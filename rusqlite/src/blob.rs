@@ -13,13 +13,6 @@ pub struct Blob<'conn> {
     pos: i32,
 }
 
-/// Enumeration of possible methods to seek within an BLOB.
-pub enum SeekFrom {
-    Start(i32),
-    End(i32),
-    Current(i32),
-}
-
 impl Connection {
     /// Open a handle to the BLOB located in `row`, `column`, `table` in database `db`.
     ///
@@ -80,15 +73,6 @@ impl<'conn> Blob<'conn> {
     /// Return the size in bytes of the BLOB
     pub fn size(&self) -> i32 {
         unsafe { ffi::sqlite3_blob_bytes(self.blob) }
-    }
-
-    /// Seek to an offset, in bytes, in BLOB.
-    pub fn seek(&mut self, pos: SeekFrom) {
-        self.pos = match pos {
-            SeekFrom::Start(offset) => offset,
-            SeekFrom::Current(offset) => self.pos + offset,
-            SeekFrom::End(offset) => self.size() + offset,
-        };
     }
 
     /// Close a BLOB handle
@@ -179,6 +163,26 @@ impl<'conn> io::Write for Blob<'conn> {
     }
 }
 
+impl<'conn> io::Seek for Blob<'conn> {
+    /// Seek to an offset, in bytes, in BLOB.
+    fn seek(&mut self, pos: io::SeekFrom) -> io::Result<u64> {
+        let pos = match pos {
+            io::SeekFrom::Start(offset) => offset as i64,
+            io::SeekFrom::Current(offset) => self.pos as i64 + offset,
+            io::SeekFrom::End(offset) => self.size() as i64 + offset,
+        };
+
+        if pos < 0 {
+            Err(io::Error::new(io::ErrorKind::InvalidInput, "invalid seek to negative position"))
+        } else if pos > ::std::i32::MAX as i64 {
+            Err(io::Error::new(io::ErrorKind::InvalidInput, "invalid seek to position > i32::MAX"))
+        } else {
+            self.pos = pos as i32;
+            Ok(pos as u64)
+        }
+    }
+}
+
 #[allow(unused_must_use)]
 impl<'conn> Drop for Blob<'conn> {
     fn drop(&mut self) {
@@ -188,7 +192,7 @@ impl<'conn> Drop for Blob<'conn> {
 
 #[cfg(test)]
 mod test {
-    use std::io::{Read, Write};
+    use std::io::{Read, Write, Seek, SeekFrom};
     use {Connection, DatabaseName};
 
     #[test]
@@ -218,6 +222,6 @@ mod test {
         assert_eq!(0, blob.read(&mut bytes[..]).unwrap());
 
         assert!(blob.reopen(rowid).is_ok());
-        blob.seek(super::SeekFrom::Start(0));
+        blob.seek(SeekFrom::Start(0));
     }
 }
