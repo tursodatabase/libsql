@@ -206,36 +206,78 @@ impl<'conn> Drop for Blob<'conn> {
 
 #[cfg(test)]
 mod test {
-    use std::io::{Read, Write, Seek, SeekFrom};
-    use {Connection, DatabaseName};
+    use std::io::{BufReader, BufRead, Read, Write, Seek, SeekFrom};
+    use {Connection, DatabaseName, Result};
+
+    #[cfg_attr(rustfmt, rustfmt_skip)]
+    fn db_with_test_blob() -> Result<(Connection, i64)> {
+        let db = try!(Connection::open_in_memory());
+        let sql = "BEGIN;
+                   CREATE TABLE test (content BLOB);
+                   INSERT INTO test VALUES (ZEROBLOB(10));
+                   END;";
+        try!(db.execute_batch(sql));
+        let rowid = db.last_insert_rowid();
+        Ok((db, rowid))
+    }
 
     #[test]
-    #[cfg_attr(rustfmt, rustfmt_skip)]
     fn test_blob() {
-        let db = Connection::open_in_memory().unwrap();
-        let sql = "BEGIN;
-                CREATE TABLE test (content BLOB);
-                INSERT INTO test VALUES (ZEROBLOB(10));
-                END;";
-        db.execute_batch(sql).unwrap();
-        let rowid = db.last_insert_rowid();
+        let (db, rowid) = db_with_test_blob().unwrap();
 
         let mut blob = db.blob_open(DatabaseName::Main, "test", "content", rowid, false).unwrap();
-        blob.write(b"Clob").unwrap();
-        let err = blob.write(b"5678901");
-        // writeln!(io::stderr(), "{:?}", err);
-        assert!(err.is_err());
+        assert_eq!(4, blob.write(b"Clob").unwrap());
+        assert!(blob.write(b"5678901").is_err()); // cannot write past 10
+        assert_eq!(4, blob.write(b"5678").unwrap());
 
-        assert!(blob.reopen(rowid).is_ok());
-        assert!(blob.close().is_ok());
+        blob.reopen(rowid).unwrap();
+        blob.close().unwrap();
 
         blob = db.blob_open(DatabaseName::Main, "test", "content", rowid, true).unwrap();
         let mut bytes = [0u8; 5];
         assert_eq!(5, blob.read(&mut bytes[..]).unwrap());
+        assert_eq!(&bytes, b"Clob5");
         assert_eq!(5, blob.read(&mut bytes[..]).unwrap());
+        assert_eq!(&bytes, b"678\0\0");
         assert_eq!(0, blob.read(&mut bytes[..]).unwrap());
 
-        assert!(blob.reopen(rowid).is_ok());
-        blob.seek(SeekFrom::Start(0));
+        blob.seek(SeekFrom::Start(2)).unwrap();
+        assert_eq!(5, blob.read(&mut bytes[..]).unwrap());
+        assert_eq!(&bytes, b"ob567");
+
+        blob.seek(SeekFrom::Current(-6)).unwrap();
+        assert_eq!(5, blob.read(&mut bytes[..]).unwrap());
+        assert_eq!(&bytes, b"lob56");
+
+        blob.seek(SeekFrom::End(-6)).unwrap();
+        assert_eq!(5, blob.read(&mut bytes[..]).unwrap());
+        assert_eq!(&bytes, b"5678\0");
+
+        blob.reopen(rowid).unwrap();
+        assert_eq!(5, blob.read(&mut bytes[..]).unwrap());
+        assert_eq!(&bytes, b"Clob5");
+    }
+
+    #[test]
+    fn test_blob_in_bufreader() {
+        let (db, rowid) = db_with_test_blob().unwrap();
+
+        let mut blob = db.blob_open(DatabaseName::Main, "test", "content", rowid, false).unwrap();
+        assert_eq!(8, blob.write(b"one\ntwo\n").unwrap());
+
+        blob.reopen(rowid).unwrap();
+        let mut reader = BufReader::new(blob);
+
+        let mut line = String::new();
+        assert_eq!(4, reader.read_line(&mut line).unwrap());
+        assert_eq!("one\n", line);
+
+        line.truncate(0);
+        assert_eq!(4, reader.read_line(&mut line).unwrap());
+        assert_eq!("two\n", line);
+
+        line.truncate(0);
+        assert_eq!(2, reader.read_line(&mut line).unwrap());
+        assert_eq!("\0\0", line);
     }
 }
