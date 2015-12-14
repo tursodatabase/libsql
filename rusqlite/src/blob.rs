@@ -99,10 +99,11 @@ impl<'conn> io::Read for Blob<'conn> {
     /// Will return `Err` if `buf` length > i32 max value or if the underlying SQLite read call fails.
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         if buf.len() > ::std::i32::MAX as usize {
-            return Err(io::Error::new(io::ErrorKind::InvalidInput, Error {
-                code: ffi::SQLITE_TOOBIG,
-                message: "buffer too long".to_string(),
-            }));
+            return Err(io::Error::new(io::ErrorKind::InvalidInput,
+                                      Error {
+                                          code: ffi::SQLITE_TOOBIG,
+                                          message: "buffer too long".to_string(),
+                                      }));
         }
         let mut n = buf.len() as i32;
         let size = self.size();
@@ -115,10 +116,13 @@ impl<'conn> io::Read for Blob<'conn> {
         let rc = unsafe {
             ffi::sqlite3_blob_read(self.blob, mem::transmute(buf.as_ptr()), n, self.pos)
         };
-        self.conn.decode_result(rc).map(|_| {
-            self.pos += n;
-            n as usize
-        }).map_err(|err| io::Error::new(io::ErrorKind::Other, err))
+        self.conn
+            .decode_result(rc)
+            .map(|_| {
+                self.pos += n;
+                n as usize
+            })
+            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))
     }
 }
 
@@ -133,18 +137,23 @@ impl<'conn> io::Write for Blob<'conn> {
     /// or if the underlying SQLite write call fails.
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         if buf.len() > ::std::i32::MAX as usize {
-            return Err(io::Error::new(io::ErrorKind::InvalidInput, Error {
-                code: ffi::SQLITE_TOOBIG,
-                message: "buffer too long".to_string(),
-            }));
+            return Err(io::Error::new(io::ErrorKind::InvalidInput,
+                                      Error {
+                                          code: ffi::SQLITE_TOOBIG,
+                                          message: "buffer too long".to_string(),
+                                      }));
         }
         let n = buf.len() as i32;
         let size = self.size();
         if self.pos + n > size {
-            return Err(io::Error::new(io::ErrorKind::Other, Error {
-                code: ffi::SQLITE_MISUSE,
-                message: format!("pos = {} + n = {} > size = {}", self.pos, n, size),
-            }));
+            return Err(io::Error::new(io::ErrorKind::Other,
+                                      Error {
+                                          code: ffi::SQLITE_MISUSE,
+                                          message: format!("pos = {} + n = {} > size = {}",
+                                                           self.pos,
+                                                           n,
+                                                           size),
+                                      }));
         }
         if n <= 0 {
             return Ok(0);
@@ -152,10 +161,13 @@ impl<'conn> io::Write for Blob<'conn> {
         let rc = unsafe {
             ffi::sqlite3_blob_write(self.blob, mem::transmute(buf.as_ptr()), n, self.pos)
         };
-        self.conn.decode_result(rc).map(|_| {
-            self.pos += n;
-            n as usize
-        }).map_err(|err| io::Error::new(io::ErrorKind::Other, err))
+        self.conn
+            .decode_result(rc)
+            .map(|_| {
+                self.pos += n;
+                n as usize
+            })
+            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))
     }
 
     fn flush(&mut self) -> io::Result<()> {
@@ -173,9 +185,11 @@ impl<'conn> io::Seek for Blob<'conn> {
         };
 
         if pos < 0 {
-            Err(io::Error::new(io::ErrorKind::InvalidInput, "invalid seek to negative position"))
+            Err(io::Error::new(io::ErrorKind::InvalidInput,
+                               "invalid seek to negative position"))
         } else if pos > ::std::i32::MAX as i64 {
-            Err(io::Error::new(io::ErrorKind::InvalidInput, "invalid seek to position > i32::MAX"))
+            Err(io::Error::new(io::ErrorKind::InvalidInput,
+                               "invalid seek to position > i32::MAX"))
         } else {
             self.pos = pos as i32;
             Ok(pos as u64)
