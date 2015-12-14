@@ -3,7 +3,7 @@ use std::mem;
 use std::ptr;
 
 use super::ffi;
-use {Error, Result, Connection};
+use {Error, Result, Connection, DatabaseName};
 
 /// Handle to an open BLOB
 pub struct Blob<'conn> {
@@ -20,14 +20,14 @@ pub enum SeekFrom {
 }
 
 impl Connection {
-    /// Open a handle to the BLOB located in `row`, `column`, `table` in database `db` ('main', 'temp', ...)
+    /// Open a handle to the BLOB located in `row`, `column`, `table` in database `db`.
     ///
     /// # Failure
     ///
     /// Will return `Err` if `db`/`table`/`column` cannot be converted to a C-compatible string or if the
     /// underlying SQLite BLOB open call fails.
     pub fn blob_open<'a>(&'a self,
-                         db: &str,
+                         db: DatabaseName,
                          table: &str,
                          column: &str,
                          row: i64,
@@ -35,7 +35,7 @@ impl Connection {
                          -> Result<Blob<'a>> {
         let mut c = self.db.borrow_mut();
         let mut blob = ptr::null_mut();
-        let db = try!(super::str_to_cstring(db));
+        let db = try!(db.to_cstring());
         let table = try!(super::str_to_cstring(table));
         let column = try!(super::str_to_cstring(column));
         let rc = unsafe {
@@ -179,7 +179,7 @@ impl<'conn> Drop for Blob<'conn> {
 
 #[cfg(test)]
 mod test {
-    use Connection;
+    use {Connection, DatabaseName};
 
     #[test]
     #[cfg_attr(rustfmt, rustfmt_skip)]
@@ -192,7 +192,7 @@ mod test {
         db.execute_batch(sql).unwrap();
         let rowid = db.last_insert_rowid();
 
-        let mut blob = db.blob_open("main", "test", "content", rowid, false).unwrap();
+        let mut blob = db.blob_open(DatabaseName::Main, "test", "content", rowid, false).unwrap();
         blob.write(b"Clob").unwrap();
         let err = blob.write(b"5678901");
         // writeln!(io::stderr(), "{:?}", err);
@@ -201,7 +201,7 @@ mod test {
         assert!(blob.reopen(rowid).is_ok());
         assert!(blob.close().is_ok());
 
-        blob = db.blob_open("main", "test", "content", rowid, true).unwrap();
+        blob = db.blob_open(DatabaseName::Main, "test", "content", rowid, true).unwrap();
         let mut bytes = [0u8; 5];
         assert_eq!(5, blob.read(&mut bytes[..]).unwrap());
         assert_eq!(5, blob.read(&mut bytes[..]).unwrap());
