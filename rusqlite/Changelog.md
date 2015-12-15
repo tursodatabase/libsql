@@ -18,6 +18,7 @@
   The old, prefixed names are still exported but are deprecated.
 * Adds a variety of `..._named` methods for executing queries using named placeholder parameters.
 * Adds `backup` feature that exposes SQLite's online backup API.
+* Adds `blob` feature that exposes SQLite's Incremental I/O for BLOB API.
 * Adds `functions` feature that allows user-defined scalar functions to be added to
   open `SqliteConnection`s.
 

@@ -69,6 +69,8 @@ features](http://doc.crates.io/manifest.html#the-features-section). They are:
   allows you to load Rust closures into SQLite connections for use in queries.
 * [`trace`](http://jgallagher.github.io/rusqlite/rusqlite/trace/index.html)
   allows hooks into SQLite's tracing and profiling APIs.
+* [`blob`](http://jgallagher.github.io/rusqlite/rusqlite/blob/index.html)
+  gives `std::io::{Read, Write, Seek}` access to SQL BLOBs.
 
 ### Design of Rows and Row
 
