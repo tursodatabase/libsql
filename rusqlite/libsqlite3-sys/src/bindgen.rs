@@ -10,10 +10,10 @@ pub type sqlite_uint64 = ::libc::c_ulonglong;
 pub type sqlite3_int64 = sqlite_int64;
 pub type sqlite3_uint64 = sqlite_uint64;
 pub type sqlite3_callback =
-    ::std::option::Option<extern "C" fn(arg1: *mut ::libc::c_void,
-                                        arg2: ::libc::c_int,
-                                        arg3: *mut *mut ::libc::c_char,
-                                        arg4: *mut *mut ::libc::c_char)
+    ::std::option::Option<unsafe extern "C" fn(arg1: *mut ::libc::c_void,
+                                               arg2: ::libc::c_int,
+                                               arg3: *mut *mut ::libc::c_char,
+                                               arg4: *mut *mut ::libc::c_char)
                               -> ::libc::c_int>;
 pub type sqlite3_file = Struct_sqlite3_file;
 #[repr(C)]
@@ -32,83 +32,110 @@ pub type sqlite3_io_methods = Struct_sqlite3_io_methods;
 #[derive(Copy)]
 pub struct Struct_sqlite3_io_methods {
     pub iVersion: ::libc::c_int,
-    pub xClose: ::std::option::Option<extern "C" fn(arg1: *mut sqlite3_file)
+    pub xClose: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                               *mut sqlite3_file)
                                           -> ::libc::c_int>,
-    pub xRead: ::std::option::Option<extern "C" fn(arg1: *mut sqlite3_file,
-                                                   arg2: *mut ::libc::c_void,
-                                                   iAmt: ::libc::c_int,
-                                                   iOfst: sqlite3_int64)
-                                         -> ::libc::c_int>,
-    pub xWrite: ::std::option::Option<extern "C" fn(arg1: *mut sqlite3_file,
-                                                    arg2:
-                                                        *const ::libc::c_void,
-                                                    iAmt: ::libc::c_int,
-                                                    iOfst: sqlite3_int64)
-                                          -> ::libc::c_int>,
-    pub xTruncate: ::std::option::Option<extern "C" fn(arg1:
-                                                           *mut sqlite3_file,
-                                                       size: sqlite3_int64)
-                                             -> ::libc::c_int>,
-    pub xSync: ::std::option::Option<extern "C" fn(arg1: *mut sqlite3_file,
-                                                   flags: ::libc::c_int)
-                                         -> ::libc::c_int>,
-    pub xFileSize: ::std::option::Option<extern "C" fn(arg1:
-                                                           *mut sqlite3_file,
-                                                       pSize:
-                                                           *mut sqlite3_int64)
-                                             -> ::libc::c_int>,
-    pub xLock: ::std::option::Option<extern "C" fn(arg1: *mut sqlite3_file,
-                                                   arg2: ::libc::c_int)
-                                         -> ::libc::c_int>,
-    pub xUnlock: ::std::option::Option<extern "C" fn(arg1: *mut sqlite3_file,
-                                                     arg2: ::libc::c_int)
-                                           -> ::libc::c_int>,
-    pub xCheckReservedLock: ::std::option::Option<extern "C" fn(arg1:
-                                                                    *mut sqlite3_file,
-                                                                pResOut:
-                                                                    *mut ::libc::c_int)
-                                                      -> ::libc::c_int>,
-    pub xFileControl: ::std::option::Option<extern "C" fn(arg1:
+    pub xRead: ::std::option::Option<unsafe extern "C" fn(arg1:
                                                               *mut sqlite3_file,
-                                                          op: ::libc::c_int,
-                                                          pArg:
-                                                              *mut ::libc::c_void)
-                                                -> ::libc::c_int>,
-    pub xSectorSize: ::std::option::Option<extern "C" fn(arg1:
-                                                             *mut sqlite3_file)
-                                               -> ::libc::c_int>,
-    pub xDeviceCharacteristics: ::std::option::Option<extern "C" fn(arg1:
-                                                                        *mut sqlite3_file)
-                                                          -> ::libc::c_int>,
-    pub xShmMap: ::std::option::Option<extern "C" fn(arg1: *mut sqlite3_file,
-                                                     iPg: ::libc::c_int,
-                                                     pgsz: ::libc::c_int,
-                                                     arg2: ::libc::c_int,
-                                                     arg3:
-                                                         *mut *mut ::libc::c_void)
-                                           -> ::libc::c_int>,
-    pub xShmLock: ::std::option::Option<extern "C" fn(arg1: *mut sqlite3_file,
-                                                      offset: ::libc::c_int,
-                                                      n: ::libc::c_int,
-                                                      flags: ::libc::c_int)
-                                            -> ::libc::c_int>,
-    pub xShmBarrier: ::std::option::Option<extern "C" fn(arg1:
-                                                             *mut sqlite3_file)
-                                               -> ()>,
-    pub xShmUnmap: ::std::option::Option<extern "C" fn(arg1:
-                                                           *mut sqlite3_file,
-                                                       deleteFlag:
-                                                           ::libc::c_int)
-                                             -> ::libc::c_int>,
-    pub xFetch: ::std::option::Option<extern "C" fn(arg1: *mut sqlite3_file,
-                                                    iOfst: sqlite3_int64,
-                                                    iAmt: ::libc::c_int,
-                                                    pp:
-                                                        *mut *mut ::libc::c_void)
+                                                          arg2:
+                                                              *mut ::libc::c_void,
+                                                          iAmt: ::libc::c_int,
+                                                          iOfst:
+                                                              sqlite3_int64)
+                                         -> ::libc::c_int>,
+    pub xWrite: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                               *mut sqlite3_file,
+                                                           arg2:
+                                                               *const ::libc::c_void,
+                                                           iAmt:
+                                                               ::libc::c_int,
+                                                           iOfst:
+                                                               sqlite3_int64)
                                           -> ::libc::c_int>,
-    pub xUnfetch: ::std::option::Option<extern "C" fn(arg1: *mut sqlite3_file,
-                                                      iOfst: sqlite3_int64,
-                                                      p: *mut ::libc::c_void)
+    pub xTruncate: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                  *mut sqlite3_file,
+                                                              size:
+                                                                  sqlite3_int64)
+                                             -> ::libc::c_int>,
+    pub xSync: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                              *mut sqlite3_file,
+                                                          flags:
+                                                              ::libc::c_int)
+                                         -> ::libc::c_int>,
+    pub xFileSize: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                  *mut sqlite3_file,
+                                                              pSize:
+                                                                  *mut sqlite3_int64)
+                                             -> ::libc::c_int>,
+    pub xLock: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                              *mut sqlite3_file,
+                                                          arg2: ::libc::c_int)
+                                         -> ::libc::c_int>,
+    pub xUnlock: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                *mut sqlite3_file,
+                                                            arg2:
+                                                                ::libc::c_int)
+                                           -> ::libc::c_int>,
+    pub xCheckReservedLock: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                           *mut sqlite3_file,
+                                                                       pResOut:
+                                                                           *mut ::libc::c_int)
+                                                      -> ::libc::c_int>,
+    pub xFileControl: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                     *mut sqlite3_file,
+                                                                 op:
+                                                                     ::libc::c_int,
+                                                                 pArg:
+                                                                     *mut ::libc::c_void)
+                                                -> ::libc::c_int>,
+    pub xSectorSize: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                    *mut sqlite3_file)
+                                               -> ::libc::c_int>,
+    pub xDeviceCharacteristics: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                               *mut sqlite3_file)
+                                                          -> ::libc::c_int>,
+    pub xShmMap: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                *mut sqlite3_file,
+                                                            iPg:
+                                                                ::libc::c_int,
+                                                            pgsz:
+                                                                ::libc::c_int,
+                                                            arg2:
+                                                                ::libc::c_int,
+                                                            arg3:
+                                                                *mut *mut ::libc::c_void)
+                                           -> ::libc::c_int>,
+    pub xShmLock: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                 *mut sqlite3_file,
+                                                             offset:
+                                                                 ::libc::c_int,
+                                                             n: ::libc::c_int,
+                                                             flags:
+                                                                 ::libc::c_int)
+                                            -> ::libc::c_int>,
+    pub xShmBarrier: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                    *mut sqlite3_file)
+                                               -> ()>,
+    pub xShmUnmap: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                  *mut sqlite3_file,
+                                                              deleteFlag:
+                                                                  ::libc::c_int)
+                                             -> ::libc::c_int>,
+    pub xFetch: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                               *mut sqlite3_file,
+                                                           iOfst:
+                                                               sqlite3_int64,
+                                                           iAmt:
+                                                               ::libc::c_int,
+                                                           pp:
+                                                               *mut *mut ::libc::c_void)
+                                          -> ::libc::c_int>,
+    pub xUnfetch: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                 *mut sqlite3_file,
+                                                             iOfst:
+                                                                 sqlite3_int64,
+                                                             p:
+                                                                 *mut ::libc::c_void)
                                             -> ::libc::c_int>,
 }
 impl ::std::clone::Clone for Struct_sqlite3_io_methods {
@@ -130,104 +157,119 @@ pub struct Struct_sqlite3_vfs {
     pub pNext: *mut sqlite3_vfs,
     pub zName: *const ::libc::c_char,
     pub pAppData: *mut ::libc::c_void,
-    pub xOpen: ::std::option::Option<extern "C" fn(arg1: *mut sqlite3_vfs,
-                                                   zName:
-                                                       *const ::libc::c_char,
-                                                   arg2: *mut sqlite3_file,
-                                                   flags: ::libc::c_int,
-                                                   pOutFlags:
-                                                       *mut ::libc::c_int)
-                                         -> ::libc::c_int>,
-    pub xDelete: ::std::option::Option<extern "C" fn(arg1: *mut sqlite3_vfs,
-                                                     zName:
-                                                         *const ::libc::c_char,
-                                                     syncDir: ::libc::c_int)
-                                           -> ::libc::c_int>,
-    pub xAccess: ::std::option::Option<extern "C" fn(arg1: *mut sqlite3_vfs,
-                                                     zName:
-                                                         *const ::libc::c_char,
-                                                     flags: ::libc::c_int,
-                                                     pResOut:
-                                                         *mut ::libc::c_int)
-                                           -> ::libc::c_int>,
-    pub xFullPathname: ::std::option::Option<extern "C" fn(arg1:
-                                                               *mut sqlite3_vfs,
-                                                           zName:
-                                                               *const ::libc::c_char,
-                                                           nOut:
-                                                               ::libc::c_int,
-                                                           zOut:
-                                                               *mut ::libc::c_char)
-                                                 -> ::libc::c_int>,
-    pub xDlOpen: ::std::option::Option<extern "C" fn(arg1: *mut sqlite3_vfs,
-                                                     zFilename:
-                                                         *const ::libc::c_char)
-                                           -> *mut ::libc::c_void>,
-    pub xDlError: ::std::option::Option<extern "C" fn(arg1: *mut sqlite3_vfs,
-                                                      nByte: ::libc::c_int,
-                                                      zErrMsg:
-                                                          *mut ::libc::c_char)
-                                            -> ()>,
-    pub xDlSym: ::std::option::Option<extern "C" fn(arg1: *mut sqlite3_vfs,
-                                                    arg2: *mut ::libc::c_void,
-                                                    zSymbol:
-                                                        *const ::libc::c_char)
-                                          ->
-                                              ::std::option::Option<extern "C" fn(arg1:
-                                                                                      *mut sqlite3_vfs,
-                                                                                  arg2:
-                                                                                      *mut ::libc::c_void,
-                                                                                  zSymbol:
-                                                                                      *const ::libc::c_char)
-                                                                        ->
-                                                                            ()>>,
-    pub xDlClose: ::std::option::Option<extern "C" fn(arg1: *mut sqlite3_vfs,
-                                                      arg2:
-                                                          *mut ::libc::c_void)
-                                            -> ()>,
-    pub xRandomness: ::std::option::Option<extern "C" fn(arg1:
-                                                             *mut sqlite3_vfs,
-                                                         nByte: ::libc::c_int,
-                                                         zOut:
-                                                             *mut ::libc::c_char)
-                                               -> ::libc::c_int>,
-    pub xSleep: ::std::option::Option<extern "C" fn(arg1: *mut sqlite3_vfs,
-                                                    microseconds:
-                                                        ::libc::c_int)
-                                          -> ::libc::c_int>,
-    pub xCurrentTime: ::std::option::Option<extern "C" fn(arg1:
+    pub xOpen: ::std::option::Option<unsafe extern "C" fn(arg1:
                                                               *mut sqlite3_vfs,
+                                                          zName:
+                                                              *const ::libc::c_char,
                                                           arg2:
-                                                              *mut ::libc::c_double)
-                                                -> ::libc::c_int>,
-    pub xGetLastError: ::std::option::Option<extern "C" fn(arg1:
-                                                               *mut sqlite3_vfs,
-                                                           arg2:
-                                                               ::libc::c_int,
-                                                           arg3:
-                                                               *mut ::libc::c_char)
-                                                 -> ::libc::c_int>,
-    pub xCurrentTimeInt64: ::std::option::Option<extern "C" fn(arg1:
-                                                                   *mut sqlite3_vfs,
-                                                               arg2:
-                                                                   *mut sqlite3_int64)
-                                                     -> ::libc::c_int>,
-    pub xSetSystemCall: ::std::option::Option<extern "C" fn(arg1:
+                                                              *mut sqlite3_file,
+                                                          flags:
+                                                              ::libc::c_int,
+                                                          pOutFlags:
+                                                              *mut ::libc::c_int)
+                                         -> ::libc::c_int>,
+    pub xDelete: ::std::option::Option<unsafe extern "C" fn(arg1:
                                                                 *mut sqlite3_vfs,
                                                             zName:
                                                                 *const ::libc::c_char,
-                                                            arg2:
-                                                                sqlite3_syscall_ptr)
-                                                  -> ::libc::c_int>,
-    pub xGetSystemCall: ::std::option::Option<extern "C" fn(arg1:
+                                                            syncDir:
+                                                                ::libc::c_int)
+                                           -> ::libc::c_int>,
+    pub xAccess: ::std::option::Option<unsafe extern "C" fn(arg1:
                                                                 *mut sqlite3_vfs,
                                                             zName:
+                                                                *const ::libc::c_char,
+                                                            flags:
+                                                                ::libc::c_int,
+                                                            pResOut:
+                                                                *mut ::libc::c_int)
+                                           -> ::libc::c_int>,
+    pub xFullPathname: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                      *mut sqlite3_vfs,
+                                                                  zName:
+                                                                      *const ::libc::c_char,
+                                                                  nOut:
+                                                                      ::libc::c_int,
+                                                                  zOut:
+                                                                      *mut ::libc::c_char)
+                                                 -> ::libc::c_int>,
+    pub xDlOpen: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                *mut sqlite3_vfs,
+                                                            zFilename:
                                                                 *const ::libc::c_char)
-                                                  -> sqlite3_syscall_ptr>,
-    pub xNextSystemCall: ::std::option::Option<extern "C" fn(arg1:
+                                           -> *mut ::libc::c_void>,
+    pub xDlError: ::std::option::Option<unsafe extern "C" fn(arg1:
                                                                  *mut sqlite3_vfs,
-                                                             zName:
-                                                                 *const ::libc::c_char)
+                                                             nByte:
+                                                                 ::libc::c_int,
+                                                             zErrMsg:
+                                                                 *mut ::libc::c_char)
+                                            -> ()>,
+    pub xDlSym: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                               *mut sqlite3_vfs,
+                                                           arg2:
+                                                               *mut ::libc::c_void,
+                                                           zSymbol:
+                                                               *const ::libc::c_char)
+                                          ->
+                                              ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                                             *mut sqlite3_vfs,
+                                                                                         arg2:
+                                                                                             *mut ::libc::c_void,
+                                                                                         zSymbol:
+                                                                                             *const ::libc::c_char)
+                                                                        ->
+                                                                            ()>>,
+    pub xDlClose: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                 *mut sqlite3_vfs,
+                                                             arg2:
+                                                                 *mut ::libc::c_void)
+                                            -> ()>,
+    pub xRandomness: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                    *mut sqlite3_vfs,
+                                                                nByte:
+                                                                    ::libc::c_int,
+                                                                zOut:
+                                                                    *mut ::libc::c_char)
+                                               -> ::libc::c_int>,
+    pub xSleep: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                               *mut sqlite3_vfs,
+                                                           microseconds:
+                                                               ::libc::c_int)
+                                          -> ::libc::c_int>,
+    pub xCurrentTime: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                     *mut sqlite3_vfs,
+                                                                 arg2:
+                                                                     *mut ::libc::c_double)
+                                                -> ::libc::c_int>,
+    pub xGetLastError: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                      *mut sqlite3_vfs,
+                                                                  arg2:
+                                                                      ::libc::c_int,
+                                                                  arg3:
+                                                                      *mut ::libc::c_char)
+                                                 -> ::libc::c_int>,
+    pub xCurrentTimeInt64: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                          *mut sqlite3_vfs,
+                                                                      arg2:
+                                                                          *mut sqlite3_int64)
+                                                     -> ::libc::c_int>,
+    pub xSetSystemCall: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                       *mut sqlite3_vfs,
+                                                                   zName:
+                                                                       *const ::libc::c_char,
+                                                                   arg2:
+                                                                       sqlite3_syscall_ptr)
+                                                  -> ::libc::c_int>,
+    pub xGetSystemCall: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                       *mut sqlite3_vfs,
+                                                                   zName:
+                                                                       *const ::libc::c_char)
+                                                  -> sqlite3_syscall_ptr>,
+    pub xNextSystemCall: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                        *mut sqlite3_vfs,
+                                                                    zName:
+                                                                        *const ::libc::c_char)
                                                    -> *const ::libc::c_char>,
 }
 impl ::std::clone::Clone for Struct_sqlite3_vfs {
@@ -242,20 +284,24 @@ pub type sqlite3_mem_methods = Struct_sqlite3_mem_methods;
 pub struct Struct_sqlite3_mem_methods {
     pub xMalloc: ::std::option::Option<extern "C" fn(arg1: ::libc::c_int)
                                            -> *mut ::libc::c_void>,
-    pub xFree: ::std::option::Option<extern "C" fn(arg1: *mut ::libc::c_void)
+    pub xFree: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                              *mut ::libc::c_void)
                                          -> ()>,
-    pub xRealloc: ::std::option::Option<extern "C" fn(arg1:
-                                                          *mut ::libc::c_void,
-                                                      arg2: ::libc::c_int)
+    pub xRealloc: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                 *mut ::libc::c_void,
+                                                             arg2:
+                                                                 ::libc::c_int)
                                             -> *mut ::libc::c_void>,
-    pub xSize: ::std::option::Option<extern "C" fn(arg1: *mut ::libc::c_void)
+    pub xSize: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                              *mut ::libc::c_void)
                                          -> ::libc::c_int>,
     pub xRoundup: ::std::option::Option<extern "C" fn(arg1: ::libc::c_int)
                                             -> ::libc::c_int>,
-    pub xInit: ::std::option::Option<extern "C" fn(arg1: *mut ::libc::c_void)
+    pub xInit: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                              *mut ::libc::c_void)
                                          -> ::libc::c_int>,
-    pub xShutdown: ::std::option::Option<extern "C" fn(arg1:
-                                                           *mut ::libc::c_void)
+    pub xShutdown: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                  *mut ::libc::c_void)
                                              -> ()>,
     pub pAppData: *mut ::libc::c_void,
 }
@@ -272,7 +318,8 @@ pub type sqlite3_value = Struct_Mem;
 pub enum Struct_sqlite3_context { }
 pub type sqlite3_context = Struct_sqlite3_context;
 pub type sqlite3_destructor_type =
-    ::std::option::Option<extern "C" fn(arg1: *mut ::libc::c_void) -> ()>;
+    ::std::option::Option<unsafe extern "C" fn(arg1: *mut ::libc::c_void)
+                              -> ()>;
 pub type sqlite3_vtab = Struct_sqlite3_vtab;
 pub type sqlite3_index_info = Struct_sqlite3_index_info;
 pub type sqlite3_vtab_cursor = Struct_sqlite3_vtab_cursor;
@@ -281,120 +328,138 @@ pub type sqlite3_module = Struct_sqlite3_module;
 #[derive(Copy)]
 pub struct Struct_sqlite3_module {
     pub iVersion: ::libc::c_int,
-    pub xCreate: ::std::option::Option<extern "C" fn(arg1: *mut sqlite3,
-                                                     pAux:
-                                                         *mut ::libc::c_void,
-                                                     argc: ::libc::c_int,
-                                                     argv:
-                                                         *const *const ::libc::c_char,
-                                                     ppVTab:
-                                                         *mut *mut sqlite3_vtab,
-                                                     arg2:
-                                                         *mut *mut ::libc::c_char)
+    pub xCreate: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                *mut sqlite3,
+                                                            pAux:
+                                                                *mut ::libc::c_void,
+                                                            argc:
+                                                                ::libc::c_int,
+                                                            argv:
+                                                                *const *const ::libc::c_char,
+                                                            ppVTab:
+                                                                *mut *mut sqlite3_vtab,
+                                                            arg2:
+                                                                *mut *mut ::libc::c_char)
                                            -> ::libc::c_int>,
-    pub xConnect: ::std::option::Option<extern "C" fn(arg1: *mut sqlite3,
-                                                      pAux:
-                                                          *mut ::libc::c_void,
-                                                      argc: ::libc::c_int,
-                                                      argv:
-                                                          *const *const ::libc::c_char,
-                                                      ppVTab:
-                                                          *mut *mut sqlite3_vtab,
-                                                      arg2:
-                                                          *mut *mut ::libc::c_char)
+    pub xConnect: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                 *mut sqlite3,
+                                                             pAux:
+                                                                 *mut ::libc::c_void,
+                                                             argc:
+                                                                 ::libc::c_int,
+                                                             argv:
+                                                                 *const *const ::libc::c_char,
+                                                             ppVTab:
+                                                                 *mut *mut sqlite3_vtab,
+                                                             arg2:
+                                                                 *mut *mut ::libc::c_char)
                                             -> ::libc::c_int>,
-    pub xBestIndex: ::std::option::Option<extern "C" fn(pVTab:
-                                                            *mut sqlite3_vtab,
-                                                        arg1:
-                                                            *mut sqlite3_index_info)
+    pub xBestIndex: ::std::option::Option<unsafe extern "C" fn(pVTab:
+                                                                   *mut sqlite3_vtab,
+                                                               arg1:
+                                                                   *mut sqlite3_index_info)
                                               -> ::libc::c_int>,
-    pub xDisconnect: ::std::option::Option<extern "C" fn(pVTab:
-                                                             *mut sqlite3_vtab)
+    pub xDisconnect: ::std::option::Option<unsafe extern "C" fn(pVTab:
+                                                                    *mut sqlite3_vtab)
                                                -> ::libc::c_int>,
-    pub xDestroy: ::std::option::Option<extern "C" fn(pVTab:
-                                                          *mut sqlite3_vtab)
+    pub xDestroy: ::std::option::Option<unsafe extern "C" fn(pVTab:
+                                                                 *mut sqlite3_vtab)
                                             -> ::libc::c_int>,
-    pub xOpen: ::std::option::Option<extern "C" fn(pVTab: *mut sqlite3_vtab,
-                                                   ppCursor:
-                                                       *mut *mut sqlite3_vtab_cursor)
+    pub xOpen: ::std::option::Option<unsafe extern "C" fn(pVTab:
+                                                              *mut sqlite3_vtab,
+                                                          ppCursor:
+                                                              *mut *mut sqlite3_vtab_cursor)
                                          -> ::libc::c_int>,
-    pub xClose: ::std::option::Option<extern "C" fn(arg1:
-                                                        *mut sqlite3_vtab_cursor)
+    pub xClose: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                               *mut sqlite3_vtab_cursor)
                                           -> ::libc::c_int>,
-    pub xFilter: ::std::option::Option<extern "C" fn(arg1:
-                                                         *mut sqlite3_vtab_cursor,
-                                                     idxNum: ::libc::c_int,
-                                                     idxStr:
-                                                         *const ::libc::c_char,
-                                                     argc: ::libc::c_int,
-                                                     argv:
-                                                         *mut *mut sqlite3_value)
+    pub xFilter: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                *mut sqlite3_vtab_cursor,
+                                                            idxNum:
+                                                                ::libc::c_int,
+                                                            idxStr:
+                                                                *const ::libc::c_char,
+                                                            argc:
+                                                                ::libc::c_int,
+                                                            argv:
+                                                                *mut *mut sqlite3_value)
                                            -> ::libc::c_int>,
-    pub xNext: ::std::option::Option<extern "C" fn(arg1:
-                                                       *mut sqlite3_vtab_cursor)
+    pub xNext: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                              *mut sqlite3_vtab_cursor)
                                          -> ::libc::c_int>,
-    pub xEof: ::std::option::Option<extern "C" fn(arg1:
-                                                      *mut sqlite3_vtab_cursor)
+    pub xEof: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                             *mut sqlite3_vtab_cursor)
                                         -> ::libc::c_int>,
-    pub xColumn: ::std::option::Option<extern "C" fn(arg1:
-                                                         *mut sqlite3_vtab_cursor,
-                                                     arg2:
-                                                         *mut sqlite3_context,
-                                                     arg3: ::libc::c_int)
+    pub xColumn: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                *mut sqlite3_vtab_cursor,
+                                                            arg2:
+                                                                *mut sqlite3_context,
+                                                            arg3:
+                                                                ::libc::c_int)
                                            -> ::libc::c_int>,
-    pub xRowid: ::std::option::Option<extern "C" fn(arg1:
-                                                        *mut sqlite3_vtab_cursor,
-                                                    pRowid:
-                                                        *mut sqlite3_int64)
+    pub xRowid: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                               *mut sqlite3_vtab_cursor,
+                                                           pRowid:
+                                                               *mut sqlite3_int64)
                                           -> ::libc::c_int>,
-    pub xUpdate: ::std::option::Option<extern "C" fn(arg1: *mut sqlite3_vtab,
-                                                     arg2: ::libc::c_int,
-                                                     arg3:
-                                                         *mut *mut sqlite3_value,
-                                                     arg4: *mut sqlite3_int64)
+    pub xUpdate: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                *mut sqlite3_vtab,
+                                                            arg2:
+                                                                ::libc::c_int,
+                                                            arg3:
+                                                                *mut *mut sqlite3_value,
+                                                            arg4:
+                                                                *mut sqlite3_int64)
                                            -> ::libc::c_int>,
-    pub xBegin: ::std::option::Option<extern "C" fn(pVTab: *mut sqlite3_vtab)
+    pub xBegin: ::std::option::Option<unsafe extern "C" fn(pVTab:
+                                                               *mut sqlite3_vtab)
                                           -> ::libc::c_int>,
-    pub xSync: ::std::option::Option<extern "C" fn(pVTab: *mut sqlite3_vtab)
+    pub xSync: ::std::option::Option<unsafe extern "C" fn(pVTab:
+                                                              *mut sqlite3_vtab)
                                          -> ::libc::c_int>,
-    pub xCommit: ::std::option::Option<extern "C" fn(pVTab: *mut sqlite3_vtab)
+    pub xCommit: ::std::option::Option<unsafe extern "C" fn(pVTab:
+                                                                *mut sqlite3_vtab)
                                            -> ::libc::c_int>,
-    pub xRollback: ::std::option::Option<extern "C" fn(pVTab:
-                                                           *mut sqlite3_vtab)
+    pub xRollback: ::std::option::Option<unsafe extern "C" fn(pVTab:
+                                                                  *mut sqlite3_vtab)
                                              -> ::libc::c_int>,
-    pub xFindFunction: ::std::option::Option<extern "C" fn(pVtab:
-                                                               *mut sqlite3_vtab,
-                                                           nArg:
-                                                               ::libc::c_int,
-                                                           zName:
-                                                               *const ::libc::c_char,
-                                                           pxFunc:
-                                                               *mut ::std::option::Option<extern "C" fn(arg1:
-                                                                                                            *mut sqlite3_context,
-                                                                                                        arg2:
-                                                                                                            ::libc::c_int,
-                                                                                                        arg3:
-                                                                                                            *mut *mut sqlite3_value)
-                                                                                              ->
-                                                                                                  ()>,
-                                                           ppArg:
-                                                               *mut *mut ::libc::c_void)
+    pub xFindFunction: ::std::option::Option<unsafe extern "C" fn(pVtab:
+                                                                      *mut sqlite3_vtab,
+                                                                  nArg:
+                                                                      ::libc::c_int,
+                                                                  zName:
+                                                                      *const ::libc::c_char,
+                                                                  pxFunc:
+                                                                      *mut ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                                                                          *mut sqlite3_context,
+                                                                                                                      arg2:
+                                                                                                                          ::libc::c_int,
+                                                                                                                      arg3:
+                                                                                                                          *mut *mut sqlite3_value)
+                                                                                                     ->
+                                                                                                         ()>,
+                                                                  ppArg:
+                                                                      *mut *mut ::libc::c_void)
                                                  -> ::libc::c_int>,
-    pub xRename: ::std::option::Option<extern "C" fn(pVtab: *mut sqlite3_vtab,
-                                                     zNew:
-                                                         *const ::libc::c_char)
+    pub xRename: ::std::option::Option<unsafe extern "C" fn(pVtab:
+                                                                *mut sqlite3_vtab,
+                                                            zNew:
+                                                                *const ::libc::c_char)
                                            -> ::libc::c_int>,
-    pub xSavepoint: ::std::option::Option<extern "C" fn(pVTab:
-                                                            *mut sqlite3_vtab,
-                                                        arg1: ::libc::c_int)
+    pub xSavepoint: ::std::option::Option<unsafe extern "C" fn(pVTab:
+                                                                   *mut sqlite3_vtab,
+                                                               arg1:
+                                                                   ::libc::c_int)
                                               -> ::libc::c_int>,
-    pub xRelease: ::std::option::Option<extern "C" fn(pVTab:
-                                                          *mut sqlite3_vtab,
-                                                      arg1: ::libc::c_int)
+    pub xRelease: ::std::option::Option<unsafe extern "C" fn(pVTab:
+                                                                 *mut sqlite3_vtab,
+                                                             arg1:
+                                                                 ::libc::c_int)
                                             -> ::libc::c_int>,
-    pub xRollbackTo: ::std::option::Option<extern "C" fn(pVTab:
-                                                             *mut sqlite3_vtab,
-                                                         arg1: ::libc::c_int)
+    pub xRollbackTo: ::std::option::Option<unsafe extern "C" fn(pVTab:
+                                                                    *mut sqlite3_vtab,
+                                                                arg1:
+                                                                    ::libc::c_int)
                                                -> ::libc::c_int>,
 }
 impl ::std::clone::Clone for Struct_sqlite3_module {
@@ -496,23 +561,23 @@ pub struct Struct_sqlite3_mutex_methods {
     pub xMutexEnd: ::std::option::Option<extern "C" fn() -> ::libc::c_int>,
     pub xMutexAlloc: ::std::option::Option<extern "C" fn(arg1: ::libc::c_int)
                                                -> *mut sqlite3_mutex>,
-    pub xMutexFree: ::std::option::Option<extern "C" fn(arg1:
-                                                            *mut sqlite3_mutex)
+    pub xMutexFree: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                   *mut sqlite3_mutex)
                                               -> ()>,
-    pub xMutexEnter: ::std::option::Option<extern "C" fn(arg1:
-                                                             *mut sqlite3_mutex)
+    pub xMutexEnter: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                    *mut sqlite3_mutex)
                                                -> ()>,
-    pub xMutexTry: ::std::option::Option<extern "C" fn(arg1:
-                                                           *mut sqlite3_mutex)
+    pub xMutexTry: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                  *mut sqlite3_mutex)
                                              -> ::libc::c_int>,
-    pub xMutexLeave: ::std::option::Option<extern "C" fn(arg1:
-                                                             *mut sqlite3_mutex)
+    pub xMutexLeave: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                    *mut sqlite3_mutex)
                                                -> ()>,
-    pub xMutexHeld: ::std::option::Option<extern "C" fn(arg1:
-                                                            *mut sqlite3_mutex)
+    pub xMutexHeld: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                   *mut sqlite3_mutex)
                                               -> ::libc::c_int>,
-    pub xMutexNotheld: ::std::option::Option<extern "C" fn(arg1:
-                                                               *mut sqlite3_mutex)
+    pub xMutexNotheld: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                      *mut sqlite3_mutex)
                                                  -> ::libc::c_int>,
 }
 impl ::std::clone::Clone for Struct_sqlite3_mutex_methods {
@@ -542,48 +607,58 @@ pub type sqlite3_pcache_methods2 = Struct_sqlite3_pcache_methods2;
 pub struct Struct_sqlite3_pcache_methods2 {
     pub iVersion: ::libc::c_int,
     pub pArg: *mut ::libc::c_void,
-    pub xInit: ::std::option::Option<extern "C" fn(arg1: *mut ::libc::c_void)
+    pub xInit: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                              *mut ::libc::c_void)
                                          -> ::libc::c_int>,
-    pub xShutdown: ::std::option::Option<extern "C" fn(arg1:
-                                                           *mut ::libc::c_void)
+    pub xShutdown: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                  *mut ::libc::c_void)
                                              -> ()>,
     pub xCreate: ::std::option::Option<extern "C" fn(szPage: ::libc::c_int,
                                                      szExtra: ::libc::c_int,
                                                      bPurgeable:
                                                          ::libc::c_int)
                                            -> *mut sqlite3_pcache>,
-    pub xCachesize: ::std::option::Option<extern "C" fn(arg1:
-                                                            *mut sqlite3_pcache,
-                                                        nCachesize:
-                                                            ::libc::c_int)
+    pub xCachesize: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                   *mut sqlite3_pcache,
+                                                               nCachesize:
+                                                                   ::libc::c_int)
                                               -> ()>,
-    pub xPagecount: ::std::option::Option<extern "C" fn(arg1:
-                                                            *mut sqlite3_pcache)
+    pub xPagecount: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                   *mut sqlite3_pcache)
                                               -> ::libc::c_int>,
-    pub xFetch: ::std::option::Option<extern "C" fn(arg1: *mut sqlite3_pcache,
-                                                    key: ::libc::c_uint,
-                                                    createFlag: ::libc::c_int)
+    pub xFetch: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                               *mut sqlite3_pcache,
+                                                           key:
+                                                               ::libc::c_uint,
+                                                           createFlag:
+                                                               ::libc::c_int)
                                           -> *mut sqlite3_pcache_page>,
-    pub xUnpin: ::std::option::Option<extern "C" fn(arg1: *mut sqlite3_pcache,
-                                                    arg2:
-                                                        *mut sqlite3_pcache_page,
-                                                    discard: ::libc::c_int)
+    pub xUnpin: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                               *mut sqlite3_pcache,
+                                                           arg2:
+                                                               *mut sqlite3_pcache_page,
+                                                           discard:
+                                                               ::libc::c_int)
                                           -> ()>,
-    pub xRekey: ::std::option::Option<extern "C" fn(arg1: *mut sqlite3_pcache,
-                                                    arg2:
-                                                        *mut sqlite3_pcache_page,
-                                                    oldKey: ::libc::c_uint,
-                                                    newKey: ::libc::c_uint)
+    pub xRekey: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                               *mut sqlite3_pcache,
+                                                           arg2:
+                                                               *mut sqlite3_pcache_page,
+                                                           oldKey:
+                                                               ::libc::c_uint,
+                                                           newKey:
+                                                               ::libc::c_uint)
                                           -> ()>,
-    pub xTruncate: ::std::option::Option<extern "C" fn(arg1:
-                                                           *mut sqlite3_pcache,
-                                                       iLimit: ::libc::c_uint)
+    pub xTruncate: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                  *mut sqlite3_pcache,
+                                                              iLimit:
+                                                                  ::libc::c_uint)
                                              -> ()>,
-    pub xDestroy: ::std::option::Option<extern "C" fn(arg1:
-                                                          *mut sqlite3_pcache)
+    pub xDestroy: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                 *mut sqlite3_pcache)
                                             -> ()>,
-    pub xShrink: ::std::option::Option<extern "C" fn(arg1:
-                                                         *mut sqlite3_pcache)
+    pub xShrink: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                *mut sqlite3_pcache)
                                            -> ()>,
 }
 impl ::std::clone::Clone for Struct_sqlite3_pcache_methods2 {
@@ -597,42 +672,54 @@ pub type sqlite3_pcache_methods = Struct_sqlite3_pcache_methods;
 #[derive(Copy)]
 pub struct Struct_sqlite3_pcache_methods {
     pub pArg: *mut ::libc::c_void,
-    pub xInit: ::std::option::Option<extern "C" fn(arg1: *mut ::libc::c_void)
+    pub xInit: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                              *mut ::libc::c_void)
                                          -> ::libc::c_int>,
-    pub xShutdown: ::std::option::Option<extern "C" fn(arg1:
-                                                           *mut ::libc::c_void)
+    pub xShutdown: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                  *mut ::libc::c_void)
                                              -> ()>,
     pub xCreate: ::std::option::Option<extern "C" fn(szPage: ::libc::c_int,
                                                      bPurgeable:
                                                          ::libc::c_int)
                                            -> *mut sqlite3_pcache>,
-    pub xCachesize: ::std::option::Option<extern "C" fn(arg1:
-                                                            *mut sqlite3_pcache,
-                                                        nCachesize:
-                                                            ::libc::c_int)
+    pub xCachesize: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                   *mut sqlite3_pcache,
+                                                               nCachesize:
+                                                                   ::libc::c_int)
                                               -> ()>,
-    pub xPagecount: ::std::option::Option<extern "C" fn(arg1:
-                                                            *mut sqlite3_pcache)
+    pub xPagecount: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                   *mut sqlite3_pcache)
                                               -> ::libc::c_int>,
-    pub xFetch: ::std::option::Option<extern "C" fn(arg1: *mut sqlite3_pcache,
-                                                    key: ::libc::c_uint,
-                                                    createFlag: ::libc::c_int)
+    pub xFetch: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                               *mut sqlite3_pcache,
+                                                           key:
+                                                               ::libc::c_uint,
+                                                           createFlag:
+                                                               ::libc::c_int)
                                           -> *mut ::libc::c_void>,
-    pub xUnpin: ::std::option::Option<extern "C" fn(arg1: *mut sqlite3_pcache,
-                                                    arg2: *mut ::libc::c_void,
-                                                    discard: ::libc::c_int)
+    pub xUnpin: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                               *mut sqlite3_pcache,
+                                                           arg2:
+                                                               *mut ::libc::c_void,
+                                                           discard:
+                                                               ::libc::c_int)
                                           -> ()>,
-    pub xRekey: ::std::option::Option<extern "C" fn(arg1: *mut sqlite3_pcache,
-                                                    arg2: *mut ::libc::c_void,
-                                                    oldKey: ::libc::c_uint,
-                                                    newKey: ::libc::c_uint)
+    pub xRekey: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                               *mut sqlite3_pcache,
+                                                           arg2:
+                                                               *mut ::libc::c_void,
+                                                           oldKey:
+                                                               ::libc::c_uint,
+                                                           newKey:
+                                                               ::libc::c_uint)
                                           -> ()>,
-    pub xTruncate: ::std::option::Option<extern "C" fn(arg1:
-                                                           *mut sqlite3_pcache,
-                                                       iLimit: ::libc::c_uint)
+    pub xTruncate: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                  *mut sqlite3_pcache,
+                                                              iLimit:
+                                                                  ::libc::c_uint)
                                              -> ()>,
-    pub xDestroy: ::std::option::Option<extern "C" fn(arg1:
-                                                          *mut sqlite3_pcache)
+    pub xDestroy: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                 *mut sqlite3_pcache)
                                             -> ()>,
 }
 impl ::std::clone::Clone for Struct_sqlite3_pcache_methods {
@@ -653,8 +740,8 @@ pub struct Struct_sqlite3_rtree_geometry {
     pub nParam: ::libc::c_int,
     pub aParam: *mut sqlite3_rtree_dbl,
     pub pUser: *mut ::libc::c_void,
-    pub xDelUser: ::std::option::Option<extern "C" fn(arg1:
-                                                          *mut ::libc::c_void)
+    pub xDelUser: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                 *mut ::libc::c_void)
                                             -> ()>,
 }
 impl ::std::clone::Clone for Struct_sqlite3_rtree_geometry {
@@ -670,8 +757,8 @@ pub struct Struct_sqlite3_rtree_query_info {
     pub nParam: ::libc::c_int,
     pub aParam: *mut sqlite3_rtree_dbl,
     pub pUser: *mut ::libc::c_void,
-    pub xDelUser: ::std::option::Option<extern "C" fn(arg1:
-                                                          *mut ::libc::c_void)
+    pub xDelUser: ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                 *mut ::libc::c_void)
                                             -> ()>,
     pub aCoord: *mut sqlite3_rtree_dbl,
     pub anQueue: *mut ::libc::c_uint,
@@ -706,11 +793,13 @@ impl ::std::clone::Clone for Struct___va_list_tag {
 impl ::std::default::Default for Struct___va_list_tag {
     fn default() -> Self { unsafe { ::std::mem::zeroed() } }
 }
+#[link(name = "sqlite3")]
 extern "C" {
     pub static mut sqlite3_version: *const ::libc::c_char;
     pub static mut sqlite3_temp_directory: *mut ::libc::c_char;
     pub static mut sqlite3_data_directory: *mut ::libc::c_char;
 }
+#[link(name = "sqlite3")]
 extern "C" {
     pub fn sqlite3_libversion() -> *const ::libc::c_char;
     pub fn sqlite3_sourceid() -> *const ::libc::c_char;
@@ -724,14 +813,14 @@ extern "C" {
     pub fn sqlite3_close_v2(arg1: *mut sqlite3) -> ::libc::c_int;
     pub fn sqlite3_exec(arg1: *mut sqlite3, sql: *const ::libc::c_char,
                         callback:
-                            ::std::option::Option<extern "C" fn(arg1:
-                                                                    *mut ::libc::c_void,
-                                                                arg2:
-                                                                    ::libc::c_int,
-                                                                arg3:
-                                                                    *mut *mut ::libc::c_char,
-                                                                arg4:
-                                                                    *mut *mut ::libc::c_char)
+                            ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                           *mut ::libc::c_void,
+                                                                       arg2:
+                                                                           ::libc::c_int,
+                                                                       arg3:
+                                                                           *mut *mut ::libc::c_char,
+                                                                       arg4:
+                                                                           *mut *mut ::libc::c_char)
                                                       -> ::libc::c_int>,
                         arg2: *mut ::libc::c_void,
                         errmsg: *mut *mut ::libc::c_char) -> ::libc::c_int;
@@ -753,10 +842,10 @@ extern "C" {
     pub fn sqlite3_complete16(sql: *const ::libc::c_void) -> ::libc::c_int;
     pub fn sqlite3_busy_handler(arg1: *mut sqlite3,
                                 arg2:
-                                    ::std::option::Option<extern "C" fn(arg1:
-                                                                            *mut ::libc::c_void,
-                                                                        arg2:
-                                                                            ::libc::c_int)
+                                    ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                                   *mut ::libc::c_void,
+                                                                               arg2:
+                                                                                   ::libc::c_int)
                                                               ->
                                                                   ::libc::c_int>,
                                 arg3: *mut ::libc::c_void) -> ::libc::c_int;
@@ -780,53 +869,57 @@ extern "C" {
                              arg3: *const ::libc::c_char, arg4: va_list)
      -> *mut ::libc::c_char;
     pub fn sqlite3_malloc(arg1: ::libc::c_int) -> *mut ::libc::c_void;
+    pub fn sqlite3_malloc64(arg1: sqlite3_uint64) -> *mut ::libc::c_void;
     pub fn sqlite3_realloc(arg1: *mut ::libc::c_void, arg2: ::libc::c_int)
      -> *mut ::libc::c_void;
+    pub fn sqlite3_realloc64(arg1: *mut ::libc::c_void, arg2: sqlite3_uint64)
+     -> *mut ::libc::c_void;
     pub fn sqlite3_free(arg1: *mut ::libc::c_void) -> ();
+    pub fn sqlite3_msize(arg1: *mut ::libc::c_void) -> sqlite3_uint64;
     pub fn sqlite3_memory_used() -> sqlite3_int64;
     pub fn sqlite3_memory_highwater(resetFlag: ::libc::c_int)
      -> sqlite3_int64;
     pub fn sqlite3_randomness(N: ::libc::c_int, P: *mut ::libc::c_void) -> ();
     pub fn sqlite3_set_authorizer(arg1: *mut sqlite3,
                                   xAuth:
-                                      ::std::option::Option<extern "C" fn(arg1:
-                                                                              *mut ::libc::c_void,
-                                                                          arg2:
-                                                                              ::libc::c_int,
-                                                                          arg3:
-                                                                              *const ::libc::c_char,
-                                                                          arg4:
-                                                                              *const ::libc::c_char,
-                                                                          arg5:
-                                                                              *const ::libc::c_char,
-                                                                          arg6:
-                                                                              *const ::libc::c_char)
+                                      ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                                     *mut ::libc::c_void,
+                                                                                 arg2:
+                                                                                     ::libc::c_int,
+                                                                                 arg3:
+                                                                                     *const ::libc::c_char,
+                                                                                 arg4:
+                                                                                     *const ::libc::c_char,
+                                                                                 arg5:
+                                                                                     *const ::libc::c_char,
+                                                                                 arg6:
+                                                                                     *const ::libc::c_char)
                                                                 ->
                                                                     ::libc::c_int>,
                                   pUserData: *mut ::libc::c_void)
      -> ::libc::c_int;
     pub fn sqlite3_trace(arg1: *mut sqlite3,
                          xTrace:
-                             ::std::option::Option<extern "C" fn(arg1:
-                                                                     *mut ::libc::c_void,
-                                                                 arg2:
-                                                                     *const ::libc::c_char)
+                             ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                            *mut ::libc::c_void,
+                                                                        arg2:
+                                                                            *const ::libc::c_char)
                                                        -> ()>,
                          arg2: *mut ::libc::c_void) -> *mut ::libc::c_void;
     pub fn sqlite3_profile(arg1: *mut sqlite3,
                            xProfile:
-                               ::std::option::Option<extern "C" fn(arg1:
-                                                                       *mut ::libc::c_void,
-                                                                   arg2:
-                                                                       *const ::libc::c_char,
-                                                                   arg3:
-                                                                       sqlite3_uint64)
+                               ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                              *mut ::libc::c_void,
+                                                                          arg2:
+                                                                              *const ::libc::c_char,
+                                                                          arg3:
+                                                                              sqlite3_uint64)
                                                          -> ()>,
                            arg2: *mut ::libc::c_void) -> *mut ::libc::c_void;
     pub fn sqlite3_progress_handler(arg1: *mut sqlite3, arg2: ::libc::c_int,
                                     arg3:
-                                        ::std::option::Option<extern "C" fn(arg1:
-                                                                                *mut ::libc::c_void)
+                                        ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                                       *mut ::libc::c_void)
                                                                   ->
                                                                       ::libc::c_int>,
                                     arg4: *mut ::libc::c_void) -> ();
@@ -879,9 +972,17 @@ extern "C" {
     pub fn sqlite3_bind_blob(arg1: *mut sqlite3_stmt, arg2: ::libc::c_int,
                              arg3: *const ::libc::c_void, n: ::libc::c_int,
                              arg4:
-                                 ::std::option::Option<extern "C" fn(arg1:
-                                                                         *mut ::libc::c_void)
+                                 ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                                *mut ::libc::c_void)
                                                            -> ()>)
+     -> ::libc::c_int;
+    pub fn sqlite3_bind_blob64(arg1: *mut sqlite3_stmt, arg2: ::libc::c_int,
+                               arg3: *const ::libc::c_void,
+                               arg4: sqlite3_uint64,
+                               arg5:
+                                   ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                                  *mut ::libc::c_void)
+                                                             -> ()>)
      -> ::libc::c_int;
     pub fn sqlite3_bind_double(arg1: *mut sqlite3_stmt, arg2: ::libc::c_int,
                                arg3: ::libc::c_double) -> ::libc::c_int;
@@ -892,20 +993,28 @@ extern "C" {
     pub fn sqlite3_bind_null(arg1: *mut sqlite3_stmt, arg2: ::libc::c_int)
      -> ::libc::c_int;
     pub fn sqlite3_bind_text(arg1: *mut sqlite3_stmt, arg2: ::libc::c_int,
-                             arg3: *const ::libc::c_char, n: ::libc::c_int,
-                             arg4:
-                                 ::std::option::Option<extern "C" fn(arg1:
-                                                                         *mut ::libc::c_void)
+                             arg3: *const ::libc::c_char, arg4: ::libc::c_int,
+                             arg5:
+                                 ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                                *mut ::libc::c_void)
                                                            -> ()>)
      -> ::libc::c_int;
     pub fn sqlite3_bind_text16(arg1: *mut sqlite3_stmt, arg2: ::libc::c_int,
                                arg3: *const ::libc::c_void,
                                arg4: ::libc::c_int,
                                arg5:
-                                   ::std::option::Option<extern "C" fn(arg1:
-                                                                           *mut ::libc::c_void)
+                                   ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                                  *mut ::libc::c_void)
                                                              -> ()>)
      -> ::libc::c_int;
+    pub fn sqlite3_bind_text64(arg1: *mut sqlite3_stmt, arg2: ::libc::c_int,
+                               arg3: *const ::libc::c_char,
+                               arg4: sqlite3_uint64,
+                               arg5:
+                                   ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                                  *mut ::libc::c_void)
+                                                             -> ()>,
+                               encoding: ::libc::c_uchar) -> ::libc::c_int;
     pub fn sqlite3_bind_value(arg1: *mut sqlite3_stmt, arg2: ::libc::c_int,
                               arg3: *const sqlite3_value) -> ::libc::c_int;
     pub fn sqlite3_bind_zeroblob(arg1: *mut sqlite3_stmt, arg2: ::libc::c_int,
@@ -978,24 +1087,24 @@ extern "C" {
                                    eTextRep: ::libc::c_int,
                                    pApp: *mut ::libc::c_void,
                                    xFunc:
-                                       ::std::option::Option<extern "C" fn(arg1:
-                                                                               *mut sqlite3_context,
-                                                                           arg2:
-                                                                               ::libc::c_int,
-                                                                           arg3:
-                                                                               *mut *mut sqlite3_value)
+                                       ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                                      *mut sqlite3_context,
+                                                                                  arg2:
+                                                                                      ::libc::c_int,
+                                                                                  arg3:
+                                                                                      *mut *mut sqlite3_value)
                                                                  -> ()>,
                                    xStep:
-                                       ::std::option::Option<extern "C" fn(arg1:
-                                                                               *mut sqlite3_context,
-                                                                           arg2:
-                                                                               ::libc::c_int,
-                                                                           arg3:
-                                                                               *mut *mut sqlite3_value)
+                                       ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                                      *mut sqlite3_context,
+                                                                                  arg2:
+                                                                                      ::libc::c_int,
+                                                                                  arg3:
+                                                                                      *mut *mut sqlite3_value)
                                                                  -> ()>,
                                    xFinal:
-                                       ::std::option::Option<extern "C" fn(arg1:
-                                                                               *mut sqlite3_context)
+                                       ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                                      *mut sqlite3_context)
                                                                  -> ()>)
      -> ::libc::c_int;
     pub fn sqlite3_create_function16(db: *mut sqlite3,
@@ -1004,24 +1113,24 @@ extern "C" {
                                      eTextRep: ::libc::c_int,
                                      pApp: *mut ::libc::c_void,
                                      xFunc:
-                                         ::std::option::Option<extern "C" fn(arg1:
-                                                                                 *mut sqlite3_context,
-                                                                             arg2:
-                                                                                 ::libc::c_int,
-                                                                             arg3:
-                                                                                 *mut *mut sqlite3_value)
+                                         ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                                        *mut sqlite3_context,
+                                                                                    arg2:
+                                                                                        ::libc::c_int,
+                                                                                    arg3:
+                                                                                        *mut *mut sqlite3_value)
                                                                    -> ()>,
                                      xStep:
-                                         ::std::option::Option<extern "C" fn(arg1:
-                                                                                 *mut sqlite3_context,
-                                                                             arg2:
-                                                                                 ::libc::c_int,
-                                                                             arg3:
-                                                                                 *mut *mut sqlite3_value)
+                                         ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                                        *mut sqlite3_context,
+                                                                                    arg2:
+                                                                                        ::libc::c_int,
+                                                                                    arg3:
+                                                                                        *mut *mut sqlite3_value)
                                                                    -> ()>,
                                      xFinal:
-                                         ::std::option::Option<extern "C" fn(arg1:
-                                                                                 *mut sqlite3_context)
+                                         ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                                        *mut sqlite3_context)
                                                                    -> ()>)
      -> ::libc::c_int;
     pub fn sqlite3_create_function_v2(db: *mut sqlite3,
@@ -1030,28 +1139,28 @@ extern "C" {
                                       eTextRep: ::libc::c_int,
                                       pApp: *mut ::libc::c_void,
                                       xFunc:
-                                          ::std::option::Option<extern "C" fn(arg1:
-                                                                                  *mut sqlite3_context,
-                                                                              arg2:
-                                                                                  ::libc::c_int,
-                                                                              arg3:
-                                                                                  *mut *mut sqlite3_value)
+                                          ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                                         *mut sqlite3_context,
+                                                                                     arg2:
+                                                                                         ::libc::c_int,
+                                                                                     arg3:
+                                                                                         *mut *mut sqlite3_value)
                                                                     -> ()>,
                                       xStep:
-                                          ::std::option::Option<extern "C" fn(arg1:
-                                                                                  *mut sqlite3_context,
-                                                                              arg2:
-                                                                                  ::libc::c_int,
-                                                                              arg3:
-                                                                                  *mut *mut sqlite3_value)
+                                          ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                                         *mut sqlite3_context,
+                                                                                     arg2:
+                                                                                         ::libc::c_int,
+                                                                                     arg3:
+                                                                                         *mut *mut sqlite3_value)
                                                                     -> ()>,
                                       xFinal:
-                                          ::std::option::Option<extern "C" fn(arg1:
-                                                                                  *mut sqlite3_context)
+                                          ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                                         *mut sqlite3_context)
                                                                     -> ()>,
                                       xDestroy:
-                                          ::std::option::Option<extern "C" fn(arg1:
-                                                                                  *mut ::libc::c_void)
+                                          ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                                         *mut ::libc::c_void)
                                                                     -> ()>)
      -> ::libc::c_int;
     pub fn sqlite3_aggregate_count(arg1: *mut sqlite3_context)
@@ -1063,12 +1172,12 @@ extern "C" {
     pub fn sqlite3_global_recover() -> ::libc::c_int;
     pub fn sqlite3_thread_cleanup() -> ();
     pub fn sqlite3_memory_alarm(arg1:
-                                    ::std::option::Option<extern "C" fn(arg1:
-                                                                            *mut ::libc::c_void,
-                                                                        arg2:
-                                                                            sqlite3_int64,
-                                                                        arg3:
-                                                                            ::libc::c_int)
+                                    ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                                   *mut ::libc::c_void,
+                                                                               arg2:
+                                                                                   sqlite3_int64,
+                                                                               arg3:
+                                                                                   ::libc::c_int)
                                                               -> ()>,
                                 arg2: *mut ::libc::c_void,
                                 arg3: sqlite3_int64) -> ::libc::c_int;
@@ -1102,16 +1211,23 @@ extern "C" {
     pub fn sqlite3_set_auxdata(arg1: *mut sqlite3_context, N: ::libc::c_int,
                                arg2: *mut ::libc::c_void,
                                arg3:
-                                   ::std::option::Option<extern "C" fn(arg1:
-                                                                           *mut ::libc::c_void)
+                                   ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                                  *mut ::libc::c_void)
                                                              -> ()>) -> ();
     pub fn sqlite3_result_blob(arg1: *mut sqlite3_context,
                                arg2: *const ::libc::c_void,
                                arg3: ::libc::c_int,
                                arg4:
-                                   ::std::option::Option<extern "C" fn(arg1:
-                                                                           *mut ::libc::c_void)
+                                   ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                                  *mut ::libc::c_void)
                                                              -> ()>) -> ();
+    pub fn sqlite3_result_blob64(arg1: *mut sqlite3_context,
+                                 arg2: *const ::libc::c_void,
+                                 arg3: sqlite3_uint64,
+                                 arg4:
+                                     ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                                    *mut ::libc::c_void)
+                                                               -> ()>) -> ();
     pub fn sqlite3_result_double(arg1: *mut sqlite3_context,
                                  arg2: ::libc::c_double) -> ();
     pub fn sqlite3_result_error(arg1: *mut sqlite3_context,
@@ -1133,30 +1249,38 @@ extern "C" {
                                arg2: *const ::libc::c_char,
                                arg3: ::libc::c_int,
                                arg4:
-                                   ::std::option::Option<extern "C" fn(arg1:
-                                                                           *mut ::libc::c_void)
+                                   ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                                  *mut ::libc::c_void)
                                                              -> ()>) -> ();
+    pub fn sqlite3_result_text64(arg1: *mut sqlite3_context,
+                                 arg2: *const ::libc::c_char,
+                                 arg3: sqlite3_uint64,
+                                 arg4:
+                                     ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                                    *mut ::libc::c_void)
+                                                               -> ()>,
+                                 encoding: ::libc::c_uchar) -> ();
     pub fn sqlite3_result_text16(arg1: *mut sqlite3_context,
                                  arg2: *const ::libc::c_void,
                                  arg3: ::libc::c_int,
                                  arg4:
-                                     ::std::option::Option<extern "C" fn(arg1:
-                                                                             *mut ::libc::c_void)
+                                     ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                                    *mut ::libc::c_void)
                                                                -> ()>) -> ();
     pub fn sqlite3_result_text16le(arg1: *mut sqlite3_context,
                                    arg2: *const ::libc::c_void,
                                    arg3: ::libc::c_int,
                                    arg4:
-                                       ::std::option::Option<extern "C" fn(arg1:
-                                                                               *mut ::libc::c_void)
+                                       ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                                      *mut ::libc::c_void)
                                                                  -> ()>)
      -> ();
     pub fn sqlite3_result_text16be(arg1: *mut sqlite3_context,
                                    arg2: *const ::libc::c_void,
                                    arg3: ::libc::c_int,
                                    arg4:
-                                       ::std::option::Option<extern "C" fn(arg1:
-                                                                               *mut ::libc::c_void)
+                                       ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                                      *mut ::libc::c_void)
                                                                  -> ()>)
      -> ();
     pub fn sqlite3_result_value(arg1: *mut sqlite3_context,
@@ -1168,16 +1292,16 @@ extern "C" {
                                     eTextRep: ::libc::c_int,
                                     pArg: *mut ::libc::c_void,
                                     xCompare:
-                                        ::std::option::Option<extern "C" fn(arg1:
-                                                                                *mut ::libc::c_void,
-                                                                            arg2:
-                                                                                ::libc::c_int,
-                                                                            arg3:
-                                                                                *const ::libc::c_void,
-                                                                            arg4:
-                                                                                ::libc::c_int,
-                                                                            arg5:
-                                                                                *const ::libc::c_void)
+                                        ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                                       *mut ::libc::c_void,
+                                                                                   arg2:
+                                                                                       ::libc::c_int,
+                                                                                   arg3:
+                                                                                       *const ::libc::c_void,
+                                                                                   arg4:
+                                                                                       ::libc::c_int,
+                                                                                   arg5:
+                                                                                       *const ::libc::c_void)
                                                                   ->
                                                                       ::libc::c_int>)
      -> ::libc::c_int;
@@ -1186,21 +1310,21 @@ extern "C" {
                                        eTextRep: ::libc::c_int,
                                        pArg: *mut ::libc::c_void,
                                        xCompare:
-                                           ::std::option::Option<extern "C" fn(arg1:
-                                                                                   *mut ::libc::c_void,
-                                                                               arg2:
-                                                                                   ::libc::c_int,
-                                                                               arg3:
-                                                                                   *const ::libc::c_void,
-                                                                               arg4:
-                                                                                   ::libc::c_int,
-                                                                               arg5:
-                                                                                   *const ::libc::c_void)
+                                           ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                                          *mut ::libc::c_void,
+                                                                                      arg2:
+                                                                                          ::libc::c_int,
+                                                                                      arg3:
+                                                                                          *const ::libc::c_void,
+                                                                                      arg4:
+                                                                                          ::libc::c_int,
+                                                                                      arg5:
+                                                                                          *const ::libc::c_void)
                                                                      ->
                                                                          ::libc::c_int>,
                                        xDestroy:
-                                           ::std::option::Option<extern "C" fn(arg1:
-                                                                                   *mut ::libc::c_void)
+                                           ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                                          *mut ::libc::c_void)
                                                                      -> ()>)
      -> ::libc::c_int;
     pub fn sqlite3_create_collation16(arg1: *mut sqlite3,
@@ -1208,43 +1332,43 @@ extern "C" {
                                       eTextRep: ::libc::c_int,
                                       pArg: *mut ::libc::c_void,
                                       xCompare:
-                                          ::std::option::Option<extern "C" fn(arg1:
-                                                                                  *mut ::libc::c_void,
-                                                                              arg2:
-                                                                                  ::libc::c_int,
-                                                                              arg3:
-                                                                                  *const ::libc::c_void,
-                                                                              arg4:
-                                                                                  ::libc::c_int,
-                                                                              arg5:
-                                                                                  *const ::libc::c_void)
+                                          ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                                         *mut ::libc::c_void,
+                                                                                     arg2:
+                                                                                         ::libc::c_int,
+                                                                                     arg3:
+                                                                                         *const ::libc::c_void,
+                                                                                     arg4:
+                                                                                         ::libc::c_int,
+                                                                                     arg5:
+                                                                                         *const ::libc::c_void)
                                                                     ->
                                                                         ::libc::c_int>)
      -> ::libc::c_int;
     pub fn sqlite3_collation_needed(arg1: *mut sqlite3,
                                     arg2: *mut ::libc::c_void,
                                     arg3:
-                                        ::std::option::Option<extern "C" fn(arg1:
-                                                                                *mut ::libc::c_void,
-                                                                            arg2:
-                                                                                *mut sqlite3,
-                                                                            eTextRep:
-                                                                                ::libc::c_int,
-                                                                            arg3:
-                                                                                *const ::libc::c_char)
+                                        ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                                       *mut ::libc::c_void,
+                                                                                   arg2:
+                                                                                       *mut sqlite3,
+                                                                                   eTextRep:
+                                                                                       ::libc::c_int,
+                                                                                   arg3:
+                                                                                       *const ::libc::c_char)
                                                                   -> ()>)
      -> ::libc::c_int;
     pub fn sqlite3_collation_needed16(arg1: *mut sqlite3,
                                       arg2: *mut ::libc::c_void,
                                       arg3:
-                                          ::std::option::Option<extern "C" fn(arg1:
-                                                                                  *mut ::libc::c_void,
-                                                                              arg2:
-                                                                                  *mut sqlite3,
-                                                                              eTextRep:
-                                                                                  ::libc::c_int,
-                                                                              arg3:
-                                                                                  *const ::libc::c_void)
+                                          ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                                         *mut ::libc::c_void,
+                                                                                     arg2:
+                                                                                         *mut sqlite3,
+                                                                                     eTextRep:
+                                                                                         ::libc::c_int,
+                                                                                     arg3:
+                                                                                         *const ::libc::c_void)
                                                                     -> ()>)
      -> ::libc::c_int;
     pub fn sqlite3_sleep(arg1: ::libc::c_int) -> ::libc::c_int;
@@ -1260,31 +1384,31 @@ extern "C" {
      -> *mut sqlite3_stmt;
     pub fn sqlite3_commit_hook(arg1: *mut sqlite3,
                                arg2:
-                                   ::std::option::Option<extern "C" fn(arg1:
-                                                                           *mut ::libc::c_void)
+                                   ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                                  *mut ::libc::c_void)
                                                              ->
                                                                  ::libc::c_int>,
                                arg3: *mut ::libc::c_void)
      -> *mut ::libc::c_void;
     pub fn sqlite3_rollback_hook(arg1: *mut sqlite3,
                                  arg2:
-                                     ::std::option::Option<extern "C" fn(arg1:
-                                                                             *mut ::libc::c_void)
+                                     ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                                    *mut ::libc::c_void)
                                                                -> ()>,
                                  arg3: *mut ::libc::c_void)
      -> *mut ::libc::c_void;
     pub fn sqlite3_update_hook(arg1: *mut sqlite3,
                                arg2:
-                                   ::std::option::Option<extern "C" fn(arg1:
-                                                                           *mut ::libc::c_void,
-                                                                       arg2:
-                                                                           ::libc::c_int,
-                                                                       arg3:
-                                                                           *const ::libc::c_char,
-                                                                       arg4:
-                                                                           *const ::libc::c_char,
-                                                                       arg5:
-                                                                           sqlite3_int64)
+                                   ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                                  *mut ::libc::c_void,
+                                                                              arg2:
+                                                                                  ::libc::c_int,
+                                                                              arg3:
+                                                                                  *const ::libc::c_char,
+                                                                              arg4:
+                                                                                  *const ::libc::c_char,
+                                                                              arg5:
+                                                                                  sqlite3_int64)
                                                              -> ()>,
                                arg3: *mut ::libc::c_void)
      -> *mut ::libc::c_void;
@@ -1332,8 +1456,8 @@ extern "C" {
                                     p: *const sqlite3_module,
                                     pClientData: *mut ::libc::c_void,
                                     xDestroy:
-                                        ::std::option::Option<extern "C" fn(arg1:
-                                                                                *mut ::libc::c_void)
+                                        ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                                       *mut ::libc::c_void)
                                                                   -> ()>)
      -> ::libc::c_int;
     pub fn sqlite3_declare_vtab(arg1: *mut sqlite3,
@@ -1377,6 +1501,9 @@ extern "C" {
     pub fn sqlite3_status(op: ::libc::c_int, pCurrent: *mut ::libc::c_int,
                           pHighwater: *mut ::libc::c_int,
                           resetFlag: ::libc::c_int) -> ::libc::c_int;
+    pub fn sqlite3_status64(op: ::libc::c_int, pCurrent: *mut sqlite3_int64,
+                            pHighwater: *mut sqlite3_int64,
+                            resetFlag: ::libc::c_int) -> ::libc::c_int;
     pub fn sqlite3_db_status(arg1: *mut sqlite3, op: ::libc::c_int,
                              pCur: *mut ::libc::c_int,
                              pHiwtr: *mut ::libc::c_int,
@@ -1395,10 +1522,10 @@ extern "C" {
     pub fn sqlite3_backup_pagecount(p: *mut sqlite3_backup) -> ::libc::c_int;
     pub fn sqlite3_unlock_notify(pBlocked: *mut sqlite3,
                                  xNotify:
-                                     ::std::option::Option<extern "C" fn(apArg:
-                                                                             *mut *mut ::libc::c_void,
-                                                                         nArg:
-                                                                             ::libc::c_int)
+                                     ::std::option::Option<unsafe extern "C" fn(apArg:
+                                                                                    *mut *mut ::libc::c_void,
+                                                                                nArg:
+                                                                                    ::libc::c_int)
                                                                -> ()>,
                                  pNotifyArg: *mut ::libc::c_void)
      -> ::libc::c_int;
@@ -1413,14 +1540,14 @@ extern "C" {
                        zFormat: *const ::libc::c_char, ...) -> ();
     pub fn sqlite3_wal_hook(arg1: *mut sqlite3,
                             arg2:
-                                ::std::option::Option<extern "C" fn(arg1:
-                                                                        *mut ::libc::c_void,
-                                                                    arg2:
-                                                                        *mut sqlite3,
-                                                                    arg3:
-                                                                        *const ::libc::c_char,
-                                                                    arg4:
-                                                                        ::libc::c_int)
+                                ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                               *mut ::libc::c_void,
+                                                                           arg2:
+                                                                               *mut sqlite3,
+                                                                           arg3:
+                                                                               *const ::libc::c_char,
+                                                                           arg4:
+                                                                               ::libc::c_int)
                                                           -> ::libc::c_int>,
                             arg3: *mut ::libc::c_void) -> *mut ::libc::c_void;
     pub fn sqlite3_wal_autocheckpoint(db: *mut sqlite3, N: ::libc::c_int)
@@ -1437,17 +1564,23 @@ extern "C" {
     pub fn sqlite3_vtab_config(arg1: *mut sqlite3, op: ::libc::c_int, ...)
      -> ::libc::c_int;
     pub fn sqlite3_vtab_on_conflict(arg1: *mut sqlite3) -> ::libc::c_int;
+    pub fn sqlite3_stmt_scanstatus(pStmt: *mut sqlite3_stmt,
+                                   idx: ::libc::c_int,
+                                   iScanStatusOp: ::libc::c_int,
+                                   pOut: *mut ::libc::c_void)
+     -> ::libc::c_int;
+    pub fn sqlite3_stmt_scanstatus_reset(arg1: *mut sqlite3_stmt) -> ();
     pub fn sqlite3_rtree_geometry_callback(db: *mut sqlite3,
                                            zGeom: *const ::libc::c_char,
                                            xGeom:
-                                               ::std::option::Option<extern "C" fn(arg1:
-                                                                                       *mut sqlite3_rtree_geometry,
-                                                                                   arg2:
-                                                                                       ::libc::c_int,
-                                                                                   arg3:
-                                                                                       *mut sqlite3_rtree_dbl,
-                                                                                   arg4:
-                                                                                       *mut ::libc::c_int)
+                                               ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                                              *mut sqlite3_rtree_geometry,
+                                                                                          arg2:
+                                                                                              ::libc::c_int,
+                                                                                          arg3:
+                                                                                              *mut sqlite3_rtree_dbl,
+                                                                                          arg4:
+                                                                                              *mut ::libc::c_int)
                                                                          ->
                                                                              ::libc::c_int>,
                                            pContext: *mut ::libc::c_void)
@@ -1455,14 +1588,14 @@ extern "C" {
     pub fn sqlite3_rtree_query_callback(db: *mut sqlite3,
                                         zQueryFunc: *const ::libc::c_char,
                                         xQueryFunc:
-                                            ::std::option::Option<extern "C" fn(arg1:
-                                                                                    *mut sqlite3_rtree_query_info)
+                                            ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                                           *mut sqlite3_rtree_query_info)
                                                                       ->
                                                                           ::libc::c_int>,
                                         pContext: *mut ::libc::c_void,
                                         xDestructor:
-                                            ::std::option::Option<extern "C" fn(arg1:
-                                                                                    *mut ::libc::c_void)
+                                            ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                                           *mut ::libc::c_void)
                                                                       -> ()>)
      -> ::libc::c_int;
 }

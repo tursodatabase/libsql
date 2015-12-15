@@ -70,7 +70,7 @@ use std::cell::{RefCell, Cell};
 use std::ffi::{CStr, CString};
 use std::result;
 use std::str;
-use libc::{c_int, c_void, c_char};
+use libc::{c_int, c_char};
 
 use types::{ToSql, FromSql};
 
@@ -87,6 +87,7 @@ mod named_params;
 #[cfg(feature = "backup")]pub mod backup;
 #[cfg(feature = "cache")] pub mod cache;
 #[cfg(feature = "functions")] pub mod functions;
+#[cfg(feature = "blob")] pub mod blob;
 
 /// Old name for `Result`. `SqliteResult` is deprecated.
 pub type SqliteResult<T> = Result<T>;
@@ -171,9 +172,9 @@ pub enum DatabaseName<'a> {
     Attached(&'a str),
 }
 
-// Currently DatabaseName is only used by the backup mod, so hide this (private)
+// Currently DatabaseName is only used by the backup and blob mods, so hide this (private)
 // impl to avoid dead code warnings.
-#[cfg(feature = "backup")]
+#[cfg(any(feature = "backup", feature = "blob"))]
 impl<'a> DatabaseName<'a> {
     fn to_cstring(self) -> Result<CString> {
         use self::DatabaseName::{Main, Temp, Attached};
@@ -632,22 +633,6 @@ impl InnerConnection {
         }
     }
 
-    unsafe fn decode_result_with_errmsg(&self,
-                                        code: c_int,
-                                        errmsg: *mut c_char)
-        -> Result<()> {
-            if code == ffi::SQLITE_OK {
-                Ok(())
-            } else {
-                let message = errmsg_to_string(&*errmsg);
-                ffi::sqlite3_free(errmsg as *mut c_void);
-                Err(Error {
-                    code: code,
-                    message: message,
-                })
-            }
-        }
-
     fn close(&mut self) -> Result<()> {
         unsafe {
             let r = ffi::sqlite3_close(self.db());
@@ -659,13 +644,12 @@ impl InnerConnection {
     fn execute_batch(&mut self, sql: &str) -> Result<()> {
         let c_sql = try!(str_to_cstring(sql));
         unsafe {
-            let mut errmsg: *mut c_char = mem::uninitialized();
             let r = ffi::sqlite3_exec(self.db(),
             c_sql.as_ptr(),
             None,
             ptr::null_mut(),
-            &mut errmsg);
-            self.decode_result_with_errmsg(r, errmsg)
+            ptr::null_mut());
+            self.decode_result(r)
         }
     }
 
@@ -689,7 +673,16 @@ impl InnerConnection {
             } else {
                 ffi::sqlite3_load_extension(self.db, dylib_str.as_ptr(), ptr::null(), &mut errmsg)
             };
-            self.decode_result_with_errmsg(r, errmsg)
+            if r == ffi::SQLITE_OK {
+                Ok(())
+            } else {
+                let message = errmsg_to_string(&*errmsg);
+                ffi::sqlite3_free(errmsg as *mut libc::c_void);
+                Err(Error {
+                    code: r,
+                    message: message,
+                })
+            }
         }
     }
 
