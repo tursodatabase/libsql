@@ -11,7 +11,7 @@ pub type SqliteError = Error;
 #[derive(Debug)]
 pub enum Error {
     SqliteFailure(ffi::Error, Option<String>),
-    FromSqlConversionFailure(Box<error::Error>),
+    FromSqlConversionFailure(Box<error::Error + Send + Sync>),
     Utf8Error(str::Utf8Error),
     NulError(::std::ffi::NulError),
     InvalidParameterName(String),
@@ -26,7 +26,7 @@ pub enum Error {
     InvalidFunctionParameterType,
     #[cfg(feature = "functions")]
     #[allow(dead_code)]
-    UserFunctionError(Box<error::Error>),
+    UserFunctionError(Box<error::Error + Send + Sync>),
 }
 
 impl From<str::Utf8Error> for Error {
