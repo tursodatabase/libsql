@@ -289,6 +289,11 @@ mod test {
         assert!(blob.seek(SeekFrom::Current(-20)).is_err());
         assert!(blob.seek(SeekFrom::End(0)).is_ok());
         assert!(blob.seek(SeekFrom::Current(1)).is_err());
+
+        // write_all should detect when we return Ok(0) because there is no space left,
+        // and return a write error
+        blob.reopen(rowid).unwrap();
+        assert!(blob.write_all(b"0123456789x").is_err());
     }
 
     #[test]
