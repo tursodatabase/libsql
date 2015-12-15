@@ -1,5 +1,5 @@
-C Add\sa\smissing\smemAboutToChange()\smacro\sto\svdbe.c,\sthe\slack\sof\swhich\swas\scausing\san\sassert()\sto\sfail\sincorrectly.\sProblem\sfound\sby\slibfuzzer.
-D 2015-12-14T19:42:19.129
+C Add\sthe\sSQLITE_OMIT_PARSER_TRACE\scompile-time\soption.
+D 2015-12-15T13:50:22.827
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e8fdca1cb89a1b58b5f4d3a130ea9a3d28cb314d
@@ -333,7 +333,7 @@ F src/pcache.c 73895411fa6b7bd6f0091212feabbe833b358d23
 F src/pcache.h 1ff11adce609ba7de139b6abfabaf9a2bac947b5
 F src/pcache1.c 46a110be31a8d9f9b41431733836822ca0dd27ab
 F src/pragma.c f3e7147299ca05ef4304a36f1fd6e002729c72c6
-F src/pragma.h 3d94aebbebd2089899fecc01909bf2608b39507d
+F src/pragma.h 64c78a648751b9f4f297276c4eb7507b14b4628c
 F src/prepare.c 82e5db1013846a819f198336fed72c44c974e7b1
 F src/printf.c af589a27b7d40f6f4f704e9eea99f02f18ad6d32
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
@@ -1372,7 +1372,7 @@ F tool/mkkeywordhash.c 06ec0b78bd4fa68c12d90ef2bdfe76b039133ff8
 F tool/mkopcodec.tcl edde8adc42621b5e598127f8cdc6d52cfe21f52b
 F tool/mkopcodeh.tcl e04177031532b7aa9379ded50e820231ac4abd6e
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
-F tool/mkpragmatab.tcl e94e55d247d4fe3be34f2a4f4edb03fdcd09ce5b
+F tool/mkpragmatab.tcl f0d5bb266d1d388cf86fce5ba01a891e95d72d41
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 87240b09c20042999b41d5fabe091b7111287835
 F tool/mksqlite3c.tcl b66b4170f693602cd6985aed15d9509fe2f18c84
@@ -1410,7 +1410,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d8a12023be32bdc6df18b0a5f38b917799854342
-R 3b6b45a5cba8add1b51b23a25852ed5f
-U dan
-Z 6f448ee5f1ec122055dafde44e32aab7
+P 1a24791109da607d502ac41f179fe6c1dc46c774
+R 2ba25094d2a2e5d1dff8c5d58f82b94b
+U drh
+Z de456f26b0f5cdabd2ebff5ccc5fcbaf
