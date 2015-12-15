@@ -1358,7 +1358,16 @@ mod test {
         assert!(result.is_err());
 
         match result.unwrap_err() {
-            Error::SqliteFailure(err, _) => assert_eq!(err.extended_code, ffi::SQLITE_CONSTRAINT_NOTNULL),
+            Error::SqliteFailure(err, _) => {
+                assert_eq!(err.code, ffi::ErrorCode::ConstraintViolation);
+
+                // extended error codes for constraints were added in SQLite 3.7.16; if we're
+                // running on a version at least that new, check for the extended code
+                let version = unsafe { ffi::sqlite3_libversion_number() };
+                if version >= 3007016 {
+                    assert_eq!(err.extended_code, ffi::SQLITE_CONSTRAINT_NOTNULL)
+                }
+            },
             err => panic!("Unexpected error {}", err),
         }
     }
