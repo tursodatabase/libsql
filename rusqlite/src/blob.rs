@@ -171,7 +171,8 @@ impl<'conn> io::Read for Blob<'conn> {
 
 impl<'conn> io::Write for Blob<'conn> {
     /// Write data into a BLOB incrementally. Will return `Ok(0)` if the end of the blob
-    /// has been reached.
+    /// has been reached; consider using `Write::write_all(buf)` if you want to get an
+    /// error if the entirety of the buffer cannot be written.
     ///
     /// This function may only modify the contents of the BLOB; it is not possible to increase
     /// the size of a BLOB using this API.
