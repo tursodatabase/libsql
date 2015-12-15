@@ -49,22 +49,27 @@ impl<'conn> StatementCache<'conn> {
             return stmt.finalize();
         }
         stmt.reset_if_needed();
-        // clear bindings ???
+        stmt.clear_bindings();
         self.cache.insert(stmt.sql(), stmt).map_or(Ok(()), |stmt| stmt.finalize())
     }
 
     /// Flush the prepared statement cache
-    pub fn flush(&mut self) {
+    pub fn clear(&mut self) {
         self.cache.clear();
     }
 
-    /// Return (current, max) sizes.
-    pub fn size(&self) -> (usize, usize) {
-        (self.cache.len(), self.cache.capacity())
+    /// Return current cache size.
+    pub fn len(&self) -> usize {
+        self.cache.len()
+    }
+
+    /// Return maximum cache size.
+    pub fn capacity(&self) -> usize {
+        self.cache.capacity()
     }
 
     /// Set the maximum number of cached statements.
-    pub fn set_size(&mut self, capacity: usize) {
+    pub fn set_capacity(&mut self, capacity: usize) {
         self.cache.set_capacity(capacity);
     }
 }
@@ -78,13 +83,28 @@ mod test {
     fn test_cache() {
         let db = Connection::open_in_memory().unwrap();
         let mut cache = StatementCache::new(&db, 10);
+        assert_eq!(0, cache.len());
+        assert_eq!(10, cache.capacity());
+
         let sql = "PRAGMA schema_version";
         let mut stmt = cache.get(sql).unwrap();
+        assert_eq!(0, cache.len());
+        assert_eq!(0, stmt.query(&[]).unwrap().get_expected_row().unwrap().get::<i64>(0));
+
         // println!("NEW {:?}", stmt);
         cache.release(stmt, false).unwrap();
+        assert_eq!(1, cache.len());
+
         stmt = cache.get(sql).unwrap();
+        assert_eq!(0, cache.len());
+        assert_eq!(0, stmt.query(&[]).unwrap().get_expected_row().unwrap().get::<i64>(0));
+
         // println!("CACHED {:?}", stmt);
         cache.release(stmt, true).unwrap();
-        cache.flush();
+        assert_eq!(0, cache.len());
+
+        cache.clear();
+        assert_eq!(0, cache.len());
+        assert_eq!(10, cache.capacity());
     }
 }

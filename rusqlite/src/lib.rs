@@ -929,7 +929,15 @@ impl<'conn> Statement<'conn> {
         }
     }
 
-    fn sql(&self) -> String { // TODO Maybe SQL should by kept as an SqliteStatement field ?
+    #[cfg(feature = "cache")]
+    fn clear_bindings(&mut self) {
+        unsafe {
+            ffi::sqlite3_clear_bindings(self.stmt);
+        };
+    }
+
+    #[cfg(feature = "cache")]
+    fn sql(&self) -> String {
         unsafe {
             let c_slice = CStr::from_ptr(ffi::sqlite3_sql(self.stmt)).to_bytes();
             let utf8_str = str::from_utf8(c_slice);
