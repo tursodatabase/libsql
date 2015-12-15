@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_OMIT_PARSER_TRACE\scompile-time\soption.
-D 2015-12-15T13:50:22.827
+C Update\sthe\smkautoconfamal.sh\sscript\sto\smake\sthe\sbuilding\sof\sthe\ssqlite3-autoconf-VERSION.tar.gz\spackage\smore\sorthodox.
+D 2015-12-15T19:32:12.783
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e8fdca1cb89a1b58b5f4d3a130ea9a3d28cb314d
@@ -13,13 +13,7 @@ F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am 089e5ecdb5761e64ea1013ded02feb4d8b29927d
 F autoconf/README 14458f1046c118efa721aadec5f227e876d3cd38
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
-F autoconf/config.guess 94cc57e2a3fdb9c235b362ace86d77e89d188cad x
-F autoconf/config.sub 1efb390a8fb4bfafd74783a15a8fb5311c84300e x
-F autoconf/configure.ac 9a65da17e440466f9842288163f16f9b21298129
-F autoconf/depcomp 0b26f101e3bc9fd1ff0be1da9fb4a82371142f92 x
-F autoconf/install-sh 06ee6336e63bb845c8439d777c32eb2eccc4fbf1 x
-F autoconf/ltmain.sh 7a658a24028f02331c1d2446562758083c5eadd1
-F autoconf/missing d7c9981a81af13370d4ed152b24c0a82b7028585 x
+F autoconf/configure.ac 82c628c68f0f204d57343dc345b6dbd1789fb1bd
 F autoconf/tea/Makefile.in b438a7020446c8a8156e8d97c8914a04833da6fd
 F autoconf/tea/README 3e9a3c060f29a44344ab50aec506f4db903fb873
 F autoconf/tea/aclocal.m4 52c47aac44ce0ddb1f918b6993e8beb8eee88f43
@@ -1367,7 +1361,7 @@ F tool/lemon.c 799e73e19a33b8dd7767a7fa34618ed2a9c2397d
 F tool/lempar.c 3ec1463a034b37d87d782be5f6b8b10a3b1ecbe7
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
 F tool/logest.c eef612f8adf4d0993dafed0416064cf50d5d33c6
-F tool/mkautoconfamal.sh 4bdf61548a143e5977bd86ab93d68b694d10c8fa
+F tool/mkautoconfamal.sh 5a5441280b509d2bb3bdc71bfb63781b0d570373
 F tool/mkkeywordhash.c 06ec0b78bd4fa68c12d90ef2bdfe76b039133ff8
 F tool/mkopcodec.tcl edde8adc42621b5e598127f8cdc6d52cfe21f52b
 F tool/mkopcodeh.tcl e04177031532b7aa9379ded50e820231ac4abd6e
@@ -1410,7 +1404,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1a24791109da607d502ac41f179fe6c1dc46c774
-R 2ba25094d2a2e5d1dff8c5d58f82b94b
-U drh
-Z de456f26b0f5cdabd2ebff5ccc5fcbaf
+P 2fda43e6e097a4a5510cce7784c31ceedc3d6e6d
+R 2c1a16b79c40a6fe71483b1b5fbca8f8
+U dan
+Z ec87a5f2f4b0ee8998a460274f87b17f
