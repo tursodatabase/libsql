@@ -400,7 +400,7 @@ impl Connection {
                                               deterministic: bool,
                                               aggr: D)
                                               -> Result<()>
-        where D: Aggregate<A,T>,
+        where D: Aggregate<A, T>,
               T: ToResult
     {
         self.db
@@ -480,17 +480,18 @@ impl InnerConnection {
                                           deterministic: bool,
                                           aggr: D)
                                           -> Result<()>
-        where D: Aggregate<A,T>,
+        where D: Aggregate<A, T>,
               T: ToResult
     {
         unsafe extern "C" fn call_boxed_closure<A, D, T>(ctx: *mut sqlite3_context,
-                                                      argc: c_int,
-                                                      argv: *mut *mut sqlite3_value)
-            where D: Aggregate<A,T>,
+                                                         argc: c_int,
+                                                         argv: *mut *mut sqlite3_value)
+            where D: Aggregate<A, T>,
                   T: ToResult
         {
             let boxed_aggr: *mut D = mem::transmute(ffi::sqlite3_user_data(ctx));
-            assert!(!boxed_aggr.is_null(), "Internal error - null aggregate pointer");
+            assert!(!boxed_aggr.is_null(),
+                    "Internal error - null aggregate pointer");
 
             // TODO Validate: double indirection: `pac` allocated/freed by SQLite and `ac` allocated/freed by Rust.
             let pac = ffi::sqlite3_aggregate_context(ctx, ::std::mem::size_of::<*mut A>() as c_int) as *mut *mut A;
@@ -513,11 +514,12 @@ impl InnerConnection {
             (*boxed_aggr).step(&mut ctx, &mut *ac);
         }
         unsafe extern "C" fn call_boxed_final<A, D, T>(ctx: *mut sqlite3_context)
-            where D: Aggregate<A,T>,
+            where D: Aggregate<A, T>,
                   T: ToResult
         {
             let boxed_aggr: *mut D = mem::transmute(ffi::sqlite3_user_data(ctx));
-            assert!(!boxed_aggr.is_null(), "Internal error - null aggregate pointer");
+            assert!(!boxed_aggr.is_null(),
+                    "Internal error - null aggregate pointer");
 
             let pac = ffi::sqlite3_aggregate_context(ctx, 0) as *mut *mut A;
             if pac.is_null() || (*pac).is_null() {
