@@ -1,5 +1,5 @@
-C Update\sthe\smkautoconfamal.sh\sscript\sto\smake\sthe\sbuilding\sof\sthe\ssqlite3-autoconf-VERSION.tar.gz\spackage\smore\sorthodox.
-D 2015-12-15T19:32:12.783
+C Make\sgreater\suse\sof\sthe\sSQLITE_WITHIN\smacro.
+D 2015-12-16T13:07:35.753
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e8fdca1cb89a1b58b5f4d3a130ea9a3d28cb314d
@@ -276,7 +276,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 2869a76c03eb393ee795416e2387005553df72bc
 F src/bitvec.c 1a78d450a17c5016710eec900bedfc5729bf9bdf
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 450950ce366159c3215736ae43d1062e7c06f741
+F src/btree.c 84ede51e371a11c3dbb3e24ccc5e3e99594a6c00
 F src/btree.h 2d76dee44704c47eed323356a758662724b674a0
 F src/btreeInt.h 3ab435ed27adea54d040584b0bcc488ee7db1e38
 F src/build.c e83da4d004a4e050c01acbb821ff7a7b1019c29b
@@ -325,7 +325,7 @@ F src/pager.h bf25005b4656cd805af43487c3139fca9678d0cc
 F src/parse.y 23737e649c26ce327603799e57f5c2ff50e5e6ba
 F src/pcache.c 73895411fa6b7bd6f0091212feabbe833b358d23
 F src/pcache.h 1ff11adce609ba7de139b6abfabaf9a2bac947b5
-F src/pcache1.c 46a110be31a8d9f9b41431733836822ca0dd27ab
+F src/pcache1.c 72f644dc9e1468c72922eff5904048427b817051
 F src/pragma.c f3e7147299ca05ef4304a36f1fd6e002729c72c6
 F src/pragma.h 64c78a648751b9f4f297276c4eb7507b14b4628c
 F src/prepare.c 82e5db1013846a819f198336fed72c44c974e7b1
@@ -1404,7 +1404,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2fda43e6e097a4a5510cce7784c31ceedc3d6e6d
-R 2c1a16b79c40a6fe71483b1b5fbca8f8
-U dan
-Z ec87a5f2f4b0ee8998a460274f87b17f
+P 1928f8945b7cdf733129619b7ab02d1addf63478
+R 66e8a449a1ea9e4af724bc52e4baa50a
+U drh
+Z dcd4ad4bd65fd6c947db9b3e37840361
