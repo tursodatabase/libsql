@@ -9,8 +9,26 @@ use self::lru_cache::LruCache;
 /// FIXME limitation: the same SQL can be cached only once...
 #[derive(Debug)]
 pub struct StatementCache<'conn> {
-    pub conn: &'conn Connection,
+    conn: &'conn Connection,
     cache: LruCache<String, Statement<'conn>>,
+}
+
+pub struct CachedStatement<'conn> {
+    stmt: Statement<'conn>,
+    cache: &'conn StatementCache<'conn>,
+    pub cacheable : bool,
+}
+
+impl<'conn> Drop for CachedStatement<'conn> {
+    #[allow(unused_must_use)]
+    fn drop(&mut self) {
+        if self.cacheable {
+            // FIXME cannot borrow immutable borrowed content `*self.cache` as mutable
+            //self.cache.release(self.stmt, false);
+        } else {
+            self.stmt.finalize_();
+        }
+    }
 }
 
 impl<'conn> StatementCache<'conn> {
