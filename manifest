@@ -1,5 +1,5 @@
-C Fix\scompiler\swarning\sseen\swith\sMSVC.
-D 2015-12-16T21:09:53.083
+C Fix\ssome\smore\sharmless\scompiler\swarnings.
+D 2015-12-16T22:06:52.804
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e8fdca1cb89a1b58b5f4d3a130ea9a3d28cb314d
@@ -90,7 +90,7 @@ F ext/fts3/fts3_unicode2.c c3d01968d497bd7001e7dc774ba75b372738c057
 F ext/fts3/fts3_write.c f442223e4a1914dc1fc12b65af7e4f2c255fa47c
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
-F ext/fts3/tool/fts3view.c 8e53d0190a7b3443764bbd32ad47be2bd852026d
+F ext/fts3/tool/fts3view.c 5d78b668f4e9598af9147f8999632599fb0d9dd5
 F ext/fts3/unicode/CaseFolding.txt 8c678ca52ecc95e16bc7afc2dbf6fc9ffa05db8c
 F ext/fts3/unicode/UnicodeData.txt cd07314edb62d49fde34debdaf92fa2aa69011e7
 F ext/fts3/unicode/mkunicode.tcl 95cf7ec186e48d4985e433ff8a1c89090a774252
@@ -263,7 +263,7 @@ F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
 F mptest/crash02.subtest f4ef05adcd15d60e5d2bd654204f2c008b519df8
-F mptest/mptest.c e7b499cb0cf8c3de65eaf24dec9b36daa4e013e4
+F mptest/mptest.c 0d3f2eb8e373cb692ab362a6dddedd53e0978502
 F mptest/multiwrite01.test dab5c5f8f9534971efce679152c5146da265222d
 F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
@@ -350,7 +350,7 @@ F src/test4.c d168f83cc78d02e8d35567bb5630e40dcd85ac1e
 F src/test5.c 5a34feec76d9b3a86aab30fd4f6cc9c48cbab4c1
 F src/test6.c 41cacf3b0dd180823919bf9e1fbab287c9266723
 F src/test7.c 9c89a4f1ed6bb13af0ed805b8d782bd83fcd57e3
-F src/test8.c b3a416298dab54537d5aec68697a8b31f5ddf69c
+F src/test8.c fa262391d3edea6490a71bfaa8fed477ccbbac75
 F src/test9.c bea1e8cf52aa93695487badedd6e1886c321ea60
 F src/test_async.c 21e11293a2f72080eda70e1124e9102044531cd8
 F src/test_autoext.c dea8a01a7153b9adc97bd26161e4226329546e12
@@ -367,7 +367,7 @@ F src/test_init.c 66b33120ffe9cd853b5a905ec850d51151337b32
 F src/test_intarray.c 870124b95ec4c645d4eb84f15efb7133528fb1a5
 F src/test_intarray.h 9dc57417fb65bc7835cc18548852cc08cc062202
 F src/test_journal.c 5360fbe1d1e4416ca36290562fd5a2e3f70f32aa
-F src/test_loadext.c a5251f956ab6af21e138dc1f9c0399394a510cb4
+F src/test_loadext.c 337056bae59f80b9eb00ba82088b39d0f4fe6dfd
 F src/test_malloc.c 96df9381a1ff1f6d3805ff7231b9baf1386aaabf
 F src/test_multiplex.c 6a088d8d9d4aad4bec45dd8878af11b15900702d
 F src/test_multiplex.h c08e4e8f8651f0c5e0509b138ff4d5b43ed1f5d3
@@ -1380,7 +1380,7 @@ F tool/replace.tcl 7727c60a04299b65a92f5e1590896fea0f25b9e0
 F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
 F tool/run-speed-test.sh 0ae485af4fe9f826e2b494be8c81f8ca9e222a4a
-F tool/showdb.c d4476e000a64eca9f5e2c2f68741e747b9778e8d
+F tool/showdb.c 82dca79a999b2701c62417636345e9974151fdad
 F tool/showjournal.c 5bad7ae8784a43d2b270d953060423b8bd480818
 F tool/showlocks.c 9920bcc64f58378ff1118caead34147201f48c68
 F tool/showstat4.c bda40d6e395df7edb6e9ea630784d3d762c35b4b
@@ -1404,10 +1404,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f2fc3aede55c8fa0351697f9f5ce4e544334c9af
-R 454ea4523afc8cf1e644fcd8a292a415
-T *branch * msvcWarn
-T *sym-msvcWarn *
-T -sym-trunk *
+P 18a4c0540bf4f02335e9e9def1f2b0d4d784ef08
+R 06de55492a4df78b9664135b3d4b8e56
 U mistachkin
-Z 09fa8646fa5564b4cacb5dabca0e4ae2
+Z 864a907ebf41c0671e45c9ca5fad89fc
