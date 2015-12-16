@@ -1,6 +1,7 @@
 //! Prepared statements cache for faster execution.
 extern crate lru_cache;
 
+use std::cell::RefCell;
 use {Result, Connection, Statement};
 use self::lru_cache::LruCache;
 
@@ -15,7 +16,7 @@ pub struct StatementCache<'conn> {
 
 pub struct CachedStatement<'conn> {
     stmt: Statement<'conn>,
-    cache: &'conn StatementCache<'conn>,
+    cache: RefCell<StatementCache<'conn>>,
     pub cacheable : bool,
 }
 
@@ -23,8 +24,8 @@ impl<'conn> Drop for CachedStatement<'conn> {
     #[allow(unused_must_use)]
     fn drop(&mut self) {
         if self.cacheable {
-            // FIXME cannot borrow immutable borrowed content `*self.cache` as mutable
-            //self.cache.release(self.stmt, false);
+            // FIXME: cannot move out of type `cache::CachedStatement<'conn>`, which defines the `Drop` trait [E0509]
+            //self.cache.borrow_mut().release(self.stmt, false);
         } else {
             self.stmt.finalize_();
         }
