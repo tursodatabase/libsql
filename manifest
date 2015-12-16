@@ -1,5 +1,5 @@
-C Make\sgreater\suse\sof\sthe\sSQLITE_WITHIN\smacro.
-D 2015-12-16T13:07:35.753
+C Fix\scompiler\swarning\sseen\swith\sMSVC.
+D 2015-12-16T21:09:53.083
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e8fdca1cb89a1b58b5f4d3a130ea9a3d28cb314d
@@ -398,7 +398,7 @@ F src/update.c 17332f9fe818cbc0444c36a811800af8498af4c3
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c e802e8e311a0d6c48cd1b3e89db164f6f0248d70
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c 0bc683e68a71d5151898b6b13cfeb277337335a4
+F src/vdbe.c 984c2be6691d3f67deb2e6747c2132150d776f32
 F src/vdbe.h efb7a8c1459e31f3ea4377824c6a7e4cb5068637
 F src/vdbeInt.h 75c2e82ee3357e9210c06474f8d9bdf12c81105d
 F src/vdbeapi.c 020681b943e77766b32ae1cddf86d7831b7374ca
@@ -1404,7 +1404,10 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1928f8945b7cdf733129619b7ab02d1addf63478
-R 66e8a449a1ea9e4af724bc52e4baa50a
-U drh
-Z dcd4ad4bd65fd6c947db9b3e37840361
+P f2fc3aede55c8fa0351697f9f5ce4e544334c9af
+R 454ea4523afc8cf1e644fcd8a292a415
+T *branch * msvcWarn
+T *sym-msvcWarn *
+T -sym-trunk *
+U mistachkin
+Z 09fa8646fa5564b4cacb5dabca0e4ae2

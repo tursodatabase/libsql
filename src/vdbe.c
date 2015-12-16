@@ -2524,6 +2524,8 @@ case OP_Column: {
         rc = SQLITE_CORRUPT_BKPT;
         goto op_column_error;
       }
+    }else{
+      VVA_ONLY( t = 0; ) /* Only needed by assert() statements */
     }
 
     /* If after trying to extract new entries from the header, nHdrParsed is
