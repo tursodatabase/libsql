@@ -169,6 +169,10 @@ int sqlite3PagerSharedLock(Pager *pPager);
   int sqlite3PagerWalCallback(Pager *pPager);
   int sqlite3PagerOpenWal(Pager *pPager, int *pisOpen);
   int sqlite3PagerCloseWal(Pager *pPager);
+# ifdef SQLITE_ENABLE_SNAPSHOT
+  int sqlite3PagerSnapshotGet(Pager *pPager, sqlite3_snapshot **ppSnapshot);
+  int sqlite3PagerSnapshotOpen(Pager *pPager, sqlite3_snapshot *pSnapshot);
+# endif
 #endif
 
 #ifdef SQLITE_ENABLE_ZIPVFS

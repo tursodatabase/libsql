@@ -238,7 +238,7 @@ set pragma_def {
   IF:   !defined(SQLITE_OMIT_FOREIGN_KEY) && !defined(SQLITE_OMIT_TRIGGER)
 
   NAME: parser_trace
-  IF:   defined(SQLITE_DEBUG)
+  IF:   defined(SQLITE_DEBUG) && !defined(SQLITE_OMIT_PARSER_TRACE)
 
   NAME: case_sensitive_like
 

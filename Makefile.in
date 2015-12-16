@@ -1156,7 +1156,7 @@ THREADTEST3_SRC = $(TOP)/test/threadtest3.c    \
                   $(TOP)/test/tt3_lookaside1.c
 
 threadtest3$(TEXE): sqlite3.lo $(THREADTEST3_SRC)
-	$(LTLINK) $(TOP)/test/threadtest3.c sqlite3.lo -o $@ $(TLIBS)
+	$(LTLINK) $(TOP)/test/threadtest3.c $(TOP)/src/test_multiplex.c sqlite3.lo -o $@ $(TLIBS)
 
 threadtest: threadtest3$(TEXE)
 	./threadtest3$(TEXE)

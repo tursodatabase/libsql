@@ -975,4 +975,20 @@ do_execsql_test 17.9 {
   SELECT * FROM x4;
 } {10 11}
 
+# Added to test a fix to a faulty assert() discovered by libFuzzer.
+#
+do_execsql_test 18.1 {
+  WITH xyz(x) AS (VALUES(NULL) UNION SELECT round(1<x) FROM xyz ORDER BY 1)
+  SELECT quote(x) FROM xyz;
+} {NULL}
+do_execsql_test 18.2 {
+  WITH xyz(x) AS (
+    SELECT printf('%d', 5) * NULL
+    UNION SELECT round(1<1+x) 
+    FROM xyz ORDER BY 1
+  )
+  SELECT 1 FROM xyz;
+} 1
+
+
 finish_test

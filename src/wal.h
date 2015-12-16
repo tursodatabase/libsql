@@ -126,6 +126,11 @@ int sqlite3WalExclusiveMode(Wal *pWal, int op);
 */
 int sqlite3WalHeapMemory(Wal *pWal);
 
+#ifdef SQLITE_ENABLE_SNAPSHOT
+int sqlite3WalSnapshotGet(Wal *pWal, sqlite3_snapshot **ppSnapshot);
+void sqlite3WalSnapshotOpen(Wal *pWal, sqlite3_snapshot *pSnapshot);
+#endif
+
 #ifndef SQLITE_OMIT_CONCURRENT
 /* Tell the wal layer that we want to commit a concurrent transaction */
 int sqlite3WalLockForCommit(Wal *pWal, PgHdr *pPg, Bitvec *pRead);

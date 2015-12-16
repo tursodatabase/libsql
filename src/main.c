@@ -445,9 +445,10 @@ int sqlite3_config(int op, ...){
       break;
     }
     case SQLITE_CONFIG_PAGECACHE: {
-      /* EVIDENCE-OF: R-31408-40510 There are three arguments to
-      ** SQLITE_CONFIG_PAGECACHE: A pointer to 8-byte aligned memory, the size
-      ** of each page buffer (sz), and the number of pages (N). */
+      /* EVIDENCE-OF: R-18761-36601 There are three arguments to
+      ** SQLITE_CONFIG_PAGECACHE: A pointer to 8-byte aligned memory (pMem),
+      ** the size of each page cache line (sz), and the number of cache lines
+      ** (N). */
       sqlite3GlobalConfig.pPage = va_arg(ap, void*);
       sqlite3GlobalConfig.szPage = va_arg(ap, int);
       sqlite3GlobalConfig.nPage = va_arg(ap, int);
@@ -3865,3 +3866,86 @@ int sqlite3_db_readonly(sqlite3 *db, const char *zDbName){
   pBt = sqlite3DbNameToBtree(db, zDbName);
   return pBt ? sqlite3BtreeIsReadonly(pBt) : -1;
 }
+
+#ifdef SQLITE_ENABLE_SNAPSHOT
+/*
+** Obtain a snapshot handle for the snapshot of database zDb currently 
+** being read by handle db.
+*/
+int sqlite3_snapshot_get(
+  sqlite3 *db, 
+  const char *zDb,
+  sqlite3_snapshot **ppSnapshot
+){
+  int rc = SQLITE_ERROR;
+#ifndef SQLITE_OMIT_WAL
+  int iDb;
+
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( !sqlite3SafetyCheckOk(db) ){
+    return SQLITE_MISUSE_BKPT;
+  }
+#endif
+  sqlite3_mutex_enter(db->mutex);
+
+  iDb = sqlite3FindDbName(db, zDb);
+  if( iDb==0 || iDb>1 ){
+    Btree *pBt = db->aDb[iDb].pBt;
+    if( 0==sqlite3BtreeIsInTrans(pBt) ){
+      rc = sqlite3BtreeBeginTrans(pBt, 0);
+      if( rc==SQLITE_OK ){
+        rc = sqlite3PagerSnapshotGet(sqlite3BtreePager(pBt), ppSnapshot);
+      }
+    }
+  }
+
+  sqlite3_mutex_leave(db->mutex);
+#endif   /* SQLITE_OMIT_WAL */
+  return rc;
+}
+
+/*
+** Open a read-transaction on the snapshot idendified by pSnapshot.
+*/
+int sqlite3_snapshot_open(
+  sqlite3 *db, 
+  const char *zDb, 
+  sqlite3_snapshot *pSnapshot
+){
+  int rc = SQLITE_ERROR;
+#ifndef SQLITE_OMIT_WAL
+
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( !sqlite3SafetyCheckOk(db) ){
+    return SQLITE_MISUSE_BKPT;
+  }
+#endif
+  sqlite3_mutex_enter(db->mutex);
+  if( db->autoCommit==0 ){
+    int iDb;
+    iDb = sqlite3FindDbName(db, zDb);
+    if( iDb==0 || iDb>1 ){
+      Btree *pBt = db->aDb[iDb].pBt;
+      if( 0==sqlite3BtreeIsInReadTrans(pBt) ){
+        rc = sqlite3PagerSnapshotOpen(sqlite3BtreePager(pBt), pSnapshot);
+        if( rc==SQLITE_OK ){
+          rc = sqlite3BtreeBeginTrans(pBt, 0);
+          sqlite3PagerSnapshotOpen(sqlite3BtreePager(pBt), 0);
+        }
+      }
+    }
+  }
+
+  sqlite3_mutex_leave(db->mutex);
+#endif   /* SQLITE_OMIT_WAL */
+  return rc;
+}
+
+/*
+** Free a snapshot handle obtained from sqlite3_snapshot_get().
+*/
+void sqlite3_snapshot_free(sqlite3_snapshot *pSnapshot){
+  sqlite3_free(pSnapshot);
+}
+#endif /* SQLITE_ENABLE_SNAPSHOT */
+

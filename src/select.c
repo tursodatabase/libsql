@@ -1529,8 +1529,9 @@ static void generateColumnNames(
   }
 #endif
 
+  if( pParse->colNamesSet || db->mallocFailed ) return;
+  assert( v!=0 );
   assert( pTabList!=0 );
-  if( pParse->colNamesSet || NEVER(v==0) || db->mallocFailed ) return;
   pParse->colNamesSet = 1;
   fullNames = (db->flags & SQLITE_FullColNames)!=0;
   shortNames = (db->flags & SQLITE_ShortColNames)!=0;
