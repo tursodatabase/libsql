@@ -226,6 +226,7 @@ do_faultsim_test 3 -faults vfsfault-* -prep {
   faultsim_delete_and_reopen
   file_control_chunksize_test db main 8192
   execsql {
+    PRAGMA synchronous=OFF;
     CREATE TABLE t1(a, b);
     BEGIN;
       SELECT * FROM t1;

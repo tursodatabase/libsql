@@ -538,6 +538,7 @@ struct ShellState {
   int autoEQP;           /* Run EXPLAIN QUERY PLAN prior to seach SQL stmt */
   int statsOn;           /* True to display memory stats before each finalize */
   int scanstatsOn;       /* True to display scan stats before each finalize */
+  int countChanges;      /* True to display change counts */
   int backslashOn;       /* Resolve C-style \x escapes in SQL input text */
   int outCount;          /* Revert to stdout when reaching zero */
   int cnt;               /* Number of records displayed so far */
@@ -1802,6 +1803,7 @@ static char zHelp[] =
   ".backup ?DB? FILE      Backup DB (default \"main\") to FILE\n"
   ".bail on|off           Stop after hitting an error.  Default OFF\n"
   ".binary on|off         Turn binary output on or off.  Default OFF\n"
+  ".changes on|off        Show number of rows changed by SQL\n"
   ".clone NEWDB           Clone data into NEWDB from the existing database\n"
   ".databases             List names and files of attached databases\n"
   ".dbinfo ?DB?           Show status information about the database\n"
@@ -2844,6 +2846,15 @@ static int do_meta_command(char *zLine, ShellState *p){
   */
   if( c=='b' && n>=3 && strncmp(azArg[0], "breakpoint", n)==0 ){
     test_breakpoint();
+  }else
+
+  if( c=='c' && n>=3 && strncmp(azArg[0], "changes", n)==0 ){
+    if( nArg==2 ){
+      p->countChanges = booleanValue(azArg[1]);
+    }else{
+      fprintf(stderr, "Usage: .changes on|off\n");
+      rc = 1;
+    }
   }else
 
   if( c=='c' && strncmp(azArg[0], "clone", n)==0 ){
@@ -4567,6 +4578,9 @@ static int process_input(ShellState *p, FILE *in){
           fprintf(stderr, "%s %s\n", zPrefix, sqlite3_errmsg(p->db));
         }
         errCnt++;
+      }else if( p->countChanges ){
+        fprintf(p->out, "changes: %3d   total_changes: %d\n",
+                sqlite3_changes(p->db), sqlite3_total_changes(p->db));
       }
       nSql = 0;
       if( p->outCount ){

@@ -222,7 +222,8 @@ static int faultsimInstall(int install){
     assert( memcmp(&m2, &memfault.m, sizeof(m2))==0 );
 
     rc = sqlite3_config(SQLITE_CONFIG_MALLOC, &memfault.m);
-    sqlite3_test_control(SQLITE_TESTCTRL_BENIGN_MALLOC_HOOKS, 0, 0);
+    sqlite3_test_control(SQLITE_TESTCTRL_BENIGN_MALLOC_HOOKS,
+        (void*)0, (void*)0);
   }
 
   if( rc==SQLITE_OK ){
