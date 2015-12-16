@@ -2393,7 +2393,7 @@ static int fts5MultiIterDoCompare(Fts5IndexIter *pIter, int iOut){
     }
   }
 
-  pRes->iFirst = iRes;
+  pRes->iFirst = (u16)iRes;
   return 0;
 }
 
@@ -2560,7 +2560,7 @@ static int fts5MultiIterAdvanceRowid(
           pIter->iSwitchRowid = pOther->iRowid;
         }
       }
-      pRes->iFirst = (pNew - pIter->aSeg);
+      pRes->iFirst = (u16)(pNew - pIter->aSeg);
       if( i==1 ) break;
 
       pOther = &pIter->aSeg[ pIter->aFirst[i ^ 0x0001].iFirst ];
@@ -2711,7 +2711,7 @@ static void fts5MultiIterNew(
   *ppOut = pNew = fts5MultiIterAlloc(p, nSeg);
   if( pNew==0 ) return;
   pNew->bRev = (0!=(flags & FTS5INDEX_QUERY_DESC));
-  pNew->bSkipEmpty = bSkipEmpty;
+  pNew->bSkipEmpty = (u8)bSkipEmpty;
   pNew->pStruct = pStruct;
   fts5StructureRef(pStruct);
 
@@ -3174,7 +3174,7 @@ static void fts5WriteFlushLeaf(Fts5Index *p, Fts5SegWriter *pWriter){
 
   /* Set the szLeaf header field. */
   assert( 0==fts5GetU16(&pPage->buf.p[2]) );
-  fts5PutU16(&pPage->buf.p[2], pPage->buf.n);
+  fts5PutU16(&pPage->buf.p[2], (u16)pPage->buf.n);
 
   if( pWriter->bFirstTermInPage ){
     /* No term was written to this page. */
@@ -3306,7 +3306,7 @@ static void fts5WriteAppendRowid(
     ** rowid-pointer in the page-header. Also append a value to the dlidx
     ** buffer, in case a doclist-index is required.  */
     if( pWriter->bFirstRowidInPage ){
-      fts5PutU16(pPage->buf.p, pPage->buf.n);
+      fts5PutU16(pPage->buf.p, (u16)pPage->buf.n);
       fts5WriteDlidxAppend(p, pWriter, iRowid);
     }
 
@@ -3464,7 +3464,7 @@ static void fts5TrimSegments(Fts5Index *p, Fts5IndexIter *pIter){
         fts5BufferAppendBlob(&p->rc, &buf, pData->szLeaf-iOff, &pData->p[iOff]);
         if( p->rc==SQLITE_OK ){
           /* Set the szLeaf field */
-          fts5PutU16(&buf.p[2], buf.n);
+          fts5PutU16(&buf.p[2], (u16)buf.n);
         }
 
         /* Set up the new page-index array */
@@ -3830,7 +3830,7 @@ static void fts5FlushOneHash(Fts5Index *p){
           iRowid += iDelta;
           
           if( writer.bFirstRowidInPage ){
-            fts5PutU16(&pBuf->p[0], pBuf->n);   /* first rowid on page */
+            fts5PutU16(&pBuf->p[0], (u16)pBuf->n);   /* first rowid on page */
             pBuf->n += sqlite3Fts5PutVarint(&pBuf->p[pBuf->n], iRowid);
             writer.bFirstRowidInPage = 0;
             fts5WriteDlidxAppend(p, &writer, iRowid);
@@ -4627,7 +4627,8 @@ int sqlite3Fts5IndexWrite(
     int nByte = fts5IndexCharlenToBytelen(pToken, nToken, pConfig->aPrefix[i]);
     if( nByte ){
       rc = sqlite3Fts5HashWrite(p->pHash, 
-          p->iWriteRowid, iCol, iPos, FTS5_MAIN_PREFIX+i+1, pToken, nByte
+          p->iWriteRowid, iCol, iPos, (char)(FTS5_MAIN_PREFIX+i+1), pToken,
+          nByte
       );
     }
   }
@@ -4677,7 +4678,7 @@ int sqlite3Fts5IndexQuery(
 
     if( iIdx<=pConfig->nPrefix ){
       Fts5Structure *pStruct = fts5StructureRead(p);
-      buf.p[0] = FTS5_MAIN_PREFIX + iIdx;
+      buf.p[0] = (u8)(FTS5_MAIN_PREFIX + iIdx);
       if( pStruct ){
         fts5MultiIterNew(p, pStruct, 1, flags, buf.p, nToken+1, -1, 0, &pRet);
         fts5StructureRelease(pStruct);

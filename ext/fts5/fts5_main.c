@@ -588,7 +588,7 @@ static int fts5BestIndexMethod(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
     struct Constraint *pC = &aConstraint[i];
     if( pC->iConsIndex>=0 ){
       pInfo->aConstraintUsage[pC->iConsIndex].argvIndex = iNext++;
-      pInfo->aConstraintUsage[pC->iConsIndex].omit = pC->omit;
+      pInfo->aConstraintUsage[pC->iConsIndex].omit = (unsigned char)pC->omit;
     }
   }
 
