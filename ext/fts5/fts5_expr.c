@@ -430,7 +430,7 @@ static int fts5ExprPhraseIsMatch(
     }
     if( rc!=SQLITE_OK ) goto ismatch_out;
     sqlite3Fts5PoslistReaderInit(a, n, &aIter[i]);
-    aIter[i].bFlag = bFlag;
+    aIter[i].bFlag = (u8)bFlag;
     if( aIter[i].bEof ) goto ismatch_out;
   }
 

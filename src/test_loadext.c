@@ -34,7 +34,7 @@ static void statusFunc(
   int argc,
   sqlite3_value **argv
 ){
-  int op, mx, cur, resetFlag, rc;
+  int op = 0, mx, cur, resetFlag, rc;
   if( sqlite3_value_type(argv[0])==SQLITE_INTEGER ){
     op = sqlite3_value_int(argv[0]);
   }else if( sqlite3_value_type(argv[0])==SQLITE_TEXT ){

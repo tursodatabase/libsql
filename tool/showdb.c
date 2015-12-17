@@ -1152,10 +1152,10 @@ int main(int argc, char **argv){
       }else if( zLeft && zLeft[0]=='t' ){
         int detail = 0;
         int recursive = 0;
-        int i;
-        for(i=1; zLeft[i]; i++){
-          if( zLeft[i]=='r' ) recursive = 1;
-          if( zLeft[i]=='d' ) detail = 1;
+        int j;
+        for(j=1; zLeft[j]; j++){
+          if( zLeft[j]=='r' ) recursive = 1;
+          if( zLeft[j]=='d' ) detail = 1;
         }
         decode_trunk_page(iStart, detail, recursive);
         continue;

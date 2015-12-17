@@ -256,7 +256,7 @@ static int fts5UnicodeAddExceptions(
         int bToken;
         READ_UTF8(zCsr, zTerm, iCode);
         if( iCode<128 ){
-          p->aTokenChar[iCode] = bTokenChars;
+          p->aTokenChar[iCode] = (unsigned char)bTokenChars;
         }else{
           bToken = sqlite3Fts5UnicodeIsalnum(iCode);
           assert( (bToken==0 || bToken==1) ); 
