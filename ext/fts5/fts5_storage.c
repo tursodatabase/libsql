@@ -825,6 +825,7 @@ struct Fts5IntegrityCtx {
   int iCol;
   int szCol;
   u64 cksum;
+  Fts5Termset *pTermset;
   Fts5Config *pConfig;
 };
 
@@ -832,21 +833,33 @@ struct Fts5IntegrityCtx {
 ** Tokenization callback used by integrity check.
 */
 static int fts5StorageIntegrityCallback(
-  void *pContext,                 /* Pointer to Fts5InsertCtx object */
+  void *pContext,                 /* Pointer to Fts5IntegrityCtx object */
   int tflags,
   const char *pToken,             /* Buffer containing token */
   int nToken,                     /* Size of token in bytes */
   int iStart,                     /* Start offset of token */
   int iEnd                        /* End offset of token */
 ){
+  int rc = SQLITE_OK;
   Fts5IntegrityCtx *pCtx = (Fts5IntegrityCtx*)pContext;
   if( (tflags & FTS5_TOKEN_COLOCATED)==0 || pCtx->szCol==0 ){
     pCtx->szCol++;
   }
-  pCtx->cksum ^= sqlite3Fts5IndexCksum(
-      pCtx->pConfig, pCtx->iRowid, pCtx->iCol, pCtx->szCol-1, pToken, nToken
-  );
-  return SQLITE_OK;
+
+  if( pCtx->pTermset ){
+    int bPresent = 0;
+    rc = sqlite3Fts5TermsetAdd(pCtx->pTermset, pToken, nToken, &bPresent);
+    if( rc==SQLITE_OK && bPresent==0 ){
+      pCtx->cksum ^= sqlite3Fts5IndexCksum(
+          pCtx->pConfig, pCtx->iRowid, 0, pCtx->iCol, pToken, nToken
+      );
+    }
+  }else{
+    pCtx->cksum ^= sqlite3Fts5IndexCksum(
+        pCtx->pConfig, pCtx->iRowid, pCtx->iCol, pCtx->szCol-1, pToken, nToken
+    );
+  }
+  return rc;
 }
 
 /*
@@ -886,17 +899,24 @@ int sqlite3Fts5StorageIntegrity(Fts5Storage *p){
         if( pConfig->abUnindexed[i] ) continue;
         ctx.iCol = i;
         ctx.szCol = 0;
-        rc = sqlite3Fts5Tokenize(pConfig, 
-            FTS5_TOKENIZE_DOCUMENT,
-            (const char*)sqlite3_column_text(pScan, i+1),
-            sqlite3_column_bytes(pScan, i+1),
-            (void*)&ctx,
-            fts5StorageIntegrityCallback
-        );
-        if( pConfig->bColumnsize && ctx.szCol!=aColSize[i] ){
+        if( pConfig->bOffsets==0 ){
+          rc = sqlite3Fts5TermsetNew(&ctx.pTermset);
+        }
+        if( rc==SQLITE_OK ){
+          rc = sqlite3Fts5Tokenize(pConfig, 
+              FTS5_TOKENIZE_DOCUMENT,
+              (const char*)sqlite3_column_text(pScan, i+1),
+              sqlite3_column_bytes(pScan, i+1),
+              (void*)&ctx,
+              fts5StorageIntegrityCallback
+          );
+        }
+        if( rc==SQLITE_OK && pConfig->bColumnsize && ctx.szCol!=aColSize[i] ){
           rc = FTS5_CORRUPT;
         }
         aTotalSize[i] += ctx.szCol;
+        sqlite3Fts5TermsetFree(ctx.pTermset);
+        ctx.pTermset = 0;
       }
       if( rc!=SQLITE_OK ) break;
     }

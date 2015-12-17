@@ -4001,6 +4001,14 @@ struct PoslistCallbackCtx {
   int eState;                     /* See above */
 };
 
+typedef struct PoslistOffsetsCtx PoslistOffsetsCtx;
+struct PoslistOffsetsCtx {
+  Fts5Buffer *pBuf;               /* Append to this buffer */
+  Fts5Colset *pColset;            /* Restrict matches to this column */
+  int iRead;
+  int iWrite;
+};
+
 /*
 ** TODO: Make this more efficient!
 */
@@ -4010,6 +4018,28 @@ static int fts5IndexColsetTest(Fts5Colset *pColset, int iCol){
     if( pColset->aiCol[i]==iCol ) return 1;
   }
   return 0;
+}
+
+static void fts5PoslistOffsetsCallback(
+  Fts5Index *p, 
+  void *pContext, 
+  const u8 *pChunk, int nChunk
+){
+  PoslistOffsetsCtx *pCtx = (PoslistOffsetsCtx*)pContext;
+  assert_nc( nChunk>=0 );
+  if( nChunk>0 ){
+    int i = 0;
+    while( i<nChunk ){
+      int iVal;
+      i += fts5GetVarint32(&pChunk[i], iVal);
+      iVal += pCtx->iRead - 2;
+      pCtx->iRead = iVal;
+      if( fts5IndexColsetTest(pCtx->pColset, iVal) ){
+        fts5BufferSafeAppendVarint(pCtx->pBuf, iVal + 2 - pCtx->iWrite);
+        pCtx->iWrite = iVal;
+      }
+    }
+  }
 }
 
 static void fts5PoslistFilterCallback(
@@ -4079,12 +4109,20 @@ static void fts5SegiterPoslist(
     if( pColset==0 ){
       fts5ChunkIterate(p, pSeg, (void*)pBuf, fts5PoslistCallback);
     }else{
-      PoslistCallbackCtx sCtx;
-      sCtx.pBuf = pBuf;
-      sCtx.pColset = pColset;
-      sCtx.eState = fts5IndexColsetTest(pColset, 0);
-      assert( sCtx.eState==0 || sCtx.eState==1 );
-      fts5ChunkIterate(p, pSeg, (void*)&sCtx, fts5PoslistFilterCallback);
+      if( p->pConfig->bOffsets==0 ){
+        PoslistOffsetsCtx sCtx;
+        memset(&sCtx, 0, sizeof(sCtx));
+        sCtx.pBuf = pBuf;
+        sCtx.pColset = pColset;
+        fts5ChunkIterate(p, pSeg, (void*)&sCtx, fts5PoslistOffsetsCallback);
+      }else{
+        PoslistCallbackCtx sCtx;
+        sCtx.pBuf = pBuf;
+        sCtx.pColset = pColset;
+        assert( sCtx.eState==0 || sCtx.eState==1 );
+        sCtx.eState = fts5IndexColsetTest(pColset, 0);
+        fts5ChunkIterate(p, pSeg, (void*)&sCtx, fts5PoslistFilterCallback);
+      }
     }
   }
 }
@@ -4446,7 +4484,7 @@ int sqlite3Fts5IndexBeginWrite(Fts5Index *p, int bDelete, i64 iRowid){
 
   /* Allocate the hash table if it has not already been allocated */
   if( p->pHash==0 ){
-    p->rc = sqlite3Fts5HashNew(&p->pHash, &p->nPendingData);
+    p->rc = sqlite3Fts5HashNew(p->pConfig, &p->pHash, &p->nPendingData);
   }
 
   /* Flush the hash table to disk if required */
@@ -4804,7 +4842,9 @@ int sqlite3Fts5IterPoslist(
   Fts5SegIter *pSeg = &pIter->aSeg[ pIter->aFirst[1].iFirst ];
   assert( pIter->pIndex->rc==SQLITE_OK );
   *piRowid = pSeg->iRowid;
-  if( pSeg->iLeafOffset+pSeg->nPos<=pSeg->pLeaf->szLeaf ){
+  if( pIter->pIndex->pConfig->bOffsets 
+   && pSeg->iLeafOffset+pSeg->nPos<=pSeg->pLeaf->szLeaf 
+  ){
     u8 *pPos = &pSeg->pLeaf->p[pSeg->iLeafOffset];
     if( pColset==0 || pIter->bFiltered ){
       *pn = pSeg->nPos;

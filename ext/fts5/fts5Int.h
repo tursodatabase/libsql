@@ -151,6 +151,7 @@ struct Fts5Config {
   char *zContent;                 /* content table */ 
   char *zContentRowid;            /* "content_rowid=" option value */ 
   int bColumnsize;                /* "columnsize=" option value (dflt==1) */
+  int bOffsets;                   /* "offsets=" option value (dflt==1) */
   char *zContentExprlist;
   Fts5Tokenizer *pTok;
   fts5_tokenizer *pTokApi;
@@ -291,6 +292,13 @@ char *sqlite3Fts5Strndup(int *pRc, const char *pIn, int nIn);
 
 /* Character set tests (like isspace(), isalpha() etc.) */
 int sqlite3Fts5IsBareword(char t);
+
+
+/* Bucket of terms object used by the integrity-check in offsets=0 mode. */
+typedef struct Fts5Termset Fts5Termset;
+int sqlite3Fts5TermsetNew(Fts5Termset**);
+int sqlite3Fts5TermsetAdd(Fts5Termset*, const char*, int, int *pbPresent);
+void sqlite3Fts5TermsetFree(Fts5Termset*);
 
 /*
 ** End of interface to code in fts5_buffer.c.
@@ -492,7 +500,7 @@ typedef struct Fts5Hash Fts5Hash;
 /*
 ** Create a hash table, free a hash table.
 */
-int sqlite3Fts5HashNew(Fts5Hash**, int *pnSize);
+int sqlite3Fts5HashNew(Fts5Config*, Fts5Hash**, int *pnSize);
 void sqlite3Fts5HashFree(Fts5Hash*);
 
 int sqlite3Fts5HashWrite(

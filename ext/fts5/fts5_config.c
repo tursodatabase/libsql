@@ -14,7 +14,6 @@
 */
 
 
-
 #include "fts5Int.h"
 
 #define FTS5_DEFAULT_PAGE_SIZE   4050
@@ -345,6 +344,16 @@ static int fts5ConfigParseSpecial(
     return rc;
   }
 
+  if( sqlite3_strnicmp("offsets", zCmd, nCmd)==0 ){
+    if( (zArg[0]!='0' && zArg[0]!='1') || zArg[1]!='\0' ){
+      *pzErr = sqlite3_mprintf("malformed offsets=... directive");
+      rc = SQLITE_ERROR;
+    }else{
+      pConfig->bOffsets = (zArg[0]=='1');
+    }
+    return rc;
+  }
+
   *pzErr = sqlite3_mprintf("unrecognized option: \"%.*s\"", nCmd, zCmd);
   return SQLITE_ERROR;
 }
@@ -500,6 +509,7 @@ int sqlite3Fts5ConfigParse(
   pRet->zDb = sqlite3Fts5Strndup(&rc, azArg[1], -1);
   pRet->zName = sqlite3Fts5Strndup(&rc, azArg[2], -1);
   pRet->bColumnsize = 1;
+  pRet->bOffsets = 1;
 #ifdef SQLITE_DEBUG
   pRet->bPrefixIndex = 1;
 #endif

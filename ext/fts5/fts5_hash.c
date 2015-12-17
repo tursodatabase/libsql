@@ -26,6 +26,7 @@ typedef struct Fts5HashEntry Fts5HashEntry;
 
 
 struct Fts5Hash {
+  int bOffsets;                   /* Copy of Fts5Config.bOffsets */
   int *pnByte;                    /* Pointer to bytes counter */
   int nEntry;                     /* Number of entries currently in hash */
   int nSlot;                      /* Size of aSlot[] array */
@@ -79,7 +80,7 @@ struct Fts5HashEntry {
 /*
 ** Allocate a new hash table.
 */
-int sqlite3Fts5HashNew(Fts5Hash **ppNew, int *pnByte){
+int sqlite3Fts5HashNew(Fts5Config *pConfig, Fts5Hash **ppNew, int *pnByte){
   int rc = SQLITE_OK;
   Fts5Hash *pNew;
 
@@ -90,6 +91,7 @@ int sqlite3Fts5HashNew(Fts5Hash **ppNew, int *pnByte){
     int nByte;
     memset(pNew, 0, sizeof(Fts5Hash));
     pNew->pnByte = pnByte;
+    pNew->bOffsets = pConfig->bOffsets;
 
     pNew->nSlot = 1024;
     nByte = sizeof(Fts5HashEntry*) * pNew->nSlot;
@@ -214,6 +216,7 @@ int sqlite3Fts5HashWrite(
   Fts5HashEntry *p;
   u8 *pPtr;
   int nIncr = 0;                  /* Amount to increment (*pHash->pnByte) by */
+  int bNew = pHash->bOffsets;     /* If non-delete entry should be written */
 
   /* Attempt to locate an existing hash entry */
   iHash = fts5HashKey2(pHash->nSlot, (u8)bByte, (const u8*)pToken, nToken);
@@ -250,6 +253,7 @@ int sqlite3Fts5HashWrite(
     p->iSzPoslist = p->nData;
     p->nData += 1;
     p->iRowid = iRowid;
+    p->iCol = (pHash->bOffsets-1);
     p->pHashNext = pHash->aSlot[iHash];
     pHash->aSlot[iHash] = p;
     pHash->nEntry++;
@@ -286,24 +290,32 @@ int sqlite3Fts5HashWrite(
     p->nData += sqlite3Fts5PutVarint(&pPtr[p->nData], iRowid - p->iRowid);
     p->iSzPoslist = p->nData;
     p->nData += 1;
-    p->iCol = 0;
+    p->iCol = (pHash->bOffsets-1);
     p->iPos = 0;
     p->iRowid = iRowid;
+    bNew = 1;
   }
 
   if( iCol>=0 ){
     /* Append a new column value, if necessary */
     assert( iCol>=p->iCol );
     if( iCol!=p->iCol ){
-      pPtr[p->nData++] = 0x01;
-      p->nData += sqlite3Fts5PutVarint(&pPtr[p->nData], iCol);
-      p->iCol = iCol;
-      p->iPos = 0;
+      if( pHash->bOffsets==0 ){
+        bNew = 1;
+        p->iCol = iPos = iCol;
+      }else{
+        pPtr[p->nData++] = 0x01;
+        p->nData += sqlite3Fts5PutVarint(&pPtr[p->nData], iCol);
+        p->iCol = iCol;
+        p->iPos = 0;
+      }
     }
 
-    /* Append the new position offset */
-    p->nData += sqlite3Fts5PutVarint(&pPtr[p->nData], iPos - p->iPos + 2);
-    p->iPos = iPos;
+    /* Append the new position offset, if necessary */
+    if( bNew ){
+      p->nData += sqlite3Fts5PutVarint(&pPtr[p->nData], iPos - p->iPos + 2);
+      p->iPos = iPos;
+    }
   }else{
     /* This is a delete. Set the delete flag. */
     p->bDel = 1;

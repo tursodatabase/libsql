@@ -292,3 +292,77 @@ int sqlite3Fts5IsBareword(char t){
 }
 
 
+/*************************************************************************
+*/
+typedef struct Fts5TermsetEntry Fts5TermsetEntry;
+struct Fts5TermsetEntry {
+  char *pTerm;
+  int nTerm;
+  Fts5TermsetEntry *pNext;
+};
+
+struct Fts5Termset {
+  Fts5TermsetEntry *apHash[512];
+};
+
+int sqlite3Fts5TermsetNew(Fts5Termset **pp){
+  int rc = SQLITE_OK;
+  *pp = sqlite3Fts5MallocZero(&rc, sizeof(Fts5Termset));
+  return rc;
+}
+
+int sqlite3Fts5TermsetAdd(
+  Fts5Termset *p, 
+  const char *pTerm, int nTerm, 
+  int *pbPresent
+){
+  int rc = SQLITE_OK;
+  int i;
+  int hash = 13;
+  Fts5TermsetEntry *pEntry;
+
+  /* Calculate a hash value for this term */
+  for(i=0; i<nTerm; i++){
+    hash += (hash << 3) + (int)pTerm[i];
+  }
+  hash = hash % ArraySize(p->apHash);
+
+  *pbPresent = 0;
+  for(pEntry=p->apHash[hash]; pEntry; pEntry=pEntry->pNext){
+    if( pEntry->nTerm==nTerm && memcmp(pEntry->pTerm, pTerm, nTerm)==0 ){
+      *pbPresent = 1;
+      break;
+    }
+  }
+
+  if( pEntry==0 ){
+    pEntry = sqlite3Fts5MallocZero(&rc, sizeof(Fts5TermsetEntry) + nTerm);
+    if( pEntry ){
+      pEntry->pTerm = (char*)&pEntry[1];
+      pEntry->nTerm = nTerm;
+      memcpy(pEntry->pTerm, pTerm, nTerm);
+      pEntry->pNext = p->apHash[hash];
+      p->apHash[hash] = pEntry;
+    }
+  }
+
+  return rc;
+}
+
+void sqlite3Fts5TermsetFree(Fts5Termset *p){
+  if( p ){
+    int i;
+    for(i=0; i<ArraySize(p->apHash); i++){
+      Fts5TermsetEntry *pEntry = p->apHash[i];
+      while( pEntry ){
+        Fts5TermsetEntry *pDel = pEntry;
+        pEntry = pEntry->pNext;
+        sqlite3_free(pDel);
+      }
+    }
+    sqlite3_free(p);
+  }
+}
+
+
+
