@@ -2,6 +2,7 @@
 
 use std::cell::RefCell;
 use std::collections::VecDeque;
+use std::ops::{Deref, DerefMut};
 use {Result, Connection, Statement};
 
 /// Prepared statements cache.
@@ -17,6 +18,20 @@ pub struct CachedStatement<'conn> {
     pub cacheable: bool,
 }
 
+impl<'conn> Deref for CachedStatement<'conn> {
+    type Target = Statement<'conn>;
+
+    fn deref(&self) -> &Statement<'conn> {
+        self.stmt.as_ref().unwrap()
+    }
+}
+
+impl<'conn> DerefMut for CachedStatement<'conn> {
+    fn deref_mut(&mut self) -> &mut Statement<'conn> {
+        self.stmt.as_mut().unwrap()
+    }
+}
+
 impl<'conn> Drop for CachedStatement<'conn> {
     #[allow(unused_must_use)]
     fn drop(&mut self) {
@@ -24,6 +39,18 @@ impl<'conn> Drop for CachedStatement<'conn> {
             self.cache.borrow_mut().release(self.stmt.take().unwrap());
         } else {
             self.stmt.take().unwrap().finalize();
+        }
+    }
+}
+
+impl<'conn> CachedStatement<'conn> {
+    fn new(stmt: Statement<'conn>,
+           cache: RefCell<StatementCache<'conn>>)
+           -> CachedStatement<'conn> {
+        CachedStatement {
+            stmt: Some(stmt),
+            cache: cache,
+            cacheable: true,
         }
     }
 }
@@ -43,11 +70,12 @@ impl<'conn> StatementCache<'conn> {
     /// # Failure
     ///
     /// Will return `Err` if no cached statement can be found and the underlying SQLite prepare call fails.
-    pub fn get(&mut self, sql: &str) -> Result<Statement<'conn>> {
-        match self.cache.iter().rposition(|entry| entry.eq(sql)) {
+    pub fn get(&mut self, sql: &str) -> Result<CachedStatement<'conn>> {
+        let stmt = match self.cache.iter().rposition(|entry| entry.eq(sql)) {
             Some(index) => Ok(self.cache.swap_remove_front(index).unwrap()), // FIXME Not LRU compliant
             _ => self.conn.prepare(sql),
-        }
+        };
+        stmt.map(|stmt| CachedStatement::new(stmt, RefCell::new(self)))
     }
 
     /// If `discard` is true, then the statement is deleted immediately.
@@ -59,7 +87,8 @@ impl<'conn> StatementCache<'conn> {
     /// Will return `Err` if `stmt` (or the already cached statement implementing the same SQL) statement is `discard`ed
     /// and the underlying SQLite finalize call fails.
     fn release(&mut self, mut stmt: Statement<'conn>) {
-        if self.cache.capacity() == self.cache.len() { // is full
+        if self.cache.capacity() == self.cache.len() {
+            // is full
             self.cache.pop_back(); // LRU dropped
         }
         stmt.reset_if_needed();
