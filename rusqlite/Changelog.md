@@ -1,4 +1,4 @@
-# Version UPCOMING (TBD)
+# Version 0.6.0 (2015-12-17)
 
 * BREAKING CHANGE: `SqliteError` is now an enum instead of a struct. Previously, we were (ab)using
   the error code and message to send back both underlying SQLite errors and errors that occurred
