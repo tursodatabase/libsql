@@ -14,6 +14,10 @@ pub enum Error {
     /// An error from an underlying SQLite call.
     SqliteFailure(ffi::Error, Option<String>),
 
+    /// Error reported when attempting to open a connection when SQLite was configured to
+    /// allow single-threaded use only.
+    SqliteSingleThreadedMode,
+
     /// An error case available for implementors of the `FromSql` trait.
     FromSqlConversionFailure(Box<error::Error + Send + Sync>),
 
@@ -77,6 +81,7 @@ impl fmt::Display for Error {
         match self {
             &Error::SqliteFailure(ref err, None) => err.fmt(f),
             &Error::SqliteFailure(_, Some(ref s)) => write!(f, "{}", s),
+            &Error::SqliteSingleThreadedMode => write!(f, "SQLite was compiled or configured for single-threaded use only"),
             &Error::FromSqlConversionFailure(ref err) => err.fmt(f),
             &Error::Utf8Error(ref err) => err.fmt(f),
             &Error::NulError(ref err) => err.fmt(f),
@@ -101,6 +106,7 @@ impl error::Error for Error {
         match self {
             &Error::SqliteFailure(ref err, None) => err.description(),
             &Error::SqliteFailure(_, Some(ref s)) => s,
+            &Error::SqliteSingleThreadedMode => "SQLite was compiled or configured for single-threaded use only",
             &Error::FromSqlConversionFailure(ref err) => err.description(),
             &Error::Utf8Error(ref err) => err.description(),
             &Error::InvalidParameterName(_) => "invalid parameter name",
@@ -122,6 +128,7 @@ impl error::Error for Error {
     fn cause(&self) -> Option<&error::Error> {
         match self {
             &Error::SqliteFailure(ref err, _) => Some(err),
+            &Error::SqliteSingleThreadedMode => None,
             &Error::FromSqlConversionFailure(ref err) => Some(&**err),
             &Error::Utf8Error(ref err) => Some(err),
             &Error::NulError(ref err) => Some(err),

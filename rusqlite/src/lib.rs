@@ -546,6 +546,30 @@ impl InnerConnection {
                        flags: OpenFlags)
         -> Result<InnerConnection> {
             unsafe {
+                // Before opening the database, we need to check that SQLite hasn't been
+                // compiled or configured to be in single-threaded mode. If it has, we're
+                // exposing a very unsafe API to Rust, so refuse to open connections at all.
+                // Unfortunately, the check for this is quite gross. sqlite3_threadsafe() only
+                // returns how SQLite was _compiled_; there is no public API to check whether
+                // someone called sqlite3_config() to set single-threaded mode. We can cheat
+                // by trying to allocate a mutex, though; in single-threaded mode due to
+                // compilation settings, the magic value 8 is returned (see the definition of
+                // sqlite3_mutex_alloc at https://github.com/mackyle/sqlite/blob/master/src/mutex.h);
+                // in single-threaded mode due to sqlite3_config(), the magic value 8 is also
+                // returned (see the definition of noopMutexAlloc at
+                // https://github.com/mackyle/sqlite/blob/master/src/mutex_noop.c).
+                const SQLITE_SINGLETHREADED_MUTEX_MAGIC: usize = 8;
+                let mutex_ptr = ffi::sqlite3_mutex_alloc(0);
+                let is_singlethreaded = if mutex_ptr as usize == SQLITE_SINGLETHREADED_MUTEX_MAGIC {
+                    true
+                } else {
+                    false
+                };
+                ffi::sqlite3_mutex_free(mutex_ptr);
+                if is_singlethreaded {
+                    return Err(Error::SqliteSingleThreadedMode);
+                }
+
                 let mut db: *mut ffi::sqlite3 = mem::uninitialized();
                 let r = ffi::sqlite3_open_v2(c_path.as_ptr(), &mut db, flags.bits(), ptr::null());
                 if r != ffi::SQLITE_OK {

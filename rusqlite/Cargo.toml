@@ -36,3 +36,6 @@ version = "0.3.0"
 [[test]]
 name = "config_log"
 harness = false
+
+[[test]]
+name = "deny_single_threaded_sqlite_config"
