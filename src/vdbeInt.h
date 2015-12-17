@@ -95,7 +95,6 @@ struct VdbeCursor {
     int pseudoTableReg;         /* CURTYPE_PSEUDO. Reg holding content. */
     VdbeSorter *pSorter;        /* CURTYPE_SORTER. Sorter object */
   } uc;
-  Btree *pBt;           /* Separate file holding temporary table */
   KeyInfo *pKeyInfo;    /* Info about index keys needed by index cursors */
   int seekResult;       /* Result of previous sqlite3BtreeMoveto() */
   i64 seqCount;         /* Sequence counter */

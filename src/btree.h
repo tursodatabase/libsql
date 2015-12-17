@@ -221,6 +221,7 @@ int sqlite3BtreeCursor(
 int sqlite3BtreeCursorSize(void);
 void sqlite3BtreeCursorZero(BtCursor*);
 void sqlite3BtreeCursorHintFlags(BtCursor*, unsigned);
+Btree *sqlite3BtreeOfCursor(BtCursor*);
 #ifdef SQLITE_ENABLE_CURSOR_HINTS
 void sqlite3BtreeCursorHint(BtCursor*, int, ...);
 #endif

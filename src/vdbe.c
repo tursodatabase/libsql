@@ -3441,6 +3441,7 @@ case OP_OpenAutoindex:
 case OP_OpenEphemeral: {
   VdbeCursor *pCx;
   KeyInfo *pKeyInfo;
+  Btree *pBt;
 
   static const int vfsFlags = 
       SQLITE_OPEN_READWRITE |
@@ -3453,35 +3454,39 @@ case OP_OpenEphemeral: {
   pCx = allocateCursor(p, pOp->p1, pOp->p2, -1, CURTYPE_BTREE);
   if( pCx==0 ) goto no_mem;
   pCx->nullRow = 1;
-  pCx->isEphemeral = 1;
-  rc = sqlite3BtreeOpen(db->pVfs, 0, db, &pCx->pBt, 
+  rc = sqlite3BtreeOpen(db->pVfs, 0, db, &pBt, 
                         BTREE_OMIT_JOURNAL | BTREE_SINGLE | pOp->p5, vfsFlags);
   if( rc==SQLITE_OK ){
-    rc = sqlite3BtreeBeginTrans(pCx->pBt, 1);
-  }
-  if( rc==SQLITE_OK ){
-    /* If a transient index is required, create it by calling
-    ** sqlite3BtreeCreateTable() with the BTREE_BLOBKEY flag before
-    ** opening it. If a transient table is required, just use the
-    ** automatically created table with root-page 1 (an BLOB_INTKEY table).
-    */
-    if( (pKeyInfo = pOp->p4.pKeyInfo)!=0 ){
-      int pgno;
-      assert( pOp->p4type==P4_KEYINFO );
-      rc = sqlite3BtreeCreateTable(pCx->pBt, &pgno, BTREE_BLOBKEY | pOp->p5); 
-      if( rc==SQLITE_OK ){
-        assert( pgno==MASTER_ROOT+1 );
-        assert( pKeyInfo->db==db );
-        assert( pKeyInfo->enc==ENC(db) );
-        pCx->pKeyInfo = pKeyInfo;
-        rc = sqlite3BtreeCursor(pCx->pBt, pgno, BTREE_WRCSR,
-                                pKeyInfo, pCx->uc.pCursor);
+    rc = sqlite3BtreeBeginTrans(pBt, 1);
+    if( rc==SQLITE_OK ){
+      /* If a transient index is required, create it by calling
+      ** sqlite3BtreeCreateTable() with the BTREE_BLOBKEY flag before
+      ** opening it. If a transient table is required, just use the
+      ** automatically created table with root-page 1 (an BLOB_INTKEY table).
+      */
+      if( (pKeyInfo = pOp->p4.pKeyInfo)!=0 ){
+        int pgno;
+        assert( pOp->p4type==P4_KEYINFO );
+        rc = sqlite3BtreeCreateTable(pBt, &pgno, BTREE_BLOBKEY | pOp->p5); 
+        if( rc==SQLITE_OK ){
+          assert( pgno==MASTER_ROOT+1 );
+          assert( pKeyInfo->db==db );
+          assert( pKeyInfo->enc==ENC(db) );
+          pCx->pKeyInfo = pKeyInfo;
+          rc = sqlite3BtreeCursor(pBt, pgno, BTREE_WRCSR,
+                                  pKeyInfo, pCx->uc.pCursor);
+        }
+        pCx->isTable = 0;
+      }else{
+        rc = sqlite3BtreeCursor(pBt, MASTER_ROOT, BTREE_WRCSR,
+                                0, pCx->uc.pCursor);
+        pCx->isTable = 1;
       }
-      pCx->isTable = 0;
+    }
+    if( rc==SQLITE_OK ){
+      pCx->isEphemeral = 1;
     }else{
-      rc = sqlite3BtreeCursor(pCx->pBt, MASTER_ROOT, BTREE_WRCSR,
-                              0, pCx->uc.pCursor);
-      pCx->isTable = 1;
+      sqlite3BtreeClose(pBt);
     }
   }
   pCx->isOrdered = (pOp->p5!=BTREE_UNORDERED);

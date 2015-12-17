@@ -1925,19 +1925,19 @@ void sqlite3VdbeFreeCursor(Vdbe *p, VdbeCursor *pCx){
   if( pCx==0 ){
     return;
   }
-  assert( pCx->pBt==0 || pCx->eCurType==CURTYPE_BTREE );
+  assert( pCx->isEphemeral==0 || pCx->eCurType==CURTYPE_BTREE );
   switch( pCx->eCurType ){
     case CURTYPE_SORTER: {
       sqlite3VdbeSorterClose(p->db, pCx);
       break;
     }
     case CURTYPE_BTREE: {
-      if( pCx->pBt ){
-        sqlite3BtreeClose(pCx->pBt);
+      assert( pCx->uc.pCursor!=0 );
+      if( pCx->isEphemeral ){
+        sqlite3BtreeClose(sqlite3BtreeOfCursor(pCx->uc.pCursor));
         /* The pCx->pCursor will be close automatically, if it exists, by
         ** the call above. */
       }else{
-        assert( pCx->uc.pCursor!=0 );
         sqlite3BtreeCloseCursor(pCx->uc.pCursor);
       }
       break;

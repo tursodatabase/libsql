@@ -4183,6 +4183,14 @@ void sqlite3BtreeCursorZero(BtCursor *p){
 }
 
 /*
+** Return the Btree object associated with a BtCursor.
+*/
+Btree *sqlite3BtreeOfCursor(BtCursor *p){
+  assert( p!=0 );
+  return p->pBtree;
+}
+
+/*
 ** Close a cursor.  The read lock on the database file is released
 ** when the last cursor is closed.
 */
