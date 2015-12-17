@@ -1,33 +1,29 @@
 //! Prepared statements cache for faster execution.
-extern crate lru_cache;
 
 use std::cell::RefCell;
+use std::collections::VecDeque;
 use {Result, Connection, Statement};
-use self::lru_cache::LruCache;
 
 /// Prepared statements cache.
-///
-/// FIXME limitation: the same SQL can be cached only once...
 #[derive(Debug)]
 pub struct StatementCache<'conn> {
     conn: &'conn Connection,
-    cache: LruCache<String, Statement<'conn>>,
+    cache: VecDeque<Statement<'conn>>, // back = LRU
 }
 
 pub struct CachedStatement<'conn> {
-    stmt: Statement<'conn>,
+    stmt: Option<Statement<'conn>>,
     cache: RefCell<StatementCache<'conn>>,
-    pub cacheable : bool,
+    pub cacheable: bool,
 }
 
 impl<'conn> Drop for CachedStatement<'conn> {
     #[allow(unused_must_use)]
     fn drop(&mut self) {
         if self.cacheable {
-            // FIXME: cannot move out of type `cache::CachedStatement<'conn>`, which defines the `Drop` trait [E0509]
-            //self.cache.borrow_mut().release(self.stmt, false);
+            self.cache.borrow_mut().release(self.stmt.take().unwrap());
         } else {
-            self.stmt.finalize_();
+            self.stmt.take().unwrap().finalize();
         }
     }
 }
@@ -37,7 +33,7 @@ impl<'conn> StatementCache<'conn> {
     pub fn new(conn: &'conn Connection, capacity: usize) -> StatementCache<'conn> {
         StatementCache {
             conn: conn,
-            cache: LruCache::new(capacity),
+            cache: VecDeque::with_capacity(capacity),
         }
     }
 
@@ -48,9 +44,8 @@ impl<'conn> StatementCache<'conn> {
     ///
     /// Will return `Err` if no cached statement can be found and the underlying SQLite prepare call fails.
     pub fn get(&mut self, sql: &str) -> Result<Statement<'conn>> {
-        let stmt = self.cache.remove(sql);
-        match stmt {
-            Some(stmt) => Ok(stmt),
+        match self.cache.iter().rposition(|entry| entry.eq(sql)) {
+            Some(index) => Ok(self.cache.swap_remove_front(index).unwrap()), // FIXME Not LRU compliant
             _ => self.conn.prepare(sql),
         }
     }
@@ -63,13 +58,13 @@ impl<'conn> StatementCache<'conn> {
     ///
     /// Will return `Err` if `stmt` (or the already cached statement implementing the same SQL) statement is `discard`ed
     /// and the underlying SQLite finalize call fails.
-    pub fn release(&mut self, mut stmt: Statement<'conn>, discard: bool) -> Result<()> {
-        if discard {
-            return stmt.finalize();
+    fn release(&mut self, mut stmt: Statement<'conn>) {
+        if self.cache.capacity() == self.cache.len() { // is full
+            self.cache.pop_back(); // LRU dropped
         }
         stmt.reset_if_needed();
         stmt.clear_bindings();
-        self.cache.insert(stmt.sql(), stmt).map_or(Ok(()), |stmt| stmt.finalize())
+        self.cache.push_front(stmt)
     }
 
     /// Flush the prepared statement cache
@@ -86,11 +81,6 @@ impl<'conn> StatementCache<'conn> {
     pub fn capacity(&self) -> usize {
         self.cache.capacity()
     }
-
-    /// Set the maximum number of cached statements.
-    pub fn set_capacity(&mut self, capacity: usize) {
-        self.cache.set_capacity(capacity);
-    }
 }
 
 #[cfg(test)]
@@ -101,29 +91,31 @@ mod test {
     #[test]
     fn test_cache() {
         let db = Connection::open_in_memory().unwrap();
-        let mut cache = StatementCache::new(&db, 10);
+        let mut cache = StatementCache::new(&db, 15);
         assert_eq!(0, cache.len());
-        assert_eq!(10, cache.capacity());
+        assert_eq!(15, cache.capacity());
 
         let sql = "PRAGMA schema_version";
         let mut stmt = cache.get(sql).unwrap();
         assert_eq!(0, cache.len());
-        assert_eq!(0, stmt.query(&[]).unwrap().get_expected_row().unwrap().get::<i64>(0));
+        assert_eq!(0,
+                   stmt.query(&[]).unwrap().get_expected_row().unwrap().get::<i64>(0));
 
         // println!("NEW {:?}", stmt);
-        cache.release(stmt, false).unwrap();
+        cache.release(stmt);
         assert_eq!(1, cache.len());
 
         stmt = cache.get(sql).unwrap();
         assert_eq!(0, cache.len());
-        assert_eq!(0, stmt.query(&[]).unwrap().get_expected_row().unwrap().get::<i64>(0));
+        assert_eq!(0,
+                   stmt.query(&[]).unwrap().get_expected_row().unwrap().get::<i64>(0));
 
         // println!("CACHED {:?}", stmt);
-        cache.release(stmt, true).unwrap();
-        assert_eq!(0, cache.len());
+        cache.release(stmt);
+        assert_eq!(1, cache.len());
 
         cache.clear();
         assert_eq!(0, cache.len());
-        assert_eq!(10, cache.capacity());
+        assert_eq!(15, cache.capacity());
     }
 }
