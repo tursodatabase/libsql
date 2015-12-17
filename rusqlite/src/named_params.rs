@@ -133,10 +133,7 @@ impl<'conn> Statement<'conn> {
             if let Some(i) = try!(self.parameter_index(name)) {
                 try!(self.conn.decode_result(unsafe { value.bind_parameter(self.stmt, i) }));
             } else {
-                return Err(Error {
-                    code: ffi::SQLITE_MISUSE,
-                    message: format!("Invalid parameter name: {}", name),
-                });
+                return Err(Error::InvalidParameterName(name.into()));
             }
         }
         Ok(())

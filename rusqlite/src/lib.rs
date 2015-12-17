@@ -64,7 +64,6 @@ use std::mem;
 use std::ptr;
 use std::fmt;
 use std::path::{Path, PathBuf};
-use std::error;
 use std::rc::Rc;
 use std::cell::{RefCell, Cell};
 use std::ffi::{CStr, CString};
@@ -73,8 +72,10 @@ use std::str;
 use libc::{c_int, c_char};
 
 use types::{ToSql, FromSql};
+use error::{error_from_sqlite_code, error_from_handle};
 
 pub use transaction::{SqliteTransaction, Transaction, TransactionBehavior};
+pub use error::{SqliteError, Error};
 
 #[cfg(feature = "load_extension")]
 pub use load_extension_guard::{SqliteLoadExtensionGuard, LoadExtensionGuard};
@@ -82,6 +83,7 @@ pub use load_extension_guard::{SqliteLoadExtensionGuard, LoadExtensionGuard};
 pub mod types;
 mod transaction;
 mod named_params;
+mod error;
 #[cfg(feature = "load_extension")]mod load_extension_guard;
 #[cfg(feature = "trace")]pub mod trace;
 #[cfg(feature = "backup")]pub mod backup;
@@ -100,62 +102,12 @@ unsafe fn errmsg_to_string(errmsg: *const c_char) -> String {
     utf8_str.unwrap_or("Invalid string encoding").to_string()
 }
 
-/// Old name for `Error`. `SqliteError` is deprecated.
-pub type SqliteError = Error;
-
-/// Encompasses an error result from a call to the SQLite C API.
-#[derive(Debug, PartialEq)]
-pub struct Error {
-    /// The error code returned by a SQLite C API call. See [SQLite Result
-    /// Codes](http://www.sqlite.org/rescode.html) for details.
-    pub code: c_int,
-
-    /// The error message provided by [sqlite3_errmsg](http://www.sqlite.org/c3ref/errcode.html),
-    /// if possible, or a generic error message based on `code` otherwise.
-    pub message: String,
-}
-
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{} (SQLite error {})", self.message, self.code)
-    }
-}
-
-impl error::Error for Error {
-    fn description(&self) -> &str {
-        &self.message
-    }
-}
-
-impl Error {
-    fn from_handle(db: *mut ffi::Struct_sqlite3, code: c_int) -> Error {
-        let message = if db.is_null() {
-            ffi::code_to_str(code).to_string()
-        } else {
-            unsafe { errmsg_to_string(ffi::sqlite3_errmsg(db)) }
-        };
-        Error {
-            code: code,
-            message: message,
-        }
-    }
-}
-
 fn str_to_cstring(s: &str) -> Result<CString> {
-    CString::new(s).map_err(|_| {
-        Error {
-            code: ffi::SQLITE_MISUSE,
-            message: format!("Could not convert string {} to C-combatible string", s),
-        }
-    })
+    Ok(try!(CString::new(s)))
 }
 
 fn path_to_cstring(p: &Path) -> Result<CString> {
-    let s = try!(p.to_str().ok_or(Error {
-        code: ffi::SQLITE_MISUSE,
-        message: format!("Could not convert path {} to UTF-8 string",
-                         p.to_string_lossy()),
-    }));
+    let s = try!(p.to_str().ok_or(Error::InvalidPath(p.to_owned())));
     str_to_cstring(s)
 }
 
@@ -598,12 +550,9 @@ impl InnerConnection {
                 let r = ffi::sqlite3_open_v2(c_path.as_ptr(), &mut db, flags.bits(), ptr::null());
                 if r != ffi::SQLITE_OK {
                     let e = if db.is_null() {
-                        Error {
-                            code: r,
-                            message: ffi::code_to_str(r).to_string(),
-                        }
+                        error_from_sqlite_code(r, None)
                     } else {
-                        let e = Error::from_handle(db, r);
+                        let e = error_from_handle(db, r);
                         ffi::sqlite3_close(db);
                         e
                     };
@@ -612,10 +561,14 @@ impl InnerConnection {
                 }
                 let r = ffi::sqlite3_busy_timeout(db, 5000);
                 if r != ffi::SQLITE_OK {
-                    let e = Error::from_handle(db, r);
+                    let e = error_from_handle(db, r);
                     ffi::sqlite3_close(db);
                     return Err(e);
                 }
+
+                // attempt to turn on extended results code; don't fail if we can't.
+                ffi::sqlite3_extended_result_codes(db, 1);
+
                 Ok(InnerConnection { db: db })
             }
         }
@@ -628,7 +581,7 @@ impl InnerConnection {
         if code == ffi::SQLITE_OK {
             Ok(())
         } else {
-            Err(Error::from_handle(self.db(), code))
+            Err(error_from_handle(self.db(), code))
         }
     }
 
@@ -677,10 +630,7 @@ impl InnerConnection {
             } else {
                 let message = errmsg_to_string(&*errmsg);
                 ffi::sqlite3_free(errmsg as *mut libc::c_void);
-                Err(Error {
-                    code: r,
-                    message: message,
-                })
+                Err(error_from_sqlite_code(r, Some(message)))
             }
         }
     }
@@ -694,10 +644,7 @@ impl InnerConnection {
                    sql: &str)
         -> Result<Statement<'a>> {
             if sql.len() >= ::std::i32::MAX as usize {
-                return Err(Error {
-                    code: ffi::SQLITE_TOOBIG,
-                    message: "statement too long".to_string(),
-                });
+                return Err(error_from_sqlite_code(ffi::SQLITE_TOOBIG, None));
             }
             let mut c_stmt: *mut ffi::sqlite3_stmt = unsafe { mem::uninitialized() };
             let c_sql = try!(str_to_cstring(sql));
@@ -793,21 +740,12 @@ impl<'conn> Statement<'conn> {
         match r {
             ffi::SQLITE_DONE => {
                 if self.column_count != 0 {
-                    Err(Error {
-                        code: ffi::SQLITE_MISUSE,
-                        message: "Unexpected column count - did you mean to call query?"
-                        .to_string(),
-                    })
+                    Err(Error::ExecuteReturnedResults)
                 } else {
                     Ok(self.conn.changes())
                 }
-            }
-            ffi::SQLITE_ROW => {
-                Err(Error {
-                    code: r,
-                    message: "Unexpected row result - did you mean to call query?".to_string(),
-                })
-            }
+            },
+            ffi::SQLITE_ROW => Err(Error::ExecuteReturnedResults),
             _ => Err(self.conn.decode_result(r).unwrap_err()),
         }
     }
@@ -1048,12 +986,7 @@ impl<'stmt> Rows<'stmt> {
     fn get_expected_row(&mut self) -> Result<Row<'stmt>> {
         match self.next() {
             Some(row) => row,
-            None => {
-                Err(Error {
-                    code: ffi::SQLITE_NOTICE,
-                    message: "Query did not return a row".to_string(),
-                })
-            }
+            None => Err(Error::QueryReturnedNoRows),
         }
     }
 }
@@ -1138,26 +1071,17 @@ impl<'stmt> Row<'stmt> {
     /// for this row or if this row is stale.
     pub fn get_checked<T: FromSql>(&self, idx: c_int) -> Result<T> {
         if self.row_idx != self.current_row.get() {
-            return Err(Error {
-                code: ffi::SQLITE_MISUSE,
-                message: "Cannot get values from a row after advancing to next row".to_string(),
-            });
+            return Err(Error::GetFromStaleRow);
         }
         unsafe {
             if idx < 0 || idx >= self.stmt.column_count {
-                return Err(Error {
-                    code: ffi::SQLITE_MISUSE,
-                    message: "Invalid column index".to_string(),
-                });
+                return Err(Error::InvalidColumnIndex(idx));
             }
 
             if T::column_has_valid_sqlite_type(self.stmt.stmt, idx) {
                 FromSql::column_result(self.stmt.stmt, idx)
             } else {
-                Err(Error {
-                    code: ffi::SQLITE_MISMATCH,
-                    message: "Invalid column type".to_string(),
-                })
+                Err(Error::InvalidColumnType)
             }
         }
     }
@@ -1260,8 +1184,10 @@ mod test {
     fn test_execute_select() {
         let db = checked_memory_handle();
         let err = db.execute("SELECT 1 WHERE 1 < ?", &[&1i32]).unwrap_err();
-        assert!(err.code == ffi::SQLITE_MISUSE);
-        assert!(err.message == "Unexpected column count - did you mean to call query?");
+        match err {
+            Error::ExecuteReturnedResults => (),
+            _ => panic!("Unexpected error: {}", err),
+        }
     }
 
     #[test]
@@ -1360,10 +1286,10 @@ mod test {
                    .unwrap());
 
         let result = db.query_row("SELECT x FROM foo WHERE x > 5", &[], |r| r.get::<i64>(0));
-        let error = result.unwrap_err();
-
-        assert!(error.code == ffi::SQLITE_NOTICE);
-        assert!(error.message == "Query did not return a row");
+        match result.unwrap_err() {
+            Error::QueryReturnedNoRows => (),
+            err => panic!("Unexpected error {}", err),
+        }
 
         let bad_query_result = db.query_row("NOT A PROPER QUERY; test123", &[], |_| ());
 
@@ -1376,7 +1302,7 @@ mod test {
         db.execute_batch("CREATE TABLE foo(x INTEGER);").unwrap();
 
         let err = db.prepare("SELECT * FROM does_not_exist").unwrap_err();
-        assert!(err.message.contains("does_not_exist"));
+        assert!(format!("{}", err).contains("does_not_exist"));
     }
 
     #[test]
@@ -1393,8 +1319,10 @@ mod test {
 
         assert_eq!(2i32, second.get(0));
 
-        let result = first.get_checked::<i32>(0);
-        assert!(result.unwrap_err().message.contains("advancing to next row"));
+        match first.get_checked::<i32>(0).unwrap_err() {
+            Error::GetFromStaleRow => (),
+            err => panic!("Unexpected error {}", err),
+        }
     }
 
     #[test]
@@ -1421,11 +1349,34 @@ mod test {
         assert!(format!("{:?}", stmt).contains(query));
     }
 
+    #[test]
+    fn test_notnull_constraint_error() {
+        let db = checked_memory_handle();
+        db.execute_batch("CREATE TABLE foo(x NOT NULL)").unwrap();
+
+        let result = db.execute("INSERT INTO foo (x) VALUES (NULL)", &[]);
+        assert!(result.is_err());
+
+        match result.unwrap_err() {
+            Error::SqliteFailure(err, _) => {
+                assert_eq!(err.code, ffi::ErrorCode::ConstraintViolation);
+
+                // extended error codes for constraints were added in SQLite 3.7.16; if we're
+                // running on a version at least that new, check for the extended code
+                let version = unsafe { ffi::sqlite3_libversion_number() };
+                if version >= 3007016 {
+                    assert_eq!(err.extended_code, ffi::SQLITE_CONSTRAINT_NOTNULL)
+                }
+            },
+            err => panic!("Unexpected error {}", err),
+        }
+    }
+
     mod query_and_then_tests {
         extern crate libsqlite3_sys as ffi;
         use super::*;
 
-        #[derive(Debug, PartialEq)]
+        #[derive(Debug)]
         enum CustomError {
             SomeError,
             Sqlite(Error),
@@ -1496,27 +1447,23 @@ mod test {
             db.execute_batch(sql).unwrap();
 
             let mut query = db.prepare("SELECT x, y FROM foo ORDER BY x DESC").unwrap();
-            let bad_type: Result<Vec<f64>> = query.query_and_then(&[],
-                                                                        |row| row.get_checked(1))
+            let bad_type: Result<Vec<f64>> = query.query_and_then(&[], |row| row.get_checked(1))
                 .unwrap()
                 .collect();
 
-            assert_eq!(bad_type,
-                       Err(Error {
-                           code: ffi::SQLITE_MISMATCH,
-                           message: "Invalid column type".to_owned(),
-                       }));
+            match bad_type.unwrap_err() {
+                Error::InvalidColumnType => (),
+                err => panic!("Unexpected error {}", err),
+            }
 
-            let bad_idx: Result<Vec<String>> = query.query_and_then(&[],
-                                                                          |row| row.get_checked(3))
+            let bad_idx: Result<Vec<String>> = query.query_and_then(&[], |row| row.get_checked(3))
                 .unwrap()
                 .collect();
 
-            assert_eq!(bad_idx,
-                       Err(Error {
-                           code: ffi::SQLITE_MISUSE,
-                           message: "Invalid column index".to_owned(),
-                       }));
+            match bad_idx.unwrap_err() {
+                Error::InvalidColumnIndex(_) => (),
+                err => panic!("Unexpected error {}", err),
+            }
         }
 
         #[test]
@@ -1564,11 +1511,10 @@ mod test {
             .unwrap()
                 .collect();
 
-            assert_eq!(bad_type,
-                       Err(CustomError::Sqlite(Error {
-                           code: ffi::SQLITE_MISMATCH,
-                           message: "Invalid column type".to_owned(),
-                       })));
+            match bad_type.unwrap_err() {
+                CustomError::Sqlite(Error::InvalidColumnType) => (),
+                err => panic!("Unexpected error {}", err),
+            }
 
             let bad_idx: CustomResult<Vec<String>> = query.query_and_then(&[], |row| {
                 row.get_checked(3)
@@ -1577,11 +1523,10 @@ mod test {
             .unwrap()
                 .collect();
 
-            assert_eq!(bad_idx,
-                       Err(CustomError::Sqlite(Error {
-                           code: ffi::SQLITE_MISUSE,
-                           message: "Invalid column index".to_owned(),
-                       })));
+            match bad_idx.unwrap_err() {
+                CustomError::Sqlite(Error::InvalidColumnIndex(_)) => (),
+                err => panic!("Unexpected error {}", err),
+            }
 
             let non_sqlite_err: CustomResult<Vec<String>> = query.query_and_then(&[], |_| {
                 Err(CustomError::SomeError)
@@ -1589,7 +1534,10 @@ mod test {
             .unwrap()
                 .collect();
 
-            assert_eq!(non_sqlite_err, Err(CustomError::SomeError));
+            match non_sqlite_err.unwrap_err() {
+                CustomError::SomeError => (),
+                err => panic!("Unexpected error {}", err),
+            }
         }
 
         #[test]
@@ -1625,27 +1573,28 @@ mod test {
                 row.get_checked(1).map_err(CustomError::Sqlite)
             });
 
-            assert_eq!(bad_type,
-                       Err(CustomError::Sqlite(Error {
-                           code: ffi::SQLITE_MISMATCH,
-                           message: "Invalid column type".to_owned(),
-                       })));
+            match bad_type.unwrap_err() {
+                CustomError::Sqlite(Error::InvalidColumnType) => (),
+                err => panic!("Unexpected error {}", err),
+            }
 
             let bad_idx: CustomResult<String> = db.query_row_and_then(query, &[], |row| {
                 row.get_checked(3).map_err(CustomError::Sqlite)
             });
 
-            assert_eq!(bad_idx,
-                       Err(CustomError::Sqlite(Error {
-                           code: ffi::SQLITE_MISUSE,
-                           message: "Invalid column index".to_owned(),
-                       })));
+            match bad_idx.unwrap_err() {
+                CustomError::Sqlite(Error::InvalidColumnIndex(_)) => (),
+                err => panic!("Unexpected error {}", err),
+            }
 
             let non_sqlite_err: CustomResult<String> = db.query_row_and_then(query, &[], |_| {
                 Err(CustomError::SomeError)
             });
 
-            assert_eq!(non_sqlite_err, Err(CustomError::SomeError));
+            match non_sqlite_err.unwrap_err() {
+                CustomError::SomeError => (),
+                err => panic!("Unexpected error {}", err),
+            }
         }
 
     }

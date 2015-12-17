@@ -232,14 +232,8 @@ impl FromSql for String {
             Ok("".to_string())
         } else {
             let c_slice = CStr::from_ptr(c_text as *const c_char).to_bytes();
-            let utf8_str = str::from_utf8(c_slice);
-            utf8_str.map(|s| s.to_string())
-                    .map_err(|e| {
-                        Error {
-                            code: 0,
-                            message: e.to_string(),
-                        }
-                    })
+            let utf8_str = try!(str::from_utf8(c_slice));
+            Ok(utf8_str.into())
         }
     }
 
@@ -272,14 +266,10 @@ impl FromSql for time::Timespec {
     unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> Result<time::Timespec> {
         let col_str = FromSql::column_result(stmt, col);
         col_str.and_then(|txt: String| {
-            time::strptime(&txt, SQLITE_DATETIME_FMT)
-                .map(|tm| tm.to_timespec())
-                .map_err(|parse_error| {
-                    Error {
-                        code: ffi::SQLITE_MISMATCH,
-                        message: format!("{}", parse_error),
-                    }
-                })
+            match time::strptime(&txt, SQLITE_DATETIME_FMT) {
+                Ok(tm) => Ok(tm.to_timespec()),
+                Err(err) => Err(Error::FromSqlConversionFailure(Box::new(err))),
+            }
         })
     }
 
@@ -306,8 +296,8 @@ impl<T: FromSql> FromSql for Option<T> {
 #[cfg(test)]
 mod test {
     use Connection;
-    use ffi;
     use super::time;
+    use Error;
     use libc::{c_int, c_double};
 
     fn checked_memory_handle() -> Connection {
@@ -380,6 +370,13 @@ mod test {
 
     #[test]
     fn test_mismatched_types() {
+        fn is_invalid_column_type(err: Error) -> bool {
+            match err {
+                Error::InvalidColumnType => true,
+                _ => false,
+            }
+        }
+
         let db = checked_memory_handle();
 
         db.execute("INSERT INTO foo(b, t, i, f) VALUES (X'0102', 'text', 1, 1.5)",
@@ -403,69 +400,42 @@ mod test {
         // check some invalid types
 
         // 0 is actually a blob (Vec<u8>)
-        assert_eq!(row.get_checked::<c_int>(0).err().unwrap().code,
-                   ffi::SQLITE_MISMATCH);
-        assert_eq!(row.get_checked::<i64>(0).err().unwrap().code,
-                   ffi::SQLITE_MISMATCH);
-        assert_eq!(row.get_checked::<c_double>(0).err().unwrap().code,
-                   ffi::SQLITE_MISMATCH);
-        assert_eq!(row.get_checked::<String>(0).err().unwrap().code,
-                   ffi::SQLITE_MISMATCH);
-        assert_eq!(row.get_checked::<time::Timespec>(0).err().unwrap().code,
-                   ffi::SQLITE_MISMATCH);
-        assert_eq!(row.get_checked::<Option<c_int>>(0).err().unwrap().code,
-                   ffi::SQLITE_MISMATCH);
+        assert!(is_invalid_column_type(row.get_checked::<c_int>(0).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<c_int>(0).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<i64>(0).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<c_double>(0).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<String>(0).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<time::Timespec>(0).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<Option<c_int>>(0).err().unwrap()));
 
         // 1 is actually a text (String)
-        assert_eq!(row.get_checked::<c_int>(1).err().unwrap().code,
-                   ffi::SQLITE_MISMATCH);
-        assert_eq!(row.get_checked::<i64>(1).err().unwrap().code,
-                   ffi::SQLITE_MISMATCH);
-        assert_eq!(row.get_checked::<c_double>(1).err().unwrap().code,
-                   ffi::SQLITE_MISMATCH);
-        assert_eq!(row.get_checked::<Vec<u8>>(1).err().unwrap().code,
-                   ffi::SQLITE_MISMATCH);
-        assert_eq!(row.get_checked::<Option<c_int>>(1).err().unwrap().code,
-                   ffi::SQLITE_MISMATCH);
+        assert!(is_invalid_column_type(row.get_checked::<c_int>(1).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<i64>(1).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<c_double>(1).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<Vec<u8>>(1).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<Option<c_int>>(1).err().unwrap()));
 
         // 2 is actually an integer
-        assert_eq!(row.get_checked::<c_double>(2).err().unwrap().code,
-                   ffi::SQLITE_MISMATCH);
-        assert_eq!(row.get_checked::<String>(2).err().unwrap().code,
-                   ffi::SQLITE_MISMATCH);
-        assert_eq!(row.get_checked::<Vec<u8>>(2).err().unwrap().code,
-                   ffi::SQLITE_MISMATCH);
-        assert_eq!(row.get_checked::<time::Timespec>(2).err().unwrap().code,
-                   ffi::SQLITE_MISMATCH);
-        assert_eq!(row.get_checked::<Option<c_double>>(2).err().unwrap().code,
-                   ffi::SQLITE_MISMATCH);
+        assert!(is_invalid_column_type(row.get_checked::<c_double>(2).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<String>(2).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<Vec<u8>>(2).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<time::Timespec>(2).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<Option<c_double>>(2).err().unwrap()));
 
         // 3 is actually a float (c_double)
-        assert_eq!(row.get_checked::<c_int>(3).err().unwrap().code,
-                   ffi::SQLITE_MISMATCH);
-        assert_eq!(row.get_checked::<i64>(3).err().unwrap().code,
-                   ffi::SQLITE_MISMATCH);
-        assert_eq!(row.get_checked::<String>(3).err().unwrap().code,
-                   ffi::SQLITE_MISMATCH);
-        assert_eq!(row.get_checked::<Vec<u8>>(3).err().unwrap().code,
-                   ffi::SQLITE_MISMATCH);
-        assert_eq!(row.get_checked::<time::Timespec>(3).err().unwrap().code,
-                   ffi::SQLITE_MISMATCH);
-        assert_eq!(row.get_checked::<Option<c_int>>(3).err().unwrap().code,
-                   ffi::SQLITE_MISMATCH);
+        assert!(is_invalid_column_type(row.get_checked::<c_int>(3).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<i64>(3).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<String>(3).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<Vec<u8>>(3).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<time::Timespec>(3).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<Option<c_int>>(3).err().unwrap()));
 
         // 4 is actually NULL
-        assert_eq!(row.get_checked::<c_int>(4).err().unwrap().code,
-                   ffi::SQLITE_MISMATCH);
-        assert_eq!(row.get_checked::<i64>(4).err().unwrap().code,
-                   ffi::SQLITE_MISMATCH);
-        assert_eq!(row.get_checked::<c_double>(4).err().unwrap().code,
-                   ffi::SQLITE_MISMATCH);
-        assert_eq!(row.get_checked::<String>(4).err().unwrap().code,
-                   ffi::SQLITE_MISMATCH);
-        assert_eq!(row.get_checked::<Vec<u8>>(4).err().unwrap().code,
-                   ffi::SQLITE_MISMATCH);
-        assert_eq!(row.get_checked::<time::Timespec>(4).err().unwrap().code,
-                   ffi::SQLITE_MISMATCH);
+        assert!(is_invalid_column_type(row.get_checked::<c_int>(4).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<i64>(4).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<c_double>(4).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<String>(4).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<Vec<u8>>(4).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<time::Timespec>(4).err().unwrap()));
     }
 }
