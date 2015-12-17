@@ -77,16 +77,18 @@ typedef struct AuxData AuxData;
 struct VdbeCursor {
   u8 eCurType;          /* One of the CURTYPE_* values above */
   i8 iDb;               /* Index of cursor database in db->aDb[] (or -1) */
-  u8 nullRow;           /* True if pointing to a row with no data */
-  u8 deferredMoveto;    /* A call to sqlite3BtreeMoveto() is needed */
-  u8 isTable;           /* True for rowid tables.  False for indexes */
 #ifdef SQLITE_DEBUG
   u8 seekOp;            /* Most recent seek operation on this cursor */
+  Bool movetoUsed:1;    /* True if ux.movetoTarget has been used */
 #endif
+  Bool nullRow:1;        /* True if pointing to a row with no data */
+  Bool deferredMoveto:1; /* A call to sqlite3BtreeMoveto() is needed */
+  Bool isTable:1;        /* True for rowid tables.  False for indexes */
   Bool isEphemeral:1;   /* True for an ephemeral table */
   Bool useRandomRowid:1;/* Generate new record numbers semi-randomly */
   Bool isOrdered:1;     /* True if the underlying table is BTREE_UNORDERED */
   Pgno pgnoRoot;        /* Root page of the open btree cursor */
+  int seekResult;       /* Result of previous sqlite3BtreeMoveto() */
   i16 nField;           /* Number of fields in the header */
   u16 nHdrParsed;       /* Number of header fields parsed so far */
   union {
@@ -96,9 +98,10 @@ struct VdbeCursor {
     VdbeSorter *pSorter;        /* CURTYPE_SORTER. Sorter object */
   } uc;
   KeyInfo *pKeyInfo;    /* Info about index keys needed by index cursors */
-  int seekResult;       /* Result of previous sqlite3BtreeMoveto() */
-  i64 seqCount;         /* Sequence counter */
-  i64 movetoTarget;     /* Argument to the deferred sqlite3BtreeMoveto() */
+  union {
+    i64 seqCount;         /* Sequence counter.  Only valid if movetoUsed==0 */
+    i64 movetoTarget;     /* Rowid moved to. */
+  } ux;
 #ifdef SQLITE_ENABLE_COLUMN_USED_MASK
   u64 maskUsed;         /* Mask of columns used by this cursor */
 #endif

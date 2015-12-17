@@ -3529,7 +3529,8 @@ case OP_SequenceTest: {
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
   assert( isSorter(pC) );
-  if( (pC->seqCount++)==0 ){
+  assert( !pC->movetoUsed );
+  if( (pC->ux.seqCount++)==0 ){
     goto jump_to_p2;
   }
   break;
@@ -3759,7 +3760,8 @@ case OP_SeekGT: {       /* jump, in3 */
       }
     } 
     rc = sqlite3BtreeMovetoUnpacked(pC->uc.pCursor, 0, (u64)iKey, 0, &res);
-    pC->movetoTarget = iKey;  /* Used by OP_Delete */
+    VVA_ONLY( pC->movetoUsed = 1; )
+    pC->ux.movetoTarget = iKey;  /* Used by OP_Delete */
     if( rc!=SQLITE_OK ){
       goto abort_due_to_error;
     }
@@ -3867,11 +3869,13 @@ case OP_Seek: {    /* in2 */
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
   assert( pC->eCurType==CURTYPE_BTREE );
+  assert( !pC->isEphemeral );
   assert( pC->uc.pCursor!=0 );
   assert( pC->isTable );
   pC->nullRow = 0;
   pIn2 = &aMem[pOp->p2];
-  pC->movetoTarget = sqlite3VdbeIntValue(pIn2);
+  VVA_ONLY( pC->movetoUsed = 1; )
+  pC->ux.movetoTarget = sqlite3VdbeIntValue(pIn2);
   pC->deferredMoveto = 1;
   break;
 }
@@ -4060,7 +4064,8 @@ case OP_NotExists: {        /* jump, in3 */
   iKey = pIn3->u.i;
   rc = sqlite3BtreeMovetoUnpacked(pCrsr, 0, iKey, 0, &res);
   assert( rc==SQLITE_OK || res==0 );
-  pC->movetoTarget = iKey;  /* Used by OP_Delete */
+  VVA_ONLY( pC->movetoUsed = 1; )
+  pC->ux.movetoTarget = iKey;  /* Used by OP_Delete */
   pC->nullRow = 0;
   pC->cacheStatus = CACHE_STALE;
   pC->deferredMoveto = 0;
@@ -4088,9 +4093,11 @@ case OP_NotExists: {        /* jump, in3 */
 case OP_Sequence: {           /* out2 */
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   assert( p->apCsr[pOp->p1]!=0 );
-  assert( p->apCsr[pOp->p1]->eCurType!=CURTYPE_VTAB );
+  assert( p->apCsr[pOp->p1]->eCurType==CURTYPE_BTREE );
+  assert( p->apCsr[pOp->p1]->isEphemeral );
+  assert( !p->apCsr[pOp->p1]->movetoUsed );
   pOut = out2Prerelease(p, pOp);
-  pOut->u.i = p->apCsr[pOp->p1]->seqCount++;
+  pOut->u.i = p->apCsr[pOp->p1]->ux.seqCount++;
   break;
 }
 
@@ -4375,17 +4382,17 @@ case OP_Delete: {
 
   hasUpdateCallback = db->xUpdateCallback && pOp->p4.z && pC->isTable;
   if( pOp->p5 && hasUpdateCallback ){
-    sqlite3BtreeKeySize(pC->uc.pCursor, &pC->movetoTarget);
+    sqlite3BtreeKeySize(pC->uc.pCursor, &pC->ux.movetoTarget);
   }
 
 #ifdef SQLITE_DEBUG
   /* The seek operation that positioned the cursor prior to OP_Delete will
-  ** have also set the pC->movetoTarget field to the rowid of the row that
+  ** have also set the pC->ux.movetoTarget field to the rowid of the row that
   ** is being deleted */
   if( pOp->p4.z && pC->isTable && pOp->p5==0 ){
     i64 iKey = 0;
     sqlite3BtreeKeySize(pC->uc.pCursor, &iKey);
-    assert( pC->movetoTarget==iKey ); 
+    assert( pC->ux.movetoTarget==iKey ); 
   }
 #endif
  
@@ -4395,7 +4402,7 @@ case OP_Delete: {
   /* Invoke the update-hook if required. */
   if( rc==SQLITE_OK && hasUpdateCallback ){
     db->xUpdateCallback(db->pUpdateArg, SQLITE_DELETE,
-                        db->aDb[pC->iDb].zName, pOp->p4.z, pC->movetoTarget);
+                        db->aDb[pC->iDb].zName, pOp->p4.z, pC->ux.movetoTarget);
     assert( pC->iDb>=0 );
   }
   if( pOp->p2 & OPFLAG_NCHANGE ) p->nChange++;
@@ -4586,7 +4593,7 @@ case OP_Rowid: {                 /* out2 */
     pOut->flags = MEM_Null;
     break;
   }else if( pC->deferredMoveto ){
-    v = pC->movetoTarget;
+    v = pC->ux.movetoTarget;
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   }else if( pC->eCurType==CURTYPE_VTAB ){
     assert( pC->uc.pVCur!=0 );

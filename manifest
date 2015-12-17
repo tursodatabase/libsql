@@ -1,5 +1,5 @@
-C Reduce\sthe\ssize\sof\sthe\sVdbeCursor\sobject\sby\sa\spointer\s(the\spBt\spointer\sused\nfor\sephemeral\stables).
-D 2015-12-17T17:30:53.420
+C Make\sthe\sVdbeCursor\sobject\seven\ssmaller.\s\sBut\sthe\sresulting\slibrary\sis\sbigger\nand\sslower\sthan\strunk.\s\sThis\sbranch\sis\sa\sfailed\sexperiment.
+D 2015-12-17T19:17:43.940
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5fff077fcc46de7714ed6eebb6159a4c00eab751
@@ -398,11 +398,11 @@ F src/update.c 17332f9fe818cbc0444c36a811800af8498af4c3
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c e802e8e311a0d6c48cd1b3e89db164f6f0248d70
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c 1879236383d730d99abb825d14b9c06ecfec931d
+F src/vdbe.c 3bedca4adcf7dc42224a20049883c89819c459b0
 F src/vdbe.h efb7a8c1459e31f3ea4377824c6a7e4cb5068637
-F src/vdbeInt.h 6c879b499dc98dbc0ec5edb92a210fdcc979b919
+F src/vdbeInt.h 06caadd917765d7b981686b1dd33845023ccfbdc
 F src/vdbeapi.c 020681b943e77766b32ae1cddf86d7831b7374ca
-F src/vdbeaux.c 7b2db8d1b5042920f9c775b4c0bf23f50b2f5f9d
+F src/vdbeaux.c b0d427a5070bae99f137368356674457d018c168
 F src/vdbeblob.c fdc4a81605ae7a35ae94a55bd768b66d6be16f15
 F src/vdbemem.c fdd1578e47bea61390d472de53c565781d81e045
 F src/vdbesort.c 90a3545ed856e1007c77ca3ac4f9c1975a64ed23
@@ -1405,10 +1405,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7adfa4a5794e47f97491c08abeaaac90e826b331
-R a16632c6e8507cdeda30edf695604402
-T *branch * optimize-vdbecursor
-T *sym-optimize-vdbecursor *
-T -sym-trunk *
+P 98b710c36343fc213c8223f353907934be60b60d
+R 10fdd2deb8319d6498b358eb4665321f
 U drh
-Z 6d89310e965f290e1d3a90698ce47a16
+Z dceb428fbc78dc00f293c1c742052765
