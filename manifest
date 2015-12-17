@@ -1,5 +1,5 @@
-C Fixes\sfor\sharmless\scompiler\swarnings.
-D 2015-12-17T13:28:50.207
+C Fix\sthe\sspellfix1_scriptcode()\sfunction\sto\signore\swhitespace\sand\spunctuation,\nand\sto\srecognize\shebrew\sand\sarabic\sscripts.
+D 2015-12-17T14:18:21.904
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5fff077fcc46de7714ed6eebb6159a4c00eab751
@@ -198,7 +198,7 @@ F ext/misc/regexp.c af92cdaa5058fcec1451e49becc7ba44dba023dc
 F ext/misc/rot13.c 1ac6f95f99b575907b9b09c81a349114cf9be45a
 F ext/misc/series.c b8fb7befd85b3a9b4a10e701b30b2b79ca92b6d4
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
-F ext/misc/spellfix.c b9065af7ab1f2597b505a8aa9892620866d502fc
+F ext/misc/spellfix.c df6efb90eb668d1860c9b59e4320e985e46dffa7
 F ext/misc/totype.c 4a167594e791abeed95e0a8db028822b5e8fe512
 F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
@@ -1035,6 +1035,7 @@ F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
 F test/speedtest1.c f8bf04214e7b5f745feea99f7bde68b1c4870666
 F test/spellfix.test 0597065ff57042df1f138e6a2611ae19c2698135
 F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
+F test/spellfix3.test f7bf7b3482971473d32b6b00f6944c5c066cff97
 F test/sqldiff1.test 8f6bc7c6a5b3585d350d779c6078869ba402f8f5
 F test/sqllimits1.test a74ee2a3740b9f9c2437c246d8fb77354862a142
 F test/sqllog.test a8faa2df39610a037dd372ed872d124260d32953
@@ -1404,8 +1405,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f2fc3aede55c8fa0351697f9f5ce4e544334c9af 1d0e6aa119da8e15d35508f5d75ffc729979da92
-R d6064250d2ceb34ab73cc0f26f2d0c34
-T +closed 1d0e6aa119da8e15d35508f5d75ffc729979da92
+P 85ebd46c701e0a094a4690cd8f1d0cbae9aa257c
+R 70cdc580d7d9b92b032d33f5e0d50f2e
 U drh
-Z 55d4a7733cfc9336492f45b410da6806
+Z 6d4b5ed9cd1870281d7d851922f323d8
