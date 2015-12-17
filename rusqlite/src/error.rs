@@ -8,22 +8,53 @@ use {ffi, errmsg_to_string};
 /// Old name for `Error`. `SqliteError` is deprecated.
 pub type SqliteError = Error;
 
+/// Enum listing possible errors from rusqlite.
 #[derive(Debug)]
 pub enum Error {
+    /// An error from an underlying SQLite call.
     SqliteFailure(ffi::Error, Option<String>),
+
+    /// An error case available for implementors of the `FromSql` trait.
     FromSqlConversionFailure(Box<error::Error + Send + Sync>),
+
+    /// Error converting a string to UTF-8.
     Utf8Error(str::Utf8Error),
+
+    /// Error converting a string to a C-compatible string because it contained an embedded nul.
     NulError(::std::ffi::NulError),
+
+    /// Error when using SQL named parameters and passing a parameter name not present in the SQL.
     InvalidParameterName(String),
+
+    /// Error converting a file path to a string.
     InvalidPath(PathBuf),
+
+    /// Error returned when an `execute` call returns rowss.
     ExecuteReturnedResults,
+
+    /// Error when a query that was expected to return at least one row (e.g., for `query_row`)
+    /// did not return any.
     QueryReturnedNoRows,
+
+    /// Error when trying to access a `Row` after stepping past it. See the discussion on
+    /// the `Rows` type for more details.
     GetFromStaleRow,
+
+    /// Error when the value of a particular column is requested, but the index is out of range
+    /// for the statement.
     InvalidColumnIndex(c_int),
+
+    /// Error when the value of a particular column is requested, but the type of the result in
+    /// that column cannot be converted to the requested Rust type.
     InvalidColumnType,
 
+    /// Error returned by `functions::Context::get` when the function argument cannot be converted
+    /// to the requested type.
     #[cfg(feature = "functions")]
     InvalidFunctionParameterType,
+
+    /// An error case available for implementors of custom user functions (e.g.,
+    /// `create_scalar_function`).
     #[cfg(feature = "functions")]
     #[allow(dead_code)]
     UserFunctionError(Box<error::Error + Send + Sync>),
