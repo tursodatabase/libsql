@@ -1,6 +1,6 @@
 [package]
 name = "rusqlite"
-version = "0.5.0"
+version = "0.6.0"
 authors = ["John Gallagher <jgallagher@bignerdranch.com>"]
 description = "Ergonomic wrapper for SQLite"
 repository = "https://github.com/jgallagher/rusqlite"
@@ -31,8 +31,11 @@ regex = "~0.1.41"
 
 [dependencies.libsqlite3-sys]
 path = "libsqlite3-sys"
-version = "0.3.0"
+version = "0.4.0"
 
 [[test]]
 name = "config_log"
 harness = false
+
+[[test]]
+name = "deny_single_threaded_sqlite_config"

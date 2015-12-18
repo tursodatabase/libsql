@@ -26,11 +26,10 @@
 //!             match entry {
 //!                 Occupied(occ) => occ.into_mut(),
 //!                 Vacant(vac) => {
-//!                     let r = try!(Regex::new(&regex_s).map_err(|e| Error {
-//!                         code: libsqlite3_sys::SQLITE_ERROR,
-//!                         message: format!("Invalid regular expression: {}", e),
-//!                     }));
-//!                     vac.insert(r)
+//!                     match Regex::new(&regex_s) {
+//!                         Ok(r) => vac.insert(r),
+//!                         Err(err) => return Err(Error::UserFunctionError(Box::new(err))),
+//!                     }
 //!                 }
 //!             }
 //!         };
@@ -50,6 +49,7 @@
 //!     assert!(is_match);
 //! }
 //! ```
+use std::error::Error as StdError;
 use std::ffi::CStr;
 use std::mem;
 use std::ptr;
@@ -225,14 +225,8 @@ impl FromValue for String {
             Ok("".to_string())
         } else {
             let c_slice = CStr::from_ptr(c_text as *const c_char).to_bytes();
-            let utf8_str = str::from_utf8(c_slice);
-            utf8_str.map(|s| s.to_string())
-                    .map_err(|e| {
-                        Error {
-                            code: 0,
-                            message: e.to_string(),
-                        }
-                    })
+            let utf8_str = try!(str::from_utf8(c_slice));
+            Ok(utf8_str.into())
         }
     }
 
@@ -302,10 +296,7 @@ impl<'a> Context<'a> {
             if T::parameter_has_valid_sqlite_type(arg) {
                 T::parameter_value(arg)
             } else {
-                Err(Error {
-                    code: ffi::SQLITE_MISMATCH,
-                    message: "Invalid value type".to_string(),
-                })
+                Err(Error::InvalidFunctionParameterType)
             }
         }
     }
@@ -445,9 +436,15 @@ impl InnerConnection {
             assert!(!boxed_f.is_null(), "Internal error - null function pointer");
             match (*boxed_f)(&ctx) {
                 Ok(r) => r.set_result(ctx.ctx),
-                Err(e) => {
-                    ffi::sqlite3_result_error_code(ctx.ctx, e.code);
-                    if let Ok(cstr) = str_to_cstring(&e.message) {
+                Err(Error::SqliteFailure(err, s)) => {
+                    ffi::sqlite3_result_error_code(ctx.ctx, err.extended_code);
+                    if let Some(Ok(cstr)) = s.map(|s| str_to_cstring(&s)) {
+                        ffi::sqlite3_result_error(ctx.ctx, cstr.as_ptr(), -1);
+                    }
+                },
+                Err(err) => {
+                    ffi::sqlite3_result_error_code(ctx.ctx, ffi::SQLITE_CONSTRAINT_FUNCTION);
+                    if let Ok(cstr) = str_to_cstring(err.description()) {
                         ffi::sqlite3_result_error(ctx.ctx, cstr.as_ptr(), -1);
                     }
                 }
@@ -584,7 +581,6 @@ mod test {
     use self::regex::Regex;
 
     use {Connection, Error, Result};
-    use ffi;
     use functions::Context;
 
     fn half(ctx: &Context) -> Result<c_double> {
@@ -624,13 +620,10 @@ mod test {
         let new_re = match saved_re {
             None => {
                 let s = try!(ctx.get::<String>(0));
-                let r = try!(Regex::new(&s).map_err(|e| {
-                    Error {
-                        code: ffi::SQLITE_ERROR,
-                        message: format!("Invalid regular expression: {}", e),
-                    }
-                }));
-                Some(r)
+                match Regex::new(&s) {
+                    Ok(r) => Some(r),
+                    Err(err) => return Err(Error::UserFunctionError(Box::new(err))),
+                }
             }
             Some(_) => None,
         };
@@ -699,11 +692,10 @@ mod test {
                 match entry {
                     Occupied(occ) => occ.into_mut(),
                     Vacant(vac) => {
-                        let r = try!(Regex::new(&regex_s).map_err(|e| Error {
-                            code: ffi::SQLITE_ERROR,
-                            message: format!("Invalid regular expression: {}", e),
-                        }));
-                        vac.insert(r)
+                        match Regex::new(&regex_s) {
+                            Ok(r) => vac.insert(r),
+                            Err(err) => return Err(Error::UserFunctionError(Box::new(err))),
+                        }
                     }
                 }
             };
