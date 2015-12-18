@@ -1,5 +1,5 @@
-C Fix\sthe\sspellfix1_scriptcode()\sfunction\sto\signore\swhitespace\sand\spunctuation,\nand\sto\srecognize\shebrew\sand\sarabic\sscripts.
-D 2015-12-17T14:18:21.904
+C Reduce\sthe\ssize\sof\sthe\sCellInfo\sobject\sfrom\s32\sto\s24\sbytes\son\s64-bit\smachines.
+D 2015-12-18T03:59:16.912
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5fff077fcc46de7714ed6eebb6159a4c00eab751
@@ -276,9 +276,9 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 2869a76c03eb393ee795416e2387005553df72bc
 F src/bitvec.c 1a78d450a17c5016710eec900bedfc5729bf9bdf
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 84ede51e371a11c3dbb3e24ccc5e3e99594a6c00
+F src/btree.c 5ac3f868d4f20a67f0f00a1014940f902b511558
 F src/btree.h 2d76dee44704c47eed323356a758662724b674a0
-F src/btreeInt.h 3ab435ed27adea54d040584b0bcc488ee7db1e38
+F src/btreeInt.h b5f2651b41808f038dee9282c5dc0232ce6532d3
 F src/build.c e83da4d004a4e050c01acbb821ff7a7b1019c29b
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
@@ -1405,7 +1405,10 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 85ebd46c701e0a094a4690cd8f1d0cbae9aa257c
-R 70cdc580d7d9b92b032d33f5e0d50f2e
+P 7adfa4a5794e47f97491c08abeaaac90e826b331
+R 235be975857692987ba30e4b3c7418db
+T *branch * optimize-cellinfo
+T *sym-optimize-cellinfo *
+T -sym-trunk *
 U drh
-Z 6d4b5ed9cd1870281d7d851922f323d8
+Z cc2df912aa2ee31453d3047ea3468b1b

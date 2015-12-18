@@ -470,7 +470,6 @@ struct CellInfo {
   u8 *pPayload;  /* Pointer to the start of payload */
   u32 nPayload;  /* Bytes of payload */
   u16 nLocal;    /* Amount of payload held locally, not on overflow */
-  u16 iOverflow; /* Offset to overflow page number.  Zero if no overflow */
   u16 nSize;     /* Size of the cell content on the main b-tree page */
 };
 
