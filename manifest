@@ -1,5 +1,5 @@
-C Fix\sthe\sspellfix1_scriptcode()\sfunction\sto\signore\swhitespace\sand\spunctuation,\nand\sto\srecognize\shebrew\sand\sarabic\sscripts.
-D 2015-12-17T14:18:21.904
+C Micro-optimizations\sand\scomment\sfixes\son\sthe\smem5.c\smemory\sallocator\smodule.
+D 2015-12-18T16:29:47.912
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5fff077fcc46de7714ed6eebb6159a4c00eab751
@@ -304,7 +304,7 @@ F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 6919bcf12f221868ea066eec27e579fed95ce98b
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
 F src/mem3.c 8768ac94694f31ffaf8b4d0ea5dc08af7010a35a
-F src/mem5.c 5c267678ba9f745a2ee58102a9f482d64a58577a
+F src/mem5.c 262055c242fa7db59c5f07ad77fdc4e97888c054
 F src/memjournal.c 3eb2c0b51adbd869cb6a44780323f05fa904dc85
 F src/msvc.h d9ba56c6851227ab44b3f228a35f3f5772296495
 F src/mutex.c 8e45800ee78e0cd1f1f3fe8e398853307f4a085c
@@ -1405,7 +1405,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 85ebd46c701e0a094a4690cd8f1d0cbae9aa257c
-R 70cdc580d7d9b92b032d33f5e0d50f2e
+P 7adfa4a5794e47f97491c08abeaaac90e826b331
+R 1b3cde8c2a6658c08ed08e4868245c5a
 U drh
-Z 6d4b5ed9cd1870281d7d851922f323d8
+Z 526b8930cb4e95afc320a389b1027b99
