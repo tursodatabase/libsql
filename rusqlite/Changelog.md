@@ -1,5 +1,14 @@
-# Version UPCOMING (TBD)
+# Version 0.6.0 (2015-12-17)
 
+* BREAKING CHANGE: `SqliteError` is now an enum instead of a struct. Previously, we were (ab)using
+  the error code and message to send back both underlying SQLite errors and errors that occurred
+  at the Rust level. Now those have been separated out; SQLite errors are returned as 
+  `SqliteFailure` cases (which still include the error code but also include a Rust-friendlier
+  enum as well), and rusqlite-level errors are captured in other cases. Because of this change,
+  `SqliteError` no longer implements `PartialEq`.
+* BREAKING CHANGE: When opening a new detection, rusqlite now detects if SQLite was compiled or
+  configured for single-threaded use only; if it was, connection attempts will fail. If this
+  affects you, please open an issue.
 * BREAKING CHANGE: `SqliteTransactionDeferred`, `SqliteTransactionImmediate`, and
   `SqliteTransactionExclusive` are no longer exported. Instead, use
   `TransactionBehavior::Deferred`, `TransactionBehavior::Immediate`, and
