@@ -4119,8 +4119,8 @@ static void fts5SegiterPoslist(
         PoslistCallbackCtx sCtx;
         sCtx.pBuf = pBuf;
         sCtx.pColset = pColset;
-        assert( sCtx.eState==0 || sCtx.eState==1 );
         sCtx.eState = fts5IndexColsetTest(pColset, 0);
+        assert( sCtx.eState==0 || sCtx.eState==1 );
         fts5ChunkIterate(p, pSeg, (void*)&sCtx, fts5PoslistFilterCallback);
       }
     }
@@ -4192,8 +4192,8 @@ static int fts5AppendPoslist(
     assert( fts5MultiIterEof(p, pMulti)==0 );
     assert( pSeg->nPos>0 );
     if( 0==fts5BufferGrow(&p->rc, pBuf, pSeg->nPos+9+9) ){
-
-      if( pSeg->iLeafOffset+pSeg->nPos<=pSeg->pLeaf->szLeaf 
+      if( p->pConfig->bOffsets
+       && pSeg->iLeafOffset+pSeg->nPos<=pSeg->pLeaf->szLeaf 
        && (pColset==0 || pColset->nCol==1)
       ){
         const u8 *pPos = &pSeg->pLeaf->p[pSeg->iLeafOffset];
@@ -4238,12 +4238,12 @@ static int fts5AppendPoslist(
           }
         }
       }
-
     }
   }
 
   return 0;
 }
+
 
 static void fts5DoclistIterNext(Fts5DoclistIter *pIter){
   u8 *p = pIter->aPoslist + pIter->nSize + pIter->nPoslist;
@@ -4390,6 +4390,9 @@ static void fts5MergePrefixLists(
   }
 }
 
+/*
+** Swap the contents of buffer *p1 with that of *p2.
+*/
 static void fts5BufferSwap(Fts5Buffer *p1, Fts5Buffer *p2){
   Fts5Buffer tmp = *p1;
   *p1 = *p2;

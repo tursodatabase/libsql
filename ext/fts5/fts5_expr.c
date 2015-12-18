@@ -1805,11 +1805,20 @@ Fts5ExprNode *sqlite3Fts5ParseNode(
         for(iPhrase=0; iPhrase<pNear->nPhrase; iPhrase++){
           pNear->apPhrase[iPhrase]->pNode = pRet;
         }
-        if( pNear->nPhrase==1 
-         && pNear->apPhrase[0]->nTerm==1 
-         && pNear->apPhrase[0]->aTerm[0].pSynonym==0
-        ){
-          pRet->eType = FTS5_TERM;
+        if( pNear->nPhrase==1 && pNear->apPhrase[0]->nTerm==1 ){
+          if( pNear->apPhrase[0]->aTerm[0].pSynonym==0 ){
+            pRet->eType = FTS5_TERM;
+          }
+        }else if( pParse->pConfig->bOffsets==0 ){
+          assert( pParse->rc==SQLITE_OK );
+          pParse->rc = SQLITE_ERROR;
+          assert( pParse->zErr==0 );
+          pParse->zErr = sqlite3_mprintf(
+              "fts5: %s queries are not supported (offsets=0)", 
+              pNear->nPhrase==1 ? "phrase": "NEAR"
+          );
+          sqlite3_free(pRet);
+          pRet = 0;
         }
       }else{
         fts5ExprAddChildren(pRet, pLeft);

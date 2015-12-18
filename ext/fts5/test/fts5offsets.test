@@ -22,9 +22,11 @@ ifcapable !fts5 {
 }
 
 
+#--------------------------------------------------------------------------
+# Simple tests.
+#
 do_execsql_test 1.0 {
   CREATE VIRTUAL TABLE t1 USING fts5(a, b, c, offsets=0);
-
   INSERT INTO t1 VALUES('h d g', 'j b b g b', 'i e i d h g g'); -- 1
   INSERT INTO t1 VALUES('h j d', 'j h d a h', 'f d d g g f b'); -- 2
   INSERT INTO t1 VALUES('j c i', 'f f h e f', 'c j i j c h f'); -- 3
@@ -54,6 +56,14 @@ foreach {tn match res} {
     SELECT rowid FROM t1($match || '*');
   } $res
 }
+
+do_catchsql_test 1.3.1 {
+  SELECT rowid FROM t1('h + d');
+} {1 {fts5: phrase queries are not supported (offsets=0)}}
+
+do_catchsql_test 1.3.2 {
+  SELECT rowid FROM t1('NEAR(h d)');
+} {1 {fts5: NEAR queries are not supported (offsets=0)}}
 
 finish_test
 
