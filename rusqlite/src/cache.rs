@@ -69,8 +69,9 @@ impl<'conn> StatementCache<'conn> {
     ///
     /// Will return `Err` if no cached statement can be found and the underlying SQLite prepare call fails.
     pub fn get<'s>(&'s self, sql: &str) -> Result<CachedStatement<'conn, 's>> {
-        let stmt = match self.cache.borrow().iter().rposition(|entry| entry.eq(sql)) {
-            Some(index) => Ok(self.cache.borrow_mut().swap_remove_front(index).unwrap()), // FIXME Not LRU compliant
+        let mut cache = self.cache.borrow_mut();
+        let stmt = match cache.iter().rposition(|entry| entry.eq(sql)) {
+            Some(index) => Ok(cache.swap_remove_front(index).unwrap()), // FIXME Not LRU compliant
             _ => self.conn.prepare(sql),
         };
         stmt.map(|stmt| CachedStatement::new(stmt, self))
@@ -85,13 +86,14 @@ impl<'conn> StatementCache<'conn> {
     /// Will return `Err` if `stmt` (or the already cached statement implementing the same SQL) statement is `discard`ed
     /// and the underlying SQLite finalize call fails.
     fn release(&self, mut stmt: Statement<'conn>) {
-        if self.cache.borrow().capacity() == self.cache.borrow().len() {
+        let mut cache = self.cache.borrow_mut();
+        if cache.capacity() == cache.len() {
             // is full
-            self.cache.borrow_mut().pop_back(); // LRU dropped
+            cache.pop_back(); // LRU dropped
         }
         stmt.reset_if_needed();
         stmt.clear_bindings();
-        self.cache.borrow_mut().push_front(stmt)
+        cache.push_front(stmt)
     }
 
     /// Flush the prepared statement cache
@@ -118,7 +120,7 @@ mod test {
     #[test]
     fn test_cache() {
         let db = Connection::open_in_memory().unwrap();
-        let mut cache = StatementCache::new(&db, 15);
+        let cache = StatementCache::new(&db, 15);
         assert_eq!(0, cache.len());
         assert_eq!(15, cache.capacity());
 
