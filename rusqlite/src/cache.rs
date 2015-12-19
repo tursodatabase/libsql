@@ -145,4 +145,20 @@ mod test {
         assert_eq!(0, cache.len());
         assert_eq!(15, cache.capacity());
     }
+
+    #[test]
+    fn test_cacheable() {
+        let db = Connection::open_in_memory().unwrap();
+        let cache = StatementCache::new(&db, 15);
+
+        let sql = "PRAGMA schema_version";
+        {
+            let mut stmt = cache.get(sql).unwrap();
+            assert_eq!(0, cache.len());
+            assert_eq!(0,
+                       stmt.query(&[]).unwrap().get_expected_row().unwrap().get::<i64>(0));
+            stmt.cacheable = false;
+        }
+        assert_eq!(0, cache.len());
+    }
 }
