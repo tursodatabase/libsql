@@ -5,13 +5,17 @@ use std::collections::VecDeque;
 use std::ops::{Deref, DerefMut};
 use {Result, Connection, Statement};
 
-/// Prepared statements cache.
+/// Prepared statements LRU cache.
 #[derive(Debug)]
 pub struct StatementCache<'conn> {
     conn: &'conn Connection,
     cache: RefCell<VecDeque<Statement<'conn>>>, // back = LRU
 }
 
+/// Cacheable statement.
+///
+/// Statement will return automatically to the cache by default.
+/// If you want the statement to be discarded, you can set the `cacheable` flag to `false`.
 pub struct CachedStatement<'c: 's, 's> {
     stmt: Option<Statement<'c>>,
     cache: &'s StatementCache<'c>,
