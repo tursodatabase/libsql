@@ -12,27 +12,27 @@ pub struct StatementCache<'conn> {
     cache: RefCell<VecDeque<Statement<'conn>>>, // back = LRU
 }
 
-pub struct CachedStatement<'conn> {
-    stmt: Option<Statement<'conn>>,
-    cache: &'conn StatementCache<'conn>,
+pub struct CachedStatement<'c: 's, 's> {
+    stmt: Option<Statement<'c>>,
+    cache: &'s StatementCache<'c>,
     pub cacheable: bool,
 }
 
-impl<'conn> Deref for CachedStatement<'conn> {
-    type Target = Statement<'conn>;
+impl<'c, 's> Deref for CachedStatement<'c, 's> {
+    type Target = Statement<'c>;
 
-    fn deref(&self) -> &Statement<'conn> {
+    fn deref(&self) -> &Statement<'c> {
         self.stmt.as_ref().unwrap()
     }
 }
 
-impl<'conn> DerefMut for CachedStatement<'conn> {
-    fn deref_mut(&mut self) -> &mut Statement<'conn> {
+impl<'c, 's> DerefMut for CachedStatement<'c, 's> {
+    fn deref_mut(&mut self) -> &mut Statement<'c> {
         self.stmt.as_mut().unwrap()
     }
 }
 
-impl<'conn> Drop for CachedStatement<'conn> {
+impl<'c, 's> Drop for CachedStatement<'c, 's> {
     #[allow(unused_must_use)]
     fn drop(&mut self) {
         if self.cacheable {
@@ -43,8 +43,8 @@ impl<'conn> Drop for CachedStatement<'conn> {
     }
 }
 
-impl<'conn> CachedStatement<'conn> {
-    fn new(stmt: Statement<'conn>, cache: &'conn StatementCache<'conn>) -> CachedStatement<'conn> {
+impl<'c, 's> CachedStatement<'c, 's> {
+    fn new(stmt: Statement<'c>, cache: &'s StatementCache<'c>) -> CachedStatement<'c, 's> {
         CachedStatement {
             stmt: Some(stmt),
             cache: cache,
@@ -68,7 +68,7 @@ impl<'conn> StatementCache<'conn> {
     /// # Failure
     ///
     /// Will return `Err` if no cached statement can be found and the underlying SQLite prepare call fails.
-    pub fn get(&'conn self, sql: &str) -> Result<CachedStatement<'conn>> {
+    pub fn get<'s>(&'s self, sql: &str) -> Result<CachedStatement<'conn, 's>> {
         let stmt = match self.cache.borrow().iter().rposition(|entry| entry.eq(sql)) {
             Some(index) => Ok(self.cache.borrow_mut().swap_remove_front(index).unwrap()), // FIXME Not LRU compliant
             _ => self.conn.prepare(sql),
