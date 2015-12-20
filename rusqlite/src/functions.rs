@@ -332,12 +332,16 @@ impl<'a> Context<'a> {
     }
 }
 
+/// Aggregate is the callback interface for user-defined aggregate function.
+///
+/// `A` is the type of the aggregation context and `T` is the type of the final result.
+/// Implementations should be stateless.
 pub trait Aggregate<A, T> where T: ToResult {
     /// Initializes the aggregation context.
-    fn init(&self) -> A; // TODO Validate: Fn(&Context)
+    fn init(&self) -> A;
     /// "step" function called once for each row in an aggregate group.
-    fn step(&self, &mut Context, &mut A) -> Result<()>; // TODO Validate: Fn(&Context, A) -> A
-    /// Computes and sets the final result.
+    fn step(&self, &mut Context, &mut A) -> Result<()>;
+    /// Computes and returns the final result.
     fn finalize(&self, &A) -> Result<T>;
 }
 
@@ -385,6 +389,11 @@ impl Connection {
         self.db.borrow_mut().create_scalar_function(fn_name, n_arg, deterministic, x_func)
     }
 
+    /// Attach a user-defined aggregate function to this database connection.
+    ///
+    /// # Failure
+    ///
+    /// Will return Err if the function could not be attached to the connection.
     pub fn create_aggregate_function<A, D, T>(&self,
                                               fn_name: &str,
                                               n_arg: c_int,
@@ -402,7 +411,7 @@ impl Connection {
     /// Removes a user-defined function from this database connection.
     ///
     /// `fn_name` and `n_arg` should match the name and number of arguments
-    /// given to `create_scalar_function`.
+    /// given to `create_scalar_function` or `create_aggregate_function`.
     ///
     /// # Failure
     ///
@@ -793,9 +802,9 @@ mod test {
                             .unwrap();
         assert_eq!(4, result);
 
-        let single_sum = "SELECT my_sum(i), my_sum(j) FROM (SELECT 2 AS i, 1 AS j UNION ALL \
-                          SELECT 2, 1)";
-        let result: (i64, i64) = db.query_row(single_sum, &[], |r| (r.get(0), r.get(1)))
+        let dual_sum = "SELECT my_sum(i), my_sum(j) FROM (SELECT 2 AS i, 1 AS j UNION ALL SELECT \
+                        2, 1)";
+        let result: (i64, i64) = db.query_row(dual_sum, &[], |r| (r.get(0), r.get(1)))
                                    .unwrap();
         assert_eq!((4, 2), result);
     }
