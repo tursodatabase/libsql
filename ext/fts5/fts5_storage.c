@@ -829,6 +829,7 @@ struct Fts5IntegrityCtx {
   Fts5Config *pConfig;
 };
 
+
 /*
 ** Tokenization callback used by integrity check.
 */
@@ -840,25 +841,41 @@ static int fts5StorageIntegrityCallback(
   int iStart,                     /* Start offset of token */
   int iEnd                        /* End offset of token */
 ){
-  int rc = SQLITE_OK;
   Fts5IntegrityCtx *pCtx = (Fts5IntegrityCtx*)pContext;
+  Fts5Termset *pTermset = pCtx->pTermset;
+  int bPresent;
+  int ii;
+  int rc = SQLITE_OK;
+  int iPos;
+  int iCol;
+
   if( (tflags & FTS5_TOKEN_COLOCATED)==0 || pCtx->szCol==0 ){
     pCtx->szCol++;
   }
 
-  if( pCtx->pTermset ){
-    int bPresent = 0;
-    rc = sqlite3Fts5TermsetAdd(pCtx->pTermset, pToken, nToken, &bPresent);
-    if( rc==SQLITE_OK && bPresent==0 ){
-      pCtx->cksum ^= sqlite3Fts5IndexCksum(
-          pCtx->pConfig, pCtx->iRowid, 0, pCtx->iCol, pToken, nToken
-      );
-    }
-  }else{
-    pCtx->cksum ^= sqlite3Fts5IndexCksum(
-        pCtx->pConfig, pCtx->iRowid, pCtx->iCol, pCtx->szCol-1, pToken, nToken
+  iPos = pTermset ? pCtx->iCol : pCtx->szCol-1;
+  iCol = pTermset ? 0 : pCtx->iCol;
+
+  rc = sqlite3Fts5TermsetAdd(pTermset, 0, pToken, nToken, &bPresent);
+  if( rc==SQLITE_OK && bPresent==0 ){
+    pCtx->cksum ^= sqlite3Fts5IndexEntryCksum(
+        pCtx->iRowid, iCol, iPos, 0, pToken, nToken
     );
   }
+
+  for(ii=0; rc==SQLITE_OK && ii<pCtx->pConfig->nPrefix; ii++){
+    const int nChar = pCtx->pConfig->aPrefix[ii];
+    int nByte = sqlite3Fts5IndexCharlenToBytelen(pToken, nToken, nChar);
+    if( nByte ){
+      rc = sqlite3Fts5TermsetAdd(pTermset, ii+1, pToken, nByte, &bPresent);
+      if( bPresent==0 ){
+        pCtx->cksum ^= sqlite3Fts5IndexEntryCksum(
+            pCtx->iRowid, iCol, iPos, ii+1, pToken, nByte
+        );
+      }
+    }
+  }
+
   return rc;
 }
 

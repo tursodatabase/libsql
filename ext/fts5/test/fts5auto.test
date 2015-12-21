@@ -369,7 +369,6 @@ foreach {tn expr} {
 
 
 } {
-breakpoint
   do_auto_test 4.$tn yy {c1 c2 c3} $expr
 }
 

@@ -74,6 +74,22 @@ foreach {T create} {
     BEGIN;
   }
 
+  6 {
+    CREATE VIRTUAL TABLE t1 USING fts5(a, b, offsets=0);
+    INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
+  }
+
+  7 {
+    CREATE VIRTUAL TABLE t1 USING fts5(a, b, offsets=0, prefix="1,2,3,4,5");
+    INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
+  }
+
+  8 {
+    CREATE VIRTUAL TABLE t1 USING fts5(a, b, offsets=0, prefix="1,2,3,4,5");
+    INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
+    BEGIN;
+  }
+
 } {
 
   do_test $T.1 { 

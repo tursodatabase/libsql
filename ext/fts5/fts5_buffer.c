@@ -298,6 +298,7 @@ typedef struct Fts5TermsetEntry Fts5TermsetEntry;
 struct Fts5TermsetEntry {
   char *pTerm;
   int nTerm;
+  int iIdx;                       /* Index (main or aPrefix[] entry) */
   Fts5TermsetEntry *pNext;
 };
 
@@ -313,36 +314,44 @@ int sqlite3Fts5TermsetNew(Fts5Termset **pp){
 
 int sqlite3Fts5TermsetAdd(
   Fts5Termset *p, 
+  int iIdx,
   const char *pTerm, int nTerm, 
   int *pbPresent
 ){
   int rc = SQLITE_OK;
-  int i;
-  int hash = 13;
-  Fts5TermsetEntry *pEntry;
-
-  /* Calculate a hash value for this term */
-  for(i=0; i<nTerm; i++){
-    hash += (hash << 3) + (int)pTerm[i];
-  }
-  hash = hash % ArraySize(p->apHash);
-
   *pbPresent = 0;
-  for(pEntry=p->apHash[hash]; pEntry; pEntry=pEntry->pNext){
-    if( pEntry->nTerm==nTerm && memcmp(pEntry->pTerm, pTerm, nTerm)==0 ){
-      *pbPresent = 1;
-      break;
-    }
-  }
+  if( p ){
+    int i;
+    int hash;
+    Fts5TermsetEntry *pEntry;
 
-  if( pEntry==0 ){
-    pEntry = sqlite3Fts5MallocZero(&rc, sizeof(Fts5TermsetEntry) + nTerm);
-    if( pEntry ){
-      pEntry->pTerm = (char*)&pEntry[1];
-      pEntry->nTerm = nTerm;
-      memcpy(pEntry->pTerm, pTerm, nTerm);
-      pEntry->pNext = p->apHash[hash];
-      p->apHash[hash] = pEntry;
+    /* Calculate a hash value for this term */
+    hash = 104 + iIdx;
+    for(i=0; i<nTerm; i++){
+      hash += (hash << 3) + (int)pTerm[i];
+    }
+    hash = hash % ArraySize(p->apHash);
+
+    for(pEntry=p->apHash[hash]; pEntry; pEntry=pEntry->pNext){
+      if( pEntry->iIdx==iIdx 
+          && pEntry->nTerm==nTerm 
+          && memcmp(pEntry->pTerm, pTerm, nTerm)==0 
+        ){
+        *pbPresent = 1;
+        break;
+      }
+    }
+
+    if( pEntry==0 ){
+      pEntry = sqlite3Fts5MallocZero(&rc, sizeof(Fts5TermsetEntry) + nTerm);
+      if( pEntry ){
+        pEntry->pTerm = (char*)&pEntry[1];
+        pEntry->nTerm = nTerm;
+        pEntry->iIdx = iIdx;
+        memcpy(pEntry->pTerm, pTerm, nTerm);
+        pEntry->pNext = p->apHash[hash];
+        p->apHash[hash] = pEntry;
+      }
     }
   }
 

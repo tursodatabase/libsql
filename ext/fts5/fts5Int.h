@@ -297,7 +297,7 @@ int sqlite3Fts5IsBareword(char t);
 /* Bucket of terms object used by the integrity-check in offsets=0 mode. */
 typedef struct Fts5Termset Fts5Termset;
 int sqlite3Fts5TermsetNew(Fts5Termset**);
-int sqlite3Fts5TermsetAdd(Fts5Termset*, const char*, int, int *pbPresent);
+int sqlite3Fts5TermsetAdd(Fts5Termset*, int, const char*, int, int *pbPresent);
 void sqlite3Fts5TermsetFree(Fts5Termset*);
 
 /*
