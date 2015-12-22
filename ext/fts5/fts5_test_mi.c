@@ -134,7 +134,7 @@ static int fts5MatchinfoXCb(
   int iPrev = -1;
 
   for(pApi->xPhraseFirst(pFts, 0, &iter, &iCol, &iOff); 
-      iOff>=0; 
+      iCol>=0; 
       pApi->xPhraseNext(pFts, &iter, &iCol, &iOff)
   ){
     aOut[iCol*3+1]++;

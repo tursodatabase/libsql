@@ -310,6 +310,13 @@ static int fts5IsContentless(Fts5Table *pTab){
 }
 
 /*
+** Return true if pTab is an offsetless table.
+*/
+static int fts5IsOffsetless(Fts5Table *pTab){
+  return pTab->pConfig->bOffsets==0;
+}
+
+/*
 ** Delete a virtual table handle allocated by fts5InitVtab(). 
 */
 static void fts5FreeVtab(Fts5Table *pTab){
@@ -1749,6 +1756,10 @@ static int fts5ApiInst(
   ){
     if( iIdx<0 || iIdx>=pCsr->nInstCount ){
       rc = SQLITE_RANGE;
+    }else if( fts5IsOffsetless((Fts5Table*)pCsr->base.pVtab) ){
+      *piPhrase = pCsr->aInst[iIdx*3];
+      *piCol = pCsr->aInst[iIdx*3 + 2];
+      *piOff = -1;
     }else{
       *piPhrase = pCsr->aInst[iIdx*3];
       *piCol = pCsr->aInst[iIdx*3 + 1];
@@ -1913,6 +1924,11 @@ static void fts5ApiPhraseNext(
 ){
   if( pIter->a>=pIter->b ){
     *piCol = -1;
+    *piOff = -1;
+  }else if( fts5IsOffsetless((Fts5Table*)(((Fts5Cursor*)pCtx)->base.pVtab)) ){
+    int iVal;
+    pIter->a += fts5GetVarint32(pIter->a, iVal);
+    *piCol += (iVal-2);
     *piOff = -1;
   }else{
     int iVal;
