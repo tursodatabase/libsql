@@ -1,5 +1,5 @@
-C Enhance\sthe\s'utc'\smodifier\son\sdate/time\sfunctions\sso\sthat\sif\sthe\sLHS\sis\nalready\sknown\sto\sbe\sin\sUTC,\sthe\smodifier\sbecomes\sa\sno-op.\s\sThis\sis\snot\san\nincompatibility\sbecause\sthe\sbehavior\sis\sdocumented\sas\s"undefined"\sin\sthat\nscenario.
-D 2015-12-23T10:54:48.693
+C Fix\ssome\sharmless\sgcc\scompiler\swarnings.\sMostly\sin\sfts5,\sbut\salso\stwo\sin\sthe\score\scode.
+D 2015-12-23T16:42:27.781
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5fff077fcc46de7714ed6eebb6159a4c00eab751
@@ -98,17 +98,17 @@ F ext/fts3/unicode/parseunicode.tcl da577d1384810fb4e2b209bf3313074353193e95
 F ext/fts5/extract_api_docs.tcl a36e54ec777172ddd3f9a88daf593b00848368e0
 F ext/fts5/fts5.h 8b9a13b309b180e9fb88ea5666c0d8d73c6102d9
 F ext/fts5/fts5Int.h acf968e43d57b6b1caf7554d34ec35d6ed3b4fe8
-F ext/fts5/fts5_aux.c 1f384972d606375b8fa078319f25ab4b5feb1b35
+F ext/fts5/fts5_aux.c 2dafc3aee0c70d643140c77d8d70daffa51a9e9e
 F ext/fts5/fts5_buffer.c 1e49512a535045e621246dc7f4f65f3593fa0fc2
 F ext/fts5/fts5_config.c 0ee66188609a62342e9f9aeefa3c3e44518a4dd6
-F ext/fts5/fts5_expr.c 80075fa45091bad42100c4a5c4f2efc83e43e3af
+F ext/fts5/fts5_expr.c 8228aca3e9af626a1ca9b093d4d24b4f2488ad23
 F ext/fts5/fts5_hash.c 25838d525e97f8662ff3504be94d0bad24f9a37e
 F ext/fts5/fts5_index.c 578f46697080f11a1e26cd45a1c039c043a3111d
-F ext/fts5/fts5_main.c ef04699949ab8e42d590ae30188afef7ad58776e
-F ext/fts5/fts5_storage.c 9ea3d92178743758b6c54d9fe8836bbbdcc92e3b
+F ext/fts5/fts5_main.c e11b525778e6fce416d916bfa96926bd1ce4616d
+F ext/fts5/fts5_storage.c 57c636d87cbb829d6147c8c8bf78fa53b9ebb526
 F ext/fts5/fts5_tcl.c 3bf445e66de32137d4693694ff7b1fd6074e32bd
 F ext/fts5/fts5_test_mi.c e96be827aa8f571031e65e481251dc1981d608bf
-F ext/fts5/fts5_tokenize.c 618efe033bceb80c521b1e9ddfd9fee85fb5946e
+F ext/fts5/fts5_tokenize.c 504984ac6993323247221eebe3cd55bead01b5f8
 F ext/fts5/fts5_unicode2.c 78273fbd588d1d9bd0a7e4e0ccc9207348bae33c
 F ext/fts5/fts5_varint.c 3f86ce09cab152e3d45490d7586b7ed2e40c13f1
 F ext/fts5/fts5_vocab.c 3742d0abfe8aa8c3cb4a7df56aa38f2e3c3fb1c2
@@ -286,7 +286,7 @@ F src/ctime.c 60e135af364d777a9ab41c97e5e89cd224da6198
 F src/date.c e4655393bb403fa310eef66cc4583d75d4d7fd93
 F src/dbstat.c ffd63fc8ba7541476ced189b95e95d7f2bc63f78
 F src/delete.c 00af9f08a15ddc5cba5962d3d3e5bf2d67b2e7da
-F src/expr.c 414f4c6b016c4494bfb11713da79f27966871d91
+F src/expr.c 38790e65d1219f2b7dc26458f39a5252fe7c60cd
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 31900763094a3736a5fc887469202eb579fef2d0
 F src/func.c fe50a9ab977acc0bb0fcd46741e0071fa388888e
@@ -310,7 +310,7 @@ F src/msvc.h d9ba56c6851227ab44b3f228a35f3f5772296495
 F src/mutex.c 8e45800ee78e0cd1f1f3fe8e398853307f4a085c
 F src/mutex.h 779d588e3b7756ec3ecf7d78cde1d84aba414f85
 F src/mutex_noop.c 9d4309c075ba9cc7249e19412d3d62f7f94839c4
-F src/mutex_unix.c fc54f25b2a750d53b32512a4a728cec28039ae2a
+F src/mutex_unix.c 27bb6cc49485ee46711a6580ab7b3f1402211d23
 F src/mutex_w32.c 5e6fe1c298fb5a8a15aaed4161d5759311431c17
 F src/notify.c 9711a7575036f0d3040ba61bc6e217f13a9888e7
 F src/os.c 8fd25588eeba74068d41102d26810e216999b6c8
@@ -1405,7 +1405,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 34073ce87d88a02313217023ae92e15939192cd9
-R fb37875a5634d72cf8280c2958a6e17e
-U drh
-Z 5e4e9bf785bd86d0086510037196235b
+P b910a3d53769689d9212a06f974ccce54844bbe4
+R 5ab375194afd22e61de829d90abd4fea
+U dan
+Z 1812011a4512993ca315aa42f142cb2e

@@ -888,7 +888,7 @@ static Expr *exprDup(sqlite3 *db, Expr *p, int flags, u8 **pzBuffer){
         assert( ExprHasProperty(p, EP_Reduced)==0 );
         memcpy(zAlloc, p, nNewSize);
       }else{
-        int nSize = exprStructSize(p);
+        u32 nSize = (u32)exprStructSize(p);
         memcpy(zAlloc, p, nSize);
         if( nSize<EXPR_FULLSIZE ){ 
           memset(&zAlloc[nSize], 0, EXPR_FULLSIZE-nSize);
