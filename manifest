@@ -1,5 +1,5 @@
-C Fix\ssome\sharmless\sgcc\scompiler\swarnings.\sMostly\sin\sfts5,\sbut\salso\stwo\sin\sthe\score\scode.
-D 2015-12-23T16:42:27.781
+C Avoid\sa\sharmless\scompiler\swarning\son\ssystems\swhere\sthe\sbyteorder\scannot\nbe\sdetermined\sat\scompile-time.
+D 2015-12-24T14:53:27.528
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5fff077fcc46de7714ed6eebb6159a4c00eab751
@@ -338,7 +338,7 @@ F src/shell.c abbc74ea43dbf2f306ea18282d666683fb5efab2
 F src/sqlite.h.in 7d87d71b9a4689c51fa092f48f16590ff71558e3
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
-F src/sqliteInt.h 5a2770eb1fdf3542b9c5ac3fd87836f0d46e1b08
+F src/sqliteInt.h 6e0c1082268e99aa337de1547df32b220e812fb3
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
@@ -395,7 +395,7 @@ F src/tokenize.c 5606871a377f390af7040ec3c12e0d183512d785
 F src/treeview.c 78842e90c1f71269e7a73a1d4221b6fe360bab66
 F src/trigger.c de3ed31ad3218a20d7d7e18bf1b3b734e78bda66
 F src/update.c 17332f9fe818cbc0444c36a811800af8498af4c3
-F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
+F src/utf.c 32d7f82aa921322f3e1c956f4b58f019ebd2c6b3
 F src/util.c e802e8e311a0d6c48cd1b3e89db164f6f0248d70
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
 F src/vdbe.c 984c2be6691d3f67deb2e6747c2132150d776f32
@@ -1405,7 +1405,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b910a3d53769689d9212a06f974ccce54844bbe4
-R 5ab375194afd22e61de829d90abd4fea
-U dan
-Z 1812011a4512993ca315aa42f142cb2e
+P 5d44d4a6cf5c6b983cbd846d9bc34251df8f4bc5
+R c0120dd70eca82393527f5b4b745caa6
+U drh
+Z 6af8ad4397eb3ff04028cb96b6439a6e
