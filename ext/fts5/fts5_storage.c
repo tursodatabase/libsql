@@ -916,7 +916,7 @@ int sqlite3Fts5StorageIntegrity(Fts5Storage *p){
         if( pConfig->abUnindexed[i] ) continue;
         ctx.iCol = i;
         ctx.szCol = 0;
-        if( pConfig->bOffsets==0 ){
+        if( pConfig->eDetail!=FTS5_DETAIL_FULL ){
           rc = sqlite3Fts5TermsetNew(&ctx.pTermset);
         }
         if( rc==SQLITE_OK ){

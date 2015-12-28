@@ -4109,19 +4109,19 @@ static void fts5SegiterPoslist(
     if( pColset==0 ){
       fts5ChunkIterate(p, pSeg, (void*)pBuf, fts5PoslistCallback);
     }else{
-      if( p->pConfig->bOffsets==0 ){
-        PoslistOffsetsCtx sCtx;
-        memset(&sCtx, 0, sizeof(sCtx));
-        sCtx.pBuf = pBuf;
-        sCtx.pColset = pColset;
-        fts5ChunkIterate(p, pSeg, (void*)&sCtx, fts5PoslistOffsetsCallback);
-      }else{
+      if( p->pConfig->eDetail==FTS5_DETAIL_FULL ){
         PoslistCallbackCtx sCtx;
         sCtx.pBuf = pBuf;
         sCtx.pColset = pColset;
         sCtx.eState = fts5IndexColsetTest(pColset, 0);
         assert( sCtx.eState==0 || sCtx.eState==1 );
         fts5ChunkIterate(p, pSeg, (void*)&sCtx, fts5PoslistFilterCallback);
+      }else{
+        PoslistOffsetsCtx sCtx;
+        memset(&sCtx, 0, sizeof(sCtx));
+        sCtx.pBuf = pBuf;
+        sCtx.pColset = pColset;
+        fts5ChunkIterate(p, pSeg, (void*)&sCtx, fts5PoslistOffsetsCallback);
       }
     }
   }
@@ -4192,7 +4192,7 @@ static int fts5AppendPoslist(
     assert( fts5MultiIterEof(p, pMulti)==0 );
     assert( pSeg->nPos>0 );
     if( 0==fts5BufferGrow(&p->rc, pBuf, pSeg->nPos+9+9) ){
-      if( p->pConfig->bOffsets
+      if( p->pConfig->eDetail==FTS5_DETAIL_FULL
        && pSeg->iLeafOffset+pSeg->nPos<=pSeg->pLeaf->szLeaf 
        && (pColset==0 || pColset->nCol==1)
       ){
@@ -4850,9 +4850,11 @@ int sqlite3Fts5IterPoslist(
   i64 *piRowid                    /* OUT: Current rowid */
 ){
   Fts5SegIter *pSeg = &pIter->aSeg[ pIter->aFirst[1].iFirst ];
+  int eDetail = pIter->pIndex->pConfig->eDetail;
+
   assert( pIter->pIndex->rc==SQLITE_OK );
   *piRowid = pSeg->iRowid;
-  if( pIter->pIndex->pConfig->bOffsets 
+  if( eDetail==FTS5_DETAIL_FULL 
    && pSeg->iLeafOffset+pSeg->nPos<=pSeg->pLeaf->szLeaf 
   ){
     u8 *pPos = &pSeg->pLeaf->p[pSeg->iLeafOffset];
@@ -4871,7 +4873,9 @@ int sqlite3Fts5IterPoslist(
   }else{
     fts5BufferZero(&pIter->poslist);
     fts5SegiterPoslist(pIter->pIndex, pSeg, pColset, &pIter->poslist);
-    *pp = pIter->poslist.p;
+    if( eDetail==FTS5_DETAIL_FULL ){
+      *pp = pIter->poslist.p;
+    }
     *pn = pIter->poslist.n;
   }
   return fts5IndexReturn(pIter->pIndex);
@@ -5062,17 +5066,15 @@ static int fts5QueryCksum(
 ){
   u64 cksum = *pCksum;
   Fts5IndexIter *pIdxIter = 0;
+  Fts5Buffer buf = {0, 0, 0};
   int rc = sqlite3Fts5IndexQuery(p, z, n, flags, 0, &pIdxIter);
 
   while( rc==SQLITE_OK && 0==sqlite3Fts5IterEof(pIdxIter) ){
-    i64 dummy;
-    const u8 *pPos;
-    int nPos;
     i64 rowid = sqlite3Fts5IterRowid(pIdxIter);
-    rc = sqlite3Fts5IterPoslist(pIdxIter, 0, &pPos, &nPos, &dummy);
+    rc = sqlite3Fts5IterPoslistBuffer(pIdxIter, &buf);
     if( rc==SQLITE_OK ){
       Fts5PoslistReader sReader;
-      for(sqlite3Fts5PoslistReaderInit(pPos, nPos, &sReader);
+      for(sqlite3Fts5PoslistReaderInit(buf.p, buf.n, &sReader);
           sReader.bEof==0;
           sqlite3Fts5PoslistReaderNext(&sReader)
       ){
@@ -5084,6 +5086,7 @@ static int fts5QueryCksum(
     }
   }
   sqlite3Fts5IterClose(pIdxIter);
+  fts5BufferFree(&buf);
 
   *pCksum = cksum;
   return rc;

@@ -151,7 +151,7 @@ struct Fts5Config {
   char *zContent;                 /* content table */ 
   char *zContentRowid;            /* "content_rowid=" option value */ 
   int bColumnsize;                /* "columnsize=" option value (dflt==1) */
-  int bOffsets;                   /* "offsets=" option value (dflt==1) */
+  int eDetail;                    /* FTS5_DETAIL_XXX value */
   char *zContentExprlist;
   Fts5Tokenizer *pTok;
   fts5_tokenizer *pTokApi;
@@ -180,6 +180,9 @@ struct Fts5Config {
 #define FTS5_CONTENT_NONE     1
 #define FTS5_CONTENT_EXTERNAL 2
 
+#define FTS5_DETAIL_FULL    0
+#define FTS5_DETAIL_NONE    1
+#define FTS5_DETAIL_COLUMNS 2
 
 
 
@@ -636,6 +639,11 @@ int sqlite3Fts5ExprInit(Fts5Global*, sqlite3*);
 int sqlite3Fts5ExprPhraseCount(Fts5Expr*);
 int sqlite3Fts5ExprPhraseSize(Fts5Expr*, int iPhrase);
 int sqlite3Fts5ExprPoslist(Fts5Expr*, int, const u8 **);
+
+Fts5PoslistWriter *sqlite3Fts5ExprClearPoslists(Fts5Expr*);
+int sqlite3Fts5ExprPopulatePoslists(
+    Fts5Config*, Fts5Expr*, Fts5PoslistWriter*, int, const char*, int
+);
 
 int sqlite3Fts5ExprClonePhrase(Fts5Config*, Fts5Expr*, int, Fts5Expr**);
 

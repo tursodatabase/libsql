@@ -1744,6 +1744,15 @@ void sqlite3Fts5ParseSetColset(
   Fts5ExprNearset *pNear, 
   Fts5Colset *pColset 
 ){
+  if( pParse->pConfig->eDetail==FTS5_DETAIL_NONE ){
+    pParse->rc = SQLITE_ERROR;
+    pParse->zErr = sqlite3_mprintf(
+      "fts5: column queries are not supported (detail=none)"
+    );
+    sqlite3_free(pColset);
+    return;
+  }
+
   if( pNear ){
     pNear->pColset = pColset;
   }else{
@@ -1809,12 +1818,12 @@ Fts5ExprNode *sqlite3Fts5ParseNode(
           if( pNear->apPhrase[0]->aTerm[0].pSynonym==0 ){
             pRet->eType = FTS5_TERM;
           }
-        }else if( pParse->pConfig->bOffsets==0 ){
+        }else if( pParse->pConfig->eDetail!=FTS5_DETAIL_FULL ){
           assert( pParse->rc==SQLITE_OK );
           pParse->rc = SQLITE_ERROR;
           assert( pParse->zErr==0 );
           pParse->zErr = sqlite3_mprintf(
-              "fts5: %s queries are not supported (offsets=0)", 
+              "fts5: %s queries are not supported (detail!=full)", 
               pNear->nPhrase==1 ? "phrase": "NEAR"
           );
           sqlite3_free(pRet);
@@ -1932,6 +1941,9 @@ static char *fts5ExprPrintTcl(
       for(iTerm=0; zRet && iTerm<pPhrase->nTerm; iTerm++){
         char *zTerm = pPhrase->aTerm[iTerm].zTerm;
         zRet = fts5PrintfAppend(zRet, "%s%s", iTerm==0?"":" ", zTerm);
+        if( pPhrase->aTerm[iTerm].bPrefix ){
+          zRet = fts5PrintfAppend(zRet, "*");
+        }
       }
 
       if( zRet ) zRet = fts5PrintfAppend(zRet, "}");
@@ -2244,3 +2256,74 @@ int sqlite3Fts5ExprPoslist(Fts5Expr *pExpr, int iPhrase, const u8 **pa){
   }
   return nRet;
 }
+
+Fts5PoslistWriter *sqlite3Fts5ExprClearPoslists(Fts5Expr *pExpr){
+  int i;
+  Fts5PoslistWriter *pRet;
+  for(i=0; i<pExpr->nPhrase; i++){
+    Fts5Buffer *pBuf = &pExpr->apExprPhrase[i]->poslist;
+    assert( pExpr->apExprPhrase[i]->nTerm==1 );
+    pBuf->n = 0;
+  }
+  pRet = sqlite3_malloc(sizeof(Fts5PoslistWriter)*pExpr->nPhrase);
+  if( pRet ){
+    memset(pRet, 0, sizeof(Fts5PoslistWriter)*pExpr->nPhrase);
+  }
+  return pRet;
+}
+
+struct Fts5ExprCtx {
+  Fts5Expr *pExpr;
+  Fts5PoslistWriter *aWriter;
+  i64 iOff;
+};
+typedef struct Fts5ExprCtx Fts5ExprCtx;
+
+static int fts5ExprPopulatePoslistsCb(
+  void *pCtx,                /* Copy of 2nd argument to xTokenize() */
+  int tflags,                /* Mask of FTS5_TOKEN_* flags */
+  const char *pToken,        /* Pointer to buffer containing token */
+  int nToken,                /* Size of token in bytes */
+  int iStart,                /* Byte offset of token within input text */
+  int iEnd                   /* Byte offset of end of token within input text */
+){
+  Fts5ExprCtx *p = (Fts5ExprCtx*)pCtx;
+  Fts5Expr *pExpr = p->pExpr;
+  int i;
+
+  if( (tflags & FTS5_TOKEN_COLOCATED)==0 ) p->iOff++;
+  for(i=0; i<pExpr->nPhrase; i++){
+    Fts5ExprTerm *pTerm;
+    for(pTerm=&pExpr->apExprPhrase[i]->aTerm[0]; pTerm; pTerm=pTerm->pSynonym){
+      int nTerm = strlen(pTerm->zTerm);
+      if( (nTerm==nToken || (nTerm<nToken && pTerm->bPrefix))
+       && memcmp(pTerm->zTerm, pToken, nTerm)==0
+      ){
+        int rc = sqlite3Fts5PoslistWriterAppend(
+            &pExpr->apExprPhrase[i]->poslist, &p->aWriter[i], p->iOff
+        );
+        if( rc ) return rc;
+        break;
+      }
+    }
+  }
+  return SQLITE_OK;
+}
+
+int sqlite3Fts5ExprPopulatePoslists(
+  Fts5Config *pConfig,
+  Fts5Expr *pExpr, 
+  Fts5PoslistWriter *aWriter,
+  int iCol, 
+  const char *z, int n
+){
+  Fts5ExprCtx sCtx;
+  sCtx.pExpr = pExpr;
+  sCtx.aWriter = aWriter;
+  sCtx.iOff = (((i64)iCol) << 32) - 1;
+
+  return sqlite3Fts5Tokenize(pConfig, 
+      FTS5_TOKENIZE_AUX, z, n, (void*)&sCtx, fts5ExprPopulatePoslistsCb
+  );
+}
+

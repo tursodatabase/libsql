@@ -13,7 +13,7 @@
 #
 
 source [file join [file dirname [info script]] fts5_common.tcl]
-set testprefix fts5offsets
+set testprefix fts5detail
 
 # If SQLITE_ENABLE_FTS5 is not defined, omit this file.
 ifcapable !fts5 {
@@ -21,11 +21,13 @@ ifcapable !fts5 {
   return
 }
 
+fts5_aux_test_functions db
+
 #--------------------------------------------------------------------------
 # Simple tests.
 #
 do_execsql_test 1.0 {
-  CREATE VIRTUAL TABLE t1 USING fts5(a, b, c, offsets=0);
+  CREATE VIRTUAL TABLE t1 USING fts5(a, b, c, detail=col);
   INSERT INTO t1 VALUES('h d g', 'j b b g b', 'i e i d h g g'); -- 1
   INSERT INTO t1 VALUES('h j d', 'j h d a h', 'f d d g g f b'); -- 2
   INSERT INTO t1 VALUES('j c i', 'f f h e f', 'c j i j c h f'); -- 3
@@ -58,17 +60,18 @@ foreach {tn match res} {
 
 do_catchsql_test 1.3.1 {
   SELECT rowid FROM t1('h + d');
-} {1 {fts5: phrase queries are not supported (offsets=0)}}
+} {1 {fts5: phrase queries are not supported (detail!=full)}}
 
 do_catchsql_test 1.3.2 {
   SELECT rowid FROM t1('NEAR(h d)');
-} {1 {fts5: NEAR queries are not supported (offsets=0)}}
+} {1 {fts5: NEAR queries are not supported (detail!=full)}}
+
 
 #-------------------------------------------------------------------------
-# integrity-check with both offsets= and prefix= options.
+# integrity-check with both detail= and prefix= options.
 #
 do_execsql_test 2.0 {
-  CREATE VIRTUAL TABLE t2 USING fts5(a, offsets=0, prefix="1");
+  CREATE VIRTUAL TABLE t2 USING fts5(a, detail=col, prefix="1");
   INSERT INTO t2(a) VALUES('aa ab');
 }
 
@@ -78,9 +81,17 @@ do_execsql_test 2.1 {
   INSERT INTO t2(t2) VALUES('integrity-check');
 }
 
+do_execsql_test 2.2 {
+  SELECT fts5_test_poslist(t2) FROM t2('aa');
+} {0.0.0}
+
+set ::pc 0
+#puts [nearset {{ax bx cx}} -pc ::pc -near 10 -- b*]
+#exit
+
 #-------------------------------------------------------------------------
 # Check that the xInstCount, xInst, xPhraseFirst and xPhraseNext APIs
-# work with offsets=0 tables.
+# work with detail=col tables.
 #
 set data {
   1  {abb aca aca} {aba bab aab aac caa} {abc cbc ccb bcc bab ccb aca}
@@ -124,9 +135,42 @@ set data {
   39 {bcb aac cba} {bcb baa caa cac bbc} {cbc ccc bab ccb bbb caa aba}
   40 {cba ccb abc} {cbb caa cba aac bab} {cbb bbb bca bbb bac cac bca}
 }
+
+set data {
+  1  {abb aca aca} {aba bab aab aac caa} {abc cbc ccb bcc bab ccb aca}
+}
+
+proc matchdata {expr {bAsc 1}} {
+
+  set tclexpr [db one {
+    SELECT fts5_expr_tcl($expr, 'nearset $cols -pc ::pc', 'x', 'y', 'z')
+  }]
+  set res [list]
+
+  #puts "$expr -> $tclexpr"
+  foreach {id x y z} $::data {
+    set cols [list $x $y $z]
+    set ::pc 0
+    #set hits [lsort -command instcompare [eval $tclexpr]]
+    set hits [eval $tclexpr]
+    if {[llength $hits]>0} {
+      lappend res [list $id $hits]
+    }
+  }
+
+  if {$bAsc} {
+    set res [lsort -integer -increasing -index 0 $res]
+  } else {
+    set res [lsort -integer -decreasing -index 0 $res]
+  }
+
+  return [concat {*}$res]
+}
+
 foreach {tn tbl} {
-  1 { CREATE VIRTUAL TABLE t3 USING fts5(x, y, z, offsets=0) }
+  1 { CREATE VIRTUAL TABLE t3 USING fts5(x, y, z, detail=col) }
 } {
+#break
   reset_db
   fts5_aux_test_functions db
   execsql $tbl
@@ -139,17 +183,7 @@ foreach {tn tbl} {
     9 a*     10 b*   11 c*
   } {
 
-    set res [list]
-    foreach {id x y z} $data {
-      if {[lsearch [concat $x $y $z] $expr]>=0} {
-        lappend res $id
-        set inst [list]
-        if {[lsearch $x $expr]>=0} { lappend inst 0.0.-1 }
-        if {[lsearch $y $expr]>=0} { lappend inst 0.1.-1 }
-        if {[lsearch $z $expr]>=0} { lappend inst 0.2.-1 }
-        lappend res $inst
-      }
-    }
+    set res [matchdata $expr]
 
     do_execsql_test 3.$tn.$tn2.1 {
       SELECT rowid, fts5_test_poslist(t3) FROM t3($expr)
@@ -159,8 +193,21 @@ foreach {tn tbl} {
       SELECT rowid, fts5_test_poslist2(t3) FROM t3($expr)
     } $res
   }
-
 }
+
+#-------------------------------------------------------------------------
+# Simple tests for detail=none tables.
+#
+breakpoint
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE t4 USING fts5(a, b, c, detail=none);
+  INSERT INTO t4 VALUES('a b c', 'b c d', 'e f g');
+  INSERT INTO t4 VALUES('1 2 3', '4 5 6', '7 8 9');
+}
+
+do_catchsql_test 4.1 {
+  SELECT * FROM t4('a:a')
+} {1 {fts5: column queries are not supported (detail=none)}}
 
 finish_test
 

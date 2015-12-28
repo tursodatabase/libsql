@@ -239,7 +239,21 @@ proc nearset {aCol args} {
         set iFirst [expr $iFL - $O(-near) - [llength $p]]
 
         for {set i $iFirst} {$i <= $iFL} {incr i} {
-          if {[lrange $col $i [expr $i+$nPm1]] == $p} { lappend B($iPhrase) $i }
+          set lCand [lrange $col $i [expr $i+$nPm1]]
+
+          set bMatch 1
+          foreach tok $p term $lCand {
+            if {[string match $tok $term]==0} {
+              #puts "$tok $term failed"
+              set bMatch 0
+            }
+          }
+          if {$bMatch} { 
+            #puts "match at $i"
+            lappend B($iPhrase) $i 
+          }
+
+          #if {$lCand == $p} { lappend B($iPhrase) $i }
         }
         if {[llength $B($iPhrase)] == 0} break
       }
@@ -265,7 +279,7 @@ proc nearset {aCol args} {
     incr counter
   }
 
-  #puts $res
+  #puts "$aCol -> $res"
   sort_poslist $res
 }
 

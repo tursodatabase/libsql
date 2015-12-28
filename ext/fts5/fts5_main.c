@@ -226,6 +226,7 @@ struct Fts5Cursor {
 #define FTS5CSR_EOF               0x08
 #define FTS5CSR_FREE_ZRANK        0x10
 #define FTS5CSR_REQUIRE_RESEEK    0x20
+#define FTS5CSR_REQUIRE_POSLIST   0x40
 
 #define BitFlagAllTest(x,y) (((x) & (y))==(y))
 #define BitFlagTest(x,y)    (((x) & (y))!=0)
@@ -313,7 +314,7 @@ static int fts5IsContentless(Fts5Table *pTab){
 ** Return true if pTab is an offsetless table.
 */
 static int fts5IsOffsetless(Fts5Table *pTab){
-  return pTab->pConfig->bOffsets==0;
+  return pTab->pConfig->eDetail!=FTS5_DETAIL_FULL;
 }
 
 /*
@@ -646,6 +647,7 @@ static void fts5CsrNewrow(Fts5Cursor *pCsr){
       FTS5CSR_REQUIRE_CONTENT 
     | FTS5CSR_REQUIRE_DOCSIZE 
     | FTS5CSR_REQUIRE_INST 
+    | FTS5CSR_REQUIRE_POSLIST 
   );
 }
 
@@ -1603,6 +1605,8 @@ static int fts5RollbackMethod(sqlite3_vtab *pVtab){
   return rc;
 }
 
+static int fts5CsrPoslist(Fts5Cursor*, int, const u8**);
+
 static void *fts5ApiUserData(Fts5Context *pCtx){
   Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
   return pCsr->pAux->pUserData;
@@ -1652,8 +1656,53 @@ static int fts5ApiPhraseSize(Fts5Context *pCtx, int iPhrase){
   return sqlite3Fts5ExprPhraseSize(pCsr->pExpr, iPhrase);
 }
 
+static int fts5ApiColumnText(
+  Fts5Context *pCtx, 
+  int iCol, 
+  const char **pz, 
+  int *pn
+){
+  int rc = SQLITE_OK;
+  Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
+  if( fts5IsContentless((Fts5Table*)(pCsr->base.pVtab)) ){
+    *pz = 0;
+    *pn = 0;
+  }else{
+    rc = fts5SeekCursor(pCsr, 0);
+    if( rc==SQLITE_OK ){
+      *pz = (const char*)sqlite3_column_text(pCsr->pStmt, iCol+1);
+      *pn = sqlite3_column_bytes(pCsr->pStmt, iCol+1);
+    }
+  }
+  return rc;
+}
+
 static int fts5CsrPoslist(Fts5Cursor *pCsr, int iPhrase, const u8 **pa){
   int n;
+  int rc = SQLITE_OK;
+
+  if( CsrFlagTest(pCsr, FTS5CSR_REQUIRE_POSLIST) ){
+    Fts5Config *pConfig = ((Fts5Table*)(pCsr->base.pVtab))->pConfig;
+    if( pConfig->eDetail!=FTS5_DETAIL_FULL ){
+      Fts5PoslistWriter *aWriter;
+      int i;
+assert( pCsr->pSorter==0 );  /* fixme */
+      aWriter = sqlite3Fts5ExprClearPoslists(pCsr->pExpr);
+      if( aWriter==0 ) rc = SQLITE_NOMEM;
+      for(i=0; i<pConfig->nCol && rc==SQLITE_OK; i++){
+        int n; const char *z;
+        rc = fts5ApiColumnText((Fts5Context*)pCsr, i, &z, &n);
+        if( rc==SQLITE_OK ){
+          rc = sqlite3Fts5ExprPopulatePoslists(
+              pConfig, pCsr->pExpr, aWriter, i, z, n
+          );
+        }
+      }
+      sqlite3_free(aWriter);
+    }
+    CsrFlagClear(pCsr, FTS5CSR_REQUIRE_POSLIST);
+  }
+
   if( pCsr->pSorter ){
     Fts5Sorter *pSorter = pCsr->pSorter;
     int i1 = (iPhrase==0 ? 0 : pSorter->aIdx[iPhrase-1]);
@@ -1756,10 +1805,12 @@ static int fts5ApiInst(
   ){
     if( iIdx<0 || iIdx>=pCsr->nInstCount ){
       rc = SQLITE_RANGE;
+#if 0
     }else if( fts5IsOffsetless((Fts5Table*)pCsr->base.pVtab) ){
       *piPhrase = pCsr->aInst[iIdx*3];
       *piCol = pCsr->aInst[iIdx*3 + 2];
       *piOff = -1;
+#endif
     }else{
       *piPhrase = pCsr->aInst[iIdx*3];
       *piCol = pCsr->aInst[iIdx*3 + 1];
@@ -1771,27 +1822,6 @@ static int fts5ApiInst(
 
 static sqlite3_int64 fts5ApiRowid(Fts5Context *pCtx){
   return fts5CursorRowid((Fts5Cursor*)pCtx);
-}
-
-static int fts5ApiColumnText(
-  Fts5Context *pCtx, 
-  int iCol, 
-  const char **pz, 
-  int *pn
-){
-  int rc = SQLITE_OK;
-  Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
-  if( fts5IsContentless((Fts5Table*)(pCsr->base.pVtab)) ){
-    *pz = 0;
-    *pn = 0;
-  }else{
-    rc = fts5SeekCursor(pCsr, 0);
-    if( rc==SQLITE_OK ){
-      *pz = (const char*)sqlite3_column_text(pCsr->pStmt, iCol+1);
-      *pn = sqlite3_column_bytes(pCsr->pStmt, iCol+1);
-    }
-  }
-  return rc;
 }
 
 static int fts5ColumnSizeCb(
@@ -1925,11 +1955,13 @@ static void fts5ApiPhraseNext(
   if( pIter->a>=pIter->b ){
     *piCol = -1;
     *piOff = -1;
+#if 0
   }else if( fts5IsOffsetless((Fts5Table*)(((Fts5Cursor*)pCtx)->base.pVtab)) ){
     int iVal;
     pIter->a += fts5GetVarint32(pIter->a, iVal);
     *piCol += (iVal-2);
     *piOff = -1;
+#endif
   }else{
     int iVal;
     pIter->a += fts5GetVarint32(pIter->a, iVal);
@@ -1981,7 +2013,6 @@ static const Fts5ExtensionApi sFts5Api = {
   fts5ApiPhraseFirst,
   fts5ApiPhraseNext,
 };
-
 
 /*
 ** Implementation of API function xQueryPhrase().

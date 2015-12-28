@@ -75,17 +75,17 @@ foreach {T create} {
   }
 
   6 {
-    CREATE VIRTUAL TABLE t1 USING fts5(a, b, offsets=0);
+    CREATE VIRTUAL TABLE t1 USING fts5(a, b, detail=col);
     INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
   }
 
   7 {
-    CREATE VIRTUAL TABLE t1 USING fts5(a, b, offsets=0, prefix="1,2,3,4,5");
+    CREATE VIRTUAL TABLE t1 USING fts5(a, b, detail=col, prefix="1,2,3,4,5");
     INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
   }
 
   8 {
-    CREATE VIRTUAL TABLE t1 USING fts5(a, b, offsets=0, prefix="1,2,3,4,5");
+    CREATE VIRTUAL TABLE t1 USING fts5(a, b, detail=col, prefix="1,2,3,4,5");
     INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
     BEGIN;
   }
