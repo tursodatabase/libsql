@@ -447,6 +447,8 @@ int sqlite3Fts5IndexMerge(Fts5Index *p, int nMerge);
 
 int sqlite3Fts5IndexLoadConfig(Fts5Index *p);
 
+int sqlite3Fts5IterCollist(Fts5IndexIter*, const u8 **, int*);
+
 /*
 ** End of interface to code in fts5_index.c.
 **************************************************************************/
@@ -646,6 +648,8 @@ int sqlite3Fts5ExprPopulatePoslists(
 );
 
 int sqlite3Fts5ExprClonePhrase(Fts5Config*, Fts5Expr*, int, Fts5Expr**);
+
+int sqlite3Fts5ExprPhraseCollist(Fts5Expr *, int, const u8 **, int *);
 
 /*******************************************
 ** The fts5_expr.c API above this point is used by the other hand-written

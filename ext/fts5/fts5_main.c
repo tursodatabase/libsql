@@ -1955,13 +1955,6 @@ static void fts5ApiPhraseNext(
   if( pIter->a>=pIter->b ){
     *piCol = -1;
     *piOff = -1;
-#if 0
-  }else if( fts5IsOffsetless((Fts5Table*)(((Fts5Cursor*)pCtx)->base.pVtab)) ){
-    int iVal;
-    pIter->a += fts5GetVarint32(pIter->a, iVal);
-    *piCol += (iVal-2);
-    *piOff = -1;
-#endif
   }else{
     int iVal;
     pIter->a += fts5GetVarint32(pIter->a, iVal);
@@ -1975,7 +1968,7 @@ static void fts5ApiPhraseNext(
   }
 }
 
-static void fts5ApiPhraseFirst(
+static int fts5ApiPhraseFirst(
   Fts5Context *pCtx, 
   int iPhrase, 
   Fts5PhraseIter *pIter, 
@@ -1988,6 +1981,70 @@ static void fts5ApiPhraseFirst(
   *piOff = 0;
   fts5ApiPhraseNext(pCtx, pIter, piCol, piOff);
 }
+
+static void fts5ApiPhraseNextColumn(
+  Fts5Context *pCtx, 
+  Fts5PhraseIter *pIter, 
+  int *piCol
+){
+  Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
+  Fts5Config *pConfig = ((Fts5Table*)(pCsr->base.pVtab))->pConfig;
+
+  if( pConfig->eDetail==FTS5_DETAIL_COLUMNS ){
+    if( pIter->a>=pIter->b ){
+      *piCol = -1;
+    }else{
+      int iIncr;
+      pIter->a += fts5GetVarint32(&pIter->a[0], iIncr);
+      *piCol += (iIncr-2);
+    }
+  }else{
+    while( 1 ){
+      int dummy;
+      if( pIter->a>=pIter->b ){
+        *piCol = -1;
+        return;
+      }
+      if( pIter->a[0]==0x01 ) break;
+      pIter->a += fts5GetVarint32(pIter->a, dummy);
+    }
+    pIter->a += 1 + fts5GetVarint32(&pIter->a[1], *piCol);
+  }
+}
+
+static int fts5ApiPhraseFirstColumn(
+  Fts5Context *pCtx, 
+  int iPhrase, 
+  Fts5PhraseIter *pIter, 
+  int *piCol
+){
+  int rc = SQLITE_OK;
+  Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
+  Fts5Config *pConfig = ((Fts5Table*)(pCsr->base.pVtab))->pConfig;
+
+  if( pConfig->eDetail==FTS5_DETAIL_COLUMNS ){
+    int n;
+    rc = sqlite3Fts5ExprPhraseCollist(pCsr->pExpr, iPhrase, &pIter->a, &n);
+    if( rc==SQLITE_OK ){
+      pIter->b = &pIter->a[n];
+      *piCol = 0;
+      fts5ApiPhraseNextColumn(pCtx, pIter, piCol);
+    }
+  }else{
+    int n = fts5CsrPoslist(pCsr, iPhrase, &pIter->a);
+    pIter->b = &pIter->a[n];
+    if( n<=0 ){
+      *piCol = -1;
+    }else if( pIter->a[0]==0x01 ){
+      pIter->a += 1 + fts5GetVarint32(&pIter->a[1], *piCol);
+    }else{
+      *piCol = 0;
+    }
+  }
+
+  return rc;
+}
+
 
 static int fts5ApiQueryPhrase(Fts5Context*, int, void*, 
     int(*)(const Fts5ExtensionApi*, Fts5Context*, void*)
@@ -2012,6 +2069,8 @@ static const Fts5ExtensionApi sFts5Api = {
   fts5ApiGetAuxdata,
   fts5ApiPhraseFirst,
   fts5ApiPhraseNext,
+  fts5ApiPhraseFirstColumn,
+  fts5ApiPhraseNextColumn,
 };
 
 /*

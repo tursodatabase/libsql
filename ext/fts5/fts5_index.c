@@ -4881,6 +4881,17 @@ int sqlite3Fts5IterPoslist(
   return fts5IndexReturn(pIter->pIndex);
 }
 
+int sqlite3Fts5IterCollist(
+  Fts5IndexIter *pIter, 
+  const u8 **pp,                  /* OUT: Pointer to position-list data */
+  int *pn                         /* OUT: Size of position-list in bytes */
+){
+  assert( pIter->pIndex->pConfig->eDetail==FTS5_DETAIL_COLUMNS );
+  *pp = pIter->poslist.p;
+  *pn = pIter->poslist.n;
+  return SQLITE_OK;
+}
+
 /*
 ** This function is similar to sqlite3Fts5IterPoslist(), except that it
 ** copies the position list into the buffer supplied as the second 

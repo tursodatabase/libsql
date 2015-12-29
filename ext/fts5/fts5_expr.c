@@ -2327,3 +2327,25 @@ int sqlite3Fts5ExprPopulatePoslists(
   );
 }
 
+/*
+** This function is only called for detail=columns tables. 
+*/
+int sqlite3Fts5ExprPhraseCollist(
+  Fts5Expr *pExpr, 
+  int iPhrase, 
+  const u8 **ppCollist, 
+  int *pnCollist
+){
+  Fts5ExprPhrase *pPhrase = pExpr->apExprPhrase[iPhrase];
+  Fts5ExprNode *pNode = pPhrase->pNode;
+  assert( iPhrase>=0 && iPhrase<pExpr->nPhrase );
+
+  if( pNode->bEof==0 && pNode->iRowid==pExpr->pRoot->iRowid ){
+    sqlite3Fts5IterCollist(pPhrase->aTerm[0].pIter, ppCollist, pnCollist);
+  }else{
+    *ppCollist = 0;
+    *pnCollist = 0;
+  }
+  return SQLITE_OK;
+}
+

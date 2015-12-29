@@ -131,16 +131,17 @@ set data {
 #   CREATE VIRTUAL TABLE xy USING fts5(x, y);
 #
 # Assuming the table contains the same records as stored in the global 
-# $::data array (see above), this function returns a list containing one
-# element for each match in the dataset. The elements are themselves lists
-# formatted as follows:
+# $::data array (see above), this function returns a list containing two
+# elements for each matching row in the dataset. The first element of each
+# pair is the rowid. The second is a list of phrase matches, where each 
+# phrase match is of the form:
 #
-#   <rowid> {<phrase 0 matches> <phrase 1 matches>...}
+#   <phrase-number>.<column-number>.<offset>
 #
-# where each <phrase X matches> element is a list of phrase matches in the
-# same form as returned by auxiliary scalar function fts5_test().
+# The list of phrase matches is in the same format as that returned by the
+# fts5_test_poslist() auxiliary scalara function.
 #
-proc matchdata {bPos expr {bAsc 1}} {
+proc poslist_data {bPos expr {bAsc 1}} {
 
   set tclexpr [db one {
     SELECT fts5_expr_tcl($expr, 'nearset $cols -pc ::pc', 'x', 'y')
@@ -168,13 +169,43 @@ proc matchdata {bPos expr {bAsc 1}} {
     set res [lsort -integer -decreasing -index 0 $res]
   }
 
-  return [concat {*}$res]
+  set res [concat {*}$res]
+  return $res
+}
+
+proc collist_elem_compare {a b} {
+  foreach {a1 a2} [split $a .] {}
+  foreach {b1 b2} [split $b .] {}
+
+  if {$a1==$b1} {
+    return [expr $a2 - $b2]
+  }
+  return [expr $a1 - $b1]
+}
+
+proc poslist2collist {poslist} {
+  set res [list]
+  foreach h $poslist {
+    regexp {(.*)\.[1234567890]+} $h -> cand
+    lappend res $cand
+  }
+  set res [lsort -command collist_elem_compare -unique $res]
+  return $res
+}
+
+proc collist_data {expr} {
+  set res [list]
+  foreach {rowid poslist} [poslist_data 1 $expr] {
+    lappend res $rowid [poslist2collist $poslist]
+  }
+  set res
 }
 
 #
 # End of test code
 #-------------------------------------------------------------------------
 
+if 0 {
 
 foreach {tn2 sql} {
   1  {}
@@ -214,10 +245,15 @@ foreach {tn2 sql} {
     10 "L O O L V V K"
   } {
     set expr "\"$phrase\""
-    set res [matchdata 1 $expr]
+    set res [poslist_data 1 $expr]
 
-    do_execsql_test 1.$tn2.1.2.$tn.[llength $res] { 
+    do_execsql_test 1.$tn2.1.2.$tn.p.[llength $res] { 
       SELECT rowid, fts5_test_poslist(xx) FROM xx WHERE xx match $expr
+    } $res
+
+    set res [collist_data $expr]
+    do_execsql_test 1.$tn2.1.2.$tn.c.[llength $res] { 
+      SELECT rowid, fts5_test_collist(xx) FROM xx WHERE xx match $expr
     } $res
   }
 
@@ -237,9 +273,14 @@ foreach {tn2 sql} {
 
     3.1 { a AND b AND c }
   } {
-    set res [matchdata 1 $expr]
-    do_execsql_test 1.$tn2.2.$tn.[llength $res] { 
+    set res [poslist_data 1 $expr]
+    do_execsql_test 1.$tn2.2.$tn.c.[llength $res] { 
       SELECT rowid, fts5_test_poslist(xx) FROM xx WHERE xx match $expr
+    } $res
+
+    set res [collist_data $expr]
+    do_execsql_test 1.$tn2.2.$tn.c.[llength $res] { 
+      SELECT rowid, fts5_test_collist(xx) FROM xx WHERE xx match $expr
     } $res
   }
 
@@ -266,9 +307,14 @@ foreach {tn2 sql} {
     4.3 {{x "x"}:b}
     4.4 {{"y" y}:b}
   } {
-    set res [matchdata 1 $expr]
-    do_execsql_test 1.$tn2.3.$tn.[llength $res] { 
+    set res [poslist_data 1 $expr]
+    do_execsql_test 1.$tn2.3.$tn.p.[llength $res] { 
       SELECT rowid, fts5_test_poslist(xx) FROM xx WHERE xx match $expr
+    } $res
+
+    set res [collist_data $expr]
+    do_execsql_test 1.$tn2.3.$tn.c.[llength $res] { 
+      SELECT rowid, fts5_test_collist(xx) FROM xx WHERE xx match $expr
     } $res
   }
 
@@ -287,9 +333,14 @@ foreach {tn2 sql} {
     8  { x : NEAR(r c) }
     9  { y : NEAR(r c) }
   } {
-    set res [matchdata 1 $expr]
-    do_execsql_test 1.$tn2.4.1.$tn.[llength $res] { 
+    set res [poslist_data 1 $expr]
+    do_execsql_test 1.$tn2.4.1.$tn.p.[llength $res] { 
       SELECT rowid, fts5_test_poslist(xx) FROM xx WHERE xx match $expr
+    } $res
+
+    set res [collist_data $expr]
+    do_execsql_test 1.$tn2.4.1.$tn.c.[llength $res] { 
+      SELECT rowid, fts5_test_collist(xx) FROM xx WHERE xx match $expr
     } $res
   }
 
@@ -337,7 +388,7 @@ foreach {tn2 sql} {
       18 { c NOT (b OR a) }
       19 { c NOT b OR a AND d }
     } {
-      set res [matchdata 0 $expr $bAsc]
+      set res [poslist_data 0 $expr $bAsc]
       do_execsql_test 1.$tn2.6.$bAsc.$tn.[llength $res] $sql $res
     }
   }
@@ -346,6 +397,9 @@ foreach {tn2 sql} {
 do_execsql_test 2.1 {
   SELECT fts5_expr_tcl('a AND b');
 } {{AND [nearset -- {a}] [nearset -- {b}]}}
+
+}
+#set data [lrange $data 0 5]
 
 # Some tests for detail=col tables and detail=none.
 #
@@ -374,7 +428,6 @@ foreach {tn2 sql} {
     INSERT INTO xx(xx, rank) VALUES('pgsz', 32);
   }
 
-
   do_test 3.$tn2.1.1 {
     foreach {id x y} $data {
       execsql { INSERT INTO xx(rowid, x, y) VALUES($id, $x, $y) }
@@ -384,12 +437,16 @@ foreach {tn2 sql} {
 
   foreach {tn q} {
     1 "o" 2 "b" 3 "e" 4 "m" 5 "l" 6 "a" 7 "b" 8 "c" 9 "no" 10 "L"
-    11 "o a" 12 "c AND d" 13 "o OR a" 12 "c OR d"
+    11 "o a" 12 "c AND d" 13 "o OR a" 14 "c OR d"
   } {
-    set res [matchdata 1 $q]
-
-    do_execsql_test 3.$tn2.1.2.$tn.[llength $res] { 
+    set res [poslist_data 1 $q]
+    do_execsql_test 3.$tn2.1.2.$tn.p.[llength $res] { 
       SELECT rowid, fts5_test_poslist(xx) FROM xx WHERE xx match $q
+    } $res
+
+    set res [collist_data $q]
+    do_execsql_test 3.$tn2.1.2.$tn.c.[llength $res] { 
+      SELECT rowid, fts5_test_collist(xx) FROM xx WHERE xx match $q
     } $res
   }
 
