@@ -473,6 +473,13 @@ struct CellInfo {
   u16 nSize;     /* Size of the cell content on the main b-tree page */
 };
 
+/* If X is a pointer to a CellInfo object for a cell, then OvflOffset(X) is 
+** the offset from the start of that cell to the first overflow page number 
+** for for that cell.
+*/
+#define OvflOffset(X)  ((X)->nSize-4)
+
+
 /*
 ** Maximum depth of an SQLite B-Tree structure. Any B-Tree deeper than
 ** this will be declared corrupt. This value is calculated based on a

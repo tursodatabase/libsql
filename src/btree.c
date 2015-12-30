@@ -1306,7 +1306,7 @@ static void ptrmapPutOvflPtr(MemPage *pPage, u8 *pCell, int *pRC){
   assert( pCell!=0 );
   pPage->xParseCell(pPage, pCell, &info);
   if( info.nLocal<info.nPayload ){
-    Pgno ovfl = get4byte(&pCell[info.nSize-4]);
+    Pgno ovfl = get4byte(&pCell[OvflOffset(&info)]);
     ptrmapPut(pPage->pBt, ovfl, PTRMAP_OVERFLOW1, pPage->pgno, pRC);
   }
 }
@@ -3346,9 +3346,9 @@ static int modifyPagePointer(MemPage *pPage, Pgno iFrom, Pgno iTo, u8 eType){
         pPage->xParseCell(pPage, pCell, &info);
         if( info.nLocal<info.nPayload
          && pCell+info.nSize-1<=pPage->aData+pPage->maskPage
-         && iFrom==get4byte(pCell+info.nSize-4)
+         && iFrom==get4byte(pCell+OvflOffset(&info))
         ){
-          put4byte(pCell+info.nSize-4, iTo);
+          put4byte(pCell+OvflOffset(&info), iTo);
           break;
         }
       }else{
@@ -6855,7 +6855,7 @@ static int ptrmapCheckPages(MemPage **apPage, int nPage){
       z = findCell(pPage, j);
       pPage->xParseCell(pPage, z, &info);
       if( info.nLocal<info.nPayload ){
-        Pgno ovfl = get4byte(&z[info.nSize-4]);
+        Pgno ovfl = get4byte(&z[OvflOffset(&info)]);
         ptrmapGet(pBt, ovfl, &e, &n);
         assert( n==pPage->pgno && e==PTRMAP_OVERFLOW1 );
       }
