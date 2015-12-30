@@ -1710,20 +1710,6 @@ int sqlite3_xferopt_count;
 
 #ifndef SQLITE_OMIT_XFER_OPT
 /*
-** Check to collation names to see if they are compatible.
-*/
-static int xferCompatibleCollation(const char *z1, const char *z2){
-  if( z1==0 ){
-    return z2==0;
-  }
-  if( z2==0 ){
-    return 0;
-  }
-  return sqlite3StrICmp(z1, z2)==0;
-}
-
-
-/*
 ** Check to see if index pSrc is compatible as a source of data
 ** for index pDest in an insert transfer optimization.  The rules
 ** for a compatible index:
@@ -1758,7 +1744,7 @@ static int xferCompatibleIndex(Index *pDest, Index *pSrc){
     if( pSrc->aSortOrder[i]!=pDest->aSortOrder[i] ){
       return 0;   /* Different sort orders */
     }
-    if( !xferCompatibleCollation(pSrc->azColl[i],pDest->azColl[i]) ){
+    if( sqlite3_stricmp(pSrc->azColl[i],pDest->azColl[i])!=0 ){
       return 0;   /* Different collating sequences */
     }
   }
@@ -1919,7 +1905,7 @@ static int xferOptimization(
     if( pDestCol->affinity!=pSrcCol->affinity ){
       return 0;    /* Affinity must be the same on all columns */
     }
-    if( !xferCompatibleCollation(pDestCol->zColl, pSrcCol->zColl) ){
+    if( sqlite3_stricmp(pDestCol->zColl, pSrcCol->zColl)!=0 ){
       return 0;    /* Collating sequence must be the same on all columns */
     }
     if( pDestCol->notNull && !pSrcCol->notNull ){

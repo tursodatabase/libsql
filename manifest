@@ -1,5 +1,5 @@
-C Remove\sunnecessary\stests\sfrom\sthe\sLIKE\spattern\smatcher.\s\sSlightly\sfaster\sand\nslightly\ssmaller,\sand\sit\sshould\salso\snow\sworks\swith\sEBCDIC.
-D 2015-12-30T14:06:22.463
+C Simplification\sto\sthe\sxfer-optimization\slogic.
+D 2015-12-30T15:18:16.130
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5fff077fcc46de7714ed6eebb6159a4c00eab751
@@ -294,7 +294,7 @@ F src/global.c 508e4087f7b41d688e4762dcf4d4fe28cfbc87f9
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
 F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c 4622e544a6f054b8f36bb06ae85f4aa09fcd6b5b
+F src/insert.c 756ae3281e465e5d489a3409ccb4f1041069d530
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/loadext.c 84996d7d70a605597d79c1f1d7b2012a5fd34f2b
@@ -1406,7 +1406,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7f386a9332237100a345035ca213327e21d95855
-R 7d1c2a289a785f636ce602a7472437a7
+P 0a99a8c4facf65ec67d8d86108c9a3f723f7cbd6
+R 5e4c4e8e37aad85efb78266b71a902b5
 U drh
-Z 72bb50259efca9e2c772b83f9c123827
+Z 91b12f25ba51396a818d59a327f065c9
