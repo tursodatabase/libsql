@@ -1,0 +1,75 @@
+# 2015 September 05
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+set testprefix fts5simple2
+
+# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a, detail=none);
+  INSERT INTO t1 VALUES('a b c');
+}
+do_execsql_test 1.1 {
+  SELECT rowid FROM t1('c a b')
+} {1}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a, detail=none);
+  BEGIN;
+    INSERT INTO t1 VALUES('b c d');
+    INSERT INTO t1 VALUES('b c d');
+  COMMIT;
+}
+do_execsql_test 2.1 {
+  SELECT rowid FROM t1('b c d')
+} {1 2}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a, detail=none);
+  BEGIN;
+    INSERT INTO t1 VALUES('b c d');
+    INSERT INTO t1 VALUES('b c d');
+}
+do_execsql_test 3.1 {
+  SELECT rowid FROM t1('b c d'); COMMIT;
+} {1 2}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a, detail=none);
+  BEGIN;
+    INSERT INTO t1 VALUES('a1 b1 c1');
+    INSERT INTO t1 VALUES('a2 b2 c2');
+    INSERT INTO t1 VALUES('a3 b3 c3');
+  COMMIT;
+}
+breakpoint
+do_execsql_test 4.1 {
+  SELECT rowid FROM t1('b*');
+} {1 2 3}
+
+
+finish_test
+

@@ -452,7 +452,8 @@ struct Fts5SegIter {
   Fts5Buffer term;                /* Current term */
   i64 iRowid;                     /* Current rowid */
   int nPos;                       /* Number of bytes in current position list */
-  int bDel;                       /* True if the delete flag is set */
+  u8 bDel;                        /* True if the delete flag is set */
+  // u8 bContent;                    /* True if has content (detail=none mode) */
 };
 
 /*
@@ -465,7 +466,6 @@ struct Fts5SegIter {
 
 #define FTS5_SEGITER_ONETERM 0x01
 #define FTS5_SEGITER_REVERSE 0x02
-
 
 /* 
 ** Argument is a pointer to an Fts5Data structure that contains a leaf
@@ -1492,13 +1492,28 @@ static int fts5GetPoslistSize(const u8 *p, int *pnSz, int *pbDel){
 static void fts5SegIterLoadNPos(Fts5Index *p, Fts5SegIter *pIter){
   if( p->rc==SQLITE_OK ){
     int iOff = pIter->iLeafOffset;  /* Offset to read at */
-    int nSz;
     ASSERT_SZLEAF_OK(pIter->pLeaf);
-    fts5FastGetVarint32(pIter->pLeaf->p, iOff, nSz);
-    pIter->bDel = (nSz & 0x0001);
-    pIter->nPos = nSz>>1;
+    if( p->pConfig->eDetail==FTS5_DETAIL_NONE ){
+      pIter->bDel = 0;
+      pIter->nPos = 1;
+      if( iOff<pIter->pLeaf->szLeaf && pIter->pLeaf->p[iOff]==0 ){
+        pIter->bDel = 1;
+        iOff++;
+        if( iOff<pIter->pLeaf->szLeaf && pIter->pLeaf->p[iOff]==0 ){
+          pIter->nPos = 1;
+          iOff++;
+        }else{
+          pIter->nPos = 0;
+        }
+      }
+    }else{
+      int nSz;
+      fts5FastGetVarint32(pIter->pLeaf->p, iOff, nSz);
+      pIter->bDel = (nSz & 0x0001);
+      pIter->nPos = nSz>>1;
+      assert_nc( pIter->nPos>=0 );
+    }
     pIter->iLeafOffset = iOff;
-    assert_nc( pIter->nPos>=0 );
   }
 }
 
@@ -1758,7 +1773,11 @@ static void fts5SegIterNext(
       int n = pLeaf->szLeaf;
 
       ASSERT_SZLEAF_OK(pLeaf);
-      iOff = pIter->iLeafOffset + pIter->nPos;
+      if( p->pConfig->eDetail==FTS5_DETAIL_NONE ){
+        iOff = pIter->iLeafOffset;
+      }else{
+        iOff = pIter->iLeafOffset + pIter->nPos;
+      }
 
       if( iOff<n ){
         /* The next entry is on the current page. */
@@ -1846,13 +1865,20 @@ static void fts5SegIterNext(
         }else{
           /* The following could be done by calling fts5SegIterLoadNPos(). But
           ** this block is particularly performance critical, so equivalent
-          ** code is inlined. */
+          ** code is inlined. 
+          **
+          ** Later: Switched back to fts5SegIterLoadNPos() because it supports
+          ** detail=none mode. Not ideal.
+          */
+#if 0
           int nSz;
           assert( p->rc==SQLITE_OK );
           fts5FastGetVarint32(pIter->pLeaf->p, pIter->iLeafOffset, nSz);
           pIter->bDel = (nSz & 0x0001);
           pIter->nPos = nSz>>1;
           assert_nc( pIter->nPos>=0 );
+#endif
+          fts5SegIterLoadNPos(p, pIter);
         }
       }
     }
@@ -4165,6 +4191,16 @@ static int fts5IndexExtractCol(
   return p - (*pa);
 }
 
+static int fts5AppendRowid(
+  Fts5Index *p,
+  i64 iDelta,
+  Fts5IndexIter *pMulti,
+  Fts5Colset *pColset,
+  Fts5Buffer *pBuf
+){
+  fts5BufferAppendVarint(&p->rc, pBuf, iDelta);
+  return 0;
+}
 
 /*
 ** Iterator pMulti currently points to a valid entry (not EOF). This
@@ -4306,6 +4342,67 @@ static void fts5MergeAppendDocid(
 }
 
 /*
+** Swap the contents of buffer *p1 with that of *p2.
+*/
+static void fts5BufferSwap(Fts5Buffer *p1, Fts5Buffer *p2){
+  Fts5Buffer tmp = *p1;
+  *p1 = *p2;
+  *p2 = tmp;
+}
+
+static void fts5NextRowid(Fts5Buffer *pBuf, int *piOff, i64 *piRowid){
+  int i = *piOff;
+  if( i>=pBuf->n ){
+    *piOff = -1;
+  }else{
+    u64 iVal;
+    *piOff = i + sqlite3Fts5GetVarint(&pBuf->p[i], &iVal);
+    *piRowid += iVal;
+  }
+}
+
+/*
+** This is the equivalent of fts5MergePrefixLists() for detail=none mode.
+** In this case the buffers consist of a delta-encoded list of rowids only.
+*/
+static void fts5MergeRowidLists(
+  Fts5Index *p,                   /* FTS5 backend object */
+  Fts5Buffer *p1,                 /* First list to merge */
+  Fts5Buffer *p2                  /* Second list to merge */
+){
+  int i1 = 0;
+  int i2 = 0;
+  i64 iRowid1 = 0;
+  i64 iRowid2 = 0;
+  i64 iOut = 0;
+
+  Fts5Buffer out;
+  memset(&out, 0, sizeof(out));
+  sqlite3Fts5BufferSize(&p->rc, &out, p1->n + p2->n);
+  if( p->rc ) return;
+
+  fts5NextRowid(p1, &i1, &iRowid1);
+  fts5NextRowid(p1, &i2, &iRowid2);
+  while( i1>=0 || i2>=0 ){
+    if( i1>=0 && (i2<0 || iRowid1<iRowid2) ){
+      fts5BufferSafeAppendVarint(&out, iRowid1 - iOut);
+      iOut = iRowid1;
+      fts5NextRowid(p1, &i1, &iRowid1);
+    }else{
+      fts5BufferSafeAppendVarint(&out, iRowid2 - iOut);
+      iOut = iRowid2;
+      fts5NextRowid(p2, &i2, &iRowid2);
+      if( i1>=0 && iRowid1==iRowid2 ){
+        fts5NextRowid(p1, &i1, &iRowid1);
+      }
+    }
+  }
+
+  fts5BufferSwap(&out, p1);
+  fts5BufferFree(&out);
+}
+
+/*
 ** Buffers p1 and p2 contain doclists. This function merges the content
 ** of the two doclists together and sets buffer p1 to the result before
 ** returning.
@@ -4392,15 +4489,6 @@ static void fts5MergePrefixLists(
   }
 }
 
-/*
-** Swap the contents of buffer *p1 with that of *p2.
-*/
-static void fts5BufferSwap(Fts5Buffer *p1, Fts5Buffer *p2){
-  Fts5Buffer tmp = *p1;
-  *p1 = *p2;
-  *p2 = tmp;
-}
-
 static void fts5SetupPrefixIter(
   Fts5Index *p,                   /* Index to read from */
   int bDesc,                      /* True for "ORDER BY rowid DESC" */
@@ -4412,6 +4500,16 @@ static void fts5SetupPrefixIter(
   Fts5Structure *pStruct;
   Fts5Buffer *aBuf;
   const int nBuf = 32;
+
+  void (*xMerge)(Fts5Index*, Fts5Buffer*, Fts5Buffer*);
+  int (*xAppend)(Fts5Index*, i64, Fts5IndexIter*, Fts5Colset*, Fts5Buffer*);
+  if( p->pConfig->eDetail==FTS5_DETAIL_NONE ){
+    xMerge = fts5MergeRowidLists;
+    xAppend = fts5AppendRowid;
+  }else{
+    xMerge = fts5MergePrefixLists;
+    xAppend = fts5AppendPoslist;
+  }
 
   aBuf = (Fts5Buffer*)fts5IdxMalloc(p, sizeof(Fts5Buffer)*nBuf);
   pStruct = fts5StructureRead(p);
@@ -4445,21 +4543,21 @@ static void fts5SetupPrefixIter(
             fts5BufferSwap(&doclist, &aBuf[i]);
             fts5BufferZero(&doclist);
           }else{
-            fts5MergePrefixLists(p, &doclist, &aBuf[i]);
+            xMerge(p, &doclist, &aBuf[i]);
             fts5BufferZero(&aBuf[i]);
           }
         }
         iLastRowid = 0;
       }
 
-      if( !fts5AppendPoslist(p, iRowid-iLastRowid, p1, pColset, &doclist) ){
+      if( !xAppend(p, iRowid-iLastRowid, p1, pColset, &doclist) ){
         iLastRowid = iRowid;
       }
     }
 
     for(i=0; i<nBuf; i++){
       if( p->rc==SQLITE_OK ){
-        fts5MergePrefixLists(p, &doclist, &aBuf[i]);
+        xMerge(p, &doclist, &aBuf[i]);
       }
       fts5BufferFree(&aBuf[i]);
     }
@@ -4854,6 +4952,9 @@ int sqlite3Fts5IterPoslist(
 
   assert( pIter->pIndex->rc==SQLITE_OK );
   *piRowid = pSeg->iRowid;
+  if( eDetail==FTS5_DETAIL_NONE ){
+    *pn = pSeg->nPos;
+  }else
   if( eDetail==FTS5_DETAIL_FULL 
    && pSeg->iLeafOffset+pSeg->nPos<=pSeg->pLeaf->szLeaf 
   ){
