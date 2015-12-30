@@ -1051,8 +1051,7 @@ static SQLITE_NOINLINE void btreeParseCellAdjustSizeForOverflow(
   }else{
     pInfo->nLocal = (u16)minLocal;
   }
-  pInfo->iOverflow = (u16)(&pInfo->pPayload[pInfo->nLocal] - pCell);
-  pInfo->nSize = pInfo->iOverflow + 4;
+  pInfo->nSize = (u16)(&pInfo->pPayload[pInfo->nLocal] - pCell) + 4;
 }
 
 /*
@@ -1084,7 +1083,6 @@ static void btreeParseCellPtrNoPayload(
   pInfo->nSize = 4 + getVarint(&pCell[4], (u64*)&pInfo->nKey);
   pInfo->nPayload = 0;
   pInfo->nLocal = 0;
-  pInfo->iOverflow = 0;
   pInfo->pPayload = 0;
   return;
 }
@@ -1154,7 +1152,6 @@ static void btreeParseCellPtr(
     pInfo->nSize = nPayload + (u16)(pIter - pCell);
     if( pInfo->nSize<4 ) pInfo->nSize = 4;
     pInfo->nLocal = (u16)nPayload;
-    pInfo->iOverflow = 0;
   }else{
     btreeParseCellAdjustSizeForOverflow(pPage, pCell, pInfo);
   }
@@ -1193,7 +1190,6 @@ static void btreeParseCellPtrIndex(
     pInfo->nSize = nPayload + (u16)(pIter - pCell);
     if( pInfo->nSize<4 ) pInfo->nSize = 4;
     pInfo->nLocal = (u16)nPayload;
-    pInfo->iOverflow = 0;
   }else{
     btreeParseCellAdjustSizeForOverflow(pPage, pCell, pInfo);
   }
@@ -1309,8 +1305,8 @@ static void ptrmapPutOvflPtr(MemPage *pPage, u8 *pCell, int *pRC){
   if( *pRC ) return;
   assert( pCell!=0 );
   pPage->xParseCell(pPage, pCell, &info);
-  if( info.iOverflow ){
-    Pgno ovfl = get4byte(&pCell[info.iOverflow]);
+  if( info.nLocal<info.nPayload ){
+    Pgno ovfl = get4byte(&pCell[info.nSize-4]);
     ptrmapPut(pPage->pBt, ovfl, PTRMAP_OVERFLOW1, pPage->pgno, pRC);
   }
 }
@@ -3348,11 +3344,11 @@ static int modifyPagePointer(MemPage *pPage, Pgno iFrom, Pgno iTo, u8 eType){
       if( eType==PTRMAP_OVERFLOW1 ){
         CellInfo info;
         pPage->xParseCell(pPage, pCell, &info);
-        if( info.iOverflow
-         && pCell+info.iOverflow+3<=pPage->aData+pPage->maskPage
-         && iFrom==get4byte(&pCell[info.iOverflow])
+        if( info.nLocal<info.nPayload
+         && pCell+info.nSize-1<=pPage->aData+pPage->maskPage
+         && iFrom==get4byte(pCell+info.nSize-4)
         ){
-          put4byte(&pCell[info.iOverflow], iTo);
+          put4byte(pCell+info.nSize-4, iTo);
           break;
         }
       }else{
@@ -5994,13 +5990,13 @@ static int clearCell(
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
   pPage->xParseCell(pPage, pCell, &info);
   *pnSize = info.nSize;
-  if( info.iOverflow==0 ){
+  if( info.nLocal==info.nPayload ){
     return SQLITE_OK;  /* No overflow pages. Return without doing anything */
   }
-  if( pCell+info.iOverflow+3 > pPage->aData+pPage->maskPage ){
+  if( pCell+info.nSize-1 > pPage->aData+pPage->maskPage ){
     return SQLITE_CORRUPT_BKPT;  /* Cell extends past end of page */
   }
-  ovflPgno = get4byte(&pCell[info.iOverflow]);
+  ovflPgno = get4byte(pCell + info.nSize - 4);
   assert( pBt->usableSize > 4 );
   ovflPageSize = pBt->usableSize - 4;
   nOvfl = (info.nPayload - info.nLocal + ovflPageSize - 1)/ovflPageSize;
@@ -6149,7 +6145,6 @@ static int fillInCell(
     assert( info.nKey==nKey );
     assert( *pnSize == info.nSize );
     assert( spaceLeft == info.nLocal );
-    assert( pPrior == &pCell[info.iOverflow] );
   }
 #endif
 
@@ -6859,8 +6854,8 @@ static int ptrmapCheckPages(MemPage **apPage, int nPage){
      
       z = findCell(pPage, j);
       pPage->xParseCell(pPage, z, &info);
-      if( info.iOverflow ){
-        Pgno ovfl = get4byte(&z[info.iOverflow]);
+      if( info.nLocal<info.nPayload ){
+        Pgno ovfl = get4byte(&z[info.nSize-4]);
         ptrmapGet(pBt, ovfl, &e, &n);
         assert( n==pPage->pgno && e==PTRMAP_OVERFLOW1 );
       }
@@ -9166,9 +9161,9 @@ static int checkTreePage(
     if( info.nPayload>info.nLocal ){
       int nPage;       /* Number of pages on the overflow chain */
       Pgno pgnoOvfl;   /* First page of the overflow chain */
-      assert( pc + info.iOverflow <= usableSize );
+      assert( pc + info.nSize - 4 <= usableSize );
       nPage = (info.nPayload - info.nLocal + usableSize - 5)/(usableSize - 4);
-      pgnoOvfl = get4byte(&pCell[info.iOverflow]);
+      pgnoOvfl = get4byte(&pCell[info.nSize - 4]);
 #ifndef SQLITE_OMIT_AUTOVACUUM
       if( pBt->autoVacuum ){
         checkPtrmap(pCheck, pgnoOvfl, PTRMAP_OVERFLOW1, iPage);
