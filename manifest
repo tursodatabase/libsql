@@ -1,5 +1,5 @@
-C Add\sthe\sjson_group_array()\sand\sjson_group_object()\saggregate\sfunctions\sto\nthe\sJSON1\sextension.
-D 2015-12-30T01:07:02.009
+C Remove\sunnecessary\stests\sfrom\sthe\sLIKE\spattern\smatcher.\s\sSlightly\sfaster\sand\nslightly\ssmaller,\sand\sit\sshould\salso\snow\sworks\swith\sEBCDIC.
+D 2015-12-30T14:06:22.463
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5fff077fcc46de7714ed6eebb6159a4c00eab751
@@ -289,7 +289,7 @@ F src/delete.c 00af9f08a15ddc5cba5962d3d3e5bf2d67b2e7da
 F src/expr.c 38790e65d1219f2b7dc26458f39a5252fe7c60cd
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 31900763094a3736a5fc887469202eb579fef2d0
-F src/func.c fe50a9ab977acc0bb0fcd46741e0071fa388888e
+F src/func.c cf5e10af9125b245f1b962e8ba4d520a37818795
 F src/global.c 508e4087f7b41d688e4762dcf4d4fe28cfbc87f9
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
 F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
@@ -1406,7 +1406,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7c7b7f26306b6aa6ff35b871ad756f43f5db9838
-R 9a71d4f0e52af46677f6902fe927abd2
+P 7f386a9332237100a345035ca213327e21d95855
+R 7d1c2a289a785f636ce602a7472437a7
 U drh
-Z d3d1e4137b6ba95a64ac245c7769bfd5
+Z 72bb50259efca9e2c772b83f9c123827
