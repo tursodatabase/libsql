@@ -1181,7 +1181,7 @@ static void jsonTest1Func(
 #endif /* SQLITE_DEBUG */
 
 /****************************************************************************
-** SQL function implementations
+** Scalar SQL function implementations
 ****************************************************************************/
 
 /*
@@ -1513,6 +1513,102 @@ static void jsonValidFunc(
   jsonParseReset(&x);
   sqlite3_result_int(ctx, rc);
 }
+
+
+/****************************************************************************
+** Aggregate SQL function implementations
+****************************************************************************/
+/*
+** json_group_array(VALUE)
+**
+** Return a JSON array composed of all values in the aggregate.
+*/
+static void jsonArrayStep(
+  sqlite3_context *ctx,
+  int argc,
+  sqlite3_value **argv
+){
+  JsonString *pStr;
+  pStr = (JsonString*)sqlite3_aggregate_context(ctx, sizeof(*pStr));
+  if( pStr ){
+    if( pStr->zBuf==0 ){
+      jsonInit(pStr, ctx);
+      jsonAppendChar(pStr, '[');
+    }else{
+      jsonAppendChar(pStr, ',');
+      pStr->pCtx = ctx;
+    }
+    jsonAppendValue(pStr, argv[0]);
+  }
+}
+static void jsonArrayFinal(sqlite3_context *ctx){
+  JsonString *pStr;
+  pStr = (JsonString*)sqlite3_aggregate_context(ctx, 0);
+  if( pStr ){
+    pStr->pCtx = ctx;
+    jsonAppendChar(pStr, ']');
+    if( pStr->bErr ){
+      sqlite3_result_error_nomem(ctx);
+      if( !pStr->bStatic ) sqlite3_free(pStr->zBuf);
+    }else{
+      sqlite3_result_text(ctx, pStr->zBuf, pStr->nUsed,
+                          pStr->bStatic ? SQLITE_TRANSIENT : sqlite3_free);
+      pStr->bStatic = 1;
+    }
+  }else{
+    sqlite3_result_text(ctx, "[]", 2, SQLITE_STATIC);
+  }
+  sqlite3_result_subtype(ctx, JSON_SUBTYPE);
+}
+
+/*
+** json_group_obj(NAME,VALUE)
+**
+** Return a JSON object composed of all names and values in the aggregate.
+*/
+static void jsonObjectStep(
+  sqlite3_context *ctx,
+  int argc,
+  sqlite3_value **argv
+){
+  JsonString *pStr;
+  const char *z;
+  u32 n;
+  pStr = (JsonString*)sqlite3_aggregate_context(ctx, sizeof(*pStr));
+  if( pStr ){
+    if( pStr->zBuf==0 ){
+      jsonInit(pStr, ctx);
+      jsonAppendChar(pStr, '{');
+    }else{
+      jsonAppendChar(pStr, ',');
+      pStr->pCtx = ctx;
+    }
+    z = (const char*)sqlite3_value_text(argv[0]);
+    n = (u32)sqlite3_value_bytes(argv[0]);
+    jsonAppendString(pStr, z, n);
+    jsonAppendChar(pStr, ':');
+    jsonAppendValue(pStr, argv[1]);
+  }
+}
+static void jsonObjectFinal(sqlite3_context *ctx){
+  JsonString *pStr;
+  pStr = (JsonString*)sqlite3_aggregate_context(ctx, 0);
+  if( pStr ){
+    jsonAppendChar(pStr, '}');
+    if( pStr->bErr ){
+      sqlite3_result_error_nomem(ctx);
+      if( !pStr->bStatic ) sqlite3_free(pStr->zBuf);
+    }else{
+      sqlite3_result_text(ctx, pStr->zBuf, pStr->nUsed,
+                          pStr->bStatic ? SQLITE_TRANSIENT : sqlite3_free);
+      pStr->bStatic = 1;
+    }
+  }else{
+    sqlite3_result_text(ctx, "{}", 2, SQLITE_STATIC);
+  }
+  sqlite3_result_subtype(ctx, JSON_SUBTYPE);
+}
+
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 /****************************************************************************
@@ -2012,6 +2108,15 @@ int sqlite3Json1Init(sqlite3 *db){
     { "json_test1",           1, 0,   jsonTest1Func         },
 #endif
   };
+  static const struct {
+     const char *zName;
+     int nArg;
+     void (*xStep)(sqlite3_context*,int,sqlite3_value**);
+     void (*xFinal)(sqlite3_context*);
+  } aAgg[] = {
+    { "json_group_array",     1,   jsonArrayStep,   jsonArrayFinal  },
+    { "json_group_object",    2,   jsonObjectStep,  jsonObjectFinal },
+  };
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   static const struct {
      const char *zName;
@@ -2026,6 +2131,11 @@ int sqlite3Json1Init(sqlite3 *db){
                                  SQLITE_UTF8 | SQLITE_DETERMINISTIC, 
                                  (void*)&aFunc[i].flag,
                                  aFunc[i].xFunc, 0, 0);
+  }
+  for(i=0; i<sizeof(aAgg)/sizeof(aAgg[0]) && rc==SQLITE_OK; i++){
+    rc = sqlite3_create_function(db, aAgg[i].zName, aAgg[i].nArg,
+                                 SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+                                 0, aAgg[i].xStep, aAgg[i].xFinal);
   }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   for(i=0; i<sizeof(aMod)/sizeof(aMod[0]) && rc==SQLITE_OK; i++){
