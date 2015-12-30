@@ -1,5 +1,5 @@
-C Simplification\sto\sthe\sxfer-optimization\slogic.
-D 2015-12-30T15:18:16.130
+C Changes\sto\sthe\sway\sthat\sthe\sdefault\sBINARY\scollating\ssequence\sis\srecorded\nresult\sin\sa\sslightly\ssmaller\sand\sslightly\sfaster\sexecutable.\s\sMore\swork\scould\nbe\sdone\sto\smake\sthis\scleaner.
+D 2015-12-30T16:51:20.187
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5fff077fcc46de7714ed6eebb6159a4c00eab751
@@ -279,7 +279,7 @@ F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
 F src/btree.c 84ede51e371a11c3dbb3e24ccc5e3e99594a6c00
 F src/btree.h 2d76dee44704c47eed323356a758662724b674a0
 F src/btreeInt.h 3ab435ed27adea54d040584b0bcc488ee7db1e38
-F src/build.c e83da4d004a4e050c01acbb821ff7a7b1019c29b
+F src/build.c 5a8611a01cbf67c736d81304e054ec361ef8963d
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
 F src/ctime.c 60e135af364d777a9ab41c97e5e89cd224da6198
@@ -288,17 +288,17 @@ F src/dbstat.c ffd63fc8ba7541476ced189b95e95d7f2bc63f78
 F src/delete.c 00af9f08a15ddc5cba5962d3d3e5bf2d67b2e7da
 F src/expr.c 38790e65d1219f2b7dc26458f39a5252fe7c60cd
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
-F src/fkey.c 31900763094a3736a5fc887469202eb579fef2d0
+F src/fkey.c e18b3dff7d47c7bcac5ac4fc178a89b9fd322b44
 F src/func.c cf5e10af9125b245f1b962e8ba4d520a37818795
-F src/global.c 508e4087f7b41d688e4762dcf4d4fe28cfbc87f9
+F src/global.c bd5a0af3f30b0c01be6db756c626cd3c33a3d260
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
 F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c 756ae3281e465e5d489a3409ccb4f1041069d530
+F src/insert.c 6b45cc86967da11aa024d034745f93f66d53f650
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/loadext.c 84996d7d70a605597d79c1f1d7b2012a5fd34f2b
-F src/main.c 2f33510a6a392c606fe64964e695e55ad124242f
+F src/main.c b9641a4f650230bfc5dbb0bebf7b33ff4d27586a
 F src/malloc.c 8f787669e79de26efc42272b5797bc00fff527c6
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 6919bcf12f221868ea066eec27e579fed95ce98b
@@ -338,7 +338,7 @@ F src/shell.c abbc74ea43dbf2f306ea18282d666683fb5efab2
 F src/sqlite.h.in 7d87d71b9a4689c51fa092f48f16590ff71558e3
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
-F src/sqliteInt.h 6e0c1082268e99aa337de1547df32b220e812fb3
+F src/sqliteInt.h 526c8514d0cb0768d014d04445c6eebd1d0b1a2c
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
@@ -412,8 +412,8 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 974928c988681c5157202c79dd9f26afaa7b5086
 F src/wal.h 907943dfdef10b583e81906679a347e0ec6f1b1b
 F src/walker.c 2e14d17f592d176b6dc879c33fbdec4fbccaa2ba
-F src/where.c b18edbb9e5afabb77f4f27550c471c5c824e0fe7
-F src/whereInt.h e20801d89e34de1912bb6a3babb30c390da27add
+F src/where.c c6d3d2f6af57d574a7365ee2b225a5024f2a6bec
+F src/whereInt.h 78b6b4de94db84aecbdc07fe3e38f648eb391e9a
 F src/wherecode.c dfbfe198e418b01f208b489e088edd230c91a4e7
 F src/whereexpr.c eebba8340c90de73b3d3bbe8c43b84559b8e6e2c
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1406,7 +1406,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0a99a8c4facf65ec67d8d86108c9a3f723f7cbd6
-R 5e4c4e8e37aad85efb78266b71a902b5
+P f35ba018da843897acca58f70541b940598bc271
+R 73bd359208653598962819ad055e1d11
 U drh
-Z 91b12f25ba51396a818d59a327f065c9
+Z 53e385ce34cbe66e9c94953f6b43b3a2
