@@ -1,5 +1,5 @@
-C Changes\sto\sthe\sway\sthat\sthe\sdefault\sBINARY\scollating\ssequence\sis\srecorded\nresult\sin\sa\sslightly\ssmaller\sand\sslightly\sfaster\sexecutable.\s\sMore\swork\scould\nbe\sdone\sto\smake\sthis\scleaner.
-D 2015-12-30T16:51:20.187
+C Enhance\sthe\scommand-line\sshell\sso\sthat\sit\scan\shandle\sMBCS\scharacters\son\s\ninput\sand\soutput.
+D 2015-12-30T17:03:40.996
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5fff077fcc46de7714ed6eebb6159a4c00eab751
@@ -334,7 +334,7 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c a83b41104e6ff69855d03cd0aaa09e93927ec39f
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c f8fded11fc443a9f5a73cc5db069d06b34460e2f
-F src/shell.c abbc74ea43dbf2f306ea18282d666683fb5efab2
+F src/shell.c ace08b69cd9702143cf87b5bd20b744a56f832fd
 F src/sqlite.h.in 7d87d71b9a4689c51fa092f48f16590ff71558e3
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
@@ -1406,7 +1406,8 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f35ba018da843897acca58f70541b940598bc271
-R 73bd359208653598962819ad055e1d11
+P 2081d75767dc590b4c8457e5f8e5f18ba5f8eaa7 a0a08b8c0bbd4d71955261f6b7e997701ca68e18
+R 7ece1114510edab4a5d304cc0b06015c
+T +closed a0a08b8c0bbd4d71955261f6b7e997701ca68e18
 U drh
-Z 53e385ce34cbe66e9c94953f6b43b3a2
+Z 175aed9e7444f5a5f7c550af284b6e58
