@@ -109,35 +109,59 @@ do_execsql_test 7.0 {
   INSERT INTO t1 VALUES('a1 b2');
   COMMIT;
 }
-do_execsql_test 7.0.4 { SELECT rowid FROM t1('b*') ORDER BY rowid DESC } {2 1}
-do_execsql_test 7.0.5 { SELECT rowid FROM t1('a1') ORDER BY rowid DESC } {2 1}
+do_execsql_test 7.1 { SELECT rowid FROM t1('b*') ORDER BY rowid DESC } {2 1}
+do_execsql_test 7.2 { SELECT rowid FROM t1('a1') ORDER BY rowid DESC } {2 1}
 
 #-------------------------------------------------------------------------
 #
 reset_db
-do_execsql_test 7.0 {
+do_execsql_test 8.0 {
   CREATE VIRTUAL TABLE t1 USING fts5(a, detail=none);
   INSERT INTO t1 VALUES('a1 b1 c1');
   INSERT INTO t1 VALUES('a2 b2 c2');
   INSERT INTO t1 VALUES('a1 b1 c1');
 }
-do_execsql_test 7.0.1 { SELECT rowid FROM t1('b*') } {1 2 3}
-do_execsql_test 7.0.2 { SELECT rowid FROM t1('a1') } {1 3}
-do_execsql_test 7.0.3 { SELECT rowid FROM t1('c2') } {2}
+do_execsql_test 8.0.1 { SELECT rowid FROM t1('b*') } {1 2 3}
+do_execsql_test 8.0.2 { SELECT rowid FROM t1('a1') } {1 3}
+do_execsql_test 8.0.3 { SELECT rowid FROM t1('c2') } {2}
 
-do_execsql_test 7.0.4 { SELECT rowid FROM t1('b*') ORDER BY rowid DESC } {3 2 1}
-do_execsql_test 7.0.5 { SELECT rowid FROM t1('a1') ORDER BY rowid DESC } {3 1}
-do_execsql_test 7.0.7 { SELECT rowid FROM t1('c2') ORDER BY rowid DESC } {2}
+do_execsql_test 8.0.4 { SELECT rowid FROM t1('b*') ORDER BY rowid DESC } {3 2 1}
+do_execsql_test 8.0.5 { SELECT rowid FROM t1('a1') ORDER BY rowid DESC } {3 1}
+do_execsql_test 8.0.8 { SELECT rowid FROM t1('c2') ORDER BY rowid DESC } {2}
 
-do_execsql_test 7.1.0 { INSERT INTO t1(t1) VALUES('optimize') }
+do_execsql_test 8.1.0 { INSERT INTO t1(t1) VALUES('optimize') }
 
-do_execsql_test 7.1.1 { SELECT rowid FROM t1('b*') } {1 2 3}
-do_execsql_test 7.1.2 { SELECT rowid FROM t1('a1') } {1 3}
-do_execsql_test 7.1.3 { SELECT rowid FROM t1('c2') } {2}
+do_execsql_test 8.1.1 { SELECT rowid FROM t1('b*') } {1 2 3}
+do_execsql_test 8.1.2 { SELECT rowid FROM t1('a1') } {1 3}
+do_execsql_test 8.1.3 { SELECT rowid FROM t1('c2') } {2}
 
-do_execsql_test 7.2.1 { SELECT rowid FROM t1('b*') ORDER BY rowid DESC} {3 2 1}
-do_execsql_test 7.2.2 { SELECT rowid FROM t1('a1') ORDER BY rowid DESC} {3 1}
-do_execsql_test 7.2.3 { SELECT rowid FROM t1('c2') ORDER BY rowid DESC} {2}
+do_execsql_test 8.2.1 { SELECT rowid FROM t1('b*') ORDER BY rowid DESC} {3 2 1}
+do_execsql_test 8.2.2 { SELECT rowid FROM t1('a1') ORDER BY rowid DESC} {3 1}
+do_execsql_test 8.2.3 { SELECT rowid FROM t1('c2') ORDER BY rowid DESC} {2}
+
+#--------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 9.0.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a, detail=none);
+  INSERT INTO t1 VALUES('a1 b1 c1');
+  INSERT INTO t1 VALUES('a2 b2 c2');
+  INSERT INTO t1 VALUES('a1 b1 c1');
+}
+do_execsql_test 9.0.1 {
+  INSERT INTO t1(t1) VALUES('integrity-check');
+} {}
+
+reset_db
+do_execsql_test 9.1.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a, b, detail=none);
+  INSERT INTO t1 VALUES('a1 b1 c1', 'x y z');
+  INSERT INTO t1 VALUES('a2 b2 c2', '1 2 3');
+  INSERT INTO t1 VALUES('a1 b1 c1', 'x 2 z');
+}
+do_execsql_test 9.2.1 {
+  INSERT INTO t1(t1) VALUES('integrity-check');
+} {}
 
 finish_test
 

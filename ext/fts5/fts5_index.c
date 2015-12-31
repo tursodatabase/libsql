@@ -5199,6 +5199,7 @@ static int fts5QueryCksum(
   int flags,                      /* Flags for Fts5IndexQuery */
   u64 *pCksum                     /* IN/OUT: Checksum value */
 ){
+  int eDetail = p->pConfig->eDetail;
   u64 cksum = *pCksum;
   Fts5IndexIter *pIdxIter = 0;
   Fts5Buffer buf = {0, 0, 0};
@@ -5206,17 +5207,24 @@ static int fts5QueryCksum(
 
   while( rc==SQLITE_OK && 0==sqlite3Fts5IterEof(pIdxIter) ){
     i64 rowid = sqlite3Fts5IterRowid(pIdxIter);
-    rc = sqlite3Fts5IterPoslistBuffer(pIdxIter, &buf);
-    if( rc==SQLITE_OK ){
-      Fts5PoslistReader sReader;
-      for(sqlite3Fts5PoslistReaderInit(buf.p, buf.n, &sReader);
-          sReader.bEof==0;
-          sqlite3Fts5PoslistReaderNext(&sReader)
-      ){
-        int iCol = FTS5_POS2COLUMN(sReader.iPos);
-        int iOff = FTS5_POS2OFFSET(sReader.iPos);
-        cksum ^= sqlite3Fts5IndexEntryCksum(rowid, iCol, iOff, iIdx, z, n);
+
+    if( eDetail==FTS5_DETAIL_NONE ){
+      cksum ^= sqlite3Fts5IndexEntryCksum(rowid, 0, 0, iIdx, z, n);
+    }else{
+      rc = sqlite3Fts5IterPoslistBuffer(pIdxIter, &buf);
+      if( rc==SQLITE_OK ){
+        Fts5PoslistReader sReader;
+        for(sqlite3Fts5PoslistReaderInit(buf.p, buf.n, &sReader);
+            sReader.bEof==0;
+            sqlite3Fts5PoslistReaderNext(&sReader)
+           ){
+          int iCol = FTS5_POS2COLUMN(sReader.iPos);
+          int iOff = FTS5_POS2OFFSET(sReader.iPos);
+          cksum ^= sqlite3Fts5IndexEntryCksum(rowid, iCol, iOff, iIdx, z, n);
+        }
       }
+    }
+    if( rc==SQLITE_OK ){
       rc = sqlite3Fts5IterNext(pIdxIter);
     }
   }
@@ -5523,6 +5531,7 @@ static void fts5IndexIntegrityCheckSegment(
 ** occurs.
 */
 int sqlite3Fts5IndexIntegrityCheck(Fts5Index *p, u64 cksum){
+  int eDetail = p->pConfig->eDetail;
   u64 cksum2 = 0;                 /* Checksum based on contents of indexes */
   Fts5Buffer poslist = {0,0,0};   /* Buffer used to hold a poslist */
   Fts5IndexIter *pIter;           /* Used to iterate through entire index */
@@ -5574,12 +5583,16 @@ int sqlite3Fts5IndexIntegrityCheck(Fts5Index *p, u64 cksum){
     /* If this is a new term, query for it. Update cksum3 with the results. */
     fts5TestTerm(p, &term, z, n, cksum2, &cksum3);
 
-    poslist.n = 0;
-    fts5SegiterPoslist(p, &pIter->aSeg[pIter->aFirst[1].iFirst] , 0, &poslist);
-    while( 0==sqlite3Fts5PoslistNext64(poslist.p, poslist.n, &iOff, &iPos) ){
-      int iCol = FTS5_POS2COLUMN(iPos);
-      int iTokOff = FTS5_POS2OFFSET(iPos);
-      cksum2 ^= sqlite3Fts5IndexEntryCksum(iRowid, iCol, iTokOff, -1, z, n);
+    if( eDetail==FTS5_DETAIL_NONE ){
+      cksum2 ^= sqlite3Fts5IndexEntryCksum(iRowid, 0, 0, -1, z, n);
+    }else{
+      poslist.n = 0;
+      fts5SegiterPoslist(p, &pIter->aSeg[pIter->aFirst[1].iFirst], 0, &poslist);
+      while( 0==sqlite3Fts5PoslistNext64(poslist.p, poslist.n, &iOff, &iPos) ){
+        int iCol = FTS5_POS2COLUMN(iPos);
+        int iTokOff = FTS5_POS2OFFSET(iPos);
+        cksum2 ^= sqlite3Fts5IndexEntryCksum(iRowid, iCol, iTokOff, -1, z, n);
+      }
     }
   }
   fts5TestTerm(p, &term, 0, 0, cksum2, &cksum3);

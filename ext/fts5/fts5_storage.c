@@ -853,8 +853,23 @@ static int fts5StorageIntegrityCallback(
     pCtx->szCol++;
   }
 
-  iPos = pTermset ? pCtx->iCol : pCtx->szCol-1;
-  iCol = pTermset ? 0 : pCtx->iCol;
+  switch( pCtx->pConfig->eDetail ){
+    case FTS5_DETAIL_FULL:
+      iPos = pCtx->szCol-1;
+      iCol = pCtx->iCol;
+      break;
+
+    case FTS5_DETAIL_COLUMNS:
+      iPos = pCtx->iCol;
+      iCol = 0;
+      break;
+
+    default:
+      assert( pCtx->pConfig->eDetail==FTS5_DETAIL_NONE );
+      iPos = 0;
+      iCol = 0;
+      break;
+  }
 
   rc = sqlite3Fts5TermsetAdd(pTermset, 0, pToken, nToken, &bPresent);
   if( rc==SQLITE_OK && bPresent==0 ){
@@ -912,11 +927,14 @@ int sqlite3Fts5StorageIntegrity(Fts5Storage *p){
       if( pConfig->bColumnsize ){
         rc = sqlite3Fts5StorageDocsize(p, ctx.iRowid, aColSize);
       }
+      if( rc==SQLITE_OK && pConfig->eDetail==FTS5_DETAIL_NONE ){
+        rc = sqlite3Fts5TermsetNew(&ctx.pTermset);
+      }
       for(i=0; rc==SQLITE_OK && i<pConfig->nCol; i++){
         if( pConfig->abUnindexed[i] ) continue;
         ctx.iCol = i;
         ctx.szCol = 0;
-        if( pConfig->eDetail!=FTS5_DETAIL_FULL ){
+        if( pConfig->eDetail==FTS5_DETAIL_COLUMNS ){
           rc = sqlite3Fts5TermsetNew(&ctx.pTermset);
         }
         if( rc==SQLITE_OK ){
@@ -932,9 +950,14 @@ int sqlite3Fts5StorageIntegrity(Fts5Storage *p){
           rc = FTS5_CORRUPT;
         }
         aTotalSize[i] += ctx.szCol;
-        sqlite3Fts5TermsetFree(ctx.pTermset);
-        ctx.pTermset = 0;
+        if( pConfig->eDetail==FTS5_DETAIL_COLUMNS ){
+          sqlite3Fts5TermsetFree(ctx.pTermset);
+          ctx.pTermset = 0;
+        }
       }
+      sqlite3Fts5TermsetFree(ctx.pTermset);
+      ctx.pTermset = 0;
+
       if( rc!=SQLITE_OK ) break;
     }
     rc2 = sqlite3_reset(pScan);
