@@ -1,5 +1,5 @@
-C Reduce\sthe\ssize\sof\sthe\sCellInfo\sobject\sfrom\s32\sto\s24\sbytes\son\s64-bit\smachines,\nfor\sa\ssmall\sperformance\sincrease\sand\slibrary\ssize\sreduction.
-D 2015-12-30T18:18:46.481
+C Small\ssize\sand\sperformance\soptimization\sto\sthe\sVDBE\scomparison\sopcodes.
+D 2015-12-31T04:34:26.528
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5fff077fcc46de7714ed6eebb6159a4c00eab751
@@ -338,7 +338,7 @@ F src/shell.c ace08b69cd9702143cf87b5bd20b744a56f832fd
 F src/sqlite.h.in 7d87d71b9a4689c51fa092f48f16590ff71558e3
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
-F src/sqliteInt.h 526c8514d0cb0768d014d04445c6eebd1d0b1a2c
+F src/sqliteInt.h d68c05b69767224eea116f07793a531286946776
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
@@ -398,11 +398,11 @@ F src/update.c 17332f9fe818cbc0444c36a811800af8498af4c3
 F src/utf.c 32d7f82aa921322f3e1c956f4b58f019ebd2c6b3
 F src/util.c e802e8e311a0d6c48cd1b3e89db164f6f0248d70
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c 984c2be6691d3f67deb2e6747c2132150d776f32
+F src/vdbe.c 39d7628bb8eed10a5378adcf97cca6dce7829a8f
 F src/vdbe.h efb7a8c1459e31f3ea4377824c6a7e4cb5068637
 F src/vdbeInt.h 75c2e82ee3357e9210c06474f8d9bdf12c81105d
 F src/vdbeapi.c 020681b943e77766b32ae1cddf86d7831b7374ca
-F src/vdbeaux.c 68082d9991fc1b8625d34c8b5db1775c9dee426e
+F src/vdbeaux.c ca523180c128dc6c64894efc61eb14374117c864
 F src/vdbeblob.c fdc4a81605ae7a35ae94a55bd768b66d6be16f15
 F src/vdbemem.c fdd1578e47bea61390d472de53c565781d81e045
 F src/vdbesort.c a7ec02da4494c59dfd071126dd3726be5a11459d
@@ -1406,8 +1406,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3d81dfe3bc5ca9588b7796769d9be7a182f38b1c 7850715406458a61cff9eba5ad915f61f6d99482
-R 53c67154b7bbcd33ca0c18e39c81df1f
-T +closed 7850715406458a61cff9eba5ad915f61f6d99482
+P 6a4cfc7ab62046eb718ce59eff6b632f239312ac
+R 38bdbc546325a042578b5eb533fe5e2f
 U drh
-Z f674907b91bbe0647e025dbc39f72b55
+Z 5aa34f553c2d2033c492b62e2956faac
