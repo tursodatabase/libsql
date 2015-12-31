@@ -3348,7 +3348,11 @@ void sqlite3OpenMasterTable(Parse *, int);
 Index *sqlite3PrimaryKeyIndex(Table*);
 i16 sqlite3ColumnOfIndex(Index*, i16);
 void sqlite3StartTable(Parse*,Token*,Token*,int,int,int,int);
-void sqlite3ColumnPropertiesFromName(Table*, Column*);
+#if SQLITE_ENABLE_HIDDEN_COLUMNS
+  void sqlite3ColumnPropertiesFromName(Table*, Column*);
+#else
+# define sqlite3ColumnPropertiesFromName(T,C) /* no-op */
+#endif
 void sqlite3AddColumn(Parse*,Token*);
 void sqlite3AddNotNull(Parse*, int);
 void sqlite3AddPrimaryKey(Parse*, ExprList*, int, int, int);

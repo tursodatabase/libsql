@@ -1,5 +1,5 @@
-C Small\ssize\sand\sperformance\soptimization\sto\sthe\sVDBE\scomparison\sopcodes.
-D 2015-12-31T04:34:26.528
+C Fix\sharmless\scompiler\swarnings\sassociated\swith\sSQLITE_ENABLE_HIDDEN_COLUMNS.
+D 2015-12-31T15:34:03.678
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5fff077fcc46de7714ed6eebb6159a4c00eab751
@@ -279,7 +279,7 @@ F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
 F src/btree.c 5ac3f868d4f20a67f0f00a1014940f902b511558
 F src/btree.h 2d76dee44704c47eed323356a758662724b674a0
 F src/btreeInt.h b5f2651b41808f038dee9282c5dc0232ce6532d3
-F src/build.c 5a8611a01cbf67c736d81304e054ec361ef8963d
+F src/build.c 249e9605fc423feeca0316e7018df04da8c345d5
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
 F src/ctime.c 60e135af364d777a9ab41c97e5e89cd224da6198
@@ -338,7 +338,7 @@ F src/shell.c ace08b69cd9702143cf87b5bd20b744a56f832fd
 F src/sqlite.h.in 7d87d71b9a4689c51fa092f48f16590ff71558e3
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
-F src/sqliteInt.h d68c05b69767224eea116f07793a531286946776
+F src/sqliteInt.h 92f83ab4612141f95cdd663ea55fa4528f3f8c2a
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
@@ -1406,7 +1406,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6a4cfc7ab62046eb718ce59eff6b632f239312ac
-R 38bdbc546325a042578b5eb533fe5e2f
+P 7a0b9413fa94d3f4fa9751ddf9b213a1238954f1
+R 793126e19a875ee34b3c925c6d9cf329
 U drh
-Z 5aa34f553c2d2033c492b62e2956faac
+Z 7a54e045f07d4dcaeff2de7160303dce
