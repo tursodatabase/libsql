@@ -1,5 +1,5 @@
-C Updates\sto\sfts5\sto\ssupport\sdetail=none\smode.\sAs\sof\sthis\scommit,\smany\scases\sare\sstill\sbroken.
-D 2015-12-30T19:58:57.068
+C Fix\ssome\sproblems\swith\sfts5\sdetail=none\stables.\sSome\sstill\sremain.
+D 2015-12-31T17:36:58.906
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5fff077fcc46de7714ed6eebb6159a4c00eab751
@@ -103,7 +103,7 @@ F ext/fts5/fts5_buffer.c 87204c8b3b8bc62b27376eab09b74d6d5acc41f1
 F ext/fts5/fts5_config.c b0ed7b0ddd785fb4d4e6f9037d357f8aa95918e6
 F ext/fts5/fts5_expr.c 08ee4f342a2b1fd82a5dccd0b9b3cde4921a8be5
 F ext/fts5/fts5_hash.c 1b113977296cf4212c6ec667d5e3f2bd18036955
-F ext/fts5/fts5_index.c 94dec3c322e9179fb0dd3239d6fe9555b9c621ec
+F ext/fts5/fts5_index.c 40eac312bdcb67552fe6dc2e0a4bad67d9273e3d
 F ext/fts5/fts5_main.c 23f3912ff44172859c771eb55cb57778fd662e89
 F ext/fts5/fts5_storage.c 076a3356536a8831eb6e554195171d5c249cd179
 F ext/fts5/fts5_tcl.c 18e9382d8cdad4c05b49559c68494968b9b4a4fb
@@ -170,7 +170,7 @@ F ext/fts5/test/fts5rebuild.test 03935f617ace91ed23a6099c7c74d905227ff29b
 F ext/fts5/test/fts5restart.test c17728fdea26e7d0f617d22ad5b4b2862b994c17
 F ext/fts5/test/fts5rowid.test 400384798349d658eaf06aefa1e364957d5d4821
 F ext/fts5/test/fts5simple.test a599b7577bc3827a9a678add3b43d8b818b93456
-F ext/fts5/test/fts5simple2.test 70b98039c8a73341bb4a632adb3018e1017e3beb
+F ext/fts5/test/fts5simple2.test 9b1e4c44fc63bd0cbb3ea639cd0ad9fa764849bf
 F ext/fts5/test/fts5synonym.test cf88c0a56d5ea9591e3939ef1f6e294f7f2d0671
 F ext/fts5/test/fts5tokenizer.test ea4df698b35cc427ebf2ba22829d0e28386d8c89
 F ext/fts5/test/fts5unicode.test fbef8d8a3b4b88470536cc57604a82ca52e51841
@@ -1407,7 +1407,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8c30605bcd0a78a5015948171145bc6f640b8358
-R 393cc400b4b232cee04e2e069dffc8fe
+P ac8f4cf0cede6bcbe47eeefb85d80a27e9278212
+R 4d80cd94292f49ff63b2b342f7b40c82
 U dan
-Z c9f782e6b3f3ae84d42c40bf56b4157b
+Z 84b26c5644e7f6dfb95a54fd72f26ecc
