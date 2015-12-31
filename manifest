@@ -1,5 +1,5 @@
-C In\sthe\sshell,\suse\sutf8_printf()\swhen\sany\sstring\sformatting\sis\spresent\sand\sraw_printf()\sotherwise.
-D 2015-12-31T19:06:24.721
+C Fix\sthe\sieee754.test\smodule\sso\sthat\sit\sworks\sboth\son\ssystems\sthat\sreport\ninfinity\sas\s"inf"\sand\sas\s"Inf".
+D 2015-12-31T22:29:36.133
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5fff077fcc46de7714ed6eebb6159a4c00eab751
@@ -761,7 +761,7 @@ F test/hexlit.test d7b0a5f41123df1e43985b91b8b2e70f95282d21
 F test/hidden.test 23c1393a79e846d68fd902d72c85d5e5dcf98711
 F test/hook.test 162d7cef7a2d2b04839fe14402934e6a1b79442f
 F test/icu.test 70df4faca133254c042d02ae342c0a141f2663f4
-F test/ieee754.test 118b665a97a8df0e8f2fbdb07d113e596f4a6b53
+F test/ieee754.test 806fc0ce7f305f57e3331eaceeddcfec9339e607
 F test/imposter1.test c3f1db2d3db2c24611a6596a3fc0ffc14f1466c8
 F test/in.test 61a24ae38d4b64ec69f06ccdf022992f68a98176
 F test/in2.test 5d4c61d17493c832f7d2d32bef785119e87bde75
@@ -1406,7 +1406,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 98ec778daac835d9ae103f6460b7d897981a5dd6
-R cd1e993dc14f9af3b107557468145aaf
-U mistachkin
-Z 770ade254ba97d3649a2f5b30f5d6fd8
+P 8cf01fff232d15d3c7b7b62b2d890d983e1945f2
+R 1c5d971ba298f5f3c5fb001aa5fe882d
+U drh
+Z d166bbddc4f1202c8b662a343755f966
