@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarning\sseen\swith\sMSVC.
-D 2015-12-31T19:04:42.799
+C In\sthe\sshell,\suse\sutf8_printf()\swhen\sany\sstring\sformatting\sis\spresent\sand\sraw_printf()\sotherwise.
+D 2015-12-31T19:06:24.721
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5fff077fcc46de7714ed6eebb6159a4c00eab751
@@ -334,7 +334,7 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c a83b41104e6ff69855d03cd0aaa09e93927ec39f
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c f8fded11fc443a9f5a73cc5db069d06b34460e2f
-F src/shell.c ace08b69cd9702143cf87b5bd20b744a56f832fd
+F src/shell.c 8d152e833c3b79825978deb83175234749c5cdf3
 F src/sqlite.h.in 7d87d71b9a4689c51fa092f48f16590ff71558e3
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
@@ -1406,7 +1406,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9c392c1019ee15f27c8e05b41246d2844f91f6c0
-R 55161c92d22f1816c3b9c126a24128f9
+P 98ec778daac835d9ae103f6460b7d897981a5dd6
+R cd1e993dc14f9af3b107557468145aaf
 U mistachkin
-Z b7a8bb994d81380f55ad5f17330fd4b6
+Z 770ade254ba97d3649a2f5b30f5d6fd8
