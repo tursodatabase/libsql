@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sassociated\swith\sSQLITE_ENABLE_HIDDEN_COLUMNS.
-D 2015-12-31T15:34:03.678
+C Fix\sharmless\scompiler\swarning\sseen\swith\sMSVC.
+D 2015-12-31T19:04:42.799
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5fff077fcc46de7714ed6eebb6159a4c00eab751
@@ -279,7 +279,7 @@ F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
 F src/btree.c 5ac3f868d4f20a67f0f00a1014940f902b511558
 F src/btree.h 2d76dee44704c47eed323356a758662724b674a0
 F src/btreeInt.h b5f2651b41808f038dee9282c5dc0232ce6532d3
-F src/build.c 249e9605fc423feeca0316e7018df04da8c345d5
+F src/build.c 1c9fb552148ee8f9234435a38833f8fca2081a71
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
 F src/ctime.c 60e135af364d777a9ab41c97e5e89cd224da6198
@@ -1406,7 +1406,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7a0b9413fa94d3f4fa9751ddf9b213a1238954f1
-R 793126e19a875ee34b3c925c6d9cf329
-U drh
-Z 7a54e045f07d4dcaeff2de7160303dce
+P 9c392c1019ee15f27c8e05b41246d2844f91f6c0
+R 55161c92d22f1816c3b9c126a24128f9
+U mistachkin
+Z b7a8bb994d81380f55ad5f17330fd4b6

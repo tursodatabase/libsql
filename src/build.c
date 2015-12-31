@@ -444,7 +444,7 @@ static void freeIndex(sqlite3 *db, Index *p){
   sqlite3ExprDelete(db, p->pPartIdxWhere);
   sqlite3ExprListDelete(db, p->aColExpr);
   sqlite3DbFree(db, p->zColAff);
-  if( p->isResized ) sqlite3DbFree(db, p->azColl);
+  if( p->isResized ) sqlite3DbFree(db, (void *)p->azColl);
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
   sqlite3_free(p->aiRowEst);
 #endif
