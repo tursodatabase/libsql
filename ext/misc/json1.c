@@ -1549,7 +1549,7 @@ static void jsonArrayFinal(sqlite3_context *ctx){
     jsonAppendChar(pStr, ']');
     if( pStr->bErr ){
       sqlite3_result_error_nomem(ctx);
-      if( !pStr->bStatic ) sqlite3_free(pStr->zBuf);
+      assert( pStr->bStatic );
     }else{
       sqlite3_result_text(ctx, pStr->zBuf, pStr->nUsed,
                           pStr->bStatic ? SQLITE_TRANSIENT : sqlite3_free);
@@ -1597,7 +1597,7 @@ static void jsonObjectFinal(sqlite3_context *ctx){
     jsonAppendChar(pStr, '}');
     if( pStr->bErr ){
       sqlite3_result_error_nomem(ctx);
-      if( !pStr->bStatic ) sqlite3_free(pStr->zBuf);
+      assert( pStr->bStatic );
     }else{
       sqlite3_result_text(ctx, pStr->zBuf, pStr->nUsed,
                           pStr->bStatic ? SQLITE_TRANSIENT : sqlite3_free);
