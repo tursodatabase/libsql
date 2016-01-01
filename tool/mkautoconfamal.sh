@@ -43,20 +43,16 @@ cp $TOP/sqlite3.1     $TMPSPACE
 cp $TOP/sqlite3.pc.in $TMPSPACE
 cp $TOP/src/shell.c   $TMPSPACE
 
-chmod 755 $TMPSPACE/install-sh
-chmod 755 $TMPSPACE/missing
-chmod 755 $TMPSPACE/depcomp
-chmod 755 $TMPSPACE/config.sub
-chmod 755 $TMPSPACE/config.guess
-
 cat $TMPSPACE/configure.ac |
-sed "s/AC_INIT(sqlite, .*, http:\/\/www.sqlite.org)/AC_INIT(sqlite, $VERSION, http:\/\/www.sqlite.org)/" > $TMPSPACE/tmp
+sed "s/--SQLITE-VERSION--/$VERSION/" > $TMPSPACE/tmp
 mv $TMPSPACE/tmp $TMPSPACE/configure.ac
 
 cd $TMPSPACE
-aclocal
-autoconf
-automake --add-missing
+autoreconf -i
+#libtoolize
+#aclocal
+#autoconf
+#automake --add-missing
 
 mkdir -p tea/generic
 echo "#ifdef USE_SYSTEM_SQLITE"      > tea/generic/tclsqlite3.c 

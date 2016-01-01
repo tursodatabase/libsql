@@ -65,6 +65,7 @@ struct DateTime {
   char validHMS;     /* True (1) if h,m,s are valid */
   char validJD;      /* True (1) if iJD is valid */
   char validTZ;      /* True (1) if tz is valid */
+  char tzSet;        /* Timezone was set explicitly */
 };
 
 
@@ -158,6 +159,7 @@ static int parseTimezone(const char *zDate, DateTime *p){
   p->tz = sgn*(nMn + nHr*60);
 zulu_time:
   while( sqlite3Isspace(*zDate) ){ zDate++; }
+  p->tzSet = 1;
   return *zDate!=0;
 }
 
@@ -590,13 +592,18 @@ static int parseModifier(sqlite3_context *pCtx, const char *zMod, DateTime *p){
       }
 #ifndef SQLITE_OMIT_LOCALTIME
       else if( strcmp(z, "utc")==0 ){
-        sqlite3_int64 c1;
-        computeJD(p);
-        c1 = localtimeOffset(p, pCtx, &rc);
-        if( rc==SQLITE_OK ){
-          p->iJD -= c1;
-          clearYMD_HMS_TZ(p);
-          p->iJD += c1 - localtimeOffset(p, pCtx, &rc);
+        if( p->tzSet==0 ){
+          sqlite3_int64 c1;
+          computeJD(p);
+          c1 = localtimeOffset(p, pCtx, &rc);
+          if( rc==SQLITE_OK ){
+            p->iJD -= c1;
+            clearYMD_HMS_TZ(p);
+            p->iJD += c1 - localtimeOffset(p, pCtx, &rc);
+          }
+          p->tzSet = 1;
+        }else{
+          rc = SQLITE_OK;
         }
       }
 #endif

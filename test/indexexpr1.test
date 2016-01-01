@@ -307,5 +307,21 @@ do_catchsql_test indexexpr1-910 {
   INSERT INTO t9(a,b,c,d) VALUES(5,6,7,-8);
 } {1 {UNIQUE constraint failed: index 't9x1'}}
 
+# Test cases derived from a NEVER() maro failure discovered by
+# Jonathan Metzman using AFL
+#
+do_execsql_test indexexpr1-1000 {
+  DROP TABLE IF EXISTS t0;
+  CREATE TABLE t0(a,b,t);
+  CREATE INDEX i ON t0(a in(0,1));
+  INSERT INTO t0 VALUES(0,1,2),(2,3,4),(5,6,7);
+  UPDATE t0 SET b=99 WHERE (a in(0,1))=0;
+  SELECT *, '|' FROM t0 ORDER BY +a;
+} {0 1 2 | 2 99 4 | 5 99 7 |}
+do_execsql_test indexexpr1-1010 {
+  UPDATE t0 SET b=88 WHERE (a in(0,1))=1;
+  SELECT *, '|' FROM t0 ORDER BY +a;
+} {0 88 2 | 2 99 4 | 5 99 7 |}
+
 
 finish_test

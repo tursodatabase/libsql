@@ -863,7 +863,7 @@ static int echoBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
 
     iCol = pConstraint->iColumn;
     if( iCol<0 || pVtab->aIndex[iCol] ){
-      char *zCol = iCol>=0 ? pVtab->aCol[iCol] : "rowid";
+      char *zNewCol = iCol>=0 ? pVtab->aCol[iCol] : "rowid";
       char *zOp = 0;
       useIdx = 1;
       switch( pConstraint->op ){
@@ -895,9 +895,9 @@ static int echoBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
       }
       if( zOp[0]=='L' ){
         zNew = sqlite3_mprintf(" %s %s LIKE (SELECT '%%'||?||'%%')", 
-                               zSep, zCol);
+                               zSep, zNewCol);
       } else {
-        zNew = sqlite3_mprintf(" %s %s %s ?", zSep, zCol, zOp);
+        zNew = sqlite3_mprintf(" %s %s %s ?", zSep, zNewCol, zOp);
       }
       string_concat(&zQuery, zNew, 1, &rc);
 
@@ -915,9 +915,9 @@ static int echoBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
         pIdxInfo->aOrderBy->iColumn<0 ||
         pVtab->aIndex[pIdxInfo->aOrderBy->iColumn]) ){
     int iCol = pIdxInfo->aOrderBy->iColumn;
-    char *zCol = iCol>=0 ? pVtab->aCol[iCol] : "rowid";
+    char *zNewCol = iCol>=0 ? pVtab->aCol[iCol] : "rowid";
     char *zDir = pIdxInfo->aOrderBy->desc?"DESC":"ASC";
-    zNew = sqlite3_mprintf(" ORDER BY %s %s", zCol, zDir);
+    zNew = sqlite3_mprintf(" ORDER BY %s %s", zNewCol, zDir);
     string_concat(&zQuery, zNew, 1, &rc);
     pIdxInfo->orderByConsumed = 1;
   }

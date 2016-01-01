@@ -249,7 +249,7 @@ int sqlite3FkLocateIndex(
         int i, j;
         for(i=0; i<nCol; i++){
           i16 iCol = pIdx->aiColumn[i];     /* Index of column in parent tbl */
-          char *zDfltColl;                  /* Def. collation for column */
+          const char *zDfltColl;            /* Def. collation for column */
           char *zIdxCol;                    /* Name of indexed column */
 
           if( iCol<0 ) break; /* No foreign keys against expression indexes */
@@ -258,9 +258,7 @@ int sqlite3FkLocateIndex(
           ** the default collation sequence for the column, this index is
           ** unusable. Bail out early in this case.  */
           zDfltColl = pParent->aCol[iCol].zColl;
-          if( !zDfltColl ){
-            zDfltColl = "BINARY";
-          }
+          if( !zDfltColl ) zDfltColl = sqlite3StrBINARY;
           if( sqlite3StrICmp(pIdx->azColl[i], zDfltColl) ) break;
 
           zIdxCol = pParent->aCol[iCol].zName;

@@ -350,7 +350,7 @@ static void *pcache1Alloc(int nByte){
 static void pcache1Free(void *p){
   int nFreed = 0;
   if( p==0 ) return;
-  if( p>=pcache1.pStart && p<pcache1.pEnd ){
+  if( SQLITE_WITHIN(p, pcache1.pStart, pcache1.pEnd) ){
     PgFreeslot *pSlot;
     sqlite3_mutex_enter(pcache1.mutex);
     sqlite3StatusDown(SQLITE_STATUS_PAGECACHE_USED, 1);

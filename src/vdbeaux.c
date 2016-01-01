@@ -1859,9 +1859,7 @@ void sqlite3VdbeMakeReady(
     nMem = 10;
   }
   memset(zCsr, 0, nFree);
-  nFree -= (zCsr - (u8*)0)&7;
-  zCsr += (zCsr - (u8*)0)&7;
-  assert( EIGHT_BYTE_ALIGNMENT(zCsr) );
+  assert( EIGHT_BYTE_ALIGNMENT(&zCsr[nFree]) );
   p->expired = 0;
 
   p->expired = 0;
@@ -3752,7 +3750,7 @@ int sqlite3MemCompare(const Mem *pMem1, const Mem *pMem2, const CollSeq *pColl){
       return -1;
     }
 
-    assert( pMem1->enc==pMem2->enc );
+    assert( pMem1->enc==pMem2->enc || pMem1->db->mallocFailed );
     assert( pMem1->enc==SQLITE_UTF8 || 
             pMem1->enc==SQLITE_UTF16LE || pMem1->enc==SQLITE_UTF16BE );
 

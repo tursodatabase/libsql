@@ -718,7 +718,7 @@ static void constructAutomaticIndex(
         idxCols |= cMask;
         pIdx->aiColumn[n] = pTerm->u.leftColumn;
         pColl = sqlite3BinaryCompareCollSeq(pParse, pX->pLeft, pX->pRight);
-        pIdx->azColl[n] = pColl ? pColl->zName : "BINARY";
+        pIdx->azColl[n] = pColl ? pColl->zName : sqlite3StrBINARY;
         n++;
       }
     }
@@ -730,20 +730,20 @@ static void constructAutomaticIndex(
   for(i=0; i<mxBitCol; i++){
     if( extraCols & MASKBIT(i) ){
       pIdx->aiColumn[n] = i;
-      pIdx->azColl[n] = "BINARY";
+      pIdx->azColl[n] = sqlite3StrBINARY;
       n++;
     }
   }
   if( pSrc->colUsed & MASKBIT(BMS-1) ){
     for(i=BMS-1; i<pTable->nCol; i++){
       pIdx->aiColumn[n] = i;
-      pIdx->azColl[n] = "BINARY";
+      pIdx->azColl[n] = sqlite3StrBINARY;
       n++;
     }
   }
   assert( n==nKeyCol );
   pIdx->aiColumn[n] = XN_ROWID;
-  pIdx->azColl[n] = "BINARY";
+  pIdx->azColl[n] = sqlite3StrBINARY;
 
   /* Create the automatic index */
   assert( pLevel->iIdxCur>=0 );
