@@ -422,9 +422,9 @@ static void stringAppend(String *p, const char *z, int n){
   if( n<0 ) n = (int)strlen(z);
   if( p->n+n>=p->nAlloc ){
     int nAlloc = p->nAlloc*2 + n + 100;
-    char *z = sqlite3_realloc(p->z, nAlloc);
-    if( z==0 ) fatalError("out of memory");
-    p->z = z;
+    char *zNew = sqlite3_realloc(p->z, nAlloc);
+    if( zNew==0 ) fatalError("out of memory");
+    p->z = zNew;
     p->nAlloc = nAlloc;
   }
   memcpy(p->z+p->n, z, n);

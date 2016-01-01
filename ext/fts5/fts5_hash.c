@@ -190,7 +190,7 @@ static void fts5HashAddPoslistSize(Fts5HashEntry *p){
 
     assert( p->bDel==0 || p->bDel==1 );
     if( nPos<=127 ){
-      pPtr[p->iSzPoslist] = nPos;
+      pPtr[p->iSzPoslist] = (u8)nPos;
     }else{
       int nByte = sqlite3Fts5GetVarintLen((u32)nPos);
       memmove(&pPtr[p->iSzPoslist + nByte], &pPtr[p->iSzPoslist + 1], nSz);
