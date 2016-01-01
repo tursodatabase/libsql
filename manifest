@@ -1,5 +1,5 @@
-C Fix\san\sassert()\sthat\smight\sbe\sfalse\sfor\sa\scorrupt\sdatabase.
-D 2016-01-01T03:37:44.301
+C Avoid\smisaligned\smemory\sallocations\son\sSparc\sin\ssqlite3VdbeMakeReady().
+D 2016-01-01T16:26:22.999
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5fff077fcc46de7714ed6eebb6159a4c00eab751
@@ -402,7 +402,7 @@ F src/vdbe.c 39d7628bb8eed10a5378adcf97cca6dce7829a8f
 F src/vdbe.h efb7a8c1459e31f3ea4377824c6a7e4cb5068637
 F src/vdbeInt.h 75c2e82ee3357e9210c06474f8d9bdf12c81105d
 F src/vdbeapi.c 020681b943e77766b32ae1cddf86d7831b7374ca
-F src/vdbeaux.c ca523180c128dc6c64894efc61eb14374117c864
+F src/vdbeaux.c 2a25e57e140a3cdef14dc11912c174cf6eb9d5a6
 F src/vdbeblob.c fdc4a81605ae7a35ae94a55bd768b66d6be16f15
 F src/vdbemem.c fdd1578e47bea61390d472de53c565781d81e045
 F src/vdbesort.c a7ec02da4494c59dfd071126dd3726be5a11459d
@@ -1406,7 +1406,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6e30f8c6c3af9b0df39783888a1479f88271f989
-R 6e164f424e8aa8f067cc3a49970e615a
+P 68360cd2211b7ab25dd4ca55a2e82e31f51f2976
+R be44c4e5edec4a82a16bfbdbf7214b99
 U drh
-Z 284865b0f74f185e26863aa2df0b68aa
+Z f1917e9fad1e2726446c5b64d14d6919

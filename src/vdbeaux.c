@@ -1849,9 +1849,8 @@ void sqlite3VdbeMakeReady(
   /* Allocate space for memory registers, SQL variables, VDBE cursors and 
   ** an array to marshal SQL function arguments in.
   */
-  zCsr = (u8*)&p->aOp[p->nOp];            /* Memory avaliable for allocation */
-  assert( pParse->nOpAlloc*sizeof(Op) <= 0x7fffff00 );
-  nFree = (pParse->nOpAlloc - p->nOp)*sizeof(p->aOp[0]); /* Available space */
+  zCsr = ((u8*)p->aOp) + ROUND8(sizeof(Op)*p->nOp);       /* Available space */
+  nFree = sqlite3_msize(p->aOp) - ROUND8(sizeof(Op)*p->nOp); /* Size of zCsr */
 
   resolveP2Values(p, &nArg);
   p->usesStmtJournal = (u8)(pParse->isMultiWrite && pParse->mayAbort);
