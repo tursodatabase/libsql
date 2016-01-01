@@ -1,5 +1,5 @@
-C Remove\sunreachable\sbranches\sfrom\sthe\snew\sJSON\saggregate\sfunctions.
-D 2016-01-01T00:15:59.486
+C Fix\san\sassert()\sthat\smight\sbe\sfalse\sfor\sa\scorrupt\sdatabase.
+D 2016-01-01T03:37:44.301
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5fff077fcc46de7714ed6eebb6159a4c00eab751
@@ -276,7 +276,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 2869a76c03eb393ee795416e2387005553df72bc
 F src/bitvec.c 1a78d450a17c5016710eec900bedfc5729bf9bdf
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 5ac3f868d4f20a67f0f00a1014940f902b511558
+F src/btree.c 4d3452b2a3daf875490ac4f0a278da7f85fabe12
 F src/btree.h 2d76dee44704c47eed323356a758662724b674a0
 F src/btreeInt.h b5f2651b41808f038dee9282c5dc0232ce6532d3
 F src/build.c 1c9fb552148ee8f9234435a38833f8fca2081a71
@@ -1406,7 +1406,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d41d4d7396fba60895535f21c438f8c75e7b2097
-R 2a5f60ea0e38c7e7f43524504946739d
+P 6e30f8c6c3af9b0df39783888a1479f88271f989
+R 6e164f424e8aa8f067cc3a49970e615a
 U drh
-Z 26d827cb451c91d1af0425a029635f07
+Z 284865b0f74f185e26863aa2df0b68aa
