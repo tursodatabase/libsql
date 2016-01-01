@@ -35,6 +35,7 @@ Vdbe *sqlite3VdbeCreate(Parse *pParse){
   assert( pParse->aLabel==0 );
   assert( pParse->nLabel==0 );
   assert( pParse->nOpAlloc==0 );
+  assert( pParse->szOpAlloc==0 );
   return p;
 }
 
@@ -124,7 +125,8 @@ static int growOpArray(Vdbe *v, int nOp){
   assert( nNew>=(p->nOpAlloc+nOp) );
   pNew = sqlite3DbRealloc(p->db, v->aOp, nNew*sizeof(Op));
   if( pNew ){
-    p->nOpAlloc = sqlite3DbMallocSize(p->db, pNew)/sizeof(Op);
+    p->szOpAlloc = sqlite3DbMallocSize(p->db, pNew);
+    p->nOpAlloc = p->szOpAlloc/sizeof(Op);
     v->aOp = pNew;
   }
   return (pNew ? SQLITE_OK : SQLITE_NOMEM);
@@ -1849,8 +1851,8 @@ void sqlite3VdbeMakeReady(
   /* Allocate space for memory registers, SQL variables, VDBE cursors and 
   ** an array to marshal SQL function arguments in.
   */
-  zCsr = ((u8*)p->aOp) + ROUND8(sizeof(Op)*p->nOp);       /* Available space */
-  nFree = sqlite3_msize(p->aOp) - ROUND8(sizeof(Op)*p->nOp); /* Size of zCsr */
+  zCsr = ((u8*)p->aOp) + ROUND8(sizeof(Op)*p->nOp);      /* Available space */
+  nFree = pParse->szOpAlloc - ROUND8(sizeof(Op)*p->nOp); /* Size of zCsr */
 
   resolveP2Values(p, &nArg);
   p->usesStmtJournal = (u8)(pParse->isMultiWrite && pParse->mayAbort);
