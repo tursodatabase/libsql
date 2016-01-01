@@ -256,7 +256,7 @@ static int fts5UnicodeAddExceptions(
         int bToken;
         READ_UTF8(zCsr, zTerm, iCode);
         if( iCode<128 ){
-          p->aTokenChar[iCode] = bTokenChars;
+          p->aTokenChar[iCode] = (unsigned char)bTokenChars;
         }else{
           bToken = sqlite3Fts5UnicodeIsalnum(iCode);
           assert( (bToken==0 || bToken==1) ); 
@@ -1220,7 +1220,7 @@ int sqlite3Fts5TokenizerInit(fts5_api *pApi){
   int rc = SQLITE_OK;             /* Return code */
   int i;                          /* To iterate through builtin functions */
 
-  for(i=0; rc==SQLITE_OK && i<sizeof(aBuiltin)/sizeof(aBuiltin[0]); i++){
+  for(i=0; rc==SQLITE_OK && i<(int)ArraySize(aBuiltin); i++){
     rc = pApi->xCreateTokenizer(pApi,
         aBuiltin[i].zName,
         (void*)pApi,

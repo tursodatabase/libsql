@@ -2829,9 +2829,9 @@ static int openDatabase(
   ** EVIDENCE-OF: R-52786-44878 SQLite defines three built-in collating
   ** functions:
   */
-  createCollation(db, "BINARY", SQLITE_UTF8, 0, binCollFunc, 0);
-  createCollation(db, "BINARY", SQLITE_UTF16BE, 0, binCollFunc, 0);
-  createCollation(db, "BINARY", SQLITE_UTF16LE, 0, binCollFunc, 0);
+  createCollation(db, sqlite3StrBINARY, SQLITE_UTF8, 0, binCollFunc, 0);
+  createCollation(db, sqlite3StrBINARY, SQLITE_UTF16BE, 0, binCollFunc, 0);
+  createCollation(db, sqlite3StrBINARY, SQLITE_UTF16LE, 0, binCollFunc, 0);
   createCollation(db, "NOCASE", SQLITE_UTF8, 0, nocaseCollatingFunc, 0);
   createCollation(db, "RTRIM", SQLITE_UTF8, (void*)1, binCollFunc, 0);
   if( db->mallocFailed ){
@@ -2840,7 +2840,7 @@ static int openDatabase(
   /* EVIDENCE-OF: R-08308-17224 The default collating function for all
   ** strings is BINARY. 
   */
-  db->pDfltColl = sqlite3FindCollSeq(db, SQLITE_UTF8, "BINARY", 0);
+  db->pDfltColl = sqlite3FindCollSeq(db, SQLITE_UTF8, sqlite3StrBINARY, 0);
   assert( db->pDfltColl!=0 );
 
   /* Parse the filename/URI argument. */
@@ -3340,7 +3340,7 @@ int sqlite3_table_column_metadata(
     primarykey = 1;
   }
   if( !zCollSeq ){
-    zCollSeq = "BINARY";
+    zCollSeq = sqlite3StrBINARY;
   }
 
 error_out:
@@ -3948,4 +3948,3 @@ void sqlite3_snapshot_free(sqlite3_snapshot *pSnapshot){
   sqlite3_free(pSnapshot);
 }
 #endif /* SQLITE_ENABLE_SNAPSHOT */
-

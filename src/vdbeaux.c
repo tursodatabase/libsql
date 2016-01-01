@@ -3766,7 +3766,7 @@ int sqlite3MemCompare(const Mem *pMem1, const Mem *pMem2, const CollSeq *pColl){
       return -1;
     }
 
-    assert( pMem1->enc==pMem2->enc );
+    assert( pMem1->enc==pMem2->enc || pMem1->db->mallocFailed );
     assert( pMem1->enc==SQLITE_UTF8 || 
             pMem1->enc==SQLITE_UTF16LE || pMem1->enc==SQLITE_UTF16BE );
 
