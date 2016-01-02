@@ -43,8 +43,8 @@
 //!     let db = Connection::open_in_memory().unwrap();
 //!     add_regexp_function(&db).unwrap();
 //!
-//!     let is_match = db.query_row("SELECT regexp('[aeiou]*', 'aaaaeeeiii')", &[],
-//!                                 |row| row.get::<bool>(0)).unwrap();
+//!     let is_match: bool = db.query_row("SELECT regexp('[aeiou]*', 'aaaaeeeiii')", &[],
+//!                                 |row| row.get(0)).unwrap();
 //!
 //!     assert!(is_match);
 //! }
@@ -354,7 +354,7 @@ impl Connection {
     ///         Ok(value / 2f64)
     ///     }));
     ///
-    ///     let six_halved = try!(db.query_row("SELECT halve(6)", &[], |r| r.get::<f64>(0)));
+    ///     let six_halved: f64 = try!(db.query_row("SELECT halve(6)", &[], |r| r.get(0)));
     ///     assert_eq!(six_halved, 3f64);
     ///     Ok(())
     /// }
@@ -485,7 +485,7 @@ mod test {
     fn test_function_half() {
         let db = Connection::open_in_memory().unwrap();
         db.create_scalar_function("half", 1, true, half).unwrap();
-        let result = db.query_row("SELECT half(6)", &[], |r| r.get::<f64>(0));
+        let result: Result<f64> = db.query_row("SELECT half(6)", &[], |r| r.get(0));
 
         assert_eq!(3f64, result.unwrap());
     }
@@ -494,11 +494,11 @@ mod test {
     fn test_remove_function() {
         let db = Connection::open_in_memory().unwrap();
         db.create_scalar_function("half", 1, true, half).unwrap();
-        let result = db.query_row("SELECT half(6)", &[], |r| r.get::<f64>(0));
+        let result: Result<f64> = db.query_row("SELECT half(6)", &[], |r| r.get(0));
         assert_eq!(3f64, result.unwrap());
 
         db.remove_function("half", 1).unwrap();
-        let result = db.query_row("SELECT half(6)", &[], |r| r.get::<f64>(0));
+        let result: Result<f64> = db.query_row("SELECT half(6)", &[], |r| r.get(0));
         assert!(result.is_err());
     }
 
@@ -546,15 +546,15 @@ mod test {
                          END;").unwrap();
         db.create_scalar_function("regexp", 2, true, regexp_with_auxilliary).unwrap();
 
-        let result = db.query_row("SELECT regexp('l.s[aeiouy]', 'lisa')",
+        let result: Result<bool> = db.query_row("SELECT regexp('l.s[aeiouy]', 'lisa')",
                                   &[],
-                                  |r| r.get::<bool>(0));
+                                  |r| r.get(0));
 
         assert_eq!(true, result.unwrap());
 
-        let result = db.query_row("SELECT COUNT(*) FROM foo WHERE regexp('l.s[aeiouy]', x) == 1",
+        let result: Result<i64> = db.query_row("SELECT COUNT(*) FROM foo WHERE regexp('l.s[aeiouy]', x) == 1",
                                   &[],
-                                  |r| r.get::<i64>(0));
+                                  |r| r.get(0));
 
         assert_eq!(2, result.unwrap());
     }
@@ -596,15 +596,15 @@ mod test {
             Ok(regex.is_match(&text))
         }).unwrap();
 
-        let result = db.query_row("SELECT regexp('l.s[aeiouy]', 'lisa')",
+        let result: Result<bool> = db.query_row("SELECT regexp('l.s[aeiouy]', 'lisa')",
                                   &[],
-                                  |r| r.get::<bool>(0));
+                                  |r| r.get(0));
 
         assert_eq!(true, result.unwrap());
 
-        let result = db.query_row("SELECT COUNT(*) FROM foo WHERE regexp('l.s[aeiouy]', x) == 1",
+        let result: Result<i64> = db.query_row("SELECT COUNT(*) FROM foo WHERE regexp('l.s[aeiouy]', x) == 1",
                                   &[],
-                                  |r| r.get::<i64>(0));
+                                  |r| r.get(0));
 
         assert_eq!(2, result.unwrap());
     }

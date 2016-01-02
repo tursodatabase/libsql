@@ -48,6 +48,10 @@ pub enum Error {
     /// for the statement.
     InvalidColumnIndex(c_int),
 
+    /// Error when the value of a named column is requested, but no column matches the name
+    /// for the statement.
+    InvalidColumnName(String),
+
     /// Error when the value of a particular column is requested, but the type of the result in
     /// that column cannot be converted to the requested Rust type.
     InvalidColumnType,
@@ -91,6 +95,7 @@ impl fmt::Display for Error {
             &Error::QueryReturnedNoRows => write!(f, "Query returned no rows"),
             &Error::GetFromStaleRow => write!(f, "Attempted to get a value from a stale row"),
             &Error::InvalidColumnIndex(i) => write!(f, "Invalid column index: {}", i),
+            &Error::InvalidColumnName(ref name) => write!(f, "Invalid column name: {}", name),
             &Error::InvalidColumnType => write!(f, "Invalid column type"),
 
             #[cfg(feature = "functions")]
@@ -116,6 +121,7 @@ impl error::Error for Error {
             &Error::QueryReturnedNoRows => "query returned no rows",
             &Error::GetFromStaleRow => "attempted to get a value from a stale row",
             &Error::InvalidColumnIndex(_) => "invalid column index",
+            &Error::InvalidColumnName(_) => "invalid column name",
             &Error::InvalidColumnType => "invalid column type",
 
             #[cfg(feature = "functions")]
@@ -138,6 +144,7 @@ impl error::Error for Error {
             &Error::QueryReturnedNoRows => None,
             &Error::GetFromStaleRow => None,
             &Error::InvalidColumnIndex(_) => None,
+            &Error::InvalidColumnName(_) => None,
             &Error::InvalidColumnType => None,
 
             #[cfg(feature = "functions")]

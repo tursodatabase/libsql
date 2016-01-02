@@ -315,7 +315,7 @@ mod test {
             backup.step(-1).unwrap();
         }
 
-        let the_answer = dst.query_row("SELECT x FROM foo", &[], |r| r.get::<i64>(0)).unwrap();
+        let the_answer: i64 = dst.query_row("SELECT x FROM foo", &[], |r| r.get(0)).unwrap();
         assert_eq!(42, the_answer);
 
         src.execute_batch("INSERT INTO foo VALUES(43)").unwrap();
@@ -325,7 +325,7 @@ mod test {
             backup.run_to_completion(5, Duration::from_millis(250), None).unwrap();
         }
 
-        let the_answer = dst.query_row("SELECT SUM(x) FROM foo", &[], |r| r.get::<i64>(0)).unwrap();
+        let the_answer: i64 = dst.query_row("SELECT SUM(x) FROM foo", &[], |r| r.get(0)).unwrap();
         assert_eq!(42 + 43, the_answer);
     }
 
@@ -350,7 +350,7 @@ mod test {
             backup.step(-1).unwrap();
         }
 
-        let the_answer = dst.query_row("SELECT x FROM foo", &[], |r| r.get::<i64>(0)).unwrap();
+        let the_answer: i64 = dst.query_row("SELECT x FROM foo", &[], |r| r.get(0)).unwrap();
         assert_eq!(42, the_answer);
 
         src.execute_batch("INSERT INTO foo VALUES(43)").unwrap();
@@ -364,7 +364,7 @@ mod test {
             backup.run_to_completion(5, Duration::from_millis(250), None).unwrap();
         }
 
-        let the_answer = dst.query_row("SELECT SUM(x) FROM foo", &[], |r| r.get::<i64>(0)).unwrap();
+        let the_answer: i64 = dst.query_row("SELECT SUM(x) FROM foo", &[], |r| r.get(0)).unwrap();
         assert_eq!(42 + 43, the_answer);
     }
 
@@ -390,7 +390,7 @@ mod test {
             backup.step(-1).unwrap();
         }
 
-        let the_answer = dst.query_row("SELECT x FROM foo", &[], |r| r.get::<i64>(0)).unwrap();
+        let the_answer: i64 = dst.query_row("SELECT x FROM foo", &[], |r| r.get(0)).unwrap();
         assert_eq!(42, the_answer);
 
         src.execute_batch("INSERT INTO foo VALUES(43)").unwrap();
@@ -404,7 +404,7 @@ mod test {
             backup.run_to_completion(5, Duration::from_millis(250), None).unwrap();
         }
 
-        let the_answer = dst.query_row("SELECT SUM(x) FROM foo", &[], |r| r.get::<i64>(0)).unwrap();
+        let the_answer: i64 = dst.query_row("SELECT SUM(x) FROM foo", &[], |r| r.get(0)).unwrap();
         assert_eq!(42 + 43, the_answer);
     }
 }

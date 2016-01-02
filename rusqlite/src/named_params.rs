@@ -198,8 +198,8 @@ mod test {
         let mut stmt = db.prepare("INSERT INTO test (x, y) VALUES (:x, :y)").unwrap();
         stmt.execute_named(&[(":x", &"one")]).unwrap();
 
-        let result = db.query_row("SELECT y FROM test WHERE x = 'one'", &[],
-                                  |row| row.get::<Option<String>>(0)).unwrap();
+        let result: Option<String> = db.query_row("SELECT y FROM test WHERE x = 'one'", &[],
+                                  |row| row.get(0)).unwrap();
         assert!(result.is_none());
     }
 
@@ -213,8 +213,8 @@ mod test {
         stmt.execute_named(&[(":x", &"one")]).unwrap();
         stmt.execute_named(&[(":y", &"two")]).unwrap();
 
-        let result = db.query_row("SELECT x FROM test WHERE y = 'two'", &[],
-                                  |row| row.get::<String>(0)).unwrap();
+        let result: String = db.query_row("SELECT x FROM test WHERE y = 'two'", &[],
+                                  |row| row.get(0)).unwrap();
         assert_eq!(result, "one");
     }
 }
