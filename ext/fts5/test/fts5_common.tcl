@@ -365,3 +365,30 @@ proc fts5_tokenize_split {text} {
   set ret
 }
 
+#-------------------------------------------------------------------------
+#
+proc foreach_detail_mode {prefix script} {
+  set saved $::testprefix
+  foreach d [list full col none] {
+    set s [string map [list %DETAIL% $d] $script]
+    set ::detail $d
+    set ::testprefix "$prefix-$d"
+    reset_db
+    uplevel $s
+    unset ::detail
+  }
+  set ::testprefix $saved
+}
+
+proc detail_check {} {
+  if {$::detail != "none" && $::detail!="full" && $::detail!="col"} {
+    error "not in foreach_detail_mode {...} block"
+  }
+}
+proc detail_is_none {} { detail_check ; expr {$::detail == "none"} }
+proc detail_is_col {}  { detail_check ; expr {$::detail == "col" } }
+proc detail_is_full {} { detail_check ; expr {$::detail == "full"} }
+
+
+
+

@@ -730,15 +730,18 @@ static int fts5SorterNext(Fts5Cursor *pCsr){
     nBlob = sqlite3_column_bytes(pSorter->pStmt, 1);
     aBlob = a = sqlite3_column_blob(pSorter->pStmt, 1);
 
-    for(i=0; i<(pSorter->nIdx-1); i++){
-      int iVal;
-      a += fts5GetVarint32(a, iVal);
-      iOff += iVal;
-      pSorter->aIdx[i] = iOff;
+    /* nBlob==0 in detail=none mode. */
+    if( nBlob>0 ){
+      for(i=0; i<(pSorter->nIdx-1); i++){
+        int iVal;
+        a += fts5GetVarint32(a, iVal);
+        iOff += iVal;
+        pSorter->aIdx[i] = iOff;
+      }
+      pSorter->aIdx[i] = &aBlob[nBlob] - a;
+      pSorter->aPoslist = a;
     }
-    pSorter->aIdx[i] = &aBlob[nBlob] - a;
 
-    pSorter->aPoslist = a;
     fts5CsrNewrow(pCsr);
   }
 
@@ -1678,15 +1681,15 @@ static int fts5ApiColumnText(
 }
 
 static int fts5CsrPoslist(Fts5Cursor *pCsr, int iPhrase, const u8 **pa){
+  Fts5Config *pConfig = ((Fts5Table*)(pCsr->base.pVtab))->pConfig;
   int n;
   int rc = SQLITE_OK;
 
   if( CsrFlagTest(pCsr, FTS5CSR_REQUIRE_POSLIST) ){
-    Fts5Config *pConfig = ((Fts5Table*)(pCsr->base.pVtab))->pConfig;
+
     if( pConfig->eDetail!=FTS5_DETAIL_FULL ){
       Fts5PoslistWriter *aWriter;
       int i;
-assert( pCsr->pSorter==0 );  /* fixme */
       aWriter = sqlite3Fts5ExprClearPoslists(pCsr->pExpr);
       if( aWriter==0 ) rc = SQLITE_NOMEM;
       for(i=0; i<pConfig->nCol && rc==SQLITE_OK; i++){
@@ -1699,11 +1702,14 @@ assert( pCsr->pSorter==0 );  /* fixme */
         }
       }
       sqlite3_free(aWriter);
+      if( pCsr->pSorter ){
+        sqlite3Fts5ExprCheckPoslists(pCsr->pExpr, pCsr->pSorter->iRowid);
+      }
     }
     CsrFlagClear(pCsr, FTS5CSR_REQUIRE_POSLIST);
   }
 
-  if( pCsr->pSorter ){
+  if( pCsr->pSorter && pConfig->eDetail==FTS5_DETAIL_FULL ){
     Fts5Sorter *pSorter = pCsr->pSorter;
     int i1 = (iPhrase==0 ? 0 : pSorter->aIdx[iPhrase-1]);
     n = pSorter->aIdx[iPhrase] - i1;
@@ -2204,20 +2210,46 @@ static int fts5PoslistBlob(sqlite3_context *pCtx, Fts5Cursor *pCsr){
   Fts5Buffer val;
 
   memset(&val, 0, sizeof(Fts5Buffer));
+  switch( ((Fts5Table*)(pCsr->base.pVtab))->pConfig->eDetail ){
+    case FTS5_DETAIL_FULL:
 
-  /* Append the varints */
-  for(i=0; i<(nPhrase-1); i++){
-    const u8 *dummy;
-    int nByte = sqlite3Fts5ExprPoslist(pCsr->pExpr, i, &dummy);
-    sqlite3Fts5BufferAppendVarint(&rc, &val, nByte);
-  }
+      /* Append the varints */
+      for(i=0; i<(nPhrase-1); i++){
+        const u8 *dummy;
+        int nByte = sqlite3Fts5ExprPoslist(pCsr->pExpr, i, &dummy);
+        sqlite3Fts5BufferAppendVarint(&rc, &val, nByte);
+      }
 
-  /* Append the position lists */
-  for(i=0; i<nPhrase; i++){
-    const u8 *pPoslist;
-    int nPoslist;
-    nPoslist = sqlite3Fts5ExprPoslist(pCsr->pExpr, i, &pPoslist);
-    sqlite3Fts5BufferAppendBlob(&rc, &val, nPoslist, pPoslist);
+      /* Append the position lists */
+      for(i=0; i<nPhrase; i++){
+        const u8 *pPoslist;
+        int nPoslist;
+        nPoslist = sqlite3Fts5ExprPoslist(pCsr->pExpr, i, &pPoslist);
+        sqlite3Fts5BufferAppendBlob(&rc, &val, nPoslist, pPoslist);
+      }
+      break;
+
+    case FTS5_DETAIL_COLUMNS:
+
+      /* Append the varints */
+      for(i=0; rc==SQLITE_OK && i<(nPhrase-1); i++){
+        const u8 *dummy;
+        int nByte;
+        rc = sqlite3Fts5ExprPhraseCollist(pCsr->pExpr, i, &dummy, &nByte);
+        sqlite3Fts5BufferAppendVarint(&rc, &val, nByte);
+      }
+
+      /* Append the position lists */
+      for(i=0; rc==SQLITE_OK && i<nPhrase; i++){
+        const u8 *pPoslist;
+        int nPoslist;
+        rc = sqlite3Fts5ExprPhraseCollist(pCsr->pExpr, i, &pPoslist, &nPoslist);
+        sqlite3Fts5BufferAppendBlob(&rc, &val, nPoslist, pPoslist);
+      }
+      break;
+
+    default:
+      break;
   }
 
   sqlite3_result_blob(pCtx, val.p, val.n, sqlite3_free);

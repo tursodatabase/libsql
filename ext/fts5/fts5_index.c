@@ -1494,12 +1494,13 @@ static void fts5SegIterLoadNPos(Fts5Index *p, Fts5SegIter *pIter){
     int iOff = pIter->iLeafOffset;  /* Offset to read at */
     ASSERT_SZLEAF_OK(pIter->pLeaf);
     if( p->pConfig->eDetail==FTS5_DETAIL_NONE ){
+      int iEod = MIN(pIter->iEndofDoclist, pIter->pLeaf->szLeaf);
       pIter->bDel = 0;
       pIter->nPos = 1;
-      if( iOff<pIter->pLeaf->szLeaf && pIter->pLeaf->p[iOff]==0 ){
+      if( iOff<iEod && pIter->pLeaf->p[iOff]==0 ){
         pIter->bDel = 1;
         iOff++;
-        if( iOff<pIter->pLeaf->szLeaf && pIter->pLeaf->p[iOff]==0 ){
+        if( iOff<iEod && pIter->pLeaf->p[iOff]==0 ){
           pIter->nPos = 1;
           iOff++;
         }else{
@@ -1643,13 +1644,16 @@ static void fts5SegIterReverseInitPage(Fts5Index *p, Fts5SegIter *pIter){
   ASSERT_SZLEAF_OK(pIter->pLeaf);
   while( 1 ){
     i64 iDelta = 0;
-    int nPos;
-    int bDummy;
 
     if( eDetail==FTS5_DETAIL_NONE ){
       /* todo */
-
+      if( i<n && a[i]==0 ){
+        i++;
+        if( i<n && a[i]==0 ) i++;
+      }
     }else{
+      int nPos;
+      int bDummy;
       i += fts5GetPoslistSize(&a[i], &nPos, &bDummy);
       i += nPos;
     }
@@ -1853,7 +1857,10 @@ static void fts5SegIterNext(
             pIter->iEndofDoclist = iOff;
             bNewTerm = 1;
           }
-          if( iOff>=pLeaf->szLeaf ){
+          assert_nc( iOff<pLeaf->szLeaf 
+                  || p->pConfig->eDetail==FTS5_DETAIL_NONE 
+          );
+          if( iOff>pLeaf->szLeaf ){
             p->rc = FTS5_CORRUPT;
             return;
           }
@@ -1896,6 +1903,11 @@ static void fts5SegIterNext(
 
 #define SWAPVAL(T, a, b) { T tmp; tmp=a; a=b; b=tmp; }
 
+#define fts5IndexSkipVarint(a, iOff) {            \
+  int iEnd = iOff+9;                              \
+  while( (a[iOff++] & 0x80) && iOff<iEnd );       \
+}
+
 /*
 ** Iterator pIter currently points to the first rowid in a doclist. This
 ** function sets the iterator up so that iterates in reverse order through
@@ -1917,9 +1929,23 @@ static void fts5SegIterReverse(Fts5Index *p, Fts5SegIter *pIter){
     /* Currently, Fts5SegIter.iLeafOffset points to the first byte of
     ** position-list content for the current rowid. Back it up so that it
     ** points to the start of the position-list size field. */
+#if 0
     if( eDetail!=FTS5_DETAIL_NONE ){
       pIter->iLeafOffset -= sqlite3Fts5GetVarintLen(pIter->nPos*2+pIter->bDel);
     }
+#else
+    int iPoslist;
+    if( pIter->iTermLeafPgno==pIter->iLeafPgno ){
+      iPoslist = pIter->iTermLeafOffset;
+    }else{
+      iPoslist = 4;
+    }
+    fts5IndexSkipVarint(pLeaf->p, iPoslist);
+    assert( eDetail==FTS5_DETAIL_NONE || iPoslist==(
+        pIter->iLeafOffset - sqlite3Fts5GetVarintLen(pIter->nPos*2+pIter->bDel)
+    ));
+    pIter->iLeafOffset = iPoslist;
+#endif
 
     /* If this condition is true then the largest rowid for the current
     ** term may not be stored on the current page. So search forward to
@@ -2001,11 +2027,6 @@ static void fts5SegIterLoadDlidx(Fts5Index *p, Fts5SegIter *pIter){
   }
 
   pIter->pDlidx = fts5DlidxIterInit(p, bRev, iSeg, pIter->iTermLeafPgno);
-}
-
-#define fts5IndexSkipVarint(a, iOff) {            \
-  int iEnd = iOff+9;                              \
-  while( (a[iOff++] & 0x80) && iOff<iEnd );       \
 }
 
 /*
@@ -3827,7 +3848,7 @@ static void fts5FlushOneHash(Fts5Index *p){
 
   if( iSegid ){
     const int pgsz = p->pConfig->pgsz;
-
+    int eDetail = p->pConfig->eDetail;
     Fts5StructureSegment *pSeg;   /* New segment within pStruct */
     Fts5Buffer *pBuf;             /* Buffer in which to assemble leaf page */
     Fts5Buffer *pPgidx;           /* Buffer in which to assemble pgidx */
@@ -3870,12 +3891,7 @@ static void fts5FlushOneHash(Fts5Index *p){
         ** loop iterates through the poslists that make up the current 
         ** doclist.  */
         while( p->rc==SQLITE_OK && iOff<nDoclist ){
-          int nPos;
-          int nCopy;
-          int bDummy;
           iOff += fts5GetVarint(&pDoclist[iOff], (u64*)&iDelta);
-          nCopy = fts5GetPoslistSize(&pDoclist[iOff], &nPos, &bDummy);
-          nCopy += nPos;
           iRowid += iDelta;
           
           if( writer.bFirstRowidInPage ){
@@ -3888,34 +3904,52 @@ static void fts5FlushOneHash(Fts5Index *p){
           }
           assert( pBuf->n<=pBuf->nSpace );
 
-          if( (pBuf->n + pPgidx->n + nCopy) <= pgsz ){
-            /* The entire poslist will fit on the current leaf. So copy
-            ** it in one go. */
-            fts5BufferSafeAppendBlob(pBuf, &pDoclist[iOff], nCopy);
-          }else{
-            /* The entire poslist will not fit on this leaf. So it needs
-            ** to be broken into sections. The only qualification being
-            ** that each varint must be stored contiguously.  */
-            const u8 *pPoslist = &pDoclist[iOff];
-            int iPos = 0;
-            while( p->rc==SQLITE_OK ){
-              int nSpace = pgsz - pBuf->n - pPgidx->n;
-              int n = 0;
-              if( (nCopy - iPos)<=nSpace ){
-                n = nCopy - iPos;
-              }else{
-                n = fts5PoslistPrefix(&pPoslist[iPos], nSpace);
+          if( eDetail==FTS5_DETAIL_NONE ){
+            if( iOff<nDoclist && pDoclist[iOff]==0 ){
+              pBuf->p[pBuf->n++] = 0;
+              iOff++;
+              if( iOff<nDoclist && pDoclist[iOff]==0 ){
+                pBuf->p[pBuf->n++] = 0;
+                iOff++;
               }
-              assert( n>0 );
-              fts5BufferSafeAppendBlob(pBuf, &pPoslist[iPos], n);
-              iPos += n;
-              if( (pBuf->n + pPgidx->n)>=pgsz ){
-                fts5WriteFlushLeaf(p, &writer);
-              }
-              if( iPos>=nCopy ) break;
             }
+            if( (pBuf->n + pPgidx->n)>=pgsz ){
+              fts5WriteFlushLeaf(p, &writer);
+            }
+          }else{
+            int bDummy;
+            int nPos;
+            int nCopy = fts5GetPoslistSize(&pDoclist[iOff], &nPos, &bDummy);
+            nCopy += nPos;
+            if( (pBuf->n + pPgidx->n + nCopy) <= pgsz ){
+              /* The entire poslist will fit on the current leaf. So copy
+              ** it in one go. */
+              fts5BufferSafeAppendBlob(pBuf, &pDoclist[iOff], nCopy);
+            }else{
+              /* The entire poslist will not fit on this leaf. So it needs
+              ** to be broken into sections. The only qualification being
+              ** that each varint must be stored contiguously.  */
+              const u8 *pPoslist = &pDoclist[iOff];
+              int iPos = 0;
+              while( p->rc==SQLITE_OK ){
+                int nSpace = pgsz - pBuf->n - pPgidx->n;
+                int n = 0;
+                if( (nCopy - iPos)<=nSpace ){
+                  n = nCopy - iPos;
+                }else{
+                  n = fts5PoslistPrefix(&pPoslist[iPos], nSpace);
+                }
+                assert( n>0 );
+                fts5BufferSafeAppendBlob(pBuf, &pPoslist[iPos], n);
+                iPos += n;
+                if( (pBuf->n + pPgidx->n)>=pgsz ){
+                  fts5WriteFlushLeaf(p, &writer);
+                }
+                if( iPos>=nCopy ) break;
+              }
+            }
+            iOff += nCopy;
           }
-          iOff += nCopy;
         }
       }
 
@@ -4408,16 +4442,18 @@ static void fts5MergeRowidLists(
   fts5NextRowid(p2, &i2, &iRowid2);
   while( i1>=0 || i2>=0 ){
     if( i1>=0 && (i2<0 || iRowid1<iRowid2) ){
+      assert( iOut==0 || iRowid1>iOut );
       fts5BufferSafeAppendVarint(&out, iRowid1 - iOut);
       iOut = iRowid1;
       fts5NextRowid(p1, &i1, &iRowid1);
     }else{
+      assert( iOut==0 || iRowid2>iOut );
       fts5BufferSafeAppendVarint(&out, iRowid2 - iOut);
       iOut = iRowid2;
-      fts5NextRowid(p2, &i2, &iRowid2);
       if( i1>=0 && iRowid1==iRowid2 ){
         fts5NextRowid(p1, &i1, &iRowid1);
       }
+      fts5NextRowid(p2, &i2, &iRowid2);
     }
   }
 
@@ -5217,7 +5253,7 @@ static int fts5QueryCksum(
         for(sqlite3Fts5PoslistReaderInit(buf.p, buf.n, &sReader);
             sReader.bEof==0;
             sqlite3Fts5PoslistReaderNext(&sReader)
-           ){
+        ){
           int iCol = FTS5_POS2COLUMN(sReader.iPos);
           int iOff = FTS5_POS2OFFSET(sReader.iPos);
           cksum ^= sqlite3Fts5IndexEntryCksum(rowid, iCol, iOff, iIdx, z, n);
@@ -5584,7 +5620,9 @@ int sqlite3Fts5IndexIntegrityCheck(Fts5Index *p, u64 cksum){
     fts5TestTerm(p, &term, z, n, cksum2, &cksum3);
 
     if( eDetail==FTS5_DETAIL_NONE ){
-      cksum2 ^= sqlite3Fts5IndexEntryCksum(iRowid, 0, 0, -1, z, n);
+      if( 0==fts5MultiIterIsEmpty(p, pIter) ){
+        cksum2 ^= sqlite3Fts5IndexEntryCksum(iRowid, 0, 0, -1, z, n);
+      }
     }else{
       poslist.n = 0;
       fts5SegiterPoslist(p, &pIter->aSeg[pIter->aFirst[1].iFirst], 0, &poslist);

@@ -22,6 +22,8 @@ ifcapable !fts5 {
   return
 }
 
+foreach_detail_mode $testprefix {
+
 set data {
     0   {p o q e z k z p n f y u z y n y}   {l o o l v v k}
     1   {p k h h p y l l h i p v n}         {p p l u r i f a j g e r r x w}
@@ -205,8 +207,6 @@ proc collist_data {expr} {
 # End of test code
 #-------------------------------------------------------------------------
 
-if 0 {
-
 foreach {tn2 sql} {
   1  {}
   2  {BEGIN}
@@ -215,7 +215,7 @@ foreach {tn2 sql} {
   fts5_aux_test_functions db
 
   do_execsql_test 1.$tn2.0 {
-    CREATE VIRTUAL TABLE xx USING fts5(x,y);
+    CREATE VIRTUAL TABLE xx USING fts5(x,y, detail=%DETAIL%);
     INSERT INTO xx(xx, rank) VALUES('pgsz', 32);
   }
 
@@ -228,31 +228,55 @@ foreach {tn2 sql} {
     execsql { INSERT INTO xx(xx) VALUES('integrity-check') }
   } {}
 
-
   #-------------------------------------------------------------------------
-  # Test phrase queries.
+  # The following work with all detail= modes.
   #
-  foreach {tn phrase} {
-    1 "o"
-    2 "b q"
-    3 "e a e"
-    4 "m d g q q b k b w f q q p p"
-    5 "l o o l v v k"
-    6 "a"
-    7 "b"
-    8 "c"
-    9 "no"
-    10 "L O O L V V K"
+  foreach {tn expr} {
+    1 "a   AND b"
+    2 "a   OR b"
+    3 "o"
+    4 "b q"
+    5 "e a e"
+    6 "m d g q q b k b w f q q p p"
+    7 "l o o l v v k"
+    8 "a"
+    9 "b"
+    10 "c"
+    11 "no"
+    12 "L O O L V V K"
+    13 "a AND b AND c"
   } {
-    set expr "\"$phrase\""
     set res [poslist_data 1 $expr]
-
-    do_execsql_test 1.$tn2.1.2.$tn.p.[llength $res] { 
+    do_execsql_test 1.$tn2.1.$tn.p.[llength $res] { 
       SELECT rowid, fts5_test_poslist(xx) FROM xx WHERE xx match $expr
     } $res
 
     set res [collist_data $expr]
-    do_execsql_test 1.$tn2.1.2.$tn.c.[llength $res] { 
+    do_execsql_test 1.$tn2.1.$tn.c.[llength $res] { 
+      SELECT rowid, fts5_test_collist(xx) FROM xx WHERE xx match $expr
+    } $res
+  }
+
+  if {[detail_is_none] || [detail_is_col]} continue
+
+  #-------------------------------------------------------------------------
+  # Test phrase queries.
+  #
+  foreach {tn expr} {
+    1 "b + q"
+    2 "e + a + e"
+    3 "m + d + g + q + q + b + k + b + w + f + q + q + p + p"
+    4 "l + o + o + l + v + v + k"
+    5 "L + O + O + L + V + V + K"
+  } {
+    set res [poslist_data 1 $expr]
+
+    do_execsql_test 1.$tn2.2.$tn.p.[llength $res] { 
+      SELECT rowid, fts5_test_poslist(xx) FROM xx WHERE xx match $expr
+    } $res
+
+    set res [collist_data $expr]
+    do_execsql_test 1.$tn2.2.$tn.c.[llength $res] { 
       SELECT rowid, fts5_test_collist(xx) FROM xx WHERE xx match $expr
     } $res
   }
@@ -261,25 +285,21 @@ foreach {tn2 sql} {
   # Test some AND and OR queries.
   #
   foreach {tn expr} {
-    1.1 "a   AND b"
-    1.2 "a+b AND c"
-    1.3 "d+c AND u"
-    1.4 "d+c AND u+d"
+    1.1 "a+b AND c"
+    1.2 "d+c AND u"
+    1.3 "d+c AND u+d"
 
-    2.1 "a   OR b"
-    2.2 "a+b OR c"
-    2.3 "d+c OR u"
-    2.4 "d+c OR u+d"
-
-    3.1 { a AND b AND c }
+    2.1 "a+b OR c"
+    2.2 "d+c OR u"
+    2.3 "d+c OR u+d"
   } {
     set res [poslist_data 1 $expr]
-    do_execsql_test 1.$tn2.2.$tn.c.[llength $res] { 
+    do_execsql_test 1.$tn2.3.$tn.c.[llength $res] { 
       SELECT rowid, fts5_test_poslist(xx) FROM xx WHERE xx match $expr
     } $res
 
     set res [collist_data $expr]
-    do_execsql_test 1.$tn2.2.$tn.c.[llength $res] { 
+    do_execsql_test 1.$tn2.3.$tn.c.[llength $res] { 
       SELECT rowid, fts5_test_collist(xx) FROM xx WHERE xx match $expr
     } $res
   }
@@ -308,12 +328,12 @@ foreach {tn2 sql} {
     4.4 {{"y" y}:b}
   } {
     set res [poslist_data 1 $expr]
-    do_execsql_test 1.$tn2.3.$tn.p.[llength $res] { 
+    do_execsql_test 1.$tn2.4.$tn.p.[llength $res] { 
       SELECT rowid, fts5_test_poslist(xx) FROM xx WHERE xx match $expr
     } $res
 
     set res [collist_data $expr]
-    do_execsql_test 1.$tn2.3.$tn.c.[llength $res] { 
+    do_execsql_test 1.$tn2.4.$tn.c.[llength $res] { 
       SELECT rowid, fts5_test_collist(xx) FROM xx WHERE xx match $expr
     } $res
   }
@@ -334,12 +354,12 @@ foreach {tn2 sql} {
     9  { y : NEAR(r c) }
   } {
     set res [poslist_data 1 $expr]
-    do_execsql_test 1.$tn2.4.1.$tn.p.[llength $res] { 
+    do_execsql_test 1.$tn2.5.1.$tn.p.[llength $res] { 
       SELECT rowid, fts5_test_poslist(xx) FROM xx WHERE xx match $expr
     } $res
 
     set res [collist_data $expr]
-    do_execsql_test 1.$tn2.4.1.$tn.c.[llength $res] { 
+    do_execsql_test 1.$tn2.5.1.$tn.c.[llength $res] { 
       SELECT rowid, fts5_test_collist(xx) FROM xx WHERE xx match $expr
     } $res
   }
@@ -350,14 +370,14 @@ foreach {tn2 sql} {
   foreach {tn expr tclexpr} {
     1 {a b} {AND [N $x -- {a}] [N $x -- {b}]}
   } {
-    do_execsql_test 1.$tn2.5.$tn {
+    do_execsql_test 1.$tn2.6.$tn {
       SELECT fts5_expr_tcl($expr, 'N $x')
     } [list $tclexpr]
   }
 
   #-------------------------------------------------------------------------
   #
-  do_execsql_test 1.$tn2.6.integrity {
+  do_execsql_test 1.$tn2.7.integrity {
     INSERT INTO xx(xx) VALUES('integrity-check');
   }
   #db eval {SELECT rowid, fts5_decode(rowid, block) aS r FROM xx_data} {puts $r}
@@ -389,68 +409,18 @@ foreach {tn2 sql} {
       19 { c NOT b OR a AND d }
     } {
       set res [poslist_data 0 $expr $bAsc]
-      do_execsql_test 1.$tn2.6.$bAsc.$tn.[llength $res] $sql $res
+      do_execsql_test 1.$tn2.7.$bAsc.$tn.[llength $res] $sql $res
     }
   }
+}
+
 }
 
 do_execsql_test 2.1 {
   SELECT fts5_expr_tcl('a AND b');
 } {{AND [nearset -- {a}] [nearset -- {b}]}}
 
-}
-#set data [lrange $data 0 5]
-
-# Some tests for detail=col tables and detail=none.
-#
-foreach {tn2 sql} {
-  1  {
-    CREATE VIRTUAL TABLE xx USING fts5(x, y, detail=col);
-  }
-  2  {
-    CREATE VIRTUAL TABLE xx USING fts5(x, y, detail=col);
-    BEGIN;
-  }
-  3  {
-    CREATE VIRTUAL TABLE xx USING fts5(x, y, detail=none);
-    BEGIN;
-  }
-  4  {
-    CREATE VIRTUAL TABLE xx USING fts5(x, y, detail=none);
-  }
-} {
-  reset_db
-  fts5_aux_test_functions db
-
-  execsql $sql
-
-  do_execsql_test 3.$tn2.0 {
-    INSERT INTO xx(xx, rank) VALUES('pgsz', 32);
-  }
-
-  do_test 3.$tn2.1.1 {
-    foreach {id x y} $data {
-      execsql { INSERT INTO xx(rowid, x, y) VALUES($id, $x, $y) }
-    }
-    execsql { INSERT INTO xx(xx) VALUES('integrity-check') }
-  } {}
-
-  foreach {tn q} {
-    1 "o" 2 "b" 3 "e" 4 "m" 5 "l" 6 "a" 7 "b" 8 "c" 9 "no" 10 "L"
-    11 "o a" 12 "c AND d" 13 "o OR a" 14 "c OR d"
-  } {
-    set res [poslist_data 1 $q]
-    do_execsql_test 3.$tn2.1.2.$tn.p.[llength $res] { 
-      SELECT rowid, fts5_test_poslist(xx) FROM xx WHERE xx match $q
-    } $res
-
-    set res [collist_data $q]
-    do_execsql_test 3.$tn2.1.2.$tn.c.[llength $res] { 
-      SELECT rowid, fts5_test_collist(xx) FROM xx WHERE xx match $q
-    } $res
-  }
-
-}
+finish_test
 
 finish_test
 

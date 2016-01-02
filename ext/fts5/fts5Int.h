@@ -646,6 +646,7 @@ Fts5PoslistWriter *sqlite3Fts5ExprClearPoslists(Fts5Expr*);
 int sqlite3Fts5ExprPopulatePoslists(
     Fts5Config*, Fts5Expr*, Fts5PoslistWriter*, int, const char*, int
 );
+void sqlite3Fts5ExprCheckPoslists(Fts5Expr*, i64);
 
 int sqlite3Fts5ExprClonePhrase(Fts5Config*, Fts5Expr*, int, Fts5Expr**);
 

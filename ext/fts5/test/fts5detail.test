@@ -169,8 +169,8 @@ proc matchdata {expr {bAsc 1}} {
 
 foreach {tn tbl} {
   1 { CREATE VIRTUAL TABLE t3 USING fts5(x, y, z, detail=col) }
+  2 { CREATE VIRTUAL TABLE t3 USING fts5(x, y, z, detail=none) }
 } {
-#break
   reset_db
   fts5_aux_test_functions db
   execsql $tbl
@@ -198,7 +198,6 @@ foreach {tn tbl} {
 #-------------------------------------------------------------------------
 # Simple tests for detail=none tables.
 #
-breakpoint
 do_execsql_test 4.0 {
   CREATE VIRTUAL TABLE t4 USING fts5(a, b, c, detail=none);
   INSERT INTO t4 VALUES('a b c', 'b c d', 'e f g');
@@ -208,6 +207,34 @@ do_execsql_test 4.0 {
 do_catchsql_test 4.1 {
   SELECT * FROM t4('a:a')
 } {1 {fts5: column queries are not supported (detail=none)}}
+
+#-------------------------------------------------------------------------
+# Test that for the same content detail=none uses less space than 
+# detail=col, and that detail=col uses less space than detail=full
+#
+reset_db
+do_test 5.1 {
+  foreach {tbl detail} {t1 none t2 col t3 full} {
+    execsql "CREATE VIRTUAL TABLE $tbl USING fts5(x, y, z, detail=$detail)"
+    foreach {rowid x y z} $::data {
+      execsql "INSERT INTO $tbl (rowid, x, y, z) VALUES(\$rowid, \$x, \$y, \$z)"
+    }
+  }
+} {}
+
+do_execsql_test 5.2 {
+  SELECT 
+    (SELECT sum(length(block)) from t1_data) <
+    (SELECT sum(length(block)) from t2_data)
+} {1}
+
+do_execsql_test 5.3 {
+  SELECT 
+    (SELECT sum(length(block)) from t2_data) <
+    (SELECT sum(length(block)) from t3_data)
+} {1}
+
+
 
 finish_test
 
