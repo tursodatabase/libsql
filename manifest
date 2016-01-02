@@ -1,5 +1,5 @@
-C Remember\sthe\ssize\sof\sthe\sVdbe.aOp[]\sarray\sin\sbytes,\sto\savoid\sunnecessary\ncalls\sto\ssqlite3_msize().
-D 2016-01-01T16:42:09.017
+C Fix\sa\s(harmless)\stypo\sin\san\s#ifdef\sfor\sSQLITE_ENABLE_CURSOR_HINTS
+D 2016-01-02T05:00:31.568
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5fff077fcc46de7714ed6eebb6159a4c00eab751
@@ -398,7 +398,7 @@ F src/update.c 17332f9fe818cbc0444c36a811800af8498af4c3
 F src/utf.c 32d7f82aa921322f3e1c956f4b58f019ebd2c6b3
 F src/util.c e802e8e311a0d6c48cd1b3e89db164f6f0248d70
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c 39d7628bb8eed10a5378adcf97cca6dce7829a8f
+F src/vdbe.c 638c20bae996d8037a114294016768b6bc8ebc14
 F src/vdbe.h efb7a8c1459e31f3ea4377824c6a7e4cb5068637
 F src/vdbeInt.h 75c2e82ee3357e9210c06474f8d9bdf12c81105d
 F src/vdbeapi.c 020681b943e77766b32ae1cddf86d7831b7374ca
@@ -1406,7 +1406,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a304e34675404aee860fcc97fa4ffcc57c014812
-R 4471a4984cac341d5421a7094690c1b8
+P 3e852804c85a5c9f4c4ffafd55d03af6d19fe5cc
+R 5906d6b78129d8858a23ea4c57fad965
 U drh
-Z 73de58c32dddcab1338ba5f059ee0a34
+Z 4843af3fcc8c5413e769bb1983160a44
