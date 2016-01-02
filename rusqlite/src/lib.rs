@@ -728,6 +728,11 @@ impl<'conn> Statement<'conn> {
         cols
     }
 
+    /// Return the number of columns in the result set returned by the prepared statement.
+    pub fn column_count(&self) -> i32 {
+        self.column_count
+    }
+
     /// Execute the prepared statement.
     ///
     /// On success, returns the number of rows that were changed or inserted or deleted (via
@@ -1109,6 +1114,11 @@ impl<'stmt> Row<'stmt> {
             }
         }
     }
+
+    /// Return the number of columns in the current row.
+    pub fn column_count(&self) -> i32 {
+        self.stmt.column_count()
+    }
 }
 
 #[cfg(test)]
@@ -1220,9 +1230,11 @@ mod test {
         db.execute_batch("CREATE TABLE foo(x INTEGER);").unwrap();
 
         let stmt = db.prepare("SELECT * FROM foo").unwrap();
+        assert_eq!(stmt.column_count(), 1);
         assert_eq!(stmt.column_names(), vec!["x"]);
 
         let stmt = db.prepare("SELECT x AS a, x AS b FROM foo").unwrap();
+        assert_eq!(stmt.column_count(), 2);
         assert_eq!(stmt.column_names(), vec!["a", "b"]);
     }
 
@@ -1621,5 +1633,17 @@ mod test {
             }
         }
 
+        #[test]
+        #[cfg_attr(rustfmt, rustfmt_skip)]
+        fn test_dynamic() {
+            let db = checked_memory_handle();
+            let sql = "BEGIN;
+                       CREATE TABLE foo(x INTEGER, y TEXT);
+                       INSERT INTO foo VALUES(4, \"hello\");
+                       END;";
+            db.execute_batch(sql).unwrap();
+
+            db.query_row("SELECT * FROM foo", &[], |r| assert_eq!(2, r.column_count())).unwrap();
+        }
     }
 }
