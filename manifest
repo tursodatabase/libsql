@@ -1,5 +1,5 @@
-C Bug\sfix:\sthe\sconflict\sresolution\sbehavior\sfor\sthe\simplied\sNOT\sNULL\sconstraint\non\sthe\sPRIMARY\sKEY\sof\sa\sWITHOUT\sROWID\stable\sshould\sbe\sABORT.
-D 2016-01-03T18:07:57.631
+C Alternative\sto\s[76f5efa6],\smove\sdefinition\sof\sutf8_printf\sup.
+D 2016-01-03T18:59:28.715
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5fff077fcc46de7714ed6eebb6159a4c00eab751
@@ -334,7 +334,7 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c a83b41104e6ff69855d03cd0aaa09e93927ec39f
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c f8fded11fc443a9f5a73cc5db069d06b34460e2f
-F src/shell.c ed71dc7679e6f087a3f1ea3f9dae4b0fae7209c3
+F src/shell.c 3ecb7a857c4595fef9ae4141fc8bb8dc53021be2
 F src/sqlite.h.in 7d87d71b9a4689c51fa092f48f16590ff71558e3
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
@@ -1406,7 +1406,10 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 76f5efa68728d899a63a74f2528dfd0c497aa5f0
-R 478df71a9631f4b73fcefbae5de2f355
-U drh
-Z 2ce3cb02ff6782c368c437352328d0d1
+P e30062e9f6cae980150dda7df440b36dfdcb7bbe
+R ebd31578448110e2087f3d6a13f40257
+T *branch * altShellFix
+T *sym-altShellFix *
+T -sym-trunk *
+U mistachkin
+Z f75cb2b820513d79cf30ddfb170e4e99

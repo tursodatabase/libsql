@@ -362,6 +362,39 @@ static char mainPrompt[20];     /* First line prompt. default: "sqlite> "*/
 static char continuePrompt[20]; /* Continuation prompt. default: "   ...> " */
 
 /*
+** Render output like fprintf().  Except, if the output is going to the
+** console and if this is running on a Windows machine, translate the
+** output from UTF-8 into MBCS.
+*/
+#if defined(_WIN32) || defined(WIN32)
+void utf8_printf(FILE *out, const char *zFormat, ...){
+  va_list ap;
+  va_start(ap, zFormat);
+  if( stdout_is_console && (out==stdout || out==stderr) ){
+    extern char *sqlite3_win32_utf8_to_mbcs(const char*);
+    char *z1 = sqlite3_vmprintf(zFormat, ap);
+    char *z2 = sqlite3_win32_utf8_to_mbcs(z1);
+    sqlite3_free(z1);
+    fputs(z2, out);
+    sqlite3_free(z2);
+  }else{
+    vfprintf(out, zFormat, ap);
+  }
+  va_end(ap);
+}
+#elif !defined(utf8_printf)
+# define utf8_printf fprintf
+#endif
+
+/*
+** Render output like fprintf().  This should not be used on anything that
+** includes string formatting (e.g. "%s").
+*/
+#if !defined(raw_printf)
+# define raw_printf fprintf
+#endif
+
+/*
 ** Write I/O traces to the following stream.
 */
 #ifdef SQLITE_ENABLE_IOTRACE
@@ -382,7 +415,7 @@ static void SQLITE_CDECL iotracePrintf(const char *zFormat, ...){
   va_start(ap, zFormat);
   z = sqlite3_vmprintf(zFormat, ap);
   va_end(ap);
-  fprintf(iotrace, "%s", z);
+  utf8_printf(iotrace, "%s", z);
   sqlite3_free(z);
 }
 #endif
@@ -538,39 +571,6 @@ static char *one_input_line(FILE *in, char *zPrior, int isContinuation){
   }
   return zResult;
 }
-
-/*
-** Render output like fprintf().  Except, if the output is going to the
-** console and if this is running on a Windows machine, translate the
-** output from UTF-8 into MBCS.
-*/
-#if defined(_WIN32) || defined(WIN32)
-void utf8_printf(FILE *out, const char *zFormat, ...){
-  va_list ap;
-  va_start(ap, zFormat);
-  if( stdout_is_console && (out==stdout || out==stderr) ){
-    extern char *sqlite3_win32_utf8_to_mbcs(const char*);
-    char *z1 = sqlite3_vmprintf(zFormat, ap);
-    char *z2 = sqlite3_win32_utf8_to_mbcs(z1);
-    sqlite3_free(z1);
-    fputs(z2, out);
-    sqlite3_free(z2);
-  }else{
-    vfprintf(out, zFormat, ap);
-  }
-  va_end(ap);
-}
-#elif !defined(utf8_printf)
-# define utf8_printf fprintf
-#endif
-
-/*
-** Render output like fprintf().  This should not be used on anything that
-** includes string formatting (e.g. "%s").
-*/
-#if !defined(raw_printf)
-# define raw_printf fprintf
-#endif
 
 /*
 ** Shell output mode information from before ".explain on", 
