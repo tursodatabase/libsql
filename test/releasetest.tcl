@@ -830,8 +830,8 @@ proc process_options {argv} {
       }
 
       default {
-        PUTSERR stderr ""
-        PUTSERR stderr [string trim $::USAGE_MESSAGE]
+        PUTSERR ""
+        PUTSERR [string trim $::USAGE_MESSAGE]
         exit -1
       }
     }
@@ -945,6 +945,8 @@ proc main {argv} {
   set min [expr {($elapsetime/60)%60}]
   set sec [expr {$elapsetime%60}]
   set etime [format (%02d:%02d:%02d) $hr $min $sec]
+  if {$::JOBS>1} {append etime " $::JOBS cores"}
+  if {[catch {exec hostname} HNAME]==0} {append etime " on $HNAME"}
   PUTS [string repeat * 79]
   incr ::NERRCASE $::NERR
   PUTS "$::NERRCASE failures out of $::NTESTCASE tests in $etime"
