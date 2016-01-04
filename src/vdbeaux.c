@@ -1848,18 +1848,21 @@ void sqlite3VdbeMakeReady(
   */
   nMem += nCursor;
 
-  /* Allocate space for memory registers, SQL variables, VDBE cursors and 
-  ** an array to marshal SQL function arguments in.
+  /* zCsr will initially point to nFree bytes of unused space at the
+  ** end of the opcode array, p->aOp.  The computation of nFree is
+  ** conservative - it might be smaller than the true number of free
+  ** bytes, but never larger.  nFree might be negative.  But the allocation
+  ** loop will still function correctly.
   */
   zCsr = ((u8*)p->aOp) + ROUND8(sizeof(Op)*p->nOp);      /* Available space */
   nFree = pParse->szOpAlloc - ROUND8(sizeof(Op)*p->nOp); /* Size of zCsr */
+  if( nFree>0 ) memset(zCsr, 0, nFree);
 
   resolveP2Values(p, &nArg);
   p->usesStmtJournal = (u8)(pParse->isMultiWrite && pParse->mayAbort);
   if( pParse->explain && nMem<10 ){
     nMem = 10;
   }
-  memset(zCsr, 0, nFree);
   assert( EIGHT_BYTE_ALIGNMENT(&zCsr[nFree]) );
   p->expired = 0;
 
