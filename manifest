@@ -1,5 +1,5 @@
-C Improved\scomment\son\sthe\svtabH-3.1\stest.
-D 2016-01-04T04:44:31.090
+C A\snew\sapproach\sto\svery\slarge\ssqlite3_mprintf()\sstrings:\s\sBack\sout\sthe\n[d655a665]\scheck-in\sand\sinstead\smake\sthe\ssize\sfields\sin\sStrAccum\sunsigned.\nStrings\sgenerated\sby\ssqlite3_mprintf()\scan\snow\sbe\sas\slarge\sas\s2^31-1\sbytes.
+D 2016-01-04T12:07:27.503
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5fff077fcc46de7714ed6eebb6159a4c00eab751
@@ -329,7 +329,7 @@ F src/pcache1.c 72f644dc9e1468c72922eff5904048427b817051
 F src/pragma.c f3e7147299ca05ef4304a36f1fd6e002729c72c6
 F src/pragma.h 64c78a648751b9f4f297276c4eb7507b14b4628c
 F src/prepare.c 82e5db1013846a819f198336fed72c44c974e7b1
-F src/printf.c 79265c0b36bca9b8582592a4f3fa73a1cc1cfa2f
+F src/printf.c af589a27b7d40f6f4f704e9eea99f02f18ad6d32
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c a83b41104e6ff69855d03cd0aaa09e93927ec39f
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
@@ -338,7 +338,7 @@ F src/shell.c ed71dc7679e6f087a3f1ea3f9dae4b0fae7209c3
 F src/sqlite.h.in 7d87d71b9a4689c51fa092f48f16590ff71558e3
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
-F src/sqliteInt.h 30f7e8957ed7d244be027be72ded385154c635df
+F src/sqliteInt.h f97614d43833bae0ed6c51ac8e550f0099a1d0ba
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
@@ -441,7 +441,7 @@ F test/analyzeB.test 8bf35ee0a548aea831bf56762cb8e7fdb1db083d
 F test/analyzeC.test 555a6cc388b9818b6eda6df816f01ce0a75d3a93
 F test/analyzeD.test 08f9d0bee4e118a66fff3a32d02dbe0ee0a2b594
 F test/analyzeE.test 8684e8ac5722fb97c251887ad97e5d496a98af1d
-F test/analyzeF.test 7ccd7a04f7d3061bde1a8a4dacc4792edccf6bf2
+F test/analyzeF.test 5d1fe1024ba2dfea3c18bede8c1ccef8aba1ab34
 F test/analyzer1.test 498e2ff4b62740c2751c3a2f8b744fe26689fae9
 F test/async.test 1d0e056ba1bb9729283a0f22718d3a25e82c277b
 F test/async2.test c0a9bd20816d7d6a2ceca7b8c03d3d69c28ffb8b
@@ -1406,7 +1406,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 73e3355004b8b7ce2e1bb937725f429795528a4f
-R add896a0a928f0a416eb15bec81a6801
+P 22abe08038cc7b66cbc25e733246d210197c9215
+R 50b92b9e9c9cae33b4950afbfcff914c
 U drh
-Z 9b39ca76b9261d7edc0d476f6827134f
+Z 208fc2f95f59628c3ac39711f08181ab
