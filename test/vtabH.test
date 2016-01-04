@@ -147,13 +147,13 @@ if {1} {
   set res [list]
   foreach p [lrange [list_root_files] 0 4] {
     if {$::tcl_platform(platform) eq "windows"} {
-      lappend res $p
+      if {![regexp {\$} $p]} {lappend res $p}
     } else {
       lappend res "/$p"
     }
   }
   do_execsql_test 3.1 {
-    SELECT path FROM fstree LIMIT 5;
+    SELECT path FROM fstree WHERE path NOT GLOB '*$*' LIMIT 5;
   } $res
   
   # Read all entries in the current directory.

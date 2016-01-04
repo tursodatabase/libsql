@@ -1,5 +1,5 @@
-C Limit\sthe\slength\sof\ssqlite3_mprintf()\soutput\sto\s2^30\sbytes,\seven\sif\nSQLITE_MAX_LENGTH\sis\sset\slarger\sat\scompile-time.
-D 2016-01-04T04:28:11.861
+C Adjust\sthe\svtabH.test\smodule\sto\signore\sfiles\sin\sthe\sroot\sdirectory\sof\sWindows\nmachines\sthat\scontain\sthe\s"$"\scharacter.
+D 2016-01-04T04:41:13.895
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5fff077fcc46de7714ed6eebb6159a4c00eab751
@@ -1274,7 +1274,7 @@ F test/vtabC.test 4528f459a13136f982e75614d120aef165f17292
 F test/vtabD.test 05b3f1d77117271671089e48719524b676842e96
 F test/vtabE.test d5024aa42754962f6bb0afd261681686488e7afe
 F test/vtabF.test fd5ad376f5a34fe0891df1f3cddb4fe7c3eb077e
-F test/vtabH.test f77296bbf55675b72817cc10fbbcb236ac986abf
+F test/vtabH.test 0def52cbcf8d68793d982329a72d70cef8308e35
 F test/vtabI.test 751b07636700dbdea328e4265b6077ccd6811a3f
 F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
@@ -1406,7 +1406,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4b404a99aa9bfa6cfe8998f5dc1f84f8be20b840
-R 3d16cb95a338f71bf305a9aee47b6af1
+P d655a665acfae676d30e90e3731f483bee6acc63
+R 0d20e16c42f612598f302d493261df54
 U drh
-Z b5d1ace2d67c86c8eec357e62ba7f839
+Z 4891b25ab1f0ba8193051c36d1d029ea
