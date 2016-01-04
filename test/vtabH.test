@@ -142,7 +142,9 @@ if {1} {
     }
   }
 
-  # Read the first 5 entries from the root directory.
+  # Read the first 5 entries from the root directory.  Except, ignore
+  # files that contain the "$" character in their names as these are
+  # special files on some Windows platforms.
   #
   set res [list]
   foreach p [lrange [list_root_files] 0 4] {
