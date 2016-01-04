@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\scompiler\swarning.
-D 2016-01-04T03:48:46.399
+C Limit\sthe\slength\sof\ssqlite3_mprintf()\soutput\sto\s2^30\sbytes,\seven\sif\nSQLITE_MAX_LENGTH\sis\sset\slarger\sat\scompile-time.
+D 2016-01-04T04:28:11.861
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5fff077fcc46de7714ed6eebb6159a4c00eab751
@@ -329,7 +329,7 @@ F src/pcache1.c 72f644dc9e1468c72922eff5904048427b817051
 F src/pragma.c f3e7147299ca05ef4304a36f1fd6e002729c72c6
 F src/pragma.h 64c78a648751b9f4f297276c4eb7507b14b4628c
 F src/prepare.c 82e5db1013846a819f198336fed72c44c974e7b1
-F src/printf.c af589a27b7d40f6f4f704e9eea99f02f18ad6d32
+F src/printf.c 79265c0b36bca9b8582592a4f3fa73a1cc1cfa2f
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c a83b41104e6ff69855d03cd0aaa09e93927ec39f
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
@@ -1406,7 +1406,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f300c35efa5f7383b2a74b1c9466c243c17815e4
-R a3643a709add89c526ff9d85846c177f
+P 4b404a99aa9bfa6cfe8998f5dc1f84f8be20b840
+R 3d16cb95a338f71bf305a9aee47b6af1
 U drh
-Z 723a886ae851aa4686263a1002cc64d8
+Z b5d1ace2d67c86c8eec357e62ba7f839

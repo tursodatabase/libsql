@@ -965,7 +965,12 @@ char *sqlite3_vmprintf(const char *zFormat, va_list ap){
 #ifndef SQLITE_OMIT_AUTOINIT
   if( sqlite3_initialize() ) return 0;
 #endif
+#if SQLITE_MAX_LENGTH<0x40000000
   sqlite3StrAccumInit(&acc, 0, zBase, sizeof(zBase), SQLITE_MAX_LENGTH);
+#else
+  sqlite3StrAccumInit(&acc, 0, zBase, sizeof(zBase), 0x3fffffff);
+#endif
+
   sqlite3VXPrintf(&acc, 0, zFormat, ap);
   z = sqlite3StrAccumFinish(&acc);
   return z;
