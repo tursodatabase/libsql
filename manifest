@@ -1,5 +1,5 @@
-C Add\sreleasetest.tcl\scases\sfor\sSQLITE_LIKE_DOESNT_MATCH_BLOB\sand\nfor\sSQLITE_ENABLE_CURSOR_HINTS.
-D 2016-01-04T01:08:50.342
+C Fix\sa\sharmless\scompiler\swarning.
+D 2016-01-04T03:48:46.399
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5fff077fcc46de7714ed6eebb6159a4c00eab751
@@ -398,7 +398,7 @@ F src/update.c 17332f9fe818cbc0444c36a811800af8498af4c3
 F src/utf.c 32d7f82aa921322f3e1c956f4b58f019ebd2c6b3
 F src/util.c e802e8e311a0d6c48cd1b3e89db164f6f0248d70
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c 638c20bae996d8037a114294016768b6bc8ebc14
+F src/vdbe.c 6ac8e5d808d48afc369316e147c191102f0584c1
 F src/vdbe.h efb7a8c1459e31f3ea4377824c6a7e4cb5068637
 F src/vdbeInt.h 75c2e82ee3357e9210c06474f8d9bdf12c81105d
 F src/vdbeapi.c 020681b943e77766b32ae1cddf86d7831b7374ca
@@ -1406,7 +1406,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e30062e9f6cae980150dda7df440b36dfdcb7bbe
-R 60c0d617eaaaa3eb60de4d61ace77f3f
+P f300c35efa5f7383b2a74b1c9466c243c17815e4
+R a3643a709add89c526ff9d85846c177f
 U drh
-Z bf759b86247c24cfa4d33f391ba06db6
+Z 723a886ae851aa4686263a1002cc64d8

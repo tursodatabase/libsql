@@ -2524,7 +2524,7 @@ case OP_Column: {
         goto op_column_error;
       }
     }else{
-      VVA_ONLY( t = 0; ) /* Only needed by assert() statements */
+      t = 0;
     }
 
     /* If after trying to extract new entries from the header, nHdrParsed is
