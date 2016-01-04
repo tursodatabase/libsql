@@ -1,5 +1,5 @@
-C Changes\sto\srun\smany\sfts5\stests\swith\sdetail=none\sand\sdetail=col\stables\sas\swell\sas\sthe\sdefault\sdetail=full.\sAlso\sfixes\sfor\sthe\sbugs\suncovered\sby\srunning\ssaid\stests.
-D 2016-01-02T19:01:56.026
+C Update\smore\sfts5\stests\sto\srun\sin\sdetail=none\sand\sdetail=column\smodes\sas\swell\sas\sthe\sdefault\sdetail=full.
+D 2016-01-04T16:19:51.421
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5fff077fcc46de7714ed6eebb6159a4c00eab751
@@ -121,12 +121,12 @@ F ext/fts5/test/fts5ac.test 9a3c5eb052a5e8c871d56d3d0f144e5fdcf075c2
 F ext/fts5/test/fts5ad.test 049f7511a79c155d2d8dfd2ddcfeb640c50ad0dc
 F ext/fts5/test/fts5ae.test 612dcb51f4069226791ff14c17dbfb3138c56f20
 F ext/fts5/test/fts5af.test be858a96b1f5de66ba6d64f0021bd8b2408e126c
-F ext/fts5/test/fts5ag.test ec3e119b728196620a31507ef503c455a7a73505
-F ext/fts5/test/fts5ah.test e592c4978622dbc4de552cd0f9395df60ac5d54c
-F ext/fts5/test/fts5ai.test f20e53bbf0c55bc596f1fd47f2740dae028b8f37
+F ext/fts5/test/fts5ag.test 27180de76c03036be75ee80b93d8c5f540014071
+F ext/fts5/test/fts5ah.test dfb7897711dbcda1dacb038aec310daca139fcf5
+F ext/fts5/test/fts5ai.test 3909d0b949b2afcaae4d5795cd79153da75381df
 F ext/fts5/test/fts5aj.test 05b569f5c16ea3098fb1984eec5cf50dbdaae5d8
-F ext/fts5/test/fts5ak.test 7b8c5df96df599293f920b7e5521ebc79f647592
-F ext/fts5/test/fts5al.test a1b7b6393376bc2adc216527a28f5ae5594069df
+F ext/fts5/test/fts5ak.test fb26389985407826f6076bb9f382c67d3db6b5d9
+F ext/fts5/test/fts5al.test 18c277f5986df0a3d9071dfd7128afeb16fe9d5d
 F ext/fts5/test/fts5alter.test 6022c61467a82aa11c70822ccad22b328dcf0d04
 F ext/fts5/test/fts5auto.test 2a6241673657b340427f521528f7809ddaa02a9e
 F ext/fts5/test/fts5aux.test 8c687c948cc98e9a94be014df7d518acc1b3b74f
@@ -1407,7 +1407,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3a1df69e58e5830da1dff158eedbe3817743f58f
-R 584d5f1c8b7a15ac2eae2ab1ffe71c4a
+P 6322a1d984e7946735bace8a069ef24b31754b3b
+R 32e8694f89e6ec744ed1fb193a76a532
 U dan
-Z cff9ad15204445a84003e93595871343
+Z 780f62d5b61ae786fb811bd6c42602f7
