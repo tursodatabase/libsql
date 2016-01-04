@@ -86,6 +86,8 @@ array set ::Configs [strip_comments {
     -DSQLITE_DEFAULT_FILE_FORMAT=4
     -DSQLITE_ENABLE_UPDATE_DELETE_LIMIT=1
     -DSQLITE_ENABLE_STMT_SCANSTATUS
+    -DSQLITE_LIKE_DOESNT_MATCH_BLOBS
+    -DSQLITE_ENABLE_CURSOR_HINTS
     --enable-json1
   }
   "Check-Symbols" {
