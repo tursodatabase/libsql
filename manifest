@@ -1,5 +1,5 @@
-C A\snew\sapproach\sto\svery\slarge\ssqlite3_mprintf()\sstrings:\s\sBack\sout\sthe\n[d655a665]\scheck-in\sand\sinstead\smake\sthe\ssize\sfields\sin\sStrAccum\sunsigned.\nStrings\sgenerated\sby\ssqlite3_mprintf()\scan\snow\sbe\sas\slarge\sas\s2^31-1\sbytes.
-D 2016-01-04T12:07:27.503
+C Fix\sthe\sconflict2.test\smodule\swhich\swas\sbroken\sby\scheck-in\s[e30062e9f6c].
+D 2016-01-04T13:06:53.893
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5fff077fcc46de7714ed6eebb6159a4c00eab751
@@ -524,7 +524,7 @@ F test/collateA.test b8218ab90d1fa5c59dcf156efabb1b2599c580d6
 F test/colmeta.test 2c765ea61ee37bc43bbe6d6047f89004e6508eb1
 F test/colname.test 08948a4809d22817e0e5de89c7c0a8bd90cb551b
 F test/conflict.test 841bcf7cabbfca39c577eb8411ea8601843b46a8
-F test/conflict2.test 0f0e810aef6739650d7f442164975e932cf18afc
+F test/conflict2.test a82dd3b9b41fceb5dd6ff0707c5c7ffba208d538
 F test/conflict3.test dec0634c0f31dec9a4b01c63063e939f0cd21b6b
 F test/contrib01.test 2a1cbc0f2f48955d7d073f725765da6fbceda6b4
 F test/corrupt.test 141c39ea650c1365e85a49e402fa05cb9617fb97
@@ -1406,7 +1406,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 22abe08038cc7b66cbc25e733246d210197c9215
-R 50b92b9e9c9cae33b4950afbfcff914c
+P 7adb789f45698e5569b840d23f3f9488db3ed109
+R 16019d64036d1aa36ba8b50ba392c4e8
 U drh
-Z 208fc2f95f59628c3ac39711f08181ab
+Z 8bde812e449e210a56672af13ac69445
