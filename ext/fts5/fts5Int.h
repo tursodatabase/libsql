@@ -642,9 +642,10 @@ int sqlite3Fts5ExprPhraseCount(Fts5Expr*);
 int sqlite3Fts5ExprPhraseSize(Fts5Expr*, int iPhrase);
 int sqlite3Fts5ExprPoslist(Fts5Expr*, int, const u8 **);
 
-Fts5PoslistWriter *sqlite3Fts5ExprClearPoslists(Fts5Expr*);
+typedef struct Fts5PoslistPopulator Fts5PoslistPopulator;
+Fts5PoslistPopulator *sqlite3Fts5ExprClearPoslists(Fts5Expr*);
 int sqlite3Fts5ExprPopulatePoslists(
-    Fts5Config*, Fts5Expr*, Fts5PoslistWriter*, int, const char*, int
+    Fts5Config*, Fts5Expr*, Fts5PoslistPopulator*, int, const char*, int
 );
 void sqlite3Fts5ExprCheckPoslists(Fts5Expr*, i64);
 

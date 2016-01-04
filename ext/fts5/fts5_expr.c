@@ -2257,27 +2257,43 @@ int sqlite3Fts5ExprPoslist(Fts5Expr *pExpr, int iPhrase, const u8 **pa){
   return nRet;
 }
 
-Fts5PoslistWriter *sqlite3Fts5ExprClearPoslists(Fts5Expr *pExpr){
-  int i;
-  Fts5PoslistWriter *pRet;
-  for(i=0; i<pExpr->nPhrase; i++){
-    Fts5Buffer *pBuf = &pExpr->apExprPhrase[i]->poslist;
-    assert( pExpr->apExprPhrase[i]->nTerm==1 );
-    pBuf->n = 0;
-  }
-  pRet = sqlite3_malloc(sizeof(Fts5PoslistWriter)*pExpr->nPhrase);
+struct Fts5PoslistPopulator {
+  Fts5PoslistWriter writer;
+  int bOk;                        /* True if ok to populate */
+};
+
+Fts5PoslistPopulator *sqlite3Fts5ExprClearPoslists(Fts5Expr *pExpr){
+  Fts5PoslistPopulator *pRet;
+  pRet = sqlite3_malloc(sizeof(Fts5PoslistPopulator)*pExpr->nPhrase);
   if( pRet ){
-    memset(pRet, 0, sizeof(Fts5PoslistWriter)*pExpr->nPhrase);
+    int i;
+    memset(pRet, 0, sizeof(Fts5PoslistPopulator)*pExpr->nPhrase);
+    for(i=0; i<pExpr->nPhrase; i++){
+      Fts5Buffer *pBuf = &pExpr->apExprPhrase[i]->poslist;
+      assert( pExpr->apExprPhrase[i]->nTerm==1 );
+      pBuf->n = 0;
+    }
   }
   return pRet;
 }
 
 struct Fts5ExprCtx {
   Fts5Expr *pExpr;
-  Fts5PoslistWriter *aWriter;
+  Fts5PoslistPopulator *aPopulator;
   i64 iOff;
 };
 typedef struct Fts5ExprCtx Fts5ExprCtx;
+
+/*
+** TODO: Make this more efficient!
+*/
+static int fts5ExprColsetTest(Fts5Colset *pColset, int iCol){
+  int i;
+  for(i=0; i<pColset->nCol; i++){
+    if( pColset->aiCol[i]==iCol ) return 1;
+  }
+  return 0;
+}
 
 static int fts5ExprPopulatePoslistsCb(
   void *pCtx,                /* Copy of 2nd argument to xTokenize() */
@@ -2294,13 +2310,14 @@ static int fts5ExprPopulatePoslistsCb(
   if( (tflags & FTS5_TOKEN_COLOCATED)==0 ) p->iOff++;
   for(i=0; i<pExpr->nPhrase; i++){
     Fts5ExprTerm *pTerm;
+    if( p->aPopulator[i].bOk==0 ) continue;
     for(pTerm=&pExpr->apExprPhrase[i]->aTerm[0]; pTerm; pTerm=pTerm->pSynonym){
       int nTerm = strlen(pTerm->zTerm);
       if( (nTerm==nToken || (nTerm<nToken && pTerm->bPrefix))
        && memcmp(pTerm->zTerm, pToken, nTerm)==0
       ){
         int rc = sqlite3Fts5PoslistWriterAppend(
-            &pExpr->apExprPhrase[i]->poslist, &p->aWriter[i], p->iOff
+            &pExpr->apExprPhrase[i]->poslist, &p->aPopulator[i].writer, p->iOff
         );
         if( rc ) return rc;
         break;
@@ -2313,14 +2330,24 @@ static int fts5ExprPopulatePoslistsCb(
 int sqlite3Fts5ExprPopulatePoslists(
   Fts5Config *pConfig,
   Fts5Expr *pExpr, 
-  Fts5PoslistWriter *aWriter,
+  Fts5PoslistPopulator *aPopulator,
   int iCol, 
   const char *z, int n
 ){
+  int i;
   Fts5ExprCtx sCtx;
   sCtx.pExpr = pExpr;
-  sCtx.aWriter = aWriter;
+  sCtx.aPopulator = aPopulator;
   sCtx.iOff = (((i64)iCol) << 32) - 1;
+
+  for(i=0; i<pExpr->nPhrase; i++){
+    Fts5Colset *pColset = pExpr->apExprPhrase[i]->pNode->pNear->pColset;
+    if( pColset && 0==fts5ExprColsetTest(pColset, iCol) ){
+      aPopulator[i].bOk = 0;
+    }else{
+      aPopulator[i].bOk = 1;
+    }
+  }
 
   return sqlite3Fts5Tokenize(pConfig, 
       FTS5_TOKENIZE_AUX, z, n, (void*)&sCtx, fts5ExprPopulatePoslistsCb
