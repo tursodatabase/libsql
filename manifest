@@ -1,8 +1,8 @@
-C Another\sattempt\sto\sget\sreuse\sof\sexcess\sopcode\sarray\sspace\sworking\scorrectly\non\sall\sarchitectures\sand\splatforms.
-D 2016-01-05T03:39:25.682
-F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
+C Always\suse\s-DSQLITE_ENABLE_MEMSYS5\sfor\sfuzzcheck\sso\sthat\sthe\s--limit-mem\noption\swill\swork.
+D 2016-01-05T03:39:52.336
+F Makefile.in 7c8cc4c2f0179efc6fa9492141d1fb65f4807054
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 5fff077fcc46de7714ed6eebb6159a4c00eab751
+F Makefile.msc e45d8b9b56dfa3f2cd860b2c28bd9d304513b042
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION 8b9d3ac6f1962f94e06ba05462422a544f9c4e36
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -257,7 +257,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk ed77cbb97848c8dae1ab928245432f74b0580162
+F main.mk 20e46c09ac8732a74a9e2d55e8d90257d97eb844
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -1406,7 +1406,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ac27f38eef7a241d56124c263d9f8c91f372a77f
-R 60123ea1ef3684554ab03afc4196be5d
+P 2f8583748abab1e15029d3a8693ba9a66c978c2b
+R 658872c8eaad4f517adfb9642371bf29
 U drh
-Z f77bc5a04736277ef260f43c3525df33
+Z 68ad1defdc3264df127031e5fb4da721
