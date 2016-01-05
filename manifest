@@ -1,5 +1,5 @@
-C Permit\sthe\s'test_fs'\stest\smodule\sto\sbe\scompiled\sand\sused\son\sMinGW.
-D 2016-01-05T01:48:29.005
+C Another\sattempt\sto\sget\sreuse\sof\sexcess\sopcode\sarray\sspace\sworking\scorrectly\non\sall\sarchitectures\sand\splatforms.
+D 2016-01-05T03:39:25.682
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5fff077fcc46de7714ed6eebb6159a4c00eab751
@@ -402,7 +402,7 @@ F src/vdbe.c 6ac8e5d808d48afc369316e147c191102f0584c1
 F src/vdbe.h efb7a8c1459e31f3ea4377824c6a7e4cb5068637
 F src/vdbeInt.h 75c2e82ee3357e9210c06474f8d9bdf12c81105d
 F src/vdbeapi.c 020681b943e77766b32ae1cddf86d7831b7374ca
-F src/vdbeaux.c 141ee231ad190240d0d1ee133c9ea28eecd55824
+F src/vdbeaux.c 3308a07a6b0b64e22e83cbcc76773eaf330b056a
 F src/vdbeblob.c fdc4a81605ae7a35ae94a55bd768b66d6be16f15
 F src/vdbemem.c fdd1578e47bea61390d472de53c565781d81e045
 F src/vdbesort.c a7ec02da4494c59dfd071126dd3726be5a11459d
@@ -1406,7 +1406,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1aa530144643582658c8c1dd66548662f950efe3
-R 6490ec858048a3d7899751e10a44fa21
-U mistachkin
-Z b205e33bbbedd23793ff52ce1287fb1d
+P ac27f38eef7a241d56124c263d9f8c91f372a77f
+R 60123ea1ef3684554ab03afc4196be5d
+U drh
+Z f77bc5a04736277ef260f43c3525df33
