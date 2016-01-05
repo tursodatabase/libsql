@@ -1218,6 +1218,9 @@ static int fts5ExprNodeNextMatch(
         }
         pNode->bEof = p1->bEof;
         pNode->iRowid = p1->iRowid;
+        if( p1->bEof ){
+          fts5ExprNodeZeroPoslist(p2);
+        }
         break;
       }
     }
@@ -2260,9 +2263,10 @@ int sqlite3Fts5ExprPoslist(Fts5Expr *pExpr, int iPhrase, const u8 **pa){
 struct Fts5PoslistPopulator {
   Fts5PoslistWriter writer;
   int bOk;                        /* True if ok to populate */
+  int bMiss;
 };
 
-Fts5PoslistPopulator *sqlite3Fts5ExprClearPoslists(Fts5Expr *pExpr){
+Fts5PoslistPopulator *sqlite3Fts5ExprClearPoslists(Fts5Expr *pExpr, int bLive){
   Fts5PoslistPopulator *pRet;
   pRet = sqlite3_malloc(sizeof(Fts5PoslistPopulator)*pExpr->nPhrase);
   if( pRet ){
@@ -2270,8 +2274,15 @@ Fts5PoslistPopulator *sqlite3Fts5ExprClearPoslists(Fts5Expr *pExpr){
     memset(pRet, 0, sizeof(Fts5PoslistPopulator)*pExpr->nPhrase);
     for(i=0; i<pExpr->nPhrase; i++){
       Fts5Buffer *pBuf = &pExpr->apExprPhrase[i]->poslist;
+      Fts5ExprNode *pNode = pExpr->apExprPhrase[i]->pNode;
       assert( pExpr->apExprPhrase[i]->nTerm==1 );
-      pBuf->n = 0;
+      if( bLive && 
+          (pBuf->n==0 || pNode->iRowid!=pExpr->pRoot->iRowid || pNode->bEof)
+      ){
+        pRet[i].bMiss = 1;
+      }else{
+        pBuf->n = 0;
+      }
     }
   }
   return pRet;
@@ -2341,8 +2352,11 @@ int sqlite3Fts5ExprPopulatePoslists(
   sCtx.iOff = (((i64)iCol) << 32) - 1;
 
   for(i=0; i<pExpr->nPhrase; i++){
-    Fts5Colset *pColset = pExpr->apExprPhrase[i]->pNode->pNear->pColset;
-    if( pColset && 0==fts5ExprColsetTest(pColset, iCol) ){
+    Fts5ExprNode *pNode = pExpr->apExprPhrase[i]->pNode;
+    Fts5Colset *pColset = pNode->pNear->pColset;
+    if( (pColset && 0==fts5ExprColsetTest(pColset, iCol)) 
+     || aPopulator[i].bMiss
+    ){
       aPopulator[i].bOk = 0;
     }else{
       aPopulator[i].bOk = 1;
@@ -2412,8 +2426,20 @@ static int fts5ExprCheckPoslists(Fts5ExprNode *pNode, i64 iRowid){
     }
   }
 }
+
 void sqlite3Fts5ExprCheckPoslists(Fts5Expr *pExpr, i64 iRowid){
   fts5ExprCheckPoslists(pExpr->pRoot, iRowid);
+}
+
+static void fts5ExprClearEof(Fts5ExprNode *pNode){
+  int i;
+  for(i=0; i<pNode->nChild; i++){
+    fts5ExprClearEof(pNode->apChild[i]);
+  }
+  pNode->bEof = 0;
+}
+void sqlite3Fts5ExprClearEof(Fts5Expr *pExpr){
+  fts5ExprClearEof(pExpr->pRoot);
 }
 
 /*

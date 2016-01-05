@@ -643,11 +643,12 @@ int sqlite3Fts5ExprPhraseSize(Fts5Expr*, int iPhrase);
 int sqlite3Fts5ExprPoslist(Fts5Expr*, int, const u8 **);
 
 typedef struct Fts5PoslistPopulator Fts5PoslistPopulator;
-Fts5PoslistPopulator *sqlite3Fts5ExprClearPoslists(Fts5Expr*);
+Fts5PoslistPopulator *sqlite3Fts5ExprClearPoslists(Fts5Expr*, int);
 int sqlite3Fts5ExprPopulatePoslists(
     Fts5Config*, Fts5Expr*, Fts5PoslistPopulator*, int, const char*, int
 );
 void sqlite3Fts5ExprCheckPoslists(Fts5Expr*, i64);
+void sqlite3Fts5ExprClearEof(Fts5Expr*);
 
 int sqlite3Fts5ExprClonePhrase(Fts5Config*, Fts5Expr*, int, Fts5Expr**);
 

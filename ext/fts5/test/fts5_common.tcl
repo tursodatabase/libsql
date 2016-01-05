@@ -390,5 +390,118 @@ proc detail_is_col {}  { detail_check ; expr {$::detail == "col" } }
 proc detail_is_full {} { detail_check ; expr {$::detail == "full"} }
 
 
+#-------------------------------------------------------------------------
+# Convert a poslist of the type returned by fts5_test_poslist() to a 
+# collist as returned by fts5_test_collist().
+#
+proc fts5_poslist2collist {poslist} {
+  set res [list]
+  foreach h $poslist {
+    regexp {(.*)\.[1234567890]+} $h -> cand
+    lappend res $cand
+  }
+  set res [lsort -command fts5_collist_elem_compare -unique $res]
+  return $res
+}
 
+# Comparison function used by fts5_poslist2collist to sort collist entries.
+#
+proc fts5_collist_elem_compare {a b} {
+  foreach {a1 a2} [split $a .] {}
+  foreach {b1 b2} [split $b .] {}
+
+  if {$a1==$b1} { return [expr $a2 - $b2] }
+  return [expr $a1 - $b1]
+}
+
+
+#--------------------------------------------------------------------------
+# Construct and return a tcl list equivalent to that returned by the SQL
+# query executed against database handle [db]:
+#
+#   SELECT 
+#     rowid, 
+#     fts5_test_poslist($tbl),
+#     fts5_test_collist($tbl) 
+#   FROM $tbl('$expr')
+#   ORDER BY rowid $order;
+#
+proc fts5_query_data {expr tbl {order ASC}} {
+
+  # Figure out the set of columns in the FTS5 table. This routine does
+  # not handle tables with UNINDEXED columns, but if it did, it would
+  # have to be here.
+  db eval "PRAGMA table_info = $tbl" x { lappend lCols $x(name) }
+
+  set cols ""
+  foreach e $lCols { append cols ", '$e'" }
+  set tclexpr [db one [subst -novar {
+    SELECT fts5_expr_tcl( $expr, 'nearset $cols -pc ::pc' [set cols] )
+  }]]
+
+  set res [list]
+  db eval "SELECT rowid, * FROM $tbl ORDER BY rowid $order" x {
+    set cols [list]
+    foreach col $lCols { lappend cols $x($col) }
+    
+    set ::pc 0
+    set rowdata [eval $tclexpr]
+    if {$rowdata != ""} { 
+      lappend res $x(rowid) $rowdata [fts5_poslist2collist $rowdata]
+    }
+  }
+
+  set res
+}
+
+#-------------------------------------------------------------------------
+# Similar to [fts5_query_data], but omit the collist field.
+#
+proc fts5_poslist_data {expr tbl {order ASC}} {
+  set res [list]
+  foreach {rowid poslist collist} [fts5_query_data $expr $tbl $order] {
+    lappend res $rowid $poslist
+  }
+  set res
+}
+
+#-------------------------------------------------------------------------
+#
+proc nearset_rf {aCol args} {
+  set idx [lsearch -exact $args --]
+  if {$idx != [llength $args]-2 || [llength [lindex $args end]]!=1} {
+    set ::expr_not_ok 1
+  }
+  list
+}
+
+proc nearset_rc {aCol args} {
+  nearset_rf $aCol {*}$args
+  if {[lsearch $args -col]>=0} { 
+    set ::expr_not_ok 1
+  }
+  list
+}
+
+proc fts5_expr_ok {expr tbl} {
+
+  if {![detail_is_full]} {
+    set nearset "nearset_rc"
+    if {[detail_is_col]} { set nearset "nearset_rf" }
+
+    set ::expr_not_ok 0
+    db eval "PRAGMA table_info = $tbl" x { lappend lCols $x(name) }
+
+    set cols ""
+    foreach e $lCols { append cols ", '$e'" }
+    set ::pc 0
+    set tclexpr [db one [subst -novar {
+      SELECT fts5_expr_tcl( $expr, '[set nearset] $cols -pc ::pc' [set cols] )
+    }]]
+    eval $tclexpr
+    if {$::expr_not_ok} { return 0 }
+  }
+
+  return 1
+}
 

@@ -1179,6 +1179,7 @@ static int fts5FilterMethod(
     pCsr->ePlan = FTS5_PLAN_SOURCE;
     pCsr->pExpr = pTab->pSortCsr->pExpr;
     rc = fts5CursorFirst(pTab, pCsr, bDesc);
+    sqlite3Fts5ExprClearEof(pCsr->pExpr);
   }else if( pMatch ){
     const char *zExpr = (const char*)sqlite3_value_text(apVal[0]);
     if( zExpr==0 ) zExpr = "";
@@ -1688,13 +1689,14 @@ static int fts5CsrPoslist(
 ){
   Fts5Config *pConfig = ((Fts5Table*)(pCsr->base.pVtab))->pConfig;
   int rc = SQLITE_OK;
+  int bLive = (pCsr->pSorter==0);
 
   if( CsrFlagTest(pCsr, FTS5CSR_REQUIRE_POSLIST) ){
 
     if( pConfig->eDetail!=FTS5_DETAIL_FULL ){
       Fts5PoslistPopulator *aPopulator;
       int i;
-      aPopulator = sqlite3Fts5ExprClearPoslists(pCsr->pExpr);
+      aPopulator = sqlite3Fts5ExprClearPoslists(pCsr->pExpr, bLive);
       if( aPopulator==0 ) rc = SQLITE_NOMEM;
       for(i=0; i<pConfig->nCol && rc==SQLITE_OK; i++){
         int n; const char *z;
@@ -1706,6 +1708,7 @@ static int fts5CsrPoslist(
         }
       }
       sqlite3_free(aPopulator);
+
       if( pCsr->pSorter ){
         sqlite3Fts5ExprCheckPoslists(pCsr->pExpr, pCsr->pSorter->iRowid);
       }
