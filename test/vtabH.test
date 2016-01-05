@@ -32,12 +32,12 @@ do_execsql_test 1.0 {
 
 foreach {tn sql expect} {
   1 "SELECT * FROM e6 WHERE b LIKE 'abc'" {
-    xBestIndex {SELECT rowid, a, b FROM 't6' WHERE b like ?} 
+    xBestIndex {SELECT rowid, a, b FROM 't6' WHERE b like ?}
     xFilter {SELECT rowid, a, b FROM 't6' WHERE b like ?} abc
   }
 
   2 "SELECT * FROM e6 WHERE b GLOB 'abc'" {
-    xBestIndex {SELECT rowid, a, b FROM 't6' WHERE b glob ?} 
+    xBestIndex {SELECT rowid, a, b FROM 't6' WHERE b glob ?}
     xFilter {SELECT rowid, a, b FROM 't6' WHERE b glob ?} abc
   }
 } {
@@ -115,7 +115,7 @@ if {1} {
     SELECT name FROM fsdir WHERE dir = '.' AND name = 'test.db';
     SELECT name FROM fsdir WHERE dir = '.' AND name = '.'
   } {test.db .}
-  
+
   proc list_root_files {} {
     if {$::tcl_platform(platform) eq "windows"} {
       set res [list]
@@ -142,22 +142,6 @@ if {1} {
     }
   }
 
-  # Read the first 5 entries from the root directory.  Except, ignore
-  # files that contain the "$" character in their names as these are
-  # special files on some Windows platforms.
-  #
-  set res [list]
-  foreach p [lrange [list_root_files] 0 4] {
-    if {$::tcl_platform(platform) eq "windows"} {
-      if {![regexp {\$} $p]} {lappend res $p}
-    } else {
-      lappend res "/$p"
-    }
-  }
-  do_execsql_test 3.1 {
-    SELECT path FROM fstree WHERE path NOT GLOB '*$*' LIMIT 5;
-  } $res
-  
   # Read all entries in the current directory.
   #
   proc contents {pattern} {
@@ -175,7 +159,7 @@ if {1} {
   do_execsql_test 3.2 {
     SELECT path FROM fstree WHERE path GLOB $pwd ORDER BY 1
   } [lsort $res]
-  
+
   # Add some sub-directories and files to the current directory.
   #
   do_test 3.3 {
@@ -183,7 +167,7 @@ if {1} {
     foreach {path sz} {
       subdir/x1.txt     143
       subdir/x2.txt     153
-    } { 
+    } {
       set dir [file dirname $path]
       catch { file mkdir $dir }
       set fd [open $path w]
@@ -191,7 +175,7 @@ if {1} {
       close $fd
     }
   } {}
-  
+
   set pwd [pwd]
   do_execsql_test 3.5 {
     SELECT path, size FROM fstree WHERE path GLOB $pwd || '/subdir/*' ORDER BY 1
