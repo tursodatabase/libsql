@@ -46,10 +46,10 @@ proc p4_of_opcode {db opcode sql} {
 # Run EXPLAIN on $sql.  Return a list of P5 values for all $opcode
 # opcodes that contain regexp $comment in their comment
 #
-proc p5_of_opcode {db opcode comment sql} {
+proc p5_of_opcode {db opcode sql} {
   set res {}
   $db eval "EXPLAIN $sql" x {
-    if {$x(opcode)==$opcode && [regexp $comment $x(comment)]} {
+    if {$x(opcode)==$opcode} {
       lappend res $x(p5)
     }
   }
@@ -66,7 +66,7 @@ do_test 1.1 {
   }
 } {{EQ(r[1],c0)}}
 do_test 1.2 {
-  p5_of_opcode db OpenRead . {
+  p5_of_opcode db OpenRead {
      SELECT * FROM t1 CROSS JOIN t2 WHERE a=x
   }
 } {00 00}
@@ -79,7 +79,7 @@ do_test 2.1 {
   }
 } {{EQ(c0,r[1])}}
 do_test 2.2 {
-  p5_of_opcode db OpenRead . {
+  p5_of_opcode db OpenRead {
      SELECT * FROM t2 CROSS JOIN t1 WHERE a=x
   }
 } {00 00}
@@ -114,7 +114,7 @@ do_test 4.1desc {
   }
 } {GT(c0,11)}
 do_test 4.2 {
-  p5_of_opcode db OpenRead . {
+  p5_of_opcode db OpenRead {
     SELECT * FROM t1 WHERE b>11;
   }
 } {02 00}
@@ -129,7 +129,7 @@ do_test 4.3desc {
   }
 } {}
 do_test 4.4 {
-  p5_of_opcode db OpenRead . {
+  p5_of_opcode db OpenRead {
     SELECT c FROM t1 WHERE b<11;
   }
 } {00}
