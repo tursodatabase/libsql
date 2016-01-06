@@ -254,8 +254,6 @@ foreach {rowid a} {
   }
 }
 
-}
-
 #-------------------------------------------------------------------------
 #
 reset_db
@@ -269,5 +267,38 @@ do_execsql_test 14.1 {
   SELECT fts5_test_poslist(t1) FROM t1('b') ORDER BY rank;
 } {0.0.1}
 
+}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 15.1 {
+  CREATE VIRTUAL TABLE t1 USING fts5(x, detail=none);
+  BEGIN;
+    INSERT INTO t1(rowid, x) VALUES(1, 'sqlite');
+    INSERT INTO t1(rowid, x) VALUES(2, 'sqlite'); 
+  COMMIT;
+} {}
+
+do_test 15.1 {
+  execsql { INSERT INTO t1(t1) VALUES('integrity-check') }
+} {}
+
+do_test 15.2 {
+  execsql { DELETE FROM t1 }
+} {}
+
+do_execsql_test 15.3.1 {
+  SELECT rowid FROM t1('sqlite');
+} {}
+
+do_execsql_test 15.3.2 {
+  SELECT rowid FROM t1('sqlite') ORDER BY rowid DESC;
+} {}
+
+do_test 15.4 {
+  execsql { INSERT INTO t1(t1) VALUES('integrity-check') }
+} {}
+  
 finish_test
 

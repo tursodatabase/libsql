@@ -1764,14 +1764,14 @@ static void fts5SegIterNext(
         i64 iDelta;
 
         pIter->iRowidOffset--;
-        pIter->iLeafOffset = iOff = pIter->aRowidOffset[pIter->iRowidOffset];
+        pIter->iLeafOffset = pIter->aRowidOffset[pIter->iRowidOffset];
+        fts5SegIterLoadNPos(p, pIter);
+        iOff = pIter->iLeafOffset;
         if( p->pConfig->eDetail!=FTS5_DETAIL_NONE ){
-          iOff += fts5GetPoslistSize(&a[iOff], &nPos, &bDummy);
-          iOff += nPos;
+          iOff += pIter->nPos;
         }
         fts5GetVarint(&a[iOff], (u64*)&iDelta);
         pIter->iRowid -= iDelta;
-        fts5SegIterLoadNPos(p, pIter);
       }else{
         fts5SegIterReverseNewPage(p, pIter);
       }
