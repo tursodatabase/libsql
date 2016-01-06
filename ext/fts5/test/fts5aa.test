@@ -424,11 +424,11 @@ do_execsql_test 16.1 {
 }
 
 proc funk {} {
+  db eval { UPDATE n1_config SET v=50 WHERE k='version' }
   set fd [db incrblob main n1_data block 10]
   fconfigure $fd -encoding binary -translation binary
   puts -nonewline $fd "\x44\x45"
   close $fd
-  db eval { UPDATE n1_config SET v=50 WHERE k='version' }
 }
 db func funk funk
 

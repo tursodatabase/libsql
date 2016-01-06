@@ -1,5 +1,5 @@
-C Merge\slatest\strunk\schanges\sinto\sthis\sbranch.
-D 2016-01-06T19:35:52.285
+C Fix\sa\stest\sscript\sproblem\scaused\sby\sa\schange\sin\sconstraint\shandling\swithin\sthe\score.
+D 2016-01-06T19:43:26.257
 F Makefile.in 7c8cc4c2f0179efc6fa9492141d1fb65f4807054
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e45d8b9b56dfa3f2cd860b2c28bd9d304513b042
@@ -115,7 +115,7 @@ F ext/fts5/fts5_vocab.c 3742d0abfe8aa8c3cb4a7df56aa38f2e3c3fb1c2
 F ext/fts5/fts5parse.y 1647eba089b9b3fc058b4dc989d9da87d15b9580
 F ext/fts5/mkportersteps.tcl 5acf962d2e0074f701620bb5308155fa1e4a63ba
 F ext/fts5/test/fts5_common.tcl c9169fe40bf751e1b311271df31aec15732b26c0
-F ext/fts5/test/fts5aa.test 4abbc14eb2d9d6d46a53ab008151512871d54ebc
+F ext/fts5/test/fts5aa.test 7e814df4a0e6c22a6fe2d84f210fdc0b5068a084
 F ext/fts5/test/fts5ab.test 30325a89453280160106be411bba3acf138e6d1b
 F ext/fts5/test/fts5ac.test d5073ca7bd2d9fe8aab0c82c6c75a7e4b0d70ced
 F ext/fts5/test/fts5ad.test 049f7511a79c155d2d8dfd2ddcfeb640c50ad0dc
@@ -1409,7 +1409,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8d05cfd48db1462dfd3efd502d53bd33214403fb 55a11fd627eaf046b3783622b2925399a50a65b4
-R cf1317de6526e81224b7c381ca0d373b
+P e7dcd013516723941c2fb78ecdc96806d49d310b
+R dce0c272fbae692a97296955b7b2c775
 U dan
-Z 2530c4785808f691eed775076fac89d0
+Z 318fda862dd5c3483c784e4e425f0506
