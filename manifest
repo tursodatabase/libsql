@@ -1,5 +1,5 @@
-C Version\s3.10.0
-D 2016-01-06T11:01:07.739
+C Disable\sthe\s--limit-mem\soption\son\sfuzzcheck\sunless\sthe\sSQLITE_ENABLE_MEMSYS5\sor\nSQLITE_ENABLE_MEMSYS3\scompile-time\soptions\sare\sused.
+D 2016-01-06T15:54:53.139
 F Makefile.in 7c8cc4c2f0179efc6fa9492141d1fb65f4807054
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e45d8b9b56dfa3f2cd860b2c28bd9d304513b042
@@ -749,7 +749,7 @@ F test/fuzz2.test 76dc35b32b6d6f965259508508abce75a6c4d7e1
 F test/fuzz3.test 53fabcd5f0f430f8b221282f6c12c4d0903c21eb
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
 F test/fuzz_malloc.test 328f70aaca63adf29b4c6f06505ed0cf57ca7c26
-F test/fuzzcheck.c ccdcdc28579b2c9744696bca8726bdbd729eea11
+F test/fuzzcheck.c 3309d793165ca61a9996271cb799694839348f9a
 F test/fuzzdata1.db 7ee3227bad0e7ccdeb08a9e6822916777073c664
 F test/fuzzdata2.db f03a420d3b822cc82e4f894ca957618fbe9c4973
 F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
@@ -1406,10 +1406,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a855697719e288c908ddb7950d32fd17ef546509
-R 658872c8eaad4f517adfb9642371bf29
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.10.0 *
+P fd0a50f0797d154fefff724624f00548b5320566
+R 87a59d21671d8eb854da54e44c1cb06d
 U drh
-Z 024a1b2bbd235a427c0ebcd39a99300a
+Z 6b66decd394482c2ac340e90e8473c2f
