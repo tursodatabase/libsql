@@ -407,7 +407,7 @@ static int fts5ExprPhraseIsMatch(
 
   /* If the aStatic[] array is not large enough, allocate a large array
   ** using sqlite3_malloc(). This approach could be improved upon. */
-  if( pPhrase->nTerm>(sizeof(aStatic) / sizeof(aStatic[0])) ){
+  if( pPhrase->nTerm>(int)ArraySize(aStatic) ){
     int nByte = sizeof(Fts5PoslistReader) * pPhrase->nTerm;
     aIter = (Fts5PoslistReader*)sqlite3_malloc(nByte);
     if( !aIter ) return SQLITE_NOMEM;
@@ -543,7 +543,7 @@ static int fts5ExprNearIsMatch(int *pRc, Fts5ExprNearset *pNear){
 
   /* If the aStatic[] array is not large enough, allocate a large array
   ** using sqlite3_malloc(). This approach could be improved upon. */
-  if( pNear->nPhrase>(sizeof(aStatic) / sizeof(aStatic[0])) ){
+  if( pNear->nPhrase>(int)ArraySize(aStatic) ){
     int nByte = sizeof(Fts5NearTrimmer) * pNear->nPhrase;
     a = (Fts5NearTrimmer*)sqlite3Fts5MallocZero(&rc, nByte);
   }else{
@@ -2214,7 +2214,7 @@ int sqlite3Fts5ExprInit(Fts5Global *pGlobal, sqlite3 *db){
   int rc = SQLITE_OK;
   void *pCtx = (void*)pGlobal;
 
-  for(i=0; rc==SQLITE_OK && i<(sizeof(aFunc) / sizeof(aFunc[0])); i++){
+  for(i=0; rc==SQLITE_OK && i<(int)ArraySize(aFunc); i++){
     struct Fts5ExprFunc *p = &aFunc[i];
     rc = sqlite3_create_function(db, p->z, -1, SQLITE_UTF8, pCtx, p->x, 0, 0);
   }

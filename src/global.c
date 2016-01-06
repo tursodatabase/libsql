@@ -260,3 +260,8 @@ int sqlite3PendingByte = 0x40000000;
 ** the vdbe.c file.  
 */
 const unsigned char sqlite3OpcodeProperty[] = OPFLG_INITIALIZER;
+
+/*
+** Name of the default collating sequence
+*/
+const char sqlite3StrBINARY[] = "BINARY";

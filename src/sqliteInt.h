@@ -692,11 +692,6 @@ typedef INT16_TYPE LogEst;
 ** -DSQLITE_RUNTIME_BYTEORDER=1 is set, then byte-order is determined
 ** at run-time.
 */
-#ifdef SQLITE_AMALGAMATION
-const int sqlite3one = 1;
-#else
-extern const int sqlite3one;
-#endif
 #if (defined(i386)     || defined(__i386__)   || defined(_M_IX86) ||    \
      defined(__x86_64) || defined(__x86_64__) || defined(_M_X64)  ||    \
      defined(_M_AMD64) || defined(_M_ARM)     || defined(__x86)   ||    \
@@ -714,6 +709,11 @@ extern const int sqlite3one;
 # define SQLITE_UTF16NATIVE  SQLITE_UTF16BE
 #endif
 #if !defined(SQLITE_BYTEORDER)
+# ifdef SQLITE_AMALGAMATION
+  const int sqlite3one = 1;
+# else
+  extern const int sqlite3one;
+# endif
 # define SQLITE_BYTEORDER    0     /* 0 means "unknown at compile-time" */
 # define SQLITE_BIGENDIAN    (*(char *)(&sqlite3one)==0)
 # define SQLITE_LITTLEENDIAN (*(char *)(&sqlite3one)==1)
@@ -1522,7 +1522,7 @@ struct Column {
   char *zColl;     /* Collating sequence.  If NULL, use the default */
   u8 notNull;      /* An OE_ code for handling a NOT NULL constraint */
   char affinity;   /* One of the SQLITE_AFF_... values */
-  u8 szEst;        /* Estimated size of this column.  INT==1 */
+  u8 szEst;        /* Estimated size of value in this column. sizeof(INT)==1 */
   u8 colFlags;     /* Boolean properties.  See COLFLAG_ defines below */
 };
 
@@ -1932,7 +1932,7 @@ struct Index {
   Index *pNext;            /* The next index associated with the same table */
   Schema *pSchema;         /* Schema containing this index */
   u8 *aSortOrder;          /* for each column: True==DESC, False==ASC */
-  char **azColl;           /* Array of collation sequence names for index */
+  const char **azColl;     /* Array of collation sequence names for index */
   Expr *pPartIdxWhere;     /* WHERE clause for partial indices */
   ExprList *aColExpr;      /* Column expressions */
   int tnum;                /* DB Page containing root of this index */
@@ -2732,6 +2732,7 @@ struct Parse {
   int nSet;            /* Number of sets used so far */
   int nOnce;           /* Number of OP_Once instructions so far */
   int nOpAlloc;        /* Number of slots allocated for Vdbe.aOp[] */
+  int szOpAlloc;       /* Bytes of memory space allocated for Vdbe.aOp[] */
   int iFixedOp;        /* Never back out opcodes iFixedOp-1 or earlier */
   int ckBase;          /* Base register of data during check constraints */
   int iSelfTab;        /* Table of an index whose exprs are being coded */
@@ -2963,9 +2964,9 @@ struct StrAccum {
   sqlite3 *db;         /* Optional database for lookaside.  Can be NULL */
   char *zBase;         /* A base allocation.  Not from malloc. */
   char *zText;         /* The string collected so far */
-  int  nChar;          /* Length of the string so far */
-  int  nAlloc;         /* Amount of space allocated in zText */
-  int  mxAlloc;        /* Maximum allowed allocation.  0 for no malloc usage */
+  u32  nChar;          /* Length of the string so far */
+  u32  nAlloc;         /* Amount of space allocated in zText */
+  u32  mxAlloc;        /* Maximum allowed allocation.  0 for no malloc usage */
   u8   accError;       /* STRACCUM_NOMEM or STRACCUM_TOOBIG */
   u8   bMalloced;      /* zText points to allocated space */
 };
@@ -3348,7 +3349,11 @@ void sqlite3OpenMasterTable(Parse *, int);
 Index *sqlite3PrimaryKeyIndex(Table*);
 i16 sqlite3ColumnOfIndex(Index*, i16);
 void sqlite3StartTable(Parse*,Token*,Token*,int,int,int,int);
-void sqlite3ColumnPropertiesFromName(Table*, Column*);
+#if SQLITE_ENABLE_HIDDEN_COLUMNS
+  void sqlite3ColumnPropertiesFromName(Table*, Column*);
+#else
+# define sqlite3ColumnPropertiesFromName(T,C) /* no-op */
+#endif
 void sqlite3AddColumn(Parse*,Token*);
 void sqlite3AddNotNull(Parse*, int);
 void sqlite3AddPrimaryKey(Parse*, ExprList*, int, int, int);
@@ -3461,6 +3466,7 @@ void sqlite3ExprCacheRemove(Parse*, int, int);
 void sqlite3ExprCacheClear(Parse*);
 void sqlite3ExprCacheAffinityChange(Parse*, int, int);
 void sqlite3ExprCode(Parse*, Expr*, int);
+void sqlite3ExprCodeCopy(Parse*, Expr*, int);
 void sqlite3ExprCodeFactorable(Parse*, Expr*, int);
 void sqlite3ExprCodeAtInit(Parse*, Expr*, int, u8);
 int sqlite3ExprCodeTemp(Parse*, Expr*, int*);
@@ -3698,6 +3704,7 @@ int sqlite3ValueFromExpr(sqlite3 *, Expr *, u8, u8, sqlite3_value **);
 void sqlite3ValueApplyAffinity(sqlite3_value *, u8, u8);
 #ifndef SQLITE_AMALGAMATION
 extern const unsigned char sqlite3OpcodeProperty[];
+extern const char sqlite3StrBINARY[];
 extern const unsigned char sqlite3UpperToLower[];
 extern const unsigned char sqlite3CtypeMap[];
 extern const Token sqlite3IntTokens[];

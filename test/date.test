@@ -336,6 +336,15 @@ if {$tzoffset_new==4} {
   datetest 6.8.1 {datetime('2006-04-02 02:00:00','utc')} {2006-04-02 06:00:00}
   datetest 6.8.2 {datetime('2007-03-11 02:00:00','utc')} {2007-03-11 06:00:00}
 
+  # The 'utc' modifier is a no-op if the LHS is known to already be in UTC
+  datetest 6.9.1 {datetime('2015-12-23 12:00:00','utc')} {2015-12-23 17:00:00}
+  datetest 6.9.2 {datetime('2015-12-23 12:00:00z','utc')} {2015-12-23 12:00:00}
+  datetest 6.9.3 {datetime('2015-12-23 12:00:00-03:00','utc')} \
+         {2015-12-23 15:00:00}
+  datetest 6.9.4 {datetime('2015-12-23 12:00:00','utc','utc','utc')} \
+         {2015-12-23 17:00:00}
+
+
   datetest 6.10 {datetime('2000-01-01 12:00:00','localtime')} \
       {2000-01-01 07:00:00}
   datetest 6.11 {datetime('1969-01-01 12:00:00','localtime')} \
