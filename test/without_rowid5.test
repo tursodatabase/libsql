@@ -132,9 +132,13 @@ do_execsql_test without_rowid5-5.1 {
   INSERT INTO ipk VALUES('rival','bonus'); -- ok to insert non-integer key
   SELECT * FROM ipk;
 } {rival bonus}
-do_catchsql_test without_rowid5-5.2 {
+do_catchsql_test without_rowid5-5.2a {
+  BEGIN;
   INSERT INTO ipk VALUES(NULL,'sample'); -- no automatic generation of keys
 } {1 {NOT NULL constraint failed: ipk.key}}
+do_execsql_test without_rowid5-5.2b {
+  ROLLBACK;
+} {}
 
 # EVIDENCE-OF: R-33142-02092 AUTOINCREMENT does not work on WITHOUT
 # ROWID tables.

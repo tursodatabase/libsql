@@ -1774,7 +1774,7 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
   ** do not enforce this for imposter tables.) */
   if( !db->init.imposterTable ){
     for(i=0; i<nPk; i++){
-      pTab->aCol[pPk->aiColumn[i]].notNull = 1;
+      pTab->aCol[pPk->aiColumn[i]].notNull = OE_Abort;
     }
     pPk->uniqNotNull = 1;
   }

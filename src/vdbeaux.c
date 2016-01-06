@@ -35,6 +35,7 @@ Vdbe *sqlite3VdbeCreate(Parse *pParse){
   assert( pParse->aLabel==0 );
   assert( pParse->nLabel==0 );
   assert( pParse->nOpAlloc==0 );
+  assert( pParse->szOpAlloc==0 );
   return p;
 }
 
@@ -124,7 +125,8 @@ static int growOpArray(Vdbe *v, int nOp){
   assert( nNew>=(p->nOpAlloc+nOp) );
   pNew = sqlite3DbRealloc(p->db, v->aOp, nNew*sizeof(Op));
   if( pNew ){
-    p->nOpAlloc = sqlite3DbMallocSize(p->db, pNew)/sizeof(Op);
+    p->szOpAlloc = sqlite3DbMallocSize(p->db, pNew);
+    p->nOpAlloc = p->szOpAlloc/sizeof(Op);
     v->aOp = pNew;
   }
   return (pNew ? SQLITE_OK : SQLITE_NOMEM);
@@ -1846,20 +1848,27 @@ void sqlite3VdbeMakeReady(
   */
   nMem += nCursor;
 
-  /* Allocate space for memory registers, SQL variables, VDBE cursors and 
-  ** an array to marshal SQL function arguments in.
+  /* zCsr will initially point to nFree bytes of unused space at the
+  ** end of the opcode array, p->aOp.  The computation of nFree is
+  ** conservative - it might be smaller than the true number of free
+  ** bytes, but never larger.  nFree must be a multiple of 8 - it is
+  ** rounded down if is not.
   */
-  zCsr = (u8*)&p->aOp[p->nOp];            /* Memory avaliable for allocation */
-  assert( pParse->nOpAlloc*sizeof(Op) <= 0x7fffff00 );
-  nFree = (pParse->nOpAlloc - p->nOp)*sizeof(p->aOp[0]); /* Available space */
+  n = ROUND8(sizeof(Op)*p->nOp);              /* Bytes of opcode space used */
+  zCsr = &((u8*)p->aOp)[n];                   /* Unused opcode space */
+  assert( EIGHT_BYTE_ALIGNMENT(zCsr) );
+  nFree = ROUNDDOWN8(pParse->szOpAlloc - n);  /* Bytes of unused space */
+  assert( nFree>=0 );
+  if( nFree>0 ){
+    memset(zCsr, 0, nFree);
+    assert( EIGHT_BYTE_ALIGNMENT(&zCsr[nFree]) );
+  }
 
   resolveP2Values(p, &nArg);
   p->usesStmtJournal = (u8)(pParse->isMultiWrite && pParse->mayAbort);
   if( pParse->explain && nMem<10 ){
     nMem = 10;
   }
-  memset(zCsr, 0, nFree);
-  assert( EIGHT_BYTE_ALIGNMENT(&zCsr[nFree]) );
   p->expired = 0;
 
   p->expired = 0;
