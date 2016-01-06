@@ -1,5 +1,5 @@
-C Always\suse\s-DSQLITE_ENABLE_MEMSYS5\sfor\sfuzzcheck\sso\sthat\sthe\s--limit-mem\noption\swill\swork.
-D 2016-01-05T03:39:52.336
+C Version\s3.10.0
+D 2016-01-06T11:01:07.739
 F Makefile.in 7c8cc4c2f0179efc6fa9492141d1fb65f4807054
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e45d8b9b56dfa3f2cd860b2c28bd9d304513b042
@@ -1406,7 +1406,10 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2f8583748abab1e15029d3a8693ba9a66c978c2b
+P a855697719e288c908ddb7950d32fd17ef546509
 R 658872c8eaad4f517adfb9642371bf29
+T +bgcolor * #d0c0ff
+T +sym-release *
+T +sym-version-3.10.0 *
 U drh
-Z 68ad1defdc3264df127031e5fb4da721
+Z 024a1b2bbd235a427c0ebcd39a99300a
