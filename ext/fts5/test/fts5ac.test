@@ -127,91 +127,10 @@ set data {
     99  {r c v w i v h a t a c v c r e}     {h h u m g o f b a e o}
 }
 
-# Argument $expr is an FTS5 match expression designed to be executed against
-# an FTS5 table with the following schema:
-# 
-#   CREATE VIRTUAL TABLE xy USING fts5(x, y);
-#
-# Assuming the table contains the same records as stored in the global 
-# $::data array (see above), this function returns a list containing two
-# elements for each matching row in the dataset. The first element of each
-# pair is the rowid. The second is a list of phrase matches, where each 
-# phrase match is of the form:
-#
-#   <phrase-number>.<column-number>.<offset>
-#
-# The list of phrase matches is in the same format as that returned by the
-# fts5_test_poslist() auxiliary scalara function.
-#
-proc poslist_data {bPos expr {bAsc 1}} {
-
-  set tclexpr [db one {
-    SELECT fts5_expr_tcl($expr, 'nearset $cols -pc ::pc', 'x', 'y')
-  }]
-  set res [list]
-
-  #puts $tclexpr
-  foreach {id x y} $::data {
-    set cols [list $x $y]
-    set ::pc 0
-    #set hits [lsort -command instcompare [eval $tclexpr]]
-    set hits [eval $tclexpr]
-    if {[llength $hits]>0} {
-      if {$bPos} {
-        lappend res [list $id $hits]
-      } else {
-        lappend res $id
-      }
-    }
-  }
-
-  if {$bAsc} {
-    set res [lsort -integer -increasing -index 0 $res]
-  } else {
-    set res [lsort -integer -decreasing -index 0 $res]
-  }
-
-  set res [concat {*}$res]
-  return $res
-}
-
-proc collist_elem_compare {a b} {
-  foreach {a1 a2} [split $a .] {}
-  foreach {b1 b2} [split $b .] {}
-
-  if {$a1==$b1} {
-    return [expr $a2 - $b2]
-  }
-  return [expr $a1 - $b1]
-}
-
-proc poslist2collist {poslist} {
-  set res [list]
-  foreach h $poslist {
-    regexp {(.*)\.[1234567890]+} $h -> cand
-    lappend res $cand
-  }
-  set res [lsort -command collist_elem_compare -unique $res]
-  return $res
-}
-
-proc collist_data {expr} {
-  set res [list]
-  foreach {rowid poslist} [poslist_data 1 $expr] {
-    lappend res $rowid [poslist2collist $poslist]
-  }
-  set res
-}
-
-#
-# End of test code
-#-------------------------------------------------------------------------
-
 foreach {tn2 sql} {
   1  {}
   2  {BEGIN}
 } {
-if {[detail_is_full]} continue
   reset_db
   fts5_aux_test_functions db
 

@@ -1,5 +1,5 @@
-C Rationalize\sand\sextend\ssome\sfts5\stest\scode.\sFix\sbugs\srevealed\sby\sthe\ssame.
-D 2016-01-05T21:04:35.294
+C Fix\sa\sproblem\swith\sthe\sxPhraseFirstColumn()\sAPI\sin\sdetail=col\smode.\sRemove\ssome\sunused\stest\scode\sfrom\sfts5ac.test.
+D 2016-01-06T10:17:26.540
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5fff077fcc46de7714ed6eebb6159a4c00eab751
@@ -101,7 +101,7 @@ F ext/fts5/fts5Int.h 3918045ebceb1d600c9c1c1b460489ff0c788e96
 F ext/fts5/fts5_aux.c 1f384972d606375b8fa078319f25ab4b5feb1b35
 F ext/fts5/fts5_buffer.c 87204c8b3b8bc62b27376eab09b74d6d5acc41f1
 F ext/fts5/fts5_config.c b0ed7b0ddd785fb4d4e6f9037d357f8aa95918e6
-F ext/fts5/fts5_expr.c 1aa0f5d597a22789172efe138659271fccb3cf19
+F ext/fts5/fts5_expr.c 5d5dd3044c1a39ace6ddd1034961fd5278ffce2d
 F ext/fts5/fts5_hash.c 1b113977296cf4212c6ec667d5e3f2bd18036955
 F ext/fts5/fts5_index.c 8665393f8be3ae9ed4f1033d7ce0b805108fb95c
 F ext/fts5/fts5_main.c cd5f6f0bf868a19e8f8ef01c7b4b86dd152f0bc7
@@ -117,7 +117,7 @@ F ext/fts5/mkportersteps.tcl 5acf962d2e0074f701620bb5308155fa1e4a63ba
 F ext/fts5/test/fts5_common.tcl c9169fe40bf751e1b311271df31aec15732b26c0
 F ext/fts5/test/fts5aa.test 4abbc14eb2d9d6d46a53ab008151512871d54ebc
 F ext/fts5/test/fts5ab.test 30325a89453280160106be411bba3acf138e6d1b
-F ext/fts5/test/fts5ac.test 63f669ad7381b0c29556da6de41eefdbb007e810
+F ext/fts5/test/fts5ac.test d5073ca7bd2d9fe8aab0c82c6c75a7e4b0d70ced
 F ext/fts5/test/fts5ad.test 049f7511a79c155d2d8dfd2ddcfeb640c50ad0dc
 F ext/fts5/test/fts5ae.test 612dcb51f4069226791ff14c17dbfb3138c56f20
 F ext/fts5/test/fts5af.test be858a96b1f5de66ba6d64f0021bd8b2408e126c
@@ -1408,7 +1408,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ee38f9dff5e9239c541515cd8a1aa3d81fdc0ae9
-R 6eca7a3ddda49a17d0ee2479d97ee402
+P fd217fdb396cf22278a496de0e9dec7902ba8b1f
+R fb939ae0b5d34f9dd8275713b2d3d9d0
 U dan
-Z 551e607b90efc1e18e4dc205bbcdae9f
+Z ffed0e3dee313fbcc0c638ddfdf4d418

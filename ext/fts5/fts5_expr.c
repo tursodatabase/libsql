@@ -2455,7 +2455,10 @@ int sqlite3Fts5ExprPhraseCollist(
   Fts5ExprNode *pNode = pPhrase->pNode;
   assert( iPhrase>=0 && iPhrase<pExpr->nPhrase );
 
-  if( pNode->bEof==0 && pNode->iRowid==pExpr->pRoot->iRowid ){
+  if( pNode->bEof==0 
+   && pNode->iRowid==pExpr->pRoot->iRowid 
+   && pPhrase->poslist.n>0
+  ){
     sqlite3Fts5IterCollist(pPhrase->aTerm[0].pIter, ppCollist, pnCollist);
   }else{
     *ppCollist = 0;
