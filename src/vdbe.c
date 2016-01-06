@@ -2524,7 +2524,7 @@ case OP_Column: {
         goto op_column_error;
       }
     }else{
-      VVA_ONLY( t = 0; ) /* Only needed by assert() statements */
+      t = 0;
     }
 
     /* If after trying to extract new entries from the header, nHdrParsed is
@@ -3434,7 +3434,7 @@ open_cursor_set_hints:
   assert( OPFLAG_BULKCSR==BTREE_BULKLOAD );
   assert( OPFLAG_SEEKEQ==BTREE_SEEK_EQ );
   testcase( pOp->p5 & OPFLAG_BULKCSR );
-#ifdef SQLITE_ENABLE_CURSOR_HINT
+#ifdef SQLITE_ENABLE_CURSOR_HINTS
   testcase( pOp->p2 & OPFLAG_SEEKEQ );
 #endif
   sqlite3BtreeCursorHintFlags(pCur->uc.pCursor,

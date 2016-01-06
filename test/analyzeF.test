@@ -106,7 +106,7 @@ do_catchsql_test 4.1 {
 } {1 {error one}}
 
 do_catchsql_test 4.2 {
-  SELECT * FROM t1 WHERE x = zeroblob(2000000000) AND y = 4;
+  SELECT * FROM t1 WHERE x = zeroblob(2200000000) AND y = 4;
 } {1 {string or blob too big}}
 
 sqlite3_limit db SQLITE_LIMIT_LENGTH 1000000
@@ -122,6 +122,3 @@ do_catchsql_test 4.4 {
 
 
 finish_test
-
-
-

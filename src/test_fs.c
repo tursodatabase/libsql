@@ -70,7 +70,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#if SQLITE_OS_UNIX
+#if SQLITE_OS_UNIX || defined(__MINGW_H)
 # include <unistd.h>
 # include <dirent.h>
 # ifndef DIRENT
@@ -79,7 +79,9 @@
 #endif
 #if SQLITE_OS_WIN
 # include <io.h>
-# include "test_windirent.h"
+# if !defined(__MINGW_H)
+#  include "test_windirent.h"
+# endif
 # ifndef S_ISREG
 #  define S_ISREG(mode) (((mode) & S_IFMT) == S_IFREG)
 # endif
@@ -231,7 +233,14 @@ static int fsdirNext(sqlite3_vtab_cursor *cur){
 
   if( pCsr->pDir ){
     struct DIRENT *pRes = 0;
+#if defined(__MINGW_H)
+    pRes = readdir(pCsr->pDir);
+    if( pRes!=0 ){
+      memcpy(&pCsr->entry, pRes, sizeof(struct DIRENT));
+    }
+#else
     readdir_r(pCsr->pDir, &pCsr->entry, &pRes);
+#endif
     if( pRes==0 ){
       closedir(pCsr->pDir);
       pCsr->pDir = 0;
