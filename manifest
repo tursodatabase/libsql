@@ -1,8 +1,8 @@
-C Merge\sin\slast-minute\spatches\sfor\sthe\s3.10.0\sbeta.
-D 2016-01-04T19:02:47.665
-F Makefile.in 321a54f5a2843b6752b21f7bd66ce5f96444d1ab
+C Merge\schanges\sfor\sversion\s3.10.0.
+D 2016-01-06T15:14:53.379
+F Makefile.in e3c1e13b4eba06cbb7f9295148383b7e284596be
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 6fd10748c3f955ca56ac1bc3a45e7c48876c32a3
+F Makefile.msc 6862a51bfd3716bbe3c387c724feb73937b107d2
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION 8b9d3ac6f1962f94e06ba05462422a544f9c4e36
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -277,7 +277,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 238ecdee438a8b0ff662ac9e739899cacaae668c
+F main.mk 727b093cca39460048ae9948b283063857b04402
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -380,7 +380,7 @@ F src/test_btree.c 2e9978eca99a9a4bfa8cae949efb00886860a64f
 F src/test_config.c a0e8eeb86a7d9393f3bbf7315932c1cccd0e8010
 F src/test_demovfs.c 0de72c2c89551629f58486fde5734b7d90758852
 F src/test_devsym.c e7498904e72ba7491d142d5c83b476c4e76993bc
-F src/test_fs.c 993c7eab65bed6add4bb48cca29775e963f710cf
+F src/test_fs.c a61f54247fdb843761d709879c3bcd1989b2050c
 F src/test_func.c 0d9c25956152adefee8881c6fadc8354793764d0
 F src/test_hexio.c abfdecb6fa58c354623978efceb088ca18e379cd
 F src/test_init.c 66b33120ffe9cd853b5a905ec850d51151337b32
@@ -422,7 +422,7 @@ F src/vdbe.c a479a4bd02b6b77b7ff3ff84825fccc0b967fe6a
 F src/vdbe.h bfe3f80dba435377cdb64fd917f2529f0f48ab77
 F src/vdbeInt.h 4f3b46806b93faa92f0511c7ce30ed31aaec65be
 F src/vdbeapi.c ab2cb8fe23fb9f3195f1311eaa800495d83b6118
-F src/vdbeaux.c 035470b59cae5af17bda4d2e64197ed0e265fc30
+F src/vdbeaux.c 13ddc450aa8113660497bcbd244139880b30966c
 F src/vdbeblob.c cc13eca96b8ec51b6248de785a1aec5df11f5805
 F src/vdbemem.c 25b6cfd665b5073480452426e84136edd94140c0
 F src/vdbesort.c a7ec02da4494c59dfd071126dd3726be5a11459d
@@ -1295,7 +1295,7 @@ F test/vtabC.test 4528f459a13136f982e75614d120aef165f17292
 F test/vtabD.test 05b3f1d77117271671089e48719524b676842e96
 F test/vtabE.test d5024aa42754962f6bb0afd261681686488e7afe
 F test/vtabF.test fd5ad376f5a34fe0891df1f3cddb4fe7c3eb077e
-F test/vtabH.test 7a21f18546cb9ab38df009e718300c40b552bb2b
+F test/vtabH.test 492ba03dcb7bb8fedcc53f258c410d04013adbc9
 F test/vtabI.test 751b07636700dbdea328e4265b6077ccd6811a3f
 F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
@@ -1427,7 +1427,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c0be246a740c8f33a7c07e1414688364dee56ece b779ca8a7580e2a0bb1176316c4540867b635229
-R 667c4c909fff87de213039b9831ec880
+P c785cd7813e4ef6d6f2cb362a0f822713db6bcea fd0a50f0797d154fefff724624f00548b5320566
+R bf5c420f78514c3466fbe2f1d92a5b04
 U drh
-Z afff2890aa9dfb1c4b31df554e7505ad
+Z d51966c7773281c88034ef287a881d30
