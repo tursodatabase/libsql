@@ -8,7 +8,7 @@ fi
 
 cd $(git rev-parse --show-toplevel)
 rm -rf target/doc/
-multirust run nightly cargo doc --no-deps --features "backup cache functions load_extension trace"
+multirust run nightly cargo doc --no-deps --features "backup cache functions load_extension trace blob"
 echo '<meta http-equiv=refresh content=0;url=rusqlite/index.html>' > target/doc/index.html
 ghp-import target/doc
 git push origin gh-pages:gh-pages
