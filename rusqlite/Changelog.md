@@ -1,5 +1,7 @@
 # Version UPCOMING (...)
 
+* Adds a `cache` Cargo feature that provides `cache::StatementCache` for caching prepraed
+  statements.
 * Adds `column_count()` method to `Statement` and `Row`.
 * Adds `types::Value` for dynamic column types.
 * Introduces a `RowIndex` trait allowing columns to be fetched via index (as before) or name (new).
