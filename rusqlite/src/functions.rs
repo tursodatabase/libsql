@@ -332,6 +332,20 @@ impl<'a> Context<'a> {
     }
 }
 
+/// Aggregate is the callback interface for user-defined aggregate function.
+///
+/// `A` is the type of the aggregation context and `T` is the type of the final result.
+/// Implementations should be stateless.
+pub trait Aggregate<A, T> where T: ToResult {
+    /// Initializes the aggregation context.
+    fn init(&self) -> A;
+    /// "step" function called once for each row in an aggregate group.
+    fn step(&self, &mut Context, &mut A) -> Result<()>;
+    /// Computes and returns the final result.
+    fn finalize(&self, &A) -> Result<T>;
+}
+
+
 impl Connection {
     /// Attach a user-defined scalar function to this database connection.
     ///
@@ -375,10 +389,29 @@ impl Connection {
         self.db.borrow_mut().create_scalar_function(fn_name, n_arg, deterministic, x_func)
     }
 
+    /// Attach a user-defined aggregate function to this database connection.
+    ///
+    /// # Failure
+    ///
+    /// Will return Err if the function could not be attached to the connection.
+    pub fn create_aggregate_function<A, D, T>(&self,
+                                              fn_name: &str,
+                                              n_arg: c_int,
+                                              deterministic: bool,
+                                              aggr: D)
+                                              -> Result<()>
+        where D: Aggregate<A, T>,
+              T: ToResult
+    {
+        self.db
+            .borrow_mut()
+            .create_aggregate_function(fn_name, n_arg, deterministic, aggr)
+    }
+
     /// Removes a user-defined function from this database connection.
     ///
     /// `fn_name` and `n_arg` should match the name and number of arguments
-    /// given to `create_scalar_function`.
+    /// given to `create_scalar_function` or `create_aggregate_function`.
     ///
     /// # Failure
     ///
@@ -417,7 +450,7 @@ impl InnerConnection {
                     if let Some(Ok(cstr)) = s.map(|s| str_to_cstring(&s)) {
                         ffi::sqlite3_result_error(ctx.ctx, cstr.as_ptr(), -1);
                     }
-                },
+                }
                 Err(err) => {
                     ffi::sqlite3_result_error_code(ctx.ctx, ffi::SQLITE_CONSTRAINT_FUNCTION);
                     if let Ok(cstr) = str_to_cstring(err.description()) {
@@ -443,6 +476,112 @@ impl InnerConnection {
                                             None,
                                             None,
                                             Some(mem::transmute(free_boxed_value::<F>)))
+        };
+        self.decode_result(r)
+    }
+
+    fn create_aggregate_function<A, D, T>(&mut self,
+                                          fn_name: &str,
+                                          n_arg: c_int,
+                                          deterministic: bool,
+                                          aggr: D)
+                                          -> Result<()>
+        where D: Aggregate<A, T>,
+              T: ToResult
+    {
+        unsafe extern "C" fn call_boxed_closure<A, D, T>(ctx: *mut sqlite3_context,
+                                                         argc: c_int,
+                                                         argv: *mut *mut sqlite3_value)
+            where D: Aggregate<A, T>,
+                  T: ToResult
+        {
+            let boxed_aggr: *mut D = mem::transmute(ffi::sqlite3_user_data(ctx));
+            assert!(!boxed_aggr.is_null(),
+                    "Internal error - null aggregate pointer");
+
+            // TODO Validate: double indirection: `pac` allocated/freed by SQLite and `ac` allocated/freed by Rust.
+            let pac = ffi::sqlite3_aggregate_context(ctx, ::std::mem::size_of::<*mut A>() as c_int) as *mut *mut A;
+            if pac.is_null() {
+                ffi::sqlite3_result_error_nomem(ctx);
+                return;
+            }
+            let ac: *mut A = if (*pac).is_null() {
+                let a = (*boxed_aggr).init();
+                *pac = Box::into_raw(Box::new(a));
+                *pac
+            } else {
+                *pac
+            };
+
+            let mut ctx = Context {
+                ctx: ctx,
+                args: slice::from_raw_parts(argv, argc as usize),
+            };
+
+            match (*boxed_aggr).step(&mut ctx, &mut *ac) {
+                Ok(_) => {}
+                Err(Error::SqliteFailure(err, s)) => {
+                    ffi::sqlite3_result_error_code(ctx.ctx, err.extended_code);
+                    if let Some(Ok(cstr)) = s.map(|s| str_to_cstring(&s)) {
+                        ffi::sqlite3_result_error(ctx.ctx, cstr.as_ptr(), -1);
+                    }
+                }
+                Err(err) => {
+                    ffi::sqlite3_result_error_code(ctx.ctx, ffi::SQLITE_CONSTRAINT_FUNCTION);
+                    if let Ok(cstr) = str_to_cstring(err.description()) {
+                        ffi::sqlite3_result_error(ctx.ctx, cstr.as_ptr(), -1);
+                    }
+                }
+            };
+        }
+        unsafe extern "C" fn call_boxed_final<A, D, T>(ctx: *mut sqlite3_context)
+            where D: Aggregate<A, T>,
+                  T: ToResult
+        {
+            let boxed_aggr: *mut D = mem::transmute(ffi::sqlite3_user_data(ctx));
+            assert!(!boxed_aggr.is_null(),
+                    "Internal error - null aggregate pointer");
+
+            let pac = ffi::sqlite3_aggregate_context(ctx, 0) as *mut *mut A;
+            if pac.is_null() || (*pac).is_null() {
+                return;
+            }
+            let ac: *mut A = *pac;
+            let a = Box::from_raw(mem::transmute(ac)); // to be freed
+
+            match (*boxed_aggr).finalize(&a) {
+                Ok(r) => r.set_result(ctx),
+                Err(Error::SqliteFailure(err, s)) => {
+                    ffi::sqlite3_result_error_code(ctx, err.extended_code);
+                    if let Some(Ok(cstr)) = s.map(|s| str_to_cstring(&s)) {
+                        ffi::sqlite3_result_error(ctx, cstr.as_ptr(), -1);
+                    }
+                }
+                Err(err) => {
+                    ffi::sqlite3_result_error_code(ctx, ffi::SQLITE_CONSTRAINT_FUNCTION);
+                    if let Ok(cstr) = str_to_cstring(err.description()) {
+                        ffi::sqlite3_result_error(ctx, cstr.as_ptr(), -1);
+                    }
+                }
+            };
+        }
+
+        let boxed_aggr: *mut D = Box::into_raw(Box::new(aggr));
+        let c_name = try!(str_to_cstring(fn_name));
+        let mut flags = ffi::SQLITE_UTF8;
+        if deterministic {
+            flags |= ffi::SQLITE_DETERMINISTIC;
+        }
+        let r = unsafe {
+            ffi::sqlite3_create_function_v2(self.db(),
+                                            c_name.as_ptr(),
+                                            n_arg,
+                                            flags,
+                                            mem::transmute(boxed_aggr),
+                                            None,
+                                            Some(call_boxed_closure::<A, D, T>),
+                                            Some(call_boxed_final::<A, D, T>),
+                                            Some(mem::transmute(free_boxed_value::<D>)))
         };
         self.decode_result(r)
     }
@@ -473,7 +612,7 @@ mod test {
     use self::regex::Regex;
 
     use {Connection, Error, Result};
-    use functions::Context;
+    use functions::{Aggregate, Context};
 
     fn half(ctx: &Context) -> Result<c_double> {
         assert!(ctx.len() == 1, "called with unexpected number of arguments");
@@ -630,5 +769,43 @@ mod test {
             let result: String = db.query_row(query, &[], |r| r.get(0)).unwrap();
             assert_eq!(expected, result);
         }
+    }
+
+    struct Sum;
+
+    impl Aggregate<i64, i64> for Sum {
+        fn init(&self) -> i64 {
+            0
+        }
+
+        fn step(&self, ctx: &mut Context, sum: &mut i64) -> Result<()> {
+            *sum = *sum + try!(ctx.get::<i64>(0));
+            Ok(())
+        }
+
+        fn finalize(&self, sum: &i64) -> Result<i64> {
+            Ok(*sum)
+        }
+    }
+
+    #[test]
+    fn test_sum() {
+        let db = Connection::open_in_memory().unwrap();
+        db.create_aggregate_function("my_sum", 1, true, Sum).unwrap();
+        let no_result = "SELECT my_sum(i) FROM (SELECT 2 AS i WHERE 1 <> 1)";
+        let result: Option<i64> = db.query_row(no_result, &[], |r| r.get(0))
+                                    .unwrap();
+        assert!(result.is_none());
+
+        let single_sum = "SELECT my_sum(i) FROM (SELECT 2 AS i UNION ALL SELECT 2)";
+        let result: i64 = db.query_row(single_sum, &[], |r| r.get(0))
+                            .unwrap();
+        assert_eq!(4, result);
+
+        let dual_sum = "SELECT my_sum(i), my_sum(j) FROM (SELECT 2 AS i, 1 AS j UNION ALL SELECT \
+                        2, 1)";
+        let result: (i64, i64) = db.query_row(dual_sum, &[], |r| (r.get(0), r.get(1)))
+                                   .unwrap();
+        assert_eq!((4, 2), result);
     }
 }
