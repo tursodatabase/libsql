@@ -33,7 +33,7 @@ pub enum Error {
     /// Error converting a file path to a string.
     InvalidPath(PathBuf),
 
-    /// Error returned when an `execute` call returns rowss.
+    /// Error returned when an `execute` call returns rows.
     ExecuteReturnedResults,
 
     /// Error when a query that was expected to return at least one row (e.g., for `query_row`)
