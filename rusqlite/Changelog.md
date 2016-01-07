@@ -1,3 +1,9 @@
+# Version UPCOMING (...)
+
+* Adds `column_count()` method to `Statement` and `Row`.
+* Adds `types::Value` for dynamic column types.
+* Introduces a `RowIndex` trait allowing columns to be fetched via index (as before) or name (new).
+
 # Version 0.6.0 (2015-12-17)
 
 * BREAKING CHANGE: `SqliteError` is now an enum instead of a struct. Previously, we were (ab)using
