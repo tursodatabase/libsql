@@ -1,5 +1,5 @@
-C Fix\sto\scause\sBtShared.db\sto\sbe\sset\scorrectly\son\sshared-cache\nconnections\sin\sSQLITE_THREADSAFE=0\sbuilds.\s\sAdded\sassert()s\sto\sverify\nthe\scorrect\ssetting\sof\sBtShared.db.
-D 2016-01-07T17:19:24.484
+C Omit\sperformance\stracking\sfrom\sthe\smemsys5\smemory\sallocator\sif\sneither\nSQLITE_DEBUG\snor\sSQLITE_TEST\sare\sdefined.
+D 2016-01-07T21:12:40.900
 F Makefile.in 7c8cc4c2f0179efc6fa9492141d1fb65f4807054
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e45d8b9b56dfa3f2cd860b2c28bd9d304513b042
@@ -304,7 +304,7 @@ F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 6919bcf12f221868ea066eec27e579fed95ce98b
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
 F src/mem3.c 8768ac94694f31ffaf8b4d0ea5dc08af7010a35a
-F src/mem5.c 262055c242fa7db59c5f07ad77fdc4e97888c054
+F src/mem5.c 71f81a11fc5e29a57428761ab38a7bf2ef4ee19d
 F src/memjournal.c 3eb2c0b51adbd869cb6a44780323f05fa904dc85
 F src/msvc.h d9ba56c6851227ab44b3f228a35f3f5772296495
 F src/mutex.c 8e45800ee78e0cd1f1f3fe8e398853307f4a085c
@@ -1406,8 +1406,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 828958ff77a5c239d55302f570077835c093e0fa 359277e0e5338f6d7743d58cf99e1c934a8460d5
-R 6a20a209200c5a1c13b83cee78194e2e
-T +closed 359277e0e5338f6d7743d58cf99e1c934a8460d5
+P 2d96aeba2460779a0a20356739a0ba49144c8a85
+R 0f87ccc97eed432e32f05b109bfdb1a7
 U drh
-Z 1846b22def634146b1c38f34bfdda1cc
+Z 9752f7a1ad4b146c9e3d9fcb5efbd790
