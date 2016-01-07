@@ -1,6 +1,6 @@
 # Version UPCOMING (...)
 
-* Adds a `cache` Cargo feature that provides `cache::StatementCache` for caching prepraed
+* Adds a `cache` Cargo feature that provides `cache::StatementCache` for caching prepared
   statements.
 * Adds `column_count()` method to `Statement` and `Row`.
 * Adds `types::Value` for dynamic column types.
