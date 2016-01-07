@@ -87,6 +87,7 @@ mod error;
 #[cfg(feature = "load_extension")]mod load_extension_guard;
 #[cfg(feature = "trace")]pub mod trace;
 #[cfg(feature = "backup")]pub mod backup;
+#[cfg(feature = "cache")] pub mod cache;
 #[cfg(feature = "functions")] pub mod functions;
 #[cfg(feature = "blob")] pub mod blob;
 
@@ -909,6 +910,21 @@ impl<'conn> Statement<'conn> {
                 ffi::sqlite3_reset(self.stmt);
             };
             self.needs_reset = false;
+        }
+    }
+
+    #[cfg(feature = "cache")]
+    fn clear_bindings(&mut self) {
+        unsafe {
+            ffi::sqlite3_clear_bindings(self.stmt);
+        };
+    }
+
+    #[cfg(feature = "cache")]
+    fn eq(&self, sql: &str) -> bool {
+        unsafe {
+            let c_slice = CStr::from_ptr(ffi::sqlite3_sql(self.stmt)).to_bytes();
+            str::from_utf8(c_slice).unwrap().eq(sql)
         }
     }
 

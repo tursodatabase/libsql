@@ -12,4 +12,5 @@ script:
     - cargo test --features load_extension
     - cargo test --features trace
     - cargo test --features functions
-    - cargo test --features "backup functions load_extension trace"
+    - cargo test --features cache
+    - cargo test --features "backup cache functions load_extension trace"

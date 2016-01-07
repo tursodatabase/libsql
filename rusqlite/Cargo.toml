@@ -16,6 +16,7 @@ name = "rusqlite"
 load_extension = ["libsqlite3-sys/load_extension"]
 backup = []
 blob = []
+cache = []
 functions = []
 trace = []
 
