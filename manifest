@@ -1,5 +1,5 @@
-C Disable\sthe\s--limit-mem\soption\son\sfuzzcheck\sunless\sthe\sSQLITE_ENABLE_MEMSYS5\sor\nSQLITE_ENABLE_MEMSYS3\scompile-time\soptions\sare\sused.
-D 2016-01-06T15:54:53.139
+C Add\sthe\s"sqlite3\s-sourceid"\scommand\sin\sthe\sTCL\sinterface.\s\sUse\sthat\scommand\sand\nothers\sto\soutput\sadditional\sinformation\sabout\sthe\stest\sconfiguration\sat\sthe\s\nconclusion\sof\sa\sTCL\stest.
+D 2016-01-07T02:06:55.894
 F Makefile.in 7c8cc4c2f0179efc6fa9492141d1fb65f4807054
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e45d8b9b56dfa3f2cd860b2c28bd9d304513b042
@@ -342,7 +342,7 @@ F src/sqliteInt.h f97614d43833bae0ed6c51ac8e550f0099a1d0ba
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
-F src/tclsqlite.c d9439b6a910985b7fff43ba6756bcef00de22649
+F src/tclsqlite.c 82979239a896992f9b78efec81cfda05d316a7d0
 F src/test1.c 4f1b42699068b7806af3111786f5ad760c2c1ff7
 F src/test2.c 5586f43fcd9a1be0830793cf9d354082c261b25b
 F src/test3.c a8887dabbbee3059af338f20d290084a63ed1b0f
@@ -1061,7 +1061,7 @@ F test/tclsqlite.test 7fb866443c7deceed22b63948ccd6f76b52ad054
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
 F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptrigger.test 8ec228b0db5d7ebc4ee9b458fc28cb9e7873f5e1
-F test/tester.tcl 9df86ab273a0877ffb4ec26c255166dcdca4c278
+F test/tester.tcl af4749cf4abf04291710c5e73f40bc8f411bae86
 F test/thread001.test 9f22fd3525a307ff42a326b6bc7b0465be1745a5
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -1406,7 +1406,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fd0a50f0797d154fefff724624f00548b5320566
-R 87a59d21671d8eb854da54e44c1cb06d
+P 55a11fd627eaf046b3783622b2925399a50a65b4
+R 5876235b8965be95d77913e3f4573bf2
 U drh
-Z 6b66decd394482c2ac340e90e8473c2f
+Z dff9c340c358386729bbf7e0fd3fe53f
