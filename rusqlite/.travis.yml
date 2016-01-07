@@ -1,16 +1,13 @@
 language: rust
 sudo: false
 
-env:
-    global:
-        secure: "FyGzHF0AIYdBcuM/2qIoABotx3MbNAlaHDzxPbbeUlVg64bnuib9G9K/qWve0a1BWCgv+8e/SbXZb7gt3JlUNE27aE4RZG4FEdtEpLYQp87Dc9d9HX0FwpUeFK3binsrtYl4WEBnIjQ3ICnUVey0E6GHEdkM+t5bWyJO5c4dJ30="
-
 script:
     - cargo build
     - cargo test
     - cargo test --features backup
+    - cargo test --features blob
     - cargo test --features load_extension
     - cargo test --features trace
     - cargo test --features functions
     - cargo test --features cache
-    - cargo test --features "backup cache functions load_extension trace"
+    - cargo test --features "backup blob cache functions load_extension trace"
