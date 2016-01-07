@@ -1,5 +1,5 @@
-C Fix\sa\stest\sscript\sproblem\scaused\sby\sa\schange\sin\sconstraint\shandling\swithin\sthe\score.
-D 2016-01-06T19:43:26.257
+C Update\sthe\sfts5vocab\smodule\sto\swork\swith\sdetail=col\sand\sdetail=none\stables.
+D 2016-01-07T20:07:41.638
 F Makefile.in 7c8cc4c2f0179efc6fa9492141d1fb65f4807054
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e45d8b9b56dfa3f2cd860b2c28bd9d304513b042
@@ -111,7 +111,7 @@ F ext/fts5/fts5_test_mi.c 1ec66ffdf7632077fbd773b7a6df5153272ec070
 F ext/fts5/fts5_tokenize.c 504984ac6993323247221eebe3cd55bead01b5f8
 F ext/fts5/fts5_unicode2.c 78273fbd588d1d9bd0a7e4e0ccc9207348bae33c
 F ext/fts5/fts5_varint.c 3f86ce09cab152e3d45490d7586b7ed2e40c13f1
-F ext/fts5/fts5_vocab.c 3742d0abfe8aa8c3cb4a7df56aa38f2e3c3fb1c2
+F ext/fts5/fts5_vocab.c da64ecbd217625980a1721fbd588a1e4118a51b6
 F ext/fts5/fts5parse.y 1647eba089b9b3fc058b4dc989d9da87d15b9580
 F ext/fts5/mkportersteps.tcl 5acf962d2e0074f701620bb5308155fa1e4a63ba
 F ext/fts5/test/fts5_common.tcl c9169fe40bf751e1b311271df31aec15732b26c0
@@ -179,7 +179,7 @@ F ext/fts5/test/fts5unicode2.test c1dd890ba32b7609adba78e420faa847abe43b59
 F ext/fts5/test/fts5unicode3.test 35c3d02aa7acf7d43d8de3bfe32c15ba96e8928e
 F ext/fts5/test/fts5unindexed.test e9539d5b78c677315e7ed8ea911d4fd25437c680
 F ext/fts5/test/fts5version.test 978f59541d8cef7e8591f8be2115ec5ccb863e2e
-F ext/fts5/test/fts5vocab.test c88a5554d0409494da95ba647bbdb4879b2624b0
+F ext/fts5/test/fts5vocab.test f4ff3ba4036a83678f2a8ba8b89eb303bebc122e
 F ext/fts5/tool/fts5txt2db.tcl c374c4c4797e8cdfadabdfaeeb5412dcd6686e84
 F ext/fts5/tool/loadfts5.tcl 4cc2d6af43b58d4fac05bc4fdabd0e5862c3b2c1
 F ext/fts5/tool/mkfts5c.tcl d1c2a9ab8e0ec690a52316f33dd9b1d379942f45
@@ -1409,7 +1409,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e7dcd013516723941c2fb78ecdc96806d49d310b
-R dce0c272fbae692a97296955b7b2c775
+P 625695b3d7d4eae7536b5f761b96cd7519ac6ada
+R 276342437a8f737c3f32b7f1a4e61d27
 U dan
-Z 318fda862dd5c3483c784e4e425f0506
+Z 8c87f6adf59add172dd12da497a3ce1f
