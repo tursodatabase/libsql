@@ -1,5 +1,5 @@
-C Have\sthe\svdbe\slayer\scall\ssqlite3BtreeEnter()\son\sall\sb-trees\sin\suse\sfrom\swithin\ssqlite3VdbeExec()\seven\sin\sSQLITE_THREADSAFE=0\sbuilds.\sThis\sensures\sthat\sBtShared.db\sis\sset\scorrectly.
-D 2016-01-07T16:06:22.102
+C Add\ssome\sassert()\sstatements\sto\sverify,\swhere\spossible,\sthat\sBtShared.db\sis\sset\scorrectly.
+D 2016-01-07T16:43:54.695
 F Makefile.in 7c8cc4c2f0179efc6fa9492141d1fb65f4807054
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e45d8b9b56dfa3f2cd860b2c28bd9d304513b042
@@ -276,7 +276,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 2869a76c03eb393ee795416e2387005553df72bc
 F src/bitvec.c 1a78d450a17c5016710eec900bedfc5729bf9bdf
 F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
-F src/btree.c d40cbcd254c7d716f9b233a87b69f6dc00b18290
+F src/btree.c 09ec3ca5e7a6b8c277cef6c4471a1427cab5fa01
 F src/btree.h 68ef301795e00cdf1d3ab93abc44a43b7fe771e0
 F src/btreeInt.h b5f2651b41808f038dee9282c5dc0232ce6532d3
 F src/build.c d8006e9030c61b9495d0b2f724edd3fcdae16930
@@ -1406,10 +1406,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4f80440bf566959306f6ca8cbb1fd29d138ee38b
-R 1d753fbc081495ae319f7ae5aa1679d6
-T *branch * shared-cache-fix
-T *sym-shared-cache-fix *
-T -sym-trunk *
+P d0214602d44d6b84b7463d530720e2560aee6edf
+R d2d125340e47dee2c161777b81c6bca6
 U dan
-Z 04b02aac85ad706faabaa5003739b07e
+Z cf8789ac325f523b3a85068e24d5a916
