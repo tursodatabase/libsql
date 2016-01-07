@@ -133,7 +133,7 @@ mod test {
             let mut stmt = cache.get(sql).unwrap();
             assert_eq!(0, cache.len());
             assert_eq!(0,
-                       stmt.query(&[]).unwrap().get_expected_row().unwrap().get::<i64>(0));
+                       stmt.query(&[]).unwrap().get_expected_row().unwrap().get::<i32,i64>(0));
         }
         assert_eq!(1, cache.len());
 
@@ -141,7 +141,7 @@ mod test {
             let mut stmt = cache.get(sql).unwrap();
             assert_eq!(0, cache.len());
             assert_eq!(0,
-                       stmt.query(&[]).unwrap().get_expected_row().unwrap().get::<i64>(0));
+                       stmt.query(&[]).unwrap().get_expected_row().unwrap().get::<i32,i64>(0));
         }
         assert_eq!(1, cache.len());
 
@@ -160,7 +160,7 @@ mod test {
             let mut stmt = cache.get(sql).unwrap();
             assert_eq!(0, cache.len());
             assert_eq!(0,
-                       stmt.query(&[]).unwrap().get_expected_row().unwrap().get::<i64>(0));
+                       stmt.query(&[]).unwrap().get_expected_row().unwrap().get::<i32,i64>(0));
             stmt.cacheable = false;
         }
         assert_eq!(0, cache.len());
