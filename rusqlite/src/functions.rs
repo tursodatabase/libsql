@@ -342,7 +342,7 @@ pub trait Aggregate<A, T> where T: ToResult {
     /// "step" function called once for each row in an aggregate group.
     fn step(&self, &mut Context, &mut A) -> Result<()>;
     /// Computes and returns the final result.
-    fn finalize(&self, &A) -> Result<T>;
+    fn finalize(&self, A) -> Result<T>;
 }
 
 
@@ -549,7 +549,7 @@ impl InnerConnection {
             let ac: *mut A = *pac;
             let a = Box::from_raw(mem::transmute(ac)); // to be freed
 
-            match (*boxed_aggr).finalize(&a) {
+            match (*boxed_aggr).finalize(*a) {
                 Ok(r) => r.set_result(ctx),
                 Err(Error::SqliteFailure(err, s)) => {
                     ffi::sqlite3_result_error_code(ctx, err.extended_code);
@@ -783,8 +783,8 @@ mod test {
             Ok(())
         }
 
-        fn finalize(&self, sum: &i64) -> Result<i64> {
-            Ok(*sum)
+        fn finalize(&self, sum: i64) -> Result<i64> {
+            Ok(sum)
         }
     }
 
