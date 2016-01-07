@@ -39,7 +39,7 @@ impl<'c, 's> Drop for CachedStatement<'c, 's> {
     #[allow(unused_must_use)]
     fn drop(&mut self) {
         if let Some(stmt) = self.stmt.take() {
-            self.cache.release(stmt);
+            self.cache.cache_stmt(stmt);
         }
     }
 }
@@ -81,15 +81,8 @@ impl<'conn> StatementCache<'conn> {
         stmt.map(|stmt| CachedStatement::new(stmt, self))
     }
 
-    /// If `discard` is true, then the statement is deleted immediately.
-    /// Otherwise it is added to the LRU list and may be returned
-    /// by a subsequent call to `get()`.
-    ///
-    /// # Failure
-    ///
-    /// Will return `Err` if `stmt` (or the already cached statement implementing the same SQL) statement is `discard`ed
-    /// and the underlying SQLite finalize call fails.
-    fn release(&self, mut stmt: Statement<'conn>) {
+    // Return a statement to the cache.
+    fn cache_stmt(&self, mut stmt: Statement<'conn>) {
         let mut cache = self.cache.borrow_mut();
         if cache.capacity() == cache.len() {
             // is full
