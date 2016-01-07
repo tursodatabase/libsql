@@ -502,6 +502,23 @@ impl InnerConnection {
             Ok(*pac)
         }
 
+        unsafe fn report_aggregate_error(ctx: *mut sqlite3_context, err: Error) {
+            match err {
+                Error::SqliteFailure(err, s) => {
+                    ffi::sqlite3_result_error_code(ctx, err.extended_code);
+                    if let Some(Ok(cstr)) = s.map(|s| str_to_cstring(&s)) {
+                        ffi::sqlite3_result_error(ctx, cstr.as_ptr(), -1);
+                    }
+                }
+                _ => {
+                    ffi::sqlite3_result_error_code(ctx, ffi::SQLITE_CONSTRAINT_FUNCTION);
+                    if let Ok(cstr) = str_to_cstring(err.description()) {
+                        ffi::sqlite3_result_error(ctx, cstr.as_ptr(), -1);
+                    }
+                }
+            }
+        }
+
         unsafe extern "C" fn call_boxed_step<A, D, T>(ctx: *mut sqlite3_context,
                                                       argc: c_int,
                                                       argv: *mut *mut sqlite3_value)
@@ -526,19 +543,8 @@ impl InnerConnection {
             };
 
             match (*boxed_aggr).step(&mut ctx, &mut *agg_ctx) {
-                Ok(_) => {}
-                Err(Error::SqliteFailure(err, s)) => {
-                    ffi::sqlite3_result_error_code(ctx.ctx, err.extended_code);
-                    if let Some(Ok(cstr)) = s.map(|s| str_to_cstring(&s)) {
-                        ffi::sqlite3_result_error(ctx.ctx, cstr.as_ptr(), -1);
-                    }
-                }
-                Err(err) => {
-                    ffi::sqlite3_result_error_code(ctx.ctx, ffi::SQLITE_CONSTRAINT_FUNCTION);
-                    if let Ok(cstr) = str_to_cstring(err.description()) {
-                        ffi::sqlite3_result_error(ctx.ctx, cstr.as_ptr(), -1);
-                    }
-                }
+                Ok(_) => {},
+                Err(err) => report_aggregate_error(ctx.ctx, err),
             };
         }
 
@@ -562,18 +568,7 @@ impl InnerConnection {
 
             match (*boxed_aggr).finalize(*a) {
                 Ok(r) => r.set_result(ctx),
-                Err(Error::SqliteFailure(err, s)) => {
-                    ffi::sqlite3_result_error_code(ctx, err.extended_code);
-                    if let Some(Ok(cstr)) = s.map(|s| str_to_cstring(&s)) {
-                        ffi::sqlite3_result_error(ctx, cstr.as_ptr(), -1);
-                    }
-                }
-                Err(err) => {
-                    ffi::sqlite3_result_error_code(ctx, ffi::SQLITE_CONSTRAINT_FUNCTION);
-                    if let Ok(cstr) = str_to_cstring(err.description()) {
-                        ffi::sqlite3_result_error(ctx, cstr.as_ptr(), -1);
-                    }
-                }
+                Err(err) => report_aggregate_error(ctx, err),
             };
         }
 
