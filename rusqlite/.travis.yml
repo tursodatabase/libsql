@@ -9,7 +9,8 @@ script:
     - cargo build
     - cargo test
     - cargo test --features backup
+    - cargo test --features blob
     - cargo test --features load_extension
     - cargo test --features trace
     - cargo test --features functions
-    - cargo test --features "backup functions load_extension trace"
+    - cargo test --features "backup blob functions load_extension trace"
