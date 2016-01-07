@@ -1,5 +1,5 @@
-C Add\sthe\s"sqlite3\s-sourceid"\scommand\sin\sthe\sTCL\sinterface.\s\sUse\sthat\scommand\sand\nothers\sto\soutput\sadditional\sinformation\sabout\sthe\stest\sconfiguration\sat\sthe\s\nconclusion\sof\sa\sTCL\stest.
-D 2016-01-07T02:06:55.894
+C Have\sthe\svdbe\slayer\scall\ssqlite3BtreeEnter()\son\sall\sb-trees\sin\suse\sfrom\swithin\ssqlite3VdbeExec()\seven\sin\sSQLITE_THREADSAFE=0\sbuilds.\sThis\sensures\sthat\sBtShared.db\sis\sset\scorrectly.
+D 2016-01-07T16:06:22.102
 F Makefile.in 7c8cc4c2f0179efc6fa9492141d1fb65f4807054
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e45d8b9b56dfa3f2cd860b2c28bd9d304513b042
@@ -275,9 +275,9 @@ F src/attach.c e944d0052b577703b9b83aac1638452ff42a8395
 F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 2869a76c03eb393ee795416e2387005553df72bc
 F src/bitvec.c 1a78d450a17c5016710eec900bedfc5729bf9bdf
-F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 4d3452b2a3daf875490ac4f0a278da7f85fabe12
-F src/btree.h 2d76dee44704c47eed323356a758662724b674a0
+F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
+F src/btree.c d40cbcd254c7d716f9b233a87b69f6dc00b18290
+F src/btree.h 68ef301795e00cdf1d3ab93abc44a43b7fe771e0
 F src/btreeInt.h b5f2651b41808f038dee9282c5dc0232ce6532d3
 F src/build.c d8006e9030c61b9495d0b2f724edd3fcdae16930
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
@@ -400,9 +400,9 @@ F src/util.c e802e8e311a0d6c48cd1b3e89db164f6f0248d70
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
 F src/vdbe.c 6ac8e5d808d48afc369316e147c191102f0584c1
 F src/vdbe.h efb7a8c1459e31f3ea4377824c6a7e4cb5068637
-F src/vdbeInt.h 75c2e82ee3357e9210c06474f8d9bdf12c81105d
+F src/vdbeInt.h 42eefa4f9e7432b9968d321b44e48821ec13b189
 F src/vdbeapi.c 020681b943e77766b32ae1cddf86d7831b7374ca
-F src/vdbeaux.c 3308a07a6b0b64e22e83cbcc76773eaf330b056a
+F src/vdbeaux.c 5d8c7c04e0f677033efb1292248a5f9056bbc34c
 F src/vdbeblob.c fdc4a81605ae7a35ae94a55bd768b66d6be16f15
 F src/vdbemem.c fdd1578e47bea61390d472de53c565781d81e045
 F src/vdbesort.c a7ec02da4494c59dfd071126dd3726be5a11459d
@@ -1406,7 +1406,10 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 55a11fd627eaf046b3783622b2925399a50a65b4
-R 5876235b8965be95d77913e3f4573bf2
-U drh
-Z dff9c340c358386729bbf7e0fd3fe53f
+P 4f80440bf566959306f6ca8cbb1fd29d138ee38b
+R 1d753fbc081495ae319f7ae5aa1679d6
+T *branch * shared-cache-fix
+T *sym-shared-cache-fix *
+T -sym-trunk *
+U dan
+Z 04b02aac85ad706faabaa5003739b07e

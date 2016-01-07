@@ -9671,3 +9671,10 @@ int sqlite3BtreeIsReadonly(Btree *p){
 ** Return the size of the header added to each page by this module.
 */
 int sqlite3HeaderSizeBtree(void){ return ROUND8(sizeof(MemPage)); }
+
+/*
+** Return true if the Btree passed as the only argument is sharable.
+*/
+int sqlite3BtreeSharable(Btree *p){
+  return p->sharable;
+}
