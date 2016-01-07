@@ -96,7 +96,7 @@ macro_rules! raw_to_impl(
     )
 );
 
-raw_to_impl!(c_int, sqlite3_bind_int);
+raw_to_impl!(c_int, sqlite3_bind_int); // i32
 raw_to_impl!(i64, sqlite3_bind_int64);
 raw_to_impl!(c_double, sqlite3_bind_double);
 
@@ -208,9 +208,9 @@ macro_rules! raw_from_impl(
     )
 );
 
-raw_from_impl!(c_int, sqlite3_column_int, ffi::SQLITE_INTEGER);
+raw_from_impl!(c_int, sqlite3_column_int, ffi::SQLITE_INTEGER); // i32
 raw_from_impl!(i64, sqlite3_column_int64, ffi::SQLITE_INTEGER);
-raw_from_impl!(c_double, sqlite3_column_double, ffi::SQLITE_FLOAT);
+raw_from_impl!(c_double, sqlite3_column_double, ffi::SQLITE_FLOAT); // f64
 
 impl FromSql for bool {
     unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> Result<bool> {
@@ -290,6 +290,39 @@ impl<T: FromSql> FromSql for Option<T> {
     unsafe fn column_has_valid_sqlite_type(stmt: *mut sqlite3_stmt, col: c_int) -> bool {
         sqlite3_column_type(stmt, col) == ffi::SQLITE_NULL ||
         T::column_has_valid_sqlite_type(stmt, col)
+    }
+}
+
+/// Dynamic type value (http://sqlite.org/datatype3.html)
+/// Value's type is dictated by SQLite (not by the caller).
+#[derive(Clone,Debug,PartialEq)]
+pub enum Value {
+    /// The value is a `NULL` value.
+    Null,
+    /// The value is a signed integer.
+    Integer(i64),
+    /// The value is a floating point number.
+    Real(f64),
+    /// The value is a text string.
+    Text(String),
+    /// The value is a blob of data
+    Blob(Vec<u8>),
+}
+
+impl FromSql for Value {
+    unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> Result<Value> {
+        match sqlite3_column_type(stmt, col) {
+            ffi::SQLITE_TEXT => FromSql::column_result(stmt, col).map(|t| Value::Text(t)),
+            ffi::SQLITE_INTEGER => Ok(Value::Integer(ffi::sqlite3_column_int64(stmt, col))),
+            ffi::SQLITE_FLOAT => Ok(Value::Real(ffi::sqlite3_column_double(stmt, col))),
+            ffi::SQLITE_NULL => Ok(Value::Null),
+            ffi::SQLITE_BLOB => FromSql::column_result(stmt, col).map(|t| Value::Blob(t)),
+            _ => Err(Error::InvalidColumnType),
+        }
+    }
+
+    unsafe fn column_has_valid_sqlite_type(_: *mut sqlite3_stmt, _: c_int) -> bool {
+        true
     }
 }
 
@@ -437,5 +470,27 @@ mod test {
         assert!(is_invalid_column_type(row.get_checked::<i32,String>(4).err().unwrap()));
         assert!(is_invalid_column_type(row.get_checked::<i32,Vec<u8>>(4).err().unwrap()));
         assert!(is_invalid_column_type(row.get_checked::<i32,time::Timespec>(4).err().unwrap()));
+    }
+
+    #[test]
+    fn test_dynamic_type() {
+        use super::Value;
+        let db = checked_memory_handle();
+
+        db.execute("INSERT INTO foo(b, t, i, f) VALUES (X'0102', 'text', 1, 1.5)",
+                   &[])
+          .unwrap();
+
+        let mut stmt = db.prepare("SELECT b, t, i, f, n FROM foo").unwrap();
+        let mut rows = stmt.query(&[]).unwrap();
+
+        let row = rows.next().unwrap().unwrap();
+        assert_eq!(Value::Blob(vec![1, 2]),
+                   row.get_checked::<i32,Value>(0).unwrap());
+        assert_eq!(Value::Text(String::from("text")),
+                   row.get_checked::<i32,Value>(1).unwrap());
+        assert_eq!(Value::Integer(1), row.get_checked::<i32,Value>(2).unwrap());
+        assert_eq!(Value::Real(1.5), row.get_checked::<i32,Value>(3).unwrap());
+        assert_eq!(Value::Null, row.get_checked::<i32,Value>(4).unwrap());
     }
 }
