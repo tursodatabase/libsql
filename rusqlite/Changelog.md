@@ -2,6 +2,7 @@
 
 * Adds `column_count()` method to `Statement` and `Row`.
 * Adds `types::Value` for dynamic column types.
+* Adds support for user-defined aggregate functions (behind the existing `functions` Cargo feature).
 * Introduces a `RowIndex` trait allowing columns to be fetched via index (as before) or name (new).
 
 # Version 0.6.0 (2015-12-17)
