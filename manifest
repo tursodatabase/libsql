@@ -1,5 +1,5 @@
-C Omit\sperformance\stracking\sfrom\sthe\smemsys5\smemory\sallocator\sif\sneither\nSQLITE_DEBUG\snor\sSQLITE_TEST\sare\sdefined.
-D 2016-01-07T21:12:40.900
+C Add\sthe\sexperimental\sSQLITE_FCNTL_JOURNAL_POINTER\sfile\scontrol\sfor\sobtaining\nthe\ssqlite3_file\spointer\sassociated\swith\sa\srollback\sjournal\sor\sWAL\sfile.
+D 2016-01-08T02:27:01.544
 F Makefile.in 7c8cc4c2f0179efc6fa9492141d1fb65f4807054
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e45d8b9b56dfa3f2cd860b2c28bd9d304513b042
@@ -298,7 +298,7 @@ F src/insert.c 6b45cc86967da11aa024d034745f93f66d53f650
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/loadext.c 84996d7d70a605597d79c1f1d7b2012a5fd34f2b
-F src/main.c b9641a4f650230bfc5dbb0bebf7b33ff4d27586a
+F src/main.c 6d589f27980c4aec014ae9a081d611e7e5ebc115
 F src/malloc.c 8f787669e79de26efc42272b5797bc00fff527c6
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 6919bcf12f221868ea066eec27e579fed95ce98b
@@ -320,8 +320,8 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c 0ca6d8710366fbb01a275160f018334cd347cbda
 F src/os_win.c 386fba30419e8458b13209781c2af5590eab2811
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
-F src/pager.c 58d2593612acb6b542de6715b4af397ea1fa0a35
-F src/pager.h bf25005b4656cd805af43487c3139fca9678d0cc
+F src/pager.c 5dda328a9a5e9405b6971d62d0d5e3ea85c6195a
+F src/pager.h 1c2a49143dfba9e69cc8159ef019f472ed8d260b
 F src/parse.y caad1e98edeca6960493d0c60d31b76820dd7776
 F src/pcache.c 73895411fa6b7bd6f0091212feabbe833b358d23
 F src/pcache.h 1ff11adce609ba7de139b6abfabaf9a2bac947b5
@@ -335,7 +335,7 @@ F src/resolve.c a83b41104e6ff69855d03cd0aaa09e93927ec39f
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c f8fded11fc443a9f5a73cc5db069d06b34460e2f
 F src/shell.c ed71dc7679e6f087a3f1ea3f9dae4b0fae7209c3
-F src/sqlite.h.in 7d87d71b9a4689c51fa092f48f16590ff71558e3
+F src/sqlite.h.in f18858fc9440fd3c399b733057d12c53a2360d11
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
 F src/sqliteInt.h 987b46b1d8089155caecbdb14b78850ae1e198ff
@@ -409,8 +409,8 @@ F src/vdbesort.c a7ec02da4494c59dfd071126dd3726be5a11459d
 F src/vdbetrace.c 8befe829faff6d9e6f6e4dee5a7d3f85cc85f1a0
 F src/vtab.c 2a8b44aa372c33f6154208e7a7f6c44254549806
 F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
-F src/wal.c 974928c988681c5157202c79dd9f26afaa7b5086
-F src/wal.h 907943dfdef10b583e81906679a347e0ec6f1b1b
+F src/wal.c 407f6f3929aeeb360f53a9279342940fe79823e1
+F src/wal.h 2f7c831cf3b071fa548bf2d5cac640846a7ff19c
 F src/walker.c 2e14d17f592d176b6dc879c33fbdec4fbccaa2ba
 F src/where.c c6d3d2f6af57d574a7365ee2b225a5024f2a6bec
 F src/whereInt.h 78b6b4de94db84aecbdc07fe3e38f648eb391e9a
@@ -1406,7 +1406,10 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2d96aeba2460779a0a20356739a0ba49144c8a85
-R 0f87ccc97eed432e32f05b109bfdb1a7
+P af5c7714e993f060841f1e893f754ddf3870e6d0
+R 1ed70ce93210d32572be9b1ea5c549df
+T *branch * file-control-journal
+T *sym-file-control-journal *
+T -sym-trunk *
 U drh
-Z 9752f7a1ad4b146c9e3d9fcb5efbd790
+Z 34b65576034eb21a6f6ec3e5456f3b6a

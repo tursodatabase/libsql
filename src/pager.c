@@ -6693,6 +6693,14 @@ sqlite3_file *sqlite3PagerFile(Pager *pPager){
 }
 
 /*
+** Return the file handle for the journal file (if it exists).
+** This will be either the rollback journal or the WAL file.
+*/
+sqlite3_file *sqlite3PagerJrnlFile(Pager *pPager){
+  return pPager->pWal ? sqlite3WalFile(pPager->pWal) : pPager->jfd;
+}
+
+/*
 ** Return the full pathname of the journal file.
 */
 const char *sqlite3PagerJournalname(Pager *pPager){
