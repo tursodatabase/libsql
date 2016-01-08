@@ -23,16 +23,7 @@ ifcapable !fts5 {
 
 foreach_detail_mode $testprefix {
 
-if {[detail_is_none]} continue
-
 proc null_list_entries {iFirst nInterval L} {
-  for {set i $iFirst} {$i < [llength $L]} {incr i $nInterval} {
-    lset L $i {}
-  }
-  return $L
-}
-
-proc null_insert {iFirst nInterval L} {
   for {set i $iFirst} {$i < [llength $L]} {incr i $nInterval} {
     lset L $i {}
   }
@@ -55,6 +46,15 @@ proc star_from_col {L} {
     set L [null_list_entries 3 4 $L]
   }
   return $L
+}
+
+proc row_to_col {L} {
+  if {[detail_is_none]==0} { error "this is for detail=none mode" }
+  set ret [list]
+  foreach {a b c} $L {
+    lappend ret $a {} $b {}
+  }
+  set ret
 }
 
 do_execsql_test 1.1.1 {
@@ -140,6 +140,9 @@ set res_col [star_from_col {
   g a 5 7     g b 5 7
   x a 1 1     y b 1 1
 }]
+if {[detail_is_none]} {
+  set res_col [row_to_col $res_row]
+}
 
 foreach {tn tbl resname} {
   1 "fts5vocab(tt, 'col')" res_col
@@ -314,6 +317,7 @@ foreach {term} {
 
   set resc [star_from_col $resc]
   set resr [star_from_row $resr]
+  if {[detail_is_none]} { set resc [row_to_col $resr] }
   do_execsql_test 7.$term.1 {SELECT * FROM txc WHERE term=$term} $resc
   do_execsql_test 7.$term.2 {SELECT * FROM txr WHERE term=$term} $resr
 }
@@ -378,10 +382,12 @@ do_execsql_test 7.3.1 {
   SELECT count(*) FROM txr, txr_c WHERE txr.term = txr_c.term;
 } {30}
 
-do_execsql_test 7.3.2 {
-  SELECT count(*) FROM txc, txc_c 
-  WHERE txc.term = txc_c.term AND txc.col=txc_c.col;
-} {57}
+if {![detail_is_none]} {
+  do_execsql_test 7.3.2 {
+    SELECT count(*) FROM txc, txc_c
+      WHERE txc.term = txc_c.term AND txc.col=txc_c.col;
+  } {57}
+}
 
 }
 
