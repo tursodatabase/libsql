@@ -1,5 +1,5 @@
-C Remove\san\sobsolete\s#ifdef\srelated\sto\siOS\ssupport.
-D 2016-01-08T17:28:24.140
+C Fix\sa\sproblem\swith\s#ifdefs\son\sthe\ssystem\scalls\sin\sthe\sunix\sVFS\sthat\scauses\nproblems\swhen\scompiling\swith\sSQLITE_OMIT_WAL.
+D 2016-01-08T19:17:30.620
 F Makefile.in 7c8cc4c2f0179efc6fa9492141d1fb65f4807054
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e45d8b9b56dfa3f2cd860b2c28bd9d304513b042
@@ -317,7 +317,7 @@ F src/os.c 8fd25588eeba74068d41102d26810e216999b6c8
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h abdb9a191a367793268fe553d25bab894e986a0e
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c 0ca6d8710366fbb01a275160f018334cd347cbda
+F src/os_unix.c 0b8ed82a5d6cdd8c8f48520789b46a6fd3fcb3ba
 F src/os_win.c 386fba30419e8458b13209781c2af5590eab2811
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 58d2593612acb6b542de6715b4af397ea1fa0a35
@@ -1406,7 +1406,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P cede2bf8e42ac140a8cc75a1d173083f543ba467
-R 687150b04bc81fb920941b849f5ff5ae
+P e9a51d2a580daa0fb152fe4c891149caa8025b9d
+R f00c1274aa3c73407d2f148ceadecbc9
 U drh
-Z 8aac296d541ec4b6e638fabbaab161bc
+Z f360db7d4eecffb564b5a77c7b7dafa5
