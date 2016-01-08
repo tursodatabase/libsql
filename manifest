@@ -1,5 +1,5 @@
-C Omit\sperformance\stracking\sfrom\sthe\smemsys5\smemory\sallocator\sif\sneither\nSQLITE_DEBUG\snor\sSQLITE_TEST\sare\sdefined.
-D 2016-01-07T21:12:40.900
+C Fix\stest\sfile\svtabH.test\sso\sthat\sit\sworks\swith\sSQLITE_ENABLE_ICU\sbuilds.
+D 2016-01-08T08:35:14.576
 F Makefile.in 7c8cc4c2f0179efc6fa9492141d1fb65f4807054
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e45d8b9b56dfa3f2cd860b2c28bd9d304513b042
@@ -1274,7 +1274,7 @@ F test/vtabC.test 4528f459a13136f982e75614d120aef165f17292
 F test/vtabD.test 05b3f1d77117271671089e48719524b676842e96
 F test/vtabE.test d5024aa42754962f6bb0afd261681686488e7afe
 F test/vtabF.test fd5ad376f5a34fe0891df1f3cddb4fe7c3eb077e
-F test/vtabH.test 492ba03dcb7bb8fedcc53f258c410d04013adbc9
+F test/vtabH.test 5f5157a1501d9889ec35c1a1832f69612dd31444
 F test/vtabI.test 751b07636700dbdea328e4265b6077ccd6811a3f
 F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
@@ -1406,7 +1406,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2d96aeba2460779a0a20356739a0ba49144c8a85
-R 0f87ccc97eed432e32f05b109bfdb1a7
-U drh
-Z 9752f7a1ad4b146c9e3d9fcb5efbd790
+P af5c7714e993f060841f1e893f754ddf3870e6d0
+R 98f692bc8cb5477e05091b4586394805
+U dan
+Z fe651ce5a28b2d87f751c475fd148bf4
