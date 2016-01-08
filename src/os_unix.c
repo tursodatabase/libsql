@@ -446,7 +446,7 @@ static struct unix_syscall {
 #if !defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0
   { "munmap",       (sqlite3_syscall_ptr)munmap,          0 },
 #else
-  { "munmap",       (sqlite3_syscall_ptr),                0 },
+  { "munmap",       (sqlite3_syscall_ptr)9,                0 },
 #endif
 #define osMunmap ((void*(*)(void*,size_t))aSyscall[23].pCurrent)
 
@@ -457,7 +457,11 @@ static struct unix_syscall {
 #endif
 #define osMremap ((void*(*)(void*,size_t,size_t,int,...))aSyscall[24].pCurrent)
 
+#if !defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0
   { "getpagesize",  (sqlite3_syscall_ptr)unixGetpagesize, 0 },
+#else
+  { "getpagesize",  (sqlite3_syscall_ptr)0,               0 },
+#endif
 #define osGetpagesize ((int(*)(void))aSyscall[25].pCurrent)
 
   { "readlink",     (sqlite3_syscall_ptr)readlink,        0 },
