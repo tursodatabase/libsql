@@ -1,5 +1,5 @@
-C More\s#ifdef\sfixes\sfor\sthe\sunix\sVFS.
-D 2016-01-08T22:18:00.216
+C Typo\sfix\sin\sthe\sprevious\scommit.
+D 2016-01-08T22:31:00.176
 F Makefile.in 7c8cc4c2f0179efc6fa9492141d1fb65f4807054
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e45d8b9b56dfa3f2cd860b2c28bd9d304513b042
@@ -317,7 +317,7 @@ F src/os.c 8fd25588eeba74068d41102d26810e216999b6c8
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h abdb9a191a367793268fe553d25bab894e986a0e
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c 085352926299f5c5ced95c67bf6e4715f7989be0
+F src/os_unix.c 82986e1e75782b54da7822dca42d36d974fc2948
 F src/os_win.c 386fba30419e8458b13209781c2af5590eab2811
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 58d2593612acb6b542de6715b4af397ea1fa0a35
@@ -1406,7 +1406,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3392f8fa2ddf2c10ffe91ddd92470040c909b36d
-R 6d9dd78f2a8c3dbacbf5b70f6d546718
+P 122c111e360761de8166e16ca151cb7260ee9bf8
+R 459dbc63e3c56e9f1bc36ac4dabf3593
 U drh
-Z 1972a905aa5c7145f504034b11e18521
+Z 6b54e5c713520cd21bd942bd06142b38

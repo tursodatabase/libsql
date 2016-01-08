@@ -446,7 +446,7 @@ static struct unix_syscall {
 #if !defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0
   { "munmap",       (sqlite3_syscall_ptr)munmap,          0 },
 #else
-  { "munmap",       (sqlite3_syscall_ptr)9,                0 },
+  { "munmap",       (sqlite3_syscall_ptr)0,               0 },
 #endif
 #define osMunmap ((void*(*)(void*,size_t))aSyscall[23].pCurrent)
 
