@@ -1,5 +1,5 @@
-C Reduce\sthe\snumber\sof\scalls\sto\smemset()\sin\ssqlite3DbMallocZero().
-D 2016-01-08T12:46:39.818
+C Remove\san\sobsolete\s#ifdef\srelated\sto\siOS\ssupport.
+D 2016-01-08T17:28:24.140
 F Makefile.in 7c8cc4c2f0179efc6fa9492141d1fb65f4807054
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e45d8b9b56dfa3f2cd860b2c28bd9d304513b042
@@ -338,7 +338,7 @@ F src/shell.c ed71dc7679e6f087a3f1ea3f9dae4b0fae7209c3
 F src/sqlite.h.in 7d87d71b9a4689c51fa092f48f16590ff71558e3
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
-F src/sqliteInt.h 987b46b1d8089155caecbdb14b78850ae1e198ff
+F src/sqliteInt.h b8ccd34a919e4b6bab8c4164046330002aa9a27a
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
@@ -1406,7 +1406,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 19c1f4483e3df7fa1e9ac7c8a510fa1c906ac7c7
-R 3c7ff6f52f3aab7d6a4fdba1fa3eda2d
+P cede2bf8e42ac140a8cc75a1d173083f543ba467
+R 687150b04bc81fb920941b849f5ff5ae
 U drh
-Z 6a7b8518ac5ee1faeba157e0f460fa55
+Z 8aac296d541ec4b6e638fabbaab161bc
