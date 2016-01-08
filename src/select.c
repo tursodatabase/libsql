@@ -111,29 +111,34 @@ Select *sqlite3SelectNew(
   Select *pNew;
   Select standin;
   sqlite3 *db = pParse->db;
-  pNew = sqlite3DbMallocZero(db, sizeof(*pNew) );
+  pNew = sqlite3DbMallocRaw(db, sizeof(*pNew) );
   if( pNew==0 ){
     assert( db->mallocFailed );
     pNew = &standin;
-    memset(pNew, 0, sizeof(*pNew));
   }
   if( pEList==0 ){
     pEList = sqlite3ExprListAppend(pParse, 0, sqlite3Expr(db,TK_ASTERISK,0));
   }
   pNew->pEList = pEList;
+  pNew->op = TK_SELECT;
+  pNew->selFlags = selFlags;
+  pNew->iLimit = 0;
+  pNew->iOffset = 0;
+  pNew->addrOpenEphm[0] = -1;
+  pNew->addrOpenEphm[1] = -1;
+  pNew->nSelectRow = 0;
   if( pSrc==0 ) pSrc = sqlite3DbMallocZero(db, sizeof(*pSrc));
   pNew->pSrc = pSrc;
   pNew->pWhere = pWhere;
   pNew->pGroupBy = pGroupBy;
   pNew->pHaving = pHaving;
   pNew->pOrderBy = pOrderBy;
-  pNew->selFlags = selFlags;
-  pNew->op = TK_SELECT;
+  pNew->pPrior = 0;
+  pNew->pNext = 0;
   pNew->pLimit = pLimit;
   pNew->pOffset = pOffset;
+  pNew->pWith = 0;
   assert( pOffset==0 || pLimit!=0 || pParse->nErr>0 || db->mallocFailed!=0 );
-  pNew->addrOpenEphm[0] = -1;
-  pNew->addrOpenEphm[1] = -1;
   if( db->mallocFailed ) {
     clearSelect(db, pNew, pNew!=&standin);
     pNew = 0;

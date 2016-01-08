@@ -1,5 +1,5 @@
-C Fix\stest\sfile\svtabH.test\sso\sthat\sit\sworks\swith\sSQLITE_ENABLE_ICU\sbuilds.
-D 2016-01-08T08:35:14.576
+C Reduce\sthe\snumber\sof\scalls\sto\smemset()\sin\ssqlite3DbMallocZero().
+D 2016-01-08T12:46:39.818
 F Makefile.in 7c8cc4c2f0179efc6fa9492141d1fb65f4807054
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e45d8b9b56dfa3f2cd860b2c28bd9d304513b042
@@ -286,7 +286,7 @@ F src/ctime.c 60e135af364d777a9ab41c97e5e89cd224da6198
 F src/date.c e4655393bb403fa310eef66cc4583d75d4d7fd93
 F src/dbstat.c ffd63fc8ba7541476ced189b95e95d7f2bc63f78
 F src/delete.c 00af9f08a15ddc5cba5962d3d3e5bf2d67b2e7da
-F src/expr.c 38790e65d1219f2b7dc26458f39a5252fe7c60cd
+F src/expr.c fe55c489362d1429c364e98c877514f4455f45a6
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c e18b3dff7d47c7bcac5ac4fc178a89b9fd322b44
 F src/func.c cf5e10af9125b245f1b962e8ba4d520a37818795
@@ -333,7 +333,7 @@ F src/printf.c af589a27b7d40f6f4f704e9eea99f02f18ad6d32
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c a83b41104e6ff69855d03cd0aaa09e93927ec39f
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c f8fded11fc443a9f5a73cc5db069d06b34460e2f
+F src/select.c d84c091185bc160c349e8bf460ebd084dbd77e64
 F src/shell.c ed71dc7679e6f087a3f1ea3f9dae4b0fae7209c3
 F src/sqlite.h.in 7d87d71b9a4689c51fa092f48f16590ff71558e3
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
@@ -1406,7 +1406,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P af5c7714e993f060841f1e893f754ddf3870e6d0
-R 98f692bc8cb5477e05091b4586394805
-U dan
-Z fe651ce5a28b2d87f751c475fd148bf4
+P 19c1f4483e3df7fa1e9ac7c8a510fa1c906ac7c7
+R 3c7ff6f52f3aab7d6a4fdba1fa3eda2d
+U drh
+Z 6a7b8518ac5ee1faeba157e0f460fa55
