@@ -202,14 +202,23 @@ proc fts5_rnddoc {n} {
 #   -near N        (NEAR distance. Default 10)
 #   -col  C        (List of column indexes to match against)
 #   -pc   VARNAME  (variable in caller frame to use for phrase numbering)
+#   -dict VARNAME  (array in caller frame to use for synonyms)
 #
 proc nearset {aCol args} {
+
+  # Process the command line options.
+  #
   set O(-near) 10
   set O(-col)  {}
   set O(-pc)   ""
+  set O(-dict) ""
 
   set nOpt [lsearch -exact $args --]
   if {$nOpt<0} { error "no -- option" }
+
+  # Set $lPhrase to be a list of phrases. $nPhrase its length.
+  set lPhrase [lrange $args [expr $nOpt+1] end]
+  set nPhrase [llength $lPhrase]
 
   foreach {k v} [lrange $args 0 [expr $nOpt-1]] {
     if {[info exists O($k)]==0} { error "unrecognized option $k" }
@@ -222,9 +231,7 @@ proc nearset {aCol args} {
     upvar $O(-pc) counter
   }
 
-  # Set $phraselist to be a list of phrases. $nPhrase its length.
-  set phraselist [lrange $args [expr $nOpt+1] end]
-  set nPhrase [llength $phraselist]
+  if {$O(-dict)!=""} { upvar $O(-dict) aDict }
 
   for {set j 0} {$j < [llength $aCol]} {incr j} {
     for {set i 0} {$i < $nPhrase} {incr i} { 
@@ -232,41 +239,54 @@ proc nearset {aCol args} {
     }
   }
 
-  set iCol -1
-  foreach col $aCol {
-    incr iCol
-    if {$O(-col)!="" && [lsearch $O(-col) $iCol]<0} continue
-    set nToken [llength $col]
+  # Loop through each column of the current row.
+  for {set iCol 0} {$iCol < [llength $aCol]} {incr iCol} {
 
-    set iFL [expr $O(-near) >= $nToken ? $nToken - 1 : $O(-near)]
-    for { } {$iFL < $nToken} {incr iFL} {
-      for {set iPhrase 0} {$iPhrase<$nPhrase} {incr iPhrase} {
-        set B($iPhrase) [list]
-      }
+    # If there is a column filter, test whether this column is excluded. If
+    # so, skip to the next iteration of this loop. Otherwise, set zCol to the
+    # column value and nToken to the number of tokens that comprise it.
+    if {$O(-col)!="" && [lsearch $O(-col) $iCol]<0} continue
+    set zCol [lindex $aCol $iCol]
+    set nToken [llength $zCol]
+
+    # Each iteration of the following loop searches a substring of the 
+    # column value for phrase matches. The last token of the substring
+    # is token $iLast of the column value. The first token is:
+    #
+    #   iFirst = ($iLast - $O(-near) - 1)
+    #
+    # where $sz is the length of the phrase being searched for. A phrase 
+    # counts as matching the substring if its first token lies on or before
+    # $iLast and its last token on or after $iFirst.
+    #
+    # For example, if the query is "NEAR(a+b c, 2)" and the column value:
+    #
+    #   "x x x x A B x x C x"
+    #    0 1 2 3 4 5 6 7 8 9"
+    #
+    # when (iLast==8 && iFirst=5) the range will contain both phrases and
+    # so both instances can be added to the output poslists.
+    #
+    set iLast [expr $O(-near) >= $nToken ? $nToken - 1 : $O(-near)]
+    for { } {$iLast < $nToken} {incr iLast} {
+
+      catch { array unset B }
       
       for {set iPhrase 0} {$iPhrase<$nPhrase} {incr iPhrase} {
-        set p [lindex $phraselist $iPhrase]
+        set p [lindex $lPhrase $iPhrase]
         set nPm1 [expr {[llength $p] - 1}]
-        set iFirst [expr $iFL - $O(-near) - [llength $p]]
+        set iFirst [expr $iLast - $O(-near) - [llength $p]]
 
-        for {set i $iFirst} {$i <= $iFL} {incr i} {
-          set lCand [lrange $col $i [expr $i+$nPm1]]
-
+        for {set i $iFirst} {$i <= $iLast} {incr i} {
+          set lCand [lrange $zCol $i [expr $i+$nPm1]]
           set bMatch 1
           foreach tok $p term $lCand {
-            if {[string match $tok $term]==0} {
-              #puts "$tok $term failed"
-              set bMatch 0
-            }
+            if {[nearset_match aDict $tok $term]==0} { set bMatch 0 ; break }
           }
-          if {$bMatch} { 
-            #puts "match at $i"
-            lappend B($iPhrase) $i 
-          }
-
-          #if {$lCand == $p} { lappend B($iPhrase) $i }
+          if {$bMatch} { lappend B($iPhrase) $i }
         }
-        if {[llength $B($iPhrase)] == 0} break
+
+        if {![info exists B($iPhrase)]} break
       }
 
       if {$iPhrase==$nPhrase} {
@@ -292,6 +312,18 @@ proc nearset {aCol args} {
 
   #puts "$aCol -> $res"
   sort_poslist $res
+}
+
+proc nearset_match {aDictVar tok term} {
+  if {[string match $tok $term]} { return 1 }
+
+  upvar $aDictVar aDict
+  if {[info exists aDict($tok)]} {
+    foreach s $aDict($tok) {
+      if {[string match $s $term]} { return 1 }
+    }
+  }
+  return 0;
 }
 
 #-------------------------------------------------------------------------
@@ -405,7 +437,6 @@ proc fts5_poslist2collist {poslist} {
 }
 
 # Comparison function used by fts5_poslist2collist to sort collist entries.
-#
 proc fts5_collist_elem_compare {a b} {
   foreach {a1 a2} [split $a .] {}
   foreach {b1 b2} [split $b .] {}
@@ -426,17 +457,23 @@ proc fts5_collist_elem_compare {a b} {
 #   FROM $tbl('$expr')
 #   ORDER BY rowid $order;
 #
-proc fts5_query_data {expr tbl {order ASC}} {
+proc fts5_query_data {expr tbl {order ASC} {aDictVar ""}} {
 
   # Figure out the set of columns in the FTS5 table. This routine does
   # not handle tables with UNINDEXED columns, but if it did, it would
   # have to be here.
   db eval "PRAGMA table_info = $tbl" x { lappend lCols $x(name) }
 
+  set d ""
+  if {$aDictVar != ""} {
+    upvar $aDictVar aDict
+    set d aDict
+  }
+
   set cols ""
   foreach e $lCols { append cols ", '$e'" }
   set tclexpr [db one [subst -novar {
-    SELECT fts5_expr_tcl( $expr, 'nearset $cols -pc ::pc' [set cols] )
+    SELECT fts5_expr_tcl( $expr, 'nearset $cols -dict $d -pc ::pc' [set cols] )
   }]]
 
   set res [list]
@@ -457,9 +494,17 @@ proc fts5_query_data {expr tbl {order ASC}} {
 #-------------------------------------------------------------------------
 # Similar to [fts5_query_data], but omit the collist field.
 #
-proc fts5_poslist_data {expr tbl {order ASC}} {
+proc fts5_poslist_data {expr tbl {order ASC} {aDictVar ""}} {
   set res [list]
-  foreach {rowid poslist collist} [fts5_query_data $expr $tbl $order] {
+
+  if {$aDictVar!=""} {
+    upvar $aDictVar aDict
+    set dict aDict
+  } else {
+    set dict ""
+  }
+
+  foreach {rowid poslist collist} [fts5_query_data $expr $tbl $order $dict] {
     lappend res $rowid $poslist
   }
   set res
@@ -467,22 +512,15 @@ proc fts5_poslist_data {expr tbl {order ASC}} {
 
 #-------------------------------------------------------------------------
 #
-proc nearset_rf {aCol args} {
-  set idx [lsearch -exact $args --]
-  if {$idx != [llength $args]-2 || [llength [lindex $args end]]!=1} {
-    set ::expr_not_ok 1
-  }
-  list
-}
 
-proc nearset_rc {aCol args} {
-  nearset_rf $aCol {*}$args
-  if {[lsearch $args -col]>=0} { 
-    set ::expr_not_ok 1
-  }
-  list
-}
-
+# This command will only work inside a [foreach_detail_mode] block. It tests
+# whether or not expression $expr run on FTS5 table $tbl is supported by
+# the current mode. If so, 1 is returned. If not, 0.
+#
+#   detail=full    (all queries supported)
+#   detail=col     (all but phrase queries and NEAR queries)
+#   detail=none    (all but phrase queries, NEAR queries, and column filters)
+#
 proc fts5_expr_ok {expr tbl} {
 
   if {![detail_is_full]} {
@@ -503,5 +541,23 @@ proc fts5_expr_ok {expr tbl} {
   }
 
   return 1
+}
+
+# Helper for [fts5_expr_ok]
+proc nearset_rf {aCol args} {
+  set idx [lsearch -exact $args --]
+  if {$idx != [llength $args]-2 || [llength [lindex $args end]]!=1} {
+    set ::expr_not_ok 1
+  }
+  list
+}
+
+# Helper for [fts5_expr_ok]
+proc nearset_rc {aCol args} {
+  nearset_rf $aCol {*}$args
+  if {[lsearch $args -col]>=0} { 
+    set ::expr_not_ok 1
+  }
+  list
 }
 

@@ -1,5 +1,5 @@
-C Fix\sfts5vocab.test\sso\sthat\sit\sworks\swith\sdetail=none\stables.
-D 2016-01-08T07:53:09.125
+C Begin\sadding\sfts5\stests\sinvolving\ssynonyms\sand\sdetail=none/col\stables.
+D 2016-01-08T17:21:18.901
 F Makefile.in 7c8cc4c2f0179efc6fa9492141d1fb65f4807054
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e45d8b9b56dfa3f2cd860b2c28bd9d304513b042
@@ -114,7 +114,7 @@ F ext/fts5/fts5_varint.c 3f86ce09cab152e3d45490d7586b7ed2e40c13f1
 F ext/fts5/fts5_vocab.c da64ecbd217625980a1721fbd588a1e4118a51b6
 F ext/fts5/fts5parse.y 1647eba089b9b3fc058b4dc989d9da87d15b9580
 F ext/fts5/mkportersteps.tcl 5acf962d2e0074f701620bb5308155fa1e4a63ba
-F ext/fts5/test/fts5_common.tcl c9169fe40bf751e1b311271df31aec15732b26c0
+F ext/fts5/test/fts5_common.tcl 393882afb225a21edf033043bbf936951e9198c1
 F ext/fts5/test/fts5aa.test 7e814df4a0e6c22a6fe2d84f210fdc0b5068a084
 F ext/fts5/test/fts5ab.test 30325a89453280160106be411bba3acf138e6d1b
 F ext/fts5/test/fts5ac.test d5073ca7bd2d9fe8aab0c82c6c75a7e4b0d70ced
@@ -173,6 +173,7 @@ F ext/fts5/test/fts5rowid.test 400384798349d658eaf06aefa1e364957d5d4821
 F ext/fts5/test/fts5simple.test 2bc6451cbe887a9215f5b14ae307c70d850344c9
 F ext/fts5/test/fts5simple2.test 843f1f7fe439ff32bf74f4fd6430632f9636ef3a
 F ext/fts5/test/fts5synonym.test cf88c0a56d5ea9591e3939ef1f6e294f7f2d0671
+F ext/fts5/test/fts5synonym2.test 6aa842d0e5bd019db0c3597e0860eb68eb2867e4
 F ext/fts5/test/fts5tokenizer.test ea4df698b35cc427ebf2ba22829d0e28386d8c89
 F ext/fts5/test/fts5unicode.test fbef8d8a3b4b88470536cc57604a82ca52e51841
 F ext/fts5/test/fts5unicode2.test c1dd890ba32b7609adba78e420faa847abe43b59
@@ -1409,7 +1410,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P eedd095dc1c81ce45df00093ba237dd7b3cdff3d
-R bd0f99ecb522e0859c1abeb3e9044459
+P d9135cc723fc4227aace6dcf4ffa4630c9d23aa0
+R c443735bd0d019a3a4798f3f3350cb78
 U dan
-Z 0717ee91389ddd999cbabbcc60656596
+Z 48c62f9fa751846d5897bddd7cc5158f
