@@ -712,7 +712,7 @@ do_test wal-11.5 {
 do_test wal-11.6 {
   execsql COMMIT
   list [expr [file size test.db]/1024] [file size test.db-wal]
-} [list 3 [wal_file_size 41 1024]]
+} [list 3 [wal_file_size 40 1024]]
 do_test wal-11.7 {
   execsql { 
     SELECT count(*) FROM t1;
@@ -722,7 +722,7 @@ do_test wal-11.7 {
 do_test wal-11.8 {
   execsql { PRAGMA wal_checkpoint }
   list [expr [file size test.db]/1024] [file size test.db-wal]
-} [list 37 [wal_file_size 41 1024]]
+} [list 37 [wal_file_size 40 1024]]
 do_test wal-11.9 {
   db close
   list [expr [file size test.db]/1024] [log_deleted test.db-wal]

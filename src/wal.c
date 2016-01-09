@@ -462,6 +462,13 @@ struct Wal {
 #define WAL_EXCLUSIVE_MODE  1     
 #define WAL_HEAPMEMORY_MODE 2
 
+/* 
+** Values for Wal.writeLock.
+*/
+#define WAL_WRITELOCK_UNLOCKED 0
+#define WAL_WRITELOCK_LOCKED   1
+#define WAL_WRITELOCK_RECKSUM  2
+
 /*
 ** Possible values for WAL.readOnly
 */
@@ -2885,6 +2892,60 @@ static int walWriteOneFrame(
   return rc;
 }
 
+/*
+** This function is called as part of committing a transaction within which
+** one or more frames have been overwritten. It updates the checksums for
+** all frames written to the wal file by the current transaction.
+**
+** Argument pLive is a pointer to the first wal-index header in shared 
+** memory (the copy readers will see if they open a read-transaction now,
+** before the current commit is finished). This is safe to use because the
+** caller holds the WRITER lock. The first frame to update the checksum
+** for is (pLive->mxFrame+1). The last is argument iLast.
+**
+** SQLITE_OK is returned if successful, or an SQLite error code otherwise.
+*/
+static int walRewriteChecksums(Wal *pWal, WalIndexHdr *pLive, u32 iLast){
+  const int szPage = pWal->szPage;/* Database page size */
+  int rc = SQLITE_OK;             /* Return code */
+  u8 *aBuf;                       /* Buffer to load data from wal file into */
+  u8 aFrame[WAL_FRAME_HDRSIZE];   /* Buffer to assemble frame-headers in */
+  u32 iRead;                      /* Next frame to read from wal file */
+
+  aBuf = sqlite3_malloc(szPage + WAL_FRAME_HDRSIZE);
+  if( aBuf==0 ) return SQLITE_NOMEM;
+
+  /* Find the checksum values to use as input for the checksum of the
+  ** first frame written by this transaction. If that frame is frame 1
+  ** (implying that the current transaction restarted the wal file), 
+  ** these values must be read from the wal-file header. If the first
+  ** frame to update the checksum of is not frame 1, then the initial
+  ** checksum values can be copied from pLive.  */
+  if( pLive->mxFrame==0 ){
+    rc = sqlite3OsRead(pWal->pWalFd, aBuf, sizeof(u32)*2, 24);
+    pWal->hdr.aFrameCksum[0] = sqlite3Get4byte(aBuf);
+    pWal->hdr.aFrameCksum[1] = sqlite3Get4byte(&aBuf[sizeof(u32)]);
+  }else{
+    memcpy(pWal->hdr.aFrameCksum, pLive->aFrameCksum, sizeof(u32)*2);
+  }
+
+  for(iRead=pLive->mxFrame+1; rc==SQLITE_OK && iRead<=iLast; iRead++){
+    i64 iOff = walFrameOffset(iRead, szPage);
+    rc = sqlite3OsRead(pWal->pWalFd, aBuf, szPage+WAL_FRAME_HDRSIZE, iOff);
+    if( rc==SQLITE_OK ){
+      u32 iPgno, nDbSize;
+      iPgno = sqlite3Get4byte(aBuf);
+      nDbSize = sqlite3Get4byte(&aBuf[4]);
+
+      walEncodeFrame(pWal, iPgno, nDbSize, &aBuf[WAL_FRAME_HDRSIZE], aFrame);
+      rc = sqlite3OsWrite(pWal->pWalFd, aFrame, sizeof(aFrame), iOff);
+    }
+  }
+
+  sqlite3_free(aBuf);
+  return rc;
+}
+
 /* 
 ** Write a set of frames to the log. The caller must hold the write-lock
 ** on the log file (obtained using sqlite3WalBeginWriteTransaction()).
@@ -2905,6 +2966,8 @@ int sqlite3WalFrames(
   int szFrame;                    /* The size of a single frame */
   i64 iOffset;                    /* Next byte to write in WAL file */
   WalWriter w;                    /* The writer */
+  u32 iFirst = 0;                 /* First frame that may be overwritten */
+  WalIndexHdr *pLive;             /* Pointer to shared header */
 
   assert( pList );
   assert( pWal->writeLock );
@@ -2919,6 +2982,13 @@ int sqlite3WalFrames(
               pWal, cnt, pWal->hdr.mxFrame, isCommit ? "Commit" : "Spill"));
   }
 #endif
+
+  pLive = (WalIndexHdr*)walIndexHdr(pWal);
+  if( memcmp(&pWal->hdr, (void *)pLive, sizeof(WalIndexHdr))!=0
+   && (isCommit || sqlite3PagerSavepointCount(pList->pPager)==0)
+  ){
+    iFirst = pLive->mxFrame+1;
+  }
 
   /* See if it is possible to write these frames into the start of the
   ** log file, instead of appending to it at pWal->hdr.mxFrame.
@@ -2984,6 +3054,25 @@ int sqlite3WalFrames(
   /* Write all frames into the log file exactly once */
   for(p=pList; p; p=p->pDirty){
     int nDbSize;   /* 0 normally.  Positive == commit flag */
+
+    /* Check if this page has already been written into the wal file by
+    ** the current transaction. If so, overwrite the existing frame and
+    ** set Wal.writeLock to WAL_WRITELOCK_RECKSUM - indicating that 
+    ** checksums must be recomputed when the transaction is committed.  */
+    if( iFirst && (p->pDirty || isCommit==0) ){
+      u32 iWrite = 0;
+      rc = sqlite3WalFindFrame(pWal, p->pgno, &iWrite);
+      if( rc ) return rc;
+      if( iWrite>=iFirst ){
+        i64 iOff = walFrameOffset(iWrite, szPage) + WAL_FRAME_HDRSIZE;
+        pWal->writeLock = WAL_WRITELOCK_RECKSUM;
+        rc = sqlite3OsWrite(pWal->pWalFd, p->pData, szPage, iOff);
+        if( rc ) return rc;
+        p->flags &= ~PGHDR_WAL_APPEND;
+        continue;
+      }
+    }
+
     iFrame++;
     assert( iOffset==walFrameOffset(iFrame, szPage) );
     nDbSize = (isCommit && p->pDirty==0) ? nTruncate : 0;
@@ -2991,6 +3080,13 @@ int sqlite3WalFrames(
     if( rc ) return rc;
     pLast = p;
     iOffset += szFrame;
+    p->flags |= PGHDR_WAL_APPEND;
+  }
+
+  /* Recalculate checksums within the wal file if required. */
+  if( isCommit && pWal->writeLock==WAL_WRITELOCK_RECKSUM ){
+    rc = walRewriteChecksums(pWal, pLive, iFrame);
+    if( rc ) return rc;
   }
 
   /* If this is the end of a transaction, then we might need to pad
@@ -3042,6 +3138,7 @@ int sqlite3WalFrames(
   */
   iFrame = pWal->hdr.mxFrame;
   for(p=pList; p && rc==SQLITE_OK; p=p->pDirty){
+    if( (p->flags & PGHDR_WAL_APPEND)==0 ) continue;
     iFrame++;
     rc = walIndexAppend(pWal, iFrame, p->pgno);
   }
@@ -3154,6 +3251,7 @@ int sqlite3WalCheckpoint(
 
   /* Copy data from the log to the database file. */
   if( rc==SQLITE_OK ){
+
     if( pWal->hdr.mxFrame && walPagesize(pWal)!=nBuf ){
       rc = SQLITE_CORRUPT_BKPT;
     }else{

@@ -7301,6 +7301,13 @@ int sqlite3PagerCloseWal(Pager *pPager){
   return rc;
 }
 
+/*
+** Return the number of open savepoints.
+**/
+int sqlite3PagerSavepointCount(Pager *pPager){
+  return pPager->nSavepoint;
+}
+
 #ifdef SQLITE_ENABLE_SNAPSHOT
 /*
 ** If this is a WAL database, obtain a snapshot handle for the snapshot
