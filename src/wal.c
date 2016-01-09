@@ -445,6 +445,7 @@ struct Wal {
   u8 padToSectorBoundary;    /* Pad transactions out to the next sector */
   WalIndexHdr hdr;           /* Wal-index header for current transaction */
   u32 minFrame;              /* Ignore wal frames before this one */
+  u32 iReCksum;              /* On commit, recalculate checksums from here */
   const char *zWalName;      /* Name of WAL file */
   u32 nCkpt;                 /* Checkpoint sequence counter in the wal-header */
 #ifdef SQLITE_DEBUG
@@ -461,13 +462,6 @@ struct Wal {
 #define WAL_NORMAL_MODE     0
 #define WAL_EXCLUSIVE_MODE  1     
 #define WAL_HEAPMEMORY_MODE 2
-
-/* 
-** Values for Wal.writeLock.
-*/
-#define WAL_WRITELOCK_UNLOCKED 0
-#define WAL_WRITELOCK_LOCKED   1
-#define WAL_WRITELOCK_RECKSUM  2
 
 /*
 ** Possible values for WAL.readOnly
@@ -705,14 +699,16 @@ static void walEncodeFrame(
   assert( WAL_FRAME_HDRSIZE==24 );
   sqlite3Put4byte(&aFrame[0], iPage);
   sqlite3Put4byte(&aFrame[4], nTruncate);
-  memcpy(&aFrame[8], pWal->hdr.aSalt, 8);
+  if( pWal->iReCksum==0 ){
+    memcpy(&aFrame[8], pWal->hdr.aSalt, 8);
 
-  nativeCksum = (pWal->hdr.bigEndCksum==SQLITE_BIGENDIAN);
-  walChecksumBytes(nativeCksum, aFrame, 8, aCksum, aCksum);
-  walChecksumBytes(nativeCksum, aData, pWal->szPage, aCksum, aCksum);
+    nativeCksum = (pWal->hdr.bigEndCksum==SQLITE_BIGENDIAN);
+    walChecksumBytes(nativeCksum, aFrame, 8, aCksum, aCksum);
+    walChecksumBytes(nativeCksum, aData, pWal->szPage, aCksum, aCksum);
 
-  sqlite3Put4byte(&aFrame[16], aCksum[0]);
-  sqlite3Put4byte(&aFrame[20], aCksum[1]);
+    sqlite3Put4byte(&aFrame[16], aCksum[0]);
+    sqlite3Put4byte(&aFrame[20], aCksum[1]);
+  }
 }
 
 /*
@@ -2639,6 +2635,7 @@ int sqlite3WalBeginWriteTransaction(Wal *pWal){
   /* Cannot start a write transaction without first holding a read
   ** transaction. */
   assert( pWal->readLock>=0 );
+  assert( pWal->writeLock==0 && pWal->iReCksum==0 );
 
   if( pWal->readOnly ){
     return SQLITE_READONLY;
@@ -2674,6 +2671,7 @@ int sqlite3WalEndWriteTransaction(Wal *pWal){
   if( pWal->writeLock ){
     walUnlockExclusive(pWal, WAL_WRITE_LOCK, 1);
     pWal->writeLock = 0;
+    pWal->iReCksum = 0;
     pWal->truncateOnCommit = 0;
   }
   return SQLITE_OK;
@@ -2895,41 +2893,40 @@ static int walWriteOneFrame(
 /*
 ** This function is called as part of committing a transaction within which
 ** one or more frames have been overwritten. It updates the checksums for
-** all frames written to the wal file by the current transaction.
-**
-** Argument pLive is a pointer to the first wal-index header in shared 
-** memory (the copy readers will see if they open a read-transaction now,
-** before the current commit is finished). This is safe to use because the
-** caller holds the WRITER lock. The first frame to update the checksum
-** for is (pLive->mxFrame+1). The last is argument iLast.
+** all frames written to the wal file by the current transaction starting
+** with the earliest to have been overwritten.
 **
 ** SQLITE_OK is returned if successful, or an SQLite error code otherwise.
 */
-static int walRewriteChecksums(Wal *pWal, WalIndexHdr *pLive, u32 iLast){
+static int walRewriteChecksums(Wal *pWal, u32 iLast){
   const int szPage = pWal->szPage;/* Database page size */
   int rc = SQLITE_OK;             /* Return code */
   u8 *aBuf;                       /* Buffer to load data from wal file into */
   u8 aFrame[WAL_FRAME_HDRSIZE];   /* Buffer to assemble frame-headers in */
   u32 iRead;                      /* Next frame to read from wal file */
+  i64 iCksumOff;
 
   aBuf = sqlite3_malloc(szPage + WAL_FRAME_HDRSIZE);
   if( aBuf==0 ) return SQLITE_NOMEM;
 
-  /* Find the checksum values to use as input for the checksum of the
-  ** first frame written by this transaction. If that frame is frame 1
-  ** (implying that the current transaction restarted the wal file), 
-  ** these values must be read from the wal-file header. If the first
-  ** frame to update the checksum of is not frame 1, then the initial
-  ** checksum values can be copied from pLive.  */
-  if( pLive->mxFrame==0 ){
-    rc = sqlite3OsRead(pWal->pWalFd, aBuf, sizeof(u32)*2, 24);
-    pWal->hdr.aFrameCksum[0] = sqlite3Get4byte(aBuf);
-    pWal->hdr.aFrameCksum[1] = sqlite3Get4byte(&aBuf[sizeof(u32)]);
+  /* Find the checksum values to use as input for the recalculating the
+  ** first checksum. If the first frame is frame 1 (implying that the current
+  ** transaction restarted the wal file), these values must be read from the
+  ** wal-file header. Otherwise, read them from the frame header of the
+  ** previous frame.  */
+  assert( pWal->iReCksum>0 );
+  if( pWal->iReCksum==1 ){
+    iCksumOff = 24;
   }else{
-    memcpy(pWal->hdr.aFrameCksum, pLive->aFrameCksum, sizeof(u32)*2);
+    iCksumOff = walFrameOffset(pWal->iReCksum-1, szPage) + 16;
   }
+  rc = sqlite3OsRead(pWal->pWalFd, aBuf, sizeof(u32)*2, iCksumOff);
+  pWal->hdr.aFrameCksum[0] = sqlite3Get4byte(aBuf);
+  pWal->hdr.aFrameCksum[1] = sqlite3Get4byte(&aBuf[sizeof(u32)]);
 
-  for(iRead=pLive->mxFrame+1; rc==SQLITE_OK && iRead<=iLast; iRead++){
+  iRead = pWal->iReCksum;
+  pWal->iReCksum = 0;
+  for(; rc==SQLITE_OK && iRead<=iLast; iRead++){
     i64 iOff = walFrameOffset(iRead, szPage);
     rc = sqlite3OsRead(pWal->pWalFd, aBuf, szPage+WAL_FRAME_HDRSIZE, iOff);
     if( rc==SQLITE_OK ){
@@ -3065,7 +3062,9 @@ int sqlite3WalFrames(
       if( rc ) return rc;
       if( iWrite>=iFirst ){
         i64 iOff = walFrameOffset(iWrite, szPage) + WAL_FRAME_HDRSIZE;
-        pWal->writeLock = WAL_WRITELOCK_RECKSUM;
+        if( pWal->iReCksum==0 || iWrite<pWal->iReCksum ){
+          pWal->iReCksum = iWrite;
+        }
         rc = sqlite3OsWrite(pWal->pWalFd, p->pData, szPage, iOff);
         if( rc ) return rc;
         p->flags &= ~PGHDR_WAL_APPEND;
@@ -3084,8 +3083,8 @@ int sqlite3WalFrames(
   }
 
   /* Recalculate checksums within the wal file if required. */
-  if( isCommit && pWal->writeLock==WAL_WRITELOCK_RECKSUM ){
-    rc = walRewriteChecksums(pWal, pLive, iFrame);
+  if( isCommit && pWal->iReCksum ){
+    rc = walRewriteChecksums(pWal, iFrame);
     if( rc ) return rc;
   }
 

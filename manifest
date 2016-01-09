@@ -1,5 +1,5 @@
-C If\sa\ssingle\spage\sis\swritten\sto\sthe\swal\sfile\smore\sthan\sonce,\shave\seach\ssubsequent\scopy\soverwrite\sthe\soriginal\sframe.
-D 2016-01-09T16:39:29.213
+C If\sit\sis\sknown\sthat\schecksums\swill\sbe\srecalculated\son\stransaction\scommit,\sskip\scalculating\schecksums\swhen\sappending\sframes\sto\sthe\swal\sfile.\sWhen\srecalculating\schecksums,\srecalculate\sthem\sstarting\swith\sthe\sfirst\soverwritten\sframe\s-\snot\sthe\sfirst\sframe\sin\sthe\stransaction.
+D 2016-01-09T18:57:35.280
 F Makefile.in 7c8cc4c2f0179efc6fa9492141d1fb65f4807054
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e45d8b9b56dfa3f2cd860b2c28bd9d304513b042
@@ -409,7 +409,7 @@ F src/vdbesort.c a7ec02da4494c59dfd071126dd3726be5a11459d
 F src/vdbetrace.c 8befe829faff6d9e6f6e4dee5a7d3f85cc85f1a0
 F src/vtab.c 2a8b44aa372c33f6154208e7a7f6c44254549806
 F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
-F src/wal.c 88661c24c86d88e40560c0be5df39d902502a29a
+F src/wal.c 38ca0c41b510b636dfada0801fad8a99a982dfa6
 F src/wal.h 907943dfdef10b583e81906679a347e0ec6f1b1b
 F src/walker.c 2e14d17f592d176b6dc879c33fbdec4fbccaa2ba
 F src/where.c c6d3d2f6af57d574a7365ee2b225a5024f2a6bec
@@ -1407,10 +1407,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 52c166039831cc8423e2252019ef64a21b9d7c2a
-R 7ec438cc7bd0e0a87d33dca3e9bb783a
-T *branch * wal-overwrite-frames
-T *sym-wal-overwrite-frames *
-T -sym-trunk *
+P 5d113aef2c7d746e8eda88d4e36c04a39b0a11be
+R 68fe235d45cc69355e6b4ad2de6e1633
 U dan
-Z eba50524221f3f22640b286e867693f1
+Z 339ef03cecb2ba4cae1a0043b973d562
