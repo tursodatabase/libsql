@@ -728,9 +728,16 @@ do_test wal-11.9 {
   list [expr [file size test.db]/1024] [log_deleted test.db-wal]
 } {37 1}
 sqlite3_wal db test.db
-set nWal 39
-if {[permutation]!="mmap"} {set nWal 37}
-ifcapable !mmap {set nWal 37}
+
+# After adding the capability of WAL to overwrite prior uncommitted
+# frame in the WAL-file with revised content, the size of the WAL file
+# following cache-spill is smaller.
+#
+#set nWal 39
+#if {[permutation]!="mmap"} {set nWal 37}
+#ifcapable !mmap {set nWal 37}
+set nWal 34
+
 do_test wal-11.10 {
   execsql {
     PRAGMA cache_size = 10;

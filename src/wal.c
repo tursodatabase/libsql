@@ -2981,9 +2981,7 @@ int sqlite3WalFrames(
 #endif
 
   pLive = (WalIndexHdr*)walIndexHdr(pWal);
-  if( memcmp(&pWal->hdr, (void *)pLive, sizeof(WalIndexHdr))!=0
-   && (isCommit || sqlite3PagerSavepointCount(pList->pPager)==0)
-  ){
+  if( memcmp(&pWal->hdr, (void *)pLive, sizeof(WalIndexHdr))!=0 ){
     iFirst = pLive->mxFrame+1;
   }
 
