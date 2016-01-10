@@ -18,6 +18,7 @@ backup = []
 blob = []
 functions = []
 trace = []
+vtab = []
 
 [dependencies]
 time = "~0.1.0"
