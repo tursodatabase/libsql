@@ -1,5 +1,5 @@
-C Fix\sduplicate\stest\snumber\sin\s'waloverwrite'.
-D 2016-01-11T22:43:04.382
+C Performance\soptimization\sin\sthe\ssqlite3VdbeChangeP4()\sroutine\sof\sthe\ncode\sgenerator.
+D 2016-01-11T22:58:50.164
 F Makefile.in 7c8cc4c2f0179efc6fa9492141d1fb65f4807054
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e45d8b9b56dfa3f2cd860b2c28bd9d304513b042
@@ -402,7 +402,7 @@ F src/vdbe.c 6572d00eefeaa0b14b325fdf3a409920ec3fee82
 F src/vdbe.h efb7a8c1459e31f3ea4377824c6a7e4cb5068637
 F src/vdbeInt.h 42eefa4f9e7432b9968d321b44e48821ec13b189
 F src/vdbeapi.c 020681b943e77766b32ae1cddf86d7831b7374ca
-F src/vdbeaux.c 5d8c7c04e0f677033efb1292248a5f9056bbc34c
+F src/vdbeaux.c f2e6b4fae037db04323be8de7bcd266375746471
 F src/vdbeblob.c fdc4a81605ae7a35ae94a55bd768b66d6be16f15
 F src/vdbemem.c fdd1578e47bea61390d472de53c565781d81e045
 F src/vdbesort.c a7ec02da4494c59dfd071126dd3726be5a11459d
@@ -412,7 +412,7 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 92ca9e7923c337c497e4c9aa7edac800e269a1d8
 F src/wal.h 907943dfdef10b583e81906679a347e0ec6f1b1b
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
-F src/where.c c6d3d2f6af57d574a7365ee2b225a5024f2a6bec
+F src/where.c bb69654f841ae7af0a20cc6fb8f0ac57901c31be
 F src/whereInt.h 78b6b4de94db84aecbdc07fe3e38f648eb391e9a
 F src/wherecode.c dfbfe198e418b01f208b489e088edd230c91a4e7
 F src/whereexpr.c eebba8340c90de73b3d3bbe8c43b84559b8e6e2c
@@ -1407,7 +1407,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ecc98bef43c2fd07d64e4efddf340929a875ebac
-R bffff77db2267e7f44f05491f1b6c72d
-U mistachkin
-Z 70102cc7ed23bad282b82f2981075253
+P f5fb82686697e5fa1937323b1c1b35cf90ad0302
+R 5cc83036f9c9da1fadf85dd4abd0f133
+U drh
+Z a8c9a7d6a102c57d4a0aed7eac3aa290
