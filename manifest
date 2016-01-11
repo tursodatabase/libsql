@@ -1,5 +1,5 @@
-C Typo\sfix\sin\sthe\sprevious\scommit.
-D 2016-01-08T22:31:00.176
+C Slightly\ssmaller\sand\sfaster\sLIKE/GLOB\scomparison\simplementation.
+D 2016-01-11T03:48:18.694
 F Makefile.in 7c8cc4c2f0179efc6fa9492141d1fb65f4807054
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e45d8b9b56dfa3f2cd860b2c28bd9d304513b042
@@ -289,7 +289,7 @@ F src/delete.c 00af9f08a15ddc5cba5962d3d3e5bf2d67b2e7da
 F src/expr.c fe55c489362d1429c364e98c877514f4455f45a6
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c e18b3dff7d47c7bcac5ac4fc178a89b9fd322b44
-F src/func.c cf5e10af9125b245f1b962e8ba4d520a37818795
+F src/func.c ccaf46fa98f795673afbfab73dff7c18db88f3cd
 F src/global.c bd5a0af3f30b0c01be6db756c626cd3c33a3d260
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
 F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
@@ -1406,7 +1406,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 122c111e360761de8166e16ca151cb7260ee9bf8
-R 459dbc63e3c56e9f1bc36ac4dabf3593
+P 52c166039831cc8423e2252019ef64a21b9d7c2a
+R b3c3f3b7322fc6b535d7f3bde12a066b
 U drh
-Z 6b54e5c713520cd21bd942bd06142b38
+Z 4530f1ebb856a62f721161bd7860507a
