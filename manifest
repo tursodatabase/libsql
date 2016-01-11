@@ -1,5 +1,5 @@
-C Performance\soptimization\son\sthe\sColumn\sopcode.
-D 2016-01-11T18:05:00.482
+C Fix\sduplicate\stest\snumber\sin\s'waloverwrite'.
+D 2016-01-11T22:43:04.382
 F Makefile.in 7c8cc4c2f0179efc6fa9492141d1fb65f4807054
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e45d8b9b56dfa3f2cd860b2c28bd9d304513b042
@@ -1301,7 +1301,7 @@ F test/walfault.test 1f8389f7709877e9b4cc679033d71d6fe529056b
 F test/walhook.test ed00a40ba7255da22d6b66433ab61fab16a63483
 F test/walmode.test 4022fe03ae6e830583672caa101f046438a0473c
 F test/walnoshm.test 84ca10c544632a756467336b7c3b864d493ee496
-F test/waloverwrite.test 8702964967c2f28204f0b4f27af65da81999fc99
+F test/waloverwrite.test a0d2ae0783187374c1e6a9571e0916152977cb81
 F test/walpersist.test 8c6b7e3ec1ba91b5e4dc4e0921d6d3f87cd356a6
 F test/walro.test 34422d1d95aaff0388f0791ec20edb34e2a3ed57
 F test/walshared.test 0befc811dcf0b287efae21612304d15576e35417
@@ -1407,7 +1407,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2f8bd5fab8cc51d1f8932c3490fd24dbccf6ef31
-R 68508ce4367c0efdf38feafa98972c4a
-U drh
-Z e90441a49428aea3c83069305613bb8e
+P ecc98bef43c2fd07d64e4efddf340929a875ebac
+R bffff77db2267e7f44f05491f1b6c72d
+U mistachkin
+Z 70102cc7ed23bad282b82f2981075253
