@@ -1,5 +1,5 @@
-C Increase\sthe\sversion\snumber\sto\s3.11.0\sdue\sto\sthe\sWAL\soverwrite\senhancement.
-D 2016-01-11T12:52:55.912
+C Performance\soptimization\sin\ssqlite3WalkExpr().
+D 2016-01-11T14:19:14.339
 F Makefile.in 7c8cc4c2f0179efc6fa9492141d1fb65f4807054
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e45d8b9b56dfa3f2cd860b2c28bd9d304513b042
@@ -411,7 +411,7 @@ F src/vtab.c 2a8b44aa372c33f6154208e7a7f6c44254549806
 F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 92ca9e7923c337c497e4c9aa7edac800e269a1d8
 F src/wal.h 907943dfdef10b583e81906679a347e0ec6f1b1b
-F src/walker.c 2e14d17f592d176b6dc879c33fbdec4fbccaa2ba
+F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
 F src/where.c c6d3d2f6af57d574a7365ee2b225a5024f2a6bec
 F src/whereInt.h 78b6b4de94db84aecbdc07fe3e38f648eb391e9a
 F src/wherecode.c dfbfe198e418b01f208b489e088edd230c91a4e7
@@ -1407,7 +1407,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d493d4f1186c15da50558a13490cba0191e6f649
-R a92483f04fb0661e2d9ab2766c996317
+P 8e807bfaa197027d0cb73532baa96755ce71ea12
+R 177e5551beb5399a29df920e18a04961
 U drh
-Z d2a7370395d09ae9d2ddb7bbbb25edc7
+Z b8d12fcc18213355136dacd10d5cf924
