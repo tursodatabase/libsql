@@ -114,10 +114,10 @@ cmdlist ::= cmdlist ecmd.
 cmdlist ::= ecmd.
 ecmd ::= SEMI.
 ecmd ::= explain cmdx SEMI.
-explain ::= .           { sqlite3BeginParse(pParse, 0); }
+explain ::= .
 %ifndef SQLITE_OMIT_EXPLAIN
-explain ::= EXPLAIN.              { sqlite3BeginParse(pParse, 1); }
-explain ::= EXPLAIN QUERY PLAN.   { sqlite3BeginParse(pParse, 2); }
+explain ::= EXPLAIN.              { pParse->explain = 1; }
+explain ::= EXPLAIN QUERY PLAN.   { pParse->explain = 2; }
 %endif  SQLITE_OMIT_EXPLAIN
 cmdx ::= cmd.           { sqlite3FinishCoding(pParse); }
 

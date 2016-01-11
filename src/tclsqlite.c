@@ -3122,6 +3122,10 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       Tcl_AppendResult(interp,sqlite3_libversion(), (char*)0);
       return TCL_OK;
     }
+    if( strcmp(zArg,"-sourceid")==0 ){
+      Tcl_AppendResult(interp,sqlite3_sourceid(), (char*)0);
+      return TCL_OK;
+    }
     if( strcmp(zArg,"-has-codec")==0 ){
 #ifdef SQLITE_HAS_CODEC
       Tcl_AppendResult(interp,"1",(char*)0);

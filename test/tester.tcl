@@ -1034,7 +1034,13 @@ proc finalize_testing {} {
     output2 "[expr {$nErr-$nKnown}] new errors and $nKnown known errors\
          out of $nTest tests"
   } else {
-    output2 "$nErr errors out of $nTest tests"
+    set cpuinfo {}
+    if {[catch {exec hostname} hname]==0} {set cpuinfo [string trim $hname]}
+    append cpuinfo " $::tcl_platform(os)"
+    append cpuinfo " [expr {$::tcl_platform(pointerSize)*8}]-bit"
+    append cpuinfo " [string map {E -e} $::tcl_platform(byteOrder)]"
+    output2 "SQLite [sqlite3 -sourceid]"
+    output2 "$nErr errors out of $nTest tests on $cpuinfo"
   }
   if {$nErr>$nKnown} {
     output2 -nonewline "!Failures on these tests:"
