@@ -725,7 +725,7 @@ do_test wal-11.5 {
 do_test wal-11.6 {
   execsql COMMIT
   list [expr [file size test.db]/1024] [file size test.db-wal]
-} [list 3 [wal_file_size 41 1024]]
+} [list 3 [wal_file_size 40 1024]]
 do_test wal-11.7 {
   execsql { 
     SELECT count(*) FROM t1;
@@ -735,7 +735,7 @@ do_test wal-11.7 {
 do_test wal-11.8 {
   execsql { PRAGMA wal_checkpoint }
   list [expr [file size test.db]/1024] [file size test.db-wal]
-} [list 37 [wal_file_size 41 1024]]
+} [list 37 [wal_file_size 40 1024]]
 do_test wal-11.9 {
   ifcapable enable_persist_wal {
     file_control_persist_wal db 0
@@ -744,9 +744,16 @@ do_test wal-11.9 {
   list [expr [file size test.db]/1024] [log_deleted test.db-wal]
 } {37 1}
 sqlite3_wal db test.db
-set nWal 39
-if {[permutation]!="mmap"} {set nWal 37}
-ifcapable !mmap {set nWal 37}
+
+# After adding the capability of WAL to overwrite prior uncommitted
+# frame in the WAL-file with revised content, the size of the WAL file
+# following cache-spill is smaller.
+#
+#set nWal 39
+#if {[permutation]!="mmap"} {set nWal 37}
+#ifcapable !mmap {set nWal 37}
+set nWal 34
+
 ifcapable enable_persist_wal {
   file_control_persist_wal db 0
 }

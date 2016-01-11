@@ -865,8 +865,13 @@ int main(int argc, char **argv){
         return 0;
       }else
       if( strcmp(z,"limit-mem")==0 ){
+#if !defined(SQLITE_ENABLE_MEMSYS3) && !defined(SQLITE_ENABLE_MEMSYS5)
+        fatalError("the %s option requires -DSQLITE_ENABLE_MEMSYS5 or _MEMSYS3",
+                   argv[i]);
+#else
         if( i>=argc-1 ) fatalError("missing arguments on %s", argv[i]);
         nMem = integerValue(argv[++i]);
+#endif
       }else
       if( strcmp(z,"limit-vdbe")==0 ){
         vdbeLimitFlag = 1;
