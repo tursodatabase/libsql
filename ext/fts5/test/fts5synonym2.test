@@ -13,7 +13,7 @@
 #
 
 source [file join [file dirname [info script]] fts5_common.tcl]
-set testprefix fts5synonym
+set testprefix fts5synonym2
 
 # If SQLITE_ENABLE_FTS5 is defined, omit this file.
 ifcapable !fts5 {
@@ -47,7 +47,7 @@ proc tcl_tokenize {tflags text} {
   foreach {w iStart iEnd} [fts5_tokenize_split $text] {
     sqlite3_fts5_token $w $iStart $iEnd
     if {$tflags == "query"} {
-      foreach s $::SYNDICT($w)  { sqlite3_fts5_token -colo $s $iStart $iEnd }
+      foreach s $::syn($w)  { sqlite3_fts5_token -colo $s $iStart $iEnd }
     }
   }
 }
@@ -67,7 +67,6 @@ fts5_aux_test_functions db
 
 do_execsql_test 1.0 {
   CREATE VIRTUAL TABLE ss USING fts5(a, b, tokenize=tcl, detail=%DETAIL%);
-
   INSERT INTO ss VALUES('5 5 five seven 3 seven i', '2 1 5 0 two 1 i');
   INSERT INTO ss VALUES('six ix iii 7 i vii iii', 'one seven nine 4 9 1 vi');
   INSERT INTO ss VALUES('6 viii i five six zero seven', '5 v iii iv iv 3');
@@ -120,14 +119,30 @@ do_execsql_test 1.0 {
 }
 
 foreach {tn expr} {
-  1 "eight"
+  1.1 "one"   1.2 "two"   1.3 "three"   1.4 "four"
+  1.5 "v"     1.6 "vi"    1.7 "vii"     1.8 "viii"
+  1.9 "9"    1.10 "0"    1.11 "1"      1.12 "2"
+
+  2.1 "one OR two OR three OR four"
+  2.2 "(one AND two) OR (three AND four)"
+  2.3 "(one AND two) OR (three AND four) NOT five"
+  2.4 "(one AND two) NOT 6"
+
+  3.1 "b:one AND a:two"
+  3.2 "b:one OR a:two"
+  3.3 "a:one OR b:1 OR {a b} : i"
+
+  4.1 "NEAR(one two, 2)"
+  4.2 "NEAR(one two three, 2)"
+  4.3 "NEAR(eight nine, 1) OR NEAR(six seven, 1)"
 } {
   if {[fts5_expr_ok $expr ss]==0} {
     do_test 1.$tn.OMITTED { list } [list]
     continue
   }
 
-  set res [fts5_query_data $expr ss ASC ::SYNDICT]
+  set res [fts5_query_data $expr ss ASC ::syn]
+  breakpoint
   do_execsql_test 1.$tn.[llength $res].asc {
     SELECT rowid, fts5_test_poslist(ss), fts5_test_collist(ss) FROM ss($expr)
   } $res
