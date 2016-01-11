@@ -3056,8 +3056,8 @@ int sqlite3WalFrames(
     ** checksums must be recomputed when the transaction is committed.  */
     if( iFirst && (p->pDirty || isCommit==0) ){
       u32 iWrite = 0;
-      rc = sqlite3WalFindFrame(pWal, p->pgno, &iWrite);
-      if( rc ) return rc;
+      VVA_ONLY(rc =) sqlite3WalFindFrame(pWal, p->pgno, &iWrite);
+      assert( rc==SQLITE_OK || iWrite==0 );
       if( iWrite>=iFirst ){
         i64 iOff = walFrameOffset(iWrite, szPage) + WAL_FRAME_HDRSIZE;
         if( pWal->iReCksum==0 || iWrite<pWal->iReCksum ){
