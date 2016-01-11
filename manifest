@@ -1,10 +1,10 @@
-C Merge\senhancements\sfrom\strunk,\sand\sin\sparticular\sthe\sWAL\soverwrite\sfeature.
-D 2016-01-11T12:49:55.102
+C Import\sthe\sversion\snumber\schange\sto\s3.11.0.
+D 2016-01-11T13:03:34.322
 F Makefile.in 7b85d6e4ef59420a075d21525a58b69a97e554f1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e45d8b9b56dfa3f2cd860b2c28bd9d304513b042
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
-F VERSION 8b9d3ac6f1962f94e06ba05462422a544f9c4e36
+F VERSION 866588d1edf0ccb5b0d33896974338f97564f719
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
@@ -29,7 +29,7 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 42b71ad3fe21c9e88fa59e8458ca1a6bc72eb0c0
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure e511ceefe595e35051933a90c848ab4fa1d48add x
+F configure b4519bb54fff37e7cde9d03d8f2946f18d5d0086 x
 F configure.ac fcfc67b323d32daaa3e46cf7782d9465ed423a6d
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 334dbf6621b8fb8790297ec1abf3cfa4621709d1
@@ -1412,7 +1412,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 77c28c2b2dc601e67a88f55afff53b6cb9a24833 d493d4f1186c15da50558a13490cba0191e6f649
-R 95df731e0279ccd54195782f9a4668dd
+P 79125ec9d2cdb96d65ceeb19c2862665f9267d4e 8e807bfaa197027d0cb73532baa96755ce71ea12
+R 8a28642ac87c13bb3a942a0053e03587
 U drh
-Z 74e9e68d235160d66807f26cf881463c
+Z 1a554c8e6a29b796fc323cbce89b151a
