@@ -1,5 +1,5 @@
-C Improved\stestability.
-D 2016-01-11T00:52:32.218
+C Add\sa\stest\scase\sto\swaloverwrite.test\sto\scheck\sthat\ssavepoint\srollback\sdoes\snot\scause\sa\sproblem.
+D 2016-01-11T08:12:40.471
 F Makefile.in 7c8cc4c2f0179efc6fa9492141d1fb65f4807054
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e45d8b9b56dfa3f2cd860b2c28bd9d304513b042
@@ -1301,7 +1301,7 @@ F test/walfault.test 1f8389f7709877e9b4cc679033d71d6fe529056b
 F test/walhook.test ed00a40ba7255da22d6b66433ab61fab16a63483
 F test/walmode.test 4022fe03ae6e830583672caa101f046438a0473c
 F test/walnoshm.test 84ca10c544632a756467336b7c3b864d493ee496
-F test/waloverwrite.test 59476a2cf0638a057ced738b62dc719ed4e32e53
+F test/waloverwrite.test 8702964967c2f28204f0b4f27af65da81999fc99
 F test/walpersist.test 8c6b7e3ec1ba91b5e4dc4e0921d6d3f87cd356a6
 F test/walro.test 34422d1d95aaff0388f0791ec20edb34e2a3ed57
 F test/walshared.test 0befc811dcf0b287efae21612304d15576e35417
@@ -1407,7 +1407,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 99b31a6b491c1c51227f478d3713b020d37a17cf
-R d76e78fad37168874a95f2cf1af1f963
-U drh
-Z b9a236105d87275bc956baaa16673a98
+P e83d3a2a4e06665e8a056f63063bd6df03f063b9
+R 328bc4f1800dd81a2ef2edb5973d61be
+U dan
+Z 271430cf4c8b2d1a2970f55a9b9d9220
