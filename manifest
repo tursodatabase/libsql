@@ -1,5 +1,5 @@
-C Performance\soptimization\sin\ssqlite3WalkExpr().
-D 2016-01-11T14:19:14.339
+C Performance\soptimization\son\sthe\sColumn\sopcode.
+D 2016-01-11T18:05:00.482
 F Makefile.in 7c8cc4c2f0179efc6fa9492141d1fb65f4807054
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e45d8b9b56dfa3f2cd860b2c28bd9d304513b042
@@ -398,7 +398,7 @@ F src/update.c 17332f9fe818cbc0444c36a811800af8498af4c3
 F src/utf.c 32d7f82aa921322f3e1c956f4b58f019ebd2c6b3
 F src/util.c e802e8e311a0d6c48cd1b3e89db164f6f0248d70
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c 6ac8e5d808d48afc369316e147c191102f0584c1
+F src/vdbe.c 6572d00eefeaa0b14b325fdf3a409920ec3fee82
 F src/vdbe.h efb7a8c1459e31f3ea4377824c6a7e4cb5068637
 F src/vdbeInt.h 42eefa4f9e7432b9968d321b44e48821ec13b189
 F src/vdbeapi.c 020681b943e77766b32ae1cddf86d7831b7374ca
@@ -1407,7 +1407,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8e807bfaa197027d0cb73532baa96755ce71ea12
-R 177e5551beb5399a29df920e18a04961
+P 2f8bd5fab8cc51d1f8932c3490fd24dbccf6ef31
+R 68508ce4367c0efdf38feafa98972c4a
 U drh
-Z b8d12fcc18213355136dacd10d5cf924
+Z e90441a49428aea3c83069305613bb8e
