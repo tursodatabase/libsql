@@ -124,6 +124,9 @@ Select *sqlite3SelectNew(
   pNew->selFlags = selFlags;
   pNew->iLimit = 0;
   pNew->iOffset = 0;
+#if SELECTTRACE_ENABLED
+  pNew->zSelName[0] = 0;
+#endif
   pNew->addrOpenEphm[0] = -1;
   pNew->addrOpenEphm[1] = -1;
   pNew->nSelectRow = 0;
