@@ -151,6 +151,7 @@ struct Fts5Config {
   char *zContent;                 /* content table */ 
   char *zContentRowid;            /* "content_rowid=" option value */ 
   int bColumnsize;                /* "columnsize=" option value (dflt==1) */
+  int eDetail;                    /* FTS5_DETAIL_XXX value */
   char *zContentExprlist;
   Fts5Tokenizer *pTok;
   fts5_tokenizer *pTokApi;
@@ -179,6 +180,9 @@ struct Fts5Config {
 #define FTS5_CONTENT_NONE     1
 #define FTS5_CONTENT_EXTERNAL 2
 
+#define FTS5_DETAIL_FULL    0
+#define FTS5_DETAIL_NONE    1
+#define FTS5_DETAIL_COLUMNS 2
 
 
 
@@ -291,6 +295,13 @@ char *sqlite3Fts5Strndup(int *pRc, const char *pIn, int nIn);
 
 /* Character set tests (like isspace(), isalpha() etc.) */
 int sqlite3Fts5IsBareword(char t);
+
+
+/* Bucket of terms object used by the integrity-check in offsets=0 mode. */
+typedef struct Fts5Termset Fts5Termset;
+int sqlite3Fts5TermsetNew(Fts5Termset**);
+int sqlite3Fts5TermsetAdd(Fts5Termset*, int, const char*, int, int *pbPresent);
+void sqlite3Fts5TermsetFree(Fts5Termset*);
 
 /*
 ** End of interface to code in fts5_buffer.c.
@@ -436,6 +447,8 @@ int sqlite3Fts5IndexMerge(Fts5Index *p, int nMerge);
 
 int sqlite3Fts5IndexLoadConfig(Fts5Index *p);
 
+int sqlite3Fts5IterCollist(Fts5IndexIter*, const u8 **, int*);
+
 /*
 ** End of interface to code in fts5_index.c.
 **************************************************************************/
@@ -492,7 +505,7 @@ typedef struct Fts5Hash Fts5Hash;
 /*
 ** Create a hash table, free a hash table.
 */
-int sqlite3Fts5HashNew(Fts5Hash**, int *pnSize);
+int sqlite3Fts5HashNew(Fts5Config*, Fts5Hash**, int *pnSize);
 void sqlite3Fts5HashFree(Fts5Hash*);
 
 int sqlite3Fts5HashWrite(
@@ -629,7 +642,17 @@ int sqlite3Fts5ExprPhraseCount(Fts5Expr*);
 int sqlite3Fts5ExprPhraseSize(Fts5Expr*, int iPhrase);
 int sqlite3Fts5ExprPoslist(Fts5Expr*, int, const u8 **);
 
+typedef struct Fts5PoslistPopulator Fts5PoslistPopulator;
+Fts5PoslistPopulator *sqlite3Fts5ExprClearPoslists(Fts5Expr*, int);
+int sqlite3Fts5ExprPopulatePoslists(
+    Fts5Config*, Fts5Expr*, Fts5PoslistPopulator*, int, const char*, int
+);
+void sqlite3Fts5ExprCheckPoslists(Fts5Expr*, i64);
+void sqlite3Fts5ExprClearEof(Fts5Expr*);
+
 int sqlite3Fts5ExprClonePhrase(Fts5Config*, Fts5Expr*, int, Fts5Expr**);
+
+int sqlite3Fts5ExprPhraseCollist(Fts5Expr *, int, const u8 **, int *);
 
 /*******************************************
 ** The fts5_expr.c API above this point is used by the other hand-written

@@ -22,8 +22,10 @@ ifcapable !fts5 {
   return
 }
 
+foreach_detail_mode $testprefix {
+
 do_execsql_test 1.0 {
-  CREATE VIRTUAL TABLE t1 USING fts5(a, b);
+  CREATE VIRTUAL TABLE t1 USING fts5(a, b, detail=%DETAIL%);
   INSERT INTO t1 VALUES('hello', 'world');
   INSERT INTO t1 VALUES('one two', 'three four');
   INSERT INTO t1(rowid, a, b) VALUES(45, 'forty', 'five');
@@ -57,7 +59,7 @@ do_execsql_test 1.6 {
 
 reset_db
 do_execsql_test 2.1 {
-  CREATE VIRTUAL TABLE t1 USING fts5(x);
+  CREATE VIRTUAL TABLE t1 USING fts5(x, detail=%DETAIL%);
   INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
   INSERT INTO t1 VALUES('one');
   INSERT INTO t1 VALUES('two');
@@ -159,7 +161,7 @@ foreach {tn expr res} {
 #
 
 do_execsql_test 4.0 {
-  CREATE VIRTUAL TABLE s1 USING fts5(x);
+  CREATE VIRTUAL TABLE s1 USING fts5(x, detail=%DETAIL%);
 }
 foreach {tn doc} [list \
   1 [string repeat {a x } 1500000]       \
@@ -172,8 +174,14 @@ do_execsql_test 4.3 {
   SELECT rowid FROM s1 WHERE s1 MATCH 'x'
 } {1 2}
 
-do_execsql_test 4.4 {
-  SELECT rowid FROM s1 WHERE s1 MATCH '"a x"'
+if {[detail_is_full]} {
+  do_execsql_test 4.4 {
+    SELECT rowid FROM s1 WHERE s1 MATCH '"a x"'
+  } {1 2}
+}
+
+do_execsql_test 4.5 {
+  SELECT rowid FROM s1 WHERE s1 MATCH 'a x'
 } {1 2}
 
 #-------------------------------------------------------------------------
@@ -182,7 +190,7 @@ do_execsql_test 4.4 {
 # (L-2) is larger than it.
 #
 do_execsql_test 5.0 {
-  CREATE VIRTUAL TABLE s2 USING fts5(x);
+  CREATE VIRTUAL TABLE s2 USING fts5(x, detail=%DETAIL%);
   INSERT INTO s2(s2, rank) VALUES('pgsz', 32);
   INSERT INTO s2(s2, rank) VALUES('automerge', 0);
 }
@@ -222,7 +230,7 @@ do_test 5.2 {
 do_test 5.3 {
   execsql {
     DROP TABLE s2;
-    CREATE VIRTUAL TABLE s2 USING fts5(x);
+    CREATE VIRTUAL TABLE s2 USING fts5(x, detail=%DETAIL%);
     INSERT INTO s2(s2, rank) VALUES('pgsz', 32);
     INSERT INTO s2(s2, rank) VALUES('automerge', 0);
   }
@@ -241,7 +249,7 @@ do_test 5.4 {
 #-------------------------------------------------------------------------
 #
 do_execsql_test 6.0 {
-  CREATE VIRTUAL TABLE s3 USING fts5(x);
+  CREATE VIRTUAL TABLE s3 USING fts5(x, detail=%DETAIL%);
   BEGIN;
     INSERT INTO s3 VALUES('a b c');
     INSERT INTO s3 VALUES('A B C');
@@ -276,13 +284,13 @@ do_test 6.4 {
 #-------------------------------------------------------------------------
 #
 set doc [string repeat "a b c " 500]
-breakpoint
 do_execsql_test 7.0 {
-  CREATE VIRTUAL TABLE x1 USING fts5(x);
+  CREATE VIRTUAL TABLE x1 USING fts5(x, detail=%DETAIL%);
   INSERT INTO x1(x1, rank) VALUES('pgsz', 32);
   INSERT INTO x1 VALUES($doc);
 }
 
+} ;# foreach_detail_mode...
 
 
 finish_test
