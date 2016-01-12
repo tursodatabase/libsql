@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\suse\sof\san\suninitialized\svariable\sfollowing\ssystem\serrors\nin\sthe\smulti-threaded\ssorter.
-D 2016-01-12T14:10:05.866
+C Add\sthe\s".vfslist"\scommand\sto\sthe\scommand-line\sshell.
+D 2016-01-12T19:37:20.761
 F Makefile.in 7c8cc4c2f0179efc6fa9492141d1fb65f4807054
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e45d8b9b56dfa3f2cd860b2c28bd9d304513b042
@@ -334,7 +334,7 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c a83b41104e6ff69855d03cd0aaa09e93927ec39f
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 372234e3554a7917544242563216af760d7d4219
-F src/shell.c ed71dc7679e6f087a3f1ea3f9dae4b0fae7209c3
+F src/shell.c dcd7a83645ef2a58ee9c6d0ea4714d877d7835c4
 F src/sqlite.h.in 7d87d71b9a4689c51fa092f48f16590ff71558e3
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
@@ -1407,7 +1407,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5fc0a4c1f353c4c06fcbc4bce8bbe1897ef49eee
-R 92b34da2a8b41bb1db044333a3c02410
+P 4bb2c1df105c2d21f5c4c7ef656ff1d6e15f78bc
+R 74300fef6ffb708c0011be0eb0839258
 U drh
-Z e6a278c031968913cb3469aed14f2f8a
+Z 0c47ae55d5f3f2500ab8561940e3da5a
