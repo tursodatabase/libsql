@@ -1,5 +1,5 @@
-C Make\ssure\sall\sbytes\sof\sthe\sWAL\sfile\sare\sinitialized\seven\sif\sthe\schecksums\sare\nnot\sbeing\scomputed\suntil\scommit\sdue\sto\sWAL\soverwrite.
-D 2016-01-12T02:28:19.320
+C Remove\san\sunused\sfield\sfrom\sthe\sMemPage\sobject.
+D 2016-01-12T04:08:54.028
 F Makefile.in 7c8cc4c2f0179efc6fa9492141d1fb65f4807054
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e45d8b9b56dfa3f2cd860b2c28bd9d304513b042
@@ -276,9 +276,9 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 2869a76c03eb393ee795416e2387005553df72bc
 F src/bitvec.c 1a78d450a17c5016710eec900bedfc5729bf9bdf
 F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
-F src/btree.c 6bd9b3d778a023e2238a81cd0b87b00085220e0e
+F src/btree.c 5d93e2477acb99d50a8b045f2e26a0be3d7751fe
 F src/btree.h 68ef301795e00cdf1d3ab93abc44a43b7fe771e0
-F src/btreeInt.h b5f2651b41808f038dee9282c5dc0232ce6532d3
+F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
 F src/build.c 9d497ff4bf3c82cecb520436e0e9963785627583
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
@@ -1407,7 +1407,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fc62851667d9120f98a2641c87bbc5a2485482b2
-R 5117171a7e356e05f85dd4c6a03b017d
+P 1f44a9bdc1577aed088d9b91882527228015dcd3
+R dcacd681598087d316aa7da66fd3e6ff
 U drh
-Z 900d53369fb7ca05847989ae4b11e011
+Z a106a14306903405633952b5120c8bc2
