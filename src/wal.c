@@ -708,6 +708,8 @@ static void walEncodeFrame(
 
     sqlite3Put4byte(&aFrame[16], aCksum[0]);
     sqlite3Put4byte(&aFrame[20], aCksum[1]);
+  }else{
+    memset(&aFrame[8], 0, 16);
   }
 }
 
