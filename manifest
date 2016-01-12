@@ -1,5 +1,5 @@
-C Performance\soptimization\sin\sthe\ssqlite3VdbeChangeP4()\sroutine\sof\sthe\ncode\sgenerator.
-D 2016-01-11T22:58:50.164
+C Various\s#ifdef\senhancements\sfor\simproved\sVxWorks\ssupport.
+D 2016-01-12T00:37:55.072
 F Makefile.in 7c8cc4c2f0179efc6fa9492141d1fb65f4807054
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e45d8b9b56dfa3f2cd860b2c28bd9d304513b042
@@ -317,7 +317,7 @@ F src/os.c 8fd25588eeba74068d41102d26810e216999b6c8
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h abdb9a191a367793268fe553d25bab894e986a0e
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c 82986e1e75782b54da7822dca42d36d974fc2948
+F src/os_unix.c b509b49b40a269e7b75ab511b6e92b2dc9444359
 F src/os_win.c 386fba30419e8458b13209781c2af5590eab2811
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 58d2593612acb6b542de6715b4af397ea1fa0a35
@@ -408,7 +408,7 @@ F src/vdbemem.c fdd1578e47bea61390d472de53c565781d81e045
 F src/vdbesort.c a7ec02da4494c59dfd071126dd3726be5a11459d
 F src/vdbetrace.c 8befe829faff6d9e6f6e4dee5a7d3f85cc85f1a0
 F src/vtab.c 2a8b44aa372c33f6154208e7a7f6c44254549806
-F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
+F src/vxworks.h 974e7d9a98f602d6310d563e1dc4e08f9fc48e47
 F src/wal.c 92ca9e7923c337c497e4c9aa7edac800e269a1d8
 F src/wal.h 907943dfdef10b583e81906679a347e0ec6f1b1b
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
@@ -1407,7 +1407,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f5fb82686697e5fa1937323b1c1b35cf90ad0302
-R 5cc83036f9c9da1fadf85dd4abd0f133
+P 28bd8d5fc541464b69886b7e886939035b42a869
+R a0f920051028c27b520313db4d779ce4
 U drh
-Z a8c9a7d6a102c57d4a0aed7eac3aa290
+Z 6a1495f4c4d6026f44345482bd14549e
