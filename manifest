@@ -1,5 +1,5 @@
-C Merge\strunk\swith\sthis\sbranch.
-D 2016-01-11T18:30:34.152
+C Improve\sperformance\sof\sfts5\slow\slevel\siterators.
+D 2016-01-12T19:28:51.507
 F Makefile.in 7c8cc4c2f0179efc6fa9492141d1fb65f4807054
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e45d8b9b56dfa3f2cd860b2c28bd9d304513b042
@@ -103,7 +103,7 @@ F ext/fts5/fts5_buffer.c 87204c8b3b8bc62b27376eab09b74d6d5acc41f1
 F ext/fts5/fts5_config.c b0ed7b0ddd785fb4d4e6f9037d357f8aa95918e6
 F ext/fts5/fts5_expr.c 6eba2220747ea1b20a358fb3b34b2ab78323e285
 F ext/fts5/fts5_hash.c 1b113977296cf4212c6ec667d5e3f2bd18036955
-F ext/fts5/fts5_index.c 04fe098ffab66d9424ba4e7c0b88ce7c98748cb1
+F ext/fts5/fts5_index.c 5ab044a67919e2c9f42f0288a39778136154511e
 F ext/fts5/fts5_main.c 03bd44e4bd0ba16213ca9259ad5df1d4d743fd7e
 F ext/fts5/fts5_storage.c f7b2d330dd7b29a9f4da09f6d85879ca8c41b2e8
 F ext/fts5/fts5_tcl.c 18e9382d8cdad4c05b49559c68494968b9b4a4fb
@@ -118,7 +118,7 @@ F ext/fts5/test/fts5_common.tcl 393882afb225a21edf033043bbf936951e9198c1
 F ext/fts5/test/fts5aa.test 7e814df4a0e6c22a6fe2d84f210fdc0b5068a084
 F ext/fts5/test/fts5ab.test 30325a89453280160106be411bba3acf138e6d1b
 F ext/fts5/test/fts5ac.test d5073ca7bd2d9fe8aab0c82c6c75a7e4b0d70ced
-F ext/fts5/test/fts5ad.test 049f7511a79c155d2d8dfd2ddcfeb640c50ad0dc
+F ext/fts5/test/fts5ad.test 0ddaa5b692ff220100ee396228838f4331399eaa
 F ext/fts5/test/fts5ae.test 612dcb51f4069226791ff14c17dbfb3138c56f20
 F ext/fts5/test/fts5af.test be858a96b1f5de66ba6d64f0021bd8b2408e126c
 F ext/fts5/test/fts5ag.test 27180de76c03036be75ee80b93d8c5f540014071
@@ -1412,7 +1412,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2c0b93553ebb00a70c611eb8dac021877933f088 ecc98bef43c2fd07d64e4efddf340929a875ebac
-R fac95fe8d4249da246cad11b14ac9297
+P a73d245f2e523a57163bc93d9fb6a74c4cdf21e7
+R 1ce1920656146c835e2df297e09b2c78
 U dan
-Z 0acdab0d7c32bec7117a883df7ebebf7
+Z 25b8dbc71e1c6971b424b6f8a3c7183e

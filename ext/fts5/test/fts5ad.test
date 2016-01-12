@@ -24,8 +24,6 @@ ifcapable !fts5 {
 
 foreach_detail_mode $testprefix {
 
-if {[detail_is_none]==0} continue
-
 do_execsql_test 1.0 {
   CREATE VIRTUAL TABLE yy USING fts5(x, y, detail=%DETAIL%);
   INSERT INTO yy VALUES('Changes the result to be', 'the list of all matching');
