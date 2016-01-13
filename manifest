@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_FCNTL_JOURNAL_POINTER\sfile\scontrol.
-D 2016-01-13T18:12:44.833
+C Add\sdocumentation\sfor\snew\sAPI\sfunctions\sto\sthe\scomments\sin\sfts5.h.
+D 2016-01-13T18:25:36.824
 F Makefile.in 7c8cc4c2f0179efc6fa9492141d1fb65f4807054
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e45d8b9b56dfa3f2cd860b2c28bd9d304513b042
@@ -96,7 +96,7 @@ F ext/fts3/unicode/UnicodeData.txt cd07314edb62d49fde34debdaf92fa2aa69011e7
 F ext/fts3/unicode/mkunicode.tcl 95cf7ec186e48d4985e433ff8a1c89090a774252
 F ext/fts3/unicode/parseunicode.tcl da577d1384810fb4e2b209bf3313074353193e95
 F ext/fts5/extract_api_docs.tcl a36e54ec777172ddd3f9a88daf593b00848368e0
-F ext/fts5/fts5.h 88fec577a2148f34df75930dc2b0c45b0bad72c3
+F ext/fts5/fts5.h ff9c2782e8ed890b0de2f697a8d63971939e70c7
 F ext/fts5/fts5Int.h 3918045ebceb1d600c9c1c1b460489ff0c788e96
 F ext/fts5/fts5_aux.c 2dafc3aee0c70d643140c77d8d70daffa51a9e9e
 F ext/fts5/fts5_buffer.c 87204c8b3b8bc62b27376eab09b74d6d5acc41f1
@@ -1412,8 +1412,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P cdbb0947f9ce18d6d7e29ffab5ea6a2ee5365fbb 807c5aee2e5e5c01eb33688a199755c345c3664e
-R 9f69ee1beb680eb7753159da9e58457d
-T +closed 807c5aee2e5e5c01eb33688a199755c345c3664e
-U drh
-Z 158e43f82215274b7eb57ca9b5089c6b
+P ad3daa5427672d2d236939ad3285b765f4601801
+R f25d53bc8dd0e47144b4d953a312dda2
+U dan
+Z 9aba901b3a90a935129ccd9da6e0e571
