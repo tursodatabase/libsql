@@ -3407,4 +3407,10 @@ int sqlite3WalFramesize(Wal *pWal){
 }
 #endif
 
+/* Return the sqlite3_file object for the WAL file
+*/
+sqlite3_file *sqlite3WalFile(Wal *pWal){
+  return pWal->pWalFd;
+}
+
 #endif /* #ifndef SQLITE_OMIT_WAL */
