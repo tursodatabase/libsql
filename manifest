@@ -1,5 +1,5 @@
-C Add\sthe\s"detail"\soption\sto\sfts5.\sUsed\sto\sreduce\sthe\samount\sof\sinformation\sstored\sin\san\sfts5\sindex.
-D 2016-01-12T19:45:01.185
+C When\sthe\s[https://www.sqlite.org/queryplanner.html#partialsort|block\ssorting\soptimization]\nis\sused\sin\sa\sscalar\ssubquery,\sbe\ssure\sto\sexit\sthe\sloop\sas\ssoon\sas\sthe\sfirst\nvalid\soutput\srow\sis\sreceived.\s\sFix\sfor\sticket\s[cb3aa0641d9a4].
+D 2016-01-13T17:50:10.253
 F Makefile.in 7c8cc4c2f0179efc6fa9492141d1fb65f4807054
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e45d8b9b56dfa3f2cd860b2c28bd9d304513b042
@@ -338,7 +338,7 @@ F src/printf.c af589a27b7d40f6f4f704e9eea99f02f18ad6d32
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c a83b41104e6ff69855d03cd0aaa09e93927ec39f
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c 372234e3554a7917544242563216af760d7d4219
+F src/select.c 5b0f2aa9f73ec7b65d1711d485471854d5bad23c
 F src/shell.c dcd7a83645ef2a58ee9c6d0ea4714d877d7835c4
 F src/sqlite.h.in 7d87d71b9a4689c51fa092f48f16590ff71558e3
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
@@ -908,7 +908,7 @@ F test/numcast.test 5d126f7f581432e86a90d1e35cac625164aec4a1
 F test/numindex1.test 20a5450d4b056e48cd5db30e659f13347a099823
 F test/offset1.test f06b83657bcf26f9ce805e67450e189e282143b2
 F test/openv2.test 0d3040974bf402e19b7df4b783e447289d7ab394
-F test/orderby1.test 870e150450437d3980badbde3d0166b81d9e33f6
+F test/orderby1.test 4d22a7c75f6a83fc1f188cc7bb5192285fdf2552
 F test/orderby2.test bc11009f7cd99d96b1b11e57b199b00633eb5b04
 F test/orderby3.test 8619d06a3debdcd80a27c0fdea5c40b468854b99
 F test/orderby4.test 4d39bfbaaa3ae64d026ca2ff166353d2edca4ba4
@@ -1412,8 +1412,8 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5727562b75edf25102cd72607c420d245379c96d bc5118f40a11f64ffb4e1c086277fa80b9764745
-R 32b6994fdd76448ebd10466a9fb05893
-T +closed bc5118f40a11f64ffb4e1c086277fa80b9764745
-U dan
-Z d6aecf5b74614ca62cb2aeb2f23739db
+P a220e85fe535af5ef2da6ef5fb76abe5a96b5abf
+Q -2a74129a21f9745f1363f844807e2d10201a3f40
+R 413681dc8f5cf3f3175ce236e8b6c97f
+U drh
+Z fd0638b6043efd9e3f580e2c8b2c7054
