@@ -1,5 +1,5 @@
-C Add\sdocumentation\sfor\snew\sAPI\sfunctions\sto\sthe\scomments\sin\sfts5.h.
-D 2016-01-13T18:25:36.824
+C Look\sfor\spthread_mutexattr_init()\sinstead\sof\spthread_create()\sin\sautoconf\nscripts,\sto\swork\saround\sissues\swith\sASAN.
+D 2016-01-13T21:23:48.485
 F Makefile.in 7c8cc4c2f0179efc6fa9492141d1fb65f4807054
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e45d8b9b56dfa3f2cd860b2c28bd9d304513b042
@@ -13,7 +13,7 @@ F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am 089e5ecdb5761e64ea1013ded02feb4d8b29927d
 F autoconf/README 14458f1046c118efa721aadec5f227e876d3cd38
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
-F autoconf/configure.ac 82c628c68f0f204d57343dc345b6dbd1789fb1bd
+F autoconf/configure.ac 2f41055b10873cfe443a08185343e38c47e2f9f0
 F autoconf/tea/Makefile.in b438a7020446c8a8156e8d97c8914a04833da6fd
 F autoconf/tea/README 3e9a3c060f29a44344ab50aec506f4db903fb873
 F autoconf/tea/aclocal.m4 52c47aac44ce0ddb1f918b6993e8beb8eee88f43
@@ -29,8 +29,8 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 42b71ad3fe21c9e88fa59e8458ca1a6bc72eb0c0
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure b4519bb54fff37e7cde9d03d8f2946f18d5d0086 x
-F configure.ac fcfc67b323d32daaa3e46cf7782d9465ed423a6d
+F configure d57d3b9d5c66549e54a4a2960de9813142d30a5a x
+F configure.ac c59513d560b3107995c73b9cc1e55bfd086c4764
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 334dbf6621b8fb8790297ec1abf3cfa4621709d1
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
@@ -1412,7 +1412,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ad3daa5427672d2d236939ad3285b765f4601801
-R f25d53bc8dd0e47144b4d953a312dda2
-U dan
-Z 9aba901b3a90a935129ccd9da6e0e571
+P 14d296fa7b43b4999a1fd070cf030f83fe1b94c3
+R 2b677537f1e9b18e2947e5670c77e061
+U drh
+Z d3d675fa0c765d73d93e44db2a68c69e
