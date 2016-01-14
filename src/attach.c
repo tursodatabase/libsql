@@ -388,8 +388,7 @@ void sqlite3Detach(Parse *pParse, Expr *pDbname){
     SQLITE_UTF8,      /* funcFlags */
     0,                /* pUserData */
     0,                /* pNext */
-    detachFunc,       /* xFunc */
-    0,                /* xStep */
+    detachFunc,       /* xSFunc */
     0,                /* xFinalize */
     "sqlite_detach",  /* zName */
     0,                /* pHash */
@@ -409,8 +408,7 @@ void sqlite3Attach(Parse *pParse, Expr *p, Expr *pDbname, Expr *pKey){
     SQLITE_UTF8,      /* funcFlags */
     0,                /* pUserData */
     0,                /* pNext */
-    attachFunc,       /* xFunc */
-    0,                /* xStep */
+    attachFunc,       /* xSFunc */
     0,                /* xFinalize */
     "sqlite_attach",  /* zName */
     0,                /* pHash */

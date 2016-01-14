@@ -779,7 +779,7 @@ static SQLITE_NOINLINE void *createAggContext(sqlite3_context *p, int nByte){
 ** same context that was returned on prior calls.
 */
 void *sqlite3_aggregate_context(sqlite3_context *p, int nByte){
-  assert( p && p->pFunc && p->pFunc->xStep );
+  assert( p && p->pFunc && p->pFunc->xFinalize );
   assert( sqlite3_mutex_held(p->pOut->db->mutex) );
   testcase( nByte<0 );
   if( (p->pMem->flags & MEM_Agg)==0 ){
@@ -870,7 +870,7 @@ failed:
 ** context.
 */
 int sqlite3_aggregate_count(sqlite3_context *p){
-  assert( p && p->pMem && p->pFunc && p->pFunc->xStep );
+  assert( p && p->pMem && p->pFunc && p->pFunc->xFinalize );
   return p->pMem->n;
 }
 #endif

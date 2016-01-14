@@ -1363,9 +1363,8 @@ struct FuncDef {
   u16 funcFlags;       /* Some combination of SQLITE_FUNC_* */
   void *pUserData;     /* User data parameter */
   FuncDef *pNext;      /* Next function with same name */
-  void (*xFunc)(sqlite3_context*,int,sqlite3_value**); /* Regular function */
-  void (*xStep)(sqlite3_context*,int,sqlite3_value**); /* Aggregate step */
-  void (*xFinalize)(sqlite3_context*);                /* Aggregate finalizer */
+  void (*xSFunc)(sqlite3_context*,int,sqlite3_value**); /* func or agg-step */
+  void (*xFinalize)(sqlite3_context*);                  /* Agg finalizer */
   char *zName;         /* SQL name of the function. */
   FuncDef *pHash;      /* Next with a different name but the same hash */
   FuncDestructor *pDestructor;   /* Reference counted destructor function */
@@ -1448,28 +1447,28 @@ struct FuncDestructor {
 */
 #define FUNCTION(zName, nArg, iArg, bNC, xFunc) \
   {nArg, SQLITE_FUNC_CONSTANT|SQLITE_UTF8|(bNC*SQLITE_FUNC_NEEDCOLL), \
-   SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, 0, #zName, 0, 0}
+   SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, #zName, 0, 0}
 #define VFUNCTION(zName, nArg, iArg, bNC, xFunc) \
   {nArg, SQLITE_UTF8|(bNC*SQLITE_FUNC_NEEDCOLL), \
-   SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, 0, #zName, 0, 0}
+   SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, #zName, 0, 0}
 #define DFUNCTION(zName, nArg, iArg, bNC, xFunc) \
   {nArg, SQLITE_FUNC_SLOCHNG|SQLITE_UTF8|(bNC*SQLITE_FUNC_NEEDCOLL), \
-   SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, 0, #zName, 0, 0}
+   SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, #zName, 0, 0}
 #define FUNCTION2(zName, nArg, iArg, bNC, xFunc, extraFlags) \
   {nArg,SQLITE_FUNC_CONSTANT|SQLITE_UTF8|(bNC*SQLITE_FUNC_NEEDCOLL)|extraFlags,\
-   SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, 0, #zName, 0, 0}
+   SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, #zName, 0, 0}
 #define STR_FUNCTION(zName, nArg, pArg, bNC, xFunc) \
   {nArg, SQLITE_FUNC_SLOCHNG|SQLITE_UTF8|(bNC*SQLITE_FUNC_NEEDCOLL), \
-   pArg, 0, xFunc, 0, 0, #zName, 0, 0}
+   pArg, 0, xFunc, 0, #zName, 0, 0}
 #define LIKEFUNC(zName, nArg, arg, flags) \
   {nArg, SQLITE_FUNC_CONSTANT|SQLITE_UTF8|flags, \
-   (void *)arg, 0, likeFunc, 0, 0, #zName, 0, 0}
+   (void *)arg, 0, likeFunc, 0, #zName, 0, 0}
 #define AGGREGATE(zName, nArg, arg, nc, xStep, xFinal) \
   {nArg, SQLITE_UTF8|(nc*SQLITE_FUNC_NEEDCOLL), \
-   SQLITE_INT_TO_PTR(arg), 0, 0, xStep,xFinal,#zName,0,0}
+   SQLITE_INT_TO_PTR(arg), 0, xStep,xFinal,#zName,0,0}
 #define AGGREGATE2(zName, nArg, arg, nc, xStep, xFinal, extraFlags) \
   {nArg, SQLITE_UTF8|(nc*SQLITE_FUNC_NEEDCOLL)|extraFlags, \
-   SQLITE_INT_TO_PTR(arg), 0, 0, xStep,xFinal,#zName,0,0}
+   SQLITE_INT_TO_PTR(arg), 0, xStep,xFinal,#zName,0,0}
 
 /*
 ** All current savepoints are stored in a linked list starting at

@@ -2896,7 +2896,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       zId = pExpr->u.zToken;
       nId = sqlite3Strlen30(zId);
       pDef = sqlite3FindFunction(db, zId, nId, nFarg, enc, 0);
-      if( pDef==0 || pDef->xFunc==0 ){
+      if( pDef==0 || pDef->xFinalize!=0 ){
         sqlite3ErrorMsg(pParse, "unknown function: %.*s()", nId, zId);
         break;
       }

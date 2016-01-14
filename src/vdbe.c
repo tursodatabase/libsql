@@ -1662,8 +1662,8 @@ case OP_Function: {
   MemSetTypeFlag(pCtx->pOut, MEM_Null);
   pCtx->fErrorOrAux = 0;
   db->lastRowid = lastRowid;
-  (*pCtx->pFunc->xFunc)(pCtx, pCtx->argc, pCtx->argv); /* IMP: R-24505-23230 */
-  lastRowid = db->lastRowid;  /* Remember rowid changes made by xFunc */
+  (*pCtx->pFunc->xSFunc)(pCtx, pCtx->argc, pCtx->argv);/* IMP: R-24505-23230 */
+  lastRowid = db->lastRowid;  /* Remember rowid changes made by xSFunc */
 
   /* If the function returned an error, throw an exception */
   if( pCtx->fErrorOrAux ){
@@ -5903,7 +5903,7 @@ case OP_AggStep: {
   pCtx->pOut = &t;
   pCtx->fErrorOrAux = 0;
   pCtx->skipFlag = 0;
-  (pCtx->pFunc->xStep)(pCtx,pCtx->argc,pCtx->argv); /* IMP: R-24505-23230 */
+  (pCtx->pFunc->xSFunc)(pCtx,pCtx->argc,pCtx->argv); /* IMP: R-24505-23230 */
   if( pCtx->fErrorOrAux ){
     if( pCtx->isError ){
       sqlite3VdbeError(p, "%s", sqlite3_value_text(&t));

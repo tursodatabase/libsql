@@ -665,7 +665,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           wrong_num_args = 1;
         }
       }else{
-        is_agg = pDef->xFunc==0;
+        is_agg = pDef->xFinalize!=0;
         if( pDef->funcFlags & SQLITE_FUNC_UNLIKELY ){
           ExprSetProperty(pExpr, EP_Unlikely|EP_Skip);
           if( n==2 ){

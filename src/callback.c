@@ -243,8 +243,8 @@ CollSeq *sqlite3FindCollSeq(
 ** 5: UTF16 byte order conversion required - argument count matches exactly
 ** 6: Perfect match:  encoding and argument count match exactly.
 **
-** If nArg==(-2) then any function with a non-null xStep or xFunc is
-** a perfect match and any function with both xStep and xFunc NULL is
+** If nArg==(-2) then any function with a non-null xSFunc is
+** a perfect match and any function with xSFunc NULL is
 ** a non-match.
 */
 #define FUNC_PERFECT_MATCH 6  /* The score for a perfect match */
@@ -256,7 +256,7 @@ static int matchQuality(
   int match;
 
   /* nArg of -2 is a special case */
-  if( nArg==(-2) ) return (p->xFunc==0 && p->xStep==0) ? 0 : FUNC_PERFECT_MATCH;
+  if( nArg==(-2) ) return (p->xSFunc==0) ? 0 : FUNC_PERFECT_MATCH;
 
   /* Wrong number of arguments means "no match" */
   if( p->nArg!=nArg && p->nArg>=0 ) return 0;
@@ -334,7 +334,7 @@ void sqlite3FuncDefInsert(
 ** no matching function previously existed.
 **
 ** If nArg is -2, then the first valid function found is returned.  A
-** function is valid if either xFunc or xStep is non-zero.  The nArg==(-2)
+** function is valid if xSFunc is non-zero.  The nArg==(-2)
 ** case is used to see if zName is a valid function name for some number
 ** of arguments.  If nArg is -2, then createFlag must be 0.
 **
@@ -411,7 +411,7 @@ FuncDef *sqlite3FindFunction(
     sqlite3FuncDefInsert(&db->aFunc, pBest);
   }
 
-  if( pBest && (pBest->xStep || pBest->xFunc || createFlag) ){
+  if( pBest && (pBest->xSFunc || createFlag) ){
     return pBest;
   }
   return 0;

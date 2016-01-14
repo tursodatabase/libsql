@@ -478,8 +478,7 @@ static const FuncDef statInitFuncdef = {
   SQLITE_UTF8,     /* funcFlags */
   0,               /* pUserData */
   0,               /* pNext */
-  statInit,        /* xFunc */
-  0,               /* xStep */
+  statInit,        /* xSFunc */
   0,               /* xFinalize */
   "stat_init",     /* zName */
   0,               /* pHash */
@@ -779,8 +778,7 @@ static const FuncDef statPushFuncdef = {
   SQLITE_UTF8,     /* funcFlags */
   0,               /* pUserData */
   0,               /* pNext */
-  statPush,        /* xFunc */
-  0,               /* xStep */
+  statPush,        /* xSFunc */
   0,               /* xFinalize */
   "stat_push",     /* zName */
   0,               /* pHash */
@@ -926,8 +924,7 @@ static const FuncDef statGetFuncdef = {
   SQLITE_UTF8,     /* funcFlags */
   0,               /* pUserData */
   0,               /* pNext */
-  statGet,         /* xFunc */
-  0,               /* xStep */
+  statGet,         /* xSFunc */
   0,               /* xFinalize */
   "stat_get",      /* zName */
   0,               /* pHash */
