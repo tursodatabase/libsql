@@ -154,7 +154,7 @@ foreach {tn xtra} {
     execsql { SELECT sum(length(y)) FROM t1 } db2
   } [expr 20*798]
 
-  do_test 1.$tn.9 {
+  do_test 1.$tn.10 {
     execsql { PRAGMA integrity_check } db2
   } ok
   db2 close

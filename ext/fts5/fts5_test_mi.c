@@ -134,7 +134,7 @@ static int fts5MatchinfoXCb(
   int iPrev = -1;
 
   for(pApi->xPhraseFirst(pFts, 0, &iter, &iCol, &iOff); 
-      iOff>=0; 
+      iCol>=0; 
       pApi->xPhraseNext(pFts, &iter, &iCol, &iOff)
   ){
     aOut[iCol*3+1]++;
@@ -211,18 +211,31 @@ static int fts5MatchinfoLocalCb(
   int rc = SQLITE_OK;
 
   switch( f ){
-    case 'b': 
+    case 'b': {
+      int iPhrase;
+      int nInt = ((p->nCol + 31) / 32) * p->nPhrase;
+      for(i=0; i<nInt; i++) aOut[i] = 0;
+
+      for(iPhrase=0; iPhrase<p->nPhrase; iPhrase++){
+        Fts5PhraseIter iter;
+        int iCol;
+        for(pApi->xPhraseFirstColumn(pFts, iPhrase, &iter, &iCol);
+            iCol>=0; 
+            pApi->xPhraseNextColumn(pFts, &iter, &iCol)
+        ){
+          aOut[iPhrase * ((p->nCol+31)/32) + iCol/32] |= ((u32)1 << iCol%32);
+        }
+      }
+
+      break;
+    }
+
     case 'x':
     case 'y': {
       int nMul = (f=='x' ? 3 : 1);
       int iPhrase;
 
-      if( f=='b' ){
-        int nInt = ((p->nCol + 31) / 32) * p->nPhrase;
-        for(i=0; i<nInt; i++) aOut[i] = 0;
-      }else{
-        for(i=0; i<(p->nCol*p->nPhrase); i++) aOut[i*nMul] = 0;
-      }
+      for(i=0; i<(p->nCol*p->nPhrase); i++) aOut[i*nMul] = 0;
 
       for(iPhrase=0; iPhrase<p->nPhrase; iPhrase++){
         Fts5PhraseIter iter;

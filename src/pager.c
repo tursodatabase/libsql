@@ -5653,7 +5653,7 @@ int sqlite3PagerBegin(Pager *pPager, int exFlag, int subjInMemory){
         if( rc!=SQLITE_OK ){
           return rc;
         }
-        sqlite3WalExclusiveMode(pPager->pWal, 1);
+        (void)sqlite3WalExclusiveMode(pPager->pWal, 1);
       }
 
       /* Grab the write lock on the log file. If successful, upgrade to
@@ -6718,6 +6718,7 @@ sqlite3_file *sqlite3PagerFile(Pager *pPager){
   return pPager->fd;
 }
 
+#if !defined(SQLITE_OMIT_WAL)
 /*
  ** Return the file handle for the WAL journal file associated
  ** with the pager.  This might return NULL if the file has
@@ -6725,6 +6726,20 @@ sqlite3_file *sqlite3PagerFile(Pager *pPager){
  */
 sqlite3_file *sqlite3PagerWalFile(Pager *pPager){
   return ((pPager->pWal) ? sqlite3WalFile(pPager->pWal) : (NULL));
+}
+#endif
+
+
+/*
+** Return the file handle for the journal file (if it exists).
+** This will be either the rollback journal or the WAL file.
+*/
+sqlite3_file *sqlite3PagerJrnlFile(Pager *pPager){
+#if SQLITE_OMIT_WAL
+  return pPager->jfd;
+#else
+  return pPager->pWal ? sqlite3WalFile(pPager->pWal) : pPager->jfd;
+#endif
 }
 
 /*

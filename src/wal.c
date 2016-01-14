@@ -708,6 +708,8 @@ static void walEncodeFrame(
 
     sqlite3Put4byte(&aFrame[16], aCksum[0]);
     sqlite3Put4byte(&aFrame[20], aCksum[1]);
+  }else{
+    memset(&aFrame[8], 0, 16);
   }
 }
 
@@ -2624,16 +2626,6 @@ Pgno sqlite3WalDbsize(Wal *pWal){
 }
 
 /* 
- ** Return the file for this Wal journal (or zero, if unknown).
- */
-sqlite3_file *sqlite3WalFile(Wal *pWal){
-  if( pWal ){
-    return pWal->pWalFd;
-  }
-  return 0;
-}
-
-/* 
 ** This function starts a write transaction on the WAL.
 **
 ** A read transaction must have already been started by a prior call
@@ -3449,5 +3441,11 @@ int sqlite3WalFramesize(Wal *pWal){
   return (pWal ? pWal->szPage : 0);
 }
 #endif
+
+/* Return the sqlite3_file object for the WAL file
+*/
+sqlite3_file *sqlite3WalFile(Wal *pWal){
+  return pWal->pWalFd;
+}
 
 #endif /* #ifndef SQLITE_OMIT_WAL */

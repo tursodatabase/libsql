@@ -14,7 +14,6 @@
 */
 
 
-
 #include "fts5Int.h"
 
 #define FTS5_DEFAULT_PAGE_SIZE   4050
@@ -195,6 +194,33 @@ void sqlite3Fts5Dequote(char *z){
   }
 }
 
+
+struct Fts5Enum {
+  const char *zName;
+  int eVal;
+};
+typedef struct Fts5Enum Fts5Enum;
+
+static int fts5ConfigSetEnum(
+  const Fts5Enum *aEnum, 
+  const char *zEnum, 
+  int *peVal
+){
+  int nEnum = strlen(zEnum);
+  int i;
+  int iVal = -1;
+
+  for(i=0; aEnum[i].zName; i++){
+    if( sqlite3_strnicmp(aEnum[i].zName, zEnum, nEnum)==0 ){
+      if( iVal>=0 ) return SQLITE_ERROR;
+      iVal = aEnum[i].eVal;
+    }
+  }
+
+  *peVal = iVal;
+  return iVal<0 ? SQLITE_ERROR : SQLITE_OK;
+}
+
 /*
 ** Parse a "special" CREATE VIRTUAL TABLE directive and update
 ** configuration object pConfig as appropriate.
@@ -341,6 +367,20 @@ static int fts5ConfigParseSpecial(
       rc = SQLITE_ERROR;
     }else{
       pConfig->bColumnsize = (zArg[0]=='1');
+    }
+    return rc;
+  }
+
+  if( sqlite3_strnicmp("detail", zCmd, nCmd)==0 ){
+    const Fts5Enum aDetail[] = {
+      { "none", FTS5_DETAIL_NONE },
+      { "full", FTS5_DETAIL_FULL },
+      { "columns", FTS5_DETAIL_COLUMNS },
+      { 0, 0 }
+    };
+
+    if( (rc = fts5ConfigSetEnum(aDetail, zArg, &pConfig->eDetail)) ){
+      *pzErr = sqlite3_mprintf("malformed detail=... directive");
     }
     return rc;
   }
@@ -500,6 +540,7 @@ int sqlite3Fts5ConfigParse(
   pRet->zDb = sqlite3Fts5Strndup(&rc, azArg[1], -1);
   pRet->zName = sqlite3Fts5Strndup(&rc, azArg[2], -1);
   pRet->bColumnsize = 1;
+  pRet->eDetail = FTS5_DETAIL_FULL;
 #ifdef SQLITE_DEBUG
   pRet->bPrefixIndex = 1;
 #endif

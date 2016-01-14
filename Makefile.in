@@ -179,7 +179,7 @@ LIBOBJS0 = alter.lo analyze.lo attach.lo auth.lo \
          mutex.lo mutex_noop.lo mutex_unix.lo mutex_w32.lo \
          notify.lo opcodes.lo os.lo os_unix.lo os_win.lo \
          pager.lo parse.lo pcache.lo pcache1.lo pragma.lo prepare.lo printf.lo \
-         random.lo resolve.lo rowset.lo rtree.lo select.lo status.lo \
+         random.lo resolve.lo rowset.lo rtree.lo select.lo sqlite3rbu.lo status.lo \
          table.lo threads.lo tokenize.lo treeview.lo trigger.lo \
          update.lo util.lo vacuum.lo \
          vdbe.lo vdbeapi.lo vdbeaux.lo vdbeblob.lo vdbemem.lo vdbesort.lo \
@@ -1040,6 +1040,9 @@ fts5.c: $(FTS5_SRC)
 fts5.lo:	fts5.c $(HDR) $(EXTHDR)
 	$(LTCOMPILE) -DSQLITE_CORE -c fts5.c
 
+sqlite3rbu.lo:	$(TOP)/ext/rbu/sqlite3rbu.c $(HDR) $(EXTHDR)
+	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/rbu/sqlite3rbu.c
+
 
 # Rules to build the 'testfixture' application.
 #
@@ -1142,6 +1145,12 @@ wordcount$(TEXE):	$(TOP)/test/wordcount.c sqlite3.c
 
 speedtest1$(TEXE):	$(TOP)/test/speedtest1.c sqlite3.lo
 	$(LTLINK) -o $@ $(TOP)/test/speedtest1.c sqlite3.lo $(TLIBS)
+
+rbu$(EXE): $(TOP)/ext/rbu/rbu.c $(TOP)/ext/rbu/sqlite3rbu.c sqlite3.lo 
+	$(LTLINK) -I. -o $@ $(TOP)/ext/rbu/rbu.c sqlite3.lo $(TLIBS)
+
+loadfts$(EXE): $(TOP)/tool/loadfts.c libsqlite3.la
+	$(LTLINK) $(TOP)/tool/loadfts.c libsqlite3.la -o $@ $(TLIBS)
 
 # This target will fail if the SQLite amalgamation contains any exported
 # symbols that do not begin with "sqlite3_". It is run as part of the

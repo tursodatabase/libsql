@@ -305,8 +305,7 @@ int sqlite3VdbeAddOp4Dup8(
 */
 void sqlite3VdbeAddParseSchemaOp(Vdbe *p, int iDb, char *zWhere){
   int j;
-  int addr = sqlite3VdbeAddOp3(p, OP_ParseSchema, iDb, 0, 0);
-  sqlite3VdbeChangeP4(p, addr, zWhere, P4_DYNAMIC);
+  sqlite3VdbeAddOp4(p, OP_ParseSchema, iDb, 0, 0, zWhere, P4_DYNAMIC);
   for(j=0; j<p->db->nDb; j++) sqlite3VdbeUsesBtree(p, j);
 }
 
@@ -805,7 +804,7 @@ static void vdbeFreeOpArray(sqlite3 *db, Op *aOp, int nOp){
   if( aOp ){
     Op *pOp;
     for(pOp=aOp; pOp<&aOp[nOp]; pOp++){
-      freeP4(db, pOp->p4type, pOp->p4.p);
+      if( pOp->p4type ) freeP4(db, pOp->p4type, pOp->p4.p);
 #ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
       sqlite3DbFree(db, pOp->zComment);
 #endif     
@@ -867,16 +866,34 @@ int sqlite3VdbeDeletePriorOpcode(Vdbe *p, u8 op){
 **
 ** If addr<0 then change P4 on the most recently inserted instruction.
 */
+static void SQLITE_NOINLINE vdbeChangeP4Full(
+  Vdbe *p,
+  Op *pOp,
+  const char *zP4,
+  int n
+){
+  if( pOp->p4type ){
+    freeP4(p->db, pOp->p4type, pOp->p4.p);
+    pOp->p4type = 0;
+    pOp->p4.p = 0;
+  }
+  if( n<0 ){
+    sqlite3VdbeChangeP4(p, (int)(pOp - p->aOp), zP4, n);
+  }else{
+    if( n==0 ) n = sqlite3Strlen30(zP4);
+    pOp->p4.z = sqlite3DbStrNDup(p->db, zP4, n);
+    pOp->p4type = P4_DYNAMIC;
+  }
+}
 void sqlite3VdbeChangeP4(Vdbe *p, int addr, const char *zP4, int n){
   Op *pOp;
   sqlite3 *db;
   assert( p!=0 );
   db = p->db;
   assert( p->magic==VDBE_MAGIC_INIT );
-  if( p->aOp==0 || db->mallocFailed ){
-    if( n!=P4_VTAB ){
-      freeP4(db, n, (void*)*(char**)&zP4);
-    }
+  assert( p->aOp!=0 || db->mallocFailed );
+  if( db->mallocFailed ){
+    if( n!=P4_VTAB ) freeP4(db, n, (void*)*(char**)&zP4);
     return;
   }
   assert( p->nOp>0 );
@@ -885,43 +902,20 @@ void sqlite3VdbeChangeP4(Vdbe *p, int addr, const char *zP4, int n){
     addr = p->nOp - 1;
   }
   pOp = &p->aOp[addr];
-  assert( pOp->p4type==P4_NOTUSED
-       || pOp->p4type==P4_INT32
-       || pOp->p4type==P4_KEYINFO );
-  freeP4(db, pOp->p4type, pOp->p4.p);
-  pOp->p4.p = 0;
+  if( n>=0 || pOp->p4type ){
+    vdbeChangeP4Full(p, pOp, zP4, n);
+    return;
+  }
   if( n==P4_INT32 ){
     /* Note: this cast is safe, because the origin data point was an int
     ** that was cast to a (const char *). */
     pOp->p4.i = SQLITE_PTR_TO_INT(zP4);
     pOp->p4type = P4_INT32;
-  }else if( zP4==0 ){
-    pOp->p4.p = 0;
-    pOp->p4type = P4_NOTUSED;
-  }else if( n==P4_KEYINFO ){
-    pOp->p4.p = (void*)zP4;
-    pOp->p4type = P4_KEYINFO;
-#ifdef SQLITE_ENABLE_CURSOR_HINTS
-  }else if( n==P4_EXPR ){
-    /* Responsibility for deleting the Expr tree is handed over to the
-    ** VDBE by this operation.  The caller should have already invoked
-    ** sqlite3ExprDup() or whatever other routine is needed to make a 
-    ** private copy of the tree. */
-    pOp->p4.pExpr = (Expr*)zP4;
-    pOp->p4type = P4_EXPR;
-#endif
-  }else if( n==P4_VTAB ){
-    pOp->p4.p = (void*)zP4;
-    pOp->p4type = P4_VTAB;
-    sqlite3VtabLock((VTable *)zP4);
-    assert( ((VTable *)zP4)->db==p->db );
-  }else if( n<0 ){
+  }else if( zP4!=0 ){
+    assert( n<0 );
     pOp->p4.p = (void*)zP4;
     pOp->p4type = (signed char)n;
-  }else{
-    if( n==0 ) n = sqlite3Strlen30(zP4);
-    pOp->p4.z = sqlite3DbStrNDup(p->db, zP4, n);
-    pOp->p4type = P4_DYNAMIC;
+    if( n==P4_VTAB ) sqlite3VtabLock((VTable*)zP4);
   }
 }
 

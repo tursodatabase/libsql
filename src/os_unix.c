@@ -718,7 +718,11 @@ static struct unix_syscall {
   { "rmdir",        (sqlite3_syscall_ptr)rmdir,           0 },
 #define osRmdir     ((int(*)(const char*))aSyscall[19].pCurrent)
 
+#if defined(HAVE_FCHOWN)
   { "fchown",       (sqlite3_syscall_ptr)fchown,          0 },
+#else
+  { "fchown",       (sqlite3_syscall_ptr)0,               0 },
+#endif
 #define osFchown    ((int(*)(int,uid_t,gid_t))aSyscall[20].pCurrent)
 
   { "geteuid",      (sqlite3_syscall_ptr)geteuid,         0 },
@@ -752,7 +756,11 @@ static struct unix_syscall {
 #endif
 #define osGetpagesize ((int(*)(void))aSyscall[25].pCurrent)
 
+#if defined(HAVE_READLINK)
   { "readlink",     (sqlite3_syscall_ptr)readlink,        0 },
+#else
+  { "readlink",     (sqlite3_syscall_ptr)0,               0 },
+#endif
 #define osReadlink ((ssize_t(*)(const char*,char*,size_t))aSyscall[26].pCurrent)
 
 
@@ -765,10 +773,10 @@ static struct unix_syscall {
 ** we are not running as root.
 */
 static int robustFchown(int fd, uid_t uid, gid_t gid){
-#if OS_VXWORKS
-  return 0;
-#else
+#if defined(HAVE_FCHOWN)
   return osGeteuid() ? 0 : osFchown(fd,uid,gid);
+#else
+  return 0;
 #endif
 }
 
@@ -7154,6 +7162,7 @@ static int unixFullPathname(
   assert( pVfs->mxPathname==MAX_PATHNAME );
   UNUSED_PARAMETER(pVfs);
 
+#if defined(HAVE_READLINK)
   /* Attempt to resolve the path as if it were a symbolic link. If it is
   ** a symbolic link, the resolved path is stored in buffer zOut[]. Or, if
   ** the identified file is not a symbolic link or does not exist, then
@@ -7169,6 +7178,7 @@ static int unixFullPathname(
   }else{
     zOut[nByte] = '\0';
   }
+#endif
 
   /* If buffer zOut[] now contains an absolute path there is nothing more
   ** to do. If it contains a relative path, do the following:
