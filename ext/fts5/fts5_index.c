@@ -4856,7 +4856,7 @@ int sqlite3Fts5IndexClose(Fts5Index *p){
 ** size. Return the number of bytes in the nChar character prefix of the
 ** buffer, or 0 if there are less than nChar characters in total.
 */
-static int sqlite3Fts5IndexCharlenToBytelen(
+int sqlite3Fts5IndexCharlenToBytelen(
   const char *p, 
   int nByte, 
   int nChar
@@ -6092,4 +6092,3 @@ int sqlite3Fts5IndexInit(sqlite3 *db){
   }
   return rc;
 }
-

@@ -1,5 +1,5 @@
-C Fix\smore\scompiler\swarnings\sin\sFTS5.
-D 2016-01-14T14:29:57.029
+C Yet\sanother\schange\sto\sFTS5\strying\sto\sget\sit\sto\smerge\ssuccessfully\sinto\ssessions.
+D 2016-01-14T14:33:36.733
 F Makefile.in cfa1ac03c4b414992fd53f24d978b45b0c21de55
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1dc36cfd3c047c9685e539257e158485f16ef035
@@ -103,7 +103,7 @@ F ext/fts5/fts5_buffer.c 87204c8b3b8bc62b27376eab09b74d6d5acc41f1
 F ext/fts5/fts5_config.c 9c243d04ac0ca997d2d2e2252891f2a10fbd7217
 F ext/fts5/fts5_expr.c 510db45967ca359f64f2ba2c707ab57d740cad56
 F ext/fts5/fts5_hash.c 1b113977296cf4212c6ec667d5e3f2bd18036955
-F ext/fts5/fts5_index.c 140617e34ccc61c2af5d313ecea6bca17591d185
+F ext/fts5/fts5_index.c aa798d3a839847fd351b3d0f49520f190e57c2e3
 F ext/fts5/fts5_main.c 488ceecdb4400ecc6a3d3b2247cedef153955388
 F ext/fts5/fts5_storage.c f7b2d330dd7b29a9f4da09f6d85879ca8c41b2e8
 F ext/fts5/fts5_tcl.c 18e9382d8cdad4c05b49559c68494968b9b4a4fb
@@ -1412,7 +1412,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d17bc2c92f4d086280e49a3cc72993be7fee2da7
-R 3a1d2f76daaee8302a3c8f4c76ae20d1
+P f791fc7009d68941c60d7bf953bab19d86112133
+R 52083946c40dd4f44744cbc0b447540f
 U drh
-Z 3fe0c32146b166753bb44c9b01cd24a5
+Z 9b36451b3b0b6d81cfd6f7c438e3b3aa
