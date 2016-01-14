@@ -1,5 +1,5 @@
-C Minor\sadjustments\sto\sthe\sMSVC\smakefile.
-D 2016-01-14T18:01:16.348
+C Simplification\sto\sthe\sISO8610\sparser\sin\sthe\simnplementation\sof\sdate/time\nfunctions.
+D 2016-01-14T19:32:46.777
 F Makefile.in cfa1ac03c4b414992fd53f24d978b45b0c21de55
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 2d8b2ad5a03315940bcb9e64145ab70850d66b4d
@@ -288,7 +288,7 @@ F src/build.c 9d497ff4bf3c82cecb520436e0e9963785627583
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
 F src/ctime.c 60e135af364d777a9ab41c97e5e89cd224da6198
-F src/date.c e4655393bb403fa310eef66cc4583d75d4d7fd93
+F src/date.c 997651e3ee6c2818fbf7fcdb7156cef9eb3ece20
 F src/dbstat.c ffd63fc8ba7541476ced189b95e95d7f2bc63f78
 F src/delete.c 00af9f08a15ddc5cba5962d3d3e5bf2d67b2e7da
 F src/expr.c fe55c489362d1429c364e98c877514f4455f45a6
@@ -1412,7 +1412,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8dedff3b9ac3e6bf9c131fee19f7d26dc1ebd61f
-R ed5fce327e310c7f92985b6ea8c3a0f4
-U mistachkin
-Z a106ef292e4f8d6ed0328b1e83183a0f
+P e2cba1bbfdcb24e35b2275e29071d8a4e4943417
+R 79fbdde13a17c7cb82657d609276debb
+U drh
+Z 2e5da468d29690cad1fa7e36751b6984
