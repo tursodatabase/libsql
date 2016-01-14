@@ -340,6 +340,29 @@ int sqlite3Fts5IndexClose(Fts5Index *p);
 */
 
 /*
+** Return a simple checksum value based on the arguments.
+*/
+u64 sqlite3Fts5IndexEntryCksum(
+  i64 iRowid, 
+  int iCol, 
+  int iPos, 
+  int iIdx,
+  const char *pTerm,
+  int nTerm
+);
+
+/*
+** Argument p points to a buffer containing utf-8 text that is n bytes in 
+** size. Return the number of bytes in the nChar character prefix of the
+** buffer, or 0 if there are less than nChar characters in total.
+*/
+int sqlite3Fts5IndexCharlenToBytelen(
+  const char *p, 
+  int nByte, 
+  int nChar
+);
+
+/*
 ** Open a new iterator to iterate though all rowids that match the 
 ** specified token or token prefix.
 */
