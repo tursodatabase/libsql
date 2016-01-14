@@ -1,8 +1,8 @@
-C Simplification\sto\sthe\sISO8610\sparser\sin\sthe\simnplementation\sof\sdate/time\nfunctions.
-D 2016-01-14T19:32:46.777
-F Makefile.in cfa1ac03c4b414992fd53f24d978b45b0c21de55
+C Add\sa\stest\sto\sverify\sthat\sthe\sfts3\sand\sfts5\s"unicode61"\stokenizers\sare\sbyte\sfor\sbyte\scompatible.
+D 2016-01-14T20:05:59.293
+F Makefile.in a476545d0c8626224d0bacac85c6e2967474af81
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 2d8b2ad5a03315940bcb9e64145ab70850d66b4d
+F Makefile.msc 01e855f958932d0d3ed62ec675fc63e2cef61fcb
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION 866588d1edf0ccb5b0d33896974338f97564f719
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -106,8 +106,9 @@ F ext/fts5/fts5_hash.c 1b113977296cf4212c6ec667d5e3f2bd18036955
 F ext/fts5/fts5_index.c aa798d3a839847fd351b3d0f49520f190e57c2e3
 F ext/fts5/fts5_main.c 488ceecdb4400ecc6a3d3b2247cedef153955388
 F ext/fts5/fts5_storage.c f7b2d330dd7b29a9f4da09f6d85879ca8c41b2e8
-F ext/fts5/fts5_tcl.c 18e9382d8cdad4c05b49559c68494968b9b4a4fb
+F ext/fts5/fts5_tcl.c bcacc05dec0446e7b1a44d5d906057e677bd7ea4
 F ext/fts5/fts5_test_mi.c 1ec66ffdf7632077fbd773b7a6df5153272ec070
+F ext/fts5/fts5_test_tok.c db08af63673c3a7d39f053b36fd6e065017706be
 F ext/fts5/fts5_tokenize.c 504984ac6993323247221eebe3cd55bead01b5f8
 F ext/fts5/fts5_unicode2.c 78273fbd588d1d9bd0a7e4e0ccc9207348bae33c
 F ext/fts5/fts5_varint.c 3f86ce09cab152e3d45490d7586b7ed2e40c13f1
@@ -174,6 +175,8 @@ F ext/fts5/test/fts5simple.test 2bc6451cbe887a9215f5b14ae307c70d850344c9
 F ext/fts5/test/fts5simple2.test 843f1f7fe439ff32bf74f4fd6430632f9636ef3a
 F ext/fts5/test/fts5synonym.test cf88c0a56d5ea9591e3939ef1f6e294f7f2d0671
 F ext/fts5/test/fts5synonym2.test d2d9099d9d105b55ea03fd52d61ae2847d534129
+F ext/fts5/test/fts5tok1.test beb894c6f3468f10a574302f69ebe4436b0287c7
+F ext/fts5/test/fts5tok2.test dcacb32d4a2a3f0dd3215d4a3987f78ae4be21a2
 F ext/fts5/test/fts5tokenizer.test ea4df698b35cc427ebf2ba22829d0e28386d8c89
 F ext/fts5/test/fts5unicode.test fbef8d8a3b4b88470536cc57604a82ca52e51841
 F ext/fts5/test/fts5unicode2.test c1dd890ba32b7609adba78e420faa847abe43b59
@@ -262,7 +265,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 20e46c09ac8732a74a9e2d55e8d90257d97eb844
+F main.mk 55f0940264e55540773214ee1f2dbba0bf359957
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -1412,7 +1415,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e2cba1bbfdcb24e35b2275e29071d8a4e4943417
-R 79fbdde13a17c7cb82657d609276debb
-U drh
-Z 2e5da468d29690cad1fa7e36751b6984
+P b9159f42a517a95ae52464c96431708c00b7bb36
+R e09ac1cbb3100668573769c5e2d7569a
+U dan
+Z 6d6590c289b1d7ff01c17cc7ff7964e6

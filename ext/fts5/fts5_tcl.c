@@ -23,7 +23,8 @@
 #include <assert.h>
 
 extern int sqlite3_fts5_may_be_corrupt;
-extern int sqlite3Fts5TestRegisterMatchinfo(sqlite3 *);
+extern int sqlite3Fts5TestRegisterMatchinfo(sqlite3*);
+extern int sqlite3Fts5TestRegisterTok(sqlite3*, fts5_api*);
 
 /*************************************************************************
 ** This is a copy of the first part of the SqliteDb structure in 
@@ -1078,6 +1079,32 @@ static int f5tRegisterMatchinfo(
   return TCL_OK;
 }
 
+static int f5tRegisterTok(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int rc;
+  sqlite3 *db = 0;
+  fts5_api *pApi = 0;
+
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB");
+    return TCL_ERROR;
+  }
+  if( f5tDbAndApi(interp, objv[1], &db, &pApi) ){
+    return TCL_ERROR;
+  }
+
+  rc = sqlite3Fts5TestRegisterTok(db, pApi);
+  if( rc!=SQLITE_OK ){
+    Tcl_SetResult(interp, (char*)sqlite3ErrName(rc), TCL_VOLATILE);
+    return TCL_ERROR;
+  }
+  return TCL_OK;
+}
+
 /*
 ** Entry point.
 */
@@ -1093,7 +1120,8 @@ int Fts5tcl_Init(Tcl_Interp *interp){
     { "sqlite3_fts5_create_function",    f5tCreateFunction, 0 },
     { "sqlite3_fts5_may_be_corrupt",     f5tMayBeCorrupt, 0 },
     { "sqlite3_fts5_token_hash",         f5tTokenHash, 0 },
-    { "sqlite3_fts5_register_matchinfo", f5tRegisterMatchinfo, 0 }
+    { "sqlite3_fts5_register_matchinfo", f5tRegisterMatchinfo, 0 },
+    { "sqlite3_fts5_register_fts5tokenize", f5tRegisterTok, 0 }
   };
   int i;
   F5tTokenizerContext *pContext;
