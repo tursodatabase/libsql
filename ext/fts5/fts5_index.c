@@ -2001,7 +2001,6 @@ static void fts5SegIterNext(
 ** the doclist.
 */
 static void fts5SegIterReverse(Fts5Index *p, Fts5SegIter *pIter){
-  int eDetail = p->pConfig->eDetail;
   Fts5DlidxIter *pDlidx = pIter->pDlidx;
   Fts5Data *pLast = 0;
   int pgnoLast = 0;
@@ -2016,11 +2015,6 @@ static void fts5SegIterReverse(Fts5Index *p, Fts5SegIter *pIter){
     /* Currently, Fts5SegIter.iLeafOffset points to the first byte of
     ** position-list content for the current rowid. Back it up so that it
     ** points to the start of the position-list size field. */
-#if 0
-    if( eDetail!=FTS5_DETAIL_NONE ){
-      pIter->iLeafOffset -= sqlite3Fts5GetVarintLen(pIter->nPos*2+pIter->bDel);
-    }
-#else
     int iPoslist;
     if( pIter->iTermLeafPgno==pIter->iLeafPgno ){
       iPoslist = pIter->iTermLeafOffset;
@@ -2028,11 +2022,10 @@ static void fts5SegIterReverse(Fts5Index *p, Fts5SegIter *pIter){
       iPoslist = 4;
     }
     fts5IndexSkipVarint(pLeaf->p, iPoslist);
-    assert( eDetail==FTS5_DETAIL_NONE || iPoslist==(
+    assert( p->pConfig->eDetail==FTS5_DETAIL_NONE || iPoslist==(
         pIter->iLeafOffset - sqlite3Fts5GetVarintLen(pIter->nPos*2+pIter->bDel)
     ));
     pIter->iLeafOffset = iPoslist;
-#endif
 
     /* If this condition is true then the largest rowid for the current
     ** term may not be stored on the current page. So search forward to
