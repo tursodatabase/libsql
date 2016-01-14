@@ -1,8 +1,8 @@
-C Fix\sharmless\scompiler\swarnings\sin\ssqldiff.c.
-D 2016-01-14T12:23:16.611
-F Makefile.in 7c8cc4c2f0179efc6fa9492141d1fb65f4807054
+C Fix\sharmless\scompiler\swarnings\sin\sRBU\sand\sadd\sRBU\sto\sthe\sautoconf\sand\swindows\nmakefiles.
+D 2016-01-14T13:22:24.150
+F Makefile.in cfa1ac03c4b414992fd53f24d978b45b0c21de55
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc e45d8b9b56dfa3f2cd860b2c28bd9d304513b042
+F Makefile.msc 1dc36cfd3c047c9685e539257e158485f16ef035
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION 866588d1edf0ccb5b0d33896974338f97564f719
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -208,7 +208,7 @@ F ext/misc/totype.c 4a167594e791abeed95e0a8db028822b5e8fe512
 F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
-F ext/rbu/rbu.c e572f7ddef2ef3a73d03e7b44d36448e466772b7
+F ext/rbu/rbu.c ba3983dceffa0938532e79142f391737513de023
 F ext/rbu/rbu1.test 57601977588603e82700a43c279bd55282ffa482
 F ext/rbu/rbu10.test 046b0980041d30700464a800bbf6733ed2df515d
 F ext/rbu/rbu11.test 9bc68c2d3dbeb1720153626e3bd0466dcc017702
@@ -230,7 +230,7 @@ F ext/rbu/rbufault.test cc0be8d5d392d98b0c2d6a51be377ea989250a89
 F ext/rbu/rbufault2.test 9a7f19edd6ea35c4c9f807d8a3db0a03a5670c06
 F ext/rbu/rbufts.test 828cd689da825f0a7b7c53ffc1f6f7fdb6fa5bda
 F ext/rbu/rbusave.test 0f43b6686084f426ddd040b878426452fd2c2f48
-F ext/rbu/sqlite3rbu.c ea47de615e911b3a69a8e7fb3be3866298403a25
+F ext/rbu/sqlite3rbu.c bea954197524631f2691ec272e8a42df8cad01cc
 F ext/rbu/sqlite3rbu.h 0bdeb3be211aaba7d85445fa36f4701a25a3dbde
 F ext/rbu/test_rbu.c 4a4cdcef4ef9379fc2a21f008805c80b27bcf573
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
@@ -1412,7 +1412,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d55a557bc70460c46a67ae5acd9f8a8356a580c2
-R 34645f4f80a93ccb4b9986535bb6f0b0
+P 74808a79ea3194f6cc00084b9dccc380846a6051
+R e29cff8691de1217f1757056bcfdb892
 U drh
-Z 0c8aaf707fea483adf01b6983fc067a8
+Z 1e6a858f101158e4efde76213bfd70e5
