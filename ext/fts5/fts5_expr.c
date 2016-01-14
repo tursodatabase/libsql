@@ -2428,7 +2428,7 @@ static int fts5ExprCheckPoslists(Fts5ExprNode *pNode, i64 iRowid){
             return 0;
           }
         }
-        return 1;
+        break;
       }
 
       case FTS5_OR: {
@@ -2453,10 +2453,11 @@ static int fts5ExprCheckPoslists(Fts5ExprNode *pNode, i64 iRowid){
           fts5ExprClearPoslists(pNode);
           return 0;
         }
-        return 1;
+        break;
       }
     }
   }
+  return 1;
 }
 
 void sqlite3Fts5ExprCheckPoslists(Fts5Expr *pExpr, i64 iRowid){

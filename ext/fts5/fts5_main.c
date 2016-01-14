@@ -311,13 +311,6 @@ static int fts5IsContentless(Fts5Table *pTab){
 }
 
 /*
-** Return true if pTab is an offsetless table.
-*/
-static int fts5IsOffsetless(Fts5Table *pTab){
-  return pTab->pConfig->eDetail!=FTS5_DETAIL_FULL;
-}
-
-/*
 ** Delete a virtual table handle allocated by fts5InitVtab(). 
 */
 static void fts5FreeVtab(Fts5Table *pTab){

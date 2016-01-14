@@ -1772,8 +1772,6 @@ static void fts5SegIterNext_Reverse(
   if( pIter->iRowidOffset>0 ){
     u8 *a = pIter->pLeaf->p;
     int iOff;
-    int nPos;
-    int bDummy;
     i64 iDelta;
 
     pIter->iRowidOffset--;
@@ -1821,7 +1819,7 @@ static void fts5SegIterNext_None(
   if( iOff<pIter->iEndofDoclist ){
     /* Next entry is on the current page */
     i64 iDelta;
-    iOff += sqlite3Fts5GetVarint(&pIter->pLeaf->p[iOff], &iDelta);
+    iOff += sqlite3Fts5GetVarint(&pIter->pLeaf->p[iOff], (u64*)&iDelta);
     pIter->iLeafOffset = iOff;
     pIter->iRowid += iDelta;
   }else if( (pIter->flags & FTS5_SEGITER_ONETERM)==0 ){

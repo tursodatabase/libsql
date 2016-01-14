@@ -379,7 +379,7 @@ static int fts5ConfigParseSpecial(
       { 0, 0 }
     };
 
-    if( rc = fts5ConfigSetEnum(aDetail, zArg, &pConfig->eDetail) ){
+    if( (rc = fts5ConfigSetEnum(aDetail, zArg, &pConfig->eDetail)) ){
       *pzErr = sqlite3_mprintf("malformed detail=... directive");
     }
     return rc;

@@ -424,7 +424,6 @@ int sqlite3Fts5IndexSetAverages(Fts5Index *p, const u8*, int);
 /*
 ** Functions called by the storage module as part of integrity-check.
 */
-u64 sqlite3Fts5IndexCksum(Fts5Config*,i64,int,int,const char*,int);
 int sqlite3Fts5IndexIntegrityCheck(Fts5Index*, u64 cksum);
 
 /* 
