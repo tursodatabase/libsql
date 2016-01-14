@@ -289,15 +289,17 @@ void sqlite3BtreeCursorList(Btree*);
 #ifndef SQLITE_OMIT_SHARED_CACHE
   void sqlite3BtreeEnter(Btree*);
   void sqlite3BtreeEnterAll(sqlite3*);
+  int sqlite3BtreeSharable(Btree*);
+  void sqlite3BtreeEnterCursor(BtCursor*);
 #else
 # define sqlite3BtreeEnter(X) 
 # define sqlite3BtreeEnterAll(X)
+# define sqlite3BtreeSharable(X) 0
+# define sqlite3BtreeEnterCursor(X)
 #endif
 
 #if !defined(SQLITE_OMIT_SHARED_CACHE) && SQLITE_THREADSAFE
-  int sqlite3BtreeSharable(Btree*);
   void sqlite3BtreeLeave(Btree*);
-  void sqlite3BtreeEnterCursor(BtCursor*);
   void sqlite3BtreeLeaveCursor(BtCursor*);
   void sqlite3BtreeLeaveAll(sqlite3*);
 #ifndef NDEBUG
@@ -308,9 +310,7 @@ void sqlite3BtreeCursorList(Btree*);
 #endif
 #else
 
-# define sqlite3BtreeSharable(X) 0
 # define sqlite3BtreeLeave(X)
-# define sqlite3BtreeEnterCursor(X)
 # define sqlite3BtreeLeaveCursor(X)
 # define sqlite3BtreeLeaveAll(X)
 

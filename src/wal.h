@@ -44,6 +44,7 @@
 # define sqlite3WalHeapMemory(z)                 0
 # define sqlite3WalFramesize(z)                  0
 # define sqlite3WalFindFrame(x,y,z)              0
+# define sqlite3WalFile(x)                       0
 #else
 
 #define WAL_SAVEPOINT_NDATA 4
@@ -146,6 +147,9 @@ int sqlite3WalUpgradeSnapshot(Wal *pWal);
 */
 int sqlite3WalFramesize(Wal *pWal);
 #endif
+
+/* Return the sqlite3_file object for the WAL file */
+sqlite3_file *sqlite3WalFile(Wal *pWal);
 
 #endif /* ifndef SQLITE_OMIT_WAL */
 #endif /* _WAL_H_ */

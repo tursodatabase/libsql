@@ -22,7 +22,6 @@ ifcapable !fts5 {
   return
 }
 
-
 set data {
     -4026076
     {n x w k b p x b n t t d s}     {f j j s p j o}               
@@ -232,37 +231,9 @@ do_execsql_test 1.0 {
 
 fts5_aux_test_functions db
 
-proc matchdata {expr tbl collist {order ASC}} {
-
-  set cols ""
-  foreach e $collist {
-    append cols ", '$e'"
-  }
-
-  set tclexpr [db one [subst -novar {
-    SELECT fts5_expr_tcl(
-      $expr, 'nearset $cols -pc ::pc' [set cols]
-    )
-  }]]
-  set res [list]
-
-  db eval "SELECT rowid, * FROM $tbl ORDER BY rowid $order" x {
-    set cols [list]
-    foreach col $x(*) {
-      if {$col != "rowid"} { lappend cols $x($col) }
-    }
-    # set cols [list $a $b $c $d $e $f]
-    set ::pc 0
-    set rowdata [eval $tclexpr]
-    if {$rowdata != ""} { lappend res $x(rowid) $rowdata }
-  }
-
-  set res
-}
-
-proc do_auto_test {tn tbl cols expr} { 
+proc do_auto_test {tn tbl expr} {
   foreach order {asc desc} {
-    set res [matchdata $expr $tbl $cols $order]
+    set res [fts5_poslist_data $expr $tbl $order]
     set testname "$tn.[string range $order 0 0].rows=[expr [llength $res]/2]"
 
     set ::autotest_expr $expr
@@ -271,8 +242,6 @@ proc do_auto_test {tn tbl cols expr} {
       WHERE [set tbl] MATCH $::autotest_expr ORDER BY rowid [set order]
     }] $res
   }
-
-
 }
 
 #-------------------------------------------------------------------------
@@ -332,7 +301,7 @@ for {set fold 0} {$fold < 3} {incr fold} {
     C.1 { a OR (b AND "b c") }
     C.2 { a OR (b AND "z c") }
   } {
-    do_auto_test 3.$fold.$tn tt {a b c d e f} $expr
+    do_auto_test 3.$fold.$tn tt $expr
   }
 }
 
@@ -366,11 +335,8 @@ foreach {tn expr} {
   4 {c1 : x} 5 {c2 : x} 6 {c3 : x}
   7 {c1 : y} 8 {c2 : y} 9 {c3 : y}
   10 {c1 : z} 11 {c2 : z} 12 {c3 : z}
-
-
 } {
-breakpoint
-  do_auto_test 4.$tn yy {c1 c2 c3} $expr
+  do_auto_test 4.$tn yy $expr
 }
 
 

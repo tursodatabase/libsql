@@ -68,19 +68,19 @@ set x7 backbone
 set x8 backarrow
 set x9 castle
 
-db func glob gfunc
+db func glob -argcount 2 gfunc
 proc gfunc {a b} {
   incr ::gfunc
   return 1
 }
 
-db func like lfunc
+db func like -argcount 2 lfunc
 proc lfunc {a b} {
   incr ::gfunc 100
   return 1
 }
 
-db func regexp rfunc
+db func regexp -argcount 2 rfunc
 proc rfunc {a b} {
   incr ::gfunc 10000
   return 1
