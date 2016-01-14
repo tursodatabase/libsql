@@ -235,6 +235,8 @@ static int xF5tApi(
     { "xGetAuxdata",       1, "CLEAR" },              /* 13 */
     { "xSetAuxdataInt",    1, "INTEGER" },            /* 14 */
     { "xGetAuxdataInt",    1, "CLEAR" },              /* 15 */
+    { "xPhraseForeach",    4, "IPHRASE COLVAR OFFVAR SCRIPT" }, /* 16 */
+    { "xPhraseColumnForeach", 3, "IPHRASE COLVAR SCRIPT" }, /* 17 */
     { 0, 0, 0}
   };
 
@@ -428,6 +430,62 @@ static int xF5tApi(
       if( Tcl_GetBooleanFromObj(interp, objv[2], &bClear) ) return TCL_ERROR;
       iVal = ((char*)p->pApi->xGetAuxdata(p->pFts, bClear) - (char*)0);
       Tcl_SetObjResult(interp, Tcl_NewIntObj(iVal));
+      break;
+    }
+
+    CASE(16, "xPhraseForeach") {
+      int iPhrase;
+      int iCol;
+      int iOff;
+      const char *zColvar;
+      const char *zOffvar;
+      Tcl_Obj *pScript = objv[5];
+      Fts5PhraseIter iter;
+
+      if( Tcl_GetIntFromObj(interp, objv[2], &iPhrase) ) return TCL_ERROR;
+      zColvar = Tcl_GetString(objv[3]);
+      zOffvar = Tcl_GetString(objv[4]);
+
+      for(p->pApi->xPhraseFirst(p->pFts, iPhrase, &iter, &iCol, &iOff);
+          iCol>=0;
+          p->pApi->xPhraseNext(p->pFts, &iter, &iCol, &iOff)
+      ){
+        Tcl_SetVar2Ex(interp, zColvar, 0, Tcl_NewIntObj(iCol), 0);
+        Tcl_SetVar2Ex(interp, zOffvar, 0, Tcl_NewIntObj(iOff), 0);
+        rc = Tcl_EvalObjEx(interp, pScript, 0);
+        if( rc==TCL_CONTINUE ) rc = TCL_OK;
+        if( rc!=TCL_OK ){
+          if( rc==TCL_BREAK ) rc = TCL_OK;
+          break;
+        }
+      }
+
+      break;
+    }
+
+    CASE(17, "xPhraseColumnForeach") {
+      int iPhrase;
+      int iCol;
+      const char *zColvar;
+      Tcl_Obj *pScript = objv[4];
+      Fts5PhraseIter iter;
+
+      if( Tcl_GetIntFromObj(interp, objv[2], &iPhrase) ) return TCL_ERROR;
+      zColvar = Tcl_GetString(objv[3]);
+
+      for(p->pApi->xPhraseFirstColumn(p->pFts, iPhrase, &iter, &iCol);
+          iCol>=0;
+          p->pApi->xPhraseNextColumn(p->pFts, &iter, &iCol)
+      ){
+        Tcl_SetVar2Ex(interp, zColvar, 0, Tcl_NewIntObj(iCol), 0);
+        rc = Tcl_EvalObjEx(interp, pScript, 0);
+        if( rc==TCL_CONTINUE ) rc = TCL_OK;
+        if( rc!=TCL_OK ){
+          if( rc==TCL_BREAK ) rc = TCL_OK;
+          break;
+        }
+      }
+
       break;
     }
 

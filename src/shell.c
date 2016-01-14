@@ -1941,6 +1941,7 @@ static char zHelp[] =
   ".timer on|off          Turn SQL timer on or off\n"
   ".trace FILE|off        Output each SQL statement as it is run\n"
   ".vfsinfo ?AUX?         Information about the top-level VFS\n"
+  ".vfslist               List all available VFSes\n"
   ".vfsname ?AUX?         Print the name of the VFS stack\n"
   ".width NUM1 NUM2 ...   Set column widths for \"column\" mode\n"
   "                         Negative values right-justify\n"
@@ -4447,6 +4448,24 @@ static int do_meta_command(char *zLine, ShellState *p){
         raw_printf(p->out, "vfs.iVersion   = %d\n", pVfs->iVersion);
         raw_printf(p->out, "vfs.szOsFile   = %d\n", pVfs->szOsFile);
         raw_printf(p->out, "vfs.mxPathname = %d\n", pVfs->mxPathname);
+      }
+    }
+  }else
+
+  if( c=='v' && strncmp(azArg[0], "vfslist", n)==0 ){
+    sqlite3_vfs *pVfs;
+    sqlite3_vfs *pCurrent = 0;
+    if( p->db ){
+      sqlite3_file_control(p->db, "main", SQLITE_FCNTL_VFS_POINTER, &pCurrent);
+    }
+    for(pVfs=sqlite3_vfs_find(0); pVfs; pVfs=pVfs->pNext){
+      utf8_printf(p->out, "vfs.zName      = \"%s\"%s\n", pVfs->zName,
+           pVfs==pCurrent ? "  <--- CURRENT" : "");
+      raw_printf(p->out, "vfs.iVersion   = %d\n", pVfs->iVersion);
+      raw_printf(p->out, "vfs.szOsFile   = %d\n", pVfs->szOsFile);
+      raw_printf(p->out, "vfs.mxPathname = %d\n", pVfs->mxPathname);
+      if( pVfs->pNext ){
+        raw_printf(p->out, "-----------------------------------\n");
       }
     }
   }else

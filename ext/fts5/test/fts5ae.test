@@ -22,8 +22,10 @@ ifcapable !fts5 {
   return
 }
 
+foreach_detail_mode $testprefix {
+
 do_execsql_test 1.0 {
-  CREATE VIRTUAL TABLE t1 USING fts5(a, b);
+  CREATE VIRTUAL TABLE t1 USING fts5(a, b, detail=%DETAIL%);
   INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
 }
 
@@ -55,7 +57,7 @@ fts5_aux_test_functions db
 #-------------------------------------------------------------------------
 # 
 do_execsql_test 2.0 {
-  CREATE VIRTUAL TABLE t2 USING fts5(x, y);
+  CREATE VIRTUAL TABLE t2 USING fts5(x, y, detail=%DETAIL%);
   INSERT INTO t2 VALUES('u t l w w m s', 'm f m o l t k o p e');
   INSERT INTO t2 VALUES('f g q e l n d m z x q', 'z s i i i m f w w f n g p');
 }
@@ -76,31 +78,35 @@ do_execsql_test 2.2 {
   2 {1.0.2 1.0.10}
 }
 
-do_execsql_test 2.3 {
-  SELECT rowid, fts5_test_poslist(t2) FROM t2 
-  WHERE t2 MATCH 'y:o' ORDER BY rowid;
-} {
-  1 {0.1.3 0.1.7}
+if {[detail_is_full]} {
+  do_execsql_test 2.3 {
+    SELECT rowid, fts5_test_poslist(t2) FROM t2 
+      WHERE t2 MATCH 'y:o' ORDER BY rowid;
+  } {
+    1 {0.1.3 0.1.7}
+  }
 }
 
 #-------------------------------------------------------------------------
 # 
 do_execsql_test 3.0 {
-  CREATE VIRTUAL TABLE t3 USING fts5(x, y);
+  CREATE VIRTUAL TABLE t3 USING fts5(x, y, detail=%DETAIL%);
   INSERT INTO t3 VALUES( 'j f h o x x a z g b a f a m i b', 'j z c z y x w t');
   INSERT INTO t3 VALUES( 'r c', '');
 }
 
-do_execsql_test 3.1 {
-  SELECT rowid, fts5_test_poslist(t3) FROM t3 WHERE t3 MATCH 'NEAR(a b)';
-} {
-  1 {0.0.6 1.0.9 0.0.10 0.0.12 1.0.15}
-}
+if {[detail_is_full]} {
+  do_execsql_test 3.1 {
+    SELECT rowid, fts5_test_poslist(t3) FROM t3 WHERE t3 MATCH 'NEAR(a b)';
+  } {
+    1 {0.0.6 1.0.9 0.0.10 0.0.12 1.0.15}
+  }
 
-do_execsql_test 3.2 {
-  SELECT rowid, fts5_test_poslist(t3) FROM t3 WHERE t3 MATCH 'NEAR(r c)';
-} {
-  2 {0.0.0 1.0.1}
+  do_execsql_test 3.2 {
+    SELECT rowid, fts5_test_poslist(t3) FROM t3 WHERE t3 MATCH 'NEAR(r c)';
+  } {
+    2 {0.0.0 1.0.1}
+  }
 }
 
 do_execsql_test 3.3 {
@@ -116,7 +122,7 @@ do_execsql_test 3.3 {
 #-------------------------------------------------------------------------
 # 
 do_execsql_test 4.0 {
-  CREATE VIRTUAL TABLE t4 USING fts5(x, y);
+  CREATE VIRTUAL TABLE t4 USING fts5(x, y, detail=%DETAIL%);
   INSERT INTO t4 
   VALUES('k x j r m a d o i z j', 'r t t t f e b r x i v j v g o');
 }
@@ -134,7 +140,7 @@ reset_db
 fts5_aux_test_functions db
 
 do_execsql_test 5.1 {
-  CREATE VIRTUAL TABLE t5 USING fts5(x, y);
+  CREATE VIRTUAL TABLE t5 USING fts5(x, y, detail=%DETAIL%);
   INSERT INTO t5 VALUES('a b c d', 'e f g h i j');
   INSERT INTO t5 VALUES('', 'a');
   INSERT INTO t5 VALUES('a', '');
@@ -182,7 +188,7 @@ do_execsql_test 5.5 {
 reset_db
 fts5_aux_test_functions db
 do_execsql_test 6.1 {
-  CREATE VIRTUAL TABLE t6 USING fts5(x, y);
+  CREATE VIRTUAL TABLE t6 USING fts5(x, y, detail=%DETAIL%);
   INSERT INTO t6 VALUES('There are more', 'things in heaven and earth');
   INSERT INTO t6 VALUES(', Horatio, Than are', 'dreamt of in your philosophy.');
 }
@@ -200,7 +206,7 @@ do_execsql_test 6.2 {
 reset_db
 fts5_aux_test_functions db
 do_execsql_test 7.1 {
-  CREATE VIRTUAL TABLE t7 USING fts5(x, y);
+  CREATE VIRTUAL TABLE t7 USING fts5(x, y, detail=%DETAIL%);
 }
 do_test 7.2 {
   foreach {x y} {
@@ -240,7 +246,7 @@ do_execsql_test 7.4 {
 #-------------------------------------------------------------------------
 #
 do_test 8.1 {
-  execsql { CREATE VIRTUAL TABLE t8 USING fts5(x, y) }
+  execsql { CREATE VIRTUAL TABLE t8 USING fts5(x, y, detail=%DETAIL%) }
   foreach {rowid x y} {
      0 {A o}   {o o o C o o o o o o o o}
      1 {o o B} {o o o C C o o o o o o o}
@@ -298,6 +304,8 @@ foreach {tn q cnt} {
   do_execsql_test 9.2.$tn {
     SELECT fts5_test_phrasecount(t9) FROM t9 WHERE t9 MATCH $q LIMIT 1
   } $cnt
+}
+
 }
 
 finish_test

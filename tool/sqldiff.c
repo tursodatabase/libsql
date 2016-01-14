@@ -994,7 +994,7 @@ static int rbuDeltaCreate(
     zDelta += lenOut;
     putInt(checksum(zOut, lenOut), &zDelta);
     *(zDelta++) = ';';
-    return zDelta - zOrigDelta;
+    return (int)(zDelta - zOrigDelta);
   }
 
   /* Compute the hash table used to locate matching sections in the
@@ -1141,7 +1141,7 @@ static int rbuDeltaCreate(
   putInt(checksum(zOut, lenOut), &zDelta);
   *(zDelta++) = ';';
   sqlite3_free(collide);
-  return zDelta - zOrigDelta;
+  return (int)(zDelta - zOrigDelta);
 }
 
 /*
