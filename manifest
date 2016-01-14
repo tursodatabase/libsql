@@ -1,8 +1,8 @@
-C Yet\sanother\schange\sto\sFTS5\strying\sto\sget\sit\sto\smerge\ssuccessfully\sinto\ssessions.
-D 2016-01-14T14:33:36.733
+C Minor\sadjustments\sto\sthe\sMSVC\smakefile.
+D 2016-01-14T18:01:16.348
 F Makefile.in cfa1ac03c4b414992fd53f24d978b45b0c21de55
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 1dc36cfd3c047c9685e539257e158485f16ef035
+F Makefile.msc 2d8b2ad5a03315940bcb9e64145ab70850d66b4d
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION 866588d1edf0ccb5b0d33896974338f97564f719
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -1412,7 +1412,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f791fc7009d68941c60d7bf953bab19d86112133
-R 52083946c40dd4f44744cbc0b447540f
-U drh
-Z 9b36451b3b0b6d81cfd6f7c438e3b3aa
+P 8dedff3b9ac3e6bf9c131fee19f7d26dc1ebd61f
+R ed5fce327e310c7f92985b6ea8c3a0f4
+U mistachkin
+Z a106ef292e4f8d6ed0328b1e83183a0f
