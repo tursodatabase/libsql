@@ -499,7 +499,6 @@ void sqlite3CollapseDatabaseArray(sqlite3 *db){
     }
     j++;
   }
-  memset(&db->aDb[j], 0, (db->nDb-j)*sizeof(db->aDb[j]));
   db->nDb = j;
   if( db->nDb<=2 && db->aDb!=db->aDbStatic ){
     memcpy(db->aDbStatic, db->aDb, 2*sizeof(db->aDb[0]));
