@@ -1,5 +1,5 @@
-C Combine\sthe\sxFunc\sand\sxStep\spointers\sof\sthe\sFuncDef\sobject\sinto\sa\ssingle\npointer\sxSFunc.
-D 2016-01-14T22:19:58.884
+C Fix\sa\scouple\sC99-isms\sin\sFTS5\sthat\scause\scompile\serrors\son\sMSVC.
+D 2016-01-15T05:39:55.053
 F Makefile.in a476545d0c8626224d0bacac85c6e2967474af81
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 01e855f958932d0d3ed62ec675fc63e2cef61fcb
@@ -103,7 +103,7 @@ F ext/fts5/fts5_buffer.c 87204c8b3b8bc62b27376eab09b74d6d5acc41f1
 F ext/fts5/fts5_config.c 9c243d04ac0ca997d2d2e2252891f2a10fbd7217
 F ext/fts5/fts5_expr.c 510db45967ca359f64f2ba2c707ab57d740cad56
 F ext/fts5/fts5_hash.c 1b113977296cf4212c6ec667d5e3f2bd18036955
-F ext/fts5/fts5_index.c aa798d3a839847fd351b3d0f49520f190e57c2e3
+F ext/fts5/fts5_index.c cd036089b22b0340fccef88a3ad62ac1016c7cbb
 F ext/fts5/fts5_main.c 488ceecdb4400ecc6a3d3b2247cedef153955388
 F ext/fts5/fts5_storage.c f7b2d330dd7b29a9f4da09f6d85879ca8c41b2e8
 F ext/fts5/fts5_tcl.c bcacc05dec0446e7b1a44d5d906057e677bd7ea4
@@ -1415,7 +1415,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8ec8314354edc9d6f7d1c8a6370fd984a552a52f
-R 470d19e0ca1a1fc910b5e91ee98341ee
-U drh
-Z f0946172c7ca453502410c246bc450d2
+P 0d1b3d7d3ca66cb0b97493f1aeade1703af3c9f4
+R b460170dac8e7d7fa7ff80be818c5f70
+U mistachkin
+Z 9c8571095ec15b56fdafaa6935514e64

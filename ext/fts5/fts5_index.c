@@ -1875,13 +1875,15 @@ static void fts5SegIterNext(
   int iOff;
   int bNewTerm = 0;
   int nKeep = 0;
+  u8 *a;
+  int n;
 
   assert( pbNewTerm==0 || *pbNewTerm==0 );
   assert( p->pConfig->eDetail!=FTS5_DETAIL_NONE );
 
   /* Search for the end of the position list within the current page. */
-  u8 *a = pLeaf->p;
-  int n = pLeaf->szLeaf;
+  a = pLeaf->p;
+  n = pLeaf->szLeaf;
 
   ASSERT_SZLEAF_OK(pLeaf);
   iOff = pIter->iLeafOffset + pIter->nPos;
