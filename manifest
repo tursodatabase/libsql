@@ -1,5 +1,5 @@
-C Work\stoward\smaking\sthe\sschema\sparsing\slogic\ssimplier\sand\smore\scompact.
-D 2016-01-15T15:06:41.166
+C Remove\sunnecessary\sde-initialization\sof\sthe\sParse\sobject.
+D 2016-01-15T16:11:58.808
 F Makefile.in a476545d0c8626224d0bacac85c6e2967474af81
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 01e855f958932d0d3ed62ec675fc63e2cef61fcb
@@ -287,7 +287,7 @@ F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
 F src/btree.c d9c6b2e2df06314079aa582f12937401a62171a6
 F src/btree.h 68ef301795e00cdf1d3ab93abc44a43b7fe771e0
 F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
-F src/build.c 2778ccdb327923b2eb6cea304e232efd0c85cbe1
+F src/build.c ae94a76279b988a62f82ae25344c68026d5fd47c
 F src/callback.c 29ae4faba226c7ebb9aee93016b5ce8a8f071261
 F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
 F src/ctime.c 60e135af364d777a9ab41c97e5e89cd224da6198
@@ -1415,7 +1415,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 584848d4396d7755027fab377c97e40fbcc90d21
-R d396ff3cd92323018eeceb835a86df32
+P c52ca2c0662bb30ab34574f933429512655b19ff
+R 18101cd5e40446f0b579af30aa8257e8
 U drh
-Z d625867287e0b3ea5f45a2d19f9bb7c8
+Z 9e527ccefb4d19cf49503262bc52d994

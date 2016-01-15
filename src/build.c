@@ -228,15 +228,19 @@ void sqlite3FinishCoding(Parse *pParse){
     if( pParse->pAinc!=0 && pParse->nTab==0 ) pParse->nTab = 1;
     sqlite3VdbeMakeReady(v, pParse);
     pParse->rc = SQLITE_DONE;
-    pParse->colNamesSet = 0;
   }else{
     pParse->rc = SQLITE_ERROR;
   }
+
+  /* We are done with this Parse object. There is no need to de-initialize it */
+#if 0
+  pParse->colNamesSet = 0;
   pParse->nTab = 0;
   pParse->nMem = 0;
   pParse->nSet = 0;
   pParse->nVar = 0;
   DbMaskZero(pParse->cookieMask);
+#endif
 }
 
 /*
