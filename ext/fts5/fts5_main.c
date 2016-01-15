@@ -1405,7 +1405,7 @@ static int fts5SpecialDelete(
   int eType1 = sqlite3_value_type(apVal[1]);
   if( eType1==SQLITE_INTEGER ){
     sqlite3_int64 iDel = sqlite3_value_int64(apVal[1]);
-    rc = sqlite3Fts5StorageSpecialDelete(pTab->pStorage, iDel, &apVal[2]);
+    rc = sqlite3Fts5StorageDelete(pTab->pStorage, iDel, &apVal[2]);
   }
   return rc;
 }
@@ -1512,7 +1512,7 @@ static int fts5UpdateMethod(
     /* Case 1: DELETE */
     else if( nArg==1 ){
       i64 iDel = sqlite3_value_int64(apVal[0]);  /* Rowid to delete */
-      rc = sqlite3Fts5StorageDelete(pTab->pStorage, iDel);
+      rc = sqlite3Fts5StorageDelete(pTab->pStorage, iDel, 0);
     }
 
     /* Case 2: INSERT */
@@ -1522,7 +1522,7 @@ static int fts5UpdateMethod(
        && sqlite3_value_type(apVal[1])==SQLITE_INTEGER 
       ){
         i64 iNew = sqlite3_value_int64(apVal[1]);  /* Rowid to delete */
-        rc = sqlite3Fts5StorageDelete(pTab->pStorage, iNew);
+        rc = sqlite3Fts5StorageDelete(pTab->pStorage, iNew, 0);
       }
       fts5StorageInsert(&rc, pTab, apVal, pRowid);
     }
@@ -1533,22 +1533,22 @@ static int fts5UpdateMethod(
       i64 iNew = sqlite3_value_int64(apVal[1]);  /* New rowid */
       if( iOld!=iNew ){
         if( eConflict==SQLITE_REPLACE ){
-          rc = sqlite3Fts5StorageDelete(pTab->pStorage, iOld);
+          rc = sqlite3Fts5StorageDelete(pTab->pStorage, iOld, 0);
           if( rc==SQLITE_OK ){
-            rc = sqlite3Fts5StorageDelete(pTab->pStorage, iNew);
+            rc = sqlite3Fts5StorageDelete(pTab->pStorage, iNew, 0);
           }
           fts5StorageInsert(&rc, pTab, apVal, pRowid);
         }else{
           rc = sqlite3Fts5StorageContentInsert(pTab->pStorage, apVal, pRowid);
           if( rc==SQLITE_OK ){
-            rc = sqlite3Fts5StorageDelete(pTab->pStorage, iOld);
+            rc = sqlite3Fts5StorageDelete(pTab->pStorage, iOld, 0);
           }
           if( rc==SQLITE_OK ){
             rc = sqlite3Fts5StorageIndexInsert(pTab->pStorage, apVal, *pRowid);
           }
         }
       }else{
-        rc = sqlite3Fts5StorageDelete(pTab->pStorage, iOld);
+        rc = sqlite3Fts5StorageDelete(pTab->pStorage, iOld, 0);
         fts5StorageInsert(&rc, pTab, apVal, pRowid);
       }
     }
@@ -1747,7 +1747,9 @@ static int fts5CacheInstArray(Fts5Cursor *pCsr){
       const u8 *a;
       int n; 
       rc = fts5CsrPoslist(pCsr, i, &a, &n);
-      sqlite3Fts5PoslistReaderInit(a, n, &aIter[i]);
+      if( rc==SQLITE_OK ){
+        sqlite3Fts5PoslistReaderInit(a, n, &aIter[i]);
+      }
     }
 
     if( rc==SQLITE_OK ){

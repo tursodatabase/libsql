@@ -57,6 +57,8 @@ proc row_to_col {L} {
   set ret
 }
 
+if 1 {
+
 do_execsql_test 1.1.1 {
   CREATE VIRTUAL TABLE t1 USING fts5(one, prefix=1, detail=%DETAIL%);
   CREATE VIRTUAL TABLE v1 USING fts5vocab(t1, 'row');
@@ -388,6 +390,58 @@ if {![detail_is_none]} {
       WHERE txc.term = txc_c.term AND txc.col=txc_c.col;
   } {57}
 }
+
+}
+
+#-------------------------------------------------------------------------
+# Test the fts5vocab tables response to a specific types of corruption:
+# where the fts5 index contains hits for columns that do not exist.
+#
+do_execsql_test 8.0 {
+  CREATE VIRTUAL TABLE x1 USING fts5(a, b, c, detail=%DETAIL%);
+  INSERT INTO x1 VALUES('a b c', 'd e f', 'g h i');
+  INSERT INTO x1 VALUES('g h i', 'a b c', 'd e f');
+  INSERT INTO x1 VALUES('d e f', 'g h i', 'a b c');
+  CREATE VIRTUAL TABLE x1_r USING fts5vocab(x1, row);
+  CREATE VIRTUAL TABLE x1_c USING fts5vocab(x1, col);
+}
+
+set resr [star_from_row {a 3 3 b 3 3 c 3 3 d 3 3 e 3 3 f 3 3 g 3 3 h 3 3 i 3 3}]
+set resc [star_from_col {
+  a a 1 1 a b 1 1 a c 1 1 b a 1 1 
+  b b 1 1 b c 1 1 c a 1 1 c b 1 1 
+  c c 1 1 d a 1 1 d b 1 1 d c 1 1
+  e a 1 1 e b 1 1 e c 1 1 f a 1 1 
+  f b 1 1 f c 1 1 g a 1 1 g b 1 1 
+  g c 1 1 h a 1 1 h b 1 1 h c 1 1 
+  i a 1 1 i b 1 1 i c 1 1
+}]
+if {[detail_is_none]} { set resc [row_to_col $resr] }
+
+do_execsql_test 8.1.1 { SELECT * FROM x1_r; } $resr
+do_execsql_test 8.1.2 { SELECT * FROM x1_c } $resc
+
+do_execsql_test 8.2 {
+  PRAGMA writable_schema = 1;
+  UPDATE sqlite_master 
+  SET sql = 'CREATE VIRTUAL TABLE x1 USING fts5(a, detail=%DETAIL%)'
+  WHERE name = 'x1';
+}
+db close
+sqlite3 db test.db
+sqlite3_fts5_may_be_corrupt 1
+
+do_execsql_test 8.2.1 { SELECT * FROM x1_r } $resr
+
+if {[detail_is_none]} {
+  do_execsql_test 8.2.2 { SELECT * FROM x1_c } $resc
+} else {
+  do_catchsql_test 8.2.2 { 
+    SELECT * FROM x1_c 
+  } {1 {database disk image is malformed}}
+}
+
+sqlite3_fts5_may_be_corrupt 0
 
 }
 

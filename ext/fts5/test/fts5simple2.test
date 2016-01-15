@@ -267,8 +267,6 @@ do_execsql_test 14.1 {
   SELECT fts5_test_poslist(t1) FROM t1('b') ORDER BY rank;
 } {0.0.1}
 
-}
-
 #-------------------------------------------------------------------------
 #
 reset_db
@@ -299,6 +297,30 @@ do_execsql_test 15.3.2 {
 do_test 15.4 {
   execsql { INSERT INTO t1(t1) VALUES('integrity-check') }
 } {}
+
+}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 16.0 {
+  CREATE VIRTUAL TABLE t2 USING fts5(x, detail=none);
+  BEGIN;
+    INSERT INTO t2(rowid, x) VALUES(1, 'a b c');
+    INSERT INTO t2(rowid, x) VALUES(456, 'a b c');
+    INSERT INTO t2(rowid, x) VALUES(1000, 'a b c');
+  COMMIT;
+  UPDATE t2 SET x=x;
+}
+
+do_execsql_test 16.1 {
+  INSERT INTO t2(t2) VALUES('integrity-check');
+} {}
+
+do_execsql_test 16.2 {
+  SELECT rowid FROM t2('b') ORDER BY rowid DESC
+} {1000 456 1}
+
   
 finish_test
 
