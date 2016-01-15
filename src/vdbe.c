@@ -5099,6 +5099,7 @@ case OP_Destroy: {     /* out2 */
   int iDb;
 
   assert( p->readOnly==0 );
+  assert( pOp->p1>1 );
   pOut = out2Prerelease(p, pOp);
   pOut->flags = MEM_Null;
   if( db->nVdbeRead > db->nVDestroy+1 ){
