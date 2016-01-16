@@ -447,10 +447,12 @@ static int xF5tApi(
       zColvar = Tcl_GetString(objv[3]);
       zOffvar = Tcl_GetString(objv[4]);
 
-      for(p->pApi->xPhraseFirst(p->pFts, iPhrase, &iter, &iCol, &iOff);
-          iCol>=0;
-          p->pApi->xPhraseNext(p->pFts, &iter, &iCol, &iOff)
-      ){
+      rc = p->pApi->xPhraseFirst(p->pFts, iPhrase, &iter, &iCol, &iOff);
+      if( rc!=SQLITE_OK ){
+        Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
+        return TCL_ERROR;
+      }
+      for( ;iCol>=0; p->pApi->xPhraseNext(p->pFts, &iter, &iCol, &iOff) ){
         Tcl_SetVar2Ex(interp, zColvar, 0, Tcl_NewIntObj(iCol), 0);
         Tcl_SetVar2Ex(interp, zOffvar, 0, Tcl_NewIntObj(iOff), 0);
         rc = Tcl_EvalObjEx(interp, pScript, 0);
@@ -474,10 +476,12 @@ static int xF5tApi(
       if( Tcl_GetIntFromObj(interp, objv[2], &iPhrase) ) return TCL_ERROR;
       zColvar = Tcl_GetString(objv[3]);
 
-      for(p->pApi->xPhraseFirstColumn(p->pFts, iPhrase, &iter, &iCol);
-          iCol>=0;
-          p->pApi->xPhraseNextColumn(p->pFts, &iter, &iCol)
-      ){
+      rc = p->pApi->xPhraseFirstColumn(p->pFts, iPhrase, &iter, &iCol);
+      if( rc!=SQLITE_OK ){
+        Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
+        return TCL_ERROR;
+      }
+      for( ; iCol>=0; p->pApi->xPhraseNextColumn(p->pFts, &iter, &iCol)){
         Tcl_SetVar2Ex(interp, zColvar, 0, Tcl_NewIntObj(iCol), 0);
         rc = Tcl_EvalObjEx(interp, pScript, 0);
         if( rc==TCL_CONTINUE ) rc = TCL_OK;

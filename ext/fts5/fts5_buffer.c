@@ -322,14 +322,17 @@ int sqlite3Fts5TermsetAdd(
   *pbPresent = 0;
   if( p ){
     int i;
-    int hash;
+    int hash = 13;
     Fts5TermsetEntry *pEntry;
 
-    /* Calculate a hash value for this term */
-    hash = 104 + iIdx;
-    for(i=0; i<nTerm; i++){
-      hash += (hash << 3) + (int)pTerm[i];
+    /* Calculate a hash value for this term. This is the same hash checksum
+    ** used by the fts5_hash.c module. This is not important for correct
+    ** operation of the module, but is necessary to ensure that some tests
+    ** designed to produce hash table collisions really do work.  */
+    for(i=nTerm-1; i>=0; i--){
+      hash = (hash << 3) ^ hash ^ pTerm[i];
     }
+    hash = (hash << 3) ^ hash ^ iIdx;
     hash = hash % ArraySize(p->apHash);
 
     for(pEntry=p->apHash[hash]; pEntry; pEntry=pEntry->pNext){
