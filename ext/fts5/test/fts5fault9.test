@@ -26,8 +26,6 @@ foreach_detail_mode $testprefix {
 
 fts5_aux_test_functions db
 
-if 1 {
-
 do_execsql_test 1.0 {
   CREATE VIRTUAL TABLE t1 USING fts5(a, b, detail=%DETAIL%);
   INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
@@ -110,8 +108,6 @@ do_faultsim_test 4.2 -faults oom-t* -body {
       {0 {4 {0.0 0.1 0.2} 5 {1.0 1.1 1.2} 6 {2.0 2.1 2.2}}} {1 SQLITE_NOMEM}
 }
 
-}
-
 
 #-------------------------------------------------------------------------
 # An OOM within an "ORDER BY rank" query.
@@ -133,6 +129,26 @@ do_faultsim_test 5 -faults oom-* -prep {
 } -test {
   faultsim_test_result [list 0 {3 2 1}]
 }
+
+set doc [string repeat "xyz " 500]
+do_execsql_test 6.0 {
+  CREATE VIRTUAL TABLE yy USING fts5(y, detail=%DETAIL%);
+  INSERT INTO yy(yy, rank) VALUES('pgsz', 64);
+  INSERT INTO yy VALUES ($doc);
+  INSERT INTO yy VALUES ('1 2 3');
+  INSERT INTO yy VALUES ('xyz');
+  UPDATE yy SET y = y WHERE rowid = 1;
+  UPDATE yy SET y = y WHERE rowid = 1;
+  UPDATE yy SET y = y WHERE rowid = 1;
+  UPDATE yy SET y = y WHERE rowid = 1;
+} {}
+
+do_faultsim_test 6 -faults oom-* -body {
+  execsql { SELECT rowid FROM yy('xyz') }
+} -test {
+  faultsim_test_result [list 0 {1 3}]
+}
+
 
 } ;# foreach_detail_mode...
 

@@ -87,6 +87,34 @@ do_test 1.4 {
   }
 } {}
 
+#-------------------------------------------------------------------------
+# Lots of deletes/inserts of the same document with the same rowid.
+#
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE x2 USING fts5(x, detail=%DETAIL%);
+  INSERT INTO x2(x2, rank) VALUES('crisismerge', 2);
+  INSERT INTO x2 VALUES('a b c');
+  INSERT INTO x2 VALUES('a b c');
+}
+do_test 2.1 {
+  for {set i 0} {$i < 1000} {incr i} {
+    execsql { DELETE FROM x2 WHERE rowid = 2 }
+    execsql { INSERT INTO x2(rowid, x) VALUES(2, 'a b c') }
+  }
+} {}
+do_execsql_test 2.1.integrity {
+  INSERT INTO x2(x2) VALUES('integrity-check');
+}
+
+do_test 2.2 {
+  for {set i 0} {$i < 1000} {incr i} {
+    execsql { UPDATE x2 SET x=x WHERE rowid=2 }
+  }
+} {}
+do_execsql_test 2.2.integrity {
+  INSERT INTO x2(x2) VALUES('integrity-check');
+}
+
 }
 finish_test
 

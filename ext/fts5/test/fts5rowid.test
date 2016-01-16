@@ -63,6 +63,7 @@ do_execsql_test 2.2 {
     SELECT rnddoc(6), rnddoc(6) FROM r
   )
   INSERT INTO x1 SELECT * FROM r LIMIT 10000;
+  DELETE FROM x1 WHERE (rowid%2);
 }
 
 set res [db one {SELECT count(*) FROM x1_data}]
@@ -71,8 +72,7 @@ do_execsql_test 2.3 {
 } $res
 do_execsql_test 2.4 {
   UPDATE x1_data SET block = X'';
-  -- SELECT count(fts5_decode(rowid, block)) FROM x1_data;
-  SELECT count(*) FROM x1_data;
+  SELECT count(fts5_decode(rowid, block)) FROM x1_data;
 } $res
 
 do_execsql_test 2.5 {
