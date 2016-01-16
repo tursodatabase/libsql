@@ -1,5 +1,5 @@
-C Remove\san\sunnecessary\smemset().
-D 2016-01-15T21:55:46.864
+C Fix\sa\spotential\suse-after-free\sproblem\swhen\scompiling\swith\sSQLITE_HAS_CODEC.
+D 2016-01-16T03:16:19.772
 F Makefile.in a476545d0c8626224d0bacac85c6e2967474af81
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 01e855f958932d0d3ed62ec675fc63e2cef61fcb
@@ -307,7 +307,7 @@ F src/insert.c 6b45cc86967da11aa024d034745f93f66d53f650
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/loadext.c 84996d7d70a605597d79c1f1d7b2012a5fd34f2b
-F src/main.c 6bcb3de6b4f02552d3df44f2ef73ff6b7ccf5322
+F src/main.c b686dabe9a7ece9121da87120d5c7bf402d77eb3
 F src/malloc.c 8f787669e79de26efc42272b5797bc00fff527c6
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 6919bcf12f221868ea066eec27e579fed95ce98b
@@ -1416,7 +1416,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3b72df405ac9b3a71144f45317d32e25f0084c4b
-R 1b6fc5c53ba731472d7f7fb860ed6428
+P 689421a9f73ceeab9786840a2d6ee008124d1f25
+R f13b5cb1e79c02d53b1455abc8833659
 U drh
-Z edef52557fd12bf4085bbb78a4ba3a5f
+Z 5aa5fcf53f35b8097ee55e85c4bed5b9
