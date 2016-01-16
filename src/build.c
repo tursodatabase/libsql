@@ -4115,7 +4115,7 @@ void sqlite3HaltConstraint(
     sqlite3MayAbort(pParse);
   }
   sqlite3VdbeAddOp4(v, OP_Halt, errCode, onError, 0, p4, p4type);
-  if( p5Errmsg ) sqlite3VdbeChangeP5(v, p5Errmsg);
+  sqlite3VdbeChangeP5(v, p5Errmsg);
 }
 
 /*
