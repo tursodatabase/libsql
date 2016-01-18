@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sSQLITE_TEST_REALLOC_STRESS.
-D 2016-01-18T00:20:26.450
+C Simplification\sof\sthe\sVDBE\sbytecode\sfor\sincremental\sblob\sI/O.
+D 2016-01-18T00:46:11.199
 F Makefile.in a476545d0c8626224d0bacac85c6e2967474af81
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 01e855f958932d0d3ed62ec675fc63e2cef61fcb
@@ -413,7 +413,7 @@ F src/vdbe.h 7a733ea8aac1b77305a67698e784fa3484ee3337
 F src/vdbeInt.h 42eefa4f9e7432b9968d321b44e48821ec13b189
 F src/vdbeapi.c ffae8f5af4570fbd548504e815e9fb7227f0822e
 F src/vdbeaux.c 95e067a5e2a75e128d45ca597388dc83c58142f0
-F src/vdbeblob.c 8542f282b58293bd61c2ea4b2125f250f4fc9543
+F src/vdbeblob.c 37c3d11a753e403698c69e17383d282e1ae73e75
 F src/vdbemem.c b9181e77eca2a095929d46250daf85c8d2621fc0
 F src/vdbesort.c 0971557e5d3c289e46f56a52aed2197c13251de7
 F src/vdbetrace.c 8befe829faff6d9e6f6e4dee5a7d3f85cc85f1a0
@@ -1417,7 +1417,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 61deab043dcea860070dba6b02601a7de627fff1
-R 4379f64b4cb45ea0db7a5f863224d3f6
+P 0aaf3febb00f622c5ef0853b2491d69f7ca7a21e
+R 8210381425f8a73bf29afce4a64c9930
 U drh
-Z e0f8e155ee8f1f04cd4cfaa23a1af003
+Z 0317022cefd345ebef2be02c7eb84046
