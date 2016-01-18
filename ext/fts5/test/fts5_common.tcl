@@ -20,6 +20,12 @@ catch {
   reset_db
 }
 
+# If SQLITE_ENABLE_FTS5 is not defined, skip this test.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
 proc fts5_test_poslist {cmd} {
   set res [list]
   for {set i 0} {$i < [$cmd xInstCount]} {incr i} {

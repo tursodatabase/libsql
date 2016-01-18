@@ -19,8 +19,6 @@ ifcapable !fts5 {
   return
 }
 
-if 1 {
-
 do_execsql_test 1.0 {
   CREATE VIRTUAL TABLE t1 USING fts5(a, detail=none);
   INSERT INTO t1 VALUES('a b c');
@@ -298,8 +296,6 @@ do_test 15.4 {
   execsql { INSERT INTO t1(t1) VALUES('integrity-check') }
 } {}
 
-}
-
 #-------------------------------------------------------------------------
 #
 reset_db
@@ -321,6 +317,22 @@ do_execsql_test 16.2 {
   SELECT rowid FROM t2('b') ORDER BY rowid DESC
 } {1000 456 1}
 
+
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 16.0 {
+  CREATE VIRTUAL TABLE t2 USING fts5(x, detail=none);
+  BEGIN;
+    INSERT INTO t2(rowid, x) VALUES(1, 'a b c');
+    INSERT INTO t2(rowid, x) VALUES(456, 'a b c');
+    INSERT INTO t2(rowid, x) VALUES(1000, 'a b c');
+  COMMIT;
+  UPDATE t2 SET x=x;
+  DELETE FROM t2;
+}
+
+#db eval {SELECT rowid, fts5_decode_none(rowid, block) aS r FROM t2_data} {puts $r}
   
 finish_test
 
