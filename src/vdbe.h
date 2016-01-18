@@ -180,10 +180,10 @@ int sqlite3VdbeAddOp3(Vdbe*,int,int,int,int);
 int sqlite3VdbeAddOp4(Vdbe*,int,int,int,int,const char *zP4,int);
 int sqlite3VdbeAddOp4Dup8(Vdbe*,int,int,int,int,const u8*,int);
 int sqlite3VdbeAddOp4Int(Vdbe*,int,int,int,int,int);
-#ifdef SQLITE_DEBUG
-  void sqlite3VdbeVerifyAvailableSpace(Vdbe *p, int N);
+#if defined(SQLITE_DEBUG) && !defined(SQLITE_TEST_REALLOC_STRESS)
+  void sqlite3VdbeVerifyNoMallocRequired(Vdbe *p, int N);
 #else
-# define sqlite3VdbeVerifyAvailableSpace(A,B)
+# define sqlite3VdbeVerifyNoMallocRequired(A,B)
 #endif
 VdbeOp *sqlite3VdbeAddOpList(Vdbe*, int nOp, VdbeOpList const *aOp, int iLineno);
 void sqlite3VdbeAddParseSchemaOp(Vdbe*,int,char*);

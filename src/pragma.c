@@ -435,9 +435,9 @@ void sqlite3Pragma(
     if( !zRight ){
       setOneColumnName(v, "cache_size");
       pParse->nMem += 2;
-      sqlite3VdbeVerifyAvailableSpace(v, ArraySize(getCacheSize));
+      sqlite3VdbeVerifyNoMallocRequired(v, ArraySize(getCacheSize));
       aOp = sqlite3VdbeAddOpList(v, ArraySize(getCacheSize), getCacheSize, iLn);
-      assert( aOp!=0 );
+      if( ONLY_IF_REALLOC_STRESS(aOp==0) ) break;
       aOp[0].p1 = iDb;
       aOp[1].p1 = iDb;
       aOp[6].p1 = SQLITE_DEFAULT_CACHE_SIZE;
@@ -688,9 +688,9 @@ void sqlite3Pragma(
         };
         VdbeOp *aOp;
         int iAddr = sqlite3VdbeCurrentAddr(v);
-        sqlite3VdbeVerifyAvailableSpace(v, ArraySize(setMeta6));
+        sqlite3VdbeVerifyNoMallocRequired(v, ArraySize(setMeta6));
         aOp = sqlite3VdbeAddOpList(v, ArraySize(setMeta6), setMeta6, iLn);
-        assert( aOp!=0 );
+        if( ONLY_IF_REALLOC_STRESS(aOp==0) ) break;
         aOp[0].p1 = iDb;
         aOp[1].p1 = iDb;
         aOp[2].p2 = iAddr+4;
@@ -1732,9 +1732,9 @@ void sqlite3Pragma(
         { OP_SetCookie,      0,  0,  1},    /* 2 */
       };
       VdbeOp *aOp;
-      sqlite3VdbeVerifyAvailableSpace(v, ArraySize(setCookie));
+      sqlite3VdbeVerifyNoMallocRequired(v, ArraySize(setCookie));
       aOp = sqlite3VdbeAddOpList(v, ArraySize(setCookie), setCookie, 0);
-      assert( aOp!=0 );
+      if( ONLY_IF_REALLOC_STRESS(aOp==0) ) break;
       aOp[0].p1 = iDb;
       aOp[1].p1 = sqlite3Atoi(zRight);
       aOp[2].p1 = iDb;
@@ -1747,9 +1747,9 @@ void sqlite3Pragma(
         { OP_ResultRow,       1,  1,  0}
       };
       VdbeOp *aOp;
-      sqlite3VdbeVerifyAvailableSpace(v, ArraySize(readCookie));
+      sqlite3VdbeVerifyNoMallocRequired(v, ArraySize(readCookie));
       aOp = sqlite3VdbeAddOpList(v, ArraySize(readCookie),readCookie,0);
-      assert( aOp!=0 );
+      if( ONLY_IF_REALLOC_STRESS(aOp==0) ) break;
       aOp[0].p1 = iDb;
       aOp[1].p1 = iDb;
       aOp[1].p3 = iCookie;
