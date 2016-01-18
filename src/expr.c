@@ -1135,10 +1135,11 @@ ExprList *sqlite3ExprListAppend(
 ){
   sqlite3 *db = pParse->db;
   if( pList==0 ){
-    pList = sqlite3DbMallocZero(db, sizeof(ExprList) );
+    pList = sqlite3DbMallocRaw(db, sizeof(ExprList) );
     if( pList==0 ){
       goto no_mem;
     }
+    pList->nExpr = 0;
     pList->a = sqlite3DbMallocRaw(db, sizeof(pList->a[0]));
     if( pList->a==0 ) goto no_mem;
   }else if( (pList->nExpr & (pList->nExpr-1))==0 ){
