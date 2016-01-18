@@ -225,13 +225,13 @@ int sqlite3Fts5ConfigParseRank(const char*, char**, char**);
 typedef struct Fts5Buffer Fts5Buffer;
 struct Fts5Buffer {
   u8 *p;
-  int n;
-  int nSpace;
+  u32 n;
+  u32 nSpace;
 };
 
-int sqlite3Fts5BufferSize(int*, Fts5Buffer*, int);
+int sqlite3Fts5BufferSize(int*, Fts5Buffer*, u32);
 void sqlite3Fts5BufferAppendVarint(int*, Fts5Buffer*, i64);
-void sqlite3Fts5BufferAppendBlob(int*, Fts5Buffer*, int, const u8*);
+void sqlite3Fts5BufferAppendBlob(int*, Fts5Buffer*, u32, const u8*);
 void sqlite3Fts5BufferAppendString(int *, Fts5Buffer*, const char*);
 void sqlite3Fts5BufferFree(Fts5Buffer*);
 void sqlite3Fts5BufferZero(Fts5Buffer*);

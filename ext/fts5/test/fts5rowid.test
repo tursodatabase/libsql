@@ -184,5 +184,32 @@ do_execsql_test 5.2 {
   SELECT count(fts5_decode(rowid, block)) FROM x4_data;
 } $res
 
+#-------------------------------------------------------------------------
+#
+
+do_execsql_test 6.0 {
+  CREATE VIRTUAL TABLE x5 USING fts5(x, detail=none);
+  INSERT INTO x5(x5, rank) VALUES('pgsz', 32);
+  INSERT INTO x5 VALUES('a b c d e f');
+  INSERT INTO x5 VALUES('a b c d e f');
+  INSERT INTO x5 VALUES('a b c d e f');
+  BEGIN;
+    WITH s(i) AS (
+      SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<100
+    ) INSERT INTO x5 SELECT 'a b c d e f' FROM s;
+  COMMIT;
+  SELECT count(fts5_decode_none(rowid, block)) FROM x5_data;
+} {32}
+
+do_execsql_test 6.1 {
+  DELETE FROM x5 WHERE rowid=1;
+  UPDATE x5 SET x='a b c d e f' WHERE rowid=2;
+  SELECT count(fts5_decode_none(rowid, block)) FROM x5_data;
+} {36}
+
+#db eval {SELECT rowid, fts5_decode_none(rowid, block) aS r FROM x5_data} {puts $r}
+
+
+
 finish_test
 

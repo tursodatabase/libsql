@@ -15,8 +15,8 @@
 
 #include "fts5Int.h"
 
-int sqlite3Fts5BufferSize(int *pRc, Fts5Buffer *pBuf, int nByte){
-  int nNew = pBuf->nSpace ? pBuf->nSpace*2 : 64;
+int sqlite3Fts5BufferSize(int *pRc, Fts5Buffer *pBuf, u32 nByte){
+  u32 nNew = pBuf->nSpace ? pBuf->nSpace*2 : 64;
   u8 *pNew;
   while( nNew<nByte ){
     nNew = nNew * 2;
@@ -61,10 +61,10 @@ int sqlite3Fts5Get32(const u8 *aBuf){
 void sqlite3Fts5BufferAppendBlob(
   int *pRc,
   Fts5Buffer *pBuf, 
-  int nData, 
+  u32 nData, 
   const u8 *pData
 ){
-  assert( *pRc || nData>=0 );
+  assert_nc( *pRc || nData>=0 );
   if( fts5BufferGrow(pRc, pBuf, nData) ) return;
   memcpy(&pBuf->p[pBuf->n], pData, nData);
   pBuf->n += nData;

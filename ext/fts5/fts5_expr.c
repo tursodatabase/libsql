@@ -834,7 +834,7 @@ static int fts5ExprTokenTest(
   assert( pPhrase->aTerm[0].pSynonym==0 );
 
   rc = sqlite3Fts5IterPoslist(pIter, pColset, 
-      (const u8**)&pPhrase->poslist.p, &pPhrase->poslist.n, &pNode->iRowid
+      (const u8**)&pPhrase->poslist.p, (int*)&pPhrase->poslist.n, &pNode->iRowid
   );
   pNode->bNomatch = (pPhrase->poslist.n==0);
   return rc;

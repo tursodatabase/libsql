@@ -6014,7 +6014,7 @@ static void fts5DecodeFunction(
 
     /* Decode any entries that occur before the first term. */
     if( szLeaf<n ){
-      fts5FastGetVarint32(a, iPgidxOff, iTermOff);
+      iPgidxOff += fts5GetVarint32(&a[iPgidxOff], iTermOff);
     }else{
       iTermOff = szLeaf;
     }
@@ -6025,7 +6025,7 @@ static void fts5DecodeFunction(
       int nAppend;
 
       /* Read the term data for the next term*/
-      fts5FastGetVarint32(a, iOff, nAppend);
+      iOff += fts5GetVarint32(&a[iOff], nAppend);
       term.n = nKeep;
       fts5BufferAppendBlob(&rc, &term, nAppend, &a[iOff]);
       sqlite3Fts5BufferAppendPrintf(
@@ -6036,7 +6036,7 @@ static void fts5DecodeFunction(
       /* Figure out where the doclist for this term ends */
       if( iPgidxOff<n ){
         int nIncr;
-        fts5FastGetVarint32(a, iPgidxOff, nIncr);
+        iPgidxOff += fts5GetVarint32(&a[iPgidxOff], nIncr);
         iTermOff += nIncr;
       }else{
         iTermOff = szLeaf;
@@ -6045,7 +6045,7 @@ static void fts5DecodeFunction(
       fts5DecodeRowidList(&rc, &s, &a[iOff], iTermOff-iOff);
       iOff = iTermOff;
       if( iOff<szLeaf ){
-        fts5FastGetVarint32(a, iOff, nKeep);
+        iOff += fts5GetVarint32(&a[iOff], nKeep);
       }
     }
 
