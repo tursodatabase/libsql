@@ -15,6 +15,11 @@ if {![info exists testdir]} {
 }
 source $testdir/tester.tcl
 
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
 catch { 
   sqlite3_fts5_may_be_corrupt 0 
   reset_db

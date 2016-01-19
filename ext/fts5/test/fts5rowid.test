@@ -202,8 +202,12 @@ do_execsql_test 6.0 {
 } {32}
 
 do_execsql_test 6.1 {
-  DELETE FROM x5 WHERE rowid=1;
-  UPDATE x5 SET x='a b c d e f' WHERE rowid=2;
+  DELETE FROM x5 WHERE rowid <= 2;
+  SELECT count(fts5_decode_none(rowid, block)) FROM x5_data;
+} {34}
+
+do_execsql_test 6.2 {
+  UPDATE x5 SET x='a b c d e f' WHERE rowid=3;
   SELECT count(fts5_decode_none(rowid, block)) FROM x5_data;
 } {36}
 
