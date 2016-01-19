@@ -3655,9 +3655,9 @@ static int vdbeCompareMemString(
     v2 = sqlite3ValueText((sqlite3_value*)&c2, pColl->enc);
     n2 = v2==0 ? 0 : c2.n;
     rc = pColl->xCmp(pColl->pUser, n1, v1, n2, v2);
+    if( (v1==0 || v2==0) && prcErr ) *prcErr = SQLITE_NOMEM;
     sqlite3VdbeMemRelease(&c1);
     sqlite3VdbeMemRelease(&c2);
-    if( (v1==0 || v2==0) && prcErr ) *prcErr = SQLITE_NOMEM;
     return rc;
   }
 }
