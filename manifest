@@ -1,5 +1,5 @@
-C Fix\stwo\sharmless\scompiler\swarnings\sabout\scomparisons\sof\sdangling\spointers.
-D 2016-01-19T17:54:21.554
+C Fix\san\sincorrect\sVFS\sversion\snumber\scheck\sin\sthe\sthreadtest3.c\stest\sprogram.
+D 2016-01-19T21:36:26.548
 F Makefile.in a476545d0c8626224d0bacac85c6e2967474af81
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 01e855f958932d0d3ed62ec675fc63e2cef61fcb
@@ -1084,7 +1084,7 @@ F test/thread2.test f35d2106452b77523b3a2b7d1dcde2e5ee8f9e46
 F test/thread_common.tcl 334639cadcb9f912bf82aa73f49efd5282e6cadd
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
 F test/threadtest2.c a70a8e94bef23339d34226eb9521015ef99f4df8
-F test/threadtest3.c 7ca82330041456afa52e4968196bb0867371f91b
+F test/threadtest3.c 38a612ea62854349ed66372f330a40d73c5cf956
 F test/threadtest4.c c1e67136ceb6c7ec8184e56ac61db28f96bd2925
 F test/tkt-02a8e81d44.test 6c80d9c7514e2a42d4918bf87bf6bc54f379110c
 F test/tkt-26ff0c2d1e.test 888324e751512972c6e0d1a09df740d8f5aaf660
@@ -1419,7 +1419,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b914ece0d146cfc8adba4dc4e8633e14f174d6ea
-R 3e5d796fe259d88063a5203a70f6d659
+P 86944f193f1f06b64471953bb5713ecea7f3d803
+R 1bd8149c5e96ca5f6729d165e7caff84
 U drh
-Z 42379f3c18aeff0e63b7fa93d55446fd
+Z 65f48ec6556e690748ae351a1c163375
