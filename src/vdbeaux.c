@@ -849,7 +849,7 @@ int sqlite3VdbeChangeToNoop(Vdbe *p, int addr){
   assert( addr>=0 && addr<p->nOp );
   pOp = &p->aOp[addr];
   freeP4(p->db, pOp->p4type, pOp->p4.p);
-  memset(pOp, 0, sizeof(pOp[0]));
+  pOp->p4type = P4_NOTUSED;
   pOp->opcode = OP_Noop;
   return 1;
 }
