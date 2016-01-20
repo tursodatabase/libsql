@@ -228,15 +228,19 @@ void sqlite3FinishCoding(Parse *pParse){
     if( pParse->pAinc!=0 && pParse->nTab==0 ) pParse->nTab = 1;
     sqlite3VdbeMakeReady(v, pParse);
     pParse->rc = SQLITE_DONE;
-    pParse->colNamesSet = 0;
   }else{
     pParse->rc = SQLITE_ERROR;
   }
+
+  /* We are done with this Parse object. There is no need to de-initialize it */
+#if 0
+  pParse->colNamesSet = 0;
   pParse->nTab = 0;
   pParse->nMem = 0;
   pParse->nSet = 0;
   pParse->nVar = 0;
   DbMaskZero(pParse->cookieMask);
+#endif
 }
 
 /*
@@ -495,7 +499,6 @@ void sqlite3CollapseDatabaseArray(sqlite3 *db){
     }
     j++;
   }
-  memset(&db->aDb[j], 0, (db->nDb-j)*sizeof(db->aDb[j]));
   db->nDb = j;
   if( db->nDb<=2 && db->aDb!=db->aDbStatic ){
     memcpy(db->aDbStatic, db->aDb, 2*sizeof(db->aDb[0]));
@@ -758,7 +761,8 @@ int sqlite3TwoPartName(
   int iDb;                    /* Database holding the object */
   sqlite3 *db = pParse->db;
 
-  if( ALWAYS(pName2!=0) && pName2->n>0 ){
+  assert( pName2!=0 );
+  if( pName2->n>0 ){
     if( db->init.busy ) {
       sqlite3ErrorMsg(pParse, "corrupt database");
       return -1;
@@ -847,62 +851,46 @@ void sqlite3StartTable(
   int iDb;         /* Database number to create the table in */
   Token *pName;    /* Unqualified name of the table to create */
 
-  /* The table or view name to create is passed to this routine via tokens
-  ** pName1 and pName2. If the table name was fully qualified, for example:
-  **
-  ** CREATE TABLE xxx.yyy (...);
-  ** 
-  ** Then pName1 is set to "xxx" and pName2 "yyy". On the other hand if
-  ** the table name is not fully qualified, i.e.:
-  **
-  ** CREATE TABLE yyy(...);
-  **
-  ** Then pName1 is set to "yyy" and pName2 is "".
-  **
-  ** The call below sets the pName pointer to point at the token (pName1 or
-  ** pName2) that stores the unqualified table name. The variable iDb is
-  ** set to the index of the database that the table or view is to be
-  ** created in.
-  */
-  iDb = sqlite3TwoPartName(pParse, pName1, pName2, &pName);
-  if( iDb<0 ) return;
-  if( !OMIT_TEMPDB && isTemp && pName2->n>0 && iDb!=1 ){
-    /* If creating a temp table, the name may not be qualified. Unless 
-    ** the database name is "temp" anyway.  */
-    sqlite3ErrorMsg(pParse, "temporary table name must be unqualified");
-    return;
+  if( db->init.busy && db->init.newTnum==1 ){
+    /* Special case:  Parsing the sqlite_master or sqlite_temp_master schema */
+    iDb = db->init.iDb;
+    zName = sqlite3DbStrDup(db, SCHEMA_TABLE(iDb));
+    pName = pName1;
+  }else{
+    /* The common case */
+    iDb = sqlite3TwoPartName(pParse, pName1, pName2, &pName);
+    if( iDb<0 ) return;
+    if( !OMIT_TEMPDB && isTemp && pName2->n>0 && iDb!=1 ){
+      /* If creating a temp table, the name may not be qualified. Unless 
+      ** the database name is "temp" anyway.  */
+      sqlite3ErrorMsg(pParse, "temporary table name must be unqualified");
+      return;
+    }
+    if( !OMIT_TEMPDB && isTemp ) iDb = 1;
+    zName = sqlite3NameFromToken(db, pName);
   }
-  if( !OMIT_TEMPDB && isTemp ) iDb = 1;
-
   pParse->sNameToken = *pName;
-  zName = sqlite3NameFromToken(db, pName);
   if( zName==0 ) return;
   if( SQLITE_OK!=sqlite3CheckObjectName(pParse, zName) ){
     goto begin_table_error;
   }
   if( db->init.iDb==1 ) isTemp = 1;
 #ifndef SQLITE_OMIT_AUTHORIZATION
-  assert( (isTemp & 1)==isTemp );
+  assert( isTemp==0 || isTemp==1 );
+  assert( isView==0 || isView==1 );
   {
-    int code;
+    static const u8 aCode[] = {
+       SQLITE_CREATE_TABLE,
+       SQLITE_CREATE_TEMP_TABLE,
+       SQLITE_CREATE_VIEW,
+       SQLITE_CREATE_TEMP_VIEW
+    };
     char *zDb = db->aDb[iDb].zName;
     if( sqlite3AuthCheck(pParse, SQLITE_INSERT, SCHEMA_TABLE(isTemp), 0, zDb) ){
       goto begin_table_error;
     }
-    if( isView ){
-      if( !OMIT_TEMPDB && isTemp ){
-        code = SQLITE_CREATE_TEMP_VIEW;
-      }else{
-        code = SQLITE_CREATE_VIEW;
-      }
-    }else{
-      if( !OMIT_TEMPDB && isTemp ){
-        code = SQLITE_CREATE_TEMP_TABLE;
-      }else{
-        code = SQLITE_CREATE_TABLE;
-      }
-    }
-    if( !isVirtual && sqlite3AuthCheck(pParse, code, zName, 0, zDb) ){
+    if( !isVirtual && sqlite3AuthCheck(pParse, (int)aCode[isTemp+2*isView],
+                                       zName, 0, zDb) ){
       goto begin_table_error;
     }
   }
@@ -1864,9 +1852,13 @@ void sqlite3EndTable(
   ** So do not write to the disk again.  Extract the root page number
   ** for the table from the db->init.newTnum field.  (The page number
   ** should have been put there by the sqliteOpenCb routine.)
+  **
+  ** If the root page number is 1, that means this is the sqlite_master
+  ** table itself.  So mark it read-only.
   */
   if( db->init.busy ){
     p->tnum = db->init.newTnum;
+    if( p->tnum==1 ) p->tabFlags |= TF_Readonly;
   }
 
   /* Special processing for WITHOUT ROWID Tables */
@@ -2319,6 +2311,7 @@ void sqlite3RootPageMoved(sqlite3 *db, int iDb, int iFrom, int iTo){
 static void destroyRootPage(Parse *pParse, int iTable, int iDb){
   Vdbe *v = sqlite3GetVdbe(pParse);
   int r1 = sqlite3GetTempReg(pParse);
+  assert( iTable>1 );
   sqlite3VdbeAddOp3(v, OP_Destroy, iTable, r1, iDb);
   sqlite3MayAbort(pParse);
 #ifndef SQLITE_OMIT_AUTOVACUUM
@@ -3717,9 +3710,10 @@ SrcList *sqlite3SrcListAppend(
   struct SrcList_item *pItem;
   assert( pDatabase==0 || pTable!=0 );  /* Cannot have C without B */
   if( pList==0 ){
-    pList = sqlite3DbMallocZero(db, sizeof(SrcList) );
+    pList = sqlite3DbMallocRaw(db, sizeof(SrcList) );
     if( pList==0 ) return 0;
     pList->nAlloc = 1;
+    pList->nSrc = 0;
   }
   pList = sqlite3SrcListEnlarge(db, pList, 1, pList->nSrc);
   if( db->mallocFailed ){
@@ -4122,7 +4116,7 @@ void sqlite3HaltConstraint(
     sqlite3MayAbort(pParse);
   }
   sqlite3VdbeAddOp4(v, OP_Halt, errCode, onError, 0, p4, p4type);
-  if( p5Errmsg ) sqlite3VdbeChangeP5(v, p5Errmsg);
+  sqlite3VdbeChangeP5(v, p5Errmsg);
 }
 
 /*

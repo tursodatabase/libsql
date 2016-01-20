@@ -63,6 +63,7 @@ do_execsql_test 2.2 {
     SELECT rnddoc(6), rnddoc(6) FROM r
   )
   INSERT INTO x1 SELECT * FROM r LIMIT 10000;
+  DELETE FROM x1 WHERE (rowid%2);
 }
 
 set res [db one {SELECT count(*) FROM x1_data}]
@@ -71,8 +72,7 @@ do_execsql_test 2.3 {
 } $res
 do_execsql_test 2.4 {
   UPDATE x1_data SET block = X'';
-  -- SELECT count(fts5_decode(rowid, block)) FROM x1_data;
-  SELECT count(*) FROM x1_data;
+  SELECT count(fts5_decode(rowid, block)) FROM x1_data;
 } $res
 
 do_execsql_test 2.5 {
@@ -183,6 +183,37 @@ set res [db one {SELECT count(*) FROM x4_data}]
 do_execsql_test 5.2 {
   SELECT count(fts5_decode(rowid, block)) FROM x4_data;
 } $res
+
+#-------------------------------------------------------------------------
+#
+
+do_execsql_test 6.0 {
+  CREATE VIRTUAL TABLE x5 USING fts5(x, detail=none);
+  INSERT INTO x5(x5, rank) VALUES('pgsz', 32);
+  INSERT INTO x5 VALUES('a b c d e f');
+  INSERT INTO x5 VALUES('a b c d e f');
+  INSERT INTO x5 VALUES('a b c d e f');
+  BEGIN;
+    WITH s(i) AS (
+      SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<100
+    ) INSERT INTO x5 SELECT 'a b c d e f' FROM s;
+  COMMIT;
+  SELECT count(fts5_decode_none(rowid, block)) FROM x5_data;
+} {32}
+
+do_execsql_test 6.1 {
+  DELETE FROM x5 WHERE rowid <= 2;
+  SELECT count(fts5_decode_none(rowid, block)) FROM x5_data;
+} {34}
+
+do_execsql_test 6.2 {
+  UPDATE x5 SET x='a b c d e f' WHERE rowid=3;
+  SELECT count(fts5_decode_none(rowid, block)) FROM x5_data;
+} {36}
+
+#db eval {SELECT rowid, fts5_decode_none(rowid, block) aS r FROM x5_data} {puts $r}
+
+
 
 finish_test
 

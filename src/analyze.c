@@ -478,8 +478,7 @@ static const FuncDef statInitFuncdef = {
   SQLITE_UTF8,     /* funcFlags */
   0,               /* pUserData */
   0,               /* pNext */
-  statInit,        /* xFunc */
-  0,               /* xStep */
+  statInit,        /* xSFunc */
   0,               /* xFinalize */
   "stat_init",     /* zName */
   0,               /* pHash */
@@ -779,8 +778,7 @@ static const FuncDef statPushFuncdef = {
   SQLITE_UTF8,     /* funcFlags */
   0,               /* pUserData */
   0,               /* pNext */
-  statPush,        /* xFunc */
-  0,               /* xStep */
+  statPush,        /* xSFunc */
   0,               /* xFinalize */
   "stat_push",     /* zName */
   0,               /* pHash */
@@ -926,8 +924,7 @@ static const FuncDef statGetFuncdef = {
   SQLITE_UTF8,     /* funcFlags */
   0,               /* pUserData */
   0,               /* pNext */
-  statGet,         /* xFunc */
-  0,               /* xStep */
+  statGet,         /* xSFunc */
   0,               /* xFinalize */
   "stat_get",      /* zName */
   0,               /* pHash */
@@ -943,8 +940,8 @@ static void callStatGet(Vdbe *v, int regStat4, int iParam, int regOut){
 #else
   UNUSED_PARAMETER( iParam );
 #endif
-  sqlite3VdbeAddOp3(v, OP_Function0, 0, regStat4, regOut);
-  sqlite3VdbeChangeP4(v, -1, (char*)&statGetFuncdef, P4_FUNCDEF);
+  sqlite3VdbeAddOp4(v, OP_Function0, 0, regStat4, regOut,
+                    (char*)&statGetFuncdef, P4_FUNCDEF);
   sqlite3VdbeChangeP5(v, 1 + IsStat34);
 }
 
@@ -1098,8 +1095,8 @@ static void analyzeOneTable(
 #endif
     sqlite3VdbeAddOp2(v, OP_Integer, nCol, regStat4+1);
     sqlite3VdbeAddOp2(v, OP_Integer, pIdx->nKeyCol, regStat4+2);
-    sqlite3VdbeAddOp3(v, OP_Function0, 0, regStat4+1, regStat4);
-    sqlite3VdbeChangeP4(v, -1, (char*)&statInitFuncdef, P4_FUNCDEF);
+    sqlite3VdbeAddOp4(v, OP_Function0, 0, regStat4+1, regStat4,
+                     (char*)&statInitFuncdef, P4_FUNCDEF);
     sqlite3VdbeChangeP5(v, 2+IsStat34);
 
     /* Implementation of the following:
@@ -1195,8 +1192,8 @@ static void analyzeOneTable(
     }
 #endif
     assert( regChng==(regStat4+1) );
-    sqlite3VdbeAddOp3(v, OP_Function0, 1, regStat4, regTemp);
-    sqlite3VdbeChangeP4(v, -1, (char*)&statPushFuncdef, P4_FUNCDEF);
+    sqlite3VdbeAddOp4(v, OP_Function0, 1, regStat4, regTemp,
+                     (char*)&statPushFuncdef, P4_FUNCDEF);
     sqlite3VdbeChangeP5(v, 2+IsStat34);
     sqlite3VdbeAddOp2(v, OP_Next, iIdxCur, addrNextRow); VdbeCoverage(v);
 

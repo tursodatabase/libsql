@@ -202,6 +202,7 @@ static int isLikeOrGlob(
   sqlite3 *db = pParse->db;  /* Database connection */
   sqlite3_value *pVal = 0;
   int op;                    /* Opcode of pRight */
+  int rc;                    /* Result code to return */
 
   if( !sqlite3IsLikeFunction(db, pExpr, pnoCase, wc) ){
     return 0;
@@ -267,8 +268,9 @@ static int isLikeOrGlob(
     }
   }
 
+  rc = (z!=0);
   sqlite3ValueFree(pVal);
-  return (z!=0);
+  return rc;
 }
 #endif /* SQLITE_OMIT_LIKE_OPTIMIZATION */
 

@@ -225,13 +225,13 @@ int sqlite3Fts5ConfigParseRank(const char*, char**, char**);
 typedef struct Fts5Buffer Fts5Buffer;
 struct Fts5Buffer {
   u8 *p;
-  int n;
-  int nSpace;
+  u32 n;
+  u32 nSpace;
 };
 
-int sqlite3Fts5BufferSize(int*, Fts5Buffer*, int);
+int sqlite3Fts5BufferSize(int*, Fts5Buffer*, u32);
 void sqlite3Fts5BufferAppendVarint(int*, Fts5Buffer*, i64);
-void sqlite3Fts5BufferAppendBlob(int*, Fts5Buffer*, int, const u8*);
+void sqlite3Fts5BufferAppendBlob(int*, Fts5Buffer*, u32, const u8*);
 void sqlite3Fts5BufferAppendString(int *, Fts5Buffer*, const char*);
 void sqlite3Fts5BufferFree(Fts5Buffer*);
 void sqlite3Fts5BufferZero(Fts5Buffer*);
@@ -586,7 +586,7 @@ int sqlite3Fts5StorageRename(Fts5Storage*, const char *zName);
 int sqlite3Fts5DropAll(Fts5Config*);
 int sqlite3Fts5CreateTable(Fts5Config*, const char*, const char*, int, char **);
 
-int sqlite3Fts5StorageDelete(Fts5Storage *p, i64);
+int sqlite3Fts5StorageDelete(Fts5Storage *p, i64, sqlite3_value**);
 int sqlite3Fts5StorageContentInsert(Fts5Storage *p, sqlite3_value**, i64*);
 int sqlite3Fts5StorageIndexInsert(Fts5Storage *p, sqlite3_value**, i64);
 
@@ -605,8 +605,6 @@ int sqlite3Fts5StorageRollback(Fts5Storage *p);
 int sqlite3Fts5StorageConfigValue(
     Fts5Storage *p, const char*, sqlite3_value*, int
 );
-
-int sqlite3Fts5StorageSpecialDelete(Fts5Storage *p, i64 iDel, sqlite3_value**);
 
 int sqlite3Fts5StorageDeleteAll(Fts5Storage *p);
 int sqlite3Fts5StorageRebuild(Fts5Storage *p);

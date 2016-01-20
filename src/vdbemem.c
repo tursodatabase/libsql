@@ -1220,7 +1220,7 @@ static int valueFromFunction(
   memset(&ctx, 0, sizeof(ctx));
   ctx.pOut = pVal;
   ctx.pFunc = pFunc;
-  pFunc->xFunc(&ctx, nVal, apVal);
+  pFunc->xSFunc(&ctx, nVal, apVal);
   if( ctx.isError ){
     rc = ctx.isError;
     sqlite3ErrorMsg(pCtx->pParse, "%s", sqlite3_value_text(pVal));

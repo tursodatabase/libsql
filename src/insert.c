@@ -1604,7 +1604,7 @@ void sqlite3CompleteInsertion(
       assert( pParse->nested==0 );
       pik_flags |= OPFLAG_NCHANGE;
     }
-    if( pik_flags )  sqlite3VdbeChangeP5(v, pik_flags);
+    sqlite3VdbeChangeP5(v, pik_flags);
   }
   if( !HasRowid(pTab) ) return;
   regData = regNewData + 1;
@@ -2020,9 +2020,9 @@ static int xferOptimization(
       assert( (pDest->tabFlags & TF_Autoincrement)==0 );
     }
     sqlite3VdbeAddOp2(v, OP_RowData, iSrc, regData);
-    sqlite3VdbeAddOp3(v, OP_Insert, iDest, regData, regRowid);
+    sqlite3VdbeAddOp4(v, OP_Insert, iDest, regData, regRowid,
+                      (char*)pDest, P4_TABLE);
     sqlite3VdbeChangeP5(v, OPFLAG_NCHANGE|OPFLAG_LASTROWID|OPFLAG_APPEND);
-    sqlite3VdbeChangeP4(v, -1, (char*)pDest, P4_TABLE);
     sqlite3VdbeAddOp2(v, OP_Next, iSrc, addr1); VdbeCoverage(v);
     sqlite3VdbeAddOp2(v, OP_Close, iSrc, 0);
     sqlite3VdbeAddOp2(v, OP_Close, iDest, 0);

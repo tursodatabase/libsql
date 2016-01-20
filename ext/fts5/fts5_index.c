@@ -1875,13 +1875,15 @@ static void fts5SegIterNext(
   int iOff;
   int bNewTerm = 0;
   int nKeep = 0;
+  u8 *a;
+  int n;
 
   assert( pbNewTerm==0 || *pbNewTerm==0 );
   assert( p->pConfig->eDetail!=FTS5_DETAIL_NONE );
 
   /* Search for the end of the position list within the current page. */
-  u8 *a = pLeaf->p;
-  int n = pLeaf->szLeaf;
+  a = pLeaf->p;
+  n = pLeaf->szLeaf;
 
   ASSERT_SZLEAF_OK(pLeaf);
   iOff = pIter->iLeafOffset + pIter->nPos;
@@ -5903,6 +5905,47 @@ static int fts5DecodeDoclist(int *pRc, Fts5Buffer *pBuf, const u8 *a, int n){
 }
 
 /*
+** This function is part of the fts5_decode() debugging function. It is 
+** only ever used with detail=none tables.
+**
+** Buffer (pData/nData) contains a doclist in the format used by detail=none
+** tables. This function appends a human-readable version of that list to
+** buffer pBuf.
+**
+** If *pRc is other than SQLITE_OK when this function is called, it is a
+** no-op. If an OOM or other error occurs within this function, *pRc is
+** set to an SQLite error code before returning. The final state of buffer
+** pBuf is undefined in this case.
+*/
+static void fts5DecodeRowidList(
+  int *pRc,                       /* IN/OUT: Error code */
+  Fts5Buffer *pBuf,               /* Buffer to append text to */
+  const u8 *pData, int nData      /* Data to decode list-of-rowids from */
+){
+  int i = 0;
+  i64 iRowid = 0;
+
+  while( i<nData ){
+    const char *zApp = "";
+    u64 iVal;
+    i += sqlite3Fts5GetVarint(&pData[i], &iVal);
+    iRowid += iVal;
+
+    if( i<nData && pData[i]==0x00 ){
+      i++;
+      if( i<nData && pData[i]==0x00 ){
+        i++;
+        zApp = "+";
+      }else{
+        zApp = "*";
+      }
+    }
+
+    sqlite3Fts5BufferAppendPrintf(pRc, pBuf, " %lld%s", iRowid, zApp);
+  }
+}
+
+/*
 ** The implementation of user-defined scalar function fts5_decode().
 */
 static void fts5DecodeFunction(
@@ -5917,6 +5960,7 @@ static void fts5DecodeFunction(
   Fts5Buffer s;                   /* Build up text to return here */
   int rc = SQLITE_OK;             /* Return code */
   int nSpace = 0;
+  int eDetailNone = (sqlite3_user_data(pCtx)!=0);
 
   assert( nArg==2 );
   memset(&s, 0, sizeof(Fts5Buffer));
@@ -5958,6 +6002,54 @@ static void fts5DecodeFunction(
     }else{
       fts5DecodeStructure(&rc, &s, a, n);
     }
+  }else if( eDetailNone ){
+    Fts5Buffer term;              /* Current term read from page */
+    int szLeaf;
+    int iPgidxOff = szLeaf = fts5GetU16(&a[2]);
+    int iTermOff;
+    int nKeep = 0;
+    int iOff;
+
+    memset(&term, 0, sizeof(Fts5Buffer));
+
+    /* Decode any entries that occur before the first term. */
+    if( szLeaf<n ){
+      iPgidxOff += fts5GetVarint32(&a[iPgidxOff], iTermOff);
+    }else{
+      iTermOff = szLeaf;
+    }
+    fts5DecodeRowidList(&rc, &s, &a[4], iTermOff-4);
+
+    iOff = iTermOff;
+    while( iOff<szLeaf ){
+      int nAppend;
+
+      /* Read the term data for the next term*/
+      iOff += fts5GetVarint32(&a[iOff], nAppend);
+      term.n = nKeep;
+      fts5BufferAppendBlob(&rc, &term, nAppend, &a[iOff]);
+      sqlite3Fts5BufferAppendPrintf(
+          &rc, &s, " term=%.*s", term.n, (const char*)term.p
+      );
+      iOff += nAppend;
+
+      /* Figure out where the doclist for this term ends */
+      if( iPgidxOff<n ){
+        int nIncr;
+        iPgidxOff += fts5GetVarint32(&a[iPgidxOff], nIncr);
+        iTermOff += nIncr;
+      }else{
+        iTermOff = szLeaf;
+      }
+
+      fts5DecodeRowidList(&rc, &s, &a[iOff], iTermOff-iOff);
+      iOff = iTermOff;
+      if( iOff<szLeaf ){
+        iOff += fts5GetVarint32(&a[iOff], nKeep);
+      }
+    }
+
+    fts5BufferFree(&term);
   }else{
     Fts5Buffer term;              /* Current term read from page */
     int szLeaf;                   /* Offset of pgidx in a[] */
@@ -6085,6 +6177,14 @@ int sqlite3Fts5IndexInit(sqlite3 *db){
   int rc = sqlite3_create_function(
       db, "fts5_decode", 2, SQLITE_UTF8, 0, fts5DecodeFunction, 0, 0
   );
+
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_function(
+        db, "fts5_decode_none", 2, 
+        SQLITE_UTF8, (void*)db, fts5DecodeFunction, 0, 0
+    );
+  }
+
   if( rc==SQLITE_OK ){
     rc = sqlite3_create_function(
         db, "fts5_rowid", -1, SQLITE_UTF8, 0, fts5RowidFunction, 0, 0

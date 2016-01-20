@@ -24,8 +24,6 @@ ifcapable !fts5 {
 
 foreach_detail_mode $testprefix {
 
-if {[detail_is_none]==0} continue
-
 fts5_aux_test_functions db
 do_execsql_test 1.0 {
   CREATE VIRTUAL TABLE t1 USING fts5(a, b, detail=%DETAIL%);
@@ -34,13 +32,21 @@ do_execsql_test 1.0 {
   INSERT INTO t1 VALUES(NULL, '1 2 1 2');
 }
 
-do_faultsim_test 1 -faults oom-t* -body {
+do_faultsim_test 1 -faults oom-* -body {
   execsql { 
     SELECT rowid, fts5_test_poslist(t1) FROM t1 WHERE t1 MATCH 'b OR 2' 
   }
 } -test {
   faultsim_test_result {0 {1 {0.0.1 1.1.1} 2 {0.0.1 0.0.3} 3 {1.1.1 1.1.3}}} \
                        {1 SQLITE_NOMEM}
+}
+
+do_faultsim_test 2 -faults oom-* -body {
+  execsql { 
+    INSERT INTO t1(t1) VALUES('integrity-check');
+  }
+} -test {
+  faultsim_test_result {0 {}} {1 SQLITE_NOMEM}
 }
 
 }

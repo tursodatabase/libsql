@@ -23,7 +23,8 @@
 #include <assert.h>
 
 extern int sqlite3_fts5_may_be_corrupt;
-extern int sqlite3Fts5TestRegisterMatchinfo(sqlite3 *);
+extern int sqlite3Fts5TestRegisterMatchinfo(sqlite3*);
+extern int sqlite3Fts5TestRegisterTok(sqlite3*, fts5_api*);
 
 /*************************************************************************
 ** This is a copy of the first part of the SqliteDb structure in 
@@ -446,10 +447,12 @@ static int xF5tApi(
       zColvar = Tcl_GetString(objv[3]);
       zOffvar = Tcl_GetString(objv[4]);
 
-      for(p->pApi->xPhraseFirst(p->pFts, iPhrase, &iter, &iCol, &iOff);
-          iCol>=0;
-          p->pApi->xPhraseNext(p->pFts, &iter, &iCol, &iOff)
-      ){
+      rc = p->pApi->xPhraseFirst(p->pFts, iPhrase, &iter, &iCol, &iOff);
+      if( rc!=SQLITE_OK ){
+        Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
+        return TCL_ERROR;
+      }
+      for( ;iCol>=0; p->pApi->xPhraseNext(p->pFts, &iter, &iCol, &iOff) ){
         Tcl_SetVar2Ex(interp, zColvar, 0, Tcl_NewIntObj(iCol), 0);
         Tcl_SetVar2Ex(interp, zOffvar, 0, Tcl_NewIntObj(iOff), 0);
         rc = Tcl_EvalObjEx(interp, pScript, 0);
@@ -473,10 +476,12 @@ static int xF5tApi(
       if( Tcl_GetIntFromObj(interp, objv[2], &iPhrase) ) return TCL_ERROR;
       zColvar = Tcl_GetString(objv[3]);
 
-      for(p->pApi->xPhraseFirstColumn(p->pFts, iPhrase, &iter, &iCol);
-          iCol>=0;
-          p->pApi->xPhraseNextColumn(p->pFts, &iter, &iCol)
-      ){
+      rc = p->pApi->xPhraseFirstColumn(p->pFts, iPhrase, &iter, &iCol);
+      if( rc!=SQLITE_OK ){
+        Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
+        return TCL_ERROR;
+      }
+      for( ; iCol>=0; p->pApi->xPhraseNextColumn(p->pFts, &iter, &iCol)){
         Tcl_SetVar2Ex(interp, zColvar, 0, Tcl_NewIntObj(iCol), 0);
         rc = Tcl_EvalObjEx(interp, pScript, 0);
         if( rc==TCL_CONTINUE ) rc = TCL_OK;
@@ -1078,6 +1083,32 @@ static int f5tRegisterMatchinfo(
   return TCL_OK;
 }
 
+static int f5tRegisterTok(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int rc;
+  sqlite3 *db = 0;
+  fts5_api *pApi = 0;
+
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB");
+    return TCL_ERROR;
+  }
+  if( f5tDbAndApi(interp, objv[1], &db, &pApi) ){
+    return TCL_ERROR;
+  }
+
+  rc = sqlite3Fts5TestRegisterTok(db, pApi);
+  if( rc!=SQLITE_OK ){
+    Tcl_SetResult(interp, (char*)sqlite3ErrName(rc), TCL_VOLATILE);
+    return TCL_ERROR;
+  }
+  return TCL_OK;
+}
+
 /*
 ** Entry point.
 */
@@ -1093,7 +1124,8 @@ int Fts5tcl_Init(Tcl_Interp *interp){
     { "sqlite3_fts5_create_function",    f5tCreateFunction, 0 },
     { "sqlite3_fts5_may_be_corrupt",     f5tMayBeCorrupt, 0 },
     { "sqlite3_fts5_token_hash",         f5tTokenHash, 0 },
-    { "sqlite3_fts5_register_matchinfo", f5tRegisterMatchinfo, 0 }
+    { "sqlite3_fts5_register_matchinfo", f5tRegisterMatchinfo, 0 },
+    { "sqlite3_fts5_register_fts5tokenize", f5tRegisterTok, 0 }
   };
   int i;
   F5tTokenizerContext *pContext;
