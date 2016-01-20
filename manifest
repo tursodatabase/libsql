@@ -1,5 +1,5 @@
-C Version\s3.10.1\srelease\scandidate
-D 2016-01-13T21:41:56.020
+C Case\sfolding\sin\sthe\sLIKE\soperator\sshould\slook\sat\sall\sbits\sof\sthe\scharacter,\nnot\sjust\sthe\slower\s8\sbits.\s\sFix\sfor\sticket\s[80369eddd5c94].\s\sThis\sis\sa\nback-out\sof\scheck-in\s[0a99a8c4facf]\swith\sa\stestcase\sadded.
+D 2016-01-20T14:30:37.713
 F Makefile.in 7c8cc4c2f0179efc6fa9492141d1fb65f4807054
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e45d8b9b56dfa3f2cd860b2c28bd9d304513b042
@@ -289,7 +289,7 @@ F src/delete.c 00af9f08a15ddc5cba5962d3d3e5bf2d67b2e7da
 F src/expr.c 38790e65d1219f2b7dc26458f39a5252fe7c60cd
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c e18b3dff7d47c7bcac5ac4fc178a89b9fd322b44
-F src/func.c cf5e10af9125b245f1b962e8ba4d520a37818795
+F src/func.c fe50a9ab977acc0bb0fcd46741e0071fa388888e
 F src/global.c bd5a0af3f30b0c01be6db756c626cd3c33a3d260
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
 F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
@@ -824,7 +824,7 @@ F test/json103.test 923b288a0610ec86c0951778f7db19cbcca36ad1
 F test/keyword1.test 37ef6bba5d2ed5b07ecdd6810571de2956599dff
 F test/lastinsert.test 42e948fd6442f07d60acbd15d33fb86473e0ef63
 F test/laststmtchanges.test ae613f53819206b3222771828d024154d51db200
-F test/like.test edcf6d0a055816fd793eab92454597c1be91f720
+F test/like.test 81632c437a947bf1f7130b19537da6a1a844806a
 F test/like2.test 3b2ee13149ba4a8a60b59756f4e5d345573852da
 F test/like3.test 3608a2042b6f922f900fbfd5d3ce4e7eca57f7c4
 F test/limit.test 0c99a27a87b14c646a9d583c7c89fd06c352663e
@@ -1406,7 +1406,8 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4660da251bcbfded00d96f105c6b60c394c8d0f4
-R 5ba94cc6a4969a90103e60e246aa0492
+P 254419c36766225ca542ae873ed38255e3fb8588
+Q +204432ee72fda8e82d244c4aa18de7ec4811b8e1
+R 16dd4692a876684dc2a61095c4a3de1f
 U drh
-Z 0d3438b18fba0c0eb6c0a5fbd8ff397b
+Z 0e7d71dd155351edff3b415453b4ca22
