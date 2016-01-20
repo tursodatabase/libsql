@@ -3076,10 +3076,10 @@ struct Sqlite3Config {
 ** Context pointer passed down through the tree-walk.
 */
 struct Walker {
+  Parse *pParse;                            /* Parser context.  */
   int (*xExprCallback)(Walker*, Expr*);     /* Callback for expressions */
   int (*xSelectCallback)(Walker*,Select*);  /* Callback for SELECTs */
   void (*xSelectCallback2)(Walker*,Select*);/* Second callback for SELECTs */
-  Parse *pParse;                            /* Parser context.  */
   int walkerDepth;                          /* Number of subqueries */
   u8 eCode;                                 /* A small processing code */
   union {                                   /* Extra data for callback */

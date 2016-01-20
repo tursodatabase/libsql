@@ -1393,10 +1393,12 @@ int sqlite3ResolveExprNames(
 #endif
   savedHasAgg = pNC->ncFlags & (NC_HasAgg|NC_MinMaxAgg);
   pNC->ncFlags &= ~(NC_HasAgg|NC_MinMaxAgg);
-  memset(&w, 0, sizeof(w));
+  w.pParse = pNC->pParse;
   w.xExprCallback = resolveExprStep;
   w.xSelectCallback = resolveSelectStep;
-  w.pParse = pNC->pParse;
+  w.xSelectCallback2 = 0;
+  w.walkerDepth = 0;
+  w.eCode = 0;
   w.u.pNC = pNC;
   sqlite3WalkExpr(&w, pExpr);
 #if SQLITE_MAX_EXPR_DEPTH>0

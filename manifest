@@ -1,5 +1,5 @@
-C Remove\san\sunnecessary\smemset()\sfor\sa\ssmall\ssize\sreduction\sand\sspeed\simprovement.
-D 2016-01-20T02:01:02.932
+C Remove\san\sunnecessary\smemset()\sfrom\sthe\ssymbol\sname\sresolver.
+D 2016-01-20T02:21:50.387
 F Makefile.in a476545d0c8626224d0bacac85c6e2967474af81
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 01e855f958932d0d3ed62ec675fc63e2cef61fcb
@@ -343,14 +343,14 @@ F src/pragma.h 64c78a648751b9f4f297276c4eb7507b14b4628c
 F src/prepare.c 74855ddbdfad6a1c4a4d5c4b0913ebb01174ba19
 F src/printf.c af589a27b7d40f6f4f704e9eea99f02f18ad6d32
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
-F src/resolve.c 08dbe0292b24abc79b0c55ea97368e8a6bd235ec
+F src/resolve.c 9f7ce3a3c087afb7597b7c916c99126ff3f12f0c
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 718954db86277d696c520fe671148db1e9c4ed3c
 F src/shell.c dcd7a83645ef2a58ee9c6d0ea4714d877d7835c4
 F src/sqlite.h.in 214476a62012e578f42133a9a3b4f97a9aa421a3
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
-F src/sqliteInt.h 9c506d4bc748667c0ea74abd4f034124a4c9a0d1
+F src/sqliteInt.h 8c1debffeeb1579bdc264d54c72c05892e23b7ee
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
@@ -1419,7 +1419,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 80dd495f378614e4eca72e71e43061b1b94ee450
-R a035637148b8d47d70dffd1e7fd4febf
+P 730d7efb6fef54ed7c1f4ae27e3b55778ea6ff01
+R 2a84d613eab09af872226a39d465de29
 U drh
-Z c01377a6a12f63d2df1dc07be9d35345
+Z a3f73fee0434b592305d171cd50a9012
