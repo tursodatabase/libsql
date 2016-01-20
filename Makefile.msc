@@ -1087,6 +1087,7 @@ TESTEXT = \
   $(TOP)\ext\misc\fuzzer.c \
   $(TOP)\ext\fts5\fts5_tcl.c \
   $(TOP)\ext\fts5\fts5_test_mi.c \
+  $(TOP)\ext\fts5\fts5_test_tok.c \
   $(TOP)\ext\misc\ieee754.c \
   $(TOP)\ext\misc\nextchar.c \
   $(TOP)\ext\misc\percentile.c \
@@ -1714,8 +1715,8 @@ fts5_ext.lo:	fts5.c $(HDR) $(EXTHDR)
 fts5.dll:	fts5_ext.lo
 	$(LD) $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) /DLL /OUT:$@ fts5_ext.lo
 
-sqlite3rbu.lo:	$(TOP)/ext/rbu/sqlite3rbu.c $(HDR) $(EXTHDR)
-	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/rbu/sqlite3rbu.c
+sqlite3rbu.lo:	$(TOP)\ext\rbu\sqlite3rbu.c $(HDR) $(EXTHDR)
+	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)\ext\rbu\sqlite3rbu.c
 
 # Rules to build the 'testfixture' application.
 #
@@ -1840,8 +1841,8 @@ speedtest1.exe:	$(TOP)\test\speedtest1.c $(SQLITE3C)
 		$(TOP)\test\speedtest1.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
 rbu.exe: $(TOP)\ext\rbu\rbu.c $(TOP)\ext\rbu\sqlite3rbu.c $(SQLITE3C)
-	$(LTLINK) $(NO_WARN) -I. -DSQLITE_ENABLE_RBU -Fe$@ $(TOP)\ext\rbu\rbu.c $(SQLITE3C) \
-		$(LDFLAGS) $(LTLINKOPTS)
+	$(LTLINK) $(NO_WARN) -DSQLITE_ENABLE_RBU -Fe$@ $(TOP)\ext\rbu\rbu.c $(SQLITE3C) \
+		/link $(LDFLAGS) $(LTLINKOPTS)
 
 clean:
 	del /Q *.exp *.lo *.ilk *.lib *.obj *.ncb *.pdb *.sdf *.suo 2>NUL

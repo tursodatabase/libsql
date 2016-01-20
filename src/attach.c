@@ -359,11 +359,11 @@ static void codeAttach(
 
   assert( v || db->mallocFailed );
   if( v ){
-    sqlite3VdbeAddOp3(v, OP_Function0, 0, regArgs+3-pFunc->nArg, regArgs+3);
+    sqlite3VdbeAddOp4(v, OP_Function0, 0, regArgs+3-pFunc->nArg, regArgs+3,
+                      (char *)pFunc, P4_FUNCDEF);
     assert( pFunc->nArg==-1 || (pFunc->nArg&0xff)==pFunc->nArg );
     sqlite3VdbeChangeP5(v, (u8)(pFunc->nArg));
-    sqlite3VdbeChangeP4(v, -1, (char *)pFunc, P4_FUNCDEF);
-
+ 
     /* Code an OP_Expire. For an ATTACH statement, set P1 to true (expire this
     ** statement only). For DETACH, set it to false (expire all existing
     ** statements).
@@ -388,8 +388,7 @@ void sqlite3Detach(Parse *pParse, Expr *pDbname){
     SQLITE_UTF8,      /* funcFlags */
     0,                /* pUserData */
     0,                /* pNext */
-    detachFunc,       /* xFunc */
-    0,                /* xStep */
+    detachFunc,       /* xSFunc */
     0,                /* xFinalize */
     "sqlite_detach",  /* zName */
     0,                /* pHash */
@@ -409,8 +408,7 @@ void sqlite3Attach(Parse *pParse, Expr *p, Expr *pDbname, Expr *pKey){
     SQLITE_UTF8,      /* funcFlags */
     0,                /* pUserData */
     0,                /* pNext */
-    attachFunc,       /* xFunc */
-    0,                /* xStep */
+    attachFunc,       /* xSFunc */
     0,                /* xFinalize */
     "sqlite_attach",  /* zName */
     0,                /* pHash */

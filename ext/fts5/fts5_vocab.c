@@ -427,6 +427,10 @@ static int fts5VocabNextMethod(sqlite3_vtab_cursor *pCursor){
                   int ii = FTS5_POS2COLUMN(iPos);
                   pCsr->aCnt[ii]++;
                   if( iCol!=ii ){
+                    if( ii>=nCol ){
+                      rc = FTS5_CORRUPT;
+                      break;
+                    }
                     pCsr->aDoc[ii]++;
                     iCol = ii;
                   }
@@ -444,7 +448,11 @@ static int fts5VocabNextMethod(sqlite3_vtab_cursor *pCursor){
               if( rc==SQLITE_OK ){
                 while( 0==sqlite3Fts5PoslistNext64(buf.p, buf.n, &iOff,&iPos) ){
                   assert_nc( iPos>=0 && iPos<nCol );
-                  if( iPos<nCol ) pCsr->aDoc[iPos]++;
+                  if( iPos>=nCol ){
+                    rc = FTS5_CORRUPT;
+                    break;
+                  }
+                  pCsr->aDoc[iPos]++;
                 }
               }
               sqlite3Fts5BufferFree(&buf);
@@ -472,7 +480,7 @@ static int fts5VocabNextMethod(sqlite3_vtab_cursor *pCursor){
     }
   }
 
-  if( pCsr->bEof==0 && pTab->eType==FTS5_VOCAB_COL ){
+  if( rc==SQLITE_OK && pCsr->bEof==0 && pTab->eType==FTS5_VOCAB_COL ){
     while( pCsr->aDoc[pCsr->iCol]==0 ) pCsr->iCol++;
     assert( pCsr->iCol<pCsr->pConfig->nCol );
   }

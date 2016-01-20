@@ -145,9 +145,68 @@ do_execsql_test 5.2 {
   INSERT INTO gg(gg) VALUES('optimize');
 }
 
-breakpoint
 do_execsql_test 5.3 {
   INSERT INTO gg(gg) VALUES('integrity-check');
+}
+
+do_test 5.4.1 {
+  set ok 0
+  for {set i 0} {$i < 10000} {incr i} {
+    set T [format %.5d $i]
+    set res  [db eval { SELECT rowid FROM gg($T) ORDER BY rowid ASC  }]
+    set res2 [db eval { SELECT rowid FROM gg($T) ORDER BY rowid DESC }]
+    if {$res == [lsort -integer $res2]} { incr ok }
+  }
+  set ok
+} {10000}
+
+do_test 5.4.2 {
+  set ok 0
+  for {set i 0} {$i < 100} {incr i} {
+    set T "[format %.3d $i]*"
+    set res  [db eval { SELECT rowid FROM gg($T) ORDER BY rowid ASC  }]
+    set res2 [db eval { SELECT rowid FROM gg($T) ORDER BY rowid DESC }]
+    if {$res == [lsort -integer $res2]} { incr ok }
+  }
+  set ok
+} {100}
+
+#-------------------------------------------------------------------------
+# Similar to 5.*.
+#
+foreach {tn pgsz} {
+  1  32
+  2  36
+  3  40
+  4  44
+  5  48
+} {
+  do_execsql_test 6.$tn.1 {
+    DROP TABLE IF EXISTS hh;
+    CREATE VIRTUAL TABLE hh USING fts5(y);
+    INSERT INTO hh(hh, rank) VALUES('pgsz', $pgsz);
+
+    WITH s(i) AS (SELECT 0 UNION ALL SELECT i+1 FROM s WHERE i<999)
+     INSERT INTO hh SELECT printf("%.3d%.3d%.3d %.3d%.3d%.3d",i,i,i,i+1,i+1,i+1)
+     FROM s;
+
+    WITH s(i) AS (SELECT 0 UNION ALL SELECT i+1 FROM s WHERE i<999)
+     INSERT INTO hh SELECT printf("%.3d%.3d%.3d %.3d%.3d%.3d",i,i,i,i+1,i+1,i+1)
+     FROM s;
+
+    INSERT INTO hh(hh) VALUES('optimize');
+  }
+
+  do_test 6.$tn.2 {
+    set ok 0
+    for {set i 0} {$i < 1000} {incr i} {
+      set T [format %.3d%.3d%.3d $i $i $i]
+      set res  [db eval { SELECT rowid FROM hh($T) ORDER BY rowid ASC  }]
+      set res2 [db eval { SELECT rowid FROM hh($T) ORDER BY rowid DESC }]
+      if {$res == [lsort -integer $res2]} { incr ok }
+    }
+    set ok
+  } {1000}
 }
 
 finish_test
