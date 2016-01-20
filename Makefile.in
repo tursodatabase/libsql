@@ -1218,6 +1218,7 @@ clean:
 	rm -f sqlite3_analyzer$(TEXE) sqlite3_analyzer.c
 	rm -f sqlite-*-output.vsix
 	rm -f mptester mptester.exe
+	rm -f rbu rbu.exe
 	rm -f fuzzershell fuzzershell.exe
 	rm -f fuzzcheck fuzzcheck.exe
 	rm -f sqldiff sqldiff.exe

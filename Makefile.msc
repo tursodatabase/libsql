@@ -1863,7 +1863,7 @@ clean:
 	del /Q testfixture.exe test.db 2>NUL
 	del /Q LogEst.exe fts3view.exe rollback-test.exe showdb.exe 2>NUL
 	del /Q showjournal.exe showstat4.exe showwal.exe speedtest1.exe 2>NUL
-	del /Q mptester.exe wordcount.exe 2>NUL
+	del /Q mptester.exe wordcount.exe rbu.exe 2>NUL
 	del /Q sqlite3.exe sqlite3.dll sqlite3.def 2>NUL
 	del /Q sqlite3.c sqlite3-*.c 2>NUL
 	del /Q sqlite3rc.h 2>NUL
