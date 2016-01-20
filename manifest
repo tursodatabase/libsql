@@ -1,5 +1,5 @@
-C Fix\sa\spotential\suse-after-free\sproblem\swhen\scompiling\swith\sSQLITE_HAS_CODEC.
-D 2016-01-20T15:05:35.493
+C Fix\sthe\sbuild\sso\sthat\sit\sworks\sfor\sSQLITE_OMIT_WAL\sagain.
+D 2016-01-20T15:08:56.758
 F Makefile.in 7c8cc4c2f0179efc6fa9492141d1fb65f4807054
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e45d8b9b56dfa3f2cd860b2c28bd9d304513b042
@@ -320,7 +320,7 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c 0ca6d8710366fbb01a275160f018334cd347cbda
 F src/os_win.c 386fba30419e8458b13209781c2af5590eab2811
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
-F src/pager.c 5dda328a9a5e9405b6971d62d0d5e3ea85c6195a
+F src/pager.c f4e9ac39fbb1e0fde97af85c0f4e00eb90764b67
 F src/pager.h 1c2a49143dfba9e69cc8159ef019f472ed8d260b
 F src/parse.y 23737e649c26ce327603799e57f5c2ff50e5e6ba
 F src/pcache.c 73895411fa6b7bd6f0091212feabbe833b358d23
@@ -1406,8 +1406,8 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c1f918dcc15e3bd440435df4c7939bb2ee49b693
-Q +653ea15ad8e23b333e234eb5dde7b80134db2baf
-R 1c91ed5cb7f099de1628b3f0d27883da
+P b94a3a37df9472be477305fc6309f69f8a3a65e9
+Q +d55a557bc70460c46a67ae5acd9f8a8356a580c2
+R edc43b4dbe4c2ab4214b4c4aea8b1448
 U drh
-Z d2a197f70a52413a22394f78eefadffe
+Z c6dfb5c91bda9d50e0bfd27514edf86b
