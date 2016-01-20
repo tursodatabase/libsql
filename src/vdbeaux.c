@@ -4445,10 +4445,12 @@ void sqlite3VdbeSetVarmask(Vdbe *v, int iVar){
 ** in memory obtained from sqlite3DbMalloc).
 */
 void sqlite3VtabImportErrmsg(Vdbe *p, sqlite3_vtab *pVtab){
-  sqlite3 *db = p->db;
-  sqlite3DbFree(db, p->zErrMsg);
-  p->zErrMsg = sqlite3DbStrDup(db, pVtab->zErrMsg);
-  sqlite3_free(pVtab->zErrMsg);
-  pVtab->zErrMsg = 0;
+  if( pVtab->zErrMsg ){
+    sqlite3 *db = p->db;
+    sqlite3DbFree(db, p->zErrMsg);
+    p->zErrMsg = sqlite3DbStrDup(db, pVtab->zErrMsg);
+    sqlite3_free(pVtab->zErrMsg);
+    pVtab->zErrMsg = 0;
+  }
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */

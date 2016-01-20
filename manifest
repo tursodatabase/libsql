@@ -1,5 +1,5 @@
-C Performance\simprovement\sin\ssqlite3DbMallocRaw().
-D 2016-01-20T03:36:32.428
+C Improve\sperformance\sof\ssqlite3VtabImportErrmsg().
+D 2016-01-20T08:47:55.546
 F Makefile.in a476545d0c8626224d0bacac85c6e2967474af81
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 01e855f958932d0d3ed62ec675fc63e2cef61fcb
@@ -414,7 +414,7 @@ F src/vdbe.c b90d9d38e5e0260c2eafa3cb4c2274d8ea94da27
 F src/vdbe.h 7a733ea8aac1b77305a67698e784fa3484ee3337
 F src/vdbeInt.h 42eefa4f9e7432b9968d321b44e48821ec13b189
 F src/vdbeapi.c ffae8f5af4570fbd548504e815e9fb7227f0822e
-F src/vdbeaux.c db67d3e0fcedced22bfeca47a567eb9df91b3495
+F src/vdbeaux.c 07f8f485a6cbc0a62da660f14e303061d45d5cb6
 F src/vdbeblob.c 37c3d11a753e403698c69e17383d282e1ae73e75
 F src/vdbemem.c b9181e77eca2a095929d46250daf85c8d2621fc0
 F src/vdbesort.c 0971557e5d3c289e46f56a52aed2197c13251de7
@@ -1419,7 +1419,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9f8297f862a110ded686d091854fae20c6bc393c
-R 90386a9e726561832778abc9155cd93d
-U drh
-Z 2aa4bf87eb3a329408d2351dd05edc2d
+P ff8eadbed5004ab03438f737492387dee6b9750a
+R 9def3e1e6201afa0dc73a868079c61c0
+U dan
+Z 16223910bb7e7f6f85293111cf2f150d
