@@ -1,5 +1,5 @@
-C Suppress\sthe\sdisplay\sof\sthe\sP4\soperand\sin\sEXPLAIN\soutput\swhen\san\sopcode\nhas\sbeen\sconverted\sinto\sa\sNo-op.
-D 2016-01-20T02:36:12.461
+C Performance\simprovement\sin\ssqlite3DbMallocRaw().
+D 2016-01-20T03:36:32.428
 F Makefile.in a476545d0c8626224d0bacac85c6e2967474af81
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 01e855f958932d0d3ed62ec675fc63e2cef61fcb
@@ -311,7 +311,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/loadext.c 84996d7d70a605597d79c1f1d7b2012a5fd34f2b
 F src/main.c b686dabe9a7ece9121da87120d5c7bf402d77eb3
-F src/malloc.c 8f787669e79de26efc42272b5797bc00fff527c6
+F src/malloc.c b67c26c359c13836d370350b3f43d228dff5b360
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 6919bcf12f221868ea066eec27e579fed95ce98b
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
@@ -1419,7 +1419,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P da527ddae06460ab4b706cdb871de2188ebaf5ac
-R 9c350206cbc3ec71bedbf771eaad6af4
+P 9f8297f862a110ded686d091854fae20c6bc393c
+R 90386a9e726561832778abc9155cd93d
 U drh
-Z d3ee680a30750cc9b6d539ba48a1436a
+Z 2aa4bf87eb3a329408d2351dd05edc2d
