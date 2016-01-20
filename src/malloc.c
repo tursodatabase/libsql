@@ -583,8 +583,9 @@ void *sqlite3DbMallocZero(sqlite3 *db, u64 n){
 }
 
 /*
-** Allocate and zero memory.  If the allocation fails, make
-** the mallocFailed flag in the connection pointer.
+** Allocate memory, either lookaside (if possible) or heap.  
+** If the allocation fails, set the mallocFailed flag in
+** the connection pointer.
 **
 ** If db!=0 and db->mallocFailed is true (indicating a prior malloc
 ** failure on the same database connection) then always return 0.
@@ -600,8 +601,8 @@ void *sqlite3DbMallocZero(sqlite3 *db, u64 n){
 ** In other words, if a subsequent malloc (ex: "b") worked, it is assumed
 ** that all prior mallocs (ex: "a") worked too.
 */
+static SQLITE_NOINLINE void *dbMallocRawFinish(sqlite3 *db, u64 n);
 void *sqlite3DbMallocRaw(sqlite3 *db, u64 n){
-  void *p;
   assert( db==0 || sqlite3_mutex_held(db->mutex) );
   assert( db==0 || db->pnBytesFreed==0 );
 #ifndef SQLITE_OMIT_LOOKASIDE
@@ -631,7 +632,10 @@ void *sqlite3DbMallocRaw(sqlite3 *db, u64 n){
     return 0;
   }
 #endif
-  p = sqlite3Malloc(n);
+  return dbMallocRawFinish(db, n);
+}
+static SQLITE_NOINLINE void *dbMallocRawFinish(sqlite3 *db, u64 n){
+  void *p = sqlite3Malloc(n);
   if( !p && db ){
     db->mallocFailed = 1;
   }

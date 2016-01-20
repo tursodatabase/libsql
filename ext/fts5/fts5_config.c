@@ -278,7 +278,7 @@ static int fts5ConfigParseSpecial(
         p++;
       }
 
-      if( rc==SQLITE_OK && (nPre<=0 || nPre>=1000) ){
+      if( nPre<=0 || nPre>=1000 ){
         *pzErr = sqlite3_mprintf("prefix length out of range (max 999)");
         rc = SQLITE_ERROR;
         break;

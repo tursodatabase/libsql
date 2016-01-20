@@ -64,11 +64,13 @@ proc random_doc {vocab nWord} {
   return $doc
 }
 
+foreach_detail_mode $testprefix {
+
 set vocab [build_vocab1]
 db func r random_doc 
 
 do_execsql_test 1.0 {
-  CREATE VIRTUAL TABLE eee USING fts5(e, ee);
+  CREATE VIRTUAL TABLE eee USING fts5(e, ee, detail=%DETAIL%);
   BEGIN;
     WITH ii(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM ii WHERE i<100)
     INSERT INTO eee SELECT r($vocab, 5), r($vocab, 7) FROM ii;
@@ -91,7 +93,7 @@ do_test 1.2 {
   }
 } {}
   
-do_test 1.2 {
+do_test 1.3 {
   db eval { SELECT term, doc FROM vocab } {
     set nRow [db one {SELECT count(*) FROM eee WHERE eee MATCH $term}]
     if {$nRow != $doc} {
@@ -101,10 +103,12 @@ do_test 1.2 {
   set {} {}
 } {}
 
-do_execsql_test 1.3 {
+do_execsql_test 1.4 {
   COMMIT;
   INSERT INTO eee(eee) VALUES('integrity-check');
 }
+
+} ;# foreach_detail_mode
 
 finish_test
 

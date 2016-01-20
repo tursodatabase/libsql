@@ -834,7 +834,7 @@ static int fts5ExprTokenTest(
   assert( pPhrase->aTerm[0].pSynonym==0 );
 
   rc = sqlite3Fts5IterPoslist(pIter, pColset, 
-      (const u8**)&pPhrase->poslist.p, &pPhrase->poslist.n, &pNode->iRowid
+      (const u8**)&pPhrase->poslist.p, (int*)&pPhrase->poslist.n, &pNode->iRowid
   );
   pNode->bNomatch = (pPhrase->poslist.n==0);
   return rc;
@@ -2396,7 +2396,7 @@ int sqlite3Fts5ExprPopulatePoslists(
   }
 
   return sqlite3Fts5Tokenize(pConfig, 
-      FTS5_TOKENIZE_AUX, z, n, (void*)&sCtx, fts5ExprPopulatePoslistsCb
+      FTS5_TOKENIZE_DOCUMENT, z, n, (void*)&sCtx, fts5ExprPopulatePoslistsCb
   );
 }
 
@@ -2412,49 +2412,44 @@ static void fts5ExprClearPoslists(Fts5ExprNode *pNode){
 }
 
 static int fts5ExprCheckPoslists(Fts5ExprNode *pNode, i64 iRowid){
-  if( pNode ){
-    pNode->iRowid = iRowid;
-    pNode->bEof = 0;
-    switch( pNode->eType ){
-      case FTS5_TERM:
-      case FTS5_STRING:
-        return (pNode->pNear->apPhrase[0]->poslist.n>0);
+  pNode->iRowid = iRowid;
+  pNode->bEof = 0;
+  switch( pNode->eType ){
+    case FTS5_TERM:
+    case FTS5_STRING:
+      return (pNode->pNear->apPhrase[0]->poslist.n>0);
 
-      case FTS5_AND: {
-        int i;
-        for(i=0; i<pNode->nChild; i++){
-          if( fts5ExprCheckPoslists(pNode->apChild[i], iRowid)==0 ){
-            fts5ExprClearPoslists(pNode);
-            return 0;
-          }
-        }
-        break;
-      }
-
-      case FTS5_OR: {
-        int i;
-        int bRet = 0;
-        for(i=0; i<pNode->nChild; i++){
-          if( fts5ExprCheckPoslists(pNode->apChild[i], iRowid) ){
-            bRet = 1;
-          }
-        }
-        if( bRet==0 ){
-          fts5ExprClearPoslists(pNode);
-        }
-        return bRet;
-      }
-
-      default: {
-        assert( pNode->eType==FTS5_NOT );
-        if( 0==fts5ExprCheckPoslists(pNode->apChild[0], iRowid)
-         || 0!=fts5ExprCheckPoslists(pNode->apChild[1], iRowid)
-        ){
+    case FTS5_AND: {
+      int i;
+      for(i=0; i<pNode->nChild; i++){
+        if( fts5ExprCheckPoslists(pNode->apChild[i], iRowid)==0 ){
           fts5ExprClearPoslists(pNode);
           return 0;
         }
-        break;
       }
+      break;
+    }
+
+    case FTS5_OR: {
+      int i;
+      int bRet = 0;
+      for(i=0; i<pNode->nChild; i++){
+        if( fts5ExprCheckPoslists(pNode->apChild[i], iRowid) ){
+          bRet = 1;
+        }
+      }
+      return bRet;
+    }
+
+    default: {
+      assert( pNode->eType==FTS5_NOT );
+      if( 0==fts5ExprCheckPoslists(pNode->apChild[0], iRowid)
+          || 0!=fts5ExprCheckPoslists(pNode->apChild[1], iRowid)
+        ){
+        fts5ExprClearPoslists(pNode);
+        return 0;
+      }
+      break;
     }
   }
   return 1;
