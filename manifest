@@ -1,5 +1,5 @@
-C Fix\san\sincorrect\sVFS\sversion\snumber\scheck\sin\sthe\sthreadtest3.c\stest\sprogram.
-D 2016-01-19T21:36:26.548
+C Very\ssmall\ssimplification\sto\sthe\sbtree\sbalancer.
+D 2016-01-20T01:32:00.028
 F Makefile.in a476545d0c8626224d0bacac85c6e2967474af81
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 01e855f958932d0d3ed62ec675fc63e2cef61fcb
@@ -288,7 +288,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 2869a76c03eb393ee795416e2387005553df72bc
 F src/bitvec.c 1a78d450a17c5016710eec900bedfc5729bf9bdf
 F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
-F src/btree.c d9c6b2e2df06314079aa582f12937401a62171a6
+F src/btree.c f224ae877fde69d1a9d430f502edaf8502752dbe
 F src/btree.h 68ef301795e00cdf1d3ab93abc44a43b7fe771e0
 F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
 F src/build.c 31af80bba31ac159967951ef58f3144cc7db9d70
@@ -1419,7 +1419,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 86944f193f1f06b64471953bb5713ecea7f3d803
-R 1bd8149c5e96ca5f6729d165e7caff84
+P 5bf6442bec83977006bc5049adcdbd4dd39369fe
+R 70eccaeca6a4cd2462229055942e9f5d
 U drh
-Z 65f48ec6556e690748ae351a1c163375
+Z 7b4de528ceedb108b3157672b1895b78

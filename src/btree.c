@@ -7186,9 +7186,8 @@ static int balance_nonroot(
     ** long be able to find the cells if a pointer to each cell is not saved
     ** first.
     */
-    memset(&b.szCell[b.nCell], 0, sizeof(b.szCell[0])*limit);
+    memset(&b.szCell[b.nCell], 0, sizeof(b.szCell[0])*(limit+pOld->nOverflow));
     if( pOld->nOverflow>0 ){
-      memset(&b.szCell[b.nCell+limit], 0, sizeof(b.szCell[0])*pOld->nOverflow);
       limit = pOld->aiOvfl[0];
       for(j=0; j<limit; j++){
         b.apCell[b.nCell] = aData + (maskPage & get2byteAligned(piCell));
