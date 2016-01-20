@@ -1,5 +1,5 @@
-C Fix\sthe\sbuild\sso\sthat\sit\sworks\sfor\sSQLITE_OMIT_WAL\sagain.
-D 2016-01-20T15:08:56.758
+C Fix\sa\sproblem\sin\sautoconf/configure.ac\scausing\s--enable-readline\sto\sfail\sif\slibedit\swas\snot\spresent.
+D 2016-01-20T15:20:58.836
 F Makefile.in 7c8cc4c2f0179efc6fa9492141d1fb65f4807054
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e45d8b9b56dfa3f2cd860b2c28bd9d304513b042
@@ -13,7 +13,7 @@ F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am 089e5ecdb5761e64ea1013ded02feb4d8b29927d
 F autoconf/README 14458f1046c118efa721aadec5f227e876d3cd38
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
-F autoconf/configure.ac 82c628c68f0f204d57343dc345b6dbd1789fb1bd
+F autoconf/configure.ac 791fa422e6ec747ca7818dcbe57c8af12077da93
 F autoconf/tea/Makefile.in b438a7020446c8a8156e8d97c8914a04833da6fd
 F autoconf/tea/README 3e9a3c060f29a44344ab50aec506f4db903fb873
 F autoconf/tea/aclocal.m4 52c47aac44ce0ddb1f918b6993e8beb8eee88f43
@@ -1406,8 +1406,8 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b94a3a37df9472be477305fc6309f69f8a3a65e9
-Q +d55a557bc70460c46a67ae5acd9f8a8356a580c2
-R edc43b4dbe4c2ab4214b4c4aea8b1448
-U drh
-Z c6dfb5c91bda9d50e0bfd27514edf86b
+P d1c15de51635d8105ac1b4947a6d8dcc82856232
+Q +e8adeb64d4e463772feb58dbd6f00715b92e735c
+R 30e86a3ae1adc600a1d0d2b285d40773
+U dan
+Z 45db96da13ac26bf9da49e8a63c9669c
