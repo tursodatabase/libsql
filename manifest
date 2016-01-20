@@ -1,5 +1,5 @@
-C Merge\srecent\senhancements\sfrom\strunk.
-D 2016-01-20T11:33:37.587
+C Merge\sthe\sLIKE-operator\sbug\sfix\sfrom\strunk.
+D 2016-01-20T16:02:48.763
 F Makefile.in a47ec69daac0cdfe3413e50ceea6dc8da3dc4ecb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b4d0270955b3f102214b2242f2a1b802c22ee21b
@@ -13,7 +13,7 @@ F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am 089e5ecdb5761e64ea1013ded02feb4d8b29927d
 F autoconf/README 14458f1046c118efa721aadec5f227e876d3cd38
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
-F autoconf/configure.ac 2f41055b10873cfe443a08185343e38c47e2f9f0
+F autoconf/configure.ac 7b1ea0dcaf49fafba262ce4b0ee8cb3281b555d1
 F autoconf/tea/Makefile.in b438a7020446c8a8156e8d97c8914a04833da6fd
 F autoconf/tea/README 3e9a3c060f29a44344ab50aec506f4db903fb873
 F autoconf/tea/aclocal.m4 52c47aac44ce0ddb1f918b6993e8beb8eee88f43
@@ -321,7 +321,7 @@ F src/delete.c 86e3940d07fe69a40270c2aaf6ca6c7adf19246c
 F src/expr.c df0d7c3230d59abd679da22ff5ce4cfd0e3a0e63
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c e18b3dff7d47c7bcac5ac4fc178a89b9fd322b44
-F src/func.c ccaf46fa98f795673afbfab73dff7c18db88f3cd
+F src/func.c ba6c03f9e440f5693086c08ee88e6e60212b3504
 F src/global.c bd5a0af3f30b0c01be6db756c626cd3c33a3d260
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
 F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
@@ -856,7 +856,7 @@ F test/json103.test 923b288a0610ec86c0951778f7db19cbcca36ad1
 F test/keyword1.test 37ef6bba5d2ed5b07ecdd6810571de2956599dff
 F test/lastinsert.test 42e948fd6442f07d60acbd15d33fb86473e0ef63
 F test/laststmtchanges.test ae613f53819206b3222771828d024154d51db200
-F test/like.test edcf6d0a055816fd793eab92454597c1be91f720
+F test/like.test 81632c437a947bf1f7130b19537da6a1a844806a
 F test/like2.test 3b2ee13149ba4a8a60b59756f4e5d345573852da
 F test/like3.test 3608a2042b6f922f900fbfd5d3ce4e7eca57f7c4
 F test/limit.test 0c99a27a87b14c646a9d583c7c89fd06c352663e
@@ -1440,7 +1440,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 007e5c6df60f9743ac6914332f59925e4a7a861c 18d61c8e40ed1466b6a3a2f53bf0eeb09687c20e
-R 062849fc5c2e599b32ec755e50c1d8e3
+P 327af5f644a49b2f41d5456958f9d61a2b704e1c e8adeb64d4e463772feb58dbd6f00715b92e735c
+R ed9d6c66302fd811ae6a8e53c4d95620
 U drh
-Z 10a2fcf1cf68156c27545982ac8f140d
+Z 8662dc0834e686268b7ae44f172fcd73

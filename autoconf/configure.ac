@@ -49,6 +49,8 @@ if test x"$enable_editline" != xno ; then
   READLINE_LIBS=$LIBS
   if test x"$LIBS" != "x"; then
      AC_DEFINE([HAVE_EDITLINE],1,Define to use BSD editline)
+  else
+    unset ac_cv_search_readline
   fi
   LIBS=$sLIBS
 fi
