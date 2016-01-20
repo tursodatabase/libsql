@@ -1,5 +1,5 @@
-C Version\s3.10.2\srelease\scandidate.
-D 2016-01-20T14:32:43.743
+C Fix\sa\spotential\suse-after-free\sproblem\swhen\scompiling\swith\sSQLITE_HAS_CODEC.
+D 2016-01-20T15:05:35.493
 F Makefile.in 7c8cc4c2f0179efc6fa9492141d1fb65f4807054
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e45d8b9b56dfa3f2cd860b2c28bd9d304513b042
@@ -298,7 +298,7 @@ F src/insert.c 6b45cc86967da11aa024d034745f93f66d53f650
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/loadext.c 84996d7d70a605597d79c1f1d7b2012a5fd34f2b
-F src/main.c 6d589f27980c4aec014ae9a081d611e7e5ebc115
+F src/main.c eab7285786f9051fb0bc969cacd2060b26bf51a2
 F src/malloc.c 8f787669e79de26efc42272b5797bc00fff527c6
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 6919bcf12f221868ea066eec27e579fed95ce98b
@@ -1406,7 +1406,8 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 29dc4a3eb2b7629232d0e35a5da75e64dc5bfea4
-R 1bbb4e72a0f01031e0dc4adc3fed9f81
+P c1f918dcc15e3bd440435df4c7939bb2ee49b693
+Q +653ea15ad8e23b333e234eb5dde7b80134db2baf
+R 1c91ed5cb7f099de1628b3f0d27883da
 U drh
-Z ee006a3733d8e09ec2af1300729bfa68
+Z d2a197f70a52413a22394f78eefadffe
