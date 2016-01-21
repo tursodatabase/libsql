@@ -4341,14 +4341,20 @@ case OP_InsertInt: {
 **
 ** Delete the record at which the P1 cursor is currently pointing.
 **
-** If the P5 parameter is non-zero, the cursor will be left pointing at 
-** either the next or the previous record in the table. If it is left 
-** pointing at the next record, then the next Next instruction will be a 
-** no-op. As a result, in this case it is OK to delete a record from within a
-** Next loop. If P5 is zero, then the cursor is left in an undefined state.
+** If the OPFLAG_SAVEPOSITION bit of the P5 parameter is set, then
+** the cursor will be left pointing at  either the next or the previous
+** record in the table. If it is left pointing at the next record, then
+** the next Next instruction will be a no-op. As a result, in this case
+** it is ok to delete a record from within a Next loop. If 
+** OPFLAG_SAVEPOSITION bit of P5 is clear, then the cursor will be
+** left in an undefined state.
 **
-** If the OPFLAG_NCHANGE flag of P2 is set, then the row change count is
-** incremented (otherwise not).
+** If the OPFLAG_IDXDELETE bit is set on P5, that indicates that this
+** delete is on an index cursor where the corresponding table row has
+** already been deleted.
+**
+** If the OPFLAG_NCHANGE flag of P2 (NB: P2 not P5) is set, then the row
+** change count is incremented (otherwise not).
 **
 ** P1 must not be pseudo-table.  It has to be a real table with
 ** multiple rows.
@@ -4385,6 +4391,9 @@ case OP_Delete: {
   }
 #endif
  
+  assert( (pOp->p5 & ~(OPFLAG_SAVEPOSITION|OPFLAG_IDXDELETE))==0 );
+  assert( OPFLAG_SAVEPOSITION==BTREE_SAVEPOSITION );
+  assert( OPFLAG_IDXDELETE==BTREE_IDXDELETE );
   rc = sqlite3BtreeDelete(pC->uc.pCursor, pOp->p5);
   pC->cacheStatus = CACHE_STALE;
 

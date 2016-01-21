@@ -1,5 +1,5 @@
-C Improved\scomments\son\sthe\sFORDELETE\shint.\s\sNo\slogic\schanges.
-D 2016-01-21T15:55:37.704
+C Add\sa\snew\shint\sbit\son\sthe\sflags\sparameter\sof\ssqlite3BtreeDelete().\s\sThe\snew\nBTREE_IDXDELETE\sbit\sindicates\sthat\sthe\scall\sis\sto\sdelete\san\sindex\sentry\s\ncorresponding\sto\sa\stable\srow\sthat\shas\salready\sbeen\sdeleted.
+D 2016-01-21T17:06:33.267
 F Makefile.in 7be88f5b473891e3a8c07245ed60535fcda4f9ee
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc c5ead4aa22ff6f528c755b07ed1e31184ac5b3d2
@@ -288,8 +288,8 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 2869a76c03eb393ee795416e2387005553df72bc
 F src/bitvec.c 1a78d450a17c5016710eec900bedfc5729bf9bdf
 F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
-F src/btree.c f224ae877fde69d1a9d430f502edaf8502752dbe
-F src/btree.h 526137361963e746949ab966a910c7f455ac6b04
+F src/btree.c 97cf881292e085ee71faf44f7167b6312965b562
+F src/btree.h c5dfbbc59226fa5fcc2b03befa85fe10ef23c1b5
 F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
 F src/build.c 31af80bba31ac159967951ef58f3144cc7db9d70
 F src/callback.c 29ae4faba226c7ebb9aee93016b5ce8a8f071261
@@ -297,7 +297,7 @@ F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
 F src/ctime.c 60e135af364d777a9ab41c97e5e89cd224da6198
 F src/date.c 997651e3ee6c2818fbf7fcdb7156cef9eb3ece20
 F src/dbstat.c ffd63fc8ba7541476ced189b95e95d7f2bc63f78
-F src/delete.c 00af9f08a15ddc5cba5962d3d3e5bf2d67b2e7da
+F src/delete.c f02e46234c5fc86f6c03ae34dc0ba48e93cd5029
 F src/expr.c df0d7c3230d59abd679da22ff5ce4cfd0e3a0e63
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c e18b3dff7d47c7bcac5ac4fc178a89b9fd322b44
@@ -350,7 +350,7 @@ F src/shell.c dcd7a83645ef2a58ee9c6d0ea4714d877d7835c4
 F src/sqlite.h.in 214476a62012e578f42133a9a3b4f97a9aa421a3
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
-F src/sqliteInt.h 0403328581127bc8ad2f9cc7af2c3bb23d5316da
+F src/sqliteInt.h 46e0bac7a3cdab96e8b5afd1436accc25d2c3d6a
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
@@ -410,7 +410,7 @@ F src/update.c 17332f9fe818cbc0444c36a811800af8498af4c3
 F src/utf.c 32d7f82aa921322f3e1c956f4b58f019ebd2c6b3
 F src/util.c e802e8e311a0d6c48cd1b3e89db164f6f0248d70
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c b90d9d38e5e0260c2eafa3cb4c2274d8ea94da27
+F src/vdbe.c e21a506d17a7397cba16c162d8c9c96e9769c68e
 F src/vdbe.h 7a733ea8aac1b77305a67698e784fa3484ee3337
 F src/vdbeInt.h 42eefa4f9e7432b9968d321b44e48821ec13b189
 F src/vdbeapi.c ffae8f5af4570fbd548504e815e9fb7227f0822e
@@ -1419,7 +1419,10 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f60f025027ab3acdbc97701f81ff9c11c8463022
-R 58c662ebb54c7087fe70ba0b9b653627
+P a3cec529f0238e4ca1196fec420f2de80d28db78
+R 76198b2176fddd32b1fb9b7a5f18b4c8
+T *branch * btree-fordelete-flag
+T *sym-btree-fordelete-flag *
+T -sym-trunk *
 U drh
-Z 656e64b9ebb4ed29ac85ca9fad2e65b0
+Z c987d8ca8053309611f1f75e6c6acde5
