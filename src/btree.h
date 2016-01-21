@@ -199,14 +199,24 @@ int sqlite3BtreeNewDb(Btree *p);
 ** Flags passed as the third argument to sqlite3BtreeCursor().
 **
 ** For read-only cursors the wrFlag argument is always zero. For read-write
-** cursors it may be set to either (BTREE_WRCSR|BTREE_FORDELETE) or
-** (BTREE_WRCSR). If the BTREE_FORDELETE flag is set, then the cursor will
+** cursors it may be set to either (BTREE_WRCSR|BTREE_FORDELETE) or just
+** (BTREE_WRCSR). If the BTREE_FORDELETE bit is set, then the cursor will
 ** only be used by SQLite for the following:
 **
-**   * to seek to and delete specific entries, and/or
+**   * to seek to and then delete specific entries, and/or
 **
 **   * to read values that will be used to create keys that other
 **     BTREE_FORDELETE cursors will seek to and delete.
+**
+** The BTREE_FORDELETE flag is an optimization hint.  It is not used by
+** by this, the native b-tree engine of SQLite, but it is available to
+** alternative storage engines that might be substituted in place of this
+** b-tree system.  For alternative storage engines in which a delete of
+** the main table row automatically deletes corresponding index rows,
+** the FORDELETE flag hint allows those alternative storage engines to
+** skip a lot of work.  Namely:  FORDELETE cursors may treat all SEEK
+** and DELETE operations as no-ops, and any READ operation against a
+** FORDELETE cursor may return a null row: 0x01 0x00.
 */
 #define BTREE_WRCSR     0x00000004     /* read-write cursor */
 #define BTREE_FORDELETE 0x00000008     /* Cursor is for seek/delete only */

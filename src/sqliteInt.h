@@ -2857,7 +2857,7 @@ struct AuthContext {
 #define OPFLAG_TYPEOFARG     0x80    /* OP_Column only used for typeof() */
 #define OPFLAG_BULKCSR       0x01    /* OP_Open** used to open bulk cursor */
 #define OPFLAG_SEEKEQ        0x02    /* OP_Open** cursor uses EQ seek only */
-#define OPFLAG_FORDELETE     0x08    /* OP_Open is opening for-delete csr */
+#define OPFLAG_FORDELETE     0x08    /* OP_Open should use BTREE_FORDELETE */
 #define OPFLAG_P2ISREG       0x10    /* P2 to OP_Open** is a register number */
 #define OPFLAG_PERMUTE       0x01    /* OP_Compare: use the permutation */
 
