@@ -1,6 +1,6 @@
-C Improved\scomments\son\sthe\sFORDELETE\shint.\s\sNo\slogic\schanges.
-D 2016-01-21T15:55:37.704
-F Makefile.in 7be88f5b473891e3a8c07245ed60535fcda4f9ee
+C Fix\stypo\sin\s'Makefile.in'.
+D 2016-01-21T18:56:10.840
+F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc c5ead4aa22ff6f528c755b07ed1e31184ac5b3d2
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
@@ -1419,7 +1419,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f60f025027ab3acdbc97701f81ff9c11c8463022
-R 58c662ebb54c7087fe70ba0b9b653627
-U drh
-Z 656e64b9ebb4ed29ac85ca9fad2e65b0
+P a3cec529f0238e4ca1196fec420f2de80d28db78
+R 0153ee59df704041be1869f598c173fa
+U mistachkin
+Z cab32b4afad5b6a6884b5ccdb88994ac
