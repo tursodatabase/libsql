@@ -47,6 +47,13 @@ proc list_to_sql {L} {
   join $ret ", "
 }
 
+proc readfile {zFile} {
+  set fd [open $zFile]
+  set data [read $fd]
+  close $fd
+  return $data
+}
+
 proc process_cmdline_args {ctxvar argv} {
   upvar $ctxvar G
   set nArg [llength $argv]
@@ -58,7 +65,12 @@ proc process_cmdline_args {ctxvar argv} {
       -select {
         incr i
         if {$i>=[llength $argv]-1} usage
-        lappend G(lSelect) [lindex $argv $i]
+        set zSelect [lindex $argv $i]
+        if {[file readable $zSelect]} {
+          lappend G(lSelect) [readfile $zSelect]
+        } else {
+          lappend G(lSelect) $zSelect
+        }
       }
       -verbose {
         set ::VERBOSE 1
