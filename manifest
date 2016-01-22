@@ -1,8 +1,8 @@
-C MSVC\smakefile\senhancements\sfor\suse\swith\sthe\sWindows\s10\sSDK.
-D 2016-01-22T01:25:15.110
+C Further\srefinements\sto\sthe\sMSVC\smakefile.
+D 2016-01-22T03:54:36.710
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 89b2e9780d97a6a3d7c89c4ad04d093787be3dc2
+F Makefile.msc 7e45640ca31116b24372d30a4e087078db22fcd8
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION 866588d1edf0ccb5b0d33896974338f97564f719
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -1419,7 +1419,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 29a51c6dcc0ef7cab51aba0024e9c5bec89c6973
-R 9e26ae539c690ec3cae729a6d81b3775
+P ac2e9d3de54d299f92fc35927b6df6d3aaa2dc59
+R 2fd39a9f583616f965419daf8ad2c68a
 U mistachkin
-Z d4ab6d93e282614aa0160682fbcc0beb
+Z 2b921b34884313de5b54030da9770cbb
