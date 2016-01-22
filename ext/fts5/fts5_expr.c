@@ -323,11 +323,15 @@ static int fts5ExprSynonymList(
       const u8 *a;
       int n;
 
-      if( bCollist ){
+      if( 0 && bCollist ){
         rc = sqlite3Fts5IterCollist(pIter, &a, &n);
       }else{
         i64 dummy;
+#if 0
         rc = sqlite3Fts5IterPoslist(pIter, pColset, &a, &n, &dummy);
+#endif
+        a = pIter->pData;
+        n = pIter->nData;
       }
 
       if( rc!=SQLITE_OK ) goto synonym_poslist_out;
@@ -436,7 +440,12 @@ static int fts5ExprPhraseIsMatch(
           pTerm, 0, pColset, pNode->iRowid, &bFlag, (u8**)&a, &n
       );
     }else{
+      Fts5IndexIter *pIter = pTerm->pIter;
+#if 0
       rc = sqlite3Fts5IterPoslist(pTerm->pIter, pColset, &a, &n, &dummy);
+#endif
+      a = pIter->pData;
+      n = pIter->nData;
     }
     if( rc!=SQLITE_OK ) goto ismatch_out;
     sqlite3Fts5PoslistReaderInit(a, n, &aIter[i]);
@@ -775,6 +784,7 @@ static int fts5ExprNearTest(
     for(pTerm=&pPhrase->aTerm[0]; pTerm; pTerm=pTerm->pSynonym){
       Fts5IndexIter *pIter = pTerm->pIter;
       if( sqlite3Fts5IterEof(pIter)==0 ){
+#if 0
         int n;
         i64 iRowid;
         rc = sqlite3Fts5IterPoslist(pIter, pNear->pColset, 0, &n, &iRowid);
@@ -782,6 +792,10 @@ static int fts5ExprNearTest(
           *pRc = rc;
           return 0;
         }else if( iRowid==pNode->iRowid && n>0 ){
+          pPhrase->poslist.n = 1;
+        }
+#endif
+        if( pIter->iRowid==pNode->iRowid && pIter->nData>0 ){
           pPhrase->poslist.n = 1;
         }
       }
@@ -800,9 +814,13 @@ static int fts5ExprNearTest(
         rc = fts5ExprPhraseIsMatch(pNode, pNear->pColset, pPhrase, &bMatch);
         if( bMatch==0 ) break;
       }else{
+        Fts5IndexIter *pIter = pPhrase->aTerm[0].pIter;
+        fts5BufferSet(&rc, &pPhrase->poslist, pIter->nData, pIter->pData);
+#if 0
         rc = sqlite3Fts5IterPoslistBuffer(
             pPhrase->aTerm[0].pIter, &pPhrase->poslist
         );
+#endif
       }
     }
 
@@ -823,21 +841,20 @@ static int fts5ExprTokenTest(
   ** fts5_index.c iterator object. This is much faster than synthesizing 
   ** a new poslist the way we have to for more complicated phrase or NEAR
   ** expressions.  */
-  Fts5ExprNearset *pNear = pNode->pNear;
-  Fts5ExprPhrase *pPhrase = pNear->apPhrase[0];
+  Fts5ExprPhrase *pPhrase = pNode->pNear->apPhrase[0];
   Fts5IndexIter *pIter = pPhrase->aTerm[0].pIter;
-  Fts5Colset *pColset = pNear->pColset;
-  int rc;
 
   assert( pNode->eType==FTS5_TERM );
-  assert( pNear->nPhrase==1 && pPhrase->nTerm==1 );
+  assert( pNode->pNear->nPhrase==1 && pPhrase->nTerm==1 );
   assert( pPhrase->aTerm[0].pSynonym==0 );
 
-  rc = sqlite3Fts5IterPoslist(pIter, pColset, 
-      (const u8**)&pPhrase->poslist.p, (int*)&pPhrase->poslist.n, &pNode->iRowid
-  );
+  pPhrase->poslist.n = pIter->nData;
+  if( pExpr->pConfig->eDetail==FTS5_DETAIL_FULL ){
+    pPhrase->poslist.p = (u8*)pIter->pData;
+  }
+  pNode->iRowid = pIter->iRowid;
   pNode->bNomatch = (pPhrase->poslist.n==0);
-  return rc;
+  return SQLITE_OK;
 }
 
 /*
@@ -2484,6 +2501,8 @@ int sqlite3Fts5ExprPhraseCollist(
   int rc = SQLITE_OK;
 
   assert( iPhrase>=0 && iPhrase<pExpr->nPhrase );
+  assert( pExpr->pConfig->eDetail==FTS5_DETAIL_COLUMNS );
+
   if( pNode->bEof==0 
    && pNode->iRowid==pExpr->pRoot->iRowid 
    && pPhrase->poslist.n>0
@@ -2503,7 +2522,8 @@ int sqlite3Fts5ExprPhraseCollist(
         *ppCollist = a;
       }
     }else{
-      sqlite3Fts5IterCollist(pPhrase->aTerm[0].pIter, ppCollist, pnCollist);
+      *ppCollist = pPhrase->aTerm[0].pIter->pData;
+      *pnCollist = pPhrase->aTerm[0].pIter->nData;
     }
   }else{
     *ppCollist = 0;

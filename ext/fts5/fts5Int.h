@@ -315,6 +315,12 @@ void sqlite3Fts5TermsetFree(Fts5Termset*);
 typedef struct Fts5Index Fts5Index;
 typedef struct Fts5IndexIter Fts5IndexIter;
 
+struct Fts5IndexIter {
+  i64 iRowid;
+  const u8 *pData;
+  int nData;
+};
+
 /*
 ** Values used as part of the flags argument passed to IndexQuery().
 */
@@ -396,6 +402,8 @@ void sqlite3Fts5IterClose(Fts5IndexIter*);
 const char *sqlite3Fts5IterTerm(Fts5IndexIter*, int*);
 int sqlite3Fts5IterNextScan(Fts5IndexIter*);
 
+int sqlite3Fts5IterCollist(Fts5IndexIter*, const u8 **, int*);
+
 
 /*
 ** Insert or remove data to or from the index. Each time a document is 
@@ -468,8 +476,6 @@ int sqlite3Fts5IndexOptimize(Fts5Index *p);
 int sqlite3Fts5IndexMerge(Fts5Index *p, int nMerge);
 
 int sqlite3Fts5IndexLoadConfig(Fts5Index *p);
-
-int sqlite3Fts5IterCollist(Fts5IndexIter*, const u8 **, int*);
 
 /*
 ** End of interface to code in fts5_index.c.
