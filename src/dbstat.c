@@ -149,11 +149,9 @@ static int statConnect(
   int iDb;
 
   if( argc>=4 ){
-    char *zDb = sqlite3DbStrDup(db, argv[3]);
-    if( zDb==0 ) return SQLITE_NOMEM;
-    sqlite3Dequote(zDb);
-    iDb = sqlite3FindDbName(db, zDb);
-    sqlite3DbFree(db, zDb);
+    Token nm;
+    sqlite3TokenInit(&nm, (char*)argv[3]);
+    iDb = sqlite3FindDb(db, &nm);
     if( iDb<0 ){
       *pzErr = sqlite3_mprintf("no such database: %s", argv[3]);
       return SQLITE_ERROR;

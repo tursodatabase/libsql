@@ -234,6 +234,14 @@ int sqlite3Dequote(char *z){
   return j;
 }
 
+/*
+** Generate a Token object from a string
+*/
+void sqlite3TokenInit(Token *p, char *z){
+  p->z = z;
+  p->n = sqlite3Strlen30(z);
+}
+
 /* Convenient short-hand */
 #define UpperToLower sqlite3UpperToLower
 
