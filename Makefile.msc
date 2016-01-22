@@ -130,6 +130,12 @@ FOR_WINRT = 0
 FOR_UAP = 0
 !ENDIF
 
+# Set this non-0 to compile binaries suitable for Windows 10.
+#
+!IFNDEF FOR_WIN10
+FOR_WIN10 = 0
+!ENDIF
+
 # Set this non-0 to skip attempting to look for and/or link with the Tcl
 # runtime library.
 #
@@ -186,6 +192,31 @@ DEBUG = 0
 OPTIMIZATIONS = 2
 !ENDIF
 
+# This is the name to use for the SQLite dynamic link library (DLL).
+#
+!IFNDEF SQLITE3DLL
+SQLITE3DLL = sqlite3.dll
+!ENDIF
+
+# This is the name to use for the SQLite import library (LIB).
+#
+!IFNDEF SQLITE3LIB
+SQLITE3LIB = sqlite3.lib
+!ENDIF
+
+# This is the name to use for the SQLite shell executable (EXE).
+#
+!IFNDEF SQLITE3EXE
+SQLITE3EXE = sqlite3.exe
+!ENDIF
+
+# This is the argument used to set the program database (PDB) file for the
+# SQLite shell executable (EXE).
+#
+!IFNDEF SQLITE3EXEPDB
+SQLITE3EXEPDB = /pdb:sqlite3sh.pdb
+!ENDIF
+
 # These are the "standard" SQLite compilation options used when compiling for
 # the Windows platform.
 #
@@ -193,6 +224,19 @@ OPTIMIZATIONS = 2
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_FTS3=1
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_RTREE=1
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_COLUMN_METADATA=1
+!ENDIF
+
+# These are the "extended" SQLite compilation options used when compiling for
+# the Windows 10 platform.
+#
+!IFNDEF EXT_FEATURE_FLAGS
+!IF $(FOR_WIN10)!=0
+EXT_FEATURE_FLAGS = $(EXT_FEATURE_FLAGS) -DSQLITE_ENABLE_FTS4=1
+EXT_FEATURE_FLAGS = $(EXT_FEATURE_FLAGS) -DSQLITE_SYSTEM_MALLOC=1
+EXT_FEATURE_FLAGS = $(EXT_FEATURE_FLAGS) -DSQLITE_OMIT_LOCALTIME=1
+!ELSE
+EXT_FEATURE_FLAGS =
+!ENDIF
 !ENDIF
 
 ###############################################################################
@@ -327,8 +371,17 @@ TCC = $(CC) -nologo -W4 -DINCLUDE_MSVC_H=1 $(CCOPTS) $(TCCOPTS)
 TCC = $(CC) -nologo -W3 $(CCOPTS) $(TCCOPTS)
 !ENDIF
 
-TCC = $(TCC) -DSQLITE_OS_WIN=1 -I. -I$(TOP) -I$(TOP)\src -fp:precise
+TCC = $(TCC) -DSQLITE_OS_WIN=1 -I$(TOP) -I$(TOP)\src -fp:precise
 RCC = $(RC) -DSQLITE_OS_WIN=1 -I$(TOP) -I$(TOP)\src $(RCOPTS) $(RCCOPTS)
+
+# Adjust the names of the primary targets for use with Windows 10.
+#
+!IF $(FOR_WIN10)!=0
+SQLITE3DLL = winsqlite3.dll
+SQLITE3LIB = winsqlite3.lib
+SQLITE3EXE = winsqlite3shell.exe
+SQLITE3EXEPDB =
+!ENDIF
 
 # Check if we want to use the "stdcall" calling convention when compiling.
 # This is not supported by the compilers for non-x86 platforms.  It should
@@ -337,7 +390,7 @@ RCC = $(RC) -DSQLITE_OS_WIN=1 -I$(TOP) -I$(TOP)\src $(RCOPTS) $(RCCOPTS)
 # to how the Tcl library functions are declared and exported (i.e. without
 # an explicit calling convention, which results in "cdecl").
 #
-!IF $(USE_STDCALL)!=0
+!IF $(USE_STDCALL)!=0 || $(FOR_WIN10)!=0
 !IF "$(PLATFORM)"=="x86"
 CORE_CCONV_OPTS = -Gz -DSQLITE_CDECL=__cdecl -DSQLITE_STDCALL=__stdcall
 SHELL_CCONV_OPTS = -Gz -DSQLITE_CDECL=__cdecl -DSQLITE_STDCALL=__stdcall
@@ -358,7 +411,7 @@ SHELL_CCONV_OPTS =
 # These are additional compiler options used for the core library.
 #
 !IFNDEF CORE_COMPILE_OPTS
-!IF $(DYNAMIC_SHELL)!=0
+!IF $(DYNAMIC_SHELL)!=0 || $(FOR_WIN10)!=0
 CORE_COMPILE_OPTS = $(CORE_CCONV_OPTS) -DSQLITE_API=__declspec(dllexport)
 !ELSE
 CORE_COMPILE_OPTS = $(CORE_CCONV_OPTS)
@@ -369,7 +422,7 @@ CORE_COMPILE_OPTS = $(CORE_CCONV_OPTS)
 # when linking.
 #
 !IFNDEF CORE_LINK_DEP
-!IF $(DYNAMIC_SHELL)!=0
+!IF $(DYNAMIC_SHELL)!=0 || $(FOR_WIN10)!=0
 CORE_LINK_DEP =
 !ELSE
 CORE_LINK_DEP = sqlite3.def
@@ -379,7 +432,7 @@ CORE_LINK_DEP = sqlite3.def
 # These are additional linker options used for the core library.
 #
 !IFNDEF CORE_LINK_OPTS
-!IF $(DYNAMIC_SHELL)!=0
+!IF $(DYNAMIC_SHELL)!=0 || $(FOR_WIN10)!=0
 CORE_LINK_OPTS =
 !ELSE
 CORE_LINK_OPTS = /DEF:sqlite3.def
@@ -389,7 +442,7 @@ CORE_LINK_OPTS = /DEF:sqlite3.def
 # These are additional compiler options used for the shell executable.
 #
 !IFNDEF SHELL_COMPILE_OPTS
-!IF $(DYNAMIC_SHELL)!=0
+!IF $(DYNAMIC_SHELL)!=0 || $(FOR_WIN10)!=0
 SHELL_COMPILE_OPTS = -DSQLITE_SHELL_JSON1 $(SHELL_CCONV_OPTS) -DSQLITE_API=__declspec(dllimport)
 !ELSE
 SHELL_COMPILE_OPTS = -DSQLITE_SHELL_JSON1 $(SHELL_CCONV_OPTS)
@@ -399,8 +452,8 @@ SHELL_COMPILE_OPTS = -DSQLITE_SHELL_JSON1 $(SHELL_CCONV_OPTS)
 # This is the core library that the shell executable should depend on.
 #
 !IFNDEF SHELL_CORE_DEP
-!IF $(DYNAMIC_SHELL)!=0
-SHELL_CORE_DEP = sqlite3.dll
+!IF $(DYNAMIC_SHELL)!=0 || $(FOR_WIN10)!=0
+SHELL_CORE_DEP = $(SQLITE3DLL)
 !ELSE
 SHELL_CORE_DEP = libsqlite3.lib
 !ENDIF
@@ -409,8 +462,8 @@ SHELL_CORE_DEP = libsqlite3.lib
 # This is the core library that the shell executable should link with.
 #
 !IFNDEF SHELL_CORE_LIB
-!IF $(DYNAMIC_SHELL)!=0
-SHELL_CORE_LIB = sqlite3.lib
+!IF $(DYNAMIC_SHELL)!=0 || $(FOR_WIN10)!=0
+SHELL_CORE_LIB = $(SQLITE3LIB)
 !ELSE
 SHELL_CORE_LIB = libsqlite3.lib
 !ENDIF
@@ -439,6 +492,13 @@ TCC = $(TCC) -DSQLITE_OS_WINRT=1
 RCC = $(RCC) -DSQLITE_OS_WINRT=1
 TCC = $(TCC) -DWINAPI_FAMILY=WINAPI_FAMILY_APP
 RCC = $(RCC) -DWINAPI_FAMILY=WINAPI_FAMILY_APP
+!ENDIF
+
+# C compiler options for Windows 10 (needs Visual Studio 2015).
+#
+!IF $(FOR_WIN10)!=0
+TCC = $(TCC) /guard:cf -D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE
+BCC = $(BCC) /guard:cf -D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE
 !ENDIF
 
 # Also, we need to dynamically link to the correct MSVC runtime
@@ -498,7 +558,7 @@ BCC = $(BCC) -DNDEBUG
 RCC = $(RCC) -DNDEBUG
 !ENDIF
 
-!IF $(DEBUG)>0 || $(API_ARMOR)!=0
+!IF $(DEBUG)>0 || $(API_ARMOR)!=0 || $(FOR_WIN10)!=0
 TCC = $(TCC) -DSQLITE_ENABLE_API_ARMOR=1
 RCC = $(RCC) -DSQLITE_ENABLE_API_ARMOR=1
 !ENDIF
@@ -659,8 +719,8 @@ REQ_FEATURE_FLAGS = $(REQ_FEATURE_FLAGS) -DSQLITE_WIN32_USE_UUID=1
 # Add the required and optional SQLite compilation options into the command
 # lines used to invoke the MSVC code and resource compilers.
 #
-TCC = $(TCC) $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS)
-RCC = $(RCC) $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS)
+TCC = $(TCC) $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS) $(EXT_FEATURE_FLAGS)
+RCC = $(RCC) $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS) $(EXT_FEATURE_FLAGS)
 
 # Add in any optional parameters specified on the commane line, e.g.
 # nmake /f Makefile.msc all "OPTS=-DSQLITE_ENABLE_FOO=1 -DSQLITE_OMIT_FOO=1"
@@ -1203,7 +1263,7 @@ EXTHDR = $(EXTHDR) \
 #
 TESTPROGS = \
   testfixture.exe \
-  sqlite3.exe \
+  $(SQLITE3EXE) \
   sqlite3_analyzer.exe \
   sqldiff.exe
 
@@ -1217,7 +1277,10 @@ FUZZDATA = \
 
 # Extra compiler options for various shell tools
 #
-SHELL_COMPILE_OPTS = -DSQLITE_ENABLE_FTS4 -DSQLITE_ENABLE_FTS5
+!IF $(FOR_WIN10)==0
+SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_FTS5
+!ENDIF
+
 FUZZERSHELL_COMPILE_OPTS = -DSQLITE_ENABLE_JSON1
 FUZZCHECK_COMPILE_OPTS = -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_MEMSYS5
 
@@ -1228,7 +1291,7 @@ TESTOPTS = --verbose=file --output=test-out.txt
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
 #
-all:	dll libsqlite3.lib sqlite3.exe libtclsqlite3.lib
+all:	dll libsqlite3.lib shell libtclsqlite3.lib
 
 libsqlite3.lib:	$(LIBOBJ)
 	$(LTLIB) $(LTLIBOPTS) /OUT:$@ $(LIBOBJ) $(TLIBS)
@@ -1236,9 +1299,9 @@ libsqlite3.lib:	$(LIBOBJ)
 libtclsqlite3.lib:	tclsqlite.lo libsqlite3.lib
 	$(LTLIB) $(LTLIBOPTS) $(LTLIBPATHS) /OUT:$@ tclsqlite.lo libsqlite3.lib $(LIBTCLSTUB) $(TLIBS)
 
-sqlite3.exe:	$(TOP)\src\shell.c $(SHELL_CORE_DEP) $(LIBRESOBJS) sqlite3.h
-	$(LTLINK) $(SHELL_COMPILE_OPTS) $(SHELL_COMPILE_OPTS) $(READLINE_FLAGS) $(TOP)\src\shell.c \
-		/link /pdb:sqlite3sh.pdb $(LDFLAGS) $(LTLINKOPTS) $(SHELL_LINK_OPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LIBREADLINE) $(LTLIBS) $(TLIBS)
+$(SQLITE3EXE):	$(TOP)\src\shell.c $(SHELL_CORE_DEP) $(LIBRESOBJS) sqlite3.h
+	$(LTLINK) $(SHELL_COMPILE_OPTS) $(READLINE_FLAGS) $(TOP)\src\shell.c \
+		/link $(SQLITE3EXEPDB) $(LDFLAGS) $(LTLINKOPTS) $(SHELL_LINK_OPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LIBREADLINE) $(LTLIBS) $(TLIBS)
 
 sqldiff.exe:	$(TOP)\tool\sqldiff.c sqlite3.c sqlite3.h
 	$(LTLINK) $(NO_WARN) $(TOP)\tool\sqldiff.c sqlite3.c /link $(LDFLAGS) $(LTLINKOPTS)
@@ -1592,7 +1655,7 @@ parse.h:	parse.c
 parse.c:	$(TOP)\src\parse.y lemon.exe $(TOP)\tool\addopcodes.tcl
 	del /Q parse.y parse.h parse.h.temp 2>NUL
 	copy $(TOP)\src\parse.y .
-	.\lemon.exe $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS) $(OPTS) parse.y
+	.\lemon.exe $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS) $(EXT_FEATURE_FLAGS) $(OPTS) parse.y
 	move parse.h parse.h.temp
 	$(TCLSH_CMD) $(TOP)\tool\addopcodes.tcl parse.h.temp > parse.h
 
@@ -1603,7 +1666,7 @@ sqlite3ext.h: .target_source
 	copy tsrc\sqlite3ext.h .
 
 mkkeywordhash.exe:	$(TOP)\tool\mkkeywordhash.c
-	$(BCC) $(NO_WARN) -Fe$@ $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS) $(OPTS) \
+	$(BCC) $(NO_WARN) -Fe$@ $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS) $(EXT_FEATURE_FLAGS) $(OPTS) \
 		$(TOP)\tool\mkkeywordhash.c /link $(LDFLAGS) $(NLTLINKOPTS) $(NLTLIBPATHS)
 
 keywordhash.h:	$(TOP)\tool\mkkeywordhash.c mkkeywordhash.exe
@@ -1698,7 +1761,7 @@ FTS5_SRC = \
 fts5parse.c:	$(TOP)\ext\fts5\fts5parse.y lemon.exe
 	copy $(TOP)\ext\fts5\fts5parse.y .
 	del /Q fts5parse.h 2>NUL
-	.\lemon.exe $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS) $(OPTS) fts5parse.y
+	.\lemon.exe $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS) $(EXT_FEATURE_FLAGS) $(OPTS) fts5parse.y
 
 fts5parse.h: fts5parse.c
 
@@ -1759,7 +1822,7 @@ fulltestonly:	$(TESTPROGS) fuzztest
 	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\full.test
 
-queryplantest:	testfixture.exe sqlite3.exe
+queryplantest:	testfixture.exe shell
 	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\permutations.test queryplanner $(TESTOPTS)
 
@@ -1864,7 +1927,7 @@ clean:
 	del /Q LogEst.exe fts3view.exe rollback-test.exe showdb.exe 2>NUL
 	del /Q showjournal.exe showstat4.exe showwal.exe speedtest1.exe 2>NUL
 	del /Q mptester.exe wordcount.exe rbu.exe 2>NUL
-	del /Q sqlite3.exe sqlite3.dll sqlite3.def 2>NUL
+	del /Q $(SQLITE3EXE) $(SQLITE3DLL) sqlite3.def 2>NUL
 	del /Q sqlite3.c sqlite3-*.c 2>NUL
 	del /Q sqlite3rc.h 2>NUL
 	del /Q shell.c sqlite3ext.h 2>NUL
@@ -1873,9 +1936,13 @@ clean:
 	del /Q fuzzershell.exe fuzzcheck.exe sqldiff.exe 2>NUL
 	del /Q fts5.* fts5parse.* 2>NUL
 
+# Shell executable.
+#
+shell: $(SQLITE3EXE)
+
 # Dynamic link library section.
 #
-dll: sqlite3.dll
+dll: $(SQLITE3DLL)
 
 sqlite3.def: libsqlite3.lib
 	echo EXPORTS > sqlite3.def
@@ -1883,5 +1950,5 @@ sqlite3.def: libsqlite3.lib
 		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl include "^\s+1 _?(sqlite3_.*)$$" \1 \
 		| sort >> sqlite3.def
 
-sqlite3.dll: $(LIBOBJ) $(LIBRESOBJS) $(CORE_LINK_DEP)
+$(SQLITE3DLL): $(LIBOBJ) $(LIBRESOBJS) $(CORE_LINK_DEP)
 	$(LD) $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) /DLL $(CORE_LINK_OPTS) /OUT:$@ $(LIBOBJ) $(LIBRESOBJS) $(LTLIBS) $(TLIBS)
