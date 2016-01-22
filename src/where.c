@@ -3924,6 +3924,7 @@ static char *whereAppendPrintf(sqlite3 *db, const char *zFmt, ...){
 static char *whereAppendSingleTerm(
   Parse *pParse,
   Table *pTab,
+  int iCol,
   int bOr,
   char *zIn,
   WhereTerm *pTerm
@@ -3945,7 +3946,7 @@ static char *whereAppendSingleTerm(
     const char *zFmt = bOr ? "%z{{%s \"%w\" \"%w\" %lld}}" :
                              "%z{%s \"%w\" \"%w\" %lld}";
     zBuf = whereAppendPrintf(db, zFmt, zIn, 
-        zOp, pTab->aCol[pTerm->u.leftColumn].zName, 
+        zOp, pTab->aCol[iCol].zName, 
         (pColl ? pColl->zName : "BINARY"),
         pTerm->prereqRight
     );
@@ -3969,6 +3970,7 @@ static char *whereTraceWC(
   int iCol;
   int ii;
   int bFirst = !bInitialSpace;
+  int bOr = (pWC->op==TK_OR);
 
   /* List of WO_SINGLE constraints */
   for(iCol=0; iCol<pTab->nCol; iCol++){
@@ -3979,9 +3981,9 @@ static char *whereTraceWC(
         pTerm;
         pTerm=whereScanNext(&scan)
     ){
-      assert( iCol==pTerm->u.leftColumn );
+      /* assert( iCol==pTerm->u.leftColumn ); */
       if( bFirst==0 ) zBuf = whereAppendPrintf(db, "%z ", zBuf);
-      zBuf = whereAppendSingleTerm(pParse, pTab, pWC->op==TK_OR, zBuf, pTerm);
+      zBuf = whereAppendSingleTerm(pParse, pTab, iCol, bOr, zBuf, pTerm);
       bFirst = 0;
     }
   }

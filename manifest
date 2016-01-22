@@ -1,5 +1,5 @@
-C Update\sthe\sschemalint.tcl\sscript\sso\sthat\sthe\sargument\sto\sa\s-select\soption\smay\sbe\seither\san\sSQL\sstatement\sor\sthe\sname\sof\sa\sfile\scontaining\san\sSQL\sstatement
-D 2016-01-22T14:32:20.666
+C Fix\shandling\sof\stransitive\sconstraints\sin\sschemalint.tcl.
+D 2016-01-22T14:44:02.574
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -416,7 +416,7 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 18b0ed49830cf04fe2d68224b41838a73ac6cd24
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 2e14d17f592d176b6dc879c33fbdec4fbccaa2ba
-F src/where.c be09f4a0513f885845ae481324c2e07603f88b38
+F src/where.c 1e987b91aaafe2bb363488e43fcdac137f5b8b59
 F src/whereInt.h 7892bb54cf9ca0ae5c7e6094491b94c9286dc647
 F src/wherecode.c 4c96182e7b25e4be54008dee2da5b9c2f8480b9b
 F src/whereexpr.c bd4877cd4dd11f6ab551ef0054535ca3c6224950
@@ -1381,7 +1381,7 @@ F tool/replace.tcl 7727c60a04299b65a92f5e1590896fea0f25b9e0
 F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
 F tool/run-speed-test.sh 0ae485af4fe9f826e2b494be8c81f8ca9e222a4a
-F tool/schemalint.tcl 7b94e303b02d1b1724c56201ed9fa2845dc8d3a5
+F tool/schemalint.tcl 49690356702d6cac07e2bb1790eac73862e92926
 F tool/showdb.c d4476e000a64eca9f5e2c2f68741e747b9778e8d
 F tool/showjournal.c 5bad7ae8784a43d2b270d953060423b8bd480818
 F tool/showlocks.c 9920bcc64f58378ff1118caead34147201f48c68
@@ -1406,7 +1406,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b8251065db9dbe5463490316baa09dc636551377
-R 6851215977a26ab67201b1a70341660d
+P d4e37767671dc946b8a21d0158fc3044e36f0c7e
+R cbe06eb4db20d1a79810102395b5ccc1
 U dan
-Z 63a5088a2207bef48ca5ab65d0652925
+Z e0e53a7502c2ab11481d0d1a7c5964ef

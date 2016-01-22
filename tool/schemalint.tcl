@@ -560,6 +560,18 @@ proc sqlidx_internal_tests {} {
     {CREATE INDEX "t4_ca b c" ON t4(c COLLATE "a b c");}
   }
 
+  # Transitive constraints
+  #
+  sqlidx_one_test 11.1 {
+    CREATE TABLE t5(a, b);
+    CREATE TABLE t6(c, d);
+  } {
+    SELECT * FROM t5, t6 WHERE a=? AND b=c AND c=?
+  } {
+    {CREATE INDEX t6_c ON t6(c);} 
+    {CREATE INDEX t5_a_b ON t5(a, b);}
+  }
+
   puts "All $nTest tests passed"
   exit
 }
