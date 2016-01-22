@@ -1,5 +1,5 @@
-C More\sMSVC\smakefile\scleanup.
-D 2016-01-22T22:16:50.346
+C In\sthe\sTCL\sinterface,\sif\sa\sdatabase\sconnection\sobject\swas\sopened\swith\nthe\s-uri\s1\soption,\sthen\salso\shonor\sURI\sfilenames\sfor\sthe\s"backup"\sand\n"restore"\scommands.
+D 2016-01-22T23:17:51.219
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc bf507c4168b28d0ba47ac29d53fd6244289f10b8
@@ -354,7 +354,7 @@ F src/sqliteInt.h 74e10a74116df0aec9d4a3e134f1a86cc34c2f14
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
-F src/tclsqlite.c 82979239a896992f9b78efec81cfda05d316a7d0
+F src/tclsqlite.c 94ef6e2794220c5b6064d4c78ec7169a8c5cc45d
 F src/test1.c 4f1b42699068b7806af3111786f5ad760c2c1ff7
 F src/test2.c 5586f43fcd9a1be0830793cf9d354082c261b25b
 F src/test3.c a8887dabbbee3059af338f20d290084a63ed1b0f
@@ -1419,7 +1419,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c11c85fdb6514cae54bb44945cc197dcaba72307
-R 7e2bc2233b486c9642759e292a9803ed
-U mistachkin
-Z f537116bba79cbb015eb60c46b78af4d
+P df22556fd75997111e52f96572da8379dfe948be
+R 14f009751ec343de1132abf0a7bfa01f
+U drh
+Z 3618240e30f243f2df7ae3a3ace24b2d
