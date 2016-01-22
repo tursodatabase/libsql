@@ -1,8 +1,8 @@
-C Further\srefinements\sto\sthe\sMSVC\smakefile.
-D 2016-01-22T03:54:36.710
+C Enable\sFTS4\swhen\sbuilding\sthe\sshell\swith\sthe\sMSVC\smakefile.
+D 2016-01-22T04:22:36.961
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 7e45640ca31116b24372d30a4e087078db22fcd8
+F Makefile.msc d2b93511a969c0c8fcf52aeb5e426571e8c610d2
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION 866588d1edf0ccb5b0d33896974338f97564f719
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -1419,7 +1419,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ac2e9d3de54d299f92fc35927b6df6d3aaa2dc59
-R 2fd39a9f583616f965419daf8ad2c68a
+P 67625b963a6f5a0c6dff1a04a323e693569c2d94
+R a9194694e295a05f59bbd77f1c470bc0
 U mistachkin
-Z 2b921b34884313de5b54030da9770cbb
+Z bf1c280948a8257fdbbacb5c97da93b0
