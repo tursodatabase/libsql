@@ -1326,11 +1326,28 @@ TESTOPTS = --verbose=file --output=test-out.txt
 #
 all:	dll libsqlite3.lib shell libtclsqlite3.lib
 
+# Dynamic link library section.
+#
+dll: $(SQLITE3DLL)
+
+# Shell executable.
+#
+shell: $(SQLITE3EXE)
+
 libsqlite3.lib:	$(LIBOBJ)
 	$(LTLIB) $(LTLIBOPTS) /OUT:$@ $(LIBOBJ) $(TLIBS)
 
 libtclsqlite3.lib:	tclsqlite.lo libsqlite3.lib
 	$(LTLIB) $(LTLIBOPTS) $(LTLIBPATHS) /OUT:$@ tclsqlite.lo libsqlite3.lib $(LIBTCLSTUB) $(TLIBS)
+
+$(SQLITE3DLL): $(LIBOBJ) $(LIBRESOBJS) $(CORE_LINK_DEP)
+	$(LD) $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) /DLL $(CORE_LINK_OPTS) /OUT:$@ $(LIBOBJ) $(LIBRESOBJS) $(LTLIBS) $(TLIBS)
+
+sqlite3.def: libsqlite3.lib
+	echo EXPORTS > sqlite3.def
+	dumpbin /all libsqlite3.lib \
+		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl include "^\s+1 _?(sqlite3_.*)$$" \1 \
+		| sort >> sqlite3.def
 
 $(SQLITE3EXE):	$(TOP)\src\shell.c $(SHELL_CORE_DEP) $(LIBRESOBJS) $(SHELL_CORE_SRC) $(SQLITE3H)
 	$(LTLINK) $(SHELL_COMPILE_OPTS) $(READLINE_FLAGS) $(TOP)\src\shell.c $(SHELL_CORE_SRC) \
@@ -1419,7 +1436,7 @@ opcodes.lo:	opcodes.c
 # Rule to build the Win32 resources object file.
 #
 !IF $(USE_RC)!=0
-$(LIBRESOBJS):	$(TOP)\src\sqlite3.rc $(HDR)
+$(LIBRESOBJS):	$(TOP)\src\sqlite3.rc $(SQLITE3H)
 	echo #ifndef SQLITE_RESOURCE_VERSION > sqlite3rc.h
 	for /F %%V in ('type "$(TOP)\VERSION"') do ( \
 		echo #define SQLITE_RESOURCE_VERSION %%V \
@@ -1957,20 +1974,3 @@ clean:
 	del /Q sqlite-*-output.vsix 2>NUL
 	del /Q fuzzershell.exe fuzzcheck.exe sqldiff.exe 2>NUL
 	del /Q fts5.* fts5parse.* 2>NUL
-
-# Shell executable.
-#
-shell: $(SQLITE3EXE)
-
-# Dynamic link library section.
-#
-dll: $(SQLITE3DLL)
-
-sqlite3.def: libsqlite3.lib
-	echo EXPORTS > sqlite3.def
-	dumpbin /all libsqlite3.lib \
-		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl include "^\s+1 _?(sqlite3_.*)$$" \1 \
-		| sort >> sqlite3.def
-
-$(SQLITE3DLL): $(LIBOBJ) $(LIBRESOBJS) $(CORE_LINK_DEP)
-	$(LD) $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) /DLL $(CORE_LINK_OPTS) /OUT:$@ $(LIBOBJ) $(LIBRESOBJS) $(LTLIBS) $(TLIBS)

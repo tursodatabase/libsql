@@ -1,8 +1,8 @@
-C Reenable\sthe\sxCurrentTime\sand\sxGetLastError\smethods\son\sthe\sunix\sVFSes\sas\slong\nas\sSQLITE_OMIT_DEPRECATED\sis\snot\sdefined.
-D 2016-01-22T19:44:03.065
+C More\sMSVC\smakefile\scleanup.
+D 2016-01-22T22:16:50.346
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc d2b93511a969c0c8fcf52aeb5e426571e8c610d2
+F Makefile.msc bf507c4168b28d0ba47ac29d53fd6244289f10b8
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION 866588d1edf0ccb5b0d33896974338f97564f719
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -1419,7 +1419,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7323175337b7ba85ac932ca892b28860f6a5b688
-R 4fcfc780a1da751b6f90e6d6f3ced841
-U drh
-Z 703592c4495d8a71fd67fbd54e7f3927
+P c11c85fdb6514cae54bb44945cc197dcaba72307
+R 7e2bc2233b486c9642759e292a9803ed
+U mistachkin
+Z f537116bba79cbb015eb60c46b78af4d
