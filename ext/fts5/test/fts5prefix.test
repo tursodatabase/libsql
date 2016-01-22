@@ -298,6 +298,48 @@ foreach {tn col pattern} {
   do_execsql_test 6.$tn { SELECT rowid FROM t5($query) } $res
 }
 
+#-------------------------------------------------------------------------
+# Check that the various ways of creating prefix indexes produce the
+# same database on disk.
+#
+save_prng_state
+foreach {tn create} {
+  1 { CREATE VIRTUAL TABLE tt USING fts5(x, y, prefix="1,2,3") }
+  2 { CREATE VIRTUAL TABLE tt USING fts5(x, y, prefix="1 2 3") }
+  3 { CREATE VIRTUAL TABLE tt USING fts5(x, y, prefix=1, prefix=2, prefix=3) }
+  4 { CREATE VIRTUAL TABLE tt USING fts5(x, y, prefix="1 2", prefix=3) }
+} {
+  execsql { DROP TABLE IF EXISTS tt }
+  restore_prng_state
+  execsql $create
+  execsql {
+    INSERT INTO tt VALUES('cc b ggg ccc aa eee hh', 'aa g b hh a e');
+    INSERT INTO tt VALUES('cc bb cc gg j g cc', 'ii jjj ggg jjj cc cc');
+    INSERT INTO tt VALUES('h eee cc h iii', 'aaa iii dd iii dd');
+    INSERT INTO tt VALUES('jjj hh eee c e b gg', 'j bbb jj ddd jj');
+    INSERT INTO tt VALUES('ii hhh aaa ff c hhh iii', 'j cc hh bb e');
+    INSERT INTO tt VALUES('e fff hhh i aaa', 'g b aa gg c aa dd');
+    INSERT INTO tt VALUES('i aaa ccc gg hhh aa h', 'j bbb bbb d ff');
+    INSERT INTO tt VALUES('g f gg ff ff jjj d', 'jjj d j fff fff ee j');
+    INSERT INTO tt VALUES('a cc e ccc jjj c', 'ccc iii d bb a eee g');
+    INSERT INTO tt VALUES('jj hh hh bb bbb gg', 'j c jjj bb iii f');
+    INSERT INTO tt VALUES('a ggg g cc ccc aa', 'jjj j j aaa c');
+    INSERT INTO tt VALUES('ddd j dd b i', 'aaa bbb iii ggg ff ccc ddd');
+    INSERT INTO tt VALUES('jj ii hh c ii h gg', 'hhh bbb ddd bbb hh g ggg');
+    INSERT INTO tt VALUES('aa hhh ccc h ggg ccc', 'iii d jj a ff ii');
+  }
+
+  #db eval {SELECT rowid, fts5_decode(rowid, block) aS r FROM tt_data} {puts $r}
+
+  if {$tn==1} {
+    set ::checksum [execsql {SELECT md5sum(id, block) FROM tt_data}]
+  } else {
+    do_execsql_test 7.$tn {
+      SELECT md5sum(id, block) FROM tt_data
+    } [list $::checksum]
+  }
+}
+
 finish_test
 
 

@@ -137,61 +137,27 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
 #ifndef SQLITE_OMIT_DEPRECATED
   int size;
 #endif
-  Table *pTab;
   Db *pDb;
   char const *azArg[4];
   int meta[5];
   InitData initData;
-  char const *zMasterSchema;
-  char const *zMasterName;
+  const char *zMasterName;
   int openedTransaction = 0;
-
-  /*
-  ** The master database table has a structure like this
-  */
-  static const char master_schema[] = 
-     "CREATE TABLE sqlite_master(\n"
-     "  type text,\n"
-     "  name text,\n"
-     "  tbl_name text,\n"
-     "  rootpage integer,\n"
-     "  sql text\n"
-     ")"
-  ;
-#ifndef SQLITE_OMIT_TEMPDB
-  static const char temp_master_schema[] = 
-     "CREATE TEMP TABLE sqlite_temp_master(\n"
-     "  type text,\n"
-     "  name text,\n"
-     "  tbl_name text,\n"
-     "  rootpage integer,\n"
-     "  sql text\n"
-     ")"
-  ;
-#else
-  #define temp_master_schema 0
-#endif
 
   assert( iDb>=0 && iDb<db->nDb );
   assert( db->aDb[iDb].pSchema );
   assert( sqlite3_mutex_held(db->mutex) );
   assert( iDb==1 || sqlite3BtreeHoldsMutex(db->aDb[iDb].pBt) );
 
-  /* zMasterSchema and zInitScript are set to point at the master schema
-  ** and initialisation script appropriate for the database being
-  ** initialized. zMasterName is the name of the master table.
-  */
-  if( !OMIT_TEMPDB && iDb==1 ){
-    zMasterSchema = temp_master_schema;
-  }else{
-    zMasterSchema = master_schema;
-  }
-  zMasterName = SCHEMA_TABLE(iDb);
-
-  /* Construct the schema tables.  */
-  azArg[0] = zMasterName;
+  /* Construct the in-memory representation schema tables (sqlite_master or
+  ** sqlite_temp_master) by invoking the parser directly.  The appropriate
+  ** table name will be inserted automatically by the parser so we can just
+  ** use the abbreviation "x" here.  The parser will also automatically tag
+  ** the schema table as read-only. */
+  azArg[0] = zMasterName = SCHEMA_TABLE(iDb);
   azArg[1] = "1";
-  azArg[2] = zMasterSchema;
+  azArg[2] = "CREATE TABLE x(type text,name text,tbl_name text,"
+                            "rootpage integer,sql text)";
   azArg[3] = 0;
   initData.db = db;
   initData.iDb = iDb;
@@ -201,10 +167,6 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   if( initData.rc ){
     rc = initData.rc;
     goto error_out;
-  }
-  pTab = sqlite3FindTable(db, zMasterName, db->aDb[iDb].zName);
-  if( ALWAYS(pTab) ){
-    pTab->tabFlags |= TF_Readonly;
   }
 
   /* Create a cursor to hold the database open
@@ -324,7 +286,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   {
     char *zSql;
     zSql = sqlite3MPrintf(db, 
-        "SELECT name, rootpage, sql FROM '%q'.%s ORDER BY rowid",
+        "SELECT name, rootpage, sql FROM \"%w\".%s ORDER BY rowid",
         db->aDb[iDb].zName, zMasterName);
 #ifndef SQLITE_OMIT_AUTHORIZATION
     {

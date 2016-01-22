@@ -327,8 +327,7 @@ static void codeApplyAffinity(Parse *pParse, int base, int n, char *zAff){
 
   /* Code the OP_Affinity opcode if there is anything left to do. */
   if( n>0 ){
-    sqlite3VdbeAddOp2(v, OP_Affinity, base, n);
-    sqlite3VdbeChangeP4(v, -1, zAff, n);
+    sqlite3VdbeAddOp4(v, OP_Affinity, base, n, 0, zAff, n);
     sqlite3ExprCacheAffinityChange(pParse, base, n);
   }
 }
@@ -561,6 +560,7 @@ static int codeAllEqualityTerms(
   return regBase;
 }
 
+#ifndef SQLITE_LIKE_DOESNT_MATCH_BLOBS
 /*
 ** If the most recently coded instruction is a constant range contraint
 ** that originated from the LIKE optimization, then change the P3 to be
@@ -572,6 +572,10 @@ static int codeAllEqualityTerms(
 ** The OP_String opcodes on the second pass convert the upper and lower
 ** bound string contants to blobs.  This routine makes the necessary changes
 ** to the OP_String opcodes for that to happen.
+**
+** Except, of course, if SQLITE_LIKE_DOESNT_MATCH_BLOBS is defined, then
+** only the one pass through the string space is required, so this routine
+** becomes a no-op.
 */
 static void whereLikeOptimizationStringFixup(
   Vdbe *v,                /* prepared statement under construction */
@@ -589,6 +593,9 @@ static void whereLikeOptimizationStringFixup(
     pOp->p5 = 1;
   }
 }
+#else
+# define whereLikeOptimizationStringFixup(A,B,C)
+#endif
 
 #ifdef SQLITE_ENABLE_CURSOR_HINTS
 /*
@@ -1075,6 +1082,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     if( pLoop->wsFlags & WHERE_TOP_LIMIT ){
       pRangeEnd = pLoop->aLTerm[j++];
       nExtraReg = 1;
+#ifndef SQLITE_LIKE_DOESNT_MATCH_BLOBS
       if( (pRangeEnd->wtFlags & TERM_LIKEOPT)!=0 ){
         assert( pRangeStart!=0 );                     /* LIKE opt constraints */
         assert( pRangeStart->wtFlags & TERM_LIKEOPT );   /* occur in pairs */
@@ -1087,6 +1095,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         VdbeComment((v, "LIKE loop counter"));
         pLevel->addrLikeRep = sqlite3VdbeCurrentAddr(v);
       }
+#endif
       if( pRangeStart==0
        && (j = pIdx->aiColumn[nEq])>=0 
        && pIdx->pTable->aCol[j].notNull==0
@@ -1590,9 +1599,13 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       continue;
     }
     if( pTerm->wtFlags & TERM_LIKECOND ){
+#ifdef SQLITE_LIKE_DOESNT_MATCH_BLOBS
+      continue;
+#else
       assert( pLevel->iLikeRepCntr>0 );
       skipLikeAddr = sqlite3VdbeAddOp1(v, OP_IfNot, pLevel->iLikeRepCntr);
       VdbeCoverage(v);
+#endif
     }
     sqlite3ExprIfFalse(pParse, pE, addrCont, SQLITE_JUMPIFNULL);
     if( skipLikeAddr ) sqlite3VdbeJumpHere(v, skipLikeAddr);

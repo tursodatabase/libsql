@@ -379,7 +379,7 @@ static int fts5VocabNextMethod(sqlite3_vtab_cursor *pCursor){
 
   if( pTab->eType==FTS5_VOCAB_COL ){
     for(pCsr->iCol++; pCsr->iCol<nCol; pCsr->iCol++){
-      if( pCsr->aCnt[pCsr->iCol] ) break;
+      if( pCsr->aDoc[pCsr->iCol] ) break;
     }
   }
 
@@ -412,24 +412,60 @@ static int fts5VocabNextMethod(sqlite3_vtab_cursor *pCursor){
         i64 iPos = 0;               /* 64-bit position read from poslist */
         int iOff = 0;               /* Current offset within position list */
 
-        rc = sqlite3Fts5IterPoslist(pCsr->pIter, 0, &pPos, &nPos, &dummy);
-        if( rc==SQLITE_OK ){
-          if( pTab->eType==FTS5_VOCAB_ROW ){
-            while( 0==sqlite3Fts5PoslistNext64(pPos, nPos, &iOff, &iPos) ){
-              pCsr->aCnt[0]++;
-            }
-            pCsr->aDoc[0]++;
-          }else{
-            int iCol = -1;
-            while( 0==sqlite3Fts5PoslistNext64(pPos, nPos, &iOff, &iPos) ){
-              int ii = FTS5_POS2COLUMN(iPos);
-              pCsr->aCnt[ii]++;
-              if( iCol!=ii ){
-                pCsr->aDoc[ii]++;
-                iCol = ii;
+        switch( pCsr->pConfig->eDetail ){
+          case FTS5_DETAIL_FULL:
+            rc = sqlite3Fts5IterPoslist(pCsr->pIter, 0, &pPos, &nPos, &dummy);
+            if( rc==SQLITE_OK ){
+              if( pTab->eType==FTS5_VOCAB_ROW ){
+                while( 0==sqlite3Fts5PoslistNext64(pPos, nPos, &iOff, &iPos) ){
+                  pCsr->aCnt[0]++;
+                }
+                pCsr->aDoc[0]++;
+              }else{
+                int iCol = -1;
+                while( 0==sqlite3Fts5PoslistNext64(pPos, nPos, &iOff, &iPos) ){
+                  int ii = FTS5_POS2COLUMN(iPos);
+                  pCsr->aCnt[ii]++;
+                  if( iCol!=ii ){
+                    if( ii>=nCol ){
+                      rc = FTS5_CORRUPT;
+                      break;
+                    }
+                    pCsr->aDoc[ii]++;
+                    iCol = ii;
+                  }
+                }
               }
             }
-          }
+            break;
+
+          case FTS5_DETAIL_COLUMNS:
+            if( pTab->eType==FTS5_VOCAB_ROW ){
+              pCsr->aDoc[0]++;
+            }else{
+              Fts5Buffer buf = {0, 0, 0};
+              rc = sqlite3Fts5IterPoslistBuffer(pCsr->pIter, &buf);
+              if( rc==SQLITE_OK ){
+                while( 0==sqlite3Fts5PoslistNext64(buf.p, buf.n, &iOff,&iPos) ){
+                  assert_nc( iPos>=0 && iPos<nCol );
+                  if( iPos>=nCol ){
+                    rc = FTS5_CORRUPT;
+                    break;
+                  }
+                  pCsr->aDoc[iPos]++;
+                }
+              }
+              sqlite3Fts5BufferFree(&buf);
+            }
+            break;
+
+          default: 
+            assert( pCsr->pConfig->eDetail==FTS5_DETAIL_NONE );
+            pCsr->aDoc[0]++;
+            break;
+        }
+
+        if( rc==SQLITE_OK ){
           rc = sqlite3Fts5IterNextScan(pCsr->pIter);
         }
 
@@ -444,8 +480,8 @@ static int fts5VocabNextMethod(sqlite3_vtab_cursor *pCursor){
     }
   }
 
-  if( pCsr->bEof==0 && pTab->eType==FTS5_VOCAB_COL ){
-    while( pCsr->aCnt[pCsr->iCol]==0 ) pCsr->iCol++;
+  if( rc==SQLITE_OK && pCsr->bEof==0 && pTab->eType==FTS5_VOCAB_COL ){
+    while( pCsr->aDoc[pCsr->iCol]==0 ) pCsr->iCol++;
     assert( pCsr->iCol<pCsr->pConfig->nCol );
   }
   return rc;
@@ -525,30 +561,36 @@ static int fts5VocabColumnMethod(
   int iCol                        /* Index of column to read value from */
 ){
   Fts5VocabCursor *pCsr = (Fts5VocabCursor*)pCursor;
+  int eDetail = pCsr->pConfig->eDetail;
+  int eType = ((Fts5VocabTable*)(pCursor->pVtab))->eType;
+  i64 iVal = 0;
 
   if( iCol==0 ){
     sqlite3_result_text(
         pCtx, (const char*)pCsr->term.p, pCsr->term.n, SQLITE_TRANSIENT
     );
-  }
-  else if( ((Fts5VocabTable*)(pCursor->pVtab))->eType==FTS5_VOCAB_COL ){
+  }else if( eType==FTS5_VOCAB_COL ){
     assert( iCol==1 || iCol==2 || iCol==3 );
     if( iCol==1 ){
-      const char *z = pCsr->pConfig->azCol[pCsr->iCol];
-      sqlite3_result_text(pCtx, z, -1, SQLITE_STATIC);
+      if( eDetail!=FTS5_DETAIL_NONE ){
+        const char *z = pCsr->pConfig->azCol[pCsr->iCol];
+        sqlite3_result_text(pCtx, z, -1, SQLITE_STATIC);
+      }
     }else if( iCol==2 ){
-      sqlite3_result_int64(pCtx, pCsr->aDoc[pCsr->iCol]);
+      iVal = pCsr->aDoc[pCsr->iCol];
     }else{
-      sqlite3_result_int64(pCtx, pCsr->aCnt[pCsr->iCol]);
+      iVal = pCsr->aCnt[pCsr->iCol];
     }
   }else{
     assert( iCol==1 || iCol==2 );
     if( iCol==1 ){
-      sqlite3_result_int64(pCtx, pCsr->aDoc[0]);
+      iVal = pCsr->aDoc[0];
     }else{
-      sqlite3_result_int64(pCtx, pCsr->aCnt[0]);
+      iVal = pCsr->aCnt[0];
     }
   }
+
+  if( iVal>0 ) sqlite3_result_int64(pCtx, iVal);
   return SQLITE_OK;
 }
 

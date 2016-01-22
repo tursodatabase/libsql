@@ -737,7 +737,7 @@ static int vdbePmaReaderInit(
 
   rc = vdbePmaReaderSeek(pTask, pReadr, pFile, iStart);
   if( rc==SQLITE_OK ){
-    u64 nByte;                    /* Size of PMA in bytes */
+    u64 nByte = 0;                 /* Size of PMA in bytes */
     rc = vdbePmaReadVarint(pReadr, &nByte);
     pReadr->iEof = pReadr->iReadOff + nByte;
     *pnByte += nByte;

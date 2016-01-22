@@ -18,6 +18,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix capi3c
 
 # Do not use a codec for tests in this file, as the database file is
 # manipulated directly using tcl scripts (using the [hexio_write] command).
@@ -1374,5 +1375,27 @@ do_test capi3c-24.5 {
 do_test capi3c-24.3 {
   decltype {SELECT (SELECT x FROM (SELECT t5.a AS x)) FROM t5}
 } {INTEGER}
+
+
+# Further tests of sqlite3_column_decltype():
+#
+do_execsql_test 25.0 {
+  CREATE TABLE t11(a VARCHAR(10), b INTEGER);
+  CREATE TABLE t12(a VARCHAR(15), b FLOAT);
+}
+
+foreach {tn sql} {
+  1 "SELECT * FROM t11 UNION ALL SELECT * FROM t12"
+  2 "SELECT * FROM t11 UNION SELECT * FROM t12"
+  3 "SELECT * FROM t11 EXCEPT SELECT * FROM t12"
+  4 "SELECT * FROM t11 INTERSECT SELECT * FROM t12"
+
+  5 "SELECT * FROM t11 UNION ALL SELECT * FROM t12 ORDER BY 1"
+  6 "SELECT * FROM t11 UNION SELECT * FROM t12 ORDER BY 1"
+  7 "SELECT * FROM t11 EXCEPT SELECT * FROM t12 ORDER BY 1"
+  8 "SELECT * FROM t11 INTERSECT SELECT * FROM t12 ORDER BY 1"
+} {
+  do_test 25.$tn { decltype $sql } {VARCHAR(10) INTEGER}
+}
 
 finish_test

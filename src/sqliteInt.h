@@ -174,6 +174,21 @@
 #endif
 
 /*
+** The SQLITE_WITHIN(P,S,E) macro checks to see if pointer P points to
+** something between S (inclusive) and E (exclusive).
+**
+** In other words, S is a buffer and E is a pointer to the first byte after
+** the end of buffer S.  This macro returns true if P points to something
+** contained within the buffer S.
+*/
+#if defined(HAVE_STDINT_H)
+# define SQLITE_WITHIN(P,S,E) \
+    ((uintptr_t)(P)>=(uintptr_t)(S) && (uintptr_t)(P)<(uintptr_t)(E))
+#else
+# define SQLITE_WITHIN(P,S,E) ((P)>=(S) && (P)<(E))
+#endif
+
+/*
 ** A macro to hint to the compiler that a function should not be
 ** inlined.
 */
@@ -385,6 +400,21 @@
 #else
 # define ALWAYS(X)      (X)
 # define NEVER(X)       (X)
+#endif
+
+/*
+** Some malloc failures are only possible if SQLITE_TEST_REALLOC_STRESS is
+** defined.  We need to defend against those failures when testing with
+** SQLITE_TEST_REALLOC_STRESS, but we don't want the unreachable branches
+** during a normal build.  The following macro can be used to disable tests
+** that are always false except when SQLITE_TEST_REALLOC_STRESS is set.
+*/
+#if defined(SQLITE_TEST_REALLOC_STRESS)
+# define ONLY_IF_REALLOC_STRESS(X)  (X)
+#elif !defined(NDEBUG)
+# define ONLY_IF_REALLOC_STRESS(X)  ((X)?(assert(0),1):0)
+#else
+# define ONLY_IF_REALLOC_STRESS(X)  (0)
 #endif
 
 /*
@@ -677,11 +707,6 @@ typedef INT16_TYPE LogEst;
 ** -DSQLITE_RUNTIME_BYTEORDER=1 is set, then byte-order is determined
 ** at run-time.
 */
-#ifdef SQLITE_AMALGAMATION
-const int sqlite3one = 1;
-#else
-extern const int sqlite3one;
-#endif
 #if (defined(i386)     || defined(__i386__)   || defined(_M_IX86) ||    \
      defined(__x86_64) || defined(__x86_64__) || defined(_M_X64)  ||    \
      defined(_M_AMD64) || defined(_M_ARM)     || defined(__x86)   ||    \
@@ -699,6 +724,11 @@ extern const int sqlite3one;
 # define SQLITE_UTF16NATIVE  SQLITE_UTF16BE
 #endif
 #if !defined(SQLITE_BYTEORDER)
+# ifdef SQLITE_AMALGAMATION
+  const int sqlite3one = 1;
+# else
+  extern const int sqlite3one;
+# endif
 # define SQLITE_BYTEORDER    0     /* 0 means "unknown at compile-time" */
 # define SQLITE_BIGENDIAN    (*(char *)(&sqlite3one)==0)
 # define SQLITE_LITTLEENDIAN (*(char *)(&sqlite3one)==1)
@@ -752,10 +782,6 @@ extern const int sqlite3one;
 */
 #ifdef __APPLE__
 # include <TargetConditionals.h>
-# if TARGET_OS_IPHONE
-#   undef SQLITE_MAX_MMAP_SIZE
-#   define SQLITE_MAX_MMAP_SIZE 0
-# endif
 #endif
 #ifndef SQLITE_MAX_MMAP_SIZE
 # if defined(__linux__) \
@@ -1352,9 +1378,8 @@ struct FuncDef {
   u16 funcFlags;       /* Some combination of SQLITE_FUNC_* */
   void *pUserData;     /* User data parameter */
   FuncDef *pNext;      /* Next function with same name */
-  void (*xFunc)(sqlite3_context*,int,sqlite3_value**); /* Regular function */
-  void (*xStep)(sqlite3_context*,int,sqlite3_value**); /* Aggregate step */
-  void (*xFinalize)(sqlite3_context*);                /* Aggregate finalizer */
+  void (*xSFunc)(sqlite3_context*,int,sqlite3_value**); /* func or agg-step */
+  void (*xFinalize)(sqlite3_context*);                  /* Agg finalizer */
   char *zName;         /* SQL name of the function. */
   FuncDef *pHash;      /* Next with a different name but the same hash */
   FuncDestructor *pDestructor;   /* Reference counted destructor function */
@@ -1437,28 +1462,28 @@ struct FuncDestructor {
 */
 #define FUNCTION(zName, nArg, iArg, bNC, xFunc) \
   {nArg, SQLITE_FUNC_CONSTANT|SQLITE_UTF8|(bNC*SQLITE_FUNC_NEEDCOLL), \
-   SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, 0, #zName, 0, 0}
+   SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, #zName, 0, 0}
 #define VFUNCTION(zName, nArg, iArg, bNC, xFunc) \
   {nArg, SQLITE_UTF8|(bNC*SQLITE_FUNC_NEEDCOLL), \
-   SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, 0, #zName, 0, 0}
+   SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, #zName, 0, 0}
 #define DFUNCTION(zName, nArg, iArg, bNC, xFunc) \
   {nArg, SQLITE_FUNC_SLOCHNG|SQLITE_UTF8|(bNC*SQLITE_FUNC_NEEDCOLL), \
-   SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, 0, #zName, 0, 0}
+   SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, #zName, 0, 0}
 #define FUNCTION2(zName, nArg, iArg, bNC, xFunc, extraFlags) \
   {nArg,SQLITE_FUNC_CONSTANT|SQLITE_UTF8|(bNC*SQLITE_FUNC_NEEDCOLL)|extraFlags,\
-   SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, 0, #zName, 0, 0}
+   SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, #zName, 0, 0}
 #define STR_FUNCTION(zName, nArg, pArg, bNC, xFunc) \
   {nArg, SQLITE_FUNC_SLOCHNG|SQLITE_UTF8|(bNC*SQLITE_FUNC_NEEDCOLL), \
-   pArg, 0, xFunc, 0, 0, #zName, 0, 0}
+   pArg, 0, xFunc, 0, #zName, 0, 0}
 #define LIKEFUNC(zName, nArg, arg, flags) \
   {nArg, SQLITE_FUNC_CONSTANT|SQLITE_UTF8|flags, \
-   (void *)arg, 0, likeFunc, 0, 0, #zName, 0, 0}
+   (void *)arg, 0, likeFunc, 0, #zName, 0, 0}
 #define AGGREGATE(zName, nArg, arg, nc, xStep, xFinal) \
   {nArg, SQLITE_UTF8|(nc*SQLITE_FUNC_NEEDCOLL), \
-   SQLITE_INT_TO_PTR(arg), 0, 0, xStep,xFinal,#zName,0,0}
+   SQLITE_INT_TO_PTR(arg), 0, xStep,xFinal,#zName,0,0}
 #define AGGREGATE2(zName, nArg, arg, nc, xStep, xFinal, extraFlags) \
   {nArg, SQLITE_UTF8|(nc*SQLITE_FUNC_NEEDCOLL)|extraFlags, \
-   SQLITE_INT_TO_PTR(arg), 0, 0, xStep,xFinal,#zName,0,0}
+   SQLITE_INT_TO_PTR(arg), 0, xStep,xFinal,#zName,0,0}
 
 /*
 ** All current savepoints are stored in a linked list starting at
@@ -1507,7 +1532,7 @@ struct Column {
   char *zColl;     /* Collating sequence.  If NULL, use the default */
   u8 notNull;      /* An OE_ code for handling a NOT NULL constraint */
   char affinity;   /* One of the SQLITE_AFF_... values */
-  u8 szEst;        /* Estimated size of this column.  INT==1 */
+  u8 szEst;        /* Estimated size of value in this column. sizeof(INT)==1 */
   u8 colFlags;     /* Boolean properties.  See COLFLAG_ defines below */
 };
 
@@ -1917,7 +1942,7 @@ struct Index {
   Index *pNext;            /* The next index associated with the same table */
   Schema *pSchema;         /* Schema containing this index */
   u8 *aSortOrder;          /* for each column: True==DESC, False==ASC */
-  char **azColl;           /* Array of collation sequence names for index */
+  const char **azColl;     /* Array of collation sequence names for index */
   Expr *pPartIdxWhere;     /* WHERE clause for partial indices */
   ExprList *aColExpr;      /* Column expressions */
   int tnum;                /* DB Page containing root of this index */
@@ -2717,6 +2742,7 @@ struct Parse {
   int nSet;            /* Number of sets used so far */
   int nOnce;           /* Number of OP_Once instructions so far */
   int nOpAlloc;        /* Number of slots allocated for Vdbe.aOp[] */
+  int szOpAlloc;       /* Bytes of memory space allocated for Vdbe.aOp[] */
   int iFixedOp;        /* Never back out opcodes iFixedOp-1 or earlier */
   int ckBase;          /* Base register of data during check constraints */
   int iSelfTab;        /* Table of an index whose exprs are being coded */
@@ -2768,7 +2794,7 @@ struct Parse {
   ** in the recursive region.
   ************************************************************************/
 
-  int nVar;                 /* Number of '?' variables seen in the SQL so far */
+  ynVar nVar;               /* Number of '?' variables seen in the SQL so far */
   int nzVar;                /* Number of available slots in azVar[] */
   u8 iPkSortOrder;          /* ASC or DESC for INTEGER PRIMARY KEY */
   u8 explain;               /* True if the EXPLAIN flag is found on the query */
@@ -2831,7 +2857,7 @@ struct AuthContext {
 #define OPFLAG_TYPEOFARG     0x80    /* OP_Column only used for typeof() */
 #define OPFLAG_BULKCSR       0x01    /* OP_Open** used to open bulk cursor */
 #define OPFLAG_SEEKEQ        0x02    /* OP_Open** cursor uses EQ seek only */
-#define OPFLAG_FORDELETE     0x08    /* OP_Open is opening for-delete csr */
+#define OPFLAG_FORDELETE     0x08    /* OP_Open should use BTREE_FORDELETE */
 #define OPFLAG_P2ISREG       0x10    /* P2 to OP_Open** is a register number */
 #define OPFLAG_PERMUTE       0x01    /* OP_Compare: use the permutation */
 
@@ -2948,10 +2974,11 @@ struct StrAccum {
   sqlite3 *db;         /* Optional database for lookaside.  Can be NULL */
   char *zBase;         /* A base allocation.  Not from malloc. */
   char *zText;         /* The string collected so far */
-  int  nChar;          /* Length of the string so far */
-  int  nAlloc;         /* Amount of space allocated in zText */
-  int  mxAlloc;        /* Maximum allowed allocation.  0 for no malloc usage */
+  u32  nChar;          /* Length of the string so far */
+  u32  nAlloc;         /* Amount of space allocated in zText */
+  u32  mxAlloc;        /* Maximum allowed allocation.  0 for no malloc usage */
   u8   accError;       /* STRACCUM_NOMEM or STRACCUM_TOOBIG */
+  u8   bMalloced;      /* zText points to allocated space */
 };
 #define STRACCUM_NOMEM   1
 #define STRACCUM_TOOBIG  2
@@ -3049,10 +3076,10 @@ struct Sqlite3Config {
 ** Context pointer passed down through the tree-walk.
 */
 struct Walker {
+  Parse *pParse;                            /* Parser context.  */
   int (*xExprCallback)(Walker*, Expr*);     /* Callback for expressions */
   int (*xSelectCallback)(Walker*,Select*);  /* Callback for SELECTs */
   void (*xSelectCallback2)(Walker*,Select*);/* Second callback for SELECTs */
-  Parse *pParse;                            /* Parser context.  */
   int walkerDepth;                          /* Number of subqueries */
   u8 eCode;                                 /* A small processing code */
   union {                                   /* Extra data for callback */
@@ -3323,7 +3350,6 @@ void sqlite3Pragma(Parse*,Token*,Token*,Token*,int);
 void sqlite3ResetAllSchemasOfConnection(sqlite3*);
 void sqlite3ResetOneSchema(sqlite3*,int);
 void sqlite3CollapseDatabaseArray(sqlite3*);
-void sqlite3BeginParse(Parse*,int);
 void sqlite3CommitInternalChanges(sqlite3*);
 void sqlite3DeleteColumnNames(sqlite3*,Table*);
 int sqlite3ColumnsFromExprList(Parse*,ExprList*,i16*,Column**);
@@ -3332,7 +3358,11 @@ void sqlite3OpenMasterTable(Parse *, int);
 Index *sqlite3PrimaryKeyIndex(Table*);
 i16 sqlite3ColumnOfIndex(Index*, i16);
 void sqlite3StartTable(Parse*,Token*,Token*,int,int,int,int);
-void sqlite3ColumnPropertiesFromName(Table*, Column*);
+#if SQLITE_ENABLE_HIDDEN_COLUMNS
+  void sqlite3ColumnPropertiesFromName(Table*, Column*);
+#else
+# define sqlite3ColumnPropertiesFromName(T,C) /* no-op */
+#endif
 void sqlite3AddColumn(Parse*,Token*);
 void sqlite3AddNotNull(Parse*, int);
 void sqlite3AddPrimaryKey(Parse*, ExprList*, int, int, int);
@@ -3445,6 +3475,7 @@ void sqlite3ExprCacheRemove(Parse*, int, int);
 void sqlite3ExprCacheClear(Parse*);
 void sqlite3ExprCacheAffinityChange(Parse*, int, int);
 void sqlite3ExprCode(Parse*, Expr*, int);
+void sqlite3ExprCodeCopy(Parse*, Expr*, int);
 void sqlite3ExprCodeFactorable(Parse*, Expr*, int);
 void sqlite3ExprCodeAtInit(Parse*, Expr*, int, u8);
 int sqlite3ExprCodeTemp(Parse*, Expr*, int*);
@@ -3682,6 +3713,7 @@ int sqlite3ValueFromExpr(sqlite3 *, Expr *, u8, u8, sqlite3_value **);
 void sqlite3ValueApplyAffinity(sqlite3_value *, u8, u8);
 #ifndef SQLITE_AMALGAMATION
 extern const unsigned char sqlite3OpcodeProperty[];
+extern const char sqlite3StrBINARY[];
 extern const unsigned char sqlite3UpperToLower[];
 extern const unsigned char sqlite3CtypeMap[];
 extern const Token sqlite3IntTokens[];

@@ -15,8 +15,8 @@
 
 #include "fts5Int.h"
 
-int sqlite3Fts5BufferSize(int *pRc, Fts5Buffer *pBuf, int nByte){
-  int nNew = pBuf->nSpace ? pBuf->nSpace*2 : 64;
+int sqlite3Fts5BufferSize(int *pRc, Fts5Buffer *pBuf, u32 nByte){
+  u32 nNew = pBuf->nSpace ? pBuf->nSpace*2 : 64;
   u8 *pNew;
   while( nNew<nByte ){
     nNew = nNew * 2;
@@ -61,10 +61,10 @@ int sqlite3Fts5Get32(const u8 *aBuf){
 void sqlite3Fts5BufferAppendBlob(
   int *pRc,
   Fts5Buffer *pBuf, 
-  int nData, 
+  u32 nData, 
   const u8 *pData
 ){
-  assert( *pRc || nData>=0 );
+  assert_nc( *pRc || nData>=0 );
   if( fts5BufferGrow(pRc, pBuf, nData) ) return;
   memcpy(&pBuf->p[pBuf->n], pData, nData);
   pBuf->n += nData;
@@ -290,5 +290,91 @@ int sqlite3Fts5IsBareword(char t){
 
   return (t & 0x80) || aBareword[(int)t];
 }
+
+
+/*************************************************************************
+*/
+typedef struct Fts5TermsetEntry Fts5TermsetEntry;
+struct Fts5TermsetEntry {
+  char *pTerm;
+  int nTerm;
+  int iIdx;                       /* Index (main or aPrefix[] entry) */
+  Fts5TermsetEntry *pNext;
+};
+
+struct Fts5Termset {
+  Fts5TermsetEntry *apHash[512];
+};
+
+int sqlite3Fts5TermsetNew(Fts5Termset **pp){
+  int rc = SQLITE_OK;
+  *pp = sqlite3Fts5MallocZero(&rc, sizeof(Fts5Termset));
+  return rc;
+}
+
+int sqlite3Fts5TermsetAdd(
+  Fts5Termset *p, 
+  int iIdx,
+  const char *pTerm, int nTerm, 
+  int *pbPresent
+){
+  int rc = SQLITE_OK;
+  *pbPresent = 0;
+  if( p ){
+    int i;
+    int hash = 13;
+    Fts5TermsetEntry *pEntry;
+
+    /* Calculate a hash value for this term. This is the same hash checksum
+    ** used by the fts5_hash.c module. This is not important for correct
+    ** operation of the module, but is necessary to ensure that some tests
+    ** designed to produce hash table collisions really do work.  */
+    for(i=nTerm-1; i>=0; i--){
+      hash = (hash << 3) ^ hash ^ pTerm[i];
+    }
+    hash = (hash << 3) ^ hash ^ iIdx;
+    hash = hash % ArraySize(p->apHash);
+
+    for(pEntry=p->apHash[hash]; pEntry; pEntry=pEntry->pNext){
+      if( pEntry->iIdx==iIdx 
+          && pEntry->nTerm==nTerm 
+          && memcmp(pEntry->pTerm, pTerm, nTerm)==0 
+        ){
+        *pbPresent = 1;
+        break;
+      }
+    }
+
+    if( pEntry==0 ){
+      pEntry = sqlite3Fts5MallocZero(&rc, sizeof(Fts5TermsetEntry) + nTerm);
+      if( pEntry ){
+        pEntry->pTerm = (char*)&pEntry[1];
+        pEntry->nTerm = nTerm;
+        pEntry->iIdx = iIdx;
+        memcpy(pEntry->pTerm, pTerm, nTerm);
+        pEntry->pNext = p->apHash[hash];
+        p->apHash[hash] = pEntry;
+      }
+    }
+  }
+
+  return rc;
+}
+
+void sqlite3Fts5TermsetFree(Fts5Termset *p){
+  if( p ){
+    int i;
+    for(i=0; i<ArraySize(p->apHash); i++){
+      Fts5TermsetEntry *pEntry = p->apHash[i];
+      while( pEntry ){
+        Fts5TermsetEntry *pDel = pEntry;
+        pEntry = pEntry->pNext;
+        sqlite3_free(pDel);
+      }
+    }
+    sqlite3_free(p);
+  }
+}
+
 
 

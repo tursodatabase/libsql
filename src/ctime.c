@@ -63,6 +63,9 @@ static const char * const azCompileOpt[] = {
 #if SQLITE_DISABLE_LFS
   "DISABLE_LFS",
 #endif
+#if SQLITE_ENABLE_8_3_NAMES
+  "ENABLE_8_3_NAMES",
+#endif
 #if SQLITE_ENABLE_API_ARMOR
   "ENABLE_API_ARMOR",
 #endif
@@ -157,6 +160,9 @@ static const char * const azCompileOpt[] = {
 #endif
 #ifdef SQLITE_INT64_TYPE
   "INT64_TYPE",
+#endif
+#ifdef SQLITE_LIKE_DOESNT_MATCH_BLOBS
+  "LIKE_DOESNT_MATCH_BLOBS",
 #endif
 #if SQLITE_LOCK_TRACE
   "LOCK_TRACE",

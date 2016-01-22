@@ -528,4 +528,21 @@ do_test 8.3 {
   set res
 } 5000
 
+#---------------------------------------------------------------------------
+# https://www.sqlite.org/src/tktview/cb3aa0641d9a413841c004293a4fc06cdc122029
+#
+# Adverse interaction between scalar subqueries and the partial-sorting
+# logic.
+#
+do_execsql_test 9.0 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(x INTEGER PRIMARY KEY);
+  INSERT INTO t1 VALUES(1),(2);
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t2(y);
+  INSERT INTO t2 VALUES(9),(8),(3),(4);
+  SELECT (SELECT x||y FROM t2, t1 ORDER BY x, y);
+} {13}
+
+
 finish_test

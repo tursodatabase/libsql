@@ -202,6 +202,7 @@ static int isLikeOrGlob(
   sqlite3 *db = pParse->db;  /* Database connection */
   sqlite3_value *pVal = 0;
   int op;                    /* Opcode of pRight */
+  int rc;                    /* Result code to return */
 
   if( !sqlite3IsLikeFunction(db, pExpr, pnoCase, wc) ){
     return 0;
@@ -267,8 +268,9 @@ static int isLikeOrGlob(
     }
   }
 
+  rc = (z!=0);
   sqlite3ValueFree(pVal);
-  return (z!=0);
+  return rc;
 }
 #endif /* SQLITE_OMIT_LIKE_OPTIMIZATION */
 
@@ -277,29 +279,48 @@ static int isLikeOrGlob(
 /*
 ** Check to see if the given expression is of the form
 **
-**         column MATCH expr
+**         column OP expr
+**
+** where OP is one of MATCH, GLOB, LIKE or REGEXP and "column" is a 
+** column of a virtual table.
 **
 ** If it is then return TRUE.  If not, return FALSE.
 */
 static int isMatchOfColumn(
-  Expr *pExpr      /* Test this expression */
+  Expr *pExpr,                    /* Test this expression */
+  unsigned char *peOp2            /* OUT: 0 for MATCH, or else an op2 value */
 ){
+  struct Op2 {
+    const char *zOp;
+    unsigned char eOp2;
+  } aOp[] = {
+    { "match",  SQLITE_INDEX_CONSTRAINT_MATCH },
+    { "glob",   SQLITE_INDEX_CONSTRAINT_GLOB },
+    { "like",   SQLITE_INDEX_CONSTRAINT_LIKE },
+    { "regexp", SQLITE_INDEX_CONSTRAINT_REGEXP }
+  };
   ExprList *pList;
+  Expr *pCol;                     /* Column reference */
+  int i;
 
   if( pExpr->op!=TK_FUNCTION ){
     return 0;
   }
-  if( sqlite3StrICmp(pExpr->u.zToken,"match")!=0 ){
-    return 0;
-  }
   pList = pExpr->x.pList;
-  if( pList->nExpr!=2 ){
+  if( pList==0 || pList->nExpr!=2 ){
     return 0;
   }
-  if( pList->a[1].pExpr->op != TK_COLUMN ){
+  pCol = pList->a[1].pExpr;
+  if( pCol->op!=TK_COLUMN || !IsVirtual(pCol->pTab) ){
     return 0;
   }
-  return 1;
+  for(i=0; i<ArraySize(aOp); i++){
+    if( sqlite3StrICmp(pExpr->u.zToken, aOp[i].zOp)==0 ){
+      *peOp2 = aOp[i].eOp2;
+      return 1;
+    }
+  }
+  return 0;
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 
@@ -876,6 +897,7 @@ static void exprAnalyze(
   int op;                          /* Top-level operator.  pExpr->op */
   Parse *pParse = pWInfo->pParse;  /* Parsing context */
   sqlite3 *db = pParse->db;        /* Database connection */
+  unsigned char eOp2;              /* op2 value for LIKE/REGEXP/GLOB */
 
   if( db->mallocFailed ){
     return;
@@ -1099,7 +1121,7 @@ static void exprAnalyze(
   ** virtual tables.  The native query optimizer does not attempt
   ** to do anything with MATCH functions.
   */
-  if( isMatchOfColumn(pExpr) ){
+  if( isMatchOfColumn(pExpr, &eOp2) ){
     int idxNew;
     Expr *pRight, *pLeft;
     WhereTerm *pNewTerm;
@@ -1120,6 +1142,7 @@ static void exprAnalyze(
       pNewTerm->leftCursor = pLeft->iTable;
       pNewTerm->u.leftColumn = pLeft->iColumn;
       pNewTerm->eOperator = WO_MATCH;
+      pNewTerm->eMatchOp = eOp2;
       markTermAsChild(pWC, idxNew, idxTerm);
       pTerm = &pWC->a[idxTerm];
       pTerm->wtFlags |= TERM_COPIED;

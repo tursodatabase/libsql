@@ -10,7 +10,7 @@
 #
 
 AC_PREREQ(2.61)
-AC_INIT(sqlite, 3.7.5, http://www.sqlite.org)
+AC_INIT(sqlite, --SQLITE-VERSION--, http://www.sqlite.org)
 AC_CONFIG_SRCDIR([sqlite3.c])
 
 # Use automake.
@@ -49,6 +49,8 @@ if test x"$enable_editline" != xno ; then
   READLINE_LIBS=$LIBS
   if test x"$LIBS" != "x"; then
      AC_DEFINE([HAVE_EDITLINE],1,Define to use BSD editline)
+  else
+    unset ac_cv_search_readline
   fi
   LIBS=$sLIBS
 fi
@@ -73,7 +75,7 @@ AC_ARG_ENABLE(threadsafe, [AS_HELP_STRING(
 THREADSAFE_FLAGS=-DSQLITE_THREADSAFE=0
 if test x"$enable_threadsafe" != "xno"; then
   THREADSAFE_FLAGS="-D_REENTRANT=1 -DSQLITE_THREADSAFE=1"
-  AC_SEARCH_LIBS(pthread_create, pthread)
+  AC_SEARCH_LIBS(pthread_mutexattr_init, pthread)
 fi
 AC_SUBST(THREADSAFE_FLAGS)
 #-----------------------------------------------------------------------

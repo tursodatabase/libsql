@@ -75,7 +75,7 @@ int main(int argc, char **argv){
   /* Process command line arguments. Following this block local variables 
   ** zTarget, zRbu and nStep are all set. */
   if( argc==5 ){
-    int nArg1 = strlen(argv[1]);
+    size_t nArg1 = strlen(argv[1]);
     if( nArg1>5 || nArg1<2 || memcmp("-step", argv[1], nArg1) ) usage(argv[0]);
     nStep = atoi(argv[2]);
   }else if( argc!=3 ){
@@ -103,7 +103,7 @@ int main(int argc, char **argv){
           "SQLITE_OK: rbu update incomplete (%lld operations so far)\n",
           nProgress
       );
-      fprintf(stdout, zBuf);
+      fprintf(stdout, "%s", zBuf);
       break;
 
     case SQLITE_DONE:
@@ -111,7 +111,7 @@ int main(int argc, char **argv){
           "SQLITE_DONE: rbu update completed (%lld operations)\n",
           nProgress
       );
-      fprintf(stdout, zBuf);
+      fprintf(stdout, "%s", zBuf);
       break;
 
     default:
@@ -122,4 +122,3 @@ int main(int argc, char **argv){
   sqlite3_free(zErrmsg);
   return (rc==SQLITE_OK || rc==SQLITE_DONE) ? 0 : 1;
 }
-

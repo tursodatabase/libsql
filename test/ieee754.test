@@ -43,12 +43,16 @@ foreach {id float rep} {
   }
 }
 
-do_execsql_test ieee754-110 {
-  SELECT ieee754(1,1024), ieee754(4503599627370495,972);
-} {Inf 1.79769313486232e+308}
-do_execsql_test ieee754-111 {
-  SELECT ieee754(-1,1024), ieee754(-4503599627370495,972);
-} {-Inf -1.79769313486232e+308}
+do_test ieee754-110 {
+  string tolower [
+    db eval {SELECT ieee754(1,1024), ieee754(4503599627370495,972);}
+  ]
+} {inf 1.79769313486232e+308}
+do_test ieee754-111 {
+  string tolower [
+    db eval {SELECT ieee754(-1,1024), ieee754(-4503599627370495,972);}
+  ]
+} {-inf -1.79769313486232e+308}
 do_execsql_test ieee754-112 {
   SELECT ieee754(4503599627370495,973) is null;
 } {1}

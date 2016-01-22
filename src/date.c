@@ -65,38 +65,54 @@ struct DateTime {
   char validHMS;     /* True (1) if h,m,s are valid */
   char validJD;      /* True (1) if iJD is valid */
   char validTZ;      /* True (1) if tz is valid */
+  char tzSet;        /* Timezone was set explicitly */
 };
 
 
 /*
-** Convert zDate into one or more integers.  Additional arguments
-** come in groups of 5 as follows:
+** Convert zDate into one or more integers according to the conversion
+** specifier zFormat.
 **
-**       N       number of digits in the integer
-**       min     minimum allowed value of the integer
-**       max     maximum allowed value of the integer
-**       nextC   first character after the integer
-**       pVal    where to write the integers value.
+** zFormat[] contains 4 characters for each integer converted, except for
+** the last integer which is specified by three characters.  The meaning
+** of a four-character format specifiers ABCD is:
 **
-** Conversions continue until one with nextC==0 is encountered.
+**    A:   number of digits to convert.  Always "2" or "4".
+**    B:   minimum value.  Always "0" or "1".
+**    C:   maximum value, decoded as:
+**           a:  12
+**           b:  14
+**           c:  24
+**           d:  31
+**           e:  59
+**           f:  9999
+**    D:   the separator character, or \000 to indicate this is the
+**         last number to convert.
+**
+** Example:  To translate an ISO-8601 date YYYY-MM-DD, the format would
+** be "40f-21a-20c".  The "40f-" indicates the 4-digit year followed by "-".
+** The "21a-" indicates the 2-digit month followed by "-".  The "20c" indicates
+** the 2-digit day which is the last integer in the set.
+**
 ** The function returns the number of successful conversions.
 */
-static int getDigits(const char *zDate, ...){
+static int getDigits(const char *zDate, const char *zFormat, ...){
+  /* The aMx[] array translates the 3rd character of each format
+  ** spec into a max size:    a   b   c   d   e     f */
+  static const u16 aMx[] = { 12, 14, 24, 31, 59, 9999 };
   va_list ap;
-  int val;
-  int N;
-  int min;
-  int max;
-  int nextC;
-  int *pVal;
   int cnt = 0;
-  va_start(ap, zDate);
+  char nextC;
+  va_start(ap, zFormat);
   do{
-    N = va_arg(ap, int);
-    min = va_arg(ap, int);
-    max = va_arg(ap, int);
-    nextC = va_arg(ap, int);
-    pVal = va_arg(ap, int*);
+    char N = zFormat[0] - '0';
+    char min = zFormat[1] - '0';
+    int val = 0;
+    u16 max;
+
+    assert( zFormat[2]>='a' && zFormat[2]<='f' );
+    max = aMx[zFormat[2] - 'a'];
+    nextC = zFormat[3];
     val = 0;
     while( N-- ){
       if( !sqlite3Isdigit(*zDate) ){
@@ -105,12 +121,13 @@ static int getDigits(const char *zDate, ...){
       val = val*10 + *zDate - '0';
       zDate++;
     }
-    if( val<min || val>max || (nextC!=0 && nextC!=*zDate) ){
+    if( val<(int)min || val>(int)max || (nextC!=0 && nextC!=*zDate) ){
       goto end_getDigits;
     }
-    *pVal = val;
+    *va_arg(ap,int*) = val;
     zDate++;
     cnt++;
+    zFormat += 4;
   }while( nextC );
 end_getDigits:
   va_end(ap);
@@ -151,13 +168,14 @@ static int parseTimezone(const char *zDate, DateTime *p){
     return c!=0;
   }
   zDate++;
-  if( getDigits(zDate, 2, 0, 14, ':', &nHr, 2, 0, 59, 0, &nMn)!=2 ){
+  if( getDigits(zDate, "20b:20e", &nHr, &nMn)!=2 ){
     return 1;
   }
   zDate += 5;
   p->tz = sgn*(nMn + nHr*60);
 zulu_time:
   while( sqlite3Isspace(*zDate) ){ zDate++; }
+  p->tzSet = 1;
   return *zDate!=0;
 }
 
@@ -171,13 +189,13 @@ zulu_time:
 static int parseHhMmSs(const char *zDate, DateTime *p){
   int h, m, s;
   double ms = 0.0;
-  if( getDigits(zDate, 2, 0, 24, ':', &h, 2, 0, 59, 0, &m)!=2 ){
+  if( getDigits(zDate, "20c:20e", &h, &m)!=2 ){
     return 1;
   }
   zDate += 5;
   if( *zDate==':' ){
     zDate++;
-    if( getDigits(zDate, 2, 0, 59, 0, &s)!=1 ){
+    if( getDigits(zDate, "20e", &s)!=1 ){
       return 1;
     }
     zDate += 2;
@@ -265,7 +283,7 @@ static int parseYyyyMmDd(const char *zDate, DateTime *p){
   }else{
     neg = 0;
   }
-  if( getDigits(zDate,4,0,9999,'-',&Y,2,1,12,'-',&M,2,1,31,0,&D)!=3 ){
+  if( getDigits(zDate, "40f-21a-21d", &Y, &M, &D)!=3 ){
     return 1;
   }
   zDate += 10;
@@ -590,13 +608,18 @@ static int parseModifier(sqlite3_context *pCtx, const char *zMod, DateTime *p){
       }
 #ifndef SQLITE_OMIT_LOCALTIME
       else if( strcmp(z, "utc")==0 ){
-        sqlite3_int64 c1;
-        computeJD(p);
-        c1 = localtimeOffset(p, pCtx, &rc);
-        if( rc==SQLITE_OK ){
-          p->iJD -= c1;
-          clearYMD_HMS_TZ(p);
-          p->iJD += c1 - localtimeOffset(p, pCtx, &rc);
+        if( p->tzSet==0 ){
+          sqlite3_int64 c1;
+          computeJD(p);
+          c1 = localtimeOffset(p, pCtx, &rc);
+          if( rc==SQLITE_OK ){
+            p->iJD -= c1;
+            clearYMD_HMS_TZ(p);
+            p->iJD += c1 - localtimeOffset(p, pCtx, &rc);
+          }
+          p->tzSet = 1;
+        }else{
+          rc = SQLITE_OK;
         }
       }
 #endif

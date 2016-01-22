@@ -168,6 +168,10 @@ int sqlite3PagerSharedLock(Pager *pPager);
   int sqlite3PagerWalCallback(Pager *pPager);
   int sqlite3PagerOpenWal(Pager *pPager, int *pisOpen);
   int sqlite3PagerCloseWal(Pager *pPager);
+# ifdef SQLITE_ENABLE_SNAPSHOT
+  int sqlite3PagerSnapshotGet(Pager *pPager, sqlite3_snapshot **ppSnapshot);
+  int sqlite3PagerSnapshotOpen(Pager *pPager, sqlite3_snapshot *pSnapshot);
+# endif
 #endif
 
 #ifdef SQLITE_ENABLE_ZIPVFS
@@ -182,8 +186,9 @@ u32 sqlite3PagerDataVersion(Pager*);
 #endif
 int sqlite3PagerMemUsed(Pager*);
 const char *sqlite3PagerFilename(Pager*, int);
-const sqlite3_vfs *sqlite3PagerVfs(Pager*);
+sqlite3_vfs *sqlite3PagerVfs(Pager*);
 sqlite3_file *sqlite3PagerFile(Pager*);
+sqlite3_file *sqlite3PagerJrnlFile(Pager*);
 const char *sqlite3PagerJournalname(Pager*);
 int sqlite3PagerNosync(Pager*);
 void *sqlite3PagerTempSpace(Pager*);

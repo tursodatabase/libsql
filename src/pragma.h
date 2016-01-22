@@ -308,7 +308,7 @@ static const struct sPragmaNames {
     /* ePragFlag: */ 0,
     /* iArg:      */ 0 },
 #endif
-#if defined(SQLITE_DEBUG)
+#if defined(SQLITE_DEBUG) && !defined(SQLITE_OMIT_PARSER_TRACE)
   { /* zName:     */ "parser_trace",
     /* ePragTyp:  */ PragTyp_PARSER_TRACE,
     /* ePragFlag: */ 0,

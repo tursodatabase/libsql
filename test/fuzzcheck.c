@@ -588,18 +588,13 @@ static int inmemFullPathname(
   return SQLITE_OK;
 }
 
-/* GetLastError() is never used */
-static int inmemGetLastError(sqlite3_vfs *pVfs, int n, char *z){
-  return SQLITE_OK;
-}
-
 /*
 ** Register the VFS that reads from the g.aFile[] set of files.
 */
 static void inmemVfsRegister(void){
   static sqlite3_vfs inmemVfs;
   sqlite3_vfs *pDefault = sqlite3_vfs_find(0);
-  inmemVfs.iVersion = 1;
+  inmemVfs.iVersion = 3;
   inmemVfs.szOsFile = sizeof(VHandle);
   inmemVfs.mxPathname = 200;
   inmemVfs.zName = "inmem";
@@ -609,8 +604,7 @@ static void inmemVfsRegister(void){
   inmemVfs.xFullPathname = inmemFullPathname;
   inmemVfs.xRandomness = pDefault->xRandomness;
   inmemVfs.xSleep = pDefault->xSleep;
-  inmemVfs.xCurrentTime = pDefault->xCurrentTime;
-  inmemVfs.xGetLastError = inmemGetLastError;
+  inmemVfs.xCurrentTimeInt64 = pDefault->xCurrentTimeInt64;
   sqlite3_vfs_register(&inmemVfs, 0);
 };
 
@@ -871,8 +865,13 @@ int main(int argc, char **argv){
         return 0;
       }else
       if( strcmp(z,"limit-mem")==0 ){
+#if !defined(SQLITE_ENABLE_MEMSYS3) && !defined(SQLITE_ENABLE_MEMSYS5)
+        fatalError("the %s option requires -DSQLITE_ENABLE_MEMSYS5 or _MEMSYS3",
+                   argv[i]);
+#else
         if( i>=argc-1 ) fatalError("missing arguments on %s", argv[i]);
         nMem = integerValue(argv[++i]);
+#endif
       }else
       if( strcmp(z,"limit-vdbe")==0 ){
         vdbeLimitFlag = 1;

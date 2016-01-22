@@ -222,7 +222,8 @@ static int faultsimInstall(int install){
     assert( memcmp(&m2, &memfault.m, sizeof(m2))==0 );
 
     rc = sqlite3_config(SQLITE_CONFIG_MALLOC, &memfault.m);
-    sqlite3_test_control(SQLITE_TESTCTRL_BENIGN_MALLOC_HOOKS, 0, 0);
+    sqlite3_test_control(SQLITE_TESTCTRL_BENIGN_MALLOC_HOOKS,
+        (void*)0, (void*)0);
   }
 
   if( rc==SQLITE_OK ){
@@ -910,7 +911,7 @@ static int test_config_scratch(
   free(buf);
   if( sz<0 ){
     buf = 0;
-    rc = sqlite3_config(SQLITE_CONFIG_SCRATCH, 0, 0, 0);
+    rc = sqlite3_config(SQLITE_CONFIG_SCRATCH, (void*)0, 0, 0);
   }else{
     buf = malloc( sz*N + 1 );
     rc = sqlite3_config(SQLITE_CONFIG_SCRATCH, buf, sz, N);
@@ -957,7 +958,7 @@ static int test_config_pagecache(
   Tcl_SetObjResult(interp, pRes);
 
   if( sz<0 ){
-    sqlite3_config(SQLITE_CONFIG_PAGECACHE, 0, 0, 0);
+    sqlite3_config(SQLITE_CONFIG_PAGECACHE, (void*)0, 0, 0);
   }else{
     buf = malloc( sz*N );
     sqlite3_config(SQLITE_CONFIG_PAGECACHE, buf, sz, N);

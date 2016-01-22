@@ -445,9 +445,10 @@ int sqlite3_config(int op, ...){
       break;
     }
     case SQLITE_CONFIG_PAGECACHE: {
-      /* EVIDENCE-OF: R-31408-40510 There are three arguments to
-      ** SQLITE_CONFIG_PAGECACHE: A pointer to 8-byte aligned memory, the size
-      ** of each page buffer (sz), and the number of pages (N). */
+      /* EVIDENCE-OF: R-18761-36601 There are three arguments to
+      ** SQLITE_CONFIG_PAGECACHE: A pointer to 8-byte aligned memory (pMem),
+      ** the size of each page cache line (sz), and the number of cache lines
+      ** (N). */
       sqlite3GlobalConfig.pPage = va_arg(ap, void*);
       sqlite3GlobalConfig.szPage = va_arg(ap, int);
       sqlite3GlobalConfig.nPage = va_arg(ap, int);
@@ -1574,7 +1575,7 @@ int sqlite3CreateFunc(
   int nArg,
   int enc,
   void *pUserData,
-  void (*xFunc)(sqlite3_context*,int,sqlite3_value **),
+  void (*xSFunc)(sqlite3_context*,int,sqlite3_value **),
   void (*xStep)(sqlite3_context*,int,sqlite3_value **),
   void (*xFinal)(sqlite3_context*),
   FuncDestructor *pDestructor
@@ -1585,9 +1586,9 @@ int sqlite3CreateFunc(
 
   assert( sqlite3_mutex_held(db->mutex) );
   if( zFunctionName==0 ||
-      (xFunc && (xFinal || xStep)) || 
-      (!xFunc && (xFinal && !xStep)) ||
-      (!xFunc && (!xFinal && xStep)) ||
+      (xSFunc && (xFinal || xStep)) || 
+      (!xSFunc && (xFinal && !xStep)) ||
+      (!xSFunc && (!xFinal && xStep)) ||
       (nArg<-1 || nArg>SQLITE_MAX_FUNCTION_ARG) ||
       (255<(nName = sqlite3Strlen30( zFunctionName))) ){
     return SQLITE_MISUSE_BKPT;
@@ -1610,10 +1611,10 @@ int sqlite3CreateFunc(
   }else if( enc==SQLITE_ANY ){
     int rc;
     rc = sqlite3CreateFunc(db, zFunctionName, nArg, SQLITE_UTF8|extraFlags,
-         pUserData, xFunc, xStep, xFinal, pDestructor);
+         pUserData, xSFunc, xStep, xFinal, pDestructor);
     if( rc==SQLITE_OK ){
       rc = sqlite3CreateFunc(db, zFunctionName, nArg, SQLITE_UTF16LE|extraFlags,
-          pUserData, xFunc, xStep, xFinal, pDestructor);
+          pUserData, xSFunc, xStep, xFinal, pDestructor);
     }
     if( rc!=SQLITE_OK ){
       return rc;
@@ -1657,8 +1658,7 @@ int sqlite3CreateFunc(
   p->pDestructor = pDestructor;
   p->funcFlags = (p->funcFlags & SQLITE_FUNC_ENCMASK) | extraFlags;
   testcase( p->funcFlags & SQLITE_DETERMINISTIC );
-  p->xFunc = xFunc;
-  p->xStep = xStep;
+  p->xSFunc = xSFunc ? xSFunc : xStep;
   p->xFinalize = xFinal;
   p->pUserData = pUserData;
   p->nArg = (u16)nArg;
@@ -1674,11 +1674,11 @@ int sqlite3_create_function(
   int nArg,
   int enc,
   void *p,
-  void (*xFunc)(sqlite3_context*,int,sqlite3_value **),
+  void (*xSFunc)(sqlite3_context*,int,sqlite3_value **),
   void (*xStep)(sqlite3_context*,int,sqlite3_value **),
   void (*xFinal)(sqlite3_context*)
 ){
-  return sqlite3_create_function_v2(db, zFunc, nArg, enc, p, xFunc, xStep,
+  return sqlite3_create_function_v2(db, zFunc, nArg, enc, p, xSFunc, xStep,
                                     xFinal, 0);
 }
 
@@ -1688,7 +1688,7 @@ int sqlite3_create_function_v2(
   int nArg,
   int enc,
   void *p,
-  void (*xFunc)(sqlite3_context*,int,sqlite3_value **),
+  void (*xSFunc)(sqlite3_context*,int,sqlite3_value **),
   void (*xStep)(sqlite3_context*,int,sqlite3_value **),
   void (*xFinal)(sqlite3_context*),
   void (*xDestroy)(void *)
@@ -1711,7 +1711,7 @@ int sqlite3_create_function_v2(
     pArg->xDestroy = xDestroy;
     pArg->pUserData = p;
   }
-  rc = sqlite3CreateFunc(db, zFunc, nArg, enc, p, xFunc, xStep, xFinal, pArg);
+  rc = sqlite3CreateFunc(db, zFunc, nArg, enc, p, xSFunc, xStep, xFinal, pArg);
   if( pArg && pArg->nRef==0 ){
     assert( rc!=SQLITE_OK );
     xDestroy(p);
@@ -1731,7 +1731,7 @@ int sqlite3_create_function16(
   int nArg,
   int eTextRep,
   void *p,
-  void (*xFunc)(sqlite3_context*,int,sqlite3_value**),
+  void (*xSFunc)(sqlite3_context*,int,sqlite3_value**),
   void (*xStep)(sqlite3_context*,int,sqlite3_value**),
   void (*xFinal)(sqlite3_context*)
 ){
@@ -1744,7 +1744,7 @@ int sqlite3_create_function16(
   sqlite3_mutex_enter(db->mutex);
   assert( !db->mallocFailed );
   zFunc8 = sqlite3Utf16to8(db, zFunctionName, -1, SQLITE_UTF16NATIVE);
-  rc = sqlite3CreateFunc(db, zFunc8, nArg, eTextRep, p, xFunc, xStep, xFinal,0);
+  rc = sqlite3CreateFunc(db, zFunc8, nArg, eTextRep, p, xSFunc,xStep,xFinal,0);
   sqlite3DbFree(db, zFunc8);
   rc = sqlite3ApiExit(db, rc);
   sqlite3_mutex_leave(db->mutex);
@@ -2828,9 +2828,9 @@ static int openDatabase(
   ** EVIDENCE-OF: R-52786-44878 SQLite defines three built-in collating
   ** functions:
   */
-  createCollation(db, "BINARY", SQLITE_UTF8, 0, binCollFunc, 0);
-  createCollation(db, "BINARY", SQLITE_UTF16BE, 0, binCollFunc, 0);
-  createCollation(db, "BINARY", SQLITE_UTF16LE, 0, binCollFunc, 0);
+  createCollation(db, sqlite3StrBINARY, SQLITE_UTF8, 0, binCollFunc, 0);
+  createCollation(db, sqlite3StrBINARY, SQLITE_UTF16BE, 0, binCollFunc, 0);
+  createCollation(db, sqlite3StrBINARY, SQLITE_UTF16LE, 0, binCollFunc, 0);
   createCollation(db, "NOCASE", SQLITE_UTF8, 0, nocaseCollatingFunc, 0);
   createCollation(db, "RTRIM", SQLITE_UTF8, (void*)1, binCollFunc, 0);
   if( db->mallocFailed ){
@@ -2839,7 +2839,7 @@ static int openDatabase(
   /* EVIDENCE-OF: R-08308-17224 The default collating function for all
   ** strings is BINARY. 
   */
-  db->pDfltColl = sqlite3FindCollSeq(db, SQLITE_UTF8, "BINARY", 0);
+  db->pDfltColl = sqlite3FindCollSeq(db, SQLITE_UTF8, sqlite3StrBINARY, 0);
   assert( db->pDfltColl!=0 );
 
   /* Parse the filename/URI argument. */
@@ -2969,7 +2969,6 @@ static int openDatabase(
   sqlite3_wal_autocheckpoint(db, SQLITE_DEFAULT_WAL_AUTOCHECKPOINT);
 
 opendb_out:
-  sqlite3_free(zOpen);
   if( db ){
     assert( db->mutex!=0 || isThreadsafe==0
            || sqlite3GlobalConfig.bFullMutex==0 );
@@ -3006,6 +3005,7 @@ opendb_out:
     }
   }
 #endif
+  sqlite3_free(zOpen);
   return rc & 0xff;
 }
 
@@ -3339,7 +3339,7 @@ int sqlite3_table_column_metadata(
     primarykey = 1;
   }
   if( !zCollSeq ){
-    zCollSeq = "BINARY";
+    zCollSeq = sqlite3StrBINARY;
   }
 
 error_out:
@@ -3419,6 +3419,12 @@ int sqlite3_file_control(sqlite3 *db, const char *zDbName, int op, void *pArg){
     assert( fd!=0 );
     if( op==SQLITE_FCNTL_FILE_POINTER ){
       *(sqlite3_file**)pArg = fd;
+      rc = SQLITE_OK;
+    }else if( op==SQLITE_FCNTL_VFS_POINTER ){
+      *(sqlite3_vfs**)pArg = sqlite3PagerVfs(pPager);
+      rc = SQLITE_OK;
+    }else if( op==SQLITE_FCNTL_JOURNAL_POINTER ){
+      *(sqlite3_file**)pArg = sqlite3PagerJrnlFile(pPager);
       rc = SQLITE_OK;
     }else if( fd->pMethods ){
       rc = sqlite3OsFileControl(fd, op, pArg);
@@ -3862,3 +3868,85 @@ int sqlite3_db_readonly(sqlite3 *db, const char *zDbName){
   pBt = sqlite3DbNameToBtree(db, zDbName);
   return pBt ? sqlite3BtreeIsReadonly(pBt) : -1;
 }
+
+#ifdef SQLITE_ENABLE_SNAPSHOT
+/*
+** Obtain a snapshot handle for the snapshot of database zDb currently 
+** being read by handle db.
+*/
+int sqlite3_snapshot_get(
+  sqlite3 *db, 
+  const char *zDb,
+  sqlite3_snapshot **ppSnapshot
+){
+  int rc = SQLITE_ERROR;
+#ifndef SQLITE_OMIT_WAL
+  int iDb;
+
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( !sqlite3SafetyCheckOk(db) ){
+    return SQLITE_MISUSE_BKPT;
+  }
+#endif
+  sqlite3_mutex_enter(db->mutex);
+
+  iDb = sqlite3FindDbName(db, zDb);
+  if( iDb==0 || iDb>1 ){
+    Btree *pBt = db->aDb[iDb].pBt;
+    if( 0==sqlite3BtreeIsInTrans(pBt) ){
+      rc = sqlite3BtreeBeginTrans(pBt, 0);
+      if( rc==SQLITE_OK ){
+        rc = sqlite3PagerSnapshotGet(sqlite3BtreePager(pBt), ppSnapshot);
+      }
+    }
+  }
+
+  sqlite3_mutex_leave(db->mutex);
+#endif   /* SQLITE_OMIT_WAL */
+  return rc;
+}
+
+/*
+** Open a read-transaction on the snapshot idendified by pSnapshot.
+*/
+int sqlite3_snapshot_open(
+  sqlite3 *db, 
+  const char *zDb, 
+  sqlite3_snapshot *pSnapshot
+){
+  int rc = SQLITE_ERROR;
+#ifndef SQLITE_OMIT_WAL
+
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( !sqlite3SafetyCheckOk(db) ){
+    return SQLITE_MISUSE_BKPT;
+  }
+#endif
+  sqlite3_mutex_enter(db->mutex);
+  if( db->autoCommit==0 ){
+    int iDb;
+    iDb = sqlite3FindDbName(db, zDb);
+    if( iDb==0 || iDb>1 ){
+      Btree *pBt = db->aDb[iDb].pBt;
+      if( 0==sqlite3BtreeIsInReadTrans(pBt) ){
+        rc = sqlite3PagerSnapshotOpen(sqlite3BtreePager(pBt), pSnapshot);
+        if( rc==SQLITE_OK ){
+          rc = sqlite3BtreeBeginTrans(pBt, 0);
+          sqlite3PagerSnapshotOpen(sqlite3BtreePager(pBt), 0);
+        }
+      }
+    }
+  }
+
+  sqlite3_mutex_leave(db->mutex);
+#endif   /* SQLITE_OMIT_WAL */
+  return rc;
+}
+
+/*
+** Free a snapshot handle obtained from sqlite3_snapshot_get().
+*/
+void sqlite3_snapshot_free(sqlite3_snapshot *pSnapshot){
+  sqlite3_free(pSnapshot);
+}
+#endif /* SQLITE_ENABLE_SNAPSHOT */

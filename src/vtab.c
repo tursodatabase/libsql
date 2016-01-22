@@ -1016,7 +1016,7 @@ FuncDef *sqlite3VtabOverloadFunction(
   Table *pTab;
   sqlite3_vtab *pVtab;
   sqlite3_module *pMod;
-  void (*xFunc)(sqlite3_context*,int,sqlite3_value**) = 0;
+  void (*xSFunc)(sqlite3_context*,int,sqlite3_value**) = 0;
   void *pArg = 0;
   FuncDef *pNew;
   int rc = 0;
@@ -1044,7 +1044,7 @@ FuncDef *sqlite3VtabOverloadFunction(
     for(z=(unsigned char*)zLowerName; *z; z++){
       *z = sqlite3UpperToLower[*z];
     }
-    rc = pMod->xFindFunction(pVtab, nArg, zLowerName, &xFunc, &pArg);
+    rc = pMod->xFindFunction(pVtab, nArg, zLowerName, &xSFunc, &pArg);
     sqlite3DbFree(db, zLowerName);
   }
   if( rc==0 ){
@@ -1061,7 +1061,7 @@ FuncDef *sqlite3VtabOverloadFunction(
   *pNew = *pDef;
   pNew->zName = (char *)&pNew[1];
   memcpy(pNew->zName, pDef->zName, sqlite3Strlen30(pDef->zName)+1);
-  pNew->xFunc = xFunc;
+  pNew->xSFunc = xSFunc;
   pNew->pUserData = pArg;
   pNew->funcFlags |= SQLITE_FUNC_EPHEM;
   return pNew;

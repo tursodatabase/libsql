@@ -461,8 +461,9 @@ Expr *sqlite3ExprAlloc(
       assert( iValue>=0 );
     }
   }
-  pNew = sqlite3DbMallocZero(db, sizeof(Expr)+nExtra);
+  pNew = sqlite3DbMallocRaw(db, sizeof(Expr)+nExtra);
   if( pNew ){
+    memset(pNew, 0, sizeof(Expr));
     pNew->op = (u8)op;
     pNew->iAgg = -1;
     if( pToken ){
@@ -853,6 +854,7 @@ static int dupedExprSize(Expr *p, int flags){
 */
 static Expr *exprDup(sqlite3 *db, Expr *p, int flags, u8 **pzBuffer){
   Expr *pNew = 0;                      /* Value to return */
+  assert( flags==0 || flags==EXPRDUP_REDUCE );
   if( p ){
     const int isReduced = (flags&EXPRDUP_REDUCE);
     u8 *zAlloc;
@@ -887,9 +889,11 @@ static Expr *exprDup(sqlite3 *db, Expr *p, int flags, u8 **pzBuffer){
         assert( ExprHasProperty(p, EP_Reduced)==0 );
         memcpy(zAlloc, p, nNewSize);
       }else{
-        int nSize = exprStructSize(p);
+        u32 nSize = (u32)exprStructSize(p);
         memcpy(zAlloc, p, nSize);
-        memset(&zAlloc[nSize], 0, EXPR_FULLSIZE-nSize);
+        if( nSize<EXPR_FULLSIZE ){ 
+          memset(&zAlloc[nSize], 0, EXPR_FULLSIZE-nSize);
+        }
       }
 
       /* Set the EP_Reduced, EP_TokenOnly, and EP_Static flags appropriately. */
@@ -979,6 +983,7 @@ static With *withDup(sqlite3 *db, With *p){
 ** part of the in-memory representation of the database schema.
 */
 Expr *sqlite3ExprDup(sqlite3 *db, Expr *p, int flags){
+  assert( flags==0 || flags==EXPRDUP_REDUCE );
   return exprDup(db, p, flags, 0);
 }
 ExprList *sqlite3ExprListDup(sqlite3 *db, ExprList *p, int flags){
@@ -1130,10 +1135,11 @@ ExprList *sqlite3ExprListAppend(
 ){
   sqlite3 *db = pParse->db;
   if( pList==0 ){
-    pList = sqlite3DbMallocZero(db, sizeof(ExprList) );
+    pList = sqlite3DbMallocRaw(db, sizeof(ExprList) );
     if( pList==0 ){
       goto no_mem;
     }
+    pList->nExpr = 0;
     pList->a = sqlite3DbMallocRaw(db, sizeof(pList->a[0]));
     if( pList->a==0 ) goto no_mem;
   }else if( (pList->nExpr & (pList->nExpr-1))==0 ){
@@ -2464,7 +2470,7 @@ void sqlite3ExprCodeLoadIndexColumn(
     assert( pIdx->aColExpr );
     assert( pIdx->aColExpr->nExpr>iIdxCol );
     pParse->iSelfTab = iTabCur;
-    sqlite3ExprCode(pParse, pIdx->aColExpr->a[iIdxCol].pExpr, regOut);
+    sqlite3ExprCodeCopy(pParse, pIdx->aColExpr->a[iIdxCol].pExpr, regOut);
   }else{
     sqlite3ExprCodeGetColumnOfTable(pParse->pVdbe, pIdx->pTable, iTabCur,
                                     iTabCol, regOut);
@@ -2891,7 +2897,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       zId = pExpr->u.zToken;
       nId = sqlite3Strlen30(zId);
       pDef = sqlite3FindFunction(db, zId, nId, nFarg, enc, 0);
-      if( pDef==0 || pDef->xFunc==0 ){
+      if( pDef==0 || pDef->xFinalize!=0 ){
         sqlite3ErrorMsg(pParse, "unknown function: %.*s()", nId, zId);
         break;
       }
@@ -3317,11 +3323,23 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
     sqlite3VdbeAddOp2(pParse->pVdbe, OP_Copy, pExpr->iTable, target);
   }else{
     inReg = sqlite3ExprCodeTarget(pParse, pExpr, target);
-    assert( pParse->pVdbe || pParse->db->mallocFailed );
+    assert( pParse->pVdbe!=0 || pParse->db->mallocFailed );
     if( inReg!=target && pParse->pVdbe ){
       sqlite3VdbeAddOp2(pParse->pVdbe, OP_SCopy, inReg, target);
     }
   }
+}
+
+/*
+** Make a transient copy of expression pExpr and then code it using
+** sqlite3ExprCode().  This routine works just like sqlite3ExprCode()
+** except that the input expression is guaranteed to be unchanged.
+*/
+void sqlite3ExprCodeCopy(Parse *pParse, Expr *pExpr, int target){
+  sqlite3 *db = pParse->db;
+  pExpr = sqlite3ExprDup(db, pExpr, 0);
+  if( !db->mallocFailed ) sqlite3ExprCode(pParse, pExpr, target);
+  sqlite3ExprDelete(db, pExpr);
 }
 
 /*
@@ -3818,7 +3836,7 @@ int sqlite3ExprCompare(Expr *pA, Expr *pB, int iTab){
     }
     return 2;
   }
-  if( pA->op!=TK_COLUMN && ALWAYS(pA->op!=TK_AGG_COLUMN) && pA->u.zToken ){
+  if( pA->op!=TK_COLUMN && pA->op!=TK_AGG_COLUMN && pA->u.zToken ){
     if( pA->op==TK_FUNCTION ){
       if( sqlite3StrICmp(pA->u.zToken,pB->u.zToken)!=0 ) return 2;
     }else if( strcmp(pA->u.zToken,pB->u.zToken)!=0 ){

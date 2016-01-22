@@ -5627,7 +5627,7 @@ int sqlite3PagerBegin(Pager *pPager, int exFlag, int subjInMemory){
         if( rc!=SQLITE_OK ){
           return rc;
         }
-        sqlite3WalExclusiveMode(pPager->pWal, 1);
+        (void)sqlite3WalExclusiveMode(pPager->pWal, 1);
       }
 
       /* Grab the write lock on the log file. If successful, upgrade to
@@ -6679,7 +6679,7 @@ const char *sqlite3PagerFilename(Pager *pPager, int nullIfMemDb){
 /*
 ** Return the VFS structure for the pager.
 */
-const sqlite3_vfs *sqlite3PagerVfs(Pager *pPager){
+sqlite3_vfs *sqlite3PagerVfs(Pager *pPager){
   return pPager->pVfs;
 }
 
@@ -6690,6 +6690,18 @@ const sqlite3_vfs *sqlite3PagerVfs(Pager *pPager){
 */
 sqlite3_file *sqlite3PagerFile(Pager *pPager){
   return pPager->fd;
+}
+
+/*
+** Return the file handle for the journal file (if it exists).
+** This will be either the rollback journal or the WAL file.
+*/
+sqlite3_file *sqlite3PagerJrnlFile(Pager *pPager){
+#if SQLITE_OMIT_WAL
+  return pPager->jfd;
+#else
+  return pPager->pWal ? sqlite3WalFile(pPager->pWal) : pPager->jfd;
+#endif
 }
 
 /*
@@ -7301,6 +7313,34 @@ int sqlite3PagerCloseWal(Pager *pPager){
   return rc;
 }
 
+#ifdef SQLITE_ENABLE_SNAPSHOT
+/*
+** If this is a WAL database, obtain a snapshot handle for the snapshot
+** currently open. Otherwise, return an error.
+*/
+int sqlite3PagerSnapshotGet(Pager *pPager, sqlite3_snapshot **ppSnapshot){
+  int rc = SQLITE_ERROR;
+  if( pPager->pWal ){
+    rc = sqlite3WalSnapshotGet(pPager->pWal, ppSnapshot);
+  }
+  return rc;
+}
+
+/*
+** If this is a WAL database, store a pointer to pSnapshot. Next time a
+** read transaction is opened, attempt to read from the snapshot it 
+** identifies. If this is not a WAL database, return an error.
+*/
+int sqlite3PagerSnapshotOpen(Pager *pPager, sqlite3_snapshot *pSnapshot){
+  int rc = SQLITE_OK;
+  if( pPager->pWal ){
+    sqlite3WalSnapshotOpen(pPager->pWal, pSnapshot);
+  }else{
+    rc = SQLITE_ERROR;
+  }
+  return rc;
+}
+#endif /* SQLITE_ENABLE_SNAPSHOT */
 #endif /* !SQLITE_OMIT_WAL */
 
 #ifdef SQLITE_ENABLE_ZIPVFS

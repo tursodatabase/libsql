@@ -312,6 +312,7 @@ TESTSRC = \
   $(TOP)/src/test_tclvar.c \
   $(TOP)/src/test_thread.c \
   $(TOP)/src/test_vfs.c \
+  $(TOP)/src/test_windirent.c \
   $(TOP)/src/test_wsd.c
 
 # Extensions to be statically loaded.
@@ -332,7 +333,8 @@ TESTSRC += \
   $(TOP)/ext/misc/wholenumber.c \
   $(TOP)/ext/misc/vfslog.c \
   $(TOP)/ext/fts5/fts5_tcl.c \
-  $(TOP)/ext/fts5/fts5_test_mi.c
+  $(TOP)/ext/fts5/fts5_test_mi.c \
+  $(TOP)/ext/fts5/fts5_test_tok.c 
 
 
 #TESTSRC += $(TOP)/ext/fts2/fts2_tokenizer.c
@@ -459,7 +461,7 @@ TESTOPTS = --verbose=file --output=test-out.txt
 #
 SHELL_OPT = -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_FTS4 -DSQLITE_ENABLE_FTS5
 FUZZERSHELL_OPT = -DSQLITE_ENABLE_JSON1
-FUZZCHECK_OPT = -DSQLITE_ENABLE_JSON1
+FUZZCHECK_OPT = -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_MEMSYS5
 
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
@@ -808,8 +810,8 @@ THREADTEST3_SRC = $(TOP)/test/threadtest3.c    \
                   $(TOP)/test/tt3_stress.c      \
                   $(TOP)/test/tt3_lookaside1.c
 
-threadtest3$(EXE): sqlite3.o $(THREADTEST3_SRC)
-	$(TCCX) $(TOP)/test/threadtest3.c sqlite3.o -o $@ $(THREADLIB)
+threadtest3$(EXE): sqlite3.o $(THREADTEST3_SRC) $(TOP)/src/test_multiplex.c
+	$(TCCX) $(TOP)/test/threadtest3.c $(TOP)/src/test_multiplex.c sqlite3.o -o $@ $(THREADLIB)
 
 threadtest: threadtest3$(EXE)
 	./threadtest3$(EXE)
@@ -904,6 +906,7 @@ clean:
 	rm -f showwal showwal.exe
 	rm -f speedtest1 speedtest1.exe
 	rm -f wordcount wordcount.exe
+	rm -f rbu rbu.exe
 	rm -f sqlite3.c sqlite3-*.c fts?amal.c tclsqlite3.c
 	rm -f sqlite3rc.h
 	rm -f shell.c sqlite3ext.h

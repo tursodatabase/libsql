@@ -23,6 +23,15 @@
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 
+/*
+** Characters that make up the idxStr created by xBestIndex for xFilter.
+*/
+#define TCLVAR_NAME_EQ      'e'
+#define TCLVAR_NAME_MATCH   'm'
+#define TCLVAR_VALUE_GLOB   'g'
+#define TCLVAR_VALUE_REGEXP 'r'
+#define TCLVAR_VALUE_LIKE   'l'
+
 typedef struct tclvar_vtab tclvar_vtab;
 typedef struct tclvar_cursor tclvar_cursor;
 
@@ -155,15 +164,44 @@ static int tclvarFilter(
 ){
   tclvar_cursor *pCur = (tclvar_cursor *)pVtabCursor;
   Tcl_Interp *interp = ((tclvar_vtab *)(pVtabCursor->pVtab))->interp;
+  Tcl_Obj *p = Tcl_NewStringObj("tclvar_filter_cmd", -1);
 
-  Tcl_Obj *p = Tcl_NewStringObj("info vars", -1);
-  Tcl_IncrRefCount(p);
+  const char *zEq = "";
+  const char *zMatch = "";
+  const char *zGlob = "";
+  const char *zRegexp = "";
+  const char *zLike = "";
+  int i;
 
-  assert( argc==0 || argc==1 );
-  if( argc==1 ){
-    Tcl_Obj *pArg = Tcl_NewStringObj((char*)sqlite3_value_text(argv[0]), -1);
-    Tcl_ListObjAppendElement(0, p, pArg);
+  for(i=0; idxStr[i]; i++){
+    switch( idxStr[i] ){
+      case TCLVAR_NAME_EQ:
+        zEq = (const char*)sqlite3_value_text(argv[i]);
+        break;
+      case TCLVAR_NAME_MATCH:
+        zMatch = (const char*)sqlite3_value_text(argv[i]);
+        break;
+      case TCLVAR_VALUE_GLOB:
+        zGlob = (const char*)sqlite3_value_text(argv[i]);
+        break;
+      case TCLVAR_VALUE_REGEXP:
+        zRegexp = (const char*)sqlite3_value_text(argv[i]);
+        break;
+      case TCLVAR_VALUE_LIKE:
+        zLike = (const char*)sqlite3_value_text(argv[i]);
+        break;
+      default:
+        assert( 0 );
+    }
   }
+
+  Tcl_IncrRefCount(p);
+  Tcl_ListObjAppendElement(0, p, Tcl_NewStringObj(zEq, -1));
+  Tcl_ListObjAppendElement(0, p, Tcl_NewStringObj(zMatch, -1));
+  Tcl_ListObjAppendElement(0, p, Tcl_NewStringObj(zGlob, -1));
+  Tcl_ListObjAppendElement(0, p, Tcl_NewStringObj(zRegexp, -1));
+  Tcl_ListObjAppendElement(0, p, Tcl_NewStringObj(zLike, -1));
+
   Tcl_EvalObjEx(interp, p, TCL_EVAL_GLOBAL);
   if( pCur->pList1 ){
     Tcl_DecrRefCount(pCur->pList1);
@@ -176,7 +214,6 @@ static int tclvarFilter(
   pCur->i2 = 0;
   pCur->pList1 = Tcl_GetObjResult(interp);
   Tcl_IncrRefCount(pCur->pList1);
-  assert( pCur->i1==0 && pCur->i2==0 && pCur->pList2==0 );
 
   Tcl_DecrRefCount(p);
   return tclvarNext(pVtabCursor);
@@ -224,32 +261,113 @@ static int tclvarEof(sqlite3_vtab_cursor *cur){
   return (pCur->pList2?0:1);
 }
 
+/*
+** If nul-terminated string zStr does not already contain the character 
+** passed as the second argument, append it and return 0. Or, if there is
+** already an instance of x in zStr, do nothing return 1;
+**
+** There is guaranteed to be enough room in the buffer pointed to by zStr
+** for the new character and nul-terminator.
+*/
+static int tclvarAddToIdxstr(char *zStr, char x){
+  int i;
+  for(i=0; zStr[i]; i++){
+    if( zStr[i]==x ) return 1;
+  }
+  zStr[i] = x;
+  zStr[i+1] = '\0';
+  return 0;
+}
+
+/*
+** Return true if variable $::tclvar_set_omit exists and is set to true.
+** False otherwise.
+*/
+static int tclvarSetOmit(Tcl_Interp *interp){
+  int rc;
+  int res = 0;
+  Tcl_Obj *pRes;
+  rc = Tcl_Eval(interp,
+    "expr {[info exists ::tclvar_set_omit] && $::tclvar_set_omit}"
+  );
+  if( rc==TCL_OK ){
+    pRes = Tcl_GetObjResult(interp);
+    rc = Tcl_GetBooleanFromObj(0, pRes, &res);
+  }
+  return (rc==TCL_OK && res);
+}
+
+/*
+** The xBestIndex() method. This virtual table supports the following
+** operators:
+**
+**     name = ?                    (omit flag clear)
+**     name MATCH ?                (omit flag set)
+**     value GLOB ?                (omit flag set iff $::tclvar_set_omit)
+**     value REGEXP ?              (omit flag set iff $::tclvar_set_omit)
+**     value LIKE ?                (omit flag set iff $::tclvar_set_omit)
+**
+** For each constraint present, the corresponding TCLVAR_XXX character is
+** appended to the idxStr value. 
+*/
 static int tclvarBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
+  tclvar_vtab *pTab = (tclvar_vtab*)tab;
   int ii;
+  char *zStr = sqlite3_malloc(32);
+  int iStr = 0;
+
+  if( zStr==0 ) return SQLITE_NOMEM;
+  zStr[0] = '\0';
 
   for(ii=0; ii<pIdxInfo->nConstraint; ii++){
     struct sqlite3_index_constraint const *pCons = &pIdxInfo->aConstraint[ii];
-    if( pCons->iColumn==0 && pCons->usable
-           && pCons->op==SQLITE_INDEX_CONSTRAINT_EQ ){
-      struct sqlite3_index_constraint_usage *pUsage;
-      pUsage = &pIdxInfo->aConstraintUsage[ii];
-      pUsage->omit = 0;
-      pUsage->argvIndex = 1;
-      return SQLITE_OK;
-    }
-  }
+    struct sqlite3_index_constraint_usage *pUsage;
+    
+    pUsage = &pIdxInfo->aConstraintUsage[ii];
+    if( pCons->usable ){
+      /* name = ? */
+      if( pCons->op==SQLITE_INDEX_CONSTRAINT_EQ && pCons->iColumn==0 ){
+        if( 0==tclvarAddToIdxstr(zStr, TCLVAR_NAME_EQ) ){
+          pUsage->argvIndex = ++iStr;
+          pUsage->omit = 0;
+        }
+      }
 
-  for(ii=0; ii<pIdxInfo->nConstraint; ii++){
-    struct sqlite3_index_constraint const *pCons = &pIdxInfo->aConstraint[ii];
-    if( pCons->iColumn==0 && pCons->usable
-           && pCons->op==SQLITE_INDEX_CONSTRAINT_MATCH ){
-      struct sqlite3_index_constraint_usage *pUsage;
-      pUsage = &pIdxInfo->aConstraintUsage[ii];
-      pUsage->omit = 1;
-      pUsage->argvIndex = 1;
-      return SQLITE_OK;
+      /* name MATCH ? */
+      if( pCons->op==SQLITE_INDEX_CONSTRAINT_MATCH && pCons->iColumn==0 ){
+        if( 0==tclvarAddToIdxstr(zStr, TCLVAR_NAME_MATCH) ){
+          pUsage->argvIndex = ++iStr;
+          pUsage->omit = 1;
+        }
+      }
+
+      /* value GLOB ? */
+      if( pCons->op==SQLITE_INDEX_CONSTRAINT_GLOB && pCons->iColumn==2 ){
+        if( 0==tclvarAddToIdxstr(zStr, TCLVAR_VALUE_GLOB) ){
+          pUsage->argvIndex = ++iStr;
+          pUsage->omit = tclvarSetOmit(pTab->interp);
+        }
+      }
+
+      /* value REGEXP ? */
+      if( pCons->op==SQLITE_INDEX_CONSTRAINT_REGEXP && pCons->iColumn==2 ){
+        if( 0==tclvarAddToIdxstr(zStr, TCLVAR_VALUE_REGEXP) ){
+          pUsage->argvIndex = ++iStr;
+          pUsage->omit = tclvarSetOmit(pTab->interp);
+        }
+      }
+
+      /* value LIKE ? */
+      if( pCons->op==SQLITE_INDEX_CONSTRAINT_LIKE && pCons->iColumn==2 ){
+        if( 0==tclvarAddToIdxstr(zStr, TCLVAR_VALUE_LIKE) ){
+          pUsage->argvIndex = ++iStr;
+          pUsage->omit = tclvarSetOmit(pTab->interp);
+        }
+      }
     }
   }
+  pIdxInfo->idxStr = zStr;
+  pIdxInfo->needToFreeIdxStr = 1;
 
   return SQLITE_OK;
 }
@@ -295,6 +413,7 @@ static int register_tclvar_module(
   int objc,              /* Number of arguments */
   Tcl_Obj *CONST objv[]  /* Command arguments */
 ){
+  int rc = TCL_OK;
   sqlite3 *db;
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "DB");
@@ -302,9 +421,30 @@ static int register_tclvar_module(
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-  sqlite3_create_module(db, "tclvar", &tclvarModule, (void *)interp);
+  sqlite3_create_module(db, "tclvar", &tclvarModule, (void*)interp);
+  rc = Tcl_Eval(interp, 
+      "proc like {pattern str} {\n"
+      "  set p [string map {% * _ ?} $pattern]\n"
+      "  string match $p $str\n"
+      "}\n"
+      "proc tclvar_filter_cmd {eq match glob regexp like} {\n"
+      "  set res {}\n"
+      "  set pattern $eq\n"
+      "  if {$pattern=={}} { set pattern $match }\n"
+      "  if {$pattern=={}} { set pattern * }\n"
+      "  foreach v [uplevel #0 info vars $pattern] {\n"
+      "    if {($glob=={} || [string match $glob [uplevel #0 set $v]])\n"
+      "     && ($like=={} || [like $like [uplevel #0 set $v]])\n"
+      "     && ($regexp=={} || [regexp $regexp [uplevel #0 set $v]])\n"
+      "    } {\n"
+      "      lappend res $v\n"
+      "    }\n"
+      "  }\n"
+      "  set res\n"
+      "}\n"
+  );
 #endif
-  return TCL_OK;
+  return rc;
 }
 
 #endif

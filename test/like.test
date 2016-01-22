@@ -745,11 +745,19 @@ ifcapable like_opt&&!icu {
       SELECT a FROM t10 WHERE e LIKE '12%' ORDER BY +a;
     }
   } {12 123 scan 5 like 6}
-  do_test like-10.5 {
-    count {
-      SELECT a FROM t10 WHERE f LIKE '12%' ORDER BY +a;
-    }
-  } {12 123 scan 4 like 0}
+  ifcapable like_match_blobs {
+    do_test like-10.5a {
+      count {
+        SELECT a FROM t10 WHERE f LIKE '12%' ORDER BY +a;
+      }
+    } {12 123 scan 4 like 0}
+  } else {
+    do_test like-10.5b {
+      count {
+        SELECT a FROM t10 WHERE f LIKE '12%' ORDER BY +a;
+      }
+    } {12 123 scan 3 like 0}
+  }
   do_test like-10.6 {
     count {
       SELECT a FROM t10 WHERE a LIKE '12%' ORDER BY +a;
@@ -786,11 +794,19 @@ ifcapable like_opt&&!icu {
       SELECT a FROM t10b WHERE e GLOB '12*' ORDER BY +a;
     }
   } {12 123 scan 5 like 6}
-  do_test like-10.14 {
-    count {
-      SELECT a FROM t10b WHERE f GLOB '12*' ORDER BY +a;
-    }
-  } {12 123 scan 4 like 0}
+  ifcapable like_match_blobs {
+    do_test like-10.14 {
+      count {
+        SELECT a FROM t10b WHERE f GLOB '12*' ORDER BY +a;
+      }
+    } {12 123 scan 4 like 0}
+  } else {
+    do_test like-10.14 {
+      count {
+        SELECT a FROM t10b WHERE f GLOB '12*' ORDER BY +a;
+      }
+    } {12 123 scan 3 like 0}
+  }
   do_test like-10.15 {
     count {
       SELECT a FROM t10b WHERE a GLOB '12*' ORDER BY +a;
@@ -947,6 +963,23 @@ do_execsql_test like-12.16 {
   EXPLAIN QUERY PLAN
   SELECT id FROM t12b WHERE x LIKE 'abc%' COLLATE binary ORDER BY +id;
 } {/SCAN/}
+
+# Ticket [https://www.sqlite.org/src/tktview/80369eddd5c94d49f7fbbcf5]
+# 2016-01-20
+#
+do_execsql_test like-13.1 {
+  SELECT char(0x304d) LIKE char(0x306d);
+} {0}
+do_execsql_test like-13.2 {
+  SELECT char(0x4d) LIKE char(0x306d);
+} {0}
+do_execsql_test like-13.3 {
+  SELECT char(0x304d) LIKE char(0x6d);
+} {0}
+do_execsql_test like-13.4 {
+  SELECT char(0x4d) LIKE char(0x6d);
+} {1}
+
 
 
 finish_test
