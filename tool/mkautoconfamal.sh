@@ -34,14 +34,15 @@ set -e
 ARTIFACT=`printf "3%.2d%.2d%.2d" $xx $yy $zz`
 
 rm -rf $TMPSPACE
-cp -R $TOP/autoconf $TMPSPACE
-
-cp sqlite3.c          $TMPSPACE
-cp sqlite3.h          $TMPSPACE
-cp sqlite3ext.h       $TMPSPACE
-cp $TOP/sqlite3.1     $TMPSPACE
-cp $TOP/sqlite3.pc.in $TMPSPACE
-cp $TOP/src/shell.c   $TMPSPACE
+cp -R $TOP/autoconf       $TMPSPACE
+cp sqlite3.c              $TMPSPACE
+cp sqlite3.h              $TMPSPACE
+cp sqlite3ext.h           $TMPSPACE
+cp $TOP/sqlite3.1         $TMPSPACE
+cp $TOP/sqlite3.pc.in     $TMPSPACE
+cp $TOP/src/shell.c       $TMPSPACE
+cp $TOP/Makefile.min.msc  $TMPSPACE/Makefile.msc
+cp $TOP/src/sqlite3.rc    $TMPSPACE
 
 cat $TMPSPACE/configure.ac |
 sed "s/--SQLITE-VERSION--/$VERSION/" > $TMPSPACE/tmp

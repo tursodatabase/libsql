@@ -1,4 +1,3 @@
-
 This package contains:
 
  * the SQLite library amalgamation (single file) source code distribution,
@@ -6,6 +5,7 @@ This package contains:
  * the sqlite3.h and sqlite3ext.h header files required to link programs
    and sqlite extensions against the installed libary.
  * autoconf/automake installation infrastucture.
+ * a Makefile.msc and sqlite3.rc for Microsoft Visual C++
 
 The generic installation instructions for autoconf/automake are found
 in the INSTALL file.
@@ -30,3 +30,6 @@ example:
 
   $ CFLAGS="-Os -DSQLITE_OMIT_TRIGGERS" ./configure
 
+To compile for Windows using Microsoft Visual C++:
+
+  $ nmake /f Makefile.msc FOR_WIN10=1
