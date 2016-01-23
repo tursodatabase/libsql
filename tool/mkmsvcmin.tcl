@@ -1,22 +1,26 @@
 #!/usr/bin/tcl
 #
-# Removes and/or replaces specially marked sections from the Makefile
-# for MSVC, writing the resulting output to another (different) file.
-# In addition, some other strings are also removed and/or replaced if
-# they are present in the Makefile.
-#
-set fromFileName [lindex $argv 0]
-
-if {![file exists $fromFileName]} then {
-  error "input file \"$fromFileName\" does not exist"
+# This script reads the regular MSVC makefile (../Makefile.msc) and outputs
+# a revised version of that Makefile that is "minimal" in the sense that
+# it uses the sqlite3.c amalgamation as input and does not require tclsh.
+# The resulting "../Makefile.min.msc" is suitable for use in the amalgamation
+# tarballs.
+# 
+if {$argc==0} {
+  set basedir [file dir [file dir [file normalize $argv0]]]
+  set fromFileName [file join $basedir Makefile.msc]
+  set toFileName [file join $basedir Makefile.min.msc]
+} else {
+  set fromFileName [lindex $argv 0]
+  if {![file exists $fromFileName]} then {
+    error "input file \"$fromFileName\" does not exist"
+  }
+  set toFileName [lindex $argv 1]
+  if {[file exists $toFileName]} then {
+    error "output file \"$toFileName\" already exists"
+  }
 }
-
-set toFileName [lindex $argv 1]
 
-if {[file exists $toFileName]} then {
-  error "output file \"$toFileName\" already exists"
-}
-
 proc readFile { fileName } {
   set file_id [open $fileName RDONLY]
   fconfigure $file_id -encoding binary -translation binary
@@ -24,7 +28,7 @@ proc readFile { fileName } {
   close $file_id
   return $result
 }
-
+
 proc writeFile { fileName data } {
   set file_id [open $fileName {WRONLY CREAT TRUNC}]
   fconfigure $file_id -encoding binary -translation binary
@@ -32,17 +36,17 @@ proc writeFile { fileName data } {
   close $file_id
   return ""
 }
-
+
 proc escapeSubSpec { data } {
   regsub -all -- {&} $data {\\\&} data
   regsub -all -- {\\(\d+)} $data {\\\\\1} data
   return $data
 }
-
+
 proc substVars { data } {
   return [uplevel 1 [list subst -nocommands -nobackslashes $data]]
 }
-
+
 #
 # NOTE: This block is used to replace the section marked <<block1>> in
 #       the Makefile, if it exists.
@@ -67,8 +71,13 @@ $(LIBRESOBJS):	$(TOP)\sqlite3.rc rcver.vc $(SQLITE3H)
 	echo #endif >> sqlite3rc.h
 	$(LTRCOMPILE) -fo $(LIBRESOBJS) -DRC_VERONLY $(TOP)\sqlite3.rc
 }]]
-
-set data [readFile $fromFileName]
+
+set data "#### DO NOT EDIT ####\n"
+append data "# This makefile is automatically "
+append data "generated from the [file tail $fromFileName] at\n"
+append data "# the root of the canonical SQLite source tree using the\n"
+append data "# tool/[file tail $argv0] script.\n#\n\n"
+append data [readFile $fromFileName]
 
 regsub -all -- {# <<mark>>\n.*?# <</mark>>\n} \
     $data "" data

@@ -1,3 +1,9 @@
+#### DO NOT EDIT ####
+# This makefile is automatically generated from the Makefile.msc at
+# the root of the canonical SQLite source tree using the
+# tool/mkmsvcmin.tcl script.
+#
+
 #
 # nmake Makefile for SQLite
 #
