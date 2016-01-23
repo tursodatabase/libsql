@@ -4,8 +4,11 @@ This package contains:
  * the shell.c file used to build the sqlite3 shell too, and
  * the sqlite3.h and sqlite3ext.h header files required to link programs
    and sqlite extensions against the installed libary.
- * autoconf/automake installation infrastucture.
- * a Makefile.msc and sqlite3.rc for Microsoft Visual C++
+ * autoconf/automake installation infrastucture for building on posix systems.
+ * a Makefile.msc and sqlite3.rc for building with Microsoft Visual C++
+
+BUILDING ON POSIX
+=================
 
 The generic installation instructions for autoconf/automake are found
 in the INSTALL file.
@@ -29,6 +32,10 @@ Other SQLite compilation parameters can also be set using CFLAGS. For
 example:
 
   $ CFLAGS="-Os -DSQLITE_OMIT_TRIGGERS" ./configure
+
+
+BUILDING WITH MICROSOFT VISUAL C++:
+===================================
 
 To compile for Windows using Microsoft Visual C++:
 

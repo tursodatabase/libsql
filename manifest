@@ -1,5 +1,5 @@
-C Move\sMakefile.min.msc\sinto\sthe\sautoconf\ssubdir\swhere\sit\sbelongs\sand\schange\nits\sname\sto\sMakefile.msc.\s\sAdjust\sbuild\sscripts\saccordingly.
-D 2016-01-23T20:34:27.088
+C Updates\sto\sthe\sautoconf\sREADME\sfile.
+D 2016-01-23T20:43:48.995
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6fca5455aaecbd14479f33f091aa19df2d3d2969
@@ -11,9 +11,9 @@ F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am 1c1657650775960804945dc392e14d9e43c5ed84
-F autoconf/Makefile.msc 68ed752a809b611d97b95d8572a34fe6fd1196f1 w Makefile.min.msc
+F autoconf/Makefile.msc 68ed752a809b611d97b95d8572a34fe6fd1196f1
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
-F autoconf/README.txt c9265657b6ca8c4de1e148e8c0c4c29d60ec860c
+F autoconf/README.txt ebf930270b2d6258f4d2c62c8c5a5dcc7cff5293
 F autoconf/configure.ac 7b1ea0dcaf49fafba262ce4b0ee8cb3281b555d1
 F autoconf/tea/Makefile.in b438a7020446c8a8156e8d97c8914a04833da6fd
 F autoconf/tea/README 3e9a3c060f29a44344ab50aec506f4db903fb873
@@ -1421,7 +1421,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c15e0fc4be08b92547bea1f1cac65581ef497409
-R ffa1a98b2b7806021300568489ac1126
+P 12eb8db79697ef55228c78011d275f36f58271e1
+R f077ea8ac49bb767871086d72cc4aac2
 U drh
-Z ba6195ff75ad05f3ae39571f4a1714e5
+Z 47e598e0236f733ea03c00ba7b81ee9b
