@@ -73,7 +73,7 @@ set data [readFile $fromFileName]
 regsub -all -- {# <<mark>>\n.*?# <</mark>>\n} \
     $data "" data
 
-foreach i [lsort [array names blocks]] {
+foreach i [lsort -integer [array names blocks]] {
   regsub -all -- [substVars \
       {# <<block${i}>>\n.*?# <</block${i}>>\n}] \
       $data [escapeSubSpec $blocks($i)] data
