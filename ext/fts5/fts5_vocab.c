@@ -184,7 +184,7 @@ static int fts5VocabInitVtab(
     
     rc = fts5VocabTableType(zType, pzErr, &eType);
     if( rc==SQLITE_OK ){
-      assert( eType>=0 && eType<sizeof(azSchema)/sizeof(azSchema[0]) );
+      assert( eType>=0 && eType<ArraySize(azSchema) );
       rc = sqlite3_declare_vtab(db, azSchema[eType]);
     }
 
@@ -407,7 +407,6 @@ static int fts5VocabNextMethod(sqlite3_vtab_cursor *pCursor){
 
       assert( pTab->eType==FTS5_VOCAB_COL || pTab->eType==FTS5_VOCAB_ROW );
       while( rc==SQLITE_OK ){
-        i64 dummy;
         const u8 *pPos; int nPos;   /* Position list */
         i64 iPos = 0;               /* 64-bit position read from poslist */
         int iOff = 0;               /* Current offset within position list */

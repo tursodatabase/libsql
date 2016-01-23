@@ -1,5 +1,5 @@
-C Merge\strunk\schanges\s(including\sfixes\sfor\swarnings\sin\sfts5)\swith\sthis\sbranch.
-D 2016-01-23T16:20:16.389
+C Fix\san\sfts5\sproblem\swith\susing\sboth\sxPhraseFirst()\sand\sxPhraseFirstColumn()\swithin\sa\ssingle\sstatement\sin\sdetail=col\smode.
+D 2016-01-23T18:51:59.865
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1708a78eda223b6daa302b140037fcc214a779f9
@@ -97,25 +97,25 @@ F ext/fts3/unicode/mkunicode.tcl 95cf7ec186e48d4985e433ff8a1c89090a774252
 F ext/fts3/unicode/parseunicode.tcl da577d1384810fb4e2b209bf3313074353193e95
 F ext/fts5/extract_api_docs.tcl a36e54ec777172ddd3f9a88daf593b00848368e0
 F ext/fts5/fts5.h ff9c2782e8ed890b0de2f697a8d63971939e70c7
-F ext/fts5/fts5Int.h a810589cf2fedd7dcfc9ba7871d2a5a09e850ace
-F ext/fts5/fts5_aux.c 2dafc3aee0c70d643140c77d8d70daffa51a9e9e
-F ext/fts5/fts5_buffer.c 0b8e1f84fec3ec01f7e17f8d4f17c46856b31e10
+F ext/fts5/fts5Int.h 6e0f90eb4872654a5b98130dec16965716525c9a
+F ext/fts5/fts5_aux.c b9bcce753ef5b451267b2232f0ca153ddeb3951d
+F ext/fts5/fts5_buffer.c f6e0c6018ffc8e39fc0b333b5daa8b8d528ae6e4
 F ext/fts5/fts5_config.c 0c384ebdd23fd055e2e50a93277b8d59da538238
-F ext/fts5/fts5_expr.c 48b9131b74c8d3b8c12ba0f7995e2d60eecce9f2
+F ext/fts5/fts5_expr.c a66b9694519d9c336d9bdbd46ea22e7e14aef412
 F ext/fts5/fts5_hash.c 1b113977296cf4212c6ec667d5e3f2bd18036955
-F ext/fts5/fts5_index.c bd5476edd4d6ef37fc389794a78f47f29f521634
-F ext/fts5/fts5_main.c 833db0a3df10ab26e0221a9baa40cf871c450df3
-F ext/fts5/fts5_storage.c fb2eaec3aa954b680d43096dc539f8270bd6390e
+F ext/fts5/fts5_index.c 722d8717e3167dd05fa48af970352932052da318
+F ext/fts5/fts5_main.c 3886bbfc5ac1d9df29979823ddf2b68241e1127e
+F ext/fts5/fts5_storage.c 2a1f44deae090cd711f02cec0c2af8e660360d24
 F ext/fts5/fts5_tcl.c f8731e0508299bd43f1a2eff7dbeaac870768966
 F ext/fts5/fts5_test_mi.c 1ec66ffdf7632077fbd773b7a6df5153272ec070
 F ext/fts5/fts5_test_tok.c db08af63673c3a7d39f053b36fd6e065017706be
-F ext/fts5/fts5_tokenize.c 504984ac6993323247221eebe3cd55bead01b5f8
+F ext/fts5/fts5_tokenize.c 4d5c4f183c7d07d144bc219b92da1ea0e962fae3
 F ext/fts5/fts5_unicode2.c 78273fbd588d1d9bd0a7e4e0ccc9207348bae33c
 F ext/fts5/fts5_varint.c 3f86ce09cab152e3d45490d7586b7ed2e40c13f1
-F ext/fts5/fts5_vocab.c f1b4308b9b7ec8e659d0c9b39ddc8f1aeee47a1a
+F ext/fts5/fts5_vocab.c 3ef401a8d6932db56368de32f446eb9fe73aa623
 F ext/fts5/fts5parse.y 1647eba089b9b3fc058b4dc989d9da87d15b9580
 F ext/fts5/mkportersteps.tcl 5acf962d2e0074f701620bb5308155fa1e4a63ba
-F ext/fts5/test/fts5_common.tcl 6d0d74b695c4be055a8ba1dd807f22a2abc95b5e
+F ext/fts5/test/fts5_common.tcl 61ff0d1a29d98a91c4553b20b3f410d858834ee9
 F ext/fts5/test/fts5aa.test 7e814df4a0e6c22a6fe2d84f210fdc0b5068a084
 F ext/fts5/test/fts5ab.test 30325a89453280160106be411bba3acf138e6d1b
 F ext/fts5/test/fts5ac.test dec95549e007dd9be52aa435cdcd0f08e14e64d0
@@ -177,7 +177,7 @@ F ext/fts5/test/fts5rowid.test 16908a99d6efc9ba21081b4f2b86b3fc699839a6
 F ext/fts5/test/fts5simple.test 2bc6451cbe887a9215f5b14ae307c70d850344c9
 F ext/fts5/test/fts5simple2.test 98377ae1ff7749a42c21fe1a139c1ed312522c46
 F ext/fts5/test/fts5synonym.test 6475d189c2e20d60795808f83e36bf9318708d48
-F ext/fts5/test/fts5synonym2.test eadb00c73ef0653258873e756b7e9102e0687539
+F ext/fts5/test/fts5synonym2.test aa4c43bd3b691ff80f658cb064f5ab40690e834e
 F ext/fts5/test/fts5tok1.test beb894c6f3468f10a574302f69ebe4436b0287c7
 F ext/fts5/test/fts5tok2.test dcacb32d4a2a3f0dd3215d4a3987f78ae4be21a2
 F ext/fts5/test/fts5tokenizer.test ea4df698b35cc427ebf2ba22829d0e28386d8c89
@@ -1419,7 +1419,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7558a0ad2276e91f2faced8ea405d9fdb4fa0c6e 3be336aa893f9eb0837d7d66c83bab1489792b9a
-R 27b07c29574081bf2a6f1649bb5e2393
+P ceccc9ad788fb4da9120915741995b9f088f85ff
+R e7d7753020b6f70b109a92a8ac037ba7
 U dan
-Z 165b70c16fc218fdaf7b93acd8863bd2
+Z 648645363fb131dd10e5d7321a173b9d

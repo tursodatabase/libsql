@@ -338,7 +338,7 @@ int sqlite3Fts5StorageClose(Fts5Storage *p){
     int i;
 
     /* Finalize all SQL statements */
-    for(i=0; i<(int)ArraySize(p->aStmt); i++){
+    for(i=0; i<ArraySize(p->aStmt); i++){
       sqlite3_finalize(p->aStmt[i]);
     }
 

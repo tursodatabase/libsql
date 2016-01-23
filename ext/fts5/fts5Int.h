@@ -29,7 +29,7 @@ typedef unsigned short u16;
 typedef sqlite3_int64 i64;
 typedef sqlite3_uint64 u64;
 
-#define ArraySize(x) (sizeof(x) / sizeof(x[0]))
+#define ArraySize(x) ((int)(sizeof(x) / sizeof(x[0])))
 
 #define testcase(x)
 #define ALWAYS(x) 1
@@ -388,8 +388,6 @@ int sqlite3Fts5IterEof(Fts5IndexIter*);
 int sqlite3Fts5IterNext(Fts5IndexIter*);
 int sqlite3Fts5IterNextFrom(Fts5IndexIter*, i64 iMatch);
 i64 sqlite3Fts5IterRowid(Fts5IndexIter*);
-int sqlite3Fts5IterPoslist(Fts5IndexIter*,Fts5Colset*, const u8**, int*, i64*);
-int sqlite3Fts5IterPoslistBuffer(Fts5IndexIter *pIter, Fts5Buffer *pBuf);
 
 /*
 ** Close an iterator opened by sqlite3Fts5IndexQuery().
@@ -401,8 +399,6 @@ void sqlite3Fts5IterClose(Fts5IndexIter*);
 */
 const char *sqlite3Fts5IterTerm(Fts5IndexIter*, int*);
 int sqlite3Fts5IterNextScan(Fts5IndexIter*);
-
-int sqlite3Fts5IterCollist(Fts5IndexIter*, const u8 **, int*);
 
 
 /*
