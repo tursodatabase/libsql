@@ -1,8 +1,9 @@
-C More\swork\son\sthe\sMSVC\sbuild.
-D 2016-01-23T00:07:51.151
+C Add\stooling\sto\screate\san\sMSVC\sMakefile\scapable\sof\sbuilding\sthe\score\slibrary\sand\sshell\sonly,\susing\sa\spre-built\samalgamation.
+D 2016-01-23T07:53:04.796
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 1708a78eda223b6daa302b140037fcc214a779f9
+F Makefile.min.msc c805e4a474fc7610d4f0cd0b6a9f56334a14c6ad
+F Makefile.msc 6fca5455aaecbd14479f33f091aa19df2d3d2969
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION 866588d1edf0ccb5b0d33896974338f97564f719
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -1378,6 +1379,7 @@ F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
 F tool/logest.c eef612f8adf4d0993dafed0416064cf50d5d33c6
 F tool/mkautoconfamal.sh 5a5441280b509d2bb3bdc71bfb63781b0d570373
 F tool/mkkeywordhash.c 06ec0b78bd4fa68c12d90ef2bdfe76b039133ff8
+F tool/mkmsvcmin.tcl 859737ff14668827738a3f7ca17ba643a88bcecc
 F tool/mkopcodec.tcl edde8adc42621b5e598127f8cdc6d52cfe21f52b
 F tool/mkopcodeh.tcl e04177031532b7aa9379ded50e820231ac4abd6e
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
@@ -1419,7 +1421,10 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a1c8116ced62d81f3f5ca26bbe0877e829d4cc56
-R b34246fa017fc0ae2e7bf7cb484e3eeb
+P a79c46bc61a35edbaf6112c26e8052314b0eb16a
+R bd00cfb25453f633191b5f1755909575
+T *branch * msvcMakeMin
+T *sym-msvcMakeMin *
+T -sym-trunk *
 U mistachkin
-Z ba075ff448ff99fa520b3503324fe6e9
+Z 18f99743dd26f3a3f31830457ad1b4ef
