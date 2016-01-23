@@ -9,7 +9,7 @@
 if {$argc==0} {
   set basedir [file dir [file dir [file normalize $argv0]]]
   set fromFileName [file join $basedir Makefile.msc]
-  set toFileName [file join $basedir Makefile.min.msc]
+  set toFileName [file join $basedir autoconf Makefile.msc]
 } else {
   set fromFileName [lindex $argv 0]
   if {![file exists $fromFileName]} {
@@ -75,8 +75,9 @@ $(LIBRESOBJS):	$(TOP)\sqlite3.rc rcver.vc $(SQLITE3H)
 set data "#### DO NOT EDIT ####\n"
 append data "# This makefile is automatically "
 append data "generated from the [file tail $fromFileName] at\n"
-append data "# the root of the canonical SQLite source tree using the\n"
-append data "# tool/[file tail $argv0] script.\n#\n\n"
+append data "# the root of the canonical SQLite source tree (not the\n"
+append data "# amalgamation tarball) using the tool/[file tail $argv0]\n"
+append data "# script.\n#\n\n"
 append data [readFile $fromFileName]
 
 regsub -all -- {# <<mark>>\n.*?# <</mark>>\n} \

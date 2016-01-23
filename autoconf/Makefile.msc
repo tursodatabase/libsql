@@ -1,7 +1,8 @@
 #### DO NOT EDIT ####
 # This makefile is automatically generated from the Makefile.msc at
-# the root of the canonical SQLite source tree using the
-# tool/mkmsvcmin.tcl script.
+# the root of the canonical SQLite source tree (not the
+# amalgamation tarball) using the tool/mkmsvcmin.tcl
+# script.
 #
 
 #

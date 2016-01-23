@@ -41,7 +41,6 @@ cp sqlite3ext.h           $TMPSPACE
 cp $TOP/sqlite3.1         $TMPSPACE
 cp $TOP/sqlite3.pc.in     $TMPSPACE
 cp $TOP/src/shell.c       $TMPSPACE
-cp $TOP/Makefile.min.msc  $TMPSPACE/Makefile.msc
 cp $TOP/src/sqlite3.rc    $TMPSPACE
 
 cat $TMPSPACE/configure.ac |

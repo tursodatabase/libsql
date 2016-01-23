@@ -1,8 +1,7 @@
-C Minor\scoding\sstyle\stweaks\sfor\sthe\smkmsvcmin\stool.
-D 2016-01-23T20:16:40.624
+C Move\sMakefile.min.msc\sinto\sthe\sautoconf\ssubdir\swhere\sit\sbelongs\sand\schange\nits\sname\sto\sMakefile.msc.\s\sAdjust\sbuild\sscripts\saccordingly.
+D 2016-01-23T20:34:27.088
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.min.msc cbbc5e37bfe74583cce7c2585319620b7516e6ed
 F Makefile.msc 6fca5455aaecbd14479f33f091aa19df2d3d2969
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION 866588d1edf0ccb5b0d33896974338f97564f719
@@ -12,6 +11,7 @@ F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am 1c1657650775960804945dc392e14d9e43c5ed84
+F autoconf/Makefile.msc 68ed752a809b611d97b95d8572a34fe6fd1196f1 w Makefile.min.msc
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/README.txt c9265657b6ca8c4de1e148e8c0c4c29d60ec860c
 F autoconf/configure.ac 7b1ea0dcaf49fafba262ce4b0ee8cb3281b555d1
@@ -1377,9 +1377,9 @@ F tool/lemon.c 799e73e19a33b8dd7767a7fa34618ed2a9c2397d
 F tool/lempar.c 3ec1463a034b37d87d782be5f6b8b10a3b1ecbe7
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
 F tool/logest.c eef612f8adf4d0993dafed0416064cf50d5d33c6
-F tool/mkautoconfamal.sh add1d703074e7edb2d8423441c7e245271c5c8cb
+F tool/mkautoconfamal.sh a29b14d54302b33fd892958f6895582ea90e4a45
 F tool/mkkeywordhash.c 06ec0b78bd4fa68c12d90ef2bdfe76b039133ff8
-F tool/mkmsvcmin.tcl c1f92b52505fe4a026e7b57fffe49b439b11b71b
+F tool/mkmsvcmin.tcl 93167a9e73383465b5716aa8dfa407409fccef1d
 F tool/mkopcodec.tcl edde8adc42621b5e598127f8cdc6d52cfe21f52b
 F tool/mkopcodeh.tcl e04177031532b7aa9379ded50e820231ac4abd6e
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
@@ -1421,7 +1421,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e420f3dc93a0e3364f0773950b7a125f5221a109
-R 0e64448b1af0ccd7100284f6f222657e
-U mistachkin
-Z 38e3fbc9582e760d49d364916a96f186
+P c15e0fc4be08b92547bea1f1cac65581ef497409
+R ffa1a98b2b7806021300568489ac1126
+U drh
+Z ba6195ff75ad05f3ae39571f4a1714e5
