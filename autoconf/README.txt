@@ -4,8 +4,10 @@ This package contains:
  * the shell.c file used to build the sqlite3 shell too, and
  * the sqlite3.h and sqlite3ext.h header files required to link programs
    and sqlite extensions against the installed libary.
- * autoconf/automake installation infrastucture for building on posix systems.
- * a Makefile.msc and sqlite3.rc for building with Microsoft Visual C++
+ * autoconf/automake installation infrastucture for building on POSIX
+   compliant systems.
+ * a Makefile.msc and sqlite3.rc for building with Microsoft Visual C++ on
+   Windows.
 
 BUILDING ON POSIX
 =================
@@ -19,7 +21,7 @@ The following SQLite specific boolean options are supported:
   --enable-threadsafe         build a thread-safe library  [default=yes]
   --enable-dynamic-extensions support loadable extensions  [default=yes]
 
-The default value for the CFLAGS variable (options passed to the C 
+The default value for the CFLAGS variable (options passed to the C
 compiler) includes debugging symbols in the build, resulting in larger
 binaries than are necessary. Override it on the configure command
 line like this:
@@ -34,9 +36,72 @@ example:
   $ CFLAGS="-Os -DSQLITE_OMIT_TRIGGERS" ./configure
 
 
-BUILDING WITH MICROSOFT VISUAL C++:
-===================================
+BUILDING WITH MICROSOFT VISUAL C++
+==================================
 
 To compile for Windows using Microsoft Visual C++:
 
-  $ nmake /f Makefile.msc FOR_WIN10=1
+  $ nmake /f Makefile.msc
+
+Using Microsoft Visual C++ 2005 (or later) is recommended.  Several Windows
+platform variants may be built by adding additional macros to the NMAKE
+command line.
+
+BUILDING FOR WINRT 8.0
+----------------------
+
+  FOR_WINRT=1
+
+Using Microsoft Visual C++ 2012 (or later) is required.  When using the
+above, something like the following macro will need to be added to the
+NMAKE command line as well:
+
+  "NSDKLIBPATH=%WindowsSdkDir%\..\8.0\lib\win8\um\x86"
+
+BUILDING FOR WINRT 8.1
+----------------------
+
+  FOR_WINRT=1
+
+Using Microsoft Visual C++ 2013 (or later) is required.  When using the
+above, something like the following macro will need to be added to the
+NMAKE command line as well:
+
+  "NSDKLIBPATH=%WindowsSdkDir%\..\8.1\lib\winv6.3\um\x86"
+
+BUILDING FOR UAP 10.0
+---------------------
+
+  FOR_WINRT=1 FOR_UAP=1
+
+Using Microsoft Visual C++ 2015 (or later) is required.  When using the
+above, something like the following macros will need to be added to the
+NMAKE command line as well:
+
+  "NSDKLIBPATH=%WindowsSdkDir%\..\10\lib\10.0.10586.0\um\x86"
+  "PSDKLIBPATH=%WindowsSdkDir%\..\10\lib\10.0.10586.0\um\x86"
+  "NUCRTLIBPATH=%UniversalCRTSdkDir%\..\10\lib\10.0.10586.0\ucrt\x86"
+
+BUILDING FOR THE WINDOWS 10 SDK
+-------------------------------
+
+  FOR_WIN10=1
+
+Using Microsoft Visual C++ 2015 (or later) is required.  When using the
+above, no other macros should be needed on the NMAKE command line.
+
+USING PREPROCESSOR DEFINES
+--------------------------
+
+Additionally, preprocessor defines may be specified by using the OPTS macro
+on the NMAKE command line.  However, not all possible preprocessor defines
+may be specified in this manner as some require the amalgamation to be built
+with them enabled (see http://www.sqlite.org/compile.html). For example, the
+following will work:
+
+  "OPTS=-DSQLITE_ENABLE_STAT4=1 -DSQLITE_ENABLE_JSON1=1"
+
+However, the following will not compile unless the amalgamation was built
+with it enabled:
+
+  "OPTS=-DSQLITE_ENABLE_UPDATE_DELETE_LIMIT=1"
