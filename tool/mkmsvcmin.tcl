@@ -5,18 +5,18 @@
 # it uses the sqlite3.c amalgamation as input and does not require tclsh.
 # The resulting "../Makefile.min.msc" is suitable for use in the amalgamation
 # tarballs.
-# 
+#
 if {$argc==0} {
   set basedir [file dir [file dir [file normalize $argv0]]]
   set fromFileName [file join $basedir Makefile.msc]
   set toFileName [file join $basedir Makefile.min.msc]
 } else {
   set fromFileName [lindex $argv 0]
-  if {![file exists $fromFileName]} then {
+  if {![file exists $fromFileName]} {
     error "input file \"$fromFileName\" does not exist"
   }
   set toFileName [lindex $argv 1]
-  if {[file exists $toFileName]} then {
+  if {[file exists $toFileName]} {
     error "output file \"$toFileName\" already exists"
   }
 }
