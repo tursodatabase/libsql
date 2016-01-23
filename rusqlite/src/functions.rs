@@ -155,6 +155,26 @@ impl ToResult for Null {
     }
 }
 
+/// Error indicating that a memory allocation failed.
+#[derive(Copy,Clone)]
+pub struct NoMem;
+
+impl ToResult for NoMem {
+    unsafe fn set_result(&self, ctx: *mut sqlite3_context) {
+        ffi::sqlite3_result_error_nomem(ctx)
+    }
+}
+
+/// Error indicating that a string or BLOB is too long to represent.
+#[derive(Copy,Clone)]
+pub struct TooBig;
+
+impl ToResult for TooBig {
+    unsafe fn set_result(&self, ctx: *mut sqlite3_context) {
+        ffi::sqlite3_result_error_toobig(ctx)
+    }
+}
+
 /// A trait for types that can be created from a SQLite function parameter value.
 pub trait FromValue: Sized {
     unsafe fn parameter_value(v: *mut sqlite3_value) -> Result<Self>;
