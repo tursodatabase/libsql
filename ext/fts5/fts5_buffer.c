@@ -363,7 +363,7 @@ int sqlite3Fts5TermsetAdd(
 
 void sqlite3Fts5TermsetFree(Fts5Termset *p){
   if( p ){
-    int i;
+    u32 i;
     for(i=0; i<ArraySize(p->apHash); i++){
       Fts5TermsetEntry *pEntry = p->apHash[i];
       while( pEntry ){

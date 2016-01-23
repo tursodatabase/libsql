@@ -225,8 +225,8 @@ int sqlite3Fts5ConfigParseRank(const char*, char**, char**);
 typedef struct Fts5Buffer Fts5Buffer;
 struct Fts5Buffer {
   u8 *p;
-  u32 n;
-  u32 nSpace;
+  int n;
+  int nSpace;
 };
 
 int sqlite3Fts5BufferSize(int*, Fts5Buffer*, u32);
@@ -247,7 +247,7 @@ char *sqlite3Fts5Mprintf(int *pRc, const char *zFmt, ...);
 #define fts5BufferSet(a,b,c,d)        sqlite3Fts5BufferSet(a,b,c,d)
 
 #define fts5BufferGrow(pRc,pBuf,nn) ( \
-  (pBuf)->n + (nn) <= (pBuf)->nSpace ? 0 : \
+  (u32)((pBuf)->n) + (u32)(nn) <= (u32)((pBuf)->nSpace) ? 0 : \
     sqlite3Fts5BufferSize((pRc),(pBuf),(nn)+(pBuf)->n) \
 )
 

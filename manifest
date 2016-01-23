@@ -1,8 +1,8 @@
-C Fix\sa\sproblem\sinvolving\sdetail=col\sand\scolumn\sfilters.
-D 2016-01-23T14:45:36.706
+C Merge\strunk\schanges\s(including\sfixes\sfor\swarnings\sin\sfts5)\swith\sthis\sbranch.
+D 2016-01-23T16:20:16.389
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc d2b93511a969c0c8fcf52aeb5e426571e8c610d2
+F Makefile.msc 1708a78eda223b6daa302b140037fcc214a779f9
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION 866588d1edf0ccb5b0d33896974338f97564f719
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -97,9 +97,9 @@ F ext/fts3/unicode/mkunicode.tcl 95cf7ec186e48d4985e433ff8a1c89090a774252
 F ext/fts3/unicode/parseunicode.tcl da577d1384810fb4e2b209bf3313074353193e95
 F ext/fts5/extract_api_docs.tcl a36e54ec777172ddd3f9a88daf593b00848368e0
 F ext/fts5/fts5.h ff9c2782e8ed890b0de2f697a8d63971939e70c7
-F ext/fts5/fts5Int.h f93aed3d05d1b3686c4dccf70544bcfc7aa117f1
+F ext/fts5/fts5Int.h a810589cf2fedd7dcfc9ba7871d2a5a09e850ace
 F ext/fts5/fts5_aux.c 2dafc3aee0c70d643140c77d8d70daffa51a9e9e
-F ext/fts5/fts5_buffer.c 7d3f6f01f8fdc45204e6a33925ef8478a67d28dd
+F ext/fts5/fts5_buffer.c 0b8e1f84fec3ec01f7e17f8d4f17c46856b31e10
 F ext/fts5/fts5_config.c 0c384ebdd23fd055e2e50a93277b8d59da538238
 F ext/fts5/fts5_expr.c 48b9131b74c8d3b8c12ba0f7995e2d60eecce9f2
 F ext/fts5/fts5_hash.c 1b113977296cf4212c6ec667d5e3f2bd18036955
@@ -329,7 +329,7 @@ F src/os.c 8fd25588eeba74068d41102d26810e216999b6c8
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h abdb9a191a367793268fe553d25bab894e986a0e
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c b509b49b40a269e7b75ab511b6e92b2dc9444359
+F src/os_unix.c 0eb7f469fcd4e1fbedf30060438e26b839ec5486
 F src/os_win.c 386fba30419e8458b13209781c2af5590eab2811
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c f4e9ac39fbb1e0fde97af85c0f4e00eb90764b67
@@ -340,7 +340,7 @@ F src/pcache.h 4d0ccaad264d360981ec5e6a2b596d6e85242545
 F src/pcache1.c 72f644dc9e1468c72922eff5904048427b817051
 F src/pragma.c ea290193369faa0a26ae2f924e7b86289b4a7987
 F src/pragma.h 64c78a648751b9f4f297276c4eb7507b14b4628c
-F src/prepare.c 74855ddbdfad6a1c4a4d5c4b0913ebb01174ba19
+F src/prepare.c 8ca7237428f372a04717d558555ea67ee1c5df93
 F src/printf.c af589a27b7d40f6f4f704e9eea99f02f18ad6d32
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 9f7ce3a3c087afb7597b7c916c99126ff3f12f0c
@@ -348,13 +348,13 @@ F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 1db9a902e89201a0ae3ff5243a7a3f37842a3937
 F src/shell.c dcd7a83645ef2a58ee9c6d0ea4714d877d7835c4
 F src/sqlite.h.in 214476a62012e578f42133a9a3b4f97a9aa421a3
-F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
+F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
 F src/sqliteInt.h 74e10a74116df0aec9d4a3e134f1a86cc34c2f14
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
-F src/tclsqlite.c 82979239a896992f9b78efec81cfda05d316a7d0
+F src/tclsqlite.c 94ef6e2794220c5b6064d4c78ec7169a8c5cc45d
 F src/test1.c 4f1b42699068b7806af3111786f5ad760c2c1ff7
 F src/test2.c 5586f43fcd9a1be0830793cf9d354082c261b25b
 F src/test3.c a8887dabbbee3059af338f20d290084a63ed1b0f
@@ -1419,7 +1419,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b5a57b812fd6a734cf2a342bf0b730ae18912d73
-R 20bdd3799e5ba562672d44f9df7f8c2a
+P 7558a0ad2276e91f2faced8ea405d9fdb4fa0c6e 3be336aa893f9eb0837d7d66c83bab1489792b9a
+R 27b07c29574081bf2a6f1649bb5e2393
 U dan
-Z fc938fd5a5718db0c9c10bacac344b80
+Z 165b70c16fc218fdaf7b93acd8863bd2
