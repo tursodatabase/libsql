@@ -1986,16 +1986,16 @@ static void winLogIoerr(int nRetry, int lineno){
   }
 }
 
-#if SQLITE_OS_WINCE
-/*************************************************************************
-** This section contains code for WinCE only.
+/*
+** This #if cannot use SQLITE_OS_WINCE because the corresponding section
+** in "sqliteInt.h" does not use it.
 */
-#if !defined(SQLITE_MSVC_LOCALTIME_API) || !SQLITE_MSVC_LOCALTIME_API
+#if defined(_WIN32_WCE) && \
+    (!defined(SQLITE_MSVC_LOCALTIME_API) || !SQLITE_MSVC_LOCALTIME_API)
 /*
 ** The MSVC CRT on Windows CE may not have a localtime() function.  So
 ** create a substitute.
 */
-#include <time.h>
 struct tm *__cdecl localtime(const time_t *t)
 {
   static struct tm y;
@@ -2019,6 +2019,10 @@ struct tm *__cdecl localtime(const time_t *t)
 }
 #endif
 
+#if SQLITE_OS_WINCE
+/*************************************************************************
+** This section contains code for WinCE only.
+*/
 #define HANDLE_TO_WINFILE(a) (winFile*)&((char*)a)[-(int)offsetof(winFile,h)]
 
 /*

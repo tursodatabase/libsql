@@ -1,5 +1,5 @@
-C More\swork\son\sthe\sMSVC\sbuild.
-D 2016-01-23T00:07:51.151
+C Cleanup\slocaltime()\ssupport\sfor\sWindows\sCE.
+D 2016-01-23T01:54:15.466
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1708a78eda223b6daa302b140037fcc214a779f9
@@ -295,7 +295,7 @@ F src/build.c b4eba1e84752ec9cae7ff3dacd5a8b6d1ab8deb9
 F src/callback.c 29ae4faba226c7ebb9aee93016b5ce8a8f071261
 F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
 F src/ctime.c 60e135af364d777a9ab41c97e5e89cd224da6198
-F src/date.c 997651e3ee6c2818fbf7fcdb7156cef9eb3ece20
+F src/date.c 6142d9e4d25fa5ec78f44644c411ee64b5bfbdd0
 F src/dbstat.c b2ec6793eef97aebb4d171d490a4ffdfa9f2475c
 F src/delete.c 00af9f08a15ddc5cba5962d3d3e5bf2d67b2e7da
 F src/expr.c d10c1cdef5810cdbf73adc9f9b383684230b360a
@@ -330,7 +330,7 @@ F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h abdb9a191a367793268fe553d25bab894e986a0e
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c 0eb7f469fcd4e1fbedf30060438e26b839ec5486
-F src/os_win.c 386fba30419e8458b13209781c2af5590eab2811
+F src/os_win.c 3cd1dbb6800a1996f25c027850e512d0631d4cf6
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c f4e9ac39fbb1e0fde97af85c0f4e00eb90764b67
 F src/pager.h 1c2a49143dfba9e69cc8159ef019f472ed8d260b
@@ -350,7 +350,7 @@ F src/shell.c dcd7a83645ef2a58ee9c6d0ea4714d877d7835c4
 F src/sqlite.h.in 214476a62012e578f42133a9a3b4f97a9aa421a3
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
-F src/sqliteInt.h 74e10a74116df0aec9d4a3e134f1a86cc34c2f14
+F src/sqliteInt.h ba1dd2b253f256353493c674425b54e0cd1e2409
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
@@ -1419,7 +1419,10 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a1c8116ced62d81f3f5ca26bbe0877e829d4cc56
-R b34246fa017fc0ae2e7bf7cb484e3eeb
+P a79c46bc61a35edbaf6112c26e8052314b0eb16a
+R 84f9a6399ea3db7dae9e4103397ece9e
+T *branch * winCeLocalTime
+T *sym-winCeLocalTime *
+T -sym-trunk *
 U mistachkin
-Z ba075ff448ff99fa520b3503324fe6e9
+Z 786b4c57551387fde5512893dcf278e2
