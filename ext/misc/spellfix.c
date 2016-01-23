@@ -875,6 +875,17 @@ static void updateCost(
   }
 }
 
+/*
+** How much stack space (int bytes) to use for Wagner matrix in 
+** editDist3Core().  If more space than this is required, the entire
+** matrix is taken from the heap.  To reduce the load on the memory
+** allocator, make this value as large as practical for the
+** architecture in use.
+*/
+#ifndef SQLITE_SPELLFIX_STACKALLOC_SZ
+# define SQLITE_SPELLFIX_STACKALLOC_SZ  (1024)
+#endif
+
 /* Compute the edit distance between two strings.
 **
 ** If an error occurs, return a negative number which is the error code.
@@ -904,7 +915,7 @@ static int editDist3Core(
   EditDist3Cost *p;
   int res;
   sqlite3_uint64 nByte;
-  unsigned int stackSpace[16*1024];
+  unsigned int stackSpace[SQLITE_SPELLFIX_STACKALLOC_SZ/sizeof(unsigned int)];
 
   /* allocate the Wagner matrix and the aTo[] array for the TO string */
   n = (f.n+1)*(n2+1);

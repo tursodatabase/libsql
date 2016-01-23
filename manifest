@@ -1,5 +1,5 @@
-C Changes\sto\sspellfix\sto\stry\sto\sget\sit\sto\suse\sstack\sspace\sinstead\sof\sheap\sspace\nin\scases\swhere\sthat\smakes\ssense.
-D 2016-01-23T18:24:52.238
+C Add\sthe\sSQLITE_SPELLFIX_STACKALLOC_SZ\scompile-time\soption\sto\scontrol\show\smuch\nstack\sspace\sis\savailable\sfor\suse\sas\sthe\sWagner\smatrix\sin\seditDest3\sof\sthe\nspellfix\sextension.
+D 2016-01-23T22:55:53.451
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1708a78eda223b6daa302b140037fcc214a779f9
@@ -210,7 +210,7 @@ F ext/misc/regexp.c af92cdaa5058fcec1451e49becc7ba44dba023dc
 F ext/misc/rot13.c 1ac6f95f99b575907b9b09c81a349114cf9be45a
 F ext/misc/series.c b8fb7befd85b3a9b4a10e701b30b2b79ca92b6d4
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
-F ext/misc/spellfix.c 5850a0e05ae1eacd48a3d80991c63b58d41e2d27
+F ext/misc/spellfix.c db4cc4b7aa12384e6c19a289a39cd232d355413d
 F ext/misc/totype.c 4a167594e791abeed95e0a8db028822b5e8fe512
 F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
@@ -1419,7 +1419,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3be336aa893f9eb0837d7d66c83bab1489792b9a
-R e0cc5654cf9d372268674d3acd0d1178
+P dfcebc7393a3a780ee9c4f257723c303bb633064
+R f2b384711e45db4261b5ef34d3e09d67
 U drh
-Z 5f4045218ee81aac454594c9cbaf4e94
+Z 57efa8447e9c944d8afed12c4b4dd5da
