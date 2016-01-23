@@ -1,5 +1,5 @@
-C Remove\san\sassert()\sthat\scan\sbe\sfalse\sif\scompiled\swith\sSQLITE_USE_ALLOCA.
-D 2016-01-23T14:05:27.109
+C Fix\ssome\ssigned/unsigned\scomparison\scompiler\swarnings\sin\sfts5.
+D 2016-01-23T15:57:06.186
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1708a78eda223b6daa302b140037fcc214a779f9
@@ -97,9 +97,9 @@ F ext/fts3/unicode/mkunicode.tcl 95cf7ec186e48d4985e433ff8a1c89090a774252
 F ext/fts3/unicode/parseunicode.tcl da577d1384810fb4e2b209bf3313074353193e95
 F ext/fts5/extract_api_docs.tcl a36e54ec777172ddd3f9a88daf593b00848368e0
 F ext/fts5/fts5.h ff9c2782e8ed890b0de2f697a8d63971939e70c7
-F ext/fts5/fts5Int.h 5599703af9c13512900a9f22fec39d48078d619d
+F ext/fts5/fts5Int.h e4c7ca41a7841f180d78a24850757e0ffcb20f27
 F ext/fts5/fts5_aux.c 2dafc3aee0c70d643140c77d8d70daffa51a9e9e
-F ext/fts5/fts5_buffer.c 7d3f6f01f8fdc45204e6a33925ef8478a67d28dd
+F ext/fts5/fts5_buffer.c 0b8e1f84fec3ec01f7e17f8d4f17c46856b31e10
 F ext/fts5/fts5_config.c 0c384ebdd23fd055e2e50a93277b8d59da538238
 F ext/fts5/fts5_expr.c 4ab4504c54bbe24689c83411d8588f4ec99136e9
 F ext/fts5/fts5_hash.c 1b113977296cf4212c6ec667d5e3f2bd18036955
@@ -1419,7 +1419,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a79c46bc61a35edbaf6112c26e8052314b0eb16a
-R 78c84a447f1adb3672b2aa032cc33ea6
-U drh
-Z 2d3baf83036e6553ecd28fa4c13c4bc2
+P f0a551edf87ef061deae34d88b02c3b484ae9adc
+R 962289f1674397e1ac71fafb409f527f
+U dan
+Z 5f630552e065d9e5a5f7f6919a0222d3
