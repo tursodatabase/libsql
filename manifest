@@ -1,8 +1,8 @@
-C In\sthe\sTCL\sinterface,\sif\sa\sdatabase\sconnection\sobject\swas\sopened\swith\nthe\s-uri\s1\soption,\sthen\salso\shonor\sURI\sfilenames\sfor\sthe\s"backup"\sand\n"restore"\scommands.
-D 2016-01-22T23:17:51.219
+C More\swork\son\sthe\sMSVC\sbuild.
+D 2016-01-23T00:07:51.151
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc bf507c4168b28d0ba47ac29d53fd6244289f10b8
+F Makefile.msc 1708a78eda223b6daa302b140037fcc214a779f9
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION 866588d1edf0ccb5b0d33896974338f97564f719
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -348,7 +348,7 @@ F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 1db9a902e89201a0ae3ff5243a7a3f37842a3937
 F src/shell.c dcd7a83645ef2a58ee9c6d0ea4714d877d7835c4
 F src/sqlite.h.in 214476a62012e578f42133a9a3b4f97a9aa421a3
-F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
+F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
 F src/sqliteInt.h 74e10a74116df0aec9d4a3e134f1a86cc34c2f14
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
@@ -1419,7 +1419,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P df22556fd75997111e52f96572da8379dfe948be
-R 14f009751ec343de1132abf0a7bfa01f
-U drh
-Z 3618240e30f243f2df7ae3a3ace24b2d
+P a1c8116ced62d81f3f5ca26bbe0877e829d4cc56
+R b34246fa017fc0ae2e7bf7cb484e3eeb
+U mistachkin
+Z ba075ff448ff99fa520b3503324fe6e9
