@@ -5013,21 +5013,26 @@ static void fts5IterSetOutputs_Col(Fts5Iter *pIter, Fts5SegIter *pSeg){
   assert( pIter->pIndex->pConfig->eDetail==FTS5_DETAIL_COLUMNS );
   assert( pColset );
 
-  if( pSeg->iLeafOffset+pSeg->nPos<=pSeg->pLeaf->szLeaf && 0 ){
+  if( pSeg->iLeafOffset+pSeg->nPos<=pSeg->pLeaf->szLeaf ){
     /* All data is stored on the current page. Populate the output 
     ** variables to point into the body of the page object. */
     Fts5PoslistWriter writer = {0};
     const u8 *a = &pSeg->pLeaf->p[pSeg->iLeafOffset];
     int n = pSeg->nPos;
     int iCol = 0;
+    int iCVal = pColset->aiCol[0];
     i64 iPos = 0;
     int iOff = 0;
 
     fts5BufferZero(&pIter->poslist);
     while( 0==sqlite3Fts5PoslistNext64(a, n, &iOff, &iPos) ){
-      if( iPos==pColset->aiCol[iCol] ){
-        sqlite3Fts5PoslistWriterAppend(&pIter->poslist, &writer, iPos);
-        if( ++iCol>=pColset->nCol ) break;
+      while( iPos>=iCVal ){
+        if( iPos==iCVal ){
+          sqlite3Fts5PoslistWriterAppend(&pIter->poslist, &writer, iPos);
+        }
+        if( ++iCol>=pColset->nCol ) goto setoutputs_col_out;
+        assert( pColset->aiCol[iCol]>iCVal );
+        iCVal = pColset->aiCol[iCol];
       }
     }
 
@@ -5039,6 +5044,7 @@ static void fts5IterSetOutputs_Col(Fts5Iter *pIter, Fts5SegIter *pSeg){
     fts5SegiterPoslist(pIter->pIndex, pSeg, pColset, &pIter->poslist);
   }
 
+setoutputs_col_out:
   pIter->base.pData = pIter->poslist.p;
   pIter->base.nData = pIter->poslist.n;
 }
