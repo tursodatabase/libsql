@@ -7,14 +7,14 @@ install:
   - rustc -V
   - cargo -V
   - ps: Start-FileDownload 'http://sqlite.org/2016/sqlite-uap-3100200.vsix'
-  - cmd: 7z e sqlite-uap-3100200.vsix DesignTime/Debug/x64/ Redist/Debug/x64/ -y > nul
+  - cmd: 7z e sqlite-uap-3100200.vsix DesignTime/Retail/x64/ Redist/Retail/x64/ -y > nul
   - SET SQLITE3_LIB_DIR=%APPVEYOR_BUILD_FOLDER%
 #  - cmd: VsixInstaller /q /a /i sqlite-uap-3100200.vsix
 
 build: false
 
 test_script:
-  - cargo test
+  - cargo test --lib
 
 branches:
   only:
