@@ -6,9 +6,10 @@ install:
   - SET PATH=%PATH%;C:\Program Files (x86)\Rust\bin
   - rustc -V
   - cargo -V
-  - ps: Start-FileDownload 'http://sqlite.org/2015/sqlite-dll-win64-x64-3090200.zip'
-  - cmd: 7z e sqlite-dll-win64-x64-3090200.zip -y > nul
+  - ps: Start-FileDownload 'http://sqlite.org/2016/sqlite-uap-3100200.vsix'
+  - cmd: 7z e sqlite-uap-3100200.vsix DesignTime/Debug/x64/ Redist/Debug/x64/ -y > nul
   - SET SQLITE3_LIB_DIR=%APPVEYOR_BUILD_FOLDER%
+  - cmd: VsixInstaller /q /a /i sqlite-uap-3100200.vsix
 
 build: false
 
