@@ -8,6 +8,7 @@ install:
   - cargo -V
   - ps: Start-FileDownload 'http://sqlite.org/2015/sqlite-dll-win64-x64-3090200.zip'
   - cmd: 7z e sqlite-dll-win64-x64-3090200.zip -y > nul
+  - SET SQLITE3_LIB_DIR=%APPVEYOR_BUILD_FOLDER%
 
 build: false
 
