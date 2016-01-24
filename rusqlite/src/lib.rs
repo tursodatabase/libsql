@@ -89,7 +89,7 @@ mod error;
 #[cfg(feature = "backup")]pub mod backup;
 #[cfg(feature = "functions")] pub mod functions;
 #[cfg(feature = "blob")] pub mod blob;
-#[cfg(feature = "vtab")] pub mod vtab;
+#[cfg(all(feature = "vtab", feature = "functions"))] pub mod vtab;
 
 /// Old name for `Result`. `SqliteResult` is deprecated.
 pub type SqliteResult<T> = Result<T>;
