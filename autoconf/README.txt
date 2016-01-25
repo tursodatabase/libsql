@@ -9,6 +9,12 @@ This package contains:
  * a Makefile.msc and sqlite3.rc for building with Microsoft Visual C++ on
    Windows.
 
+SUMMARY OF HOW TO BUILD
+=======================
+
+  unix:      ./configure; make
+  windows:   nmake /f Makefile.msc
+
 BUILDING ON POSIX
 =================
 
@@ -47,7 +53,7 @@ Using Microsoft Visual C++ 2005 (or later) is recommended.  Several Windows
 platform variants may be built by adding additional macros to the NMAKE
 command line.
 
-BUILDING FOR WINRT 8.0
+Building for WinRT 8.0
 ----------------------
 
   FOR_WINRT=1
@@ -58,7 +64,7 @@ NMAKE command line as well:
 
   "NSDKLIBPATH=%WindowsSdkDir%\..\8.0\lib\win8\um\x86"
 
-BUILDING FOR WINRT 8.1
+Building for WinRT 8.1
 ----------------------
 
   FOR_WINRT=1
@@ -69,7 +75,7 @@ NMAKE command line as well:
 
   "NSDKLIBPATH=%WindowsSdkDir%\..\8.1\lib\winv6.3\um\x86"
 
-BUILDING FOR UAP 10.0
+Building for UAP 10.0
 ---------------------
 
   FOR_WINRT=1 FOR_UAP=1
@@ -82,7 +88,7 @@ NMAKE command line as well:
   "PSDKLIBPATH=%WindowsSdkDir%\..\10\lib\10.0.10586.0\um\x86"
   "NUCRTLIBPATH=%UniversalCRTSdkDir%\..\10\lib\10.0.10586.0\ucrt\x86"
 
-BUILDING FOR THE WINDOWS 10 SDK
+Building for the Windows 10 SDK
 -------------------------------
 
   FOR_WIN10=1
@@ -90,7 +96,7 @@ BUILDING FOR THE WINDOWS 10 SDK
 Using Microsoft Visual C++ 2015 (or later) is required.  When using the
 above, no other macros should be needed on the NMAKE command line.
 
-USING PREPROCESSOR DEFINES
+Other preprocessor defines
 --------------------------
 
 Additionally, preprocessor defines may be specified by using the OPTS macro
