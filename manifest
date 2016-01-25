@@ -1,5 +1,5 @@
-C Fix\sissues\son\sunix\swith\sopening\sdatabase\sfiles\svia\ssymlinks\sthat\sare\snot\sin\sthe\scurrent\sworking\sdirectory.\sAnd\swith\snested\ssymlinks.
-D 2016-01-25T17:04:48.546
+C Simplify\sthe\sunixFullpathname()\sfunction.\sThis\sadds\sa\sdependency\son\slstat().
+D 2016-01-25T18:05:49.964
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1708a78eda223b6daa302b140037fcc214a779f9
@@ -329,7 +329,7 @@ F src/os.c 8fd25588eeba74068d41102d26810e216999b6c8
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h abdb9a191a367793268fe553d25bab894e986a0e
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c cf524029242b4f878d6b97bad25cc2c0b66c2b31
+F src/os_unix.c 6604e7f9e5298b615f729b6bb3c22bd3545cdca6
 F src/os_win.c 386fba30419e8458b13209781c2af5590eab2811
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 2916c66aee50f69d9ec56a7619b62d9c6a3bee61
@@ -1419,10 +1419,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7ac017a498b6fb28343eef2d24e400c7800660d6
-R 0289127606d03bb3b649ecbd39bb14a5
-T *branch * follow-symlinks
-T *sym-follow-symlinks *
-T -sym-trunk *
+P 80398fd44fb232193450103808e1854e0eba5652
+R 084dee05e1353887f6af0d88670b22d0
 U dan
-Z 3e18b3d01ba737d3635110839e378935
+Z 72572e009a3ce3b7747f3257ebf7dfc7

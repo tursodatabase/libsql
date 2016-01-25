@@ -480,6 +480,8 @@ static struct unix_syscall {
 #endif
 #define osReadlink ((ssize_t(*)(const char*,char*,size_t))aSyscall[26].pCurrent)
 
+  { "lstat",         (sqlite3_syscall_ptr)lstat,       0  },
+#define osLstat      ((int(*)(const char*,struct stat*))aSyscall[27].pCurrent)
 
 }; /* End of the overrideable system calls */
 
@@ -5933,54 +5935,24 @@ static int unixAccess(
 }
 
 /*
-** Buffer zOut contains a (possibly) relative pathname. Overwrite it with
-** the corresponding full pathname.
 **
-** Parameter nOut is the allocated size of buffer zOut. nByte is the number
-** of bytes in the nul-terminated string that it contains (not including
-** the nul-terminator itself).
-**
-** Return SQLITE_OK if successful, or an SQLite error code otherwise.
 */
 static int mkFullPathname(
-  const char *zPath,              /* Use this path to log any errors */
-  char *zOut,                     /* IN/OUT: Buffer to modify */
-  int nByte,                      /* size of nul-terminated zOut in bytes */
+  const char *zPath,              /* Input path */
+  char *zOut,                     /* Output buffer */
   int nOut                        /* Allocated size of buffer zOut */
 ){
-  /* If buffer zOut[] now contains an absolute path there is nothing more
-  ** to do. If it contains a relative path, do the following:
-  **
-  **   * move the relative path string so that it is at the end of th
-  **     zOut[] buffer.
-  **   * Call getcwd() to read the path of the current working directory 
-  **     into the start of the zOut[] buffer.
-  **   * Append a '/' character to the cwd string and move the 
-  **     relative path back within the buffer so that it immediately 
-  **     follows the '/'.
-  **
-  ** This code is written so that if the combination of the CWD and relative
-  ** path are larger than the allocated size of zOut[] the CWD is silently
-  ** truncated to make it fit. This is Ok, as SQLite refuses to open any
-  ** file for which this function returns a full path larger than (nOut-8)
-  ** bytes in size.  */
-  assert( nByte<nOut );
-  testcase( nByte==nOut-5 );
-  testcase( nByte==nOut-4 );
-  if( zOut[0]!='/' && nByte<nOut-4 ){
-    int nCwd;
-    int nRem = nOut-nByte-1;
-    memmove(&zOut[nRem], zOut, nByte+1);
-    zOut[nRem-1] = '\0';
-    if( osGetcwd(zOut, nRem-1)==0 ){
+  int nPath = sqlite3Strlen30(zPath);
+  int iOff = 0;
+  if( zPath[0]!='/' ){
+    if( osGetcwd(zOut, nOut-2)==0 ){
       return unixLogError(SQLITE_CANTOPEN_BKPT, "getcwd", zPath);
     }
-    nCwd = sqlite3Strlen30(zOut);
-    assert( nCwd<=nRem-1 );
-    zOut[nCwd] = '/';
-    memmove(&zOut[nCwd+1], &zOut[nRem], nByte+1);
+    iOff = sqlite3Strlen30(zOut);
+    zOut[iOff++] = '/';
   }
-
+  if( (iOff+nPath+1)>nOut ) return SQLITE_CANTOPEN_BKPT;
+  sqlite3_snprintf(nOut-iOff, &zOut[iOff], "%s", zPath);
   return SQLITE_OK;
 }
 
@@ -6000,13 +5972,11 @@ static int unixFullPathname(
   char *zOut                    /* Output buffer */
 ){
 #if !defined(HAVE_READLINK)
-  sqlite3_snprintf(nOut, zOut, "%s", zIn);
-  nByte = sqlite3Strlen30(zOut);
-  return mkFullPathname(zPath, zOut, sqlite3Strlen30(zOut), nOut);
+  return mkFullPathname(zPath, zOut, nOut);
 #else
   int rc = SQLITE_OK;
   int nByte;
-  int nLink = 0;                /* Number of symbolic links followed so far */
+  int nLink = 1;                /* Number of symbolic links followed so far */
   int bLink;                    /* True for a symbolic link */
   const char *zIn = zPath;      /* Input path for each iteration of loop */
   char *zDel = 0;
@@ -6023,55 +5993,54 @@ static int unixFullPathname(
 
   do {
 
-    /* Attempt to resolve the path as if it were a symbolic link. If it is
-    ** a symbolic link, the resolved path is stored in buffer zOut[]. Or, if
-    ** the identified file is not a symbolic link or does not exist, then
-    ** zPath is copied directly into zOut. Either way, nByte is left set to
-    ** the size of the string copied into zOut[] in bytes.  */
-    assert( (zDel==0 && zIn==zPath) || (zDel!=0 && zIn==zDel) );
-    if( zDel ){
-      assert( zIn==zDel );
-      sqlite3_snprintf(nOut, zDel, "%s", zOut);
-    }
-    nByte = osReadlink(zIn, zOut, nOut-1);
-    if( nByte<0 ){
-      if( errno!=EINVAL && errno!=ENOENT ){
-        rc = unixLogError(SQLITE_CANTOPEN_BKPT, "readlink", zPath);
-      }else{
-        sqlite3_snprintf(nOut, zOut, "%s", zIn);
-        nByte = sqlite3Strlen30(zOut);
+    /* Call stat() on path zIn. Set bLink to true if the path is a symbolic
+    ** link, or false otherwise.  */
+    int bLink = 0;
+    struct stat buf;
+    if( osLstat(zIn, &buf)!=0 ){
+      if( errno!=ENOENT ){
+        rc = unixLogError(SQLITE_CANTOPEN_BKPT, "stat", zIn);
       }
-      bLink = 0;
-    }else if( ++nLink>SQLITE_MAX_SYMLINKS ){
-      sqlite3_log(SQLITE_CANTOPEN, 
-          "too many symbolic links (max=%d)", SQLITE_MAX_SYMLINKS
-      );
-      rc = SQLITE_CANTOPEN_BKPT;
     }else{
-      zOut[nByte] = '\0';
-      if( zOut[0]!='/' ){
-        int n;
-        for(n = sqlite3Strlen30(zIn); n>0 && zIn[n-1]!='/'; n--);
-        if( nByte+n+1>nOut ){
-          rc = SQLITE_CANTOPEN_BKPT;
-        }else{
-          memmove(&zOut[n], zOut, nByte+1);
-          memcpy(zOut, zIn, n);
-          nByte += n;
-        }
-      }
+      bLink = S_ISLNK(buf.st_mode);
+    }
+
+    if( bLink ){
       if( zDel==0 ){
         zDel = sqlite3_malloc(nOut);
         if( zDel==0 ) rc = SQLITE_NOMEM;
-        zIn = (const char*)zDel;
+      }else if( ++nLink>SQLITE_MAX_SYMLINKS ){
+        rc = SQLITE_CANTOPEN_BKPT;
       }
-      bLink = 1;
+
+      if( rc==SQLITE_OK ){
+        nByte = osReadlink(zIn, zDel, nOut-1);
+        if( nByte<0 ){
+          rc = unixLogError(SQLITE_CANTOPEN_BKPT, "readlink", zIn);
+        }else if( zDel[0]!='/' ){
+          int n;
+          for(n = sqlite3Strlen30(zIn); n>0 && zIn[n-1]!='/'; n--);
+          if( nByte+n+1>nOut ){
+            rc = SQLITE_CANTOPEN_BKPT;
+          }else{
+            memmove(&zDel[n], zDel, nByte+1);
+            memcpy(zDel, zIn, n);
+            nByte += n;
+          }
+          zDel[nByte] = '\0';
+        }
+      }
+
+      zIn = zDel;
     }
 
     if( rc==SQLITE_OK ){
-      rc = mkFullPathname(zPath, zOut, nByte, nOut);
+      assert( zIn!=zOut || zIn[0]=='/' );
+      rc = mkFullPathname(zIn, zOut, nOut);
     }
-  }while( bLink && rc==SQLITE_OK );
+    if( bLink==0 ) break;
+    zIn = zOut;
+  }while( rc==SQLITE_OK );
 
   sqlite3_free(zDel);
   return rc;
@@ -7574,7 +7543,7 @@ int sqlite3_os_init(void){
 
   /* Double-check that the aSyscall[] array has been constructed
   ** correctly.  See ticket [bb3a86e890c8e96ab] */
-  assert( ArraySize(aSyscall)==27 );
+  assert( ArraySize(aSyscall)==28 );
 
   /* Register all VFSes defined in the aVfs[] array */
   for(i=0; i<(sizeof(aVfs)/sizeof(sqlite3_vfs)); i++){
