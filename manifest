@@ -1,5 +1,5 @@
-C Small\ssimplification\sto\sthe\sprepare\sstatement\sopcode\smemory\sreuse\slogic.\nEasier\sto\sread,\sand\sslightly\ssmaller\sand\sfaster.
-D 2016-01-25T02:15:02.255
+C Add\sthe\sSQLITE_EXTRA_DURABLE\scompile-time\soption.
+D 2016-01-25T13:55:47.049
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1708a78eda223b6daa302b140037fcc214a779f9
@@ -332,7 +332,7 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c 0eb7f469fcd4e1fbedf30060438e26b839ec5486
 F src/os_win.c 386fba30419e8458b13209781c2af5590eab2811
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
-F src/pager.c f4e9ac39fbb1e0fde97af85c0f4e00eb90764b67
+F src/pager.c 2916c66aee50f69d9ec56a7619b62d9c6a3bee61
 F src/pager.h 1c2a49143dfba9e69cc8159ef019f472ed8d260b
 F src/parse.y caad1e98edeca6960493d0c60d31b76820dd7776
 F src/pcache.c 73895411fa6b7bd6f0091212feabbe833b358d23
@@ -1419,7 +1419,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0a9cff5c4822874b74e90bfca3963bc7e5c753a5
-R 5ad29c29cc49b0c7f9cd0947deba5a80
+P 8a1deae497edf3fa43fa96152d140405398c5ed6
+R ae4ccddaf3c593cdf1ed2beb484cfd15
 U drh
-Z 5c673e5ee459b55b04084dc37cebc110
+Z 297086babbdf85e61ae58e42a437c1ec
