@@ -149,6 +149,11 @@
 */
 #define MAX_PATHNAME 512
 
+/*
+** Maximum supported symbolic links
+*/
+#define SQLITE_MAX_SYMLINKS 100
+
 /* Always cast the getpid() return type for compatibility with
 ** kernel modules in VxWorks. */
 #define osGetpid(X) (pid_t)getpid()
@@ -5927,52 +5932,22 @@ static int unixAccess(
   return SQLITE_OK;
 }
 
-
 /*
-** Turn a relative pathname into a full pathname. The relative path
-** is stored as a nul-terminated string in the buffer pointed to by
-** zPath. 
+** Buffer zOut contains a (possibly) relative pathname. Overwrite it with
+** the corresponding full pathname.
 **
-** zOut points to a buffer of at least sqlite3_vfs.mxPathname bytes 
-** (in this case, MAX_PATHNAME bytes). The full-path is written to
-** this buffer before returning.
+** Parameter nOut is the allocated size of buffer zOut. nByte is the number
+** of bytes in the nul-terminated string that it contains (not including
+** the nul-terminator itself).
+**
+** Return SQLITE_OK if successful, or an SQLite error code otherwise.
 */
-static int unixFullPathname(
-  sqlite3_vfs *pVfs,            /* Pointer to vfs object */
-  const char *zPath,            /* Possibly relative input path */
-  int nOut,                     /* Size of output buffer in bytes */
-  char *zOut                    /* Output buffer */
+static int mkFullPathname(
+  const char *zPath,              /* Use this path to log any errors */
+  char *zOut,                     /* IN/OUT: Buffer to modify */
+  int nByte,                      /* size of nul-terminated zOut in bytes */
+  int nOut                        /* Allocated size of buffer zOut */
 ){
-  int nByte;
-
-  /* It's odd to simulate an io-error here, but really this is just
-  ** using the io-error infrastructure to test that SQLite handles this
-  ** function failing. This function could fail if, for example, the
-  ** current working directory has been unlinked.
-  */
-  SimulateIOError( return SQLITE_ERROR );
-
-  assert( pVfs->mxPathname==MAX_PATHNAME );
-  UNUSED_PARAMETER(pVfs);
-
-#if defined(HAVE_READLINK)
-  /* Attempt to resolve the path as if it were a symbolic link. If it is
-  ** a symbolic link, the resolved path is stored in buffer zOut[]. Or, if
-  ** the identified file is not a symbolic link or does not exist, then
-  ** zPath is copied directly into zOut. Either way, nByte is left set to
-  ** the size of the string copied into zOut[] in bytes.  */
-  nByte = osReadlink(zPath, zOut, nOut-1);
-  if( nByte<0 ){
-    if( errno!=EINVAL && errno!=ENOENT ){
-      return unixLogError(SQLITE_CANTOPEN_BKPT, "readlink", zPath);
-    }
-    sqlite3_snprintf(nOut, zOut, "%s", zPath);
-    nByte = sqlite3Strlen30(zOut);
-  }else{
-    zOut[nByte] = '\0';
-  }
-#endif
-
   /* If buffer zOut[] now contains an absolute path there is nothing more
   ** to do. If it contains a relative path, do the following:
   **
@@ -5989,6 +5964,7 @@ static int unixFullPathname(
   ** truncated to make it fit. This is Ok, as SQLite refuses to open any
   ** file for which this function returns a full path larger than (nOut-8)
   ** bytes in size.  */
+  assert( nByte<nOut );
   testcase( nByte==nOut-5 );
   testcase( nByte==nOut-4 );
   if( zOut[0]!='/' && nByte<nOut-4 ){
@@ -6006,6 +5982,100 @@ static int unixFullPathname(
   }
 
   return SQLITE_OK;
+}
+
+/*
+** Turn a relative pathname into a full pathname. The relative path
+** is stored as a nul-terminated string in the buffer pointed to by
+** zPath. 
+**
+** zOut points to a buffer of at least sqlite3_vfs.mxPathname bytes 
+** (in this case, MAX_PATHNAME bytes). The full-path is written to
+** this buffer before returning.
+*/
+static int unixFullPathname(
+  sqlite3_vfs *pVfs,            /* Pointer to vfs object */
+  const char *zPath,            /* Possibly relative input path */
+  int nOut,                     /* Size of output buffer in bytes */
+  char *zOut                    /* Output buffer */
+){
+#if !defined(HAVE_READLINK)
+  sqlite3_snprintf(nOut, zOut, "%s", zIn);
+  nByte = sqlite3Strlen30(zOut);
+  return mkFullPathname(zPath, zOut, sqlite3Strlen30(zOut), nOut);
+#else
+  int rc = SQLITE_OK;
+  int nByte;
+  int nLink = 0;                /* Number of symbolic links followed so far */
+  int bLink;                    /* True for a symbolic link */
+  const char *zIn = zPath;      /* Input path for each iteration of loop */
+  char *zDel = 0;
+
+  assert( pVfs->mxPathname==MAX_PATHNAME );
+  UNUSED_PARAMETER(pVfs);
+
+  /* It's odd to simulate an io-error here, but really this is just
+  ** using the io-error infrastructure to test that SQLite handles this
+  ** function failing. This function could fail if, for example, the
+  ** current working directory has been unlinked.
+  */
+  SimulateIOError( return SQLITE_ERROR );
+
+  do {
+
+    /* Attempt to resolve the path as if it were a symbolic link. If it is
+    ** a symbolic link, the resolved path is stored in buffer zOut[]. Or, if
+    ** the identified file is not a symbolic link or does not exist, then
+    ** zPath is copied directly into zOut. Either way, nByte is left set to
+    ** the size of the string copied into zOut[] in bytes.  */
+    assert( (zDel==0 && zIn==zPath) || (zDel!=0 && zIn==zDel) );
+    if( zDel ){
+      assert( zIn==zDel );
+      sqlite3_snprintf(nOut, zDel, "%s", zOut);
+    }
+    nByte = osReadlink(zIn, zOut, nOut-1);
+    if( nByte<0 ){
+      if( errno!=EINVAL && errno!=ENOENT ){
+        rc = unixLogError(SQLITE_CANTOPEN_BKPT, "readlink", zPath);
+      }else{
+        sqlite3_snprintf(nOut, zOut, "%s", zIn);
+        nByte = sqlite3Strlen30(zOut);
+      }
+      bLink = 0;
+    }else if( ++nLink>SQLITE_MAX_SYMLINKS ){
+      sqlite3_log(SQLITE_CANTOPEN, 
+          "too many symbolic links (max=%d)", SQLITE_MAX_SYMLINKS
+      );
+      rc = SQLITE_CANTOPEN_BKPT;
+    }else{
+      zOut[nByte] = '\0';
+      if( zOut[0]!='/' ){
+        int n;
+        for(n = sqlite3Strlen30(zIn); n>0 && zIn[n-1]!='/'; n--);
+        if( nByte+n+1>nOut ){
+          rc = SQLITE_CANTOPEN_BKPT;
+        }else{
+          memmove(&zOut[n], zOut, nByte+1);
+          memcpy(zOut, zIn, n);
+          nByte += n;
+        }
+      }
+      if( zDel==0 ){
+        zDel = sqlite3_malloc(nOut);
+        if( zDel==0 ) rc = SQLITE_NOMEM;
+        zIn = (const char*)zDel;
+      }
+      bLink = 1;
+    }
+
+    if( rc==SQLITE_OK ){
+      rc = mkFullPathname(zPath, zOut, nByte, nOut);
+    }
+  }while( bLink && rc==SQLITE_OK );
+
+  sqlite3_free(zDel);
+  return rc;
+#endif   /* HAVE_READLINK */
 }
 
 

@@ -1,5 +1,5 @@
-C Replace\sthe\sOP_SetIfNotPos\soperator\swith\sOP_OffsetLimit\sin\sthe\sVDBE,\sfor\nsimpler\sand\ssmaller\scode.
-D 2016-01-25T15:57:29.060
+C Fix\sissues\son\sunix\swith\sopening\sdatabase\sfiles\svia\ssymlinks\sthat\sare\snot\sin\sthe\scurrent\sworking\sdirectory.\sAnd\swith\snested\ssymlinks.
+D 2016-01-25T17:04:48.546
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1708a78eda223b6daa302b140037fcc214a779f9
@@ -329,7 +329,7 @@ F src/os.c 8fd25588eeba74068d41102d26810e216999b6c8
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h abdb9a191a367793268fe553d25bab894e986a0e
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c 0eb7f469fcd4e1fbedf30060438e26b839ec5486
+F src/os_unix.c cf524029242b4f878d6b97bad25cc2c0b66c2b31
 F src/os_win.c 386fba30419e8458b13209781c2af5590eab2811
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 2916c66aee50f69d9ec56a7619b62d9c6a3bee61
@@ -1061,7 +1061,7 @@ F test/subselect.test d24fd8757daf97dafd2e889c73ea4c4272dcf4e4
 F test/substr.test 18f57c4ca8a598805c4d64e304c418734d843c1a
 F test/subtype1.test 7fe09496352f97053af1437150751be2d0a0cae8
 F test/superlock.test 1cde669f68d2dd37d6c9bd35eee1d95491ae3fc2
-F test/symlink.test cbf6cb8c6c4b63a39e9f0f6b0d5c99e249dbc102
+F test/symlink.test 511db82662446bb0d3619002422760ef8e4b1122
 F test/sync.test a34cd43e98b7fb84eabbf38f7ed8f7349b3f3d85
 F test/syscall.test 2aa9e111b79fb385681ff8940124def6f8faab87
 F test/sysfault.test c9f2b0d8d677558f74de750c75e12a5454719d04
@@ -1419,7 +1419,10 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 30671345b1c1ee55a2d1aa17273213f1849efd81
-R f342889ba3409bd63b1cf54d88bfe0e2
-U drh
-Z e7c5fc86067d4269675714897cec0b51
+P 7ac017a498b6fb28343eef2d24e400c7800660d6
+R 0289127606d03bb3b649ecbd39bb14a5
+T *branch * follow-symlinks
+T *sym-follow-symlinks *
+T -sym-trunk *
+U dan
+Z 3e18b3d01ba737d3635110839e378935
