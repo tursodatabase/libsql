@@ -1,5 +1,5 @@
-C Simplify\sthe\sunixFullpathname()\sfunction.\sThis\sadds\sa\sdependency\son\slstat().
-D 2016-01-25T18:05:49.964
+C Only\suse\slstat()\sif\sthe\sHAVE_LSTAT\smacro\sis\sdefined.\sFix\ssome\stest\sfile\sissues.
+D 2016-01-25T18:43:05.007
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1708a78eda223b6daa302b140037fcc214a779f9
@@ -329,7 +329,7 @@ F src/os.c 8fd25588eeba74068d41102d26810e216999b6c8
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h abdb9a191a367793268fe553d25bab894e986a0e
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c 6604e7f9e5298b615f729b6bb3c22bd3545cdca6
+F src/os_unix.c 4c217111d7bdebbd7a9b47cf11f434420da432e7
 F src/os_win.c 386fba30419e8458b13209781c2af5590eab2811
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 2916c66aee50f69d9ec56a7619b62d9c6a3bee61
@@ -420,7 +420,7 @@ F src/vdbemem.c b9181e77eca2a095929d46250daf85c8d2621fc0
 F src/vdbesort.c 0971557e5d3c289e46f56a52aed2197c13251de7
 F src/vdbetrace.c 8befe829faff6d9e6f6e4dee5a7d3f85cc85f1a0
 F src/vtab.c 320682cca733115b4cbe71320b5c5eeb1074ebde
-F src/vxworks.h 974e7d9a98f602d6310d563e1dc4e08f9fc48e47
+F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c d21b99fd1458159d0b1ecdccc8ee6ada4fdc4c54
 F src/wal.h 2f7c831cf3b071fa548bf2d5cac640846a7ff19c
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
@@ -924,7 +924,7 @@ F test/orderby6.test 8b38138ab0972588240b3fca0985d2e400432859
 F test/orderby7.test 3d1383d52ade5b9eb3a173b3147fdd296f0202da
 F test/orderby8.test 23ef1a5d72bd3adcc2f65561c654295d1b8047bd
 F test/orderby9.test 87fb9548debcc2cd141c5299002dd94672fa76a3
-F test/oserror.test 361346396ae18462c7393c1ac5c3f17237bd89b2
+F test/oserror.test b32dc34f2363ef18532e3a0a7358e3e7e321974f
 F test/ovfl.test 4f7ca651cba5c059a12d8c67dddd49bec5747799
 F test/pager1.test 1acbdb14c5952a72dd43129cabdbf69aaa3ed1fa
 F test/pager2.test 67b8f40ae98112bcdba1f2b2d03ea83266418c71
@@ -1063,7 +1063,7 @@ F test/subtype1.test 7fe09496352f97053af1437150751be2d0a0cae8
 F test/superlock.test 1cde669f68d2dd37d6c9bd35eee1d95491ae3fc2
 F test/symlink.test 511db82662446bb0d3619002422760ef8e4b1122
 F test/sync.test a34cd43e98b7fb84eabbf38f7ed8f7349b3f3d85
-F test/syscall.test 2aa9e111b79fb385681ff8940124def6f8faab87
+F test/syscall.test f59ba4e25f7ba4a4c031026cc2ef8b6e4b4c639c
 F test/sysfault.test c9f2b0d8d677558f74de750c75e12a5454719d04
 F test/tabfunc01.test cc33684f9480fcf1fd5ce287ac28d22971cad1cc
 F test/table.test b708f3e5fa2542fa51dfab21fc07b36ea445cb2f
@@ -1419,7 +1419,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 80398fd44fb232193450103808e1854e0eba5652
-R 084dee05e1353887f6af0d88670b22d0
+P f71249d3db9242b8f38955db51a7a5789d002803
+R 31817b68212f6684c4e9fbfebdae658d
 U dan
-Z 72572e009a3ce3b7747f3257ebf7dfc7
+Z 17d90a7cade21886dca3e4bdfc08ed4c

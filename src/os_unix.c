@@ -480,7 +480,11 @@ static struct unix_syscall {
 #endif
 #define osReadlink ((ssize_t(*)(const char*,char*,size_t))aSyscall[26].pCurrent)
 
-  { "lstat",         (sqlite3_syscall_ptr)lstat,       0  },
+#if defined(HAVE_LSTAT)
+  { "lstat",         (sqlite3_syscall_ptr)lstat,          0 },
+#else
+  { "lstat",         (sqlite3_syscall_ptr)0,              0 },
+#endif
 #define osLstat      ((int(*)(const char*,struct stat*))aSyscall[27].pCurrent)
 
 }; /* End of the overrideable system calls */
@@ -5971,7 +5975,7 @@ static int unixFullPathname(
   int nOut,                     /* Size of output buffer in bytes */
   char *zOut                    /* Output buffer */
 ){
-#if !defined(HAVE_READLINK)
+#if !defined(HAVE_READLINK) || !defined(HAVE_LSTAT)
   return mkFullPathname(zPath, zOut, nOut);
 #else
   int rc = SQLITE_OK;
@@ -5999,7 +6003,7 @@ static int unixFullPathname(
     struct stat buf;
     if( osLstat(zIn, &buf)!=0 ){
       if( errno!=ENOENT ){
-        rc = unixLogError(SQLITE_CANTOPEN_BKPT, "stat", zIn);
+        rc = unixLogError(SQLITE_CANTOPEN_BKPT, "lstat", zIn);
       }
     }else{
       bLink = S_ISLNK(buf.st_mode);
@@ -6044,7 +6048,7 @@ static int unixFullPathname(
 
   sqlite3_free(zDel);
   return rc;
-#endif   /* HAVE_READLINK */
+#endif   /* HAVE_READLINK && HAVE_LSTAT */
 }
 
 
