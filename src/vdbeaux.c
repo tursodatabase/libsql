@@ -1721,41 +1721,43 @@ void sqlite3VdbeIOTraceSql(Vdbe *p){
 }
 #endif /* !SQLITE_OMIT_TRACE && SQLITE_ENABLE_IOTRACE */
 
-/*
-** Allocate space from a fixed size buffer and return a pointer to
-** that space.  If insufficient space is available, return NULL.
+/* An instance of this object describes bulk memory available for use
+** by subcomponents of a prepared statement.  Space is allocated out
+** of a ReusableSpace object by the allocSpace() routine below.
+*/
+struct ReusableSpace {
+  u8 *pSpace;          /* Available memory */
+  int nFree;           /* Bytes of available memory */
+  int nNeeded;         /* Total bytes that could not be allocated */
+};
+
+/* Try to allocate nByte bytes of 8-byte aligned bulk memory for pBuf
+** from the ReusableSpace object.  Return a pointer to the allocated
+** memory on success.  If insufficient memory is available in the
+** ReusableSpace object, increase the ReusableSpace.nNeeded
+** value by the amount needed and return NULL.
 **
-** The pBuf parameter is the initial value of a pointer which will
-** receive the new memory.  pBuf is normally NULL.  If pBuf is not
-** NULL, it means that memory space has already been allocated and that
-** this routine should not allocate any new memory.  When pBuf is not
-** NULL simply return pBuf.  Only allocate new memory space when pBuf
-** is NULL.
+** If pBuf is not initially NULL, that means that the memory has already
+** been allocated by a prior call to this routine, so just return a copy
+** of pBuf and leave ReusableSpace unchanged.
 **
-** nByte is the number of bytes of space needed.
-**
-** pFrom points to *pnFrom bytes of available space.  New space is allocated
-** from the end of the pFrom buffer and *pnFrom is decremented.
-**
-** *pnNeeded is a counter of the number of bytes of space that have failed
-** to allocate.  If there is insufficient space in pFrom to satisfy the
-** request, then increment *pnNeeded by the amount of the request.
+** This allocator is employed to repurpose unused slots at the end of the
+** opcode array of prepared state for other memory needs of the prepared
+** statement.
 */
 static void *allocSpace(
-  void *pBuf,          /* Where return pointer will be stored */
-  int nByte,           /* Number of bytes to allocate */
-  u8 *pFrom,           /* Memory available for allocation */
-  int *pnFrom,         /* IN/OUT: Space available at pFrom */
-  int *pnNeeded        /* If allocation cannot be made, increment *pnByte */
+  struct ReusableSpace *p,  /* Bulk memory available for allocation */
+  void *pBuf,               /* Pointer to a prior allocation */
+  int nByte                 /* Bytes of memory needed */
 ){
-  assert( EIGHT_BYTE_ALIGNMENT(pFrom) );
+  assert( EIGHT_BYTE_ALIGNMENT(p->pSpace) );
   if( pBuf==0 ){
     nByte = ROUND8(nByte);
-    if( nByte <= *pnFrom ){
-      *pnFrom -= nByte;
-      pBuf = &pFrom[*pnFrom];
+    if( nByte <= p->nFree ){
+      p->nFree -= nByte;
+      pBuf = &p->pSpace[p->nFree];
     }else{
-      *pnNeeded += nByte;
+      p->nNeeded += nByte;
     }
   }
   assert( EIGHT_BYTE_ALIGNMENT(pBuf) );
@@ -1831,9 +1833,7 @@ void sqlite3VdbeMakeReady(
   int nArg;                      /* Number of arguments in subprograms */
   int nOnce;                     /* Number of OP_Once instructions */
   int n;                         /* Loop counter */
-  int nFree;                     /* Available free space */
-  u8 *zCsr;                      /* Memory available for allocation */
-  int nByte;                     /* How much extra memory is needed */
+  struct ReusableSpace x;        /* Reusable bulk memory */
 
   assert( p!=0 );
   assert( p->nOp>0 );
@@ -1851,7 +1851,7 @@ void sqlite3VdbeMakeReady(
   
   /* For each cursor required, also allocate a memory cell. Memory
   ** cells (nMem+1-nCursor)..nMem, inclusive, will never be used by
-  ** the vdbe program. Instead they are used to allocate space for
+  ** the vdbe program. Instead they are used to allocate memory for
   ** VdbeCursor/BtCursor structures. The blob of memory associated with 
   ** cursor 0 is stored in memory cell nMem. Memory cell (nMem-1)
   ** stores the blob of memory associated with cursor 1, etc.
@@ -1860,20 +1860,18 @@ void sqlite3VdbeMakeReady(
   */
   nMem += nCursor;
 
-  /* zCsr will initially point to nFree bytes of unused space at the
-  ** end of the opcode array, p->aOp.  The computation of nFree is
-  ** conservative - it might be smaller than the true number of free
-  ** bytes, but never larger.  nFree must be a multiple of 8 - it is
-  ** rounded down if is not.
+  /* Figure out how much reusable memory is available at the end of the
+  ** opcode array.  This extra memory will be reallocated for other elements
+  ** of the prepared statement.
   */
-  n = ROUND8(sizeof(Op)*p->nOp);              /* Bytes of opcode space used */
-  zCsr = &((u8*)p->aOp)[n];                   /* Unused opcode space */
-  assert( EIGHT_BYTE_ALIGNMENT(zCsr) );
-  nFree = ROUNDDOWN8(pParse->szOpAlloc - n);  /* Bytes of unused space */
-  assert( nFree>=0 );
-  if( nFree>0 ){
-    memset(zCsr, 0, nFree);
-    assert( EIGHT_BYTE_ALIGNMENT(&zCsr[nFree]) );
+  n = ROUND8(sizeof(Op)*p->nOp);              /* Bytes of opcode memory used */
+  x.pSpace = &((u8*)p->aOp)[n];               /* Unused opcode memory */
+  assert( EIGHT_BYTE_ALIGNMENT(x.pSpace) );
+  x.nFree = ROUNDDOWN8(pParse->szOpAlloc - n);  /* Bytes of unused memory */
+  assert( x.nFree>=0 );
+  if( x.nFree>0 ){
+    memset(x.pSpace, 0, x.nFree);
+    assert( EIGHT_BYTE_ALIGNMENT(&x.pSpace[x.nFree]) );
   }
 
   resolveP2Values(p, &nArg);
@@ -1883,33 +1881,30 @@ void sqlite3VdbeMakeReady(
   }
   p->expired = 0;
 
-  /* Memory for registers, parameters, cursor, etc, is allocated in two
-  ** passes.  On the first pass, we try to reuse unused space at the 
+  /* Memory for registers, parameters, cursor, etc, is allocated in one or two
+  ** passes.  On the first pass, we try to reuse unused memory at the 
   ** end of the opcode array.  If we are unable to satisfy all memory
   ** requirements by reusing the opcode array tail, then the second
-  ** pass will fill in the rest using a fresh allocation.  
+  ** pass will fill in the remainder using a fresh memory allocation.  
   **
   ** This two-pass approach that reuses as much memory as possible from
-  ** the leftover space at the end of the opcode array can significantly
+  ** the leftover memory at the end of the opcode array.  This can significantly
   ** reduce the amount of memory held by a prepared statement.
   */
   do {
-    nByte = 0;
-    p->aMem = allocSpace(p->aMem, nMem*sizeof(Mem), zCsr, &nFree, &nByte);
-    p->aVar = allocSpace(p->aVar, nVar*sizeof(Mem), zCsr, &nFree, &nByte);
-    p->apArg = allocSpace(p->apArg, nArg*sizeof(Mem*), zCsr, &nFree, &nByte);
-    p->apCsr = allocSpace(p->apCsr, nCursor*sizeof(VdbeCursor*),
-                          zCsr, &nFree, &nByte);
-    p->aOnceFlag = allocSpace(p->aOnceFlag, nOnce, zCsr, &nFree, &nByte);
+    x.nNeeded = 0;
+    p->aMem = allocSpace(&x, p->aMem, nMem*sizeof(Mem));
+    p->aVar = allocSpace(&x, p->aVar, nVar*sizeof(Mem));
+    p->apArg = allocSpace(&x, p->apArg, nArg*sizeof(Mem*));
+    p->apCsr = allocSpace(&x, p->apCsr, nCursor*sizeof(VdbeCursor*));
+    p->aOnceFlag = allocSpace(&x, p->aOnceFlag, nOnce);
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
-    p->anExec = allocSpace(p->anExec, p->nOp*sizeof(i64), zCsr, &nFree, &nByte);
+    p->anExec = allocSpace(&x, p->anExec, p->nOp*sizeof(i64));
 #endif
-    if( nByte ){
-      p->pFree = sqlite3DbMallocZero(db, nByte);
-    }
-    zCsr = p->pFree;
-    nFree = nByte;
-  }while( nByte && !db->mallocFailed );
+    if( x.nNeeded==0 ) break;
+    x.pSpace = p->pFree = sqlite3DbMallocZero(db, x.nNeeded);
+    x.nFree = x.nNeeded;
+  }while( !db->mallocFailed );
 
   p->nCursor = nCursor;
   p->nOnceFlag = nOnce;
