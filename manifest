@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_EXTRA_DURABLE\scompile-time\soption.
-D 2016-01-25T13:55:47.049
+C Replace\sthe\sOP_SetIfNotPos\soperator\swith\sOP_OffsetLimit\sin\sthe\sVDBE,\sfor\nsimpler\sand\ssmaller\scode.
+D 2016-01-25T15:57:29.060
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1708a78eda223b6daa302b140037fcc214a779f9
@@ -345,7 +345,7 @@ F src/printf.c af589a27b7d40f6f4f704e9eea99f02f18ad6d32
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 9f7ce3a3c087afb7597b7c916c99126ff3f12f0c
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c 1db9a902e89201a0ae3ff5243a7a3f37842a3937
+F src/select.c c34292c8ce7fe69c7cf890d933834a22572bd301
 F src/shell.c dcd7a83645ef2a58ee9c6d0ea4714d877d7835c4
 F src/sqlite.h.in 214476a62012e578f42133a9a3b4f97a9aa421a3
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -410,7 +410,7 @@ F src/update.c 17332f9fe818cbc0444c36a811800af8498af4c3
 F src/utf.c 32d7f82aa921322f3e1c956f4b58f019ebd2c6b3
 F src/util.c 72d40df0a52d3f30b462a15f0e094fcbade6dc82
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c b90d9d38e5e0260c2eafa3cb4c2274d8ea94da27
+F src/vdbe.c 3ffbcc413bf793e3f0b95b79ef2f4bd449a5b5a3
 F src/vdbe.h 7a733ea8aac1b77305a67698e784fa3484ee3337
 F src/vdbeInt.h 42eefa4f9e7432b9968d321b44e48821ec13b189
 F src/vdbeapi.c ffae8f5af4570fbd548504e815e9fb7227f0822e
@@ -1419,7 +1419,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8a1deae497edf3fa43fa96152d140405398c5ed6
-R ae4ccddaf3c593cdf1ed2beb484cfd15
+P 30671345b1c1ee55a2d1aa17273213f1849efd81
+R f342889ba3409bd63b1cf54d88bfe0e2
 U drh
-Z 297086babbdf85e61ae58e42a437c1ec
+Z e7c5fc86067d4269675714897cec0b51
