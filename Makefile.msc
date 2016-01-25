@@ -10,11 +10,13 @@
 #
 TOP = .
 
+# <<mark>>
 # Set this non-0 to create and use the SQLite amalgamation file.
 #
 !IFNDEF USE_AMALGAMATION
 USE_AMALGAMATION = 1
 !ENDIF
+# <</mark>>
 
 # Set this non-0 to enable full warnings (-W4, etc) when compiling.
 #
@@ -68,11 +70,13 @@ USE_WP81_OPTS = 0
 SPLIT_AMALGAMATION = 0
 !ENDIF
 
+# <<mark>>
 # Set this non-0 to use the International Components for Unicode (ICU).
 #
 !IFNDEF USE_ICU
 USE_ICU = 0
 !ENDIF
+# <</mark>>
 
 # Set this non-0 to dynamically link to the MSVC runtime library.
 #
@@ -136,12 +140,14 @@ FOR_UAP = 0
 FOR_WIN10 = 0
 !ENDIF
 
+# <<mark>>
 # Set this non-0 to skip attempting to look for and/or link with the Tcl
 # runtime library.
 #
 !IFNDEF NO_TCL
 NO_TCL = 0
 !ENDIF
+# <</mark>>
 
 # Set this to non-0 to create and use PDBs.
 #
@@ -553,6 +559,7 @@ BCC = $(BCC) -MT
 !ENDIF
 !ENDIF
 
+# <<mark>>
 # The mksqlite3c.tcl and mksqlite3h.tcl scripts will pull in
 # any extension header files by default.  For non-amalgamation
 # builds, we need to make sure the compiler can find these.
@@ -576,6 +583,7 @@ MKSQLITE3C_ARGS = --linemacros
 MKSQLITE3C_ARGS =
 !ENDIF
 !ENDIF
+# <</mark>>
 
 # Define -DNDEBUG to compile without debugging (i.e., for production usage)
 # Omitting the define will cause extra debugging code to be inserted and
@@ -640,6 +648,7 @@ RCC = $(RCC) -DSQLITE_WIN32_MALLOC_VALIDATE=1
 !ENDIF
 !ENDIF
 
+# <<mark>>
 # The locations of the Tcl header and library files.  Also, the library that
 # non-stubs enabled programs using Tcl must link against.  These variables
 # (TCLINCDIR, TCLLIBDIR, and LIBTCL) may be overridden via the environment
@@ -691,6 +700,7 @@ LIBICU = icuuc.lib icuin.lib
 !IFNDEF TCLSH_CMD
 TCLSH_CMD = tclsh85
 !ENDIF
+# <</mark>>
 
 # Compiler options needed for programs that use the readline() library.
 #
@@ -789,6 +799,7 @@ TCC = $(TCC) -Zi
 BCC = $(BCC) -Zi
 !ENDIF
 
+# <<mark>>
 # If ICU support is enabled, add the compiler options for it.
 #
 !IF $(USE_ICU)!=0
@@ -799,6 +810,7 @@ RCC = $(RCC) -I$(TOP)\ext\icu
 TCC = $(TCC) -I$(ICUINCDIR)
 RCC = $(RCC) -I$(ICUINCDIR)
 !ENDIF
+# <</mark>>
 
 # Command line prefixes for compiling code, compiling resources,
 # linking, etc.
@@ -894,6 +906,7 @@ LDFLAGS = /DEBUG $(LDOPTS)
 LDFLAGS = $(LDOPTS)
 !ENDIF
 
+# <<mark>>
 # Start with the Tcl related linker options.
 #
 !IF $(NO_TCL)==0
@@ -907,10 +920,12 @@ LTLIBS = $(LIBTCL)
 LTLIBPATHS = $(LTLIBPATHS) /LIBPATH:$(ICULIBDIR)
 LTLIBS = $(LTLIBS) $(LIBICU)
 !ENDIF
+# <</mark>>
 
 # You should not have to change anything below this line
 ###############################################################################
 
+# <<mark>>
 # Object files for the SQLite library (non-amalgamation).
 #
 LIBOBJS0 = vdbe.lo parse.lo alter.lo analyze.lo attach.lo auth.lo \
@@ -934,6 +949,7 @@ LIBOBJS0 = vdbe.lo parse.lo alter.lo analyze.lo attach.lo auth.lo \
          vdbeapi.lo vdbeaux.lo vdbeblob.lo vdbemem.lo vdbesort.lo \
          vdbetrace.lo wal.lo walker.lo where.lo wherecode.lo whereexpr.lo \
          utf.lo vtab.lo
+# <</mark>>
 
 # Object files for the amalgamation.
 #
@@ -941,11 +957,15 @@ LIBOBJS1 = sqlite3.lo
 
 # Determine the real value of LIBOBJ based on the 'configure' script
 #
+# <<mark>>
 !IF $(USE_AMALGAMATION)==0
 LIBOBJ = $(LIBOBJS0)
 !ELSE
+# <</mark>>
 LIBOBJ = $(LIBOBJS1)
+# <<mark>>
 !ENDIF
+# <</mark>>
 
 # Determine if embedded resource compilation and usage are enabled.
 #
@@ -955,6 +975,7 @@ LIBRESOBJS = sqlite3res.lo
 LIBRESOBJS =
 !ENDIF
 
+# <<mark>>
 # All of the source code files.
 #
 SRC1 = \
@@ -1303,6 +1324,7 @@ FUZZDATA = \
   $(TOP)\test\fuzzdata2.db \
   $(TOP)\test\fuzzdata3.db \
   $(TOP)\test\fuzzdata4.db
+# <</mark>>
 
 # Additional compiler options for the shell.  These are only effective
 # when the shell is not being dynamically linked.
@@ -1311,6 +1333,7 @@ FUZZDATA = \
 SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_SHELL_JSON1 -DSQLITE_ENABLE_FTS4 -DSQLITE_ENABLE_FTS5
 !ENDIF
 
+# <<mark>>
 # Extra compiler options for various test tools.
 #
 MPTESTER_COMPILE_OPTS = -DSQLITE_SHELL_JSON1 -DSQLITE_ENABLE_FTS5
@@ -1320,6 +1343,7 @@ FUZZCHECK_COMPILE_OPTS = -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_MEMSYS5
 # Standard options to testfixture.
 #
 TESTOPTS = --verbose=file --output=test-out.txt
+# <</mark>>
 
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
@@ -1337,22 +1361,27 @@ shell: $(SQLITE3EXE)
 libsqlite3.lib:	$(LIBOBJ)
 	$(LTLIB) $(LTLIBOPTS) /OUT:$@ $(LIBOBJ) $(TLIBS)
 
+# <<mark>>
 libtclsqlite3.lib:	tclsqlite.lo libsqlite3.lib
 	$(LTLIB) $(LTLIBOPTS) $(LTLIBPATHS) /OUT:$@ tclsqlite.lo libsqlite3.lib $(LIBTCLSTUB) $(TLIBS)
+# <</mark>>
 
 $(SQLITE3DLL): $(LIBOBJ) $(LIBRESOBJS) $(CORE_LINK_DEP)
 	$(LD) $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) /DLL $(CORE_LINK_OPTS) /OUT:$@ $(LIBOBJ) $(LIBRESOBJS) $(LTLIBS) $(TLIBS)
 
+# <<mark>>
 sqlite3.def: libsqlite3.lib
 	echo EXPORTS > sqlite3.def
 	dumpbin /all libsqlite3.lib \
 		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl include "^\s+1 _?(sqlite3_.*)$$" \1 \
 		| sort >> sqlite3.def
+# <</mark>>
 
 $(SQLITE3EXE):	$(TOP)\src\shell.c $(SHELL_CORE_DEP) $(LIBRESOBJS) $(SHELL_CORE_SRC) $(SQLITE3H)
 	$(LTLINK) $(SHELL_COMPILE_OPTS) $(READLINE_FLAGS) $(TOP)\src\shell.c $(SHELL_CORE_SRC) \
 		/link $(SQLITE3EXEPDB) $(LDFLAGS) $(LTLINKOPTS) $(SHELL_LINK_OPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LIBREADLINE) $(LTLIBS) $(TLIBS)
 
+# <<mark>>
 sqldiff.exe:	$(TOP)\tool\sqldiff.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(TOP)\tool\sqldiff.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
@@ -1406,12 +1435,14 @@ sqlite3.c:	.target_source sqlite3ext.h $(TOP)\tool\mksqlite3c.tcl
 
 sqlite3-all.c:	sqlite3.c $(TOP)\tool\split-sqlite3c.tcl
 	$(TCLSH_CMD) $(TOP)\tool\split-sqlite3c.tcl
+# <</mark>>
 
 # Rule to build the amalgamation
 #
 sqlite3.lo:	$(SQLITE3C)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(SQLITE3C)
 
+# <<mark>>
 # Rules to build the LEMON compiler generator
 #
 lempar.c:	$(TOP)\tool\lempar.c
@@ -1432,10 +1463,12 @@ parse.lo:	parse.c $(HDR)
 
 opcodes.lo:	opcodes.c
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c opcodes.c
+# <</mark>>
 
 # Rule to build the Win32 resources object file.
 #
 !IF $(USE_RC)!=0
+# <<block1>>
 $(LIBRESOBJS):	$(TOP)\src\sqlite3.rc $(SQLITE3H)
 	echo #ifndef SQLITE_RESOURCE_VERSION > sqlite3rc.h
 	for /F %%V in ('type "$(TOP)\VERSION"') do ( \
@@ -1444,8 +1477,10 @@ $(LIBRESOBJS):	$(TOP)\src\sqlite3.rc $(SQLITE3H)
 	)
 	echo #endif >> sqlite3rc.h
 	$(LTRCOMPILE) -fo $(LIBRESOBJS) $(TOP)\src\sqlite3.rc
+# <</block1>>
 !ENDIF
 
+# <<mark>>
 # Rules to build individual *.lo files from files in the src directory.
 #
 alter.lo:	$(TOP)\src\alter.c $(HDR)
@@ -1945,10 +1980,12 @@ speedtest1.exe:	$(TOP)\test\speedtest1.c $(SQLITE3C) $(SQLITE3H)
 rbu.exe: $(TOP)\ext\rbu\rbu.c $(TOP)\ext\rbu\sqlite3rbu.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) -DSQLITE_ENABLE_RBU -Fe$@ \
 		$(TOP)\ext\rbu\rbu.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
+# <</mark>>
 
 clean:
 	del /Q *.exp *.lo *.ilk *.lib *.obj *.ncb *.pdb *.sdf *.suo 2>NUL
 	del /Q *.bsc *.cod *.da *.bb *.bbg *.vc gmon.out 2>NUL
+# <<mark>>
 	del /Q $(SQLITE3C) $(SQLITE3H) opcodes.c opcodes.h 2>NUL
 	del /Q lemon.* lempar.c parse.* 2>NUL
 	del /Q mkkeywordhash.* keywordhash.h 2>NUL
@@ -1974,3 +2011,4 @@ clean:
 	del /Q sqlite-*-output.vsix 2>NUL
 	del /Q fuzzershell.exe fuzzcheck.exe sqldiff.exe 2>NUL
 	del /Q fts5.* fts5parse.* 2>NUL
+# <</mark>>
