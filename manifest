@@ -1,5 +1,5 @@
-C Add\sthe\sability\sto\sdo\sWindows\sbuilds\sto\sthe\samalgamation\starball.
-D 2016-01-25T23:24:38.805
+C Fix\sissues\son\sunix\swith\sopening\sdatabase\sfiles\svia\ssymlinks\sthat\sare\snot\sin\sthe\scurrent\sworking\sdirectory.\sAnd\swith\snested\ssymlinks.
+D 2016-01-26T14:48:02.511
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6fca5455aaecbd14479f33f091aa19df2d3d2969
@@ -13,7 +13,7 @@ F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am 1c1657650775960804945dc392e14d9e43c5ed84
 F autoconf/Makefile.msc 68ed752a809b611d97b95d8572a34fe6fd1196f1
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
-F autoconf/README.txt e9757a381e5ce2553dbaa6247bb8ad00eb8d87aa w autoconf/README
+F autoconf/README.txt e9757a381e5ce2553dbaa6247bb8ad00eb8d87aa
 F autoconf/configure.ac 7b1ea0dcaf49fafba262ce4b0ee8cb3281b555d1
 F autoconf/tea/Makefile.in b438a7020446c8a8156e8d97c8914a04833da6fd
 F autoconf/tea/README 3e9a3c060f29a44344ab50aec506f4db903fb873
@@ -330,7 +330,7 @@ F src/os.c 8fd25588eeba74068d41102d26810e216999b6c8
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h abdb9a191a367793268fe553d25bab894e986a0e
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c 0eb7f469fcd4e1fbedf30060438e26b839ec5486
+F src/os_unix.c 5bb20172d0c9a6afcfa829a88c406970593c848d
 F src/os_win.c 386fba30419e8458b13209781c2af5590eab2811
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 2916c66aee50f69d9ec56a7619b62d9c6a3bee61
@@ -421,7 +421,7 @@ F src/vdbemem.c b9181e77eca2a095929d46250daf85c8d2621fc0
 F src/vdbesort.c 3bb1f1f03162e6d223da623714d8e93fcaeac658
 F src/vdbetrace.c 8befe829faff6d9e6f6e4dee5a7d3f85cc85f1a0
 F src/vtab.c 320682cca733115b4cbe71320b5c5eeb1074ebde
-F src/vxworks.h 974e7d9a98f602d6310d563e1dc4e08f9fc48e47
+F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c d21b99fd1458159d0b1ecdccc8ee6ada4fdc4c54
 F src/wal.h 2f7c831cf3b071fa548bf2d5cac640846a7ff19c
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
@@ -925,7 +925,7 @@ F test/orderby6.test 8b38138ab0972588240b3fca0985d2e400432859
 F test/orderby7.test 3d1383d52ade5b9eb3a173b3147fdd296f0202da
 F test/orderby8.test 23ef1a5d72bd3adcc2f65561c654295d1b8047bd
 F test/orderby9.test 87fb9548debcc2cd141c5299002dd94672fa76a3
-F test/oserror.test 361346396ae18462c7393c1ac5c3f17237bd89b2
+F test/oserror.test b32dc34f2363ef18532e3a0a7358e3e7e321974f
 F test/ovfl.test 4f7ca651cba5c059a12d8c67dddd49bec5747799
 F test/pager1.test 1acbdb14c5952a72dd43129cabdbf69aaa3ed1fa
 F test/pager2.test 67b8f40ae98112bcdba1f2b2d03ea83266418c71
@@ -1062,9 +1062,9 @@ F test/subselect.test d24fd8757daf97dafd2e889c73ea4c4272dcf4e4
 F test/substr.test 18f57c4ca8a598805c4d64e304c418734d843c1a
 F test/subtype1.test 7fe09496352f97053af1437150751be2d0a0cae8
 F test/superlock.test 1cde669f68d2dd37d6c9bd35eee1d95491ae3fc2
-F test/symlink.test cbf6cb8c6c4b63a39e9f0f6b0d5c99e249dbc102
+F test/symlink.test c9ebe7330d228249e447038276bfc8a7b22f4849
 F test/sync.test a34cd43e98b7fb84eabbf38f7ed8f7349b3f3d85
-F test/syscall.test 2aa9e111b79fb385681ff8940124def6f8faab87
+F test/syscall.test f59ba4e25f7ba4a4c031026cc2ef8b6e4b4c639c
 F test/sysfault.test c9f2b0d8d677558f74de750c75e12a5454719d04
 F test/tabfunc01.test cc33684f9480fcf1fd5ce287ac28d22971cad1cc
 F test/table.test b708f3e5fa2542fa51dfab21fc07b36ea445cb2f
@@ -1421,8 +1421,8 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7c49a9478bd36564e81d33458ca1f4063ddaca83 6df8a9c00a9d067f67d492da7a4617908070c6c0
-R c1478777421253ac0125637ca661aa71
-T +closed 6df8a9c00a9d067f67d492da7a4617908070c6c0
-U drh
-Z 730cfb6cf754e8e26f747fb36fc92bb4
+P abd2b357c55fdcdbc8e66a81a3fbb7f822ea0a4f 4a4385564dd3887a7953820b60c99d6ce289f96a
+R 1d2d15b294b146d0b5d200f0cf62495d
+T +closed 4a4385564dd3887a7953820b60c99d6ce289f96a
+U dan
+Z 7fd087e8bb59761ded2cdf6adb6cd578

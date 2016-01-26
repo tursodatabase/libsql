@@ -28,4 +28,5 @@
 #define OS_VXWORKS 0
 #define HAVE_FCHOWN 1
 #define HAVE_READLINK 1
+#define HAVE_LSTAT 1
 #endif /* defined(_WRS_KERNEL) */
