@@ -5004,96 +5004,63 @@ static void fts5IterSetOutputs_Nocolset(Fts5Iter *pIter, Fts5SegIter *pSeg){
 }
 
 /*
-** xSetOutputs callback used when: detail=col when there is a column filter.
-**
-**   * detail=col,
-**   * there is a column filter, and
-**   * the table contains 32 or fewer columns.
+** xSetOutputs callback used by detail=col when there is a column filter
+** and there are 100 or more columns. Also called as a fallback from
+** fts5IterSetOutputs_Col100 if the column-list spans more than one page.
 */
-static void fts5IterSetOutputs_Col32(Fts5Iter *pIter, Fts5SegIter *pSeg){
-  Fts5Colset *pColset = pIter->pColset;
-  pIter->base.iRowid = pSeg->iRowid;
-
-  assert( pIter->pIndex->pConfig->eDetail==FTS5_DETAIL_COLUMNS );
-  assert( pColset );
-
+static void fts5IterSetOutputs_Col(Fts5Iter *pIter, Fts5SegIter *pSeg){
   fts5BufferZero(&pIter->poslist);
-  if( pSeg->iLeafOffset+pSeg->nPos<=pSeg->pLeaf->szLeaf ){
-    int i;
-    int iPrev = 0;
-    u32 m = 0;
-    u8 *a = (u8*)&pSeg->pLeaf->p[pSeg->iLeafOffset];
-    u8 *pEnd = (u8*)&a[pSeg->nPos]; 
-
-    while( a<pEnd ){
-      iPrev += (int)a[0] - 2;
-      m |= (1 << iPrev);
-      a++;
-    }
-
-    iPrev = 0;
-    a = pIter->poslist.p;
-    for(i=0; i<pColset->nCol; i++){
-      int iCol = pColset->aiCol[i];
-      if( m & (1 << iCol) ){
-        *a++ = (iCol - iPrev) + 2;
-        iPrev = iCol;
-      }
-    }
-    pIter->poslist.n = a - pIter->poslist.p;
-
-  }else{
-    fts5SegiterPoslist(pIter->pIndex, pSeg, pColset, &pIter->poslist);
-  }
-
+  fts5SegiterPoslist(pIter->pIndex, pSeg, pIter->pColset, &pIter->poslist);
+  pIter->base.iRowid = pSeg->iRowid;
   pIter->base.pData = pIter->poslist.p;
   pIter->base.nData = pIter->poslist.n;
 }
 
 /*
-** xSetOutputs callback used by detail=col when there is a column filter.
+** xSetOutputs callback used when: 
+**
+**   * detail=col,
+**   * there is a column filter, and
+**   * the table contains 100 or fewer columns. 
+**
+** The last point is to ensure all column numbers are stored as 
+** single-byte varints.
 */
-static void fts5IterSetOutputs_Col(Fts5Iter *pIter, Fts5SegIter *pSeg){
-  Fts5Colset *pColset = pIter->pColset;
-  pIter->base.iRowid = pSeg->iRowid;
+static void fts5IterSetOutputs_Col100(Fts5Iter *pIter, Fts5SegIter *pSeg){
 
   assert( pIter->pIndex->pConfig->eDetail==FTS5_DETAIL_COLUMNS );
-  assert( pColset );
+  assert( pIter->pColset );
 
-  if( pSeg->iLeafOffset+pSeg->nPos<=pSeg->pLeaf->szLeaf ){
-    /* All data is stored on the current page. Populate the output 
-    ** variables to point into the body of the page object. */
-    Fts5PoslistWriter writer = {0};
-    const u8 *a = &pSeg->pLeaf->p[pSeg->iLeafOffset];
-    int n = pSeg->nPos;
-    int iCol = 0;
-    int iCVal = pColset->aiCol[0];
-    i64 iPos = 0;
-    int iOff = 0;
+  if( pSeg->iLeafOffset+pSeg->nPos>pSeg->pLeaf->szLeaf ){
+    fts5IterSetOutputs_Col(pIter, pSeg);
+  }else{
+    u8 *a = (u8*)&pSeg->pLeaf->p[pSeg->iLeafOffset];
+    u8 *pEnd = (u8*)&a[pSeg->nPos]; 
+    int iPrev = 0;
+    int *aiCol = pIter->pColset->aiCol;
+    int *aiColEnd = &aiCol[pIter->pColset->nCol];
 
-    fts5BufferZero(&pIter->poslist);
-    while( 0==sqlite3Fts5PoslistNext64(a, n, &iOff, &iPos) ){
-      while( iPos>=iCVal ){
-        if( iPos==iCVal ){
-          sqlite3Fts5PoslistWriterAppend(&pIter->poslist, &writer, iPos);
-        }
-        if( ++iCol>=pColset->nCol ) goto setoutputs_col_out;
-        assert( pColset->aiCol[iCol]>iCVal );
-        iCVal = pColset->aiCol[iCol];
+    u8 *aOut = pIter->poslist.p;
+    int iPrevOut = 0;
+
+    pIter->base.iRowid = pSeg->iRowid;
+
+    while( a<pEnd ){
+      iPrev += (int)a++[0] - 2;
+      while( *aiCol<iPrev ){
+        aiCol++;
+        if( aiCol==aiColEnd ) goto setoutputs_col_out;
+      }
+      if( *aiCol==iPrev ){
+        *aOut++ = (iPrev - iPrevOut) + 2;
+        iPrevOut = iPrev;
       }
     }
 
-  }else{
-    /* The data is distributed over two or more pages. Copy it into the
-    ** Fts5Iter.poslist buffer and then set the output pointer to point
-    ** to this buffer.  */
-    fts5BufferZero(&pIter->poslist);
-    fts5SegiterPoslist(pIter->pIndex, pSeg, pColset, &pIter->poslist);
-  }
-
 setoutputs_col_out:
-  pIter->base.pData = pIter->poslist.p;
-  pIter->base.nData = pIter->poslist.n;
+    pIter->base.pData = pIter->poslist.p;
+    pIter->base.nData = aOut - pIter->poslist.p;
+  }
 }
 
 /*
@@ -5146,8 +5113,8 @@ static void fts5IterSetOutputCb(int *pRc, Fts5Iter *pIter){
 
   else{
     assert( pConfig->eDetail==FTS5_DETAIL_COLUMNS );
-    if( pConfig->nCol<=32 ){
-      pIter->xSetOutputs = fts5IterSetOutputs_Col32;
+    if( pConfig->nCol<=100 ){
+      pIter->xSetOutputs = fts5IterSetOutputs_Col100;
       sqlite3Fts5BufferSize(pRc, &pIter->poslist, pConfig->nCol);
     }else{
       pIter->xSetOutputs = fts5IterSetOutputs_Col;

@@ -1,5 +1,5 @@
-C Improve\sthe\sperformance\sof\sfts5\scolumn\sfilters\son\sdetail=col\stables.
-D 2016-01-26T19:30:49.768
+C Further\sminor\sperformance\simprovements\sand\scode-size\sreductions\srelated\sto\sfts5\scolumn\sfilters\son\sdetail=col\stables.
+D 2016-01-26T20:08:50.348
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1708a78eda223b6daa302b140037fcc214a779f9
@@ -103,7 +103,7 @@ F ext/fts5/fts5_buffer.c f6e0c6018ffc8e39fc0b333b5daa8b8d528ae6e4
 F ext/fts5/fts5_config.c 0c384ebdd23fd055e2e50a93277b8d59da538238
 F ext/fts5/fts5_expr.c a66b9694519d9c336d9bdbd46ea22e7e14aef412
 F ext/fts5/fts5_hash.c 1b113977296cf4212c6ec667d5e3f2bd18036955
-F ext/fts5/fts5_index.c b34b7257f73929dc1b25c420aad2453dcbe36128
+F ext/fts5/fts5_index.c 5558bfbeaf364cc67f937e25753ceed8757cb6d1
 F ext/fts5/fts5_main.c 3886bbfc5ac1d9df29979823ddf2b68241e1127e
 F ext/fts5/fts5_storage.c 2a1f44deae090cd711f02cec0c2af8e660360d24
 F ext/fts5/fts5_tcl.c f8731e0508299bd43f1a2eff7dbeaac870768966
@@ -1420,7 +1420,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c646e40350e5aa91abcf52de61fb31275bad38f9
-R a44979856d96ea38951595ad6e15598a
+P 249a2d070c34bf884a04cb248b9691e239f2871c
+R a28f5f4bedd812396ab85ff0aefd35c4
 U dan
-Z a6d46df0ea079f8f36131bee8e2cf5b7
+Z 56fb7a3fddaab518f0c4eb551a124662
