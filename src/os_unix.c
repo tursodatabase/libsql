@@ -5981,7 +5981,6 @@ static int unixFullPathname(
   int rc = SQLITE_OK;
   int nByte;
   int nLink = 1;                /* Number of symbolic links followed so far */
-  int bLink;                    /* True for a symbolic link */
   const char *zIn = zPath;      /* Input path for each iteration of loop */
   char *zDel = 0;
 
