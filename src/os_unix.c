@@ -5955,7 +5955,12 @@ static int mkFullPathname(
     iOff = sqlite3Strlen30(zOut);
     zOut[iOff++] = '/';
   }
-  if( (iOff+nPath+1)>nOut ) return SQLITE_CANTOPEN_BKPT;
+  if( (iOff+nPath+1)>nOut ){
+    /* SQLite assumes that xFullPathname() nul-terminates the output buffer
+    ** even if it returns an error.  */
+    zOut[iOff] = '\0';
+    return SQLITE_CANTOPEN_BKPT;
+  }
   sqlite3_snprintf(nOut-iOff, &zOut[iOff], "%s", zPath);
   return SQLITE_OK;
 }
@@ -6020,15 +6025,17 @@ static int unixFullPathname(
         nByte = osReadlink(zIn, zDel, nOut-1);
         if( nByte<0 ){
           rc = unixLogError(SQLITE_CANTOPEN_BKPT, "readlink", zIn);
-        }else if( zDel[0]!='/' ){
-          int n;
-          for(n = sqlite3Strlen30(zIn); n>0 && zIn[n-1]!='/'; n--);
-          if( nByte+n+1>nOut ){
-            rc = SQLITE_CANTOPEN_BKPT;
-          }else{
-            memmove(&zDel[n], zDel, nByte+1);
-            memcpy(zDel, zIn, n);
-            nByte += n;
+        }else{
+          if( zDel[0]!='/' ){
+            int n;
+            for(n = sqlite3Strlen30(zIn); n>0 && zIn[n-1]!='/'; n--);
+            if( nByte+n+1>nOut ){
+              rc = SQLITE_CANTOPEN_BKPT;
+            }else{
+              memmove(&zDel[n], zDel, nByte+1);
+              memcpy(zDel, zIn, n);
+              nByte += n;
+            }
           }
           zDel[nByte] = '\0';
         }
@@ -6037,8 +6044,8 @@ static int unixFullPathname(
       zIn = zDel;
     }
 
-    if( rc==SQLITE_OK ){
-      assert( zIn!=zOut || zIn[0]=='/' );
+    assert( rc!=SQLITE_OK || zIn!=zOut || zIn[0]=='/' );
+    if( rc==SQLITE_OK && zIn!=zOut ){
       rc = mkFullPathname(zIn, zOut, nOut);
     }
     if( bLink==0 ) break;

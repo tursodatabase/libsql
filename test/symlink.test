@@ -181,7 +181,6 @@ do_test 4.4.0 {
 } {}
 do_test 4.4.1 {
   db close
-  breakpoint
   sqlite3 db w/test.db
   db eval { SELECT * FROM t1 }
 } {hello world}
