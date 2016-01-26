@@ -1192,11 +1192,9 @@ static Trigger *fkActionTrigger(
       assert( iFromCol>=0 );
       assert( pIdx!=0 || (pTab->iPKey>=0 && pTab->iPKey<pTab->nCol) );
       assert( pIdx==0 || pIdx->aiColumn[i]>=0 );
-      tToCol.z = pTab->aCol[pIdx ? pIdx->aiColumn[i] : pTab->iPKey].zName;
-      tFromCol.z = pFKey->pFrom->aCol[iFromCol].zName;
-
-      tToCol.n = sqlite3Strlen30(tToCol.z);
-      tFromCol.n = sqlite3Strlen30(tFromCol.z);
+      sqlite3TokenInit(&tToCol,
+                   pTab->aCol[pIdx ? pIdx->aiColumn[i] : pTab->iPKey].zName);
+      sqlite3TokenInit(&tFromCol, pFKey->pFrom->aCol[iFromCol].zName);
 
       /* Create the expression "OLD.zToCol = zFromCol". It is important
       ** that the "OLD.zToCol" term is on the LHS of the = operator, so

@@ -1708,8 +1708,7 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
   if( pTab->iPKey>=0 ){
     ExprList *pList;
     Token ipkToken;
-    ipkToken.z = pTab->aCol[pTab->iPKey].zName;
-    ipkToken.n = sqlite3Strlen30(ipkToken.z);
+    sqlite3TokenInit(&ipkToken, pTab->aCol[pTab->iPKey].zName);
     pList = sqlite3ExprListAppend(pParse, 0, 
                   sqlite3ExprAlloc(db, TK_ID, &ipkToken, 0));
     if( pList==0 ) return;
@@ -3057,8 +3056,7 @@ Index *sqlite3CreateIndex(
   */
   if( pList==0 ){
     Token prevCol;
-    prevCol.z = pTab->aCol[pTab->nCol-1].zName;
-    prevCol.n = sqlite3Strlen30(prevCol.z);
+    sqlite3TokenInit(&prevCol, pTab->aCol[pTab->nCol-1].zName);
     pList = sqlite3ExprListAppend(pParse, 0,
               sqlite3ExprAlloc(db, TK_ID, &prevCol, 0));
     if( pList==0 ) goto exit_create_index;

@@ -5766,20 +5766,31 @@ case OP_IfPos: {        /* jump, in1 */
   break;
 }
 
-/* Opcode: SetIfNotPos P1 P2 P3 * *
-** Synopsis: if r[P1]<=0 then r[P2]=P3
+/* Opcode: OffsetLimit P1 P2 P3 * *
+** Synopsis: if r[P1]>0 then r[P2]=r[P1]+max(0,r[P3]) else r[P2]=(-1)
 **
-** Register P1 must contain an integer.
-** If the value of register P1 is not positive (if it is less than 1) then
-** set the value of register P2 to be the integer P3.
+** This opcode performs a commonly used computation associated with
+** LIMIT and OFFSET process.  r[P1] holds the limit counter.  r[P3]
+** holds the offset counter.  The opcode computes the combined value
+** of the LIMIT and OFFSET and stores that value in r[P2].  The r[P2]
+** value computed is the total number of rows that will need to be
+** visited in order to complete the query.
+**
+** If r[P3] is zero or negative, that means there is no OFFSET
+** and r[P2] is set to be the value of the LIMIT, r[P1].
+**
+** if r[P1] is zero or negative, that means there is no LIMIT
+** and r[P2] is set to -1. 
+**
+** Otherwise, r[P2] is set to the sum of r[P1] and r[P3].
 */
-case OP_SetIfNotPos: {        /* in1, in2 */
+case OP_OffsetLimit: {    /* in1, out2, in3 */
   pIn1 = &aMem[pOp->p1];
-  assert( pIn1->flags&MEM_Int );
-  if( pIn1->u.i<=0 ){
-    pOut = out2Prerelease(p, pOp);
-    pOut->u.i = pOp->p3;
-  }
+  pIn3 = &aMem[pOp->p3];
+  pOut = out2Prerelease(p, pOp);
+  assert( pIn1->flags & MEM_Int );
+  assert( pIn3->flags & MEM_Int );
+  pOut->u.i = pIn1->u.i<=0 ? -1 : pIn1->u.i+(pIn3->u.i>0?pIn3->u.i:0);
   break;
 }
 

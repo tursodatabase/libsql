@@ -39,9 +39,11 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
  * Icon
  */
 
+#if !defined(RC_VERONLY)
 #define IDI_SQLITE 101
 
 IDI_SQLITE ICON "..\\art\\sqlite370.ico"
+#endif /* !defined(RC_VERONLY) */
 
 /*
  * Version

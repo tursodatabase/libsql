@@ -306,7 +306,7 @@ static int fts5ExprSynonymList(
   int bCollist, 
   Fts5Colset *pColset,
   i64 iRowid,
-  int *pbDel,                     /* OUT: Caller should sqlite3_free(*pa) */
+  Fts5Buffer *pBuf,               /* Use this buffer for space if required */
   u8 **pa, int *pn
 ){
   Fts5PoslistReader aStatic[4];
@@ -320,18 +320,7 @@ static int fts5ExprSynonymList(
   for(p=pTerm; p; p=p->pSynonym){
     Fts5IndexIter *pIter = p->pIter;
     if( sqlite3Fts5IterEof(pIter)==0 && sqlite3Fts5IterRowid(pIter)==iRowid ){
-      const u8 *a;
-      int n;
-
-      if( bCollist ){
-        rc = sqlite3Fts5IterCollist(pIter, &a, &n);
-      }else{
-        i64 dummy;
-        rc = sqlite3Fts5IterPoslist(pIter, pColset, &a, &n, &dummy);
-      }
-
-      if( rc!=SQLITE_OK ) goto synonym_poslist_out;
-      if( n==0 ) continue;
+      if( pIter->nData==0 ) continue;
       if( nIter==nAlloc ){
         int nByte = sizeof(Fts5PoslistReader) * nAlloc * 2;
         Fts5PoslistReader *aNew = (Fts5PoslistReader*)sqlite3_malloc(nByte);
@@ -344,20 +333,19 @@ static int fts5ExprSynonymList(
         if( aIter!=aStatic ) sqlite3_free(aIter);
         aIter = aNew;
       }
-      sqlite3Fts5PoslistReaderInit(a, n, &aIter[nIter]);
+      sqlite3Fts5PoslistReaderInit(pIter->pData, pIter->nData, &aIter[nIter]);
       assert( aIter[nIter].bEof==0 );
       nIter++;
     }
   }
 
-  assert( *pbDel==0 );
   if( nIter==1 ){
     *pa = (u8*)aIter[0].a;
     *pn = aIter[0].n;
   }else{
     Fts5PoslistWriter writer = {0};
-    Fts5Buffer buf = {0,0,0};
     i64 iPrev = -1;
+    fts5BufferZero(pBuf);
     while( 1 ){
       int i;
       i64 iMin = FTS5_LARGEST_INT64;
@@ -372,15 +360,12 @@ static int fts5ExprSynonymList(
         }
       }
       if( iMin==FTS5_LARGEST_INT64 || rc!=SQLITE_OK ) break;
-      rc = sqlite3Fts5PoslistWriterAppend(&buf, &writer, iMin);
+      rc = sqlite3Fts5PoslistWriterAppend(pBuf, &writer, iMin);
       iPrev = iMin;
     }
-    if( rc ){
-      sqlite3_free(buf.p);
-    }else{
-      *pa = buf.p;
-      *pn = buf.n;
-      *pbDel = 1;
+    if( rc==SQLITE_OK ){
+      *pa = pBuf->p;
+      *pn = pBuf->n;
     }
   }
 
@@ -417,7 +402,7 @@ static int fts5ExprPhraseIsMatch(
 
   /* If the aStatic[] array is not large enough, allocate a large array
   ** using sqlite3_malloc(). This approach could be improved upon. */
-  if( pPhrase->nTerm>(int)ArraySize(aStatic) ){
+  if( pPhrase->nTerm>ArraySize(aStatic) ){
     int nByte = sizeof(Fts5PoslistReader) * pPhrase->nTerm;
     aIter = (Fts5PoslistReader*)sqlite3_malloc(nByte);
     if( !aIter ) return SQLITE_NOMEM;
@@ -427,18 +412,23 @@ static int fts5ExprPhraseIsMatch(
   /* Initialize a term iterator for each term in the phrase */
   for(i=0; i<pPhrase->nTerm; i++){
     Fts5ExprTerm *pTerm = &pPhrase->aTerm[i];
-    i64 dummy;
     int n = 0;
     int bFlag = 0;
-    const u8 *a = 0;
+    u8 *a = 0;
     if( pTerm->pSynonym ){
+      Fts5Buffer buf = {0, 0, 0};
       rc = fts5ExprSynonymList(
-          pTerm, 0, pColset, pNode->iRowid, &bFlag, (u8**)&a, &n
+          pTerm, 0, pColset, pNode->iRowid, &buf, &a, &n
       );
+      if( rc ){
+        sqlite3_free(a);
+        goto ismatch_out;
+      }
+      if( a==buf.p ) bFlag = 1;
     }else{
-      rc = sqlite3Fts5IterPoslist(pTerm->pIter, pColset, &a, &n, &dummy);
+      a = (u8*)pTerm->pIter->pData;
+      n = pTerm->pIter->nData;
     }
-    if( rc!=SQLITE_OK ) goto ismatch_out;
     sqlite3Fts5PoslistReaderInit(a, n, &aIter[i]);
     aIter[i].bFlag = (u8)bFlag;
     if( aIter[i].bEof ) goto ismatch_out;
@@ -553,7 +543,7 @@ static int fts5ExprNearIsMatch(int *pRc, Fts5ExprNearset *pNear){
 
   /* If the aStatic[] array is not large enough, allocate a large array
   ** using sqlite3_malloc(). This approach could be improved upon. */
-  if( pNear->nPhrase>(int)ArraySize(aStatic) ){
+  if( pNear->nPhrase>ArraySize(aStatic) ){
     int nByte = sizeof(Fts5NearTrimmer) * pNear->nPhrase;
     a = (Fts5NearTrimmer*)sqlite3Fts5MallocZero(&rc, nByte);
   }else{
@@ -775,6 +765,7 @@ static int fts5ExprNearTest(
     for(pTerm=&pPhrase->aTerm[0]; pTerm; pTerm=pTerm->pSynonym){
       Fts5IndexIter *pIter = pTerm->pIter;
       if( sqlite3Fts5IterEof(pIter)==0 ){
+#if 0
         int n;
         i64 iRowid;
         rc = sqlite3Fts5IterPoslist(pIter, pNear->pColset, 0, &n, &iRowid);
@@ -782,6 +773,10 @@ static int fts5ExprNearTest(
           *pRc = rc;
           return 0;
         }else if( iRowid==pNode->iRowid && n>0 ){
+          pPhrase->poslist.n = 1;
+        }
+#endif
+        if( pIter->iRowid==pNode->iRowid && pIter->nData>0 ){
           pPhrase->poslist.n = 1;
         }
       }
@@ -800,9 +795,13 @@ static int fts5ExprNearTest(
         rc = fts5ExprPhraseIsMatch(pNode, pNear->pColset, pPhrase, &bMatch);
         if( bMatch==0 ) break;
       }else{
+        Fts5IndexIter *pIter = pPhrase->aTerm[0].pIter;
+        fts5BufferSet(&rc, &pPhrase->poslist, pIter->nData, pIter->pData);
+#if 0
         rc = sqlite3Fts5IterPoslistBuffer(
             pPhrase->aTerm[0].pIter, &pPhrase->poslist
         );
+#endif
       }
     }
 
@@ -823,21 +822,20 @@ static int fts5ExprTokenTest(
   ** fts5_index.c iterator object. This is much faster than synthesizing 
   ** a new poslist the way we have to for more complicated phrase or NEAR
   ** expressions.  */
-  Fts5ExprNearset *pNear = pNode->pNear;
-  Fts5ExprPhrase *pPhrase = pNear->apPhrase[0];
+  Fts5ExprPhrase *pPhrase = pNode->pNear->apPhrase[0];
   Fts5IndexIter *pIter = pPhrase->aTerm[0].pIter;
-  Fts5Colset *pColset = pNear->pColset;
-  int rc;
 
   assert( pNode->eType==FTS5_TERM );
-  assert( pNear->nPhrase==1 && pPhrase->nTerm==1 );
+  assert( pNode->pNear->nPhrase==1 && pPhrase->nTerm==1 );
   assert( pPhrase->aTerm[0].pSynonym==0 );
 
-  rc = sqlite3Fts5IterPoslist(pIter, pColset, 
-      (const u8**)&pPhrase->poslist.p, (int*)&pPhrase->poslist.n, &pNode->iRowid
-  );
+  pPhrase->poslist.n = pIter->nData;
+  if( pExpr->pConfig->eDetail==FTS5_DETAIL_FULL ){
+    pPhrase->poslist.p = (u8*)pIter->pData;
+  }
+  pNode->iRowid = pIter->iRowid;
   pNode->bNomatch = (pPhrase->poslist.n==0);
-  return rc;
+  return SQLITE_OK;
 }
 
 /*
@@ -1370,10 +1368,10 @@ static void fts5ExprPhraseFree(Fts5ExprPhrase *pPhrase){
       Fts5ExprTerm *pTerm = &pPhrase->aTerm[i];
       sqlite3_free(pTerm->zTerm);
       sqlite3Fts5IterClose(pTerm->pIter);
-
       for(pSyn=pTerm->pSynonym; pSyn; pSyn=pNext){
         pNext = pSyn->pSynonym;
         sqlite3Fts5IterClose(pSyn->pIter);
+        fts5BufferFree((Fts5Buffer*)&pSyn[1]);
         sqlite3_free(pSyn);
       }
     }
@@ -1461,13 +1459,13 @@ static int fts5ParseTokenize(
   assert( pPhrase==0 || pPhrase->nTerm>0 );
   if( pPhrase && (tflags & FTS5_TOKEN_COLOCATED) ){
     Fts5ExprTerm *pSyn;
-    int nByte = sizeof(Fts5ExprTerm) + nToken+1;
+    int nByte = sizeof(Fts5ExprTerm) + sizeof(Fts5Buffer) + nToken+1;
     pSyn = (Fts5ExprTerm*)sqlite3_malloc(nByte);
     if( pSyn==0 ){
       rc = SQLITE_NOMEM;
     }else{
       memset(pSyn, 0, nByte);
-      pSyn->zTerm = (char*)&pSyn[1];
+      pSyn->zTerm = ((char*)pSyn) + sizeof(Fts5ExprTerm) + sizeof(Fts5Buffer);
       memcpy(pSyn->zTerm, pToken, nToken);
       pSyn->pSynonym = pPhrase->aTerm[pPhrase->nTerm-1].pSynonym;
       pPhrase->aTerm[pPhrase->nTerm-1].pSynonym = pSyn;
@@ -2246,7 +2244,7 @@ int sqlite3Fts5ExprInit(Fts5Global *pGlobal, sqlite3 *db){
   int rc = SQLITE_OK;
   void *pCtx = (void*)pGlobal;
 
-  for(i=0; rc==SQLITE_OK && i<(int)ArraySize(aFunc); i++){
+  for(i=0; rc==SQLITE_OK && i<ArraySize(aFunc); i++){
     struct Fts5ExprFunc *p = &aFunc[i];
     rc = sqlite3_create_function(db, p->z, -1, SQLITE_UTF8, pCtx, p->x, 0, 0);
   }
@@ -2484,26 +2482,21 @@ int sqlite3Fts5ExprPhraseCollist(
   int rc = SQLITE_OK;
 
   assert( iPhrase>=0 && iPhrase<pExpr->nPhrase );
+  assert( pExpr->pConfig->eDetail==FTS5_DETAIL_COLUMNS );
+
   if( pNode->bEof==0 
    && pNode->iRowid==pExpr->pRoot->iRowid 
    && pPhrase->poslist.n>0
   ){
     Fts5ExprTerm *pTerm = &pPhrase->aTerm[0];
     if( pTerm->pSynonym ){
-      int bDel = 0;
-      u8 *a;
+      Fts5Buffer *pBuf = (Fts5Buffer*)&pTerm->pSynonym[1];
       rc = fts5ExprSynonymList(
-          pTerm, 1, 0, pNode->iRowid, &bDel, &a, pnCollist
+          pTerm, 1, 0, pNode->iRowid, pBuf, (u8**)ppCollist, pnCollist
       );
-      if( bDel ){
-        sqlite3Fts5BufferSet(&rc, &pPhrase->poslist, *pnCollist, a);
-        *ppCollist = pPhrase->poslist.p;
-        sqlite3_free(a);
-      }else{
-        *ppCollist = a;
-      }
     }else{
-      sqlite3Fts5IterCollist(pPhrase->aTerm[0].pIter, ppCollist, pnCollist);
+      *ppCollist = pPhrase->aTerm[0].pIter->pData;
+      *pnCollist = pPhrase->aTerm[0].pIter->nData;
     }
   }else{
     *ppCollist = 0;
