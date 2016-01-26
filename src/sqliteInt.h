@@ -1540,6 +1540,7 @@ struct Column {
 */
 #define COLFLAG_PRIMKEY  0x0001    /* Column is part of the primary key */
 #define COLFLAG_HIDDEN   0x0002    /* A hidden column in a virtual table */
+#define COLFLAG_NOAUTO   0x0004    /* Not useful in an automatic index */
 
 /*
 ** A "Collating Sequence" is defined by an instance of the following

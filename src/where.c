@@ -578,15 +578,19 @@ static void TRACE_IDX_OUTPUTS(sqlite3_index_info *p){
 static int termCanDriveIndex(
   WhereTerm *pTerm,              /* WHERE clause term to check */
   struct SrcList_item *pSrc,     /* Table we are trying to access */
-  Bitmask notReady               /* Tables in outer loops of the join */
+  Bitmask notReady,              /* Tables in outer loops of the join */
+  int excludeNoauto              /* Answer FALSE if pTerm is COLFLAG_NOAUTO */
 ){
   char aff;
+  Column *pCol;
   if( pTerm->leftCursor!=pSrc->iCursor ) return 0;
   if( (pTerm->eOperator & (WO_EQ|WO_IS))==0 ) return 0;
   if( (pTerm->prereqRight & notReady)!=0 ) return 0;
   if( pTerm->u.leftColumn<0 ) return 0;
-  aff = pSrc->pTab->aCol[pTerm->u.leftColumn].affinity;
+  pCol = &pSrc->pTab->aCol[pTerm->u.leftColumn];
+  aff = pCol->affinity;
   if( !sqlite3IndexAffinityOk(pTerm->pExpr, aff) ) return 0;
+  if( excludeNoauto && (pCol->colFlags & COLFLAG_NOAUTO)!=0 ) return 0;
   testcase( pTerm->pExpr->op==TK_IS );
   return 1;
 }
@@ -655,7 +659,7 @@ static void constructAutomaticIndex(
       pPartial = sqlite3ExprAnd(pParse->db, pPartial,
                                 sqlite3ExprDup(pParse->db, pExpr, 0));
     }
-    if( termCanDriveIndex(pTerm, pSrc, notReady) ){
+    if( termCanDriveIndex(pTerm, pSrc, notReady, 0) ){
       int iCol = pTerm->u.leftColumn;
       Bitmask cMask = iCol>=BMS ? MASKBIT(BMS-1) : MASKBIT(iCol);
       testcase( iCol==BMS );
@@ -708,7 +712,7 @@ static void constructAutomaticIndex(
   n = 0;
   idxCols = 0;
   for(pTerm=pWC->a; pTerm<pWCEnd; pTerm++){
-    if( termCanDriveIndex(pTerm, pSrc, notReady) ){
+    if( termCanDriveIndex(pTerm, pSrc, notReady, 0) ){
       int iCol = pTerm->u.leftColumn;
       Bitmask cMask = iCol>=BMS ? MASKBIT(BMS-1) : MASKBIT(iCol);
       testcase( iCol==BMS-1 );
@@ -2627,7 +2631,7 @@ static int whereLoopAddBtree(
     WhereTerm *pWCEnd = pWC->a + pWC->nTerm;
     for(pTerm=pWC->a; rc==SQLITE_OK && pTerm<pWCEnd; pTerm++){
       if( pTerm->prereqRight & pNew->maskSelf ) continue;
-      if( termCanDriveIndex(pTerm, pSrc, 0) ){
+      if( termCanDriveIndex(pTerm, pSrc, 0, 1) ){
         pNew->u.btree.nEq = 1;
         pNew->nSkip = 0;
         pNew->u.btree.pIndex = 0;

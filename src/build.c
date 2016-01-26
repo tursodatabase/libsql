@@ -3153,8 +3153,16 @@ Index *sqlite3CreateIndex(
       assert( j<=0x7fff );
       if( j<0 ){
         j = pTab->iPKey;
-      }else if( pTab->aCol[j].notNull==0 ){
-        pIndex->uniqNotNull = 0;
+      }else{
+        if( pTab->aCol[j].notNull==0 ){
+          pIndex->uniqNotNull = 0;
+        }
+        if( i==0 && pPIWhere==0 ){
+          /* Exclude the left-most column of every complete index from
+          ** consideration as an automatic index term.  Better to use the real
+          ** index */
+          pTab->aCol[j].colFlags |= COLFLAG_NOAUTO;
+        }
       }
       pIndex->aiColumn[i] = (i16)j;
     }

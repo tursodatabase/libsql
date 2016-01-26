@@ -1529,7 +1529,19 @@ static int analysisLoader(void *pData, int argc, char **argv, char **NotUsed){
 #endif
     pIndex->bUnordered = 0;
     decodeIntArray((char*)z, nCol, aiRowEst, pIndex->aiRowLogEst, pIndex);
-    if( pIndex->pPartIdxWhere==0 ) pTable->nRowLogEst = pIndex->aiRowLogEst[0];
+    if( pIndex->pPartIdxWhere==0 ){
+      int i, j;
+      /* TUNING: Any column that cannot narrow down the number of table rows
+      ** to less than 30 should not be considered as a column for use in
+      ** an automatic index */
+      for(i=0; i<nCol; i++){
+        assert( 49==sqlite3LogEst(30) );
+        if( aiRowEst[i+1]>49 && (j = pIndex->aiColumn[i])>=0 ){
+          pTable->aCol[j].colFlags |= COLFLAG_NOAUTO;
+        }
+      }
+      pTable->nRowLogEst = pIndex->aiRowLogEst[0];
+    }
   }else{
     Index fakeIdx;
     fakeIdx.szIdxRow = pTable->szTabRow;
