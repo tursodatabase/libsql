@@ -1,0 +1,44 @@
+# 2015 September 05
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+set testprefix fts5simple3
+
+# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
+fts5_aux_test_functions db
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a, b, c, detail=col);
+  INSERT INTO t1 VALUES('a', 'b', 'c');
+  INSERT INTO t1 VALUES('x', 'x', 'x');
+}
+
+do_execsql_test 1.1 {
+  SELECT rowid, fts5_test_collist(t1) FROM t1('a:a');
+} {1 0.0}
+
+do_execsql_test 1.2 {
+  SELECT rowid, fts5_test_collist(t1) FROM t1('b:x');
+} {2 0.1}
+
+do_execsql_test 1.3 {
+  SELECT rowid, fts5_test_collist(t1) FROM t1('b:a');
+} {}
+
+
+finish_test
+

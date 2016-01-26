@@ -5004,6 +5004,53 @@ static void fts5IterSetOutputs_Nocolset(Fts5Iter *pIter, Fts5SegIter *pSeg){
 }
 
 /*
+** xSetOutputs callback used when: detail=col when there is a column filter.
+**
+**   * detail=col,
+**   * there is a column filter, and
+**   * the table contains 32 or fewer columns.
+*/
+static void fts5IterSetOutputs_Col32(Fts5Iter *pIter, Fts5SegIter *pSeg){
+  Fts5Colset *pColset = pIter->pColset;
+  pIter->base.iRowid = pSeg->iRowid;
+
+  assert( pIter->pIndex->pConfig->eDetail==FTS5_DETAIL_COLUMNS );
+  assert( pColset );
+
+  fts5BufferZero(&pIter->poslist);
+  if( pSeg->iLeafOffset+pSeg->nPos<=pSeg->pLeaf->szLeaf ){
+    int i;
+    int iPrev = 0;
+    u32 m = 0;
+    u8 *a = (u8*)&pSeg->pLeaf->p[pSeg->iLeafOffset];
+    u8 *pEnd = (u8*)&a[pSeg->nPos]; 
+
+    while( a<pEnd ){
+      iPrev += (int)a[0] - 2;
+      m |= (1 << iPrev);
+      a++;
+    }
+
+    iPrev = 0;
+    a = pIter->poslist.p;
+    for(i=0; i<pColset->nCol; i++){
+      int iCol = pColset->aiCol[i];
+      if( m & (1 << iCol) ){
+        *a++ = (iCol - iPrev) + 2;
+        iPrev = iCol;
+      }
+    }
+    pIter->poslist.n = a - pIter->poslist.p;
+
+  }else{
+    fts5SegiterPoslist(pIter->pIndex, pSeg, pColset, &pIter->poslist);
+  }
+
+  pIter->base.pData = pIter->poslist.p;
+  pIter->base.nData = pIter->poslist.n;
+}
+
+/*
 ** xSetOutputs callback used by detail=col when there is a column filter.
 */
 static void fts5IterSetOutputs_Col(Fts5Iter *pIter, Fts5SegIter *pSeg){
@@ -5083,9 +5130,9 @@ static void fts5IterSetOutputs_Full(Fts5Iter *pIter, Fts5SegIter *pSeg){
   }
 }
 
-static void fts5IterSetOutputCb(Fts5Iter *pIter){
-  int eDetail = pIter->pIndex->pConfig->eDetail;
-  if( eDetail==FTS5_DETAIL_NONE ){
+static void fts5IterSetOutputCb(int *pRc, Fts5Iter *pIter){
+  Fts5Config *pConfig = pIter->pIndex->pConfig;
+  if( pConfig->eDetail==FTS5_DETAIL_NONE ){
     pIter->xSetOutputs = fts5IterSetOutputs_None;
   }
 
@@ -5093,13 +5140,18 @@ static void fts5IterSetOutputCb(Fts5Iter *pIter){
     pIter->xSetOutputs = fts5IterSetOutputs_Nocolset;
   }
 
-  else if( eDetail==FTS5_DETAIL_FULL ){
+  else if( pConfig->eDetail==FTS5_DETAIL_FULL ){
     pIter->xSetOutputs = fts5IterSetOutputs_Full;
   }
 
   else{
-    assert( eDetail==FTS5_DETAIL_COLUMNS );
-    pIter->xSetOutputs = fts5IterSetOutputs_Col;
+    assert( pConfig->eDetail==FTS5_DETAIL_COLUMNS );
+    if( pConfig->nCol<=32 ){
+      pIter->xSetOutputs = fts5IterSetOutputs_Col32;
+      sqlite3Fts5BufferSize(pRc, &pIter->poslist, pConfig->nCol);
+    }else{
+      pIter->xSetOutputs = fts5IterSetOutputs_Col;
+    }
   }
 }
 
@@ -5166,8 +5218,8 @@ int sqlite3Fts5IndexQuery(
     if( p->rc==SQLITE_OK ){
       Fts5SegIter *pSeg = &pRet->aSeg[pRet->aFirst[1].iFirst];
       pRet->pColset = pColset;
-      fts5IterSetOutputCb(pRet);
-      if( pSeg->pLeaf ) pRet->xSetOutputs(pRet, pSeg);
+      fts5IterSetOutputCb(&p->rc, pRet);
+      if( p->rc==SQLITE_OK && pSeg->pLeaf ) pRet->xSetOutputs(pRet, pSeg);
     }
     if( p->rc ){
       sqlite3Fts5IterClose(&pRet->base);
