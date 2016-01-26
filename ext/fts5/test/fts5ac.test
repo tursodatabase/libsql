@@ -158,8 +158,8 @@ foreach {tn2 sql} {
   #-------------------------------------------------------------------------
   #
   foreach {tn expr} {
-    1.2 "a   OR b"
     1.1 "a   AND b"
+    1.2 "a   OR b"
     1.3 "o"
     1.4 "b q"
     1.5 "e a e"
@@ -249,7 +249,6 @@ foreach {tn2 sql} {
       SELECT rowid, fts5_test_poslist(xx), fts5_test_collist(xx) 
       FROM xx WHERE xx match $expr
     } $res
-
 
     set res [fts5_query_data $expr xx DESC]
     do_execsql_test 1.$tn2.$tn.[llength $res].desc {

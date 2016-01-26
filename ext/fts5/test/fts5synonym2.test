@@ -27,6 +27,21 @@ foreach_detail_mode $testprefix {
 fts5_tclnum_register db
 fts5_aux_test_functions db
 
+proc fts5_test_bothlist {cmd} {
+
+  for {set i 0} {$i < [$cmd xPhraseCount]} {incr i} {
+    set bFirst 1
+    $cmd xPhraseColumnForeach $i c { 
+      lappend CL $i.$c 
+      if {$bFirst} { $cmd xPhraseForeach $i c o { lappend PL $i.$c.$o } }
+      set bFirst 0
+    }
+  }
+
+  list [sort_poslist $PL] $CL
+}
+sqlite3_fts5_create_function db fts5_test_bothlist fts5_test_bothlist
+
 proc fts5_rowid {cmd} { expr [$cmd xColumnText -1] }
 sqlite3_fts5_create_function db fts5_rowid fts5_rowid
 
@@ -89,6 +104,8 @@ do_execsql_test 1.$tok.0.2 {
 }
 
 foreach {tn expr} {
+  2.1 "one OR two OR three OR four"
+
   1.1 "one"   1.2 "two"   1.3 "three"   1.4 "four"
   1.5 "v"     1.6 "vi"    1.7 "vii"     1.8 "viii"
   1.9 "9"    1.10 "0"    1.11 "1"      1.12 "2"
@@ -113,13 +130,31 @@ foreach {tn expr} {
 
   set res [fts5_query_data $expr ss ASC ::tclnum_syn]
   do_execsql_test 1.$tok.$tn.[llength $res].asc.1 {
-    SELECT rowid, fts5_test_poslist(ss), fts5_test_collist(ss) FROM ss($expr)
+    SELECT rowid, fts5_test_poslist2(ss), fts5_test_collist(ss) FROM ss($expr)
   } $res
 
   do_execsql_test 1.$tok.$tn.[llength $res].asc.2 {
     SELECT rowid, fts5_test_poslist(ss), fts5_test_collist(ss) FROM ss($expr)
+  } $res
+
+  do_execsql_test 1.$tok.$tn.[llength $res].asc.2 {
+    SELECT rowid, fts5_test_poslist2(ss), fts5_test_collist(ss) FROM ss($expr)
     ORDER BY rank ASC
   } $res
+
+  set res2 [list]
+  foreach {a b c} $res { lappend res2 $a $c $b }
+  do_execsql_test 1.$tok.$tn.[llength $res].asc.3 {
+    SELECT rowid, fts5_test_collist(ss), fts5_test_poslist2(ss) FROM ss($expr)
+  } $res2
+
+  set res3 [list]
+  foreach {a b c} $res { lappend res3 $a [list $b $c] }
+  do_execsql_test 1.$tok.$tn.[llength $res].asc.3 {
+    SELECT rowid, fts5_test_bothlist(ss) FROM ss($expr)
+  } $res3
+
+
 }
 
 }
