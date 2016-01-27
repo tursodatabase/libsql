@@ -249,7 +249,7 @@ int sqlite3BtreeDelete(BtCursor*, u8 flags);
 
 /* Allowed flags for the 2nd argument to sqlite3BtreeDelete() */
 #define BTREE_SAVEPOSITION 0x02  /* Leave cursor pointing at NEXT or PREV */
-#define BTREE_IDXDELETE    0x04  /* this is index, table row already deleted */
+#define BTREE_AUXDELETE    0x04  /* not the primary delete operation */
 
 int sqlite3BtreeInsert(BtCursor*, const void *pKey, i64 nKey,
                                   const void *pData, int nData,

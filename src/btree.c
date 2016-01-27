@@ -8098,9 +8098,12 @@ end_insert:
 ** the next call to BtreeNext() or BtreePrev() moves it to the same row
 ** as it would have been on if the call to BtreeDelete() had been omitted.
 **
-** The BTREE_IDXDELETE bit of flags indicates that this is a delete of
-** an index entry where the corresponding table row has already been deleted.
-** The BTREE_IDXDELETE bit is a hint that is not used by this implementation,
+** The BTREE_AUXDELETE bit of flags indicates that is one of several deletes
+** associated with a single table entry and its indexes.  Only one of those
+** deletes is considered the "primary" delete.  The primary delete occurs
+** on a cursor that is not a BTREE_FORDELETE cursor.  All but one delete
+** operation on non-FORDELETE cursors is tagged with the AUXDELETE flag.
+** The BTREE_AUXDELETE bit is a hint that is not used by this implementation,
 ** but which might be used by alternative storage engines.
 */
 int sqlite3BtreeDelete(BtCursor *pCur, u8 flags){
@@ -8123,7 +8126,7 @@ int sqlite3BtreeDelete(BtCursor *pCur, u8 flags){
   assert( !hasReadConflicts(p, pCur->pgnoRoot) );
   assert( pCur->aiIdx[pCur->iPage]<pCur->apPage[pCur->iPage]->nCell );
   assert( pCur->eState==CURSOR_VALID );
-  assert( (flags & ~(BTREE_SAVEPOSITION | BTREE_IDXDELETE))==0 );
+  assert( (flags & ~(BTREE_SAVEPOSITION | BTREE_AUXDELETE))==0 );
 
   iCellDepth = pCur->iPage;
   iCellIdx = pCur->aiIdx[iCellDepth];

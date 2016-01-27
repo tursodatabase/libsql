@@ -724,12 +724,10 @@ void sqlite3GenerateRowDelete(
       sqlite3VdbeChangeP4(v, -1, pTab->zName, P4_TRANSIENT);
     }
     if( eMode!=ONEPASS_OFF ){
-      sqlite3VdbeChangeP5(v, OPFLAG_IDXDELETE);
-      p5 = OPFLAG_IDXDELETE;
+      sqlite3VdbeChangeP5(v, OPFLAG_AUXDELETE);
     }
     if( iIdxNoSeek>=0 ){
       sqlite3VdbeAddOp1(v, OP_Delete, iIdxNoSeek);
-      p5 = 0;
     }
     if( eMode==ONEPASS_MULTI ) p5 |= OPFLAG_SAVEPOSITION;
     sqlite3VdbeChangeP5(v, p5);

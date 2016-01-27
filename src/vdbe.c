@@ -553,7 +553,7 @@ int sqlite3VdbeExec(
   Op *pOrigOp;               /* Value of pOp at the top of the loop */
 #endif
 #ifdef SQLITE_DEBUG
-  int nExtraDelete = 0;      /* Verifies FORDELETE and IDXDELETE flags */
+  int nExtraDelete = 0;      /* Verifies FORDELETE and AUXDELETE flags */
 #endif
   int rc = SQLITE_OK;        /* Value to return */
   sqlite3 *db = p->db;       /* The database */
@@ -4355,9 +4355,11 @@ case OP_InsertInt: {
 ** OPFLAG_SAVEPOSITION bit of P5 is clear, then the cursor will be
 ** left in an undefined state.
 **
-** If the OPFLAG_IDXDELETE bit is set on P5, that indicates that this
-** delete is on an index cursor where the corresponding table row has
-** already been deleted.
+** If the OPFLAG_AUXDELETE bit is set on P5, that indicates that this
+** delete one of several associated with deleting a table row and all its
+** associated index entries.  Exactly one of those deletes is the "primary"
+** delete.  The others are all on OPFLAG_FORDELETE cursors or else are
+** marked with the AUXDELETE flag.
 **
 ** If the OPFLAG_NCHANGE flag of P2 (NB: P2 not P5) is set, then the row
 ** change count is incremented (otherwise not).
@@ -4397,14 +4399,14 @@ case OP_Delete: {
   }
 #endif
 
-  /* Only flags that can be set are SAVEPOISTION and IDXDELETE */ 
-  assert( (pOp->p5 & ~(OPFLAG_SAVEPOSITION|OPFLAG_IDXDELETE))==0 );
+  /* Only flags that can be set are SAVEPOISTION and AUXDELETE */ 
+  assert( (pOp->p5 & ~(OPFLAG_SAVEPOSITION|OPFLAG_AUXDELETE))==0 );
   assert( OPFLAG_SAVEPOSITION==BTREE_SAVEPOSITION );
-  assert( OPFLAG_IDXDELETE==BTREE_IDXDELETE );
+  assert( OPFLAG_AUXDELETE==BTREE_AUXDELETE );
 
 #ifdef SQLITE_DEBUG
   if( pC->isEphemeral==0
-   && (pOp->p5 & OPFLAG_IDXDELETE)==0
+   && (pOp->p5 & OPFLAG_AUXDELETE)==0
    && (pC->wrFlag & OPFLAG_FORDELETE)==0
   ){
     nExtraDelete++;
@@ -4963,7 +4965,7 @@ case OP_IdxDelete: {
     int i;
     for(i=0; i<r.nField; i++) assert( memIsValid(&r.aMem[i]) );
     if( pC->isEphemeral==0
-     && (pOp->p5 & OPFLAG_IDXDELETE)==0
+     && (pOp->p5 & OPFLAG_AUXDELETE)==0
      && (pC->wrFlag & OPFLAG_FORDELETE)==0
     ){
       nExtraDelete++;
