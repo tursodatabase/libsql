@@ -92,7 +92,7 @@ foreach i [lsort -integer [array names blocks]] {
 set data [string map [list " -I\$(TOP)\\src" ""] $data]
 set data [string map [list " /DEF:sqlite3.def" ""] $data]
 set data [string map [list " sqlite3.def" ""] $data]
-set data [string map [list " libtclsqlite3.lib" ""] $data]
+set data [string map [list " \$(ALL_TCL_TARGETS)" ""] $data]
 set data [string map [list "\$(TOP)\\src\\" "\$(TOP)\\"] $data]
 
 writeFile $toFileName $data

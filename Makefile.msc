@@ -890,7 +890,7 @@ LTLINKOPTS = $(LTLINKOPTS) /NODEFAULTLIB:kernel32.lib /NODEFAULTLIB:ole32.lib
 
 # When compiling for UAP, some extra linker options are also required.
 #
-!IF $(FOR_UAP)!=0
+!IF $(FOR_UAP)!=0 || $(FOR_WIN10)!=0
 LTLINKOPTS = $(LTLINKOPTS) /DYNAMICBASE /NODEFAULTLIB:kernel32.lib
 LTLINKOPTS = $(LTLINKOPTS) mincore.lib
 !IFDEF PSDKLIBPATH
@@ -1343,12 +1343,20 @@ FUZZCHECK_COMPILE_OPTS = -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_MEMSYS5
 # Standard options to testfixture.
 #
 TESTOPTS = --verbose=file --output=test-out.txt
+
+# Extra targets for the "all" target that require Tcl.
+#
+!IF $(NO_TCL)==0
+ALL_TCL_TARGETS = libtclsqlite3.lib
+!ELSE
+ALL_TCL_TARGETS =
+!ENDIF
 # <</mark>>
 
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
 #
-all:	dll libsqlite3.lib shell libtclsqlite3.lib
+all:	dll libsqlite3.lib shell $(ALL_TCL_TARGETS)
 
 # Dynamic link library section.
 #

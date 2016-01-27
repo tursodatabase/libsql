@@ -785,7 +785,7 @@ LTLINKOPTS = $(LTLINKOPTS) /NODEFAULTLIB:kernel32.lib /NODEFAULTLIB:ole32.lib
 
 # When compiling for UAP, some extra linker options are also required.
 #
-!IF $(FOR_UAP)!=0
+!IF $(FOR_UAP)!=0 || $(FOR_WIN10)!=0
 LTLINKOPTS = $(LTLINKOPTS) /DYNAMICBASE /NODEFAULTLIB:kernel32.lib
 LTLINKOPTS = $(LTLINKOPTS) mincore.lib
 !IFDEF PSDKLIBPATH
