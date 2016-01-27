@@ -1,5 +1,5 @@
-C Merge\sall\srecent\strunk\senhancements.
-D 2016-01-26T23:32:55.750
+C Add\sassert()\sstatements\son\sthe\snExtraDelete\svariable\sin\svdbe.c\sto\stry\sto\sverify\nthat\sthe\sFORDELETE\sand\sIDXDELETE\sflags\sare\sbeing\sgenerated\scorrectly.\s\sThose\nflags\sare\snot\scurrently\sgenerated\scorrectly,\sand\sso\sthe\sassert()s\strip\son\sthis\ncheck-in.
+D 2016-01-27T15:49:32.327
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6fca5455aaecbd14479f33f091aa19df2d3d2969
@@ -13,7 +13,7 @@ F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am 1c1657650775960804945dc392e14d9e43c5ed84
 F autoconf/Makefile.msc 68ed752a809b611d97b95d8572a34fe6fd1196f1
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
-F autoconf/README.txt e9757a381e5ce2553dbaa6247bb8ad00eb8d87aa w autoconf/README
+F autoconf/README.txt e9757a381e5ce2553dbaa6247bb8ad00eb8d87aa
 F autoconf/configure.ac 7b1ea0dcaf49fafba262ce4b0ee8cb3281b555d1
 F autoconf/tea/Makefile.in b438a7020446c8a8156e8d97c8914a04833da6fd
 F autoconf/tea/README 3e9a3c060f29a44344ab50aec506f4db903fb873
@@ -299,7 +299,7 @@ F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
 F src/ctime.c 60e135af364d777a9ab41c97e5e89cd224da6198
 F src/date.c 997651e3ee6c2818fbf7fcdb7156cef9eb3ece20
 F src/dbstat.c b2ec6793eef97aebb4d171d490a4ffdfa9f2475c
-F src/delete.c f02e46234c5fc86f6c03ae34dc0ba48e93cd5029
+F src/delete.c db231a9895681efed007c0887e38b49f4d1291a5
 F src/expr.c d10c1cdef5810cdbf73adc9f9b383684230b360a
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c c66d3e5b35d4d95b5c1e2ee6c12f5df13a7f9ad6
@@ -308,7 +308,7 @@ F src/global.c bd5a0af3f30b0c01be6db756c626cd3c33a3d260
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
 F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c a00e6d8a843dc22e2c136df04e6300c4528d9b9f
+F src/insert.c 410f52b9ef4603dc0aebb169b7cb6b3c60eda07e
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/loadext.c 84996d7d70a605597d79c1f1d7b2012a5fd34f2b
@@ -412,9 +412,9 @@ F src/update.c 17332f9fe818cbc0444c36a811800af8498af4c3
 F src/utf.c 32d7f82aa921322f3e1c956f4b58f019ebd2c6b3
 F src/util.c 72d40df0a52d3f30b462a15f0e094fcbade6dc82
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c 6039096edea4ed25f7b1e28aa5d46b0ee3ba73ef
+F src/vdbe.c a27a3fdc65f5728c6e9bff49b6753fbf9d73c8c0
 F src/vdbe.h 7a733ea8aac1b77305a67698e784fa3484ee3337
-F src/vdbeInt.h 42eefa4f9e7432b9968d321b44e48821ec13b189
+F src/vdbeInt.h 40c728712a2975855a2ac6aac44bf02dfd4a4c30
 F src/vdbeapi.c ffae8f5af4570fbd548504e815e9fb7227f0822e
 F src/vdbeaux.c 757f86e6fef8efb3dd4226cb31e2e82b9c44c883
 F src/vdbeblob.c 37c3d11a753e403698c69e17383d282e1ae73e75
@@ -595,7 +595,7 @@ F test/e_blobbytes.test 9bea1d3e2b20f3010b04abba58f6ba172301f49f
 F test/e_blobclose.test df756753f571bc30e42e3a6cba2807576e49e716
 F test/e_blobopen.test 234f960d90235a9b51ec3ca1e062e8541dd558d8
 F test/e_blobwrite.test 615b405f29feb2cfb5a1f03dab7933258294fa26
-F test/e_changes.test fd66105385153dbf21fdb35eb8ef6c3e1eade579
+F test/e_changes.test d66e8c1e33f5ec61af32eda729c8a2475404e49b
 F test/e_createtable.test d4c6059d44dcd4b636de9aae322766062b471844
 F test/e_delete.test ab39084f26ae1f033c940b70ebdbbd523dc4962e
 F test/e_droptrigger.test 3cd080807622c13e5bbb61fc9a57bd7754da2412
@@ -1422,7 +1422,10 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ac2cbadd8000947c097da5b00c00090fe58fdcff a3d7b8ac53f94d29a11362f193fd1967f30583df
-R 7855243eb7d1aae3e5a98345ca05c333
+P 9a71d56dcea953cb965f1fdda9a8b8f158cdeff6
+R 3af2d64e2a860c6e0d1b5193b911b983
+T *branch * fordelete-assert
+T *sym-fordelete-assert *
+T -sym-btree-fordelete-flag *
 U drh
-Z 6eda54656ca87ef44dc31ff7472a92ee
+Z f5e1f3160ce620e13f32c1dda67a1107

@@ -552,6 +552,9 @@ int sqlite3VdbeExec(
 #if defined(SQLITE_DEBUG) || defined(VDBE_PROFILE)
   Op *pOrigOp;               /* Value of pOp at the top of the loop */
 #endif
+#ifdef SQLITE_DEBUG
+  int nExtraDelete = 0;      /* Verifies FORDELETE and IDXDELETE flags */
+#endif
   int rc = SQLITE_OK;        /* Value to return */
   sqlite3 *db = p->db;       /* The database */
   u8 resetSchemaOnFault = 0; /* Reset schema after an error if positive */
@@ -3392,6 +3395,9 @@ case OP_OpenWrite:
   pCur->nullRow = 1;
   pCur->isOrdered = 1;
   pCur->pgnoRoot = p2;
+#ifdef SQLITE_DEBUG
+  pCur->wrFlag = wrFlag;
+#endif
   rc = sqlite3BtreeCursor(pX, p2, wrFlag, pKeyInfo, pCur->uc.pCursor);
   pCur->pKeyInfo = pKeyInfo;
   /* Set the VdbeCursor.isTable variable. Previous versions of
@@ -4390,10 +4396,24 @@ case OP_Delete: {
     assert( pC->movetoTarget==iKey ); 
   }
 #endif
- 
+
+  /* Only flags that can be set are SAVEPOISTION and IDXDELETE */ 
   assert( (pOp->p5 & ~(OPFLAG_SAVEPOSITION|OPFLAG_IDXDELETE))==0 );
   assert( OPFLAG_SAVEPOSITION==BTREE_SAVEPOSITION );
   assert( OPFLAG_IDXDELETE==BTREE_IDXDELETE );
+
+#ifdef SQLITE_DEBUG
+  if( pC->isEphemeral==0
+   && (pOp->p5 & OPFLAG_IDXDELETE)==0
+   && (pC->wrFlag & OPFLAG_FORDELETE)==0
+  ){
+    nExtraDelete++;
+  }
+  if( pOp->p2 & OPFLAG_NCHANGE ){
+    nExtraDelete--;
+  }
+#endif
+
   rc = sqlite3BtreeDelete(pC->uc.pCursor, pOp->p5);
   pC->cacheStatus = CACHE_STALE;
 
@@ -4939,7 +4959,16 @@ case OP_IdxDelete: {
   r.default_rc = 0;
   r.aMem = &aMem[pOp->p2];
 #ifdef SQLITE_DEBUG
-  { int i; for(i=0; i<r.nField; i++) assert( memIsValid(&r.aMem[i]) ); }
+  {
+    int i;
+    for(i=0; i<r.nField; i++) assert( memIsValid(&r.aMem[i]) );
+    if( pC->isEphemeral==0
+     && (pOp->p5 & OPFLAG_IDXDELETE)==0
+     && (pC->wrFlag & OPFLAG_FORDELETE)==0
+    ){
+      nExtraDelete++;
+    }
+  }
 #endif
   rc = sqlite3BtreeMovetoUnpacked(pCrsr, &r, 0, 0, &res);
   if( rc==SQLITE_OK && res==0 ){
@@ -6762,6 +6791,7 @@ vdbe_return:
   testcase( nVmStep>0 );
   p->aCounter[SQLITE_STMTSTATUS_VM_STEP] += (int)nVmStep;
   sqlite3VdbeLeave(p);
+  assert( nExtraDelete==0 || sqlite3_strlike("DELETE%",p->zSql,0)!=0 );
   return rc;
 
   /* Jump to here if a string or blob larger than SQLITE_MAX_LENGTH

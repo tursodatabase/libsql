@@ -82,6 +82,7 @@ struct VdbeCursor {
   u8 isTable;           /* True for rowid tables.  False for indexes */
 #ifdef SQLITE_DEBUG
   u8 seekOp;            /* Most recent seek operation on this cursor */
+  u8 wrFlag;            /* The wrFlag argument to sqlite3BtreeCursor() */
 #endif
   Bool isEphemeral:1;   /* True for an ephemeral table */
   Bool useRandomRowid:1;/* Generate new record numbers semi-randomly */
