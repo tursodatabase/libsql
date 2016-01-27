@@ -1,5 +1,5 @@
-C Add\sassert()\sstatements\son\sthe\snExtraDelete\svariable\sin\svdbe.c\sto\stry\sto\sverify\nthat\sthe\sFORDELETE\sand\sIDXDELETE\sflags\sare\sbeing\sgenerated\scorrectly.\s\sThose\nflags\sare\snot\scurrently\sgenerated\scorrectly,\sand\sso\sthe\sassert()s\strip\son\sthis\ncheck-in.
-D 2016-01-27T15:49:32.327
+C Fix\stests\sin\sfordelete.test\sto\stest\sfor\sthe\sBTREE_AUXDELETE\sflag.
+D 2016-01-27T16:17:41.726
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6fca5455aaecbd14479f33f091aa19df2d3d2969
@@ -642,7 +642,7 @@ F test/fkey6.test abb59f866c1b44926fd02d1fdd217d831fe04f48
 F test/fkey7.test 72e915890ee4a005daaf3002cb208e8fe973ac13
 F test/fkey8.test 8f08203458321e6c19a263829de4cfc936274ab0
 F test/fkey_malloc.test 594a7ea1fbab553c036c70813cd8bd9407d63749
-F test/fordelete.test ba12ec1d27cc34a4c23db4446029126d773f3849
+F test/fordelete.test f794392f1768584609fa439f7528484dc04d3a03
 F test/format4.test 1f0cac8ff3895e9359ed87e41aaabee982a812eb
 F test/fts-9fd058691.test 78b887e30ae6816df0e1fed6259de4b5a64ad33c
 F test/fts1a.test 46090311f85da51bb33bd5ce84f7948359c6d8d7
@@ -1422,10 +1422,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9a71d56dcea953cb965f1fdda9a8b8f158cdeff6
-R 3af2d64e2a860c6e0d1b5193b911b983
-T *branch * fordelete-assert
-T *sym-fordelete-assert *
-T -sym-btree-fordelete-flag *
-U drh
-Z f5e1f3160ce620e13f32c1dda67a1107
+P dde1db0dd2e2cf04706117629756c352b178ebb8
+R 112344660260002964aa8c335bb07305
+U dan
+Z e0043c886092534757bb67db359c02f9
