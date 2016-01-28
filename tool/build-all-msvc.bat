@@ -732,6 +732,7 @@ GOTO no_errors
   SET VALUE=%1
   IF DEFINED VALUE (
     SET %VALUE%=
+    SET VALUE=
     CALL :fn_ResetErrorLevel
   )
   GOTO :EOF
