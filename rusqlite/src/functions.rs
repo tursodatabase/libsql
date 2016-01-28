@@ -489,8 +489,8 @@ impl InnerConnection {
         where D: Aggregate<A, T>,
               T: ToResult
     {
-        unsafe fn aggregate_context<A>(ctx: *mut sqlite3_context) -> Option<*mut *mut A> {
-            let pac = ffi::sqlite3_aggregate_context(ctx, ::std::mem::size_of::<*mut A>() as c_int)
+        unsafe fn aggregate_context<A>(ctx: *mut sqlite3_context, bytes: usize) -> Option<*mut *mut A> {
+            let pac = ffi::sqlite3_aggregate_context(ctx, bytes as c_int)
                             as *mut *mut A;
             if pac.is_null() {
                 return None;
@@ -525,7 +525,7 @@ impl InnerConnection {
             assert!(!boxed_aggr.is_null(),
                     "Internal error - null aggregate pointer");
 
-            let pac = match aggregate_context(ctx) {
+            let pac = match aggregate_context(ctx, ::std::mem::size_of::<*mut A>()) {
                 Some(pac) => pac,
                 None => {
                     ffi::sqlite3_result_error_nomem(ctx);
@@ -556,19 +556,16 @@ impl InnerConnection {
             assert!(!boxed_aggr.is_null(),
                     "Internal error - null aggregate pointer");
 
-            let pac = match aggregate_context(ctx) {
-                Some(pac) => pac,
-                None => {
-                    ffi::sqlite3_result_error_nomem(ctx);
-                    return;
-                }
-            };
-
-            let a: Option<A> = if (*pac).is_null() {
-                None
-            } else {
-                let a = Box::from_raw(*pac);
-                Some(*a)
+            // Within the xFinal callback, it is customary to set N=0 in calls to
+            // sqlite3_aggregate_context(C,N) so that no pointless memory allocations occur.
+            let a: Option<A> = match aggregate_context(ctx, 0) {
+                Some(pac) => if (*pac).is_null() {
+                    None
+                } else {
+                    let a = Box::from_raw(*pac);
+                    Some(*a)
+                },
+                None => None,
             };
 
             match (*boxed_aggr).finalize(a) {
