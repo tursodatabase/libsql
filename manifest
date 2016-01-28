@@ -1,5 +1,5 @@
-C Minor\scorrection\sto\sthe\sbatch\stool\schanges\sin\sthe\sprevious\scheck-in.
-D 2016-01-28T00:04:32.165
+C Fix\sfor\spthread\sdetection\sin\sthe\sconfigure\sscripts.
+D 2016-01-28T02:47:32.836
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 72b7858f02017611c3ac1ddc965251017fed0845
@@ -14,7 +14,7 @@ F autoconf/Makefile.am 1c1657650775960804945dc392e14d9e43c5ed84
 F autoconf/Makefile.msc 2ce3b1565a52d7083a1dbf57a1706fd14cc1ee0c
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/README.txt e9757a381e5ce2553dbaa6247bb8ad00eb8d87aa
-F autoconf/configure.ac 7b1ea0dcaf49fafba262ce4b0ee8cb3281b555d1
+F autoconf/configure.ac 72a5e42beb090b32bca580285dc0ab3c4670adb8
 F autoconf/tea/Makefile.in b438a7020446c8a8156e8d97c8914a04833da6fd
 F autoconf/tea/README 3e9a3c060f29a44344ab50aec506f4db903fb873
 F autoconf/tea/aclocal.m4 52c47aac44ce0ddb1f918b6993e8beb8eee88f43
@@ -30,8 +30,8 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 42b71ad3fe21c9e88fa59e8458ca1a6bc72eb0c0
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure d57d3b9d5c66549e54a4a2960de9813142d30a5a x
-F configure.ac c59513d560b3107995c73b9cc1e55bfd086c4764
+F configure 12d96e3798e612e0ffa53a7a8c4d7fb1090df80e x
+F configure.ac a2224b1162f79848982d3618ac1deffcd94e88ec
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 334dbf6621b8fb8790297ec1abf3cfa4621709d1
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
@@ -1422,7 +1422,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1edd5f31b9e6f91bb5434055a539428c000f1084
-R dd88757d0a47522dcabe5cdbe4d1c234
-U mistachkin
-Z b852cd61a6ae9681850058c67e7066b1
+P 7c89d75de1e8d44d7ebd8eac1320b50dd6c221a8
+R aa8b5eab35ce807961f68c0e84ef93a7
+U drh
+Z c7a8f0aff80d4c386e53fd4da40e1b68
