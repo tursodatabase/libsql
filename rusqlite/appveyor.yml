@@ -8,8 +8,8 @@ install:
   - if defined MSYS2_BITS set PATH=%PATH%;C:\msys64\mingw%MSYS2_BITS%\bin
   - rustc -V
   - cargo -V
-  - ps: Start-FileDownload 'http://sqlite.org/2015/sqlite-dll-win64-x64-3090200.zip'
-  - cmd: 7z e sqlite-dll-win64-x64-3090200.zip -y > nul
+  - ps: Start-FileDownload 'http://sqlite.org/2015/sqlite-dll-win64-x64-3100200.zip'
+  - cmd: 7z e sqlite-dll-win64-x64-3100200.zip -y > nul
   - SET SQLITE3_LIB_DIR=%APPVEYOR_BUILD_FOLDER%
 
 build: false
