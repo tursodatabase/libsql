@@ -1790,7 +1790,6 @@ void sqlite3VdbeRewind(Vdbe *p){
   p->pc = -1;
   p->rc = SQLITE_OK;
   p->errorAction = OE_Abort;
-  p->magic = VDBE_MAGIC_RUN;
   p->nChange = 0;
   p->cacheCtr = 1;
   p->minWriteFileFormat = 255;
