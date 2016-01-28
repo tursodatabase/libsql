@@ -1,15 +1,16 @@
 environment:
-  TARGET: x86_64-pc-windows-msvc
+  TARGET: 1.6.0-x86_64-pc-windows-gnu
+  MSYS2_BITS: 64
 install:
-  - ps: Start-FileDownload "https://static.rust-lang.org/dist/rust-nightly-${env:TARGET}.exe"
-  - rust-nightly-%TARGET%.exe /VERYSILENT /NORESTART /DIR="C:\Program Files (x86)\Rust"
+  - ps: Start-FileDownload "https://static.rust-lang.org/dist/rust-${env:TARGET}.exe"
+  - rust-%TARGET%.exe /VERYSILENT /NORESTART /DIR="C:\Program Files (x86)\Rust"
   - SET PATH=%PATH%;C:\Program Files (x86)\Rust\bin
+  - if defined MSYS2_BITS set PATH=%PATH%;C:\msys64\mingw%MSYS2_BITS%\bin
   - rustc -V
   - cargo -V
-  - ps: Start-FileDownload 'http://sqlite.org/2016/sqlite-uap-3100200.vsix'
-  - cmd: 7z e sqlite-uap-3100200.vsix DesignTime/Retail/x64/ Redist/Retail/x64/ -y > nul
+  - ps: Start-FileDownload 'http://sqlite.org/2015/sqlite-dll-win64-x64-3090200.zip'
+  - cmd: 7z e sqlite-dll-win64-x64-3090200.zip -y > nul
   - SET SQLITE3_LIB_DIR=%APPVEYOR_BUILD_FOLDER%
-#  - cmd: VsixInstaller /q /a /i sqlite-uap-3100200.vsix
 
 build: false
 
