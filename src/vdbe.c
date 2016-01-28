@@ -4405,14 +4405,16 @@ case OP_Delete: {
   assert( OPFLAG_AUXDELETE==BTREE_AUXDELETE );
 
 #ifdef SQLITE_DEBUG
-  if( pC->isEphemeral==0
-   && (pOp->p5 & OPFLAG_AUXDELETE)==0
-   && (pC->wrFlag & OPFLAG_FORDELETE)==0
-  ){
-    nExtraDelete++;
-  }
-  if( pOp->p2 & OPFLAG_NCHANGE ){
-    nExtraDelete--;
+  if( p->pFrame==0 ){
+    if( pC->isEphemeral==0
+        && (pOp->p5 & OPFLAG_AUXDELETE)==0
+        && (pC->wrFlag & OPFLAG_FORDELETE)==0
+      ){
+      nExtraDelete++;
+    }
+    if( pOp->p2 & OPFLAG_NCHANGE ){
+      nExtraDelete--;
+    }
   }
 #endif
 
@@ -4960,21 +4962,9 @@ case OP_IdxDelete: {
   r.nField = (u16)pOp->p3;
   r.default_rc = 0;
   r.aMem = &aMem[pOp->p2];
-#ifdef SQLITE_DEBUG
-  {
-    int i;
-    for(i=0; i<r.nField; i++) assert( memIsValid(&r.aMem[i]) );
-    if( pC->isEphemeral==0
-     && (pOp->p5 & OPFLAG_AUXDELETE)==0
-     && (pC->wrFlag & OPFLAG_FORDELETE)==0
-    ){
-      nExtraDelete++;
-    }
-  }
-#endif
   rc = sqlite3BtreeMovetoUnpacked(pCrsr, &r, 0, 0, &res);
   if( rc==SQLITE_OK && res==0 ){
-    rc = sqlite3BtreeDelete(pCrsr, 0);
+    rc = sqlite3BtreeDelete(pCrsr, BTREE_AUXDELETE);
   }
   assert( pC->deferredMoveto==0 );
   pC->cacheStatus = CACHE_STALE;

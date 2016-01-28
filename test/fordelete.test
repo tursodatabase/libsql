@@ -158,5 +158,53 @@ do_test 3.2 {
   }
 } {6 {} {} {}}
 
+
+#-------------------------------------------------------------------------
+#
+reset_db 
+do_execsql_test 4.0 {
+  CREATE TABLE log(x);
+  CREATE TABLE p1(one PRIMARY KEY, two);
+
+  CREATE TRIGGER tr_bd BEFORE DELETE ON p1 BEGIN
+    INSERT INTO log VALUES('delete');
+  END;
+  INSERT INTO p1 VALUES('a', 'A'), ('b', 'B'), ('c', 'C');
+  DELETE FROM p1 WHERE one = 'a';
+}
+
+reset_db
+do_execsql_test 4.1 {
+  BEGIN TRANSACTION;
+  CREATE TABLE tbl(a PRIMARY KEY, b, c);
+  CREATE TABLE log(a, b, c);
+  INSERT INTO "tbl" VALUES(1,2,3);
+  CREATE TRIGGER the_trigger BEFORE DELETE ON tbl BEGIN 
+    INSERT INTO log VALUES(1, 2,3);
+  END;
+  COMMIT;
+  DELETE FROM tbl WHERE a=1;
+}
+
+reset_db
+do_execsql_test 5.1 {
+  PRAGMA foreign_keys = 1;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+  CREATE TABLE t2(
+      c INTEGER PRIMARY KEY,
+      d INTEGER DEFAULT 1 REFERENCES t1 ON DELETE SET DEFAULT
+  );
+} {}
+do_execsql_test 5.2 {
+  INSERT INTO t1 VALUES(1, 'one');
+  INSERT INTO t1 VALUES(2, 'two');
+  INSERT INTO t2 VALUES(1, 2);
+  SELECT * FROM t2;
+} {1 2}
+do_execsql_test 5.3 {
+  DELETE FROM t1 WHERE a = 2;
+} {}
+
+
 finish_test
 

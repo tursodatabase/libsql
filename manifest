@@ -1,5 +1,5 @@
-C Change\sthe\sname\sof\sthe\sBTREE_IDXDELETE\sflag\sto\sBTREE_AUXDELETE,\sto\sbetter\nreflect\sits\spurpose.
-D 2016-01-27T16:26:25.226
+C Modifications\sto\sensure\sthe\snExtraDelete-related\sassert()\sstatement\sdoes\snot\sfail.
+D 2016-01-28T17:06:17.501
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6fca5455aaecbd14479f33f091aa19df2d3d2969
@@ -412,7 +412,7 @@ F src/update.c 17332f9fe818cbc0444c36a811800af8498af4c3
 F src/utf.c 32d7f82aa921322f3e1c956f4b58f019ebd2c6b3
 F src/util.c 72d40df0a52d3f30b462a15f0e094fcbade6dc82
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c c367615fecb5fae8a39113ee2b6ecbab94e4bcd3
+F src/vdbe.c 66c429896ce44ebcbe199f1c7a592c12095158f0
 F src/vdbe.h 7a733ea8aac1b77305a67698e784fa3484ee3337
 F src/vdbeInt.h 40c728712a2975855a2ac6aac44bf02dfd4a4c30
 F src/vdbeapi.c ffae8f5af4570fbd548504e815e9fb7227f0822e
@@ -642,7 +642,7 @@ F test/fkey6.test abb59f866c1b44926fd02d1fdd217d831fe04f48
 F test/fkey7.test 72e915890ee4a005daaf3002cb208e8fe973ac13
 F test/fkey8.test 8f08203458321e6c19a263829de4cfc936274ab0
 F test/fkey_malloc.test 594a7ea1fbab553c036c70813cd8bd9407d63749
-F test/fordelete.test f794392f1768584609fa439f7528484dc04d3a03
+F test/fordelete.test 57ed9b953eeace09dd2eac3251b40bf9d6990aec
 F test/format4.test 1f0cac8ff3895e9359ed87e41aaabee982a812eb
 F test/fts-9fd058691.test 78b887e30ae6816df0e1fed6259de4b5a64ad33c
 F test/fts1a.test 46090311f85da51bb33bd5ce84f7948359c6d8d7
@@ -1422,7 +1422,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P bbd25cf179df5bda1fe729928d6746248f06e46f
-R 21474325914b9893f106ce3a1694990c
-U drh
-Z 6ce2f1bf15f4f84bace517d6cc10a5ac
+P 1d3bf6bebdda9f96734bc139601e9b05344ea0b4
+R 8c4c31e27c8a082a17d0a49af9f3ce1b
+U dan
+Z 9dc5d2517a8a4fb456754e0a3cfe77cf
