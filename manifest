@@ -1,5 +1,5 @@
-C Remove\sa\sduplicate\s"p->magic\s=\sVDBE_MAGIC_RUN;"\sline\sfrom\svdbeaux.c.
-D 2016-01-28T08:58:45.702
+C Modify\sthe\sorder\sof\sterms\sin\san\s"if"\scondition\sto\savoid\simplicitly\scomparing\sa\sdangling\spointer\sto\sNULL\sfollowing\san\sOOM\serror.
+D 2016-01-28T18:22:46.091
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 72b7858f02017611c3ac1ddc965251017fed0845
@@ -336,7 +336,7 @@ F src/os_win.c ccf29ddded3e41e506b6bd98c1171aa0963b23f2
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 2916c66aee50f69d9ec56a7619b62d9c6a3bee61
 F src/pager.h 1c2a49143dfba9e69cc8159ef019f472ed8d260b
-F src/parse.y caad1e98edeca6960493d0c60d31b76820dd7776
+F src/parse.y 426a91fbbbf7cdde3fd4b8798de7317a8782bec5
 F src/pcache.c 73895411fa6b7bd6f0091212feabbe833b358d23
 F src/pcache.h 4d0ccaad264d360981ec5e6a2b596d6e85242545
 F src/pcache1.c 72f644dc9e1468c72922eff5904048427b817051
@@ -1422,7 +1422,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 47633ffdbfead3ce7b1f6560660df99f950d24f8
-R cfc22f0fb66c12a8ff66ff6486e44028
+P 688eb3b400a3f2f8005c341e8259f4c1485cb0ed
+R e0b38fbf138d8fe5067019d9b4797980
 U dan
-Z 6ad2591078bc40cf96572d242da40773
+Z 338551eead62c92e7c871564cd38e428
