@@ -1,5 +1,5 @@
-C Avoid\stwo\smore\sinstances\sof\spointer\sarithmetic\son\sfreed\spointers.
-D 2016-01-29T08:38:35.193
+C Avoid\sunnecessary\sWHERE\sclause\sterm\stests\swhen\scoding\sa\sjoin\swhere\sone\nof\sthe\stables\scontains\sa\sOR\sconstraint.
+D 2016-01-29T16:57:06.008
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 72b7858f02017611c3ac1ddc965251017fed0845
@@ -428,7 +428,7 @@ F src/wal.h 2f7c831cf3b071fa548bf2d5cac640846a7ff19c
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
 F src/where.c af9bf5dcec1a0e52726c550924aa91d837166251
 F src/whereInt.h 78b6b4de94db84aecbdc07fe3e38f648eb391e9a
-F src/wherecode.c 8dee26eb181ea9daa8b1a4d96f34c0860aaf99bd
+F src/wherecode.c 22a7fee2360c738533ce12615f487594849adc78
 F src/whereexpr.c 197a448b52073aee43eca3a2233fc113369eb2d4
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1422,7 +1422,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5372f800835da61736a64dcee8b476bbe7ee2e46
-R 3b0a4b2b0654f088a973292429d2f71d
-U dan
-Z daf578eb367bf673fc68218c1dc6fe42
+P 2910ef64097b890c9f8929bf609ea2827db7ac97
+R a5e195d58a480f7623421e36c529b8b4
+U drh
+Z 416f01dc8ffa44ad767f5afe8de92edc
