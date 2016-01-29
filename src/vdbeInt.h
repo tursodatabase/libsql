@@ -101,8 +101,8 @@ struct VdbeCursor {
   int seekResult;       /* Result of previous sqlite3BtreeMoveto() */
   i64 seqCount;         /* Sequence counter */
   i64 movetoTarget;     /* Argument to the deferred sqlite3BtreeMoveto() */
-  VdbeCursor *pAltCursor; /* Set by OP_Seek */
-  int *aAltMap;           /* Set by OP_Seek */
+  VdbeCursor *pAltCursor; /* Associated index cursor from which to read */
+  int *aAltMap;           /* Mapping from table to index column numbers */
 #ifdef SQLITE_ENABLE_COLUMN_USED_MASK
   u64 maskUsed;         /* Mask of columns used by this cursor */
 #endif

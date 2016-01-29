@@ -1,5 +1,5 @@
-C Experimental\sattempt\sto\smake\sbetter\suse\sof\scovering\sindexes\swithin\sOR\squeries.
-D 2016-01-29T19:29:45.658
+C Different\scomment\son\sthe\salternative\scursor\sfields\sof\sVdbeCursor.
+D 2016-01-29T20:58:40.189
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 72b7858f02017611c3ac1ddc965251017fed0845
@@ -414,7 +414,7 @@ F src/util.c 72d40df0a52d3f30b462a15f0e094fcbade6dc82
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
 F src/vdbe.c 2e0c42bba0aee55b06b636feb5ad41d77c75abe3
 F src/vdbe.h 7a733ea8aac1b77305a67698e784fa3484ee3337
-F src/vdbeInt.h 91f22c4d54a2540fa0da64f04dd9d96969c0f0e0
+F src/vdbeInt.h 171fdc5f6af4eeb0ff0559dbf0a71244d726a670
 F src/vdbeapi.c ffae8f5af4570fbd548504e815e9fb7227f0822e
 F src/vdbeaux.c 657402ba7d253963e3fca323c6ad9f7b29a9efb9
 F src/vdbeblob.c 37c3d11a753e403698c69e17383d282e1ae73e75
@@ -1422,10 +1422,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 512caa1ad30e6f699e2d006d5ab7674d55d2c746
-R 7c9589ab5b77780aed167682522067f5
-T *branch * covering-or
-T *sym-covering-or *
-T -sym-trunk *
-U dan
-Z 8b3097dd603cdb6f18b5a640e7f1b04b
+P a323ac3a9d42bd5cb38d724c7e1180584b91054c
+R 2723ccd4873b2c7d653d59caf129ff2b
+U drh
+Z c70856a82eab5a5a2e181cbd70b2aa42
