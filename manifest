@@ -1,5 +1,5 @@
-C Modifications\sto\sensure\sthe\snExtraDelete-related\sassert()\sstatement\sdoes\snot\sfail.
-D 2016-01-28T17:06:17.501
+C Prepend\s"rc!=SQLITE_OK\s||\s"\sto\sthe\snExtraDelete\sassert()\scondition.
+D 2016-01-29T18:04:31.311
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6fca5455aaecbd14479f33f091aa19df2d3d2969
@@ -412,7 +412,7 @@ F src/update.c 17332f9fe818cbc0444c36a811800af8498af4c3
 F src/utf.c 32d7f82aa921322f3e1c956f4b58f019ebd2c6b3
 F src/util.c 72d40df0a52d3f30b462a15f0e094fcbade6dc82
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c 66c429896ce44ebcbe199f1c7a592c12095158f0
+F src/vdbe.c e86e100a3f90a861f28a5bda9c9abf1bca119a54
 F src/vdbe.h 7a733ea8aac1b77305a67698e784fa3484ee3337
 F src/vdbeInt.h 40c728712a2975855a2ac6aac44bf02dfd4a4c30
 F src/vdbeapi.c ffae8f5af4570fbd548504e815e9fb7227f0822e
@@ -1422,7 +1422,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1d3bf6bebdda9f96734bc139601e9b05344ea0b4
-R 8c4c31e27c8a082a17d0a49af9f3ce1b
+P f43ff8f82d6c1239e6f9a32e7716421c1180ac74
+R 089a2135f4238760de692cbeaf9edaeb
 U dan
-Z 9dc5d2517a8a4fb456754e0a3cfe77cf
+Z f28c932cf1fbf9988a116d4b713a0ec7
