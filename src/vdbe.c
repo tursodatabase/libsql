@@ -552,6 +552,9 @@ int sqlite3VdbeExec(
 #if defined(SQLITE_DEBUG) || defined(VDBE_PROFILE)
   Op *pOrigOp;               /* Value of pOp at the top of the loop */
 #endif
+#ifdef SQLITE_DEBUG
+  int nExtraDelete = 0;      /* Verifies FORDELETE and AUXDELETE flags */
+#endif
   int rc = SQLITE_OK;        /* Value to return */
   sqlite3 *db = p->db;       /* The database */
   u8 resetSchemaOnFault = 0; /* Reset schema after an error if positive */
@@ -3392,6 +3395,9 @@ case OP_OpenWrite:
   pCur->nullRow = 1;
   pCur->isOrdered = 1;
   pCur->pgnoRoot = p2;
+#ifdef SQLITE_DEBUG
+  pCur->wrFlag = wrFlag;
+#endif
   rc = sqlite3BtreeCursor(pX, p2, wrFlag, pKeyInfo, pCur->uc.pCursor);
   pCur->pKeyInfo = pKeyInfo;
   /* Set the VdbeCursor.isTable variable. Previous versions of
@@ -4349,9 +4355,11 @@ case OP_InsertInt: {
 ** OPFLAG_SAVEPOSITION bit of P5 is clear, then the cursor will be
 ** left in an undefined state.
 **
-** If the OPFLAG_IDXDELETE bit is set on P5, that indicates that this
-** delete is on an index cursor where the corresponding table row has
-** already been deleted.
+** If the OPFLAG_AUXDELETE bit is set on P5, that indicates that this
+** delete one of several associated with deleting a table row and all its
+** associated index entries.  Exactly one of those deletes is the "primary"
+** delete.  The others are all on OPFLAG_FORDELETE cursors or else are
+** marked with the AUXDELETE flag.
 **
 ** If the OPFLAG_NCHANGE flag of P2 (NB: P2 not P5) is set, then the row
 ** change count is incremented (otherwise not).
@@ -4390,10 +4398,26 @@ case OP_Delete: {
     assert( pC->movetoTarget==iKey ); 
   }
 #endif
- 
-  assert( (pOp->p5 & ~(OPFLAG_SAVEPOSITION|OPFLAG_IDXDELETE))==0 );
+
+  /* Only flags that can be set are SAVEPOISTION and AUXDELETE */ 
+  assert( (pOp->p5 & ~(OPFLAG_SAVEPOSITION|OPFLAG_AUXDELETE))==0 );
   assert( OPFLAG_SAVEPOSITION==BTREE_SAVEPOSITION );
-  assert( OPFLAG_IDXDELETE==BTREE_IDXDELETE );
+  assert( OPFLAG_AUXDELETE==BTREE_AUXDELETE );
+
+#ifdef SQLITE_DEBUG
+  if( p->pFrame==0 ){
+    if( pC->isEphemeral==0
+        && (pOp->p5 & OPFLAG_AUXDELETE)==0
+        && (pC->wrFlag & OPFLAG_FORDELETE)==0
+      ){
+      nExtraDelete++;
+    }
+    if( pOp->p2 & OPFLAG_NCHANGE ){
+      nExtraDelete--;
+    }
+  }
+#endif
+
   rc = sqlite3BtreeDelete(pC->uc.pCursor, pOp->p5);
   pC->cacheStatus = CACHE_STALE;
 
@@ -4938,12 +4962,9 @@ case OP_IdxDelete: {
   r.nField = (u16)pOp->p3;
   r.default_rc = 0;
   r.aMem = &aMem[pOp->p2];
-#ifdef SQLITE_DEBUG
-  { int i; for(i=0; i<r.nField; i++) assert( memIsValid(&r.aMem[i]) ); }
-#endif
   rc = sqlite3BtreeMovetoUnpacked(pCrsr, &r, 0, 0, &res);
   if( rc==SQLITE_OK && res==0 ){
-    rc = sqlite3BtreeDelete(pCrsr, 0);
+    rc = sqlite3BtreeDelete(pCrsr, BTREE_AUXDELETE);
   }
   assert( pC->deferredMoveto==0 );
   pC->cacheStatus = CACHE_STALE;
@@ -6762,6 +6783,9 @@ vdbe_return:
   testcase( nVmStep>0 );
   p->aCounter[SQLITE_STMTSTATUS_VM_STEP] += (int)nVmStep;
   sqlite3VdbeLeave(p);
+  assert( rc!=SQLITE_OK || nExtraDelete==0 
+       || sqlite3_strlike("DELETE%",p->zSql,0)!=0 
+  );
   return rc;
 
   /* Jump to here if a string or blob larger than SQLITE_MAX_LENGTH
