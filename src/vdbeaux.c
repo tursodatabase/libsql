@@ -3008,9 +3008,15 @@ int sqlite3VdbeCursorRestore(VdbeCursor *p){
 ** If the cursor is already pointing to the correct row and that row has
 ** not been deleted out from under the cursor, then this routine is a no-op.
 */
-int sqlite3VdbeCursorMoveto(VdbeCursor *p){
+int sqlite3VdbeCursorMoveto(VdbeCursor **pp, int *piCol){
+  VdbeCursor *p = *pp;
   if( p->eCurType==CURTYPE_BTREE ){
     if( p->deferredMoveto ){
+      if( p->aAltMap && p->aAltMap[*piCol] ){
+        *pp = p->pAltCursor;
+        *piCol = p->aAltMap[*piCol] - 1;
+        return SQLITE_OK;
+      }
       return handleDeferredMoveto(p);
     }
     if( sqlite3BtreeCursorHasMoved(p->uc.pCursor) ){
