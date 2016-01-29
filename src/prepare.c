@@ -582,8 +582,8 @@ static int sqlite3Prepare(
     zSqlCopy = sqlite3DbStrNDup(db, zSql, nBytes);
     if( zSqlCopy ){
       sqlite3RunParser(pParse, zSqlCopy, &zErrMsg);
-      sqlite3DbFree(db, zSqlCopy);
       pParse->zTail = &zSql[pParse->zTail-zSqlCopy];
+      sqlite3DbFree(db, zSqlCopy);
     }else{
       pParse->zTail = &zSql[nBytes];
     }
