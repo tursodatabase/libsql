@@ -1,5 +1,5 @@
-C Different\scomment\son\sthe\salternative\scursor\sfields\sof\sVdbeCursor.
-D 2016-01-29T20:58:40.189
+C Add\stests\sfor\sthe\schange\son\sthis\sbranch.
+D 2016-01-29T21:16:13.360
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 72b7858f02017611c3ac1ddc965251017fed0845
@@ -1334,7 +1334,7 @@ F test/where9.test 729c3ba9b47e8f9f1aab96bae7dad2a524f1d1a2
 F test/whereA.test 4d253178d135ec46d1671e440cd8f2b916aa6e6b
 F test/whereB.test 0def95db3bdec220a731c7e4bec5930327c1d8c5
 F test/whereC.test cae295158703cb3fc23bf1a108a9ab730efff0f6
-F test/whereD.test 4b648b4a75911474b7b4dde08a7411b165e3fa39
+F test/whereD.test 51366b07cb6f546cd30cc803f7e754f063b940de
 F test/whereE.test b3a055eef928c992b0a33198a7b8dc10eea5ad2f
 F test/whereF.test 5b2ba0dbe8074aa13e416b37c753991f0a2492d7
 F test/whereG.test dde4c52a97385a55be6a7cd46be8373f0cf35501
@@ -1422,7 +1422,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a323ac3a9d42bd5cb38d724c7e1180584b91054c
-R 2723ccd4873b2c7d653d59caf129ff2b
-U drh
-Z c70856a82eab5a5a2e181cbd70b2aa42
+P 6e3dcb6d7d960bb513d9a4a002b6cf5ab7159686
+R 56d45fd4fdb64a9d12152455ff1bc2b7
+U dan
+Z 8c3eb3de3f58e27647eefba9e15f6f8b
