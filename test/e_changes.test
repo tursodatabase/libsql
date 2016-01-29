@@ -65,7 +65,6 @@ foreach {tn schema} {
     UPDATE t1 SET b=b+1 WHERE a<5;
   } 5
 
-exit
   # Delete 4 rows
   do_changes_test 1.$tn.4 {
     DELETE FROM t1 WHERE a>6

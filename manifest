@@ -1,5 +1,5 @@
-C Prepend\s"rc!=SQLITE_OK\s||\s"\sto\sthe\snExtraDelete\sassert()\scondition.
-D 2016-01-29T18:04:31.311
+C Remove\sa\sstray\s"exit"\sin\sa\stest\sscript.
+D 2016-01-29T18:48:08.448
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6fca5455aaecbd14479f33f091aa19df2d3d2969
@@ -595,7 +595,7 @@ F test/e_blobbytes.test 9bea1d3e2b20f3010b04abba58f6ba172301f49f
 F test/e_blobclose.test df756753f571bc30e42e3a6cba2807576e49e716
 F test/e_blobopen.test 234f960d90235a9b51ec3ca1e062e8541dd558d8
 F test/e_blobwrite.test 615b405f29feb2cfb5a1f03dab7933258294fa26
-F test/e_changes.test d66e8c1e33f5ec61af32eda729c8a2475404e49b
+F test/e_changes.test fd66105385153dbf21fdb35eb8ef6c3e1eade579
 F test/e_createtable.test d4c6059d44dcd4b636de9aae322766062b471844
 F test/e_delete.test ab39084f26ae1f033c940b70ebdbbd523dc4962e
 F test/e_droptrigger.test 3cd080807622c13e5bbb61fc9a57bd7754da2412
@@ -1422,7 +1422,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f43ff8f82d6c1239e6f9a32e7716421c1180ac74
-R 089a2135f4238760de692cbeaf9edaeb
-U dan
-Z f28c932cf1fbf9988a116d4b713a0ec7
+P 2a055ed0afd56e8c6b17cfc31e7808debe9ec765
+R 4fbaa01893d53f4580e8296002d14aff
+U drh
+Z dbc978af0b86d437c82a817aee2df876
