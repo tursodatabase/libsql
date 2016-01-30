@@ -4333,26 +4333,32 @@ static int fts5IndexExtractCol(
   int iCurrent = 0;               /* Anything before the first 0x01 is col 0 */
   const u8 *p = *pa;
   const u8 *pEnd = &p[n];         /* One byte past end of position list */
-  u8 prev = 0;
 
   while( iCol>iCurrent ){
     /* Advance pointer p until it points to pEnd or an 0x01 byte that is
-    ** not part of a varint */
-    while( (prev & 0x80) || *p!=0x01 ){
-      prev = *p++;
-      if( p==pEnd ) return 0;
+    ** not part of a varint. Note that it is not possible for a negative
+    ** or extremely large varint to occur within an uncorrupted position 
+    ** list. So the last byte of each varint may be assumed to have a clear
+    ** 0x80 bit.  */
+    while( *p!=0x01 ){
+      while( *p++ & 0x80 );
+      if( p>=pEnd ) return 0;
     }
     *pa = p++;
-    p += fts5GetVarint32(p, iCurrent);
+    iCurrent = *p++;
+    if( iCurrent & 0x80 ){
+      p--;
+      p += fts5GetVarint32(p, iCurrent);
+    }
   }
   if( iCol!=iCurrent ) return 0;
 
   /* Advance pointer p until it points to pEnd or an 0x01 byte that is
   ** not part of a varint */
-  assert( (prev & 0x80)==0 );
-  while( p<pEnd && ((prev & 0x80) || *p!=0x01) ){
-    prev = *p++;
+  while( p<pEnd && *p!=0x01 ){
+    while( *p++ & 0x80 );
   }
+
   return p - (*pa);
 }
 
