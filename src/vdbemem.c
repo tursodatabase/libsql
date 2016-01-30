@@ -358,7 +358,7 @@ int sqlite3VdbeMemFinalize(Mem *pMem, FuncDef *pFunc){
 */
 static SQLITE_NOINLINE void vdbeMemClearExternAndSetNull(Mem *p){
   assert( p->db==0 || sqlite3_mutex_held(p->db->mutex) );
-  assert( VdbeMemDynamic(p) );
+  assert( VdbeMemDynamicOrSubtype(p) );
   if( p->flags&MEM_Agg ){
     sqlite3VdbeMemFinalize(p, p->u.pDef);
     assert( (p->flags & MEM_Agg)==0 );
@@ -376,6 +376,7 @@ static SQLITE_NOINLINE void vdbeMemClearExternAndSetNull(Mem *p){
     pFrame->v->pDelFrame = pFrame;
   }
   p->flags = MEM_Null;
+  p->eSubtype = 0;
 }
 
 /*
@@ -387,7 +388,7 @@ static SQLITE_NOINLINE void vdbeMemClearExternAndSetNull(Mem *p){
 ** to be freed.
 */
 static SQLITE_NOINLINE void vdbeMemClear(Mem *p){
-  if( VdbeMemDynamic(p) ){
+  if( VdbeMemDynamicOrSubtype(p) ){
     vdbeMemClearExternAndSetNull(p);
   }
   if( p->szMalloc ){
@@ -409,7 +410,7 @@ static SQLITE_NOINLINE void vdbeMemClear(Mem *p){
 */
 void sqlite3VdbeMemRelease(Mem *p){
   assert( sqlite3VdbeCheckMemInvariants(p) );
-  if( VdbeMemDynamic(p) || p->szMalloc ){
+  if( VdbeMemDynamicOrSubtype(p) || p->szMalloc ){
     vdbeMemClear(p);
   }
 }
@@ -648,7 +649,7 @@ void sqlite3VdbeMemInit(Mem *pMem, sqlite3 *db, u16 flags){
 ** Use sqlite3VdbeMemRelease() to complete erase the Mem prior to abandoning it.
 */
 void sqlite3VdbeMemSetNull(Mem *pMem){
-  if( VdbeMemDynamic(pMem) ){
+  if( VdbeMemDynamicOrSubtype(pMem) ){
     vdbeMemClearExternAndSetNull(pMem);
   }else{
     pMem->flags = MEM_Null;
@@ -688,7 +689,7 @@ static SQLITE_NOINLINE void vdbeReleaseAndSetInt64(Mem *pMem, i64 val){
 ** manifest type INTEGER.
 */
 void sqlite3VdbeMemSetInt64(Mem *pMem, i64 val){
-  if( VdbeMemDynamic(pMem) ){
+  if( VdbeMemDynamicOrSubtype(pMem) ){
     vdbeReleaseAndSetInt64(pMem, val);
   }else{
     pMem->u.i = val;
