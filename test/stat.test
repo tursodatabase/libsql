@@ -192,6 +192,7 @@ do_catchsql_test stat-6.1 {
 forcedelete test.db2
 do_execsql_test 7.1 {
   ATTACH 'test.db2' AS '123';
+  PRAGMA "123".auto_vacuum = OFF;
   CREATE TABLE "123".x1(a, b);
   INSERT INTO x1 VALUES(1, 2);
 }

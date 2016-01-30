@@ -1,5 +1,5 @@
-C Performance\senhancement\sfor\sfts5\scolumn\sfilter\squeries\son\sdetail=full\stables.
-D 2016-01-30T19:16:11.820
+C Fix\snew\stest\scases\sin\sstat.test\sso\sthat\sthey\swork\swith\s-DSQLITE_DEFAULT_AUTOVACUUM=1\sbuilds.
+D 2016-01-30T21:09:02.039
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 72b7858f02017611c3ac1ddc965251017fed0845
@@ -1054,7 +1054,7 @@ F test/spellfix3.test f7bf7b3482971473d32b6b00f6944c5c066cff97
 F test/sqldiff1.test 8f6bc7c6a5b3585d350d779c6078869ba402f8f5
 F test/sqllimits1.test a74ee2a3740b9f9c2437c246d8fb77354862a142
 F test/sqllog.test a8faa2df39610a037dd372ed872d124260d32953
-F test/stat.test fafe6e82dfdb97d8c8be31cd83e36e973079ce0f
+F test/stat.test acc91e80517fff447ae8adcfd953cfdaa5efc0af
 F test/statfault.test f525a7bf633e50afd027700e9a486090684b1ac1
 F test/stmt.test 25d64e3dbf9a3ce89558667d7f39d966fe2a71b9
 F test/subquery.test d7268d193dd33d5505df965399d3a594e76ae13f
@@ -1422,7 +1422,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9bec50a1e7796a6e038db9b1cc7cc1e7e350bf74
-R bc0069e7525e32617bb065c15a24c73f
+P 13fb4aa6a87c5c6258979953da82eedc1a7bf14f
+R 47a5bd805bca8e3bfa57e533079ecc85
 U dan
-Z 0739ff39c83f4f590353add9c7d562e8
+Z 77da8baba44508a2b8a7ef85c127b8a0
