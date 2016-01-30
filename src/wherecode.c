@@ -747,6 +747,55 @@ static void codeCursorHint(
 #endif /* SQLITE_ENABLE_CURSOR_HINTS */
 
 /*
+** Cursor iCur is open on an intkey b-tree (a table). Register iRowid contains
+** a rowid value just read from cursor iIdxCur, open on index pIdx. This
+** function generates code to do a deferred seek of cursor iCur to the 
+** rowid stored in register iRowid.
+**
+** Normally, this is just:
+**
+**   OP_Seek $iCur $iRowid
+**
+** However, if the scan currently being coded is a branch of an OR-loop and
+** the statement currently being coded is a SELECT, then P3 of the OP_Seek
+** is set to iIdxCur and P4 is set to point to an array of integers
+** containing one entry for each column of the table cursor iCur is open 
+** on. For each table column, if the column is the i'th column of the 
+** index, then the corresponding array entry is set to (i+1). If the column
+** does not appear in the index at all, the array entry is set to 0.
+*/
+static void codeDeferredSeek(
+  WhereInfo *pWInfo,              /* Where clause context */
+  Index *pIdx,                    /* Index scan is using */
+  int iCur,                       /* Cursor for IPK b-tree */
+  int iRowid,                     /* Register containing rowid to seek to */
+  int iIdxCur                     /* Index cursor */
+){
+  Parse *pParse = pWInfo->pParse; /* Parse context */
+  Vdbe *v = pParse->pVdbe;        /* Vdbe to generate code within */
+
+  assert( iIdxCur>0 );
+  assert( pIdx->aiColumn[pIdx->nColumn-1]==-1 );
+  
+  sqlite3VdbeAddOp3(v, OP_Seek, iCur, iRowid, iIdxCur);
+  if( (pWInfo->wctrlFlags & WHERE_FORCE_TABLE)
+   && sqlite3ParseToplevel(pParse)->writeMask==0 
+  ){
+    int i;
+    Table *pTab = pIdx->pTable;
+    int *ai = (int*)sqlite3DbMallocZero(pParse->db, sizeof(int)*(pTab->nCol+1));
+    if( ai ){
+      ai[0] = pTab->nCol;
+      for(i=0; i<pIdx->nColumn-1; i++){
+        assert( pIdx->aiColumn[i]<pTab->nCol );
+        if( pIdx->aiColumn[i]>=0 ) ai[pIdx->aiColumn[i]+1] = i+1;
+      }
+      sqlite3VdbeChangeP4(v, -1, (char*)ai, P4_INTARRAY);
+    }
+  }
+}
+
+/*
 ** Generate code for the start of the iLevel-th loop in the WHERE clause
 ** implementation described by pWInfo.
 */
@@ -1232,7 +1281,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         sqlite3VdbeAddOp3(v, OP_NotExists, iCur, 0, iRowidReg);
         VdbeCoverage(v);
       }else{
-        sqlite3VdbeAddOp2(v, OP_Seek, iCur, iRowidReg);  /* Deferred seek */
+        codeDeferredSeek(pWInfo, pIdx, iCur, iRowidReg, iIdxCur);
       }
     }else if( iCur!=iIdxCur ){
       Index *pPk = sqlite3PrimaryKeyIndex(pIdx->pTable);
