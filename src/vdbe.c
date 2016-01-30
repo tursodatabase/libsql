@@ -2067,11 +2067,14 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
 ** The permutation is only valid until the next OP_Compare that has
 ** the OPFLAG_PERMUTE bit set in P5. Typically the OP_Permutation should 
 ** occur immediately prior to the OP_Compare.
+**
+** The first integer in the P4 integer array is the length of the array
+** and does not become part of the permutation.
 */
 case OP_Permutation: {
   assert( pOp->p4type==P4_INTARRAY );
   assert( pOp->p4.ai );
-  aPermute = pOp->p4.ai;
+  aPermute = pOp->p4.ai + 1;
   break;
 }
 

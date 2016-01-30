@@ -783,11 +783,12 @@ static void codeDeferredSeek(
   ){
     int i;
     Table *pTab = pIdx->pTable;
-    int *ai = (int*)sqlite3DbMallocZero(pParse->db, sizeof(int) * pTab->nCol);
+    int *ai = (int*)sqlite3DbMallocZero(pParse->db, sizeof(int)*(pTab->nCol+1));
     if( ai ){
+      ai[0] = pTab->nCol;
       for(i=0; i<pIdx->nColumn-1; i++){
         assert( pIdx->aiColumn[i]<pTab->nCol );
-        if( pIdx->aiColumn[i]>=0 ) ai[pIdx->aiColumn[i]] = i+1;
+        if( pIdx->aiColumn[i]>=0 ) ai[pIdx->aiColumn[i]+1] = i+1;
       }
       sqlite3VdbeChangeP4(v, -1, (char*)ai, P4_INTARRAY);
     }
