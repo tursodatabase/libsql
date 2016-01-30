@@ -1,5 +1,5 @@
-C Output\ssubtype\sinformation\son\sregister\straces\sfor\sPRAGMA\svdbe_trace.
-D 2016-01-30T14:17:10.486
+C A\sdifferent\sway\sto\sclear\sthe\ssubtype\son\sVDBE\sregisters\swhen\sthe\svalue\sof\sthe\sregister\sis\soverwritten\swith\snew\scontent.\sTo\sfix\s[[f45ac567eaa9f93].
+D 2016-01-30T15:46:03.527
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 72b7858f02017611c3ac1ddc965251017fed0845
@@ -409,13 +409,13 @@ F src/tokenize.c 5606871a377f390af7040ec3c12e0d183512d785
 F src/treeview.c dc39ccf04e9331237388b9cb73289c9d87ea050b
 F src/trigger.c 72d876b2d0c66604a112362bdae07dae9b104816
 F src/update.c 17332f9fe818cbc0444c36a811800af8498af4c3
-F src/utf.c 32d7f82aa921322f3e1c956f4b58f019ebd2c6b3
+F src/utf.c 10cc2519e82e3369344d0969ad4b1a333dc86d18
 F src/util.c 72d40df0a52d3f30b462a15f0e094fcbade6dc82
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c bd4d2cabbafe49bd8e04d7bf57d8e480393268d9
+F src/vdbe.c 49e0a224526f4307ab80e9d3a63697b28cf0cb21
 F src/vdbe.h 7a733ea8aac1b77305a67698e784fa3484ee3337
-F src/vdbeInt.h 716df83ac45b70ff000b515040ea606d0cb5d0f3
-F src/vdbeapi.c ffae8f5af4570fbd548504e815e9fb7227f0822e
+F src/vdbeInt.h 4b69d5451bcadd473e745af53ef1e8abfdce0a79
+F src/vdbeapi.c 9d640d5efd9a140a6bda8da53b220aa258167993
 F src/vdbeaux.c 221631e40111b5efa96ea557c6e2e7f62fd32b2a
 F src/vdbeblob.c 37c3d11a753e403698c69e17383d282e1ae73e75
 F src/vdbemem.c b9181e77eca2a095929d46250daf85c8d2621fc0
@@ -834,7 +834,7 @@ F test/jrnlmode2.test 81610545a4e6ed239ea8fa661891893385e23a1d
 F test/jrnlmode3.test 556b447a05be0e0963f4311e95ab1632b11c9eaa
 F test/json101.test f0178422b3a2418f423fd0d3caf3571c8d1b9863
 F test/json102.test bf3fe7a706d30936a76a0f7a0375e1e8e73aff5a
-F test/json103.test 923b288a0610ec86c0951778f7db19cbcca36ad1
+F test/json103.test c5f6b85e69de05f6b3195f9f9d5ce9cd179099a0
 F test/keyword1.test 37ef6bba5d2ed5b07ecdd6810571de2956599dff
 F test/lastinsert.test 42e948fd6442f07d60acbd15d33fb86473e0ef63
 F test/laststmtchanges.test ae613f53819206b3222771828d024154d51db200
@@ -1422,7 +1422,10 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 85c467041c9378cae3038756da815e9117ee8c7d
-R 694b551c33162b646e920ddc57abdc60
-U drh
-Z fd54d0de297ea145965f78cad2cde9ad
+P 96b780209cc95c3f3769bb880591380d94bfe38d
+R bd3d63263e82ae4209cc8f920c59f1ec
+T *branch * clear-subtype-flag
+T *sym-clear-subtype-flag *
+T -sym-trunk *
+U dan
+Z b20671d59699e15a0872203a064b7cf5
