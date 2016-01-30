@@ -768,7 +768,6 @@ static void codeDeferredSeek(
   WhereInfo *pWInfo,              /* Where clause context */
   Index *pIdx,                    /* Index scan is using */
   int iCur,                       /* Cursor for IPK b-tree */
-  int iRowid,                     /* Register containing rowid to seek to */
   int iIdxCur                     /* Index cursor */
 ){
   Parse *pParse = pWInfo->pParse; /* Parse context */
@@ -777,7 +776,7 @@ static void codeDeferredSeek(
   assert( iIdxCur>0 );
   assert( pIdx->aiColumn[pIdx->nColumn-1]==-1 );
   
-  sqlite3VdbeAddOp3(v, OP_Seek, iCur, iRowid, iIdxCur);
+  sqlite3VdbeAddOp3(v, OP_Seek, iIdxCur, 0, iCur);
   if( (pWInfo->wctrlFlags & WHERE_FORCE_TABLE)
    && sqlite3ParseToplevel(pParse)->writeMask==0 
   ){
@@ -1274,14 +1273,14 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     if( omitTable ){
       /* pIdx is a covering index.  No need to access the main table. */
     }else if( HasRowid(pIdx->pTable) ){
-      iRowidReg = ++pParse->nMem;
-      sqlite3VdbeAddOp2(v, OP_IdxRowid, iIdxCur, iRowidReg);
-      sqlite3ExprCacheStore(pParse, iCur, -1, iRowidReg);
       if( pWInfo->eOnePass!=ONEPASS_OFF ){
+        iRowidReg = ++pParse->nMem;
+        sqlite3VdbeAddOp2(v, OP_IdxRowid, iIdxCur, iRowidReg);
+        sqlite3ExprCacheStore(pParse, iCur, -1, iRowidReg);
         sqlite3VdbeAddOp3(v, OP_NotExists, iCur, 0, iRowidReg);
         VdbeCoverage(v);
       }else{
-        codeDeferredSeek(pWInfo, pIdx, iCur, iRowidReg, iIdxCur);
+        codeDeferredSeek(pWInfo, pIdx, iCur, iIdxCur);
       }
     }else if( iCur!=iIdxCur ){
       Index *pPk = sqlite3PrimaryKeyIndex(pIdx->pTable);

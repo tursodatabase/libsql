@@ -1,5 +1,5 @@
-C Only\shonor\sthe\sregister\ssubtype\svalue\sif\sthe\sMEM_Subtype\sflag\sis\sset.\nRevised\sand\simproved\sfix\sfor\sticket\s[f45ac567eaa9f9].
-D 2016-01-30T15:52:39.136
+C Merge\sthe\simplementation\sof\sOP_IdxRowid\sand\sOP_Seek\sso\sthat\sOP_Seek\sno\slonger\nrequires\sthe\srowid\sregister\sand\sa\sseparate\sOP_IdxRowid\scall.\s\sShorter\sand\nfaster\sprepared\sstatements\sresult.
+D 2016-01-30T16:59:56.592
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 72b7858f02017611c3ac1ddc965251017fed0845
@@ -412,7 +412,7 @@ F src/update.c 17332f9fe818cbc0444c36a811800af8498af4c3
 F src/utf.c 10cc2519e82e3369344d0969ad4b1a333dc86d18
 F src/util.c 72d40df0a52d3f30b462a15f0e094fcbade6dc82
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c 49e0a224526f4307ab80e9d3a63697b28cf0cb21
+F src/vdbe.c 73f0f61eb5556e430487671a557d032ecac52240
 F src/vdbe.h 7a733ea8aac1b77305a67698e784fa3484ee3337
 F src/vdbeInt.h 4b69d5451bcadd473e745af53ef1e8abfdce0a79
 F src/vdbeapi.c 9d640d5efd9a140a6bda8da53b220aa258167993
@@ -428,7 +428,7 @@ F src/wal.h 2f7c831cf3b071fa548bf2d5cac640846a7ff19c
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
 F src/where.c af9bf5dcec1a0e52726c550924aa91d837166251
 F src/whereInt.h 78b6b4de94db84aecbdc07fe3e38f648eb391e9a
-F src/wherecode.c ef0d7019029624625416cdf32cc86604c970416f
+F src/wherecode.c 7ea737b14e7a35d7f55cbad589a29aa49dfe3f7a
 F src/whereexpr.c 197a448b52073aee43eca3a2233fc113369eb2d4
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1422,8 +1422,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 96b780209cc95c3f3769bb880591380d94bfe38d 2e9fb1295cd31fc29c97444c3dec82fef68e939f
-R bd3d63263e82ae4209cc8f920c59f1ec
-T +closed 2e9fb1295cd31fc29c97444c3dec82fef68e939f
+P 1f4c667f37d63fc3ef2e8f2581ecd3a66c054426
+R c807c9436e91d8aabdffdea0ecd68c4e
 U drh
-Z 5703eae66c478a55119b68d54c8bb9ef
+Z a3f05d9c2a4721d817f24f533822e83f
