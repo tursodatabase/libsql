@@ -1,5 +1,5 @@
-C Add\sthe\sBTREE_FORDELETE\sand\sBTREE_AUXDELETE\sflags\sto\sthe\sb-tree\slayer\sinterface\nand\suse\sthem.\s\sAdd\sassert()\sstatement\sto\sverify\sthat\sthey\sare\scorrect.
-D 2016-01-30T13:32:30.291
+C Output\ssubtype\sinformation\son\sregister\straces\sfor\sPRAGMA\svdbe_trace.
+D 2016-01-30T14:17:10.486
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 72b7858f02017611c3ac1ddc965251017fed0845
@@ -412,7 +412,7 @@ F src/update.c 17332f9fe818cbc0444c36a811800af8498af4c3
 F src/utf.c 32d7f82aa921322f3e1c956f4b58f019ebd2c6b3
 F src/util.c 72d40df0a52d3f30b462a15f0e094fcbade6dc82
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c d9d2406d8a3baca537d2b05a2354afaa25e1ca84
+F src/vdbe.c bd4d2cabbafe49bd8e04d7bf57d8e480393268d9
 F src/vdbe.h 7a733ea8aac1b77305a67698e784fa3484ee3337
 F src/vdbeInt.h 716df83ac45b70ff000b515040ea606d0cb5d0f3
 F src/vdbeapi.c ffae8f5af4570fbd548504e815e9fb7227f0822e
@@ -1422,8 +1422,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0bdb41c45aa1cc8e5c136aaa6605d54b401483bd 46080b0474363ca6594d2e5c249a280e2b4fc67a
-R 54437ffc6525e4a6d93d7714d1fd6e2f
-T +closed 46080b0474363ca6594d2e5c249a280e2b4fc67a
+P 85c467041c9378cae3038756da815e9117ee8c7d
+R 694b551c33162b646e920ddc57abdc60
 U drh
-Z 640a4b96ac8cc992fda6dcd328c886fd
+Z fd54d0de297ea145965f78cad2cde9ad

@@ -471,6 +471,7 @@ static void memTracePrint(Mem *p){
     sqlite3VdbeMemPrettyPrint(p, zBuf);
     printf(" %s", zBuf);
   }
+  if( p->eSubtype ) printf(" subtype=0x%02x", p->eSubtype);
 }
 static void registerTrace(int iReg, Mem *p){
   printf("REG[%d] = ", iReg);
