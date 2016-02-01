@@ -608,7 +608,7 @@ void sqlite3MinimumFileFormat(Parse *pParse, int iDb, int minFormat){
     sqlite3VdbeAddOp2(v, OP_Integer, minFormat, r2);
     addr1 = sqlite3VdbeAddOp3(v, OP_Ge, r2, 0, r1);
     sqlite3VdbeChangeP5(v, SQLITE_NOTNULL); VdbeCoverage(v);
-    sqlite3VdbeAddOp3(v, OP_SetCookie, iDb, BTREE_FILE_FORMAT, r2);
+    sqlite3VdbeAddOp3(v, OP_SetCookie, iDb, BTREE_FILE_FORMAT, minFormat);
     sqlite3VdbeJumpHere(v, addr1);
     sqlite3ReleaseTempReg(pParse, r1);
     sqlite3ReleaseTempReg(pParse, r2);

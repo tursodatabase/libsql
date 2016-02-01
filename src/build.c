@@ -983,10 +983,8 @@ void sqlite3StartTable(
     addr1 = sqlite3VdbeAddOp1(v, OP_If, reg3); VdbeCoverage(v);
     fileFormat = (db->flags & SQLITE_LegacyFileFmt)!=0 ?
                   1 : SQLITE_MAX_FILE_FORMAT;
-    sqlite3VdbeAddOp2(v, OP_Integer, fileFormat, reg3);
-    sqlite3VdbeAddOp3(v, OP_SetCookie, iDb, BTREE_FILE_FORMAT, reg3);
-    sqlite3VdbeAddOp2(v, OP_Integer, ENC(db), reg3);
-    sqlite3VdbeAddOp3(v, OP_SetCookie, iDb, BTREE_TEXT_ENCODING, reg3);
+    sqlite3VdbeAddOp3(v, OP_SetCookie, iDb, BTREE_FILE_FORMAT, fileFormat);
+    sqlite3VdbeAddOp3(v, OP_SetCookie, iDb, BTREE_TEXT_ENCODING, ENC(db));
     sqlite3VdbeJumpHere(v, addr1);
 
     /* This just creates a place-holder record in the sqlite_master table.
@@ -1471,13 +1469,11 @@ CollSeq *sqlite3LocateCollSeq(Parse *pParse, const char *zName){
 ** 1 chance in 2^32.  So we're safe enough.
 */
 void sqlite3ChangeCookie(Parse *pParse, int iDb){
-  int r1 = sqlite3GetTempReg(pParse);
   sqlite3 *db = pParse->db;
   Vdbe *v = pParse->pVdbe;
   assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
-  sqlite3VdbeAddOp2(v, OP_Integer, db->aDb[iDb].pSchema->schema_cookie+1, r1);
-  sqlite3VdbeAddOp3(v, OP_SetCookie, iDb, BTREE_SCHEMA_VERSION, r1);
-  sqlite3ReleaseTempReg(pParse, r1);
+  sqlite3VdbeAddOp3(v, OP_SetCookie, iDb, BTREE_SCHEMA_VERSION, 
+                    db->aDb[iDb].pSchema->schema_cookie+1);
 }
 
 /*

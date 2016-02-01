@@ -3213,15 +3213,15 @@ case OP_ReadCookie: {               /* out2 */
 
 /* Opcode: SetCookie P1 P2 P3 * *
 **
-** Write the content of register P3 (interpreted as an integer)
-** into cookie number P2 of database P1.  P2==1 is the schema version.  
-** P2==2 is the database format. P2==3 is the recommended pager cache 
+** Write the integer value P3 into cookie number P2 of database P1.
+** P2==1 is the schema version.  P2==2 is the database format.
+** P2==3 is the recommended pager cache 
 ** size, and so forth.  P1==0 is the main database file and P1==1 is the 
 ** database file used to store temporary tables.
 **
 ** A transaction must be started before executing this opcode.
 */
-case OP_SetCookie: {       /* in3 */
+case OP_SetCookie: {
   Db *pDb;
   assert( pOp->p2<SQLITE_N_BTREE_META );
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
@@ -3230,17 +3230,15 @@ case OP_SetCookie: {       /* in3 */
   pDb = &db->aDb[pOp->p1];
   assert( pDb->pBt!=0 );
   assert( sqlite3SchemaMutexHeld(db, pOp->p1, 0) );
-  pIn3 = &aMem[pOp->p3];
-  sqlite3VdbeMemIntegerify(pIn3);
   /* See note about index shifting on OP_ReadCookie */
-  rc = sqlite3BtreeUpdateMeta(pDb->pBt, pOp->p2, (int)pIn3->u.i);
+  rc = sqlite3BtreeUpdateMeta(pDb->pBt, pOp->p2, pOp->p3);
   if( pOp->p2==BTREE_SCHEMA_VERSION ){
     /* When the schema cookie changes, record the new cookie internally */
-    pDb->pSchema->schema_cookie = (int)pIn3->u.i;
+    pDb->pSchema->schema_cookie = pOp->p3;
     db->flags |= SQLITE_InternChanges;
   }else if( pOp->p2==BTREE_FILE_FORMAT ){
     /* Record changes in the file format */
-    pDb->pSchema->file_format = (u8)pIn3->u.i;
+    pDb->pSchema->file_format = pOp->p3;
   }
   if( pOp->p1==1 ){
     /* Invalidate all prepared statements whenever the TEMP database
