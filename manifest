@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\scausing\sthe\sOR/covering-index\soptimization\sto\sbe\sdisabled\sif\scompile\stime\sparameter\sSQLITE_MAX_ATTACHED\swere\sset\sto\sgreater\sthan\s30.
-D 2016-02-01T13:58:56.691
+C Update\swalcrash.test\sto\sensure\sthat,\sduring\sa\sparticular\stest,\senough\sdata\sis\swritten\sto\scause\sSQLite\sto\ssync\sthe\swal\sfile\s14\stimes.
+D 2016-02-01T16:36:47.969
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 72b7858f02017611c3ac1ddc965251017fed0845
@@ -1308,7 +1308,7 @@ F test/walbak.test b9f68e39646375c2b877be906babcc15d38b4877
 F test/walbig.test f437473a16cfb314867c6b5d1dbcd519e73e3434
 F test/walblock.test be48f3a75eff0b4456209f26b3ce186c2015497d
 F test/walcksum.test 9afeb96240296c08c72fc524d199c912cfe34daa
-F test/walcrash.test 451d79e528add5c42764cea74aa2750754171b25
+F test/walcrash.test 21038858cc552077b0522f50b0fa87e38139306a
 F test/walcrash2.test a0edab4e5390f03b99a790de89aad15d6ec70b36
 F test/walcrash3.test e426aa58122d20f2b9fbe9a507f9eb8cab85b8af
 F test/walfault.test 1f8389f7709877e9b4cc679033d71d6fe529056b
@@ -1422,7 +1422,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a9b6a0672f84dd205f9333951e4c2a608d027d71
-R 2464227ee70c33ffde6d518be2a20c9c
+P a17712bf8d98dd485560f434a5350e6381cf1411
+R 9c14b59494afeacd043f7754f1a985e1
 U dan
-Z 281424deda7a5f64a5e9ae761e185dda
+Z ecc144871fca92cc0fc68693a6e08d49
