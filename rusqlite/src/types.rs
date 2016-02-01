@@ -194,21 +194,6 @@ impl ToSql for Null {
     }
 }
 
-/// BLOB of length N that is filled with zeroes.
-/// Zeroblobs are intended to serve as placeholders for BLOBs whose content is later written using incremental BLOB I/O routines.
-/// A negative value for the zeroblob results in a zero-length BLOB.
-#[cfg(feature = "blob")]
-#[derive(Copy,Clone)]
-pub struct ZeroBlob(pub i32);
-
-#[cfg(feature = "blob")]
-impl ToSql for ZeroBlob {
-    unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
-        let ZeroBlob(length) = *self;
-        ffi::sqlite3_bind_zeroblob(stmt, col, length)
-    }
-}
-
 macro_rules! raw_from_impl(
     ($t:ty, $f:ident, $c:expr) => (
         impl FromSql for $t {
