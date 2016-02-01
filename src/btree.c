@@ -8239,7 +8239,7 @@ int sqlite3BtreeDelete(BtCursor *pCur, u8 flags){
   if( rc==SQLITE_OK ){
     if( bSkipnext ){
       assert( bPreserve && (pCur->iPage==iCellDepth || CORRUPT_DB) );
-      assert( pPage==pCur->apPage[pCur->iPage] );
+      assert( pPage==pCur->apPage[pCur->iPage] || CORRUPT_DB );
       assert( (pPage->nCell>0 || CORRUPT_DB) && iCellIdx<=pPage->nCell );
       pCur->eState = CURSOR_SKIPNEXT;
       if( iCellIdx>=pPage->nCell ){

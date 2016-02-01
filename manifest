@@ -1,5 +1,5 @@
-C Fix\snew\stest\scases\sin\sstat.test\sso\sthat\sthey\swork\swith\s-DSQLITE_DEFAULT_AUTOVACUUM=1\sbuilds.
-D 2016-01-30T21:09:02.039
+C Fix\san\sassert()\sthat\smight\sfail\son\sa\scorrupt\sdatabase.
+D 2016-02-01T00:21:08.846
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 72b7858f02017611c3ac1ddc965251017fed0845
@@ -290,7 +290,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 2869a76c03eb393ee795416e2387005553df72bc
 F src/bitvec.c 1a78d450a17c5016710eec900bedfc5729bf9bdf
 F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
-F src/btree.c e3929afb9bfbaa6b39685b5e5a207036ac862a75
+F src/btree.c a2a0244ea3f0b3f57f75019c2f229c744ca5d202
 F src/btree.h 368ceeb4bd9312dc8df2ffd64b4b7dbcf4db5f8e
 F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
 F src/build.c 0510844c48d80732aead74b5727403b493dd1cd5
@@ -1422,7 +1422,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 13fb4aa6a87c5c6258979953da82eedc1a7bf14f
-R 47a5bd805bca8e3bfa57e533079ecc85
-U dan
-Z 77da8baba44508a2b8a7ef85c127b8a0
+P a2810cf65db13479e2ab255c37abac7841ee985d
+R 188fdebacf7930560dd1bef6de7f142e
+U drh
+Z 4925a52dc50a180b6685bbcef3b9e085
