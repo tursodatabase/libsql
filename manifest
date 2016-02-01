@@ -1,5 +1,5 @@
-C Minor\ssimplification\sto\sthe\sOP_AutoCommit\sopcode.\s\sFix\ssome\scode\scomments\nrelated\sto\stransaction\scontrol.
-D 2016-02-01T13:21:13.072
+C Fix\sa\sproblem\scausing\sthe\sOR/covering-index\soptimization\sto\sbe\sdisabled\sif\scompile\stime\sparameter\sSQLITE_MAX_ATTACHED\swere\sset\sto\sgreater\sthan\s30.
+D 2016-02-01T13:58:56.691
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 72b7858f02017611c3ac1ddc965251017fed0845
@@ -428,7 +428,7 @@ F src/wal.h 2f7c831cf3b071fa548bf2d5cac640846a7ff19c
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
 F src/where.c af9bf5dcec1a0e52726c550924aa91d837166251
 F src/whereInt.h 78b6b4de94db84aecbdc07fe3e38f648eb391e9a
-F src/wherecode.c 7ea737b14e7a35d7f55cbad589a29aa49dfe3f7a
+F src/wherecode.c 923f5d04b379b7417bc29f3b86b5eae9d1923d72
 F src/whereexpr.c 197a448b52073aee43eca3a2233fc113369eb2d4
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1422,7 +1422,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 22eaced7274764eaf7ab4b5fc52cc2fcfc285708
-R 48595a32d50edde169d3b975cd1cf3f9
-U drh
-Z 4ace4ad684d082250fc68f1cbbc590b5
+P a9b6a0672f84dd205f9333951e4c2a608d027d71
+R 2464227ee70c33ffde6d518be2a20c9c
+U dan
+Z 281424deda7a5f64a5e9ae761e185dda
