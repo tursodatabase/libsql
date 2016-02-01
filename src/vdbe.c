@@ -3008,28 +3008,27 @@ case OP_Savepoint: {
 case OP_AutoCommit: {
   int desiredAutoCommit;
   int iRollback;
-  int turnOnAC;
 
   desiredAutoCommit = pOp->p1;
   iRollback = pOp->p2;
-  turnOnAC = desiredAutoCommit && !db->autoCommit;
   assert( desiredAutoCommit==1 || desiredAutoCommit==0 );
   assert( desiredAutoCommit==1 || iRollback==0 );
   assert( db->nVdbeActive>0 );  /* At least this one VM is active */
   assert( p->bIsReader );
 
-  if( turnOnAC && !iRollback && db->nVdbeWrite>0 ){
-    /* If this instruction implements a COMMIT and other VMs are writing
-    ** return an error indicating that the other VMs must complete first. 
-    */
-    sqlite3VdbeError(p, "cannot commit transaction - "
-                        "SQL statements in progress");
-    rc = SQLITE_BUSY;
-  }else if( desiredAutoCommit!=db->autoCommit ){
+  if( desiredAutoCommit!=db->autoCommit ){
     if( iRollback ){
       assert( desiredAutoCommit==1 );
       sqlite3RollbackAll(db, SQLITE_ABORT_ROLLBACK);
       db->autoCommit = 1;
+    }else if( desiredAutoCommit && db->nVdbeWrite>0 ){
+      /* If this instruction implements a COMMIT and other VMs are writing
+      ** return an error indicating that the other VMs must complete first. 
+      */
+      sqlite3VdbeError(p, "cannot commit transaction - "
+                          "SQL statements in progress");
+      rc = SQLITE_BUSY;
+      break;
     }else if( (rc = sqlite3VdbeCheckFk(p, 1))!=SQLITE_OK ){
       goto vdbe_return;
     }else{

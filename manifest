@@ -1,5 +1,5 @@
-C Fix\san\sassert()\sthat\smight\sfail\son\sa\scorrupt\sdatabase.
-D 2016-02-01T00:21:08.846
+C Minor\ssimplification\sto\sthe\sOP_AutoCommit\sopcode.\s\sFix\ssome\scode\scomments\nrelated\sto\stransaction\scontrol.
+D 2016-02-01T13:21:13.072
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 72b7858f02017611c3ac1ddc965251017fed0845
@@ -293,7 +293,7 @@ F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
 F src/btree.c a2a0244ea3f0b3f57f75019c2f229c744ca5d202
 F src/btree.h 368ceeb4bd9312dc8df2ffd64b4b7dbcf4db5f8e
 F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
-F src/build.c 0510844c48d80732aead74b5727403b493dd1cd5
+F src/build.c c177ca703d7a3ac6ea6bba3a6c396d67ce79bc69
 F src/callback.c 29ae4faba226c7ebb9aee93016b5ce8a8f071261
 F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
 F src/ctime.c 60e135af364d777a9ab41c97e5e89cd224da6198
@@ -412,11 +412,11 @@ F src/update.c 17332f9fe818cbc0444c36a811800af8498af4c3
 F src/utf.c 10cc2519e82e3369344d0969ad4b1a333dc86d18
 F src/util.c 72d40df0a52d3f30b462a15f0e094fcbade6dc82
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c 73f0f61eb5556e430487671a557d032ecac52240
+F src/vdbe.c 755b1e2117214549b768efb6e552fcd12a9d859b
 F src/vdbe.h 7a733ea8aac1b77305a67698e784fa3484ee3337
 F src/vdbeInt.h 4b69d5451bcadd473e745af53ef1e8abfdce0a79
 F src/vdbeapi.c 9d640d5efd9a140a6bda8da53b220aa258167993
-F src/vdbeaux.c 221631e40111b5efa96ea557c6e2e7f62fd32b2a
+F src/vdbeaux.c b8ba8e6d48732fb7a735a23e3040a01f4848498e
 F src/vdbeblob.c 37c3d11a753e403698c69e17383d282e1ae73e75
 F src/vdbemem.c b9181e77eca2a095929d46250daf85c8d2621fc0
 F src/vdbesort.c ef3c6d1f1a7d44cf67bb2bee59ea3d1fe5bad174
@@ -1422,7 +1422,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a2810cf65db13479e2ab255c37abac7841ee985d
-R 188fdebacf7930560dd1bef6de7f142e
+P 22eaced7274764eaf7ab4b5fc52cc2fcfc285708
+R 48595a32d50edde169d3b975cd1cf3f9
 U drh
-Z 4925a52dc50a180b6685bbcef3b9e085
+Z 4ace4ad684d082250fc68f1cbbc590b5

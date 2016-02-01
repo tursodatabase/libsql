@@ -3892,7 +3892,7 @@ void sqlite3SrcListShiftJoinType(SrcList *p){
 }
 
 /*
-** Begin a transaction
+** Generate VDBE code for a BEGIN statement.
 */
 void sqlite3BeginTransaction(Parse *pParse, int type){
   sqlite3 *db;
@@ -3902,7 +3902,6 @@ void sqlite3BeginTransaction(Parse *pParse, int type){
   assert( pParse!=0 );
   db = pParse->db;
   assert( db!=0 );
-/*  if( db->aDb[0].pBt==0 ) return; */
   if( sqlite3AuthCheck(pParse, SQLITE_TRANSACTION, "BEGIN", 0, 0) ){
     return;
   }
@@ -3914,11 +3913,11 @@ void sqlite3BeginTransaction(Parse *pParse, int type){
       sqlite3VdbeUsesBtree(v, i);
     }
   }
-  sqlite3VdbeAddOp2(v, OP_AutoCommit, 0, 0);
+  sqlite3VdbeAddOp0(v, OP_AutoCommit);
 }
 
 /*
-** Commit a transaction
+** Generate VDBE code for a COMMIT statement.
 */
 void sqlite3CommitTransaction(Parse *pParse){
   Vdbe *v;
@@ -3930,12 +3929,12 @@ void sqlite3CommitTransaction(Parse *pParse){
   }
   v = sqlite3GetVdbe(pParse);
   if( v ){
-    sqlite3VdbeAddOp2(v, OP_AutoCommit, 1, 0);
+    sqlite3VdbeAddOp1(v, OP_AutoCommit, 1);
   }
 }
 
 /*
-** Rollback a transaction
+** Generate VDBE code for a ROLLBACK statement.
 */
 void sqlite3RollbackTransaction(Parse *pParse){
   Vdbe *v;

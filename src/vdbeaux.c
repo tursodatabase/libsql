@@ -534,7 +534,7 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
   for(pOp=p->aOp, i=p->nOp-1; i>=0; i--, pOp++){
     u8 opcode = pOp->opcode;
 
-    /* NOTE: Be sure to update mkopcodeh.awk when adding or removing
+    /* NOTE: Be sure to update mkopcodeh.tcl when adding or removing
     ** cases from this switch! */
     switch( opcode ){
       case OP_Transaction: {
