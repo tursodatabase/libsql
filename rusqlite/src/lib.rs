@@ -983,6 +983,9 @@ pub type SqliteRows<'stmt> = Rows<'stmt>;
 ///
 /// ## Warning
 ///
+/// Strongly consider using `query_map` or `query_and_then` instead of `query`; the former do not
+/// suffer from the following problem.
+///
 /// Due to the way SQLite returns result rows of a query, it is not safe to attempt to get values
 /// from a row after it has become stale (i.e., `next()` has been called again on the `Rows`
 /// iterator). For example:
@@ -994,7 +997,7 @@ pub type SqliteRows<'stmt> = Rows<'stmt>;
 ///     let mut rows = try!(stmt.query(&[]));
 ///
 ///     let row0 = try!(rows.next().unwrap());
-///     // row 0 is value now...
+///     // row 0 is valid for now...
 ///
 ///     let row1 = try!(rows.next().unwrap());
 ///     // row 0 is now STALE, and row 1 is valid
@@ -1008,12 +1011,6 @@ pub type SqliteRows<'stmt> = Rows<'stmt>;
 /// (which would result in a collection of rows, only the last of which can safely be used) and
 /// `min`/`max` (which could return a stale row unless the last row happened to be the min or max,
 /// respectively).
-///
-/// This problem could be solved by changing the signature of `next` to tie the lifetime of the
-/// returned row to the lifetime of (a mutable reference to) the result rows handle, but this would
-/// no longer implement `Iterator`, and therefore you would lose access to the majority of
-/// functions which are useful (such as support for `for ... in ...` looping, `map`, `filter`,
-/// etc.).
 pub struct Rows<'stmt> {
     stmt: &'stmt Statement<'stmt>,
     current_row: Rc<Cell<c_int>>,
