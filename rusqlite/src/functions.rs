@@ -489,9 +489,10 @@ impl InnerConnection {
         where D: Aggregate<A, T>,
               T: ToResult
     {
-        unsafe fn aggregate_context<A>(ctx: *mut sqlite3_context, bytes: usize) -> Option<*mut *mut A> {
-            let pac = ffi::sqlite3_aggregate_context(ctx, bytes as c_int)
-                            as *mut *mut A;
+        unsafe fn aggregate_context<A>(ctx: *mut sqlite3_context,
+                                       bytes: usize)
+                                       -> Option<*mut *mut A> {
+            let pac = ffi::sqlite3_aggregate_context(ctx, bytes as c_int) as *mut *mut A;
             if pac.is_null() {
                 return None;
             }
@@ -559,12 +560,14 @@ impl InnerConnection {
             // Within the xFinal callback, it is customary to set N=0 in calls to
             // sqlite3_aggregate_context(C,N) so that no pointless memory allocations occur.
             let a: Option<A> = match aggregate_context(ctx, 0) {
-                Some(pac) => if (*pac).is_null() {
-                    None
-                } else {
-                    let a = Box::from_raw(*pac);
-                    Some(*a)
-                },
+                Some(pac) => {
+                    if (*pac).is_null() {
+                        None
+                    } else {
+                        let a = Box::from_raw(*pac);
+                        Some(*a)
+                    }
+                }
                 None => None,
             };
 
