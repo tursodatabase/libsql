@@ -16,10 +16,7 @@ build: false
 
 test_script:
   - cargo test --lib --verbose
-
-branches:
-  only:
-    - appveyor
+  - cargo test --lib --features "backup blob functions load_extension trace"
 
 cache:
   - C:\Users\appveyor\.cargo
