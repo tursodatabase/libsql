@@ -1,5 +1,5 @@
-C Update\swalcrash.test\sto\sensure\sthat,\sduring\sa\sparticular\stest,\senough\sdata\sis\swritten\sto\scause\sSQLite\sto\ssync\sthe\swal\sfile\s14\stimes.
-D 2016-02-01T16:36:47.969
+C Number\sVDBE\sopcodes\sstarting\swith\s0\sinstead\sof\s1,\sas\sthis\sobviates\sthe\nlower-bound\stest\son\s"switch(opcode){...}",\smaking\sthe\scode\ssmaller\sand\sfaster.
+D 2016-02-01T17:20:08.707
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 72b7858f02017611c3ac1ddc965251017fed0845
@@ -416,7 +416,7 @@ F src/vdbe.c 755b1e2117214549b768efb6e552fcd12a9d859b
 F src/vdbe.h 7a733ea8aac1b77305a67698e784fa3484ee3337
 F src/vdbeInt.h 4b69d5451bcadd473e745af53ef1e8abfdce0a79
 F src/vdbeapi.c 9d640d5efd9a140a6bda8da53b220aa258167993
-F src/vdbeaux.c b8ba8e6d48732fb7a735a23e3040a01f4848498e
+F src/vdbeaux.c f0e7cfa04f7ac44d69866868531dbaf20659d0a2
 F src/vdbeblob.c 37c3d11a753e403698c69e17383d282e1ae73e75
 F src/vdbemem.c b9181e77eca2a095929d46250daf85c8d2621fc0
 F src/vdbesort.c ef3c6d1f1a7d44cf67bb2bee59ea3d1fe5bad174
@@ -1381,8 +1381,8 @@ F tool/logest.c eef612f8adf4d0993dafed0416064cf50d5d33c6
 F tool/mkautoconfamal.sh a29b14d54302b33fd892958f6895582ea90e4a45
 F tool/mkkeywordhash.c 06ec0b78bd4fa68c12d90ef2bdfe76b039133ff8
 F tool/mkmsvcmin.tcl d57e6efc9428605f5418d0b235721ddf7b5d9c0b
-F tool/mkopcodec.tcl edde8adc42621b5e598127f8cdc6d52cfe21f52b
-F tool/mkopcodeh.tcl e04177031532b7aa9379ded50e820231ac4abd6e
+F tool/mkopcodec.tcl d1b6362bd3aa80d5520d4d6f3765badf01f6c43c
+F tool/mkopcodeh.tcl 385c62d78c38b2d92146dcb5abd319dbbc33506d
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkpragmatab.tcl f0d5bb266d1d388cf86fce5ba01a891e95d72d41
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
@@ -1422,7 +1422,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a17712bf8d98dd485560f434a5350e6381cf1411
-R 9c14b59494afeacd043f7754f1a985e1
-U dan
-Z ecc144871fca92cc0fc68693a6e08d49
+P 5d7c092869137a0ba69f93324fe4ed56a05b5985
+R c689c18fc524ba4b0a7bb357f3467ad8
+U drh
+Z 4a66c8beaa1a93ec6bbf8e1c0f940158
