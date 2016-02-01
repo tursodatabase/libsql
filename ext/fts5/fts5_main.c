@@ -220,10 +220,10 @@ struct Fts5Cursor {
 /*
 ** Values for Fts5Cursor.csrflags
 */
-#define FTS5CSR_REQUIRE_CONTENT   0x01
-#define FTS5CSR_REQUIRE_DOCSIZE   0x02
-#define FTS5CSR_REQUIRE_INST      0x04
-#define FTS5CSR_EOF               0x08
+#define FTS5CSR_EOF               0x01
+#define FTS5CSR_REQUIRE_CONTENT   0x02
+#define FTS5CSR_REQUIRE_DOCSIZE   0x04
+#define FTS5CSR_REQUIRE_INST      0x08
 #define FTS5CSR_FREE_ZRANK        0x10
 #define FTS5CSR_REQUIRE_RESEEK    0x20
 #define FTS5CSR_REQUIRE_POSLIST   0x40
@@ -778,7 +778,7 @@ static int fts5CursorReseek(Fts5Cursor *pCsr, int *pbSkip){
     i64 iRowid = sqlite3Fts5ExprRowid(pCsr->pExpr);
 
     rc = sqlite3Fts5ExprFirst(pCsr->pExpr, pTab->pIndex, iRowid, bDesc);
-    if( rc==SQLITE_OK && iRowid!=sqlite3Fts5ExprRowid(pCsr->pExpr) ){
+    if( rc==SQLITE_OK &&  iRowid!=sqlite3Fts5ExprRowid(pCsr->pExpr) ){
       *pbSkip = 1;
     }
 
@@ -786,6 +786,7 @@ static int fts5CursorReseek(Fts5Cursor *pCsr, int *pbSkip){
     fts5CsrNewrow(pCsr);
     if( sqlite3Fts5ExprEof(pCsr->pExpr) ){
       CsrFlagSet(pCsr, FTS5CSR_EOF);
+      *pbSkip = 1;
     }
   }
   return rc;
@@ -807,14 +808,13 @@ static int fts5NextMethod(sqlite3_vtab_cursor *pCursor){
   assert( (pCsr->ePlan<3)==
           (pCsr->ePlan==FTS5_PLAN_MATCH || pCsr->ePlan==FTS5_PLAN_SOURCE) 
   );
+  assert( !CsrFlagTest(pCsr, FTS5CSR_EOF) );
 
   if( pCsr->ePlan<3 ){
     int bSkip = 0;
     if( (rc = fts5CursorReseek(pCsr, &bSkip)) || bSkip ) return rc;
     rc = sqlite3Fts5ExprNext(pCsr->pExpr, pCsr->iLastRowid);
-    if( sqlite3Fts5ExprEof(pCsr->pExpr) ){
-      CsrFlagSet(pCsr, FTS5CSR_EOF);
-    }
+    CsrFlagSet(pCsr, sqlite3Fts5ExprEof(pCsr->pExpr));
     fts5CsrNewrow(pCsr);
   }else{
     switch( pCsr->ePlan ){
