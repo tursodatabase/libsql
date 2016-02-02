@@ -429,6 +429,20 @@ int sqlite3PagerTrace=1;  /* True to enable tracing */
 #define MAX_SECTOR_SIZE 0x10000
 
 /*
+** If the option SQLITE_EXTRA_DURABLE option is set at compile-time, then
+** SQLite will do extra fsync() operations when synchronous==FULL to help
+** ensure that transactions are durable across a power failure.  Most
+** applications are happy as long as transactions are consistent across
+** a power failure, and are perfectly willing to lose the last transaction
+** in exchange for the extra performance of avoiding directory syncs.
+** And so the default SQLITE_EXTRA_DURABLE setting is off.
+*/
+#ifndef SQLITE_EXTRA_DURABLE
+# define SQLITE_EXTRA_DURABLE 0
+#endif
+
+
+/*
 ** An instance of the following structure is allocated for each active
 ** savepoint and statement transaction in the system. All such structures
 ** are stored in the Pager.aSavepoint[] array, which is allocated and
@@ -1983,7 +1997,8 @@ static int pager_end_transaction(Pager *pPager, int hasMaster, int bCommit){
       );
       sqlite3OsClose(pPager->jfd);
       if( bDelete ){
-        rc = sqlite3OsDelete(pPager->pVfs, pPager->zJournal, 0);
+        rc = sqlite3OsDelete(pPager->pVfs, pPager->zJournal, 
+                 pPager->fullSync && SQLITE_EXTRA_DURABLE);
       }
     }
   }

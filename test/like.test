@@ -964,5 +964,22 @@ do_execsql_test like-12.16 {
   SELECT id FROM t12b WHERE x LIKE 'abc%' COLLATE binary ORDER BY +id;
 } {/SCAN/}
 
+# Ticket [https://www.sqlite.org/src/tktview/80369eddd5c94d49f7fbbcf5]
+# 2016-01-20
+#
+do_execsql_test like-13.1 {
+  SELECT char(0x304d) LIKE char(0x306d);
+} {0}
+do_execsql_test like-13.2 {
+  SELECT char(0x4d) LIKE char(0x306d);
+} {0}
+do_execsql_test like-13.3 {
+  SELECT char(0x304d) LIKE char(0x6d);
+} {0}
+do_execsql_test like-13.4 {
+  SELECT char(0x4d) LIKE char(0x6d);
+} {1}
+
+
 
 finish_test

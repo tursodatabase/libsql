@@ -528,7 +528,7 @@ static int sqlite3Prepare(
   }
   pParse->pReprepare = pReprepare;
   assert( ppStmt && *ppStmt==0 );
-  assert( !db->mallocFailed );
+  /* assert( !db->mallocFailed ); // not true with SQLITE_USE_ALLOCA */
   assert( sqlite3_mutex_held(db->mutex) );
 
   /* Check to verify that it is possible to get a read lock on all
@@ -585,8 +585,8 @@ static int sqlite3Prepare(
     zSqlCopy = sqlite3DbStrNDup(db, zSql, nBytes);
     if( zSqlCopy ){
       sqlite3RunParser(pParse, zSqlCopy, &zErrMsg);
-      sqlite3DbFree(db, zSqlCopy);
       pParse->zTail = &zSql[pParse->zTail-zSqlCopy];
+      sqlite3DbFree(db, zSqlCopy);
     }else{
       pParse->zTail = &zSql[nBytes];
     }
