@@ -7,6 +7,7 @@
 * Introduces `ZeroBlob` type under the `blob` module/feature exposing SQLite's zeroblob API.
 * Adds CI testing for Windows via AppVeyor.
 * Fixes a warning building libsqlite3-sys under Rust 1.6.
+* Adds an unsafe `handle()` method to `Connection`. Please file an issue if you actually use it.
 
 # Version 0.6.0 (2015-12-17)
 

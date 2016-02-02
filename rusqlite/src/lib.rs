@@ -494,6 +494,18 @@ impl Connection {
             self.db.borrow_mut().load_extension(dylib_path.as_ref(), entry_point)
         }
 
+    /// Get access to the underlying SQLite database connection handle.
+    ///
+    /// # Warning
+    ///
+    /// You should not need to use this function. If you do need to, please [open an issue
+    /// on the rusqlite repository](https://github.com/jgallagher/rusqlite/issues) and describe
+    /// your use case. This function is unsafe because it gives you raw access to the SQLite
+    /// connection, and what you do with it could impact the safety of this `Connection`.
+    pub unsafe fn handle(&self) -> *mut ffi::Struct_sqlite3 {
+        self.db.borrow().db()
+    }
+
     fn decode_result(&self, code: c_int) -> Result<()> {
         self.db.borrow_mut().decode_result(code)
     }
