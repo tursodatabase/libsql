@@ -1,0 +1,22 @@
+environment:
+  TARGET: 1.6.0-x86_64-pc-windows-gnu
+  MSYS2_BITS: 64
+install:
+  - ps: Start-FileDownload "https://static.rust-lang.org/dist/rust-${env:TARGET}.exe"
+  - rust-%TARGET%.exe /VERYSILENT /NORESTART /DIR="C:\Program Files (x86)\Rust"
+  - SET PATH=%PATH%;C:\Program Files (x86)\Rust\bin
+  - if defined MSYS2_BITS set PATH=%PATH%;C:\msys64\mingw%MSYS2_BITS%\bin
+  - rustc -V
+  - cargo -V
+  - ps: Start-FileDownload 'http://sqlite.org/2016/sqlite-dll-win64-x64-3100200.zip'
+  - cmd: 7z e sqlite-dll-win64-x64-3100200.zip -y > nul
+  - SET SQLITE3_LIB_DIR=%APPVEYOR_BUILD_FOLDER%
+
+build: false
+
+test_script:
+  - cargo test --lib --verbose
+  - cargo test --lib --features "backup blob functions load_extension trace"
+
+cache:
+  - C:\Users\appveyor\.cargo
