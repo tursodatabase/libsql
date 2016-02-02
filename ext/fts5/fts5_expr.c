@@ -1337,7 +1337,8 @@ int sqlite3Fts5ExprFirst(Fts5Expr *p, Fts5Index *pIdx, i64 iFirst, int bDesc){
     }
 
     /* If the iterator is not at a real match, skip forward until it is. */
-    while( pRoot->bNomatch && rc==SQLITE_OK && pRoot->bEof==0 ){
+    while( pRoot->bNomatch ){
+      assert( pRoot->bEof==0 && rc==SQLITE_OK );
       rc = fts5ExprNodeNext(p, pRoot, 0, 0);
     }
   }
