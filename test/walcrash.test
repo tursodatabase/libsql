@@ -237,12 +237,13 @@ for {set i 1} {$i < $REPEATS} {incr i} {
       INSERT INTO t1 VALUES(randomblob(9000));
       INSERT INTO t1 VALUES(randomblob(9000));
       INSERT INTO t1 VALUES(randomblob(9000));
+      INSERT INTO t1 VALUES(randomblob(9000));
     }
   } {1 {child process exited abnormally}}
 
   do_test walcrash-6.$i.2 {
     sqlite3 db test.db
-    execsql { SELECT count(*)==34 OR count(*)==35 FROM t1 WHERE x != 1 }
+    execsql { SELECT count(*) BETWEEN 34 AND 36 FROM t1 WHERE x != 1 }
   } {1}
   do_test walcrash-6.$i.3 { execsql { PRAGMA main.integrity_check } } {ok}
   do_test walcrash-6.$i.4 { execsql { PRAGMA main.journal_mode } } {wal}

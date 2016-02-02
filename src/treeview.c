@@ -63,7 +63,7 @@ static void sqlite3TreeViewLine(TreeView *p, const char *zFormat, ...){
     sqlite3StrAccumAppend(&acc, p->bLine[i] ? "|-- " : "'-- ", 4);
   }
   va_start(ap, zFormat);
-  sqlite3VXPrintf(&acc, 0, zFormat, ap);
+  sqlite3VXPrintf(&acc, zFormat, ap);
   va_end(ap);
   if( zBuf[acc.nChar-1]!='\n' ) sqlite3StrAccumAppend(&acc, "\n", 1);
   sqlite3StrAccumFinish(&acc);
@@ -98,17 +98,17 @@ void sqlite3TreeViewWith(TreeView *pView, const With *pWith, u8 moreToFollow){
       char zLine[1000];
       const struct Cte *pCte = &pWith->a[i];
       sqlite3StrAccumInit(&x, 0, zLine, sizeof(zLine), 0);
-      sqlite3XPrintf(&x, 0, "%s", pCte->zName);
+      sqlite3XPrintf(&x, "%s", pCte->zName);
       if( pCte->pCols && pCte->pCols->nExpr>0 ){
         char cSep = '(';
         int j;
         for(j=0; j<pCte->pCols->nExpr; j++){
-          sqlite3XPrintf(&x, 0, "%c%s", cSep, pCte->pCols->a[j].zName);
+          sqlite3XPrintf(&x, "%c%s", cSep, pCte->pCols->a[j].zName);
           cSep = ',';
         }
-        sqlite3XPrintf(&x, 0, ")");
+        sqlite3XPrintf(&x, ")");
       }
-      sqlite3XPrintf(&x, 0, " AS");
+      sqlite3XPrintf(&x, " AS");
       sqlite3StrAccumFinish(&x);
       sqlite3TreeViewItem(pView, zLine, i<pWith->nCte-1);
       sqlite3TreeViewSelect(pView, pCte->pSelect, 0);
@@ -159,20 +159,20 @@ void sqlite3TreeViewSelect(TreeView *pView, const Select *p, u8 moreToFollow){
         StrAccum x;
         char zLine[100];
         sqlite3StrAccumInit(&x, 0, zLine, sizeof(zLine), 0);
-        sqlite3XPrintf(&x, 0, "{%d,*}", pItem->iCursor);
+        sqlite3XPrintf(&x, "{%d,*}", pItem->iCursor);
         if( pItem->zDatabase ){
-          sqlite3XPrintf(&x, 0, " %s.%s", pItem->zDatabase, pItem->zName);
+          sqlite3XPrintf(&x, " %s.%s", pItem->zDatabase, pItem->zName);
         }else if( pItem->zName ){
-          sqlite3XPrintf(&x, 0, " %s", pItem->zName);
+          sqlite3XPrintf(&x, " %s", pItem->zName);
         }
         if( pItem->pTab ){
-          sqlite3XPrintf(&x, 0, " tabname=%Q", pItem->pTab->zName);
+          sqlite3XPrintf(&x, " tabname=%Q", pItem->pTab->zName);
         }
         if( pItem->zAlias ){
-          sqlite3XPrintf(&x, 0, " (AS %s)", pItem->zAlias);
+          sqlite3XPrintf(&x, " (AS %s)", pItem->zAlias);
         }
         if( pItem->fg.jointype & JT_LEFT ){
-          sqlite3XPrintf(&x, 0, " LEFT-JOIN");
+          sqlite3XPrintf(&x, " LEFT-JOIN");
         }
         sqlite3StrAccumFinish(&x);
         sqlite3TreeViewItem(pView, zLine, i<p->pSrc->nSrc-1); 

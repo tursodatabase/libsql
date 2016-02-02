@@ -29,7 +29,7 @@ typedef unsigned short u16;
 typedef sqlite3_int64 i64;
 typedef sqlite3_uint64 u64;
 
-#define ArraySize(x) (sizeof(x) / sizeof(x[0]))
+#define ArraySize(x) ((int)(sizeof(x) / sizeof(x[0])))
 
 #define testcase(x)
 #define ALWAYS(x) 1
@@ -225,8 +225,8 @@ int sqlite3Fts5ConfigParseRank(const char*, char**, char**);
 typedef struct Fts5Buffer Fts5Buffer;
 struct Fts5Buffer {
   u8 *p;
-  u32 n;
-  u32 nSpace;
+  int n;
+  int nSpace;
 };
 
 int sqlite3Fts5BufferSize(int*, Fts5Buffer*, u32);
@@ -247,7 +247,7 @@ char *sqlite3Fts5Mprintf(int *pRc, const char *zFmt, ...);
 #define fts5BufferSet(a,b,c,d)        sqlite3Fts5BufferSet(a,b,c,d)
 
 #define fts5BufferGrow(pRc,pBuf,nn) ( \
-  (pBuf)->n + (nn) <= (pBuf)->nSpace ? 0 : \
+  (u32)((pBuf)->n) + (u32)(nn) <= (u32)((pBuf)->nSpace) ? 0 : \
     sqlite3Fts5BufferSize((pRc),(pBuf),(nn)+(pBuf)->n) \
 )
 
@@ -314,6 +314,12 @@ void sqlite3Fts5TermsetFree(Fts5Termset*);
 
 typedef struct Fts5Index Fts5Index;
 typedef struct Fts5IndexIter Fts5IndexIter;
+
+struct Fts5IndexIter {
+  i64 iRowid;
+  const u8 *pData;
+  int nData;
+};
 
 /*
 ** Values used as part of the flags argument passed to IndexQuery().
@@ -382,8 +388,6 @@ int sqlite3Fts5IterEof(Fts5IndexIter*);
 int sqlite3Fts5IterNext(Fts5IndexIter*);
 int sqlite3Fts5IterNextFrom(Fts5IndexIter*, i64 iMatch);
 i64 sqlite3Fts5IterRowid(Fts5IndexIter*);
-int sqlite3Fts5IterPoslist(Fts5IndexIter*,Fts5Colset*, const u8**, int*, i64*);
-int sqlite3Fts5IterPoslistBuffer(Fts5IndexIter *pIter, Fts5Buffer *pBuf);
 
 /*
 ** Close an iterator opened by sqlite3Fts5IndexQuery().
@@ -468,8 +472,6 @@ int sqlite3Fts5IndexOptimize(Fts5Index *p);
 int sqlite3Fts5IndexMerge(Fts5Index *p, int nMerge);
 
 int sqlite3Fts5IndexLoadConfig(Fts5Index *p);
-
-int sqlite3Fts5IterCollist(Fts5IndexIter*, const u8 **, int*);
 
 /*
 ** End of interface to code in fts5_index.c.

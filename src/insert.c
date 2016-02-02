@@ -1647,7 +1647,7 @@ int sqlite3OpenTableAndIndices(
   Parse *pParse,   /* Parsing context */
   Table *pTab,     /* Table to be opened */
   int op,          /* OP_OpenRead or OP_OpenWrite */
-  u8 p5,           /* P5 value for OP_Open* instructions */
+  u8 p5,           /* P5 value for OP_Open* opcodes (except on WITHOUT ROWID) */
   int iBase,       /* Use this for the table cursor, if there is one */
   u8 *aToOpen,     /* If not NULL: boolean for each table and index */
   int *piDataCur,  /* Write the database source cursor number here */
@@ -1682,14 +1682,15 @@ int sqlite3OpenTableAndIndices(
   for(i=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
     int iIdxCur = iBase++;
     assert( pIdx->pSchema==pTab->pSchema );
-    if( IsPrimaryKeyIndex(pIdx) && !HasRowid(pTab) && piDataCur ){
-      *piDataCur = iIdxCur;
-    }
     if( aToOpen==0 || aToOpen[i+1] ){
       sqlite3VdbeAddOp3(v, op, iIdxCur, pIdx->tnum, iDb);
       sqlite3VdbeSetP4KeyInfo(pParse, pIdx);
-      sqlite3VdbeChangeP5(v, p5);
       VdbeComment((v, "%s", pIdx->zName));
+    }
+    if( IsPrimaryKeyIndex(pIdx) && !HasRowid(pTab) ){
+      if( piDataCur ) *piDataCur = iIdxCur;
+    }else{
+      sqlite3VdbeChangeP5(v, p5);
     }
   }
   if( iBase>pParse->nTab ) pParse->nTab = iBase;

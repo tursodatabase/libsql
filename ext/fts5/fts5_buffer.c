@@ -322,7 +322,7 @@ int sqlite3Fts5TermsetAdd(
   *pbPresent = 0;
   if( p ){
     int i;
-    int hash = 13;
+    u32 hash = 13;
     Fts5TermsetEntry *pEntry;
 
     /* Calculate a hash value for this term. This is the same hash checksum
@@ -339,7 +339,7 @@ int sqlite3Fts5TermsetAdd(
       if( pEntry->iIdx==iIdx 
           && pEntry->nTerm==nTerm 
           && memcmp(pEntry->pTerm, pTerm, nTerm)==0 
-        ){
+      ){
         *pbPresent = 1;
         break;
       }
@@ -363,7 +363,7 @@ int sqlite3Fts5TermsetAdd(
 
 void sqlite3Fts5TermsetFree(Fts5Termset *p){
   if( p ){
-    int i;
+    u32 i;
     for(i=0; i<ArraySize(p->apHash); i++){
       Fts5TermsetEntry *pEntry = p->apHash[i];
       while( pEntry ){

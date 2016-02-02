@@ -49,6 +49,7 @@ proc usage {} {
   puts stderr "  -prefix PREFIX (comma separated prefix= argument)"
   puts stderr "  -trans N     (commit after N inserts - 0 == never)"
   puts stderr "  -hashsize N  (set the fts5 hashsize parameter to N)"
+  puts stderr "  -detail MODE (detail mode for fts5 tables)"
   exit 1
 }
 
@@ -61,6 +62,7 @@ set O(crisismerge)  -1
 set O(prefix)     ""
 set O(trans)      0
 set O(hashsize)   -1
+set O(detail)     full
 
 if {[llength $argv]<2} usage
 set nOpt [expr {[llength $argv]-2}]
@@ -113,6 +115,11 @@ for {set i 0} {$i < $nOpt} {incr i} {
       set O(hashsize) [lindex $argv $i]
     }
 
+    -detail {
+      if { [incr i]>=$nOpt } usage
+      set O(detail) [lindex $argv $i]
+    }
+
     default {
       usage
     }
@@ -129,6 +136,9 @@ db eval "PRAGMA page_size=4096"
 db eval BEGIN
   set pref ""
   if {$O(prefix)!=""} { set pref ", prefix='$O(prefix)'" }
+  if {$O(vtab)=="fts5"} {
+    append pref ", detail=$O(detail)"
+  }
   catch {
     db eval "CREATE VIRTUAL TABLE t1 USING $O(vtab) (path, content$O(tok)$pref)"
     db eval "INSERT INTO t1(t1, rank) VALUES('pgsz', 4050);"

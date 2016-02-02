@@ -76,6 +76,10 @@
 #  define NTDDI_WINBLUE                     0x06030000
 #endif
 
+#ifndef NTDDI_WINTHRESHOLD
+#  define NTDDI_WINTHRESHOLD                0x06040000
+#endif
+
 /*
 ** Check to see if the GetVersionEx[AW] functions are deprecated on the
 ** target system.  GetVersionEx was first deprecated in Win8.1.
@@ -85,6 +89,19 @@
 #    define SQLITE_WIN32_GETVERSIONEX   0   /* GetVersionEx() is deprecated */
 #  else
 #    define SQLITE_WIN32_GETVERSIONEX   1   /* GetVersionEx() is current */
+#  endif
+#endif
+
+/*
+** Check to see if the CreateFileMappingA function is supported on the
+** target system.  It is unavailable when using "mincore.lib" on Win10.
+** When compiling for Windows 10, always assume "mincore.lib" is in use.
+*/
+#ifndef SQLITE_WIN32_CREATEFILEMAPPINGA
+#  if defined(NTDDI_VERSION) && NTDDI_VERSION >= NTDDI_WINTHRESHOLD
+#    define SQLITE_WIN32_CREATEFILEMAPPINGA   0
+#  else
+#    define SQLITE_WIN32_CREATEFILEMAPPINGA   1
 #  endif
 #endif
 
@@ -494,8 +511,9 @@ static struct win_syscall {
 #define osCreateFileW ((HANDLE(WINAPI*)(LPCWSTR,DWORD,DWORD, \
         LPSECURITY_ATTRIBUTES,DWORD,DWORD,HANDLE))aSyscall[5].pCurrent)
 
-#if (!SQLITE_OS_WINRT && defined(SQLITE_WIN32_HAS_ANSI) && \
-        (!defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0))
+#if !SQLITE_OS_WINRT && defined(SQLITE_WIN32_HAS_ANSI) && \
+        (!defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0) && \
+        SQLITE_WIN32_CREATEFILEMAPPINGA
   { "CreateFileMappingA",      (SYSCALL)CreateFileMappingA,      0 },
 #else
   { "CreateFileMappingA",      (SYSCALL)0,                       0 },
@@ -725,8 +743,7 @@ static struct win_syscall {
 
 #define osGetTickCount ((DWORD(WINAPI*)(VOID))aSyscall[33].pCurrent)
 
-#if defined(SQLITE_WIN32_HAS_ANSI) && defined(SQLITE_WIN32_GETVERSIONEX) && \
-        SQLITE_WIN32_GETVERSIONEX
+#if defined(SQLITE_WIN32_HAS_ANSI) && SQLITE_WIN32_GETVERSIONEX
   { "GetVersionExA",           (SYSCALL)GetVersionExA,           0 },
 #else
   { "GetVersionExA",           (SYSCALL)0,                       0 },
@@ -736,7 +753,7 @@ static struct win_syscall {
         LPOSVERSIONINFOA))aSyscall[34].pCurrent)
 
 #if !SQLITE_OS_WINRT && defined(SQLITE_WIN32_HAS_WIDE) && \
-        defined(SQLITE_WIN32_GETVERSIONEX) && SQLITE_WIN32_GETVERSIONEX
+        SQLITE_WIN32_GETVERSIONEX
   { "GetVersionExW",           (SYSCALL)GetVersionExW,           0 },
 #else
   { "GetVersionExW",           (SYSCALL)0,                       0 },
@@ -1347,7 +1364,7 @@ DWORD sqlite3Win32Wait(HANDLE hObject){
 ** the LockFileEx() API.
 */
 
-#if !defined(SQLITE_WIN32_GETVERSIONEX) || !SQLITE_WIN32_GETVERSIONEX
+#if !SQLITE_WIN32_GETVERSIONEX
 # define osIsNT()  (1)
 #elif SQLITE_OS_WINCE || SQLITE_OS_WINRT || !defined(SQLITE_WIN32_HAS_ANSI)
 # define osIsNT()  (1)
@@ -1368,7 +1385,7 @@ int sqlite3_win32_is_nt(void){
   **       kernel.
   */
   return 1;
-#elif defined(SQLITE_WIN32_GETVERSIONEX) && SQLITE_WIN32_GETVERSIONEX
+#elif SQLITE_WIN32_GETVERSIONEX
   if( osInterlockedCompareExchange(&sqlite3_os_type, 0, 0)==0 ){
 #if defined(SQLITE_WIN32_HAS_ANSI)
     OSVERSIONINFOA sInfo;
@@ -3952,7 +3969,7 @@ static int winShmMap(
       hMap = osCreateFileMappingW(pShmNode->hFile.h,
           NULL, PAGE_READWRITE, 0, nByte, NULL
       );
-#elif defined(SQLITE_WIN32_HAS_ANSI)
+#elif defined(SQLITE_WIN32_HAS_ANSI) && SQLITE_WIN32_CREATEFILEMAPPINGA
       hMap = osCreateFileMappingA(pShmNode->hFile.h,
           NULL, PAGE_READWRITE, 0, nByte, NULL
       );
@@ -4108,7 +4125,7 @@ static int winMapfile(winFile *pFd, sqlite3_int64 nByte){
     pFd->hMap = osCreateFileMappingW(pFd->h, NULL, protect,
                                 (DWORD)((nMap>>32) & 0xffffffff),
                                 (DWORD)(nMap & 0xffffffff), NULL);
-#elif defined(SQLITE_WIN32_HAS_ANSI)
+#elif defined(SQLITE_WIN32_HAS_ANSI) && SQLITE_WIN32_CREATEFILEMAPPINGA
     pFd->hMap = osCreateFileMappingA(pFd->h, NULL, protect,
                                 (DWORD)((nMap>>32) & 0xffffffff),
                                 (DWORD)(nMap & 0xffffffff), NULL);

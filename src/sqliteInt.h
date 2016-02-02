@@ -2848,7 +2848,8 @@ struct AuthContext {
 /*
 ** Bitfield flags for P5 value in various opcodes.
 */
-#define OPFLAG_NCHANGE       0x01    /* Set to update db->nChange */
+#define OPFLAG_NCHANGE       0x01    /* OP_Insert: Set to update db->nChange */
+                                     /* Also used in P2 (not P5) of OP_Delete */
 #define OPFLAG_EPHEM         0x01    /* OP_Column: Ephemeral output is ok */
 #define OPFLAG_LASTROWID     0x02    /* Set to update db->lastRowid */
 #define OPFLAG_ISUPDATE      0x04    /* This OP_Insert is an sql UPDATE */
@@ -2858,9 +2859,11 @@ struct AuthContext {
 #define OPFLAG_TYPEOFARG     0x80    /* OP_Column only used for typeof() */
 #define OPFLAG_BULKCSR       0x01    /* OP_Open** used to open bulk cursor */
 #define OPFLAG_SEEKEQ        0x02    /* OP_Open** cursor uses EQ seek only */
-#define OPFLAG_FORDELETE     0x08    /* OP_Open is opening for-delete csr */
+#define OPFLAG_FORDELETE     0x08    /* OP_Open should use BTREE_FORDELETE */
 #define OPFLAG_P2ISREG       0x10    /* P2 to OP_Open** is a register number */
 #define OPFLAG_PERMUTE       0x01    /* OP_Compare: use the permutation */
+#define OPFLAG_SAVEPOSITION  0x02    /* OP_Delete: keep cursor position */
+#define OPFLAG_AUXDELETE     0x04    /* OP_Delete: index in a DELETE op */
 
 /*
  * Each trigger present in the database schema is stored as an instance of
@@ -2979,10 +2982,16 @@ struct StrAccum {
   u32  nAlloc;         /* Amount of space allocated in zText */
   u32  mxAlloc;        /* Maximum allowed allocation.  0 for no malloc usage */
   u8   accError;       /* STRACCUM_NOMEM or STRACCUM_TOOBIG */
-  u8   bMalloced;      /* zText points to allocated space */
+  u8   printfFlags;    /* SQLITE_PRINTF flags below */
 };
 #define STRACCUM_NOMEM   1
 #define STRACCUM_TOOBIG  2
+#define SQLITE_PRINTF_INTERNAL 0x01  /* Internal-use-only converters allowed */
+#define SQLITE_PRINTF_SQLFUNC  0x02  /* SQL function arguments to VXPrintf */
+#define SQLITE_PRINTF_MALLOCED 0x04  /* True if xText is allocated space */
+
+#define isMalloced(X)  (((X)->printfFlags & SQLITE_PRINTF_MALLOCED)!=0)
+
 
 /*
 ** A pointer to this structure is used to communicate information
@@ -3299,10 +3308,8 @@ struct PrintfArguments {
   sqlite3_value **apArg;   /* The argument values */
 };
 
-#define SQLITE_PRINTF_INTERNAL 0x01
-#define SQLITE_PRINTF_SQLFUNC  0x02
-void sqlite3VXPrintf(StrAccum*, u32, const char*, va_list);
-void sqlite3XPrintf(StrAccum*, u32, const char*, ...);
+void sqlite3VXPrintf(StrAccum*, const char*, va_list);
+void sqlite3XPrintf(StrAccum*, const char*, ...);
 char *sqlite3MPrintf(sqlite3*,const char*, ...);
 char *sqlite3VMPrintf(sqlite3*,const char*, va_list);
 #if defined(SQLITE_DEBUG) || defined(SQLITE_HAVE_OS_TRACE)
@@ -3323,6 +3330,7 @@ char *sqlite3VMPrintf(sqlite3*,const char*, va_list);
 void sqlite3SetString(char **, sqlite3*, const char*);
 void sqlite3ErrorMsg(Parse*, const char*, ...);
 int sqlite3Dequote(char*);
+void sqlite3TokenInit(Token*,char*);
 int sqlite3KeywordCode(const unsigned char*, int);
 int sqlite3RunParser(Parse*, const char*, char **);
 void sqlite3FinishCoding(Parse*);

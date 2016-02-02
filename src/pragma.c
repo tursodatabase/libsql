@@ -444,8 +444,7 @@ void sqlite3Pragma(
     }else{
       int size = sqlite3AbsInt32(sqlite3Atoi(zRight));
       sqlite3BeginWriteOperation(pParse, 0, iDb);
-      sqlite3VdbeAddOp2(v, OP_Integer, size, 1);
-      sqlite3VdbeAddOp3(v, OP_SetCookie, iDb, BTREE_DEFAULT_CACHE_SIZE, 1);
+      sqlite3VdbeAddOp3(v, OP_SetCookie, iDb, BTREE_DEFAULT_CACHE_SIZE, size);
       assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
       pDb->pSchema->cache_size = size;
       sqlite3BtreeSetCacheSize(pDb->pBt, pDb->pSchema->cache_size);
@@ -683,8 +682,7 @@ void sqlite3Pragma(
           { OP_ReadCookie,     0,         1,         BTREE_LARGEST_ROOT_PAGE},
           { OP_If,             1,         0,                 0},    /* 2 */
           { OP_Halt,           SQLITE_OK, OE_Abort,          0},    /* 3 */
-          { OP_Integer,        0,         1,                 0},    /* 4 */
-          { OP_SetCookie,      0,         BTREE_INCR_VACUUM, 1},    /* 5 */
+          { OP_SetCookie,      0,         BTREE_INCR_VACUUM, 0},    /* 4 */
         };
         VdbeOp *aOp;
         int iAddr = sqlite3VdbeCurrentAddr(v);
@@ -694,8 +692,8 @@ void sqlite3Pragma(
         aOp[0].p1 = iDb;
         aOp[1].p1 = iDb;
         aOp[2].p2 = iAddr+4;
-        aOp[4].p1 = eAuto - 1;
-        aOp[5].p1 = iDb;
+        aOp[4].p1 = iDb;
+        aOp[4].p3 = eAuto - 1;
         sqlite3VdbeUsesBtree(v, iDb);
       }
     }
@@ -1728,17 +1726,16 @@ void sqlite3Pragma(
       /* Write the specified cookie value */
       static const VdbeOpList setCookie[] = {
         { OP_Transaction,    0,  1,  0},    /* 0 */
-        { OP_Integer,        0,  1,  0},    /* 1 */
-        { OP_SetCookie,      0,  0,  1},    /* 2 */
+        { OP_SetCookie,      0,  0,  0},    /* 1 */
       };
       VdbeOp *aOp;
       sqlite3VdbeVerifyNoMallocRequired(v, ArraySize(setCookie));
       aOp = sqlite3VdbeAddOpList(v, ArraySize(setCookie), setCookie, 0);
       if( ONLY_IF_REALLOC_STRESS(aOp==0) ) break;
       aOp[0].p1 = iDb;
-      aOp[1].p1 = sqlite3Atoi(zRight);
-      aOp[2].p1 = iDb;
-      aOp[2].p2 = iCookie;
+      aOp[1].p1 = iDb;
+      aOp[1].p2 = iCookie;
+      aOp[1].p3 = sqlite3Atoi(zRight);
     }else{
       /* Read the specified cookie value */
       static const VdbeOpList readCookie[] = {
