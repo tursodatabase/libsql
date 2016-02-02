@@ -171,9 +171,7 @@ impl<'a, 'b> Backup<'a, 'b> {
     ///
     /// Will return `Err` if the underlying `sqlite3_backup_init` call returns
     /// `NULL`.
-    pub fn new(from: &'a Connection,
-               to: &'b mut Connection)
-               -> Result<Backup<'a, 'b>> {
+    pub fn new(from: &'a Connection, to: &'b mut Connection) -> Result<Backup<'a, 'b>> {
         Backup::new_with_names(from, DatabaseName::Main, to, DatabaseName::Main)
     }
 
