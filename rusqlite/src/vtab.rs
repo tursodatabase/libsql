@@ -99,20 +99,28 @@ fn escape_quote(identifier: String) -> String {
     }
 }
 
-static INT_ARRAY_MODULE: ffi::sqlite3_module = ffi::sqlite3_module {
+#[macro_export]
+macro_rules! init_module {
+    ($module_name: ident, $vtab: ident, $cursor: ty,
+        $create: ident, $best_index: ident, $destroy: ident,
+        $open: ident, $close: ident,
+        $filter: ident, $next: ident, $eof: ident,
+        $column: ident, $rowid: ident) => {
+
+static $module_name: ffi::sqlite3_module = ffi::sqlite3_module {
     iVersion: 1,
-    xCreate: Some(x_create),
-    xConnect: Some(x_create), /* A virtual table is eponymous if its xCreate method is the exact same function as the xConnect method */
-    xBestIndex: Some(x_best_index),
-    xDisconnect: Some(x_destroy),
-    xDestroy: Some(x_destroy),
-    xOpen: Some(x_open),
-    xClose: Some(x_close),
-    xFilter: Some(x_filter),
-    xNext: Some(x_next),
-    xEof: Some(x_eof),
-    xColumn: Some(x_column),
-    xRowid: Some(x_rowid),
+    xCreate: Some($create),
+    xConnect: Some($create), /* A virtual table is eponymous if its xCreate method is the exact same function as the xConnect method */
+    xBestIndex: Some($best_index),
+    xDisconnect: Some($destroy),
+    xDestroy: Some($destroy),
+    xOpen: Some($open),
+    xClose: Some($close),
+    xFilter: Some($filter),
+    xNext: Some($next),
+    xEof: Some($eof),
+    xColumn: Some($column),
+    xRowid: Some($rowid),
     xUpdate: None, // TODO
     xBegin: None,
     xSync: None,
@@ -125,16 +133,16 @@ static INT_ARRAY_MODULE: ffi::sqlite3_module = ffi::sqlite3_module {
     xRollbackTo: None,
 };
 
-unsafe extern "C" fn x_create(db: *mut ffi::sqlite3,
+unsafe extern "C" fn $create(db: *mut ffi::sqlite3,
                               aux: *mut libc::c_void,
                               argc: libc::c_int,
                               argv: *const *const libc::c_char,
                               pp_vtab: *mut *mut ffi::sqlite3_vtab,
                               err_msg: *mut *mut libc::c_char)
                               -> libc::c_int {
-    match IntArrayVTab::create(db, aux, argc, argv) {
+    match $vtab::create(db, aux, argc, argv) {
         Ok(vtab) => {
-            let boxed_vtab: *mut IntArrayVTab = Box::into_raw(Box::new(vtab));
+            let boxed_vtab: *mut $vtab = Box::into_raw(Box::new(vtab));
             *pp_vtab = boxed_vtab as *mut ffi::sqlite3_vtab;
             ffi::SQLITE_OK
         }
@@ -154,12 +162,73 @@ unsafe extern "C" fn x_create(db: *mut ffi::sqlite3,
         }
     }
 }
-
-unsafe extern "C" fn x_destroy(vtab: *mut ffi::sqlite3_vtab) -> libc::c_int {
-    let vtab = vtab as *mut IntArrayVTab;
-    let _: Box<IntArrayVTab> = Box::from_raw(mem::transmute(vtab));
+unsafe extern "C" fn $best_index(vtab: *mut ffi::sqlite3_vtab,
+                                  info: *mut ffi::sqlite3_index_info)
+                                  -> libc::c_int {
+    let vtab = vtab as *mut $vtab;
+    (*vtab).best_index(info);
     ffi::SQLITE_OK
 }
+unsafe extern "C" fn $destroy(vtab: *mut ffi::sqlite3_vtab) -> libc::c_int {
+    let vtab = vtab as *mut $vtab;
+    let _: Box<$vtab> = Box::from_raw(mem::transmute(vtab));
+    ffi::SQLITE_OK
+}
+
+unsafe extern "C" fn $open(vtab: *mut ffi::sqlite3_vtab,
+                            pp_cursor: *mut *mut ffi::sqlite3_vtab_cursor)
+                            -> libc::c_int {
+    let vtab = vtab as *mut $vtab;
+    let cursor = (*vtab).open();
+    let boxed_cursor: *mut $cursor = Box::into_raw(Box::new(cursor));
+    *pp_cursor = boxed_cursor as *mut ffi::sqlite3_vtab_cursor;
+    ffi::SQLITE_OK
+}
+unsafe extern "C" fn $close(cursor: *mut ffi::sqlite3_vtab_cursor) -> libc::c_int {
+    let cursor = cursor as *mut $cursor;
+    let _: Box<$cursor> = Box::from_raw(mem::transmute(cursor));
+    ffi::SQLITE_OK
+}
+
+unsafe extern "C" fn $filter(cursor: *mut ffi::sqlite3_vtab_cursor,
+                              _idx_num: libc::c_int,
+                              _idx_str: *const libc::c_char,
+                              _argc: libc::c_int,
+                              _argv: *mut *mut ffi::sqlite3_value)
+                              -> libc::c_int {
+    let cursor = cursor as *mut $cursor;
+    (*cursor).filter()
+}
+unsafe extern "C" fn $next(cursor: *mut ffi::sqlite3_vtab_cursor) -> libc::c_int {
+    let cursor = cursor as *mut $cursor;
+    (*cursor).next()
+}
+unsafe extern "C" fn $eof(cursor: *mut ffi::sqlite3_vtab_cursor) -> libc::c_int {
+    let cursor = cursor as *mut $cursor;
+    (*cursor).eof() as libc::c_int
+}
+unsafe extern "C" fn $column(cursor: *mut ffi::sqlite3_vtab_cursor,
+                              ctx: *mut ffi::sqlite3_context,
+                              i: libc::c_int)
+                              -> libc::c_int {
+    let cursor = cursor as *mut $cursor;
+    (*cursor).column(ctx, i)
+}
+unsafe extern "C" fn $rowid(cursor: *mut ffi::sqlite3_vtab_cursor,
+                             p_rowid: *mut ffi::sqlite3_int64)
+                             -> libc::c_int {
+    let cursor = cursor as *mut $cursor;
+    *p_rowid = (*cursor).rowid();
+    ffi::SQLITE_OK
+}
+    }
+}
+
+init_module!(INT_ARRAY_MODULE, IntArrayVTab, IntArrayVTabCursor,
+    int_array_create, int_array_best_index, int_array_destroy,
+    int_array_open, int_array_close,
+    int_array_filter, int_array_next, int_array_eof,
+    int_array_column, int_array_rowid);
 
 #[repr(C)]
 struct IntArrayVTab {
@@ -210,29 +279,6 @@ impl IntArrayVTab {
     }
 }
 
-unsafe extern "C" fn x_best_index(vtab: *mut ffi::sqlite3_vtab,
-                                  info: *mut ffi::sqlite3_index_info)
-                                  -> libc::c_int {
-    let vtab = vtab as *mut IntArrayVTab;
-    (*vtab).best_index(info);
-    ffi::SQLITE_OK
-}
-
-unsafe extern "C" fn x_open(vtab: *mut ffi::sqlite3_vtab,
-                            pp_cursor: *mut *mut ffi::sqlite3_vtab_cursor)
-                            -> libc::c_int {
-    let vtab = vtab as *mut IntArrayVTab;
-    let cursor = (*vtab).open();
-    let boxed_cursor: *mut IntArrayVTabCursor = Box::into_raw(Box::new(cursor));
-    *pp_cursor = boxed_cursor as *mut ffi::sqlite3_vtab_cursor;
-    ffi::SQLITE_OK
-}
-unsafe extern "C" fn x_close(cursor: *mut ffi::sqlite3_vtab_cursor) -> libc::c_int {
-    let cursor = cursor as *mut IntArrayVTabCursor;
-    let _: Box<IntArrayVTabCursor> = Box::from_raw(mem::transmute(cursor));
-    ffi::SQLITE_OK
-}
-
 #[repr(C)]
 struct IntArrayVTabCursor {
     /// Base class
@@ -279,38 +325,6 @@ impl IntArrayVTabCursor {
     fn rowid(&self) -> i64 {
         self.i as i64
     }
-}
-
-unsafe extern "C" fn x_filter(cursor: *mut ffi::sqlite3_vtab_cursor,
-                              _idx_num: libc::c_int,
-                              _idx_str: *const libc::c_char,
-                              _argc: libc::c_int,
-                              _argv: *mut *mut ffi::sqlite3_value)
-                              -> libc::c_int {
-    let cursor = cursor as *mut IntArrayVTabCursor;
-    (*cursor).filter()
-}
-unsafe extern "C" fn x_next(cursor: *mut ffi::sqlite3_vtab_cursor) -> libc::c_int {
-    let cursor = cursor as *mut IntArrayVTabCursor;
-    (*cursor).next()
-}
-unsafe extern "C" fn x_eof(cursor: *mut ffi::sqlite3_vtab_cursor) -> libc::c_int {
-    let cursor = cursor as *mut IntArrayVTabCursor;
-    (*cursor).eof() as libc::c_int
-}
-unsafe extern "C" fn x_column(cursor: *mut ffi::sqlite3_vtab_cursor,
-                              ctx: *mut ffi::sqlite3_context,
-                              i: libc::c_int)
-                              -> libc::c_int {
-    let cursor = cursor as *mut IntArrayVTabCursor;
-    (*cursor).column(ctx, i)
-}
-unsafe extern "C" fn x_rowid(cursor: *mut ffi::sqlite3_vtab_cursor,
-                             p_rowid: *mut ffi::sqlite3_int64)
-                             -> libc::c_int {
-    let cursor = cursor as *mut IntArrayVTabCursor;
-    *p_rowid = (*cursor).rowid();
-    ffi::SQLITE_OK
 }
 
 unsafe fn result_error(ctx: *mut ffi::sqlite3_context, err: Error) -> libc::c_int {
