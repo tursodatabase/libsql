@@ -319,7 +319,10 @@ struct Fts5IndexIter {
   i64 iRowid;
   const u8 *pData;
   int nData;
+  u8 bEof;
 };
+
+#define sqlite3Fts5IterEof(x) ((x)->bEof)
 
 /*
 ** Values used as part of the flags argument passed to IndexQuery().
@@ -384,7 +387,6 @@ int sqlite3Fts5IndexQuery(
 ** The various operations on open token or token prefix iterators opened
 ** using sqlite3Fts5IndexQuery().
 */
-int sqlite3Fts5IterEof(Fts5IndexIter*);
 int sqlite3Fts5IterNext(Fts5IndexIter*);
 int sqlite3Fts5IterNextFrom(Fts5IndexIter*, i64 iMatch);
 i64 sqlite3Fts5IterRowid(Fts5IndexIter*);

@@ -518,7 +518,6 @@ struct Fts5Iter {
   int nSeg;                       /* Size of aSeg[] array */
   int bRev;                       /* True to iterate in reverse order */
   u8 bSkipEmpty;                  /* True to skip deleted entries */
-  u8 bEof;                        /* True at EOF */
   u8 bFiltered;                   /* True if column-filter already applied */
 
   i64 iSwitchRowid;               /* Firstest rowid of other than aFirst[1] */
@@ -2459,7 +2458,7 @@ static void fts5AssertMultiIterSetup(Fts5Index *p, Fts5Iter *pIter){
     Fts5SegIter *pFirst = &pIter->aSeg[ pIter->aFirst[1].iFirst ];
     int i;
 
-    assert( (pFirst->pLeaf==0)==pIter->bEof );
+    assert( (pFirst->pLeaf==0)==pIter->base.bEof );
 
     /* Check that pIter->iSwitchRowid is set correctly. */
     for(i=0; i<pIter->nSeg; i++){
@@ -2731,7 +2730,7 @@ static int fts5MultiIterAdvanceRowid(
 */
 static void fts5MultiIterSetEof(Fts5Iter *pIter){
   Fts5SegIter *pSeg = &pIter->aSeg[ pIter->aFirst[1].iFirst ];
-  pIter->bEof = pSeg->pLeaf==0;
+  pIter->base.bEof = pSeg->pLeaf==0;
   pIter->iSwitchRowid = pSeg->iRowid;
 }
 
@@ -2964,7 +2963,7 @@ static void fts5MultiIterNew2(
       }
       pData = 0;
     }else{
-      pNew->bEof = 1;
+      pNew->base.bEof = 1;
     }
     fts5SegIterSetNext(p, pIter);
 
@@ -2980,9 +2979,9 @@ static void fts5MultiIterNew2(
 */
 static int fts5MultiIterEof(Fts5Index *p, Fts5Iter *pIter){
   assert( p->rc 
-      || (pIter->aSeg[ pIter->aFirst[1].iFirst ].pLeaf==0)==pIter->bEof 
+      || (pIter->aSeg[ pIter->aFirst[1].iFirst ].pLeaf==0)==pIter->base.bEof 
   );
-  return (p->rc || pIter->bEof);
+  return (p->rc || pIter->base.bEof);
 }
 
 /*
@@ -5209,11 +5208,6 @@ int sqlite3Fts5IndexQuery(
 /*
 ** Return true if the iterator passed as the only argument is at EOF.
 */
-int sqlite3Fts5IterEof(Fts5IndexIter *pIter){
-  assert( ((Fts5Iter*)pIter)->pIndex->rc==SQLITE_OK );
-  return ((Fts5Iter*)pIter)->bEof;
-}
-
 /*
 ** Move to the next matching rowid. 
 */
@@ -5239,7 +5233,7 @@ int sqlite3Fts5IterNextScan(Fts5IndexIter *pIndexIter){
     if( pSeg->pLeaf && pSeg->term.p[0]!=FTS5_MAIN_PREFIX ){
       fts5DataRelease(pSeg->pLeaf);
       pSeg->pLeaf = 0;
-      pIter->bEof = 1;
+      pIter->base.bEof = 1;
     }
   }
 
@@ -5255,13 +5249,6 @@ int sqlite3Fts5IterNextFrom(Fts5IndexIter *pIndexIter, i64 iMatch){
   Fts5Iter *pIter = (Fts5Iter*)pIndexIter;
   fts5MultiIterNextFrom(pIter->pIndex, pIter, iMatch);
   return fts5IndexReturn(pIter->pIndex);
-}
-
-/*
-** Return the current rowid.
-*/
-i64 sqlite3Fts5IterRowid(Fts5IndexIter *pIndexIter){
-  return fts5MultiIterRowid((Fts5Iter*)pIndexIter);
 }
 
 /*
@@ -5450,7 +5437,7 @@ static int fts5QueryCksum(
   int rc = sqlite3Fts5IndexQuery(p, z, n, flags, 0, &pIter);
 
   while( rc==SQLITE_OK && 0==sqlite3Fts5IterEof(pIter) ){
-    i64 rowid = sqlite3Fts5IterRowid(pIter);
+    i64 rowid = pIter->iRowid;
 
     if( eDetail==FTS5_DETAIL_NONE ){
       cksum ^= sqlite3Fts5IndexEntryCksum(rowid, 0, 0, iIdx, z, n);
