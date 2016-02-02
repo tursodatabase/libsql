@@ -47,9 +47,7 @@ pub struct Transaction<'conn> {
 
 impl<'conn> Transaction<'conn> {
     /// Begin a new transaction. Cannot be nested; see `savepoint` for nested transactions.
-    pub fn new(conn: &Connection,
-               behavior: TransactionBehavior)
-               -> Result<Transaction> {
+    pub fn new(conn: &Connection, behavior: TransactionBehavior) -> Result<Transaction> {
         let query = match behavior {
             TransactionBehavior::Deferred => "BEGIN DEFERRED",
             TransactionBehavior::Immediate => "BEGIN IMMEDIATE",
