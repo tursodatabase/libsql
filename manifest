@@ -1,5 +1,5 @@
-C Change\sthe\sOP_SetCookie\sinstruction\sto\swrite\sthe\sliteral\sP3\svalue,\snot\sthe\nvalue\sin\sregister\sP3.
-D 2016-02-01T21:48:34.880
+C Enhance\sthe\scomment\son\sthe\ssqlite3_index_constraint\sobject\sto\sbring\sattention\s\nto\sthe\sfact\sthan\siColumn\sfield\scan\sbe\snegative\sfor\sa\srowid.
+D 2016-02-02T02:04:21.840
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 72b7858f02017611c3ac1ddc965251017fed0845
@@ -349,7 +349,7 @@ F src/resolve.c 9f7ce3a3c087afb7597b7c916c99126ff3f12f0c
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c ea6f3b0c279aa37eb3701792d094673a7ad1bf88
 F src/shell.c dcd7a83645ef2a58ee9c6d0ea4714d877d7835c4
-F src/sqlite.h.in 214476a62012e578f42133a9a3b4f97a9aa421a3
+F src/sqlite.h.in cf22ad1d52dca2c9862d63833e581028119aab7e
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
 F src/sqliteInt.h 2f80b9b1506a8d602b2a99f3f0bfae22df3e7d70
@@ -1422,7 +1422,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2334e88244afe6387208be5d527aba9b5ddf4e4c
-R 249f75933f6fe25a197c05fa835262de
+P 6d7d4703ebf3754bec74123d5ba7e861a705f90f
+R a0fd58918162f72722cea72a597641d9
 U drh
-Z 56e6b1659de31a547fab736bcf3cb22f
+Z 8a77cde1543981fcb216eb719b02e019
