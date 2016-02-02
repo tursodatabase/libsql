@@ -154,6 +154,7 @@ struct SqliteDb {
   IncrblobChannel *pIncrblob;/* Linked list of open incrblob channels */
   int nStep, nSort, nIndex;  /* Statistics for most recent operation */
   int nTransaction;          /* Number of nested [transaction] methods */
+  int openFlags;             /* Flags used to open.  (SQLITE_OPEN_URI) */
 #ifdef SQLITE_TEST
   int bLegacyPrepare;        /* True to use sqlite3_prepare() */
 #endif
@@ -1835,7 +1836,8 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       Tcl_WrongNumArgs(interp, 2, objv, "?DATABASE? FILENAME");
       return TCL_ERROR;
     }
-    rc = sqlite3_open(zDestFile, &pDest);
+    rc = sqlite3_open_v2(zDestFile, &pDest,
+               SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE| pDb->openFlags, 0);
     if( rc!=SQLITE_OK ){
       Tcl_AppendResult(interp, "cannot open target database: ",
            sqlite3_errmsg(pDest), (char*)0);
@@ -2698,7 +2700,8 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       Tcl_WrongNumArgs(interp, 2, objv, "?DATABASE? FILENAME");
       return TCL_ERROR;
     }
-    rc = sqlite3_open_v2(zSrcFile, &pSrc, SQLITE_OPEN_READONLY, 0);
+    rc = sqlite3_open_v2(zSrcFile, &pSrc,
+                         SQLITE_OPEN_READONLY | pDb->openFlags, 0);
     if( rc!=SQLITE_OK ){
       Tcl_AppendResult(interp, "cannot open source database: ",
            sqlite3_errmsg(pSrc), (char*)0);
@@ -3234,6 +3237,7 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     return TCL_ERROR;
   }
   p->maxStmt = NUM_PREPARED_STMTS;
+  p->openFlags = flags & SQLITE_OPEN_URI;
   p->interp = interp;
   zArg = Tcl_GetStringFromObj(objv[1], 0);
   if( DbUseNre() ){

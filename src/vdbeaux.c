@@ -172,7 +172,7 @@ int sqlite3VdbeAddOp3(Vdbe *p, int op, int p1, int p2, int p3){
 
   i = p->nOp;
   assert( p->magic==VDBE_MAGIC_INIT );
-  assert( op>0 && op<0xff );
+  assert( op>=0 && op<0xff );
   if( p->pParse->nOpAlloc<=i ){
     return growOp3(p, op, p1, p2, p3);
   }
@@ -535,7 +535,7 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
   for(pOp=p->aOp, i=p->nOp-1; i>=0; i--, pOp++){
     u8 opcode = pOp->opcode;
 
-    /* NOTE: Be sure to update mkopcodeh.awk when adding or removing
+    /* NOTE: Be sure to update mkopcodeh.tcl when adding or removing
     ** cases from this switch! */
     switch( opcode ){
       case OP_Transaction: {
@@ -1118,28 +1118,27 @@ static int displayComment(
 ** Translate the P4.pExpr value for an OP_CursorHint opcode into text
 ** that can be displayed in the P4 column of EXPLAIN output.
 */
-static int displayP4Expr(int nTemp, char *zTemp, Expr *pExpr){
+static void displayP4Expr(StrAccum *p, Expr *pExpr){
   const char *zOp = 0;
-  int n;
   switch( pExpr->op ){
     case TK_STRING:
-      sqlite3_snprintf(nTemp, zTemp, "%Q", pExpr->u.zToken);
+      sqlite3XPrintf(p, "%Q", pExpr->u.zToken);
       break;
     case TK_INTEGER:
-      sqlite3_snprintf(nTemp, zTemp, "%d", pExpr->u.iValue);
+      sqlite3XPrintf(p, "%d", pExpr->u.iValue);
       break;
     case TK_NULL:
-      sqlite3_snprintf(nTemp, zTemp, "NULL");
+      sqlite3XPrintf(p, "NULL");
       break;
     case TK_REGISTER: {
-      sqlite3_snprintf(nTemp, zTemp, "r[%d]", pExpr->iTable);
+      sqlite3XPrintf(p, "r[%d]", pExpr->iTable);
       break;
     }
     case TK_COLUMN: {
       if( pExpr->iColumn<0 ){
-        sqlite3_snprintf(nTemp, zTemp, "rowid");
+        sqlite3XPrintf(p, "rowid");
       }else{
-        sqlite3_snprintf(nTemp, zTemp, "c%d", (int)pExpr->iColumn);
+        sqlite3XPrintf(p, "c%d", (int)pExpr->iColumn);
       }
       break;
     }
@@ -1171,21 +1170,19 @@ static int displayP4Expr(int nTemp, char *zTemp, Expr *pExpr){
     case TK_NOTNULL: zOp = "NOTNULL"; break;
 
     default:
-      sqlite3_snprintf(nTemp, zTemp, "%s", "expr");
+      sqlite3XPrintf(p, "%s", "expr");
       break;
   }
 
   if( zOp ){
-    sqlite3_snprintf(nTemp, zTemp, "%s(", zOp);
-    n = sqlite3Strlen30(zTemp);
-    n += displayP4Expr(nTemp-n, zTemp+n, pExpr->pLeft);
-    if( n<nTemp-1 && pExpr->pRight ){
-      zTemp[n++] = ',';
-      n += displayP4Expr(nTemp-n, zTemp+n, pExpr->pRight);
+    sqlite3XPrintf(p, "%s(", zOp);
+    displayP4Expr(p, pExpr->pLeft);
+    if( pExpr->pRight ){
+      sqlite3StrAccumAppend(p, ",", 1);
+      displayP4Expr(p, pExpr->pRight);
     }
-    sqlite3_snprintf(nTemp-n, zTemp+n, ")");
+    sqlite3StrAccumAppend(p, ")", 1);
   }
-  return sqlite3Strlen30(zTemp);
 }
 #endif /* VDBE_DISPLAY_P4 && defined(SQLITE_ENABLE_CURSOR_HINTS) */
 
@@ -1197,72 +1194,57 @@ static int displayP4Expr(int nTemp, char *zTemp, Expr *pExpr){
 */
 static char *displayP4(Op *pOp, char *zTemp, int nTemp){
   char *zP4 = zTemp;
+  StrAccum x;
   assert( nTemp>=20 );
+  sqlite3StrAccumInit(&x, 0, zTemp, nTemp, 0);
   switch( pOp->p4type ){
     case P4_KEYINFO: {
-      int i, j;
+      int j;
       KeyInfo *pKeyInfo = pOp->p4.pKeyInfo;
       assert( pKeyInfo->aSortOrder!=0 );
-      sqlite3_snprintf(nTemp, zTemp, "k(%d", pKeyInfo->nField);
-      i = sqlite3Strlen30(zTemp);
+      sqlite3XPrintf(&x, "k(%d", pKeyInfo->nField);
       for(j=0; j<pKeyInfo->nField; j++){
         CollSeq *pColl = pKeyInfo->aColl[j];
-        const char *zColl = pColl ? pColl->zName : "nil";
-        int n = sqlite3Strlen30(zColl);
-        if( n==6 && memcmp(zColl,"BINARY",6)==0 ){
-          zColl = "B";
-          n = 1;
-        }
-        if( i+n>nTemp-7 ){
-          memcpy(&zTemp[i],",...",4);
-          i += 4;
-          break;
-        }
-        zTemp[i++] = ',';
-        if( pKeyInfo->aSortOrder[j] ){
-          zTemp[i++] = '-';
-        }
-        memcpy(&zTemp[i], zColl, n+1);
-        i += n;
+        const char *zColl = pColl ? pColl->zName : "";
+        if( strcmp(zColl, "BINARY")==0 ) zColl = "B";
+        sqlite3XPrintf(&x, ",%s%s", pKeyInfo->aSortOrder[j] ? "-" : "", zColl);
       }
-      zTemp[i++] = ')';
-      zTemp[i] = 0;
-      assert( i<nTemp );
+      sqlite3StrAccumAppend(&x, ")", 1);
       break;
     }
 #ifdef SQLITE_ENABLE_CURSOR_HINTS
     case P4_EXPR: {
-      displayP4Expr(nTemp, zTemp, pOp->p4.pExpr);
+      displayP4Expr(&x, pOp->p4.pExpr);
       break;
     }
 #endif
     case P4_COLLSEQ: {
       CollSeq *pColl = pOp->p4.pColl;
-      sqlite3_snprintf(nTemp, zTemp, "(%.20s)", pColl->zName);
+      sqlite3XPrintf(&x, "(%.20s)", pColl->zName);
       break;
     }
     case P4_FUNCDEF: {
       FuncDef *pDef = pOp->p4.pFunc;
-      sqlite3_snprintf(nTemp, zTemp, "%s(%d)", pDef->zName, pDef->nArg);
+      sqlite3XPrintf(&x, "%s(%d)", pDef->zName, pDef->nArg);
       break;
     }
 #ifdef SQLITE_DEBUG
     case P4_FUNCCTX: {
       FuncDef *pDef = pOp->p4.pCtx->pFunc;
-      sqlite3_snprintf(nTemp, zTemp, "%s(%d)", pDef->zName, pDef->nArg);
+      sqlite3XPrintf(&x, "%s(%d)", pDef->zName, pDef->nArg);
       break;
     }
 #endif
     case P4_INT64: {
-      sqlite3_snprintf(nTemp, zTemp, "%lld", *pOp->p4.pI64);
+      sqlite3XPrintf(&x, "%lld", *pOp->p4.pI64);
       break;
     }
     case P4_INT32: {
-      sqlite3_snprintf(nTemp, zTemp, "%d", pOp->p4.i);
+      sqlite3XPrintf(&x, "%d", pOp->p4.i);
       break;
     }
     case P4_REAL: {
-      sqlite3_snprintf(nTemp, zTemp, "%.16g", *pOp->p4.pReal);
+      sqlite3XPrintf(&x, "%.16g", *pOp->p4.pReal);
       break;
     }
     case P4_MEM: {
@@ -1270,11 +1252,11 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
       if( pMem->flags & MEM_Str ){
         zP4 = pMem->z;
       }else if( pMem->flags & MEM_Int ){
-        sqlite3_snprintf(nTemp, zTemp, "%lld", pMem->u.i);
+        sqlite3XPrintf(&x, "%lld", pMem->u.i);
       }else if( pMem->flags & MEM_Real ){
-        sqlite3_snprintf(nTemp, zTemp, "%.16g", pMem->u.r);
+        sqlite3XPrintf(&x, "%.16g", pMem->u.r);
       }else if( pMem->flags & MEM_Null ){
-        sqlite3_snprintf(nTemp, zTemp, "NULL");
+        zP4 = "NULL";
       }else{
         assert( pMem->flags & MEM_Blob );
         zP4 = "(blob)";
@@ -1284,16 +1266,24 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     case P4_VTAB: {
       sqlite3_vtab *pVtab = pOp->p4.pVtab->pVtab;
-      sqlite3_snprintf(nTemp, zTemp, "vtab:%p", pVtab);
+      sqlite3XPrintf(&x, "vtab:%p", pVtab);
       break;
     }
 #endif
     case P4_INTARRAY: {
-      sqlite3_snprintf(nTemp, zTemp, "intarray");
+      int i;
+      int *ai = pOp->p4.ai;
+      int n = ai[0];   /* The first element of an INTARRAY is always the
+                       ** count of the number of elements to follow */
+      for(i=1; i<n; i++){
+        sqlite3XPrintf(&x, ",%d", ai[i]);
+      }
+      zTemp[0] = '[';
+      sqlite3StrAccumAppend(&x, "]", 1);
       break;
     }
     case P4_SUBPROGRAM: {
-      sqlite3_snprintf(nTemp, zTemp, "program");
+      sqlite3XPrintf(&x, "program");
       break;
     }
     case P4_ADVANCE: {
@@ -1308,6 +1298,7 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
       }
     }
   }
+  sqlite3StrAccumFinish(&x);
   assert( zP4!=0 );
   return zP4;
 }
@@ -1722,41 +1713,43 @@ void sqlite3VdbeIOTraceSql(Vdbe *p){
 }
 #endif /* !SQLITE_OMIT_TRACE && SQLITE_ENABLE_IOTRACE */
 
-/*
-** Allocate space from a fixed size buffer and return a pointer to
-** that space.  If insufficient space is available, return NULL.
+/* An instance of this object describes bulk memory available for use
+** by subcomponents of a prepared statement.  Space is allocated out
+** of a ReusableSpace object by the allocSpace() routine below.
+*/
+struct ReusableSpace {
+  u8 *pSpace;          /* Available memory */
+  int nFree;           /* Bytes of available memory */
+  int nNeeded;         /* Total bytes that could not be allocated */
+};
+
+/* Try to allocate nByte bytes of 8-byte aligned bulk memory for pBuf
+** from the ReusableSpace object.  Return a pointer to the allocated
+** memory on success.  If insufficient memory is available in the
+** ReusableSpace object, increase the ReusableSpace.nNeeded
+** value by the amount needed and return NULL.
 **
-** The pBuf parameter is the initial value of a pointer which will
-** receive the new memory.  pBuf is normally NULL.  If pBuf is not
-** NULL, it means that memory space has already been allocated and that
-** this routine should not allocate any new memory.  When pBuf is not
-** NULL simply return pBuf.  Only allocate new memory space when pBuf
-** is NULL.
+** If pBuf is not initially NULL, that means that the memory has already
+** been allocated by a prior call to this routine, so just return a copy
+** of pBuf and leave ReusableSpace unchanged.
 **
-** nByte is the number of bytes of space needed.
-**
-** pFrom points to *pnFrom bytes of available space.  New space is allocated
-** from the end of the pFrom buffer and *pnFrom is decremented.
-**
-** *pnNeeded is a counter of the number of bytes of space that have failed
-** to allocate.  If there is insufficient space in pFrom to satisfy the
-** request, then increment *pnNeeded by the amount of the request.
+** This allocator is employed to repurpose unused slots at the end of the
+** opcode array of prepared state for other memory needs of the prepared
+** statement.
 */
 static void *allocSpace(
-  void *pBuf,          /* Where return pointer will be stored */
-  int nByte,           /* Number of bytes to allocate */
-  u8 *pFrom,           /* Memory available for allocation */
-  int *pnFrom,         /* IN/OUT: Space available at pFrom */
-  int *pnNeeded        /* If allocation cannot be made, increment *pnByte */
+  struct ReusableSpace *p,  /* Bulk memory available for allocation */
+  void *pBuf,               /* Pointer to a prior allocation */
+  int nByte                 /* Bytes of memory needed */
 ){
-  assert( EIGHT_BYTE_ALIGNMENT(pFrom) );
+  assert( EIGHT_BYTE_ALIGNMENT(p->pSpace) );
   if( pBuf==0 ){
     nByte = ROUND8(nByte);
-    if( nByte <= *pnFrom ){
-      *pnFrom -= nByte;
-      pBuf = &pFrom[*pnFrom];
+    if( nByte <= p->nFree ){
+      p->nFree -= nByte;
+      pBuf = &p->pSpace[p->nFree];
     }else{
-      *pnNeeded += nByte;
+      p->nNeeded += nByte;
     }
   }
   assert( EIGHT_BYTE_ALIGNMENT(pBuf) );
@@ -1789,7 +1782,6 @@ void sqlite3VdbeRewind(Vdbe *p){
   p->pc = -1;
   p->rc = SQLITE_OK;
   p->errorAction = OE_Abort;
-  p->magic = VDBE_MAGIC_RUN;
   p->nChange = 0;
   p->cacheCtr = 1;
   p->minWriteFileFormat = 255;
@@ -1832,9 +1824,7 @@ void sqlite3VdbeMakeReady(
   int nArg;                      /* Number of arguments in subprograms */
   int nOnce;                     /* Number of OP_Once instructions */
   int n;                         /* Loop counter */
-  int nFree;                     /* Available free space */
-  u8 *zCsr;                      /* Memory available for allocation */
-  int nByte;                     /* How much extra memory is needed */
+  struct ReusableSpace x;        /* Reusable bulk memory */
 
   assert( p!=0 );
   assert( p->nOp>0 );
@@ -1852,7 +1842,7 @@ void sqlite3VdbeMakeReady(
   
   /* For each cursor required, also allocate a memory cell. Memory
   ** cells (nMem+1-nCursor)..nMem, inclusive, will never be used by
-  ** the vdbe program. Instead they are used to allocate space for
+  ** the vdbe program. Instead they are used to allocate memory for
   ** VdbeCursor/BtCursor structures. The blob of memory associated with 
   ** cursor 0 is stored in memory cell nMem. Memory cell (nMem-1)
   ** stores the blob of memory associated with cursor 1, etc.
@@ -1861,20 +1851,18 @@ void sqlite3VdbeMakeReady(
   */
   nMem += nCursor;
 
-  /* zCsr will initially point to nFree bytes of unused space at the
-  ** end of the opcode array, p->aOp.  The computation of nFree is
-  ** conservative - it might be smaller than the true number of free
-  ** bytes, but never larger.  nFree must be a multiple of 8 - it is
-  ** rounded down if is not.
+  /* Figure out how much reusable memory is available at the end of the
+  ** opcode array.  This extra memory will be reallocated for other elements
+  ** of the prepared statement.
   */
-  n = ROUND8(sizeof(Op)*p->nOp);              /* Bytes of opcode space used */
-  zCsr = &((u8*)p->aOp)[n];                   /* Unused opcode space */
-  assert( EIGHT_BYTE_ALIGNMENT(zCsr) );
-  nFree = ROUNDDOWN8(pParse->szOpAlloc - n);  /* Bytes of unused space */
-  assert( nFree>=0 );
-  if( nFree>0 ){
-    memset(zCsr, 0, nFree);
-    assert( EIGHT_BYTE_ALIGNMENT(&zCsr[nFree]) );
+  n = ROUND8(sizeof(Op)*p->nOp);              /* Bytes of opcode memory used */
+  x.pSpace = &((u8*)p->aOp)[n];               /* Unused opcode memory */
+  assert( EIGHT_BYTE_ALIGNMENT(x.pSpace) );
+  x.nFree = ROUNDDOWN8(pParse->szOpAlloc - n);  /* Bytes of unused memory */
+  assert( x.nFree>=0 );
+  if( x.nFree>0 ){
+    memset(x.pSpace, 0, x.nFree);
+    assert( EIGHT_BYTE_ALIGNMENT(&x.pSpace[x.nFree]) );
   }
 
   resolveP2Values(p, &nArg);
@@ -1884,33 +1872,30 @@ void sqlite3VdbeMakeReady(
   }
   p->expired = 0;
 
-  /* Memory for registers, parameters, cursor, etc, is allocated in two
-  ** passes.  On the first pass, we try to reuse unused space at the 
+  /* Memory for registers, parameters, cursor, etc, is allocated in one or two
+  ** passes.  On the first pass, we try to reuse unused memory at the 
   ** end of the opcode array.  If we are unable to satisfy all memory
   ** requirements by reusing the opcode array tail, then the second
-  ** pass will fill in the rest using a fresh allocation.  
+  ** pass will fill in the remainder using a fresh memory allocation.  
   **
   ** This two-pass approach that reuses as much memory as possible from
-  ** the leftover space at the end of the opcode array can significantly
+  ** the leftover memory at the end of the opcode array.  This can significantly
   ** reduce the amount of memory held by a prepared statement.
   */
   do {
-    nByte = 0;
-    p->aMem = allocSpace(p->aMem, nMem*sizeof(Mem), zCsr, &nFree, &nByte);
-    p->aVar = allocSpace(p->aVar, nVar*sizeof(Mem), zCsr, &nFree, &nByte);
-    p->apArg = allocSpace(p->apArg, nArg*sizeof(Mem*), zCsr, &nFree, &nByte);
-    p->apCsr = allocSpace(p->apCsr, nCursor*sizeof(VdbeCursor*),
-                          zCsr, &nFree, &nByte);
-    p->aOnceFlag = allocSpace(p->aOnceFlag, nOnce, zCsr, &nFree, &nByte);
+    x.nNeeded = 0;
+    p->aMem = allocSpace(&x, p->aMem, nMem*sizeof(Mem));
+    p->aVar = allocSpace(&x, p->aVar, nVar*sizeof(Mem));
+    p->apArg = allocSpace(&x, p->apArg, nArg*sizeof(Mem*));
+    p->apCsr = allocSpace(&x, p->apCsr, nCursor*sizeof(VdbeCursor*));
+    p->aOnceFlag = allocSpace(&x, p->aOnceFlag, nOnce);
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
-    p->anExec = allocSpace(p->anExec, p->nOp*sizeof(i64), zCsr, &nFree, &nByte);
+    p->anExec = allocSpace(&x, p->anExec, p->nOp*sizeof(i64));
 #endif
-    if( nByte ){
-      p->pFree = sqlite3DbMallocZero(db, nByte);
-    }
-    zCsr = p->pFree;
-    nFree = nByte;
-  }while( nByte && !db->mallocFailed );
+    if( x.nNeeded==0 ) break;
+    x.pSpace = p->pFree = sqlite3DbMallocZero(db, x.nNeeded);
+    x.nFree = x.nNeeded;
+  }while( !db->mallocFailed );
 
   p->nCursor = nCursor;
   p->nOnceFlag = nOnce;
@@ -3015,9 +3000,16 @@ int sqlite3VdbeCursorRestore(VdbeCursor *p){
 ** If the cursor is already pointing to the correct row and that row has
 ** not been deleted out from under the cursor, then this routine is a no-op.
 */
-int sqlite3VdbeCursorMoveto(VdbeCursor *p){
+int sqlite3VdbeCursorMoveto(VdbeCursor **pp, int *piCol){
+  VdbeCursor *p = *pp;
   if( p->eCurType==CURTYPE_BTREE ){
     if( p->deferredMoveto ){
+      int iMap;
+      if( p->aAltMap && (iMap = p->aAltMap[1+*piCol])>0 ){
+        *pp = p->pAltCursor;
+        *piCol = iMap - 1;
+        return SQLITE_OK;
+      }
       return handleDeferredMoveto(p);
     }
     if( sqlite3BtreeCursorHasMoved(p->uc.pCursor) ){

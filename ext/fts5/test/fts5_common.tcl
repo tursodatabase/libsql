@@ -48,7 +48,8 @@ proc fts5_test_poslist2 {cmd} {
     }
   }
 
-  set res
+  #set res
+  sort_poslist $res
 }
 
 proc fts5_test_collist {cmd} {

@@ -482,13 +482,12 @@ void sqlite3DeleteFrom(
     */
     if( !isView ){
       int iAddrOnce = 0;
-      u8 p5 = (eOnePass==ONEPASS_OFF ? 0 : OPFLAG_FORDELETE);
       if( eOnePass==ONEPASS_MULTI ){
         iAddrOnce = sqlite3CodeOnce(pParse); VdbeCoverage(v);
       }
       testcase( IsVirtual(pTab) );
-      sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenWrite, p5, iTabCur, 
-                                 aToOpen, &iDataCur, &iIdxCur);
+      sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenWrite, OPFLAG_FORDELETE,
+                                 iTabCur, aToOpen, &iDataCur, &iIdxCur);
       assert( pPk || IsVirtual(pTab) || iDataCur==iTabCur );
       assert( pPk || IsVirtual(pTab) || iIdxCur==iDataCur+1 );
       if( eOnePass==ONEPASS_MULTI ) sqlite3VdbeJumpHere(v, iAddrOnce);
@@ -728,13 +727,18 @@ void sqlite3GenerateRowDelete(
   ** pre-update-hook is.
   */ 
   if( pTab->pSelect==0 ){
+    u8 p5 = 0;
     sqlite3GenerateRowIndexDelete(pParse, pTab, iDataCur, iIdxCur,0,iIdxNoSeek);
     sqlite3VdbeAddOp2(v, OP_Delete, iDataCur, (count?OPFLAG_NCHANGE:0));
     sqlite3VdbeChangeP4(v, -1, (char*)pTab, P4_TABLE);
+    if( eMode!=ONEPASS_OFF ){
+      sqlite3VdbeChangeP5(v, OPFLAG_AUXDELETE);
+    }
     if( iIdxNoSeek>=0 ){
       sqlite3VdbeAddOp1(v, OP_Delete, iIdxNoSeek);
     }
-    sqlite3VdbeChangeP5(v, eMode==ONEPASS_MULTI);
+    if( eMode==ONEPASS_MULTI ) p5 |= OPFLAG_SAVEPOSITION;
+    sqlite3VdbeChangeP5(v, p5);
   }
 
   /* Do any ON CASCADE, SET NULL or SET DEFAULT operations required to

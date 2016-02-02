@@ -287,8 +287,7 @@ void sqlite3FinishTrigger(
     pStepList->pTrig = pTrig;
     pStepList = pStepList->pNext;
   }
-  nameToken.z = pTrig->zName;
-  nameToken.n = sqlite3Strlen30(nameToken.z);
+  sqlite3TokenInit(&nameToken, pTrig->zName);
   sqlite3FixInit(&sFix, pParse, iDb, "trigger", &nameToken);
   if( sqlite3FixTriggerStep(&sFix, pTrig->step_list) 
    || sqlite3FixExpr(&sFix, pTrig->pWhen) 

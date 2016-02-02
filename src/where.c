@@ -4014,7 +4014,7 @@ WhereInfo *sqlite3WhereBegin(
   int ii;                    /* Loop counter */
   sqlite3 *db;               /* Database connection */
   int rc;                    /* Return code */
-  u8 bFordelete = 0;
+  u8 bFordelete = 0;         /* OPFLAG_FORDELETE or zero, as appropriate */
 
   assert( (wctrlFlags & WHERE_ONEPASS_MULTIROW)==0 || (
         (wctrlFlags & WHERE_ONEPASS_DESIRED)!=0 
@@ -4259,16 +4259,15 @@ WhereInfo *sqlite3WhereBegin(
 
   /* If the caller is an UPDATE or DELETE statement that is requesting
   ** to use a one-pass algorithm, determine if this is appropriate.
-  ** The one-pass algorithm only works if the WHERE clause constrains
-  ** the statement to update or delete a single row.
   */
   assert( (wctrlFlags & WHERE_ONEPASS_DESIRED)==0 || pWInfo->nLevel==1 );
   if( (wctrlFlags & WHERE_ONEPASS_DESIRED)!=0 ){
     int wsFlags = pWInfo->a[0].pWLoop->wsFlags;
     int bOnerow = (wsFlags & WHERE_ONEROW)!=0;
-    if( bOnerow || ( (wctrlFlags & WHERE_ONEPASS_MULTIROW)
-       && 0==(wsFlags & WHERE_VIRTUALTABLE)
-    )){
+    if( bOnerow
+     || ((wctrlFlags & WHERE_ONEPASS_MULTIROW)!=0
+           && 0==(wsFlags & WHERE_VIRTUALTABLE))
+    ){
       pWInfo->eOnePass = bOnerow ? ONEPASS_SINGLE : ONEPASS_MULTI;
       if( HasRowid(pTabList->a[0].pTab) && (wsFlags & WHERE_IDX_ONLY) ){
         if( wctrlFlags & WHERE_ONEPASS_MULTIROW ){

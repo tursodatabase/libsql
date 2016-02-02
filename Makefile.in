@@ -1193,9 +1193,9 @@ lib_install:	libsqlite3.la
 	$(INSTALL) -d $(DESTDIR)$(libdir)
 	$(LTINSTALL) libsqlite3.la $(DESTDIR)$(libdir)
 	
-install:	sqlite3$(BEXE) lib_install sqlite3.h sqlite3.pc ${HAVE_TCL:1=tcl_install}
+install:	sqlite3$(TEXE) lib_install sqlite3.h sqlite3.pc ${HAVE_TCL:1=tcl_install}
 	$(INSTALL) -d $(DESTDIR)$(bindir)
-	$(LTINSTALL) sqlite3$(BEXE) $(DESTDIR)$(bindir)
+	$(LTINSTALL) sqlite3$(TEXE) $(DESTDIR)$(bindir)
 	$(INSTALL) -d $(DESTDIR)$(includedir)
 	$(INSTALL) -m 0644 sqlite3.h $(DESTDIR)$(includedir)
 	$(INSTALL) -m 0644 $(TOP)/src/sqlite3ext.h $(DESTDIR)$(includedir)
@@ -1231,6 +1231,7 @@ clean:
 	rm -f sqlite3_analyzer$(TEXE) sqlite3_analyzer.c
 	rm -f sqlite-*-output.vsix
 	rm -f mptester mptester.exe
+	rm -f rbu rbu.exe
 	rm -f fuzzershell fuzzershell.exe
 	rm -f fuzzcheck fuzzcheck.exe
 	rm -f sqldiff sqldiff.exe

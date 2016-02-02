@@ -365,8 +365,8 @@ static int editdist1(const char *zA, const char *zB, int *pnMatch){
   int *m;                /* The cost matrix */
   char *cx;              /* Corresponding character values */
   int *toFree = 0;       /* Malloced space */
-  int mStack[60+15];     /* Stack space to use if not too much is needed */
   int nMatch = 0;
+  int mStack[60+15];     /* Stack space to use if not too much is needed */
 
   /* Early out if either input is NULL */
   if( zA==0 || zB==0 ) return -1;
@@ -875,6 +875,17 @@ static void updateCost(
   }
 }
 
+/*
+** How much stack space (int bytes) to use for Wagner matrix in 
+** editDist3Core().  If more space than this is required, the entire
+** matrix is taken from the heap.  To reduce the load on the memory
+** allocator, make this value as large as practical for the
+** architecture in use.
+*/
+#ifndef SQLITE_SPELLFIX_STACKALLOC_SZ
+# define SQLITE_SPELLFIX_STACKALLOC_SZ  (1024)
+#endif
+
 /* Compute the edit distance between two strings.
 **
 ** If an error occurs, return a negative number which is the error code.
@@ -899,15 +910,24 @@ static int editDist3Core(
   EditDist3FromString f = *pFrom;
   EditDist3To *a2;
   unsigned int *m;
+  unsigned int *pToFree;
   int szRow;
   EditDist3Cost *p;
   int res;
+  sqlite3_uint64 nByte;
+  unsigned int stackSpace[SQLITE_SPELLFIX_STACKALLOC_SZ/sizeof(unsigned int)];
 
   /* allocate the Wagner matrix and the aTo[] array for the TO string */
   n = (f.n+1)*(n2+1);
   n = (n+1)&~1;
-  m = sqlite3_malloc( n*sizeof(m[0]) + sizeof(a2[0])*n2 );
-  if( m==0 ) return -1;            /* Out of memory */
+  nByte = n*sizeof(m[0]) + sizeof(a2[0])*n2;
+  if( nByte<=sizeof(stackSpace) ){
+    m = stackSpace;
+    pToFree = 0;
+  }else{
+    m = pToFree = sqlite3_malloc( nByte );
+    if( m==0 ) return -1;            /* Out of memory */
+  }
   a2 = (EditDist3To*)&m[n];
   memset(a2, 0, sizeof(a2[0])*n2);
 
@@ -1029,7 +1049,7 @@ static int editDist3Core(
 
 editDist3Abort:
   for(i2=0; i2<n2; i2++) sqlite3_free(a2[i2].apIns);
-  sqlite3_free(m);
+  sqlite3_free(pToFree);
   return res;
 }
 
