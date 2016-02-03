@@ -90,11 +90,12 @@ typedef struct PgHdr DbPage;
 #define PAGER_SYNCHRONOUS_OFF       0x01  /* PRAGMA synchronous=OFF */
 #define PAGER_SYNCHRONOUS_NORMAL    0x02  /* PRAGMA synchronous=NORMAL */
 #define PAGER_SYNCHRONOUS_FULL      0x03  /* PRAGMA synchronous=FULL */
-#define PAGER_SYNCHRONOUS_MASK      0x03  /* Mask for three values above */
-#define PAGER_FULLFSYNC             0x04  /* PRAGMA fullfsync=ON */
-#define PAGER_CKPT_FULLFSYNC        0x08  /* PRAGMA checkpoint_fullfsync=ON */
-#define PAGER_CACHESPILL            0x10  /* PRAGMA cache_spill=ON */
-#define PAGER_FLAGS_MASK            0x1c  /* All above except SYNCHRONOUS */
+#define PAGER_SYNCHRONOUS_EXTRA     0x04  /* PRAGMA synchronous=EXTRA */
+#define PAGER_SYNCHRONOUS_MASK      0x07  /* Mask for four values above */
+#define PAGER_FULLFSYNC             0x08  /* PRAGMA fullfsync=ON */
+#define PAGER_CKPT_FULLFSYNC        0x10  /* PRAGMA checkpoint_fullfsync=ON */
+#define PAGER_CACHESPILL            0x20  /* PRAGMA cache_spill=ON */
+#define PAGER_FLAGS_MASK            0x38  /* All above except SYNCHRONOUS */
 
 /*
 ** The remainder of this file contains the declarations of the functions

@@ -1,5 +1,5 @@
-C Enhance\sthe\sinternal\ssqlite3VdbeAddOpList()\sinterface\sto\sautomatically\supdate\njump\sdestinations.\s\sUse\sthis\sfeature\sto\ssimplify\sthe\sAUTOINCREMENT\scode\ngenerator.
-D 2016-02-03T01:55:44.089
+C Add\s"PRAGMA\ssynchronous=EXTRA"\swhich\ssyncs\sthe\sdirectory\scontaining\sthe\nrollback\sjournal\swhen\sthe\srollback\sjournal\sis\sdeleted\sin\sorder\sto\scommit\sa\s\ntransaction\sin\sDELETE\smode.
+D 2016-02-03T19:20:15.585
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 72b7858f02017611c3ac1ddc965251017fed0845
@@ -335,13 +335,13 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c 5bb20172d0c9a6afcfa829a88c406970593c848d
 F src/os_win.c ccf29ddded3e41e506b6bd98c1171aa0963b23f2
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
-F src/pager.c 2916c66aee50f69d9ec56a7619b62d9c6a3bee61
-F src/pager.h 1c2a49143dfba9e69cc8159ef019f472ed8d260b
+F src/pager.c 3e189231fc662710964b54862450bc7f69f313c2
+F src/pager.h f3eb324a3ff2408b28bab7e81c1c55c13720f865
 F src/parse.y 426a91fbbbf7cdde3fd4b8798de7317a8782bec5
 F src/pcache.c 73895411fa6b7bd6f0091212feabbe833b358d23
 F src/pcache.h 4d0ccaad264d360981ec5e6a2b596d6e85242545
 F src/pcache1.c 72f644dc9e1468c72922eff5904048427b817051
-F src/pragma.c a973357ef2faded933725a6de2883133deb24029
+F src/pragma.c 3c4f3fadf05893e289f2adf3a20c671a842cadec
 F src/pragma.h 64c78a648751b9f4f297276c4eb7507b14b4628c
 F src/prepare.c db85f0451ba93ecb3c1e497c279abece5cb5aead
 F src/printf.c 98a5cef7fc84577ab8a3098cfa48ecfa5a70b9f8
@@ -353,7 +353,7 @@ F src/shell.c dcd7a83645ef2a58ee9c6d0ea4714d877d7835c4
 F src/sqlite.h.in cf22ad1d52dca2c9862d63833e581028119aab7e
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
-F src/sqliteInt.h ed6f75088781af7cbd0a6653c2fe16340faa0dd4
+F src/sqliteInt.h bf8c17fb55d7cd09b477111212b19d661b134989
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
@@ -943,7 +943,7 @@ F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
 F test/permutations.test 4ea119731c62d2f7d0aa86dd5b184cbb61ca411b
-F test/pragma.test a44253f911e7d50127d4a08f927f47c861a4c772
+F test/pragma.test 507ac7ef2ea5682241ea0ef041799ca70bb5e0bf
 F test/pragma2.test a9400a7289605280576098b97f5cde3f204075c0
 F test/pragma3.test 6f849ccffeee7e496d2f2b5e74152306c0b8757c
 F test/printf.test b3ff34e73d59124140eaf89f7672e21bc2ca5fcc
@@ -1423,7 +1423,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 063755c81574800e7db12a42e17d982a8c1e5181
-R 03bd7861865ae8f6fba63605b50d909b
+P ae8b9d2edf1b5aef6108e729754911db7682b6a3
+R 1a8761ef82294be8ac021b32cc3428ab
 U drh
-Z 0f50d7954b5cdd37df3317e2f95eccf8
+Z 47031796dc00696c427dc7b231b9f896

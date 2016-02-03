@@ -1286,10 +1286,10 @@ struct sqlite3 {
 */
 #define SQLITE_VdbeTrace      0x00000001  /* True to trace VDBE execution */
 #define SQLITE_InternChanges  0x00000002  /* Uncommitted Hash table changes */
-#define SQLITE_FullFSync      0x00000004  /* Use full fsync on the backend */
-#define SQLITE_CkptFullFSync  0x00000008  /* Use full fsync for checkpoint */
-#define SQLITE_CacheSpill     0x00000010  /* OK to spill pager cache */
-#define SQLITE_FullColNames   0x00000020  /* Show full column names on SELECT */
+#define SQLITE_FullColNames   0x00000004  /* Show full column names on SELECT */
+#define SQLITE_FullFSync      0x00000008  /* Use full fsync on the backend */
+#define SQLITE_CkptFullFSync  0x00000010  /* Use full fsync for checkpoint */
+#define SQLITE_CacheSpill     0x00000020  /* OK to spill pager cache */
 #define SQLITE_ShortColNames  0x00000040  /* Show short columns names */
 #define SQLITE_CountRows      0x00000080  /* Count rows changed by INSERT, */
                                           /*   DELETE, or UPDATE and return */
