@@ -646,6 +646,9 @@ VdbeOp *sqlite3VdbeTakeOpArray(Vdbe *p, int *pnOp, int *pnMaxArg){
 /*
 ** Add a whole list of operations to the operation stack.  Return a
 ** pointer to the first operation inserted.
+**
+** Non-zero P2 arguments to jump instructions are automatically adjusted
+** so that the jump target is relative to the first operation inserted.
 */
 VdbeOp *sqlite3VdbeAddOpList(
   Vdbe *p,                     /* Add opcodes to the prepared statement */
@@ -666,6 +669,9 @@ VdbeOp *sqlite3VdbeAddOpList(
     pOut->p1 = aOp->p1;
     pOut->p2 = aOp->p2;
     assert( aOp->p2>=0 );
+    if( (sqlite3OpcodeProperty[aOp->opcode] & OPFLG_JUMP)!=0 && aOp->p2>0 ){
+      pOut->p2 += p->nOp;
+    }
     pOut->p3 = aOp->p3;
     pOut->p4type = P4_NOTUSED;
     pOut->p4.p = 0;

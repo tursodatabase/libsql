@@ -1599,16 +1599,15 @@ void sqlite3Pragma(
       static const int iLn = VDBE_OFFSET_LINENO(2);
       static const VdbeOpList endCode[] = {
         { OP_AddImm,      1, 0,        0},    /* 0 */
-        { OP_If,          1, 0,        0},    /* 1 */
+        { OP_If,          1, 4,        0},    /* 1 */
         { OP_String8,     0, 3,        0},    /* 2 */
-        { OP_ResultRow,   3, 1,        0},
+        { OP_ResultRow,   3, 1,        0},    /* 3 */
       };
       VdbeOp *aOp;
 
       aOp = sqlite3VdbeAddOpList(v, ArraySize(endCode), endCode, iLn);
       if( aOp ){
         aOp[0].p2 = -mxErr;
-        aOp[1].p2 = sqlite3VdbeCurrentAddr(v);
         aOp[2].p4type = P4_STATIC;
         aOp[2].p4.z = "ok";
       }
