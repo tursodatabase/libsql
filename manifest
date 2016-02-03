@@ -1,5 +1,5 @@
-C Improve\sperformance\sof\sfts5\sprefix\squeries\son\sdetail=col\stables.
-D 2016-02-03T20:04:59.805
+C In\sthe\sVDBE\sloop,\sonly\scheck\sfor\sOOM\serrors\sat\sjumps\srather\sthan\safter\severy\nopcode,\sfor\sabout\sa\s0.5%\sperformance\sincrease.
+D 2016-02-03T22:14:38.812
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 72b7858f02017611c3ac1ddc965251017fed0845
@@ -413,7 +413,7 @@ F src/update.c 17332f9fe818cbc0444c36a811800af8498af4c3
 F src/utf.c 10cc2519e82e3369344d0969ad4b1a333dc86d18
 F src/util.c 72d40df0a52d3f30b462a15f0e094fcbade6dc82
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c 16ca0c1e2975fac04c3ea5c62b34dc24b13fea13
+F src/vdbe.c f0c2e2fb8cbff761ea8602058406c151b9325e8d
 F src/vdbe.h 7a733ea8aac1b77305a67698e784fa3484ee3337
 F src/vdbeInt.h 4b69d5451bcadd473e745af53ef1e8abfdce0a79
 F src/vdbeapi.c 9d640d5efd9a140a6bda8da53b220aa258167993
@@ -1423,7 +1423,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ef252bc4b59d272460aaebdc0d4b8e347b0d25a8
-R 671ea22942ad2d2bcb9568b9e59d452e
-U dan
-Z 34c6688fd340fcbe0aee4e43e23acf72
+P ca11f46db047e7f131cef3893f73824758a2076b
+R 59ea01ed7c88b6674116d0bfaf73cf15
+U drh
+Z 96f5f7409c64154023cc6759eed6c5b3

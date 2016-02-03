@@ -629,7 +629,6 @@ int sqlite3VdbeExec(
 #endif
   for(pOp=&aOp[p->pc]; rc==SQLITE_OK; pOp++){
     assert( pOp>=aOp && pOp<&aOp[p->nOp]);
-    if( db->mallocFailed ) goto no_mem;
 #ifdef VDBE_PROFILE
     start = sqlite3Hwtime();
 #endif
@@ -754,14 +753,16 @@ jump_to_p2_and_check_for_interrupt:
   /* Opcodes that are used as the bottom of a loop (OP_Next, OP_Prev,
   ** OP_VNext, OP_RowSetNext, or OP_SorterNext) all jump here upon
   ** completion.  Check to see if sqlite3_interrupt() has been called
-  ** or if the progress callback needs to be invoked. 
+  ** or if the progress callback needs to be invoked. Also check for
+  ** OOM conditions and abort if seen.
   **
   ** This code uses unstructured "goto" statements and does not look clean.
   ** But that is not due to sloppy coding habits. The code is written this
   ** way for performance, to avoid having to run the interrupt and progress
-  ** checks on every opcode.  This helps sqlite3_step() to run about 1.5%
+  ** checks on every opcode.  This helps sqlite3_step() to run over 2.0%
   ** faster according to "valgrind --tool=cachegrind" */
 check_for_interrupt:
+  if( db->mallocFailed ) goto no_mem;
   if( db->u1.isInterrupted ) goto abort_due_to_interrupt;
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
   /* Call the progress callback if it is configured and the required number
