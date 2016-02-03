@@ -1,5 +1,5 @@
-C Fix\smarkup\serrors\sin\scomments\sused\sto\sgenerate\sthe\sdocumentation\s-\sspecifically\nin\sthe\sdocumentation\son\sthe\sOP_Seek\sopcode.
-D 2016-02-03T19:52:06.161
+C Improve\sperformance\sof\sfts5\sprefix\squeries\son\sdetail=col\stables.
+D 2016-02-03T20:04:59.805
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 72b7858f02017611c3ac1ddc965251017fed0845
@@ -98,13 +98,13 @@ F ext/fts3/unicode/mkunicode.tcl 95cf7ec186e48d4985e433ff8a1c89090a774252
 F ext/fts3/unicode/parseunicode.tcl da577d1384810fb4e2b209bf3313074353193e95
 F ext/fts5/extract_api_docs.tcl a36e54ec777172ddd3f9a88daf593b00848368e0
 F ext/fts5/fts5.h ff9c2782e8ed890b0de2f697a8d63971939e70c7
-F ext/fts5/fts5Int.h 9505f3bc8d0b2ca4cd2b112e7e042e3c6a3222a7
+F ext/fts5/fts5Int.h 2095cc38e776f19cc083ca90e00772ea0b204ab3
 F ext/fts5/fts5_aux.c b9bcce753ef5b451267b2232f0ca153ddeb3951d
 F ext/fts5/fts5_buffer.c f6e0c6018ffc8e39fc0b333b5daa8b8d528ae6e4
 F ext/fts5/fts5_config.c 0c384ebdd23fd055e2e50a93277b8d59da538238
 F ext/fts5/fts5_expr.c ff5c451a6d025909639ac0f0d0af0cc595b50feb
 F ext/fts5/fts5_hash.c 1b113977296cf4212c6ec667d5e3f2bd18036955
-F ext/fts5/fts5_index.c 471ff6935068a4579830474249e1046b57137103
+F ext/fts5/fts5_index.c e634a4a05b066f7122db93558c871148bd9893f2
 F ext/fts5/fts5_main.c 7e8a5f27d504bc04e3de7f1cba8867f0332aee9d
 F ext/fts5/fts5_storage.c 2a1f44deae090cd711f02cec0c2af8e660360d24
 F ext/fts5/fts5_tcl.c f8731e0508299bd43f1a2eff7dbeaac870768966
@@ -1423,7 +1423,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P af92401826f5cf49e62c278f344ab75252a18da2
-R f36c5f43b820b4830c00d3f3959d5c82
-U drh
-Z cdc17003a87221b5f2cfde36f98aed07
+P ef252bc4b59d272460aaebdc0d4b8e347b0d25a8
+R 671ea22942ad2d2bcb9568b9e59d452e
+U dan
+Z 34c6688fd340fcbe0aee4e43e23acf72
