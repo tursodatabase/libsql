@@ -1,5 +1,5 @@
-C Add\s"PRAGMA\ssynchronous=EXTRA"\swhich\ssyncs\sthe\sdirectory\scontaining\sthe\nrollback\sjournal\swhen\sthe\srollback\sjournal\sis\sdeleted\sin\sorder\sto\scommit\sa\s\ntransaction\sin\sDELETE\smode.
-D 2016-02-03T19:20:15.585
+C Fix\smarkup\serrors\sin\scomments\sused\sto\sgenerate\sthe\sdocumentation\s-\sspecifically\nin\sthe\sdocumentation\son\sthe\sOP_Seek\sopcode.
+D 2016-02-03T19:52:06.161
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 72b7858f02017611c3ac1ddc965251017fed0845
@@ -413,7 +413,7 @@ F src/update.c 17332f9fe818cbc0444c36a811800af8498af4c3
 F src/utf.c 10cc2519e82e3369344d0969ad4b1a333dc86d18
 F src/util.c 72d40df0a52d3f30b462a15f0e094fcbade6dc82
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c a0a0ada4b51161d3950fe30fc696b6c8235a841f
+F src/vdbe.c 16ca0c1e2975fac04c3ea5c62b34dc24b13fea13
 F src/vdbe.h 7a733ea8aac1b77305a67698e784fa3484ee3337
 F src/vdbeInt.h 4b69d5451bcadd473e745af53ef1e8abfdce0a79
 F src/vdbeapi.c 9d640d5efd9a140a6bda8da53b220aa258167993
@@ -1423,7 +1423,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ae8b9d2edf1b5aef6108e729754911db7682b6a3
-R 1a8761ef82294be8ac021b32cc3428ab
+P af92401826f5cf49e62c278f344ab75252a18da2
+R f36c5f43b820b4830c00d3f3959d5c82
 U drh
-Z 47031796dc00696c427dc7b231b9f896
+Z cdc17003a87221b5f2cfde36f98aed07

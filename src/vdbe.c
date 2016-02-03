@@ -4960,8 +4960,8 @@ case OP_IdxDelete: {
 ** occur, no unnecessary I/O happens.
 **
 ** P4 may be an array of integers (type P4_INTARRAY) containing
-** one entry for each column in the P3 table.  If array entry a[i]
-** is non-zero, then reading column (a[i]-1) from cursor P3 is 
+** one entry for each column in the P3 table.  If array entry a(i)
+** is non-zero, then reading column a(i)-1 from cursor P3 is 
 ** equivalent to performing the deferred seek and then reading column i 
 ** from P1.  This information is stored in P3 and used to redirect
 ** reads against P3 over to P1, thus possibly avoiding the need to
