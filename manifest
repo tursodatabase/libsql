@@ -1,5 +1,5 @@
-C Escape\scontrol\scharacters\sin\sJSON.\nFix\sfor\sticket\s[ad2559db380abf8].
-D 2016-02-04T10:28:57.253
+C Use\ssqlite3_malloc64()\sinstead\sof\ssqlite3_malloc()\sin\sthe\sspellfix\sextension.
+D 2016-02-04T11:15:57.924
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 72b7858f02017611c3ac1ddc965251017fed0845
@@ -213,7 +213,7 @@ F ext/misc/regexp.c af92cdaa5058fcec1451e49becc7ba44dba023dc
 F ext/misc/rot13.c 1ac6f95f99b575907b9b09c81a349114cf9be45a
 F ext/misc/series.c b8fb7befd85b3a9b4a10e701b30b2b79ca92b6d4
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
-F ext/misc/spellfix.c db4cc4b7aa12384e6c19a289a39cd232d355413d
+F ext/misc/spellfix.c 525190484b7a9dbc6be646c4842274fff4f27d53
 F ext/misc/totype.c 4a167594e791abeed95e0a8db028822b5e8fe512
 F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
@@ -1423,7 +1423,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e3157cb5ad0d22758e766a95fb1463a7810f7d7f
-R b212639d5d48b990a29409ffb71a1dde
+P 4f1b5229a3bbc9d40b7433a5eb3139d59d31dcb1
+R cd8475786d59a53ccb02d1969d7db950
 U drh
-Z b8b1a6316f2eff8be617256b6e3556cd
+Z 726ec290d2122a80c8fe5371e8b4749b
