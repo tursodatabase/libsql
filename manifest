@@ -1,5 +1,5 @@
-C Refinements\sto\ssynchronous\slogic:\s\n(1)\sUse\sPAGER_SYNCHRONOUS_FULL\srather\sthan\sthe\scorresponding\smagic\snumber.\n(2)\sHonor\sSQLITE_NO_SYNC\son\sxDelete\scalls\swith\ssync\n(3)\sCount\sxDelete\ssyncs\sduring\stesting\n(4)\sFix\s#ifs\son\sSQLITE_EXTRA_DURABLE\sso\sthat\sdirectory\ssyncs\son\sjournal\nunlink\sare\soff\sby\sdefault.
-D 2016-02-04T09:48:12.199
+C Escape\scontrol\scharacters\sin\sJSON.\nFix\sfor\sticket\s[ad2559db380abf8].
+D 2016-02-04T10:28:57.253
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 72b7858f02017611c3ac1ddc965251017fed0845
@@ -206,7 +206,7 @@ F ext/misc/eval.c f971962e92ebb8b0a4e6b62949463ee454d88fa2
 F ext/misc/fileio.c d4171c815d6543a9edef8308aab2951413cd8d0f
 F ext/misc/fuzzer.c 4c84635c71c26cfa7c2e5848cf49fe2d2cfcd767
 F ext/misc/ieee754.c f190d0cc5182529acb15babd177781be1ac1718c
-F ext/misc/json1.c 7b1155f520d5e8ec1c005d978ac675e8a7f2688a
+F ext/misc/json1.c 8698ea0ce24bda23bd8ad4a124620d758f92760b
 F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
 F ext/misc/percentile.c bcbee3c061b884eccb80e21651daaae8e1e43c63
 F ext/misc/regexp.c af92cdaa5058fcec1451e49becc7ba44dba023dc
@@ -833,7 +833,7 @@ F test/journal3.test ff8af941f9e06161d3db1b46bb9f965ff0e7f307
 F test/jrnlmode.test 7864d59cf7f6e552b9b99ba0f38acd167edc10fa
 F test/jrnlmode2.test 81610545a4e6ed239ea8fa661891893385e23a1d
 F test/jrnlmode3.test 556b447a05be0e0963f4311e95ab1632b11c9eaa
-F test/json101.test f0178422b3a2418f423fd0d3caf3571c8d1b9863
+F test/json101.test ef42283f0b60d8bacbc2243448e7c84988578e52
 F test/json102.test bf3fe7a706d30936a76a0f7a0375e1e8e73aff5a
 F test/json103.test c5f6b85e69de05f6b3195f9f9d5ce9cd179099a0
 F test/keyword1.test 37ef6bba5d2ed5b07ecdd6810571de2956599dff
@@ -1423,7 +1423,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 632071bac5ff324a74cec9bdbba2deb60c0945e9
-R 3746b9c792f29a07d873215ad89cd62c
+P e3157cb5ad0d22758e766a95fb1463a7810f7d7f
+R b212639d5d48b990a29409ffb71a1dde
 U drh
-Z 6297b2dadaa7144af31b30e87beaeee7
+Z b8b1a6316f2eff8be617256b6e3556cd
