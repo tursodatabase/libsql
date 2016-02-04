@@ -1,5 +1,5 @@
-C Avoid\srunning\ssome\sparticularly\stime-consuming\stests\sas\spart\sof\sveryquick.test.
-D 2016-02-04T17:31:03.368
+C Further\simprove\sperformance\sof\sunindexed\sfts5\sprefix\squeries.
+D 2016-02-04T19:45:19.673
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 72b7858f02017611c3ac1ddc965251017fed0845
@@ -104,7 +104,7 @@ F ext/fts5/fts5_buffer.c f6e0c6018ffc8e39fc0b333b5daa8b8d528ae6e4
 F ext/fts5/fts5_config.c 0c384ebdd23fd055e2e50a93277b8d59da538238
 F ext/fts5/fts5_expr.c ff5c451a6d025909639ac0f0d0af0cc595b50feb
 F ext/fts5/fts5_hash.c 1b113977296cf4212c6ec667d5e3f2bd18036955
-F ext/fts5/fts5_index.c e634a4a05b066f7122db93558c871148bd9893f2
+F ext/fts5/fts5_index.c 614c54544f844387ba6728c613a884a1aa151f06
 F ext/fts5/fts5_main.c 7e8a5f27d504bc04e3de7f1cba8867f0332aee9d
 F ext/fts5/fts5_storage.c 2a1f44deae090cd711f02cec0c2af8e660360d24
 F ext/fts5/fts5_tcl.c f8731e0508299bd43f1a2eff7dbeaac870768966
@@ -980,7 +980,7 @@ F test/savepoint4.test c8f8159ade6d2acd9128be61e1230f1c1edc6cc0
 F test/savepoint5.test 0735db177e0ebbaedc39812c8d065075d563c4fd
 F test/savepoint6.test f41279c5e137139fa5c21485773332c7adb98cd7
 F test/savepoint7.test db3db281486c925095f305aad09fe806e5188ff3
-F test/savepointfault.test f044eac64b59f09746c7020ee261734de82bf9b2 w test/savepoint3.test
+F test/savepointfault.test f044eac64b59f09746c7020ee261734de82bf9b2
 F test/scanstatus.test 5253c219e331318a437f436268e0e82345700285
 F test/schema.test 8f7999be894260f151adf15c2c7540f1c6d6a481
 F test/schema2.test 906408621ea881fdb496d878b1822572a34e32c5
@@ -1345,7 +1345,7 @@ F test/whereH.test e4b07f7a3c2f5d31195cd33710054c78667573b2
 F test/whereI.test 1d89199697919d4930be05a71e7fe620f114e622
 F test/whereJ.test 55a3221706a7ab706293f17cc8f96da563bf0767
 F test/whereK.test f8e3cf26a8513ecc7f514f54df9f0572c046c42b
-F test/wherefault.test 1374c3aa198388925246475f84ad4cd5f9528864 w test/where8m.test
+F test/wherefault.test 1374c3aa198388925246475f84ad4cd5f9528864
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/wild001.test bca33f499866f04c24510d74baf1e578d4e44b1c
 F test/win32heap.test ea19770974795cff26e11575e12d422dbd16893c
@@ -1426,7 +1426,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b787165b25a240fd5b4a5c7f73b395f30213a1d7
-R 2d9511ba502b30b0a28170783af34756
+P f465944b75a800ddc6920229ad32c2f39ff91e19
+R 50521888ffcbf123db65487e5572aad3
 U dan
-Z 9311e6c3b97d9e579dd5eb1512f82842
+Z 7367047abd1bd45b9cf9859d0571d183
