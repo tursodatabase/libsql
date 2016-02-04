@@ -926,7 +926,7 @@ void sqlite3StartTable(
 
   pTable = sqlite3DbMallocZero(db, sizeof(Table));
   if( pTable==0 ){
-    db->mallocFailed = 1;
+    assert( db->mallocFailed );
     pParse->rc = SQLITE_NOMEM;
     pParse->nErr++;
     goto begin_table_error;

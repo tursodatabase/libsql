@@ -1,5 +1,5 @@
-C Use\ssqlite3_malloc64()\sinstead\sof\ssqlite3_malloc()\sin\sthe\sspellfix\sextension.
-D 2016-02-04T11:15:57.924
+C Remove\sunnecessary\ssets\sof\sdb->mallocFailed.
+D 2016-02-04T11:48:00.219
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 72b7858f02017611c3ac1ddc965251017fed0845
@@ -284,17 +284,17 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c 3fe13e97ab38317b092e2f3ae11267b40c9b5cbd
+F src/alter.c b6e0befc17d69b59c66f4b8a126c05b1ee7ef10a
 F src/analyze.c 0043d3e501f04297fed2bb50b488bc08d5c39f36
 F src/attach.c 27743a694df17ca468eee3956126a5d28d2a29ea
 F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 2869a76c03eb393ee795416e2387005553df72bc
 F src/bitvec.c 1a78d450a17c5016710eec900bedfc5729bf9bdf
 F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
-F src/btree.c a2a0244ea3f0b3f57f75019c2f229c744ca5d202
+F src/btree.c 0b359bcc2316a57acf12f583253974ad22b4654f
 F src/btree.h 368ceeb4bd9312dc8df2ffd64b4b7dbcf4db5f8e
 F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
-F src/build.c 33dea2cef04c16a902c55f9d83b1a2065f213979
+F src/build.c 88ee370118ff7f081f2060ad3fb6c170f9aed7d3
 F src/callback.c 29ae4faba226c7ebb9aee93016b5ce8a8f071261
 F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
 F src/ctime.c 60e135af364d777a9ab41c97e5e89cd224da6198
@@ -429,7 +429,7 @@ F src/wal.h 2f7c831cf3b071fa548bf2d5cac640846a7ff19c
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
 F src/where.c af9bf5dcec1a0e52726c550924aa91d837166251
 F src/whereInt.h 78b6b4de94db84aecbdc07fe3e38f648eb391e9a
-F src/wherecode.c 923f5d04b379b7417bc29f3b86b5eae9d1923d72
+F src/wherecode.c 791a784bbf8749d560fdb0b990b607bc4f44a38d
 F src/whereexpr.c 197a448b52073aee43eca3a2233fc113369eb2d4
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1423,7 +1423,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4f1b5229a3bbc9d40b7433a5eb3139d59d31dcb1
-R cd8475786d59a53ccb02d1969d7db950
+P 634d008c34bd237fc9cfb88dc291394fc5d31efa
+R 0723d194047e6276e554e1a515e620e8
 U drh
-Z 726ec290d2122a80c8fe5371e8b4749b
+Z 4a87610dafa418a613875dd84903b4d5
