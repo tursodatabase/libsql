@@ -1,5 +1,5 @@
-C Further\simprove\sperformance\sof\sunindexed\sfts5\sprefix\squeries.
-D 2016-02-04T19:45:19.673
+C Temporarily\sback\sout\sthe\s0.5%\sperformance\simprovement\sfrom\ncheck-in\s[632071bac5ff32].\s\sNeed\sa\smore\selaborate\ssolution\sthat\sworks\nwith\sreentrant\svirtual\stables\sand\sSQL\sfunctions.
+D 2016-02-04T19:50:33.284
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 72b7858f02017611c3ac1ddc965251017fed0845
@@ -413,7 +413,7 @@ F src/update.c 17332f9fe818cbc0444c36a811800af8498af4c3
 F src/utf.c 10cc2519e82e3369344d0969ad4b1a333dc86d18
 F src/util.c 72d40df0a52d3f30b462a15f0e094fcbade6dc82
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c f0c2e2fb8cbff761ea8602058406c151b9325e8d
+F src/vdbe.c 16ca0c1e2975fac04c3ea5c62b34dc24b13fea13
 F src/vdbe.h 7a733ea8aac1b77305a67698e784fa3484ee3337
 F src/vdbeInt.h 4b69d5451bcadd473e745af53ef1e8abfdce0a79
 F src/vdbeapi.c 9d640d5efd9a140a6bda8da53b220aa258167993
@@ -1426,7 +1426,8 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f465944b75a800ddc6920229ad32c2f39ff91e19
-R 50521888ffcbf123db65487e5572aad3
-U dan
-Z 7367047abd1bd45b9cf9859d0571d183
+P c9c6457d8ea911f6cc63967127e58da3146fd3ef
+Q -632071bac5ff324a74cec9bdbba2deb60c0945e9
+R c2fbdbab2e50abda4a6e36464c2e90a7
+U drh
+Z d787da74a7d8bd75c2afcf5547eaa172
