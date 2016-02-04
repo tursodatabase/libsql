@@ -4823,7 +4823,7 @@ act_like_temp_file:
     assert( pPager->ckptSyncFlags==0 );
   }else{
     pPager->fullSync = 1;
-#ifdef SQLITE_EXTRA_DURABLE
+#if SQLITE_EXTRA_DURABLE
     pPager->extraSync = 1;
 #else
     pPager->extraSync = 0;

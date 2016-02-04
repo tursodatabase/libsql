@@ -1,5 +1,5 @@
-C In\sthe\sVDBE\sloop,\sonly\scheck\sfor\sOOM\serrors\sat\sjumps\srather\sthan\safter\severy\nopcode,\sfor\sabout\sa\s0.5%\sperformance\sincrease.
-D 2016-02-03T22:14:38.812
+C Refinements\sto\ssynchronous\slogic:\s\n(1)\sUse\sPAGER_SYNCHRONOUS_FULL\srather\sthan\sthe\scorresponding\smagic\snumber.\n(2)\sHonor\sSQLITE_NO_SYNC\son\sxDelete\scalls\swith\ssync\n(3)\sCount\sxDelete\ssyncs\sduring\stesting\n(4)\sFix\s#ifs\son\sSQLITE_EXTRA_DURABLE\sso\sthat\sdirectory\ssyncs\son\sjournal\nunlink\sare\soff\sby\sdefault.
+D 2016-02-04T09:48:12.199
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 72b7858f02017611c3ac1ddc965251017fed0845
@@ -286,7 +286,7 @@ F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c 3fe13e97ab38317b092e2f3ae11267b40c9b5cbd
 F src/analyze.c 0043d3e501f04297fed2bb50b488bc08d5c39f36
-F src/attach.c 07b3a34a1702dce92a7f1d3888c0c06222b63760
+F src/attach.c 27743a694df17ca468eee3956126a5d28d2a29ea
 F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 2869a76c03eb393ee795416e2387005553df72bc
 F src/bitvec.c 1a78d450a17c5016710eec900bedfc5729bf9bdf
@@ -332,10 +332,10 @@ F src/os.c 8fd25588eeba74068d41102d26810e216999b6c8
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h abdb9a191a367793268fe553d25bab894e986a0e
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c 5bb20172d0c9a6afcfa829a88c406970593c848d
+F src/os_unix.c 821ed110197175165cf2f50b0930c7ff9a24504c
 F src/os_win.c ccf29ddded3e41e506b6bd98c1171aa0963b23f2
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
-F src/pager.c 3e189231fc662710964b54862450bc7f69f313c2
+F src/pager.c 67cd2fbab58d0e35fed5f81432856f4f0af9fc6d
 F src/pager.h f3eb324a3ff2408b28bab7e81c1c55c13720f865
 F src/parse.y 426a91fbbbf7cdde3fd4b8798de7317a8782bec5
 F src/pcache.c 73895411fa6b7bd6f0091212feabbe833b358d23
@@ -1065,7 +1065,7 @@ F test/substr.test 18f57c4ca8a598805c4d64e304c418734d843c1a
 F test/subtype1.test 7fe09496352f97053af1437150751be2d0a0cae8
 F test/superlock.test 1cde669f68d2dd37d6c9bd35eee1d95491ae3fc2
 F test/symlink.test c9ebe7330d228249e447038276bfc8a7b22f4849
-F test/sync.test a34cd43e98b7fb84eabbf38f7ed8f7349b3f3d85
+F test/sync.test 2f607e1821aa3af3c5c53b58835c05e511c95899
 F test/syscall.test f59ba4e25f7ba4a4c031026cc2ef8b6e4b4c639c
 F test/sysfault.test c9f2b0d8d677558f74de750c75e12a5454719d04
 F test/tabfunc01.test cc33684f9480fcf1fd5ce287ac28d22971cad1cc
@@ -1423,7 +1423,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ca11f46db047e7f131cef3893f73824758a2076b
-R 59ea01ed7c88b6674116d0bfaf73cf15
+P 632071bac5ff324a74cec9bdbba2deb60c0945e9
+R 3746b9c792f29a07d873215ad89cd62c
 U drh
-Z 96f5f7409c64154023cc6759eed6c5b3
+Z 6297b2dadaa7144af31b30e87beaeee7
