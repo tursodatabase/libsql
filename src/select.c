@@ -2900,7 +2900,7 @@ static int multiSelectOrderBy(
     assert( nOrderBy>=nExpr || db->mallocFailed );
     regPrev = pParse->nMem+1;
     pParse->nMem += nExpr+1;
-    sqlite3VdbeAddOp2(v, OP_Integer, 0, regPrev);
+    sqlite3VdbeZeroRegister(v, regPrev);
     pKeyDup = sqlite3KeyInfoAlloc(db, nExpr, 1);
     if( pKeyDup ){
       assert( sqlite3KeyInfoIsWriteable(pKeyDup) );
@@ -5004,7 +5004,7 @@ int sqlite3Select(
       int retAddr;
       assert( pItem->addrFillSub==0 );
       pItem->regReturn = ++pParse->nMem;
-      topAddr = sqlite3VdbeAddOp2(v, OP_Integer, 0, pItem->regReturn);
+      topAddr = sqlite3VdbeZeroRegister(v, pItem->regReturn);
       pItem->addrFillSub = topAddr+1;
       if( pItem->fg.isCorrelated==0 ){
         /* If the subquery is not correlated and if we are not inside of
@@ -5271,9 +5271,9 @@ int sqlite3Select(
       pParse->nMem += pGroupBy->nExpr;
       iBMem = pParse->nMem + 1;
       pParse->nMem += pGroupBy->nExpr;
-      sqlite3VdbeAddOp2(v, OP_Integer, 0, iAbortFlag);
+      sqlite3VdbeZeroRegister(v, iAbortFlag);
       VdbeComment((v, "clear abort flag"));
-      sqlite3VdbeAddOp2(v, OP_Integer, 0, iUseFlag);
+      sqlite3VdbeZeroRegister(v, iUseFlag);
       VdbeComment((v, "indicate accumulator empty"));
       sqlite3VdbeAddOp3(v, OP_Null, 0, iAMem, iAMem+pGroupBy->nExpr-1);
 

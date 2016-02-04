@@ -234,6 +234,12 @@ int sqlite3VdbeLoadString(Vdbe *p, int iDest, const char *zStr){
   return sqlite3VdbeAddOp4(p, OP_String8, 0, iDest, 0, zStr, 0);
 }
 
+/* Generate code to zero a register
+*/
+int sqlite3VdbeZeroRegister(Vdbe *p, int iDest){
+  return sqlite3VdbeAddOp3(p, OP_Integer, 0, iDest, 0);
+}
+
 /*
 ** Generate code that initializes multiple registers to string or integer
 ** constants.  The registers begin with iDest and increase consecutively.

@@ -998,7 +998,7 @@ void sqlite3StartTable(
     */
 #if !defined(SQLITE_OMIT_VIEW) || !defined(SQLITE_OMIT_VIRTUALTABLE)
     if( isView || isVirtual ){
-      sqlite3VdbeAddOp2(v, OP_Integer, 0, reg2);
+      sqlite3VdbeZeroRegister(v, reg2);
     }else
 #endif
     {

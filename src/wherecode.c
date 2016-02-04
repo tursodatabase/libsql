@@ -854,7 +854,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
   */
   if( pLevel->iFrom>0 && (pTabItem[0].fg.jointype & JT_LEFT)!=0 ){
     pLevel->iLeftJoin = ++pParse->nMem;
-    sqlite3VdbeAddOp2(v, OP_Integer, 0, pLevel->iLeftJoin);
+    sqlite3VdbeZeroRegister(v, pLevel->iLeftJoin);
     VdbeComment((v, "init LEFT JOIN no-match flag"));
   }
 
@@ -1427,7 +1427,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       }
       regRowid = ++pParse->nMem;
     }
-    iRetInit = sqlite3VdbeAddOp2(v, OP_Integer, 0, regReturn);
+    iRetInit = sqlite3VdbeZeroRegister(v, regReturn);
 
     /* If the original WHERE clause is z of the form:  (x1 OR x2 OR ...) AND y
     ** Then for every term xN, evaluate as the subexpression: xN AND z

@@ -406,7 +406,7 @@ void sqlite3Update(
   */
   if( (db->flags & SQLITE_CountRows) && !pParse->pTriggerTab ){
     regRowCount = ++pParse->nMem;
-    sqlite3VdbeAddOp2(v, OP_Integer, 0, regRowCount);
+    sqlite3VdbeZeroRegister(v, regRowCount);
   }
 
   labelBreak = sqlite3VdbeMakeLabel(v);

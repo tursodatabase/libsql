@@ -175,6 +175,7 @@ int sqlite3VdbeAddOp1(Vdbe*,int,int);
 int sqlite3VdbeAddOp2(Vdbe*,int,int,int);
 int sqlite3VdbeGoto(Vdbe*,int);
 int sqlite3VdbeLoadString(Vdbe*,int,const char*);
+int sqlite3VdbeZeroRegister(Vdbe*,int);
 void sqlite3VdbeMultiLoad(Vdbe*,int,const char*,...);
 int sqlite3VdbeAddOp3(Vdbe*,int,int,int,int);
 int sqlite3VdbeAddOp4(Vdbe*,int,int,int,int,const char *zP4,int);

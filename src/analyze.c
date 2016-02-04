@@ -1109,7 +1109,7 @@ static void analyzeOneTable(
     */
     addrRewind = sqlite3VdbeAddOp1(v, OP_Rewind, iIdxCur);
     VdbeCoverage(v);
-    sqlite3VdbeAddOp2(v, OP_Integer, 0, regChng);
+    sqlite3VdbeZeroRegister(v, regChng);
     addrNextRow = sqlite3VdbeCurrentAddr(v);
 
     if( nColTest>0 ){

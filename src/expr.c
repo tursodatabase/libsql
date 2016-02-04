@@ -1617,7 +1617,7 @@ int sqlite3CodeOnce(Parse *pParse){
 */
 static void sqlite3SetHasNullFlag(Vdbe *v, int iCur, int regHasNull){
   int addr1;
-  sqlite3VdbeAddOp2(v, OP_Integer, 0, regHasNull);
+  sqlite3VdbeZeroRegister(v, regHasNull);
   addr1 = sqlite3VdbeAddOp1(v, OP_Rewind, iCur); VdbeCoverage(v);
   sqlite3VdbeAddOp3(v, OP_Column, iCur, 0, regHasNull);
   sqlite3VdbeChangeP5(v, OPFLAG_TYPEOFARG);
@@ -2048,7 +2048,7 @@ int sqlite3CodeSubselect(
         VdbeComment((v, "Init subquery result"));
       }else{
         dest.eDest = SRT_Exists;
-        sqlite3VdbeAddOp2(v, OP_Integer, 0, dest.iSDParm);
+        sqlite3VdbeZeroRegister(v, dest.iSDParm);
         VdbeComment((v, "Init EXISTS result"));
       }
       sqlite3ExprDelete(pParse->db, pSel->pLimit);
@@ -2860,7 +2860,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       addr = sqlite3VdbeAddOp1(v, op, r1);
       VdbeCoverageIf(v, op==TK_ISNULL);
       VdbeCoverageIf(v, op==TK_NOTNULL);
-      sqlite3VdbeAddOp2(v, OP_Integer, 0, target);
+      sqlite3VdbeZeroRegister(v, target);
       sqlite3VdbeJumpHere(v, addr);
       break;
     }

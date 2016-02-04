@@ -1502,9 +1502,9 @@ void sqlite3Pragma(
         sqlite3ExprCacheClear(pParse);
         sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenRead, 0,
                                    1, 0, &iDataCur, &iIdxCur);
-        sqlite3VdbeAddOp2(v, OP_Integer, 0, 7);
+        sqlite3VdbeZeroRegister(v, 7);
         for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
-          sqlite3VdbeAddOp2(v, OP_Integer, 0, 8+j); /* index entries counter */
+          sqlite3VdbeZeroRegister(v, 8+j); /* index entries counter */
         }
         pParse->nMem = MAX(pParse->nMem, 8+j);
         sqlite3VdbeAddOp2(v, OP_Rewind, iDataCur, 0); VdbeCoverage(v);

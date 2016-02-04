@@ -354,7 +354,7 @@ void sqlite3DeleteFrom(
   */
   if( db->flags & SQLITE_CountRows ){
     memCnt = ++pParse->nMem;
-    sqlite3VdbeAddOp2(v, OP_Integer, 0, memCnt);
+    sqlite3VdbeZeroRegister(v, memCnt);
   }
 
 #ifndef SQLITE_OMIT_TRUNCATE_OPTIMIZATION

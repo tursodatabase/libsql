@@ -779,7 +779,7 @@ void sqlite3Insert(
   */
   if( db->flags & SQLITE_CountRows ){
     regRowCount = ++pParse->nMem;
-    sqlite3VdbeAddOp2(v, OP_Integer, 0, regRowCount);
+    sqlite3VdbeZeroRegister(v, regRowCount);
   }
 
   /* If this is not a view, open the table and and all indices */
