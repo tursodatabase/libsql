@@ -1,8 +1,8 @@
-C Further\sstreamlining\sof\sfts5\sprefix\squery\scode.
-D 2016-02-05T19:18:02.811
+C More\swork\son\sWindows\s10\sSDK\sintegration.
+D 2016-02-05T19:40:23.877
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 72b7858f02017611c3ac1ddc965251017fed0845
+F Makefile.msc 9eadde083c1ef0d0d2a253671c76e0b7e48a3dc6
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION 866588d1edf0ccb5b0d33896974338f97564f719
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -1426,7 +1426,10 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1cac6c45eeb7dbbcda0c76ba7d3a2ca77bc725cd
-R 82ed27d217d52be944f2d4bee3dfe639
-U dan
-Z ad1bc1867d7f59ff72d365283a40efbf
+P ca91bd8ac70a5b3fef127364f73ec675e58bb92c
+R 1ddcbe680d5a6ea9a1dc01ec422c820c
+T *branch * win10sdk
+T *sym-win10sdk *
+T -sym-trunk *
+U mistachkin
+Z 9a5014635472c911640e985821bf4dea
