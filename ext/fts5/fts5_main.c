@@ -803,7 +803,7 @@ static int fts5CursorReseek(Fts5Cursor *pCsr, int *pbSkip){
 */
 static int fts5NextMethod(sqlite3_vtab_cursor *pCursor){
   Fts5Cursor *pCsr = (Fts5Cursor*)pCursor;
-  int rc = SQLITE_OK;
+  int rc;
 
   assert( (pCsr->ePlan<3)==
           (pCsr->ePlan==FTS5_PLAN_MATCH || pCsr->ePlan==FTS5_PLAN_SOURCE) 
@@ -820,6 +820,7 @@ static int fts5NextMethod(sqlite3_vtab_cursor *pCursor){
     switch( pCsr->ePlan ){
       case FTS5_PLAN_SPECIAL: {
         CsrFlagSet(pCsr, FTS5CSR_EOF);
+        rc = SQLITE_OK;
         break;
       }
   
