@@ -1,5 +1,5 @@
-C Minor\ssimplification\sof\sschema\serror\sreporting.
-D 2016-02-05T02:50:11.825
+C OOM\sfailures\son\ssqlite3_errmsg16()\sin\san\sapp-defined\sfunction\sare\sno\slonger\nbenign.
+D 2016-02-05T04:50:27.680
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 72b7858f02017611c3ac1ddc965251017fed0845
@@ -376,7 +376,7 @@ F src/test_config.c 0dee90328e3dedf8ba002ee94b6a7e7ea7726fe4
 F src/test_demovfs.c 0de72c2c89551629f58486fde5734b7d90758852
 F src/test_devsym.c e7498904e72ba7491d142d5c83b476c4e76993bc
 F src/test_fs.c a61f54247fdb843761d709879c3bcd1989b2050c
-F src/test_func.c 0d9c25956152adefee8881c6fadc8354793764d0
+F src/test_func.c 37453d346cfcf118774efd5bf6187f7e6a7e3254
 F src/test_hexio.c abfdecb6fa58c354623978efceb088ca18e379cd
 F src/test_init.c 66b33120ffe9cd853b5a905ec850d51151337b32
 F src/test_intarray.c 870124b95ec4c645d4eb84f15efb7133528fb1a5
@@ -1426,7 +1426,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d94416ddca8f7ed727dd335d38155ea5945a86b7
-R 93de80b6f41eca5b247f8cd43a03611d
+P a8846aeed9992c6c9f1c8bd6e996a4cbe891751e
+R d0bf71e8097462f80d2341a6f602c53f
 U drh
-Z 30d13b253cef6bc68465b8bc6d2bab02
+Z 1d703e36553aaf91d3187c59187314d2
