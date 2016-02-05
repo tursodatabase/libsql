@@ -103,4 +103,3 @@ foreach {tn use_stmt sql schema} {
 
 
 finish_test
-

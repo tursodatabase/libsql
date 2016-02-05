@@ -79,4 +79,3 @@ do_icu_expr_test    3.9 { "ab*c" } { PHRASE 3 0 ab+ * c }
 do_icu_expr_test    3.10 { ab*c } { AND {PHRASE 3 0 ab+} {PHRASE 3 0 c}}
 
 finish_test
-
