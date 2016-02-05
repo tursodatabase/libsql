@@ -7088,12 +7088,7 @@ static int unixDelete(
     int fd;
     rc = osOpenDirectory(zPath, &fd);
     if( rc==SQLITE_OK ){
-#if OS_VXWORKS
-      if( fsync(fd)==-1 )
-#else
-      if( fsync(fd) )
-#endif
-      {
+      if( full_fsync(fd,0,0) ){
         rc = unixLogError(SQLITE_IOERR_DIR_FSYNC, "fsync", zPath);
       }
 #if OSCLOSE_CHECK_CLOSE_IOERR
@@ -8185,7 +8180,7 @@ static int proxyTakeConch(unixFile *pFile){
         writeSize = PROXY_PATHINDEX + strlen(&writeBuffer[PROXY_PATHINDEX]);
         robust_ftruncate(conchFile->h, writeSize);
         rc = unixWrite((sqlite3_file *)conchFile, writeBuffer, writeSize, 0);
-        fsync(conchFile->h);
+        full_fsync(conchFile->h,0,0);
         /* If we created a new conch file (not just updated the contents of a 
          ** valid conch file), try to match the permissions of the database 
          */

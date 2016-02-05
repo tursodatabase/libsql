@@ -186,7 +186,15 @@ do_test pragma-1.10 {
     PRAGMA synchronous;
   }
 } {123 123 1}
-do_test pragma-1.11 {
+do_test pragma-1.11.1 {
+  execsql {
+    PRAGMA synchronous=EXTRA;
+    PRAGMA cache_size;
+    PRAGMA default_cache_size;
+    PRAGMA synchronous;
+  }
+} {123 123 3}
+do_test pragma-1.11.2 {
   execsql {
     PRAGMA synchronous=FULL;
     PRAGMA cache_size;
@@ -224,14 +232,20 @@ do_test pragma-1.14.1 {
     PRAGMA synchronous=4;
     PRAGMA synchronous;
   }
-} {0}
+} {4}
 do_test pragma-1.14.2 {
   execsql {
     PRAGMA synchronous=3;
     PRAGMA synchronous;
   }
-} {0}
+} {3}
 do_test pragma-1.14.3 {
+  execsql {
+    PRAGMA synchronous=8;
+    PRAGMA synchronous;
+  }
+} {0}
+do_test pragma-1.14.4 {
   execsql {
     PRAGMA synchronous=10;
     PRAGMA synchronous;

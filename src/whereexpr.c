@@ -64,7 +64,7 @@ static int whereClauseInsert(WhereClause *pWC, Expr *p, u16 wtFlags){
   if( pWC->nTerm>=pWC->nSlot ){
     WhereTerm *pOld = pWC->a;
     sqlite3 *db = pWC->pWInfo->pParse->db;
-    pWC->a = sqlite3DbMallocRaw(db, sizeof(pWC->a[0])*pWC->nSlot*2 );
+    pWC->a = sqlite3DbMallocRawNN(db, sizeof(pWC->a[0])*pWC->nSlot*2 );
     if( pWC->a==0 ){
       if( wtFlags & TERM_DYNAMIC ){
         sqlite3ExprDelete(db, p);
@@ -549,7 +549,7 @@ static void exprAnalyzeOrTerm(
       WhereAndInfo *pAndInfo;
       assert( (pOrTerm->wtFlags & (TERM_ANDINFO|TERM_ORINFO))==0 );
       chngToIN = 0;
-      pAndInfo = sqlite3DbMallocRaw(db, sizeof(*pAndInfo));
+      pAndInfo = sqlite3DbMallocRawNN(db, sizeof(*pAndInfo));
       if( pAndInfo ){
         WhereClause *pAndWC;
         WhereTerm *pAndTerm;
@@ -563,7 +563,6 @@ static void exprAnalyzeOrTerm(
         sqlite3WhereSplit(pAndWC, pOrTerm->pExpr, TK_AND);
         sqlite3WhereExprAnalyze(pSrc, pAndWC);
         pAndWC->pOuter = pWC;
-        testcase( db->mallocFailed );
         if( !db->mallocFailed ){
           for(j=0, pAndTerm=pAndWC->a; j<pAndWC->nTerm; j++, pAndTerm++){
             assert( pAndTerm->pExpr );

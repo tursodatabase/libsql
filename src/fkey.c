@@ -219,7 +219,7 @@ int sqlite3FkLocateIndex(
     }
   }else if( paiCol ){
     assert( nCol>1 );
-    aiCol = (int *)sqlite3DbMallocRaw(pParse->db, nCol*sizeof(int));
+    aiCol = (int *)sqlite3DbMallocRawNN(pParse->db, nCol*sizeof(int));
     if( !aiCol ) return 1;
     *paiCol = aiCol;
   }
@@ -1165,7 +1165,6 @@ static Trigger *fkActionTrigger(
   pTrigger = pFKey->apTrigger[iAction];
 
   if( action!=OE_None && !pTrigger ){
-    u8 enableLookaside;           /* Copy of db->lookaside.bEnabled */
     char const *zFrom;            /* Name of child table */
     int nFrom;                    /* Length in bytes of zFrom */
     Index *pIdx = 0;              /* Parent key index for this FK */
@@ -1274,8 +1273,7 @@ static Trigger *fkActionTrigger(
     }
 
     /* Disable lookaside memory allocation */
-    enableLookaside = db->lookaside.bEnabled;
-    db->lookaside.bEnabled = 0;
+    db->lookaside.bDisable++;
 
     pTrigger = (Trigger *)sqlite3DbMallocZero(db, 
         sizeof(Trigger) +         /* struct Trigger */
@@ -1297,7 +1295,7 @@ static Trigger *fkActionTrigger(
     }
 
     /* Re-enable the lookaside buffer, if it was disabled earlier. */
-    db->lookaside.bEnabled = enableLookaside;
+    db->lookaside.bDisable--;
 
     sqlite3ExprDelete(db, pWhere);
     sqlite3ExprDelete(db, pWhen);

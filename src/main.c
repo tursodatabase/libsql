@@ -701,12 +701,12 @@ static int setupLookaside(sqlite3 *db, void *pBuf, int sz, int cnt){
       p = (LookasideSlot*)&((u8*)p)[sz];
     }
     db->lookaside.pEnd = p;
-    db->lookaside.bEnabled = 1;
+    db->lookaside.bDisable = 0;
     db->lookaside.bMalloced = pBuf==0 ?1:0;
   }else{
     db->lookaside.pStart = db;
     db->lookaside.pEnd = db;
-    db->lookaside.bEnabled = 0;
+    db->lookaside.bDisable = 1;
     db->lookaside.bMalloced = 0;
   }
 #endif /* SQLITE_OMIT_LOOKASIDE */
@@ -2215,7 +2215,7 @@ const void *sqlite3_errmsg16(sqlite3 *db){
     ** be cleared before returning. Do this directly, instead of via
     ** sqlite3ApiExit(), to avoid setting the database handle error message.
     */
-    db->mallocFailed = 0;
+    sqlite3OomClear(db);
   }
   sqlite3_mutex_leave(db->mutex);
   return z;
@@ -2942,7 +2942,7 @@ static int openDatabase(
   db->openFlags = flags;
   rc = sqlite3ParseUri(zVfs, zFilename, &flags, &db->pVfs, &zOpen, &zErrMsg);
   if( rc!=SQLITE_OK ){
-    if( rc==SQLITE_NOMEM ) db->mallocFailed = 1;
+    if( rc==SQLITE_NOMEM ) sqlite3OomFault(db);
     sqlite3ErrorWithMsg(db, rc, zErrMsg ? "%s" : 0, zErrMsg);
     sqlite3_free(zErrMsg);
     goto opendb_out;

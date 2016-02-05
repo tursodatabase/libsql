@@ -1005,7 +1005,7 @@ typedef struct With With;
 ** field when the user has specified a synchronous setting via pragma.
 */
 #define SQLITE_SAFETYLEVEL_FIXED 0x10
-#define SQLITE_SAFETYLEVEL_VALUE_MASK 0x03
+#define SQLITE_SAFETYLEVEL_VALUE_MASK 0x07
 #define SQLITE_DbSafetyLevelValue(level) (level&SQLITE_SAFETYLEVEL_VALUE_MASK)
 #define SQLITE_DbSafetyLevelIsFixed(level) (level&SQLITE_SAFETYLEVEL_FIXED)
 
@@ -1104,8 +1104,8 @@ struct Schema {
 ** lookaside allocations are not used to construct the schema objects.
 */
 struct Lookaside {
+  u32 bDisable;           /* Only operate the lookaside when zero */
   u16 sz;                 /* Size of each buffer in bytes */
-  u8 bEnabled;            /* False to disable new lookaside allocations */
   u8 bMalloced;           /* True if pStart obtained from sqlite3_malloc() */
   int nOut;               /* Number of buffers currently checked out */
   int mxOut;              /* Highwater mark for nOut */
@@ -1188,6 +1188,7 @@ struct sqlite3 {
   u8 autoCommit;                /* The auto-commit flag. */
   u8 temp_store;                /* 1: file 2: memory 0: default */
   u8 mallocFailed;              /* True if we have seen a malloc failure */
+  u8 bBenignMalloc;             /* Do not require OOMs if true */
   u8 dfltLockMode;              /* Default locking-mode for attached dbs */
   signed char nextAutovac;      /* Autovac setting after VACUUM if >=0 */
   u8 suppressErr;               /* Do not issue error messages if true */
@@ -1296,10 +1297,10 @@ struct sqlite3 {
 */
 #define SQLITE_VdbeTrace      0x00000001  /* True to trace VDBE execution */
 #define SQLITE_InternChanges  0x00000002  /* Uncommitted Hash table changes */
-#define SQLITE_FullFSync      0x00000004  /* Use full fsync on the backend */
-#define SQLITE_CkptFullFSync  0x00000008  /* Use full fsync for checkpoint */
-#define SQLITE_CacheSpill     0x00000010  /* OK to spill pager cache */
-#define SQLITE_FullColNames   0x00000020  /* Show full column names on SELECT */
+#define SQLITE_FullColNames   0x00000004  /* Show full column names on SELECT */
+#define SQLITE_FullFSync      0x00000008  /* Use full fsync on the backend */
+#define SQLITE_CkptFullFSync  0x00000010  /* Use full fsync for checkpoint */
+#define SQLITE_CacheSpill     0x00000020  /* OK to spill pager cache */
 #define SQLITE_ShortColNames  0x00000040  /* Show short columns names */
 #define SQLITE_CountRows      0x00000080  /* Count rows changed by INSERT, */
                                           /*   DELETE, or UPDATE and return */
@@ -2651,7 +2652,7 @@ struct SelectDest {
 ** tables, the following information is attached to the Table.u.autoInc.p
 ** pointer of each autoincrement table to record some side information that
 ** the code generator needs.  We have to keep per-table autoincrement
-** information in case inserts are down within triggers.  Triggers do not
+** information in case inserts are done within triggers.  Triggers do not
 ** normally coordinate their activities, but we do need to coordinate the
 ** loading and saving of autoincrement information.
 */
@@ -2743,6 +2744,7 @@ struct Parse {
   u8 mayAbort;         /* True if statement may throw an ABORT exception */
   u8 hasCompound;      /* Need to invoke convertCompoundSelectToSubquery() */
   u8 okConstFactor;    /* OK to factor out constants */
+  u8 disableLookaside; /* Number of times lookaside has been disabled */
   int aTempReg[8];     /* Holding area for temporary registers */
   int nRangeReg;       /* Size of the temporary register block */
   int iRangeReg;       /* First register in temporary register block */
@@ -3235,6 +3237,7 @@ void *sqlite3Malloc(u64);
 void *sqlite3MallocZero(u64);
 void *sqlite3DbMallocZero(sqlite3*, u64);
 void *sqlite3DbMallocRaw(sqlite3*, u64);
+void *sqlite3DbMallocRawNN(sqlite3*, u64);
 char *sqlite3DbStrDup(sqlite3*,const char*);
 char *sqlite3DbStrNDup(sqlite3*,const char*, u64);
 void *sqlite3Realloc(void*, u64);
@@ -3787,6 +3790,8 @@ int sqlite3CreateFunc(sqlite3 *, const char *, int, int, void *,
   void (*)(sqlite3_context*,int,sqlite3_value **), void (*)(sqlite3_context*),
   FuncDestructor *pDestructor
 );
+void sqlite3OomFault(sqlite3*);
+void sqlite3OomClear(sqlite3*);
 int sqlite3ApiExit(sqlite3 *db, int);
 int sqlite3OpenTempDatabase(Parse *);
 

@@ -2344,7 +2344,6 @@ int sqlite3BtreeOpen(
         pBt->mutex = sqlite3MutexAlloc(SQLITE_MUTEX_FAST);
         if( pBt->mutex==0 ){
           rc = SQLITE_NOMEM;
-          db->mallocFailed = 0;
           goto btree_open_out;
         }
       }
