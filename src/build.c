@@ -78,7 +78,7 @@ void sqlite3TableLock(
     p->zName = zName;
   }else{
     pToplevel->nTableLock = 0;
-    pToplevel->db->mallocFailed = 1;
+    sqlite3OomFault(pToplevel->db);
   }
 }
 
@@ -1555,7 +1555,7 @@ static char *createTableStmt(sqlite3 *db, Table *p){
   n += 35 + 6*p->nCol;
   zStmt = sqlite3DbMallocRaw(0, n);
   if( zStmt==0 ){
-    db->mallocFailed = 1;
+    sqlite3OomFault(db);
     return 0;
   }
   sqlite3_snprintf(n, zStmt, "CREATE TABLE ");
@@ -2038,7 +2038,7 @@ void sqlite3EndTable(
     pOld = sqlite3HashInsert(&pSchema->tblHash, p->zName, p);
     if( pOld ){
       assert( p==pOld );  /* Malloc must have failed inside HashInsert() */
-      db->mallocFailed = 1;
+      sqlite3OomFault(db);
       return;
     }
     pParse->pNewTable = 0;
@@ -2142,7 +2142,6 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
   int n;            /* Temporarily holds the number of cursors assigned */
   sqlite3 *db = pParse->db;  /* Database connection for malloc errors */
   sqlite3_xauth xAuth;       /* Saved xAuth pointer */
-  u8 bEnabledLA;             /* Saved db->lookaside.bEnabled state */
 
   assert( pTable );
 
@@ -2188,18 +2187,18 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
   ** statement that defines the view.
   */
   assert( pTable->pSelect );
-  bEnabledLA = db->lookaside.bEnabled;
   if( pTable->pCheck ){
-    db->lookaside.bEnabled = 0;
+    db->lookaside.bDisable++;
     sqlite3ColumnsFromExprList(pParse, pTable->pCheck, 
                                &pTable->nCol, &pTable->aCol);
+    db->lookaside.bDisable--;
   }else{
     pSel = sqlite3SelectDup(db, pTable->pSelect, 0);
     if( pSel ){
       n = pParse->nTab;
       sqlite3SrcListAssignCursors(pParse, pSel->pSrc);
       pTable->nCol = -1;
-      db->lookaside.bEnabled = 0;
+      db->lookaside.bDisable++;
 #ifndef SQLITE_OMIT_AUTHORIZATION
       xAuth = db->xAuth;
       db->xAuth = 0;
@@ -2208,6 +2207,7 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
 #else
       pSelTab = sqlite3ResultSetOfSelect(pParse, pSel);
 #endif
+      db->lookaside.bDisable--;
       pParse->nTab = n;
       if( pSelTab ){
         assert( pTable->aCol==0 );
@@ -2226,7 +2226,6 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
       nErr++;
     }
   }
-  db->lookaside.bEnabled = bEnabledLA;
   pTable->pSchema->schemaFlags |= DB_UnresetViews;
 #endif /* SQLITE_OMIT_VIEW */
   return nErr;  
@@ -2692,7 +2691,7 @@ void sqlite3CreateForeignKey(
       pFKey->zTo, (void *)pFKey
   );
   if( pNextTo==pFKey ){
-    db->mallocFailed = 1;
+    sqlite3OomFault(db);
     goto fk_end;
   }
   if( pNextTo ){
@@ -3274,7 +3273,7 @@ Index *sqlite3CreateIndex(
                           pIndex->zName, pIndex);
     if( p ){
       assert( p==pIndex );  /* Malloc must have failed */
-      db->mallocFailed = 1;
+      sqlite3OomFault(db);
       goto exit_create_index;
     }
     db->flags |= SQLITE_InternChanges;
@@ -3703,8 +3702,9 @@ SrcList *sqlite3SrcListAppend(
 ){
   struct SrcList_item *pItem;
   assert( pDatabase==0 || pTable!=0 );  /* Cannot have C without B */
+  assert( db!=0 );
   if( pList==0 ){
-    pList = sqlite3DbMallocRaw(db, sizeof(SrcList) );
+    pList = sqlite3DbMallocRawNN(db, sizeof(SrcList) );
     if( pList==0 ) return 0;
     pList->nAlloc = 1;
     pList->nSrc = 0;
@@ -3992,7 +3992,7 @@ int sqlite3OpenTempDatabase(Parse *pParse){
     db->aDb[1].pBt = pBt;
     assert( db->aDb[1].pSchema );
     if( SQLITE_NOMEM==sqlite3BtreeSetPageSize(pBt, db->nextPagesize, -1, 0) ){
-      db->mallocFailed = 1;
+      sqlite3OomFault(db);
       return 1;
     }
   }
@@ -4367,10 +4367,9 @@ With *sqlite3WithAdd(
   }else{
     pNew = sqlite3DbMallocZero(db, sizeof(*pWith));
   }
-  assert( zName!=0 || pNew==0 );
-  assert( db->mallocFailed==0 || pNew==0 );
+  assert( (pNew!=0 && zName!=0) || db->mallocFailed );
 
-  if( pNew==0 ){
+  if( db->mallocFailed ){
     sqlite3ExprListDelete(db, pArglist);
     sqlite3SelectDelete(db, pQuery);
     sqlite3DbFree(db, zName);

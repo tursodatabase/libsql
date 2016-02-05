@@ -478,7 +478,7 @@ void sqlite3Pragma(
       */
       db->nextPagesize = sqlite3Atoi(zRight);
       if( SQLITE_NOMEM==sqlite3BtreeSetPageSize(pBt, db->nextPagesize,-1,0) ){
-        db->mallocFailed = 1;
+        sqlite3OomFault(db);
       }
     }
     break;

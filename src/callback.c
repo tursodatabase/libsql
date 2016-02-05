@@ -177,7 +177,7 @@ static CollSeq *findCollSeqEntry(
       */
       assert( pDel==0 || pDel==pColl );
       if( pDel!=0 ){
-        db->mallocFailed = 1;
+        sqlite3OomFault(db);
         sqlite3DbFree(db, pDel);
         pColl = 0;
       }
@@ -465,7 +465,7 @@ Schema *sqlite3SchemaGet(sqlite3 *db, Btree *pBt){
     p = (Schema *)sqlite3DbMallocZero(0, sizeof(Schema));
   }
   if( !p ){
-    db->mallocFailed = 1;
+    sqlite3OomFault(db);
   }else if ( 0==p->file_format ){
     sqlite3HashInit(&p->tblHash);
     sqlite3HashInit(&p->idxHash);

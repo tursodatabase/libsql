@@ -83,7 +83,7 @@ const char *sqlite3IndexAffinityStr(sqlite3 *db, Index *pIdx){
     Table *pTab = pIdx->pTable;
     pIdx->zColAff = (char *)sqlite3DbMallocRaw(0, pIdx->nColumn+1);
     if( !pIdx->zColAff ){
-      db->mallocFailed = 1;
+      sqlite3OomFault(db);
       return 0;
     }
     for(n=0; n<pIdx->nColumn; n++){
@@ -134,7 +134,7 @@ void sqlite3TableAffinity(Vdbe *v, Table *pTab, int iReg){
     sqlite3 *db = sqlite3VdbeDb(v);
     zColAff = (char *)sqlite3DbMallocRaw(0, pTab->nCol+1);
     if( !zColAff ){
-      db->mallocFailed = 1;
+      sqlite3OomFault(db);
       return;
     }
 
@@ -230,7 +230,7 @@ static int autoIncBegin(
     pInfo = pToplevel->pAinc;
     while( pInfo && pInfo->pTab!=pTab ){ pInfo = pInfo->pNext; }
     if( pInfo==0 ){
-      pInfo = sqlite3DbMallocRaw(pParse->db, sizeof(*pInfo));
+      pInfo = sqlite3DbMallocRawNN(pParse->db, sizeof(*pInfo));
       if( pInfo==0 ) return 0;
       pInfo->pNext = pToplevel->pAinc;
       pToplevel->pAinc = pInfo;
@@ -787,7 +787,7 @@ void sqlite3Insert(
     int nIdx;
     nIdx = sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenWrite, 0, -1, 0,
                                       &iDataCur, &iIdxCur);
-    aRegIdx = sqlite3DbMallocRaw(db, sizeof(int)*(nIdx+1));
+    aRegIdx = sqlite3DbMallocRawNN(db, sizeof(int)*(nIdx+1));
     if( aRegIdx==0 ){
       goto insert_cleanup;
     }

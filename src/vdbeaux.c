@@ -289,7 +289,7 @@ int sqlite3VdbeAddOp4Dup8(
   const u8 *zP4,      /* The P4 operand */
   int p4type          /* P4 operand type */
 ){
-  char *p4copy = sqlite3DbMallocRaw(sqlite3VdbeDb(p), 8);
+  char *p4copy = sqlite3DbMallocRawNN(sqlite3VdbeDb(p), 8);
   if( p4copy ) memcpy(p4copy, zP4, 8);
   return sqlite3VdbeAddOp4(p, op, p1, p2, p3, p4copy, p4type);
 }
@@ -1423,7 +1423,6 @@ static void releaseMemArray(Mem *p, int N){
   if( p && N ){
     Mem *pEnd = &p[N];
     sqlite3 *db = p->db;
-    u8 malloc_failed = db->mallocFailed;
     if( db->pnBytesFreed ){
       do{
         if( p->szMalloc ) sqlite3DbFree(db, p->zMalloc);
@@ -1459,7 +1458,6 @@ static void releaseMemArray(Mem *p, int N){
 
       p->flags = MEM_Undefined;
     }while( (++p)<pEnd );
-    db->mallocFailed = malloc_failed;
   }
 }
 
@@ -1520,7 +1518,7 @@ int sqlite3VdbeList(
   if( p->rc==SQLITE_NOMEM ){
     /* This happens if a malloc() inside a call to sqlite3_column_text() or
     ** sqlite3_column_text16() failed.  */
-    db->mallocFailed = 1;
+    sqlite3OomFault(db);
     return SQLITE_ERROR;
   }
 
@@ -2513,7 +2511,7 @@ int sqlite3VdbeHalt(Vdbe *p){
   ** one, or the complete transaction if there is no statement transaction.
   */
 
-  if( p->db->mallocFailed ){
+  if( db->mallocFailed ){
     p->rc = SQLITE_NOMEM;
   }
   if( p->aOnceFlag ) memset(p->aOnceFlag, 0, p->nOnceFlag);
@@ -2674,7 +2672,7 @@ int sqlite3VdbeHalt(Vdbe *p){
   }
   p->magic = VDBE_MAGIC_HALT;
   checkActiveVdbeCnt(db);
-  if( p->db->mallocFailed ){
+  if( db->mallocFailed ){
     p->rc = SQLITE_NOMEM;
   }
 
@@ -2711,12 +2709,12 @@ int sqlite3VdbeTransferError(Vdbe *p){
   sqlite3 *db = p->db;
   int rc = p->rc;
   if( p->zErrMsg ){
-    u8 mallocFailed = db->mallocFailed;
+    db->bBenignMalloc++;
     sqlite3BeginBenignMalloc();
     if( db->pErr==0 ) db->pErr = sqlite3ValueNew(db);
     sqlite3ValueSetStr(db->pErr, -1, p->zErrMsg, SQLITE_UTF8, SQLITE_TRANSIENT);
     sqlite3EndBenignMalloc();
-    db->mallocFailed = mallocFailed;
+    db->bBenignMalloc--;
     db->errCode = rc;
   }else{
     sqlite3Error(db, rc);
