@@ -3227,6 +3227,7 @@ void *sqlite3Malloc(u64);
 void *sqlite3MallocZero(u64);
 void *sqlite3DbMallocZero(sqlite3*, u64);
 void *sqlite3DbMallocRaw(sqlite3*, u64);
+void *sqlite3DbMallocRawNN(sqlite3*, u64);
 char *sqlite3DbStrDup(sqlite3*,const char*);
 char *sqlite3DbStrNDup(sqlite3*,const char*, u64);
 void *sqlite3Realloc(void*, u64);

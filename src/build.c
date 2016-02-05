@@ -3702,8 +3702,9 @@ SrcList *sqlite3SrcListAppend(
 ){
   struct SrcList_item *pItem;
   assert( pDatabase==0 || pTable!=0 );  /* Cannot have C without B */
+  assert( db!=0 );
   if( pList==0 ){
-    pList = sqlite3DbMallocRaw(db, sizeof(SrcList) );
+    pList = sqlite3DbMallocRawNN(db, sizeof(SrcList) );
     if( pList==0 ) return 0;
     pList->nAlloc = 1;
     pList->nSrc = 0;

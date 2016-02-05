@@ -575,10 +575,24 @@ void *sqlite3MallocZero(u64 n){
 ** the mallocFailed flag in the connection pointer.
 */
 void *sqlite3DbMallocZero(sqlite3 *db, u64 n){
-  void *p = sqlite3DbMallocRaw(db, n);
-  if( p ){
-    memset(p, 0, (size_t)n);
-  }
+  void *p;
+  testcase( db==0 );
+  p = sqlite3DbMallocRaw(db, n);
+  if( p ) memset(p, 0, (size_t)n);
+  return p;
+}
+
+
+/* Finish the work of sqlite3DbMallocRawNN for the unusual and
+** slower case when the allocation cannot be fulfilled using lookaside.
+*/
+static SQLITE_NOINLINE void *dbMallocRawFinish(sqlite3 *db, u64 n){
+  void *p;
+  assert( db!=0 );
+  p = sqlite3Malloc(n);
+  if( !p ) sqlite3OomFault(db);
+  sqlite3MemdebugSetType(p, 
+         (db->lookaside.bDisable==0) ? MEMTYPE_LOOKASIDE : MEMTYPE_HEAP);
   return p;
 }
 
@@ -600,49 +614,47 @@ void *sqlite3DbMallocZero(sqlite3 *db, u64 n){
 **
 ** In other words, if a subsequent malloc (ex: "b") worked, it is assumed
 ** that all prior mallocs (ex: "a") worked too.
+**
+** The sqlite3MallocRawNN() variant guarantees that the "db" parameter is
+** not a NULL pointer.
 */
-static SQLITE_NOINLINE void *dbMallocRawFinish(sqlite3 *db, u64 n);
 void *sqlite3DbMallocRaw(sqlite3 *db, u64 n){
-  assert( db==0 || sqlite3_mutex_held(db->mutex) );
-  assert( db==0 || db->pnBytesFreed==0 );
+  void *p;
+  if( db ) return sqlite3DbMallocRawNN(db, n);
+  p = sqlite3Malloc(n);
+  sqlite3MemdebugSetType(p, MEMTYPE_HEAP);
+  return p;
+}
+void *sqlite3DbMallocRawNN(sqlite3 *db, u64 n){
+  assert( db!=0 );
+  assert( sqlite3_mutex_held(db->mutex) );
+  assert( db->pnBytesFreed==0 );
 #ifndef SQLITE_OMIT_LOOKASIDE
-  if( db ){
-    LookasideSlot *pBuf;
-    if( db->lookaside.bDisable==0 ){
-      assert( db->mallocFailed==0 );
-      if( n>db->lookaside.sz ){
-        db->lookaside.anStat[1]++;
-      }else if( (pBuf = db->lookaside.pFree)==0 ){
-        db->lookaside.anStat[2]++;
-      }else{
-        db->lookaside.pFree = pBuf->pNext;
-        db->lookaside.nOut++;
-        db->lookaside.anStat[0]++;
-        if( db->lookaside.nOut>db->lookaside.mxOut ){
-          db->lookaside.mxOut = db->lookaside.nOut;
-        }
-        return (void*)pBuf;
+  LookasideSlot *pBuf;
+  if( db->lookaside.bDisable==0 ){
+    assert( db->mallocFailed==0 );
+    if( n>db->lookaside.sz ){
+      db->lookaside.anStat[1]++;
+    }else if( (pBuf = db->lookaside.pFree)==0 ){
+      db->lookaside.anStat[2]++;
+    }else{
+      db->lookaside.pFree = pBuf->pNext;
+      db->lookaside.nOut++;
+      db->lookaside.anStat[0]++;
+      if( db->lookaside.nOut>db->lookaside.mxOut ){
+        db->lookaside.mxOut = db->lookaside.nOut;
       }
-    }else if( db->mallocFailed ){
-      return 0;
+      return (void*)pBuf;
     }
-    
+  }else if( db->mallocFailed ){
+    return 0;
   }
 #else
-  if( db && db->mallocFailed ){
+  if( db->mallocFailed ){
     return 0;
   }
 #endif
   return dbMallocRawFinish(db, n);
-}
-static SQLITE_NOINLINE void *dbMallocRawFinish(sqlite3 *db, u64 n){
-  void *p = sqlite3Malloc(n);
-  if( !p && db ){
-    sqlite3OomFault(db);
-  }
-  sqlite3MemdebugSetType(p, 
-         (db && db->lookaside.bDisable==0) ? MEMTYPE_LOOKASIDE : MEMTYPE_HEAP);
-  return p;
 }
 
 /* Forward declaration */
@@ -654,7 +666,7 @@ static SQLITE_NOINLINE void *dbReallocFinish(sqlite3 *db, void *p, u64 n);
 */
 void *sqlite3DbRealloc(sqlite3 *db, void *p, u64 n){
   assert( db!=0 );
-  if( p==0 ) return sqlite3DbMallocRaw(db, n);
+  if( p==0 ) return sqlite3DbMallocRawNN(db, n);
   assert( sqlite3_mutex_held(db->mutex) );
   if( isLookaside(db,p) && n<=db->lookaside.sz ) return p;
   return dbReallocFinish(db, p, n);
@@ -665,7 +677,7 @@ static SQLITE_NOINLINE void *dbReallocFinish(sqlite3 *db, void *p, u64 n){
   assert( p!=0 );
   if( db->mallocFailed==0 ){
     if( isLookaside(db, p) ){
-      pNew = sqlite3DbMallocRaw(db, n);
+      pNew = sqlite3DbMallocRawNN(db, n);
       if( pNew ){
         memcpy(pNew, p, db->lookaside.sz);
         sqlite3DbFree(db, p);
@@ -721,11 +733,12 @@ char *sqlite3DbStrDup(sqlite3 *db, const char *z){
 }
 char *sqlite3DbStrNDup(sqlite3 *db, const char *z, u64 n){
   char *zNew;
+  assert( db!=0 );
   if( z==0 ){
     return 0;
   }
   assert( (n&0x7fffffff)==n );
-  zNew = sqlite3DbMallocRaw(db, n+1);
+  zNew = sqlite3DbMallocRawNN(db, n+1);
   if( zNew ){
     memcpy(zNew, z, (size_t)n);
     zNew[n] = 0;

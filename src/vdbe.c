@@ -1626,7 +1626,7 @@ case OP_Function0: {
   assert( pOp->p3>0 && pOp->p3<=(p->nMem-p->nCursor) );
   assert( n==0 || (pOp->p2>0 && pOp->p2+n<=(p->nMem-p->nCursor)+1) );
   assert( pOp->p3<pOp->p2 || pOp->p3>=pOp->p2+n );
-  pCtx = sqlite3DbMallocRaw(db, sizeof(*pCtx) + (n-1)*sizeof(sqlite3_value*));
+  pCtx = sqlite3DbMallocRawNN(db, sizeof(*pCtx) + (n-1)*sizeof(sqlite3_value*));
   if( pCtx==0 ) goto no_mem;
   pCtx->pOut = 0;
   pCtx->pFunc = pOp->p4.pFunc;
@@ -2870,7 +2870,7 @@ case OP_Savepoint: {
 #endif
 
       /* Create a new savepoint structure. */
-      pNew = sqlite3DbMallocRaw(db, sizeof(Savepoint)+nName+1);
+      pNew = sqlite3DbMallocRawNN(db, sizeof(Savepoint)+nName+1);
       if( pNew ){
         pNew->zName = (char *)&pNew[1];
         memcpy(pNew->zName, zName, nName+1);
@@ -5420,7 +5420,7 @@ case OP_IntegrityCk: {
   assert( p->bIsReader );
   nRoot = pOp->p2;
   assert( nRoot>0 );
-  aRoot = sqlite3DbMallocRaw(db, sizeof(int)*(nRoot+1) );
+  aRoot = sqlite3DbMallocRawNN(db, sizeof(int)*(nRoot+1) );
   if( aRoot==0 ) goto no_mem;
   assert( pOp->p3>0 && pOp->p3<=(p->nMem-p->nCursor) );
   pnErr = &aMem[pOp->p3];
@@ -5917,7 +5917,7 @@ case OP_AggStep0: {
   assert( pOp->p3>0 && pOp->p3<=(p->nMem-p->nCursor) );
   assert( n==0 || (pOp->p2>0 && pOp->p2+n<=(p->nMem-p->nCursor)+1) );
   assert( pOp->p3<pOp->p2 || pOp->p3>=pOp->p2+n );
-  pCtx = sqlite3DbMallocRaw(db, sizeof(*pCtx) + (n-1)*sizeof(sqlite3_value*));
+  pCtx = sqlite3DbMallocRawNN(db, sizeof(*pCtx) + (n-1)*sizeof(sqlite3_value*));
   if( pCtx==0 ) goto no_mem;
   pCtx->pMem = 0;
   pCtx->pFunc = pOp->p4.pFunc;

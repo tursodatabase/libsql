@@ -313,7 +313,7 @@ static void sampleClear(sqlite3 *db, Stat4Sample *p){
 static void sampleSetRowid(sqlite3 *db, Stat4Sample *p, int n, const u8 *pData){
   assert( db!=0 );
   if( p->nRowid ) sqlite3DbFree(db, p->u.aRowid);
-  p->u.aRowid = sqlite3DbMallocRaw(db, n);
+  p->u.aRowid = sqlite3DbMallocRawNN(db, n);
   if( p->u.aRowid ){
     p->nRowid = n;
     memcpy(p->u.aRowid, pData, n);
@@ -1115,7 +1115,7 @@ static void analyzeOneTable(
     if( nColTest>0 ){
       int endDistinctTest = sqlite3VdbeMakeLabel(v);
       int *aGotoChng;               /* Array of jump instruction addresses */
-      aGotoChng = sqlite3DbMallocRaw(db, sizeof(int)*nColTest);
+      aGotoChng = sqlite3DbMallocRawNN(db, sizeof(int)*nColTest);
       if( aGotoChng==0 ) continue;
 
       /*

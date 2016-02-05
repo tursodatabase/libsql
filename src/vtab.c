@@ -49,7 +49,7 @@ static int createModule(
     rc = SQLITE_MISUSE_BKPT;
   }else{
     Module *pMod;
-    pMod = (Module *)sqlite3DbMallocRaw(db, sizeof(Module) + nName + 1);
+    pMod = (Module *)sqlite3DbMallocRawNN(db, sizeof(Module) + nName + 1);
     if( pMod ){
       Module *pDel;
       char *zCopy = (char *)(&pMod[1]);

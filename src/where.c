@@ -1735,7 +1735,7 @@ static int whereLoopResize(sqlite3 *db, WhereLoop *p, int n){
   WhereTerm **paNew;
   if( p->nLSlot>=n ) return SQLITE_OK;
   n = (n+7)&~7;
-  paNew = sqlite3DbMallocRaw(db, sizeof(p->aLTerm[0])*n);
+  paNew = sqlite3DbMallocRawNN(db, sizeof(p->aLTerm[0])*n);
   if( paNew==0 ) return SQLITE_NOMEM;
   memcpy(paNew, p->aLTerm, sizeof(p->aLTerm[0])*p->nLSlot);
   if( p->aLTerm!=p->aLTermSpace ) sqlite3DbFree(db, p->aLTerm);
@@ -2032,7 +2032,7 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
 #endif
   if( p==0 ){
     /* Allocate a new WhereLoop to add to the end of the list */
-    *ppPrev = p = sqlite3DbMallocRaw(db, sizeof(WhereLoop));
+    *ppPrev = p = sqlite3DbMallocRawNN(db, sizeof(WhereLoop));
     if( p==0 ) return SQLITE_NOMEM;
     whereLoopInit(p);
     p->pNextLoop = 0;
@@ -3529,7 +3529,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
   /* Allocate and initialize space for aTo, aFrom and aSortCost[] */
   nSpace = (sizeof(WherePath)+sizeof(WhereLoop*)*nLoop)*mxChoice*2;
   nSpace += sizeof(LogEst) * nOrderBy;
-  pSpace = sqlite3DbMallocRaw(db, nSpace);
+  pSpace = sqlite3DbMallocRawNN(db, nSpace);
   if( pSpace==0 ) return SQLITE_NOMEM;
   aTo = (WherePath*)pSpace;
   aFrom = aTo+mxChoice;

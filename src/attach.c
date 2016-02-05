@@ -109,7 +109,7 @@ static void attachFunc(
   ** hash tables.
   */
   if( db->aDb==db->aDbStatic ){
-    aNew = sqlite3DbMallocRaw(db, sizeof(db->aDb[0])*3 );
+    aNew = sqlite3DbMallocRawNN(db, sizeof(db->aDb[0])*3 );
     if( aNew==0 ) return;
     memcpy(aNew, db->aDb, sizeof(db->aDb[0])*2);
   }else{

@@ -112,7 +112,7 @@ Select *sqlite3SelectNew(
   Select *pNew;
   Select standin;
   sqlite3 *db = pParse->db;
-  pNew = sqlite3DbMallocRaw(db, sizeof(*pNew) );
+  pNew = sqlite3DbMallocRawNN(db, sizeof(*pNew) );
   if( pNew==0 ){
     assert( db->mallocFailed );
     pNew = &standin;
@@ -2870,7 +2870,7 @@ static int multiSelectOrderBy(
   ** to the right and the left are evaluated, they use the correct
   ** collation.
   */
-  aPermute = sqlite3DbMallocRaw(db, sizeof(int)*(nOrderBy + 1));
+  aPermute = sqlite3DbMallocRawNN(db, sizeof(int)*(nOrderBy + 1));
   if( aPermute ){
     struct ExprList_item *pItem;
     aPermute[0] = nOrderBy;

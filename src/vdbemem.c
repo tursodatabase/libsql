@@ -116,6 +116,7 @@ int sqlite3VdbeChangeEncoding(Mem *pMem, int desiredEnc){
 SQLITE_NOINLINE int sqlite3VdbeMemGrow(Mem *pMem, int n, int bPreserve){
   assert( sqlite3VdbeCheckMemInvariants(pMem) );
   assert( (pMem->flags&MEM_RowSet)==0 );
+  testcase( pMem->db==0 );
 
   /* If the bPreserve flag is set to true, then the memory cell must already
   ** contain a valid string or blob value.  */
@@ -719,7 +720,7 @@ void sqlite3VdbeMemSetRowSet(Mem *pMem){
   assert( db!=0 );
   assert( (pMem->flags & MEM_RowSet)==0 );
   sqlite3VdbeMemRelease(pMem);
-  pMem->zMalloc = sqlite3DbMallocRaw(db, 64);
+  pMem->zMalloc = sqlite3DbMallocRawNN(db, 64);
   if( db->mallocFailed ){
     pMem->flags = MEM_Null;
     pMem->szMalloc = 0;
@@ -1440,7 +1441,7 @@ static void recordFunc(
   db = sqlite3_context_db_handle(context);
 
   nRet = 1 + nSerial + nVal;
-  aRet = sqlite3DbMallocRaw(db, nRet);
+  aRet = sqlite3DbMallocRawNN(db, nRet);
   if( aRet==0 ){
     sqlite3_result_error_nomem(context);
   }else{
