@@ -1,5 +1,5 @@
-C From\stest\sscripts,\sremove\sstray\s"breakpoint"\scommands\sand\sblank\slines\nat\sthe\sends\sof\sfiles.
-D 2016-02-05T16:46:09.824
+C Make\ssure\sthe\s"bak.db"\sdatabase\sfile\sdoes\snot\sactually\sexist\sbefore\nstarting\sthe\s"quota.test"\stesting.
+D 2016-02-05T17:49:43.402
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 72b7858f02017611c3ac1ddc965251017fed0845
@@ -955,7 +955,7 @@ F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
 F test/queryonly.test 5f653159e0f552f0552d43259890c1089391dcca
 F test/quick.test 1681febc928d686362d50057c642f77a02c62e57
 F test/quota-glob.test 32901e9eed6705d68ca3faee2a06b73b57cb3c26
-F test/quota.test 2379902c25e291eac5c12b4cf96946a3447e3744
+F test/quota.test 36cd78b178c4eb0401d4f25754ef410fbd9df2a7
 F test/quota2.test 7dc12e08b11cbc4c16c9ba2aa2e040ea8d8ab4b8
 F test/quote.test 215897dbe8de1a6f701265836d6601cc6ed103e6
 F test/randexpr1.tcl 40dec52119ed3a2b8b2a773bce24b63a3a746459
@@ -1426,7 +1426,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b082538da774ac77f284fd7e22f9b1b9c2abc343
-R 2d1b67b182c9e99ebe80d7af9546dd2d
+P a6b35273239669189f33402144f58328b133d182
+R a53abbe37c3df437dd159edcdce10b4b
 U drh
-Z 796cfacaa9509982f1af1b696a2e58d2
+Z b28b558e8ce57b27d1473527e7eaafc5
