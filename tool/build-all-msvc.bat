@@ -735,10 +735,10 @@ GOTO no_errors
     SET VALUE=
     ENDLOCAL
     SET %VALUE%=
-    CALL :fn_ResetErrorLevel
   ) ELSE (
     ENDLOCAL
   )
+  CALL :fn_ResetErrorLevel
   GOTO :EOF
 
 :fn_AppendVariable
