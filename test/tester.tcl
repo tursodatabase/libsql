@@ -1911,6 +1911,12 @@ proc presql {} {
   set presql
 }
 
+proc isquick {} {
+  set ret 0
+  catch {set ret $::G(isquick)}
+  set ret
+}
+
 #-------------------------------------------------------------------------
 #
 proc slave_test_script {script} {

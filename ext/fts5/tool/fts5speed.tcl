@@ -12,6 +12,10 @@ set Q {
   {1   "SELECT count(*) FROM t1 WHERE t1 MATCH 'a:t* OR b:t* OR c:t* OR d:t* OR e:t* OR f:t* OR g:t*'"}
   {1   "SELECT count(*) FROM t1 WHERE t1 MATCH 'a:t*'"}
   {2   "SELECT count(*) FROM t1 WHERE t1 MATCH 'c:the'"}
+
+  {2   "SELECT count(*) FROM t1 WHERE t1 MATCH 'd:holmes OR e:holmes OR f:holmes OR g:holmes'" }
+  {2   "SELECT count(*) FROM t1 WHERE t1 MATCH 'd:holmes AND e:holmes AND f:holmes AND g:holmes'" }
+  {4   "SELECT count(*) FROM t1 WHERE t1 MATCH 'd:holmes NOT e:holmes'" }
 }
 
 proc usage {} {

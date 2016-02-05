@@ -442,7 +442,7 @@ void sqlite3DeleteFrom(
       ** one, so just keep it in its register(s) and fall through to the
       ** delete code.  */
       nKey = nPk; /* OP_Found will use an unpacked key */
-      aToOpen = sqlite3DbMallocRaw(db, nIdx+2);
+      aToOpen = sqlite3DbMallocRawNN(db, nIdx+2);
       if( aToOpen==0 ){
         sqlite3WhereEnd(pWInfo);
         goto delete_from_cleanup;

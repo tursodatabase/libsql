@@ -390,7 +390,6 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   void *pEngine;                  /* The LEMON-generated LALR(1) parser */
   int tokenType;                  /* type of the next token */
   int lastTokenParsed = -1;       /* type of the previous token */
-  u8 enableLookaside;             /* Saved value of db->lookaside.bEnabled */
   sqlite3 *db = pParse->db;       /* The database connection */
   int mxSqlLen;                   /* Max length of an SQL string */
 
@@ -406,7 +405,7 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   /* sqlite3ParserTrace(stdout, "parser: "); */
   pEngine = sqlite3ParserAlloc(sqlite3Malloc);
   if( pEngine==0 ){
-    db->mallocFailed = 1;
+    sqlite3OomFault(db);
     return SQLITE_NOMEM;
   }
   assert( pParse->pNewTable==0 );
@@ -414,8 +413,6 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   assert( pParse->nVar==0 );
   assert( pParse->nzVar==0 );
   assert( pParse->azVar==0 );
-  enableLookaside = db->lookaside.bEnabled;
-  if( db->lookaside.pStart ) db->lookaside.bEnabled = 1;
   while( zSql[i]!=0 ){
     assert( i>=0 );
     pParse->sLastToken.z = &zSql[i];
@@ -428,7 +425,6 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
     if( tokenType>=TK_SPACE ){
       assert( tokenType==TK_SPACE || tokenType==TK_ILLEGAL );
       if( db->u1.isInterrupted ){
-        sqlite3ErrorMsg(pParse, "interrupt");
         pParse->rc = SQLITE_INTERRUPT;
         break;
       }
@@ -463,7 +459,6 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   sqlite3_mutex_leave(sqlite3MallocMutex());
 #endif /* YYDEBUG */
   sqlite3ParserFree(pEngine, sqlite3_free);
-  db->lookaside.bEnabled = enableLookaside;
   if( db->mallocFailed ){
     pParse->rc = SQLITE_NOMEM;
   }

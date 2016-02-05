@@ -253,19 +253,17 @@ int sqlite3_blob_open(
       ** which closes the b-tree cursor and (possibly) commits the 
       ** transaction.
       */
-      static const int iLn = VDBE_OFFSET_LINENO(4);
+      static const int iLn = VDBE_OFFSET_LINENO(2);
       static const VdbeOpList openBlob[] = {
-                                    /* addr/ofst */
-        /* {OP_Transaction, 0, 0, 0},  // 0/   inserted separately */
-        {OP_TableLock, 0, 0, 0},       /* 1/0: Acquire a read or write lock */
-        {OP_OpenRead, 0, 0, 0},        /* 2/1: Open a cursor */
-        {OP_Variable, 1, 1, 0},        /* 3/2: Move ?1 into reg[1] */
-        {OP_NotExists, 0, 8, 1},       /* 4/3: Seek the cursor */
-        {OP_Column, 0, 0, 1},          /* 5/4  */
-        {OP_ResultRow, 1, 0, 0},       /* 6/5  */
-        {OP_Goto, 0, 3, 0},            /* 7/6  */
-        {OP_Close, 0, 0, 0},           /* 8/7  */
-        {OP_Halt, 0, 0, 0},            /* 9/8  */
+        {OP_TableLock,      0, 0, 0},  /* 0: Acquire a read or write lock */
+        {OP_OpenRead,       0, 0, 0},  /* 1: Open a cursor */
+        {OP_Variable,       1, 1, 0},  /* 2: Move ?1 into reg[1] */
+        {OP_NotExists,      0, 7, 1},  /* 3: Seek the cursor */
+        {OP_Column,         0, 0, 1},  /* 4  */
+        {OP_ResultRow,      1, 0, 0},  /* 5  */
+        {OP_Goto,           0, 2, 0},  /* 6  */
+        {OP_Close,          0, 0, 0},  /* 7  */
+        {OP_Halt,           0, 0, 0},  /* 8  */
       };
       Vdbe *v = (Vdbe *)pBlob->pStmt;
       int iDb = sqlite3SchemaToIndex(db, pTab->pSchema);

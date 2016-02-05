@@ -473,7 +473,7 @@ void sqlite3_result_error_nomem(sqlite3_context *pCtx){
   sqlite3VdbeMemSetNull(pCtx->pOut);
   pCtx->isError = SQLITE_NOMEM;
   pCtx->fErrorOrAux = 1;
-  pCtx->pOut->db->mallocFailed = 1;
+  sqlite3OomFault(pCtx->pOut->db);
 }
 
 /*
@@ -1101,7 +1101,7 @@ static const void *columnName(
     ** is the case, clear the mallocFailed flag and return NULL.
     */
     if( db->mallocFailed ){
-      db->mallocFailed = 0;
+      sqlite3OomClear(db);
       ret = 0;
     }
     sqlite3_mutex_leave(db->mutex);

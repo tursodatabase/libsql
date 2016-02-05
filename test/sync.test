@@ -13,7 +13,6 @@
 # This file implements tests to verify that fsync is disabled when
 # pragma synchronous=off even for multi-database commits.
 #
-# $Id: sync.test,v 1.6 2007/10/09 08:29:33 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -33,7 +32,7 @@ proc cond_incr_sync_count {adj} {
   global sqlite_sync_count
   if {$::tcl_platform(platform) == "windows"} {
     incr sqlite_sync_count $adj
-  } {
+  } else {
     ifcapable !dirsync {
       incr sqlite_sync_count $adj
     }
@@ -64,9 +63,9 @@ ifcapable pager_pragmas {
       INSERT INTO t2 VALUES(3,4);
       COMMIT;
     }
-    cond_incr_sync_count 3
+    cond_incr_sync_count 4
     set sqlite_sync_count
-  } 8
+  } 9
 }
 do_test sync-1.3 {
   set sqlite_sync_count 0
@@ -78,9 +77,9 @@ do_test sync-1.3 {
     INSERT INTO t2 VALUES(5,6);
     COMMIT;
   }
-  cond_incr_sync_count 3
+  cond_incr_sync_count 4
   set sqlite_sync_count
-} 10
+} 11
 ifcapable pager_pragmas {
   do_test sync-1.4 {
     set sqlite_sync_count 0

@@ -28,11 +28,10 @@ static void corruptSchema(
   if( !db->mallocFailed && (db->flags & SQLITE_RecoveryMode)==0 ){
     char *z;
     if( zObj==0 ) zObj = "?";
-    z = sqlite3_mprintf("malformed database schema (%s)", zObj);
-    if( z && zExtra ) z = sqlite3_mprintf("%z - %s", z, zExtra);
+    z = sqlite3MPrintf(db, "malformed database schema (%s)", zObj);
+    if( zExtra ) z = sqlite3MPrintf(db, "%z - %s", z, zExtra);
     sqlite3DbFree(db, *pData->pzErrMsg);
     *pData->pzErrMsg = z;
-    if( z==0 ) db->mallocFailed = 1;
   }
   pData->rc = db->mallocFailed ? SQLITE_NOMEM : SQLITE_CORRUPT_BKPT;
 }
@@ -91,7 +90,7 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
       }else{
         pData->rc = rc;
         if( rc==SQLITE_NOMEM ){
-          db->mallocFailed = 1;
+          sqlite3OomFault(db);
         }else if( rc!=SQLITE_INTERRUPT && (rc&0xFF)!=SQLITE_LOCKED ){
           corruptSchema(pData, argv[0], sqlite3_errmsg(db));
         }
@@ -336,7 +335,7 @@ initone_error_out:
 
 error_out:
   if( rc==SQLITE_NOMEM || rc==SQLITE_IOERR_NOMEM ){
-    db->mallocFailed = 1;
+    sqlite3OomFault(db);
   }
   return rc;
 }
@@ -434,7 +433,7 @@ static void schemaIsValid(Parse *pParse){
     if( !sqlite3BtreeIsInReadTrans(pBt) ){
       rc = sqlite3BtreeBeginTrans(pBt, 0);
       if( rc==SQLITE_NOMEM || rc==SQLITE_IOERR_NOMEM ){
-        db->mallocFailed = 1;
+        sqlite3OomFault(db);
       }
       if( rc!=SQLITE_OK ) return;
       openedTransaction = 1;
@@ -497,6 +496,11 @@ void sqlite3ParserReset(Parse *pParse){
     sqlite3 *db = pParse->db;
     sqlite3DbFree(db, pParse->aLabel);
     sqlite3ExprListDelete(db, pParse->pConstExpr);
+    if( db ){
+      assert( db->lookaside.bDisable >= pParse->disableLookaside );
+      db->lookaside.bDisable -= pParse->disableLookaside;
+    }
+    pParse->disableLookaside = 0;
   }
 }
 
@@ -592,9 +596,6 @@ static int sqlite3Prepare(
   }
   assert( 0==pParse->nQueryLoop );
 
-  if( db->mallocFailed ){
-    pParse->rc = SQLITE_NOMEM;
-  }
   if( pParse->rc==SQLITE_DONE ) pParse->rc = SQLITE_OK;
   if( pParse->checkSchema ){
     schemaIsValid(pParse);
@@ -716,7 +717,7 @@ int sqlite3Reprepare(Vdbe *p){
   rc = sqlite3LockAndPrepare(db, zSql, -1, 0, p, &pNew, 0);
   if( rc ){
     if( rc==SQLITE_NOMEM ){
-      db->mallocFailed = 1;
+      sqlite3OomFault(db);
     }
     assert( pNew==0 );
     return rc;

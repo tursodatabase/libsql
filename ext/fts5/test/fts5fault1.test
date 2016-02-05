@@ -72,7 +72,7 @@ do_faultsim_test 3 -prep {
 reset_db
 do_execsql_test 4.0 {
   CREATE VIRTUAL TABLE t2 USING fts5(a, b);
-  INSERT INTO t2 VALUES('m f a jj th q jr ar',   'hj n h h sg j i m');
+  INSERT INTO t2 VALUES('m f a jj th q gi ar',   'hj n h h sg j i m');
   INSERT INTO t2 VALUES('nr s t g od j kf h',    'sb h aq rg op rb n nl');
   INSERT INTO t2 VALUES('do h h pb p p q fr',    'c rj qs or cr a l i');
   INSERT INTO t2 VALUES('lk gp t i lq mq qm p',  'h mr g f op ld aj h');
@@ -95,6 +95,7 @@ foreach {tn expr res} {
   7 { NEAR(r a, 5) }  {9}
   8 { m* f* }         {1 4 6 8 9 10}
   9 { m* + f* }       {1 8}
+  10 { c NOT p }       {5 6 7 10}
 } {
   do_faultsim_test 4.$tn -prep {
     faultsim_restore_and_reopen

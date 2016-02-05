@@ -639,7 +639,6 @@ int sqlite3VdbeExec(
 #endif
   for(pOp=&aOp[p->pc]; rc==SQLITE_OK; pOp++){
     assert( pOp>=aOp && pOp<&aOp[p->nOp]);
-    if( db->mallocFailed ) goto no_mem;
 #ifdef VDBE_PROFILE
     start = sqlite3Hwtime();
 #endif
@@ -1637,7 +1636,7 @@ case OP_Function0: {
   assert( pOp->p3>0 && pOp->p3<=(p->nMem-p->nCursor) );
   assert( n==0 || (pOp->p2>0 && pOp->p2+n<=(p->nMem-p->nCursor)+1) );
   assert( pOp->p3<pOp->p2 || pOp->p3>=pOp->p2+n );
-  pCtx = sqlite3DbMallocRaw(db, sizeof(*pCtx) + (n-1)*sizeof(sqlite3_value*));
+  pCtx = sqlite3DbMallocRawNN(db, sizeof(*pCtx) + (n-1)*sizeof(sqlite3_value*));
   if( pCtx==0 ) goto no_mem;
   pCtx->pOut = 0;
   pCtx->pFunc = pOp->p4.pFunc;
@@ -2881,7 +2880,7 @@ case OP_Savepoint: {
 #endif
 
       /* Create a new savepoint structure. */
-      pNew = sqlite3DbMallocRaw(db, sizeof(Savepoint)+nName+1);
+      pNew = sqlite3DbMallocRawNN(db, sizeof(Savepoint)+nName+1);
       if( pNew ){
         pNew->zName = (char *)&pNew[1];
         memcpy(pNew->zName, zName, nName+1);
@@ -5020,8 +5019,8 @@ case OP_IdxDelete: {
 ** occur, no unnecessary I/O happens.
 **
 ** P4 may be an array of integers (type P4_INTARRAY) containing
-** one entry for each column in the P3 table.  If array entry a[i]
-** is non-zero, then reading column (a[i]-1) from cursor P3 is 
+** one entry for each column in the P3 table.  If array entry a(i)
+** is non-zero, then reading column a(i)-1 from cursor P3 is 
 ** equivalent to performing the deferred seek and then reading column i 
 ** from P1.  This information is stored in P3 and used to redirect
 ** reads against P3 over to P1, thus possibly avoiding the need to
@@ -5481,7 +5480,7 @@ case OP_IntegrityCk: {
   assert( p->bIsReader );
   nRoot = pOp->p2;
   assert( nRoot>0 );
-  aRoot = sqlite3DbMallocRaw(db, sizeof(int)*(nRoot+1) );
+  aRoot = sqlite3DbMallocRawNN(db, sizeof(int)*(nRoot+1) );
   if( aRoot==0 ) goto no_mem;
   assert( pOp->p3>0 && pOp->p3<=(p->nMem-p->nCursor) );
   pnErr = &aMem[pOp->p3];
@@ -5978,7 +5977,7 @@ case OP_AggStep0: {
   assert( pOp->p3>0 && pOp->p3<=(p->nMem-p->nCursor) );
   assert( n==0 || (pOp->p2>0 && pOp->p2+n<=(p->nMem-p->nCursor)+1) );
   assert( pOp->p3<pOp->p2 || pOp->p3>=pOp->p2+n );
-  pCtx = sqlite3DbMallocRaw(db, sizeof(*pCtx) + (n-1)*sizeof(sqlite3_value*));
+  pCtx = sqlite3DbMallocRawNN(db, sizeof(*pCtx) + (n-1)*sizeof(sqlite3_value*));
   if( pCtx==0 ) goto no_mem;
   pCtx->pMem = 0;
   pCtx->pFunc = pOp->p4.pFunc;
@@ -6845,7 +6844,7 @@ vdbe_error_halt:
   sqlite3_log(rc, "statement aborts at %d: [%s] %s", 
                    (int)(pOp - aOp), p->zSql, p->zErrMsg);
   sqlite3VdbeHalt(p);
-  if( rc==SQLITE_IOERR_NOMEM ) db->mallocFailed = 1;
+  if( rc==SQLITE_IOERR_NOMEM ) sqlite3OomFault(db);
   rc = SQLITE_ERROR;
   if( resetSchemaOnFault>0 ){
     sqlite3ResetOneSchema(db, resetSchemaOnFault-1);
@@ -6875,7 +6874,7 @@ too_big:
   /* Jump to here if a malloc() fails.
   */
 no_mem:
-  db->mallocFailed = 1;
+  sqlite3OomFault(db);
   sqlite3VdbeError(p, "out of memory");
   rc = SQLITE_NOMEM;
   goto vdbe_error_halt;
@@ -6896,7 +6895,7 @@ abort_due_to_error:
   */
 abort_due_to_interrupt:
   assert( db->u1.isInterrupted );
-  rc = SQLITE_INTERRUPT;
+  rc = db->mallocFailed ? SQLITE_NOMEM : SQLITE_INTERRUPT;
   p->rc = rc;
   sqlite3VdbeError(p, "%s", sqlite3ErrStr(rc));
   goto vdbe_error_halt;
