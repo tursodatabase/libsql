@@ -28,11 +28,10 @@ static void corruptSchema(
   if( !db->mallocFailed && (db->flags & SQLITE_RecoveryMode)==0 ){
     char *z;
     if( zObj==0 ) zObj = "?";
-    z = sqlite3_mprintf("malformed database schema (%s)", zObj);
-    if( z && zExtra ) z = sqlite3_mprintf("%z - %s", z, zExtra);
+    z = sqlite3MPrintf(db, "malformed database schema (%s)", zObj);
+    if( zExtra ) z = sqlite3MPrintf(db, "%z - %s", z, zExtra);
     sqlite3DbFree(db, *pData->pzErrMsg);
     *pData->pzErrMsg = z;
-    if( z==0 ) sqlite3OomFault(db);
   }
   pData->rc = db->mallocFailed ? SQLITE_NOMEM : SQLITE_CORRUPT_BKPT;
 }
