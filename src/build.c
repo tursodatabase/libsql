@@ -4366,10 +4366,9 @@ With *sqlite3WithAdd(
   }else{
     pNew = sqlite3DbMallocZero(db, sizeof(*pWith));
   }
-  assert( zName!=0 || pNew==0 );
-  assert( db->mallocFailed==0 || pNew==0 );
+  assert( (pNew!=0 && zName!=0) || db->mallocFailed );
 
-  if( pNew==0 ){
+  if( db->mallocFailed ){
     sqlite3ExprListDelete(db, pArglist);
     sqlite3SelectDelete(db, pQuery);
     sqlite3DbFree(db, zName);

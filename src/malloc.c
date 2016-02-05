@@ -645,22 +645,26 @@ static SQLITE_NOINLINE void *dbMallocRawFinish(sqlite3 *db, u64 n){
   return p;
 }
 
+/* Forward declaration */
+static SQLITE_NOINLINE void *dbReallocFinish(sqlite3 *db, void *p, u64 n);
+
 /*
 ** Resize the block of memory pointed to by p to n bytes. If the
 ** resize fails, set the mallocFailed flag in the connection object.
 */
 void *sqlite3DbRealloc(sqlite3 *db, void *p, u64 n){
+  assert( db!=0 );
+  if( p==0 ) return sqlite3DbMallocRaw(db, n);
+  assert( sqlite3_mutex_held(db->mutex) );
+  if( isLookaside(db,p) && n<=db->lookaside.sz ) return p;
+  return dbReallocFinish(db, p, n);
+}
+static SQLITE_NOINLINE void *dbReallocFinish(sqlite3 *db, void *p, u64 n){
   void *pNew = 0;
   assert( db!=0 );
-  assert( sqlite3_mutex_held(db->mutex) );
+  assert( p!=0 );
   if( db->mallocFailed==0 ){
-    if( p==0 ){
-      return sqlite3DbMallocRaw(db, n);
-    }
     if( isLookaside(db, p) ){
-      if( n<=db->lookaside.sz ){
-        return p;
-      }
       pNew = sqlite3DbMallocRaw(db, n);
       if( pNew ){
         memcpy(pNew, p, db->lookaside.sz);

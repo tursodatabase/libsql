@@ -2511,7 +2511,7 @@ int sqlite3VdbeHalt(Vdbe *p){
   ** one, or the complete transaction if there is no statement transaction.
   */
 
-  if( p->db->mallocFailed ){
+  if( db->mallocFailed ){
     p->rc = SQLITE_NOMEM;
   }
   if( p->aOnceFlag ) memset(p->aOnceFlag, 0, p->nOnceFlag);
@@ -2672,7 +2672,7 @@ int sqlite3VdbeHalt(Vdbe *p){
   }
   p->magic = VDBE_MAGIC_HALT;
   checkActiveVdbeCnt(db);
-  if( p->db->mallocFailed ){
+  if( db->mallocFailed ){
     p->rc = SQLITE_NOMEM;
   }
 
