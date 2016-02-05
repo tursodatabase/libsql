@@ -236,7 +236,6 @@ int sqlite3Fts5PoslistWriterAppend(
   Fts5PoslistWriter *pWriter,
   i64 iPos
 ){
-  static const i64 colmask = ((i64)(0x7FFFFFFF)) << 32;
   int rc;
   if( fts5BufferGrow(&rc, pBuf, 5+5+5) ) return rc;
   sqlite3Fts5PoslistSafeAppend(pBuf, &pWriter->iPrev, iPos);
