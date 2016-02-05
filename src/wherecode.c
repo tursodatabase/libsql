@@ -495,9 +495,7 @@ static int codeAllEqualityTerms(
   pParse->nMem += nReg;
 
   zAff = sqlite3DbStrDup(pParse->db,sqlite3IndexAffinityStr(pParse->db,pIdx));
-  if( !zAff ){
-    pParse->db->mallocFailed = 1;
-  }
+  assert( zAff!=0 || pParse->db->mallocFailed );
 
   if( nSkip ){
     int iIdxCur = pLevel->iIdxCur;

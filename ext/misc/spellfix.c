@@ -186,7 +186,7 @@ static const unsigned char className[] = ".ABCDHLRMY9 ?";
 ** Return NULL if memory allocation fails.  
 */
 static unsigned char *phoneticHash(const unsigned char *zIn, int nIn){
-  unsigned char *zOut = sqlite3_malloc( nIn + 1 );
+  unsigned char *zOut = sqlite3_malloc64( nIn + 1 );
   int i;
   int nOut = 0;
   char cPrev = 0x77;
@@ -413,7 +413,7 @@ static int editdist1(const char *zA, const char *zB, int *pnMatch){
   if( nB<(sizeof(mStack)*4)/(sizeof(mStack[0])*5) ){
     m = mStack;
   }else{
-    m = toFree = sqlite3_malloc( (nB+1)*5*sizeof(m[0])/4 );
+    m = toFree = sqlite3_malloc64( (nB+1)*5*sizeof(m[0])/4 );
     if( m==0 ) return -3;
   }
   cx = (char*)&m[nB+1];
@@ -687,7 +687,7 @@ static int editDist3ConfigLoad(
     if( iCost<0 ) continue;
     if( pLang==0 || iLang!=iLangPrev ){
       EditDist3Lang *pNew;
-      pNew = sqlite3_realloc(p->a, (p->nLang+1)*sizeof(p->a[0]));
+      pNew = sqlite3_realloc64(p->a, (p->nLang+1)*sizeof(p->a[0]));
       if( pNew==0 ){ rc = SQLITE_NOMEM; break; }
       p->a = pNew;
       pLang = &p->a[p->nLang];
@@ -709,7 +709,7 @@ static int editDist3ConfigLoad(
       EditDist3Cost *pCost;
       int nExtra = nFrom + nTo - 4;
       if( nExtra<0 ) nExtra = 0;
-      pCost = sqlite3_malloc( sizeof(*pCost) + nExtra );
+      pCost = sqlite3_malloc64( sizeof(*pCost) + nExtra );
       if( pCost==0 ){ rc = SQLITE_NOMEM; break; }
       pCost->nFrom = nFrom;
       pCost->nTo = nTo;
@@ -808,7 +808,7 @@ static EditDist3FromString *editDist3FromStringNew(
 
   if( z==0 ) return 0;
   if( n<0 ) n = (int)strlen(z);
-  pStr = sqlite3_malloc( sizeof(*pStr) + sizeof(pStr->a[0])*n + n + 1 );
+  pStr = sqlite3_malloc64( sizeof(*pStr) + sizeof(pStr->a[0])*n + n + 1 );
   if( pStr==0 ) return 0;
   pStr->a = (EditDist3From*)&pStr[1];
   memset(pStr->a, 0, sizeof(pStr->a[0])*n);
@@ -833,13 +833,13 @@ static EditDist3FromString *editDist3FromStringNew(
       if( i+p->nFrom>n ) continue;
       if( matchFrom(p, z+i, n-i)==0 ) continue;
       if( p->nTo==0 ){
-        apNew = sqlite3_realloc(pFrom->apDel,
+        apNew = sqlite3_realloc64(pFrom->apDel,
                                 sizeof(*apNew)*(pFrom->nDel+1));
         if( apNew==0 ) break;
         pFrom->apDel = apNew;
         apNew[pFrom->nDel++] = p;
       }else{
-        apNew = sqlite3_realloc(pFrom->apSubst,
+        apNew = sqlite3_realloc64(pFrom->apSubst,
                                 sizeof(*apNew)*(pFrom->nSubst+1));
         if( apNew==0 ) break;
         pFrom->apSubst = apNew;
@@ -925,7 +925,7 @@ static int editDist3Core(
     m = stackSpace;
     pToFree = 0;
   }else{
-    m = pToFree = sqlite3_malloc( nByte );
+    m = pToFree = sqlite3_malloc64( nByte );
     if( m==0 ) return -1;            /* Out of memory */
   }
   a2 = (EditDist3To*)&m[n];
@@ -940,7 +940,7 @@ static int editDist3Core(
       if( i2+p->nTo>n2 ) continue;
       if( matchTo(p, z2+i2, n2-i2)==0 ) continue;
       a2[i2].nIns++;
-      apNew = sqlite3_realloc(a2[i2].apIns, sizeof(*apNew)*a2[i2].nIns);
+      apNew = sqlite3_realloc64(a2[i2].apIns, sizeof(*apNew)*a2[i2].nIns);
       if( apNew==0 ){
         res = -1;  /* Out of memory */
         goto editDist3Abort;
@@ -1118,7 +1118,7 @@ static void editDist3SqlFunc(
 */
 static int editDist3Install(sqlite3 *db){
   int rc;
-  EditDist3Config *pConfig = sqlite3_malloc( sizeof(*pConfig) );
+  EditDist3Config *pConfig = sqlite3_malloc64( sizeof(*pConfig) );
   if( pConfig==0 ) return SQLITE_NOMEM;
   memset(pConfig, 0, sizeof(*pConfig));
   rc = sqlite3_create_function_v2(db, "editdist3",
@@ -1607,7 +1607,7 @@ static const struct {
 ** should be freed by the caller.
 */
 static unsigned char *transliterate(const unsigned char *zIn, int nIn){
-  unsigned char *zOut = sqlite3_malloc( nIn*4 + 1 );
+  unsigned char *zOut = sqlite3_malloc64( nIn*4 + 1 );
   int c, sz, nOut;
   if( zOut==0 ) return 0;
   nOut = 0;
@@ -1930,7 +1930,7 @@ static int spellfix1Init(
   int i;
 
   nDbName = (int)strlen(zDbName);
-  pNew = sqlite3_malloc( sizeof(*pNew) + nDbName + 1);
+  pNew = sqlite3_malloc64( sizeof(*pNew) + nDbName + 1);
   if( pNew==0 ){
     rc = SQLITE_NOMEM;
   }else{
@@ -2044,7 +2044,7 @@ static void spellfix1ResetCursor(spellfix1_cursor *pCur){
 static void spellfix1ResizeCursor(spellfix1_cursor *pCur, int N){
   struct spellfix1_row *aNew;
   assert( N>=pCur->nRow );
-  aNew = sqlite3_realloc(pCur->a, sizeof(pCur->a[0])*N);
+  aNew = sqlite3_realloc64(pCur->a, sizeof(pCur->a[0])*N);
   if( aNew==0 && N>0 ){
     spellfix1ResetCursor(pCur);
     sqlite3_free(pCur->a);
@@ -2203,7 +2203,7 @@ static int spellfix1BestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
 static int spellfix1Open(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
   spellfix1_vtab *p = (spellfix1_vtab*)pVTab;
   spellfix1_cursor *pCur;
-  pCur = sqlite3_malloc( sizeof(*pCur) );
+  pCur = sqlite3_malloc64( sizeof(*pCur) );
   if( pCur==0 ) return SQLITE_NOMEM;
   memset(pCur, 0, sizeof(*pCur));
   pCur->pVTab = p;
@@ -2417,7 +2417,7 @@ static int spellfix1FilterForMatch(
 
   /* Load the cost table if we have not already done so */
   if( p->zCostTable!=0 && p->pConfig3==0 ){
-    p->pConfig3 = sqlite3_malloc( sizeof(p->pConfig3[0]) );
+    p->pConfig3 = sqlite3_malloc64( sizeof(p->pConfig3[0]) );
     if( p->pConfig3==0 ) return SQLITE_NOMEM;
     memset(p->pConfig3, 0, sizeof(p->pConfig3[0]));
     rc = editDist3ConfigLoad(p->pConfig3, p->db, p->zCostTable);

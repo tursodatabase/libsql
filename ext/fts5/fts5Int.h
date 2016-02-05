@@ -319,7 +319,10 @@ struct Fts5IndexIter {
   i64 iRowid;
   const u8 *pData;
   int nData;
+  u8 bEof;
 };
+
+#define sqlite3Fts5IterEof(x) ((x)->bEof)
 
 /*
 ** Values used as part of the flags argument passed to IndexQuery().
@@ -328,6 +331,12 @@ struct Fts5IndexIter {
 #define FTS5INDEX_QUERY_DESC       0x0002   /* Docs in descending rowid order */
 #define FTS5INDEX_QUERY_TEST_NOIDX 0x0004   /* Do not use prefix index */
 #define FTS5INDEX_QUERY_SCAN       0x0008   /* Scan query (fts5vocab) */
+
+/* The following are used internally by the fts5_index.c module. They are
+** defined here only to make it easier to avoid clashes with the flags
+** above. */
+#define FTS5INDEX_QUERY_SKIPEMPTY  0x0010
+#define FTS5INDEX_QUERY_NOOUTPUT   0x0020
 
 /*
 ** Create/destroy an Fts5Index object.
@@ -384,7 +393,6 @@ int sqlite3Fts5IndexQuery(
 ** The various operations on open token or token prefix iterators opened
 ** using sqlite3Fts5IndexQuery().
 */
-int sqlite3Fts5IterEof(Fts5IndexIter*);
 int sqlite3Fts5IterNext(Fts5IndexIter*);
 int sqlite3Fts5IterNextFrom(Fts5IndexIter*, i64 iMatch);
 i64 sqlite3Fts5IterRowid(Fts5IndexIter*);
