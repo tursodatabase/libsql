@@ -1094,8 +1094,8 @@ struct Schema {
 ** lookaside allocations are not used to construct the schema objects.
 */
 struct Lookaside {
+  u32 bDisable;           /* Only operate the lookaside when zero */
   u16 sz;                 /* Size of each buffer in bytes */
-  u8 bEnabled;            /* False to disable new lookaside allocations */
   u8 bMalloced;           /* True if pStart obtained from sqlite3_malloc() */
   int nOut;               /* Number of buffers currently checked out */
   int mxOut;              /* Highwater mark for nOut */
@@ -1178,6 +1178,7 @@ struct sqlite3 {
   u8 autoCommit;                /* The auto-commit flag. */
   u8 temp_store;                /* 1: file 2: memory 0: default */
   u8 mallocFailed;              /* True if we have seen a malloc failure */
+  u8 bBenignMalloc;             /* Do not require OOMs if true */
   u8 dfltLockMode;              /* Default locking-mode for attached dbs */
   signed char nextAutovac;      /* Autovac setting after VACUUM if >=0 */
   u8 suppressErr;               /* Do not issue error messages if true */
@@ -2733,6 +2734,7 @@ struct Parse {
   u8 mayAbort;         /* True if statement may throw an ABORT exception */
   u8 hasCompound;      /* Need to invoke convertCompoundSelectToSubquery() */
   u8 okConstFactor;    /* OK to factor out constants */
+  u8 disableLookaside; /* Number of times lookaside has been disabled */
   int aTempReg[8];     /* Holding area for temporary registers */
   int nRangeReg;       /* Size of the temporary register block */
   int iRangeReg;       /* First register in temporary register block */
@@ -3777,6 +3779,8 @@ int sqlite3CreateFunc(sqlite3 *, const char *, int, int, void *,
   void (*)(sqlite3_context*,int,sqlite3_value **), void (*)(sqlite3_context*),
   FuncDestructor *pDestructor
 );
+void sqlite3OomFault(sqlite3*);
+void sqlite3OomClear(sqlite3*);
 int sqlite3ApiExit(sqlite3 *db, int);
 int sqlite3OpenTempDatabase(Parse *);
 

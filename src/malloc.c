@@ -608,10 +608,8 @@ void *sqlite3DbMallocRaw(sqlite3 *db, u64 n){
 #ifndef SQLITE_OMIT_LOOKASIDE
   if( db ){
     LookasideSlot *pBuf;
-    if( db->mallocFailed ){
-      return 0;
-    }
-    if( db->lookaside.bEnabled ){
+    if( db->lookaside.bDisable==0 ){
+      assert( db->mallocFailed==0 );
       if( n>db->lookaside.sz ){
         db->lookaside.anStat[1]++;
       }else if( (pBuf = db->lookaside.pFree)==0 ){
@@ -625,7 +623,10 @@ void *sqlite3DbMallocRaw(sqlite3 *db, u64 n){
         }
         return (void*)pBuf;
       }
+    }else if( db->mallocFailed ){
+      return 0;
     }
+    
   }
 #else
   if( db && db->mallocFailed ){
@@ -637,10 +638,10 @@ void *sqlite3DbMallocRaw(sqlite3 *db, u64 n){
 static SQLITE_NOINLINE void *dbMallocRawFinish(sqlite3 *db, u64 n){
   void *p = sqlite3Malloc(n);
   if( !p && db ){
-    db->mallocFailed = 1;
+    sqlite3OomFault(db);
   }
   sqlite3MemdebugSetType(p, 
-         (db && db->lookaside.bEnabled) ? MEMTYPE_LOOKASIDE : MEMTYPE_HEAP);
+         (db && db->lookaside.bDisable==0) ? MEMTYPE_LOOKASIDE : MEMTYPE_HEAP);
   return p;
 }
 
@@ -671,10 +672,10 @@ void *sqlite3DbRealloc(sqlite3 *db, void *p, u64 n){
       sqlite3MemdebugSetType(p, MEMTYPE_HEAP);
       pNew = sqlite3_realloc64(p, n);
       if( !pNew ){
-        db->mallocFailed = 1;
+        sqlite3OomFault(db);
       }
       sqlite3MemdebugSetType(pNew,
-            (db->lookaside.bEnabled ? MEMTYPE_LOOKASIDE : MEMTYPE_HEAP));
+            (db->lookaside.bDisable==0 ? MEMTYPE_LOOKASIDE : MEMTYPE_HEAP));
     }
   }
   return pNew;
@@ -737,10 +738,42 @@ void sqlite3SetString(char **pz, sqlite3 *db, const char *zNew){
 }
 
 /*
+** Call this routine to record the fact that an OOM (out-of-memory) error
+** has happened.  This routine will set db->mallocFailed, and also
+** temporarily disable the lookaside memory allocator and interrupt
+** any running VDBEs.
+*/
+void sqlite3OomFault(sqlite3 *db){
+  if( db->mallocFailed==0 && db->bBenignMalloc==0 ){
+    db->mallocFailed = 1;
+    if( db->nVdbeExec>0 ){
+      db->u1.isInterrupted = 1;
+    }
+    db->lookaside.bDisable++;
+  }
+}
+
+/*
+** This routine reactivates the memory allocator and clears the
+** db->mallocFailed flag as necessary.
+**
+** The memory allocator is not restarted if there are running
+** VDBEs.
+*/
+void sqlite3OomClear(sqlite3 *db){
+  if( db->mallocFailed && db->nVdbeExec==0 ){
+    db->mallocFailed = 0;
+    db->u1.isInterrupted = 0;
+    assert( db->lookaside.bDisable>0 );
+    db->lookaside.bDisable--;
+  }
+}
+
+/*
 ** Take actions at the end of an API call to indicate an OOM error
 */
 static SQLITE_NOINLINE int apiOomError(sqlite3 *db){
-  db->mallocFailed = 0;
+  sqlite3OomClear(db);
   sqlite3Error(db, SQLITE_NOMEM);
   return SQLITE_NOMEM;
 }

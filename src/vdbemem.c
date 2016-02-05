@@ -1381,7 +1381,7 @@ static int valueFromExpr(
   return rc;
 
 no_mem:
-  db->mallocFailed = 1;
+  sqlite3OomFault(db);
   sqlite3DbFree(db, zVal);
   assert( *ppVal==0 );
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4

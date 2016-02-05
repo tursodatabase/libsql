@@ -1615,7 +1615,7 @@ void sqlite3RegisterBuiltinFunctions(sqlite3 *db){
   int rc = sqlite3_overload_function(db, "MATCH", 2);
   assert( rc==SQLITE_NOMEM || rc==SQLITE_OK );
   if( rc==SQLITE_NOMEM ){
-    db->mallocFailed = 1;
+    sqlite3OomFault(db);
   }
 }
 

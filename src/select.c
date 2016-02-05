@@ -1016,7 +1016,7 @@ KeyInfo *sqlite3KeyInfoAlloc(sqlite3 *db, int N, int X){
     p->nRef = 1;
     memset(&p[1], 0, nExtra);
   }else{
-    db->mallocFailed = 1;
+    sqlite3OomFault(db);
   }
   return p;
 }
@@ -1677,7 +1677,7 @@ int sqlite3ColumnsFromExprList(
     pCol->zName = zName;
     sqlite3ColumnPropertiesFromName(0, pCol);
     if( zName && sqlite3HashInsert(&ht, zName, pCol)==pCol ){
-      db->mallocFailed = 1;
+      sqlite3OomFault(db);
     }
   }
   sqlite3HashClear(&ht);
@@ -1764,7 +1764,7 @@ Table *sqlite3ResultSetOfSelect(Parse *pParse, Select *pSelect){
   }
   /* The sqlite3ResultSetOfSelect() is only used n contexts where lookaside
   ** is disabled */
-  assert( db->lookaside.bEnabled==0 );
+  assert( db->lookaside.bDisable );
   pTab->nRef = 1;
   pTab->zName = 0;
   pTab->nRowLogEst = 200; assert( 200==sqlite3LogEst(1048576) );
@@ -5562,7 +5562,8 @@ int sqlite3Select(
         if( flag ){
           pMinMax = sqlite3ExprListDup(db, pMinMax, 0);
           pDel = pMinMax;
-          if( pMinMax && !db->mallocFailed ){
+          assert( db->mallocFailed || pMinMax!=0 );
+          if( !db->mallocFailed ){
             pMinMax->a[0].sortOrder = flag!=WHERE_ORDERBY_MIN ?1:0;
             pMinMax->a[0].pExpr->op = TK_COLUMN;
           }

@@ -83,7 +83,7 @@ const char *sqlite3IndexAffinityStr(sqlite3 *db, Index *pIdx){
     Table *pTab = pIdx->pTable;
     pIdx->zColAff = (char *)sqlite3DbMallocRaw(0, pIdx->nColumn+1);
     if( !pIdx->zColAff ){
-      db->mallocFailed = 1;
+      sqlite3OomFault(db);
       return 0;
     }
     for(n=0; n<pIdx->nColumn; n++){
@@ -134,7 +134,7 @@ void sqlite3TableAffinity(Vdbe *v, Table *pTab, int iReg){
     sqlite3 *db = sqlite3VdbeDb(v);
     zColAff = (char *)sqlite3DbMallocRaw(0, pTab->nCol+1);
     if( !zColAff ){
-      db->mallocFailed = 1;
+      sqlite3OomFault(db);
       return;
     }
 

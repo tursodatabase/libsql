@@ -563,7 +563,6 @@ static void exprAnalyzeOrTerm(
         sqlite3WhereSplit(pAndWC, pOrTerm->pExpr, TK_AND);
         sqlite3WhereExprAnalyze(pSrc, pAndWC);
         pAndWC->pOuter = pWC;
-        testcase( db->mallocFailed );
         if( !db->mallocFailed ){
           for(j=0, pAndTerm=pAndWC->a; j<pAndWC->nTerm; j++, pAndTerm++){
             assert( pAndTerm->pExpr );

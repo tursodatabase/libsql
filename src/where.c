@@ -943,7 +943,7 @@ static int vtabBestIndex(Parse *pParse, Table *pTab, sqlite3_index_info *p){
 
   if( rc!=SQLITE_OK ){
     if( rc==SQLITE_NOMEM ){
-      pParse->db->mallocFailed = 1;
+      sqlite3OomFault(pParse->db);
     }else if( !pVtab->zErrMsg ){
       sqlite3ErrorMsg(pParse, "%s", sqlite3ErrStr(rc));
     }else{

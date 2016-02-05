@@ -343,7 +343,7 @@ static void jsonAppendValue(
     default: {
       if( p->bErr==0 ){
         sqlite3_result_error(p->pCtx, "JSON cannot hold BLOB values", -1);
-        p->bErr = 1;
+        p->bErr = 2;
         jsonReset(p);
       }
       break;
@@ -1571,7 +1571,7 @@ static void jsonArrayFinal(sqlite3_context *ctx){
     pStr->pCtx = ctx;
     jsonAppendChar(pStr, ']');
     if( pStr->bErr ){
-      sqlite3_result_error_nomem(ctx);
+      if( pStr->bErr==1 ) sqlite3_result_error_nomem(ctx);
       assert( pStr->bStatic );
     }else{
       sqlite3_result_text(ctx, pStr->zBuf, pStr->nUsed,
@@ -1619,7 +1619,7 @@ static void jsonObjectFinal(sqlite3_context *ctx){
   if( pStr ){
     jsonAppendChar(pStr, '}');
     if( pStr->bErr ){
-      sqlite3_result_error_nomem(ctx);
+      if( pStr->bErr==0 ) sqlite3_result_error_nomem(ctx);
       assert( pStr->bStatic );
     }else{
       sqlite3_result_text(ctx, pStr->zBuf, pStr->nUsed,

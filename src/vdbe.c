@@ -629,7 +629,6 @@ int sqlite3VdbeExec(
 #endif
   for(pOp=&aOp[p->pc]; rc==SQLITE_OK; pOp++){
     assert( pOp>=aOp && pOp<&aOp[p->nOp]);
-    if( db->mallocFailed ) goto no_mem;
 #ifdef VDBE_PROFILE
     start = sqlite3Hwtime();
 #endif
@@ -6785,7 +6784,7 @@ vdbe_error_halt:
   sqlite3_log(rc, "statement aborts at %d: [%s] %s", 
                    (int)(pOp - aOp), p->zSql, p->zErrMsg);
   sqlite3VdbeHalt(p);
-  if( rc==SQLITE_IOERR_NOMEM ) db->mallocFailed = 1;
+  if( rc==SQLITE_IOERR_NOMEM ) sqlite3OomFault(db);
   rc = SQLITE_ERROR;
   if( resetSchemaOnFault>0 ){
     sqlite3ResetOneSchema(db, resetSchemaOnFault-1);
@@ -6815,7 +6814,7 @@ too_big:
   /* Jump to here if a malloc() fails.
   */
 no_mem:
-  db->mallocFailed = 1;
+  sqlite3OomFault(db);
   sqlite3VdbeError(p, "out of memory");
   rc = SQLITE_NOMEM;
   goto vdbe_error_halt;
@@ -6836,7 +6835,7 @@ abort_due_to_error:
   */
 abort_due_to_interrupt:
   assert( db->u1.isInterrupted );
-  rc = SQLITE_INTERRUPT;
+  rc = db->mallocFailed ? SQLITE_NOMEM : SQLITE_INTERRUPT;
   p->rc = rc;
   sqlite3VdbeError(p, "%s", sqlite3ErrStr(rc));
   goto vdbe_error_halt;

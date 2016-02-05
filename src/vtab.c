@@ -62,7 +62,7 @@ static int createModule(
       pDel = (Module *)sqlite3HashInsert(&db->aModule,zCopy,(void*)pMod);
       assert( pDel==0 || pDel==pMod );
       if( pDel ){
-        db->mallocFailed = 1;
+        sqlite3OomFault(db);
         sqlite3DbFree(db, pDel);
       }
     }
@@ -439,7 +439,7 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
     assert( sqlite3SchemaMutexHeld(db, 0, pSchema) );
     pOld = sqlite3HashInsert(&pSchema->tblHash, zName, pTab);
     if( pOld ){
-      db->mallocFailed = 1;
+      sqlite3OomFault(db);
       assert( pTab==pOld );  /* Malloc must have failed inside HashInsert() */
       return;
     }
@@ -530,7 +530,7 @@ static int vtabCallConstructor(
   db->pVtabCtx = &sCtx;
   rc = xConstruct(db, pMod->pAux, nArg, azArg, &pVTable->pVtab, &zErr);
   db->pVtabCtx = sCtx.pPrior;
-  if( rc==SQLITE_NOMEM ) db->mallocFailed = 1;
+  if( rc==SQLITE_NOMEM ) sqlite3OomFault(db);
   assert( sCtx.pTab==pTab );
 
   if( SQLITE_OK!=rc ){
@@ -1088,7 +1088,7 @@ void sqlite3VtabMakeWritable(Parse *pParse, Table *pTab){
     pToplevel->apVtabLock = apVtabLock;
     pToplevel->apVtabLock[pToplevel->nVtabLock++] = pTab;
   }else{
-    pToplevel->db->mallocFailed = 1;
+    sqlite3OomFault(pToplevel->db);
   }
 }
 

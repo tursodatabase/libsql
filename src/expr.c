@@ -699,7 +699,10 @@ void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr){
       if( x>pParse->nzVar ){
         char **a;
         a = sqlite3DbRealloc(db, pParse->azVar, x*sizeof(a[0]));
-        if( a==0 ) return;  /* Error reported through db->mallocFailed */
+        if( a==0 ){
+          assert( db->mallocFailed ); /* Error reported through mallocFailed */
+          return;
+        }
         pParse->azVar = a;
         memset(&a[pParse->nzVar], 0, (x-pParse->nzVar)*sizeof(a[0]));
         pParse->nzVar = x;

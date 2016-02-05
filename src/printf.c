@@ -929,7 +929,7 @@ char *sqlite3VMPrintf(sqlite3 *db, const char *zFormat, va_list ap){
   sqlite3VXPrintf(&acc, zFormat, ap);
   z = sqlite3StrAccumFinish(&acc);
   if( acc.accError==STRACCUM_NOMEM ){
-    db->mallocFailed = 1;
+    sqlite3OomFault(db);
   }
   return z;
 }
