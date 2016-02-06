@@ -6148,7 +6148,7 @@ static int fillInCell(
   {
     CellInfo info;
     pPage->xParseCell(pPage, pCell, &info);
-    assert( nHeader=(int)(info.pPayload - pCell) );
+    assert( nHeader==(int)(info.pPayload - pCell) );
     assert( info.nKey==nKey );
     assert( *pnSize == info.nSize );
     assert( spaceLeft == info.nLocal );
@@ -7807,8 +7807,8 @@ static int balance(BtCursor *pCur){
   u8 aBalanceQuickSpace[13];
   u8 *pFree = 0;
 
-  TESTONLY( int balance_quick_called = 0 );
-  TESTONLY( int balance_deeper_called = 0 );
+  VVA_ONLY( int balance_quick_called = 0 );
+  VVA_ONLY( int balance_deeper_called = 0 );
 
   do {
     int iPage = pCur->iPage;
@@ -7821,7 +7821,8 @@ static int balance(BtCursor *pCur){
         ** and copy the current contents of the root-page to it. The
         ** next iteration of the do-loop will balance the child page.
         */ 
-        assert( (balance_deeper_called++)==0 );
+        assert( balance_deeper_called==0 );
+        VVA_ONLY( balance_deeper_called++ );
         rc = balance_deeper(pPage, &pCur->apPage[1]);
         if( rc==SQLITE_OK ){
           pCur->iPage = 1;
@@ -7860,7 +7861,8 @@ static int balance(BtCursor *pCur){
           ** function. If this were not verified, a subtle bug involving reuse
           ** of the aBalanceQuickSpace[] might sneak in.
           */
-          assert( (balance_quick_called++)==0 );
+          assert( balance_quick_called==0 ); 
+          VVA_ONLY( balance_quick_called++ );
           rc = balance_quick(pParent, pPage, aBalanceQuickSpace);
         }else
 #endif
@@ -9327,7 +9329,8 @@ char *sqlite3BtreeIntegrityCheck(
 
   sqlite3BtreeEnter(p);
   assert( p->inTrans>TRANS_NONE && pBt->inTransaction>TRANS_NONE );
-  assert( (nRef = sqlite3PagerRefcount(pBt->pPager))>=0 );
+  VVA_ONLY( nRef = sqlite3PagerRefcount(pBt->pPager) );
+  assert( nRef>=0 );
   sCheck.pBt = pBt;
   sCheck.pPager = pBt->pPager;
   sCheck.nPage = btreePagecount(sCheck.pBt);

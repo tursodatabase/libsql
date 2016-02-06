@@ -480,6 +480,12 @@ sqldiff$(EXE):	$(TOP)/tool/sqldiff.c sqlite3.c sqlite3.h
 	$(TCCX) -o sqldiff$(EXE) -DSQLITE_THREADSAFE=0 \
 		$(TOP)/tool/sqldiff.c sqlite3.c $(TLIBS) $(THREADLIB)
 
+srcck1$(EXE):	$(TOP)/tool/srcck1.c
+	$(BCC) -o srcck1$(EXE) $(TOP)/tool/srcck1.c
+
+sourcetest:	srcck1$(EXE) sqlite3.c
+	./srcck1 sqlite3.c
+
 fuzzershell$(EXE):	$(TOP)/tool/fuzzershell.c sqlite3.c sqlite3.h
 	$(TCCX) -o fuzzershell$(EXE) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
 	  $(FUZZERSHELL_OPT) $(TOP)/tool/fuzzershell.c sqlite3.c \
@@ -768,7 +774,7 @@ quicktest:	./testfixture$(EXE)
 # The default test case.  Runs most of the faster standard TCL tests,
 # and fuzz tests, and sqlite3_analyzer and sqldiff tests.
 #
-test:	$(TESTPROGS) fastfuzztest
+test:	$(TESTPROGS) sourcetest fastfuzztest
 	./testfixture$(EXE) $(TOP)/test/veryquick.test $(TESTOPTS)
 
 # Run a test using valgrind.  This can take a really long time
