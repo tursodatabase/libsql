@@ -1,5 +1,5 @@
-C Fix\san\sassert()\sto\shave\sa\stest\sinstead\sof\sa\sside\seffect
-D 2016-02-06T14:14:43.463
+C Make\ssure\svariable\sdeclarations\soccur\sat\sthe\sbeginning\sof\sblocks,\seven\nwith\sSQLITE_DEBUG\senabled.
+D 2016-02-06T19:48:50.321
 F Makefile.in 027c1603f255390c43a426671055a31c0a65fdb4
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 72b7858f02017611c3ac1ddc965251017fed0845
@@ -314,7 +314,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c b1b0880fc474abfab89e737b0ecfde0bd7a60902
 F src/loadext.c 84996d7d70a605597d79c1f1d7b2012a5fd34f2b
 F src/main.c 62b7fe3ed245757d1ff2e6268a7ec0bc30100308
-F src/malloc.c 55ebb1701ebd39985dbcc497aaecb09192b69682
+F src/malloc.c 337e9808b5231855fe28857950f4f60ae42c417f
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 6919bcf12f221868ea066eec27e579fed95ce98b
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
@@ -1426,7 +1426,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 22589018ac3321f7bd89ce9fa69e57eae395e324
-R e3d82b169cbfebcfd4c4fb1447b3dcc4
-U pdr
-Z 6e44ca05901e086eb71b8481afaf44d8
+P a2952231ac7abe165ed070875728f752ae0be608
+R da8a8c4dec6af3be8a6f4cff524d4f5f
+U drh
+Z f3b1e3c58e3e9ab1cb32cfa377da1181
