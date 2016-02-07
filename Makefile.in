@@ -1225,6 +1225,7 @@ clean:
 	rm -f sqlite-*-output.vsix
 	rm -f mptester mptester.exe
 	rm -f rbu rbu.exe
+	rm -f srcck1 srcck1.exe
 	rm -f fuzzershell fuzzershell.exe
 	rm -f fuzzcheck fuzzcheck.exe
 	rm -f sqldiff sqldiff.exe

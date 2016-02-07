@@ -124,7 +124,7 @@ static unsigned int findAllSideEffects(const char *z){
        || strncmp(&z[i],"NEVER(",6)==0
        || strncmp(&z[i],"testcase(",9)==0
       ){
-        unsigned int j, n;
+        unsigned int n;
         const char *z2 = &z[i+5];
         while( z2[0]!='(' ){ z2++; }
         z2++;

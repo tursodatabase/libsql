@@ -899,6 +899,7 @@ clean:
 	rm -f speedtest1 speedtest1.exe
 	rm -f wordcount wordcount.exe
 	rm -f rbu rbu.exe
+	rm -f srcck1 srcck1.exe
 	rm -f sqlite3.c sqlite3-*.c fts?amal.c tclsqlite3.c
 	rm -f sqlite3rc.h
 	rm -f shell.c sqlite3ext.h
