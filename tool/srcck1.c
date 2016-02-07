@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <stdio.h>
+#include <string.h>
 
 /* Read the complete text of a file into memory.  Return a pointer to
 ** the result.  Panic if unable to read the file or allocate memory.

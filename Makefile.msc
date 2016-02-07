@@ -1393,6 +1393,12 @@ $(SQLITE3EXE):	$(TOP)\src\shell.c $(SHELL_CORE_DEP) $(LIBRESOBJS) $(SHELL_CORE_S
 sqldiff.exe:	$(TOP)\tool\sqldiff.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(TOP)\tool\sqldiff.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
+srcck1.exe:	$(TOP)\tool\srcck1.c
+	$(BCC) $(NO_WARN) -Fe$@ $(TOP)\tool\srcck1.c
+
+sourcetest:	srcck1.exe sqlite3.c
+	srcck1.exe sqlite3.c
+
 fuzzershell.exe:	$(TOP)\tool\fuzzershell.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(FUZZERSHELL_COMPILE_OPTS) $(TOP)\tool\fuzzershell.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
@@ -1916,14 +1922,14 @@ fastfuzztest:	fuzzcheck.exe
 
 # Minimal testing that runs in less than 3 minutes (on a fast machine)
 #
-quicktest:	testfixture.exe
+quicktest:	testfixture.exe sourcetest
 	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\extraquick.test $(TESTOPTS)
 
 # This is the common case.  Run many tests that do not take too long,
 # including fuzzcheck, sqlite3_analyzer, and sqldiff tests.
 #
-test:	$(TESTPROGS) fastfuzztest
+test:	$(TESTPROGS) sourcetest fastfuzztest
 	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\veryquick.test $(TESTOPTS)
 
