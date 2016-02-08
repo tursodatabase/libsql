@@ -1,5 +1,5 @@
-C Fix\sa\scompiler\swarning\swhen\scompiling\swithout\sSQLITE_ENABLE_FTS3_TOKENIZER.
-D 2016-02-08T20:06:52.183
+C Fix\sa\ssigned/unsigned\scomparison\swarning\sin\sfts5.
+D 2016-02-08T20:14:41.915
 F Makefile.in dac2776c84e0d533b158a9af6e57e05c4a6b19f3
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc fcf377286d910b47e072da1ac7945976337c0925
@@ -100,7 +100,7 @@ F ext/fts5/extract_api_docs.tcl a36e54ec777172ddd3f9a88daf593b00848368e0
 F ext/fts5/fts5.h ff9c2782e8ed890b0de2f697a8d63971939e70c7
 F ext/fts5/fts5Int.h efb02807dbe5a2bfb0ea592a472d1171cb553d53
 F ext/fts5/fts5_aux.c b9bcce753ef5b451267b2232f0ca153ddeb3951d
-F ext/fts5/fts5_buffer.c 2dac8e23c5b77fccecc234f1a1f37d75113b4e46
+F ext/fts5/fts5_buffer.c 5142f73defd7d2ad7419f3a8e487681b38b72097
 F ext/fts5/fts5_config.c 0c384ebdd23fd055e2e50a93277b8d59da538238
 F ext/fts5/fts5_expr.c ff5c451a6d025909639ac0f0d0af0cc595b50feb
 F ext/fts5/fts5_hash.c 1b113977296cf4212c6ec667d5e3f2bd18036955
@@ -1427,7 +1427,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e0eb217aca7e4aadf9c44ed20822b78139f7c83c
-R 3ba2bfd061690101a8667e8fadcc2696
-U drh
-Z 2da14d7bb409b5abdcdd912d6af6bf8a
+P 6926f28cd56bf61f7c92877baa54024bee7cbab5
+R a71ae48fc3eb916c5bf5cda4edac941f
+U dan
+Z 4a750b37db683e6936f9a933a2b590b6

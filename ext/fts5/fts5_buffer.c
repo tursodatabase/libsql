@@ -16,7 +16,7 @@
 #include "fts5Int.h"
 
 int sqlite3Fts5BufferSize(int *pRc, Fts5Buffer *pBuf, u32 nByte){
-  if( pBuf->nSpace<nByte ){
+  if( (u32)pBuf->nSpace<nByte ){
     u32 nNew = pBuf->nSpace ? pBuf->nSpace : 64;
     u8 *pNew;
     while( nNew<nByte ){
