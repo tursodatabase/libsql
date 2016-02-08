@@ -18,7 +18,14 @@
 #include "sqliteInt.h"
 #include <stdlib.h>
 
-/* Character classes for tokenizing */
+/* Character classes for tokenizing
+**
+** In the sqlite3GetToken() function, a switch() on aiClass[c] is implemented
+** using a lookup table, whereas a switch() directly on c uses a binary search.
+** The lookup table is much faster.  To maximize speed, and to ensure that
+** a lookup table is used, all of the classes need to be small integers and
+** all of them need to be used within the switch.
+*/
 #define CC_X          0    /* The letter 'x' or 'X'.  Start of x'01234fed' */
 #define CC_KYWD       1    /* Alphabetics or '_'.  Usable in a keyword */
 #define CC_ID         2    /* unicode characters usable in IDs */
@@ -49,6 +56,7 @@
 #define CC_ILLEGAL   27    /* Illegal character */
 
 static const unsigned char aiClass[] = {
+#ifdef SQLITE_ASCII
 /*         x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xa  xb  xc  xd  xe  xf */
 /* 0x */   27, 27, 27, 27, 27, 27, 27, 27, 27,  7,  7, 27,  7,  7, 27, 27,
 /* 1x */   27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27,
@@ -66,14 +74,36 @@ static const unsigned char aiClass[] = {
 /* Dx */    2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,
 /* Ex */    2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,
 /* Fx */    2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2
+#endif
+#ifdef SQLITE_EBCDIC
+/*         x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xa  xb  xc  xd  xe  xf */
+/* 0x */   27, 27, 27, 27, 27,  7, 27, 27, 27, 27, 27, 27,  7,  7, 27, 27,
+/* 1x */   27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27,
+/* 2x */   27, 27, 27, 27, 27,  7, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27,
+/* 3x */   27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27,
+/* 4x */    7, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 12, 17, 20, 10,
+/* 5x */   24, 27, 27, 27, 27, 27, 27, 27, 27, 27, 15,  4, 21, 18, 19, 27,
+/* 6x */   11, 16, 27, 27, 27, 27, 27, 27, 27, 27, 27, 23, 22,  1, 13,  7,
+/* 7x */   27, 27, 27, 27, 27, 27, 27, 27, 27,  8,  5,  5,  5,  8, 14,  8,
+/* 8x */   27,  1,  1,  1,  1,  1,  1,  1,  1,  1, 27, 27, 27, 27, 27, 27,
+/* 9x */   27,  1,  1,  1,  1,  1,  1,  1,  1,  1, 27, 27, 27, 27, 27, 27,
+/* 9x */   25,  1,  1,  1,  1,  1,  1,  0,  1,  1, 27, 27, 27, 27, 27, 27,
+/* Bx */   27, 27, 27, 27, 27, 27, 27, 27, 27, 27,  9, 27, 27, 27, 27, 27,
+/* Cx */   27,  1,  1,  1,  1,  1,  1,  1,  1,  1, 27, 27, 27, 27, 27, 27,
+/* Dx */   27,  1,  1,  1,  1,  1,  1,  1,  1,  1, 27, 27, 27, 27, 27, 27,
+/* Ex */   27, 27,  1,  1,  1,  1,  1,  0,  1,  1, 27, 27, 27, 27, 27, 27,
+/* Fx */    3,  3,  3,  3,  3,  3,  3,  3,  3,  3, 27, 27, 27, 27, 27, 27,
+#endif
 };
 
 /*
-** The charMap() macro maps alphabetic characters into their
+** The charMap() macro maps alphabetic characters (only) into their
 ** lower-case ASCII equivalent.  On ASCII machines, this is just
 ** an upper-to-lower case map.  On EBCDIC machines we also need
-** to adjust the encoding.  Only alphabetic characters and underscores
-** need to be translated.
+** to adjust the encoding.  The mapping is only valid for alphabetics
+** which are the only characters for which this feature is used. 
+**
+** Used by keywordhash.h
 */
 #ifdef SQLITE_ASCII
 # define charMap(X) sqlite3UpperToLower[(unsigned char)X]
@@ -410,7 +440,7 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
 #endif
     case CC_KYWD: {
       for(i=1; aiClass[z[i]]<=CC_KYWD; i++){}
-      if( aiClass[z[i]]<=CC_DOLLAR ){ i++; break; }
+      if( IdChar(z[i]) ){ i++; break; }
       *tokenType = TK_ID;
       return keywordCode((char*)z, i, tokenType);
     }
@@ -423,7 +453,7 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
       return 1;
     }
   }
-  while( aiClass[z[i]]<=CC_DOLLAR ){ i++; }
+  while( IdChar(z[i]) ){ i++; }
   *tokenType = TK_ID;
   return i;
 }
