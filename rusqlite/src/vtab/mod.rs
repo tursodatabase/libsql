@@ -1,8 +1,8 @@
 //! Create virtual tables.
 //! (See http://sqlite.org/vtab.html)
-use std::error::Error as StdError;
 use std::ffi::CString;
 use std::mem;
+use std::ptr;
 use libc;
 
 use {Connection, Error, Result, InnerConnection, str_to_cstring};
@@ -29,7 +29,7 @@ use ffi;
 //
 // let stmt = conn.prepare("SELECT ... FROM foo WHERE ...");
 // \-> vtab.xbestindex
-// stmt.quey().next();
+// stmt.query().next();
 // \-> vtab.xopen
 //  |-> let cursor: Cursor = ...; // on the heap
 //  |-> cursor.xfilter or xnext
@@ -42,7 +42,7 @@ impl Connection {
     pub fn create_module<A>(&self,
                             module_name: &str,
                             module: *const ffi::sqlite3_module,
-                            aux: A)
+                            aux: Option<A>)
                             -> Result<()> {
         self.db
             .borrow_mut()
@@ -54,16 +54,27 @@ impl InnerConnection {
     fn create_module<A>(&mut self,
                         module_name: &str,
                         module: *const ffi::sqlite3_module,
-                        aux: A)
+                        aux: Option<A>)
                         -> Result<()> {
-        let boxed_aux: *mut A = Box::into_raw(Box::new(aux));
         let c_name = try!(str_to_cstring(module_name));
-        let r = unsafe {
-            ffi::sqlite3_create_module_v2(self.db(),
-                                          c_name.as_ptr(),
-                                          module,
-                                          mem::transmute(boxed_aux),
-                                          Some(mem::transmute(free_boxed_value::<A>)))
+        let r = match aux {
+            Some(aux) => {
+                let boxed_aux: *mut A = Box::into_raw(Box::new(aux));
+                unsafe {
+                    ffi::sqlite3_create_module_v2(self.db(),
+                                                  c_name.as_ptr(),
+                                                  module,
+                                                  mem::transmute(boxed_aux),
+                                                  Some(mem::transmute(free_boxed_value::<A>)))
+                }
+            }
+            None => unsafe {
+                ffi::sqlite3_create_module_v2(self.db(),
+                                              c_name.as_ptr(),
+                                              module,
+                                              ptr::null_mut(),
+                                              None)
+            },
         };
         self.decode_result(r)
     }
@@ -125,25 +136,23 @@ unsafe extern "C" fn $create(db: *mut ffi::sqlite3,
                               pp_vtab: *mut *mut ffi::sqlite3_vtab,
                               err_msg: *mut *mut libc::c_char)
                               -> libc::c_int {
+    use std::error::Error as StdError;
+    use vtab::mprintf;
     match $vtab::create(db, aux, argc, argv) {
         Ok(vtab) => {
             let boxed_vtab: *mut $vtab = Box::into_raw(Box::new(vtab));
             *pp_vtab = boxed_vtab as *mut ffi::sqlite3_vtab;
             ffi::SQLITE_OK
         }
-        Err(err) => {
-            match err {
-                Error::SqliteFailure(err, s) => {
-                    if let Some(s) = s {
-                        *err_msg = mprintf(&s);
-                    }
-                    err.extended_code
-                }
-                _ => {
-                    *err_msg = mprintf(err.description());
-                    ffi::SQLITE_ERROR
-                }
+        Err(Error::SqliteFailure(err, s)) => {
+            if let Some(s) = s {
+                *err_msg = mprintf(&s);
             }
+            err.extended_code
+        },
+        Err(err) => {
+            *err_msg = mprintf(err.description());
+            ffi::SQLITE_ERROR
         }
     }
 }
@@ -163,15 +172,28 @@ unsafe extern "C" fn $destroy(vtab: *mut ffi::sqlite3_vtab) -> libc::c_int {
 unsafe extern "C" fn $open(vtab: *mut ffi::sqlite3_vtab,
                             pp_cursor: *mut *mut ffi::sqlite3_vtab_cursor)
                             -> libc::c_int {
-    let vtab = vtab as *mut $vtab;
-    let cursor = (*vtab).open();
-    let boxed_cursor: *mut $cursor = Box::into_raw(Box::new(cursor));
-    *pp_cursor = boxed_cursor as *mut ffi::sqlite3_vtab_cursor;
-    ffi::SQLITE_OK
+    use vtab::set_err_msg;
+    let vt = vtab as *mut $vtab;
+    match (*vt).open() {
+        Ok(cursor) => {
+            let boxed_cursor: *mut $cursor = Box::into_raw(Box::new(cursor));
+            *pp_cursor = boxed_cursor as *mut ffi::sqlite3_vtab_cursor;
+            ffi::SQLITE_OK
+        },
+        Err(Error::SqliteFailure(err, s)) => {
+            if let Some(err_msg) = s {
+                set_err_msg(vtab, &err_msg);
+            }
+            err.extended_code
+        }
+        Err(_) => {
+            ffi::SQLITE_ERROR
+        }
+    }
 }
 unsafe extern "C" fn $close(cursor: *mut ffi::sqlite3_vtab_cursor) -> libc::c_int {
-    let cursor = cursor as *mut $cursor;
-    let _: Box<$cursor> = Box::from_raw(mem::transmute(cursor));
+    let cr = cursor as *mut $cursor;
+    let _: Box<$cursor> = Box::from_raw(mem::transmute(cr));
     ffi::SQLITE_OK
 }
 
@@ -181,35 +203,70 @@ unsafe extern "C" fn $filter(cursor: *mut ffi::sqlite3_vtab_cursor,
                               _argc: libc::c_int,
                               _argv: *mut *mut ffi::sqlite3_value)
                               -> libc::c_int {
-    let cursor = cursor as *mut $cursor;
-    (*cursor).filter()
+    use vtab::cursor_error;
+    let cr = cursor as *mut $cursor;
+    cursor_error(cursor, (*cr).filter())
 }
 unsafe extern "C" fn $next(cursor: *mut ffi::sqlite3_vtab_cursor) -> libc::c_int {
-    let cursor = cursor as *mut $cursor;
-    (*cursor).next()
+    use vtab::cursor_error;
+    let cr = cursor as *mut $cursor;
+    cursor_error(cursor, (*cr).next())
 }
 unsafe extern "C" fn $eof(cursor: *mut ffi::sqlite3_vtab_cursor) -> libc::c_int {
-    let cursor = cursor as *mut $cursor;
-    (*cursor).eof() as libc::c_int
+    let cr = cursor as *mut $cursor;
+    (*cr).eof() as libc::c_int
 }
 unsafe extern "C" fn $column(cursor: *mut ffi::sqlite3_vtab_cursor,
                               ctx: *mut ffi::sqlite3_context,
                               i: libc::c_int)
                               -> libc::c_int {
-    let cursor = cursor as *mut $cursor;
-    (*cursor).column(ctx, i)
+    use vtab::cursor_error;
+    let cr = cursor as *mut $cursor;
+    cursor_error(cursor, (*cr).column(ctx, i))
 }
 unsafe extern "C" fn $rowid(cursor: *mut ffi::sqlite3_vtab_cursor,
                              p_rowid: *mut ffi::sqlite3_int64)
                              -> libc::c_int {
-    let cursor = cursor as *mut $cursor;
-    *p_rowid = (*cursor).rowid();
-    ffi::SQLITE_OK
+    use vtab::cursor_error;
+    let cr = cursor as *mut $cursor;
+    match (*cr).rowid() {
+        Ok(rowid) => {
+            *p_rowid = rowid;
+            ffi::SQLITE_OK
+        },
+        err => cursor_error(cursor, err)
+    }
 }
     }
 }
 
+pub unsafe fn cursor_error<T>(cursor: *mut ffi::sqlite3_vtab_cursor,
+                              result: Result<T>)
+                              -> libc::c_int {
+    match result {
+        Ok(_) => ffi::SQLITE_OK,
+        Err(Error::SqliteFailure(err, s)) => {
+            if let Some(err_msg) = s {
+                set_err_msg((*cursor).pVtab, &err_msg);
+            }
+            err.extended_code
+        }
+        Err(_) => {
+            // TODO errMsg
+            ffi::SQLITE_ERROR
+        }
+    }
+}
+
+unsafe fn set_err_msg(vtab: *mut ffi::sqlite3_vtab, err_msg: &str) {
+    if !(*vtab).zErrMsg.is_null() {
+        ffi::sqlite3_free((*vtab).zErrMsg as *mut libc::c_void);
+    }
+    (*vtab).zErrMsg = mprintf(err_msg);
+}
+
 unsafe fn result_error(ctx: *mut ffi::sqlite3_context, err: Error) -> libc::c_int {
+    use std::error::Error as StdError;
     match err {
         Error::SqliteFailure(err, s) => {
             ffi::sqlite3_result_error_code(ctx, err.extended_code);
@@ -236,3 +293,4 @@ pub fn mprintf(err_msg: &str) -> *mut ::libc::c_char {
 }
 
 pub mod int_array;
+#[cfg(feature = "csvtab")]pub mod csvtab;

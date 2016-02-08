@@ -66,6 +66,12 @@ pub enum Error {
     #[cfg(feature = "functions")]
     #[allow(dead_code)]
     UserFunctionError(Box<error::Error + Send + Sync>),
+
+    /// An error case available for implementors of custom modules (e.g.,
+    /// `create_module`).
+    #[cfg(feature = "vtab")]
+    #[allow(dead_code)]
+    ModuleError(String),
 }
 
 impl From<str::Utf8Error> for Error {
@@ -107,6 +113,8 @@ impl fmt::Display for Error {
             &Error::InvalidFunctionParameterType => write!(f, "Invalid function parameter type"),
             #[cfg(feature = "functions")]
             &Error::UserFunctionError(ref err) => err.fmt(f),
+            #[cfg(feature = "vtab")]
+            &Error::ModuleError(ref desc) => write!(f, "{}", desc),
         }
     }
 }
@@ -137,6 +145,8 @@ impl error::Error for Error {
             &Error::InvalidFunctionParameterType => "invalid function parameter type",
             #[cfg(feature = "functions")]
             &Error::UserFunctionError(ref err) => err.description(),
+            #[cfg(feature = "vtab")]
+            &Error::ModuleError(ref desc) => desc,
         }
     }
 
@@ -160,6 +170,8 @@ impl error::Error for Error {
             &Error::InvalidFunctionParameterType => None,
             #[cfg(feature = "functions")]
             &Error::UserFunctionError(ref err) => Some(&**err),
+            #[cfg(feature = "vtab")]
+            &Error::ModuleError(_) => None,
         }
     }
 }

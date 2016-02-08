@@ -1,5 +1,4 @@
 //! Int array virtual table.
-use std::error::Error as StdError;
 use std::cell::RefCell;
 use std::default::Default;
 use std::mem;
@@ -8,12 +7,11 @@ use libc;
 
 use {Connection, Error, Result};
 use ffi;
-use functions::ToResult;
-use vtab::{declare_vtab, mprintf};
+use vtab::declare_vtab;
 
 pub fn create_int_array(conn: &Connection, name: &str) -> Result<Rc<RefCell<Vec<i64>>>> {
     let array = Rc::new(RefCell::new(Vec::new()));
-    try!(conn.create_module(name, &INT_ARRAY_MODULE, array.clone()));
+    try!(conn.create_module(name, &INT_ARRAY_MODULE, Some(array.clone())));
     try!(conn.execute_batch(&format!("CREATE VIRTUAL TABLE temp.{0} USING {0}",
                                      escape_quote(name.to_string()))));
     Ok(array)
@@ -60,11 +58,10 @@ impl IntArrayVTab {
         Ok(vtab)
     }
 
-    fn best_index(&self, _info: *mut ffi::sqlite3_index_info) {
-    }
+    fn best_index(&self, _info: *mut ffi::sqlite3_index_info) {}
 
-    fn open(&self) -> IntArrayVTabCursor {
-        IntArrayVTabCursor::new()
+    fn open(&self) -> Result<IntArrayVTabCursor> {
+        Ok(IntArrayVTabCursor::new())
     }
 }
 
@@ -84,35 +81,36 @@ impl IntArrayVTabCursor {
         }
     }
 
-    fn vtab(&self) -> *mut IntArrayVTab {
-        self.base.pVtab as *mut IntArrayVTab
+    fn vtab(&self) -> &mut IntArrayVTab {
+        unsafe { &mut *(self.base.pVtab as *mut IntArrayVTab) }
     }
 
-    fn filter(&mut self) -> libc::c_int {
+    fn filter(&mut self) -> Result<()> {
         self.i = 0;
-        ffi::SQLITE_OK
+        Ok(())
     }
-    fn next(&mut self) -> libc::c_int {
+    fn next(&mut self) -> Result<()> {
         self.i = self.i + 1;
-        ffi::SQLITE_OK
+        Ok(())
     }
     fn eof(&self) -> bool {
         let vtab = self.vtab();
         unsafe {
-            let array = (*(*vtab).array).borrow();
+            let array = (*vtab.array).borrow();
             self.i >= array.len()
         }
     }
-    fn column(&self, ctx: *mut ffi::sqlite3_context, _i: libc::c_int) -> libc::c_int {
+    fn column(&self, ctx: *mut ffi::sqlite3_context, _i: libc::c_int) -> Result<()> {
+        use functions::ToResult;
         let vtab = self.vtab();
         unsafe {
-            let array = (*(*vtab).array).borrow();
+            let array = (*vtab.array).borrow();
             array[self.i].set_result(ctx);
         }
-        ffi::SQLITE_OK
+        Ok(())
     }
-    fn rowid(&self) -> i64 {
-        self.i as i64
+    fn rowid(&self) -> Result<i64> {
+        Ok(self.i as i64)
     }
 }
 
