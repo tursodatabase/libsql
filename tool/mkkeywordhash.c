@@ -565,20 +565,23 @@ int main(int argc, char **argv){
   }
   printf("%s  };\n", j==0 ? "" : "\n");
 
-  printf("  int h, i;\n");
+  printf("  int h, i, j;\n");
+  printf("  const char *zKW;\n");
   printf("  if( n>=2 ){\n");
   printf("    h = ((charMap(z[0])*4) ^ (charMap(z[n-1])*3) ^ n) %% %d;\n",
           bestSize);
   printf("    for(i=((int)aHash[h])-1; i>=0; i=((int)aNext[i])-1){\n");
-  printf("      if( aLen[i]==n &&"
-                     " sqlite3StrNICmp(&zText[aOffset[i]],z,n)==0 ){\n");
+  printf("      if( aLen[i]!=n ) continue;\n");
+  printf("      j = 0;\n");
+  printf("      zKW = &zText[aOffset[i]];\n");
+  printf("      while( j<n && (z[j]&~0x20)==zKW[j] ){ j++; }\n");
+  printf("      if( j<n ) continue;\n");
   for(i=0; i<nKeyword; i++){
-    printf("        testcase( i==%d ); /* %s */\n",
+    printf("      testcase( i==%d ); /* %s */\n",
            i, aKeywordTable[i].zOrigName);
   }
-  printf("        *pType = aCode[i];\n");
-  printf("        break;\n");
-  printf("      }\n");
+  printf("      *pType = aCode[i];\n");
+  printf("      break;\n");
   printf("    }\n");
   printf("  }\n");
   printf("  return n;\n");
