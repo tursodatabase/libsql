@@ -1,5 +1,5 @@
-C Add\sthe\ssourcetest\starget\sto\sMakefile.msc.
-D 2016-02-07T00:08:08.480
+C Demonstrate\sa\smuch\sfaster\ssqlite3GetToken()\sroutine\sby\susing\sa\slookup\stable\nto\smap\sinitial\stoken\scharacters\sinto\sa\scharacter\sclass.\s\sThis\scheck-in\sdoes\nnot\swork\sfor\sEBCDIC.\s\sMore\soptimization\sneeded.
+D 2016-02-08T02:30:50.194
 F Makefile.in 0a957a57243a3d55e96b1514e22ffae5db9ea116
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a3f8092763bb5d0057f0f4feb6b7fcc19713e107
@@ -406,7 +406,7 @@ F src/test_windirent.c 8f5fada630348558d5745b334702f301da1ffc61
 F src/test_windirent.h b12055cab6227f7be10f5c19296f67c60cc5e2a5
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c bbfb74450643cb5372a43ad4f6cffd7e9dfcecb0
-F src/tokenize.c 214b783d6138e9f9fbb6b225ce9a376db3b03d42
+F src/tokenize.c b3cfc123d65a5bf7ba615f74f28737ae2135620a
 F src/treeview.c dc39ccf04e9331237388b9cb73289c9d87ea050b
 F src/trigger.c e14840ee0c3e549e758ec9bf3e4146e166002280
 F src/update.c 310ca7adb86a7d1f2afae46905b21c83580f3e17
@@ -1427,7 +1427,10 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b0b4624fc5d53bb0cc9fae7dad51984837d946ac
-R 08c9d9815def36a9ada11c24d7dc13cb
+P ab269e720552483c5617906837e294c1be3e0a57
+R de21eeb460827c84c88aec10967c3b1d
+T *branch * tokenizer-char-class
+T *sym-tokenizer-char-class *
+T -sym-trunk *
 U drh
-Z 21cfff4994071e02bdb1eef8143a0ef4
+Z 8982f608f7ca1f17154501e0dba47865
