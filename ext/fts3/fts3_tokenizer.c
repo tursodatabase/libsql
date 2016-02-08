@@ -336,6 +336,7 @@ finish:
   Tcl_DecrRefCount(pRet);
 }
 
+#ifdef SQLITE_ENABLE_FTS3_TOKENIZER
 static
 int registerTokenizer(
   sqlite3 *db, 
@@ -357,6 +358,8 @@ int registerTokenizer(
 
   return sqlite3_finalize(pStmt);
 }
+#endif /* SQLITE_ENABLE_FTS3_TOKENIZER */
+
 
 static
 int queryTokenizer(
