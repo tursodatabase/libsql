@@ -1,8 +1,8 @@
-C More\swork\son\sWindows\s10\sSDK\sintegration.
-D 2016-02-08T20:40:57.726
+C Fix\sspelling\serror\sin\sMSVC\smakefile\scomments.
+D 2016-02-08T20:45:37.407
 F Makefile.in dac2776c84e0d533b158a9af6e57e05c4a6b19f3
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 8514a6d7c15fa179b45da902a4ddcf0a8e6748b2
+F Makefile.msc b0493f10caddb8adf992a4e6f1943141fc7c6816
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION 866588d1edf0ccb5b0d33896974338f97564f719
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -11,7 +11,7 @@ F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am 1c1657650775960804945dc392e14d9e43c5ed84
-F autoconf/Makefile.msc de6d40e0c495d761b9813ccb20a649841f6d6b72
+F autoconf/Makefile.msc a35b2aab24d1603f3f0ae65cf01686c2578d319c
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/README.txt e9757a381e5ce2553dbaa6247bb8ad00eb8d87aa
 F autoconf/configure.ac 72a5e42beb090b32bca580285dc0ab3c4670adb8
@@ -1427,8 +1427,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 85eb05ddbc3a7cff986af13c3dab6c0063e62171 ebace2c99b6af9230c4bbc31a764c7f397200148
-R 7f11f3c1dcb5601b2c82dcb73372e020
-T +closed ebace2c99b6af9230c4bbc31a764c7f397200148
+P 1e563c6ebbb02d2e89760c7a7f95aa69964629c6
+R 8450aebd4fe3e5df6689a15f6b4c74a5
 U mistachkin
-Z ac6553c79aaf86d7e04ebeafa308be17
+Z fa8db5a9236f4356c9f0e0ef9af9fdef

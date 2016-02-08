@@ -306,7 +306,7 @@ LD = link.exe
 RC = rc.exe
 !ENDIF
 
-# Check for the MSVC runtime library path macro.  Othertise, this value will
+# Check for the MSVC runtime library path macro.  Otherwise, this value will
 # default to the 'lib' directory underneath the MSVC installation directory.
 #
 !IFNDEF CRTLIBPATH
@@ -343,7 +343,7 @@ NCC = $(NCC:\\=\)
 NCC = $(CC)
 !ENDIF
 
-# Check for the MSVC native runtime library path macro.  Othertise,
+# Check for the MSVC native runtime library path macro.  Otherwise,
 # this value will default to the 'lib' directory underneath the MSVC
 # installation directory.
 #
@@ -353,7 +353,7 @@ NCRTLIBPATH = $(VCINSTALLDIR)\lib
 
 NCRTLIBPATH = $(NCRTLIBPATH:\\=\)
 
-# Check for the Platform SDK library path macro.  Othertise, this
+# Check for the Platform SDK library path macro.  Otherwise, this
 # value will default to the 'lib' directory underneath the Windows
 # SDK installation directory (the environment variable used appears
 # to be available when using Visual C++ 2008 or later via the
@@ -365,7 +365,7 @@ NSDKLIBPATH = $(WINDOWSSDKDIR)\lib
 
 NSDKLIBPATH = $(NSDKLIBPATH:\\=\)
 
-# Check for the UCRT library path macro.  Othertise, this value will
+# Check for the UCRT library path macro.  Otherwise, this value will
 # default to the version-specific, platform-specific 'lib' directory
 # underneath the Windows SDK installation directory.
 #
