@@ -1,8 +1,8 @@
-C Fix\sthe\stop-level\smakefiles\sto\salways\sinclude\sSQLITE_ENABLE_EXPLAIN_COMMENTS\nwhen\sbuilding\sthe\sshell.\s\sStill\sneed\sto\sfix\smain.mk\sand\sthe\namalgamation\starball.
-D 2016-02-09T17:12:22.679
+C Fix\sMSVC\smakefile\soptions\sthat\senable\scontrol-flow\sguard.
+D 2016-02-09T18:28:20.640
 F Makefile.in 95ea52e9c02962e31f986fe8ea5805104c84f94b
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc d2eef1643b13c02686a5f3f5fa58e6843e910e2a
+F Makefile.msc 0fe3b22f8e29bcde0533ada7957a5f15835d797a
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION 866588d1edf0ccb5b0d33896974338f97564f719
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -1427,7 +1427,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e1d8ec85546caeca3bb7a05ad962a2aed91194ce
-R c5ef01ad4ed02f828dd7e74a721278c9
-U drh
-Z 91487ddf0aeacb78fa9d983e619d08c4
+P 992282399cd2d1fc52ff5a1a4bff59f30b62899a
+R 339c4dc7dafb8a9f839919868c327cb9
+U mistachkin
+Z 87542794a9bfaf638d39bc9a323993e0
