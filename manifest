@@ -1,5 +1,5 @@
-C Make\ssure\severy\sco-routines\shas\sits\sown\sset\sof\stemporary\sregisters\sand\sdoes\nnot\sshare\stemporaries,\ssince\sa\sco-routine\smight\sexpect\sthe\scontent\sof\sa\ntemporary\sregister\sto\sbe\spreserved\sacross\san\sOP_Yield.\nProposed\sfix\sfor\sticket\s[d06a25c84454a].
-D 2016-02-09T02:12:20.490
+C Code\ssimplification:\s\sALTER\sTABLE\sADD\sCOLUMN\salways\supgrades\sthe\sfile_format\nto\s4\sif\sis\snot\sthere\salready.\s\sNo\sneed\sto\supgrade\sto\sonly\s2\sor\s3\ssince\sformat\n4\shas\snow\sbeen\ssupported\sfor\sover\s10\syears.
+D 2016-02-09T16:09:22.275
 F Makefile.in dac2776c84e0d533b158a9af6e57e05c4a6b19f3
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b0493f10caddb8adf992a4e6f1943141fc7c6816
@@ -284,7 +284,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c d50b7dbb49a4affee951301afb76a008463e3625
+F src/alter.c 1fbb01c26c64528088f1df8015992fefda387889
 F src/analyze.c fbf0e80d83cc893734e872f932f249a056b86e11
 F src/attach.c c16c2648a577fa3def2adfa48c28901376389bc5
 F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
@@ -353,7 +353,7 @@ F src/shell.c dcd7a83645ef2a58ee9c6d0ea4714d877d7835c4
 F src/sqlite.h.in cf22ad1d52dca2c9862d63833e581028119aab7e
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
-F src/sqliteInt.h 3aeaff9611acd790c8e76719b33db09ab885d537
+F src/sqliteInt.h b1850d30a1333de1df076eca979683f696f9d4b4
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
@@ -439,7 +439,7 @@ F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 6ff7b43c2b4b905c74dc4a813d201d0fa64c5783
 F test/alter.test 2facdddf08d0d48e75dc6cc312cd2b030f4835dd
 F test/alter2.test 7ea05c7d92ac99349a802ef7ada17294dd647060
-F test/alter3.test 49c9d9fba2b8fcdce2dedeca97bbf1f369cc548d
+F test/alter3.test b3568d11c38c4599c92f24242eda34144d78dc10
 F test/alter4.test c461150723ac957f3b2214aa0b11552cd72023ec
 F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
 F test/amatch1.test b5ae7065f042b7f4c1c922933f4700add50cdb9f
@@ -1427,7 +1427,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6eab74c9ae57676044b5bc82fa14e92fd2448008
-R 28a5285fd29b59b5a769fa2b98c8137d
+P ca72be8618e5d466d6f35819ca8bbd2b84269959
+R f95e307a4f6313b9df891047976f580b
 U drh
-Z 50a93197f1857fe46bad3c49957d1f43
+Z 5769e00c07411a2161fa568f8263dd90
