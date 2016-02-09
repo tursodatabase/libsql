@@ -23,6 +23,7 @@ set -u
 TMPSPACE=./mkpkg_tmp_dir
 VERSION=`cat $TOP/VERSION`
 HASH=`sed 's/^\(..........\).*/\1/' $TOP/manifest.uuid`
+DATETIME=`grep '^D' $TOP/manifest | sed 's/[^0-9]//g'`
 
 # If this script is given an argument of --snapshot, then generate a
 # snapshot tarball named for the current checkout SHA1 hash, rather than
@@ -38,9 +39,9 @@ then
   set +e
     zz=`echo $VERSION|sed 's/3\.[^.]*\.[^.]*\.\([0-9]*\).*/\1/'|grep -v '\.'`
   set -e
-  ARTIFACT=`printf "3%.2d%.2d%.2d" $xx $yy $zz`
+  TARBALLNAME=`printf "sqlite-autoconf-3%.2d%.2d%.2d" $xx $yy $zz`
 else
-  ARTIFACT=$HASH
+  TARBALLNAME=sqlite-snapshot-$DATETIME
 fi
 
 rm -rf $TMPSPACE
@@ -83,8 +84,8 @@ rm -rf autom4te.cache
 cd ../
 ./configure && make dist
 tar -xzf sqlite-$VERSION.tar.gz
-mv sqlite-$VERSION sqlite-autoconf-$ARTIFACT
-tar -czf sqlite-autoconf-$ARTIFACT.tar.gz sqlite-autoconf-$ARTIFACT
-mv sqlite-autoconf-$ARTIFACT.tar.gz ..
+mv sqlite-$VERSION $TARBALLNAME
+tar -czf $TARBALLNAME.tar.gz $TARBALLNAME
+mv $TARBALLNAME.tar.gz ..
 cd ..
-ls -l sqlite-autoconf-$ARTIFACT.tar.gz
+ls -l $TARBALLNAME.tar.gz

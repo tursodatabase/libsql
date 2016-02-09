@@ -1,5 +1,5 @@
-C Add\sthe\snew\s"snapshot-tarball"\starget\sto\sthe\sunix\smakefiles,\sfor\sbuilding\na\starball\ssimilar\sto\s"amalgamation-tarball"\sbut\snamed\sby\sthe\sSHA1\shash\sof\nthe\scurrent\scheck-out\srather\sthan\sby\sthe\sversion\snumber.
-D 2016-02-09T22:39:39.028
+C Update\sthe\ssnapshot\starball\sname\sto\suse\sthe\sdate\s(ISO8601\sformat)\sinstead\nof\sthe\sSHA1\shash\sin\sits\sname.
+D 2016-02-09T22:54:39.919
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 0fe3b22f8e29bcde0533ada7957a5f15835d797a
@@ -1382,7 +1382,7 @@ F tool/lemon.c 799e73e19a33b8dd7767a7fa34618ed2a9c2397d
 F tool/lempar.c 3ec1463a034b37d87d782be5f6b8b10a3b1ecbe7
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
 F tool/logest.c eef612f8adf4d0993dafed0416064cf50d5d33c6
-F tool/mkautoconfamal.sh e4efcad8e94bea57c143175a8ad58e953487f185
+F tool/mkautoconfamal.sh 11cd32789d8b47bfc09c46487ca7686107b767ef
 F tool/mkkeywordhash.c f7f3b342211ac6a14258b9726d5b97cf4f548f22
 F tool/mkmsvcmin.tcl d57e6efc9428605f5418d0b235721ddf7b5d9c0b
 F tool/mkopcodec.tcl d1b6362bd3aa80d5520d4d6f3765badf01f6c43c
@@ -1427,7 +1427,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c7242aa3e9c08e0c019388e89a785a6e59c915d5
-R 1f1da2b535c3a877742d655382e7c04d
+P 4f360b2ae78b3d4ccfe6c40ac6b27a00fc70cf23
+R 31af8c3f36c5dfe800721802c10c2a38
 U drh
-Z 3b1fd5382ba0d09acf8b866801d6e0da
+Z be5fe588d1fb7ecaa0371d844a54afd9
