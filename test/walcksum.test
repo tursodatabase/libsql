@@ -334,59 +334,5 @@ do_test walcksum-2.1 {
 catch { db close }
 catch { db2 close }
 
-#-------------------------------------------------------------------------
-# Test case walcksum-3.* tests that the checksum calculation detects single 
-# byte changes to frame or frame-header data and considers the frame
-# invalid as a result.
-#
-do_test walcksum-3.1 {
-  forcedelete test.db test.db-wal test.db-journal
-  sqlite3 db test.db
-
-  execsql {
-    PRAGMA synchronous = NORMAL;
-    PRAGMA page_size = 1024;
-    CREATE TABLE t1(a, b);
-    INSERT INTO t1 VALUES(1, randomblob(300));
-    INSERT INTO t1 VALUES(2, randomblob(300));
-    PRAGMA journal_mode = WAL;
-    INSERT INTO t1 VALUES(3, randomblob(300));
-  }
-
-  file size test.db-wal
-} [wal_file_size 1 1024]
-do_test walcksum-3.2 {
-  forcecopy test.db-wal test2.db-wal
-  forcecopy test.db test2.db
-  sqlite3 db2 test2.db
-  execsql { SELECT a FROM t1 } db2
-} {1 2 3}
-db2 close
-forcecopy test.db test2.db
-
-
-foreach incr {1 2 3 20 40 60 80 100 120 140 160 180 200 220 240 253 254 255} {
-  do_test walcksum-3.3.$incr {
-    set FAIL 0
-    for {set iOff 0} {$iOff < [wal_file_size 1 1024]} {incr iOff} {
-
-      forcecopy test.db-wal test2.db-wal
-      set fd [open test2.db-wal r+]
-      fconfigure $fd -encoding binary
-      fconfigure $fd -translation binary
-  
-      seek $fd $iOff
-      binary scan [read $fd 1] c x
-      seek $fd $iOff
-      puts -nonewline $fd [binary format c [expr {($x+$incr)&0xFF}]]
-      close $fd
-    
-      sqlite3 db2 test2.db
-      if { [execsql { SELECT a FROM t1 } db2] != "1 2" } {set FAIL 1}
-      db2 close
-    }
-    set FAIL
-  } {0}
-}
   
 finish_test

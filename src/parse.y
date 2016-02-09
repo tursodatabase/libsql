@@ -106,6 +106,15 @@ struct TrigEvent { int a; IdList * b; };
 */
 struct AttachKey { int type;  Token key; };
 
+/*
+** Disable lookaside memory allocation for objects that might be
+** shared across database connections.
+*/
+static void disableLookaside(Parse *pParse){
+  pParse->disableLookaside++;
+  pParse->db->lookaside.bDisable++;
+}
+
 } // end %include
 
 // Input is a single SQL command
@@ -156,7 +165,7 @@ create_table ::= createkw temp(T) TABLE ifnotexists(E) nm(Y) dbnm(Z). {
    sqlite3StartTable(pParse,&Y,&Z,T,0,0,E);
 }
 createkw(A) ::= CREATE(X).  {
-  pParse->db->lookaside.bEnabled = 0;
+  disableLookaside(pParse);
   A = X;
 }
 %type ifnotexists {int}
@@ -1010,7 +1019,7 @@ expr(A) ::= expr(X) NOT NULL(E). {spanUnaryPostfix(&A,pParse,TK_NOTNULL,&X,&E);}
   ** unary TK_ISNULL or TK_NOTNULL expression. */
   static void binaryToUnaryIfNull(Parse *pParse, Expr *pY, Expr *pA, int op){
     sqlite3 *db = pParse->db;
-    if( pY && pA && pY->op==TK_NULL ){
+    if( pA && pY && pY->op==TK_NULL ){
       pA->op = (u8)op;
       sqlite3ExprDelete(db, pA->pRight);
       pA->pRight = 0;
@@ -1507,7 +1516,7 @@ cmd ::= ALTER TABLE add_column_fullname ADD kwcolumn_opt column(Y). {
   sqlite3AlterFinishAddColumn(pParse, &Y);
 }
 add_column_fullname ::= fullname(X). {
-  pParse->db->lookaside.bEnabled = 0;
+  disableLookaside(pParse);
   sqlite3AlterBeginAddColumn(pParse, X);
 }
 kwcolumn_opt ::= .

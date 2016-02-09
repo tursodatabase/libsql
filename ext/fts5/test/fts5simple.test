@@ -19,7 +19,7 @@ ifcapable !fts5 {
   return
 }
 
- if 1 {
+if 1 {
 
 #-------------------------------------------------------------------------
 #
@@ -363,8 +363,6 @@ do_execsql_test 15.1 {
   INSERT INTO x2(x2) VALUES('integrity-check');
 }
 
-}
-
 #-------------------------------------------------------------------------
 foreach_detail_mode $testprefix {
   reset_db
@@ -380,6 +378,25 @@ foreach_detail_mode $testprefix {
   do_execsql_test 16.1 {
     SELECT fts5_test_poslist(x3) FROM x3('a OR c');
   } {{0.0.0 1.0.2}}
+}
+
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 17.0 {
+  CREATE VIRTUAL TABLE x3 USING fts5(x);
+  INSERT INTO x3 VALUES('a b c');
+}
+
+do_execsql_test 17.1 {
+  SELECT rowid FROM x3('b AND d');
+}
+
+#-------------------------------------------------------------------------
+do_execsql_test 18.1 {
+  CREATE VIRTUAL TABLE x4 USING fts5(x);
+  SELECT rowid FROM x4('""');
 }
 
 finish_test

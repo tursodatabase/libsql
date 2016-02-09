@@ -234,6 +234,14 @@ int sqlite3Dequote(char *z){
   return j;
 }
 
+/*
+** Generate a Token object from a string
+*/
+void sqlite3TokenInit(Token *p, char *z){
+  p->z = z;
+  p->n = sqlite3Strlen30(z);
+}
+
 /* Convenient short-hand */
 #define UpperToLower sqlite3UpperToLower
 
@@ -1142,7 +1150,7 @@ void *sqlite3HexToBlob(sqlite3 *db, const char *z, int n){
   char *zBlob;
   int i;
 
-  zBlob = (char *)sqlite3DbMallocRaw(db, n/2 + 1);
+  zBlob = (char *)sqlite3DbMallocRawNN(db, n/2 + 1);
   n--;
   if( zBlob ){
     for(i=0; i<n; i+=2){

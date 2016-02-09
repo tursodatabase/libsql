@@ -434,4 +434,3 @@ do_execsql_test 7.7 {
 
 
 finish_test
-

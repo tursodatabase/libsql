@@ -255,7 +255,6 @@ db close
 forcedelete test.db
 sqlite3 db test.db
 
-breakpoint
 do_execsql_test pragma2-5.1 {
   PRAGMA page_size=16384;
   CREATE TABLE t1(x);

@@ -21,6 +21,7 @@ ifcapable !curdir {
 
 source $testdir/malloc_common.tcl
 
+forcedelete bak.db
 unset -nocomplain defaultVfs
 set defaultVfs [file_control_vfsname db]
 db close

@@ -492,52 +492,6 @@ do_execsql_test sort-13.3 {
 } [db eval {SELECT a, b FROM t10 ORDER BY a, b}]
 
 #-------------------------------------------------------------------------
-# Sort some large ( > 4KiB) records.
-#
-proc cksum {x} {
-  set i1 1
-  set i2 2
-  binary scan $x c* L
-  foreach {a b} $L {
-    set i1 [expr (($i2<<3) + $a) & 0x7FFFFFFF]
-    set i2 [expr (($i1<<3) + $b) & 0x7FFFFFFF]
-  }
-  list $i1 $i2
-}
-db func cksum cksum
-
-do_execsql_test sort-14.0 {
-  PRAGMA cache_size = 5;
-  CREATE TABLE t11(a, b);
-  INSERT INTO t11 VALUES(randomblob(5000), NULL);
-  INSERT INTO t11 SELECT randomblob(5000), NULL FROM t11; --2
-  INSERT INTO t11 SELECT randomblob(5000), NULL FROM t11; --3
-  INSERT INTO t11 SELECT randomblob(5000), NULL FROM t11; --4
-  INSERT INTO t11 SELECT randomblob(5000), NULL FROM t11; --5
-  INSERT INTO t11 SELECT randomblob(5000), NULL FROM t11; --6
-  INSERT INTO t11 SELECT randomblob(5000), NULL FROM t11; --7
-  INSERT INTO t11 SELECT randomblob(5000), NULL FROM t11; --8
-  INSERT INTO t11 SELECT randomblob(5000), NULL FROM t11; --9
-  UPDATE t11 SET b = cksum(a);
-}
-
-foreach {tn mmap_limit} {
-  1 0
-  2 1000000
-} {
-  do_test sort-14.$tn {
-    sqlite3_test_control SQLITE_TESTCTRL_SORTER_MMAP db $mmap_limit
-    set prev ""
-    db eval { SELECT * FROM t11 ORDER BY b } {
-      if {$b != [cksum $a]} {error "checksum failed"}
-      if {[string compare $b $prev] < 0} {error "sort failed"}
-      set prev $b
-    }
-    set {} {}
-  } {}
-}
-
-#-------------------------------------------------------------------------
 #
 foreach {tn mmap_limit nWorker tmpstore coremutex fakeheap softheaplimit} {
           1          0       3     file      true    false             0

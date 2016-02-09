@@ -28,6 +28,10 @@ proc nRead {db} {
   return $stats(read)
 }
 
+# Return a Tcl script that registers a user-defined scalar function 
+# named rblob() with database handle $dbname. The function returns a
+# sequence of pseudo-random blobs based on seed value $seed.
+#
 proc register_rblob_code {dbname seed} {
   return [subst -nocommands {
     set ::rcnt $seed
@@ -39,6 +43,7 @@ proc register_rblob_code {dbname seed} {
     $dbname func rblob rblob
   }]
 }
+
 
 # For cases 1.1 and 1.4, the number of pages read using xRead() is 4 on
 # unix and 9 on windows. The difference is that windows only ever maps
@@ -268,66 +273,6 @@ do_test 5.4 {
 do_test 5.5 {
   sqlite3_finalize $::STMT
 } SQLITE_OK
-
-#-------------------------------------------------------------------------
-# Test various mmap_size settings.
-#
-foreach {tn1 mmap1 mmap2} {
-     1 6144       167773
-     2 18432      140399
-     3 43008      401302
-     4 92160      253899
-     5 190464          2
-     6 387072     752431
-     7 780288     291143
-     8 1566720    594306
-     9 3139584    829137
-     10 6285312   793963
-     11 12576768 1015590
-} {
-  do_multiclient_test tn {
-    sql1 {
-      CREATE TABLE t1(a PRIMARY KEY);
-      CREATE TABLE t2(x);
-      INSERT INTO t2 VALUES('');
-    }
-
-    code1 [register_rblob_code db  0]
-    code2 [register_rblob_code db2 444]
-
-    sql1 "PRAGMA mmap_size = $mmap1"
-    sql2 "PRAGMA mmap_size = $mmap2"
-
-    do_test $tn1.$tn {
-      for {set i 1} {$i <= 100} {incr i} {
-        if {$i % 2} {
-          set c1 sql1
-            set c2 sql2
-        } else {
-          set c1 sql2
-            set c2 sql1
-        }
-
-        $c1 {
-          INSERT INTO t1 VALUES( rblob(5000) );
-          UPDATE t2 SET x = (SELECT md5sum(a) FROM t1);
-        }
-
-        set res [$c2 {
-            SELECT count(*) FROM t1;
-            SELECT x == (SELECT md5sum(a) FROM t1) FROM t2;
-            PRAGMA integrity_check;
-        }]
-        if {$res != [list $i 1 ok]} {
-          do_test $tn1.$tn.$i {
-            set ::res
-          } [list $i 1 ok]
-        }
-      }
-      set res 1
-    } {1}
-  }
-}
 
 
 finish_test

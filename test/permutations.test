@@ -113,7 +113,14 @@ set allquicktests [test_set $alltests -exclude {
   vtab_err.test walslow.test walcrash.test walcrash3.test
   walthread.test rtree3.test indexfault.test securedel2.test
   sort3.test sort4.test fts4growth.test fts4growth2.test
-  bigsort.test rbu.test
+  bigsort.test rbu.test walprotocol.test mmap4.test fuzzer2.test
+  walcrash2.test e_fkey.test backup.test
+
+  fts4merge.test fts4merge2.test fts4merge4.test fts4check.test
+  fts3cov.test fts3snippet.test fts3corrupt2.test fts3an.test
+  fts3defer.test fts4langid.test fts3sort.test fts5unicode.test
+
+  rtree4.test
 }]
 if {[info exists ::env(QUICKTEST_INCLUDE)]} {
   set allquicktests [concat $allquicktests $::env(QUICKTEST_INCLUDE)]
@@ -150,7 +157,7 @@ test_suite "veryquick" -prefix "" -description {
   This test suite is the same as the "quick" tests, except that some files
   that test malloc and IO errors are omitted.
 } -files [
-  test_set $allquicktests -exclude *malloc* *ioerr* *fault* *bigfile*
+  test_set $allquicktests -exclude *malloc* *ioerr* *fault* *bigfile* *_err*
 ]
 
 test_suite "extraquick" -prefix "" -description {
@@ -158,7 +165,7 @@ test_suite "extraquick" -prefix "" -description {
   This test suite is the same as the "veryquick" tests, except that
   slower tests are omitted.
 } -files [
-  test_set $allquicktests -exclude *malloc* *ioerr* *fault* *bigfile* \
+  test_set $allquicktests -exclude *malloc* *ioerr* *fault* *bigfile* *_err* \
      wal3.test fts4merge* sort2.test mmap1.test walcrash* \
      percentile.test where8m.test walcksum.test savepoint3.test \
      fuzzer1.test fuzzer3.test fts3expr3.test
@@ -176,7 +183,7 @@ test_suite "valgrind" -prefix "" -description {
   Run the "veryquick" test suite with a couple of multi-process tests (that
   fail under valgrind) omitted.
 } -files [
-  test_set $allquicktests -exclude *malloc* *ioerr* *fault* wal.test \
+  test_set $allquicktests -exclude *malloc* *ioerr* *fault* *_err* wal.test \
               shell*.test crash8.test atof1.test selectG.test \
               tkt-fc62af4523.test numindex1.test
 ] -initialize {
@@ -189,7 +196,8 @@ test_suite "valgrind-nolookaside" -prefix "" -description {
   Run the "veryquick" test suite with a couple of multi-process tests (that
   fail under valgrind) omitted.
 } -files [
-  test_set $allquicktests -exclude *malloc* *ioerr* *fault* wal.test atof1.test
+  test_set $allquicktests -exclude *malloc* *ioerr* *fault* *_err* \
+      wal.test atof1.test
 ] -initialize {
   set ::G(valgrind) 1
   catch {db close}
@@ -266,7 +274,7 @@ test_suite "nofaultsim" -prefix "" -description {
   This test suite is the same as the "quick" tests, except that some files
   that test malloc and IO errors are omitted.
 } -files [
-  test_set $allquicktests -exclude *malloc* *ioerr* *fault*
+  test_set $allquicktests -exclude *malloc* *ioerr* *fault* *_err*
 ] -initialize {
   catch {db close}
   sqlite3_shutdown

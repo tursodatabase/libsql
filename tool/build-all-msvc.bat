@@ -729,10 +729,16 @@ GOTO no_errors
   GOTO :EOF
 
 :fn_UnsetVariable
-  IF NOT "%1" == "" (
-    SET %1=
-    CALL :fn_ResetErrorLevel
+  SETLOCAL
+  SET VALUE=%1
+  IF DEFINED VALUE (
+    SET VALUE=
+    ENDLOCAL
+    SET %VALUE%=
+  ) ELSE (
+    ENDLOCAL
   )
+  CALL :fn_ResetErrorLevel
   GOTO :EOF
 
 :fn_AppendVariable
