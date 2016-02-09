@@ -589,6 +589,12 @@ sqlite3$(TEXE):	$(TOP)/src/shell.c libsqlite3.la sqlite3.h
 sqldiff$(TEXE):	$(TOP)/tool/sqldiff.c sqlite3.c sqlite3.h
 	$(LTLINK) -o $@ $(TOP)/tool/sqldiff.c sqlite3.c $(TLIBS)
 
+srcck1$(BEXE):	$(TOP)/tool/srcck1.c
+	$(BCC) -o srcck1$(BEXE) $(TOP)/tool/srcck1.c
+
+sourcetest:	srcck1$(BEXE) sqlite3.c
+	./srcck1 sqlite3.c
+
 fuzzershell$(TEXE):	$(TOP)/tool/fuzzershell.c sqlite3.c sqlite3.h
 	$(LTLINK) -o $@ $(FUZZERSHELL_OPT) \
 	  $(TOP)/tool/fuzzershell.c sqlite3.c $(TLIBS)
@@ -1093,7 +1099,7 @@ quicktest:	./testfixture$(TEXE)
 # This is the common case.  Run many tests that do not take too long,
 # including fuzzcheck, sqlite3_analyzer, and sqldiff tests.
 #
-test:	$(TESTPROGS) fastfuzztest
+test:	$(TESTPROGS) sourcetest fastfuzztest
 	./testfixture$(TEXE) $(TOP)/test/veryquick.test $(TESTOPTS)
 
 # Run a test using valgrind.  This can take a really long time
@@ -1232,6 +1238,7 @@ clean:
 	rm -f sqlite-*-output.vsix
 	rm -f mptester mptester.exe
 	rm -f rbu rbu.exe
+	rm -f srcck1 srcck1.exe
 	rm -f fuzzershell fuzzershell.exe
 	rm -f fuzzcheck fuzzcheck.exe
 	rm -f sqldiff sqldiff.exe

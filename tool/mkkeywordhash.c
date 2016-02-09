@@ -277,7 +277,10 @@ static Keyword aKeywordTable[] = {
 /* Number of keywords */
 static int nKeyword = (sizeof(aKeywordTable)/sizeof(aKeywordTable[0]));
 
-/* Map all alphabetic characters into the same case */
+/* Map all alphabetic characters into lower-case for hashing.  This is
+** only valid for alphabetics.  In particular it does not work for '_'
+** and so the hash cannot be on a keyword position that might be an '_'.
+*/
 #define charMap(X)   (0x20|(X))
 
 /*
@@ -565,20 +568,28 @@ int main(int argc, char **argv){
   }
   printf("%s  };\n", j==0 ? "" : "\n");
 
-  printf("  int h, i;\n");
+  printf("  int i, j;\n");
+  printf("  const char *zKW;\n");
   printf("  if( n>=2 ){\n");
-  printf("    h = ((charMap(z[0])*4) ^ (charMap(z[n-1])*3) ^ n) %% %d;\n",
+  printf("    i = ((charMap(z[0])*4) ^ (charMap(z[n-1])*3) ^ n) %% %d;\n",
           bestSize);
-  printf("    for(i=((int)aHash[h])-1; i>=0; i=((int)aNext[i])-1){\n");
-  printf("      if( aLen[i]==n &&"
-                     " sqlite3StrNICmp(&zText[aOffset[i]],z,n)==0 ){\n");
+  printf("    for(i=((int)aHash[i])-1; i>=0; i=((int)aNext[i])-1){\n");
+  printf("      if( aLen[i]!=n ) continue;\n");
+  printf("      j = 0;\n");
+  printf("      zKW = &zText[aOffset[i]];\n");
+  printf("#ifdef SQLITE_ASCII\n");
+  printf("      while( j<n && (z[j]&~0x20)==zKW[j] ){ j++; }\n");
+  printf("#endif\n");
+  printf("#ifdef SQLITE_EBCDIC\n");
+  printf("      while( j<n && toupper(z[j])==zKW[j] ){ j++; }\n");
+  printf("#endif\n");
+  printf("      if( j<n ) continue;\n");
   for(i=0; i<nKeyword; i++){
-    printf("        testcase( i==%d ); /* %s */\n",
+    printf("      testcase( i==%d ); /* %s */\n",
            i, aKeywordTable[i].zOrigName);
   }
-  printf("        *pType = aCode[i];\n");
-  printf("        break;\n");
-  printf("      }\n");
+  printf("      *pType = aCode[i];\n");
+  printf("      break;\n");
   printf("    }\n");
   printf("  }\n");
   printf("  return n;\n");

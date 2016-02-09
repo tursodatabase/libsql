@@ -55,7 +55,6 @@ do_execsql_test 2.1.0 {
     SELECT * FROM t1;
 } {1 2 3 4 5 6 7 8}
 
-breakpoint
 do_test 2.1.1 {
   set snapshot [sqlite3_snapshot_get db main]
   execsql {

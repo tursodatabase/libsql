@@ -62,5 +62,3 @@ do_catchsql_test 2.5 {
 } {1 {unable to use function MATCH in the requested context}}
 
 finish_test
-
-

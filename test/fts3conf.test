@@ -212,4 +212,3 @@ do_execsql_test 4.2.2 {
 } {}
 
 finish_test
-

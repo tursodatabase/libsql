@@ -173,4 +173,3 @@ for {set ii 0} {$ii < 5000} {incr ii} {
 
 test_restore_config_pagecache
 finish_test
-

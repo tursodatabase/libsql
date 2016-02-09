@@ -16,18 +16,20 @@
 #include "fts5Int.h"
 
 int sqlite3Fts5BufferSize(int *pRc, Fts5Buffer *pBuf, u32 nByte){
-  u32 nNew = pBuf->nSpace ? pBuf->nSpace*2 : 64;
-  u8 *pNew;
-  while( nNew<nByte ){
-    nNew = nNew * 2;
-  }
-  pNew = sqlite3_realloc(pBuf->p, nNew);
-  if( pNew==0 ){
-    *pRc = SQLITE_NOMEM;
-    return 1;
-  }else{
-    pBuf->nSpace = nNew;
-    pBuf->p = pNew;
+  if( (u32)pBuf->nSpace<nByte ){
+    u32 nNew = pBuf->nSpace ? pBuf->nSpace : 64;
+    u8 *pNew;
+    while( nNew<nByte ){
+      nNew = nNew * 2;
+    }
+    pNew = sqlite3_realloc(pBuf->p, nNew);
+    if( pNew==0 ){
+      *pRc = SQLITE_NOMEM;
+      return 1;
+    }else{
+      pBuf->nSpace = nNew;
+      pBuf->p = pNew;
+    }
   }
   return 0;
 }
@@ -208,23 +210,36 @@ int sqlite3Fts5PoslistReaderInit(
   return pIter->bEof;
 }
 
+/*
+** Append position iPos to the position list being accumulated in buffer
+** pBuf, which must be already be large enough to hold the new data.
+** The previous position written to this list is *piPrev. *piPrev is set
+** to iPos before returning.
+*/
+void sqlite3Fts5PoslistSafeAppend(
+  Fts5Buffer *pBuf, 
+  i64 *piPrev, 
+  i64 iPos
+){
+  static const i64 colmask = ((i64)(0x7FFFFFFF)) << 32;
+  if( (iPos & colmask) != (*piPrev & colmask) ){
+    pBuf->p[pBuf->n++] = 1;
+    pBuf->n += sqlite3Fts5PutVarint(&pBuf->p[pBuf->n], (iPos>>32));
+    *piPrev = (iPos & colmask);
+  }
+  pBuf->n += sqlite3Fts5PutVarint(&pBuf->p[pBuf->n], (iPos-*piPrev)+2);
+  *piPrev = iPos;
+}
+
 int sqlite3Fts5PoslistWriterAppend(
   Fts5Buffer *pBuf, 
   Fts5PoslistWriter *pWriter,
   i64 iPos
 ){
-  static const i64 colmask = ((i64)(0x7FFFFFFF)) << 32;
-  int rc = SQLITE_OK;
-  if( 0==fts5BufferGrow(&rc, pBuf, 5+5+5) ){
-    if( (iPos & colmask) != (pWriter->iPrev & colmask) ){
-      pBuf->p[pBuf->n++] = 1;
-      pBuf->n += sqlite3Fts5PutVarint(&pBuf->p[pBuf->n], (iPos>>32));
-      pWriter->iPrev = (iPos & colmask);
-    }
-    pBuf->n += sqlite3Fts5PutVarint(&pBuf->p[pBuf->n], (iPos-pWriter->iPrev)+2);
-    pWriter->iPrev = iPos;
-  }
-  return rc;
+  int rc;
+  if( fts5BufferGrow(&rc, pBuf, 5+5+5) ) return rc;
+  sqlite3Fts5PoslistSafeAppend(pBuf, &pWriter->iPrev, iPos);
+  return SQLITE_OK;
 }
 
 void *sqlite3Fts5MallocZero(int *pRc, int nByte){

@@ -518,7 +518,6 @@ struct Fts5Iter {
   int nSeg;                       /* Size of aSeg[] array */
   int bRev;                       /* True to iterate in reverse order */
   u8 bSkipEmpty;                  /* True to skip deleted entries */
-  u8 bFiltered;                   /* True if column-filter already applied */
 
   i64 iSwitchRowid;               /* Firstest rowid of other than aFirst[1] */
   Fts5CResult *aFirst;            /* Current merge state (see above) */
@@ -2030,9 +2029,6 @@ static void fts5SegIterReverse(Fts5Index *p, Fts5SegIter *pIter){
       iPoslist = 4;
     }
     fts5IndexSkipVarint(pLeaf->p, iPoslist);
-    assert( p->pConfig->eDetail==FTS5_DETAIL_NONE || iPoslist==(
-        pIter->iLeafOffset - sqlite3Fts5GetVarintLen(pIter->nPos*2+pIter->bDel)
-    ));
     pIter->iLeafOffset = iPoslist;
 
     /* If this condition is true then the largest rowid for the current
@@ -3095,7 +3091,7 @@ static void fts5IterSetOutputs_Nocolset(Fts5Iter *pIter, Fts5SegIter *pSeg){
   pIter->base.nData = pSeg->nPos;
 
   assert( pIter->pIndex->pConfig->eDetail!=FTS5_DETAIL_NONE );
-  assert( pIter->pColset==0 || pIter->bFiltered );
+  assert( pIter->pColset==0 );
 
   if( pSeg->iLeafOffset+pSeg->nPos<=pSeg->pLeaf->szLeaf ){
     /* All data is stored on the current page. Populate the output 
@@ -3212,7 +3208,7 @@ static void fts5IterSetOutputCb(int *pRc, Fts5Iter *pIter){
       pIter->xSetOutputs = fts5IterSetOutputs_None;
     }
 
-    else if( pIter->pColset==0 || pIter->bFiltered ){
+    else if( pIter->pColset==0 ){
       pIter->xSetOutputs = fts5IterSetOutputs_Nocolset;
     }
 
@@ -3359,7 +3355,6 @@ static void fts5MultiIterNew2(
   if( pNew ){
     Fts5SegIter *pIter = &pNew->aSeg[1];
 
-    pNew->bFiltered = 1;
     pIter->flags = FTS5_SEGITER_ONETERM;
     if( pData->szLeaf>0 ){
       pIter->pLeaf = pData;
@@ -4705,94 +4700,110 @@ static void fts5MergePrefixLists(
   Fts5Buffer *p2                  /* Second list to merge */
 ){
   if( p2->n ){
-    if( p1->n==0 ){
-      fts5BufferSwap(p1, p2);
-    }else{
-      i64 iLastRowid = 0;
-      Fts5DoclistIter i1;
-      Fts5DoclistIter i2;
-      Fts5Buffer out = {0, 0, 0};
-      Fts5Buffer tmp = {0, 0, 0};
+    i64 iLastRowid = 0;
+    Fts5DoclistIter i1;
+    Fts5DoclistIter i2;
+    Fts5Buffer out = {0, 0, 0};
+    Fts5Buffer tmp = {0, 0, 0};
 
-      if( sqlite3Fts5BufferSize(&p->rc, &out, p1->n + p2->n) ) return;
-      fts5DoclistIterInit(p1, &i1);
-      fts5DoclistIterInit(p2, &i2);
+    if( sqlite3Fts5BufferSize(&p->rc, &out, p1->n + p2->n) ) return;
+    fts5DoclistIterInit(p1, &i1);
+    fts5DoclistIterInit(p2, &i2);
 
-      while( 1 ){
+    while( 1 ){
+      if( i1.iRowid<i2.iRowid ){
+        /* Copy entry from i1 */
+        fts5MergeAppendDocid(&out, iLastRowid, i1.iRowid);
+        fts5BufferSafeAppendBlob(&out, i1.aPoslist, i1.nPoslist+i1.nSize);
+        fts5DoclistIterNext(&i1);
+        if( i1.aPoslist==0 ) break;
+      }
+      else if( i2.iRowid!=i1.iRowid ){
+        /* Copy entry from i2 */
+        fts5MergeAppendDocid(&out, iLastRowid, i2.iRowid);
+        fts5BufferSafeAppendBlob(&out, i2.aPoslist, i2.nPoslist+i2.nSize);
+        fts5DoclistIterNext(&i2);
+        if( i2.aPoslist==0 ) break;
+      }
+      else{
+        /* Merge the two position lists. */ 
+        i64 iPos1 = 0;
+        i64 iPos2 = 0;
+        int iOff1 = 0;
+        int iOff2 = 0;
+        u8 *a1 = &i1.aPoslist[i1.nSize];
+        u8 *a2 = &i2.aPoslist[i2.nSize];
 
-        if( i1.iRowid<i2.iRowid ){
-          /* Copy entry from i1 */
-          fts5MergeAppendDocid(&out, iLastRowid, i1.iRowid);
-          fts5BufferSafeAppendBlob(&out, i1.aPoslist, i1.nPoslist+i1.nSize);
-          fts5DoclistIterNext(&i1);
-          if( i1.aPoslist==0 ) break;
-        }
-        else if( i2.iRowid!=i1.iRowid ){
-          /* Copy entry from i2 */
-          fts5MergeAppendDocid(&out, iLastRowid, i2.iRowid);
-          fts5BufferSafeAppendBlob(&out, i2.aPoslist, i2.nPoslist+i2.nSize);
-          fts5DoclistIterNext(&i2);
-          if( i2.aPoslist==0 ) break;
-        }
-        else{
-          i64 iPos1 = 0;
-          i64 iPos2 = 0;
-          int iOff1 = 0;
-          int iOff2 = 0;
-          u8 *a1 = &i1.aPoslist[i1.nSize];
-          u8 *a2 = &i2.aPoslist[i2.nSize];
+        i64 iPrev = 0;
+        Fts5PoslistWriter writer;
+        memset(&writer, 0, sizeof(writer));
 
-          Fts5PoslistWriter writer;
-          memset(&writer, 0, sizeof(writer));
+        fts5MergeAppendDocid(&out, iLastRowid, i2.iRowid);
+        fts5BufferZero(&tmp);
+        sqlite3Fts5BufferSize(&p->rc, &tmp, i1.nPoslist + i2.nPoslist);
+        if( p->rc ) break;
 
-          /* Merge the two position lists. */ 
-          fts5MergeAppendDocid(&out, iLastRowid, i2.iRowid);
-          fts5BufferZero(&tmp);
+        sqlite3Fts5PoslistNext64(a1, i1.nPoslist, &iOff1, &iPos1);
+        sqlite3Fts5PoslistNext64(a2, i2.nPoslist, &iOff2, &iPos2);
+        assert( iPos1>=0 && iPos2>=0 );
 
+        if( iPos1<iPos2 ){
+          sqlite3Fts5PoslistSafeAppend(&tmp, &iPrev, iPos1);
           sqlite3Fts5PoslistNext64(a1, i1.nPoslist, &iOff1, &iPos1);
+        }else{
+          sqlite3Fts5PoslistSafeAppend(&tmp, &iPrev, iPos2);
           sqlite3Fts5PoslistNext64(a2, i2.nPoslist, &iOff2, &iPos2);
+        }
 
-          while( iPos1>=0 || iPos2>=0 ){
-            i64 iNew;
-            if( iPos2<0 || (iPos1>=0 && iPos1<iPos2) ){
-              iNew = iPos1;
-              sqlite3Fts5PoslistNext64(a1, i1.nPoslist, &iOff1, &iPos1);
-            }else{
-              iNew = iPos2;
-              sqlite3Fts5PoslistNext64(a2, i2.nPoslist, &iOff2, &iPos2);
-              if( iPos1==iPos2 ){
-                sqlite3Fts5PoslistNext64(a1, i1.nPoslist, &iOff1,&iPos1);
+        if( iPos1>=0 && iPos2>=0 ){
+          while( 1 ){
+            if( iPos1<iPos2 ){
+              if( iPos1!=iPrev ){
+                sqlite3Fts5PoslistSafeAppend(&tmp, &iPrev, iPos1);
               }
-            }
-            if( iNew!=writer.iPrev || tmp.n==0 ){
-              p->rc = sqlite3Fts5PoslistWriterAppend(&tmp, &writer, iNew);
-              if( p->rc ) goto error_out;
+              sqlite3Fts5PoslistNext64(a1, i1.nPoslist, &iOff1, &iPos1);
+              if( iPos1<0 ) break;
+            }else{
+              assert( iPos2!=iPrev );
+              sqlite3Fts5PoslistSafeAppend(&tmp, &iPrev, iPos2);
+              sqlite3Fts5PoslistNext64(a2, i2.nPoslist, &iOff2, &iPos2);
+              if( iPos2<0 ) break;
             }
           }
-
-          /* WRITEPOSLISTSIZE */
-          fts5BufferSafeAppendVarint(&out, tmp.n * 2);
-          fts5BufferSafeAppendBlob(&out, tmp.p, tmp.n);
-          fts5DoclistIterNext(&i1);
-          fts5DoclistIterNext(&i2);
-          if( i1.aPoslist==0 || i2.aPoslist==0 ) break;
         }
-      }
 
-      if( i1.aPoslist ){
-        fts5MergeAppendDocid(&out, iLastRowid, i1.iRowid);
-        fts5BufferSafeAppendBlob(&out, i1.aPoslist, i1.aEof - i1.aPoslist);
-      }
-      else if( i2.aPoslist ){
-        fts5MergeAppendDocid(&out, iLastRowid, i2.iRowid);
-        fts5BufferSafeAppendBlob(&out, i2.aPoslist, i2.aEof - i2.aPoslist);
-      }
+        if( iPos1>=0 ){
+          if( iPos1!=iPrev ){
+            sqlite3Fts5PoslistSafeAppend(&tmp, &iPrev, iPos1);
+          }
+          fts5BufferSafeAppendBlob(&tmp, &a1[iOff1], i1.nPoslist-iOff1);
+        }else{
+          assert( iPos2>=0 && iPos2!=iPrev );
+          sqlite3Fts5PoslistSafeAppend(&tmp, &iPrev, iPos2);
+          fts5BufferSafeAppendBlob(&tmp, &a2[iOff2], i2.nPoslist-iOff2);
+        }
 
-     error_out:
-      fts5BufferSet(&p->rc, p1, out.n, out.p);
-      fts5BufferFree(&tmp);
-      fts5BufferFree(&out);
+        /* WRITEPOSLISTSIZE */
+        fts5BufferSafeAppendVarint(&out, tmp.n * 2);
+        fts5BufferSafeAppendBlob(&out, tmp.p, tmp.n);
+        fts5DoclistIterNext(&i1);
+        fts5DoclistIterNext(&i2);
+        if( i1.aPoslist==0 || i2.aPoslist==0 ) break;
+      }
     }
+
+    if( i1.aPoslist ){
+      fts5MergeAppendDocid(&out, iLastRowid, i1.iRowid);
+      fts5BufferSafeAppendBlob(&out, i1.aPoslist, i1.aEof - i1.aPoslist);
+    }
+    else if( i2.aPoslist ){
+      fts5MergeAppendDocid(&out, iLastRowid, i2.iRowid);
+      fts5BufferSafeAppendBlob(&out, i2.aPoslist, i2.aEof - i2.aPoslist);
+    }
+
+    fts5BufferSet(&p->rc, p1, out.n, out.p);
+    fts5BufferFree(&tmp);
+    fts5BufferFree(&out);
   }
 }
 
@@ -4936,7 +4947,7 @@ int sqlite3Fts5IndexSync(Fts5Index *p, int bCommit){
 int sqlite3Fts5IndexRollback(Fts5Index *p){
   fts5CloseReader(p);
   fts5IndexDiscardData(p);
-  assert( p->rc==SQLITE_OK );
+  /* assert( p->rc==SQLITE_OK ); */
   return SQLITE_OK;
 }
 
@@ -5156,10 +5167,11 @@ int sqlite3Fts5IndexQuery(
       int bDesc = (flags & FTS5INDEX_QUERY_DESC)!=0;
       buf.p[0] = FTS5_MAIN_PREFIX;
       fts5SetupPrefixIter(p, bDesc, buf.p, nToken+1, pColset, &pRet);
+      assert( pRet->pColset==0 );
       fts5IterSetOutputCb(&p->rc, pRet);
       if( p->rc==SQLITE_OK ){
         Fts5SegIter *pSeg = &pRet->aSeg[pRet->aFirst[1].iFirst];
-        if( p->rc==SQLITE_OK && pSeg->pLeaf ) pRet->xSetOutputs(pRet, pSeg);
+        if( pSeg->pLeaf ) pRet->xSetOutputs(pRet, pSeg);
       }
     }
 

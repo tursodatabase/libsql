@@ -72,6 +72,3 @@ do_faultsim_test withM-1.3 -prep {
 }
 
 finish_test
-
-
-
