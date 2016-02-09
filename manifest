@@ -1,5 +1,5 @@
-C Fix\sMSVC\smakefile\soptions\sthat\senable\scontrol-flow\sguard.
-D 2016-02-09T18:28:20.640
+C Add\sauto-explain\smode\sto\sthe\scommand-line\sshell.\s\sDefault\son.\s\sAuto-explain\ntries\sto\sautomatically\sdetect\sEXPLAIN\squeries\sand\sformat\sthem\sappropriately.
+D 2016-02-09T18:39:25.001
 F Makefile.in 95ea52e9c02962e31f986fe8ea5805104c84f94b
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 0fe3b22f8e29bcde0533ada7957a5f15835d797a
@@ -349,7 +349,7 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 9f7ce3a3c087afb7597b7c916c99126ff3f12f0c
 F src/rowset.c 9fe4b3ad7cc00944386bb600233d8f523de07a6e
 F src/select.c ff80004a9a6ece891a8d9327a88e7b6e2588ee6d
-F src/shell.c dcd7a83645ef2a58ee9c6d0ea4714d877d7835c4
+F src/shell.c eae68d3a7aff0f4195074d5f204dc2c219e748fd
 F src/sqlite.h.in cf22ad1d52dca2c9862d63833e581028119aab7e
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
@@ -1427,7 +1427,10 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 992282399cd2d1fc52ff5a1a4bff59f30b62899a
-R 339c4dc7dafb8a9f839919868c327cb9
-U mistachkin
-Z 87542794a9bfaf638d39bc9a323993e0
+P 51b6823f4c9376d549f572f5a33cac1e4c9783a2
+R 38fbc467636eda7f2b73a6fc60969ca8
+T *branch * auto-explain
+T *sym-auto-explain *
+T -sym-trunk *
+U drh
+Z 2feb45f9e3784b1a58bde6f86e718a1d
