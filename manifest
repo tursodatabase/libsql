@@ -1,5 +1,5 @@
-C In\sthe\sshell,\suse\sthe\sappropriate\sstring\sconstant\sinstead\sof\sa\sliteral\snew-line.
-D 2016-02-09T20:31:50.440
+C Fix\sthe\smakefiles\sin\sthe\sautoconf-tarball\sso\sthat\sthey\sbuild\sthe\scommand-line\nshell\swith\sSQLITE_ENABLE_EXPLAIN_COMMENTS.
+D 2016-02-09T20:37:46.079
 F Makefile.in 95ea52e9c02962e31f986fe8ea5805104c84f94b
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 0fe3b22f8e29bcde0533ada7957a5f15835d797a
@@ -10,8 +10,8 @@ F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
-F autoconf/Makefile.am 1c1657650775960804945dc392e14d9e43c5ed84
-F autoconf/Makefile.msc a35b2aab24d1603f3f0ae65cf01686c2578d319c
+F autoconf/Makefile.am 29e2a6e8d0c5e32723a48b4faf6b168854dde5f4
+F autoconf/Makefile.msc 28aa3bcecef3edcddf320a7631f92088c47cf00e
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/README.txt e9757a381e5ce2553dbaa6247bb8ad00eb8d87aa
 F autoconf/configure.ac 72a5e42beb090b32bca580285dc0ab3c4670adb8
@@ -1427,7 +1427,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 751915cb7e4981661a40dc5e4d029ab27434c2d9
-R 6632eb3071442a86edbf0e20c957fb36
-U mistachkin
-Z 03c626e8f779d36c2a5f32596caaf00c
+P 61951b153d47096f30ebc8b84af408d9d709637c
+R d75c460e141623bfe7fb7110cba37d7d
+U drh
+Z 11eb657dc7f95c0de93cd1d08c7016df
