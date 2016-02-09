@@ -1506,10 +1506,17 @@ static void explain_data_prepare(ShellState *p, sqlite3_stmt *pSql){
 
   /* Try to figure out if this is really an EXPLAIN statement. If this
   ** cannot be verified, return early.  */
+  if( sqlite3_column_count(pSql)!=8 ){
+    p->cMode = p->mode;
+    return;
+  }
   zSql = sqlite3_sql(pSql);
   if( zSql==0 ) return;
   for(z=zSql; *z==' ' || *z=='\t' || *z=='\n' || *z=='\f' || *z=='\r'; z++);
-  if( sqlite3_strnicmp(z, "explain", 7) ) return;
+  if( sqlite3_strnicmp(z, "explain", 7) ){
+    p->cMode = p->mode;
+    return;
+  }
 
   for(iOp=0; SQLITE_ROW==sqlite3_step(pSql); iOp++){
     int i;
@@ -1526,6 +1533,20 @@ static void explain_data_prepare(ShellState *p, sqlite3_stmt *pSql){
 
     /* Grow the p->aiIndent array as required */
     if( iOp>=nAlloc ){
+      if( iOp==0 ){
+        /* Do further verfication that this is explain output.  Abort if
+        ** it is not */
+        static const char *explainCols[] = {
+           "addr", "opcode", "p1", "p2", "p3", "p4", "p5", "comment" };
+        int jj;
+        for(jj=0; jj<ArraySize(explainCols); jj++){
+          if( strcmp(sqlite3_column_name(pSql,jj),explainCols[jj])!=0 ){
+            p->cMode = p->mode;
+            sqlite3_reset(pSql);
+            return;
+          }
+        }
+      }
       nAlloc += 100;
       p->aiIndent = (int*)sqlite3_realloc64(p->aiIndent, nAlloc*sizeof(int));
       abYield = (int*)sqlite3_realloc64(abYield, nAlloc*sizeof(int));
@@ -1631,9 +1652,9 @@ static int shell_exec(
 
       if( pArg ){
         pArg->cMode = pArg->mode;
-        if( sqlite3_column_count(pStmt)==8
+        if( pArg->autoExplain
+         && sqlite3_column_count(pStmt)==8
          && sqlite3_strlike("%EXPLAIN%", sqlite3_sql(pStmt),0)==0
-         && sqlite3_strlike("%QUERY%", sqlite3_sql(pStmt),0)!=0
         ){
           pArg->cMode = MODE_Explain;
         }
