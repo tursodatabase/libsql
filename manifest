@@ -1,8 +1,8 @@
-C Code\ssimplification:\s\sALTER\sTABLE\sADD\sCOLUMN\salways\supgrades\sthe\sfile_format\nto\s4\sif\sis\snot\sthere\salready.\s\sNo\sneed\sto\supgrade\sto\sonly\s2\sor\s3\ssince\sformat\n4\shas\snow\sbeen\ssupported\sfor\sover\s10\syears.
-D 2016-02-09T16:09:22.275
-F Makefile.in dac2776c84e0d533b158a9af6e57e05c4a6b19f3
+C Fix\sthe\stop-level\smakefiles\sto\salways\sinclude\sSQLITE_ENABLE_EXPLAIN_COMMENTS\nwhen\sbuilding\sthe\sshell.\s\sStill\sneed\sto\sfix\smain.mk\sand\sthe\namalgamation\starball.
+D 2016-02-09T17:12:22.679
+F Makefile.in 95ea52e9c02962e31f986fe8ea5805104c84f94b
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc b0493f10caddb8adf992a4e6f1943141fc7c6816
+F Makefile.msc d2eef1643b13c02686a5f3f5fa58e6843e910e2a
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION 866588d1edf0ccb5b0d33896974338f97564f719
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -1427,7 +1427,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ca72be8618e5d466d6f35819ca8bbd2b84269959
-R f95e307a4f6313b9df891047976f580b
+P e1d8ec85546caeca3bb7a05ad962a2aed91194ce
+R c5ef01ad4ed02f828dd7e74a721278c9
 U drh
-Z 5769e00c07411a2161fa568f8263dd90
+Z 91487ddf0aeacb78fa9d983e619d08c4
