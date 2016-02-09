@@ -912,7 +912,7 @@ static int shell_callback(
       }else{
         colWidth = aExplainWidths;
         showHdr = 1;
-        rowSep = "\n";
+        rowSep = SEP_Row;
       }
       if( p->cnt++==0 ){
         for(i=0; i<nArg; i++){

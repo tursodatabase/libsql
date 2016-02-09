@@ -1,5 +1,5 @@
-C Enhance\sthe\scommand-line\sshell\sto\sbe\sin\sauto-explain\smode\sby\sdefault.\s\sIt\sis\nno\slonger\snecessary\sto\suse\sthe\s".explain"\scommand\sto\sput\sthe\sshell\sinto\sa\smode\nwhere\sthe\sEXPLAIN\soutput\sis\sformatted\snicely.\s\sThat\snow\shappens\sautomatically.
-D 2016-02-09T20:11:14.398
+C In\sthe\sshell,\suse\sthe\sappropriate\sstring\sconstant\sinstead\sof\sa\sliteral\snew-line.
+D 2016-02-09T20:31:50.440
 F Makefile.in 95ea52e9c02962e31f986fe8ea5805104c84f94b
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 0fe3b22f8e29bcde0533ada7957a5f15835d797a
@@ -349,7 +349,7 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 9f7ce3a3c087afb7597b7c916c99126ff3f12f0c
 F src/rowset.c 9fe4b3ad7cc00944386bb600233d8f523de07a6e
 F src/select.c ff80004a9a6ece891a8d9327a88e7b6e2588ee6d
-F src/shell.c dad82078194d5dae39d35f131e4b60dd3276ab27
+F src/shell.c 0367440658104bf2ce8d8a9a5a713a4b11c9acbe
 F src/sqlite.h.in cf22ad1d52dca2c9862d63833e581028119aab7e
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
@@ -1427,8 +1427,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 51b6823f4c9376d549f572f5a33cac1e4c9783a2 6c6d7a6e89e67cdb0813d3eebb869aafb43d43ed
-R 7efe35d4fa73e934642e7f03926fba5a
-T +closed 6c6d7a6e89e67cdb0813d3eebb869aafb43d43ed
-U drh
-Z 1d6fcdd166387e79c0e00d781ecb3274
+P 751915cb7e4981661a40dc5e4d029ab27434c2d9
+R 6632eb3071442a86edbf0e20c957fb36
+U mistachkin
+Z 03c626e8f779d36c2a5f32596caaf00c
