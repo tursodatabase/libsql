@@ -1,5 +1,5 @@
-C Fix\sspelling\serror\sin\sMSVC\smakefile\scomments.
-D 2016-02-08T20:45:37.407
+C Make\ssure\severy\sco-routines\shas\sits\sown\sset\sof\stemporary\sregisters\sand\sdoes\nnot\sshare\stemporaries,\ssince\sa\sco-routine\smight\sexpect\sthe\scontent\sof\sa\ntemporary\sregister\sto\sbe\spreserved\sacross\san\sOP_Yield.\nProposed\sfix\sfor\sticket\s[d06a25c84454a].
+D 2016-02-09T02:12:20.490
 F Makefile.in dac2776c84e0d533b158a9af6e57e05c4a6b19f3
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b0493f10caddb8adf992a4e6f1943141fc7c6816
@@ -294,7 +294,7 @@ F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
 F src/btree.c 4c8caaeed7878aafdb607c3d2bcbc365bb0d19a1
 F src/btree.h 368ceeb4bd9312dc8df2ffd64b4b7dbcf4db5f8e
 F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
-F src/build.c 198eaa849c193f28b802ed135b2483c68ef7a35c
+F src/build.c 54866fbafa09d494269bdefc79995eb7207003a6
 F src/callback.c ed6c2a4a712eb7287ff64e20e3c23265dfb8a7ce
 F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
 F src/ctime.c 60e135af364d777a9ab41c97e5e89cd224da6198
@@ -309,7 +309,7 @@ F src/global.c bd5a0af3f30b0c01be6db756c626cd3c33a3d260
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
 F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c b84359365bace233919db550a15f131923190efc
+F src/insert.c 046199e085e69e05af7bef197d53c5b4b402b6fa
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c b1b0880fc474abfab89e737b0ecfde0bd7a60902
 F src/loadext.c 84996d7d70a605597d79c1f1d7b2012a5fd34f2b
@@ -348,7 +348,7 @@ F src/printf.c 63e6fb12bbe702dd664dc3703776c090383a5a26
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 9f7ce3a3c087afb7597b7c916c99126ff3f12f0c
 F src/rowset.c 9fe4b3ad7cc00944386bb600233d8f523de07a6e
-F src/select.c 57646a44ba9a0bc4aa926ae9c79b8199c246844b
+F src/select.c ff80004a9a6ece891a8d9327a88e7b6e2588ee6d
 F src/shell.c dcd7a83645ef2a58ee9c6d0ea4714d877d7835c4
 F src/sqlite.h.in cf22ad1d52dca2c9862d63833e581028119aab7e
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -414,10 +414,10 @@ F src/utf.c 10cc2519e82e3369344d0969ad4b1a333dc86d18
 F src/util.c 49ce0a65306c1c51d61cb5bc214c71cb62452de6
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
 F src/vdbe.c c193299e595a13eba247738e22fce25c49346a6c
-F src/vdbe.h 7a733ea8aac1b77305a67698e784fa3484ee3337
+F src/vdbe.h c743791f723049db94f009e3e30958952bc2d512
 F src/vdbeInt.h 4b69d5451bcadd473e745af53ef1e8abfdce0a79
 F src/vdbeapi.c 9324f6baee1a1b2284c6543e98f916888a81e459
-F src/vdbeaux.c 49b536284c2b8a823dd342d653e18145ca2b393a
+F src/vdbeaux.c deae5d3bd45da0e57c7d9e1d7436333d142dc3bb
 F src/vdbeblob.c 3b570b730109e8f653d9d2081649f6e7015113db
 F src/vdbemem.c 68fcfac37dc6601d98c32cc5adee4d39f2c1b7b4
 F src/vdbesort.c ef3c6d1f1a7d44cf67bb2bee59ea3d1fe5bad174
@@ -992,7 +992,7 @@ F test/securedel2.test 2d54c28e46eb1fd6902089958b20b1b056c6f1c5
 F test/select1.test be62204d2bd9a5a8a149e9974cfddce893d8f686
 F test/select2.test 352480e0e9c66eda9c3044e412abdf5be0215b56
 F test/select3.test 2ce595f8fb8e2ac10071d3b4e424cadd4634a054
-F test/select4.test 6d5bc6d178a367e8b48fa1c1d3ea12cae9c2d650
+F test/select4.test 453631158540e5f685b81cac5b7e8bd8c6b4c5fc
 F test/select5.test e758b8ef94f69b111df4cb819008856655dcd535
 F test/select6.test 39eac4a5c03650b2b473c532882273283ee8b7a0
 F test/select7.test 95e370c42d47c3c52377d05e9ffc01ccff7c1f61
@@ -1427,7 +1427,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1e563c6ebbb02d2e89760c7a7f95aa69964629c6
-R 8450aebd4fe3e5df6689a15f6b4c74a5
-U mistachkin
-Z fa8db5a9236f4356c9f0e0ef9af9fdef
+P 6eab74c9ae57676044b5bc82fa14e92fd2448008
+R 28a5285fd29b59b5a769fa2b98c8137d
+U drh
+Z 50a93197f1857fe46bad3c49957d1f43

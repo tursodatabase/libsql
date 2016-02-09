@@ -685,7 +685,7 @@ void sqlite3Insert(
     rc = sqlite3Select(pParse, pSelect, &dest);
     regFromSelect = dest.iSdst;
     if( rc || db->mallocFailed || pParse->nErr ) goto insert_cleanup;
-    sqlite3VdbeAddOp1(v, OP_EndCoroutine, regYield);
+    sqlite3VdbeEndCoroutine(v, regYield);
     sqlite3VdbeJumpHere(v, addrTop - 1);                       /* label B: */
     assert( pSelect->pEList );
     nColumn = pSelect->pEList->nExpr;
