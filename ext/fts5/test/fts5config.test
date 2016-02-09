@@ -243,5 +243,9 @@ foreach {tn opt} {
   do_catchsql_test 11.$tn "CREATE VIRTUAL TABLE f1 USING fts5(x, $opt)" $res
 }
 
+do_catchsql_test 12.1 {
+  INSERT INTO t1(t1, rank) VALUES('rank', NULL);;
+} {1 {SQL logic error or missing database}}
+
 finish_test
 

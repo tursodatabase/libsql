@@ -695,7 +695,7 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
     rc = sqlite3ValueFromExpr(db, pDflt, SQLITE_UTF8, SQLITE_AFF_BLOB, &pVal);
     assert( rc==SQLITE_OK || rc==SQLITE_NOMEM );
     if( rc!=SQLITE_OK ){
-      assert( db->mallocFailed = 1 );
+      assert( db->mallocFailed == 1 );
       return;
     }
     if( !pVal ){

@@ -85,6 +85,10 @@ do_execsql_test 2.2 {
   SELECT fts5_test_poslist(t2) FROM t2('aa');
 } {0.0.0}
 
+do_execsql_test 2.3 {
+  SELECT fts5_test_collist(t2) FROM t2('aa');
+} {0.0}
+
 set ::pc 0
 #puts [nearset {{ax bx cx}} -pc ::pc -near 10 -- b*]
 #exit

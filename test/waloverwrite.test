@@ -131,7 +131,6 @@ foreach {tn xtra} {
           execsql { UPDATE t1 SET y = randomblob(797) WHERE x=$x }
         }
       }
-      breakpoint
       execsql {ROLLBACK TO abc}
 
     }
@@ -161,4 +160,3 @@ foreach {tn xtra} {
 }
 
 finish_test
-

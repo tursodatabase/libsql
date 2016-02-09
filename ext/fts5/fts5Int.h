@@ -282,6 +282,7 @@ struct Fts5PoslistWriter {
   i64 iPrev;
 };
 int sqlite3Fts5PoslistWriterAppend(Fts5Buffer*, Fts5PoslistWriter*, i64);
+void sqlite3Fts5PoslistSafeAppend(Fts5Buffer*, i64*, i64);
 
 int sqlite3Fts5PoslistNext64(
   const u8 *a, int n,             /* Buffer containing poslist */

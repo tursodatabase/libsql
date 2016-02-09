@@ -267,6 +267,15 @@ EXT_FEATURE_FLAGS =
 ############################### END OF OPTIONS ################################
 ###############################################################################
 
+# When compiling for the Windows 10 platform, the PLATFORM macro must be set
+# to an appropriate value (e.g. x86, x64, arm, arm64, etc).
+#
+!IF $(FOR_WIN10)!=0
+!IFNDEF PLATFORM
+!ERROR Using the FOR_WIN10 option requires a value for PLATFORM.
+!ENDIF
+!ENDIF
+
 # This assumes that MSVC is always installed in 32-bit Program Files directory
 # and sets the variable for use in locating other 32-bit installs accordingly.
 #
@@ -297,7 +306,7 @@ LD = link.exe
 RC = rc.exe
 !ENDIF
 
-# Check for the MSVC runtime library path macro.  Othertise, this value will
+# Check for the MSVC runtime library path macro.  Otherwise, this value will
 # default to the 'lib' directory underneath the MSVC installation directory.
 #
 !IFNDEF CRTLIBPATH
@@ -334,7 +343,7 @@ NCC = $(NCC:\\=\)
 NCC = $(CC)
 !ENDIF
 
-# Check for the MSVC native runtime library path macro.  Othertise,
+# Check for the MSVC native runtime library path macro.  Otherwise,
 # this value will default to the 'lib' directory underneath the MSVC
 # installation directory.
 #
@@ -344,7 +353,7 @@ NCRTLIBPATH = $(VCINSTALLDIR)\lib
 
 NCRTLIBPATH = $(NCRTLIBPATH:\\=\)
 
-# Check for the Platform SDK library path macro.  Othertise, this
+# Check for the Platform SDK library path macro.  Otherwise, this
 # value will default to the 'lib' directory underneath the Windows
 # SDK installation directory (the environment variable used appears
 # to be available when using Visual C++ 2008 or later via the
@@ -355,6 +364,16 @@ NSDKLIBPATH = $(WINDOWSSDKDIR)\lib
 !ENDIF
 
 NSDKLIBPATH = $(NSDKLIBPATH:\\=\)
+
+# Check for the UCRT library path macro.  Otherwise, this value will
+# default to the version-specific, platform-specific 'lib' directory
+# underneath the Windows SDK installation directory.
+#
+!IFNDEF UCRTLIBPATH
+UCRTLIBPATH = $(WINDOWSSDKDIR)\lib\$(WINDOWSSDKLIBVERSION)\ucrt\$(PLATFORM)
+!ENDIF
+
+UCRTLIBPATH = $(UCRTLIBPATH:\\=\)
 
 # C compiler and options for use in building executables that
 # will run on the platform that is doing the build.
@@ -541,7 +560,7 @@ BCC = $(BCC) /guard:cf -D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE
 # USE_CRT_DLL option is set to force dynamically linking to the
 # MSVC runtime library.
 #
-!IF $(FOR_WINRT)!=0 || $(FOR_WIN10)!=0 || $(USE_CRT_DLL)!=0
+!IF $(FOR_WINRT)!=0 || $(USE_CRT_DLL)!=0
 !IF $(DEBUG)>1
 TCC = $(TCC) -MDd
 BCC = $(BCC) -MDd
@@ -888,13 +907,23 @@ LTLINKOPTS = $(LTLINKOPTS) WindowsPhoneCore.lib RuntimeObject.lib PhoneAppModelH
 LTLINKOPTS = $(LTLINKOPTS) /NODEFAULTLIB:kernel32.lib /NODEFAULTLIB:ole32.lib
 !ENDIF
 
-# When compiling for UAP, some extra linker options are also required.
+# When compiling for UAP or the Windows 10 platform, some extra linker
+# options are also required.
 #
 !IF $(FOR_UAP)!=0 || $(FOR_WIN10)!=0
 LTLINKOPTS = $(LTLINKOPTS) /DYNAMICBASE /NODEFAULTLIB:kernel32.lib
 LTLINKOPTS = $(LTLINKOPTS) mincore.lib
 !IFDEF PSDKLIBPATH
 LTLINKOPTS = $(LTLINKOPTS) "/LIBPATH:$(PSDKLIBPATH)"
+!ENDIF
+!ENDIF
+
+!IF $(FOR_WIN10)!=0
+LTLINKOPTS = $(LTLINKOPTS) "/LIBPATH:$(UCRTLIBPATH)"
+!IF $(DEBUG)>1
+LTLINKOPTS = $(LTLINKOPTS) /NODEFAULTLIB:libucrtd.lib /DEFAULTLIB:ucrtd.lib
+!ELSE
+LTLINKOPTS = $(LTLINKOPTS) /NODEFAULTLIB:libucrt.lib /DEFAULTLIB:ucrt.lib
 !ENDIF
 !ENDIF
 
@@ -1392,6 +1421,12 @@ $(SQLITE3EXE):	$(TOP)\src\shell.c $(SHELL_CORE_DEP) $(LIBRESOBJS) $(SHELL_CORE_S
 # <<mark>>
 sqldiff.exe:	$(TOP)\tool\sqldiff.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(TOP)\tool\sqldiff.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
+
+srcck1.exe:	$(TOP)\tool\srcck1.c
+	$(BCC) $(NO_WARN) -Fe$@ $(TOP)\tool\srcck1.c
+
+sourcetest:	srcck1.exe sqlite3.c
+	srcck1.exe sqlite3.c
 
 fuzzershell.exe:	$(TOP)\tool\fuzzershell.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(FUZZERSHELL_COMPILE_OPTS) $(TOP)\tool\fuzzershell.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
@@ -1916,14 +1951,14 @@ fastfuzztest:	fuzzcheck.exe
 
 # Minimal testing that runs in less than 3 minutes (on a fast machine)
 #
-quicktest:	testfixture.exe
+quicktest:	testfixture.exe sourcetest
 	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\extraquick.test $(TESTOPTS)
 
 # This is the common case.  Run many tests that do not take too long,
 # including fuzzcheck, sqlite3_analyzer, and sqldiff tests.
 #
-test:	$(TESTPROGS) fastfuzztest
+test:	$(TESTPROGS) sourcetest fastfuzztest
 	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\veryquick.test $(TESTOPTS)
 
@@ -2010,7 +2045,7 @@ clean:
 	del /Q testfixture.exe test.db 2>NUL
 	del /Q LogEst.exe fts3view.exe rollback-test.exe showdb.exe 2>NUL
 	del /Q showjournal.exe showstat4.exe showwal.exe speedtest1.exe 2>NUL
-	del /Q mptester.exe wordcount.exe rbu.exe 2>NUL
+	del /Q mptester.exe wordcount.exe rbu.exe srcck1.exe 2>NUL
 	del /Q $(SQLITE3EXE) $(SQLITE3DLL) sqlite3.def 2>NUL
 	del /Q sqlite3.c sqlite3-*.c 2>NUL
 	del /Q sqlite3rc.h 2>NUL

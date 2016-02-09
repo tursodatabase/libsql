@@ -524,7 +524,6 @@ foreach {tn expr res} {
   do_execsql_test 11.1.$tn.2  {
     SELECT rowid, mit(matchinfo(tt, 'b')) FROM tt WHERE tt MATCH $expr
   } $r2
-  breakpoint
 
   do_execsql_test 11.1.$tn.2  {
     SELECT rowid, mit(matchinfo(tt, 'b')) FROM tt WHERE tt MATCH $expr
@@ -552,4 +551,3 @@ do_execsql_test 12.1 {
 
 set sqlite_fts3_enable_parentheses 0
 finish_test
-
