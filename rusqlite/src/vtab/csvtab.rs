@@ -7,7 +7,7 @@ use libc;
 use {Connection, Error, Result};
 use ffi;
 use types::Null;
-use vtab::declare_vtab;
+use vtab::{declare_vtab, VTab, VTabCursor};
 
 use self::csv::Reader;
 
@@ -31,7 +31,7 @@ struct CSVTab {
     cols: Vec<String>,
 }
 
-impl CSVTab {
+impl VTab<CSVTabCursor> for CSVTab {
     fn create(db: *mut ffi::sqlite3,
               aux: *mut libc::c_void,
               argc: libc::c_int,
@@ -76,7 +76,9 @@ impl CSVTabCursor {
             row_number: 0,
         }
     }
+}
 
+impl VTabCursor<CSVTab> for CSVTabCursor {
     fn vtab(&self) -> &mut CSVTab {
         unsafe { &mut *(self.base.pVtab as *mut CSVTab) }
     }

@@ -37,6 +37,25 @@ use ffi;
 //  \-> if not eof { cursor.column or xrowid } else { cursor.xclose }
 //
 
+pub trait VTab<C: VTabCursor<Self>>: Sized {
+    fn create(db: *mut ffi::sqlite3,
+              aux: *mut libc::c_void,
+              _argc: libc::c_int,
+              _argv: *const *const libc::c_char)
+              -> Result<Self>;
+    fn best_index(&self, _info: *mut ffi::sqlite3_index_info);
+    fn open(&self) -> Result<C>;
+}
+
+pub trait VTabCursor<V: VTab<Self>>: Sized {
+    fn vtab(&self) -> &mut V;
+    fn filter(&mut self) -> Result<()>;
+    fn next(&mut self) -> Result<()>;
+    fn eof(&self) -> bool;
+    fn column(&self, ctx: *mut ffi::sqlite3_context, _i: libc::c_int) -> Result<()>;
+    fn rowid(&self) -> Result<i64>;
+}
+
 impl Connection {
     /// Register a virtual table implementation.
     pub fn create_module<A>(&self,
@@ -261,7 +280,7 @@ pub unsafe fn cursor_error<T>(cursor: *mut ffi::sqlite3_vtab_cursor,
     }
 }
 
-unsafe fn set_err_msg(vtab: *mut ffi::sqlite3_vtab, err_msg: &str) {
+pub unsafe fn set_err_msg(vtab: *mut ffi::sqlite3_vtab, err_msg: &str) {
     if !(*vtab).zErrMsg.is_null() {
         ffi::sqlite3_free((*vtab).zErrMsg as *mut libc::c_void);
     }

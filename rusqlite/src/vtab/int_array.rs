@@ -7,7 +7,7 @@ use libc;
 
 use {Connection, Error, Result};
 use ffi;
-use vtab::declare_vtab;
+use vtab::{declare_vtab, VTab, VTabCursor};
 
 pub fn create_int_array(conn: &Connection, name: &str) -> Result<Rc<RefCell<Vec<i64>>>> {
     let array = Rc::new(RefCell::new(Vec::new()));
@@ -24,7 +24,7 @@ pub fn drop_int_array(conn: &Connection, name: &str) -> Result<()> {
 fn escape_quote(identifier: String) -> String {
     if identifier.contains('"') {
         // escape quote by doubling them
-        identifier.replace('"', "\"\"")
+        identifier.replace("\"", "\"\"")
     } else {
         identifier
     }
@@ -43,7 +43,7 @@ struct IntArrayVTab {
     array: *const Rc<RefCell<Vec<i64>>>,
 }
 
-impl IntArrayVTab {
+impl VTab<IntArrayVTabCursor> for IntArrayVTab {
     fn create(db: *mut ffi::sqlite3,
               aux: *mut libc::c_void,
               _argc: libc::c_int,
@@ -80,11 +80,12 @@ impl IntArrayVTabCursor {
             i: 0,
         }
     }
+}
 
+impl VTabCursor<IntArrayVTab> for IntArrayVTabCursor {
     fn vtab(&self) -> &mut IntArrayVTab {
         unsafe { &mut *(self.base.pVtab as *mut IntArrayVTab) }
     }
-
     fn filter(&mut self) -> Result<()> {
         self.i = 0;
         Ok(())
