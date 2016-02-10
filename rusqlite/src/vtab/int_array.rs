@@ -46,8 +46,7 @@ struct IntArrayVTab {
 impl VTab<IntArrayVTabCursor> for IntArrayVTab {
     fn create(db: *mut ffi::sqlite3,
               aux: *mut libc::c_void,
-              _argc: libc::c_int,
-              _argv: *const *const libc::c_char)
+              _args: &[*const libc::c_char])
               -> Result<IntArrayVTab> {
         let array = unsafe { mem::transmute(aux) };
         let vtab = IntArrayVTab {

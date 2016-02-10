@@ -40,10 +40,9 @@ use ffi;
 pub trait VTab<C: VTabCursor<Self>>: Sized {
     fn create(db: *mut ffi::sqlite3,
               aux: *mut libc::c_void,
-              _argc: libc::c_int,
-              _argv: *const *const libc::c_char)
+              args: &[*const libc::c_char])
               -> Result<Self>;
-    fn best_index(&self, _info: *mut ffi::sqlite3_index_info);
+    fn best_index(&self, info: *mut ffi::sqlite3_index_info);
     fn open(&self) -> Result<C>;
 }
 
@@ -52,7 +51,7 @@ pub trait VTabCursor<V: VTab<Self>>: Sized {
     fn filter(&mut self) -> Result<()>;
     fn next(&mut self) -> Result<()>;
     fn eof(&self) -> bool;
-    fn column(&self, ctx: *mut ffi::sqlite3_context, _i: libc::c_int) -> Result<()>;
+    fn column(&self, ctx: *mut ffi::sqlite3_context, i: libc::c_int) -> Result<()>;
     fn rowid(&self) -> Result<i64>;
 }
 
@@ -156,8 +155,10 @@ unsafe extern "C" fn $create(db: *mut ffi::sqlite3,
                               err_msg: *mut *mut libc::c_char)
                               -> libc::c_int {
     use std::error::Error as StdError;
+    use std::slice;
     use vtab::mprintf;
-    match $vtab::create(db, aux, argc, argv) {
+    let args = slice::from_raw_parts(argv, argc as usize);
+    match $vtab::create(db, aux, args) {
         Ok(vtab) => {
             let boxed_vtab: *mut $vtab = Box::into_raw(Box::new(vtab));
             *pp_vtab = boxed_vtab as *mut ffi::sqlite3_vtab;
