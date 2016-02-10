@@ -23,7 +23,7 @@ set -u
 TMPSPACE=./mkpkg_tmp_dir
 VERSION=`cat $TOP/VERSION`
 HASH=`sed 's/^\(..........\).*/\1/' $TOP/manifest.uuid`
-DATETIME=`grep '^D' $TOP/manifest | sed 's/[^0-9]//g'`
+DATETIME=`grep '^D' $TOP/manifest | sed -e 's/[^0-9]//g' -e 's/\(............\).*/\1/'`
 
 # If this script is given an argument of --snapshot, then generate a
 # snapshot tarball named for the current checkout SHA1 hash, rather than
