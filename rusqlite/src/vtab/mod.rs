@@ -172,6 +172,7 @@ unsafe extern "C" fn $destroy(vtab: *mut ffi::sqlite3_vtab) -> libc::c_int {
 unsafe extern "C" fn $open(vtab: *mut ffi::sqlite3_vtab,
                             pp_cursor: *mut *mut ffi::sqlite3_vtab_cursor)
                             -> libc::c_int {
+    use std::error::Error as StdError;
     use vtab::set_err_msg;
     let vt = vtab as *mut $vtab;
     match (*vt).open() {
@@ -186,7 +187,8 @@ unsafe extern "C" fn $open(vtab: *mut ffi::sqlite3_vtab,
             }
             err.extended_code
         }
-        Err(_) => {
+        Err(err) => {
+            set_err_msg(vtab, err.description());
             ffi::SQLITE_ERROR
         }
     }
@@ -243,6 +245,7 @@ unsafe extern "C" fn $rowid(cursor: *mut ffi::sqlite3_vtab_cursor,
 pub unsafe fn cursor_error<T>(cursor: *mut ffi::sqlite3_vtab_cursor,
                               result: Result<T>)
                               -> libc::c_int {
+    use std::error::Error as StdError;
     match result {
         Ok(_) => ffi::SQLITE_OK,
         Err(Error::SqliteFailure(err, s)) => {
@@ -251,8 +254,8 @@ pub unsafe fn cursor_error<T>(cursor: *mut ffi::sqlite3_vtab_cursor,
             }
             err.extended_code
         }
-        Err(_) => {
-            // TODO errMsg
+        Err(err) => {
+            set_err_msg((*cursor).pVtab, err.description());
             ffi::SQLITE_ERROR
         }
     }
