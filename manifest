@@ -1,5 +1,5 @@
-C Omit\sunnecessary\sCHECK\sconstraints\sin\sUPDATE\sstatements,\swhen\snone\sof\sthe\ncolumns\sreferenced\sin\sthe\sCHECK\sconstraint\sare\smodified.
-D 2016-02-10T16:52:24.041
+C Fix\sto\sprevious\scheck-in:\sMake\ssure\sCHECK\sconstraints\sinvolving\sthe\sROWID\nare\snot\signored\swhen\sthe\sROWID\schanges.
+D 2016-02-10T18:24:05.782
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 0fe3b22f8e29bcde0533ada7957a5f15835d797a
@@ -309,7 +309,7 @@ F src/global.c bd5a0af3f30b0c01be6db756c626cd3c33a3d260
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
 F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c 5b715b726f9705c512d3759c827f2db0f57b6de5
+F src/insert.c 6699f029049ea119b652b1464c92cae9f3813247
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c b1b0880fc474abfab89e737b0ecfde0bd7a60902
 F src/loadext.c 84996d7d70a605597d79c1f1d7b2012a5fd34f2b
@@ -522,7 +522,7 @@ F test/capi3d.test 485048dc5cd07bc68011e4917ad035ad6047ab82
 F test/capi3e.test 3d49c01ef2a1a55f41d73cba2b23b5059ec460fe
 F test/cast.test 4c275cbdc8202d6f9c54a3596701719868ac7dc3
 F test/cffault.test aadc1f61f8811cb600e3e069acbf8796f472a096
-F test/check.test 5831ddb6f2c687782eaf2e1a07b6e17f24c4f763
+F test/check.test 85a84bfc4be0e83f668747211c7cd45a6721d485
 F test/close.test 340bd24cc58b16c6bc01967402755027c37eb815
 F test/closure01.test b1703ba40639cfc9b295cf478d70739415eec6a4
 F test/coalesce.test cee0dccb9fbd2d494b77234bccf9dc6c6786eb91
@@ -1427,7 +1427,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6a3aaedfb41735996470abbae6d3cd1be1f508b3
-R 5992825785c26c277f0bebde72670a95
+P 02fbdbc782dd98f080bf4482d820f36c0ef3d519
+R 52598be0e985900f7f9c7a3aa6a38f4a
 U drh
-Z 18800c36980a344bd8e3c9fe7e30ed04
+Z c2e03029353f27985e4cc514e9bd561e

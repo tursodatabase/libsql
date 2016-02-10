@@ -1077,16 +1077,27 @@ insert_cleanup:
  #undef tmask
 #endif
 
+/*
+** Meanings of bits in of pWalker->eCode for checkConstraintUnchanged()
+*/
+#define CKCNSTRNT_COLUMN   0x01    /* CHECK constraint uses a changing column */
+#define CKCNSTRNT_ROWID    0x02    /* CHECK constraint references the ROWID */
+
 /* This is the Walker callback from checkConstraintUnchanged().  Set
+** bit 0x01 of pWalker->eCode if
 ** pWalker->eCode to 0 if this expression node references any of the
 ** columns that are being modifed by an UPDATE statement.
 */
 static int checkConstraintExprNode(Walker *pWalker, Expr *pExpr){
-  if( pExpr->op==TK_COLUMN
-   && pExpr->iColumn>=0
-   && pWalker->u.aiCol[pExpr->iColumn]>=0
-  ){
-    pWalker->eCode = 0;
+  if( pExpr->op==TK_COLUMN ){
+    assert( pExpr->iColumn>=0 || pExpr->iColumn==-1 );
+    if( pExpr->iColumn>=0 ){
+      if( pWalker->u.aiCol[pExpr->iColumn]>=0 ){
+        pWalker->eCode |= CKCNSTRNT_COLUMN;
+      }
+    }else{
+      pWalker->eCode |= CKCNSTRNT_ROWID;
+    }
   }
   return WRC_Continue;
 }
@@ -1094,19 +1105,22 @@ static int checkConstraintExprNode(Walker *pWalker, Expr *pExpr){
 /*
 ** pExpr is a CHECK constraint on a row that is being UPDATE-ed.  The
 ** only columns that are modified by the UPDATE are those for which
-** aiChng[i]>=0.  Return true if CHECK constraint pExpr does not use
-** any of the changing columns.  In other words, return true if this
-** CHECK constraint can be skipped when validating the new row in
-** the UPDATE statement.
+** aiChng[i]>=0, and also the ROWID is modified if chngRowid is true.
+**
+** Return true if CHECK constraint pExpr does not use any of the
+** changing columns (or the rowid if it is changing).  In other words,
+** return true if this CHECK constraint can be skipped when validating
+** the new row in the UPDATE statement.
 */
-static int checkConstraintUnchanged(Expr *pExpr, int *aiChng){
+static int checkConstraintUnchanged(Expr *pExpr, int *aiChng, int chngRowid){
   Walker w;
   memset(&w, 0, sizeof(w));
-  w.eCode = 1;
+  w.eCode = 0;
   w.xExprCallback = checkConstraintExprNode;
   w.u.aiCol = aiChng;
   sqlite3WalkExpr(&w, pExpr);
-  return w.eCode;
+  if( !chngRowid ) w.eCode &= ~CKCNSTRNT_ROWID;
+  return !w.eCode;
 }
 
 /*
@@ -1308,7 +1322,7 @@ void sqlite3GenerateConstraintChecks(
     for(i=0; i<pCheck->nExpr; i++){
       int allOk = sqlite3VdbeMakeLabel(v);
       Expr *pExpr = pCheck->a[i].pExpr;
-      if( aiChng && checkConstraintUnchanged(pExpr, aiChng) ) continue;
+      if( aiChng && checkConstraintUnchanged(pExpr, aiChng, pkChng) ) continue;
       sqlite3ExprIfTrue(pParse, pExpr, allOk, SQLITE_JUMPIFNULL);
       if( onError==OE_Ignore ){
         sqlite3VdbeGoto(v, ignoreDest);
