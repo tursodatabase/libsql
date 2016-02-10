@@ -995,7 +995,7 @@ void sqlite3Insert(
     {
       int isReplace;    /* Set to true if constraints may cause a replace */
       sqlite3GenerateConstraintChecks(pParse, pTab, aRegIdx, iDataCur, iIdxCur,
-          regIns, 0, ipkColumn>=0, onError, endOfLoop, &isReplace
+          regIns, 0, ipkColumn>=0, onError, endOfLoop, &isReplace, 0
       );
       sqlite3FkCheck(pParse, pTab, 0, regIns, 0, 0);
       sqlite3CompleteInsertion(pParse, pTab, iDataCur, iIdxCur,
@@ -1171,7 +1171,8 @@ void sqlite3GenerateConstraintChecks(
   u8 pkChng,           /* Non-zero if the rowid or PRIMARY KEY changed */
   u8 overrideError,    /* Override onError to this if not OE_Default */
   int ignoreDest,      /* Jump to this label on an OE_Ignore resolution */
-  int *pbMayReplace    /* OUT: Set to true if constraint may cause a replace */
+  int *pbMayReplace,   /* OUT: Set to true if constraint may cause a replace */
+  int *aiChng          /* column i is unchanged if aiChng[i]<0 */
 ){
   Vdbe *v;             /* VDBE under constrution */
   Index *pIdx;         /* Pointer to one of the indices */
@@ -1217,10 +1218,14 @@ void sqlite3GenerateConstraintChecks(
   */
   for(i=0; i<nCol; i++){
     if( i==pTab->iPKey ){
+      continue;        /* ROWID is never NULL */
+    }
+    if( aiChng && aiChng[i]<0 ){
+      /* Don't bother checking for NOT NULL on columns that do not change */
       continue;
     }
     onError = pTab->aCol[i].notNull;
-    if( onError==OE_None ) continue;
+    if( onError==OE_None ) continue;  /* This column is allowed to be NULL */
     if( overrideError!=OE_Default ){
       onError = overrideError;
     }else if( onError==OE_Default ){
