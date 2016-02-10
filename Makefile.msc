@@ -414,8 +414,8 @@ TCC = $(CC) -nologo -W4 -DINCLUDE_MSVC_H=1 $(CCOPTS) $(TCCOPTS)
 TCC = $(CC) -nologo -W3 $(CCOPTS) $(TCCOPTS)
 !ENDIF
 
-TCC = $(TCC) -DSQLITE_OS_WIN=1 -I$(TOP) -I$(TOP)\src -fp:precise
-RCC = $(RC) -DSQLITE_OS_WIN=1 -I$(TOP) -I$(TOP)\src $(RCOPTS) $(RCCOPTS)
+TCC = $(TCC) -DSQLITE_OS_WIN=1 -I. -I$(TOP) -I$(TOP)\src -fp:precise
+RCC = $(RC) -DSQLITE_OS_WIN=1 -I. -I$(TOP) -I$(TOP)\src $(RCOPTS) $(RCCOPTS)
 
 # Adjust the names of the primary targets for use with Windows 10.
 #
