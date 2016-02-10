@@ -69,7 +69,7 @@ impl VTab<CSVTabCursor> for CSVTab {
         }
 
         let mut offset_first_row = 0;
-        if reader.has_headers  {
+        if reader.has_headers {
             let headers = try!(reader.headers());
             offset_first_row = reader.byte_offset();
             // headers ignored if cols is not empty
@@ -146,12 +146,19 @@ impl VTabCursor<CSVTab> for CSVTabCursor {
         self.next()
     }
     fn next(&mut self) -> Result<()> {
-        let vtab = self.vtab();
-        if vtab.reader.done() {
-            return Err(Error::ModuleError(format!("eof")));
+        {
+            let vtab = self.vtab();
+            if vtab.reader.done() {
+                return Err(Error::ModuleError(format!("eof")));
+            }
+
+            vtab.cols.clear();
+            while let Some(col) = vtab.reader.next_str().into_iter_result() {
+                vtab.cols.push(String::from(try!(col)));
+            }
         }
-        unimplemented!();
-        // self.row_number = self.row_number + 1;
+
+        self.row_number = self.row_number + 1;
         Ok(())
     }
     fn eof(&self) -> bool {
