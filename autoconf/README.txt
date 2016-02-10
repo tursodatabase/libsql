@@ -1,13 +1,13 @@
 This package contains:
 
- * the SQLite library amalgamation (single file) source code distribution,
- * the shell.c file used to build the sqlite3 shell too, and
- * the sqlite3.h and sqlite3ext.h header files required to link programs
-   and sqlite extensions against the installed libary.
+ * the SQLite library amalgamation source code file: sqlite3.c
+ * the sqlite3.h and sqlite3ext.h header files that define the C-language
+   interface to the sqlite3.c library file
+ * the shell.c file used to build the sqlite3 command-line shell program
  * autoconf/automake installation infrastucture for building on POSIX
-   compliant systems.
+   compliant systems
  * a Makefile.msc and sqlite3.rc for building with Microsoft Visual C++ on
-   Windows.
+   Windows
 
 SUMMARY OF HOW TO BUILD
 =======================
@@ -39,7 +39,7 @@ to produce a smaller installation footprint.
 Other SQLite compilation parameters can also be set using CFLAGS. For
 example:
 
-  $ CFLAGS="-Os -DSQLITE_OMIT_TRIGGERS" ./configure
+  $ CFLAGS="-Os -DSQLITE_THREADSAFE=0" ./configure
 
 
 BUILDING WITH MICROSOFT VISUAL C++
