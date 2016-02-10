@@ -1,5 +1,5 @@
-C Omit\sNOT\sNULL\schecks\son\sunchanging\scolumns\sin\san\sUPDATE.
-D 2016-02-10T16:03:20.793
+C Omit\sunnecessary\sCHECK\sconstraints\sin\sUPDATE\sstatements,\swhen\snone\sof\sthe\ncolumns\sreferenced\sin\sthe\sCHECK\sconstraint\sare\smodified.
+D 2016-02-10T16:52:24.041
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 0fe3b22f8e29bcde0533ada7957a5f15835d797a
@@ -309,7 +309,7 @@ F src/global.c bd5a0af3f30b0c01be6db756c626cd3c33a3d260
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
 F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c f2e7592be43c7101ee8b991ff1cd976f027f7eb9
+F src/insert.c 5b715b726f9705c512d3759c827f2db0f57b6de5
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c b1b0880fc474abfab89e737b0ecfde0bd7a60902
 F src/loadext.c 84996d7d70a605597d79c1f1d7b2012a5fd34f2b
@@ -353,7 +353,7 @@ F src/shell.c 0367440658104bf2ce8d8a9a5a713a4b11c9acbe
 F src/sqlite.h.in cf22ad1d52dca2c9862d63833e581028119aab7e
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
-F src/sqliteInt.h 8eff197a6c0934e19f34c1b072bc4abd48bfee6b
+F src/sqliteInt.h eb20019610d0bd25c7479ddfdef1fd4c00854dc2
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
@@ -1427,7 +1427,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 604f77754797a4066f6cf275c7bc8a68d2839c2d
-R 311aef0cc6bd481061bf1dc7cd93a2e3
+P 6a3aaedfb41735996470abbae6d3cd1be1f508b3
+R 5992825785c26c277f0bebde72670a95
 U drh
-Z 273046c163b5169406e9a0408477555f
+Z 18800c36980a344bd8e3c9fe7e30ed04

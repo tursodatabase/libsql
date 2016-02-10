@@ -3100,6 +3100,7 @@ struct Walker {
     SrcList *pSrcList;                         /* FROM clause */
     struct SrcCount *pSrcCount;                /* Counting column references */
     struct CCurHint *pCCurHint;                /* Used by codeCursorHint() */
+    int *aiCol;                                /* array of column indexes */
   } u;
 };
 

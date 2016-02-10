@@ -1077,6 +1077,38 @@ insert_cleanup:
  #undef tmask
 #endif
 
+/* This is the Walker callback from checkConstraintUnchanged().  Set
+** pWalker->eCode to 0 if this expression node references any of the
+** columns that are being modifed by an UPDATE statement.
+*/
+static int checkConstraintExprNode(Walker *pWalker, Expr *pExpr){
+  if( pExpr->op==TK_COLUMN
+   && pExpr->iColumn>=0
+   && pWalker->u.aiCol[pExpr->iColumn]>=0
+  ){
+    pWalker->eCode = 0;
+  }
+  return WRC_Continue;
+}
+
+/*
+** pExpr is a CHECK constraint on a row that is being UPDATE-ed.  The
+** only columns that are modified by the UPDATE are those for which
+** aiChng[i]>=0.  Return true if CHECK constraint pExpr does not use
+** any of the changing columns.  In other words, return true if this
+** CHECK constraint can be skipped when validating the new row in
+** the UPDATE statement.
+*/
+static int checkConstraintUnchanged(Expr *pExpr, int *aiChng){
+  Walker w;
+  memset(&w, 0, sizeof(w));
+  w.eCode = 1;
+  w.xExprCallback = checkConstraintExprNode;
+  w.u.aiCol = aiChng;
+  sqlite3WalkExpr(&w, pExpr);
+  return w.eCode;
+}
+
 /*
 ** Generate code to do constraint checks prior to an INSERT or an UPDATE
 ** on table pTab.
@@ -1275,7 +1307,9 @@ void sqlite3GenerateConstraintChecks(
     onError = overrideError!=OE_Default ? overrideError : OE_Abort;
     for(i=0; i<pCheck->nExpr; i++){
       int allOk = sqlite3VdbeMakeLabel(v);
-      sqlite3ExprIfTrue(pParse, pCheck->a[i].pExpr, allOk, SQLITE_JUMPIFNULL);
+      Expr *pExpr = pCheck->a[i].pExpr;
+      if( aiChng && checkConstraintUnchanged(pExpr, aiChng) ) continue;
+      sqlite3ExprIfTrue(pParse, pExpr, allOk, SQLITE_JUMPIFNULL);
       if( onError==OE_Ignore ){
         sqlite3VdbeGoto(v, ignoreDest);
       }else{
