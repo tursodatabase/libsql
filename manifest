@@ -1,5 +1,5 @@
-C Fix\sto\sprevious\scheck-in:\sMake\ssure\sCHECK\sconstraints\sinvolving\sthe\sROWID\nare\snot\signored\swhen\sthe\sROWID\schanges.
-D 2016-02-10T18:24:05.782
+C Add\stestcase()\smacros\sto\sthe\sCHECK\sconstraint\savoidance\slogic.\s\sAvoid\screating\nan\sunused\sVDBE\slabel\sduring\sCHECK\sconstraint\scode\sgeneration.
+D 2016-02-10T19:10:50.227
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 0fe3b22f8e29bcde0533ada7957a5f15835d797a
@@ -309,7 +309,7 @@ F src/global.c bd5a0af3f30b0c01be6db756c626cd3c33a3d260
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
 F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c 6699f029049ea119b652b1464c92cae9f3813247
+F src/insert.c 9ca97272e9f74ed0efddf3b4350ee12740cebbef
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c b1b0880fc474abfab89e737b0ecfde0bd7a60902
 F src/loadext.c 84996d7d70a605597d79c1f1d7b2012a5fd34f2b
@@ -1427,7 +1427,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 02fbdbc782dd98f080bf4482d820f36c0ef3d519
-R 52598be0e985900f7f9c7a3aa6a38f4a
+P 7782cb1dd5914b867caf5ff2f0f837407abbfd7a
+R f678261a2391a665894eb0de22b6791f
 U drh
-Z c2e03029353f27985e4cc514e9bd561e
+Z 3c3c66a5988241bd4f12998cbe4ce5b2

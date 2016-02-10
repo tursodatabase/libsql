@@ -1119,7 +1119,14 @@ static int checkConstraintUnchanged(Expr *pExpr, int *aiChng, int chngRowid){
   w.xExprCallback = checkConstraintExprNode;
   w.u.aiCol = aiChng;
   sqlite3WalkExpr(&w, pExpr);
-  if( !chngRowid ) w.eCode &= ~CKCNSTRNT_ROWID;
+  if( !chngRowid ){
+    testcase( (w.eCode & CKCNSTRNT_ROWID)!=0 );
+    w.eCode &= ~CKCNSTRNT_ROWID;
+  }
+  testcase( w.eCode==0 );
+  testcase( w.eCode==CKCNSTRNT_COLUMN );
+  testcase( w.eCode==CKCNSTRNT_ROWID );
+  testcase( w.eCode==(CKCNSTRNT_ROWID|CKCNSTRNT_COLUMN) );
   return !w.eCode;
 }
 
@@ -1320,9 +1327,10 @@ void sqlite3GenerateConstraintChecks(
     pParse->ckBase = regNewData+1;
     onError = overrideError!=OE_Default ? overrideError : OE_Abort;
     for(i=0; i<pCheck->nExpr; i++){
-      int allOk = sqlite3VdbeMakeLabel(v);
+      int allOk;
       Expr *pExpr = pCheck->a[i].pExpr;
       if( aiChng && checkConstraintUnchanged(pExpr, aiChng, pkChng) ) continue;
+      allOk = sqlite3VdbeMakeLabel(v);
       sqlite3ExprIfTrue(pParse, pExpr, allOk, SQLITE_JUMPIFNULL);
       if( onError==OE_Ignore ){
         sqlite3VdbeGoto(v, ignoreDest);
