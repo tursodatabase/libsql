@@ -1005,9 +1005,9 @@ LIBRESOBJS =
 !ENDIF
 
 # <<mark>>
-# All of the source code files.
+# Core source code files, part 1.
 #
-SRC1 = \
+SRC00 = \
   $(TOP)\src\alter.c \
   $(TOP)\src\analyze.c \
   $(TOP)\src\attach.c \
@@ -1016,8 +1016,6 @@ SRC1 = \
   $(TOP)\src\bitvec.c \
   $(TOP)\src\btmutex.c \
   $(TOP)\src\btree.c \
-  $(TOP)\src\btree.h \
-  $(TOP)\src\btreeInt.h \
   $(TOP)\src\build.c \
   $(TOP)\src\callback.c \
   $(TOP)\src\complete.c \
@@ -1031,8 +1029,6 @@ SRC1 = \
   $(TOP)\src\func.c \
   $(TOP)\src\global.c \
   $(TOP)\src\hash.c \
-  $(TOP)\src\hash.h \
-  $(TOP)\src\hwtime.h \
   $(TOP)\src\insert.c \
   $(TOP)\src\journal.c \
   $(TOP)\src\legacy.c \
@@ -1045,29 +1041,22 @@ SRC1 = \
   $(TOP)\src\mem3.c \
   $(TOP)\src\mem5.c \
   $(TOP)\src\memjournal.c \
-  $(TOP)\src\msvc.h \
   $(TOP)\src\mutex.c \
-  $(TOP)\src\mutex.h \
   $(TOP)\src\mutex_noop.c \
   $(TOP)\src\mutex_unix.c \
   $(TOP)\src\mutex_w32.c \
   $(TOP)\src\notify.c \
   $(TOP)\src\os.c \
-  $(TOP)\src\os.h \
-  $(TOP)\src\os_common.h \
-  $(TOP)\src\os_setup.h \
   $(TOP)\src\os_unix.c \
-  $(TOP)\src\os_win.c \
-  $(TOP)\src\os_win.h
-SRC2 = \
+  $(TOP)\src\os_win.c
+
+# Core source code files, part 2.
+#
+SRC01 = \
   $(TOP)\src\pager.c \
-  $(TOP)\src\pager.h \
-  $(TOP)\src\parse.y \
   $(TOP)\src\pcache.c \
-  $(TOP)\src\pcache.h \
   $(TOP)\src\pcache1.c \
   $(TOP)\src\pragma.c \
-  $(TOP)\src\pragma.h \
   $(TOP)\src\prepare.c \
   $(TOP)\src\printf.c \
   $(TOP)\src\random.c \
@@ -1075,11 +1064,6 @@ SRC2 = \
   $(TOP)\src\rowset.c \
   $(TOP)\src\select.c \
   $(TOP)\src\status.c \
-  $(TOP)\src\shell.c \
-  $(TOP)\src\sqlite.h.in \
-  $(TOP)\src\sqlite3ext.h \
-  $(TOP)\src\sqliteInt.h \
-  $(TOP)\src\sqliteLimit.h \
   $(TOP)\src\table.c \
   $(TOP)\src\threads.c \
   $(TOP)\src\tclsqlite.c \
@@ -1091,83 +1075,132 @@ SRC2 = \
   $(TOP)\src\util.c \
   $(TOP)\src\vacuum.c \
   $(TOP)\src\vdbe.c \
-  $(TOP)\src\vdbe.h \
   $(TOP)\src\vdbeapi.c \
   $(TOP)\src\vdbeaux.c \
   $(TOP)\src\vdbeblob.c \
   $(TOP)\src\vdbemem.c \
   $(TOP)\src\vdbesort.c \
   $(TOP)\src\vdbetrace.c \
-  $(TOP)\src\vdbeInt.h \
   $(TOP)\src\vtab.c \
-  $(TOP)\src\vxworks.h \
   $(TOP)\src\wal.c \
-  $(TOP)\src\wal.h \
   $(TOP)\src\walker.c \
   $(TOP)\src\where.c \
   $(TOP)\src\wherecode.c \
-  $(TOP)\src\whereexpr.c \
+  $(TOP)\src\whereexpr.c
+
+# Shell source code files.
+#
+SRC02 = \
+  $(TOP)\src\shell.c
+
+# Core miscellaneous files.
+#
+SRC03 = \
+  $(TOP)\src\parse.y
+
+# Core header files, part 1.
+#
+SRC04 = \
+  $(TOP)\src\btree.h \
+  $(TOP)\src\btreeInt.h \
+  $(TOP)\src\hash.h \
+  $(TOP)\src\hwtime.h \
+  $(TOP)\src\msvc.h \
+  $(TOP)\src\mutex.h \
+  $(TOP)\src\os.h \
+  $(TOP)\src\os_common.h \
+  $(TOP)\src\os_setup.h \
+  $(TOP)\src\os_win.h
+
+# Core header files, part 2.
+#
+SRC05 = \
+  $(TOP)\src\pager.h \
+  $(TOP)\src\pcache.h \
+  $(TOP)\src\pragma.h \
+  $(TOP)\src\sqlite.h.in \
+  $(TOP)\src\sqlite3ext.h \
+  $(TOP)\src\sqliteInt.h \
+  $(TOP)\src\sqliteLimit.h \
+  $(TOP)\src\vdbe.h \
+  $(TOP)\src\vdbeInt.h \
+  $(TOP)\src\vxworks.h \
+  $(TOP)\src\wal.h \
   $(TOP)\src\whereInt.h
 
-# Source code for extensions
+# Extension source code files, part 1.
 #
-SRC3 = \
+SRC06 = \
   $(TOP)\ext\fts1\fts1.c \
-  $(TOP)\ext\fts1\fts1.h \
   $(TOP)\ext\fts1\fts1_hash.c \
-  $(TOP)\ext\fts1\fts1_hash.h \
   $(TOP)\ext\fts1\fts1_porter.c \
-  $(TOP)\ext\fts1\fts1_tokenizer.h \
   $(TOP)\ext\fts1\fts1_tokenizer1.c \
   $(TOP)\ext\fts2\fts2.c \
-  $(TOP)\ext\fts2\fts2.h \
   $(TOP)\ext\fts2\fts2_hash.c \
-  $(TOP)\ext\fts2\fts2_hash.h \
   $(TOP)\ext\fts2\fts2_icu.c \
   $(TOP)\ext\fts2\fts2_porter.c \
-  $(TOP)\ext\fts2\fts2_tokenizer.h \
   $(TOP)\ext\fts2\fts2_tokenizer.c \
   $(TOP)\ext\fts2\fts2_tokenizer1.c
-SRC4 = \
+
+# Extension source code files, part 2.
+#
+SRC07 = \
   $(TOP)\ext\fts3\fts3.c \
-  $(TOP)\ext\fts3\fts3.h \
-  $(TOP)\ext\fts3\fts3Int.h \
   $(TOP)\ext\fts3\fts3_aux.c \
   $(TOP)\ext\fts3\fts3_expr.c \
   $(TOP)\ext\fts3\fts3_hash.c \
-  $(TOP)\ext\fts3\fts3_hash.h \
   $(TOP)\ext\fts3\fts3_icu.c \
   $(TOP)\ext\fts3\fts3_porter.c \
   $(TOP)\ext\fts3\fts3_snippet.c \
-  $(TOP)\ext\fts3\fts3_tokenizer.h \
   $(TOP)\ext\fts3\fts3_tokenizer.c \
   $(TOP)\ext\fts3\fts3_tokenizer1.c \
   $(TOP)\ext\fts3\fts3_tokenize_vtab.c \
   $(TOP)\ext\fts3\fts3_unicode.c \
   $(TOP)\ext\fts3\fts3_unicode2.c \
   $(TOP)\ext\fts3\fts3_write.c \
-  $(TOP)\ext\icu\sqliteicu.h \
   $(TOP)\ext\icu\icu.c \
-  $(TOP)\ext\rtree\rtree.h \
   $(TOP)\ext\rtree\rtree.c \
-  $(TOP)\ext\rbu\sqlite3rbu.h \
   $(TOP)\ext\rbu\sqlite3rbu.c \
   $(TOP)\ext\misc\json1.c
 
+# Extension header files, part 1.
+#
+SRC08 = \
+  $(TOP)\ext\fts1\fts1.h \
+  $(TOP)\ext\fts1\fts1_hash.h \
+  $(TOP)\ext\fts1\fts1_tokenizer.h \
+  $(TOP)\ext\fts2\fts2.h \
+  $(TOP)\ext\fts2\fts2_hash.h \
+  $(TOP)\ext\fts2\fts2_tokenizer.h
+
+# Extension header files, part 2.
+#
+SRC09 = \
+  $(TOP)\ext\fts3\fts3.h \
+  $(TOP)\ext\fts3\fts3Int.h \
+  $(TOP)\ext\fts3\fts3_hash.h \
+  $(TOP)\ext\fts3\fts3_tokenizer.h \
+  $(TOP)\ext\icu\sqliteicu.h \
+  $(TOP)\ext\rtree\rtree.h \
+  $(TOP)\ext\rbu\sqlite3rbu.h
 
 # Generated source code files
 #
-SRC5 = \
-  keywordhash.h \
+SRC10 = \
   opcodes.c \
+  parse.c
+
+# Generated header files
+#
+SRC11 = \
+  keywordhash.h \
   opcodes.h \
-  parse.c \
   parse.h \
   $(SQLITE3H)
 
 # All source code files.
 #
-SRC = $(SRC1) $(SRC2) $(SRC3) $(SRC4) $(SRC5)
+SRC = $(SRC00) $(SRC01) $(SRC02) $(SRC03) $(SRC04) $(SRC05) $(SRC06) $(SRC07) $(SRC08) $(SRC09) $(SRC10) $(SRC11)
 
 # Source code to the test files.
 #
@@ -1216,7 +1249,7 @@ TESTSRC = \
   $(TOP)\ext\fts3\fts3_test.c \
   $(TOP)\ext\rbu\test_rbu.c
 
-# Statically linked extensions
+# Statically linked extensions.
 #
 TESTEXT = \
   $(TOP)\ext\misc\amatch.c \
@@ -1236,56 +1269,14 @@ TESTEXT = \
   $(TOP)\ext\misc\totype.c \
   $(TOP)\ext\misc\wholenumber.c
 
-
 # Source code to the library files needed by the test fixture
 #
 TESTSRC2 = \
-  $(TOP)\src\attach.c \
-  $(TOP)\src\backup.c \
-  $(TOP)\src\bitvec.c \
-  $(TOP)\src\btree.c \
-  $(TOP)\src\build.c \
-  $(TOP)\src\ctime.c \
-  $(TOP)\src\date.c \
-  $(TOP)\src\dbstat.c \
-  $(TOP)\src\expr.c \
-  $(TOP)\src\func.c \
-  $(TOP)\src\insert.c \
-  $(TOP)\src\wal.c \
-  $(TOP)\src\main.c \
-  $(TOP)\src\mem5.c \
-  $(TOP)\src\os.c \
-  $(TOP)\src\os_unix.c \
-  $(TOP)\src\os_win.c \
-  $(TOP)\src\pager.c \
-  $(TOP)\src\pragma.c \
-  $(TOP)\src\prepare.c \
-  $(TOP)\src\printf.c \
-  $(TOP)\src\random.c \
-  $(TOP)\src\pcache.c \
-  $(TOP)\src\pcache1.c \
-  $(TOP)\src\select.c \
-  $(TOP)\src\tokenize.c \
-  $(TOP)\src\utf.c \
-  $(TOP)\src\util.c \
-  $(TOP)\src\vdbeapi.c \
-  $(TOP)\src\vdbeaux.c \
-  $(TOP)\src\vdbe.c \
-  $(TOP)\src\vdbemem.c \
-  $(TOP)\src\vdbesort.c \
-  $(TOP)\src\vdbetrace.c \
-  $(TOP)\src\where.c \
-  $(TOP)\src\wherecode.c \
-  $(TOP)\src\whereexpr.c \
-  parse.c \
-  $(TOP)\ext\fts3\fts3.c \
-  $(TOP)\ext\fts3\fts3_aux.c \
-  $(TOP)\ext\fts3\fts3_expr.c \
-  $(TOP)\ext\fts3\fts3_tokenizer.c \
-  $(TOP)\ext\fts3\fts3_tokenize_vtab.c \
-  $(TOP)\ext\fts3\fts3_unicode.c \
-  $(TOP)\ext\fts3\fts3_unicode2.c \
-  $(TOP)\ext\fts3\fts3_write.c \
+  $(SRC00) \
+  $(SRC01) \
+  $(SRC06) \
+  $(SRC07) \
+  $(SRC10) \
   $(TOP)\ext\async\sqlite3async.c
 
 # Header files used by all library source files.
@@ -1460,11 +1451,7 @@ mptest:	mptester.exe
 .target_source:	$(SRC) $(TOP)\tool\vdbe-compress.tcl fts5.c
 	-rmdir /Q/S tsrc 2>NUL
 	-mkdir tsrc
-	for %i in ($(SRC1)) do copy /Y %i tsrc
-	for %i in ($(SRC2)) do copy /Y %i tsrc
-	for %i in ($(SRC3)) do copy /Y %i tsrc
-	for %i in ($(SRC4)) do copy /Y %i tsrc
-	for %i in ($(SRC5)) do copy /Y %i tsrc
+	for %i in ($(SRC)) do copy /Y %i tsrc
 	copy /Y fts5.c tsrc
 	copy /Y fts5.h tsrc
 	del /Q tsrc\sqlite.h.in tsrc\parse.y 2>NUL
@@ -1909,7 +1896,7 @@ TESTFIXTURE_FLAGS = -DTCLSH=1 -DSQLITE_TEST=1 -DSQLITE_CRASH_TEST=1
 TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_SERVER=1 -DSQLITE_PRIVATE=""
 TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_CORE $(NO_WARN)
 
-TESTFIXTURE_SRC0 = $(TESTEXT) $(TESTSRC2) $(SHELL_CORE_DEP)
+TESTFIXTURE_SRC0 = $(TESTEXT) $(TESTSRC2)
 TESTFIXTURE_SRC1 = $(TESTEXT) $(SQLITE3C)
 !IF $(USE_AMALGAMATION)==0
 TESTFIXTURE_SRC = $(TESTSRC) $(TOP)\src\tclsqlite.c $(TESTFIXTURE_SRC0)
