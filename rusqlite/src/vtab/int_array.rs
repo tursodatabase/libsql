@@ -7,27 +7,19 @@ use libc;
 
 use {Connection, Error, Result};
 use ffi;
-use vtab::{declare_vtab, VTab, VTabCursor};
+use vtab::{declare_vtab, escape_double_quote, VTab, VTabCursor};
 
 pub fn create_int_array(conn: &Connection, name: &str) -> Result<Rc<RefCell<Vec<i64>>>> {
     let array = Rc::new(RefCell::new(Vec::new()));
     try!(conn.create_module(name, &INT_ARRAY_MODULE, Some(array.clone())));
-    try!(conn.execute_batch(&format!("CREATE VIRTUAL TABLE temp.{0} USING {0}",
-                                     escape_quote(name.to_string()))));
+    try!(conn.execute_batch(&format!("CREATE VIRTUAL TABLE temp.\"{0}\" USING \"{0}\"",
+                                     escape_double_quote(name.to_string()))));
     Ok(array)
 }
 
 pub fn drop_int_array(conn: &Connection, name: &str) -> Result<()> {
-    conn.execute_batch(&format!("DROP TABLE temp.{0}", escape_quote(name.to_string())))
-}
-
-fn escape_quote(identifier: String) -> String {
-    if identifier.contains('"') {
-        // escape quote by doubling them
-        identifier.replace("\"", "\"\"")
-    } else {
-        identifier
-    }
+    conn.execute_batch(&format!("DROP TABLE temp.\"{0}\"",
+                                escape_double_quote(name.to_string())))
 }
 
 init_module!(INT_ARRAY_MODULE, IntArrayVTab, IntArrayVTabCursor,
@@ -85,7 +77,12 @@ impl VTabCursor<IntArrayVTab> for IntArrayVTabCursor {
     fn vtab(&self) -> &mut IntArrayVTab {
         unsafe { &mut *(self.base.pVtab as *mut IntArrayVTab) }
     }
-    fn filter(&mut self) -> Result<()> {
+    fn filter(&mut self,
+              _idx_num: libc::c_int,
+              _idx_str: *const libc::c_char,
+              _argc: libc::c_int,
+              _argv: *mut *mut ffi::sqlite3_value)
+              -> Result<()> {
         self.i = 0;
         Ok(())
     }

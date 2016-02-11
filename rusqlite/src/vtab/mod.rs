@@ -37,21 +37,39 @@ use ffi;
 //  \-> if not eof { cursor.column or xrowid } else { cursor.xclose }
 //
 
+/// Virtual table instance trait.
 pub trait VTab<C: VTabCursor<Self>>: Sized {
+    /// Create a new instance of a virtual table in response to a CREATE VIRTUAL TABLE statement.
+    /// The `db` parameter is a pointer to the SQLite database connection that is executing the CREATE VIRTUAL TABLE statement.
     fn create(db: *mut ffi::sqlite3,
               aux: *mut libc::c_void,
               args: &[*const libc::c_char])
               -> Result<Self>;
+    /// Determine the best way to access the virtual table.
     fn best_index(&self, info: *mut ffi::sqlite3_index_info);
+    /// Create a new cursor used for accessing a virtual table.
     fn open(&self) -> Result<C>;
 }
 
+/// Virtual table cursor trait.
 pub trait VTabCursor<V: VTab<Self>>: Sized {
+    /// Accessor to the associated virtual table.
     fn vtab(&self) -> &mut V;
-    fn filter(&mut self) -> Result<()>;
+    /// Begin a search of a virtual table.
+    fn filter(&mut self,
+              idx_num: libc::c_int,
+              idx_str: *const libc::c_char,
+              argc: libc::c_int,
+              argv: *mut *mut ffi::sqlite3_value)
+              -> Result<()>;
+    /// Advance cursor to the next row of a result set initiated by `filter`.
     fn next(&mut self) -> Result<()>;
+    /// Must return `false` if the cursor currently points to a valid row of data, or `true` otherwise.
     fn eof(&self) -> bool;
+    /// Find the value for the `i`-th column of the current row. `i` is zero-based so the first column is numbered 0.
+    /// May return its result back to SQLite using one of the specified `ctx`.
     fn column(&self, ctx: *mut ffi::sqlite3_context, i: libc::c_int) -> Result<()>;
+    /// Return the rowid of row that the cursor is currently pointing at.
     fn rowid(&self) -> Result<i64>;
 }
 
@@ -98,6 +116,7 @@ impl InnerConnection {
     }
 }
 
+/// Declare the schema of a virtual table.
 pub fn declare_vtab(db: *mut ffi::sqlite3, sql: &str) -> Result<()> {
     let c_sql = try!(CString::new(sql));
     let rc = unsafe { ffi::sqlite3_declare_vtab(db, c_sql.as_ptr()) };
@@ -105,6 +124,16 @@ pub fn declare_vtab(db: *mut ffi::sqlite3, sql: &str) -> Result<()> {
         Ok(())
     } else {
         Err(error_from_sqlite_code(rc, None))
+    }
+}
+
+/// Escape double-quote (`"`) character occurences by doubling them (`""`).
+pub fn escape_double_quote(identifier: String) -> String {
+    if identifier.contains('"') {
+        // escape quote by doubling them
+        identifier.replace("\"", "\"\"")
+    } else {
+        identifier
     }
 }
 
@@ -220,14 +249,14 @@ unsafe extern "C" fn $close(cursor: *mut ffi::sqlite3_vtab_cursor) -> libc::c_in
 }
 
 unsafe extern "C" fn $filter(cursor: *mut ffi::sqlite3_vtab_cursor,
-                              _idx_num: libc::c_int,
-                              _idx_str: *const libc::c_char,
-                              _argc: libc::c_int,
-                              _argv: *mut *mut ffi::sqlite3_value)
+                              idx_num: libc::c_int,
+                              idx_str: *const libc::c_char,
+                              argc: libc::c_int,
+                              argv: *mut *mut ffi::sqlite3_value)
                               -> libc::c_int {
     use vtab::cursor_error;
     let cr = cursor as *mut $cursor;
-    cursor_error(cursor, (*cr).filter())
+    cursor_error(cursor, (*cr).filter(idx_num, idx_str, argc, argv))
 }
 unsafe extern "C" fn $next(cursor: *mut ffi::sqlite3_vtab_cursor) -> libc::c_int {
     use vtab::cursor_error;
@@ -242,9 +271,9 @@ unsafe extern "C" fn $column(cursor: *mut ffi::sqlite3_vtab_cursor,
                               ctx: *mut ffi::sqlite3_context,
                               i: libc::c_int)
                               -> libc::c_int {
-    use vtab::cursor_error;
+    use vtab::result_error;
     let cr = cursor as *mut $cursor;
-    cursor_error(cursor, (*cr).column(ctx, i))
+    result_error(ctx, (*cr).column(ctx, i))
 }
 unsafe extern "C" fn $rowid(cursor: *mut ffi::sqlite3_vtab_cursor,
                              p_rowid: *mut ffi::sqlite3_int64)
@@ -262,6 +291,7 @@ unsafe extern "C" fn $rowid(cursor: *mut ffi::sqlite3_vtab_cursor,
     }
 }
 
+/// Virtual table cursors can set an error message by assigning a string to `zErrMsg`.
 pub unsafe fn cursor_error<T>(cursor: *mut ffi::sqlite3_vtab_cursor,
                               result: Result<T>)
                               -> libc::c_int {
@@ -281,6 +311,7 @@ pub unsafe fn cursor_error<T>(cursor: *mut ffi::sqlite3_vtab_cursor,
     }
 }
 
+/// Virtual tables methods can set an error message by assigning a string to `zErrMsg`.
 pub unsafe fn set_err_msg(vtab: *mut ffi::sqlite3_vtab, err_msg: &str) {
     if !(*vtab).zErrMsg.is_null() {
         ffi::sqlite3_free((*vtab).zErrMsg as *mut libc::c_void);
@@ -288,22 +319,34 @@ pub unsafe fn set_err_msg(vtab: *mut ffi::sqlite3_vtab, err_msg: &str) {
     (*vtab).zErrMsg = mprintf(err_msg);
 }
 
-unsafe fn result_error(ctx: *mut ffi::sqlite3_context, err: Error) -> libc::c_int {
+/// To raise an error, the `column` method should use this method to set the error message and return the error code.
+pub unsafe fn result_error<T>(ctx: *mut ffi::sqlite3_context, result: Result<T>) -> libc::c_int {
     use std::error::Error as StdError;
-    match err {
-        Error::SqliteFailure(err, s) => {
-            ffi::sqlite3_result_error_code(ctx, err.extended_code);
-            if let Some(Ok(cstr)) = s.map(|s| str_to_cstring(&s)) {
-                ffi::sqlite3_result_error(ctx, cstr.as_ptr(), -1);
-            }
+    match result {
+        Ok(_) => ffi::SQLITE_OK,
+        Err(Error::SqliteFailure(err, s)) => {
+            match err.extended_code {
+                ffi::SQLITE_TOOBIG => {
+                    ffi::sqlite3_result_error_toobig(ctx);
+                }
+                ffi::SQLITE_NOMEM => {
+                    ffi::sqlite3_result_error_nomem(ctx);
+                }
+                code => {
+                    ffi::sqlite3_result_error_code(ctx, code);
+                    if let Some(Ok(cstr)) = s.map(|s| str_to_cstring(&s)) {
+                        ffi::sqlite3_result_error(ctx, cstr.as_ptr(), -1);
+                    }
+                }
+            };
             err.extended_code
         }
-        _ => {
-            ffi::sqlite3_result_error_code(ctx, ffi::SQLITE_CORRUPT_VTAB);
+        Err(err) => {
+            ffi::sqlite3_result_error_code(ctx, ffi::SQLITE_ERROR);
             if let Ok(cstr) = str_to_cstring(err.description()) {
                 ffi::sqlite3_result_error(ctx, cstr.as_ptr(), -1);
             }
-            ffi::SQLITE_CORRUPT_VTAB
+            ffi::SQLITE_ERROR
         }
     }
 }

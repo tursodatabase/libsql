@@ -9,7 +9,7 @@ use libc;
 use {Connection, Error, Result};
 use ffi;
 use types::Null;
-use vtab::{declare_vtab, VTab, VTabCursor};
+use vtab::{declare_vtab, escape_double_quote, VTab, VTabCursor};
 
 pub fn load_module(conn: &Connection) -> Result<()> {
     let aux: Option<()> = None;
@@ -29,6 +29,7 @@ struct CSVTab {
     reader: csv::Reader<File>,
     offset_first_row: u64,
     cols: Vec<String>,
+    eof: bool,
 }
 
 impl VTab<CSVTabCursor> for CSVTab {
@@ -63,7 +64,7 @@ impl VTab<CSVTabCursor> for CSVTab {
                 } else if uc.contains("NO_QUOTE") {
                     reader = reader.quote(0);
                 } else {
-                    cols.push(String::from(arg));
+                    cols.push(escape_double_quote(String::from(arg)));
                 }
             }
         }
@@ -102,6 +103,7 @@ impl VTab<CSVTabCursor> for CSVTab {
             reader: reader,
             offset_first_row: offset_first_row,
             cols: cols,
+            eof: false,
         };
         try!(declare_vtab(db, &sql));
         Ok(vtab)
@@ -137,7 +139,12 @@ impl VTabCursor<CSVTab> for CSVTabCursor {
         unsafe { &mut *(self.base.pVtab as *mut CSVTab) }
     }
 
-    fn filter(&mut self) -> Result<()> {
+    fn filter(&mut self,
+              _idx_num: libc::c_int,
+              _idx_str: *const libc::c_char,
+              _argc: libc::c_int,
+              _argv: *mut *mut ffi::sqlite3_value)
+              -> Result<()> {
         {
             let vtab = self.vtab();
             try!(vtab.reader.seek(vtab.offset_first_row));
@@ -148,8 +155,9 @@ impl VTabCursor<CSVTab> for CSVTabCursor {
     fn next(&mut self) -> Result<()> {
         {
             let vtab = self.vtab();
-            if vtab.reader.done() {
-                return Err(Error::ModuleError(format!("eof")));
+            vtab.eof = vtab.reader.done();
+            if vtab.eof {
+                return Ok(());
             }
 
             vtab.cols.clear();
@@ -163,7 +171,7 @@ impl VTabCursor<CSVTab> for CSVTabCursor {
     }
     fn eof(&self) -> bool {
         let vtab = self.vtab();
-        vtab.reader.done()
+        vtab.eof
     }
     fn column(&self, ctx: *mut ffi::sqlite3_context, col: libc::c_int) -> Result<()> {
         use functions::ToResult;
@@ -188,5 +196,36 @@ impl From<csv::Error> for Error {
     fn from(err: csv::Error) -> Error {
         use std::error::Error as StdError;
         Error::ModuleError(String::from(err.description()))
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use Connection;
+    use vtab::csvtab;
+
+    #[test]
+    fn test_csv_module() {
+        let db = Connection::open_in_memory().unwrap();
+        csvtab::load_module(&db).unwrap();
+        db.execute_batch("CREATE VIRTUAL TABLE vtab USING csv('test.csv', HAS_HEADERS)").unwrap();
+
+        let mut s = db.prepare("SELECT rowid, * FROM vtab").unwrap();
+        {
+            let headers = s.column_names();
+            assert_eq!(vec!["rowid", "colA", "colB", "colC"], headers);
+        }
+
+        let rows = s.query(&[]).unwrap();
+        let mut sum = 0;
+        for row in rows {
+            let row = row.unwrap();
+            let id: i64 = row.get(0);
+            // println!("{}, {:?}, {:?}, {:?}", id, row.get::<i32, Value>(1), row.get::<i32, Value>(2), row.get::<i32, Value>(3));
+            sum = sum + id;
+        }
+        assert_eq!(sum, 15);
+
+        db.execute_batch("DROP TABLE vtab").unwrap();
     }
 }
