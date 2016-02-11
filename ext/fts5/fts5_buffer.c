@@ -236,7 +236,7 @@ int sqlite3Fts5PoslistWriterAppend(
   Fts5PoslistWriter *pWriter,
   i64 iPos
 ){
-  int rc;
+  int rc = 0;   /* Initialized only to suppress erroneous warning from Clang */
   if( fts5BufferGrow(&rc, pBuf, 5+5+5) ) return rc;
   sqlite3Fts5PoslistSafeAppend(pBuf, &pWriter->iPrev, iPos);
   return SQLITE_OK;
@@ -390,6 +390,3 @@ void sqlite3Fts5TermsetFree(Fts5Termset *p){
     sqlite3_free(p);
   }
 }
-
-
-

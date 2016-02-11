@@ -1,5 +1,5 @@
-C In\sthe\sMSVC\smakefile,\sinclude\sthe\sworking\sdirectory\sso\sthat\sit\scan\spickup\sbuild\sgenerated\sfiles\s(e.g.\ssqlite3.h,\setc).
-D 2016-02-10T21:45:25.033
+C Add\sJSON1\sand\sFTS5\sto\sthe\sset\sof\sextensions\ssubject\sto\sclose\scompiler\swarning\nanalysis.\s\sFix\ssome\swarnings\sin\seach.\s\s\sMore\s(harmless)\swarnings\sstill\sexist\nin\sFTS5.
+D 2016-02-11T15:37:18.370
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 463edfba5c6fccebc61d8c094ccd463a6a55becb
@@ -98,10 +98,10 @@ F ext/fts3/unicode/mkunicode.tcl 95cf7ec186e48d4985e433ff8a1c89090a774252
 F ext/fts3/unicode/parseunicode.tcl da577d1384810fb4e2b209bf3313074353193e95
 F ext/fts5/extract_api_docs.tcl a36e54ec777172ddd3f9a88daf593b00848368e0
 F ext/fts5/fts5.h ff9c2782e8ed890b0de2f697a8d63971939e70c7
-F ext/fts5/fts5Int.h efb02807dbe5a2bfb0ea592a472d1171cb553d53
+F ext/fts5/fts5Int.h cb495e7cb2d140ab3fc3547750e14d1feeec1ca8
 F ext/fts5/fts5_aux.c b9bcce753ef5b451267b2232f0ca153ddeb3951d
-F ext/fts5/fts5_buffer.c 5142f73defd7d2ad7419f3a8e487681b38b72097
-F ext/fts5/fts5_config.c 0c384ebdd23fd055e2e50a93277b8d59da538238
+F ext/fts5/fts5_buffer.c 4c1502d4c956cd092c89ce4480867f9d8bf325cd
+F ext/fts5/fts5_config.c 35c5173cae4eb17e82164a7f5aeef56a48903079
 F ext/fts5/fts5_expr.c ff5c451a6d025909639ac0f0d0af0cc595b50feb
 F ext/fts5/fts5_hash.c 1b113977296cf4212c6ec667d5e3f2bd18036955
 F ext/fts5/fts5_index.c 28f72130400cb54d179a9a120b7232915e3e7a4e
@@ -206,7 +206,7 @@ F ext/misc/eval.c f971962e92ebb8b0a4e6b62949463ee454d88fa2
 F ext/misc/fileio.c d4171c815d6543a9edef8308aab2951413cd8d0f
 F ext/misc/fuzzer.c 4c84635c71c26cfa7c2e5848cf49fe2d2cfcd767
 F ext/misc/ieee754.c f190d0cc5182529acb15babd177781be1ac1718c
-F ext/misc/json1.c a27cf1eca6583f9b6e18abab5c2a9a82c4540ca9
+F ext/misc/json1.c b9c88d5c3b6ecd8c731ffdd7f5b3d902857f8c96
 F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
 F ext/misc/percentile.c bcbee3c061b884eccb80e21651daaae8e1e43c63
 F ext/misc/regexp.c af92cdaa5058fcec1451e49becc7ba44dba023dc
@@ -1425,9 +1425,9 @@ F tool/varint.c 5d94cb5003db9dbbcbcc5df08d66f16071aee003
 F tool/vdbe-compress.tcl 5926c71f9c12d2ab73ef35c29376e756eb68361c
 F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
-F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
+F tool/warnings.sh ef6ebc6fd8d2dc35db3b622015c16a023d4fef4f
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 970881befd5da6cc837c474d6e917de0bf029350
-R 5eb3b947cad1b703762744d4a1125c44
-U mistachkin
-Z 4770d0013fc64e8d84870f88c904e1b8
+P e9e6000bd2f7e0ef85178db2b5b8f20e4cf0093c
+R 203364b475629e5387d880c7b72b1d29
+U drh
+Z 7bc360a50dcd258c28a9003183e0bafc

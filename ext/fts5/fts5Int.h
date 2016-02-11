@@ -80,6 +80,12 @@ extern int sqlite3_fts5_may_be_corrupt;
 # define assert_nc(x) assert(x)
 #endif
 
+/* Mark a function parameter as unused, to suppress nuisance compiler
+** warnings. */
+#ifndef UNUSED_PARAM
+# define UNUSED_PARAM(X)  (void)(X)
+#endif
+
 typedef struct Fts5Global Fts5Global;
 typedef struct Fts5Colset Fts5Colset;
 
@@ -346,16 +352,6 @@ int sqlite3Fts5IndexOpen(Fts5Config *pConfig, int bCreate, Fts5Index**, char**);
 int sqlite3Fts5IndexClose(Fts5Index *p);
 
 /*
-** for(
-**   sqlite3Fts5IndexQuery(p, "token", 5, 0, 0, &pIter);
-**   0==sqlite3Fts5IterEof(pIter);
-**   sqlite3Fts5IterNext(pIter)
-** ){
-**   i64 iRowid = sqlite3Fts5IterRowid(pIter);
-** }
-*/
-
-/*
 ** Return a simple checksum value based on the arguments.
 */
 u64 sqlite3Fts5IndexEntryCksum(
@@ -396,7 +392,6 @@ int sqlite3Fts5IndexQuery(
 */
 int sqlite3Fts5IterNext(Fts5IndexIter*);
 int sqlite3Fts5IterNextFrom(Fts5IndexIter*, i64 iMatch);
-i64 sqlite3Fts5IterRowid(Fts5IndexIter*);
 
 /*
 ** Close an iterator opened by sqlite3Fts5IndexQuery().
