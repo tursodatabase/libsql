@@ -1096,7 +1096,7 @@ static i64 fts5GetRowidLimit(sqlite3_value *pVal, i64 iDefault){
 static int fts5FilterMethod(
   sqlite3_vtab_cursor *pCursor,   /* The cursor used for this query */
   int idxNum,                     /* Strategy index */
-  const char *idxStr,             /* Unused */
+  const char *zUnused,            /* Unused */
   int nVal,                       /* Number of elements in apVal */
   sqlite3_value **apVal           /* Arguments for the indexing scheme */
 ){
@@ -1113,6 +1113,9 @@ static int fts5FilterMethod(
   sqlite3_value *pRowidLe = 0;    /* rowid <= ? expression (or NULL) */
   sqlite3_value *pRowidGe = 0;    /* rowid >= ? expression (or NULL) */
   char **pzErrmsg = pConfig->pzErrmsg;
+
+  UNUSED_PARAM(zUnused);
+  UNUSED_PARAM(nVal);
 
   if( pCsr->ePlan ){
     fts5FreeCursorComponents(pCsr);
@@ -1398,8 +1401,7 @@ static int fts5SpecialInsert(
 
 static int fts5SpecialDelete(
   Fts5Table *pTab, 
-  sqlite3_value **apVal, 
-  sqlite3_int64 *piRowid
+  sqlite3_value **apVal
 ){
   int rc = SQLITE_OK;
   int eType1 = sqlite3_value_type(apVal[1]);
@@ -1475,7 +1477,7 @@ static int fts5UpdateMethod(
     if( pConfig->eContent!=FTS5_CONTENT_NORMAL 
       && 0==sqlite3_stricmp("delete", z) 
     ){
-      rc = fts5SpecialDelete(pTab, apVal, pRowid);
+      rc = fts5SpecialDelete(pTab, apVal);
     }else{
       rc = fts5SpecialInsert(pTab, z, apVal[2 + pConfig->nCol + 1]);
     }
@@ -1576,6 +1578,7 @@ static int fts5SyncMethod(sqlite3_vtab *pVtab){
 ** Implementation of xBegin() method. 
 */
 static int fts5BeginMethod(sqlite3_vtab *pVtab){
+  UNUSED_PARAM(pVtab);  /* Call below is a no-op for NDEBUG builds */
   fts5CheckTransactionState((Fts5Table*)pVtab, FTS5_BEGIN, 0);
   return SQLITE_OK;
 }
@@ -1586,6 +1589,7 @@ static int fts5BeginMethod(sqlite3_vtab *pVtab){
 ** by fts5SyncMethod().
 */
 static int fts5CommitMethod(sqlite3_vtab *pVtab){
+  UNUSED_PARAM(pVtab);  /* Call below is a no-op for NDEBUG builds */
   fts5CheckTransactionState((Fts5Table*)pVtab, FTS5_COMMIT, 0);
   return SQLITE_OK;
 }
@@ -1839,12 +1843,14 @@ static sqlite3_int64 fts5ApiRowid(Fts5Context *pCtx){
 static int fts5ColumnSizeCb(
   void *pContext,                 /* Pointer to int */
   int tflags,
-  const char *pToken,             /* Buffer containing token */
-  int nToken,                     /* Size of token in bytes */
-  int iStart,                     /* Start offset of token */
-  int iEnd                        /* End offset of token */
+  const char *pUnused,            /* Buffer containing token */
+  int nUnused,                    /* Size of token in bytes */
+  int iUnused1,                   /* Start offset of token */
+  int iUnused2                    /* End offset of token */
 ){
   int *pCnt = (int*)pContext;
+  UNUSED_PARAM2(pUnused, nUnused);
+  UNUSED_PARAM2(iUnused1, iUnused2);
   if( (tflags & FTS5_TOKEN_COLOCATED)==0 ){
     (*pCnt)++;
   }
@@ -1960,10 +1966,11 @@ static void *fts5ApiGetAuxdata(Fts5Context *pCtx, int bClear){
 }
 
 static void fts5ApiPhraseNext(
-  Fts5Context *pCtx, 
+  Fts5Context *pUnused, 
   Fts5PhraseIter *pIter, 
   int *piCol, int *piOff
 ){
+  UNUSED_PARAM(pUnused);
   if( pIter->a>=pIter->b ){
     *piCol = -1;
     *piOff = -1;
@@ -2115,12 +2122,11 @@ static int fts5ApiQueryPhrase(
 
   rc = fts5OpenMethod(pCsr->base.pVtab, (sqlite3_vtab_cursor**)&pNew);
   if( rc==SQLITE_OK ){
-    Fts5Config *pConf = pTab->pConfig;
     pNew->ePlan = FTS5_PLAN_MATCH;
     pNew->iFirstRowid = SMALLEST_INT64;
     pNew->iLastRowid = LARGEST_INT64;
     pNew->base.pVtab = (sqlite3_vtab*)pTab;
-    rc = sqlite3Fts5ExprClonePhrase(pConf, pCsr->pExpr, iPhrase, &pNew->pExpr);
+    rc = sqlite3Fts5ExprClonePhrase(pCsr->pExpr, iPhrase, &pNew->pExpr);
   }
 
   if( rc==SQLITE_OK ){
@@ -2333,7 +2339,7 @@ static int fts5ColumnMethod(
 */
 static int fts5FindFunctionMethod(
   sqlite3_vtab *pVtab,            /* Virtual table handle */
-  int nArg,                       /* Number of SQL function arguments */
+  int nUnused,                    /* Number of SQL function arguments */
   const char *zName,              /* Name of SQL function */
   void (**pxFunc)(sqlite3_context*,int,sqlite3_value**), /* OUT: Result */
   void **ppArg                    /* OUT: User data for *pxFunc */
@@ -2341,6 +2347,7 @@ static int fts5FindFunctionMethod(
   Fts5Table *pTab = (Fts5Table*)pVtab;
   Fts5Auxiliary *pAux;
 
+  UNUSED_PARAM(nUnused);
   pAux = fts5FindAuxiliary(pTab, zName);
   if( pAux ){
     *pxFunc = fts5ApiCallback;
@@ -2370,6 +2377,7 @@ static int fts5RenameMethod(
 */
 static int fts5SavepointMethod(sqlite3_vtab *pVtab, int iSavepoint){
   Fts5Table *pTab = (Fts5Table*)pVtab;
+  UNUSED_PARAM(iSavepoint);  /* Call below is a no-op for NDEBUG builds */
   fts5CheckTransactionState(pTab, FTS5_SAVEPOINT, iSavepoint);
   fts5TripCursors(pTab);
   return sqlite3Fts5StorageSync(pTab->pStorage, 0);
@@ -2382,6 +2390,7 @@ static int fts5SavepointMethod(sqlite3_vtab *pVtab, int iSavepoint){
 */
 static int fts5ReleaseMethod(sqlite3_vtab *pVtab, int iSavepoint){
   Fts5Table *pTab = (Fts5Table*)pVtab;
+  UNUSED_PARAM(iSavepoint);  /* Call below is a no-op for NDEBUG builds */
   fts5CheckTransactionState(pTab, FTS5_RELEASE, iSavepoint);
   fts5TripCursors(pTab);
   return sqlite3Fts5StorageSync(pTab->pStorage, 0);
@@ -2394,6 +2403,7 @@ static int fts5ReleaseMethod(sqlite3_vtab *pVtab, int iSavepoint){
 */
 static int fts5RollbackToMethod(sqlite3_vtab *pVtab, int iSavepoint){
   Fts5Table *pTab = (Fts5Table*)pVtab;
+  UNUSED_PARAM(iSavepoint);  /* Call below is a no-op for NDEBUG builds */
   fts5CheckTransactionState(pTab, FTS5_ROLLBACKTO, iSavepoint);
   fts5TripCursors(pTab);
   return sqlite3Fts5StorageRollback(pTab->pStorage);
@@ -2573,10 +2583,11 @@ static void fts5ModuleDestroy(void *pCtx){
 static void fts5Fts5Func(
   sqlite3_context *pCtx,          /* Function call context */
   int nArg,                       /* Number of args */
-  sqlite3_value **apVal           /* Function arguments */
+  sqlite3_value **apUnused        /* Function arguments */
 ){
   Fts5Global *pGlobal = (Fts5Global*)sqlite3_user_data(pCtx);
   char buf[8];
+  UNUSED_PARAM2(nArg, apUnused);
   assert( nArg==0 );
   assert( sizeof(buf)>=sizeof(pGlobal) );
   memcpy(buf, (void*)&pGlobal, sizeof(pGlobal));
@@ -2589,9 +2600,10 @@ static void fts5Fts5Func(
 static void fts5SourceIdFunc(
   sqlite3_context *pCtx,          /* Function call context */
   int nArg,                       /* Number of args */
-  sqlite3_value **apVal           /* Function arguments */
+  sqlite3_value **apUnused        /* Function arguments */
 ){
   assert( nArg==0 );
+  UNUSED_PARAM2(nArg, apUnused);
   sqlite3_result_text(pCtx, "--FTS5-SOURCE-ID--", -1, SQLITE_TRANSIENT);
 }
 

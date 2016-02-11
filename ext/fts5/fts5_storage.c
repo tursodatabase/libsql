@@ -362,11 +362,12 @@ static int fts5StorageInsertCallback(
   int tflags,
   const char *pToken,             /* Buffer containing token */
   int nToken,                     /* Size of token in bytes */
-  int iStart,                     /* Start offset of token */
-  int iEnd                        /* End offset of token */
+  int iUnused1,                   /* Start offset of token */
+  int iUnused2                    /* End offset of token */
 ){
   Fts5InsertCtx *pCtx = (Fts5InsertCtx*)pContext;
   Fts5Index *pIdx = pCtx->pStorage->pIndex;
+  UNUSED_PARAM2(iUnused1, iUnused2);
   if( (tflags & FTS5_TOKEN_COLOCATED)==0 || pCtx->szCol==0 ){
     pCtx->szCol++;
   }
@@ -797,8 +798,8 @@ static int fts5StorageIntegrityCallback(
   int tflags,
   const char *pToken,             /* Buffer containing token */
   int nToken,                     /* Size of token in bytes */
-  int iStart,                     /* Start offset of token */
-  int iEnd                        /* End offset of token */
+  int iUnused1,                   /* Start offset of token */
+  int iUnused2                    /* End offset of token */
 ){
   Fts5IntegrityCtx *pCtx = (Fts5IntegrityCtx*)pContext;
   Fts5Termset *pTermset = pCtx->pTermset;
@@ -807,6 +808,8 @@ static int fts5StorageIntegrityCallback(
   int rc = SQLITE_OK;
   int iPos;
   int iCol;
+
+  UNUSED_PARAM2(iUnused1, iUnused2);
 
   if( (tflags & FTS5_TOKEN_COLOCATED)==0 || pCtx->szCol==0 ){
     pCtx->szCol++;

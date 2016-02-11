@@ -33,7 +33,8 @@
   );
 }
 %stack_overflow {
-  assert( 0 );
+  UNUSED_PARAM(yypMinor); /* Silence some compiler warnings */
+  sqlite3Fts5ParseError(pParse, "fts5: parser stack overflow");
 }
 
 // The name of the generated procedure that implements the parser

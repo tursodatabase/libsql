@@ -86,6 +86,10 @@ extern int sqlite3_fts5_may_be_corrupt;
 # define UNUSED_PARAM(X)  (void)(X)
 #endif
 
+#ifndef UNUSED_PARAM2
+# define UNUSED_PARAM2(X, Y)  (void)(X), (void)(Y)
+#endif
+
 typedef struct Fts5Global Fts5Global;
 typedef struct Fts5Colset Fts5Colset;
 
@@ -676,7 +680,7 @@ int sqlite3Fts5ExprPopulatePoslists(
 void sqlite3Fts5ExprCheckPoslists(Fts5Expr*, i64);
 void sqlite3Fts5ExprClearEof(Fts5Expr*);
 
-int sqlite3Fts5ExprClonePhrase(Fts5Config*, Fts5Expr*, int, Fts5Expr**);
+int sqlite3Fts5ExprClonePhrase(Fts5Expr*, int, Fts5Expr**);
 
 int sqlite3Fts5ExprPhraseCollist(Fts5Expr *, int, const u8 **, int *);
 

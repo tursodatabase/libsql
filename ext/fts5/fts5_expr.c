@@ -320,8 +320,6 @@ static i64 fts5ExprSynonymRowid(Fts5ExprTerm *pTerm, int bDesc, int *pbEof){
 */
 static int fts5ExprSynonymList(
   Fts5ExprTerm *pTerm, 
-  int bCollist, 
-  Fts5Colset *pColset,
   i64 iRowid,
   Fts5Buffer *pBuf,               /* Use this buffer for space if required */
   u8 **pa, int *pn
@@ -405,7 +403,6 @@ static int fts5ExprSynonymList(
 */
 static int fts5ExprPhraseIsMatch(
   Fts5ExprNode *pNode,            /* Node pPhrase belongs to */
-  Fts5Colset *pColset,            /* Restrict matches to these columns */
   Fts5ExprPhrase *pPhrase,        /* Phrase object to initialize */
   int *pbMatch                    /* OUT: Set to true if really a match */
 ){
@@ -434,9 +431,7 @@ static int fts5ExprPhraseIsMatch(
     u8 *a = 0;
     if( pTerm->pSynonym ){
       Fts5Buffer buf = {0, 0, 0};
-      rc = fts5ExprSynonymList(
-          pTerm, 0, pColset, pNode->iRowid, &buf, &a, &n
-      );
+      rc = fts5ExprSynonymList(pTerm, pNode->iRowid, &buf, &a, &n);
       if( rc ){
         sqlite3_free(a);
         goto ismatch_out;
@@ -727,7 +722,7 @@ static int fts5ExprNearTest(
       Fts5ExprPhrase *pPhrase = pNear->apPhrase[i];
       if( pPhrase->nTerm>1 || pPhrase->aTerm[0].pSynonym || pNear->pColset ){
         int bMatch = 0;
-        rc = fts5ExprPhraseIsMatch(pNode, pNear->pColset, pPhrase, &bMatch);
+        rc = fts5ExprPhraseIsMatch(pNode, pPhrase, &bMatch);
         if( bMatch==0 ) break;
       }else{
         Fts5IndexIter *pIter = pPhrase->aTerm[0].pIter;
@@ -1476,6 +1471,8 @@ static int fts5ParseTokenize(
   TokenCtx *pCtx = (TokenCtx*)pContext;
   Fts5ExprPhrase *pPhrase = pCtx->pPhrase;
 
+  UNUSED_PARAM2(iUnused1, iUnused2);
+
   /* If an error has already occurred, this is a no-op */
   if( pCtx->rc!=SQLITE_OK ) return pCtx->rc;
 
@@ -1611,7 +1608,6 @@ Fts5ExprPhrase *sqlite3Fts5ParseTerm(
 ** expression passed as the second argument.
 */
 int sqlite3Fts5ExprClonePhrase(
-  Fts5Config *pConfig,
   Fts5Expr *pExpr, 
   int iPhrase, 
   Fts5Expr **ppNew
@@ -1619,14 +1615,10 @@ int sqlite3Fts5ExprClonePhrase(
   int rc = SQLITE_OK;             /* Return code */
   Fts5ExprPhrase *pOrig;          /* The phrase extracted from pExpr */
   int i;                          /* Used to iterate through phrase terms */
-
   Fts5Expr *pNew = 0;             /* Expression to return via *ppNew */
-
   TokenCtx sCtx = {0,0};          /* Context object for fts5ParseTokenize */
 
-
   pOrig = pExpr->apExprPhrase[iPhrase];
-
   pNew = (Fts5Expr*)sqlite3Fts5MallocZero(&rc, sizeof(Fts5Expr));
   if( rc==SQLITE_OK ){
     pNew->apExprPhrase = (Fts5ExprPhrase**)sqlite3Fts5MallocZero(&rc, 
@@ -2399,12 +2391,14 @@ static int fts5ExprPopulatePoslistsCb(
   int tflags,                /* Mask of FTS5_TOKEN_* flags */
   const char *pToken,        /* Pointer to buffer containing token */
   int nToken,                /* Size of token in bytes */
-  int iStart,                /* Byte offset of token within input text */
-  int iEnd                   /* Byte offset of end of token within input text */
+  int iUnused1,              /* Byte offset of token within input text */
+  int iUnused2               /* Byte offset of end of token within input text */
 ){
   Fts5ExprCtx *p = (Fts5ExprCtx*)pCtx;
   Fts5Expr *pExpr = p->pExpr;
   int i;
+
+  UNUSED_PARAM2(iUnused1, iUnused2);
 
   if( (tflags & FTS5_TOKEN_COLOCATED)==0 ) p->iOff++;
   for(i=0; i<pExpr->nPhrase; i++){
@@ -2550,7 +2544,7 @@ int sqlite3Fts5ExprPhraseCollist(
     if( pTerm->pSynonym ){
       Fts5Buffer *pBuf = (Fts5Buffer*)&pTerm->pSynonym[1];
       rc = fts5ExprSynonymList(
-          pTerm, 1, 0, pNode->iRowid, pBuf, (u8**)ppCollist, pnCollist
+          pTerm, pNode->iRowid, pBuf, (u8**)ppCollist, pnCollist
       );
     }else{
       *ppCollist = pPhrase->aTerm[0].pIter->pData;
