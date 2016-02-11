@@ -1,5 +1,5 @@
-C Avoid\sa\sbuffer\soverread\swhen\sreading\sa\scorrupt\sfts5\sstructure\srecord.
-D 2016-02-11T18:08:38.633
+C Fix\sanother\sunused\svariable\swarning\sin\sfts5\scode.
+D 2016-02-11T18:18:33.214
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 463edfba5c6fccebc61d8c094ccd463a6a55becb
@@ -114,7 +114,7 @@ F ext/fts5/fts5_tokenize.c 2ce7b44183538ec46b7907726262ee43ffdd39a8
 F ext/fts5/fts5_unicode2.c 78273fbd588d1d9bd0a7e4e0ccc9207348bae33c
 F ext/fts5/fts5_varint.c a5aceacda04dafcbae725413d7a16818ecd65738
 F ext/fts5/fts5_vocab.c dba72ca393d71c2588548b51380387f6b44c77a8
-F ext/fts5/fts5parse.y 9f4786e16ff2ce16c27552fb4911dc0a033472ef
+F ext/fts5/fts5parse.y 59432ea369f1aa65511bad465f55d31a22f9f223
 F ext/fts5/mkportersteps.tcl 5acf962d2e0074f701620bb5308155fa1e4a63ba
 F ext/fts5/test/fts5_common.tcl 61ff0d1a29d98a91c4553b20b3f410d858834ee9
 F ext/fts5/test/fts5aa.test 7e814df4a0e6c22a6fe2d84f210fdc0b5068a084
@@ -1427,7 +1427,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh ef6ebc6fd8d2dc35db3b622015c16a023d4fef4f
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P bc3f7900d5a06829d123814a5ac7b951bcfc1560
-R 4e2da5472f7a4a893328894fa9813af5
+P facbc424e555061135aced7b134bf6c19f54e484
+R 36e010c0ed746dc7878f2a118cec7bdd
 U dan
-Z 61d305eb29d472167b30ee2488dbe8c6
+Z 6610f3f01094a7b96f8ca1dff6e9ec45

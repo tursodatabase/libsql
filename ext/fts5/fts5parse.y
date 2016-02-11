@@ -28,12 +28,13 @@
 // This code runs whenever there is a syntax error
 //
 %syntax_error {
+  UNUSED_PARAM(yymajor); /* Silence a compiler warning */
   sqlite3Fts5ParseError(
     pParse, "fts5: syntax error near \"%.*s\"",TOKEN.n,TOKEN.p
   );
 }
 %stack_overflow {
-  UNUSED_PARAM(yypMinor); /* Silence some compiler warnings */
+  UNUSED_PARAM(yypMinor); /* Silence a compiler warning */
   sqlite3Fts5ParseError(pParse, "fts5: parser stack overflow");
 }
 
