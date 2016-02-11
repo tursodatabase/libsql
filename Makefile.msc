@@ -1451,7 +1451,18 @@ mptest:	mptester.exe
 .target_source:	$(SRC) $(TOP)\tool\vdbe-compress.tcl fts5.c
 	-rmdir /Q/S tsrc 2>NUL
 	-mkdir tsrc
-	for %i in ($(SRC)) do copy /Y %i tsrc
+	for %i in ($(SRC00)) do copy /Y %i tsrc
+	for %i in ($(SRC01)) do copy /Y %i tsrc
+	for %i in ($(SRC02)) do copy /Y %i tsrc
+	for %i in ($(SRC03)) do copy /Y %i tsrc
+	for %i in ($(SRC04)) do copy /Y %i tsrc
+	for %i in ($(SRC05)) do copy /Y %i tsrc
+	for %i in ($(SRC06)) do copy /Y %i tsrc
+	for %i in ($(SRC07)) do copy /Y %i tsrc
+	for %i in ($(SRC08)) do copy /Y %i tsrc
+	for %i in ($(SRC09)) do copy /Y %i tsrc
+	for %i in ($(SRC10)) do copy /Y %i tsrc
+	for %i in ($(SRC11)) do copy /Y %i tsrc
 	copy /Y fts5.c tsrc
 	copy /Y fts5.h tsrc
 	del /Q tsrc\sqlite.h.in tsrc\parse.y 2>NUL

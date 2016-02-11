@@ -1,8 +1,8 @@
-C Enhance\sthe\sMSVC\smakefile\sto\senable\sbuilding\s'testfixture'\sfully\sfrom\ssource\scode.
-D 2016-02-11T21:28:16.615
+C Prevent\s'expanded\scommand\sline\sX\stoo\slong'\serrors\sduring\sthe\sbatch\s'for'\sloops\sused\sfor\scopying\sfiles.
+D 2016-02-11T21:38:05.552
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 5e216ab1a9d71888cd18f759edc37742b22ab88a
+F Makefile.msc 9df6e7ea267d09a63ba845df044bf3afe9e4fa48
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION 866588d1edf0ccb5b0d33896974338f97564f719
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -1427,10 +1427,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh ef6ebc6fd8d2dc35db3b622015c16a023d4fef4f
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 61b4c120540afd80a4021b0d3990f13acc38a059
-R b57cf2985771e3ae41eb2414d99c4601
-T *branch * testFixtureSrc
-T *sym-testFixtureSrc *
-T -sym-trunk *
+P 54ff3a26bc45a1c3c0690119e8fd00b02e2a16ba
+R 42eb6f3594e981fa7242203e9049d719
 U mistachkin
-Z 5a46bf6df8254b3a0e184f4d03ced4bc
+Z 06f173e2669b6a296587f217c0e00623
