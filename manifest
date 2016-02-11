@@ -1,5 +1,5 @@
-C Enhance\sthe\sMSVC\smakefile\sto\senable\sbuilding\s'testfixture'\sfully\sfrom\ssource\scode.
-D 2016-02-11T21:59:02.687
+C Automatically\sdisable\sFTS3\sand\sFTS4\swhen\sbuilding\swith\sSQLITE_OMIT_VIRTUALTABLE.
+D 2016-02-11T22:41:04.941
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 9df6e7ea267d09a63ba845df044bf3afe9e4fa48
@@ -72,7 +72,7 @@ F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
 F ext/fts3/fts3.c e028eb13432f108d2e22cded019fc980700e4e00
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h c84125c666ee54cef6efce6ff64abb0d0e2f4535
+F ext/fts3/fts3Int.h 89d0bd4595a0de384dac78e94b803de12586e8dd
 F ext/fts3/fts3_aux.c 9edc3655fcb287f0467d0a4b886a01c6185fe9f1
 F ext/fts3/fts3_expr.c dfd571a24412779ac01f25c01d888c6ef7b2d0ef
 F ext/fts3/fts3_hash.c 29b986e43f4e9dd40110eafa377dc0d63c422c60
@@ -353,7 +353,7 @@ F src/shell.c 0367440658104bf2ce8d8a9a5a713a4b11c9acbe
 F src/sqlite.h.in cf22ad1d52dca2c9862d63833e581028119aab7e
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
-F src/sqliteInt.h eb20019610d0bd25c7479ddfdef1fd4c00854dc2
+F src/sqliteInt.h 04ca5b3cdb3bcf87ba6300d5d36b51498f65f28c
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
@@ -1427,8 +1427,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh ef6ebc6fd8d2dc35db3b622015c16a023d4fef4f
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 52571991fcfa2629e8a8354e0c9a62e749a092bf 67ee9b5af10a8b57a37f19ac040e49fdfcec4145
-R 433c8d6ed9428ba17eccff539cc26ec2
-T +closed 67ee9b5af10a8b57a37f19ac040e49fdfcec4145
-U mistachkin
-Z 14072e3fe80b7f74a81b8ac3aab7b0a7
+P f183e05990608d1a4002fa8a02c2d2eea6bc94b6
+R dfe12fb76097c62e2abe5dbb44ef76aa
+U drh
+Z 0896e1216887463484734b70a95ecf26
