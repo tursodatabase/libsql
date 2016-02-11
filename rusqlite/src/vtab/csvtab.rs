@@ -11,6 +11,7 @@ use ffi;
 use types::Null;
 use vtab::{declare_vtab, escape_double_quote, VTab, VTabCursor};
 
+/// Register the "csv" module.
 pub fn load_module(conn: &Connection) -> Result<()> {
     let aux: Option<()> = None;
     conn.create_module("csv", &CSV_MODULE, aux)

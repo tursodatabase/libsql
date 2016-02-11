@@ -9,6 +9,11 @@ use {Connection, Error, Result};
 use ffi;
 use vtab::{declare_vtab, escape_double_quote, VTab, VTabCursor};
 
+/// Create a specific instance of an intarray object.
+/// The new intarray object is returned.
+///
+/// Each intarray object corresponds to a virtual table in the TEMP table
+/// with the specified `name`.
 pub fn create_int_array(conn: &Connection, name: &str) -> Result<Rc<RefCell<Vec<i64>>>> {
     let array = Rc::new(RefCell::new(Vec::new()));
     try!(conn.create_module(name, &INT_ARRAY_MODULE, Some(array.clone())));
@@ -17,6 +22,9 @@ pub fn create_int_array(conn: &Connection, name: &str) -> Result<Rc<RefCell<Vec<
     Ok(array)
 }
 
+/// Destroy the intarray object by dropping the virtual table.
+/// If not done explicitly by the application, the virtual table will be dropped implicitly
+/// by the system when the database connection is closed.
 pub fn drop_int_array(conn: &Connection, name: &str) -> Result<()> {
     conn.execute_batch(&format!("DROP TABLE temp.\"{0}\"",
                                 escape_double_quote(name)))
