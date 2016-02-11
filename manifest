@@ -1,5 +1,5 @@
-C Fix\sanother\sunused\svariable\swarning\sin\sfts5\scode.
-D 2016-02-11T18:18:33.214
+C Remove\sthe\sunused\sfts5BlobCompare()\sroutine.
+D 2016-02-11T21:53:57.918
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 463edfba5c6fccebc61d8c094ccd463a6a55becb
@@ -104,7 +104,7 @@ F ext/fts5/fts5_buffer.c 4c1502d4c956cd092c89ce4480867f9d8bf325cd
 F ext/fts5/fts5_config.c 35c5173cae4eb17e82164a7f5aeef56a48903079
 F ext/fts5/fts5_expr.c 8e8e4635f655133eb39018072fc0f0942a2c4337
 F ext/fts5/fts5_hash.c 1b113977296cf4212c6ec667d5e3f2bd18036955
-F ext/fts5/fts5_index.c f8afd5cc076726bd9e5807ab62306c85c58cef22
+F ext/fts5/fts5_index.c c6cd5190c7e5dd94151cb17acd939c82e5c7be2d
 F ext/fts5/fts5_main.c 0e01ead4e817483e378e7e38e6d902f50b68d29e
 F ext/fts5/fts5_storage.c f8343db90d8c95a4d4b52f6676e354b4649ffd6e
 F ext/fts5/fts5_tcl.c f8731e0508299bd43f1a2eff7dbeaac870768966
@@ -1427,7 +1427,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh ef6ebc6fd8d2dc35db3b622015c16a023d4fef4f
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P facbc424e555061135aced7b134bf6c19f54e484
-R 36e010c0ed746dc7878f2a118cec7bdd
-U dan
-Z 6610f3f01094a7b96f8ca1dff6e9ec45
+P 61b4c120540afd80a4021b0d3990f13acc38a059
+R 529687379591fdd4d2bd925d4a922f7c
+U drh
+Z 880ed5157f4e91bf42a07f9f7d321ea0

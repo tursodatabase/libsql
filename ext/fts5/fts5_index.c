@@ -607,17 +607,6 @@ static int fts5BufferCompare(Fts5Buffer *pLeft, Fts5Buffer *pRight){
   return (res==0 ? (pLeft->n - pRight->n) : res);
 }
 
-#ifdef SQLITE_DEBUG
-static int fts5BlobCompare(
-  const u8 *pLeft, int nLeft, 
-  const u8 *pRight, int nRight
-){
-  int nCmp = MIN(nLeft, nRight);
-  int res = memcmp(pLeft, pRight, nCmp);
-  return (res==0 ? (nLeft - nRight) : res);
-}
-#endif
-
 static int fts5LeafFirstTermOff(Fts5Data *pLeaf){
   int ret;
   fts5GetVarint32(&pLeaf->p[pLeaf->szLeaf], ret);
