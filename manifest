@@ -1,5 +1,5 @@
-C Remove\sthe\sunused\sfts5BlobCompare()\sroutine.
-D 2016-02-11T21:53:57.918
+C Remove\sthe\sunexplained\sextra\s3.0\scost\sfactor\sfor\sthe\sB-tree\ssorting\sthat\sis\ndone\sto\simplement\sDISTINCT\sin\sthe\sabsence\sof\san\sindex\sto\shelp.
+D 2016-02-11T21:55:23.162
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 463edfba5c6fccebc61d8c094ccd463a6a55becb
@@ -427,7 +427,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c d21b99fd1458159d0b1ecdccc8ee6ada4fdc4c54
 F src/wal.h 2f7c831cf3b071fa548bf2d5cac640846a7ff19c
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
-F src/where.c d89fd5cff448ab5c5ca492dd9793b35ffe31ab35
+F src/where.c f9683f8b881106e441971bc5eda216722ab16d4c
 F src/whereInt.h 78b6b4de94db84aecbdc07fe3e38f648eb391e9a
 F src/wherecode.c 791a784bbf8749d560fdb0b990b607bc4f44a38d
 F src/whereexpr.c de117970b29471177a6901d60ad83a194671dc03
@@ -1427,7 +1427,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh ef6ebc6fd8d2dc35db3b622015c16a023d4fef4f
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 61b4c120540afd80a4021b0d3990f13acc38a059
-R 529687379591fdd4d2bd925d4a922f7c
+P defc762dd11144402abd591278819768a080d5ea
+R 38eca6b8eb9deb3a2f0fef0b239b97c5
 U drh
-Z 880ed5157f4e91bf42a07f9f7d321ea0
+Z 4bfab18ef2ae74dd28795db9a6295a18
