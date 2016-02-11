@@ -1274,6 +1274,10 @@ struct sqlite3 {
 #ifdef SQLITE_USER_AUTHENTICATION
   sqlite3_userauth auth;        /* User authentication information */
 #endif
+#ifdef SQLITE_SCHEMA_LINT
+  void (*xWhereInfo)(void*, int, const char*, int, i64);
+  void *pWhereInfoCtx;
+#endif
 };
 
 /*

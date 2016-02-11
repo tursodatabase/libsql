@@ -3906,176 +3906,103 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
 }
 
 #ifdef SQLITE_SCHEMA_LINT
-static char *whereAppendPrintf(sqlite3 *db, const char *zFmt, ...){
-  va_list ap;
-  char *zRes = 0;
-  va_start(ap, zFmt);
-  zRes = sqlite3_vmprintf(zFmt, ap);
-  if( zRes==0 ){
-    db->mallocFailed = 1;
-  }else if( db->mallocFailed ){
-    sqlite3_free(zRes);
-    zRes = 0;
-  }
-  va_end(ap);
-  return zRes;
-}
-
-/*
-** Append a representation of term pTerm to the string in zIn and return
-** the result. Or, if an OOM occurs, free zIn and return a NULL pointer.
-*/
-static char *whereAppendSingleTerm(
-  Parse *pParse,
-  Table *pTab,
-  int iCol,
-  int bOr,
-  char *zIn,
-  WhereTerm *pTerm
-){
-  char *zBuf;
-  sqlite3 *db = pParse->db;
-  Expr *pX = pTerm->pExpr;
-  CollSeq *pColl;
-  const char *zOp = 0;
-
-  if( pTerm->eOperator & (WO_IS|WO_EQ|WO_IN) ){
-    zOp = "eq";
-  }else if( pTerm->eOperator & (WO_LT|WO_LE|WO_GE|WO_GT) ){
-    zOp = "range";
-  }
-  pColl = sqlite3BinaryCompareCollSeq(pParse, pX->pLeft, pX->pRight);
-
-  if( zOp ){
-    const char *zFmt = bOr ? "%z{{%s \"%w\" \"%w\" %lld}}" :
-                             "%z{%s \"%w\" \"%w\" %lld}";
-    zBuf = whereAppendPrintf(db, zFmt, zIn, 
-        zOp, pTab->aCol[iCol].zName, 
-        (pColl ? pColl->zName : "BINARY"),
-        pTerm->prereqRight
-    );
-  }else{
-    zBuf = zIn;
-  }
-
-  return zBuf;
-}
-
-static char *whereTraceWC(
+static void whereTraceWC(
   Parse *pParse, 
-  int bInitialSpace,
   struct SrcList_item *pItem,
-  char *zIn,
-  WhereClause *pWC
+  WhereClause *pWC,
+  int bOr
 ){
   sqlite3 *db = pParse->db;
   Table *pTab = pItem->pTab;
-  char *zBuf = zIn;
-  int iCol;
+  void (*x)(void*, int, const char*, int, i64) = db->xWhereInfo;
+  void *pCtx = db->pWhereInfoCtx;
+  int bFirst = 1;                 /* True until first callback is made */
   int ii;
-  int bFirst = !bInitialSpace;
-  int bOr = (pWC->op==TK_OR);
 
-  /* List of WO_SINGLE constraints */
-  for(iCol=0; iCol<pTab->nCol; iCol++){
+  /* Issue callbacks for WO_SINGLE constraints */
+  for(ii=0; ii<pTab->nCol; ii++){
     int opMask = WO_SINGLE; 
     WhereScan scan;
     WhereTerm *pTerm;
-    for(pTerm=whereScanInit(&scan, pWC, pItem->iCursor, iCol, opMask, 0);
+    for(pTerm=whereScanInit(&scan, pWC, pItem->iCursor, ii, opMask, 0);
         pTerm;
         pTerm=whereScanNext(&scan)
     ){
-      /* assert( iCol==pTerm->u.leftColumn ); */
-      if( bFirst==0 ) zBuf = whereAppendPrintf(db, "%z ", zBuf);
-      zBuf = whereAppendSingleTerm(pParse, pTab, iCol, bOr, zBuf, pTerm);
+      int eOp;
+      Expr *pX = pTerm->pExpr;
+      CollSeq *pC = sqlite3BinaryCompareCollSeq(pParse, pX->pLeft, pX->pRight);
+      if( pTerm->eOperator & (WO_IS|WO_EQ|WO_IN) ){
+        eOp = SQLITE_WHEREINFO_EQUALS;
+      }else{
+        eOp = SQLITE_WHEREINFO_RANGE;
+      }
+      if( bOr && !bFirst ) x(pCtx, SQLITE_WHEREINFO_NEXTOR, 0, 0, 0);
+      x(pCtx, eOp, (pC ? pC->zName : "BINARY"), ii, pTerm->prereqRight);
       bFirst = 0;
     }
   }
 
-  /* Add composite - (WO_OR|WO_AND) - constraints */
+  /* Callbacks for composite - (WO_OR|WO_AND) - constraints */
   for(ii=0; ii<pWC->nTerm; ii++){
     WhereTerm *pTerm = &pWC->a[ii];
-    if( pTerm->eOperator & (WO_OR|WO_AND) ){
-      const char *zFmt = ((pTerm->eOperator&WO_OR) ? "%z%s{or " : "%z%s{");
-      zBuf = whereAppendPrintf(db, zFmt, zBuf, bFirst ? "" : " ");
-      zBuf = whereTraceWC(pParse, 0, pItem, zBuf, &pTerm->u.pOrInfo->wc);
-      zBuf = whereAppendPrintf(db, "%z}", zBuf);
+    if( pTerm->eOperator & WO_OR ){
+      assert( bOr==0 );
+      x(pCtx, SQLITE_WHEREINFO_BEGINOR, 0, 0, 0);
+      whereTraceWC(pParse, pItem, &pTerm->u.pOrInfo->wc, 1);
+      x(pCtx, SQLITE_WHEREINFO_ENDOR, 0, 0, 0);
+    }
+    if( pTerm->eOperator & WO_AND ){
+      if( bOr && !bFirst ) x(pCtx, SQLITE_WHEREINFO_NEXTOR, 0, 0, 0);
+      whereTraceWC(pParse, pItem, &pTerm->u.pAndInfo->wc, 0);
       bFirst = 0;
     }
   }
-
-  return zBuf;
 }
+
 
 static void whereTraceBuilder(
   Parse *pParse,
   WhereLoopBuilder *p
 ){
   sqlite3 *db = pParse->db;
-  if( db->xTrace ){
-    ExprList *pOrderBy = p->pOrderBy;
-    WhereInfo *pWInfo = p->pWInfo;
-    int nTablist = pWInfo->pTabList->nSrc;
+  if( db->xWhereInfo && db->init.busy==0 ){
+    void (*x)(void*, int, const char*, int, i64) = db->xWhereInfo;
+    void *pCtx = db->pWhereInfoCtx;
     int ii;
+    int nTab = p->pWInfo->pTabList->nSrc;
 
     /* Loop through each element of the FROM clause. Ignore any sub-selects
-    ** or views. Invoke the xTrace() callback once for each real table. */
-    for(ii=0; ii<nTablist; ii++){
-      char *zBuf = 0;
-      int iCol;
-      int nCol;
-      Table *pTab;
+    ** or views. Invoke the xWhereInfo() callback multiple times for each
+    ** real table.  */
+    for(ii=0; ii<p->pWInfo->pTabList->nSrc; ii++){
+      struct SrcList_item *pItem = &p->pWInfo->pTabList->a[ii];
+      if( pItem->pSelect==0 ){
+        Table *pTab = pItem->pTab;
+        int iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
 
-      struct SrcList_item *pItem = &pWInfo->pTabList->a[ii];
-      if( pItem->pSelect ) continue;
-      pTab = pItem->pTab;
-      nCol = pTab->nCol;
+        /* Table name callback */
+        x(pCtx, SQLITE_WHEREINFO_TABLE, pTab->zName, iDb, pItem->colUsed);
 
-      /* Append the table name to the buffer. */
-      zBuf = whereAppendPrintf(db, "\"%w\"", pTab->zName);
-
-      /* Append the list of columns required to create a covering index */
-      zBuf = whereAppendPrintf(db, "%z {cols", zBuf);
-      if( 0==(pItem->colUsed & ((u64)1 << (sizeof(Bitmask)*8-1))) ){
-        for(iCol=0; iCol<nCol; iCol++){
-          if( iCol==(sizeof(Bitmask)*8-1) ) break;
-          if( pItem->colUsed & ((u64)1 << iCol) ){
-            const char *zName = pTab->aCol[iCol].zName;
-            zBuf = whereAppendPrintf(db, "%z \"%w\"", zBuf, zName);
-          }
-        }
-      }
-      zBuf = whereAppendPrintf(db, "%z}",zBuf);
-
-      /* Append the contents of WHERE clause */
-      zBuf = whereTraceWC(pParse, 1, pItem, zBuf, p->pWC);
-
-      /* Append the ORDER BY clause, if any */
-      if( pOrderBy ){
-        int i;
-        int bFirst = 1;
-        for(i=0; i<pOrderBy->nExpr; i++){
-          Expr *pExpr = pOrderBy->a[i].pExpr; 
-          CollSeq *pColl = sqlite3ExprCollSeq(pParse, pExpr);
-
-          pExpr = sqlite3ExprSkipCollate(pExpr);
-          if( pExpr->op==TK_COLUMN && pExpr->iTable==pItem->iCursor ){
-            if( pExpr->iColumn>=0 ){
-              const char *zName = pTab->aCol[pExpr->iColumn].zName;
-              zBuf = whereAppendPrintf(db, "%z%s\"%w\" \"%w\" %s", zBuf,
-                  bFirst ? " {orderby " : " ", zName, pColl->zName,
-                  (pOrderBy->a[i].sortOrder ? "DESC" : "ASC")
-              );
-              bFirst = 0;
+        /* ORDER BY callbacks */
+        if( p->pOrderBy ){
+          int i;
+          int bFirst = 1;
+          for(i=0; i<p->pOrderBy->nExpr; i++){
+            Expr *pExpr = p->pOrderBy->a[i].pExpr; 
+            CollSeq *pColl = sqlite3ExprCollSeq(pParse, pExpr);
+            pExpr = sqlite3ExprSkipCollate(pExpr);
+            if( pExpr->op==TK_COLUMN && pExpr->iTable==pItem->iCursor ){
+              int iCol = pExpr->iColumn;
+              if( iCol>=0 ){
+                x(pCtx, SQLITE_WHEREINFO_ORDERBY, pColl->zName, iCol, 0); 
+              }
             }
           }
         }
-        if( bFirst==0 ) zBuf = whereAppendPrintf(db, "%z}", zBuf);
-      }
 
-      /* Pass the buffer to the xTrace() callback, then free it */
-      db->xTrace(db->pTraceArg, zBuf);
-      sqlite3DbFree(db, zBuf);
+        /* WHERE callbacks */
+        whereTraceWC(pParse, pItem, p->pWC, 0);
+      }
     }
   }
 }

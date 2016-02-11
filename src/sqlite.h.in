@@ -1909,6 +1909,15 @@ struct sqlite3_mem_methods {
 #define SQLITE_DBCONFIG_LOOKASIDE       1001  /* void* int int */
 #define SQLITE_DBCONFIG_ENABLE_FKEY     1002  /* int int* */
 #define SQLITE_DBCONFIG_ENABLE_TRIGGER  1003  /* int int* */
+#define SQLITE_DBCONFIG_WHEREINFO       1004  /* xWhereInfo void* */
+
+#define SQLITE_WHEREINFO_TABLE   1
+#define SQLITE_WHEREINFO_EQUALS  2
+#define SQLITE_WHEREINFO_RANGE   3
+#define SQLITE_WHEREINFO_ORDERBY 4
+#define SQLITE_WHEREINFO_BEGINOR 5
+#define SQLITE_WHEREINFO_ENDOR   6
+#define SQLITE_WHEREINFO_NEXTOR  7
 
 
 /*

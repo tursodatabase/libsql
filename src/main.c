@@ -792,6 +792,13 @@ int sqlite3_db_config(sqlite3 *db, int op, ...){
       rc = setupLookaside(db, pBuf, sz, cnt);
       break;
     }
+#ifdef SQLITE_SCHEMA_LINT
+    case SQLITE_DBCONFIG_WHEREINFO: {
+      db->xWhereInfo = va_arg(ap, void(*)(void*, int, const char*, int, i64));
+      db->pWhereInfoCtx = va_arg(ap, void*);
+      break;
+    }
+#endif
     default: {
       static const struct {
         int op;      /* The opcode */

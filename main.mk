@@ -472,7 +472,7 @@ libsqlite3.a:	$(LIBOBJ)
 	$(AR) libsqlite3.a $(LIBOBJ)
 	$(RANLIB) libsqlite3.a
 
-sqlite3$(EXE):	$(TOP)/src/shell.c libsqlite3.a sqlite3.h
+sqlite3$(EXE):	$(TOP)/src/shell.c libsqlite3.a sqlite3.h $(TOP)/src/shell_indexes.c
 	$(TCCX) $(READLINE_FLAGS) -o sqlite3$(EXE) $(SHELL_OPT) \
 		$(TOP)/src/shell.c libsqlite3.a $(LIBREADLINE) $(TLIBS) $(THREADLIB)
 
