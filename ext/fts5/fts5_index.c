@@ -879,24 +879,33 @@ static int fts5StructureDecode(
       int nTotal;
       int iSeg;
 
-      i += fts5GetVarint32(&pData[i], pLvl->nMerge);
-      i += fts5GetVarint32(&pData[i], nTotal);
-      assert( nTotal>=pLvl->nMerge );
-      pLvl->aSeg = (Fts5StructureSegment*)sqlite3Fts5MallocZero(&rc, 
-          nTotal * sizeof(Fts5StructureSegment)
-      );
+      if( i>=nData ){
+        rc = FTS5_CORRUPT;
+      }else{
+        i += fts5GetVarint32(&pData[i], pLvl->nMerge);
+        i += fts5GetVarint32(&pData[i], nTotal);
+        assert( nTotal>=pLvl->nMerge );
+        pLvl->aSeg = (Fts5StructureSegment*)sqlite3Fts5MallocZero(&rc, 
+            nTotal * sizeof(Fts5StructureSegment)
+        );
+      }
 
       if( rc==SQLITE_OK ){
         pLvl->nSeg = nTotal;
         for(iSeg=0; iSeg<nTotal; iSeg++){
+          if( i>=nData ){
+            rc = FTS5_CORRUPT;
+            break;
+          }
           i += fts5GetVarint32(&pData[i], pLvl->aSeg[iSeg].iSegid);
           i += fts5GetVarint32(&pData[i], pLvl->aSeg[iSeg].pgnoFirst);
           i += fts5GetVarint32(&pData[i], pLvl->aSeg[iSeg].pgnoLast);
         }
-      }else{
-        fts5StructureRelease(pRet);
-        pRet = 0;
       }
+    }
+    if( rc!=SQLITE_OK ){
+      fts5StructureRelease(pRet);
+      pRet = 0;
     }
   }
 
@@ -1564,6 +1573,10 @@ static void fts5SegIterLoadTerm(Fts5Index *p, Fts5SegIter *pIter, int nKeep){
   int nNew;                       /* Bytes of new data */
 
   iOff += fts5GetVarint32(&a[iOff], nNew);
+  if( iOff+nNew>pIter->pLeaf->nn ){
+    p->rc = FTS5_CORRUPT;
+    return;
+  }
   pIter->term.n = nKeep;
   fts5BufferAppendBlob(&p->rc, &pIter->term, nNew, &a[iOff]);
   iOff += nNew;

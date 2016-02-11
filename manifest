@@ -1,5 +1,5 @@
-C Handle\sparser\sstack\soverflow\swhen\sparsing\sfts5\squery\sexpressions.\sFix\ssome\scompiler\swarnings\sin\sfts5\scode.
-D 2016-02-11T17:01:32.344
+C Avoid\sa\sbuffer\soverread\swhen\sreading\sa\scorrupt\sfts5\sstructure\srecord.
+D 2016-02-11T18:08:38.633
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 463edfba5c6fccebc61d8c094ccd463a6a55becb
@@ -104,7 +104,7 @@ F ext/fts5/fts5_buffer.c 4c1502d4c956cd092c89ce4480867f9d8bf325cd
 F ext/fts5/fts5_config.c 35c5173cae4eb17e82164a7f5aeef56a48903079
 F ext/fts5/fts5_expr.c 8e8e4635f655133eb39018072fc0f0942a2c4337
 F ext/fts5/fts5_hash.c 1b113977296cf4212c6ec667d5e3f2bd18036955
-F ext/fts5/fts5_index.c 12354c3871dc0e84621449ab52e8dc26ada82294
+F ext/fts5/fts5_index.c f8afd5cc076726bd9e5807ab62306c85c58cef22
 F ext/fts5/fts5_main.c 0e01ead4e817483e378e7e38e6d902f50b68d29e
 F ext/fts5/fts5_storage.c f8343db90d8c95a4d4b52f6676e354b4649ffd6e
 F ext/fts5/fts5_tcl.c f8731e0508299bd43f1a2eff7dbeaac870768966
@@ -141,7 +141,7 @@ F ext/fts5/test/fts5conflict.test 26f4e46c4d31e16221794832a990dc4e30e18de5
 F ext/fts5/test/fts5content.test 9a952c95518a14182dc3b59e3c8fa71cda82a4e1
 F ext/fts5/test/fts5corrupt.test c2ad090192708150d50d961278df10ae7a4b8b62
 F ext/fts5/test/fts5corrupt2.test 26c0a39dd9ff73207e6229f83b50b21d37c7658c
-F ext/fts5/test/fts5corrupt3.test a2b537c120bdd43c79c42fe2438d7b8c81fe5599
+F ext/fts5/test/fts5corrupt3.test b9558d5b0ca44a8b6247fbb5d4a47592a8976892
 F ext/fts5/test/fts5detail.test ef5c690535a797413acaf5ad9b8ab5d49972df69
 F ext/fts5/test/fts5dlidx.test 13871a14641017ae42f6f1055a8067bafd44cb3d
 F ext/fts5/test/fts5doclist.test 8edb5b57e5f144030ed74ec00ef6fa4294fed79b
@@ -1427,7 +1427,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh ef6ebc6fd8d2dc35db3b622015c16a023d4fef4f
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P cfe2eb88b504f5e9b1351022036641b1ac4c3e78
-R ecfecabfdc2e20b17daae28f5e9c8aee
+P bc3f7900d5a06829d123814a5ac7b951bcfc1560
+R 4e2da5472f7a4a893328894fa9813af5
 U dan
-Z 2089f51bfc7049c8d149969b8c7916a9
+Z 61d305eb29d472167b30ee2488dbe8c6
