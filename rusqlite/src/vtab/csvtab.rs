@@ -47,7 +47,7 @@ impl VTab<CSVTabCursor> for CSVTab {
         }
         let filename = try!(str::from_utf8(c_filename));
         let mut reader = try!(csv::Reader::from_file(filename)).has_headers(false); // TODO flexible ?
-        let mut cols = Vec::new();
+        let mut cols: Vec<String> = Vec::new();
 
         let args = &args[4..];
         for c_arg in args {
@@ -64,7 +64,7 @@ impl VTab<CSVTabCursor> for CSVTab {
                 } else if uc.contains("NO_QUOTE") {
                     reader = reader.quote(0);
                 } else {
-                    cols.push(escape_double_quote(String::from(arg)));
+                    cols.push(escape_double_quote(arg).into_owned());
                 }
             }
         }

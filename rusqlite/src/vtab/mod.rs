@@ -1,5 +1,7 @@
 //! Create virtual tables.
 //! (See http://sqlite.org/vtab.html)
+use std::borrow::Cow;
+use std::borrow::Cow::{Borrowed, Owned};
 use std::ffi::CString;
 use std::mem;
 use std::ptr;
@@ -128,12 +130,12 @@ pub fn declare_vtab(db: *mut ffi::sqlite3, sql: &str) -> Result<()> {
 }
 
 /// Escape double-quote (`"`) character occurences by doubling them (`""`).
-pub fn escape_double_quote(identifier: String) -> String {
+pub fn escape_double_quote<'a>(identifier: &'a str) -> Cow<'a, str> {
     if identifier.contains('"') {
         // escape quote by doubling them
-        identifier.replace("\"", "\"\"")
+        Owned(identifier.replace("\"", "\"\""))
     } else {
-        identifier
+        Borrowed(identifier)
     }
 }
 

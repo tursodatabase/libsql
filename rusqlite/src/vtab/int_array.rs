@@ -13,13 +13,13 @@ pub fn create_int_array(conn: &Connection, name: &str) -> Result<Rc<RefCell<Vec<
     let array = Rc::new(RefCell::new(Vec::new()));
     try!(conn.create_module(name, &INT_ARRAY_MODULE, Some(array.clone())));
     try!(conn.execute_batch(&format!("CREATE VIRTUAL TABLE temp.\"{0}\" USING \"{0}\"",
-                                     escape_double_quote(name.to_string()))));
+                                     escape_double_quote(name))));
     Ok(array)
 }
 
 pub fn drop_int_array(conn: &Connection, name: &str) -> Result<()> {
     conn.execute_batch(&format!("DROP TABLE temp.\"{0}\"",
-                                escape_double_quote(name.to_string())))
+                                escape_double_quote(name)))
 }
 
 init_module!(INT_ARRAY_MODULE, IntArrayVTab, IntArrayVTabCursor,
