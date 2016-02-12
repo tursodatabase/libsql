@@ -119,12 +119,12 @@ USE_RC = 1
 FOR_WINRT = 0
 !ENDIF
 
-# Set this non-0 to compile binaries suitable for the UAP environment.
+# Set this non-0 to compile binaries suitable for the UWP environment.
 # This setting does not apply to any binaries that require Tcl to operate
 # properly (i.e. the text fixture, etc).
 #
-!IFNDEF FOR_UAP
-FOR_UAP = 0
+!IFNDEF FOR_UWP
+FOR_UWP = 0
 !ENDIF
 
 # Set this non-0 to compile binaries suitable for the Windows 10 platform.
@@ -802,10 +802,10 @@ LTLINKOPTS = $(LTLINKOPTS) WindowsPhoneCore.lib RuntimeObject.lib PhoneAppModelH
 LTLINKOPTS = $(LTLINKOPTS) /NODEFAULTLIB:kernel32.lib /NODEFAULTLIB:ole32.lib
 !ENDIF
 
-# When compiling for UAP or the Windows 10 platform, some extra linker
+# When compiling for UWP or the Windows 10 platform, some extra linker
 # options are also required.
 #
-!IF $(FOR_UAP)!=0 || $(FOR_WIN10)!=0
+!IF $(FOR_UWP)!=0 || $(FOR_WIN10)!=0
 LTLINKOPTS = $(LTLINKOPTS) /DYNAMICBASE /NODEFAULTLIB:kernel32.lib
 LTLINKOPTS = $(LTLINKOPTS) mincore.lib
 !IFDEF PSDKLIBPATH

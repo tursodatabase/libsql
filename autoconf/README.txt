@@ -75,10 +75,10 @@ NMAKE command line as well:
 
   "NSDKLIBPATH=%WindowsSdkDir%\..\8.1\lib\winv6.3\um\x86"
 
-Building for UAP 10.0
+Building for UWP 10.0
 ---------------------
 
-  FOR_WINRT=1 FOR_UAP=1
+  FOR_WINRT=1 FOR_UWP=1
 
 Using Microsoft Visual C++ 2015 (or later) is required.  When using the
 above, something like the following macros will need to be added to the

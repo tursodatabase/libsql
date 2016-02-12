@@ -1,8 +1,8 @@
-C Remove\san\sunused\sparameter\sfrom\swhereSortingCost().
-D 2016-02-12T00:13:38.283
+C Naming\supdates\sfor\sUniversal\sWindows\sPlatform.
+D 2016-02-12T05:19:29.324
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 9df6e7ea267d09a63ba845df044bf3afe9e4fa48
+F Makefile.msc 30f075dc4f27a07abb76088946b2944178d85347
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION 866588d1edf0ccb5b0d33896974338f97564f719
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -11,9 +11,9 @@ F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am 29e2a6e8d0c5e32723a48b4faf6b168854dde5f4
-F autoconf/Makefile.msc 6e27530281128adc3e51ce7f95dffbd1da7e64e1
+F autoconf/Makefile.msc b865d2c72cf43cbf39913336415556af8ff2e819
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
-F autoconf/README.txt 7325022e1cd497e1c3a525c97aa1020665e398cf
+F autoconf/README.txt 7c31da66232f7590bb987cfcd4e2381744b25d24
 F autoconf/configure.ac 72a5e42beb090b32bca580285dc0ab3c4670adb8
 F autoconf/tea/Makefile.in b438a7020446c8a8156e8d97c8914a04833da6fd
 F autoconf/tea/README 3e9a3c060f29a44344ab50aec506f4db903fb873
@@ -1394,7 +1394,7 @@ F tool/mksqlite3c-noext.tcl 87240b09c20042999b41d5fabe091b7111287835
 F tool/mksqlite3c.tcl b66b4170f693602cd6985aed15d9509fe2f18c84
 F tool/mksqlite3h.tcl 1d41ab59bffb025121f75b76e183125ce41b3ec8
 F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
-F tool/mkvsix.tcl bbe57cd9ae11c6cc70319241101ef8d2b8c3765b
+F tool/mkvsix.tcl fbeb0af7cffdf64e0fba6d65e2e5120dc14595f4
 F tool/offsets.c fe4262fdfa378e8f5499a42136d17bf3b98f6091
 F tool/omittest.tcl 34d7ac01fe4fd18e3637f64abe12c40eca0f6b97
 F tool/pagesig.c ff0ca355fd3c2398e933da5e22439bbff89b803b
@@ -1427,7 +1427,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh ef6ebc6fd8d2dc35db3b622015c16a023d4fef4f
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0beb32d20d8dd698138cdb2de6b6056de176754d
-R 0940ecab971a56d675704b07d9c453fc
-U drh
-Z 74867ce3130a7e0367ef4e3542a53928
+P b5d771991686bf86a679b7dff9f16301a5029c8b
+R c5c7b0be1a525c29164d455010760517
+U mistachkin
+Z 6d4d0f2a2e82ddbc9f26fd9ded605bf1
