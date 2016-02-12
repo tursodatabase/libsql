@@ -1,5 +1,5 @@
-C Fix\sa\sdocumentation\stypo.\s\sNo\schanges\sto\scode.
-D 2016-02-12T17:30:39.594
+C Fix\sa\sfairly\sobscure\sbuffer\soverread\sin\sfts5.
+D 2016-02-12T17:56:27.467
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 30f075dc4f27a07abb76088946b2944178d85347
@@ -98,12 +98,12 @@ F ext/fts3/unicode/mkunicode.tcl 95cf7ec186e48d4985e433ff8a1c89090a774252
 F ext/fts3/unicode/parseunicode.tcl da577d1384810fb4e2b209bf3313074353193e95
 F ext/fts5/extract_api_docs.tcl a36e54ec777172ddd3f9a88daf593b00848368e0
 F ext/fts5/fts5.h ff9c2782e8ed890b0de2f697a8d63971939e70c7
-F ext/fts5/fts5Int.h f9e7772d3ad2b8aac6ad77a5867a254f4422992e
+F ext/fts5/fts5Int.h fa7c17e5c3ec9c8690387ff962f9dc6aee75e114
 F ext/fts5/fts5_aux.c daa57fb45216491814520bbb587e97bf81ced458
 F ext/fts5/fts5_buffer.c 4c1502d4c956cd092c89ce4480867f9d8bf325cd
 F ext/fts5/fts5_config.c 35c5173cae4eb17e82164a7f5aeef56a48903079
 F ext/fts5/fts5_expr.c 8e8e4635f655133eb39018072fc0f0942a2c4337
-F ext/fts5/fts5_hash.c 1b113977296cf4212c6ec667d5e3f2bd18036955
+F ext/fts5/fts5_hash.c f3a7217c86eb8f272871be5f6aa1b6798960a337
 F ext/fts5/fts5_index.c c6cd5190c7e5dd94151cb17acd939c82e5c7be2d
 F ext/fts5/fts5_main.c 0e01ead4e817483e378e7e38e6d902f50b68d29e
 F ext/fts5/fts5_storage.c f8343db90d8c95a4d4b52f6676e354b4649ffd6e
@@ -158,7 +158,7 @@ F ext/fts5/test/fts5fault8.test 430837fe6dd0511fd3aea52bd602ac02441bcb58
 F ext/fts5/test/fts5fault9.test e10e395428a9ea0596ebe752ff7123d16ab78e08
 F ext/fts5/test/fts5faultA.test fa5d59c0ff62b7125cd14eee38ded1c46e15a7ea
 F ext/fts5/test/fts5full.test 6f6143af0c6700501d9fd597189dfab1555bb741
-F ext/fts5/test/fts5hash.test 00668f6fa9b9bffbd7c1be29f408aa2bdade0451
+F ext/fts5/test/fts5hash.test 06f9309ccb4d5050a131594e9e47d0b21456837d
 F ext/fts5/test/fts5integrity.test f5e4f8d284385875068ad0f3e894ce43e9de835d
 F ext/fts5/test/fts5matchinfo.test 86569026d20f1ed748236587ce798de8a96615f1
 F ext/fts5/test/fts5merge.test 8f3cdba2ec9c5e7e568246e81b700ad37f764367
@@ -1427,7 +1427,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh ef6ebc6fd8d2dc35db3b622015c16a023d4fef4f
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6ea84ec1e02f0a48953bc758027ab7148529c36e
-R 32f39dbecc6e1b0fd64cf3f801eef486
-U drh
-Z 253162cb9c4e3721df2895ed3fc41a73
+P d9c985878cf7c74a79ccdb9cf94a2d48fdde3e6f
+R 0a862bd7a75e07028d820b1669759dd1
+U dan
+Z 281d4ece2b41724c1d776859918d3659
