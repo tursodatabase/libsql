@@ -500,10 +500,9 @@ mptester$(EXE):	sqlite3.c $(TOP)/mptest/mptest.c
 	$(TCCX) -o $@ -I. $(TOP)/mptest/mptest.c sqlite3.c \
 		$(TLIBS) $(THREADLIB)
 
-MPTEST1=./mptester$(EXE) mptest.db $(TOP)/mptest/crash01.test --repeat 20
-MPTEST2=./mptester$(EXE) mptest.db $(TOP)/mptest/multiwrite01.test --repeat 20
+MPTEST1=./mptester$(EXE) mptest1.db $(TOP)/mptest/crash01.test --repeat 20
+MPTEST2=./mptester$(EXE) mptest2.db $(TOP)/mptest/multiwrite01.test --repeat 20
 mptest:	mptester$(EXE)
-	rm -f mptest.db
 	$(MPTEST1) --journalmode DELETE
 	$(MPTEST2) --journalmode WAL
 	$(MPTEST1) --journalmode WAL

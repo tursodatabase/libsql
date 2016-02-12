@@ -1,5 +1,5 @@
-C Naming\supdates\sfor\sUniversal\sWindows\sPlatform.
-D 2016-02-12T05:19:29.324
+C Enhance\smptester\sso\sthat\sit\stakes\sgreat\scare\sto\sdelete\sits\stest\sdatabase\nprior\sto\sstart-up,\sincluding\schecking\sthe\sreturn\scode\sfrom\sunlink()\sand\nretrying\safter\sa\sdelay\sif\sunlink()\sfails.\s\sHopefully\sthis\swill\sclear\s\nintermittant\sstartup\sproblems\son\sWindows.
+D 2016-02-12T17:27:32.074
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 30f075dc4f27a07abb76088946b2944178d85347
@@ -272,13 +272,13 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk aecd0ce0646db48754e2a14523f759593f8ed072
+F main.mk 791597b87204f6bd56cdf7b2ab2feeecd608c60d
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
 F mptest/crash02.subtest f4ef05adcd15d60e5d2bd654204f2c008b519df8
-F mptest/mptest.c 0d3f2eb8e373cb692ab362a6dddedd53e0978502
+F mptest/mptest.c aa41ace6dbc5050d76b02548d3521e6bbccae4f0
 F mptest/multiwrite01.test dab5c5f8f9534971efce679152c5146da265222d
 F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
@@ -1427,7 +1427,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh ef6ebc6fd8d2dc35db3b622015c16a023d4fef4f
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b5d771991686bf86a679b7dff9f16301a5029c8b
-R c5c7b0be1a525c29164d455010760517
-U mistachkin
-Z 6d4d0f2a2e82ddbc9f26fd9ded605bf1
+P 717c1fc41a2246e27b324a4071073c286bac4efc
+R fe68ada3af9b678ecc7b1b483d0cc9f6
+U drh
+Z 04c3f99151f7ad228f455f6f996d4b70
