@@ -16,7 +16,7 @@ build: false
 
 test_script:
   - cargo test --lib --verbose
-  - cargo test --lib --features "backup blob functions load_extension trace"
+  - cargo test --lib --features "backup blob functions load_extension trace vtab"
 
 cache:
   - C:\Users\appveyor\.cargo
