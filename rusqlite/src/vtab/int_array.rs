@@ -26,8 +26,7 @@ pub fn create_int_array(conn: &Connection, name: &str) -> Result<Rc<RefCell<Vec<
 /// If not done explicitly by the application, the virtual table will be dropped implicitly
 /// by the system when the database connection is closed.
 pub fn drop_int_array(conn: &Connection, name: &str) -> Result<()> {
-    conn.execute_batch(&format!("DROP TABLE temp.\"{0}\"",
-                                escape_double_quote(name)))
+    conn.execute_batch(&format!("DROP TABLE temp.\"{0}\"", escape_double_quote(name)))
 }
 
 init_module!(INT_ARRAY_MODULE, IntArrayVTab, IntArrayVTabCursor,

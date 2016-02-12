@@ -194,7 +194,7 @@ unsafe extern "C" fn $create(db: *mut ffi::sqlite3,
             let boxed_vtab: *mut $vtab = Box::into_raw(Box::new(vtab));
             *pp_vtab = boxed_vtab as *mut ffi::sqlite3_vtab;
             ffi::SQLITE_OK
-        }
+        },
         Err(Error::SqliteFailure(err, s)) => {
             if let Some(s) = s {
                 *err_msg = mprintf(&s);
@@ -237,7 +237,7 @@ unsafe extern "C" fn $open(vtab: *mut ffi::sqlite3_vtab,
                 set_err_msg(vtab, &err_msg);
             }
             err.extended_code
-        }
+        },
         Err(err) => {
             set_err_msg(vtab, err.description());
             ffi::SQLITE_ERROR

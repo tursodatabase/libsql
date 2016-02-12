@@ -3,6 +3,8 @@ extern crate csv;
 use std::ffi::CStr;
 use std::fs::File;
 use std::mem;
+use std::path::Path;
+use std::result;
 use std::str;
 use libc;
 
@@ -27,10 +29,21 @@ init_module!(CSV_MODULE, CSVTab, CSVTabCursor,
 struct CSVTab {
     /// Base class
     base: ffi::sqlite3_vtab,
-    reader: csv::Reader<File>,
+    filename: String,
+    has_headers: bool,
+    delimiter: u8,
+    quote: u8,
     offset_first_row: u64,
-    cols: Vec<String>,
-    eof: bool,
+}
+
+impl CSVTab {
+    fn reader(&self) -> result::Result<csv::Reader<File>, csv::Error> {
+        csv::Reader::from_file(&self.filename).map(|reader| {
+            reader.has_headers(self.has_headers)
+                  .delimiter(self.delimiter)
+                  .quote(self.quote)
+        })
+    }
 }
 
 impl VTab<CSVTabCursor> for CSVTab {
@@ -47,33 +60,43 @@ impl VTab<CSVTabCursor> for CSVTab {
             c_filename = &c_filename[1..c_filename.len() - 1];
         }
         let filename = try!(str::from_utf8(c_filename));
-        let mut reader = try!(csv::Reader::from_file(filename)).has_headers(false); // TODO flexible ?
+        if !Path::new(filename).exists() {
+            return Err(Error::ModuleError(format!("file '{}' does not exist", filename)));
+        }
+        let mut vtab = CSVTab {
+            base: Default::default(),
+            filename: String::from(filename),
+            has_headers: false,
+            delimiter: b',',
+            quote: b'"',
+            offset_first_row: 0,
+        };
         let mut cols: Vec<String> = Vec::new();
 
         let args = &args[4..];
         for c_arg in args {
             let c_slice = unsafe { CStr::from_ptr(*c_arg).to_bytes() };
             if c_slice.len() == 1 {
-                reader = reader.delimiter(c_slice[0]);
+                vtab.delimiter = c_slice[0];
             } else if c_slice.len() == 3 && c_slice[0] == b'\'' {
-                reader = reader.delimiter(c_slice[1]);
+                vtab.delimiter = c_slice[1];
             } else {
                 let arg = try!(str::from_utf8(c_slice));
                 let uc = arg.to_uppercase();
                 if uc.contains("HEADER") {
-                    reader = reader.has_headers(true);
+                    vtab.has_headers = true;
                 } else if uc.contains("NO_QUOTE") {
-                    reader = reader.quote(0);
+                    vtab.quote = 0;
                 } else {
                     cols.push(escape_double_quote(arg).into_owned());
                 }
             }
         }
 
-        let mut offset_first_row = 0;
-        if reader.has_headers {
+        if vtab.has_headers {
+            let mut reader = try!(vtab.reader());
             let headers = try!(reader.headers());
-            offset_first_row = reader.byte_offset();
+            vtab.offset_first_row = reader.byte_offset();
             // headers ignored if cols is not empty
             if cols.is_empty() {
                 cols = headers;
@@ -99,13 +122,6 @@ impl VTab<CSVTabCursor> for CSVTab {
             }
         }
 
-        let vtab = CSVTab {
-            base: Default::default(),
-            reader: reader,
-            offset_first_row: offset_first_row,
-            cols: cols,
-            eof: false,
-        };
         try!(declare_vtab(db, &sql));
         Ok(vtab)
     }
@@ -113,7 +129,7 @@ impl VTab<CSVTabCursor> for CSVTab {
     fn best_index(&self, _info: *mut ffi::sqlite3_index_info) {}
 
     fn open(&self) -> Result<CSVTabCursor> {
-        Ok(CSVTabCursor::new())
+        Ok(CSVTabCursor::new(try!(self.reader())))
     }
 }
 
@@ -122,15 +138,21 @@ impl VTab<CSVTabCursor> for CSVTab {
 struct CSVTabCursor {
     /// Base class
     base: ffi::sqlite3_vtab_cursor,
+    reader: csv::Reader<File>,
     /// Current cursor position
     row_number: usize,
+    cols: Vec<String>,
+    eof: bool,
 }
 
 impl CSVTabCursor {
-    fn new() -> CSVTabCursor {
+    fn new(reader: csv::Reader<File>) -> CSVTabCursor {
         CSVTabCursor {
             base: Default::default(),
+            reader: reader,
             row_number: 0,
+            cols: Vec::new(),
+            eof: false,
         }
     }
 }
@@ -147,23 +169,22 @@ impl VTabCursor<CSVTab> for CSVTabCursor {
               _argv: *mut *mut ffi::sqlite3_value)
               -> Result<()> {
         {
-            let vtab = self.vtab();
-            try!(vtab.reader.seek(vtab.offset_first_row));
+            let offset_first_row = self.vtab().offset_first_row;
+            try!(self.reader.seek(offset_first_row));
         }
         self.row_number = 0;
         self.next()
     }
     fn next(&mut self) -> Result<()> {
         {
-            let vtab = self.vtab();
-            vtab.eof = vtab.reader.done();
-            if vtab.eof {
+            self.eof = self.reader.done();
+            if self.eof {
                 return Ok(());
             }
 
-            vtab.cols.clear();
-            while let Some(col) = vtab.reader.next_str().into_iter_result() {
-                vtab.cols.push(String::from(try!(col)));
+            self.cols.clear();
+            while let Some(col) = self.reader.next_str().into_iter_result() {
+                self.cols.push(String::from(try!(col)));
             }
         }
 
@@ -171,21 +192,19 @@ impl VTabCursor<CSVTab> for CSVTabCursor {
         Ok(())
     }
     fn eof(&self) -> bool {
-        let vtab = self.vtab();
-        vtab.eof
+        self.eof
     }
     fn column(&self, ctx: *mut ffi::sqlite3_context, col: libc::c_int) -> Result<()> {
         use functions::ToResult;
-        let vtab = self.vtab();
-        if col < 0 || col as usize >= vtab.cols.len() {
+        if col < 0 || col as usize >= self.cols.len() {
             return Err(Error::ModuleError(format!("column index out of bounds: {}", col)));
         }
-        if vtab.cols.is_empty() {
+        if self.cols.is_empty() {
             unsafe { Null.set_result(ctx) };
             return Ok(());
         }
         // TODO Affinity
-        unsafe { vtab.cols[col as usize].set_result(ctx) };
+        unsafe { self.cols[col as usize].set_result(ctx) };
         Ok(())
     }
     fn rowid(&self) -> Result<i64> {
@@ -211,22 +230,39 @@ mod test {
         csvtab::load_module(&db).unwrap();
         db.execute_batch("CREATE VIRTUAL TABLE vtab USING csv('test.csv', HAS_HEADERS)").unwrap();
 
-        let mut s = db.prepare("SELECT rowid, * FROM vtab").unwrap();
         {
-            let headers = s.column_names();
-            assert_eq!(vec!["rowid", "colA", "colB", "colC"], headers);
-        }
+            let mut s = db.prepare("SELECT rowid, * FROM vtab").unwrap();
+            {
+                let headers = s.column_names();
+                assert_eq!(vec!["rowid", "colA", "colB", "colC"], headers);
+            }
 
-        let rows = s.query(&[]).unwrap();
-        let mut sum = 0;
-        for row in rows {
-            let row = row.unwrap();
-            let id: i64 = row.get(0);
-            // println!("{}, {:?}, {:?}, {:?}", id, row.get::<i32, Value>(1), row.get::<i32, Value>(2), row.get::<i32, Value>(3));
-            sum = sum + id;
+            let rows = s.query(&[]).unwrap();
+            let mut sum = 0;
+            for row in rows {
+                let row = row.unwrap();
+                let id: i64 = row.get(0);
+                sum = sum + id;
+            }
+            assert_eq!(sum, 15);
         }
-        assert_eq!(sum, 15);
+        db.execute_batch("DROP TABLE vtab").unwrap();
+    }
 
+    #[test]
+    fn test_csv_cursor() {
+        let db = Connection::open_in_memory().unwrap();
+        csvtab::load_module(&db).unwrap();
+        db.execute_batch("CREATE VIRTUAL TABLE vtab USING csv('test.csv', HAS_HEADERS)").unwrap();
+
+        {
+            let mut s = db.prepare("SELECT v1.rowid, v1.* FROM vtab v1 NATURAL JOIN vtab v2 \
+                                    WHERE v1.rowid < v2.rowid")
+                          .unwrap();
+
+            let row = s.query(&[]).unwrap().next().unwrap().unwrap();
+            assert_eq!(row.get::<i32, i32>(0), 2);
+        }
         db.execute_batch("DROP TABLE vtab").unwrap();
     }
 }
