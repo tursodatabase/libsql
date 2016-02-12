@@ -1,5 +1,5 @@
-C Automatically\sdisable\sFTS3\sand\sFTS4\swhen\sbuilding\swith\sSQLITE_OMIT_VIRTUALTABLE.
-D 2016-02-11T22:41:04.941
+C Remove\san\sunused\sparameter\sfrom\swhereSortingCost().
+D 2016-02-12T00:13:38.283
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 9df6e7ea267d09a63ba845df044bf3afe9e4fa48
@@ -427,7 +427,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c d21b99fd1458159d0b1ecdccc8ee6ada4fdc4c54
 F src/wal.h 2f7c831cf3b071fa548bf2d5cac640846a7ff19c
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
-F src/where.c f9683f8b881106e441971bc5eda216722ab16d4c
+F src/where.c 984084584c10c41e46c89ac027a5cca991bc37e6
 F src/whereInt.h 78b6b4de94db84aecbdc07fe3e38f648eb391e9a
 F src/wherecode.c 791a784bbf8749d560fdb0b990b607bc4f44a38d
 F src/whereexpr.c de117970b29471177a6901d60ad83a194671dc03
@@ -1427,7 +1427,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh ef6ebc6fd8d2dc35db3b622015c16a023d4fef4f
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f183e05990608d1a4002fa8a02c2d2eea6bc94b6
-R dfe12fb76097c62e2abe5dbb44ef76aa
+P 0beb32d20d8dd698138cdb2de6b6056de176754d
+R 0940ecab971a56d675704b07d9c453fc
 U drh
-Z 0896e1216887463484734b70a95ecf26
+Z 74867ce3130a7e0367ef4e3542a53928

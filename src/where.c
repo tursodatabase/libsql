@@ -3438,7 +3438,6 @@ static const char *wherePathName(WherePath *pPath, int nLoop, WhereLoop *pLast){
 ** order.
 */
 static LogEst whereSortingCost(
-  WhereInfo *pWInfo,
   LogEst nRow,
   int nOrderBy,
   int nSorted
@@ -3593,7 +3592,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
         if( isOrdered>=0 && isOrdered<nOrderBy ){
           if( aSortCost[isOrdered]==0 ){
             aSortCost[isOrdered] = whereSortingCost(
-                pWInfo, nRowEst, nOrderBy, isOrdered
+                nRowEst, nOrderBy, isOrdered
             );
           }
           rCost = sqlite3LogEstAdd(rUnsorted, aSortCost[isOrdered]);
