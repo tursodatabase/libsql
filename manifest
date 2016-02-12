@@ -1,5 +1,5 @@
-C Enhance\smptester\sso\sthat\sit\stakes\sgreat\scare\sto\sdelete\sits\stest\sdatabase\nprior\sto\sstart-up,\sincluding\schecking\sthe\sreturn\scode\sfrom\sunlink()\sand\nretrying\safter\sa\sdelay\sif\sunlink()\sfails.\s\sHopefully\sthis\swill\sclear\s\nintermittant\sstartup\sproblems\son\sWindows.
-D 2016-02-12T17:27:32.074
+C Fix\sa\sdocumentation\stypo.\s\sNo\schanges\sto\scode.
+D 2016-02-12T17:30:39.594
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 30f075dc4f27a07abb76088946b2944178d85347
@@ -350,7 +350,7 @@ F src/resolve.c 9f7ce3a3c087afb7597b7c916c99126ff3f12f0c
 F src/rowset.c 9fe4b3ad7cc00944386bb600233d8f523de07a6e
 F src/select.c ff80004a9a6ece891a8d9327a88e7b6e2588ee6d
 F src/shell.c 0367440658104bf2ce8d8a9a5a713a4b11c9acbe
-F src/sqlite.h.in cf22ad1d52dca2c9862d63833e581028119aab7e
+F src/sqlite.h.in f80c6ebd85588fc514bfedf3ecb00cec269cb410
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
 F src/sqliteInt.h 04ca5b3cdb3bcf87ba6300d5d36b51498f65f28c
@@ -1427,7 +1427,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh ef6ebc6fd8d2dc35db3b622015c16a023d4fef4f
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 717c1fc41a2246e27b324a4071073c286bac4efc
-R fe68ada3af9b678ecc7b1b483d0cc9f6
+P 6ea84ec1e02f0a48953bc758027ab7148529c36e
+R 32f39dbecc6e1b0fd64cf3f801eef486
 U drh
-Z 04c3f99151f7ad228f455f6f996d4b70
+Z 253162cb9c4e3721df2895ed3fc41a73
