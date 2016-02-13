@@ -1222,7 +1222,7 @@ int sqlite3_win32_compact_heap(LPUINT pnLargest){
     if( lastErrno==NO_ERROR ){
       sqlite3_log(SQLITE_NOMEM, "failed to HeapCompact (no space), heap=%p",
                   (void*)hHeap);
-      rc = SQLITE_NOMEM;
+      rc = SQLITE_NOMEM_BKPT;
     }else{
       sqlite3_log(SQLITE_ERROR, "failed to HeapCompact (%lu), heap=%p",
                   osGetLastError(), (void*)hHeap);
@@ -1542,7 +1542,7 @@ static int winMemInit(void *pAppData){
           "failed to HeapCreate (%lu), flags=%u, initSize=%lu, maxSize=%lu",
           osGetLastError(), SQLITE_WIN32_HEAP_FLAGS, dwInitialSize,
           dwMaximumSize);
-      return SQLITE_NOMEM;
+      return SQLITE_NOMEM_BKPT;
     }
     pWinMemData->bOwned = TRUE;
     assert( pWinMemData->bOwned );
@@ -1552,7 +1552,7 @@ static int winMemInit(void *pAppData){
   if( !pWinMemData->hHeap ){
     sqlite3_log(SQLITE_NOMEM,
         "failed to GetProcessHeap (%lu)", osGetLastError());
-    return SQLITE_NOMEM;
+    return SQLITE_NOMEM_BKPT;
   }
   pWinMemData->bOwned = FALSE;
   assert( !pWinMemData->bOwned );
@@ -1789,7 +1789,7 @@ int sqlite3_win32_set_directory(DWORD type, LPCWSTR zValue){
     if( zValue && zValue[0] ){
       zValueUtf8 = winUnicodeToUtf8(zValue);
       if ( zValueUtf8==0 ){
-        return SQLITE_NOMEM;
+        return SQLITE_NOMEM_BKPT;
       }
     }
     sqlite3_free(*ppDirectory);
@@ -2066,7 +2066,7 @@ static int winceCreateLock(const char *zFilename, winFile *pFile){
   zName = winUtf8ToUnicode(zFilename);
   if( zName==0 ){
     /* out of memory */
-    return SQLITE_IOERR_NOMEM;
+    return SQLITE_IOERR_NOMEM_BKPT;
   }
 
   /* Initialize the local lockdata */
@@ -3615,12 +3615,12 @@ static int winOpenSharedMemory(winFile *pDbFd){
   ** allocate space for a new winShmNode and filename.
   */
   p = sqlite3MallocZero( sizeof(*p) );
-  if( p==0 ) return SQLITE_IOERR_NOMEM;
+  if( p==0 ) return SQLITE_IOERR_NOMEM_BKPT;
   nName = sqlite3Strlen30(pDbFd->zPath);
   pNew = sqlite3MallocZero( sizeof(*pShmNode) + nName + 17 );
   if( pNew==0 ){
     sqlite3_free(p);
-    return SQLITE_IOERR_NOMEM;
+    return SQLITE_IOERR_NOMEM_BKPT;
   }
   pNew->zFilename = (char*)&pNew[1];
   sqlite3_snprintf(nName+15, pNew->zFilename, "%s-shm", pDbFd->zPath);
@@ -3647,7 +3647,7 @@ static int winOpenSharedMemory(winFile *pDbFd){
 
     pShmNode->mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
     if( pShmNode->mutex==0 ){
-      rc = SQLITE_IOERR_NOMEM;
+      rc = SQLITE_IOERR_NOMEM_BKPT;
       goto shm_open_err;
     }
 
@@ -3952,7 +3952,7 @@ static int winShmMap(
         pShmNode->aRegion, (iRegion+1)*sizeof(apNew[0])
     );
     if( !apNew ){
-      rc = SQLITE_IOERR_NOMEM;
+      rc = SQLITE_IOERR_NOMEM_BKPT;
       goto shmpage_out;
     }
     pShmNode->aRegion = apNew;
@@ -4382,7 +4382,7 @@ static int winGetTempname(sqlite3_vfs *pVfs, char **pzBuf){
   zBuf = sqlite3MallocZero( nBuf );
   if( !zBuf ){
     OSTRACE(("TEMP-FILENAME rc=SQLITE_IOERR_NOMEM\n"));
-    return SQLITE_IOERR_NOMEM;
+    return SQLITE_IOERR_NOMEM_BKPT;
   }
 
   /* Figure out the effective temporary directory.  First, check if one
@@ -4440,7 +4440,7 @@ static int winGetTempname(sqlite3_vfs *pVfs, char **pzBuf){
         if( !zConverted ){
           sqlite3_free(zBuf);
           OSTRACE(("TEMP-FILENAME rc=SQLITE_IOERR_NOMEM\n"));
-          return SQLITE_IOERR_NOMEM;
+          return SQLITE_IOERR_NOMEM_BKPT;
         }
         if( winIsDir(zConverted) ){
           sqlite3_snprintf(nMax, zBuf, "%s", zDir);
@@ -4453,7 +4453,7 @@ static int winGetTempname(sqlite3_vfs *pVfs, char **pzBuf){
         if( !zConverted ){
           sqlite3_free(zBuf);
           OSTRACE(("TEMP-FILENAME rc=SQLITE_IOERR_NOMEM\n"));
-          return SQLITE_IOERR_NOMEM;
+          return SQLITE_IOERR_NOMEM_BKPT;
         }
         if( cygwin_conv_path(
                 osIsNT() ? CCP_POSIX_TO_WIN_W : CCP_POSIX_TO_WIN_A, zDir,
@@ -4474,7 +4474,7 @@ static int winGetTempname(sqlite3_vfs *pVfs, char **pzBuf){
             sqlite3_free(zConverted);
             sqlite3_free(zBuf);
             OSTRACE(("TEMP-FILENAME rc=SQLITE_IOERR_NOMEM\n"));
-            return SQLITE_IOERR_NOMEM;
+            return SQLITE_IOERR_NOMEM_BKPT;
           }
           sqlite3_snprintf(nMax, zBuf, "%s", zUtf8);
           sqlite3_free(zUtf8);
@@ -4492,7 +4492,7 @@ static int winGetTempname(sqlite3_vfs *pVfs, char **pzBuf){
     if( !zWidePath ){
       sqlite3_free(zBuf);
       OSTRACE(("TEMP-FILENAME rc=SQLITE_IOERR_NOMEM\n"));
-      return SQLITE_IOERR_NOMEM;
+      return SQLITE_IOERR_NOMEM_BKPT;
     }
     if( osGetTempPathW(nMax, zWidePath)==0 ){
       sqlite3_free(zWidePath);
@@ -4510,7 +4510,7 @@ static int winGetTempname(sqlite3_vfs *pVfs, char **pzBuf){
       sqlite3_free(zWidePath);
       sqlite3_free(zBuf);
       OSTRACE(("TEMP-FILENAME rc=SQLITE_IOERR_NOMEM\n"));
-      return SQLITE_IOERR_NOMEM;
+      return SQLITE_IOERR_NOMEM_BKPT;
     }
   }
 #ifdef SQLITE_WIN32_HAS_ANSI
@@ -4520,7 +4520,7 @@ static int winGetTempname(sqlite3_vfs *pVfs, char **pzBuf){
     if( !zMbcsPath ){
       sqlite3_free(zBuf);
       OSTRACE(("TEMP-FILENAME rc=SQLITE_IOERR_NOMEM\n"));
-      return SQLITE_IOERR_NOMEM;
+      return SQLITE_IOERR_NOMEM_BKPT;
     }
     if( osGetTempPathA(nMax, zMbcsPath)==0 ){
       sqlite3_free(zBuf);
@@ -4535,7 +4535,7 @@ static int winGetTempname(sqlite3_vfs *pVfs, char **pzBuf){
     }else{
       sqlite3_free(zBuf);
       OSTRACE(("TEMP-FILENAME rc=SQLITE_IOERR_NOMEM\n"));
-      return SQLITE_IOERR_NOMEM;
+      return SQLITE_IOERR_NOMEM_BKPT;
     }
   }
 #endif /* SQLITE_WIN32_HAS_ANSI */
@@ -4727,7 +4727,7 @@ static int winOpen(
   if( zConverted==0 ){
     sqlite3_free(zTmpname);
     OSTRACE(("OPEN name=%s, rc=SQLITE_IOERR_NOMEM", zUtf8Name));
-    return SQLITE_IOERR_NOMEM;
+    return SQLITE_IOERR_NOMEM_BKPT;
   }
 
   if( winIsDir(zConverted) ){
@@ -4927,7 +4927,7 @@ static int winDelete(
   zConverted = winConvertFromUtf8Filename(zFilename);
   if( zConverted==0 ){
     OSTRACE(("DELETE name=%s, rc=SQLITE_IOERR_NOMEM\n", zFilename));
-    return SQLITE_IOERR_NOMEM;
+    return SQLITE_IOERR_NOMEM_BKPT;
   }
   if( osIsNT() ){
     do {
@@ -5035,7 +5035,7 @@ static int winAccess(
   zConverted = winConvertFromUtf8Filename(zFilename);
   if( zConverted==0 ){
     OSTRACE(("ACCESS name=%s, rc=SQLITE_IOERR_NOMEM\n", zFilename));
-    return SQLITE_IOERR_NOMEM;
+    return SQLITE_IOERR_NOMEM_BKPT;
   }
   if( osIsNT() ){
     int cnt = 0;
@@ -5162,7 +5162,7 @@ static int winFullPathname(
     */
     char *zOut = sqlite3MallocZero( pVfs->mxPathname+1 );
     if( !zOut ){
-      return SQLITE_IOERR_NOMEM;
+      return SQLITE_IOERR_NOMEM_BKPT;
     }
     if( cygwin_conv_path(
             (osIsNT() ? CCP_POSIX_TO_WIN_W : CCP_POSIX_TO_WIN_A) |
@@ -5174,7 +5174,7 @@ static int winFullPathname(
       char *zUtf8 = winConvertToUtf8Filename(zOut);
       if( !zUtf8 ){
         sqlite3_free(zOut);
-        return SQLITE_IOERR_NOMEM;
+        return SQLITE_IOERR_NOMEM_BKPT;
       }
       sqlite3_snprintf(MIN(nFull, pVfs->mxPathname), zFull, "%s%c%s",
                        sqlite3_data_directory, winGetDirSep(), zUtf8);
@@ -5184,7 +5184,7 @@ static int winFullPathname(
   }else{
     char *zOut = sqlite3MallocZero( pVfs->mxPathname+1 );
     if( !zOut ){
-      return SQLITE_IOERR_NOMEM;
+      return SQLITE_IOERR_NOMEM_BKPT;
     }
     if( cygwin_conv_path(
             (osIsNT() ? CCP_POSIX_TO_WIN_W : CCP_POSIX_TO_WIN_A),
@@ -5196,7 +5196,7 @@ static int winFullPathname(
       char *zUtf8 = winConvertToUtf8Filename(zOut);
       if( !zUtf8 ){
         sqlite3_free(zOut);
-        return SQLITE_IOERR_NOMEM;
+        return SQLITE_IOERR_NOMEM_BKPT;
       }
       sqlite3_snprintf(MIN(nFull, pVfs->mxPathname), zFull, "%s", zUtf8);
       sqlite3_free(zUtf8);
@@ -5256,7 +5256,7 @@ static int winFullPathname(
   }
   zConverted = winConvertFromUtf8Filename(zRelative);
   if( zConverted==0 ){
-    return SQLITE_IOERR_NOMEM;
+    return SQLITE_IOERR_NOMEM_BKPT;
   }
   if( osIsNT() ){
     LPWSTR zTemp;
@@ -5270,7 +5270,7 @@ static int winFullPathname(
     zTemp = sqlite3MallocZero( nByte*sizeof(zTemp[0]) );
     if( zTemp==0 ){
       sqlite3_free(zConverted);
-      return SQLITE_IOERR_NOMEM;
+      return SQLITE_IOERR_NOMEM_BKPT;
     }
     nByte = osGetFullPathNameW((LPCWSTR)zConverted, nByte, zTemp, 0);
     if( nByte==0 ){
@@ -5296,7 +5296,7 @@ static int winFullPathname(
     zTemp = sqlite3MallocZero( nByte*sizeof(zTemp[0]) );
     if( zTemp==0 ){
       sqlite3_free(zConverted);
-      return SQLITE_IOERR_NOMEM;
+      return SQLITE_IOERR_NOMEM_BKPT;
     }
     nByte = osGetFullPathNameA((char*)zConverted, nByte, zTemp, 0);
     if( nByte==0 ){
@@ -5315,7 +5315,7 @@ static int winFullPathname(
     sqlite3_free(zOut);
     return SQLITE_OK;
   }else{
-    return SQLITE_IOERR_NOMEM;
+    return SQLITE_IOERR_NOMEM_BKPT;
   }
 #endif
 }

@@ -33,7 +33,7 @@ static void corruptSchema(
     sqlite3DbFree(db, *pData->pzErrMsg);
     *pData->pzErrMsg = z;
   }
-  pData->rc = db->mallocFailed ? SQLITE_NOMEM : SQLITE_CORRUPT_BKPT;
+  pData->rc = db->mallocFailed ? SQLITE_NOMEM_BKPT : SQLITE_CORRUPT_BKPT;
 }
 
 /*
@@ -307,7 +307,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
 #endif
   }
   if( db->mallocFailed ){
-    rc = SQLITE_NOMEM;
+    rc = SQLITE_NOMEM_BKPT;
     sqlite3ResetAllSchemasOfConnection(db);
   }
   if( rc==SQLITE_OK || (db->flags&SQLITE_RecoveryMode)){
@@ -524,7 +524,7 @@ static int sqlite3Prepare(
   /* Allocate the parsing context */
   pParse = sqlite3StackAllocZero(db, sizeof(*pParse));
   if( pParse==0 ){
-    rc = SQLITE_NOMEM;
+    rc = SQLITE_NOMEM_BKPT;
     goto end_prepare;
   }
   pParse->pReprepare = pReprepare;
@@ -601,7 +601,7 @@ static int sqlite3Prepare(
     schemaIsValid(pParse);
   }
   if( db->mallocFailed ){
-    pParse->rc = SQLITE_NOMEM;
+    pParse->rc = SQLITE_NOMEM_BKPT;
   }
   if( pzTail ){
     *pzTail = pParse->zTail;

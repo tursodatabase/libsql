@@ -187,7 +187,7 @@ int sqlite3_initialize(void){
       sqlite3GlobalConfig.pInitMutex =
            sqlite3MutexAlloc(SQLITE_MUTEX_RECURSIVE);
       if( sqlite3GlobalConfig.bCoreMutex && !sqlite3GlobalConfig.pInitMutex ){
-        rc = SQLITE_NOMEM;
+        rc = SQLITE_NOMEM_BKPT;
       }
     }
   }
@@ -1645,7 +1645,7 @@ int sqlite3CreateFunc(
   p = sqlite3FindFunction(db, zFunctionName, nName, nArg, (u8)enc, 1);
   assert(p || db->mallocFailed);
   if( !p ){
-    return SQLITE_NOMEM;
+    return SQLITE_NOMEM_BKPT;
   }
 
   /* If an older version of the function with a configured destructor is
@@ -2149,14 +2149,14 @@ int sqlite3TempInMemory(const sqlite3 *db){
 const char *sqlite3_errmsg(sqlite3 *db){
   const char *z;
   if( !db ){
-    return sqlite3ErrStr(SQLITE_NOMEM);
+    return sqlite3ErrStr(SQLITE_NOMEM_BKPT);
   }
   if( !sqlite3SafetyCheckSickOrOk(db) ){
     return sqlite3ErrStr(SQLITE_MISUSE_BKPT);
   }
   sqlite3_mutex_enter(db->mutex);
   if( db->mallocFailed ){
-    z = sqlite3ErrStr(SQLITE_NOMEM);
+    z = sqlite3ErrStr(SQLITE_NOMEM_BKPT);
   }else{
     testcase( db->pErr==0 );
     z = (char*)sqlite3_value_text(db->pErr);
@@ -2224,7 +2224,7 @@ int sqlite3_errcode(sqlite3 *db){
     return SQLITE_MISUSE_BKPT;
   }
   if( !db || db->mallocFailed ){
-    return SQLITE_NOMEM;
+    return SQLITE_NOMEM_BKPT;
   }
   return db->errCode & db->errMask;
 }
@@ -2233,7 +2233,7 @@ int sqlite3_extended_errcode(sqlite3 *db){
     return SQLITE_MISUSE_BKPT;
   }
   if( !db || db->mallocFailed ){
-    return SQLITE_NOMEM;
+    return SQLITE_NOMEM_BKPT;
   }
   return db->errCode;
 }
@@ -2313,7 +2313,7 @@ static int createCollation(
   }
 
   pColl = sqlite3FindCollSeq(db, (u8)enc2, zName, 1);
-  if( pColl==0 ) return SQLITE_NOMEM;
+  if( pColl==0 ) return SQLITE_NOMEM_BKPT;
   pColl->xCmp = xCompare;
   pColl->pUser = pCtx;
   pColl->xDel = xDel;
@@ -2492,7 +2492,7 @@ int sqlite3ParseUri(
 
     for(iIn=0; iIn<nUri; iIn++) nByte += (zUri[iIn]=='&');
     zFile = sqlite3_malloc64(nByte);
-    if( !zFile ) return SQLITE_NOMEM;
+    if( !zFile ) return SQLITE_NOMEM_BKPT;
 
     iIn = 5;
 #ifdef SQLITE_ALLOW_URI_AUTHORITY
@@ -2658,7 +2658,7 @@ int sqlite3ParseUri(
 
   }else{
     zFile = sqlite3_malloc64(nUri+2);
-    if( !zFile ) return SQLITE_NOMEM;
+    if( !zFile ) return SQLITE_NOMEM_BKPT;
     memcpy(zFile, zUri, nUri);
     zFile[nUri] = '\0';
     zFile[nUri+1] = '\0';
@@ -2857,7 +2857,7 @@ static int openDatabase(
                         flags | SQLITE_OPEN_MAIN_DB);
   if( rc!=SQLITE_OK ){
     if( rc==SQLITE_IOERR_NOMEM ){
-      rc = SQLITE_NOMEM;
+      rc = SQLITE_NOMEM_BKPT;
     }
     sqlite3Error(db, rc);
     goto opendb_out;
@@ -3060,7 +3060,7 @@ int sqlite3_open16(
       SCHEMA_ENC(*ppDb) = ENC(*ppDb) = SQLITE_UTF16NATIVE;
     }
   }else{
-    rc = SQLITE_NOMEM;
+    rc = SQLITE_NOMEM_BKPT;
   }
   sqlite3ValueFree(pVal);
 
@@ -3235,7 +3235,20 @@ int sqlite3CantopenError(int lineno){
               lineno, 20+sqlite3_sourceid());
   return SQLITE_CANTOPEN;
 }
-
+int sqlite3NomemError(int lineno){
+  testcase( sqlite3GlobalConfig.xLog!=0 );
+  sqlite3_log(SQLITE_NOMEM, 
+              "out of memory at line %d of [%.10s]",
+              lineno, 20+sqlite3_sourceid());
+  return SQLITE_NOMEM;
+}
+int sqlite3IoerrnomemError(int lineno){
+  testcase( sqlite3GlobalConfig.xLog!=0 );
+  sqlite3_log(SQLITE_IOERR_NOMEM, 
+              "out of memory for I/O at line %d of [%.10s]",
+              lineno, 20+sqlite3_sourceid());
+  return SQLITE_IOERR_NOMEM;
+}
 
 #ifndef SQLITE_OMIT_DEPRECATED
 /*

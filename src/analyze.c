@@ -1673,7 +1673,7 @@ static int loadStatTbl(
   assert( db->lookaside.bDisable );
   zSql = sqlite3MPrintf(db, zSql1, zDb);
   if( !zSql ){
-    return SQLITE_NOMEM;
+    return SQLITE_NOMEM_BKPT;
   }
   rc = sqlite3_prepare(db, zSql, -1, &pStmt, 0);
   sqlite3DbFree(db, zSql);
@@ -1713,7 +1713,7 @@ static int loadStatTbl(
     pIdx->aSample = sqlite3DbMallocZero(db, nByte);
     if( pIdx->aSample==0 ){
       sqlite3_finalize(pStmt);
-      return SQLITE_NOMEM;
+      return SQLITE_NOMEM_BKPT;
     }
     pSpace = (tRowcnt*)&pIdx->aSample[nSample];
     pIdx->aAvgEq = pSpace; pSpace += nIdxCol;
@@ -1729,7 +1729,7 @@ static int loadStatTbl(
 
   zSql = sqlite3MPrintf(db, zSql2, zDb);
   if( !zSql ){
-    return SQLITE_NOMEM;
+    return SQLITE_NOMEM_BKPT;
   }
   rc = sqlite3_prepare(db, zSql, -1, &pStmt, 0);
   sqlite3DbFree(db, zSql);
@@ -1767,7 +1767,7 @@ static int loadStatTbl(
     pSample->p = sqlite3DbMallocZero(db, pSample->n + 2);
     if( pSample->p==0 ){
       sqlite3_finalize(pStmt);
-      return SQLITE_NOMEM;
+      return SQLITE_NOMEM_BKPT;
     }
     memcpy(pSample->p, sqlite3_column_blob(pStmt, 4), pSample->n);
     pIdx->nSample++;
@@ -1856,7 +1856,7 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
   zSql = sqlite3MPrintf(db, 
       "SELECT tbl,idx,stat FROM %Q.sqlite_stat1", sInfo.zDatabase);
   if( zSql==0 ){
-    rc = SQLITE_NOMEM;
+    rc = SQLITE_NOMEM_BKPT;
   }else{
     rc = sqlite3_exec(db, zSql, analysisLoader, &sInfo, 0);
     sqlite3DbFree(db, zSql);

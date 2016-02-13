@@ -927,7 +927,7 @@ void sqlite3StartTable(
   pTable = sqlite3DbMallocZero(db, sizeof(Table));
   if( pTable==0 ){
     assert( db->mallocFailed );
-    pParse->rc = SQLITE_NOMEM;
+    pParse->rc = SQLITE_NOMEM_BKPT;
     pParse->nErr++;
     goto begin_table_error;
   }
@@ -1608,7 +1608,7 @@ static int resizeIndexObject(sqlite3 *db, Index *pIdx, int N){
   assert( pIdx->isResized==0 );
   nByte = (sizeof(char*) + sizeof(i16) + 1)*N;
   zExtra = sqlite3DbMallocZero(db, nByte);
-  if( zExtra==0 ) return SQLITE_NOMEM;
+  if( zExtra==0 ) return SQLITE_NOMEM_BKPT;
   memcpy(zExtra, pIdx->azColl, sizeof(char*)*pIdx->nColumn);
   pIdx->azColl = (const char**)zExtra;
   zExtra += sizeof(char*)*N;

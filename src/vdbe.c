@@ -5315,7 +5315,7 @@ case OP_ParseSchema: {
        "SELECT name, rootpage, sql FROM '%q'.%s WHERE %s ORDER BY rowid",
        db->aDb[iDb].zName, zMaster, pOp->p4.z);
     if( zSql==0 ){
-      rc = SQLITE_NOMEM;
+      rc = SQLITE_NOMEM_BKPT;
     }else{
       assert( db->init.busy==0 );
       db->init.busy = 1;
@@ -6816,7 +6816,7 @@ too_big:
 no_mem:
   sqlite3OomFault(db);
   sqlite3VdbeError(p, "out of memory");
-  rc = SQLITE_NOMEM;
+  rc = SQLITE_NOMEM_BKPT;
   goto vdbe_error_halt;
 
   /* Jump to here for any other kind of fatal error.  The "rc" variable
@@ -6824,7 +6824,7 @@ no_mem:
   */
 abort_due_to_error:
   assert( p->zErrMsg==0 );
-  if( db->mallocFailed ) rc = SQLITE_NOMEM;
+  if( db->mallocFailed ) rc = SQLITE_NOMEM_BKPT;
   if( rc!=SQLITE_IOERR_NOMEM ){
     sqlite3VdbeError(p, "%s", sqlite3ErrStr(rc));
   }
@@ -6835,7 +6835,7 @@ abort_due_to_error:
   */
 abort_due_to_interrupt:
   assert( db->u1.isInterrupted );
-  rc = db->mallocFailed ? SQLITE_NOMEM : SQLITE_INTERRUPT;
+  rc = db->mallocFailed ? SQLITE_NOMEM_BKPT : SQLITE_INTERRUPT;
   p->rc = rc;
   sqlite3VdbeError(p, "%s", sqlite3ErrStr(rc));
   goto vdbe_error_halt;
