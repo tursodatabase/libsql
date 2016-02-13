@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\ssessionfault.test\scausing\sit\sto\ssegfault\sfollowing\sa\stest\sfailure.\sThis\scommit\sdoes\snot\sfix\sthe\sactual\stest\sfailure\s-\sjust\sthe\ssubsequent\ssegfault.
-D 2016-02-13T14:39:46.492
+C Harden\ssqlite3session_delete()\sagainst\strying\sto\sdelete\sa\ssession\sthat\nis\snot\scurrently\son\sthe\ssession\slist.
+D 2016-02-13T14:45:56.852
 F Makefile.in 5cbf3f753328d1bcd3a6117785b4874d99612f8f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 45e596bd4ccecf2256f68a2e96466aa52cc4bc1f
@@ -283,7 +283,7 @@ F ext/session/sessionE.test e60a238c47f0feb3bb707e7f35e22be09c7e8f26
 F ext/session/sessionF.test c2f178d4dfd723a5fd94a730ea2ccb44c669e3ce
 F ext/session/session_common.tcl a1293167d14774b5e728836720497f40fe4ea596
 F ext/session/sessionfault.test 94a4dd100e16cf0b1c44d8487517dbb407eeab1d
-F ext/session/sqlite3session.c 1ace1d1e4cb32cf60ca6e8ed1ae8d4c9f99ca458
+F ext/session/sqlite3session.c b10af3e87ae437bb197b3a23a584d2dc8ad8981a
 F ext/session/sqlite3session.h 64e9e7f185725ef43b97f4a9a0c0df0669844f1d
 F ext/session/test_session.c 187bd344c5ae9d5be85e22ef7c3010f0c17307ce
 F ext/userauth/sqlite3userauth.h 19cb6f0e31316d0ee4afdfb7a85ef9da3333a220
@@ -1448,7 +1448,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh ef6ebc6fd8d2dc35db3b622015c16a023d4fef4f
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4d7a802e73ef0352f840bc8d74c560afb7666ff7
-R 56ec775a8f26a6fc9784a8bb5f2be4e3
-U dan
-Z 3166b3068d23321aad4e67ff074e960a
+P 582b2ae77d65b1e142ceb5774f37b0aaa3851378
+R 99d33fcea6ce08ff5ef828796adb3d5d
+U drh
+Z 9efd5fb5a4c4d606f6b8046dd50f3f7a

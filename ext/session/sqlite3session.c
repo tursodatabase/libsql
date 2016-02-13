@@ -1615,9 +1615,13 @@ void sqlite3session_delete(sqlite3_session *pSession){
   ** database handle. Hold the db mutex while doing so.  */
   sqlite3_mutex_enter(sqlite3_db_mutex(db));
   pHead = (sqlite3_session*)sqlite3_preupdate_hook(db, 0, 0);
-  for(pp=&pHead; (*pp)!=pSession; pp=&((*pp)->pNext));
-  *pp = (*pp)->pNext;
-  if( pHead ) sqlite3_preupdate_hook(db, xPreUpdate, (void *)pHead);
+  for(pp=&pHead; ALWAYS((*pp)!=0); pp=&((*pp)->pNext)){
+    if( (*pp)==pSession ){
+      *pp = (*pp)->pNext;
+      if( pHead ) sqlite3_preupdate_hook(db, xPreUpdate, (void*)pHead);
+      break;
+    }
+  }
   sqlite3_mutex_leave(sqlite3_db_mutex(db));
 
   /* Delete all attached table objects. And the contents of their 
