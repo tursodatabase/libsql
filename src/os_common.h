@@ -35,8 +35,8 @@
 */
 #ifdef SQLITE_PERFORMANCE_TRACE
 
-/* 
-** hwtime.h contains inline assembler code for implementing 
+/*
+** hwtime.h contains inline assembler code for implementing
 ** high-performance timing routines.
 */
 #include "hwtime.h"
@@ -57,14 +57,14 @@ static sqlite_uint64 g_elapsed;
 ** of code will give us the ability to simulate a disk I/O error.  This
 ** is used for testing the I/O recovery logic.
 */
-#ifdef SQLITE_TEST
-int sqlite3_io_error_hit = 0;            /* Total number of I/O Errors */
-int sqlite3_io_error_hardhit = 0;        /* Number of non-benign errors */
-int sqlite3_io_error_pending = 0;        /* Count down to first I/O error */
-int sqlite3_io_error_persist = 0;        /* True if I/O errors persist */
-int sqlite3_io_error_benign = 0;         /* True if errors are benign */
-int sqlite3_diskfull_pending = 0;
-int sqlite3_diskfull = 0;
+#if defined(SQLITE_TEST)
+extern int sqlite3_io_error_hit;
+extern int sqlite3_io_error_hardhit;
+extern int sqlite3_io_error_pending;
+extern int sqlite3_io_error_persist;
+extern int sqlite3_io_error_benign;
+extern int sqlite3_diskfull_pending;
+extern int sqlite3_diskfull;
 #define SimulateIOErrorBenign(X) sqlite3_io_error_benign=(X)
 #define SimulateIOError(CODE)  \
   if( (sqlite3_io_error_persist && sqlite3_io_error_hit) \
@@ -90,16 +90,16 @@ static void local_ioerr(){
 #define SimulateIOErrorBenign(X)
 #define SimulateIOError(A)
 #define SimulateDiskfullError(A)
-#endif
+#endif /* defined(SQLITE_TEST) */
 
 /*
 ** When testing, keep a count of the number of open files.
 */
-#ifdef SQLITE_TEST
-int sqlite3_open_file_count = 0;
+#if defined(SQLITE_TEST)
+extern int sqlite3_open_file_count;
 #define OpenCounter(X)  sqlite3_open_file_count+=(X)
 #else
 #define OpenCounter(X)
-#endif
+#endif /* defined(SQLITE_TEST) */
 
 #endif /* !defined(_OS_COMMON_H_) */
