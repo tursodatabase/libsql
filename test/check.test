@@ -459,4 +459,24 @@ do_execsql_test 8.1 {
   CREATE TABLE t811(b, CHECK( xyzzy.t811.b BETWEEN 5 AND 10 ));
 } {}
 
+# Make sure check constraints involving the ROWID are not ignored
+#
+do_execsql_test 9.1 {
+  CREATE TABLE t1(
+    a INTEGER PRIMARY KEY,
+    b INTEGER NOT NULL CONSTRAINT 'b-check' CHECK( b>a ),
+    c INTEGER NOT NULL CONSTRAINT 'c-check' CHECK( c>rowid*2 ),
+    d INTEGER NOT NULL CONSTRAINT 'd-check' CHECK( d BETWEEN b AND c )
+  );
+  INSERT INTO t1(a,b,c,d) VALUES(1,2,4,3),(2,4,6,5),(3,10,30,20);
+} {}
+do_catchsql_test 9.2 {
+  UPDATE t1 SET b=0 WHERE a=1;
+} {1 {CHECK constraint failed: b-check}}
+do_catchsql_test 9.3 {
+  UPDATE t1 SET c=a*2 WHERE a=1;
+} {1 {CHECK constraint failed: c-check}}
+
+
+
 finish_test

@@ -487,10 +487,9 @@ mptester$(EXE):	sqlite3.c $(TOP)/mptest/mptest.c
 	$(TCCX) -o $@ -I. $(TOP)/mptest/mptest.c sqlite3.c \
 		$(TLIBS) $(THREADLIB)
 
-MPTEST1=./mptester$(EXE) mptest.db $(TOP)/mptest/crash01.test --repeat 20
-MPTEST2=./mptester$(EXE) mptest.db $(TOP)/mptest/multiwrite01.test --repeat 20
+MPTEST1=./mptester$(EXE) mptest1.db $(TOP)/mptest/crash01.test --repeat 20
+MPTEST2=./mptester$(EXE) mptest2.db $(TOP)/mptest/multiwrite01.test --repeat 20
 mptest:	mptester$(EXE)
-	rm -f mptest.db
 	$(MPTEST1) --journalmode DELETE
 	$(MPTEST2) --journalmode WAL
 	$(MPTEST1) --journalmode WAL
@@ -850,10 +849,15 @@ loadfts: $(TOP)/tool/loadfts.c libsqlite3.a
 checksymbols: sqlite3.o
 	nm -g --defined-only sqlite3.o | grep -v " sqlite3_" ; test $$? -ne 0
 
-# Build the amalgamation-autoconf package.
+# Build the amalgamation-autoconf package.  The amalamgation-tarball target builds
+# a tarball named for the version number.  Ex:  sqlite-autoconf-3110000.tar.gz.
+# The snapshot-tarball target builds a tarball named by the SHA1 hash
 #
 amalgamation-tarball: sqlite3.c
-	TOP=$(TOP) sh $(TOP)/tool/mkautoconfamal.sh
+	TOP=$(TOP) sh $(TOP)/tool/mkautoconfamal.sh --normal
+
+snapshot-tarball: sqlite3.c
+	TOP=$(TOP) sh $(TOP)/tool/mkautoconfamal.sh --snapshot
 
 
 # Standard install and cleanup targets

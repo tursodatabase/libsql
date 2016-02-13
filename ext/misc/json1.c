@@ -31,7 +31,11 @@ SQLITE_EXTENSION_INIT1
 #include <stdlib.h>
 #include <stdarg.h>
 
-#define UNUSED_PARAM(X)  (void)(X)
+/* Mark a function parameter as unused, to suppress nuisance compiler
+** warnings. */
+#ifndef UNUSED_PARAM
+# define UNUSED_PARAM(X)  (void)(X)
+#endif
 
 #ifndef LARGEST_INT64
 # define LARGEST_INT64  (0xffffffff|(((sqlite3_int64)0x7fffffff)<<32))
@@ -1552,6 +1556,7 @@ static void jsonArrayStep(
   sqlite3_value **argv
 ){
   JsonString *pStr;
+  UNUSED_PARAM(argc);
   pStr = (JsonString*)sqlite3_aggregate_context(ctx, sizeof(*pStr));
   if( pStr ){
     if( pStr->zBuf==0 ){
@@ -1597,6 +1602,7 @@ static void jsonObjectStep(
   JsonString *pStr;
   const char *z;
   u32 n;
+  UNUSED_PARAM(argc);
   pStr = (JsonString*)sqlite3_aggregate_context(ctx, sizeof(*pStr));
   if( pStr ){
     if( pStr->zBuf==0 ){

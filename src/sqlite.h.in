@@ -347,7 +347,7 @@ typedef int (*sqlite3_callback)(void*,int,char**, char**);
 ** from [sqlite3_malloc()] and passed back through the 5th parameter.
 ** To avoid memory leaks, the application should invoke [sqlite3_free()]
 ** on error message strings returned through the 5th parameter of
-** of sqlite3_exec() after the error message string is no longer needed.
+** sqlite3_exec() after the error message string is no longer needed.
 ** ^If the 5th parameter to sqlite3_exec() is not NULL and no errors
 ** occur, then sqlite3_exec() sets the pointer in its 5th parameter to
 ** NULL before returning.

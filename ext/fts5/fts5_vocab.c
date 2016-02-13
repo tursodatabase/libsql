@@ -237,7 +237,7 @@ static int fts5VocabCreateMethod(
 ** Implementation of the xBestIndex method.
 */
 static int fts5VocabBestIndexMethod(
-  sqlite3_vtab *pVTab, 
+  sqlite3_vtab *pUnused,
   sqlite3_index_info *pInfo
 ){
   int i;
@@ -246,6 +246,8 @@ static int fts5VocabBestIndexMethod(
   int iTermLe = -1;
   int idxNum = 0;
   int nArg = 0;
+
+  UNUSED_PARAM(pUnused);
 
   for(i=0; i<pInfo->nConstraint; i++){
     struct sqlite3_index_constraint *p = &pInfo->aConstraint[i];
@@ -488,8 +490,8 @@ static int fts5VocabNextMethod(sqlite3_vtab_cursor *pCursor){
 static int fts5VocabFilterMethod(
   sqlite3_vtab_cursor *pCursor,   /* The cursor used for this query */
   int idxNum,                     /* Strategy index */
-  const char *idxStr,             /* Unused */
-  int nVal,                       /* Number of elements in apVal */
+  const char *zUnused,            /* Unused */
+  int nUnused,                    /* Number of elements in apVal */
   sqlite3_value **apVal           /* Arguments for the indexing scheme */
 ){
   Fts5VocabCursor *pCsr = (Fts5VocabCursor*)pCursor;
@@ -503,6 +505,8 @@ static int fts5VocabFilterMethod(
   sqlite3_value *pEq = 0;
   sqlite3_value *pGe = 0;
   sqlite3_value *pLe = 0;
+
+  UNUSED_PARAM2(zUnused, nUnused);
 
   fts5VocabResetCursor(pCsr);
   if( idxNum & FTS5_VOCAB_TERM_EQ ) pEq = apVal[iVal++];

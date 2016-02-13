@@ -995,7 +995,7 @@ void sqlite3Insert(
     {
       int isReplace;    /* Set to true if constraints may cause a replace */
       sqlite3GenerateConstraintChecks(pParse, pTab, aRegIdx, iDataCur, iIdxCur,
-          regIns, 0, ipkColumn>=0, onError, endOfLoop, &isReplace
+          regIns, 0, ipkColumn>=0, onError, endOfLoop, &isReplace, 0
       );
       sqlite3FkCheck(pParse, pTab, 0, regIns, 0, 0);
       sqlite3CompleteInsertion(pParse, pTab, iDataCur, iIdxCur,
@@ -1076,6 +1076,59 @@ insert_cleanup:
 #ifdef tmask
  #undef tmask
 #endif
+
+/*
+** Meanings of bits in of pWalker->eCode for checkConstraintUnchanged()
+*/
+#define CKCNSTRNT_COLUMN   0x01    /* CHECK constraint uses a changing column */
+#define CKCNSTRNT_ROWID    0x02    /* CHECK constraint references the ROWID */
+
+/* This is the Walker callback from checkConstraintUnchanged().  Set
+** bit 0x01 of pWalker->eCode if
+** pWalker->eCode to 0 if this expression node references any of the
+** columns that are being modifed by an UPDATE statement.
+*/
+static int checkConstraintExprNode(Walker *pWalker, Expr *pExpr){
+  if( pExpr->op==TK_COLUMN ){
+    assert( pExpr->iColumn>=0 || pExpr->iColumn==-1 );
+    if( pExpr->iColumn>=0 ){
+      if( pWalker->u.aiCol[pExpr->iColumn]>=0 ){
+        pWalker->eCode |= CKCNSTRNT_COLUMN;
+      }
+    }else{
+      pWalker->eCode |= CKCNSTRNT_ROWID;
+    }
+  }
+  return WRC_Continue;
+}
+
+/*
+** pExpr is a CHECK constraint on a row that is being UPDATE-ed.  The
+** only columns that are modified by the UPDATE are those for which
+** aiChng[i]>=0, and also the ROWID is modified if chngRowid is true.
+**
+** Return true if CHECK constraint pExpr does not use any of the
+** changing columns (or the rowid if it is changing).  In other words,
+** return true if this CHECK constraint can be skipped when validating
+** the new row in the UPDATE statement.
+*/
+static int checkConstraintUnchanged(Expr *pExpr, int *aiChng, int chngRowid){
+  Walker w;
+  memset(&w, 0, sizeof(w));
+  w.eCode = 0;
+  w.xExprCallback = checkConstraintExprNode;
+  w.u.aiCol = aiChng;
+  sqlite3WalkExpr(&w, pExpr);
+  if( !chngRowid ){
+    testcase( (w.eCode & CKCNSTRNT_ROWID)!=0 );
+    w.eCode &= ~CKCNSTRNT_ROWID;
+  }
+  testcase( w.eCode==0 );
+  testcase( w.eCode==CKCNSTRNT_COLUMN );
+  testcase( w.eCode==CKCNSTRNT_ROWID );
+  testcase( w.eCode==(CKCNSTRNT_ROWID|CKCNSTRNT_COLUMN) );
+  return !w.eCode;
+}
 
 /*
 ** Generate code to do constraint checks prior to an INSERT or an UPDATE
@@ -1171,7 +1224,8 @@ void sqlite3GenerateConstraintChecks(
   u8 pkChng,           /* Non-zero if the rowid or PRIMARY KEY changed */
   u8 overrideError,    /* Override onError to this if not OE_Default */
   int ignoreDest,      /* Jump to this label on an OE_Ignore resolution */
-  int *pbMayReplace    /* OUT: Set to true if constraint may cause a replace */
+  int *pbMayReplace,   /* OUT: Set to true if constraint may cause a replace */
+  int *aiChng          /* column i is unchanged if aiChng[i]<0 */
 ){
   Vdbe *v;             /* VDBE under constrution */
   Index *pIdx;         /* Pointer to one of the indices */
@@ -1217,10 +1271,14 @@ void sqlite3GenerateConstraintChecks(
   */
   for(i=0; i<nCol; i++){
     if( i==pTab->iPKey ){
+      continue;        /* ROWID is never NULL */
+    }
+    if( aiChng && aiChng[i]<0 ){
+      /* Don't bother checking for NOT NULL on columns that do not change */
       continue;
     }
     onError = pTab->aCol[i].notNull;
-    if( onError==OE_None ) continue;
+    if( onError==OE_None ) continue;  /* This column is allowed to be NULL */
     if( overrideError!=OE_Default ){
       onError = overrideError;
     }else if( onError==OE_Default ){
@@ -1269,8 +1327,11 @@ void sqlite3GenerateConstraintChecks(
     pParse->ckBase = regNewData+1;
     onError = overrideError!=OE_Default ? overrideError : OE_Abort;
     for(i=0; i<pCheck->nExpr; i++){
-      int allOk = sqlite3VdbeMakeLabel(v);
-      sqlite3ExprIfTrue(pParse, pCheck->a[i].pExpr, allOk, SQLITE_JUMPIFNULL);
+      int allOk;
+      Expr *pExpr = pCheck->a[i].pExpr;
+      if( aiChng && checkConstraintUnchanged(pExpr, aiChng, pkChng) ) continue;
+      allOk = sqlite3VdbeMakeLabel(v);
+      sqlite3ExprIfTrue(pParse, pExpr, allOk, SQLITE_JUMPIFNULL);
       if( onError==OE_Ignore ){
         sqlite3VdbeGoto(v, ignoreDest);
       }else{

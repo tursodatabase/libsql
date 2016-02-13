@@ -5,9 +5,10 @@
 #
 rm -f sqlite3.c
 make sqlite3.c
-echo '********** No optimizations.  Includes FTS4 and RTREE *********'
+echo '********** No optimizations.  Includes FTS4/5, RTREE, JSON1 ***'
 gcc -c -Wshadow -Wall -Wextra -pedantic-errors -Wno-long-long -std=c89 \
       -ansi -DHAVE_STDINT_H -DSQLITE_ENABLE_FTS4 -DSQLITE_ENABLE_RTREE \
+      -DSQLITE_ENABLE_FTS5 -DSQLITE_ENABLE_JSON1 \
       sqlite3.c
 echo '********** Android configuration ******************************'
 gcc -c \
@@ -35,7 +36,8 @@ echo '********** No optimizations. ENABLE_STAT4. THREADSAFE=0 *******'
 gcc -c -Wshadow -Wall -Wextra -pedantic-errors -Wno-long-long -std=c89 \
       -ansi -DSQLITE_ENABLE_STAT4 -DSQLITE_THREADSAFE=0 \
       sqlite3.c
-echo '********** Optimized -O3.  Includes FTS4 and RTREE ************'
+echo '********** Optimized -O3.  Includes FTS4/5, RTREE, JSON1 ******'
 gcc -O3 -c -Wshadow -Wall -Wextra -pedantic-errors -Wno-long-long -std=c89 \
       -ansi -DHAVE_STDINT_H -DSQLITE_ENABLE_FTS4 -DSQLITE_ENABLE_RTREE \
+      -DSQLITE_ENABLE_FTS5 -DSQLITE_ENABLE_JSON1 \
       sqlite3.c
