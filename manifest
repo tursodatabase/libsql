@@ -1,5 +1,5 @@
-C Fix\sa\spotential\sbuffer\soverread\sprovoked\sby\sinvalid\sutf-8\sin\sfts5.
-D 2016-02-12T18:48:09.224
+C Provide\sSqlite3_SafeInit()\sand\sSqlite3_SafeUnload()\sentry\spoints\son\sthe\sTCL\ninterface,\sbut\shave\sthe\salways\sreturn\sTCL_ERROR,\sbecause\sthe\snon-standard\s\nTCL\sbuilds\son\sMacs\srequire\sthis.
+D 2016-02-13T18:54:10.051
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 30f075dc4f27a07abb76088946b2944178d85347
@@ -357,7 +357,7 @@ F src/sqliteInt.h 04ca5b3cdb3bcf87ba6300d5d36b51498f65f28c
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
-F src/tclsqlite.c 94ef6e2794220c5b6064d4c78ec7169a8c5cc45d
+F src/tclsqlite.c 13debcc6a5ca1217486f8903768c01114fbe8b58
 F src/test1.c 4f1b42699068b7806af3111786f5ad760c2c1ff7
 F src/test2.c 5586f43fcd9a1be0830793cf9d354082c261b25b
 F src/test3.c a8887dabbbee3059af338f20d290084a63ed1b0f
@@ -1427,7 +1427,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh ef6ebc6fd8d2dc35db3b622015c16a023d4fef4f
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 130580207ab5cee762b2893808acef7c8afad027
-R f6628307ca7dcc5e74da260d3c3d6ac5
-U dan
-Z 7972d84e46f7d6d6e270e54f6c76821e
+P a049fbbde5da2e43d41aa8c2b41f9eb21507ac76
+R 0ed7109e4c77d1cb323166614bc90c67
+U drh
+Z 0875f4eabfb763252145d2214f48fc91
