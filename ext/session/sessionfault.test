@@ -361,7 +361,7 @@ do_faultsim_test 6 -faults oom-* -body {
 }
 
 faultsim_delete_and_reopen
-do_execsql_test 5.prep1 {
+do_execsql_test 7.prep1 {
   CREATE TABLE t1(a, b, PRIMARY KEY(a));
 }
 faultsim_save_and_close
@@ -372,6 +372,7 @@ for {set ::i 0} {$::i < 480} {incr ::i 4} {
 }
 set res [lsort $res]
 do_faultsim_test 7 -faults oom-transient -prep {
+  catch { S delete }
   faultsim_restore_and_reopen
   sqlite3session S db main
   S attach *
