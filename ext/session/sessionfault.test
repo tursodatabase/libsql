@@ -389,8 +389,8 @@ do_faultsim_test 7 -faults oom-transient -prep {
       error "Expected {0 $::res} Got {$cres}"
     }
   } else {
-    S changeset
-    S delete
+    catch { S changeset }
+    catch { S delete }
   }
 }
 

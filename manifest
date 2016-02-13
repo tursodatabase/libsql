@@ -1,5 +1,5 @@
-C Harden\ssqlite3session_delete()\sagainst\strying\sto\sdelete\sa\ssession\sthat\nis\snot\scurrently\son\sthe\ssession\slist.
-D 2016-02-13T14:45:56.852
+C Fix\sanother\stest\sproblem\sin\ssessionfault.test.
+D 2016-02-13T15:08:25.504
 F Makefile.in 5cbf3f753328d1bcd3a6117785b4874d99612f8f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 45e596bd4ccecf2256f68a2e96466aa52cc4bc1f
@@ -282,7 +282,7 @@ F ext/session/sessionD.test d4744c78334162851d2a2f285c7e603e31b49aa2
 F ext/session/sessionE.test e60a238c47f0feb3bb707e7f35e22be09c7e8f26
 F ext/session/sessionF.test c2f178d4dfd723a5fd94a730ea2ccb44c669e3ce
 F ext/session/session_common.tcl a1293167d14774b5e728836720497f40fe4ea596
-F ext/session/sessionfault.test 94a4dd100e16cf0b1c44d8487517dbb407eeab1d
+F ext/session/sessionfault.test d52cbb7bee48cc8ee80335e07eb72fcb6b15eb40
 F ext/session/sqlite3session.c b10af3e87ae437bb197b3a23a584d2dc8ad8981a
 F ext/session/sqlite3session.h 64e9e7f185725ef43b97f4a9a0c0df0669844f1d
 F ext/session/test_session.c 187bd344c5ae9d5be85e22ef7c3010f0c17307ce
@@ -1448,7 +1448,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh ef6ebc6fd8d2dc35db3b622015c16a023d4fef4f
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 582b2ae77d65b1e142ceb5774f37b0aaa3851378
-R 99d33fcea6ce08ff5ef828796adb3d5d
-U drh
-Z 9efd5fb5a4c4d606f6b8046dd50f3f7a
+P 6c2d34df76fb7823f307c11a1135ab30674421a9
+R aed6007c61153b78ae015657d3f9bbb0
+U dan
+Z 2a607f92ff5c33f0d10318ab25e2fc68
