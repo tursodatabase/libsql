@@ -128,7 +128,8 @@ mod test {
     fn test_int_array_module() {
         let db = Connection::open_in_memory().unwrap();
         db.execute_batch("CREATE TABLE t1 (x INT);
-                INSERT INTO t1 VALUES (1), (3);
+                INSERT INTO t1 VALUES (1);
+                INSERT INTO t1 VALUES (3);
                 CREATE TABLE t2 (y INT);
                 INSERT INTO t2 VALUES (11);
                 CREATE TABLE t3 (z INT);
