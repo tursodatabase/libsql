@@ -1172,6 +1172,7 @@ impl<'a> RowIndex for &'a str {
 mod test {
     extern crate tempdir;
     pub use super::*;
+    use ffi;
     use self::tempdir::TempDir;
     pub use std::error::Error as StdError;
     pub use std::fmt;
