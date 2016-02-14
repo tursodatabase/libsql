@@ -50,6 +50,9 @@
 //!     }
 //! }
 //! ```
+#![cfg_attr(feature="clippy", feature(plugin))]
+#![cfg_attr(feature="clippy", plugin(clippy))]
+
 extern crate libc;
 extern crate libsqlite3_sys as ffi;
 #[macro_use]
@@ -99,7 +102,7 @@ pub type Result<T> = result::Result<T, Error>;
 unsafe fn errmsg_to_string(errmsg: *const c_char) -> String {
     let c_slice = CStr::from_ptr(errmsg).to_bytes();
     let utf8_str = str::from_utf8(c_slice);
-    utf8_str.unwrap_or("Invalid string encoding").to_string()
+    utf8_str.unwrap_or("Invalid string encoding").to_owned()
 }
 
 fn str_to_cstring(s: &str) -> Result<CString> {
@@ -127,9 +130,9 @@ pub enum DatabaseName<'a> {
 // impl to avoid dead code warnings.
 #[cfg(any(feature = "backup", feature = "blob"))]
 impl<'a> DatabaseName<'a> {
-    fn to_cstring(self) -> Result<CString> {
+    fn to_cstring(&self) -> Result<CString> {
         use self::DatabaseName::{Main, Temp, Attached};
-        match self {
+        match *self {
             Main => str_to_cstring("main"),
             Temp => str_to_cstring("temp"),
             Attached(s) => str_to_cstring(s),
@@ -234,7 +237,7 @@ impl Connection {
     /// # Failure
     ///
     /// Will return `Err` if the underlying SQLite call fails.
-    pub fn transaction<'a>(&'a self) -> Result<Transaction<'a>> {
+    pub fn transaction(&self) -> Result<Transaction> {
         Transaction::new(self, TransactionBehavior::Deferred)
     }
 
@@ -245,9 +248,7 @@ impl Connection {
     /// # Failure
     ///
     /// Will return `Err` if the underlying SQLite call fails.
-    pub fn transaction_with_behavior<'a>(&'a self,
-                                         behavior: TransactionBehavior)
-                                         -> Result<Transaction<'a>> {
+    pub fn transaction_with_behavior(&self, behavior: TransactionBehavior) -> Result<Transaction> {
         Transaction::new(self, behavior)
     }
 
@@ -572,11 +573,7 @@ impl InnerConnection {
             // https://github.com/mackyle/sqlite/blob/master/src/mutex_noop.c).
             const SQLITE_SINGLETHREADED_MUTEX_MAGIC: usize = 8;
             let mutex_ptr = ffi::sqlite3_mutex_alloc(0);
-            let is_singlethreaded = if mutex_ptr as usize == SQLITE_SINGLETHREADED_MUTEX_MAGIC {
-                true
-            } else {
-                false
-            };
+            let is_singlethreaded = mutex_ptr as usize == SQLITE_SINGLETHREADED_MUTEX_MAGIC;
             ffi::sqlite3_mutex_free(mutex_ptr);
             if is_singlethreaded {
                 return Err(Error::SqliteSingleThreadedMode);
@@ -1173,7 +1170,6 @@ impl<'a> RowIndex for &'a str {
 
 #[cfg(test)]
 mod test {
-    extern crate libsqlite3_sys as ffi;
     extern crate tempdir;
     pub use super::*;
     use self::tempdir::TempDir;

@@ -82,84 +82,84 @@ impl From<::std::ffi::NulError> for Error {
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            &Error::SqliteFailure(ref err, None) => err.fmt(f),
-            &Error::SqliteFailure(_, Some(ref s)) => write!(f, "{}", s),
-            &Error::SqliteSingleThreadedMode => {
+        match *self {
+            Error::SqliteFailure(ref err, None) => err.fmt(f),
+            Error::SqliteFailure(_, Some(ref s)) => write!(f, "{}", s),
+            Error::SqliteSingleThreadedMode => {
                 write!(f,
                        "SQLite was compiled or configured for single-threaded use only")
             }
-            &Error::FromSqlConversionFailure(ref err) => err.fmt(f),
-            &Error::Utf8Error(ref err) => err.fmt(f),
-            &Error::NulError(ref err) => err.fmt(f),
-            &Error::InvalidParameterName(ref name) => write!(f, "Invalid parameter name: {}", name),
-            &Error::InvalidPath(ref p) => write!(f, "Invalid path: {}", p.to_string_lossy()),
-            &Error::ExecuteReturnedResults => {
+            Error::FromSqlConversionFailure(ref err) => err.fmt(f),
+            Error::Utf8Error(ref err) => err.fmt(f),
+            Error::NulError(ref err) => err.fmt(f),
+            Error::InvalidParameterName(ref name) => write!(f, "Invalid parameter name: {}", name),
+            Error::InvalidPath(ref p) => write!(f, "Invalid path: {}", p.to_string_lossy()),
+            Error::ExecuteReturnedResults => {
                 write!(f, "Execute returned results - did you mean to call query?")
             }
-            &Error::QueryReturnedNoRows => write!(f, "Query returned no rows"),
-            &Error::GetFromStaleRow => write!(f, "Attempted to get a value from a stale row"),
-            &Error::InvalidColumnIndex(i) => write!(f, "Invalid column index: {}", i),
-            &Error::InvalidColumnName(ref name) => write!(f, "Invalid column name: {}", name),
-            &Error::InvalidColumnType => write!(f, "Invalid column type"),
+            Error::QueryReturnedNoRows => write!(f, "Query returned no rows"),
+            Error::GetFromStaleRow => write!(f, "Attempted to get a value from a stale row"),
+            Error::InvalidColumnIndex(i) => write!(f, "Invalid column index: {}", i),
+            Error::InvalidColumnName(ref name) => write!(f, "Invalid column name: {}", name),
+            Error::InvalidColumnType => write!(f, "Invalid column type"),
 
             #[cfg(feature = "functions")]
-            &Error::InvalidFunctionParameterType => write!(f, "Invalid function parameter type"),
+            Error::InvalidFunctionParameterType => write!(f, "Invalid function parameter type"),
             #[cfg(feature = "functions")]
-            &Error::UserFunctionError(ref err) => err.fmt(f),
+            Error::UserFunctionError(ref err) => err.fmt(f),
         }
     }
 }
 
 impl error::Error for Error {
     fn description(&self) -> &str {
-        match self {
-            &Error::SqliteFailure(ref err, None) => err.description(),
-            &Error::SqliteFailure(_, Some(ref s)) => s,
-            &Error::SqliteSingleThreadedMode => {
+        match *self {
+            Error::SqliteFailure(ref err, None) => err.description(),
+            Error::SqliteFailure(_, Some(ref s)) => s,
+            Error::SqliteSingleThreadedMode => {
                 "SQLite was compiled or configured for single-threaded use only"
             }
-            &Error::FromSqlConversionFailure(ref err) => err.description(),
-            &Error::Utf8Error(ref err) => err.description(),
-            &Error::InvalidParameterName(_) => "invalid parameter name",
-            &Error::NulError(ref err) => err.description(),
-            &Error::InvalidPath(_) => "invalid path",
-            &Error::ExecuteReturnedResults => {
+            Error::FromSqlConversionFailure(ref err) => err.description(),
+            Error::Utf8Error(ref err) => err.description(),
+            Error::InvalidParameterName(_) => "invalid parameter name",
+            Error::NulError(ref err) => err.description(),
+            Error::InvalidPath(_) => "invalid path",
+            Error::ExecuteReturnedResults => {
                 "execute returned results - did you mean to call query?"
             }
-            &Error::QueryReturnedNoRows => "query returned no rows",
-            &Error::GetFromStaleRow => "attempted to get a value from a stale row",
-            &Error::InvalidColumnIndex(_) => "invalid column index",
-            &Error::InvalidColumnName(_) => "invalid column name",
-            &Error::InvalidColumnType => "invalid column type",
+            Error::QueryReturnedNoRows => "query returned no rows",
+            Error::GetFromStaleRow => "attempted to get a value from a stale row",
+            Error::InvalidColumnIndex(_) => "invalid column index",
+            Error::InvalidColumnName(_) => "invalid column name",
+            Error::InvalidColumnType => "invalid column type",
 
             #[cfg(feature = "functions")]
-            &Error::InvalidFunctionParameterType => "invalid function parameter type",
+            Error::InvalidFunctionParameterType => "invalid function parameter type",
             #[cfg(feature = "functions")]
-            &Error::UserFunctionError(ref err) => err.description(),
+            Error::UserFunctionError(ref err) => err.description(),
         }
     }
 
     fn cause(&self) -> Option<&error::Error> {
-        match self {
-            &Error::SqliteFailure(ref err, _) => Some(err),
-            &Error::SqliteSingleThreadedMode => None,
-            &Error::FromSqlConversionFailure(ref err) => Some(&**err),
-            &Error::Utf8Error(ref err) => Some(err),
-            &Error::NulError(ref err) => Some(err),
-            &Error::InvalidParameterName(_) => None,
-            &Error::InvalidPath(_) => None,
-            &Error::ExecuteReturnedResults => None,
-            &Error::QueryReturnedNoRows => None,
-            &Error::GetFromStaleRow => None,
-            &Error::InvalidColumnIndex(_) => None,
-            &Error::InvalidColumnName(_) => None,
-            &Error::InvalidColumnType => None,
+        match *self {
+            Error::SqliteFailure(ref err, _) => Some(err),
+            Error::SqliteSingleThreadedMode => None,
+            Error::FromSqlConversionFailure(ref err) => Some(&**err),
+            Error::Utf8Error(ref err) => Some(err),
+            Error::NulError(ref err) => Some(err),
+            Error::InvalidParameterName(_) => None,
+            Error::InvalidPath(_) => None,
+            Error::ExecuteReturnedResults => None,
+            Error::QueryReturnedNoRows => None,
+            Error::GetFromStaleRow => None,
+            Error::InvalidColumnIndex(_) => None,
+            Error::InvalidColumnName(_) => None,
+            Error::InvalidColumnType => None,
 
             #[cfg(feature = "functions")]
-            &Error::InvalidFunctionParameterType => None,
+            Error::InvalidFunctionParameterType => None,
             #[cfg(feature = "functions")]
-            &Error::UserFunctionError(ref err) => Some(&**err),
+            Error::UserFunctionError(ref err) => Some(&**err),
         }
     }
 }

@@ -23,6 +23,7 @@ trace = []
 time = "~0.1.0"
 bitflags = "~0.1"
 libc = "~0.2"
+clippy = {version = "~0.0.41", optional = true}
 
 [dev-dependencies]
 tempdir = "~0.3.4"

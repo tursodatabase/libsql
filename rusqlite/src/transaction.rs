@@ -89,7 +89,7 @@ impl<'conn> Transaction<'conn> {
     ///     tx.commit()
     /// }
     /// ```
-    pub fn savepoint<'a>(&'a self) -> Result<Transaction<'a>> {
+    pub fn savepoint(&self) -> Result<Transaction> {
         self.conn.execute_batch("SAVEPOINT sp").map(|_| {
             Transaction {
                 conn: self.conn,

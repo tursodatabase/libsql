@@ -102,9 +102,10 @@ raw_to_impl!(c_double, sqlite3_bind_double);
 
 impl ToSql for bool {
     unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
-        match *self {
-            true => ffi::sqlite3_bind_int(stmt, col, 1),
-            _ => ffi::sqlite3_bind_int(stmt, col, 0),
+        if *self {
+            ffi::sqlite3_bind_int(stmt, col, 1)
+        } else {
+            ffi::sqlite3_bind_int(stmt, col, 0)
         }
     }
 }
@@ -229,7 +230,7 @@ impl FromSql for String {
     unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> Result<String> {
         let c_text = ffi::sqlite3_column_text(stmt, col);
         if c_text.is_null() {
-            Ok("".to_string())
+            Ok("".to_owned())
         } else {
             let c_slice = CStr::from_ptr(c_text as *const c_char).to_bytes();
             let utf8_str = try!(str::from_utf8(c_slice));
@@ -283,7 +284,7 @@ impl<T: FromSql> FromSql for Option<T> {
         if sqlite3_column_type(stmt, col) == ffi::SQLITE_NULL {
             Ok(None)
         } else {
-            FromSql::column_result(stmt, col).map(|t| Some(t))
+            FromSql::column_result(stmt, col).map(Some)
         }
     }
 
@@ -312,11 +313,11 @@ pub enum Value {
 impl FromSql for Value {
     unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> Result<Value> {
         match sqlite3_column_type(stmt, col) {
-            ffi::SQLITE_TEXT => FromSql::column_result(stmt, col).map(|t| Value::Text(t)),
+            ffi::SQLITE_TEXT => FromSql::column_result(stmt, col).map(Value::Text),
             ffi::SQLITE_INTEGER => Ok(Value::Integer(ffi::sqlite3_column_int64(stmt, col))),
             ffi::SQLITE_FLOAT => Ok(Value::Real(ffi::sqlite3_column_double(stmt, col))),
             ffi::SQLITE_NULL => Ok(Value::Null),
-            ffi::SQLITE_BLOB => FromSql::column_result(stmt, col).map(|t| Value::Blob(t)),
+            ffi::SQLITE_BLOB => FromSql::column_result(stmt, col).map(Value::Blob),
             _ => Err(Error::InvalidColumnType),
         }
     }
@@ -355,7 +356,7 @@ mod test {
         let db = checked_memory_handle();
 
         let s = "hello, world!";
-        db.execute("INSERT INTO foo(t) VALUES (?)", &[&s.to_string()]).unwrap();
+        db.execute("INSERT INTO foo(t) VALUES (?)", &[&s.to_owned()]).unwrap();
 
         let from: String = db.query_row("SELECT t FROM foo", &[], |r| r.get(0)).unwrap();
         assert_eq!(from, s);

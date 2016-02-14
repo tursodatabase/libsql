@@ -88,9 +88,10 @@ raw_to_impl!(c_double, sqlite3_result_double);
 
 impl<'a> ToResult for bool {
     unsafe fn set_result(&self, ctx: *mut sqlite3_context) {
-        match *self {
-            true => ffi::sqlite3_result_int(ctx, 1),
-            _ => ffi::sqlite3_result_int(ctx, 0),
+        if *self {
+            ffi::sqlite3_result_int(ctx, 1)
+        } else {
+            ffi::sqlite3_result_int(ctx, 0)
         }
     }
 }
@@ -214,7 +215,7 @@ impl FromValue for String {
     unsafe fn parameter_value(v: *mut sqlite3_value) -> Result<String> {
         let c_text = ffi::sqlite3_value_text(v);
         if c_text.is_null() {
-            Ok("".to_string())
+            Ok("".to_owned())
         } else {
             let c_slice = CStr::from_ptr(c_text as *const c_char).to_bytes();
             let utf8_str = try!(str::from_utf8(c_slice));
@@ -250,7 +251,7 @@ impl<T: FromValue> FromValue for Option<T> {
         if sqlite3_value_type(v) == ffi::SQLITE_NULL {
             Ok(None)
         } else {
-            FromValue::parameter_value(v).map(|t| Some(t))
+            FromValue::parameter_value(v).map(Some)
         }
     }
 
@@ -273,6 +274,10 @@ impl<'a> Context<'a> {
     /// Returns the number of arguments to the function.
     pub fn len(&self) -> usize {
         self.args.len()
+    }
+    /// Returns `true` when there is no argument.
+    pub fn is_empty(&self) -> bool {
+        self.args.is_empty()
     }
 
     /// Returns the `idx`th argument as a `T`.
