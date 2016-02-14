@@ -1,5 +1,5 @@
-C Enhance\sability\sto\sdebug\sout-of-memory\serrors.
-D 2016-02-13T23:43:46.135
+C Update\sa\scomment.
+D 2016-02-14T00:14:35.173
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 30f075dc4f27a07abb76088946b2944178d85347
@@ -313,7 +313,7 @@ F src/insert.c 9ca97272e9f74ed0efddf3b4350ee12740cebbef
 F src/journal.c fe3a3e2559ce3ce9d371afd30fbabbc074174575
 F src/legacy.c 75d3023be8f0d2b99d60f905090341a03358c58e
 F src/loadext.c 9e2a41adcaff16ebc1ebff1f336cbf33de55396f
-F src/main.c fa3b9f523bcecf7b35d3f77ad1c091cd6902c74d
+F src/main.c 49f6d326bcecdbd2ee137abacd071439273e35ef
 F src/malloc.c 1443d1ad95d67c21d77af7ae3f44678252f0efec
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 6919bcf12f221868ea066eec27e579fed95ce98b
@@ -1427,10 +1427,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh ef6ebc6fd8d2dc35db3b622015c16a023d4fef4f
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 37ec3015ec95035d31e3672f520908a0d36c9d67
-R c35a4cd7d70ca4772cad6122d840cf2a
-T *branch * noMemBkpt
-T *sym-noMemBkpt *
-T -sym-trunk *
+P 6a9c4a3ebfb7cc0738ef6634440ccab44a21ff28
+R e3819c5f475544c6e34fa514747b2e7e
 U mistachkin
-Z 8214b214fa921fedf00745b7f0968f1a
+Z 1f3637cc5e67ca5cc7786677aae5b8ad
