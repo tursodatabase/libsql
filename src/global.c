@@ -219,7 +219,7 @@ SQLITE_WSD struct Sqlite3Config sqlite3Config = {
 ** database connections.  After initialization, this table is
 ** read-only.
 */
-SQLITE_WSD FuncDefHash sqlite3GlobalFunctions;
+FuncDefHash sqlite3BuiltinFunctions;
 
 /*
 ** Constant tokens for values 0 and 1.

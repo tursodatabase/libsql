@@ -1611,7 +1611,7 @@ static void groupConcatFinalize(sqlite3_context *context){
 ** of the built-in functions above are part of the global function set.
 ** This routine only deals with those that are not global.
 */
-void sqlite3RegisterBuiltinFunctions(sqlite3 *db){
+void sqlite3RegisterPerConnectionBuiltinFunctions(sqlite3 *db){
   int rc = sqlite3_overload_function(db, "MATCH", 2);
   assert( rc==SQLITE_NOMEM || rc==SQLITE_OK );
   if( rc==SQLITE_NOMEM ){
@@ -1624,8 +1624,7 @@ void sqlite3RegisterBuiltinFunctions(sqlite3 *db){
 */
 static void setLikeOptFlag(sqlite3 *db, const char *zName, u8 flagVal){
   FuncDef *pDef;
-  pDef = sqlite3FindFunction(db, zName, sqlite3Strlen30(zName),
-                             2, SQLITE_UTF8, 0);
+  pDef = sqlite3FindFunction(db, zName, 2, SQLITE_UTF8, 0);
   if( ALWAYS(pDef) ){
     pDef->funcFlags |= flagVal;
   }
@@ -1673,9 +1672,7 @@ int sqlite3IsLikeFunction(sqlite3 *db, Expr *pExpr, int *pIsNocase, char *aWc){
     return 0;
   }
   assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
-  pDef = sqlite3FindFunction(db, pExpr->u.zToken, 
-                             sqlite3Strlen30(pExpr->u.zToken),
-                             2, SQLITE_UTF8, 0);
+  pDef = sqlite3FindFunction(db, pExpr->u.zToken, 2, SQLITE_UTF8, 0);
   if( NEVER(pDef==0) || (pDef->funcFlags & SQLITE_FUNC_LIKE)==0 ){
     return 0;
   }
@@ -1699,7 +1696,7 @@ int sqlite3IsLikeFunction(sqlite3 *db, Expr *pExpr, int *pIsNocase, char *aWc){
 **
 ** After this routine runs
 */
-void sqlite3RegisterGlobalFunctions(void){
+void sqlite3RegisterBuiltinFunctions(void){
   /*
   ** The following array holds FuncDef structures for all of the functions
   ** defined in this file.
@@ -1707,8 +1704,27 @@ void sqlite3RegisterGlobalFunctions(void){
   ** The array cannot be constant since changes are made to the
   ** FuncDef.pHash elements at start-time.  The elements of this array
   ** are read-only after initialization is complete.
+  **
+  ** For peak efficiency, put the most frequently used function last.
   */
-  static SQLITE_WSD FuncDef aBuiltinFunc[] = {
+  static FuncDef aBuiltinFunc[] = {
+#ifdef SQLITE_SOUNDEX
+    FUNCTION(soundex,            1, 0, 0, soundexFunc      ),
+#endif
+#ifndef SQLITE_OMIT_LOAD_EXTENSION
+    VFUNCTION(load_extension,    1, 0, 0, loadExt          ),
+    VFUNCTION(load_extension,    2, 0, 0, loadExt          ),
+#endif
+#if SQLITE_USER_AUTHENTICATION
+    FUNCTION(sqlite_crypt,       2, 0, 0, sqlite3CryptFunc ),
+#endif
+#ifndef SQLITE_OMIT_COMPILEOPTION_DIAGS
+    DFUNCTION(sqlite_compileoption_used,1, 0, 0, compileoptionusedFunc  ),
+    DFUNCTION(sqlite_compileoption_get, 1, 0, 0, compileoptiongetFunc  ),
+#endif /* SQLITE_OMIT_COMPILEOPTION_DIAGS */
+    FUNCTION2(unlikely,          1, 0, 0, noopFunc,  SQLITE_FUNC_UNLIKELY),
+    FUNCTION2(likelihood,        2, 0, 0, noopFunc,  SQLITE_FUNC_UNLIKELY),
+    FUNCTION2(likely,            1, 0, 0, noopFunc,  SQLITE_FUNC_UNLIKELY),
     FUNCTION(ltrim,              1, 1, 0, trimFunc         ),
     FUNCTION(ltrim,              2, 1, 0, trimFunc         ),
     FUNCTION(rtrim,              1, 2, 0, trimFunc         ),
@@ -1726,8 +1742,6 @@ void sqlite3RegisterGlobalFunctions(void){
     FUNCTION2(typeof,            1, 0, 0, typeofFunc,  SQLITE_FUNC_TYPEOF),
     FUNCTION2(length,            1, 0, 0, lengthFunc,  SQLITE_FUNC_LENGTH),
     FUNCTION(instr,              2, 0, 0, instrFunc        ),
-    FUNCTION(substr,             2, 0, 0, substrFunc       ),
-    FUNCTION(substr,             3, 0, 0, substrFunc       ),
     FUNCTION(printf,            -1, 0, 0, printfFunc       ),
     FUNCTION(unicode,            1, 0, 0, unicodeFunc      ),
     FUNCTION(char,              -1, 0, 0, charFunc         ),
@@ -1738,40 +1752,22 @@ void sqlite3RegisterGlobalFunctions(void){
 #endif
     FUNCTION(upper,              1, 0, 0, upperFunc        ),
     FUNCTION(lower,              1, 0, 0, lowerFunc        ),
-    FUNCTION(coalesce,           1, 0, 0, 0                ),
-    FUNCTION(coalesce,           0, 0, 0, 0                ),
-    FUNCTION2(coalesce,         -1, 0, 0, noopFunc,  SQLITE_FUNC_COALESCE),
     FUNCTION(hex,                1, 0, 0, hexFunc          ),
     FUNCTION2(ifnull,            2, 0, 0, noopFunc,  SQLITE_FUNC_COALESCE),
-    FUNCTION2(unlikely,          1, 0, 0, noopFunc,  SQLITE_FUNC_UNLIKELY),
-    FUNCTION2(likelihood,        2, 0, 0, noopFunc,  SQLITE_FUNC_UNLIKELY),
-    FUNCTION2(likely,            1, 0, 0, noopFunc,  SQLITE_FUNC_UNLIKELY),
     VFUNCTION(random,            0, 0, 0, randomFunc       ),
     VFUNCTION(randomblob,        1, 0, 0, randomBlob       ),
     FUNCTION(nullif,             2, 0, 1, nullifFunc       ),
     DFUNCTION(sqlite_version,    0, 0, 0, versionFunc      ),
     DFUNCTION(sqlite_source_id,  0, 0, 0, sourceidFunc     ),
     FUNCTION(sqlite_log,         2, 0, 0, errlogFunc       ),
-#if SQLITE_USER_AUTHENTICATION
-    FUNCTION(sqlite_crypt,       2, 0, 0, sqlite3CryptFunc ),
-#endif
-#ifndef SQLITE_OMIT_COMPILEOPTION_DIAGS
-    DFUNCTION(sqlite_compileoption_used,1, 0, 0, compileoptionusedFunc  ),
-    DFUNCTION(sqlite_compileoption_get, 1, 0, 0, compileoptiongetFunc  ),
-#endif /* SQLITE_OMIT_COMPILEOPTION_DIAGS */
     FUNCTION(quote,              1, 0, 0, quoteFunc        ),
     VFUNCTION(last_insert_rowid, 0, 0, 0, last_insert_rowid),
     VFUNCTION(changes,           0, 0, 0, changes          ),
     VFUNCTION(total_changes,     0, 0, 0, total_changes    ),
     FUNCTION(replace,            3, 0, 0, replaceFunc      ),
     FUNCTION(zeroblob,           1, 0, 0, zeroblobFunc     ),
-  #ifdef SQLITE_SOUNDEX
-    FUNCTION(soundex,            1, 0, 0, soundexFunc      ),
-  #endif
-  #ifndef SQLITE_OMIT_LOAD_EXTENSION
-    VFUNCTION(load_extension,    1, 0, 0, loadExt          ),
-    VFUNCTION(load_extension,    2, 0, 0, loadExt          ),
-  #endif
+    FUNCTION(substr,             2, 0, 0, substrFunc       ),
+    FUNCTION(substr,             3, 0, 0, substrFunc       ),
     AGGREGATE(sum,               1, 0, 0, sumStep,         sumFinalize    ),
     AGGREGATE(total,             1, 0, 0, sumStep,         totalFinalize    ),
     AGGREGATE(avg,               1, 0, 0, sumStep,         avgFinalize    ),
@@ -1789,20 +1785,32 @@ void sqlite3RegisterGlobalFunctions(void){
     LIKEFUNC(like, 2, &likeInfoNorm, SQLITE_FUNC_LIKE),
     LIKEFUNC(like, 3, &likeInfoNorm, SQLITE_FUNC_LIKE),
   #endif
+    FUNCTION(coalesce,           1, 0, 0, 0                ),
+    FUNCTION(coalesce,           0, 0, 0, 0                ),
+    FUNCTION2(coalesce,         -1, 0, 0, noopFunc,  SQLITE_FUNC_COALESCE),
   };
-
-  int i;
-  FuncDefHash *pHash = &GLOBAL(FuncDefHash, sqlite3GlobalFunctions);
-  FuncDef *aFunc = (FuncDef*)&GLOBAL(FuncDef, aBuiltinFunc);
-
-  for(i=0; i<ArraySize(aBuiltinFunc); i++){
-    sqlite3FuncDefInsert(pHash, &aFunc[i]);
-  }
-  sqlite3RegisterDateTimeFunctions();
 #ifndef SQLITE_OMIT_ALTERTABLE
   sqlite3AlterFunctions();
 #endif
 #if defined(SQLITE_ENABLE_STAT3) || defined(SQLITE_ENABLE_STAT4)
   sqlite3AnalyzeFunctions();
+#endif
+  sqlite3RegisterDateTimeFunctions();
+  sqlite3InsertBuiltinFuncs(aBuiltinFunc, ArraySize(aBuiltinFunc));
+
+#if 0  /* Enable to print out how the built-in functions are hashed */
+  {
+    int i;
+    FuncDef *p;
+    for(i=0; i<SQLITE_FUNC_HASH_SZ; i++){
+      printf("FUNC-HASH %02d:", i);
+      for(p=sqlite3BuiltinFunctions.a[i]; p; p=p->u.pHash){
+        int n = sqlite3Strlen30(p->zName);
+        int h = p->zName[0] + n;
+        printf(" %s(%d)", p->zName, h);
+      }
+      printf("\n");
+    }
+  }
 #endif
 }

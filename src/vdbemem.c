@@ -1186,7 +1186,6 @@ static int valueFromFunction(
   FuncDef *pFunc = 0;             /* Function definition */
   sqlite3_value *pVal = 0;        /* New value */
   int rc = SQLITE_OK;             /* Return code */
-  int nName;                      /* Size of function name in bytes */
   ExprList *pList = 0;            /* Function arguments */
   int i;                          /* Iterator variable */
 
@@ -1194,8 +1193,7 @@ static int valueFromFunction(
   assert( (p->flags & EP_TokenOnly)==0 );
   pList = p->x.pList;
   if( pList ) nVal = pList->nExpr;
-  nName = sqlite3Strlen30(p->u.zToken);
-  pFunc = sqlite3FindFunction(db, p->u.zToken, nName, nVal, enc, 0);
+  pFunc = sqlite3FindFunction(db, p->u.zToken, nVal, enc, 0);
   assert( pFunc );
   if( (pFunc->funcFlags & (SQLITE_FUNC_CONSTANT|SQLITE_FUNC_SLOCHNG))==0 
    || (pFunc->funcFlags & SQLITE_FUNC_NEEDCOLL)
@@ -1457,15 +1455,10 @@ static void recordFunc(
 ** Register built-in functions used to help read ANALYZE data.
 */
 void sqlite3AnalyzeFunctions(void){
-  static SQLITE_WSD FuncDef aAnalyzeTableFuncs[] = {
+  static FuncDef aAnalyzeTableFuncs[] = {
     FUNCTION(sqlite_record,   1, 0, 0, recordFunc),
   };
-  int i;
-  FuncDefHash *pHash = &GLOBAL(FuncDefHash, sqlite3GlobalFunctions);
-  FuncDef *aFunc = (FuncDef*)&GLOBAL(FuncDef, aAnalyzeTableFuncs);
-  for(i=0; i<ArraySize(aAnalyzeTableFuncs); i++){
-    sqlite3FuncDefInsert(pHash, &aFunc[i]);
-  }
+  sqlite3InsertBuiltinFuncs(aAnalyzeTableFuncs, ArraySize(aAnalyzeTableFuncs));
 }
 
 /*
