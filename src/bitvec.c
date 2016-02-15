@@ -177,7 +177,7 @@ int sqlite3BitvecSet(Bitvec *p, u32 i){
     i = i%p->iDivisor;
     if( p->u.apSub[bin]==0 ){
       p->u.apSub[bin] = sqlite3BitvecCreate( p->iDivisor );
-      if( p->u.apSub[bin]==0 ) return SQLITE_NOMEM;
+      if( p->u.apSub[bin]==0 ) return SQLITE_NOMEM_BKPT;
     }
     p = p->u.apSub[bin];
   }
@@ -212,7 +212,7 @@ bitvec_set_rehash:
     int rc;
     u32 *aiValues = sqlite3StackAllocRaw(0, sizeof(p->u.aHash));
     if( aiValues==0 ){
-      return SQLITE_NOMEM;
+      return SQLITE_NOMEM_BKPT;
     }else{
       memcpy(aiValues, p->u.aHash, sizeof(p->u.aHash));
       memset(p->u.apSub, 0, sizeof(p->u.apSub));

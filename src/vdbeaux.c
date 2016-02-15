@@ -129,7 +129,7 @@ static int growOpArray(Vdbe *v, int nOp){
     p->nOpAlloc = p->szOpAlloc/sizeof(Op);
     v->aOp = pNew;
   }
-  return (pNew ? SQLITE_OK : SQLITE_NOMEM);
+  return (pNew ? SQLITE_OK : SQLITE_NOMEM_BKPT);
 }
 
 #ifdef SQLITE_DEBUG
@@ -1530,7 +1530,7 @@ int sqlite3VdbeList(
   releaseMemArray(pMem, 8);
   p->pResultSet = 0;
 
-  if( p->rc==SQLITE_NOMEM ){
+  if( p->rc==SQLITE_NOMEM_BKPT ){
     /* This happens if a malloc() inside a call to sqlite3_column_text() or
     ** sqlite3_column_text16() failed.  */
     sqlite3OomFault(db);
@@ -2119,7 +2119,7 @@ int sqlite3VdbeSetColName(
   assert( var<COLNAME_N );
   if( p->db->mallocFailed ){
     assert( !zName || xDel!=SQLITE_DYNAMIC );
-    return SQLITE_NOMEM;
+    return SQLITE_NOMEM_BKPT;
   }
   assert( p->aColName!=0 );
   pColName = &(p->aColName[idx+var*p->nResColumn]);
@@ -2237,7 +2237,7 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
     /* Select a master journal file name */
     nMainFile = sqlite3Strlen30(zMainFile);
     zMaster = sqlite3MPrintf(db, "%s-mjXXXXXX9XXz", zMainFile);
-    if( zMaster==0 ) return SQLITE_NOMEM;
+    if( zMaster==0 ) return SQLITE_NOMEM_BKPT;
     do {
       u32 iRandom;
       if( retryCount ){
@@ -2527,7 +2527,7 @@ int sqlite3VdbeHalt(Vdbe *p){
   */
 
   if( db->mallocFailed ){
-    p->rc = SQLITE_NOMEM;
+    p->rc = SQLITE_NOMEM_BKPT;
   }
   if( p->aOnceFlag ) memset(p->aOnceFlag, 0, p->nOnceFlag);
   closeAllCursors(p);
@@ -2688,7 +2688,7 @@ int sqlite3VdbeHalt(Vdbe *p){
   p->magic = VDBE_MAGIC_HALT;
   checkActiveVdbeCnt(db);
   if( db->mallocFailed ){
-    p->rc = SQLITE_NOMEM;
+    p->rc = SQLITE_NOMEM_BKPT;
   }
 
   /* If the auto-commit flag is set to true, then any locks that were held
@@ -3666,7 +3666,7 @@ static int vdbeCompareMemString(
     v2 = sqlite3ValueText((sqlite3_value*)&c2, pColl->enc);
     n2 = v2==0 ? 0 : c2.n;
     rc = pColl->xCmp(pColl->pUser, n1, v1, n2, v2);
-    if( (v1==0 || v2==0) && prcErr ) *prcErr = SQLITE_NOMEM;
+    if( (v1==0 || v2==0) && prcErr ) *prcErr = SQLITE_NOMEM_BKPT;
     sqlite3VdbeMemRelease(&c1);
     sqlite3VdbeMemRelease(&c2);
     return rc;

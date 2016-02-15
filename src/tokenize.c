@@ -495,7 +495,7 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   pEngine = sqlite3ParserAlloc(sqlite3Malloc);
   if( pEngine==0 ){
     sqlite3OomFault(db);
-    return SQLITE_NOMEM;
+    return SQLITE_NOMEM_BKPT;
   }
   assert( pParse->pNewTable==0 );
   assert( pParse->pNewTrigger==0 );
@@ -549,7 +549,7 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
 #endif /* YYDEBUG */
   sqlite3ParserFree(pEngine, sqlite3_free);
   if( db->mallocFailed ){
-    pParse->rc = SQLITE_NOMEM;
+    pParse->rc = SQLITE_NOMEM_BKPT;
   }
   if( pParse->rc!=SQLITE_OK && pParse->rc!=SQLITE_DONE && pParse->zErrMsg==0 ){
     pParse->zErrMsg = sqlite3MPrintf(db, "%s", sqlite3ErrStr(pParse->rc));

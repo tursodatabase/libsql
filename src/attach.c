@@ -144,7 +144,7 @@ static void attachFunc(
     Pager *pPager;
     aNew->pSchema = sqlite3SchemaGet(db, aNew->pBt);
     if( !aNew->pSchema ){
-      rc = SQLITE_NOMEM;
+      rc = SQLITE_NOMEM_BKPT;
     }else if( aNew->pSchema->file_format && aNew->pSchema->enc!=ENC(db) ){
       zErrDyn = sqlite3MPrintf(db, 
         "attached databases must use the same text encoding as main database");
@@ -164,7 +164,7 @@ static void attachFunc(
   aNew->safety_level = 3;
   aNew->zName = sqlite3DbStrDup(db, zName);
   if( rc==SQLITE_OK && aNew->zName==0 ){
-    rc = SQLITE_NOMEM;
+    rc = SQLITE_NOMEM_BKPT;
   }
 
 

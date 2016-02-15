@@ -546,7 +546,7 @@ static int walIndexPage(Wal *pWal, int iPage, volatile u32 **ppPage){
     apNew = (volatile u32 **)sqlite3_realloc64((void *)pWal->apWiData, nByte);
     if( !apNew ){
       *ppPage = 0;
-      return SQLITE_NOMEM;
+      return SQLITE_NOMEM_BKPT;
     }
     memset((void*)&apNew[pWal->nWiData], 0,
            sizeof(u32*)*(iPage+1-pWal->nWiData));
@@ -558,7 +558,7 @@ static int walIndexPage(Wal *pWal, int iPage, volatile u32 **ppPage){
   if( pWal->apWiData[iPage]==0 ){
     if( pWal->exclusiveMode==WAL_HEAPMEMORY_MODE ){
       pWal->apWiData[iPage] = (u32 volatile *)sqlite3MallocZero(WALINDEX_PGSZ);
-      if( !pWal->apWiData[iPage] ) rc = SQLITE_NOMEM;
+      if( !pWal->apWiData[iPage] ) rc = SQLITE_NOMEM_BKPT;
     }else{
       rc = sqlite3OsShmMap(pWal->pDbFd, iPage, WALINDEX_PGSZ, 
           pWal->writeLock, (void volatile **)&pWal->apWiData[iPage]
@@ -1173,7 +1173,7 @@ static int walIndexRecover(Wal *pWal){
     szFrame = szPage + WAL_FRAME_HDRSIZE;
     aFrame = (u8 *)sqlite3_malloc64(szFrame);
     if( !aFrame ){
-      rc = SQLITE_NOMEM;
+      rc = SQLITE_NOMEM_BKPT;
       goto recovery_error;
     }
     aData = &aFrame[WAL_FRAME_HDRSIZE];
@@ -1311,7 +1311,7 @@ int sqlite3WalOpen(
   *ppWal = 0;
   pRet = (Wal*)sqlite3MallocZero(sizeof(Wal) + pVfs->szOsFile);
   if( !pRet ){
-    return SQLITE_NOMEM;
+    return SQLITE_NOMEM_BKPT;
   }
 
   pRet->pVfs = pVfs;
@@ -1575,7 +1575,7 @@ static int walIteratorInit(Wal *pWal, WalIterator **pp){
         + iLast*sizeof(ht_slot);
   p = (WalIterator *)sqlite3_malloc64(nByte);
   if( !p ){
-    return SQLITE_NOMEM;
+    return SQLITE_NOMEM_BKPT;
   }
   memset(p, 0, nByte);
   p->nSegment = nSegment;
@@ -1587,7 +1587,7 @@ static int walIteratorInit(Wal *pWal, WalIterator **pp){
       sizeof(ht_slot) * (iLast>HASHTABLE_NPAGE?HASHTABLE_NPAGE:iLast)
   );
   if( !aTmp ){
-    rc = SQLITE_NOMEM;
+    rc = SQLITE_NOMEM_BKPT;
   }
 
   for(i=0; rc==SQLITE_OK && i<nSegment; i++){
@@ -2880,7 +2880,7 @@ static int walWriteOneFrame(
   void *pData;                    /* Data actually written */
   u8 aFrame[WAL_FRAME_HDRSIZE];   /* Buffer to assemble frame-header in */
 #if defined(SQLITE_HAS_CODEC)
-  if( (pData = sqlite3PagerCodec(pPage))==0 ) return SQLITE_NOMEM;
+  if( (pData = sqlite3PagerCodec(pPage))==0 ) return SQLITE_NOMEM_BKPT;
 #else
   pData = pPage->pData;
 #endif
@@ -2909,7 +2909,7 @@ static int walRewriteChecksums(Wal *pWal, u32 iLast){
   i64 iCksumOff;
 
   aBuf = sqlite3_malloc(szPage + WAL_FRAME_HDRSIZE);
-  if( aBuf==0 ) return SQLITE_NOMEM;
+  if( aBuf==0 ) return SQLITE_NOMEM_BKPT;
 
   /* Find the checksum values to use as input for the recalculating the
   ** first checksum. If the first frame is frame 1 (implying that the current
@@ -3385,7 +3385,7 @@ int sqlite3WalSnapshotGet(Wal *pWal, sqlite3_snapshot **ppSnapshot){
 
   pRet = (WalIndexHdr*)sqlite3_malloc(sizeof(WalIndexHdr));
   if( pRet==0 ){
-    rc = SQLITE_NOMEM;
+    rc = SQLITE_NOMEM_BKPT;
   }else{
     memcpy(pRet, &pWal->hdr, sizeof(WalIndexHdr));
     *ppSnapshot = (sqlite3_snapshot*)pRet;
