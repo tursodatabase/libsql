@@ -1,5 +1,5 @@
-C Experimental\sintegration\sof\sschemalint\sfunctionality\swith\sthe\sshell\stool.\sDoes\snot\swork\syet.
-D 2016-02-11T21:01:16.253
+C Progress\stowards\sintegrating\sschemalint\sinto\sthe\sshell\stool.\sSome\scases\swork\snow.
+D 2016-02-15T20:12:16.368
 F Makefile.in dac2776c84e0d533b158a9af6e57e05c4a6b19f3
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b0493f10caddb8adf992a4e6f1943141fc7c6816
@@ -350,7 +350,7 @@ F src/resolve.c 9f7ce3a3c087afb7597b7c916c99126ff3f12f0c
 F src/rowset.c 9fe4b3ad7cc00944386bb600233d8f523de07a6e
 F src/select.c ff80004a9a6ece891a8d9327a88e7b6e2588ee6d
 F src/shell.c 2cde87e03712204231167c4a6c61b0eb5129e105
-F src/shell_indexes.c 3cff393ee86d15fbfbe31f30cd752b46d7779b52
+F src/shell_indexes.c eefa3e9b7d992d10d1f71e27a2e12024a838b365
 F src/sqlite.h.in c7db059d3b810b70b83d9ed1436fa813eba22462
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
@@ -1430,7 +1430,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1a4182eedd0143c3f71b3d97f1d1bb25adeba617
-R 6253a80a5a7097c3b24b24ce68900613
+P ed49f297bcee86674ed673e195610b8cc1d35647
+R 6a53f87d207675e944487abae6392564
 U dan
-Z bddf3d3a7cd183a6a2362ed54e10358b
+Z dd362fd8eca18359c7fdd88fbcc31963
