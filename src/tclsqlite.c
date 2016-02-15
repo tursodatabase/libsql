@@ -3297,9 +3297,13 @@ EXTERN int Sqlite3_Unload(Tcl_Interp *interp, int flags){ return TCL_OK; }
 EXTERN int Tclsqlite3_Unload(Tcl_Interp *interp, int flags){ return TCL_OK; }
 
 /* Because it accesses the file-system and uses persistent state, SQLite
-** is not considered appropriate for safe interpreters.  Hence, we deliberately
-** omit the _SafeInit() interfaces.
+** is not considered appropriate for safe interpreters.  Hence, we cause
+** the _SafeInit() interfaces return TCL_ERROR.
 */
+EXTERN int Sqlite3_SafeInit(Tcl_Interp *interp){ return TCL_ERROR; }
+EXTERN int Sqlite3_SafeUnload(Tcl_Interp *interp, int flags){return TCL_ERROR;}
+
+
 
 #ifndef SQLITE_3_SUFFIX_ONLY
 int Sqlite_Init(Tcl_Interp *interp){ return Sqlite3_Init(interp); }

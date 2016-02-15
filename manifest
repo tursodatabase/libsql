@@ -1,5 +1,5 @@
-C Fix\sanother\stest\sproblem\sin\ssessionfault.test.
-D 2016-02-13T15:08:25.504
+C Merge\s3.11.0\schanges.
+D 2016-02-15T17:39:10.662
 F Makefile.in 5cbf3f753328d1bcd3a6117785b4874d99612f8f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 45e596bd4ccecf2256f68a2e96466aa52cc4bc1f
@@ -377,7 +377,7 @@ F src/sqliteInt.h a6127f268ee02e6f792e5d5706707a8dd9bf8808
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
-F src/tclsqlite.c 769c38453ec3e9dfc60822ed1d17f4bc76de1db6
+F src/tclsqlite.c 89b27573473e94257d9a2d296bc6c0626c9314d0
 F src/test1.c 4f1b42699068b7806af3111786f5ad760c2c1ff7
 F src/test2.c 5586f43fcd9a1be0830793cf9d354082c261b25b
 F src/test3.c a8887dabbbee3059af338f20d290084a63ed1b0f
@@ -444,7 +444,7 @@ F src/vdbesort.c ef3c6d1f1a7d44cf67bb2bee59ea3d1fe5bad174
 F src/vdbetrace.c f75c5455d8cf389ef86a8bfdfd3177e0e3692484
 F src/vtab.c bef51b4f693d82b4b0184457faa8625654534091
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c d21b99fd1458159d0b1ecdccc8ee6ada4fdc4c54
+F src/wal.c 1dd3f1aeed5765be62f27d7d2e44d46a68d891ab
 F src/wal.h 2f7c831cf3b071fa548bf2d5cac640846a7ff19c
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
 F src/where.c 984084584c10c41e46c89ac027a5cca991bc37e6
@@ -1448,7 +1448,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh ef6ebc6fd8d2dc35db3b622015c16a023d4fef4f
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6c2d34df76fb7823f307c11a1135ab30674421a9
-R aed6007c61153b78ae015657d3f9bbb0
-U dan
-Z 2a607f92ff5c33f0d10318ab25e2fc68
+P f6d1cf79437f892220e93635c377513160ee7fd7 3d862f207e3adc00f78066799ac5a8c282430a5f
+R b476bf4ab3b143a25fb59e5c7bd22337
+U drh
+Z a1cb35e211e072ee0c64a1a99f864eec
