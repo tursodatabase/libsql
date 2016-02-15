@@ -256,16 +256,25 @@ void sqlite3TokenInit(Token *p, char *z){
 ** independence" that SQLite uses internally when comparing identifiers.
 */
 int sqlite3_stricmp(const char *zLeft, const char *zRight){
-  register unsigned char *a, *b;
   if( zLeft==0 ){
     return zRight ? -1 : 0;
   }else if( zRight==0 ){
     return 1;
   }
+  return sqlite3StrICmp(zLeft, zRight);
+}
+int sqlite3StrICmp(const char *zLeft, const char *zRight){
+  unsigned char *a, *b;
+  int c;
   a = (unsigned char *)zLeft;
   b = (unsigned char *)zRight;
-  while( *a!=0 && UpperToLower[*a]==UpperToLower[*b]){ a++; b++; }
-  return UpperToLower[*a] - UpperToLower[*b];
+  for(;;){
+    c = (int)UpperToLower[*a] - (int)UpperToLower[*b];
+    if( c || *a==0 ) break;
+    a++;
+    b++;
+  }
+  return c;
 }
 int sqlite3_strnicmp(const char *zLeft, const char *zRight, int N){
   register unsigned char *a, *b;
