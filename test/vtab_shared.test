@@ -276,4 +276,3 @@ ifcapable fts3 {
 
 sqlite3_enable_shared_cache 0
 finish_test
-

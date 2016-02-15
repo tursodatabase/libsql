@@ -916,4 +916,24 @@ do_execsql_test select4-14.17 {
   VALUES(1),(2),(3),(4) UNION ALL SELECT 5 LIMIT 3;
 } {1 2 3}
 
+# Ticket https://www.sqlite.org/src/info/d06a25c84454a372
+# Incorrect answer due to two co-routines using the same registers and expecting
+# those register values to be preserved across a Yield.
+#
+do_execsql_test select4-15.1 {
+  DROP TABLE IF EXISTS tx;
+  CREATE TABLE tx(id INTEGER PRIMARY KEY, a, b);
+  INSERT INTO tx(a,b) VALUES(33,456);
+  INSERT INTO tx(a,b) VALUES(33,789);
+
+  SELECT DISTINCT t0.id, t0.a, t0.b
+    FROM tx AS t0, tx AS t1
+   WHERE t0.a=t1.a AND t1.a=33 AND t0.b=456
+  UNION
+  SELECT DISTINCT t0.id, t0.a, t0.b
+    FROM tx AS t0, tx AS t1
+   WHERE t0.a=t1.a AND t1.a=33 AND t0.b=789
+   ORDER BY 1;
+} {1 33 456 2 33 789}
+
 finish_test

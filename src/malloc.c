@@ -626,11 +626,11 @@ void *sqlite3DbMallocRaw(sqlite3 *db, u64 n){
   return p;
 }
 void *sqlite3DbMallocRawNN(sqlite3 *db, u64 n){
+#ifndef SQLITE_OMIT_LOOKASIDE
+  LookasideSlot *pBuf;
   assert( db!=0 );
   assert( sqlite3_mutex_held(db->mutex) );
   assert( db->pnBytesFreed==0 );
-#ifndef SQLITE_OMIT_LOOKASIDE
-  LookasideSlot *pBuf;
   if( db->lookaside.bDisable==0 ){
     assert( db->mallocFailed==0 );
     if( n>db->lookaside.sz ){
@@ -650,6 +650,9 @@ void *sqlite3DbMallocRawNN(sqlite3 *db, u64 n){
     return 0;
   }
 #else
+  assert( db!=0 );
+  assert( sqlite3_mutex_held(db->mutex) );
+  assert( db->pnBytesFreed==0 );
   if( db->mallocFailed ){
     return 0;
   }

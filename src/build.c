@@ -1954,7 +1954,7 @@ void sqlite3EndTable(
       sqlite3VdbeAddOp3(v, OP_InitCoroutine, regYield, 0, addrTop);
       sqlite3SelectDestInit(&dest, SRT_Coroutine, regYield);
       sqlite3Select(pParse, pSelect, &dest);
-      sqlite3VdbeAddOp1(v, OP_EndCoroutine, regYield);
+      sqlite3VdbeEndCoroutine(v, regYield);
       sqlite3VdbeJumpHere(v, addrTop - 1);
       if( pParse->nErr ) return;
       pSelTab = sqlite3ResultSetOfSelect(pParse, pSelect);

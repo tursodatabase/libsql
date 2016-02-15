@@ -125,9 +125,9 @@ int sqlite3Fts5UnicodeIsalnum(int c){
     0xFFFFFFFF, 0xFC00FFFF, 0xF8000001, 0xF8000001,
   };
 
-  if( c<128 ){
+  if( (unsigned int)c<128 ){
     return ( (aAscii[c >> 5] & (1 << (c & 0x001F)))==0 );
-  }else if( c<(1<<22) ){
+  }else if( (unsigned int)c<(1<<22) ){
     unsigned int key = (((unsigned int)c)<<10) | 0x000003FF;
     int iRes = 0;
     int iHi = sizeof(aEntry)/sizeof(aEntry[0]) - 1;

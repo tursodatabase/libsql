@@ -26,6 +26,7 @@ SQLITE_EXTENSION_INIT1
 typedef unsigned char  u8;
 typedef unsigned int   u32;
 typedef unsigned short u16;
+typedef short i16;
 typedef sqlite3_int64 i64;
 typedef sqlite3_uint64 u64;
 
@@ -78,6 +79,16 @@ extern int sqlite3_fts5_may_be_corrupt;
 # define assert_nc(x) assert(sqlite3_fts5_may_be_corrupt || (x))
 #else
 # define assert_nc(x) assert(x)
+#endif
+
+/* Mark a function parameter as unused, to suppress nuisance compiler
+** warnings. */
+#ifndef UNUSED_PARAM
+# define UNUSED_PARAM(X)  (void)(X)
+#endif
+
+#ifndef UNUSED_PARAM2
+# define UNUSED_PARAM2(X, Y)  (void)(X), (void)(Y)
 #endif
 
 typedef struct Fts5Global Fts5Global;
@@ -282,6 +293,7 @@ struct Fts5PoslistWriter {
   i64 iPrev;
 };
 int sqlite3Fts5PoslistWriterAppend(Fts5Buffer*, Fts5PoslistWriter*, i64);
+void sqlite3Fts5PoslistSafeAppend(Fts5Buffer*, i64*, i64);
 
 int sqlite3Fts5PoslistNext64(
   const u8 *a, int n,             /* Buffer containing poslist */
@@ -345,16 +357,6 @@ int sqlite3Fts5IndexOpen(Fts5Config *pConfig, int bCreate, Fts5Index**, char**);
 int sqlite3Fts5IndexClose(Fts5Index *p);
 
 /*
-** for(
-**   sqlite3Fts5IndexQuery(p, "token", 5, 0, 0, &pIter);
-**   0==sqlite3Fts5IterEof(pIter);
-**   sqlite3Fts5IterNext(pIter)
-** ){
-**   i64 iRowid = sqlite3Fts5IterRowid(pIter);
-** }
-*/
-
-/*
 ** Return a simple checksum value based on the arguments.
 */
 u64 sqlite3Fts5IndexEntryCksum(
@@ -395,7 +397,6 @@ int sqlite3Fts5IndexQuery(
 */
 int sqlite3Fts5IterNext(Fts5IndexIter*);
 int sqlite3Fts5IterNextFrom(Fts5IndexIter*, i64 iMatch);
-i64 sqlite3Fts5IterRowid(Fts5IndexIter*);
 
 /*
 ** Close an iterator opened by sqlite3Fts5IndexQuery().
@@ -680,7 +681,7 @@ int sqlite3Fts5ExprPopulatePoslists(
 void sqlite3Fts5ExprCheckPoslists(Fts5Expr*, i64);
 void sqlite3Fts5ExprClearEof(Fts5Expr*);
 
-int sqlite3Fts5ExprClonePhrase(Fts5Config*, Fts5Expr*, int, Fts5Expr**);
+int sqlite3Fts5ExprClonePhrase(Fts5Expr*, int, Fts5Expr**);
 
 int sqlite3Fts5ExprPhraseCollist(Fts5Expr *, int, const u8 **, int *);
 
