@@ -1,5 +1,5 @@
-C Readability\simprovements\sfor\swinRandomness.
-D 2016-02-15T22:37:18.018
+C Fix\sa\sharmless\scompiler\swarning\sin\sFTS5.
+D 2016-02-15T23:46:36.756
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 30f075dc4f27a07abb76088946b2944178d85347
@@ -104,7 +104,7 @@ F ext/fts5/fts5_buffer.c 4c1502d4c956cd092c89ce4480867f9d8bf325cd
 F ext/fts5/fts5_config.c 35c5173cae4eb17e82164a7f5aeef56a48903079
 F ext/fts5/fts5_expr.c 8e8e4635f655133eb39018072fc0f0942a2c4337
 F ext/fts5/fts5_hash.c f3a7217c86eb8f272871be5f6aa1b6798960a337
-F ext/fts5/fts5_index.c c6cd5190c7e5dd94151cb17acd939c82e5c7be2d
+F ext/fts5/fts5_index.c 78069efb54559a17c35906a741362d0b5c899bd0
 F ext/fts5/fts5_main.c 0e01ead4e817483e378e7e38e6d902f50b68d29e
 F ext/fts5/fts5_storage.c f8343db90d8c95a4d4b52f6676e354b4649ffd6e
 F ext/fts5/fts5_tcl.c f8731e0508299bd43f1a2eff7dbeaac870768966
@@ -1427,7 +1427,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh a98af506df552f3b3c0d904f94e4cdc4e1a6d598
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2e1f2eff27e25280fe626c07b6260b0a7aa903d3
-R dd8a80ac652728cd502c81c91874767f
-U mistachkin
-Z 8e4d3c615023f7e6ecbb584ba3188e53
+P 1640f814c7a5210f08c81e52e5a3fb89ac26f4d4
+R b9aa8d782c6b62a0c225e4bb87cb9bb3
+U drh
+Z 2752a99e50374be8d380aa3f6a98228d
