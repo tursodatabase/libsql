@@ -16,6 +16,7 @@
 #define _MSVC_H_
 
 #if defined(_MSC_VER)
+#define _CRT_RAND_S  /* Make rand_s() available on windows systems */
 #pragma warning(disable : 4054)
 #pragma warning(disable : 4055)
 #pragma warning(disable : 4100)

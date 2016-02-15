@@ -1,5 +1,5 @@
-C Improved\sentropy\sgathering\sfor\sthe\simplementation\sof\swinRandomness().
-D 2016-02-15T20:41:56.528
+C On\swindows\ssystems\swhen\srand_s()\sis\savailable,\suse\sit\sto\sobtain\sadditional\nseed\smaterial\sin\swinRandomness().
+D 2016-02-15T21:31:51.875
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 30f075dc4f27a07abb76088946b2944178d85347
@@ -321,7 +321,7 @@ F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
 F src/mem3.c 8768ac94694f31ffaf8b4d0ea5dc08af7010a35a
 F src/mem5.c 9bf955937b07f8c32541c8a9991f33ce3173d944
 F src/memjournal.c 349a04fb803db40532cde0993e39758f1acaecce
-F src/msvc.h d9ba56c6851227ab44b3f228a35f3f5772296495
+F src/msvc.h 32960d4f059c281182accbb3a5e5215d969fc73a
 F src/mutex.c 8e45800ee78e0cd1f1f3fe8e398853307f4a085c
 F src/mutex.h 779d588e3b7756ec3ecf7d78cde1d84aba414f85
 F src/mutex_noop.c 9d4309c075ba9cc7249e19412d3d62f7f94839c4
@@ -333,7 +333,7 @@ F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c 3a6f20736dfb8a0949cdd66553fdf59f6604be35
-F src/os_win.c ae1f287a5a47e6cc08c0ac8dd0cfa2c67358f73a
+F src/os_win.c 382fd1b58ddfe649993110ebdfb7f31d3cdcf7f6
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 6812f3803951774b56abded396171e1c12b0b003
 F src/pager.h f3eb324a3ff2408b28bab7e81c1c55c13720f865
@@ -1427,7 +1427,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh a98af506df552f3b3c0d904f94e4cdc4e1a6d598
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 404494e52b6385671ccde1c83b7b868986645536
-R 65a12199f7ba9145cf2ed73477d5bc07
+P fea3705e7750d276a8c8300b7a82dfae2d5979c0
+R 3ea964cea3f85da9036cd633975ae669
 U drh
-Z f5568a99b7bf2a6087045b1c5b2d107b
+Z 9da59384e387e9220326258d227dc94d
