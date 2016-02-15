@@ -1,5 +1,5 @@
-C Merge\schanges\sfrom\sthe\s3.11.0\srelease\scandidate.
-D 2016-02-13T17:35:48.571
+C Merge\s3.11.0\schanges.
+D 2016-02-15T17:40:37.807
 F Makefile.in 6bc82e8fca16b46e6158b5614f16b68cc42cbe5d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 30f075dc4f27a07abb76088946b2944178d85347
@@ -361,7 +361,7 @@ F src/sqliteInt.h d96632a59d850b9fc66fcbd17016a4e42bd4ccbc
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
-F src/tclsqlite.c 94ef6e2794220c5b6064d4c78ec7169a8c5cc45d
+F src/tclsqlite.c 13debcc6a5ca1217486f8903768c01114fbe8b58
 F src/test1.c f51730220589f17d95dbd6f821e1cb6377d4554c
 F src/test2.c 5586f43fcd9a1be0830793cf9d354082c261b25b
 F src/test3.c a8887dabbbee3059af338f20d290084a63ed1b0f
@@ -428,7 +428,7 @@ F src/vdbesort.c ef3c6d1f1a7d44cf67bb2bee59ea3d1fe5bad174
 F src/vdbetrace.c f75c5455d8cf389ef86a8bfdfd3177e0e3692484
 F src/vtab.c bef51b4f693d82b4b0184457faa8625654534091
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 9bd7a20c656171200725462a37183e53c549afda
+F src/wal.c 459a1287ca28b92dadb5b433445b7f7a199a5d87
 F src/wal.h 29c2a284ddd9c665199273dadc7255a227092291
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
 F src/where.c 984084584c10c41e46c89ac027a5cca991bc37e6
@@ -1432,7 +1432,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh ef6ebc6fd8d2dc35db3b622015c16a023d4fef4f
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f073401792c0a093d4324fc2636170f108656976 a049fbbde5da2e43d41aa8c2b41f9eb21507ac76
-R 08b85784270df2d9bb8996cc6368e262
+P d198a6db2e49d0205420f8ed08cfffd75ee93e1e 3d862f207e3adc00f78066799ac5a8c282430a5f
+R cbffd2c61409ebe477080fcdfd9cee6a
 U drh
-Z ebb7df642eb97cd9be2be5a6b0ed0028
+Z bc51080d07885efd1d1c87762452e1d8
