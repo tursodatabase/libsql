@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\spreviously\sseen\sin\s64-bit\sMSVC\sbuilds.
-D 2016-02-15T18:47:26.307
+C In\sthe\stool/warning.sh\sscript,\sdisable\sAndroid-specific\scompiler\swarning\stests\nwhen\snot\srunning\son\sLinux.
+D 2016-02-15T18:58:37.285
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 30f075dc4f27a07abb76088946b2944178d85347
@@ -1425,9 +1425,9 @@ F tool/varint.c 5d94cb5003db9dbbcbcc5df08d66f16071aee003
 F tool/vdbe-compress.tcl 5926c71f9c12d2ab73ef35c29376e756eb68361c
 F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
-F tool/warnings.sh ef6ebc6fd8d2dc35db3b622015c16a023d4fef4f
+F tool/warnings.sh a98af506df552f3b3c0d904f94e4cdc4e1a6d598
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9b3454762d142113f5923d754ca6bd2edefbd362
-R b07e46417f5dffc4daced5861e5000cb
+P 7026246300392a83cc23817dbc54c2c66bf1f2b3
+R fc9aa743a12cf9b6bf1ff5f64fb6b62a
 U drh
-Z df21a5d736621ec1a72e81dad263dffb
+Z e0842079d26b7ffa8e27ebf0376ee458

@@ -10,6 +10,7 @@ gcc -c -Wshadow -Wall -Wextra -pedantic-errors -Wno-long-long -std=c89 \
       -ansi -DHAVE_STDINT_H -DSQLITE_ENABLE_FTS4 -DSQLITE_ENABLE_RTREE \
       -DSQLITE_ENABLE_FTS5 -DSQLITE_ENABLE_JSON1 \
       sqlite3.c
+if test x`uname` = 'xLinux'; then
 echo '********** Android configuration ******************************'
 gcc -c \
   -DHAVE_USLEEP=1 \
@@ -32,6 +33,7 @@ gcc -c \
   -DUSE_PREAD64 \
   -Wshadow -Wall -Wextra \
   -Os sqlite3.c shell.c
+fi
 echo '********** No optimizations. ENABLE_STAT4. THREADSAFE=0 *******'
 gcc -c -Wshadow -Wall -Wextra -pedantic-errors -Wno-long-long -std=c89 \
       -ansi -DSQLITE_ENABLE_STAT4 -DSQLITE_THREADSAFE=0 \
