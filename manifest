@@ -1,5 +1,5 @@
-C Provide\sSqlite3_SafeInit()\sand\sSqlite3_SafeUnload()\sentry\spoints\son\sthe\sTCL\ninterface,\sbut\shave\sthe\salways\sreturn\sTCL_ERROR,\sbecause\sthe\snon-standard\s\nTCL\sbuilds\son\sMacs\srequire\sthis.
-D 2016-02-13T18:54:10.051
+C Make\ssure\sthe\scodec\sis\sinvoked\swhen\soverwriting\sexisting\sframes\sof\sthe\nWAL\sfile.\s\sYikes!
+D 2016-02-15T15:06:47.557
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 30f075dc4f27a07abb76088946b2944178d85347
@@ -424,7 +424,7 @@ F src/vdbesort.c ef3c6d1f1a7d44cf67bb2bee59ea3d1fe5bad174
 F src/vdbetrace.c f75c5455d8cf389ef86a8bfdfd3177e0e3692484
 F src/vtab.c bef51b4f693d82b4b0184457faa8625654534091
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c d21b99fd1458159d0b1ecdccc8ee6ada4fdc4c54
+F src/wal.c 1dd3f1aeed5765be62f27d7d2e44d46a68d891ab
 F src/wal.h 2f7c831cf3b071fa548bf2d5cac640846a7ff19c
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
 F src/where.c 984084584c10c41e46c89ac027a5cca991bc37e6
@@ -1427,7 +1427,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh ef6ebc6fd8d2dc35db3b622015c16a023d4fef4f
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a049fbbde5da2e43d41aa8c2b41f9eb21507ac76
-R 0ed7109e4c77d1cb323166614bc90c67
+P 37ec3015ec95035d31e3672f520908a0d36c9d67
+R f2e9debe8cf42a0179962a66a44645cf
 U drh
-Z 0875f4eabfb763252145d2214f48fc91
+Z 12ae21a200342c13300e7567f86ed2d7
