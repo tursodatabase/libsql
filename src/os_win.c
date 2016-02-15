@@ -5468,7 +5468,7 @@ static int winRandomness(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
   }
 #endif
   return e.nXor>nBuf ? nBuf : e.nXor;
-#endif /* defined(SQLITE_TEST) || defined(SQLITE_ZERO_PRNG_SEED) */
+#endif /* defined(SQLITE_TEST) || defined(SQLITE_OMIT_RANDOMNESS) */
 }
 
 
