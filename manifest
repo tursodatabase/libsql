@@ -1,5 +1,5 @@
-C In\sthe\stool/warning.sh\sscript,\sdisable\sAndroid-specific\scompiler\swarning\stests\nwhen\snot\srunning\son\sLinux.
-D 2016-02-15T18:58:37.285
+C Add\sworking\s-q\sand\s--help\soptions\sto\stestfixture.
+D 2016-02-15T19:38:17.026
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 30f075dc4f27a07abb76088946b2944178d85347
@@ -1078,7 +1078,7 @@ F test/tclsqlite.test 7fb866443c7deceed22b63948ccd6f76b52ad054
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
 F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptrigger.test 8ec228b0db5d7ebc4ee9b458fc28cb9e7873f5e1
-F test/tester.tcl 462376b478c1429030911b4cb7c8c517ef1fbd9b
+F test/tester.tcl 750365ff97047ded5f2d6e28df82a998f7c66ae0
 F test/thread001.test 9f22fd3525a307ff42a326b6bc7b0465be1745a5
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -1427,7 +1427,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh a98af506df552f3b3c0d904f94e4cdc4e1a6d598
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7026246300392a83cc23817dbc54c2c66bf1f2b3
-R fc9aa743a12cf9b6bf1ff5f64fb6b62a
+P 153f01a821e9844d0a2e418eb83c60f6c7695c8d
+R b996ecd577900723d8e8c822f6ba0fa2
 U drh
-Z e0842079d26b7ffa8e27ebf0376ee458
+Z 1c21e4bc8961adde657fcb0992c7a61d
