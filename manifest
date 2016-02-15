@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_NOMEM_BKPT\smacro\sto\senhance\sthe\sability\sto\sdebug\sOOM\serrors.\nOnly\seffective\swith\scompiling\swith\sSQLITE_DEBUG.
-D 2016-02-15T18:15:15.015
+C Fix\sharmless\scompiler\swarnings\spreviously\sseen\sin\s64-bit\sMSVC\sbuilds.
+D 2016-02-15T18:47:26.307
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 30f075dc4f27a07abb76088946b2944178d85347
@@ -375,7 +375,7 @@ F src/test_btree.c 2e9978eca99a9a4bfa8cae949efb00886860a64f
 F src/test_config.c 7985332c806d1cece793475c75a6abcccde9d331
 F src/test_demovfs.c 0de72c2c89551629f58486fde5734b7d90758852
 F src/test_devsym.c e7498904e72ba7491d142d5c83b476c4e76993bc
-F src/test_fs.c a61f54247fdb843761d709879c3bcd1989b2050c
+F src/test_fs.c f10f840ca4f8c72e4837908bd8347ac4bcab074b
 F src/test_func.c 37453d346cfcf118774efd5bf6187f7e6a7e3254
 F src/test_hexio.c abfdecb6fa58c354623978efceb088ca18e379cd
 F src/test_init.c 66b33120ffe9cd853b5a905ec850d51151337b32
@@ -764,7 +764,7 @@ F test/fuzz2.test 76dc35b32b6d6f965259508508abce75a6c4d7e1
 F test/fuzz3.test b47377143f0c80f91ed29d722861077ff34415d5
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
 F test/fuzz_malloc.test 328f70aaca63adf29b4c6f06505ed0cf57ca7c26
-F test/fuzzcheck.c 3309d793165ca61a9996271cb799694839348f9a
+F test/fuzzcheck.c 3b1707385ee81ae124a0f35c9df6d6d20550917a
 F test/fuzzdata1.db 7ee3227bad0e7ccdeb08a9e6822916777073c664
 F test/fuzzdata2.db f03a420d3b822cc82e4f894ca957618fbe9c4973
 F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
@@ -1427,8 +1427,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh ef6ebc6fd8d2dc35db3b622015c16a023d4fef4f
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c3b38efd50c3c07b6dee5dea4c1f95b37d1c0994 e9753d9a2c1269050f886e6cb9bc9cba0a8df6ce
-R b0fc853e4a1dd4125cb33093c5176aa5
-T +closed e9753d9a2c1269050f886e6cb9bc9cba0a8df6ce
+P 9b3454762d142113f5923d754ca6bd2edefbd362
+R b07e46417f5dffc4daced5861e5000cb
 U drh
-Z 3f49c178a99d041b6eb9f7c9f8c2a0a3
+Z df21a5d736621ec1a72e81dad263dffb
