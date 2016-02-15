@@ -5410,7 +5410,7 @@ static void xorMemory(EntropyGatherer *p, unsigned char *x, int sz){
   p->i = k;
   p->nXor += sz;
 }
-#endif
+#endif /* !defined(SQLITE_TEST) && !defined(SQLITE_OMIT_RANDOMNESS) */
 
 /*
 ** Write up to nBuf bytes of randomness into zBuf.
@@ -5426,7 +5426,7 @@ static int winRandomness(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
   memset(zBuf, 0, nBuf);
 #if defined(_MSC_VER) && _MSC_VER>=1400
   rand_s((int*)zBuf); /* rand_s() is not available with MinGW */
-#endif
+#endif /* defined(_MSC_VER) && _MSC_VER>=1400 */
   e.a = (unsigned char*)zBuf;
   e.na = nBuf;
   e.nXor = 0;
@@ -5434,27 +5434,27 @@ static int winRandomness(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
   {
     SYSTEMTIME x;
     osGetSystemTime(&x);
-    xorMemory(&e, (unsigned char*)&x, sizeof(x));
+    xorMemory(&e, (unsigned char*)&x, sizeof(SYSTEMTIME));
   }
   {
     DWORD pid = osGetCurrentProcessId();
-    xorMemory(&e, (unsigned char*)&pid, sizeof(pid));
+    xorMemory(&e, (unsigned char*)&pid, sizeof(DWORD));
   }
 #if SQLITE_OS_WINRT
   {
     ULONGLONG cnt = osGetTickCount64();
-    xorMemory(&e, (unsigned char*)&cnt, sizeof(cnt));
+    xorMemory(&e, (unsigned char*)&cnt, sizeof(ULONGLONG));
   }
 #else
   {
     DWORD cnt = osGetTickCount();
-    xorMemory(&e, (unsigned char*)&cnt, sizeof(cnt));
+    xorMemory(&e, (unsigned char*)&cnt, sizeof(DWORD));
   }
-#endif
+#endif /* SQLITE_OS_WINRT */
   {
     LARGE_INTEGER i;
     osQueryPerformanceCounter(&i);
-    xorMemory(&e, (unsigned char*)&i, sizeof(i));
+    xorMemory(&e, (unsigned char*)&i, sizeof(LARGE_INTEGER));
   }
 #if !SQLITE_OS_WINCE && !SQLITE_OS_WINRT && SQLITE_WIN32_USE_UUID
   {
@@ -5466,7 +5466,7 @@ static int winRandomness(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
     osUuidCreateSequential(&id);
     xorMemory(&e, (unsigned char*)&id, sizeof(UUID));
   }
-#endif
+#endif /* !SQLITE_OS_WINCE && !SQLITE_OS_WINRT && SQLITE_WIN32_USE_UUID */
   return e.nXor>nBuf ? nBuf : e.nXor;
 #endif /* defined(SQLITE_TEST) || defined(SQLITE_OMIT_RANDOMNESS) */
 }
