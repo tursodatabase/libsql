@@ -523,18 +523,17 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
         break;
       }
     }else{
-      if( tokenType==TK_SEMI ) pParse->zTail = &zSql[i];
       sqlite3Parser(pEngine, tokenType, pParse->sLastToken, pParse);
       lastTokenParsed = tokenType;
       if( pParse->rc!=SQLITE_OK || db->mallocFailed ) break;
     }
   }
   assert( nErr==0 );
+  pParse->zTail = &zSql[i];
   if( pParse->rc==SQLITE_OK && db->mallocFailed==0 ){
     assert( zSql[i]==0 );
     if( lastTokenParsed!=TK_SEMI ){
       sqlite3Parser(pEngine, TK_SEMI, pParse->sLastToken, pParse);
-      pParse->zTail = &zSql[i];
     }
     if( pParse->rc==SQLITE_OK && db->mallocFailed==0 ){
       sqlite3Parser(pEngine, 0, pParse->sLastToken, pParse);
