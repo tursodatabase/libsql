@@ -35,7 +35,6 @@
   sqlite3ErrorMsg(pParse, "near \"%T\": syntax error", &TOKEN);
 }
 %stack_overflow {
-  UNUSED_PARAMETER(yypMinor); /* Silence some compiler warnings */
   sqlite3ErrorMsg(pParse, "parser stack overflow");
 }
 

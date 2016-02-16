@@ -518,7 +518,7 @@ static int yy_find_reduce_action(
 /*
 ** The following routine is called if the stack overflows.
 */
-static void yyStackOverflow(yyParser *yypParser, YYMINORTYPE *yypMinor){
+static void yyStackOverflow(yyParser *yypParser){
    ParseARG_FETCH;
    yypParser->yyidx--;
 #ifndef NDEBUG
@@ -562,7 +562,7 @@ static void yy_shift(
   yyParser *yypParser,          /* The parser to be shifted */
   int yyNewState,               /* The new state to shift in */
   int yyMajor,                  /* The major token to shift in */
-  YYMINORTYPE *yypMinor         /* Pointer to the minor token to shift in */
+  ParseTOKENTYPE yyMinor        /* The minor token to shift in */
 ){
   yyStackEntry *yytos;
   yypParser->yyidx++;
@@ -573,14 +573,14 @@ static void yy_shift(
 #endif
 #if YYSTACKDEPTH>0 
   if( yypParser->yyidx>=YYSTACKDEPTH ){
-    yyStackOverflow(yypParser, yypMinor);
+    yyStackOverflow(yypParser);
     return;
   }
 #else
   if( yypParser->yyidx>=yypParser->yystksz ){
     yyGrowStack(yypParser);
     if( yypParser->yyidx>=yypParser->yystksz ){
-      yyStackOverflow(yypParser, yypMinor);
+      yyStackOverflow(yypParser);
       return;
     }
   }
@@ -588,7 +588,7 @@ static void yy_shift(
   yytos = &yypParser->yystack[yypParser->yyidx];
   yytos->stateno = (YYACTIONTYPE)yyNewState;
   yytos->major = (YYCODETYPE)yyMajor;
-  yytos->minor = *yypMinor;
+  yytos->minor.yy0 = yyMinor;
   yyTraceShift(yypParser, yyNewState);
 }
 
@@ -627,7 +627,32 @@ static void yy_reduce(
       yyRuleName[yyruleno], yymsp[-yysize].stateno);
   }
 #endif /* NDEBUG */
-  yygotominor = yyzerominor;
+  /*  yygotominor = yyzerominor; */
+
+  /* Check that the stack is large enough to grow by a single entry
+  ** if the RHS of the rule is empty.  This ensures that there is room
+  ** enough on the stack to push the LHS value */
+  if( yyRuleInfo[yyruleno].nrhs==0 ){
+#ifdef YYTRACKMAXSTACKDEPTH
+    if( yypParser->yyidx>yypParser->yyidxMax ){
+      yypParser->yyidxMax = yypParser->yyidx;
+    }
+#endif
+#if YYSTACKDEPTH>0 
+    if( yypParser->yyidx>=YYSTACKDEPTH ){
+      yyStackOverflow(yypParser);
+      return;
+    }
+#else
+    if( yypParser->yyidx>=yypParser->yystksz ){
+      yyGrowStack(yypParser);
+      if( yypParser->yyidx>=yypParser->yystksz ){
+        yyStackOverflow(yypParser);
+        return;
+      }
+    }
+#endif
+  }
 
   switch( yyruleno ){
   /* Beginning here are the reduction cases.  A typical example
@@ -645,26 +670,18 @@ static void yy_reduce(
   assert( yyruleno>=0 && yyruleno<sizeof(yyRuleInfo)/sizeof(yyRuleInfo[0]) );
   yygoto = yyRuleInfo[yyruleno].lhs;
   yysize = yyRuleInfo[yyruleno].nrhs;
-  yypParser->yyidx -= yysize;
   yyact = yy_find_reduce_action(yymsp[-yysize].stateno,(YYCODETYPE)yygoto);
   if( yyact <= YY_MAX_SHIFTREDUCE ){
     if( yyact>YY_MAX_SHIFT ) yyact += YY_MIN_REDUCE - YY_MIN_SHIFTREDUCE;
-    /* If the reduce action popped at least
-    ** one element off the stack, then we can push the new element back
-    ** onto the stack here, and skip the stack overflow test in yy_shift().
-    ** That gives a significant speed improvement. */
-    if( yysize ){
-      yypParser->yyidx++;
-      yymsp -= yysize-1;
-      yymsp->stateno = (YYACTIONTYPE)yyact;
-      yymsp->major = (YYCODETYPE)yygoto;
-      yymsp->minor = yygotominor;
-      yyTraceShift(yypParser, yyact);
-    }else{
-      yy_shift(yypParser,yyact,yygoto,&yygotominor);
-    }
+    yypParser->yyidx -= yysize - 1;
+    yymsp -= yysize-1;
+    yymsp->stateno = (YYACTIONTYPE)yyact;
+    yymsp->major = (YYCODETYPE)yygoto;
+    yymsp->minor = yygotominor;
+    yyTraceShift(yypParser, yyact);
   }else{
     assert( yyact == YY_ACCEPT_ACTION );
+    yypParser->yyidx -= yysize;
     yy_accept(yypParser);
   }
 }
@@ -698,10 +715,10 @@ static void yy_parse_failed(
 static void yy_syntax_error(
   yyParser *yypParser,           /* The parser */
   int yymajor,                   /* The major type of the error token */
-  YYMINORTYPE yyminor            /* The minor type of the error token */
+  ParseTOKENTYPE yyminor         /* The minor type of the error token */
 ){
   ParseARG_FETCH;
-#define TOKEN (yyminor.yy0)
+#define TOKEN yyminor
 /************ Begin %syntax_error code ****************************************/
 %%
 /************ End %syntax_error code ******************************************/
@@ -769,9 +786,7 @@ void Parse(
   if( yypParser->yyidx<0 ){
 #if YYSTACKDEPTH<=0
     if( yypParser->yystksz <=0 ){
-      /*memset(&yyminorunion, 0, sizeof(yyminorunion));*/
-      yyminorunion = yyzerominor;
-      yyStackOverflow(yypParser, &yyminorunion);
+      yyStackOverflow(yypParser);
       return;
     }
 #endif
@@ -788,7 +803,6 @@ void Parse(
     }
 #endif
   }
-  yyminorunion.yy0 = yyminor;
 #if !defined(YYERRORSYMBOL) && !defined(YYNOERRORRECOVERY)
   yyendofinput = (yymajor==0);
 #endif
@@ -804,7 +818,7 @@ void Parse(
     yyact = yy_find_shift_action(yypParser,(YYCODETYPE)yymajor);
     if( yyact <= YY_MAX_SHIFTREDUCE ){
       if( yyact > YY_MAX_SHIFT ) yyact += YY_MIN_REDUCE - YY_MIN_SHIFTREDUCE;
-      yy_shift(yypParser,yyact,yymajor,&yyminorunion);
+      yy_shift(yypParser,yyact,yymajor,yyminor);
 #ifndef YYNOERRORRECOVERY
       yypParser->yyerrcnt--;
 #endif
@@ -813,6 +827,7 @@ void Parse(
       yy_reduce(yypParser,yyact-YY_MIN_REDUCE);
     }else{
       assert( yyact == YY_ERROR_ACTION );
+      yyminorunion.yy0 = yyminor;
 #ifdef YYERRORSYMBOL
       int yymx;
 #endif
@@ -842,7 +857,7 @@ void Parse(
       **
       */
       if( yypParser->yyerrcnt<0 ){
-        yy_syntax_error(yypParser,yymajor,yyminorunion);
+        yy_syntax_error(yypParser,yymajor,yyminor);
       }
       yymx = yypParser->yystack[yypParser->yyidx].major;
       if( yymx==YYERRORSYMBOL || yyerrorhit ){
@@ -852,10 +867,10 @@ void Parse(
              yyTracePrompt,yyTokenName[yymajor]);
         }
 #endif
-        yy_destructor(yypParser, (YYCODETYPE)yymajor,&yyminorunion);
+        yy_destructor(yypParser, (YYCODETYPE)yymajor, &yyminorunion);
         yymajor = YYNOCODE;
       }else{
-         while(
+        while(
           yypParser->yyidx >= 0 &&
           yymx != YYERRORSYMBOL &&
           (yyact = yy_find_reduce_action(
@@ -869,9 +884,7 @@ void Parse(
           yy_parse_failed(yypParser);
           yymajor = YYNOCODE;
         }else if( yymx!=YYERRORSYMBOL ){
-          YYMINORTYPE u2;
-          u2.YYERRSYMDT = 0;
-          yy_shift(yypParser,yyact,YYERRORSYMBOL,&u2);
+          yy_shift(yypParser,yyact,YYERRORSYMBOL,yyminor);
         }
       }
       yypParser->yyerrcnt = 3;
@@ -884,7 +897,7 @@ void Parse(
       ** Applications can set this macro (for example inside %include) if
       ** they intend to abandon the parse upon the first syntax error seen.
       */
-      yy_syntax_error(yypParser,yymajor,yyminorunion);
+      yy_syntax_error(yypParser,yymajor, yyminor);
       yy_destructor(yypParser,(YYCODETYPE)yymajor,&yyminorunion);
       yymajor = YYNOCODE;
       
@@ -899,7 +912,7 @@ void Parse(
       ** three input tokens have been successfully shifted.
       */
       if( yypParser->yyerrcnt<=0 ){
-        yy_syntax_error(yypParser,yymajor,yyminorunion);
+        yy_syntax_error(yypParser,yymajor, yyminor);
       }
       yypParser->yyerrcnt = 3;
       yy_destructor(yypParser,(YYCODETYPE)yymajor,&yyminorunion);
