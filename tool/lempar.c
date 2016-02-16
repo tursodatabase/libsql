@@ -211,7 +211,9 @@ struct yyParser {
 #ifdef YYTRACKMAXSTACKDEPTH
   int yyidxMax;                 /* Maximum value of yyidx */
 #endif
+#ifndef YYNOERRORRECOVERY
   int yyerrcnt;                 /* Shifts left before out of the error */
+#endif
   ParseARG_SDECL                /* A place to hold %extra_argument */
 #if YYSTACKDEPTH<=0
   int yystksz;                  /* Current side of the stack */
@@ -774,7 +776,9 @@ void Parse(
     }
 #endif
     yypParser->yyidx = 0;
+#ifndef YYNOERRORRECOVERY
     yypParser->yyerrcnt = -1;
+#endif
     yypParser->yystack[0].stateno = 0;
     yypParser->yystack[0].major = 0;
 #ifndef NDEBUG
@@ -801,7 +805,9 @@ void Parse(
     if( yyact <= YY_MAX_SHIFTREDUCE ){
       if( yyact > YY_MAX_SHIFT ) yyact += YY_MIN_REDUCE - YY_MIN_SHIFTREDUCE;
       yy_shift(yypParser,yyact,yymajor,&yyminorunion);
+#ifndef YYNOERRORRECOVERY
       yypParser->yyerrcnt--;
+#endif
       yymajor = YYNOCODE;
     }else if( yyact <= YY_MAX_REDUCE ){
       yy_reduce(yypParser,yyact-YY_MIN_REDUCE);
