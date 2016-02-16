@@ -25,7 +25,8 @@ typedef struct IdxTable IdxTable;
 ** A single constraint. Equivalent to either "col = ?" or "col < ?".
 **
 ** pLink:
-**   ... todo ...
+**   Used to temporarily link IdxConstraint objects into lists while
+**   creating candidate indexes.
 */
 struct IdxConstraint {
   char *zColl;                    /* Collation sequence */
@@ -39,18 +40,41 @@ struct IdxConstraint {
 /*
 ** A WHERE clause. Made up of IdxConstraint objects. Example WHERE clause:
 **
-**   a=? AND b=? AND (c=? OR d=?) AND (e=? OR f=?)
+**   a=? AND b=? AND ((c=? AND d=?) OR e=?) AND (f=? OR g=?) AND h>?
 **
-** The above
+** The above is decomposed into 5 AND connected clauses. The first two are
+** added to the IdxWhere.pEq linked list, the following two into 
+** IdxWhere.pOr and the last into IdxWhere.pRange.
 **
+** IdxWhere.pEq and IdxWhere.pRange are simple linked lists of IdxConstraint
+** objects linked by the IdxConstraint.pNext field.
 **
+** The list headed at IdxWhere.pOr and linked by IdxWhere.pNextOr contains
+** all "OR" terms that belong to the current WHERE clause. In the example
+** above, there are two OR terms:
 **
+**   ((c=? AND d=?) OR e=?)
+**   (f=? OR g=?)
+**
+** Within an OR term, the OR connected sub-expressions are termed siblings.
+** These are connected into a linked list by the pSibling pointers. Each OR
+** term above consists of two siblings.
+**
+**   pOr -> (c=? AND d=?) -> pNextOr -> (f=?)
+**               |                        |
+**            pSibling                 pSibling
+**               |                        |
+**               V                        V
+**             (e=?)                    (g=?)
+**
+** IdxWhere.pParent is only used while constructing a tree of IdxWhere 
+** structures. It is NULL for the root IdxWhere. For all others, the parent
+** WHERE clause.
 */
 struct IdxWhere {
   IdxConstraint *pEq;             /* List of == constraints */
   IdxConstraint *pRange;          /* List of < constraints */
   IdxWhere *pOr;                  /* List of OR constraints */
-
   IdxWhere *pNextOr;              /* Next in OR constraints of same IdxWhere */
   IdxWhere *pSibling;             /* Next branch in single OR constraint */
   IdxWhere *pParent;              /* Parent object (or NULL) */
@@ -93,209 +117,6 @@ struct IdxTable {
   int nCol;
   IdxColumn *aCol;
 };
-
-
-typedef struct PragmaTable PragmaTable;
-typedef struct PragmaCursor PragmaCursor;
-
-struct PragmaTable {
-  sqlite3_vtab base;
-  sqlite3 *db;
-};
-
-struct PragmaCursor {
-  sqlite3_vtab_cursor base;
-  sqlite3_stmt *pStmt;
-  i64 iRowid;
-};
-
-/*
-** Connect to or create a pragma virtual table.
-*/
-static int pragmaConnect(
-  sqlite3 *db,
-  void *pAux,
-  int argc, const char *const*argv,
-  sqlite3_vtab **ppVtab,
-  char **pzErr
-){
-  const char *zSchema = 
-    "CREATE TABLE a(tbl HIDDEN, cid, name, type, isnotnull, dflt_value, pk)";
-  PragmaTable *pTab = 0;
-  int rc = SQLITE_OK;
-
-  rc = sqlite3_declare_vtab(db, zSchema);
-  if( rc==SQLITE_OK ){
-    pTab = (PragmaTable *)sqlite3_malloc64(sizeof(PragmaTable));
-    if( pTab==0 ) rc = SQLITE_NOMEM;
-  }else{
-    *pzErr = sqlite3_mprintf("%s", sqlite3_errmsg(db));
-  }
-
-  assert( rc==SQLITE_OK || pTab==0 );
-  if( rc==SQLITE_OK ){
-    memset(pTab, 0, sizeof(PragmaTable));
-    pTab->db = db;
-  }
-
-  *ppVtab = (sqlite3_vtab*)pTab;
-  return rc;
-}
-
-/*
-** Disconnect from or destroy a pragma virtual table.
-*/
-static int pragmaDisconnect(sqlite3_vtab *pVtab){
-  sqlite3_free(pVtab);
-  return SQLITE_OK;
-}
-
-/*
-** xBestIndex method for pragma virtual tables.
-*/
-static int pragmaBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
-  int i;
-
-  pIdxInfo->estimatedCost = 1.0e6;  /* Initial cost estimate */
-
-  /* Look for a valid tbl=? constraint. */
-  for(i=0; i<pIdxInfo->nConstraint; i++){
-    if( pIdxInfo->aConstraint[i].usable==0 ) continue;
-    if( pIdxInfo->aConstraint[i].op!=SQLITE_INDEX_CONSTRAINT_EQ ) continue;
-    if( pIdxInfo->aConstraint[i].iColumn!=0 ) continue;
-    pIdxInfo->idxNum = 1;
-    pIdxInfo->estimatedCost = 1.0;
-    pIdxInfo->aConstraintUsage[i].argvIndex = 1;
-    pIdxInfo->aConstraintUsage[i].omit = 1;
-    break;
-  }
-  if( i==pIdxInfo->nConstraint ){
-    tab->zErrMsg = sqlite3_mprintf("missing required tbl=? constraint");
-    return SQLITE_ERROR;
-  }
-  return SQLITE_OK;
-}
-
-/*
-** Open a new pragma cursor.
-*/
-static int pragmaOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
-  PragmaCursor *pCsr;
-
-  pCsr = (PragmaCursor*)sqlite3_malloc64(sizeof(PragmaCursor));
-  if( pCsr==0 ){
-    return SQLITE_NOMEM;
-  }else{
-    memset(pCsr, 0, sizeof(PragmaCursor));
-    pCsr->base.pVtab = pVTab;
-  }
-
-  *ppCursor = (sqlite3_vtab_cursor*)pCsr;
-  return SQLITE_OK;
-}
-
-static int pragmaClose(sqlite3_vtab_cursor *pCursor){
-  PragmaCursor *pCsr = (PragmaCursor*)pCursor;
-  sqlite3_finalize(pCsr->pStmt);
-  sqlite3_free(pCsr);
-  return SQLITE_OK;
-}
-
-/*
-** Move a statvfs cursor to the next entry in the file.
-*/
-static int pragmaNext(sqlite3_vtab_cursor *pCursor){
-  PragmaCursor *pCsr = (PragmaCursor*)pCursor;
-  int rc = SQLITE_OK;
-
-  if( sqlite3_step(pCsr->pStmt)!=SQLITE_ROW ){
-    rc = sqlite3_finalize(pCsr->pStmt);
-    pCsr->pStmt = 0;
-  }
-  pCsr->iRowid++;
-  return rc;
-}
-
-static int pragmaEof(sqlite3_vtab_cursor *pCursor){
-  PragmaCursor *pCsr = (PragmaCursor*)pCursor;
-  return pCsr->pStmt==0;
-}
-
-static int pragmaFilter(
-  sqlite3_vtab_cursor *pCursor, 
-  int idxNum, const char *idxStr,
-  int argc, sqlite3_value **argv
-){
-  PragmaCursor *pCsr = (PragmaCursor*)pCursor;
-  PragmaTable *pTab = (PragmaTable*)(pCursor->pVtab);
-  char *zSql;
-  const char *zTbl;
-  int rc = SQLITE_OK;
-
-  if( pCsr->pStmt ){
-    sqlite3_finalize(pCsr->pStmt);
-    pCsr->pStmt = 0;
-  }
-  pCsr->iRowid = 0;
-
-  assert( argc==1 );
-  zTbl = (const char*)sqlite3_value_text(argv[0]);
-  zSql = sqlite3_mprintf("PRAGMA table_info(%Q)", zTbl);
-  if( zSql==0 ){
-    rc = SQLITE_NOMEM;
-  }else{
-    rc = sqlite3_prepare_v2(pTab->db, zSql, -1, &pCsr->pStmt, 0);
-  }
-  if( rc ) return rc;
-  return pragmaNext(pCursor);;
-}
-
-/*
-** xColumn method.
-*/
-static int pragmaColumn(
-  sqlite3_vtab_cursor *pCursor, 
-  sqlite3_context *ctx, 
-  int iCol
-){
-  PragmaCursor *pCsr = (PragmaCursor *)pCursor;
-  if( iCol>0 ){
-    sqlite3_result_value(ctx, sqlite3_column_value(pCsr->pStmt, iCol-1));
-  }
-  return SQLITE_OK;
-}
-
-static int pragmaRowid(sqlite3_vtab_cursor *pCursor, sqlite_int64 *pRowid){
-  PragmaCursor *pCsr = (PragmaCursor *)pCursor;
-  *pRowid = pCsr->iRowid;
-  return SQLITE_OK;
-}
-
-static int registerPragmaVtabs(sqlite3 *db){
-  static sqlite3_module pragma_module = {
-    0,                            /* iVersion */
-    pragmaConnect,                /* xCreate */
-    pragmaConnect,                /* xConnect */
-    pragmaBestIndex,              /* xBestIndex */
-    pragmaDisconnect,             /* xDisconnect */
-    pragmaDisconnect,             /* xDestroy */
-    pragmaOpen,                   /* xOpen - open a cursor */
-    pragmaClose,                  /* xClose - close a cursor */
-    pragmaFilter,                 /* xFilter - configure scan constraints */
-    pragmaNext,                   /* xNext - advance a cursor */
-    pragmaEof,                    /* xEof - check for end of scan */
-    pragmaColumn,                 /* xColumn - read data */
-    pragmaRowid,                  /* xRowid - read data */
-    0,                            /* xUpdate */
-    0,                            /* xBegin */
-    0,                            /* xSync */
-    0,                            /* xCommit */
-    0,                            /* xRollback */
-    0,                            /* xFindMethod */
-    0,                            /* xRename */
-  };
-  return sqlite3_create_module(db, "pragma_table_info", &pragma_module, 0);
-}
 
 /*
 ** Allocate and return nByte bytes of zeroed memory using sqlite3_malloc(). 
@@ -477,12 +298,48 @@ static char *idxQueryToList(
   return zRet;
 }
 
+static int idxPrepareStmt(
+  sqlite3 *db,                    /* Database handle to compile against */
+  sqlite3_stmt **ppStmt,          /* OUT: Compiled SQL statement */
+  char **pzErrmsg,                /* OUT: sqlite3_malloc()ed error message */
+  const char *zSql                /* SQL statement to compile */
+){
+  int rc = sqlite3_prepare_v2(db, zSql, -1, ppStmt, 0);
+  if( rc!=SQLITE_OK ){
+    *ppStmt = 0;
+    idxDatabaseError(db, pzErrmsg);
+  }
+  return rc;
+}
+
+static int idxPrintfPrepareStmt(
+  sqlite3 *db,                    /* Database handle to compile against */
+  sqlite3_stmt **ppStmt,          /* OUT: Compiled SQL statement */
+  char **pzErrmsg,                /* OUT: sqlite3_malloc()ed error message */
+  const char *zFmt,               /* printf() format of SQL statement */
+  ...                             /* Trailing printf() arguments */
+){
+  va_list ap;
+  int rc;
+  char *zSql;
+  va_start(ap, zFmt);
+  zSql = sqlite3_vmprintf(zFmt, ap);
+  if( zSql==0 ){
+    rc = SQLITE_NOMEM;
+  }else{
+    rc = idxPrepareStmt(db, ppStmt, pzErrmsg, zSql);
+    sqlite3_free(zSql);
+  }
+  va_end(ap);
+  return rc;
+}
+
 static int idxGetTableInfo(
   sqlite3 *db,
   IdxScan *pScan,
   char **pzErrmsg
 ){
-  const char *zSql = "SELECT name, pk FROM pragma_table_info(?)";
+  const char *zTbl = pScan->zTable;
   sqlite3_stmt *p1 = 0;
   int nCol = 0;
   int nByte = sizeof(IdxTable);
@@ -490,17 +347,12 @@ static int idxGetTableInfo(
   int rc, rc2;
   char *pCsr;
 
-  rc = sqlite3_prepare_v2(db, zSql, -1, &p1, 0);
-  if( rc!=SQLITE_OK ){
-    idxDatabaseError(db, pzErrmsg);
-    return rc;
-  }
-  sqlite3_bind_text(p1, 1, pScan->zTable, -1, SQLITE_TRANSIENT);
-  while( SQLITE_ROW==sqlite3_step(p1) ){
-    const char *zCol = sqlite3_column_text(p1, 0);
+  rc = idxPrintfPrepareStmt(db, &p1, pzErrmsg, "PRAGMA table_info=%Q", zTbl);
+  while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(p1) ){
+    const char *zCol = sqlite3_column_text(p1, 1);
     nByte += 1 + strlen(zCol);
     rc = sqlite3_table_column_metadata(
-        db, "main", pScan->zTable, zCol, 0, &zCol, 0, 0, 0
+        db, "main", zTbl, zCol, 0, &zCol, 0, 0, 0
     );
     nByte += 1 + strlen(zCol);
     nCol++;
@@ -520,15 +372,15 @@ static int idxGetTableInfo(
 
   nCol = 0;
   while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(p1) ){
-    const char *zCol = sqlite3_column_text(p1, 0);
+    const char *zCol = sqlite3_column_text(p1, 1);
     int nCopy = strlen(zCol) + 1;
     pNew->aCol[nCol].zName = pCsr;
-    pNew->aCol[nCol].iPk = sqlite3_column_int(p1, 1);
+    pNew->aCol[nCol].iPk = sqlite3_column_int(p1, 5);
     memcpy(pCsr, zCol, nCopy);
     pCsr += nCopy;
 
     rc = sqlite3_table_column_metadata(
-        db, "main", pScan->zTable, zCol, 0, &zCol, 0, 0, 0
+        db, "main", zTbl, zCol, 0, &zCol, 0, 0, 0
     );
     if( rc==SQLITE_OK ){
       nCopy = strlen(zCol) + 1;
@@ -600,7 +452,7 @@ static int idxCreateTables(
     }
 
     if( rc==SQLITE_OK ){
-#if 1
+#if 0
       printf("/* %s */\n", zCreate);
 #endif
       rc = sqlite3_exec(dbm, zCreate, 0, 0, pzErrmsg);
@@ -700,7 +552,9 @@ static int idxCreateFromCons(
         rc = SQLITE_NOMEM;
       }else{
         rc = sqlite3_exec(dbm, zIdx, 0, 0, 0);
+#if 0
         printf("/* %s */\n", zIdx);
+#endif
       }
     }
 
@@ -778,20 +632,6 @@ static int idxCreateFromWhere(
   return rc;
 }
 
-static int idxPrepareStmt(
-  sqlite3 *db,                    /* Database handle to compile against */
-  const char *zSql,               /* SQL statement to compile */
-  sqlite3_stmt **ppStmt,          /* OUT: Compiled SQL statement */
-  char **pzErrmsg                 /* OUT: sqlite3_malloc()ed error message */
-){
-  int rc = sqlite3_prepare_v2(db, zSql, -1, ppStmt, 0);
-  if( rc!=SQLITE_OK ){
-    *ppStmt = 0;
-    idxDatabaseError(db, pzErrmsg);
-  }
-  return rc;
-}
-
 /*
 ** Create candidate indexes in database [dbm] based on the data in 
 ** linked-list pScan.
@@ -806,7 +646,7 @@ static int idxCreateCandidates(
   sqlite3_stmt *pDepmask;         /* Foreach depmask */
   IdxScan *pIter;
 
-  rc = idxPrepareStmt(dbm, "SELECT mask FROM depmask", &pDepmask, pzErrmsg);
+  rc = idxPrepareStmt(dbm, &pDepmask, pzErrmsg, "SELECT mask FROM depmask");
 
   for(pIter=pScan; pIter && rc==SQLITE_OK; pIter=pIter->pNextScan){
     IdxWhere *pWhere = &pIter->where;
@@ -832,27 +672,65 @@ int idxFindIndexes(
   const char *zSql,                    /* SQL to find indexes for */
   void (*xOut)(void*, const char*),    /* Output callback */
   void *pOutCtx,                       /* Context for xOut() */
-  char **pzErrmsg                      /* OUT: Error message (sqlite3_malloc) */
+  char **pzErr                         /* OUT: Error message (sqlite3_malloc) */
 ){
-  char *zExplain;
-  sqlite3_stmt *pExplain;
-  int rc;
+  sqlite3_stmt *pExplain = 0;
+  sqlite3_stmt *pSelect = 0;
+  int rc, rc2;
 
-  zExplain = sqlite3_mprintf("EXPLAIN QUERY PLAN %s", zSql);
-  if( zExplain==0 ){
-    rc = SQLITE_NOMEM;
-  }else{
-    rc = idxPrepareStmt(dbm, zExplain, &pExplain, pzErrmsg);
-    sqlite3_free(zExplain);
+  rc = idxPrintfPrepareStmt(dbm, &pExplain, pzErr,"EXPLAIN QUERY PLAN %s",zSql);
+  if( rc==SQLITE_OK ){
+    rc = idxPrepareStmt(dbm, &pSelect, pzErr, 
+        "SELECT sql FROM sqlite_master WHERE name = ?"
+    );
   }
-  if( rc!=SQLITE_OK ) return rc;
 
-  while( sqlite3_step(pExplain)==SQLITE_ROW ){
-    int iCol;
-    // for(iCol=0; iCol<sqlite3_column_count(pExplain); iCol++){ }
-    xOut(pOutCtx, sqlite3_column_text(pExplain, 3));
+  while( rc==SQLITE_OK && sqlite3_step(pExplain)==SQLITE_ROW ){
+    int i;
+    const char *zDetail = (const char*)sqlite3_column_text(pExplain, 3);
+    int nDetail = strlen(zDetail);
+
+    for(i=0; i<nDetail; i++){
+      if( memcmp(&zDetail[i], " USING INDEX ", 13)==0 ){
+        int nIdx = 0;
+        const char *zIdx = &zDetail[i+13];
+        while( zIdx[nIdx]!='\0' && zIdx[nIdx]!=' ' ) nIdx++;
+        sqlite3_bind_text(pSelect, 1, zIdx, nIdx, SQLITE_STATIC);
+        if( SQLITE_ROW==sqlite3_step(pSelect) ){
+          xOut(pOutCtx, sqlite3_column_text(pSelect, 0));
+        }
+        rc = sqlite3_reset(pSelect);
+        break;
+      }
+    }
   }
-  rc = sqlite3_finalize(pExplain);
+  rc2 = sqlite3_reset(pExplain);
+  if( rc==SQLITE_OK ) rc = rc2;
+  if( rc==SQLITE_OK ) xOut(pOutCtx, "");
+
+  while( rc==SQLITE_OK && sqlite3_step(pExplain)==SQLITE_ROW ){
+    int iSelectid = sqlite3_column_int(pExplain, 0);
+    int iOrder = sqlite3_column_int(pExplain, 1);
+    int iFrom = sqlite3_column_int(pExplain, 2);
+    const char *zDetail = (const char*)sqlite3_column_text(pExplain, 3);
+    char *zOut;
+
+    zOut = sqlite3_mprintf("%d|%d|%d|%s", iSelectid, iOrder, iFrom, zDetail);
+    if( zOut==0 ){
+      rc = SQLITE_NOMEM;
+    }else{
+      xOut(pOutCtx, zOut);
+      sqlite3_free(zOut);
+    }
+  }
+
+ find_indexes_out:
+  rc2 = sqlite3_finalize(pExplain);
+  if( rc==SQLITE_OK ) rc = rc2;
+  rc2 = sqlite3_finalize(pSelect);
+  if( rc==SQLITE_OK ) rc = rc2;
+
+  return rc;
 }
 
 /*
@@ -873,8 +751,6 @@ int shellIndexesCommand(
   IdxContext ctx;
   sqlite3_stmt *pStmt = 0;        /* Statement compiled from zSql */
 
-  rc = registerPragmaVtabs(db);
-  if( rc ) return rc;
   memset(&ctx, 0, sizeof(IdxContext));
 
   /* Open an in-memory database to work with. The main in-memory 
@@ -887,52 +763,44 @@ int shellIndexesCommand(
         "ATTACH ':memory:' AS aux;"
         "CREATE TABLE aux.depmask(mask PRIMARY KEY) WITHOUT ROWID;"
         "INSERT INTO aux.depmask VALUES(0);"
-        , 0, 0, 0
+        , 0, 0, pzErrmsg
     );
   }
 
   /* Prepare an INSERT statement for writing to aux.depmask */
   if( rc==SQLITE_OK ){
-    rc = sqlite3_prepare_v2(dbm, 
-        "INSERT OR IGNORE INTO depmask SELECT mask | ?1 FROM depmask;", -1,
-        &ctx.pInsertMask, 0
+    rc = idxPrepareStmt(dbm, &ctx.pInsertMask, pzErrmsg,
+        "INSERT OR IGNORE INTO depmask SELECT mask | ?1 FROM depmask;"
     );
   }
 
-  if( rc!=SQLITE_OK ){
-    idxDatabaseError(dbm, pzErrmsg);
-    goto indexes_out;
-  }
-
   /* Analyze the SELECT statement in zSql. */
-  ctx.dbm = dbm;
-  sqlite3_db_config(db, SQLITE_DBCONFIG_WHEREINFO, idxWhereInfo, (void*)&ctx);
-  rc = sqlite3_prepare(db, zSql, -1, &pStmt, 0);
-  sqlite3_db_config(db, SQLITE_DBCONFIG_WHEREINFO, (void*)0, (void*)0);
-
-  if( rc!=SQLITE_OK ){
-    idxDatabaseError(db, pzErrmsg);
-    goto indexes_out;
+  if( rc==SQLITE_OK ){
+    ctx.dbm = dbm;
+    sqlite3_db_config(db, SQLITE_DBCONFIG_WHEREINFO, idxWhereInfo, (void*)&ctx);
+    rc = idxPrepareStmt(db, &pStmt, pzErrmsg, zSql);
+    sqlite3_db_config(db, SQLITE_DBCONFIG_WHEREINFO, (void*)0, (void*)0);
+    sqlite3_finalize(pStmt);
   }
 
   /* Create tables within the main in-memory database. These tables
   ** have the same names, columns and declared types as the tables in
   ** the user database. All constraints except for PRIMARY KEY are
   ** removed. */
-  rc = idxCreateTables(db, dbm, ctx.pScan, pzErrmsg);
-  if( rc!=SQLITE_OK ){
-    goto indexes_out;
+  if( rc==SQLITE_OK ){
+    rc = idxCreateTables(db, dbm, ctx.pScan, pzErrmsg);
   }
 
   /* Create candidate indexes within the in-memory database file */
-  rc = idxCreateCandidates(dbm, ctx.pScan, pzErrmsg);
-  if( rc!=SQLITE_OK ){
-    goto indexes_out;
+  if( rc==SQLITE_OK ){
+    rc = idxCreateCandidates(dbm, ctx.pScan, pzErrmsg);
   }
 
-  rc = idxFindIndexes(dbm, zSql, xOut, pOutCtx, pzErrmsg);
+  /* Create candidate indexes within the in-memory database file */
+  if( rc==SQLITE_OK ){
+    rc = idxFindIndexes(dbm, zSql, xOut, pOutCtx, pzErrmsg);
+  }
 
- indexes_out:
   idxScanFree(ctx.pScan);
   sqlite3_close(dbm);
   return rc;
