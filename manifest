@@ -1,5 +1,5 @@
-C Minor\ssimplification\sto\sthe\stokenizer.\s\sSlightly\ssmaller\sand\sfaster.
-D 2016-02-16T13:04:19.100
+C Documentation\stypo\son\ssqlite3_wal_hook().\s\sNo\schanges\sto\scode.
+D 2016-02-17T11:13:20.401
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 30f075dc4f27a07abb76088946b2944178d85347
@@ -350,7 +350,7 @@ F src/resolve.c b8f7174e5f8c33c44ded3a25a973d0bb89228c20
 F src/rowset.c 9fe4b3ad7cc00944386bb600233d8f523de07a6e
 F src/select.c 1a7e23a3bb2edb9cdc46ab0cf7c1500109cf2531
 F src/shell.c 0367440658104bf2ce8d8a9a5a713a4b11c9acbe
-F src/sqlite.h.in f80c6ebd85588fc514bfedf3ecb00cec269cb410
+F src/sqlite.h.in a7caa805a345d6a14136c11ccfa6f4c1a6ef6e7b
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
 F src/sqliteInt.h 47f61c35d587d38cbcfc8ba852ff441054d697d3
@@ -1427,7 +1427,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh a98af506df552f3b3c0d904f94e4cdc4e1a6d598
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9235b0cf6a37712ae9e5deeb1e5ee064dd5511fa
-R a61b67e5f930748de130d8b41c0bc53a
+P 9570b6b43df3bc5ce314cded20bca8be9e968efe
+R fa7ad000641c654ec7b23cbb3e1a9847
 U drh
-Z d1a1b630582c40b1f2edd9cd2e01402a
+Z 6e5104d61f82ea485c4100026aadb443

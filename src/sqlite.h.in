@@ -7489,7 +7489,7 @@ void sqlite3_log(int iErrCode, const char *zFormat, ...);
 ** previously registered write-ahead log callback. ^Note that the
 ** [sqlite3_wal_autocheckpoint()] interface and the
 ** [wal_autocheckpoint pragma] both invoke [sqlite3_wal_hook()] and will
-** those overwrite any prior [sqlite3_wal_hook()] settings.
+** overwrite any prior [sqlite3_wal_hook()] settings.
 */
 void *sqlite3_wal_hook(
   sqlite3*, 
