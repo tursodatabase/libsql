@@ -33,6 +33,7 @@ struct IdxConstraint {
   int bRange;                     /* True for range, false for eq */
   int iCol;                       /* Constrained table column */
   i64 depmask;                    /* Dependency mask */
+  int bFlag;                      /* Used by idxFindCompatible() */
   IdxConstraint *pNext;           /* Next constraint in pEq or pRange list */
   IdxConstraint *pLink;           /* See above */
 };
@@ -413,53 +414,20 @@ static int idxCreateTables(
   int rc = SQLITE_OK;
   IdxScan *pIter;
   for(pIter=pScan; pIter && rc==SQLITE_OK; pIter=pIter->pNextScan){
-    int nPk = 0;
-    char *zCols = 0;
-    char *zPk = 0;
-    char *zCreate = 0;
-    int iCol;
-
     rc = idxGetTableInfo(db, pIter, pzErrmsg);
-
-    for(iCol=0; rc==SQLITE_OK && iCol<pIter->pTable->nCol; iCol++){
-      IdxColumn *pCol = &pIter->pTable->aCol[iCol];
-      if( pCol->iPk>nPk ) nPk = pCol->iPk;
-      zCols = sqlite3_mprintf("%z%s%Q", zCols, (zCols?", ":""), pCol->zName);
-      if( zCols==0 ) rc = SQLITE_NOMEM;
-    }
-
-    for(iCol=1; rc==SQLITE_OK && iCol<=nPk; iCol++){
-      int j;
-      for(j=0; j<pIter->pTable->nCol; j++){
-        IdxColumn *pCol = &pIter->pTable->aCol[j];
-        if( pCol->iPk==iCol ){
-          zPk = sqlite3_mprintf("%z%s%Q", zPk, (zPk?", ":""), pCol->zName);
-          if( zPk==0 ) rc = SQLITE_NOMEM;
-          break;
-        }
-      }
-    }
-
     if( rc==SQLITE_OK ){
-      if( zPk ){
-        zCreate = sqlite3_mprintf("CREATE TABLE %Q(%s, PRIMARY KEY(%s))",
-            pIter->zTable, zCols, zPk
-        );
-      }else{
-        zCreate = sqlite3_mprintf("CREATE TABLE %Q(%s)", pIter->zTable, zCols);
+      int rc2;
+      sqlite3_stmt *pSql = 0;
+      rc = idxPrintfPrepareStmt(db, &pSql, pzErrmsg, 
+          "SELECT sql FROM sqlite_master WHERE tbl_name = %Q", pIter->zTable
+      );
+      while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pSql) ){
+        const char *zSql = (const char*)sqlite3_column_text(pSql, 0);
+        rc = sqlite3_exec(dbm, zSql, 0, 0, pzErrmsg);
       }
-      if( zCreate==0 ) rc = SQLITE_NOMEM;
+      rc2 = sqlite3_finalize(pSql);
+      if( rc==SQLITE_OK ) rc = rc2;
     }
-
-    if( rc==SQLITE_OK ){
-#if 0
-      printf("/* %s */\n", zCreate);
-#endif
-      rc = sqlite3_exec(dbm, zCreate, 0, 0, pzErrmsg);
-    }
-    sqlite3_free(zCols);
-    sqlite3_free(zPk);
-    sqlite3_free(zCreate);
   }
   return rc;
 }
@@ -501,6 +469,20 @@ static char *idxAppendText(int *pRc, char *zIn, const char *zFmt, ...){
   return zRet;
 }
 
+static int idxIdentifierRequiresQuotes(const char *zId){
+  int i;
+  for(i=0; zId[i]; i++){
+    if( !(zId[i]=='_')
+     && !(zId[i]>='0' && zId[i]<='9')
+     && !(zId[i]>='a' && zId[i]<='z')
+     && !(zId[i]>='A' && zId[i]<='Z')
+    ){
+      return 1;
+    }
+  }
+  return 0;
+}
+
 static char *idxAppendColDefn(
   int *pRc, 
   char *zIn, 
@@ -510,11 +492,98 @@ static char *idxAppendColDefn(
   char *zRet = zIn;
   IdxColumn *p = &pTab->aCol[pCons->iCol];
   if( zRet ) zRet = idxAppendText(pRc, zRet, ", ");
-  zRet = idxAppendText(pRc, zRet, "%Q", p->zName);
+
+  if( idxIdentifierRequiresQuotes(p->zName) ){
+    zRet = idxAppendText(pRc, zRet, "%Q", p->zName);
+  }else{
+    zRet = idxAppendText(pRc, zRet, "%s", p->zName);
+  }
+
   if( sqlite3_stricmp(p->zColl, pCons->zColl) ){
-    zRet = idxAppendText(pRc, zRet, " COLLATE %Q", pCons->zColl);
+    if( idxIdentifierRequiresQuotes(pCons->zColl) ){
+      zRet = idxAppendText(pRc, zRet, " COLLATE %Q", pCons->zColl);
+    }else{
+      zRet = idxAppendText(pRc, zRet, " COLLATE %s", pCons->zColl);
+    }
   }
   return zRet;
+}
+
+/*
+** Search database dbm for an index compatible with the one idxCreateFromCons()
+** would create from arguments pScan, pEq and pTail. If no error occurs and 
+** such an index is found, return non-zero. Or, if no such index is found,
+** return zero.
+**
+** If an error occurs, set *pRc to an SQLite error code and return zero.
+*/
+static int idxFindCompatible(
+  int *pRc,                       /* OUT: Error code */
+  sqlite3* dbm,                   /* Database to search */
+  IdxScan *pScan,                 /* Scan for table to search for index on */
+  IdxConstraint *pEq,             /* List of == constraints */
+  IdxConstraint *pTail            /* List of range constraints */
+){
+  const char *zTbl = pScan->zTable;
+  sqlite3_stmt *pIdxList = 0;
+  IdxConstraint *pIter;
+  int nEq = 0;                    /* Number of elements in pEq */
+  int rc, rc2;
+
+  /* Count the elements in list pEq */
+  for(pIter=pEq; pIter; pIter=pIter->pNext) nEq++;
+
+  rc = idxPrintfPrepareStmt(dbm, &pIdxList, 0, "PRAGMA index_list=%Q", zTbl);
+  while( rc==SQLITE_OK && sqlite3_step(pIdxList)==SQLITE_ROW ){
+    int bMatch = 1;
+    IdxConstraint *pT = pTail;
+    sqlite3_stmt *pInfo = 0;
+    const char *zIdx = (const char*)sqlite3_column_text(pIdxList, 1);
+
+    /* Zero the IdxConstraint.bFlag values in the pEq list */
+    for(pIter=pEq; pIter; pIter=pIter->pNext) pIter->bFlag = 0;
+
+    rc = idxPrintfPrepareStmt(dbm, &pInfo, 0, "PRAGMA index_xInfo=%Q", zIdx);
+    while( rc==SQLITE_OK && sqlite3_step(pInfo)==SQLITE_ROW ){
+      int iIdx = sqlite3_column_int(pInfo, 0);
+      int iCol = sqlite3_column_int(pInfo, 1);
+      const char *zColl = (const char*)sqlite3_column_text(pInfo, 4);
+
+      if( iIdx<nEq ){
+        for(pIter=pEq; pIter; pIter=pIter->pNext){
+          if( pIter->bFlag ) continue;
+          if( pIter->iCol!=iCol ) continue;
+          if( sqlite3_stricmp(pIter->zColl, zColl) ) continue;
+          pIter->bFlag = 1;
+          break;
+        }
+        if( pIter==0 ){
+          bMatch = 0;
+          break;
+        }
+      }else{
+        if( pT ){
+          if( pT->iCol!=iCol || sqlite3_stricmp(pT->zColl, zColl) ){
+            bMatch = 0;
+            break;
+          }
+          pT = pT->pLink;
+        }
+      }
+    }
+    rc2 = sqlite3_finalize(pInfo);
+    if( rc==SQLITE_OK ) rc = rc2;
+
+    if( rc==SQLITE_OK && bMatch ){
+      sqlite3_finalize(pIdxList);
+      return 1;
+    }
+  }
+  rc2 = sqlite3_finalize(pIdxList);
+  if( rc==SQLITE_OK ) rc = rc2;
+
+  *pRc = rc;
+  return 0;
 }
 
 static int idxCreateFromCons(
@@ -524,12 +593,13 @@ static int idxCreateFromCons(
   IdxConstraint *pTail
 ){
   int rc = SQLITE_OK;
-  if( pEq || pTail ){
+  if( (pEq || pTail) && 0==idxFindCompatible(&rc, dbm, pScan, pEq, pTail) ){
     IdxTable *pTab = pScan->pTable;
     char *zCols = 0;
     char *zIdx = 0;
     IdxConstraint *pCons;
     int h = 0;
+    const char *zFmt;
 
     for(pCons=pEq; pCons; pCons=pCons->pLink){
       zCols = idxAppendColDefn(&rc, zCols, pTab, pCons);
@@ -545,9 +615,12 @@ static int idxCreateFromCons(
         h += ((h<<3) + zCols[i]);
       }
 
-      zIdx = sqlite3_mprintf("CREATE INDEX IF NOT EXISTS "
-          "'%q_idx_%08x' ON %Q(%s)", pScan->zTable, h, pScan->zTable, zCols
-      );
+      if( idxIdentifierRequiresQuotes(pScan->zTable) ){
+        zFmt = "CREATE INDEX '%q_idx_%08x' ON %Q(%s)";
+      }else{
+        zFmt = "CREATE INDEX %s_idx_%08x ON %s(%s)";
+      }
+      zIdx = sqlite3_mprintf(zFmt, pScan->zTable, h, pScan->zTable, zCols);
       if( !zIdx ){
         rc = SQLITE_NOMEM;
       }else{
@@ -665,6 +738,12 @@ static int idxCreateCandidates(
 }
 
 static void idxScanFree(IdxScan *pScan){
+  IdxScan *pIter;
+  IdxScan *pNext;
+  for(pIter=pScan; pIter; pIter=pNext){
+    pNext = pIter->pNextScan;
+
+  }
 }
 
 int idxFindIndexes(
@@ -796,12 +875,14 @@ int shellIndexesCommand(
     rc = idxCreateCandidates(dbm, ctx.pScan, pzErrmsg);
   }
 
-  /* Create candidate indexes within the in-memory database file */
+  /* Figure out which of the candidate indexes are preferred by the query
+  ** planner and report the results to the user.  */
   if( rc==SQLITE_OK ){
     rc = idxFindIndexes(dbm, zSql, xOut, pOutCtx, pzErrmsg);
   }
 
   idxScanFree(ctx.pScan);
+  sqlite3_finalize(ctx.pInsertMask);
   sqlite3_close(dbm);
   return rc;
 }
