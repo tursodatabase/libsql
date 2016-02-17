@@ -138,9 +138,9 @@ trans_opt ::= TRANSACTION.
 trans_opt ::= TRANSACTION nm.
 %type transtype {int}
 transtype(A) ::= .             {A = TK_DEFERRED;}
-transtype(A) ::= DEFERRED(X).  {A = @X;}
-transtype(A) ::= IMMEDIATE(X). {A = @X;}
-transtype(A) ::= EXCLUSIVE(X). {A = @X;}
+transtype(A) ::= DEFERRED(X).  {A = @X; /*A-overwrites-X*/}
+transtype(A) ::= IMMEDIATE(X). {A = @X; /*A-overwrites-X*/}
+transtype(A) ::= EXCLUSIVE(X). {A = @X; /*A-overwrites-X*/}
 cmd ::= COMMIT trans_opt.      {sqlite3CommitTransaction(pParse);}
 cmd ::= END trans_opt.         {sqlite3CommitTransaction(pParse);}
 cmd ::= ROLLBACK trans_opt.    {sqlite3RollbackTransaction(pParse);}
@@ -456,7 +456,7 @@ select(A) ::= with(W) selectnowith(X). {
   }else{
     sqlite3WithDelete(pParse->db, W);
   }
-  A = p;
+  A = p; /*A-overwrites-W*/
 }
 
 selectnowith(A) ::= oneselect(A).
@@ -484,9 +484,9 @@ selectnowith(A) ::= selectnowith(A) multiselect_op(Y) oneselect(Z).  {
   A = pRhs;
 }
 %type multiselect_op {int}
-multiselect_op(A) ::= UNION(OP).             {A = @OP;}
+multiselect_op(A) ::= UNION(OP).             {A = @OP; /*A-overwrites-OP*/}
 multiselect_op(A) ::= UNION ALL.             {A = TK_ALL;}
-multiselect_op(A) ::= EXCEPT|INTERSECT(OP).  {A = @OP;}
+multiselect_op(A) ::= EXCEPT|INTERSECT(OP).  {A = @OP; /*A-overwrites-OP*/}
 %endif SQLITE_OMIT_COMPOUND_SELECT
 oneselect(A) ::= SELECT(S) distinct(D) selcollist(W) from(X) where_opt(Y)
                  groupby_opt(P) having_opt(Q) orderby_opt(Z) limit_opt(L). {
@@ -648,14 +648,17 @@ dbnm(A) ::= DOT nm(X). {A = X;}
 
 %type fullname {SrcList*}
 %destructor fullname {sqlite3SrcListDelete(pParse->db, $$);}
-fullname(A) ::= nm(X) dbnm(Y).  {A = sqlite3SrcListAppend(pParse->db,0,&X,&Y);}
+fullname(A) ::= nm(X) dbnm(Y).  
+   {A = sqlite3SrcListAppend(pParse->db,0,&X,&Y); /*A-overwrites-X*/}
 
 %type joinop {int}
 joinop(X) ::= COMMA|JOIN.              { X = JT_INNER; }
-joinop(X) ::= JOIN_KW(A) JOIN.         { X = sqlite3JoinType(pParse,&A,0,0); }
-joinop(X) ::= JOIN_KW(A) nm(B) JOIN.   { X = sqlite3JoinType(pParse,&A,&B,0); }
+joinop(X) ::= JOIN_KW(A) JOIN.
+                  {X = sqlite3JoinType(pParse,&A,0,0);  /*X-overwrites-A*/}
+joinop(X) ::= JOIN_KW(A) nm(B) JOIN.
+                  {X = sqlite3JoinType(pParse,&A,&B,0); /*X-overwrites-A*/}
 joinop(X) ::= JOIN_KW(A) nm(B) nm(C) JOIN.
-                                       { X = sqlite3JoinType(pParse,&A,&B,&C); }
+                  {X = sqlite3JoinType(pParse,&A,&B,&C);/*X-overwrites-A*/}
 
 %type on_opt {Expr*}
 %destructor on_opt {sqlite3ExprDelete(pParse->db, $$);}
@@ -700,7 +703,7 @@ sortlist(A) ::= sortlist(A) COMMA expr(Y) sortorder(Z). {
   sqlite3ExprListSetSortOrder(A,Z);
 }
 sortlist(A) ::= expr(Y) sortorder(Z). {
-  A = sqlite3ExprListAppend(pParse,0,Y.pExpr);
+  A = sqlite3ExprListAppend(pParse,0,Y.pExpr); /*A-overwrites-Y*/
   sqlite3ExprListSetSortOrder(A,Z);
 }
 
@@ -825,7 +828,7 @@ idlist_opt(A) ::= LP idlist(X) RP.    {A = X;}
 idlist(A) ::= idlist(A) COMMA nm(Y).
     {A = sqlite3IdListAppend(pParse->db,A,&Y);}
 idlist(A) ::= nm(Y).
-    {A = sqlite3IdListAppend(pParse->db,0,&Y);}
+    {A = sqlite3IdListAppend(pParse->db,0,&Y); /*A-overwrites-Y*/}
 
 /////////////////////////// Expression Processing /////////////////////////////
 //
@@ -864,16 +867,16 @@ expr(A) ::= JOIN_KW(X).          {spanExpr(&A, pParse, TK_ID, &X);}
 expr(A) ::= nm(X) DOT nm(Y). {
   Expr *temp1 = sqlite3PExpr(pParse, TK_ID, 0, 0, &X);
   Expr *temp2 = sqlite3PExpr(pParse, TK_ID, 0, 0, &Y);
+  spanSet(&A,&X,&Y); /*A-overwrites-X*/
   A.pExpr = sqlite3PExpr(pParse, TK_DOT, temp1, temp2, 0);
-  spanSet(&A,&X,&Y);
 }
 expr(A) ::= nm(X) DOT nm(Y) DOT nm(Z). {
   Expr *temp1 = sqlite3PExpr(pParse, TK_ID, 0, 0, &X);
   Expr *temp2 = sqlite3PExpr(pParse, TK_ID, 0, 0, &Y);
   Expr *temp3 = sqlite3PExpr(pParse, TK_ID, 0, 0, &Z);
   Expr *temp4 = sqlite3PExpr(pParse, TK_DOT, temp2, temp3, 0);
+  spanSet(&A,&X,&Z); /*A-overwrites-X*/
   A.pExpr = sqlite3PExpr(pParse, TK_DOT, temp1, temp4, 0);
-  spanSet(&A,&X,&Z);
 }
 term(A) ::= INTEGER|FLOAT|BLOB(X).  {spanExpr(&A, pParse, @X, &X);}
 term(A) ::= STRING(X).              {spanExpr(&A, pParse, @X, &X);}
@@ -961,7 +964,7 @@ expr(A) ::= expr(A) STAR|SLASH|REM(OP) expr(Y).
                                         {spanBinaryExpr(pParse,@OP,&A,&Y);}
 expr(A) ::= expr(A) CONCAT(OP) expr(Y). {spanBinaryExpr(pParse,@OP,&A,&Y);}
 %type likeop {struct LikeOp}
-likeop(A) ::= LIKE_KW|MATCH(X).     {A.eOperator = X; A.bNot = 0;}
+likeop(A) ::= LIKE_KW|MATCH(X). {A.eOperator = X; A.bNot = 0;/*A-overwrites-X*/}
 likeop(A) ::= NOT LIKE_KW|MATCH(X). {A.eOperator = X; A.bNot = 1;}
 expr(A) ::= expr(A) likeop(OP) expr(Y).  [LIKE_KW]  {
   ExprList *pList;
@@ -1203,7 +1206,7 @@ case_else(A) ::=  ELSE expr(X).         {A = X.pExpr;}
 case_else(A) ::=  .                     {A = 0;} 
 %type case_operand {Expr*}
 %destructor case_operand {sqlite3ExprDelete(pParse->db, $$);}
-case_operand(A) ::= expr(X).            {A = X.pExpr;} 
+case_operand(A) ::= expr(X).            {A = X.pExpr; /*A-overwrites-X*/} 
 case_operand(A) ::= .                   {A = 0;} 
 
 %type exprlist {ExprList*}
@@ -1216,7 +1219,7 @@ exprlist(A) ::= .                            {A = 0;}
 nexprlist(A) ::= nexprlist(A) COMMA expr(Y).
     {A = sqlite3ExprListAppend(pParse,A,Y.pExpr);}
 nexprlist(A) ::= expr(Y).
-    {A = sqlite3ExprListAppend(pParse,0,Y.pExpr);}
+    {A = sqlite3ExprListAppend(pParse,0,Y.pExpr); /*A-overwrites-Y*/}
 
 
 ///////////////////////////// The CREATE INDEX command ///////////////////////
@@ -1284,7 +1287,7 @@ eidlist(A) ::= eidlist(A) COMMA nm(Y) collate(C) sortorder(Z).  {
   A = parserAddExprIdListTerm(pParse, A, &Y, C, Z);
 }
 eidlist(A) ::= nm(Y) collate(C) sortorder(Z). {
-  A = parserAddExprIdListTerm(pParse, 0, &Y, C, Z);
+  A = parserAddExprIdListTerm(pParse, 0, &Y, C, Z); /*A-overwrites-Y*/
 }
 
 %type collate {int}
@@ -1316,15 +1319,15 @@ cmd ::= PRAGMA nm(X) dbnm(Z) EQ minus_num(Y).
 cmd ::= PRAGMA nm(X) dbnm(Z) LP minus_num(Y) RP.
                                              {sqlite3Pragma(pParse,&X,&Z,&Y,1);}
 
-nmnum(A) ::= plus_num(X).             {A = X;}
-nmnum(A) ::= nm(X).                   {A = X;}
-nmnum(A) ::= ON(X).                   {A = X;}
-nmnum(A) ::= DELETE(X).               {A = X;}
-nmnum(A) ::= DEFAULT(X).              {A = X;}
+nmnum(A) ::= plus_num(A).
+nmnum(A) ::= nm(A).
+nmnum(A) ::= ON(A).
+nmnum(A) ::= DELETE(A).
+nmnum(A) ::= DEFAULT(A).
 %endif SQLITE_OMIT_PRAGMA
 %token_class number INTEGER|FLOAT.
 plus_num(A) ::= PLUS number(X).       {A = X;}
-plus_num(A) ::= number(X).            {A = X;}
+plus_num(A) ::= number(A).
 minus_num(A) ::= MINUS number(X).     {A = X;}
 //////////////////////////// The CREATE TRIGGER command /////////////////////
 
@@ -1341,7 +1344,7 @@ trigger_decl(A) ::= temp(T) TRIGGER ifnotexists(NOERR) nm(B) dbnm(Z)
                     trigger_time(C) trigger_event(D)
                     ON fullname(E) foreach_clause when_clause(G). {
   sqlite3BeginTrigger(pParse, &B, &Z, C, D.a, D.b, E, G, T, NOERR);
-  A = (Z.n==0?B:Z);
+  A = (Z.n==0?B:Z); /*A-overwrites-T*/
 }
 
 %type trigger_time {int}
@@ -1352,9 +1355,9 @@ trigger_time(A) ::= .            { A = TK_BEFORE; }
 
 %type trigger_event {struct TrigEvent}
 %destructor trigger_event {sqlite3IdListDelete(pParse->db, $$.b);}
-trigger_event(A) ::= DELETE|INSERT(OP).       {A.a = @OP; A.b = 0;}
-trigger_event(A) ::= UPDATE(OP).              {A.a = @OP; A.b = 0;}
-trigger_event(A) ::= UPDATE OF idlist(X). {A.a = TK_UPDATE; A.b = X;}
+trigger_event(A) ::= DELETE|INSERT(X).   {A.a = @X; /*A-overwrites-X*/ A.b = 0;}
+trigger_event(A) ::= UPDATE(X).          {A.a = @X; /*A-overwrites-X*/ A.b = 0;}
+trigger_event(A) ::= UPDATE OF idlist(X).{A.a = TK_UPDATE; A.b = X;}
 
 foreach_clause ::= .
 foreach_clause ::= FOR EACH ROW.
@@ -1423,24 +1426,23 @@ trigger_cmd(A) ::= DELETE FROM trnm(X) tridxby where_opt(Y).
                {A = sqlite3TriggerDeleteStep(pParse->db, &X, Y);}
 
 // SELECT
-trigger_cmd(A) ::= select(X).  {A = sqlite3TriggerSelectStep(pParse->db, X); }
+trigger_cmd(A) ::= select(X).
+               {A = sqlite3TriggerSelectStep(pParse->db, X); /*A-overwrites-X*/}
 
 // The special RAISE expression that may occur in trigger programs
 expr(A) ::= RAISE(X) LP IGNORE RP(Y).  {
+  spanSet(&A,&X,&Y);  /*A-overwrites-X*/
   A.pExpr = sqlite3PExpr(pParse, TK_RAISE, 0, 0, 0); 
   if( A.pExpr ){
     A.pExpr->affinity = OE_Ignore;
   }
-  A.zStart = X.z;
-  A.zEnd = &Y.z[Y.n];
 }
 expr(A) ::= RAISE(X) LP raisetype(T) COMMA nm(Z) RP(Y).  {
+  spanSet(&A,&X,&Y);  /*A-overwrites-X*/
   A.pExpr = sqlite3PExpr(pParse, TK_RAISE, 0, 0, &Z); 
   if( A.pExpr ) {
     A.pExpr->affinity = (char)T;
   }
-  A.zStart = X.z;
-  A.zEnd = &Y.z[Y.n];
 }
 %endif  !SQLITE_OMIT_TRIGGER
 
@@ -1536,7 +1538,7 @@ with(A) ::= WITH wqlist(W).              { A = W; }
 with(A) ::= WITH RECURSIVE wqlist(W).    { A = W; }
 
 wqlist(A) ::= nm(X) eidlist_opt(Y) AS LP select(Z) RP. {
-  A = sqlite3WithAdd(pParse, 0, &X, Y, Z);
+  A = sqlite3WithAdd(pParse, 0, &X, Y, Z); /*A-overwrites-X*/
 }
 wqlist(A) ::= wqlist(A) COMMA nm(X) eidlist_opt(Y) AS LP select(Z) RP. {
   A = sqlite3WithAdd(pParse, A, &X, Y, Z);
