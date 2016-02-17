@@ -626,7 +626,6 @@ static void yy_reduce(
       yyRuleName[yyruleno], yymsp[-yysize].stateno);
   }
 #endif /* NDEBUG */
-  /*  yygotominor = yyzerominor; */
 
   /* Check that the stack is large enough to grow by a single entry
   ** if the RHS of the rule is empty.  This ensures that there is room

@@ -163,10 +163,8 @@ cmd ::= create_table create_table_args.
 create_table ::= createkw temp(T) TABLE ifnotexists(E) nm(Y) dbnm(Z). {
    sqlite3StartTable(pParse,&Y,&Z,T,0,0,E);
 }
-createkw(A) ::= CREATE(X).  {
-  disableLookaside(pParse);
-  A = X;
-}
+createkw(A) ::= CREATE(A).  {disableLookaside(pParse);}
+
 %type ifnotexists {int}
 ifnotexists(A) ::= .              {A = 0;}
 ifnotexists(A) ::= IF NOT EXISTS. {A = 1;}

@@ -3469,10 +3469,14 @@ PRIVATE char *append_str(const char *zText, int n, int p1, int p2){
 ** zCode is a string that is the action associated with a rule.  Expand
 ** the symbols in this string so that the refer to elements of the parser
 ** stack.
+**
+** Return 1 if the expanded code requires that "yylhsminor" local variable
+** to be defined.
 */
-PRIVATE void translate_code(struct lemon *lemp, struct rule *rp){
+PRIVATE int translate_code(struct lemon *lemp, struct rule *rp){
   char *cp, *xp;
   int i;
+  int rc = 0;          /* True if yylhsminor is used */
   char lhsused = 0;    /* True if the LHS element has been used */
   char lhsdirect;      /* True if LHS writes directly into stack */
   char used[MAXRHS];   /* True for each RHS element which is used */
@@ -3523,9 +3527,7 @@ PRIVATE void translate_code(struct lemon *lemp, struct rule *rp){
   if( lhsdirect ){
     sprintf(zLhs, "yymsp[%d].minor.yy%d",1-rp->nrhs,rp->lhs->dtnum);
   }else{
-    append_str(0,0,0,0);
-    append_str("  YYMINORTYPE yylhsminor;\n", 0, 0, 0);
-    rp->codePrefix = Strsafe(append_str(0,0,0,0));
+    rc = 1;
     sprintf(zLhs, "yylhsminor.yy%d",rp->lhs->dtnum);
   }
 
@@ -3630,6 +3632,8 @@ PRIVATE void translate_code(struct lemon *lemp, struct rule *rp){
   /* Suffix code generation complete */
   cp = append_str(0,0,0,0);
   if( cp ) rp->codeSuffix = Strsafe(cp);
+
+  return rc;
 }
 
 /* 
@@ -4298,8 +4302,12 @@ void ReportTable(
   tplt_xfer(lemp->name,in,out,&lineno);
 
   /* Generate code which execution during each REDUCE action */
+  i = 0;
   for(rp=lemp->rule; rp; rp=rp->next){
-    translate_code(lemp, rp);
+    i += translate_code(lemp, rp);
+  }
+  if( i ){
+    fprintf(out,"        YYMINORTYPE yylhsminor;\n"); lineno++;
   }
   /* First output rules other than the default: rule */
   for(rp=lemp->rule; rp; rp=rp->next){

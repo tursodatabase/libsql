@@ -1,5 +1,5 @@
-C In\sLemon,\sadd\sthe\sability\sfor\sthe\sleft-most\sRHS\slabel\sto\sbe\sthe\ssame\sas\sthe\nLHS\slabel,\scausing\sthe\sLHS\svalues\sto\sbe\swritten\sdirectly\sinto\sthe\sstack.
-D 2016-02-17T01:18:33.698
+C Further\simprovements\sto\sthe\sLemon-generated\scode\sfor\syy_reduce().
+D 2016-02-17T01:46:19.413
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 30f075dc4f27a07abb76088946b2944178d85347
@@ -337,7 +337,7 @@ F src/os_win.c f0d7aa603eb6262143d7169a222aea07c4fca91d
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 6812f3803951774b56abded396171e1c12b0b003
 F src/pager.h f3eb324a3ff2408b28bab7e81c1c55c13720f865
-F src/parse.y eb7d241ca23d6035e5f902de571bb066884fd4ca
+F src/parse.y b845cfc4ba7d96b843856007a3c09c5b7ca2878f
 F src/pcache.c 647bb53a86b7bbcf55ad88089b3ea5a9170b90df
 F src/pcache.h 4d0ccaad264d360981ec5e6a2b596d6e85242545
 F src/pcache1.c 72f644dc9e1468c72922eff5904048427b817051
@@ -1378,8 +1378,8 @@ F tool/fuzzershell.c 94019b185caceffc9f7c7b678a6489e42bc2aefa
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
-F tool/lemon.c 501104fc7fbb01a86078841bed704184ccfd6036
-F tool/lempar.c 08bbb0fbca9c1f61d2a20a7af893110aefd571a0
+F tool/lemon.c 61844c3d01865473bce2dc8134e17346cda07000
+F tool/lempar.c c7dde8fae568759a1a136b1acf35c4084864d035
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
 F tool/logest.c eef612f8adf4d0993dafed0416064cf50d5d33c6
 F tool/mkautoconfamal.sh c78caa3214f25dc28ea157b5a82abb311f209906
@@ -1427,7 +1427,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh a98af506df552f3b3c0d904f94e4cdc4e1a6d598
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a65d583ce97b8c08157268bd054479cda3957a94
-R e1ed8179ef03a39381f66ed9ce3ecd2f
+P 4bb94c7c4c3cb3ccad72c2451d88684130dde845
+R 8570435db7ea690b60e76be3d8d02f8b
 U drh
-Z a9c8340faee95f29d20e3673b4598420
+Z bc476c236d739b2c3e79f3d57d12535c
