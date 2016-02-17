@@ -244,11 +244,7 @@ static int fts5MatchinfoLocalCb(
             iOff>=0; 
             pApi->xPhraseNext(pFts, &iter, &iCol, &iOff)
         ){
-          if( f=='b' ){
-            aOut[iPhrase * ((p->nCol+31)/32) + iCol/32] |= ((u32)1 << iCol%32);
-          }else{
-            aOut[nMul * (iCol + iPhrase * p->nCol)]++;
-          }
+          aOut[nMul * (iCol + iPhrase * p->nCol)]++;
         }
       }
 
@@ -409,7 +405,7 @@ int sqlite3Fts5TestRegisterMatchinfo(sqlite3 *db){
   **
   ** Also check that the fts5_api object is version 2 or newer.  
   */ 
-  if( pApi==0 || pApi->iVersion<1 ){
+  if( pApi==0 || pApi->iVersion<2 ){
     return SQLITE_ERROR;
   }
 
