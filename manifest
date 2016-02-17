@@ -1,5 +1,5 @@
-C Bump\sthe\sversion\snumber\sto\s3.12.0.
-D 2016-02-17T15:01:18.374
+C When\sVDBE\sopcodes\sfail,\sthey\scause\san\simmediate\sexit\sfrom\sthe\sloop,\srather\nthan\sdepending\son\sthe\src==SQLITE_OK\stest\sat\sthe\stop\sof\sthe\sloop.\s\sThis\sis\nfaster\sand\ssmaller.
+D 2016-02-17T20:47:24.973
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 30f075dc4f27a07abb76088946b2944178d85347
@@ -414,7 +414,7 @@ F src/update.c a7eeeaffad59c6506f01303a071dac11de8269ca
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c 8073bbdab9cc7209f6741bd44264ede606cbadc6
 F src/vacuum.c feb1eabb20987983d9350cad98299b21fa811f52
-F src/vdbe.c ad4d5b7ad65793886b09c925fb5d1d74ac78f1a4
+F src/vdbe.c 4eef77da4b81763a25992cc060506c001ebd4e3d
 F src/vdbe.h c743791f723049db94f009e3e30958952bc2d512
 F src/vdbeInt.h 4b69d5451bcadd473e745af53ef1e8abfdce0a79
 F src/vdbeapi.c bfc06382d5089944388a90e4f90bb1e975b3613d
@@ -1428,7 +1428,8 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh a98af506df552f3b3c0d904f94e4cdc4e1a6d598
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 87e6e225aea3a4d10476d16eab4a6403a4a128c9
-R c239316472226b2429c7b466d6a49ed7
+P c17d7276b8c114df5fe6e9ea14d59758443c281b a444633a827642bcf4d02a461e7e5f66769d39fd
+R 99549bba2f02d5e0c4a44abe6153e853
+T +closed a444633a827642bcf4d02a461e7e5f66769d39fd
 U drh
-Z 28d335fbd5135b0e539f7ad24d2e095e
+Z fc76c9d80b0512ba6c14a32a0f780946
