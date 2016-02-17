@@ -3477,6 +3477,7 @@ PRIVATE int translate_code(struct lemon *lemp, struct rule *rp){
   char *cp, *xp;
   int i;
   int rc = 0;            /* True if yylhsminor is used */
+  int dontUseRhs0 = 0;   /* If true, use of left-most RHS label is illegal */
   const char *zSkip = 0; /* The zOvwrt comment within rp->code, or NULL */
   char lhsused = 0;      /* True if the LHS element has been used */
   char lhsdirect;        /* True if LHS writes directly into stack */
@@ -3549,6 +3550,7 @@ PRIVATE int translate_code(struct lemon *lemp, struct rule *rp){
     if( cp==zSkip ){
       append_str(zOvwrt,0,0,0);
       cp += lemonStrlen(zOvwrt)-1;
+      dontUseRhs0 = 1;
       continue;
     }
     if( ISALPHA(*cp) && (cp==rp->code || (!ISALNUM(cp[-1]) && cp[-1]!='_')) ){
@@ -3563,7 +3565,12 @@ PRIVATE int translate_code(struct lemon *lemp, struct rule *rp){
       }else{
         for(i=0; i<rp->nrhs; i++){
           if( rp->rhsalias[i] && strcmp(cp,rp->rhsalias[i])==0 ){
-            if( cp!=rp->code && cp[-1]=='@' ){
+            if( i==0 && dontUseRhs0 ){
+              ErrorMsg(lemp->filename,rp->ruleline,
+                 "Label %s used after '%s'.",
+                 rp->rhsalias[0], zOvwrt);
+              lemp->errorcnt++;
+            }else if( cp!=rp->code && cp[-1]=='@' ){
               /* If the argument is of the form @X then substituted
               ** the token number of X, not the value of X */
               append_str("yymsp[%d].major",-1,i-rp->nrhs+1,0);

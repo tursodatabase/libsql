@@ -637,14 +637,14 @@ static void yy_reduce(
     }
 #endif
 #if YYSTACKDEPTH>0 
-    if( yypParser->yyidx>=YYSTACKDEPTH ){
+    if( yypParser->yyidx>=YYSTACKDEPTH-1 ){
       yyStackOverflow(yypParser);
       return;
     }
 #else
-    if( yypParser->yyidx>=yypParser->yystksz ){
+    if( yypParser->yyidx>=yypParser->yystksz-1 ){
       yyGrowStack(yypParser);
-      if( yypParser->yyidx>=yypParser->yystksz ){
+      if( yypParser->yyidx>=yypParser->yystksz-1 ){
         yyStackOverflow(yypParser);
         return;
       }

@@ -302,7 +302,7 @@ ccons ::= DEFAULT MINUS(A) term(X).      {
 }
 ccons ::= DEFAULT id(X).              {
   ExprSpan v;
-  spanExpr(&v, pParse, TK_STRING, &X);
+  spanExpr(&v, pParse, TK_STRING, X);
   sqlite3AddDefaultValue(pParse,&v);
 }
 
@@ -490,6 +490,9 @@ multiselect_op(A) ::= EXCEPT|INTERSECT(OP).  {A = @OP; /*A-overwrites-OP*/}
 %endif SQLITE_OMIT_COMPOUND_SELECT
 oneselect(A) ::= SELECT(S) distinct(D) selcollist(W) from(X) where_opt(Y)
                  groupby_opt(P) having_opt(Q) orderby_opt(Z) limit_opt(L). {
+#if SELECTTRACE_ENABLED
+  Token s = S; /*A-overwrites-S*/
+#endif
   A = sqlite3SelectNew(pParse,W,X,Y,P,Q,Z,D,L.pLimit,L.pOffset);
 #if SELECTTRACE_ENABLED
   /* Populate the Select.zSelName[] string that is used to help with
@@ -502,7 +505,7 @@ oneselect(A) ::= SELECT(S) distinct(D) selcollist(W) from(X) where_opt(Y)
   ** is an integer that is incremented with each SELECT statement seen.
   */
   if( A!=0 ){
-    const char *z = S.z+6;
+    const char *z = s.z+6;
     int i;
     sqlite3_snprintf(sizeof(A->zSelName), A->zSelName, "#%d",
                      ++pParse->nSelect);
@@ -852,18 +855,19 @@ idlist(A) ::= nm(Y).
   ** new Expr to populate pOut.  Set the span of pOut to be the identifier
   ** that created the expression.
   */
-  static void spanExpr(ExprSpan *pOut, Parse *pParse, int op, Token *pValue){
-    pOut->pExpr = sqlite3PExpr(pParse, op, 0, 0, pValue);
-    pOut->zStart = pValue->z;
-    pOut->zEnd = &pValue->z[pValue->n];
+  static void spanExpr(ExprSpan *pOut, Parse *pParse, int op, Token t){
+    pOut->pExpr = sqlite3PExpr(pParse, op, 0, 0, &t);
+    pOut->zStart = t.z;
+    pOut->zEnd = &t.z[t.n];
   }
 }
 
 expr(A) ::= term(A).
-expr(A) ::= LP(B) expr(X) RP(E). {A.pExpr = X.pExpr; spanSet(&A,&B,&E);}
-term(A) ::= NULL(X).             {spanExpr(&A, pParse, @X, &X);}
-expr(A) ::= id(X).               {spanExpr(&A, pParse, TK_ID, &X);}
-expr(A) ::= JOIN_KW(X).          {spanExpr(&A, pParse, TK_ID, &X);}
+expr(A) ::= LP(B) expr(X) RP(E).
+            {spanSet(&A,&B,&E); /*A-overwrites-B*/  A.pExpr = X.pExpr;}
+term(A) ::= NULL(X).        {spanExpr(&A,pParse,@X,X);/*A-overwrites-X*/}
+expr(A) ::= id(X).          {spanExpr(&A,pParse,TK_ID,X); /*A-overwrites-X*/}
+expr(A) ::= JOIN_KW(X).     {spanExpr(&A,pParse,TK_ID,X); /*A-overwrites-X*/}
 expr(A) ::= nm(X) DOT nm(Y). {
   Expr *temp1 = sqlite3PExpr(pParse, TK_ID, 0, 0, &X);
   Expr *temp2 = sqlite3PExpr(pParse, TK_ID, 0, 0, &Y);
@@ -878,25 +882,26 @@ expr(A) ::= nm(X) DOT nm(Y) DOT nm(Z). {
   spanSet(&A,&X,&Z); /*A-overwrites-X*/
   A.pExpr = sqlite3PExpr(pParse, TK_DOT, temp1, temp4, 0);
 }
-term(A) ::= INTEGER|FLOAT|BLOB(X).  {spanExpr(&A, pParse, @X, &X);}
-term(A) ::= STRING(X).              {spanExpr(&A, pParse, @X, &X);}
+term(A) ::= INTEGER|FLOAT|BLOB(X). {spanExpr(&A,pParse,@X,X);/*A-overwrites-X*/}
+term(A) ::= STRING(X).             {spanExpr(&A,pParse,@X,X);/*A-overwrites-X*/}
 expr(A) ::= VARIABLE(X).     {
-  if( X.n>=2 && X.z[0]=='#' && sqlite3Isdigit(X.z[1]) ){
+  Token t = X; /*A-overwrites-X*/
+  if( t.n>=2 && t.z[0]=='#' && sqlite3Isdigit(t.z[1]) ){
     /* When doing a nested parse, one can include terms in an expression
     ** that look like this:   #1 #2 ...  These terms refer to registers
     ** in the virtual machine.  #N is the N-th register. */
+    spanSet(&A, &t, &t);
     if( pParse->nested==0 ){
-      sqlite3ErrorMsg(pParse, "near \"%T\": syntax error", &X);
+      sqlite3ErrorMsg(pParse, "near \"%T\": syntax error", &t);
       A.pExpr = 0;
     }else{
-      A.pExpr = sqlite3PExpr(pParse, TK_REGISTER, 0, 0, &X);
-      if( A.pExpr ) sqlite3GetInt32(&X.z[1], &A.pExpr->iTable);
+      A.pExpr = sqlite3PExpr(pParse, TK_REGISTER, 0, 0, &t);
+      if( A.pExpr ) sqlite3GetInt32(&t.z[1], &A.pExpr->iTable);
     }
   }else{
-    spanExpr(&A, pParse, TK_VARIABLE, &X);
+    spanExpr(&A, pParse, TK_VARIABLE, t);
     sqlite3ExprAssignVarNumber(pParse, A.pExpr);
   }
-  spanSet(&A, &X, &X);
 }
 expr(A) ::= expr(A) COLLATE ids(C). {
   A.pExpr = sqlite3ExprAddCollateToken(pParse, A.pExpr, &C, 1);
@@ -904,8 +909,8 @@ expr(A) ::= expr(A) COLLATE ids(C). {
 }
 %ifndef SQLITE_OMIT_CAST
 expr(A) ::= CAST(X) LP expr(E) AS typetoken(T) RP(Y). {
+  spanSet(&A,&X,&Y); /*A-overwrites-X*/
   A.pExpr = sqlite3PExpr(pParse, TK_CAST, E.pExpr, 0, &T);
-  spanSet(&A,&X,&Y);
 }
 %endif  SQLITE_OMIT_CAST
 expr(A) ::= id(X) LP distinct(D) exprlist(Y) RP(E). {
@@ -1041,20 +1046,22 @@ expr(A) ::= expr(A) IS NOT expr(Y). {
     ExprSpan *pOperand,    /* The operand */
     Token *pPreOp         /* The operand token for setting the span */
   ){
-    pOut->pExpr = sqlite3PExpr(pParse, op, pOperand->pExpr, 0, 0);
     pOut->zStart = pPreOp->z;
+    pOut->pExpr = sqlite3PExpr(pParse, op, pOperand->pExpr, 0, 0);
     pOut->zEnd = pOperand->zEnd;
   }
 }
 
 
 
-expr(A) ::= NOT(B) expr(X).    {spanUnaryPrefix(&A,pParse,@B,&X,&B);}
-expr(A) ::= BITNOT(B) expr(X). {spanUnaryPrefix(&A,pParse,@B,&X,&B);}
+expr(A) ::= NOT(B) expr(X).  
+              {spanUnaryPrefix(&A,pParse,@B,&X,&B);/*A-overwrites-B*/}
+expr(A) ::= BITNOT(B) expr(X).
+              {spanUnaryPrefix(&A,pParse,@B,&X,&B);/*A-overwrites-B*/}
 expr(A) ::= MINUS(B) expr(X). [BITNOT]
-                               {spanUnaryPrefix(&A,pParse,TK_UMINUS,&X,&B);}
+              {spanUnaryPrefix(&A,pParse,TK_UMINUS,&X,&B);/*A-overwrites-B*/}
 expr(A) ::= PLUS(B) expr(X). [BITNOT]
-                               {spanUnaryPrefix(&A,pParse,TK_UPLUS,&X,&B);}
+              {spanUnaryPrefix(&A,pParse,TK_UPLUS,&X,&B);/*A-overwrites-B*/}
 
 %type between_op {int}
 between_op(A) ::= BETWEEN.     {A = 0;}
@@ -1127,6 +1134,7 @@ expr(A) ::= expr(A) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
     A.zEnd = &E.z[E.n];
   }
   expr(A) ::= LP(B) select(X) RP(E). {
+    spanSet(&A,&B,&E); /*A-overwrites-B*/
     A.pExpr = sqlite3PExpr(pParse, TK_SELECT, 0, 0, 0);
     if( A.pExpr ){
       A.pExpr->x.pSelect = X;
@@ -1135,8 +1143,6 @@ expr(A) ::= expr(A) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
     }else{
       sqlite3SelectDelete(pParse->db, X);
     }
-    A.zStart = B.z;
-    A.zEnd = &E.z[E.n];
   }
   expr(A) ::= expr(A) in_op(N) LP select(Y) RP(E).  [IN] {
     A.pExpr = sqlite3PExpr(pParse, TK_IN, A.pExpr, 0, 0);
@@ -1164,7 +1170,9 @@ expr(A) ::= expr(A) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
     A.zEnd = Z.z ? &Z.z[Z.n] : &Y.z[Y.n];
   }
   expr(A) ::= EXISTS(B) LP select(Y) RP(E). {
-    Expr *p = A.pExpr = sqlite3PExpr(pParse, TK_EXISTS, 0, 0, 0);
+    Expr *p;
+    spanSet(&A,&B,&E); /*A-overwrites-B*/
+    p = A.pExpr = sqlite3PExpr(pParse, TK_EXISTS, 0, 0, 0);
     if( p ){
       p->x.pSelect = Y;
       ExprSetProperty(p, EP_xIsSelect|EP_Subquery);
@@ -1172,13 +1180,12 @@ expr(A) ::= expr(A) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
     }else{
       sqlite3SelectDelete(pParse->db, Y);
     }
-    A.zStart = B.z;
-    A.zEnd = &E.z[E.n];
   }
 %endif SQLITE_OMIT_SUBQUERY
 
 /* CASE expressions */
 expr(A) ::= CASE(C) case_operand(X) case_exprlist(Y) case_else(Z) END(E). {
+  spanSet(&A,&C,&E);  /*A-overwrites-C*/
   A.pExpr = sqlite3PExpr(pParse, TK_CASE, X, 0, 0);
   if( A.pExpr ){
     A.pExpr->x.pList = Z ? sqlite3ExprListAppend(pParse,Y,Z) : Y;
@@ -1187,8 +1194,6 @@ expr(A) ::= CASE(C) case_operand(X) case_exprlist(Y) case_else(Z) END(E). {
     sqlite3ExprListDelete(pParse->db, Y);
     sqlite3ExprDelete(pParse->db, Z);
   }
-  A.zStart = C.z;
-  A.zEnd = &E.z[E.n];
 }
 %type case_exprlist {ExprList*}
 %destructor case_exprlist {sqlite3ExprListDelete(pParse->db, $$);}
@@ -1415,19 +1420,19 @@ tridxby ::= NOT INDEXED. {
 // UPDATE 
 trigger_cmd(A) ::=
    UPDATE orconf(R) trnm(X) tridxby SET setlist(Y) where_opt(Z).  
-   { A = sqlite3TriggerUpdateStep(pParse->db, &X, Y, Z, R); }
+   {A = sqlite3TriggerUpdateStep(pParse->db, &X, Y, Z, R);}
 
 // INSERT
 trigger_cmd(A) ::= insert_cmd(R) INTO trnm(X) idlist_opt(F) select(S).
-               {A = sqlite3TriggerInsertStep(pParse->db, &X, F, S, R);}
+   {A = sqlite3TriggerInsertStep(pParse->db, &X, F, S, R);/*A-overwrites-R*/}
 
 // DELETE
 trigger_cmd(A) ::= DELETE FROM trnm(X) tridxby where_opt(Y).
-               {A = sqlite3TriggerDeleteStep(pParse->db, &X, Y);}
+   {A = sqlite3TriggerDeleteStep(pParse->db, &X, Y);}
 
 // SELECT
 trigger_cmd(A) ::= select(X).
-               {A = sqlite3TriggerSelectStep(pParse->db, X); /*A-overwrites-X*/}
+   {A = sqlite3TriggerSelectStep(pParse->db, X); /*A-overwrites-X*/}
 
 // The special RAISE expression that may occur in trigger programs
 expr(A) ::= RAISE(X) LP IGNORE RP(Y).  {
