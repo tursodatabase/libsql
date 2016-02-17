@@ -286,6 +286,8 @@ struct rule {
   const char **rhsalias;   /* An alias for each RHS symbol (NULL if none) */
   int line;                /* Line number at which code begins */
   const char *code;        /* The code executed when this rule is reduced */
+  const char *codePrefix;  /* Setup code before code[] above */
+  const char *codeSuffix;  /* Breakdown code after code[] above */
   struct symbol *precsym;  /* Precedence symbol for this rule */
   int index;               /* An index number for this rule */
   Boolean canReduce;       /* True if this rule is ever reduced */
@@ -3430,6 +3432,7 @@ PRIVATE char *append_str(const char *zText, int n, int p1, int p2){
   int c;
   char zInt[40];
   if( zText==0 ){
+    if( used==0 && z!=0 ) z[0] = 0;
     used = 0;
     return z;
   }
@@ -3471,7 +3474,9 @@ PRIVATE void translate_code(struct lemon *lemp, struct rule *rp){
   char *cp, *xp;
   int i;
   char lhsused = 0;    /* True if the LHS element has been used */
+  char lhsdirect;      /* True if LHS writes directly into stack */
   char used[MAXRHS];   /* True for each RHS element which is used */
+  char zLhs[50];       /* Convert the LHS symbol into this string */
 
   for(i=0; i<rp->nrhs; i++) used[i] = 0;
   lhsused = 0;
@@ -3480,6 +3485,48 @@ PRIVATE void translate_code(struct lemon *lemp, struct rule *rp){
     static char newlinestr[2] = { '\n', '\0' };
     rp->code = newlinestr;
     rp->line = rp->ruleline;
+  }
+
+
+  if( rp->lhsalias==0 ){
+    /* There is no LHS value symbol. */
+    lhsdirect = 1;
+  }else if( rp->nrhs==0 ){
+    /* If there are no RHS symbols, then writing directly to the LHS is ok */
+    lhsdirect = 1;
+  }else if( rp->rhsalias[0]==0 ){
+    /* The left-most RHS symbol has not value.  LHS direct is ok.  But
+    ** we have to call the distructor on the RHS symbol first. */
+    lhsdirect = 1;
+    if( has_destructor(rp->rhs[0],lemp) ){
+      append_str(0,0,0,0);
+      append_str("  yy_destructor(yypParser,%d,&yymsp[%d].minor);\n", 0,
+                 rp->rhs[0]->index,1-rp->nrhs);
+      rp->codePrefix = Strsafe(append_str(0,0,0,0));
+    }
+  }else if( strcmp(rp->lhsalias,rp->rhsalias[0])==0 ){
+    /* The LHS symbol and the left-most RHS symbol are the same, so 
+    ** direct writing is allowed */
+    lhsdirect = 1;
+    lhsused = 1;
+    used[0] = 1;
+    if( rp->lhs->dtnum!=rp->rhs[0]->dtnum ){
+      ErrorMsg(lemp->filename,rp->ruleline,
+        "%s(%s) and %s(%s) share the same label but have "
+        "different datatypes.",
+        rp->lhs->name, rp->lhsalias, rp->rhs[0]->name, rp->rhsalias[0]);
+      lemp->errorcnt++;
+    }    
+  }else{
+    lhsdirect = 0;
+  }
+  if( lhsdirect ){
+    sprintf(zLhs, "yymsp[%d].minor.yy%d",1-rp->nrhs,rp->lhs->dtnum);
+  }else{
+    append_str(0,0,0,0);
+    append_str("  YYMINORTYPE yylhsminor;\n", 0, 0, 0);
+    rp->codePrefix = Strsafe(append_str(0,0,0,0));
+    sprintf(zLhs, "yylhsminor.yy%d",rp->lhs->dtnum);
   }
 
   append_str(0,0,0,0);
@@ -3492,7 +3539,7 @@ PRIVATE void translate_code(struct lemon *lemp, struct rule *rp){
       saved = *xp;
       *xp = 0;
       if( rp->lhsalias && strcmp(cp,rp->lhsalias)==0 ){
-        append_str("yygotominor.yy%d",0,rp->lhs->dtnum,0);
+        append_str(zLhs,0,0,0);
         cp = xp;
         lhsused = 1;
       }else{
@@ -3523,6 +3570,11 @@ PRIVATE void translate_code(struct lemon *lemp, struct rule *rp){
     append_str(cp, 1, 0, 0);
   } /* End loop */
 
+  /* Main code generation completed */
+  cp = append_str(0,0,0,0);
+  if( cp && cp[0] ) rp->code = Strsafe(cp);
+  append_str(0,0,0,0);
+
   /* Check to make sure the LHS has been used */
   if( rp->lhsalias && !lhsused ){
     ErrorMsg(lemp->filename,rp->ruleline,
@@ -3531,27 +3583,53 @@ PRIVATE void translate_code(struct lemon *lemp, struct rule *rp){
     lemp->errorcnt++;
   }
 
-  /* Generate destructor code for RHS symbols which are not used in the
-  ** reduce code */
+  /* Generate destructor code for RHS minor values which are not referenced.
+  ** Generate error messages for unused labels and duplicate labels.
+  */
   for(i=0; i<rp->nrhs; i++){
-    if( rp->rhsalias[i] && !used[i] ){
-      ErrorMsg(lemp->filename,rp->ruleline,
-        "Label %s for \"%s(%s)\" is never used.",
-        rp->rhsalias[i],rp->rhs[i]->name,rp->rhsalias[i]);
-      lemp->errorcnt++;
-    }else if( rp->rhsalias[i]==0 ){
-      if( has_destructor(rp->rhs[i],lemp) ){
-        append_str("  yy_destructor(yypParser,%d,&yymsp[%d].minor);\n", 0,
-           rp->rhs[i]->index,i-rp->nrhs+1);
-      }else{
-        /* No destructor defined for this term */
+    if( rp->rhsalias[i] ){
+      if( i>0 ){
+        int j;
+        if( rp->lhsalias && strcmp(rp->lhsalias,rp->rhsalias[i])==0 ){
+          ErrorMsg(lemp->filename,rp->ruleline,
+            "%s(%s) has the same label as the LHS but is not the left-most "
+            "symbol on the RHS.",
+            rp->rhs[i]->name, rp->rhsalias);
+          lemp->errorcnt++;
+        }
+        for(j=0; j<i; j++){
+          if( rp->rhsalias[j] && strcmp(rp->rhsalias[j],rp->rhsalias[i])==0 ){
+            ErrorMsg(lemp->filename,rp->ruleline,
+              "Label %s used for multiple symbols on the RHS of a rule.",
+              rp->rhsalias[i]);
+            lemp->errorcnt++;
+            break;
+          }
+        }
       }
+      if( !used[i] ){
+        ErrorMsg(lemp->filename,rp->ruleline,
+          "Label %s for \"%s(%s)\" is never used.",
+          rp->rhsalias[i],rp->rhs[i]->name,rp->rhsalias[i]);
+        lemp->errorcnt++;
+      }
+    }else if( i>0 && has_destructor(rp->rhs[i],lemp) ){
+      append_str("  yy_destructor(yypParser,%d,&yymsp[%d].minor);\n", 0,
+         rp->rhs[i]->index,i-rp->nrhs+1);
     }
   }
-  if( rp->code ){
-    cp = append_str(0,0,0,0);
-    rp->code = Strsafe(cp?cp:"");
+
+  /* If unable to write LHS values directly into the stack, write the
+  ** saved LHS value now. */
+  if( lhsdirect==0 ){
+    append_str("  yymsp[%d].minor.yy%d = ", 0, 1-rp->nrhs, rp->lhs->dtnum);
+    append_str(zLhs, 0, 0, 0);
+    append_str(";\n", 0, 0, 0);
   }
+
+  /* Suffix code generation complete */
+  cp = append_str(0,0,0,0);
+  if( cp ) rp->codeSuffix = Strsafe(cp);
 }
 
 /* 
@@ -3566,6 +3644,12 @@ PRIVATE void emit_code(
 ){
  const char *cp;
 
+ /* Setup code prior to the #line directive */
+ if( rp->codePrefix && rp->codePrefix[0] ){
+   fprintf(out, "{%s", rp->codePrefix);
+   for(cp=rp->codePrefix; *cp; cp++){ if( *cp=='\n' ) (*lineno)++; }
+ }
+
  /* Generate code to do the reduce action */
  if( rp->code ){
    if( !lemp->nolinenosflag ){
@@ -3573,15 +3657,23 @@ PRIVATE void emit_code(
      tplt_linedir(out,rp->line,lemp->filename);
    }
    fprintf(out,"{%s",rp->code);
-   for(cp=rp->code; *cp; cp++){
-     if( *cp=='\n' ) (*lineno)++;
-   } /* End loop */
+   for(cp=rp->code; *cp; cp++){ if( *cp=='\n' ) (*lineno)++; }
    fprintf(out,"}\n"); (*lineno)++;
    if( !lemp->nolinenosflag ){
      (*lineno)++;
      tplt_linedir(out,*lineno,lemp->outname);
    }
- } /* End if( rp->code ) */
+ }
+
+ /* Generate breakdown code that occurs after the #line directive */
+ if( rp->codeSuffix && rp->codeSuffix[0] ){
+   fprintf(out, "%s", rp->codeSuffix);
+   for(cp=rp->codeSuffix; *cp; cp++){ if( *cp=='\n' ) (*lineno)++; }
+ }
+
+ if( rp->codePrefix ){
+   fprintf(out, "}\n"); (*lineno)++;
+ }
 
  return;
 }
