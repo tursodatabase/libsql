@@ -98,12 +98,14 @@ struct IdxScan {
 ** Context object passed to idxWhereInfo()
 */
 struct IdxContext {
+  char **pzErrmsg;
   IdxWhere *pCurrent;             /* Current where clause */
   int rc;                         /* Error code (if error has occurred) */
   IdxScan *pScan;                 /* List of scan objects */
   sqlite3 *dbm;                   /* In-memory db for this analysis */
   sqlite3 *db;                    /* User database under analysis */
   sqlite3_stmt *pInsertMask;      /* To write to aux.depmask */
+  i64 iIdxRowid;                  /* Rowid of first index created */
 };
 
 /*
@@ -587,11 +589,12 @@ static int idxFindCompatible(
 }
 
 static int idxCreateFromCons(
-  sqlite3 *dbm,
+  IdxContext *pCtx,
   IdxScan *pScan,
   IdxConstraint *pEq, 
   IdxConstraint *pTail
 ){
+  sqlite3 *dbm = pCtx->dbm;
   int rc = SQLITE_OK;
   if( (pEq || pTail) && 0==idxFindCompatible(&rc, dbm, pScan, pEq, pTail) ){
     IdxTable *pTab = pScan->pTable;
@@ -608,8 +611,8 @@ static int idxCreateFromCons(
       zCols = idxAppendColDefn(&rc, zCols, pTab, pCons);
     }
 
-    /* Hash the list of columns to come up with a name for the index */
     if( rc==SQLITE_OK ){
+      /* Hash the list of columns to come up with a name for the index */
       int i;
       for(i=0; zCols[i]; i++){
         h += ((h<<3) + zCols[i]);
@@ -630,6 +633,18 @@ static int idxCreateFromCons(
 #endif
       }
     }
+    if( rc==SQLITE_OK && pCtx->iIdxRowid==0 ){
+      int rc2;
+      sqlite3_stmt *pLast = 0;
+      rc = idxPrepareStmt(dbm, &pLast, pCtx->pzErrmsg, 
+          "SELECT max(rowid) FROM sqlite_master"
+      );
+      if( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pLast) ){
+        pCtx->iIdxRowid = sqlite3_column_int64(pLast, 0);
+      }
+      rc2 = sqlite3_finalize(pLast);
+      if( rc==SQLITE_OK ) rc = rc2;
+    }
 
     sqlite3_free(zIdx);
     sqlite3_free(zCols);
@@ -638,11 +653,11 @@ static int idxCreateFromCons(
 }
 
 static int idxCreateFromWhere(
-    sqlite3*, i64, IdxScan*, IdxWhere*, IdxConstraint*, IdxConstraint*
+    IdxContext*, i64, IdxScan*, IdxWhere*, IdxConstraint*, IdxConstraint*
 );
 
 static int idxCreateForeachOr(
-  sqlite3 *dbm, 
+  IdxContext *pCtx, 
   i64 mask,                       /* Consider only these constraints */
   IdxScan *pScan,                 /* Create indexes for this scan */
   IdxWhere *pWhere,               /* Read constraints from here */
@@ -653,22 +668,23 @@ static int idxCreateForeachOr(
   IdxWhere *p1;
   IdxWhere *p2;
   for(p1=pWhere->pOr; p1 && rc==SQLITE_OK; p1=p1->pNextOr){
-    rc = idxCreateFromWhere(dbm, mask, pScan, p1, pEq, pTail);
+    rc = idxCreateFromWhere(pCtx, mask, pScan, p1, pEq, pTail);
     for(p2=p1->pSibling; p2 && rc==SQLITE_OK; p2=p2->pSibling){
-      rc = idxCreateFromWhere(dbm, mask, pScan, p2, pEq, pTail);
+      rc = idxCreateFromWhere(pCtx, mask, pScan, p2, pEq, pTail);
     }
   }
   return rc;
 }
 
 static int idxCreateFromWhere(
-  sqlite3 *dbm, 
+  IdxContext *pCtx, 
   i64 mask,                       /* Consider only these constraints */
   IdxScan *pScan,                 /* Create indexes for this scan */
   IdxWhere *pWhere,               /* Read constraints from here */
   IdxConstraint *pEq,             /* == constraints for inclusion */
   IdxConstraint *pTail            /* range/ORDER BY constraints for inclusion */
 ){
+  sqlite3 *dbm = pCtx->dbm;
   IdxConstraint *p1 = pEq;
   IdxConstraint *pCon;
   int rc;
@@ -683,9 +699,9 @@ static int idxCreateFromWhere(
 
   /* Create an index using the == constraints collected above. And the
   ** range constraint/ORDER BY terms passed in by the caller, if any. */
-  rc = idxCreateFromCons(dbm, pScan, p1, pTail);
+  rc = idxCreateFromCons(pCtx, pScan, p1, pTail);
   if( rc==SQLITE_OK ){
-    rc = idxCreateForeachOr(dbm, mask, pScan, pWhere, p1, pTail);
+    rc = idxCreateForeachOr(pCtx, mask, pScan, pWhere, p1, pTail);
   }
 
   /* If no range/ORDER BY passed by the caller, create a version of the
@@ -694,9 +710,9 @@ static int idxCreateFromWhere(
     for(pCon=pWhere->pRange; rc==SQLITE_OK && pCon; pCon=pCon->pNext){
       assert( pCon->pLink==0 );
       if( (mask & pCon->depmask)==pCon->depmask ){
-        rc = idxCreateFromCons(dbm, pScan, p1, pCon);
+        rc = idxCreateFromCons(pCtx, pScan, p1, pCon);
         if( rc==SQLITE_OK ){
-          rc = idxCreateForeachOr(dbm, mask, pScan, pWhere, p1, pCon);
+          rc = idxCreateForeachOr(pCtx, mask, pScan, pWhere, p1, pCon);
         }
       }
     }
@@ -709,25 +725,24 @@ static int idxCreateFromWhere(
 ** Create candidate indexes in database [dbm] based on the data in 
 ** linked-list pScan.
 */
-static int idxCreateCandidates(
-  sqlite3 *dbm,
-  IdxScan *pScan,
-  char **pzErrmsg
-){
+static int idxCreateCandidates(IdxContext *pCtx){
+  sqlite3 *dbm = pCtx->dbm;
   int rc2;
   int rc = SQLITE_OK;
   sqlite3_stmt *pDepmask;         /* Foreach depmask */
   IdxScan *pIter;
 
-  rc = idxPrepareStmt(dbm, &pDepmask, pzErrmsg, "SELECT mask FROM depmask");
+  rc = idxPrepareStmt(pCtx->dbm, &pDepmask, pCtx->pzErrmsg, 
+      "SELECT mask FROM depmask"
+  );
 
-  for(pIter=pScan; pIter && rc==SQLITE_OK; pIter=pIter->pNextScan){
+  for(pIter=pCtx->pScan; pIter && rc==SQLITE_OK; pIter=pIter->pNextScan){
     IdxWhere *pWhere = &pIter->where;
     while( SQLITE_ROW==sqlite3_step(pDepmask) && rc==SQLITE_OK ){
       i64 mask = sqlite3_column_int64(pDepmask, 0);
-      rc = idxCreateFromWhere(dbm, mask, pIter, pWhere, 0, 0);
+      rc = idxCreateFromWhere(pCtx, mask, pIter, pWhere, 0, 0);
       if( rc==SQLITE_OK && pIter->pOrder ){
-        rc = idxCreateFromWhere(dbm, mask, pIter, pWhere, 0, pIter->pOrder);
+        rc = idxCreateFromWhere(pCtx, mask, pIter, pWhere, 0, pIter->pOrder);
       }
     }
   }
@@ -747,20 +762,22 @@ static void idxScanFree(IdxScan *pScan){
 }
 
 int idxFindIndexes(
-  sqlite3 *dbm,                        /* Database handle */
+  IdxContext *pCtx,
   const char *zSql,                    /* SQL to find indexes for */
   void (*xOut)(void*, const char*),    /* Output callback */
   void *pOutCtx,                       /* Context for xOut() */
   char **pzErr                         /* OUT: Error message (sqlite3_malloc) */
 ){
+  sqlite3 *dbm = pCtx->dbm;
   sqlite3_stmt *pExplain = 0;
   sqlite3_stmt *pSelect = 0;
   int rc, rc2;
+  int bFound = 0;
 
   rc = idxPrintfPrepareStmt(dbm, &pExplain, pzErr,"EXPLAIN QUERY PLAN %s",zSql);
   if( rc==SQLITE_OK ){
     rc = idxPrepareStmt(dbm, &pSelect, pzErr, 
-        "SELECT sql FROM sqlite_master WHERE name = ?"
+        "SELECT rowid, sql FROM sqlite_master WHERE name = ?"
     );
   }
 
@@ -776,7 +793,12 @@ int idxFindIndexes(
         while( zIdx[nIdx]!='\0' && zIdx[nIdx]!=' ' ) nIdx++;
         sqlite3_bind_text(pSelect, 1, zIdx, nIdx, SQLITE_STATIC);
         if( SQLITE_ROW==sqlite3_step(pSelect) ){
-          xOut(pOutCtx, sqlite3_column_text(pSelect, 0));
+          i64 iRowid = sqlite3_column_int64(pSelect, 0);
+          const char *zSql = (const char*)sqlite3_column_text(pSelect, 1);
+          if( iRowid>=pCtx->iIdxRowid ){
+            xOut(pOutCtx, zSql);
+            bFound = 1;
+          }
         }
         rc = sqlite3_reset(pSelect);
         break;
@@ -785,7 +807,10 @@ int idxFindIndexes(
   }
   rc2 = sqlite3_reset(pExplain);
   if( rc==SQLITE_OK ) rc = rc2;
-  if( rc==SQLITE_OK ) xOut(pOutCtx, "");
+  if( rc==SQLITE_OK ){
+    if( bFound==0 ) xOut(pOutCtx, "(no new indexes)");
+    xOut(pOutCtx, "");
+  }
 
   while( rc==SQLITE_OK && sqlite3_step(pExplain)==SQLITE_ROW ){
     int iSelectid = sqlite3_column_int(pExplain, 0);
@@ -841,6 +866,7 @@ int shellIndexesCommand(
     rc = sqlite3_exec(dbm, 
         "ATTACH ':memory:' AS aux;"
         "CREATE TABLE aux.depmask(mask PRIMARY KEY) WITHOUT ROWID;"
+        "CREATE TABLE aux.indexes(name PRIMARY KEY) WITHOUT ROWID;"
         "INSERT INTO aux.depmask VALUES(0);"
         , 0, 0, pzErrmsg
     );
@@ -872,13 +898,13 @@ int shellIndexesCommand(
 
   /* Create candidate indexes within the in-memory database file */
   if( rc==SQLITE_OK ){
-    rc = idxCreateCandidates(dbm, ctx.pScan, pzErrmsg);
+    rc = idxCreateCandidates(&ctx);
   }
 
   /* Figure out which of the candidate indexes are preferred by the query
   ** planner and report the results to the user.  */
   if( rc==SQLITE_OK ){
-    rc = idxFindIndexes(dbm, zSql, xOut, pOutCtx, pzErrmsg);
+    rc = idxFindIndexes(&ctx, zSql, xOut, pOutCtx, pzErrmsg);
   }
 
   idxScanFree(ctx.pScan);

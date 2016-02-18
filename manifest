@@ -1,5 +1,5 @@
-C Schemalint\schanges:\sAvoid\screating\scandidate\sindexes\sif\sa\scompatible\sindex\sexists.\sDo\snot\squote\sidentifiers\sthat\sdo\snot\srequire\sit.
-D 2016-02-17T20:06:12.566
+C Have\sthe\sschemalint\soutput\sdistinguish\sbetween\sexisting\sand\srecommended\sindexes.
+D 2016-02-18T19:10:02.440
 F Makefile.in dac2776c84e0d533b158a9af6e57e05c4a6b19f3
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b0493f10caddb8adf992a4e6f1943141fc7c6816
@@ -350,7 +350,7 @@ F src/resolve.c 9f7ce3a3c087afb7597b7c916c99126ff3f12f0c
 F src/rowset.c 9fe4b3ad7cc00944386bb600233d8f523de07a6e
 F src/select.c ff80004a9a6ece891a8d9327a88e7b6e2588ee6d
 F src/shell.c 2cde87e03712204231167c4a6c61b0eb5129e105
-F src/shell_indexes.c 6cc207072469f1ded8c3bb9de1d4b6590a28abb8
+F src/shell_indexes.c 277eb75b8cfb3c2bcf76e062baaa419779f824e7
 F src/sqlite.h.in c7db059d3b810b70b83d9ed1436fa813eba22462
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
@@ -1430,7 +1430,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 73a7f010937828c5195a198604f976e8458cef73
-R 3a9a4af7276c9c00e5b2666c0bfe324e
+P cf0f7eeb4f6490b1e3f05b45e83b87cd64640846
+R f54b8a1f9b5e206798931d383b1eb3a6
 U dan
-Z 82976e1002963ffa4a1c502f357a9ae9
+Z 5c18fceb59d8462f5aec79ee219a18a2
