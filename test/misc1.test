@@ -699,7 +699,7 @@ do_catchsql_test misc1-23.3 {
 #
 do_test misc1-24.0 {
   list [catch { sqlite3_prepare_v2 db ! -1 dummy } msg] $msg
-} {1 {(1) unrecognized token: "!}}
+} {1 {(1) unrecognized token: "!"}}
 
 # The following query (provided by Kostya Serebryany) used to take 25
 # minutes to prepare.  This has been speeded up to about 250 milliseconds.

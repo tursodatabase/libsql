@@ -319,7 +319,7 @@ do_test main-3.1 {
   sqlite3 db testdb
   set v [catch {execsql {SELECT * from T1 where x!!5}} msg]
   lappend v $msg
-} {1 {unrecognized token: "!!"}}
+} {1 {unrecognized token: "!"}}
 do_test main-3.2 {
   catch {db close}
   foreach f [glob -nocomplain testdb/*] {forcedelete $f}

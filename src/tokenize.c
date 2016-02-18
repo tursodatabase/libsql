@@ -285,7 +285,7 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
     case CC_BANG: {
       if( z[1]!='=' ){
         *tokenType = TK_ILLEGAL;
-        return 2;
+        return 1;
       }else{
         *tokenType = TK_NE;
         return 2;
