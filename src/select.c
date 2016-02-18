@@ -1688,7 +1688,7 @@ int sqlite3ColumnsFromExprList(
     sqlite3DbFree(db, aCol);
     *paCol = 0;
     *pnCol = 0;
-    return SQLITE_NOMEM;
+    return SQLITE_NOMEM_BKPT;
   }
   return SQLITE_OK;
 }
@@ -2499,7 +2499,7 @@ static int multiSelect(
     nCol = p->pEList->nExpr;
     pKeyInfo = sqlite3KeyInfoAlloc(db, nCol, 1);
     if( !pKeyInfo ){
-      rc = SQLITE_NOMEM;
+      rc = SQLITE_NOMEM_BKPT;
       goto multi_select_end;
     }
     for(i=0, apColl=pKeyInfo->aColl; i<nCol; i++, apColl++){
@@ -2854,7 +2854,7 @@ static int multiSelectOrderBy(
       }
       if( j==nOrderBy ){
         Expr *pNew = sqlite3Expr(db, TK_INTEGER, 0);
-        if( pNew==0 ) return SQLITE_NOMEM;
+        if( pNew==0 ) return SQLITE_NOMEM_BKPT;
         pNew->flags |= EP_IntValue;
         pNew->u.iValue = i;
         pOrderBy = sqlite3ExprListAppend(pParse, pOrderBy, pNew);
@@ -4091,7 +4091,7 @@ static int withExpand(
     pTab->nRowLogEst = 200; assert( 200==sqlite3LogEst(1048576) );
     pTab->tabFlags |= TF_Ephemeral | TF_NoVisibleRowid;
     pFrom->pSelect = sqlite3SelectDup(db, pCte->pSelect, 0);
-    if( db->mallocFailed ) return SQLITE_NOMEM;
+    if( db->mallocFailed ) return SQLITE_NOMEM_BKPT;
     assert( pFrom->pSelect );
 
     /* Check if this is a recursive CTE. */

@@ -255,8 +255,9 @@ static VFile *createVFile(const char *zName, int sz, unsigned char *pData){
   if( i>=MX_FILE ) return 0;
   pNew = &g.aFile[i];
   if( zName ){
-    pNew->zFilename = safe_realloc(0, strlen(zName)+1);
-    memcpy(pNew->zFilename, zName, strlen(zName)+1);
+    int nName = (int)strlen(zName)+1;
+    pNew->zFilename = safe_realloc(0, nName);
+    memcpy(pNew->zFilename, zName, nName);
   }else{
     pNew->zFilename = 0;
   }
@@ -1055,7 +1056,7 @@ int main(int argc, char **argv){
     /* Print the description, if there is one */
     if( !quietFlag ){
       zDbName = azSrcDb[iSrcDb];
-      i = strlen(zDbName) - 1;
+      i = (int)strlen(zDbName) - 1;
       while( i>0 && zDbName[i-1]!='/' && zDbName[i-1]!='\\' ){ i--; }
       zDbName += i;
       sqlite3_prepare_v2(db, "SELECT msg FROM readme", -1, &pStmt, 0);

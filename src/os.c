@@ -68,7 +68,7 @@ int sqlite3_memdebug_vfs_oom_test = 1;
   #define DO_OS_MALLOC_TEST(x)                                       \
   if (sqlite3_memdebug_vfs_oom_test && (!x || !sqlite3IsMemJournal(x))) {  \
     void *pTstAlloc = sqlite3Malloc(10);                             \
-    if (!pTstAlloc) return SQLITE_IOERR_NOMEM;                       \
+    if (!pTstAlloc) return SQLITE_IOERR_NOMEM_BKPT;                  \
     sqlite3_free(pTstAlloc);                                         \
   }
 #else
@@ -293,7 +293,7 @@ int sqlite3OsOpenMalloc(
   int flags,
   int *pOutFlags
 ){
-  int rc = SQLITE_NOMEM;
+  int rc;
   sqlite3_file *pFile;
   pFile = (sqlite3_file *)sqlite3MallocZero(pVfs->szOsFile);
   if( pFile ){
@@ -303,6 +303,8 @@ int sqlite3OsOpenMalloc(
     }else{
       *ppFile = pFile;
     }
+  }else{
+    rc = SQLITE_NOMEM_BKPT;
   }
   return rc;
 }
@@ -322,7 +324,7 @@ int sqlite3OsCloseFree(sqlite3_file *pFile){
 */
 int sqlite3OsInit(void){
   void *p = sqlite3_malloc(10);
-  if( p==0 ) return SQLITE_NOMEM;
+  if( p==0 ) return SQLITE_NOMEM_BKPT;
   sqlite3_free(p);
   return sqlite3_os_init();
 }

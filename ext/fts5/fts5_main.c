@@ -2665,6 +2665,17 @@ static int fts5Init(sqlite3 *db){
       );
     }
   }
+
+  /* If SQLITE_FTS5_ENABLE_TEST_MI is defined, assume that the file
+  ** fts5_test_mi.c is compiled and linked into the executable. And call
+  ** its entry point to enable the matchinfo() demo.  */
+#ifdef SQLITE_FTS5_ENABLE_TEST_MI
+  if( rc==SQLITE_OK ){
+    extern int sqlite3Fts5TestRegisterMatchinfo(sqlite3*);
+    rc = sqlite3Fts5TestRegisterMatchinfo(db);
+  }
+#endif
+
   return rc;
 }
 

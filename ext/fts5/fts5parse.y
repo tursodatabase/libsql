@@ -34,7 +34,6 @@
   );
 }
 %stack_overflow {
-  UNUSED_PARAM(yypMinor); /* Silence a compiler warning */
   sqlite3Fts5ParseError(pParse, "fts5: parser stack overflow");
 }
 

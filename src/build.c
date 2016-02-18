@@ -710,12 +710,8 @@ int sqlite3FindDbName(sqlite3 *db, const char *zName){
   int i = -1;         /* Database number */
   if( zName ){
     Db *pDb;
-    int n = sqlite3Strlen30(zName);
     for(i=(db->nDb-1), pDb=&db->aDb[i]; i>=0; i--, pDb--){
-      if( (!OMIT_TEMPDB || i!=1 ) && n==sqlite3Strlen30(pDb->zName) && 
-          0==sqlite3StrICmp(pDb->zName, zName) ){
-        break;
-      }
+      if( 0==sqlite3StrICmp(pDb->zName, zName) ) break;
     }
   }
   return i;
@@ -927,7 +923,7 @@ void sqlite3StartTable(
   pTable = sqlite3DbMallocZero(db, sizeof(Table));
   if( pTable==0 ){
     assert( db->mallocFailed );
-    pParse->rc = SQLITE_NOMEM;
+    pParse->rc = SQLITE_NOMEM_BKPT;
     pParse->nErr++;
     goto begin_table_error;
   }
@@ -1608,7 +1604,7 @@ static int resizeIndexObject(sqlite3 *db, Index *pIdx, int N){
   assert( pIdx->isResized==0 );
   nByte = (sizeof(char*) + sizeof(i16) + 1)*N;
   zExtra = sqlite3DbMallocZero(db, nByte);
-  if( zExtra==0 ) return SQLITE_NOMEM;
+  if( zExtra==0 ) return SQLITE_NOMEM_BKPT;
   memcpy(zExtra, pIdx->azColl, sizeof(char*)*pIdx->nColumn);
   pIdx->azColl = (const char**)zExtra;
   zExtra += sizeof(char*)*N;
@@ -3237,7 +3233,7 @@ Index *sqlite3CreateIndex(
         if( pIdx->aiColumn[k]!=pIndex->aiColumn[k] ) break;
         z1 = pIdx->azColl[k];
         z2 = pIndex->azColl[k];
-        if( z1!=z2 && sqlite3StrICmp(z1, z2) ) break;
+        if( sqlite3StrICmp(z1, z2) ) break;
       }
       if( k==pIdx->nKeyCol ){
         if( pIdx->onError!=pIndex->onError ){

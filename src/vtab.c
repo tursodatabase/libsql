@@ -506,13 +506,13 @@ static int vtabCallConstructor(
 
   zModuleName = sqlite3MPrintf(db, "%s", pTab->zName);
   if( !zModuleName ){
-    return SQLITE_NOMEM;
+    return SQLITE_NOMEM_BKPT;
   }
 
   pVTable = sqlite3DbMallocZero(db, sizeof(VTable));
   if( !pVTable ){
     sqlite3DbFree(db, zModuleName);
-    return SQLITE_NOMEM;
+    return SQLITE_NOMEM_BKPT;
   }
   pVTable->db = db;
   pVTable->pMod = pMod;
@@ -655,7 +655,7 @@ static int growVTrans(sqlite3 *db){
     int nBytes = sizeof(sqlite3_vtab *) * (db->nVTrans + ARRAY_INCR);
     aVTrans = sqlite3DbRealloc(db, (void *)db->aVTrans, nBytes);
     if( !aVTrans ){
-      return SQLITE_NOMEM;
+      return SQLITE_NOMEM_BKPT;
     }
     memset(&aVTrans[db->nVTrans], 0, sizeof(sqlite3_vtab *)*ARRAY_INCR);
     db->aVTrans = aVTrans;
@@ -747,7 +747,7 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
 
   pParse = sqlite3StackAllocZero(db, sizeof(*pParse));
   if( pParse==0 ){
-    rc = SQLITE_NOMEM;
+    rc = SQLITE_NOMEM_BKPT;
   }else{
     pParse->declareVtab = 1;
     pParse->db = db;

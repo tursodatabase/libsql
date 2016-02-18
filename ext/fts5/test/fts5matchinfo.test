@@ -467,5 +467,29 @@ do_execsql_test 12.1 {
 
 } ;# foreach_detail_mode
 
+#-------------------------------------------------------------------------
+# Test that a bad fts5() return is detected
+#
+reset_db
+proc xyz {} {}
+db func fts5 -argcount 0 xyz
+do_test 13.1 {
+  list [catch { sqlite3_fts5_register_matchinfo db } msg] $msg
+} {1 SQLITE_ERROR}
+
+#-------------------------------------------------------------------------
+# Test that an invalid matchinfo() flag is detected
+#
+reset_db
+sqlite3_fts5_register_matchinfo db
+do_execsql_test 14.1 {
+  CREATE VIRTUAL TABLE x1 USING fts5(z);
+  INSERT INTO x1 VALUES('a b c a b c a b c');
+} {}
+
+do_catchsql_test 14.2 {
+  SELECT matchinfo(x1, 'd') FROM x1('a b c');
+} {1 {unrecognized matchinfo flag: d}}
+
 finish_test
 

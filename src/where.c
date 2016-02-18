@@ -1736,7 +1736,7 @@ static int whereLoopResize(sqlite3 *db, WhereLoop *p, int n){
   if( p->nLSlot>=n ) return SQLITE_OK;
   n = (n+7)&~7;
   paNew = sqlite3DbMallocRawNN(db, sizeof(p->aLTerm[0])*n);
-  if( paNew==0 ) return SQLITE_NOMEM;
+  if( paNew==0 ) return SQLITE_NOMEM_BKPT;
   memcpy(paNew, p->aLTerm, sizeof(p->aLTerm[0])*p->nLSlot);
   if( p->aLTerm!=p->aLTermSpace ) sqlite3DbFree(db, p->aLTerm);
   p->aLTerm = paNew;
@@ -1751,7 +1751,7 @@ static int whereLoopXfer(sqlite3 *db, WhereLoop *pTo, WhereLoop *pFrom){
   whereLoopClearUnion(db, pTo);
   if( whereLoopResize(db, pTo, pFrom->nLTerm) ){
     memset(&pTo->u, 0, sizeof(pTo->u));
-    return SQLITE_NOMEM;
+    return SQLITE_NOMEM_BKPT;
   }
   memcpy(pTo, pFrom, WHERE_LOOP_XFER_SZ);
   memcpy(pTo->aLTerm, pFrom->aLTerm, pTo->nLTerm*sizeof(pTo->aLTerm[0]));
@@ -2033,7 +2033,7 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
   if( p==0 ){
     /* Allocate a new WhereLoop to add to the end of the list */
     *ppPrev = p = sqlite3DbMallocRawNN(db, sizeof(WhereLoop));
-    if( p==0 ) return SQLITE_NOMEM;
+    if( p==0 ) return SQLITE_NOMEM_BKPT;
     whereLoopInit(p);
     p->pNextLoop = 0;
   }else{
@@ -2189,7 +2189,7 @@ static int whereLoopAddBtreeIndex(
   WhereTerm *pTop = 0, *pBtm = 0; /* Top and bottom range constraints */
 
   pNew = pBuilder->pNew;
-  if( db->mallocFailed ) return SQLITE_NOMEM;
+  if( db->mallocFailed ) return SQLITE_NOMEM_BKPT;
 
   assert( (pNew->wsFlags & WHERE_VIRTUALTABLE)==0 );
   assert( (pNew->wsFlags & WHERE_TOP_LIMIT)==0 );
@@ -2806,7 +2806,7 @@ static int whereLoopAddVirtual(
   pTab = pSrc->pTab;
   assert( IsVirtual(pTab) );
   pIdxInfo = allocateIndexInfo(pParse, pWC, mUnusable, pSrc,pBuilder->pOrderBy);
-  if( pIdxInfo==0 ) return SQLITE_NOMEM;
+  if( pIdxInfo==0 ) return SQLITE_NOMEM_BKPT;
   pNew->prereq = 0;
   pNew->rSetup = 0;
   pNew->wsFlags = WHERE_VIRTUALTABLE;
@@ -2816,7 +2816,7 @@ static int whereLoopAddVirtual(
   nConstraint = pIdxInfo->nConstraint;
   if( whereLoopResize(db, pNew, nConstraint) ){
     sqlite3DbFree(db, pIdxInfo);
-    return SQLITE_NOMEM;
+    return SQLITE_NOMEM_BKPT;
   }
 
   for(iPhase=0; iPhase<=3; iPhase++){
@@ -3521,7 +3521,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
   nSpace = (sizeof(WherePath)+sizeof(WhereLoop*)*nLoop)*mxChoice*2;
   nSpace += sizeof(LogEst) * nOrderBy;
   pSpace = sqlite3DbMallocRawNN(db, nSpace);
-  if( pSpace==0 ) return SQLITE_NOMEM;
+  if( pSpace==0 ) return SQLITE_NOMEM_BKPT;
   aTo = (WherePath*)pSpace;
   aFrom = aTo+mxChoice;
   memset(aFrom, 0, sizeof(aFrom[0]));

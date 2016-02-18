@@ -212,7 +212,7 @@ int sqlite3JournalOpen(
   if( nBuf>0 ){
     p->zBuf = sqlite3MallocZero(nBuf);
     if( !p->zBuf ){
-      return SQLITE_NOMEM;
+      return SQLITE_NOMEM_BKPT;
     }
   }else{
     return sqlite3OsOpen(pVfs, zName, pJfd, flags, 0);

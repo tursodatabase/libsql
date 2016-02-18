@@ -191,7 +191,7 @@ int sqlite3PcacheSetPageSize(PCache *pCache, int szPage){
                 szPage, pCache->szExtra + ROUND8(sizeof(PgHdr)),
                 pCache->bPurgeable
     );
-    if( pNew==0 ) return SQLITE_NOMEM;
+    if( pNew==0 ) return SQLITE_NOMEM_BKPT;
     sqlite3GlobalConfig.pcache2.xCachesize(pNew, numberOfCachePages(pCache));
     if( pCache->pCache ){
       sqlite3GlobalConfig.pcache2.xDestroy(pCache->pCache);
@@ -301,7 +301,7 @@ int sqlite3PcacheFetchStress(
     }
   }
   *ppPage = sqlite3GlobalConfig.pcache2.xFetch(pCache->pCache, pgno, 2);
-  return *ppPage==0 ? SQLITE_NOMEM : SQLITE_OK;
+  return *ppPage==0 ? SQLITE_NOMEM_BKPT : SQLITE_OK;
 }
 
 /*

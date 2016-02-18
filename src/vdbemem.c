@@ -138,7 +138,7 @@ SQLITE_NOINLINE int sqlite3VdbeMemGrow(Mem *pMem, int n, int bPreserve){
       sqlite3VdbeMemSetNull(pMem);
       pMem->z = 0;
       pMem->szMalloc = 0;
-      return SQLITE_NOMEM;
+      return SQLITE_NOMEM_BKPT;
     }else{
       pMem->szMalloc = sqlite3DbMallocSize(pMem->db, pMem->zMalloc);
     }
@@ -196,7 +196,7 @@ int sqlite3VdbeMemMakeWriteable(Mem *pMem){
   f = pMem->flags;
   if( (f&(MEM_Str|MEM_Blob)) && (pMem->szMalloc==0 || pMem->z!=pMem->zMalloc) ){
     if( sqlite3VdbeMemGrow(pMem, pMem->n + 2, 1) ){
-      return SQLITE_NOMEM;
+      return SQLITE_NOMEM_BKPT;
     }
     pMem->z[pMem->n] = 0;
     pMem->z[pMem->n+1] = 0;
@@ -228,7 +228,7 @@ int sqlite3VdbeMemExpandBlob(Mem *pMem){
       nByte = 1;
     }
     if( sqlite3VdbeMemGrow(pMem, nByte, 1) ){
-      return SQLITE_NOMEM;
+      return SQLITE_NOMEM_BKPT;
     }
 
     memset(&pMem->z[pMem->n], 0, pMem->u.nZero);
@@ -245,7 +245,7 @@ int sqlite3VdbeMemExpandBlob(Mem *pMem){
 */
 static SQLITE_NOINLINE int vdbeMemAddTerminator(Mem *pMem){
   if( sqlite3VdbeMemGrow(pMem, pMem->n+2, 1) ){
-    return SQLITE_NOMEM;
+    return SQLITE_NOMEM_BKPT;
   }
   pMem->z[pMem->n] = 0;
   pMem->z[pMem->n+1] = 0;
@@ -294,7 +294,7 @@ int sqlite3VdbeMemStringify(Mem *pMem, u8 enc, u8 bForce){
 
 
   if( sqlite3VdbeMemClearAndResize(pMem, nByte) ){
-    return SQLITE_NOMEM;
+    return SQLITE_NOMEM_BKPT;
   }
 
   /* For a Real or Integer, use sqlite3_snprintf() to produce the UTF-8
@@ -905,7 +905,7 @@ int sqlite3VdbeMemSetStr(
     testcase( nAlloc==31 );
     testcase( nAlloc==32 );
     if( sqlite3VdbeMemClearAndResize(pMem, MAX(nAlloc,32)) ){
-      return SQLITE_NOMEM;
+      return SQLITE_NOMEM_BKPT;
     }
     memcpy(pMem->z, z, nAlloc);
   }else if( xDel==SQLITE_DYNAMIC ){
@@ -925,7 +925,7 @@ int sqlite3VdbeMemSetStr(
 
 #ifndef SQLITE_OMIT_UTF16
   if( pMem->enc!=SQLITE_UTF8 && sqlite3VdbeMemHandleBom(pMem) ){
-    return SQLITE_NOMEM;
+    return SQLITE_NOMEM_BKPT;
   }
 #endif
 
@@ -1186,7 +1186,6 @@ static int valueFromFunction(
   FuncDef *pFunc = 0;             /* Function definition */
   sqlite3_value *pVal = 0;        /* New value */
   int rc = SQLITE_OK;             /* Return code */
-  int nName;                      /* Size of function name in bytes */
   ExprList *pList = 0;            /* Function arguments */
   int i;                          /* Iterator variable */
 
@@ -1194,8 +1193,7 @@ static int valueFromFunction(
   assert( (p->flags & EP_TokenOnly)==0 );
   pList = p->x.pList;
   if( pList ) nVal = pList->nExpr;
-  nName = sqlite3Strlen30(p->u.zToken);
-  pFunc = sqlite3FindFunction(db, p->u.zToken, nName, nVal, enc, 0);
+  pFunc = sqlite3FindFunction(db, p->u.zToken, nVal, enc, 0);
   assert( pFunc );
   if( (pFunc->funcFlags & (SQLITE_FUNC_CONSTANT|SQLITE_FUNC_SLOCHNG))==0 
    || (pFunc->funcFlags & SQLITE_FUNC_NEEDCOLL)
@@ -1206,7 +1204,7 @@ static int valueFromFunction(
   if( pList ){
     apVal = (sqlite3_value**)sqlite3DbMallocZero(db, sizeof(apVal[0]) * nVal);
     if( apVal==0 ){
-      rc = SQLITE_NOMEM;
+      rc = SQLITE_NOMEM_BKPT;
       goto value_from_function_out;
     }
     for(i=0; i<nVal; i++){
@@ -1217,7 +1215,7 @@ static int valueFromFunction(
 
   pVal = valueNew(db, pCtx);
   if( pVal==0 ){
-    rc = SQLITE_NOMEM;
+    rc = SQLITE_NOMEM_BKPT;
     goto value_from_function_out;
   }
 
@@ -1390,7 +1388,7 @@ no_mem:
 #else
   assert( pCtx==0 ); sqlite3ValueFree(pVal);
 #endif
-  return SQLITE_NOMEM;
+  return SQLITE_NOMEM_BKPT;
 }
 
 /*
@@ -1457,15 +1455,10 @@ static void recordFunc(
 ** Register built-in functions used to help read ANALYZE data.
 */
 void sqlite3AnalyzeFunctions(void){
-  static SQLITE_WSD FuncDef aAnalyzeTableFuncs[] = {
+  static FuncDef aAnalyzeTableFuncs[] = {
     FUNCTION(sqlite_record,   1, 0, 0, recordFunc),
   };
-  int i;
-  FuncDefHash *pHash = &GLOBAL(FuncDefHash, sqlite3GlobalFunctions);
-  FuncDef *aFunc = (FuncDef*)&GLOBAL(FuncDef, aAnalyzeTableFuncs);
-  for(i=0; i<ArraySize(aAnalyzeTableFuncs); i++){
-    sqlite3FuncDefInsert(pHash, &aFunc[i]);
-  }
+  sqlite3InsertBuiltinFuncs(aAnalyzeTableFuncs, ArraySize(aAnalyzeTableFuncs));
 }
 
 /*
@@ -1644,7 +1637,7 @@ int sqlite3Stat4Column(
   if( iField>nRec ) return SQLITE_CORRUPT_BKPT;
   if( pMem==0 ){
     pMem = *ppVal = sqlite3ValueNew(db);
-    if( pMem==0 ) return SQLITE_NOMEM;
+    if( pMem==0 ) return SQLITE_NOMEM_BKPT;
   }
   sqlite3VdbeSerialGet(&a[iField-szField], t, pMem);
   pMem->enc = ENC(db);
