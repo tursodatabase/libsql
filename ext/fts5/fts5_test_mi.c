@@ -41,11 +41,9 @@
 */
 
 
-#ifdef SQLITE_TEST
 #ifdef SQLITE_ENABLE_FTS5
 
 #include "fts5.h"
-#include <tcl.h>
 #include <assert.h>
 #include <string.h>
 
@@ -420,5 +418,4 @@ int sqlite3Fts5TestRegisterMatchinfo(sqlite3 *db){
 }
 
 #endif /* SQLITE_ENABLE_FTS5 */
-#endif /* SQLITE_TEST */
 
