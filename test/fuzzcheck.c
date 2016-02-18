@@ -784,8 +784,7 @@ static void showHelp(void){
 "  --export-db DIR       Write databases to files(s) in DIR. Works with --dbid\n"
 "  --export-sql DIR      Write SQL to file(s) in DIR. Also works with --sqlid\n"
 "  --help                Show this help text\n"
-"  -q                    Reduced output\n"
-"  --quiet               Reduced output\n"
+"  -q|--quiet            Reduced output\n"
 "  --limit-mem N         Limit memory used by test SQLite instance to N bytes\n"
 "  --limit-vdbe          Panic if an sync SQL runs for more than 100,000 cycles\n"
 "  --load-sql ARGS...    Load SQL scripts fro files into SOURCE-DB\n"
@@ -796,8 +795,7 @@ static void showHelp(void){
 "  --result-trace        Show the results of each SQL command\n"
 "  --sqlid N             Use only SQL where sqlid=N\n"
 "  --timeout N           Abort if any single test case needs more than N seconds\n"
-"  -v                    Increased output\n"
-"  --verbose             Increased output\n"
+"  -v|--verbose          Increased output.  Repeat for more output.\n"
   );
 }
 
@@ -920,8 +918,8 @@ int main(int argc, char **argv){
       }else
       if( strcmp(z,"verbose")==0 || strcmp(z,"v")==0 ){
         quietFlag = 0;
-        verboseFlag = 1;
-        runFlags |= SQL_TRACE;
+        verboseFlag++;
+        if( verboseFlag>1 ) runFlags |= SQL_TRACE;
       }else
       {
         fatalError("unknown option: %s", argv[i]);
