@@ -44,7 +44,6 @@
 #ifdef SQLITE_ENABLE_FTS5
 
 #include "fts5.h"
-#include <tcl.h>
 #include <assert.h>
 #include <string.h>
 
