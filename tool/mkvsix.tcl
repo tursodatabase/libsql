@@ -463,7 +463,7 @@ if {[string equal $packageFlavor WinRT]} then {
   }
   set shortName $shortNames($packageFlavor,$vsVersion)
   set displayName $displayNames($packageFlavor,$vsVersion)
-  set targetPlatformIdentifier UWP
+  set targetPlatformIdentifier UAP; # NOTE: Not "UWP".
   set targetPlatformVersion v0.8.0.0
   set minVsVersion [getMinVsVersionXmlChunk $vsVersion]
   set maxPlatformVersion \
