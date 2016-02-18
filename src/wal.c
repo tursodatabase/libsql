@@ -3114,7 +3114,12 @@ int sqlite3WalFrames(
     assert( iOffset==walFrameOffset(iFrame, szPage) );
     nDbSize = (isCommit && p->pDirty==0) ? nTruncate : 0;
     rc = walWriteOneFrame(&w, p, nDbSize, iOffset);
-    if( rc ) return rc;
+    if( rc ) {
+#if defined(SQLITE_WRITE_WALFRAME_PREBUFFERED)
+      free(w.aFrameBuf);
+#endif
+      return rc;
+    }
     pLast = p;
     iOffset += szFrame;
     p->flags |= PGHDR_WAL_APPEND;
@@ -3146,7 +3151,12 @@ int sqlite3WalFrames(
       w.iSyncPoint = ((iOffset+sectorSize-1)/sectorSize)*sectorSize;
       while( iOffset<w.iSyncPoint ){
         rc = walWriteOneFrame(&w, pLast, nTruncate, iOffset);
-        if( rc ) return rc;
+        if( rc ) {
+#if defined(SQLITE_WRITE_WALFRAME_PREBUFFERED)
+          free(w.aFrameBuf);
+#endif
+          return rc;
+        }
         iOffset += szFrame;
         nExtra++;
       }
