@@ -1,5 +1,5 @@
-C Add\sextra\sAPI\sarmor\son\sthe\ssqlite3_bind_blob()\sinterface.
-D 2016-02-18T01:29:12.161
+C Remove\san\sunnecessary\s"include\s<tcl.h>"\sline\sfrom\sfts5_test_mi.c.
+D 2016-02-18T13:32:34.131
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 30f075dc4f27a07abb76088946b2944178d85347
@@ -108,7 +108,7 @@ F ext/fts5/fts5_index.c 78069efb54559a17c35906a741362d0b5c899bd0
 F ext/fts5/fts5_main.c db24ac714c6c4a1b3c24a1f8c25889f2952148c1
 F ext/fts5/fts5_storage.c f8343db90d8c95a4d4b52f6676e354b4649ffd6e
 F ext/fts5/fts5_tcl.c f8731e0508299bd43f1a2eff7dbeaac870768966
-F ext/fts5/fts5_test_mi.c c1bb729651d86c7c70bcd1ec3f12fa83f97035cc
+F ext/fts5/fts5_test_mi.c 09a332628b65271da5803e72c723a75bfc65695a
 F ext/fts5/fts5_test_tok.c db08af63673c3a7d39f053b36fd6e065017706be
 F ext/fts5/fts5_tokenize.c 2ce7b44183538ec46b7907726262ee43ffdd39a8
 F ext/fts5/fts5_unicode2.c b450b209b157d598f7b9df9f837afb75a14c24bf
@@ -1428,7 +1428,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh a98af506df552f3b3c0d904f94e4cdc4e1a6d598
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 24c7151c1aabeaffcb8bb5836404e70a3ec4681b
-R f0b4335702e227844828d1e40e95332a
-U drh
-Z ca0837f1f24e7471925104495cb0295d
+P 80de1ad5eb4c3839756b6467d5b8195b4abfb1f8
+R 32cf564ef89201f9d7ee30986c17a6b0
+U dan
+Z 78ba4be2d3fd60f090cc3e09bd972230
