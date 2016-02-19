@@ -1477,6 +1477,21 @@ static void releaseMemArray(Mem *p, int N){
 }
 
 /*
+** Delete the linked list of AuxData structures attached to frame *p.
+*/
+static void deleteAuxdataInFrame(sqlite3 *db, VdbeFrame *p){
+  AuxData *pAux = p->pAuxData;
+  while( pAux ){
+    AuxData *pNext = pAux->pNext;
+    if( pAux->xDelete ){
+      pAux->xDelete(pAux->pAux);
+    }
+    sqlite3DbFree(db, pAux);
+    pAux = pNext;
+  }
+}
+
+/*
 ** Delete a VdbeFrame object and its contents. VdbeFrame objects are
 ** allocated by the OP_Program opcode in sqlite3VdbeExec().
 */
@@ -1488,6 +1503,7 @@ void sqlite3VdbeFrameDelete(VdbeFrame *p){
     sqlite3VdbeFreeCursor(p->v, apCsr[i]);
   }
   releaseMemArray(aMem, p->nChildMem);
+  deleteAuxdataInFrame(p->v->db, p);
   sqlite3DbFree(p->v->db, p);
 }
 
@@ -2016,6 +2032,9 @@ int sqlite3VdbeFrameRestore(VdbeFrame *pFrame){
   v->db->lastRowid = pFrame->lastRowid;
   v->nChange = pFrame->nChange;
   v->db->nChange = pFrame->nDbChange;
+  sqlite3VdbeDeleteAuxData(v, -1, 0);
+  v->pAuxData = pFrame->pAuxData;
+  pFrame->pAuxData = 0;
   return pFrame->pc;
 }
 
