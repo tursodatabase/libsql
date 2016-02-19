@@ -22,7 +22,7 @@ REM
 REM Example:
 REM
 REM                        CD /D C:\dev\sqlite\core
-REM                        tool\build-all-msvc.bat C:\Temp
+REM                        CALL tool\build-all-msvc.bat C:\Temp
 REM
 REM In the example above, "C:\dev\sqlite\core" represents the root of the
 REM source tree for SQLite and "C:\Temp" represents the final destination
@@ -53,6 +53,11 @@ REM spaces.
 REM
 REM There are a few other environment variables that impact the build process
 REM when set ^(to anything^), they are:
+REM
+REM                        USE_AUTOCONF_MAKEFILE
+REM
+REM When set, the "autoconf" Makefile for MSVC will be used instead of the main
+REM Makefile for MSVC.  It must exist at "%ROOT%\autoconf\Makefile.msc".
 REM
 REM                        NOCLEAN
 REM
@@ -93,12 +98,16 @@ REM on the WindowsSdkDir environment variable.  It causes this batch script to
 REM assume the Windows 10.0 SDK location should be used.
 REM
 REM                        NMAKE_ARGS
+REM                        NMAKE_ARGS_DEBUG
+REM                        NMAKE_ARGS_RETAIL
 REM
-REM When set, the value is expanded and passed to the NMAKE command line, after
-REM its other arguments.  This is used to specify additional NMAKE options, for
-REM example:
+REM When set, these values are expanded and passed to the NMAKE command line,
+REM after its other arguments.  These may be used to specify additional NMAKE
+REM options, for example:
 REM
 REM                        SET NMAKE_ARGS=FOR_WINRT=1
+REM                        SET NMAKE_ARGS_DEBUG=MEMDEBUG=1
+REM                        SET NMAKE_ARGS_RETAIL=WIN32HEAP=1
 REM
 REM Using the above command before running this tool will cause the compiled
 REM binaries to target the WinRT environment, which provides a subset of the
@@ -218,11 +227,17 @@ REM NOTE: If the command used to invoke NMAKE is not already set, use the
 REM       default.
 REM
 IF NOT DEFINED NMAKE_CMD (
-  SET NMAKE_CMD=nmake -B -f Makefile.msc
+  IF DEFINED USE_AUTOCONF_MAKEFILE (
+    SET NMAKE_CMD=nmake -B -f autoconf\Makefile.msc
+  ) ELSE (
+    SET NMAKE_CMD=nmake -B -f Makefile.msc
+  )
 )
 
 %_VECHO% NmakeCmd = '%NMAKE_CMD%'
 %_VECHO% NmakeArgs = '%NMAKE_ARGS%'
+%_VECHO% NmakeArgsDebug = '%NMAKE_ARGS_DEBUG%'
+%_VECHO% NmakeArgsRetail = '%NMAKE_ARGS_RETAIL%'
 
 REM
 REM NOTE: Setup environment variables to translate between the MSVC platform
@@ -481,6 +496,12 @@ FOR %%P IN (%PLATFORMS%) DO (
       )
 
       REM
+      REM NOTE: Copy the extra NMAKE arguments for this configuration into the
+      REM       common variable used by the actual commands.
+      REM
+      CALL :fn_CopyVariable NMAKE_ARGS_%%B NMAKE_ARGS_CFG
+
+      REM
       REM NOTE: Launch a nested command shell to perform the following steps:
       REM
       REM       1. Setup the MSVC environment for this platform using the
@@ -586,7 +607,7 @@ FOR %%P IN (%PLATFORMS%) DO (
         REM       file, etc.
         REM
         IF NOT DEFINED NOCLEAN (
-          %__ECHO% %NMAKE_CMD% clean
+          CALL :fn_MakeClean %%D
 
           IF ERRORLEVEL 1 (
             ECHO Failed to clean for platform %%P.
@@ -609,7 +630,7 @@ FOR %%P IN (%PLATFORMS%) DO (
         REM       Also, disable looking for and/or linking to the native Tcl
         REM       runtime library.
         REM
-        %__ECHO% %NMAKE_CMD% "%DLL_FILE_NAME%" "PLATFORM=%%D" XCOMPILE=1 USE_NATIVE_LIBPATHS=1 NO_TCL=1 %NMAKE_ARGS%
+        CALL :fn_MakeDll %%D
 
         IF ERRORLEVEL 1 (
           ECHO Failed to build %%B "%DLL_FILE_NAME%" for platform %%P.
@@ -677,7 +698,7 @@ FOR %%P IN (%PLATFORMS%) DO (
           REM       Also, disable looking for and/or linking to the native Tcl
           REM       runtime library.
           REM
-          %__ECHO% %NMAKE_CMD% "%EXE_FILE_NAME%" "PLATFORM=%%D" XCOMPILE=1 USE_NATIVE_LIBPATHS=1 NO_TCL=1 %NMAKE_ARGS%
+          CALL :fn_MakeExe %%D
 
           IF ERRORLEVEL 1 (
             ECHO Failed to build %%B "%EXE_FILE_NAME%" for platform %%P.
@@ -735,6 +756,18 @@ REM
 REM NOTE: If we get to this point, we have succeeded.
 REM
 GOTO no_errors
+
+:fn_MakeClean
+  %__ECHO% %NMAKE_CMD% clean "PLATFORM=%1" XCOMPILE=1 USE_NATIVE_LIBPATHS=1 NO_TCL=1 %NMAKE_ARGS% %NMAKE_ARGS_CFG%
+  GOTO :EOF
+
+:fn_MakeDll
+  %__ECHO% %NMAKE_CMD% "%DLL_FILE_NAME%" "PLATFORM=%1" XCOMPILE=1 USE_NATIVE_LIBPATHS=1 NO_TCL=1 %NMAKE_ARGS% %NMAKE_ARGS_CFG%
+  GOTO :EOF
+
+:fn_MakeExe
+  %__ECHO% %NMAKE_CMD% "%EXE_FILE_NAME%" "PLATFORM=%1" XCOMPILE=1 USE_NATIVE_LIBPATHS=1 NO_TCL=1 %NMAKE_ARGS% %NMAKE_ARGS_CFG%
+  GOTO :EOF
 
 :fn_ShowVariable
   SETLOCAL
