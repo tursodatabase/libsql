@@ -87,10 +87,6 @@
 %%
 /************* End control #defines *******************************************/
 
-/* The yyzerominor constant is used to initialize instances of
-** YYMINORTYPE objects to zero. */
-static const YYMINORTYPE yyzerominor = { 0 };
-
 /* Define the yytestcase() macro to be a no-op if is not already defined
 ** otherwise.
 **
