@@ -48,7 +48,10 @@
 #include <string.h>
 
 typedef struct Fts5MatchinfoCtx Fts5MatchinfoCtx;
+
+#ifndef SQLITE_AMALGAMATION
 typedef unsigned int u32;
+#endif
 
 struct Fts5MatchinfoCtx {
   int nCol;                       /* Number of cols in FTS5 table */
