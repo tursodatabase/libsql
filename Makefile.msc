@@ -2032,7 +2032,8 @@ rbu.exe: $(TOP)\ext\rbu\rbu.c $(TOP)\ext\rbu\sqlite3rbu.c $(SQLITE3C) $(SQLITE3H
 
 clean:
 	del /Q *.exp *.lo *.ilk *.lib *.obj *.ncb *.pdb *.sdf *.suo 2>NUL
-	del /Q *.bsc *.cod *.da *.bb *.bbg *.vc gmon.out 2>NUL
+	del /Q *.bsc *.def *.cod *.da *.bb *.bbg *.vc gmon.out 2>NUL
+	del /Q $(SQLITE3EXE) $(SQLITE3DLL) 2>NUL
 # <<mark>>
 	del /Q $(SQLITE3C) $(SQLITE3H) opcodes.c opcodes.h 2>NUL
 	del /Q lemon.* lempar.c parse.* 2>NUL
@@ -2051,7 +2052,6 @@ clean:
 	del /Q LogEst.exe fts3view.exe rollback-test.exe showdb.exe 2>NUL
 	del /Q showjournal.exe showstat4.exe showwal.exe speedtest1.exe 2>NUL
 	del /Q mptester.exe wordcount.exe rbu.exe srcck1.exe 2>NUL
-	del /Q $(SQLITE3EXE) $(SQLITE3DLL) sqlite3.def 2>NUL
 	del /Q sqlite3.c sqlite3-*.c 2>NUL
 	del /Q sqlite3rc.h 2>NUL
 	del /Q shell.c sqlite3ext.h 2>NUL

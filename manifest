@@ -1,8 +1,8 @@
-C Modify\sthe\sMSVC\sbatch\sbuild\stool\sto\ssupport\sthe\sMSVC\sautoconf\sMakefile.
-D 2016-02-19T05:07:56.206
+C Enhance\sclean\starget\sin\sthe\sMSVC\smakefiles.
+D 2016-02-19T19:03:04.706
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc d3a190d93235a9aa142e4ade7b473435a5d376f9
+F Makefile.msc 28fc4ee02333996d31b3602b39eeb8e609a89ce4
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION 866588d1edf0ccb5b0d33896974338f97564f719
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -11,7 +11,7 @@ F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am 29e2a6e8d0c5e32723a48b4faf6b168854dde5f4
-F autoconf/Makefile.msc fe04b5870a3e4b98c73e8a82e04e98f330da7ea7
+F autoconf/Makefile.msc d5ab32cf30d6ba8b5ce20835b4042f6cc2a4cb39
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/README.txt 7c31da66232f7590bb987cfcd4e2381744b25d24
 F autoconf/configure.ac 72a5e42beb090b32bca580285dc0ab3c4670adb8
@@ -1427,7 +1427,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh ef6ebc6fd8d2dc35db3b622015c16a023d4fef4f
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 90dd6eb1fec22460473d670519d0e730bb37067d
-R c6d10791b59e57f5d1181c2f31399663
+P 72b10e5e7d2db436c7b03cc3735a2e9d0e53ab5d
+R b7460cecc6b485f24aba529c416ef3bb
 U mistachkin
-Z 5c3b7d3d4a467152f425917bb5dd9dae
+Z 44264aeb20df837b180d552e8068cd8f

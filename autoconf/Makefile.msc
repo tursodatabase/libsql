@@ -922,4 +922,5 @@ $(LIBRESOBJS):	$(TOP)\sqlite3.rc rcver.vc $(SQLITE3H)
 
 clean:
 	del /Q *.exp *.lo *.ilk *.lib *.obj *.ncb *.pdb *.sdf *.suo 2>NUL
-	del /Q *.bsc *.cod *.da *.bb *.bbg *.vc gmon.out 2>NUL
+	del /Q *.bsc *.def *.cod *.da *.bb *.bbg *.vc gmon.out 2>NUL
+	del /Q $(SQLITE3EXE) $(SQLITE3DLL) 2>NUL
