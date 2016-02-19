@@ -1,5 +1,5 @@
-C Add\san\sSQLITE_DISABLE_INTRINSIC\s#ifdef\sto\sthe\ssqlite3Put4Byte()\sfunction.
-D 2016-02-19T13:20:02.042
+C Fix\s(harmless)\scompiler\swarnings\sin\ssome\sof\sthe\sTCL-based\stest\scode.
+D 2016-02-19T13:29:52.247
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 30f075dc4f27a07abb76088946b2944178d85347
@@ -359,7 +359,7 @@ F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
 F src/tclsqlite.c 13debcc6a5ca1217486f8903768c01114fbe8b58
-F src/test1.c 4f1b42699068b7806af3111786f5ad760c2c1ff7
+F src/test1.c 8b17b1ff53aad71e7f9318a2fda247beddeaa601
 F src/test2.c 5586f43fcd9a1be0830793cf9d354082c261b25b
 F src/test3.c a8887dabbbee3059af338f20d290084a63ed1b0f
 F src/test4.c d168f83cc78d02e8d35567bb5630e40dcd85ac1e
@@ -371,7 +371,7 @@ F src/test9.c bea1e8cf52aa93695487badedd6e1886c321ea60
 F src/test_async.c 21e11293a2f72080eda70e1124e9102044531cd8
 F src/test_autoext.c dea8a01a7153b9adc97bd26161e4226329546e12
 F src/test_backup.c 2e6e6a081870150f20c526a2e9d0d29cda47d803
-F src/test_blob.c e5a7a81d61a780da79101aeb1e60d300af169e07
+F src/test_blob.c b2551a9b5573232db5f66f292307c37067937239
 F src/test_btree.c 2e9978eca99a9a4bfa8cae949efb00886860a64f
 F src/test_config.c 7985332c806d1cece793475c75a6abcccde9d331
 F src/test_demovfs.c 0de72c2c89551629f58486fde5734b7d90758852
@@ -1428,7 +1428,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh a98af506df552f3b3c0d904f94e4cdc4e1a6d598
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 60ad68a9f569d2446d76a6453be4fa1c4ed2cd93
-R d12bbc92c78d2cfaf446c5b734b63a28
+P ba9c6827d0890aaed9168c221fefbdbe89f4f9d3
+R b3eefefd48eaf4c05a027f12e3577322
 U drh
-Z 22d2505e89be374674fd2948e46d1040
+Z ddb549605aed0cf283117ce1e762d390
