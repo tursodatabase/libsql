@@ -1,5 +1,5 @@
-C Correct\sthe\sinstall\slocation\sfor\sthe\sUWP\sVSIX\spackage.
-D 2016-02-18T21:15:12.348
+C Further\simprovements\sto\sthe\sMSVC\sbatch\sbuild\stool.
+D 2016-02-19T00:48:23.870
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 30f075dc4f27a07abb76088946b2944178d85347
@@ -1368,7 +1368,7 @@ F test/zerodamage.test cf6748bad89553cc1632be51a6f54e487e4039ac
 F tool/GetFile.cs a15e08acb5dd7539b75ba23501581d7c2b462cb5
 F tool/GetTclKit.bat 629d87562e0487c386db630033931d12d62e6372
 F tool/addopcodes.tcl 4ca9c3ef196f08da30add5d07ce0c9458dc8c633
-F tool/build-all-msvc.bat 31866578036cd1d962628059b0760d407c3ce4d8 x
+F tool/build-all-msvc.bat ab27285398404cdf99c56430fda7a98f5b1121c2 x
 F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
 F tool/cg_anno.tcl 692ce4b8693d59e3a3de77ca97f4139ecfa641b0 x
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
@@ -1428,7 +1428,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh a98af506df552f3b3c0d904f94e4cdc4e1a6d598
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2a8d97e7c8976df0312e1294e8c1da8b15686654 b47d03027e973e3c8d77246a2d2100881f6a9bd2
-R 636aa09f735f400dc542b4aca0bbc634
+P f74de325ffb01a1ca8ddd4f011188e38296c3402 90dd6eb1fec22460473d670519d0e730bb37067d
+R e824ea0707e0554d332b81d14a570ac2
 U mistachkin
-Z 5f6c9326bad1d45fd11fdc74f036b512
+Z 514b043e9dc9c196caf2eb7d2fd83711

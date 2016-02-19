@@ -69,6 +69,11 @@ REM be skipped and they will not appear in the final destination directory.
 REM Setting this environment variable is never strictly needed and could cause
 REM issues in some circumstances; therefore, setting it is not recommended.
 REM
+REM                        NOMEMDEBUG
+REM
+REM When set, disables use of MEMDEBUG when building binaries for the "Debug"
+REM configuration.
+REM
 REM                        BUILD_ALL_SHELL
 REM
 REM When set, the command line shell will be built for each selected platform
@@ -98,6 +103,15 @@ REM
 REM Using the above command before running this tool will cause the compiled
 REM binaries to target the WinRT environment, which provides a subset of the
 REM Win32 API.
+REM
+REM                        DLL_FILE_NAME
+REM                        DLL_PDB_FILE_NAME
+REM                        LIB_FILE_NAME
+REM                        EXE_FILE_NAME
+REM                        EXE_PDB_FILE_NAME
+REM
+REM When set, these values will override the associated target file name used
+REM for the build.
 REM
 SETLOCAL
 
@@ -253,6 +267,30 @@ REM
 IF NOT DEFINED %TCLSH_FILE%_PATH (
   ECHO The Tcl shell executable "%TCLSH_FILE%" is required to be in the PATH.
   GOTO errors
+)
+
+REM
+REM NOTE: Setup the default names for the build targets we are creating.  Any
+REM       ^(or all^) of these may end up being overridden.
+REM
+IF NOT DEFINED DLL_FILE_NAME (
+  SET DLL_FILE_NAME=sqlite3.dll
+)
+
+IF NOT DEFINED DLL_PDB_FILE_NAME (
+  SET DLL_PDB_FILE_NAME=sqlite3.pdb
+)
+
+IF NOT DEFINED LIB_FILE_NAME (
+  SET LIB_FILE_NAME=sqlite3.lib
+)
+
+IF NOT DEFINED EXE_FILE_NAME (
+  SET EXE_FILE_NAME=sqlite3.exe
+)
+
+IF NOT DEFINED EXE_PDB_FILE_NAME (
+  SET EXE_PDB_FILE_NAME=sqlite3sh.pdb
 )
 
 REM
@@ -434,7 +472,9 @@ FOR %%P IN (%PLATFORMS%) DO (
         REM NOTE: Setting this to non-zero should enable the SQLITE_MEMDEBUG
         REM       define.
         REM
-        SET MEMDEBUG=1
+        IF NOT DEFINED NOMEMDEBUG (
+          SET MEMDEBUG=1
+        )
       ) ELSE (
         CALL :fn_UnsetVariable DEBUG
         CALL :fn_UnsetVariable MEMDEBUG
@@ -559,7 +599,7 @@ FOR %%P IN (%PLATFORMS%) DO (
           REM       specifically wanting to build for each platform.
           REM
           %_AECHO% Cleaning final core library output files only...
-          %__ECHO% DEL /Q *.lo sqlite3.dll sqlite3.lib sqlite3.pdb 2%REDIRECT% NUL
+          %__ECHO% DEL /Q *.lo "%DLL_FILE_NAME%" "%LIB_FILE_NAME%" "%DLL_PDB_FILE_NAME%" 2%REDIRECT% NUL
         )
 
         REM
@@ -569,10 +609,10 @@ FOR %%P IN (%PLATFORMS%) DO (
         REM       Also, disable looking for and/or linking to the native Tcl
         REM       runtime library.
         REM
-        %__ECHO% %NMAKE_CMD% sqlite3.dll XCOMPILE=1 USE_NATIVE_LIBPATHS=1 NO_TCL=1 %NMAKE_ARGS%
+        %__ECHO% %NMAKE_CMD% "%DLL_FILE_NAME%" "PLATFORM=%%D" XCOMPILE=1 USE_NATIVE_LIBPATHS=1 NO_TCL=1 %NMAKE_ARGS%
 
         IF ERRORLEVEL 1 (
-          ECHO Failed to build %%B "sqlite3.dll" for platform %%P.
+          ECHO Failed to build %%B "%DLL_FILE_NAME%" for platform %%P.
           GOTO errors
         )
 
@@ -580,10 +620,10 @@ FOR %%P IN (%PLATFORMS%) DO (
         REM NOTE: Copy the "sqlite3.dll" file to the appropriate directory for
         REM       the build and platform beneath the binary directory.
         REM
-        %__ECHO% XCOPY sqlite3.dll "%BINARYDIRECTORY%\%%B\%%D\" %FFLAGS% %DFLAGS%
+        %__ECHO% XCOPY "%DLL_FILE_NAME%" "%BINARYDIRECTORY%\%%B\%%D\" %FFLAGS% %DFLAGS%
 
         IF ERRORLEVEL 1 (
-          ECHO Failed to copy "sqlite3.dll" to "%BINARYDIRECTORY%\%%B\%%D\".
+          ECHO Failed to copy "%DLL_FILE_NAME%" to "%BINARYDIRECTORY%\%%B\%%D\".
           GOTO errors
         )
 
@@ -591,10 +631,10 @@ FOR %%P IN (%PLATFORMS%) DO (
         REM NOTE: Copy the "sqlite3.lib" file to the appropriate directory for
         REM       the build and platform beneath the binary directory.
         REM
-        %__ECHO% XCOPY sqlite3.lib "%BINARYDIRECTORY%\%%B\%%D\" %FFLAGS% %DFLAGS%
+        %__ECHO% XCOPY "%LIB_FILE_NAME%" "%BINARYDIRECTORY%\%%B\%%D\" %FFLAGS% %DFLAGS%
 
         IF ERRORLEVEL 1 (
-          ECHO Failed to copy "sqlite3.lib" to "%BINARYDIRECTORY%\%%B\%%D\".
+          ECHO Failed to copy "%LIB_FILE_NAME%" to "%BINARYDIRECTORY%\%%B\%%D\".
           GOTO errors
         )
 
@@ -604,10 +644,10 @@ FOR %%P IN (%PLATFORMS%) DO (
         REM       are prevented from doing so.
         REM
         IF NOT DEFINED NOSYMBOLS (
-          %__ECHO% XCOPY sqlite3.pdb "%BINARYDIRECTORY%\%%B\%%D\" %FFLAGS% %DFLAGS%
+          %__ECHO% XCOPY "%DLL_PDB_FILE_NAME%" "%BINARYDIRECTORY%\%%B\%%D\" %FFLAGS% %DFLAGS%
 
           IF ERRORLEVEL 1 (
-            ECHO Failed to copy "sqlite3.pdb" to "%BINARYDIRECTORY%\%%B\%%D\".
+            ECHO Failed to copy "%DLL_PDB_FILE_NAME%" to "%BINARYDIRECTORY%\%%B\%%D\".
             GOTO errors
           )
         )
@@ -627,7 +667,7 @@ FOR %%P IN (%PLATFORMS%) DO (
             REM       specifically wanting to build for each platform.
             REM
             %_AECHO% Cleaning final shell executable output files only...
-            %__ECHO% DEL /Q sqlite3.exe sqlite3sh.pdb 2%REDIRECT% NUL
+            %__ECHO% DEL /Q "%EXE_FILE_NAME%" "%EXE_PDB_FILE_NAME%" 2%REDIRECT% NUL
           )
 
           REM
@@ -637,10 +677,10 @@ FOR %%P IN (%PLATFORMS%) DO (
           REM       Also, disable looking for and/or linking to the native Tcl
           REM       runtime library.
           REM
-          %__ECHO% %NMAKE_CMD% sqlite3.exe XCOMPILE=1 USE_NATIVE_LIBPATHS=1 NO_TCL=1 %NMAKE_ARGS%
+          %__ECHO% %NMAKE_CMD% "%EXE_FILE_NAME%" "PLATFORM=%%D" XCOMPILE=1 USE_NATIVE_LIBPATHS=1 NO_TCL=1 %NMAKE_ARGS%
 
           IF ERRORLEVEL 1 (
-            ECHO Failed to build %%B "sqlite3.exe" for platform %%P.
+            ECHO Failed to build %%B "%EXE_FILE_NAME%" for platform %%P.
             GOTO errors
           )
 
@@ -648,10 +688,10 @@ FOR %%P IN (%PLATFORMS%) DO (
           REM NOTE: Copy the "sqlite3.exe" file to the appropriate directory
           REM       for the build and platform beneath the binary directory.
           REM
-          %__ECHO% XCOPY sqlite3.exe "%BINARYDIRECTORY%\%%B\%%D\" %FFLAGS% %DFLAGS%
+          %__ECHO% XCOPY "%EXE_FILE_NAME%" "%BINARYDIRECTORY%\%%B\%%D\" %FFLAGS% %DFLAGS%
 
           IF ERRORLEVEL 1 (
-            ECHO Failed to copy "sqlite3.exe" to "%BINARYDIRECTORY%\%%B\%%D\".
+            ECHO Failed to copy "%EXE_FILE_NAME%" to "%BINARYDIRECTORY%\%%B\%%D\".
             GOTO errors
           )
 
@@ -661,10 +701,10 @@ FOR %%P IN (%PLATFORMS%) DO (
           REM       unless we are prevented from doing so.
           REM
           IF NOT DEFINED NOSYMBOLS (
-            %__ECHO% XCOPY sqlite3sh.pdb "%BINARYDIRECTORY%\%%B\%%D\" %FFLAGS% %DFLAGS%
+            %__ECHO% XCOPY "%EXE_PDB_FILE_NAME%" "%BINARYDIRECTORY%\%%B\%%D\" %FFLAGS% %DFLAGS%
 
             IF ERRORLEVEL 1 (
-              ECHO Failed to copy "sqlite3sh.pdb" to "%BINARYDIRECTORY%\%%B\%%D\".
+              ECHO Failed to copy "%EXE_PDB_FILE_NAME%" to "%BINARYDIRECTORY%\%%B\%%D\".
               GOTO errors
             )
           )
