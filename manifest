@@ -1,5 +1,5 @@
-C Fix\sa\scouple\sof\sharmless\swarnings\sgenerated\sby\sclang.
-D 2016-02-19T15:17:53.973
+C Enhance\sspeedtest1\sto\sdisplay\sthe\sparticular\sversion\sof\sSQLite\sunder\stest.
+D 2016-02-19T16:19:23.113
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 30f075dc4f27a07abb76088946b2944178d85347
@@ -1051,7 +1051,7 @@ F test/speed3.test d32043614c08c53eafdc80f33191d5bd9b920523
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
-F test/speedtest1.c f8bf04214e7b5f745feea99f7bde68b1c4870666
+F test/speedtest1.c 947421c324f5cd4cb3dcae1ec214e4be763df718
 F test/spellfix.test f9c1f431e2c096c8775fec032952320c0e4700db
 F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
 F test/spellfix3.test f7bf7b3482971473d32b6b00f6944c5c066cff97
@@ -1428,7 +1428,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh a98af506df552f3b3c0d904f94e4cdc4e1a6d598
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 398522e686b34e7f82a62e62d8b0a0ea924de064
-R 8ff116d314d0fbd7bb871b177657846d
+P a1a3ff1f53145c5a9fbf29398cf4a453729e71f0
+R 40dc747e2685bc8d2296fe54198bd303
 U drh
-Z 530c09cba645391ee26979799d0e5fce
+Z d4723b5bdb5c40e13ea374fd3e41533b
