@@ -1,5 +1,5 @@
-C Further\simprovements\sto\sthe\sMSVC\sbatch\sbuild\stool.
-D 2016-02-19T00:48:23.870
+C Add\san\s"#ifndef\sSQLITE_AMALGAMATION"\sguard\saround\sa\stypedef\sin\sfts5_test_mi.c\sto\savoid\sredefining\s"u32"\sif\sit\sis\scompiled\sas\spart\sof\sthe\samalgamation.
+D 2016-02-19T10:18:36.453
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 30f075dc4f27a07abb76088946b2944178d85347
@@ -108,7 +108,7 @@ F ext/fts5/fts5_index.c 78069efb54559a17c35906a741362d0b5c899bd0
 F ext/fts5/fts5_main.c db24ac714c6c4a1b3c24a1f8c25889f2952148c1
 F ext/fts5/fts5_storage.c f8343db90d8c95a4d4b52f6676e354b4649ffd6e
 F ext/fts5/fts5_tcl.c f8731e0508299bd43f1a2eff7dbeaac870768966
-F ext/fts5/fts5_test_mi.c 09a332628b65271da5803e72c723a75bfc65695a
+F ext/fts5/fts5_test_mi.c b8d04816428202b2898d4ca38deb1739ac0110ae
 F ext/fts5/fts5_test_tok.c db08af63673c3a7d39f053b36fd6e065017706be
 F ext/fts5/fts5_tokenize.c 2ce7b44183538ec46b7907726262ee43ffdd39a8
 F ext/fts5/fts5_unicode2.c b450b209b157d598f7b9df9f837afb75a14c24bf
@@ -1428,7 +1428,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh a98af506df552f3b3c0d904f94e4cdc4e1a6d598
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f74de325ffb01a1ca8ddd4f011188e38296c3402 90dd6eb1fec22460473d670519d0e730bb37067d
-R e824ea0707e0554d332b81d14a570ac2
-U mistachkin
-Z 514b043e9dc9c196caf2eb7d2fd83711
+P b9626b5954068ae2e7733dd14f906a1f6d7090a5
+R da0a6cae91db1fce2dac362cc1366301
+U dan
+Z 070f4a73f6ec42ddf571ffbbc3f021c2
