@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\suninitialized\svariable\saccess.
-D 2016-02-19T14:20:46.061
+C Fix\sa\scouple\sof\sharmless\swarnings\sgenerated\sby\sclang.
+D 2016-02-19T15:17:53.973
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 30f075dc4f27a07abb76088946b2944178d85347
@@ -81,7 +81,7 @@ F ext/fts3/fts3_icu.c deb46f7020d87ea7a14a433fb7a7f4bef42a9652
 F ext/fts3/fts3_porter.c 3565faf04b626cddf85f03825e86056a4562c009
 F ext/fts3/fts3_snippet.c 68ae118b0f834ea53d2b89e4087fc0f0b8c4ee4e
 F ext/fts3/fts3_term.c 88c55a6fa1a51ab494e33dced0401a6c28791fd7
-F ext/fts3/fts3_test.c 8a3a78c4458b2d7c631fcf4b152a5cd656fa7038
+F ext/fts3/fts3_test.c 11e36437b0f3f2266acea5b4787f615e4337a237
 F ext/fts3/fts3_tokenize_vtab.c a27593ab19657166f6fa5ec073b678cc29a75860
 F ext/fts3/fts3_tokenizer.c 4bd72f767f61c9ce5a7575c844e8d1ed2c3c561a
 F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
@@ -241,7 +241,7 @@ F ext/rbu/rbufault.test cc0be8d5d392d98b0c2d6a51be377ea989250a89
 F ext/rbu/rbufault2.test 9a7f19edd6ea35c4c9f807d8a3db0a03a5670c06
 F ext/rbu/rbufts.test 828cd689da825f0a7b7c53ffc1f6f7fdb6fa5bda
 F ext/rbu/rbusave.test 0f43b6686084f426ddd040b878426452fd2c2f48
-F ext/rbu/sqlite3rbu.c bea954197524631f2691ec272e8a42df8cad01cc
+F ext/rbu/sqlite3rbu.c 371e8bf06cfb3f691adac47eb15ab1073ed92dcf
 F ext/rbu/sqlite3rbu.h 0bdeb3be211aaba7d85445fa36f4701a25a3dbde
 F ext/rbu/test_rbu.c 4a4cdcef4ef9379fc2a21f008805c80b27bcf573
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
@@ -1428,7 +1428,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh a98af506df552f3b3c0d904f94e4cdc4e1a6d598
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 162053021795ff40c447498a76de4d31d58aa808
-R fe0bdee7c9c938489c9da7a703a0aaf9
+P 398522e686b34e7f82a62e62d8b0a0ea924de064
+R 8ff116d314d0fbd7bb871b177657846d
 U drh
-Z f2650a4b63096d696bdaa068be72bdaf
+Z 530c09cba645391ee26979799d0e5fce
