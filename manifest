@@ -1,5 +1,5 @@
-C Make\ssure\sWhereClause\sobjects\sare\sfully\sinitialized\sbefore\suse\swhen\nplanning\sOR\squeries.
-D 2016-02-19T14:10:44.243
+C Fix\sa\sharmless\suninitialized\svariable\saccess.
+D 2016-02-19T14:20:46.061
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 30f075dc4f27a07abb76088946b2944178d85347
@@ -421,7 +421,7 @@ F src/vdbeapi.c 95b1f8e527240a18a9aea41a655b013bf07a7009
 F src/vdbeaux.c 3580de0325a05663195d8f8fddf48c6dd9a28522
 F src/vdbeblob.c 3b570b730109e8f653d9d2081649f6e7015113db
 F src/vdbemem.c be8381ed6de54eb9cb9dfa802823cdeb5166d855
-F src/vdbesort.c 74c22db608649fd7ed2d19d53eefb6efb14e9ee0
+F src/vdbesort.c 307460bfa4de4d1c3901fcd42089159131e34062
 F src/vdbetrace.c f75c5455d8cf389ef86a8bfdfd3177e0e3692484
 F src/vtab.c c27c0232bbc6bd4b50320ea0ef988334cde7d1ca
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
@@ -1428,7 +1428,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh a98af506df552f3b3c0d904f94e4cdc4e1a6d598
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7c26d2b47025edaa289bd4a383b5c1536482ec11
-R 85b43af389af1eb3a02fa6f3878342fe
+P 162053021795ff40c447498a76de4d31d58aa808
+R fe0bdee7c9c938489c9da7a703a0aaf9
 U drh
-Z 20f7de88f5ee5fb441b8422adb035c25
+Z f2650a4b63096d696bdaa068be72bdaf

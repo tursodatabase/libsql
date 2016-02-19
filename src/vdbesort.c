@@ -2297,7 +2297,7 @@ static int vdbeMergeEngineLevel0(
   if( pNew==0 ) rc = SQLITE_NOMEM_BKPT;
 
   for(i=0; i<nPMA && rc==SQLITE_OK; i++){
-    i64 nDummy;
+    i64 nDummy = 0;
     PmaReader *pReadr = &pNew->aReadr[i];
     rc = vdbePmaReaderInit(pTask, &pTask->file, iOff, pReadr, &nDummy);
     iOff = pReadr->iEof;
