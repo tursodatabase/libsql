@@ -95,7 +95,7 @@ struct IdxScan {
 };
 
 /*
-** Context object passed to idxWhereInfo()
+** Context object passed to idxWhereInfo() and other functions.
 */
 struct IdxContext {
   char **pzErrmsg;
@@ -454,7 +454,7 @@ static char *idxAppendText(int *pRc, char *zIn, const char *zFmt, ...){
     zAppend = sqlite3_vmprintf(zFmt, ap);
     if( zAppend ){
       nAppend = strlen(zAppend);
-      zRet = (char*)sqlite3_malloc(nIn + nAppend);
+      zRet = (char*)sqlite3_malloc(nIn + nAppend + 1);
     }
     if( zAppend && zRet ){
       memcpy(zRet, zIn, nIn);
@@ -532,8 +532,9 @@ static int idxFindCompatible(
   int nEq = 0;                    /* Number of elements in pEq */
   int rc, rc2;
 
+
   /* Count the elements in list pEq */
-  for(pIter=pEq; pIter; pIter=pIter->pNext) nEq++;
+  for(pIter=pEq; pIter; pIter=pIter->pLink) nEq++;
 
   rc = idxPrintfPrepareStmt(dbm, &pIdxList, 0, "PRAGMA index_list=%Q", zTbl);
   while( rc==SQLITE_OK && sqlite3_step(pIdxList)==SQLITE_ROW ){
@@ -543,7 +544,7 @@ static int idxFindCompatible(
     const char *zIdx = (const char*)sqlite3_column_text(pIdxList, 1);
 
     /* Zero the IdxConstraint.bFlag values in the pEq list */
-    for(pIter=pEq; pIter; pIter=pIter->pNext) pIter->bFlag = 0;
+    for(pIter=pEq; pIter; pIter=pIter->pLink) pIter->bFlag = 0;
 
     rc = idxPrintfPrepareStmt(dbm, &pInfo, 0, "PRAGMA index_xInfo=%Q", zIdx);
     while( rc==SQLITE_OK && sqlite3_step(pInfo)==SQLITE_ROW ){
@@ -552,7 +553,7 @@ static int idxFindCompatible(
       const char *zColl = (const char*)sqlite3_column_text(pInfo, 4);
 
       if( iIdx<nEq ){
-        for(pIter=pEq; pIter; pIter=pIter->pNext){
+        for(pIter=pEq; pIter; pIter=pIter->pLink){
           if( pIter->bFlag ) continue;
           if( pIter->iCol!=iCol ) continue;
           if( sqlite3_stricmp(pIter->zColl, zColl) ) continue;
@@ -627,10 +628,8 @@ static int idxCreateFromCons(
       if( !zIdx ){
         rc = SQLITE_NOMEM;
       }else{
-        rc = sqlite3_exec(dbm, zIdx, 0, 0, 0);
-#if 0
-        printf("/* %s */\n", zIdx);
-#endif
+        rc = sqlite3_exec(dbm, zIdx, 0, 0, pCtx->pzErrmsg);
+        /* printf("%s\n", zIdx); */
       }
     }
     if( rc==SQLITE_OK && pCtx->iIdxRowid==0 ){
@@ -676,6 +675,18 @@ static int idxCreateForeachOr(
   return rc;
 }
 
+/*
+** Return true if list pList (linked by IdxConstraint.pLink) contains
+** a constraint compatible with *p. Otherwise return false.
+*/
+static int idxFindConstraint(IdxConstraint *pList, IdxConstraint *p){
+  IdxConstraint *pCmp;
+  for(pCmp=pList; pCmp; pCmp=pCmp->pLink){
+    if( p->iCol==pCmp->iCol ) return 1;
+  }
+  return 0;
+}
+
 static int idxCreateFromWhere(
   IdxContext *pCtx, 
   i64 mask,                       /* Consider only these constraints */
@@ -691,7 +702,10 @@ static int idxCreateFromWhere(
 
   /* Gather up all the == constraints that match the mask. */
   for(pCon=pWhere->pEq; pCon; pCon=pCon->pNext){
-    if( (mask & pCon->depmask)==pCon->depmask ){
+    if( (mask & pCon->depmask)==pCon->depmask 
+     && idxFindConstraint(p1, pCon)==0
+     && idxFindConstraint(pTail, pCon)==0
+    ){
       pCon->pLink = p1;
       p1 = pCon;
     }
@@ -709,7 +723,10 @@ static int idxCreateFromWhere(
   if( pTail==0 ){
     for(pCon=pWhere->pRange; rc==SQLITE_OK && pCon; pCon=pCon->pNext){
       assert( pCon->pLink==0 );
-      if( (mask & pCon->depmask)==pCon->depmask ){
+      if( (mask & pCon->depmask)==pCon->depmask
+        && idxFindConstraint(pEq, pCon)==0
+        && idxFindConstraint(pTail, pCon)==0
+      ){
         rc = idxCreateFromCons(pCtx, pScan, p1, pCon);
         if( rc==SQLITE_OK ){
           rc = idxCreateForeachOr(pCtx, mask, pScan, pWhere, p1, pCon);
@@ -787,9 +804,14 @@ int idxFindIndexes(
     int nDetail = strlen(zDetail);
 
     for(i=0; i<nDetail; i++){
+      const char *zIdx = 0;
       if( memcmp(&zDetail[i], " USING INDEX ", 13)==0 ){
+        zIdx = &zDetail[i+13];
+      }else if( memcmp(&zDetail[i], " USING COVERING INDEX ", 22)==0 ){
+        zIdx = &zDetail[i+22];
+      }
+      if( zIdx ){
         int nIdx = 0;
-        const char *zIdx = &zDetail[i+13];
         while( zIdx[nIdx]!='\0' && zIdx[nIdx]!=' ' ) nIdx++;
         sqlite3_bind_text(pSelect, 1, zIdx, nIdx, SQLITE_STATIC);
         if( SQLITE_ROW==sqlite3_step(pSelect) ){
@@ -856,6 +878,7 @@ int shellIndexesCommand(
   sqlite3_stmt *pStmt = 0;        /* Statement compiled from zSql */
 
   memset(&ctx, 0, sizeof(IdxContext));
+  ctx.pzErrmsg = pzErrmsg;
 
   /* Open an in-memory database to work with. The main in-memory 
   ** database schema contains tables similar to those in the users 
