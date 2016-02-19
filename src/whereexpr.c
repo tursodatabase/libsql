@@ -533,6 +533,7 @@ static void exprAnalyzeOrTerm(
   if( pOrInfo==0 ) return;
   pTerm->wtFlags |= TERM_ORINFO;
   pOrWc = &pOrInfo->wc;
+  memset(pOrWc->aStatic, 0, sizeof(pOrWc->aStatic));
   sqlite3WhereClauseInit(pOrWc, pWInfo);
   sqlite3WhereSplit(pOrWc, pExpr, TK_OR);
   sqlite3WhereExprAnalyze(pSrc, pOrWc);
@@ -559,6 +560,7 @@ static void exprAnalyzeOrTerm(
         pOrTerm->wtFlags |= TERM_ANDINFO;
         pOrTerm->eOperator = WO_AND;
         pAndWC = &pAndInfo->wc;
+        memset(pAndWC->aStatic, 0, sizeof(pAndWC->aStatic));
         sqlite3WhereClauseInit(pAndWC, pWC->pWInfo);
         sqlite3WhereSplit(pAndWC, pOrTerm->pExpr, TK_AND);
         sqlite3WhereExprAnalyze(pSrc, pAndWC);

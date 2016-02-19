@@ -1,5 +1,5 @@
-C Fix\s(harmless)\scompiler\swarnings\sin\ssome\sof\sthe\sTCL-based\stest\scode.
-D 2016-02-19T13:29:52.247
+C Make\ssure\sWhereClause\sobjects\sare\sfully\sinitialized\sbefore\suse\swhen\nplanning\sOR\squeries.
+D 2016-02-19T14:10:44.243
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 30f075dc4f27a07abb76088946b2944178d85347
@@ -431,7 +431,7 @@ F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
 F src/where.c 5b67fb8035ae4697cf721db095f800ef8dff5f56
 F src/whereInt.h 78b6b4de94db84aecbdc07fe3e38f648eb391e9a
 F src/wherecode.c 791a784bbf8749d560fdb0b990b607bc4f44a38d
-F src/whereexpr.c de117970b29471177a6901d60ad83a194671dc03
+F src/whereexpr.c fb87944b1254234e5bba671aaf6dee476241506a
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1428,7 +1428,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh a98af506df552f3b3c0d904f94e4cdc4e1a6d598
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ba9c6827d0890aaed9168c221fefbdbe89f4f9d3
-R b3eefefd48eaf4c05a027f12e3577322
+P 7c26d2b47025edaa289bd4a383b5c1536482ec11
+R 85b43af389af1eb3a02fa6f3878342fe
 U drh
-Z ddb549605aed0cf283117ce1e762d390
+Z 20f7de88f5ee5fb441b8422adb035c25
