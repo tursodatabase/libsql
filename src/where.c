@@ -3990,11 +3990,13 @@ static void whereTraceBuilder(
           for(i=0; i<p->pOrderBy->nExpr; i++){
             Expr *pExpr = p->pOrderBy->a[i].pExpr; 
             CollSeq *pColl = sqlite3ExprCollSeq(pParse, pExpr);
+            assert( pColl || pParse->rc );
             pExpr = sqlite3ExprSkipCollate(pExpr);
             if( pExpr->op==TK_COLUMN && pExpr->iTable==pItem->iCursor ){
               int iCol = pExpr->iColumn;
-              if( iCol>=0 ){
-                x(pCtx, SQLITE_WHEREINFO_ORDERBY, pColl->zName, iCol, 0); 
+              if( pColl && iCol>=0 ){
+                int bDesc = p->pOrderBy->a[i].sortOrder;
+                x(pCtx, SQLITE_WHEREINFO_ORDERBY, pColl->zName, iCol, bDesc); 
               }
             }
           }

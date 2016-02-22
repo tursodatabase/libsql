@@ -34,6 +34,7 @@ struct IdxConstraint {
   int iCol;                       /* Constrained table column */
   i64 depmask;                    /* Dependency mask */
   int bFlag;                      /* Used by idxFindCompatible() */
+  int bDesc;                      /* True if ORDER BY <expr> DESC */
   IdxConstraint *pNext;           /* Next constraint in pEq or pRange list */
   IdxConstraint *pLink;           /* See above */
 };
@@ -198,11 +199,17 @@ static void idxWhereInfo(
 
       case SQLITE_WHEREINFO_ORDERBY: {
         IdxConstraint *pNew = idxNewConstraint(&p->rc, zVal);
-        IdxConstraint **pp;
         if( pNew==0 ) return;
         pNew->iCol = iVal;
-        for(pp=&p->pScan->pOrder; *pp; pp=&(*pp)->pNext);
-        *pp = pNew;
+        pNew->bDesc = (int)mask;
+        if( p->pScan->pOrder==0 ){
+          p->pScan->pOrder = pNew;
+        }else{
+          IdxConstraint *pIter;
+          for(pIter=p->pScan->pOrder; pIter->pNext; pIter=pIter->pNext);
+          pIter->pNext = pNew;
+          pIter->pLink = pNew;
+        }
         break;
       }
 
@@ -508,6 +515,10 @@ static char *idxAppendColDefn(
       zRet = idxAppendText(pRc, zRet, " COLLATE %s", pCons->zColl);
     }
   }
+
+  if( pCons->bDesc ){
+    zRet = idxAppendText(pRc, zRet, " DESC");
+  }
   return zRet;
 }
 
@@ -812,7 +823,9 @@ int idxFindIndexes(
       }
       if( zIdx ){
         int nIdx = 0;
-        while( zIdx[nIdx]!='\0' && zIdx[nIdx]!=' ' ) nIdx++;
+        while( zIdx[nIdx]!='\0' && (zIdx[nIdx]!=' ' || zIdx[nIdx+1]!='(') ){
+          nIdx++;
+        }
         sqlite3_bind_text(pSelect, 1, zIdx, nIdx, SQLITE_STATIC);
         if( SQLITE_ROW==sqlite3_step(pSelect) ){
           i64 iRowid = sqlite3_column_int64(pSelect, 0);
