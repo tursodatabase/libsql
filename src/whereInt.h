@@ -69,8 +69,10 @@ struct WhereLevel {
   int addrCont;         /* Jump here to continue with the next loop cycle */
   int addrFirst;        /* First instruction of interior of the loop */
   int addrBody;         /* Beginning of the body of this loop */
+#ifndef SQLITE_LIKE_DOESNT_MATCH_BLOBS
   int iLikeRepCntr;     /* LIKE range processing counter register */
   int addrLikeRep;      /* LIKE range processing address */
+#endif
   u8 iFrom;             /* Which entry in the FROM clause */
   u8 op, p3, p5;        /* Opcode, P3 & P5 of the opcode that ends the loop */
   int p1, p2;           /* Operands of the opcode used to ends the loop */
@@ -253,6 +255,7 @@ struct WhereTerm {
   u16 eOperator;          /* A WO_xx value describing <op> */
   u16 wtFlags;            /* TERM_xxx bit flags.  See below */
   u8 nChild;              /* Number of children that must disable us */
+  u8 eMatchOp;            /* Op for vtab MATCH/LIKE/GLOB/REGEXP terms */
   WhereClause *pWC;       /* The clause this term is part of */
   Bitmask prereqRight;    /* Bitmask of tables used by pExpr->pRight */
   Bitmask prereqAll;      /* Bitmask of tables referenced by pExpr */
@@ -285,7 +288,7 @@ struct WhereTerm {
 struct WhereScan {
   WhereClause *pOrigWC;      /* Original, innermost WhereClause */
   WhereClause *pWC;          /* WhereClause currently being scanned */
-  char *zCollName;           /* Required collating sequence, if not NULL */
+  const char *zCollName;     /* Required collating sequence, if not NULL */
   Expr *pIdxExpr;            /* Search for this index expression */
   char idxaff;               /* Must match this affinity, if zCollName!=NULL */
   unsigned char nEquiv;      /* Number of entries in aEquiv[] */

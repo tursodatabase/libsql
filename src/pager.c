@@ -429,6 +429,20 @@ int sqlite3PagerTrace=1;  /* True to enable tracing */
 #define MAX_SECTOR_SIZE 0x10000
 
 /*
+** If the option SQLITE_EXTRA_DURABLE option is set at compile-time, then
+** SQLite will do extra fsync() operations when synchronous==FULL to help
+** ensure that transactions are durable across a power failure.  Most
+** applications are happy as long as transactions are consistent across
+** a power failure, and are perfectly willing to lose the last transaction
+** in exchange for the extra performance of avoiding directory syncs.
+** And so the default SQLITE_EXTRA_DURABLE setting is off.
+*/
+#ifndef SQLITE_EXTRA_DURABLE
+# define SQLITE_EXTRA_DURABLE 0
+#endif
+
+
+/*
 ** An instance of the following structure is allocated for each active
 ** savepoint and statement transaction in the system. All such structures
 ** are stored in the Pager.aSavepoint[] array, which is allocated and
@@ -623,6 +637,7 @@ struct Pager {
   u8 useJournal;              /* Use a rollback journal on this file */
   u8 noSync;                  /* Do not sync the journal if true */
   u8 fullSync;                /* Do extra syncs of the journal for robustness */
+  u8 extraSync;               /* sync directory after journal delete */
   u8 ckptSyncFlags;           /* SYNC_NORMAL or SYNC_FULL for checkpoint */
   u8 walSyncFlags;            /* SYNC_NORMAL or SYNC_FULL for wal writes */
   u8 syncFlags;               /* SYNC_NORMAL or SYNC_FULL otherwise */
@@ -1983,7 +1998,7 @@ static int pager_end_transaction(Pager *pPager, int hasMaster, int bCommit){
       );
       sqlite3OsClose(pPager->jfd);
       if( bDelete ){
-        rc = sqlite3OsDelete(pPager->pVfs, pPager->zJournal, 0);
+        rc = sqlite3OsDelete(pPager->pVfs, pPager->zJournal, pPager->extraSync);
       }
     }
   }
@@ -2309,9 +2324,9 @@ static int pager_playback_one_page(
       pPager->dbFileSize = pgno;
     }
     if( pPager->pBackup ){
-      CODEC1(pPager, aData, pgno, 3, rc=SQLITE_NOMEM);
+      CODEC1(pPager, aData, pgno, 3, rc=SQLITE_NOMEM_BKPT);
       sqlite3BackupUpdate(pPager->pBackup, pgno, (u8*)aData);
-      CODEC2(pPager, aData, pgno, 7, rc=SQLITE_NOMEM, aData);
+      CODEC2(pPager, aData, pgno, 7, rc=SQLITE_NOMEM_BKPT, aData);
     }
   }else if( !isMainJrnl && pPg==0 ){
     /* If this is a rollback of a savepoint and data was not written to
@@ -2383,7 +2398,7 @@ static int pager_playback_one_page(
     }
 
     /* Decode the page just read from disk */
-    CODEC1(pPager, pData, pPg->pgno, 3, rc=SQLITE_NOMEM);
+    CODEC1(pPager, pData, pPg->pgno, 3, rc=SQLITE_NOMEM_BKPT);
     sqlite3PcacheRelease(pPg);
   }
   return rc;
@@ -2449,7 +2464,7 @@ static int pager_delmaster(Pager *pPager, const char *zMaster){
   pMaster = (sqlite3_file *)sqlite3MallocZero(pVfs->szOsFile * 2);
   pJournal = (sqlite3_file *)(((u8 *)pMaster) + pVfs->szOsFile);
   if( !pMaster ){
-    rc = SQLITE_NOMEM;
+    rc = SQLITE_NOMEM_BKPT;
   }else{
     const int flags = (SQLITE_OPEN_READONLY|SQLITE_OPEN_MASTER_JOURNAL);
     rc = sqlite3OsOpen(pVfs, zMaster, pMaster, flags, 0);
@@ -2466,7 +2481,7 @@ static int pager_delmaster(Pager *pPager, const char *zMaster){
   nMasterPtr = pVfs->mxPathname+1;
   zMasterJournal = sqlite3Malloc(nMasterJournal + nMasterPtr + 1);
   if( !zMasterJournal ){
-    rc = SQLITE_NOMEM;
+    rc = SQLITE_NOMEM_BKPT;
     goto delmaster_out;
   }
   zMasterPtr = &zMasterJournal[nMasterJournal+1];
@@ -2936,7 +2951,7 @@ static int readDbPage(PgHdr *pPg, u32 iFrame){
       memcpy(&pPager->dbFileVers, dbFileVers, sizeof(pPager->dbFileVers));
     }
   }
-  CODEC1(pPager, pPg->pData, pgno, 3, rc = SQLITE_NOMEM);
+  CODEC1(pPager, pPg->pData, pgno, 3, rc = SQLITE_NOMEM_BKPT);
 
   PAGER_INCR(sqlite3_pager_readdb_count);
   PAGER_INCR(pPager->nRead);
@@ -3296,7 +3311,7 @@ static int pagerPlaybackSavepoint(Pager *pPager, PagerSavepoint *pSavepoint){
   if( pSavepoint ){
     pDone = sqlite3BitvecCreate(pSavepoint->nOrig);
     if( !pDone ){
-      return SQLITE_NOMEM;
+      return SQLITE_NOMEM_BKPT;
     }
   }
 
@@ -3489,9 +3504,15 @@ void sqlite3PagerSetFlags(
   unsigned pgFlags      /* Various flags */
 ){
   unsigned level = pgFlags & PAGER_SYNCHRONOUS_MASK;
-  assert( level>=1 && level<=3 );
-  pPager->noSync =  (level==1 || pPager->tempFile) ?1:0;
-  pPager->fullSync = (level==3 && !pPager->tempFile) ?1:0;
+  if( pPager->tempFile ){
+    pPager->noSync = 1;
+    pPager->fullSync = 0;
+    pPager->extraSync = 0;
+  }else{
+    pPager->noSync =  level==PAGER_SYNCHRONOUS_OFF ?1:0;
+    pPager->fullSync = level>=PAGER_SYNCHRONOUS_FULL ?1:0;
+    pPager->extraSync = level==PAGER_SYNCHRONOUS_EXTRA ?1:0;
+  }
   if( pPager->noSync ){
     pPager->syncFlags = 0;
     pPager->ckptSyncFlags = 0;
@@ -3653,7 +3674,7 @@ int sqlite3PagerSetPagesize(Pager *pPager, u32 *pPageSize, int nReserve){
     }
     if( rc==SQLITE_OK ){
       pNew = (char *)sqlite3PageMalloc(pageSize);
-      if( !pNew ) rc = SQLITE_NOMEM;
+      if( !pNew ) rc = SQLITE_NOMEM_BKPT;
     }
 
     if( rc==SQLITE_OK ){
@@ -3929,7 +3950,7 @@ static int pagerAcquireMapPage(
     *ppPage = p = (PgHdr *)sqlite3MallocZero(sizeof(PgHdr) + pPager->nExtra);
     if( p==0 ){
       sqlite3OsUnfetch(pPager->fd, (i64)(pgno-1) * pPager->pageSize, pData);
-      return SQLITE_NOMEM;
+      return SQLITE_NOMEM_BKPT;
     }
     p->pExtra = (void *)&p[1];
     p->flags = PGHDR_MMAP;
@@ -4287,7 +4308,7 @@ static int pager_write_pagelist(Pager *pPager, PgHdr *pList){
       if( pList->pgno==1 ) pager_write_changecounter(pList);
 
       /* Encode the database */
-      CODEC2(pPager, pList->pData, pgno, 6, return SQLITE_NOMEM, pData);
+      CODEC2(pPager, pList->pData, pgno, 6, return SQLITE_NOMEM_BKPT, pData);
 
       /* Write out the page data. */
       rc = sqlite3OsWrite(pPager->fd, pData, pPager->pageSize, offset);
@@ -4374,7 +4395,7 @@ static int subjournalPage(PgHdr *pPg){
       i64 offset = (i64)pPager->nSubRec*(4+pPager->pageSize);
       char *pData2;
   
-      CODEC2(pPager, pData, pPg->pgno, 7, return SQLITE_NOMEM, pData2);
+      CODEC2(pPager, pData, pPg->pgno, 7, return SQLITE_NOMEM_BKPT, pData2);
       PAGERTRACE(("STMT-JOURNAL %d page %d\n", PAGERID(pPager), pPg->pgno));
       rc = write32bits(pPager->sjfd, offset, pPg->pgno);
       if( rc==SQLITE_OK ){
@@ -4578,7 +4599,7 @@ int sqlite3PagerOpen(
     memDb = 1;
     if( zFilename && zFilename[0] ){
       zPathname = sqlite3DbStrDup(0, zFilename);
-      if( zPathname==0  ) return SQLITE_NOMEM;
+      if( zPathname==0  ) return SQLITE_NOMEM_BKPT;
       nPathname = sqlite3Strlen30(zPathname);
       zFilename = 0;
     }
@@ -4594,7 +4615,7 @@ int sqlite3PagerOpen(
     nPathname = pVfs->mxPathname+1;
     zPathname = sqlite3DbMallocRaw(0, nPathname*2);
     if( zPathname==0 ){
-      return SQLITE_NOMEM;
+      return SQLITE_NOMEM_BKPT;
     }
     zPathname[0] = 0; /* Make sure initialized even if FullPathname() fails */
     rc = sqlite3OsFullPathname(pVfs, zFilename, nPathname, zPathname);
@@ -4647,7 +4668,7 @@ int sqlite3PagerOpen(
   assert( EIGHT_BYTE_ALIGNMENT(SQLITE_INT_TO_PTR(journalFileSize)) );
   if( !pPtr ){
     sqlite3DbFree(0, zPathname);
-    return SQLITE_NOMEM;
+    return SQLITE_NOMEM_BKPT;
   }
   pPager =              (Pager*)(pPtr);
   pPager->pPCache =    (PCache*)(pPtr += ROUND8(sizeof(*pPager)));
@@ -4796,11 +4817,17 @@ act_like_temp_file:
   pPager->noSync = pPager->tempFile;
   if( pPager->noSync ){
     assert( pPager->fullSync==0 );
+    assert( pPager->extraSync==0 );
     assert( pPager->syncFlags==0 );
     assert( pPager->walSyncFlags==0 );
     assert( pPager->ckptSyncFlags==0 );
   }else{
     pPager->fullSync = 1;
+#if SQLITE_EXTRA_DURABLE
+    pPager->extraSync = 1;
+#else
+    pPager->extraSync = 0;
+#endif
     pPager->syncFlags = SQLITE_SYNC_NORMAL;
     pPager->walSyncFlags = SQLITE_SYNC_NORMAL | WAL_SYNC_TRANSACTIONS;
     pPager->ckptSyncFlags = SQLITE_SYNC_NORMAL;
@@ -5361,7 +5388,7 @@ int sqlite3PagerGet(
         if( rc!=SQLITE_OK ) goto pager_acquire_err;
         if( pBase==0 ){
           pPg = *ppPage = 0;
-          rc = SQLITE_NOMEM;
+          rc = SQLITE_NOMEM_BKPT;
           goto pager_acquire_err;
         }
       }
@@ -5535,7 +5562,7 @@ static int pager_open_journal(Pager *pPager){
   if( !pagerUseWal(pPager) && pPager->journalMode!=PAGER_JOURNALMODE_OFF ){
     pPager->pInJournal = sqlite3BitvecCreate(pPager->dbSize);
     if( pPager->pInJournal==0 ){
-      return SQLITE_NOMEM;
+      return SQLITE_NOMEM_BKPT;
     }
   
     /* Open the journal file if it is not already open. */
@@ -5627,7 +5654,7 @@ int sqlite3PagerBegin(Pager *pPager, int exFlag, int subjInMemory){
         if( rc!=SQLITE_OK ){
           return rc;
         }
-        sqlite3WalExclusiveMode(pPager->pWal, 1);
+        (void)sqlite3WalExclusiveMode(pPager->pWal, 1);
       }
 
       /* Grab the write lock on the log file. If successful, upgrade to
@@ -5690,7 +5717,7 @@ static SQLITE_NOINLINE int pagerAddPageToRollbackJournal(PgHdr *pPg){
   assert( pPg->pgno!=PAGER_MJ_PGNO(pPager) );
 
   assert( pPager->journalHdr<=pPager->journalOff );
-  CODEC2(pPager, pPg->pData, pPg->pgno, 7, return SQLITE_NOMEM, pData2);
+  CODEC2(pPager, pPg->pData, pPg->pgno, 7, return SQLITE_NOMEM_BKPT, pData2);
   cksum = pager_cksum(pPager, (u8*)pData2);
 
   /* Even if an IO or diskfull error occurs while journalling the
@@ -6047,7 +6074,7 @@ static int pager_incr_changecounter(Pager *pPager, int isDirectMode){
       if( DIRECT_MODE ){
         const void *zBuf;
         assert( pPager->dbFileSize>0 );
-        CODEC2(pPager, pPgHdr->pData, 1, 6, rc=SQLITE_NOMEM, zBuf);
+        CODEC2(pPager, pPgHdr->pData, 1, 6, rc=SQLITE_NOMEM_BKPT, zBuf);
         if( rc==SQLITE_OK ){
           rc = sqlite3OsWrite(pPager->fd, zBuf, pPager->pageSize, 0);
           pPager->aStat[PAGER_STAT_WRITE]++;
@@ -6546,7 +6573,7 @@ static SQLITE_NOINLINE int pagerOpenSavepoint(Pager *pPager, int nSavepoint){
       pPager->aSavepoint, sizeof(PagerSavepoint)*nSavepoint
   );
   if( !aNew ){
-    return SQLITE_NOMEM;
+    return SQLITE_NOMEM_BKPT;
   }
   memset(&aNew[nCurrent], 0, (nSavepoint-nCurrent) * sizeof(PagerSavepoint));
   pPager->aSavepoint = aNew;
@@ -6562,7 +6589,7 @@ static SQLITE_NOINLINE int pagerOpenSavepoint(Pager *pPager, int nSavepoint){
     aNew[ii].iSubRec = pPager->nSubRec;
     aNew[ii].pInSavepoint = sqlite3BitvecCreate(pPager->dbSize);
     if( !aNew[ii].pInSavepoint ){
-      return SQLITE_NOMEM;
+      return SQLITE_NOMEM_BKPT;
     }
     if( pagerUseWal(pPager) ){
       sqlite3WalSavepoint(pPager->pWal, aNew[ii].aWalData);
@@ -6679,7 +6706,7 @@ const char *sqlite3PagerFilename(Pager *pPager, int nullIfMemDb){
 /*
 ** Return the VFS structure for the pager.
 */
-const sqlite3_vfs *sqlite3PagerVfs(Pager *pPager){
+sqlite3_vfs *sqlite3PagerVfs(Pager *pPager){
   return pPager->pVfs;
 }
 
@@ -6690,6 +6717,18 @@ const sqlite3_vfs *sqlite3PagerVfs(Pager *pPager){
 */
 sqlite3_file *sqlite3PagerFile(Pager *pPager){
   return pPager->fd;
+}
+
+/*
+** Return the file handle for the journal file (if it exists).
+** This will be either the rollback journal or the WAL file.
+*/
+sqlite3_file *sqlite3PagerJrnlFile(Pager *pPager){
+#if SQLITE_OMIT_WAL
+  return pPager->jfd;
+#else
+  return pPager->pWal ? sqlite3WalFile(pPager->pWal) : pPager->jfd;
+#endif
 }
 
 /*
@@ -7301,6 +7340,34 @@ int sqlite3PagerCloseWal(Pager *pPager){
   return rc;
 }
 
+#ifdef SQLITE_ENABLE_SNAPSHOT
+/*
+** If this is a WAL database, obtain a snapshot handle for the snapshot
+** currently open. Otherwise, return an error.
+*/
+int sqlite3PagerSnapshotGet(Pager *pPager, sqlite3_snapshot **ppSnapshot){
+  int rc = SQLITE_ERROR;
+  if( pPager->pWal ){
+    rc = sqlite3WalSnapshotGet(pPager->pWal, ppSnapshot);
+  }
+  return rc;
+}
+
+/*
+** If this is a WAL database, store a pointer to pSnapshot. Next time a
+** read transaction is opened, attempt to read from the snapshot it 
+** identifies. If this is not a WAL database, return an error.
+*/
+int sqlite3PagerSnapshotOpen(Pager *pPager, sqlite3_snapshot *pSnapshot){
+  int rc = SQLITE_OK;
+  if( pPager->pWal ){
+    sqlite3WalSnapshotOpen(pPager->pWal, pSnapshot);
+  }else{
+    rc = SQLITE_ERROR;
+  }
+  return rc;
+}
+#endif /* SQLITE_ENABLE_SNAPSHOT */
 #endif /* !SQLITE_OMIT_WAL */
 
 #ifdef SQLITE_ENABLE_ZIPVFS

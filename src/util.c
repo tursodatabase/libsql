@@ -234,6 +234,14 @@ int sqlite3Dequote(char *z){
   return j;
 }
 
+/*
+** Generate a Token object from a string
+*/
+void sqlite3TokenInit(Token *p, char *z){
+  p->z = z;
+  p->n = sqlite3Strlen30(z);
+}
+
 /* Convenient short-hand */
 #define UpperToLower sqlite3UpperToLower
 
@@ -248,16 +256,25 @@ int sqlite3Dequote(char *z){
 ** independence" that SQLite uses internally when comparing identifiers.
 */
 int sqlite3_stricmp(const char *zLeft, const char *zRight){
-  register unsigned char *a, *b;
   if( zLeft==0 ){
     return zRight ? -1 : 0;
   }else if( zRight==0 ){
     return 1;
   }
+  return sqlite3StrICmp(zLeft, zRight);
+}
+int sqlite3StrICmp(const char *zLeft, const char *zRight){
+  unsigned char *a, *b;
+  int c;
   a = (unsigned char *)zLeft;
   b = (unsigned char *)zRight;
-  while( *a!=0 && UpperToLower[*a]==UpperToLower[*b]){ a++; b++; }
-  return UpperToLower[*a] - UpperToLower[*b];
+  for(;;){
+    c = (int)UpperToLower[*a] - (int)UpperToLower[*b];
+    if( c || *a==0 ) break;
+    a++;
+    b++;
+  }
+  return c;
 }
 int sqlite3_strnicmp(const char *zLeft, const char *zRight, int N){
   register unsigned char *a, *b;
@@ -555,7 +572,8 @@ int sqlite3Atoi64(const char *zNum, i64 *pNum, int length, u8 enc){
   testcase( i==18 );
   testcase( i==19 );
   testcase( i==20 );
-  if( (c!=0 && &zNum[i]<zEnd) || (i==0 && zStart==zNum) || i>19*incr || nonNum ){
+  if( (c!=0 && &zNum[i]<zEnd) || (i==0 && zStart==zNum)
+       || i>19*incr || nonNum ){
     /* zNum is empty or contains non-numeric text or is longer
     ** than 19 digits (thus guaranteeing that it is too large) */
     return 1;
@@ -844,7 +862,8 @@ u8 sqlite3GetVarint(const unsigned char *p, u64 *v){
   /* a: p0<<28 | p2<<14 | p4 (unmasked) */
   if (!(a&0x80))
   {
-    /* we can skip these cause they were (effectively) done above in calc'ing s */
+    /* we can skip these cause they were (effectively) done above
+    ** while calculating s */
     /* a &= (0x7f<<28)|(0x7f<<14)|(0x7f); */
     /* b &= (0x7f<<14)|(0x7f); */
     b = b<<7;
@@ -1097,10 +1116,12 @@ u32 sqlite3Get4byte(const u8 *p){
 void sqlite3Put4byte(unsigned char *p, u32 v){
 #if SQLITE_BYTEORDER==4321
   memcpy(p,&v,4);
-#elif SQLITE_BYTEORDER==1234 && defined(__GNUC__) && GCC_VERSION>=4003000
+#elif SQLITE_BYTEORDER==1234 && !defined(SQLITE_DISABLE_INTRINSIC) \
+    && defined(__GNUC__) && GCC_VERSION>=4003000
   u32 x = __builtin_bswap32(v);
   memcpy(p,&x,4);
-#elif SQLITE_BYTEORDER==1234 && defined(_MSC_VER) && _MSC_VER>=1300
+#elif SQLITE_BYTEORDER==1234 && !defined(SQLITE_DISABLE_INTRINSIC) \
+    && defined(_MSC_VER) && _MSC_VER>=1300
   u32 x = _byteswap_ulong(v);
   memcpy(p,&x,4);
 #else
@@ -1140,7 +1161,7 @@ void *sqlite3HexToBlob(sqlite3 *db, const char *z, int n){
   char *zBlob;
   int i;
 
-  zBlob = (char *)sqlite3DbMallocRaw(db, n/2 + 1);
+  zBlob = (char *)sqlite3DbMallocRawNN(db, n/2 + 1);
   n--;
   if( zBlob ){
     for(i=0; i<n; i+=2){

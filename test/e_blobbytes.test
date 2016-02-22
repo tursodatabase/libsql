@@ -72,5 +72,3 @@ do_test 2.1 {
 sqlite3_blob_close $B
 
 finish_test
-
-

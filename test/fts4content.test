@@ -587,7 +587,7 @@ do_execsql_test 10.1 {
   INSERT INTO idx VALUES (3, 't3.txt');
 
   CREATE VIRTUAL TABLE vt USING fs(idx);
-  SELECT * FROM vt;
+  SELECT path, data FROM vt;
 } {
   1 {a b c d e f g h i j k l m n o p q r s t u v w x y z} 
   2 {a b c d e f g h i j k l m a b c d e f g h i j k l m}
@@ -595,7 +595,7 @@ do_execsql_test 10.1 {
 }
 
 do_execsql_test 10.2 {
-  SELECT * FROM vt WHERE rowid = 2;
+  SELECT path, data FROM vt WHERE rowid = 2;
 } {
   2 {a b c d e f g h i j k l m a b c d e f g h i j k l m}
 }
@@ -636,4 +636,3 @@ do_catchsql_test 11.1 {
 
 
 finish_test
-

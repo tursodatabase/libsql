@@ -252,4 +252,21 @@ do_execsql_test 5.6 {
   SELECT DISTINCT x FROM t1 ORDER BY x;
 } {1 2 3 4 5 6}
 
+#-------------------------------------------------------------------------
+# 2015-11-23.  Problem discovered by Kostya Serebryany using libFuzzer
+#
+db close
+sqlite3 db :memory:
+do_execsql_test 6.1 {
+  CREATE TABLE jjj(x);
+  SELECT (SELECT 'mmm' UNION SELECT DISTINCT max(name) ORDER BY 1) 
+    FROM sqlite_master;
+} {jjj}
+do_execsql_test 6.2 {
+  CREATE TABLE nnn(x);
+  SELECT (SELECT 'mmm' UNION SELECT DISTINCT max(name) ORDER BY 1) 
+    FROM sqlite_master;
+} {mmm}
+
+
 finish_test

@@ -60,8 +60,8 @@ foreach s {
     open close access getcwd stat fstat ftruncate
     fcntl read pread write pwrite fchmod fallocate
     pread64 pwrite64 unlink openDirectory mkdir rmdir 
-    statvfs fchown umask mmap munmap mremap
-    getpagesize readlink
+    statvfs fchown geteuid umask mmap munmap mremap
+    getpagesize readlink lstat
 } {
   if {[test_syscall exists $s]} {lappend syscall_list $s}
 }

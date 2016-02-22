@@ -312,6 +312,7 @@ TESTSRC = \
   $(TOP)/src/test_tclvar.c \
   $(TOP)/src/test_thread.c \
   $(TOP)/src/test_vfs.c \
+  $(TOP)/src/test_windirent.c \
   $(TOP)/src/test_wsd.c
 
 # Extensions to be statically loaded.
@@ -332,7 +333,8 @@ TESTSRC += \
   $(TOP)/ext/misc/wholenumber.c \
   $(TOP)/ext/misc/vfslog.c \
   $(TOP)/ext/fts5/fts5_tcl.c \
-  $(TOP)/ext/fts5/fts5_test_mi.c
+  $(TOP)/ext/fts5/fts5_test_mi.c \
+  $(TOP)/ext/fts5/fts5_test_tok.c 
 
 
 #TESTSRC += $(TOP)/ext/fts2/fts2_tokenizer.c
@@ -459,7 +461,7 @@ TESTOPTS = --verbose=file --output=test-out.txt
 #
 SHELL_OPT = -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_FTS4 -DSQLITE_ENABLE_FTS5
 FUZZERSHELL_OPT = -DSQLITE_ENABLE_JSON1
-FUZZCHECK_OPT = -DSQLITE_ENABLE_JSON1
+FUZZCHECK_OPT = -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_MEMSYS5
 
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
@@ -478,6 +480,12 @@ sqldiff$(EXE):	$(TOP)/tool/sqldiff.c sqlite3.c sqlite3.h
 	$(TCCX) -o sqldiff$(EXE) -DSQLITE_THREADSAFE=0 \
 		$(TOP)/tool/sqldiff.c sqlite3.c $(TLIBS) $(THREADLIB)
 
+srcck1$(EXE):	$(TOP)/tool/srcck1.c
+	$(BCC) -o srcck1$(EXE) $(TOP)/tool/srcck1.c
+
+sourcetest:	srcck1$(EXE) sqlite3.c
+	./srcck1 sqlite3.c
+
 fuzzershell$(EXE):	$(TOP)/tool/fuzzershell.c sqlite3.c sqlite3.h
 	$(TCCX) -o fuzzershell$(EXE) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
 	  $(FUZZERSHELL_OPT) $(TOP)/tool/fuzzershell.c sqlite3.c \
@@ -492,10 +500,9 @@ mptester$(EXE):	sqlite3.c $(TOP)/mptest/mptest.c
 	$(TCCX) -o $@ -I. $(TOP)/mptest/mptest.c sqlite3.c \
 		$(TLIBS) $(THREADLIB)
 
-MPTEST1=./mptester$(EXE) mptest.db $(TOP)/mptest/crash01.test --repeat 20
-MPTEST2=./mptester$(EXE) mptest.db $(TOP)/mptest/multiwrite01.test --repeat 20
+MPTEST1=./mptester$(EXE) mptest1.db $(TOP)/mptest/crash01.test --repeat 20
+MPTEST2=./mptester$(EXE) mptest2.db $(TOP)/mptest/multiwrite01.test --repeat 20
 mptest:	mptester$(EXE)
-	rm -f mptest.db
 	$(MPTEST1) --journalmode DELETE
 	$(MPTEST2) --journalmode WAL
 	$(MPTEST1) --journalmode WAL
@@ -766,7 +773,7 @@ quicktest:	./testfixture$(EXE)
 # The default test case.  Runs most of the faster standard TCL tests,
 # and fuzz tests, and sqlite3_analyzer and sqldiff tests.
 #
-test:	$(TESTPROGS) fastfuzztest
+test:	$(TESTPROGS) sourcetest fastfuzztest
 	./testfixture$(EXE) $(TOP)/test/veryquick.test $(TESTOPTS)
 
 # Run a test using valgrind.  This can take a really long time
@@ -794,8 +801,8 @@ THREADTEST3_SRC = $(TOP)/test/threadtest3.c    \
                   $(TOP)/test/tt3_stress.c      \
                   $(TOP)/test/tt3_lookaside1.c
 
-threadtest3$(EXE): sqlite3.o $(THREADTEST3_SRC)
-	$(TCCX) $(TOP)/test/threadtest3.c sqlite3.o -o $@ $(THREADLIB)
+threadtest3$(EXE): sqlite3.o $(THREADTEST3_SRC) $(TOP)/src/test_multiplex.c
+	$(TCCX) $(TOP)/test/threadtest3.c $(TOP)/src/test_multiplex.c sqlite3.o -o $@ $(THREADLIB)
 
 threadtest: threadtest3$(EXE)
 	./threadtest3$(EXE)
@@ -855,10 +862,15 @@ loadfts: $(TOP)/tool/loadfts.c libsqlite3.a
 checksymbols: sqlite3.o
 	nm -g --defined-only sqlite3.o | grep -v " sqlite3_" ; test $$? -ne 0
 
-# Build the amalgamation-autoconf package.
+# Build the amalgamation-autoconf package.  The amalamgation-tarball target builds
+# a tarball named for the version number.  Ex:  sqlite-autoconf-3110000.tar.gz.
+# The snapshot-tarball target builds a tarball named by the SHA1 hash
 #
 amalgamation-tarball: sqlite3.c
-	TOP=$(TOP) sh $(TOP)/tool/mkautoconfamal.sh
+	TOP=$(TOP) sh $(TOP)/tool/mkautoconfamal.sh --normal
+
+snapshot-tarball: sqlite3.c
+	TOP=$(TOP) sh $(TOP)/tool/mkautoconfamal.sh --snapshot
 
 
 # Standard install and cleanup targets
@@ -890,6 +902,8 @@ clean:
 	rm -f showwal showwal.exe
 	rm -f speedtest1 speedtest1.exe
 	rm -f wordcount wordcount.exe
+	rm -f rbu rbu.exe
+	rm -f srcck1 srcck1.exe
 	rm -f sqlite3.c sqlite3-*.c fts?amal.c tclsqlite3.c
 	rm -f sqlite3rc.h
 	rm -f shell.c sqlite3ext.h

@@ -29,6 +29,11 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+ifcapable !like_match_blobs {
+  finish_test
+  return
+}
+
 do_execsql_test like3-1.1 {
   PRAGMA encoding=UTF8;
   CREATE TABLE t1(a,b TEXT COLLATE nocase);
@@ -106,7 +111,5 @@ do_execsql_test like3-4.2 {
 do_execsql_test like3-4.2ck {
   SELECT quote(x) FROM t4 WHERE x LIKE 'ab%' ORDER BY +x ASC;
 } {'abc' 'abd' 'abe' X'616263' X'616264' X'616265'}
-
-
 
 finish_test

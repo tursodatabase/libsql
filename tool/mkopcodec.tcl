@@ -19,7 +19,7 @@ puts "#else"
 puts "# define OpHelp(X)"
 puts "#endif"
 puts "const char *sqlite3OpcodeName(int i)\173"
-puts " static const char *const azName\[\] = \173 \"?\","
+puts " static const char *const azName\[\] = \173"
 set mx 0
 
 set in [open [lindex $argv 0] rb]
@@ -40,7 +40,7 @@ while {![eof $in]} {
 }
 close $in
 
-for {set i 1} {$i<=$mx} {incr i} {
+for {set i 0} {$i<=$mx} {incr i} {
   puts [format "    /* %3d */ %-18s OpHelp(\"%s\")," \
          $i \"$label($i)\" $synopsis($i)]
 }

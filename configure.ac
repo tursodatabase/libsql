@@ -195,6 +195,7 @@ AC_SUBST(SQLITE_THREADSAFE)
 
 if test "$SQLITE_THREADSAFE" = "1"; then
   AC_SEARCH_LIBS(pthread_create, pthread)
+  AC_SEARCH_LIBS(pthread_mutexattr_init, pthread)
 fi
 
 ##########

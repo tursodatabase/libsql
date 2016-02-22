@@ -374,6 +374,21 @@ proc do_not_use_codec {} {
   reset_db
 }
 
+# Print a HELP message and exit
+#
+proc print_help_and_quit {} {
+  puts {Options:
+  --pause                  Wait for user input before continuing
+  --soft-heap-limit=N      Set the soft-heap-limit to N
+  --maxerror=N             Quit after N errors
+  --verbose=(0|1)          Control the amount of output.  Default '1'
+  --output=FILE            set --verbose=2 and output to FILE.  Implies -q
+  -q                       Shorthand for --verbose=0
+  --help                   This message
+}
+  exit 1
+}
+
 # The following block only runs the first time this file is sourced. It
 # does not run in slave interpreters (since the ::cmdlinearg array is
 # populated before the test script is run in slave interpreters).
@@ -482,6 +497,13 @@ if {[info exists cmdlinearg]==0} {
         } elseif {[string is boolean -strict $cmdlinearg(verbose)]==0} {
           error "option --verbose= must be set to a boolean or to \"file\""
         }
+      }
+      {.*help.*} {
+         print_help_and_quit
+      }
+      {^-q$} {
+        set cmdlinearg(output) test-out.txt
+        set cmdlinearg(verbose) 2
       }
 
       default {
@@ -1028,7 +1050,13 @@ proc finalize_testing {} {
     output2 "[expr {$nErr-$nKnown}] new errors and $nKnown known errors\
          out of $nTest tests"
   } else {
-    output2 "$nErr errors out of $nTest tests"
+    set cpuinfo {}
+    if {[catch {exec hostname} hname]==0} {set cpuinfo [string trim $hname]}
+    append cpuinfo " $::tcl_platform(os)"
+    append cpuinfo " [expr {$::tcl_platform(pointerSize)*8}]-bit"
+    append cpuinfo " [string map {E -e} $::tcl_platform(byteOrder)]"
+    output2 "SQLite [sqlite3 -sourceid]"
+    output2 "$nErr errors out of $nTest tests on $cpuinfo"
   }
   if {$nErr>$nKnown} {
     output2 -nonewline "!Failures on these tests:"
@@ -1897,6 +1925,12 @@ proc presql {} {
   set presql ""
   catch {set presql $::G(perm:presql)}
   set presql
+}
+
+proc isquick {} {
+  set ret 0
+  catch {set ret $::G(isquick)}
+  set ret
 }
 
 #-------------------------------------------------------------------------

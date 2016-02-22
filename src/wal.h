@@ -44,6 +44,7 @@
 # define sqlite3WalHeapMemory(z)                 0
 # define sqlite3WalFramesize(z)                  0
 # define sqlite3WalFindFrame(x,y,z)              0
+# define sqlite3WalFile(x)                       0
 #else
 
 #define WAL_SAVEPOINT_NDATA 4
@@ -126,12 +127,20 @@ int sqlite3WalExclusiveMode(Wal *pWal, int op);
 */
 int sqlite3WalHeapMemory(Wal *pWal);
 
+#ifdef SQLITE_ENABLE_SNAPSHOT
+int sqlite3WalSnapshotGet(Wal *pWal, sqlite3_snapshot **ppSnapshot);
+void sqlite3WalSnapshotOpen(Wal *pWal, sqlite3_snapshot *pSnapshot);
+#endif
+
 #ifdef SQLITE_ENABLE_ZIPVFS
 /* If the WAL file is not empty, return the number of bytes of content
 ** stored in each frame (i.e. the db page-size when the WAL was created).
 */
 int sqlite3WalFramesize(Wal *pWal);
 #endif
+
+/* Return the sqlite3_file object for the WAL file */
+sqlite3_file *sqlite3WalFile(Wal *pWal);
 
 #endif /* ifndef SQLITE_OMIT_WAL */
 #endif /* _WAL_H_ */

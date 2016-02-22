@@ -23,7 +23,8 @@
 #include <assert.h>
 
 extern int sqlite3_fts5_may_be_corrupt;
-extern int sqlite3Fts5TestRegisterMatchinfo(sqlite3 *);
+extern int sqlite3Fts5TestRegisterMatchinfo(sqlite3*);
+extern int sqlite3Fts5TestRegisterTok(sqlite3*, fts5_api*);
 
 /*************************************************************************
 ** This is a copy of the first part of the SqliteDb structure in 
@@ -235,6 +236,8 @@ static int xF5tApi(
     { "xGetAuxdata",       1, "CLEAR" },              /* 13 */
     { "xSetAuxdataInt",    1, "INTEGER" },            /* 14 */
     { "xGetAuxdataInt",    1, "CLEAR" },              /* 15 */
+    { "xPhraseForeach",    4, "IPHRASE COLVAR OFFVAR SCRIPT" }, /* 16 */
+    { "xPhraseColumnForeach", 3, "IPHRASE COLVAR SCRIPT" }, /* 17 */
     { 0, 0, 0}
   };
 
@@ -428,6 +431,66 @@ static int xF5tApi(
       if( Tcl_GetBooleanFromObj(interp, objv[2], &bClear) ) return TCL_ERROR;
       iVal = ((char*)p->pApi->xGetAuxdata(p->pFts, bClear) - (char*)0);
       Tcl_SetObjResult(interp, Tcl_NewIntObj(iVal));
+      break;
+    }
+
+    CASE(16, "xPhraseForeach") {
+      int iPhrase;
+      int iCol;
+      int iOff;
+      const char *zColvar;
+      const char *zOffvar;
+      Tcl_Obj *pScript = objv[5];
+      Fts5PhraseIter iter;
+
+      if( Tcl_GetIntFromObj(interp, objv[2], &iPhrase) ) return TCL_ERROR;
+      zColvar = Tcl_GetString(objv[3]);
+      zOffvar = Tcl_GetString(objv[4]);
+
+      rc = p->pApi->xPhraseFirst(p->pFts, iPhrase, &iter, &iCol, &iOff);
+      if( rc!=SQLITE_OK ){
+        Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
+        return TCL_ERROR;
+      }
+      for( ;iCol>=0; p->pApi->xPhraseNext(p->pFts, &iter, &iCol, &iOff) ){
+        Tcl_SetVar2Ex(interp, zColvar, 0, Tcl_NewIntObj(iCol), 0);
+        Tcl_SetVar2Ex(interp, zOffvar, 0, Tcl_NewIntObj(iOff), 0);
+        rc = Tcl_EvalObjEx(interp, pScript, 0);
+        if( rc==TCL_CONTINUE ) rc = TCL_OK;
+        if( rc!=TCL_OK ){
+          if( rc==TCL_BREAK ) rc = TCL_OK;
+          break;
+        }
+      }
+
+      break;
+    }
+
+    CASE(17, "xPhraseColumnForeach") {
+      int iPhrase;
+      int iCol;
+      const char *zColvar;
+      Tcl_Obj *pScript = objv[4];
+      Fts5PhraseIter iter;
+
+      if( Tcl_GetIntFromObj(interp, objv[2], &iPhrase) ) return TCL_ERROR;
+      zColvar = Tcl_GetString(objv[3]);
+
+      rc = p->pApi->xPhraseFirstColumn(p->pFts, iPhrase, &iter, &iCol);
+      if( rc!=SQLITE_OK ){
+        Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
+        return TCL_ERROR;
+      }
+      for( ; iCol>=0; p->pApi->xPhraseNextColumn(p->pFts, &iter, &iCol)){
+        Tcl_SetVar2Ex(interp, zColvar, 0, Tcl_NewIntObj(iCol), 0);
+        rc = Tcl_EvalObjEx(interp, pScript, 0);
+        if( rc==TCL_CONTINUE ) rc = TCL_OK;
+        if( rc!=TCL_OK ){
+          if( rc==TCL_BREAK ) rc = TCL_OK;
+          break;
+        }
+      }
+
       break;
     }
 
@@ -1020,6 +1083,32 @@ static int f5tRegisterMatchinfo(
   return TCL_OK;
 }
 
+static int f5tRegisterTok(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int rc;
+  sqlite3 *db = 0;
+  fts5_api *pApi = 0;
+
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB");
+    return TCL_ERROR;
+  }
+  if( f5tDbAndApi(interp, objv[1], &db, &pApi) ){
+    return TCL_ERROR;
+  }
+
+  rc = sqlite3Fts5TestRegisterTok(db, pApi);
+  if( rc!=SQLITE_OK ){
+    Tcl_SetResult(interp, (char*)sqlite3ErrName(rc), TCL_VOLATILE);
+    return TCL_ERROR;
+  }
+  return TCL_OK;
+}
+
 /*
 ** Entry point.
 */
@@ -1035,7 +1124,8 @@ int Fts5tcl_Init(Tcl_Interp *interp){
     { "sqlite3_fts5_create_function",    f5tCreateFunction, 0 },
     { "sqlite3_fts5_may_be_corrupt",     f5tMayBeCorrupt, 0 },
     { "sqlite3_fts5_token_hash",         f5tTokenHash, 0 },
-    { "sqlite3_fts5_register_matchinfo", f5tRegisterMatchinfo, 0 }
+    { "sqlite3_fts5_register_matchinfo", f5tRegisterMatchinfo, 0 },
+    { "sqlite3_fts5_register_fts5tokenize", f5tRegisterTok, 0 }
   };
   int i;
   F5tTokenizerContext *pContext;

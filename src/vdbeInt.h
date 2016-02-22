@@ -58,42 +58,52 @@ typedef struct Explain Explain;
 /* Elements of the linked list at Vdbe.pAuxData */
 typedef struct AuxData AuxData;
 
+/* Types of VDBE cursors */
+#define CURTYPE_BTREE       0
+#define CURTYPE_SORTER      1
+#define CURTYPE_VTAB        2
+#define CURTYPE_PSEUDO      3
+
 /*
-** A cursor is a pointer into a single BTree within a database file.
-** The cursor can seek to a BTree entry with a particular key, or
-** loop over all entries of the Btree.  You can also insert new BTree
-** entries or retrieve the key or data from the entry that the cursor
-** is currently pointing to.
+** A VdbeCursor is an superclass (a wrapper) for various cursor objects:
 **
-** Cursors can also point to virtual tables, sorters, or "pseudo-tables".
-** A pseudo-table is a single-row table implemented by registers.
-** 
-** Every cursor that the virtual machine has open is represented by an
-** instance of the following structure.
+**      * A b-tree cursor
+**          -  In the main database or in an ephemeral database
+**          -  On either an index or a table
+**      * A sorter
+**      * A virtual table
+**      * A one-row "pseudotable" stored in a single register
 */
+typedef struct VdbeCursor VdbeCursor;
 struct VdbeCursor {
-  BtCursor *pCursor;    /* The cursor structure of the backend */
-  Btree *pBt;           /* Separate file holding temporary table */
-  KeyInfo *pKeyInfo;    /* Info about index keys needed by index cursors */
-  int seekResult;       /* Result of previous sqlite3BtreeMoveto() */
-  int pseudoTableReg;   /* Register holding pseudotable content. */
-  i16 nField;           /* Number of fields in the header */
-  u16 nHdrParsed;       /* Number of header fields parsed so far */
-#ifdef SQLITE_DEBUG
-  u8 seekOp;            /* Most recent seek operation on this cursor */
-#endif
+  u8 eCurType;          /* One of the CURTYPE_* values above */
   i8 iDb;               /* Index of cursor database in db->aDb[] (or -1) */
   u8 nullRow;           /* True if pointing to a row with no data */
   u8 deferredMoveto;    /* A call to sqlite3BtreeMoveto() is needed */
+  u8 isTable;           /* True for rowid tables.  False for indexes */
+#ifdef SQLITE_DEBUG
+  u8 seekOp;            /* Most recent seek operation on this cursor */
+  u8 wrFlag;            /* The wrFlag argument to sqlite3BtreeCursor() */
+#endif
   Bool isEphemeral:1;   /* True for an ephemeral table */
   Bool useRandomRowid:1;/* Generate new record numbers semi-randomly */
-  Bool isTable:1;       /* True if a table requiring integer keys */
   Bool isOrdered:1;     /* True if the underlying table is BTREE_UNORDERED */
   Pgno pgnoRoot;        /* Root page of the open btree cursor */
-  sqlite3_vtab_cursor *pVtabCursor;  /* The cursor for a virtual table */
+  i16 nField;           /* Number of fields in the header */
+  u16 nHdrParsed;       /* Number of header fields parsed so far */
+  union {
+    BtCursor *pCursor;          /* CURTYPE_BTREE.  Btree cursor */
+    sqlite3_vtab_cursor *pVCur; /* CURTYPE_VTAB.   Vtab cursor */
+    int pseudoTableReg;         /* CURTYPE_PSEUDO. Reg holding content. */
+    VdbeSorter *pSorter;        /* CURTYPE_SORTER. Sorter object */
+  } uc;
+  Btree *pBt;           /* Separate file holding temporary table */
+  KeyInfo *pKeyInfo;    /* Info about index keys needed by index cursors */
+  int seekResult;       /* Result of previous sqlite3BtreeMoveto() */
   i64 seqCount;         /* Sequence counter */
   i64 movetoTarget;     /* Argument to the deferred sqlite3BtreeMoveto() */
-  VdbeSorter *pSorter;  /* Sorter object for OP_SorterOpen cursors */
+  VdbeCursor *pAltCursor; /* Associated index cursor from which to read */
+  int *aAltMap;           /* Mapping from table to index column numbers */
 #ifdef SQLITE_ENABLE_COLUMN_USED_MASK
   u64 maskUsed;         /* Mask of columns used by this cursor */
 #endif
@@ -118,7 +128,6 @@ struct VdbeCursor {
   ** static element declared in the structure.  nField total array slots for
   ** aType[] and nField+1 array slots for aOffset[] */
 };
-typedef struct VdbeCursor VdbeCursor;
 
 /*
 ** When a sub-program is executed (OP_Program), a structure of this type
@@ -152,6 +161,7 @@ struct VdbeFrame {
   VdbeCursor **apCsr;     /* Array of Vdbe cursors for parent frame */
   void *token;            /* Copy of SubProgram.token */
   i64 lastRowid;          /* Last insert rowid (sqlite3.lastRowid) */
+  AuxData *pAuxData;      /* Linked list of auxdata allocations */
   int nCursor;            /* Number of entries in apCsr */
   int pc;                 /* Program Counter in parent (calling) frame */
   int nOp;                /* Size of aOp array */
@@ -229,7 +239,7 @@ struct Mem {
 #define MEM_Frame     0x0040   /* Value is a VdbeFrame object */
 #define MEM_Undefined 0x0080   /* Value is undefined */
 #define MEM_Cleared   0x0100   /* NULL set by OP_Null, not from data */
-#define MEM_TypeMask  0x01ff   /* Mask of type bits */
+#define MEM_TypeMask  0x81ff   /* Mask of type bits */
 
 
 /* Whenever Mem contains a valid string or blob representation, one of
@@ -243,10 +253,17 @@ struct Mem {
 #define MEM_Ephem     0x1000   /* Mem.z points to an ephemeral string */
 #define MEM_Agg       0x2000   /* Mem.z points to an agg function context */
 #define MEM_Zero      0x4000   /* Mem.i contains count of 0s appended to blob */
+#define MEM_Subtype   0x8000   /* Mem.eSubtype is valid */
 #ifdef SQLITE_OMIT_INCRBLOB
   #undef MEM_Zero
   #define MEM_Zero 0x0000
 #endif
+
+/* Return TRUE if Mem X contains dynamically allocated content - anything
+** that needs to be deallocated to avoid a leak.
+*/
+#define VdbeMemDynamic(X)  \
+  (((X)->flags&(MEM_Agg|MEM_Dyn|MEM_RowSet|MEM_Frame))!=0)
 
 /*
 ** Clear any existing type flags from a Mem and replace them with f
@@ -417,7 +434,7 @@ struct Vdbe {
 void sqlite3VdbeError(Vdbe*, const char *, ...);
 void sqlite3VdbeFreeCursor(Vdbe *, VdbeCursor*);
 void sqliteVdbePopStack(Vdbe*,int);
-int sqlite3VdbeCursorMoveto(VdbeCursor*);
+int sqlite3VdbeCursorMoveto(VdbeCursor**, int*);
 int sqlite3VdbeCursorRestore(VdbeCursor*);
 #if defined(SQLITE_DEBUG) || defined(VDBE_PROFILE)
 void sqlite3VdbePrintOp(FILE*, int, Op*);
@@ -463,8 +480,6 @@ int sqlite3VdbeMemNumerify(Mem*);
 void sqlite3VdbeMemCast(Mem*,u8,u8);
 int sqlite3VdbeMemFromBtree(BtCursor*,u32,u32,int,Mem*);
 void sqlite3VdbeMemRelease(Mem *p);
-#define VdbeMemDynamic(X)  \
-  (((X)->flags&(MEM_Agg|MEM_Dyn|MEM_RowSet|MEM_Frame))!=0)
 int sqlite3VdbeMemFinalize(Mem*, FuncDef*);
 const char *sqlite3OpcodeName(int);
 int sqlite3VdbeMemGrow(Mem *pMem, int n, int preserve);
@@ -483,11 +498,15 @@ int sqlite3VdbeSorterRewind(const VdbeCursor *, int *);
 int sqlite3VdbeSorterWrite(const VdbeCursor *, Mem *);
 int sqlite3VdbeSorterCompare(const VdbeCursor *, Mem *, int, int *);
 
-#if !defined(SQLITE_OMIT_SHARED_CACHE) && SQLITE_THREADSAFE>0
+#if !defined(SQLITE_OMIT_SHARED_CACHE) 
   void sqlite3VdbeEnter(Vdbe*);
-  void sqlite3VdbeLeave(Vdbe*);
 #else
 # define sqlite3VdbeEnter(X)
+#endif
+
+#if !defined(SQLITE_OMIT_SHARED_CACHE) && SQLITE_THREADSAFE>0
+  void sqlite3VdbeLeave(Vdbe*);
+#else
 # define sqlite3VdbeLeave(X)
 #endif
 

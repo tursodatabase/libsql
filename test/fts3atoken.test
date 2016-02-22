@@ -24,7 +24,7 @@ ifcapable !fts3 {
   return
 }
 
-set ::testprefix fts3token
+set ::testprefix fts3atoken
 
 proc escape_string {str} {
   set out ""
@@ -40,7 +40,7 @@ proc escape_string {str} {
 }
 
 #--------------------------------------------------------------------------
-# Test cases fts3token-1.* are the warm-body test for the SQL scalar
+# Test cases fts3atoken-1.* are the warm-body test for the SQL scalar
 # function fts3_tokenizer(). The procedure is as follows:
 #
 #   1: Verify that there is no such fts3 tokenizer as 'blah'.
@@ -56,62 +56,68 @@ proc escape_string {str} {
 #
 #   5: Test that the table created to use tokenizer 'blah' is usable.
 #
-do_test fts3token-1.1 {
-  catchsql {
-    CREATE VIRTUAL TABLE t1 USING fts3(content, tokenize blah);
-  }
-} {1 {unknown tokenizer: blah}}
-do_test fts3token-1.2 {
-  execsql {
+ifcapable fts3_tokenizer {
+  do_test fts3atoken-1.1 {
+    catchsql {
+      CREATE VIRTUAL TABLE t1 USING fts3(content, tokenize blah);
+    }
+  } {1 {unknown tokenizer: blah}}
+  do_test fts3atoken-1.2 {
+    execsql {
+      SELECT fts3_tokenizer('blah', fts3_tokenizer('simple')) IS NULL;
+    }
+  } {0}
+  do_test fts3atoken-1.3 {
+    execsql {
+      SELECT fts3_tokenizer('blah') == fts3_tokenizer('simple');
+    }
+  } {1}
+  do_test fts3atoken-1.4 {
+    catchsql {
+      CREATE VIRTUAL TABLE t1 USING fts3(content, tokenize blah);
+    }
+  } {0 {}}
+  do_test fts3atoken-1.5 {
+    execsql {
+      INSERT INTO t1(content) VALUES('There was movement at the station');
+      INSERT INTO t1(content) VALUES('For the word has passed around');
+      INSERT INTO t1(content) VALUES('That the colt from ol regret had got');
+      SELECT content FROM t1 WHERE content MATCH 'movement'
+    }
+  } {{There was movement at the station}}
+} else {
+  do_catchsql_test 1.6 {
     SELECT fts3_tokenizer('blah', fts3_tokenizer('simple')) IS NULL;
-  }
-} {0}
-do_test fts3token-1.3 {
-  execsql {
-    SELECT fts3_tokenizer('blah') == fts3_tokenizer('simple');
-  }
-} {1}
-do_test fts3token-1.4 {
-  catchsql {
-    CREATE VIRTUAL TABLE t1 USING fts3(content, tokenize blah);
-  }
-} {0 {}}
-do_test fts3token-1.5 {
-  execsql {
-    INSERT INTO t1(content) VALUES('There was movement at the station');
-    INSERT INTO t1(content) VALUES('For the word has passed around');
-    INSERT INTO t1(content) VALUES('That the colt from ol regret had got away');
-    SELECT content FROM t1 WHERE content MATCH 'movement'
-  }
-} {{There was movement at the station}}
+  } {1 {fts3tokenize: disabled - rebuild with -DSQLITE_ENABLE_FTS3_TOKENIZER}}
+}
 
 #--------------------------------------------------------------------------
-# Test cases fts3token-2.* test error cases in the scalar function based
+# Test cases fts3atoken-2.* test error cases in the scalar function based
 # API for getting and setting tokenizers.
 #
-do_test fts3token-2.1 {
+do_test fts3atoken-2.1 {
   catchsql {
     SELECT fts3_tokenizer('nosuchtokenizer');
   }
 } {1 {unknown tokenizer: nosuchtokenizer}}
 
 #--------------------------------------------------------------------------
-# Test cases fts3token-3.* test the three built-in tokenizers with a
+# Test cases fts3atoken-3.* test the three built-in tokenizers with a
 # simple input string via the built-in test function. This is as much
 # to test the test function as the tokenizer implementations.
 #
-do_test fts3token-3.1 {
+do_test fts3atoken-3.1 {
   execsql {
     SELECT fts3_tokenizer_test('simple', 'I don''t see how');
   }
 } {{0 i I 1 don don 2 t t 3 see see 4 how how}}
-do_test fts3token-3.2 {
+do_test fts3atoken-3.2 {
   execsql {
     SELECT fts3_tokenizer_test('porter', 'I don''t see how');
   }
 } {{0 i I 1 don don 2 t t 3 see see 4 how how}}
 ifcapable icu {
-  do_test fts3token-3.3 {
+  do_test fts3atoken-3.3 {
     execsql {
       SELECT fts3_tokenizer_test('icu', 'I don''t see how');
     }
@@ -119,7 +125,7 @@ ifcapable icu {
 }
 
 #--------------------------------------------------------------------------
-# Test cases fts3token-4.* test the ICU tokenizer. In practice, this
+# Test cases fts3atoken-4.* test the ICU tokenizer. In practice, this
 # tokenizer only has two modes - "thai" and "everybody else". Some other
 # Asian languages (Lao, Khmer etc.) require the same special treatment as 
 # Thai, but ICU doesn't support them yet.
@@ -133,8 +139,8 @@ ifcapable icu {
     } $output
   }
   
-  do_icu_test fts3token-4.1 en_US  {}   {}
-  do_icu_test fts3token-4.2 en_US {Test cases fts3} [list \
+  do_icu_test fts3atoken-4.1 en_US  {}   {}
+  do_icu_test fts3atoken-4.2 en_US {Test cases fts3} [list \
     0 test Test 1 cases cases 2 fts3 fts3
   ]
 
@@ -147,12 +153,12 @@ ifcapable icu {
   append output "1 \u0e19\u0e30 \u0e19\u0e30 "
   append output "2 \u0e04\u0e23\u0e31\u0e1a \u0e04\u0e23\u0e31\u0e1a"
 
-  do_icu_test fts3token-4.3 th_TH  $input $output
-  do_icu_test fts3token-4.4 en_US  $input $output
+  do_icu_test fts3atoken-4.3 th_TH  $input $output
+  do_icu_test fts3atoken-4.4 en_US  $input $output
 
   # ICU handles an unknown locale by falling back to the default.
   # So this is not an error.
-  do_icu_test fts3token-4.5 MiddleOfTheOcean  $input $output
+  do_icu_test fts3atoken-4.5 MiddleOfTheOcean  $input $output
 
   set    longtoken "AReallyReallyLongTokenOneThatWillSurelyRequire"
   append longtoken "AReallocInTheIcuTokenizerCode"
@@ -164,9 +170,9 @@ ifcapable icu {
   append output "2 then then "
   append output "3 [string tolower $longtoken] $longtoken"
 
-  do_icu_test fts3token-4.6 MiddleOfTheOcean  $input $output
-  do_icu_test fts3token-4.7 th_TH  $input $output
-  do_icu_test fts3token-4.8 en_US  $input $output
+  do_icu_test fts3atoken-4.6 MiddleOfTheOcean  $input $output
+  do_icu_test fts3atoken-4.7 th_TH  $input $output
+  do_icu_test fts3atoken-4.8 en_US  $input $output
 
   do_execsql_test 5.1 {
     CREATE VIRTUAL TABLE x1 USING fts3(name,TOKENIZE icu en_US);
@@ -186,7 +192,7 @@ ifcapable icu {
   } {}
 }
 
-do_test fts3token-internal {
+do_test fts3atoken-internal {
   execsql { SELECT fts3_tokenizer_internal_test() }
 } {ok}
 
@@ -206,12 +212,14 @@ do_catchsql_test 6.1.3 {
 do_catchsql_test 6.2.1 {
   SELECT fts3_tokenizer(NULL);
 } {1 {unknown tokenizer: }}
-do_catchsql_test 6.2.2 {
-  SELECT fts3_tokenizer(NULL, X'1234567812345678');
-} {1 {argument type mismatch}}
-do_catchsql_test 6.2.3 {
-  SELECT fts3_tokenizer(NULL, X'12345678');
-} {1 {argument type mismatch}}
+ifcapable fts3_tokenizer {
+  do_catchsql_test 6.2.2 {
+    SELECT fts3_tokenizer(NULL, X'1234567812345678');
+  } {1 {argument type mismatch}}
+  do_catchsql_test 6.2.3 {
+    SELECT fts3_tokenizer(NULL, X'12345678');
+  } {1 {argument type mismatch}}
+}
 
 
 finish_test

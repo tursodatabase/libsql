@@ -125,8 +125,8 @@ ifcapable attach {
 
 # Default setting of PRAGMA cache_spill is always ON
 #
-# EVIDENCE-OF: R-51036-62828 PRAGMA cache_spill; PRAGMA
-# cache_spill=boolean;
+# EVIDENCE-OF: R-63549-59887 PRAGMA cache_spill; PRAGMA
+# cache_spill=boolean; PRAGMA schema.cache_spill=N;
 #
 # EVIDENCE-OF: R-23955-02765 Cache_spill is enabled by default
 #
@@ -190,6 +190,11 @@ do_test pragma2-4.5.1 {
     PRAGMA lock_status;
   }
 } {0 main reserved temp unknown}   ;# No cache spill, so no exclusive lock
+
+
+# EVIDENCE-OF: R-34657-61226 The "PRAGMA cache_spill=N" form of this
+# pragma sets a minimum cache size threshold required for spilling to
+# occur.
 do_test pragma2-4.5.2 {
   db eval {
     ROLLBACK;
@@ -250,7 +255,6 @@ db close
 forcedelete test.db
 sqlite3 db test.db
 
-breakpoint
 do_execsql_test pragma2-5.1 {
   PRAGMA page_size=16384;
   CREATE TABLE t1(x);

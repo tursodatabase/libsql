@@ -22,6 +22,8 @@ ifcapable !fts5 {
   return
 }
 
+foreach_detail_mode $testprefix {
+
 set data {
     0   {p o q e z k z p n f y u z y n y}   {l o o l v v k}
     1   {p k h h p y l l h i p v n}         {p p l u r i f a j g e r r x w}
@@ -125,80 +127,21 @@ set data {
     99  {r c v w i v h a t a c v c r e}     {h h u m g o f b a e o}
 }
 
-# Argument $expr is an FTS5 match expression designed to be executed against
-# an FTS5 table with the following schema:
-# 
-#   CREATE VIRTUAL TABLE xy USING fts5(x, y);
-#
-# Assuming the table contains the same records as stored int the global 
-# $::data array (see above), this function returns a list containing one
-# element for each match in the dataset. The elements are themselves lists
-# formatted as follows:
-#
-#   <rowid> {<phrase 0 matches> <phrase 1 matches>...}
-#
-# where each <phrase X matches> element is a list of phrase matches in the
-# same form as returned by auxiliary scalar function fts5_test().
-#
-proc matchdata {bPos expr {bAsc 1}} {
-
-  set tclexpr [db one {
-    SELECT fts5_expr_tcl($expr, 'nearset $cols -pc ::pc', 'x', 'y')
-  }]
-  set res [list]
-
-  #puts $tclexpr
-  foreach {id x y} $::data {
-    set cols [list $x $y]
-    set ::pc 0
-    #set hits [lsort -command instcompare [eval $tclexpr]]
-    set hits [eval $tclexpr]
-    if {[llength $hits]>0} {
-      if {$bPos} {
-        lappend res [list $id $hits]
-      } else {
-        lappend res $id
-      }
-    }
-  }
-
-  if {$bAsc} {
-    set res [lsort -integer -increasing -index 0 $res]
-  } else {
-    set res [lsort -integer -decreasing -index 0 $res]
-  }
-
-  return [concat {*}$res]
-}
-
-#
-# End of test code
-#-------------------------------------------------------------------------
-
-proc fts5_test_poslist {cmd} {
-  set res [list]
-  for {set i 0} {$i < [$cmd xInstCount]} {incr i} {
-    lappend res [string map {{ } .} [$cmd xInst $i]]
-  }
-  set res
-}
-
-
 foreach {tn2 sql} {
   1  {}
   2  {BEGIN}
 } {
   reset_db
-  sqlite3_fts5_create_function db fts5_test_poslist fts5_test_poslist
+  fts5_aux_test_functions db
 
-  do_execsql_test 1.0 {
-    CREATE VIRTUAL TABLE xx USING fts5(x,y);
+  do_execsql_test 1.$tn2.0 {
+    CREATE VIRTUAL TABLE xx USING fts5(x,y, detail=%DETAIL%);
     INSERT INTO xx(xx, rank) VALUES('pgsz', 32);
   }
 
   execsql $sql
 
-  do_test $tn2.1.1 {
+  do_test 1.$tn2.1.1 {
     foreach {id x y} $data {
       execsql { INSERT INTO xx(rowid, x, y) VALUES($id, $x, $y) }
     }
@@ -207,153 +150,130 @@ foreach {tn2 sql} {
 
 
   #-------------------------------------------------------------------------
-  # Test phrase queries.
   #
-  foreach {tn phrase} {
-    1 "o"
-    2 "b q"
-    3 "e a e"
-    4 "m d g q q b k b w f q q p p"
-    5 "l o o l v v k"
-    6 "a"
-    7 "b"
-    8 "c"
-    9 "no"
-    10 "L O O L V V K"
-  } {
-    set expr "\"$phrase\""
-    set res [matchdata 1 $expr]
-
-    do_execsql_test $tn2.1.2.$tn.[llength $res] { 
-      SELECT rowid, fts5_test_poslist(xx) FROM xx WHERE xx match $expr
-    } $res
+  do_execsql_test 1.$tn2.integrity {
+    INSERT INTO xx(xx) VALUES('integrity-check');
   }
 
   #-------------------------------------------------------------------------
-  # Test some AND and OR queries.
   #
   foreach {tn expr} {
     1.1 "a   AND b"
-    1.2 "a+b AND c"
-    1.3 "d+c AND u"
-    1.4 "d+c AND u+d"
+    1.2 "a   OR b"
+    1.3 "o"
+    1.4 "b q"
+    1.5 "e a e"
+    1.6 "m d g q q b k b w f q q p p"
+    1.7 "l o o l v v k"
+    1.8 "a"
+    1.9 "b"
+    1.10 "c"
+    1.11 "no"
+    1.12 "L O O L V V K"
+    1.13 "a AND b AND c"
+    1.14 "x:a"
 
-    2.1 "a   OR b"
-    2.2 "a+b OR c"
-    2.3 "d+c OR u"
-    2.4 "d+c OR u+d"
+    2.1 "x:a"
+    2.2 "y:a"
+    2.3 "x:b"
+    2.4 "y:b"
 
-    3.1 { a AND b AND c }
+    3.1 "{x}:a"
+    3.2 "{y}:a"
+    3.3 "{x}:b"
+    3.4 "{y}:b"
+
+    4.1 "{x y}:a"
+    4.2 "{y x}:a"
+    4.3 "{x x}:b"
+    4.4 "{y y}:b"
+
+    5.1 {{"x" "y"}:a}
+    5.2 {{"y" x}:a}
+    5.3 {{x "x"}:b}
+    5.4 {{"y" y}:b}
+
+    6.1 "b + q"
+    6.2 "e + a + e"
+    6.3 "m + d + g + q + q + b + k + b + w + f + q + q + p + p"
+    6.4 "l + o + o + l + v + v + k"
+    6.5 "L + O + O + L + V + V + K"
+
+    7.1 "a+b AND c"
+    7.2 "d+c AND u"
+    7.3 "d+c AND u+d"
+    7.4 "a+b OR c"
+    7.5 "d+c OR u"
+    7.6 "d+c OR u+d"
+
+    8.1 "NEAR(a b)"
+    8.2 "NEAR(r c)"
+    8.2 { NEAR(r c, 5) }
+    8.3 { NEAR(r c, 3) }
+    8.4 { NEAR(r c, 2) }
+    8.5 { NEAR(r c, 0) }
+    8.6 { NEAR(a b c) }
+    8.7 { NEAR(a b c, 8) }
+    8.8  { x : NEAR(r c) }
+    8.9  { y : NEAR(r c) }
+
+    9.1 { NEAR(r c) }
+    9.2 { NEAR(r c, 5) }
+    9.3 { NEAR(r c, 3) }
+    9.4 { NEAR(r c, 2) }
+    9.5 { NEAR(r c, 0) }
+    9.6 { NEAR(a b c) }
+    9.7 { NEAR(a b c, 8) }
+    9.8  { x : NEAR(r c) }
+    9.9  { y : NEAR(r c) }
+    9.10 { x : "r c" }
+    9.11 { y : "r c" }
+    9.12 { a AND b }
+    9.13 { a AND b AND c }
+    9.14a { a }
+    9.14b { a OR b }
+    9.15 { a OR b AND c }
+    9.16 { c AND b OR a }
+    9.17 { c AND (b OR a) }
+    9.18 { c NOT (b OR a) }
+    9.19 { (c NOT b) OR (a AND d) }
   } {
-    set res [matchdata 1 $expr]
-    do_execsql_test $tn2.2.$tn.[llength $res] { 
-      SELECT rowid, fts5_test_poslist(xx) FROM xx WHERE xx match $expr
-    } $res
-  }
 
-  #-------------------------------------------------------------------------
-  # Queries on a specific column.
-  #
-  foreach {tn expr} {
-    1.1 "x:a"
-    1.2 "y:a"
-    1.3 "x:b"
-    1.4 "y:b"
-    2.1 "{x}:a"
-    2.2 "{y}:a"
-    2.3 "{x}:b"
-    2.4 "{y}:b"
-
-    3.1 "{x y}:a"
-    3.2 "{y x}:a"
-    3.3 "{x x}:b"
-    3.4 "{y y}:b"
-
-    4.1 {{"x" "y"}:a}
-    4.2 {{"y" x}:a}
-    4.3 {{x "x"}:b}
-    4.4 {{"y" y}:b}
-  } {
-    set res [matchdata 1 $expr]
-    do_execsql_test $tn2.3.$tn.[llength $res] { 
-      SELECT rowid, fts5_test_poslist(xx) FROM xx WHERE xx match $expr
-    } $res
-  }
-
-  #-------------------------------------------------------------------------
-  # Some NEAR queries.
-  #
-  foreach {tn expr} {
-    1 "NEAR(a b)"
-    2 "NEAR(r c)"
-    2 { NEAR(r c, 5) }
-    3 { NEAR(r c, 3) }
-    4 { NEAR(r c, 2) }
-    5 { NEAR(r c, 0) }
-    6 { NEAR(a b c) }
-    7 { NEAR(a b c, 8) }
-    8  { x : NEAR(r c) }
-    9  { y : NEAR(r c) }
-  } {
-    set res [matchdata 1 $expr]
-    do_execsql_test $tn2.4.1.$tn.[llength $res] { 
-      SELECT rowid, fts5_test_poslist(xx) FROM xx WHERE xx match $expr
-    } $res
-  }
-
-  do_test $tn2.4.1  { nearset {{a b c}} -- a } {0.0.0}
-  do_test $tn2.4.2  { nearset {{a b c}} -- c } {0.0.2}
-
-  foreach {tn expr tclexpr} {
-    1 {a b} {AND [N $x -- {a}] [N $x -- {b}]}
-  } {
-    do_execsql_test $tn2.5.$tn {
-      SELECT fts5_expr_tcl($expr, 'N $x')
-    } [list $tclexpr]
-  }
-
-  #-------------------------------------------------------------------------
-  #
-  do_execsql_test $tn2.6.integrity {
-    INSERT INTO xx(xx) VALUES('integrity-check');
-  }
-  #db eval {SELECT rowid, fts5_decode(rowid, block) aS r FROM xx_data} {puts $r}
-  foreach {bAsc sql} {
-    1 {SELECT rowid FROM xx WHERE xx MATCH $expr}
-    0 {SELECT rowid FROM xx WHERE xx MATCH $expr ORDER BY rowid DESC}
-  } {
-    foreach {tn expr} {
-      0.1 x
-      1 { NEAR(r c) }
-      2 { NEAR(r c, 5) }
-      3 { NEAR(r c, 3) }
-      4 { NEAR(r c, 2) }
-      5 { NEAR(r c, 0) }
-      6 { NEAR(a b c) }
-      7 { NEAR(a b c, 8) }
-      8  { x : NEAR(r c) }
-      9  { y : NEAR(r c) }
-      10 { x : "r c" }
-      11 { y : "r c" }
-      12 { a AND b }
-      13 { a AND b AND c }
-      14a { a }
-      14b { a OR b }
-      15 { a OR b AND c }
-      16 { c AND b OR a }
-      17 { c AND (b OR a) }
-      18 { c NOT (b OR a) }
-      19 { c NOT b OR a AND d }
-    } {
-      set res [matchdata 0 $expr $bAsc]
-      do_execsql_test $tn2.6.$bAsc.$tn.[llength $res] $sql $res
+    if {[fts5_expr_ok $expr xx]==0} {
+      do_test 1.$tn2.$tn.OMITTED { list } [list]
+      continue
     }
+
+    set res [fts5_query_data $expr xx]
+    do_execsql_test 1.$tn2.$tn.[llength $res].asc {
+      SELECT rowid, fts5_test_poslist(xx), fts5_test_collist(xx) 
+      FROM xx WHERE xx match $expr
+    } $res
+
+    set res [fts5_query_data $expr xx DESC]
+    do_execsql_test 1.$tn2.$tn.[llength $res].desc {
+      SELECT rowid, fts5_test_poslist(xx), fts5_test_collist(xx) 
+      FROM xx WHERE xx match $expr ORDER BY 1 DESC
+    } $res
   }
 }
 
-do_execsql_test 3.1 {
+}
+
+do_execsql_test 2.1 {
   SELECT fts5_expr_tcl('a AND b');
 } {{AND [nearset -- {a}] [nearset -- {b}]}}
+
+do_test 2.2.1  { nearset {{a b c}} -- a } {0.0.0}
+do_test 2.2.2  { nearset {{a b c}} -- c } {0.0.2}
+
+foreach {tn expr tclexpr} {
+  1 {a b} {AND [N $x -- {a}] [N $x -- {b}]}
+} {
+  do_execsql_test 2.3.$tn {
+    SELECT fts5_expr_tcl($expr, 'N $x')
+  } [list $tclexpr]
+}
 
 finish_test
 

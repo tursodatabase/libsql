@@ -65,7 +65,7 @@
 ** that is allocated when the page cache is created.  The size of the local
 ** bulk allocation can be adjusted using 
 **
-**     sqlite3_config(SQLITE_CONFIG_PAGECACHE, 0, 0, N).
+**     sqlite3_config(SQLITE_CONFIG_PAGECACHE, (void*)0, 0, N).
 **
 ** If N is positive, then N pages worth of memory are allocated using a single
 ** sqlite3Malloc() call and that memory is used for the first N pages allocated.
@@ -350,7 +350,7 @@ static void *pcache1Alloc(int nByte){
 static void pcache1Free(void *p){
   int nFreed = 0;
   if( p==0 ) return;
-  if( p>=pcache1.pStart && p<pcache1.pEnd ){
+  if( SQLITE_WITHIN(p, pcache1.pStart, pcache1.pEnd) ){
     PgFreeslot *pSlot;
     sqlite3_mutex_enter(pcache1.mutex);
     sqlite3StatusDown(SQLITE_STATUS_PAGECACHE_USED, 1);

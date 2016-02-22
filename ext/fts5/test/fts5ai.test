@@ -23,8 +23,10 @@ ifcapable !fts5 {
   return
 }
 
+foreach_detail_mode $testprefix {
+
 do_execsql_test 1.0 {
-  CREATE VIRTUAL TABLE t1 USING fts5(a);
+  CREATE VIRTUAL TABLE t1 USING fts5(a, detail=%DETAIL%);
 } {}
 
 do_execsql_test 1.1 {
@@ -48,6 +50,7 @@ do_execsql_test 1.1 {
 
 do_execsql_test 1.2 {
   INSERT INTO t1(t1) VALUES('integrity-check');
+}
 }
 
 

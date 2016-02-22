@@ -179,7 +179,7 @@ LIBOBJS0 = alter.lo analyze.lo attach.lo auth.lo \
          mutex.lo mutex_noop.lo mutex_unix.lo mutex_w32.lo \
          notify.lo opcodes.lo os.lo os_unix.lo os_win.lo \
          pager.lo parse.lo pcache.lo pcache1.lo pragma.lo prepare.lo printf.lo \
-         random.lo resolve.lo rowset.lo rtree.lo select.lo status.lo \
+         random.lo resolve.lo rowset.lo rtree.lo select.lo sqlite3rbu.lo status.lo \
          table.lo threads.lo tokenize.lo treeview.lo trigger.lo \
          update.lo util.lo vacuum.lo \
          vdbe.lo vdbeapi.lo vdbeaux.lo vdbeblob.lo vdbemem.lo vdbesort.lo \
@@ -402,6 +402,7 @@ TESTSRC = \
   $(TOP)/src/test_tclvar.c \
   $(TOP)/src/test_thread.c \
   $(TOP)/src/test_vfs.c \
+  $(TOP)/src/test_windirent.c \
   $(TOP)/src/test_wsd.c       \
   $(TOP)/ext/fts3/fts3_term.c \
   $(TOP)/ext/fts3/fts3_test.c \
@@ -417,6 +418,7 @@ TESTSRC += \
   $(TOP)/ext/misc/fuzzer.c \
   $(TOP)/ext/fts5/fts5_tcl.c \
   $(TOP)/ext/fts5/fts5_test_mi.c \
+  $(TOP)/ext/fts5/fts5_test_tok.c \
   $(TOP)/ext/misc/ieee754.c \
   $(TOP)/ext/misc/nextchar.c \
   $(TOP)/ext/misc/percentile.c \
@@ -547,9 +549,10 @@ TESTOPTS = --verbose=file --output=test-out.txt
 
 # Extra compiler options for various shell tools
 #
-SHELL_OPT = -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_FTS4 -DSQLITE_ENABLE_FTS5
+SHELL_OPT = -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_FTS4
+SHELL_OPT += -DSQLITE_ENABLE_EXPLAIN_COMMENTS
 FUZZERSHELL_OPT = -DSQLITE_ENABLE_JSON1
-FUZZCHECK_OPT = -DSQLITE_ENABLE_JSON1
+FUZZCHECK_OPT = -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_MEMSYS5
 
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
@@ -573,13 +576,19 @@ libtclsqlite3.la:	tclsqlite.lo libsqlite3.la
 		-version-info "8:6:8" \
 		-avoid-version
 
-sqlite3$(TEXE):	$(TOP)/src/shell.c libsqlite3.la sqlite3.h
+sqlite3$(TEXE):	$(TOP)/src/shell.c sqlite3.c
 	$(LTLINK) $(READLINE_FLAGS) $(SHELL_OPT) -o $@ \
-		$(TOP)/src/shell.c libsqlite3.la \
+		$(TOP)/src/shell.c sqlite3.c \
 		$(LIBREADLINE) $(TLIBS) -rpath "$(libdir)"
 
 sqldiff$(TEXE):	$(TOP)/tool/sqldiff.c sqlite3.c sqlite3.h
 	$(LTLINK) -o $@ $(TOP)/tool/sqldiff.c sqlite3.c $(TLIBS)
+
+srcck1$(BEXE):	$(TOP)/tool/srcck1.c
+	$(BCC) -o srcck1$(BEXE) $(TOP)/tool/srcck1.c
+
+sourcetest:	srcck1$(BEXE) sqlite3.c
+	./srcck1 sqlite3.c
 
 fuzzershell$(TEXE):	$(TOP)/tool/fuzzershell.c sqlite3.c sqlite3.h
 	$(LTLINK) -o $@ $(FUZZERSHELL_OPT) \
@@ -1027,6 +1036,9 @@ fts5.c: $(FTS5_SRC)
 fts5.lo:	fts5.c $(HDR) $(EXTHDR)
 	$(LTCOMPILE) -DSQLITE_CORE -c fts5.c
 
+sqlite3rbu.lo:	$(TOP)/ext/rbu/sqlite3rbu.c $(HDR) $(EXTHDR)
+	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/rbu/sqlite3rbu.c
+
 
 # Rules to build the 'testfixture' application.
 #
@@ -1078,7 +1090,7 @@ quicktest:	./testfixture$(TEXE)
 # This is the common case.  Run many tests that do not take too long,
 # including fuzzcheck, sqlite3_analyzer, and sqldiff tests.
 #
-test:	$(TESTPROGS) fastfuzztest
+test:	$(TESTPROGS) sourcetest fastfuzztest
 	./testfixture$(TEXE) $(TOP)/test/veryquick.test $(TESTOPTS)
 
 # Run a test using valgrind.  This can take a really long time
@@ -1130,6 +1142,12 @@ wordcount$(TEXE):	$(TOP)/test/wordcount.c sqlite3.c
 speedtest1$(TEXE):	$(TOP)/test/speedtest1.c sqlite3.lo
 	$(LTLINK) -o $@ $(TOP)/test/speedtest1.c sqlite3.lo $(TLIBS)
 
+rbu$(EXE): $(TOP)/ext/rbu/rbu.c $(TOP)/ext/rbu/sqlite3rbu.c sqlite3.lo 
+	$(LTLINK) -I. -o $@ $(TOP)/ext/rbu/rbu.c sqlite3.lo $(TLIBS)
+
+loadfts$(EXE): $(TOP)/tool/loadfts.c libsqlite3.la
+	$(LTLINK) $(TOP)/tool/loadfts.c libsqlite3.la -o $@ $(TLIBS)
+
 # This target will fail if the SQLite amalgamation contains any exported
 # symbols that do not begin with "sqlite3_". It is run as part of the
 # releasetest.tcl script.
@@ -1138,10 +1156,15 @@ checksymbols: sqlite3.lo
 	nm -g --defined-only sqlite3.o | grep -v " sqlite3_" ; test $$? -ne 0
 	echo '0 errors out of 1 tests'
 
-# Build the amalgamation-autoconf package.
+# Build the amalgamation-autoconf package.  The amalamgation-tarball target builds
+# a tarball named for the version number.  Ex:  sqlite-autoconf-3110000.tar.gz.
+# The snapshot-tarball target builds a tarball named by the SHA1 hash
 #
 amalgamation-tarball: sqlite3.c
-	TOP=$(TOP) sh $(TOP)/tool/mkautoconfamal.sh
+	TOP=$(TOP) sh $(TOP)/tool/mkautoconfamal.sh --normal
+
+snapshot-tarball: sqlite3.c
+	TOP=$(TOP) sh $(TOP)/tool/mkautoconfamal.sh --snapshot
 
 # The next two rules are used to support the "threadtest" target. Building
 # threadtest runs a few thread-safety tests that are implemented in C. This
@@ -1155,7 +1178,7 @@ THREADTEST3_SRC = $(TOP)/test/threadtest3.c    \
                   $(TOP)/test/tt3_lookaside1.c
 
 threadtest3$(TEXE): sqlite3.lo $(THREADTEST3_SRC)
-	$(LTLINK) $(TOP)/test/threadtest3.c sqlite3.lo -o $@ $(TLIBS)
+	$(LTLINK) $(TOP)/test/threadtest3.c $(TOP)/src/test_multiplex.c sqlite3.lo -o $@ $(TLIBS)
 
 threadtest: threadtest3$(TEXE)
 	./threadtest3$(TEXE)
@@ -1169,9 +1192,9 @@ lib_install:	libsqlite3.la
 	$(INSTALL) -d $(DESTDIR)$(libdir)
 	$(LTINSTALL) libsqlite3.la $(DESTDIR)$(libdir)
 	
-install:	sqlite3$(BEXE) lib_install sqlite3.h sqlite3.pc ${HAVE_TCL:1=tcl_install}
+install:	sqlite3$(TEXE) lib_install sqlite3.h sqlite3.pc ${HAVE_TCL:1=tcl_install}
 	$(INSTALL) -d $(DESTDIR)$(bindir)
-	$(LTINSTALL) sqlite3$(BEXE) $(DESTDIR)$(bindir)
+	$(LTINSTALL) sqlite3$(TEXE) $(DESTDIR)$(bindir)
 	$(INSTALL) -d $(DESTDIR)$(includedir)
 	$(INSTALL) -m 0644 sqlite3.h $(DESTDIR)$(includedir)
 	$(INSTALL) -m 0644 $(TOP)/src/sqlite3ext.h $(DESTDIR)$(includedir)
@@ -1207,6 +1230,8 @@ clean:
 	rm -f sqlite3_analyzer$(TEXE) sqlite3_analyzer.c
 	rm -f sqlite-*-output.vsix
 	rm -f mptester mptester.exe
+	rm -f rbu rbu.exe
+	rm -f srcck1 srcck1.exe
 	rm -f fuzzershell fuzzershell.exe
 	rm -f fuzzcheck fuzzcheck.exe
 	rm -f sqldiff sqldiff.exe

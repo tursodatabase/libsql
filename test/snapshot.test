@@ -1,0 +1,339 @@
+# 2015 December 7
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library. The focus
+# of this file is the sqlite3_snapshot_xxx() APIs.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+ifcapable !snapshot {finish_test; return}
+set testprefix snapshot
+
+#-------------------------------------------------------------------------
+# Check some error conditions in snapshot_get(). It is an error if:
+#
+#  1) snapshot_get() is called on a non-WAL database, or
+#  2) there is an open write transaction on the database.
+#
+do_execsql_test 1.0 {
+  CREATE TABLE t1(a, b);
+  INSERT INTO t1 VALUES(1, 2);
+  INSERT INTO t1 VALUES(3, 4);
+}
+
+do_test 1.1.1 {
+  execsql { BEGIN; SELECT * FROM t1; }
+  list [catch { sqlite3_snapshot_get db main } msg] $msg
+} {1 SQLITE_ERROR}
+do_execsql_test 1.1.2 COMMIT
+
+do_test 1.2.1 {
+  execsql {
+    PRAGMA journal_mode = WAL;
+    BEGIN;
+      INSERT INTO t1 VALUES(5, 6);
+      INSERT INTO t1 VALUES(7, 8);
+  }
+  list [catch { sqlite3_snapshot_get db main } msg] $msg
+} {1 SQLITE_ERROR}
+do_execsql_test 1.3.2 COMMIT
+
+#-------------------------------------------------------------------------
+# Check that a simple case works. Reuse the database created by the
+# block of tests above.
+#
+do_execsql_test 2.1.0 {
+  BEGIN;
+    SELECT * FROM t1;
+} {1 2 3 4 5 6 7 8}
+
+do_test 2.1.1 {
+  set snapshot [sqlite3_snapshot_get db main]
+  execsql {
+    COMMIT;
+    INSERT INTO t1 VALUES(9, 10);
+    SELECT * FROM t1;
+  }
+} {1 2 3 4 5 6 7 8 9 10}
+
+do_test 2.1.2 {
+  execsql BEGIN
+  sqlite3_snapshot_open db main $snapshot
+  execsql {
+    SELECT * FROM t1;
+  }
+} {1 2 3 4 5 6 7 8}
+
+do_test 2.1.3 {
+  sqlite3_snapshot_free $snapshot
+  execsql COMMIT
+} {}
+
+do_test 2.2.0 {
+  sqlite3 db2 test.db
+  execsql {
+    BEGIN;
+      SELECT * FROM t1;
+  } db2
+} {1 2 3 4 5 6 7 8 9 10}
+
+do_test 2.2.1 {
+  set snapshot [sqlite3_snapshot_get db2 main]
+  execsql {
+    INSERT INTO t1 VALUES(11, 12);
+    SELECT * FROM t1;
+  }
+} {1 2 3 4 5 6 7 8 9 10 11 12}
+
+do_test 2.2.2 {
+  execsql BEGIN
+  sqlite3_snapshot_open db main $snapshot
+  execsql {
+    SELECT * FROM t1;
+  }
+} {1 2 3 4 5 6 7 8 9 10}
+
+do_test 2.2.3 {
+  sqlite3_snapshot_free $snapshot
+  execsql COMMIT
+  execsql COMMIT db2
+  db2 close
+} {}
+
+do_test 2.3.1 {
+  execsql { DELETE FROM t1 WHERE a>6 }
+  set snapshot [sqlite3_snapshot_get db main]
+  execsql {
+    INSERT INTO t1 VALUES('a', 'b');
+    INSERT INTO t1 VALUES('c', 'd');
+    SELECT * FROM t1;
+  }
+} {1 2 3 4 5 6 a b c d}
+do_test 2.3.2 {
+  execsql BEGIN
+  sqlite3_snapshot_open db main $snapshot
+  execsql { SELECT * FROM t1 }
+} {1 2 3 4 5 6}
+
+do_test 2.3.3 {
+  catchsql {
+    INSERT INTO t1 VALUES('x','y')
+  }
+} {1 {database is locked}}
+do_test 2.3.4 {
+  execsql COMMIT
+  sqlite3_snapshot_free $snapshot
+} {}
+
+#-------------------------------------------------------------------------
+# Check some errors in sqlite3_snapshot_open(). It is an error if:
+#
+#   1) the db is in auto-commit mode,
+#   2) the db has an open (read or write) transaction,
+#   3) the db is not a wal database,
+#
+# Reuse the database created by earlier tests.
+#
+do_execsql_test 3.0.0 {
+  CREATE TABLE t2(x, y);
+  INSERT INTO t2 VALUES('a', 'b');
+  INSERT INTO t2 VALUES('c', 'd');
+  BEGIN;
+    SELECT * FROM t2;
+} {a b c d}
+do_test 3.0.1 {
+  set snapshot [sqlite3_snapshot_get db main]
+  execsql { COMMIT }
+  execsql { INSERT INTO t2 VALUES('e', 'f'); }
+} {}
+
+do_test 3.1 {
+  list [catch {sqlite3_snapshot_open db main $snapshot } msg] $msg
+} {1 SQLITE_ERROR}
+
+do_test 3.2.1 {
+  execsql {
+    BEGIN;
+      SELECT * FROM t2;
+  }
+} {a b c d e f}
+do_test 3.2.2 {
+  list [catch {sqlite3_snapshot_open db main $snapshot } msg] $msg
+} {1 SQLITE_ERROR}
+
+do_test 3.2.3 {
+  execsql {
+    COMMIT;
+    BEGIN;
+      INSERT INTO t2 VALUES('g', 'h');
+  }
+  list [catch {sqlite3_snapshot_open db main $snapshot } msg] $msg
+} {1 SQLITE_ERROR}
+do_execsql_test 3.2.4 COMMIT
+
+do_test 3.3.1 {
+  execsql { PRAGMA journal_mode = DELETE }
+  execsql { BEGIN }
+  list [catch {sqlite3_snapshot_open db main $snapshot } msg] $msg
+} {1 SQLITE_ERROR}
+
+do_test 3.3.2 {
+  sqlite3_snapshot_free $snapshot
+  execsql COMMIT
+} {}
+
+#-------------------------------------------------------------------------
+# Check that SQLITE_BUSY_SNAPSHOT is returned if the specified snapshot
+# no longer exists because the wal file has been checkpointed.
+#
+#   1. Reading a snapshot from the middle of a wal file is not possible
+#      after the wal file has been checkpointed.
+#
+#   2. That a snapshot from the end of a wal file can not be read once
+#      the wal file has been wrapped.
+#
+do_execsql_test 4.1.0 {
+  PRAGMA journal_mode = wal;
+  CREATE TABLE t3(i, j);
+  INSERT INTO t3 VALUES('o', 't');
+  INSERT INTO t3 VALUES('t', 'f');
+  BEGIN;
+    SELECT * FROM t3;
+} {wal o t t f}
+
+do_test 4.1.1 {
+  set snapshot [sqlite3_snapshot_get db main]
+  execsql COMMIT
+} {}
+do_test 4.1.2 {
+  execsql { 
+    INSERT INTO t3 VALUES('f', 's'); 
+    BEGIN;
+  }
+  sqlite3_snapshot_open db main $snapshot
+  execsql { SELECT * FROM t3 }
+} {o t t f}
+
+do_test 4.1.3 {
+  execsql { 
+    COMMIT;
+    PRAGMA wal_checkpoint;
+    BEGIN;
+  }
+  list [catch {sqlite3_snapshot_open db main $snapshot} msg] $msg
+} {1 SQLITE_BUSY_SNAPSHOT}
+do_test 4.1.4 {
+  sqlite3_snapshot_free $snapshot
+  execsql COMMIT
+} {}
+
+do_test 4.2.1 {
+  execsql {
+    INSERT INTO t3 VALUES('s', 'e');
+    INSERT INTO t3 VALUES('n', 't');
+    BEGIN;
+      SELECT * FROM t3;
+  }
+} {o t t f f s s e n t}
+do_test 4.2.2 {
+  set snapshot [sqlite3_snapshot_get db main]
+  execsql {
+    COMMIT;
+    PRAGMA wal_checkpoint;
+    BEGIN;
+  }
+  sqlite3_snapshot_open db main $snapshot
+  execsql { SELECT * FROM t3 }
+} {o t t f f s s e n t}
+do_test 4.2.3 {
+  execsql {
+    COMMIT;
+    INSERT INTO t3 VALUES('e', 't');
+    BEGIN;
+  }
+  list [catch {sqlite3_snapshot_open db main $snapshot} msg] $msg
+} {1 SQLITE_BUSY_SNAPSHOT}
+do_test 4.2.4 {
+  sqlite3_snapshot_free $snapshot
+} {}
+
+#-------------------------------------------------------------------------
+# Check that SQLITE_BUSY is returned if a checkpoint is running when
+# sqlite3_snapshot_open() is called.
+#
+reset_db
+db close
+testvfs tvfs
+sqlite3 db test.db -vfs tvfs
+
+do_execsql_test 5.1 {
+  PRAGMA journal_mode = wal;
+  CREATE TABLE x1(x, xx, xxx);
+  INSERT INTO x1 VALUES('z', 'zz', 'zzz');
+  BEGIN;
+    SELECT * FROM x1;
+} {wal z zz zzz}
+
+do_test 5.2 {
+  set ::snapshot [sqlite3_snapshot_get db main]
+  sqlite3 db2 test.db -vfs tvfs
+  execsql {
+    INSERT INTO x1 VALUES('a', 'aa', 'aaa');
+    COMMIT;
+  }
+} {}
+
+set t53 0
+proc write_callback {args} {
+  do_test 5.3.[incr ::t53] {
+    execsql BEGIN
+    list [catch { sqlite3_snapshot_open db main $::snapshot } msg] $msg
+  } {1 SQLITE_BUSY}
+  catchsql COMMIT
+}
+
+tvfs filter xWrite
+tvfs script write_callback
+db2 eval { PRAGMA wal_checkpoint }
+db close
+db2 close
+tvfs delete
+sqlite3_snapshot_free $snapshot
+
+#-------------------------------------------------------------------------
+# Test that sqlite3_snapshot_get() may be called immediately after
+# "BEGIN; PRAGMA user_version;". And that sqlite3_snapshot_open() may
+# be called after opening the db handle and running the script
+# "PRAGMA user_version; BEGIN".
+reset_db
+do_execsql_test 6.1 {
+  PRAGMA journal_mode = wal;
+  CREATE TABLE x1(x, xx, xxx);
+  INSERT INTO x1 VALUES('z', 'zz', 'zzz');
+  BEGIN;
+    PRAGMA user_version;
+} {wal 0}
+do_test 6.2 {
+  set ::snapshot [sqlite3_snapshot_get db main]
+  execsql {
+    INSERT INTO x1 VALUES('a', 'aa', 'aaa');
+    COMMIT;
+  }
+} {}
+do_test 6.3 {
+  sqlite3 db2 test.db 
+  db2 eval "PRAGMA user_version ; BEGIN"
+  sqlite3_snapshot_open db2 main $::snapshot
+  db2 eval { SELECT * FROM x1 }
+} {z zz zzz}
+sqlite3_snapshot_free $snapshot
+
+finish_test

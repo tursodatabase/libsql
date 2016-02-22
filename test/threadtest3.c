@@ -88,6 +88,13 @@
 #include <fcntl.h>
 #include <errno.h>
 
+#include "test_multiplex.h"
+
+/* Required to link test_multiplex.c */
+#ifndef SQLITE_OMIT_WSD
+int sqlite3PendingByte = 0x40000000;
+#endif
+
 /*
  * This code implements the MD5 message-digest algorithm.
  * The algorithm is due to Ron Rivest.  This code was
@@ -868,22 +875,28 @@ static void filecopy_x(
 ** Used by setstoptime() and timetostop().
 */
 static double timelimit = 0.0;
-static sqlite3_vfs *pTimelimitVfs = 0;
+
+static double currentTime(void){
+  double t;
+  static sqlite3_vfs *pTimelimitVfs = 0;
+  if( pTimelimitVfs==0 ) pTimelimitVfs = sqlite3_vfs_find(0);
+  if( pTimelimitVfs->iVersion>=2 && pTimelimitVfs->xCurrentTimeInt64!=0 ){
+    sqlite3_int64 tm;
+    pTimelimitVfs->xCurrentTimeInt64(pTimelimitVfs, &tm);
+    t = tm/86400000.0;
+  }else{
+    pTimelimitVfs->xCurrentTime(pTimelimitVfs, &t);
+  }
+  return t;
+}
 
 static void setstoptime_x(
   Error *pErr,                    /* IN/OUT: Error code */
   int nMs                         /* Milliseconds until "stop time" */
 ){
   if( pErr->rc==SQLITE_OK ){
-    double t;
-    int rc;
-    pTimelimitVfs = sqlite3_vfs_find(0);
-    rc = pTimelimitVfs->xCurrentTime(pTimelimitVfs, &t);
-    if( rc!=SQLITE_OK ){
-      pErr->rc = rc;
-    }else{
-      timelimit = t + ((double)nMs)/(1000.0*60.0*60.0*24.0);
-    }
+    double t = currentTime();
+    timelimit = t + ((double)nMs)/(1000.0*60.0*60.0*24.0);
   }
 }
 
@@ -892,14 +905,8 @@ static int timetostop_x(
 ){
   int ret = 1;
   if( pErr->rc==SQLITE_OK ){
-    double t;
-    int rc;
-    rc = pTimelimitVfs->xCurrentTime(pTimelimitVfs, &t);
-    if( rc!=SQLITE_OK ){
-      pErr->rc = rc;
-    }else{
-      ret = (t >= timelimit);
-    }
+    double t = currentTime();
+    ret = (t >= timelimit);
   }
   return ret;
 }
@@ -1460,13 +1467,36 @@ int main(int argc, char **argv){
     argc = 2;
     argv = substArgv;
   }
+
+  /* Loop through the command-line arguments to ensure that each argument
+  ** selects at least one test. If not, assume there is a typo on the 
+  ** command-line and bail out with the usage message.  */
   for(iArg=1; iArg<argc; iArg++){
+    const char *zArg = argv[iArg];
+    if( zArg[0]=='-' ){
+      if( sqlite3_stricmp(zArg, "-multiplexor")==0 ){
+        /* Install the multiplexor VFS as the default */
+        int rc = sqlite3_multiplex_initialize(0, 1);
+        if( rc!=SQLITE_OK ){
+          fprintf(stderr, "Failed to install multiplexor VFS (%d)\n", rc);
+          return 253;
+        }
+      }
+      else {
+        goto usage;
+      }
+
+      continue;
+    }
+
     for(i=0; i<sizeof(aTest)/sizeof(aTest[0]); i++){
-      if( sqlite3_strglob(argv[iArg],aTest[i].zTest)==0 ) break;
+      if( sqlite3_strglob(zArg, aTest[i].zTest)==0 ) break;
     }
     if( i>=sizeof(aTest)/sizeof(aTest[0]) ) goto usage;   
   }
+
   for(iArg=1; iArg<argc; iArg++){
+    if( argv[iArg][0]=='-' ) continue;
     for(i=0; i<sizeof(aTest)/sizeof(aTest[0]); i++){
       char const *z = aTest[i].zTest;
       if( sqlite3_strglob(argv[iArg],z)==0 ){
@@ -1483,7 +1513,7 @@ int main(int argc, char **argv){
   return (nGlobalErr>0 ? 255 : 0);
 
  usage:
-  printf("Usage: %s [testname|testprefix*]...\n", argv[0]);
+  printf("Usage: %s [-multiplexor] [testname|testprefix*]...\n", argv[0]);
   printf("Available tests are:\n");
   for(i=0; i<sizeof(aTest)/sizeof(aTest[0]); i++){
     printf("   %s\n", aTest[i].zTest);

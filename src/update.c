@@ -197,7 +197,7 @@ void sqlite3Update(
   /* Allocate space for aXRef[], aRegIdx[], and aToOpen[].  
   ** Initialize aXRef[] and aToOpen[] to their default values.
   */
-  aXRef = sqlite3DbMallocRaw(db, sizeof(int) * (pTab->nCol+nIdx) + nIdx+2 );
+  aXRef = sqlite3DbMallocRawNN(db, sizeof(int) * (pTab->nCol+nIdx) + nIdx+2 );
   if( aXRef==0 ) goto update_cleanup;
   aRegIdx = aXRef+pTab->nCol;
   aToOpen = (u8*)(aRegIdx+nIdx);
@@ -263,10 +263,12 @@ void sqlite3Update(
   assert( chngPk==0 || chngPk==1 );
   chngKey = chngRowid + chngPk;
 
-  /* The SET expressions are not actually used inside the WHERE loop.
-  ** So reset the colUsed mask
+  /* The SET expressions are not actually used inside the WHERE loop.  
+  ** So reset the colUsed mask. Unless this is a virtual table. In that
+  ** case, set all bits of the colUsed mask (to ensure that the virtual
+  ** table implementation makes all columns available).
   */
-  pTabList->a[0].colUsed = 0;
+  pTabList->a[0].colUsed = IsVirtual(pTab) ? (Bitmask)-1 : 0;
 
   hasFK = sqlite3FkRequired(pParse, pTab, aXRef, chngKey);
 
@@ -570,7 +572,8 @@ void sqlite3Update(
     /* Do constraint checks. */
     assert( regOldRowid>0 );
     sqlite3GenerateConstraintChecks(pParse, pTab, aRegIdx, iDataCur, iIdxCur,
-        regNewRowid, regOldRowid, chngKey, onError, labelContinue, &bReplace);
+        regNewRowid, regOldRowid, chngKey, onError, labelContinue, &bReplace,
+        aXRef);
 
     /* Do FK constraint checks. */
     if( hasFK ){

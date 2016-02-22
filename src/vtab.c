@@ -49,7 +49,7 @@ static int createModule(
     rc = SQLITE_MISUSE_BKPT;
   }else{
     Module *pMod;
-    pMod = (Module *)sqlite3DbMallocRaw(db, sizeof(Module) + nName + 1);
+    pMod = (Module *)sqlite3DbMallocRawNN(db, sizeof(Module) + nName + 1);
     if( pMod ){
       Module *pDel;
       char *zCopy = (char *)(&pMod[1]);
@@ -62,7 +62,7 @@ static int createModule(
       pDel = (Module *)sqlite3HashInsert(&db->aModule,zCopy,(void*)pMod);
       assert( pDel==0 || pDel==pMod );
       if( pDel ){
-        db->mallocFailed = 1;
+        sqlite3OomFault(db);
         sqlite3DbFree(db, pDel);
       }
     }
@@ -439,7 +439,7 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
     assert( sqlite3SchemaMutexHeld(db, 0, pSchema) );
     pOld = sqlite3HashInsert(&pSchema->tblHash, zName, pTab);
     if( pOld ){
-      db->mallocFailed = 1;
+      sqlite3OomFault(db);
       assert( pTab==pOld );  /* Malloc must have failed inside HashInsert() */
       return;
     }
@@ -506,13 +506,13 @@ static int vtabCallConstructor(
 
   zModuleName = sqlite3MPrintf(db, "%s", pTab->zName);
   if( !zModuleName ){
-    return SQLITE_NOMEM;
+    return SQLITE_NOMEM_BKPT;
   }
 
   pVTable = sqlite3DbMallocZero(db, sizeof(VTable));
   if( !pVTable ){
     sqlite3DbFree(db, zModuleName);
-    return SQLITE_NOMEM;
+    return SQLITE_NOMEM_BKPT;
   }
   pVTable->db = db;
   pVTable->pMod = pMod;
@@ -530,7 +530,7 @@ static int vtabCallConstructor(
   db->pVtabCtx = &sCtx;
   rc = xConstruct(db, pMod->pAux, nArg, azArg, &pVTable->pVtab, &zErr);
   db->pVtabCtx = sCtx.pPrior;
-  if( rc==SQLITE_NOMEM ) db->mallocFailed = 1;
+  if( rc==SQLITE_NOMEM ) sqlite3OomFault(db);
   assert( sCtx.pTab==pTab );
 
   if( SQLITE_OK!=rc ){
@@ -655,7 +655,7 @@ static int growVTrans(sqlite3 *db){
     int nBytes = sizeof(sqlite3_vtab *) * (db->nVTrans + ARRAY_INCR);
     aVTrans = sqlite3DbRealloc(db, (void *)db->aVTrans, nBytes);
     if( !aVTrans ){
-      return SQLITE_NOMEM;
+      return SQLITE_NOMEM_BKPT;
     }
     memset(&aVTrans[db->nVTrans], 0, sizeof(sqlite3_vtab *)*ARRAY_INCR);
     db->aVTrans = aVTrans;
@@ -747,7 +747,7 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
 
   pParse = sqlite3StackAllocZero(db, sizeof(*pParse));
   if( pParse==0 ){
-    rc = SQLITE_NOMEM;
+    rc = SQLITE_NOMEM_BKPT;
   }else{
     pParse->declareVtab = 1;
     pParse->db = db;
@@ -1016,7 +1016,7 @@ FuncDef *sqlite3VtabOverloadFunction(
   Table *pTab;
   sqlite3_vtab *pVtab;
   sqlite3_module *pMod;
-  void (*xFunc)(sqlite3_context*,int,sqlite3_value**) = 0;
+  void (*xSFunc)(sqlite3_context*,int,sqlite3_value**) = 0;
   void *pArg = 0;
   FuncDef *pNew;
   int rc = 0;
@@ -1044,7 +1044,7 @@ FuncDef *sqlite3VtabOverloadFunction(
     for(z=(unsigned char*)zLowerName; *z; z++){
       *z = sqlite3UpperToLower[*z];
     }
-    rc = pMod->xFindFunction(pVtab, nArg, zLowerName, &xFunc, &pArg);
+    rc = pMod->xFindFunction(pVtab, nArg, zLowerName, &xSFunc, &pArg);
     sqlite3DbFree(db, zLowerName);
   }
   if( rc==0 ){
@@ -1061,7 +1061,7 @@ FuncDef *sqlite3VtabOverloadFunction(
   *pNew = *pDef;
   pNew->zName = (char *)&pNew[1];
   memcpy(pNew->zName, pDef->zName, sqlite3Strlen30(pDef->zName)+1);
-  pNew->xFunc = xFunc;
+  pNew->xSFunc = xSFunc;
   pNew->pUserData = pArg;
   pNew->funcFlags |= SQLITE_FUNC_EPHEM;
   return pNew;
@@ -1088,7 +1088,7 @@ void sqlite3VtabMakeWritable(Parse *pParse, Table *pTab){
     pToplevel->apVtabLock = apVtabLock;
     pToplevel->apVtabLock[pToplevel->nVtabLock++] = pTab;
   }else{
-    pToplevel->db->mallocFailed = 1;
+    sqlite3OomFault(pToplevel->db);
   }
 }
 

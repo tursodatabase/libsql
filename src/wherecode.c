@@ -76,7 +76,7 @@ static void explainIndexRange(StrAccum *pStr, WhereLoop *pLoop){
   for(i=0; i<nEq; i++){
     const char *z = explainIndexColumnName(pIndex, i);
     if( i ) sqlite3StrAccumAppend(pStr, " AND ", 5);
-    sqlite3XPrintf(pStr, 0, i>=nSkip ? "%s=?" : "ANY(%s)", z);
+    sqlite3XPrintf(pStr, i>=nSkip ? "%s=?" : "ANY(%s)", z);
   }
 
   j = i;
@@ -135,13 +135,13 @@ int sqlite3WhereExplainOneScan(
     sqlite3StrAccumInit(&str, db, zBuf, sizeof(zBuf), SQLITE_MAX_LENGTH);
     sqlite3StrAccumAppendAll(&str, isSearch ? "SEARCH" : "SCAN");
     if( pItem->pSelect ){
-      sqlite3XPrintf(&str, 0, " SUBQUERY %d", pItem->iSelectId);
+      sqlite3XPrintf(&str, " SUBQUERY %d", pItem->iSelectId);
     }else{
-      sqlite3XPrintf(&str, 0, " TABLE %s", pItem->zName);
+      sqlite3XPrintf(&str, " TABLE %s", pItem->zName);
     }
 
     if( pItem->zAlias ){
-      sqlite3XPrintf(&str, 0, " AS %s", pItem->zAlias);
+      sqlite3XPrintf(&str, " AS %s", pItem->zAlias);
     }
     if( (flags & (WHERE_IPK|WHERE_VIRTUALTABLE))==0 ){
       const char *zFmt = 0;
@@ -165,7 +165,7 @@ int sqlite3WhereExplainOneScan(
       }
       if( zFmt ){
         sqlite3StrAccumAppend(&str, " USING ", 7);
-        sqlite3XPrintf(&str, 0, zFmt, pIdx->zName);
+        sqlite3XPrintf(&str, zFmt, pIdx->zName);
         explainIndexRange(&str, pLoop);
       }
     }else if( (flags & WHERE_IPK)!=0 && (flags & WHERE_CONSTRAINT)!=0 ){
@@ -180,17 +180,17 @@ int sqlite3WhereExplainOneScan(
         assert( flags&WHERE_TOP_LIMIT);
         zRangeOp = "<";
       }
-      sqlite3XPrintf(&str, 0, " USING INTEGER PRIMARY KEY (rowid%s?)",zRangeOp);
+      sqlite3XPrintf(&str, " USING INTEGER PRIMARY KEY (rowid%s?)",zRangeOp);
     }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     else if( (flags & WHERE_VIRTUALTABLE)!=0 ){
-      sqlite3XPrintf(&str, 0, " VIRTUAL TABLE INDEX %d:%s",
+      sqlite3XPrintf(&str, " VIRTUAL TABLE INDEX %d:%s",
                   pLoop->u.vtab.idxNum, pLoop->u.vtab.idxStr);
     }
 #endif
 #ifdef SQLITE_EXPLAIN_ESTIMATED_ROWS
     if( pLoop->nOut>=10 ){
-      sqlite3XPrintf(&str, 0, " (~%llu rows)", sqlite3LogEstToInt(pLoop->nOut));
+      sqlite3XPrintf(&str, " (~%llu rows)", sqlite3LogEstToInt(pLoop->nOut));
     }else{
       sqlite3StrAccumAppend(&str, " (~1 row)", 9);
     }
@@ -327,8 +327,7 @@ static void codeApplyAffinity(Parse *pParse, int base, int n, char *zAff){
 
   /* Code the OP_Affinity opcode if there is anything left to do. */
   if( n>0 ){
-    sqlite3VdbeAddOp2(v, OP_Affinity, base, n);
-    sqlite3VdbeChangeP4(v, -1, zAff, n);
+    sqlite3VdbeAddOp4(v, OP_Affinity, base, n, 0, zAff, n);
     sqlite3ExprCacheAffinityChange(pParse, base, n);
   }
 }
@@ -496,9 +495,7 @@ static int codeAllEqualityTerms(
   pParse->nMem += nReg;
 
   zAff = sqlite3DbStrDup(pParse->db,sqlite3IndexAffinityStr(pParse->db,pIdx));
-  if( !zAff ){
-    pParse->db->mallocFailed = 1;
-  }
+  assert( zAff!=0 || pParse->db->mallocFailed );
 
   if( nSkip ){
     int iIdxCur = pLevel->iIdxCur;
@@ -561,6 +558,7 @@ static int codeAllEqualityTerms(
   return regBase;
 }
 
+#ifndef SQLITE_LIKE_DOESNT_MATCH_BLOBS
 /*
 ** If the most recently coded instruction is a constant range contraint
 ** that originated from the LIKE optimization, then change the P3 to be
@@ -572,6 +570,10 @@ static int codeAllEqualityTerms(
 ** The OP_String opcodes on the second pass convert the upper and lower
 ** bound string contants to blobs.  This routine makes the necessary changes
 ** to the OP_String opcodes for that to happen.
+**
+** Except, of course, if SQLITE_LIKE_DOESNT_MATCH_BLOBS is defined, then
+** only the one pass through the string space is required, so this routine
+** becomes a no-op.
 */
 static void whereLikeOptimizationStringFixup(
   Vdbe *v,                /* prepared statement under construction */
@@ -589,6 +591,9 @@ static void whereLikeOptimizationStringFixup(
     pOp->p5 = 1;
   }
 }
+#else
+# define whereLikeOptimizationStringFixup(A,B,C)
+#endif
 
 #ifdef SQLITE_ENABLE_CURSOR_HINTS
 /*
@@ -738,6 +743,54 @@ static void codeCursorHint(
 #else
 # define codeCursorHint(A,B,C)  /* No-op */
 #endif /* SQLITE_ENABLE_CURSOR_HINTS */
+
+/*
+** Cursor iCur is open on an intkey b-tree (a table). Register iRowid contains
+** a rowid value just read from cursor iIdxCur, open on index pIdx. This
+** function generates code to do a deferred seek of cursor iCur to the 
+** rowid stored in register iRowid.
+**
+** Normally, this is just:
+**
+**   OP_Seek $iCur $iRowid
+**
+** However, if the scan currently being coded is a branch of an OR-loop and
+** the statement currently being coded is a SELECT, then P3 of the OP_Seek
+** is set to iIdxCur and P4 is set to point to an array of integers
+** containing one entry for each column of the table cursor iCur is open 
+** on. For each table column, if the column is the i'th column of the 
+** index, then the corresponding array entry is set to (i+1). If the column
+** does not appear in the index at all, the array entry is set to 0.
+*/
+static void codeDeferredSeek(
+  WhereInfo *pWInfo,              /* Where clause context */
+  Index *pIdx,                    /* Index scan is using */
+  int iCur,                       /* Cursor for IPK b-tree */
+  int iIdxCur                     /* Index cursor */
+){
+  Parse *pParse = pWInfo->pParse; /* Parse context */
+  Vdbe *v = pParse->pVdbe;        /* Vdbe to generate code within */
+
+  assert( iIdxCur>0 );
+  assert( pIdx->aiColumn[pIdx->nColumn-1]==-1 );
+  
+  sqlite3VdbeAddOp3(v, OP_Seek, iIdxCur, 0, iCur);
+  if( (pWInfo->wctrlFlags & WHERE_FORCE_TABLE)
+   && DbMaskAllZero(sqlite3ParseToplevel(pParse)->writeMask)
+  ){
+    int i;
+    Table *pTab = pIdx->pTable;
+    int *ai = (int*)sqlite3DbMallocZero(pParse->db, sizeof(int)*(pTab->nCol+1));
+    if( ai ){
+      ai[0] = pTab->nCol;
+      for(i=0; i<pIdx->nColumn-1; i++){
+        assert( pIdx->aiColumn[i]<pTab->nCol );
+        if( pIdx->aiColumn[i]>=0 ) ai[pIdx->aiColumn[i]+1] = i+1;
+      }
+      sqlite3VdbeChangeP4(v, -1, (char*)ai, P4_INTARRAY);
+    }
+  }
+}
 
 /*
 ** Generate code for the start of the iLevel-th loop in the WHERE clause
@@ -1075,6 +1128,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     if( pLoop->wsFlags & WHERE_TOP_LIMIT ){
       pRangeEnd = pLoop->aLTerm[j++];
       nExtraReg = 1;
+#ifndef SQLITE_LIKE_DOESNT_MATCH_BLOBS
       if( (pRangeEnd->wtFlags & TERM_LIKEOPT)!=0 ){
         assert( pRangeStart!=0 );                     /* LIKE opt constraints */
         assert( pRangeStart->wtFlags & TERM_LIKEOPT );   /* occur in pairs */
@@ -1087,6 +1141,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         VdbeComment((v, "LIKE loop counter"));
         pLevel->addrLikeRep = sqlite3VdbeCurrentAddr(v);
       }
+#endif
       if( pRangeStart==0
        && (j = pIdx->aiColumn[nEq])>=0 
        && pIdx->pTable->aCol[j].notNull==0
@@ -1216,14 +1271,14 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     if( omitTable ){
       /* pIdx is a covering index.  No need to access the main table. */
     }else if( HasRowid(pIdx->pTable) ){
-      iRowidReg = ++pParse->nMem;
-      sqlite3VdbeAddOp2(v, OP_IdxRowid, iIdxCur, iRowidReg);
-      sqlite3ExprCacheStore(pParse, iCur, -1, iRowidReg);
       if( pWInfo->eOnePass!=ONEPASS_OFF ){
+        iRowidReg = ++pParse->nMem;
+        sqlite3VdbeAddOp2(v, OP_IdxRowid, iIdxCur, iRowidReg);
+        sqlite3ExprCacheStore(pParse, iCur, -1, iRowidReg);
         sqlite3VdbeAddOp3(v, OP_NotExists, iCur, 0, iRowidReg);
         VdbeCoverage(v);
       }else{
-        sqlite3VdbeAddOp2(v, OP_Seek, iCur, iRowidReg);  /* Deferred seek */
+        codeDeferredSeek(pWInfo, pIdx, iCur, iIdxCur);
       }
     }else if( iCur!=iIdxCur ){
       Index *pPk = sqlite3PrimaryKeyIndex(pIdx->pTable);
@@ -1392,7 +1447,9 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         Expr *pExpr = pWC->a[iTerm].pExpr;
         if( &pWC->a[iTerm] == pTerm ) continue;
         if( ExprHasProperty(pExpr, EP_FromJoin) ) continue;
-        if( (pWC->a[iTerm].wtFlags & TERM_VIRTUAL)!=0 ) continue;
+        testcase( pWC->a[iTerm].wtFlags & TERM_VIRTUAL );
+        testcase( pWC->a[iTerm].wtFlags & TERM_CODED );
+        if( (pWC->a[iTerm].wtFlags & (TERM_VIRTUAL|TERM_CODED))!=0 ) continue;
         if( (pWC->a[iTerm].eOperator & WO_ALL)==0 ) continue;
         testcase( pWC->a[iTerm].wtFlags & TERM_ORINFO );
         pExpr = sqlite3ExprDup(db, pExpr, 0);
@@ -1590,9 +1647,13 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       continue;
     }
     if( pTerm->wtFlags & TERM_LIKECOND ){
+#ifdef SQLITE_LIKE_DOESNT_MATCH_BLOBS
+      continue;
+#else
       assert( pLevel->iLikeRepCntr>0 );
       skipLikeAddr = sqlite3VdbeAddOp1(v, OP_IfNot, pLevel->iLikeRepCntr);
       VdbeCoverage(v);
+#endif
     }
     sqlite3ExprIfFalse(pParse, pE, addrCont, SQLITE_JUMPIFNULL);
     if( skipLikeAddr ) sqlite3VdbeJumpHere(v, skipLikeAddr);

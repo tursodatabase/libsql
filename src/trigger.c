@@ -287,8 +287,7 @@ void sqlite3FinishTrigger(
     pStepList->pTrig = pTrig;
     pStepList = pStepList->pNext;
   }
-  nameToken.z = pTrig->zName;
-  nameToken.n = sqlite3Strlen30(nameToken.z);
+  sqlite3TokenInit(&nameToken, pTrig->zName);
   sqlite3FixInit(&sFix, pParse, iDb, "trigger", &nameToken);
   if( sqlite3FixTriggerStep(&sFix, pTrig->step_list) 
    || sqlite3FixExpr(&sFix, pTrig->pWhen) 
@@ -324,7 +323,7 @@ void sqlite3FinishTrigger(
     assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
     pTrig = sqlite3HashInsert(pHash, zName, pTrig);
     if( pTrig ){
-      db->mallocFailed = 1;
+      sqlite3OomFault(db);
     }else if( pLink->pSchema==pLink->pTabSchema ){
       Table *pTab;
       pTab = sqlite3HashFind(&pLink->pTabSchema->tblHash, pLink->table);
@@ -559,31 +558,12 @@ void sqlite3DropTriggerPtr(Parse *pParse, Trigger *pTrigger){
   */
   assert( pTable!=0 );
   if( (v = sqlite3GetVdbe(pParse))!=0 ){
-    int base;
-    static const int iLn = VDBE_OFFSET_LINENO(2);
-    static const VdbeOpList dropTrigger[] = {
-      { OP_Rewind,     0, ADDR(9),  0},
-      { OP_String8,    0, 1,        0}, /* 1 */
-      { OP_Column,     0, 1,        2},
-      { OP_Ne,         2, ADDR(8),  1},
-      { OP_String8,    0, 1,        0}, /* 4: "trigger" */
-      { OP_Column,     0, 0,        2},
-      { OP_Ne,         2, ADDR(8),  1},
-      { OP_Delete,     0, 0,        0},
-      { OP_Next,       0, ADDR(1),  0}, /* 8 */
-    };
-
-    sqlite3BeginWriteOperation(pParse, 0, iDb);
-    sqlite3OpenMasterTable(pParse, iDb);
-    base = sqlite3VdbeAddOpList(v,  ArraySize(dropTrigger), dropTrigger, iLn);
-    sqlite3VdbeChangeP4(v, base+1, pTrigger->zName, P4_TRANSIENT);
-    sqlite3VdbeChangeP4(v, base+4, "trigger", P4_STATIC);
+    sqlite3NestedParse(pParse,
+       "DELETE FROM %Q.%s WHERE name=%Q AND type='trigger'",
+       db->aDb[iDb].zName, SCHEMA_TABLE(iDb), pTrigger->zName
+    );
     sqlite3ChangeCookie(pParse, iDb);
-    sqlite3VdbeAddOp2(v, OP_Close, 0, 0);
     sqlite3VdbeAddOp4(v, OP_DropTrigger, iDb, 0, 0, pTrigger->zName, 0);
-    if( pParse->nMem<3 ){
-      pParse->nMem = 3;
-    }
   }
 }
 
@@ -971,8 +951,8 @@ void sqlite3CodeRowTriggerDirect(
   if( pPrg ){
     int bRecursive = (p->zName && 0==(pParse->db->flags&SQLITE_RecTriggers));
 
-    sqlite3VdbeAddOp3(v, OP_Program, reg, ignoreJump, ++pParse->nMem);
-    sqlite3VdbeChangeP4(v, -1, (const char *)pPrg->pProgram, P4_SUBPROGRAM);
+    sqlite3VdbeAddOp4(v, OP_Program, reg, ignoreJump, ++pParse->nMem,
+                      (const char *)pPrg->pProgram, P4_SUBPROGRAM);
     VdbeComment(
         (v, "Call: %s.%s", (p->zName?p->zName:"fkey"), onErrorText(orconf)));
 

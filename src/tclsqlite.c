@@ -153,6 +153,7 @@ struct SqliteDb {
   IncrblobChannel *pIncrblob;/* Linked list of open incrblob channels */
   int nStep, nSort, nIndex;  /* Statistics for most recent operation */
   int nTransaction;          /* Number of nested [transaction] methods */
+  int openFlags;             /* Flags used to open.  (SQLITE_OPEN_URI) */
 #ifdef SQLITE_TEST
   int bLegacyPrepare;        /* True to use sqlite3_prepare() */
 #endif
@@ -1750,7 +1751,8 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       Tcl_WrongNumArgs(interp, 2, objv, "?DATABASE? FILENAME");
       return TCL_ERROR;
     }
-    rc = sqlite3_open(zDestFile, &pDest);
+    rc = sqlite3_open_v2(zDestFile, &pDest,
+               SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE| pDb->openFlags, 0);
     if( rc!=SQLITE_OK ){
       Tcl_AppendResult(interp, "cannot open target database: ",
            sqlite3_errmsg(pDest), (char*)0);
@@ -2613,7 +2615,8 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       Tcl_WrongNumArgs(interp, 2, objv, "?DATABASE? FILENAME");
       return TCL_ERROR;
     }
-    rc = sqlite3_open_v2(zSrcFile, &pSrc, SQLITE_OPEN_READONLY, 0);
+    rc = sqlite3_open_v2(zSrcFile, &pSrc,
+                         SQLITE_OPEN_READONLY | pDb->openFlags, 0);
     if( rc!=SQLITE_OK ){
       Tcl_AppendResult(interp, "cannot open source database: ",
            sqlite3_errmsg(pSrc), (char*)0);
@@ -2976,6 +2979,10 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       Tcl_AppendResult(interp,sqlite3_libversion(), (char*)0);
       return TCL_OK;
     }
+    if( strcmp(zArg,"-sourceid")==0 ){
+      Tcl_AppendResult(interp,sqlite3_sourceid(), (char*)0);
+      return TCL_OK;
+    }
     if( strcmp(zArg,"-has-codec")==0 ){
 #ifdef SQLITE_HAS_CODEC
       Tcl_AppendResult(interp,"1",(char*)0);
@@ -3084,6 +3091,7 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     return TCL_ERROR;
   }
   p->maxStmt = NUM_PREPARED_STMTS;
+  p->openFlags = flags & SQLITE_OPEN_URI;
   p->interp = interp;
   zArg = Tcl_GetStringFromObj(objv[1], 0);
   if( DbUseNre() ){
@@ -3143,9 +3151,13 @@ EXTERN int Sqlite3_Unload(Tcl_Interp *interp, int flags){ return TCL_OK; }
 EXTERN int Tclsqlite3_Unload(Tcl_Interp *interp, int flags){ return TCL_OK; }
 
 /* Because it accesses the file-system and uses persistent state, SQLite
-** is not considered appropriate for safe interpreters.  Hence, we deliberately
-** omit the _SafeInit() interfaces.
+** is not considered appropriate for safe interpreters.  Hence, we cause
+** the _SafeInit() interfaces return TCL_ERROR.
 */
+EXTERN int Sqlite3_SafeInit(Tcl_Interp *interp){ return TCL_ERROR; }
+EXTERN int Sqlite3_SafeUnload(Tcl_Interp *interp, int flags){return TCL_ERROR;}
+
+
 
 #ifndef SQLITE_3_SUFFIX_ONLY
 int Sqlite_Init(Tcl_Interp *interp){ return Sqlite3_Init(interp); }
