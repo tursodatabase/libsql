@@ -1,5 +1,5 @@
-C Avoid\san\sunnecessary\sseek\soperation\son\ssome\scorner-case\sskip-scans.
-D 2016-02-22T20:52:26.579
+C Clearer\spresentation\sof\sthe\slogic.\s\sNo\sfunctional\schanges.
+D 2016-02-22T21:19:54.531
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 28fc4ee02333996d31b3602b39eeb8e609a89ce4
@@ -430,7 +430,7 @@ F src/wal.h 2f7c831cf3b071fa548bf2d5cac640846a7ff19c
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
 F src/where.c 5b67fb8035ae4697cf721db095f800ef8dff5f56
 F src/whereInt.h 78b6b4de94db84aecbdc07fe3e38f648eb391e9a
-F src/wherecode.c 19aa0189a6088f8fde9105839b00be77f85d4469
+F src/wherecode.c 39c1ef4598bedf1d66249334c74efd23ddd182ac
 F src/whereexpr.c fb87944b1254234e5bba671aaf6dee476241506a
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1429,10 +1429,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh a98af506df552f3b3c0d904f94e4cdc4e1a6d598
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 64386fa339adb91439da979d74062f67a6ec68fd
-R a08f482677879c74e73ef75af70e8b9f
-T *branch * skip-scan-improvement
-T *sym-skip-scan-improvement *
-T -sym-trunk *
+P 38e837e605076124b73235e1fd832838d9545cb2
+R 56c5c81425d101f0314396c9251634e4
 U drh
-Z 08bae61bde61749b6ce2ce908b2beeb6
+Z dfca62313f421fb124d083409ac98469

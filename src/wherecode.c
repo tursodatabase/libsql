@@ -1212,7 +1212,11 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       start_constraints = 1;
     }
     codeApplyAffinity(pParse, regBase, nConstraint - bSeekPastNull, zStartAff);
-    if( pLoop->nSkip==0 || nConstraint>pLoop->nSkip ){
+    if( pLoop->nSkip>0 && nConstraint==pLoop->nSkip ){
+      /* The skip-scan logic inside the call to codeAllEqualityConstraints()
+      ** above has already left the cursor sitting on the correct row,
+      ** so no further seeking is needed */
+    }else{
       op = aStartOp[(start_constraints<<2) + (startEq<<1) + bRev];
       assert( op!=0 );
       sqlite3VdbeAddOp4Int(v, op, iIdxCur, addrNxt, regBase, nConstraint);
@@ -1224,7 +1228,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       VdbeCoverageIf(v, op==OP_SeekLE);  testcase( op==OP_SeekLE );
       VdbeCoverageIf(v, op==OP_SeekLT);  testcase( op==OP_SeekLT );
     }
-    
+
     /* Load the value for the inequality constraint at the end of the
     ** range (if any).
     */
