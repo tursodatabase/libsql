@@ -1212,17 +1212,19 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       start_constraints = 1;
     }
     codeApplyAffinity(pParse, regBase, nConstraint - bSeekPastNull, zStartAff);
-    op = aStartOp[(start_constraints<<2) + (startEq<<1) + bRev];
-    assert( op!=0 );
-    sqlite3VdbeAddOp4Int(v, op, iIdxCur, addrNxt, regBase, nConstraint);
-    VdbeCoverage(v);
-    VdbeCoverageIf(v, op==OP_Rewind);  testcase( op==OP_Rewind );
-    VdbeCoverageIf(v, op==OP_Last);    testcase( op==OP_Last );
-    VdbeCoverageIf(v, op==OP_SeekGT);  testcase( op==OP_SeekGT );
-    VdbeCoverageIf(v, op==OP_SeekGE);  testcase( op==OP_SeekGE );
-    VdbeCoverageIf(v, op==OP_SeekLE);  testcase( op==OP_SeekLE );
-    VdbeCoverageIf(v, op==OP_SeekLT);  testcase( op==OP_SeekLT );
-
+    if( pLoop->nSkip==0 || nConstraint>pLoop->nSkip ){
+      op = aStartOp[(start_constraints<<2) + (startEq<<1) + bRev];
+      assert( op!=0 );
+      sqlite3VdbeAddOp4Int(v, op, iIdxCur, addrNxt, regBase, nConstraint);
+      VdbeCoverage(v);
+      VdbeCoverageIf(v, op==OP_Rewind);  testcase( op==OP_Rewind );
+      VdbeCoverageIf(v, op==OP_Last);    testcase( op==OP_Last );
+      VdbeCoverageIf(v, op==OP_SeekGT);  testcase( op==OP_SeekGT );
+      VdbeCoverageIf(v, op==OP_SeekGE);  testcase( op==OP_SeekGE );
+      VdbeCoverageIf(v, op==OP_SeekLE);  testcase( op==OP_SeekLE );
+      VdbeCoverageIf(v, op==OP_SeekLT);  testcase( op==OP_SeekLT );
+    }
+    
     /* Load the value for the inequality constraint at the end of the
     ** range (if any).
     */
