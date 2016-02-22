@@ -1,5 +1,5 @@
-C Change\smagic\snumbers\sassociated\swith\ssynchronous\ssettings\sto\snamed\sconstants.
-D 2016-02-22T13:23:16.525
+C Avoid\screating\sa\smaster\sjournal\sunless\stwo\sor\smore\sdatabases\sin\sthe\ntransaction\scan\sactually\sbenefit\sfrom\sthat\smaster\sjournal.
+D 2016-02-22T14:57:38.065
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 28fc4ee02333996d31b3602b39eeb8e609a89ce4
@@ -418,7 +418,7 @@ F src/vdbe.c 822e44c1dd859794f8c414e8bae4d96ac1fa774d
 F src/vdbe.h c743791f723049db94f009e3e30958952bc2d512
 F src/vdbeInt.h 581e5bff9a401fabdb917b816503cda7356ec3e1
 F src/vdbeapi.c 95b1f8e527240a18a9aea41a655b013bf07a7009
-F src/vdbeaux.c ec9a4d939a7430b76f53c5ef5cdbca3c8704848a
+F src/vdbeaux.c 51aaf15e5c29512423429cc0e0477e08f7181514
 F src/vdbeblob.c 3b570b730109e8f653d9d2081649f6e7015113db
 F src/vdbemem.c be8381ed6de54eb9cb9dfa802823cdeb5166d855
 F src/vdbesort.c 307460bfa4de4d1c3901fcd42089159131e34062
@@ -932,7 +932,7 @@ F test/orderby8.test 23ef1a5d72bd3adcc2f65561c654295d1b8047bd
 F test/orderby9.test 87fb9548debcc2cd141c5299002dd94672fa76a3
 F test/oserror.test b32dc34f2363ef18532e3a0a7358e3e7e321974f
 F test/ovfl.test 199c482696defceacee8c8e0e0ef36da62726b2f
-F test/pager1.test 1acbdb14c5952a72dd43129cabdbf69aaa3ed1fa
+F test/pager1.test f49df1a8b0e38b9ee3a7dd2ab4d427507b7314ce
 F test/pager2.test 67b8f40ae98112bcdba1f2b2d03ea83266418c71
 F test/pager3.test 3856d9c80839be0668efee1b74811b1b7f7fc95f
 F test/pager4.test a122e9e6925d5b23b31e3dfef8c6a44bbf19590e
@@ -1429,7 +1429,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh a98af506df552f3b3c0d904f94e4cdc4e1a6d598
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a48ac4c347813bd2b416b1cb06c3cbf1f4b3781a
-R 5ba950defec5ebb5c806c723cbc4f5b9
+P 9230ba6c01f4a550d92a0cbbf36dbe81af14fbfc
+R 28c7602ad1de5114aacb14204e4f7226
 U drh
-Z 3422238b7807aea6814e5b393b012e9d
+Z aad5fe626dac38bb4fd331764966d6a1
