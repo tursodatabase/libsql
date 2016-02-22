@@ -1,5 +1,5 @@
-C Avoid\screating\sa\smaster\sjournal\sunless\stwo\sor\smore\sdatabases\sin\sthe\ntransaction\scan\sactually\sbenefit\sfrom\sthat\smaster\sjournal.
-D 2016-02-22T14:57:38.065
+C Always\suse\sthe\ssqlite3VdbeDeleteAuxdata()\sroutine\sfor\sclearing\sauxdata\son\nfunction\sparameter,\srather\sthan\shaving\sa\sseparate\sdeleteAuxdataFromFrame()\nfor\sdoing\sthe\sjob\sfor\strigger\sframes.
+D 2016-02-22T16:04:31.519
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 28fc4ee02333996d31b3602b39eeb8e609a89ce4
@@ -414,11 +414,11 @@ F src/update.c a7eeeaffad59c6506f01303a071dac11de8269ca
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c 38c06684c922694809ccb988a13562c16890a3d5
 F src/vacuum.c feb1eabb20987983d9350cad98299b21fa811f52
-F src/vdbe.c 822e44c1dd859794f8c414e8bae4d96ac1fa774d
+F src/vdbe.c 87ae3a5657fefed7875f3eb30e7ababd48013d71
 F src/vdbe.h c743791f723049db94f009e3e30958952bc2d512
-F src/vdbeInt.h 581e5bff9a401fabdb917b816503cda7356ec3e1
+F src/vdbeInt.h 84827a809229917fdd3cc05af719dbb61314a5a3
 F src/vdbeapi.c 95b1f8e527240a18a9aea41a655b013bf07a7009
-F src/vdbeaux.c 51aaf15e5c29512423429cc0e0477e08f7181514
+F src/vdbeaux.c 9583c5c05a75feb699591c9f24e4750def6537fb
 F src/vdbeblob.c 3b570b730109e8f653d9d2081649f6e7015113db
 F src/vdbemem.c be8381ed6de54eb9cb9dfa802823cdeb5166d855
 F src/vdbesort.c 307460bfa4de4d1c3901fcd42089159131e34062
@@ -1429,7 +1429,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh a98af506df552f3b3c0d904f94e4cdc4e1a6d598
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9230ba6c01f4a550d92a0cbbf36dbe81af14fbfc
-R 28c7602ad1de5114aacb14204e4f7226
+P 3ed1890612bd45bd9c72f670d2cbb0b8fbd35d92
+R 087e6cf717ab51d03c5c0e76eb47f593
 U drh
-Z aad5fe626dac38bb4fd331764966d6a1
+Z ce8b779f1a9ea7c56d4a99bdf5d3c13f

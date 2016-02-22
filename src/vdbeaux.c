@@ -1477,21 +1477,6 @@ static void releaseMemArray(Mem *p, int N){
 }
 
 /*
-** Delete the linked list of AuxData structures attached to frame *p.
-*/
-static void deleteAuxdataInFrame(sqlite3 *db, VdbeFrame *p){
-  AuxData *pAux = p->pAuxData;
-  while( pAux ){
-    AuxData *pNext = pAux->pNext;
-    if( pAux->xDelete ){
-      pAux->xDelete(pAux->pAux);
-    }
-    sqlite3DbFree(db, pAux);
-    pAux = pNext;
-  }
-}
-
-/*
 ** Delete a VdbeFrame object and its contents. VdbeFrame objects are
 ** allocated by the OP_Program opcode in sqlite3VdbeExec().
 */
@@ -1503,7 +1488,7 @@ void sqlite3VdbeFrameDelete(VdbeFrame *p){
     sqlite3VdbeFreeCursor(p->v, apCsr[i]);
   }
   releaseMemArray(aMem, p->nChildMem);
-  deleteAuxdataInFrame(p->v->db, p);
+  sqlite3VdbeDeleteAuxData(p->v->db, &p->pAuxData, -1, 0);
   sqlite3DbFree(p->v->db, p);
 }
 
@@ -2032,7 +2017,7 @@ int sqlite3VdbeFrameRestore(VdbeFrame *pFrame){
   v->db->lastRowid = pFrame->lastRowid;
   v->nChange = pFrame->nChange;
   v->db->nChange = pFrame->nDbChange;
-  sqlite3VdbeDeleteAuxData(v, -1, 0);
+  sqlite3VdbeDeleteAuxData(v->db, &v->pAuxData, -1, 0);
   v->pAuxData = pFrame->pAuxData;
   pFrame->pAuxData = 0;
   return pFrame->pc;
@@ -2066,7 +2051,7 @@ static void closeAllCursors(Vdbe *p){
   }
 
   /* Delete any auxdata allocations made by the VM */
-  if( p->pAuxData ) sqlite3VdbeDeleteAuxData(p, -1, 0);
+  if( p->pAuxData ) sqlite3VdbeDeleteAuxData(p->db, &p->pAuxData, -1, 0);
   assert( p->pAuxData==0 );
 }
 
@@ -2914,8 +2899,7 @@ int sqlite3VdbeFinalize(Vdbe *p){
 **    * the corresponding bit in argument mask is clear (where the first
 **      function parameter corresponds to bit 0 etc.).
 */
-void sqlite3VdbeDeleteAuxData(Vdbe *pVdbe, int iOp, int mask){
-  AuxData **pp = &pVdbe->pAuxData;
+void sqlite3VdbeDeleteAuxData(sqlite3 *db, AuxData **pp, int iOp, int mask){
   while( *pp ){
     AuxData *pAux = *pp;
     if( (iOp<0)
@@ -2926,7 +2910,7 @@ void sqlite3VdbeDeleteAuxData(Vdbe *pVdbe, int iOp, int mask){
         pAux->xDelete(pAux->pAux);
       }
       *pp = pAux->pNext;
-      sqlite3DbFree(pVdbe->db, pAux);
+      sqlite3DbFree(db, pAux);
     }else{
       pp= &pAux->pNext;
     }
