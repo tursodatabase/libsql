@@ -529,6 +529,7 @@ set pwd [get_pwd]
 testvfs tv -default 1
 tv script copy_on_mj_delete
 set ::mj_filename_length 0
+set ::mj_delete_cnt 0
 proc copy_on_mj_delete {method filename args} {
   if {[string match *mj* [file tail $filename]]} { 
     #
@@ -542,6 +543,7 @@ proc copy_on_mj_delete {method filename args} {
       set ::mj_filename_length [string length $filename]
     }
     faultsim_save 
+    incr ::mj_delete_cnt
   }
   return SQLITE_OK
 }
@@ -581,29 +583,68 @@ foreach {tn1 tcl} {
   }
 } {
   eval $tcl
-  foreach {tn2 sql} {
+  foreach {tn2 sql usesMJ} {
     o { 
       PRAGMA main.synchronous=OFF;
       PRAGMA aux.synchronous=OFF;
       PRAGMA journal_mode = DELETE;
-    }
+    } 0
     o512 { 
       PRAGMA main.synchronous=OFF;
       PRAGMA aux.synchronous=OFF;
       PRAGMA main.page_size = 512;
       PRAGMA aux.page_size = 512;
       PRAGMA journal_mode = DELETE;
-    }
+    } 0
     n { 
       PRAGMA main.synchronous=NORMAL;
       PRAGMA aux.synchronous=NORMAL;
       PRAGMA journal_mode = DELETE;
-    }
+    } 1
     f { 
       PRAGMA main.synchronous=FULL;
       PRAGMA aux.synchronous=FULL;
       PRAGMA journal_mode = DELETE;
-    }
+    } 1
+    w1 { 
+      PRAGMA main.synchronous=NORMAL;
+      PRAGMA aux.synchronous=NORMAL;
+      PRAGMA journal_mode = WAL;
+    } 0
+    w2 { 
+      PRAGMA main.synchronous=NORMAL;
+      PRAGMA aux.synchronous=NORMAL;
+      PRAGMA main.journal_mode=DELETE;
+      PRAGMA aux.journal_mode=WAL;
+    } 0
+    o1a { 
+      PRAGMA main.synchronous=FULL;
+      PRAGMA aux.synchronous=OFF;
+      PRAGMA journal_mode=DELETE;
+    } 0
+    o1b { 
+      PRAGMA main.synchronous=OFF;
+      PRAGMA aux.synchronous=NORMAL;
+      PRAGMA journal_mode=DELETE;
+    } 0
+    m1 { 
+      PRAGMA main.synchronous=NORMAL;
+      PRAGMA aux.synchronous=NORMAL;
+      PRAGMA main.journal_mode=DELETE;
+      PRAGMA aux.journal_mode = MEMORY;
+    } 0
+    t1 { 
+      PRAGMA main.synchronous=NORMAL;
+      PRAGMA aux.synchronous=NORMAL;
+      PRAGMA main.journal_mode=DELETE;
+      PRAGMA aux.journal_mode = TRUNCATE;
+    } 1
+    p1 { 
+      PRAGMA main.synchronous=NORMAL;
+      PRAGMA aux.synchronous=NORMAL;
+      PRAGMA main.journal_mode=DELETE;
+      PRAGMA aux.journal_mode = PERSIST;
+    } 1
   } {
 
     set tn "${tn1}.${tn2}"
@@ -615,6 +656,7 @@ foreach {tn1 tcl} {
     #
     tv filter xDelete
     do_test pager1-4.4.$tn.1 {
+      set ::mj_delete_cnt 0
       faultsim_delete_and_reopen $prefix
       execsql "
         ATTACH '${prefix}2' AS aux;
@@ -636,6 +678,13 @@ foreach {tn1 tcl} {
       }
     } {}
     tv filter {}
+
+    # Verify that a master journal was deleted only for those cases where
+    # master journals really ought to be used
+    #
+    do_test pager1-4.4.$tn.1b {
+      set ::mj_delete_cnt
+    } $usesMJ
     
     # Check that the transaction was committed successfully.
     #
@@ -646,25 +695,33 @@ foreach {tn1 tcl} {
       SELECT * FROM b
     } {won too free double-you why zed}
     
-    # Restore the file-system and reopen the databases. Check that it now
-    # appears that the transaction was not committed (because the file-system
-    # was restored to the state where it had not been).
-    #
-    do_test pager1-4.4.$tn.4 {
-      faultsim_restore_and_reopen $prefix
-      execsql "ATTACH '${prefix}2' AS aux"
-    } {}
-    do_execsql_test pager1-4.4.$tn.5 {SELECT * FROM a} {double-you why zed}
-    do_execsql_test pager1-4.4.$tn.6 {SELECT * FROM b} {won too free}
+    if {$usesMJ} {
+      # Restore the file-system and reopen the databases. Check that it now
+      # appears that the transaction was not committed (because the file-system
+      # was restored to the state where it had not been).
+      #
+      do_test pager1-4.4.$tn.4 {
+        faultsim_restore_and_reopen $prefix
+        execsql "ATTACH '${prefix}2' AS aux"
+      } {}
+      do_execsql_test pager1-4.4.$tn.5 {SELECT * FROM a} {double-you why zed}
+      do_execsql_test pager1-4.4.$tn.6 {SELECT * FROM b} {won too free}
+    }
     
     # Restore the file-system again. This time, before reopening the databases,
     # delete the master-journal file from the file-system. It now appears that
     # the transaction was committed (no master-journal file == no rollback).
     #
     do_test pager1-4.4.$tn.7 {
-      faultsim_restore_and_reopen $prefix
-      foreach f [glob ${prefix}-mj*] { forcedelete $f }
+      if {$::mj_delete_cnt>0} {
+        faultsim_restore_and_reopen $prefix
+        foreach f [glob ${prefix}-mj*] { forcedelete $f }
+      } else {
+        db close
+        sqlite3 db $prefix
+      }
       execsql "ATTACH '${prefix}2' AS aux"
+      glob -nocomplain ${prefix}-mj*
     } {}
     do_execsql_test pager1-4.4.$tn.8 {
       SELECT * FROM a
@@ -680,7 +737,6 @@ db close
 tv delete
 forcedelete $dirname
 }
-
 
 # Set up a VFS to make a copy of the file-system just before deleting a
 # journal file to commit a transaction. The transaction modifies exactly

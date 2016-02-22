@@ -3704,7 +3704,7 @@ static int rbuVfsShmUnmap(sqlite3_file *pFile, int delFlag){
 static rbu_file *rbuFindMaindb(rbu_vfs *pRbuVfs, const char *zWal){
   rbu_file *pDb;
   sqlite3_mutex_enter(pRbuVfs->mutex);
-  for(pDb=pRbuVfs->pMain; pDb && pDb->zWal!=zWal; pDb=pDb->pMainNext);
+  for(pDb=pRbuVfs->pMain; pDb && pDb->zWal!=zWal; pDb=pDb->pMainNext){}
   sqlite3_mutex_leave(pRbuVfs->mutex);
   return pDb;
 }

@@ -1488,6 +1488,7 @@ void sqlite3VdbeFrameDelete(VdbeFrame *p){
     sqlite3VdbeFreeCursor(p->v, apCsr[i]);
   }
   releaseMemArray(aMem, p->nChildMem);
+  sqlite3VdbeDeleteAuxData(p->v->db, &p->pAuxData, -1, 0);
   sqlite3DbFree(p->v->db, p);
 }
 
@@ -2016,6 +2017,9 @@ int sqlite3VdbeFrameRestore(VdbeFrame *pFrame){
   v->db->lastRowid = pFrame->lastRowid;
   v->nChange = pFrame->nChange;
   v->db->nChange = pFrame->nDbChange;
+  sqlite3VdbeDeleteAuxData(v->db, &v->pAuxData, -1, 0);
+  v->pAuxData = pFrame->pAuxData;
+  pFrame->pAuxData = 0;
   return pFrame->pc;
 }
 
@@ -2047,7 +2051,7 @@ static void closeAllCursors(Vdbe *p){
   }
 
   /* Delete any auxdata allocations made by the VM */
-  if( p->pAuxData ) sqlite3VdbeDeleteAuxData(p, -1, 0);
+  if( p->pAuxData ) sqlite3VdbeDeleteAuxData(p->db, &p->pAuxData, -1, 0);
   assert( p->pAuxData==0 );
 }
 
@@ -2136,7 +2140,9 @@ int sqlite3VdbeSetColName(
 */
 static int vdbeCommit(sqlite3 *db, Vdbe *p){
   int i;
-  int nTrans = 0;  /* Number of databases with an active write-transaction */
+  int nTrans = 0;  /* Number of databases with an active write-transaction
+                   ** that are candidates for a two-phase commit using a
+                   ** master-journal */
   int rc = SQLITE_OK;
   int needXcommit = 0;
 
@@ -2164,10 +2170,28 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
   for(i=0; rc==SQLITE_OK && i<db->nDb; i++){ 
     Btree *pBt = db->aDb[i].pBt;
     if( sqlite3BtreeIsInTrans(pBt) ){
+      /* Whether or not a database might need a master journal depends upon
+      ** its journal mode (among other things).  This matrix determines which
+      ** journal modes use a master journal and which do not */
+      static const u8 aMJNeeded[] = {
+        /* DELETE   */  1,
+        /* PERSIST   */ 1,
+        /* OFF       */ 0,
+        /* TRUNCATE  */ 1,
+        /* MEMORY    */ 0,
+        /* WAL       */ 0
+      };
+      Pager *pPager;   /* Pager associated with pBt */
       needXcommit = 1;
-      if( i!=1 ) nTrans++;
       sqlite3BtreeEnter(pBt);
-      rc = sqlite3PagerExclusiveLock(sqlite3BtreePager(pBt));
+      pPager = sqlite3BtreePager(pBt);
+      if( db->aDb[i].safety_level!=PAGER_SYNCHRONOUS_OFF
+       && aMJNeeded[sqlite3PagerGetJournalMode(pPager)]
+      ){ 
+        assert( i!=1 );
+        nTrans++;
+      }
+      rc = sqlite3PagerExclusiveLock(pPager);
       sqlite3BtreeLeave(pBt);
     }
   }
@@ -2875,8 +2899,7 @@ int sqlite3VdbeFinalize(Vdbe *p){
 **    * the corresponding bit in argument mask is clear (where the first
 **      function parameter corresponds to bit 0 etc.).
 */
-void sqlite3VdbeDeleteAuxData(Vdbe *pVdbe, int iOp, int mask){
-  AuxData **pp = &pVdbe->pAuxData;
+void sqlite3VdbeDeleteAuxData(sqlite3 *db, AuxData **pp, int iOp, int mask){
   while( *pp ){
     AuxData *pAux = *pp;
     if( (iOp<0)
@@ -2887,7 +2910,7 @@ void sqlite3VdbeDeleteAuxData(Vdbe *pVdbe, int iOp, int mask){
         pAux->xDelete(pAux->pAux);
       }
       *pp = pAux->pNext;
-      sqlite3DbFree(pVdbe->db, pAux);
+      sqlite3DbFree(db, pAux);
     }else{
       pp= &pAux->pNext;
     }

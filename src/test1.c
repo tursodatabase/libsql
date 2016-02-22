@@ -3154,7 +3154,7 @@ static int test_bind_zeroblob64(
 ){
   sqlite3_stmt *pStmt;
   int idx;
-  i64 n;
+  Tcl_WideInt n;
   int rc;
 
   if( objc!=4 ){
