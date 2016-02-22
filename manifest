@@ -1,5 +1,5 @@
-C Always\suse\sthe\ssqlite3VdbeDeleteAuxdata()\sroutine\sfor\sclearing\sauxdata\son\nfunction\sparameter,\srather\sthan\shaving\sa\sseparate\sdeleteAuxdataFromFrame()\nfor\sdoing\sthe\sjob\sfor\strigger\sframes.
-D 2016-02-22T16:04:31.519
+C Avoid\san\sunnecessary\sseek\soperation\ssome\scorner-case\sskip-scan\soperations.
+D 2016-02-22T23:14:11.422
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 28fc4ee02333996d31b3602b39eeb8e609a89ce4
@@ -430,7 +430,7 @@ F src/wal.h 2f7c831cf3b071fa548bf2d5cac640846a7ff19c
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
 F src/where.c 5b67fb8035ae4697cf721db095f800ef8dff5f56
 F src/whereInt.h 78b6b4de94db84aecbdc07fe3e38f648eb391e9a
-F src/wherecode.c 791a784bbf8749d560fdb0b990b607bc4f44a38d
+F src/wherecode.c 39c1ef4598bedf1d66249334c74efd23ddd182ac
 F src/whereexpr.c fb87944b1254234e5bba671aaf6dee476241506a
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1429,7 +1429,8 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh a98af506df552f3b3c0d904f94e4cdc4e1a6d598
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3ed1890612bd45bd9c72f670d2cbb0b8fbd35d92
-R 087e6cf717ab51d03c5c0e76eb47f593
+P 64386fa339adb91439da979d74062f67a6ec68fd a3dcf6db76cc09bdfedb1bbeba3b359b77762cbe
+R 56c5c81425d101f0314396c9251634e4
+T +closed a3dcf6db76cc09bdfedb1bbeba3b359b77762cbe
 U drh
-Z ce8b779f1a9ea7c56d4a99bdf5d3c13f
+Z 8dd31c368b55043259ced425c01733ad
