@@ -101,5 +101,25 @@ do_execsql_test 2.3 {
   SELECT * FROM t4;
 } {1 a_abc_1 2 a_abc_1 1 a_abc_1 2 a_abc_1 1 a_abc_1 2 a_abc_1}
 
+#-------------------------------------------------------------------------
+# Test that trigger parameters (i.e. new.* and old.*) refs are not 
+# considered to be constant across separate invocations of the trigger.
+#
+do_execsql_test 3.0 {
+  CREATE TABLE t5(a);
+  CREATE TABLE t6(x);
+
+  CREATE TRIGGER t5tr AFTER DELETE ON t5 BEGIN
+    DELETE FROM t6 WHERE t6.x REGEXP old.a;
+  END;
+
+  INSERT INTO t5 VALUES ('^a.*'), ('^b.*'), ('^c.*');
+  INSERT INTO t6 VALUES ('eab'), ('abc'), ('bcd'), ('cde'), ('dea');
+
+  DELETE FROM t5;
+  SELECT * FROM t6;
+} {eab dea}
+
+
 finish_test
 
