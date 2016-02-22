@@ -1,5 +1,5 @@
-C Add\san\sextra\stest\scase\sfor\sthe\schange\sin\scommit\s[c4295725].
-D 2016-02-22T09:45:27.195
+C Change\smagic\snumbers\sassociated\swith\ssynchronous\ssettings\sto\snamed\sconstants.
+D 2016-02-22T13:23:16.525
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 28fc4ee02333996d31b3602b39eeb8e609a89ce4
@@ -314,7 +314,7 @@ F src/insert.c 9ca97272e9f74ed0efddf3b4350ee12740cebbef
 F src/journal.c fe3a3e2559ce3ce9d371afd30fbabbc074174575
 F src/legacy.c 75d3023be8f0d2b99d60f905090341a03358c58e
 F src/loadext.c 9e2a41adcaff16ebc1ebff1f336cbf33de55396f
-F src/main.c 8d2fd210bfbf2f28becb9452641c5689760a68d4
+F src/main.c d7415cd68121ef24c2e76b9e81ec96ffc90e6517
 F src/malloc.c 1443d1ad95d67c21d77af7ae3f44678252f0efec
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 6919bcf12f221868ea066eec27e579fed95ce98b
@@ -1429,7 +1429,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh a98af506df552f3b3c0d904f94e4cdc4e1a6d598
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 06f1495f4b7465e3992f524f56d97847643a9895
-R b86f8e59b295e1048335bf96093b2d01
-U dan
-Z f9a2cc9c8dbe56018446b3f984094705
+P a48ac4c347813bd2b416b1cb06c3cbf1f4b3781a
+R 5ba950defec5ebb5c806c723cbc4f5b9
+U drh
+Z 3422238b7807aea6814e5b393b012e9d
