@@ -66,6 +66,9 @@ pub use ffi::sqlite3_column_type;
 
 pub use ffi::{SQLITE_INTEGER, SQLITE_FLOAT, SQLITE_TEXT, SQLITE_BLOB, SQLITE_NULL};
 
+#[cfg(feature = "chrono")]
+mod chrono;
+
 const SQLITE_DATETIME_FMT: &'static str = "%Y-%m-%d %H:%M:%S";
 
 /// A trait for types that can be converted into SQLite values.
