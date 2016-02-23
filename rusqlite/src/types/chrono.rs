@@ -64,7 +64,7 @@ impl FromSql for NaiveDate {
 /// ISO 8601 time without timezone => "HH:MM:SS.SSS"
 impl ToSql for NaiveTime {
     unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
-        let date_str = self.format("%H:%M:%S.3f").to_string();
+        let date_str = self.format("%H:%M:%S%.3f").to_string();
         date_str.bind_parameter(stmt, col)
     }
 }
@@ -175,7 +175,7 @@ impl FromSql for NaiveDateTime {
 /// ISO 8601 date and time with time zone => "YYYY-MM-DD HH:MM:SS.SSS[+-]HH:MM"
 impl ToSql for DateTime<UTC> {
     unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
-        let date_str = self.format("%Y-%m-%dT%H:%M:%S%.3f%:z").to_string();
+        let date_str = self.format("%Y-%m-%d %H:%M:%S%.3f%:z").to_string();
         date_str.bind_parameter(stmt, col)
     }
 }
@@ -194,7 +194,7 @@ impl FromSql for DateTime<UTC> {
                     } else {
                         "%Y-%m-%d %H:%M:%S%.3f%:z"
                     };
-                    match UTC.datetime_from_str(fmt, &s) {
+                    match UTC.datetime_from_str(&s, fmt) {
                         Ok(dt) => Ok(dt),
                         Err(err) => Err(Error::FromSqlConversionFailure(Box::new(err))),
                     }
@@ -221,7 +221,7 @@ impl FromSql for DateTime<UTC> {
 /// ISO 8601 date and time with time zone => "YYYY-MM-DD HH:MM:SS.SSS[+-]HH:MM"
 impl ToSql for DateTime<Local> {
     unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
-        let date_str = self.format("%Y-%m-%dT%H:%M:%S%.3f%:z").to_string();
+        let date_str = self.format("%Y-%m-%d %H:%M:%S%.3f%:z").to_string();
         date_str.bind_parameter(stmt, col)
     }
 }
@@ -240,7 +240,7 @@ impl FromSql for DateTime<Local> {
                     } else {
                         "%Y-%m-%d %H:%M:%S%.3f%:z"
                     };
-                    match Local.datetime_from_str(fmt, &s) {
+                    match Local.datetime_from_str(&s, fmt) {
                         Ok(dt) => Ok(dt),
                         Err(err) => Err(Error::FromSqlConversionFailure(Box::new(err))),
                     }
@@ -265,3 +265,118 @@ impl FromSql for DateTime<Local> {
 
 // struct UnixTime(NaiveDateTime);
 // struct JulianTime(NaiveDateTime)
+
+#[cfg(test)]
+mod test {
+    use Connection;
+    use super::chrono::{DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, UTC};
+
+    fn checked_memory_handle() -> Connection {
+        let db = Connection::open_in_memory().unwrap();
+        db.execute_batch("CREATE TABLE chrono (t TEXT, i INTEGER, f FLOAT, b BLOB)").unwrap();
+        db
+    }
+
+    #[test]
+    fn test_naive_date() {
+        let db = checked_memory_handle();
+        let d = NaiveDate::from_ymd(2016, 2, 23);
+        db.execute("INSERT INTO chrono (t) VALUES (?)", &[&d]).unwrap();
+        db.execute("UPDATE chrono SET f = julianday(t)", &[]).unwrap();
+
+        let s: String = db.query_row("SELECT t FROM chrono", &[], |r| r.get(0)).unwrap();
+        assert_eq!("2016-02-23", s);
+        let t: NaiveDate = db.query_row("SELECT t FROM chrono", &[], |r| r.get(0)).unwrap();
+        assert_eq!(d, t);
+        let f: NaiveDate = db.query_row("SELECT f FROM chrono", &[], |r| r.get(0)).unwrap();
+        assert_eq!(d, f);
+    }
+
+    #[test]
+    fn test_naive_time() {
+        let db = checked_memory_handle();
+        let t = NaiveTime::from_hms(23, 56, 4);
+        db.execute("INSERT INTO chrono (t) VALUES (?)", &[&t]).unwrap();
+
+        let s: String = db.query_row("SELECT t FROM chrono", &[], |r| r.get(0)).unwrap();
+        assert_eq!("23:56:04.000", s);
+        let v: NaiveTime = db.query_row("SELECT t FROM chrono", &[], |r| r.get(0)).unwrap();
+        assert_eq!(t, v);
+    }
+
+    #[test]
+    fn test_naive_date_time() {
+        let db = checked_memory_handle();
+        let d = NaiveDate::from_ymd(2016, 2, 23);
+        let t = NaiveTime::from_hms(23, 56, 4);
+        let dt = NaiveDateTime::new(d, t);
+
+        let di = NaiveDateTime::new(d, NaiveTime::from_hms(23, 56, 3));
+        let ds = NaiveDateTime::new(d, NaiveTime::from_hms(23, 56, 5));
+
+        db.execute("INSERT INTO chrono (t) VALUES (?)", &[&dt]).unwrap();
+        db.execute("UPDATE chrono SET f = julianday(t), i = strftime('%s', t)",
+                   &[])
+          .unwrap();
+
+        let s: String = db.query_row("SELECT t FROM chrono", &[], |r| r.get(0)).unwrap();
+        assert_eq!("2016-02-23 23:56:04.000", s);
+        let v: NaiveDateTime = db.query_row("SELECT t FROM chrono", &[], |r| r.get(0)).unwrap();
+        assert_eq!(dt, v);
+        let f: NaiveDateTime = db.query_row("SELECT f FROM chrono", &[], |r| r.get(0)).unwrap();
+        // FIXME `2016-02-23T23:56:04` vs `2016-02-23T23:56:03.999992609`
+        assert!(f.ge(&di) && f.le(&ds));
+        let i: NaiveDateTime = db.query_row("SELECT i FROM chrono", &[], |r| r.get(0)).unwrap();
+        assert_eq!(dt, i);
+
+        db.execute("UPDATE chrono set b = datetime(t)", &[]).unwrap(); // "YYYY-MM-DD HH:MM:SS"
+        let b: NaiveDateTime = db.query_row("SELECT b FROM chrono", &[], |r| r.get(0)).unwrap();
+        assert_eq!(dt, b);
+
+        db.execute("UPDATE chrono set b = strftime('%Y-%m-%dT%H:%M', t)", &[]).unwrap();
+        let b: NaiveDateTime = db.query_row("SELECT b FROM chrono", &[], |r| r.get(0)).unwrap();
+        assert_eq!(NaiveDateTime::new(d, NaiveTime::from_hms(23, 56, 0)), b);
+    }
+
+    #[test]
+    fn test_date_time_utc() {
+        let db = checked_memory_handle();
+        let d = NaiveDate::from_ymd(2016, 2, 23);
+        let t = NaiveTime::from_hms(23, 56, 4);
+        let dt = NaiveDateTime::new(d, t);
+        let utc = UTC.from_utc_datetime(&dt);
+
+        db.execute("INSERT INTO chrono (t) VALUES (?)", &[&utc]).unwrap();
+        db.execute("UPDATE chrono SET f = julianday(t), i = strftime('%s', t)",
+                   &[])
+          .unwrap();
+
+        let s: String = db.query_row("SELECT t FROM chrono", &[], |r| r.get(0)).unwrap();
+        assert_eq!("2016-02-23 23:56:04.000+00:00", s);
+        let v: DateTime<UTC> = db.query_row("SELECT t FROM chrono", &[], |r| r.get(0)).unwrap();
+        assert_eq!(utc, v);
+        let i: DateTime<UTC> = db.query_row("SELECT i FROM chrono", &[], |r| r.get(0)).unwrap();
+        assert_eq!(utc, i);
+    }
+
+    #[test]
+    fn test_date_time_local() {
+        let db = checked_memory_handle();
+        let d = NaiveDate::from_ymd(2016, 2, 23);
+        let t = NaiveTime::from_hms(23, 56, 4);
+        let dt = NaiveDateTime::new(d, t);
+        let local = Local.from_local_datetime(&dt).single().unwrap();
+
+        db.execute("INSERT INTO chrono (t) VALUES (?)", &[&local]).unwrap();
+        db.execute("UPDATE chrono SET f = julianday(t), i = strftime('%s', t)",
+                   &[])
+          .unwrap();
+
+        let s: String = db.query_row("SELECT t FROM chrono", &[], |r| r.get(0)).unwrap();
+        assert_eq!("2016-02-23 23:56:04.000+01:00", s);
+        let v: DateTime<Local> = db.query_row("SELECT t FROM chrono", &[], |r| r.get(0)).unwrap();
+        assert_eq!(local, v);
+        let i: DateTime<Local> = db.query_row("SELECT i FROM chrono", &[], |r| r.get(0)).unwrap();
+        assert_eq!(local, i);
+    }
+}
