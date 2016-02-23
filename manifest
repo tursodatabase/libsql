@@ -1,5 +1,5 @@
-C Remove\scode\snot\sneeded\snow\sthat\ssynchronous=OFF\sdatabase\sfiles\sno\slonger\ntrigger\sthe\suse\sof\sa\smaster\sjournal.
-D 2016-02-22T23:44:42.710
+C Add\sthe\sSQLITE_BITMASK_TYPE\scompile-time\soption.
+D 2016-02-23T16:28:34.108
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 28fc4ee02333996d31b3602b39eeb8e609a89ce4
@@ -354,7 +354,7 @@ F src/shell.c 0367440658104bf2ce8d8a9a5a713a4b11c9acbe
 F src/sqlite.h.in a7caa805a345d6a14136c11ccfa6f4c1a6ef6e7b
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
-F src/sqliteInt.h 47f61c35d587d38cbcfc8ba852ff441054d697d3
+F src/sqliteInt.h 1a2f11f92cb3d76c011c04f87de3c0ebcc26230e
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
@@ -1429,7 +1429,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh a98af506df552f3b3c0d904f94e4cdc4e1a6d598
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2a6003a937a210dfc279e393d3a0b49d1f3ac92e
-R 3fce95d53a76531400313bc834bea507
+P aa9f4c622af191edbeb6a535942944f8c91f5c37
+R 4a575c5637747e2b18640a9618428d3e
 U drh
-Z c128e62f644c513c2811d577cffaf98d
+Z c4c6cb390dd2f5f6f2bb80636719a5f7
