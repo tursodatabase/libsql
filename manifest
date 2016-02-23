@@ -1,5 +1,5 @@
-C Merge\sup\sto\strunk.
-D 2016-02-22T13:01:22.781
+C Add\ssupport\sfor\s(variable\slength)\sinteger\skeys\sin\sLSM1.
+D 2016-02-23T01:37:24.930
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 28fc4ee02333996d31b3602b39eeb8e609a89ce4
@@ -13,7 +13,7 @@ F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am 29e2a6e8d0c5e32723a48b4faf6b168854dde5f4
 F autoconf/Makefile.msc d5ab32cf30d6ba8b5ce20835b4042f6cc2a4cb39
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
-F autoconf/README.txt 7c31da66232f7590bb987cfcd4e2381744b25d24 w autoconf/README
+F autoconf/README.txt 7c31da66232f7590bb987cfcd4e2381744b25d24
 F autoconf/configure.ac 72a5e42beb090b32bca580285dc0ab3c4670adb8
 F autoconf/tea/Makefile.in b438a7020446c8a8156e8d97c8914a04833da6fd
 F autoconf/tea/README 3e9a3c060f29a44344ab50aec506f4db903fb873
@@ -215,7 +215,7 @@ F ext/lsm1/lsm_str.c 77ebdd5040ddf267a6f724d4c83132d2dce8a226
 F ext/lsm1/lsm_tree.c 5d9fb2bc58a1a70c75126bd8d7198f7b627e165b
 F ext/lsm1/lsm_unix.c fcaf5b6738713f1229dc0e1a90393ecf24f787f2
 F ext/lsm1/lsm_varint.c b19ae9bd26b5a1e8402fb8a564b25d9542338a41
-F ext/lsm1/lsm_vtab.c 37be4d5928de455f752fdd8108ea1e6cd06ce6e0
+F ext/lsm1/lsm_vtab.c f7fb6c185ebd5dcf70f676886e28799afa72424e
 F ext/misc/amatch.c a1a8f66c29d40bd71b075546ddeddb477b17a2bb
 F ext/misc/closure.c 0d2a038df8fbae7f19de42e7c7d71f2e4dc88704
 F ext/misc/compress.c 122faa92d25033d6c3f07c39231de074ab3d2e83
@@ -998,7 +998,7 @@ F test/savepoint4.test c8f8159ade6d2acd9128be61e1230f1c1edc6cc0
 F test/savepoint5.test 0735db177e0ebbaedc39812c8d065075d563c4fd
 F test/savepoint6.test f41279c5e137139fa5c21485773332c7adb98cd7
 F test/savepoint7.test db3db281486c925095f305aad09fe806e5188ff3
-F test/savepointfault.test f044eac64b59f09746c7020ee261734de82bf9b2 w test/savepoint3.test
+F test/savepointfault.test f044eac64b59f09746c7020ee261734de82bf9b2
 F test/scanstatus.test 5253c219e331318a437f436268e0e82345700285
 F test/schema.test 8f7999be894260f151adf15c2c7540f1c6d6a481
 F test/schema2.test 906408621ea881fdb496d878b1822572a34e32c5
@@ -1363,7 +1363,7 @@ F test/whereH.test e4b07f7a3c2f5d31195cd33710054c78667573b2
 F test/whereI.test eab5b226bbc344ac70d7dc09b963a064860ae6d7
 F test/whereJ.test 55a3221706a7ab706293f17cc8f96da563bf0767
 F test/whereK.test f8e3cf26a8513ecc7f514f54df9f0572c046c42b
-F test/wherefault.test 1374c3aa198388925246475f84ad4cd5f9528864 w test/where8m.test
+F test/wherefault.test 1374c3aa198388925246475f84ad4cd5f9528864
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/wild001.test bca33f499866f04c24510d74baf1e578d4e44b1c
 F test/win32heap.test ea19770974795cff26e11575e12d422dbd16893c
@@ -1445,7 +1445,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh a98af506df552f3b3c0d904f94e4cdc4e1a6d598
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8aede091c4740511d11ea14da253fe39bbfe75a6 a48ac4c347813bd2b416b1cb06c3cbf1f4b3781a
-R 580b69c1534293700c3568d992e6ddd2
+P f9e5fb88a5a14b26e9ea6997f449d0913f27a494
+R cb91bcf5f852d7d369f68158e9ec3ba2
 U drh
-Z e274944a16c507edac9643474a14a944
+Z 5c76f2e4fcca8d24f17a7236982c41a2
