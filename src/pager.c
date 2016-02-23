@@ -6738,14 +6738,6 @@ const char *sqlite3PagerJournalname(Pager *pPager){
   return pPager->zJournal;
 }
 
-/*
-** Return true if fsync() calls are disabled for this pager.  Return FALSE
-** if fsync()s are executed normally.
-*/
-int sqlite3PagerNosync(Pager *pPager){
-  return pPager->noSync;
-}
-
 #ifdef SQLITE_HAS_CODEC
 /*
 ** Set or retrieve the codec for this pager

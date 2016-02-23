@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\s(variable\slength)\sinteger\skeys\sin\sLSM1.
-D 2016-02-23T01:37:24.930
+C Merge\strunk\senhancements.
+D 2016-02-23T01:41:35.494
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 28fc4ee02333996d31b3602b39eeb8e609a89ce4
@@ -308,8 +308,8 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c f60f0aa55d25d853ffde53d0b0370a7bb7ee41ce
 F src/bitvec.c 3ee4c8b2c94ed3a7377256e18199e6ff5cf33f63
 F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
-F src/btree.c 474ad91c1684e9053da64fa88747a1cb0c10d034
-F src/btree.h 368ceeb4bd9312dc8df2ffd64b4b7dbcf4db5f8e
+F src/btree.c 7bb920c473c277380fcb3e8a8ee28ce1a48e0abc
+F src/btree.h a5008b9afe56e8e54ade6c436a910f112defcca9
 F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
 F src/build.c 88f185a37d1e087818fd7077d84d65c5babefdb1
 F src/callback.c 0643b8fb06c95a8977beb201b268210d4b131a22
@@ -330,7 +330,7 @@ F src/insert.c 9ca97272e9f74ed0efddf3b4350ee12740cebbef
 F src/journal.c fe3a3e2559ce3ce9d371afd30fbabbc074174575
 F src/legacy.c 75d3023be8f0d2b99d60f905090341a03358c58e
 F src/loadext.c 9e2a41adcaff16ebc1ebff1f336cbf33de55396f
-F src/main.c 8d2fd210bfbf2f28becb9452641c5689760a68d4
+F src/main.c d7415cd68121ef24c2e76b9e81ec96ffc90e6517
 F src/malloc.c 1443d1ad95d67c21d77af7ae3f44678252f0efec
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 6919bcf12f221868ea066eec27e579fed95ce98b
@@ -352,8 +352,8 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c 3a6f20736dfb8a0949cdd66553fdf59f6604be35
 F src/os_win.c f0d7aa603eb6262143d7169a222aea07c4fca91d
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
-F src/pager.c 6812f3803951774b56abded396171e1c12b0b003
-F src/pager.h f3eb324a3ff2408b28bab7e81c1c55c13720f865
+F src/pager.c d034c69b958c01289eb8070cbf902e1a68cd7e0b
+F src/pager.h e1d38a2f14849e219df0f91f8323504d134c8a56
 F src/parse.y c3ce2c4a7cbf0b699239be6b2a945c5cb51875e2
 F src/pcache.c 647bb53a86b7bbcf55ad88089b3ea5a9170b90df
 F src/pcache.h 4d0ccaad264d360981ec5e6a2b596d6e85242545
@@ -430,11 +430,11 @@ F src/update.c a7eeeaffad59c6506f01303a071dac11de8269ca
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c 38c06684c922694809ccb988a13562c16890a3d5
 F src/vacuum.c feb1eabb20987983d9350cad98299b21fa811f52
-F src/vdbe.c 822e44c1dd859794f8c414e8bae4d96ac1fa774d
+F src/vdbe.c 87ae3a5657fefed7875f3eb30e7ababd48013d71
 F src/vdbe.h c743791f723049db94f009e3e30958952bc2d512
-F src/vdbeInt.h 581e5bff9a401fabdb917b816503cda7356ec3e1
+F src/vdbeInt.h 84827a809229917fdd3cc05af719dbb61314a5a3
 F src/vdbeapi.c 95b1f8e527240a18a9aea41a655b013bf07a7009
-F src/vdbeaux.c ec9a4d939a7430b76f53c5ef5cdbca3c8704848a
+F src/vdbeaux.c 2c15cf88de4df97428318c8cfac0dea873dae451
 F src/vdbeblob.c 3b570b730109e8f653d9d2081649f6e7015113db
 F src/vdbemem.c be8381ed6de54eb9cb9dfa802823cdeb5166d855
 F src/vdbesort.c 307460bfa4de4d1c3901fcd42089159131e34062
@@ -446,7 +446,7 @@ F src/wal.h 2f7c831cf3b071fa548bf2d5cac640846a7ff19c
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
 F src/where.c 5b67fb8035ae4697cf721db095f800ef8dff5f56
 F src/whereInt.h 78b6b4de94db84aecbdc07fe3e38f648eb391e9a
-F src/wherecode.c 791a784bbf8749d560fdb0b990b607bc4f44a38d
+F src/wherecode.c 39c1ef4598bedf1d66249334c74efd23ddd182ac
 F src/whereexpr.c fb87944b1254234e5bba671aaf6dee476241506a
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -948,7 +948,7 @@ F test/orderby8.test 23ef1a5d72bd3adcc2f65561c654295d1b8047bd
 F test/orderby9.test 87fb9548debcc2cd141c5299002dd94672fa76a3
 F test/oserror.test b32dc34f2363ef18532e3a0a7358e3e7e321974f
 F test/ovfl.test 199c482696defceacee8c8e0e0ef36da62726b2f
-F test/pager1.test 1acbdb14c5952a72dd43129cabdbf69aaa3ed1fa
+F test/pager1.test f49df1a8b0e38b9ee3a7dd2ab4d427507b7314ce
 F test/pager2.test 67b8f40ae98112bcdba1f2b2d03ea83266418c71
 F test/pager3.test 3856d9c80839be0668efee1b74811b1b7f7fc95f
 F test/pager4.test a122e9e6925d5b23b31e3dfef8c6a44bbf19590e
@@ -1445,7 +1445,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh a98af506df552f3b3c0d904f94e4cdc4e1a6d598
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f9e5fb88a5a14b26e9ea6997f449d0913f27a494
-R cb91bcf5f852d7d369f68158e9ec3ba2
+P 32f3daec0a8084b258b2513c8025bc4d95a5d757 aa9f4c622af191edbeb6a535942944f8c91f5c37
+R 03319de6b06f1ae4f2324c01efdb9598
 U drh
-Z 5c76f2e4fcca8d24f17a7236982c41a2
+Z 7e07aa1e426a3abb50d562fbcc7f53c0
