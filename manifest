@@ -1,5 +1,5 @@
-C Test\sbuild\sall\ssupported\sconfigurations\sand\splatforms\sduring\sVSIX\stesting.
-D 2016-02-24T23:25:23.355
+C Fix\stypo.\s\sImprove\sinterim\sdebugging.
+D 2016-02-24T23:31:14.464
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 28fc4ee02333996d31b3602b39eeb8e609a89ce4
@@ -1446,11 +1446,11 @@ F vsixtest/Package.appxmanifest 0535b2e6708c44ad45ed7fb1dfd4de5de351dd7a
 F vsixtest/pch.cpp 681cc12ddc215c95fe300ee8a3dde057fa2ec308
 F vsixtest/pch.h 9d2475a4f6d5c921b86c8f61060b6b04421f1010
 F vsixtest/vsixtest.sln 8950e044dd04a07046990d04bf77e60738e2d136
-F vsixtest/vsixtest.tcl 0f16064663d4e8362381529a4f7f675f242b7b18
+F vsixtest/vsixtest.tcl e1f20568f5551ae58f395af6440a3f3b65368682
 F vsixtest/vsixtest.vcxproj 15407f0e35e914fecc65ed422ac08b28e52b3e4f
 F vsixtest/vsixtest.vcxproj.filters 443739cb985bb81620dc66f375a845b25debe116
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 496e4ac984b2548dd5f2f969cd34656b586cfcfe
-R 5a3c0879fbd24c05458da7451d8d9c43
+P cce40a0b8ee792482fb7031113eb190ad316d01a
+R 599ba9dab9a4637ded30c8413d19596a
 U mistachkin
-Z bb333cc3788a57a462cd7d4a3c9c3a93
+Z a097fb629010575b51e2f4b031c45e27

@@ -181,7 +181,7 @@ set commands(2) [list exec [file nativename $msBuild]]
 lappend commands(2) [file nativename [file join $path vsixtest.sln]]
 lappend commands(2) /target:Rebuild
 lappend commands(2) /property:Configuration=%configuration%
-lappend commands(2) /property:Platform=%clatform%
+lappend commands(2) /property:Platform=%platform%
 
 lappend commands(2) [appendArgs \
     /logger:FileLogger,Microsoft.Build.Engine\;Logfile= \
@@ -213,7 +213,7 @@ puts stdout [appendArgs \
 puts stdout [appendArgs \
     "Third command is \"" $commands(3) "\"."]
 
-if {0} then {
+if {1} then {
   # eval $commands(1)
 
   set platforms [list Win32 x64 ARM]
@@ -221,9 +221,15 @@ if {0} then {
 
   foreach platform $platforms {
     foreach configuration $configurations {
-      eval [string map [list \
+      puts stdout [string map [list \
           %platform% $platform %configuration% \
           $configuration] $commands(2)]
+
+      if {0} then {
+        eval [string map [list \
+            %platform% $platform %configuration% \
+            $configuration] $commands(2)]
+      }
     }
   }
 
