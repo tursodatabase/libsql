@@ -379,7 +379,7 @@ static int lsm1EncodeKey(
       sqlite3_uint64 uVal;
       if( iVal<0 ){
         if( iVal==0xffffffffffffffffLL ) return SQLITE_ERROR;
-        uVal = -iVal;
+        uVal = *(sqlite3_uint64*)&iVal;
         eType = LSM1_TYPE_NEGATIVE;
       }else{
         uVal = iVal;
@@ -424,16 +424,12 @@ static int lsm1Column(
         }else if( pVal[0]==LSM1_TYPE_TEXT ){
           sqlite3_result_text(ctx, (const char*)&pVal[1],nVal-1,
                               SQLITE_TRANSIENT);
-        }else if( nVal>=2 && nVal<=9 &&
+        }else if( nVal>=2 && nVal<=10 &&
            (pVal[0]==LSM1_TYPE_POSITIVE || pVal[0]==LSM1_TYPE_NEGATIVE)
         ){
-          sqlite3_uint64 uVal = 0;
-          lsm1GetVarint64(pVal+1, nVal-1, &uVal);
-          if( pVal[0]==LSM1_TYPE_NEGATIVE ){
-            sqlite3_result_int64(ctx, -(sqlite3_int64)uVal);
-          }else{
-            sqlite3_result_int64(ctx, (sqlite3_int64)uVal); 
-          }
+          sqlite3_int64 iVal;
+          lsm1GetVarint64(pVal+1, nVal-1, (sqlite3_uint64*)&iVal);
+          sqlite3_result_int64(ctx, iVal);
         }         
       }
       break;

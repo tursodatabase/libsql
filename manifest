@@ -1,5 +1,5 @@
-C Merge\strunk\senhancements.
-D 2016-02-23T01:41:35.494
+C LSM1:\sFix\sthe\sinteger\skey\sencoding\sso\sthat\snegative\skeys\sare\sin\snumeric\sorder.
+D 2016-02-24T13:35:22.043
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 28fc4ee02333996d31b3602b39eeb8e609a89ce4
@@ -215,7 +215,7 @@ F ext/lsm1/lsm_str.c 77ebdd5040ddf267a6f724d4c83132d2dce8a226
 F ext/lsm1/lsm_tree.c 5d9fb2bc58a1a70c75126bd8d7198f7b627e165b
 F ext/lsm1/lsm_unix.c fcaf5b6738713f1229dc0e1a90393ecf24f787f2
 F ext/lsm1/lsm_varint.c b19ae9bd26b5a1e8402fb8a564b25d9542338a41
-F ext/lsm1/lsm_vtab.c f7fb6c185ebd5dcf70f676886e28799afa72424e
+F ext/lsm1/lsm_vtab.c fff303ce03168eca9e333add3c1429b3471674b0
 F ext/misc/amatch.c a1a8f66c29d40bd71b075546ddeddb477b17a2bb
 F ext/misc/closure.c 0d2a038df8fbae7f19de42e7c7d71f2e4dc88704
 F ext/misc/compress.c 122faa92d25033d6c3f07c39231de074ab3d2e83
@@ -1445,7 +1445,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh a98af506df552f3b3c0d904f94e4cdc4e1a6d598
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 32f3daec0a8084b258b2513c8025bc4d95a5d757 aa9f4c622af191edbeb6a535942944f8c91f5c37
-R 03319de6b06f1ae4f2324c01efdb9598
+P fac4f4ecee21a460e527a0e2ffa24094b74e17dd
+R 9f78396a287b58b8dc55076320f7b772
 U drh
-Z 7e07aa1e426a3abb50d562fbcc7f53c0
+Z 4d07009afed81bdff10146a4248806a2
