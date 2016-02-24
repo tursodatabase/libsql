@@ -3192,6 +3192,17 @@ Index *sqlite3CreateIndex(
   }else{
     pIndex->aiColumn[i] = XN_ROWID;
     pIndex->azColl[i] = sqlite3StrBINARY;
+    /* If this index contains every column of its table, then mark
+    ** it as a covering index */
+    if( pTblName!=0 && pIndex->nColumn>=pTab->nCol ){
+      pIndex->isCovering = 1;
+      for(j=0; j<pTab->nCol; j++){
+        if( j==pTab->iPKey ) continue;
+        if( sqlite3ColumnOfIndex(pIndex,j)>=0 ) continue;
+        pIndex->isCovering = 0;
+        break;
+      }
+    }
   }
   sqlite3DefaultRowEst(pIndex);
   if( pParse->pNewTable==0 ) estimateIndexWidth(pIndex);
