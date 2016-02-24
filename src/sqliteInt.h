@@ -1395,7 +1395,7 @@ struct FuncDef {
   FuncDef *pNext;      /* Next function with same name */
   void (*xSFunc)(sqlite3_context*,int,sqlite3_value**); /* func or agg-step */
   void (*xFinalize)(sqlite3_context*);                  /* Agg finalizer */
-  char *zName;         /* SQL name of the function. */
+  const char *zName;   /* SQL name of the function. */
   union {
     FuncDef *pHash;      /* Next with a different name but the same hash */
     FuncDestructor *pDestructor;   /* Reference counted destructor function */
