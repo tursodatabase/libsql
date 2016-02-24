@@ -167,27 +167,30 @@ set installLogFileName [appendArgs \
     [file rootname [file tail $fileName]] -install- [pid] .log]
 
 set buildLogFileName [appendArgs \
-    [file rootname [file tail $fileName]] -build- [pid] .log]
+    [file rootname [file tail $fileName]] \
+    -build-%configuration%-%platform%- [pid] .log]
 
 set uninstallLogFileName [appendArgs \
     [file rootname [file tail $fileName]] -uninstall- [pid] .log]
 
-set command(1) [list exec [file nativename $vsixInstaller] /quiet /norepair]
-lappend command(1) [appendArgs /logFile: $installLogFileName]
-lappend command(1) [file nativename $fileName]
+set commands(1) [list exec [file nativename $vsixInstaller] /quiet /norepair]
+lappend commands(1) [appendArgs /logFile: $installLogFileName]
+lappend commands(1) [file nativename $fileName]
 
-set command(2) [list exec [file nativename $msBuild]]
-lappend command(2) [file nativename [file join $path vsixtest.sln]]
-lappend command(2) /target:Rebuild /property:Configuration=Release
+set commands(2) [list exec [file nativename $msBuild]]
+lappend commands(2) [file nativename [file join $path vsixtest.sln]]
+lappend commands(2) /target:Rebuild
+lappend commands(2) /property:Configuration=%configuration%
+lappend commands(2) /property:Platform=%clatform%
 
-lappend command(2) [appendArgs \
+lappend commands(2) [appendArgs \
     /logger:FileLogger,Microsoft.Build.Engine\;Logfile= \
     [file nativename [file join $temporaryDirectory $buildLogFileName]] \
     \;Verbosity=diagnostic]
 
-set command(3) [list exec [file nativename $vsixInstaller] /quiet /norepair]
-lappend command(3) [appendArgs /logFile: $uninstallLogFileName]
-lappend command(3) [appendArgs /uninstall:SQLite.UWP.2015]
+set commands(3) [list exec [file nativename $vsixInstaller] /quiet /norepair]
+lappend commands(3) [appendArgs /logFile: $uninstallLogFileName]
+lappend commands(3) [appendArgs /uninstall:SQLite.UWP.2015]
 
 puts stdout [appendArgs \
     "Install log will be \"" [file nativename [file join \
@@ -202,14 +205,27 @@ puts stdout [appendArgs \
     $temporaryDirectory $uninstallLogFileName]] "\"."]
 
 puts stdout [appendArgs \
-    "First command is \"" $command(1) "\"."]
+    "First command is \"" $commands(1) "\"."]
 
 puts stdout [appendArgs \
-    "Second command is \"" $command(2) "\"."]
+    "Second command is \"" $commands(2) "\"."]
 
 puts stdout [appendArgs \
-    "Third command is \"" $command(3) "\"."]
+    "Third command is \"" $commands(3) "\"."]
 
-# eval exec $command(1)
-# eval exec $command(2)
-# eval exec $command(3)
+if {0} then {
+  # eval $commands(1)
+
+  set platforms [list Win32 x64 ARM]
+  set configurations [list Debug Release]
+
+  foreach platform $platforms {
+    foreach configuration $configurations {
+      eval [string map [list \
+          %platform% $platform %configuration% \
+          $configuration] $commands(2)]
+    }
+  }
+
+  # eval $commands(3)
+}

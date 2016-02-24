@@ -1,5 +1,5 @@
-C Initial\swork\son\san\sautomated\sVSIX\stesting\stool.\s\sNot\sworking\sor\stested\syet.
-D 2016-02-24T21:42:03.852
+C Test\sbuild\sall\ssupported\sconfigurations\sand\splatforms\sduring\sVSIX\stesting.
+D 2016-02-24T23:25:23.355
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 28fc4ee02333996d31b3602b39eeb8e609a89ce4
@@ -1446,14 +1446,11 @@ F vsixtest/Package.appxmanifest 0535b2e6708c44ad45ed7fb1dfd4de5de351dd7a
 F vsixtest/pch.cpp 681cc12ddc215c95fe300ee8a3dde057fa2ec308
 F vsixtest/pch.h 9d2475a4f6d5c921b86c8f61060b6b04421f1010
 F vsixtest/vsixtest.sln 8950e044dd04a07046990d04bf77e60738e2d136
-F vsixtest/vsixtest.tcl d452077319cd94e626e37a8ea323f4e739dbc5a6
+F vsixtest/vsixtest.tcl 0f16064663d4e8362381529a4f7f675f242b7b18
 F vsixtest/vsixtest.vcxproj 15407f0e35e914fecc65ed422ac08b28e52b3e4f
 F vsixtest/vsixtest.vcxproj.filters 443739cb985bb81620dc66f375a845b25debe116
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e721975faa0925be4029330550ff2a9666041ff7
-R 5235a7354869742aeac200c2498e03f2
-T *branch * vsixTest
-T *sym-vsixTest *
-T -sym-trunk *
+P 496e4ac984b2548dd5f2f969cd34656b586cfcfe
+R 5a3c0879fbd24c05458da7451d8d9c43
 U mistachkin
-Z 30aae13ef1f9c0b59510b9ed5eae30fc
+Z bb333cc3788a57a462cd7d4a3c9c3a93
