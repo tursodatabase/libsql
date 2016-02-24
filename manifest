@@ -1,5 +1,5 @@
-C Change\sa\schar*\sto\sconst\schar*\sin\sorder\sto\ssuppress\ssome\sharmless\ncompiler\swarnings.
-D 2016-02-24T19:57:11.748
+C Extend\s[3e9ed1ae]\sso\sthat\scovering\sindexes\son\sWITHOUT\sROWID\stables\sare\salso\sidentified.
+D 2016-02-24T20:16:28.164
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 28fc4ee02333996d31b3602b39eeb8e609a89ce4
@@ -295,7 +295,7 @@ F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
 F src/btree.c 7bb920c473c277380fcb3e8a8ee28ce1a48e0abc
 F src/btree.h a5008b9afe56e8e54ade6c436a910f112defcca9
 F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
-F src/build.c 2c85d62e502e3f41f37049733c25be77780660e2
+F src/build.c 6661513c8f90a23d44ed5e5ada7ea40fac6b6b77
 F src/callback.c 2e76147783386374bf01b227f752c81ec872d730
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 60e135af364d777a9ab41c97e5e89cd224da6198
@@ -564,7 +564,7 @@ F test/corruptI.test 347babbf970e7947e3f91dccf7a1bec28a1bab04
 F test/corruptJ.test 9e29e7a81ee3b6ac50f77ea7a9e2f3fa03f32d91
 F test/cost.test 1eedbfd868f806f3fa08ff072b04cf270dcf61c8
 F test/count.test cb2e0f934c6eb33670044520748d2ecccd46259c
-F test/coveridxscan.test cdb47d01acc4a634a34fd25abe85189e0d0f1e62
+F test/coveridxscan.test b629e896b14df2f000a99b8d170d80589c46562c
 F test/crash.test fb9dc4a02dcba30d4aa5c2c226f98b220b2b959f
 F test/crash2.test 5b14d4eb58b880e231361d3b609b216acda86651
 F test/crash3.test 8f5de9d32ab9ab95475a9efe7f47a940aa889418
@@ -1429,7 +1429,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh a98af506df552f3b3c0d904f94e4cdc4e1a6d598
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3e9ed1aea43e8ce2eb74bb845ea2c05b5882e36e
-R a9fa28705051ff7267b4f6fc3a125cf7
-U drh
-Z a55a4b9187efcf601b6a807452ec9fcd
+P 56f62e34ae9d5c7db07367f0007df258b2e76bd2
+R baac3e94ca81a0031c96821cb1862aed
+U dan
+Z 255768a198e66c588af8c08668af4632
