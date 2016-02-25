@@ -2442,6 +2442,7 @@ struct SrcList {
 #define WHERE_SORTBYGROUP      0x0800 /* Support sqlite3WhereIsSorted() */
 #define WHERE_REOPEN_IDX       0x1000 /* Try to use OP_ReopenIdx */
 #define WHERE_ONEPASS_MULTIROW 0x2000 /* ONEPASS is ok with multiple rows */
+#define WHERE_USE_LIMIT        0x4000 /* There is a constant LIMIT clause */
 
 /* Allowed return values from sqlite3WhereIsDistinct()
 */
@@ -2520,13 +2521,13 @@ struct NameContext {
 struct Select {
   ExprList *pEList;      /* The fields of the result */
   u8 op;                 /* One of: TK_UNION TK_ALL TK_INTERSECT TK_EXCEPT */
-  u16 selFlags;          /* Various SF_* values */
+  LogEst nSelectRow;     /* Estimated number of result rows */
+  u32 selFlags;          /* Various SF_* values */
   int iLimit, iOffset;   /* Memory registers holding LIMIT & OFFSET counters */
 #if SELECTTRACE_ENABLED
   char zSelName[12];     /* Symbolic name of this SELECT use for debugging */
 #endif
   int addrOpenEphm[2];   /* OP_OpenEphem opcodes related to this select */
-  u64 nSelectRow;        /* Estimated number of result rows */
   SrcList *pSrc;         /* The FROM clause */
   Expr *pWhere;          /* The WHERE clause */
   ExprList *pGroupBy;    /* The GROUP BY clause */
@@ -2543,22 +2544,23 @@ struct Select {
 ** Allowed values for Select.selFlags.  The "SF" prefix stands for
 ** "Select Flag".
 */
-#define SF_Distinct        0x0001  /* Output should be DISTINCT */
-#define SF_All             0x0002  /* Includes the ALL keyword */
-#define SF_Resolved        0x0004  /* Identifiers have been resolved */
-#define SF_Aggregate       0x0008  /* Contains aggregate functions */
-#define SF_UsesEphemeral   0x0010  /* Uses the OpenEphemeral opcode */
-#define SF_Expanded        0x0020  /* sqlite3SelectExpand() called on this */
-#define SF_HasTypeInfo     0x0040  /* FROM subqueries have Table metadata */
-#define SF_Compound        0x0080  /* Part of a compound query */
-#define SF_Values          0x0100  /* Synthesized from VALUES clause */
-#define SF_MultiValue      0x0200  /* Single VALUES term with multiple rows */
-#define SF_NestedFrom      0x0400  /* Part of a parenthesized FROM clause */
-#define SF_MaybeConvert    0x0800  /* Need convertCompoundSelectToSubquery() */
-#define SF_MinMaxAgg       0x1000  /* Aggregate containing min() or max() */
-#define SF_Recursive       0x2000  /* The recursive part of a recursive CTE */
-#define SF_Converted       0x4000  /* By convertCompoundSelectToSubquery() */
-#define SF_IncludeHidden   0x8000  /* Include hidden columns in output */
+#define SF_Distinct       0x00001  /* Output should be DISTINCT */
+#define SF_All            0x00002  /* Includes the ALL keyword */
+#define SF_Resolved       0x00004  /* Identifiers have been resolved */
+#define SF_Aggregate      0x00008  /* Contains aggregate functions */
+#define SF_UsesEphemeral  0x00010  /* Uses the OpenEphemeral opcode */
+#define SF_Expanded       0x00020  /* sqlite3SelectExpand() called on this */
+#define SF_HasTypeInfo    0x00040  /* FROM subqueries have Table metadata */
+#define SF_Compound       0x00080  /* Part of a compound query */
+#define SF_Values         0x00100  /* Synthesized from VALUES clause */
+#define SF_MultiValue     0x00200  /* Single VALUES term with multiple rows */
+#define SF_NestedFrom     0x00400  /* Part of a parenthesized FROM clause */
+#define SF_MaybeConvert   0x00800  /* Need convertCompoundSelectToSubquery() */
+#define SF_MinMaxAgg      0x01000  /* Aggregate containing min() or max() */
+#define SF_Recursive      0x02000  /* The recursive part of a recursive CTE */
+#define SF_FixedLimit     0x04000  /* nSelectRow set by a constant LIMIT */
+#define SF_Converted      0x08000  /* By convertCompoundSelectToSubquery() */
+#define SF_IncludeHidden  0x10000  /* Include hidden columns in output */
 
 
 /*
@@ -3489,7 +3491,7 @@ Index *sqlite3CreateIndex(Parse*,Token*,Token*,SrcList*,ExprList*,int,Token*,
 void sqlite3DropIndex(Parse*, SrcList*, int);
 int sqlite3Select(Parse*, Select*, SelectDest*);
 Select *sqlite3SelectNew(Parse*,ExprList*,SrcList*,Expr*,ExprList*,
-                         Expr*,ExprList*,u16,Expr*,Expr*);
+                         Expr*,ExprList*,u32,Expr*,Expr*);
 void sqlite3SelectDelete(sqlite3*, Select*);
 Table *sqlite3SrcListLookup(Parse*, SrcList*);
 int sqlite3IsReadOnly(Parse*, Table*, int);
@@ -3501,7 +3503,7 @@ void sqlite3DeleteFrom(Parse*, SrcList*, Expr*);
 void sqlite3Update(Parse*, SrcList*, ExprList*, Expr*, int);
 WhereInfo *sqlite3WhereBegin(Parse*,SrcList*,Expr*,ExprList*,ExprList*,u16,int);
 void sqlite3WhereEnd(WhereInfo*);
-u64 sqlite3WhereOutputRowCount(WhereInfo*);
+LogEst sqlite3WhereOutputRowCount(WhereInfo*);
 int sqlite3WhereIsDistinct(WhereInfo*);
 int sqlite3WhereIsOrdered(WhereInfo*);
 int sqlite3WhereIsSorted(WhereInfo*);

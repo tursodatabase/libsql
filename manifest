@@ -1,5 +1,5 @@
-C In\sthe\scommand-line\sshell:\s\sWhen\sthe\s".import"\scommand\sis\screating\sa\snew\ntable\susing\scolumn\snames\sfrom\sthe\sfirst\srow\sof\sCSV\sinput,\smake\ssure\s\ndouble-quotes\sin\sthe\sname\sare\sproperly\sescaped.
-D 2016-02-25T13:33:02.701
+C Query\splanner\simprovements:\s\sTake\sthe\sLIMIT\sinto\saccount\swhen\sestimated\sthe\ncost\sof\san\sORDER\sBY.\s\sAvoid\sautomatic\sindexes\son\squery\sloops\sthat\sare\sexpected\nto\srun\sless\sthan\stwice.
+D 2016-02-25T18:40:18.408
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 28fc4ee02333996d31b3602b39eeb8e609a89ce4
@@ -349,12 +349,12 @@ F src/printf.c 63e6fb12bbe702dd664dc3703776c090383a5a26
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c b8f7174e5f8c33c44ded3a25a973d0bb89228c20
 F src/rowset.c 9fe4b3ad7cc00944386bb600233d8f523de07a6e
-F src/select.c 1a7e23a3bb2edb9cdc46ab0cf7c1500109cf2531
+F src/select.c dbc73a63bee99bf7cfac6052477ffc21e899bb08
 F src/shell.c 89b73e894e737cc2f21e4bce0feb3ea21cc61124
 F src/sqlite.h.in a7caa805a345d6a14136c11ccfa6f4c1a6ef6e7b
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
-F src/sqliteInt.h 5200682fc1050f00fba07128c0facc37462c4411
+F src/sqliteInt.h 5a87bccd05996f4c3facd8f831cf92a05b818b6f
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
@@ -408,7 +408,7 @@ F src/test_windirent.h b12055cab6227f7be10f5c19296f67c60cc5e2a5
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 3d338cdd00d916ce8a05c397001d64ed58e6fe1c
-F src/treeview.c dc39ccf04e9331237388b9cb73289c9d87ea050b
+F src/treeview.c c525282442111b3f61eb176784567cd6654db5dc
 F src/trigger.c e14840ee0c3e549e758ec9bf3e4146e166002280
 F src/update.c a7eeeaffad59c6506f01303a071dac11de8269ca
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
@@ -428,8 +428,8 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 10deb6b43887662691e5f53d10b3c171c401169b
 F src/wal.h 2f7c831cf3b071fa548bf2d5cac640846a7ff19c
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
-F src/where.c 5b67fb8035ae4697cf721db095f800ef8dff5f56
-F src/whereInt.h 78b6b4de94db84aecbdc07fe3e38f648eb391e9a
+F src/where.c b21a2b3cee42e1db4f14c8fc5124f607e0c668c0
+F src/whereInt.h 93297d56edd137b7ea004490690fb6e2ce028a34
 F src/wherecode.c 39c1ef4598bedf1d66249334c74efd23ddd182ac
 F src/whereexpr.c fb87944b1254234e5bba671aaf6dee476241506a
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -475,7 +475,7 @@ F test/auth2.test 264c6af53cad9aba5218c68bbe18036e39007bfa
 F test/auth3.test 5cfa94ed90c6617c42b7ba4b133fd79678b251c7
 F test/autoinc.test c58912526998a39e11f66b533e23cfabea7f25b7
 F test/autoindex1.test 14b63a9f1e405fe6d5bfc8c8d00249c2ebaf13ea
-F test/autoindex2.test af7e595c6864cc6ef5fc38d5db579a3e34940cb8
+F test/autoindex2.test 12ef578928102baaa0dc23ad397601a2f4ecb0df
 F test/autoindex3.test a3be0d1a53a7d2edff208a5e442312957047e972
 F test/autoindex4.test 49d3cd791a9baa16fb461d7ea3de80d019a819cf
 F test/autoindex5.test 96f084a5e6024ea07cace5888df3223f3ea86990
@@ -1429,7 +1429,8 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh a98af506df552f3b3c0d904f94e4cdc4e1a6d598
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e721975faa0925be4029330550ff2a9666041ff7
-R c8d6b90bca6c11dea1a586d1afdb957c
+P 2e67a1c823c7003e7d2619c7d8b6db6ce046c527 aab53a21894ba51d325fd8f8f4bb4163ece74391
+R 8a8e5a80c02a4dfa694df7d4a40dc042
+T +closed aab53a21894ba51d325fd8f8f4bb4163ece74391
 U drh
-Z 8dad8d5c86c3c0b275d53a26a0713023
+Z a9e5cc9fdd4504d0ecf5a0daa8c57736
