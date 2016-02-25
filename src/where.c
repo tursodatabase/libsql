@@ -31,8 +31,8 @@ static int whereLoopResize(sqlite3*, WhereLoop*, int);
 /*
 ** Return the estimated number of output rows from a WHERE clause
 */
-u64 sqlite3WhereOutputRowCount(WhereInfo *pWInfo){
-  return sqlite3LogEstToInt(pWInfo->nRowOut);
+LogEst sqlite3WhereOutputRowCount(WhereInfo *pWInfo){
+  return pWInfo->nRowOut;
 }
 
 /*
@@ -3438,6 +3438,7 @@ static const char *wherePathName(WherePath *pPath, int nLoop, WhereLoop *pLast){
 ** order.
 */
 static LogEst whereSortingCost(
+  WhereInfo *pWInfo,
   LogEst nRow,
   int nOrderBy,
   int nSorted
@@ -3458,7 +3459,15 @@ static LogEst whereSortingCost(
   LogEst rScale, rSortCost;
   assert( nOrderBy>0 && 66==sqlite3LogEst(100) );
   rScale = sqlite3LogEst((nOrderBy-nSorted)*100/nOrderBy) - 66;
-  rSortCost = nRow + estLog(nRow) + rScale + 16;
+  rSortCost = nRow + rScale + 16;
+
+  /* Multiple by log(M) where M is the number of output rows.
+  ** Use the LIMIT for M if it is smaller */
+  if( (pWInfo->wctrlFlags & WHERE_USE_LIMIT)!=0 ){
+    LogEst m = sqlite3LogEst(pWInfo->iLimit);
+    if( m<nRow ) nRow = m;
+  }
+  rSortCost += estLog(nRow);
   return rSortCost;
 }
 
@@ -3592,7 +3601,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
         if( isOrdered>=0 && isOrdered<nOrderBy ){
           if( aSortCost[isOrdered]==0 ){
             aSortCost[isOrdered] = whereSortingCost(
-                nRowEst, nOrderBy, isOrdered
+                pWInfo, nRowEst, nOrderBy, isOrdered
             );
           }
           rCost = sqlite3LogEstAdd(rUnsorted, aSortCost[isOrdered]);
@@ -3991,7 +4000,8 @@ WhereInfo *sqlite3WhereBegin(
   ExprList *pOrderBy,   /* An ORDER BY (or GROUP BY) clause, or NULL */
   ExprList *pResultSet, /* Result set of the query */
   u16 wctrlFlags,       /* One of the WHERE_* flags defined in sqliteInt.h */
-  int iIdxCur           /* If WHERE_ONETABLE_ONLY is set, index cursor number */
+  int iAuxArg           /* If WHERE_ONETABLE_ONLY is set, index cursor number,
+                        ** If WHERE_USE_LIMIT, then the limit amount */
 ){
   int nByteWInfo;            /* Num. bytes allocated for WhereInfo struct */
   int nTabList;              /* Number of elements in pTabList */
@@ -4011,6 +4021,10 @@ WhereInfo *sqlite3WhereBegin(
         (wctrlFlags & WHERE_ONEPASS_DESIRED)!=0 
      && (wctrlFlags & WHERE_OMIT_OPEN_CLOSE)==0 
   ));
+
+  /* Only one of WHERE_ONETABLE_ONLY or WHERE_USE_LIMIT */
+  assert( (wctrlFlags & WHERE_ONETABLE_ONLY)==0
+            || (wctrlFlags & WHERE_USE_LIMIT)==0 );
 
   /* Variable initialization */
   db = pParse->db;
@@ -4065,6 +4079,7 @@ WhereInfo *sqlite3WhereBegin(
   pWInfo->pResultSet = pResultSet;
   pWInfo->iBreak = pWInfo->iContinue = sqlite3VdbeMakeLabel(v);
   pWInfo->wctrlFlags = wctrlFlags;
+  pWInfo->iLimit = iAuxArg;
   pWInfo->savedNQueryLoop = pParse->nQueryLoop;
   assert( pWInfo->eOnePass==ONEPASS_OFF );  /* ONEPASS defaults to OFF */
   pMaskSet = &pWInfo->sMaskSet;
@@ -4145,9 +4160,14 @@ WhereInfo *sqlite3WhereBegin(
   }
 
   /* Construct the WhereLoop objects */
-  WHERETRACE(0xffff,("*** Optimizer Start *** (wctrlFlags: 0x%x)\n",
-             wctrlFlags));
 #if defined(WHERETRACE_ENABLED)
+  if( sqlite3WhereTrace & 0xffff ){
+    sqlite3DebugPrintf("*** Optimizer Start *** (wctrlFlags: 0x%x",wctrlFlags);
+    if( wctrlFlags & WHERE_USE_LIMIT ){
+      sqlite3DebugPrintf(", limit: %d", iAuxArg);
+    }
+    sqlite3DebugPrintf(")\n");
+  }
   if( sqlite3WhereTrace & 0x100 ){ /* Display all terms of the WHERE clause */
     int i;
     for(i=0; i<sWLB.pWC->nTerm; i++){
@@ -4330,8 +4350,8 @@ WhereInfo *sqlite3WhereBegin(
       Index *pIx = pLoop->u.btree.pIndex;
       int iIndexCur;
       int op = OP_OpenRead;
-      /* iIdxCur is always set if to a positive value if ONEPASS is possible */
-      assert( iIdxCur!=0 || (pWInfo->wctrlFlags & WHERE_ONEPASS_DESIRED)==0 );
+      /* iAuxArg is always set if to a positive value if ONEPASS is possible */
+      assert( iAuxArg!=0 || (pWInfo->wctrlFlags & WHERE_ONEPASS_DESIRED)==0 );
       if( !HasRowid(pTab) && IsPrimaryKeyIndex(pIx)
        && (wctrlFlags & WHERE_ONETABLE_ONLY)!=0
       ){
@@ -4341,7 +4361,7 @@ WhereInfo *sqlite3WhereBegin(
         op = 0;
       }else if( pWInfo->eOnePass!=ONEPASS_OFF ){
         Index *pJ = pTabItem->pTab->pIndex;
-        iIndexCur = iIdxCur;
+        iIndexCur = iAuxArg;
         assert( wctrlFlags & WHERE_ONEPASS_DESIRED );
         while( ALWAYS(pJ) && pJ!=pIx ){
           iIndexCur++;
@@ -4349,8 +4369,8 @@ WhereInfo *sqlite3WhereBegin(
         }
         op = OP_OpenWrite;
         pWInfo->aiCurOnePass[1] = iIndexCur;
-      }else if( iIdxCur && (wctrlFlags & WHERE_ONETABLE_ONLY)!=0 ){
-        iIndexCur = iIdxCur;
+      }else if( iAuxArg && (wctrlFlags & WHERE_ONETABLE_ONLY)!=0 ){
+        iIndexCur = iAuxArg;
         if( wctrlFlags & WHERE_REOPEN_IDX ) op = OP_ReopenIdx;
       }else{
         iIndexCur = pParse->nTab++;
