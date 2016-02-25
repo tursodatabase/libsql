@@ -1,5 +1,5 @@
-C Do\snot\suse\san\sautomatic\sindex\son\san\souter\sloop\sthat\sonly\sruns\sonce.
-D 2016-02-25T18:03:38.680
+C Improvement\son\sthe\sprevious\scheck-in:\s\sdisallow\sautomatic\sindexes\sfor\sany\nloop\sthat\sis\sexpected\sto\srun\sless\sthan\stwice.
+D 2016-02-25T18:22:09.962
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 28fc4ee02333996d31b3602b39eeb8e609a89ce4
@@ -428,7 +428,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 10deb6b43887662691e5f53d10b3c171c401169b
 F src/wal.h 2f7c831cf3b071fa548bf2d5cac640846a7ff19c
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
-F src/where.c 07bf0330592acd2610d131aabe175cbada3e9710
+F src/where.c b21a2b3cee42e1db4f14c8fc5124f607e0c668c0
 F src/whereInt.h 93297d56edd137b7ea004490690fb6e2ce028a34
 F src/wherecode.c 39c1ef4598bedf1d66249334c74efd23ddd182ac
 F src/whereexpr.c fb87944b1254234e5bba671aaf6dee476241506a
@@ -1429,7 +1429,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh a98af506df552f3b3c0d904f94e4cdc4e1a6d598
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d491745cab951e0de70f1f79b7640ea8aff6e8bb
-R fb78c9128e17cc39ff6d4163eb8b91e3
+P 5957e793414ff80ed01a7a67e70c3fd096a3f6e0
+R 8a8e5a80c02a4dfa694df7d4a40dc042
 U drh
-Z b2631495aa69546c0305d417243ff503
+Z 5c10952be751c4b6279994eaa94bd734

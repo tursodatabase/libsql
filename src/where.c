@@ -3585,12 +3585,10 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
 
         if( (pWLoop->prereq & ~pFrom->maskLoop)!=0 ) continue;
         if( (pWLoop->maskSelf & pFrom->maskLoop)!=0 ) continue;
-        if( iLoop==0
-         && (pWLoop->wsFlags & WHERE_AUTO_INDEX)!=0
-         && pParse->nQueryLoop==0
-        ){
-          /* Never put an automatic index in the outer loop if the query
-          ** is only being run once. */
+        if( (pWLoop->wsFlags & WHERE_AUTO_INDEX)!=0 && pFrom->nRow<10 ){
+          /* Do not use an automatic index if the this loop is expected
+          ** to run less than 2 times. */
+          assert( 10==sqlite3LogEst(2) );
           continue;
         }
         /* At this point, pWLoop is a candidate to be the next loop. 
