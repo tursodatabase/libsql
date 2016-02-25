@@ -1102,14 +1102,14 @@ void sqlite3Pragma(
       sqlite3VdbeMultiLoad(v, 1, "ssii",
            pTab->zName,
            0,
-           (int)sqlite3LogEstToInt(pTab->szTabRow),
-           (int)sqlite3LogEstToInt(pTab->nRowLogEst));
+           pTab->szTabRow,
+           pTab->nRowLogEst);
       sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 4);
       for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
         sqlite3VdbeMultiLoad(v, 2, "sii",
            pIdx->zName,
-           (int)sqlite3LogEstToInt(pIdx->szIdxRow),
-           (int)sqlite3LogEstToInt(pIdx->aiRowLogEst[0]));
+           pIdx->szIdxRow,
+           pIdx->aiRowLogEst[0]);
         sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 4);
       }
     }
