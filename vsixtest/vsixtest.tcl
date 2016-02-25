@@ -5,22 +5,24 @@
 #
 # PREREQUISITES
 #
-# 1. Tcl 8.4 and later are supported, earlier versions have not been tested.
+# 1. This tool must be executed with "elevated administrator" privileges.
 #
-# 2. The "sqlite-UWP-output.vsix" file is assumed to exist in the parent
+# 2. Tcl 8.4 and later are supported, earlier versions have not been tested.
+#
+# 3. The "sqlite-UWP-output.vsix" file is assumed to exist in the parent
 #    directory of the directory containing this script.  The [optional] first
 #    command line argument to this script may be used to specify an alternate
 #    file.  However, currently, the file must be compatible with both Visual
 #    Studio 2015 and the Universal Windows Platform.
 #
-# 3. The "VERSION" file is assumed to exist in the parent directory of the
+# 4. The "VERSION" file is assumed to exist in the parent directory of the
 #    directory containing this script.  It must contain a version number that
 #    matches the VSIX file being tested.
 #
-# 4. The temporary directory specified in the TEMP or TMP environment variables
+# 5. The temporary directory specified in the TEMP or TMP environment variables
 #    must refer to an existing directory writable by the current user.
 #
-# 5. The VS140COMNTOOLS environment variable must refer to the Visual Studio
+# 6. The VS140COMNTOOLS environment variable must refer to the Visual Studio
 #    2015 common tools directory.
 #
 # USAGE
@@ -259,7 +261,7 @@ if {1} then {
 ###############################################################################
 
 if {1} then {
-  # putsAndEval $commands(1)
+  putsAndEval $commands(1)
 
   set versionNumber [string trim [readFile $versionFileName]]
   set data [readFile $projectTemplateFileName]
@@ -277,5 +279,5 @@ if {1} then {
     }
   }
 
-  # putsAndEval $commands(3)
+  putsAndEval $commands(3)
 }
