@@ -26,11 +26,19 @@ set testprefix sessionC
 # ON DELETE RESTRICT foreign key action is triggered, or if a trigger
 # program raises a constraint somehow.
 #
+# UPDATE: The above is no longer true, as "PRAGMA defer_foreign_keys"
+# now disables "RESTRICT" processing. The test below has been rewritten 
+# to use a trigger instead of a foreign key to test this case.
+#
 do_execsql_test 1.0 {
   PRAGMA foreign_keys = 1;
 
   CREATE TABLE p(a PRIMARY KEY, b, c);
-  CREATE TABLE c(d PRIMARY KEY, e REFERENCES p ON DELETE RESTRICT);
+  CREATE TABLE c(d PRIMARY KEY, e /* REFERENCES p ON DELETE RESTRICT */);
+
+  CREATE TRIGGER restrict_trig BEFORE DELETE ON p BEGIN
+    SELECT raise(ABORT, 'error!') FROM c WHERE e=old.a;
+  END;
 
   INSERT INTO p VALUES('one', 1, 1);
   INSERT INTO p VALUES('two', 2, 2);

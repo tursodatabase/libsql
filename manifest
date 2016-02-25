@@ -1,5 +1,5 @@
-C Merge\sall\sthe\slatest\schanges\sfrom\strunk.
-D 2016-02-25T18:54:30.918
+C Disable\sthe\sRESTRICT\sforeign\skey\saction\sif\s"PRAGMA\sdefer_foreign_keys"\sis\sset.
+D 2016-02-25T19:52:11.580
 F Makefile.in 5cbf3f753328d1bcd3a6117785b4874d99612f8f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc cf5496f4c4e256a79bae1804da61703647b26398
@@ -278,7 +278,7 @@ F ext/session/session8.test 8e194b3f655d861ca36de5d4de53f702751bab3b
 F ext/session/session9.test 5409d90d8141881d08285ed1c2c0d8d10fb92069
 F ext/session/sessionA.test 1feeab0b8e03527f08f2f1defb442da25480138f
 F ext/session/sessionB.test 886252dcb7e692e62ef7e357456200912e367823
-F ext/session/sessionC.test 3982f8577b0744c5ce3aaef7cfeb5bd903f17fe4
+F ext/session/sessionC.test 97556f5164ac29f2344b24bd7de6a3a35a95c390
 F ext/session/sessionD.test d4744c78334162851d2a2f285c7e603e31b49aa2
 F ext/session/sessionE.test e60a238c47f0feb3bb707e7f35e22be09c7e8f26
 F ext/session/sessionF.test c2f178d4dfd723a5fd94a730ea2ccb44c669e3ce
@@ -324,7 +324,7 @@ F src/dbstat.c c845548d4346e606e2f2b7d2e714ace2b8a7dd1b
 F src/delete.c eeac28b3d3d88e3541bdf93e91ea7492a7b67842
 F src/expr.c 9adb58153f6e943b703d43e9a1f67f77b5a75721
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
-F src/fkey.c 08edad1fce30f761f14b3997e89bad58f9f7f4e0
+F src/fkey.c a842533c411b9aef63a2814bbdc24f8a21e14cd8
 F src/func.c 552d300265aed09eea21f68ac742a440550c0062
 F src/global.c ded7b97efd16efda5062b65e857198e46c40e652
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
@@ -660,7 +660,7 @@ F test/fkey2.test f3d27ecba480a348c328965d154214719bb158a9
 F test/fkey3.test 76d475c80b84ee7a5d062e56ccb6ea68882e2b49
 F test/fkey4.test 86446017011273aad8f9a99c1a65019e7bd9ca9d
 F test/fkey5.test 5a373303f201ac03c22ba1ef17a733d3f56e611a
-F test/fkey6.test 6697550baa38505c9952eff130ab26a2d156c0cc
+F test/fkey6.test d078a1e323a740062bed38df32b8a736fd320dc0
 F test/fkey7.test 72e915890ee4a005daaf3002cb208e8fe973ac13
 F test/fkey8.test 7bd1dd0174a0e29a90c62c517b9e2a410a0b345d
 F test/fkey_malloc.test 594a7ea1fbab553c036c70813cd8bd9407d63749
@@ -1450,7 +1450,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh a98af506df552f3b3c0d904f94e4cdc4e1a6d598
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 631023dd9aa19cd8d92d712941d58e7148821995 bf46179d4484376909dce40ffcc06fecb19b3544
-R 7e6dc514e3703b1055f28159276cc00f
-U drh
-Z d59a306a1e57a2c5fa67f4c507e15fb8
+P b86590043e17705ada90562cf30f69b3e3ef65a4 82470d1c3a41221c78bcdd402b2219c4c21c43af
+R ed4175ea9b6a35a3a633e24a66e7650f
+U dan
+Z 25048b6cbead70238ee6379efe484cce
