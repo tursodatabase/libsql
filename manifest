@@ -1,5 +1,5 @@
-C Add\stool\sfor\ssmoke-testing\sthe\sUWP\sVSIX\spackage.
-D 2016-02-25T23:25:00.511
+C Add\ssome\scomments\sin\sthe\sVSIX\stest\stool.
+D 2016-02-25T23:27:02.855
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 28fc4ee02333996d31b3602b39eeb8e609a89ce4
@@ -1446,12 +1446,11 @@ F vsixtest/Package.appxmanifest 6b6db1eb7df3a315c5d681059754d5f0e0c47a93
 F vsixtest/pch.cpp cb823cfac36f1a39a7eb0acbd7e9a0b0de8f23af
 F vsixtest/pch.h 9cab7980f2ac4baa40807d8b5e52af32a21cf78c
 F vsixtest/vsixtest.sln 77cadbe4e96c1fe1bf51cd77de9e9b0a12ada547
-F vsixtest/vsixtest.tcl 463b7aa846f8f1bdadf2aadb1ac84c34c247437c
+F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2459d3238853951bc3a507dd975e7ec921cf8446 799d5f09ed058898167e43bd9c8d1bf8c5df23ba
-R a2c41dee5fc3fcec68335e2bea7b9721
-T +closed 799d5f09ed058898167e43bd9c8d1bf8c5df23ba
+P d27f32c6d72182198ae6d6cf8e385be76335dc65
+R eaa06d7471a7f3afc4a0fae5257d24c3
 U mistachkin
-Z 00dca86db1b95b6beaa7d7daeb4c1114
+Z cdb877e6651172a6d5d6ba712087b34e

@@ -5,24 +5,26 @@
 #
 # PREREQUISITES
 #
-# 1. This tool must be executed with "elevated administrator" privileges.
+# 1. This tool is Windows only.
 #
-# 2. Tcl 8.4 and later are supported, earlier versions have not been tested.
+# 2. This tool must be executed with "elevated administrator" privileges.
 #
-# 3. The "sqlite-UWP-output.vsix" file is assumed to exist in the parent
+# 3. Tcl 8.4 and later are supported, earlier versions have not been tested.
+#
+# 4. The "sqlite-UWP-output.vsix" file is assumed to exist in the parent
 #    directory of the directory containing this script.  The [optional] first
 #    command line argument to this script may be used to specify an alternate
 #    file.  However, currently, the file must be compatible with both Visual
 #    Studio 2015 and the Universal Windows Platform.
 #
-# 4. The "VERSION" file is assumed to exist in the parent directory of the
+# 5. The "VERSION" file is assumed to exist in the parent directory of the
 #    directory containing this script.  It must contain a version number that
 #    matches the VSIX file being tested.
 #
-# 5. The temporary directory specified in the TEMP or TMP environment variables
+# 6. The temporary directory specified in the TEMP or TMP environment variables
 #    must refer to an existing directory writable by the current user.
 #
-# 6. The VS140COMNTOOLS environment variable must refer to the Visual Studio
+# 7. The VS140COMNTOOLS environment variable must refer to the Visual Studio
 #    2015 common tools directory.
 #
 # USAGE
