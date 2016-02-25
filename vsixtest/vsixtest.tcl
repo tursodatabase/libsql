@@ -45,6 +45,44 @@ proc fail { {error ""} {usage false} } {
   exit 1
 }
 
+proc isWindows {} {
+  #
+  # NOTE: Returns non-zero only when running on Windows.
+  #
+  return [expr {[info exists ::tcl_platform(platform)] && \
+      $::tcl_platform(platform) eq "windows"}]
+}
+
+proc isAdministrator {} {
+  #
+  # NOTE: Returns non-zero only when running as "elevated administrator".
+  #
+  if {[isWindows]} then {
+    if {[catch {exec -- whoami /groups} groups] == 0} then {
+      set groups [string map [list \r\n \n] $groups]
+
+      foreach group [split $groups \n] {
+        #
+        # NOTE: Match this group line against the "well-known" SID for
+        #       the "Administrators" group on Windows.
+        #
+        if {[regexp -- {\sS-1-5-32-544\s} $group]} then {
+          #
+          # NOTE: Match this group line against the attributes column
+          #       sub-value that should be present when running with
+          #       elevated administrator credentials.
+          #
+          if {[regexp -- {\sEnabled group(?:,|\s)} $group]} then {
+            return true
+          }
+        }
+      }
+    }
+  }
+
+  return false
+}
+
 proc getEnvironmentVariable { name } {
   #
   # NOTE: Returns the value of the specified environment variable or an empty
@@ -155,6 +193,14 @@ set script [file normalize [info script]]
 
 if {[string length $script] == 0} then {
   fail "script file currently being evaluated is unknown" true
+}
+
+if {![isWindows]} then {
+  fail "this tool only works properly on Windows"
+}
+
+if {![isAdministrator]} then {
+  fail "this tool must run with \"elevated administrator\" privileges"
 }
 
 set path [file normalize [file dirname $script]]

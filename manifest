@@ -1,5 +1,5 @@
-C Improve\sreadability\sand\slogging\sof\sthe\svsixtest\sscript.
-D 2016-02-25T08:02:16.943
+C Enhance\schecking\sof\sprerequisites\sin\sthe\svsixtest\stool.
+D 2016-02-25T23:22:26.535
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 28fc4ee02333996d31b3602b39eeb8e609a89ce4
@@ -1446,11 +1446,11 @@ F vsixtest/Package.appxmanifest 6b6db1eb7df3a315c5d681059754d5f0e0c47a93
 F vsixtest/pch.cpp cb823cfac36f1a39a7eb0acbd7e9a0b0de8f23af
 F vsixtest/pch.h 9cab7980f2ac4baa40807d8b5e52af32a21cf78c
 F vsixtest/vsixtest.sln 77cadbe4e96c1fe1bf51cd77de9e9b0a12ada547
-F vsixtest/vsixtest.tcl 41268d1a0937c517f3c2e3f6538c90da70d155f8
+F vsixtest/vsixtest.tcl 463b7aa846f8f1bdadf2aadb1ac84c34c247437c
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 788f99f47f40be42f30d3f324983f39e84d8cfbb
-R 27bc664c4897fa05fbab9ef38c37f4b7
+P 4fe7c4e90b7adbb1630b4aa15709968a1fcc7d83
+R fa3049ef82e4175b0a6df31159094b76
 U mistachkin
-Z e145e455c738e58b5464d9cf81ba3318
+Z bc452bd15f3f1d06988b3918e97baf68
