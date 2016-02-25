@@ -1,5 +1,5 @@
-C Small\soptimization\sin\sFK\shandling.
-D 2016-02-25T21:38:28.541
+C Fix\san\sincorrect\scost\scomputation\sfor\ssorting\s(introduced\sjust\sa\sfew\ncheck-ins\sago).\s\sShould\sbe\sNlogN,\snot\sNloglogN.
+D 2016-02-25T23:21:41.832
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 28fc4ee02333996d31b3602b39eeb8e609a89ce4
@@ -428,7 +428,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 10deb6b43887662691e5f53d10b3c171c401169b
 F src/wal.h 2f7c831cf3b071fa548bf2d5cac640846a7ff19c
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
-F src/where.c b21a2b3cee42e1db4f14c8fc5124f607e0c668c0
+F src/where.c 32051597188dc632bafb32d50a9c3a04fb97ce39
 F src/whereInt.h 93297d56edd137b7ea004490690fb6e2ce028a34
 F src/wherecode.c 39c1ef4598bedf1d66249334c74efd23ddd182ac
 F src/whereexpr.c fb87944b1254234e5bba671aaf6dee476241506a
@@ -1327,7 +1327,7 @@ F test/walro.test 34422d1d95aaff0388f0791ec20edb34e2a3ed57
 F test/walshared.test 0befc811dcf0b287efae21612304d15576e35417
 F test/walslow.test c05c68d4dc2700a982f89133ce103a1a84cc285f
 F test/walthread.test de8dbaf6d9e41481c460ba31ca61e163d7348f8e
-F test/where.test 9902a3d84e9bc80357a2c54ed0e76c0d6d04a867
+F test/where.test c33bf57e48a34d6cc98018d779a577c2f61ff312
 F test/where2.test af78c55589cbc82d793449493adba0dc3d659f23
 F test/where3.test 1ad55ba900bd7747f98b6082e65bd3e442c5004e
 F test/where4.test 4a371bfcc607f41d233701bdec33ac2972908ba8
@@ -1429,7 +1429,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh a98af506df552f3b3c0d904f94e4cdc4e1a6d598
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d64d005eb5df2e3eb1248fc8eff8b1b683e48c74
-R ab8765cbaf5fbfbed19ecf7263e09682
-U mistachkin
-Z ff9c90565884f74ae6db48ba3f5b6f95
+P e0d25913b73a813f5987aa70b364b00f19351663
+R 8ecd868c4f09ad809b17fd8b0dd4a502
+U drh
+Z 87b6be9293374710fdcde53ff54603a2

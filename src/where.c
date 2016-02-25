@@ -3463,9 +3463,8 @@ static LogEst whereSortingCost(
 
   /* Multiple by log(M) where M is the number of output rows.
   ** Use the LIMIT for M if it is smaller */
-  if( (pWInfo->wctrlFlags & WHERE_USE_LIMIT)!=0 ){
-    LogEst m = sqlite3LogEst(pWInfo->iLimit);
-    if( m<nRow ) nRow = m;
+  if( (pWInfo->wctrlFlags & WHERE_USE_LIMIT)!=0 && pWInfo->iLimit<nRow ){
+    nRow = pWInfo->iLimit;
   }
   rSortCost += estLog(nRow);
   return rSortCost;
