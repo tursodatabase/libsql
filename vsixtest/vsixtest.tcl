@@ -80,8 +80,8 @@ proc getTemporaryPath {} {
 
 proc appendArgs { args } {
   #
-  # NOTE: Returns all passed arguments joined together as a single string with
-  #       no intervening spaces between arguments.
+  # NOTE: Returns all passed arguments joined together as a single string
+  #       with no intervening spaces between arguments.
   #
   eval append result $args
 }
@@ -111,8 +111,41 @@ proc writeFile { fileName data } {
 }
 
 proc putsAndEval { command } {
-  catch {puts stdout $command}
+  #
+  # NOTE: Outputs a command to the standard output channel and then evaluates
+  #       it in the callers context.
+  #
+  catch {
+    puts stdout [appendArgs "Running: " [lrange $command 1 end] ...\n]
+  }
+
   return [uplevel 1 $command]
+}
+
+proc isBadDirectory { directory } {
+  #
+  # NOTE: Returns non-zero if the directory is empty, does not exist, -OR- is
+  #       not a directory.
+  #
+  catch {
+    puts stdout [appendArgs "Checking directory \"" $directory \"...\n]
+  }
+
+  return [expr {[string length $directory] == 0 || \
+      ![file exists $directory] || ![file isdirectory $directory]}]
+}
+
+proc isBadFile { fileName } {
+  #
+  # NOTE: Returns non-zero if the file name is empty, does not exist, -OR- is
+  #       not a regular file.
+  #
+  catch {
+    puts stdout [appendArgs "Checking file \"" $fileName \"...\n]
+  }
+
+  return [expr {[string length $fileName] == 0 || \
+      ![file exists $fileName] || ![file isfile $fileName]}]
 }
 
 #
@@ -124,62 +157,52 @@ if {[string length $script] == 0} then {
   fail "script file currently being evaluated is unknown" true
 }
 
-set path [file dirname $script]
-
-###############################################################################
-
-#
-# NOTE: Process and verify all the command line arguments.
-#
-set argc [llength $argv]
-if {$argc > 1} then {fail}
+set path [file normalize [file dirname $script]]
+set argc [llength $argv]; if {$argc > 1} then {fail "" true}
 
 if {$argc == 1} then {
   set vsixFileName [lindex $argv 0]
 } else {
-  set vsixFileName [file join [file dirname $path] sqlite-UWP-output.vsix]
+  set vsixFileName [file join \
+      [file dirname $path] sqlite-UWP-output.vsix]
 }
 
-if {[string length $vsixFileName] == 0} then {
-  fail "invalid VSIX file name"
-}
+###############################################################################
 
-if {![file exists $vsixFileName] || ![file isfile $vsixFileName]} then {
-  fail [appendArgs "VSIX file \"" $vsixFileName "\" does not exist"]
+if {[isBadFile $vsixFileName]} then {
+  fail [appendArgs \
+      "VSIX file \"" $vsixFileName "\" does not exist"]
 }
 
 set versionFileName [file join [file dirname $path] VERSION]
 
-if {![file exists $versionFileName] || ![file isfile $versionFileName]} then {
-  fail [appendArgs "Version file \"" $versionFileName "\" does not exist"]
+if {[isBadFile $versionFileName]} then {
+  fail [appendArgs \
+      "Version file \"" $versionFileName "\" does not exist"]
 }
 
 set projectTemplateFileName [file join $path vsixtest.vcxproj.data]
-set projectFileName [file join $path vsixtest.vcxproj]
 
-if {![file exists $projectTemplateFileName] || \
-    ![file isfile $projectTemplateFileName]} then {
+if {[isBadFile $projectTemplateFileName]} then {
   fail [appendArgs \
-      "Project template file \"" $projectTemplateFileName "\" does not exist"]
+      "Project template file \"" $projectTemplateFileName \
+      "\" does not exist"]
 }
 
 set envVarName VS140COMNTOOLS
 set vsDirectory [getEnvironmentVariable $envVarName]
 
-if {[string length $vsDirectory] == 0} then {
-  fail [appendArgs \
-      "Visual Studio 2015 environment variable \"" $envVarName "\" missing"]
-}
-
-if {![file exists $vsDirectory] || ![file isdirectory $vsDirectory]} then {
+if {[isBadDirectory $vsDirectory]} then {
   fail [appendArgs \
       "Visual Studio 2015 directory \"" $vsDirectory \
+      "\" from environment variable \"" $envVarName \
       "\" does not exist"]
 }
 
-set vsixInstaller [file join [file dirname $vsDirectory] IDE VSIXInstaller.exe]
+set vsixInstaller [file join \
+    [file dirname $vsDirectory] IDE VSIXInstaller.exe]
 
-if {![file exists $vsixInstaller] || ![file isfile $vsixInstaller]} then {
+if {[isBadFile $vsixInstaller]} then {
   fail [appendArgs \
       "Visual Studio 2015 VSIX installer \"" $vsixInstaller \
       "\" does not exist"]
@@ -188,46 +211,49 @@ if {![file exists $vsixInstaller] || ![file isfile $vsixInstaller]} then {
 set envVarName ProgramFiles
 set programFiles [getEnvironmentVariable $envVarName]
 
-if {[string length $programFiles] == 0} then {
+if {[isBadDirectory $programFiles]} then {
   fail [appendArgs \
-      "Windows environment variable \"" $envVarName "\" missing"]
-}
-
-if {![file exists $programFiles] || ![file isdirectory $programFiles]} then {
-  fail [appendArgs \
-      "Program Files directory \"" $programFiles "\" does not exist"]
+      "Program Files directory \"" $programFiles \
+      "\" from environment variable \"" $envVarName \
+      "\" does not exist"]
 }
 
 set msBuild [file join $programFiles MSBuild 14.0 Bin MSBuild.exe]
 
-if {![file exists $msBuild] || ![file isfile $msBuild]} then {
+if {[isBadFile $msBuild]} then {
   fail [appendArgs \
-      "MSBuild 14.0 executable file \"" $msBuild "\" does not exist"]
+      "MSBuild v14.0 executable file \"" $msBuild \
+      "\" does not exist"]
 }
 
 set temporaryDirectory [getTemporaryPath]
 
-if {[string length $temporaryDirectory] == 0 || \
-    ![file exists $temporaryDirectory] || \
-    ![file isdirectory $temporaryDirectory]} then {
-  fail "cannot locate a usable temporary directory"
+if {[isBadDirectory $temporaryDirectory]} then {
+  fail [appendArgs \
+      "Temporary directory \"" $temporaryDirectory \
+      "\" does not exist"]
 }
 
+###############################################################################
+
 set installLogFileName [appendArgs \
-    [file rootname [file tail $vsixFileName]] -install- [pid] .log]
+    [file rootname [file tail $vsixFileName]] \
+    -install- [pid] .log]
+
+set commands(1) [list exec [file nativename $vsixInstaller]]
+
+lappend commands(1) /quiet /norepair
+lappend commands(1) [appendArgs /logFile: $installLogFileName]
+lappend commands(1) [file nativename $vsixFileName]
+
+###############################################################################
 
 set buildLogFileName [appendArgs \
     [file rootname [file tail $vsixFileName]] \
     -build-%configuration%-%platform%- [pid] .log]
 
-set uninstallLogFileName [appendArgs \
-    [file rootname [file tail $vsixFileName]] -uninstall- [pid] .log]
-
-set commands(1) [list exec [file nativename $vsixInstaller] /quiet /norepair]
-lappend commands(1) [appendArgs /logFile: $installLogFileName]
-lappend commands(1) [file nativename $vsixFileName]
-
 set commands(2) [list exec [file nativename $msBuild]]
+
 lappend commands(2) [file nativename [file join $path vsixtest.sln]]
 lappend commands(2) /target:Rebuild
 lappend commands(2) /property:Configuration=%configuration%
@@ -235,27 +261,41 @@ lappend commands(2) /property:Platform=%platform%
 
 lappend commands(2) [appendArgs \
     /logger:FileLogger,Microsoft.Build.Engine\;Logfile= \
-    [file nativename [file join $temporaryDirectory $buildLogFileName]] \
-    \;Verbosity=diagnostic]
+    [file nativename [file join $temporaryDirectory \
+    $buildLogFileName]] \;Verbosity=diagnostic]
 
-set commands(3) [list exec [file nativename $vsixInstaller] /quiet /norepair]
+###############################################################################
+
+set uninstallLogFileName [appendArgs \
+    [file rootname [file tail $vsixFileName]] \
+    -uninstall- [pid] .log]
+
+set commands(3) [list exec [file nativename $vsixInstaller]]
+
+lappend commands(3) /quiet /norepair
 lappend commands(3) [appendArgs /logFile: $uninstallLogFileName]
 lappend commands(3) [appendArgs /uninstall:SQLite.UWP.2015]
 
 ###############################################################################
 
 if {1} then {
-  puts stdout [appendArgs \
-      "Install log will be \"" [file nativename [file join \
-      $temporaryDirectory $installLogFileName]] "\"."]
+  catch {
+    puts stdout [appendArgs \
+        "Install log: \"" [file nativename [file join \
+        $temporaryDirectory $installLogFileName]] \"\n]
+  }
 
-  puts stdout [appendArgs \
-      "Build log will be \"" [file nativename [file join \
-      $temporaryDirectory $buildLogFileName]] "\"."]
+  catch {
+    puts stdout [appendArgs \
+        "Build logs: \"" [file nativename [file join \
+        $temporaryDirectory $buildLogFileName]] \"\n]
+  }
 
-  puts stdout [appendArgs \
-      "Uninstall log will be \"" [file nativename [file join \
-      $temporaryDirectory $uninstallLogFileName]] "\"."]
+  catch {
+    puts stdout [appendArgs \
+        "Uninstall log: \"" [file nativename [file join \
+        $temporaryDirectory $uninstallLogFileName]] \"\n]
+  }
 }
 
 ###############################################################################
@@ -266,6 +306,8 @@ if {1} then {
   set versionNumber [string trim [readFile $versionFileName]]
   set data [readFile $projectTemplateFileName]
   set data [string map [list %versionNumber% $versionNumber] $data]
+
+  set projectFileName [file join $path vsixtest.vcxproj]
   writeFile $projectFileName $data
 
   set platforms [list x86 x64 ARM]
@@ -274,8 +316,8 @@ if {1} then {
   foreach platform $platforms {
     foreach configuration $configurations {
       putsAndEval [string map [list \
-          %platform% $platform %configuration% \
-          $configuration] $commands(2)]
+          %platform% $platform %configuration% $configuration] \
+          $commands(2)]
     }
   }
 
