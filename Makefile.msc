@@ -219,26 +219,42 @@ SQLITE3H = sqlite3.h
 # This is the name to use for the SQLite dynamic link library (DLL).
 #
 !IFNDEF SQLITE3DLL
+!IF $(FOR_WIN10)!=0
+SQLITE3DLL = winsqlite3.dll
+!ELSE
 SQLITE3DLL = sqlite3.dll
+!ENDIF
 !ENDIF
 
 # This is the name to use for the SQLite import library (LIB).
 #
 !IFNDEF SQLITE3LIB
+!IF $(FOR_WIN10)!=0
+SQLITE3LIB = winsqlite3.lib
+!ELSE
 SQLITE3LIB = sqlite3.lib
+!ENDIF
 !ENDIF
 
 # This is the name to use for the SQLite shell executable (EXE).
 #
 !IFNDEF SQLITE3EXE
+!IF $(FOR_WIN10)!=0
+SQLITE3EXE = winsqlite3shell.exe
+!ELSE
 SQLITE3EXE = sqlite3.exe
+!ENDIF
 !ENDIF
 
 # This is the argument used to set the program database (PDB) file for the
 # SQLite shell executable (EXE).
 #
 !IFNDEF SQLITE3EXEPDB
+!IF $(FOR_WIN10)!=0
+SQLITE3EXEPDB =
+!ELSE
 SQLITE3EXEPDB = /pdb:sqlite3sh.pdb
+!ENDIF
 !ENDIF
 
 # These are the "standard" SQLite compilation options used when compiling for
@@ -416,15 +432,6 @@ TCC = $(CC) -nologo -W3 $(CCOPTS) $(TCCOPTS)
 
 TCC = $(TCC) -DSQLITE_OS_WIN=1 -I. -I$(TOP) -I$(TOP)\src -fp:precise
 RCC = $(RC) -DSQLITE_OS_WIN=1 -I. -I$(TOP) -I$(TOP)\src $(RCOPTS) $(RCCOPTS)
-
-# Adjust the names of the primary targets for use with Windows 10.
-#
-!IF $(FOR_WIN10)!=0
-SQLITE3DLL = winsqlite3.dll
-SQLITE3LIB = winsqlite3.lib
-SQLITE3EXE = winsqlite3shell.exe
-SQLITE3EXEPDB =
-!ENDIF
 
 # Check if we want to use the "stdcall" calling convention when compiling.
 # This is not supported by the compilers for non-x86 platforms.  It should
@@ -1411,10 +1418,10 @@ dll: $(SQLITE3DLL)
 #
 shell: $(SQLITE3EXE)
 
+# <<mark>>
 libsqlite3.lib:	$(LIBOBJ)
 	$(LTLIB) $(LTLIBOPTS) /OUT:$@ $(LIBOBJ) $(TLIBS)
 
-# <<mark>>
 libtclsqlite3.lib:	tclsqlite.lo libsqlite3.lib
 	$(LTLIB) $(LTLIBOPTS) $(LTLIBPATHS) /OUT:$@ tclsqlite.lo libsqlite3.lib $(LIBTCLSTUB) $(TLIBS)
 # <</mark>>
@@ -2058,7 +2065,8 @@ rbu.exe: $(TOP)\ext\rbu\rbu.c $(TOP)\ext\rbu\sqlite3rbu.c $(SQLITE3C) $(SQLITE3H
 
 clean:
 	del /Q *.exp *.lo *.ilk *.lib *.obj *.ncb *.pdb *.sdf *.suo 2>NUL
-	del /Q *.bsc *.cod *.da *.bb *.bbg *.vc gmon.out 2>NUL
+	del /Q *.bsc *.def *.cod *.da *.bb *.bbg *.vc gmon.out 2>NUL
+	del /Q $(SQLITE3EXE) $(SQLITE3DLL) 2>NUL
 # <<mark>>
 	del /Q $(SQLITE3C) $(SQLITE3H) opcodes.c opcodes.h 2>NUL
 	del /Q lemon.* lempar.c parse.* 2>NUL
@@ -2078,7 +2086,6 @@ clean:
 	del /Q changeset.exe 2>NUL
 	del /Q showjournal.exe showstat4.exe showwal.exe speedtest1.exe 2>NUL
 	del /Q mptester.exe wordcount.exe rbu.exe srcck1.exe 2>NUL
-	del /Q $(SQLITE3EXE) $(SQLITE3DLL) sqlite3.def 2>NUL
 	del /Q sqlite3.c sqlite3-*.c 2>NUL
 	del /Q sqlite3rc.h 2>NUL
 	del /Q shell.c sqlite3ext.h 2>NUL

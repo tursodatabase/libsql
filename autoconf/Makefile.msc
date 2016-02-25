@@ -204,26 +204,42 @@ SQLITE3H = sqlite3.h
 # This is the name to use for the SQLite dynamic link library (DLL).
 #
 !IFNDEF SQLITE3DLL
+!IF $(FOR_WIN10)!=0
+SQLITE3DLL = winsqlite3.dll
+!ELSE
 SQLITE3DLL = sqlite3.dll
+!ENDIF
 !ENDIF
 
 # This is the name to use for the SQLite import library (LIB).
 #
 !IFNDEF SQLITE3LIB
+!IF $(FOR_WIN10)!=0
+SQLITE3LIB = winsqlite3.lib
+!ELSE
 SQLITE3LIB = sqlite3.lib
+!ENDIF
 !ENDIF
 
 # This is the name to use for the SQLite shell executable (EXE).
 #
 !IFNDEF SQLITE3EXE
+!IF $(FOR_WIN10)!=0
+SQLITE3EXE = winsqlite3shell.exe
+!ELSE
 SQLITE3EXE = sqlite3.exe
+!ENDIF
 !ENDIF
 
 # This is the argument used to set the program database (PDB) file for the
 # SQLite shell executable (EXE).
 #
 !IFNDEF SQLITE3EXEPDB
+!IF $(FOR_WIN10)!=0
+SQLITE3EXEPDB =
+!ELSE
 SQLITE3EXEPDB = /pdb:sqlite3sh.pdb
+!ENDIF
 !ENDIF
 
 # These are the "standard" SQLite compilation options used when compiling for
@@ -401,15 +417,6 @@ TCC = $(CC) -nologo -W3 $(CCOPTS) $(TCCOPTS)
 
 TCC = $(TCC) -DSQLITE_OS_WIN=1 -I. -I$(TOP) -fp:precise
 RCC = $(RC) -DSQLITE_OS_WIN=1 -I. -I$(TOP) $(RCOPTS) $(RCCOPTS)
-
-# Adjust the names of the primary targets for use with Windows 10.
-#
-!IF $(FOR_WIN10)!=0
-SQLITE3DLL = winsqlite3.dll
-SQLITE3LIB = winsqlite3.lib
-SQLITE3EXE = winsqlite3shell.exe
-SQLITE3EXEPDB =
-!ENDIF
 
 # Check if we want to use the "stdcall" calling convention when compiling.
 # This is not supported by the compilers for non-x86 platforms.  It should
@@ -863,7 +870,7 @@ SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_SHELL_JSON1 -DSQLITE_ENABLE_
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
 #
-all:	dll libsqlite3.lib shell
+all:	dll shell
 
 # Dynamic link library section.
 #
@@ -872,9 +879,6 @@ dll: $(SQLITE3DLL)
 # Shell executable.
 #
 shell: $(SQLITE3EXE)
-
-libsqlite3.lib:	$(LIBOBJ)
-	$(LTLIB) $(LTLIBOPTS) /OUT:$@ $(LIBOBJ) $(TLIBS)
 
 
 $(SQLITE3DLL): $(LIBOBJ) $(LIBRESOBJS) $(CORE_LINK_DEP)
@@ -918,4 +922,5 @@ $(LIBRESOBJS):	$(TOP)\sqlite3.rc rcver.vc $(SQLITE3H)
 
 clean:
 	del /Q *.exp *.lo *.ilk *.lib *.obj *.ncb *.pdb *.sdf *.suo 2>NUL
-	del /Q *.bsc *.cod *.da *.bb *.bbg *.vc gmon.out 2>NUL
+	del /Q *.bsc *.def *.cod *.da *.bb *.bbg *.vc gmon.out 2>NUL
+	del /Q $(SQLITE3EXE) $(SQLITE3DLL) 2>NUL

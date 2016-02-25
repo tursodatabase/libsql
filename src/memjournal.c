@@ -133,7 +133,7 @@ static int memjrnlWrite(
       /* New chunk is required to extend the file. */
       FileChunk *pNew = sqlite3_malloc(sizeof(FileChunk));
       if( !pNew ){
-        return SQLITE_IOERR_NOMEM;
+        return SQLITE_IOERR_NOMEM_BKPT;
       }
       pNew->pNext = 0;
       if( pChunk ){
