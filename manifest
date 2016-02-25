@@ -1,5 +1,5 @@
-C Fix\san\sincorrect\scost\scomputation\sfor\ssorting\s(introduced\sjust\sa\sfew\ncheck-ins\sago).\s\sShould\sbe\sNlogN,\snot\sNloglogN.
-D 2016-02-25T23:21:41.832
+C Add\stool\sfor\ssmoke-testing\sthe\sUWP\sVSIX\spackage.
+D 2016-02-25T23:25:00.511
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 28fc4ee02333996d31b3602b39eeb8e609a89ce4
@@ -1429,7 +1429,29 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh a98af506df552f3b3c0d904f94e4cdc4e1a6d598
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e0d25913b73a813f5987aa70b364b00f19351663
-R 8ecd868c4f09ad809b17fd8b0dd4a502
-U drh
-Z 87b6be9293374710fdcde53ff54603a2
+F vsixtest/App.xaml b76d3b48860e7454775c47ea38ffea9c4abe3e85
+F vsixtest/App.xaml.cpp c465147f50871165c60ca16955219f6c5812d6d8
+F vsixtest/App.xaml.h 4a9768e2983d05600ad1e1c2f1b00a132967da9f
+F vsixtest/Assets/LockScreenLogo.scale-200.png e820c9a3deb909197081b0bf3216c06e13905f0a
+F vsixtest/Assets/SplashScreen.scale-200.png cab70988ca71bebec7bfeb3b6dbafe17b9ab0b4a
+F vsixtest/Assets/Square150x150Logo.scale-200.png e17b40817db7a239fc239d83efcc951fb824e3ff
+F vsixtest/Assets/Square44x44Logo.scale-200.png 2f166237094dea94d952d10b9eeae81806844f1c
+F vsixtest/Assets/Square44x44Logo.targetsize-24_altform-unplated.png 5f6a6d391b95a3061ccca6e6fdd6955ede63b4ed
+F vsixtest/Assets/StoreLogo.png 0828b7257db74a4ecd5eeb6b7b4971f0fdc4d9d1
+F vsixtest/Assets/Wide310x150Logo.scale-200.png 04ddefe5bc5f43ae12a7433f6f236ddab101ac42
+F vsixtest/MainPage.xaml 34f49897e3ca533a7e74506ba0759b66eebce151
+F vsixtest/MainPage.xaml.cpp 7f31fc6de751b64676c0924c97a5485d950a91d7
+F vsixtest/MainPage.xaml.h cc05cca10d50a003f6c6e4448b701cdd07f52f29
+F vsixtest/Package.appxmanifest 6b6db1eb7df3a315c5d681059754d5f0e0c47a93
+F vsixtest/pch.cpp cb823cfac36f1a39a7eb0acbd7e9a0b0de8f23af
+F vsixtest/pch.h 9cab7980f2ac4baa40807d8b5e52af32a21cf78c
+F vsixtest/vsixtest.sln 77cadbe4e96c1fe1bf51cd77de9e9b0a12ada547
+F vsixtest/vsixtest.tcl 463b7aa846f8f1bdadf2aadb1ac84c34c247437c
+F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
+F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
+F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
+P 2459d3238853951bc3a507dd975e7ec921cf8446 799d5f09ed058898167e43bd9c8d1bf8c5df23ba
+R a2c41dee5fc3fcec68335e2bea7b9721
+T +closed 799d5f09ed058898167e43bd9c8d1bf8c5df23ba
+U mistachkin
+Z 00dca86db1b95b6beaa7d7daeb4c1114
