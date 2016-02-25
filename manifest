@@ -1,5 +1,5 @@
-C Take\sthe\sLIMIT\sclause\sinto\saccount\swhen\sestimating\sthe\scost\sof\ssorting.
-D 2016-02-25T16:04:59.636
+C Do\snot\suse\san\sautomatic\sindex\son\san\souter\sloop\sthat\sonly\sruns\sonce.
+D 2016-02-25T18:03:38.680
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 28fc4ee02333996d31b3602b39eeb8e609a89ce4
@@ -428,7 +428,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 10deb6b43887662691e5f53d10b3c171c401169b
 F src/wal.h 2f7c831cf3b071fa548bf2d5cac640846a7ff19c
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
-F src/where.c ba8f2cd97e5125d2423b3dffad9f77b888b9b1a8
+F src/where.c 07bf0330592acd2610d131aabe175cbada3e9710
 F src/whereInt.h 93297d56edd137b7ea004490690fb6e2ce028a34
 F src/wherecode.c 39c1ef4598bedf1d66249334c74efd23ddd182ac
 F src/whereexpr.c fb87944b1254234e5bba671aaf6dee476241506a
@@ -475,7 +475,7 @@ F test/auth2.test 264c6af53cad9aba5218c68bbe18036e39007bfa
 F test/auth3.test 5cfa94ed90c6617c42b7ba4b133fd79678b251c7
 F test/autoinc.test c58912526998a39e11f66b533e23cfabea7f25b7
 F test/autoindex1.test 14b63a9f1e405fe6d5bfc8c8d00249c2ebaf13ea
-F test/autoindex2.test af7e595c6864cc6ef5fc38d5db579a3e34940cb8
+F test/autoindex2.test 12ef578928102baaa0dc23ad397601a2f4ecb0df
 F test/autoindex3.test a3be0d1a53a7d2edff208a5e442312957047e972
 F test/autoindex4.test 49d3cd791a9baa16fb461d7ea3de80d019a819cf
 F test/autoindex5.test 96f084a5e6024ea07cace5888df3223f3ea86990
@@ -1429,10 +1429,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh a98af506df552f3b3c0d904f94e4cdc4e1a6d598
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2e67a1c823c7003e7d2619c7d8b6db6ce046c527
-R 537d9f6aec4a86824de8d982730a8e8f
-T *branch * planner-improvements
-T *sym-planner-improvements *
-T -sym-trunk *
+P d491745cab951e0de70f1f79b7640ea8aff6e8bb
+R fb78c9128e17cc39ff6d4163eb8b91e3
 U drh
-Z 54aed3c7f721cc8ad2041b056394372f
+Z b2631495aa69546c0305d417243ff503

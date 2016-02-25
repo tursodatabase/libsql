@@ -3585,6 +3585,14 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
 
         if( (pWLoop->prereq & ~pFrom->maskLoop)!=0 ) continue;
         if( (pWLoop->maskSelf & pFrom->maskLoop)!=0 ) continue;
+        if( iLoop==0
+         && (pWLoop->wsFlags & WHERE_AUTO_INDEX)!=0
+         && pParse->nQueryLoop==0
+        ){
+          /* Never put an automatic index in the outer loop if the query
+          ** is only being run once. */
+          continue;
+        }
         /* At this point, pWLoop is a candidate to be the next loop. 
         ** Compute its cost */
         rUnsorted = sqlite3LogEstAdd(pWLoop->rSetup,pWLoop->rRun + pFrom->nRow);
