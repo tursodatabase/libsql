@@ -1,5 +1,5 @@
-C Change\sthe\ssrcck1.c\sutility\sprogram\sto\suse\sonly\sunsigned\scharacters.
-D 2016-02-25T21:27:03.339
+C Small\soptimization\sin\sFK\shandling.
+D 2016-02-25T21:38:28.541
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 28fc4ee02333996d31b3602b39eeb8e609a89ce4
@@ -304,7 +304,7 @@ F src/dbstat.c c845548d4346e606e2f2b7d2e714ace2b8a7dd1b
 F src/delete.c 48802aa3ee6339f576d074336d3ae1b5f40e240f
 F src/expr.c 9adb58153f6e943b703d43e9a1f67f77b5a75721
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
-F src/fkey.c a842533c411b9aef63a2814bbdc24f8a21e14cd8
+F src/fkey.c 5cb42d9a59e2a590776fd3fc8ff6f61d40df3c6e
 F src/func.c 552d300265aed09eea21f68ac742a440550c0062
 F src/global.c ded7b97efd16efda5062b65e857198e46c40e652
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
@@ -1429,7 +1429,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh a98af506df552f3b3c0d904f94e4cdc4e1a6d598
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 832c237fcbe83dd4f5a18a06acb0aeb7e2b9e712
-R 0714ab3705e4d9ae10258587d2894689
-U drh
-Z 6cd1ed7303c3e6dd998ffd3867295c4f
+P d64d005eb5df2e3eb1248fc8eff8b1b683e48c74
+R ab8765cbaf5fbfbed19ecf7263e09682
+U mistachkin
+Z ff9c90565884f74ae6db48ba3f5b6f95

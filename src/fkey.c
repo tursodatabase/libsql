@@ -1162,10 +1162,11 @@ static Trigger *fkActionTrigger(
   int iAction = (pChanges!=0);    /* 1 for UPDATE, 0 for DELETE */
 
   action = pFKey->aAction[iAction];
-  pTrigger = pFKey->apTrigger[iAction];
-  if( (db->flags & SQLITE_DeferFKs) && action==OE_Restrict ){
+  if( action==OE_Restrict && (db->flags & SQLITE_DeferFKs) ){
     return 0;
   }
+
+  pTrigger = pFKey->apTrigger[iAction];
 
   if( action!=OE_None && !pTrigger ){
     char const *zFrom;            /* Name of child table */
