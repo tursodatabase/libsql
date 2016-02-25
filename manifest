@@ -1,5 +1,5 @@
-C Extend\s[3e9ed1ae]\sso\sthat\scovering\sindexes\son\sWITHOUT\sROWID\stables\sare\salso\sidentified.
-D 2016-02-24T20:16:28.164
+C In\sthe\scommand-line\sshell:\s\sWhen\sthe\s".import"\scommand\sis\screating\sa\snew\ntable\susing\scolumn\snames\sfrom\sthe\sfirst\srow\sof\sCSV\sinput,\smake\ssure\s\ndouble-quotes\sin\sthe\sname\sare\sproperly\sescaped.
+D 2016-02-25T13:33:02.701
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 28fc4ee02333996d31b3602b39eeb8e609a89ce4
@@ -350,7 +350,7 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c b8f7174e5f8c33c44ded3a25a973d0bb89228c20
 F src/rowset.c 9fe4b3ad7cc00944386bb600233d8f523de07a6e
 F src/select.c 1a7e23a3bb2edb9cdc46ab0cf7c1500109cf2531
-F src/shell.c 0367440658104bf2ce8d8a9a5a713a4b11c9acbe
+F src/shell.c 89b73e894e737cc2f21e4bce0feb3ea21cc61124
 F src/sqlite.h.in a7caa805a345d6a14136c11ccfa6f4c1a6ef6e7b
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
@@ -1429,7 +1429,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh a98af506df552f3b3c0d904f94e4cdc4e1a6d598
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 56f62e34ae9d5c7db07367f0007df258b2e76bd2
-R baac3e94ca81a0031c96821cb1862aed
-U dan
-Z 255768a198e66c588af8c08668af4632
+P e721975faa0925be4029330550ff2a9666041ff7
+R c8d6b90bca6c11dea1a586d1afdb957c
+U drh
+Z 8dad8d5c86c3c0b275d53a26a0713023

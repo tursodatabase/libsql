@@ -3171,7 +3171,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       char *zCreate = sqlite3_mprintf("CREATE TABLE %s", zTable);
       char cSep = '(';
       while( xRead(&sCtx) ){
-        zCreate = sqlite3_mprintf("%z%c\n  \"%s\" TEXT", zCreate, cSep, sCtx.z);
+        zCreate = sqlite3_mprintf("%z%c\n  \"%w\" TEXT", zCreate, cSep, sCtx.z);
         cSep = ',';
         if( sCtx.cTerm!=sCtx.cColSep ) break;
       }
