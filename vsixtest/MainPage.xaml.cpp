@@ -5,6 +5,7 @@
 
 #include "pch.h"
 #include "MainPage.xaml.h"
+#include "sqlite3.h"
 
 using namespace vsixtest;
 
@@ -24,4 +25,29 @@ using namespace Windows::UI::Xaml::Navigation;
 MainPage::MainPage()
 {
 	InitializeComponent();
+	UseSQLite();
+}
+
+void MainPage::UseSQLite(void)
+{
+    int rc = SQLITE_OK;
+    sqlite3 *pDb = nullptr;
+
+    rc = sqlite3_open_v2("test.db", &pDb,
+	SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nullptr);
+
+    if (rc != SQLITE_OK)
+	throw ref new FailureException("Failed to open database.");
+
+    rc = sqlite3_exec(pDb, "VACUUM;", nullptr, nullptr, nullptr);
+
+    if (rc != SQLITE_OK)
+	throw ref new FailureException("Failed to vacuum database.");
+
+    rc = sqlite3_close(pDb);
+
+    if (rc != SQLITE_OK)
+	throw ref new FailureException("Failed to close database.");
+
+    pDb = nullptr;
 }

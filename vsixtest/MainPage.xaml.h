@@ -16,6 +16,7 @@ namespace vsixtest
 	{
 	public:
 		MainPage();
+		void UseSQLite(void);
 
 	};
 }

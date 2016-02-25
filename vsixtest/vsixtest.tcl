@@ -13,10 +13,14 @@
 #    file.  However, currently, the file must be compatible with both Visual
 #    Studio 2015 and the Universal Windows Platform.
 #
-# 3. The temporary directory specified in the TEMP or TMP environment variables
+# 3. The "VERSION" file is assumed to exist in the parent directory of the
+#    directory containing this script.  It must contain a version number that
+#    matches the VSIX file being tested.
+#
+# 4. The temporary directory specified in the TEMP or TMP environment variables
 #    must refer to an existing directory writable by the current user.
 #
-# 4. The VS140COMNTOOLS environment variable must refer to the Visual Studio
+# 5. The VS140COMNTOOLS environment variable must refer to the Visual Studio
 #    2015 common tools directory.
 #
 # USAGE
@@ -80,6 +84,35 @@ proc appendArgs { args } {
   eval append result $args
 }
 
+proc readFile { fileName } {
+  #
+  # NOTE: Reads and returns the entire contents of the specified file, which
+  #       may contain binary data.
+  #
+  set file_id [open $fileName RDONLY]
+  fconfigure $file_id -encoding binary -translation binary
+  set result [read $file_id]
+  close $file_id
+  return $result
+}
+
+proc writeFile { fileName data } {
+  #
+  # NOTE: Writes the entire contents of the specified file, which may contain
+  #       binary data.
+  #
+  set file_id [open $fileName {WRONLY CREAT TRUNC}]
+  fconfigure $file_id -encoding binary -translation binary
+  puts -nonewline $file_id $data
+  close $file_id
+  return ""
+}
+
+proc putsAndEval { command } {
+  catch {puts stdout $command}
+  return [uplevel 1 $command]
+}
+
 #
 # NOTE: This is the entry point for this script.
 #
@@ -100,17 +133,32 @@ set argc [llength $argv]
 if {$argc > 1} then {fail}
 
 if {$argc == 1} then {
-  set fileName [lindex $argv 0]
+  set vsixFileName [lindex $argv 0]
 } else {
-  set fileName [file join [file dirname $path] sqlite-UWP-output.vsix]
+  set vsixFileName [file join [file dirname $path] sqlite-UWP-output.vsix]
 }
 
-if {[string length $fileName] == 0} then {
+if {[string length $vsixFileName] == 0} then {
   fail "invalid VSIX file name"
 }
 
-if {![file exists $fileName] || ![file isfile $fileName]} then {
-  fail [appendArgs "VSIX file \"" $fileName "\" does not exist"]
+if {![file exists $vsixFileName] || ![file isfile $vsixFileName]} then {
+  fail [appendArgs "VSIX file \"" $vsixFileName "\" does not exist"]
+}
+
+set versionFileName [file join [file dirname $path] VERSION]
+
+if {![file exists $versionFileName] || ![file isfile $versionFileName]} then {
+  fail [appendArgs "Version file \"" $versionFileName "\" does not exist"]
+}
+
+set projectTemplateFileName [file join $path vsixtest.vcxproj.data]
+set projectFileName [file join $path vsixtest.vcxproj]
+
+if {![file exists $projectTemplateFileName] || \
+    ![file isfile $projectTemplateFileName]} then {
+  fail [appendArgs \
+      "Project template file \"" $projectTemplateFileName "\" does not exist"]
 }
 
 set envVarName VS140COMNTOOLS
@@ -164,18 +212,18 @@ if {[string length $temporaryDirectory] == 0 || \
 }
 
 set installLogFileName [appendArgs \
-    [file rootname [file tail $fileName]] -install- [pid] .log]
+    [file rootname [file tail $vsixFileName]] -install- [pid] .log]
 
 set buildLogFileName [appendArgs \
-    [file rootname [file tail $fileName]] \
+    [file rootname [file tail $vsixFileName]] \
     -build-%configuration%-%platform%- [pid] .log]
 
 set uninstallLogFileName [appendArgs \
-    [file rootname [file tail $fileName]] -uninstall- [pid] .log]
+    [file rootname [file tail $vsixFileName]] -uninstall- [pid] .log]
 
 set commands(1) [list exec [file nativename $vsixInstaller] /quiet /norepair]
 lappend commands(1) [appendArgs /logFile: $installLogFileName]
-lappend commands(1) [file nativename $fileName]
+lappend commands(1) [file nativename $vsixFileName]
 
 set commands(2) [list exec [file nativename $msBuild]]
 lappend commands(2) [file nativename [file join $path vsixtest.sln]]
@@ -192,46 +240,42 @@ set commands(3) [list exec [file nativename $vsixInstaller] /quiet /norepair]
 lappend commands(3) [appendArgs /logFile: $uninstallLogFileName]
 lappend commands(3) [appendArgs /uninstall:SQLite.UWP.2015]
 
-puts stdout [appendArgs \
-    "Install log will be \"" [file nativename [file join \
-    $temporaryDirectory $installLogFileName]] "\"."]
-
-puts stdout [appendArgs \
-    "Build log will be \"" [file nativename [file join \
-    $temporaryDirectory $buildLogFileName]] "\"."]
-
-puts stdout [appendArgs \
-    "Uninstall log will be \"" [file nativename [file join \
-    $temporaryDirectory $uninstallLogFileName]] "\"."]
-
-puts stdout [appendArgs \
-    "First command is \"" $commands(1) "\"."]
-
-puts stdout [appendArgs \
-    "Second command is \"" $commands(2) "\"."]
-
-puts stdout [appendArgs \
-    "Third command is \"" $commands(3) "\"."]
+###############################################################################
 
 if {1} then {
-  # eval $commands(1)
+  puts stdout [appendArgs \
+      "Install log will be \"" [file nativename [file join \
+      $temporaryDirectory $installLogFileName]] "\"."]
 
-  set platforms [list Win32 x64 ARM]
+  puts stdout [appendArgs \
+      "Build log will be \"" [file nativename [file join \
+      $temporaryDirectory $buildLogFileName]] "\"."]
+
+  puts stdout [appendArgs \
+      "Uninstall log will be \"" [file nativename [file join \
+      $temporaryDirectory $uninstallLogFileName]] "\"."]
+}
+
+###############################################################################
+
+if {1} then {
+  # putsAndEval $commands(1)
+
+  set versionNumber [string trim [readFile $versionFileName]]
+  set data [readFile $projectTemplateFileName]
+  set data [string map [list %versionNumber% $versionNumber] $data]
+  writeFile $projectFileName $data
+
+  set platforms [list x86 x64 ARM]
   set configurations [list Debug Release]
 
   foreach platform $platforms {
     foreach configuration $configurations {
-      puts stdout [string map [list \
+      putsAndEval [string map [list \
           %platform% $platform %configuration% \
           $configuration] $commands(2)]
-
-      if {0} then {
-        eval [string map [list \
-            %platform% $platform %configuration% \
-            $configuration] $commands(2)]
-      }
     }
   }
 
-  # eval $commands(3)
+  # putsAndEval $commands(3)
 }
