@@ -583,7 +583,6 @@ do_test where-6.7.2 {
     SELECT * FROM t3 WHERE b>0 ORDER BY a LIMIT 1
   }
 } {1 100 4 sort}
-exit
 ifcapable subquery {
   do_test where-6.8a {
     cksort {

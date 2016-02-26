@@ -1,5 +1,5 @@
-C Add\ssome\scomments\sin\sthe\sVSIX\stest\stool.
-D 2016-02-25T23:27:02.855
+C Remove\sa\sdebuggin\s"exit"\scommand\smistakenly\sleft\sin\sthe\s"where.test"\smodule.
+D 2016-02-26T04:04:07.156
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 28fc4ee02333996d31b3602b39eeb8e609a89ce4
@@ -1327,7 +1327,7 @@ F test/walro.test 34422d1d95aaff0388f0791ec20edb34e2a3ed57
 F test/walshared.test 0befc811dcf0b287efae21612304d15576e35417
 F test/walslow.test c05c68d4dc2700a982f89133ce103a1a84cc285f
 F test/walthread.test de8dbaf6d9e41481c460ba31ca61e163d7348f8e
-F test/where.test c33bf57e48a34d6cc98018d779a577c2f61ff312
+F test/where.test f0c325563acde44f2c4ea6ba348e9e29f7121757
 F test/where2.test af78c55589cbc82d793449493adba0dc3d659f23
 F test/where3.test 1ad55ba900bd7747f98b6082e65bd3e442c5004e
 F test/where4.test 4a371bfcc607f41d233701bdec33ac2972908ba8
@@ -1450,7 +1450,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d27f32c6d72182198ae6d6cf8e385be76335dc65
-R eaa06d7471a7f3afc4a0fae5257d24c3
-U mistachkin
-Z cdb877e6651172a6d5d6ba712087b34e
+P c871473ffee6dbb0f5b47f1c1329c84b902368ae
+R 6fc01093db6658e430bdeb2c14b7bd88
+U drh
+Z 4d54711e77d505069a1e93ab6ffa4de0
