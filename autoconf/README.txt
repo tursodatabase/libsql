@@ -6,8 +6,8 @@ This package contains:
  * the shell.c file used to build the sqlite3 command-line shell program
  * autoconf/automake installation infrastucture for building on POSIX
    compliant systems
- * a Makefile.msc and sqlite3.rc for building with Microsoft Visual C++ on
-   Windows
+ * a Makefile.msc, sqlite3.rc, and Replace.cs for building with Microsoft
+   Visual C++ on Windows
 
 SUMMARY OF HOW TO BUILD
 =======================

@@ -306,6 +306,14 @@ PROGRAMFILES_X86 = $(PROGRAMFILES_X86:\\=\)
 CC = cl.exe
 !ENDIF
 
+# Check for the predefined command macro CSC.  This should point to a working
+# C Sharp compiler binary.  If it is not defined, simply define it to the
+# legacy default value 'csc.exe'.
+#
+!IFNDEF CSC
+CSC = csc.exe
+!ENDIF
+
 # Check for the command macro LD.  This should point to the linker binary for
 # the target platform.  If it is not defined, simply define it to the legacy
 # default value 'link.exe'.
@@ -1408,13 +1416,13 @@ libtclsqlite3.lib:	tclsqlite.lo libsqlite3.lib
 $(SQLITE3DLL):	$(LIBOBJ) $(LIBRESOBJS) $(CORE_LINK_DEP)
 	$(LD) $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) /DLL $(CORE_LINK_OPTS) /OUT:$@ $(LIBOBJ) $(LIBRESOBJS) $(LTLIBS) $(TLIBS)
 
-# <<mark>>
+# <<block2>>
 sqlite3.def:	libsqlite3.lib
 	echo EXPORTS > sqlite3.def
 	dumpbin /all libsqlite3.lib \
 		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl include "^\s+1 _?(sqlite3_[^@]*)(?:@\d+)?$$" \1 \
 		| sort >> sqlite3.def
-# <</mark>>
+# <</block2>>
 
 $(SQLITE3EXE):	$(TOP)\src\shell.c $(SHELL_CORE_DEP) $(LIBRESOBJS) $(SHELL_CORE_SRC) $(SQLITE3H)
 	$(LTLINK) $(SHELL_COMPILE_OPTS) $(READLINE_FLAGS) $(TOP)\src\shell.c $(SHELL_CORE_SRC) \
