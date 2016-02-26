@@ -1,5 +1,5 @@
-C Provide\sthe\snew\sSQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER\soption\sto\s\nsqlite3_db_config()\sthat\scan\sbe\sused\sto\sactivate\sthe\stwo-argument\sversion\nof\sfts3_tokenizer()\sfor\sa\sspecific\sdatabase\sconnection\sat\srun-time.
-D 2016-02-26T15:38:24.549
+C Fix\sthe\sICU\sextension\sLIKE\sfunction\sso\sthat\sit\sdoes\snot\sread\spast\sthe\send\sof\sa\sbuffer\sif\sit\sit\spassed\smalformed\sutf-8.
+D 2016-02-26T16:03:29.500
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 28fc4ee02333996d31b3602b39eeb8e609a89ce4
@@ -198,7 +198,7 @@ F ext/fts5/tool/loadfts5.tcl 95b03429ee6b138645703c6ca192c3ac96eaf093
 F ext/fts5/tool/mkfts5c.tcl d1c2a9ab8e0ec690a52316f33dd9b1d379942f45
 F ext/fts5/tool/showfts5.tcl d54da0e067306663e2d5d523965ca487698e722c
 F ext/icu/README.txt d9fbbad0c2f647c3fdf715fc9fd64af53aedfc43
-F ext/icu/icu.c b2732aef0b076e4276d9b39b5a33cec7a05e1413
+F ext/icu/icu.c 194e972ff3545084b56c459131eb80e1485da75e
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/misc/amatch.c a1a8f66c29d40bd71b075546ddeddb477b17a2bb
 F ext/misc/closure.c 0d2a038df8fbae7f19de42e7c7d71f2e4dc88704
@@ -1450,7 +1450,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ff3d7f845e1875d6729f64f5231db1c376892f31
-R 31d803939428fd2d10225002a384e77a
-U drh
-Z 2070e36304d2e6c69aaa4c28fc3295af
+P 374b5108087a2eae03676c0f3469b37a272145bf
+R 1de55b3a8f2d3749e97e04af07972bbe
+U dan
+Z 5dfcb2d8f6d42b01529359e44d97d92b
