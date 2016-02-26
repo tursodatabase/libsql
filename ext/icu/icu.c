@@ -355,11 +355,11 @@ static void icuRegexpFunc(sqlite3_context *p, int nArg, sqlite3_value **apArg){
 */
 static void icuCaseFunc16(sqlite3_context *p, int nArg, sqlite3_value **apArg){
   const UChar *zInput;
-  UChar *zOutput;
+  UChar *zOutput = 0;
   int nInput;
-  int nOutput;
-
-  UErrorCode status = U_ZERO_ERROR;
+  int nOut;
+  int cnt;
+  UErrorCode status;
   const char *zLocale = 0;
 
   assert(nArg==1 || nArg==2);
@@ -371,26 +371,34 @@ static void icuCaseFunc16(sqlite3_context *p, int nArg, sqlite3_value **apArg){
   if( !zInput ){
     return;
   }
-  nInput = sqlite3_value_bytes16(apArg[0]);
-
-  nOutput = nInput * 2 + 2;
-  zOutput = sqlite3_malloc(nOutput);
-  if( !zOutput ){
+  nOut = nInput = sqlite3_value_bytes16(apArg[0]);
+  if( nOut==0 ){
+    sqlite3_result_text16(p, "", 0, SQLITE_STATIC);
     return;
   }
 
-  if( sqlite3_user_data(p) ){
-    u_strToUpper(zOutput, nOutput/2, zInput, nInput/2, zLocale, &status);
-  }else{
-    u_strToLower(zOutput, nOutput/2, zInput, nInput/2, zLocale, &status);
+  for(cnt=0; cnt<2; cnt++){
+    UChar *zNew = sqlite3_realloc(zOutput, nOut);
+    if( zNew==0 ){
+      sqlite3_free(zOutput);
+      sqlite3_result_error_nomem(p);
+      return;
+    }
+    zOutput = zNew;
+    status = U_ZERO_ERROR;
+    if( sqlite3_user_data(p) ){
+      nOut = 2*u_strToUpper(zOutput,nOut/2,zInput,nInput/2,zLocale,&status);
+    }else{
+      nOut = 2*u_strToLower(zOutput,nOut/2,zInput,nInput/2,zLocale,&status);
+    }
+    if( !U_SUCCESS(status) ){
+      if( status==U_BUFFER_OVERFLOW_ERROR ) continue;
+      icuFunctionError(p,
+          sqlite3_user_data(p) ? "u_strToUpper()" : "u_strToLower", status);
+      return;
+    }
   }
-
-  if( !U_SUCCESS(status) ){
-    icuFunctionError(p, "u_strToLower()/u_strToUpper", status);
-    return;
-  }
-
-  sqlite3_result_text16(p, zOutput, -1, xFree);
+  sqlite3_result_text16(p, zOutput, nOut, xFree);
 }
 
 /*
