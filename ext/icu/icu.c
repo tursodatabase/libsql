@@ -61,6 +61,38 @@ static void xFree(void *p){
 }
 
 /*
+** This lookup table is used to help decode the first byte of
+** a multi-byte UTF8 character. It is copied here from SQLite source
+** code file utf8.c.
+*/
+static const unsigned char icuUtf8Trans1[] = {
+  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+  0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+  0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+  0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f,
+  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+  0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+  0x00, 0x01, 0x02, 0x03, 0x00, 0x01, 0x00, 0x00,
+};
+
+#define SQLITE_ICU_READ_UTF8(zIn, c)                       \
+  c = *(zIn++);                                            \
+  if( c>=0xc0 ){                                           \
+    c = icuUtf8Trans1[c-0xc0];                             \
+    while( (*zIn & 0xc0)==0x80 ){                          \
+      c = (c<<6) + (0x3f & *(zIn++));                      \
+    }                                                      \
+  }
+
+#define SQLITE_ICU_SKIP_UTF8(zIn)                          \
+  assert( *zIn );                                          \
+  if( *(zIn++)>=0xc0 ){                                    \
+    while( (*zIn & 0xc0)==0x80 ){zIn++;}                   \
+  }
+
+
+/*
 ** Compare two UTF-8 strings for equality where the first string is
 ** a "LIKE" expression. Return true (1) if they are the same and 
 ** false (0) if they are different.
@@ -73,16 +105,14 @@ static int icuLikeCompare(
   static const int MATCH_ONE = (UChar32)'_';
   static const int MATCH_ALL = (UChar32)'%';
 
-  int iPattern = 0;       /* Current byte index in zPattern */
-  int iString = 0;        /* Current byte index in zString */
-
   int prevEscape = 0;     /* True if the previous character was uEsc */
 
-  while( zPattern[iPattern]!=0 ){
+  while( 1 ){
 
     /* Read (and consume) the next character from the input pattern. */
     UChar32 uPattern;
-    U8_NEXT_UNSAFE(zPattern, iPattern, uPattern);
+    SQLITE_ICU_READ_UTF8(zPattern, uPattern);
+    if( uPattern==0 ) break;
 
     /* There are now 4 possibilities:
     **
@@ -99,28 +129,28 @@ static int icuLikeCompare(
       ** MATCH_ALL. For each MATCH_ONE, skip one character in the 
       ** test string.
       */
-      while( (c=zPattern[iPattern]) == MATCH_ALL || c == MATCH_ONE ){
+      while( (c=*zPattern) == MATCH_ALL || c == MATCH_ONE ){
         if( c==MATCH_ONE ){
-          if( zString[iString]==0 ) return 0;
-          U8_FWD_1_UNSAFE(zString, iString);
+          if( *zString==0 ) return 0;
+          SQLITE_ICU_SKIP_UTF8(zString);
         }
-        iPattern++;
+        zPattern++;
       }
 
-      if( zPattern[iPattern]==0 ) return 1;
+      if( *zPattern==0 ) return 1;
 
-      while( zString[iString] ){
-        if( icuLikeCompare(&zPattern[iPattern], &zString[iString], uEsc) ){
+      while( *zString ){
+        if( icuLikeCompare(zPattern, zString, uEsc) ){
           return 1;
         }
-        U8_FWD_1_UNSAFE(zString, iString);
+        SQLITE_ICU_SKIP_UTF8(zString);
       }
       return 0;
 
     }else if( !prevEscape && uPattern==MATCH_ONE ){
       /* Case 2. */
-      if( zString[iString]==0 ) return 0;
-      U8_FWD_1_UNSAFE(zString, iString);
+      if( *zString==0 ) return 0;
+      SQLITE_ICU_SKIP_UTF8(zString);
 
     }else if( !prevEscape && uPattern==uEsc){
       /* Case 3. */
@@ -129,7 +159,7 @@ static int icuLikeCompare(
     }else{
       /* Case 4. */
       UChar32 uString;
-      U8_NEXT_UNSAFE(zString, iString, uString);
+      SQLITE_ICU_READ_UTF8(zString, uString);
       uString = u_foldCase(uString, U_FOLD_CASE_DEFAULT);
       uPattern = u_foldCase(uPattern, U_FOLD_CASE_DEFAULT);
       if( uString!=uPattern ){
@@ -139,7 +169,7 @@ static int icuLikeCompare(
     }
   }
 
-  return zString[iString]==0;
+  return *zString==0;
 }
 
 /*

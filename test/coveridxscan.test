@@ -89,5 +89,36 @@ do_test 4.3 {
   db eval {SELECT b FROM t1}
 } {2 4 8}
 
+#-------------------------------------------------------------------------
+# Test that indexes with large numbers of columns can be correctly 
+# identified as covering indexes.
+reset_db
+set L [list]
+for {set i 1} {$i<120} {incr i} {
+  lappend L "c$i"
+}
+set cols [join $L ,]
+
+do_execsql_test 5.1.0 "
+  CREATE TABLE t1(a, b, c, $cols, PRIMARY KEY(a, b, c)) WITHOUT ROWID;
+  CREATE INDEX i1 ON t1($cols);
+
+  CREATE TABLE t2(i INTEGER PRIMARY KEY, $cols);
+  CREATE INDEX i2 ON t2($cols);
+"
+
+do_eqp_test 5.1.1 {
+  SELECT * FROM t1 ORDER BY c1, c2;
+} {
+  0 0 0 {SCAN TABLE t1 USING COVERING INDEX i1}
+}
+
+do_eqp_test 5.1.2 {
+  SELECT * FROM t2 ORDER BY c1, c2;
+} {
+  0 0 0 {SCAN TABLE t2 USING COVERING INDEX i2}
+}
+
+
 
 finish_test

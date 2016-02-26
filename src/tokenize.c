@@ -435,8 +435,8 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
       *tokenType = TK_ID;
       return keywordCode((char*)z, i, tokenType);
     }
-#ifndef SQLITE_OMIT_BLOB_LITERAL
     case CC_X: {
+#ifndef SQLITE_OMIT_BLOB_LITERAL
       testcase( z[0]=='x' ); testcase( z[0]=='X' );
       if( z[1]=='\'' ){
         *tokenType = TK_BLOB;
@@ -448,10 +448,10 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
         if( z[i] ) i++;
         return i;
       }
+#endif
       /* If it is not a BLOB literal, then it must be an ID, since no
       ** SQL keywords start with the letter 'x'.  Fall through */
     }
-#endif
     case CC_ID: {
       i = 1;
       break;
