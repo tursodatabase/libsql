@@ -1,8 +1,8 @@
-C Fix\sthe\sICU\sextension\sLIKE\sfunction\sso\sthat\sit\sdoes\snot\sread\spast\sthe\send\sof\sa\sbuffer\sif\sit\sit\spassed\smalformed\sutf-8.
-D 2016-02-26T16:03:29.500
+C Further\srefinements\sto\sthe\sMSVC\sbatch\sbuild\sprocess.
+D 2016-02-26T21:03:16.418
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 28fc4ee02333996d31b3602b39eeb8e609a89ce4
+F Makefile.msc 56ea123a975690bf9ed38b31bb89ff87b02a7c2b
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION c6b1f51809551d60ad001e6d87cf3ab2c7f54b6f
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -11,7 +11,7 @@ F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am 29e2a6e8d0c5e32723a48b4faf6b168854dde5f4
-F autoconf/Makefile.msc d5ab32cf30d6ba8b5ce20835b4042f6cc2a4cb39
+F autoconf/Makefile.msc 3cbf11c911fafd4d95fbe8aec059b5aa586a0157
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/README.txt 7c31da66232f7590bb987cfcd4e2381744b25d24
 F autoconf/configure.ac 72a5e42beb090b32bca580285dc0ab3c4670adb8
@@ -1450,7 +1450,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 374b5108087a2eae03676c0f3469b37a272145bf
-R 1de55b3a8f2d3749e97e04af07972bbe
-U dan
-Z 5dfcb2d8f6d42b01529359e44d97d92b
+P 424b7aee3310b9782bd312589dc3d9f287aa04b8 4e54e9c0fefe417f94a2d95921acf61b1dda5ca4
+R 7da9769ad29c99be35565d7e5f8b1154
+U mistachkin
+Z 7d4c099032b4aee5af44d708663be688
