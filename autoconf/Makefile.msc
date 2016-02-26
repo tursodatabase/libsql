@@ -457,7 +457,9 @@ CORE_COMPILE_OPTS = $(CORE_CCONV_OPTS)
 # when linking.
 #
 !IFNDEF CORE_LINK_DEP
-!IF $(DYNAMIC_SHELL)!=0 || $(FOR_WIN10)!=0
+!IF $(DYNAMIC_SHELL)!=0
+CORE_LINK_DEP =
+!ELSEIF $(FOR_WIN10)==0 || "$(PLATFORM)"=="x86"
 CORE_LINK_DEP =
 !ELSE
 CORE_LINK_DEP =
@@ -467,7 +469,9 @@ CORE_LINK_DEP =
 # These are additional linker options used for the core library.
 #
 !IFNDEF CORE_LINK_OPTS
-!IF $(DYNAMIC_SHELL)!=0 || $(FOR_WIN10)!=0
+!IF $(DYNAMIC_SHELL)!=0
+CORE_LINK_OPTS =
+!ELSEIF $(FOR_WIN10)==0 || "$(PLATFORM)"=="x86"
 CORE_LINK_OPTS =
 !ELSE
 CORE_LINK_OPTS =
@@ -874,14 +878,14 @@ all:	dll shell
 
 # Dynamic link library section.
 #
-dll: $(SQLITE3DLL)
+dll:	$(SQLITE3DLL)
 
 # Shell executable.
 #
-shell: $(SQLITE3EXE)
+shell:	$(SQLITE3EXE)
 
 
-$(SQLITE3DLL): $(LIBOBJ) $(LIBRESOBJS) $(CORE_LINK_DEP)
+$(SQLITE3DLL):	$(LIBOBJ) $(LIBRESOBJS) $(CORE_LINK_DEP)
 	$(LD) $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) /DLL $(CORE_LINK_OPTS) /OUT:$@ $(LIBOBJ) $(LIBRESOBJS) $(LTLIBS) $(TLIBS)
 
 
