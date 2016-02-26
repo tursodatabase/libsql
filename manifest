@@ -1,5 +1,5 @@
-C Ephemeral\stables\sused\sto\shold\smanifested\sviews\smay\snot\sbe\sunordered\ssince\nthey\smight\sbe\ssubject\sto\san\sordered\scomparison\sif\sthey\sare\spart\sof\sa\sjoin.
-D 2016-02-26T04:13:39.081
+C Fix\sa\stypo\sin\sa\scomment\s(though\san\simportant\scomment\sin\sthat\sit\sis\sused\s\nto\sgenerate\sdocumentation).
+D 2016-02-26T13:22:21.836
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 28fc4ee02333996d31b3602b39eeb8e609a89ce4
@@ -351,7 +351,7 @@ F src/resolve.c b8f7174e5f8c33c44ded3a25a973d0bb89228c20
 F src/rowset.c 9fe4b3ad7cc00944386bb600233d8f523de07a6e
 F src/select.c 1bacfde7b7cec134d2b354cbcf67bafc67078431
 F src/shell.c 89b73e894e737cc2f21e4bce0feb3ea21cc61124
-F src/sqlite.h.in a7caa805a345d6a14136c11ccfa6f4c1a6ef6e7b
+F src/sqlite.h.in 42203c6bf167b8b13c4e6637cbdf8ad2cb2f8685
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
 F src/sqliteInt.h b9ac8b9c9798f57d80a9756f86abf1dbd9424ec9
@@ -1450,7 +1450,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P beda0b8c76c2c7328a44156257c978cf8f5df59b
-R 5d471132c02d748b5b7a9c957a1aab1e
+P 3ef6a3153267d5328202fea24fd29ff4d5409295
+R 77993d5bd700ce83f039b073c94a1fa4
 U drh
-Z 02d11a44d61806b13a4d06a9e5d2f12b
+Z 9609a7717e93d89e1b3f63c437689c08
