@@ -198,13 +198,11 @@ columnlist ::= column.
 // datatype, and other keywords such as PRIMARY KEY, UNIQUE, REFERENCES,
 // NOT NULL and so forth.
 //
-column(A) ::= columnid(A) type carglist. {
+column(A) ::= columnname(A) carglist. {
   A.n = (int)(pParse->sLastToken.z-A.z) + pParse->sLastToken.n;
 }
-columnid(A) ::= nm(A). {
-  sqlite3AddColumn(pParse,&A);
-  pParse->constraintName.n = 0;
-}
+columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,&A,&Y);}
+columnname(A) ::= nm(A).              {sqlite3AddColumn(pParse,&A,0);}
 
 
 // An IDENTIFIER can be a generic identifier, or one of several
@@ -269,8 +267,6 @@ nm(A) ::= JOIN_KW(A).
 // Multiple tokens are concatenated to form the value of the typetoken.
 //
 %type typetoken {Token}
-type ::= .
-type ::= typetoken(X).                   {sqlite3AddColumnType(pParse,&X);}
 typetoken(A) ::= typename(A).
 typetoken(A) ::= typename(A) LP signed RP(Y). {
   A.n = (int)(&Y.z[Y.n] - A.z);
