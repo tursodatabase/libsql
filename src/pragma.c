@@ -1903,15 +1903,13 @@ void sqlite3Pragma(
   ** Set the default conflict handling algorithm.
   */
   case PragTyp_ONCONFLICT: {
-    const char *zRes = "ABORT";
-    if( zRight ){
-      if( sqlite3StrICmp(zRight,"FAIL")==0 ) db->dfltOnError = OE_Fail;
-      if( sqlite3StrICmp(zRight,"ABORT")==0 ) db->dfltOnError = OE_Abort;
-      if( sqlite3StrICmp(zRight,"ROLLBACK")==0 ) db->dfltOnError = OE_Rollback;
-    }
-    switch( db->dfltOnError ){
-      case OE_Fail:     zRes = "FAIL";      break;
-      case OE_Rollback: zRes = "ROLLBACK";  break;
+    static const char *azMode[] = { "ABORT",  "FAIL",  "ROLLBACK"  };
+    static const u8 aeMode[]    = { OE_Abort, OE_Fail, OE_Rollback };
+    const char *zRes = 0;
+    int i;
+    for(i=0; i<ArraySize(azMode); i++){
+      if( sqlite3_stricmp(azMode[i], zRight)==0 ) db->dfltOnError = aeMode[i];
+      if( db->dfltOnError==aeMode[i] ) zRes = azMode[i];
     }
     returnSingleText(v, "onconflict", zRes);
     break;

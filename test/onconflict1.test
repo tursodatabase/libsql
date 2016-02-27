@@ -1,0 +1,99 @@
+# 2016-02-27
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.
+#
+# This file focuses on the PRAGMA onconflict statement.
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix onconflict1
+
+do_execsql_test 100 {
+  PRAGMA onconflict;
+} {ABORT}
+do_execsql_test 110 {
+  PRAGMA onconflict=Rollback;
+} {ROLLBACK}
+do_execsql_test 120 {
+  PRAGMA onconflict=fail;
+} {FAIL}
+do_execsql_test 130 {
+  PRAGMA onconflict=whatever;
+} {FAIL}
+do_execsql_test 140 {
+  PRAGMA onconflict=abort;
+} {ABORT}
+
+do_catchsql_test 200 {
+  CREATE TABLE t1(a, b UNIQUE);
+  INSERT INTO t1(a,b) VALUES(1,1),(2,2),(3,3),(98,98),(99,99);
+  BEGIN;
+  UPDATE t1 SET a=100 WHERE a=101;
+  UPDATE t1 SET b=10;
+} {1 {UNIQUE constraint failed: t1.b}}
+do_execsql_test 201 {
+  SELECT a, b FROM t1 ORDER BY a;
+} {1 1 2 2 3 3 98 98 99 99}
+
+do_catchsql_test 210 {
+  PRAGMA onconflict=FAIL;
+  UPDATE t1 SET b=10;
+} {1 {UNIQUE constraint failed: t1.b}}
+do_execsql_test 211 {
+  SELECT a, b FROM t1 ORDER BY a;
+} {1 10 2 2 3 3 98 98 99 99}
+
+do_catchsql_test 220 {
+  ROLLBACK;
+  BEGIN;
+  PRAGMA onconflict=ROLLBACK;
+  UPDATE t1 SET b=10;
+} {1 {UNIQUE constraint failed: t1.b}}
+do_execsql_test 221 {
+  SELECT a, b FROM t1 ORDER BY a;
+} {1 1 2 2 3 3 98 98 99 99}
+do_catchsql_test 222 {
+  ROLLBACK
+} {1 {cannot rollback - no transaction is active}}
+
+do_catchsql_test 300 {
+  PRAGMA onconflict=ABORT;
+  BEGIN;
+  INSERT INTO t1(a,b) VALUES(4,4),(5,1),(6,6);
+} {1 {UNIQUE constraint failed: t1.b}}
+do_execsql_test 301 {
+  SELECT a, b FROM t1 ORDER BY a;
+} {1 1 2 2 3 3 98 98 99 99}
+
+do_catchsql_test 310 {
+  PRAGMA onconflict=ROLLBACK;
+  INSERT INTO t1(a,b) VALUES(4,4),(5,1),(6,6);
+} {1 {UNIQUE constraint failed: t1.b}}
+do_execsql_test 311 {
+  SELECT a, b FROM t1 ORDER BY a;
+} {1 1 2 2 3 3 98 98 99 99}
+do_catchsql_test 312 {
+  ROLLBACK
+} {1 {cannot rollback - no transaction is active}}
+
+do_catchsql_test 320 {
+  PRAGMA onconflict=FAIL;
+  BEGIN;
+  INSERT INTO t1(a,b) VALUES(4,4),(5,1),(6,6);
+} {1 {UNIQUE constraint failed: t1.b}}
+do_execsql_test 321 {
+  SELECT a, b FROM t1 ORDER BY a;
+} {1 1 2 2 3 3 4 4 98 98 99 99}
+do_catchsql_test 322 {
+  ROLLBACK
+} {0 {}}
+
+finish_test
