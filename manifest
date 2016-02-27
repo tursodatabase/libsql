@@ -1,5 +1,5 @@
-C Enhance\sdocumentation\sof\ssqlite3_snapshot_open()\sto\sexplain\sthat\sthe\sdatabase\nconnection\smust\shave\sparticipated\sin\sat\sleast\sone\sread\soperation\sprior\sto\nthe\sbeginning\sof\sthe\stransaction\sfor\swhich\sthe\ssnapshot\sis\sto\sbe\sopened.\nAdd\stest\scases\sfor\sthis\sfact.
-D 2016-02-27T14:00:07.182
+C Fix\sa\srequirement\smark\sto\sconform\sto\sa\stypo\sfix\sin\sthe\sdocumentation.
+D 2016-02-27T14:04:27.011
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 4f319afb7c049d40aff7af6e8c4e7cc2ba18e079
@@ -617,7 +617,7 @@ F test/e_vacuum.test 5bfbdc21b65c0abf24398d0ba31dc88d93ca77a9
 F test/e_wal.test ae9a593207a77d711443ee69ffe081fda9243625
 F test/e_walauto.test 280714ddf14e1a47dcbc59d515cd0b026dfd5567
 F test/e_walckpt.test 28c371a6bb5e5fe7f31679c1df1763a19d19e8a0
-F test/e_walhook.test da3ea8b3483d1af72190337bda50155a91a4b664
+F test/e_walhook.test 4c0613a0c76e7a9d5c4c211e1b4cbcc1143914df
 F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 83437a79ba1545a55fb549309175c683fb334473
 F test/enc3.test 6807f7a7740a00361ca8d0ccd66bc60c8dc5f2b6
@@ -1451,7 +1451,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c2277fab12d2aecf9e0f69683741a194df17e854
-R d50b04aa37cc4844a3040bb1385bb8e7
+P 33dd671cb9c17f08dbc61aed91e80eaeb84bfaf5
+R 262f28bf043321d0cb2a0438d4f47c13
 U drh
-Z f370d53fd3d226317497efdfe8ae225f
+Z 7540cf66865728ef817082a1a3c276f6
