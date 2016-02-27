@@ -1299,13 +1299,13 @@ static void displayLinuxIoStats(FILE *out){
       const char *zPattern;
       const char *zDesc;
     } aTrans[] = {
-      { "rchar: ",                  "Number of bytes received by read():" },
-      { "wchar: ",                  "Number of bytes sent to write():"    },
-      { "syscr: ",                  "Number of read() system calls:"      },
-      { "syscw: ",                  "Number of write() system calls:"     },
-      { "read_bytes: ",             "Number of bytes from storage:"       },
-      { "write_bytes: ",            "Number of bytes sent to storage:"    },
-      { "cancelled_write_bytes: ",  "Cancelled write bytes:"              },
+      { "rchar: ",                  "Bytes received by read():" },
+      { "wchar: ",                  "Bytes sent to write():"    },
+      { "syscr: ",                  "Read() system calls:"      },
+      { "syscw: ",                  "Write() system calls:"     },
+      { "read_bytes: ",             "Bytes read from storage:"  },
+      { "write_bytes: ",            "Bytes written to storage:" },
+      { "cancelled_write_bytes: ",  "Cancelled write bytes:"    },
     };
     int i;
     for(i=0; i<ArraySize(aTrans); i++){

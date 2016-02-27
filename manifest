@@ -1,5 +1,5 @@
-C Enhance\sthe\s".stats"\scommand\sin\ssqlite3.exe\sto\sshow\sone-time\sstats\sinformation\nif\sinvoked\swith\sone\sargument.\s\sAlso\sshow\s/proc/PID/io\sinformation\sif\srun\son\nLinux.
-D 2016-02-27T17:12:36.918
+C Tighter\sdescription\sof\sI/O\sstats\sin\sthe\sshell.\s\sShow\sI/O\sstats\son\sspeedtest1.c.
+D 2016-02-27T19:19:22.849
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 4f319afb7c049d40aff7af6e8c4e7cc2ba18e079
@@ -350,7 +350,7 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c b8f7174e5f8c33c44ded3a25a973d0bb89228c20
 F src/rowset.c 9fe4b3ad7cc00944386bb600233d8f523de07a6e
 F src/select.c 1bacfde7b7cec134d2b354cbcf67bafc67078431
-F src/shell.c f30efdd675007ec6006d51193fc47aabda2984a5
+F src/shell.c 5e0ab1e708dc294330ccd8230536e1801f60822e
 F src/sqlite.h.in 57d2a02b14c9ec4f7cb294153eaf62294dc5aa68
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
@@ -1052,7 +1052,7 @@ F test/speed3.test d32043614c08c53eafdc80f33191d5bd9b920523
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
-F test/speedtest1.c 947421c324f5cd4cb3dcae1ec214e4be763df718
+F test/speedtest1.c 1478cb3fb64ad30f291ddca87ca9dbd72ff552aa
 F test/spellfix.test f9c1f431e2c096c8775fec032952320c0e4700db
 F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
 F test/spellfix3.test f7bf7b3482971473d32b6b00f6944c5c066cff97
@@ -1451,7 +1451,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d1392c627934b89cdb86d82e73d56e8f76952b30
-R cc008a8c941c26feeb254cac8325586b
+P 3c36948f16b58fe8042c37d0df634308b4e48217
+R 2b473c8c6b36608ca875feba0d8cbb83
 U drh
-Z 0f34ce71f4553990685c1f98cc5c169c
+Z 565e8454d2408a569a86791d9e6b12a6
