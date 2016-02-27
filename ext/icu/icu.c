@@ -394,7 +394,7 @@ static void icuCaseFunc16(sqlite3_context *p, int nArg, sqlite3_value **apArg){
     if( !U_SUCCESS(status) ){
       if( status==U_BUFFER_OVERFLOW_ERROR ) continue;
       icuFunctionError(p,
-          sqlite3_user_data(p) ? "u_strToUpper()" : "u_strToLower", status);
+          sqlite3_user_data(p) ? "u_strToUpper" : "u_strToLower", status);
       return;
     }
   }

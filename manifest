@@ -1,5 +1,5 @@
-C Make\ssure\sthe\sReplace.cs\sfile\sis\sincluded\sin\sthe\sautoconf\starball.
-D 2016-02-27T00:07:18.719
+C Fix\stypo\sin\sICU\serror\smessage.
+D 2016-02-27T00:21:16.746
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b6eb7a434c2e160a042036bd5047c3bd89eedacc
@@ -198,7 +198,7 @@ F ext/fts5/tool/loadfts5.tcl 95b03429ee6b138645703c6ca192c3ac96eaf093
 F ext/fts5/tool/mkfts5c.tcl d1c2a9ab8e0ec690a52316f33dd9b1d379942f45
 F ext/fts5/tool/showfts5.tcl d54da0e067306663e2d5d523965ca487698e722c
 F ext/icu/README.txt d9fbbad0c2f647c3fdf715fc9fd64af53aedfc43
-F ext/icu/icu.c be1f90d8babafe6d1a55a6912161bcac75baee0e
+F ext/icu/icu.c 4bdf4c5daedabcd8e6eb6e6a377657f7b978f9f7
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/misc/amatch.c a1a8f66c29d40bd71b075546ddeddb477b17a2bb
 F ext/misc/closure.c 0d2a038df8fbae7f19de42e7c7d71f2e4dc88704
@@ -1451,7 +1451,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3617564cb630ed418badf43d2c0291c11c166d12
-R 093da9a09b9ba8463976ad6bb6eea8a3
-U drh
-Z 9a8d22871125a4adc384815a430d82c9
+P b850df483d4dfc677ec61b119d8c1162b6a823d6
+R d5cc203073b9c279291539df551306ee
+U mistachkin
+Z c6ab413d3c48c517b60705cf4b24dfd0
