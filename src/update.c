@@ -794,7 +794,7 @@ static void updateVirtualTable(
   }
   sqlite3VtabMakeWritable(pParse, pTab);
   sqlite3VdbeAddOp4(v, OP_VUpdate, 0, nArg, regArg, pVTab, P4_VTAB);
-  sqlite3VdbeChangeP5(v, onError==OE_Default ? OE_Abort : onError);
+  sqlite3VdbeChangeP5(v, onError==OE_Default ? db->dfltOnError : onError);
   sqlite3MayAbort(pParse);
 
   /* End of the ephemeral table scan. Or, if using the onepass strategy,

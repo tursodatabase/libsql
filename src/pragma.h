@@ -28,24 +28,25 @@
 #define PragTyp_LOCKING_MODE                  22
 #define PragTyp_PAGE_COUNT                    23
 #define PragTyp_MMAP_SIZE                     24
-#define PragTyp_PAGE_SIZE                     25
-#define PragTyp_SECURE_DELETE                 26
-#define PragTyp_SHRINK_MEMORY                 27
-#define PragTyp_SOFT_HEAP_LIMIT               28
-#define PragTyp_STATS                         29
-#define PragTyp_SYNCHRONOUS                   30
-#define PragTyp_TABLE_INFO                    31
-#define PragTyp_TEMP_STORE                    32
-#define PragTyp_TEMP_STORE_DIRECTORY          33
-#define PragTyp_THREADS                       34
-#define PragTyp_WAL_AUTOCHECKPOINT            35
-#define PragTyp_WAL_CHECKPOINT                36
-#define PragTyp_ACTIVATE_EXTENSIONS           37
-#define PragTyp_HEXKEY                        38
-#define PragTyp_KEY                           39
-#define PragTyp_REKEY                         40
-#define PragTyp_LOCK_STATUS                   41
-#define PragTyp_PARSER_TRACE                  42
+#define PragTyp_ONCONFLICT                    25
+#define PragTyp_PAGE_SIZE                     26
+#define PragTyp_SECURE_DELETE                 27
+#define PragTyp_SHRINK_MEMORY                 28
+#define PragTyp_SOFT_HEAP_LIMIT               29
+#define PragTyp_STATS                         30
+#define PragTyp_SYNCHRONOUS                   31
+#define PragTyp_TABLE_INFO                    32
+#define PragTyp_TEMP_STORE                    33
+#define PragTyp_TEMP_STORE_DIRECTORY          34
+#define PragTyp_THREADS                       35
+#define PragTyp_WAL_AUTOCHECKPOINT            36
+#define PragTyp_WAL_CHECKPOINT                37
+#define PragTyp_ACTIVATE_EXTENSIONS           38
+#define PragTyp_HEXKEY                        39
+#define PragTyp_KEY                           40
+#define PragTyp_REKEY                         41
+#define PragTyp_LOCK_STATUS                   42
+#define PragTyp_PARSER_TRACE                  43
 #define PragFlag_NeedSchema           0x01
 #define PragFlag_ReadOnly             0x02
 static const struct sPragmaNames {
@@ -299,6 +300,12 @@ static const struct sPragmaNames {
     /* ePragTyp:  */ PragTyp_MMAP_SIZE,
     /* ePragFlag: */ 0,
     /* iArg:      */ 0 },
+#endif
+  { /* zName:     */ "onconflict",
+    /* ePragTyp:  */ PragTyp_ONCONFLICT,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ 0 },
+#if !defined(SQLITE_OMIT_PAGER_PRAGMAS)
   { /* zName:     */ "page_count",
     /* ePragTyp:  */ PragTyp_PAGE_COUNT,
     /* ePragFlag: */ PragFlag_NeedSchema,
@@ -461,4 +468,4 @@ static const struct sPragmaNames {
     /* iArg:      */ SQLITE_WriteSchema|SQLITE_RecoveryMode },
 #endif
 };
-/* Number of pragmas: 60 on by default, 73 total. */
+/* Number of pragmas: 61 on by default, 74 total. */

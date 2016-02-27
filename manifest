@@ -1,5 +1,5 @@
-C Enhance\sthe\s".stats"\scommand\sin\ssqlite3.exe\sto\sshow\sone-time\sstats\sinformation\nif\sinvoked\swith\sone\sargument.\s\sAlso\sshow\s/proc/PID/io\sinformation\sif\srun\son\nLinux.
-D 2016-02-27T17:12:36.918
+C Experimental\s"PRAGMA\sonconflict=FAIL"\sstatement\sto\schange\sthe\sdefault\nON\sCONFLICT\salgorithm\sto\ssomething\sother\sthan\sABORT.
+D 2016-02-27T17:16:34.701
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 4f319afb7c049d40aff7af6e8c4e7cc2ba18e079
@@ -310,11 +310,11 @@ F src/global.c ded7b97efd16efda5062b65e857198e46c40e652
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
 F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c 9ca97272e9f74ed0efddf3b4350ee12740cebbef
+F src/insert.c b42e0c7e81da4a56c664c3895c675662ac6469f4
 F src/journal.c fe3a3e2559ce3ce9d371afd30fbabbc074174575
 F src/legacy.c 75d3023be8f0d2b99d60f905090341a03358c58e
 F src/loadext.c 9e2a41adcaff16ebc1ebff1f336cbf33de55396f
-F src/main.c be9309f442ec291177642d2e48e82290e0951f4b
+F src/main.c 2bf81b968e8e1f9ce778eb5b61b389ab145f9497
 F src/malloc.c 1443d1ad95d67c21d77af7ae3f44678252f0efec
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 6919bcf12f221868ea066eec27e579fed95ce98b
@@ -342,8 +342,8 @@ F src/parse.y c3ce2c4a7cbf0b699239be6b2a945c5cb51875e2
 F src/pcache.c 647bb53a86b7bbcf55ad88089b3ea5a9170b90df
 F src/pcache.h 4d0ccaad264d360981ec5e6a2b596d6e85242545
 F src/pcache1.c 72f644dc9e1468c72922eff5904048427b817051
-F src/pragma.c d6028d23a9495a8b55f2075e3244ec9a0485e03e
-F src/pragma.h 64c78a648751b9f4f297276c4eb7507b14b4628c
+F src/pragma.c f8f9bf11e2cb362d3a81264b7795ca89a8f695d9
+F src/pragma.h 0639ea9901f8a22433a94ca8b0f35921d6ac2306
 F src/prepare.c 22df6171aec1d86904ed2ad30c2348a5748aa04e
 F src/printf.c 63e6fb12bbe702dd664dc3703776c090383a5a26
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
@@ -354,7 +354,7 @@ F src/shell.c f30efdd675007ec6006d51193fc47aabda2984a5
 F src/sqlite.h.in 57d2a02b14c9ec4f7cb294153eaf62294dc5aa68
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
-F src/sqliteInt.h 63c0e1b5b5d608a1ba2303fe3a554b859a120406
+F src/sqliteInt.h eed052038018d543cd03ade7f3a69830ff302777
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
@@ -410,7 +410,7 @@ F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 3d338cdd00d916ce8a05c397001d64ed58e6fe1c
 F src/treeview.c c525282442111b3f61eb176784567cd6654db5dc
 F src/trigger.c e14840ee0c3e549e758ec9bf3e4146e166002280
-F src/update.c a7eeeaffad59c6506f01303a071dac11de8269ca
+F src/update.c 3c911431bcc7c6b5f996743d807ff0a9ef9e088a
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c 6ed9d7bdd3b0a30742027b6d8e8e1a9e2b14f373
 F src/vacuum.c feb1eabb20987983d9350cad98299b21fa811f52
@@ -1391,7 +1391,7 @@ F tool/mkmsvcmin.tcl 2f12f7fa8858bbe61cf81820a2da96c79ed1ca8d
 F tool/mkopcodec.tcl d1b6362bd3aa80d5520d4d6f3765badf01f6c43c
 F tool/mkopcodeh.tcl 385c62d78c38b2d92146dcb5abd319dbbc33506d
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
-F tool/mkpragmatab.tcl f0d5bb266d1d388cf86fce5ba01a891e95d72d41
+F tool/mkpragmatab.tcl bf99a05342afb7baf04c7b18b151d5b55ae8588f
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 87240b09c20042999b41d5fabe091b7111287835
 F tool/mksqlite3c.tcl b66b4170f693602cd6985aed15d9509fe2f18c84
@@ -1451,7 +1451,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d1392c627934b89cdb86d82e73d56e8f76952b30
-R cc008a8c941c26feeb254cac8325586b
+P 3c36948f16b58fe8042c37d0df634308b4e48217
+R 60015793d5c7a8b9994caa990b084503
+T *branch * pragma-onconflict
+T *sym-pragma-onconflict *
+T -sym-trunk *
 U drh
-Z 0f34ce71f4553990685c1f98cc5c169c
+Z 2a9189a9e71cee0c4156061d04e62711

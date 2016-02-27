@@ -988,7 +988,7 @@ void sqlite3Insert(
       const char *pVTab = (const char *)sqlite3GetVTable(db, pTab);
       sqlite3VtabMakeWritable(pParse, pTab);
       sqlite3VdbeAddOp4(v, OP_VUpdate, 1, pTab->nCol+2, regIns, pVTab, P4_VTAB);
-      sqlite3VdbeChangeP5(v, onError==OE_Default ? OE_Abort : onError);
+      sqlite3VdbeChangeP5(v, onError==OE_Default ? db->dfltOnError : onError);
       sqlite3MayAbort(pParse);
     }else
 #endif
@@ -1282,10 +1282,10 @@ void sqlite3GenerateConstraintChecks(
     if( overrideError!=OE_Default ){
       onError = overrideError;
     }else if( onError==OE_Default ){
-      onError = OE_Abort;
+      onError = db->dfltOnError;
     }
     if( onError==OE_Replace && pTab->aCol[i].pDflt==0 ){
-      onError = OE_Abort;
+      onError = db->dfltOnError;
     }
     assert( onError==OE_Rollback || onError==OE_Abort || onError==OE_Fail
         || onError==OE_Ignore || onError==OE_Replace );
@@ -1325,7 +1325,7 @@ void sqlite3GenerateConstraintChecks(
   if( pTab->pCheck && (db->flags & SQLITE_IgnoreChecks)==0 ){
     ExprList *pCheck = pTab->pCheck;
     pParse->ckBase = regNewData+1;
-    onError = overrideError!=OE_Default ? overrideError : OE_Abort;
+    onError = overrideError!=OE_Default ? overrideError : db->dfltOnError;
     for(i=0; i<pCheck->nExpr; i++){
       int allOk;
       Expr *pExpr = pCheck->a[i].pExpr;
@@ -1337,7 +1337,7 @@ void sqlite3GenerateConstraintChecks(
       }else{
         char *zName = pCheck->a[i].zName;
         if( zName==0 ) zName = pTab->zName;
-        if( onError==OE_Replace ) onError = OE_Abort; /* IMP: R-15569-63625 */
+        if( onError==OE_Replace ) onError = db->dfltOnError; /* IMP: R-15569-63625 */
         sqlite3HaltConstraint(pParse, SQLITE_CONSTRAINT_CHECK,
                               onError, zName, P4_TRANSIENT,
                               P5_ConstraintCheck);
@@ -1358,7 +1358,7 @@ void sqlite3GenerateConstraintChecks(
     if( overrideError!=OE_Default ){
       onError = overrideError;
     }else if( onError==OE_Default ){
-      onError = OE_Abort;
+      onError = db->dfltOnError;
     }
 
     if( isUpdate ){
@@ -1390,6 +1390,7 @@ void sqlite3GenerateConstraintChecks(
     VdbeCoverage(v);
 
     /* Generate code that deals with a rowid collision */
+    if( onError==OE_Default ) onError = db->dfltOnError;
     switch( onError ){
       default: {
         onError = OE_Abort;
@@ -1532,7 +1533,7 @@ void sqlite3GenerateConstraintChecks(
     if( overrideError!=OE_Default ){
       onError = overrideError;
     }else if( onError==OE_Default ){
-      onError = OE_Abort;
+      onError = db->dfltOnError;
     }
     
     /* Check to see if the new index entry will be unique */
@@ -1910,7 +1911,7 @@ static int xferOptimization(
 #endif
   if( onError==OE_Default ){
     if( pDest->iPKey>=0 ) onError = pDest->keyConf;
-    if( onError==OE_Default ) onError = OE_Abort;
+    if( onError==OE_Default ) onError = db->dfltOnError;
   }
   assert(pSelect->pSrc);   /* allocated even if there is no FROM clause */
   if( pSelect->pSrc->nSrc!=1 ){

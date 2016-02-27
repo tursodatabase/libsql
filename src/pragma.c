@@ -1894,6 +1894,29 @@ void sqlite3Pragma(
     break;
   }
 
+  /*
+  **   PRAGMA onconflict
+  **   PRAGMA onconflict = FAIL
+  **   PRAGMA onconflict = ABORT
+  **   PRAGMA onconflict = ROLLBACK
+  **
+  ** Set the default conflict handling algorithm.
+  */
+  case PragTyp_ONCONFLICT: {
+    const char *zRes = "ABORT";
+    if( zRight ){
+      if( sqlite3StrICmp(zRight,"FAIL")==0 ) db->dfltOnError = OE_Fail;
+      if( sqlite3StrICmp(zRight,"ABORT")==0 ) db->dfltOnError = OE_Abort;
+      if( sqlite3StrICmp(zRight,"ROLLBACK")==0 ) db->dfltOnError = OE_Rollback;
+    }
+    switch( db->dfltOnError ){
+      case OE_Fail:     zRes = "FAIL";      break;
+      case OE_Rollback: zRes = "ROLLBACK";  break;
+    }
+    returnSingleText(v, "onconflict", zRes);
+    break;
+  }
+
 #if defined(SQLITE_DEBUG) || defined(SQLITE_TEST)
   /*
   ** Report the current state of file logs for all databases

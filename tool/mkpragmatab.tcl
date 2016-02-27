@@ -317,6 +317,8 @@ set pragma_def {
   NAME: soft_heap_limit
 
   NAME: threads
+
+  NAME: onconflict
 }
 
 # Open the output file
