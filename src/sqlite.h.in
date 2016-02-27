@@ -7968,7 +7968,11 @@ SQLITE_EXPERIMENTAL int sqlite3_snapshot_get(
 ** the first operation, apart from other sqlite3_snapshot_open() calls,
 ** following the [BEGIN] that starts a new read transaction.
 ** ^A [snapshot] will fail to open if it has been overwritten by a 
-** [checkpoint].  
+** [checkpoint].
+** ^A [snapshot] will fail to open if the database connection D has not
+** previously completed at least one read operation against the database 
+** file.  (Hint: Run "[PRAGMA application_id]" against a newly opened
+** database connection in order to make it ready to use snapshots.)
 **
 ** The [sqlite3_snapshot_open()] interface is only available when the
 ** SQLITE_ENABLE_SNAPSHOT compile-time option is used.

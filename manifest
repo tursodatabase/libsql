@@ -1,5 +1,5 @@
-C Add\s'Replace.exe'\sto\sthe\sMSVC\sclean\starget.
-D 2016-02-27T00:21:44.269
+C Enhance\sdocumentation\sof\ssqlite3_snapshot_open()\sto\sexplain\sthat\sthe\sdatabase\nconnection\smust\shave\sparticipated\sin\sat\sleast\sone\sread\soperation\sprior\sto\nthe\sbeginning\sof\sthe\stransaction\sfor\swhich\sthe\ssnapshot\sis\sto\sbe\sopened.\nAdd\stest\scases\sfor\sthis\sfact.
+D 2016-02-27T14:00:07.182
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 4f319afb7c049d40aff7af6e8c4e7cc2ba18e079
@@ -351,7 +351,7 @@ F src/resolve.c b8f7174e5f8c33c44ded3a25a973d0bb89228c20
 F src/rowset.c 9fe4b3ad7cc00944386bb600233d8f523de07a6e
 F src/select.c 1bacfde7b7cec134d2b354cbcf67bafc67078431
 F src/shell.c 89b73e894e737cc2f21e4bce0feb3ea21cc61124
-F src/sqlite.h.in 6bf029bcb077c6db633a77b7fda5ffd5b7c950b7
+F src/sqlite.h.in 57d2a02b14c9ec4f7cb294153eaf62294dc5aa68
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
 F src/sqliteInt.h 63c0e1b5b5d608a1ba2303fe3a554b859a120406
@@ -1034,7 +1034,7 @@ F test/skipscan2.test d1d1450952b7275f0b0a3a981f0230532743951a
 F test/skipscan3.test ec5bab3f81c7038b43450e7b3062e04a198bdbb5
 F test/skipscan5.test 67817a4b6857c47e0e33ba3e506da6f23ef68de2
 F test/skipscan6.test 5866039d03a56f5bd0b3d172a012074a1d90a15b
-F test/snapshot.test 5ec4651d16c3d1eb6c010d102febe32b3614bf56
+F test/snapshot.test c03eb5ba1602df33c1edc1d12393d6ca7a282a46
 F test/snapshot_fault.test 25973aeb1b86a280800e0bcf1eb5ce70e9ef57ab
 F test/soak.test 0b5b6375c9f4110c828070b826b3b4b0bb65cd5f
 F test/softheap1.test 843cd84db9891b2d01b9ab64cef3e9020f98d087
@@ -1451,7 +1451,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 00c8fffd47cec763857389e1e91c026ba3179182
-R 5d5d8a8010dbfa6bc274c104c226fec0
-U mistachkin
-Z b85e54c141d3cf5bd3e41d9206ec3bb6
+P c2277fab12d2aecf9e0f69683741a194df17e854
+R d50b04aa37cc4844a3040bb1385bb8e7
+U drh
+Z f370d53fd3d226317497efdfe8ae225f
