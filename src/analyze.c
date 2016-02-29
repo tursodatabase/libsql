@@ -267,6 +267,7 @@ typedef struct Stat4Sample Stat4Sample;
 struct Stat4Sample {
   tRowcnt *anEq;                  /* sqlite_stat4.nEq */
   tRowcnt *anDLt;                 /* sqlite_stat4.nDLt */
+  tRowcnt *amxEq;                 /* Maximum length run of equal values */
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
   tRowcnt *anLt;                  /* sqlite_stat4.nLt */
   union {
@@ -418,8 +419,9 @@ static void statInit(
   /* Allocate the space required for the Stat4Accum object */
   n = sizeof(*p) 
     + sizeof(tRowcnt)*nColUp                  /* Stat4Accum.anEq */
-    + sizeof(tRowcnt)*nColUp                  /* Stat4Accum.anDLt */
+    + sizeof(tRowcnt)*nColUp                  /* Stat4Accum.amxEq */
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+    + sizeof(tRowcnt)*nColUp                  /* Stat4Accum.anDLt */
     + sizeof(tRowcnt)*nColUp                  /* Stat4Accum.anLt */
     + sizeof(Stat4Sample)*(nCol+mxSample)     /* Stat4Accum.aBest[], a[] */
     + sizeof(tRowcnt)*3*nColUp*(nCol+mxSample)
@@ -436,18 +438,19 @@ static void statInit(
   p->nRow = 0;
   p->nCol = nCol;
   p->nKeyCol = nKeyCol;
-  p->current.anDLt = (tRowcnt*)&p[1];
-  p->current.anEq = &p->current.anDLt[nColUp];
+  p->current.anEq = (tRowcnt*)&p[1];
+  p->current.amxEq = &p->current.anEq[nColUp];
 
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
   {
     u8 *pSpace;                     /* Allocated space not yet assigned */
-    int i;                          /* Used to iterate through p->aSample[] */
+    int i;                          /* Loop counter */
 
     p->iGet = -1;
     p->mxSample = mxSample;
     p->nPSample = (tRowcnt)(sqlite3_value_int64(argv[2])/(mxSample/3+1) + 1);
-    p->current.anLt = &p->current.anEq[nColUp];
+    p->current.anDLt = &p->current.amxEq[nColUp];
+    p->current.anLt = &p->current.anDLt[nColUp];
     p->iPrn = 0x689e962d*(u32)nCol ^ 0xd0944565*(u32)sqlite3_value_int(argv[2]);
   
     /* Set up the Stat4Accum.a[] and aBest[] arrays */
@@ -721,7 +724,10 @@ static void statPush(
 
   if( p->nRow==0 ){
     /* This is the first call to this function. Do initialization. */
-    for(i=0; i<p->nCol; i++) p->current.anEq[i] = 1;
+    for(i=0; i<p->nCol; i++){
+      p->current.anEq[i] = 1;
+      p->current.amxEq[i] = 1;
+    }
   }else{
     /* Second and subsequent calls get processed here */
     samplePushPrevious(p, iChng);
@@ -729,11 +735,12 @@ static void statPush(
     /* Update anDLt[], anLt[] and anEq[] to reflect the values that apply
     ** to the current row of the index. */
     for(i=0; i<iChng; i++){
+      if( p->current.amxEq[i]==p->current.anEq[i] ) p->current.amxEq[i]++;
       p->current.anEq[i]++;
     }
     for(i=iChng; i<p->nCol; i++){
-      p->current.anDLt[i]++;
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+      p->current.anDLt[i]++;
       p->current.anLt[i] += p->current.anEq[i];
 #endif
       p->current.anEq[i] = 1;
@@ -828,7 +835,7 @@ static void statGet(
     ** the index. The first integer in the list is the total number of 
     ** entries in the index. There is one additional integer in the list 
     ** for each indexed column. This additional integer is an estimate of
-    ** the number of rows matched by a stabbing query on the index using
+    ** the number of rows matched by a query on the index using
     ** a key with the corresponding number of fields. In other words,
     ** if the index is on columns (a,b) and the sqlite_stat1 value is 
     ** "100 10 2", then SQLite estimates that:
@@ -837,10 +844,8 @@ static void statGet(
     **   * "WHERE a=?" matches 10 rows, and
     **   * "WHERE a=? AND b=?" matches 2 rows.
     **
-    ** If D is the count of distinct values and K is the total number of 
-    ** rows, then each estimate is computed as:
-    **
-    **        I = (K+D-1)/D
+    ** Use the worst-case estimate: the maximum number of repeated entries
+    ** in the index.
     */
     char *z;
     int i;
@@ -854,8 +859,7 @@ static void statGet(
     sqlite3_snprintf(24, zRet, "%llu", (u64)p->nRow);
     z = zRet + sqlite3Strlen30(zRet);
     for(i=0; i<p->nKeyCol; i++){
-      u64 nDistinct = p->current.anDLt[i] + 1;
-      u64 iVal = (p->nRow + nDistinct - 1) / nDistinct;
+      u64 iVal = p->current.amxEq[i];
       sqlite3_snprintf(24, z, " %llu", iVal);
       z += sqlite3Strlen30(z);
       assert( p->current.anEq[i] );
