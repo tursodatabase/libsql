@@ -1,5 +1,5 @@
-C Fix\san\sfts5\sproblem\scausing\s'optimize'\sto\scorrupt\sthe\sfts\sindex\sunder\ssome\scircumstances.
-D 2016-02-29T17:16:26.225
+C Fix\sa\sproblem\sin\sfts5\swhere\sa\scorrupt\sdb\scould\slead\sto\sa\s(huge)\sbuffer\soverread.
+D 2016-02-29T17:34:16.069
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 4f319afb7c049d40aff7af6e8c4e7cc2ba18e079
@@ -104,7 +104,7 @@ F ext/fts5/fts5_buffer.c 4c1502d4c956cd092c89ce4480867f9d8bf325cd
 F ext/fts5/fts5_config.c 35c5173cae4eb17e82164a7f5aeef56a48903079
 F ext/fts5/fts5_expr.c 8e8e4635f655133eb39018072fc0f0942a2c4337
 F ext/fts5/fts5_hash.c f3a7217c86eb8f272871be5f6aa1b6798960a337
-F ext/fts5/fts5_index.c 745bc6f0e0c13c3b659be0bae72fa6067d1708c9
+F ext/fts5/fts5_index.c 26a4a6112864feb599a6f6144d06a78bb179736a
 F ext/fts5/fts5_main.c db24ac714c6c4a1b3c24a1f8c25889f2952148c1
 F ext/fts5/fts5_storage.c f8343db90d8c95a4d4b52f6676e354b4649ffd6e
 F ext/fts5/fts5_tcl.c f8731e0508299bd43f1a2eff7dbeaac870768966
@@ -1451,7 +1451,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4b55c520f554163edc174e5995e66242f169cb04
-R e6d22f9f71f3990f592583cd83eb05c9
+P 251d6473f7c9ad95adbdcc49cb8eaf7c0956764b
+R 1a43d3061a1f154a38fc05ffa17e1f4a
 U dan
-Z fe2b648248ba7cac53004b260ee02700
+Z 0ef60cd2035dd9bea82e9df13f5bcf57
