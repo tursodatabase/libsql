@@ -1,5 +1,5 @@
-C Fix\sminor\sproblems\swith\snew\scode\sin\smemjournal.c.
-D 2016-02-29T20:00:13.233
+C When\susing\sa\stemporary\sfile\sfor\sa\sstatement\sjournal,\sstore\sthe\sfirst\s64KiB\sin\smemory.\sIf\sthe\sfile\sgrows\slarger\sthan\sthat,\sflush\sit\sto\sdisk\sand\sfree\sthe\smemory.\sHardcoding\sto\s64KiB\sis\sjust\san\sexperiment\sto\scheck\sthat\sthe\smemjournal.c\scode\sworks.
+D 2016-02-29T20:18:21.986
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 4f319afb7c049d40aff7af6e8c4e7cc2ba18e079
@@ -321,7 +321,7 @@ F src/mem1.c 6919bcf12f221868ea066eec27e579fed95ce98b
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
 F src/mem3.c 8768ac94694f31ffaf8b4d0ea5dc08af7010a35a
 F src/mem5.c 9bf955937b07f8c32541c8a9991f33ce3173d944
-F src/memjournal.c 9b71f171dd20827022e9edd874adf8dba2b8d218
+F src/memjournal.c fea987c5809993211da554ba109816fae7e04dae
 F src/msvc.h d9ba56c6851227ab44b3f228a35f3f5772296495
 F src/mutex.c 8e45800ee78e0cd1f1f3fe8e398853307f4a085c
 F src/mutex.h 779d588e3b7756ec3ecf7d78cde1d84aba414f85
@@ -336,7 +336,7 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c 3a6f20736dfb8a0949cdd66553fdf59f6604be35
 F src/os_win.c f0d7aa603eb6262143d7169a222aea07c4fca91d
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
-F src/pager.c 24dd5e463f527427dd55fccc338c62260ae09b3a
+F src/pager.c 2bc43817697b5a4e88fd6a2cdb2cb25f2223505c
 F src/pager.h e1d38a2f14849e219df0f91f8323504d134c8a56
 F src/parse.y c3ce2c4a7cbf0b699239be6b2a945c5cb51875e2
 F src/pcache.c 647bb53a86b7bbcf55ad88089b3ea5a9170b90df
@@ -1451,7 +1451,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e0b0b4316531fc8afa74b4882d9c74a91030ec69
-R 662914373e55c4521cf0e8e3f2bf03da
+P 9fd3f7b9c93325a83cdbe7dc9ee312b22a9c2898
+R 498bd0458994e1419985675b963a5c33
 U dan
-Z 9ebd4b81ff0d949546d50775b32308aa
+Z de04134d7998c131f105dcb3752be845

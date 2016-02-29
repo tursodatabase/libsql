@@ -4355,11 +4355,14 @@ static int pager_write_pagelist(Pager *pPager, PgHdr *pList){
 static int openSubJournal(Pager *pPager){
   int rc = SQLITE_OK;
   if( !isOpen(pPager->sjfd) ){
+    const int flags =  SQLITE_OPEN_SUBJOURNAL | SQLITE_OPEN_READWRITE 
+      | SQLITE_OPEN_CREATE | SQLITE_OPEN_EXCLUSIVE 
+      | SQLITE_OPEN_DELETEONCLOSE;
+    int nBuf = 64*1024;
     if( pPager->journalMode==PAGER_JOURNALMODE_MEMORY || pPager->subjInMemory ){
-      sqlite3MemJournalOpen(pPager->sjfd);
-    }else{
-      rc = pagerOpentemp(pPager, pPager->sjfd, SQLITE_OPEN_SUBJOURNAL);
+      nBuf = -1;
     }
+    rc = sqlite3JournalOpen(pPager->pVfs, 0, pPager->sjfd, flags, nBuf);
   }
   return rc;
 }

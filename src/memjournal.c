@@ -354,7 +354,7 @@ int sqlite3JournalOpen(
   ** it using the sqlite3OsOpen() function of the underlying VFS. In this
   ** case none of the code in this module is executed as a result of calls
   ** made on the journal file-handle.  */
-  memset(p, 0, sizeof(MemJournal) + pVfs ? pVfs->szOsFile : 0);
+  memset(p, 0, sizeof(MemJournal) + (pVfs ? pVfs->szOsFile : 0));
   if( nBuf==0 ){
     return sqlite3OsOpen(pVfs, zName, pJfd, flags, 0);
   }
