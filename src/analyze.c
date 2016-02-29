@@ -844,13 +844,15 @@ static void statGet(
     **   * "WHERE a=?" matches 10 rows, and
     **   * "WHERE a=? AND b=?" matches 2 rows.
     **
-    ** Use the worst-case estimate: the maximum number of repeated entries
-    ** in the index.  The worst-case estimate is best for picking indexes.
-    ** But for skip-scan, we want an average case estimate.  The worst-case
-    ** estimate might be too high.  To avoid undesirable skip-scans, if the
-    ** worst-case estimate is above the WHERE_SKIPSCAN_ONSET but the average
-    ** estimate is below, simply disable skipscans on this index by adding
-    ** the "noskipscan" modifier onto the end of the stat line.
+    ** A worst-case estimate is used:  the maximum number of rows that
+    ** could be select for any set of query parameters.  The worst case
+    ** is the estimate we want for choosing indexes.
+    **
+    ** For deciding whether or not to do a skip-scan, we want to know the
+    ** average number of rows with the same key.  We can approximate this
+    ** using the (worst case) most number of rows with the same key.  But
+    ** sometimes that approximation can be badly off.  In those cases,
+    ** mark the index as "noskipscan" to avoid suboptimal skip-scan plans.
     */
     char *z;
     int i;
@@ -869,10 +871,10 @@ static void statGet(
       sqlite3_snprintf(24, z, " %llu", iVal);
       z += sqlite3Strlen30(z);
       assert( p->current.anEq[i] );
-      if( i>0 && iVal>=WHERE_SKIPSCAN_ONSET+5 ){
-        iVal = p->current.anDLt[i];
-        iVal = (p->nRow + iVal)/(iVal + 1);
-        if( iVal<WHERE_SKIPSCAN_ONSET-5 ) noSkipScan = 1;
+      if( iVal>=WHERE_SKIPSCAN_ONSET
+       && p->current.anDLt[i] > p->nRow/(WHERE_SKIPSCAN_ONSET*2/3)
+      ){
+        noSkipScan = 1;
       }
     }
     if( noSkipScan ) sqlite3_snprintf(14, z, " noskipscan");
