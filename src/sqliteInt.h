@@ -2422,6 +2422,15 @@ struct SrcList {
 #define JT_OUTER     0x0020    /* The "OUTER" keyword is present */
 #define JT_ERROR     0x0040    /* unknown or unsupported join type */
 
+/*
+** TUNING: The skip-scan optimization is only profitable if the average 
+** number of repeats of an entry in the index is greater than or equal to
+** WHERE_SKIPSCAN_ONSET.  If the average numbe of repeats is less
+** than WHERE_SKIPSCAN_ONSET, then it is faster to do a full table
+** scan.
+*/
+#define WHERE_SKIPSCAN_ONSET         18
+#define WHERE_SKIPSCAN_ONSET_LOG     42
 
 /*
 ** Flags appropriate for the wctrlFlags parameter of sqlite3WhereBegin()

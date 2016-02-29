@@ -2411,11 +2411,11 @@ static int whereLoopAddBtreeIndex(
   ** the code). And, even if it is not, it should not be too much slower. 
   ** On the other hand, the extra seeks could end up being significantly
   ** more expensive.  */
-  assert( 42==sqlite3LogEst(18) );
+  assert( WHERE_SKIPSCAN_ONSET_LOG==sqlite3LogEst(WHERE_SKIPSCAN_ONSET) );
   if( saved_nEq==saved_nSkip
    && saved_nEq+1<pProbe->nKeyCol
    && pProbe->noSkipScan==0
-   && pProbe->aiRowLogEst[saved_nEq+1]>=42  /* TUNING: Minimum for skip-scan */
+   && pProbe->aiRowLogEst[saved_nEq+1]>=WHERE_SKIPSCAN_ONSET_LOG
    && (rc = whereLoopResize(db, pNew, pNew->nLTerm+1))==SQLITE_OK
   ){
     LogEst nIter;

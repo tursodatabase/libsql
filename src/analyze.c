@@ -420,8 +420,8 @@ static void statInit(
   n = sizeof(*p) 
     + sizeof(tRowcnt)*nColUp                  /* Stat4Accum.anEq */
     + sizeof(tRowcnt)*nColUp                  /* Stat4Accum.amxEq */
-#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
     + sizeof(tRowcnt)*nColUp                  /* Stat4Accum.anDLt */
+#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
     + sizeof(tRowcnt)*nColUp                  /* Stat4Accum.anLt */
     + sizeof(Stat4Sample)*(nCol+mxSample)     /* Stat4Accum.aBest[], a[] */
     + sizeof(tRowcnt)*3*nColUp*(nCol+mxSample)
@@ -440,6 +440,7 @@ static void statInit(
   p->nKeyCol = nKeyCol;
   p->current.anEq = (tRowcnt*)&p[1];
   p->current.amxEq = &p->current.anEq[nColUp];
+  p->current.anDLt = &p->current.amxEq[nColUp];
 
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
   {
@@ -449,7 +450,6 @@ static void statInit(
     p->iGet = -1;
     p->mxSample = mxSample;
     p->nPSample = (tRowcnt)(sqlite3_value_int64(argv[2])/(mxSample/3+1) + 1);
-    p->current.anDLt = &p->current.amxEq[nColUp];
     p->current.anLt = &p->current.anDLt[nColUp];
     p->iPrn = 0x689e962d*(u32)nCol ^ 0xd0944565*(u32)sqlite3_value_int(argv[2]);
   
@@ -739,8 +739,8 @@ static void statPush(
       p->current.anEq[i]++;
     }
     for(i=iChng; i<p->nCol; i++){
-#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
       p->current.anDLt[i]++;
+#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
       p->current.anLt[i] += p->current.anEq[i];
 #endif
       p->current.anEq[i] = 1;
@@ -845,12 +845,18 @@ static void statGet(
     **   * "WHERE a=? AND b=?" matches 2 rows.
     **
     ** Use the worst-case estimate: the maximum number of repeated entries
-    ** in the index.
+    ** in the index.  The worst-case estimate is best for picking indexes.
+    ** But for skip-scan, we want an average case estimate.  The worst-case
+    ** estimate might be too high.  To avoid undesirable skip-scans, if the
+    ** worst-case estimate is above the WHERE_SKIPSCAN_ONSET but the average
+    ** estimate is below, simply disable skipscans on this index by adding
+    ** the "noskipscan" modifier onto the end of the stat line.
     */
     char *z;
     int i;
+    int noSkipScan = 0;
 
-    char *zRet = sqlite3MallocZero( (p->nKeyCol+1)*25 );
+    char *zRet = sqlite3MallocZero( (p->nKeyCol+2)*25 );
     if( zRet==0 ){
       sqlite3_result_error_nomem(context);
       return;
@@ -863,9 +869,13 @@ static void statGet(
       sqlite3_snprintf(24, z, " %llu", iVal);
       z += sqlite3Strlen30(z);
       assert( p->current.anEq[i] );
+      if( i>0 && iVal>=WHERE_SKIPSCAN_ONSET+5 ){
+        iVal = p->current.anDLt[i];
+        iVal = (p->nRow + iVal)/(iVal + 1);
+        if( iVal<WHERE_SKIPSCAN_ONSET-5 ) noSkipScan = 1;
+      }
     }
-    assert( z[0]=='\0' && z>zRet );
-
+    if( noSkipScan ) sqlite3_snprintf(14, z, " noskipscan");
     sqlite3_result_text(context, zRet, -1, sqlite3_free);
   }
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
