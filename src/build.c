@@ -1074,7 +1074,7 @@ void sqlite3AddColumn(Parse *pParse, Token *pName, Token *pType){
   pCol->zName = z;
   sqlite3ColumnPropertiesFromName(p, pCol);
  
-  if( pType==0 ){
+  if( pType->n==0 ){
     /* If there is no type specified, columns have the default affinity
     ** 'BLOB'. */
     pCol->affinity = SQLITE_AFF_BLOB;
@@ -1084,6 +1084,7 @@ void sqlite3AddColumn(Parse *pParse, Token *pName, Token *pType){
     pCol->affinity = sqlite3AffinityType(pCol->zType, &pCol->szEst);
   }
   p->nCol++;
+  pParse->constraintName.n = 0;
 }
 
 /*
