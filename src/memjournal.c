@@ -248,6 +248,10 @@ static int memjrnlWrite(
 
 /*
 ** Truncate the file.
+**
+** If the journal file is already on disk, truncate it there. Or, if it
+** is still in main memory but is being truncated to zero bytes in size,
+** ignore 
 */
 static int memjrnlTruncate(sqlite3_file *pJfd, sqlite_int64 size){
   MemJournal *p = (MemJournal *)pJfd;
@@ -350,7 +354,7 @@ int sqlite3JournalOpen(
   ** it using the sqlite3OsOpen() function of the underlying VFS. In this
   ** case none of the code in this module is executed as a result of calls
   ** made on the journal file-handle.  */
-  memset(p, 0, sizeof(MemJournal));
+  memset(p, 0, sizeof(MemJournal) + pVfs ? pVfs->szOsFile : 0);
   if( nBuf==0 ){
     return sqlite3OsOpen(pVfs, zName, pJfd, flags, 0);
   }
@@ -378,29 +382,22 @@ void sqlite3MemJournalOpen(sqlite3_file *pJfd){
 }
 
 /*
-** Return true if the file-handle passed as an argument is an in-memory 
-** journal.
-*/
-int sqlite3IsMemJournal(sqlite3_file *pJfd){
-  return pJfd->pMethods==&MemJournalMethods && ((MemJournal*)pJfd)->pReal==0;
-}
-
-/*
 ** If the argument p points to a MemJournal structure that is not an 
-** in-memory-only journal file, and the underlying file has not yet been 
-** created, create it now.
+** in-memory-only journal file (i.e. is one that was opened with a +ve
+** nBuf parameter), and the underlying file has not yet been created, 
+** create it now.
 */
 int sqlite3JournalCreate(sqlite3_file *p){
   int rc = SQLITE_OK;
-  if( p->pMethods==&MemJournalMethods && ((MemJournal*)p)->nBuf>=0 ){
+  if( p->pMethods==&MemJournalMethods && ((MemJournal*)p)->nBuf>0 ){
     rc = createFile((MemJournal*)p);
   }
   return rc;
 }
 
 /*
-** The file-handle passed as teh only argument is open on a journal file.
-** Return true if this "journal file" is actually stored in heap memory,
+** The file-handle passed as the only argument is open on a journal file.
+** Return true if this "journal file" is currently stored in heap memory,
 ** or false otherwise.
 */
 int sqlite3JournalIsInMemory(sqlite3_file *p){
