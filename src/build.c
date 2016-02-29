@@ -1038,7 +1038,7 @@ void sqlite3ColumnPropertiesFromName(Table *pTab, Column *pCol){
 ** first to get things going.  Then this routine is called for each
 ** column.
 */
-void sqlite3AddColumn(Parse *pParse, Token *pName){
+void sqlite3AddColumn(Parse *pParse, Token *pName, Token *pType){
   Table *p;
   int i;
   char *z;
@@ -1074,13 +1074,17 @@ void sqlite3AddColumn(Parse *pParse, Token *pName){
   pCol->zName = z;
   sqlite3ColumnPropertiesFromName(p, pCol);
  
-  /* If there is no type specified, columns have the default affinity
-  ** 'BLOB'. If there is a type specified, then sqlite3AddColumnType() will
-  ** be called next to set pCol->affinity correctly.
-  */
-  pCol->affinity = SQLITE_AFF_BLOB;
-  pCol->szEst = 1;
+  if( pType->n==0 ){
+    /* If there is no type specified, columns have the default affinity
+    ** 'BLOB'. */
+    pCol->affinity = SQLITE_AFF_BLOB;
+    pCol->szEst = 1;
+  }else{
+    pCol->zType = sqlite3NameFromToken(pParse->db, pType);
+    pCol->affinity = sqlite3AffinityType(pCol->zType, &pCol->szEst);
+  }
   p->nCol++;
+  pParse->constraintName.n = 0;
 }
 
 /*
@@ -1181,28 +1185,6 @@ char sqlite3AffinityType(const char *zIn, u8 *pszEst){
     }
   }
   return aff;
-}
-
-/*
-** This routine is called by the parser while in the middle of
-** parsing a CREATE TABLE statement.  The pFirst token is the first
-** token in the sequence of tokens that describe the type of the
-** column currently under construction.   pLast is the last token
-** in the sequence.  Use this information to construct a string
-** that contains the typename of the column and store that string
-** in zType.
-*/ 
-void sqlite3AddColumnType(Parse *pParse, Token *pType){
-  Table *p;
-  Column *pCol;
-
-  p = pParse->pNewTable;
-  if( p==0 || NEVER(p->nCol<1) ) return;
-  pCol = &p->aCol[p->nCol-1];
-  assert( pCol->zType==0 || CORRUPT_DB );
-  sqlite3DbFree(pParse->db, pCol->zType);
-  pCol->zType = sqlite3NameFromToken(pParse->db, pType);
-  pCol->affinity = sqlite3AffinityType(pCol->zType, &pCol->szEst);
 }
 
 /*

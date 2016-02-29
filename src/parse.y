@@ -190,22 +190,9 @@ table_options(A) ::= WITHOUT nm(X). {
     sqlite3ErrorMsg(pParse, "unknown table option: %.*s", X.n, X.z);
   }
 }
-columnlist ::= columnlist COMMA column.
-columnlist ::= column.
-
-// A "column" is a complete description of a single column in a
-// CREATE TABLE statement.  This includes the column name, its
-// datatype, and other keywords such as PRIMARY KEY, UNIQUE, REFERENCES,
-// NOT NULL and so forth.
-//
-column(A) ::= columnid(A) type carglist. {
-  A.n = (int)(pParse->sLastToken.z-A.z) + pParse->sLastToken.n;
-}
-columnid(A) ::= nm(A). {
-  sqlite3AddColumn(pParse,&A);
-  pParse->constraintName.n = 0;
-}
-
+columnlist ::= columnlist COMMA columnname carglist.
+columnlist ::= columnname carglist.
+columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,&A,&Y);}
 
 // An IDENTIFIER can be a generic identifier, or one of several
 // keywords.  Any non-standard keyword can also be an identifier.
@@ -264,13 +251,12 @@ nm(A) ::= id(A).
 nm(A) ::= STRING(A).
 nm(A) ::= JOIN_KW(A).
 
-// A typetoken is really one or more tokens that form a type name such
+// A typetoken is really zero or more tokens that form a type name such
 // as can be found after the column name in a CREATE TABLE statement.
 // Multiple tokens are concatenated to form the value of the typetoken.
 //
 %type typetoken {Token}
-type ::= .
-type ::= typetoken(X).                   {sqlite3AddColumnType(pParse,&X);}
+typetoken(A) ::= .   {A.n = 0; A.z = 0;}
 typetoken(A) ::= typename(A).
 typetoken(A) ::= typename(A) LP signed RP(Y). {
   A.n = (int)(&Y.z[Y.n] - A.z);
@@ -580,7 +566,7 @@ selcollist(A) ::= sclp(A) nm(X) DOT STAR(Y). {
 %type as {Token}
 as(X) ::= AS nm(Y).    {X = Y;}
 as(X) ::= ids(X).
-as(X) ::= .            {X.n = 0;}
+as(X) ::= .            {X.n = 0; X.z = 0;}
 
 
 %type seltablist {SrcList*}
@@ -1499,7 +1485,9 @@ cmd ::= ANALYZE nm(X) dbnm(Y).  {sqlite3Analyze(pParse, &X, &Y);}
 cmd ::= ALTER TABLE fullname(X) RENAME TO nm(Z). {
   sqlite3AlterRenameTable(pParse,X,&Z);
 }
-cmd ::= ALTER TABLE add_column_fullname ADD kwcolumn_opt column(Y). {
+cmd ::= ALTER TABLE add_column_fullname
+        ADD kwcolumn_opt columnname(Y) carglist. {
+  Y.n = (int)(pParse->sLastToken.z-Y.z) + pParse->sLastToken.n;
   sqlite3AlterFinishAddColumn(pParse, &Y);
 }
 add_column_fullname ::= fullname(X). {

@@ -3413,11 +3413,10 @@ void sqlite3StartTable(Parse*,Token*,Token*,int,int,int,int);
 #else
 # define sqlite3ColumnPropertiesFromName(T,C) /* no-op */
 #endif
-void sqlite3AddColumn(Parse*,Token*);
+void sqlite3AddColumn(Parse*,Token*,Token*);
 void sqlite3AddNotNull(Parse*, int);
 void sqlite3AddPrimaryKey(Parse*, ExprList*, int, int, int);
 void sqlite3AddCheckConstraint(Parse*, Expr*);
-void sqlite3AddColumnType(Parse*,Token*);
 void sqlite3AddDefaultValue(Parse*,ExprSpan*);
 void sqlite3AddCollateType(Parse*, Token*);
 void sqlite3EndTable(Parse*,Token*,Token*,u8,Select*);
