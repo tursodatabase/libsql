@@ -1,5 +1,5 @@
-C Remove\sa\sforgotten\s"breakpoint"\scommand\sfrom\san\sFTS5\stest\sscript.
-D 2016-03-01T15:52:41.571
+C Add\s-DSQLITE_ENABLE_FTS5\sto\sone\sof\sthe\srelease-test\sconfigurations\sin\sreleasetest.tcl.\sRun\sfts5\stests\sas\spart\sof\s"make\stest"\sif\sSQLITE_ENABLE_FTS5\sis\sdefined.
+D 2016-03-01T16:02:57.526
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 56ea123a975690bf9ed38b31bb89ff87b02a7c2b
@@ -944,7 +944,7 @@ F test/parser1.test 222b5cbf3e2e659fec1bf7d723488c8b9c94f1d0
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
-F test/permutations.test 382a43c49f49bafe6fddffe904ea33d6bb3ff33e
+F test/permutations.test ea7d077b4644ba0ed6804666915595e9fc3b1950
 F test/pragma.test 507ac7ef2ea5682241ea0ef041799ca70bb5e0bf
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
 F test/pragma3.test 6f849ccffeee7e496d2f2b5e74152306c0b8757c
@@ -964,7 +964,7 @@ F test/rbu.test 168573d353cd0fd10196b87b0caa322c144ef736
 F test/rdonly.test 64e2696c322e3538df0b1ed624e21f9a23ed9ff8
 F test/regexp1.test 497ea812f264d12b6198d6e50a76be4a1973a9d8
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
-F test/releasetest.tcl 975449bf742b8bb9025208292208af816a1fcb58
+F test/releasetest.tcl a246ecb14ed594bf44bf77bd21df873971d779bf
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
 F test/rollback.test 458fe73eb3ffdfdf9f6ba3e9b7350a6220414dea
 F test/rollback2.test 8435d6ff0f13f51d2a4181c232e706005fa90fc5
@@ -1427,7 +1427,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh ef6ebc6fd8d2dc35db3b622015c16a023d4fef4f
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2dcd2fdafe933b74e2d90923986c5ee5791d8223
-R 58e98448c6fb190107b5ef844b8497ab
-U drh
-Z d57af09b65899a042bcd085eed028813
+P 61927c8f3156c6e61b768318b3cd3bcc4144e17b
+R bfee7792832173f4b2f2e0f85f5783ce
+U dan
+Z d07cc313679c906c74090dbeca08d604
