@@ -1,5 +1,5 @@
-C Better\sestimatedCost\sin\sthe\sxBestIndex\smethod\sof\sthe\sgenerate_series\svtab.
-D 2016-03-01T02:11:50.810
+C Improved\sdebugging\soutput\swith\swheretrace.\s\sFix\ssome\stypos\sin\stest\sscript\ncomments.
+D 2016-03-01T22:41:27.874
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 4f319afb7c049d40aff7af6e8c4e7cc2ba18e079
@@ -428,7 +428,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 10deb6b43887662691e5f53d10b3c171c401169b
 F src/wal.h 2f7c831cf3b071fa548bf2d5cac640846a7ff19c
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
-F src/where.c 32051597188dc632bafb32d50a9c3a04fb97ce39
+F src/where.c 6282e53fcc612a8918262f1432d6fd7fbc24af40
 F src/whereInt.h 93297d56edd137b7ea004490690fb6e2ce028a34
 F src/wherecode.c 39c1ef4598bedf1d66249334c74efd23ddd182ac
 F src/whereexpr.c fb87944b1254234e5bba671aaf6dee476241506a
@@ -451,11 +451,11 @@ F test/analyze5.test 765c4e284aa69ca172772aa940946f55629bc8c4
 F test/analyze6.test f1c552ce39cca4ec922a7e4e0e5d0203d6b3281f
 F test/analyze7.test bb1409afc9e8629e414387ef048b8e0e3e0bdc4f
 F test/analyze8.test c05a461d0a6b05991106467d0c47480f2e709c82
-F test/analyze9.test 88c1f2aa20b614236f03e1cc38c3619e7e8a38b4
+F test/analyze9.test b817b8e798315fc65b820a5463f73ad5f48ed8dd
 F test/analyzeA.test 3335697f6700c7052295cfd0067fc5b2aacddf9a
 F test/analyzeB.test a4c1c3048f6d9e090eb76e83eecb18bcf6d31a70
 F test/analyzeC.test 555a6cc388b9818b6eda6df816f01ce0a75d3a93
-F test/analyzeD.test f3d77cd0fefe2849d784897d52df13beee19271d
+F test/analyzeD.test 42af58de25a6436502e43006e9e59e2d71bcb0cf
 F test/analyzeE.test 8684e8ac5722fb97c251887ad97e5d496a98af1d
 F test/analyzeF.test 5d1fe1024ba2dfea3c18bede8c1ccef8aba1ab34
 F test/analyzer1.test 498e2ff4b62740c2751c3a2f8b744fe26689fae9
@@ -1451,7 +1451,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c9a30e117f2c6c9ef0cc0c6ca5227d2961715b8f
-R 78072d3e9e5d5130b27dfb7458df9d26
+P f2c16094a536e7ef62444d0fe38cbee2a4999426
+R 8bf9dc83caf7a5f48b09e10ce3dd712c
 U drh
-Z 00eb8a065721ce5867f81f8e93fd77c0
+Z cbae5a3ad8eb0cbd1b6534802cfd9e9b
