@@ -1,5 +1,5 @@
-C Fix\stest\scases\sto\salign\swith\sthe\simproved\sstats\scomputation.
-D 2016-03-01T12:45:08.294
+C Change\sthe\sestimated\srow\scounts\sin\sstat1\sto\sbe\sone-third\sworst-case\sand\ntwo-threads\saverage\scase.
+D 2016-03-01T14:31:59.247
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 4f319afb7c049d40aff7af6e8c4e7cc2ba18e079
@@ -286,7 +286,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c 44e18dfd78e8942d65d3cdaec4de972b5cd9f1f2
-F src/analyze.c 997b0ce0f4efd68b0499f941ebebdd1ec0c71549
+F src/analyze.c dac2f49d4a622091df1964a9ec9de1d2cd0584bb
 F src/attach.c a3724c64de1099d85e30751213d285752aed9505
 F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c f60f0aa55d25d853ffde53d0b0370a7bb7ee41ce
@@ -444,7 +444,7 @@ F test/alter3.test b3568d11c38c4599c92f24242eda34144d78dc10
 F test/alter4.test c461150723ac957f3b2214aa0b11552cd72023ec
 F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
 F test/amatch1.test b5ae7065f042b7f4c1c922933f4700add50cdb9f
-F test/analyze.test 6e7bb2c94df69461b83627bdc3d960b0cb2847cd
+F test/analyze.test 3eb35a4af972f98422e5dc0586501b17d103d321
 F test/analyze3.test 1dccda46a6c374018af617fba00bfe297a61d442
 F test/analyze4.test eff2df19b8dd84529966420f29ea52edc6b56213
 F test/analyze5.test 765c4e284aa69ca172772aa940946f55629bc8c4
@@ -1451,7 +1451,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 421b5b544af734b97e3da47699fa0f82b21617d3
-R d260dd34a084c646db10204191cf68af
+P 810967bff6ba262f38a2833e2d4efef4ef00f463
+R cd9cc1e55f6145b7b1e4855011dd5873
 U drh
-Z 232c83ab04b03227d0856ebcd7ccd2ec
+Z 85196c62dcaae63dbb4c33e57a54153c

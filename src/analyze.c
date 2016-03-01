@@ -828,31 +828,47 @@ static void statGet(
   assert( argc==1 );
 #endif
   {
-    /* Return the value to store in the "stat" column of the sqlite_stat1
+    /* Return a value for the "stat" column of the sqlite_stat1
     ** table for this index.
     **
     ** The value is a string composed of a list of integers describing 
-    ** the index. The first integer in the list is the total number of 
-    ** entries in the index. There is one additional integer in the list 
-    ** for each indexed column. This additional integer is an estimate of
-    ** the number of rows matched by a query on the index using
-    ** a key with the corresponding number of fields. In other words,
-    ** if the index is on columns (a,b) and the sqlite_stat1 value is 
-    ** "100 10 2", then SQLite estimates that:
+    ** the index. The first integer is the (estimated) total number
+    ** entries in the index. There is one additional integer for each
+    ** column in the index.  The first added integer is an estimate of
+    ** the number of rows that match a single key in the first column of
+    ** the index.  The second added integer is an estimate on of the number
+    ** of rows that match a single key consisting of the first two columns
+    ** of the index.  And so forth.
     **
-    **   * the index contains 100 rows,
-    **   * "WHERE a=?" matches 10 rows, and
-    **   * "WHERE a=? AND b=?" matches 2 rows.
+    ** For example, for an index on columns (a,b), if the sqlite_stat1.stat
+    ** values is "100 10 2", that means there are about 100 rows in the
+    ** index, and that a query against a=$key1 will match about 10 rows
+    ** and a query against "a=$key1 AND b=$key2" will match about 2 rows.
     **
-    ** A worst-case estimate is used:  the maximum number of rows that
-    ** could be select for any set of query parameters.  The worst case
-    ** is the estimate we want for choosing indexes.
+    ** Let V be the average number of rows that match a key, and let M
+    ** be the most number of rows that match the key for any possible value
+    ** of that key.  The estimate is computed as:
+    **
+    **     E = (2*V + M)/3
+    **
+    ** Consider two indexes.  Index X has with 100 values of exactly 0 and 
+    ** 100 singleton values between 1 and 100.  Index Y has 200 values
+    ** evenly distributed between 1 and 20.  If only the average (V) is
+    ** used in the estimate, X would have "200 2" and Y would have "200 10"
+    ** and so the planner would think X is the more selective index.  And
+    ** X often would be more selective.  But when searching for 0, index X
+    ** would perform badly.  To avoid this problem, the M is added into the
+    ** estimate so that the stat for X is "200 34" and Y is still "200 10".
+    ** In this way, Y is the preferred index (all else being equal) and
+    ** the pathological case is avoided.
     **
     ** For deciding whether or not to do a skip-scan, we want to know the
-    ** average number of rows with the same key.  We can approximate this
-    ** using the (worst case) most number of rows with the same key.  But
-    ** sometimes that approximation can be badly off.  In those cases,
-    ** mark the index as "noskipscan" to avoid suboptimal skip-scan plans.
+    ** average number of rows (V) with the same key, not the mixed estimate
+    ** E shown above.  Usually E will be close enough.  However, if E is
+    ** large but V is small, that could trick the query planner into thinking
+    ** that a skip-scan might work well on this index.  To avoid that, the
+    ** "noskipscan" flag is added in cases where the divergence between E
+    ** and V might mislead the query planner.
     */
     char *z;
     int i;
@@ -867,13 +883,14 @@ static void statGet(
     sqlite3_snprintf(24, zRet, "%llu", (u64)p->nRow);
     z = zRet + sqlite3Strlen30(zRet);
     for(i=0; i<p->nKeyCol; i++){
-      u64 iVal = p->current.amxEq[i];
+      u64 nDistinct = p->current.anDLt[i];
+      u64 iMx = p->current.amxEq[i];                /* M: Most rows per key */
+      u64 iAvg = (p->nRow+nDistinct)/(nDistinct+1); /* V: Average per key */
+      u64 iVal = (iMx+iAvg*2)/3;                    /* E: The estimate */
       sqlite3_snprintf(24, z, " %llu", iVal);
       z += sqlite3Strlen30(z);
       assert( p->current.anEq[i] );
-      if( iVal>=WHERE_SKIPSCAN_ONSET
-       && p->current.anDLt[i] > p->nRow/(WHERE_SKIPSCAN_ONSET*2/3)
-      ){
+      if( iVal>=WHERE_SKIPSCAN_ONSET && iAvg<(WHERE_SKIPSCAN_ONSET*2/3) ){
         noSkipScan = 1;
       }
     }
