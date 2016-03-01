@@ -1,5 +1,5 @@
-C Further\srefinements\sto\sthe\sMSVC\sbatch\sbuild\sprocess.
-D 2016-02-26T21:01:37.745
+C Merge\sbranch-3.11-matchinfo\sinto\sthis\sbranch.
+D 2016-03-01T15:09:15.371
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 56ea123a975690bf9ed38b31bb89ff87b02a7c2b
@@ -104,11 +104,11 @@ F ext/fts5/fts5_buffer.c 4c1502d4c956cd092c89ce4480867f9d8bf325cd
 F ext/fts5/fts5_config.c 35c5173cae4eb17e82164a7f5aeef56a48903079
 F ext/fts5/fts5_expr.c 8e8e4635f655133eb39018072fc0f0942a2c4337
 F ext/fts5/fts5_hash.c f3a7217c86eb8f272871be5f6aa1b6798960a337
-F ext/fts5/fts5_index.c c6cd5190c7e5dd94151cb17acd939c82e5c7be2d
-F ext/fts5/fts5_main.c 0e01ead4e817483e378e7e38e6d902f50b68d29e
+F ext/fts5/fts5_index.c ecc70368618c6bae4bb59124abc343c02634ad0c
+F ext/fts5/fts5_main.c db24ac714c6c4a1b3c24a1f8c25889f2952148c1
 F ext/fts5/fts5_storage.c f8343db90d8c95a4d4b52f6676e354b4649ffd6e
 F ext/fts5/fts5_tcl.c f8731e0508299bd43f1a2eff7dbeaac870768966
-F ext/fts5/fts5_test_mi.c 1ec66ffdf7632077fbd773b7a6df5153272ec070
+F ext/fts5/fts5_test_mi.c 6f76bfc2ec56ce258763c5ace7608636c8745956
 F ext/fts5/fts5_test_tok.c db08af63673c3a7d39f053b36fd6e065017706be
 F ext/fts5/fts5_tokenize.c 2ce7b44183538ec46b7907726262ee43ffdd39a8
 F ext/fts5/fts5_unicode2.c b450b209b157d598f7b9df9f837afb75a14c24bf
@@ -176,7 +176,7 @@ F ext/fts5/test/fts5rank.test 7e9e64eac7245637f6f2033aec4b292aaf611aab
 F ext/fts5/test/fts5rebuild.test 03935f617ace91ed23a6099c7c74d905227ff29b
 F ext/fts5/test/fts5restart.test c17728fdea26e7d0f617d22ad5b4b2862b994c17
 F ext/fts5/test/fts5rowid.test 16908a99d6efc9ba21081b4f2b86b3fc699839a6
-F ext/fts5/test/fts5simple.test e6fe2fb10a2b9193648b32bbc2caecabdf8c333d
+F ext/fts5/test/fts5simple.test 92e06be1c119f88a73ea11a05599a276ec3ff7fd
 F ext/fts5/test/fts5simple2.test 98377ae1ff7749a42c21fe1a139c1ed312522c46
 F ext/fts5/test/fts5simple3.test 8e71733b3d1b0e695011d02c68ebc5ca40b6124e
 F ext/fts5/test/fts5synonym.test 6475d189c2e20d60795808f83e36bf9318708d48
@@ -1427,7 +1427,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh ef6ebc6fd8d2dc35db3b622015c16a023d4fef4f
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 480e5049486b8b047f533d78b040daa47dd6b946
-R 87ed83a4b8ba227fd93efdc4c65e0468
-U mistachkin
-Z ceeeca002bf9c099753e1f0c14c10004
+P 4e54e9c0fefe417f94a2d95921acf61b1dda5ca4 daef5869f4d62ebb24eb03b79fe4be0812fa0496
+R 941c7c2c1d8ea45171acb610a804d763
+U dan
+Z 0133e19e04cb90ccecc941fa59f3b459
