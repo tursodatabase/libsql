@@ -337,7 +337,7 @@ static int seriesBestIndex(
   if( (idxNum & 3)==3 ){
     /* Both start= and stop= boundaries are available.  This is the 
     ** the preferred case */
-    pIdxInfo->estimatedCost = (double)1;
+    pIdxInfo->estimatedCost = (double)(2 - ((idxNum&4)!=0));
     pIdxInfo->estimatedRows = 1000;
     if( pIdxInfo->nOrderBy==1 ){
       if( pIdxInfo->aOrderBy[0].desc ) idxNum |= 8;
