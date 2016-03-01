@@ -1,0 +1,60 @@
+# 2016-03-01
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# 
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix bestindex1
+
+register_tcl_module db
+
+proc vtab_command {method args} {
+  switch -- $method {
+    xConnect {
+      return "CREATE TABLE t1(a, b, c)"
+    }
+
+    xBestIndex {
+      set clist [lindex $args 0]
+      if {[llength $clist]!=1} { error "unexpected constraint list" }
+      catch { array unset C }
+      array set C [lindex $clist 0]
+      if {$C(usable)} {
+        return "omit 0 cost 0 rows 1 idxnum 555 idxstr eq!"
+      } else {
+        return "cost 1000000 rows 0 idxnum 0 idxstr scan..."
+      }
+    }
+
+  }
+
+  return {}
+}
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE x1 USING tcl(vtab_command);
+} {}
+
+do_eqp_test 1.1 {
+  SELECT * FROM x1 WHERE a = 'abc'
+} {
+  0 0 0 {SCAN TABLE x1 VIRTUAL TABLE INDEX 555:eq!}
+}
+
+do_eqp_test 1.2 {
+  SELECT * FROM x1 WHERE a IN ('abc', 'def');
+} {
+  0 0 0 {SCAN TABLE x1 VIRTUAL TABLE INDEX 555:eq!}
+  0 0 0 {EXECUTE LIST SUBQUERY 1}
+}
+
+finish_test

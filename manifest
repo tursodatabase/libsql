@@ -1,5 +1,5 @@
-C Improved\sdebugging\soutput\swith\swheretrace.\s\sFix\ssome\stypos\sin\stest\sscript\ncomments.
-D 2016-03-01T22:41:27.874
+C New\stest\scases\sand\sinfrastructure\sfor\stesting\sthe\sxBestIndex\smethod\sof\s\nvirtual\stables.
+D 2016-03-01T22:48:00.766
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 4f319afb7c049d40aff7af6e8c4e7cc2ba18e079
@@ -273,7 +273,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 791597b87204f6bd56cdf7b2ab2feeecd608c60d
+F main.mk 31027cdd40130bdbb3a0862bb97a8c837c5987d9
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -358,7 +358,7 @@ F src/sqliteInt.h 01b43972162c2b5ed864060a23502af3abe0e4f4
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
-F src/tclsqlite.c 13debcc6a5ca1217486f8903768c01114fbe8b58
+F src/tclsqlite.c 54dca4eaf3a9cb0a4b845ef54ffa99225c30a52e
 F src/test1.c f14a6f9e2cff6cba4d83e2b0c52857f61886cead
 F src/test2.c 5586f43fcd9a1be0830793cf9d354082c261b25b
 F src/test3.c a8887dabbbee3059af338f20d290084a63ed1b0f
@@ -371,6 +371,7 @@ F src/test9.c bea1e8cf52aa93695487badedd6e1886c321ea60
 F src/test_async.c 21e11293a2f72080eda70e1124e9102044531cd8
 F src/test_autoext.c dea8a01a7153b9adc97bd26161e4226329546e12
 F src/test_backup.c 2e6e6a081870150f20c526a2e9d0d29cda47d803
+F src/test_bestindex.c cd2eb53d7abf082665bca161e6762c4ba395f17a
 F src/test_blob.c b2551a9b5573232db5f66f292307c37067937239
 F src/test_btree.c 2e9978eca99a9a4bfa8cae949efb00886860a64f
 F src/test_config.c 0dee90328e3dedf8ba002ee94b6a7e7ea7726fe4
@@ -492,6 +493,7 @@ F test/backup_malloc.test 7162d604ec2b4683c4b3799a48657fb8b5e2d450
 F test/badutf.test d5360fc31f643d37a973ab0d8b4fb85799c3169f
 F test/badutf2.test f5bc7f2d280670ecd79b9cf4f0f1760c607fe51f
 F test/bc_common.tcl 3eda41ef9cda7d5f6c205462c96228b301da4191
+F test/bestindex1.test 41c763428e403663b3e15b2acba7f07b40b22592
 F test/between.test 34d375fb5ce1ae283ffe82b6b233e9f38e84fc6c
 F test/bigfile.test aa74f4e5db51c8e54a1d9de9fa65d01d1eb20b59
 F test/bigfile2.test 1b489a3a39ae90c7f027b79110d6b4e1dbc71bfc
@@ -1451,7 +1453,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f2c16094a536e7ef62444d0fe38cbee2a4999426
-R 8bf9dc83caf7a5f48b09e10ce3dd712c
+P 13a37fd487ce7d4f98a12f7a67a9c05dadc66557 7a1add56341f43dc41adc7b370e58860f4dd50a3
+R 0985007e1a98dc617470e125c83c71f2
+T +closed 7a1add56341f43dc41adc7b370e58860f4dd50a3
 U drh
-Z cbae5a3ad8eb0cbd1b6534802cfd9e9b
+Z 971ab7ec7b38808209f8a28c1ffc2c5d
