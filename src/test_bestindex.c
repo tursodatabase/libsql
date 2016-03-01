@@ -302,6 +302,7 @@ static int tclBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
     **   "use"              (index of used constraint in aConstraint[])
     **   "idxnum"           (value of idxNum field)
     **   "idxstr"           (value of idxStr field)
+    **   "omit"             (index of omitted constraint in aConstraint[])
     */
     Tcl_Obj *pRes = Tcl_GetObjResult(interp);
     Tcl_Obj **apElem = 0;
@@ -332,7 +333,9 @@ static int tclBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
         if( sqlite3_stricmp("rows", zCmd)==0 ){
           rc = Tcl_GetWideIntFromObj(interp, p, &pIdxInfo->estimatedRows);
         }else
-        if( sqlite3_stricmp("use", zCmd)==0 ){
+        if( sqlite3_stricmp("use", zCmd)==0 
+         || sqlite3_stricmp("omit", zCmd)==0 
+        ){
           int iCons;
           rc = Tcl_GetIntFromObj(interp, p, &iCons);
           if( rc==SQLITE_OK ){
@@ -340,7 +343,9 @@ static int tclBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
               rc = SQLITE_ERROR;
               pTab->base.zErrMsg = sqlite3_mprintf("unexpected: %d", iCons);
             }else{
+              int bOmit = (zCmd[0]=='o' || zCmd[0]=='O');
               pIdxInfo->aConstraintUsage[iCons].argvIndex = iArgv++;
+              pIdxInfo->aConstraintUsage[iCons].omit = bOmit;
             }
           }
         }else{
