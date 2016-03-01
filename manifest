@@ -1,5 +1,5 @@
-C Improvements\sto\sthe\slogic\sfor\sadding\sthe\s"noskipscan"\sflag\sto\sstat1\sentries.
-D 2016-02-29T23:02:50.488
+C Fix\stest\scases\sto\salign\swith\sthe\simproved\sstats\scomputation.
+D 2016-03-01T12:45:08.294
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 4f319afb7c049d40aff7af6e8c4e7cc2ba18e079
@@ -444,7 +444,7 @@ F test/alter3.test b3568d11c38c4599c92f24242eda34144d78dc10
 F test/alter4.test c461150723ac957f3b2214aa0b11552cd72023ec
 F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
 F test/amatch1.test b5ae7065f042b7f4c1c922933f4700add50cdb9f
-F test/analyze.test 3eb35a4af972f98422e5dc0586501b17d103d321
+F test/analyze.test 6e7bb2c94df69461b83627bdc3d960b0cb2847cd
 F test/analyze3.test 1dccda46a6c374018af617fba00bfe297a61d442
 F test/analyze4.test eff2df19b8dd84529966420f29ea52edc6b56213
 F test/analyze5.test 765c4e284aa69ca172772aa940946f55629bc8c4
@@ -1451,7 +1451,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6326ba5891fae9c6be0c0c51cebcbe44c9f3f057
-R d11c7934d7e6b9fd5164f25abb15ccbc
+P 421b5b544af734b97e3da47699fa0f82b21617d3
+R d260dd34a084c646db10204191cf68af
 U drh
-Z e3fa57a0ace16605a0bcfe31fb8b1cb6
+Z 232c83ab04b03227d0856ebcd7ccd2ec
