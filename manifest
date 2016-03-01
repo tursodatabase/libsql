@@ -1,5 +1,5 @@
-C Increase\sthe\sversion\snumber\sto\s3.11.1
-D 2016-03-01T15:41:31.146
+C Remove\sa\sforgotten\s"breakpoint"\scommand\sfrom\san\sFTS5\stest\sscript.
+D 2016-03-01T15:52:41.571
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 56ea123a975690bf9ed38b31bb89ff87b02a7c2b
@@ -176,7 +176,7 @@ F ext/fts5/test/fts5rank.test 7e9e64eac7245637f6f2033aec4b292aaf611aab
 F ext/fts5/test/fts5rebuild.test 03935f617ace91ed23a6099c7c74d905227ff29b
 F ext/fts5/test/fts5restart.test c17728fdea26e7d0f617d22ad5b4b2862b994c17
 F ext/fts5/test/fts5rowid.test 16908a99d6efc9ba21081b4f2b86b3fc699839a6
-F ext/fts5/test/fts5simple.test 92e06be1c119f88a73ea11a05599a276ec3ff7fd
+F ext/fts5/test/fts5simple.test 09420cb1137f3a19d02dacb5b4b6831d2e683773
 F ext/fts5/test/fts5simple2.test 98377ae1ff7749a42c21fe1a139c1ed312522c46
 F ext/fts5/test/fts5simple3.test 8e71733b3d1b0e695011d02c68ebc5ca40b6124e
 F ext/fts5/test/fts5synonym.test 6475d189c2e20d60795808f83e36bf9318708d48
@@ -1427,7 +1427,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh ef6ebc6fd8d2dc35db3b622015c16a023d4fef4f
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 42358170b35cc3e25c42f20e56f3f67e809001ba
-R 85cb3c3574d71e33da57a24aa6b9d049
+P 2dcd2fdafe933b74e2d90923986c5ee5791d8223
+R 58e98448c6fb190107b5ef844b8497ab
 U drh
-Z c5c8b142342c3d43dce53788f70a0a50
+Z d57af09b65899a042bcd085eed028813
