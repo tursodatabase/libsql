@@ -1,5 +1,5 @@
-C Add\san\s"#ifndef\sSQLITE_AMALGAMATION"\sguard\saround\sa\stypedef\sin\sfts5_test_mi.c\sto\savoid\sredefining\s"u32"\sif\sit\sis\scompiled\sas\spart\sof\sthe\samalgamation.\sCherrypick\sof\s[f9c49ba1].
-D 2016-02-19T10:19:43.655
+C Fix\san\sfts5\sproblem\scausing\s'optimize'\sto\scorrupt\sthe\sfts\sindex\sunder\ssome\scircumstances.\sCherrypick\sof\s[251d6473f7].
+D 2016-03-01T14:50:55.628
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 30f075dc4f27a07abb76088946b2944178d85347
@@ -104,7 +104,7 @@ F ext/fts5/fts5_buffer.c 4c1502d4c956cd092c89ce4480867f9d8bf325cd
 F ext/fts5/fts5_config.c 35c5173cae4eb17e82164a7f5aeef56a48903079
 F ext/fts5/fts5_expr.c 8e8e4635f655133eb39018072fc0f0942a2c4337
 F ext/fts5/fts5_hash.c f3a7217c86eb8f272871be5f6aa1b6798960a337
-F ext/fts5/fts5_index.c c6cd5190c7e5dd94151cb17acd939c82e5c7be2d
+F ext/fts5/fts5_index.c a32f4059b48ee800a94e8a286bf953d67b75185e
 F ext/fts5/fts5_main.c db24ac714c6c4a1b3c24a1f8c25889f2952148c1
 F ext/fts5/fts5_storage.c f8343db90d8c95a4d4b52f6676e354b4649ffd6e
 F ext/fts5/fts5_tcl.c f8731e0508299bd43f1a2eff7dbeaac870768966
@@ -176,7 +176,7 @@ F ext/fts5/test/fts5rank.test 7e9e64eac7245637f6f2033aec4b292aaf611aab
 F ext/fts5/test/fts5rebuild.test 03935f617ace91ed23a6099c7c74d905227ff29b
 F ext/fts5/test/fts5restart.test c17728fdea26e7d0f617d22ad5b4b2862b994c17
 F ext/fts5/test/fts5rowid.test 16908a99d6efc9ba21081b4f2b86b3fc699839a6
-F ext/fts5/test/fts5simple.test e6fe2fb10a2b9193648b32bbc2caecabdf8c333d
+F ext/fts5/test/fts5simple.test 92e06be1c119f88a73ea11a05599a276ec3ff7fd
 F ext/fts5/test/fts5simple2.test 98377ae1ff7749a42c21fe1a139c1ed312522c46
 F ext/fts5/test/fts5simple3.test 8e71733b3d1b0e695011d02c68ebc5ca40b6124e
 F ext/fts5/test/fts5synonym.test 6475d189c2e20d60795808f83e36bf9318708d48
@@ -1427,8 +1427,8 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh ef6ebc6fd8d2dc35db3b622015c16a023d4fef4f
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e2ef6667772eeac6eee3aed5d0609c2a0ef5d8cf
-Q +f9c49ba1edf13cb8c48d73f1b2e3f80c46b3c030
-R 86861d7afb256ba49d3c7d2e1e2e6725
+P ce0f1ed517e387ca6a687b805088d7c529cd257b
+Q +251d6473f7c9ad95adbdcc49cb8eaf7c0956764b
+R 5f7a25988e6c8801d10d40ebf8cc999a
 U dan
-Z 1618528e1896e183cb510df07cb30bf4
+Z 645a7ae1e10094786fc6e926b7bb55a9
