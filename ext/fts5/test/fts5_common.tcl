@@ -21,6 +21,8 @@ ifcapable !fts5 {
     return -code return
   }
   return
+} else {
+  proc return_if_no_fts5 {} {}
 }
 
 catch { 

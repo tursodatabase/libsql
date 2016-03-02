@@ -27,8 +27,6 @@ proc dump_structure {} {
 
 foreach_detail_mode $testprefix {
 
-if {[detail_is_none]==0} continue
-
 do_execsql_test 1.0 {
   CREATE VIRTUAL TABLE t1 USING fts5(x, detail=%DETAIL%);
   INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
