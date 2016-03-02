@@ -1,5 +1,5 @@
-C New\stest\scases\sand\sinfrastructure\sfor\stesting\sthe\sxBestIndex\smethod\sof\s\nvirtual\stables.
-D 2016-03-01T22:48:00.766
+C Add\sthe\soptional\s-DSERIES_OMIT_CONSTRAINT_VERIFY=0\soption\sto\sthe\sseries.c\nextension\sthat\simplements\sthe\sgenerate_series()\svirtual\stable.
+D 2016-03-02T00:58:49.570
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 4f319afb7c049d40aff7af6e8c4e7cc2ba18e079
@@ -212,7 +212,7 @@ F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
 F ext/misc/percentile.c bcbee3c061b884eccb80e21651daaae8e1e43c63
 F ext/misc/regexp.c af92cdaa5058fcec1451e49becc7ba44dba023dc
 F ext/misc/rot13.c 1ac6f95f99b575907b9b09c81a349114cf9be45a
-F ext/misc/series.c 235d6281397003ad5226582de216507642aa0095
+F ext/misc/series.c e1ef8bc23328d4e2196835737f62b324bdcd1c0d
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c 525190484b7a9dbc6be646c4842274fff4f27d53
 F ext/misc/totype.c 4a167594e791abeed95e0a8db028822b5e8fe512
@@ -1453,8 +1453,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 13a37fd487ce7d4f98a12f7a67a9c05dadc66557 7a1add56341f43dc41adc7b370e58860f4dd50a3
-R 0985007e1a98dc617470e125c83c71f2
-T +closed 7a1add56341f43dc41adc7b370e58860f4dd50a3
+P 1d41c161165006d6c2af47e476f05fb13039f8b8
+R 7bc50a1ee335d764bdfff403c9ca0d5d
 U drh
-Z 971ab7ec7b38808209f8a28c1ffc2c5d
+Z d249d93e08651d834742ccb923f02a0e
