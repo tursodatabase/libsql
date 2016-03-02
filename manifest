@@ -1,5 +1,5 @@
-C Allow\sthe\sleft-hand\sside\sof\sIN\soperators\son\svirtual\stables\sto\shave\sthe\naConstraintUsage[].omit\sflag\sclear.
-D 2016-03-02T03:28:07.978
+C Add\san\sextra\stest\sfor\sthe\schange\son\sthis\sbranch.
+D 2016-03-02T16:13:53.809
 F Makefile.in e335453db0b16da00c884ad51bb56d1c091a74de
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc dbd4621ecc585c2ef0c2aa0874698c54675754f1
@@ -371,7 +371,7 @@ F src/test9.c bea1e8cf52aa93695487badedd6e1886c321ea60
 F src/test_async.c 21e11293a2f72080eda70e1124e9102044531cd8
 F src/test_autoext.c dea8a01a7153b9adc97bd26161e4226329546e12
 F src/test_backup.c 2e6e6a081870150f20c526a2e9d0d29cda47d803
-F src/test_bestindex.c cd2eb53d7abf082665bca161e6762c4ba395f17a
+F src/test_bestindex.c a711473c79e812e4082fbf045ed6c18c99c16058
 F src/test_blob.c b2551a9b5573232db5f66f292307c37067937239
 F src/test_btree.c 2e9978eca99a9a4bfa8cae949efb00886860a64f
 F src/test_config.c 0dee90328e3dedf8ba002ee94b6a7e7ea7726fe4
@@ -493,7 +493,7 @@ F test/backup_malloc.test 7162d604ec2b4683c4b3799a48657fb8b5e2d450
 F test/badutf.test d5360fc31f643d37a973ab0d8b4fb85799c3169f
 F test/badutf2.test f5bc7f2d280670ecd79b9cf4f0f1760c607fe51f
 F test/bc_common.tcl 3eda41ef9cda7d5f6c205462c96228b301da4191
-F test/bestindex1.test 41c763428e403663b3e15b2acba7f07b40b22592
+F test/bestindex1.test e228fe1e3794dbe20271481164e000d695abcd24
 F test/between.test 34d375fb5ce1ae283ffe82b6b233e9f38e84fc6c
 F test/bigfile.test aa74f4e5db51c8e54a1d9de9fa65d01d1eb20b59
 F test/bigfile2.test 1b489a3a39ae90c7f027b79110d6b4e1dbc71bfc
@@ -1453,10 +1453,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3d9daa929c0abe6dc01e800ef343b0eef2f0c76a
-R c059a6ee769a0309e913921e43679d8c
-T *branch * vtab-IN-opt
-T *sym-vtab-IN-opt *
-T -sym-trunk *
-U drh
-Z f36b44043e8c4337262495e2c87317b9
+P 1622623cbbfc4325c53d731aba78ca9c382ec612 3c15a9bf45cd7dae2fbd99123b8dd75ce278d6e4
+R bdc2b3d0e5cbd463ccc4765d0aeeef84
+U dan
+Z d9e37a89daaed1ba1547f52769e0ebb4
