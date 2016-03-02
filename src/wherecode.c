@@ -874,6 +874,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     int iReg;   /* P3 Value for OP_VFilter */
     int addrNotFound;
     int nConstraint = pLoop->nLTerm;
+    int iIn;    /* Counter for IN constraints */
 
     sqlite3ExprCachePush(pParse);
     iReg = sqlite3GetTempRange(pParse, nConstraint+2);
@@ -896,14 +897,48 @@ Bitmask sqlite3WhereCodeOneLoopStart(
                       pLoop->u.vtab.needFree ? P4_MPRINTF : P4_STATIC);
     VdbeCoverage(v);
     pLoop->u.vtab.needFree = 0;
-    for(j=0; j<nConstraint && j<16; j++){
-      if( (pLoop->u.vtab.omitMask>>j)&1 ){
-        disableTerm(pLevel, pLoop->aLTerm[j]);
-      }
-    }
     pLevel->p1 = iCur;
     pLevel->op = pWInfo->eOnePass ? OP_Noop : OP_VNext;
     pLevel->p2 = sqlite3VdbeCurrentAddr(v);
+    iIn = pLevel->u.in.nIn;
+    for(j=nConstraint-1; j>=0; j--){
+      pTerm = pLoop->aLTerm[j];
+      if( j<16 && (pLoop->u.vtab.omitMask>>j)&1 ){
+        disableTerm(pLevel, pTerm);
+      }else if( (pTerm->eOperator & WO_IN)!=0 ){
+        Expr *pCompare;  /* The comparison operator */
+        Expr *pRight;    /* RHS of the comparison */
+        VdbeOp *pOp;     /* Opcode to access the value of the IN constraint */
+
+        /* Reload the constraint value into reg[iReg+j+2].  The same value
+        ** was loaded into the same register prior to the OP_VFilter, but
+        ** the xFilter implementation might have changed the datatype or
+        ** encoding of the value in the register, so it *must* be reloaded. */
+        assert( pLevel->u.in.aInLoop!=0 || db->mallocFailed );
+        if( pLevel->u.in.aInLoop!=0 ){
+          assert( iIn>0 );
+          pOp = sqlite3VdbeGetOp(v, pLevel->u.in.aInLoop[--iIn].addrInTop);
+          assert( pOp->opcode==OP_Column || pOp->opcode==OP_Rowid );
+          assert( pOp->opcode!=OP_Column || pOp->p3==iReg+j+2 );
+          assert( pOp->opcode!=OP_Rowid || pOp->p2==iReg+j+2 );
+          testcase( pOp->opcode==OP_Rowid );
+          sqlite3VdbeAddOp3(v, pOp->opcode, pOp->p1, pOp->p2, pOp->p3);
+        }
+
+        /* Generate code that will continue to the next row if 
+        ** the IN constraint is not satisfied */
+        pCompare = sqlite3PExpr(pParse, TK_EQ, 0, 0, 0);
+        assert( pCompare!=0 || db->mallocFailed );
+        if( pCompare ){
+          pCompare->pLeft = pTerm->pExpr->pLeft;
+          pCompare->pRight = pRight = sqlite3Expr(db, TK_REGISTER, 0);
+          if( pRight ) pRight->iTable = iReg+j+2;
+          sqlite3ExprIfFalse(pParse, pCompare, pLevel->addrCont, 0);
+          pCompare->pLeft = 0;
+          sqlite3ExprDelete(db, pCompare);
+        }
+      }
+    }
     sqlite3ReleaseTempRange(pParse, iReg, nConstraint+2);
     sqlite3ExprCachePop(pParse);
   }else

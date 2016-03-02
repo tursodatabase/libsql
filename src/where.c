@@ -2898,13 +2898,6 @@ static int whereLoopAddVirtual(
         testcase( iTerm==16 );
         if( iTerm<16 && pUsage[i].omit ) pNew->u.vtab.omitMask |= 1<<iTerm;
         if( (pTerm->eOperator & WO_IN)!=0 ){
-          if( pUsage[i].omit==0 ){
-            /* Do not attempt to use an IN constraint if the virtual table
-            ** says that the equivalent EQ constraint cannot be safely omitted.
-            ** If we do attempt to use such a constraint, some rows might be
-            ** repeated in the output. */
-            break;
-          }
           /* A virtual table that is constrained by an IN clause may not
           ** consume the ORDER BY clause because (1) the order of IN terms
           ** is not necessarily related to the order of output terms and

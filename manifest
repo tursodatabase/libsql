@@ -1,8 +1,8 @@
-C Add\sthe\soptional\s-DSERIES_OMIT_CONSTRAINT_VERIFY=0\soption\sto\sthe\sseries.c\nextension\sthat\simplements\sthe\sgenerate_series()\svirtual\stable.
-D 2016-03-02T00:58:49.570
-F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
+C Allow\sthe\sleft-hand\sside\sof\sIN\soperators\son\svirtual\stables\sto\shave\sthe\naConstraintUsage[].omit\sflag\sclear.
+D 2016-03-02T03:28:07.978
+F Makefile.in e335453db0b16da00c884ad51bb56d1c091a74de
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 4f319afb7c049d40aff7af6e8c4e7cc2ba18e079
+F Makefile.msc dbd4621ecc585c2ef0c2aa0874698c54675754f1
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION c6b1f51809551d60ad001e6d87cf3ab2c7f54b6f
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -212,7 +212,7 @@ F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
 F ext/misc/percentile.c bcbee3c061b884eccb80e21651daaae8e1e43c63
 F ext/misc/regexp.c af92cdaa5058fcec1451e49becc7ba44dba023dc
 F ext/misc/rot13.c 1ac6f95f99b575907b9b09c81a349114cf9be45a
-F ext/misc/series.c e1ef8bc23328d4e2196835737f62b324bdcd1c0d
+F ext/misc/series.c e11e534ada797d5b816d7e7a93c022306563ca35
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c 525190484b7a9dbc6be646c4842274fff4f27d53
 F ext/misc/totype.c 4a167594e791abeed95e0a8db028822b5e8fe512
@@ -273,7 +273,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 31027cdd40130bdbb3a0862bb97a8c837c5987d9
+F main.mk 518d93f9f606d515628f99ce03f9e909f4f8a2e3
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -429,9 +429,9 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 10deb6b43887662691e5f53d10b3c171c401169b
 F src/wal.h 2f7c831cf3b071fa548bf2d5cac640846a7ff19c
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
-F src/where.c 6282e53fcc612a8918262f1432d6fd7fbc24af40
+F src/where.c 56948ada5aacc3bf2628db3776986e8bf4085383
 F src/whereInt.h 93297d56edd137b7ea004490690fb6e2ce028a34
-F src/wherecode.c 39c1ef4598bedf1d66249334c74efd23ddd182ac
+F src/wherecode.c 3ca820435c5b597bb50e63ed11e938786fe5c23e
 F src/whereexpr.c fb87944b1254234e5bba671aaf6dee476241506a
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1074,7 +1074,7 @@ F test/symlink.test c9ebe7330d228249e447038276bfc8a7b22f4849
 F test/sync.test 2f607e1821aa3af3c5c53b58835c05e511c95899
 F test/syscall.test f59ba4e25f7ba4a4c031026cc2ef8b6e4b4c639c
 F test/sysfault.test c9f2b0d8d677558f74de750c75e12a5454719d04
-F test/tabfunc01.test cc33684f9480fcf1fd5ce287ac28d22971cad1cc
+F test/tabfunc01.test f977868fa8bb7beb4b2072883190411653473906
 F test/table.test b708f3e5fa2542fa51dfab21fc07b36ea445cb2f
 F test/tableapi.test 2674633fa95d80da917571ebdd759a14d9819126
 F test/tableopts.test dba698ba97251017b7c80d738c198d39ab747930
@@ -1453,7 +1453,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1d41c161165006d6c2af47e476f05fb13039f8b8
-R 7bc50a1ee335d764bdfff403c9ca0d5d
+P 3d9daa929c0abe6dc01e800ef343b0eef2f0c76a
+R c059a6ee769a0309e913921e43679d8c
+T *branch * vtab-IN-opt
+T *sym-vtab-IN-opt *
+T -sym-trunk *
 U drh
-Z d249d93e08651d834742ccb923f02a0e
+Z f36b44043e8c4337262495e2c87317b9
