@@ -57,4 +57,100 @@ do_eqp_test 1.2 {
   0 0 0 {EXECUTE LIST SUBQUERY 1}
 }
 
+#-------------------------------------------------------------------------
+#
+reset_db
+register_tcl_module db
+
+# Parameter $mode may be one of:
+#
+#   "omit" - Implement filtering. Set the omit flag.
+#   "use"  - Implement filtering. Use the constraint, but do not set omit.
+#   "use2" - Do not implement filtering. Use the constraint anyway.
+#
+#   
+proc t1_vtab {mode method args} {
+  switch -- $method {
+    xConnect {
+      return "CREATE TABLE t1(a, b)"
+    }
+
+    xBestIndex {
+      set SQL_FILTER {SELECT * FROM t1x WHERE a='%1%'}
+      set SQL_SCAN   {SELECT * FROM t1x}
+
+      set clist [lindex $args 0]
+      set idx 0
+      for {set idx 0} {$idx < [llength $clist]} {incr idx} {
+        array unset C
+        array set C [lindex $clist $idx]
+        if {$C(column)==0 && $C(op)=="eq" && $C(usable)} {
+          switch -- $mode {
+            "omit" {
+              return [list omit $idx rows 10 cost 10 idxstr $SQL_FILTER]
+            }
+            "use" {
+              return [list use $idx rows 10 cost 10 idxstr $SQL_FILTER]
+            }
+            "use2" {
+              return [list use $idx rows 10 cost 10 idxstr $SQL_SCAN]
+            }
+            default {
+              error "Bad mode - $mode"
+            }
+          }
+        }
+      }
+
+      return [list idxstr {SELECT * FROM t1x}]
+    }
+
+    xFilter {
+      set map [list %1% [lindex $args 2 0]]
+      set sql [string map $map [lindex $args 1]]
+      return [list sql $sql]
+    }
+  }
+
+  return {}
+}
+
+do_execsql_test 2.1 {
+  CREATE TABLE t1x(i INTEGER PRIMARY KEY, a, b);
+  INSERT INTO t1x VALUES(1, 'one', 1);
+  INSERT INTO t1x VALUES(2, 'two', 2);
+  INSERT INTO t1x VALUES(3, 'three', 3);
+  INSERT INTO t1x VALUES(4, 'four', 4);
+}
+
+foreach {tn mode} {
+  1 use 2 omit 3 use2
+} {
+  do_execsql_test 2.2.$mode.1 "
+    DROP TABLE IF EXISTS t1;
+    CREATE VIRTUAL TABLE t1 USING tcl(t1_vtab $mode);
+  "
+
+  do_execsql_test 2.2.$mode.2 {SELECT * FROM t1} {one 1 two 2 three 3 four 4}
+  do_execsql_test 2.2.$mode.3 {SELECT rowid FROM t1} {1 2 3 4}
+  do_execsql_test 2.2.$mode.4 {SELECT rowid FROM t1 WHERE a='two'} {2} 
+
+  do_execsql_test 2.2.$mode.5 {
+    SELECT rowid FROM t1 WHERE a IN ('one', 'four') ORDER BY +rowid
+  } {1 4} 
+
+  set plan(use) {0 0 0 {SCAN TABLE t1 VIRTUAL TABLE INDEX 0:SELECT * FROM t1x}}
+  set plan(use2) {0 0 0 {SCAN TABLE t1 VIRTUAL TABLE INDEX 0:SELECT * FROM t1x}}
+  set plan(omit) {
+    0 0 0 {SCAN TABLE t1 VIRTUAL TABLE INDEX 0:SELECT * FROM t1x WHERE a='%1%'}
+    0 0 0 {EXECUTE LIST SUBQUERY 1}
+  }
+
+  do_eqp_test 2.2.$mode.6 { 
+    SELECT rowid FROM t1 WHERE a IN ('one', 'four') ORDER BY +rowid
+  } [concat $plan($mode) {0 0 0 {USE TEMP B-TREE FOR ORDER BY}}]
+}
+
 finish_test
+
+

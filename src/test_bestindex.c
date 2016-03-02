@@ -28,8 +28,9 @@
 **   CREATE VIRTUAL TABLE x1 USING tcl(tcl_command);
 **
 ** The command [tcl_command] is invoked when the table is first created (or
-** connected) and when the xBestIndex() method is invoked. When it is created
-** (or connected), it is invoked as follows:
+** connected), when the xBestIndex() method is invoked and when the xFilter()
+** method is called. When it is created (or connected), it is invoked as
+** follows:
 **
 **   tcl_command xConnect
 **
@@ -67,10 +68,27 @@
 **   "cost"             (value of estimatedCost field)
 **   "rows"             (value of estimatedRows field)
 **   "use"              (index of used constraint in aConstraint[])
+**   "omit"             (like "use", but also sets omit flag)
 **   "idxnum"           (value of idxNum field)
 **   "idxstr"           (value of idxStr field)
 **
 ** Refer to code below for further details.
+**
+** When SQLite calls the xFilter() method, this module invokes the following
+** Tcl script:
+**
+**   tcl_command xFilter IDXNUM IDXSTR ARGLIST
+**
+** IDXNUM and IDXSTR are the values of the idxNum and idxStr parameters
+** passed to xFilter. ARGLIST is a Tcl list containing each of the arguments
+** passed to xFilter in text form.
+**
+** As with xBestIndex(), the return value of the script is interpreted as a
+** list of key-value pairs. There is currently only one key defined - "sql".
+** The value must be the full text of an SQL statement that returns the data
+** for the current scan. The leftmost column returned by the SELECT is assumed
+** to contain the rowid. Other columns must follow, in order from left to
+** right.
 */
 
 
@@ -89,11 +107,13 @@ struct tcl_vtab {
   sqlite3_vtab base;
   Tcl_Interp *interp;
   Tcl_Obj *pCmd;
+  sqlite3 *db;
 };
 
 /* A tcl cursor object */
 struct tcl_cursor {
   sqlite3_vtab_cursor base;
+  sqlite3_stmt *pStmt;            /* Read data from here */
 };
 
 /*
@@ -132,6 +152,7 @@ static int tclConnect(
 
   pTab->pCmd = Tcl_NewStringObj(zCmd, -1);
   pTab->interp = interp;
+  pTab->db = db;
   Tcl_IncrRefCount(pTab->pCmd);
 
   pScript = Tcl_DuplicateObj(pTab->pCmd);
@@ -180,11 +201,29 @@ static int tclOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
 */
 static int tclClose(sqlite3_vtab_cursor *cur){
   tcl_cursor *pCur = (tcl_cursor *)cur;
-  sqlite3_free(pCur);
+  if( pCur ){
+    sqlite3_finalize(pCur->pStmt);
+    sqlite3_free(pCur);
+  }
   return SQLITE_OK;
 }
 
-static int tclNext(sqlite3_vtab_cursor *cur){
+static int tclNext(sqlite3_vtab_cursor *pVtabCursor){
+  tcl_cursor *pCsr = (tcl_cursor*)pVtabCursor;
+  tcl_vtab *pTab = (tcl_vtab*)(pVtabCursor->pVtab);
+  if( pCsr->pStmt ){
+    tcl_vtab *pTab = (tcl_vtab*)(pVtabCursor->pVtab);
+    int rc = sqlite3_step(pCsr->pStmt);
+    if( rc!=SQLITE_ROW ){
+      const char *zErr;
+      rc = sqlite3_finalize(pCsr->pStmt);
+      pCsr->pStmt = 0;
+      if( rc!=SQLITE_OK ){
+        zErr = sqlite3_errmsg(pTab->db);
+        pTab->base.zErrMsg = sqlite3_mprintf("%s", zErr);
+      }
+    }
+  }
   return SQLITE_OK;
 }
 
@@ -193,19 +232,104 @@ static int tclFilter(
   int idxNum, const char *idxStr,
   int argc, sqlite3_value **argv
 ){
+  tcl_cursor *pCsr = (tcl_cursor*)pVtabCursor;
+  tcl_vtab *pTab = (tcl_vtab*)(pVtabCursor->pVtab);
+  Tcl_Interp *interp = pTab->interp;
+  Tcl_Obj *pScript;
+  Tcl_Obj *pArg;
+  int ii;
+  int rc;
+
+  pScript = Tcl_DuplicateObj(pTab->pCmd);
+  Tcl_IncrRefCount(pScript);
+  Tcl_ListObjAppendElement(interp, pScript, Tcl_NewStringObj("xFilter", -1));
+  Tcl_ListObjAppendElement(interp, pScript, Tcl_NewIntObj(idxNum));
+  if( idxStr ){
+    Tcl_ListObjAppendElement(interp, pScript, Tcl_NewStringObj(idxStr, -1));
+  }else{
+    Tcl_ListObjAppendElement(interp, pScript, Tcl_NewStringObj("", -1));
+  }
+
+  pArg = Tcl_NewObj();
+  Tcl_IncrRefCount(pArg);
+  for(ii=0; ii<argc; ii++){
+    const char *zVal = (const char*)sqlite3_value_text(argv[ii]);
+    Tcl_Obj *pVal;
+    if( zVal==0 ){
+      pVal = Tcl_NewObj();
+    }else{
+      pVal = Tcl_NewStringObj(zVal, -1);
+    }
+    Tcl_ListObjAppendElement(interp, pArg, pVal);
+  }
+  Tcl_ListObjAppendElement(interp, pScript, pArg);
+  Tcl_DecrRefCount(pArg);
+
+  rc = Tcl_EvalObjEx(interp, pScript, TCL_EVAL_GLOBAL);
+  if( rc!=TCL_OK ){
+    const char *zErr = Tcl_GetStringResult(interp);
+    rc = SQLITE_ERROR;
+    pTab->base.zErrMsg = sqlite3_mprintf("%s", zErr);
+  }else{
+    /* Analyze the scripts return value. The return value should be a tcl 
+    ** list object with an even number of elements. The first element of each
+    ** pair must be one of:
+    ** 
+    **   "sql"          (SQL statement to return data)
+    */
+    Tcl_Obj *pRes = Tcl_GetObjResult(interp);
+    Tcl_Obj **apElem = 0;
+    int nElem;
+    rc = Tcl_ListObjGetElements(interp, pRes, &nElem, &apElem);
+    if( rc!=TCL_OK ){
+      const char *zErr = Tcl_GetStringResult(interp);
+      rc = SQLITE_ERROR;
+      pTab->base.zErrMsg = sqlite3_mprintf("%s", zErr);
+    }else{
+      int iArgv = 1;
+      for(ii=0; rc==SQLITE_OK && ii<nElem; ii+=2){
+        const char *zCmd = Tcl_GetString(apElem[ii]);
+        Tcl_Obj *p = apElem[ii+1];
+        if( sqlite3_stricmp("sql", zCmd)==0 ){
+          const char *zSql = Tcl_GetString(p);
+          rc = sqlite3_prepare_v2(pTab->db, zSql, -1, &pCsr->pStmt, 0);
+          if( rc!=SQLITE_OK ){
+            const char *zErr = sqlite3_errmsg(pTab->db);
+            pTab->base.zErrMsg = sqlite3_mprintf("unexpected: %s", zErr);
+          }
+        }else{
+          rc = SQLITE_ERROR;
+          pTab->base.zErrMsg = sqlite3_mprintf("unexpected: %s", zCmd);
+        }
+      }
+    }
+  }
+
+  if( rc==SQLITE_OK ){
+    rc = tclNext(pVtabCursor);
+  }
+  return rc;
+}
+
+static int tclColumn(
+  sqlite3_vtab_cursor *pVtabCursor, 
+  sqlite3_context *ctx, 
+  int i
+){
+  tcl_cursor *pCsr = (tcl_cursor*)pVtabCursor;
+  sqlite3_result_value(ctx, sqlite3_column_value(pCsr->pStmt, i+1));
   return SQLITE_OK;
 }
 
-static int tclColumn(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int i){
+static int tclRowid(sqlite3_vtab_cursor *pVtabCursor, sqlite_int64 *pRowid){
+  tcl_cursor *pCsr = (tcl_cursor*)pVtabCursor;
+  *pRowid = sqlite3_column_int64(pCsr->pStmt, 0);
   return SQLITE_OK;
 }
 
-static int tclRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
-  return SQLITE_OK;
-}
-
-static int tclEof(sqlite3_vtab_cursor *cur){
-  return 1;
+static int tclEof(sqlite3_vtab_cursor *pVtabCursor){
+  tcl_cursor *pCsr = (tcl_cursor*)pVtabCursor;
+  return (pCsr->pStmt==0);
 }
 
 static int tclBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
