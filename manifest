@@ -1,5 +1,5 @@
-C Fix\san\serror\sin\san\sfts5\stest\sscript.
-D 2016-03-02T13:26:19.396
+C Fix\sa\srecently\sintroduced\sproblem\sin\spermutations.test\scausing\san\serror\swhen\sthe\sQUICKTEST_OMIT\senvironment\svariable\sis\sdefined.
+D 2016-03-02T15:37:50.695
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 56ea123a975690bf9ed38b31bb89ff87b02a7c2b
@@ -944,7 +944,7 @@ F test/parser1.test 222b5cbf3e2e659fec1bf7d723488c8b9c94f1d0
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
-F test/permutations.test ea7d077b4644ba0ed6804666915595e9fc3b1950
+F test/permutations.test 7c9e145c9b888f719daa28a843db2c25f04f8b1d
 F test/pragma.test 507ac7ef2ea5682241ea0ef041799ca70bb5e0bf
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
 F test/pragma3.test 6f849ccffeee7e496d2f2b5e74152306c0b8757c
@@ -1427,7 +1427,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh ef6ebc6fd8d2dc35db3b622015c16a023d4fef4f
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f7ed373953c2dea0919a85dfb461dfef512cd5fc
-R fb67c5bfcdd18aefee22c2054e345c4e
+P b2a03e2d479aec2fc68dfc83a1fa34c740f44e13
+R c3f5f569c1111b59b7a7b8d3cc840098
 U dan
-Z 0301af39ef437e67ac6a081e34e72ea7
+Z 3f6f2fabdb87bc8705a94a5cd070d288

@@ -85,8 +85,8 @@ proc test_set {args} {
 #   $allquicktests
 #
 set alltests [list]
+foreach f [glob $testdir/*.test] { lappend alltests [file tail $f] }
 foreach f [glob -nocomplain       \
-    $testdir/*.test               \
     $testdir/../ext/rtree/*.test  \
     $testdir/../ext/fts5/test/*.test   \
 ] { 
