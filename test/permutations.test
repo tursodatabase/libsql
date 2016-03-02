@@ -612,6 +612,7 @@ test_suite "utf16" -description {
     trace.test trigger1.test trigger2.test trigger3.test
     trigger4.test types2.test types.test unique.test update.test
     vacuum.test view.test where.test
+    bestindex1.test
 }
 
 # Run some tests in exclusive locking mode.

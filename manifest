@@ -1,5 +1,5 @@
-C Add\san\sextra\stest\sfor\sthe\schange\son\sthis\sbranch.
-D 2016-03-02T16:13:53.809
+C Add\snew\stest\sscript\sbestindex1.test\sto\sthe\sutf16\spermutation.
+D 2016-03-02T17:57:53.035
 F Makefile.in e335453db0b16da00c884ad51bb56d1c091a74de
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc dbd4621ecc585c2ef0c2aa0874698c54675754f1
@@ -947,7 +947,7 @@ F test/parser1.test 222b5cbf3e2e659fec1bf7d723488c8b9c94f1d0
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
-F test/permutations.test 382a43c49f49bafe6fddffe904ea33d6bb3ff33e
+F test/permutations.test 7872debaba9e4513dfc7bb52ff32f5a1429985e4
 F test/pragma.test 507ac7ef2ea5682241ea0ef041799ca70bb5e0bf
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
 F test/pragma3.test 6f849ccffeee7e496d2f2b5e74152306c0b8757c
@@ -1453,7 +1453,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1622623cbbfc4325c53d731aba78ca9c382ec612 3c15a9bf45cd7dae2fbd99123b8dd75ce278d6e4
-R bdc2b3d0e5cbd463ccc4765d0aeeef84
+P d2d28251566d2a0ec1a07fe5b8ed047136840bfd
+R f53f8a06609558c5e139632a3abf7f8d
 U dan
-Z d9e37a89daaed1ba1547f52769e0ebb4
+Z 9060a915fc132a5c0981e5ef43325748
