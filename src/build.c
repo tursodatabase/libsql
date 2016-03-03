@@ -571,7 +571,6 @@ void sqlite3DeleteColumnNames(sqlite3 *db, Table *pTable){
     for(i=0; i<pTable->nCol; i++, pCol++){
       sqlite3DbFree(db, pCol->zName);
       sqlite3ExprDelete(db, pCol->pDflt);
-      sqlite3DbFree(db, pCol->zType);
       sqlite3DbFree(db, pCol->zColl);
     }
     sqlite3DbFree(db, pTable->aCol);
@@ -1042,6 +1041,7 @@ void sqlite3AddColumn(Parse *pParse, Token *pName, Token *pType){
   Table *p;
   int i;
   char *z;
+  char *zType;
   Column *pCol;
   sqlite3 *db = pParse->db;
   if( (p = pParse->pNewTable)==0 ) return;
@@ -1051,8 +1051,14 @@ void sqlite3AddColumn(Parse *pParse, Token *pName, Token *pType){
     return;
   }
 #endif
-  z = sqlite3NameFromToken(db, pName);
+  z = sqlite3DbMallocRaw(db, pName->n + pType->n + 2);
   if( z==0 ) return;
+  memcpy(z, pName->z, pName->n);
+  z[pName->n] = 0;
+  sqlite3Dequote(z);
+  zType = z + sqlite3Strlen30(z) + 1;
+  memcpy(zType, pType->z, pType->n);
+  zType[pType->n] = 0;
   for(i=0; i<p->nCol; i++){
     if( sqlite3_stricmp(z, p->aCol[i].zName)==0 ){
       sqlite3ErrorMsg(pParse, "duplicate column name: %s", z);
@@ -1080,8 +1086,7 @@ void sqlite3AddColumn(Parse *pParse, Token *pName, Token *pType){
     pCol->affinity = SQLITE_AFF_BLOB;
     pCol->szEst = 1;
   }else{
-    pCol->zType = sqlite3NameFromToken(pParse->db, pType);
-    pCol->affinity = sqlite3AffinityType(pCol->zType, &pCol->szEst);
+    pCol->affinity = sqlite3AffinityType(zType, &pCol->szEst);
   }
   p->nCol++;
   pParse->constraintName.n = 0;
@@ -1277,7 +1282,7 @@ void sqlite3AddPrimaryKey(
   int sortOrder     /* SQLITE_SO_ASC or SQLITE_SO_DESC */
 ){
   Table *pTab = pParse->pNewTable;
-  char *zType = 0;
+  const char *zName = 0;
   int iCol = -1, i;
   int nTerm;
   if( pTab==0 || IN_DECLARE_VTAB ) goto primary_key_exit;
@@ -1290,7 +1295,7 @@ void sqlite3AddPrimaryKey(
   if( pList==0 ){
     iCol = pTab->nCol - 1;
     pTab->aCol[iCol].colFlags |= COLFLAG_PRIMKEY;
-    zType = pTab->aCol[iCol].zType;
+    zName = pTab->aCol[iCol].zName;
     nTerm = 1;
   }else{
     nTerm = pList->nExpr;
@@ -1303,7 +1308,7 @@ void sqlite3AddPrimaryKey(
         for(iCol=0; iCol<pTab->nCol; iCol++){
           if( sqlite3StrICmp(zCName, pTab->aCol[iCol].zName)==0 ){
             pTab->aCol[iCol].colFlags |= COLFLAG_PRIMKEY;
-            zType = pTab->aCol[iCol].zType;
+            zName = pTab->aCol[iCol].zName;
             break;
           }
         }
@@ -1311,7 +1316,8 @@ void sqlite3AddPrimaryKey(
     }
   }
   if( nTerm==1
-   && zType && sqlite3StrICmp(zType, "INTEGER")==0
+   && zName
+   && sqlite3StrICmp(sqlite3StrNext(zName), "INTEGER")==0
    && sortOrder!=SQLITE_SO_DESC
   ){
     pTab->iPKey = iCol;

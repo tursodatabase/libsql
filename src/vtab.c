@@ -564,10 +564,10 @@ static int vtabCallConstructor(
       pTab->pVTable = pVTable;
 
       for(iCol=0; iCol<pTab->nCol; iCol++){
-        char *zType = pTab->aCol[iCol].zType;
+        char *zType = (char*)sqlite3StrNext(pTab->aCol[iCol].zName);
         int nType;
         int i = 0;
-        if( !zType ){
+        if( !zType[0] ){
           pTab->tabFlags |= oooHidden;
           continue;
         }
