@@ -429,5 +429,23 @@ do_execsql_test 20.2 {
   INSERT INTO x1(x1) VALUES('integrity-check');
 } {}
 
-finish_test
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 20.0 {
+  CREATE VIRTUAL TABLE x1 USING fts5(x);
+  INSERT INTO x1(x1, rank) VALUES('pgsz', 32);
+  INSERT INTO x1(rowid, x) VALUES(11111, 'onetwothree');
+}
+do_test 20.1 {
+  for {set i 1} {$i <= 200} {incr i} {
+    execsql { INSERT INTO x1(rowid, x) VALUES($i, 'one two three'); }
+  }
+  execsql { INSERT INTO x1(x1) VALUES('optimize'); }
+  execsql { DELETE FROM x1 WHERE rowid = 4; }
+} {}
+do_execsql_test 20.2 {
+  INSERT INTO x1(x1) VALUES('optimize');
+  INSERT INTO x1(x1) VALUES('integrity-check');
+} {}
 
+finish_test

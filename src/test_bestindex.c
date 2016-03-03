@@ -210,7 +210,6 @@ static int tclClose(sqlite3_vtab_cursor *cur){
 
 static int tclNext(sqlite3_vtab_cursor *pVtabCursor){
   tcl_cursor *pCsr = (tcl_cursor*)pVtabCursor;
-  tcl_vtab *pTab = (tcl_vtab*)(pVtabCursor->pVtab);
   if( pCsr->pStmt ){
     tcl_vtab *pTab = (tcl_vtab*)(pVtabCursor->pVtab);
     int rc = sqlite3_step(pCsr->pStmt);
@@ -286,7 +285,6 @@ static int tclFilter(
       rc = SQLITE_ERROR;
       pTab->base.zErrMsg = sqlite3_mprintf("%s", zErr);
     }else{
-      int iArgv = 1;
       for(ii=0; rc==SQLITE_OK && ii<nElem; ii+=2){
         const char *zCmd = Tcl_GetString(apElem[ii]);
         Tcl_Obj *p = apElem[ii+1];

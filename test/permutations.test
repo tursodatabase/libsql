@@ -86,7 +86,10 @@ proc test_set {args} {
 #
 set alltests [list]
 foreach f [glob $testdir/*.test] { lappend alltests [file tail $f] }
-foreach f [glob -nocomplain $testdir/../ext/rtree/*.test] { 
+foreach f [glob -nocomplain       \
+    $testdir/../ext/rtree/*.test  \
+    $testdir/../ext/fts5/test/*.test   \
+] { 
   lappend alltests $f 
 }
 
@@ -157,7 +160,8 @@ test_suite "veryquick" -prefix "" -description {
   This test suite is the same as the "quick" tests, except that some files
   that test malloc and IO errors are omitted.
 } -files [
-  test_set $allquicktests -exclude *malloc* *ioerr* *fault* *bigfile* *_err*
+  test_set $allquicktests -exclude *malloc* *ioerr* *fault* *bigfile* *_err* \
+      *fts5corrupt* *fts5big* *fts5aj*
 ]
 
 test_suite "extraquick" -prefix "" -description {
