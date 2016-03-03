@@ -1,5 +1,5 @@
-C Increase\sthe\sdefault\supper\sbound\son\sscope\sto\s30.
-D 2016-03-03T15:16:15.336
+C Version\s3.11.1
+D 2016-03-03T16:17:53.102
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 56ea123a975690bf9ed38b31bb89ff87b02a7c2b
@@ -1427,7 +1427,10 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh ef6ebc6fd8d2dc35db3b622015c16a023d4fef4f
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 45bc9557722cc2a1398a53fdb2acd8b6692f3121
+P b1258814f6100f594210775e9e3007b5b0c65025
 R da5680e10572eb2ee67e7f4f853b931e
+T +bgcolor * #d0c0ff
+T +sym-release *
+T +sym-version-3.11.1 *
 U drh
-Z 04cb77a072223fec31cd6c5dab87e3c4
+Z ad71638129773a9e26cf148e72895b35
