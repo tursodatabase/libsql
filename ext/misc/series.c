@@ -217,12 +217,12 @@ static int seriesEof(sqlite3_vtab_cursor *cur){
   }
 }
 
-/* True to omit run-time checking of the start=, stop=, and/or step= 
-** parameters.  The only reason to not omit these is for testing the
+/* True to cause run-time checking of the start=, stop=, and/or step= 
+** parameters.  The only reason to do this is for testing the
 ** constraint checking logic for virtual tables in the SQLite core.
 */
-#ifndef SERIES_OMIT_CONSTRAINT_VERIFY
-# define SERIES_OMIT_CONSTRAINT_VERIFY 1
+#ifndef SQLITE_SERIES_CONSTRAINT_VERIFY
+# define SQLITE_SERIES_CONSTRAINT_VERIFY 0
 #endif
 
 /*
@@ -332,15 +332,15 @@ static int seriesBestIndex(
   }
   if( startIdx>=0 ){
     pIdxInfo->aConstraintUsage[startIdx].argvIndex = ++nArg;
-    pIdxInfo->aConstraintUsage[startIdx].omit = SERIES_OMIT_CONSTRAINT_VERIFY;
+    pIdxInfo->aConstraintUsage[startIdx].omit= !SQLITE_SERIES_CONSTRAINT_VERIFY;
   }
   if( stopIdx>=0 ){
     pIdxInfo->aConstraintUsage[stopIdx].argvIndex = ++nArg;
-    pIdxInfo->aConstraintUsage[stopIdx].omit = SERIES_OMIT_CONSTRAINT_VERIFY;
+    pIdxInfo->aConstraintUsage[stopIdx].omit = !SQLITE_SERIES_CONSTRAINT_VERIFY;
   }
   if( stepIdx>=0 ){
     pIdxInfo->aConstraintUsage[stepIdx].argvIndex = ++nArg;
-    pIdxInfo->aConstraintUsage[stepIdx].omit = SERIES_OMIT_CONSTRAINT_VERIFY;
+    pIdxInfo->aConstraintUsage[stepIdx].omit = !SQLITE_SERIES_CONSTRAINT_VERIFY;
   }
   if( (idxNum & 3)==3 ){
     /* Both start= and stop= boundaries are available.  This is the 
