@@ -1065,6 +1065,7 @@ void sqlite3Pragma(
       setAllColumnNames(v, 6, azCol); assert( 6==ArraySize(azCol) );
       sqlite3ViewGetColumnNames(pParse, pTab);
       for(i=0, pCol=pTab->aCol; i<pTab->nCol; i++, pCol++){
+        const char *zName;
         if( IsHiddenColumn(pCol) ){
           nHidden++;
           continue;
@@ -1076,12 +1077,14 @@ void sqlite3Pragma(
         }else{
           for(k=1; k<=pTab->nCol && pPk->aiColumn[k-1]!=i; k++){}
         }
+        assert( pCol->pDflt==0 || pCol->pDflt->op==TK_SPAN );
+        zName = pCol->zName;
         sqlite3VdbeMultiLoad(v, 1, "issisi",
                i-nHidden,
-               pCol->zName,
-               pCol->zType ? pCol->zType : "",
+               zName,
+               sqlite3StrNext(zName),
                pCol->notNull ? 1 : 0,
-               pCol->zDflt,
+               pCol->pDflt ? pCol->pDflt->u.zToken : 0,
                k);
         sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 6);
       }

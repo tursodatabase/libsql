@@ -13,7 +13,8 @@
 #
 
 source [file join [file dirname [info script]] fts5_common.tcl]
-set testprefix fts5merge
+set testprefix fts5merge2
+return_if_no_fts5
 
 proc dump_structure {} {
   db eval {SELECT fts5_decode(id, block) AS t FROM t1_data WHERE id=10} {
@@ -25,8 +26,6 @@ proc dump_structure {} {
 }
 
 foreach_detail_mode $testprefix {
-
-if {[detail_is_none]==0} continue
 
 do_execsql_test 1.0 {
   CREATE VIRTUAL TABLE t1 USING fts5(x, detail=%DETAIL%);

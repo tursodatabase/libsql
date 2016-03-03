@@ -1999,11 +1999,15 @@ static int xferOptimization(
       return 0;    /* tab2 must be NOT NULL if tab1 is */
     }
     /* Default values for second and subsequent columns need to match. */
-    if( i>0
-     && ((pDestCol->zDflt==0)!=(pSrcCol->zDflt==0) 
-         || (pDestCol->zDflt && strcmp(pDestCol->zDflt, pSrcCol->zDflt)!=0))
-    ){
-      return 0;    /* Default values must be the same for all columns */
+    if( i>0 ){
+      assert( pDestCol->pDflt==0 || pDestCol->pDflt->op==TK_SPAN );
+      assert( pSrcCol->pDflt==0 || pSrcCol->pDflt->op==TK_SPAN );
+      if( (pDestCol->pDflt==0)!=(pSrcCol->pDflt==0) 
+       || (pDestCol->pDflt && strcmp(pDestCol->pDflt->u.zToken,
+                                       pSrcCol->pDflt->u.zToken)!=0)
+      ){
+        return 0;    /* Default values must be the same for all columns */
+      }
     }
   }
   for(pDestIdx=pDest->pIndex; pDestIdx; pDestIdx=pDestIdx->pNext){

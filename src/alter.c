@@ -628,7 +628,8 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
   ** literal NULL, then set pDflt to 0. This simplifies checking
   ** for an SQL NULL default below.
   */
-  if( pDflt && pDflt->op==TK_NULL ){
+  assert( pDflt==0 || pDflt->op==TK_SPAN );
+  if( pDflt && pDflt->pLeft->op==TK_NULL ){
     pDflt = 0;
   }
 
@@ -785,9 +786,7 @@ void sqlite3AlterBeginAddColumn(Parse *pParse, SrcList *pSrc){
     Column *pCol = &pNew->aCol[i];
     pCol->zName = sqlite3DbStrDup(db, pCol->zName);
     pCol->zColl = 0;
-    pCol->zType = 0;
     pCol->pDflt = 0;
-    pCol->zDflt = 0;
   }
   pNew->pSchema = db->aDb[iDb].pSchema;
   pNew->addColOffset = pTab->addColOffset;

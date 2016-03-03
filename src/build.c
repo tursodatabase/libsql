@@ -571,8 +571,6 @@ void sqlite3DeleteColumnNames(sqlite3 *db, Table *pTable){
     for(i=0; i<pTable->nCol; i++, pCol++){
       sqlite3DbFree(db, pCol->zName);
       sqlite3ExprDelete(db, pCol->pDflt);
-      sqlite3DbFree(db, pCol->zDflt);
-      sqlite3DbFree(db, pCol->zType);
       sqlite3DbFree(db, pCol->zColl);
     }
     sqlite3DbFree(db, pTable->aCol);
@@ -1039,10 +1037,11 @@ void sqlite3ColumnPropertiesFromName(Table *pTab, Column *pCol){
 ** first to get things going.  Then this routine is called for each
 ** column.
 */
-void sqlite3AddColumn(Parse *pParse, Token *pName){
+void sqlite3AddColumn(Parse *pParse, Token *pName, Token *pType){
   Table *p;
   int i;
   char *z;
+  char *zType;
   Column *pCol;
   sqlite3 *db = pParse->db;
   if( (p = pParse->pNewTable)==0 ) return;
@@ -1052,8 +1051,14 @@ void sqlite3AddColumn(Parse *pParse, Token *pName){
     return;
   }
 #endif
-  z = sqlite3NameFromToken(db, pName);
+  z = sqlite3DbMallocRaw(db, pName->n + pType->n + 2);
   if( z==0 ) return;
+  memcpy(z, pName->z, pName->n);
+  z[pName->n] = 0;
+  sqlite3Dequote(z);
+  zType = z + sqlite3Strlen30(z) + 1;
+  memcpy(zType, pType->z, pType->n);
+  zType[pType->n] = 0;
   for(i=0; i<p->nCol; i++){
     if( sqlite3_stricmp(z, p->aCol[i].zName)==0 ){
       sqlite3ErrorMsg(pParse, "duplicate column name: %s", z);
@@ -1075,13 +1080,16 @@ void sqlite3AddColumn(Parse *pParse, Token *pName){
   pCol->zName = z;
   sqlite3ColumnPropertiesFromName(p, pCol);
  
-  /* If there is no type specified, columns have the default affinity
-  ** 'BLOB'. If there is a type specified, then sqlite3AddColumnType() will
-  ** be called next to set pCol->affinity correctly.
-  */
-  pCol->affinity = SQLITE_AFF_BLOB;
-  pCol->szEst = 1;
+  if( pType->n==0 ){
+    /* If there is no type specified, columns have the default affinity
+    ** 'BLOB'. */
+    pCol->affinity = SQLITE_AFF_BLOB;
+    pCol->szEst = 1;
+  }else{
+    pCol->affinity = sqlite3AffinityType(zType, &pCol->szEst);
+  }
   p->nCol++;
+  pParse->constraintName.n = 0;
 }
 
 /*
@@ -1185,28 +1193,6 @@ char sqlite3AffinityType(const char *zIn, u8 *pszEst){
 }
 
 /*
-** This routine is called by the parser while in the middle of
-** parsing a CREATE TABLE statement.  The pFirst token is the first
-** token in the sequence of tokens that describe the type of the
-** column currently under construction.   pLast is the last token
-** in the sequence.  Use this information to construct a string
-** that contains the typename of the column and store that string
-** in zType.
-*/ 
-void sqlite3AddColumnType(Parse *pParse, Token *pType){
-  Table *p;
-  Column *pCol;
-
-  p = pParse->pNewTable;
-  if( p==0 || NEVER(p->nCol<1) ) return;
-  pCol = &p->aCol[p->nCol-1];
-  assert( pCol->zType==0 || CORRUPT_DB );
-  sqlite3DbFree(pParse->db, pCol->zType);
-  pCol->zType = sqlite3NameFromToken(pParse->db, pType);
-  pCol->affinity = sqlite3AffinityType(pCol->zType, &pCol->szEst);
-}
-
-/*
 ** The expression is the default value for the most recently added column
 ** of the table currently under construction.
 **
@@ -1231,11 +1217,16 @@ void sqlite3AddDefaultValue(Parse *pParse, ExprSpan *pSpan){
       ** tokens that point to volatile memory. The 'span' of the expression
       ** is required by pragma table_info.
       */
+      Expr x;
       sqlite3ExprDelete(db, pCol->pDflt);
-      pCol->pDflt = sqlite3ExprDup(db, pSpan->pExpr, EXPRDUP_REDUCE);
-      sqlite3DbFree(db, pCol->zDflt);
-      pCol->zDflt = sqlite3DbStrNDup(db, (char*)pSpan->zStart,
-                                     (int)(pSpan->zEnd - pSpan->zStart));
+      memset(&x, 0, sizeof(x));
+      x.op = TK_SPAN;
+      x.u.zToken = sqlite3DbStrNDup(db, (char*)pSpan->zStart,
+                                    (int)(pSpan->zEnd - pSpan->zStart));
+      x.pLeft = pSpan->pExpr;
+      x.flags = EP_Skip;
+      pCol->pDflt = sqlite3ExprDup(db, &x, EXPRDUP_REDUCE);
+      sqlite3DbFree(db, x.u.zToken);
     }
   }
   sqlite3ExprDelete(db, pSpan->pExpr);
@@ -1291,7 +1282,7 @@ void sqlite3AddPrimaryKey(
   int sortOrder     /* SQLITE_SO_ASC or SQLITE_SO_DESC */
 ){
   Table *pTab = pParse->pNewTable;
-  char *zType = 0;
+  const char *zName = 0;
   int iCol = -1, i;
   int nTerm;
   if( pTab==0 || IN_DECLARE_VTAB ) goto primary_key_exit;
@@ -1304,7 +1295,7 @@ void sqlite3AddPrimaryKey(
   if( pList==0 ){
     iCol = pTab->nCol - 1;
     pTab->aCol[iCol].colFlags |= COLFLAG_PRIMKEY;
-    zType = pTab->aCol[iCol].zType;
+    zName = pTab->aCol[iCol].zName;
     nTerm = 1;
   }else{
     nTerm = pList->nExpr;
@@ -1317,7 +1308,7 @@ void sqlite3AddPrimaryKey(
         for(iCol=0; iCol<pTab->nCol; iCol++){
           if( sqlite3StrICmp(zCName, pTab->aCol[iCol].zName)==0 ){
             pTab->aCol[iCol].colFlags |= COLFLAG_PRIMKEY;
-            zType = pTab->aCol[iCol].zType;
+            zName = pTab->aCol[iCol].zName;
             break;
           }
         }
@@ -1325,7 +1316,8 @@ void sqlite3AddPrimaryKey(
     }
   }
   if( nTerm==1
-   && zType && sqlite3StrICmp(zType, "INTEGER")==0
+   && zName
+   && sqlite3StrICmp(sqlite3StrNext(zName), "INTEGER")==0
    && sortOrder!=SQLITE_SO_DESC
   ){
     pTab->iPKey = iCol;

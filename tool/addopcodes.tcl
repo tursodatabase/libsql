@@ -38,6 +38,7 @@ set extras {
   UPLUS
   REGISTER
   ASTERISK
+  SPAN
   SPACE
   ILLEGAL
 }
