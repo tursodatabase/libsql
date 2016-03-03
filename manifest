@@ -1,5 +1,5 @@
-C Fix\sa\srecently\sintroduced\sproblem\sin\spermutations.test\scausing\san\serror\swhen\sthe\sQUICKTEST_OMIT\senvironment\svariable\sis\sdefined.
-D 2016-03-02T15:37:50.695
+C Increase\sthe\sdefault\supper\sbound\son\sscope\sto\s30.
+D 2016-03-03T15:16:15.336
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 56ea123a975690bf9ed38b31bb89ff87b02a7c2b
@@ -213,7 +213,7 @@ F ext/misc/regexp.c af92cdaa5058fcec1451e49becc7ba44dba023dc
 F ext/misc/rot13.c 1ac6f95f99b575907b9b09c81a349114cf9be45a
 F ext/misc/series.c b8fb7befd85b3a9b4a10e701b30b2b79ca92b6d4
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
-F ext/misc/spellfix.c 525190484b7a9dbc6be646c4842274fff4f27d53
+F ext/misc/spellfix.c 194b5fc3a9a63cb6c5680d8f713800012bddca7c
 F ext/misc/totype.c 4a167594e791abeed95e0a8db028822b5e8fe512
 F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
@@ -1427,7 +1427,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh ef6ebc6fd8d2dc35db3b622015c16a023d4fef4f
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b2a03e2d479aec2fc68dfc83a1fa34c740f44e13
-R c3f5f569c1111b59b7a7b8d3cc840098
-U dan
-Z 3f6f2fabdb87bc8705a94a5cd070d288
+P 45bc9557722cc2a1398a53fdb2acd8b6692f3121
+R da5680e10572eb2ee67e7f4f853b931e
+U drh
+Z 04cb77a072223fec31cd6c5dab87e3c4
