@@ -1,8 +1,8 @@
-C Detect\sthe\spresence\sof\spread()/pwrite()\ssystem\scalls\son\sunix\ssystems\sand\nuse\sthem\sif\savailable.
-D 2016-03-04T03:20:05.475
-F Makefile.in 4c3d3d1b98454bf60e8977223b26ef30777a2bf2
+C Change\sthe\sdefault\spage\ssize\sfor\snew\sdatabase\sfiles\sto\s4096\s(from\s1024).\nExcept,\swhen\sbuilding\sthe\stestfixture,\spreserve\sthe\slegacy\spage\ssize.\nAlso\sfix\sa\scomment\son\sSQLITE_MAX_ATTACHED.
+D 2016-03-04T03:43:10.844
+F Makefile.in ead489fe5d3313b8a2a8d5f3710173a4b50dd2e0
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 0dc13352b84b257d81736076d8101a584940c409
+F Makefile.msc d68db8ddac21ea2576ea5b446f12cf9ebe897a03
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION c6b1f51809551d60ad001e6d87cf3ab2c7f54b6f
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -273,7 +273,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 518d93f9f606d515628f99ce03f9e909f4f8a2e3
+F main.mk d9982cb6a42b1c9da7d61cebae973cd6b034de61
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -355,7 +355,7 @@ F src/sqlite.h.in 57d2a02b14c9ec4f7cb294153eaf62294dc5aa68
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
 F src/sqliteInt.h 8aa9992cb35289ede0946f7ba8e993070e040fc4
-F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
+F src/sqliteLimit.h 7c17293db62f238ccdec1498dd855fc126fa07a9
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
 F src/tclsqlite.c 54dca4eaf3a9cb0a4b845ef54ffa99225c30a52e
@@ -1453,8 +1453,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6ec6b6a97e62be1abe1e349b5bc04c6f5ae88968 38fb54e7854ac0500a88585ff9dd7487b4b2e586
-R 2f3feca250b12264f442f8836aa34529
-T +closed 38fb54e7854ac0500a88585ff9dd7487b4b2e586
+P 82cbf5ad2ed988a006106e188e98096a52e6779d
+R 0406775a6be9491c81a210a63da6c171
 U drh
-Z 6deed976f37e6ab4c44908da24567cb0
+Z 4f7c554d47a12cc14f56cbfb2a874afa
