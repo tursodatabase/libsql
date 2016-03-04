@@ -786,7 +786,6 @@ void sqlite3AlterBeginAddColumn(Parse *pParse, SrcList *pSrc){
     Column *pCol = &pNew->aCol[i];
     pCol->zName = sqlite3DbStrDup(db, pCol->zName);
     pCol->zColl = 0;
-    pCol->zType = 0;
     pCol->pDflt = 0;
   }
   pNew->pSchema = db->aDb[iDb].pSchema;
