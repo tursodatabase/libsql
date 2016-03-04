@@ -1,5 +1,5 @@
-C Merge\schanges\sfrom\strunk.
-D 2016-03-04T13:08:35.636
+C Update\stest\scases\sto\staken\sdeferred\sstatement-journal\sopening\sinto\saccount.
+D 2016-03-04T14:23:10.937
 F Makefile.in ead489fe5d3313b8a2a8d5f3710173a4b50dd2e0
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d68db8ddac21ea2576ea5b446f12cf9ebe897a03
@@ -541,8 +541,8 @@ F test/collate9.test 3adcc799229545940df2f25308dd1ad65869145a
 F test/collateA.test b8218ab90d1fa5c59dcf156efabb1b2599c580d6
 F test/colmeta.test 2c765ea61ee37bc43bbe6d6047f89004e6508eb1
 F test/colname.test 08948a4809d22817e0e5de89c7c0a8bd90cb551b
-F test/conflict.test 841bcf7cabbfca39c577eb8411ea8601843b46a8
-F test/conflict2.test a82dd3b9b41fceb5dd6ff0707c5c7ffba208d538
+F test/conflict.test 029faa2d81a0d1cafb5f88614beb663d972c01db
+F test/conflict2.test bb0b94cf7196c64a3cbd815c66d3ee98c2fecd9c
 F test/conflict3.test dec0634c0f31dec9a4b01c63063e939f0cd21b6b
 F test/contrib01.test 2a1cbc0f2f48955d7d073f725765da6fbceda6b4
 F test/corrupt.test 141c39ea650c1365e85a49e402fa05cb9617fb97
@@ -627,7 +627,7 @@ F test/enc4.test c8f1ce3618508fd0909945beb8b8831feef2c020
 F test/eqp.test 85873fa5816c48915c82c4e74cb5c35a5b48160f
 F test/errmsg.test f31592a594b44ee121371d25ddd5d63497bb3401
 F test/eval.test a64c9105d6ff163df7cf09d6ac29cdad5922078c
-F test/exclusive.test c7ebbc756eacf544c108b15eed64d7d4e5f86b75
+F test/exclusive.test f48243eaf40e0957215501a12f510a8644d13a02
 F test/exclusive2.test 32798111aae78a5deec980eee383213f189df308
 F test/exec.test e949714dc127eaa5ecc7d723efec1ec27118fdd7
 F test/exists.test 8f7b27b61c2fbe5822f0a1f899c715d14e416e30
@@ -1063,7 +1063,7 @@ F test/sqllimits1.test a74ee2a3740b9f9c2437c246d8fb77354862a142
 F test/sqllog.test 6af6cb0b09f4e44e1917e06ce85be7670302517a
 F test/stat.test acc91e80517fff447ae8adcfd953cfdaa5efc0af
 F test/statfault.test f525a7bf633e50afd027700e9a486090684b1ac1
-F test/stmt.test 25d64e3dbf9a3ce89558667d7f39d966fe2a71b9
+F test/stmt.test 64844332db69cf1a735fcb3e11548557fc95392f
 F test/subquery.test d7268d193dd33d5505df965399d3a594e76ae13f
 F test/subquery2.test 438f8a7da1457277b22e4176510f7659b286995f
 F test/subselect.test d24fd8757daf97dafd2e889c73ea4c4272dcf4e4
@@ -1079,7 +1079,7 @@ F test/table.test b708f3e5fa2542fa51dfab21fc07b36ea445cb2f
 F test/tableapi.test 2674633fa95d80da917571ebdd759a14d9819126
 F test/tableopts.test dba698ba97251017b7c80d738c198d39ab747930
 F test/tclsqlite.test 7fb866443c7deceed22b63948ccd6f76b52ad054
-F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
+F test/tempdb.test bd92eba8f20e16a9136e434e20b280794de3cdb6
 F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptrigger.test 8ec228b0db5d7ebc4ee9b458fc28cb9e7873f5e1
 F test/tester.tcl 750365ff97047ded5f2d6e28df82a998f7c66ae0
@@ -1453,7 +1453,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b5378dcea53d4cd1744d13ddee5e50869607b771 2682e8e413fadbca0673f242769af17bfd291559
-R 1d5f238c78a751f41b8ce4e327b6fc98
+P a87305dfd49ee17632d0bce66ce7c2e9407b7b3e
+R bcfeac6deb0b24b3190e8b427e406c58
 U drh
-Z 35e5851abb6d53f81aa001148a407eb0
+Z 82bd4288d2e4175a3c31e21a46f9d82d
