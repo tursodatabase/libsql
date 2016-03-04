@@ -1,5 +1,5 @@
-C Change\sthe\sdefault\spage\ssize\sfor\snew\sdatabase\sfiles\sto\s4096\s(from\s1024).\nExcept,\swhen\sbuilding\sthe\stestfixture,\spreserve\sthe\slegacy\spage\ssize.\nAlso\sfix\sa\scomment\son\sSQLITE_MAX_ATTACHED.
-D 2016-03-04T03:43:10.844
+C Change\sthe\sdefault\scache_size\sto\s-2000\s(which\smeans\s2000*1024\sbytes\nindependent\sof\spage_size).
+D 2016-03-04T04:01:43.190
 F Makefile.in ead489fe5d3313b8a2a8d5f3710173a4b50dd2e0
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d68db8ddac21ea2576ea5b446f12cf9ebe897a03
@@ -355,7 +355,7 @@ F src/sqlite.h.in 57d2a02b14c9ec4f7cb294153eaf62294dc5aa68
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
 F src/sqliteInt.h 8aa9992cb35289ede0946f7ba8e993070e040fc4
-F src/sqliteLimit.h 7c17293db62f238ccdec1498dd855fc126fa07a9
+F src/sqliteLimit.h 7b28cf72cbd52f178bfc97ea266445e351f2cd24
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
 F src/tclsqlite.c 54dca4eaf3a9cb0a4b845ef54ffa99225c30a52e
@@ -1453,7 +1453,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 82cbf5ad2ed988a006106e188e98096a52e6779d
-R 0406775a6be9491c81a210a63da6c171
+P 2e8a9ca9d3d6efddc31f01074d14acae56568c37
+R bce4d7ea1e35eefbc9f3bc83f2294e5c
 U drh
-Z 4f7c554d47a12cc14f56cbfb2a874afa
+Z 8be75f8161fe6fe960ec420b19540c0b
