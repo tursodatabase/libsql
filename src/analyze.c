@@ -1604,52 +1604,45 @@ void sqlite3DeleteIndexSamples(sqlite3 *db, Index *pIdx){
 */
 static void initAvgEq(Index *pIdx){
   if( pIdx ){
-    IndexSample *aSample = pIdx->aSample;
-    IndexSample *pFinal = &aSample[pIdx->nSample-1];
-    int iCol;
-    int nCol = 1;
-    if( pIdx->nSampleCol>1 ){
+    int nSample = pIdx->nSample;                /* Number of samples */
+    int nCol = pIdx->nSampleCol;                /* Number of columns sampled */
+    IndexSample *aSample = pIdx->aSample;       /* The samples */
+    IndexSample *pFinal = &aSample[nSample-1];  /* The last sample */
+    int iCol;                                   /* Loop counter of columns */
+    if( nCol>1 ){
       /* If this is stat4 data, then calculate aAvgEq[] values for all
       ** sample columns except the last. The last is always set to 1, as
       ** once the trailing PK fields are considered all index keys are
       ** unique.  */
-      nCol = pIdx->nSampleCol-1;
+      nCol--;
       pIdx->aAvgEq[nCol] = 1;
     }
     for(iCol=0; iCol<nCol; iCol++){
-      int nSample = pIdx->nSample;
       int i;                    /* Used to iterate through samples */
+      u32 nDSample = 0;         /* Number of distinct samples less than pFinal*/
       tRowcnt sumEq = 0;        /* Sum of the nEq values */
-      tRowcnt avgEq = 0;
+      tRowcnt avgEq;            /* Average repeats for unsampled entries */
       tRowcnt nRow;             /* Number of rows in index */
-      i64 nSum100 = 0;          /* Number of terms contributing to sumEq */
-      i64 nDist100;             /* Number of distinct values in index */
+      tRowcnt prevLt = 0;       /* Number of values less than previous sample */
+      tRowcnt thisLt;           /* Number of values less than current sample */
 
       if( !pIdx->aiRowEst || iCol>=pIdx->nKeyCol || pIdx->aiRowEst[iCol+1]==0 ){
-        nRow = pFinal->anLt[iCol];
-        nDist100 = (i64)100 * pFinal->anDLt[iCol];
-        nSample--;
+        nRow = pFinal->anLt[iCol] + pFinal->anEq[iCol];
       }else{
         nRow = pIdx->aiRowEst[0];
-        nDist100 = ((i64)100 * pIdx->aiRowEst[0]) / pIdx->aiRowEst[iCol+1];
       }
       pIdx->nRowEst0 = nRow;
-
-      /* Set nSum to the number of distinct (iCol+1) field prefixes that
-      ** occur in the stat4 table for this index. Set sumEq to the sum of 
-      ** the nEq values for column iCol for the same set (adding the value 
-      ** only once where there exist duplicate prefixes).  */
-      for(i=0; i<nSample; i++){
-        if( i==(pIdx->nSample-1)
-         || aSample[i].anDLt[iCol]!=aSample[i+1].anDLt[iCol] 
-        ){
+      for(i=0; (thisLt = aSample[i].anLt[iCol])<pFinal->anLt[iCol]; i++){
+        if( i==0 || thisLt!=prevLt ){
           sumEq += aSample[i].anEq[iCol];
-          nSum100 += 100;
+          nDSample++;
         }
+        prevLt = thisLt;
       }
-
-      if( nDist100>nSum100 ){
-        avgEq = ((i64)100 * (nRow - sumEq))/(nDist100 - nSum100);
+      if( pFinal->anDLt[iCol] > nDSample ){
+        avgEq = (pFinal->anLt[iCol] - sumEq)/(pFinal->anDLt[iCol] - nDSample);
+      }else{
+        avgEq = 1;
       }
       if( avgEq==0 ) avgEq = 1;
       pIdx->aAvgEq[iCol] = avgEq;

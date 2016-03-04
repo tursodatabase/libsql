@@ -48,14 +48,6 @@ do_execsql_test skipscan2-1.2 {
   INSERT INTO people VALUES('Robert','student',159);
   INSERT INTO people VALUES('Sally','student',166);
   INSERT INTO people VALUES('Tom','student',171);
-/*
-  INSERT INTO people VALUES('Ursula','student',170);
-  INSERT INTO people VALUES('Vance','student',179);
-  INSERT INTO people VALUES('Willma','student',175);
-  INSERT INTO people VALUES('Xavier','teacher',185);
-  INSERT INTO people VALUES('Yvonne','student',149);
-  INSERT INTO people VALUES('Zach','student',170);
-*/
 }
 
 # Without ANALYZE, a skip-scan is not used
@@ -110,7 +102,7 @@ do_execsql_test skipscan2-1.8 {
   INSERT INTO people VALUES('Ursula','student',170);
   ANALYZE;
   SELECT stat FROM sqlite_stat1 WHERE idx='people_idx1';
-} {{21 18 3}}
+} {{21 13 2}}
 db cache flush
 do_execsql_test skipscan2-1.9 {
   SELECT name FROM people WHERE height<=161 ORDER BY +name;
@@ -160,7 +152,7 @@ do_execsql_test skipscan2-2.5 {
 do_execsql_test skipscan2-2.5eqp {
   EXPLAIN QUERY PLAN
   SELECT name FROM peoplew WHERE height<=161 ORDER BY +name;
-} {/*INDEX peoplew_idx1 */}
+} {/*INDEX peoplew_idx1*/}
 
 # A skip-scan on a PK index of a WITHOUT ROWID table.
 #
