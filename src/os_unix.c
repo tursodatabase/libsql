@@ -84,7 +84,6 @@
 # define USE_PWRITE64 1
 #endif
 
-
 /*
 ** standard include files.
 */
@@ -214,9 +213,6 @@ struct unixFile {
   const char *zPath;                  /* Name of the file */
   unixShm *pShm;                      /* Shared memory segment information */
   int szChunk;                        /* Configured by FCNTL_CHUNK_SIZE */
-#if !defined(USE_PREAD) && !defined(USE_PREAD64)
-  off64_t iOfst;                      /* Current offset */
-#endif
 #if SQLITE_MAX_MMAP_SIZE>0
   int nFetchOut;                      /* Number of outstanding xFetch refs */
   sqlite3_int64 mmapSize;             /* Usable size of mapping at pMapRegion */
@@ -3114,6 +3110,9 @@ static int nfsUnlock(sqlite3_file *id, int eFileLock){
 static int seekAndRead(unixFile *id, sqlite3_int64 offset, void *pBuf, int cnt){
   int got;
   int prior = 0;
+#if (!defined(USE_PREAD) && !defined(USE_PREAD64))
+  i64 newOffset;
+#endif
   TIMER_START;
   assert( cnt==(cnt&0x1ffff) );
   assert( id->h>2 );
@@ -3125,15 +3124,13 @@ static int seekAndRead(unixFile *id, sqlite3_int64 offset, void *pBuf, int cnt){
     got = osPread64(id->h, pBuf, cnt, offset);
     SimulateIOError( got = -1 );
 #else
-    if( offset!=id->iOfst ){
-      id->iOfst = lseek(id->h, offset, SEEK_SET);
-      SimulateIOError( id->iOfst = -1 );
-      if( id->iOfst<0 ){
-        storeLastErrno((unixFile*)id, errno);
-        return -1;
-      }
-      got = osRead(id->h, pBuf, cnt);
-      if( got>=0 ) id->iOfst += got;
+    newOffset = lseek(id->h, offset, SEEK_SET);
+    SimulateIOError( newOffset = -1 );
+    if( newOffset<0 ){
+      storeLastErrno((unixFile*)id, errno);
+      return -1;
+    }
+    got = osRead(id->h, pBuf, cnt);
 #endif
     if( got==cnt ) break;
     if( got<0 ){
@@ -3239,7 +3236,6 @@ static int seekAndWriteFd(
   do{ rc = (int)osPwrite64(fd, pBuf, nBuf, iOff);}while( rc<0 && errno==EINTR);
 #else
   do{
-    if( iOff!=fd
     i64 iSeek = lseek(fd, iOff, SEEK_SET);
     SimulateIOError( iSeek = -1 );
     if( iSeek<0 ){

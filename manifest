@@ -1,5 +1,5 @@
-C Update\sthe\sconfigure\sscript\sto\sdetect\spread/pwrite\sand\supdate\sos_unix.c\sto\nuse\sthose\sroutines\sif\sthey\sare\savailable.
-D 2016-03-04T02:38:00.565
+C Fix\sthe\sbuild\sfor\scases\swhen\spread()/pwrite()\sare\snot\savailable.
+D 2016-03-04T03:02:06.930
 F Makefile.in e335453db0b16da00c884ad51bb56d1c091a74de
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc dbd4621ecc585c2ef0c2aa0874698c54675754f1
@@ -333,7 +333,7 @@ F src/os.c ca9a104b677328ee037cfdf1a54a16fd1805e8c9
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c a1aaf2d8d253138e63d2a8a972693f9f624f885d
+F src/os_unix.c 14a28aeb3b77102a90ed645534a8d319b8ac6082
 F src/os_win.c f0d7aa603eb6262143d7169a222aea07c4fca91d
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c d034c69b958c01289eb8070cbf902e1a68cd7e0b
@@ -1453,7 +1453,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 16fbf2e19c22df9441aef5c8b7f5670adc38a6b6
-R 8390ec5e0d9e5eb3999e5eee0cb5ce81
+P 2cffb9e50bed77d1079603f5b4a71b7559de7294
+R 340d2ced6d6364f0299bbd36b34b2f41
 U drh
-Z b764ac5f33b779f6bf5d09a763220c12
+Z a704f390d3e95dbf657db754d417ef5a
