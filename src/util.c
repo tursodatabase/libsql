@@ -110,6 +110,14 @@ int sqlite3Strlen30(const char *z){
 }
 
 /*
+** The string z[] is followed immediately by another string.  Return
+** a poiner to that other string.
+*/
+const char *sqlite3StrNext(const char *z){
+  return z + strlen(z) + 1;
+}
+
+/*
 ** Set the current error code to err_code and clear any prior error message.
 */
 void sqlite3Error(sqlite3 *db, int err_code){
@@ -1400,8 +1408,14 @@ LogEst sqlite3LogEstFromDouble(double x){
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 
+#if defined(SQLITE_ENABLE_STMT_SCANSTAT) || \
+    defined(SQLITE_ENABLE_STAT3_OR_STAT4) || \
+    defined(SQLITE_EXPLAIN_ESTIMATED_ROWS)
 /*
 ** Convert a LogEst into an integer.
+**
+** Note that this routine is only used when one or more of various
+** non-standard compile-time options is enabled.
 */
 u64 sqlite3LogEstToInt(LogEst x){
   u64 n;
@@ -1415,3 +1429,4 @@ u64 sqlite3LogEstToInt(LogEst x){
   }
   return (n+8)>>(3-x);
 }
+#endif /* defined SCANSTAT or STAT4 or ESTIMATED_ROWS */

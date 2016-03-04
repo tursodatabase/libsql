@@ -796,8 +796,9 @@ int sqlite3_db_config(sqlite3 *db, int op, ...){
         int op;      /* The opcode */
         u32 mask;    /* Mask of the bit in sqlite3.flags to set/clear */
       } aFlagOp[] = {
-        { SQLITE_DBCONFIG_ENABLE_FKEY,    SQLITE_ForeignKeys    },
-        { SQLITE_DBCONFIG_ENABLE_TRIGGER, SQLITE_EnableTrigger  },
+        { SQLITE_DBCONFIG_ENABLE_FKEY,           SQLITE_ForeignKeys    },
+        { SQLITE_DBCONFIG_ENABLE_TRIGGER,        SQLITE_EnableTrigger  },
+        { SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER, SQLITE_Fts3Tokenizer  },
       };
       unsigned int i;
       rc = SQLITE_ERROR; /* IMP: R-42790-23372 */
@@ -2833,6 +2834,9 @@ static int openDatabase(
 #if defined(SQLITE_ENABLE_OVERSIZE_CELL_CHECK)
                  | SQLITE_CellSizeCk
 #endif
+#if defined(SQLITE_ENABLE_FTS3_TOKENIZER)
+                 | SQLITE_Fts3Tokenizer
+#endif
       ;
   sqlite3HashInit(&db->aCollSeq);
 #ifndef SQLITE_OMIT_VIRTUALTABLE
@@ -3352,7 +3356,8 @@ int sqlite3_table_column_metadata(
   **        explicitly declared column. Copy meta information from *pCol.
   */ 
   if( pCol ){
-    zDataType = pCol->zType;
+    zDataType = sqlite3StrNext(pCol->zName);
+    if( zDataType[0]==0 ) zDataType = 0;
     zCollSeq = pCol->zColl;
     notnull = pCol->notNull!=0;
     primarykey  = (pCol->colFlags & COLFLAG_PRIMKEY)!=0;

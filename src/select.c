@@ -1429,8 +1429,8 @@ static const char *columnTypeImpl(
           zType = "INTEGER";
           zOrigCol = "rowid";
         }else{
-          zType = pTab->aCol[iCol].zType;
           zOrigCol = pTab->aCol[iCol].zName;
+          zType = sqlite3StrNext(zOrigCol);
           estWidth = pTab->aCol[iCol].szEst;
         }
         zOrigTab = pTab->zName;
@@ -1442,7 +1442,7 @@ static const char *columnTypeImpl(
         if( iCol<0 ){
           zType = "INTEGER";
         }else{
-          zType = pTab->aCol[iCol].zType;
+          zType = sqlite3StrNext(pTab->aCol[iCol].zName);
           estWidth = pTab->aCol[iCol].szEst;
         }
 #endif
@@ -1727,10 +1727,7 @@ static void selectAddColumnTypeAndCollation(
   a = pSelect->pEList->a;
   for(i=0, pCol=pTab->aCol; i<pTab->nCol; i++, pCol++){
     p = a[i].pExpr;
-    if( pCol->zType==0 ){
-      pCol->zType = sqlite3DbStrDup(db, 
-                        columnType(&sNC, p,0,0,0, &pCol->szEst));
-    }
+    columnType(&sNC, p, 0, 0, 0, &pCol->szEst);
     szAll += pCol->szEst;
     pCol->affinity = sqlite3ExprAffinity(p);
     if( pCol->affinity==0 ) pCol->affinity = SQLITE_AFF_BLOB;
@@ -2225,7 +2222,6 @@ static int multiSelect(
   if( dest.eDest==SRT_EphemTab ){
     assert( p->pEList );
     sqlite3VdbeAddOp2(v, OP_OpenEphemeral, dest.iSDParm, p->pEList->nExpr);
-    sqlite3VdbeChangeP5(v, BTREE_UNORDERED);
     dest.eDest = SRT_Table;
   }
 

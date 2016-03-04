@@ -3070,6 +3070,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       sqlite3ReleaseTempReg(pParse, r4);
       break;
     }
+    case TK_SPAN:
     case TK_COLLATE: 
     case TK_UPLUS: {
       inReg = sqlite3ExprCodeTarget(pParse, pExpr->pLeft, target);

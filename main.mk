@@ -290,6 +290,7 @@ TESTSRC = \
   $(TOP)/src/test_autoext.c \
   $(TOP)/src/test_async.c \
   $(TOP)/src/test_backup.c \
+  $(TOP)/src/test_bestindex.c \
   $(TOP)/src/test_blob.c \
   $(TOP)/src/test_btree.c \
   $(TOP)/src/test_config.c \
@@ -736,7 +737,9 @@ sqlite3_analyzer$(EXE): sqlite3_analyzer.c
 # Rules to build the 'testfixture' application.
 #
 TESTFIXTURE_FLAGS  = -DSQLITE_TEST=1 -DSQLITE_CRASH_TEST=1
-TESTFIXTURE_FLAGS += -DSQLITE_SERVER=1 -DSQLITE_PRIVATE="" -DSQLITE_CORE 
+TESTFIXTURE_FLAGS += -DSQLITE_SERVER=1 -DSQLITE_PRIVATE="" -DSQLITE_CORE
+TESTFIXTURE_FLAGS += -DSQLITE_SERIES_CONSTRAINT_VERIFY=1
+TESTFIXTURE_FLAGS += -DSQLITE_DEFAULT_PAGE_SIZE=1024
 
 testfixture$(EXE): $(TESTSRC2) libsqlite3.a $(TESTSRC) $(TOP)/src/tclsqlite.c
 	$(TCCX) $(TCL_FLAGS) -DTCLSH=1 $(TESTFIXTURE_FLAGS)                  \

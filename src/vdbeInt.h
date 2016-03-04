@@ -87,7 +87,7 @@ struct VdbeCursor {
 #endif
   Bool isEphemeral:1;   /* True for an ephemeral table */
   Bool useRandomRowid:1;/* Generate new record numbers semi-randomly */
-  Bool isOrdered:1;     /* True if the underlying table is BTREE_UNORDERED */
+  Bool isOrdered:1;     /* True if the table is not BTREE_UNORDERED */
   Pgno pgnoRoot;        /* Root page of the open btree cursor */
   i16 nField;           /* Number of fields in the header */
   u16 nHdrParsed;       /* Number of header fields parsed so far */

@@ -71,6 +71,19 @@
 #  endif
 #endif
 
+/* Use pread() and pwrite() if they are available */
+#if defined(__APPLE__)
+# define HAVE_PREAD 1
+# define HAVE_PWRITE 1
+#endif
+#if defined(HAVE_PREAD64) && defined(HAVE_PWRITE64)
+# undef USE_PREAD
+# define USE_PREAD64 1
+#elif defined(HAVE_PREAD) && defined(HAVE_PWRITE)
+# undef USE_PREAD64
+# define USE_PREAD 1
+#endif
+
 /*
 ** standard include files.
 */

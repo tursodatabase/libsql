@@ -217,6 +217,14 @@ static int seriesEof(sqlite3_vtab_cursor *cur){
   }
 }
 
+/* True to cause run-time checking of the start=, stop=, and/or step= 
+** parameters.  The only reason to do this is for testing the
+** constraint checking logic for virtual tables in the SQLite core.
+*/
+#ifndef SQLITE_SERIES_CONSTRAINT_VERIFY
+# define SQLITE_SERIES_CONSTRAINT_VERIFY 0
+#endif
+
 /*
 ** This method is called to "rewind" the series_cursor object back
 ** to the first row of output.  This method is always called at least
@@ -324,20 +332,20 @@ static int seriesBestIndex(
   }
   if( startIdx>=0 ){
     pIdxInfo->aConstraintUsage[startIdx].argvIndex = ++nArg;
-    pIdxInfo->aConstraintUsage[startIdx].omit = 1;
+    pIdxInfo->aConstraintUsage[startIdx].omit= !SQLITE_SERIES_CONSTRAINT_VERIFY;
   }
   if( stopIdx>=0 ){
     pIdxInfo->aConstraintUsage[stopIdx].argvIndex = ++nArg;
-    pIdxInfo->aConstraintUsage[stopIdx].omit = 1;
+    pIdxInfo->aConstraintUsage[stopIdx].omit = !SQLITE_SERIES_CONSTRAINT_VERIFY;
   }
   if( stepIdx>=0 ){
     pIdxInfo->aConstraintUsage[stepIdx].argvIndex = ++nArg;
-    pIdxInfo->aConstraintUsage[stepIdx].omit = 1;
+    pIdxInfo->aConstraintUsage[stepIdx].omit = !SQLITE_SERIES_CONSTRAINT_VERIFY;
   }
   if( (idxNum & 3)==3 ){
     /* Both start= and stop= boundaries are available.  This is the 
     ** the preferred case */
-    pIdxInfo->estimatedCost = (double)1;
+    pIdxInfo->estimatedCost = (double)(2 - ((idxNum&4)!=0));
     pIdxInfo->estimatedRows = 1000;
     if( pIdxInfo->nOrderBy==1 ){
       if( pIdxInfo->aOrderBy[0].desc ) idxNum |= 8;

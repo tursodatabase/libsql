@@ -3923,6 +3923,7 @@ static void init_all(Tcl_Interp *interp){
 #endif
     extern int Fts5tcl_Init(Tcl_Interp *);
     extern int SqliteRbu_Init(Tcl_Interp*);
+    extern int Sqlitetesttcl_Init(Tcl_Interp*);
 #if defined(SQLITE_ENABLE_FTS3) || defined(SQLITE_ENABLE_FTS4)
     extern int Sqlitetestfts3_Init(Tcl_Interp *interp);
 #endif
@@ -3970,6 +3971,7 @@ static void init_all(Tcl_Interp *interp){
 #endif
     Fts5tcl_Init(interp);
     SqliteRbu_Init(interp);
+    Sqlitetesttcl_Init(interp);
 
 #if defined(SQLITE_ENABLE_FTS3) || defined(SQLITE_ENABLE_FTS4)
     Sqlitetestfts3_Init(interp);
