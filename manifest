@@ -1,8 +1,8 @@
-C Reduce\sthe\samount\sof\sheap\smemory\srequired\sto\sstore\smany\sschemas\sby\sstoring\s\nthe\scolumn\sdatatype\sappended\sto\sthe\scolumn\sname\s(with\sa\s\\000\sseparator),\s\nrather\sthan\sin\sseparate\smemory\sallocation.
-D 2016-03-03T21:22:53.735
-F Makefile.in e335453db0b16da00c884ad51bb56d1c091a74de
+C Add\sthe\stest_bestindex.c\sfile\sto\sMakefile.in\sand\sMakefile.msc\sso\sthat\n"make\stest"\swill\swork\sagain.
+D 2016-03-04T02:59:35.823
+F Makefile.in 4c3d3d1b98454bf60e8977223b26ef30777a2bf2
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc dbd4621ecc585c2ef0c2aa0874698c54675754f1
+F Makefile.msc 0dc13352b84b257d81736076d8101a584940c409
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION c6b1f51809551d60ad001e6d87cf3ab2c7f54b6f
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -1453,8 +1453,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3eb74342740cd393e03aa38cd01690ccab173b76 842b21162713bb141b845b01c136457a31af4ab0
-R 8594cd13d54710bae620a17d4ba5114b
-T +closed 842b21162713bb141b845b01c136457a31af4ab0
+P 16fbf2e19c22df9441aef5c8b7f5670adc38a6b6
+R 7c159ecc947e100f72a0b55ddd229f42
 U drh
-Z 4f9819dace7a151b6043885dfe386959
+Z bb6e56d7a0bd406da0bf812970d93fdb
