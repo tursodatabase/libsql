@@ -1,8 +1,8 @@
-C Get\sin-memory\ssubjournals\sworking\sfor\sbuilds\swithout\sSQLITE_ENABLE_ATOMIC_WRITE.
-D 2016-03-04T00:13:29.040
-F Makefile.in e335453db0b16da00c884ad51bb56d1c091a74de
+C Merge\schanges\sfrom\strunk.
+D 2016-03-04T13:08:35.636
+F Makefile.in ead489fe5d3313b8a2a8d5f3710173a4b50dd2e0
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc dbd4621ecc585c2ef0c2aa0874698c54675754f1
+F Makefile.msc d68db8ddac21ea2576ea5b446f12cf9ebe897a03
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION c6b1f51809551d60ad001e6d87cf3ab2c7f54b6f
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -28,10 +28,10 @@ F autoconf/tea/win/makefile.vc f89d0184d0eee5f7e356ea407964dcd139939928
 F autoconf/tea/win/nmakehlp.c 247538ad8e8c508f33c03ec1fbd67d3a07ef6291
 F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
-F config.h.in 42b71ad3fe21c9e88fa59e8458ca1a6bc72eb0c0
+F config.h.in 6376abec766e9a0785178b1823b5a587e9f1ccbc
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 0339a635cd2943a3b56000a10a11b4b2e6ed6d1b x
-F configure.ac a2224b1162f79848982d3618ac1deffcd94e88ec
+F configure c01a159fdf7ea0171ad01ce2937283f2c7972bde x
+F configure.ac 89e4e02a83d8a1528011f8395621b8c3186b4089
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html c30255bea0fd87a81f082d17a72c9dffbc3f6dd9
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
@@ -273,7 +273,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 518d93f9f606d515628f99ce03f9e909f4f8a2e3
+F main.mk d9982cb6a42b1c9da7d61cebae973cd6b034de61
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -333,7 +333,7 @@ F src/os.c f89e3ca1c2e3d5015b847aec60371c474acbac82
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c 3a6f20736dfb8a0949cdd66553fdf59f6604be35
+F src/os_unix.c f5bac8e74aaefc4ea520e43b4540793c3b8a9e8f
 F src/os_win.c f0d7aa603eb6262143d7169a222aea07c4fca91d
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 2bc43817697b5a4e88fd6a2cdb2cb25f2223505c
@@ -355,7 +355,7 @@ F src/sqlite.h.in 57d2a02b14c9ec4f7cb294153eaf62294dc5aa68
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
 F src/sqliteInt.h 8a4810fa90b17eb08acab43649b877e894ea1e98
-F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
+F src/sqliteLimit.h 7b28cf72cbd52f178bfc97ea266445e351f2cd24
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
 F src/tclsqlite.c 54dca4eaf3a9cb0a4b845ef54ffa99225c30a52e
@@ -1453,7 +1453,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 55c00f716dc98b188c91f3a5a010242c9497785f
-R 9e3fbc3007cf6215e63dd7896623508e
+P b5378dcea53d4cd1744d13ddee5e50869607b771 2682e8e413fadbca0673f242769af17bfd291559
+R 1d5f238c78a751f41b8ce4e327b6fc98
 U drh
-Z 727109808ff36a69d33c43dee6d82c50
+Z 35e5851abb6d53f81aa001148a407eb0
