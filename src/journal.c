@@ -24,6 +24,7 @@
 **      buffer, or
 **   2) The sqlite3JournalCreate() function is called.
 */
+#if 0 
 #ifdef SQLITE_ENABLE_ATOMIC_WRITE
 #include "sqliteInt.h"
 
@@ -253,4 +254,5 @@ int sqlite3JournalExists(sqlite3_file *p){
 int sqlite3JournalSize(sqlite3_vfs *pVfs){
   return (pVfs->szOsFile+sizeof(JournalFile));
 }
+#endif
 #endif
