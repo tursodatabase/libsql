@@ -1,5 +1,5 @@
-C Merge\sthe\slatest\supdates\sfrom\strunk.
-D 2016-03-03T21:29:10.682
+C Get\sin-memory\ssubjournals\sworking\sfor\sbuilds\swithout\sSQLITE_ENABLE_ATOMIC_WRITE.
+D 2016-03-04T00:13:29.040
 F Makefile.in e335453db0b16da00c884ad51bb56d1c091a74de
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc dbd4621ecc585c2ef0c2aa0874698c54675754f1
@@ -321,7 +321,7 @@ F src/mem1.c 6919bcf12f221868ea066eec27e579fed95ce98b
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
 F src/mem3.c 8768ac94694f31ffaf8b4d0ea5dc08af7010a35a
 F src/mem5.c 9bf955937b07f8c32541c8a9991f33ce3173d944
-F src/memjournal.c fea987c5809993211da554ba109816fae7e04dae
+F src/memjournal.c 56c7688565cf407c5f22f03e3be478d3a92bdc81
 F src/msvc.h d9ba56c6851227ab44b3f228a35f3f5772296495
 F src/mutex.c 8e45800ee78e0cd1f1f3fe8e398853307f4a085c
 F src/mutex.h 779d588e3b7756ec3ecf7d78cde1d84aba414f85
@@ -354,7 +354,7 @@ F src/shell.c 5e0ab1e708dc294330ccd8230536e1801f60822e
 F src/sqlite.h.in 57d2a02b14c9ec4f7cb294153eaf62294dc5aa68
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
-F src/sqliteInt.h 57da6fd6aa35dff72eb946064ff4999eab6bc616
+F src/sqliteInt.h 8a4810fa90b17eb08acab43649b877e894ea1e98
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
@@ -1453,7 +1453,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 44b2dc18e200e87cf062cb8f1659727c53fa36e9 16fbf2e19c22df9441aef5c8b7f5670adc38a6b6
-R bdaefcabe5bf87c04d8b11c17326d65d
+P 55c00f716dc98b188c91f3a5a010242c9497785f
+R 9e3fbc3007cf6215e63dd7896623508e
 U drh
-Z 002d922341500f2c0dc185f71a114083
+Z 727109808ff36a69d33c43dee6d82c50

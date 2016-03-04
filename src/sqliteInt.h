@@ -3998,12 +3998,10 @@ const char *sqlite3JournalModename(int);
 #define IN_INDEX_LOOP        0x0004  /* IN operator used as a loop */
 int sqlite3FindInIndex(Parse *, Expr *, u32, int*);
 
+int sqlite3JournalOpen(sqlite3_vfs *, const char *, sqlite3_file *, int, int);
+int sqlite3JournalSize(sqlite3_vfs *);
 #ifdef SQLITE_ENABLE_ATOMIC_WRITE
-  int sqlite3JournalOpen(sqlite3_vfs *, const char *, sqlite3_file *, int, int);
-  int sqlite3JournalSize(sqlite3_vfs *);
   int sqlite3JournalCreate(sqlite3_file *);
-#else
-  #define sqlite3JournalSize(pVfs) ((pVfs)->szOsFile)
 #endif
 
 int sqlite3JournalIsInMemory(sqlite3_file *p);

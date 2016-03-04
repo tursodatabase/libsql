@@ -381,6 +381,7 @@ void sqlite3MemJournalOpen(sqlite3_file *pJfd){
   sqlite3JournalOpen(0, 0, pJfd, 0, -1);
 }
 
+#ifdef SQLITE_ENABLE_ATOMIC_WRITE
 /*
 ** If the argument p points to a MemJournal structure that is not an 
 ** in-memory-only journal file (i.e. is one that was opened with a +ve
@@ -394,6 +395,7 @@ int sqlite3JournalCreate(sqlite3_file *p){
   }
   return rc;
 }
+#endif
 
 /*
 ** The file-handle passed as the only argument is open on a journal file.
@@ -411,4 +413,3 @@ int sqlite3JournalIsInMemory(sqlite3_file *p){
 int sqlite3JournalSize(sqlite3_vfs *pVfs){
   return pVfs->szOsFile + sizeof(MemJournal);
 }
-
