@@ -1285,7 +1285,7 @@ static int valueFromExpr(
     *ppVal = 0;
     return SQLITE_OK;
   }
-  while( (op = pExpr->op)==TK_UPLUS ) pExpr = pExpr->pLeft;
+  while( (op = pExpr->op)==TK_UPLUS || op==TK_SPAN ) pExpr = pExpr->pLeft;
   if( NEVER(op==TK_REGISTER) ) op = pExpr->op2;
 
   /* Compressed expressions only appear when parsing the DEFAULT clause

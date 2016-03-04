@@ -110,6 +110,14 @@ int sqlite3Strlen30(const char *z){
 }
 
 /*
+** The string z[] is followed immediately by another string.  Return
+** a poiner to that other string.
+*/
+const char *sqlite3StrNext(const char *z){
+  return z + strlen(z) + 1;
+}
+
+/*
 ** Set the current error code to err_code and clear any prior error message.
 */
 void sqlite3Error(sqlite3 *db, int err_code){
