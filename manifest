@@ -1,5 +1,5 @@
-C Defer\sopening\sand\swriting\sstatement\sjournals\suntil\sthe\ssize\sreaches\sa\nthreshold\s(currently\s64KiB).
-D 2016-03-04T14:43:44.681
+C Fix\san\sassert()\sin\ssqlite3VarintLen(),\seven\sthough\sit\sis\simpossible\sto\shit\nin\sSQLite\sdue\sto\sthe\sway\ssqlite3VarintLen()\sis\sused.
+D 2016-03-04T21:18:09.041
 F Makefile.in ead489fe5d3313b8a2a8d5f3710173a4b50dd2e0
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d68db8ddac21ea2576ea5b446f12cf9ebe897a03
@@ -413,7 +413,7 @@ F src/treeview.c e4b41a37530a191579d3c53142cc44ee2eb99373
 F src/trigger.c e14840ee0c3e549e758ec9bf3e4146e166002280
 F src/update.c a7eeeaffad59c6506f01303a071dac11de8269ca
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
-F src/util.c a64585a74aef6feb16dfe4e090b5de01e26eba3b
+F src/util.c 9da96848829029db21490ccf5de0a83b9826301d
 F src/vacuum.c feb1eabb20987983d9350cad98299b21fa811f52
 F src/vdbe.c 87ae3a5657fefed7875f3eb30e7ababd48013d71
 F src/vdbe.h c743791f723049db94f009e3e30958952bc2d512
@@ -1453,8 +1453,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2682e8e413fadbca0673f242769af17bfd291559 5b2fe5219ab9ad15969e3374894a75979b65cb3c
-R bcfeac6deb0b24b3190e8b427e406c58
-T +closed 5b2fe5219ab9ad15969e3374894a75979b65cb3c
+P cb9302cca423de41305719a49208daa392ec09da
+R 3f65b65b7495c9f571c8ba6ae5d73738
 U drh
-Z 04f483c25715ded0ed1694d083bfc434
+Z b8ec485efc1d4705a2d34eb295972964
