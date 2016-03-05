@@ -2994,7 +2994,7 @@ static int whereLoopAddVirtual(
       mPrev = mNext;
       if( mNext==(Bitmask)(-1) ) break;
       if( mNext==mBest || mNext==mBestNoIn ) continue;
-      rc = whereLoopAddVirtualOne(pBuilder, mExtra, mNext, 0, p, &bIn);
+      rc = whereLoopAddVirtualOne(pBuilder, mExtra, mNext|mExtra, 0, p, &bIn);
       if( pNew->prereq==mExtra ){
         seenZero = 1;
         if( bIn==0 ) seenZeroNoIN = 1;
