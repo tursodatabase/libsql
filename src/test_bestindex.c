@@ -117,6 +117,40 @@ struct tcl_cursor {
 };
 
 /*
+** Dequote string z in place.
+*/
+static void tclDequote(char *z){
+  char q = z[0];
+
+  /* Set stack variable q to the close-quote character */
+  if( q=='[' || q=='\'' || q=='"' || q=='`' ){
+    int iIn = 1;
+    int iOut = 0;
+    if( q=='[' ) q = ']';  
+
+    while( ALWAYS(z[iIn]) ){
+      if( z[iIn]==q ){
+        if( z[iIn+1]!=q ){
+          /* Character iIn was the close quote. */
+          iIn++;
+          break;
+        }else{
+          /* Character iIn and iIn+1 form an escaped quote character. Skip
+          ** the input cursor past both and copy a single quote character 
+          ** to the output buffer. */
+          iIn += 2;
+          z[iOut++] = q;
+        }
+      }else{
+        z[iOut++] = z[iIn++];
+      }
+    }
+
+    z[iOut] = '\0';
+  }
+}
+
+/*
 ** This function is the implementation of both the xConnect and xCreate
 ** methods of the fs virtual table.
 **
@@ -135,43 +169,49 @@ static int tclConnect(
   char **pzErr
 ){
   Tcl_Interp *interp = (Tcl_Interp*)pAux;
-  tcl_vtab *pTab;
-  const char *zCmd;
+  tcl_vtab *pTab = 0;
+  char *zCmd = 0;
   Tcl_Obj *pScript = 0;
-  int rc;
+  int rc = SQLITE_OK;
 
   if( argc!=4 ){
     *pzErr = sqlite3_mprintf("wrong number of arguments");
     return SQLITE_ERROR;
   }
-  zCmd = argv[3];
 
+  zCmd = sqlite3_malloc(strlen(argv[3])+1);
   pTab = (tcl_vtab*)sqlite3_malloc(sizeof(tcl_vtab));
-  if( pTab==0 ) return SQLITE_NOMEM;
-  memset(pTab, 0, sizeof(tcl_vtab));
+  if( zCmd && pTab ){
+    memcpy(zCmd, argv[3], strlen(argv[3])+1);
+    tclDequote(zCmd);
+    memset(pTab, 0, sizeof(tcl_vtab));
 
-  pTab->pCmd = Tcl_NewStringObj(zCmd, -1);
-  pTab->interp = interp;
-  pTab->db = db;
-  Tcl_IncrRefCount(pTab->pCmd);
+    pTab->pCmd = Tcl_NewStringObj(zCmd, -1);
+    pTab->interp = interp;
+    pTab->db = db;
+    Tcl_IncrRefCount(pTab->pCmd);
 
-  pScript = Tcl_DuplicateObj(pTab->pCmd);
-  Tcl_IncrRefCount(pScript);
-  Tcl_ListObjAppendElement(interp, pScript, Tcl_NewStringObj("xConnect", -1));
+    pScript = Tcl_DuplicateObj(pTab->pCmd);
+    Tcl_IncrRefCount(pScript);
+    Tcl_ListObjAppendElement(interp, pScript, Tcl_NewStringObj("xConnect", -1));
 
-  rc = Tcl_EvalObjEx(interp, pScript, TCL_EVAL_GLOBAL);
-  if( rc!=TCL_OK ){
-    *pzErr = sqlite3_mprintf("%s", Tcl_GetStringResult(interp));
-    rc = SQLITE_ERROR;
+    rc = Tcl_EvalObjEx(interp, pScript, TCL_EVAL_GLOBAL);
+    if( rc!=TCL_OK ){
+      *pzErr = sqlite3_mprintf("%s", Tcl_GetStringResult(interp));
+      rc = SQLITE_ERROR;
+    }else{
+      rc = sqlite3_declare_vtab(db, Tcl_GetStringResult(interp));
+    }
+
+    if( rc!=SQLITE_OK ){
+      sqlite3_free(pTab);
+      pTab = 0;
+    }
   }else{
-    rc = sqlite3_declare_vtab(db, Tcl_GetStringResult(interp));
+    rc = SQLITE_NOMEM;
   }
 
-  if( rc!=SQLITE_OK ){
-    sqlite3_free(pTab);
-    pTab = 0;
-  }
-
+  sqlite3_free(zCmd);
   *ppVtab = &pTab->base;
   return rc;
 }
