@@ -1,8 +1,8 @@
-C Work\saround\s(incorrect)\sASAN\swarnings\sin\smemjournal.c.
-D 2016-03-05T15:03:31.910
-F Makefile.in ead489fe5d3313b8a2a8d5f3710173a4b50dd2e0
+C Remove\sthe\sunused\sjournal.c\ssource\sfile\s(its\sfunction\shave\sbeen\ssubsumed\sinto\nmemjournal.c).\s\sRefactor\ssome\sof\sthe\snames\sin\smemjournal.c.\s\sNo\sfunctional\nchanges.
+D 2016-03-05T15:35:09.793
+F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc d68db8ddac21ea2576ea5b446f12cf9ebe897a03
+F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION c6b1f51809551d60ad001e6d87cf3ab2c7f54b6f
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -273,7 +273,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk d9982cb6a42b1c9da7d61cebae973cd6b034de61
+F main.mk 91cfc30d0fa295be28a86657ad3b1053f0428c9e
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -311,7 +311,6 @@ F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
 F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
 F src/insert.c 723d5d708cdb61bdd47c00b9f07c75be45aefc09
-F src/journal.c 673cbdde5676eb0c55848f561575d45b609c820d
 F src/legacy.c 75d3023be8f0d2b99d60f905090341a03358c58e
 F src/loadext.c 9e2a41adcaff16ebc1ebff1f336cbf33de55396f
 F src/main.c 32c45647866429f34d7a13a717172a8e7d0a1056
@@ -321,7 +320,7 @@ F src/mem1.c 6919bcf12f221868ea066eec27e579fed95ce98b
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
 F src/mem3.c 8768ac94694f31ffaf8b4d0ea5dc08af7010a35a
 F src/mem5.c 9bf955937b07f8c32541c8a9991f33ce3173d944
-F src/memjournal.c 7bdc7bced5884ab3a38a4ccf10487b9e01d9ebb5
+F src/memjournal.c 011da5236a7250385cc74c253f14bbee04c0d61e
 F src/msvc.h d9ba56c6851227ab44b3f228a35f3f5772296495
 F src/mutex.c 8e45800ee78e0cd1f1f3fe8e398853307f4a085c
 F src/mutex.h 779d588e3b7756ec3ecf7d78cde1d84aba414f85
@@ -1396,7 +1395,7 @@ F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkpragmatab.tcl f0d5bb266d1d388cf86fce5ba01a891e95d72d41
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 87240b09c20042999b41d5fabe091b7111287835
-F tool/mksqlite3c.tcl b66b4170f693602cd6985aed15d9509fe2f18c84
+F tool/mksqlite3c.tcl 9382100c82a0a08e63265780536a6c8efead4b65
 F tool/mksqlite3h.tcl 1d41ab59bffb025121f75b76e183125ce41b3ec8
 F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
 F tool/mkvsix.tcl 4abcaf3267171b2faadaf9b82a0dfbaa6e98f8b7
@@ -1453,7 +1452,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2e35eb6b7464455467c868adfbcaad4da16d3207
-R ec05aaf410156a1b332fc5b2fb0ea4f0
+P 4de09777dad6188b7e897473700af3c9655e8547
+R 323dedc301dba3a5e5eae684c7c211b0
 U drh
-Z da5e511cdc73c2d6d55df28700c71c4a
+Z 93b1612ed0c564573b8e6748ccaa7792

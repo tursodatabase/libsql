@@ -985,7 +985,7 @@ LIBOBJS0 = vdbe.lo parse.lo alter.lo analyze.lo attach.lo auth.lo \
          fts3_tokenize_vtab.lo fts3_unicode.lo fts3_unicode2.lo fts3_write.lo \
          fts5.lo \
          func.lo global.lo hash.lo \
-         icu.lo insert.lo journal.lo legacy.lo loadext.lo \
+         icu.lo insert.lo legacy.lo loadext.lo \
          main.lo malloc.lo mem0.lo mem1.lo mem2.lo mem3.lo mem5.lo \
          memjournal.lo \
          mutex.lo mutex_noop.lo mutex_unix.lo mutex_w32.lo \
@@ -1049,7 +1049,6 @@ SRC00 = \
   $(TOP)\src\global.c \
   $(TOP)\src\hash.c \
   $(TOP)\src\insert.c \
-  $(TOP)\src\journal.c \
   $(TOP)\src\legacy.c \
   $(TOP)\src\loadext.c \
   $(TOP)\src\main.c \
@@ -1609,9 +1608,6 @@ hash.lo:	$(TOP)\src\hash.c $(HDR)
 
 insert.lo:	$(TOP)\src\insert.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\insert.c
-
-journal.lo:	$(TOP)\src\journal.c $(HDR)
-	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\journal.c
 
 legacy.lo:	$(TOP)\src\legacy.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\legacy.c
