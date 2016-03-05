@@ -109,7 +109,7 @@ static int memjrnlRead(
     do {
       int iSpace = p->nChunkSize - iChunkOffset;
       int nCopy = MIN(nRead, (p->nChunkSize - iChunkOffset));
-      memcpy(zOut, &pChunk->zChunk[iChunkOffset], nCopy);
+      memcpy(zOut, (u8*)pChunk->zChunk + iChunkOffset, nCopy);
       zOut += nCopy;
       nRead -= iSpace;
       iChunkOffset = 0;
@@ -153,7 +153,7 @@ static int createFile(MemJournal *p){
           nWrite = p->endpoint.iOffset % p->nChunkSize;
           if( nWrite==0 ) nWrite = p->nChunkSize;
         }
-        rc = sqlite3OsWrite(pReal, pIter->zChunk, nWrite, iOff);
+        rc = sqlite3OsWrite(pReal, (u8*)pIter->zChunk, nWrite, iOff);
         iOff += nWrite;
       }
       if( rc!=SQLITE_OK ){
@@ -210,7 +210,7 @@ static int memjrnlWrite(
     assert( iOfst==p->endpoint.iOffset || iOfst==0 );
     if( iOfst==0 && p->pFirst ){
       assert( p->nChunkSize>iAmt );
-      memcpy(p->pFirst->zChunk, zBuf, iAmt);
+      memcpy((u8*)p->pFirst->zChunk, zBuf, iAmt);
     }else{
       while( nWrite>0 ){
         FileChunk *pChunk = p->endpoint.pChunk;
@@ -234,7 +234,7 @@ static int memjrnlWrite(
           p->endpoint.pChunk = pNew;
         }
 
-        memcpy(&p->endpoint.pChunk->zChunk[iChunkOffset], zWrite, iSpace);
+        memcpy((u8*)p->endpoint.pChunk->zChunk + iChunkOffset, zWrite, iSpace);
         zWrite += iSpace;
         nWrite -= iSpace;
         p->endpoint.iOffset += iSpace;
