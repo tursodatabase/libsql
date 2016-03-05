@@ -454,7 +454,9 @@ static int tclBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
           pIdxInfo->needToFreeIdxStr = 1;
         }else
         if( sqlite3_stricmp("rows", zCmd)==0 ){
-          rc = Tcl_GetWideIntFromObj(interp, p, &pIdxInfo->estimatedRows);
+          Tcl_WideInt x = 0;
+          rc = Tcl_GetWideIntFromObj(interp, p, &x);
+          pIdxInfo->estimatedRows = (tRowcnt)x;
         }else
         if( sqlite3_stricmp("use", zCmd)==0 
          || sqlite3_stricmp("omit", zCmd)==0 

@@ -1,5 +1,5 @@
-C Fix\san\sincorrect\s#ifdef\son\ssqlite3LogEstToInt().
-D 2016-03-05T14:00:09.835
+C Fix\san\sinteger\ssize\smismatch\sproblem\sin\stest_bestindex.c
+D 2016-03-05T14:19:32.489
 F Makefile.in ead489fe5d3313b8a2a8d5f3710173a4b50dd2e0
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d68db8ddac21ea2576ea5b446f12cf9ebe897a03
@@ -371,7 +371,7 @@ F src/test9.c bea1e8cf52aa93695487badedd6e1886c321ea60
 F src/test_async.c 21e11293a2f72080eda70e1124e9102044531cd8
 F src/test_autoext.c dea8a01a7153b9adc97bd26161e4226329546e12
 F src/test_backup.c 2e6e6a081870150f20c526a2e9d0d29cda47d803
-F src/test_bestindex.c cd36324f05404df5f1a82608a321b91932a549ea
+F src/test_bestindex.c 1da6fa21ac9413e8985a698b962541e615a9f311
 F src/test_blob.c b2551a9b5573232db5f66f292307c37067937239
 F src/test_btree.c 2e9978eca99a9a4bfa8cae949efb00886860a64f
 F src/test_config.c 0dee90328e3dedf8ba002ee94b6a7e7ea7726fe4
@@ -1453,7 +1453,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 251424c5869f43012fc1e1a545de362036b883db
-R 90305ca4dfd4aba0131d1df776abe7c9
+P dca7b23354a6b08c926b6ed3f7345d942a409862
+R 419fa6ee740f29be7406090838523282
 U drh
-Z 712c8c7e19abd0b144a0db443a2a27a2
+Z dc391039bf997df63fda556410810121
