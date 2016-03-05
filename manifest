@@ -1,5 +1,5 @@
-C Remove\sthe\sunused\sjournal.c\ssource\sfile\s(its\sfunction\shave\sbeen\ssubsumed\sinto\nmemjournal.c).\s\sRefactor\ssome\sof\sthe\snames\sin\smemjournal.c.\s\sNo\sfunctional\nchanges.
-D 2016-03-05T15:35:09.793
+C Change\sthe\sway\sSQLite\sinvokes\sthe\sxBestIndex\smethod\sof\svirtual\stables\sso\sthat\sN-way\sjoins\sinvolving\svirtual\stables\swork\sas\sexpected.
+D 2016-03-05T17:29:08.396
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -370,7 +370,7 @@ F src/test9.c bea1e8cf52aa93695487badedd6e1886c321ea60
 F src/test_async.c 21e11293a2f72080eda70e1124e9102044531cd8
 F src/test_autoext.c dea8a01a7153b9adc97bd26161e4226329546e12
 F src/test_backup.c 2e6e6a081870150f20c526a2e9d0d29cda47d803
-F src/test_bestindex.c 1da6fa21ac9413e8985a698b962541e615a9f311
+F src/test_bestindex.c 29af3cc3b963ffe5760c85d142b9b3e5302c1e3d
 F src/test_blob.c b2551a9b5573232db5f66f292307c37067937239
 F src/test_btree.c 2e9978eca99a9a4bfa8cae949efb00886860a64f
 F src/test_config.c 0dee90328e3dedf8ba002ee94b6a7e7ea7726fe4
@@ -428,7 +428,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 10deb6b43887662691e5f53d10b3c171c401169b
 F src/wal.h 2f7c831cf3b071fa548bf2d5cac640846a7ff19c
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
-F src/where.c 56948ada5aacc3bf2628db3776986e8bf4085383
+F src/where.c bada38bf45ea4437318164f915243b3f0822ceda
 F src/whereInt.h 93297d56edd137b7ea004490690fb6e2ce028a34
 F src/wherecode.c 3ca820435c5b597bb50e63ed11e938786fe5c23e
 F src/whereexpr.c fb87944b1254234e5bba671aaf6dee476241506a
@@ -493,6 +493,7 @@ F test/badutf.test d5360fc31f643d37a973ab0d8b4fb85799c3169f
 F test/badutf2.test f5bc7f2d280670ecd79b9cf4f0f1760c607fe51f
 F test/bc_common.tcl 3eda41ef9cda7d5f6c205462c96228b301da4191
 F test/bestindex1.test e228fe1e3794dbe20271481164e000d695abcd24
+F test/bestindex2.test b5c1fbcf7a6e73b22763445262399c9fc50276bc
 F test/between.test 34d375fb5ce1ae283ffe82b6b233e9f38e84fc6c
 F test/bigfile.test aa74f4e5db51c8e54a1d9de9fa65d01d1eb20b59
 F test/bigfile2.test 1b489a3a39ae90c7f027b79110d6b4e1dbc71bfc
@@ -1452,7 +1453,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4de09777dad6188b7e897473700af3c9655e8547
-R 323dedc301dba3a5e5eae684c7c211b0
-U drh
-Z 93b1612ed0c564573b8e6748ccaa7792
+P 5f2a262d3f6b1531001326faf1d3b3d92c20a30a
+R 5392a3186cae79bf12c69e9ed8cd8a4b
+T *branch * xbestindex-fix
+T *sym-xbestindex-fix *
+T -sym-trunk *
+U dan
+Z 7116cca1dca1d43002adf5a35b7161d9
