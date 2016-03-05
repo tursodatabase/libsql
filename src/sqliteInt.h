@@ -3685,7 +3685,7 @@ LogEst sqlite3LogEstAdd(LogEst,LogEst);
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 LogEst sqlite3LogEstFromDouble(double);
 #endif
-#if defined(SQLITE_ENABLE_STMT_SCANSTAT) || \
+#if defined(SQLITE_ENABLE_STMT_SCANSTATUS) || \
     defined(SQLITE_ENABLE_STAT3_OR_STAT4) || \
     defined(SQLITE_EXPLAIN_ESTIMATED_ROWS)
 u64 sqlite3LogEstToInt(LogEst);

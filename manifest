@@ -1,5 +1,5 @@
-C Fix\san\sassert()\sin\ssqlite3VarintLen(),\seven\sthough\sit\sis\simpossible\sto\shit\nin\sSQLite\sdue\sto\sthe\sway\ssqlite3VarintLen()\sis\sused.
-D 2016-03-04T21:18:09.041
+C Fix\san\sincorrect\s#ifdef\son\ssqlite3LogEstToInt().
+D 2016-03-05T14:00:09.835
 F Makefile.in ead489fe5d3313b8a2a8d5f3710173a4b50dd2e0
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d68db8ddac21ea2576ea5b446f12cf9ebe897a03
@@ -354,7 +354,7 @@ F src/shell.c 5e0ab1e708dc294330ccd8230536e1801f60822e
 F src/sqlite.h.in 57d2a02b14c9ec4f7cb294153eaf62294dc5aa68
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
-F src/sqliteInt.h 8a4810fa90b17eb08acab43649b877e894ea1e98
+F src/sqliteInt.h 2ce28b3c1228de3b6d392d6bd69b47f3aa2f2931
 F src/sqliteLimit.h 7b28cf72cbd52f178bfc97ea266445e351f2cd24
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
@@ -413,7 +413,7 @@ F src/treeview.c e4b41a37530a191579d3c53142cc44ee2eb99373
 F src/trigger.c e14840ee0c3e549e758ec9bf3e4146e166002280
 F src/update.c a7eeeaffad59c6506f01303a071dac11de8269ca
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
-F src/util.c 9da96848829029db21490ccf5de0a83b9826301d
+F src/util.c 12800a93f0664f41575f96799eb881a786d565e6
 F src/vacuum.c feb1eabb20987983d9350cad98299b21fa811f52
 F src/vdbe.c 87ae3a5657fefed7875f3eb30e7ababd48013d71
 F src/vdbe.h c743791f723049db94f009e3e30958952bc2d512
@@ -1453,7 +1453,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cb9302cca423de41305719a49208daa392ec09da
-R 3f65b65b7495c9f571c8ba6ae5d73738
+P 251424c5869f43012fc1e1a545de362036b883db
+R 90305ca4dfd4aba0131d1df776abe7c9
 U drh
-Z b8ec485efc1d4705a2d34eb295972964
+Z 712c8c7e19abd0b144a0db443a2a27a2
