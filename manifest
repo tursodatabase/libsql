@@ -1,5 +1,5 @@
-C Change\sthe\sway\sSQLite\sinvokes\sthe\sxBestIndex\smethod\sof\svirtual\stables\sso\sthat\sN-way\sjoins\sinvolving\svirtual\stables\swork\sas\sexpected.
-D 2016-03-05T17:29:08.396
+C Adjust\sthe\scost\sestimates\sfor\sRTREE\ssuch\sthat\sthe\sexpected\snumber\sof\srows\sand\nexpected\scost\sis\shalved\sfor\seach\sadditional\sconstraint.
+D 2016-03-05T20:28:24.332
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -245,7 +245,7 @@ F ext/rbu/sqlite3rbu.c 371e8bf06cfb3f691adac47eb15ab1073ed92dcf
 F ext/rbu/sqlite3rbu.h 0bdeb3be211aaba7d85445fa36f4701a25a3dbde
 F ext/rbu/test_rbu.c 4a4cdcef4ef9379fc2a21f008805c80b27bcf573
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 0f9b595bd0debcbedf1d7a63d0e0678d619e6c9c
+F ext/rtree/rtree.c 0b870ccb7b58b734a2a8e1e2755a7c0ded070920
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test 96a80c08440c932cd72aac50660e7af2612d2cda
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
@@ -1453,10 +1453,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5f2a262d3f6b1531001326faf1d3b3d92c20a30a
-R 5392a3186cae79bf12c69e9ed8cd8a4b
-T *branch * xbestindex-fix
-T *sym-xbestindex-fix *
-T -sym-trunk *
-U dan
-Z 7116cca1dca1d43002adf5a35b7161d9
+P ffc65968ede2c402e616147e6e3d737e6f9de21d
+R 8203917822af6549d587abdbaf41bca8
+U drh
+Z 50bb6547d93efe3f9c2eda315226d306
