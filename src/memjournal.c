@@ -60,7 +60,7 @@ struct MemJournal {
   const sqlite3_io_methods *pMethod; /* Parent class. MUST BE FIRST */
   int nChunkSize;                 /* In-memory chunk-size */
 
-  int nBuf;                       /* Bytes of data before flushing */
+  int nSpill;                     /* Bytes of data before flushing */
   int nSize;                      /* Bytes of data currently in memory */
   FileChunk *pFirst;              /* Head of in-memory chunk-list */
   FilePoint endpoint;             /* Pointer to the end of the file */
@@ -109,7 +109,7 @@ static int memjrnlRead(
     do {
       int iSpace = p->nChunkSize - iChunkOffset;
       int nCopy = MIN(nRead, (p->nChunkSize - iChunkOffset));
-      memcpy(zOut, &pChunk->zChunk[iChunkOffset], nCopy);
+      memcpy(zOut, (u8*)pChunk->zChunk + iChunkOffset, nCopy);
       zOut += nCopy;
       nRead -= iSpace;
       iChunkOffset = 0;
@@ -137,7 +137,7 @@ static void memjrnlFreeChunks(MemJournal *p){
 /*
 ** Flush the contents of memory to a real file on disk.
 */
-static int createFile(MemJournal *p){
+static int memjrnlCreateFile(MemJournal *p){
   int rc = SQLITE_OK;
   if( !p->pReal ){
     sqlite3_file *pReal = (sqlite3_file *)&p[1];
@@ -153,7 +153,7 @@ static int createFile(MemJournal *p){
           nWrite = p->endpoint.iOffset % p->nChunkSize;
           if( nWrite==0 ) nWrite = p->nChunkSize;
         }
-        rc = sqlite3OsWrite(pReal, pIter->zChunk, nWrite, iOff);
+        rc = sqlite3OsWrite(pReal, (u8*)pIter->zChunk, nWrite, iOff);
         iOff += nWrite;
       }
       if( rc!=SQLITE_OK ){
@@ -192,8 +192,8 @@ static int memjrnlWrite(
   }
 
   /* If the file should be created now. */
-  else if( p->nBuf>0 && (iAmt+iOfst)>p->nBuf ){
-    int rc = createFile(p);
+  else if( p->nSpill>0 && (iAmt+iOfst)>p->nSpill ){
+    int rc = memjrnlCreateFile(p);
     if( rc==SQLITE_OK ){
       rc = memjrnlWrite(pJfd, zBuf, iAmt, iOfst);
     }
@@ -210,7 +210,7 @@ static int memjrnlWrite(
     assert( iOfst==p->endpoint.iOffset || iOfst==0 );
     if( iOfst==0 && p->pFirst ){
       assert( p->nChunkSize>iAmt );
-      memcpy(p->pFirst->zChunk, zBuf, iAmt);
+      memcpy((u8*)p->pFirst->zChunk, zBuf, iAmt);
     }else{
       while( nWrite>0 ){
         FileChunk *pChunk = p->endpoint.pChunk;
@@ -234,7 +234,7 @@ static int memjrnlWrite(
           p->endpoint.pChunk = pNew;
         }
 
-        memcpy(&p->endpoint.pChunk->zChunk[iChunkOffset], zWrite, iSpace);
+        memcpy((u8*)p->endpoint.pChunk->zChunk + iChunkOffset, zWrite, iSpace);
         zWrite += iSpace;
         nWrite -= iSpace;
         p->endpoint.iOffset += iSpace;
@@ -333,12 +333,12 @@ static const struct sqlite3_io_methods MemJournalMethods = {
 ** Open a journal file. 
 **
 ** The behaviour of the journal file depends on the value of parameter 
-** nBuf. If nBuf is 0, then the journal file is always create and 
-** accessed using the underlying VFS. If nBuf is less than zero, then
-** all content is always stored in main-memory. Finally, if nBuf is a
+** nSpill. If nSpill is 0, then the journal file is always create and 
+** accessed using the underlying VFS. If nSpill is less than zero, then
+** all content is always stored in main-memory. Finally, if nSpill is a
 ** positive value, then the journal file is initially created in-memory
 ** but may be flushed to disk later on. In this case the journal file is
-** flushed to disk either when it grows larger than nBuf bytes in size,
+** flushed to disk either when it grows larger than nSpill bytes in size,
 ** or when sqlite3JournalCreate() is called.
 */
 int sqlite3JournalOpen(
@@ -346,28 +346,28 @@ int sqlite3JournalOpen(
   const char *zName,         /* Name of the journal file */
   sqlite3_file *pJfd,        /* Preallocated, blank file handle */
   int flags,                 /* Opening flags */
-  int nBuf                   /* Bytes buffered before opening the file */
+  int nSpill                 /* Bytes buffered before opening the file */
 ){
   MemJournal *p = (MemJournal*)pJfd;
 
-  /* Zero the file-handle object. If nBuf was passed zero, initialize
+  /* Zero the file-handle object. If nSpill was passed zero, initialize
   ** it using the sqlite3OsOpen() function of the underlying VFS. In this
   ** case none of the code in this module is executed as a result of calls
   ** made on the journal file-handle.  */
   memset(p, 0, sizeof(MemJournal) + (pVfs ? pVfs->szOsFile : 0));
-  if( nBuf==0 ){
+  if( nSpill==0 ){
     return sqlite3OsOpen(pVfs, zName, pJfd, flags, 0);
   }
 
-  if( nBuf>0 ){
-    p->nChunkSize = nBuf;
+  if( nSpill>0 ){
+    p->nChunkSize = nSpill;
   }else{
     p->nChunkSize = 8 + MEMJOURNAL_DFLT_FILECHUNKSIZE - sizeof(FileChunk);
     assert( MEMJOURNAL_DFLT_FILECHUNKSIZE==fileChunkSize(p->nChunkSize) );
   }
 
   p->pMethod = (const sqlite3_io_methods*)&MemJournalMethods;
-  p->nBuf = nBuf;
+  p->nSpill = nSpill;
   p->flags = flags;
   p->zJournal = zName;
   p->pVfs = pVfs;
@@ -385,13 +385,13 @@ void sqlite3MemJournalOpen(sqlite3_file *pJfd){
 /*
 ** If the argument p points to a MemJournal structure that is not an 
 ** in-memory-only journal file (i.e. is one that was opened with a +ve
-** nBuf parameter), and the underlying file has not yet been created, 
+** nSpill parameter), and the underlying file has not yet been created, 
 ** create it now.
 */
 int sqlite3JournalCreate(sqlite3_file *p){
   int rc = SQLITE_OK;
-  if( p->pMethods==&MemJournalMethods && ((MemJournal*)p)->nBuf>0 ){
-    rc = createFile((MemJournal*)p);
+  if( p->pMethods==&MemJournalMethods && ((MemJournal*)p)->nSpill>0 ){
+    rc = memjrnlCreateFile((MemJournal*)p);
   }
   return rc;
 }

@@ -3051,6 +3051,7 @@ struct Sqlite3Config {
   int neverCorrupt;                 /* Database is always well-formed */
   int szLookaside;                  /* Default lookaside buffer size */
   int nLookaside;                   /* Default lookaside buffer count */
+  int nStmtSpill;                   /* Stmt-journal spill-to-disk threshold */
   sqlite3_mem_methods m;            /* Low-level memory allocation interface */
   sqlite3_mutex_methods mutex;      /* Low-level mutex interface */
   sqlite3_pcache_methods2 pcache2;  /* Low-level page-cache interface */
@@ -3695,7 +3696,7 @@ LogEst sqlite3LogEstAdd(LogEst,LogEst);
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 LogEst sqlite3LogEstFromDouble(double);
 #endif
-#if defined(SQLITE_ENABLE_STMT_SCANSTAT) || \
+#if defined(SQLITE_ENABLE_STMT_SCANSTATUS) || \
     defined(SQLITE_ENABLE_STAT3_OR_STAT4) || \
     defined(SQLITE_EXPLAIN_ESTIMATED_ROWS)
 u64 sqlite3LogEstToInt(LogEst);
