@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_CONFIG_STMTJRNL_SPILL\soption\sfor\ssqlite3_config().
-D 2016-03-07T17:37:37.281
+C Avoid\sa\sNULL\spointer\sdereference\sfollowing\san\sOOM\swhile\sgenerating\scode\nfor\sIN\soperators\son\svirtual\stables.
+D 2016-03-07T19:08:27.802
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -430,7 +430,7 @@ F src/wal.h 2f7c831cf3b071fa548bf2d5cac640846a7ff19c
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
 F src/where.c ccc62c39af1e6340f6af36fcf68efb96482d4c3a
 F src/whereInt.h 93297d56edd137b7ea004490690fb6e2ce028a34
-F src/wherecode.c 3ca820435c5b597bb50e63ed11e938786fe5c23e
+F src/wherecode.c 870f3e92602f216701a14d3f26805caffbfb5c34
 F src/whereexpr.c fb87944b1254234e5bba671aaf6dee476241506a
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1453,7 +1453,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d8d89d69a490a708b83147945f74134ae0e4b387
-R bbf6d9fea009c5097a1f1af27ba30392
+P b6c4202432dc96f8f1740f52d0bf872116357fcc
+R e48be4f1fe6a73cf9fce9701a7a4b585
 U drh
-Z 638bda7b36ac0921edfae65baff4e139
+Z 61bc8adb3df986a31e200efbd3ce6ae3
