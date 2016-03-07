@@ -89,7 +89,6 @@ foreach mod {fts3 fts4} {
     5   {merge=6,%}
     6   {merge=6,six}
     7   {merge=6,1}
-    8   {merge=6,0}
   } {
     do_catchsql_test 2.$tn { 
       INSERT INTO t2(t2) VALUES($arg);
