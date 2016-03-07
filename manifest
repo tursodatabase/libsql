@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\sthe\sprevious\scommit\saffecting\squeries\swith\sthree\sor\smore\stables\sjoined\stogether\sto\sthe\sright\sof\sa\sLEFT\sor\sCROSS\sJOIN\soperator.
-D 2016-03-05T21:32:14.419
+C Add\sthe\sSQLITE_CONFIG_STMTJRNL_SPILL\soption\sfor\ssqlite3_config().
+D 2016-03-07T17:37:37.281
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -306,14 +306,14 @@ F src/expr.c c4dad2cd6cec00387b75fef4551aff655430dcd2
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 5cb42d9a59e2a590776fd3fc8ff6f61d40df3c6e
 F src/func.c 552d300265aed09eea21f68ac742a440550c0062
-F src/global.c ded7b97efd16efda5062b65e857198e46c40e652
+F src/global.c 884d4c7eba9f5fc25c96a23b21520da19b7713e2
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
 F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
 F src/insert.c 723d5d708cdb61bdd47c00b9f07c75be45aefc09
 F src/legacy.c 75d3023be8f0d2b99d60f905090341a03358c58e
 F src/loadext.c 9e2a41adcaff16ebc1ebff1f336cbf33de55396f
-F src/main.c 32c45647866429f34d7a13a717172a8e7d0a1056
+F src/main.c 93c571d78bc41b257f36912e678db4817d3c540e
 F src/malloc.c 1443d1ad95d67c21d77af7ae3f44678252f0efec
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 6919bcf12f221868ea066eec27e579fed95ce98b
@@ -335,7 +335,7 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c f5bac8e74aaefc4ea520e43b4540793c3b8a9e8f
 F src/os_win.c f0d7aa603eb6262143d7169a222aea07c4fca91d
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
-F src/pager.c 2bc43817697b5a4e88fd6a2cdb2cb25f2223505c
+F src/pager.c d40cf1e890a0582b6ac7cb208c24619d72d2c900
 F src/pager.h e1d38a2f14849e219df0f91f8323504d134c8a56
 F src/parse.y 5ea8c81c5c41b27887f41b4a7e1c58470d7d3821
 F src/pcache.c 647bb53a86b7bbcf55ad88089b3ea5a9170b90df
@@ -350,10 +350,10 @@ F src/resolve.c b8f7174e5f8c33c44ded3a25a973d0bb89228c20
 F src/rowset.c 9fe4b3ad7cc00944386bb600233d8f523de07a6e
 F src/select.c 137b31daa84d57d67847bf621bb54f3353e2077b
 F src/shell.c 5e0ab1e708dc294330ccd8230536e1801f60822e
-F src/sqlite.h.in 57d2a02b14c9ec4f7cb294153eaf62294dc5aa68
+F src/sqlite.h.in 0235586b3fb639e85998d495c90f007657fd82af
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
-F src/sqliteInt.h 2ce28b3c1228de3b6d392d6bd69b47f3aa2f2931
+F src/sqliteInt.h 8c32c1f4566c577cfb8e1c96e56f61e8b3e780d7
 F src/sqliteLimit.h 7b28cf72cbd52f178bfc97ea266445e351f2cd24
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
@@ -1453,7 +1453,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 195444380bafd3d95d37ad83047c75ca20978de4
-R e0527fe33379f8b0f9960c0e82e97b5e
-U dan
-Z e8beaa0235978227df4d188254085ea8
+P d8d89d69a490a708b83147945f74134ae0e4b387
+R bbf6d9fea009c5097a1f1af27ba30392
+U drh
+Z 638bda7b36ac0921edfae65baff4e139
