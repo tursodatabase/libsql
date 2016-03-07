@@ -1,5 +1,5 @@
-C Merge\srecent\senhancements\sfrom\strunk.
-D 2016-03-07T20:48:49.110
+C Fix\sa\stypo\sand\sremove\san\sunused\svariable\sfrom\stest\slogic.
+D 2016-03-07T21:28:41.826
 F Makefile.in 3aee0ba902634c52493914df76b40cedcd99b678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -362,7 +362,7 @@ F src/sqliteLimit.h 7b28cf72cbd52f178bfc97ea266445e351f2cd24
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
 F src/tclsqlite.c 54dca4eaf3a9cb0a4b845ef54ffa99225c30a52e
-F src/test1.c c506aae8a90fadbf4dfda1a9f7acec77356879b9
+F src/test1.c c2ee2401b72cbde410d02a75be6d495b91c06f25
 F src/test2.c 5586f43fcd9a1be0830793cf9d354082c261b25b
 F src/test3.c a8887dabbbee3059af338f20d290084a63ed1b0f
 F src/test4.c d168f83cc78d02e8d35567bb5630e40dcd85ac1e
@@ -1459,7 +1459,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2f0c195ccc3c9550f0664223fc355b1c27063eba cddf69dbc46f10ee7e87538dd850e086386b544c
-R 57a1cdaba59f7ecec9b6d79e07916714
+P 84f09f00f8731b1b3e057bc629ec14103a44b81d
+R 59470dd87fbad08edd400a407c25e925
 U drh
-Z ade9a16166eadb6e15caff159818d7db
+Z a14b7b830586a2141d82877f6e3294e0

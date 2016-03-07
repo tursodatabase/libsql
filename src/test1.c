@@ -5270,7 +5270,7 @@ static int file_control_lasterrno_test(
 }
 
 #ifdef __APPLE__
-/* From sqlite3_priavet.h */
+/* From sqlite3_private.h */
 # ifndef SQLITE_TRUNCATE_DATABASE
 # define SQLITE_TRUNCATE_DATABASE      101
 # define SQLITE_TRUNCATE_JOURNALMODE_WAL           (0x1<<0)
@@ -5335,7 +5335,6 @@ static int file_control_replace_test(
   int objc,              /* Number of arguments */
   Tcl_Obj *CONST objv[]  /* Command arguments */
 ){
-  int iArg = 0;
   sqlite3 *src_db;
   sqlite3 *dst_db;
   int rc;
