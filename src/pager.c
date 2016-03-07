@@ -4358,11 +4358,11 @@ static int openSubJournal(Pager *pPager){
     const int flags =  SQLITE_OPEN_SUBJOURNAL | SQLITE_OPEN_READWRITE 
       | SQLITE_OPEN_CREATE | SQLITE_OPEN_EXCLUSIVE 
       | SQLITE_OPEN_DELETEONCLOSE;
-    int nBuf = 64*1024;
+    int nStmtSpill = sqlite3Config.nStmtSpill;
     if( pPager->journalMode==PAGER_JOURNALMODE_MEMORY || pPager->subjInMemory ){
-      nBuf = -1;
+      nStmtSpill = -1;
     }
-    rc = sqlite3JournalOpen(pPager->pVfs, 0, pPager->sjfd, flags, nBuf);
+    rc = sqlite3JournalOpen(pPager->pVfs, 0, pPager->sjfd, flags, nStmtSpill);
   }
   return rc;
 }
