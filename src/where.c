@@ -2771,9 +2771,9 @@ static int whereLoopAddBtree(
 */
 static int whereLoopAddVirtualOne(
   WhereLoopBuilder *pBuilder,
-  Bitmask mPrereq,                 /* Mask of tables that must be used. */
-  Bitmask mUsable,                /* Mask of usable prereqs */
-  u16 mExclude,                   /* Exclude terms for this operator */
+  Bitmask mPrereq,                /* Mask of tables that must be used. */
+  Bitmask mUsable,                /* Mask of usable tables */
+  u16 mExclude,                   /* Exclude terms using these operators */
   sqlite3_index_info *pIdxInfo,   /* Populated object for xBestIndex */
   int *pbIn                       /* OUT: True if plan uses an IN(...) op */
 ){
@@ -2941,7 +2941,7 @@ static int whereLoopAddVirtual(
   pNew = pBuilder->pNew;
   pSrc = &pWInfo->pTabList->a[pNew->iTab];
   assert( IsVirtual(pSrc->pTab) );
-  p = allocateIndexInfo(pParse, pWC, mUnusable, pSrc,pBuilder->pOrderBy);
+  p = allocateIndexInfo(pParse, pWC, mUnusable, pSrc, pBuilder->pOrderBy);
   if( p==0 ) return SQLITE_NOMEM_BKPT;
   pNew->rSetup = 0;
   pNew->wsFlags = WHERE_VIRTUALTABLE;
@@ -2954,7 +2954,7 @@ static int whereLoopAddVirtual(
   }
 
   /* First call xBestIndex() with all constraints usable. */
-  rc = whereLoopAddVirtualOne(pBuilder, mPrereq, (Bitmask)(-1), 0, p, &bIn);
+  rc = whereLoopAddVirtualOne(pBuilder, mPrereq, ALLBITS, 0, p, &bIn);
   mBest = pNew->prereq & ~mPrereq;
 
   /* If the call to xBestIndex() with all terms enabled produced a plan
@@ -2971,7 +2971,7 @@ static int whereLoopAddVirtual(
     /* If the plan produced by the earlier call uses an IN(...) term, call
     ** xBestIndex again, this time with IN(...) terms disabled. */
     if( rc==SQLITE_OK && bIn ){
-      rc = whereLoopAddVirtualOne(pBuilder,mPrereq,(Bitmask)-1,WO_IN,p,&bIn);
+      rc = whereLoopAddVirtualOne(pBuilder, mPrereq, ALLBITS, WO_IN, p, &bIn);
       mBestNoIn = pNew->prereq & ~mPrereq;
       if( mBestNoIn==0 ){
         seenZero = 1;
@@ -2983,7 +2983,7 @@ static int whereLoopAddVirtual(
     ** in the set of terms that apply to the current virtual table.  */
     while( rc==SQLITE_OK ){
       int i;
-      Bitmask mNext = (Bitmask)(-1);
+      Bitmask mNext = ALLBITS;
       assert( mNext>0 );
       for(i=0; i<nConstraint; i++){
         Bitmask mThis = (
@@ -2992,7 +2992,7 @@ static int whereLoopAddVirtual(
         if( mThis>mPrev && mThis<mNext ) mNext = mThis;
       }
       mPrev = mNext;
-      if( mNext==(Bitmask)(-1) ) break;
+      if( mNext==ALLBITS ) break;
       if( mNext==mBest || mNext==mBestNoIn ) continue;
       rc = whereLoopAddVirtualOne(pBuilder, mPrereq, mNext|mPrereq, 0, p, &bIn);
       if( pNew->prereq==mPrereq ){
@@ -4280,7 +4280,7 @@ WhereInfo *sqlite3WhereBegin(
     }
   }
   if( pWInfo->pOrderBy==0 && (db->flags & SQLITE_ReverseOrder)!=0 ){
-     pWInfo->revMask = (Bitmask)(-1);
+     pWInfo->revMask = ALLBITS;
   }
   if( pParse->nErr || NEVER(db->mallocFailed) ){
     goto whereBeginError;
