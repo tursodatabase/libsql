@@ -1,5 +1,5 @@
-C Remove\san\sunused\sgoto\slabel\sin\sthe\sRBU\sextension.
-D 2016-03-08T16:02:37.304
+C Drop\ssupport\sfor\sSQLITE_EXTRA_DURABLE.\s\sThe\snew\sSQLITE_DEFAULT_SYNCHRONOUS\ncompile-time\soption\sis\sa\smore\sgeneral\sreplacement.
+D 2016-03-08T16:07:59.373
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -336,7 +336,7 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c f5bac8e74aaefc4ea520e43b4540793c3b8a9e8f
 F src/os_win.c f0d7aa603eb6262143d7169a222aea07c4fca91d
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
-F src/pager.c 17aa37b3b53a62a1bd98fe6f3c758bb41429ef08
+F src/pager.c 2d950142528e5d9b291a1160443d7ade0d90700d
 F src/pager.h e1d38a2f14849e219df0f91f8323504d134c8a56
 F src/parse.y 5ea8c81c5c41b27887f41b4a7e1c58470d7d3821
 F src/pcache.c 647bb53a86b7bbcf55ad88089b3ea5a9170b90df
@@ -354,7 +354,7 @@ F src/shell.c 5e0ab1e708dc294330ccd8230536e1801f60822e
 F src/sqlite.h.in 0235586b3fb639e85998d495c90f007657fd82af
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
-F src/sqliteInt.h b017fbf491606a0fd1a5d43af40dbe965a928ead
+F src/sqliteInt.h 24e2eed36a68d48bd43d866adb528001b0795275
 F src/sqliteLimit.h 7b28cf72cbd52f178bfc97ea266445e351f2cd24
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
@@ -1455,7 +1455,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1d9468d2427d2c9b7240b364554ac85a0b62fa44
-R 45c0cb408cd3189b0d141b544c4ab247
+P 2179a106e8dd7943d4f37093e65ce7826720904e
+R 82b2467863d1f8153e3f75a5d4f56472
 U drh
-Z 224db619cbf5201e3fc07a0cf6e997b5
+Z ded4eae64cbc81643a193c9cf7561702

@@ -1005,6 +1005,14 @@ typedef struct With With;
 #include "os.h"
 #include "mutex.h"
 
+/* The SQLITE_EXTRA_DURABLE compile-time option used to set the default
+** synchronous setting to EXTRA.  It is no longer supported.
+*/
+#ifdef SQLITE_EXTRA_DURABLE
+# warning Use SQLITE_DEFAULT_SYNCHRONOUS=3 instead of SQLITE_EXTRA_DURABLE
+# define SQLITE_DEFAULT_SYNCHRONOUS 3
+#endif
+
 /*
 ** Default synchronous levels.
 **

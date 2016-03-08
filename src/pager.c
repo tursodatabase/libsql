@@ -428,19 +428,6 @@ int sqlite3PagerTrace=1;  /* True to enable tracing */
 */
 #define MAX_SECTOR_SIZE 0x10000
 
-/*
-** If the option SQLITE_EXTRA_DURABLE option is set at compile-time, then
-** SQLite will do extra fsync() operations when synchronous==FULL to help
-** ensure that transactions are durable across a power failure.  Most
-** applications are happy as long as transactions are consistent across
-** a power failure, and are perfectly willing to lose the last transaction
-** in exchange for the extra performance of avoiding directory syncs.
-** And so the default SQLITE_EXTRA_DURABLE setting is off.
-*/
-#ifndef SQLITE_EXTRA_DURABLE
-# define SQLITE_EXTRA_DURABLE 0
-#endif
-
 
 /*
 ** An instance of the following structure is allocated for each active
@@ -4823,11 +4810,7 @@ act_like_temp_file:
     assert( pPager->ckptSyncFlags==0 );
   }else{
     pPager->fullSync = 1;
-#if SQLITE_EXTRA_DURABLE
-    pPager->extraSync = 1;
-#else
     pPager->extraSync = 0;
-#endif
     pPager->syncFlags = SQLITE_SYNC_NORMAL;
     pPager->walSyncFlags = SQLITE_SYNC_NORMAL | WAL_SYNC_TRANSACTIONS;
     pPager->ckptSyncFlags = SQLITE_SYNC_NORMAL;
