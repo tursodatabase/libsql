@@ -1,5 +1,5 @@
-C Drop\ssupport\sfor\sSQLITE_EXTRA_DURABLE.\s\sThe\snew\sSQLITE_DEFAULT_SYNCHRONOUS\ncompile-time\soption\sis\sa\smore\sgeneral\sreplacement.
-D 2016-03-08T16:07:59.373
+C In\smemjournal.c,\sreuse\sthe\ssame\ssqlite3_file\sobject\sfor\sboth\sthe\sin-memory\nphase\sand\sthe\son-disk\sphase.
+D 2016-03-08T17:59:19.784
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -321,7 +321,7 @@ F src/mem1.c 6919bcf12f221868ea066eec27e579fed95ce98b
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
 F src/mem3.c 8768ac94694f31ffaf8b4d0ea5dc08af7010a35a
 F src/mem5.c 9bf955937b07f8c32541c8a9991f33ce3173d944
-F src/memjournal.c 011da5236a7250385cc74c253f14bbee04c0d61e
+F src/memjournal.c 02deb8930ae8103fbe5640433a9d55c5dd2c13f1
 F src/msvc.h d9ba56c6851227ab44b3f228a35f3f5772296495
 F src/mutex.c 8e45800ee78e0cd1f1f3fe8e398853307f4a085c
 F src/mutex.h 779d588e3b7756ec3ecf7d78cde1d84aba414f85
@@ -1455,7 +1455,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2179a106e8dd7943d4f37093e65ce7826720904e
-R 82b2467863d1f8153e3f75a5d4f56472
+P f6d3156ba9af1da517dd77c1df03fa7869888463 d99ac4154812065eef26c298de52954d7ee0bd75
+R bec56382cb26d93b90f8b590f852c457
+T +closed d99ac4154812065eef26c298de52954d7ee0bd75
 U drh
-Z ded4eae64cbc81643a193c9cf7561702
+Z 55dc3dcac976fd228dc3d62385f9ab1a
