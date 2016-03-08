@@ -1,5 +1,5 @@
-C Fix\sATTACH\sto\suse\sthe\ssymbolic\sname\sPAGER_SYNCHRONOUS_FULL\srather\sthan\nan\sinteger\sliteral.
-D 2016-03-08T14:16:23.535
+C Update\sfts3/4\sso\sthat\sthe\s'merge=X,Y'\scommand\smerges\sat\sleast,\sinstead\sof\sexactly,\sY\ssegments\sfrom\sa\ssingle\slevel.\sThis\smatches\sthe\sdocumentation.\s'merge=X,0'\sis,\sas\sit\swas\sin\s3.11,\san\serror.
+D 2016-03-08T15:37:48.202
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -88,7 +88,7 @@ F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c a93f5edc0aff44ef8b06d7cb55b52026541ca145
 F ext/fts3/fts3_unicode2.c c3d01968d497bd7001e7dc774ba75b372738c057
-F ext/fts3/fts3_write.c f56345c64387ca30bf91b91511082fa83d9b5178
+F ext/fts3/fts3_write.c fb0456fa1407758f82458417c76fe4b06c86be98
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3view.c 5d78b668f4e9598af9147f8999632599fb0d9dd5
@@ -482,7 +482,7 @@ F test/autoindex5.test 96f084a5e6024ea07cace5888df3223f3ea86990
 F test/autovacuum.test 941892505d2c0f410a0cb5970dfa1c7c4e5f6e74
 F test/autovacuum_ioerr2.test 8a367b224183ad801e0e24dcb7d1501f45f244b4
 F test/avtrans.test 0252654f4295ddda3b2cce0e894812259e655a85
-F test/backcompat.test 19a1f337c68419b020a7481dd272a472c4ad8ef4
+F test/backcompat.test 28403f43d11624e696c5ef134c7c7d81015cd19e
 F test/backup.test b79299a536a4c6d919094786595b95be56d02014
 F test/backup2.test 34986ef926ea522911a51dfdb2f8e99b7b75ebcf
 F test/backup4.test 2a2e4a64388090b152de753fd9e123f28f6a3bd4
@@ -744,17 +744,17 @@ F test/fts4aa.test 10aac8e9d62c7357590acfabe3fad01e9a9ce1cb
 F test/fts4check.test c3056eab9524232e4c9bdcd119912947e07bcc1c
 F test/fts4content.test 05716af19a899cd70d5cd916c580043c03f30db4
 F test/fts4docid.test e33c383cfbdff0284685604d256f347a18fdbf01
-F test/fts4growth.test 60d6bb3f78e25b34f533797dd9f2f9402310a13a
+F test/fts4growth.test e5390da74619cacc389711bac9349640b32c4f9a
 F test/fts4growth2.test 13ad4e76451af6e6906c95cdc725d01b00044269
 F test/fts4incr.test 4e353a0bd886ea984e56fce9e77724fc923b8d0d
-F test/fts4langid.test 9794addcc8faaee85ac60eceecdb52feb0c70f68
-F test/fts4merge.test 146563df4a90ccb7f111a6e11ab29bbfe9e6ce2c
+F test/fts4langid.test 65a7332c9bc257919e259a304aa8a38c41655b9d
+F test/fts4merge.test d2b39f6b1bd4a9738a13540e2d044cba11c43d47
 F test/fts4merge2.test 5faa558d1b672f82b847d2a337465fa745e46891
-F test/fts4merge3.test aab02a09f50fe6baaddc2e159c3eabc116d45fc7
+F test/fts4merge3.test 8d9ccb4a3d41c4c617a149d6c4b13ad02de797d0
 F test/fts4merge4.test d895b1057a7798b67e03455d0fa50e9ea836c47b
 F test/fts4noti.test 5553d7bb2e20bf4a06b23e849352efc022ce6309
 F test/fts4onepass.test 7319d61a2ed1325fc54afd0c060a0513b462303a
-F test/fts4opt.test f15c84305c4b78c665fc476d8569e27ab9a0d418
+F test/fts4opt.test 1901f696214c4e16a995dd7fdd70576fc5c41dbe
 F test/fts4unicode.test 27378af76394542cf490cf001d8d1505fe55f6a9
 F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
 F test/func.test ae97561957aba6ca9e3a7b8a13aac41830d701ef
@@ -1454,7 +1454,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3a65a1fc0fd2408c6984153801ec5dcd5211c897
-R 713ccf93fbf940d5f93658dc674d69a8
-U drh
-Z 60af40306ae0297078d0f487c0fa1cd6
+P c4e192a0e5a408e198dbacb2752859a00d2b572f
+R 3e8d6ecab7b420c32f9b7a175d510e4d
+U dan
+Z 45820e8758a67cfc47c6d8f8a214769a

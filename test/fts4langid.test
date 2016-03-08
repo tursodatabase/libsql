@@ -481,6 +481,6 @@ foreach lid [list 4 [expr 1<<30]] {
   do_execsql_test 5.4.$lid.5 {
     SELECT count(*) FROM t6_segdir;
     SELECT count(*) FROM t6_segments;
-  } {4 4}
+  } {1 2}
 }
 finish_test

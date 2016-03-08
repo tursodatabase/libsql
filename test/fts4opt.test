@@ -92,7 +92,7 @@ do_execsql_test 1.5 {
 do_test 1.6 {
   while 1 {
     set tc1 [db total_changes]
-    execsql { INSERT INTO t2(t2) VALUES('merge=5,0') }
+    execsql { INSERT INTO t2(t2) VALUES('merge=5,2') }
     set tc2 [db total_changes]
     if {($tc2 - $tc1) < 2} break
   }
@@ -153,7 +153,7 @@ do_execsql_test 2.5 {
 do_test 2.6 {
   while 1 {
     set tc1 [db total_changes]
-    execsql { INSERT INTO t2(t2) VALUES('merge=5,0') }
+    execsql { INSERT INTO t2(t2) VALUES('merge=5,2') }
     set tc2 [db total_changes]
     if {($tc2 - $tc1) < 2} break
   }
