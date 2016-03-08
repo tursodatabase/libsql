@@ -1,5 +1,5 @@
-C Add\scompile-time\soptions\sSQLITE_DEFAULT_SYNCHRONOUS\sand\nSQLITE_DEFAULT_WAL_SYNCHRONOUS\sused\sto\sspecify\sthe\sdefault\ssynchronous\nsettings\sfor\sall\sdatabase\sconnections.
-D 2016-03-08T14:40:11.978
+C If\sSQLITE_DEFAULT_WAL_SYNCHRONOUS\sis\snot\sthe\ssame\svalue\sas\nSQLITE_DEFAULT_SYNCHRONOUS\sand\sthe\sapplication\shas\snot\srun\n"PRAGMA\ssynchronous",\sthen\sset\ssynchronous\sto\sthe\s\nSQLITE_DEFAULT_WAL_SYNCHRONOUS\ssetting\swhen\sentering\sWAL\smode\sfor\nthe\sfirst\stime.
+D 2016-03-08T15:14:26.164
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -292,7 +292,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c f60f0aa55d25d853ffde53d0b0370a7bb7ee41ce
 F src/bitvec.c 3ee4c8b2c94ed3a7377256e18199e6ff5cf33f63
 F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
-F src/btree.c 7bb920c473c277380fcb3e8a8ee28ce1a48e0abc
+F src/btree.c be3ac34a9d669fed0e0b315e4b62fb198b3534a1
 F src/btree.h a5008b9afe56e8e54ade6c436a910f112defcca9
 F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
 F src/build.c 43b93fe757bfffe00f97462596418b052eefdccd
@@ -1268,7 +1268,7 @@ F test/types2.test 3555aacf8ed8dc883356e59efc314707e6247a84
 F test/types3.test 99e009491a54f4dc02c06bdbc0c5eea56ae3e25a
 F test/unique.test 93f8b2ef5ea51b9495f8d6493429b1fd0f465264
 F test/unique2.test 3674e9f2a3f1fbbfd4772ac74b7a97090d0f77d2
-F test/unixexcl.test cd6c765f75e50e8e2c2ba763149e5d340ea19825
+F test/unixexcl.test d936ba2b06794018e136418addd59a2354eeae97
 F test/unordered.test ca7adce0419e4ca0c50f039885e76ed2c531eda8
 F test/update.test 6c68446b8a0a33d522a7c72b320934596a2d7d32
 F test/uri.test 6630ecbdea2aac10df3c89dbae2243f4c2c353e4
@@ -1302,7 +1302,7 @@ F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 5253bff2355a9a3f014c15337da7e177ab0ef8ad
 F test/wal.test 0148c8b3421a25fdb4d9c160e84a681d0646371b
-F test/wal2.test 1f841d2048080d32f552942e333fd99ce541dada
+F test/wal2.test 25ae059e900dbb584e0775627e45415ba5940df1
 F test/wal3.test 5dd734147f1f8f958c5261a1f2775d346d7013ce
 F test/wal4.test 4744e155cd6299c6bd99d3eab1c82f77db9cdb3c
 F test/wal5.test 88b5d9a6a3d1532497ee9f4296f010d66f07e33c
@@ -1368,7 +1368,7 @@ F test/without_rowid5.test 89b1c587bd92a0590e440da33e7666bf4891572a
 F test/without_rowid6.test 1f99644e6508447fb050f73697350c7ceca3392e
 F test/wordcount.c 2a0a6c0d0e8e8bbbac1f06d72a6791828c37c0cf
 F test/zeroblob.test 3857870fe681b8185654414a9bccfde80b62a0fa
-F test/zerodamage.test cf6748bad89553cc1632be51a6f54e487e4039ac
+F test/zerodamage.test 2d725c214b883e25ae6bb85ef228ecdfa03c6a7b
 F tool/GetFile.cs a15e08acb5dd7539b75ba23501581d7c2b462cb5
 F tool/GetTclKit.bat 629d87562e0487c386db630033931d12d62e6372
 F tool/Replace.cs 02c67258801c2fb5f63231e0ac0f220b4b36ba91
@@ -1454,10 +1454,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c4e192a0e5a408e198dbacb2752859a00d2b572f
-R ed8cb54862c87c7000f2b5316b253427
-T *branch * default-synchronous
-T *sym-default-synchronous *
-T -sym-trunk *
+P 1fefa967aa93372d232b96b1e0232b7b855d6d00
+R 96b74d7d7452050d9fb3b3bb7ed48b9b
 U drh
-Z e2df223f431828867c29b052b714b5b9
+Z fb25535cfc55b70029b29a9169aa4b7e

@@ -112,6 +112,7 @@ ifcapable wal {
     db close
     sqlite3 db file:test.db?psow=FALSE -uri 1
     db eval {
+       PRAGMA synchronous=FULL;
        UPDATE t1 SET y=randomblob(50) WHERE x=124;
     }
     file size test.db-wal
