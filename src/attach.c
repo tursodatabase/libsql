@@ -161,7 +161,7 @@ static void attachFunc(
 #endif
     sqlite3BtreeLeave(aNew->pBt);
   }
-  aNew->safety_level = PAGER_SYNCHRONOUS_FULL;
+  aNew->safety_level = SQLITE_DEFAULT_SYNCHRONOUS;
   aNew->zName = sqlite3DbStrDup(db, zName);
   if( rc==SQLITE_OK && aNew->zName==0 ){
     rc = SQLITE_NOMEM_BKPT;
