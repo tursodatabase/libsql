@@ -1,5 +1,5 @@
-C Improved\scomments\son\svirtual\stable\squery\splanning.\s\sAdded\smany\snew\nWHERETRACE()\smacros.
-D 2016-03-08T23:18:51.182
+C Change\san\sunreachable\sbranch\sin\sthe\svirtual\stable\squery\splanner\sinto\nan\sassert().
+D 2016-03-08T23:44:48.075
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -429,7 +429,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 10deb6b43887662691e5f53d10b3c171c401169b
 F src/wal.h 2f7c831cf3b071fa548bf2d5cac640846a7ff19c
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
-F src/where.c a3f6db088f335a9217fe53d976f9441610061a2f
+F src/where.c f2859a4f9e3ce0585fd75648fb5cae9f985c458d
 F src/whereInt.h 93297d56edd137b7ea004490690fb6e2ce028a34
 F src/wherecode.c 863aedf086131743763c1960637fde904eadc442
 F src/whereexpr.c fb87944b1254234e5bba671aaf6dee476241506a
@@ -1455,7 +1455,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e7fbbdc25c0991d4e58d78a5fcb7386e1aa7f3af
-R 624279792742522c1a4793f09c7ca2f6
+P 4c89c2534abcf67bc486d5a900a84a6c4f59537e
+R ba189513b00cd0d7f1cb51ba2837236b
 U drh
-Z ab3adc4bc8a1b11824c36206a5455ed4
+Z b92bcbc09edaf6b80c374c7506559755

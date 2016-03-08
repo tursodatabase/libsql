@@ -2810,10 +2810,9 @@ static int whereLoopAddVirtualOne(
 
   /* Initialize the output fields of the sqlite3_index_info structure */
   memset(pUsage, 0, sizeof(pUsage[0])*nConstraint);
-  if( pIdxInfo->needToFreeIdxStr ) sqlite3_free(pIdxInfo->idxStr);
+  assert( pIdxInfo->needToFreeIdxStr==0 );
   pIdxInfo->idxStr = 0;
   pIdxInfo->idxNum = 0;
-  pIdxInfo->needToFreeIdxStr = 0;
   pIdxInfo->orderByConsumed = 0;
   pIdxInfo->estimatedCost = SQLITE_BIG_DBL / (double)2;
   pIdxInfo->estimatedRows = 25;
