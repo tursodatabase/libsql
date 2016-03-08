@@ -882,7 +882,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     for(j=0; j<nConstraint; j++){
       int iTarget = iReg+j+2;
       pTerm = pLoop->aLTerm[j];
-      if( pTerm==0 ) continue;
+      if( NEVER(pTerm==0) ) continue;
       if( pTerm->eOperator & WO_IN ){
         codeEqualityTerm(pParse, pTerm, pLevel, j, bRev, iTarget);
         addrNotFound = pLevel->addrNxt;
@@ -915,7 +915,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         ** the xFilter implementation might have changed the datatype or
         ** encoding of the value in the register, so it *must* be reloaded. */
         assert( pLevel->u.in.aInLoop!=0 || db->mallocFailed );
-        if( pLevel->u.in.aInLoop!=0 ){
+        if( !db->mallocFailed ){
           assert( iIn>0 );
           pOp = sqlite3VdbeGetOp(v, pLevel->u.in.aInLoop[--iIn].addrInTop);
           assert( pOp->opcode==OP_Column || pOp->opcode==OP_Rowid );

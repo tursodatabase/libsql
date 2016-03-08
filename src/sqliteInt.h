@@ -2363,6 +2363,7 @@ struct IdList {
 */
 #define MASKBIT(n)   (((Bitmask)1)<<(n))
 #define MASKBIT32(n) (((unsigned int)1)<<(n))
+#define ALLBITS      ((Bitmask)-1)
 
 /*
 ** The following structure describes the FROM clause of a SELECT statement.
