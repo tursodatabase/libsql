@@ -2878,7 +2878,7 @@ static int openDatabase(
   ** database it is OFF. This matches the pager layer defaults.  
   */
   db->aDb[0].zName = "main";
-  db->aDb[0].safety_level = PAGER_SYNCHRONOUS_FULL;
+  db->aDb[0].safety_level = SQLITE_DEFAULT_SYNCHRONOUS+1;
   db->aDb[1].zName = "temp";
   db->aDb[1].safety_level = PAGER_SYNCHRONOUS_OFF;
 

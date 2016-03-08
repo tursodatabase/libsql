@@ -2864,9 +2864,25 @@ static int lockBtree(BtShared *pBt){
       rc = sqlite3PagerOpenWal(pBt->pPager, &isOpen);
       if( rc!=SQLITE_OK ){
         goto page1_init_failed;
-      }else if( isOpen==0 ){
-        releasePage(pPage1);
-        return SQLITE_OK;
+      }else{
+#if SQLITE_DEFAULT_SYNCHRONOUS!=SQLITE_DEFAULT_WAL_SYNCHRONOUS
+        sqlite3 *db;
+        Db *pDb;
+        if( (db=pBt->db)!=0 && (pDb=db->aDb)!=0 ){
+          while( pDb->pBt==0 || pDb->pBt->pBt!=pBt ){ pDb++; }
+          if( pDb->bSyncSet==0
+           && pDb->safety_level==SQLITE_DEFAULT_SYNCHRONOUS+1
+          ){
+            pDb->safety_level = SQLITE_DEFAULT_WAL_SYNCHRONOUS+1;
+            sqlite3PagerSetFlags(pBt->pPager,
+               pDb->safety_level | (db->flags & PAGER_FLAGS_MASK));
+          }
+        }
+#endif
+        if( isOpen==0 ){
+          releasePage(pPage1);
+          return SQLITE_OK;
+        }
       }
       rc = SQLITE_NOTADB;
     }

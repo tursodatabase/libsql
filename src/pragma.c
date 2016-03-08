@@ -993,6 +993,7 @@ void sqlite3Pragma(
         int iLevel = (getSafetyLevel(zRight,0,1)+1) & PAGER_SYNCHRONOUS_MASK;
         if( iLevel==0 ) iLevel = 1;
         pDb->safety_level = iLevel;
+        pDb->bSyncSet = 1;
         setAllPagerFlags(db);
       }
     }

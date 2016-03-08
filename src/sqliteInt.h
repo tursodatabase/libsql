@@ -1002,10 +1002,31 @@ typedef struct With With;
 #include "vdbe.h"
 #include "pager.h"
 #include "pcache.h"
-
 #include "os.h"
 #include "mutex.h"
 
+/*
+** Default synchronous levels.
+**
+** Note that (for historcal reasons) the PAGER_SYNCHRONOUS_* macros differ
+** from the SQLITE_DEFAULT_SYNCHRONOUS value by 1.
+**
+**           PAGER_SYNCHRONOUS       DEFAULT_SYNCHRONOUS
+**   OFF           1                         0
+**   NORMAL        2                         1
+**   FULL          3                         2
+**   EXTRA         4                         3
+**
+** The "PRAGMA synchronous" statement also uses the zero-based numbers.
+** In other words, the zero-based numbers are used for all external interfaces
+** and the one-based values are used internally.
+*/
+#ifndef SQLITE_DEFAULT_SYNCHRONOUS
+# define SQLITE_DEFAULT_SYNCHRONOUS (PAGER_SYNCHRONOUS_FULL-1)
+#endif
+#ifndef SQLITE_DEFAULT_WAL_SYNCHRONOUS
+# define SQLITE_DEFAULT_WAL_SYNCHRONOUS SQLITE_DEFAULT_SYNCHRONOUS
+#endif
 
 /*
 ** Each database file to be accessed by the system is an instance
@@ -1018,6 +1039,7 @@ struct Db {
   char *zName;         /* Name of this database */
   Btree *pBt;          /* The B*Tree structure for this database file */
   u8 safety_level;     /* How aggressive at syncing data to disk */
+  u8 bSyncSet;         /* True if "PRAGMA synchronous=N" has been run */
   Schema *pSchema;     /* Pointer to database schema (possibly shared) */
 };
 
