@@ -2677,8 +2677,6 @@ static int rbuStep(sqlite3rbu *p){
       }
     }
   }
-
- step_out:
   return p->rc;
 }
 
