@@ -2871,9 +2871,9 @@ static int lockBtree(BtShared *pBt){
         if( (db=pBt->db)!=0 && (pDb=db->aDb)!=0 ){
           while( pDb->pBt==0 || pDb->pBt->pBt!=pBt ){ pDb++; }
           if( pDb->bSyncSet==0
-           && pDb->safety_level==SQLITE_DEFAULT_SYNCHRONOUS
+           && pDb->safety_level==SQLITE_DEFAULT_SYNCHRONOUS+1
           ){
-            pDb->safety_level = SQLITE_DEFAULT_WAL_SYNCHRONOUS;
+            pDb->safety_level = SQLITE_DEFAULT_WAL_SYNCHRONOUS+1;
             sqlite3PagerSetFlags(pBt->pPager,
                pDb->safety_level | (db->flags & PAGER_FLAGS_MASK));
           }
