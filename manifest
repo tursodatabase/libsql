@@ -1,5 +1,5 @@
-C Add\sthe\sALLBITS\smacro\sas\sa\sshorthand\sfor\s"(Bitmask)(-1)".
-D 2016-03-08T01:32:30.559
+C Simplified\serror\sdetection\sin\sthe\sxBestIndex\sprocessing.
+D 2016-03-08T02:59:33.371
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -428,7 +428,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 10deb6b43887662691e5f53d10b3c171c401169b
 F src/wal.h 2f7c831cf3b071fa548bf2d5cac640846a7ff19c
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
-F src/where.c e4d2d0ea8403339db188e75b75ca44fff225abba
+F src/where.c dff52f7f0842430f80a7017c7859124685b08453
 F src/whereInt.h 93297d56edd137b7ea004490690fb6e2ce028a34
 F src/wherecode.c 863aedf086131743763c1960637fde904eadc442
 F src/whereexpr.c fb87944b1254234e5bba671aaf6dee476241506a
@@ -1286,7 +1286,7 @@ F test/vtab2.test f8cd1bb9aba7143eba97812d9617880a36d247ad
 F test/vtab3.test b45f47d20f225ccc9c28dc915d92740c2dee311e
 F test/vtab4.test 8e73ed268f3d596bc3590f45fc948fb40f28e9c3
 F test/vtab5.test 889f444970393c73f1e077e2bdc5d845e157a391
-F test/vtab6.test d2986cf418dc51e7fb81d12366bea2caa8b812df
+F test/vtab6.test 8e789f526e6594cf7ae933d1adee0caa87dc9f78
 F test/vtab7.test ae560ebea870ed04e9aa4177cc302f910faaabb5
 F test/vtab8.test e19fa4a538fcd1bb66c22825fa8f71618fb13583
 F test/vtab9.test ea58d2b95d61955f87226381716b2d0b1d4e4f9b
@@ -1454,7 +1454,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 721ae51e443647291f3a8f7f2128aa410fee2682
-R 06f3b1fde5a5e4d09bcfebd9ae1525b6
+P 91bd619d27e4d91510a187bbb88de961a31c8a2e
+R 925559caeda122c2e0a2ca4fc28cc0ee
 U drh
-Z acf689ff3c45ad889c44d18cadd3bf9c
+Z b4b54118bbf4d13b5c60372c03985e73

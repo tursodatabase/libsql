@@ -934,7 +934,6 @@ static sqlite3_index_info *allocateIndexInfo(
 */
 static int vtabBestIndex(Parse *pParse, Table *pTab, sqlite3_index_info *p){
   sqlite3_vtab *pVtab = sqlite3GetVTable(pParse->db, pTab)->pVtab;
-  int i;
   int rc;
 
   TRACE_IDX_INPUTS(p);
@@ -953,12 +952,16 @@ static int vtabBestIndex(Parse *pParse, Table *pTab, sqlite3_index_info *p){
   sqlite3_free(pVtab->zErrMsg);
   pVtab->zErrMsg = 0;
 
+#if 0
+  /* This error is now caught by the caller.
+  ** Search for "xBestIndex malfunction" below */
   for(i=0; i<p->nConstraint; i++){
     if( !p->aConstraint[i].usable && p->aConstraintUsage[i].argvIndex>0 ){
       sqlite3ErrorMsg(pParse, 
           "table %s: xBestIndex returned an invalid plan", pTab->zName);
     }
   }
+#endif
 
   return pParse->nErr;
 }
@@ -2835,9 +2838,10 @@ static int whereLoopAddVirtualOne(
        || j<0
        || j>=pWC->nTerm
        || pNew->aLTerm[iTerm]!=0
+       || pIdxCons->usable==0
       ){
         rc = SQLITE_ERROR;
-        sqlite3ErrorMsg(pParse,"%s.xBestIndex() malfunction",pSrc->pTab->zName);
+        sqlite3ErrorMsg(pParse,"%s.xBestIndex malfunction",pSrc->pTab->zName);
         return rc;
       }
       testcase( iTerm==nConstraint-1 );
@@ -2859,7 +2863,7 @@ static int whereLoopAddVirtualOne(
         ** together.  */
         pIdxInfo->orderByConsumed = 0;
         pIdxInfo->idxFlags &= ~SQLITE_INDEX_SCAN_UNIQUE;
-        *pbIn = 1;
+        *pbIn = 1; assert( (mExclude & WO_IN)==0 );
       }
     }
   }
@@ -2972,10 +2976,11 @@ static int whereLoopAddVirtual(
     ** xBestIndex again, this time with IN(...) terms disabled. */
     if( rc==SQLITE_OK && bIn ){
       rc = whereLoopAddVirtualOne(pBuilder, mPrereq, ALLBITS, WO_IN, p, &bIn);
+      assert( bIn==0 );
       mBestNoIn = pNew->prereq & ~mPrereq;
       if( mBestNoIn==0 ){
         seenZero = 1;
-        if( bIn==0 ) seenZeroNoIN = 1;
+        seenZeroNoIN = 1;
       }
     }
 
