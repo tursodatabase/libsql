@@ -1226,14 +1226,14 @@ if {$::tcl_platform(platform) == "unix"} {
 #-------------------------------------------------------------------------
 # Test that "PRAGMA checkpoint_fullsync" appears to be working.
 #
-foreach {tn sql reslist altreslist} {
-  1 { }                                 {10 0 4 0 6 0} {7 4 3 2 3 2}
-  2 { PRAGMA checkpoint_fullfsync = 1 } {10 4 4 2 6 2} {7 4 3 2 3 2}
-  3 { PRAGMA checkpoint_fullfsync = 0 } {10 0 4 0 6 0} {7 0 3 0 3 0}
+foreach {tn sql reslist} {
+  1 { }                                 {10 0 4 0 6 0}
+  2 { PRAGMA checkpoint_fullfsync = 1 } {10 4 4 2 6 2}
+  3 { PRAGMA checkpoint_fullfsync = 0 } {10 0 4 0 6 0}
 } {
   faultsim_delete_and_reopen
 
-  execsql {PRAGMA auto_vacuum = 0}
+  execsql {PRAGMA auto_vacuum = 0; PRAGMA synchronous = FULL;}
   execsql $sql
   do_execsql_test wal2-14.$tn.0 { PRAGMA page_size = 4096 }   {}
   do_execsql_test wal2-14.$tn.1 { PRAGMA journal_mode = WAL } {wal}
@@ -1242,9 +1242,6 @@ foreach {tn sql reslist altreslist} {
   set sqlite_fullsync_count 0
 
   set useres $reslist
-  if $::sqlite_options(default_wal_safetylevel) {
-    set useres $altreslist
-  }
 
   do_execsql_test wal2-14.$tn.2 {
     PRAGMA wal_autocheckpoint = 10;

@@ -4840,11 +4840,8 @@ int sqlite3Fts3Incrmerge(Fts3Table *p, int nMerge, int nMin){
     sqlite3_bind_int(pFindLevel, 1, MAX(2, nMin));
     if( sqlite3_step(pFindLevel)==SQLITE_ROW ){
       iAbsLevel = sqlite3_column_int64(pFindLevel, 0);
-      if( nMin<2 ){
-        nSeg = sqlite3_column_int(pFindLevel, 1);
-      }else{
-        nSeg = nMin;
-      }
+      nSeg = sqlite3_column_int(pFindLevel, 1);
+      assert( nSeg>=2 );
     }else{
       nSeg = -1;
     }
@@ -4996,7 +4993,7 @@ static int fts3DoIncrmerge(
     nMin = fts3Getint(&z);
   }
 
-  if( z[0]!='\0' || nMin<0 || nMin==1 ){
+  if( z[0]!='\0' || nMin<2 ){
     rc = SQLITE_ERROR;
   }else{
     rc = SQLITE_OK;

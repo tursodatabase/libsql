@@ -2890,9 +2890,7 @@ static int walWriteOneFrame(
   int rc;                         /* Result code from subfunctions */
   void *pData;                    /* Data actually written */
 #if defined(SQLITE_WRITE_WALFRAME_PREBUFFERED)
-  void *aFrame;
-
-  aFrame = p->aFrameBuf;
+  u8 *aFrame = p->aFrameBuf;
 #else
   u8 aFrame[WAL_FRAME_HDRSIZE];   /* Buffer to assemble frame-header in */
 #endif

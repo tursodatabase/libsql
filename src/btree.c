@@ -2870,30 +2870,25 @@ static int lockBtree(BtShared *pBt){
       rc = sqlite3PagerOpenWal(pBt->pPager, &isOpen);
       if( rc!=SQLITE_OK ){
         goto page1_init_failed;
-      }else if( isOpen==0 ){
-#ifdef SQLITE_DEFAULT_WAL_SAFETYLEVEL
-        /* Default to specified safety_level for WAL mode */
-        if( pBt->db!=0 && pBt->db->aDb!=0 ){
-          int iDb;
-          sqlite3 *db = pBt->db;
-          Db *aDb = db->aDb;
-          u8 level = 0;
-          for(iDb=0; iDb<db->nDb; iDb++){
-            if( aDb[iDb].pBt && aDb[iDb].pBt->pBt==pBt ) break;
-          }
-          assert( iDb<db->nDb );
-          level = db->aDb[iDb].safety_level;
-          if( !SQLITE_DbSafetyLevelIsFixed(level) && 
-             (SQLITE_DbSafetyLevelValue(level) != SQLITE_DEFAULT_WAL_SAFETYLEVEL) ){
-            aDb[iDb].safety_level = SQLITE_DEFAULT_WAL_SAFETYLEVEL;
-            sqlite3PagerSetSafetyLevel(pBt->pPager, SQLITE_DEFAULT_WAL_SAFETYLEVEL, 
-                                       (db->flags&SQLITE_FullFSync)!=0,
-                                       (db->flags&SQLITE_CkptFullFSync)!=0);
+      }else{
+#if SQLITE_DEFAULT_SYNCHRONOUS!=SQLITE_DEFAULT_WAL_SYNCHRONOUS
+        sqlite3 *db;
+        Db *pDb;
+        if( (db=pBt->db)!=0 && (pDb=db->aDb)!=0 ){
+          while( pDb->pBt==0 || pDb->pBt->pBt!=pBt ){ pDb++; }
+          if( pDb->bSyncSet==0
+           && pDb->safety_level==SQLITE_DEFAULT_SYNCHRONOUS+1
+          ){
+            pDb->safety_level = SQLITE_DEFAULT_WAL_SYNCHRONOUS+1;
+            sqlite3PagerSetFlags(pBt->pPager,
+               pDb->safety_level | (db->flags & PAGER_FLAGS_MASK));
           }
         }
 #endif
-        releasePage(pPage1);
-        return SQLITE_OK;
+        if( isOpen==0 ){
+          releasePage(pPage1);
+          return SQLITE_OK;
+        }
       }
       rc = SQLITE_NOTADB;
     }

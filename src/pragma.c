@@ -620,20 +620,6 @@ void sqlite3Pragma(
       iDb = 0;
       pId2->n = 1;
     }
-#ifdef SQLITE_DEFAULT_WAL_SAFETYLEVEL
-    if( ! SQLITE_DbSafetyLevelIsFixed(pDb->safety_level) ){
-      if( eMode == PAGER_JOURNALMODE_WAL ){
-        /* when entering wal mode, immediately switch the safety_level
-        ** so that a query to pragma synchronous returns the correct value */
-      
-        pDb->safety_level = SQLITE_DEFAULT_WAL_SAFETYLEVEL;
-      }else{
-        /* If the user hasn't overridden the synchronous setting, use the 
-        ** default for non-wal databases */
-        pDb->safety_level = 3;
-      }
-    }
-#endif /* SQLITE_DEFAULT_WAL_SAFETYLEVEL */
     for(ii=db->nDb-1; ii>=0; ii--){
       if( db->aDb[ii].pBt && (ii==iDb || pId2->n==0) ){
         sqlite3VdbeUsesBtree(v, ii);
@@ -998,18 +984,16 @@ void sqlite3Pragma(
   */
   case PragTyp_SYNCHRONOUS: {
     if( !zRight ){
-      returnSingleInt(v, "synchronous", 
-            SQLITE_DbSafetyLevelValue(pDb->safety_level)-1);
+      returnSingleInt(v, "synchronous", pDb->safety_level-1);
     }else{
       if( !db->autoCommit ){
         sqlite3ErrorMsg(pParse, 
             "Safety level may not be changed inside a transaction");
       }else{
-        int iLevel = (getSafetyLevel(zRight,0,1)+1)
-                                      | SQLITE_SAFETYLEVEL_FIXED;
-        iLevel &= PAGER_SYNCHRONOUS_MASK;
+        int iLevel = (getSafetyLevel(zRight,0,1)+1) & PAGER_SYNCHRONOUS_MASK;
         if( iLevel==0 ) iLevel = 1;
         pDb->safety_level = iLevel;
+        pDb->bSyncSet = 1;
         setAllPagerFlags(db);
       }
     }

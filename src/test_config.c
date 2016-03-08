@@ -565,12 +565,6 @@ Tcl_SetVar2(interp, "sqlite_options", "mergesort", "1", TCL_GLOBAL_ONLY);
 #else
   Tcl_SetVar2(interp,"sqlite_options","default_ckptfullfsync","0",TCL_GLOBAL_ONLY);
 #endif
-#if SQLITE_DEFAULT_WAL_SAFETYLEVEL
-  Tcl_SetVar2(interp,"sqlite_options","default_wal_safetylevel",
-              STRINGVALUE(SQLITE_DEFAULT_WAL_SAFETYLEVEL),TCL_GLOBAL_ONLY);
-#else
-  Tcl_SetVar2(interp,"sqlite_options","default_wal_safetylevel","0",TCL_GLOBAL_ONLY);
-#endif
 #if SQLITE_ENABLE_PERSIST_WAL
   Tcl_SetVar2(interp,"sqlite_options","enable_persist_wal","1",TCL_GLOBAL_ONLY);
 #else
