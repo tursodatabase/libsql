@@ -882,7 +882,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     for(j=0; j<nConstraint; j++){
       int iTarget = iReg+j+2;
       pTerm = pLoop->aLTerm[j];
-      if( pTerm==0 ) continue;
+      if( NEVER(pTerm==0) ) continue;
       if( pTerm->eOperator & WO_IN ){
         codeEqualityTerm(pParse, pTerm, pLevel, j, bRev, iTarget);
         addrNotFound = pLevel->addrNxt;
