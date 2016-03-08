@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_DEFAULT_SYNCHRONOUS\sand\sSQLITE_DEFAULT_WAL_SYNCHRONOUS\ncompile-time\soptions.\s\sAutomatically\sswitch\sto\sthe\sWAL_SYNCHRONOUS\ssetting\nwhen\sfirst\sopening\sa\sWAL-mode\sdatabase\sif\sthe\ssynchronous\ssetting\shas\snot\nbeen\spreviously\sset\sby\sthe\sapplication.
-D 2016-03-08T15:47:47.861
+C Add\sa\snew\srow\stype\sto\sRBU\s(a\speer\sof\sinsert,\supdate\sand\sdelete)\s-\s"delete\sthen\sinsert".
+D 2016-03-08T15:52:43.903
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -234,6 +234,7 @@ F ext/rbu/rbu8.test 3bbf2c35d71a843c463efe93946f14ad10c3ede0
 F ext/rbu/rbu9.test 0806d1772c9f4981774ff028de6656e4183082af
 F ext/rbu/rbuA.test c1a7b3e2d926b8f8448bb3b4ae787e314ee4b2b3
 F ext/rbu/rbuB.test c25bc325b8072a766e56bb76c001866b405925c2
+F ext/rbu/rbuC.test efe47db508a0269b683cb2a1913a425ffd39a831
 F ext/rbu/rbu_common.tcl 0398545fed614f807d5f0ba55a85a51f08ba8f1a
 F ext/rbu/rbucrash.test 8d2ed5d4b05fef6c00c2a6b5f7ead71fa172a695
 F ext/rbu/rbudiff.test 6cc806dc36389292f2a8f5842d0103721df4a07d
@@ -241,7 +242,7 @@ F ext/rbu/rbufault.test cc0be8d5d392d98b0c2d6a51be377ea989250a89
 F ext/rbu/rbufault2.test 9a7f19edd6ea35c4c9f807d8a3db0a03a5670c06
 F ext/rbu/rbufts.test 828cd689da825f0a7b7c53ffc1f6f7fdb6fa5bda
 F ext/rbu/rbusave.test 0f43b6686084f426ddd040b878426452fd2c2f48
-F ext/rbu/sqlite3rbu.c 371e8bf06cfb3f691adac47eb15ab1073ed92dcf
+F ext/rbu/sqlite3rbu.c 0d901d773bf4c9e7d101daaf545263044e7e6615
 F ext/rbu/sqlite3rbu.h 0bdeb3be211aaba7d85445fa36f4701a25a3dbde
 F ext/rbu/test_rbu.c 4a4cdcef4ef9379fc2a21f008805c80b27bcf573
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
@@ -1454,8 +1455,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 64b3cb29159491cbfab7e01844b54408541ece5e 592d2104361500e5002783ba329a2609389c57b9
-R da9c8dcc67c43bdd497418f56500542e
-T +closed 592d2104361500e5002783ba329a2609389c57b9
-U drh
-Z 4fa68fdb2896879ae18878d725366e25
+P 5a847a676e756bbe33436596d4279f339bfb247c 169311c85b30f625bdb6986c9cd11db70942d73b
+R 43c0b748ba126143d737a43b13d0c445
+T +closed 169311c85b30f625bdb6986c9cd11db70942d73b
+U dan
+Z 99ed19537580c1e7328c1d8043178b0a
