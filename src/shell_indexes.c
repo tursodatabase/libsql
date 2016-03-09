@@ -413,7 +413,6 @@ static int idxGetTableInfo(
   return rc;
 }
 
-
 static int idxCreateTables(
   sqlite3 *db,                    /* User database */
   sqlite3 *dbm,                   /* In-memory database to create tables in */
@@ -424,6 +423,22 @@ static int idxCreateTables(
   IdxScan *pIter;
   for(pIter=pScan; pIter && rc==SQLITE_OK; pIter=pIter->pNextScan){
     rc = idxGetTableInfo(db, pIter, pzErrmsg);
+
+    /* Test if table has already been created. If so, jump to the next
+    ** iteration of the loop.  */
+    if( rc==SQLITE_OK ){
+      sqlite3_stmt *pSql = 0;
+      rc = idxPrintfPrepareStmt(dbm, &pSql, pzErrmsg, 
+          "SELECT 1 FROM sqlite_master WHERE tbl_name = %Q", pIter->zTable
+      );
+      if( rc==SQLITE_OK ){
+        int bSkip = 0;
+        if( sqlite3_step(pSql)==SQLITE_ROW ) bSkip = 1;
+        rc = sqlite3_finalize(pSql);
+        if( bSkip ) continue;
+      }
+    }
+
     if( rc==SQLITE_OK ){
       int rc2;
       sqlite3_stmt *pSql = 0;
@@ -799,6 +814,7 @@ int idxFindIndexes(
   sqlite3 *dbm = pCtx->dbm;
   sqlite3_stmt *pExplain = 0;
   sqlite3_stmt *pSelect = 0;
+  sqlite3_stmt *pInsert = 0;
   int rc, rc2;
   int bFound = 0;
 
@@ -806,6 +822,11 @@ int idxFindIndexes(
   if( rc==SQLITE_OK ){
     rc = idxPrepareStmt(dbm, &pSelect, pzErr, 
         "SELECT rowid, sql FROM sqlite_master WHERE name = ?"
+    );
+  }
+  if( rc==SQLITE_OK ){
+    rc = idxPrepareStmt(dbm, &pInsert, pzErr,
+        "INSERT OR IGNORE INTO aux.indexes VALUES(?)"
     );
   }
 
@@ -831,8 +852,10 @@ int idxFindIndexes(
           i64 iRowid = sqlite3_column_int64(pSelect, 0);
           const char *zSql = (const char*)sqlite3_column_text(pSelect, 1);
           if( iRowid>=pCtx->iIdxRowid ){
-            xOut(pOutCtx, zSql);
-            bFound = 1;
+            sqlite3_bind_text(pInsert, 1, zSql, -1, SQLITE_STATIC);
+            sqlite3_step(pInsert);
+            rc = sqlite3_reset(pInsert);
+            if( rc ) goto find_indexes_out;
           }
         }
         rc = sqlite3_reset(pSelect);
@@ -843,8 +866,19 @@ int idxFindIndexes(
   rc2 = sqlite3_reset(pExplain);
   if( rc==SQLITE_OK ) rc = rc2;
   if( rc==SQLITE_OK ){
-    if( bFound==0 ) xOut(pOutCtx, "(no new indexes)");
-    xOut(pOutCtx, "");
+    sqlite3_stmt *pLoop = 0;
+    rc = idxPrepareStmt(dbm, &pLoop, pzErr, "SELECT name FROM aux.indexes");
+    if( rc==SQLITE_OK ){
+      while( SQLITE_ROW==sqlite3_step(pLoop) ){
+        bFound = 1;
+        xOut(pOutCtx, sqlite3_column_text(pLoop, 0));
+      }
+      rc = sqlite3_finalize(pLoop);
+    }
+    if( rc==SQLITE_OK ){
+      if( bFound==0 ) xOut(pOutCtx, "(no new indexes)");
+      xOut(pOutCtx, "");
+    }
   }
 
   while( rc==SQLITE_OK && sqlite3_step(pExplain)==SQLITE_ROW ){
@@ -867,6 +901,8 @@ int idxFindIndexes(
   rc2 = sqlite3_finalize(pExplain);
   if( rc==SQLITE_OK ) rc = rc2;
   rc2 = sqlite3_finalize(pSelect);
+  if( rc==SQLITE_OK ) rc = rc2;
+  rc2 = sqlite3_finalize(pInsert);
   if( rc==SQLITE_OK ) rc = rc2;
 
   return rc;
@@ -911,7 +947,7 @@ int shellIndexesCommand(
   /* Prepare an INSERT statement for writing to aux.depmask */
   if( rc==SQLITE_OK ){
     rc = idxPrepareStmt(dbm, &ctx.pInsertMask, pzErrmsg,
-        "INSERT OR IGNORE INTO depmask SELECT mask | ?1 FROM depmask;"
+        "INSERT OR IGNORE INTO aux.depmask SELECT mask | ?1 FROM aux.depmask;"
     );
   }
 

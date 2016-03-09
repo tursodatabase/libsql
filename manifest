@@ -1,5 +1,5 @@
-C Add\stest\sscript\sshell6.test,\scontaining\stests\sfor\sschemalint.
-D 2016-02-22T19:51:08.971
+C Fix\sa\sproblem\sin\sthe\sschemalint\scode\sthat\scomes\sup\swhen\sa\ssub-query\suses\sone\sor\smore\sof\sthe\ssame\stables\sas\sits\sparent.
+D 2016-03-09T08:07:31.577
 F Makefile.in dac2776c84e0d533b158a9af6e57e05c4a6b19f3
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b0493f10caddb8adf992a4e6f1943141fc7c6816
@@ -350,7 +350,7 @@ F src/resolve.c 9f7ce3a3c087afb7597b7c916c99126ff3f12f0c
 F src/rowset.c 9fe4b3ad7cc00944386bb600233d8f523de07a6e
 F src/select.c ff80004a9a6ece891a8d9327a88e7b6e2588ee6d
 F src/shell.c 2cde87e03712204231167c4a6c61b0eb5129e105
-F src/shell_indexes.c e10b3c2c4bc9a87f7bff1cf622473717b1a00698
+F src/shell_indexes.c 23c4b7f7bb8e9b0a8b912c389a85922939bb0769
 F src/sqlite.h.in c7db059d3b810b70b83d9ed1436fa813eba22462
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
@@ -428,7 +428,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c d21b99fd1458159d0b1ecdccc8ee6ada4fdc4c54
 F src/wal.h 2f7c831cf3b071fa548bf2d5cac640846a7ff19c
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
-F src/where.c 0ecce6da62ad521cac83dfa1b60a37936b36b6a1
+F src/where.c 59f267a53d29db13880597011323745b69e14f24
 F src/whereInt.h 78b6b4de94db84aecbdc07fe3e38f648eb391e9a
 F src/wherecode.c 791a784bbf8749d560fdb0b990b607bc4f44a38d
 F src/whereexpr.c de117970b29471177a6901d60ad83a194671dc03
@@ -988,7 +988,6 @@ F test/schema2.test 906408621ea881fdb496d878b1822572a34e32c5
 F test/schema3.test 1bc1008e1f8cb5654b248c55f27249366eb7ed38
 F test/schema4.test e6a66e20cc69f0e306667c08be7fda3d11707dc5
 F test/schema5.test 29699b4421f183c8f0e88bd28ce7d75d13ea653e
-F test/schemalint.test cee9f375637fcc8c6e77d971abe044445c23e024
 F test/securedel.test 21749c32ccc30f1ea9e4b9f33295a6521ec20fa0
 F test/securedel2.test 2d54c28e46eb1fd6902089958b20b1b056c6f1c5
 F test/select1.test be62204d2bd9a5a8a149e9974cfddce893d8f686
@@ -1025,7 +1024,7 @@ F test/shell2.test 12b8bf901b0e3a8ac58cf5c0c63a0a388d4d1862
 F test/shell3.test 5e8545ec72c4413a0e8d4c6be56496e3c257ca29
 F test/shell4.test ddf0a99044e2245a87fc17423e3aaa1445b3243b
 F test/shell5.test c04e9f9f948305706b88377c464c7f08ce7479f9
-F test/shell6.test dc93ef3f42c5c385e66b97729374fa1c017ea5ed
+F test/shell6.test 4ce53ce53e1206742e003b5ae609b6c2be438df1
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/show_speedtest1_rtree.tcl 32e6c5f073d7426148a6936a0408f4b5b169aba5
 F test/shrink.test 1b4330b1fd9e818c04726d45cb28db73087535ce
@@ -1431,7 +1430,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 02fbf699c07286f842d9617755f071b0fffc5d40
-R a01d8436d914e04ca0b643f78b3bf6ab
+P 0b73406595c9a077399b0f4c17af3a826cf3612f
+R d77c52a71510d468f62d262501df9c9f
 U dan
-Z 48d2e83e55b4a0cbf023823a82d88ee7
+Z c51c58b805618dc47dc45d8f0cd33733

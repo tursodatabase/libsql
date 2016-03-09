@@ -182,8 +182,8 @@ do_setup_rec_test 10.1 {
 } {
   SELECT * FROM t5, t6 WHERE a=? AND b=c AND c=?
 } {
-  CREATE INDEX t6_idx_00000063 ON t6(c) 
   CREATE INDEX t5_idx_000123a7 ON t5(a, b) 
+  CREATE INDEX t6_idx_00000063 ON t6(c) 
   0|0|1|SEARCH TABLE t6 USING INDEX t6_idx_00000063 (c=?) 
   0|1|0|SEARCH TABLE t5 USING COVERING INDEX t5_idx_000123a7 (a=? AND b=?)
 }

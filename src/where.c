@@ -3990,7 +3990,6 @@ static void whereTraceBuilder(
           for(i=0; i<p->pOrderBy->nExpr; i++){
             Expr *pExpr = p->pOrderBy->a[i].pExpr; 
             CollSeq *pColl = sqlite3ExprCollSeq(pParse, pExpr);
-            assert( pColl || pParse->rc );
             pExpr = sqlite3ExprSkipCollate(pExpr);
             if( pExpr->op==TK_COLUMN && pExpr->iTable==pItem->iCursor ){
               int iCol = pExpr->iColumn;
