@@ -82,38 +82,41 @@ static int memjrnlRead(
   sqlite_int64 iOfst     /* Begin reading at this offset */
 ){
   MemJournal *p = (MemJournal *)pJfd;
+  u8 *zOut = zBuf;
+  int nRead = iAmt;
+  int iChunkOffset;
+  FileChunk *pChunk;
+
+#ifdef SQLITE_ENABLE_ATOMIC_WRITE
   if( (iAmt+iOfst)>p->endpoint.iOffset ){
     return SQLITE_IOERR_SHORT_READ;
-  }else{
-    u8 *zOut = zBuf;
-    int nRead = iAmt;
-    int iChunkOffset;
-    FileChunk *pChunk;
-
-    if( p->readpoint.iOffset!=iOfst || iOfst==0 ){
-      sqlite3_int64 iOff = 0;
-      for(pChunk=p->pFirst; 
-          ALWAYS(pChunk) && (iOff+p->nChunkSize)<=iOfst;
-          pChunk=pChunk->pNext
-      ){
-        iOff += p->nChunkSize;
-      }
-    }else{
-      pChunk = p->readpoint.pChunk;
-    }
-
-    iChunkOffset = (int)(iOfst%p->nChunkSize);
-    do {
-      int iSpace = p->nChunkSize - iChunkOffset;
-      int nCopy = MIN(nRead, (p->nChunkSize - iChunkOffset));
-      memcpy(zOut, (u8*)pChunk->zChunk + iChunkOffset, nCopy);
-      zOut += nCopy;
-      nRead -= iSpace;
-      iChunkOffset = 0;
-    } while( nRead>=0 && (pChunk=pChunk->pNext)!=0 && nRead>0 );
-    p->readpoint.iOffset = iOfst+iAmt;
-    p->readpoint.pChunk = pChunk;
   }
+#endif
+
+  assert( (iAmt+iOfst)<=p->endpoint.iOffset );
+  if( p->readpoint.iOffset!=iOfst || iOfst==0 ){
+    sqlite3_int64 iOff = 0;
+    for(pChunk=p->pFirst; 
+        ALWAYS(pChunk) && (iOff+p->nChunkSize)<=iOfst;
+        pChunk=pChunk->pNext
+    ){
+      iOff += p->nChunkSize;
+    }
+  }else{
+    pChunk = p->readpoint.pChunk;
+  }
+
+  iChunkOffset = (int)(iOfst%p->nChunkSize);
+  do {
+    int iSpace = p->nChunkSize - iChunkOffset;
+    int nCopy = MIN(nRead, (p->nChunkSize - iChunkOffset));
+    memcpy(zOut, (u8*)pChunk->zChunk + iChunkOffset, nCopy);
+    zOut += nCopy;
+    nRead -= iSpace;
+    iChunkOffset = 0;
+  } while( nRead>=0 && (pChunk=pChunk->pNext)!=0 && nRead>0 );
+  p->readpoint.iOffset = iOfst+iAmt;
+  p->readpoint.pChunk = pChunk;
 
   return SQLITE_OK;
 }
@@ -146,14 +149,12 @@ static int memjrnlCreateFile(MemJournal *p){
     i64 iOff = 0;
     FileChunk *pIter;
     for(pIter=copy.pFirst; pIter; pIter=pIter->pNext){
-      int nWrite = nChunk;
-      if( pIter==copy.endpoint.pChunk ){
-        nWrite = copy.endpoint.iOffset % copy.nChunkSize;
-        if( nWrite==0 ) nWrite = copy.nChunkSize;
+      if( iOff + nChunk > copy.endpoint.iOffset ){
+        nChunk = copy.endpoint.iOffset - iOff;
       }
-      rc = sqlite3OsWrite(pReal, (u8*)pIter->zChunk, nWrite, iOff);
+      rc = sqlite3OsWrite(pReal, (u8*)pIter->zChunk, nChunk, iOff);
       if( rc ) break;
-      iOff += nWrite;
+      iOff += nChunk;
     }
     if( rc==SQLITE_OK ){
       /* No error has occurred. Free the in-memory buffers. */
