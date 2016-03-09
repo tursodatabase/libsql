@@ -1,5 +1,5 @@
-C In\sthe\squery\splanner,\smake\ssure\sOOM\serrors\sare\sreported\sup\sinto\nwhereLoopAddVirtual()\sso\sthat\sit\sshuts\sdown\sappropriately.
-D 2016-03-09T12:35:18.466
+C Automatically\sdisable\sSQLITE_ENABLE_EXPLAIN_COMMENTS\sif\sSQLITE_OMIT_EXPLAIN\nis\sdefined.
+D 2016-03-09T13:39:43.412
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -354,7 +354,7 @@ F src/shell.c 5e0ab1e708dc294330ccd8230536e1801f60822e
 F src/sqlite.h.in 0235586b3fb639e85998d495c90f007657fd82af
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
-F src/sqliteInt.h 24e2eed36a68d48bd43d866adb528001b0795275
+F src/sqliteInt.h 84c673f27b77dfbd367cb3ed1de8b6f3b73102dc
 F src/sqliteLimit.h 7b28cf72cbd52f178bfc97ea266445e351f2cd24
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
@@ -1455,7 +1455,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e0bac2f3eed900d3a26de339fb7d5963f9b47724
-R ef93df8fd296bfa582e1a9a9087c3fc6
+P a13c59d08bcbc6f26ce6ac761a892eff8f035201
+R dc65bf9f81f047db6984b996890cdadd
 U drh
-Z 498b8899efc263dd56cd46e3ec14e230
+Z 0ec66dff68629b4a77d366f261f0f00c
