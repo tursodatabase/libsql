@@ -110,6 +110,14 @@ int sqlite3Strlen30(const char *z){
 }
 
 /*
+** The string z[] is followed immediately by another string.  Return
+** a poiner to that other string.
+*/
+const char *sqlite3StrNext(const char *z){
+  return z + strlen(z) + 1;
+}
+
+/*
 ** Set the current error code to err_code and clear any prior error message.
 */
 void sqlite3Error(sqlite3 *db, int err_code){
@@ -256,16 +264,25 @@ void sqlite3TokenInit(Token *p, char *z){
 ** independence" that SQLite uses internally when comparing identifiers.
 */
 int sqlite3_stricmp(const char *zLeft, const char *zRight){
-  register unsigned char *a, *b;
   if( zLeft==0 ){
     return zRight ? -1 : 0;
   }else if( zRight==0 ){
     return 1;
   }
+  return sqlite3StrICmp(zLeft, zRight);
+}
+int sqlite3StrICmp(const char *zLeft, const char *zRight){
+  unsigned char *a, *b;
+  int c;
   a = (unsigned char *)zLeft;
   b = (unsigned char *)zRight;
-  while( *a!=0 && UpperToLower[*a]==UpperToLower[*b]){ a++; b++; }
-  return UpperToLower[*a] - UpperToLower[*b];
+  for(;;){
+    c = (int)UpperToLower[*a] - (int)UpperToLower[*b];
+    if( c || *a==0 ) break;
+    a++;
+    b++;
+  }
+  return c;
 }
 int sqlite3_strnicmp(const char *zLeft, const char *zRight, int N){
   register unsigned char *a, *b;
@@ -1076,7 +1093,7 @@ u8 sqlite3GetVarint32(const unsigned char *p, u32 *v){
 */
 int sqlite3VarintLen(u64 v){
   int i;
-  for(i=1; (v >>= 7)!=0; i++){ assert( i<9 ); }
+  for(i=1; (v >>= 7)!=0; i++){ assert( i<10 ); }
   return i;
 }
 
@@ -1107,10 +1124,12 @@ u32 sqlite3Get4byte(const u8 *p){
 void sqlite3Put4byte(unsigned char *p, u32 v){
 #if SQLITE_BYTEORDER==4321
   memcpy(p,&v,4);
-#elif SQLITE_BYTEORDER==1234 && defined(__GNUC__) && GCC_VERSION>=4003000
+#elif SQLITE_BYTEORDER==1234 && !defined(SQLITE_DISABLE_INTRINSIC) \
+    && defined(__GNUC__) && GCC_VERSION>=4003000
   u32 x = __builtin_bswap32(v);
   memcpy(p,&x,4);
-#elif SQLITE_BYTEORDER==1234 && defined(_MSC_VER) && _MSC_VER>=1300
+#elif SQLITE_BYTEORDER==1234 && !defined(SQLITE_DISABLE_INTRINSIC) \
+    && defined(_MSC_VER) && _MSC_VER>=1300
   u32 x = _byteswap_ulong(v);
   memcpy(p,&x,4);
 #else
@@ -1389,8 +1408,14 @@ LogEst sqlite3LogEstFromDouble(double x){
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 
+#if defined(SQLITE_ENABLE_STMT_SCANSTATUS) || \
+    defined(SQLITE_ENABLE_STAT3_OR_STAT4) || \
+    defined(SQLITE_EXPLAIN_ESTIMATED_ROWS)
 /*
 ** Convert a LogEst into an integer.
+**
+** Note that this routine is only used when one or more of various
+** non-standard compile-time options is enabled.
 */
 u64 sqlite3LogEstToInt(LogEst x){
   u64 n;
@@ -1404,3 +1429,4 @@ u64 sqlite3LogEstToInt(LogEst x){
   }
   return (n+8)>>(3-x);
 }
+#endif /* defined SCANSTAT or STAT4 or ESTIMATED_ROWS */

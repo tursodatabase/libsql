@@ -72,6 +72,21 @@ $(LIBRESOBJS):	$(TOP)\sqlite3.rc rcver.vc $(SQLITE3H)
 	$(LTRCOMPILE) -fo $(LIBRESOBJS) -DRC_VERONLY $(TOP)\sqlite3.rc
 }]]
 
+#
+# NOTE: This block is used to replace the section marked <<block2>> in
+#       the Makefile, if it exists.
+#
+set blocks(2) [string trimleft [string map [list \\\\ \\] {
+Replace.exe:
+	$(CSC) /target:exe $(TOP)\Replace.cs
+
+sqlite3.def:	Replace.exe $(LIBOBJ)
+	echo EXPORTS > sqlite3.def
+	dumpbin /all $(LIBOBJ) \\
+		| .\Replace.exe "^\s+/EXPORT:_?(sqlite3_[^@,]*)(?:@\d+|,DATA)?$$" $$1 true \\
+		| sort >> sqlite3.def
+}]]
+
 set data "#### DO NOT EDIT ####\n"
 append data "# This makefile is automatically "
 append data "generated from the [file tail $fromFileName] at\n"
@@ -90,8 +105,7 @@ foreach i [lsort -integer [array names blocks]] {
 }
 
 set data [string map [list " -I\$(TOP)\\src" ""] $data]
-set data [string map [list " /DEF:sqlite3.def" ""] $data]
-set data [string map [list " sqlite3.def" ""] $data]
+set data [string map [list " libsqlite3.lib" ""] $data]
 set data [string map [list " \$(ALL_TCL_TARGETS)" ""] $data]
 set data [string map [list "\$(TOP)\\src\\" "\$(TOP)\\"] $data]
 

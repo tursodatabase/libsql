@@ -3151,9 +3151,13 @@ EXTERN int Sqlite3_Unload(Tcl_Interp *interp, int flags){ return TCL_OK; }
 EXTERN int Tclsqlite3_Unload(Tcl_Interp *interp, int flags){ return TCL_OK; }
 
 /* Because it accesses the file-system and uses persistent state, SQLite
-** is not considered appropriate for safe interpreters.  Hence, we deliberately
-** omit the _SafeInit() interfaces.
+** is not considered appropriate for safe interpreters.  Hence, we cause
+** the _SafeInit() interfaces return TCL_ERROR.
 */
+EXTERN int Sqlite3_SafeInit(Tcl_Interp *interp){ return TCL_ERROR; }
+EXTERN int Sqlite3_SafeUnload(Tcl_Interp *interp, int flags){return TCL_ERROR;}
+
+
 
 #ifndef SQLITE_3_SUFFIX_ONLY
 int Sqlite_Init(Tcl_Interp *interp){ return Sqlite3_Init(interp); }
@@ -3770,6 +3774,7 @@ static void init_all(Tcl_Interp *interp){
     extern int SqlitetestSyscall_Init(Tcl_Interp*);
     extern int Fts5tcl_Init(Tcl_Interp *);
     extern int SqliteRbu_Init(Tcl_Interp*);
+    extern int Sqlitetesttcl_Init(Tcl_Interp*);
 #if defined(SQLITE_ENABLE_FTS3) || defined(SQLITE_ENABLE_FTS4)
     extern int Sqlitetestfts3_Init(Tcl_Interp *interp);
 #endif
@@ -3814,6 +3819,7 @@ static void init_all(Tcl_Interp *interp){
     SqlitetestSyscall_Init(interp);
     Fts5tcl_Init(interp);
     SqliteRbu_Init(interp);
+    Sqlitetesttcl_Init(interp);
 
 #if defined(SQLITE_ENABLE_FTS3) || defined(SQLITE_ENABLE_FTS4)
     Sqlitetestfts3_Init(interp);

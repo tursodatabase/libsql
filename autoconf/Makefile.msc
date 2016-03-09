@@ -119,12 +119,12 @@ USE_RC = 1
 FOR_WINRT = 0
 !ENDIF
 
-# Set this non-0 to compile binaries suitable for the UAP environment.
+# Set this non-0 to compile binaries suitable for the UWP environment.
 # This setting does not apply to any binaries that require Tcl to operate
 # properly (i.e. the text fixture, etc).
 #
-!IFNDEF FOR_UAP
-FOR_UAP = 0
+!IFNDEF FOR_UWP
+FOR_UWP = 0
 !ENDIF
 
 # Set this non-0 to compile binaries suitable for the Windows 10 platform.
@@ -204,26 +204,42 @@ SQLITE3H = sqlite3.h
 # This is the name to use for the SQLite dynamic link library (DLL).
 #
 !IFNDEF SQLITE3DLL
+!IF $(FOR_WIN10)!=0
+SQLITE3DLL = winsqlite3.dll
+!ELSE
 SQLITE3DLL = sqlite3.dll
+!ENDIF
 !ENDIF
 
 # This is the name to use for the SQLite import library (LIB).
 #
 !IFNDEF SQLITE3LIB
+!IF $(FOR_WIN10)!=0
+SQLITE3LIB = winsqlite3.lib
+!ELSE
 SQLITE3LIB = sqlite3.lib
+!ENDIF
 !ENDIF
 
 # This is the name to use for the SQLite shell executable (EXE).
 #
 !IFNDEF SQLITE3EXE
+!IF $(FOR_WIN10)!=0
+SQLITE3EXE = winsqlite3shell.exe
+!ELSE
 SQLITE3EXE = sqlite3.exe
+!ENDIF
 !ENDIF
 
 # This is the argument used to set the program database (PDB) file for the
 # SQLite shell executable (EXE).
 #
 !IFNDEF SQLITE3EXEPDB
+!IF $(FOR_WIN10)!=0
+SQLITE3EXEPDB =
+!ELSE
 SQLITE3EXEPDB = /pdb:sqlite3sh.pdb
+!ENDIF
 !ENDIF
 
 # These are the "standard" SQLite compilation options used when compiling for
@@ -273,6 +289,14 @@ PROGRAMFILES_X86 = $(PROGRAMFILES_X86:\\=\)
 #
 !IFNDEF CC
 CC = cl.exe
+!ENDIF
+
+# Check for the predefined command macro CSC.  This should point to a working
+# C Sharp compiler binary.  If it is not defined, simply define it to the
+# legacy default value 'csc.exe'.
+#
+!IFNDEF CSC
+CSC = csc.exe
 !ENDIF
 
 # Check for the command macro LD.  This should point to the linker binary for
@@ -399,17 +423,8 @@ TCC = $(CC) -nologo -W4 -DINCLUDE_MSVC_H=1 $(CCOPTS) $(TCCOPTS)
 TCC = $(CC) -nologo -W3 $(CCOPTS) $(TCCOPTS)
 !ENDIF
 
-TCC = $(TCC) -DSQLITE_OS_WIN=1 -I$(TOP) -fp:precise
-RCC = $(RC) -DSQLITE_OS_WIN=1 -I$(TOP) $(RCOPTS) $(RCCOPTS)
-
-# Adjust the names of the primary targets for use with Windows 10.
-#
-!IF $(FOR_WIN10)!=0
-SQLITE3DLL = winsqlite3.dll
-SQLITE3LIB = winsqlite3.lib
-SQLITE3EXE = winsqlite3shell.exe
-SQLITE3EXEPDB =
-!ENDIF
+TCC = $(TCC) -DSQLITE_OS_WIN=1 -I. -I$(TOP) -fp:precise
+RCC = $(RC) -DSQLITE_OS_WIN=1 -I. -I$(TOP) $(RCOPTS) $(RCCOPTS)
 
 # Check if we want to use the "stdcall" calling convention when compiling.
 # This is not supported by the compilers for non-x86 platforms.  It should
@@ -450,8 +465,10 @@ CORE_COMPILE_OPTS = $(CORE_CCONV_OPTS)
 # when linking.
 #
 !IFNDEF CORE_LINK_DEP
-!IF $(DYNAMIC_SHELL)!=0 || $(FOR_WIN10)!=0
+!IF $(DYNAMIC_SHELL)!=0
 CORE_LINK_DEP =
+!ELSEIF $(FOR_WIN10)==0 || "$(PLATFORM)"=="x86"
+CORE_LINK_DEP = sqlite3.def
 !ELSE
 CORE_LINK_DEP =
 !ENDIF
@@ -460,8 +477,10 @@ CORE_LINK_DEP =
 # These are additional linker options used for the core library.
 #
 !IFNDEF CORE_LINK_OPTS
-!IF $(DYNAMIC_SHELL)!=0 || $(FOR_WIN10)!=0
+!IF $(DYNAMIC_SHELL)!=0
 CORE_LINK_OPTS =
+!ELSEIF $(FOR_WIN10)==0 || "$(PLATFORM)"=="x86"
+CORE_LINK_OPTS = /DEF:sqlite3.def
 !ELSE
 CORE_LINK_OPTS =
 !ENDIF
@@ -536,8 +555,8 @@ RCC = $(RCC) -DWINAPI_FAMILY=WINAPI_FAMILY_APP
 # C compiler options for the Windows 10 platform (needs MSVC 2015).
 #
 !IF $(FOR_WIN10)!=0
-TCC = $(TCC) /guard:cf -D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE
-BCC = $(BCC) /guard:cf -D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE
+TCC = $(TCC) /d2guard4 -D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE
+BCC = $(BCC) /d2guard4 -D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE
 !ENDIF
 
 # Also, we need to dynamically link to the correct MSVC runtime
@@ -802,10 +821,10 @@ LTLINKOPTS = $(LTLINKOPTS) WindowsPhoneCore.lib RuntimeObject.lib PhoneAppModelH
 LTLINKOPTS = $(LTLINKOPTS) /NODEFAULTLIB:kernel32.lib /NODEFAULTLIB:ole32.lib
 !ENDIF
 
-# When compiling for UAP or the Windows 10 platform, some extra linker
+# When compiling for UWP or the Windows 10 platform, some extra linker
 # options are also required.
 #
-!IF $(FOR_UAP)!=0 || $(FOR_WIN10)!=0
+!IF $(FOR_UWP)!=0 || $(FOR_WIN10)!=0
 LTLINKOPTS = $(LTLINKOPTS) /DYNAMICBASE /NODEFAULTLIB:kernel32.lib
 LTLINKOPTS = $(LTLINKOPTS) mincore.lib
 !IFDEF PSDKLIBPATH
@@ -814,7 +833,7 @@ LTLINKOPTS = $(LTLINKOPTS) "/LIBPATH:$(PSDKLIBPATH)"
 !ENDIF
 
 !IF $(FOR_WIN10)!=0
-LTLINKOPTS = $(LTLINKOPTS) "/LIBPATH:$(UCRTLIBPATH)"
+LTLINKOPTS = $(LTLINKOPTS) /guard:cf "/LIBPATH:$(UCRTLIBPATH)"
 !IF $(DEBUG)>1
 LTLINKOPTS = $(LTLINKOPTS) /NODEFAULTLIB:libucrtd.lib /DEFAULTLIB:ucrtd.lib
 !ELSE
@@ -856,30 +875,35 @@ LIBRESOBJS =
 # when the shell is not being dynamically linked.
 #
 !IF $(DYNAMIC_SHELL)==0 && $(FOR_WIN10)==0
-SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_SHELL_JSON1 -DSQLITE_ENABLE_FTS4 -DSQLITE_ENABLE_FTS5
+SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_SHELL_JSON1 -DSQLITE_ENABLE_FTS4 -DSQLITE_ENABLE_EXPLAIN_COMMENTS
 !ENDIF
 
 
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
 #
-all:	dll libsqlite3.lib shell
+all:	dll shell
 
 # Dynamic link library section.
 #
-dll: $(SQLITE3DLL)
+dll:	$(SQLITE3DLL)
 
 # Shell executable.
 #
-shell: $(SQLITE3EXE)
-
-libsqlite3.lib:	$(LIBOBJ)
-	$(LTLIB) $(LTLIBOPTS) /OUT:$@ $(LIBOBJ) $(TLIBS)
+shell:	$(SQLITE3EXE)
 
 
-$(SQLITE3DLL): $(LIBOBJ) $(LIBRESOBJS) $(CORE_LINK_DEP)
+$(SQLITE3DLL):	$(LIBOBJ) $(LIBRESOBJS) $(CORE_LINK_DEP)
 	$(LD) $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) /DLL $(CORE_LINK_OPTS) /OUT:$@ $(LIBOBJ) $(LIBRESOBJS) $(LTLIBS) $(TLIBS)
 
+Replace.exe:
+	$(CSC) /target:exe $(TOP)\Replace.cs
+
+sqlite3.def:	Replace.exe $(LIBOBJ)
+	echo EXPORTS > sqlite3.def
+	dumpbin /all $(LIBOBJ) \
+		| .\Replace.exe "^\s+/EXPORT:_?(sqlite3_[^@,]*)(?:@\d+|,DATA)?$$" $$1 true \
+		| sort >> sqlite3.def
 
 $(SQLITE3EXE):	$(TOP)\shell.c $(SHELL_CORE_DEP) $(LIBRESOBJS) $(SHELL_CORE_SRC) $(SQLITE3H)
 	$(LTLINK) $(SHELL_COMPILE_OPTS) $(READLINE_FLAGS) $(TOP)\shell.c $(SHELL_CORE_SRC) \
@@ -918,4 +942,5 @@ $(LIBRESOBJS):	$(TOP)\sqlite3.rc rcver.vc $(SQLITE3H)
 
 clean:
 	del /Q *.exp *.lo *.ilk *.lib *.obj *.ncb *.pdb *.sdf *.suo 2>NUL
-	del /Q *.bsc *.cod *.da *.bb *.bbg *.vc gmon.out 2>NUL
+	del /Q *.bsc *.def *.cod *.da *.bb *.bbg *.vc gmon.out 2>NUL
+	del /Q $(SQLITE3EXE) $(SQLITE3DLL) Replace.exe 2>NUL

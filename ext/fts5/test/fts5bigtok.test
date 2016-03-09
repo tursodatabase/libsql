@@ -14,6 +14,7 @@
 
 source [file join [file dirname [info script]] fts5_common.tcl]
 set testprefix fts5bigtok
+return_if_no_fts5
 
 proc rndterm {} {
   set L [list a b c d e f g h i j k l m n o p q r s t u v w x y z]

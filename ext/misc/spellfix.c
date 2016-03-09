@@ -1775,7 +1775,7 @@ static void scriptCodeSqlFunc(
 */
 
 /* Maximum length of a phonehash used for querying the shadow table */
-#define SPELLFIX_MX_HASH  8
+#define SPELLFIX_MX_HASH  32
 
 /* Maximum number of hash strings to examine per query */
 #define SPELLFIX_MX_RUN   1

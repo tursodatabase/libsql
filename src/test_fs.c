@@ -496,9 +496,9 @@ static int fstreeFilter(
 
 #if SQLITE_OS_WIN
   zRoot = sqlite3_mprintf("%s%c", getenv("SystemDrive"), '/');
-  nRoot = strlen(zRoot);
+  nRoot = sqlite3Strlen30(zRoot);
   zPrefix = sqlite3_mprintf("%s", getenv("SystemDrive"));
-  nPrefix = strlen(zPrefix);
+  nPrefix = sqlite3Strlen30(zPrefix);
 #else
   zRoot = "/";
   nRoot = 1;

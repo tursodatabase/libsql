@@ -3154,7 +3154,7 @@ static int test_bind_zeroblob64(
 ){
   sqlite3_stmt *pStmt;
   int idx;
-  i64 n;
+  Tcl_WideInt n;
   int rc;
 
   if( objc!=4 ){
@@ -6921,6 +6921,53 @@ static int test_register_dbstat_vtab(
 }
 
 /*
+** tclcmd:   sqlite3_db_config DB SETTING VALUE
+**
+** Invoke sqlite3_db_config() for one of the setting values.
+*/
+static int test_sqlite3_db_config(
+  void *clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  static const struct {
+    const char *zName;
+    int eVal;
+  } aSetting[] = {
+    { "FKEY",            SQLITE_DBCONFIG_ENABLE_FKEY },
+    { "TRIGGER",         SQLITE_DBCONFIG_ENABLE_TRIGGER },
+    { "FTS3_TOKENIZER",  SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER },
+  };
+  int i;
+  int v;
+  const char *zSetting;
+  sqlite3 *db;
+
+  if( objc!=4 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB SETTING VALUE");
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  zSetting = Tcl_GetString(objv[2]);
+  if( sqlite3_strglob("SQLITE_*", zSetting)==0 ) zSetting += 7;
+  if( sqlite3_strglob("DBCONFIG_*", zSetting)==0 ) zSetting += 9;
+  if( sqlite3_strglob("ENABLE_*", zSetting)==0 ) zSetting += 7;
+  for(i=0; i<ArraySize(aSetting); i++){
+    if( strcmp(zSetting, aSetting[i].zName)==0 ) break;
+  }
+  if( i>=ArraySize(aSetting) ){
+    Tcl_SetObjResult(interp,
+      Tcl_NewStringObj("unknown sqlite3_db_config setting", -1));
+    return TCL_ERROR;
+  }
+  if( Tcl_GetIntFromObj(interp, objv[3], &v) ) return TCL_ERROR;
+  sqlite3_db_config(db, aSetting[i].eVal, v, &v);
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(v));
+  return TCL_OK;
+}
+
+/*
 ** Register commands with the TCL interpreter.
 */
 int Sqlitetest1_Init(Tcl_Interp *interp){
@@ -6989,6 +7036,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      Tcl_ObjCmdProc *xProc;
      void *clientData;
   } aObjCmd[] = {
+     { "sqlite3_db_config",             test_sqlite3_db_config, 0 },
      { "bad_behavior",                  test_bad_behavior,  (void*)&iZero },
      { "register_dbstat_vtab",          test_register_dbstat_vtab  },
      { "sqlite3_connection_pointer",    get_sqlite_pointer, 0 },

@@ -61,7 +61,7 @@ LIBOBJ+= vdbe.o parse.o \
          fts3_tokenize_vtab.o \
 	 fts3_unicode.o fts3_unicode2.o \
          fts3_write.o fts5.o func.o global.o hash.o \
-         icu.o insert.o journal.o json1.o legacy.o loadext.o \
+         icu.o insert.o json1.o legacy.o loadext.o \
          main.o malloc.o mem0.o mem1.o mem2.o mem3.o mem5.o \
          memjournal.o \
          mutex.o mutex_noop.o mutex_unix.o mutex_w32.o \
@@ -104,7 +104,6 @@ SRC = \
   $(TOP)/src/hash.h \
   $(TOP)/src/hwtime.h \
   $(TOP)/src/insert.c \
-  $(TOP)/src/journal.c \
   $(TOP)/src/legacy.c \
   $(TOP)/src/loadext.c \
   $(TOP)/src/main.c \
@@ -285,6 +284,7 @@ TESTSRC = \
   $(TOP)/src/test_autoext.c \
   $(TOP)/src/test_async.c \
   $(TOP)/src/test_backup.c \
+  $(TOP)/src/test_bestindex.c \
   $(TOP)/src/test_blob.c \
   $(TOP)/src/test_btree.c \
   $(TOP)/src/test_config.c \
@@ -500,10 +500,9 @@ mptester$(EXE):	sqlite3.c $(TOP)/mptest/mptest.c
 	$(TCCX) -o $@ -I. $(TOP)/mptest/mptest.c sqlite3.c \
 		$(TLIBS) $(THREADLIB)
 
-MPTEST1=./mptester$(EXE) mptest.db $(TOP)/mptest/crash01.test --repeat 20
-MPTEST2=./mptester$(EXE) mptest.db $(TOP)/mptest/multiwrite01.test --repeat 20
+MPTEST1=./mptester$(EXE) mptest1.db $(TOP)/mptest/crash01.test --repeat 20
+MPTEST2=./mptester$(EXE) mptest2.db $(TOP)/mptest/multiwrite01.test --repeat 20
 mptest:	mptester$(EXE)
-	rm -f mptest.db
 	$(MPTEST1) --journalmode DELETE
 	$(MPTEST2) --journalmode WAL
 	$(MPTEST1) --journalmode WAL
@@ -740,7 +739,9 @@ sqlite3_schemalint$(EXE): $(TESTSRC) sqlite3_schemalint.c
 # Rules to build the 'testfixture' application.
 #
 TESTFIXTURE_FLAGS  = -DSQLITE_TEST=1 -DSQLITE_CRASH_TEST=1
-TESTFIXTURE_FLAGS += -DSQLITE_SERVER=1 -DSQLITE_PRIVATE="" -DSQLITE_CORE 
+TESTFIXTURE_FLAGS += -DSQLITE_SERVER=1 -DSQLITE_PRIVATE="" -DSQLITE_CORE
+TESTFIXTURE_FLAGS += -DSQLITE_SERIES_CONSTRAINT_VERIFY=1
+TESTFIXTURE_FLAGS += -DSQLITE_DEFAULT_PAGE_SIZE=1024
 
 testfixture$(EXE): $(TESTSRC2) libsqlite3.a $(TESTSRC) $(TOP)/src/tclsqlite.c
 	$(TCCX) $(TCL_FLAGS) -DTCLSH=1 $(TESTFIXTURE_FLAGS)                  \
@@ -877,10 +878,15 @@ loadfts: $(TOP)/tool/loadfts.c libsqlite3.a
 checksymbols: sqlite3.o
 	nm -g --defined-only sqlite3.o | grep -v " sqlite3_" ; test $$? -ne 0
 
-# Build the amalgamation-autoconf package.
+# Build the amalgamation-autoconf package.  The amalamgation-tarball target builds
+# a tarball named for the version number.  Ex:  sqlite-autoconf-3110000.tar.gz.
+# The snapshot-tarball target builds a tarball named by the SHA1 hash
 #
 amalgamation-tarball: sqlite3.c
-	TOP=$(TOP) sh $(TOP)/tool/mkautoconfamal.sh
+	TOP=$(TOP) sh $(TOP)/tool/mkautoconfamal.sh --normal
+
+snapshot-tarball: sqlite3.c
+	TOP=$(TOP) sh $(TOP)/tool/mkautoconfamal.sh --snapshot
 
 
 # Standard install and cleanup targets

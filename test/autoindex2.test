@@ -218,10 +218,15 @@ do_execsql_test autoindex2-120 {
      AND t1.did = t2.did
      AND t2.uid = t3.uid
   ORDER BY t1.ptime desc LIMIT 500;
-} {0 0 0 {SEARCH TABLE t1 USING INDEX t1x1 (ptime>?)} 0 1 1 {SEARCH TABLE t2 USING INDEX t2x0 (did=?)} 0 2 2 {SEARCH TABLE t3 USING INDEX t3x0 (uid=?)}}
+} {~/AUTO/}
 #
 # ^^^--- Before being fixed, the above was using an automatic covering
 # on t3 and reordering the tables so that t3 was in the outer loop and
 # implementing the ORDER BY clause using a B-Tree.
+#
+# This test is sanitized data received from a user.  The original unsanitized
+# data and STAT4 data is found in the th3private test repository.  See one of
+# the th3private check-ins on 2016-02-25.  The test is much more accurate when
+# STAT4 data is used.
 
 finish_test

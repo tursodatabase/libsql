@@ -206,7 +206,7 @@ static int fts5ConfigSetEnum(
   const char *zEnum, 
   int *peVal
 ){
-  int nEnum = strlen(zEnum);
+  int nEnum = (int)strlen(zEnum);
   int i;
   int iVal = -1;
 
@@ -943,4 +943,3 @@ int sqlite3Fts5ConfigLoad(Fts5Config *pConfig, int iCookie){
   }
   return rc;
 }
-

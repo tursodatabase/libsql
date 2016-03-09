@@ -31,8 +31,8 @@ static int whereLoopResize(sqlite3*, WhereLoop*, int);
 /*
 ** Return the estimated number of output rows from a WHERE clause
 */
-u64 sqlite3WhereOutputRowCount(WhereInfo *pWInfo){
-  return sqlite3LogEstToInt(pWInfo->nRowOut);
+LogEst sqlite3WhereOutputRowCount(WhereInfo *pWInfo){
+  return pWInfo->nRowOut;
 }
 
 /*
@@ -934,7 +934,6 @@ static sqlite3_index_info *allocateIndexInfo(
 */
 static int vtabBestIndex(Parse *pParse, Table *pTab, sqlite3_index_info *p){
   sqlite3_vtab *pVtab = sqlite3GetVTable(pParse->db, pTab)->pVtab;
-  int i;
   int rc;
 
   TRACE_IDX_INPUTS(p);
@@ -953,12 +952,16 @@ static int vtabBestIndex(Parse *pParse, Table *pTab, sqlite3_index_info *p){
   sqlite3_free(pVtab->zErrMsg);
   pVtab->zErrMsg = 0;
 
+#if 0
+  /* This error is now caught by the caller.
+  ** Search for "xBestIndex malfunction" below */
   for(i=0; i<p->nConstraint; i++){
     if( !p->aConstraint[i].usable && p->aConstraintUsage[i].argvIndex>0 ){
       sqlite3ErrorMsg(pParse, 
           "table %s: xBestIndex returned an invalid plan", pTab->zName);
     }
   }
+#endif
 
   return pParse->nErr;
 }
@@ -1561,7 +1564,8 @@ static int whereEqualScanEst(
   pBuilder->nRecValid = nEq;
 
   whereKeyStats(pParse, p, pRec, 0, a);
-  WHERETRACE(0x10,("equality scan regions: %d\n", (int)a[1]));
+  WHERETRACE(0x10,("equality scan regions %s(%d): %d\n",
+                   p->zName, nEq-1, (int)a[1]));
   *pnRow = a[1];
   
   return rc;
@@ -1736,7 +1740,7 @@ static int whereLoopResize(sqlite3 *db, WhereLoop *p, int n){
   if( p->nLSlot>=n ) return SQLITE_OK;
   n = (n+7)&~7;
   paNew = sqlite3DbMallocRawNN(db, sizeof(p->aLTerm[0])*n);
-  if( paNew==0 ) return SQLITE_NOMEM;
+  if( paNew==0 ) return SQLITE_NOMEM_BKPT;
   memcpy(paNew, p->aLTerm, sizeof(p->aLTerm[0])*p->nLSlot);
   if( p->aLTerm!=p->aLTermSpace ) sqlite3DbFree(db, p->aLTerm);
   p->aLTerm = paNew;
@@ -1751,7 +1755,7 @@ static int whereLoopXfer(sqlite3 *db, WhereLoop *pTo, WhereLoop *pFrom){
   whereLoopClearUnion(db, pTo);
   if( whereLoopResize(db, pTo, pFrom->nLTerm) ){
     memset(&pTo->u, 0, sizeof(pTo->u));
-    return SQLITE_NOMEM;
+    return SQLITE_NOMEM_BKPT;
   }
   memcpy(pTo, pFrom, WHERE_LOOP_XFER_SZ);
   memcpy(pTo->aLTerm, pFrom->aLTerm, pTo->nLTerm*sizeof(pTo->aLTerm[0]));
@@ -2033,7 +2037,7 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
   if( p==0 ){
     /* Allocate a new WhereLoop to add to the end of the list */
     *ppPrev = p = sqlite3DbMallocRawNN(db, sizeof(WhereLoop));
-    if( p==0 ) return SQLITE_NOMEM;
+    if( p==0 ) return SQLITE_NOMEM_BKPT;
     whereLoopInit(p);
     p->pNextLoop = 0;
   }else{
@@ -2189,7 +2193,7 @@ static int whereLoopAddBtreeIndex(
   WhereTerm *pTop = 0, *pBtm = 0; /* Top and bottom range constraints */
 
   pNew = pBuilder->pNew;
-  if( db->mallocFailed ) return SQLITE_NOMEM;
+  if( db->mallocFailed ) return SQLITE_NOMEM_BKPT;
 
   assert( (pNew->wsFlags & WHERE_VIRTUALTABLE)==0 );
   assert( (pNew->wsFlags & WHERE_TOP_LIMIT)==0 );
@@ -2553,7 +2557,7 @@ static int whereUsablePartialIndex(int iTab, WhereClause *pWC, Expr *pWhere){
 */
 static int whereLoopAddBtree(
   WhereLoopBuilder *pBuilder, /* WHERE clause information */
-  Bitmask mExtra              /* Extra prerequesites for using this table */
+  Bitmask mPrereq             /* Extra prerequesites for using this table */
 ){
   WhereInfo *pWInfo;          /* WHERE analysis context */
   Index *pProbe;              /* An index we are evaluating */
@@ -2653,7 +2657,7 @@ static int whereLoopAddBtree(
         pNew->nOut = 43;  assert( 43==sqlite3LogEst(20) );
         pNew->rRun = sqlite3LogEstAdd(rLogSize,pNew->nOut);
         pNew->wsFlags = WHERE_AUTO_INDEX;
-        pNew->prereq = mExtra | pTerm->prereqRight;
+        pNew->prereq = mPrereq | pTerm->prereqRight;
         rc = whereLoopInsert(pBuilder, pNew);
       }
     }
@@ -2674,7 +2678,7 @@ static int whereLoopAddBtree(
     pNew->nLTerm = 0;
     pNew->iSortIdx = 0;
     pNew->rSetup = 0;
-    pNew->prereq = mExtra;
+    pNew->prereq = mPrereq;
     pNew->nOut = rSize;
     pNew->u.btree.pIndex = pProbe;
     b = indexMightHelpWithOrderBy(pBuilder, pProbe, pSrc->iCursor);
@@ -2747,12 +2751,160 @@ static int whereLoopAddBtree(
 }
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
+
+/*
+** Argument pIdxInfo is already populated with all constraints that may
+** be used by the virtual table identified by pBuilder->pNew->iTab. This
+** function marks a subset of those constraints usable, invokes the
+** xBestIndex method and adds the returned plan to pBuilder.
+**
+** A constraint is marked usable if:
+**
+**   * Argument mUsable indicates that its prerequisites are available, and
+**
+**   * It is not one of the operators specified in the mExclude mask passed
+**     as the fourth argument (which in practice is either WO_IN or 0).
+**
+** Argument mPrereq is a mask of tables that must be scanned before the
+** virtual table in question. These are added to the plans prerequisites
+** before it is added to pBuilder.
+**
+** Output parameter *pbIn is set to true if the plan added to pBuilder
+** uses one or more WO_IN terms, or false otherwise.
+*/
+static int whereLoopAddVirtualOne(
+  WhereLoopBuilder *pBuilder,
+  Bitmask mPrereq,                /* Mask of tables that must be used. */
+  Bitmask mUsable,                /* Mask of usable tables */
+  u16 mExclude,                   /* Exclude terms using these operators */
+  sqlite3_index_info *pIdxInfo,   /* Populated object for xBestIndex */
+  int *pbIn                       /* OUT: True if plan uses an IN(...) op */
+){
+  WhereClause *pWC = pBuilder->pWC;
+  struct sqlite3_index_constraint *pIdxCons;
+  struct sqlite3_index_constraint_usage *pUsage = pIdxInfo->aConstraintUsage;
+  int i;
+  int mxTerm;
+  int rc = SQLITE_OK;
+  WhereLoop *pNew = pBuilder->pNew;
+  Parse *pParse = pBuilder->pWInfo->pParse;
+  struct SrcList_item *pSrc = &pBuilder->pWInfo->pTabList->a[pNew->iTab];
+  int nConstraint = pIdxInfo->nConstraint;
+
+  assert( (mUsable & mPrereq)==mPrereq );
+  *pbIn = 0;
+  pNew->prereq = mPrereq;
+
+  /* Set the usable flag on the subset of constraints identified by 
+  ** arguments mUsable and mExclude. */
+  pIdxCons = *(struct sqlite3_index_constraint**)&pIdxInfo->aConstraint;
+  for(i=0; i<nConstraint; i++, pIdxCons++){
+    WhereTerm *pTerm = &pWC->a[pIdxCons->iTermOffset];
+    pIdxCons->usable = 0;
+    if( (pTerm->prereqRight & mUsable)==pTerm->prereqRight 
+     && (pTerm->eOperator & mExclude)==0
+    ){
+      pIdxCons->usable = 1;
+    }
+  }
+
+  /* Initialize the output fields of the sqlite3_index_info structure */
+  memset(pUsage, 0, sizeof(pUsage[0])*nConstraint);
+  assert( pIdxInfo->needToFreeIdxStr==0 );
+  pIdxInfo->idxStr = 0;
+  pIdxInfo->idxNum = 0;
+  pIdxInfo->orderByConsumed = 0;
+  pIdxInfo->estimatedCost = SQLITE_BIG_DBL / (double)2;
+  pIdxInfo->estimatedRows = 25;
+  pIdxInfo->idxFlags = 0;
+  pIdxInfo->colUsed = (sqlite3_int64)pSrc->colUsed;
+
+  /* Invoke the virtual table xBestIndex() method */
+  rc = vtabBestIndex(pParse, pSrc->pTab, pIdxInfo);
+  if( rc ) return rc;
+
+  mxTerm = -1;
+  assert( pNew->nLSlot>=nConstraint );
+  for(i=0; i<nConstraint; i++) pNew->aLTerm[i] = 0;
+  pNew->u.vtab.omitMask = 0;
+  pIdxCons = *(struct sqlite3_index_constraint**)&pIdxInfo->aConstraint;
+  for(i=0; i<nConstraint; i++, pIdxCons++){
+    int iTerm;
+    if( (iTerm = pUsage[i].argvIndex - 1)>=0 ){
+      WhereTerm *pTerm;
+      int j = pIdxCons->iTermOffset;
+      if( iTerm>=nConstraint
+       || j<0
+       || j>=pWC->nTerm
+       || pNew->aLTerm[iTerm]!=0
+       || pIdxCons->usable==0
+      ){
+        rc = SQLITE_ERROR;
+        sqlite3ErrorMsg(pParse,"%s.xBestIndex malfunction",pSrc->pTab->zName);
+        return rc;
+      }
+      testcase( iTerm==nConstraint-1 );
+      testcase( j==0 );
+      testcase( j==pWC->nTerm-1 );
+      pTerm = &pWC->a[j];
+      pNew->prereq |= pTerm->prereqRight;
+      assert( iTerm<pNew->nLSlot );
+      pNew->aLTerm[iTerm] = pTerm;
+      if( iTerm>mxTerm ) mxTerm = iTerm;
+      testcase( iTerm==15 );
+      testcase( iTerm==16 );
+      if( iTerm<16 && pUsage[i].omit ) pNew->u.vtab.omitMask |= 1<<iTerm;
+      if( (pTerm->eOperator & WO_IN)!=0 ){
+        /* A virtual table that is constrained by an IN clause may not
+        ** consume the ORDER BY clause because (1) the order of IN terms
+        ** is not necessarily related to the order of output terms and
+        ** (2) Multiple outputs from a single IN value will not merge
+        ** together.  */
+        pIdxInfo->orderByConsumed = 0;
+        pIdxInfo->idxFlags &= ~SQLITE_INDEX_SCAN_UNIQUE;
+        *pbIn = 1; assert( (mExclude & WO_IN)==0 );
+      }
+    }
+  }
+
+  pNew->nLTerm = mxTerm+1;
+  assert( pNew->nLTerm<=pNew->nLSlot );
+  pNew->u.vtab.idxNum = pIdxInfo->idxNum;
+  pNew->u.vtab.needFree = pIdxInfo->needToFreeIdxStr;
+  pIdxInfo->needToFreeIdxStr = 0;
+  pNew->u.vtab.idxStr = pIdxInfo->idxStr;
+  pNew->u.vtab.isOrdered = (i8)(pIdxInfo->orderByConsumed ?
+      pIdxInfo->nOrderBy : 0);
+  pNew->rSetup = 0;
+  pNew->rRun = sqlite3LogEstFromDouble(pIdxInfo->estimatedCost);
+  pNew->nOut = sqlite3LogEst(pIdxInfo->estimatedRows);
+
+  /* Set the WHERE_ONEROW flag if the xBestIndex() method indicated
+  ** that the scan will visit at most one row. Clear it otherwise. */
+  if( pIdxInfo->idxFlags & SQLITE_INDEX_SCAN_UNIQUE ){
+    pNew->wsFlags |= WHERE_ONEROW;
+  }else{
+    pNew->wsFlags &= ~WHERE_ONEROW;
+  }
+  whereLoopInsert(pBuilder, pNew);
+  if( pNew->u.vtab.needFree ){
+    sqlite3_free(pNew->u.vtab.idxStr);
+    pNew->u.vtab.needFree = 0;
+  }
+  WHERETRACE(0xffff, ("  bIn=%d prereqIn=%04llx prereqOut=%04llx\n",
+                      *pbIn, (sqlite3_uint64)mPrereq,
+                      (sqlite3_uint64)(pNew->prereq & ~mPrereq)));
+
+  return SQLITE_OK;
+}
+
+
 /*
 ** Add all WhereLoop objects for a table of the join identified by
 ** pBuilder->pNew->iTab.  That table is guaranteed to be a virtual table.
 **
-** If there are no LEFT or CROSS JOIN joins in the query, both mExtra and
-** mUnusable are set to 0. Otherwise, mExtra is a mask of all FROM clause
+** If there are no LEFT or CROSS JOIN joins in the query, both mPrereq and
+** mUnusable are set to 0. Otherwise, mPrereq is a mask of all FROM clause
 ** entries that occur before the virtual table in the FROM clause and are
 ** separated from it by at least one LEFT or CROSS JOIN. Similarly, the
 ** mUnusable mask contains all FROM clause entries that occur after the
@@ -2763,188 +2915,122 @@ static int whereLoopAddBtree(
 **
 **   ... FROM t1, t2 LEFT JOIN t3, t4, vt CROSS JOIN t5, t6;
 **
-** then mExtra corresponds to (t1, t2) and mUnusable to (t5, t6).
+** then mPrereq corresponds to (t1, t2) and mUnusable to (t5, t6).
 **
-** All the tables in mExtra must be scanned before the current virtual 
+** All the tables in mPrereq must be scanned before the current virtual 
 ** table. So any terms for which all prerequisites are satisfied by 
-** mExtra may be specified as "usable" in all calls to xBestIndex. 
+** mPrereq may be specified as "usable" in all calls to xBestIndex. 
 ** Conversely, all tables in mUnusable must be scanned after the current
 ** virtual table, so any terms for which the prerequisites overlap with
 ** mUnusable should always be configured as "not-usable" for xBestIndex.
 */
 static int whereLoopAddVirtual(
   WhereLoopBuilder *pBuilder,  /* WHERE clause information */
-  Bitmask mExtra,              /* Tables that must be scanned before this one */
+  Bitmask mPrereq,             /* Tables that must be scanned before this one */
   Bitmask mUnusable            /* Tables that must be scanned after this one */
 ){
+  int rc = SQLITE_OK;          /* Return code */
   WhereInfo *pWInfo;           /* WHERE analysis context */
   Parse *pParse;               /* The parsing context */
   WhereClause *pWC;            /* The WHERE clause */
   struct SrcList_item *pSrc;   /* The FROM clause term to search */
-  Table *pTab;
-  sqlite3 *db;
-  sqlite3_index_info *pIdxInfo;
-  struct sqlite3_index_constraint *pIdxCons;
-  struct sqlite3_index_constraint_usage *pUsage;
-  WhereTerm *pTerm;
-  int i, j;
-  int iTerm, mxTerm;
-  int nConstraint;
-  int seenIn = 0;              /* True if an IN operator is seen */
-  int seenVar = 0;             /* True if a non-constant constraint is seen */
-  int iPhase;                  /* 0: const w/o IN, 1: const, 2: no IN,  2: IN */
+  sqlite3_index_info *p;       /* Object to pass to xBestIndex() */
+  int nConstraint;             /* Number of constraints in p */
+  int bIn;                     /* True if plan uses IN(...) operator */
   WhereLoop *pNew;
-  int rc = SQLITE_OK;
+  Bitmask mBest;               /* Tables used by best possible plan */
 
-  assert( (mExtra & mUnusable)==0 );
+  assert( (mPrereq & mUnusable)==0 );
   pWInfo = pBuilder->pWInfo;
   pParse = pWInfo->pParse;
-  db = pParse->db;
   pWC = pBuilder->pWC;
   pNew = pBuilder->pNew;
   pSrc = &pWInfo->pTabList->a[pNew->iTab];
-  pTab = pSrc->pTab;
-  assert( IsVirtual(pTab) );
-  pIdxInfo = allocateIndexInfo(pParse, pWC, mUnusable, pSrc,pBuilder->pOrderBy);
-  if( pIdxInfo==0 ) return SQLITE_NOMEM;
-  pNew->prereq = 0;
+  assert( IsVirtual(pSrc->pTab) );
+  p = allocateIndexInfo(pParse, pWC, mUnusable, pSrc, pBuilder->pOrderBy);
+  if( p==0 ) return SQLITE_NOMEM_BKPT;
   pNew->rSetup = 0;
   pNew->wsFlags = WHERE_VIRTUALTABLE;
   pNew->nLTerm = 0;
   pNew->u.vtab.needFree = 0;
-  pUsage = pIdxInfo->aConstraintUsage;
-  nConstraint = pIdxInfo->nConstraint;
-  if( whereLoopResize(db, pNew, nConstraint) ){
-    sqlite3DbFree(db, pIdxInfo);
-    return SQLITE_NOMEM;
+  nConstraint = p->nConstraint;
+  if( whereLoopResize(pParse->db, pNew, nConstraint) ){
+    sqlite3DbFree(pParse->db, p);
+    return SQLITE_NOMEM_BKPT;
   }
 
-  for(iPhase=0; iPhase<=3; iPhase++){
-    if( !seenIn && (iPhase&1)!=0 ){
-      iPhase++;
-      if( iPhase>3 ) break;
-    }
-    if( !seenVar && iPhase>1 ) break;
-    pIdxCons = *(struct sqlite3_index_constraint**)&pIdxInfo->aConstraint;
-    for(i=0; i<pIdxInfo->nConstraint; i++, pIdxCons++){
-      j = pIdxCons->iTermOffset;
-      pTerm = &pWC->a[j];
-      switch( iPhase ){
-        case 0:    /* Constants without IN operator */
-          pIdxCons->usable = 0;
-          if( (pTerm->eOperator & WO_IN)!=0 ){
-            seenIn = 1;
-          }
-          if( (pTerm->prereqRight & ~mExtra)!=0 ){
-            seenVar = 1;
-          }else if( (pTerm->eOperator & WO_IN)==0 ){
-            pIdxCons->usable = 1;
-          }
-          break;
-        case 1:    /* Constants with IN operators */
-          assert( seenIn );
-          pIdxCons->usable = (pTerm->prereqRight & ~mExtra)==0;
-          break;
-        case 2:    /* Variables without IN */
-          assert( seenVar );
-          pIdxCons->usable = (pTerm->eOperator & WO_IN)==0;
-          break;
-        default:   /* Variables with IN */
-          assert( seenVar && seenIn );
-          pIdxCons->usable = 1;
-          break;
-      }
-    }
-    memset(pUsage, 0, sizeof(pUsage[0])*pIdxInfo->nConstraint);
-    if( pIdxInfo->needToFreeIdxStr ) sqlite3_free(pIdxInfo->idxStr);
-    pIdxInfo->idxStr = 0;
-    pIdxInfo->idxNum = 0;
-    pIdxInfo->needToFreeIdxStr = 0;
-    pIdxInfo->orderByConsumed = 0;
-    pIdxInfo->estimatedCost = SQLITE_BIG_DBL / (double)2;
-    pIdxInfo->estimatedRows = 25;
-    pIdxInfo->idxFlags = 0;
-    pIdxInfo->colUsed = (sqlite3_int64)pSrc->colUsed;
-    rc = vtabBestIndex(pParse, pTab, pIdxInfo);
-    if( rc ) goto whereLoopAddVtab_exit;
-    pIdxCons = *(struct sqlite3_index_constraint**)&pIdxInfo->aConstraint;
-    pNew->prereq = mExtra;
-    mxTerm = -1;
-    assert( pNew->nLSlot>=nConstraint );
-    for(i=0; i<nConstraint; i++) pNew->aLTerm[i] = 0;
-    pNew->u.vtab.omitMask = 0;
-    for(i=0; i<nConstraint; i++, pIdxCons++){
-      if( (iTerm = pUsage[i].argvIndex - 1)>=0 ){
-        j = pIdxCons->iTermOffset;
-        if( iTerm>=nConstraint
-         || j<0
-         || j>=pWC->nTerm
-         || pNew->aLTerm[iTerm]!=0
-        ){
-          rc = SQLITE_ERROR;
-          sqlite3ErrorMsg(pParse, "%s.xBestIndex() malfunction", pTab->zName);
-          goto whereLoopAddVtab_exit;
-        }
-        testcase( iTerm==nConstraint-1 );
-        testcase( j==0 );
-        testcase( j==pWC->nTerm-1 );
-        pTerm = &pWC->a[j];
-        pNew->prereq |= pTerm->prereqRight;
-        assert( iTerm<pNew->nLSlot );
-        pNew->aLTerm[iTerm] = pTerm;
-        if( iTerm>mxTerm ) mxTerm = iTerm;
-        testcase( iTerm==15 );
-        testcase( iTerm==16 );
-        if( iTerm<16 && pUsage[i].omit ) pNew->u.vtab.omitMask |= 1<<iTerm;
-        if( (pTerm->eOperator & WO_IN)!=0 ){
-          if( pUsage[i].omit==0 ){
-            /* Do not attempt to use an IN constraint if the virtual table
-            ** says that the equivalent EQ constraint cannot be safely omitted.
-            ** If we do attempt to use such a constraint, some rows might be
-            ** repeated in the output. */
-            break;
-          }
-          /* A virtual table that is constrained by an IN clause may not
-          ** consume the ORDER BY clause because (1) the order of IN terms
-          ** is not necessarily related to the order of output terms and
-          ** (2) Multiple outputs from a single IN value will not merge
-          ** together.  */
-          pIdxInfo->orderByConsumed = 0;
-          pIdxInfo->idxFlags &= ~SQLITE_INDEX_SCAN_UNIQUE;
-        }
-      }
-    }
-    if( i>=nConstraint ){
-      pNew->nLTerm = mxTerm+1;
-      assert( pNew->nLTerm<=pNew->nLSlot );
-      pNew->u.vtab.idxNum = pIdxInfo->idxNum;
-      pNew->u.vtab.needFree = pIdxInfo->needToFreeIdxStr;
-      pIdxInfo->needToFreeIdxStr = 0;
-      pNew->u.vtab.idxStr = pIdxInfo->idxStr;
-      pNew->u.vtab.isOrdered = (i8)(pIdxInfo->orderByConsumed ?
-                                      pIdxInfo->nOrderBy : 0);
-      pNew->rSetup = 0;
-      pNew->rRun = sqlite3LogEstFromDouble(pIdxInfo->estimatedCost);
-      pNew->nOut = sqlite3LogEst(pIdxInfo->estimatedRows);
+  /* First call xBestIndex() with all constraints usable. */
+  WHERETRACE(0x40, ("  VirtualOne: all usable\n"));
+  rc = whereLoopAddVirtualOne(pBuilder, mPrereq, ALLBITS, 0, p, &bIn);
 
-      /* Set the WHERE_ONEROW flag if the xBestIndex() method indicated
-      ** that the scan will visit at most one row. Clear it otherwise. */
-      if( pIdxInfo->idxFlags & SQLITE_INDEX_SCAN_UNIQUE ){
-        pNew->wsFlags |= WHERE_ONEROW;
-      }else{
-        pNew->wsFlags &= ~WHERE_ONEROW;
-      }
-      whereLoopInsert(pBuilder, pNew);
-      if( pNew->u.vtab.needFree ){
-        sqlite3_free(pNew->u.vtab.idxStr);
-        pNew->u.vtab.needFree = 0;
+  /* If the call to xBestIndex() with all terms enabled produced a plan
+  ** that does not require any source tables (IOW: a plan with mBest==0),
+  ** then there is no point in making any further calls to xBestIndex() 
+  ** since they will all return the same result (if the xBestIndex()
+  ** implementation is sane). */
+  if( rc==SQLITE_OK && (mBest = (pNew->prereq & ~mPrereq))!=0 ){
+    int seenZero = 0;             /* True if a plan with no prereqs seen */
+    int seenZeroNoIN = 0;         /* Plan with no prereqs and no IN(...) seen */
+    Bitmask mPrev = 0;
+    Bitmask mBestNoIn = 0;
+
+    /* If the plan produced by the earlier call uses an IN(...) term, call
+    ** xBestIndex again, this time with IN(...) terms disabled. */
+    if( bIn ){
+      WHERETRACE(0x40, ("  VirtualOne: all usable w/o IN\n"));
+      rc = whereLoopAddVirtualOne(pBuilder, mPrereq, ALLBITS, WO_IN, p, &bIn);
+      assert( bIn==0 );
+      mBestNoIn = pNew->prereq & ~mPrereq;
+      if( mBestNoIn==0 ){
+        seenZero = 1;
+        seenZeroNoIN = 1;
       }
     }
-  }  
 
-whereLoopAddVtab_exit:
-  if( pIdxInfo->needToFreeIdxStr ) sqlite3_free(pIdxInfo->idxStr);
-  sqlite3DbFree(db, pIdxInfo);
+    /* Call xBestIndex once for each distinct value of (prereqRight & ~mPrereq) 
+    ** in the set of terms that apply to the current virtual table.  */
+    while( rc==SQLITE_OK ){
+      int i;
+      Bitmask mNext = ALLBITS;
+      assert( mNext>0 );
+      for(i=0; i<nConstraint; i++){
+        Bitmask mThis = (
+            pWC->a[p->aConstraint[i].iTermOffset].prereqRight & ~mPrereq
+        );
+        if( mThis>mPrev && mThis<mNext ) mNext = mThis;
+      }
+      mPrev = mNext;
+      if( mNext==ALLBITS ) break;
+      if( mNext==mBest || mNext==mBestNoIn ) continue;
+      WHERETRACE(0x40, ("  VirtualOne: mPrev=%04llx mNext=%04llx\n",
+                       (sqlite3_uint64)mPrev, (sqlite3_uint64)mNext));
+      rc = whereLoopAddVirtualOne(pBuilder, mPrereq, mNext|mPrereq, 0, p, &bIn);
+      if( pNew->prereq==mPrereq ){
+        seenZero = 1;
+        if( bIn==0 ) seenZeroNoIN = 1;
+      }
+    }
+
+    /* If the calls to xBestIndex() in the above loop did not find a plan
+    ** that requires no source tables at all (i.e. one guaranteed to be
+    ** usable), make a call here with all source tables disabled */
+    if( rc==SQLITE_OK && seenZero==0 ){
+      WHERETRACE(0x40, ("  VirtualOne: all disabled\n"));
+      rc = whereLoopAddVirtualOne(pBuilder, mPrereq, mPrereq, 0, p, &bIn);
+      if( bIn==0 ) seenZeroNoIN = 1;
+    }
+
+    /* If the calls to xBestIndex() have so far failed to find a plan
+    ** that requires no source tables at all and does not use an IN(...)
+    ** operator, make a final call to obtain one here.  */
+    if( rc==SQLITE_OK && seenZeroNoIN==0 ){
+      WHERETRACE(0x40, ("  VirtualOne: all disabled and w/o IN\n"));
+      rc = whereLoopAddVirtualOne(pBuilder, mPrereq, mPrereq, WO_IN, p, &bIn);
+    }
+  }
+
+  if( p->needToFreeIdxStr ) sqlite3_free(p->idxStr);
+  sqlite3DbFree(pParse->db, p);
   return rc;
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
@@ -2955,7 +3041,7 @@ whereLoopAddVtab_exit:
 */
 static int whereLoopAddOr(
   WhereLoopBuilder *pBuilder, 
-  Bitmask mExtra, 
+  Bitmask mPrereq, 
   Bitmask mUnusable
 ){
   WhereInfo *pWInfo = pBuilder->pWInfo;
@@ -3016,14 +3102,14 @@ static int whereLoopAddOr(
 #endif
 #ifndef SQLITE_OMIT_VIRTUALTABLE
         if( IsVirtual(pItem->pTab) ){
-          rc = whereLoopAddVirtual(&sSubBuild, mExtra, mUnusable);
+          rc = whereLoopAddVirtual(&sSubBuild, mPrereq, mUnusable);
         }else
 #endif
         {
-          rc = whereLoopAddBtree(&sSubBuild, mExtra);
+          rc = whereLoopAddBtree(&sSubBuild, mPrereq);
         }
         if( rc==SQLITE_OK ){
-          rc = whereLoopAddOr(&sSubBuild, mExtra, mUnusable);
+          rc = whereLoopAddOr(&sSubBuild, mPrereq, mUnusable);
         }
         assert( rc==SQLITE_OK || sCur.n==0 );
         if( sCur.n==0 ){
@@ -3080,7 +3166,7 @@ static int whereLoopAddOr(
 */
 static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
   WhereInfo *pWInfo = pBuilder->pWInfo;
-  Bitmask mExtra = 0;
+  Bitmask mPrereq = 0;
   Bitmask mPrior = 0;
   int iTab;
   SrcList *pTabList = pWInfo->pTabList;
@@ -3101,7 +3187,7 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
     if( ((pItem->fg.jointype|priorJointype) & (JT_LEFT|JT_CROSS))!=0 ){
       /* This condition is true when pItem is the FROM clause term on the
       ** right-hand-side of a LEFT or CROSS JOIN.  */
-      mExtra = mPrior;
+      mPrereq = mPrior;
     }
     priorJointype = pItem->fg.jointype;
     if( IsVirtual(pItem->pTab) ){
@@ -3111,12 +3197,12 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
           mUnusable |= sqlite3WhereGetMask(&pWInfo->sMaskSet, p->iCursor);
         }
       }
-      rc = whereLoopAddVirtual(pBuilder, mExtra, mUnusable);
+      rc = whereLoopAddVirtual(pBuilder, mPrereq, mUnusable);
     }else{
-      rc = whereLoopAddBtree(pBuilder, mExtra);
+      rc = whereLoopAddBtree(pBuilder, mPrereq);
     }
     if( rc==SQLITE_OK ){
-      rc = whereLoopAddOr(pBuilder, mExtra, mUnusable);
+      rc = whereLoopAddOr(pBuilder, mPrereq, mUnusable);
     }
     mPrior |= pNew->maskSelf;
     if( rc || db->mallocFailed ) break;
@@ -3459,15 +3545,14 @@ static LogEst whereSortingCost(
   LogEst rScale, rSortCost;
   assert( nOrderBy>0 && 66==sqlite3LogEst(100) );
   rScale = sqlite3LogEst((nOrderBy-nSorted)*100/nOrderBy) - 66;
-  rSortCost = nRow + estLog(nRow) + rScale + 16;
+  rSortCost = nRow + rScale + 16;
 
-  /* TUNING: The cost of implementing DISTINCT using a B-TREE is
-  ** similar but with a larger constant of proportionality. 
-  ** Multiply by an additional factor of 3.0.  */
-  if( pWInfo->wctrlFlags & WHERE_WANT_DISTINCT ){
-    rSortCost += 16;
+  /* Multiple by log(M) where M is the number of output rows.
+  ** Use the LIMIT for M if it is smaller */
+  if( (pWInfo->wctrlFlags & WHERE_USE_LIMIT)!=0 && pWInfo->iLimit<nRow ){
+    nRow = pWInfo->iLimit;
   }
-
+  rSortCost += estLog(nRow);
   return rSortCost;
 }
 
@@ -3530,7 +3615,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
   nSpace = (sizeof(WherePath)+sizeof(WhereLoop*)*nLoop)*mxChoice*2;
   nSpace += sizeof(LogEst) * nOrderBy;
   pSpace = sqlite3DbMallocRawNN(db, nSpace);
-  if( pSpace==0 ) return SQLITE_NOMEM;
+  if( pSpace==0 ) return SQLITE_NOMEM_BKPT;
   aTo = (WherePath*)pSpace;
   aFrom = aTo+mxChoice;
   memset(aFrom, 0, sizeof(aFrom[0]));
@@ -3585,6 +3670,12 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
 
         if( (pWLoop->prereq & ~pFrom->maskLoop)!=0 ) continue;
         if( (pWLoop->maskSelf & pFrom->maskLoop)!=0 ) continue;
+        if( (pWLoop->wsFlags & WHERE_AUTO_INDEX)!=0 && pFrom->nRow<10 ){
+          /* Do not use an automatic index if the this loop is expected
+          ** to run less than 2 times. */
+          assert( 10==sqlite3LogEst(2) );
+          continue;
+        }
         /* At this point, pWLoop is a candidate to be the next loop. 
         ** Compute its cost */
         rUnsorted = sqlite3LogEstAdd(pWLoop->rSetup,pWLoop->rRun + pFrom->nRow);
@@ -4106,7 +4197,8 @@ WhereInfo *sqlite3WhereBegin(
   ExprList *pOrderBy,   /* An ORDER BY (or GROUP BY) clause, or NULL */
   ExprList *pResultSet, /* Result set of the query */
   u16 wctrlFlags,       /* One of the WHERE_* flags defined in sqliteInt.h */
-  int iIdxCur           /* If WHERE_ONETABLE_ONLY is set, index cursor number */
+  int iAuxArg           /* If WHERE_ONETABLE_ONLY is set, index cursor number,
+                        ** If WHERE_USE_LIMIT, then the limit amount */
 ){
   int nByteWInfo;            /* Num. bytes allocated for WhereInfo struct */
   int nTabList;              /* Number of elements in pTabList */
@@ -4126,6 +4218,10 @@ WhereInfo *sqlite3WhereBegin(
         (wctrlFlags & WHERE_ONEPASS_DESIRED)!=0 
      && (wctrlFlags & WHERE_OMIT_OPEN_CLOSE)==0 
   ));
+
+  /* Only one of WHERE_ONETABLE_ONLY or WHERE_USE_LIMIT */
+  assert( (wctrlFlags & WHERE_ONETABLE_ONLY)==0
+            || (wctrlFlags & WHERE_USE_LIMIT)==0 );
 
   /* Variable initialization */
   db = pParse->db;
@@ -4180,6 +4276,7 @@ WhereInfo *sqlite3WhereBegin(
   pWInfo->pResultSet = pResultSet;
   pWInfo->iBreak = pWInfo->iContinue = sqlite3VdbeMakeLabel(v);
   pWInfo->wctrlFlags = wctrlFlags;
+  pWInfo->iLimit = iAuxArg;
   pWInfo->savedNQueryLoop = pParse->nQueryLoop;
   assert( pWInfo->eOnePass==ONEPASS_OFF );  /* ONEPASS defaults to OFF */
   pMaskSet = &pWInfo->sMaskSet;
@@ -4260,9 +4357,14 @@ WhereInfo *sqlite3WhereBegin(
   }
 
   /* Construct the WhereLoop objects */
-  WHERETRACE(0xffff,("*** Optimizer Start *** (wctrlFlags: 0x%x)\n",
-             wctrlFlags));
 #if defined(WHERETRACE_ENABLED)
+  if( sqlite3WhereTrace & 0xffff ){
+    sqlite3DebugPrintf("*** Optimizer Start *** (wctrlFlags: 0x%x",wctrlFlags);
+    if( wctrlFlags & WHERE_USE_LIMIT ){
+      sqlite3DebugPrintf(", limit: %d", iAuxArg);
+    }
+    sqlite3DebugPrintf(")\n");
+  }
   if( sqlite3WhereTrace & 0x100 ){ /* Display all terms of the WHERE clause */
     int i;
     for(i=0; i<sWLB.pWC->nTerm; i++){
@@ -4299,7 +4401,7 @@ WhereInfo *sqlite3WhereBegin(
     }
   }
   if( pWInfo->pOrderBy==0 && (db->flags & SQLITE_ReverseOrder)!=0 ){
-     pWInfo->revMask = (Bitmask)(-1);
+     pWInfo->revMask = ALLBITS;
   }
   if( pParse->nErr || NEVER(db->mallocFailed) ){
     goto whereBeginError;
@@ -4448,8 +4550,8 @@ WhereInfo *sqlite3WhereBegin(
       Index *pIx = pLoop->u.btree.pIndex;
       int iIndexCur;
       int op = OP_OpenRead;
-      /* iIdxCur is always set if to a positive value if ONEPASS is possible */
-      assert( iIdxCur!=0 || (pWInfo->wctrlFlags & WHERE_ONEPASS_DESIRED)==0 );
+      /* iAuxArg is always set if to a positive value if ONEPASS is possible */
+      assert( iAuxArg!=0 || (pWInfo->wctrlFlags & WHERE_ONEPASS_DESIRED)==0 );
       if( !HasRowid(pTab) && IsPrimaryKeyIndex(pIx)
        && (wctrlFlags & WHERE_ONETABLE_ONLY)!=0
       ){
@@ -4459,7 +4561,7 @@ WhereInfo *sqlite3WhereBegin(
         op = 0;
       }else if( pWInfo->eOnePass!=ONEPASS_OFF ){
         Index *pJ = pTabItem->pTab->pIndex;
-        iIndexCur = iIdxCur;
+        iIndexCur = iAuxArg;
         assert( wctrlFlags & WHERE_ONEPASS_DESIRED );
         while( ALWAYS(pJ) && pJ!=pIx ){
           iIndexCur++;
@@ -4467,8 +4569,8 @@ WhereInfo *sqlite3WhereBegin(
         }
         op = OP_OpenWrite;
         pWInfo->aiCurOnePass[1] = iIndexCur;
-      }else if( iIdxCur && (wctrlFlags & WHERE_ONETABLE_ONLY)!=0 ){
-        iIndexCur = iIdxCur;
+      }else if( iAuxArg && (wctrlFlags & WHERE_ONETABLE_ONLY)!=0 ){
+        iIndexCur = iAuxArg;
         if( wctrlFlags & WHERE_REOPEN_IDX ) op = OP_ReopenIdx;
       }else{
         iIndexCur = pParse->nTab++;

@@ -41,16 +41,17 @@
 */
 
 
-#ifdef SQLITE_TEST
 #ifdef SQLITE_ENABLE_FTS5
 
 #include "fts5.h"
-#include <tcl.h>
 #include <assert.h>
 #include <string.h>
 
 typedef struct Fts5MatchinfoCtx Fts5MatchinfoCtx;
+
+#ifndef SQLITE_AMALGAMATION
 typedef unsigned int u32;
+#endif
 
 struct Fts5MatchinfoCtx {
   int nCol;                       /* Number of cols in FTS5 table */
@@ -244,11 +245,7 @@ static int fts5MatchinfoLocalCb(
             iOff>=0; 
             pApi->xPhraseNext(pFts, &iter, &iCol, &iOff)
         ){
-          if( f=='b' ){
-            aOut[iPhrase * ((p->nCol+31)/32) + iCol/32] |= ((u32)1 << iCol%32);
-          }else{
-            aOut[nMul * (iCol + iPhrase * p->nCol)]++;
-          }
+          aOut[nMul * (iCol + iPhrase * p->nCol)]++;
         }
       }
 
@@ -409,7 +406,7 @@ int sqlite3Fts5TestRegisterMatchinfo(sqlite3 *db){
   **
   ** Also check that the fts5_api object is version 2 or newer.  
   */ 
-  if( pApi==0 || pApi->iVersion<1 ){
+  if( pApi==0 || pApi->iVersion<2 ){
     return SQLITE_ERROR;
   }
 
@@ -420,5 +417,4 @@ int sqlite3Fts5TestRegisterMatchinfo(sqlite3 *db){
 }
 
 #endif /* SQLITE_ENABLE_FTS5 */
-#endif /* SQLITE_TEST */
 

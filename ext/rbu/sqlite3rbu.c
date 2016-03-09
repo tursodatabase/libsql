@@ -280,10 +280,11 @@ struct RbuObjIter {
 */
 #define RBU_INSERT     1          /* Insert on a main table b-tree */
 #define RBU_DELETE     2          /* Delete a row from a main table b-tree */
-#define RBU_IDX_DELETE 3          /* Delete a row from an aux. index b-tree */
-#define RBU_IDX_INSERT 4          /* Insert on an aux. index b-tree */
-#define RBU_UPDATE     5          /* Update a row in a main table b-tree */
+#define RBU_REPLACE    3          /* Delete and then insert a row */
+#define RBU_IDX_DELETE 4          /* Delete a row from an aux. index b-tree */
+#define RBU_IDX_INSERT 5          /* Insert on an aux. index b-tree */
 
+#define RBU_UPDATE     6          /* Update a row in a main table b-tree */
 
 /*
 ** A single step of an incremental checkpoint - frame iWalFrame of the wal
@@ -1909,13 +1910,13 @@ static int rbuObjIterPrepareAll(
           );
         }else{
           zSql = sqlite3_mprintf(
+              "SELECT %s, rbu_control FROM %s.'rbu_tmp_%q' "
+              "UNION ALL "
               "SELECT %s, rbu_control FROM '%q' "
               "WHERE typeof(rbu_control)='integer' AND rbu_control!=1 "
-              "UNION ALL "
-              "SELECT %s, rbu_control FROM %s.'rbu_tmp_%q' "
               "ORDER BY %s%s",
-              zCollist, pIter->zDataTbl, 
               zCollist, p->zStateDb, pIter->zDataTbl, 
+              zCollist, pIter->zDataTbl, 
               zCollist, zLimit
           );
         }
@@ -1981,17 +1982,17 @@ static int rbuObjIterPrepareAll(
         rbuMPrintfExec(p, p->dbMain,
             "CREATE TEMP TRIGGER rbu_delete_tr BEFORE DELETE ON \"%s%w\" "
             "BEGIN "
-            "  SELECT rbu_tmp_insert(2, %s);"
+            "  SELECT rbu_tmp_insert(3, %s);"
             "END;"
 
             "CREATE TEMP TRIGGER rbu_update1_tr BEFORE UPDATE ON \"%s%w\" "
             "BEGIN "
-            "  SELECT rbu_tmp_insert(2, %s);"
+            "  SELECT rbu_tmp_insert(3, %s);"
             "END;"
 
             "CREATE TEMP TRIGGER rbu_update2_tr AFTER UPDATE ON \"%s%w\" "
             "BEGIN "
-            "  SELECT rbu_tmp_insert(3, %s);"
+            "  SELECT rbu_tmp_insert(4, %s);"
             "END;",
             zWrite, zTbl, zOldlist,
             zWrite, zTbl, zOldlist,
@@ -2509,14 +2510,12 @@ static int rbuStepType(sqlite3rbu *p, const char **pzMask){
   switch( sqlite3_column_type(p->objiter.pSelect, iCol) ){
     case SQLITE_INTEGER: {
       int iVal = sqlite3_column_int(p->objiter.pSelect, iCol);
-      if( iVal==0 ){
-        res = RBU_INSERT;
-      }else if( iVal==1 ){
-        res = RBU_DELETE;
-      }else if( iVal==2 ){
-        res = RBU_IDX_DELETE;
-      }else if( iVal==3 ){
-        res = RBU_IDX_INSERT;
+      switch( iVal ){
+        case 0: res = RBU_INSERT;     break;
+        case 1: res = RBU_DELETE;     break;
+        case 2: res = RBU_REPLACE;    break;
+        case 3: res = RBU_IDX_DELETE; break;
+        case 4: res = RBU_IDX_INSERT; break;
       }
       break;
     }
@@ -2556,6 +2555,67 @@ static void assertColumnName(sqlite3_stmt *pStmt, int iCol, const char *zName){
 #endif
 
 /*
+** Argument eType must be one of RBU_INSERT, RBU_DELETE, RBU_IDX_INSERT or
+** RBU_IDX_DELETE. This function performs the work of a single
+** sqlite3rbu_step() call for the type of operation specified by eType.
+*/
+static void rbuStepOneOp(sqlite3rbu *p, int eType){
+  RbuObjIter *pIter = &p->objiter;
+  sqlite3_value *pVal;
+  sqlite3_stmt *pWriter;
+  int i;
+
+  assert( p->rc==SQLITE_OK );
+  assert( eType!=RBU_DELETE || pIter->zIdx==0 );
+
+  if( eType==RBU_IDX_DELETE || eType==RBU_DELETE ){
+    pWriter = pIter->pDelete;
+  }else{
+    pWriter = pIter->pInsert;
+  }
+
+  for(i=0; i<pIter->nCol; i++){
+    /* If this is an INSERT into a table b-tree and the table has an
+    ** explicit INTEGER PRIMARY KEY, check that this is not an attempt
+    ** to write a NULL into the IPK column. That is not permitted.  */
+    if( eType==RBU_INSERT 
+     && pIter->zIdx==0 && pIter->eType==RBU_PK_IPK && pIter->abTblPk[i] 
+     && sqlite3_column_type(pIter->pSelect, i)==SQLITE_NULL
+    ){
+      p->rc = SQLITE_MISMATCH;
+      p->zErrmsg = sqlite3_mprintf("datatype mismatch");
+      return;
+    }
+
+    if( eType==RBU_DELETE && pIter->abTblPk[i]==0 ){
+      continue;
+    }
+
+    pVal = sqlite3_column_value(pIter->pSelect, i);
+    p->rc = sqlite3_bind_value(pWriter, i+1, pVal);
+    if( p->rc ) return;
+  }
+  if( pIter->zIdx==0
+   && (pIter->eType==RBU_PK_VTAB || pIter->eType==RBU_PK_NONE) 
+  ){
+    /* For a virtual table, or a table with no primary key, the 
+    ** SELECT statement is:
+    **
+    **   SELECT <cols>, rbu_control, rbu_rowid FROM ....
+    **
+    ** Hence column_value(pIter->nCol+1).
+    */
+    assertColumnName(pIter->pSelect, pIter->nCol+1, "rbu_rowid");
+    pVal = sqlite3_column_value(pIter->pSelect, pIter->nCol+1);
+    p->rc = sqlite3_bind_value(pWriter, pIter->nCol+1, pVal);
+  }
+  if( p->rc==SQLITE_OK ){
+    sqlite3_step(pWriter);
+    p->rc = resetAndCollectError(pWriter, &p->zErrmsg);
+  }
+}
+
+/*
 ** This function does the work for an sqlite3rbu_step() call.
 **
 ** The object-iterator (p->objiter) currently points to a valid object,
@@ -2569,78 +2629,32 @@ static void assertColumnName(sqlite3_stmt *pStmt, int iCol, const char *zName){
 static int rbuStep(sqlite3rbu *p){
   RbuObjIter *pIter = &p->objiter;
   const char *zMask = 0;
-  int i;
   int eType = rbuStepType(p, &zMask);
 
   if( eType ){
+    assert( eType==RBU_INSERT     || eType==RBU_DELETE
+         || eType==RBU_REPLACE    || eType==RBU_IDX_DELETE
+         || eType==RBU_IDX_INSERT || eType==RBU_UPDATE
+    );
     assert( eType!=RBU_UPDATE || pIter->zIdx==0 );
 
     if( pIter->zIdx==0 && eType==RBU_IDX_DELETE ){
       rbuBadControlError(p);
     }
-    else if( 
-        eType==RBU_INSERT 
-     || eType==RBU_DELETE
-     || eType==RBU_IDX_DELETE 
-     || eType==RBU_IDX_INSERT
-    ){
-      sqlite3_value *pVal;
-      sqlite3_stmt *pWriter;
-
-      assert( eType!=RBU_UPDATE );
-      assert( eType!=RBU_DELETE || pIter->zIdx==0 );
-
-      if( eType==RBU_IDX_DELETE || eType==RBU_DELETE ){
-        pWriter = pIter->pDelete;
-      }else{
-        pWriter = pIter->pInsert;
-      }
-
-      for(i=0; i<pIter->nCol; i++){
-        /* If this is an INSERT into a table b-tree and the table has an
-        ** explicit INTEGER PRIMARY KEY, check that this is not an attempt
-        ** to write a NULL into the IPK column. That is not permitted.  */
-        if( eType==RBU_INSERT 
-         && pIter->zIdx==0 && pIter->eType==RBU_PK_IPK && pIter->abTblPk[i] 
-         && sqlite3_column_type(pIter->pSelect, i)==SQLITE_NULL
-        ){
-          p->rc = SQLITE_MISMATCH;
-          p->zErrmsg = sqlite3_mprintf("datatype mismatch");
-          goto step_out;
-        }
-
-        if( eType==RBU_DELETE && pIter->abTblPk[i]==0 ){
-          continue;
-        }
-
-        pVal = sqlite3_column_value(pIter->pSelect, i);
-        p->rc = sqlite3_bind_value(pWriter, i+1, pVal);
-        if( p->rc ) goto step_out;
-      }
-      if( pIter->zIdx==0
-       && (pIter->eType==RBU_PK_VTAB || pIter->eType==RBU_PK_NONE) 
-      ){
-        /* For a virtual table, or a table with no primary key, the 
-        ** SELECT statement is:
-        **
-        **   SELECT <cols>, rbu_control, rbu_rowid FROM ....
-        **
-        ** Hence column_value(pIter->nCol+1).
-        */
-        assertColumnName(pIter->pSelect, pIter->nCol+1, "rbu_rowid");
-        pVal = sqlite3_column_value(pIter->pSelect, pIter->nCol+1);
-        p->rc = sqlite3_bind_value(pWriter, pIter->nCol+1, pVal);
-      }
-      if( p->rc==SQLITE_OK ){
-        sqlite3_step(pWriter);
-        p->rc = resetAndCollectError(pWriter, &p->zErrmsg);
-      }
-    }else{
+    else if( eType==RBU_REPLACE ){
+      if( pIter->zIdx==0 ) rbuStepOneOp(p, RBU_DELETE);
+      if( p->rc==SQLITE_OK ) rbuStepOneOp(p, RBU_INSERT);
+    }
+    else if( eType!=RBU_UPDATE ){
+      rbuStepOneOp(p, eType);
+    }
+    else{
       sqlite3_value *pVal;
       sqlite3_stmt *pUpdate = 0;
       assert( eType==RBU_UPDATE );
       rbuGetUpdateStmt(p, pIter, zMask, &pUpdate);
       if( pUpdate ){
+        int i;
         for(i=0; p->rc==SQLITE_OK && i<pIter->nCol; i++){
           char c = zMask[pIter->aiSrcOrder[i]];
           pVal = sqlite3_column_value(pIter->pSelect, i);
@@ -2663,8 +2677,6 @@ static int rbuStep(sqlite3rbu *p){
       }
     }
   }
-
- step_out:
   return p->rc;
 }
 
@@ -3704,7 +3716,7 @@ static int rbuVfsShmUnmap(sqlite3_file *pFile, int delFlag){
 static rbu_file *rbuFindMaindb(rbu_vfs *pRbuVfs, const char *zWal){
   rbu_file *pDb;
   sqlite3_mutex_enter(pRbuVfs->mutex);
-  for(pDb=pRbuVfs->pMain; pDb && pDb->zWal!=zWal; pDb=pDb->pMainNext);
+  for(pDb=pRbuVfs->pMain; pDb && pDb->zWal!=zWal; pDb=pDb->pMainNext){}
   sqlite3_mutex_leave(pRbuVfs->mutex);
   return pDb;
 }

@@ -285,7 +285,7 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
     case CC_BANG: {
       if( z[1]!='=' ){
         *tokenType = TK_ILLEGAL;
-        return 2;
+        return 1;
       }else{
         *tokenType = TK_NE;
         return 2;
@@ -435,8 +435,8 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
       *tokenType = TK_ID;
       return keywordCode((char*)z, i, tokenType);
     }
-#ifndef SQLITE_OMIT_BLOB_LITERAL
     case CC_X: {
+#ifndef SQLITE_OMIT_BLOB_LITERAL
       testcase( z[0]=='x' ); testcase( z[0]=='X' );
       if( z[1]=='\'' ){
         *tokenType = TK_BLOB;
@@ -448,10 +448,10 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
         if( z[i] ) i++;
         return i;
       }
+#endif
       /* If it is not a BLOB literal, then it must be an ID, since no
       ** SQL keywords start with the letter 'x'.  Fall through */
     }
-#endif
     case CC_ID: {
       i = 1;
       break;
@@ -495,7 +495,7 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   pEngine = sqlite3ParserAlloc(sqlite3Malloc);
   if( pEngine==0 ){
     sqlite3OomFault(db);
-    return SQLITE_NOMEM;
+    return SQLITE_NOMEM_BKPT;
   }
   assert( pParse->pNewTable==0 );
   assert( pParse->pNewTrigger==0 );
@@ -523,18 +523,17 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
         break;
       }
     }else{
-      if( tokenType==TK_SEMI ) pParse->zTail = &zSql[i];
       sqlite3Parser(pEngine, tokenType, pParse->sLastToken, pParse);
       lastTokenParsed = tokenType;
       if( pParse->rc!=SQLITE_OK || db->mallocFailed ) break;
     }
   }
   assert( nErr==0 );
+  pParse->zTail = &zSql[i];
   if( pParse->rc==SQLITE_OK && db->mallocFailed==0 ){
     assert( zSql[i]==0 );
     if( lastTokenParsed!=TK_SEMI ){
       sqlite3Parser(pEngine, TK_SEMI, pParse->sLastToken, pParse);
-      pParse->zTail = &zSql[i];
     }
     if( pParse->rc==SQLITE_OK && db->mallocFailed==0 ){
       sqlite3Parser(pEngine, 0, pParse->sLastToken, pParse);
@@ -549,7 +548,7 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
 #endif /* YYDEBUG */
   sqlite3ParserFree(pEngine, sqlite3_free);
   if( db->mallocFailed ){
-    pParse->rc = SQLITE_NOMEM;
+    pParse->rc = SQLITE_NOMEM_BKPT;
   }
   if( pParse->rc!=SQLITE_OK && pParse->rc!=SQLITE_DONE && pParse->zErrMsg==0 ){
     pParse->zErrMsg = sqlite3MPrintf(db, "%s", sqlite3ErrStr(pParse->rc));

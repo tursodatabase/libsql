@@ -993,6 +993,7 @@ void sqlite3Pragma(
         int iLevel = (getSafetyLevel(zRight,0,1)+1) & PAGER_SYNCHRONOUS_MASK;
         if( iLevel==0 ) iLevel = 1;
         pDb->safety_level = iLevel;
+        pDb->bSyncSet = 1;
         setAllPagerFlags(db);
       }
     }
@@ -1066,6 +1067,7 @@ void sqlite3Pragma(
       setAllColumnNames(v, 6, azCol); assert( 6==ArraySize(azCol) );
       sqlite3ViewGetColumnNames(pParse, pTab);
       for(i=0, pCol=pTab->aCol; i<pTab->nCol; i++, pCol++){
+        const char *zName;
         if( IsHiddenColumn(pCol) ){
           nHidden++;
           continue;
@@ -1077,12 +1079,14 @@ void sqlite3Pragma(
         }else{
           for(k=1; k<=pTab->nCol && pPk->aiColumn[k-1]!=i; k++){}
         }
+        assert( pCol->pDflt==0 || pCol->pDflt->op==TK_SPAN );
+        zName = pCol->zName;
         sqlite3VdbeMultiLoad(v, 1, "issisi",
                i-nHidden,
-               pCol->zName,
-               pCol->zType ? pCol->zType : "",
+               zName,
+               sqlite3StrNext(zName),
                pCol->notNull ? 1 : 0,
-               pCol->zDflt,
+               pCol->pDflt ? pCol->pDflt->u.zToken : 0,
                k);
         sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 6);
       }
@@ -1103,14 +1107,14 @@ void sqlite3Pragma(
       sqlite3VdbeMultiLoad(v, 1, "ssii",
            pTab->zName,
            0,
-           (int)sqlite3LogEstToInt(pTab->szTabRow),
-           (int)sqlite3LogEstToInt(pTab->nRowLogEst));
+           pTab->szTabRow,
+           pTab->nRowLogEst);
       sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 4);
       for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
         sqlite3VdbeMultiLoad(v, 2, "sii",
            pIdx->zName,
-           (int)sqlite3LogEstToInt(pIdx->szIdxRow),
-           (int)sqlite3LogEstToInt(pIdx->aiRowLogEst[0]));
+           pIdx->szIdxRow,
+           pIdx->aiRowLogEst[0]);
         sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 4);
       }
     }
