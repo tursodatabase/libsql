@@ -1,5 +1,5 @@
-C Automatically\sdisable\sSQLITE_ENABLE_EXPLAIN_COMMENTS\sif\sSQLITE_OMIT_EXPLAIN\nis\sdefined.
-D 2016-03-09T13:39:43.412
+C When\soptimizing\sexpressions\sof\sthe\sform\s"x\sIN\s(SELECT\s...)"\smake\ssure\sthat\nthe\ssubquery\sis\snot\scorrelated.\s\sFix\sfor\sticket\s[5e3c886796e5512].
+D 2016-03-09T15:09:22.795
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -303,7 +303,7 @@ F src/ctime.c 60e135af364d777a9ab41c97e5e89cd224da6198
 F src/date.c 0b73e681c11fca867fec554750c07fe0d4e417c1
 F src/dbstat.c c845548d4346e606e2f2b7d2e714ace2b8a7dd1b
 F src/delete.c 48802aa3ee6339f576d074336d3ae1b5f40e240f
-F src/expr.c c4dad2cd6cec00387b75fef4551aff655430dcd2
+F src/expr.c 4ce9e66a297ec08d234817c3d9f7fa8c3bf4d851
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 5cb42d9a59e2a590776fd3fc8ff6f61d40df3c6e
 F src/func.c 552d300265aed09eea21f68ac742a440550c0062
@@ -1332,7 +1332,7 @@ F test/walshared.test 0befc811dcf0b287efae21612304d15576e35417
 F test/walslow.test c05c68d4dc2700a982f89133ce103a1a84cc285f
 F test/walthread.test de8dbaf6d9e41481c460ba31ca61e163d7348f8e
 F test/where.test f0c325563acde44f2c4ea6ba348e9e29f7121757
-F test/where2.test af78c55589cbc82d793449493adba0dc3d659f23
+F test/where2.test 478d2170637b9211f593120648858593bf2445a1
 F test/where3.test 1ad55ba900bd7747f98b6082e65bd3e442c5004e
 F test/where4.test 4a371bfcc607f41d233701bdec33ac2972908ba8
 F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
@@ -1455,7 +1455,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a13c59d08bcbc6f26ce6ac761a892eff8f035201
-R dc65bf9f81f047db6984b996890cdadd
+P 8d4b6b2b519a80f831d64345ac26db825b0e2ebe
+R 903e4bb527a74ada303408f9543fd4d8
 U drh
-Z 0ec66dff68629b4a77d366f261f0f00c
+Z 88acb6b3e9ba3ec690e7fd39f78d002e

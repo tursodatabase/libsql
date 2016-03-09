@@ -1584,6 +1584,7 @@ static int isCandidateForInOpt(Select *p){
   SrcList *pSrc;
   ExprList *pEList;
   Table *pTab;
+  Expr *pRes;                            /* Result expression */
   if( p==0 ) return 0;                   /* right-hand side of IN is SELECT */
   if( p->pPrior ) return 0;              /* Not a compound SELECT */
   if( p->selFlags & (SF_Distinct|SF_Aggregate) ){
@@ -1605,7 +1606,9 @@ static int isCandidateForInOpt(Select *p){
   if( IsVirtual(pTab) ) return 0;        /* FROM clause not a virtual table */
   pEList = p->pEList;
   if( pEList->nExpr!=1 ) return 0;       /* One column in the result set */
-  if( pEList->a[0].pExpr->op!=TK_COLUMN ) return 0; /* Result is a column */
+  pRes = pEList->a[0].pExpr;
+  if( pRes->op!=TK_COLUMN ) return 0;    /* Result is a column */
+  if( pRes->iTable!=pSrc->a[0].iCursor ) return 0;  /* Not a correlated subq */
   return 1;
 }
 #endif /* SQLITE_OMIT_SUBQUERY */
