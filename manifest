@@ -1,5 +1,5 @@
-C When\soptimizing\sexpressions\sof\sthe\sform\s"x\sIN\s(SELECT\s...)"\smake\ssure\sthat\nthe\ssubquery\sis\snot\scorrelated.\s\sFix\sfor\sticket\s[5e3c886796e5512].
-D 2016-03-09T15:09:22.795
+C Add\sanother\stest\scase\sfor\sbug\s[5e3c8867].
+D 2016-03-09T15:14:54.990
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -788,7 +788,7 @@ F test/in.test 61a24ae38d4b64ec69f06ccdf022992f68a98176
 F test/in2.test 5d4c61d17493c832f7d2d32bef785119e87bde75
 F test/in3.test 3cbf58c87f4052cee3a58b37b6389777505aa0c0
 F test/in4.test d2b38cba404bc4320f4fe1b595b3d163f212c068
-F test/in5.test 1de657472fa9ac2924be25c2c959ac5ca1aae554
+F test/in5.test acc710c12af118df5f8645eaba9479f5619eed81
 F test/incrblob.test e81846d214f3637622620fbde7cd526781cfe328
 F test/incrblob2.test a5ce5ed1d0b01e2ed347245a21170372528af0a5
 F test/incrblob3.test d8d036fde015d4a159cd3cbae9d29003b37227a4
@@ -1455,7 +1455,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8d4b6b2b519a80f831d64345ac26db825b0e2ebe
-R 903e4bb527a74ada303408f9543fd4d8
-U drh
-Z 88acb6b3e9ba3ec690e7fd39f78d002e
+P 1ed6b06ea3c432f920fb2b66b6042be906c5d21c
+R 95d0f94d6b7106c7ee892a8bac9f59f5
+U dan
+Z b79fcffb60dd8a57430224ebf643a8ab
