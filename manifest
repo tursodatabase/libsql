@@ -1,5 +1,5 @@
-C Disable\sthe\sbestindex*.test\smodules\swhen\sbuilding\swithout\svirtual\stable\ssupport.
-D 2016-03-09T11:59:16.171
+C In\sthe\squery\splanner,\smake\ssure\sOOM\serrors\sare\sreported\sup\sinto\nwhereLoopAddVirtual()\sso\sthat\sit\sshuts\sdown\sappropriately.
+D 2016-03-09T12:35:18.466
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -429,7 +429,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 10deb6b43887662691e5f53d10b3c171c401169b
 F src/wal.h 2f7c831cf3b071fa548bf2d5cac640846a7ff19c
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
-F src/where.c f2859a4f9e3ce0585fd75648fb5cae9f985c458d
+F src/where.c 5533002ddf4fbc256f450cb629668a200b06a3ce
 F src/whereInt.h 93297d56edd137b7ea004490690fb6e2ce028a34
 F src/wherecode.c 863aedf086131743763c1960637fde904eadc442
 F src/whereexpr.c fb87944b1254234e5bba671aaf6dee476241506a
@@ -1455,7 +1455,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8baa2c2c7698e03418531482a8314a5d7ae2c7d3
-R edb83c934a274796cafb7c4f60da05c5
+P e0bac2f3eed900d3a26de339fb7d5963f9b47724
+R ef93df8fd296bfa582e1a9a9087c3fc6
 U drh
-Z 1fd2317c8384669beba01778fd436686
+Z 498b8899efc263dd56cd46e3ec14e230

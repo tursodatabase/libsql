@@ -1979,6 +1979,7 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
   WhereLoop **ppPrev, *p;
   WhereInfo *pWInfo = pBuilder->pWInfo;
   sqlite3 *db = pWInfo->pParse->db;
+  int rc;
 
   /* If pBuilder->pOrSet is defined, then only keep track of the costs
   ** and prereqs.
@@ -2061,14 +2062,14 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
       whereLoopDelete(db, pToDel);
     }
   }
-  whereLoopXfer(db, p, pTemplate);
+  rc = whereLoopXfer(db, p, pTemplate);
   if( (p->wsFlags & WHERE_VIRTUALTABLE)==0 ){
     Index *pIndex = p->u.btree.pIndex;
     if( pIndex && pIndex->tnum==0 ){
       p->u.btree.pIndex = 0;
     }
   }
-  return SQLITE_OK;
+  return rc;
 }
 
 /*
@@ -2886,7 +2887,7 @@ static int whereLoopAddVirtualOne(
   }else{
     pNew->wsFlags &= ~WHERE_ONEROW;
   }
-  whereLoopInsert(pBuilder, pNew);
+  rc = whereLoopInsert(pBuilder, pNew);
   if( pNew->u.vtab.needFree ){
     sqlite3_free(pNew->u.vtab.idxStr);
     pNew->u.vtab.needFree = 0;
@@ -2895,7 +2896,7 @@ static int whereLoopAddVirtualOne(
                       *pbIn, (sqlite3_uint64)mPrereq,
                       (sqlite3_uint64)(pNew->prereq & ~mPrereq)));
 
-  return SQLITE_OK;
+  return rc;
 }
 
 
