@@ -1,5 +1,5 @@
-C Add\san\s#ifdef\sand\san\sALWAYS()\sfor\scoverage.
-D 2016-03-09T02:03:03.758
+C Change\sa\sbranch\smade\sobsolete\sby\srecent\sparser\senhancements\sinto\san\sassert().
+D 2016-03-09T02:12:44.430
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -296,7 +296,7 @@ F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
 F src/btree.c 2712f087351f5c4ff0e71631b1e67b461611b99d
 F src/btree.h a5008b9afe56e8e54ade6c436a910f112defcca9
 F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
-F src/build.c 43b93fe757bfffe00f97462596418b052eefdccd
+F src/build.c 213cbf84e99dd834e6ea46615633656d7ef79321
 F src/callback.c 2e76147783386374bf01b227f752c81ec872d730
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 60e135af364d777a9ab41c97e5e89cd224da6198
@@ -1455,7 +1455,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 73b97b9ec3c39ab2828ae6353b5d7e04a27996c9
-R ff350e249f52320a06e1a0030d694c10
+P 069337a922867ad0d023f5bf36e13ea46e047000
+R 3e57a4be2efca34c86d71580042aa5c5
 U drh
-Z 4b008537bb55e8cdb449348ac3153700
+Z 969405448d01de3e3b82aafcc7d6fe5a
