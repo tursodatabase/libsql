@@ -1,5 +1,5 @@
-C Update\sa\scomment\sin\sbtree.c\sto\saccount\sfor\sWITHOUT\sROWID\stables.\s\sNo\scode\nchanges.
-D 2016-03-09T03:29:27.407
+C Move\sthe\swrite\sfailure\stest\sin\smemjrnlCreateFile()\sto\sjust\safter\sthe\nactual\swrite,\sthus\sreducing\sthe\snumber\sof\sinstances\sof\sthe\stest\sby\sone.
+D 2016-03-09T03:44:32.424
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -321,7 +321,7 @@ F src/mem1.c 6919bcf12f221868ea066eec27e579fed95ce98b
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
 F src/mem3.c 8768ac94694f31ffaf8b4d0ea5dc08af7010a35a
 F src/mem5.c 9bf955937b07f8c32541c8a9991f33ce3173d944
-F src/memjournal.c 9704b40cd63d53f584ac06c0cd1b52d399bb63ec
+F src/memjournal.c 13ae08696117438e7fa2518af71e52ee00c02395
 F src/msvc.h d9ba56c6851227ab44b3f228a35f3f5772296495
 F src/mutex.c 8e45800ee78e0cd1f1f3fe8e398853307f4a085c
 F src/mutex.h 779d588e3b7756ec3ecf7d78cde1d84aba414f85
@@ -1455,7 +1455,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ee486ef742557244f532e8d3b3604ff04e024b8a
-R 58c822ca96b5496f25a8c479ed6f41b8
+P fa20dcb03b92be3bb32f8e3d6f88681ace3f6c84
+R ddfc9f5547c4cd989efbf516628daef2
 U drh
-Z 14a12081690d2b5a8e4723ef05aa614c
+Z f80415911853dbc4f72e4c714eb20705

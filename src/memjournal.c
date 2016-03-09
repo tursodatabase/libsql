@@ -145,13 +145,14 @@ static int memjrnlCreateFile(MemJournal *p){
     int nChunk = copy.nChunkSize;
     i64 iOff = 0;
     FileChunk *pIter;
-    for(pIter=copy.pFirst; pIter && rc==SQLITE_OK; pIter=pIter->pNext){
+    for(pIter=copy.pFirst; pIter; pIter=pIter->pNext){
       int nWrite = nChunk;
       if( pIter==copy.endpoint.pChunk ){
         nWrite = copy.endpoint.iOffset % copy.nChunkSize;
         if( nWrite==0 ) nWrite = copy.nChunkSize;
       }
       rc = sqlite3OsWrite(pReal, (u8*)pIter->zChunk, nWrite, iOff);
+      if( rc ) break;
       iOff += nWrite;
     }
     if( rc==SQLITE_OK ){
