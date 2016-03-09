@@ -166,4 +166,48 @@ do_execsql_test 2.8 {
   SELECT level, count(*) FROM t2_segdir GROUP BY level;
 } {0 2 1024 2 2048 2 3072 2}
 
+#-------------------------------------------------------------------------
+# Check that 'optimize' works when there is data in the in-memory hash
+# table, but no segments at all on disk.
+#
+do_execsql_test 3.1 {
+  CREATE VIRTUAL TABLE fts USING fts4 (t);
+  INSERT INTO fts (fts) VALUES ('optimize');
+}
+do_execsql_test 3.2 {
+  INSERT INTO fts(fts) VALUES('integrity-check');
+  SELECT count(*) FROM fts_segdir;
+} {0}
+do_execsql_test 3.3 {
+  BEGIN;
+  INSERT INTO fts (rowid, t) VALUES (2, 'test');
+  INSERT INTO fts (fts) VALUES ('optimize');
+  COMMIT;
+  SELECT level, idx FROM fts_segdir;
+} {0 0}
+do_execsql_test 3.4 {
+  INSERT INTO fts(fts) VALUES('integrity-check');
+  SELECT rowid FROM fts WHERE fts MATCH 'test';
+} {2}
+do_execsql_test 3.5 {
+  INSERT INTO fts (fts) VALUES ('optimize');
+  INSERT INTO fts(fts) VALUES('integrity-check');
+}
+do_test 3.6 {
+  set c1 [db total_changes]
+  execsql { INSERT INTO fts (fts) VALUES ('optimize') }
+  expr {[db total_changes] - $c1}
+} {1}
+do_test 3.7 {
+  execsql { INSERT INTO fts (rowid, t) VALUES (3, 'xyz') }
+  set c1 [db total_changes]
+  execsql { INSERT INTO fts (fts) VALUES ('optimize') }
+  expr {([db total_changes] - $c1) > 1}
+} {1}
+do_test 3.8 {
+  set c1 [db total_changes]
+  execsql { INSERT INTO fts (fts) VALUES ('optimize') }
+  expr {[db total_changes] - $c1}
+} {1}
+
 finish_test
