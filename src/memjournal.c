@@ -202,10 +202,15 @@ static int memjrnlWrite(
     ** atomic-write optimization. In this case the first 28 bytes of the
     ** journal file may be written as part of committing the transaction. */ 
     assert( iOfst==p->endpoint.iOffset || iOfst==0 );
+#ifdef SQLITE_ENABLE_ATOMIC_WRITE
     if( iOfst==0 && p->pFirst ){
       assert( p->nChunkSize>iAmt );
       memcpy((u8*)p->pFirst->zChunk, zBuf, iAmt);
-    }else{
+    }else
+#else
+    assert( iOfst>0 || p->pFirst==0 );
+#endif
+    {
       while( nWrite>0 ){
         FileChunk *pChunk = p->endpoint.pChunk;
         int iChunkOffset = (int)(p->endpoint.iOffset%p->nChunkSize);
@@ -249,7 +254,7 @@ static int memjrnlWrite(
 */
 static int memjrnlTruncate(sqlite3_file *pJfd, sqlite_int64 size){
   MemJournal *p = (MemJournal *)pJfd;
-  if( size==0 ){
+  if( ALWAYS(size==0) ){
     memjrnlFreeChunks(p);
     p->nSize = 0;
     p->endpoint.pChunk = 0;
