@@ -1,5 +1,5 @@
-C Remove\san\sunused\slocal\svariable.
-D 2016-03-10T14:22:42.064
+C Use\s#ifdefs\sto\sremove\scode\sthat\sis\sunreachable\sin\ssome\sconfigurations,\sreplacing\nit\swith\san\sassert().
+D 2016-03-10T14:28:24.490
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -413,7 +413,7 @@ F src/treeview.c e4b41a37530a191579d3c53142cc44ee2eb99373
 F src/trigger.c e14840ee0c3e549e758ec9bf3e4146e166002280
 F src/update.c 56b3db7edff0110360a12b76af97c39ebe3ea8b8
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
-F src/util.c 12800a93f0664f41575f96799eb881a786d565e6
+F src/util.c 34ef7be420f82415ec48131404995ddb6ee7502f
 F src/vacuum.c feb1eabb20987983d9350cad98299b21fa811f52
 F src/vdbe.c 87ae3a5657fefed7875f3eb30e7ababd48013d71
 F src/vdbe.h c743791f723049db94f009e3e30958952bc2d512
@@ -1455,7 +1455,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 556671444c03e3afca072d0f5e9bea2657de6fd3
-R a2320da0e2fa85ffcb15f59a61bf4023
+P 3c343c3d012367942037e64a9855b825cb459844
+R cc439e49a58b31085f4379adad06b3a4
 U drh
-Z c878404512f3f3f9c49842f23ff627b0
+Z ed62054916964b4fe2af635a90038c7e
