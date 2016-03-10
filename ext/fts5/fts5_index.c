@@ -4543,7 +4543,6 @@ static Fts5Structure *fts5IndexOptimizeStruct(
 int sqlite3Fts5IndexOptimize(Fts5Index *p){
   Fts5Structure *pStruct;
   Fts5Structure *pNew = 0;
-  int nSeg = 0;
 
   assert( p->rc==SQLITE_OK );
   fts5IndexFlush(p);
