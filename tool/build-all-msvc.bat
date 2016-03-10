@@ -665,11 +665,13 @@ FOR %%P IN (%PLATFORMS%) DO (
         REM       are prevented from doing so.
         REM
         IF NOT DEFINED NOSYMBOLS (
-          %__ECHO% XCOPY "%DLL_PDB_FILE_NAME%" "%BINARYDIRECTORY%\%%B\%%D\" %FFLAGS% %DFLAGS%
+          IF EXIST "%DLL_PDB_FILE_NAME%" (
+            %__ECHO% XCOPY "%DLL_PDB_FILE_NAME%" "%BINARYDIRECTORY%\%%B\%%D\" %FFLAGS% %DFLAGS%
 
-          IF ERRORLEVEL 1 (
-            ECHO Failed to copy "%DLL_PDB_FILE_NAME%" to "%BINARYDIRECTORY%\%%B\%%D\".
-            GOTO errors
+            IF ERRORLEVEL 1 (
+              ECHO Failed to copy "%DLL_PDB_FILE_NAME%" to "%BINARYDIRECTORY%\%%B\%%D\".
+              GOTO errors
+            )
           )
         )
 
@@ -722,11 +724,13 @@ FOR %%P IN (%PLATFORMS%) DO (
           REM       unless we are prevented from doing so.
           REM
           IF NOT DEFINED NOSYMBOLS (
-            %__ECHO% XCOPY "%EXE_PDB_FILE_NAME%" "%BINARYDIRECTORY%\%%B\%%D\" %FFLAGS% %DFLAGS%
+            IF EXIST "%EXE_PDB_FILE_NAME%" (
+              %__ECHO% XCOPY "%EXE_PDB_FILE_NAME%" "%BINARYDIRECTORY%\%%B\%%D\" %FFLAGS% %DFLAGS%
 
-            IF ERRORLEVEL 1 (
-              ECHO Failed to copy "%EXE_PDB_FILE_NAME%" to "%BINARYDIRECTORY%\%%B\%%D\".
-              GOTO errors
+              IF ERRORLEVEL 1 (
+                ECHO Failed to copy "%EXE_PDB_FILE_NAME%" to "%BINARYDIRECTORY%\%%B\%%D\".
+                GOTO errors
+              )
             )
           )
         )

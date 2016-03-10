@@ -1,5 +1,5 @@
-C Add\stests\sto\scover\suntested\sbranches\sin\srecent\sfts5\schanges.
-D 2016-03-10T15:12:47.687
+C Check\sfor\sPDB\sfiles\sprior\sto\sattempting\sto\scopy\sthem\sin\sthe\sMSVC\sbatch\sbuild\stool.
+D 2016-03-10T19:08:44.973
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -1374,7 +1374,7 @@ F tool/GetFile.cs a15e08acb5dd7539b75ba23501581d7c2b462cb5
 F tool/GetTclKit.bat 629d87562e0487c386db630033931d12d62e6372
 F tool/Replace.cs 02c67258801c2fb5f63231e0ac0f220b4b36ba91
 F tool/addopcodes.tcl 2b089684eb8b7d0db64cf9d8e6d2fe1b6d279e8d
-F tool/build-all-msvc.bat 55be1cf8545dabd69df2ba6b3de6868da0c26f52 x
+F tool/build-all-msvc.bat 3e4e4043b53f1aede4308e0d2567bbd773614630 x
 F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
 F tool/cg_anno.tcl 692ce4b8693d59e3a3de77ca97f4139ecfa641b0 x
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
@@ -1455,7 +1455,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f96ec84d605fd73c323344a753acf35b76307af9
-R 051c67540d0eafc760e9e2909fb96246
-U dan
-Z d3ddde89c58a1d5ab316ef215efd6168
+P fa0033edf6ddf3c6631fa95b343225dbc8ac9429
+R 306b8c821d3092af90856b15d0070f67
+U mistachkin
+Z c66ddc08ff47a327984a1b8fcbda8cec
