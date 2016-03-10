@@ -220,6 +220,25 @@ do_test 5.2 {
 } {}
 
 
+#--------------------------------------------------------------------------
+# Test that running 'merge' on an empty database does not cause a 
+# problem.
+#
+reset_db
+do_execsql_test 6.0 {
+  CREATE VIRTUAL TABLE g1 USING fts5(a, b);
+}
+do_execsql_test 6.1 {
+  INSERT INTO g1(g1, rank) VALUES('merge', 10);
+}
+do_execsql_test 6.2 {
+  INSERT INTO g1(g1, rank) VALUES('merge', -10);
+}
+do_execsql_test 6.3 {
+  INSERT INTO g1(g1) VALUES('integrity-check');
+}
+
+
 
 finish_test
 

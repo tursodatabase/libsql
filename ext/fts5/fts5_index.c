@@ -4553,11 +4553,10 @@ int sqlite3Fts5IndexOptimize(Fts5Index *p){
   }
   fts5StructureRelease(pStruct);
 
-  if( pNew && pNew->nSegment>0 ){
+  assert( pNew==0 || pNew->nSegment>0 );
+  if( pNew ){
     int iLvl;
-    for(iLvl=0; iLvl<pNew->nLevel; iLvl++){
-      if( pNew->aLevel[iLvl].nSeg ) break;
-    }
+    for(iLvl=0; pNew->aLevel[iLvl].nSeg==0; iLvl++){}
     while( p->rc==SQLITE_OK && pNew->aLevel[iLvl].nSeg>0 ){
       int nRem = FTS5_OPT_WORK_UNIT;
       fts5IndexMergeLevel(p, &pNew, iLvl, &nRem);

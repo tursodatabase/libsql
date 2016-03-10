@@ -20,6 +20,12 @@ ifcapable !fts5 {
   return
 }
 
+#
+# 1.* - Warm body tests for index optimization using ('optimize')
+#
+# 2.* - Warm body tests for index optimization using ('merge', -1)
+#
+
 proc rnddoc {nWord} {
   set vocab {a b c d e f g h i j k l m n o p q r s t u v w x y z}
   set nVocab [llength $vocab]
@@ -29,7 +35,6 @@ proc rnddoc {nWord} {
   }
   return $ret
 }
-
 
 foreach {tn nStep} {
   1 2
@@ -100,6 +105,5 @@ foreach {tn nStep} {
 
   do_test 2.$tn.6 { fts5_segcount t1 } 1
 }
-
 finish_test
 
