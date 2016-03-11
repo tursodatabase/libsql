@@ -1,5 +1,5 @@
-C Update\sspellfix1_scriptcode()\sto\soutput\s215\s(latin)\sfor\spure\snumeric\stext.
-D 2016-03-11T14:30:18.667
+C Tweak\sthe\samalgamation\sautoconf\sfiles\sso\sthat\sthe\s--disable-static-shell\soption\sworks\sagain.
+D 2016-03-11T15:25:13.462
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -10,11 +10,11 @@ F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
-F autoconf/Makefile.am 4b8bd7896fffb6b22a57747f1f98cba1da9108ae
+F autoconf/Makefile.am 42f7eb1fb2b06ddd6c6adab3e4388cc0a237ba40
 F autoconf/Makefile.msc b8ada5177e6f39c126a88295af5ad0255e08d280
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/README.txt 4f04b0819303aabaa35fff5f7b257fb0c1ef95f1
-F autoconf/configure.ac 72a5e42beb090b32bca580285dc0ab3c4670adb8
+F autoconf/configure.ac d807b567f73a2b0986ccdd206b782cecb4d08fff
 F autoconf/tea/Makefile.in b438a7020446c8a8156e8d97c8914a04833da6fd
 F autoconf/tea/README 3e9a3c060f29a44344ab50aec506f4db903fb873
 F autoconf/tea/aclocal.m4 52c47aac44ce0ddb1f918b6993e8beb8eee88f43
@@ -1455,7 +1455,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d7c20f04e69fb1848b2e2f3b04fbd56e06c7c854
-R 6aa12144d3c644bf9edbd83316218d69
-U drh
-Z c13ed9f7b14004f5942c430b85f3af01
+P df44308b862e932ff0ad25b6328d13be22047b96
+R 19b1fa38a58d00a667be85fd411c2202
+U dan
+Z bd858a2f3f6240bb0acfbf97ee308bf8
