@@ -1,5 +1,5 @@
-C Do\snot\sallow\sthe\suse\sof\sWAL\smode\swith\snolock=1\sbecause\sit\sdoes\snot\swork.
-D 2016-03-11T23:07:30.911
+C Fix\shandling\sof\sstrings\sthat\scontain\szero\stokens\sin\sfts5.\sAnd\sother\sproblems\sfound\sby\sfuzzing.
+D 2016-03-12T16:32:16.002
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -98,11 +98,11 @@ F ext/fts3/unicode/mkunicode.tcl 2debed3f582d77b3fdd0b8830880250021571fd8
 F ext/fts3/unicode/parseunicode.tcl da577d1384810fb4e2b209bf3313074353193e95
 F ext/fts5/extract_api_docs.tcl a36e54ec777172ddd3f9a88daf593b00848368e0
 F ext/fts5/fts5.h ff9c2782e8ed890b0de2f697a8d63971939e70c7
-F ext/fts5/fts5Int.h 59e13423371512df1992532a08fe80518244f96b
+F ext/fts5/fts5Int.h 4060504b7979601d99e1385c2b5713036854979a
 F ext/fts5/fts5_aux.c daa57fb45216491814520bbb587e97bf81ced458
 F ext/fts5/fts5_buffer.c 4c1502d4c956cd092c89ce4480867f9d8bf325cd
-F ext/fts5/fts5_config.c abd3ae1107ca8b8def7445a0a3b70c2e46d05986
-F ext/fts5/fts5_expr.c 8e8e4635f655133eb39018072fc0f0942a2c4337
+F ext/fts5/fts5_config.c 5af9c360e99669d29f06492c370892394aba0857
+F ext/fts5/fts5_expr.c c4166ba0de2e87c444a7eedc8623e32653138ca0
 F ext/fts5/fts5_hash.c f3a7217c86eb8f272871be5f6aa1b6798960a337
 F ext/fts5/fts5_index.c d4f0c12e4f04bbc3a06b6da052039f2ce3e45438
 F ext/fts5/fts5_main.c b8501e1a6a11591c53b18ce7aea7e5386cfb0421
@@ -114,7 +114,7 @@ F ext/fts5/fts5_tokenize.c 2ce7b44183538ec46b7907726262ee43ffdd39a8
 F ext/fts5/fts5_unicode2.c b450b209b157d598f7b9df9f837afb75a14c24bf
 F ext/fts5/fts5_varint.c a5aceacda04dafcbae725413d7a16818ecd65738
 F ext/fts5/fts5_vocab.c dba72ca393d71c2588548b51380387f6b44c77a8
-F ext/fts5/fts5parse.y 86fe6ba094a47e02fe8be2571539e6833d197764
+F ext/fts5/fts5parse.y fcc5e92e570d38cab38488b2109cbf67468923b2
 F ext/fts5/mkportersteps.tcl 5acf962d2e0074f701620bb5308155fa1e4a63ba
 F ext/fts5/test/fts5_common.tcl b01c584144b5064f30e6c648145a2dd6bc440841
 F ext/fts5/test/fts5aa.test 7e814df4a0e6c22a6fe2d84f210fdc0b5068a084
@@ -146,7 +146,7 @@ F ext/fts5/test/fts5detail.test ef5c690535a797413acaf5ad9b8ab5d49972df69
 F ext/fts5/test/fts5dlidx.test 13871a14641017ae42f6f1055a8067bafd44cb3d
 F ext/fts5/test/fts5doclist.test 8edb5b57e5f144030ed74ec00ef6fa4294fed79b
 F ext/fts5/test/fts5ea.test b01e3a18cdfabbff8104a96a5242a06a68a998a0
-F ext/fts5/test/fts5eb.test 021aa80b7ac09b964249aa32ced9ee908703e4aa
+F ext/fts5/test/fts5eb.test c516ae0c934be6fd29ec95ea8b5f11f461311535
 F ext/fts5/test/fts5fault1.test e09040d3e17b8c0837101e8c79c8a874c4376fb7
 F ext/fts5/test/fts5fault2.test d8c6c7f916ccbdfc10b2c69530e9dd3bc8313232
 F ext/fts5/test/fts5fault3.test d6e9577d4312e331a913c72931bf131704efc8f3
@@ -159,6 +159,7 @@ F ext/fts5/test/fts5fault9.test e10e395428a9ea0596ebe752ff7123d16ab78e08
 F ext/fts5/test/fts5faultA.test fa5d59c0ff62b7125cd14eee38ded1c46e15a7ea
 F ext/fts5/test/fts5faultB.test 92ae906284062bf081b6c854afa54dcb1aa9ef88
 F ext/fts5/test/fts5full.test 6f6143af0c6700501d9fd597189dfab1555bb741
+F ext/fts5/test/fts5fuzz1.test 7a6411c39959d8f4cb8f11e840a787e74a3bfbef
 F ext/fts5/test/fts5hash.test 06f9309ccb4d5050a131594e9e47d0b21456837d
 F ext/fts5/test/fts5integrity.test f5e4f8d284385875068ad0f3e894ce43e9de835d
 F ext/fts5/test/fts5matchinfo.test f7dde99697bcb310ea8faa8eb2714d9f4dfc0e1b
@@ -1455,7 +1456,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 83efcdebfa255cd0663ecc6b74eb99183e2f3a10
-R 95ba30529f9bfc1f4da2d6ab93334cdc
-U drh
-Z 5b477c118f77a96b5b851b408af856c1
+P 74f5d3b07f6e5e977858c73957c6f9337ae3ca3e
+R 561f4a7c15c16c270cfb03e11b79c482
+U dan
+Z 78cc445fb6679cc3e05486871c5dafe8

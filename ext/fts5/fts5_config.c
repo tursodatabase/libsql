@@ -442,7 +442,9 @@ static const char *fts5ConfigGobbleWord(
       *pbQuoted = 1;
     }else{
       zRet = fts5ConfigSkipBareword(zIn);
-      zOut[zRet-zIn] = '\0';
+      if( zRet ){
+        zOut[zRet-zIn] = '\0';
+      }
     }
   }
 

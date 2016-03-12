@@ -701,6 +701,12 @@ Fts5ExprNode *sqlite3Fts5ParseNode(
   Fts5ExprNearset *pNear
 );
 
+Fts5ExprNode *sqlite3Fts5ParseImplicitAnd(
+  Fts5Parse *pParse,
+  Fts5ExprNode *pLeft,
+  Fts5ExprNode *pRight
+);
+
 Fts5ExprPhrase *sqlite3Fts5ParseTerm(
   Fts5Parse *pParse, 
   Fts5ExprPhrase *pPhrase, 
