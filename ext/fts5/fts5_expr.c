@@ -1445,6 +1445,21 @@ Fts5ExprNearset *sqlite3Fts5ParseNearset(
     sqlite3Fts5ParseNearsetFree(pNear);
     sqlite3Fts5ParsePhraseFree(pPhrase);
   }else{
+    if( pRet->nPhrase>0 ){
+      Fts5ExprPhrase *pLast = pRet->apPhrase[pRet->nPhrase-1];
+      assert( pLast==pParse->apPhrase[pParse->nPhrase-2] );
+      if( pPhrase->nTerm==0 ){
+        fts5ExprPhraseFree(pPhrase);
+        pRet->nPhrase--;
+        pParse->nPhrase--;
+        pPhrase = pLast;
+      }else if( pLast->nTerm==0 ){
+        fts5ExprPhraseFree(pLast);
+        pParse->apPhrase[pParse->nPhrase-2] = pPhrase;
+        pParse->nPhrase--;
+        pRet->nPhrase--;
+      }
+    }
     pRet->apPhrase[pRet->nPhrase++] = pPhrase;
   }
   return pRet;

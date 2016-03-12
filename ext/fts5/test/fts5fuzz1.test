@@ -59,11 +59,11 @@ do_execsql_test 2.4 {
 
 do_execsql_test 2.5 {
   SELECT a, b FROM f1('NEAR("" c, 5)');
-} {}
+} {{a b} {c d}}
 
 do_execsql_test 2.6 {
   SELECT a, b FROM f1('NEAR("" c d, 5)');
-} {}
+} {{a b} {c d}}
 
 do_execsql_test 2.7 {
   SELECT a, b FROM f1('NEAR(c d, 5)');
