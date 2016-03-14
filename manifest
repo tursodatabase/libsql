@@ -1,5 +1,5 @@
-C Update\stest\sscripts\sso\sthat\sthey\swork\swith\sSEE.
-D 2016-03-14T21:12:26.457
+C Fix\sthe\spermutations.test\sscript\sso\sthat\sit\sworks\sagain.
+D 2016-03-14T21:26:25.596
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -950,7 +950,7 @@ F test/parser1.test 222b5cbf3e2e659fec1bf7d723488c8b9c94f1d0
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
-F test/permutations.test 64abe58d53cde4adcfb881e37aa5ea1b2a980e58
+F test/permutations.test af8067e4b6d684518956f8e2a744f42bde99014d
 F test/pragma.test afbf028be1c35b68f57db8eb015c4a3c59d8f28e
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
 F test/pragma3.test 3f1984a04657331f838df5c519b443c2088df922
@@ -1456,8 +1456,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f7480e33eb82f2eae219d17ce46cd2d4edac07d2 92be06c1a828d56652fa5269a3029f8cb029b2cd
-R 24275616ba2669073b7ddeb77ba67682
-T +closed 92be06c1a828d56652fa5269a3029f8cb029b2cd
+P f4693ba4bbd9738b45012cf507fc0d7b6d04b7ee
+R b91725f8858bc448d609dcaeb28fa81e
 U drh
-Z d1492fd2b8bf4cccc192885ce03fdf82
+Z 51ddcfc985bc0e936856bdb8a64dca36
