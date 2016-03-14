@@ -1,5 +1,5 @@
-C Merge\stest\sscript\sfixes\sfrom\strunk.
-D 2016-03-14T18:42:04.674
+C Changing\spage\ssize\susing\sVACUUM\sor\sbackup\sis\snot\sallowed\swith\sa\scodec\sattached.
+D 2016-03-14T20:49:24.177
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -937,7 +937,7 @@ F test/orderby8.test 23ef1a5d72bd3adcc2f65561c654295d1b8047bd
 F test/orderby9.test 87fb9548debcc2cd141c5299002dd94672fa76a3
 F test/oserror.test b32dc34f2363ef18532e3a0a7358e3e7e321974f
 F test/ovfl.test 199c482696defceacee8c8e0e0ef36da62726b2f
-F test/pager1.test f49df1a8b0e38b9ee3a7dd2ab4d427507b7314ce
+F test/pager1.test 841868017e9dd3cb459b8d78862091a7d9cff21d
 F test/pager2.test 67b8f40ae98112bcdba1f2b2d03ea83266418c71
 F test/pager3.test 3856d9c80839be0668efee1b74811b1b7f7fc95f
 F test/pager4.test a122e9e6925d5b23b31e3dfef8c6a44bbf19590e
@@ -1072,7 +1072,7 @@ F test/subquery2.test 438f8a7da1457277b22e4176510f7659b286995f
 F test/subselect.test d24fd8757daf97dafd2e889c73ea4c4272dcf4e4
 F test/substr.test 18f57c4ca8a598805c4d64e304c418734d843c1a
 F test/subtype1.test 7fe09496352f97053af1437150751be2d0a0cae8
-F test/superlock.test 168011a6730aee70c28ea8d5e1c0592de4026f79
+F test/superlock.test ec94f0556b6488d97f71c79f9061ae08d9ab8f12
 F test/symlink.test c9ebe7330d228249e447038276bfc8a7b22f4849
 F test/sync.test 2f607e1821aa3af3c5c53b58835c05e511c95899
 F test/syscall.test f59ba4e25f7ba4a4c031026cc2ef8b6e4b4c639c
@@ -1456,7 +1456,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 99b9d7eef68fd6d5c9eecb5fbe3dfe002c1ca4a8 f7480e33eb82f2eae219d17ce46cd2d4edac07d2
-R a4b3be370b53beddc257d6f309680c72
+P ea1d2cddd59192251ee5fd912b190cded4959879
+R 24275616ba2669073b7ddeb77ba67682
 U drh
-Z 068814209d932469f07bb4748200130f
+Z 86d93a0053c6301f416af4041023113a
