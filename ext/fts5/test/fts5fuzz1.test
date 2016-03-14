@@ -82,8 +82,12 @@ do_execsql_test 3.2 {
 
 
 
-
+#-------------------------------------------------------------------------
+reset_db
+do_catchsql_test 4.1 {
+  CREATE VIRTUAL TABLE f2 USING fts5(o, t);
+  SELECT * FROM f2('(8 AND 9)`AND 10');
+} {1 {fts5: syntax error near "`"}}
 
 finish_test
-
 

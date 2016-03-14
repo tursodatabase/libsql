@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\shandling\s'NEAR(""\stoken)'\sin\sfts5\sfound\sby\sfuzzing.
-D 2016-03-12T19:33:47.637
+C Fix\sa\smemory\sleak\sin\sfts5\sthat\scould\soccur\sfollowing\sa\ssyntax\serror\sin\sa\squery\sexpression.
+D 2016-03-14T12:16:23.063
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -102,7 +102,7 @@ F ext/fts5/fts5Int.h 4060504b7979601d99e1385c2b5713036854979a
 F ext/fts5/fts5_aux.c daa57fb45216491814520bbb587e97bf81ced458
 F ext/fts5/fts5_buffer.c 4c1502d4c956cd092c89ce4480867f9d8bf325cd
 F ext/fts5/fts5_config.c 5af9c360e99669d29f06492c370892394aba0857
-F ext/fts5/fts5_expr.c f11757a251346df38c04fd67d0703fbb0c084ef7
+F ext/fts5/fts5_expr.c be309fb227003c931107bfcc12d5be4f2fd2bb8c
 F ext/fts5/fts5_hash.c f3a7217c86eb8f272871be5f6aa1b6798960a337
 F ext/fts5/fts5_index.c d4f0c12e4f04bbc3a06b6da052039f2ce3e45438
 F ext/fts5/fts5_main.c b8501e1a6a11591c53b18ce7aea7e5386cfb0421
@@ -159,7 +159,7 @@ F ext/fts5/test/fts5fault9.test e10e395428a9ea0596ebe752ff7123d16ab78e08
 F ext/fts5/test/fts5faultA.test fa5d59c0ff62b7125cd14eee38ded1c46e15a7ea
 F ext/fts5/test/fts5faultB.test 92ae906284062bf081b6c854afa54dcb1aa9ef88
 F ext/fts5/test/fts5full.test 6f6143af0c6700501d9fd597189dfab1555bb741
-F ext/fts5/test/fts5fuzz1.test 74b638ca214b91614cadb2de14e6269385819e99
+F ext/fts5/test/fts5fuzz1.test bece4695fc169b61ab236ada7931c6e4942cbef9
 F ext/fts5/test/fts5hash.test 06f9309ccb4d5050a131594e9e47d0b21456837d
 F ext/fts5/test/fts5integrity.test f5e4f8d284385875068ad0f3e894ce43e9de835d
 F ext/fts5/test/fts5matchinfo.test f7dde99697bcb310ea8faa8eb2714d9f4dfc0e1b
@@ -1456,7 +1456,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 72b3ff0f0df83e62adda6584b4281cf086d45e45
-R f6701c1b7c325b06b9e793bf0b9b6f39
+P 10a827ae5f3f322af836c15e581fdc958a433a5a
+R 044bc4807e350ab5b23a4e059317d425
 U dan
-Z ac91e536ca766cb3c7d727597fcc6975
+Z 7cd8dbc9719c56da8d0f172ae33ba6b2

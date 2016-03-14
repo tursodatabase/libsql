@@ -258,6 +258,8 @@ int sqlite3Fts5ExprNew(
       pNew->nPhrase = sParse.nPhrase;
       sParse.apPhrase = 0;
     }
+  }else{
+    sqlite3Fts5ParseNodeFree(sParse.pExpr);
   }
 
   sqlite3_free(sParse.apPhrase);
