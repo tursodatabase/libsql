@@ -374,6 +374,12 @@ proc do_not_use_codec {} {
   reset_db
 }
 
+# Return true if the "reserved_bytes" integer on database files is non-zero.
+#
+proc nonzero_reserved_bytes {} {
+  return [sqlite3 -has-codec]
+}
+
 # Print a HELP message and exit
 #
 proc print_help_and_quit {} {
@@ -521,6 +527,7 @@ if {[info exists cmdlinearg]==0} {
   }
   set testdir [file normalize $testdir]
   set cmdlinearg(TESTFIXTURE_HOME) [pwd]
+  set cmdlinearg(INFO_SCRIPT) [file normalize [info script]]
   set argv0 [file normalize $argv0]
   if {$cmdlinearg(testdir)!=""} {
     file mkdir $cmdlinearg(testdir)

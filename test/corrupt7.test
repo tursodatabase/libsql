@@ -19,10 +19,9 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-# Do not use a codec for tests in this file, as the database file is
-# manipulated directly using tcl scripts (using the [hexio_write] command).
-#
-do_not_use_codec
+# This module uses hard-coded offsets which do not work if the reserved_bytes
+# value is nonzero.
+if {[nonzero_reserved_bytes]} {finish_test; return;}
 
 # These tests deal with corrupt database files
 #

@@ -1,5 +1,5 @@
-C Test\sscript\schanges\sto\ssupport\stesting\sthe\sSQLite\sEncryption\sExtension.
-D 2016-03-14T16:16:43.649
+C Many\stest\scases\sfixed\sto\swork\swith\sencryption.
+D 2016-03-14T17:05:04.050
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -487,7 +487,7 @@ F test/avtrans.test 0252654f4295ddda3b2cce0e894812259e655a85
 F test/backcompat.test 28403f43d11624e696c5ef134c7c7d81015cd19e
 F test/backup.test b79299a536a4c6d919094786595b95be56d02014
 F test/backup2.test 34986ef926ea522911a51dfdb2f8e99b7b75ebcf
-F test/backup4.test 2a2e4a64388090b152de753fd9e123f28f6a3bd4
+F test/backup4.test 8f6fd48e0dfde77b9a3bb26dc471ede3e101df32
 F test/backup5.test ee5da6d7fe5082f5b9b0bbfa31d016f52412a2e4
 F test/backup_ioerr.test 4c3c7147cee85b024ecf6e150e090c32fdbb5135
 F test/backup_malloc.test 7162d604ec2b4683c4b3799a48657fb8b5e2d450
@@ -528,7 +528,7 @@ F test/capi3e.test 3d49c01ef2a1a55f41d73cba2b23b5059ec460fe
 F test/cast.test 4c275cbdc8202d6f9c54a3596701719868ac7dc3
 F test/cffault.test aadc1f61f8811cb600e3e069acbf8796f472a096
 F test/check.test 85a84bfc4be0e83f668747211c7cd45a6721d485
-F test/close.test 340bd24cc58b16c6bc01967402755027c37eb815
+F test/close.test 83947daf3b700631f90f4850ddaab455be4af73d
 F test/closure01.test b1703ba40639cfc9b295cf478d70739415eec6a4
 F test/coalesce.test cee0dccb9fbd2d494b77234bccf9dc6c6786eb91
 F test/collate1.test 08c18e7512a5a32c97938854263fa15362eeb846
@@ -549,23 +549,23 @@ F test/conflict3.test dec0634c0f31dec9a4b01c63063e939f0cd21b6b
 F test/contrib01.test 2a1cbc0f2f48955d7d073f725765da6fbceda6b4
 F test/corrupt.test 141c39ea650c1365e85a49e402fa05cb9617fb97
 F test/corrupt2.test cb787825d761b0f869764d6990531382840de872
-F test/corrupt3.test 4b548d0bbe2933bc81d3f54099a05fc4d28aff18
-F test/corrupt4.test b99652079d542b21f4965f6248703b983e40fe80
+F test/corrupt3.test e676f478fe602915d721472811f6f410b75ddc7e
+F test/corrupt4.test 8d1d86b850fcc43e417450454f2044e52d55778a
 F test/corrupt5.test 8ead52af76006f3286e9396cb41898018ccea107
-F test/corrupt6.test 269548d19427ac554c830763b1c5ea54a0252f80
-F test/corrupt7.test e4fa6d6584276679cc1d20c4e58beb9559a4eb85
+F test/corrupt6.test fc6a891716139665dae0073b6945e3670bf92568
+F test/corrupt7.test b036f94bda4b0b23a2919bf717046ce9ecca4543
 F test/corrupt8.test 2399dfe40d2c0c63af86706e30f3e6302a8d0516
 F test/corrupt9.test 730a3db08d4ab9aa43392ea30d9c2b4879cbff85
 F test/corruptA.test 53e56dafd180addcdadb402244b8cb9771d2ba26
 F test/corruptB.test 73a8d6c0b9833697ecf16b63e3c5c05c945b5dec
 F test/corruptC.test 0c46574f8d4f27ecc799b1b5c4cbf9b1817bce9a
 F test/corruptD.test b3c205fac7952b1de645ce44bb02335cd9e3e040
-F test/corruptE.test be8e5088c369fc7979c662cd644efdaafc0f7f6d
+F test/corruptE.test 82ccf4f8f543fdbedd4aa42c709cb077f7374c62
 F test/corruptF.test be9fde98e4c93648f1ba52b74e5318edc8f59fe4
-F test/corruptG.test 1ab3bf97ee7bdba70e0ff3ba2320657df55d1804
-F test/corruptH.test 99ad81a4bda7cc078c589ef7542ecbc64e453c80
-F test/corruptI.test 347babbf970e7947e3f91dccf7a1bec28a1bab04
-F test/corruptJ.test 9e29e7a81ee3b6ac50f77ea7a9e2f3fa03f32d91
+F test/corruptG.test adf79b669cbfd19e28c8191a610d083ae53a6d51
+F test/corruptH.test 79801d97ec5c2f9f3c87739aa1ec2eb786f96454
+F test/corruptI.test 075fe1d75aa1d84e2949be56b6264376c41502e4
+F test/corruptJ.test 4d5ccc4bf959464229a836d60142831ef76a5aa4
 F test/cost.test 1eedbfd868f806f3fa08ff072b04cf270dcf61c8
 F test/count.test cb2e0f934c6eb33670044520748d2ecccd46259c
 F test/coveridxscan.test b629e896b14df2f000a99b8d170d80589c46562c
@@ -576,7 +576,7 @@ F test/crash4.test fe2821baf37168dc59dd733dcf7dba2a401487bc
 F test/crash5.test 05dd3aa9dbb751a22d5cdaf22a9c49b6667aa219
 F test/crash6.test 4c56f1e40d0291e1110790a99807aa875b1647ba
 F test/crash7.test 1a194c4900a255258cf94b7fcbfd29536db572df
-F test/crash8.test 61442a9964ab6b124fc5254e4258b45747842e6f
+F test/crash8.test a63907617d8e74fb54b4bff23eca8a4435625245
 F test/crashM.test d95f59046fa749b0d0822edf18a717788c8f318d
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test b5de160630b209c4b8925bdcbbaf48cc90b67fe8
@@ -617,7 +617,7 @@ F test/e_select2.test aceb80ab927d46fba5ce7586ebabf23e2bb0604f
 F test/e_totalchanges.test b12ee5809d3e63aeb83238dd501a7bca7fd72c10
 F test/e_update.test f46c2554d915c9197548681e8d8c33a267e84528
 F test/e_uri.test 25385396082b67fd02ae0038b95a3b3575fe0519
-F test/e_vacuum.test 5bfbdc21b65c0abf24398d0ba31dc88d93ca77a9
+F test/e_vacuum.test 4d5b391384bb7d56bb9337d956f08035332421fc
 F test/e_wal.test ae9a593207a77d711443ee69ffe081fda9243625
 F test/e_walauto.test 280714ddf14e1a47dcbc59d515cd0b026dfd5567
 F test/e_walckpt.test 28c371a6bb5e5fe7f31679c1df1763a19d19e8a0
@@ -626,7 +626,7 @@ F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 83437a79ba1545a55fb549309175c683fb334473
 F test/enc3.test 6807f7a7740a00361ca8d0ccd66bc60c8dc5f2b6
 F test/enc4.test c8f1ce3618508fd0909945beb8b8831feef2c020
-F test/eqp.test 85873fa5816c48915c82c4e74cb5c35a5b48160f
+F test/eqp.test 3fe051af50921284189d1970eb653f9fcf5117d2
 F test/errmsg.test f31592a594b44ee121371d25ddd5d63497bb3401
 F test/eval.test a64c9105d6ff163df7cf09d6ac29cdad5922078c
 F test/exclusive.test f48243eaf40e0957215501a12f510a8644d13a02
@@ -790,11 +790,11 @@ F test/in2.test 5d4c61d17493c832f7d2d32bef785119e87bde75
 F test/in3.test 3cbf58c87f4052cee3a58b37b6389777505aa0c0
 F test/in4.test d2b38cba404bc4320f4fe1b595b3d163f212c068
 F test/in5.test acc710c12af118df5f8645eaba9479f5619eed81
-F test/incrblob.test e81846d214f3637622620fbde7cd526781cfe328
+F test/incrblob.test 8a6d31ba3243d7c00cebf0b0d9ff533410e8b412
 F test/incrblob2.test a5ce5ed1d0b01e2ed347245a21170372528af0a5
 F test/incrblob3.test d8d036fde015d4a159cd3cbae9d29003b37227a4
 F test/incrblob4.test f26502a5697893e5acea268c910f16478c2f0fab
-F test/incrblob_err.test af1f12ba60d220c9752073ff2bda2ad59e88960d
+F test/incrblob_err.test 69f9247fed50278d48ea710d1a8f9cdb09e4c0b8
 F test/incrblobfault.test 280474078f6da9e732cd2a215d3d854969014b6e
 F test/incrcorrupt.test 6c567fbf870aa9e91866fe52ce6f200cd548939a
 F test/incrvacuum.test d2a6ddf5e429720b5fe502766af747915ccf6c32
@@ -1085,7 +1085,7 @@ F test/tclsqlite.test 7fb866443c7deceed22b63948ccd6f76b52ad054
 F test/tempdb.test bd92eba8f20e16a9136e434e20b280794de3cdb6
 F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptrigger.test 8ec228b0db5d7ebc4ee9b458fc28cb9e7873f5e1
-F test/tester.tcl 8fbf071b23ec66ce9bb8607fc92fdc4326393697
+F test/tester.tcl d6dee24773e20320ab64d39bb5ce6e1a91b6029e
 F test/thread001.test 9f22fd3525a307ff42a326b6bc7b0465be1745a5
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -1456,10 +1456,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 90e0cc7b0be31ee2f155c2c053b0cbac584f6154
-R 923bd9deb3676f2e6a04ffc9c99e77ab
-T *branch * see-testing
-T *sym-see-testing *
-T -sym-trunk *
+P 1c70aa5c014fc48ab06215992a61c6f92490abe4
+R ac90bb020079fb64a047783b4d5bc228
 U drh
-Z 56d0f9475e233b620a1fb1bf6022de74
+Z 40fa5f4f9bc49db4a476fd7c95e3e453

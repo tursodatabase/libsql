@@ -516,45 +516,47 @@ det 5.13 "SELECT a FROM t1 EXCEPT SELECT d FROM t2 ORDER BY 1" {
 }
 
 
-#-------------------------------------------------------------------------
-# The following tests - eqp-6.* - test that the example C code on 
-# documentation page eqp.html works. The C code is duplicated in test1.c
-# and wrapped in Tcl command [print_explain_query_plan] 
-#
-set boilerplate {
-  proc explain_query_plan {db sql} {
-    set stmt [sqlite3_prepare_v2 db $sql -1 DUMMY]
-    print_explain_query_plan $stmt
-    sqlite3_finalize $stmt
+if {![nonzero_reserved_bytes]} {
+  #-------------------------------------------------------------------------
+  # The following tests - eqp-6.* - test that the example C code on 
+  # documentation page eqp.html works. The C code is duplicated in test1.c
+  # and wrapped in Tcl command [print_explain_query_plan] 
+  #
+  set boilerplate {
+    proc explain_query_plan {db sql} {
+      set stmt [sqlite3_prepare_v2 db $sql -1 DUMMY]
+      print_explain_query_plan $stmt
+      sqlite3_finalize $stmt
+    }
+    sqlite3 db test.db
+    explain_query_plan db {%SQL%}
+    db close
+    exit
   }
-  sqlite3 db test.db
-  explain_query_plan db {%SQL%}
-  db close
-  exit
-}
-
-# Do a "Print Explain Query Plan" test.
-proc do_peqp_test {tn sql res} {
-  set fd [open script.tcl w]
-  puts $fd [string map [list %SQL% $sql] $::boilerplate]
-  close $fd
-
-  uplevel do_test $tn [list {
-    set fd [open "|[info nameofexec] script.tcl"]
-    set data [read $fd]
+  
+  # Do a "Print Explain Query Plan" test.
+  proc do_peqp_test {tn sql res} {
+    set fd [open script.tcl w]
+    puts $fd [string map [list %SQL% $sql] $::boilerplate]
     close $fd
-    set data
-  }] [list $res]
-}
-
-do_peqp_test 6.1 {
-  SELECT a, b FROM t1 EXCEPT SELECT d, 99 FROM t2 ORDER BY 1
-} [string trimleft {
+  
+    uplevel do_test $tn [list {
+      set fd [open "|[info nameofexec] script.tcl"]
+      set data [read $fd]
+      close $fd
+      set data
+    }] [list $res]
+  }
+  
+  do_peqp_test 6.1 {
+    SELECT a, b FROM t1 EXCEPT SELECT d, 99 FROM t2 ORDER BY 1
+  } [string trimleft {
 1 0 0 SCAN TABLE t1 USING COVERING INDEX i2
 2 0 0 SCAN TABLE t2
 2 0 0 USE TEMP B-TREE FOR ORDER BY
 0 0 0 COMPOUND SUBQUERIES 1 AND 2 (EXCEPT)
 }]
+}
 
 #-------------------------------------------------------------------------
 # The following tests - eqp-7.* - test that queries that use the OP_Count

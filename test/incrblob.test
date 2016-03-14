@@ -384,7 +384,7 @@ ifcapable vtab {
 ifcapable attach {
   do_test incrblob-5.1 {
     forcedelete test2.db test2.db-journal
-    set ::size [expr [file size [info script]]]
+    set ::size [expr [file size $::cmdlinearg(INFO_SCRIPT)]]
     execsql {
       ATTACH 'test2.db' AS aux;
       CREATE TABLE aux.files(name, text);
@@ -392,16 +392,16 @@ ifcapable attach {
     }
     set fd  [db incrblob aux files text 1]
     fconfigure $fd -translation binary
-    set fd2 [open [info script]]
+    set fd2 [open $::cmdlinearg(INFO_SCRIPT)]
     fconfigure $fd2 -translation binary
     puts -nonewline $fd [read $fd2]
     close $fd
     close $fd2
     set ::text [db one {select text from aux.files}]
     string length $::text
-  } [file size [info script]]
+  } [file size $::cmdlinearg(INFO_SCRIPT)]
   do_test incrblob-5.2 {
-    set fd2 [open [info script]]
+    set fd2 [open $::cmdlinearg(INFO_SCRIPT)]
     fconfigure $fd2 -translation binary
     set ::data [read $fd2]
     close $fd2
@@ -576,7 +576,7 @@ foreach {tn arg} {1 "" 2 -readonly} {
 
 }
 
-set fd [open [info script]]
+set fd [open $::cmdlinearg(INFO_SCRIPT)]
 fconfigure $fd -translation binary
 set ::data [read $fd 14000]
 close $fd
