@@ -240,6 +240,7 @@ foreach {tn setup} {
   }
 
 } {
+  if {$tn==4 && [sqlite3 -has-codec]} continue
   foreach f [glob -nocomplain test.db*] { forcedelete $f }
 
   eval $setup
