@@ -1,5 +1,5 @@
-C Run\sTCL\stests\sin\sthe\s"testdir"\ssubdirectory.
-D 2016-03-14T15:03:54.569
+C Fix\sthe\sbackcompat.test\sscript\sso\sthat\sit\sworks\swith\sthe\s--testdir\stest\soption.
+D 2016-03-14T15:43:03.210
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -484,7 +484,7 @@ F test/autoindex5.test 96f084a5e6024ea07cace5888df3223f3ea86990
 F test/autovacuum.test 941892505d2c0f410a0cb5970dfa1c7c4e5f6e74
 F test/autovacuum_ioerr2.test 8a367b224183ad801e0e24dcb7d1501f45f244b4
 F test/avtrans.test 0252654f4295ddda3b2cce0e894812259e655a85
-F test/backcompat.test 28403f43d11624e696c5ef134c7c7d81015cd19e
+F test/backcompat.test 3e64cedda754c778ef6bbe417b6e7a295e662a4d
 F test/backup.test b79299a536a4c6d919094786595b95be56d02014
 F test/backup2.test 34986ef926ea522911a51dfdb2f8e99b7b75ebcf
 F test/backup4.test 2a2e4a64388090b152de753fd9e123f28f6a3bd4
@@ -493,7 +493,7 @@ F test/backup_ioerr.test 4c3c7147cee85b024ecf6e150e090c32fdbb5135
 F test/backup_malloc.test 7162d604ec2b4683c4b3799a48657fb8b5e2d450
 F test/badutf.test d5360fc31f643d37a973ab0d8b4fb85799c3169f
 F test/badutf2.test f5bc7f2d280670ecd79b9cf4f0f1760c607fe51f
-F test/bc_common.tcl 3eda41ef9cda7d5f6c205462c96228b301da4191
+F test/bc_common.tcl b5e42d80305be95697e6370e015af571e5333a1c
 F test/bestindex1.test d5ba89a7941a941476d8d69be39b146aaed3614c
 F test/bestindex2.test 4a06b8922ab2fd09434870da8d1cdf525aaf7060
 F test/between.test 34d375fb5ce1ae283ffe82b6b233e9f38e84fc6c
@@ -1456,8 +1456,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 54b8968e335760105206b894672213c1d56771a4 fa8c12921f8361f1889724bb7c5f7eca9c48b075
-R e6d4ff0cfaea5c603741eca2f2c0aea1
-T +closed fa8c12921f8361f1889724bb7c5f7eca9c48b075
-U drh
-Z 3e9e43a77139e0aba2725db0c4d642ac
+P 90e0cc7b0be31ee2f155c2c053b0cbac584f6154
+R 02e42b4c9a3b088e9b811e95ac0b8895
+U dan
+Z adf33e3278f777c691b4da9ad8602fb1

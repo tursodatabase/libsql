@@ -7,7 +7,7 @@ proc bc_find_binaries {zCaption} {
   # against.
   #
   set binaries [list]
-  set self [file tail [info nameofexec]]
+  set self [info nameofexec]
   set pattern "$self?*"
   if {$::tcl_platform(platform)=="windows"} {
     set pattern [string map {\.exe {}} $pattern]
@@ -52,7 +52,8 @@ proc do_bc_test {bin script} {
   code1 { sqlite3 db test.db }
   code2 { sqlite3 db test.db }
 
-  set bintag [string map {testfixture {}} $bin]
+  set bintag $bin
+  regsub {.*testfixture\.} $bintag {} bintag
   set bintag [string map {\.exe {}} $bintag]
   if {$bintag == ""} {set bintag self}
   set saved_prefix $::testprefix
