@@ -1,5 +1,5 @@
-C Run\sTCL\stests\sin\sthe\s"testdir"\ssubdirectory.
-D 2016-03-14T15:03:54.569
+C Test\sscript\schanges\sto\ssupport\stesting\sthe\sSQLite\sEncryption\sExtension.
+D 2016-03-14T16:16:43.649
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -481,7 +481,7 @@ F test/autoindex2.test 12ef578928102baaa0dc23ad397601a2f4ecb0df
 F test/autoindex3.test a3be0d1a53a7d2edff208a5e442312957047e972
 F test/autoindex4.test 49d3cd791a9baa16fb461d7ea3de80d019a819cf
 F test/autoindex5.test 96f084a5e6024ea07cace5888df3223f3ea86990
-F test/autovacuum.test 941892505d2c0f410a0cb5970dfa1c7c4e5f6e74
+F test/autovacuum.test 92c24eedbdb68e49f3fb71f26f9ce6d8988cac15
 F test/autovacuum_ioerr2.test 8a367b224183ad801e0e24dcb7d1501f45f244b4
 F test/avtrans.test 0252654f4295ddda3b2cce0e894812259e655a85
 F test/backcompat.test 28403f43d11624e696c5ef134c7c7d81015cd19e
@@ -616,7 +616,7 @@ F test/e_select.test 52692ff3849541e828ad4661fe3773a9b8711763
 F test/e_select2.test aceb80ab927d46fba5ce7586ebabf23e2bb0604f
 F test/e_totalchanges.test b12ee5809d3e63aeb83238dd501a7bca7fd72c10
 F test/e_update.test f46c2554d915c9197548681e8d8c33a267e84528
-F test/e_uri.test eed3eb41b22d051a1164110dacdc778899126e14
+F test/e_uri.test 25385396082b67fd02ae0038b95a3b3575fe0519
 F test/e_vacuum.test 5bfbdc21b65c0abf24398d0ba31dc88d93ca77a9
 F test/e_wal.test ae9a593207a77d711443ee69ffe081fda9243625
 F test/e_walauto.test 280714ddf14e1a47dcbc59d515cd0b026dfd5567
@@ -1072,7 +1072,7 @@ F test/subquery2.test 438f8a7da1457277b22e4176510f7659b286995f
 F test/subselect.test d24fd8757daf97dafd2e889c73ea4c4272dcf4e4
 F test/substr.test 18f57c4ca8a598805c4d64e304c418734d843c1a
 F test/subtype1.test 7fe09496352f97053af1437150751be2d0a0cae8
-F test/superlock.test 1cde669f68d2dd37d6c9bd35eee1d95491ae3fc2
+F test/superlock.test 168011a6730aee70c28ea8d5e1c0592de4026f79
 F test/symlink.test c9ebe7330d228249e447038276bfc8a7b22f4849
 F test/sync.test 2f607e1821aa3af3c5c53b58835c05e511c95899
 F test/syscall.test f59ba4e25f7ba4a4c031026cc2ef8b6e4b4c639c
@@ -1314,7 +1314,7 @@ F test/wal7.test 2ae8f427d240099cc4b2dfef63cff44e2a68a1bd
 F test/wal8.test 75c42e1bc4545c277fed212f8fc9b7723cd02216
 F test/wal9.test 378e76a9ad09cd9bee06c172ad3547b0129a6750
 F test/wal_common.tcl a98f17fba96206122eff624db0ab13ec377be4fe
-F test/walbak.test b9f68e39646375c2b877be906babcc15d38b4877
+F test/walbak.test 8f4466e574dcd3a41cad3f25c45dc15aa74959d8
 F test/walbig.test f437473a16cfb314867c6b5d1dbcd519e73e3434
 F test/walblock.test be48f3a75eff0b4456209f26b3ce186c2015497d
 F test/walcksum.test bb234a1bb42248b3515d992b719708015c384278
@@ -1456,8 +1456,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 54b8968e335760105206b894672213c1d56771a4 fa8c12921f8361f1889724bb7c5f7eca9c48b075
-R e6d4ff0cfaea5c603741eca2f2c0aea1
-T +closed fa8c12921f8361f1889724bb7c5f7eca9c48b075
+P 90e0cc7b0be31ee2f155c2c053b0cbac584f6154
+R 923bd9deb3676f2e6a04ffc9c99e77ab
+T *branch * see-testing
+T *sym-see-testing *
+T -sym-trunk *
 U drh
-Z 3e9e43a77139e0aba2725db0c4d642ac
+Z 56d0f9475e233b620a1fb1bf6022de74

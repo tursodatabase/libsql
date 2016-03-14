@@ -15,6 +15,7 @@ source $testdir/tester.tcl
 source $testdir/lock_common.tcl
 
 set testprefix superlock
+do_not_use_codec
 
 # Test organization:
 #
