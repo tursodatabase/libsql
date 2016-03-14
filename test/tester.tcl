@@ -517,7 +517,9 @@ if {[info exists cmdlinearg]==0} {
       }
     }
   }
+  set testdir [file normalize $testdir]
   set cmdlinearg(TESTFIXTURE_HOME) [pwd]
+  set argv0 [file normalize $argv0]
   if {$cmdlinearg(testdir)!=""} {
     file mkdir $cmdlinearg(testdir)
     cd $cmdlinearg(testdir)
