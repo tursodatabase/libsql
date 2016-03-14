@@ -1,5 +1,5 @@
-C Fix\sa\smemory\sleak\sin\sfts5\sthat\scould\soccur\sfollowing\sa\ssyntax\serror\sin\sa\squery\sexpression.
-D 2016-03-14T12:16:23.063
+C Run\sTCL\stests\sin\sa\ssubdirectory\s"testdir".
+D 2016-03-14T13:42:29.333
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -460,7 +460,7 @@ F test/analyzeC.test 555a6cc388b9818b6eda6df816f01ce0a75d3a93
 F test/analyzeD.test 42af58de25a6436502e43006e9e59e2d71bcb0cf
 F test/analyzeE.test 8684e8ac5722fb97c251887ad97e5d496a98af1d
 F test/analyzeF.test 5d1fe1024ba2dfea3c18bede8c1ccef8aba1ab34
-F test/analyzer1.test 498e2ff4b62740c2751c3a2f8b744fe26689fae9
+F test/analyzer1.test 459fa02c445ddbf0101a3bad47b34290a35f2e49
 F test/async.test 1d0e056ba1bb9729283a0f22718d3a25e82c277b
 F test/async2.test c0a9bd20816d7d6a2ceca7b8c03d3d69c28ffb8b
 F test/async3.test d73a062002376d7edc1fe3edff493edbec1fc2f7
@@ -1085,7 +1085,7 @@ F test/tclsqlite.test 7fb866443c7deceed22b63948ccd6f76b52ad054
 F test/tempdb.test bd92eba8f20e16a9136e434e20b280794de3cdb6
 F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptrigger.test 8ec228b0db5d7ebc4ee9b458fc28cb9e7873f5e1
-F test/tester.tcl 750365ff97047ded5f2d6e28df82a998f7c66ae0
+F test/tester.tcl 5e4888b6bfa9862716531c085a7d450d80427884
 F test/thread001.test 9f22fd3525a307ff42a326b6bc7b0465be1745a5
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -1456,7 +1456,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 10a827ae5f3f322af836c15e581fdc958a433a5a
-R 044bc4807e350ab5b23a4e059317d425
-U dan
-Z 7cd8dbc9719c56da8d0f172ae33ba6b2
+P 54b8968e335760105206b894672213c1d56771a4
+R 51c96c83fefb55fe62e20e36b1c079f2
+U drh
+Z ad4f0a6837143665327a52812ce6dad2

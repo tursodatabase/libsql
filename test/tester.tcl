@@ -411,6 +411,8 @@ if {[info exists cmdlinearg]==0} {
   #   --match=$pattern
   #   --verbose=$val
   #   --output=$filename
+  #   -q                                      Reduce output
+  #   --testdir=$dir                          Run tests in subdirectory $dir
   #   --help
   #
   set cmdlinearg(soft-heap-limit)    0
@@ -425,6 +427,7 @@ if {[info exists cmdlinearg]==0} {
   set cmdlinearg(match)             ""
   set cmdlinearg(verbose)           ""
   set cmdlinearg(output)            ""
+  set cmdlinearg(testdir)           "testdir"
 
   set leftover [list]
   foreach a $argv {
@@ -498,6 +501,9 @@ if {[info exists cmdlinearg]==0} {
           error "option --verbose= must be set to a boolean or to \"file\""
         }
       }
+      {^-+testdir=.*$} {
+        foreach {dummy cmdlinearg(testdir)} [split $a =] break
+      }
       {.*help.*} {
          print_help_and_quit
       }
@@ -507,9 +513,14 @@ if {[info exists cmdlinearg]==0} {
       }
 
       default {
-        lappend leftover $a
+        lappend leftover [file normalize $a]
       }
     }
+  }
+  set cmdlinearg(TESTFIXTURE_HOME) [pwd]
+  if {$cmdlinearg(testdir)!=""} {
+    file mkdir $cmdlinearg(testdir)
+    cd $cmdlinearg(testdir)
   }
   set argv $leftover
 

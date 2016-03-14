@@ -25,9 +25,12 @@ if {$tcl_platform(platform)=="windows"} {
   set PROG "./sqlite3_analyzer"
 }
 if {![file exe $PROG]} {
-  puts "analyzer1 cannot run because $PROG is not available"
-  finish_test
-  return
+  set PROG [file normalize [file join $::cmdlinearg(TESTFIXTURE_HOME) $PROG]]
+  if {![file exe $PROG]} {
+    puts "analyzer1 cannot run because $PROG is not available"
+    finish_test
+    return
+  }
 }
 db close
 forcedelete test.db test.db-journal test.db-wal
