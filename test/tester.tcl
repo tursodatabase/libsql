@@ -457,6 +457,7 @@ if {[info exists cmdlinearg]==0} {
       }
       {^-+binarylog=.+$} {
         foreach {dummy cmdlinearg(binarylog)} [split $a =] break
+        set cmdlinearg(binarylog) [file normalize $cmdlinearg(binarylog)]
       }
       {^-+soak=.+$} {
         foreach {dummy cmdlinearg(soak)} [split $a =] break
@@ -489,6 +490,7 @@ if {[info exists cmdlinearg]==0} {
 
       {^-+output=.+$} {
         foreach {dummy cmdlinearg(output)} [split $a =] break
+        set cmdlinearg(output) [file normalize $cmdlinearg(output)]
         if {$cmdlinearg(verbose)==""} {
           set cmdlinearg(verbose) 2
         }
