@@ -1396,26 +1396,47 @@ do_test pager1-9.3.1 {
   execsql { PRAGMA page_size = 1024 }
   for {set ii 0} {$ii < 4} {incr ii} { execsql "CREATE TABLE t${ii}(a, b)" }
 } {}
-do_test pager1-9.3.2 {
-  sqlite3 db2 test.db2
-
-  execsql {
-    PRAGMA page_size = 4096;
-    PRAGMA synchronous = OFF;
-    CREATE TABLE t1(a, b);
-    CREATE TABLE t2(a, b);
-  } db2
-
-  sqlite3_backup B db2 main db main
-  B step 30
-  list [B step 10000] [B finish]
-} {SQLITE_DONE SQLITE_OK}
-do_test pager1-9.3.3 {
-  db2 close
-  db close
-  tv delete
-  file size test.db2
-} [file size test.db]
+if {[nonzero_reserved_bytes]} {
+  # backup with a page size changes is not possible with the codec
+  #
+  do_test pager1-9.3.2codec {
+    sqlite3 db2 test.db2
+    execsql {
+      PRAGMA page_size = 4096;
+      PRAGMA synchronous = OFF;
+      CREATE TABLE t1(a, b);
+      CREATE TABLE t2(a, b);
+    } db2
+    sqlite3_backup B db2 main db main
+    B step 30
+    list [B step 10000] [B finish]
+  } {SQLITE_READONLY SQLITE_READONLY}
+  do_test pager1-9.3.3codec {
+    db2 close
+    db close
+    tv delete
+    file size test.db2
+  } [file size test.db2]
+} else {
+  do_test pager1-9.3.2 {
+    sqlite3 db2 test.db2
+    execsql {
+      PRAGMA page_size = 4096;
+      PRAGMA synchronous = OFF;
+      CREATE TABLE t1(a, b);
+      CREATE TABLE t2(a, b);
+    } db2
+    sqlite3_backup B db2 main db main
+    B step 30
+    list [B step 10000] [B finish]
+  } {SQLITE_DONE SQLITE_OK}
+  do_test pager1-9.3.3 {
+    db2 close
+    db close
+    tv delete
+    file size test.db2
+  } [file size test.db]
+}
 
 do_test pager1-9.4.1 {
   faultsim_delete_and_reopen
@@ -2447,13 +2468,23 @@ do_test pager1-29.1 {
   }
   file size test.db
 } [expr 1024*3]
-do_test pager1-29.2 {
-  execsql {
-    PRAGMA page_size = 4096;
-    VACUUM;
-  }
-  file size test.db
-} [expr 4096*3]
+if {[nonzero_reserved_bytes]} {
+  # VACUUM with size changes is not possible with the codec.
+  do_test pager1-29.2 {
+    catchsql {
+      PRAGMA page_size = 4096;
+      VACUUM;
+    }
+  } {1 {attempt to write a readonly database}}
+} else {
+  do_test pager1-29.2 {
+    execsql {
+      PRAGMA page_size = 4096;
+      VACUUM;
+    }
+    file size test.db
+  } [expr 4096*3]
+}
 
 #-------------------------------------------------------------------------
 # Test that if an empty database file (size 0 bytes) is opened in 

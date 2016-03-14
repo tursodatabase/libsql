@@ -16,6 +16,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+do_not_use_codec
 
 ifcapable {!pager_pragmas||secure_delete||direct_read} {
   finish_test
