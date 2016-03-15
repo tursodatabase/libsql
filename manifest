@@ -1,5 +1,5 @@
-C Fix\sthe\sshellN.test\stest\sscripts\sso\sthat\sthey\swork\swith\sthe\s--testdir\soption.
-D 2016-03-15T09:55:44.853
+C More\stest-case\schanges\sso\sthat\severything\sworks\swhen\sthe\sreserved_bytes\nvalue\sin\sthe\sheader\sis\snon-zero.
+D 2016-03-15T12:37:08.820
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -548,7 +548,7 @@ F test/conflict2.test bb0b94cf7196c64a3cbd815c66d3ee98c2fecd9c
 F test/conflict3.test dec0634c0f31dec9a4b01c63063e939f0cd21b6b
 F test/contrib01.test 2a1cbc0f2f48955d7d073f725765da6fbceda6b4
 F test/corrupt.test 141c39ea650c1365e85a49e402fa05cb9617fb97
-F test/corrupt2.test cb787825d761b0f869764d6990531382840de872
+F test/corrupt2.test e4964cee73dda57a90958e0087a6b388b1d9cb58
 F test/corrupt3.test e676f478fe602915d721472811f6f410b75ddc7e
 F test/corrupt4.test 8d1d86b850fcc43e417450454f2044e52d55778a
 F test/corrupt5.test 8ead52af76006f3286e9396cb41898018ccea107
@@ -638,7 +638,7 @@ F test/extension01.test 00d13cec817f331a687a243e0e5a2d87b0e358c9
 F test/extraquick.test cb254400bd42bfb777ff675356aabf3287978f79
 F test/fallocate.test 3e979af17dfa7e5e9dda5eba1a696c04fa9d47f7
 F test/filectrl.test 7c13f96457435238da99aff7343ad6a3a4885787
-F test/filefmt.test cb34663f126cbc2d358af552dcaf5c72769b0146
+F test/filefmt.test e4edbdc637ca9576ccf4337a3cce627d9df7a56c
 F test/fkey1.test 13e3d48236a2b9f5c5ebd232eef9b3ab682a8a2c
 F test/fkey2.test f3d27ecba480a348c328965d154214719bb158a9
 F test/fkey3.test 76d475c80b84ee7a5d062e56ccb6ea68882e2b49
@@ -944,7 +944,7 @@ F test/pager4.test a122e9e6925d5b23b31e3dfef8c6a44bbf19590e
 F test/pagerfault.test ae9ee0db5a30aecda9db8290ce3dd12e5f7bbaa1
 F test/pagerfault2.test caf4c7facb914fd3b03a17b31ae2b180c8d6ca1f
 F test/pagerfault3.test 1003fcda009bf48a8e22a516e193b6ef0dd1bbd8
-F test/pageropt.test f8d840f0fed84854dbd12b4c17fb3506eeb8224c
+F test/pageropt.test 84e4cc5cbca285357f7906e99b21be4f2bf5abc0
 F test/pagesize.test 5769fc62d8c890a83a503f67d47508dfdc543305
 F test/parser1.test 222b5cbf3e2e659fec1bf7d723488c8b9c94f1d0
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
@@ -1307,7 +1307,7 @@ F test/wal.test 613efec03e517e1775d86b993a54877d2e29a477
 F test/wal2.test 25ae059e900dbb584e0775627e45415ba5940df1
 F test/wal3.test 5dd734147f1f8f958c5261a1f2775d346d7013ce
 F test/wal4.test 4744e155cd6299c6bd99d3eab1c82f77db9cdb3c
-F test/wal5.test 22cb252502c5ff851925add2ca8a7e2af012e1d6
+F test/wal5.test 9c11da7aeccd83a46d79a556ad11a18d3cb15aa9
 F test/wal6.test a9d6aa635b9d63607dabdc11406f5f96ca986635
 F test/wal64k.test 163655ecd2cb8afef4737cac2a40fdd2eeaf20b8
 F test/wal7.test 2ae8f427d240099cc4b2dfef63cff44e2a68a1bd
@@ -1456,7 +1456,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9f194f90c07d5415b1d6bb10ec049f74999d6885
-R 50980fd60bfbb727ae154c36fe3906ce
-U dan
-Z f0681fd41f2ae1a8be1bbfb650e8fc11
+P 051c61ebae921b70f843c55aacf046a9922cc187
+R 1b522ee9926e242e3422d1eddaaf0fbf
+U drh
+Z 3fc58440746cd83f06c07d7c16cdd74a
