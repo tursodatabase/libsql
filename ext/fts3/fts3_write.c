@@ -3195,7 +3195,7 @@ static int fts3SegmentMerge(
     ** segment. The level of the new segment is equal to the numerically
     ** greatest segment level currently present in the database for this
     ** index. The idx of the new segment is always 0.  */
-    if( csr.nSegment==1 ){
+    if( csr.nSegment==1 && 0==fts3SegReaderIsPending(csr.apSegment[0]) ){
       rc = SQLITE_DONE;
       goto finished;
     }

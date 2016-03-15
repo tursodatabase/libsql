@@ -127,6 +127,7 @@ do_test walbak-2.1 {
   }
 } {}
 do_test walbak-2.2 {
+  forcedelete abc.db
   db backup abc.db
   sqlite3 db2 abc.db
   string compare [sig db] [sig db2]
@@ -239,6 +240,7 @@ foreach {tn setup} {
   }
 
 } {
+  if {$tn==4 && [sqlite3 -has-codec]} continue
   foreach f [glob -nocomplain test.db*] { forcedelete $f }
 
   eval $setup

@@ -85,7 +85,8 @@ proc do_allbackcompat_test {script} {
     set nErr [set_test_counter errors]
     foreach dir {0 1} {
 
-      set bintag [string map {testfixture {}} $bin]
+      set bintag $bin
+      regsub {.*testfixture\.} $bintag {} bintag
       set bintag [string map {\.exe {}} $bintag]
       if {$bintag == ""} {set bintag self}
       set ::bcname ".$bintag.$dir."
