@@ -2136,6 +2136,24 @@ proc test_restore_config_pagecache {} {
   sqlite3 db test.db
 }
 
+# Find the name of the 'shell' executable (e.g. "sqlite3.exe") to use for
+# the tests in shell[1-5].test. If no such executable can be found, invoke
+# [finish_test ; return] in the callers context.
+#
+proc test_find_cli {} {
+  if {$::tcl_platform(platform)=="windows"} {
+    set ret "sqlite3.exe"
+  } else {
+    set ret "sqlite3"
+  }
+  set ret [file normalize [file join $::cmdlinearg(TESTFIXTURE_HOME) $ret]]
+  if {![file executable $ret]} {
+    finish_test
+    return -code return
+  }
+  return $ret
+}
+
 # If the library is compiled with the SQLITE_DEFAULT_AUTOVACUUM macro set
 # to non-zero, then set the global variable $AUTOVACUUM to 1.
 set AUTOVACUUM $sqlite_options(default_autovacuum)
