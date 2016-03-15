@@ -5422,7 +5422,7 @@ case OP_DropTrigger: {
 
 
 #ifndef SQLITE_OMIT_INTEGRITY_CHECK
-/* Opcode: IntegrityCk P1 P2 P3 * P5
+/* Opcode: IntegrityCk P1 P2 P3 P4 P5
 **
 ** Do an analysis of the currently open database.  Store in
 ** register P1 the text of an error message describing any problems.
@@ -5433,9 +5433,8 @@ case OP_DropTrigger: {
 ** In other words, the analysis stops as soon as reg(P1) errors are 
 ** seen.  Reg(P1) is updated with the number of errors remaining.
 **
-** The root page numbers of all tables in the database are integer
-** stored in reg(P1), reg(P1+1), reg(P1+2), ....  There are P2 tables
-** total.
+** The root page numbers of all tables in the database are integers
+** stored in P4_INTARRAY argument.
 **
 ** If P5 is not zero, the check is done on the auxiliary database
 ** file, not the main database file.
@@ -5445,30 +5444,24 @@ case OP_DropTrigger: {
 case OP_IntegrityCk: {
   int nRoot;      /* Number of tables to check.  (Number of root pages.) */
   int *aRoot;     /* Array of rootpage numbers for tables to be checked */
-  int j;          /* Loop counter */
   int nErr;       /* Number of errors reported */
   char *z;        /* Text of the error report */
   Mem *pnErr;     /* Register keeping track of errors remaining */
 
   assert( p->bIsReader );
   nRoot = pOp->p2;
+  aRoot = pOp->p4.ai;
   assert( nRoot>0 );
-  aRoot = sqlite3DbMallocRawNN(db, sizeof(int)*(nRoot+1) );
-  if( aRoot==0 ) goto no_mem;
+  assert( aRoot[nRoot]==0 );
   assert( pOp->p3>0 && pOp->p3<=(p->nMem-p->nCursor) );
   pnErr = &aMem[pOp->p3];
   assert( (pnErr->flags & MEM_Int)!=0 );
   assert( (pnErr->flags & (MEM_Str|MEM_Blob))==0 );
   pIn1 = &aMem[pOp->p1];
-  for(j=0; j<nRoot; j++){
-    aRoot[j] = (int)sqlite3VdbeIntValue(&pIn1[j]);
-  }
-  aRoot[j] = 0;
   assert( pOp->p5<db->nDb );
   assert( DbMaskTest(p->btreeMask, pOp->p5) );
   z = sqlite3BtreeIntegrityCheck(db->aDb[pOp->p5].pBt, aRoot, nRoot,
                                  (int)pnErr->u.i, &nErr);
-  sqlite3DbFree(db, aRoot);
   pnErr->u.i -= nErr;
   sqlite3VdbeMemSetNull(pIn1);
   if( nErr==0 ){

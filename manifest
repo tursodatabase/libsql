@@ -1,5 +1,5 @@
-C In\sthe\sWin32\sVFS,\suse\sSQLITE_FCNTL_LAST_ERRNO\sinstead\sof\s(the\solder)\sSQLITE_LAST_ERRNO.
-D 2016-03-15T19:10:39.513
+C Change\sthe\sOP_IntegrityCk\sopcode\sto\saccept\sthe\slist\sof\sroot\spages\sas\san\nintarray\sargument\sin\sP4.\s\sSlightly\ssmaller\sand\sfaster.
+D 2016-03-15T22:00:39.610
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -343,7 +343,7 @@ F src/parse.y 5ea8c81c5c41b27887f41b4a7e1c58470d7d3821
 F src/pcache.c 647bb53a86b7bbcf55ad88089b3ea5a9170b90df
 F src/pcache.h 4d0ccaad264d360981ec5e6a2b596d6e85242545
 F src/pcache1.c 72f644dc9e1468c72922eff5904048427b817051
-F src/pragma.c c7061870c235702a513ce4152fe978faf3f282eb
+F src/pragma.c 04baa9343771f913f1c86b2720f768be8a3ad52a
 F src/pragma.h 64c78a648751b9f4f297276c4eb7507b14b4628c
 F src/prepare.c 22df6171aec1d86904ed2ad30c2348a5748aa04e
 F src/printf.c 63e6fb12bbe702dd664dc3703776c090383a5a26
@@ -416,7 +416,7 @@ F src/update.c 56b3db7edff0110360a12b76af97c39ebe3ea8b8
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c 34ef7be420f82415ec48131404995ddb6ee7502f
 F src/vacuum.c feb1eabb20987983d9350cad98299b21fa811f52
-F src/vdbe.c 87ae3a5657fefed7875f3eb30e7ababd48013d71
+F src/vdbe.c 8cf45bb8da77d39f55d108e759d15a57acd0255c
 F src/vdbe.h c743791f723049db94f009e3e30958952bc2d512
 F src/vdbeInt.h 49a74fe5ece206d2d8666ba9afaf1abeda5f123b
 F src/vdbeapi.c 95b1f8e527240a18a9aea41a655b013bf07a7009
@@ -1456,7 +1456,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c7bae50bdccb5bcf3bc22e8ac5bb6725ef13db39
-R 46123ac548d09b6e0ffa37ea5d80c14d
-U mistachkin
-Z d90a9a53fb7ea7a50e56b06b4f7c6bc4
+P 9463762c437488970a87093ef13131c39b2adadc
+R 6817ca21db6938155940db404d48bb61
+U drh
+Z e5f48f52274ef8efc53f2f946a6d2fff
