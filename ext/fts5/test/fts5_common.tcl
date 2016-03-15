@@ -159,6 +159,12 @@ proc fts5_aux_test_functions {db} {
   }
 }
 
+proc fts5_segcount {tbl} {
+  set N 0
+  foreach n [fts5_level_segs $tbl] { incr N $n }
+  set N
+}
+
 proc fts5_level_segs {tbl} {
   set sql "SELECT fts5_decode(rowid,block) aS r FROM ${tbl}_data WHERE rowid=10"
   set ret [list]

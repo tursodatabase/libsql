@@ -1135,7 +1135,7 @@ char sqlite3AffinityType(const char *zIn, u8 *pszEst){
   char aff = SQLITE_AFF_NUMERIC;
   const char *zChar = 0;
 
-  if( zIn==0 ) return aff;
+  assert( zIn!=0 );
   while( zIn[0] ){
     h = (h<<8) + sqlite3UpperToLower[(*zIn)&0xff];
     zIn++;

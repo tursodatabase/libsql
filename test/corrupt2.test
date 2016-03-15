@@ -346,27 +346,29 @@ ifcapable autovacuum {
     } {1 {database disk image is malformed}}
   }
 
-  corruption_test -sqlprep {
-    PRAGMA auto_vacuum = 1;
-    PRAGMA page_size = 1024;
-    CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
-    INSERT INTO t1 VALUES(1, randomblob(2500));
-    DELETE FROM t1 WHERE a = 1;
-  } -corrupt {
-    set nAppend [expr 1024*207 - [file size corrupt.db]]
-    set fd [open corrupt.db r+]
-    seek $fd 0 end
-    puts -nonewline $fd [string repeat x $nAppend]
-    close $fd
-    hexio_write corrupt.db 28 00000000
-  } -test {
-    do_test corrupt2-6.4 {
-      catchsql " 
-        $::presql 
-        BEGIN EXCLUSIVE;
-        COMMIT;
-      "
-    } {1 {database disk image is malformed}}
+  if {![nonzero_reserved_bytes]} {
+    corruption_test -sqlprep {
+      PRAGMA auto_vacuum = 1;
+      PRAGMA page_size = 1024;
+      CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+      INSERT INTO t1 VALUES(1, randomblob(2500));
+      DELETE FROM t1 WHERE a = 1;
+    } -corrupt {
+      set nAppend [expr 1024*207 - [file size corrupt.db]]
+      set fd [open corrupt.db r+]
+      seek $fd 0 end
+      puts -nonewline $fd [string repeat x $nAppend]
+      close $fd
+      hexio_write corrupt.db 28 00000000
+    } -test {
+      do_test corrupt2-6.4 {
+        catchsql " 
+          $::presql 
+          BEGIN EXCLUSIVE;
+          COMMIT;
+        "
+      } {1 {database disk image is malformed}}
+    }
   }
 }
 

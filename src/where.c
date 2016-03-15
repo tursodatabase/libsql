@@ -1979,6 +1979,7 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
   WhereLoop **ppPrev, *p;
   WhereInfo *pWInfo = pBuilder->pWInfo;
   sqlite3 *db = pWInfo->pParse->db;
+  int rc;
 
   /* If pBuilder->pOrSet is defined, then only keep track of the costs
   ** and prereqs.
@@ -2061,14 +2062,14 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
       whereLoopDelete(db, pToDel);
     }
   }
-  whereLoopXfer(db, p, pTemplate);
+  rc = whereLoopXfer(db, p, pTemplate);
   if( (p->wsFlags & WHERE_VIRTUALTABLE)==0 ){
     Index *pIndex = p->u.btree.pIndex;
     if( pIndex && pIndex->tnum==0 ){
       p->u.btree.pIndex = 0;
     }
   }
-  return SQLITE_OK;
+  return rc;
 }
 
 /*
@@ -2810,10 +2811,9 @@ static int whereLoopAddVirtualOne(
 
   /* Initialize the output fields of the sqlite3_index_info structure */
   memset(pUsage, 0, sizeof(pUsage[0])*nConstraint);
-  if( pIdxInfo->needToFreeIdxStr ) sqlite3_free(pIdxInfo->idxStr);
+  assert( pIdxInfo->needToFreeIdxStr==0 );
   pIdxInfo->idxStr = 0;
   pIdxInfo->idxNum = 0;
-  pIdxInfo->needToFreeIdxStr = 0;
   pIdxInfo->orderByConsumed = 0;
   pIdxInfo->estimatedCost = SQLITE_BIG_DBL / (double)2;
   pIdxInfo->estimatedRows = 25;
@@ -2887,13 +2887,16 @@ static int whereLoopAddVirtualOne(
   }else{
     pNew->wsFlags &= ~WHERE_ONEROW;
   }
-  whereLoopInsert(pBuilder, pNew);
+  rc = whereLoopInsert(pBuilder, pNew);
   if( pNew->u.vtab.needFree ){
     sqlite3_free(pNew->u.vtab.idxStr);
     pNew->u.vtab.needFree = 0;
   }
+  WHERETRACE(0xffff, ("  bIn=%d prereqIn=%04llx prereqOut=%04llx\n",
+                      *pbIn, (sqlite3_uint64)mPrereq,
+                      (sqlite3_uint64)(pNew->prereq & ~mPrereq)));
 
-  return SQLITE_OK;
+  return rc;
 }
 
 
@@ -2958,15 +2961,15 @@ static int whereLoopAddVirtual(
   }
 
   /* First call xBestIndex() with all constraints usable. */
+  WHERETRACE(0x40, ("  VirtualOne: all usable\n"));
   rc = whereLoopAddVirtualOne(pBuilder, mPrereq, ALLBITS, 0, p, &bIn);
-  mBest = pNew->prereq & ~mPrereq;
 
   /* If the call to xBestIndex() with all terms enabled produced a plan
-  ** that does not require any source tables, there is no point in making
-  ** any further calls - if the xBestIndex() method is sane they will all
-  ** return the same plan anyway.
-  */
-  if( mBest ){
+  ** that does not require any source tables (IOW: a plan with mBest==0),
+  ** then there is no point in making any further calls to xBestIndex() 
+  ** since they will all return the same result (if the xBestIndex()
+  ** implementation is sane). */
+  if( rc==SQLITE_OK && (mBest = (pNew->prereq & ~mPrereq))!=0 ){
     int seenZero = 0;             /* True if a plan with no prereqs seen */
     int seenZeroNoIN = 0;         /* Plan with no prereqs and no IN(...) seen */
     Bitmask mPrev = 0;
@@ -2974,7 +2977,8 @@ static int whereLoopAddVirtual(
 
     /* If the plan produced by the earlier call uses an IN(...) term, call
     ** xBestIndex again, this time with IN(...) terms disabled. */
-    if( rc==SQLITE_OK && bIn ){
+    if( bIn ){
+      WHERETRACE(0x40, ("  VirtualOne: all usable w/o IN\n"));
       rc = whereLoopAddVirtualOne(pBuilder, mPrereq, ALLBITS, WO_IN, p, &bIn);
       assert( bIn==0 );
       mBestNoIn = pNew->prereq & ~mPrereq;
@@ -2999,6 +3003,8 @@ static int whereLoopAddVirtual(
       mPrev = mNext;
       if( mNext==ALLBITS ) break;
       if( mNext==mBest || mNext==mBestNoIn ) continue;
+      WHERETRACE(0x40, ("  VirtualOne: mPrev=%04llx mNext=%04llx\n",
+                       (sqlite3_uint64)mPrev, (sqlite3_uint64)mNext));
       rc = whereLoopAddVirtualOne(pBuilder, mPrereq, mNext|mPrereq, 0, p, &bIn);
       if( pNew->prereq==mPrereq ){
         seenZero = 1;
@@ -3010,6 +3016,7 @@ static int whereLoopAddVirtual(
     ** that requires no source tables at all (i.e. one guaranteed to be
     ** usable), make a call here with all source tables disabled */
     if( rc==SQLITE_OK && seenZero==0 ){
+      WHERETRACE(0x40, ("  VirtualOne: all disabled\n"));
       rc = whereLoopAddVirtualOne(pBuilder, mPrereq, mPrereq, 0, p, &bIn);
       if( bIn==0 ) seenZeroNoIN = 1;
     }
@@ -3018,6 +3025,7 @@ static int whereLoopAddVirtual(
     ** that requires no source tables at all and does not use an IN(...)
     ** operator, make a final call to obtain one here.  */
     if( rc==SQLITE_OK && seenZeroNoIN==0 ){
+      WHERETRACE(0x40, ("  VirtualOne: all disabled and w/o IN\n"));
       rc = whereLoopAddVirtualOne(pBuilder, mPrereq, mPrereq, WO_IN, p, &bIn);
     }
   }

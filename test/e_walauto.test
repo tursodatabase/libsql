@@ -24,6 +24,11 @@ if {$tcl_platform(os) == "OpenBSD"} {
   return
 }
 
+# This module uses hard-coded offsets which do not work if the reserved_bytes
+# value is nonzero.
+if {[nonzero_reserved_bytes]} {finish_test; return;}
+
+
 proc read_nbackfill {} {
   seek $::shmfd 96
   binary scan [read $::shmfd 4] n nBackfill

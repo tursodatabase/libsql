@@ -88,7 +88,7 @@ foreach {t mmap_size nRead c2init} {
     sql2 { DELETE FROM t1 WHERE rowid%2; }
     do_test $t.$tn.2 {
       sql1 "SELECT count(*) FROM t1; PRAGMA integrity_check ; PRAGMA page_count"
-    } {16 ok 42}
+    } "16 ok [expr {42+[nonzero_reserved_bytes]}]"
 
     # Have connection 2 grow the file. Check connection 1 can still read it.
     sql2 { INSERT INTO t1 SELECT rblob(500), rblob(500) FROM t1 }
@@ -104,7 +104,9 @@ foreach {t mmap_size nRead c2init} {
 
     # Check that the number of pages read by connection 1 indicates that the
     # "PRAGMA mmap_size" command worked.
-    do_test $t.$tn.5 { nRead db } $nRead
+    if {[nonzero_reserved_bytes]==0} {
+      do_test $t.$tn.5 { nRead db } $nRead
+    }
   }
 }
 

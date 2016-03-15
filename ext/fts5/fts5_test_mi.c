@@ -68,18 +68,22 @@ struct Fts5MatchinfoCtx {
 ** If an error occurs, return NULL and leave an error in the database 
 ** handle (accessible using sqlite3_errcode()/errmsg()).
 */
-static fts5_api *fts5_api_from_db(sqlite3 *db){
-  fts5_api *pRet = 0;
+static int fts5_api_from_db(sqlite3 *db, fts5_api **ppApi){
   sqlite3_stmt *pStmt = 0;
+  int rc;
 
-  if( SQLITE_OK==sqlite3_prepare(db, "SELECT fts5()", -1, &pStmt, 0)
-   && SQLITE_ROW==sqlite3_step(pStmt) 
-   && sizeof(pRet)==sqlite3_column_bytes(pStmt, 0)
-  ){
-    memcpy(&pRet, sqlite3_column_blob(pStmt, 0), sizeof(pRet));
+  *ppApi = 0;
+  rc = sqlite3_prepare(db, "SELECT fts5()", -1, &pStmt, 0);
+  if( rc==SQLITE_OK ){
+    if( SQLITE_ROW==sqlite3_step(pStmt) 
+        && sizeof(fts5_api*)==sqlite3_column_bytes(pStmt, 0)
+      ){
+      memcpy(ppApi, sqlite3_column_blob(pStmt, 0), sizeof(fts5_api*));
+    }
+    rc = sqlite3_finalize(pStmt);
   }
-  sqlite3_finalize(pStmt);
-  return pRet;
+
+  return rc;
 }
 
 
@@ -399,7 +403,8 @@ int sqlite3Fts5TestRegisterMatchinfo(sqlite3 *db){
   /* Extract the FTS5 API pointer from the database handle. The 
   ** fts5_api_from_db() function above is copied verbatim from the 
   ** FTS5 documentation. Refer there for details. */
-  pApi = fts5_api_from_db(db);
+  rc = fts5_api_from_db(db, &pApi);
+  if( rc!=SQLITE_OK ) return rc;
 
   /* If fts5_api_from_db() returns NULL, then either FTS5 is not registered
   ** with this database handle, or an error (OOM perhaps?) has occurred.

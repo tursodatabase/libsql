@@ -1734,6 +1734,7 @@ static void scriptCodeSqlFunc(
   int c, sz;
   int scriptMask = 0;
   int res;
+  int seenDigit = 0;
 # define SCRIPT_LATIN       0x0001
 # define SCRIPT_CYRILLIC    0x0002
 # define SCRIPT_GREEK       0x0004
@@ -1744,8 +1745,12 @@ static void scriptCodeSqlFunc(
     c = utf8Read(zIn, nIn, &sz);
     zIn += sz;
     nIn -= sz;
-    if( c<0x02af && (c>=0x80 || midClass[c&0x7f]<CCLASS_DIGIT) ){
-      scriptMask |= SCRIPT_LATIN;
+    if( c<0x02af ){
+      if( c>=0x80 || midClass[c&0x7f]<CCLASS_DIGIT ){
+        scriptMask |= SCRIPT_LATIN;
+      }else if( c>='0' && c<='9' ){
+        seenDigit = 1;
+      }
     }else if( c>=0x0400 && c<=0x04ff ){
       scriptMask |= SCRIPT_CYRILLIC;
     }else if( c>=0x0386 && c<=0x03ce ){
@@ -1756,6 +1761,7 @@ static void scriptCodeSqlFunc(
       scriptMask |= SCRIPT_ARABIC;
     }
   }
+  if( scriptMask==0 && seenDigit ) scriptMask = SCRIPT_LATIN;
   switch( scriptMask ){
     case 0:                res = 999; break;
     case SCRIPT_LATIN:     res = 215; break;

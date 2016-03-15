@@ -258,6 +258,8 @@ int sqlite3Fts5ExprNew(
       pNew->nPhrase = sParse.nPhrase;
       sParse.apPhrase = 0;
     }
+  }else{
+    sqlite3Fts5ParseNodeFree(sParse.pExpr);
   }
 
   sqlite3_free(sParse.apPhrase);
@@ -1268,6 +1270,8 @@ static int fts5ExprNodeFirst(Fts5Expr *pExpr, Fts5ExprNode *pNode){
   if( Fts5NodeIsString(pNode) ){
     /* Initialize all term iterators in the NEAR object. */
     rc = fts5ExprNearInitAll(pExpr, pNode);
+  }else if( pNode->xNext==0 ){
+    pNode->bEof = 1;
   }else{
     int i;
     int nEof = 0;
@@ -1319,23 +1323,22 @@ static int fts5ExprNodeFirst(Fts5Expr *pExpr, Fts5ExprNode *pNode){
 */
 int sqlite3Fts5ExprFirst(Fts5Expr *p, Fts5Index *pIdx, i64 iFirst, int bDesc){
   Fts5ExprNode *pRoot = p->pRoot;
-  int rc = SQLITE_OK;
-  if( pRoot->xNext ){
-    p->pIndex = pIdx;
-    p->bDesc = bDesc;
-    rc = fts5ExprNodeFirst(p, pRoot);
+  int rc;                         /* Return code */
 
-    /* If not at EOF but the current rowid occurs earlier than iFirst in
-    ** the iteration order, move to document iFirst or later. */
-    if( pRoot->bEof==0 && fts5RowidCmp(p, pRoot->iRowid, iFirst)<0 ){
-      rc = fts5ExprNodeNext(p, pRoot, 1, iFirst);
-    }
+  p->pIndex = pIdx;
+  p->bDesc = bDesc;
+  rc = fts5ExprNodeFirst(p, pRoot);
 
-    /* If the iterator is not at a real match, skip forward until it is. */
-    while( pRoot->bNomatch ){
-      assert( pRoot->bEof==0 && rc==SQLITE_OK );
-      rc = fts5ExprNodeNext(p, pRoot, 0, 0);
-    }
+  /* If not at EOF but the current rowid occurs earlier than iFirst in
+  ** the iteration order, move to document iFirst or later. */
+  if( pRoot->bEof==0 && fts5RowidCmp(p, pRoot->iRowid, iFirst)<0 ){
+    rc = fts5ExprNodeNext(p, pRoot, 1, iFirst);
+  }
+
+  /* If the iterator is not at a real match, skip forward until it is. */
+  while( pRoot->bNomatch ){
+    assert( pRoot->bEof==0 && rc==SQLITE_OK );
+    rc = fts5ExprNodeNext(p, pRoot, 0, 0);
   }
   return rc;
 }
@@ -1444,6 +1447,21 @@ Fts5ExprNearset *sqlite3Fts5ParseNearset(
     sqlite3Fts5ParseNearsetFree(pNear);
     sqlite3Fts5ParsePhraseFree(pPhrase);
   }else{
+    if( pRet->nPhrase>0 ){
+      Fts5ExprPhrase *pLast = pRet->apPhrase[pRet->nPhrase-1];
+      assert( pLast==pParse->apPhrase[pParse->nPhrase-2] );
+      if( pPhrase->nTerm==0 ){
+        fts5ExprPhraseFree(pPhrase);
+        pRet->nPhrase--;
+        pParse->nPhrase--;
+        pPhrase = pLast;
+      }else if( pLast->nTerm==0 ){
+        fts5ExprPhraseFree(pLast);
+        pParse->apPhrase[pParse->nPhrase-2] = pPhrase;
+        pParse->nPhrase--;
+        pRet->nPhrase--;
+      }
+    }
     pRet->apPhrase[pRet->nPhrase++] = pPhrase;
   }
   return pRet;
@@ -1476,8 +1494,7 @@ static int fts5ParseTokenize(
   /* If an error has already occurred, this is a no-op */
   if( pCtx->rc!=SQLITE_OK ) return pCtx->rc;
 
-  assert( pPhrase==0 || pPhrase->nTerm>0 );
-  if( pPhrase && (tflags & FTS5_TOKEN_COLOCATED) ){
+  if( pPhrase && pPhrase->nTerm>0 && (tflags & FTS5_TOKEN_COLOCATED) ){
     Fts5ExprTerm *pSyn;
     int nByte = sizeof(Fts5ExprTerm) + sizeof(Fts5Buffer) + nToken+1;
     pSyn = (Fts5ExprTerm*)sqlite3_malloc(nByte);
@@ -1578,7 +1595,7 @@ Fts5ExprPhrase *sqlite3Fts5ParseTerm(
     pParse->rc = rc;
     fts5ExprPhraseFree(sCtx.pPhrase);
     sCtx.pPhrase = 0;
-  }else if( sCtx.pPhrase ){
+  }else{
 
     if( pAppend==0 ){
       if( (pParse->nPhrase % 8)==0 ){
@@ -1595,9 +1612,14 @@ Fts5ExprPhrase *sqlite3Fts5ParseTerm(
       pParse->nPhrase++;
     }
 
+    if( sCtx.pPhrase==0 ){
+      /* This happens when parsing a token or quoted phrase that contains
+      ** no token characters at all. (e.g ... MATCH '""'). */
+      sCtx.pPhrase = sqlite3Fts5MallocZero(&pParse->rc, sizeof(Fts5ExprPhrase));
+    }else if( sCtx.pPhrase->nTerm ){
+      sCtx.pPhrase->aTerm[sCtx.pPhrase->nTerm-1].bPrefix = bPrefix;
+    }
     pParse->apPhrase[pParse->nPhrase-1] = sCtx.pPhrase;
-    assert( sCtx.pPhrase->nTerm>0 );
-    sCtx.pPhrase->aTerm[sCtx.pPhrase->nTerm-1].bPrefix = bPrefix;
   }
 
   return sCtx.pPhrase;
@@ -1693,23 +1715,25 @@ void sqlite3Fts5ParseSetDistance(
   Fts5ExprNearset *pNear,
   Fts5Token *p
 ){
-  int nNear = 0;
-  int i;
-  if( p->n ){
-    for(i=0; i<p->n; i++){
-      char c = (char)p->p[i];
-      if( c<'0' || c>'9' ){
-        sqlite3Fts5ParseError(
-            pParse, "expected integer, got \"%.*s\"", p->n, p->p
-        );
-        return;
+  if( pNear ){
+    int nNear = 0;
+    int i;
+    if( p->n ){
+      for(i=0; i<p->n; i++){
+        char c = (char)p->p[i];
+        if( c<'0' || c>'9' ){
+          sqlite3Fts5ParseError(
+              pParse, "expected integer, got \"%.*s\"", p->n, p->p
+              );
+          return;
+        }
+        nNear = nNear * 10 + (p->p[i] - '0');
       }
-      nNear = nNear * 10 + (p->p[i] - '0');
+    }else{
+      nNear = FTS5_DEFAULT_NEARDIST;
     }
-  }else{
-    nNear = FTS5_DEFAULT_NEARDIST;
+    pNear->nNear = nNear;
   }
-  pNear->nNear = nNear;
 }
 
 /*
@@ -1896,10 +1920,14 @@ Fts5ExprNode *sqlite3Fts5ParseNode(
         int iPhrase;
         for(iPhrase=0; iPhrase<pNear->nPhrase; iPhrase++){
           pNear->apPhrase[iPhrase]->pNode = pRet;
+          if( pNear->apPhrase[iPhrase]->nTerm==0 ){
+            pRet->xNext = 0;
+            pRet->eType = FTS5_EOF;
+          }
         }
 
         if( pParse->pConfig->eDetail!=FTS5_DETAIL_FULL 
-         && (pNear->nPhrase!=1 || pNear->apPhrase[0]->nTerm!=1)
+         && (pNear->nPhrase!=1 || pNear->apPhrase[0]->nTerm>1)
         ){
           assert( pParse->rc==SQLITE_OK );
           pParse->rc = SQLITE_ERROR;
@@ -1925,6 +1953,70 @@ Fts5ExprNode *sqlite3Fts5ParseNode(
     sqlite3Fts5ParseNodeFree(pRight);
     sqlite3Fts5ParseNearsetFree(pNear);
   }
+  return pRet;
+}
+
+Fts5ExprNode *sqlite3Fts5ParseImplicitAnd(
+  Fts5Parse *pParse,              /* Parse context */
+  Fts5ExprNode *pLeft,            /* Left hand child expression */
+  Fts5ExprNode *pRight            /* Right hand child expression */
+){
+  Fts5ExprNode *pRet = 0;
+  Fts5ExprNode *pPrev;
+
+  if( pParse->rc ){
+    sqlite3Fts5ParseNodeFree(pLeft);
+    sqlite3Fts5ParseNodeFree(pRight);
+  }else{
+
+    assert( pLeft->eType==FTS5_STRING 
+        || pLeft->eType==FTS5_TERM
+        || pLeft->eType==FTS5_EOF
+        || pLeft->eType==FTS5_AND
+    );
+    assert( pRight->eType==FTS5_STRING 
+        || pRight->eType==FTS5_TERM 
+        || pRight->eType==FTS5_EOF 
+    );
+
+    if( pLeft->eType==FTS5_AND ){
+      pPrev = pLeft->apChild[pLeft->nChild-1];
+    }else{
+      pPrev = pLeft;
+    }
+    assert( pPrev->eType==FTS5_STRING 
+        || pPrev->eType==FTS5_TERM 
+        || pPrev->eType==FTS5_EOF 
+        );
+
+    if( pRight->eType==FTS5_EOF ){
+      assert( pParse->apPhrase[pParse->nPhrase-1]==pRight->pNear->apPhrase[0] );
+      sqlite3Fts5ParseNodeFree(pRight);
+      pRet = pLeft;
+      pParse->nPhrase--;
+    }
+    else if( pPrev->eType==FTS5_EOF ){
+      Fts5ExprPhrase **ap;
+
+      if( pPrev==pLeft ){
+        pRet = pRight;
+      }else{
+        pLeft->apChild[pLeft->nChild-1] = pRight;
+        pRet = pLeft;
+      }
+
+      ap = &pParse->apPhrase[pParse->nPhrase-1-pRight->pNear->nPhrase];
+      assert( ap[0]==pPrev->pNear->apPhrase[0] );
+      memmove(ap, &ap[1], sizeof(Fts5ExprPhrase*)*pRight->pNear->nPhrase);
+      pParse->nPhrase--;
+
+      sqlite3Fts5ParseNodeFree(pPrev);
+    }
+    else{
+      pRet = sqlite3Fts5ParseNode(pParse, FTS5_AND, pLeft, pRight, 0);
+    }
+  }
+
   return pRet;
 }
 
@@ -2062,6 +2154,9 @@ static char *fts5ExprPrintTcl(
 
 static char *fts5ExprPrint(Fts5Config *pConfig, Fts5ExprNode *pExpr){
   char *zRet = 0;
+  if( pExpr->eType==0 ){
+    return sqlite3_mprintf("\"\"");
+  }else
   if( pExpr->eType==FTS5_STRING || pExpr->eType==FTS5_TERM ){
     Fts5ExprNearset *pNear = pExpr->pNear;
     int i; 
@@ -2122,7 +2217,7 @@ static char *fts5ExprPrint(Fts5Config *pConfig, Fts5ExprNode *pExpr){
         zRet = 0;
       }else{
         int e = pExpr->apChild[i]->eType;
-        int b = (e!=FTS5_STRING && e!=FTS5_TERM);
+        int b = (e!=FTS5_STRING && e!=FTS5_TERM && e!=FTS5_EOF);
         zRet = fts5PrintfAppend(zRet, "%s%s%z%s", 
             (i==0 ? "" : zOp),
             (b?"(":""), z, (b?")":"")

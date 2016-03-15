@@ -35,9 +35,18 @@ do_execsql_test 140 {
 } {160}
 do_execsql_test 200 {
   SELECT spellfix1_scriptcode('+3.14159');
-} {999}
+} {215}
 do_execsql_test 210 {
   SELECT spellfix1_scriptcode('And God said: "Да будет свет"');
 } {998}
+do_execsql_test 220 {
+  SELECT spellfix1_scriptcode('+3.14159 light');
+} {215}
+do_execsql_test 230 {
+  SELECT spellfix1_scriptcode('+3.14159 свет');
+} {220}
+do_execsql_test 240 {
+  SELECT spellfix1_scriptcode('וַיֹּ֥אמֶר +3.14159');
+} {125}
 
 finish_test

@@ -23,6 +23,11 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix backup4
 
+# The codec logic does not work for zero-length database files.  A database
+# file must contain at least one page in order to be recognized as an
+# encrypted database.
+do_not_use_codec
+
 #-------------------------------------------------------------------------
 # At one point this test was failing because [db] was using an out of
 # date schema in test case 1.2.

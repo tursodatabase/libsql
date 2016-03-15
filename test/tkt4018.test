@@ -16,6 +16,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+do_not_use_codec
 
 proc testsql {sql} {
   set fd [open tf_main.tcl w]

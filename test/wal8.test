@@ -29,6 +29,7 @@ set ::testprefix wal8
 
 ifcapable !wal {finish_test ; return }
 if ![wal_is_ok] { finish_test; return }
+do_not_use_codec
 
 db close
 forcedelete test.db test.db-wal
