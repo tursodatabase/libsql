@@ -1,5 +1,5 @@
-C More\stest-case\schanges\sso\sthat\severything\sworks\swhen\sthe\sreserved_bytes\nvalue\sin\sthe\sheader\sis\snon-zero.
-D 2016-03-15T12:37:08.820
+C Implement\sFROM-clause\ssubqueries\sas\sco-routines\swhenever\sthey\sare\sguaranteed\nto\sbe\sthe\souter-most\sloop\sof\sthe\sjoin.
+D 2016-03-15T17:52:12.224
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -350,7 +350,7 @@ F src/printf.c 63e6fb12bbe702dd664dc3703776c090383a5a26
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c b8f7174e5f8c33c44ded3a25a973d0bb89228c20
 F src/rowset.c 9fe4b3ad7cc00944386bb600233d8f523de07a6e
-F src/select.c 137b31daa84d57d67847bf621bb54f3353e2077b
+F src/select.c 6dd2097bb158efe3b8d68683dcc3b4a49e907a34
 F src/shell.c 5e0ab1e708dc294330ccd8230536e1801f60822e
 F src/sqlite.h.in 0235586b3fb639e85998d495c90f007657fd82af
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -999,7 +999,7 @@ F test/securedel2.test 2d54c28e46eb1fd6902089958b20b1b056c6f1c5
 F test/select1.test be62204d2bd9a5a8a149e9974cfddce893d8f686
 F test/select2.test 352480e0e9c66eda9c3044e412abdf5be0215b56
 F test/select3.test 2ce595f8fb8e2ac10071d3b4e424cadd4634a054
-F test/select4.test 453631158540e5f685b81cac5b7e8bd8c6b4c5fc
+F test/select4.test d926792a5e4d88fef0ddcddeb45d27ce75f7296c
 F test/select5.test e758b8ef94f69b111df4cb819008856655dcd535
 F test/select6.test 39eac4a5c03650b2b473c532882273283ee8b7a0
 F test/select7.test 95e370c42d47c3c52377d05e9ffc01ccff7c1f61
@@ -1456,7 +1456,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 051c61ebae921b70f843c55aacf046a9922cc187
-R 1b522ee9926e242e3422d1eddaaf0fbf
+P 2fd095b14b03a508169bba710d2e8e2addf4b8f5
+R dae03fc18d1aaaa839efcf6d42490a7e
 U drh
-Z 3fc58440746cd83f06c07d7c16cdd74a
+Z 042547ad8e59422492ad781582901ed5
