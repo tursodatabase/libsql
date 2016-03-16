@@ -15,6 +15,11 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix bestindex1
 
+ifcapable !vtab {
+  finish_test
+  return
+}
+
 register_tcl_module db
 
 proc vtab_command {method args} {
@@ -161,5 +166,3 @@ foreach {tn mode} {
 }
 
 finish_test
-
-

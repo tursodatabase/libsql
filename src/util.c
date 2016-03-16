@@ -1424,9 +1424,14 @@ u64 sqlite3LogEstToInt(LogEst x){
   x /= 10;
   if( n>=5 ) n -= 2;
   else if( n>=1 ) n -= 1;
-  if( x>=3 ){
-    return x>60 ? (u64)LARGEST_INT64 : (n+8)<<(x-3);
-  }
-  return (n+8)>>(3-x);
+#if defined(SQLITE_ENABLE_STMT_SCANSTATUS) || \
+    defined(SQLITE_EXPLAIN_ESTIMATED_ROWS)
+  if( x>60 ) return (u64)LARGEST_INT64;
+#else
+  /* If only SQLITE_ENABLE_STAT3_OR_STAT4 is on, then the largest input
+  ** possible to this routine is 310, resulting in a maximum x of 31 */
+  assert( x<=60 );
+#endif
+  return x>=3 ? (n+8)<<(x-3) : (n+8)>>(3-x);
 }
 #endif /* defined SCANSTAT or STAT4 or ESTIMATED_ROWS */

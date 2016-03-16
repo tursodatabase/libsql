@@ -381,16 +381,16 @@ struct Vdbe {
 #endif
   u16 nResColumn;         /* Number of columns in one row of the result set */
   u8 errorAction;         /* Recovery action to do in case of an error */
+  bft expired:1;          /* True if the VM needs to be recompiled */
+  bft doingRerun:1;       /* True if rerunning after an auto-reprepare */
   u8 minWriteFileFormat;  /* Minimum file format for writable database files */
   bft explain:2;          /* True if EXPLAIN present on SQL command */
   bft changeCntOn:1;      /* True to update the change-counter */
-  bft expired:1;          /* True if the VM needs to be recompiled */
   bft runOnlyOnce:1;      /* Automatically expire on reset */
   bft usesStmtJournal:1;  /* True if uses a statement journal */
   bft readOnly:1;         /* True for statements that do not write */
   bft bIsReader:1;        /* True for statements that read */
   bft isPrepareV2:1;      /* True if prepared with prepare_v2() */
-  bft doingRerun:1;       /* True if rerunning after an auto-reprepare */
   int nChange;            /* Number of db changes made since last reset */
   yDbMask btreeMask;      /* Bitmask of db->aDb[] entries referenced */
   yDbMask lockMask;       /* Subset of btreeMask that requires a lock */

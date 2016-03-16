@@ -1092,12 +1092,12 @@ proc help {} {
   exit -1
 }
 
-if {[info script] == $argv0} {
+if {[file tail $argv0] == "permutations.test"} {
   proc main {argv} {
     if {[llength $argv]==0} {
       help
     } else {
-      set suite [lindex $argv 0]
+      set suite [file tail [lindex $argv 0]]
       if {[info exists ::testspec($suite)]==0} help
       set extra ""
       if {[llength $argv]>1} { set extra [list -files [lrange $argv 1 end]] }

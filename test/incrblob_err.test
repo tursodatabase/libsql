@@ -24,12 +24,12 @@ ifcapable {!incrblob  || !memdebug || !tclvar} {
 source $testdir/malloc_common.tcl
 
 unset -nocomplain ::fd ::data
-set ::fd [open [info script]]
+set ::fd [open $::cmdlinearg(INFO_SCRIPT)]
 set ::data [read $::fd]
 close $::fd
 
 do_malloc_test 1 -tclprep {
-  set bytes [file size [info script]]
+  set bytes [file size $::cmdlinearg(INFO_SCRIPT)]
   execsql {
     CREATE TABLE blobs(k, v BLOB);
     INSERT INTO blobs VALUES(1, zeroblob($::bytes));

@@ -428,19 +428,6 @@ int sqlite3PagerTrace=1;  /* True to enable tracing */
 */
 #define MAX_SECTOR_SIZE 0x10000
 
-/*
-** If the option SQLITE_EXTRA_DURABLE option is set at compile-time, then
-** SQLite will do extra fsync() operations when synchronous==FULL to help
-** ensure that transactions are durable across a power failure.  Most
-** applications are happy as long as transactions are consistent across
-** a power failure, and are perfectly willing to lose the last transaction
-** in exchange for the extra performance of avoiding directory syncs.
-** And so the default SQLITE_EXTRA_DURABLE setting is off.
-*/
-#ifndef SQLITE_EXTRA_DURABLE
-# define SQLITE_EXTRA_DURABLE 0
-#endif
-
 
 /*
 ** An instance of the following structure is allocated for each active
@@ -3460,7 +3447,7 @@ void sqlite3PagerShrink(Pager *pPager){
 ** The "level" in pgFlags & PAGER_SYNCHRONOUS_MASK sets the robustness
 ** of the database to damage due to OS crashes or power failures by
 ** changing the number of syncs()s when writing the journals.
-** There are three levels:
+** There are four levels:
 **
 **    OFF       sqlite3OsSync() is never called.  This is the default
 **              for temporary and transient files.
@@ -3480,6 +3467,10 @@ void sqlite3PagerShrink(Pager *pPager){
 **              assurance that the journal will not be corrupted to the
 **              point of causing damage to the database during rollback.
 **
+**    EXTRA     This is like FULL except that is also syncs the directory
+**              that contains the rollback journal after the rollback
+**              journal is unlinked.
+**
 ** The above is for a rollback-journal mode.  For WAL mode, OFF continues
 ** to mean that no syncs ever occur.  NORMAL means that the WAL is synced
 ** prior to the start of checkpoint and that the database file is synced
@@ -3487,7 +3478,8 @@ void sqlite3PagerShrink(Pager *pPager){
 ** was written back into the database.  But no sync operations occur for
 ** an ordinary commit in NORMAL mode with WAL.  FULL means that the WAL
 ** file is synced following each commit operation, in addition to the
-** syncs associated with NORMAL.
+** syncs associated with NORMAL.  There is no difference between FULL
+** and EXTRA for WAL mode.
 **
 ** Do not confuse synchronous=FULL with SQLITE_SYNC_FULL.  The
 ** SQLITE_SYNC_FULL macro means to use the MacOSX-style full-fsync
@@ -4818,11 +4810,7 @@ act_like_temp_file:
     assert( pPager->ckptSyncFlags==0 );
   }else{
     pPager->fullSync = 1;
-#if SQLITE_EXTRA_DURABLE
-    pPager->extraSync = 1;
-#else
     pPager->extraSync = 0;
-#endif
     pPager->syncFlags = SQLITE_SYNC_NORMAL;
     pPager->walSyncFlags = SQLITE_SYNC_NORMAL | WAL_SYNC_TRANSACTIONS;
     pPager->ckptSyncFlags = SQLITE_SYNC_NORMAL;
@@ -7179,6 +7167,7 @@ int sqlite3PagerWalCallback(Pager *pPager){
 */
 int sqlite3PagerWalSupported(Pager *pPager){
   const sqlite3_io_methods *pMethods = pPager->fd->pMethods;
+  if( pPager->noLock ) return 0;
   return pPager->exclusiveMode || (pMethods->iVersion>=2 && pMethods->xShmMap);
 }
 

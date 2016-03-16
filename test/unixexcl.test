@@ -87,6 +87,7 @@ do_multiclient_test tn {
     sql1 {
       PRAGMA auto_vacuum = 0;
       PRAGMA journal_mode = WAL;
+      PRAGMA synchronous = FULL;
       CREATE TABLE t1(a, b);
       INSERT INTO t1 VALUES(1, 2);
     }

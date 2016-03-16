@@ -452,6 +452,13 @@
 #endif
 
 /*
+** SQLITE_ENABLE_EXPLAIN_COMMENTS is incompatible with SQLITE_OMIT_EXPLAIN
+*/
+#ifdef SQLITE_OMIT_EXPLAIN
+# undef SQLITE_ENABLE_EXPLAIN_COMMENTS
+#endif
+
+/*
 ** Return true (non-zero) if the input is an integer that is too large
 ** to fit in 32-bits.  This macro is used inside of various testcase()
 ** macros to verify that we have tested SQLite for large-file support.
@@ -1003,10 +1010,39 @@ typedef struct With With;
 #include "vdbe.h"
 #include "pager.h"
 #include "pcache.h"
-
 #include "os.h"
 #include "mutex.h"
 
+/* The SQLITE_EXTRA_DURABLE compile-time option used to set the default
+** synchronous setting to EXTRA.  It is no longer supported.
+*/
+#ifdef SQLITE_EXTRA_DURABLE
+# warning Use SQLITE_DEFAULT_SYNCHRONOUS=3 instead of SQLITE_EXTRA_DURABLE
+# define SQLITE_DEFAULT_SYNCHRONOUS 3
+#endif
+
+/*
+** Default synchronous levels.
+**
+** Note that (for historcal reasons) the PAGER_SYNCHRONOUS_* macros differ
+** from the SQLITE_DEFAULT_SYNCHRONOUS value by 1.
+**
+**           PAGER_SYNCHRONOUS       DEFAULT_SYNCHRONOUS
+**   OFF           1                         0
+**   NORMAL        2                         1
+**   FULL          3                         2
+**   EXTRA         4                         3
+**
+** The "PRAGMA synchronous" statement also uses the zero-based numbers.
+** In other words, the zero-based numbers are used for all external interfaces
+** and the one-based values are used internally.
+*/
+#ifndef SQLITE_DEFAULT_SYNCHRONOUS
+# define SQLITE_DEFAULT_SYNCHRONOUS (PAGER_SYNCHRONOUS_FULL-1)
+#endif
+#ifndef SQLITE_DEFAULT_WAL_SYNCHRONOUS
+# define SQLITE_DEFAULT_WAL_SYNCHRONOUS SQLITE_DEFAULT_SYNCHRONOUS
+#endif
 
 /*
 ** Each database file to be accessed by the system is an instance
@@ -1019,6 +1055,7 @@ struct Db {
   char *zName;         /* Name of this database */
   Btree *pBt;          /* The B*Tree structure for this database file */
   u8 safety_level;     /* How aggressive at syncing data to disk */
+  u8 bSyncSet;         /* True if "PRAGMA synchronous=N" has been run */
   Schema *pSchema;     /* Pointer to database schema (possibly shared) */
 };
 
@@ -2361,6 +2398,7 @@ struct IdList {
 */
 #define MASKBIT(n)   (((Bitmask)1)<<(n))
 #define MASKBIT32(n) (((unsigned int)1)<<(n))
+#define ALLBITS      ((Bitmask)-1)
 
 /*
 ** The following structure describes the FROM clause of a SELECT statement.

@@ -269,7 +269,7 @@ do_test autovacuum-2.4.3 {
 } {3 4 5 6 7 8 9 10}
 
 # Right now there are 5 free pages in the database. Consume and then free
-# a 520 pages. Then create 520 tables. This ensures that at least some of the
+# all 520 pages. Then create 520 tables. This ensures that at least some of the
 # desired root-pages reside on the second free-list trunk page, and that the
 # trunk itself is required at some point.
 do_test autovacuum-2.4.4 {
@@ -280,9 +280,20 @@ do_test autovacuum-2.4.4 {
 } {}
 set root_page_list [list]
 set pending_byte_page [expr ($::sqlite_pending_byte / 1024) + 1]
+
+# unusable_pages
+# These are either the pending_byte page or the pointer map pages
+#
+unset -nocomplain unusable_page
+if {[sqlite3 -has-codec]} {
+  array set unusable_page {205 1 408 1}
+} else {
+  array set unusable_page {207 1 412 1}
+}
+set unusable_page($pending_byte_page) 1
+
 for {set i 3} {$i<=532} {incr i} {
-  # 207 and 412 are pointer-map pages.
-  if { $i!=207 && $i!=412 && $i != $pending_byte_page} {
+  if {![info exists unusable_page($i)]} {
     lappend root_page_list $i
   }
 }

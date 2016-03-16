@@ -16,11 +16,16 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+do_not_use_codec
 
 ifcapable {!pager_pragmas||secure_delete||direct_read} {
   finish_test
   return
 }
+
+# A non-zero reserved_bytes value changes the number of pages in the 
+# database file, which messes up the results in this test.
+if {[nonzero_reserved_bytes]} {finish_test; return;}
 
 # Run the SQL statement supplied by the argument and return
 # the results.  Prepend four integers to the beginning of the

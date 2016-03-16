@@ -424,7 +424,7 @@ ifcapable pager_pragmas {
     # The COMMIT requires a single fsync() - to the database file.
     execsql { COMMIT }
     list [file size test.db] [nSync]
-  } {39936 1}
+  } "[expr {[nonzero_reserved_bytes]?40960:39936}] 1"
 }
 
 #----------------------------------------------------------------------

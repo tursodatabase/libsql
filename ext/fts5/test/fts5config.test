@@ -247,5 +247,21 @@ do_catchsql_test 12.1 {
   INSERT INTO t1(t1, rank) VALUES('rank', NULL);;
 } {1 {SQL logic error or missing database}}
 
+#-------------------------------------------------------------------------
+# errors in the 'usermerge' option
+#
+do_execsql_test 13.0 {
+  CREATE VIRTUAL TABLE tt USING fts5(ttt);
+}
+foreach {tn val} {
+  1     -1
+  2     4.2
+  3     17
+  4     1
+} {
+  set sql "INSERT INTO tt(tt, rank) VALUES('usermerge', $val)"
+  do_catchsql_test 13.$tn $sql {1 {SQL logic error or missing database}}
+}
+
 finish_test
 

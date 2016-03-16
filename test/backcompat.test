@@ -63,7 +63,7 @@ proc do_backcompat_test {rv bin1 bin2 script} {
       set v [split [db version] .]
       if {[llength $v]==3} {lappend v 0}
       set ::sqlite_libversion [format \
-        "%d%.2d%.2d%2d" [lindex $v 0] [lindex $v 1] [lindex $v 2] [lindex $v 3]
+        "%d%.2d%.2d%.2d" [lindex $v 0] [lindex $v 1] [lindex $v 2] [lindex $v 3]
       ]
     }
   }
@@ -85,7 +85,8 @@ proc do_allbackcompat_test {script} {
     set nErr [set_test_counter errors]
     foreach dir {0 1} {
 
-      set bintag [string map {testfixture {}} $bin]
+      set bintag $bin
+      regsub {.*testfixture\.} $bintag {} bintag
       set bintag [string map {\.exe {}} $bintag]
       if {$bintag == ""} {set bintag self}
       set ::bcname ".$bintag.$dir."
@@ -420,6 +421,12 @@ ifcapable fts3 {
       if {[code1 { set ::sqlite_libversion }] >=3071200 
        && [code2 { set ::sqlite_libversion }] >=3071200 
       } {
+        if {[code1 { set ::sqlite_libversion }]<3120000} {
+          set res {0 {0 1} 1 0}
+        } else {
+          set res {1 0}
+        }
+
         do_test backcompat-3.9 {
           sql1 { INSERT INTO t2(t2) VALUES('merge=100,4'); }
           sql2 { INSERT INTO t2(t2) VALUES('merge=100,4'); }
@@ -428,7 +435,7 @@ ifcapable fts3 {
           sql2 {
             SELECT level, group_concat(idx, ' ') FROM t2_segdir GROUP BY level;
           }
-        } {0 {0 1} 1 0}
+        } $res
 
         do_test backcompat-3.10 {
           sql1 { INSERT INTO t2(t2) VALUES('integrity-check') }

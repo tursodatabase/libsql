@@ -1511,13 +1511,13 @@ static int fts5UpdateMethod(
       rc = SQLITE_ERROR;
     }
 
-    /* Case 1: DELETE */
+    /* DELETE */
     else if( nArg==1 ){
       i64 iDel = sqlite3_value_int64(apVal[0]);  /* Rowid to delete */
       rc = sqlite3Fts5StorageDelete(pTab->pStorage, iDel, 0);
     }
 
-    /* Case 2: INSERT */
+    /* INSERT */
     else if( eType0!=SQLITE_INTEGER ){     
       /* If this is a REPLACE, first remove the current entry (if any) */
       if( eConflict==SQLITE_REPLACE 
@@ -1529,7 +1529,7 @@ static int fts5UpdateMethod(
       fts5StorageInsert(&rc, pTab, apVal, pRowid);
     }
 
-    /* Case 2: UPDATE */
+    /* UPDATE */
     else{
       i64 iOld = sqlite3_value_int64(apVal[0]);  /* Old rowid */
       i64 iNew = sqlite3_value_int64(apVal[1]);  /* New rowid */
