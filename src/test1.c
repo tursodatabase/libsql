@@ -651,7 +651,7 @@ static int test_key(
   int argc,              /* Number of arguments */
   char **argv            /* Text of each argument */
 ){
-#ifdef SQLITE_HAS_CODEC
+#if defined(SQLITE_HAS_CODEC) && !defined(SQLITE_OMIT_CODEC_FROM_TCL)
   sqlite3 *db;
   const char *zKey;
   int nKey;
