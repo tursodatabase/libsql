@@ -1706,7 +1706,9 @@ void sqlite3Pragma(
   **   PRAGMA [schema.]user_version
   **   PRAGMA [schema.]user_version = <integer>
   **
-  **   PRAGMA [schema.]freelist_count = <integer>
+  **   PRAGMA [schema.]freelist_count
+  **
+  **   PRAGMA [schema.]data_version
   **
   **   PRAGMA [schema.]application_id
   **   PRAGMA [schema.]application_id = <integer>
@@ -1762,6 +1764,7 @@ void sqlite3Pragma(
       aOp[1].p3 = iCookie;
       sqlite3VdbeSetNumCols(v, 1);
       sqlite3VdbeSetColName(v, 0, COLNAME_NAME, zLeft, SQLITE_TRANSIENT);
+      sqlite3VdbeReusable(v);
     }
   }
   break;
@@ -1783,6 +1786,7 @@ void sqlite3Pragma(
       sqlite3VdbeLoadString(v, 1, zOpt);
       sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 1);
     }
+    sqlite3VdbeReusable(v);
   }
   break;
 #endif /* SQLITE_OMIT_COMPILEOPTION_DIAGS */

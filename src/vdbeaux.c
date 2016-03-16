@@ -391,6 +391,13 @@ void sqlite3VdbeRunOnlyOnce(Vdbe *p){
   p->runOnlyOnce = 1;
 }
 
+/*
+** Mark the VDBE as one that can only be run multiple times.
+*/
+void sqlite3VdbeReusable(Vdbe *p){
+  p->runOnlyOnce = 0;
+}
+
 #ifdef SQLITE_DEBUG /* sqlite3AssertMayAbort() logic */
 
 /*
