@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_OMIT_CODEC_FROM_TCL\scompile-time\soption.
-D 2016-03-16T01:03:10.251
+C Fix\sthe\squery\splanner\sso\sthat\sit\sis\sable\sto\suse\sthe\sinteger\sprimary\skey\nfrom\san\sindex\sas\spart\sof\sa\smulti-column\sconstraint.
+D 2016-03-16T18:26:54.117
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -430,7 +430,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 10deb6b43887662691e5f53d10b3c171c401169b
 F src/wal.h 2f7c831cf3b071fa548bf2d5cac640846a7ff19c
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
-F src/where.c 5533002ddf4fbc256f450cb629668a200b06a3ce
+F src/where.c fe7925faafbe9a458972035c0bb4753d672f04ed
 F src/whereInt.h 93297d56edd137b7ea004490690fb6e2ce028a34
 F src/wherecode.c 863aedf086131743763c1960637fde904eadc442
 F src/whereexpr.c fb87944b1254234e5bba671aaf6dee476241506a
@@ -820,7 +820,7 @@ F test/insert5.test 394f96728d1258f406fe5f5aeb0aaf29487c39a6
 F test/instr.test 737bbf80685232033f3abedc6ae92f75860b5dd2
 F test/intarray.test 066b7d7ac38d25bf96f87f1b017bfc687551cdd4
 F test/interrupt.test dfe9a67a94b0b2d8f70545ba1a6cca10780d71cc
-F test/intpkey.test 7506090fc08e028712a8bf47e5f54111947e3844
+F test/intpkey.test 70aab09756b9bd3bcb6b0358f971d7bbace46522
 F test/io.test f95bca1783b01ea7761671560d023360d2dfa4cc
 F test/ioerr.test 2a24bd6ed5a8b062e64bfe1f6cf94fb25e92210d
 F test/ioerr2.test 2593563599e2cc6b6b4fcf5878b177bdd5d8df26
@@ -1456,7 +1456,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e0b116edd64a55c971c368685aa343cb6beed0f1
-R 1b0c52bbc749be5b9a732d29d3d099e5
+P 45f7f0c80bd91a0c7ff859c27fd9e82e551bd83e
+R 48d902683e4b6144f631d91ce9dec30e
 U drh
-Z 5dddb7cbfc6ef15baab9797e73067d60
+Z 4770e56ece3387d541183edf6806d70a

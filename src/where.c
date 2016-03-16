@@ -289,6 +289,7 @@ static WhereTerm *whereScanInit(
     j = iColumn;
     iColumn = pIdx->aiColumn[j];
     if( iColumn==XN_EXPR ) pScan->pIdxExpr = pIdx->aColExpr->a[j].pExpr;
+    if( iColumn==pIdx->pTable->iPKey ) iColumn = XN_ROWID;
   }
   if( pIdx && iColumn>=0 ){
     pScan->idxaff = pIdx->pTable->aCol[iColumn].affinity;
@@ -3929,7 +3930,7 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
   int j;
   Table *pTab;
   Index *pIdx;
-  
+
   pWInfo = pBuilder->pWInfo;
   if( pWInfo->wctrlFlags & WHERE_FORCE_TABLE ) return 0;
   assert( pWInfo->pTabList->nSrc>=1 );
