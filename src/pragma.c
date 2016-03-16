@@ -1439,6 +1439,7 @@ void sqlite3Pragma(
     for(i=0; i<db->nDb; i++){
       HashElem *x;
       Hash *pTbls;
+      int *aRoot;
       int cnt = 0;
 
       if( OMIT_TEMPDB && i==1 ) continue;
@@ -1452,31 +1453,34 @@ void sqlite3Pragma(
 
       /* Do an integrity check of the B-Tree
       **
-      ** Begin by filling registers 2, 3, ... with the root pages numbers
+      ** Begin by finding the root pages numbers
       ** for all tables and indices in the database.
       */
       assert( sqlite3SchemaMutexHeld(db, i, 0) );
       pTbls = &db->aDb[i].pSchema->tblHash;
-      for(x=sqliteHashFirst(pTbls); x; x=sqliteHashNext(x)){
+      for(cnt=0, x=sqliteHashFirst(pTbls); x; x=sqliteHashNext(x)){
         Table *pTab = sqliteHashData(x);
         Index *pIdx;
-        if( HasRowid(pTab) ){
-          sqlite3VdbeAddOp2(v, OP_Integer, pTab->tnum, 2+cnt);
-          VdbeComment((v, "%s", pTab->zName));
-          cnt++;
-        }
+        if( HasRowid(pTab) ) cnt++;
+        for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){ cnt++; }
+      }
+      aRoot = sqlite3DbMallocRawNN(db, sizeof(int)*(cnt+1));
+      if( aRoot==0 ) break;
+      for(cnt=0, x=sqliteHashFirst(pTbls); x; x=sqliteHashNext(x)){
+        Table *pTab = sqliteHashData(x);
+        Index *pIdx;
+        if( HasRowid(pTab) ) aRoot[cnt++] = pTab->tnum;
         for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-          sqlite3VdbeAddOp2(v, OP_Integer, pIdx->tnum, 2+cnt);
-          VdbeComment((v, "%s", pIdx->zName));
-          cnt++;
+          aRoot[cnt++] = pIdx->tnum;
         }
       }
+      aRoot[cnt] = 0;
 
       /* Make sure sufficient number of registers have been allocated */
-      pParse->nMem = MAX( pParse->nMem, cnt+8 );
+      pParse->nMem = MAX( pParse->nMem, 14 );
 
       /* Do the b-tree integrity checks */
-      sqlite3VdbeAddOp3(v, OP_IntegrityCk, 2, cnt, 1);
+      sqlite3VdbeAddOp4(v, OP_IntegrityCk, 2, cnt, 1, (char*)aRoot,P4_INTARRAY);
       sqlite3VdbeChangeP5(v, (u8)i);
       addr = sqlite3VdbeAddOp1(v, OP_IsNull, 2); VdbeCoverage(v);
       sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0,
