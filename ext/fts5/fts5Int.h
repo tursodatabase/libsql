@@ -480,6 +480,7 @@ int sqlite3Fts5IndexReads(Fts5Index *p);
 int sqlite3Fts5IndexReinit(Fts5Index *p);
 int sqlite3Fts5IndexOptimize(Fts5Index *p);
 int sqlite3Fts5IndexMerge(Fts5Index *p, int nMerge);
+int sqlite3Fts5IndexReset(Fts5Index *p);
 
 int sqlite3Fts5IndexLoadConfig(Fts5Index *p);
 
@@ -622,6 +623,7 @@ int sqlite3Fts5StorageDeleteAll(Fts5Storage *p);
 int sqlite3Fts5StorageRebuild(Fts5Storage *p);
 int sqlite3Fts5StorageOptimize(Fts5Storage *p);
 int sqlite3Fts5StorageMerge(Fts5Storage *p, int nMerge);
+int sqlite3Fts5StorageReset(Fts5Storage *p);
 
 /*
 ** End of interface to code in fts5_storage.c.
