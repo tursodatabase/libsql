@@ -1706,7 +1706,9 @@ void sqlite3Pragma(
   **   PRAGMA [schema.]user_version
   **   PRAGMA [schema.]user_version = <integer>
   **
-  **   PRAGMA [schema.]freelist_count = <integer>
+  **   PRAGMA [schema.]freelist_count
+  **
+  **   PRAGMA [schema.]data_version
   **
   **   PRAGMA [schema.]application_id
   **   PRAGMA [schema.]application_id = <integer>
