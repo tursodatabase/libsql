@@ -131,7 +131,7 @@ exec_out:
     if( *pzErrMsg ){
       memcpy(*pzErrMsg, sqlite3_errmsg(db), nErrMsg);
     }else{
-      rc = SQLITE_NOMEM;
+      rc = SQLITE_NOMEM_BKPT;
       sqlite3Error(db, SQLITE_NOMEM);
     }
   }else if( pzErrMsg ){

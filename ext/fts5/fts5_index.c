@@ -698,6 +698,7 @@ static Fts5Data *fts5DataRead(Fts5Index *p, i64 iRowid){
   return pRet;
 }
 
+
 /*
 ** Release a reference to data record returned by an earlier call to
 ** fts5DataRead().
@@ -865,7 +866,7 @@ static int fts5StructureDecode(
 
     for(iLvl=0; rc==SQLITE_OK && iLvl<nLevel; iLvl++){
       Fts5StructureLevel *pLvl = &pRet->aLevel[iLvl];
-      int nTotal;
+      int nTotal = 0;
       int iSeg;
 
       if( i>=nData ){
@@ -2154,6 +2155,10 @@ static void fts5LeafSeek(
   iPgidx = szLeaf;
   iPgidx += fts5GetVarint32(&a[iPgidx], iTermOff);
   iOff = iTermOff;
+  if( iOff>n ){
+    p->rc = FTS5_CORRUPT;
+    return;
+  }
 
   while( 1 ){
 
@@ -4174,13 +4179,17 @@ static void fts5IndexMergeLevel(
 
 /*
 ** Do up to nPg pages of automerge work on the index.
+**
+** Return true if any changes were actually made, or false otherwise.
 */
-static void fts5IndexMerge(
+static int fts5IndexMerge(
   Fts5Index *p,                   /* FTS5 backend object */
   Fts5Structure **ppStruct,       /* IN/OUT: Current structure of index */
-  int nPg                         /* Pages of work to do */
+  int nPg,                        /* Pages of work to do */
+  int nMin                        /* Minimum number of segments to merge */
 ){
   int nRem = nPg;
+  int bRet = 0;
   Fts5Structure *pStruct = *ppStruct;
   while( nRem>0 && p->rc==SQLITE_OK ){
     int iLvl;                   /* To iterate through levels */
@@ -4211,17 +4220,17 @@ static void fts5IndexMerge(
     }
 #endif
 
-    if( nBest<p->pConfig->nAutomerge 
-        && pStruct->aLevel[iBestLvl].nMerge==0 
-      ){
+    if( nBest<nMin && pStruct->aLevel[iBestLvl].nMerge==0 ){
       break;
     }
+    bRet = 1;
     fts5IndexMergeLevel(p, &pStruct, iBestLvl, &nRem);
     if( p->rc==SQLITE_OK && pStruct->aLevel[iBestLvl].nMerge==0 ){
       fts5StructurePromote(p, iBestLvl+1, pStruct);
     }
   }
   *ppStruct = pStruct;
+  return bRet;
 }
 
 /*
@@ -4249,7 +4258,7 @@ static void fts5IndexAutomerge(
     pStruct->nWriteCounter += nLeaf;
     nRem = (int)(p->nWorkUnit * nWork * pStruct->nLevel);
 
-    fts5IndexMerge(p, ppStruct, nRem);
+    fts5IndexMerge(p, ppStruct, nRem, p->pConfig->nAutomerge);
   }
 }
 
@@ -4469,25 +4478,38 @@ static void fts5IndexFlush(Fts5Index *p){
   }
 }
 
-
-int sqlite3Fts5IndexOptimize(Fts5Index *p){
-  Fts5Structure *pStruct;
+static Fts5Structure *fts5IndexOptimizeStruct(
+  Fts5Index *p, 
+  Fts5Structure *pStruct
+){
   Fts5Structure *pNew = 0;
-  int nSeg = 0;
+  int nByte = sizeof(Fts5Structure);
+  int nSeg = pStruct->nSegment;
+  int i;
 
-  assert( p->rc==SQLITE_OK );
-  fts5IndexFlush(p);
-  pStruct = fts5StructureRead(p);
-
-  if( pStruct ){
-    assert( pStruct->nSegment==fts5StructureCountSegments(pStruct) );
-    nSeg = pStruct->nSegment;
-    if( nSeg>1 ){
-      int nByte = sizeof(Fts5Structure);
-      nByte += (pStruct->nLevel+1) * sizeof(Fts5StructureLevel);
-      pNew = (Fts5Structure*)sqlite3Fts5MallocZero(&p->rc, nByte);
+  /* Figure out if this structure requires optimization. A structure does
+  ** not require optimization if either:
+  **
+  **  + it consists of fewer than two segments, or 
+  **  + all segments are on the same level, or
+  **  + all segments except one are currently inputs to a merge operation.
+  **
+  ** In the first case, return NULL. In the second, increment the ref-count
+  ** on *pStruct and return a copy of the pointer to it.
+  */
+  if( nSeg<2 ) return 0;
+  for(i=0; i<pStruct->nLevel; i++){
+    int nThis = pStruct->aLevel[i].nSeg;
+    if( nThis==nSeg || (nThis==nSeg-1 && pStruct->aLevel[i].nMerge==nThis) ){
+      fts5StructureRef(pStruct);
+      return pStruct;
     }
+    assert( pStruct->aLevel[i].nMerge<=nThis );
   }
+
+  nByte += (pStruct->nLevel+1) * sizeof(Fts5StructureLevel);
+  pNew = (Fts5Structure*)sqlite3Fts5MallocZero(&p->rc, nByte);
+
   if( pNew ){
     Fts5StructureLevel *pLvl;
     int nByte = nSeg * sizeof(Fts5StructureSegment);
@@ -4499,7 +4521,10 @@ int sqlite3Fts5IndexOptimize(Fts5Index *p){
     if( pLvl->aSeg ){
       int iLvl, iSeg;
       int iSegOut = 0;
-      for(iLvl=0; iLvl<pStruct->nLevel; iLvl++){
+      /* Iterate through all segments, from oldest to newest. Add them to
+      ** the new Fts5Level object so that pLvl->aSeg[0] is the oldest
+      ** segment in the data structure.  */
+      for(iLvl=pStruct->nLevel-1; iLvl>=0; iLvl--){
         for(iSeg=0; iSeg<pStruct->aLevel[iLvl].nSeg; iSeg++){
           pLvl->aSeg[iSegOut] = pStruct->aLevel[iLvl].aSeg[iSeg];
           iSegOut++;
@@ -4512,8 +4537,26 @@ int sqlite3Fts5IndexOptimize(Fts5Index *p){
     }
   }
 
+  return pNew;
+}
+
+int sqlite3Fts5IndexOptimize(Fts5Index *p){
+  Fts5Structure *pStruct;
+  Fts5Structure *pNew = 0;
+
+  assert( p->rc==SQLITE_OK );
+  fts5IndexFlush(p);
+  pStruct = fts5StructureRead(p);
+
+  if( pStruct ){
+    pNew = fts5IndexOptimizeStruct(p, pStruct);
+  }
+  fts5StructureRelease(pStruct);
+
+  assert( pNew==0 || pNew->nSegment>0 );
   if( pNew ){
-    int iLvl = pNew->nLevel-1;
+    int iLvl;
+    for(iLvl=0; pNew->aLevel[iLvl].nSeg==0; iLvl++){}
     while( p->rc==SQLITE_OK && pNew->aLevel[iLvl].nSeg>0 ){
       int nRem = FTS5_OPT_WORK_UNIT;
       fts5IndexMergeLevel(p, &pNew, iLvl, &nRem);
@@ -4523,20 +4566,31 @@ int sqlite3Fts5IndexOptimize(Fts5Index *p){
     fts5StructureRelease(pNew);
   }
 
-  fts5StructureRelease(pStruct);
   return fts5IndexReturn(p); 
 }
 
+/*
+** This is called to implement the special "VALUES('merge', $nMerge)"
+** INSERT command.
+*/
 int sqlite3Fts5IndexMerge(Fts5Index *p, int nMerge){
-  Fts5Structure *pStruct;
-
-  pStruct = fts5StructureRead(p);
-  if( pStruct && pStruct->nLevel ){
-    fts5IndexMerge(p, &pStruct, nMerge);
-    fts5StructureWrite(p, pStruct);
+  Fts5Structure *pStruct = fts5StructureRead(p);
+  if( pStruct ){
+    int nMin = p->pConfig->nUsermerge;
+    if( nMerge<0 ){
+      Fts5Structure *pNew = fts5IndexOptimizeStruct(p, pStruct);
+      fts5StructureRelease(pStruct);
+      pStruct = pNew;
+      nMin = 2;
+      nMerge = nMerge*-1;
+    }
+    if( pStruct && pStruct->nLevel ){
+      if( fts5IndexMerge(p, &pStruct, nMerge, nMin) ){
+        fts5StructureWrite(p, pStruct);
+      }
+    }
+    fts5StructureRelease(pStruct);
   }
-  fts5StructureRelease(pStruct);
-
   return fts5IndexReturn(p);
 }
 

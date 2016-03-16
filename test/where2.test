@@ -765,4 +765,15 @@ do_execsql_test where2-13.1 {
   SELECT * FROM t13 WHERE (1=2 AND a=3) OR a=4;
 } {4 5}
 
+# https://www.sqlite.org/src/info/5e3c886796e5512e  (2016-03-09)
+# Correlated subquery on the RHS of an IN operator 
+#
+do_execsql_test where2-14.1 {
+  CREATE TABLE t14a(x INTEGER PRIMARY KEY);
+  INSERT INTO t14a(x) VALUES(1),(2),(3),(4);
+  CREATE TABLE t14b(y INTEGER PRIMARY KEY);
+  INSERT INTO t14b(y) VALUES(1);
+  SELECT x FROM t14a WHERE x NOT IN (SELECT x FROM t14b);
+} {}
+
 finish_test

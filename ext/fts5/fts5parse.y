@@ -34,7 +34,6 @@
   );
 }
 %stack_overflow {
-  UNUSED_PARAM(yypMinor); /* Silence a compiler warning */
   sqlite3Fts5ParseError(pParse, "fts5: parser stack overflow");
 }
 
@@ -105,7 +104,7 @@ expr(A) ::= exprlist(X).   {A = X;}
 
 exprlist(A) ::= cnearset(X). {A = X;}
 exprlist(A) ::= exprlist(X) cnearset(Y). {
-  A = sqlite3Fts5ParseNode(pParse, FTS5_AND, X, Y, 0);
+  A = sqlite3Fts5ParseImplicitAnd(pParse, X, Y);
 }
 
 cnearset(A) ::= nearset(X). { 

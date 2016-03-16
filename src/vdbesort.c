@@ -540,7 +540,7 @@ static int vdbePmaReadBlob(
       int nNew = MAX(128, p->nAlloc*2);
       while( nByte>nNew ) nNew = nNew*2;
       aNew = sqlite3Realloc(p->aAlloc, nNew);
-      if( !aNew ) return SQLITE_NOMEM;
+      if( !aNew ) return SQLITE_NOMEM_BKPT;
       p->nAlloc = nNew;
       p->aAlloc = aNew;
     }
@@ -652,7 +652,7 @@ static int vdbePmaReaderSeek(
     int iBuf = pReadr->iReadOff % pgsz;
     if( pReadr->aBuffer==0 ){
       pReadr->aBuffer = (u8*)sqlite3Malloc(pgsz);
-      if( pReadr->aBuffer==0 ) rc = SQLITE_NOMEM;
+      if( pReadr->aBuffer==0 ) rc = SQLITE_NOMEM_BKPT;
       pReadr->nBuffer = pgsz;
     }
     if( rc==SQLITE_OK && iBuf ){
@@ -968,7 +968,7 @@ int sqlite3VdbeSorterInit(
   pSorter = (VdbeSorter*)sqlite3DbMallocZero(db, sz + szKeyInfo);
   pCsr->uc.pSorter = pSorter;
   if( pSorter==0 ){
-    rc = SQLITE_NOMEM;
+    rc = SQLITE_NOMEM_BKPT;
   }else{
     pSorter->pKeyInfo = pKeyInfo = (KeyInfo*)((u8*)pSorter + sz);
     memcpy(pKeyInfo, pCsr->pKeyInfo, szKeyInfo);
@@ -1002,7 +1002,7 @@ int sqlite3VdbeSorterInit(
         assert( pSorter->iMemory==0 );
         pSorter->nMemory = pgsz;
         pSorter->list.aMemory = (u8*)sqlite3Malloc(pgsz);
-        if( !pSorter->list.aMemory ) rc = SQLITE_NOMEM;
+        if( !pSorter->list.aMemory ) rc = SQLITE_NOMEM_BKPT;
       }
     }
 
@@ -1324,7 +1324,7 @@ static int vdbeSortAllocUnpacked(SortSubtask *pTask){
         pTask->pSorter->pKeyInfo, 0, 0, &pFree
     );
     assert( pTask->pUnpacked==(UnpackedRecord*)pFree );
-    if( pFree==0 ) return SQLITE_NOMEM;
+    if( pFree==0 ) return SQLITE_NOMEM_BKPT;
     pTask->pUnpacked->nField = pTask->pSorter->pKeyInfo->nField;
     pTask->pUnpacked->errCode = 0;
   }
@@ -1399,7 +1399,7 @@ static int vdbeSorterSort(SortSubtask *pTask, SorterList *pList){
 
   aSlot = (SorterRecord **)sqlite3MallocZero(64 * sizeof(SorterRecord *));
   if( !aSlot ){
-    return SQLITE_NOMEM;
+    return SQLITE_NOMEM_BKPT;
   }
 
   while( p ){
@@ -1449,7 +1449,7 @@ static void vdbePmaWriterInit(
   memset(p, 0, sizeof(PmaWriter));
   p->aBuffer = (u8*)sqlite3Malloc(nBuf);
   if( !p->aBuffer ){
-    p->eFWErr = SQLITE_NOMEM;
+    p->eFWErr = SQLITE_NOMEM_BKPT;
   }else{
     p->iBufEnd = p->iBufStart = (iStart % nBuf);
     p->iWriteOff = iStart - p->iBufStart;
@@ -1737,7 +1737,7 @@ static int vdbeSorterFlushPMA(VdbeSorter *pSorter){
         pSorter->nMemory = sqlite3MallocSize(aMem);
       }else if( pSorter->list.aMemory ){
         pSorter->list.aMemory = sqlite3Malloc(pSorter->nMemory);
-        if( !pSorter->list.aMemory ) return SQLITE_NOMEM;
+        if( !pSorter->list.aMemory ) return SQLITE_NOMEM_BKPT;
       }
 
       rc = vdbeSorterCreateThread(pTask, vdbeSorterFlushThread, pCtx);
@@ -1828,7 +1828,7 @@ int sqlite3VdbeSorterWrite(
       if( nNew < nMin ) nNew = nMin;
 
       aNew = sqlite3Realloc(pSorter->list.aMemory, nNew);
-      if( !aNew ) return SQLITE_NOMEM;
+      if( !aNew ) return SQLITE_NOMEM_BKPT;
       pSorter->list.pList = (SorterRecord*)&aNew[iListOff];
       pSorter->list.aMemory = aNew;
       pSorter->nMemory = nNew;
@@ -1842,7 +1842,7 @@ int sqlite3VdbeSorterWrite(
   }else{
     pNew = (SorterRecord *)sqlite3Malloc(nReq);
     if( pNew==0 ){
-      return SQLITE_NOMEM;
+      return SQLITE_NOMEM_BKPT;
     }
     pNew->u.pNext = pSorter->list.pList;
   }
@@ -1989,7 +1989,7 @@ static int vdbeIncrMergerNew(
     pTask->file2.iEof += pIncr->mxSz;
   }else{
     vdbeMergeEngineFree(pMerger);
-    rc = SQLITE_NOMEM;
+    rc = SQLITE_NOMEM_BKPT;
   }
   return rc;
 }
@@ -2294,10 +2294,10 @@ static int vdbeMergeEngineLevel0(
   int rc = SQLITE_OK;
 
   *ppOut = pNew = vdbeMergeEngineNew(nPMA);
-  if( pNew==0 ) rc = SQLITE_NOMEM;
+  if( pNew==0 ) rc = SQLITE_NOMEM_BKPT;
 
   for(i=0; i<nPMA && rc==SQLITE_OK; i++){
-    i64 nDummy;
+    i64 nDummy = 0;
     PmaReader *pReadr = &pNew->aReadr[i];
     rc = vdbePmaReaderInit(pTask, &pTask->file, iOff, pReadr, &nDummy);
     iOff = pReadr->iEof;
@@ -2365,7 +2365,7 @@ static int vdbeSorterAddToTree(
     if( pReadr->pIncr==0 ){
       MergeEngine *pNew = vdbeMergeEngineNew(SORTER_MAX_MERGE_COUNT);
       if( pNew==0 ){
-        rc = SQLITE_NOMEM;
+        rc = SQLITE_NOMEM_BKPT;
       }else{
         rc = vdbeIncrMergerNew(pTask, pNew, &pReadr->pIncr);
       }
@@ -2410,7 +2410,7 @@ static int vdbeSorterMergeTreeBuild(
   assert( pSorter->bUseThreads || pSorter->nTask==1 );
   if( pSorter->nTask>1 ){
     pMain = vdbeMergeEngineNew(pSorter->nTask);
-    if( pMain==0 ) rc = SQLITE_NOMEM;
+    if( pMain==0 ) rc = SQLITE_NOMEM_BKPT;
   }
 #endif
 
@@ -2428,7 +2428,7 @@ static int vdbeSorterMergeTreeBuild(
         int i;
         int iSeq = 0;
         pRoot = vdbeMergeEngineNew(SORTER_MAX_MERGE_COUNT);
-        if( pRoot==0 ) rc = SQLITE_NOMEM;
+        if( pRoot==0 ) rc = SQLITE_NOMEM_BKPT;
         for(i=0; i<pTask->nPMA && rc==SQLITE_OK; i += SORTER_MAX_MERGE_COUNT){
           MergeEngine *pMerger = 0; /* New level-0 PMA merger */
           int nReader;              /* Number of level-0 PMAs to merge */
@@ -2499,7 +2499,7 @@ static int vdbeSorterSetupMerge(VdbeSorter *pSorter){
       if( rc==SQLITE_OK ){
         pReadr = (PmaReader*)sqlite3DbMallocZero(db, sizeof(PmaReader));
         pSorter->pReader = pReadr;
-        if( pReadr==0 ) rc = SQLITE_NOMEM;
+        if( pReadr==0 ) rc = SQLITE_NOMEM_BKPT;
       }
       if( rc==SQLITE_OK ){
         rc = vdbeIncrMergerNew(pLast, pMain, &pReadr->pIncr);
@@ -2676,7 +2676,7 @@ int sqlite3VdbeSorterRowkey(const VdbeCursor *pCsr, Mem *pOut){
   pSorter = pCsr->uc.pSorter;
   pKey = vdbeSorterRowkey(pSorter, &nKey);
   if( sqlite3VdbeMemClearAndResize(pOut, nKey) ){
-    return SQLITE_NOMEM;
+    return SQLITE_NOMEM_BKPT;
   }
   pOut->n = nKey;
   MemSetTypeFlag(pOut, MEM_Blob);
@@ -2721,7 +2721,7 @@ int sqlite3VdbeSorterCompare(
     char *p;
     r2 = pSorter->pUnpacked = sqlite3VdbeAllocUnpackedRecord(pKeyInfo,0,0,&p);
     assert( pSorter->pUnpacked==(UnpackedRecord*)p );
-    if( r2==0 ) return SQLITE_NOMEM;
+    if( r2==0 ) return SQLITE_NOMEM_BKPT;
     r2->nField = nKeyCol;
   }
   assert( r2->nField==nKeyCol );

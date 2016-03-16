@@ -144,7 +144,7 @@ static void attachFunc(
     Pager *pPager;
     aNew->pSchema = sqlite3SchemaGet(db, aNew->pBt);
     if( !aNew->pSchema ){
-      rc = SQLITE_NOMEM;
+      rc = SQLITE_NOMEM_BKPT;
     }else if( aNew->pSchema->file_format && aNew->pSchema->enc!=ENC(db) ){
       zErrDyn = sqlite3MPrintf(db, 
         "attached databases must use the same text encoding as main database");
@@ -161,10 +161,10 @@ static void attachFunc(
 #endif
     sqlite3BtreeLeave(aNew->pBt);
   }
-  aNew->safety_level = 3;
+  aNew->safety_level = SQLITE_DEFAULT_SYNCHRONOUS+1;
   aNew->zName = sqlite3DbStrDup(db, zName);
   if( rc==SQLITE_OK && aNew->zName==0 ){
-    rc = SQLITE_NOMEM;
+    rc = SQLITE_NOMEM_BKPT;
   }
 
 
@@ -392,8 +392,7 @@ void sqlite3Detach(Parse *pParse, Expr *pDbname){
     detachFunc,       /* xSFunc */
     0,                /* xFinalize */
     "sqlite_detach",  /* zName */
-    0,                /* pHash */
-    0                 /* pDestructor */
+    {0}
   };
   codeAttach(pParse, SQLITE_DETACH, &detach_func, pDbname, 0, 0, pDbname);
 }
@@ -412,8 +411,7 @@ void sqlite3Attach(Parse *pParse, Expr *p, Expr *pDbname, Expr *pKey){
     attachFunc,       /* xSFunc */
     0,                /* xFinalize */
     "sqlite_attach",  /* zName */
-    0,                /* pHash */
-    0                 /* pDestructor */
+    {0}
   };
   codeAttach(pParse, SQLITE_ATTACH, &attach_func, p, p, pDbname, pKey);
 }

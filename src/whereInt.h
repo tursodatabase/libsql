@@ -412,6 +412,7 @@ struct WhereInfo {
   WhereLoop *pLoops;        /* List of all WhereLoop objects */
   Bitmask revMask;          /* Mask of ORDER BY terms that need reversing */
   LogEst nRowOut;           /* Estimated number of output rows */
+  LogEst iLimit;            /* LIMIT if wctrlFlags has WHERE_USE_LIMIT */
   u16 wctrlFlags;           /* Flags originally passed to sqlite3WhereBegin() */
   i8 nOBSat;                /* Number of ORDER BY terms satisfied by indices */
   u8 sorted;                /* True if really sorted (not just grouped) */

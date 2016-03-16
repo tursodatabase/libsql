@@ -284,14 +284,12 @@ static int matchQuality(
 ** a pointer to the matching FuncDef if found, or 0 if there is no match.
 */
 static FuncDef *functionSearch(
-  FuncDefHash *pHash,  /* Hash table to search */
   int h,               /* Hash of the name */
-  const char *zFunc,   /* Name of function */
-  int nFunc            /* Number of bytes in zFunc */
+  const char *zFunc    /* Name of function */
 ){
   FuncDef *p;
-  for(p=pHash->a[h]; p; p=p->pHash){
-    if( sqlite3StrNICmp(p->zName, zFunc, nFunc)==0 && p->zName[nFunc]==0 ){
+  for(p=sqlite3BuiltinFunctions.a[h]; p; p=p->u.pHash){
+    if( sqlite3StrICmp(p->zName, zFunc)==0 ){
       return p;
     }
   }
@@ -301,23 +299,26 @@ static FuncDef *functionSearch(
 /*
 ** Insert a new FuncDef into a FuncDefHash hash table.
 */
-void sqlite3FuncDefInsert(
-  FuncDefHash *pHash,  /* The hash table into which to insert */
-  FuncDef *pDef        /* The function definition to insert */
+void sqlite3InsertBuiltinFuncs(
+  FuncDef *aDef,      /* List of global functions to be inserted */
+  int nDef            /* Length of the apDef[] list */
 ){
-  FuncDef *pOther;
-  int nName = sqlite3Strlen30(pDef->zName);
-  u8 c1 = (u8)pDef->zName[0];
-  int h = (sqlite3UpperToLower[c1] + nName) % ArraySize(pHash->a);
-  pOther = functionSearch(pHash, h, pDef->zName, nName);
-  if( pOther ){
-    assert( pOther!=pDef && pOther->pNext!=pDef );
-    pDef->pNext = pOther->pNext;
-    pOther->pNext = pDef;
-  }else{
-    pDef->pNext = 0;
-    pDef->pHash = pHash->a[h];
-    pHash->a[h] = pDef;
+  int i;
+  for(i=0; i<nDef; i++){
+    FuncDef *pOther;
+    const char *zName = aDef[i].zName;
+    int nName = sqlite3Strlen30(zName);
+    int h = (sqlite3UpperToLower[(u8)zName[0]] + nName) % SQLITE_FUNC_HASH_SZ;
+    pOther = functionSearch(h, zName);
+    if( pOther ){
+      assert( pOther!=&aDef[i] && pOther->pNext!=&aDef[i] );
+      aDef[i].pNext = pOther->pNext;
+      pOther->pNext = &aDef[i];
+    }else{
+      aDef[i].pNext = 0;
+      aDef[i].u.pHash = sqlite3BuiltinFunctions.a[h];
+      sqlite3BuiltinFunctions.a[h] = &aDef[i];
+    }
   }
 }
   
@@ -344,8 +345,7 @@ void sqlite3FuncDefInsert(
 */
 FuncDef *sqlite3FindFunction(
   sqlite3 *db,       /* An open database */
-  const char *zName, /* Name of the function.  Not null-terminated */
-  int nName,         /* Number of characters in the name */
+  const char *zName, /* Name of the function.  zero-terminated */
   int nArg,          /* Number of arguments.  -1 means any number */
   u8 enc,            /* Preferred text encoding */
   u8 createFlag      /* Create new entry if true and does not otherwise exist */
@@ -354,14 +354,15 @@ FuncDef *sqlite3FindFunction(
   FuncDef *pBest = 0; /* Best match found so far */
   int bestScore = 0;  /* Score of best match */
   int h;              /* Hash value */
+  int nName;          /* Length of the name */
 
   assert( nArg>=(-2) );
   assert( nArg>=(-1) || createFlag==0 );
-  h = (sqlite3UpperToLower[(u8)zName[0]] + nName) % ArraySize(db->aFunc.a);
+  nName = sqlite3Strlen30(zName);
 
   /* First search for a match amongst the application-defined functions.
   */
-  p = functionSearch(&db->aFunc, h, zName, nName);
+  p = (FuncDef*)sqlite3HashFind(&db->aFunc, zName);
   while( p ){
     int score = matchQuality(p, nArg, enc);
     if( score>bestScore ){
@@ -384,9 +385,9 @@ FuncDef *sqlite3FindFunction(
   ** So we must not search for built-ins when creating a new function.
   */ 
   if( !createFlag && (pBest==0 || (db->flags & SQLITE_PreferBuiltin)!=0) ){
-    FuncDefHash *pHash = &GLOBAL(FuncDefHash, sqlite3GlobalFunctions);
     bestScore = 0;
-    p = functionSearch(pHash, h, zName, nName);
+    h = (sqlite3UpperToLower[(u8)zName[0]] + nName) % SQLITE_FUNC_HASH_SZ;
+    p = functionSearch(h, zName);
     while( p ){
       int score = matchQuality(p, nArg, enc);
       if( score>bestScore ){
@@ -403,12 +404,19 @@ FuncDef *sqlite3FindFunction(
   */
   if( createFlag && bestScore<FUNC_PERFECT_MATCH && 
       (pBest = sqlite3DbMallocZero(db, sizeof(*pBest)+nName+1))!=0 ){
-    pBest->zName = (char *)&pBest[1];
+    FuncDef *pOther;
+    pBest->zName = (const char*)&pBest[1];
     pBest->nArg = (u16)nArg;
     pBest->funcFlags = enc;
-    memcpy(pBest->zName, zName, nName);
-    pBest->zName[nName] = 0;
-    sqlite3FuncDefInsert(&db->aFunc, pBest);
+    memcpy((char*)&pBest[1], zName, nName+1);
+    pOther = (FuncDef*)sqlite3HashInsert(&db->aFunc, pBest->zName, pBest);
+    if( pOther==pBest ){
+      sqlite3DbFree(db, pBest);
+      sqlite3OomFault(db);
+      return 0;
+    }else{
+      pBest->pNext = pOther;
+    }
   }
 
   if( pBest && (pBest->xSFunc || createFlag) ){

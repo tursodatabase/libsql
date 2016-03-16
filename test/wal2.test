@@ -1159,7 +1159,7 @@ foreach {tn sql reslist} {
 } {
   faultsim_delete_and_reopen
 
-  execsql {PRAGMA auto_vacuum = 0}
+  execsql {PRAGMA auto_vacuum = 0; PRAGMA synchronous = FULL;}
   execsql $sql
   do_execsql_test wal2-14.$tn.0 { PRAGMA page_size = 4096 }   {}
   do_execsql_test wal2-14.$tn.1 { PRAGMA journal_mode = WAL } {wal}

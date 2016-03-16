@@ -1162,6 +1162,10 @@ static Trigger *fkActionTrigger(
   int iAction = (pChanges!=0);    /* 1 for UPDATE, 0 for DELETE */
 
   action = pFKey->aAction[iAction];
+  if( action==OE_Restrict && (db->flags & SQLITE_DeferFKs) ){
+    return 0;
+  }
+
   pTrigger = pFKey->apTrigger[iAction];
 
   if( action!=OE_None && !pTrigger ){

@@ -33,12 +33,12 @@ foreach {tn expr res} {
   1  {abc}                            {"abc"}
   2  {abc ""}                         {"abc"}
   3  {""}                             {}
-  4  {abc OR ""}                      {"abc"}
-  5  {abc NOT ""}                     {"abc"}
-  6  {abc AND ""}                     {"abc"}
-  7  {"" OR abc}                      {"abc"}
-  8  {"" NOT abc}                     {"abc"}
-  9  {"" AND abc}                     {"abc"}
+  4  {abc OR ""}                      {"abc" OR ""}
+  5  {abc NOT ""}                     {"abc" NOT ""}
+  6  {abc AND ""}                     {"abc" AND ""}
+  7  {"" OR abc}                      {"" OR "abc"}
+  8  {"" NOT abc}                     {"" NOT "abc"}
+  9  {"" AND abc}                     {"" AND "abc"}
   10 {abc + "" + def}                 {"abc" + "def"}
   11 {abc "" def}                     {"abc" AND "def"}
   12 {r+e OR w}                       {"r" + "e" OR "w"}

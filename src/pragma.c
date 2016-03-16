@@ -993,6 +993,7 @@ void sqlite3Pragma(
         int iLevel = (getSafetyLevel(zRight,0,1)+1) & PAGER_SYNCHRONOUS_MASK;
         if( iLevel==0 ) iLevel = 1;
         pDb->safety_level = iLevel;
+        pDb->bSyncSet = 1;
         setAllPagerFlags(db);
       }
     }
@@ -1065,6 +1066,7 @@ void sqlite3Pragma(
       setAllColumnNames(v, 6, azCol); assert( 6==ArraySize(azCol) );
       sqlite3ViewGetColumnNames(pParse, pTab);
       for(i=0, pCol=pTab->aCol; i<pTab->nCol; i++, pCol++){
+        const char *zName;
         if( IsHiddenColumn(pCol) ){
           nHidden++;
           continue;
@@ -1076,12 +1078,14 @@ void sqlite3Pragma(
         }else{
           for(k=1; k<=pTab->nCol && pPk->aiColumn[k-1]!=i; k++){}
         }
+        assert( pCol->pDflt==0 || pCol->pDflt->op==TK_SPAN );
+        zName = pCol->zName;
         sqlite3VdbeMultiLoad(v, 1, "issisi",
                i-nHidden,
-               pCol->zName,
-               pCol->zType ? pCol->zType : "",
+               zName,
+               sqlite3StrNext(zName),
                pCol->notNull ? 1 : 0,
-               pCol->zDflt,
+               pCol->pDflt ? pCol->pDflt->u.zToken : 0,
                k);
         sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 6);
       }
@@ -1102,14 +1106,14 @@ void sqlite3Pragma(
       sqlite3VdbeMultiLoad(v, 1, "ssii",
            pTab->zName,
            0,
-           (int)sqlite3LogEstToInt(pTab->szTabRow),
-           (int)sqlite3LogEstToInt(pTab->nRowLogEst));
+           pTab->szTabRow,
+           pTab->nRowLogEst);
       sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 4);
       for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
         sqlite3VdbeMultiLoad(v, 2, "sii",
            pIdx->zName,
-           (int)sqlite3LogEstToInt(pIdx->szIdxRow),
-           (int)sqlite3LogEstToInt(pIdx->aiRowLogEst[0]));
+           pIdx->szIdxRow,
+           pIdx->aiRowLogEst[0]);
         sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 4);
       }
     }
@@ -1435,6 +1439,7 @@ void sqlite3Pragma(
     for(i=0; i<db->nDb; i++){
       HashElem *x;
       Hash *pTbls;
+      int *aRoot;
       int cnt = 0;
 
       if( OMIT_TEMPDB && i==1 ) continue;
@@ -1448,31 +1453,34 @@ void sqlite3Pragma(
 
       /* Do an integrity check of the B-Tree
       **
-      ** Begin by filling registers 2, 3, ... with the root pages numbers
+      ** Begin by finding the root pages numbers
       ** for all tables and indices in the database.
       */
       assert( sqlite3SchemaMutexHeld(db, i, 0) );
       pTbls = &db->aDb[i].pSchema->tblHash;
-      for(x=sqliteHashFirst(pTbls); x; x=sqliteHashNext(x)){
+      for(cnt=0, x=sqliteHashFirst(pTbls); x; x=sqliteHashNext(x)){
         Table *pTab = sqliteHashData(x);
         Index *pIdx;
-        if( HasRowid(pTab) ){
-          sqlite3VdbeAddOp2(v, OP_Integer, pTab->tnum, 2+cnt);
-          VdbeComment((v, "%s", pTab->zName));
-          cnt++;
-        }
+        if( HasRowid(pTab) ) cnt++;
+        for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){ cnt++; }
+      }
+      aRoot = sqlite3DbMallocRawNN(db, sizeof(int)*(cnt+1));
+      if( aRoot==0 ) break;
+      for(cnt=0, x=sqliteHashFirst(pTbls); x; x=sqliteHashNext(x)){
+        Table *pTab = sqliteHashData(x);
+        Index *pIdx;
+        if( HasRowid(pTab) ) aRoot[cnt++] = pTab->tnum;
         for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-          sqlite3VdbeAddOp2(v, OP_Integer, pIdx->tnum, 2+cnt);
-          VdbeComment((v, "%s", pIdx->zName));
-          cnt++;
+          aRoot[cnt++] = pIdx->tnum;
         }
       }
+      aRoot[cnt] = 0;
 
       /* Make sure sufficient number of registers have been allocated */
-      pParse->nMem = MAX( pParse->nMem, cnt+8 );
+      pParse->nMem = MAX( pParse->nMem, 14 );
 
       /* Do the b-tree integrity checks */
-      sqlite3VdbeAddOp3(v, OP_IntegrityCk, 2, cnt, 1);
+      sqlite3VdbeAddOp4(v, OP_IntegrityCk, 2, cnt, 1, (char*)aRoot,P4_INTARRAY);
       sqlite3VdbeChangeP5(v, (u8)i);
       addr = sqlite3VdbeAddOp1(v, OP_IsNull, 2); VdbeCoverage(v);
       sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0,

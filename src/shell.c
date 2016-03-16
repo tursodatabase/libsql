@@ -1284,6 +1284,43 @@ static char *save_err_msg(
   return zErrMsg;
 }
 
+#ifdef __linux__
+/*
+** Attempt to display I/O stats on Linux using /proc/PID/io
+*/
+static void displayLinuxIoStats(FILE *out){
+  FILE *in;
+  char z[200];
+  sqlite3_snprintf(sizeof(z), z, "/proc/%d/io", getpid());
+  in = fopen(z, "rb");
+  if( in==0 ) return;
+  while( fgets(z, sizeof(z), in)!=0 ){
+    static const struct {
+      const char *zPattern;
+      const char *zDesc;
+    } aTrans[] = {
+      { "rchar: ",                  "Bytes received by read():" },
+      { "wchar: ",                  "Bytes sent to write():"    },
+      { "syscr: ",                  "Read() system calls:"      },
+      { "syscw: ",                  "Write() system calls:"     },
+      { "read_bytes: ",             "Bytes read from storage:"  },
+      { "write_bytes: ",            "Bytes written to storage:" },
+      { "cancelled_write_bytes: ",  "Cancelled write bytes:"    },
+    };
+    int i;
+    for(i=0; i<ArraySize(aTrans); i++){
+      int n = (int)strlen(aTrans[i].zPattern);
+      if( strncmp(aTrans[i].zPattern, z, n)==0 ){
+        raw_printf(out, "%-36s %s", aTrans[i].zDesc, &z[n]);
+        break;
+      }
+    }
+  }
+  fclose(in);
+}   
+#endif
+
+
 /*
 ** Display memory stats.
 */
@@ -1405,6 +1442,10 @@ static int display_stats(
     iCur = sqlite3_stmt_status(pArg->pStmt, SQLITE_STMTSTATUS_VM_STEP, bReset);
     raw_printf(pArg->out, "Virtual Machine Steps:               %d\n", iCur);
   }
+
+#ifdef __linux__
+  displayLinuxIoStats(pArg->out);
+#endif
 
   /* Do not remove this machine readable comment: extra-stats-output-here */
 
@@ -1957,7 +1998,7 @@ static char zHelp[] =
   "                         separator for both the output mode and .import\n"
   ".shell CMD ARGS...     Run CMD ARGS... in a system shell\n"
   ".show                  Show the current values for various settings\n"
-  ".stats on|off          Turn stats on or off\n"
+  ".stats ?on|off?        Show stats or turn stats on or off\n"
   ".system CMD ARGS...    Run CMD ARGS... in a system shell\n"
   ".tables ?TABLE?        List names of tables\n"
   "                         If TABLE specified, only list tables matching\n"
@@ -3171,7 +3212,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       char *zCreate = sqlite3_mprintf("CREATE TABLE %s", zTable);
       char cSep = '(';
       while( xRead(&sCtx) ){
-        zCreate = sqlite3_mprintf("%z%c\n  \"%s\" TEXT", zCreate, cSep, sCtx.z);
+        zCreate = sqlite3_mprintf("%z%c\n  \"%w\" TEXT", zCreate, cSep, sCtx.z);
         cSep = ',';
         if( sCtx.cTerm!=sCtx.cColSep ) break;
       }
@@ -3835,8 +3876,10 @@ static int do_meta_command(char *zLine, ShellState *p){
   if( c=='s' && strncmp(azArg[0], "stats", n)==0 ){
     if( nArg==2 ){
       p->statsOn = booleanValue(azArg[1]);
+    }else if( nArg==1 ){
+      display_stats(p->db, p, 0);
     }else{
-      raw_printf(stderr, "Usage: .stats on|off\n");
+      raw_printf(stderr, "Usage: .stats ?on|off?\n");
       rc = 1;
     }
   }else

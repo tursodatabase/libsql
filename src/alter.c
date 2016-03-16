@@ -229,7 +229,7 @@ static void renameTriggerFunc(
 ** Register built-in functions used to help implement ALTER TABLE
 */
 void sqlite3AlterFunctions(void){
-  static SQLITE_WSD FuncDef aAlterTableFuncs[] = {
+  static FuncDef aAlterTableFuncs[] = {
     FUNCTION(sqlite_rename_table,   2, 0, 0, renameTableFunc),
 #ifndef SQLITE_OMIT_TRIGGER
     FUNCTION(sqlite_rename_trigger, 2, 0, 0, renameTriggerFunc),
@@ -238,13 +238,7 @@ void sqlite3AlterFunctions(void){
     FUNCTION(sqlite_rename_parent,  3, 0, 0, renameParentFunc),
 #endif
   };
-  int i;
-  FuncDefHash *pHash = &GLOBAL(FuncDefHash, sqlite3GlobalFunctions);
-  FuncDef *aFunc = (FuncDef*)&GLOBAL(FuncDef, aAlterTableFuncs);
-
-  for(i=0; i<ArraySize(aAlterTableFuncs); i++){
-    sqlite3FuncDefInsert(pHash, &aFunc[i]);
-  }
+  sqlite3InsertBuiltinFuncs(aAlterTableFuncs, ArraySize(aAlterTableFuncs));
 }
 
 /*
@@ -634,7 +628,8 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
   ** literal NULL, then set pDflt to 0. This simplifies checking
   ** for an SQL NULL default below.
   */
-  if( pDflt && pDflt->op==TK_NULL ){
+  assert( pDflt==0 || pDflt->op==TK_SPAN );
+  if( pDflt && pDflt->pLeft->op==TK_NULL ){
     pDflt = 0;
   }
 
@@ -791,9 +786,7 @@ void sqlite3AlterBeginAddColumn(Parse *pParse, SrcList *pSrc){
     Column *pCol = &pNew->aCol[i];
     pCol->zName = sqlite3DbStrDup(db, pCol->zName);
     pCol->zColl = 0;
-    pCol->zType = 0;
     pCol->pDflt = 0;
-    pCol->zDflt = 0;
   }
   pNew->pSchema = db->aDb[iDb].pSchema;
   pNew->addColOffset = pTab->addColOffset;

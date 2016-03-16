@@ -88,7 +88,7 @@ static Btree *findBtree(sqlite3 *pErrorDb, sqlite3 *pDb, const char *zDb){
     pParse = sqlite3StackAllocZero(pErrorDb, sizeof(*pParse));
     if( pParse==0 ){
       sqlite3ErrorWithMsg(pErrorDb, SQLITE_NOMEM, "out of memory");
-      rc = SQLITE_NOMEM;
+      rc = SQLITE_NOMEM_BKPT;
     }else{
       pParse->db = pDb;
       if( sqlite3OpenTempDatabase(pParse) ){
@@ -182,7 +182,7 @@ sqlite3_backup *sqlite3_backup_init(
     ** sqlite3_backup_finish(). */
     p = (sqlite3_backup *)sqlite3MallocZero(sizeof(sqlite3_backup));
     if( !p ){
-      sqlite3Error(pDestDb, SQLITE_NOMEM);
+      sqlite3Error(pDestDb, SQLITE_NOMEM_BKPT);
     }
   }
 
@@ -581,7 +581,7 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage){
     }
   
     if( rc==SQLITE_IOERR_NOMEM ){
-      rc = SQLITE_NOMEM;
+      rc = SQLITE_NOMEM_BKPT;
     }
     p->rc = rc;
   }

@@ -87,7 +87,7 @@ struct VdbeCursor {
 #endif
   Bool isEphemeral:1;   /* True for an ephemeral table */
   Bool useRandomRowid:1;/* Generate new record numbers semi-randomly */
-  Bool isOrdered:1;     /* True if the underlying table is BTREE_UNORDERED */
+  Bool isOrdered:1;     /* True if the table is not BTREE_UNORDERED */
   Pgno pgnoRoot;        /* Root page of the open btree cursor */
   i16 nField;           /* Number of fields in the header */
   u16 nHdrParsed;       /* Number of header fields parsed so far */
@@ -161,6 +161,7 @@ struct VdbeFrame {
   VdbeCursor **apCsr;     /* Array of Vdbe cursors for parent frame */
   void *token;            /* Copy of SubProgram.token */
   i64 lastRowid;          /* Last insert rowid (sqlite3.lastRowid) */
+  AuxData *pAuxData;      /* Linked list of auxdata allocations */
   int nCursor;            /* Number of entries in apCsr */
   int pc;                 /* Program Counter in parent (calling) frame */
   int nOp;                /* Size of aOp array */
@@ -380,16 +381,16 @@ struct Vdbe {
 #endif
   u16 nResColumn;         /* Number of columns in one row of the result set */
   u8 errorAction;         /* Recovery action to do in case of an error */
+  bft expired:1;          /* True if the VM needs to be recompiled */
+  bft doingRerun:1;       /* True if rerunning after an auto-reprepare */
   u8 minWriteFileFormat;  /* Minimum file format for writable database files */
   bft explain:2;          /* True if EXPLAIN present on SQL command */
   bft changeCntOn:1;      /* True to update the change-counter */
-  bft expired:1;          /* True if the VM needs to be recompiled */
   bft runOnlyOnce:1;      /* Automatically expire on reset */
   bft usesStmtJournal:1;  /* True if uses a statement journal */
   bft readOnly:1;         /* True for statements that do not write */
   bft bIsReader:1;        /* True for statements that read */
   bft isPrepareV2:1;      /* True if prepared with prepare_v2() */
-  bft doingRerun:1;       /* True if rerunning after an auto-reprepare */
   int nChange;            /* Number of db changes made since last reset */
   yDbMask btreeMask;      /* Bitmask of db->aDb[] entries referenced */
   yDbMask lockMask;       /* Subset of btreeMask that requires a lock */
@@ -443,7 +444,7 @@ u8 sqlite3VdbeOneByteSerialTypeLen(u8);
 u32 sqlite3VdbeSerialType(Mem*, int, u32*);
 u32 sqlite3VdbeSerialPut(unsigned char*, Mem*, u32);
 u32 sqlite3VdbeSerialGet(const unsigned char*, u32, Mem*);
-void sqlite3VdbeDeleteAuxData(Vdbe*, int, int);
+void sqlite3VdbeDeleteAuxData(sqlite3*, AuxData**, int, int);
 
 int sqlite2BtreeKeyCompare(BtCursor *, const void *, int, int, int *);
 int sqlite3VdbeIdxKeyCompare(sqlite3*,VdbeCursor*,UnpackedRecord*,int*);

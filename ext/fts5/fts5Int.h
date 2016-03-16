@@ -172,6 +172,7 @@ struct Fts5Config {
   int pgsz;                       /* Approximate page size used in %_data */
   int nAutomerge;                 /* 'automerge' setting */
   int nCrisisMerge;               /* Maximum allowed segments per level */
+  int nUsermerge;                 /* 'usermerge' setting */
   int nHashSize;                  /* Bytes of memory for in-memory hash */
   char *zRank;                    /* Name of rank function */
   char *zRankArgs;                /* Arguments to rank function */
@@ -698,6 +699,12 @@ Fts5ExprNode *sqlite3Fts5ParseNode(
   Fts5ExprNode *pLeft,
   Fts5ExprNode *pRight,
   Fts5ExprNearset *pNear
+);
+
+Fts5ExprNode *sqlite3Fts5ParseImplicitAnd(
+  Fts5Parse *pParse,
+  Fts5ExprNode *pLeft,
+  Fts5ExprNode *pRight
 );
 
 Fts5ExprPhrase *sqlite3Fts5ParseTerm(

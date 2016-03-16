@@ -62,7 +62,7 @@ do_all_bc_test {
 
     do_test 1.7 { sql2 { 
       SELECT level, count(*) FROM t2_segdir GROUP BY level ORDER BY 1
-    } } [list  0 1  2 18  3 5]
+    } } {2 15 3 5}
 
     # Using the old connection, insert many rows. 
     do_test 1.8 {
@@ -73,7 +73,7 @@ do_all_bc_test {
 
     do_test 1.9 { sql2 { 
       SELECT level, count(*) FROM t2_segdir GROUP BY level ORDER BY 1
-    } } [list  0 13  1 13  2 5  3 6]
+    } } [list  0 12  1 13  2 4  3 6]
 
     # Run a big incr-merge operation on the db.
     do_test 1.10 { sql1 { INSERT INTO t2(t2) VALUES('merge=2000,2') } } {}
@@ -97,7 +97,7 @@ do_all_bc_test {
 
     do_test 1.15 { sql2 { 
       SELECT level, count(*) FROM t2_segdir GROUP BY level ORDER BY 1
-    } } {6 1}
+    } } {4 1}
   }
 }
 

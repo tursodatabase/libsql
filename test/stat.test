@@ -21,6 +21,10 @@ ifcapable !vtab||!compound {
   return
 }
 
+# This module uses hard-coded results that depend on exact measurements of
+# pages sizes at the byte level, and hence will not work if the reserved_bytes
+# value is nonzero.
+if {[nonzero_reserved_bytes]} {finish_test; return;}
 
 set ::asc 1
 proc a_string {n} { string range [string repeat [incr ::asc]. $n] 1 $n }

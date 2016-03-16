@@ -40,6 +40,7 @@ set extras {
   EXCLUSIVE
   CONCURRENT
   ASTERISK
+  SPAN
   SPACE
   ILLEGAL
 }

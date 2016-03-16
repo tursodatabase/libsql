@@ -471,7 +471,7 @@ void sqlite3_result_error_toobig(sqlite3_context *pCtx){
 void sqlite3_result_error_nomem(sqlite3_context *pCtx){
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
   sqlite3VdbeMemSetNull(pCtx->pOut);
-  pCtx->isError = SQLITE_NOMEM;
+  pCtx->isError = SQLITE_NOMEM_BKPT;
   pCtx->fErrorOrAux = 1;
   sqlite3OomFault(pCtx->pOut->db);
 }
@@ -547,7 +547,7 @@ static int sqlite3Step(Vdbe *p){
   db = p->db;
   if( db->mallocFailed ){
     p->rc = SQLITE_NOMEM;
-    return SQLITE_NOMEM;
+    return SQLITE_NOMEM_BKPT;
   }
 
   if( p->pc<=0 && p->expired ){
@@ -610,7 +610,7 @@ static int sqlite3Step(Vdbe *p){
 
   db->errCode = rc;
   if( SQLITE_NOMEM==sqlite3ApiExit(p->db, p->rc) ){
-    p->rc = SQLITE_NOMEM;
+    p->rc = SQLITE_NOMEM_BKPT;
   }
 end_of_step:
   /* At this point local variable rc holds the value that should be 
@@ -677,7 +677,7 @@ int sqlite3_step(sqlite3_stmt *pStmt){
       v->rc = rc2;
     } else {
       v->zErrMsg = 0;
-      v->rc = rc = SQLITE_NOMEM;
+      v->rc = rc = SQLITE_NOMEM_BKPT;
     }
   }
   rc = sqlite3ApiExit(db, rc);
@@ -1301,6 +1301,9 @@ int sqlite3_bind_blob(
   int nData, 
   void (*xDel)(void*)
 ){
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( nData<0 ) return SQLITE_MISUSE_BKPT;
+#endif
   return bindText(pStmt, i, zData, nData, xDel, 0);
 }
 int sqlite3_bind_blob64(

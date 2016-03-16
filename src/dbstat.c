@@ -162,7 +162,7 @@ static int statConnect(
   rc = sqlite3_declare_vtab(db, VTAB_SCHEMA);
   if( rc==SQLITE_OK ){
     pTab = (StatTable *)sqlite3_malloc64(sizeof(StatTable));
-    if( pTab==0 ) rc = SQLITE_NOMEM;
+    if( pTab==0 ) rc = SQLITE_NOMEM_BKPT;
   }
 
   assert( rc==SQLITE_OK || pTab==0 );
@@ -243,7 +243,7 @@ static int statOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
 
   pCsr = (StatCursor *)sqlite3_malloc64(sizeof(StatCursor));
   if( pCsr==0 ){
-    return SQLITE_NOMEM;
+    return SQLITE_NOMEM_BKPT;
   }else{
     memset(pCsr, 0, sizeof(StatCursor));
     pCsr->base.pVtab = pVTab;
@@ -349,7 +349,7 @@ static int statDecodePage(Btree *pBt, StatPage *p){
     nUsable = szPage - sqlite3BtreeGetReserveNoMutex(pBt);
     sqlite3BtreeLeave(pBt);
     p->aCell = sqlite3_malloc64((p->nCell+1) * sizeof(StatCell));
-    if( p->aCell==0 ) return SQLITE_NOMEM;
+    if( p->aCell==0 ) return SQLITE_NOMEM_BKPT;
     memset(p->aCell, 0, (p->nCell+1) * sizeof(StatCell));
 
     for(i=0; i<p->nCell; i++){
@@ -382,7 +382,7 @@ static int statDecodePage(Btree *pBt, StatPage *p){
           pCell->nLastOvfl = (nPayload-nLocal) - (nOvfl-1) * (nUsable-4);
           pCell->nOvfl = nOvfl;
           pCell->aOvfl = sqlite3_malloc64(sizeof(u32)*nOvfl);
-          if( pCell->aOvfl==0 ) return SQLITE_NOMEM;
+          if( pCell->aOvfl==0 ) return SQLITE_NOMEM_BKPT;
           pCell->aOvfl[0] = sqlite3Get4byte(&aData[iOff+nLocal]);
           for(j=1; j<nOvfl; j++){
             int rc;
@@ -461,7 +461,7 @@ statNextRestart:
       pCsr->aPage[0].iCell = 0;
       pCsr->aPage[0].zPath = z = sqlite3_mprintf("/");
       pCsr->iPage = 0;
-      if( z==0 ) rc = SQLITE_NOMEM;
+      if( z==0 ) rc = SQLITE_NOMEM_BKPT;
     }else{
       pCsr->isEof = 1;
       return sqlite3_reset(pCsr->pStmt);
@@ -496,7 +496,7 @@ statNextRestart:
         }
         pCell->iOvfl++;
         statSizeAndOffset(pCsr);
-        return z==0 ? SQLITE_NOMEM : SQLITE_OK;
+        return z==0 ? SQLITE_NOMEM_BKPT : SQLITE_OK;
       }
       if( p->iRightChildPg ) break;
       p->iCell++;
@@ -520,7 +520,7 @@ statNextRestart:
     p[1].iCell = 0;
     p[1].zPath = z = sqlite3_mprintf("%s%.3x/", p->zPath, p->iCell);
     p->iCell++;
-    if( z==0 ) rc = SQLITE_NOMEM;
+    if( z==0 ) rc = SQLITE_NOMEM_BKPT;
   }
 
 
@@ -554,7 +554,7 @@ statNextRestart:
       pCsr->nUnused = p->nUnused;
       pCsr->nMxPayload = p->nMxPayload;
       pCsr->zPath = z = sqlite3_mprintf("%s", p->zPath);
-      if( z==0 ) rc = SQLITE_NOMEM;
+      if( z==0 ) rc = SQLITE_NOMEM_BKPT;
       nPayload = 0;
       for(i=0; i<p->nCell; i++){
         nPayload += p->aCell[i].nLocal;
@@ -588,7 +588,7 @@ static int statFilter(
     if( pCsr->iDb<0 ){
       sqlite3_free(pCursor->pVtab->zErrMsg);
       pCursor->pVtab->zErrMsg = sqlite3_mprintf("no such schema: %s", zDbase);
-      return pCursor->pVtab->zErrMsg ? SQLITE_ERROR : SQLITE_NOMEM;
+      return pCursor->pVtab->zErrMsg ? SQLITE_ERROR : SQLITE_NOMEM_BKPT;
     }
   }else{
     pCsr->iDb = pTab->iDb;
@@ -604,7 +604,7 @@ static int statFilter(
       "  FROM \"%w\".%s WHERE rootpage!=0"
       "  ORDER BY name", pTab->db->aDb[pCsr->iDb].zName, zMaster);
   if( zSql==0 ){
-    return SQLITE_NOMEM;
+    return SQLITE_NOMEM_BKPT;
   }else{
     rc = sqlite3_prepare_v2(pTab->db, zSql, -1, &pCsr->pStmt, 0);
     sqlite3_free(zSql);

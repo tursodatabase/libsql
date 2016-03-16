@@ -161,8 +161,9 @@ such as ``identifier'' or ``number'' and the third argument will
 be the name of the identifier or the value of the number.</p>
 
 <p>The Parse() function may have either three or four arguments,
-depending on the grammar.  If the grammar specification file request
-it, the Parse() function will have a fourth parameter that can be
+depending on the grammar.  If the grammar specification file requests
+it (via the <a href='#extraarg'><tt>extra_argument</tt> directive</a>),
+the Parse() function will have a fourth parameter that can be
 of any type chosen by the programmer.  The parser doesn't do anything
 with this argument except to pass it through to action routines.
 This is a convenient mechanism for passing state information down
@@ -262,6 +263,12 @@ These differences may cause some initial confusion for programmers
 with prior yacc and bison experience.
 But after years of experience using Lemon, I firmly
 believe that the Lemon way of doing things is better.</p>
+
+<p><i>Updated as of 2016-02-16:</i>
+The text above was written in the 1990s.
+We are told that Bison has lately been enhanced to support the
+tokenizer-calls-parser paradigm used by Lemon, and to obviate the
+need for global variables.</p>
 
 <h2>Input File Syntax</h2>
 
@@ -617,6 +624,7 @@ build a parser using Lemon that can be used within a long-running
 program, such as a GUI, that will not leak memory or other resources.
 To do the same using yacc or bison is much more difficult.</p>
 
+<a name="extraarg"></a>
 <h4>The <tt>%extra_argument</tt> directive</h4>
 
 The %extra_argument directive instructs Lemon to add a 4th parameter

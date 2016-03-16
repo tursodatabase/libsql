@@ -2574,7 +2574,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   ** Change the encryption key on the currently open database.
   */
   case DB_REKEY: {
-#ifdef SQLITE_HAS_CODEC
+#if defined(SQLITE_HAS_CODEC) && !defined(SQLITE_OMIT_CODEC_FROM_TCL)
     int nKey;
     void *pKey;
 #endif
@@ -2582,7 +2582,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       Tcl_WrongNumArgs(interp, 2, objv, "KEY");
       return TCL_ERROR;
     }
-#ifdef SQLITE_HAS_CODEC
+#if defined(SQLITE_HAS_CODEC) && !defined(SQLITE_OMIT_CODEC_FROM_TCL)
     pKey = Tcl_GetByteArrayFromObj(objv[2], &nKey);
     rc = sqlite3_rekey(pDb->db, pKey, nKey);
     if( rc ){
@@ -2955,7 +2955,7 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   const char *zVfs = 0;
   int flags;
   Tcl_DString translatedFilename;
-#ifdef SQLITE_HAS_CODEC
+#if defined(SQLITE_HAS_CODEC) && !defined(SQLITE_OMIT_CODEC_FROM_TCL)
   void *pKey = 0;
   int nKey = 0;
 #endif
@@ -2984,7 +2984,7 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       return TCL_OK;
     }
     if( strcmp(zArg,"-has-codec")==0 ){
-#ifdef SQLITE_HAS_CODEC
+#if defined(SQLITE_HAS_CODEC) && !defined(SQLITE_OMIT_CODEC_FROM_TCL)
       Tcl_AppendResult(interp,"1",(char*)0);
 #else
       Tcl_AppendResult(interp,"0",(char*)0);
@@ -2995,7 +2995,7 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   for(i=3; i+1<objc; i+=2){
     zArg = Tcl_GetString(objv[i]);
     if( strcmp(zArg,"-key")==0 ){
-#ifdef SQLITE_HAS_CODEC
+#if defined(SQLITE_HAS_CODEC) && !defined(SQLITE_OMIT_CODEC_FROM_TCL)
       pKey = Tcl_GetByteArrayFromObj(objv[i+1], &nKey);
 #endif
     }else if( strcmp(zArg, "-vfs")==0 ){
@@ -3053,7 +3053,7 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     Tcl_WrongNumArgs(interp, 1, objv, 
       "HANDLE FILENAME ?-vfs VFSNAME? ?-readonly BOOLEAN? ?-create BOOLEAN?"
       " ?-nomutex BOOLEAN? ?-fullmutex BOOLEAN? ?-uri BOOLEAN?"
-#ifdef SQLITE_HAS_CODEC
+#if defined(SQLITE_HAS_CODEC) && !defined(SQLITE_OMIT_CODEC_FROM_TCL)
       " ?-key CODECKEY?"
 #endif
     );
@@ -3079,7 +3079,7 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   }else{
     zErrMsg = sqlite3_mprintf("%s", sqlite3_errstr(rc));
   }
-#ifdef SQLITE_HAS_CODEC
+#if defined(SQLITE_HAS_CODEC) && !defined(SQLITE_OMIT_CODEC_FROM_TCL)
   if( p->db ){
     sqlite3_key(p->db, pKey, nKey);
   }
@@ -3774,6 +3774,7 @@ static void init_all(Tcl_Interp *interp){
     extern int SqlitetestSyscall_Init(Tcl_Interp*);
     extern int Fts5tcl_Init(Tcl_Interp *);
     extern int SqliteRbu_Init(Tcl_Interp*);
+    extern int Sqlitetesttcl_Init(Tcl_Interp*);
 #if defined(SQLITE_ENABLE_FTS3) || defined(SQLITE_ENABLE_FTS4)
     extern int Sqlitetestfts3_Init(Tcl_Interp *interp);
 #endif
@@ -3818,6 +3819,7 @@ static void init_all(Tcl_Interp *interp){
     SqlitetestSyscall_Init(interp);
     Fts5tcl_Init(interp);
     SqliteRbu_Init(interp);
+    Sqlitetesttcl_Init(interp);
 
 #if defined(SQLITE_ENABLE_FTS3) || defined(SQLITE_ENABLE_FTS4)
     Sqlitetestfts3_Init(interp);

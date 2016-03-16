@@ -45,7 +45,7 @@ proc do_merge1_test {testname nRowPerSeg} {
     WITH ii(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM ii WHERE i<$::nRowPerSeg)
       INSERT INTO x8 SELECT repeat('x y ', i % 16) FROM ii;
 
-    INSERT INTO x8(x8, rank) VALUES('automerge', 2);
+    INSERT INTO x8(x8, rank) VALUES('usermerge', 2);
   }
 
   for {set tn 1} {[lindex [fts5_level_segs x8] 0]>0} {incr tn} {
@@ -84,9 +84,9 @@ proc do_merge2_test {testname nRow} {
       execsql { INSERT INTO x8 VALUES( rnddoc(($i%16) + 5) ) }
       while {[not_merged x8]} {
         execsql {
-          INSERT INTO x8(x8, rank) VALUES('automerge', 2);
+          INSERT INTO x8(x8, rank) VALUES('usermerge', 2);
           INSERT INTO x8(x8, rank) VALUES('merge', 1);
-          INSERT INTO x8(x8, rank) VALUES('automerge', 16);
+          INSERT INTO x8(x8, rank) VALUES('usermerge', 16);
           INSERT INTO x8(x8) VALUES('integrity-check');
         }
       }
@@ -104,9 +104,9 @@ do_merge2_test 2.2   10
 do_merge2_test 2.3   20
 
 #-------------------------------------------------------------------------
-# Test that an auto-merge will complete any merge that has already been
+# Test that a merge will complete any merge that has already been
 # started, even if the number of input segments is less than the current
-# value of the 'automerge' configuration parameter.
+# value of the 'usermerge' configuration parameter.
 #
 db func rnddoc fts5_rnddoc
 
@@ -119,7 +119,7 @@ do_execsql_test 3.1 {
 }
 do_test 3.2 {
   execsql {
-    INSERT INTO x8(x8, rank) VALUES('automerge', 4);
+    INSERT INTO x8(x8, rank) VALUES('usermerge', 4);
     INSERT INTO x8(x8, rank) VALUES('merge', 1);
   }
   fts5_level_segs x8
@@ -127,14 +127,14 @@ do_test 3.2 {
 
 do_test 3.3 {
   execsql {
-    INSERT INTO x8(x8, rank) VALUES('automerge', 2);
+    INSERT INTO x8(x8, rank) VALUES('usermerge', 2);
     INSERT INTO x8(x8, rank) VALUES('merge', 1);
   }
   fts5_level_segs x8
 } {2 1}
 
 do_test 3.4 {
-  execsql { INSERT INTO x8(x8, rank) VALUES('automerge', 4) }
+  execsql { INSERT INTO x8(x8, rank) VALUES('usermerge', 4) }
   while {[not_merged x8]} {
     execsql { INSERT INTO x8(x8, rank) VALUES('merge', 1) }
   }
@@ -176,7 +176,7 @@ foreach {tn pgsz} {
       INSERT INTO x8 SELECT mydoc() FROM ii;
     WITH ii(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM ii WHERE i<100)
       INSERT INTO x8 SELECT mydoc() FROM ii;
-    INSERT INTO x8(x8, rank) VALUES('automerge', 2);
+    INSERT INTO x8(x8, rank) VALUES('usermerge', 2);
   }
 
   set expect [mycount]
@@ -189,6 +189,56 @@ foreach {tn pgsz} {
     }
 #  db eval {SELECT fts5_decode(rowid, block) AS r FROM x8_data} { puts $r }
 }
+
+#-------------------------------------------------------------------------
+# Test that the 'merge' command does not modify the database if there is
+# no work to do. 
+
+do_execsql_test 5.1 {
+  CREATE VIRTUAL TABLE x9 USING fts5(one, two);
+  INSERT INTO x9(x9, rank) VALUES('pgsz', 32);
+  INSERT INTO x9(x9, rank) VALUES('automerge', 2);
+  INSERT INTO x9(x9, rank) VALUES('usermerge', 2);
+  INSERT INTO x9 VALUES(rnddoc(100), rnddoc(100));
+  INSERT INTO x9 VALUES(rnddoc(100), rnddoc(100));
+  INSERT INTO x9 VALUES(rnddoc(100), rnddoc(100));
+  INSERT INTO x9 VALUES(rnddoc(100), rnddoc(100));
+  INSERT INTO x9 VALUES(rnddoc(100), rnddoc(100));
+  INSERT INTO x9 VALUES(rnddoc(100), rnddoc(100));
+  INSERT INTO x9 VALUES(rnddoc(100), rnddoc(100));
+  INSERT INTO x9 VALUES(rnddoc(100), rnddoc(100));
+}
+
+do_test 5.2 {
+  while 1 {
+    set nChange [db total_changes]
+    execsql { INSERT INTO x9(x9, rank) VALUES('merge', 1); }
+    set nChange [expr [db total_changes] - $nChange]
+    #puts $nChange
+    if {$nChange<2} break
+  }
+} {}
+
+
+#--------------------------------------------------------------------------
+# Test that running 'merge' on an empty database does not cause a 
+# problem.
+#
+reset_db
+do_execsql_test 6.0 {
+  CREATE VIRTUAL TABLE g1 USING fts5(a, b);
+}
+do_execsql_test 6.1 {
+  INSERT INTO g1(g1, rank) VALUES('merge', 10);
+}
+do_execsql_test 6.2 {
+  INSERT INTO g1(g1, rank) VALUES('merge', -10);
+}
+do_execsql_test 6.3 {
+  INSERT INTO g1(g1) VALUES('integrity-check');
+}
+
+
 
 finish_test
 

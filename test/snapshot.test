@@ -334,6 +334,26 @@ do_test 6.3 {
   sqlite3_snapshot_open db2 main $::snapshot
   db2 eval { SELECT * FROM x1 }
 } {z zz zzz}
+do_test 6.4 {
+  db2 close
+  sqlite3 db2 test.db 
+  db2 eval "PRAGMA application_id"
+  db2 eval "BEGIN"
+  sqlite3_snapshot_open db2 main $::snapshot
+  db2 eval { SELECT * FROM x1 }
+} {z zz zzz}
+
+# EVIDENCE-OF: R-55491-50411 A snapshot will fail to open if the
+# database connection D has not previously completed at least one read
+# operation against the database file.
+#
+do_test 6.5 {
+  db2 close
+  sqlite3 db2 test.db 
+  db2 eval "BEGIN"
+  list [catch {sqlite3_snapshot_open db2 main $::snapshot} msg] $msg
+} {1 SQLITE_ERROR}
+
 sqlite3_snapshot_free $snapshot
 
 finish_test

@@ -1167,6 +1167,45 @@ void testset_debug1(void){
   }
 }
 
+#ifdef __linux__
+#include <sys/types.h>
+#include <unistd.h>
+
+/*
+** Attempt to display I/O stats on Linux using /proc/PID/io
+*/
+static void displayLinuxIoStats(FILE *out){
+  FILE *in;
+  char z[200];
+  sqlite3_snprintf(sizeof(z), z, "/proc/%d/io", getpid());
+  in = fopen(z, "rb");
+  if( in==0 ) return;
+  while( fgets(z, sizeof(z), in)!=0 ){
+    static const struct {
+      const char *zPattern;
+      const char *zDesc;
+    } aTrans[] = {
+      { "rchar: ",                  "Bytes received by read():" },
+      { "wchar: ",                  "Bytes sent to write():"    },
+      { "syscr: ",                  "Read() system calls:"      },
+      { "syscw: ",                  "Write() system calls:"     },
+      { "read_bytes: ",             "Bytes rcvd from storage:"  },
+      { "write_bytes: ",            "Bytes sent to storage:"    },
+      { "cancelled_write_bytes: ",  "Cancelled write bytes:"    },
+    };
+    int i;
+    for(i=0; i<sizeof(aTrans)/sizeof(aTrans[0]); i++){
+      int n = (int)strlen(aTrans[i].zPattern);
+      if( strncmp(aTrans[i].zPattern, z, n)==0 ){
+        fprintf(out, "-- %-28s %s", aTrans[i].zDesc, &z[n]);
+        break;
+      }
+    }
+  }
+  fclose(in);
+}   
+#endif
+
 int main(int argc, char **argv){
   int doAutovac = 0;            /* True for --autovacuum */
   int cacheSize = 0;            /* Desired cache size.  0 means default */
@@ -1195,6 +1234,9 @@ int main(int argc, char **argv){
   int iCur, iHi;                /* Stats values, current and "highwater" */
   int i;                        /* Loop counter */
   int rc;                       /* API return code */
+
+  /* Display the version of SQLite being tested */
+  printf("Speedtest1 for SQLite %s %.50s\n", sqlite3_libversion(), sqlite3_sourceid());
 
   /* Process command-line arguments */
   g.zWR = "";
@@ -1454,6 +1496,12 @@ int main(int argc, char **argv){
     printf("-- Largest Pcache Allocation:   %d bytes\n",iHi);
     sqlite3_status(SQLITE_STATUS_SCRATCH_SIZE, &iCur, &iHi, 0);
     printf("-- Largest Scratch Allocation:  %d bytes\n", iHi);
+  }
+#endif
+
+#ifdef __linux__
+  if( showStats ){
+    displayLinuxIoStats(stdout);
   }
 #endif
 

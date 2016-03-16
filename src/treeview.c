@@ -132,9 +132,10 @@ void sqlite3TreeViewSelect(TreeView *pView, const Select *p, u8 moreToFollow){
     sqlite3TreeViewPush(pView, 1);
   }
   do{
-    sqlite3TreeViewLine(pView, "SELECT%s%s (0x%p) selFlags=0x%x",
+    sqlite3TreeViewLine(pView, "SELECT%s%s (0x%p) selFlags=0x%x nSelectRow=%d",
       ((p->selFlags & SF_Distinct) ? " DISTINCT" : ""),
-      ((p->selFlags & SF_Aggregate) ? " agg_flag" : ""), p, p->selFlags
+      ((p->selFlags & SF_Aggregate) ? " agg_flag" : ""), p, p->selFlags,
+      (int)p->nSelectRow
     );
     if( cnt++ ) sqlite3TreeViewPop(pView);
     if( p->pPrior ){
@@ -337,6 +338,12 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
     case TK_NOT:     zUniOp = "NOT";    break;
     case TK_ISNULL:  zUniOp = "ISNULL"; break;
     case TK_NOTNULL: zUniOp = "NOTNULL"; break;
+
+    case TK_SPAN: {
+      sqlite3TreeViewLine(pView, "SPAN %Q", pExpr->u.zToken);
+      sqlite3TreeViewExpr(pView, pExpr->pLeft, 0);
+      break;
+    }
 
     case TK_COLLATE: {
       sqlite3TreeViewLine(pView, "COLLATE %Q", pExpr->u.zToken);
