@@ -2240,6 +2240,9 @@ int sqlite3_extended_errcode(sqlite3 *db){
   }
   return db->errCode;
 }
+int sqlite3_system_errno(sqlite3 *db){
+  return db ? db->iSysErrno : 0;
+}  
 
 /*
 ** Return a string that describes the kind of error specified in the
@@ -2865,6 +2868,7 @@ static int openDatabase(
     if( rc==SQLITE_IOERR_NOMEM ){
       rc = SQLITE_NOMEM_BKPT;
     }
+    sqlite3SystemError(db, rc);
     sqlite3Error(db, rc);
     goto opendb_out;
   }

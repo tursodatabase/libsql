@@ -127,6 +127,18 @@ void sqlite3Error(sqlite3 *db, int err_code){
 }
 
 /*
+** Load the sqlite3.iSysErrno field if that is an appropriate thing
+** to do based on the SQLite error code in rc.
+*/
+void sqlite3SystemError(sqlite3 *db, int rc){
+  if( rc==SQLITE_IOERR_NOMEM ) return;
+  rc &= 0xff;
+  if( rc==SQLITE_CANTOPEN || rc==SQLITE_IOERR ){
+    db->iSysErrno = sqlite3OsGetLastError(db->pVfs);
+  }
+}
+
+/*
 ** Set the most recent error code and error string for the sqlite
 ** handle "db". The error code is set to "err_code".
 **

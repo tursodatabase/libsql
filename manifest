@@ -1,5 +1,5 @@
-C The\sprepared\sstatements\sfor\ssome\spragmas\scan\snow\sbe\sreused\swithout\sinvoking\nan\sautomatic\sreprepare.
-D 2016-03-16T21:29:54.761
+C Experimental\simplementation\sof\sthe\ssqlite3_system_errno()\sinterface.
+D 2016-03-17T16:01:23.259
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -314,8 +314,8 @@ F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
 F src/insert.c 723d5d708cdb61bdd47c00b9f07c75be45aefc09
 F src/legacy.c 75d3023be8f0d2b99d60f905090341a03358c58e
-F src/loadext.c 9e2a41adcaff16ebc1ebff1f336cbf33de55396f
-F src/main.c 29ea8ebb23ceb5159da167e18d5c807fbb1545c4
+F src/loadext.c e70f8f9e97624a232870ea5486e682c813ac3002
+F src/main.c 74591e0405e5e71b276105ac5f8d419dd54e6495
 F src/malloc.c 1443d1ad95d67c21d77af7ae3f44678252f0efec
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 6919bcf12f221868ea066eec27e579fed95ce98b
@@ -330,11 +330,11 @@ F src/mutex_noop.c 9d4309c075ba9cc7249e19412d3d62f7f94839c4
 F src/mutex_unix.c 27bb6cc49485ee46711a6580ab7b3f1402211d23
 F src/mutex_w32.c 5e6fe1c298fb5a8a15aaed4161d5759311431c17
 F src/notify.c 9711a7575036f0d3040ba61bc6e217f13a9888e7
-F src/os.c f89e3ca1c2e3d5015b847aec60371c474acbac82
-F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
+F src/os.c ca10edb445ad2c5fdc7285b49d72bcdf261fa23e
+F src/os.h 91ff889115ecd01f436d3611f7f5ea4dc12d92f1
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c 4bde11921a2bebcf2167efc8540ddabc814189dc
+F src/os_unix.c 50103f69121bca969761b821e2b0e393b55fe869
 F src/os_win.c cbf8c442a0d818d05bcf40b093cb3ebad435b9be
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 38718a019ca762ba4f6795425d5a54db70d1790d
@@ -352,10 +352,10 @@ F src/resolve.c b8f7174e5f8c33c44ded3a25a973d0bb89228c20
 F src/rowset.c 9fe4b3ad7cc00944386bb600233d8f523de07a6e
 F src/select.c 6dd2097bb158efe3b8d68683dcc3b4a49e907a34
 F src/shell.c 5e0ab1e708dc294330ccd8230536e1801f60822e
-F src/sqlite.h.in 0235586b3fb639e85998d495c90f007657fd82af
+F src/sqlite.h.in e877f141b15ef68ef28f84714e69d7234f9a071e
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
-F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
-F src/sqliteInt.h 84c673f27b77dfbd367cb3ed1de8b6f3b73102dc
+F src/sqlite3ext.h 98f72cbfe00169c39089115427d06ea05fe4b4a2
+F src/sqliteInt.h 5256653cc049ad48e03189abe106cb45f5eaf2c8
 F src/sqliteLimit.h 7b28cf72cbd52f178bfc97ea266445e351f2cd24
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
@@ -414,7 +414,7 @@ F src/treeview.c e4b41a37530a191579d3c53142cc44ee2eb99373
 F src/trigger.c e14840ee0c3e549e758ec9bf3e4146e166002280
 F src/update.c 56b3db7edff0110360a12b76af97c39ebe3ea8b8
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
-F src/util.c 34ef7be420f82415ec48131404995ddb6ee7502f
+F src/util.c c3fc5193e6f039fa61afbcc0db87d5a5d563a18a
 F src/vacuum.c feb1eabb20987983d9350cad98299b21fa811f52
 F src/vdbe.c 8cf45bb8da77d39f55d108e759d15a57acd0255c
 F src/vdbe.h 6f44193e7be52fd5f7c308175a936555b1e6b101
@@ -1456,8 +1456,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 10a3e2a01db9f80452a2a3369fd25b6fd9798274 db1ce7e13e656fcd2766f1b1f225cbfefe8f73ad
-R 2716c51dfa2bfe8ed5e18127e51ae3c8
-T +closed db1ce7e13e656fcd2766f1b1f225cbfefe8f73ad
+P 97b0e88cc7c3d677217d0bfab4cb4a34a4abb238
+R 2fd7ee41c15d4ef6398866450bc883db
+T *branch * sqlite_system_errno
+T *sym-sqlite_system_errno *
+T -sym-trunk *
 U drh
-Z e3b23194e47816995dbce6c752704ef0
+Z 77c764a9e283f7fe52499f77098482f4
