@@ -1,5 +1,5 @@
-C Experimental\simplementation\sof\sthe\ssqlite3_system_errno()\sinterface.
-D 2016-03-17T16:01:23.259
+C Simple\stest\scases\sfor\ssqlite3_system_errno()
+D 2016-03-17T17:23:11.511
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -360,7 +360,7 @@ F src/sqliteLimit.h 7b28cf72cbd52f178bfc97ea266445e351f2cd24
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
 F src/tclsqlite.c 4bf3bea9b03aeac176ac114700f35f76a1de4c8a
-F src/test1.c 52965bd684ddcd7f22328ebd7d50fd0b6e51f0d4
+F src/test1.c 289e7dab5b1aec4f4d44f2cc84972c97458d739f
 F src/test2.c 5586f43fcd9a1be0830793cf9d354082c261b25b
 F src/test3.c a8887dabbbee3059af338f20d290084a63ed1b0f
 F src/test4.c d168f83cc78d02e8d35567bb5630e40dcd85ac1e
@@ -520,7 +520,7 @@ F test/busy.test 76b4887f8b9160ba903c1ac22e8ff406ad6ae2f0
 F test/cache.test 13bc046b26210471ca6f2889aceb1ea52dc717de
 F test/cacheflush.test af25bb1509df04c1da10e38d8f322d66eceedf61
 F test/capi2.test 011c16da245fdc0106a2785035de6b242c05e738
-F test/capi3.test bf6f0308bbbba1e770dac13aa08e5c2ac61c7324
+F test/capi3.test 84ab8993016cd7edfe91af58a04def17075ec9b9
 F test/capi3b.test efb2b9cfd127efa84433cd7a2d72ce0454ae0dc4
 F test/capi3c.test 06f6261f9e9b4ef6f76afcd9900f3665408af1c8
 F test/capi3d.test 485048dc5cd07bc68011e4917ad035ad6047ab82
@@ -1456,10 +1456,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 97b0e88cc7c3d677217d0bfab4cb4a34a4abb238
-R 2fd7ee41c15d4ef6398866450bc883db
-T *branch * sqlite_system_errno
-T *sym-sqlite_system_errno *
-T -sym-trunk *
+P 6782c87b3722fbd09684a5b1e5df05247956f1c6
+R b7a0980686d8da4da394952a90c389a3
 U drh
-Z 77c764a9e283f7fe52499f77098482f4
+Z 861529470b9b3fd5330fda28dd73536f

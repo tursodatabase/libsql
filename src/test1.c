@@ -4848,6 +4848,29 @@ static int test_db_cacheflush(
 }
 
 /*
+** Usage:  sqlite3_system_errno DB
+**
+** Return the low-level system errno value.
+*/
+static int test_system_errno(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3 *db;
+  int iErrno;
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB");
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  iErrno = sqlite3_system_errno(db);
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(iErrno));
+  return TCL_OK;
+}
+
+/*
 ** Usage:  sqlite3_db_filename DB DBNAME
 **
 ** Return the name of a file associated with a database.
@@ -7084,6 +7107,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_release_memory",        test_release_memory,     0},
      { "sqlite3_db_release_memory",     test_db_release_memory,  0},
      { "sqlite3_db_cacheflush",         test_db_cacheflush,      0},
+     { "sqlite3_system_errno",          test_system_errno,       0},
      { "sqlite3_db_filename",           test_db_filename,        0},
      { "sqlite3_db_readonly",           test_db_readonly,        0},
      { "sqlite3_soft_heap_limit",       test_soft_heap_limit,    0},
