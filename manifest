@@ -1,5 +1,5 @@
-C The\sprepared\sstatements\sfor\ssome\spragmas\scan\snow\sbe\sreused\swithout\sinvoking\nan\sautomatic\sreprepare.
-D 2016-03-16T21:29:54.761
+C An\salternative\smethod\sof\sencoding\sthe\swildcard\sin\s"SELECT\s*".\s\sThis\sis\san\nexperiment.
+D 2016-03-17T18:41:38.733
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -304,7 +304,7 @@ F src/ctime.c 60e135af364d777a9ab41c97e5e89cd224da6198
 F src/date.c 0b73e681c11fca867fec554750c07fe0d4e417c1
 F src/dbstat.c c845548d4346e606e2f2b7d2e714ace2b8a7dd1b
 F src/delete.c 48802aa3ee6339f576d074336d3ae1b5f40e240f
-F src/expr.c c329d581e5d631153456369684d7d4bcd94c907d
+F src/expr.c ee11e39874c8ea8f56eb86eb561b7b592c51605b
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 5cb42d9a59e2a590776fd3fc8ff6f61d40df3c6e
 F src/func.c 552d300265aed09eea21f68ac742a440550c0062
@@ -339,7 +339,7 @@ F src/os_win.c cbf8c442a0d818d05bcf40b093cb3ebad435b9be
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 38718a019ca762ba4f6795425d5a54db70d1790d
 F src/pager.h e1d38a2f14849e219df0f91f8323504d134c8a56
-F src/parse.y 5ea8c81c5c41b27887f41b4a7e1c58470d7d3821
+F src/parse.y fc4d11e4f57edc617d1eba062c2dd6604d63aed2
 F src/pcache.c 647bb53a86b7bbcf55ad88089b3ea5a9170b90df
 F src/pcache.h 4d0ccaad264d360981ec5e6a2b596d6e85242545
 F src/pcache1.c 72f644dc9e1468c72922eff5904048427b817051
@@ -350,12 +350,12 @@ F src/printf.c 63e6fb12bbe702dd664dc3703776c090383a5a26
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c b8f7174e5f8c33c44ded3a25a973d0bb89228c20
 F src/rowset.c 9fe4b3ad7cc00944386bb600233d8f523de07a6e
-F src/select.c 6dd2097bb158efe3b8d68683dcc3b4a49e907a34
+F src/select.c 41467e0c63d7282831c3ad829e01630da9576320
 F src/shell.c 5e0ab1e708dc294330ccd8230536e1801f60822e
 F src/sqlite.h.in 0235586b3fb639e85998d495c90f007657fd82af
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
-F src/sqliteInt.h 84c673f27b77dfbd367cb3ed1de8b6f3b73102dc
+F src/sqliteInt.h 8435a8b21e2d7c89a67a25b7a203afc27c5d42d7
 F src/sqliteLimit.h 7b28cf72cbd52f178bfc97ea266445e351f2cd24
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
@@ -1456,8 +1456,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 10a3e2a01db9f80452a2a3369fd25b6fd9798274 db1ce7e13e656fcd2766f1b1f225cbfefe8f73ad
-R 2716c51dfa2bfe8ed5e18127e51ae3c8
-T +closed db1ce7e13e656fcd2766f1b1f225cbfefe8f73ad
+P 97b0e88cc7c3d677217d0bfab4cb4a34a4abb238
+R 7cc43be281eed43b468d8c4ff2e01351
+T *branch * select-wildcard
+T *sym-select-wildcard *
+T -sym-trunk *
 U drh
-Z e3b23194e47816995dbce6c752704ef0
+Z 21f570cb00d593253e312795bb662288

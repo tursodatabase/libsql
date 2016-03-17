@@ -92,6 +92,16 @@ void sqlite3SelectDestInit(SelectDest *pDest, int eDest, int iParm){
   pDest->nSdst = 0;
 }
 
+/*
+** Return an expression list that represents the wildcard result set
+** of a SELECT.
+*/
+ExprList *sqlite3WildcardResultSet(Parse *pParse, ExprList *pPrior){
+  Expr *p = sqlite3Expr(pParse->db, TK_ASTERISK, 0);
+  if( p ) ExprSetProperty(p, EP_Wildcard);
+  return sqlite3ExprListAppend(pParse, pPrior, p);
+}
+
 
 /*
 ** Allocate a new Select structure and return a pointer to that
@@ -117,9 +127,7 @@ Select *sqlite3SelectNew(
     assert( db->mallocFailed );
     pNew = &standin;
   }
-  if( pEList==0 ){
-    pEList = sqlite3ExprListAppend(pParse, 0, sqlite3Expr(db,TK_ASTERISK,0));
-  }
+  if( pEList==0 ) pEList = sqlite3WildcardResultSet(pParse,0);
   pNew->pEList = pEList;
   pNew->op = TK_SELECT;
   pNew->selFlags = selFlags;
@@ -3952,7 +3960,7 @@ static int convertCompoundSelectToSubquery(Walker *pWalker, Select *p){
   if( pNewSrc==0 ) return WRC_Abort;
   *pNew = *p;
   p->pSrc = pNewSrc;
-  p->pEList = sqlite3ExprListAppend(pParse, 0, sqlite3Expr(db, TK_ASTERISK, 0));
+  p->pEList = sqlite3WildcardResultSet(pParse,0);
   p->op = TK_SELECT;
   p->pWhere = 0;
   pNew->pGroupBy = 0;
@@ -4310,18 +4318,8 @@ static int selectExpander(Walker *pWalker, Select *p){
   ** list.  The following code just has to locate the TK_ASTERISK
   ** expressions and expand each one to the list of all columns in
   ** all tables.
-  **
-  ** The first loop just checks to see if there are any "*" operators
-  ** that need expanding.
   */
-  for(k=0; k<pEList->nExpr; k++){
-    pE = pEList->a[k].pExpr;
-    if( pE->op==TK_ASTERISK ) break;
-    assert( pE->op!=TK_DOT || pE->pRight!=0 );
-    assert( pE->op!=TK_DOT || (pE->pLeft!=0 && pE->pLeft->op==TK_ID) );
-    if( pE->op==TK_DOT && pE->pRight->op==TK_ASTERISK ) break;
-  }
-  if( k<pEList->nExpr ){
+  if( sqlite3ExprListFlags(pEList) & EP_Wildcard ){
     /*
     ** If we get here it means the result set contains one or more "*"
     ** operators that need to be expanded.  Loop through each expression
@@ -4337,9 +4335,7 @@ static int selectExpander(Walker *pWalker, Select *p){
       pE = a[k].pExpr;
       pRight = pE->pRight;
       assert( pE->op!=TK_DOT || pRight!=0 );
-      if( pE->op!=TK_ASTERISK
-       && (pE->op!=TK_DOT || pRight->op!=TK_ASTERISK)
-      ){
+      if( !ExprHasProperty(pE, EP_Wildcard) ){
         /* This particular expression does not need to be expanded.
         */
         pNew = sqlite3ExprListAppend(pParse, pNew, a[k].pExpr);

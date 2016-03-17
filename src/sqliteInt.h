@@ -2257,6 +2257,7 @@ struct Expr {
 #define EP_CanBeNull 0x100000 /* Can be null despite NOT NULL constraint */
 #define EP_Subquery  0x200000 /* Tree contains a TK_SELECT operator */
 #define EP_Alias     0x400000 /* Is an alias for a result set column */
+#define EP_Wildcard  0x800000 /* The "*" or "TABLE.*" of a SELECT result */
 
 /*
 ** Combinations of two or more EP_* flags
@@ -3527,6 +3528,7 @@ Index *sqlite3AllocateIndexObject(sqlite3*,i16,int,char**);
 Index *sqlite3CreateIndex(Parse*,Token*,Token*,SrcList*,ExprList*,int,Token*,
                           Expr*, int, int);
 void sqlite3DropIndex(Parse*, SrcList*, int);
+ExprList *sqlite3WildcardResultSet(Parse*,ExprList*);
 int sqlite3Select(Parse*, Select*, SelectDest*);
 Select *sqlite3SelectNew(Parse*,ExprList*,SrcList*,Expr*,ExprList*,
                          Expr*,ExprList*,u32,Expr*,Expr*);

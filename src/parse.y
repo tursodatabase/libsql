@@ -550,13 +550,13 @@ selcollist(A) ::= sclp(A) expr(X) as(Y).     {
    sqlite3ExprListSetSpan(pParse,A,&X);
 }
 selcollist(A) ::= sclp(A) STAR. {
-  Expr *p = sqlite3Expr(pParse->db, TK_ASTERISK, 0);
-  A = sqlite3ExprListAppend(pParse, A, p);
+  A = sqlite3WildcardResultSet(pParse,A);
 }
 selcollist(A) ::= sclp(A) nm(X) DOT STAR(Y). {
   Expr *pRight = sqlite3PExpr(pParse, TK_ASTERISK, 0, 0, &Y);
   Expr *pLeft = sqlite3PExpr(pParse, TK_ID, 0, 0, &X);
   Expr *pDot = sqlite3PExpr(pParse, TK_DOT, pLeft, pRight, 0);
+  if( pDot ) ExprSetProperty(pDot, EP_Wildcard);
   A = sqlite3ExprListAppend(pParse,A, pDot);
 }
 
