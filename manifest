@@ -1,5 +1,5 @@
-C The\sprepared\sstatements\sfor\ssome\spragmas\scan\snow\sbe\sreused\swithout\sinvoking\nan\sautomatic\sreprepare.
-D 2016-03-16T21:29:54.761
+C A\smore\scompact\simplementation\sof\sthe\scode\sgenerator\sfor\sthe\nIS\sand\sIS\sNOT\soperators.
+D 2016-03-17T19:07:52.217
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -304,7 +304,7 @@ F src/ctime.c 60e135af364d777a9ab41c97e5e89cd224da6198
 F src/date.c 0b73e681c11fca867fec554750c07fe0d4e417c1
 F src/dbstat.c c845548d4346e606e2f2b7d2e714ace2b8a7dd1b
 F src/delete.c 48802aa3ee6339f576d074336d3ae1b5f40e240f
-F src/expr.c c329d581e5d631153456369684d7d4bcd94c907d
+F src/expr.c f8137b7d3d3f2a991f9622e41d170e0adf0abc71
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 5cb42d9a59e2a590776fd3fc8ff6f61d40df3c6e
 F src/func.c 552d300265aed09eea21f68ac742a440550c0062
@@ -1456,8 +1456,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 10a3e2a01db9f80452a2a3369fd25b6fd9798274 db1ce7e13e656fcd2766f1b1f225cbfefe8f73ad
-R 2716c51dfa2bfe8ed5e18127e51ae3c8
-T +closed db1ce7e13e656fcd2766f1b1f225cbfefe8f73ad
+P 97b0e88cc7c3d677217d0bfab4cb4a34a4abb238
+R 7d24921d4d6b93efccc35ce02f43234b
 U drh
-Z e3b23194e47816995dbce6c752704ef0
+Z d01f371f2a1444a2eb95b11e7cec5f5e
