@@ -1,5 +1,5 @@
-C The\sprepared\sstatements\sfor\ssome\spragmas\scan\snow\sbe\sreused\swithout\sinvoking\nan\sautomatic\sreprepare.
-D 2016-03-16T21:29:54.761
+C Add\san\sAPI\sto\sindicate\sthe\spercentage\sprogress\sof\san\srbu\supdate.
+D 2016-03-17T21:06:42.412
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -242,10 +242,11 @@ F ext/rbu/rbudiff.test 6cc806dc36389292f2a8f5842d0103721df4a07d
 F ext/rbu/rbufault.test cc0be8d5d392d98b0c2d6a51be377ea989250a89
 F ext/rbu/rbufault2.test 9a7f19edd6ea35c4c9f807d8a3db0a03a5670c06
 F ext/rbu/rbufts.test 828cd689da825f0a7b7c53ffc1f6f7fdb6fa5bda
+F ext/rbu/rbuprogress.test d63b70f838a20422dce6445bcaed10890e506d02
 F ext/rbu/rbusave.test 0f43b6686084f426ddd040b878426452fd2c2f48
-F ext/rbu/sqlite3rbu.c 5956f8bee63b5ab2b04e65c1801ea0f5920dac92
-F ext/rbu/sqlite3rbu.h 0bdeb3be211aaba7d85445fa36f4701a25a3dbde
-F ext/rbu/test_rbu.c 4a4cdcef4ef9379fc2a21f008805c80b27bcf573
+F ext/rbu/sqlite3rbu.c 9bcf35b2f1d8eaf1c82b47bead114b2289ea06c6
+F ext/rbu/sqlite3rbu.h f8ee94f95fc80a35b7cb7ef3f2f5ea740b662477
+F ext/rbu/test_rbu.c 5b6d31af188193d929234d1cd08ee967df092f66
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 0b870ccb7b58b734a2a8e1e2755a7c0ded070920
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
@@ -1456,8 +1457,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 10a3e2a01db9f80452a2a3369fd25b6fd9798274 db1ce7e13e656fcd2766f1b1f225cbfefe8f73ad
-R 2716c51dfa2bfe8ed5e18127e51ae3c8
-T +closed db1ce7e13e656fcd2766f1b1f225cbfefe8f73ad
-U drh
-Z e3b23194e47816995dbce6c752704ef0
+P 97b0e88cc7c3d677217d0bfab4cb4a34a4abb238
+R 9de86de419de6ede9128347e06885dfc
+T *branch * rbu-percent-progress
+T *sym-rbu-percent-progress *
+T -sym-trunk *
+U dan
+Z f4146c58d33c341586c7f6e824f90dbe

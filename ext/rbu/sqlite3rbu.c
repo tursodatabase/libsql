@@ -147,14 +147,15 @@
 ** RBU_STATE_OALSZ:
 **   Valid if STAGE==1. The size in bytes of the *-oal file.
 */
-#define RBU_STATE_STAGE       1
-#define RBU_STATE_TBL         2
-#define RBU_STATE_IDX         3
-#define RBU_STATE_ROW         4
-#define RBU_STATE_PROGRESS    5
-#define RBU_STATE_CKPT        6
-#define RBU_STATE_COOKIE      7
-#define RBU_STATE_OALSZ       8
+#define RBU_STATE_STAGE        1
+#define RBU_STATE_TBL          2
+#define RBU_STATE_IDX          3
+#define RBU_STATE_ROW          4
+#define RBU_STATE_PROGRESS     5
+#define RBU_STATE_CKPT         6
+#define RBU_STATE_COOKIE       7
+#define RBU_STATE_OALSZ        8
+#define RBU_STATE_PHASEONESTEP 9
 
 #define RBU_STAGE_OAL         1
 #define RBU_STAGE_MOVE        2
@@ -200,6 +201,7 @@ struct RbuState {
   i64 nProgress;
   u32 iCookie;
   i64 iOalSz;
+  i64 nPhaseOneStep;
 };
 
 struct RbuUpdateStmt {
@@ -244,6 +246,7 @@ struct RbuObjIter {
   int iTnum;                      /* Root page of current object */
   int iPkTnum;                    /* If eType==EXTERNAL, root of PK index */
   int bUnique;                    /* Current index is unique */
+  int nIndex;                     /* Number of aux. indexes on table zTbl */
 
   /* Statements created by rbuObjIterPrepareAll() */
   int nCol;                       /* Number of columns in current object */
@@ -314,6 +317,7 @@ struct sqlite3rbu {
   const char *zVfsName;           /* Name of automatically created rbu vfs */
   rbu_file *pTargetFd;            /* File handle open on target db */
   i64 iOalSz;
+  i64 nPhaseOneStep;
 
   /* The following state variables are used as part of the incremental
   ** checkpoint stage (eStage==RBU_STAGE_CKPT). See comments surrounding
@@ -1144,6 +1148,7 @@ static void rbuObjIterCacheIndexedCols(sqlite3rbu *p, RbuObjIter *pIter){
     );
   }
 
+  pIter->nIndex = 0;
   while( p->rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pList) ){
     const char *zIdx = (const char*)sqlite3_column_text(pList, 1);
     sqlite3_stmt *pXInfo = 0;
@@ -1157,6 +1162,7 @@ static void rbuObjIterCacheIndexedCols(sqlite3rbu *p, RbuObjIter *pIter){
     }
     rbuFinalize(p, pXInfo);
     bIndex = 1;
+    pIter->nIndex++;
   }
 
   rbuFinalize(p, pList);
@@ -1822,6 +1828,14 @@ static void rbuTmpInsertFunc(
   sqlite3rbu *p = sqlite3_user_data(pCtx);
   int rc = SQLITE_OK;
   int i;
+
+  assert( sqlite3_value_int(apVal[0])!=0
+      || p->objiter.eType==RBU_PK_EXTERNAL 
+      || p->objiter.eType==RBU_PK_NONE 
+  );
+  if( sqlite3_value_int(apVal[0])!=0 ){
+    p->nPhaseOneStep += p->objiter.nIndex;
+  }
 
   for(i=0; rc==SQLITE_OK && i<nVal; i++){
     rc = sqlite3_bind_value(p->objiter.pTmpInsert, i+1, apVal[i]);
@@ -2567,6 +2581,17 @@ static void rbuStepOneOp(sqlite3rbu *p, int eType){
 
   assert( p->rc==SQLITE_OK );
   assert( eType!=RBU_DELETE || pIter->zIdx==0 );
+  assert( eType==RBU_DELETE || eType==RBU_IDX_DELETE
+       || eType==RBU_INSERT || eType==RBU_IDX_INSERT
+  );
+
+  /* If this is a delete, decrement nPhaseOneStep by nIndex. If the DELETE
+  ** statement below does actually delete a row, nPhaseOneStep will be
+  ** incremented by the same amount when SQL function rbu_tmp_insert()
+  ** is invoked by the trigger.  */
+  if( eType==RBU_DELETE ){
+    p->nPhaseOneStep -= p->objiter.nIndex;
+  }
 
   if( eType==RBU_IDX_DELETE || eType==RBU_DELETE ){
     pWriter = pIter->pDelete;
@@ -2642,7 +2667,10 @@ static int rbuStep(sqlite3rbu *p){
       rbuBadControlError(p);
     }
     else if( eType==RBU_REPLACE ){
-      if( pIter->zIdx==0 ) rbuStepOneOp(p, RBU_DELETE);
+      if( pIter->zIdx==0 ){
+        p->nPhaseOneStep += p->objiter.nIndex;
+        rbuStepOneOp(p, RBU_DELETE);
+      }
       if( p->rc==SQLITE_OK ) rbuStepOneOp(p, RBU_INSERT);
     }
     else if( eType!=RBU_UPDATE ){
@@ -2652,6 +2680,7 @@ static int rbuStep(sqlite3rbu *p){
       sqlite3_value *pVal;
       sqlite3_stmt *pUpdate = 0;
       assert( eType==RBU_UPDATE );
+      p->nPhaseOneStep -= p->objiter.nIndex;
       rbuGetUpdateStmt(p, pIter, zMask, &pUpdate);
       if( pUpdate ){
         int i;
@@ -2729,6 +2758,7 @@ static void rbuSaveState(sqlite3rbu *p, int eStage){
           "(%d, %d), "
           "(%d, %lld), "
           "(%d, %lld), "
+          "(%d, %lld), "
           "(%d, %lld) ",
           p->zStateDb,
           RBU_STATE_STAGE, eStage,
@@ -2738,7 +2768,8 @@ static void rbuSaveState(sqlite3rbu *p, int eStage){
           RBU_STATE_PROGRESS, p->nProgress,
           RBU_STATE_CKPT, p->iWalCksum,
           RBU_STATE_COOKIE, (i64)p->pTargetFd->iCookie,
-          RBU_STATE_OALSZ, p->iOalSz
+          RBU_STATE_OALSZ, p->iOalSz,
+          RBU_STATE_PHASEONESTEP, p->nPhaseOneStep
       )
     );
     assert( pInsert==0 || rc==SQLITE_OK );
@@ -2925,6 +2956,10 @@ static RbuState *rbuLoadState(sqlite3rbu *p){
         pRet->iOalSz = (u32)sqlite3_column_int64(pStmt, 1);
         break;
 
+      case RBU_STATE_PHASEONESTEP:
+        pRet->nPhaseOneStep = (u32)sqlite3_column_int64(pStmt, 1);
+        break;
+
       default:
         rc = SQLITE_CORRUPT;
         break;
@@ -3033,6 +3068,97 @@ static void rbuDeleteVfs(sqlite3rbu *p){
 }
 
 /*
+**
+*/
+static void rbuIndexCntFunc(
+  sqlite3_context *pCtx, 
+  int nVal,
+  sqlite3_value **apVal
+){
+  sqlite3rbu *p = (sqlite3rbu*)sqlite3_user_data(pCtx);
+  sqlite3_stmt *pStmt = 0;
+  char *zErrmsg = 0;
+  int rc;
+
+  assert( nVal==1 );
+  
+  rc = prepareFreeAndCollectError(p->dbMain, &pStmt, &zErrmsg, 
+      sqlite3_mprintf("PRAGMA index_list = %Q", sqlite3_value_text(apVal[0]))
+  );
+  if( rc!=SQLITE_OK ){
+    sqlite3_result_error(pCtx, zErrmsg, -1);
+  }else{
+    int nIndex = 0;
+    while( SQLITE_ROW==sqlite3_step(pStmt) ){
+      nIndex++;
+    }
+    rc = sqlite3_finalize(pStmt);
+    if( rc==SQLITE_OK ){
+      sqlite3_result_int(pCtx, nIndex);
+    }else{
+      sqlite3_result_error(pCtx, sqlite3_errmsg(p->dbMain), -1);
+    }
+  }
+
+  sqlite3_free(zErrmsg);
+}
+
+/*
+** If the RBU database contains the rbu_count table, use it to initialize
+** the sqlite3rbu.nPhaseOneStep variable. The schema of the rbu_count table
+** is assumed to contain the same columns as:
+**
+**   CREATE TABLE rbu_count(tbl TEXT PRIMARY KEY, cnt INTEGER) WITHOUT ROWID;
+**
+** There should be one row in the table for each data_xxx table in the
+** database. The 'tbl' column should contain the name of a data_xxx table,
+** and the cnt column the number of rows it contains.
+**
+** sqlite3rbu.nPhaseOneStep is initialized to the sum of (1 + nIndex) * cnt
+** for all rows in the rbu_count table, where nIndex is the number of 
+** indexes on the corresponding target database table.
+*/
+static void rbuInitPhaseOneSteps(sqlite3rbu *p){
+  if( p->rc==SQLITE_OK ){
+    sqlite3_stmt *pStmt = 0;
+    int bExists = 0;                /* True if rbu_count exists */
+
+    p->nPhaseOneStep = -1;
+
+    p->rc = sqlite3_create_function(p->dbRbu, 
+        "rbu_index_cnt", 1, SQLITE_UTF8, (void*)p, rbuIndexCntFunc, 0, 0
+    );
+  
+    /* Check for the rbu_count table. If it does not exist, or if an error
+    ** occurs, nPhaseOneStep will be left set to -1. */
+    if( p->rc==SQLITE_OK ){
+      p->rc = prepareAndCollectError(p->dbRbu, &pStmt, &p->zErrmsg,
+          "SELECT 1 FROM sqlite_master WHERE tbl_name = 'rbu_count'"
+      );
+    }
+    if( p->rc==SQLITE_OK ){
+      if( SQLITE_ROW==sqlite3_step(pStmt) ){
+        bExists = 1;
+      }
+      p->rc = sqlite3_finalize(pStmt);
+    }
+  
+    if( p->rc==SQLITE_OK && bExists ){
+      p->rc = prepareAndCollectError(p->dbRbu, &pStmt, &p->zErrmsg,
+          "SELECT sum(cnt * (1 + rbu_index_cnt(rbu_target_name(tbl))))"
+          "FROM rbu_count"
+      );
+      if( p->rc==SQLITE_OK ){
+        if( SQLITE_ROW==sqlite3_step(pStmt) ){
+          p->nPhaseOneStep = sqlite3_column_int64(pStmt, 0);
+        }
+        p->rc = sqlite3_finalize(pStmt);
+      }
+    }
+  }
+}
+
+/*
 ** Open and return a new RBU handle. 
 */
 sqlite3rbu *sqlite3rbu_open(
@@ -3077,6 +3203,7 @@ sqlite3rbu *sqlite3rbu_open(
 
         if( pState->eStage==0 ){ 
           rbuDeleteOalFile(p);
+          rbuInitPhaseOneSteps(p);
           p->eStage = RBU_STAGE_OAL;
         }else{
           p->eStage = pState->eStage;
@@ -3241,6 +3368,38 @@ int sqlite3rbu_close(sqlite3rbu *p, char **pzErrmsg){
 */
 sqlite3_int64 sqlite3rbu_progress(sqlite3rbu *pRbu){
   return pRbu->nProgress;
+}
+
+void sqlite3rbu_stage_progress(sqlite3rbu *p, int *pnOne, int *pnTwo){
+  const int MAX_PROGRESS = 10000;
+  switch( p->eStage ){
+    case RBU_STAGE_OAL:
+      if( p->nPhaseOneStep>0 ){
+        *pnOne = (int)(MAX_PROGRESS * (i64)p->nProgress/(i64)p->nPhaseOneStep);
+      }else{
+        *pnOne = -1;
+      }
+      *pnTwo = 0;
+      break;
+
+    case RBU_STAGE_MOVE:
+      *pnOne = MAX_PROGRESS;
+      *pnTwo = 0;
+      break;
+
+    case RBU_STAGE_CKPT:
+      *pnOne = MAX_PROGRESS;
+      *pnTwo = (int)(MAX_PROGRESS * (i64)p->nStep / (i64)p->nFrame);
+      break;
+
+    case RBU_STAGE_DONE:
+      *pnOne = MAX_PROGRESS;
+      *pnTwo = MAX_PROGRESS;
+      break;
+
+    default:
+      assert( 0 );
+  }
 }
 
 int sqlite3rbu_savestate(sqlite3rbu *p){

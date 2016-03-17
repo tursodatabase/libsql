@@ -1,0 +1,179 @@
+# 2016 March 18
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+source [file join [file dirname [info script]] rbu_common.tcl]
+set ::testprefix rbuprogress
+
+
+# Create a simple RBU database. That expects to write to a table:
+#
+#   CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+#
+proc create_rbu1 {filename} {
+  forcedelete $filename
+  sqlite3 rbu1 $filename  
+  rbu1 eval {
+    CREATE TABLE data_t1(a, b, c, rbu_control);
+    INSERT INTO data_t1 VALUES(1, 2, 3, 0);
+    INSERT INTO data_t1 VALUES(2, 'two', 'three', 0);
+    INSERT INTO data_t1 VALUES(3, NULL, 8.2, 0);
+
+    CREATE TABLE rbu_count(tbl, cnt);
+    INSERT INTO rbu_count VALUES('data_t1', 3);
+  }
+  rbu1 close
+  return $filename
+}
+
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+}
+
+do_test 1.1 {
+  create_rbu1 rbu.db
+  sqlite3rbu rbu test.db rbu.db
+  rbu stage_progress
+} {0 0}
+do_test 1.2 { rbu step ; rbu stage_progress } {3333 0}
+do_test 1.3 { rbu step ; rbu stage_progress } {6666 0}
+do_test 1.4 { rbu step ; rbu stage_progress } {10000 0}
+do_test 1.5 { rbu step ; rbu stage_progress } {10000 0}
+do_test 1.6 { rbu step ; rbu stage_progress } {10000 0}
+do_test 1.7 { rbu step ; rbu stage_progress } {10000 5000}
+do_test 1.8 { rbu step ; rbu stage_progress } {10000 10000}
+do_test 1.9 { rbu step ; rbu stage_progress } {10000 10000}
+
+do_test 1.10 {
+  rbu close
+} {SQLITE_DONE}
+
+#-------------------------------------------------------------------------
+
+proc do_sp_test {tn target rbu reslist} {
+  uplevel [list do_test $tn [subst -nocommands {
+    sqlite3rbu rbu $target $rbu
+    set res [list]
+    while 1 {
+      set rc [rbu step]
+      if {[set rc] != "SQLITE_OK"} { error "error 1" }
+      lappend res [lindex [rbu stage_progress] 0]
+      if {[lindex [set res] end]==10000} break
+    }
+    if {[set res] != [list $reslist]} {
+      error "reslist is incorrect (expect=$reslist got=[set res])"
+    }
+
+    # One step to clean up the temporary tables used to update the only
+    # target table in the rbu database. And one more to move the *-oal 
+    # file to *-wal.
+    rbu step
+    rbu step
+
+    # Do the checkpoint.
+    while {[rbu step]=="SQLITE_OK"} { }
+
+    rbu close
+  }] {SQLITE_DONE}]
+}
+
+proc create_db_file {filename sql} {
+  forcedelete $filename
+  sqlite3 tmpdb $filename  
+  tmpdb eval $sql
+  tmpdb close
+}
+
+reset_db
+do_test 2.1.0 {
+  execsql {
+    CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+  }
+  create_db_file rbu.db {
+    CREATE TABLE data_t1(a, b, c, rbu_control);
+    INSERT INTO data_t1 VALUES(4, 4, 4, 0);
+    INSERT INTO data_t1 VALUES(5, 5, 5, 0);
+
+    CREATE TABLE rbu_count(tbl, cnt);
+    INSERT INTO rbu_count VALUES('data_t1', 2);
+  }
+} {}
+do_sp_test 2.1.1 test.db rbu.db {5000 10000}
+
+reset_db
+do_test 2.2.0 {
+  execsql { CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c) }
+  create_rbu1 rbu.db
+} {rbu.db}
+do_sp_test 2.2.1 test.db rbu.db {3333 6666 10000}
+
+reset_db
+do_test 2.3.0 {
+  execsql { 
+    CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+    CREATE INDEX i1 ON t1(b);
+    INSERT INTO t1 VALUES(1, 1, 1);
+    INSERT INTO t1 VALUES(2, 2, 2);
+    INSERT INTO t1 VALUES(3, 3, 3);
+  }
+  create_db_file rbu.db {
+    CREATE TABLE data_t1(a, b, c, rbu_control);
+    INSERT INTO data_t1 VALUES(4, 4, 4, 0);
+    INSERT INTO data_t1 VALUES(2, NULL, NULL, 1);
+    INSERT INTO data_t1 VALUES(5, NULL, NULL, 1);
+
+    CREATE TABLE rbu_count(tbl, cnt);
+    INSERT INTO rbu_count VALUES('data_t1', 3);
+  }
+} {}
+do_sp_test 2.3.1 test.db rbu.db {1666 3333 6000 8000 10000}
+
+reset_db
+do_test 2.4.0 {
+  execsql { 
+    CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+    CREATE INDEX i1 ON t1(b);
+    INSERT INTO t1 VALUES(1, 1, 1);
+    INSERT INTO t1 VALUES(2, 2, 2);
+    INSERT INTO t1 VALUES(3, 3, 3);
+  }
+  create_db_file rbu.db {
+    CREATE TABLE data_t1(a, b, c, rbu_control);
+    INSERT INTO data_t1 VALUES(2, 4, 4, '.xx');
+
+    CREATE TABLE rbu_count(tbl, cnt);
+    INSERT INTO rbu_count VALUES('data_t1', 1);
+  }
+} {}
+do_sp_test 2.4.1 test.db rbu.db {3333 6666 10000}
+
+reset_db
+do_test 2.5.0 {
+  execsql { 
+    CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+    CREATE INDEX i1 ON t1(b);
+    INSERT INTO t1 VALUES(1, 1, 1);
+    INSERT INTO t1 VALUES(2, 2, 2);
+    INSERT INTO t1 VALUES(3, 3, 3);
+  }
+  create_db_file rbu.db {
+    CREATE TABLE data_t1(a, b, c, rbu_control);
+    INSERT INTO data_t1 VALUES(4, NULL, 4, '.xx');
+
+    CREATE TABLE rbu_count(tbl, cnt);
+    INSERT INTO rbu_count VALUES('data_t1', 1);
+  }
+} {}
+do_sp_test 2.5.1 test.db rbu.db {10000}
+
+finish_test
+

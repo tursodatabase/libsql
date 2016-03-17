@@ -400,6 +400,8 @@ int sqlite3rbu_close(sqlite3rbu *pRbu, char **pzErrmsg);
 */
 sqlite3_int64 sqlite3rbu_progress(sqlite3rbu *pRbu);
 
+void sqlite3rbu_stage_progress(sqlite3rbu *pRbu, int *pnOne, int *pnTwo);
+
 /*
 ** Create an RBU VFS named zName that accesses the underlying file-system
 ** via existing VFS zParent. Or, if the zParent parameter is passed NULL, 
