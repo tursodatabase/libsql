@@ -1,5 +1,5 @@
-C Simple\stest\scases\sfor\ssqlite3_system_errno()
-D 2016-03-17T17:23:11.511
+C Change\sthe\sxGetLastError()\smethod\son\sthe\swindows\sVFS\sso\sthat\sit\scontinues\sto\nformat\san\serror\smessage\s(if\srequested)\sbut\sreturns\sthe\ssystem\serror\scode,\nrather\sthan\san\sSQLite\sstatus\scode.
+D 2016-03-17T19:28:19.609
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -335,7 +335,7 @@ F src/os.h 91ff889115ecd01f436d3611f7f5ea4dc12d92f1
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c 50103f69121bca969761b821e2b0e393b55fe869
-F src/os_win.c cbf8c442a0d818d05bcf40b093cb3ebad435b9be
+F src/os_win.c 551d973ada67127430e41d9e514e53f6beb6c5a7
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 38718a019ca762ba4f6795425d5a54db70d1790d
 F src/pager.h e1d38a2f14849e219df0f91f8323504d134c8a56
@@ -1456,7 +1456,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6782c87b3722fbd09684a5b1e5df05247956f1c6
-R b7a0980686d8da4da394952a90c389a3
+P 185bc8644c806597194dc532a4d547a03a2dedaa
+R d7bafa1f512c1236fc42737f63cfb05e
 U drh
-Z 861529470b9b3fd5330fda28dd73536f
+Z df3bbf22437c6fe25ac3bbf281848b7c
