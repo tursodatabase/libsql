@@ -990,17 +990,19 @@ static Fts5Structure *fts5StructureReadUncached(Fts5Index *p){
 static i64 fts5IndexDataVersion(Fts5Index *p){
   i64 iVersion = 0;
 
-  if( p->pDataVersion==0 ){
-    p->rc = fts5IndexPrepareStmt(p, &p->pDataVersion, 
-        sqlite3_mprintf("PRAGMA %Q.data_version", p->pConfig->zDb)
-    );
-    if( p->rc ) return 0;
-  }
+  if( p->rc==SQLITE_OK ){
+    if( p->pDataVersion==0 ){
+      p->rc = fts5IndexPrepareStmt(p, &p->pDataVersion, 
+          sqlite3_mprintf("PRAGMA %Q.data_version", p->pConfig->zDb)
+          );
+      if( p->rc ) return 0;
+    }
 
-  if( SQLITE_ROW==sqlite3_step(p->pDataVersion) ){
-    iVersion = sqlite3_column_int64(p->pDataVersion, 0);
+    if( SQLITE_ROW==sqlite3_step(p->pDataVersion) ){
+      iVersion = sqlite3_column_int64(p->pDataVersion, 0);
+    }
+    p->rc = sqlite3_reset(p->pDataVersion);
   }
-  p->rc = sqlite3_reset(p->pDataVersion);
 
   return iVersion;
 }
@@ -1019,39 +1021,40 @@ static i64 fts5IndexDataVersion(Fts5Index *p){
 static Fts5Structure *fts5StructureRead(Fts5Index *p){
   Fts5Structure *pRet;            /* Object to return */
 
-  if( p->pStruct ){
-    pRet = p->pStruct;
-#ifdef SQLITE_DEBUG
-    {
-      Fts5Structure *pTest = fts5StructureReadUncached(p);
-      if( pTest ){
-        int i, j;
-        assert_nc( pRet->nSegment==pTest->nSegment );
-        assert_nc( pRet->nLevel==pTest->nLevel );
-        for(i=0; i<pTest->nLevel; i++){
-          assert_nc( pRet->aLevel[i].nMerge==pTest->aLevel[i].nMerge );
-          assert_nc( pRet->aLevel[i].nSeg==pTest->aLevel[i].nSeg );
-          for(j=0; j<pTest->aLevel[i].nSeg; j++){
-            Fts5StructureSegment *p1 = &pTest->aLevel[i].aSeg[j];
-            Fts5StructureSegment *p2 = &pRet->aLevel[i].aSeg[j];
-            assert_nc( p1->iSegid==p2->iSegid );
-            assert_nc( p1->pgnoFirst==p2->pgnoFirst );
-            assert_nc( p1->pgnoLast==p2->pgnoLast );
-          }
-        }
-        fts5StructureRelease(pTest);
-      }
-    }
-#endif
-  }else{
-    pRet = fts5StructureReadUncached(p);
-  }
-
-  if( pRet ){
-    fts5StructureRef(pRet);
-    p->pStruct = pRet;
+  if( p->pStruct==0 ){
     p->iStructVersion = fts5IndexDataVersion(p);
+    if( p->rc==SQLITE_OK ){
+      p->pStruct = pRet = fts5StructureReadUncached(p);
+    }
+    if( p->rc!=SQLITE_OK ) return 0;
+    assert( p->iStructVersion!=0 );
+    assert( p->pStruct!=0 );
   }
+#ifdef SQLITE_DEBUG
+  else{
+    Fts5Structure *pTest = fts5StructureReadUncached(p);
+    if( pTest ){
+      int i, j;
+      assert_nc( p->pStruct->nSegment==pTest->nSegment );
+      assert_nc( p->pStruct->nLevel==pTest->nLevel );
+      for(i=0; i<pTest->nLevel; i++){
+        assert_nc( p->pStruct->aLevel[i].nMerge==pTest->aLevel[i].nMerge );
+        assert_nc( p->pStruct->aLevel[i].nSeg==pTest->aLevel[i].nSeg );
+        for(j=0; j<pTest->aLevel[i].nSeg; j++){
+          Fts5StructureSegment *p1 = &pTest->aLevel[i].aSeg[j];
+          Fts5StructureSegment *p2 = &p->pStruct->aLevel[i].aSeg[j];
+          assert_nc( p1->iSegid==p2->iSegid );
+          assert_nc( p1->pgnoFirst==p2->pgnoFirst );
+          assert_nc( p1->pgnoLast==p2->pgnoLast );
+        }
+      }
+      fts5StructureRelease(pTest);
+    }
+  }
+#endif
+
+  pRet = p->pStruct;
+  fts5StructureRef(pRet);
   return pRet;
 }
 

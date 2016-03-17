@@ -1,5 +1,5 @@
-C Merge\sthe\schanges\son\sthe\sreusable-pragma\sbranch\sinto\sthis\sone.
-D 2016-03-16T20:53:33.830
+C Fix\ssome\sOOM-handling\sissues\sin\sthe\sfts5\schanges\son\sthis\sbranch.
+D 2016-03-17T12:39:56.371
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -104,7 +104,7 @@ F ext/fts5/fts5_buffer.c 4c1502d4c956cd092c89ce4480867f9d8bf325cd
 F ext/fts5/fts5_config.c 5af9c360e99669d29f06492c370892394aba0857
 F ext/fts5/fts5_expr.c 35e9d92c89e7c7ea0759b73d24da1ecb7630a24b
 F ext/fts5/fts5_hash.c f3a7217c86eb8f272871be5f6aa1b6798960a337
-F ext/fts5/fts5_index.c 317040cb17cdad05e973376b39239b29c75f90b5
+F ext/fts5/fts5_index.c afac2ffe3198776626b99366e18af1f32ea9eb85
 F ext/fts5/fts5_main.c b4a0fc5bf17f2f1f056ee76cdd7d2af08b360f55
 F ext/fts5/fts5_storage.c a3361410422e69639ca2bcd5a56a0933dadf84d2
 F ext/fts5/fts5_tcl.c f8731e0508299bd43f1a2eff7dbeaac870768966
@@ -1456,7 +1456,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 33ef2210ef19e55c8d460bfe9d3dc146034c8acc db1ce7e13e656fcd2766f1b1f225cbfefe8f73ad
-R 9bcd2375f3bee3eec21a0e0d6e512aed
+P 6c4a17b963916d19c9433d7a251338042f32e9fa
+R bc1955b591517ca84e5bb3a7a87f0726
 U dan
-Z 9f0b8bb8494a2ee2e21e8a8509116058
+Z 380059b0b3811052efb55863df364c4f
