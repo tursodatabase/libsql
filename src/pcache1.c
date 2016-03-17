@@ -348,7 +348,6 @@ static void *pcache1Alloc(int nByte){
 ** Free an allocated buffer obtained from pcache1Alloc().
 */
 static void pcache1Free(void *p){
-  int nFreed = 0;
   if( p==0 ) return;
   if( SQLITE_WITHIN(p, pcache1.pStart, pcache1.pEnd) ){
     PgFreeslot *pSlot;
@@ -365,10 +364,13 @@ static void pcache1Free(void *p){
     assert( sqlite3MemdebugHasType(p, MEMTYPE_PCACHE) );
     sqlite3MemdebugSetType(p, MEMTYPE_HEAP);
 #ifndef SQLITE_DISABLE_PAGECACHE_OVERFLOW_STATS
-    nFreed = sqlite3MallocSize(p);
-    sqlite3_mutex_enter(pcache1.mutex);
-    sqlite3StatusDown(SQLITE_STATUS_PAGECACHE_OVERFLOW, nFreed);
-    sqlite3_mutex_leave(pcache1.mutex);
+    {
+      int nFreed = 0;
+      nFreed = sqlite3MallocSize(p);
+      sqlite3_mutex_enter(pcache1.mutex);
+      sqlite3StatusDown(SQLITE_STATUS_PAGECACHE_OVERFLOW, nFreed);
+      sqlite3_mutex_leave(pcache1.mutex);
+    }
 #endif
     sqlite3_free(p);
   }
