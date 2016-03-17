@@ -79,6 +79,13 @@ static void set_options(Tcl_Interp *interp){
   Tcl_SetVar2(interp, "sqlite_options", "debug", "0", TCL_GLOBAL_ONLY);
 #endif
 
+#ifdef SQLITE_DEFAULT_CKPTFULLFSYNC
+  Tcl_SetVar2(interp, "sqlite_options", "default_ckptfullfsync", 
+              SQLITE_DEFAULT_CKPTFULLFSYNC ? "1" : "0", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "default_ckptfullfsync", "0", TCL_GLOBAL_ONLY);
+#endif
+
 #ifdef SQLITE_DIRECT_OVERFLOW_READ
   Tcl_SetVar2(interp, "sqlite_options", "direct_read", "1", TCL_GLOBAL_ONLY);
 #else
