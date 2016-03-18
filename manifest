@@ -1,5 +1,5 @@
-C Add\stests\sfor\sthe\schanges\son\sthis\sbranch.\sFix\sa\sproblem\swith\scalls\sto\sthe\snew\sprogress\sindicator\sAPI\smade\safter\san\srbu\supdate\shas\sbeen\sresumed.
-D 2016-03-18T10:29:47.529
+C Change\sthe\sname\sof\sthe\snew\sAPI\son\sthis\sbranch\sto\s"sqlite3_bp_progress".\sAdd\stests\sand\sdocumentation\sfor\sthe\ssame.
+D 2016-03-18T18:56:45.343
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -242,11 +242,11 @@ F ext/rbu/rbudiff.test 6cc806dc36389292f2a8f5842d0103721df4a07d
 F ext/rbu/rbufault.test cc0be8d5d392d98b0c2d6a51be377ea989250a89
 F ext/rbu/rbufault2.test 9a7f19edd6ea35c4c9f807d8a3db0a03a5670c06
 F ext/rbu/rbufts.test 828cd689da825f0a7b7c53ffc1f6f7fdb6fa5bda
-F ext/rbu/rbuprogress.test c4a9b3262bc0cafbf19709b56fbda0c3a9e69ac2
+F ext/rbu/rbuprogress.test 77fe3cd10d3c408bef364bc2e529310495ddd07e
 F ext/rbu/rbusave.test 0f43b6686084f426ddd040b878426452fd2c2f48
-F ext/rbu/sqlite3rbu.c c89f1e59eb09257e126d2cdcb3c5588e16a44fee
-F ext/rbu/sqlite3rbu.h f8ee94f95fc80a35b7cb7ef3f2f5ea740b662477
-F ext/rbu/test_rbu.c 5b6d31af188193d929234d1cd08ee967df092f66
+F ext/rbu/sqlite3rbu.c 6b7dc899b3980d4236bffa5048218f8dba85ac0a
+F ext/rbu/sqlite3rbu.h d7cc99350c10134f358fe1a8997d9225b3f712b2
+F ext/rbu/test_rbu.c 3505641a78b723589b8780d5f9b2faeeb73e037d
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 0b870ccb7b58b734a2a8e1e2755a7c0ded070920
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
@@ -1457,7 +1457,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ffc58d2c2576a5b6e1c2c7112612c5760e711afd
-R b5c08658920cbd4a66ad9300ad32e622
+P bf82321724d3b0feb51e26d9b76090e03cc3964a
+R 14faa32cca0db38c921d7bc3da7dea4c
 U dan
-Z 25ebcfe6c5065c93d73006dcdc7ea2c0
+Z 40a2b2dbafc34d98f3493240ec44ac36

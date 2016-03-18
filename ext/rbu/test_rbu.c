@@ -66,7 +66,7 @@ static int test_sqlite3rbu_cmd(
     {"create_rbu_delta", 2, ""},  /* 2 */
     {"savestate", 2, ""},         /* 3 */
     {"dbMain_eval", 3, "SQL"},    /* 4 */
-    {"stage_progress", 2, ""},    /* 5 */
+    {"bp_progress", 2, ""},    /* 5 */
     {0,0,0}
   };
   int iCmd;
@@ -137,10 +137,10 @@ static int test_sqlite3rbu_cmd(
       break;
     }
 
-    case 5: /* stage_progress */ {
+    case 5: /* bp_progress */ {
       int one, two;
       Tcl_Obj *pObj;
-      sqlite3rbu_stage_progress(pRbu, &one, &two);
+      sqlite3rbu_bp_progress(pRbu, &one, &two);
 
       pObj = Tcl_NewObj();
       Tcl_ListObjAppendElement(interp, pObj, Tcl_NewIntObj(one));

@@ -300,6 +300,43 @@ struct RbuFrame {
 
 /*
 ** RBU handle.
+**
+** nPhaseOneStep:
+**   If the RBU database contains an rbu_count table, this value is set to
+**   a running estimate of the number of b-tree operations required to 
+**   finish populating the *-oal file. This allows the sqlite3_bp_progress()
+**   API to calculate the permyriadage progress of populating the *-oal file
+**   using the formula:
+**
+**     permyriadage = (10000 * nProgress) / nPhaseOneStep
+**
+**   nPhaseOneStep is initialized to the sum of:
+**
+**     nRow * (nIndex + 1)
+**
+**   for all source tables in the RBU database, where nRow is the number
+**   of rows in the source table and nIndex the number of indexes on the
+**   corresponding target database table.
+**
+**   This estimate is accurate if the RBU update consists entirely of
+**   INSERT operations. However, it is inaccurate if:
+**
+**     * the RBU update contains any UPDATE operations. If the PK specified
+**       for an UPDATE operation does not exist in the target table, then
+**       no b-tree operations are required on index b-trees. Or if the 
+**       specified PK does exist, then (nIndex*2) such operations are
+**       required (one delete and one insert on each index b-tree).
+**
+**     * the RBU update contains any DELETE operations for which the specified
+**       PK does not exist. In this case no operations are required on index
+**       b-trees.
+**
+**     * the RBU update contains REPLACE operations. These are similar to
+**       UPDATE operations.
+**
+**   nPhaseOneStep is updated to account for the conditions above during the
+**   first pass of each source table. The updated nPhaseOneStep value is
+**   stored in the rbu_state table if the RBU update is suspended.
 */
 struct sqlite3rbu {
   int eStage;                     /* Value of RBU_STATE_STAGE field */
@@ -2957,7 +2994,7 @@ static RbuState *rbuLoadState(sqlite3rbu *p){
         break;
 
       case RBU_STATE_PHASEONESTEP:
-        pRet->nPhaseOneStep = (u32)sqlite3_column_int64(pStmt, 1);
+        pRet->nPhaseOneStep = sqlite3_column_int64(pStmt, 1);
         break;
 
       default:
@@ -3068,7 +3105,9 @@ static void rbuDeleteVfs(sqlite3rbu *p){
 }
 
 /*
-**
+** This user-defined SQL function is invoked with a single argument - the
+** name of a table expected to appear in the target database. It returns
+** the number of auxilliary indexes on the table.
 */
 static void rbuIndexCntFunc(
   sqlite3_context *pCtx, 
@@ -3371,7 +3410,11 @@ sqlite3_int64 sqlite3rbu_progress(sqlite3rbu *pRbu){
   return pRbu->nProgress;
 }
 
-void sqlite3rbu_stage_progress(sqlite3rbu *p, int *pnOne, int *pnTwo){
+/*
+** Return permyriadage progress indications for the two main stages of
+** an RBU update.
+*/
+void sqlite3rbu_bp_progress(sqlite3rbu *p, int *pnOne, int *pnTwo){
   const int MAX_PROGRESS = 10000;
   switch( p->eStage ){
     case RBU_STAGE_OAL:
