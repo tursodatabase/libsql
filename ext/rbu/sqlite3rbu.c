@@ -3207,6 +3207,7 @@ sqlite3rbu *sqlite3rbu_open(
           p->eStage = RBU_STAGE_OAL;
         }else{
           p->eStage = pState->eStage;
+          p->nPhaseOneStep = pState->nPhaseOneStep;
         }
         p->nProgress = pState->nProgress;
         p->iOalSz = pState->iOalSz;
