@@ -1202,6 +1202,11 @@ static void rbuObjIterCacheIndexedCols(sqlite3rbu *p, RbuObjIter *pIter){
     pIter->nIndex++;
   }
 
+  if( pIter->eType==RBU_PK_WITHOUT_ROWID ){
+    /* "PRAGMA index_list" includes the main PK b-tree */
+    pIter->nIndex--;
+  }
+
   rbuFinalize(p, pList);
   if( bIndex==0 ) pIter->abIndexed = 0;
 }
@@ -1313,6 +1318,7 @@ static int rbuObjIterCacheTableInfo(sqlite3rbu *p, RbuObjIter *pIter){
     rbuFinalize(p, pStmt);
     rbuObjIterCacheIndexedCols(p, pIter);
     assert( pIter->eType!=RBU_PK_VTAB || pIter->abIndexed==0 );
+    assert( pIter->eType!=RBU_PK_VTAB || pIter->nIndex==0 );
   }
 
   return p->rc;
@@ -3122,14 +3128,15 @@ static void rbuIndexCntFunc(
   assert( nVal==1 );
   
   rc = prepareFreeAndCollectError(p->dbMain, &pStmt, &zErrmsg, 
-      sqlite3_mprintf("PRAGMA index_list = %Q", sqlite3_value_text(apVal[0]))
+      sqlite3_mprintf("SELECT count(*) FROM sqlite_master "
+        "WHERE type='index' AND tbl_name = %Q", sqlite3_value_text(apVal[0]))
   );
   if( rc!=SQLITE_OK ){
     sqlite3_result_error(pCtx, zErrmsg, -1);
   }else{
     int nIndex = 0;
-    while( SQLITE_ROW==sqlite3_step(pStmt) ){
-      nIndex++;
+    if( SQLITE_ROW==sqlite3_step(pStmt) ){
+      nIndex = sqlite3_column_int(pStmt, 0);
     }
     rc = sqlite3_finalize(pStmt);
     if( rc==SQLITE_OK ){

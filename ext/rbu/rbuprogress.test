@@ -70,12 +70,13 @@ proc do_sp_test {tn bReopen target rbu reslist} {
     while 1 {
       if {$bReopen} { sqlite3rbu rbu $target $rbu }
       set rc [rbu step]
-      if {[set rc] != "SQLITE_OK"} { error "error 1" }
+      if {[set rc] != "SQLITE_OK"} { rbu close ; error "error 1" }
       lappend res [lindex [rbu bp_progress] 0]
       if {[lindex [set res] end]==10000} break
       if {$bReopen} { rbu close }
     }
     if {[set res] != [list $reslist]} {
+      rbu close
       error "1. reslist incorrect (expect=$reslist got=[set res])"
     }
 
@@ -88,6 +89,7 @@ proc do_sp_test {tn bReopen target rbu reslist} {
       rbu step
       set res [rbu bp_progress]
       if {[set res] != [list 10000 0]} {
+        rbu close
         error "2. reslist incorrect (expect=10000 0 got=[set res])"
       }
     }
@@ -95,6 +97,7 @@ proc do_sp_test {tn bReopen target rbu reslist} {
     rbu step
     set res [rbu bp_progress]
     if {[set res] != [list 10000 0]} {
+      rbu close
       error "3. reslist incorrect (expect=10000 0 got=[set res])"
     }
 
@@ -102,12 +105,14 @@ proc do_sp_test {tn bReopen target rbu reslist} {
     while {[rbu step]=="SQLITE_OK"} { 
       foreach {a b} [rbu bp_progress] {}
       if {[set a]!=10000 || [set b]<=0 || [set b]>10000} {
+        rbu close
         error "4. reslist incorrect (expect=10000 1..10000 got=[set a] [set b])"
       }
     }
 
     set res [rbu bp_progress]
     if {[set res] != [list 10000 10000]} {
+      rbu close
       error "5. reslist is incorrect (expect=10000 10000 got=[set res])"
     }
 
@@ -116,7 +121,6 @@ proc do_sp_test {tn bReopen target rbu reslist} {
 }
 
 foreach {bReopen} { 0 1 } {
-
   reset_db
   do_test 2.$bReopen.1.0 {
     execsql {
@@ -285,6 +289,115 @@ foreach bReopen {0 1} {
     }
   } {}
   do_phase2_test 3.$bReopen.1.1 $bReopen test.db rbu.db 5
+}
+
+
+foreach {bReopen} { 0 1 } {
+  foreach {tn tbl} {
+    ipk { CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c) }
+    wr  { CREATE TABLE t1(a INT PRIMARY KEY, b, c) WITHOUT ROWID }
+    pk  { CREATE TABLE t1(a INT PRIMARY KEY, b, c) }
+  } {
+
+    foreach {tn2 rbusql r1 r3} {
+      1 {
+        CREATE TABLE data0_t1(a, b, c, rbu_control);
+        INSERT INTO data0_t1 VALUES(15, 15, 15, 0);
+        INSERT INTO data0_t1 VALUES(20, 20, 20, 0);
+        CREATE TABLE rbu_count(tbl, cnt);
+        INSERT INTO rbu_count VALUES('data0_t1', 2); 
+      } 
+      {2500 5000 7500 10000}
+      {1666 3333 5000 6666 8333 10000}
+
+      2 {
+        CREATE TABLE data0_t1(a, b, c, rbu_control);
+        INSERT INTO data0_t1 VALUES(10, 10, 10, 2);
+        CREATE TABLE rbu_count(tbl, cnt);
+        INSERT INTO rbu_count VALUES('data0_t1', 1); 
+      } 
+      {3333 6666 10000}
+      {2000 4000 6000 8000 10000}
+
+      3 {
+        CREATE TABLE data0_t1(a, b, c, rbu_control);
+        INSERT INTO data0_t1 VALUES(7, 7, 7, 2);
+        INSERT INTO data0_t1 VALUES(10, 10, 10, 2);
+        CREATE TABLE rbu_count(tbl, cnt);
+        INSERT INTO rbu_count VALUES('data0_t1', 2); 
+      } 
+      {2500 4000 6000 8000 10000}
+      {1666 2500 3750 5000 6250 7500 8750 10000}
+
+    } {
+
+      reset_db ; execsql $tbl
+      do_test 4.$tn.$bReopen.$tn2.0 {
+        execsql {
+          CREATE INDEX t1c ON t1(c);
+          INSERT INTO t1 VALUES(1, 1, 1);
+          INSERT INTO t1 VALUES(5, 5, 5);
+          INSERT INTO t1 VALUES(10, 10, 10);
+        }
+        create_db_file rbu.db $rbusql
+      } {}
+
+      set R(ipk) $r1
+      set R(wr) $r1
+      set R(pk) $r3
+      do_sp_test 4.$tn.$bReopen.$tn2.1 $bReopen test.db rbu.db $R($tn)
+    }
+  }
+}
+
+foreach {bReopen} { 0 1 } {
+  foreach {tn tbl} {
+    nopk { 
+      CREATE TABLE t1(a, b, c);
+      CREATE INDEX t1c ON t1(c);
+    }
+    vtab { 
+      CREATE VIRTUAL TABLE t1 USING fts5(a, b, c);
+    }
+  } {
+
+    foreach {tn2 rbusql r1 r2} {
+      1 {
+        CREATE TABLE data0_t1(a, b, c, rbu_rowid, rbu_control);
+        INSERT INTO data0_t1 VALUES(15, 15, 15, 4, 0);
+        INSERT INTO data0_t1 VALUES(20, 20, 20, 5, 0);
+        CREATE TABLE rbu_count(tbl, cnt);
+        INSERT INTO rbu_count VALUES('data0_t1', 2); 
+      } 
+      {2500 5000 7500 10000}
+      {5000 10000}
+
+      2 {
+        CREATE TABLE data0_t1(rbu_rowid, a, b, c, rbu_control);
+        INSERT INTO data0_t1 VALUES(0, 7, 7, 7, 2);
+        INSERT INTO data0_t1 VALUES(2, 10, 10, 10, 2);
+        CREATE TABLE rbu_count(tbl, cnt);
+        INSERT INTO rbu_count VALUES('data0_t1', 2); 
+      } 
+      {2500 4000 6000 8000 10000}
+      {5000 10000}
+    } {
+
+      reset_db ; execsql $tbl
+      do_test 5.$tn.$bReopen.$tn2.0 {
+        execsql {
+          INSERT INTO t1 VALUES(1, 1, 1);
+          INSERT INTO t1 VALUES(5, 5, 5);
+          INSERT INTO t1 VALUES(10, 10, 10);
+        }
+        create_db_file rbu.db $rbusql
+      } {}
+
+      set R(nopk) $r1
+      set R(vtab) $r2
+      do_sp_test 5.$tn.$bReopen.$tn2.1 $bReopen test.db rbu.db $R($tn)
+    }
+  }
 }
 
 
