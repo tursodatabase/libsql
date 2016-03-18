@@ -1231,6 +1231,9 @@ foreach {tn sql reslist} {
   2 { PRAGMA checkpoint_fullfsync = 1 } {10 4 4 2 6 2}
   3 { PRAGMA checkpoint_fullfsync = 0 } {10 0 4 0 6 0}
 } {
+  ifcapable default_ckptfullfsync {
+    if {[string trim $sql]==""} continue
+  }
   faultsim_delete_and_reopen
 
   execsql {PRAGMA auto_vacuum = 0; PRAGMA synchronous = FULL;}

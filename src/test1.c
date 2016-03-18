@@ -1902,10 +1902,8 @@ static int test_load_extension(
   sqlite3 *db;
   int rc;
   char *zDb;
-#ifndef SQLITE_OMIT_LOAD_EXTENSION
   char *zFile;
   char *zProc = 0;
-#endif
   char *zErr = 0;
 
   if( objc!=4 && objc!=3 ){
@@ -1913,12 +1911,10 @@ static int test_load_extension(
     return TCL_ERROR;
   }
   zDb = Tcl_GetString(objv[1]);
-#ifndef SQLITE_OMIT_LOAD_EXTENSION
   zFile = Tcl_GetString(objv[2]);
   if( objc==4 ){
     zProc = Tcl_GetString(objv[3]);
   }
-#endif
 
   /* Extract the C database handle from the Tcl command name */
   if( !Tcl_GetCommandInfo(interp, zDb, &cmdInfo) ){
@@ -1935,6 +1931,8 @@ static int test_load_extension(
 #ifdef SQLITE_OMIT_LOAD_EXTENSION
   rc = SQLITE_ERROR;
   zErr = sqlite3_mprintf("this build omits sqlite3_load_extension()");
+  (void)zProc;
+  (void)zFile;
 #else
   rc = sqlite3_load_extension(db, zFile, zProc, &zErr);
 #endif

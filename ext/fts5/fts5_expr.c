@@ -2500,7 +2500,7 @@ static int fts5ExprPopulatePoslistsCb(
     Fts5ExprTerm *pTerm;
     if( p->aPopulator[i].bOk==0 ) continue;
     for(pTerm=&pExpr->apExprPhrase[i]->aTerm[0]; pTerm; pTerm=pTerm->pSynonym){
-      int nTerm = strlen(pTerm->zTerm);
+      int nTerm = (int)strlen(pTerm->zTerm);
       if( (nTerm==nToken || (nTerm<nToken && pTerm->bPrefix))
        && memcmp(pTerm->zTerm, pToken, nTerm)==0
       ){
