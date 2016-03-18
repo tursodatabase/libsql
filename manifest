@@ -1,5 +1,5 @@
-C Fix\smore\stest-case\serrors\sin\sthe\sApple\sconfiguration.
-D 2016-03-18T00:19:48.288
+C Fix\sFTS5\sso\sthat\sit\sworks\swith\sSQLITE_OMIT_AUTORESET.
+D 2016-03-18T00:39:40.456
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -106,7 +106,7 @@ F ext/fts5/fts5_expr.c 35e9d92c89e7c7ea0759b73d24da1ecb7630a24b
 F ext/fts5/fts5_hash.c f3a7217c86eb8f272871be5f6aa1b6798960a337
 F ext/fts5/fts5_index.c d4f0c12e4f04bbc3a06b6da052039f2ce3e45438
 F ext/fts5/fts5_main.c b8501e1a6a11591c53b18ce7aea7e5386cfb0421
-F ext/fts5/fts5_storage.c f8343db90d8c95a4d4b52f6676e354b4649ffd6e
+F ext/fts5/fts5_storage.c 2a38c6fa5db193a6a00588865134450ef5812daa
 F ext/fts5/fts5_tcl.c f8731e0508299bd43f1a2eff7dbeaac870768966
 F ext/fts5/fts5_test_mi.c 783b86697ebf773c18fc109992426c0173a055bc
 F ext/fts5/fts5_test_tok.c db08af63673c3a7d39f053b36fd6e065017706be
@@ -1456,7 +1456,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 399c60764d3fdec49dab1745c30930ca1dbafe70
-R 6d659b59f432dac31e8bf0c8b3f7d1b0
+P 6631e1e655604a7d1fb45b4d151938d4a13b47f3
+R 472ca36ca6048890d22e3e80bb68c577
 U drh
-Z 34dc8dd8397892469013fc1a83c5fbd6
+Z 94c5a688910df424330581238168e35b
