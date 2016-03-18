@@ -33,7 +33,8 @@ testvfs oldvfs -iversion 1
 #
 # All three done with VFS "oldvfs", which has iVersion==1 and so does
 # not support shared memory.
-# 
+#
+forcedelete test.db-shm
 sqlite3 db test.db -vfs oldvfs
 do_execsql_test 1.1.1 {
   PRAGMA journal_mode = WAL;

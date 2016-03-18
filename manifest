@@ -1,5 +1,5 @@
-C Merge\srecent\senhancements\sfrom\strunk.
-D 2016-03-18T00:58:39.889
+C Test\scase\stweaks\sto\sbetter\ssupport\sthe\sApple\sconfiguration\soptions.
+D 2016-03-18T11:03:15.004
 F Makefile.in 3aee0ba902634c52493914df76b40cedcd99b678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -622,9 +622,9 @@ F test/e_totalchanges.test b12ee5809d3e63aeb83238dd501a7bca7fd72c10
 F test/e_update.test f46c2554d915c9197548681e8d8c33a267e84528
 F test/e_uri.test 25385396082b67fd02ae0038b95a3b3575fe0519
 F test/e_vacuum.test 4d5b391384bb7d56bb9337d956f08035332421fc
-F test/e_wal.test ae9a593207a77d711443ee69ffe081fda9243625
+F test/e_wal.test 95c21e45eefe4cc31e820f998b14f92d1cb3a1bf
 F test/e_walauto.test 248af31e73c98df23476a22bdb815524c9dc3ba8
-F test/e_walckpt.test 28c371a6bb5e5fe7f31679c1df1763a19d19e8a0
+F test/e_walckpt.test 9f20ab843538484c57069074b126699266ee5521
 F test/e_walhook.test 4c0613a0c76e7a9d5c4c211e1b4cbcc1143914df
 F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 83437a79ba1545a55fb549309175c683fb334473
@@ -1461,7 +1461,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 161d91e485059efb36b7bc74d091f9721b76dcbf b199637d81d7e2a767131ac03c7679b101fd459c
-R d77de9b53d091e369f8d6b8489f35bed
+P ec052b4f14a8a7019bfc1bbe474020abafa557f3
+R 7e30daf73815e9704f232f235223463d
 U drh
-Z 0387ad32ececb70effa1db288aa7e20b
+Z da5133edb23b0fd361e7b2c4a3bb311d

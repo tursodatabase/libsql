@@ -440,6 +440,7 @@ foreach {tn script} {
       #   It's not. Test case "$tp.6".
       #
       do_test $tp.4 {
+        forcedelete abc.db-shm abc.db-wal       
         forcecopy test.db abc.db
         sqlite3 db4 abc.db
         db4 eval { SELECT * FROM t1 UNION ALL SELECT * FROM t2 }
