@@ -104,6 +104,12 @@ static void set_options(Tcl_Interp *interp){
   Tcl_SetVar2(interp, "sqlite_options", "lfs", "1", TCL_GLOBAL_ONLY);
 #endif
 
+#ifdef SQLITE_DISABLE_PAGECACHE_OVERFLOW_STATS
+  Tcl_SetVar2(interp, "sqlite_options", "pagecache_overflow_stats","0",TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "pagecache_overflow_stats","1",TCL_GLOBAL_ONLY);
+#endif
+
 #if SQLITE_MAX_MMAP_SIZE>0
   Tcl_SetVar2(interp, "sqlite_options", "mmap", "1", TCL_GLOBAL_ONLY);
 #else
@@ -583,7 +589,11 @@ Tcl_SetVar2(interp, "sqlite_options", "mergesort", "1", TCL_GLOBAL_ONLY);
 #endif
 
   Tcl_SetVar2(interp, "sqlite_options", "threadsafe", 
-      STRINGVALUE(SQLITE_THREADSAFE), TCL_GLOBAL_ONLY);
+      SQLITE_THREADSAFE ? "1" : "0", TCL_GLOBAL_ONLY);
+  Tcl_SetVar2(interp, "sqlite_options", "threadsafe1", 
+      SQLITE_THREADSAFE==1 ? "1" : "0", TCL_GLOBAL_ONLY);
+  Tcl_SetVar2(interp, "sqlite_options", "threadsafe2", 
+      SQLITE_THREADSAFE==2 ? "1" : "0", TCL_GLOBAL_ONLY);
   assert( sqlite3_threadsafe()==SQLITE_THREADSAFE );
 
 #ifdef SQLITE_OMIT_TEMPDB
