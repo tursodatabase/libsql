@@ -1,5 +1,5 @@
-C Updates\sto\sthe\sLemon\sdocumentation.
-D 2016-03-19T18:00:44.390
+C Fix\sexclusive.test\sso\sthat\sit\sworks\swith\s-DSQLITE_TEMP_STORE=3.
+D 2016-03-19T18:11:59.750
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -630,7 +630,7 @@ F test/enc4.test c8f1ce3618508fd0909945beb8b8831feef2c020
 F test/eqp.test 3fe051af50921284189d1970eb653f9fcf5117d2
 F test/errmsg.test f31592a594b44ee121371d25ddd5d63497bb3401
 F test/eval.test a64c9105d6ff163df7cf09d6ac29cdad5922078c
-F test/exclusive.test f48243eaf40e0957215501a12f510a8644d13a02
+F test/exclusive.test 9a57bd66e39144b888ca75c309914fcdefb4e3f9
 F test/exclusive2.test 32798111aae78a5deec980eee383213f189df308
 F test/exec.test e949714dc127eaa5ecc7d723efec1ec27118fdd7
 F test/exists.test 8f7b27b61c2fbe5822f0a1f899c715d14e416e30
@@ -1457,7 +1457,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 209e31c729b9c8a09a80e43e3e4a2f3cd9384b3a
-R fc92092a5d7485b32fa03b1aa106ab60
-U drh
-Z 281323da864a48bf6b3196a4def3800c
+P f095341471aa822e6d556cb65512ec081c3918da
+R eda7e2fd58d6241fa97b2fe69addd6c1
+U dan
+Z fdac7ca02eef2361aeb61c0eeeaed018
