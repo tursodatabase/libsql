@@ -381,6 +381,16 @@ foreach {bReopen} { 0 1 } {
       } 
       {2500 4000 6000 8000 10000}
       {5000 10000}
+
+      3 {
+        CREATE TABLE data0_t1(rbu_rowid, a, b, c, rbu_control);
+        INSERT INTO data0_t1 VALUES(1, NULL, NULL, NULL, 1);
+        INSERT INTO data0_t1 VALUES(2, NULL, NULL, 7, '..x');
+        CREATE TABLE rbu_count(tbl, cnt);
+        INSERT INTO rbu_count VALUES('data0_t1', 2); 
+      } 
+      {2500 4000 6000 8000 10000}
+      {5000 10000}
     } {
 
       reset_db ; execsql $tbl
