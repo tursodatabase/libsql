@@ -2706,7 +2706,7 @@ static int rbuStep(sqlite3rbu *p){
     );
     assert( eType!=RBU_UPDATE || pIter->zIdx==0 );
 
-    if( pIter->zIdx==0 && eType==RBU_IDX_DELETE ){
+    if( pIter->zIdx==0 && (eType==RBU_IDX_DELETE || eType==RBU_IDX_INSERT) ){
       rbuBadControlError(p);
     }
     else if( eType==RBU_REPLACE ){

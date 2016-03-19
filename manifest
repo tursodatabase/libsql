@@ -1,5 +1,5 @@
-C Update\sthe\ssqldiff\stool\sso\sthat\sit\sgenerates\san\srbu_count\stable.
-D 2016-03-19T16:21:26.457
+C Fix\sa\sproblem\sdetecting\sinvalid\svalues\sin\sthe\srbu_control\scolumn\sof\san\srbu\sdatabase\stable.
+D 2016-03-19T17:09:30.416
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -221,7 +221,7 @@ F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
 F ext/rbu/rbu.c ba3983dceffa0938532e79142f391737513de023
-F ext/rbu/rbu1.test 57601977588603e82700a43c279bd55282ffa482
+F ext/rbu/rbu1.test 42bd835e019eff789ec241017965277baeb658b1
 F ext/rbu/rbu10.test 046b0980041d30700464a800bbf6733ed2df515d
 F ext/rbu/rbu11.test 9bc68c2d3dbeb1720153626e3bd0466dcc017702
 F ext/rbu/rbu12.test bde22ed0004dd5d1888c72a84ae407e574aeae16
@@ -244,7 +244,7 @@ F ext/rbu/rbufault2.test 9a7f19edd6ea35c4c9f807d8a3db0a03a5670c06
 F ext/rbu/rbufts.test 828cd689da825f0a7b7c53ffc1f6f7fdb6fa5bda
 F ext/rbu/rbuprogress.test 2023a7df2c523e3df1cb532eff811cda385a789a
 F ext/rbu/rbusave.test 0f43b6686084f426ddd040b878426452fd2c2f48
-F ext/rbu/sqlite3rbu.c edeb8f90a1bccc567438036e083123cec1403091
+F ext/rbu/sqlite3rbu.c 007fc4db8c0b95c7ef10162b5864921ef5cc8106
 F ext/rbu/sqlite3rbu.h d7cc99350c10134f358fe1a8997d9225b3f712b2
 F ext/rbu/test_rbu.c 3505641a78b723589b8780d5f9b2faeeb73e037d
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
@@ -1457,7 +1457,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 734fc68fb12f06e97026d4637138b82b37809f5b
-R 10d61b7fcae01138c8363988e8c8eb47
+P 1f7afb6e9be9f549a91bf2ab492df15698df89fd
+R 514d2969d6e0309f243db8f417770908
 U dan
-Z 3bf67face0611b0cfd47029621ad6bf5
+Z 5251b6a3ad2fccca44307445ac5141c6
