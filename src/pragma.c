@@ -1441,6 +1441,8 @@ void sqlite3Pragma(
       Hash *pTbls;
       int *aRoot;
       int cnt = 0;
+      int mxIdx = 0;
+      int nIdx;
 
       if( OMIT_TEMPDB && i==1 ) continue;
       if( iDb>=0 && i!=iDb ) continue;
@@ -1462,7 +1464,8 @@ void sqlite3Pragma(
         Table *pTab = sqliteHashData(x);
         Index *pIdx;
         if( HasRowid(pTab) ) cnt++;
-        for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){ cnt++; }
+        for(nIdx=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, nIdx++){ cnt++; }
+        if( nIdx>mxIdx ) mxIdx = nIdx;
       }
       aRoot = sqlite3DbMallocRawNN(db, sizeof(int)*(cnt+1));
       if( aRoot==0 ) break;
@@ -1477,7 +1480,7 @@ void sqlite3Pragma(
       aRoot[cnt] = 0;
 
       /* Make sure sufficient number of registers have been allocated */
-      pParse->nMem = MAX( pParse->nMem, 14 );
+      pParse->nMem = MAX( pParse->nMem, 8+mxIdx );
 
       /* Do the b-tree integrity checks */
       sqlite3VdbeAddOp4(v, OP_IntegrityCk, 2, cnt, 1, (char*)aRoot,P4_INTARRAY);
@@ -1514,7 +1517,8 @@ void sqlite3Pragma(
         for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
           sqlite3VdbeAddOp2(v, OP_Integer, 0, 8+j); /* index entries counter */
         }
-        pParse->nMem = MAX(pParse->nMem, 8+j);
+        assert( pParse->nMem>=8+j );
+        assert( sqlite3NoTempsInRange(pParse,1,7+j) );
         sqlite3VdbeAddOp2(v, OP_Rewind, iDataCur, 0); VdbeCoverage(v);
         loopTop = sqlite3VdbeAddOp2(v, OP_AddImm, 7, 1);
         /* Verify that all NOT NULL columns really are NOT NULL */
