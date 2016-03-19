@@ -1,5 +1,5 @@
-C Fix\sa\sregister\sallocation\sbug\sin\sthe\sVDBE\scode\sgenerator\sfor\nPRAGMA\sintegrity_check;
-D 2016-03-19T00:35:02.035
+C Fix\stest\sscripts\ssqldiff.test\sand\srbudiff.test\sso\sthat\sthey\swork\swith\sthe\s--testdir\soption.
+D 2016-03-19T14:53:36.705
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -238,7 +238,7 @@ F ext/rbu/rbuB.test c25bc325b8072a766e56bb76c001866b405925c2
 F ext/rbu/rbuC.test efe47db508a0269b683cb2a1913a425ffd39a831
 F ext/rbu/rbu_common.tcl 0398545fed614f807d5f0ba55a85a51f08ba8f1a
 F ext/rbu/rbucrash.test 8d2ed5d4b05fef6c00c2a6b5f7ead71fa172a695
-F ext/rbu/rbudiff.test 6cc806dc36389292f2a8f5842d0103721df4a07d
+F ext/rbu/rbudiff.test 7f0fbf54912b9f8898819504c8465df12c970a00
 F ext/rbu/rbufault.test cc0be8d5d392d98b0c2d6a51be377ea989250a89
 F ext/rbu/rbufault2.test 9a7f19edd6ea35c4c9f807d8a3db0a03a5670c06
 F ext/rbu/rbufts.test 828cd689da825f0a7b7c53ffc1f6f7fdb6fa5bda
@@ -1061,7 +1061,7 @@ F test/speedtest1.c 1478cb3fb64ad30f291ddca87ca9dbd72ff552aa
 F test/spellfix.test f9c1f431e2c096c8775fec032952320c0e4700db
 F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
 F test/spellfix3.test 0f9efaaa502a0e0a09848028518a6fb096c8ad33
-F test/sqldiff1.test 8f6bc7c6a5b3585d350d779c6078869ba402f8f5
+F test/sqldiff1.test 28cd737cf1b0078b1ec1bbf425e674c47785835e
 F test/sqllimits1.test a74ee2a3740b9f9c2437c246d8fb77354862a142
 F test/sqllog.test 6af6cb0b09f4e44e1917e06ce85be7670302517a
 F test/stat.test b65bad7120c52583b8f0054d99eff80718119a77
@@ -1085,7 +1085,7 @@ F test/tclsqlite.test c6d9f546f79d15d0134c1e06583fb3ee0c3afad3
 F test/tempdb.test bd92eba8f20e16a9136e434e20b280794de3cdb6
 F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptrigger.test 8ec228b0db5d7ebc4ee9b458fc28cb9e7873f5e1
-F test/tester.tcl 859a7ccbe5bd65f0f8b524cd51c318d3edcd3008
+F test/tester.tcl d9831491ddc902ef62ef11438eca83ac0d4cf969
 F test/thread001.test 9f22fd3525a307ff42a326b6bc7b0465be1745a5
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -1456,7 +1456,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b199637d81d7e2a767131ac03c7679b101fd459c
-R aa6d8166f4985600b2fe26e199ff3347
-U drh
-Z 34d82988bd3c2eee6ead07b5f4503f1c
+P 88439a866b3b16ad7c308ebe59198662a05e7eeb
+R 3b6913cf00d6ce7b8c04137012202e6b
+U dan
+Z d63e42a30b9cbf754c53eb2c6783a9e9

@@ -14,16 +14,8 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-if {$tcl_platform(platform)=="windows"} {
-  set PROG "sqldiff.exe"
-} else {
-  set PROG "./sqldiff"
-}
-if {![file exe $PROG]} {
-  puts "sqldiff cannot run because $PROG is not available"
-  finish_test
-  return
-}
+set PROG [test_find_sqldiff]
+
 db close
 forcedelete test.db test2.db
 sqlite3 db test.db
