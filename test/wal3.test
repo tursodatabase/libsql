@@ -220,6 +220,7 @@ foreach {tn syncmode synccount} {
     sqlite3 db test.db -vfs T
   
     execsql "PRAGMA synchronous = $syncmode"
+    execsql "PRAGMA checkpoint_fullfsync = 0"
     execsql { PRAGMA journal_mode = WAL }
     execsql { CREATE TABLE filler(a,b,c); }
 
