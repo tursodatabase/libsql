@@ -1,5 +1,5 @@
-C Fix\stest\sscripts\ssqldiff.test\sand\srbudiff.test\sso\sthat\sthey\swork\swith\sthe\s--testdir\soption.
-D 2016-03-19T14:53:36.705
+C Fix\sanother\sproblem\sin\stest\sscript\srbudiff.test.
+D 2016-03-19T15:13:59.043
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -1085,7 +1085,7 @@ F test/tclsqlite.test c6d9f546f79d15d0134c1e06583fb3ee0c3afad3
 F test/tempdb.test bd92eba8f20e16a9136e434e20b280794de3cdb6
 F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptrigger.test 8ec228b0db5d7ebc4ee9b458fc28cb9e7873f5e1
-F test/tester.tcl d9831491ddc902ef62ef11438eca83ac0d4cf969
+F test/tester.tcl 2a82a76c1704a1d5f6c71bcebcffc3041e4d9856
 F test/thread001.test 9f22fd3525a307ff42a326b6bc7b0465be1745a5
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -1456,7 +1456,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 88439a866b3b16ad7c308ebe59198662a05e7eeb
-R 3b6913cf00d6ce7b8c04137012202e6b
+P 1ffe3cde03f924bb8405a8729c8e1bc01f5b6d3b
+R b5342d0d86cc431c9e51a0ed18eda8f1
 U dan
-Z d63e42a30b9cbf754c53eb2c6783a9e9
+Z 45d735e7ccd57967a5a5daaae9ccf4a0

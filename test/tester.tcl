@@ -2145,7 +2145,7 @@ proc test_find_binary {nm} {
   set ret [file normalize [file join $::cmdlinearg(TESTFIXTURE_HOME) $ret]]
   if {![file executable $ret]} {
     finish_test
-    return -code return
+    return ""
   }
   return $ret
 }
@@ -2155,7 +2155,9 @@ proc test_find_binary {nm} {
 # [finish_test ; return] in the callers context.
 #
 proc test_find_cli {} {
-  uplevel test_find_binary sqlite3
+  set cli [test_find_binary sqlite3]
+  if {$prog==""} { return -code return }
+  return $prog
 }
 
 # Find the name of the 'sqldiff' executable (e.g. "sqlite3.exe") to use for
@@ -2163,7 +2165,9 @@ proc test_find_cli {} {
 # [finish_test ; return] in the callers context.
 #
 proc test_find_sqldiff {} {
-  uplevel test_find_binary sqldiff
+  set prog [test_find_binary sqldiff]
+  if {$prog==""} { return -code return }
+  return $prog
 }
 
 
