@@ -1,5 +1,5 @@
-C Fix\sFTS5\sso\sthat\sit\sworks\swith\sSQLITE_OMIT_AUTORESET.
-D 2016-03-18T00:39:40.456
+C Fix\sa\sregister\sallocation\sbug\sin\sthe\sVDBE\scode\sgenerator\sfor\nPRAGMA\sintegrity_check;
+D 2016-03-19T00:35:02.035
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -304,7 +304,7 @@ F src/ctime.c 60e135af364d777a9ab41c97e5e89cd224da6198
 F src/date.c 0b73e681c11fca867fec554750c07fe0d4e417c1
 F src/dbstat.c c845548d4346e606e2f2b7d2e714ace2b8a7dd1b
 F src/delete.c 48802aa3ee6339f576d074336d3ae1b5f40e240f
-F src/expr.c f8137b7d3d3f2a991f9622e41d170e0adf0abc71
+F src/expr.c 289ffac5240b60fee0a824d3d5ab2d7bd2630c94
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 5cb42d9a59e2a590776fd3fc8ff6f61d40df3c6e
 F src/func.c 552d300265aed09eea21f68ac742a440550c0062
@@ -343,7 +343,7 @@ F src/parse.y 5ea8c81c5c41b27887f41b4a7e1c58470d7d3821
 F src/pcache.c 647bb53a86b7bbcf55ad88089b3ea5a9170b90df
 F src/pcache.h 4d0ccaad264d360981ec5e6a2b596d6e85242545
 F src/pcache1.c c40cdb93586e21b5dd826b5e671240bd91c26b05
-F src/pragma.c f0670909e915179fec47e17f72f14660995b8022
+F src/pragma.c e7e8f380efec6075a722822306435afc1eeca88a
 F src/pragma.h 64c78a648751b9f4f297276c4eb7507b14b4628c
 F src/prepare.c 22df6171aec1d86904ed2ad30c2348a5748aa04e
 F src/printf.c 63e6fb12bbe702dd664dc3703776c090383a5a26
@@ -355,7 +355,7 @@ F src/shell.c 5e0ab1e708dc294330ccd8230536e1801f60822e
 F src/sqlite.h.in 0235586b3fb639e85998d495c90f007657fd82af
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
-F src/sqliteInt.h 84c673f27b77dfbd367cb3ed1de8b6f3b73102dc
+F src/sqliteInt.h 751ced73be8c449a75e075e0545cdd832ed3591e
 F src/sqliteLimit.h 7b28cf72cbd52f178bfc97ea266445e351f2cd24
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
@@ -1456,7 +1456,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6631e1e655604a7d1fb45b4d151938d4a13b47f3
-R 472ca36ca6048890d22e3e80bb68c577
+P b199637d81d7e2a767131ac03c7679b101fd459c
+R aa6d8166f4985600b2fe26e199ff3347
 U drh
-Z 94c5a688910df424330581238168e35b
+Z 34d82988bd3c2eee6ead07b5f4503f1c
