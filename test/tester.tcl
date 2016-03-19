@@ -2155,7 +2155,7 @@ proc test_find_binary {nm} {
 # [finish_test ; return] in the callers context.
 #
 proc test_find_cli {} {
-  set cli [test_find_binary sqlite3]
+  set prog [test_find_binary sqlite3]
   if {$prog==""} { return -code return }
   return $prog
 }
