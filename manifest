@@ -1,5 +1,5 @@
-C Fix\ssome\sOOM-handling\sissues\sin\sthe\sfts5\schanges\son\sthis\sbranch.
-D 2016-03-17T12:39:56.371
+C Add\stest\sfile\sfts5multiclient.test.
+D 2016-03-19T14:47:28.441
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -165,6 +165,7 @@ F ext/fts5/test/fts5integrity.test f5e4f8d284385875068ad0f3e894ce43e9de835d
 F ext/fts5/test/fts5matchinfo.test f7dde99697bcb310ea8faa8eb2714d9f4dfc0e1b
 F ext/fts5/test/fts5merge.test 9f65f090d214ff865c56bef4f864aaa1182af6e3
 F ext/fts5/test/fts5merge2.test a6da3c16d694235938d1939f503cfa53f0943d75
+F ext/fts5/test/fts5multiclient.test 5bd54a6bc8ff818be233a50a8dec93da99098f2a
 F ext/fts5/test/fts5near.test b214cddb1c1f1bddf45c75af768f20145f7e71cc
 F ext/fts5/test/fts5onepass.test 7ed9608e258132cb8d55e7c479b08676ad68810c
 F ext/fts5/test/fts5optimize.test 9d3ac53bb9cae58cb070d795db86bcb2f9fec105
@@ -1456,7 +1457,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6c4a17b963916d19c9433d7a251338042f32e9fa
-R bc1955b591517ca84e5bb3a7a87f0726
+P 020a0bda59fe93b9361ceeed0d5a8ba4177380c8
+R f14c9b8edfca8f7bf113e7bd0b21996b
 U dan
-Z 380059b0b3811052efb55863df364c4f
+Z d493def8e880a32e2aca451bc5e776cf
