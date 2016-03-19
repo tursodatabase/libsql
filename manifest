@@ -1,5 +1,5 @@
-C Add\sthe\ssqlite3rbu_bp_progress()\sAPI\sto\sthe\sRBU\sextension.\sUsed\sto\sobtain\sthe\spercentage\sprogress\sof\san\sRBU\supdate.
-D 2016-03-19T17:48:12.474
+C Updates\sto\sthe\sLemon\sdocumentation.
+D 2016-03-19T18:00:44.390
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -33,7 +33,7 @@ F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
 F configure c01a159fdf7ea0171ad01ce2937283f2c7972bde x
 F configure.ac 89e4e02a83d8a1528011f8395621b8c3186b4089
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
-F doc/lemon.html c30255bea0fd87a81f082d17a72c9dffbc3f6dd9
+F doc/lemon.html e2118945e5f07ed146b45c9cd2b2dd6eabb8ebf2
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
 F doc/vfs-shm.txt e101f27ea02a8387ce46a05be2b1a902a021d37a
 F ext/README.txt 913a7bd3f4837ab14d7e063304181787658b14e1
@@ -1457,7 +1457,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 41c29c123ff347db720ed1a541c0b2ffc04670aa a1132dd9027d1c6dd845be307eeb38e535393f2c
-R cb043230718add9f6d5b3a52d3cc19f9
-U dan
-Z 67d28afde6e42b0d24beaa12aaf943b4
+P 209e31c729b9c8a09a80e43e3e4a2f3cd9384b3a
+R fc92092a5d7485b32fa03b1aa106ab60
+U drh
+Z 281323da864a48bf6b3196a4def3800c
