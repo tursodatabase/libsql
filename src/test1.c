@@ -1931,6 +1931,8 @@ static int test_load_extension(
 #ifdef SQLITE_OMIT_LOAD_EXTENSION
   rc = SQLITE_ERROR;
   zErr = sqlite3_mprintf("this build omits sqlite3_load_extension()");
+  (void)zProc;
+  (void)zFile;
 #else
   rc = sqlite3_load_extension(db, zFile, zProc, &zErr);
 #endif

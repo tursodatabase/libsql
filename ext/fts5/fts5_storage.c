@@ -145,6 +145,7 @@ static int fts5StorageGetStmt(
   }
 
   *ppStmt = p->aStmt[eStmt];
+  sqlite3_reset(*ppStmt);
   return rc;
 }
 
@@ -1121,5 +1122,3 @@ int sqlite3Fts5StorageConfigValue(
   }
   return rc;
 }
-
-
