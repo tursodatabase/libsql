@@ -192,7 +192,7 @@ static VdbeCursor *allocateCursor(
   **     be freed lazily via the sqlite3_release_memory() API. This
   **     minimizes the number of malloc calls made by the system.
   **
-  ** Memory cell for cursor 0 is Mem[0]. The rest are allocated from
+  ** The memory cell for cursor 0 is aMem[0]. The rest are allocated from
   ** the top of the register space.  Cursor 1 is at Mem[p->nMem-1].
   ** Cursor 2 is at Mem[p->nMem-2]. And so forth.
   */
@@ -5643,7 +5643,8 @@ case OP_Program: {        /* jump */
     ** variable nMem (and later, VdbeFrame.nChildMem) to this value.
     */
     nMem = pProgram->nMem + pProgram->nCsr;
-    if( pProgram->nCsr==0 && nMem>0 ) nMem++;
+    assert( nMem>0 );
+    if( pProgram->nCsr==0 ) nMem++;
     nByte = ROUND8(sizeof(VdbeFrame))
               + nMem * sizeof(Mem)
               + pProgram->nCsr * sizeof(VdbeCursor *)

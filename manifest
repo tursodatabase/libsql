@@ -1,5 +1,5 @@
-C Change\sthe\sVdbe.aMem\sarray\sso\sthat\sit\sis\szero-based\sinstead\sof\sone-based.
-D 2016-03-19T23:32:59.000
+C Remove\san\sunreachable\sbranch.\s\sImprovements\sto\scomments.
+D 2016-03-21T00:30:40.611
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -417,11 +417,11 @@ F src/update.c 56b3db7edff0110360a12b76af97c39ebe3ea8b8
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c 34ef7be420f82415ec48131404995ddb6ee7502f
 F src/vacuum.c feb1eabb20987983d9350cad98299b21fa811f52
-F src/vdbe.c 90d18d0a91284092a099e9a048982df38920190c
+F src/vdbe.c 3b542ffd5b6aaab55255ec3801fc86dcbfaea543
 F src/vdbe.h 6f44193e7be52fd5f7c308175a936555b1e6b101
 F src/vdbeInt.h f88d3115e9bde33b01d81f0dd26d8dd51f995991
 F src/vdbeapi.c 95b1f8e527240a18a9aea41a655b013bf07a7009
-F src/vdbeaux.c 4a38b9f9dab7350f670b9efff25f605933f81963
+F src/vdbeaux.c c8dd3e4e932bede6363b380519d05c0557ad27ce
 F src/vdbeblob.c 3b570b730109e8f653d9d2081649f6e7015113db
 F src/vdbemem.c fe76c1f866de362d9b8332e59d74aa44f6560d69
 F src/vdbesort.c 307460bfa4de4d1c3901fcd42089159131e34062
@@ -1457,10 +1457,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d7852c639683a1d305a1e731df3cccafa64b594b
-R 4a4c5282463bb7b6f1f36414c3f19a6f
-T *branch * zero-base-aMem
-T *sym-zero-base-aMem *
-T -sym-trunk *
+P e07b0c47eb5a39623f5fe0e66b939bba0906691c
+R 3918e948fd7d72bc109c3b7a0fa018f3
 U drh
-Z 5ba539d03a989ddc8c4359f1a3ede74d
+Z ae546b517b9c79f405f4513ed17a526d

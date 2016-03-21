@@ -1866,14 +1866,9 @@ void sqlite3VdbeMakeReady(
   nOnce = pParse->nOnce;
   if( nOnce==0 ) nOnce = 1; /* Ensure at least one byte in p->aOnceFlag[] */
   
-  /* For each cursor required, also allocate a memory cell.  Memory
-  ** cells 0 and (nMem-nCursor)..nMem-1 inclusive will never be used by
-  ** the vdbe program. Instead they are used to allocate memory for
-  ** VdbeCursor/BtCursor structures. The blob of memory associated with 
-  ** cursor 0 is stored in memory cell 0. Memory cell (nMem-1)
-  ** stores the blob of memory associated with cursor 1.  Memory cell
-  ** (nMem-iCur) is used for cursor iCur.
-  **
+  /* Each cursor uses a memory cell.  The first cursor (cursor 0) can
+  ** use aMem[0] which is not otherwise used by the VDBE program.  Allocate
+  ** space at the end of aMem[] for cursors 1 and greater.
   ** See also: allocateCursor().
   */
   nMem += nCursor;
