@@ -6826,6 +6826,7 @@ abort_due_to_error:
     sqlite3VdbeError(p, "%s", sqlite3ErrStr(rc));
   }
   p->rc = rc;
+  sqlite3SystemError(db, rc);
   testcase( sqlite3GlobalConfig.xLog!=0 );
   sqlite3_log(rc, "statement aborts at %d: [%s] %s", 
                    (int)(pOp - aOp), p->zSql, p->zErrMsg);

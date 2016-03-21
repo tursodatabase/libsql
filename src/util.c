@@ -118,12 +118,36 @@ const char *sqlite3StrNext(const char *z){
 }
 
 /*
+** Helper function for sqlite3Error() - called rarely.  Broken out into
+** a separate routine to avoid unnecessary register saves on entry to
+** sqlite3Error().
+*/
+static SQLITE_NOINLINE void  sqlite3ErrorFinish(sqlite3 *db, int err_code){
+  if( db->pErr ) sqlite3ValueSetNull(db->pErr);
+  sqlite3SystemError(db, err_code);
+}
+
+/*
 ** Set the current error code to err_code and clear any prior error message.
+** Also set iSysErrno (by calling sqlite3System) if the err_code indicates
+** that would be appropriate.
 */
 void sqlite3Error(sqlite3 *db, int err_code){
   assert( db!=0 );
   db->errCode = err_code;
-  if( db->pErr ) sqlite3ValueSetNull(db->pErr);
+  if( err_code || db->pErr ) sqlite3ErrorFinish(db, err_code);
+}
+
+/*
+** Load the sqlite3.iSysErrno field if that is an appropriate thing
+** to do based on the SQLite error code in rc.
+*/
+void sqlite3SystemError(sqlite3 *db, int rc){
+  if( rc==SQLITE_IOERR_NOMEM ) return;
+  rc &= 0xff;
+  if( rc==SQLITE_CANTOPEN || rc==SQLITE_IOERR ){
+    db->iSysErrno = sqlite3OsGetLastError(db->pVfs);
+  }
 }
 
 /*
@@ -150,6 +174,7 @@ void sqlite3Error(sqlite3 *db, int err_code){
 void sqlite3ErrorWithMsg(sqlite3 *db, int err_code, const char *zFormat, ...){
   assert( db!=0 );
   db->errCode = err_code;
+  sqlite3SystemError(db, err_code);
   if( zFormat==0 ){
     sqlite3Error(db, err_code);
   }else if( db->pErr || (db->pErr = sqlite3ValueNew(db))!=0 ){
