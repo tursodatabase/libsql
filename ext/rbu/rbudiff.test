@@ -18,16 +18,7 @@ if {![info exists testdir]} {
 source $testdir/tester.tcl
 set testprefix rbudiff
 
-if {$tcl_platform(platform)=="windows"} {
-  set PROG "sqldiff.exe"
-} else {
-  set PROG "./sqldiff"
-}
-if {![file exe $PROG]} {
-  puts "rbudiff.test cannot run because $PROG is not available"
-  finish_test
-  return
-}
+set PROG [test_find_sqldiff]
 db close
 
 proc get_rbudiff_sql {db1 db2} {
@@ -45,11 +36,33 @@ proc step_rbu {target rbu} {
 }
 
 proc apply_rbudiff {sql target} {
+  test_rbucount $sql
   forcedelete rbu.db
   sqlite3 rbudb rbu.db
   rbudb eval $sql
   rbudb close
   step_rbu $target rbu.db
+}
+
+# The only argument is the output of an [sqldiff -rbu] run. This command
+# tests that the contents of the rbu_count table is correct. An exception
+# is thrown if it is not.
+#
+proc test_rbucount {sql} {
+  sqlite3 tmpdb ""
+  tmpdb eval $sql
+  tmpdb eval {
+    SELECT name FROM sqlite_master WHERE name LIKE 'data%' AND type='table'
+  } {
+    set a [tmpdb eval "SELECT count(*) FROM $name"]
+    set b [tmpdb eval {SELECT cnt FROM rbu_count WHERE tbl = $name}]
+    if {$a != $b} { 
+      tmpdb close
+      error "rbu_count error - tbl = $name" 
+    }
+  }
+  tmpdb close
+  return ""
 }
 
 proc rbudiff_cksum {db1} {

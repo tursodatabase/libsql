@@ -268,6 +268,9 @@ int sqlite3OsRandomness(sqlite3_vfs *pVfs, int nByte, char *zBufOut){
 int sqlite3OsSleep(sqlite3_vfs *pVfs, int nMicro){
   return pVfs->xSleep(pVfs, nMicro);
 }
+int sqlite3OsGetLastError(sqlite3_vfs *pVfs){
+  return pVfs->xGetLastError ? pVfs->xGetLastError(pVfs, 0, 0) : 0;
+}
 int sqlite3OsCurrentTimeInt64(sqlite3_vfs *pVfs, sqlite3_int64 *pTimeOut){
   int rc;
   /* IMPLEMENTATION-OF: R-49045-42493 SQLite will use the xCurrentTimeInt64()

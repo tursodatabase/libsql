@@ -7471,23 +7471,18 @@ static int unixCurrentTime(sqlite3_vfs *NotUsed, double *prNow){
 # define unixCurrentTime 0
 #endif
 
-#ifndef SQLITE_OMIT_DEPRECATED
 /*
-** We added the xGetLastError() method with the intention of providing
-** better low-level error messages when operating-system problems come up
-** during SQLite operation.  But so far, none of that has been implemented
-** in the core.  So this routine is never called.  For now, it is merely
-** a place-holder.
+** The xGetLastError() method is designed to return a better
+** low-level error message when operating-system problems come up
+** during SQLite operation.  Only the integer return code is currently
+** used.
 */
 static int unixGetLastError(sqlite3_vfs *NotUsed, int NotUsed2, char *NotUsed3){
   UNUSED_PARAMETER(NotUsed);
   UNUSED_PARAMETER(NotUsed2);
   UNUSED_PARAMETER(NotUsed3);
-  return 0;
+  return errno;
 }
-#else
-# define unixGetLastError 0
-#endif
 
 
 /*

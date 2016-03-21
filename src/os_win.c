@@ -5593,8 +5593,10 @@ static int winCurrentTime(sqlite3_vfs *pVfs, double *prNow){
 ** sqlite3_errmsg(), possibly making IO errors easier to debug.
 */
 static int winGetLastError(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
+  DWORD e = osGetLastError();
   UNUSED_PARAMETER(pVfs);
-  return winGetLastErrorMsg(osGetLastError(), nBuf, zBuf);
+  if( nBuf>0 ) winGetLastErrorMsg(e, nBuf, zBuf);
+  return e;
 }
 
 /*

@@ -611,7 +611,7 @@ foreach {tn3 create_vfs destroy_vfs} {
        9 {
          CREATE TABLE t1(a, b PRIMARY KEY) WITHOUT ROWID;
          CREATE TABLE rbu.data_t1(a, b, rbu_control);
-         INSERT INTO rbu.data_t1 VALUES(1, 2, 2);
+         INSERT INTO rbu.data_t1 VALUES(1, 2, 3);
        } {SQLITE_ERROR - invalid rbu_control value}
 
        10 {

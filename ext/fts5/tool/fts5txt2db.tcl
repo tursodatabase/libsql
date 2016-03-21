@@ -17,6 +17,7 @@ proc process_cmdline {} {
     {detail    "full"     "Fts5 detail mode to use"}
     {repeat    1          "Load each file this many times"}
     {prefix    ""         "Fts prefix= option"}
+    {trans     1          "True to use a transaction"}
     database
     file...
   } {
@@ -214,7 +215,7 @@ foreach c [lrange $cols 1 end] {
 }
 append sql ")"
 
-db eval BEGIN
+if {$A(trans)} { db eval BEGIN }
   while {$i < $N} {
     foreach c $cols s $A(colsize) {
       set R($c) [lrange $tokens $i [expr $i+$s-1]]
@@ -222,7 +223,7 @@ db eval BEGIN
     }
     db eval $sql
   }
-db eval COMMIT
+if {$A(trans)} { db eval COMMIT }
 
 
 

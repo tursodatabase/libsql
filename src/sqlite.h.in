@@ -7917,6 +7917,18 @@ void sqlite3_stmt_scanstatus_reset(sqlite3_stmt*);
 int sqlite3_db_cacheflush(sqlite3*);
 
 /*
+** CAPI3REF: Low-level system error code
+**
+** ^Attempt to return the underlying operating system error code or error
+** number that caused the most reason I/O error or failure to open a file.
+** The return value is OS-dependent.  For example, on unix systems, after
+** [sqlite3_open_v2()] returns [SQLITE_CANTOPEN], this interface could be
+** called to get back the underlying "errno" that caused the problem, such
+** as ENOSPC, EAUTH, EISDIR, and so forth.  
+*/
+int sqlite3_system_errno(sqlite3*);
+
+/*
 ** CAPI3REF: Database Snapshot
 ** KEYWORDS: {snapshot}
 ** EXPERIMENTAL
