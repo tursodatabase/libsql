@@ -1019,17 +1019,14 @@ static i64 fts5IndexDataVersion(Fts5Index *p){
 ** is called, it is a no-op.
 */
 static Fts5Structure *fts5StructureRead(Fts5Index *p){
-  Fts5Structure *pRet;            /* Object to return */
 
   if( p->pStruct==0 ){
     p->iStructVersion = fts5IndexDataVersion(p);
     if( p->rc==SQLITE_OK ){
-      p->pStruct = pRet = fts5StructureReadUncached(p);
+      p->pStruct = fts5StructureReadUncached(p);
     }
-    if( p->rc!=SQLITE_OK ) return 0;
-    assert( p->iStructVersion!=0 );
-    assert( p->pStruct!=0 );
   }
+
 #ifdef SQLITE_DEBUG
   else{
     Fts5Structure *pTest = fts5StructureReadUncached(p);
@@ -1053,9 +1050,11 @@ static Fts5Structure *fts5StructureRead(Fts5Index *p){
   }
 #endif
 
-  pRet = p->pStruct;
-  fts5StructureRef(pRet);
-  return pRet;
+  if( p->rc!=SQLITE_OK ) return 0;
+  assert( p->iStructVersion!=0 );
+  assert( p->pStruct!=0 );
+  fts5StructureRef(p->pStruct);
+  return p->pStruct;
 }
 
 static void fts5StructureInvalidate(Fts5Index *p){
