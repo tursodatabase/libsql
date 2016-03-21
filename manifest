@@ -1,5 +1,5 @@
-C Skip\srecently\sadded\stest\scases\sin\snolock.test\swhen\srunning\sin\nthe\sinmemory_journal\spermutation.
-D 2016-03-21T16:19:29.587
+C Add\stests\sto\sensure\sthat\sfts5\sis\snow\sdeterministic.
+D 2016-03-21T16:25:34.085
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -143,6 +143,7 @@ F ext/fts5/test/fts5corrupt.test c2ad090192708150d50d961278df10ae7a4b8b62
 F ext/fts5/test/fts5corrupt2.test 26c0a39dd9ff73207e6229f83b50b21d37c7658c
 F ext/fts5/test/fts5corrupt3.test f77f65e386231daf62902466b40ff998b2c8ce4f
 F ext/fts5/test/fts5detail.test ef5c690535a797413acaf5ad9b8ab5d49972df69
+F ext/fts5/test/fts5determin.test 10648edb75ef1e196b10978fd21a9be0c31e09c3
 F ext/fts5/test/fts5dlidx.test 007e9390c94638760797dbec2990c97c3fa08dfe
 F ext/fts5/test/fts5doclist.test 8edb5b57e5f144030ed74ec00ef6fa4294fed79b
 F ext/fts5/test/fts5ea.test b01e3a18cdfabbff8104a96a5242a06a68a998a0
@@ -1458,7 +1459,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4dc30cce7fdb7dba9a9aad96bb8b499b965610b2
-R 1f352d94053f76691b11c27a8d4a5d8f
-U drh
-Z d3631fb4e80d910681e8351d2aa12531
+P a1dcf7af42bb7394d46138318f9367fe9e8be560
+R d12464ec7adc7a5a41759a981f3bde86
+U dan
+Z 8af492a5f67a993085e11843c854eec0
