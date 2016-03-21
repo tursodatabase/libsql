@@ -1,5 +1,5 @@
-C Change\sthe\sVdbe.aMem\sarray\sso\sthat\sit\sis\szero-based\sinstead\sof\sone-based.
-D 2016-03-21T00:38:59.802
+C Change\sthe\sway\sfts5\sinternally\sallocates\ssegment\sids\sin\sorder\sto\seliminated\snon-determinism\sfrom\sthe\smodule.
+D 2016-03-21T09:56:19.361
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -104,7 +104,7 @@ F ext/fts5/fts5_buffer.c 4c1502d4c956cd092c89ce4480867f9d8bf325cd
 F ext/fts5/fts5_config.c 5af9c360e99669d29f06492c370892394aba0857
 F ext/fts5/fts5_expr.c 35e9d92c89e7c7ea0759b73d24da1ecb7630a24b
 F ext/fts5/fts5_hash.c f3a7217c86eb8f272871be5f6aa1b6798960a337
-F ext/fts5/fts5_index.c d4f0c12e4f04bbc3a06b6da052039f2ce3e45438
+F ext/fts5/fts5_index.c d3759c2f7d878e9e0a392b027a1c6e05c356007d
 F ext/fts5/fts5_main.c b8501e1a6a11591c53b18ce7aea7e5386cfb0421
 F ext/fts5/fts5_storage.c 2a38c6fa5db193a6a00588865134450ef5812daa
 F ext/fts5/fts5_tcl.c f8731e0508299bd43f1a2eff7dbeaac870768966
@@ -194,7 +194,7 @@ F ext/fts5/test/fts5update.test 57c7012a7919889048947addae10e0613df45529
 F ext/fts5/test/fts5version.test 978f59541d8cef7e8591f8be2115ec5ccb863e2e
 F ext/fts5/test/fts5vocab.test 480d780aa6b699816c5066225fbd86f3a0239477
 F ext/fts5/tool/fts5speed.tcl b0056f91a55b2d1a3684ec05729de92b042e2f85
-F ext/fts5/tool/fts5txt2db.tcl 1343745b89ca2a1e975c23f836d0cee410052975
+F ext/fts5/tool/fts5txt2db.tcl 526a9979c963f1c54fd50976a05a502e533a4c59
 F ext/fts5/tool/loadfts5.tcl 95b03429ee6b138645703c6ca192c3ac96eaf093
 F ext/fts5/tool/mkfts5c.tcl d1c2a9ab8e0ec690a52316f33dd9b1d379942f45
 F ext/fts5/tool/showfts5.tcl d54da0e067306663e2d5d523965ca487698e722c
@@ -1457,8 +1457,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d7852c639683a1d305a1e731df3cccafa64b594b c5677ecd5cd2637d92a831ec6bd5b002f8d75626
-R 3918e948fd7d72bc109c3b7a0fa018f3
-T +closed c5677ecd5cd2637d92a831ec6bd5b002f8d75626
-U drh
-Z 542f0ebd1ebe0cc42b5001043dab2846
+P c39081e878faccc8552141afa5732a2bf2f77570
+R b7f851b6f7c0c6dc2d06642c2058dff4
+U dan
+Z 052aba56922a1e224a7195cfbf595d27
