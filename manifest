@@ -1,5 +1,5 @@
-C Do\sa\sbetter\sjob\sof\scapturing\sall\ssystem\serrno\svalues\sregardless\sof\swhen\nthey\soccur.
-D 2016-03-21T11:38:01.899
+C Improved\scomments.\s\sNo\slogical\schanges\sto\scode.
+D 2016-03-21T11:57:13.971
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -415,7 +415,7 @@ F src/treeview.c e4b41a37530a191579d3c53142cc44ee2eb99373
 F src/trigger.c e14840ee0c3e549e758ec9bf3e4146e166002280
 F src/update.c 56b3db7edff0110360a12b76af97c39ebe3ea8b8
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
-F src/util.c 161266913716ec2b35cf477239d3bdf1e2038305
+F src/util.c cf7dce85ab9af5280b8a45985df2591efbfefe56
 F src/vacuum.c feb1eabb20987983d9350cad98299b21fa811f52
 F src/vdbe.c 3b542ffd5b6aaab55255ec3801fc86dcbfaea543
 F src/vdbe.h 6f44193e7be52fd5f7c308175a936555b1e6b101
@@ -1457,7 +1457,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 86ab8643969bd2e51a257d80da9316c668437f7b
-R 79a2efa83ad9e99707ee54a3ce3858c7
+P 7d49998d571d841a6d1b55f5f9889e613daaab2a
+R 2f9bb272499f0485ddab735cd0415aba
 U drh
-Z deb9ef153d45658bc99716f0bcf98cb3
+Z ece300b1b257b87eefa9cd94f35c2874

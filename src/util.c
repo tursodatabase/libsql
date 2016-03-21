@@ -118,12 +118,20 @@ const char *sqlite3StrNext(const char *z){
 }
 
 /*
-** Set the current error code to err_code and clear any prior error message.
+** Helper function for sqlite3Error() - called rarely.  Broken out into
+** a separate routine to avoid unnecessary register saves on entry to
+** sqlite3Error().
 */
 static SQLITE_NOINLINE void  sqlite3ErrorFinish(sqlite3 *db, int err_code){
   if( db->pErr ) sqlite3ValueSetNull(db->pErr);
   sqlite3SystemError(db, err_code);
 }
+
+/*
+** Set the current error code to err_code and clear any prior error message.
+** Also set iSysErrno (by calling sqlite3System) if the err_code indicates
+** that would be appropriate.
+*/
 void sqlite3Error(sqlite3 *db, int err_code){
   assert( db!=0 );
   db->errCode = err_code;
