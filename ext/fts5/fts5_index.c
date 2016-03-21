@@ -4603,7 +4603,7 @@ static Fts5Structure *fts5IndexOptimizeStruct(
 
   if( pNew ){
     Fts5StructureLevel *pLvl;
-    int nByte = nSeg * sizeof(Fts5StructureSegment);
+    nByte = nSeg * sizeof(Fts5StructureSegment);
     pNew->nLevel = pStruct->nLevel+1;
     pNew->nRef = 1;
     pNew->nWriteCounter = pStruct->nWriteCounter;

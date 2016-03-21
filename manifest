@@ -1,5 +1,5 @@
-C Add\stests\sto\sensure\sthat\sfts5\sis\snow\sdeterministic.
-D 2016-03-21T16:25:34.085
+C Fix\sharmless\scompiler\swarnings.
+D 2016-03-21T22:28:51.426
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -104,7 +104,7 @@ F ext/fts5/fts5_buffer.c 4c1502d4c956cd092c89ce4480867f9d8bf325cd
 F ext/fts5/fts5_config.c 5af9c360e99669d29f06492c370892394aba0857
 F ext/fts5/fts5_expr.c 35e9d92c89e7c7ea0759b73d24da1ecb7630a24b
 F ext/fts5/fts5_hash.c f3a7217c86eb8f272871be5f6aa1b6798960a337
-F ext/fts5/fts5_index.c 40fde2538deeb7f018435c1d1bacf057f89c3c42
+F ext/fts5/fts5_index.c 0fe734b1e2574fdbcfad4d71f861b8598dd7f91b
 F ext/fts5/fts5_main.c b4a0fc5bf17f2f1f056ee76cdd7d2af08b360f55
 F ext/fts5/fts5_storage.c 98e3129047d250fc5acc4a4ba7ba4fde9b0ae030
 F ext/fts5/fts5_tcl.c f8731e0508299bd43f1a2eff7dbeaac870768966
@@ -325,7 +325,7 @@ F src/mem1.c 6919bcf12f221868ea066eec27e579fed95ce98b
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
 F src/mem3.c 8768ac94694f31ffaf8b4d0ea5dc08af7010a35a
 F src/mem5.c 9bf955937b07f8c32541c8a9991f33ce3173d944
-F src/memjournal.c 6423a0817ffd8c7a04ef9e5fb974b6b9dd71f8b6
+F src/memjournal.c 5253fd4335a8d9c64e5df25cb9da6329af5242c7
 F src/msvc.h d9ba56c6851227ab44b3f228a35f3f5772296495
 F src/mutex.c 8e45800ee78e0cd1f1f3fe8e398853307f4a085c
 F src/mutex.h 779d588e3b7756ec3ecf7d78cde1d84aba414f85
@@ -358,7 +358,7 @@ F src/shell.c 5e0ab1e708dc294330ccd8230536e1801f60822e
 F src/sqlite.h.in e877f141b15ef68ef28f84714e69d7234f9a071e
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 98f72cbfe00169c39089115427d06ea05fe4b4a2
-F src/sqliteInt.h 4eb80a9b9a512180a9739f99d754915e03d8091a
+F src/sqliteInt.h 47847a919790e2a30bb1dfb89ba0dc59fc6ed0be
 F src/sqliteLimit.h 7b28cf72cbd52f178bfc97ea266445e351f2cd24
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
@@ -1459,7 +1459,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a1dcf7af42bb7394d46138318f9367fe9e8be560
-R d12464ec7adc7a5a41759a981f3bde86
-U dan
-Z 8af492a5f67a993085e11843c854eec0
+P 3d076094ce411bffcfeb76c0284d15d0f83bd459
+R 8b7871914efe43742b6c5e5d156225cc
+U drh
+Z 74feddb89c21c363d080129c819f5a2b

@@ -583,8 +583,12 @@
 /*
 ** Macros to compute minimum and maximum of two numbers.
 */
-#define MIN(A,B) ((A)<(B)?(A):(B))
-#define MAX(A,B) ((A)>(B)?(A):(B))
+#ifndef MIN
+# define MIN(A,B) ((A)<(B)?(A):(B))
+#endif
+#ifndef MAX
+# define MAX(A,B) ((A)>(B)?(A):(B))
+#endif
 
 /*
 ** Swap two objects of type TYPE.
