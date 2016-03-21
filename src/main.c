@@ -2868,7 +2868,6 @@ static int openDatabase(
     if( rc==SQLITE_IOERR_NOMEM ){
       rc = SQLITE_NOMEM_BKPT;
     }
-    sqlite3SystemError(db, rc);
     sqlite3Error(db, rc);
     goto opendb_out;
   }

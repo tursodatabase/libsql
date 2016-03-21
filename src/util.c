@@ -120,10 +120,14 @@ const char *sqlite3StrNext(const char *z){
 /*
 ** Set the current error code to err_code and clear any prior error message.
 */
+static SQLITE_NOINLINE void  sqlite3ErrorFinish(sqlite3 *db, int err_code){
+  if( db->pErr ) sqlite3ValueSetNull(db->pErr);
+  sqlite3SystemError(db, err_code);
+}
 void sqlite3Error(sqlite3 *db, int err_code){
   assert( db!=0 );
   db->errCode = err_code;
-  if( db->pErr ) sqlite3ValueSetNull(db->pErr);
+  if( err_code || db->pErr ) sqlite3ErrorFinish(db, err_code);
 }
 
 /*
@@ -162,6 +166,7 @@ void sqlite3SystemError(sqlite3 *db, int rc){
 void sqlite3ErrorWithMsg(sqlite3 *db, int err_code, const char *zFormat, ...){
   assert( db!=0 );
   db->errCode = err_code;
+  sqlite3SystemError(db, err_code);
   if( zFormat==0 ){
     sqlite3Error(db, err_code);
   }else if( db->pErr || (db->pErr = sqlite3ValueNew(db))!=0 ){
