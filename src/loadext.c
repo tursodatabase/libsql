@@ -414,7 +414,9 @@ static const sqlite3_api_routines sqlite3Apis = {
   /* Version 3.10.0 and later */
   sqlite3_status64,
   sqlite3_strlike,
-  sqlite3_db_cacheflush
+  sqlite3_db_cacheflush,
+  /* Version 3.12.0 and later */
+  sqlite3_system_errno
 };
 
 /*

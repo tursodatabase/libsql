@@ -197,6 +197,7 @@ void sqlite3OsDlClose(sqlite3_vfs *, void *);
 #endif /* SQLITE_OMIT_LOAD_EXTENSION */
 int sqlite3OsRandomness(sqlite3_vfs *, int, char *);
 int sqlite3OsSleep(sqlite3_vfs *, int);
+int sqlite3OsGetLastError(sqlite3_vfs*);
 int sqlite3OsCurrentTimeInt64(sqlite3_vfs *, sqlite3_int64*);
 
 /*

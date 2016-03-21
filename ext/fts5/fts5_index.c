@@ -3453,18 +3453,35 @@ static int fts5AllocateSegid(Fts5Index *p, Fts5Structure *pStruct){
     if( pStruct->nSegment>=FTS5_MAX_SEGMENT ){
       p->rc = SQLITE_FULL;
     }else{
-      while( iSegid==0 ){
-        int iLvl, iSeg;
-        sqlite3_randomness(sizeof(u32), (void*)&iSegid);
-        iSegid = iSegid & ((1 << FTS5_DATA_ID_B)-1);
-        for(iLvl=0; iLvl<pStruct->nLevel; iLvl++){
-          for(iSeg=0; iSeg<pStruct->aLevel[iLvl].nSeg; iSeg++){
-            if( iSegid==pStruct->aLevel[iLvl].aSeg[iSeg].iSegid ){
-              iSegid = 0;
-            }
+      /* FTS5_MAX_SEGMENT is currently defined as 2000. So the following
+      ** array is 63 elements, or 252 bytes, in size.  */
+      u32 aUsed[(FTS5_MAX_SEGMENT+31) / 32];
+      int iLvl, iSeg;
+      int i;
+      u32 mask;
+      memset(aUsed, 0, sizeof(aUsed));
+      for(iLvl=0; iLvl<pStruct->nLevel; iLvl++){
+        for(iSeg=0; iSeg<pStruct->aLevel[iLvl].nSeg; iSeg++){
+          int iId = pStruct->aLevel[iLvl].aSeg[iSeg].iSegid;
+          if( iId<=FTS5_MAX_SEGMENT ){
+            aUsed[(iId-1) / 32] |= 1 << ((iId-1) % 32);
           }
         }
       }
+
+      for(i=0; aUsed[i]==0xFFFFFFFF; i++);
+      mask = aUsed[i];
+      for(iSegid=0; mask & (1 << iSegid); iSegid++);
+      iSegid += 1 + i*32;
+
+#ifdef SQLITE_DEBUG
+      for(iLvl=0; iLvl<pStruct->nLevel; iLvl++){
+        for(iSeg=0; iSeg<pStruct->aLevel[iLvl].nSeg; iSeg++){
+          assert( iSegid!=pStruct->aLevel[iLvl].aSeg[iSeg].iSegid );
+        }
+      }
+      assert( iSegid>0 && iSegid<=FTS5_MAX_SEGMENT );
+#endif
     }
   }
 
@@ -3909,7 +3926,9 @@ static void fts5WriteFinish(
       fts5WriteFlushLeaf(p, pWriter);
     }
     *pnLeaf = pLeaf->pgno-1;
-    fts5WriteFlushBtree(p, pWriter);
+    if( pLeaf->pgno>1 ){
+      fts5WriteFlushBtree(p, pWriter);
+    }
   }
   fts5BufferFree(&pLeaf->term);
   fts5BufferFree(&pLeaf->buf);

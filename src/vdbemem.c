@@ -761,7 +761,7 @@ int sqlite3VdbeMemTooBig(Mem *p){
 void sqlite3VdbeMemAboutToChange(Vdbe *pVdbe, Mem *pMem){
   int i;
   Mem *pX;
-  for(i=1, pX=&pVdbe->aMem[1]; i<=pVdbe->nMem; i++, pX++){
+  for(i=0, pX=pVdbe->aMem; i<pVdbe->nMem; i++, pX++){
     if( pX->pScopyFrom==pMem ){
       pX->flags |= MEM_Undefined;
       pX->pScopyFrom = 0;
