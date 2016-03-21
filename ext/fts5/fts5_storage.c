@@ -640,6 +640,10 @@ int sqlite3Fts5StorageMerge(Fts5Storage *p, int nMerge){
   return sqlite3Fts5IndexMerge(p->pIndex, nMerge);
 }
 
+int sqlite3Fts5StorageReset(Fts5Storage *p){
+  return sqlite3Fts5IndexReset(p->pIndex);
+}
+
 /*
 ** Allocate a new rowid. This is used for "external content" tables when
 ** a NULL value is inserted into the rowid column. The new rowid is allocated
