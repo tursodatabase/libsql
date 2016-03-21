@@ -418,7 +418,7 @@ int ParseStackPeak(void *p){
 ** Find the appropriate action for a parser given the terminal
 ** look-ahead token iLookAhead.
 */
-static int yy_find_shift_action(
+static unsigned int yy_find_shift_action(
   yyParser *pParser,        /* The parser */
   YYCODETYPE iLookAhead     /* The look-ahead token */
 ){
@@ -606,7 +606,7 @@ static void yy_accept(yyParser*);  /* Forward Declaration */
 */
 static void yy_reduce(
   yyParser *yypParser,         /* The parser */
-  int yyruleno                 /* Number of the rule by which to reduce */
+  unsigned int yyruleno        /* Number of the rule by which to reduce */
 ){
   int yygoto;                     /* The next state */
   int yyact;                      /* The next action */
@@ -615,8 +615,7 @@ static void yy_reduce(
   ParseARG_FETCH;
   yymsp = &yypParser->yystack[yypParser->yyidx];
 #ifndef NDEBUG
-  if( yyTraceFILE && yyruleno>=0 
-        && yyruleno<(int)(sizeof(yyRuleName)/sizeof(yyRuleName[0])) ){
+  if( yyTraceFILE && yyruleno<(int)(sizeof(yyRuleName)/sizeof(yyRuleName[0])) ){
     yysize = yyRuleInfo[yyruleno].nrhs;
     fprintf(yyTraceFILE, "%sReduce [%s], go to state %d.\n", yyTracePrompt,
       yyRuleName[yyruleno], yymsp[-yysize].stateno);
@@ -661,7 +660,7 @@ static void yy_reduce(
 %%
 /********** End reduce actions ************************************************/
   };
-  assert( yyruleno>=0 && yyruleno<sizeof(yyRuleInfo)/sizeof(yyRuleInfo[0]) );
+  assert( yyruleno<sizeof(yyRuleInfo)/sizeof(yyRuleInfo[0]) );
   yygoto = yyRuleInfo[yyruleno].lhs;
   yysize = yyRuleInfo[yyruleno].nrhs;
   yyact = yy_find_reduce_action(yymsp[-yysize].stateno,(YYCODETYPE)yygoto);
@@ -765,7 +764,7 @@ void Parse(
   ParseARG_PDECL               /* Optional %extra_argument parameter */
 ){
   YYMINORTYPE yyminorunion;
-  int yyact;            /* The parser action. */
+  unsigned int yyact;   /* The parser action. */
 #if !defined(YYERRORSYMBOL) && !defined(YYNOERRORRECOVERY)
   int yyendofinput;     /* True if we are at the end of input */
 #endif

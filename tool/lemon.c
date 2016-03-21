@@ -290,6 +290,7 @@ struct rule {
   const char *codeSuffix;  /* Breakdown code after code[] above */
   struct symbol *precsym;  /* Precedence symbol for this rule */
   int index;               /* An index number for this rule */
+  int iRule;               /* Rule number as used in the generated tables */
   Boolean canReduce;       /* True if this rule is ever reduced */
   struct rule *nextlhs;    /* Next rule with the same LHS */
   struct rule *next;       /* Next rule in the global list */
@@ -372,6 +373,7 @@ struct plink {
 struct lemon {
   struct state **sorted;   /* Table of states sorted by state number */
   struct rule *rule;       /* List of all rules */
+  struct rule *startRule;  /* First rule */
   int nstate;              /* Number of states */
   int nxstate;             /* nstate with tail degenerate states removed */
   int nrule;               /* Number of rules */
@@ -858,12 +860,12 @@ void FindStates(struct lemon *lemp)
       ErrorMsg(lemp->filename,0,
 "The specified start symbol \"%s\" is not \
 in a nonterminal of the grammar.  \"%s\" will be used as the start \
-symbol instead.",lemp->start,lemp->rule->lhs->name);
+symbol instead.",lemp->start,lemp->startRule->lhs->name);
       lemp->errorcnt++;
-      sp = lemp->rule->lhs;
+      sp = lemp->startRule->lhs;
     }
   }else{
-    sp = lemp->rule->lhs;
+    sp = lemp->startRule->lhs;
   }
 
   /* Make sure the start symbol doesn't occur on the right-hand side of
@@ -1117,9 +1119,9 @@ void FindActions(struct lemon *lemp)
   /* Add the accepting token */
   if( lemp->start ){
     sp = Symbol_find(lemp->start);
-    if( sp==0 ) sp = lemp->rule->lhs;
+    if( sp==0 ) sp = lemp->startRule->lhs;
   }else{
-    sp = lemp->rule->lhs;
+    sp = lemp->startRule->lhs;
   }
   /* Add to the first state (which is always the starting state of the
   ** finite state machine) an action to ACCEPT if the lookahead is the
@@ -1497,6 +1499,54 @@ static void handle_T_option(char *z){
   lemon_strcpy(user_templatename, z);
 }
 
+/* Merge together to lists of rules order by rule.iRule */
+static struct rule *Rule_merge(struct rule *pA, struct rule *pB){
+  struct rule *pFirst = 0;
+  struct rule **ppPrev = &pFirst;
+  while( pA && pB ){
+    if( pA->iRule<pB->iRule ){
+      *ppPrev = pA;
+      ppPrev = &pA->next;
+      pA = pA->next;
+    }else{
+      *ppPrev = pB;
+      ppPrev = &pB->next;
+      pB = pB->next;
+    }
+  }
+  if( pA ){
+    *ppPrev = pA;
+  }else{
+    *ppPrev = pB;
+  }
+  return pFirst;
+}
+
+/*
+** Sort a list of rules in order of increasing iRule value
+*/
+static struct rule *Rule_sort(struct rule *rp){
+  int i;
+  struct rule *pNext;
+  struct rule *x[32];
+  memset(x, 0, sizeof(x));
+  while( rp ){
+    pNext = rp->next;
+    rp->next = 0;
+    for(i=0; i<sizeof(x)/sizeof(x[0]) && x[i]; i++){
+      rp = Rule_merge(x[i], rp);
+      x[i] = 0;
+    }
+    x[i] = rp;
+    rp = pNext;
+  }
+  rp = 0;
+  for(i=0; i<sizeof(x)/sizeof(x[0]); i++){
+    rp = Rule_merge(x[i], rp);
+  }
+  return rp;
+}
+
 /* forward reference */
 static const char *minimum_size_type(int lwr, int upr, int *pnByte);
 
@@ -1545,6 +1595,7 @@ int main(int argc, char **argv)
   int i;
   int exitcode;
   struct lemon lem;
+  struct rule *rp;
 
   OptInit(argv,options,stderr);
   if( version ){
@@ -1590,6 +1641,16 @@ int main(int argc, char **argv)
   lem.nsymbol = i - 1;
   for(i=1; ISUPPER(lem.symbols[i]->name[0]); i++);
   lem.nterminal = i;
+
+  /* Assign sequential rule numbers */
+  for(i=0, rp=lem.rule; rp; rp=rp->next){
+    rp->iRule = rp->code ? i++ : -1;
+  }
+  for(rp=lem.rule; rp; rp=rp->next){
+    if( rp->iRule<0 ) rp->iRule = i++;
+  }
+  lem.startRule = lem.rule;
+  lem.rule = Rule_sort(lem.rule);
 
   /* Generate a reprint of the grammar, if requested on the command line */
   if( rpflag ){
@@ -3054,13 +3115,13 @@ int PrintAction(
     }
     case REDUCE: {
       struct rule *rp = ap->x.rp;
-      fprintf(fp,"%*s reduce       %-7d",indent,ap->sp->name,rp->index);
+      fprintf(fp,"%*s reduce       %-7d",indent,ap->sp->name,rp->iRule);
       RulePrint(fp, rp, -1);
       break;
     }
     case SHIFTREDUCE: {
       struct rule *rp = ap->x.rp;
-      fprintf(fp,"%*s shift-reduce %-7d",indent,ap->sp->name,rp->index);
+      fprintf(fp,"%*s shift-reduce %-7d",indent,ap->sp->name,rp->iRule);
       RulePrint(fp, rp, -1);
       break;
     }
@@ -3073,7 +3134,7 @@ int PrintAction(
     case SRCONFLICT:
     case RRCONFLICT:
       fprintf(fp,"%*s reduce       %-7d ** Parsing conflict **",
-        indent,ap->sp->name,ap->x.rp->index);
+        indent,ap->sp->name,ap->x.rp->iRule);
       break;
     case SSCONFLICT:
       fprintf(fp,"%*s shift        %-7d ** Parsing conflict **", 
@@ -3090,7 +3151,7 @@ int PrintAction(
     case RD_RESOLVED:
       if( showPrecedenceConflict ){
         fprintf(fp,"%*s reduce %-7d -- dropped by precedence",
-                indent,ap->sp->name,ap->x.rp->index);
+                indent,ap->sp->name,ap->x.rp->iRule);
       }else{
         result = 0;
       }
@@ -3121,7 +3182,7 @@ void ReportOutput(struct lemon *lemp)
     while( cfp ){
       char buf[20];
       if( cfp->dot==cfp->rp->nrhs ){
-        lemon_sprintf(buf,"(%d)",cfp->rp->index);
+        lemon_sprintf(buf,"(%d)",cfp->rp->iRule);
         fprintf(fp,"    %5s ",buf);
       }else{
         fprintf(fp,"          ");
@@ -3222,8 +3283,8 @@ PRIVATE int compute_action(struct lemon *lemp, struct action *ap)
   int act;
   switch( ap->type ){
     case SHIFT:  act = ap->x.stp->statenum;                        break;
-    case SHIFTREDUCE: act = ap->x.rp->index + lemp->nstate;        break;
-    case REDUCE: act = ap->x.rp->index + lemp->nstate+lemp->nrule; break;
+    case SHIFTREDUCE: act = ap->x.rp->iRule + lemp->nstate;        break;
+    case REDUCE: act = ap->x.rp->iRule + lemp->nstate+lemp->nrule; break;
     case ERROR:  act = lemp->nstate + lemp->nrule*2;               break;
     case ACCEPT: act = lemp->nstate + lemp->nrule*2 + 1;           break;
     default:     act = -1; break;
@@ -4241,7 +4302,7 @@ void ReportTable(
   ** when tracing REDUCE actions.
   */
   for(i=0, rp=lemp->rule; rp; rp=rp->next, i++){
-    assert( rp->index==i );
+    assert( rp->iRule==i );
     fprintf(out," /* %3d */ \"", i);
     writeRuleText(out, rp);
     fprintf(out,"\",\n"); lineno++;
@@ -4337,14 +4398,14 @@ void ReportTable(
     struct rule *rp2;               /* Other rules with the same action */
     if( rp->code==0 ) continue;
     if( rp->code[0]=='\n' && rp->code[1]==0 ) continue; /* Will be default: */
-    fprintf(out,"      case %d: /* ", rp->index);
+    fprintf(out,"      case %d: /* ", rp->iRule);
     writeRuleText(out, rp);
     fprintf(out, " */\n"); lineno++;
     for(rp2=rp->next; rp2; rp2=rp2->next){
       if( rp2->code==rp->code ){
-        fprintf(out,"      case %d: /* ", rp2->index);
+        fprintf(out,"      case %d: /* ", rp2->iRule);
         writeRuleText(out, rp2);
-        fprintf(out," */ yytestcase(yyruleno==%d);\n", rp2->index); lineno++;
+        fprintf(out," */ yytestcase(yyruleno==%d);\n", rp2->iRule); lineno++;
         rp2->code = 0;
       }
     }
@@ -4358,9 +4419,9 @@ void ReportTable(
   for(rp=lemp->rule; rp; rp=rp->next){
     if( rp->code==0 ) continue;
     assert( rp->code[0]=='\n' && rp->code[1]==0 );
-    fprintf(out,"      /* (%d) ", rp->index);
+    fprintf(out,"      /* (%d) ", rp->iRule);
     writeRuleText(out, rp);
-    fprintf(out, " */ yytestcase(yyruleno==%d);\n", rp->index); lineno++;
+    fprintf(out, " */ yytestcase(yyruleno==%d);\n", rp->iRule); lineno++;
   }
   fprintf(out,"        break;\n"); lineno++;
   tplt_xfer(lemp->name,in,out,&lineno);

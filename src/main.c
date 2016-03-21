@@ -2240,6 +2240,9 @@ int sqlite3_extended_errcode(sqlite3 *db){
   }
   return db->errCode;
 }
+int sqlite3_system_errno(sqlite3 *db){
+  return db ? db->iSysErrno : 0;
+}  
 
 /*
 ** Return a string that describes the kind of error specified in the

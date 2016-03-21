@@ -174,24 +174,47 @@ array set ::Configs [strip_comments {
     -O2
     -DSQLITE_ENABLE_LOCKING_STYLE=1
   }
-  "OS-X" {
+  "Apple" {
     -O1   # Avoid a compiler bug in gcc 4.2.1 build 5658
-    -DSQLITE_OMIT_LOAD_EXTENSION=1
-    -DSQLITE_DEFAULT_MEMSTATUS=0
-    -DSQLITE_THREADSAFE=2
-    -DSQLITE_OS_UNIX=1
-    -DSQLITE_ENABLE_JSON1=1
-    -DSQLITE_ENABLE_LOCKING_STYLE=1
-    -DUSE_PREAD=1
-    -DSQLITE_ENABLE_RTREE=1
+    -DHAVE_GMTIME_R=1
+    -DHAVE_ISNAN=1
+    -DHAVE_LOCALTIME_R=1
+    -DHAVE_PREAD=1
+    -DHAVE_PWRITE=1
+    -DHAVE_USLEEP=1
+    -DHAVE_USLEEP=1
+    -DHAVE_UTIME=1
+    -DSQLITE_DEFAULT_CACHE_SIZE=1000
+    -DSQLITE_DEFAULT_CKPTFULLFSYNC=1
+    -DSQLITE_DEFAULT_MEMSTATUS=1
+    -DSQLITE_DEFAULT_PAGE_SIZE=1024
+    -DSQLITE_DISABLE_PAGECACHE_OVERFLOW_STATS=1
+    -DSQLITE_ENABLE_API_ARMOR=1
+    -DSQLITE_ENABLE_AUTO_PROFILE=1
+    -DSQLITE_ENABLE_FLOCKTIMEOUT=1
     -DSQLITE_ENABLE_FTS3=1
     -DSQLITE_ENABLE_FTS3_PARENTHESIS=1
-    -DSQLITE_DEFAULT_CACHE_SIZE=1000
+    -DSQLITE_ENABLE_FTS3_TOKENIZER=1
+    if:os=="Darwin" -DSQLITE_ENABLE_LOCKING_STYLE=1
+    -DSQLITE_ENABLE_PERSIST_WAL=1
+    -DSQLITE_ENABLE_PURGEABLE_PCACHE=1
+    -DSQLITE_ENABLE_RTREE=1
+    -DSQLITE_ENABLE_SNAPSHOT=1
+    # -DSQLITE_ENABLE_SQLLOG=1
+    -DSQLITE_ENABLE_UPDATE_DELETE_LIMIT=1
     -DSQLITE_MAX_LENGTH=2147483645
     -DSQLITE_MAX_VARIABLE_NUMBER=500000
-    -DSQLITE_DEBUG=1
+    # -DSQLITE_MEMDEBUG=1
+    -DSQLITE_NO_SYNC=1
+    -DSQLITE_OMIT_AUTORESET=1
+    -DSQLITE_OMIT_LOAD_EXTENSION=1
     -DSQLITE_PREFER_PROXY_LOCKING=1
-    -DSQLITE_ENABLE_API_ARMOR=1
+    -DSQLITE_SERIES_CONSTRAINT_VERIFY=1
+    -DSQLITE_THREADSAFE=2
+    -DSQLITE_USE_URI=1
+    -DSQLITE_WRITE_WALFRAME_PREBUFFERED=1
+    -DUSE_GUARDED_FD=1
+    -DUSE_PREAD=1
     --enable-json1 --enable-fts5
   }
   "Extra-Robustness" {
@@ -248,6 +271,7 @@ array set ::Platforms [strip_comments {
     "Device-Two"              test
     "No-lookaside"            test
     "Devkit"                  test
+    "Apple"                   test
     "Sanitize"                {QUICKTEST_OMIT=func4.test,nan.test test}
     "Device-One"              fulltest
     "Default"                 "threadtest fulltest"
@@ -264,12 +288,12 @@ array set ::Platforms [strip_comments {
   Darwin-i386 {
     "Locking-Style"           "mptest test"
     "Have-Not"                test
-    "OS-X"                    "threadtest fulltest"
+    "Apple"                   "threadtest fulltest"
   }
   Darwin-x86_64 {
     "Locking-Style"           "mptest test"
     "Have-Not"                test
-    "OS-X"                    "threadtest fulltest"
+    "Apple"                   "threadtest fulltest"
   }
   "Windows NT-intel" {
     "Have-Not"                test
@@ -588,13 +612,23 @@ proc add_test_suite {listvar name testtarget config} {
   set opts ""
   set title ${name}($testtarget)
   set configOpts $::WITHTCL
+  set skip 0
 
   regsub -all {#[^\n]*\n} $config \n config
   foreach arg $config {
+    if {$skip} {
+      set skip 0
+      continue
+    }
     if {[regexp {^-[UD]} $arg]} {
       lappend opts $arg
     } elseif {[regexp {^[A-Z]+=} $arg]} {
       lappend testtarget $arg
+    } elseif {[regexp {^if:([a-z]+)(.*)} $arg all key tail]} {
+      # Arguments of the form 'if:os=="Linux"' will cause the subsequent
+      # argument to be skipped if the $tcl_platform(os) is not "Linux", for
+      # example...
+      set skip [expr !(\$::tcl_platform($key)$tail)]
     } elseif {[regexp {^--(enable|disable)-} $arg]} {
       if {$::MSVC} {
         if {$arg eq "--disable-amalgamation"} {
