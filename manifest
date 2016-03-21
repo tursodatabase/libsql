@@ -1,5 +1,5 @@
-C Improved\scomments.\s\sNo\slogical\schanges\sto\scode.
-D 2016-03-21T11:57:13.971
+C Make\ssure\ssystem\serrors\sthat\soccur\sdurign\ssqlite3_step()\sare\scaptured\sfor\nuse\sby\ssqlite3_system_errno().
+D 2016-03-21T12:28:02.060
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -417,7 +417,7 @@ F src/update.c 56b3db7edff0110360a12b76af97c39ebe3ea8b8
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c cf7dce85ab9af5280b8a45985df2591efbfefe56
 F src/vacuum.c feb1eabb20987983d9350cad98299b21fa811f52
-F src/vdbe.c 3b542ffd5b6aaab55255ec3801fc86dcbfaea543
+F src/vdbe.c f19741f2d8b33e8f09cd2219570b6c9ed924c3f1
 F src/vdbe.h 6f44193e7be52fd5f7c308175a936555b1e6b101
 F src/vdbeInt.h f88d3115e9bde33b01d81f0dd26d8dd51f995991
 F src/vdbeapi.c 95b1f8e527240a18a9aea41a655b013bf07a7009
@@ -1457,7 +1457,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7d49998d571d841a6d1b55f5f9889e613daaab2a
-R 2f9bb272499f0485ddab735cd0415aba
+P a6b6c6c466f3feb257b4fc08ef6b9a27a68ca073
+R 6870e1f7d1e452978a882de2dd2b0506
 U drh
-Z ece300b1b257b87eefa9cd94f35c2874
+Z 3347e0ff1ad1a288a0d7114b0f195e81
