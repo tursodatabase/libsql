@@ -4472,8 +4472,13 @@ static int accessPayload(
 #endif
   assert( offset+amt <= pCur->info.nPayload );
 
-  if( &aPayload[pCur->info.nLocal] > &pPage->aData[pBt->usableSize] ){
-    /* Trying to read or write past the end of the data is an error */
+  assert( aPayload > pPage->aData );
+  if( (aPayload - pPage->aData) > (pBt->usableSize - pCur->info.nLocal) ){
+    /* Trying to read or write past the end of the data is an error.  The
+    ** conditional above is really:
+    **    &aPayload[pCur->info.nLocal] > &pPage->aData[pBt->usableSize]
+    ** but is recast into its current form to avoid integer overflow problems
+    */
     return SQLITE_CORRUPT_BKPT;
   }
 
