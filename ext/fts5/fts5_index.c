@@ -1027,7 +1027,7 @@ static Fts5Structure *fts5StructureRead(Fts5Index *p){
     }
   }
 
-#ifdef SQLITE_DEBUG
+#if 0
   else{
     Fts5Structure *pTest = fts5StructureReadUncached(p);
     if( pTest ){

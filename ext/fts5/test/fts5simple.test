@@ -340,7 +340,7 @@ do_test 14.2 {
 
 #-------------------------------------------------------------------------
 db func rnddoc fts5_rnddoc
-do_execsql_test 4.0 {
+do_execsql_test 14.3 {
   CREATE VIRTUAL TABLE x1 USING fts5(x);
   INSERT INTO x1(x1, rank) VALUES('pgsz', 32);
 
@@ -348,9 +348,9 @@ do_execsql_test 4.0 {
   INSERT INTO x1 SELECT rnddoc(5) FROM ii;
 }
 
-do_execsql_test 4.1 {
+do_execsql_test 14.4 {
   SELECT rowid, x, x1 FROM x1 WHERE x1 MATCH '*reads'
-} {0 {} 4}
+} {0 {} 3}
 
 #-------------------------------------------------------------------------
 reset_db
