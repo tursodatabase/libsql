@@ -5425,7 +5425,7 @@ static int winRandomness(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
   UNUSED_PARAMETER(pVfs);
   memset(zBuf, 0, nBuf);
 #if defined(_MSC_VER) && _MSC_VER>=1400
-  rand_s((int*)zBuf); /* rand_s() is not available with MinGW */
+  rand_s((unsigned int*)zBuf); /* rand_s() is not available with MinGW */
 #endif /* defined(_MSC_VER) && _MSC_VER>=1400 */
   e.a = (unsigned char*)zBuf;
   e.na = nBuf;

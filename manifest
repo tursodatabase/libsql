@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\scompiler\swarning.
-D 2016-03-22T15:25:16.949
+C Fix\sharmless\scompiler\swarning\sfor\sMSVC.
+D 2016-03-22T15:26:03.280
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -338,7 +338,7 @@ F src/os.h 91ff889115ecd01f436d3611f7f5ea4dc12d92f1
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c b1ccb273771f41dbdbe0ba7c1ad63c38ad5972ec
-F src/os_win.c 551d973ada67127430e41d9e514e53f6beb6c5a7
+F src/os_win.c 17493f12b0b023c2d5a349b6860009f0d45e08d6
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 38718a019ca762ba4f6795425d5a54db70d1790d
 F src/pager.h e1d38a2f14849e219df0f91f8323504d134c8a56
@@ -1459,7 +1459,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e1ab2d376a72786098125a41c1ea8140fcbd15c6
-R bdaff546f18a9832fa859fa7ed0eb2c5
-U drh
-Z e5f40ebb5a86d8be765f1d7f6d3191da
+P 5ace870d3ac3e9eb29cb4602c9036873adbcb99d
+R 005c1e5cbc7587970df3ccd3cc730064
+U mistachkin
+Z 4de36823f78a549c0eee8008ed054760
