@@ -1604,6 +1604,7 @@ struct Column {
 */
 #define COLFLAG_PRIMKEY  0x0001    /* Column is part of the primary key */
 #define COLFLAG_HIDDEN   0x0002    /* A hidden column in a virtual table */
+#define COLFLAG_HASTYPE  0x0004    /* Type name follows column name */
 
 /*
 ** A "Collating Sequence" is defined by an instance of the following
@@ -3307,7 +3308,7 @@ int sqlite3IsIdChar(u8);
 */
 int sqlite3StrICmp(const char*,const char*);
 int sqlite3Strlen30(const char*);
-const char *sqlite3StrNext(const char*);
+char *sqlite3ColumnType(Column*,char*);
 #define sqlite3StrNICmp sqlite3_strnicmp
 
 int sqlite3MallocInit(void);
