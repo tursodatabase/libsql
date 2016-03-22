@@ -4473,7 +4473,7 @@ static int accessPayload(
   assert( offset+amt <= pCur->info.nPayload );
 
   assert( aPayload > pPage->aData );
-  if( (aPayload - pPage->aData) > (pBt->usableSize - pCur->info.nLocal) ){
+  if( (uptr)(aPayload - pPage->aData) > (pBt->usableSize - pCur->info.nLocal) ){
     /* Trying to read or write past the end of the data is an error.  The
     ** conditional above is really:
     **    &aPayload[pCur->info.nLocal] > &pPage->aData[pBt->usableSize]
