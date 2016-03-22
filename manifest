@@ -1,5 +1,5 @@
-C Avoid\sthe\spossibility\sof\sinteger\soverflow\son\sa\spointer\scomparison\stest\sfor\ncorruption\sin\sthe\sdatabase\sfile.
-D 2016-03-22T14:10:45.052
+C Create\sthe\s"uptr"\stypedef\s(the\ssame\sas\suintptr_t\swhen\savailable)\sand\suse\sit\nto\scast\spointers\sbefore\scomparison.
+D 2016-03-22T14:37:59.457
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -297,7 +297,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c f60f0aa55d25d853ffde53d0b0370a7bb7ee41ce
 F src/bitvec.c 3ee4c8b2c94ed3a7377256e18199e6ff5cf33f63
 F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
-F src/btree.c 5753da53071b5d5a8ace8fd9ea7a54cefeb8187b
+F src/btree.c 8a02b1fb98eb11b9ce50cb3ab6a031f852b69303
 F src/btree.h a5008b9afe56e8e54ade6c436a910f112defcca9
 F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
 F src/build.c 213cbf84e99dd834e6ea46615633656d7ef79321
@@ -358,7 +358,7 @@ F src/shell.c 5e0ab1e708dc294330ccd8230536e1801f60822e
 F src/sqlite.h.in e877f141b15ef68ef28f84714e69d7234f9a071e
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 98f72cbfe00169c39089115427d06ea05fe4b4a2
-F src/sqliteInt.h 47847a919790e2a30bb1dfb89ba0dc59fc6ed0be
+F src/sqliteInt.h cb02015eac6d642bd23d8cbd76cc116635c17540
 F src/sqliteLimit.h 7b28cf72cbd52f178bfc97ea266445e351f2cd24
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
@@ -1459,7 +1459,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 25d776e4523aefeec007943fe29aa17c23ccb301
-R 7b06b50bff5ae9500629c34b0d5509bb
+P ff1b1ac3313ba9d70414e928ef3dd82913298a1a
+R db2868426a9aae9f4cc9b8c065b04b6c
 U drh
-Z 3c0767287744fc9671f0ea1849fc5941
+Z 0cd59c36c28d6740a5e8b1f16f08075a
