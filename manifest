@@ -1,5 +1,5 @@
-C Remove\san\sunused\slocal\svariable\sfrom\sFTS5.
-D 2016-03-23T15:53:45.875
+C Fix\s"ifcapable"\stests\sin\scapi3.test\sand\scapi3c.test\sso\sthat\sthe\stests\swork\swith\smore\sbuild\sconfigurations.
+D 2016-03-23T16:32:29.404
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -523,9 +523,9 @@ F test/busy.test 76b4887f8b9160ba903c1ac22e8ff406ad6ae2f0
 F test/cache.test 13bc046b26210471ca6f2889aceb1ea52dc717de
 F test/cacheflush.test af25bb1509df04c1da10e38d8f322d66eceedf61
 F test/capi2.test 011c16da245fdc0106a2785035de6b242c05e738
-F test/capi3.test 860dafdc04f651a67781018cb1a0b179d22d7d15
+F test/capi3.test f0c66919e43d42e1572a69be039e4527a931b00f
 F test/capi3b.test efb2b9cfd127efa84433cd7a2d72ce0454ae0dc4
-F test/capi3c.test b28ec47692f0fc50eb61b2d464d8d52e816b3732
+F test/capi3c.test 0b9edb0c2156a964b9271cd5ea7ae56736cc2fcb
 F test/capi3d.test 485048dc5cd07bc68011e4917ad035ad6047ab82
 F test/capi3e.test 3d49c01ef2a1a55f41d73cba2b23b5059ec460fe
 F test/cast.test 4c275cbdc8202d6f9c54a3596701719868ac7dc3
@@ -1459,7 +1459,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 70fc69eed9b09159899d7cbd1416a59d04210a63
-R 873e340080925d4861d8b0305a1e9665
-U drh
-Z 80f86ca0927f258d1530b1b8654e3fe4
+P 0ed693c29f184223cde3b3d51f0e06273e586803
+R 405228ca43a6aac7fb0de536de78cc72
+U dan
+Z fb0a5f0fe48a39fd4b3b3bb440d1982d
