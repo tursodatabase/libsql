@@ -3562,7 +3562,6 @@ static int fts5AllocateSegid(Fts5Index *p, Fts5Structure *pStruct){
       {
         sqlite3_stmt *pIdxSelect = fts5IdxSelectStmt(p);
         if( p->rc==SQLITE_OK ){
-          int rc;
           u8 aBlob[2] = {0xff, 0xff};
           sqlite3_bind_int(pIdxSelect, 1, iSegid);
           sqlite3_bind_blob(pIdxSelect, 2, aBlob, 2, SQLITE_STATIC);

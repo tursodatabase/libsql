@@ -1,5 +1,5 @@
-C Explicitly\slimit\sthe\ssize\sof\sfts5\stokens\sto\s32768\sbytes.
-D 2016-03-23T15:04:00.239
+C Remove\san\sunused\slocal\svariable\sfrom\sFTS5.
+D 2016-03-23T15:53:45.875
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -104,7 +104,7 @@ F ext/fts5/fts5_buffer.c 4c1502d4c956cd092c89ce4480867f9d8bf325cd
 F ext/fts5/fts5_config.c 5af9c360e99669d29f06492c370892394aba0857
 F ext/fts5/fts5_expr.c 5ca4bafe29aa3d27683c90e836192e4aefd20a3f
 F ext/fts5/fts5_hash.c f3a7217c86eb8f272871be5f6aa1b6798960a337
-F ext/fts5/fts5_index.c b271b19dd28d3501772c3a9317272add4751af95
+F ext/fts5/fts5_index.c fdd82bb421a5d1e64d004acb43f4dd9970c8d2b3
 F ext/fts5/fts5_main.c b4a0fc5bf17f2f1f056ee76cdd7d2af08b360f55
 F ext/fts5/fts5_storage.c 3309c6a8e34b974513016fd1ef47c83f5898f94c
 F ext/fts5/fts5_tcl.c f8731e0508299bd43f1a2eff7dbeaac870768966
@@ -1459,7 +1459,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 412984642af40578ec611d8c0b7c0508cb5cf9c9
-R 7ff8c5a33cf0f5a9bc31dcb4123a3529
-U dan
-Z a8f8abdf00b8979540d6caa40226ffc8
+P 70fc69eed9b09159899d7cbd1416a59d04210a63
+R 873e340080925d4861d8b0305a1e9665
+U drh
+Z 80f86ca0927f258d1530b1b8654e3fe4
