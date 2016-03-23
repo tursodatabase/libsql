@@ -189,7 +189,7 @@ static int progressHandler(void *pVdbeLimitFlag){
 ** Reallocate memory.  Show and error and quit if unable.
 */
 static void *safe_realloc(void *pOld, int szNew){
-  void *pNew = realloc(pOld, szNew);
+  void *pNew = realloc(pOld, szNew<=0 ? 1 : szNew);
   if( pNew==0 ) fatalError("unable to realloc for %d bytes", szNew);
   return pNew;
 }

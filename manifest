@@ -1,5 +1,5 @@
-C Fix\s"ifcapable"\stests\sin\scapi3.test\sand\scapi3c.test\sso\sthat\sthe\stests\swork\swith\smore\sbuild\sconfigurations.
-D 2016-03-23T16:32:29.404
+C Avoid\scalling\srealloc()\swith\sa\szero\ssize\sin\sfuzzcheck.c.
+D 2016-03-23T17:54:19.633
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -773,7 +773,7 @@ F test/fuzz2.test 76dc35b32b6d6f965259508508abce75a6c4d7e1
 F test/fuzz3.test b47377143f0c80f91ed29d722861077ff34415d5
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
 F test/fuzz_malloc.test 328f70aaca63adf29b4c6f06505ed0cf57ca7c26
-F test/fuzzcheck.c 93bb9d309888634615e21ef98d1c30d51483e942
+F test/fuzzcheck.c f01d432d001ba29e7916df8411be7d4e7cddc574
 F test/fuzzdata1.db 7ee3227bad0e7ccdeb08a9e6822916777073c664
 F test/fuzzdata2.db f03a420d3b822cc82e4f894ca957618fbe9c4973
 F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
@@ -1459,7 +1459,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0ed693c29f184223cde3b3d51f0e06273e586803
-R 405228ca43a6aac7fb0de536de78cc72
-U dan
-Z fb0a5f0fe48a39fd4b3b3bb440d1982d
+P 3fa88f68c3e1bbb3421cb0d2b82b9bb3fe7b9b14
+R 6050811335a4694faefeb0d2dc871228
+U drh
+Z bf4eed3170d70e06db77678976293947
