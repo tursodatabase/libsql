@@ -448,4 +448,24 @@ do_execsql_test 20.2 {
   INSERT INTO x1(x1) VALUES('integrity-check');
 } {}
 
+#-------------------------------------------------------------------------
+reset_db
+set doc "a b [string repeat x 100000]"
+do_execsql_test 21.0 {
+  CREATE VIRTUAL TABLE x1 USING fts5(x);
+  INSERT INTO x1(rowid, x) VALUES(11111, $doc);
+  INSERT INTO x1(rowid, x) VALUES(11112, $doc);
+}
+do_execsql_test 21.1 {
+  INSERT INTO x1(x1) VALUES('integrity-check');
+}
+do_execsql_test 21.2 {
+  SELECT rowid FROM x1($doc);
+} {11111 11112}
+do_execsql_test 21.3 {
+  DELETE FROM x1 WHERE rowid=11111;
+  INSERT INTO x1(x1) VALUES('integrity-check');
+  SELECT rowid FROM x1($doc);
+} {11112}
+
 finish_test
