@@ -1,5 +1,5 @@
-C Prevent\snegative\svalues\sof\sSQLITE_DEFAULT_CACHE_SIZE\sfrom\smaking\sSQLITE_WIN32_HEAP_INIT_SIZE\snegative.
-D 2016-03-24T20:36:47.715
+C Make\stest\scases\sin\sshell1.test\srobust\sagainst\sTCL\sdeciding\sto\squote\sstrings\nusing\slots\sof\sbackslashes.
+D 2016-03-24T20:55:03.263
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -1028,7 +1028,7 @@ F test/sharedA.test 0cdf1a76dfa00e6beee66af5b534b1e8df2720f5
 F test/sharedB.test 16cc7178e20965d75278f410943109b77b2e645e
 F test/shared_err.test 2f2aee20db294b9924e81f6ccbe60f19e21e8506
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test e7dac9830b7d80432be9cebfae06eff9c18675f5
+F test/shell1.test 94538224ee7b7a52952dea67d2633b358abde271
 F test/shell2.test 2e7a32c9ee03c6398478637d72416d5b9ebd9777
 F test/shell3.test c39453d3012a39ffec944566eca8a6bda10a2284
 F test/shell4.test 69995ee1cc278eb149aa8746ce1f935f4eaf98b9
@@ -1459,7 +1459,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6db1d1fbc6c1acc896fa635dfdc5564800502c40
-R 5e26e94cafc58d6fd55eccc4e6c637ee
-U mistachkin
-Z 1088b9c27d83d36a2ae2a2fd6824e14f
+P e0737f5236ed3e85bd03203c880ee41b34619137
+R 203f39504a0cd47826f57431bf7289e6
+U drh
+Z ba68271edf3c6755b87aa606194c0bcd
