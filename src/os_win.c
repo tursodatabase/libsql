@@ -345,10 +345,22 @@ struct winFile {
 #endif
 
 /*
+ * This is cache size used in the calculation of the initial size of the
+ * Win32-specific heap.  It cannot be negative.
+ */
+#ifndef SQLITE_WIN32_CACHE_SIZE
+#  if SQLITE_DEFAULT_CACHE_SIZE>=0
+#    define SQLITE_WIN32_CACHE_SIZE (SQLITE_DEFAULT_CACHE_SIZE)
+#  else
+#    define SQLITE_WIN32_CACHE_SIZE (-(SQLITE_DEFAULT_CACHE_SIZE))
+#  endif
+#endif
+
+/*
  * The initial size of the Win32-specific heap.  This value may be zero.
  */
 #ifndef SQLITE_WIN32_HEAP_INIT_SIZE
-#  define SQLITE_WIN32_HEAP_INIT_SIZE ((SQLITE_DEFAULT_CACHE_SIZE) * \
+#  define SQLITE_WIN32_HEAP_INIT_SIZE ((SQLITE_WIN32_CACHE_SIZE) * \
                                        (SQLITE_DEFAULT_PAGE_SIZE) + 4194304)
 #endif
 
