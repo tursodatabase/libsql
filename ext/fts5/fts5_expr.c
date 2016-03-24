@@ -1493,6 +1493,7 @@ static int fts5ParseTokenize(
 
   /* If an error has already occurred, this is a no-op */
   if( pCtx->rc!=SQLITE_OK ) return pCtx->rc;
+  if( nToken>FTS5_MAX_TOKEN_SIZE ) nToken = FTS5_MAX_TOKEN_SIZE;
 
   if( pPhrase && pPhrase->nTerm>0 && (tflags & FTS5_TOKEN_COLOCATED) ){
     Fts5ExprTerm *pSyn;
@@ -2495,6 +2496,7 @@ static int fts5ExprPopulatePoslistsCb(
 
   UNUSED_PARAM2(iUnused1, iUnused2);
 
+  if( nToken>FTS5_MAX_TOKEN_SIZE ) nToken = FTS5_MAX_TOKEN_SIZE;
   if( (tflags & FTS5_TOKEN_COLOCATED)==0 ) p->iOff++;
   for(i=0; i<pExpr->nPhrase; i++){
     Fts5ExprTerm *pTerm;

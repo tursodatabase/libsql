@@ -564,22 +564,16 @@ static int vtabCallConstructor(
       pTab->pVTable = pVTable;
 
       for(iCol=0; iCol<pTab->nCol; iCol++){
-        char *zType = (char*)sqlite3StrNext(pTab->aCol[iCol].zName);
+        char *zType = sqlite3ColumnType(&pTab->aCol[iCol], "");
         int nType;
         int i = 0;
-        if( !zType[0] ){
-          pTab->tabFlags |= oooHidden;
-          continue;
-        }
         nType = sqlite3Strlen30(zType);
-        if( sqlite3StrNICmp("hidden", zType, 6)||(zType[6] && zType[6]!=' ') ){
-          for(i=0; i<nType; i++){
-            if( (0==sqlite3StrNICmp(" hidden", &zType[i], 7))
-             && (zType[i+7]=='\0' || zType[i+7]==' ')
-            ){
-              i++;
-              break;
-            }
+        for(i=0; i<nType; i++){
+          if( 0==sqlite3StrNICmp("hidden", &zType[i], 6)
+           && (i==0 || zType[i-1]==' ')
+           && (zType[i+6]=='\0' || zType[i+6]==' ')
+          ){
+            break;
           }
         }
         if( i<nType ){

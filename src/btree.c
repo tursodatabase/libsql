@@ -2360,12 +2360,12 @@ int sqlite3BtreeOpen(
     for(i=0; i<db->nDb; i++){
       if( (pSib = db->aDb[i].pBt)!=0 && pSib->sharable ){
         while( pSib->pPrev ){ pSib = pSib->pPrev; }
-        if( p->pBt<pSib->pBt ){
+        if( (uptr)p->pBt<(uptr)pSib->pBt ){
           p->pNext = pSib;
           p->pPrev = 0;
           pSib->pPrev = p;
         }else{
-          while( pSib->pNext && pSib->pNext->pBt<p->pBt ){
+          while( pSib->pNext && (uptr)pSib->pNext->pBt<(uptr)p->pBt ){
             pSib = pSib->pNext;
           }
           p->pNext = pSib->pNext;
@@ -4472,8 +4472,13 @@ static int accessPayload(
 #endif
   assert( offset+amt <= pCur->info.nPayload );
 
-  if( &aPayload[pCur->info.nLocal] > &pPage->aData[pBt->usableSize] ){
-    /* Trying to read or write past the end of the data is an error */
+  assert( aPayload > pPage->aData );
+  if( (uptr)(aPayload - pPage->aData) > (pBt->usableSize - pCur->info.nLocal) ){
+    /* Trying to read or write past the end of the data is an error.  The
+    ** conditional above is really:
+    **    &aPayload[pCur->info.nLocal] > &pPage->aData[pBt->usableSize]
+    ** but is recast into its current form to avoid integer overflow problems
+    */
     return SQLITE_CORRUPT_BKPT;
   }
 
