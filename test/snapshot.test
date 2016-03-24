@@ -17,6 +17,15 @@ source $testdir/tester.tcl
 ifcapable !snapshot {finish_test; return}
 set testprefix snapshot
 
+# This test does not work with the inmemory_journal permutation. The reason
+# is that each connection opened as part of this permutation executes
+# "PRAGMA journal_mode=memory", which fails if the database is in wal mode
+# and there are one or more existing connections.
+if {[permutation]=="inmemory_journal"} {
+  finish_test
+  return
+}
+
 #-------------------------------------------------------------------------
 # Check some error conditions in snapshot_get(). It is an error if:
 #

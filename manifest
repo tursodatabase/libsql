@@ -1,5 +1,5 @@
-C Avoid\scalling\srealloc()\swith\sa\szero\ssize\sin\sfuzzcheck.c.
-D 2016-03-23T17:54:19.633
+C Fix\ssome\stest\sscripts\sso\sthat\sthey\swork\swith\svarious\spermutations.
+D 2016-03-24T15:09:14.368
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -1042,8 +1042,8 @@ F test/skipscan2.test d1d1450952b7275f0b0a3a981f0230532743951a
 F test/skipscan3.test ec5bab3f81c7038b43450e7b3062e04a198bdbb5
 F test/skipscan5.test 67817a4b6857c47e0e33ba3e506da6f23ef68de2
 F test/skipscan6.test 5866039d03a56f5bd0b3d172a012074a1d90a15b
-F test/snapshot.test c03eb5ba1602df33c1edc1d12393d6ca7a282a46
-F test/snapshot_fault.test 25973aeb1b86a280800e0bcf1eb5ce70e9ef57ab
+F test/snapshot.test 9ed24c792fb05382814258daf68b2256f23de57f
+F test/snapshot_fault.test 062ff0438a074978d45e9f9a92e7ad459b74ee73
 F test/soak.test 0b5b6375c9f4110c828070b826b3b4b0bb65cd5f
 F test/softheap1.test 843cd84db9891b2d01b9ab64cef3e9020f98d087
 F test/sort.test c2adc635c2564241fefec0b3a68391ef6868fd3b
@@ -1459,7 +1459,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3fa88f68c3e1bbb3421cb0d2b82b9bb3fe7b9b14
-R 6050811335a4694faefeb0d2dc871228
-U drh
-Z bf4eed3170d70e06db77678976293947
+P a1fd14694c1adc54e5c443ebfdef38e38637f5c5
+R 36309b59b7cae947470048aeed54391f
+U dan
+Z b85dfb4995f4f514e1ad3337ff91de1c
