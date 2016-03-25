@@ -26,6 +26,13 @@ db close
 forcedelete test.db test.db-journal test.db-wal
 sqlite3 db test.db
 
+if {[info exists env(MSYSCON)] && $env(MSYSCON)=="sh.exe"} {
+  puts "shell3 tests do not work with the mingw shell due to dodgy\
+        command-line parsing"
+  finish_test
+  return
+}
+
 #----------------------------------------------------------------------------
 #   shell3-1.*: Basic tests for running SQL statments from command line.
 #
