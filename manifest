@@ -1,5 +1,5 @@
-C Make\stest\scases\sin\sshell1.test\srobust\sagainst\sTCL\sdeciding\sto\squote\sstrings\nusing\slots\sof\sbackslashes.
-D 2016-03-24T20:55:03.263
+C Fix\stwo\sinstances\sof\sundefined\sbehavior\sin\sthe\sC\scode\s-\sboth\sharmless\sfor\nall\scurrent\scompilers.
+D 2016-03-25T12:10:32.929
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -300,7 +300,7 @@ F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
 F src/btree.c 577fb5674e2f0aa0a38246afc19e1885a0b8c9b0
 F src/btree.h a5008b9afe56e8e54ade6c436a910f112defcca9
 F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
-F src/build.c 7d1a5e64fcd10110edc8ce9ffb710d06af0a59f5
+F src/build.c 39faaaeecb77eb3936d4bd5024e865e3836ca323
 F src/callback.c 2e76147783386374bf01b227f752c81ec872d730
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 60e135af364d777a9ab41c97e5e89cd224da6198
@@ -419,7 +419,7 @@ F src/update.c 56b3db7edff0110360a12b76af97c39ebe3ea8b8
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c 8873d696c9ccc4206058c402e09e101f1b81561a
 F src/vacuum.c feb1eabb20987983d9350cad98299b21fa811f52
-F src/vdbe.c f19741f2d8b33e8f09cd2219570b6c9ed924c3f1
+F src/vdbe.c cd990451b504507b455cc649d46dad51f2835a67
 F src/vdbe.h 6f44193e7be52fd5f7c308175a936555b1e6b101
 F src/vdbeInt.h f88d3115e9bde33b01d81f0dd26d8dd51f995991
 F src/vdbeapi.c 95b1f8e527240a18a9aea41a655b013bf07a7009
@@ -1459,7 +1459,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e0737f5236ed3e85bd03203c880ee41b34619137
-R 203f39504a0cd47826f57431bf7289e6
+P 817e93f42c09eb876421e27eb8eceb7b077cb45d
+R aca0111531dd13b444e2634c40aa3c16
 U drh
-Z ba68271edf3c6755b87aa606194c0bcd
+Z a7abe0dd0ebfdb648c54f66b764dd2a5
