@@ -1,5 +1,5 @@
-C Add\sthe\scatchcmd_collapse_space\scommand\sand\suse\sit\sto\shelp\smake\sshell\stesting\nmore\srobust\sagainst\sTCL\sspace\sescapes.
-D 2016-03-25T17:09:16.750
+C In\sthe\sWin32\sVFS,\savoid\strying\sto\suse\srand_s()\son\sWindows\sCE.
+D 2016-03-25T17:19:57.501
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -338,7 +338,7 @@ F src/os.h 91ff889115ecd01f436d3611f7f5ea4dc12d92f1
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c b1ccb273771f41dbdbe0ba7c1ad63c38ad5972ec
-F src/os_win.c 7c071f7f8f04827ab25a8f441080832be58688e9
+F src/os_win.c ff870d89f4cb088a04cbf5ea0cbd9ff1b089ff4a
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 38718a019ca762ba4f6795425d5a54db70d1790d
 F src/pager.h e1d38a2f14849e219df0f91f8323504d134c8a56
@@ -1459,7 +1459,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 99fd194c83dbcfcdcc582983b86678b85b1b9570
-R cfe872b896f4c791395847cc13daead3
-U drh
-Z 0d389fd777e66fc5d8e3b6840aab7902
+P 93caabb66082f76ef161a51ac822b919517a7171
+R 5aa2c9bfd4173374520b94533760d2da
+U mistachkin
+Z 700a9aa1ab3cd081c3674af5a63a2d5f
