@@ -823,6 +823,17 @@ proc catchcmd {db {cmd ""}} {
   list $rc $msg
 }
 
+proc catchcmd_collapse_space {db {cmd ""}} {
+  global CLI
+  set out [open cmds.txt w]
+  puts $out $cmd
+  close $out
+  set line "exec $CLI $db < cmds.txt"
+  set rc [catch { eval $line } msg]
+  regsub -all {\s+} $msg { } msg
+  list $rc $msg
+}
+
 proc catchcmdex {db {cmd ""}} {
   global CLI
   set out [open cmds.txt w]
