@@ -45,7 +45,7 @@ do_test shell1-1.1.1b {
 } {1 1}
 # error on extra options
 do_test shell1-1.1.2 {
-  catchcmd "test.db \"select 3\" \"select 4\"" ""
+  catchcmd "test.db \"select+3\" \"select+4\"" ""
 } {0 {3
 4}}
 # error on extra options
