@@ -275,11 +275,11 @@ do_test shell1-3.2.4 {
 
 # .databases             List names and files of attached databases
 do_test shell1-3.3.1 {
-  catchcmd_collapse_space "-csv test.db" ".databases"
+  catchcmd "-csv test.db" ".databases"
 } "/0.+main.+[string map {/ ".{1,2}"} [string range [get_pwd] 0 10]].*/"
 do_test shell1-3.3.2 {
   # extra arguments ignored
-  catchcmd_collapse_space "test.db" ".databases BAD"
+  catchcmd "test.db" ".databases BAD"
 } "/0.+main.+[string map {/ ".{1,2}"} [string range [get_pwd] 0 10]].*/"
 
 # .dump ?TABLE? ...      Dump the database in an SQL text format
