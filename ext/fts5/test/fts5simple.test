@@ -350,7 +350,7 @@ do_execsql_test 14.3 {
 
 do_execsql_test 14.4 {
   SELECT rowid, x, x1 FROM x1 WHERE x1 MATCH '*reads'
-} {0 {} 3}
+} {0 {} 4}
 
 #-------------------------------------------------------------------------
 reset_db

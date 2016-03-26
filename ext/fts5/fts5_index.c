@@ -12,8 +12,8 @@
 **
 ** Low level access to the FTS index stored in the database file. The 
 ** routines in this file file implement all read and write access to the
-** %_data table. Other parts of the system access this functionality via
-** the interface defined in fts5Int.h.
+** %_data and %_idx tables. Other parts of the system access this 
+** functionality via the interface defined in fts5Int.h.
 */
 
 
@@ -22,9 +22,10 @@
 /*
 ** Overview:
 **
-** The %_data table contains all the FTS indexes for an FTS5 virtual table.
-** As well as the main term index, there may be up to 31 prefix indexes.
-** The format is similar to FTS3/4, except that:
+** The %_data table contains the FTS index for an FTS5 virtual table.
+** All entries, for terms and prefixes, are stored in a single data
+** structure. The format is similar to FTS3/4, but differs in the 
+** following ways:
 **
 **   * all segment b-tree leaf data is stored in fixed size page records 
 **     (e.g. 1000 bytes). A single doclist may span multiple pages. Care is 
@@ -39,31 +40,19 @@
 **
 **   * extra fields in the "structure record" record the state of ongoing
 **     incremental merge operations.
-**
 */
 
 
-#define FTS5_OPT_WORK_UNIT  1000  /* Number of leaf pages per optimize step */
-#define FTS5_WORK_UNIT      64    /* Number of leaf pages in unit of work */
-
-#define FTS5_MIN_DLIDX_SIZE 4     /* Add dlidx if this many empty pages */
-
-#define FTS5_MAIN_PREFIX '0'
-
-#if FTS5_MAX_PREFIX_INDEXES > 31
-# error "FTS5_MAX_PREFIX_INDEXES is too large"
-#endif
-
 /*
-** Details:
+** Contents of %_data table:
 **
 ** The %_data table managed by this module,
 **
 **     CREATE TABLE %_data(id INTEGER PRIMARY KEY, block BLOB);
 **
-** , contains the following 5 types of records. See the comments surrounding
+** , contains the following 4 types of records. See the comments surrounding
 ** the FTS5_*_ROWID macros below for a description of how %_data rowids are 
-** assigned to each fo them.
+** assigned to each of them.
 **
 ** 1. Structure Records:
 **
@@ -176,7 +165,7 @@
 **             varint : size of first term
 **             blob:    first term data
 **
-** 5. Segment doclist indexes:
+** 4. Segment doclist indexes:
 **
 **   Doclist indexes are themselves b-trees, however they usually consist of
 **   a single leaf record only. The format of each doclist index leaf page 
@@ -206,6 +195,21 @@
 **       child page. 
 **
 */
+
+
+#define FTS5_OPT_WORK_UNIT  1000  /* Number of leaf pages per optimize step */
+#define FTS5_WORK_UNIT      64    /* Number of leaf pages in unit of work */
+#define FTS5_MIN_DLIDX_SIZE 4     /* Add dlidx if this many empty pages */
+
+/* All entries for regular terms in the FTS index are prefixed with '0'.
+** Entries for the first prefix index are prefixed with '1'. And so on, 
+** up to ('0'+31).  */
+#define FTS5_MAIN_PREFIX '0'
+
+#if FTS5_MAX_PREFIX_INDEXES > 31
+# error "FTS5_MAX_PREFIX_INDEXES is too large"
+#endif
+
 
 /*
 ** Rowids for the averages and structure records in the %_data table.
@@ -305,7 +309,8 @@ struct Fts5Index {
   sqlite3_stmt *pIdxSelect;
   int nRead;                      /* Total number of blocks read */
 
-  sqlite3_stmt *pDataVersion;
+  /* In-memory cache of the 'structure' record */
+  sqlite3_stmt *pDataVersion;     /* PRAGMA <db>.data_version */
   i64 iStructVersion;             /* data_version when pStruct read */
   Fts5Structure *pStruct;         /* Current db structure (or NULL) */
 };
@@ -620,7 +625,7 @@ static int fts5LeafFirstTermOff(Fts5Data *pLeaf){
 /*
 ** Close the read-only blob handle, if it is open.
 */
-static void fts5CloseReader(Fts5Index *p){
+void sqlite3Fts5IndexCloseReader(Fts5Index *p){
   if( p->pReader ){
     sqlite3_blob *pReader = p->pReader;
     p->pReader = 0;
@@ -650,7 +655,7 @@ static Fts5Data *fts5DataRead(Fts5Index *p, i64 iRowid){
       assert( p->pReader==0 );
       p->pReader = pBlob;
       if( rc!=SQLITE_OK ){
-        fts5CloseReader(p);
+        sqlite3Fts5IndexCloseReader(p);
       }
       if( rc==SQLITE_ABORT ) rc = SQLITE_OK;
     }
@@ -994,7 +999,7 @@ static i64 fts5IndexDataVersion(Fts5Index *p){
     if( p->pDataVersion==0 ){
       p->rc = fts5IndexPrepareStmt(p, &p->pDataVersion, 
           sqlite3_mprintf("PRAGMA %Q.data_version", p->pConfig->zDb)
-          );
+      );
       if( p->rc ) return 0;
     }
 
@@ -1005,6 +1010,19 @@ static i64 fts5IndexDataVersion(Fts5Index *p){
   }
 
   return iVersion;
+}
+
+/*
+** If there is currently no cache of the index structure in memory, load
+** one from the database.
+*/
+static void fts5StructureCache(Fts5Index *p){
+  if( p->pStruct==0 ){
+    p->iStructVersion = fts5IndexDataVersion(p);
+    if( p->rc==SQLITE_OK ){
+      p->pStruct = fts5StructureReadUncached(p);
+    }
+  }
 }
 
 /*
@@ -1019,13 +1037,7 @@ static i64 fts5IndexDataVersion(Fts5Index *p){
 ** is called, it is a no-op.
 */
 static Fts5Structure *fts5StructureRead(Fts5Index *p){
-
-  if( p->pStruct==0 ){
-    p->iStructVersion = fts5IndexDataVersion(p);
-    if( p->rc==SQLITE_OK ){
-      p->pStruct = fts5StructureReadUncached(p);
-    }
-  }
+  fts5StructureCache(p);
 
 #if 0
   else{
@@ -4396,12 +4408,6 @@ static int fts5IndexReturn(Fts5Index *p){
   return rc;
 }
 
-typedef struct Fts5FlushCtx Fts5FlushCtx;
-struct Fts5FlushCtx {
-  Fts5Index *pIdx;
-  Fts5SegWriter writer; 
-};
-
 /*
 ** Buffer aBuf[] contains a list of varints, all small enough to fit
 ** in a 32-bit integer. Return the size of the largest prefix of this 
@@ -5104,7 +5110,7 @@ int sqlite3Fts5IndexBeginWrite(Fts5Index *p, int bDelete, i64 iRowid){
 int sqlite3Fts5IndexSync(Fts5Index *p, int bCommit){
   assert( p->rc==SQLITE_OK );
   fts5IndexFlush(p);
-  if( bCommit ) fts5CloseReader(p);
+  if( bCommit ) sqlite3Fts5IndexCloseReader(p);
   return fts5IndexReturn(p);
 }
 
@@ -5115,9 +5121,10 @@ int sqlite3Fts5IndexSync(Fts5Index *p, int bCommit){
 ** records must be invalidated.
 */
 int sqlite3Fts5IndexRollback(Fts5Index *p){
-  fts5CloseReader(p);
+  sqlite3Fts5IndexCloseReader(p);
   fts5IndexDiscardData(p);
   fts5StructureInvalidate(p);
+  p->pConfig->iCookie = -1;
   /* assert( p->rc==SQLITE_OK ); */
   return SQLITE_OK;
 }
@@ -5352,7 +5359,7 @@ int sqlite3Fts5IndexQuery(
     if( p->rc ){
       sqlite3Fts5IterClose(&pRet->base);
       pRet = 0;
-      fts5CloseReader(p);
+      sqlite3Fts5IndexCloseReader(p);
     }
 
     *ppIter = &pRet->base;
@@ -5425,7 +5432,7 @@ void sqlite3Fts5IterClose(Fts5IndexIter *pIndexIter){
     Fts5Iter *pIter = (Fts5Iter*)pIndexIter;
     Fts5Index *pIndex = pIter->pIndex;
     fts5MultiIterFree(pIter);
-    fts5CloseReader(pIndex);
+    sqlite3Fts5IndexCloseReader(pIndex);
   }
 }
 
@@ -5467,45 +5474,42 @@ int sqlite3Fts5IndexSetAverages(Fts5Index *p, const u8 *pData, int nData){
 
 /*
 ** Return the total number of blocks this module has read from the %_data
-** table since it was created.
+** table (since it was created by sqlite3Fts5IndexOpen).
 */
 int sqlite3Fts5IndexReads(Fts5Index *p){
   return p->nRead;
 }
 
 /*
-** Set the 32-bit cookie value stored at the start of all structure 
-** records to the value passed as the second argument.
-**
-** Return SQLITE_OK if successful, or an SQLite error code if an error
-** occurs.
+** Increment the value of the configuration cookie stored as the first 
+** 32-bits of the structure record in the database. This is done after
+** modifying the contents of the %_config table.
 */
-int sqlite3Fts5IndexSetCookie(Fts5Index *p, int iNew){
-  int rc;                              /* Return code */
-  Fts5Config *pConfig = p->pConfig;    /* Configuration object */
-  u8 aCookie[4];                       /* Binary representation of iNew */
-  sqlite3_blob *pBlob = 0;
-
-  assert( p->rc==SQLITE_OK );
-  sqlite3Fts5Put32(aCookie, iNew);
-
-  rc = sqlite3_blob_open(pConfig->db, pConfig->zDb, p->zDataTbl, 
-      "block", FTS5_STRUCTURE_ROWID, 1, &pBlob
-  );
-  if( rc==SQLITE_OK ){
-    sqlite3_blob_write(pBlob, aCookie, 4, 0);
-    rc = sqlite3_blob_close(pBlob);
-  }
-
-  return rc;
-}
-
-int sqlite3Fts5IndexLoadConfig(Fts5Index *p){
+int sqlite3Fts5IndexIncrCookie(Fts5Index *p){
   Fts5Structure *pStruct;
   pStruct = fts5StructureRead(p);
+  p->pConfig->iCookie++;
+  fts5StructureWrite(p, pStruct);
   fts5StructureRelease(pStruct);
   return fts5IndexReturn(p);
 }
+
+/*
+** Ensure the contents of the %_config table have been loaded into memory.
+*/
+int sqlite3Fts5IndexLoadConfig(Fts5Index *p){
+  fts5StructureCache(p);
+  return fts5IndexReturn(p);
+}
+
+int sqlite3Fts5IndexNewTrans(Fts5Index *p){
+  assert( p->pStruct==0 || p->iStructVersion!=0 );
+  if( p->pConfig->iCookie<0 || fts5IndexDataVersion(p)!=p->iStructVersion ){
+    fts5StructureInvalidate(p);
+  }
+  return fts5IndexReturn(p);
+}
+
 
 
 /*************************************************************************
@@ -6451,11 +6455,3 @@ int sqlite3Fts5IndexInit(sqlite3 *db){
   return rc;
 }
 
-
-int sqlite3Fts5IndexReset(Fts5Index *p){
-  assert( p->pStruct==0 || p->iStructVersion!=0 );
-  if( fts5IndexDataVersion(p)!=p->iStructVersion ){
-    fts5StructureInvalidate(p);
-  }
-  return fts5IndexReturn(p);
-}

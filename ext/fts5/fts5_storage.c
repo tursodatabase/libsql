@@ -641,10 +641,6 @@ int sqlite3Fts5StorageMerge(Fts5Storage *p, int nMerge){
   return sqlite3Fts5IndexMerge(p->pIndex, nMerge);
 }
 
-int sqlite3Fts5StorageReset(Fts5Storage *p){
-  return sqlite3Fts5IndexReset(p->pIndex);
-}
-
 /*
 ** Allocate a new rowid. This is used for "external content" tables when
 ** a NULL value is inserted into the rowid column. The new rowid is allocated
@@ -1120,11 +1116,7 @@ int sqlite3Fts5StorageConfigValue(
     rc = sqlite3_reset(pReplace);
   }
   if( rc==SQLITE_OK && pVal ){
-    int iNew = p->pConfig->iCookie + 1;
-    rc = sqlite3Fts5IndexSetCookie(p->pIndex, iNew);
-    if( rc==SQLITE_OK ){
-      p->pConfig->iCookie = iNew;
-    }
+    rc = sqlite3Fts5IndexIncrCookie(p->pIndex);
   }
   return rc;
 }

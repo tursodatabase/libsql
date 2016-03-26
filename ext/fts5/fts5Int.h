@@ -473,7 +473,7 @@ int sqlite3Fts5IndexIntegrityCheck(Fts5Index*, u64 cksum);
 */
 int sqlite3Fts5IndexInit(sqlite3*);
 
-int sqlite3Fts5IndexSetCookie(Fts5Index*, int);
+int sqlite3Fts5IndexIncrCookie(Fts5Index*);
 
 /*
 ** Return the total number of entries read from the %_data table by 
@@ -484,9 +484,11 @@ int sqlite3Fts5IndexReads(Fts5Index *p);
 int sqlite3Fts5IndexReinit(Fts5Index *p);
 int sqlite3Fts5IndexOptimize(Fts5Index *p);
 int sqlite3Fts5IndexMerge(Fts5Index *p, int nMerge);
-int sqlite3Fts5IndexReset(Fts5Index *p);
+int sqlite3Fts5IndexNewTrans(Fts5Index *p);
 
 int sqlite3Fts5IndexLoadConfig(Fts5Index *p);
+
+void sqlite3Fts5IndexCloseReader(Fts5Index*);
 
 /*
 ** End of interface to code in fts5_index.c.

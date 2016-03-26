@@ -602,7 +602,7 @@ static int fts5NewTransaction(Fts5Table *pTab){
   for(pCsr=pTab->pGlobal->pCsr; pCsr; pCsr=pCsr->pNext){
     if( pCsr->base.pVtab==(sqlite3_vtab*)pTab ) return SQLITE_OK;
   }
-  return sqlite3Fts5StorageReset(pTab->pStorage);
+  return sqlite3Fts5IndexNewTrans(pTab->pIndex);
 }
 
 /*
@@ -617,6 +617,9 @@ static int fts5OpenMethod(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCsr){
 
   rc = fts5NewTransaction(pTab);
   if( rc==SQLITE_OK ){
+    rc = sqlite3Fts5IndexLoadConfig(pTab->pIndex);
+  }
+  if( rc==SQLITE_OK ){
     nByte = sizeof(Fts5Cursor) + pConfig->nCol * sizeof(int);
     pCsr = (Fts5Cursor*)sqlite3_malloc(nByte);
     if( pCsr ){
@@ -629,6 +632,9 @@ static int fts5OpenMethod(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCsr){
     }else{
       rc = SQLITE_NOMEM;
     }
+  }
+  if( rc!=SQLITE_OK ){
+    sqlite3Fts5IndexCloseReader(pTab->pIndex);
   }
   *ppCsr = (sqlite3_vtab_cursor*)pCsr;
   return rc;
@@ -710,6 +716,7 @@ static int fts5CloseMethod(sqlite3_vtab_cursor *pCursor){
     *pp = pCsr->pNext;
 
     sqlite3_free(pCsr);
+    sqlite3Fts5IndexCloseReader(pTab->pIndex);
   }
   return SQLITE_OK;
 }
@@ -1589,9 +1596,16 @@ static int fts5SyncMethod(sqlite3_vtab *pVtab){
 ** Implementation of xBegin() method. 
 */
 static int fts5BeginMethod(sqlite3_vtab *pVtab){
-  fts5CheckTransactionState((Fts5Table*)pVtab, FTS5_BEGIN, 0);
-  fts5NewTransaction((Fts5Table*)pVtab);
-  return SQLITE_OK;
+  Fts5Table *pTab = (Fts5Table*)pVtab;
+  int rc;
+  rc = fts5NewTransaction(pTab);
+  if( rc!=SQLITE_OK ){
+    sqlite3Fts5IndexCloseReader(pTab->pIndex);
+  }
+#ifdef SQLITE_DEBUG
+  if( rc==SQLITE_OK ) fts5CheckTransactionState(pTab, FTS5_BEGIN, 0);
+#endif
+  return rc;
 }
 
 /*

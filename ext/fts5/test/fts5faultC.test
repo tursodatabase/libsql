@@ -1,0 +1,79 @@
+# 2016 March 26
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+#
+# This file is focused on OOM errors.
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+source $testdir/malloc_common.tcl
+set testprefix fts5faultC
+return_if_no_fts5
+
+#--------------------------------------------------------------------------
+# Test that if an OOM error occurs while trying to set a configuration
+# option, the in-memory and on-disk configurations are not left in an 
+# inconsistent state.
+#
+
+
+
+proc posrowid {cmd} { $cmd xRowid }
+proc negrowid {cmd} { expr -1 * [$cmd xRowid] }
+
+sqlite3_fts5_create_function db posrowid posrowid
+sqlite3_fts5_create_function db negrowid negrowid
+
+do_execsql_test 1.0.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(x);
+  INSERT INTO t1 VALUES('a b c');
+  INSERT INTO t1 VALUES('d a d');
+  INSERT INTO t1 VALUES('c b a');
+}
+do_execsql_test 1.0.1 {
+  INSERT INTO t1(t1, rank) VALUES('rank', 'posrowid()');
+  SELECT rowid FROM t1('a') ORDER BY rank;
+} {1 2 3}
+do_execsql_test 1.0.2 {
+  INSERT INTO t1(t1, rank) VALUES('rank', 'negrowid()');
+  SELECT rowid FROM t1('a') ORDER BY rank;
+} {3 2 1}
+
+faultsim_save_and_close 
+do_faultsim_test 1.1 -faults oom-* -prep {
+  faultsim_restore_and_reopen
+  sqlite3_fts5_create_function db posrowid posrowid
+  sqlite3_fts5_create_function db negrowid negrowid
+  execsql { SELECT * FROM t1('*reads') }
+} -body {
+  execsql { INSERT INTO t1(t1, rank) VALUES('rank', 'posrowid()') }
+} -test {
+
+  faultsim_test_result [list 0 {}]
+  sqlite3 db2 test.db
+  set ex [db2 one { SELECT v FROM t1_config WHERE k='rank' }]
+  switch -- $ex {
+    "posrowid()" { set ex {1 2 3} }
+    "negrowid()" { set ex {3 2 1} }
+    default { error 1 }
+  }
+  
+  set res [db eval { SELECT rowid FROM t1('a') ORDER BY rank }]
+  if {$res != $ex} {
+    error "2: expected {$ex} got {$res}"
+  }
+  db2 close
+}
+
+
+
+
+finish_test
+
