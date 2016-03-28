@@ -316,6 +316,7 @@ void sqlite3VtabBeginParse(
   sqlite3 *db;          /* Database connection */
 
   sqlite3StartTable(pParse, pName1, pName2, 0, 0, 1, ifNotExists);
+  sqlite3MayAbort(pParse);
   pTable = pParse->pNewTable;
   if( pTable==0 ) return;
   assert( 0==pTable->pIndex );

@@ -55,11 +55,11 @@ foreach_detail_mode $testprefix {
     }
     execsql "CREATE VIRTUAL TABLE t2 USING fts5(detail=%DETAIL%,[join $cols ,])"
   } {}
-  
+
   do_test 2.2 {
     execsql "INSERT INTO t2 VALUES([join $vals ,])"
   } {}
-  
+ 
   foreach {tn q res} {
     1 { c1:val1 }     1
     2 { c300:val300 } 1
@@ -80,6 +80,21 @@ do_execsql_test 3.0 {
   SELECT * FROM x3('x OR y OR z');
 }
 
+
+#-------------------------------------------------------------------------
+# Check that if a CREATE VIRTUAL TABLE statement fails within a 
+# transaction, any changes made to the database are reverted before
+# continuing.
+#
+reset_db
+do_catchsql_test 4.0 {
+  BEGIN;
+    CREATE VIRTUAL TABLE t1 USING fts5;
+} {1 {vtable constructor failed: t1}}
+
+do_execsql_test 4.1 { SELECT * FROM sqlite_master } {}
+do_execsql_test 4.2 { COMMIT }
+do_execsql_test 4.3 { SELECT * FROM sqlite_master } {}
 
 finish_test
 

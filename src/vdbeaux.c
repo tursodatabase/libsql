@@ -509,6 +509,9 @@ int sqlite3VdbeAssertMayAbort(Vdbe *v, int mayAbort){
       break;
     }
     if( opcode==OP_CreateTable ) hasCreateTable = 1;
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+    if( opcode==OP_VCreate ) hasAbort = 1;
+#endif
     if( opcode==OP_InitCoroutine ) hasInitCoroutine = 1;
 #ifndef SQLITE_OMIT_FOREIGN_KEY
     if( opcode==OP_FkCounter && pOp->p1==0 && pOp->p2==1 ){

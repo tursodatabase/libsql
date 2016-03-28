@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sOOM\shandling\swhen\ssetting\san\sfts5\sconfiguration\soption.
-D 2016-03-26T20:11:04.128
+C Integrate\sthe\svcreate-stmt\sbranch\sinto\sthis\sone.
+D 2016-03-28T15:06:50.597
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -183,7 +183,7 @@ F ext/fts5/test/fts5restart.test c17728fdea26e7d0f617d22ad5b4b2862b994c17
 F ext/fts5/test/fts5rowid.test 16908a99d6efc9ba21081b4f2b86b3fc699839a6
 F ext/fts5/test/fts5simple.test f157c8b068f5e68473ad86bfe220b07a84e0209f
 F ext/fts5/test/fts5simple2.test 98377ae1ff7749a42c21fe1a139c1ed312522c46
-F ext/fts5/test/fts5simple3.test 8e71733b3d1b0e695011d02c68ebc5ca40b6124e
+F ext/fts5/test/fts5simple3.test 5e00bc009aa0a62190e795383d969b8f31dbde15
 F ext/fts5/test/fts5synonym.test 6475d189c2e20d60795808f83e36bf9318708d48
 F ext/fts5/test/fts5synonym2.test aa4c43bd3b691ff80f658cb064f5ab40690e834e
 F ext/fts5/test/fts5tok1.test beb894c6f3468f10a574302f69ebe4436b0287c7
@@ -391,7 +391,7 @@ F src/test_intarray.h 9dc57417fb65bc7835cc18548852cc08cc062202
 F src/test_journal.c 5360fbe1d1e4416ca36290562fd5a2e3f70f32aa
 F src/test_loadext.c 337056bae59f80b9eb00ba82088b39d0f4fe6dfd
 F src/test_malloc.c 96df9381a1ff1f6d3805ff7231b9baf1386aaabf
-F src/test_multiplex.c 6a088d8d9d4aad4bec45dd8878af11b15900702d
+F src/test_multiplex.c 6a9de820fcaaf506c59aa14bc8693822333cea48
 F src/test_multiplex.h c08e4e8f8651f0c5e0509b138ff4d5b43ed1f5d3
 F src/test_mutex.c dbdfaff8580071f2212a0deae3325a93a737819c
 F src/test_onefile.c 38f7cbe79d5bafe95bde683cc3a53b8ca16daf10
@@ -424,12 +424,12 @@ F src/vdbe.c cd990451b504507b455cc649d46dad51f2835a67
 F src/vdbe.h 6f44193e7be52fd5f7c308175a936555b1e6b101
 F src/vdbeInt.h f88d3115e9bde33b01d81f0dd26d8dd51f995991
 F src/vdbeapi.c 95b1f8e527240a18a9aea41a655b013bf07a7009
-F src/vdbeaux.c c8dd3e4e932bede6363b380519d05c0557ad27ce
+F src/vdbeaux.c 12936eacddb053711755c0811cdfca54bccec574
 F src/vdbeblob.c 3b570b730109e8f653d9d2081649f6e7015113db
 F src/vdbemem.c fe76c1f866de362d9b8332e59d74aa44f6560d69
 F src/vdbesort.c 307460bfa4de4d1c3901fcd42089159131e34062
 F src/vdbetrace.c f75c5455d8cf389ef86a8bfdfd3177e0e3692484
-F src/vtab.c 23b6cdfa996152d43b390504ed4a942c8caf3a00
+F src/vtab.c 708a9c55986d9ff0266a50ad8841050cbaf38d67
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 10deb6b43887662691e5f53d10b3c171c401169b
 F src/wal.h 2f7c831cf3b071fa548bf2d5cac640846a7ff19c
@@ -1460,10 +1460,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8213c2f58167243411d29cc58e303b4be656f756
-R be57f13787d59ee7ecd47b81dbe52717
-T *branch * fts5
-T *sym-fts5 *
-T -sym-trunk *
+P 53b80a6d054a1c87311b3dc1c2bcfcc1b676b05a d0a3853b37230c12f8d4c5c24401cb707991e5e4
+R ffe18224996cd879ed36bca59636011d
+T +closed d0a3853b37230c12f8d4c5c24401cb707991e5e4
 U dan
-Z 9cae65c93dd0ffab0ada61227cd993a5
+Z a57793b5d3a81d4bcf7041fac7b6fde4
