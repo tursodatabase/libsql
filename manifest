@@ -1,5 +1,5 @@
-C Fix\sthe\smultiplexor\sso\sthat\sit\sdoes\snot\sassume\sthat\sthe\sxGetLastError\smethod\nis\snon-NULL\sin\sthe\schild\sVFS.
-D 2016-03-28T11:01:54.323
+C Open\sa\sstatement\stransaction\sfor\s"CREATE\sVIRTUAL\sTABLE"\sstatements\sin\sorder\sto\sensure\sthat\sif\sthe\sxCreate()\scall\sfails,\schanges\smade\sto\sthe\ssqlite_master\sand\spossibly\sother\stables\sare\srolled\sback.
+D 2016-03-28T14:57:04.013
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -182,7 +182,7 @@ F ext/fts5/test/fts5restart.test c17728fdea26e7d0f617d22ad5b4b2862b994c17
 F ext/fts5/test/fts5rowid.test 16908a99d6efc9ba21081b4f2b86b3fc699839a6
 F ext/fts5/test/fts5simple.test cd23d4072ea095d652c9b6db12284cc642e49c98
 F ext/fts5/test/fts5simple2.test 98377ae1ff7749a42c21fe1a139c1ed312522c46
-F ext/fts5/test/fts5simple3.test 8e71733b3d1b0e695011d02c68ebc5ca40b6124e
+F ext/fts5/test/fts5simple3.test 5e00bc009aa0a62190e795383d969b8f31dbde15
 F ext/fts5/test/fts5synonym.test 6475d189c2e20d60795808f83e36bf9318708d48
 F ext/fts5/test/fts5synonym2.test aa4c43bd3b691ff80f658cb064f5ab40690e834e
 F ext/fts5/test/fts5tok1.test beb894c6f3468f10a574302f69ebe4436b0287c7
@@ -423,12 +423,12 @@ F src/vdbe.c cd990451b504507b455cc649d46dad51f2835a67
 F src/vdbe.h 6f44193e7be52fd5f7c308175a936555b1e6b101
 F src/vdbeInt.h f88d3115e9bde33b01d81f0dd26d8dd51f995991
 F src/vdbeapi.c 95b1f8e527240a18a9aea41a655b013bf07a7009
-F src/vdbeaux.c c8dd3e4e932bede6363b380519d05c0557ad27ce
+F src/vdbeaux.c 12936eacddb053711755c0811cdfca54bccec574
 F src/vdbeblob.c 3b570b730109e8f653d9d2081649f6e7015113db
 F src/vdbemem.c fe76c1f866de362d9b8332e59d74aa44f6560d69
 F src/vdbesort.c 307460bfa4de4d1c3901fcd42089159131e34062
 F src/vdbetrace.c f75c5455d8cf389ef86a8bfdfd3177e0e3692484
-F src/vtab.c 23b6cdfa996152d43b390504ed4a942c8caf3a00
+F src/vtab.c 708a9c55986d9ff0266a50ad8841050cbaf38d67
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 10deb6b43887662691e5f53d10b3c171c401169b
 F src/wal.h 2f7c831cf3b071fa548bf2d5cac640846a7ff19c
@@ -1459,7 +1459,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8213c2f58167243411d29cc58e303b4be656f756
-R 345c74a0cb9568a53ff6b8825c4a812b
-U drh
-Z 80e7037d98d6e1826970b484373d3274
+P f6a88cccbc0c62a0b453f4711298c9d5e1882b18
+R dadeb3bb7a060e0da4677a7f51fa7277
+T *branch * vcreate-stmt
+T *sym-vcreate-stmt *
+T -sym-trunk *
+U dan
+Z e4289e8a630a23c8c71af0317c2bb78e
