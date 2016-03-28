@@ -1,5 +1,5 @@
-C More\schanges\sto\sthe\sshellN.test\sscripts\sto\sget\sthem\sworking\son\sall\svariations\nof\sWindows.
-D 2016-03-26T15:36:36.768
+C Fix\sthe\smultiplexor\sso\sthat\sit\sdoes\snot\sassume\sthat\sthe\sxGetLastError\smethod\nis\snon-NULL\sin\sthe\schild\sVFS.
+D 2016-03-28T11:01:54.323
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -390,7 +390,7 @@ F src/test_intarray.h 9dc57417fb65bc7835cc18548852cc08cc062202
 F src/test_journal.c 5360fbe1d1e4416ca36290562fd5a2e3f70f32aa
 F src/test_loadext.c 337056bae59f80b9eb00ba82088b39d0f4fe6dfd
 F src/test_malloc.c 96df9381a1ff1f6d3805ff7231b9baf1386aaabf
-F src/test_multiplex.c 6a088d8d9d4aad4bec45dd8878af11b15900702d
+F src/test_multiplex.c 6a9de820fcaaf506c59aa14bc8693822333cea48
 F src/test_multiplex.h c08e4e8f8651f0c5e0509b138ff4d5b43ed1f5d3
 F src/test_mutex.c dbdfaff8580071f2212a0deae3325a93a737819c
 F src/test_onefile.c 38f7cbe79d5bafe95bde683cc3a53b8ca16daf10
@@ -1459,7 +1459,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3bd499d3bdf4e80f83513966c2ee9dd11e67cbd1
-R 0f980ceb534899c3d74e7aadbdc990e8
+P 8213c2f58167243411d29cc58e303b4be656f756
+R 345c74a0cb9568a53ff6b8825c4a812b
 U drh
-Z 6df6f858842cee4837ac5cccff369bba
+Z 80e7037d98d6e1826970b484373d3274
