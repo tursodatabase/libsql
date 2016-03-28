@@ -315,6 +315,11 @@ struct Fts5Index {
   Fts5Structure *pStruct;         /* Current db structure (or NULL) */
 };
 
+/*
+** An iterator of this sort is used to iterate through a doclist stored
+** entirely in memory. See functions fts5DoclistIterInit() and
+** fts5DoclistIterNext() for details. 
+*/
 struct Fts5DoclistIter {
   u8 *aEof;                       /* Pointer to 1 byte past end of doclist */
 
@@ -532,6 +537,13 @@ struct Fts5Iter {
   Fts5CResult *aFirst;            /* Current merge state (see above) */
   Fts5SegIter aSeg[1];            /* Array of segment iterators */
 };
+
+
+/*
+** Given pointer "x" to an Fts5Iter structure, return a pointer the the
+** current first component segment iterator.
+*/
+#define fts5IterSegment(x) (&(x)->aSeg [ (x)->aFirst[1].iFirst ])
 
 
 /*
@@ -1844,7 +1856,7 @@ static void fts5SegIterReverseNewPage(Fts5Index *p, Fts5SegIter *pIter){
 ** position-list.
 */
 static int fts5MultiIterIsEmpty(Fts5Index *p, Fts5Iter *pIter){
-  Fts5SegIter *pSeg = &pIter->aSeg[pIter->aFirst[1].iFirst];
+  Fts5SegIter *pSeg = fts5IterSegment(pIter);
   return (p->rc==SQLITE_OK && pSeg->pLeaf && pSeg->nPos==0);
 }
 
@@ -2545,7 +2557,7 @@ static void fts5AssertComparisonResult(
 */
 static void fts5AssertMultiIterSetup(Fts5Index *p, Fts5Iter *pIter){
   if( p->rc==SQLITE_OK ){
-    Fts5SegIter *pFirst = &pIter->aSeg[ pIter->aFirst[1].iFirst ];
+    Fts5SegIter *pFirst = fts5IterSegment(pIter);
     int i;
 
     assert( (pFirst->pLeaf==0)==pIter->base.bEof );
@@ -2818,7 +2830,7 @@ static int fts5MultiIterAdvanceRowid(
 ** Set the pIter->bEof variable based on the state of the sub-iterators.
 */
 static void fts5MultiIterSetEof(Fts5Iter *pIter){
-  Fts5SegIter *pSeg = &pIter->aSeg[ pIter->aFirst[1].iFirst ];
+  Fts5SegIter *pSeg = fts5IterSegment(pIter);
   pIter->base.bEof = pSeg->pLeaf==0;
   pIter->iSwitchRowid = pSeg->iRowid;
 }
@@ -2853,12 +2865,12 @@ static void fts5MultiIterNext(
     ){
       fts5MultiIterAdvanced(p, pIter, iFirst, 1);
       fts5MultiIterSetEof(pIter);
-      pSeg = &pIter->aSeg[pIter->aFirst[1].iFirst];
+      pSeg = fts5IterSegment(pIter);
       if( pSeg->pLeaf==0 ) return;
     }
 
     fts5AssertMultiIterSetup(p, pIter);
-    assert( pSeg==&pIter->aSeg[pIter->aFirst[1].iFirst] && pSeg->pLeaf );
+    assert( pSeg==fts5IterSegment(pIter) && pSeg->pLeaf );
     if( pIter->bSkipEmpty==0 || pSeg->nPos ){
       pIter->xSetOutputs(pIter, pSeg);
       return;
@@ -3427,8 +3439,7 @@ static void fts5MultiIterNew(
     if( pNew->bSkipEmpty && fts5MultiIterIsEmpty(p, pNew) ){
       fts5MultiIterNext(p, pNew, 0, 0);
     }else if( pNew->base.bEof==0 ){
-      Fts5SegIter *pSeg = &pNew->aSeg[pNew->aFirst[1].iFirst];
-      pNew->xSetOutputs(pNew, pSeg);
+      pNew->xSetOutputs(pNew, fts5IterSegment(pNew));
     }
 
   }else{
@@ -3482,9 +3493,7 @@ static void fts5MultiIterNew2(
 ** False otherwise.
 */
 static int fts5MultiIterEof(Fts5Index *p, Fts5Iter *pIter){
-  assert( p->rc 
-      || (pIter->aSeg[ pIter->aFirst[1].iFirst ].pLeaf==0)==pIter->base.bEof 
-  );
+  assert( p->rc || (fts5IterSegment(pIter)->pLeaf==0)==pIter->base.bEof );
   return (p->rc || pIter->base.bEof);
 }
 
@@ -3494,8 +3503,8 @@ static int fts5MultiIterEof(Fts5Index *p, Fts5Iter *pIter){
 ** results are undefined.
 */
 static i64 fts5MultiIterRowid(Fts5Iter *pIter){
-  assert( pIter->aSeg[ pIter->aFirst[1].iFirst ].pLeaf );
-  return pIter->aSeg[ pIter->aFirst[1].iFirst ].iRowid;
+  assert( fts5IterSegment(pIter)->pLeaf );
+  return fts5IterSegment(pIter)->iRowid;
 }
 
 /*
@@ -3827,9 +3836,6 @@ static void fts5WriteFlushLeaf(Fts5Index *p, Fts5SegWriter *pWriter){
   Fts5PageWriter *pPage = &pWriter->writer;
   i64 iRowid;
 
-static int nCall = 0;
-nCall++;
-
   assert( (pPage->pgidx.n==0)==(pWriter->bFirstTermInPage) );
 
   /* Set the szLeaf header field. */
@@ -4158,13 +4164,21 @@ static void fts5MergeChunkCallback(
 }
 
 /*
+** This function reads data from level iLvl of structure (*ppStruct) and
+** writes it into a segment on level (iLvl+1). If (*ppStruct) indicates
+** that there is already such a merge underway, this function continues
+** it. Otherwise, a new merge is started. (*ppStruct) is updated with the
+** results of the merge before this function returns.
 **
+** When this function is called in/out parameter *pnRem contains the maximum
+** number of leaf pages to write to the database. *pnRem is decremented by
+** the actual number of pages written before this function returns.
 */
 static void fts5IndexMergeLevel(
   Fts5Index *p,                   /* FTS5 backend object */
   Fts5Structure **ppStruct,       /* IN/OUT: Stucture of index */
   int iLvl,                       /* Level to read input from */
-  int *pnRem                      /* Write up to this many output leaves */
+  int *pnRem                      /* IN/OUT: Write this many output leaves */
 ){
   Fts5Structure *pStruct = *ppStruct;
   Fts5StructureLevel *pLvl = &pStruct->aLevel[iLvl];
@@ -4226,7 +4240,7 @@ static void fts5IndexMergeLevel(
       fts5MultiIterEof(p, pIter)==0;
       fts5MultiIterNext(p, pIter, 0, 0)
   ){
-    Fts5SegIter *pSegIter = &pIter->aSeg[ pIter->aFirst[1].iFirst ];
+    Fts5SegIter *pSegIter = fts5IterSegment(pIter);
     int nPos;                     /* position-list size field value */
     int nTerm;
     const u8 *pTerm;
@@ -4384,6 +4398,11 @@ static void fts5IndexAutomerge(
   }
 }
 
+/*
+** This function is called when a new level 0 segment has just been written
+** to the database. If any crisis-merge operations are required as a result,
+** they are performed here.
+*/
 static void fts5IndexCrisismerge(
   Fts5Index *p,                   /* FTS5 backend object */
   Fts5Structure **ppStruct        /* IN/OUT: Current structure of index */
@@ -4400,12 +4419,6 @@ static void fts5IndexCrisismerge(
     iLvl++;
   }
   *ppStruct = pStruct;
-}
-
-static int fts5IndexReturn(Fts5Index *p){
-  int rc = p->rc;
-  p->rc = SQLITE_OK;
-  return rc;
 }
 
 /*
@@ -4428,192 +4441,189 @@ static int fts5PoslistPrefix(const u8 *aBuf, int nMax){
 }
 
 /*
-** Flush the contents of in-memory hash table iHash to a new level-0 
-** segment on disk. Also update the corresponding structure record.
+** Flush any data stored in the in-memory hash tables to the database.
 **
 ** If an error occurs, set the Fts5Index.rc error code. If an error has 
 ** already occurred, this function is a no-op.
 */
-static void fts5FlushOneHash(Fts5Index *p){
-  Fts5Hash *pHash = p->pHash;
-  Fts5Structure *pStruct;
-  int iSegid;
-  int pgnoLast = 0;                 /* Last leaf page number in segment */
+static void fts5IndexFlush(Fts5Index *p){
+  if( p->nPendingData ){
+    Fts5Hash *pHash = p->pHash;
+    Fts5Structure *pStruct;
+    int iSegid;
+    int pgnoLast = 0;                 /* Last leaf page number in segment */
 
-  /* Obtain a reference to the index structure and allocate a new segment-id
-  ** for the new level-0 segment.  */
-  pStruct = fts5StructureRead(p);
-  iSegid = fts5AllocateSegid(p, pStruct);
-  fts5StructureInvalidate(p);
+    p->nPendingData = 0;
 
-  if( iSegid ){
-    const int pgsz = p->pConfig->pgsz;
-    int eDetail = p->pConfig->eDetail;
-    Fts5StructureSegment *pSeg;   /* New segment within pStruct */
-    Fts5Buffer *pBuf;             /* Buffer in which to assemble leaf page */
-    Fts5Buffer *pPgidx;           /* Buffer in which to assemble pgidx */
+    /* Obtain a reference to the index structure and allocate a new segment-id
+    ** for the new level-0 segment.  */
+    pStruct = fts5StructureRead(p);
+    iSegid = fts5AllocateSegid(p, pStruct);
+    fts5StructureInvalidate(p);
 
-    Fts5SegWriter writer;
-    fts5WriteInit(p, &writer, iSegid);
+    if( iSegid ){
+      const int pgsz = p->pConfig->pgsz;
+      int eDetail = p->pConfig->eDetail;
+      Fts5StructureSegment *pSeg;   /* New segment within pStruct */
+      Fts5Buffer *pBuf;             /* Buffer in which to assemble leaf page */
+      Fts5Buffer *pPgidx;           /* Buffer in which to assemble pgidx */
 
-    pBuf = &writer.writer.buf;
-    pPgidx = &writer.writer.pgidx;
+      Fts5SegWriter writer;
+      fts5WriteInit(p, &writer, iSegid);
 
-    /* fts5WriteInit() should have initialized the buffers to (most likely)
-    ** the maximum space required. */
-    assert( p->rc || pBuf->nSpace>=(pgsz + FTS5_DATA_PADDING) );
-    assert( p->rc || pPgidx->nSpace>=(pgsz + FTS5_DATA_PADDING) );
+      pBuf = &writer.writer.buf;
+      pPgidx = &writer.writer.pgidx;
 
-    /* Begin scanning through hash table entries. This loop runs once for each
-    ** term/doclist currently stored within the hash table. */
-    if( p->rc==SQLITE_OK ){
-      p->rc = sqlite3Fts5HashScanInit(pHash, 0, 0);
-    }
-    while( p->rc==SQLITE_OK && 0==sqlite3Fts5HashScanEof(pHash) ){
-      const char *zTerm;          /* Buffer containing term */
-      const u8 *pDoclist;         /* Pointer to doclist for this term */
-      int nDoclist;               /* Size of doclist in bytes */
+      /* fts5WriteInit() should have initialized the buffers to (most likely)
+      ** the maximum space required. */
+      assert( p->rc || pBuf->nSpace>=(pgsz + FTS5_DATA_PADDING) );
+      assert( p->rc || pPgidx->nSpace>=(pgsz + FTS5_DATA_PADDING) );
 
-      /* Write the term for this entry to disk. */
-      sqlite3Fts5HashScanEntry(pHash, &zTerm, &pDoclist, &nDoclist);
-      fts5WriteAppendTerm(p, &writer, (int)strlen(zTerm), (const u8*)zTerm);
+      /* Begin scanning through hash table entries. This loop runs once for each
+      ** term/doclist currently stored within the hash table. */
+      if( p->rc==SQLITE_OK ){
+        p->rc = sqlite3Fts5HashScanInit(pHash, 0, 0);
+      }
+      while( p->rc==SQLITE_OK && 0==sqlite3Fts5HashScanEof(pHash) ){
+        const char *zTerm;          /* Buffer containing term */
+        const u8 *pDoclist;         /* Pointer to doclist for this term */
+        int nDoclist;               /* Size of doclist in bytes */
 
-      assert( writer.bFirstRowidInPage==0 );
-      if( pgsz>=(pBuf->n + pPgidx->n + nDoclist + 1) ){
-        /* The entire doclist will fit on the current leaf. */
-        fts5BufferSafeAppendBlob(pBuf, pDoclist, nDoclist);
-      }else{
-        i64 iRowid = 0;
-        i64 iDelta = 0;
-        int iOff = 0;
+        /* Write the term for this entry to disk. */
+        sqlite3Fts5HashScanEntry(pHash, &zTerm, &pDoclist, &nDoclist);
+        fts5WriteAppendTerm(p, &writer, (int)strlen(zTerm), (const u8*)zTerm);
 
-        /* The entire doclist will not fit on this leaf. The following 
-        ** loop iterates through the poslists that make up the current 
-        ** doclist.  */
-        while( p->rc==SQLITE_OK && iOff<nDoclist ){
-          iOff += fts5GetVarint(&pDoclist[iOff], (u64*)&iDelta);
-          iRowid += iDelta;
-          
-          if( writer.bFirstRowidInPage ){
-            fts5PutU16(&pBuf->p[0], (u16)pBuf->n);   /* first rowid on page */
-            pBuf->n += sqlite3Fts5PutVarint(&pBuf->p[pBuf->n], iRowid);
-            writer.bFirstRowidInPage = 0;
-            fts5WriteDlidxAppend(p, &writer, iRowid);
-          }else{
-            pBuf->n += sqlite3Fts5PutVarint(&pBuf->p[pBuf->n], iDelta);
-          }
-          assert( pBuf->n<=pBuf->nSpace );
+        assert( writer.bFirstRowidInPage==0 );
+        if( pgsz>=(pBuf->n + pPgidx->n + nDoclist + 1) ){
+          /* The entire doclist will fit on the current leaf. */
+          fts5BufferSafeAppendBlob(pBuf, pDoclist, nDoclist);
+        }else{
+          i64 iRowid = 0;
+          i64 iDelta = 0;
+          int iOff = 0;
 
-          if( eDetail==FTS5_DETAIL_NONE ){
-            if( iOff<nDoclist && pDoclist[iOff]==0 ){
-              pBuf->p[pBuf->n++] = 0;
-              iOff++;
+          /* The entire doclist will not fit on this leaf. The following 
+          ** loop iterates through the poslists that make up the current 
+          ** doclist.  */
+          while( p->rc==SQLITE_OK && iOff<nDoclist ){
+            iOff += fts5GetVarint(&pDoclist[iOff], (u64*)&iDelta);
+            iRowid += iDelta;
+            
+            if( writer.bFirstRowidInPage ){
+              fts5PutU16(&pBuf->p[0], (u16)pBuf->n);   /* first rowid on page */
+              pBuf->n += sqlite3Fts5PutVarint(&pBuf->p[pBuf->n], iRowid);
+              writer.bFirstRowidInPage = 0;
+              fts5WriteDlidxAppend(p, &writer, iRowid);
+            }else{
+              pBuf->n += sqlite3Fts5PutVarint(&pBuf->p[pBuf->n], iDelta);
+            }
+            assert( pBuf->n<=pBuf->nSpace );
+
+            if( eDetail==FTS5_DETAIL_NONE ){
               if( iOff<nDoclist && pDoclist[iOff]==0 ){
                 pBuf->p[pBuf->n++] = 0;
                 iOff++;
+                if( iOff<nDoclist && pDoclist[iOff]==0 ){
+                  pBuf->p[pBuf->n++] = 0;
+                  iOff++;
+                }
               }
-            }
-            if( (pBuf->n + pPgidx->n)>=pgsz ){
-              fts5WriteFlushLeaf(p, &writer);
-            }
-          }else{
-            int bDummy;
-            int nPos;
-            int nCopy = fts5GetPoslistSize(&pDoclist[iOff], &nPos, &bDummy);
-            nCopy += nPos;
-            if( (pBuf->n + pPgidx->n + nCopy) <= pgsz ){
-              /* The entire poslist will fit on the current leaf. So copy
-              ** it in one go. */
-              fts5BufferSafeAppendBlob(pBuf, &pDoclist[iOff], nCopy);
+              if( (pBuf->n + pPgidx->n)>=pgsz ){
+                fts5WriteFlushLeaf(p, &writer);
+              }
             }else{
-              /* The entire poslist will not fit on this leaf. So it needs
-              ** to be broken into sections. The only qualification being
-              ** that each varint must be stored contiguously.  */
-              const u8 *pPoslist = &pDoclist[iOff];
-              int iPos = 0;
-              while( p->rc==SQLITE_OK ){
-                int nSpace = pgsz - pBuf->n - pPgidx->n;
-                int n = 0;
-                if( (nCopy - iPos)<=nSpace ){
-                  n = nCopy - iPos;
-                }else{
-                  n = fts5PoslistPrefix(&pPoslist[iPos], nSpace);
+              int bDummy;
+              int nPos;
+              int nCopy = fts5GetPoslistSize(&pDoclist[iOff], &nPos, &bDummy);
+              nCopy += nPos;
+              if( (pBuf->n + pPgidx->n + nCopy) <= pgsz ){
+                /* The entire poslist will fit on the current leaf. So copy
+                ** it in one go. */
+                fts5BufferSafeAppendBlob(pBuf, &pDoclist[iOff], nCopy);
+              }else{
+                /* The entire poslist will not fit on this leaf. So it needs
+                ** to be broken into sections. The only qualification being
+                ** that each varint must be stored contiguously.  */
+                const u8 *pPoslist = &pDoclist[iOff];
+                int iPos = 0;
+                while( p->rc==SQLITE_OK ){
+                  int nSpace = pgsz - pBuf->n - pPgidx->n;
+                  int n = 0;
+                  if( (nCopy - iPos)<=nSpace ){
+                    n = nCopy - iPos;
+                  }else{
+                    n = fts5PoslistPrefix(&pPoslist[iPos], nSpace);
+                  }
+                  assert( n>0 );
+                  fts5BufferSafeAppendBlob(pBuf, &pPoslist[iPos], n);
+                  iPos += n;
+                  if( (pBuf->n + pPgidx->n)>=pgsz ){
+                    fts5WriteFlushLeaf(p, &writer);
+                  }
+                  if( iPos>=nCopy ) break;
                 }
-                assert( n>0 );
-                fts5BufferSafeAppendBlob(pBuf, &pPoslist[iPos], n);
-                iPos += n;
-                if( (pBuf->n + pPgidx->n)>=pgsz ){
-                  fts5WriteFlushLeaf(p, &writer);
-                }
-                if( iPos>=nCopy ) break;
               }
+              iOff += nCopy;
             }
-            iOff += nCopy;
           }
         }
+
+        /* TODO2: Doclist terminator written here. */
+        /* pBuf->p[pBuf->n++] = '\0'; */
+        assert( pBuf->n<=pBuf->nSpace );
+        sqlite3Fts5HashScanNext(pHash);
       }
+      sqlite3Fts5HashClear(pHash);
+      fts5WriteFinish(p, &writer, &pgnoLast);
 
-      /* TODO2: Doclist terminator written here. */
-      /* pBuf->p[pBuf->n++] = '\0'; */
-      assert( pBuf->n<=pBuf->nSpace );
-      sqlite3Fts5HashScanNext(pHash);
+      /* Update the Fts5Structure. It is written back to the database by the
+      ** fts5StructureRelease() call below.  */
+      if( pStruct->nLevel==0 ){
+        fts5StructureAddLevel(&p->rc, &pStruct);
+      }
+      fts5StructureExtendLevel(&p->rc, pStruct, 0, 1, 0);
+      if( p->rc==SQLITE_OK ){
+        pSeg = &pStruct->aLevel[0].aSeg[ pStruct->aLevel[0].nSeg++ ];
+        pSeg->iSegid = iSegid;
+        pSeg->pgnoFirst = 1;
+        pSeg->pgnoLast = pgnoLast;
+        pStruct->nSegment++;
+      }
+      fts5StructurePromote(p, 0, pStruct);
     }
-    sqlite3Fts5HashClear(pHash);
-    fts5WriteFinish(p, &writer, &pgnoLast);
 
-    /* Update the Fts5Structure. It is written back to the database by the
-    ** fts5StructureRelease() call below.  */
-    if( pStruct->nLevel==0 ){
-      fts5StructureAddLevel(&p->rc, &pStruct);
-    }
-    fts5StructureExtendLevel(&p->rc, pStruct, 0, 1, 0);
-    if( p->rc==SQLITE_OK ){
-      pSeg = &pStruct->aLevel[0].aSeg[ pStruct->aLevel[0].nSeg++ ];
-      pSeg->iSegid = iSegid;
-      pSeg->pgnoFirst = 1;
-      pSeg->pgnoLast = pgnoLast;
-      pStruct->nSegment++;
-    }
-    fts5StructurePromote(p, 0, pStruct);
+    fts5IndexAutomerge(p, &pStruct, pgnoLast);
+    fts5IndexCrisismerge(p, &pStruct);
+    fts5StructureWrite(p, pStruct);
+    fts5StructureRelease(pStruct);
   }
-
-  fts5IndexAutomerge(p, &pStruct, pgnoLast);
-  fts5IndexCrisismerge(p, &pStruct);
-  fts5StructureWrite(p, pStruct);
-  fts5StructureRelease(pStruct);
 }
 
 /*
-** Flush any data stored in the in-memory hash tables to the database.
+** If argument pStruct contains fewer than two segments, NULL is returned.
+**
+** Otherwise, this function returns a structure reference containing all the
+** same segments as argument pStruct, but arranged within levels so that
+** running the merge sub-routines merges all content into a single segment.
 */
-static void fts5IndexFlush(Fts5Index *p){
-  /* Unless it is empty, flush the hash table to disk */
-  if( p->nPendingData ){
-    assert( p->pHash );
-    p->nPendingData = 0;
-    fts5FlushOneHash(p);
-  }
-}
-
 static Fts5Structure *fts5IndexOptimizeStruct(
-  Fts5Index *p, 
-  Fts5Structure *pStruct
+  Fts5Index *p,                   /* Index object */
+  Fts5Structure *pStruct          /* Structure to optimize */
 ){
   Fts5Structure *pNew = 0;
   int nByte = sizeof(Fts5Structure);
   int nSeg = pStruct->nSegment;
   int i;
 
-  /* Figure out if this structure requires optimization. A structure does
-  ** not require optimization if either:
+  /* First figure out if this structure requires optimization. A structure 
+  ** does not require optimization if either:
   **
   **  + it consists of fewer than two segments, or 
   **  + all segments are on the same level, or
   **  + all segments except one are currently inputs to a merge operation.
   **
-  ** In the first case, return NULL. In the second, increment the ref-count
-  ** on *pStruct and return a copy of the pointer to it.
-  */
+  ** In the first case, return NULL. In the second and third, increment the
+  ** ref-count on *pStruct and return a copy of the pointer to it.  */
   if( nSeg<2 ) return 0;
   for(i=0; i<pStruct->nLevel; i++){
     int nThis = pStruct->aLevel[i].nSeg;
@@ -4624,9 +4634,10 @@ static Fts5Structure *fts5IndexOptimizeStruct(
     assert( pStruct->aLevel[i].nMerge<=nThis );
   }
 
+  /* Allocate a new structure. Copy all segments from pStruct to level nMax+1
+  ** of the new structure, where nMax is the largest level in pStruct.  */
   nByte += (pStruct->nLevel+1) * sizeof(Fts5StructureLevel);
   pNew = (Fts5Structure*)sqlite3Fts5MallocZero(&p->rc, nByte);
-
   if( pNew ){
     Fts5StructureLevel *pLvl;
     nByte = nSeg * sizeof(Fts5StructureSegment);
@@ -4657,6 +4668,18 @@ static Fts5Structure *fts5IndexOptimizeStruct(
   return pNew;
 }
 
+/*
+** Return from an Fts5Index API function that may have set the error code.
+*/
+static int fts5IndexReturn(Fts5Index *p){
+  int rc = p->rc;
+  p->rc = SQLITE_OK;
+  return rc;
+}
+
+/*
+** The implementation of the special "VALUES('optimize')" command.
+*/
 int sqlite3Fts5IndexOptimize(Fts5Index *p){
   Fts5Structure *pStruct;
   Fts5Structure *pNew = 0;
@@ -4713,6 +4736,13 @@ int sqlite3Fts5IndexMerge(Fts5Index *p, int nMerge){
   return fts5IndexReturn(p);
 }
 
+/*
+** Append varint iDelta to buffer pBuf.
+**
+** This function is a no-op if Fts5Index.rc is set to other than SQLITE_OK
+** when it is called. If an error occurs, Fts5Index.rc is set to an SQLite
+** error code before returning.
+*/
 static void fts5AppendRowid(
   Fts5Index *p,
   i64 iDelta,
@@ -4723,6 +4753,14 @@ static void fts5AppendRowid(
   fts5BufferAppendVarint(&p->rc, pBuf, iDelta);
 }
 
+/*
+** Append varint iDelta to buffer pBuf. Then append a copy of the poslist
+** currently pointed to by iterator pMulti.
+**
+** This function is a no-op if Fts5Index.rc is set to other than SQLITE_OK
+** when it is called. If an error occurs, Fts5Index.rc is set to an SQLite
+** error code before returning.
+*/
 static void fts5AppendPoslist(
   Fts5Index *p,
   i64 iDelta,
@@ -4738,7 +4776,9 @@ static void fts5AppendPoslist(
   }
 }
 
-
+/*
+** Advance iterator pIter to the next rowid in its doclist.
+*/
 static void fts5DoclistIterNext(Fts5DoclistIter *pIter){
   u8 *p = pIter->aPoslist + pIter->nSize + pIter->nPoslist;
 
@@ -4765,6 +4805,12 @@ static void fts5DoclistIterNext(Fts5DoclistIter *pIter){
   }
 }
 
+/*
+** Buffer pBuf contains a doclist. Set up the structure pointed to by 
+** pIter to iterate through it. The iterator points to the first rowid
+** in the doclist (or EOF if the doclist is empty) when this function
+** returns.
+*/
 static void fts5DoclistIterInit(
   Fts5Buffer *pBuf, 
   Fts5DoclistIter *pIter
@@ -4773,30 +4819,6 @@ static void fts5DoclistIterInit(
   pIter->aPoslist = pBuf->p;
   pIter->aEof = &pBuf->p[pBuf->n];
   fts5DoclistIterNext(pIter);
-}
-
-#if 0
-/*
-** Append a doclist to buffer pBuf.
-**
-** This function assumes that space within the buffer has already been
-** allocated.
-*/
-static void fts5MergeAppendDocid(
-  Fts5Buffer *pBuf,               /* Buffer to write to */
-  i64 *piLastRowid,               /* IN/OUT: Previous rowid written (if any) */
-  i64 iRowid                      /* Rowid to append */
-){
-  assert( pBuf->n!=0 || (*piLastRowid)==0 );
-  fts5BufferSafeAppendVarint(pBuf, iRowid - *piLastRowid);
-  *piLastRowid = iRowid;
-}
-#endif
-
-#define fts5MergeAppendDocid(pBuf, iLastRowid, iRowid) {       \
-  assert( (pBuf)->n!=0 || (iLastRowid)==0 );                   \
-  fts5BufferSafeAppendVarint((pBuf), (iRowid) - (iLastRowid)); \
-  (iLastRowid) = (iRowid);                                     \
 }
 
 /*
@@ -4808,6 +4830,16 @@ static void fts5BufferSwap(Fts5Buffer *p1, Fts5Buffer *p2){
   *p2 = tmp;
 }
 
+/*
+** Buffer pBuf contains a delta-encoded list of rowids (the sort stored by
+** detail=none tables). 
+**
+** When this function is called, *piOff must be set to the byte offset of a
+** varint within this list, and *piRowid to the value of the previous
+** rowid in the list. If there are no more rowids in the list, *piOff is
+** set to -1 before returning. Otherwise, *piRowid is set to the next
+** rowid in the list and *piOff to the offset of the rowid following it.
+*/
 static void fts5NextRowid(Fts5Buffer *pBuf, int *piOff, i64 *piRowid){
   int i = *piOff;
   if( i>=pBuf->n ){
@@ -4860,6 +4892,25 @@ static void fts5MergeRowidLists(
 
   fts5BufferSwap(&out, p1);
   fts5BufferFree(&out);
+}
+
+/*
+** This macro is used by fts5MergePrefixLists(). The arguments passed should 
+** be of the following types:
+**
+**   Fts5Buffer *pBuf,            // Buffer to write to
+**   i64 iLastRowid,              // IN/OUT: Previous rowid written (if any)
+**   i64 iRowid                   // Rowid to append
+**
+** This function appends a single rowid to the doclist stored in pBuf. The
+** value of the rowid appended is iRowid. IN/OUT parameter iLastRowid
+** should be set to the value of the previous rowid stored in the doclist
+** when this macro is invoked. It is set to a copy of iRowid by this macro.
+*/
+#define fts5MergeAppendDocid(pBuf, iLastRowid, iRowid) {       \
+  assert( (pBuf)->n!=0 || (iLastRowid)==0 );                   \
+  fts5BufferSafeAppendVarint((pBuf), (iRowid) - (iLastRowid)); \
+  (iLastRowid) = (iRowid);                                     \
 }
 
 /*
@@ -4983,13 +5034,18 @@ static void fts5MergePrefixLists(
   }
 }
 
+/*
+** This function is used to prepare an iterator for a prefix query for
+** which there is no prefix index. It assembles a doclist in memory
+** and then sets up an Fts5Iter object to iterate through it.
+*/
 static void fts5SetupPrefixIter(
   Fts5Index *p,                   /* Index to read from */
   int bDesc,                      /* True for "ORDER BY rowid DESC" */
   const u8 *pToken,               /* Buffer containing prefix to match */
   int nToken,                     /* Size of buffer pToken in bytes */
   Fts5Colset *pColset,            /* Restrict matches to these columns */
-  Fts5Iter **ppIter          /* OUT: New iterator */
+  Fts5Iter **ppIter               /* OUT: New iterator */
 ){
   Fts5Structure *pStruct;
   Fts5Buffer *aBuf;
@@ -5026,7 +5082,7 @@ static void fts5SetupPrefixIter(
         fts5MultiIterEof(p, p1)==0;
         fts5MultiIterNext2(p, p1, &bNewTerm)
     ){
-      Fts5SegIter *pSeg = &p1->aSeg[ p1->aFirst[1].iFirst ];
+      Fts5SegIter *pSeg = fts5IterSegment(p1);
       int nTerm = pSeg->term.n;
       const u8 *pTerm = pSeg->term.p;
       p1->xSetOutputs(p1, pSeg);
@@ -5131,8 +5187,8 @@ int sqlite3Fts5IndexRollback(Fts5Index *p){
 
 /*
 ** The %_data table is completely empty when this function is called. This
-** function populates it with the initial structure objects for each index,
-** and the initial version of the "averages" record (a zero-byte blob).
+** function populates it with the initial structure object and the initial
+** version of the "averages" record (a zero-byte blob).
 */
 int sqlite3Fts5IndexReinit(Fts5Index *p){
   Fts5Structure s;
@@ -5164,14 +5220,15 @@ int sqlite3Fts5IndexOpen(
     p->pConfig = pConfig;
     p->nWorkUnit = FTS5_WORK_UNIT;
     p->zDataTbl = sqlite3Fts5Mprintf(&rc, "%s_data", pConfig->zName);
-    if( p->zDataTbl && bCreate ){
-      rc = sqlite3Fts5CreateTable(
-          pConfig, "data", "id INTEGER PRIMARY KEY, block BLOB", 0, pzErr
-      );
+    if( bCreate ){
+      if( rc==SQLITE_OK ){
+        rc = sqlite3Fts5CreateTable(
+            pConfig, "data", "id INTEGER PRIMARY KEY, block BLOB", 0, pzErr
+        );
+      }
       if( rc==SQLITE_OK ){
         rc = sqlite3Fts5CreateTable(pConfig, "idx", 
-            "segid, term, pgno, PRIMARY KEY(segid, term)", 
-            1, pzErr
+            "segid, term, pgno, PRIMARY KEY(segid, term)", 1, pzErr
         );
       }
       if( rc==SQLITE_OK ){
@@ -5274,6 +5331,8 @@ int sqlite3Fts5IndexWrite(
       p->pHash, p->iWriteRowid, iCol, iPos, FTS5_MAIN_PREFIX, pToken, nToken
   );
 
+  /* Add an entry for each of the prefix indexes that the token is large
+  ** enough for (e.g. for which nChar>=nPrefix). */
   for(i=0; i<pConfig->nPrefix && rc==SQLITE_OK; i++){
     const int nChar = pConfig->aPrefix[i];
     int nByte = sqlite3Fts5IndexCharlenToBytelen(pToken, nToken, nChar);
@@ -5303,7 +5362,8 @@ int sqlite3Fts5IndexQuery(
   Fts5Iter *pRet = 0;
   Fts5Buffer buf = {0, 0, 0};
 
-  /* If the QUERY_SCAN flag is set, all other flags must be clear. */
+  /* If the QUERY_SCAN flag is set, all other flags must be clear. This
+  ** flag is used by the fts5vocab module only. */
   assert( (flags & FTS5INDEX_QUERY_SCAN)==0 || flags==FTS5INDEX_QUERY_SCAN );
 
   if( sqlite3Fts5BufferSize(&p->rc, &buf, nToken+1)==0 ){
@@ -5315,22 +5375,16 @@ int sqlite3Fts5IndexQuery(
     ** greater than pConfig->nPrefix to indicate that the query will be
     ** satisfied by scanning multiple terms in the main index.
     **
-    ** If the QUERY_TEST_NOIDX flag was specified, then this must be a
-    ** prefix-query. Instead of using a prefix-index (if one exists), 
-    ** evaluate the prefix query using the main FTS index. This is used
-    ** for internal sanity checking by the integrity-check in debug 
-    ** mode only.  */
-#ifdef SQLITE_DEBUG
-    if( pConfig->bPrefixIndex==0 || (flags & FTS5INDEX_QUERY_TEST_NOIDX) ){
-      assert( flags & FTS5INDEX_QUERY_PREFIX );
-      iIdx = 1+pConfig->nPrefix;
-    }else
-#endif
+    ** If the Fts5Config.bPrefixIndex debugging flag is set, do not use
+    ** a prefix index even if a suitable one does exist.  */
     if( flags & FTS5INDEX_QUERY_PREFIX ){
       int nChar = fts5IndexCharlen(pToken, nToken);
       for(iIdx=1; iIdx<=pConfig->nPrefix; iIdx++){
         if( pConfig->aPrefix[iIdx-1]==nChar ) break;
       }
+#ifdef SQLITE_DEBUG
+      if( pConfig->bPrefixIndex==0 ) iIdx = 1+pConfig->nPrefix;
+#endif
     }
 
     if( iIdx<=pConfig->nPrefix ){
@@ -5351,7 +5405,7 @@ int sqlite3Fts5IndexQuery(
       assert( p->rc!=SQLITE_OK || pRet->pColset==0 );
       fts5IterSetOutputCb(&p->rc, pRet);
       if( p->rc==SQLITE_OK ){
-        Fts5SegIter *pSeg = &pRet->aSeg[pRet->aFirst[1].iFirst];
+        Fts5SegIter *pSeg = fts5IterSegment(pRet);
         if( pSeg->pLeaf ) pRet->xSetOutputs(pRet, pSeg);
       }
     }
@@ -5368,9 +5422,6 @@ int sqlite3Fts5IndexQuery(
   return fts5IndexReturn(p);
 }
 
-/*
-** Return true if the iterator passed as the only argument is at EOF.
-*/
 /*
 ** Move to the next matching rowid. 
 */
@@ -5392,7 +5443,7 @@ int sqlite3Fts5IterNextScan(Fts5IndexIter *pIndexIter){
 
   fts5MultiIterNext(p, pIter, 0, 0);
   if( p->rc==SQLITE_OK ){
-    Fts5SegIter *pSeg = &pIter->aSeg[ pIter->aFirst[1].iFirst ];
+    Fts5SegIter *pSeg = fts5IterSegment(pIter);
     if( pSeg->pLeaf && pSeg->term.p[0]!=FTS5_MAIN_PREFIX ){
       fts5DataRelease(pSeg->pLeaf);
       pSeg->pLeaf = 0;
@@ -5416,6 +5467,9 @@ int sqlite3Fts5IterNextFrom(Fts5IndexIter *pIndexIter, i64 iMatch){
 
 /*
 ** Return the current term.
+**
+** This function is only called as part of the fts5vocab module - not as
+** part of normal full-text query processing.
 */
 const char *sqlite3Fts5IterTerm(Fts5IndexIter *pIndexIter, int *pn){
   int n;
@@ -5464,7 +5518,12 @@ int sqlite3Fts5IndexGetAverages(Fts5Index *p, i64 *pnRow, i64 *anSize){
 
 /*
 ** Replace the current "averages" record with the contents of the buffer 
-** supplied as the second argument.
+** supplied as the second argument. 
+**
+** The averages record consists of N+1 varints, where N is the number of
+** columns in the fts5 table. The first varint is the total number of
+** rows in the FTS table. The second varint is the total number of tokens 
+** in the first column of the table, and so on.
 */
 int sqlite3Fts5IndexSetAverages(Fts5Index *p, const u8 *pData, int nData){
   assert( p->rc==SQLITE_OK );
@@ -5482,7 +5541,7 @@ int sqlite3Fts5IndexReads(Fts5Index *p){
 
 /*
 ** Increment the value of the configuration cookie stored as the first 
-** 32-bits of the structure record in the database. This is done after
+** 32-bits of the structure record in the database. This is called after
 ** modifying the contents of the %_config table.
 */
 int sqlite3Fts5IndexIncrCookie(Fts5Index *p){
@@ -5502,6 +5561,10 @@ int sqlite3Fts5IndexLoadConfig(Fts5Index *p){
   return fts5IndexReturn(p);
 }
 
+/*
+** This is called when a new read or write transaction may be being opened.
+** It ensures that the in-memory cache of the structure record is valid.
+*/
 int sqlite3Fts5IndexNewTrans(Fts5Index *p){
   assert( p->pStruct==0 || p->iStructVersion!=0 );
   if( p->pConfig->iCookie<0 || fts5IndexDataVersion(p)!=p->iStructVersion ){
@@ -5664,18 +5727,19 @@ static void fts5TestTerm(
     ** a time, and the multi-iter loop from which this function is called
     ** is already performing such a scan. */
     if( p->nPendingData==0 ){
+      int bSaved = p->pConfig->bPrefixIndex;
+      p->pConfig->bPrefixIndex = 1;
       if( iIdx>0 && rc==SQLITE_OK ){
-        int f = flags|FTS5INDEX_QUERY_TEST_NOIDX;
         ck2 = 0;
-        rc = fts5QueryCksum(p, iIdx, zTerm, nTerm, f, &ck2);
+        rc = fts5QueryCksum(p, iIdx, zTerm, nTerm, flags, &ck2);
         if( rc==SQLITE_OK && ck1!=ck2 ) rc = FTS5_CORRUPT;
       }
       if( iIdx>0 && rc==SQLITE_OK ){
-        int f = flags|FTS5INDEX_QUERY_TEST_NOIDX|FTS5INDEX_QUERY_DESC;
         ck2 = 0;
-        rc = fts5QueryCksum(p, iIdx, zTerm, nTerm, f, &ck2);
+        rc = fts5QueryCksum(p, iIdx, zTerm, nTerm, flags, &ck2);
         if( rc==SQLITE_OK && ck1!=ck2 ) rc = FTS5_CORRUPT;
       }
+      p->pConfig->bPrefixIndex = bSaved;
     }
 
     cksum3 ^= ck1;

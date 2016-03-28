@@ -346,7 +346,6 @@ struct Fts5IndexIter {
 */
 #define FTS5INDEX_QUERY_PREFIX     0x0001   /* Prefix query */
 #define FTS5INDEX_QUERY_DESC       0x0002   /* Docs in descending rowid order */
-#define FTS5INDEX_QUERY_TEST_NOIDX 0x0004   /* Do not use prefix index */
 #define FTS5INDEX_QUERY_SCAN       0x0008   /* Scan query (fts5vocab) */
 
 /* The following are used internally by the fts5_index.c module. They are

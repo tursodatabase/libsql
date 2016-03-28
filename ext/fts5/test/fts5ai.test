@@ -51,8 +51,66 @@ do_execsql_test 1.1 {
 do_execsql_test 1.2 {
   INSERT INTO t1(t1) VALUES('integrity-check');
 }
-}
 
+#-------------------------------------------------------------------------
+# Test that the in-memory configuration does not become inconsistent with
+# respect to the on-disk configuration if a savepoint is rolled back.
+#
+proc posrowid {cmd} { $cmd xRowid }
+proc negrowid {cmd} { expr -1 * [$cmd xRowid] }
+sqlite3_fts5_create_function db posrowid posrowid
+sqlite3_fts5_create_function db negrowid negrowid
+
+do_execsql_test 2.1 {
+  INSERT INTO t1(rowid, a) VALUES(1001, 'x y 1');
+  INSERT INTO t1(rowid, a) VALUES(1002, 'x y 2');
+  INSERT INTO t1(rowid, a) VALUES(1003, 'x y 3');
+  BEGIN;
+    INSERT INTO t1(t1, rank) VALUES('rank', 'posrowid()');
+    SELECT a FROM t1('x') ORDER BY rank;
+} {{x y 1} {x y 2} {x y 3}}
+
+do_execsql_test 2.2 {
+  SAVEPOINT abc;
+    INSERT INTO t1(t1, rank) VALUES('rank', 'negrowid()');
+    SELECT a FROM t1('x') ORDER BY rank;
+} {{x y 3} {x y 2} {x y 1}}
+
+do_execsql_test 2.3 {
+  ROLLBACK TO abc;
+    SELECT a FROM t1('x') ORDER BY rank;
+  COMMIT;
+} {{x y 1} {x y 2} {x y 3}}
+
+#-------------------------------------------------------------------------
+# Test that the in-memory structure does not become inconsistent with
+# respect to the on-disk configuration if a savepoint is rolled back.
+#
+do_execsql_test 3.1 {
+  CREATE VIRTUAL TABLE t2 USING fts5(x, detail=%DETAIL%);
+  INSERT INTO t2 VALUES('a 1');
+  INSERT INTO t2 VALUES('a 2');
+  INSERT INTO t2 VALUES('a 3');
+  SELECT count(*) FROM t2_data;
+} {5}
+
+do_execsql_test 3.2 {
+  BEGIN;
+    SAVEPOINT one;
+      INSERT INTO t2(rowid, x) VALUES(8, 'a 8');
+      INSERT INTO t2(rowid, x) VALUES(7, 'a 7');
+      INSERT INTO t2(rowid, x) VALUES(6, 'a 6');
+      SELECT count(*) FROM t2_data;
+} {7}
+do_execsql_test 3.3 { INSERT INTO t2(t2) VALUES('integrity-check') } {}
+
+do_execsql_test 3.4 {
+  ROLLBACK TO one;
+      SELECT count(*) FROM t2_data;
+} {5}
+do_execsql_test 3.5 { INSERT INTO t2(t2) VALUES('integrity-check') } {}
+
+} ;# foreach_detail_mode
 
 finish_test
 
