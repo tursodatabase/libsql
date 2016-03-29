@@ -1056,9 +1056,6 @@ void sqlite3AddColumn(Parse *pParse, Token *pName, Token *pType){
   memcpy(z, pName->z, pName->n);
   z[pName->n] = 0;
   sqlite3Dequote(z);
-  zType = z + sqlite3Strlen30(z) + 1;
-  memcpy(zType, pType->z, pType->n);
-  zType[pType->n] = 0;
   for(i=0; i<p->nCol; i++){
     if( sqlite3_stricmp(z, p->aCol[i].zName)==0 ){
       sqlite3ErrorMsg(pParse, "duplicate column name: %s", z);
@@ -1086,6 +1083,9 @@ void sqlite3AddColumn(Parse *pParse, Token *pName, Token *pType){
     pCol->affinity = SQLITE_AFF_BLOB;
     pCol->szEst = 1;
   }else{
+    zType = z + sqlite3Strlen30(z) + 1;
+    memcpy(zType, pType->z, pType->n);
+    zType[pType->n] = 0;
     pCol->affinity = sqlite3AffinityType(zType, &pCol->szEst);
     pCol->colFlags |= COLFLAG_HASTYPE;
   }
