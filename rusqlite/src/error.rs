@@ -143,18 +143,19 @@ impl error::Error for Error {
     fn cause(&self) -> Option<&error::Error> {
         match *self {
             Error::SqliteFailure(ref err, _) => Some(err),
-            Error::SqliteSingleThreadedMode => None,
             Error::FromSqlConversionFailure(ref err) => Some(&**err),
             Error::Utf8Error(ref err) => Some(err),
             Error::NulError(ref err) => Some(err),
-            Error::InvalidParameterName(_) => None,
+
+            Error::SqliteSingleThreadedMode |
+            Error::InvalidParameterName(_) |
+            Error::ExecuteReturnedResults |
+            Error::QueryReturnedNoRows |
+            Error::GetFromStaleRow |
+            Error::InvalidColumnIndex(_) |
+            Error::InvalidColumnName(_) |
+            Error::InvalidColumnType |
             Error::InvalidPath(_) => None,
-            Error::ExecuteReturnedResults => None,
-            Error::QueryReturnedNoRows => None,
-            Error::GetFromStaleRow => None,
-            Error::InvalidColumnIndex(_) => None,
-            Error::InvalidColumnName(_) => None,
-            Error::InvalidColumnType => None,
 
             #[cfg(feature = "functions")]
             Error::InvalidFunctionParameterType => None,

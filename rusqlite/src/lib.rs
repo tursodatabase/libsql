@@ -53,6 +53,9 @@
 #![cfg_attr(feature="clippy", feature(plugin))]
 #![cfg_attr(feature="clippy", plugin(clippy))]
 
+// Clippy complains about SQLite in our doc comments, but they're fine.
+#![cfg_attr(feature="clippy", allow(doc_markdown))]
+
 extern crate libc;
 extern crate libsqlite3_sys as ffi;
 #[macro_use]
@@ -791,10 +794,10 @@ impl<'conn> Statement<'conn> {
         ffi::sqlite3_reset(self.stmt);
         match r {
             ffi::SQLITE_DONE => {
-                if self.column_count != 0 {
-                    Err(Error::ExecuteReturnedResults)
-                } else {
+                if self.column_count == 0 {
                     Ok(self.conn.changes())
+                } else {
+                    Err(Error::ExecuteReturnedResults)
                 }
             }
             ffi::SQLITE_ROW => Err(Error::ExecuteReturnedResults),
