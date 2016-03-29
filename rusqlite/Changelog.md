@@ -1,5 +1,6 @@
 # Version UPCOMING (...)
 
+* Adds optional `clippy` feature and addresses issues it found.
 * Adds `column_count()` method to `Statement` and `Row`.
 * Adds `types::Value` for dynamic column types.
 * Adds support for user-defined aggregate functions (behind the existing `functions` Cargo feature).
