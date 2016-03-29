@@ -1,5 +1,5 @@
-C Fix\sthe\smultiplexor\sso\sthat\sit\sdoes\snot\sassume\sthat\sthe\sxGetLastError\smethod\nis\snon-NULL\sin\sthe\schild\sVFS.
-D 2016-03-28T11:01:54.323
+C Version\s3.12.0
+D 2016-03-29T10:14:15.762
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -1459,7 +1459,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8213c2f58167243411d29cc58e303b4be656f756
+P f6a88cccbc0c62a0b453f4711298c9d5e1882b18
 R 345c74a0cb9568a53ff6b8825c4a812b
+T +bgcolor * #d0c0ff
+T +sym-relaese *
+T +sym-version-3.12.0 *
 U drh
-Z 80e7037d98d6e1826970b484373d3274
+Z 9c957a50c25c5de44ce9010b47906f30
