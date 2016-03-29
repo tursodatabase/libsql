@@ -53,9 +53,6 @@
 #![cfg_attr(feature="clippy", feature(plugin))]
 #![cfg_attr(feature="clippy", plugin(clippy))]
 
-// Clippy complains about SQLite in our doc comments, but they're fine.
-#![cfg_attr(feature="clippy", allow(doc_markdown))]
-
 extern crate libc;
 extern crate libsqlite3_sys as ffi;
 #[macro_use]
@@ -1224,10 +1221,9 @@ mod test {
 
     #[test]
     fn test_open_with_flags() {
-        for bad_flags in [OpenFlags::empty(),
-                          SQLITE_OPEN_READ_ONLY | SQLITE_OPEN_READ_WRITE,
-                          SQLITE_OPEN_READ_ONLY | SQLITE_OPEN_CREATE]
-                             .iter() {
+        for bad_flags in &[OpenFlags::empty(),
+                           SQLITE_OPEN_READ_ONLY | SQLITE_OPEN_READ_WRITE,
+                           SQLITE_OPEN_READ_ONLY | SQLITE_OPEN_CREATE] {
             assert!(Connection::open_in_memory_with_flags(*bad_flags).is_err());
         }
     }

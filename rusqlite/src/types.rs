@@ -328,11 +328,13 @@ impl FromSql for Value {
 }
 
 #[cfg(test)]
+#[cfg_attr(feature="clippy", allow(similar_names))]
 mod test {
     use Connection;
     use super::time;
     use Error;
     use libc::{c_int, c_double};
+    use std::f64::EPSILON;
 
     fn checked_memory_handle() -> Connection {
         let db = Connection::open_in_memory().unwrap();
@@ -403,6 +405,7 @@ mod test {
     }
 
     #[test]
+    #[cfg_attr(feature="clippy", allow(cyclomatic_complexity))]
     fn test_mismatched_types() {
         fn is_invalid_column_type(err: Error) -> bool {
             match err {
@@ -426,7 +429,7 @@ mod test {
         assert_eq!(vec![1, 2], row.get_checked::<i32, Vec<u8>>(0).unwrap());
         assert_eq!("text", row.get_checked::<i32, String>(1).unwrap());
         assert_eq!(1, row.get_checked::<i32, c_int>(2).unwrap());
-        assert_eq!(1.5, row.get_checked::<i32, c_double>(3).unwrap());
+        assert!((1.5 - row.get_checked::<i32, c_double>(3).unwrap()).abs() < EPSILON);
         assert!(row.get_checked::<i32, Option<c_int>>(4).unwrap().is_none());
         assert!(row.get_checked::<i32, Option<c_double>>(4).unwrap().is_none());
         assert!(row.get_checked::<i32, Option<String>>(4).unwrap().is_none());
@@ -491,7 +494,10 @@ mod test {
         assert_eq!(Value::Text(String::from("text")),
                    row.get_checked::<i32, Value>(1).unwrap());
         assert_eq!(Value::Integer(1), row.get_checked::<i32, Value>(2).unwrap());
-        assert_eq!(Value::Real(1.5), row.get_checked::<i32, Value>(3).unwrap());
+        match row.get_checked::<i32, Value>(3).unwrap() {
+            Value::Real(val) => assert!((1.5 - val).abs() < EPSILON),
+            x => panic!("Invalid Value {:?}", x),
+        }
         assert_eq!(Value::Null, row.get_checked::<i32, Value>(4).unwrap());
     }
 }

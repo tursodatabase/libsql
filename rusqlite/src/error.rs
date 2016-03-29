@@ -140,6 +140,7 @@ impl error::Error for Error {
         }
     }
 
+    #[allow(match_same_arms)]
     fn cause(&self) -> Option<&error::Error> {
         match *self {
             Error::SqliteFailure(ref err, _) => Some(err),
@@ -159,6 +160,7 @@ impl error::Error for Error {
 
             #[cfg(feature = "functions")]
             Error::InvalidFunctionParameterType => None,
+
             #[cfg(feature = "functions")]
             Error::UserFunctionError(ref err) => Some(&**err),
         }

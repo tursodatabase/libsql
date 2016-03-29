@@ -307,7 +307,7 @@ impl<'a> Context<'a> {
             ffi::sqlite3_set_auxdata(self.ctx,
                                      arg,
                                      mem::transmute(boxed),
-                                     Some(mem::transmute(free_boxed_value::<T>)))
+                                     Some(free_boxed_value::<T>))
         };
     }
 
@@ -480,7 +480,7 @@ impl InnerConnection {
                                             Some(call_boxed_closure::<F, T>),
                                             None,
                                             None,
-                                            Some(mem::transmute(free_boxed_value::<F>)))
+                                            Some(free_boxed_value::<F>))
         };
         self.decode_result(r)
     }
@@ -597,7 +597,7 @@ impl InnerConnection {
                                             None,
                                             Some(call_boxed_step::<A, D, T>),
                                             Some(call_boxed_final::<A, D, T>),
-                                            Some(mem::transmute(free_boxed_value::<D>)))
+                                            Some(free_boxed_value::<D>))
         };
         self.decode_result(r)
     }
@@ -626,6 +626,7 @@ mod test {
     use std::collections::HashMap;
     use libc::c_double;
     use self::regex::Regex;
+    use std::f64::EPSILON;
 
     use {Connection, Error, Result};
     use functions::{Aggregate, Context};
@@ -642,7 +643,7 @@ mod test {
         db.create_scalar_function("half", 1, true, half).unwrap();
         let result: Result<f64> = db.query_row("SELECT half(6)", &[], |r| r.get(0));
 
-        assert_eq!(3f64, result.unwrap());
+        assert!((3f64 - result.unwrap()).abs() < EPSILON);
     }
 
     #[test]
@@ -650,7 +651,7 @@ mod test {
         let db = Connection::open_in_memory().unwrap();
         db.create_scalar_function("half", 1, true, half).unwrap();
         let result: Result<f64> = db.query_row("SELECT half(6)", &[], |r| r.get(0));
-        assert_eq!(3f64, result.unwrap());
+        assert!((3f64 - result.unwrap()).abs() < EPSILON);
 
         db.remove_function("half", 1).unwrap();
         let result: Result<f64> = db.query_row("SELECT half(6)", &[], |r| r.get(0));

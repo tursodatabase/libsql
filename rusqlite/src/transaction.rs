@@ -174,6 +174,7 @@ impl<'conn> Drop for Transaction<'conn> {
 }
 
 #[cfg(test)]
+#[cfg_attr(feature="clippy", allow(similar_names))]
 mod test {
     use Connection;
 
