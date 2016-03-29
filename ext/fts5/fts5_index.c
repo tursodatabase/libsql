@@ -266,7 +266,6 @@ typedef struct Fts5DlidxIter Fts5DlidxIter;
 typedef struct Fts5DlidxLvl Fts5DlidxLvl;
 typedef struct Fts5DlidxWriter Fts5DlidxWriter;
 typedef struct Fts5Iter Fts5Iter;
-typedef struct Fts5PageWriter Fts5PageWriter;
 typedef struct Fts5SegIter Fts5SegIter;
 typedef struct Fts5DoclistIter Fts5DoclistIter;
 typedef struct Fts5SegWriter Fts5SegWriter;
@@ -356,13 +355,6 @@ struct Fts5Structure {
 /*
 ** An object of type Fts5SegWriter is used to write to segments.
 */
-struct Fts5PageWriter {
-  int pgno;                       /* Page number for this page */
-  int iPrevPgidx;                 /* Previous value written into pgidx */
-  Fts5Buffer buf;                 /* Buffer containing leaf data */
-  Fts5Buffer pgidx;               /* Buffer containing page-index */
-  Fts5Buffer term;                /* Buffer containing previous term on page */
-};
 struct Fts5DlidxWriter {
   int pgno;                       /* Page number for this page */
   int bPrevValid;                 /* True if iPrev is valid */
@@ -371,12 +363,15 @@ struct Fts5DlidxWriter {
 };
 struct Fts5SegWriter {
   int iSegid;                     /* Segid to write to */
-  Fts5PageWriter writer;          /* PageWriter object */
+  int pgno;                       /* Page number for current leaf page */
+  int iPrevPgidx;                 /* Previous value written into pgidx */
+  Fts5Buffer buf;                 /* Buffer of current leaf page data */
+  Fts5Buffer pgidx;               /* Buffer of current leaf page-index */
+  Fts5Buffer term;                /* Buffer containing previous term on leaf */
+
   i64 iPrevRowid;                 /* Previous rowid written to current leaf */
   u8 bFirstRowidInDoclist;        /* True if next rowid is first in doclist */
   u8 bFirstRowidInPage;           /* True if next rowid is first in page */
-  /* TODO1: Can use (writer.pgidx.n==0) instead of bFirstTermInPage */
-  u8 bFirstTermInPage;            /* True if next term will be first in leaf */
   int nLeafWritten;               /* Number of leaf pages written */
   int nEmpty;                     /* Number of contiguous term-less nodes */
 
@@ -1004,6 +999,14 @@ static Fts5Structure *fts5StructureReadUncached(Fts5Index *p){
   return pRet;
 }
 
+/*
+** Execute "PRAGMA db.data_version" and return the integer value that 
+** it returns.
+**
+** This function returns 0 if Fts5Index.rc is set to other than SQLITE_OK
+** when it is called. If an error occurs while executing the PRAGMA,
+** Fts5Index.rc is set to an SQLite error code before returning.
+*/
 static i64 fts5IndexDataVersion(Fts5Index *p){
   i64 iVersion = 0;
 
@@ -3047,6 +3050,20 @@ static void fts5PoslistFilterCallback(
   }
 }
 
+/*
+** This function is used to extract the position list associated with
+** the entry that segment iterator pSeg currently points to. If the
+** entire position list resides on a single leaf page, then this 
+** function invokes the xChunk callback exactly once. Or, if the position
+** list spans multiple leaves, xChunk is invoked once for each leaf.
+**
+** The first argument passed to the xChunk callback is a copy of the Fts5Index
+** pointer passed as the first argument to this function. Similarly, the 
+** second argument passed to xChunk is a copy of the third parameter passed
+** to this function. The third and fourth arguments passed to xChunk are
+** a pointer to a blob containing part of the position list and the size
+** in bytes there of.
+*/
 static void fts5ChunkIterate(
   Fts5Index *p,                   /* Index object */
   Fts5SegIter *pSeg,              /* Poslist of this iterator */
@@ -3060,7 +3077,7 @@ static void fts5ChunkIterate(
   int pgno = pSeg->iLeafPgno;
   int pgnoSave = 0;
 
-  /* This function does notmwork with detail=none databases. */
+  /* This function does not work with detail=none databases. */
   assert( p->pConfig->eDetail!=FTS5_DETAIL_NONE );
 
   if( (pSeg->flags & FTS5_SEGITER_REVERSE)==0 ){
@@ -3734,7 +3751,7 @@ static void fts5WriteBtreeTerm(
 ){
   fts5WriteFlushBtree(p, pWriter);
   fts5BufferSet(&p->rc, &pWriter->btterm, nTerm, pTerm);
-  pWriter->iBtPage = pWriter->writer.pgno;
+  pWriter->iBtPage = pWriter->pgno;
 }
 
 /*
@@ -3757,10 +3774,16 @@ static void fts5WriteBtreeNoTerm(
   pWriter->nEmpty++;
 }
 
+/*
+** Buffer pBuf contains a doclist-index page. Return the first rowid 
+** value on the page.
+*/
 static i64 fts5DlidxExtractFirstRowid(Fts5Buffer *pBuf){
   i64 iRowid;
   int iOff;
 
+  /* Skip past the flags byte and the page number of the left-most child
+  ** page to the first rowid.  */
   iOff = 1 + fts5GetVarint(&pBuf->p[1], (u64*)&iRowid);
   fts5GetVarint(&pBuf->p[iOff], (u64*)&iRowid);
   return iRowid;
@@ -3768,8 +3791,8 @@ static i64 fts5DlidxExtractFirstRowid(Fts5Buffer *pBuf){
 
 /*
 ** Rowid iRowid has just been appended to the current leaf page. It is the
-** first on the page. This function appends an appropriate entry to the current
-** doclist-index.
+** first on the page. This function appends an appropriate entry to the
+** current doclist-index.
 */
 static void fts5WriteDlidxAppend(
   Fts5Index *p, 
@@ -3818,7 +3841,7 @@ static void fts5WriteDlidxAppend(
     if( pDlidx->bPrevValid ){
       iVal = iRowid - pDlidx->iPrev;
     }else{
-      i64 iPgno = (i==0 ? pWriter->writer.pgno : pDlidx[-1].pgno);
+      i64 iPgno = (i==0 ? pWriter->pgno : pDlidx[-1].pgno);
       assert( pDlidx->buf.n==0 );
       sqlite3Fts5BufferAppendVarint(&p->rc, &pDlidx->buf, !bDone);
       sqlite3Fts5BufferAppendVarint(&p->rc, &pDlidx->buf, iPgno);
@@ -3831,42 +3854,42 @@ static void fts5WriteDlidxAppend(
   }
 }
 
+/*
+** Flush the writer's current leaf page to disk. Initialize various
+** fields ready for the next leaf page.
+*/
 static void fts5WriteFlushLeaf(Fts5Index *p, Fts5SegWriter *pWriter){
-  static const u8 zero[] = { 0x00, 0x00, 0x00, 0x00 };
-  Fts5PageWriter *pPage = &pWriter->writer;
   i64 iRowid;
 
-  assert( (pPage->pgidx.n==0)==(pWriter->bFirstTermInPage) );
-
   /* Set the szLeaf header field. */
-  assert( 0==fts5GetU16(&pPage->buf.p[2]) );
-  fts5PutU16(&pPage->buf.p[2], (u16)pPage->buf.n);
+  assert( 0==fts5GetU16(&pWriter->buf.p[2]) );
+  fts5PutU16(&pWriter->buf.p[2], (u16)pWriter->buf.n);
 
-  if( pWriter->bFirstTermInPage ){
+  if( pWriter->pgidx.n==0 ){
     /* No term was written to this page. */
-    assert( pPage->pgidx.n==0 );
+    assert( pWriter->pgidx.n==0 );
     fts5WriteBtreeNoTerm(p, pWriter);
   }else{
     /* Append the pgidx to the page buffer. Set the szLeaf header field. */
-    fts5BufferAppendBlob(&p->rc, &pPage->buf, pPage->pgidx.n, pPage->pgidx.p);
+    fts5BufferSafeAppendBlob(&pWriter->buf, pWriter->pgidx.p, pWriter->pgidx.n);
   }
 
   /* Write the page out to disk */
-  iRowid = FTS5_SEGMENT_ROWID(pWriter->iSegid, pPage->pgno);
-  fts5DataWrite(p, iRowid, pPage->buf.p, pPage->buf.n);
+  iRowid = FTS5_SEGMENT_ROWID(pWriter->iSegid, pWriter->pgno);
+  fts5DataWrite(p, iRowid, pWriter->buf.p, pWriter->buf.n);
 
   /* Initialize the next page. */
-  fts5BufferZero(&pPage->buf);
-  fts5BufferZero(&pPage->pgidx);
-  fts5BufferAppendBlob(&p->rc, &pPage->buf, 4, zero);
-  pPage->iPrevPgidx = 0;
-  pPage->pgno++;
+  fts5BufferZero(&pWriter->buf);
+  fts5BufferZero(&pWriter->pgidx);
+  memset(pWriter->buf.p, 0, 4);
+  pWriter->buf.n = 4;
+  pWriter->iPrevPgidx = 0;
+  pWriter->pgno++;
 
   /* Increase the leaves written counter */
   pWriter->nLeafWritten++;
 
   /* The new leaf holds no terms or rowids */
-  pWriter->bFirstTermInPage = 1;
   pWriter->bFirstRowidInPage = 1;
 }
 
@@ -3883,34 +3906,24 @@ static void fts5WriteAppendTerm(
   int nTerm, const u8 *pTerm 
 ){
   int nPrefix;                    /* Bytes of prefix compression for term */
-  Fts5PageWriter *pPage = &pWriter->writer;
-  Fts5Buffer *pPgidx = &pWriter->writer.pgidx;
+  int iOff;
+  Fts5Buffer *pPgidx = &pWriter->pgidx;
 
   assert( p->rc==SQLITE_OK );
-  assert( pPage->buf.n>=4 );
-  assert( pPage->buf.n>4 || pWriter->bFirstTermInPage );
+  assert( pWriter->buf.n>=4 );
 
   /* If the current leaf page is full, flush it to disk. */
-  if( (pPage->buf.n + pPgidx->n + nTerm + 2)>=p->pConfig->pgsz ){
-    if( pPage->buf.n>4 ){
+  if( (pWriter->buf.n + pPgidx->n + nTerm + 2)>=p->pConfig->pgsz ){
+    if( pWriter->buf.n>4 ){
       fts5WriteFlushLeaf(p, pWriter);
     }
-    fts5BufferGrow(&p->rc, &pPage->buf, nTerm+FTS5_DATA_PADDING);
+    fts5BufferGrow(&p->rc, &pWriter->buf, nTerm+FTS5_DATA_PADDING);
   }
-  
-  /* TODO1: Updating pgidx here. */
-  pPgidx->n += sqlite3Fts5PutVarint(
-      &pPgidx->p[pPgidx->n], pPage->buf.n - pPage->iPrevPgidx
-  );
-  pPage->iPrevPgidx = pPage->buf.n;
-#if 0
-  fts5PutU16(&pPgidx->p[pPgidx->n], pPage->buf.n);
-  pPgidx->n += 2;
-#endif
 
-  if( pWriter->bFirstTermInPage ){
+  iOff = pWriter->buf.n;
+  if( pPgidx->n==0 ){
     nPrefix = 0;
-    if( pPage->pgno!=1 ){
+    if( pWriter->pgno!=1 ){
       /* This is the first term on a leaf that is not the leftmost leaf in
       ** the segment b-tree. In this case it is necessary to add a term to
       ** the b-tree hierarchy that is (a) larger than the largest term 
@@ -3919,37 +3932,38 @@ static void fts5WriteAppendTerm(
       ** byte longer than the longest prefix (pTerm/nTerm) shares with the
       ** previous term. 
       **
-      ** Usually, the previous term is available in pPage->term. The exception
+      ** Usually, the previous term is available in pWriter->term. The exception
       ** is if this is the first term written in an incremental-merge step.
       ** In this case the previous term is not available, so just write a
       ** copy of (pTerm/nTerm) into the parent node. This is slightly
       ** inefficient, but still correct.  */
       int n = nTerm;
-      if( pPage->term.n ){
-        n = 1 + fts5PrefixCompress(pPage->term.n, pPage->term.p, pTerm);
+      if( pWriter->term.n ){
+        n = 1 + fts5PrefixCompress(pWriter->term.n, pWriter->term.p, pTerm);
       }
       fts5WriteBtreeTerm(p, pWriter, n, pTerm);
-      pPage = &pWriter->writer;
     }
   }else{
-    nPrefix = fts5PrefixCompress(pPage->term.n, pPage->term.p, pTerm);
-    fts5BufferAppendVarint(&p->rc, &pPage->buf, nPrefix);
+    nPrefix = fts5PrefixCompress(pWriter->term.n, pWriter->term.p, pTerm);
+    fts5BufferAppendVarint(&p->rc, &pWriter->buf, nPrefix);
   }
+
+  fts5BufferSafeAppendVarint(pPgidx, iOff - pWriter->iPrevPgidx);
+  pWriter->iPrevPgidx = iOff;
 
   /* Append the number of bytes of new data, then the term data itself
   ** to the page. */
-  fts5BufferAppendVarint(&p->rc, &pPage->buf, nTerm - nPrefix);
-  fts5BufferAppendBlob(&p->rc, &pPage->buf, nTerm - nPrefix, &pTerm[nPrefix]);
+  fts5BufferAppendVarint(&p->rc, &pWriter->buf, nTerm - nPrefix);
+  fts5BufferAppendBlob(&p->rc, &pWriter->buf, nTerm - nPrefix, &pTerm[nPrefix]);
 
-  /* Update the Fts5PageWriter.term field. */
-  fts5BufferSet(&p->rc, &pPage->term, nTerm, pTerm);
-  pWriter->bFirstTermInPage = 0;
+  /* Update the Fts5SegWriter.term field. */
+  fts5BufferSet(&p->rc, &pWriter->term, nTerm, pTerm);
 
   pWriter->bFirstRowidInPage = 0;
   pWriter->bFirstRowidInDoclist = 1;
 
   assert( p->rc || (pWriter->nDlidx>0 && pWriter->aDlidx[0].buf.n==0) );
-  pWriter->aDlidx[0].pgno = pPage->pgno;
+  pWriter->aDlidx[0].pgno = pWriter->pgno;
 }
 
 /*
@@ -3961,9 +3975,8 @@ static void fts5WriteAppendRowid(
   i64 iRowid
 ){
   if( p->rc==SQLITE_OK ){
-    Fts5PageWriter *pPage = &pWriter->writer;
 
-    if( (pPage->buf.n + pPage->pgidx.n)>=p->pConfig->pgsz ){
+    if( (pWriter->buf.n + pWriter->pgidx.n)>=p->pConfig->pgsz ){
       fts5WriteFlushLeaf(p, pWriter);
     }
 
@@ -3971,16 +3984,17 @@ static void fts5WriteAppendRowid(
     ** rowid-pointer in the page-header. Also append a value to the dlidx
     ** buffer, in case a doclist-index is required.  */
     if( pWriter->bFirstRowidInPage ){
-      fts5PutU16(pPage->buf.p, (u16)pPage->buf.n);
+      fts5PutU16(pWriter->buf.p, (u16)pWriter->buf.n);
       fts5WriteDlidxAppend(p, pWriter, iRowid);
     }
 
     /* Write the rowid. */
     if( pWriter->bFirstRowidInDoclist || pWriter->bFirstRowidInPage ){
-      fts5BufferAppendVarint(&p->rc, &pPage->buf, iRowid);
+      fts5BufferSafeAppendVarint(&pWriter->buf, iRowid);
     }else{
       assert( p->rc || iRowid>pWriter->iPrevRowid );
-      fts5BufferAppendVarint(&p->rc, &pPage->buf, iRowid - pWriter->iPrevRowid);
+      assert( pWriter->buf.n+9 <= pWriter->buf.nSpace );
+      fts5BufferSafeAppendVarint(&pWriter->buf, iRowid - pWriter->iPrevRowid);
     }
     pWriter->iPrevRowid = iRowid;
     pWriter->bFirstRowidInDoclist = 0;
@@ -3988,33 +4002,35 @@ static void fts5WriteAppendRowid(
   }
 }
 
+/*
+** Append position list data to the writers output.
+*/
 static void fts5WriteAppendPoslistData(
   Fts5Index *p, 
-  Fts5SegWriter *pWriter, 
-  const u8 *aData, 
-  int nData
+  Fts5SegWriter *pWriter,         /* Writer object to write to the output of */
+  const u8 *aData,                /* Buffer containing data to append */
+  int nData                       /* Size of buffer aData[] in bytes */
 ){
-  Fts5PageWriter *pPage = &pWriter->writer;
   const u8 *a = aData;
   int n = nData;
   
   assert( p->pConfig->pgsz>0 );
   while( p->rc==SQLITE_OK 
-     && (pPage->buf.n + pPage->pgidx.n + n)>=p->pConfig->pgsz 
+     && (pWriter->buf.n + pWriter->pgidx.n + n)>=p->pConfig->pgsz 
   ){
-    int nReq = p->pConfig->pgsz - pPage->buf.n - pPage->pgidx.n;
+    int nReq = p->pConfig->pgsz - pWriter->buf.n - pWriter->pgidx.n;
     int nCopy = 0;
     while( nCopy<nReq ){
       i64 dummy;
       nCopy += fts5GetVarint(&a[nCopy], (u64*)&dummy);
     }
-    fts5BufferAppendBlob(&p->rc, &pPage->buf, nCopy, a);
+    fts5BufferAppendBlob(&p->rc, &pWriter->buf, nCopy, a);
     a += nCopy;
     n -= nCopy;
     fts5WriteFlushLeaf(p, pWriter);
   }
   if( n>0 ){
-    fts5BufferAppendBlob(&p->rc, &pPage->buf, n, a);
+    fts5BufferAppendBlob(&p->rc, &pWriter->buf, n, a);
   }
 }
 
@@ -4028,20 +4044,19 @@ static void fts5WriteFinish(
   int *pnLeaf                     /* OUT: Number of leaf pages in b-tree */
 ){
   int i;
-  Fts5PageWriter *pLeaf = &pWriter->writer;
   if( p->rc==SQLITE_OK ){
-    assert( pLeaf->pgno>=1 );
-    if( pLeaf->buf.n>4 ){
+    assert( pWriter->pgno>=1 );
+    if( pWriter->buf.n>4 ){
       fts5WriteFlushLeaf(p, pWriter);
     }
-    *pnLeaf = pLeaf->pgno-1;
-    if( pLeaf->pgno>1 ){
+    *pnLeaf = pWriter->pgno-1;
+    if( pWriter->pgno>1 ){
       fts5WriteFlushBtree(p, pWriter);
     }
   }
-  fts5BufferFree(&pLeaf->term);
-  fts5BufferFree(&pLeaf->buf);
-  fts5BufferFree(&pLeaf->pgidx);
+  fts5BufferFree(&pWriter->term);
+  fts5BufferFree(&pWriter->buf);
+  fts5BufferFree(&pWriter->pgidx);
   fts5BufferFree(&pWriter->btterm);
 
   for(i=0; i<pWriter->nDlidx; i++){
@@ -4050,6 +4065,10 @@ static void fts5WriteFinish(
   sqlite3_free(pWriter->aDlidx);
 }
 
+/*
+** Initialize the Fts5SegWriter object indicated by the second argument
+** to write to the segment with seg-id iSegid.
+*/
 static void fts5WriteInit(
   Fts5Index *p, 
   Fts5SegWriter *pWriter, 
@@ -4061,16 +4080,15 @@ static void fts5WriteInit(
   pWriter->iSegid = iSegid;
 
   fts5WriteDlidxGrow(p, pWriter, 1);
-  pWriter->writer.pgno = 1;
-  pWriter->bFirstTermInPage = 1;
+  pWriter->pgno = 1;
   pWriter->iBtPage = 1;
 
-  assert( pWriter->writer.buf.n==0 );
-  assert( pWriter->writer.pgidx.n==0 );
+  assert( pWriter->buf.n==0 );
+  assert( pWriter->pgidx.n==0 );
 
   /* Grow the two buffers to pgsz + padding bytes in size. */
-  sqlite3Fts5BufferSize(&p->rc, &pWriter->writer.pgidx, nBuffer);
-  sqlite3Fts5BufferSize(&p->rc, &pWriter->writer.buf, nBuffer);
+  sqlite3Fts5BufferSize(&p->rc, &pWriter->pgidx, nBuffer);
+  sqlite3Fts5BufferSize(&p->rc, &pWriter->buf, nBuffer);
 
   if( p->pIdxWriter==0 ){
     Fts5Config *pConfig = p->pConfig;
@@ -4082,8 +4100,8 @@ static void fts5WriteInit(
 
   if( p->rc==SQLITE_OK ){
     /* Initialize the 4-byte leaf-page header to 0x00. */
-    memset(pWriter->writer.buf.p, 0, 4);
-    pWriter->writer.buf.n = 4;
+    memset(pWriter->buf.p, 0, 4);
+    pWriter->buf.n = 4;
 
     /* Bind the current output segment id to the index-writer. This is an
     ** optimization over binding the same value over and over as rows are
@@ -4096,6 +4114,8 @@ static void fts5WriteInit(
 ** Iterator pIter was used to iterate through the input segments of on an
 ** incremental merge operation. This function is called if the incremental
 ** merge step has finished but the input has not been completely exhausted.
+** It removes (DELETEs) any input segment leaves that are no longer required
+** from the database.
 */
 static void fts5TrimSegments(Fts5Index *p, Fts5Iter *pIter){
   int i;
@@ -4154,6 +4174,11 @@ static void fts5TrimSegments(Fts5Index *p, Fts5Iter *pIter){
   fts5BufferFree(&buf);
 }
 
+/*
+** This function is used as an fts5ChunkIterate() callback when merging
+** levels. The chunk passed to this function is appended to the output
+** segment.
+*/
 static void fts5MergeChunkCallback(
   Fts5Index *p, 
   void *pCtx, 
@@ -4205,7 +4230,7 @@ static void fts5IndexMergeLevel(
     pSeg = &pLvlOut->aSeg[pLvlOut->nSeg-1];
 
     fts5WriteInit(p, &writer, pSeg->iSegid);
-    writer.writer.pgno = pSeg->pgnoLast+1;
+    writer.pgno = pSeg->pgnoLast+1;
     writer.iBtPage = 0;
   }else{
     int iSegid = fts5AllocateSegid(p, pStruct);
@@ -4265,15 +4290,15 @@ static void fts5IndexMergeLevel(
 
     if( eDetail==FTS5_DETAIL_NONE ){
       if( pSegIter->bDel ){
-        fts5BufferAppendVarint(&p->rc, &writer.writer.buf, 0);
+        fts5BufferAppendVarint(&p->rc, &writer.buf, 0);
         if( pSegIter->nPos>0 ){
-          fts5BufferAppendVarint(&p->rc, &writer.writer.buf, 0);
+          fts5BufferAppendVarint(&p->rc, &writer.buf, 0);
         }
       }
     }else{
       /* Append the position-list data to the output */
       nPos = pSegIter->nPos*2 + pSegIter->bDel;
-      fts5BufferAppendVarint(&p->rc, &writer.writer.buf, nPos);
+      fts5BufferAppendVarint(&p->rc, &writer.buf, nPos);
       fts5ChunkIterate(p, pSegIter, (void*)&writer, fts5MergeChunkCallback);
     }
   }
@@ -4471,8 +4496,8 @@ static void fts5IndexFlush(Fts5Index *p){
       Fts5SegWriter writer;
       fts5WriteInit(p, &writer, iSegid);
 
-      pBuf = &writer.writer.buf;
-      pPgidx = &writer.writer.pgidx;
+      pBuf = &writer.buf;
+      pPgidx = &writer.pgidx;
 
       /* fts5WriteInit() should have initialized the buffers to (most likely)
       ** the maximum space required. */
@@ -5061,10 +5086,11 @@ static void fts5SetupPrefixIter(
     xAppend = fts5AppendPoslist;
   }
 
+  assert( p->pStruct );
   aBuf = (Fts5Buffer*)fts5IdxMalloc(p, sizeof(Fts5Buffer)*nBuf);
   pStruct = fts5StructureRead(p);
 
-  if( aBuf && pStruct ){
+  if( aBuf ){
     const int flags = FTS5INDEX_QUERY_SCAN 
                     | FTS5INDEX_QUERY_SKIPEMPTY 
                     | FTS5INDEX_QUERY_NOOUTPUT;
@@ -5365,6 +5391,8 @@ int sqlite3Fts5IndexQuery(
   /* If the QUERY_SCAN flag is set, all other flags must be clear. This
   ** flag is used by the fts5vocab module only. */
   assert( (flags & FTS5INDEX_QUERY_SCAN)==0 || flags==FTS5INDEX_QUERY_SCAN );
+  assert( p->rc==SQLITE_OK );
+  assert( p->pStruct!=0 || (flags & FTS5INDEX_QUERY_PREFIX)==0 );
 
   if( sqlite3Fts5BufferSize(&p->rc, &buf, nToken+1)==0 ){
     int iIdx = 0;                 /* Index to search */
@@ -5567,6 +5595,7 @@ int sqlite3Fts5IndexLoadConfig(Fts5Index *p){
 */
 int sqlite3Fts5IndexNewTrans(Fts5Index *p){
   assert( p->pStruct==0 || p->iStructVersion!=0 );
+  assert( p->rc==SQLITE_OK );
   if( p->pConfig->iCookie<0 || fts5IndexDataVersion(p)!=p->iStructVersion ){
     fts5StructureInvalidate(p);
   }
@@ -6458,40 +6487,6 @@ static void fts5DecodeFunction(
 }
 
 /*
-** The implementation of user-defined scalar function fts5_rowid().
-*/
-static void fts5RowidFunction(
-  sqlite3_context *pCtx,          /* Function call context */
-  int nArg,                       /* Number of args (always 2) */
-  sqlite3_value **apVal           /* Function arguments */
-){
-  const char *zArg;
-  if( nArg==0 ){
-    sqlite3_result_error(pCtx, "should be: fts5_rowid(subject, ....)", -1);
-  }else{
-    zArg = (const char*)sqlite3_value_text(apVal[0]);
-    if( 0==sqlite3_stricmp(zArg, "segment") ){
-      i64 iRowid;
-      int segid, pgno;
-      if( nArg!=3 ){
-        sqlite3_result_error(pCtx, 
-            "should be: fts5_rowid('segment', segid, pgno))", -1
-        );
-      }else{
-        segid = sqlite3_value_int(apVal[1]);
-        pgno = sqlite3_value_int(apVal[2]);
-        iRowid = FTS5_SEGMENT_ROWID(segid, pgno);
-        sqlite3_result_int64(pCtx, iRowid);
-      }
-    }else{
-      sqlite3_result_error(pCtx, 
-        "first arg to fts5_rowid() must be 'segment'" , -1
-      );
-    }
-  }
-}
-
-/*
 ** This is called as part of registering the FTS5 module with database
 ** connection db. It registers several user-defined scalar functions useful
 ** with FTS5.
@@ -6511,11 +6506,6 @@ int sqlite3Fts5IndexInit(sqlite3 *db){
     );
   }
 
-  if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(
-        db, "fts5_rowid", -1, SQLITE_UTF8, 0, fts5RowidFunction, 0, 0
-    );
-  }
   return rc;
 }
 

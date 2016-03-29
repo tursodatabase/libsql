@@ -15,33 +15,13 @@
 source [file join [file dirname [info script]] fts5_common.tcl]
 set testprefix fts5rowid
 
-# If SQLITE_ENABLE_FTS5 is defined, omit this file.
-ifcapable !fts5 {
-  finish_test
-  return
-}
-
-do_catchsql_test 1.1 {
-  SELECT fts5_rowid()
-} {1 {should be: fts5_rowid(subject, ....)}}
-
-do_catchsql_test 1.2 {
-  SELECT fts5_rowid('segment')
-} {1 {should be: fts5_rowid('segment', segid, pgno))}}
-
-do_execsql_test 1.3 {
-  SELECT fts5_rowid('segment', 1, 1)
-} {137438953473}
-
-do_catchsql_test 1.4 {
-  SELECT fts5_rowid('nosucharg');
-} {1 {first arg to fts5_rowid() must be 'segment'}} 
-
+return_if_no_fts5
 
 #-------------------------------------------------------------------------
 # Tests of the fts5_decode() function.
 #
 reset_db
+register_fts5_rowid db
 do_execsql_test 2.1 { 
   CREATE VIRTUAL TABLE x1 USING fts5(a, b);
   INSERT INTO x1(x1, rank) VALUES('pgsz', 32);
@@ -92,7 +72,7 @@ do_execsql_test 2.6 {
 #} $res
 
 do_execsql_test 2.8 {
-  SELECT fts5_decode(fts5_rowid('segment', 1000, 1), X'AB')
+  SELECT fts5_decode(fts5_rowid(1000, 1), X'AB')
 } {corrupt}
 
 #-------------------------------------------------------------------------

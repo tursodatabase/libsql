@@ -17,14 +17,13 @@ source $testdir/malloc_common.tcl
 set testprefix fts5faultC
 return_if_no_fts5
 
+if 1 {
+
 #--------------------------------------------------------------------------
 # Test that if an OOM error occurs while trying to set a configuration
 # option, the in-memory and on-disk configurations are not left in an 
 # inconsistent state.
 #
-
-
-
 proc posrowid {cmd} { $cmd xRowid }
 proc negrowid {cmd} { expr -1 * [$cmd xRowid] }
 
@@ -73,7 +72,50 @@ do_faultsim_test 1.1 -faults oom-* -prep {
 }
 
 
+#--------------------------------------------------------------------------
 
+reset_db
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(y);
+}
+do_faultsim_test 2.1 -faults * -prep {
+  sqlite3 db test.db
+  execsql { SELECT * FROM t1('x') }
+} -body {
+  execsql { SELECT * FROM t1('x') }
+  execsql { SELECT * FROM t1('x') }
+} -test {
+  faultsim_test_result [list 0 {}]
+}
+do_faultsim_test 2.2 -faults * -prep {
+  sqlite3 db test.db
+  execsql { INSERT INTO t1 VALUES('yy') }
+} -body {
+  execsql { INSERT INTO t1 VALUES('yy') }
+  execsql { INSERT INTO t1 VALUES('yy') }
+} -test {
+  faultsim_test_result [list 0 {}]
+}
+
+#--------------------------------------------------------------------------
+}
+reset_db
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(y);
+}
+faultsim_save_and_close
+do_faultsim_test 3.1 -faults * -prep {
+  faultsim_restore_and_reopen
+  execsql { 
+    BEGIN;
+      INSERT INTO t1 VALUES('x y z');
+      INSERT INTO t1 VALUES('a b c');
+  }
+} -body {
+  execsql { INSERT INTO t1(t1) VALUES('optimize') }
+} -test {
+  faultsim_test_result [list 0 {}]
+}
 
 finish_test
 

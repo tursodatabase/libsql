@@ -96,5 +96,35 @@ do_execsql_test 4.1 { SELECT * FROM sqlite_master } {}
 do_execsql_test 4.2 { COMMIT }
 do_execsql_test 4.3 { SELECT * FROM sqlite_master } {}
 
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 5.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a);
+  INSERT INTO t1 VALUES('vtable constructor failed');
+} {}
+do_execsql_test 5.1 {
+  SELECT quote(block) FROM t1_data WHERE rowid=10;
+} {
+  X'000000000101010001010101'
+}
+do_test 5.3 {
+  sqlite3 db2 test.db
+  register_fts5_rowid db2
+  db2 eval {
+    UPDATE t1_data SET block = X'000000000101010001A7080101' WHERE rowid=10;
+    UPDATE t1_data SET rowid=fts5_rowid(5000, 1) WHERE rowid=fts5_rowid(1,1);
+    UPDATE t1_idx SET segid=5000 WHERE segid=1;
+  }
+  db2 close
+} {}
+do_execsql_test 5.4 {
+  SELECT rowid FROM t1('cons*');
+} {1}
+breakpoint
+do_execsql_test 5.5 {
+  INSERT INTO t1 VALUES('hello world');
+}
+
 finish_test
 

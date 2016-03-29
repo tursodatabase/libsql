@@ -42,13 +42,13 @@ proc fts5_test_bothlist {cmd} {
 }
 sqlite3_fts5_create_function db fts5_test_bothlist fts5_test_bothlist
 
-proc fts5_rowid {cmd} { expr [$cmd xColumnText -1] }
-sqlite3_fts5_create_function db fts5_rowid fts5_rowid
+proc rowid_func {cmd} { expr [$cmd xColumnText -1] }
+sqlite3_fts5_create_function db rowid_func rowid_func
 
 do_execsql_test 1.$tok.0.1 "
   CREATE VIRTUAL TABLE ss USING fts5(a, b, 
        tokenize='tclnum $tok', detail=%DETAIL%);
-  INSERT INTO ss(ss, rank) VALUES('rank', 'fts5_rowid()');
+  INSERT INTO ss(ss, rank) VALUES('rank', 'rowid_func()');
 "
 
 do_execsql_test 1.$tok.0.2 {

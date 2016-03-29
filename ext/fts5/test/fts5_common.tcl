@@ -645,3 +645,10 @@ proc fts5_tclnum_register {db} {
 # End of tokenizer code.
 #-------------------------------------------------------------------------
 
+proc fts5_rowid_func {segid pgno} { return [expr ($segid<<37) + $pgno] }
+proc register_fts5_rowid {db} {
+  $db func fts5_rowid -argcount 2 fts5_rowid_func
+}
+
+
+

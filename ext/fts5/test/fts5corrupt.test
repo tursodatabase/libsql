@@ -41,18 +41,20 @@ db_save
 do_execsql_test 1.2 { INSERT INTO t1(t1) VALUES('integrity-check') }
 set segid [lindex [fts5_level_segids t1] 0]
 
+register_fts5_rowid db
 do_test 1.3 {
   execsql {
-    DELETE FROM t1_data WHERE rowid = fts5_rowid('segment', $segid, 4);
+    DELETE FROM t1_data WHERE rowid = fts5_rowid($segid, 4);
   }
   catchsql { INSERT INTO t1(t1) VALUES('integrity-check') }
 } {1 {database disk image is malformed}}
 
 do_test 1.4 {
   db_restore_and_reopen
+  register_fts5_rowid db
   execsql {
     UPDATE t1_data set block = X'00000000' || substr(block, 5) WHERE
-    rowid = fts5_rowid('segment', $segid, 4);
+    rowid = fts5_rowid($segid, 4);
   }
   catchsql { INSERT INTO t1(t1) VALUES('integrity-check') }
 } {1 {database disk image is malformed}}

@@ -59,6 +59,25 @@ do_test 1.7 {
   catchsql { SELECT * FROM t1 WHERE t1 MATCH 'a' }
 } {1 {invalid fts5 file format (found 0, expected 4) - run 'rebuild'}}
 
+#---------------------------------------------------------------------------
+
+do_execsql_test 2.1 {
+  CREATE VIRTUAL TABLE t2 USING fts5(two);
+  INSERT INTO t2 VALUES('a b c d');
+}
+
+do_test 2.2 {
+  sqlite3 db2 test.db
+  execsql {
+    INSERT INTO t2(t2, rank) VALUES('pgsz', 512);
+    UPDATE t2_config SET v=5 WHERE k='version';
+  } db2
+  db2 close
+} {}
+
+do_catchsql_test 2.3 {
+  SELECT * FROM t2('b + c');
+} {1 {SQL logic error or missing database}}
 
 finish_test
 
