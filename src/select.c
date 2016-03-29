@@ -1430,7 +1430,7 @@ static const char *columnTypeImpl(
           zOrigCol = "rowid";
         }else{
           zOrigCol = pTab->aCol[iCol].zName;
-          zType = sqlite3StrNext(zOrigCol);
+          zType = sqlite3ColumnType(&pTab->aCol[iCol],0);
           estWidth = pTab->aCol[iCol].szEst;
         }
         zOrigTab = pTab->zName;
@@ -1442,7 +1442,7 @@ static const char *columnTypeImpl(
         if( iCol<0 ){
           zType = "INTEGER";
         }else{
-          zType = sqlite3StrNext(pTab->aCol[iCol].zName);
+          zType = sqlite3ColumnType(&pTab->aCol[iCol],0);
           estWidth = pTab->aCol[iCol].szEst;
         }
 #endif

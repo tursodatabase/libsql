@@ -432,9 +432,16 @@ proc funk {} {
 }
 db func funk funk
 
+# This test case corrupts the structure record within the first invocation
+# of function funk(). Which used to cause the bm25() function to throw an
+# exception. But since bm25() can now used the cached structure record,
+# it never sees the corruption introduced by funk() and so the following 
+# statement no longer fails.
+#
 do_catchsql_test 16.2 {
   SELECT funk(), bm25(n1), funk() FROM n1 WHERE n1 MATCH 'a+b+c+d'
-} {1 {SQL logic error or missing database}}
+} {0 {{} -1e-06 {}}}
+# {1 {SQL logic error or missing database}}
 
 #-------------------------------------------------------------------------
 #

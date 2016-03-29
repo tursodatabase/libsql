@@ -146,7 +146,7 @@ do_faultsim_test 3.0 -prep {
     error $msg
   }
 } -test {
-  faultsim_test_result {0 {}} {1 SQLITE_IOERR} \
+  faultsim_test_result {0 {}} {1 SQLITE_IOERR} {1 SQLITE_NOMEM} \
                               {1 SQLITE_IOERR_NOMEM} {1 SQLITE_IOERR_READ}
   if {$testrc==0} {
     set res [db eval { 
