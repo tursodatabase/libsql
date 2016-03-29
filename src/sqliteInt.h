@@ -182,21 +182,6 @@
 #endif
 
 /*
-** The SQLITE_WITHIN(P,S,E) macro checks to see if pointer P points to
-** something between S (inclusive) and E (exclusive).
-**
-** In other words, S is a buffer and E is a pointer to the first byte after
-** the end of buffer S.  This macro returns true if P points to something
-** contained within the buffer S.
-*/
-#if defined(HAVE_STDINT_H)
-# define SQLITE_WITHIN(P,S,E) \
-    ((uintptr_t)(P)>=(uintptr_t)(S) && (uintptr_t)(P)<(uintptr_t)(E))
-#else
-# define SQLITE_WITHIN(P,S,E) ((P)>=(S) && (P)<(E))
-#endif
-
-/*
 ** A macro to hint to the compiler that a function should not be
 ** inlined.
 */
@@ -583,8 +568,12 @@
 /*
 ** Macros to compute minimum and maximum of two numbers.
 */
-#define MIN(A,B) ((A)<(B)?(A):(B))
-#define MAX(A,B) ((A)>(B)?(A):(B))
+#ifndef MIN
+# define MIN(A,B) ((A)<(B)?(A):(B))
+#endif
+#ifndef MAX
+# define MAX(A,B) ((A)>(B)?(A):(B))
+#endif
 
 /*
 ** Swap two objects of type TYPE.
@@ -712,6 +701,27 @@ typedef INT16_TYPE LogEst;
 #   define SQLITE_PTRSIZE 8
 # endif
 #endif
+
+/* The uptr type is an unsigned integer large enough to hold a pointer
+*/
+#if defined(HAVE_STDINT_H)
+  typedef uintptr_t uptr;
+#elif SQLITE_PTRSIZE==4
+  typedef u32 uptr;
+#else
+  typedef u64 uptr;
+#endif
+
+/*
+** The SQLITE_WITHIN(P,S,E) macro checks to see if pointer P points to
+** something between S (inclusive) and E (exclusive).
+**
+** In other words, S is a buffer and E is a pointer to the first byte after
+** the end of buffer S.  This macro returns true if P points to something
+** contained within the buffer S.
+*/
+#define SQLITE_WITHIN(P,S,E) (((uptr)(P)>=(uptr)(S))&&((uptr)(P)<(uptr)(E)))
+
 
 /*
 ** Macros to determine whether the machine is big or little endian,
@@ -1594,6 +1604,7 @@ struct Column {
 */
 #define COLFLAG_PRIMKEY  0x0001    /* Column is part of the primary key */
 #define COLFLAG_HIDDEN   0x0002    /* A hidden column in a virtual table */
+#define COLFLAG_HASTYPE  0x0004    /* Type name follows column name */
 
 /*
 ** A "Collating Sequence" is defined by an instance of the following
@@ -3297,7 +3308,7 @@ int sqlite3IsIdChar(u8);
 */
 int sqlite3StrICmp(const char*,const char*);
 int sqlite3Strlen30(const char*);
-const char *sqlite3StrNext(const char*);
+char *sqlite3ColumnType(Column*,char*);
 #define sqlite3StrNICmp sqlite3_strnicmp
 
 int sqlite3MallocInit(void);

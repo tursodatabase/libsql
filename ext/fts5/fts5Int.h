@@ -47,6 +47,10 @@ typedef sqlite3_uint64 u64;
 
 #endif
 
+/* Truncate very long tokens to this many bytes. Hard limit is 
+** (65536-1-1-4-9)==65521 bytes. The limiting factor is the 16-bit offset
+** field that occurs at the start of each leaf page (see fts5_index.c). */
+#define FTS5_MAX_TOKEN_SIZE 32768
 
 /*
 ** Maximum number of prefix indexes on single FTS5 table. This must be
@@ -480,6 +484,7 @@ int sqlite3Fts5IndexReads(Fts5Index *p);
 int sqlite3Fts5IndexReinit(Fts5Index *p);
 int sqlite3Fts5IndexOptimize(Fts5Index *p);
 int sqlite3Fts5IndexMerge(Fts5Index *p, int nMerge);
+int sqlite3Fts5IndexReset(Fts5Index *p);
 
 int sqlite3Fts5IndexLoadConfig(Fts5Index *p);
 
@@ -622,6 +627,7 @@ int sqlite3Fts5StorageDeleteAll(Fts5Storage *p);
 int sqlite3Fts5StorageRebuild(Fts5Storage *p);
 int sqlite3Fts5StorageOptimize(Fts5Storage *p);
 int sqlite3Fts5StorageMerge(Fts5Storage *p, int nMerge);
+int sqlite3Fts5StorageReset(Fts5Storage *p);
 
 /*
 ** End of interface to code in fts5_storage.c.

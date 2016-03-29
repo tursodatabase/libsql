@@ -868,7 +868,7 @@ do_test capi3c-11.10 {
 do_test capi3c-11.11 {
   sqlite3_step $STMT
 } {SQLITE_DONE}
-ifcapable api_armor {
+ifcapable !autoreset {
   do_test capi3c-11.12armor {
     sqlite3_step $STMT
     sqlite3_step $STMT

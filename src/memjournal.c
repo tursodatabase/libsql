@@ -403,5 +403,5 @@ int sqlite3JournalIsInMemory(sqlite3_file *p){
 ** pVfs to create the underlying on-disk files.
 */
 int sqlite3JournalSize(sqlite3_vfs *pVfs){
-  return MAX(pVfs->szOsFile, sizeof(MemJournal));
+  return MAX(pVfs->szOsFile, (int)sizeof(MemJournal));
 }

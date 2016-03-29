@@ -43,7 +43,7 @@ do_test shell2-1.1.1 {
 # Shell silently ignores extra parameters.
 # Ticket [f5cb008a65].
 do_test shell2-1.2.1 {
-  set rc [catch { eval exec $CLI \":memory:\" \"select 3\" \"select 4\" } msg]
+  set rc [catch { eval exec $CLI \":memory:\" \"select+3\" \"select+4\" } msg]
   list $rc $msg
 } {0 {3
 4}}
