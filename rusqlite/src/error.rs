@@ -140,7 +140,7 @@ impl error::Error for Error {
         }
     }
 
-    #[allow(match_same_arms)]
+    #[cfg_attr(feature="clippy", allow(match_same_arms))]
     fn cause(&self) -> Option<&error::Error> {
         match *self {
             Error::SqliteFailure(ref err, _) => Some(err),
