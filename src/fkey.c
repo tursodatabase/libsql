@@ -1165,11 +1165,7 @@ static Trigger *fkActionTrigger(
   if( action==OE_Restrict && (db->flags & SQLITE_DeferFKs) ){
     return 0;
   }
-
   pTrigger = pFKey->apTrigger[iAction];
-  if( (db->flags & SQLITE_DeferFKs) && action==OE_Restrict ){
-    return 0;
-  }
 
   if( action!=OE_None && !pTrigger ){
     char const *zFrom;            /* Name of child table */

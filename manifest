@@ -1,5 +1,5 @@
-C Incorporate\sthe\ssessions\sextension\sand\sthe\nSQLITE_ENABLE_PREUPDATE_HOOK\scompile-time\soption.
-D 2016-03-30T13:43:09.573
+C Remove\sa\sredundant\stest\sfor\sdisabling\sRESTRICT\swith\sdefer_foreign_keys=ON.
+D 2016-03-30T14:17:36.686
 F Makefile.in e812bb732d7af01baa09f1278bd4f4a2e3a09449
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e6ee58b849c116d5554024f524cbf61f064f6f01
@@ -329,7 +329,7 @@ F src/dbstat.c c845548d4346e606e2f2b7d2e714ace2b8a7dd1b
 F src/delete.c eeac28b3d3d88e3541bdf93e91ea7492a7b67842
 F src/expr.c 289ffac5240b60fee0a824d3d5ab2d7bd2630c94
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
-F src/fkey.c 5da47ff524e2f687997a74737ce598f043e1342a
+F src/fkey.c 4c0bd09e602b8ae8d36d81e31e4872d0b53c87bb
 F src/func.c 552d300265aed09eea21f68ac742a440550c0062
 F src/global.c 884d4c7eba9f5fc25c96a23b21520da19b7713e2
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
@@ -1480,8 +1480,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e4bee561fdead5d35c24da3fe8a11bf6548550c6 5ab46d760dff327491703478d6d7c7c44a0147ca
-R 9dafbaa8421126ca3296fa72ec1f46aa
-T +closed 5ab46d760dff327491703478d6d7c7c44a0147ca
+P 4af7a90f980ade3566fc5da2f0db2669ac7d8256
+R 8a337360e7d496c90cf72795a6dab55f
 U drh
-Z ca91103b707261c36c558c8ac5546192
+Z d1fd34700ce8bf6be699758638dac3cb
