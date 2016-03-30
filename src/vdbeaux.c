@@ -78,6 +78,7 @@ const char *sqlite3_sql(sqlite3_stmt *pStmt){
 void sqlite3VdbeSwap(Vdbe *pA, Vdbe *pB){
   Vdbe tmp, *pTmp;
   char *zTmp;
+  assert( pA->db==pB->db );
   tmp = *pA;
   *pA = *pB;
   *pB = tmp;
@@ -1315,6 +1316,10 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
     }
     case P4_ADVANCE: {
       zTemp[0] = 0;
+      break;
+    }
+    case P4_TABLE: {
+      sqlite3XPrintf(&x, "%s", pOp->p4.pTab->zName);
       break;
     }
     default: {
@@ -3507,6 +3512,7 @@ void sqlite3VdbeRecordUnpack(
     pMem->db = pKeyInfo->db;
     /* pMem->flags = 0; // sqlite3VdbeSerialGet() will set this for us */
     pMem->szMalloc = 0;
+    pMem->z = 0;
     d += sqlite3VdbeSerialGet(&aKey[d], serial_type, pMem);
     pMem++;
     if( (++u)>=p->nField ) break;
@@ -4486,3 +4492,87 @@ void sqlite3VtabImportErrmsg(Vdbe *p, sqlite3_vtab *pVtab){
   }
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
+
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
+
+/*
+** If the second argument is not NULL, release any allocations associated 
+** with the memory cells in the p->aMem[] array. Also free the UnpackedRecord
+** structure itself, using sqlite3DbFree().
+**
+** This function is used to free UnpackedRecord structures allocated by
+** the vdbeUnpackRecord() function found in vdbeapi.c.
+*/
+static void vdbeFreeUnpacked(sqlite3 *db, UnpackedRecord *p){
+  if( p ){
+    int i;
+    for(i=0; i<p->nField; i++){
+      Mem *pMem = &p->aMem[i];
+      if( pMem->zMalloc ) sqlite3VdbeMemRelease(pMem);
+    }
+    sqlite3DbFree(db, p);
+  }
+}
+#endif /* SQLITE_ENABLE_PREUPDATE_HOOK */
+
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
+/*
+** Invoke the pre-update hook. If this is an UPDATE or DELETE pre-update call,
+** then cursor passed as the second argument should point to the row about
+** to be update or deleted. If the application calls sqlite3_preupdate_old(),
+** the required value will be read from the row the cursor points to.
+*/
+void sqlite3VdbePreUpdateHook(
+  Vdbe *v,                        /* Vdbe pre-update hook is invoked by */
+  VdbeCursor *pCsr,               /* Cursor to grab old.* values from */
+  int op,                         /* SQLITE_INSERT, UPDATE or DELETE */
+  const char *zDb,                /* Database name */
+  Table *pTab,                    /* Modified table */
+  i64 iKey1,                      /* Initial key value */
+  int iReg                        /* Register for new.* record */
+){
+  sqlite3 *db = v->db;
+  i64 iKey2;
+  PreUpdate preupdate;
+  const char *zTbl = pTab->zName;
+  static const u8 fakeSortOrder = 0;
+
+  assert( db->pPreUpdate==0 );
+  memset(&preupdate, 0, sizeof(PreUpdate));
+  if( op==SQLITE_UPDATE ){
+    iKey2 = v->aMem[iReg].u.i;
+  }else{
+    iKey2 = iKey1;
+  }
+
+  assert( pCsr->nField==pTab->nCol 
+       || (pCsr->nField==pTab->nCol+1 && op==SQLITE_DELETE && iReg==-1)
+  );
+
+  preupdate.v = v;
+  preupdate.pCsr = pCsr;
+  preupdate.op = op;
+  preupdate.iNewReg = iReg;
+  preupdate.keyinfo.db = db;
+  preupdate.keyinfo.enc = ENC(db);
+  preupdate.keyinfo.nField = pTab->nCol;
+  preupdate.keyinfo.aSortOrder = (u8*)&fakeSortOrder;
+  preupdate.iKey1 = iKey1;
+  preupdate.iKey2 = iKey2;
+  preupdate.iPKey = pTab->iPKey;
+
+  db->pPreUpdate = &preupdate;
+  db->xPreUpdateCallback(db->pPreUpdateArg, db, op, zDb, zTbl, iKey1, iKey2);
+  db->pPreUpdate = 0;
+  sqlite3DbFree(db, preupdate.aRecord);
+  vdbeFreeUnpacked(db, preupdate.pUnpacked);
+  vdbeFreeUnpacked(db, preupdate.pNewUnpacked);
+  if( preupdate.aNew ){
+    int i;
+    for(i=0; i<pCsr->nField; i++){
+      sqlite3VdbeMemRelease(&preupdate.aNew[i]);
+    }
+    sqlite3DbFree(db, preupdate.aNew);
+  }
+}
+#endif /* SQLITE_ENABLE_PREUPDATE_HOOK */

@@ -366,6 +366,9 @@ void sqlite3DeleteFrom(
    && pWhere==0
    && !bComplex
    && !IsVirtual(pTab)
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
+   && db->xPreUpdateCallback==0
+#endif
   ){
     assert( !isView );
     sqlite3TableLock(pParse, iDb, pTab->tnum, 1, pTab->zName);
@@ -715,14 +718,19 @@ void sqlite3GenerateRowDelete(
 
   /* Delete the index and table entries. Skip this step if pTab is really
   ** a view (in which case the only effect of the DELETE statement is to
-  ** fire the INSTEAD OF triggers).  */ 
+  ** fire the INSTEAD OF triggers).  
+  **
+  ** If variable 'count' is non-zero, then this OP_Delete instruction should
+  ** invoke the update-hook. The pre-update-hook, on the other hand should
+  ** be invoked unless table pTab is a system table. The difference is that
+  ** the update-hook is not invoked for rows removed by REPLACE, but the 
+  ** pre-update-hook is.
+  */ 
   if( pTab->pSelect==0 ){
     u8 p5 = 0;
     sqlite3GenerateRowIndexDelete(pParse, pTab, iDataCur, iIdxCur,0,iIdxNoSeek);
     sqlite3VdbeAddOp2(v, OP_Delete, iDataCur, (count?OPFLAG_NCHANGE:0));
-    if( count ){
-      sqlite3VdbeChangeP4(v, -1, pTab->zName, P4_TRANSIENT);
-    }
+    sqlite3VdbeChangeP4(v, -1, (char*)pTab, P4_TABLE);
     if( eMode!=ONEPASS_OFF ){
       sqlite3VdbeChangeP5(v, OPFLAG_AUXDELETE);
     }

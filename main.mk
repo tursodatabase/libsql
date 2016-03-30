@@ -46,6 +46,7 @@
 TCCX =  $(TCC) $(OPTS) -I. -I$(TOP)/src -I$(TOP) 
 TCCX += -I$(TOP)/ext/rtree -I$(TOP)/ext/icu -I$(TOP)/ext/fts3
 TCCX += -I$(TOP)/ext/async -I$(TOP)/ext/userauth
+TCCX += -I$(TOP)/ext/session
 TCCX += -I$(TOP)/ext/fts5
 THREADLIB += $(LIBS)
 
@@ -74,6 +75,7 @@ LIBOBJ+= vdbe.o parse.o \
 	 vdbetrace.o wal.o walker.o where.o wherecode.o whereexpr.o \
          utf.o vtab.o
 
+LIBOBJ += sqlite3session.o
 
 # All of the source code files.
 #
@@ -222,6 +224,9 @@ SRC += \
   $(TOP)/ext/rtree/sqlite3rtree.h \
   $(TOP)/ext/rtree/rtree.h \
   $(TOP)/ext/rtree/rtree.c
+SRC += \
+  $(TOP)/ext/session/sqlite3session.c \
+  $(TOP)/ext/session/sqlite3session.h
 SRC += \
   $(TOP)/ext/userauth/userauth.c \
   $(TOP)/ext/userauth/sqlite3userauth.h 
@@ -381,7 +386,10 @@ TESTSRC2 = \
   $(TOP)/ext/fts3/fts3_expr.c \
   $(TOP)/ext/fts3/fts3_tokenizer.c \
   $(TOP)/ext/fts3/fts3_write.c \
-  $(TOP)/ext/async/sqlite3async.c
+  $(TOP)/ext/async/sqlite3async.c \
+  $(TOP)/ext/session/sqlite3session.c \
+  $(TOP)/ext/session/test_session.c \
+  $(FTS5_SRC)
 
 # Header files used by all library source files.
 #
@@ -534,6 +542,7 @@ target_source:	$(SRC) $(TOP)/tool/vdbe-compress.tcl fts5.c
 sqlite3.c:	target_source $(TOP)/tool/mksqlite3c.tcl
 	tclsh $(TOP)/tool/mksqlite3c.tcl
 	cp tsrc/shell.c tsrc/sqlite3ext.h .
+	cp $(TOP)/ext/session/sqlite3session.h .
 	echo '#ifndef USE_SYSTEM_SQLITE' >tclsqlite3.c
 	cat sqlite3.c >>tclsqlite3.c
 	echo '#endif /* USE_SYSTEM_SQLITE */' >>tclsqlite3.c
@@ -700,9 +709,11 @@ fts5.c: $(FTS5_SRC) $(FTS5_HDR)
 userauth.o:	$(TOP)/ext/userauth/userauth.c $(HDR) $(EXTHDR)
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/userauth/userauth.c
 
+sqlite3session.o:	$(TOP)/ext/session/sqlite3session.c $(HDR) $(EXTHDR)
+	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/session/sqlite3session.c
+
 sqlite3rbu.o:	$(TOP)/ext/rbu/sqlite3rbu.c $(HDR) $(EXTHDR)
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/rbu/sqlite3rbu.c
-
 
 # Rules for building test programs and for running tests
 #
@@ -734,9 +745,11 @@ testfixture$(EXE): $(TESTSRC2) libsqlite3.a $(TESTSRC) $(TOP)/src/tclsqlite.c
 		$(TESTSRC) $(TESTSRC2) $(TOP)/src/tclsqlite.c                \
 		-o testfixture$(EXE) $(LIBTCL) libsqlite3.a $(THREADLIB)
 
-amalgamation-testfixture$(EXE): sqlite3.c $(TESTSRC) $(TOP)/src/tclsqlite.c
+amalgamation-testfixture$(EXE): sqlite3.c $(TESTSRC) $(TOP)/src/tclsqlite.c  \
+				$(TOP)/ext/session/test_session.c
 	$(TCCX) $(TCL_FLAGS) -DTCLSH=1 $(TESTFIXTURE_FLAGS)                  \
 		$(TESTSRC) $(TOP)/src/tclsqlite.c sqlite3.c                  \
+		$(TOP)/ext/session/test_session.c                            \
 		-o testfixture$(EXE) $(LIBTCL) $(THREADLIB)
 
 fts3-testfixture$(EXE): sqlite3.c fts3amal.c $(TESTSRC) $(TOP)/src/tclsqlite.c
@@ -832,6 +845,10 @@ showwal$(EXE):	$(TOP)/tool/showwal.c sqlite3.o
 	$(TCC) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o showwal$(EXE) \
 		$(TOP)/tool/showwal.c sqlite3.o $(THREADLIB)
 
+changeset$(EXE):	$(TOP)/ext/session/changeset.c sqlite3.o
+	$(TCC) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o changeset$(EXE) \
+		$(TOP)/ext/session/changeset.c sqlite3.o $(THREADLIB)
+
 fts3view$(EXE):	$(TOP)/ext/fts3/tool/fts3view.c sqlite3.o
 	$(TCC) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o fts3view$(EXE) \
 		$(TOP)/ext/fts3/tool/fts3view.c sqlite3.o $(THREADLIB)
@@ -902,6 +919,7 @@ clean:
 	rm -f showjournal showjournal.exe
 	rm -f showstat4 showstat4.exe
 	rm -f showwal showwal.exe
+	rm -f changeset changeset.exe
 	rm -f speedtest1 speedtest1.exe
 	rm -f wordcount wordcount.exe
 	rm -f rbu rbu.exe
