@@ -1236,7 +1236,8 @@ int main(int argc, char **argv){
   int rc;                       /* API return code */
 
   /* Display the version of SQLite being tested */
-  printf("Speedtest1 for SQLite %s %.50s\n", sqlite3_libversion(), sqlite3_sourceid());
+  printf("-- Speedtest1 for SQLite %s %.50s\n",
+         sqlite3_libversion(), sqlite3_sourceid());
 
   /* Process command-line arguments */
   g.zWR = "";

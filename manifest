@@ -1,5 +1,5 @@
-C Version\s3.12.0
-D 2016-03-29T10:14:15.762
+C Improvements\sto\sthe\sperformance\stesting\sprogram\s"speedtest1.c"\sand\sthe\nshell\sscript\sthat\sinvokes\sit.
+D 2016-03-30T12:20:24.594
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -1060,7 +1060,7 @@ F test/speed3.test d32043614c08c53eafdc80f33191d5bd9b920523
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
-F test/speedtest1.c 1478cb3fb64ad30f291ddca87ca9dbd72ff552aa
+F test/speedtest1.c 21af8db2492a903835b654517ac8d90aed0af91f
 F test/spellfix.test f9c1f431e2c096c8775fec032952320c0e4700db
 F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
 F test/spellfix3.test 0f9efaaa502a0e0a09848028518a6fb096c8ad33
@@ -1412,7 +1412,7 @@ F tool/pagesig.c ff0ca355fd3c2398e933da5e22439bbff89b803b
 F tool/replace.tcl 7727c60a04299b65a92f5e1590896fea0f25b9e0
 F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
-F tool/run-speed-test.sh 0ae485af4fe9f826e2b494be8c81f8ca9e222a4a
+F tool/run-speed-test.sh f95d19fd669b68c4c38b6b475242841d47c66076
 F tool/showdb.c 82dca79a999b2701c62417636345e9974151fdad
 F tool/showjournal.c 5bad7ae8784a43d2b270d953060423b8bd480818
 F tool/showlocks.c 9920bcc64f58378ff1118caead34147201f48c68
@@ -1459,10 +1459,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f6a88cccbc0c62a0b453f4711298c9d5e1882b18
-R 345c74a0cb9568a53ff6b8825c4a812b
-T +bgcolor * #d0c0ff
-T +sym-relaese *
-T +sym-version-3.12.0 *
+P e9bb4cf40f4971974a74468ef922bdee481c988b
+R 4acc2ba84abf0860d40142ef07554f22
 U drh
-Z 9c957a50c25c5de44ce9010b47906f30
+Z 4975a52cd95acaed6ad2d9bf0b3f9807
