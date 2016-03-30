@@ -35,7 +35,9 @@ pub unsafe fn config_log(callback: Option<fn(c_int, &str)>) -> Result<()> {
     let rc = match callback {
         Some(f) => {
             let p_arg: *mut c_void = mem::transmute(f);
-            ffi::sqlite3_config(ffi::SQLITE_CONFIG_LOG, Some(log_callback), p_arg)
+            ffi::sqlite3_config(ffi::SQLITE_CONFIG_LOG,
+                                log_callback as extern "C" fn(_, _, _),
+                                p_arg)
         }
         None => {
             let nullptr: *mut c_void = ptr::null_mut();

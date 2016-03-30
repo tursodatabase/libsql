@@ -1,5 +1,5 @@
-rusqlite contributors (sorted alphabetically)
-=============================================
+rusqlite contributors
+=====================
 
 * [John Gallagher](https://github.com/jgallagher)
 * [Marcus Klaas de Vries](https://github.com/marcusklaas)
@@ -13,3 +13,4 @@ rusqlite contributors (sorted alphabetically)
 * [Andrew Straw](https://github.com/astraw)
 * [Ronald Kinard](https://github.com/Furyhunter)
 * [maciejkula](https://github.com/maciejkula)
+* [Xidorn Quan](https://github.com/upsuper)
