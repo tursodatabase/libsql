@@ -601,6 +601,7 @@ void sqlite3Update(
     ** is the column index supplied by the user.
     */
     assert( regNew==regNewRowid+1 );
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
     sqlite3VdbeAddOp3(v, OP_Delete, iDataCur,
         OPFLAG_ISUPDATE | ((hasFK || chngKey || pPk!=0) ? 0 : OPFLAG_ISNOOP),
         regNewRowid
@@ -608,6 +609,11 @@ void sqlite3Update(
     if( !pParse->nested ){
       sqlite3VdbeChangeP4(v, -1, (char*)pTab, P4_TABLE);
     }
+#else
+    if( hasFK || chngKey || pPk!=0 ){
+      sqlite3VdbeAddOp2(v, OP_Delete, iDataCur, 0);
+    }
+#endif
     if( bReplace || chngKey ){
       sqlite3VdbeJumpHere(v, addr1);
     }

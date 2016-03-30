@@ -1,5 +1,5 @@
-C Merge\schanges\sfor\s3.12.0.
-D 2016-03-29T10:19:29.541
+C Avoid\scompiler\swarnings\sand\sexcess\sopcodes\swhen\sSQLITE_ENABLE_PREUPDATE_HOOK\nis\snot\sused.\s\sFix\sthe\sEXPLAIN\soutput\sfor\sP4_TABLE\sopcodes.
+D 2016-03-30T12:56:55.161
 F Makefile.in e812bb732d7af01baa09f1278bd4f4a2e3a09449
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e6ee58b849c116d5554024f524cbf61f064f6f01
@@ -435,15 +435,15 @@ F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 3d338cdd00d916ce8a05c397001d64ed58e6fe1c
 F src/treeview.c e4b41a37530a191579d3c53142cc44ee2eb99373
 F src/trigger.c e14840ee0c3e549e758ec9bf3e4146e166002280
-F src/update.c 14c6916d0194a7f25ad429292f4831b8c31e93d9
+F src/update.c 3e67ab3c0814635f355fb1f8ab010a2b9e016e7d
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c 8873d696c9ccc4206058c402e09e101f1b81561a
 F src/vacuum.c feb1eabb20987983d9350cad98299b21fa811f52
-F src/vdbe.c da8f4d04fb134d7e64fd34d519b0eba4883ed779
+F src/vdbe.c 04e0606bc0505924036a974759703af6a3664904
 F src/vdbe.h c16ba943d407baa1c7085eefea73a063fc631863
-F src/vdbeInt.h 9b704336a69f62ba189eafb06a46171e3463d27b
+F src/vdbeInt.h ddb157974436d87652de7dc641f7191496d9a8cd
 F src/vdbeapi.c ba85b78fe08dc4a9ce747e62c89a2b4a4547e74c
-F src/vdbeaux.c 03b2a622bf7714153bf06f9a6789e94aad9a5f89
+F src/vdbeaux.c fa06ba5441714160ab5f64422660ee286968672f
 F src/vdbeblob.c c9f2f494b911c6fa34efd9803f0a10807da80f77
 F src/vdbemem.c 5cfef60e60e19cab6275d1b975bf4c791d575beb
 F src/vdbesort.c 307460bfa4de4d1c3901fcd42089159131e34062
@@ -1480,7 +1480,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P beb5ea1439995fb8ab112451a8ffcc08fe42d0c4 e9bb4cf40f4971974a74468ef922bdee481c988b
-R 491d941731d06e3edceeb8f36a9265ac
+P ed22eb653f2809446ace6a27e7ea3926ac6db30c
+R 5630f9e5708bbc437f2437f3c1df072c
 U drh
-Z 3f9fc483108428866f896f452f439d76
+Z eacbad43019a9bff0f7b72fbe90e323f

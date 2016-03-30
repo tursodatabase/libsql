@@ -506,8 +506,9 @@ int sqlite3VdbeMemClearAndResize(Mem *pMem, int n);
 int sqlite3VdbeCloseStatement(Vdbe *, int);
 void sqlite3VdbeFrameDelete(VdbeFrame*);
 int sqlite3VdbeFrameRestore(VdbeFrame *);
-void sqlite3VdbePreUpdateHook(
-    Vdbe *, VdbeCursor *, int, const char*, Table *, i64, int);
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
+void sqlite3VdbePreUpdateHook(Vdbe*,VdbeCursor*,int,const char*,Table*,i64,int);
+#endif
 int sqlite3VdbeTransferError(Vdbe *p);
 
 int sqlite3VdbeSorterInit(sqlite3 *, int, VdbeCursor *);

@@ -1318,6 +1318,10 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
       zTemp[0] = 0;
       break;
     }
+    case P4_TABLE: {
+      sqlite3XPrintf(&x, "%s", pOp->p4.pTab->zName);
+      break;
+    }
     default: {
       zP4 = pOp->p4.z;
       if( zP4==0 ){
@@ -4509,7 +4513,9 @@ static void vdbeFreeUnpacked(sqlite3 *db, UnpackedRecord *p){
     sqlite3DbFree(db, p);
   }
 }
+#endif /* SQLITE_ENABLE_PREUPDATE_HOOK */
 
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
 /*
 ** Invoke the pre-update hook. If this is an UPDATE or DELETE pre-update call,
 ** then cursor passed as the second argument should point to the row about

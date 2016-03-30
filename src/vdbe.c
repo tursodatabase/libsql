@@ -91,9 +91,9 @@ static void updateMaxBlobsize(Mem *p){
 ** hook are enabled for database connect DB.
 */
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
-# define HAS_UPDATE_HOOK(DB)   ((DB)->xPreUpdateCallback||(DB)->xUpdateCallback)
+# define HAS_UPDATE_HOOK(DB) ((DB)->xPreUpdateCallback||(DB)->xUpdateCallback)
 #else
-# define HAS_UPDATE_HOOK(DB)  ((DB)->xUpdateCallback)
+# define HAS_UPDATE_HOOK(DB) ((DB)->xUpdateCallback)
 #endif
 
 /*
@@ -4287,8 +4287,9 @@ case OP_InsertInt: {
   int seekResult;   /* Result of prior seek or 0 if no USESEEKRESULT flag */
   const char *zDb;  /* database name - used by the update hook */
   Table *pTab;      /* Table structure - used by update and pre-update hooks */
-  int op = 0;       /* Opcode for update hook: SQLITE_UPDATE or SQLITE_INSERT */
+  int op;           /* Opcode for update hook: SQLITE_UPDATE or SQLITE_INSERT */
 
+  op = 0;
   pData = &aMem[pOp->p2];
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   assert( memIsValid(pData) );
@@ -4317,6 +4318,9 @@ case OP_InsertInt: {
     zDb = db->aDb[pC->iDb].zName;
     pTab = pOp->p4.pTab;
     op = ((pOp->p5 & OPFLAG_ISUPDATE) ? SQLITE_UPDATE : SQLITE_INSERT);
+  }else{
+    pTab = 0; /* Not needed.  Silence a comiler warning. */
+    zDb = 0;  /* Not needed.  Silence a compiler warning. */
   }
 
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
@@ -4431,6 +4435,9 @@ case OP_Delete: {
     if( pOp->p5 && pC->isTable ){
       sqlite3BtreeKeySize(pC->uc.pCursor, &pC->movetoTarget);
     }
+  }else{
+    zDb = 0;   /* Not needed.  Silence a compiler warning. */
+    pTab = 0;  /* Not needed.  Silence a compiler warning. */
   }
 
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
