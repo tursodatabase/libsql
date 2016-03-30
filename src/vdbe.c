@@ -4317,6 +4317,7 @@ case OP_InsertInt: {
     assert( pC->iDb>=0 );
     zDb = db->aDb[pC->iDb].zName;
     pTab = pOp->p4.pTab;
+    assert( HasRowid(pTab) );
     op = ((pOp->p5 & OPFLAG_ISUPDATE) ? SQLITE_UPDATE : SQLITE_INSERT);
   }else{
     pTab = 0; /* Not needed.  Silence a comiler warning. */
@@ -4328,7 +4329,6 @@ case OP_InsertInt: {
   if( db->xPreUpdateCallback 
    && pOp->p4type==P4_TABLE
    && !(pOp->p5 & OPFLAG_ISUPDATE)
-   && HasRowid(pTab)
   ){
     sqlite3VdbePreUpdateHook(p, pC, SQLITE_INSERT, zDb, pTab, iKey, pOp->p2);
   }
@@ -4357,7 +4357,7 @@ case OP_InsertInt: {
 
   /* Invoke the update-hook if required. */
   if( rc ) goto abort_due_to_error;
-  if( db->xUpdateCallback && op && HasRowid(pTab) ){
+  if( db->xUpdateCallback && op ){
     db->xUpdateCallback(db->pUpdateArg, op, zDb, pTab->zName, iKey);
   }
   break;
@@ -4428,11 +4428,12 @@ case OP_Delete: {
   ** of p4.pTab. Finally, if p5 is true, indicating that this cursor was
   ** last moved with OP_Next or OP_Prev, not Seek or NotFound, set 
   ** VdbeCursor.movetoTarget to the current rowid.  */
-  if( pOp->p4.pTab && HAS_UPDATE_HOOK(db) ){
+  if( pOp->p4type==P4_TABLE && HAS_UPDATE_HOOK(db) ){
     assert( pC->iDb>=0 );
+    assert( pOp->p4.pTab!=0 );
     zDb = db->aDb[pC->iDb].zName;
     pTab = pOp->p4.pTab;
-    if( pOp->p5 && pC->isTable ){
+    if( (pOp->p5 & OPFLAG_SAVEPOSITION)!=0 && pC->isTable ){
       sqlite3BtreeKeySize(pC->uc.pCursor, &pC->movetoTarget);
     }
   }else{
@@ -4450,9 +4451,8 @@ case OP_Delete: {
         pOp->p3
     );
   }
-#endif
-
   if( opflags & OPFLAG_ISNOOP ) break;
+#endif
  
   /* Only flags that can be set are SAVEPOISTION and AUXDELETE */ 
   assert( (pOp->p5 & ~(OPFLAG_SAVEPOSITION|OPFLAG_AUXDELETE))==0 );
@@ -4480,7 +4480,7 @@ case OP_Delete: {
   /* Invoke the update-hook if required. */
   if( opflags & OPFLAG_NCHANGE ){
     p->nChange++;
-    if( rc==SQLITE_OK && db->xUpdateCallback && HasRowid(pTab) ){
+    if( db->xUpdateCallback && HasRowid(pTab) ){
       db->xUpdateCallback(db->pUpdateArg, SQLITE_DELETE, zDb, pTab->zName,
           pC->movetoTarget);
       assert( pC->iDb>=0 );

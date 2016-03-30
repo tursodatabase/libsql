@@ -1,5 +1,5 @@
-C Increase\sthe\sversion\snumber\sto\s3.13.0\son\saccount\sof\sthe\snew\ssession\sextension.
-D 2016-03-30T14:26:36.915
+C Simplifications\sand\sclarification\sto\supdate\scallback\shandling\sin\sthe\nOP_Delete\sand\sOP_Insert\sopcodes.
+D 2016-03-30T15:30:07.231
 F Makefile.in e812bb732d7af01baa09f1278bd4f4a2e3a09449
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e6ee58b849c116d5554024f524cbf61f064f6f01
@@ -378,7 +378,7 @@ F src/shell.c cd3f82fdc5c895b817a375b7ab8319cb41f447ce
 F src/sqlite.h.in a1d7a367997f80c7075303aaf73e5fc46261c11c
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 98f72cbfe00169c39089115427d06ea05fe4b4a2
-F src/sqliteInt.h 410bd07098423b887874d9d2ff9ed6f8e3284839
+F src/sqliteInt.h 594bf31a7a0cc788688ca947e562576e23bd7904
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
@@ -439,7 +439,7 @@ F src/update.c 3e67ab3c0814635f355fb1f8ab010a2b9e016e7d
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c 8873d696c9ccc4206058c402e09e101f1b81561a
 F src/vacuum.c feb1eabb20987983d9350cad98299b21fa811f52
-F src/vdbe.c 04e0606bc0505924036a974759703af6a3664904
+F src/vdbe.c 0f0e4a6255f9a5272857a818314d081db26bcd90
 F src/vdbe.h c16ba943d407baa1c7085eefea73a063fc631863
 F src/vdbeInt.h ddb157974436d87652de7dc641f7191496d9a8cd
 F src/vdbeapi.c ba85b78fe08dc4a9ce747e62c89a2b4a4547e74c
@@ -1480,7 +1480,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9cdf813c6aaaddc01d2d4e04636c83fcda04d971
-R 7a69958e274665351e7e782b27ccbb0b
+P e9bcd5acb9ab7b3d55c96519ca10f51f35e24cd9
+R 7d699e46158684aaeb0674ba8ed1262b
 U drh
-Z fc241d926edbc77d507e66ad4423e83d
+Z 8edbe6879cd34861bc153d7b5712adb5
