@@ -206,8 +206,8 @@ do_conflict_test 3.1.2 -tables t1 -sql {
   INSERT INTO t1 VALUES(7, 'seven');
   INSERT INTO t1 VALUES(8, NULL);
 } -conflicts {
-  {INSERT t1 CONSTRAINT {i 8 n {}}}
   {INSERT t1 CONFLICT {i 6 t six} {i 6 t VI}}
+  {INSERT t1 CONSTRAINT {i 8 n {}}}
 }
 
 do_db2_test 3.1.3 "SELECT * FROM t1" {
@@ -272,9 +272,9 @@ do_conflict_test 3.3.3 -tables t4 -sql {
   UPDATE t4 SET a = NULL WHERE c = 9;
   UPDATE t4 SET a = 'x' WHERE b = 11;
 } -conflicts {
-  {UPDATE t4 CONSTRAINT {i 7 i 8 i 9} {n {} {} {} {} {}}}
   {UPDATE t4 DATA {i 1 i 2 i 3} {i -1 {} {} {} {}} {i 0 i 2 i 3}}
   {UPDATE t4 NOTFOUND {i 4 i 5 i 6} {i -1 {} {} {} {}}}
+  {UPDATE t4 CONSTRAINT {i 7 i 8 i 9} {n {} {} {} {} {}}}
 }
 do_db2_test     3.3.4 { SELECT * FROM t4 } {0 2 3 4 5 7 7 8 9 x 11 12}
 do_execsql_test 3.3.5 { SELECT * FROM t4 } {-1 2 3 -1 5 6 {} 8 9 x 11 12}
