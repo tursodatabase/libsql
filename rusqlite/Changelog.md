@@ -1,5 +1,9 @@
 # Version UPCOMING (...)
 
+* Removes `load_extension` feature from `libsqlite3-sys`. `load_extension` is still available
+  on rusqlite itself.
+* Fixes crash on nightly Rust when using the `trace` feature.
+* Adds optional `clippy` feature and addresses issues it found.
 * Adds `column_count()` method to `Statement` and `Row`.
 * Adds `types::Value` for dynamic column types.
 * Adds support for user-defined aggregate functions (behind the existing `functions` Cargo feature).

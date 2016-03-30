@@ -88,9 +88,10 @@ raw_to_impl!(c_double, sqlite3_result_double);
 
 impl<'a> ToResult for bool {
     unsafe fn set_result(&self, ctx: *mut sqlite3_context) {
-        match *self {
-            true => ffi::sqlite3_result_int(ctx, 1),
-            _ => ffi::sqlite3_result_int(ctx, 0),
+        if *self {
+            ffi::sqlite3_result_int(ctx, 1)
+        } else {
+            ffi::sqlite3_result_int(ctx, 0)
         }
     }
 }
@@ -214,7 +215,7 @@ impl FromValue for String {
     unsafe fn parameter_value(v: *mut sqlite3_value) -> Result<String> {
         let c_text = ffi::sqlite3_value_text(v);
         if c_text.is_null() {
-            Ok("".to_string())
+            Ok("".to_owned())
         } else {
             let c_slice = CStr::from_ptr(c_text as *const c_char).to_bytes();
             let utf8_str = try!(str::from_utf8(c_slice));
@@ -250,7 +251,7 @@ impl<T: FromValue> FromValue for Option<T> {
         if sqlite3_value_type(v) == ffi::SQLITE_NULL {
             Ok(None)
         } else {
-            FromValue::parameter_value(v).map(|t| Some(t))
+            FromValue::parameter_value(v).map(Some)
         }
     }
 
@@ -273,6 +274,10 @@ impl<'a> Context<'a> {
     /// Returns the number of arguments to the function.
     pub fn len(&self) -> usize {
         self.args.len()
+    }
+    /// Returns `true` when there is no argument.
+    pub fn is_empty(&self) -> bool {
+        self.args.is_empty()
     }
 
     /// Returns the `idx`th argument as a `T`.
@@ -302,7 +307,7 @@ impl<'a> Context<'a> {
             ffi::sqlite3_set_auxdata(self.ctx,
                                      arg,
                                      mem::transmute(boxed),
-                                     Some(mem::transmute(free_boxed_value::<T>)))
+                                     Some(free_boxed_value::<T>))
         };
     }
 
@@ -475,7 +480,7 @@ impl InnerConnection {
                                             Some(call_boxed_closure::<F, T>),
                                             None,
                                             None,
-                                            Some(mem::transmute(free_boxed_value::<F>)))
+                                            Some(free_boxed_value::<F>))
         };
         self.decode_result(r)
     }
@@ -592,7 +597,7 @@ impl InnerConnection {
                                             None,
                                             Some(call_boxed_step::<A, D, T>),
                                             Some(call_boxed_final::<A, D, T>),
-                                            Some(mem::transmute(free_boxed_value::<D>)))
+                                            Some(free_boxed_value::<D>))
         };
         self.decode_result(r)
     }
@@ -621,6 +626,7 @@ mod test {
     use std::collections::HashMap;
     use libc::c_double;
     use self::regex::Regex;
+    use std::f64::EPSILON;
 
     use {Connection, Error, Result};
     use functions::{Aggregate, Context};
@@ -637,7 +643,7 @@ mod test {
         db.create_scalar_function("half", 1, true, half).unwrap();
         let result: Result<f64> = db.query_row("SELECT half(6)", &[], |r| r.get(0));
 
-        assert_eq!(3f64, result.unwrap());
+        assert!((3f64 - result.unwrap()).abs() < EPSILON);
     }
 
     #[test]
@@ -645,7 +651,7 @@ mod test {
         let db = Connection::open_in_memory().unwrap();
         db.create_scalar_function("half", 1, true, half).unwrap();
         let result: Result<f64> = db.query_row("SELECT half(6)", &[], |r| r.get(0));
-        assert_eq!(3f64, result.unwrap());
+        assert!((3f64 - result.unwrap()).abs() < EPSILON);
 
         db.remove_function("half", 1).unwrap();
         let result: Result<f64> = db.query_row("SELECT half(6)", &[], |r| r.get(0));
