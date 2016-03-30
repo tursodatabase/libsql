@@ -103,7 +103,7 @@ impl InnerConnection {
                                                   c_name.as_ptr(),
                                                   module,
                                                   mem::transmute(boxed_aux),
-                                                  Some(mem::transmute(free_boxed_value::<A>)))
+                                                  Some(free_boxed_value::<A>))
                 }
             }
             None => unsafe {
