@@ -264,6 +264,8 @@ SQLITE3EXEPDB = /pdb:sqlite3sh.pdb
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_FTS3=1
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_RTREE=1
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_COLUMN_METADATA=1
+OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_SESSION=1
+OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_PREUPDATE_HOOK=1
 !ENDIF
 
 # These are the "extended" SQLite compilation options used when compiling for
@@ -784,14 +786,6 @@ RCC = $(RCC) -DSQLITE_TEMP_STORE=1
 # The same set of OMIT and ENABLE flags should be passed to the
 # LEMON parser generator and the mkkeywordhash tool as well.
 
-# BEGIN standard options
-OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_FTS3=1
-OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_RTREE=1
-OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_COLUMN_METADATA=1
-OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_SESSION=1
-OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_PREUPDATE_HOOK=1
-# END standard options
-
 # These are the required SQLite compilation options used when compiling for
 # the Windows platform.
 #
@@ -1189,9 +1183,7 @@ SRC07 = \
   $(TOP)\ext\fts3\fts3_write.c \
   $(TOP)\ext\icu\icu.c \
   $(TOP)\ext\rtree\rtree.c \
-  $(TOP)\ext\session\sqlite3session.h \
   $(TOP)\ext\session\sqlite3session.c \
-  $(TOP)\ext\rbu\sqlite3rbu.h \
   $(TOP)\ext\rbu\sqlite3rbu.c \
   $(TOP)\ext\misc\json1.c
 
@@ -1214,7 +1206,8 @@ SRC09 = \
   $(TOP)\ext\fts3\fts3_tokenizer.h \
   $(TOP)\ext\icu\sqliteicu.h \
   $(TOP)\ext\rtree\rtree.h \
-  $(TOP)\ext\rbu\sqlite3rbu.h
+  $(TOP)\ext\rbu\sqlite3rbu.h \
+  $(TOP)\ext\session\sqlite3session.h
 
 # Generated source code files
 #
@@ -1280,8 +1273,8 @@ TESTSRC = \
   $(TOP)\src\test_wsd.c \
   $(TOP)\ext\fts3\fts3_term.c \
   $(TOP)\ext\fts3\fts3_test.c \
-  $(TOP)\ext\session\test_session.c \
-  $(TOP)\ext\rbu\test_rbu.c
+  $(TOP)\ext\rbu\test_rbu.c \
+  $(TOP)\ext\session\test_session.c
 
 # Statically linked extensions.
 #
@@ -1312,14 +1305,7 @@ TESTSRC2 = \
   $(SRC06) \
   $(SRC07) \
   $(SRC10) \
-  $(TOP)\ext\async\sqlite3async.c \
-  $(TOP)\ext\session\sqlite3session.c
-
-# Source code to the library files needed by the test fixture
-# (amalgamation)
-#
-TESTSRC3 =
-
+  $(TOP)\ext\async\sqlite3async.c
 
 # Header files used by all library source files.
 #
@@ -1897,7 +1883,7 @@ rtree.lo:	$(TOP)\ext\rtree\rtree.c $(HDR) $(EXTHDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) $(NO_WARN) -DSQLITE_CORE -c $(TOP)\ext\rtree\rtree.c
 
 sqlite3session.lo:	$(TOP)\ext\session\sqlite3sesion.c $(HDR) $(EXTHDR)
-	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)\ext\session\sqlite3session.c
+	$(LTCOMPILE) $(CORE_COMPILE_OPTS) $(NO_WARN) -DSQLITE_CORE -c $(TOP)\ext\session\sqlite3session.c
 
 # FTS5 things
 #
@@ -1955,7 +1941,7 @@ TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_SERIES_CONSTRAINT_VERIFY=1
 TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_DEFAULT_PAGE_SIZE=1024
 
 TESTFIXTURE_SRC0 = $(TESTEXT) $(TESTSRC2)
-TESTFIXTURE_SRC1 = $(TESTEXT) $(TESTSRC3) $(SQLITE3C)
+TESTFIXTURE_SRC1 = $(TESTEXT) $(SQLITE3C)
 !IF $(USE_AMALGAMATION)==0
 TESTFIXTURE_SRC = $(TESTSRC) $(TOP)\src\tclsqlite.c $(TESTFIXTURE_SRC0)
 !ELSE
@@ -2047,8 +2033,8 @@ showwal.exe:	$(TOP)\tool\showwal.c $(SQLITE3C) $(SQLITE3H)
 		$(TOP)\tool\showwal.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
 changeset.exe:	$(TOP)\ext\session\changeset.c $(SQLITE3C)
-	$(LTLINK) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \
-		$(TOP)\ext\session\changeset.c $(SQLITE3C)
+	$(LTLINK) $(NO_WARN) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \
+		$(TOP)\ext\session\changeset.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
 fts3view.exe:	$(TOP)\ext\fts3\tool\fts3view.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \

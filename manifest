@@ -1,8 +1,8 @@
-C Fix\stypo\sin\scomment.\s\sNo\schanges\sto\scode.
-D 2016-03-30T16:22:18.401
+C Updates\sfor\sthe\sMSVC\smakefiles.
+D 2016-03-30T16:23:06.801
 F Makefile.in e812bb732d7af01baa09f1278bd4f4a2e3a09449
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc e6ee58b849c116d5554024f524cbf61f064f6f01
+F Makefile.msc cde766eb7c27a7ca42000e66c5f0c37a17a05998
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION 5d234da9b5dae329fab75ff75884cfe0a9cb3fda
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -11,7 +11,7 @@ F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am 42f7eb1fb2b06ddd6c6adab3e4388cc0a237ba40
-F autoconf/Makefile.msc b8ada5177e6f39c126a88295af5ad0255e08d280
+F autoconf/Makefile.msc dc0d0500e4a827cb3891d08d846dd6dd40241b51
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/README.txt 4f04b0819303aabaa35fff5f7b257fb0c1ef95f1
 F autoconf/configure.ac d807b567f73a2b0986ccdd206b782cecb4d08fff
@@ -1480,7 +1480,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 47887ef89ed60ddb869d65e0957c1c4b2115f169
-R b936f16f86444f27d224909ef15c00ab
+P 64d75cbe2c45af67124fa7ce5688d91cc6ddb755
+R 77269b95e931ac6cca96bcd2fa718a38
 U mistachkin
-Z ee43622ecca2631579c58c415c88d4a1
+Z 37f983898af724eda9f571ecd8a4d862
