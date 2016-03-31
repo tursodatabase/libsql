@@ -3852,6 +3852,16 @@ static int sessionApplyOneOp(
   return rc;
 }
 
+/*
+** Attempt to apply the change that the iterator passed as the first argument
+** currently points to to the database. If a conflict is encountered, invoke
+** the conflict handler callback.
+**
+** The difference between this function and sessionApplyOne() is that this
+** function handles the case where the conflict-handler is invoked and 
+** returns SQLITE_CHANGESET_REPLACE - indicating that the change should be
+** retried in some manner.
+*/
 static int sessionApplyOneWithRetry(
   sqlite3 *db,                    /* Apply change to "main" db of this handle */
   sqlite3_changeset_iter *pIter,  /* Changeset iterator to read change from */
@@ -3864,12 +3874,26 @@ static int sessionApplyOneWithRetry(
   int rc;
 
   rc = sessionApplyOneOp(pIter, pApply, xConflict, pCtx, &bReplace, &bRetry);
+  assert( rc==SQLITE_OK || (bRetry==0 && bReplace==0) );
 
-  if( rc==SQLITE_OK && bRetry ){
-    rc = sessionApplyOneOp(pIter, pApply, xConflict, pCtx, &bReplace, 0);
+  /* If the bRetry flag is set, the change has not been applied due to an
+  ** SQLITE_CHANGESET_DATA problem (i.e. this is an UPDATE or DELETE and
+  ** a row with the correct PK is present in the db, but one or more other
+  ** fields do not contain the expected values) and the conflict handler 
+  ** returned SQLITE_CHANGESET_REPLACE. In this case retry the operation,
+  ** but pass NULL as the final argument so that sessionApplyOneOp() ignores
+  ** the SQLITE_CHANGESET_DATA problem.  */
+  if( bRetry ){
+    assert( pIter->op==SQLITE_UPDATE || pIter->op==SQLITE_DELETE );
+    rc = sessionApplyOneOp(pIter, pApply, xConflict, pCtx, 0, 0);
   }
 
-  if( bReplace ){
+  /* If the bReplace flag is set, the change is an INSERT that has not
+  ** been performed because the database already contains a row with the
+  ** specified primary key and the conflict handler returned
+  ** SQLITE_CHANGESET_REPLACE. In this case remove the conflicting row
+  ** before reattempting the INSERT.  */
+  else if( bReplace ){
     assert( pIter->op==SQLITE_INSERT );
     rc = sqlite3_exec(db, "SAVEPOINT replace_op", 0, 0, 0);
     if( rc==SQLITE_OK ){
@@ -3968,6 +3992,7 @@ static int sessionChangesetApply(
   const char *zTab = 0;           /* Name of current table */
   int nTab = 0;                   /* Result of sqlite3Strlen30(zTab) */
   SessionApplyCtx sApply;         /* changeset_apply() context object */
+  int bPatchset;
 
   assert( xConflict!=0 );
 
@@ -4059,16 +4084,15 @@ static int sessionChangesetApply(
     rc = sessionApplyOneWithRetry(db, pIter, &sApply, xConflict, pCtx);
   }
 
-  if( rc==SQLITE_OK ){
-    rc = sessionRetryConstraints(
-        db, pIter->bPatchset, zTab, &sApply, xConflict, pCtx
-    );
-  }
-
+  bPatchset = pIter->bPatchset;
   if( rc==SQLITE_OK ){
     rc = sqlite3changeset_finalize(pIter);
   }else{
     sqlite3changeset_finalize(pIter);
+  }
+
+  if( rc==SQLITE_OK ){
+    rc = sessionRetryConstraints(db, bPatchset, zTab, &sApply, xConflict, pCtx);
   }
 
   if( rc==SQLITE_OK ){
