@@ -1,5 +1,5 @@
-C Fix\sthe\sreturn\scode\sin\ssessionRetryConstraints().
-D 2016-03-31T00:45:58.444
+C Enhanced\scomments\sdescribing\sthe\ssessions\sfile\sformat.\s\sNo\schanges\sto\scode.
+D 2016-03-31T02:44:56.615
 F Makefile.in e812bb732d7af01baa09f1278bd4f4a2e3a09449
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc cde766eb7c27a7ca42000e66c5f0c37a17a05998
@@ -290,7 +290,7 @@ F ext/session/sessionF.test c2f178d4dfd723a5fd94a730ea2ccb44c669e3ce
 F ext/session/sessionG.test 388b4f311176411301c35f90f0bf2cb7c6c3dec9
 F ext/session/session_common.tcl a1293167d14774b5e728836720497f40fe4ea596
 F ext/session/sessionfault.test d52cbb7bee48cc8ee80335e07eb72fcb6b15eb40
-F ext/session/sqlite3session.c 401776afb4886a25182051ae5d68b9b07f70a99c
+F ext/session/sqlite3session.c 8ed9c3acf81b12d9d6fcb61b198d851c06046555
 F ext/session/sqlite3session.h 64e9e7f185725ef43b97f4a9a0c0df0669844f1d
 F ext/session/test_session.c 187bd344c5ae9d5be85e22ef7c3010f0c17307ce
 F ext/userauth/sqlite3userauth.h 19cb6f0e31316d0ee4afdfb7a85ef9da3333a220
@@ -1481,7 +1481,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1085911afb51744f32fe9db183b50e8e88bdd73e
-R d0981524bf93277ec5c96a0100bce6e7
+P ea917c14b940f95b20b91dae77567dc25a651ef6
+R 703150f896b886ff9303fa6318e268aa
 U drh
-Z 5d6f324097a8e5b94e7625885f845746
+Z 55b5826bc78e3fc677b5c1348287f2c3

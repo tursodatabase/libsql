@@ -177,7 +177,7 @@ struct SessionTable {
 **
 ** Followed by one or more changes to the table.
 **
-**   1 byte: Either SQLITE_INSERT, UPDATE or DELETE.
+**   1 byte: Either SQLITE_INSERT (0x12), UPDATE (0x17) or DELETE (0x09).
 **   1 byte: The "indirect-change" flag.
 **   old.* record: (delete and update only)
 **   new.* record: (insert and update only)
@@ -219,7 +219,7 @@ struct SessionTable {
 **
 ** Followed by one or more changes to the table.
 **
-**   1 byte: Either SQLITE_INSERT, UPDATE or DELETE.
+**   1 byte: Either SQLITE_INSERT (0x12), UPDATE (0x17) or DELETE (0x09).
 **   1 byte: The "indirect-change" flag.
 **   single record: (PK fields for DELETE, PK and modified fields for UPDATE,
 **                   full record for INSERT).
