@@ -3927,7 +3927,7 @@ static int sessionRetryConstraints(
       }
 
       rc2 = sqlite3changeset_finalize(pIter2);
-      if( rc==SQLITE_OK ) rc==rc2;
+      if( rc==SQLITE_OK ) rc = rc2;
     }
     assert( pApply->bDeferConstraints || pApply->constraints.nBuf==0 );
 
