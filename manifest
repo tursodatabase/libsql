@@ -1,5 +1,5 @@
-C Version\s3.9.2
-D 2015-11-02T18:31:45.544
+C Enhance\sthe\squery\splanner\sso\sthat\sIS\sand\sIS\sNULL\soperators\sare\sable\sto\sdrive\nan\sindex\son\sa\sLEFT\sOUTER\sJOIN.
+D 2016-03-31T21:16:56.689
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f0088ff0d2ac949fce6de7c00f13a99ac5bdb663
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -420,7 +420,7 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 18b0ed49830cf04fe2d68224b41838a73ac6cd24
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 2e14d17f592d176b6dc879c33fbdec4fbccaa2ba
-F src/where.c e3724b7b31d1e13869308ed4125305364f7d823a
+F src/where.c f06ac362cfb64c16cb02df7aa756f35b5f3455c6
 F src/whereInt.h 7892bb54cf9ca0ae5c7e6094491b94c9286dc647
 F src/wherecode.c cdfff200d065e7fb1af827b3274ed46b10a91d65
 F src/whereexpr.c e63244ca06c503e5f3c5b7f3c9aea0db826089ed
@@ -1390,10 +1390,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c0c4b6b39648be9aa9b1e218e6d281ab17812536
-R 56b278dd241b099a55f2d39b092fbea8
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.9.2 *
+P bda77dda9697c463c3d0704014d51627fceee328
+Q +c648539b52ca28c0b2cb61208e2c32b1d29626a1
+R b35c888757280be19c712957d8f590ac
 U drh
-Z ea2f853532ec0d2d6055c0d00a95dc82
+Z c2af06165318ce226b935e5360d45b12
