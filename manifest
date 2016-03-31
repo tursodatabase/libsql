@@ -1,5 +1,5 @@
-C Add\sfurther\stests\sfor\sthe\scode\son\sthis\sbranch.\sFix\sa\sproblem\sin\sOOM\shandling.
-D 2016-03-31T10:50:26.149
+C Add\sanother\sOOM\stest\sto\sthis\sbranch.
+D 2016-03-31T15:08:10.284
 F Makefile.in e812bb732d7af01baa09f1278bd4f4a2e3a09449
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc cde766eb7c27a7ca42000e66c5f0c37a17a05998
@@ -290,7 +290,7 @@ F ext/session/sessionF.test c2f178d4dfd723a5fd94a730ea2ccb44c669e3ce
 F ext/session/sessionG.test 01ef705096a9d3984eebdcca79807a211dee1b60
 F ext/session/session_common.tcl a1293167d14774b5e728836720497f40fe4ea596
 F ext/session/sessionfault.test d52cbb7bee48cc8ee80335e07eb72fcb6b15eb40
-F ext/session/sessionfault2.test 2667fec1452e46abb5ce6c9f99483de8e0559032
+F ext/session/sessionfault2.test ac1dfd77a0fb0ea310aee40a16645ef1b66d3f88
 F ext/session/sqlite3session.c 2fc72bd989c424a15802da766c7ebd8eed47bcf6
 F ext/session/sqlite3session.h 64e9e7f185725ef43b97f4a9a0c0df0669844f1d
 F ext/session/test_session.c 187bd344c5ae9d5be85e22ef7c3010f0c17307ce
@@ -1482,7 +1482,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 84dc41e2df1092e9724a535b670343181a9cd0dd
-R 6c1e5637abee98a737c22aa1d2e2c831
+P 195f3340ee4d870420e4f58d44300bab5436b920
+R 553c882c4eb73691c7e02bdd576b9d70
 U dan
-Z ca2c22d2a622b0edd20f5f5ca6a19e56
+Z 5ef40d72349254975dc55c844d6daff8

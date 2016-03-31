@@ -71,5 +71,36 @@ do_faultsim_test 1 -faults oom-p* -prep {
   }
 }
 
+#-------------------------------------------------------------------------
+# OOM when applying a changeset for which one of the tables has a name
+# 99 bytes in size. This happens to cause an extra malloc in within the
+# sessions_strm permutation.
+#
+reset_db
+set nm [string repeat t 99]
+do_execsql_test 2.0.0 [string map "%TBL% $nm" {
+  CREATE TABLE %TBL%(a PRIMARY KEY, b UNIQUE);
+}]
+faultsim_save_and_close
+
+faultsim_restore_and_reopen
+do_test 1.0.1 {
+  set ::C [changeset_from_sql [string map "%TBL% $nm" {
+    INSERT INTO %TBL% VALUES(1, 2);
+    INSERT INTO %TBL% VALUES(3, 4);
+  }]]
+  set {} {}
+} {}
+
+proc xConflict args { return "OMIT" }
+do_faultsim_test 2 -faults oom-p* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  sqlite3changeset_apply db $::C xConflict
+} -test {
+  faultsim_test_result {0 {}} {1 SQLITE_NOMEM}
+  faultsim_integrity_check
+}
+
 finish_test
 
