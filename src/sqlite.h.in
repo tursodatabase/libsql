@@ -5187,7 +5187,7 @@ void *sqlite3_rollback_hook(sqlite3*, void(*)(void *), void*);
 ** ^The sqlite3_update_hook() interface registers a callback function
 ** with the [database connection] identified by the first argument
 ** to be invoked whenever a row is updated, inserted or deleted in
-** a rowid table.
+** a [rowid table].
 ** ^Any callback set by a previous call to this function
 ** for the same database connection is overridden.
 **
@@ -7917,13 +7917,13 @@ int sqlite3_db_cacheflush(sqlite3*);
 
 /*
 ** CAPI3REF: The pre-update hook.
-** EXPERIMENTAL
 **
 ** ^These interfaces are only available if SQLite is compiled using the
-** [SQLITE_ENABLE_UPDATE_HOOK] compile-time option.
+** [SQLITE_ENABLE_PREUPDATE_HOOK] compile-time option.
 **
 ** ^The [sqlite3_preupdate_hook()] interface registers a callback function
-** that is invoked prior to each [INSERT], [UPDATE], and [DELETE] operation.
+** that is invoked prior to each [INSERT], [UPDATE], and [DELETE] operation
+** on a [rowid table].
 ** ^At most one preupdate hook may be registered at a time on a single
 ** [database connection]; each call to [sqlite3_preupdate_hook()] overrides
 ** the previous setting.
@@ -7932,8 +7932,9 @@ int sqlite3_db_cacheflush(sqlite3*);
 ** ^The third parameter to [sqlite3_preupdate_hook()] is passed through as
 ** the first parameter to callbacks.
 **
-** ^The preupdate hook only fires for changes to real tables; the preupdate
-** hook is not invoked for changes to virtual tables.
+** ^The preupdate hook only fires for changes to [rowid tables]; the preupdate
+** hook is not invoked for changes to [virtual tables] or [WITHOUT ROWID]
+** tables.
 **
 ** ^The second parameter to the preupdate callback is a pointer to
 ** the [database connection] that registered the preupdate hook.
