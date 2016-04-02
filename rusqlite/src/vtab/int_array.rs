@@ -63,6 +63,7 @@ impl VTab<IntArrayVTabCursor> for IntArrayVTab {
     }
 }
 
+#[derive(Default)]
 #[repr(C)]
 struct IntArrayVTabCursor {
     /// Base class

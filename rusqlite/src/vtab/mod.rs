@@ -130,7 +130,7 @@ pub fn declare_vtab(db: *mut ffi::sqlite3, sql: &str) -> Result<()> {
 }
 
 /// Escape double-quote (`"`) character occurences by doubling them (`""`).
-pub fn escape_double_quote<'a>(identifier: &'a str) -> Cow<'a, str> {
+pub fn escape_double_quote(identifier: &str) -> Cow<str> {
     if identifier.contains('"') {
         // escape quote by doubling them
         Owned(identifier.replace("\"", "\"\""))
@@ -216,7 +216,7 @@ unsafe extern "C" fn $best_index(vtab: *mut ffi::sqlite3_vtab,
 }
 unsafe extern "C" fn $destroy(vtab: *mut ffi::sqlite3_vtab) -> libc::c_int {
     let vtab = vtab as *mut $vtab;
-    let _: Box<$vtab> = Box::from_raw(mem::transmute(vtab));
+    let _: Box<$vtab> = Box::from_raw(vtab);
     ffi::SQLITE_OK
 }
 
@@ -246,7 +246,7 @@ unsafe extern "C" fn $open(vtab: *mut ffi::sqlite3_vtab,
 }
 unsafe extern "C" fn $close(cursor: *mut ffi::sqlite3_vtab_cursor) -> libc::c_int {
     let cr = cursor as *mut $cursor;
-    let _: Box<$cursor> = Box::from_raw(mem::transmute(cr));
+    let _: Box<$cursor> = Box::from_raw(cr);
     ffi::SQLITE_OK
 }
 

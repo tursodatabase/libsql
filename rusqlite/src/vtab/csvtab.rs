@@ -2,7 +2,6 @@
 extern crate csv;
 use std::ffi::CStr;
 use std::fs::File;
-use std::mem;
 use std::path::Path;
 use std::result;
 use std::str;
@@ -52,7 +51,7 @@ impl VTab<CSVTabCursor> for CSVTab {
               args: &[*const libc::c_char])
               -> Result<CSVTab> {
         if args.len() < 4 {
-            return Err(Error::ModuleError(format!("no CSV file specified")));
+            return Err(Error::ModuleError("no CSV file specified".to_owned()));
         }
         // pull out name of csv file (remove quotes)
         let mut c_filename = unsafe { CStr::from_ptr(args[3]).to_bytes() };
@@ -104,13 +103,13 @@ impl VTab<CSVTabCursor> for CSVTab {
         }
 
         if cols.is_empty() {
-            return Err(Error::ModuleError(format!("no column name specified")));
+            return Err(Error::ModuleError("no column name specified".to_owned()));
         }
 
         let mut sql = String::from("CREATE TABLE x(");
         for (i, col) in cols.iter().enumerate() {
             if col.is_empty() {
-                return Err(Error::ModuleError(format!("no column name found")));
+                return Err(Error::ModuleError("no column name found".to_owned()));
             }
             sql.push('"');
             sql.push_str(col);
