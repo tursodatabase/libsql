@@ -322,12 +322,12 @@ mod test {
         assert_eq!(dt, i);
 
         db.execute("UPDATE foo set b = datetime(t)", &[]).unwrap(); // "YYYY-MM-DD HH:MM:SS"
-        let b: NaiveDateTime = db.query_row("SELECT b FROM foo", &[], |r| r.get(0)).unwrap();
-        assert_eq!(dt, b);
+        let hms: NaiveDateTime = db.query_row("SELECT b FROM foo", &[], |r| r.get(0)).unwrap();
+        assert_eq!(dt, hms);
 
         db.execute("UPDATE foo set b = strftime('%Y-%m-%dT%H:%M', t)", &[]).unwrap();
-        let b: NaiveDateTime = db.query_row("SELECT b FROM foo", &[], |r| r.get(0)).unwrap();
-        assert_eq!(NaiveDateTime::new(date, NaiveTime::from_hms(23, 56, 0)), b);
+        let hm: NaiveDateTime = db.query_row("SELECT b FROM foo", &[], |r| r.get(0)).unwrap();
+        assert_eq!(NaiveDateTime::new(date, NaiveTime::from_hms(23, 56, 0)), hm);
     }
 
     #[test]
