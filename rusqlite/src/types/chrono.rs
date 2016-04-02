@@ -272,39 +272,39 @@ mod test {
     #[test]
     fn test_naive_date() {
         let db = checked_memory_handle();
-        let d = NaiveDate::from_ymd(2016, 2, 23);
-        db.execute("INSERT INTO foo (t) VALUES (?)", &[&d]).unwrap();
+        let date = NaiveDate::from_ymd(2016, 2, 23);
+        db.execute("INSERT INTO foo (t) VALUES (?)", &[&date]).unwrap();
         db.execute("UPDATE foo SET f = julianday(t)", &[]).unwrap();
 
         let s: String = db.query_row("SELECT t FROM foo", &[], |r| r.get(0)).unwrap();
         assert_eq!("2016-02-23", s);
         let t: NaiveDate = db.query_row("SELECT t FROM foo", &[], |r| r.get(0)).unwrap();
-        assert_eq!(d, t);
+        assert_eq!(date, t);
         let f: NaiveDate = db.query_row("SELECT f FROM foo", &[], |r| r.get(0)).unwrap();
-        assert_eq!(d, f);
+        assert_eq!(date, f);
     }
 
     #[test]
     fn test_naive_time() {
         let db = checked_memory_handle();
-        let t = NaiveTime::from_hms(23, 56, 4);
-        db.execute("INSERT INTO foo (t) VALUES (?)", &[&t]).unwrap();
+        let time = NaiveTime::from_hms(23, 56, 4);
+        db.execute("INSERT INTO foo (t) VALUES (?)", &[&time]).unwrap();
 
         let s: String = db.query_row("SELECT t FROM foo", &[], |r| r.get(0)).unwrap();
         assert_eq!("23:56:04", s);
         let v: NaiveTime = db.query_row("SELECT t FROM foo", &[], |r| r.get(0)).unwrap();
-        assert_eq!(t, v);
+        assert_eq!(time, v);
     }
 
     #[test]
     fn test_naive_date_time() {
         let db = checked_memory_handle();
-        let d = NaiveDate::from_ymd(2016, 2, 23);
-        let t = NaiveTime::from_hms(23, 56, 4);
-        let dt = NaiveDateTime::new(d, t);
+        let date = NaiveDate::from_ymd(2016, 2, 23);
+        let time = NaiveTime::from_hms(23, 56, 4);
+        let dt = NaiveDateTime::new(date, time);
 
-        let di = NaiveDateTime::new(d, NaiveTime::from_hms(23, 56, 3));
-        let ds = NaiveDateTime::new(d, NaiveTime::from_hms(23, 56, 5));
+        let di = NaiveDateTime::new(date, NaiveTime::from_hms(23, 56, 3));
+        let ds = NaiveDateTime::new(date, NaiveTime::from_hms(23, 56, 5));
 
         db.execute("INSERT INTO foo (t) VALUES (?)", &[&dt]).unwrap();
         db.execute("UPDATE foo SET f = julianday(t), i = strftime('%s', t)",
@@ -327,15 +327,15 @@ mod test {
 
         db.execute("UPDATE foo set b = strftime('%Y-%m-%dT%H:%M', t)", &[]).unwrap();
         let b: NaiveDateTime = db.query_row("SELECT b FROM foo", &[], |r| r.get(0)).unwrap();
-        assert_eq!(NaiveDateTime::new(d, NaiveTime::from_hms(23, 56, 0)), b);
+        assert_eq!(NaiveDateTime::new(date, NaiveTime::from_hms(23, 56, 0)), b);
     }
 
     #[test]
     fn test_date_time_utc() {
         let db = checked_memory_handle();
-        let d = NaiveDate::from_ymd(2016, 2, 23);
-        let t = NaiveTime::from_hms(23, 56, 4);
-        let dt = NaiveDateTime::new(d, t);
+        let date = NaiveDate::from_ymd(2016, 2, 23);
+        let time = NaiveTime::from_hms(23, 56, 4);
+        let dt = NaiveDateTime::new(date, time);
         let utc = UTC.from_utc_datetime(&dt);
 
         db.execute("INSERT INTO foo (t) VALUES (?)", &[&utc]).unwrap();
@@ -354,9 +354,9 @@ mod test {
     #[test]
     fn test_date_time_local() {
         let db = checked_memory_handle();
-        let d = NaiveDate::from_ymd(2016, 2, 23);
-        let t = NaiveTime::from_hms(23, 56, 4);
-        let dt = NaiveDateTime::new(d, t);
+        let date = NaiveDate::from_ymd(2016, 2, 23);
+        let time = NaiveTime::from_hms(23, 56, 4);
+        let dt = NaiveDateTime::new(date, time);
         let local = Local.from_local_datetime(&dt).single().unwrap();
 
         db.execute("INSERT INTO foo (t) VALUES (?)", &[&local]).unwrap();
