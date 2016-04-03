@@ -1741,7 +1741,7 @@ static int rtreeBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
     return SQLITE_NOMEM;
   }
 
-  nRow = pRtree->nRowEst / (iIdx + 1);
+  nRow = pRtree->nRowEst >> (iIdx/2);
   pIdxInfo->estimatedCost = (double)6.0 * (double)nRow;
   setEstimatedRows(pIdxInfo, nRow);
 

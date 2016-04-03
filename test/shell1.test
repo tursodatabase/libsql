@@ -21,15 +21,7 @@
 #
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-if {$tcl_platform(platform)=="windows"} {
-  set CLI "sqlite3.exe"
-} else {
-  set CLI "./sqlite3"
-}
-if {![file executable $CLI]} {
-  finish_test
-  return
-}
+set CLI [test_find_cli]
 db close
 forcedelete test.db test.db-journal test.db-wal
 sqlite3 db test.db
@@ -53,7 +45,7 @@ do_test shell1-1.1.1b {
 } {1 1}
 # error on extra options
 do_test shell1-1.1.2 {
-  catchcmd "test.db \"select 3\" \"select 4\"" ""
+  catchcmd "test.db \"select+3\" \"select+4\"" ""
 } {0 {3
 4}}
 # error on extra options
@@ -284,11 +276,11 @@ do_test shell1-3.2.4 {
 # .databases             List names and files of attached databases
 do_test shell1-3.3.1 {
   catchcmd "-csv test.db" ".databases"
-} "/0 +.*main +[string map {/ .} [string range [get_pwd] 0 10]].*/"
+} "/0.+main.+[string map {/ ".{1,2}"} [string range [get_pwd] 0 10]].*/"
 do_test shell1-3.3.2 {
   # extra arguments ignored
   catchcmd "test.db" ".databases BAD"
-} "/0 +.*main +[string map {/ .} [string range [get_pwd] 0 10]].*/"
+} "/0.+main.+[string map {/ ".{1,2}"} [string range [get_pwd] 0 10]].*/"
 
 # .dump ?TABLE? ...      Dump the database in an SQL text format
 #                          If TABLE specified, only dump tables matching
@@ -625,9 +617,9 @@ do_test shell1-3.23.2 {
 } {1 {Usage: .show}}
 
 # .stats ON|OFF          Turn stats on or off
-do_test shell1-3.23b.1 {
-  catchcmd "test.db" ".stats"
-} {1 {Usage: .stats on|off}}
+#do_test shell1-3.23b.1 {
+#  catchcmd "test.db" ".stats"
+#} {1 {Usage: .stats on|off}}
 do_test shell1-3.23b.2 {
   catchcmd "test.db" ".stats ON"
 } {0 {}}
@@ -637,7 +629,7 @@ do_test shell1-3.23b.3 {
 do_test shell1-3.23b.4 {
   # too many arguments
   catchcmd "test.db" ".stats OFF BAD"
-} {1 {Usage: .stats on|off}}
+} {1 {Usage: .stats ?on|off?}}
 
 # .tables ?TABLE?        List names of tables
 #                          If TABLE specified, only list tables matching

@@ -182,4 +182,39 @@ do_test nolock-3.12 {
 db2 close
 db close
 tvfs delete
+
+if {[permutation]!="inmemory_journal"} {
+  # 2016-03-11:  Make sure all works when transitioning to WAL mode
+  # under nolock.
+  #
+  do_test nolock-4.1 {
+    forcedelete test.db
+    sqlite3 db file:test.db?nolock=1 -uri 1
+    db eval {
+       PRAGMA journal_mode=WAL;
+       CREATE TABLE t1(x);
+       INSERT INTO t1 VALUES('youngling');
+       SELECT * FROM t1;
+    }
+  } {delete youngling}
+  db close
+  
+  do_test nolock-4.2 {
+    forcedelete test.db
+    sqlite3 db test.db
+    db eval {
+      PRAGMA journal_mode=WAL;
+      CREATE TABLE t1(x);
+      INSERT INTO t1 VALUES('catbird');
+      SELECT * FROM t1;
+    }
+  } {wal catbird}
+  do_test nolock-4.3 {
+    db close
+    sqlite3 db file:test.db?nolock=1 -uri 1
+    set rc [catch {db eval {SELECT * FROM t1}} msg]
+    lappend rc $msg
+  } {1 {unable to open database file}}
+}
+
 finish_test

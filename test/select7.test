@@ -220,5 +220,3 @@ do_catchsql_test 8.2 {
 
 
 finish_test
-
-

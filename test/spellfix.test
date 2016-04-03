@@ -403,4 +403,3 @@ foreach {tn conflict err bRollback res} {
 }
 
 finish_test
-

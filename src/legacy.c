@@ -90,7 +90,7 @@ int sqlite3_exec(
           for(i=0; i<nCol; i++){
             azVals[i] = (char *)sqlite3_column_text(pStmt, i);
             if( !azVals[i] && sqlite3_column_type(pStmt, i)!=SQLITE_NULL ){
-              db->mallocFailed = 1;
+              sqlite3OomFault(db);
               goto exec_out;
             }
           }
@@ -131,7 +131,7 @@ exec_out:
     if( *pzErrMsg ){
       memcpy(*pzErrMsg, sqlite3_errmsg(db), nErrMsg);
     }else{
-      rc = SQLITE_NOMEM;
+      rc = SQLITE_NOMEM_BKPT;
       sqlite3Error(db, SQLITE_NOMEM);
     }
   }else if( pzErrMsg ){

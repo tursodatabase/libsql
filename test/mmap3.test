@@ -19,6 +19,9 @@ ifcapable !mmap||!vtab {
 source $testdir/lock_common.tcl
 set testprefix mmap3
 
+# A codec shuts down memory-mapped I/O
+if {[nonzero_reserved_bytes]} {finish_test; return;}
+
 do_test mmap3-1.0 {
   load_static_extension db wholenumber
   db eval {

@@ -17,6 +17,10 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set ::testprefix close
 
+# This module bypasses the "-key" logic in tester.tcl, so it cannot run
+# with the codec enabled.
+do_not_use_codec
+
 do_execsql_test 1.0 {
   CREATE TABLE t1(x);
   INSERT INTO t1 VALUES('one');

@@ -20,15 +20,7 @@
 #
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-if {$tcl_platform(platform)=="windows"} {
-  set CLI "sqlite3.exe"
-} else {
-  set CLI "./sqlite3"
-}
-if {![file executable $CLI]} {
-  finish_test
-  return
-}
+set CLI [test_find_cli]
 db close
 forcedelete test.db test.db-journal test.db-wal
 sqlite3 db test.db
@@ -51,7 +43,7 @@ do_test shell2-1.1.1 {
 # Shell silently ignores extra parameters.
 # Ticket [f5cb008a65].
 do_test shell2-1.2.1 {
-  set rc [catch { eval exec $CLI \":memory:\" \"select 3\" \"select 4\" } msg]
+  set rc [catch { eval exec $CLI \":memory:\" \"select+3\" \"select+4\" } msg]
   list $rc $msg
 } {0 {3
 4}}

@@ -26,7 +26,7 @@ if { $tcl_platform(wordSize)<8 } {
   return
 }
 
-if 1 {
+foreach_detail_mode $testprefix {
 
 proc do_fb_test {tn sql res} {
   set res2 [lsort -integer -decr $res]
@@ -34,7 +34,7 @@ proc do_fb_test {tn sql res} {
   uplevel [list do_execsql_test $tn.2 "$sql ORDER BY rowid DESC" $res2]
 }
 
-# This test populates the FTS5 table containing $nEntry entries. Rows are 
+# This test populates the FTS5 table with $nEntry entries. Rows are 
 # numbered from 0 to ($nEntry-1). The rowid for row $i is:
 #
 #   ($iFirst + $i*$nStep)
@@ -77,10 +77,12 @@ proc do_dlidx_test1 {tn spc1 spc2 nEntry iFirst nStep} {
   do_fb_test $tn.4.1 { SELECT rowid FROM t1 WHERE t1 MATCH 'a AND y' } $ydoc
   do_fb_test $tn.4.2 { SELECT rowid FROM t1 WHERE t1 MATCH 'y AND a' } $ydoc
   
-  do_fb_test $tn.5.1 { 
-    SELECT rowid FROM t1 WHERE t1 MATCH 'a + b + c + x' } $xdoc
-  do_fb_test $tn.5.2 { 
-    SELECT rowid FROM t1 WHERE t1 MATCH 'b + c + x + y' } $ydoc
+  if {[detail_is_full]} {
+    do_fb_test $tn.5.1 { 
+      SELECT rowid FROM t1 WHERE t1 MATCH 'a + b + c + x' } $xdoc
+    do_fb_test $tn.5.2 { 
+      SELECT rowid FROM t1 WHERE t1 MATCH 'b + c + x + y' } $ydoc
+  }
 }
 
 
@@ -90,7 +92,7 @@ foreach {tn pgsz} {
 } {
   do_execsql_test $tn.0 { 
     DROP TABLE IF EXISTS t1;
-    CREATE VIRTUAL TABLE t1 USING fts5(x);
+    CREATE VIRTUAL TABLE t1 USING fts5(x, detail=%DETAIL%);
     INSERT INTO t1(t1, rank) VALUES('pgsz', $pgsz);
   }
 
@@ -107,7 +109,7 @@ proc do_dlidx_test2 {tn nEntry iFirst nStep} {
   execsql {
     BEGIN;
     DROP TABLE IF EXISTS t1;
-    CREATE VIRTUAL TABLE t1 USING fts5(x);
+    CREATE VIRTUAL TABLE t1 USING fts5(x, detail=%DETAIL%);
     INSERT INTO t1(t1, rank) VALUES('pgsz', 64);
     INSERT INTO t1 VALUES('b a');
 
@@ -129,8 +131,6 @@ proc do_dlidx_test2 {tn nEntry iFirst nStep} {
 }
 
 do_dlidx_test2 2.1 [expr 20] [expr 1<<57] [expr (1<<57) + 128]
-
-}
 
 #--------------------------------------------------------------------
 #
@@ -158,7 +158,7 @@ proc rnddoc {} {
 db func rnddoc rnddoc
 
 do_execsql_test 3.1 {
-  CREATE VIRTUAL TABLE abc USING fts5(a);
+  CREATE VIRTUAL TABLE abc USING fts5(a, detail=%DETAIL%);
   INSERT INTO abc(abc, rank) VALUES('pgsz', 32);
 
   INSERT INTO abc VALUES ( rnddoc() );
@@ -178,7 +178,7 @@ do_execsql_test 3.2 {
   ORDER BY rowid DESC;
 } {16 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1}
 
-do_execsql_test 3.2 {
+do_execsql_test 3.3 {
   INSERT INTO abc(abc) VALUES('integrity-check');
   INSERT INTO abc(abc) VALUES('optimize');
   INSERT INTO abc(abc) VALUES('integrity-check');
@@ -187,10 +187,13 @@ do_execsql_test 3.2 {
 set v [lindex $vocab 0]
 set i 0
 foreach v $vocab {
-  do_execsql_test 3.3.[incr i] {
+  do_execsql_test 3.4.[incr i] {
     SELECT rowid FROM abc WHERE abc MATCH $v
   } {1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16}
 }
+
+} ;# foreach_detail_mode
+
 
 
 finish_test

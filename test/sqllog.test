@@ -110,7 +110,4 @@ unset ::env(SQLITE_SQLLOG_DIR)
 unset ::env(SQLITE_SQLLOG_CONDITIONAL)
 sqlite3_config_sqllog
 sqlite3_initialize
-breakpoint
 finish_test
-
-

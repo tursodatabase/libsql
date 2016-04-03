@@ -347,7 +347,7 @@ typedef int (*sqlite3_callback)(void*,int,char**, char**);
 ** from [sqlite3_malloc()] and passed back through the 5th parameter.
 ** To avoid memory leaks, the application should invoke [sqlite3_free()]
 ** on error message strings returned through the 5th parameter of
-** of sqlite3_exec() after the error message string is no longer needed.
+** sqlite3_exec() after the error message string is no longer needed.
 ** ^If the 5th parameter to sqlite3_exec() is not NULL and no errors
 ** occur, then sqlite3_exec() sets the pointer in its 5th parameter to
 ** NULL before returning.
@@ -794,8 +794,13 @@ struct sqlite3_io_methods {
 ** <li>[[SQLITE_FCNTL_FILE_POINTER]]
 ** The [SQLITE_FCNTL_FILE_POINTER] opcode is used to obtain a pointer
 ** to the [sqlite3_file] object associated with a particular database
-** connection.  See the [sqlite3_file_control()] documentation for
-** additional information.
+** connection.  See also [SQLITE_FCNTL_JOURNAL_POINTER].
+**
+** <li>[[SQLITE_FCNTL_JOURNAL_POINTER]]
+** The [SQLITE_FCNTL_JOURNAL_POINTER] opcode is used to obtain a pointer
+** to the [sqlite3_file] object associated with the journal file (either
+** the [rollback journal] or the [write-ahead log]) for a particular database
+** connection.  See also [SQLITE_FCNTL_FILE_POINTER].
 **
 ** <li>[[SQLITE_FCNTL_SYNC_OMITTED]]
 ** No longer in use.
@@ -1010,6 +1015,7 @@ struct sqlite3_io_methods {
 #define SQLITE_FCNTL_ZIPVFS                 25
 #define SQLITE_FCNTL_RBU                    26
 #define SQLITE_FCNTL_VFS_POINTER            27
+#define SQLITE_FCNTL_JOURNAL_POINTER        28
 
 /* deprecated names */
 #define SQLITE_GET_LOCKPROXYFILE      SQLITE_FCNTL_GET_LOCKPROXYFILE
@@ -1222,7 +1228,7 @@ struct sqlite3_vfs {
   const char *(*xNextSystemCall)(sqlite3_vfs*, const char *zName);
   /*
   ** The methods above are in versions 1 through 3 of the sqlite_vfs object.
-  ** New fields may be appended in figure versions.  The iVersion
+  ** New fields may be appended in future versions.  The iVersion
   ** value will increment whenever this happens. 
   */
 };
@@ -1814,6 +1820,20 @@ struct sqlite3_mem_methods {
 ** is enabled (using the [PRAGMA threads] command) and the amount of content
 ** to be sorted exceeds the page size times the minimum of the
 ** [PRAGMA cache_size] setting and this value.
+**
+** [[SQLITE_CONFIG_STMTJRNL_SPILL]]
+** <dt>SQLITE_CONFIG_STMTJRNL_SPILL
+** <dd>^The SQLITE_CONFIG_STMTJRNL_SPILL option takes a single parameter which
+** becomes the [statement journal] spill-to-disk threshold.  
+** [Statement journals] are held in memory until their size (in bytes)
+** exceeds this threshold, at which point they are written to disk.
+** Or if the threshold is -1, statement journals are always held
+** exclusively in memory.
+** Since many statement journals never become large, setting the spill
+** threshold to a value such as 64KiB can greatly reduce the amount of
+** I/O required to support statement rollback.
+** The default value for this setting is controlled by the
+** [SQLITE_STMTJRNL_SPILL] compile-time option.
 ** </dl>
 */
 #define SQLITE_CONFIG_SINGLETHREAD  1  /* nil */
@@ -1841,6 +1861,7 @@ struct sqlite3_mem_methods {
 #define SQLITE_CONFIG_WIN32_HEAPSIZE      23  /* int nByte */
 #define SQLITE_CONFIG_PCACHE_HDRSZ        24  /* int *psz */
 #define SQLITE_CONFIG_PMASZ               25  /* unsigned int szPma */
+#define SQLITE_CONFIG_STMTJRNL_SPILL      26  /* int nByte */
 
 /*
 ** CAPI3REF: Database Connection Configuration Options
@@ -1898,11 +1919,25 @@ struct sqlite3_mem_methods {
 ** following this call.  The second parameter may be a NULL pointer, in
 ** which case the trigger setting is not reported back. </dd>
 **
+** <dt>SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER</dt>
+** <dd> ^This option is used to enable or disable the two-argument
+** version of the [fts3_tokenizer()] function which is part of the
+** [FTS3] full-text search engine extension.
+** There should be two additional arguments.
+** The first argument is an integer which is 0 to disable fts3_tokenizer() or
+** positive to enable fts3_tokenizer() or negative to leave the setting
+** unchanged.
+** The second parameter is a pointer to an integer into which
+** is written 0 or 1 to indicate whether fts3_tokenizer is disabled or enabled
+** following this call.  The second parameter may be a NULL pointer, in
+** which case the new setting is not reported back. </dd>
+**
 ** </dl>
 */
-#define SQLITE_DBCONFIG_LOOKASIDE       1001  /* void* int int */
-#define SQLITE_DBCONFIG_ENABLE_FKEY     1002  /* int int* */
-#define SQLITE_DBCONFIG_ENABLE_TRIGGER  1003  /* int int* */
+#define SQLITE_DBCONFIG_LOOKASIDE             1001 /* void* int int */
+#define SQLITE_DBCONFIG_ENABLE_FKEY           1002 /* int int* */
+#define SQLITE_DBCONFIG_ENABLE_TRIGGER        1003 /* int int* */
+#define SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER 1004 /* int int* */
 
 
 /*
@@ -5152,7 +5187,7 @@ void *sqlite3_rollback_hook(sqlite3*, void(*)(void *), void*);
 ** ^The sqlite3_update_hook() interface registers a callback function
 ** with the [database connection] identified by the first argument
 ** to be invoked whenever a row is updated, inserted or deleted in
-** a rowid table.
+** a [rowid table].
 ** ^Any callback set by a previous call to this function
 ** for the same database connection is overridden.
 **
@@ -5191,8 +5226,8 @@ void *sqlite3_rollback_hook(sqlite3*, void(*)(void *), void*);
 ** on the same [database connection] D, or NULL for
 ** the first call on D.
 **
-** See also the [sqlite3_commit_hook()] and [sqlite3_rollback_hook()]
-** interfaces.
+** See also the [sqlite3_commit_hook()], [sqlite3_rollback_hook()],
+** and [sqlite3_preupdate_hook()] interfaces.
 */
 void *sqlite3_update_hook(
   sqlite3*, 
@@ -5691,7 +5726,7 @@ struct sqlite3_index_info {
   /* Inputs */
   int nConstraint;           /* Number of entries in aConstraint */
   struct sqlite3_index_constraint {
-     int iColumn;              /* Column on left-hand side of constraint */
+     int iColumn;              /* Column constrained.  -1 for ROWID */
      unsigned char op;         /* Constraint operator */
      unsigned char usable;     /* True if this constraint is usable */
      int iTermOffset;          /* Used internally - xBestIndex should ignore */
@@ -6726,7 +6761,7 @@ int sqlite3_db_status(sqlite3*, int op, int *pCur, int *pHiwtr, int resetFlg);
 ** database file in rollback mode databases. Any pages written as part of
 ** transaction rollback or database recovery operations are not included.
 ** If an IO or other error occurs while writing a page to disk, the effect
-** on subsequent SQLITE_DBSTATUS_CACHE_WRITE requests is undefined.)^ ^The
+** on subsequent SQLITE_DBSTATUS_CACHE_WRITE requests is undefined). ^The
 ** highwater mark associated with SQLITE_DBSTATUS_CACHE_WRITE is always 0.
 ** </dd>
 **
@@ -7483,7 +7518,7 @@ void sqlite3_log(int iErrCode, const char *zFormat, ...);
 ** previously registered write-ahead log callback. ^Note that the
 ** [sqlite3_wal_autocheckpoint()] interface and the
 ** [wal_autocheckpoint pragma] both invoke [sqlite3_wal_hook()] and will
-** those overwrite any prior [sqlite3_wal_hook()] settings.
+** overwrite any prior [sqlite3_wal_hook()] settings.
 */
 void *sqlite3_wal_hook(
   sqlite3*, 
@@ -7881,6 +7916,114 @@ void sqlite3_stmt_scanstatus_reset(sqlite3_stmt*);
 int sqlite3_db_cacheflush(sqlite3*);
 
 /*
+** CAPI3REF: The pre-update hook.
+**
+** ^These interfaces are only available if SQLite is compiled using the
+** [SQLITE_ENABLE_PREUPDATE_HOOK] compile-time option.
+**
+** ^The [sqlite3_preupdate_hook()] interface registers a callback function
+** that is invoked prior to each [INSERT], [UPDATE], and [DELETE] operation
+** on a [rowid table].
+** ^At most one preupdate hook may be registered at a time on a single
+** [database connection]; each call to [sqlite3_preupdate_hook()] overrides
+** the previous setting.
+** ^The preupdate hook is disabled by invoking [sqlite3_preupdate_hook()]
+** with a NULL pointer as the second parameter.
+** ^The third parameter to [sqlite3_preupdate_hook()] is passed through as
+** the first parameter to callbacks.
+**
+** ^The preupdate hook only fires for changes to [rowid tables]; the preupdate
+** hook is not invoked for changes to [virtual tables] or [WITHOUT ROWID]
+** tables.
+**
+** ^The second parameter to the preupdate callback is a pointer to
+** the [database connection] that registered the preupdate hook.
+** ^The third parameter to the preupdate callback is one of the constants
+** [SQLITE_INSERT], [SQLITE_DELETE], or [SQLITE_UPDATE] to indentify the
+** kind of update operation that is about to occur.
+** ^(The fourth parameter to the preupdate callback is the name of the
+** database within the database connection that is being modified.  This
+** will be "main" for the main database or "temp" for TEMP tables or 
+** the name given after the AS keyword in the [ATTACH] statement for attached
+** databases.)^
+** ^The fifth parameter to the preupdate callback is the name of the
+** table that is being modified.
+** ^The sixth parameter to the preupdate callback is the initial [rowid] of the
+** row being changes for SQLITE_UPDATE and SQLITE_DELETE changes and is
+** undefined for SQLITE_INSERT changes.
+** ^The seventh parameter to the preupdate callback is the final [rowid] of
+** the row being changed for SQLITE_UPDATE and SQLITE_INSERT changes and is
+** undefined for SQLITE_DELETE changes.
+**
+** The [sqlite3_preupdate_old()], [sqlite3_preupdate_new()],
+** [sqlite3_preupdate_count()], and [sqlite3_preupdate_depth()] interfaces
+** provide additional information about a preupdate event. These routines
+** may only be called from within a preupdate callback.  Invoking any of
+** these routines from outside of a preupdate callback or with a
+** [database connection] pointer that is different from the one supplied
+** to the preupdate callback results in undefined and probably undesirable
+** behavior.
+**
+** ^The [sqlite3_preupdate_count(D)] interface returns the number of columns
+** in the row that is being inserted, updated, or deleted.
+**
+** ^The [sqlite3_preupdate_old(D,N,P)] interface writes into P a pointer to
+** a [protected sqlite3_value] that contains the value of the Nth column of
+** the table row before it is updated.  The N parameter must be between 0
+** and one less than the number of columns or the behavior will be
+** undefined. This must only be used within SQLITE_UPDATE and SQLITE_DELETE
+** preupdate callbacks; if it is used by an SQLITE_INSERT callback then the
+** behavior is undefined.  The [sqlite3_value] that P points to
+** will be destroyed when the preupdate callback returns.
+**
+** ^The [sqlite3_preupdate_new(D,N,P)] interface writes into P a pointer to
+** a [protected sqlite3_value] that contains the value of the Nth column of
+** the table row after it is updated.  The N parameter must be between 0
+** and one less than the number of columns or the behavior will be
+** undefined. This must only be used within SQLITE_INSERT and SQLITE_UPDATE
+** preupdate callbacks; if it is used by an SQLITE_DELETE callback then the
+** behavior is undefined.  The [sqlite3_value] that P points to
+** will be destroyed when the preupdate callback returns.
+**
+** ^The [sqlite3_preupdate_depth(D)] interface returns 0 if the preupdate
+** callback was invoked as a result of a direct insert, update, or delete
+** operation; or 1 for inserts, updates, or deletes invoked by top-level 
+** triggers; or 2 for changes resulting from triggers called by top-level
+** triggers; and so forth.
+**
+** See also:  [sqlite3_update_hook()]
+*/
+SQLITE_EXPERIMENTAL void *sqlite3_preupdate_hook(
+  sqlite3 *db,
+  void(*xPreUpdate)(
+    void *pCtx,                   /* Copy of third arg to preupdate_hook() */
+    sqlite3 *db,                  /* Database handle */
+    int op,                       /* SQLITE_UPDATE, DELETE or INSERT */
+    char const *zDb,              /* Database name */
+    char const *zName,            /* Table name */
+    sqlite3_int64 iKey1,          /* Rowid of row about to be deleted/updated */
+    sqlite3_int64 iKey2           /* New rowid value (for a rowid UPDATE) */
+  ),
+  void*
+);
+SQLITE_EXPERIMENTAL int sqlite3_preupdate_old(sqlite3 *, int, sqlite3_value **);
+SQLITE_EXPERIMENTAL int sqlite3_preupdate_count(sqlite3 *);
+SQLITE_EXPERIMENTAL int sqlite3_preupdate_depth(sqlite3 *);
+SQLITE_EXPERIMENTAL int sqlite3_preupdate_new(sqlite3 *, int, sqlite3_value **);
+
+/*
+** CAPI3REF: Low-level system error code
+**
+** ^Attempt to return the underlying operating system error code or error
+** number that caused the most recent I/O error or failure to open a file.
+** The return value is OS-dependent.  For example, on unix systems, after
+** [sqlite3_open_v2()] returns [SQLITE_CANTOPEN], this interface could be
+** called to get back the underlying "errno" that caused the problem, such
+** as ENOSPC, EAUTH, EISDIR, and so forth.  
+*/
+int sqlite3_system_errno(sqlite3*);
+
+/*
 ** CAPI3REF: Database Snapshot
 ** KEYWORDS: {snapshot}
 ** EXPERIMENTAL
@@ -7948,7 +8091,11 @@ SQLITE_EXPERIMENTAL int sqlite3_snapshot_get(
 ** the first operation, apart from other sqlite3_snapshot_open() calls,
 ** following the [BEGIN] that starts a new read transaction.
 ** ^A [snapshot] will fail to open if it has been overwritten by a 
-** [checkpoint].  
+** [checkpoint].
+** ^A [snapshot] will fail to open if the database connection D has not
+** previously completed at least one read operation against the database 
+** file.  (Hint: Run "[PRAGMA application_id]" against a newly opened
+** database connection in order to make it ready to use snapshots.)
 **
 ** The [sqlite3_snapshot_open()] interface is only available when the
 ** SQLITE_ENABLE_SNAPSHOT compile-time option is used.

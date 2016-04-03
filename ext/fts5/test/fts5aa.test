@@ -21,6 +21,8 @@ ifcapable !fts5 {
   return
 }
 
+foreach_detail_mode $::testprefix {
+
 do_execsql_test 1.0 {
   CREATE VIRTUAL TABLE t1 USING fts5(a, b, c);
   SELECT name, sql FROM sqlite_master;
@@ -41,9 +43,9 @@ do_execsql_test 1.1 {
 
 #-------------------------------------------------------------------------
 #
-reset_db
+
 do_execsql_test 2.0 {
-  CREATE VIRTUAL TABLE t1 USING fts5(x,y);
+  CREATE VIRTUAL TABLE t1 USING fts5(x, y, detail=%DETAIL%);
 }
 do_execsql_test 2.1 {
   INSERT INTO t1 VALUES('a b c', 'd e f');
@@ -66,11 +68,12 @@ do_execsql_test 2.4 {
   INSERT INTO t1(t1) VALUES('integrity-check');
 }
 
+
 #-------------------------------------------------------------------------
 #
 reset_db
 do_execsql_test 3.0 {
-  CREATE VIRTUAL TABLE t1 USING fts5(x,y);
+  CREATE VIRTUAL TABLE t1 USING fts5(x,y, detail=%DETAIL%);
 }
 foreach {i x y} {
    1  {g f d b f} {h h e i a}
@@ -93,7 +96,7 @@ foreach {i x y} {
 #
 reset_db
 do_execsql_test 4.0 {
-  CREATE VIRTUAL TABLE t1 USING fts5(x,y);
+  CREATE VIRTUAL TABLE t1 USING fts5(x,y, detail=%DETAIL%);
   INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
 }
 foreach {i x y} {
@@ -117,7 +120,7 @@ foreach {i x y} {
 #
 reset_db
 do_execsql_test 5.0 {
-  CREATE VIRTUAL TABLE t1 USING fts5(x,y);
+  CREATE VIRTUAL TABLE t1 USING fts5(x,y, detail=%DETAIL%);
   INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
 }
 foreach {i x y} {
@@ -141,7 +144,7 @@ foreach {i x y} {
 #
 reset_db
 do_execsql_test 6.0 {
-  CREATE VIRTUAL TABLE t1 USING fts5(x,y);
+  CREATE VIRTUAL TABLE t1 USING fts5(x,y, detail=%DETAIL%);
   INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
 }
 
@@ -276,7 +279,7 @@ for {set i 1} {$i <= 10} {incr i} {
 #
 reset_db
 do_execsql_test 10.0 {
-  CREATE VIRTUAL TABLE t1 USING fts5(x,y);
+  CREATE VIRTUAL TABLE t1 USING fts5(x,y, detail=%DETAIL%);
 }
 set d10 {
    1  {g f d b f} {h h e i a}
@@ -309,19 +312,19 @@ do_execsql_test 10.4.2 { INSERT INTO t1(t1) VALUES('integrity-check') }
 #-------------------------------------------------------------------------
 #
 do_catchsql_test 11.1 {
-  CREATE VIRTUAL TABLE t2 USING fts5(a, b, c, rank);
+  CREATE VIRTUAL TABLE t2 USING fts5(a, b, c, rank, detail=%DETAIL%);
 } {1 {reserved fts5 column name: rank}}
 do_catchsql_test 11.2 {
-  CREATE VIRTUAL TABLE rank USING fts5(a, b, c);
+  CREATE VIRTUAL TABLE rank USING fts5(a, b, c, detail=%DETAIL%);
 } {1 {reserved fts5 table name: rank}}
 do_catchsql_test 11.3 {
-  CREATE VIRTUAL TABLE t2 USING fts5(a, b, c, rowid);
+  CREATE VIRTUAL TABLE t2 USING fts5(a, b, c, rowid, detail=%DETAIL%);
 } {1 {reserved fts5 column name: rowid}}
 
 #-------------------------------------------------------------------------
 #
 do_execsql_test 12.1 {
-  CREATE VIRTUAL TABLE t2 USING fts5(x,y);
+  CREATE VIRTUAL TABLE t2 USING fts5(x,y, detail=%DETAIL%);
 } {}
 
 do_catchsql_test 12.2 {
@@ -337,7 +340,7 @@ do_test 12.3 {
 #
 reset_db
 do_execsql_test 13.1 {
-  CREATE VIRTUAL TABLE t1 USING fts5(x);
+  CREATE VIRTUAL TABLE t1 USING fts5(x, detail=%DETAIL%);
   INSERT INTO t1(rowid, x) VALUES(1, 'o n e'), (2, 't w o');
 } {}
 
@@ -361,7 +364,7 @@ do_execsql_test 13.6 {
 #
 reset_db
 do_execsql_test 14.1 {
-  CREATE VIRTUAL TABLE t1 USING fts5(x, y);
+  CREATE VIRTUAL TABLE t1 USING fts5(x, y, detail=%DETAIL%);
   INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
   WITH d(x,y) AS (
     SELECT NULL, 'xyz xyz xyz xyz xyz xyz'
@@ -369,6 +372,10 @@ do_execsql_test 14.1 {
     SELECT NULL, 'xyz xyz xyz xyz xyz xyz' FROM d
   )
   INSERT INTO t1 SELECT * FROM d LIMIT 200;
+}
+
+do_execsql_test 15.x {
+  INSERT INTO t1(t1) VALUES('integrity-check');
 }
 
 do_test 14.2 {
@@ -417,23 +424,30 @@ do_execsql_test 16.1 {
 }
 
 proc funk {} {
+  db eval { UPDATE n1_config SET v=50 WHERE k='version' }
   set fd [db incrblob main n1_data block 10]
   fconfigure $fd -encoding binary -translation binary
   puts -nonewline $fd "\x44\x45"
   close $fd
-  db eval { UPDATE n1_config SET v=50 WHERE k='version' }
 }
 db func funk funk
 
+# This test case corrupts the structure record within the first invocation
+# of function funk(). Which used to cause the bm25() function to throw an
+# exception. But since bm25() can now used the cached structure record,
+# it never sees the corruption introduced by funk() and so the following 
+# statement no longer fails.
+#
 do_catchsql_test 16.2 {
   SELECT funk(), bm25(n1), funk() FROM n1 WHERE n1 MATCH 'a+b+c+d'
-} {1 {SQL logic error or missing database}}
+} {0 {{} -1e-06 {}}}
+# {1 {SQL logic error or missing database}}
 
 #-------------------------------------------------------------------------
 #
 reset_db
 do_execsql_test 17.1 {
-  CREATE VIRTUAL TABLE b2 USING fts5(x);
+  CREATE VIRTUAL TABLE b2 USING fts5(x, detail=%DETAIL%);
   INSERT INTO b2 VALUES('a');
   INSERT INTO b2 VALUES('b');
   INSERT INTO b2 VALUES('c');
@@ -447,18 +461,20 @@ do_test 17.2 {
   set res
 } {{a b c} {a b c} {a b c}}
 
-reset_db
-do_execsql_test 18.1 {
-  CREATE VIRTUAL TABLE c2 USING fts5(x, y);
-  INSERT INTO c2 VALUES('x x x', 'x x x');
-  SELECT rowid FROM c2 WHERE c2 MATCH 'y:x';
-} {1}
+if {[string match n* %DETAIL%]==0} {
+  reset_db
+  do_execsql_test 17.3 {
+    CREATE VIRTUAL TABLE c2 USING fts5(x, y, detail=%DETAIL%);
+    INSERT INTO c2 VALUES('x x x', 'x x x');
+    SELECT rowid FROM c2 WHERE c2 MATCH 'y:x';
+  } {1}
+}
 
 #-------------------------------------------------------------------------
 #
 reset_db
 do_execsql_test 17.1 {
-  CREATE VIRTUAL TABLE uio USING fts5(ttt);
+  CREATE VIRTUAL TABLE uio USING fts5(ttt, detail=%DETAIL%);
   INSERT INTO uio VALUES(NULL);
   INSERT INTO uio SELECT NULL FROM uio;
   INSERT INTO uio SELECT NULL FROM uio;
@@ -505,8 +521,8 @@ do_execsql_test 17.9 {
 #--------------------------------------------------------------------
 #
 do_execsql_test 18.1 {
-  CREATE VIRTUAL TABLE t1 USING fts5(a, b);
-  CREATE VIRTUAL TABLE t2 USING fts5(c, d);
+  CREATE VIRTUAL TABLE t1 USING fts5(a, b, detail=%DETAIL%);
+  CREATE VIRTUAL TABLE t2 USING fts5(c, d, detail=%DETAIL%);
   INSERT INTO t1 VALUES('abc*', NULL);
   INSERT INTO t2 VALUES(1, 'abcdefg');
 }
@@ -522,7 +538,7 @@ do_execsql_test 18.3 {
 #
 reset_db
 do_execsql_test 19.0 {
-  CREATE VIRTUAL TABLE temp.t1 USING fts5(x);
+  CREATE VIRTUAL TABLE temp.t1 USING fts5(x, detail=%DETAIL%);
   INSERT INTO t1 VALUES('x y z');
   INSERT INTO t1 VALUES('w x 1');
   SELECT rowid FROM t1 WHERE t1 MATCH 'x';
@@ -533,7 +549,7 @@ do_execsql_test 19.0 {
 #
 reset_db
 do_execsql_test 20.0 {
-  CREATE VIRTUAL TABLE temp.tmp USING fts5(x);
+  CREATE VIRTUAL TABLE temp.tmp USING fts5(x, detail=%DETAIL%);
 }
 set ::ids [list \
   0 [expr 1<<36] [expr 2<<36] [expr 1<<43] [expr 2<<43]
@@ -545,6 +561,7 @@ do_test 20.1 {
   execsql { SELECT rowid FROM tmp WHERE tmp MATCH 'y' }
 } $::ids
 
+}
 
 
 finish_test

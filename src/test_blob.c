@@ -105,7 +105,7 @@ static int test_blob_open(
   const char *zDb;
   const char *zTable;
   const char *zColumn;
-  sqlite_int64 iRowid;
+  Tcl_WideInt iRowid;
   int flags;
   const char *zVarname;
   int nVarname;

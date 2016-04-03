@@ -210,4 +210,3 @@ do_execsql_test 5.4 {
 } {}
 
 finish_test
-

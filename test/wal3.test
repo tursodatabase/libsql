@@ -61,7 +61,7 @@ do_test wal3-1.0 {
     PRAGMA cache_size = 10;
   }
   set x [wal_frame_count test.db-wal 1024]
-  if {$::G(perm:name)=="memsubsys1"} {
+  if {[permutation]=="memsubsys1"} {
     if {$x==4251 || $x==4290} {set x 4056}
   }
   set x
@@ -220,6 +220,7 @@ foreach {tn syncmode synccount} {
     sqlite3 db test.db -vfs T
   
     execsql "PRAGMA synchronous = $syncmode"
+    execsql "PRAGMA checkpoint_fullfsync = 0"
     execsql { PRAGMA journal_mode = WAL }
     execsql { CREATE TABLE filler(a,b,c); }
 
@@ -237,67 +238,6 @@ foreach {tn syncmode synccount} {
   db close
   T delete
 }
-
-#-------------------------------------------------------------------------
-# When recovering the contents of a WAL file, a process obtains the WRITER
-# lock, then locks all other bytes before commencing recovery. If it fails
-# to lock all other bytes (because some other process is holding a read
-# lock) it should retry up to 100 times. Then return SQLITE_PROTOCOL to the 
-# caller. Test this (test case wal3-4.3).
-#
-# Also test the effect of hitting an SQLITE_BUSY while attempting to obtain
-# the WRITER lock (should be the same). Test case wal3-4.4.
-# 
-proc lock_callback {method filename handle lock} {
-  lappend ::locks $lock
-}
-do_test wal3-4.1 {
-  testvfs T
-  T filter xShmLock 
-  T script lock_callback
-  set ::locks [list]
-  sqlite3 db test.db -vfs T
-  execsql { SELECT * FROM x }
-  lrange $::locks 0 3
-} [list {0 1 lock exclusive} {1 7 lock exclusive}      \
-        {1 7 unlock exclusive} {0 1 unlock exclusive}  \
-]
-do_test wal3-4.2 {
-  db close
-  set ::locks [list]
-  sqlite3 db test.db -vfs T
-  execsql { SELECT * FROM x }
-  lrange $::locks 0 3
-} [list {0 1 lock exclusive} {1 7 lock exclusive}      \
-        {1 7 unlock exclusive} {0 1 unlock exclusive}  \
-]
-proc lock_callback {method filename handle lock} {
-  if {$lock == "1 7 lock exclusive"} { return SQLITE_BUSY }
-  return SQLITE_OK
-}
-puts "# Warning: This next test case causes SQLite to call xSleep(1) 100 times."
-puts "# Normally this equates to a 100ms delay, but if SQLite is built on unix"
-puts "# without HAVE_USLEEP defined, it may be 100 seconds."
-do_test wal3-4.3 {
-  db close
-  set ::locks [list]
-  sqlite3 db test.db -vfs T
-  catchsql { SELECT * FROM x }
-} {1 {locking protocol}}
-
-puts "# Warning: Same again!"
-proc lock_callback {method filename handle lock} {
-  if {$lock == "0 1 lock exclusive"} { return SQLITE_BUSY }
-  return SQLITE_OK
-}
-do_test wal3-4.4 {
-  db close
-  set ::locks [list]
-  sqlite3 db test.db -vfs T
-  catchsql { SELECT * FROM x }
-} {1 {locking protocol}}
-db close
-T delete
 
 
 #-------------------------------------------------------------------------
@@ -617,86 +557,6 @@ db close
 db2 close
 T delete
 
-#-------------------------------------------------------------------------
-# 
-do_test wal3-8.1 {
-  forcedelete test.db test.db-journal test.db wal
-  sqlite3 db test.db
-  sqlite3 db2 test.db
-  execsql {
-    PRAGMA auto_vacuum = off;
-    PRAGMA journal_mode = WAL;
-    CREATE TABLE b(c);
-    INSERT INTO b VALUES('Tehran');
-    INSERT INTO b VALUES('Qom');
-    INSERT INTO b VALUES('Markazi');
-    PRAGMA wal_checkpoint;
-  }
-} {wal 0 5 5}
-do_test wal3-8.2 {
-  execsql { SELECT * FROM b }
-} {Tehran Qom Markazi}
-do_test wal3-8.3 {
-  db eval { SELECT * FROM b } {
-    db eval { INSERT INTO b VALUES('Qazvin') }
-    set r [db2 eval { SELECT * FROM b }]
-    break
-  }
-  set r
-} {Tehran Qom Markazi Qazvin}
-do_test wal3-8.4 {
-  execsql {
-    INSERT INTO b VALUES('Gilan');
-    INSERT INTO b VALUES('Ardabil');
-  }
-} {}
-db2 close
-
-faultsim_save_and_close
-testvfs T -default 1
-faultsim_restore_and_reopen
-T filter xShmLock
-T script lock_callback
-
-proc lock_callback {method file handle spec} {
-  if {$spec == "1 7 unlock exclusive"} {
-    T filter {}
-    set ::r [catchsql { SELECT * FROM b } db2]
-  }
-}
-sqlite3 db test.db
-sqlite3 db2 test.db
-do_test wal3-8.5 {
-  execsql { SELECT * FROM b }
-} {Tehran Qom Markazi Qazvin Gilan Ardabil}
-do_test wal3-8.6 {
-  set ::r
-} {1 {locking protocol}}
-
-db close
-db2 close
-
-faultsim_restore_and_reopen
-sqlite3 db2 test.db
-T filter xShmLock
-T script lock_callback
-proc lock_callback {method file handle spec} {
-  if {$spec == "1 7 unlock exclusive"} {
-    T filter {}
-    set ::r [catchsql { SELECT * FROM b } db2]
-  }
-}
-unset ::r
-do_test wal3-8.5 {
-  execsql { SELECT * FROM b }
-} {Tehran Qom Markazi Qazvin Gilan Ardabil}
-do_test wal3-8.6 {
-  set ::r
-} {1 {locking protocol}}
-
-db close
-db2 close
-T delete
 
 #-------------------------------------------------------------------------
 # When a connection opens a read-lock on the database, it searches for

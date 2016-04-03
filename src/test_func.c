@@ -166,9 +166,7 @@ static void test_agg_errmsg16_final(sqlite3_context *ctx){
   const void *z;
   sqlite3 * db = sqlite3_context_db_handle(ctx);
   sqlite3_aggregate_context(ctx, 2048);
-  sqlite3BeginBenignMalloc();
   z = sqlite3_errmsg16(db);
-  sqlite3EndBenignMalloc();
   sqlite3_result_text16(ctx, z, -1, SQLITE_TRANSIENT);
 #endif
 }

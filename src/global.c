@@ -159,6 +159,18 @@ const unsigned char sqlite3CtypeMap[256] = {
 # define SQLITE_SORTER_PMASZ 250
 #endif
 
+/* Statement journals spill to disk when their size exceeds the following
+** threashold (in bytes). 0 means that statement journals are created and
+** written to disk immediately (the default behavior for SQLite versions
+** before 3.12.0).  -1 means always keep the entire statement journal in
+** memory.  (The statement journal is also always held entirely in memory
+** if journal_mode=MEMORY or if temp_store=MEMORY, regardless of this
+** setting.)
+*/
+#ifndef SQLITE_STMTJRNL_SPILL 
+# define SQLITE_STMTJRNL_SPILL (64*1024)
+#endif
+
 /*
 ** The following singleton contains the global configuration for
 ** the SQLite library.
@@ -173,6 +185,7 @@ SQLITE_WSD struct Sqlite3Config sqlite3Config = {
    0,                         /* neverCorrupt */
    128,                       /* szLookaside */
    500,                       /* nLookaside */
+   SQLITE_STMTJRNL_SPILL,     /* nStmtSpill */
    {0,0,0,0,0,0,0,0},         /* m */
    {0,0,0,0,0,0,0,0,0},       /* mutex */
    {0,0,0,0,0,0,0,0,0,0,0,0,0},/* pcache2 */
@@ -219,7 +232,7 @@ SQLITE_WSD struct Sqlite3Config sqlite3Config = {
 ** database connections.  After initialization, this table is
 ** read-only.
 */
-SQLITE_WSD FuncDefHash sqlite3GlobalFunctions;
+FuncDefHash sqlite3BuiltinFunctions;
 
 /*
 ** Constant tokens for values 0 and 1.

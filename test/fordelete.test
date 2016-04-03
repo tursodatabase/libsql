@@ -30,15 +30,47 @@ proc analyze_delete_program {sql} {
   } {
     set T($rootpage) $name
   }
-
-  # Calculate the results.
-  set res [list]
+  
+  # For each OpenWrite instruction generated for the proposed DELETE
+  # statement, add the following array entries:
+  #
+  #   $M(<cursor number>) -> <object name>
+  #   $O(<object name>)   -> "*" | ""
+  #
+  # The O() entry is set to "*" if the BTREE_FORDELETE flag is specified,
+  # or "" otherwise.
+  #
   db eval "EXPLAIN $sql" R {
-    if {$R(opcode) == "OpenWrite"} {
-      set obj $T($R(p2))
-      if {"0x$R(p5)" & 0x08} { append obj *}
-      lappend res $obj
+    if {$R(opcode)=="OpenWrite"} {
+      set root $R(p2)
+      set csr $R(p1)
+      if {[info exists T($root)]} { set M($csr) $T($root) }
+
+      set obj $T($root)
+      set O($obj) ""
+      if {"0x$R(p5)" & 0x08} { 
+        set O($obj) *
+      } else {
+        set O($obj) ""
+      }
     }
+  }
+
+  db eval "EXPLAIN $sql" R {
+    if {$R(opcode) == "Delete"} {
+      set csr $R(p1)
+      if {[info exists M($csr)]} {
+        set idxdelete [expr {("0x$R(p5)" & 0x04) ? 1 : 0}]
+        if {$idxdelete} {
+          append O($M($csr)) "+"
+        }
+      }
+    }
+  }
+
+  set res [list]
+  foreach {k v} [array get O] {
+    lappend res "${k}${v}"
   }
 
   lsort $res
@@ -53,10 +85,10 @@ do_execsql_test 1.0 {
 }
 
 foreach {tn sql res} {
-  1 { DELETE FROM t1 WHERE a=?}          { sqlite_autoindex_t1_1  t1* }
-  2 { DELETE FROM t1 WHERE a=? AND b=? } { sqlite_autoindex_t1_1  t1 }
-  3 { DELETE FROM t1 WHERE a>? }         { sqlite_autoindex_t1_1  t1* }
-  4 { DELETE FROM t1 WHERE rowid=? }     { sqlite_autoindex_t1_1*  t1 }
+  1 { DELETE FROM t1 WHERE a=?}          { sqlite_autoindex_t1_1  t1*+ }
+  2 { DELETE FROM t1 WHERE a=? AND b=? } { sqlite_autoindex_t1_1  t1+  }
+  3 { DELETE FROM t1 WHERE a>? }         { sqlite_autoindex_t1_1  t1*+ }
+  4 { DELETE FROM t1 WHERE rowid=? }     { sqlite_autoindex_t1_1*  t1  }
 } {
   do_adp_test 1.$tn $sql $res
 }
@@ -68,8 +100,8 @@ do_execsql_test 2.0 {
   CREATE INDEX t2c ON t2(c);
 }
 foreach {tn sql res} {
-  1 { DELETE FROM t2 WHERE a=?}          { t2* t2a t2b* t2c* }
-  2 { DELETE FROM t2 WHERE a=? AND +b=?} { t2 t2a t2b* t2c* }
+  1 { DELETE FROM t2 WHERE a=?}          { t2*+ t2a t2b* t2c* }
+  2 { DELETE FROM t2 WHERE a=? AND +b=?} { t2+ t2a t2b* t2c* }
   3 { DELETE FROM t2 WHERE a=? OR b=?}   { t2 t2a* t2b* t2c* }
   4 { DELETE FROM t2 WHERE +a=? }        { t2 t2a* t2b* t2c* }
   5 { DELETE FROM t2 WHERE rowid=? }     { t2 t2a* t2b* t2c* }
@@ -126,5 +158,52 @@ do_test 3.2 {
   }
 } {6 {} {} {}}
 
-finish_test
 
+#-------------------------------------------------------------------------
+#
+reset_db 
+do_execsql_test 4.0 {
+  CREATE TABLE log(x);
+  CREATE TABLE p1(one PRIMARY KEY, two);
+
+  CREATE TRIGGER tr_bd BEFORE DELETE ON p1 BEGIN
+    INSERT INTO log VALUES('delete');
+  END;
+  INSERT INTO p1 VALUES('a', 'A'), ('b', 'B'), ('c', 'C');
+  DELETE FROM p1 WHERE one = 'a';
+}
+
+reset_db
+do_execsql_test 4.1 {
+  BEGIN TRANSACTION;
+  CREATE TABLE tbl(a PRIMARY KEY, b, c);
+  CREATE TABLE log(a, b, c);
+  INSERT INTO "tbl" VALUES(1,2,3);
+  CREATE TRIGGER the_trigger BEFORE DELETE ON tbl BEGIN 
+    INSERT INTO log VALUES(1, 2,3);
+  END;
+  COMMIT;
+  DELETE FROM tbl WHERE a=1;
+}
+
+reset_db
+do_execsql_test 5.1 {
+  PRAGMA foreign_keys = 1;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+  CREATE TABLE t2(
+      c INTEGER PRIMARY KEY,
+      d INTEGER DEFAULT 1 REFERENCES t1 ON DELETE SET DEFAULT
+  );
+} {}
+do_execsql_test 5.2 {
+  INSERT INTO t1 VALUES(1, 'one');
+  INSERT INTO t1 VALUES(2, 'two');
+  INSERT INTO t2 VALUES(1, 2);
+  SELECT * FROM t2;
+} {1 2}
+do_execsql_test 5.3 {
+  DELETE FROM t1 WHERE a = 2;
+} {}
+
+
+finish_test

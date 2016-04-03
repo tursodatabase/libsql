@@ -865,19 +865,20 @@ do_test capi3c-11.9.3 {
 do_test capi3c-11.10 {
   sqlite3_step $STMT
 } {SQLITE_ROW}
-ifcapable !autoreset {
-  # If SQLITE_OMIT_AUTORESET is defined, then the statement must be
-  # reset() before it can be passed to step() again.
-  do_test capi3-11.11a { sqlite3_step $STMT } {SQLITE_MISUSE}
-  do_test capi3-11.11b { sqlite3_reset $STMT } {SQLITE_ABORT}
-}
 do_test capi3c-11.11 {
   sqlite3_step $STMT
 } {SQLITE_DONE}
-do_test capi3c-11.12 {
-  sqlite3_step $STMT
-  sqlite3_step $STMT
-} {SQLITE_ROW}
+ifcapable !autoreset {
+  do_test capi3c-11.12armor {
+    sqlite3_step $STMT
+    sqlite3_step $STMT
+  } {SQLITE_MISUSE}
+} else {
+  do_test capi3c-11.12 {
+    sqlite3_step $STMT
+    sqlite3_step $STMT
+  } {SQLITE_ROW}
+}
 do_test capi3c-11.13 {
   sqlite3_finalize $STMT
 } {SQLITE_OK}

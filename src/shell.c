@@ -572,6 +572,19 @@ static char *one_input_line(FILE *in, char *zPrior, int isContinuation){
   return zResult;
 }
 
+#if defined(SQLITE_ENABLE_SESSION)
+/*
+** State information for a single open session
+*/
+typedef struct OpenSession OpenSession;
+struct OpenSession {
+  char *zName;             /* Symbolic name for this session */
+  int nFilter;             /* Number of xFilter rejection GLOB patterns */
+  char **azFilter;         /* Array of xFilter rejection GLOB patterns */
+  sqlite3_session *p;      /* The open session */
+};
+#endif
+
 /*
 ** Shell output mode information from before ".explain on", 
 ** saved so that it can be restored by ".explain off"
@@ -592,6 +605,7 @@ typedef struct ShellState ShellState;
 struct ShellState {
   sqlite3 *db;           /* The database */
   int echoOn;            /* True to echo input commands */
+  int autoExplain;       /* Automatically turn on .explain mode */
   int autoEQP;           /* Run EXPLAIN QUERY PLAN prior to seach SQL stmt */
   int statsOn;           /* True to display memory stats before each finalize */
   int scanstatsOn;       /* True to display scan stats before each finalize */
@@ -603,6 +617,8 @@ struct ShellState {
   FILE *traceOut;        /* Output for sqlite3_trace() */
   int nErr;              /* Number of errors seen */
   int mode;              /* An output mode setting */
+  int cMode;             /* temporary output mode for the current query */
+  int normalMode;        /* Output mode before ".explain on" */
   int writableSchema;    /* True if PRAGMA writable_schema=ON */
   int showHeader;        /* True to show column names in List or Column mode */
   unsigned shellFlgs;    /* Various flags */
@@ -613,7 +629,6 @@ struct ShellState {
   int actualWidth[100];  /* Actual width of each column */
   char nullValue[20];    /* The text to print when a NULL comes back from
                          ** the database */
-  SavedModeInfo normalMode;/* Holds the mode just before .explain ON */
   char outfile[FILENAME_MAX]; /* Filename for *out */
   const char *zDbFilename;    /* name of the database file */
   char *zFreeOnClose;         /* Filename to free when closing */
@@ -623,6 +638,10 @@ struct ShellState {
   int *aiIndent;         /* Array of indents used in MODE_Explain */
   int nIndent;           /* Size of array aiIndent[] */
   int iIndent;           /* Index of current op in aiIndent[] */
+#if defined(SQLITE_ENABLE_SESSION)
+  int nSession;             /* Number of active sessions */
+  OpenSession aSession[4];  /* Array of sessions.  [0] is in focus. */
+#endif
 };
 
 /*
@@ -882,7 +901,7 @@ static int shell_callback(
   int i;
   ShellState *p = (ShellState*)pArg;
 
-  switch( p->mode ){
+  switch( p->cMode ){
     case MODE_Line: {
       int w = 5;
       if( azArg==0 ) break;
@@ -899,11 +918,24 @@ static int shell_callback(
     }
     case MODE_Explain:
     case MODE_Column: {
+      static const int aExplainWidths[] = {4, 13, 4, 4, 4, 13, 2, 13};
+      const int *colWidth;
+      int showHdr;
+      char *rowSep;
+      if( p->cMode==MODE_Column ){
+        colWidth = p->colWidth;
+        showHdr = p->showHeader;
+        rowSep = p->rowSeparator;
+      }else{
+        colWidth = aExplainWidths;
+        showHdr = 1;
+        rowSep = SEP_Row;
+      }
       if( p->cnt++==0 ){
         for(i=0; i<nArg; i++){
           int w, n;
           if( i<ArraySize(p->colWidth) ){
-            w = p->colWidth[i];
+            w = colWidth[i];
           }else{
             w = 0;
           }
@@ -916,17 +948,17 @@ static int shell_callback(
           if( i<ArraySize(p->actualWidth) ){
             p->actualWidth[i] = w;
           }
-          if( p->showHeader ){
+          if( showHdr ){
             if( w<0 ){
               utf8_printf(p->out,"%*.*s%s",-w,-w,azCol[i],
-                      i==nArg-1 ? p->rowSeparator : "  ");
+                      i==nArg-1 ? rowSep : "  ");
             }else{
               utf8_printf(p->out,"%-*.*s%s",w,w,azCol[i],
-                      i==nArg-1 ? p->rowSeparator : "  ");
+                      i==nArg-1 ? rowSep : "  ");
             }
           }
         }
-        if( p->showHeader ){
+        if( showHdr ){
           for(i=0; i<nArg; i++){
             int w;
             if( i<ArraySize(p->actualWidth) ){
@@ -938,7 +970,7 @@ static int shell_callback(
             utf8_printf(p->out,"%-*.*s%s",w,w,
                    "----------------------------------------------------------"
                    "----------------------------------------------------------",
-                    i==nArg-1 ? p->rowSeparator : "  ");
+                    i==nArg-1 ? rowSep : "  ");
           }
         }
       }
@@ -950,7 +982,7 @@ static int shell_callback(
         }else{
            w = 10;
         }
-        if( p->mode==MODE_Explain && azArg[i] && strlen30(azArg[i])>w ){
+        if( p->cMode==MODE_Explain && azArg[i] && strlen30(azArg[i])>w ){
           w = strlen30(azArg[i]);
         }
         if( i==1 && p->aiIndent && p->pStmt ){
@@ -962,11 +994,11 @@ static int shell_callback(
         if( w<0 ){
           utf8_printf(p->out,"%*.*s%s",-w,-w,
               azArg[i] ? azArg[i] : p->nullValue,
-              i==nArg-1 ? p->rowSeparator : "  ");
+              i==nArg-1 ? rowSep : "  ");
         }else{
           utf8_printf(p->out,"%-*.*s%s",w,w,
               azArg[i] ? azArg[i] : p->nullValue,
-              i==nArg-1 ? p->rowSeparator : "  ");
+              i==nArg-1 ? rowSep : "  ");
         }
       }
       break;
@@ -986,7 +1018,7 @@ static int shell_callback(
         utf8_printf(p->out, "%s", z);
         if( i<nArg-1 ){
           utf8_printf(p->out, "%s", p->colSeparator);
-        }else if( p->mode==MODE_Semi ){
+        }else if( p->cMode==MODE_Semi ){
           utf8_printf(p->out, ";%s", p->rowSeparator);
         }else{
           utf8_printf(p->out, "%s", p->rowSeparator);
@@ -1269,6 +1301,43 @@ static char *save_err_msg(
   return zErrMsg;
 }
 
+#ifdef __linux__
+/*
+** Attempt to display I/O stats on Linux using /proc/PID/io
+*/
+static void displayLinuxIoStats(FILE *out){
+  FILE *in;
+  char z[200];
+  sqlite3_snprintf(sizeof(z), z, "/proc/%d/io", getpid());
+  in = fopen(z, "rb");
+  if( in==0 ) return;
+  while( fgets(z, sizeof(z), in)!=0 ){
+    static const struct {
+      const char *zPattern;
+      const char *zDesc;
+    } aTrans[] = {
+      { "rchar: ",                  "Bytes received by read():" },
+      { "wchar: ",                  "Bytes sent to write():"    },
+      { "syscr: ",                  "Read() system calls:"      },
+      { "syscw: ",                  "Write() system calls:"     },
+      { "read_bytes: ",             "Bytes read from storage:"  },
+      { "write_bytes: ",            "Bytes written to storage:" },
+      { "cancelled_write_bytes: ",  "Cancelled write bytes:"    },
+    };
+    int i;
+    for(i=0; i<ArraySize(aTrans); i++){
+      int n = (int)strlen(aTrans[i].zPattern);
+      if( strncmp(aTrans[i].zPattern, z, n)==0 ){
+        raw_printf(out, "%-36s %s", aTrans[i].zDesc, &z[n]);
+        break;
+      }
+    }
+  }
+  fclose(in);
+}   
+#endif
+
+
 /*
 ** Display memory stats.
 */
@@ -1391,6 +1460,10 @@ static int display_stats(
     raw_printf(pArg->out, "Virtual Machine Steps:               %d\n", iCur);
   }
 
+#ifdef __linux__
+  displayLinuxIoStats(pArg->out);
+#endif
+
   /* Do not remove this machine readable comment: extra-stats-output-here */
 
   return 0;
@@ -1491,10 +1564,17 @@ static void explain_data_prepare(ShellState *p, sqlite3_stmt *pSql){
 
   /* Try to figure out if this is really an EXPLAIN statement. If this
   ** cannot be verified, return early.  */
+  if( sqlite3_column_count(pSql)!=8 ){
+    p->cMode = p->mode;
+    return;
+  }
   zSql = sqlite3_sql(pSql);
   if( zSql==0 ) return;
   for(z=zSql; *z==' ' || *z=='\t' || *z=='\n' || *z=='\f' || *z=='\r'; z++);
-  if( sqlite3_strnicmp(z, "explain", 7) ) return;
+  if( sqlite3_strnicmp(z, "explain", 7) ){
+    p->cMode = p->mode;
+    return;
+  }
 
   for(iOp=0; SQLITE_ROW==sqlite3_step(pSql); iOp++){
     int i;
@@ -1511,6 +1591,20 @@ static void explain_data_prepare(ShellState *p, sqlite3_stmt *pSql){
 
     /* Grow the p->aiIndent array as required */
     if( iOp>=nAlloc ){
+      if( iOp==0 ){
+        /* Do further verfication that this is explain output.  Abort if
+        ** it is not */
+        static const char *explainCols[] = {
+           "addr", "opcode", "p1", "p2", "p3", "p4", "p5", "comment" };
+        int jj;
+        for(jj=0; jj<ArraySize(explainCols); jj++){
+          if( strcmp(sqlite3_column_name(pSql,jj),explainCols[jj])!=0 ){
+            p->cMode = p->mode;
+            sqlite3_reset(pSql);
+            return;
+          }
+        }
+      }
       nAlloc += 100;
       p->aiIndent = (int*)sqlite3_realloc64(p->aiIndent, nAlloc*sizeof(int));
       abYield = (int*)sqlite3_realloc64(abYield, nAlloc*sizeof(int));
@@ -1614,10 +1708,20 @@ static int shell_exec(
         sqlite3_free(zEQP);
       }
 
-      /* If the shell is currently in ".explain" mode, gather the extra
-      ** data required to add indents to the output.*/
-      if( pArg && pArg->mode==MODE_Explain ){
-        explain_data_prepare(pArg, pStmt);
+      if( pArg ){
+        pArg->cMode = pArg->mode;
+        if( pArg->autoExplain
+         && sqlite3_column_count(pStmt)==8
+         && sqlite3_strlike("%EXPLAIN%", sqlite3_sql(pStmt),0)==0
+        ){
+          pArg->cMode = MODE_Explain;
+        }
+      
+        /* If the shell is currently in ".explain" mode, gather the extra
+        ** data required to add indents to the output.*/
+        if( pArg->cMode==MODE_Explain ){
+          explain_data_prepare(pArg, pStmt);
+        }
       }
 
       /* perform the first step.  this will tell us if we
@@ -1647,7 +1751,7 @@ static int shell_exec(
               /* extract the data and data types */
               for(i=0; i<nCol; i++){
                 aiTypes[i] = x = sqlite3_column_type(pStmt, i);
-                if( x==SQLITE_BLOB && pArg && pArg->mode==MODE_Insert ){
+                if( x==SQLITE_BLOB && pArg && pArg->cMode==MODE_Insert ){
                   azVals[i] = "";
                 }else{
                   azVals[i] = (char*)sqlite3_column_text(pStmt, i);
@@ -1867,8 +1971,7 @@ static char zHelp[] =
   ".echo on|off           Turn command echo on or off\n"
   ".eqp on|off            Enable or disable automatic EXPLAIN QUERY PLAN\n"
   ".exit                  Exit this program\n"
-  ".explain ?on|off?      Turn output mode suitable for EXPLAIN on or off.\n"
-  "                         With no args, it turns EXPLAIN on.\n"
+  ".explain ?on|off|auto? Turn EXPLAIN output mode on or off or to automatic\n"
   ".fullschema            Show schema and the content of sqlite_stat tables\n"
   ".headers on|off        Turn display of headers on or off\n"
   ".help                  Show this message\n"
@@ -1910,9 +2013,12 @@ static char zHelp[] =
   "                         LIKE pattern TABLE.\n"
   ".separator COL ?ROW?   Change the column separator and optionally the row\n"
   "                         separator for both the output mode and .import\n"
+#if defined(SQLITE_ENABLE_SESSION)
+  ".session CMD ...       Create or control sessions\n"
+#endif
   ".shell CMD ARGS...     Run CMD ARGS... in a system shell\n"
   ".show                  Show the current values for various settings\n"
-  ".stats on|off          Turn stats on or off\n"
+  ".stats ?on|off?        Show stats or turn stats on or off\n"
   ".system CMD ARGS...    Run CMD ARGS... in a system shell\n"
   ".tables ?TABLE?        List names of tables\n"
   "                         If TABLE specified, only list tables matching\n"
@@ -1921,10 +2027,35 @@ static char zHelp[] =
   ".timer on|off          Turn SQL timer on or off\n"
   ".trace FILE|off        Output each SQL statement as it is run\n"
   ".vfsinfo ?AUX?         Information about the top-level VFS\n"
+  ".vfslist               List all available VFSes\n"
   ".vfsname ?AUX?         Print the name of the VFS stack\n"
   ".width NUM1 NUM2 ...   Set column widths for \"column\" mode\n"
   "                         Negative values right-justify\n"
 ;
+
+#if defined(SQLITE_ENABLE_SESSION)
+/*
+** Print help information for the ".sessions" command
+*/
+void session_help(ShellState *p){
+  fprintf(p->out,
+    ".session ?NAME? SUBCOMMAND ?ARGS...?\n"
+    "If ?NAME? is omitted, the first defined session is used.\n"
+    "Subcommands:\n"
+    "   attach TABLE             Attach TABLE\n"
+    "   changeset FILE           Write a changeset into FILE\n"
+    "   close                    Close one session\n"
+    "   enable ?BOOLEAN?         Set or query the enable bit\n"
+    "   filter GLOB...           Reject tables matching GLOBs\n" 
+    "   indirect ?BOOLEAN?       Mark or query the indirect status\n"
+    "   isempty                  Query whether the session is empty\n"
+    "   list                     List currently open session names\n"
+    "   open DB NAME             Open a new session on DB\n"
+    "   patchset FILE            Write a patchset into FILE\n"
+  );
+}
+#endif
+
 
 /* Forward reference */
 static int process_input(ShellState *p, FILE *in);
@@ -1990,6 +2121,51 @@ static void writefileFunc(
   fclose(out);
   sqlite3_result_int64(context, rc);
 }
+
+#if defined(SQLITE_ENABLE_SESSION)
+/*
+** Close a single OpenSession object and release all of its associated
+** resources.
+*/
+static void session_close(OpenSession *pSession){
+  int i;
+  sqlite3session_delete(pSession->p);
+  sqlite3_free(pSession->zName);
+  for(i=0; i<pSession->nFilter; i++){
+    sqlite3_free(pSession->azFilter[i]);
+  }
+  sqlite3_free(pSession->azFilter);
+  memset(pSession, 0, sizeof(OpenSession));
+}
+#endif
+
+/*
+** Close all OpenSession objects and release all assocaited resources.
+*/
+static void session_close_all(ShellState *p){
+#if defined(SQLITE_ENABLE_SESSION)
+  int i;
+  for(i=0; i<p->nSession; i++){
+    session_close(&p->aSession[i]);
+  }
+  p->nSession = 0;
+#endif
+}
+
+/*
+** Implementation of the xFilter function for an open session.  Omit
+** any tables named by ".session filter" but let all other table through.
+*/
+#if defined(SQLITE_ENABLE_SESSION)
+static int session_filter(void *pCtx, const char *zTab){
+  OpenSession *pSession = (OpenSession*)pCtx;
+  int i;
+  for(i=0; i<pSession->nFilter; i++){
+    if( sqlite3_strglob(pSession->azFilter[i], zTab)==0 ) return 0;
+  }
+  return 1;
+}
+#endif
 
 /*
 ** Make sure the database is open.  If it is not, then open it.  If
@@ -2854,7 +3030,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     open_db(p, 0);
     memcpy(&data, p, sizeof(data));
     data.showHeader = 1;
-    data.mode = MODE_Column;
+    data.cMode = data.mode = MODE_Column;
     data.colWidth[0] = 3;
     data.colWidth[1] = 15;
     data.colWidth[2] = 58;
@@ -2949,37 +3125,24 @@ static int do_meta_command(char *zLine, ShellState *p){
   }else
 
   if( c=='e' && strncmp(azArg[0], "explain", n)==0 ){
-    int val = nArg>=2 ? booleanValue(azArg[1]) : 1;
-    if(val == 1) {
-      if(!p->normalMode.valid) {
-        p->normalMode.valid = 1;
-        p->normalMode.mode = p->mode;
-        p->normalMode.showHeader = p->showHeader;
-        memcpy(p->normalMode.colWidth,p->colWidth,sizeof(p->colWidth));
+    int val = 1;
+    if( nArg>=2 ){
+      if( strcmp(azArg[1],"auto")==0 ){
+        val = 99;
+      }else{
+        val =  booleanValue(azArg[1]);
       }
-      /* We could put this code under the !p->explainValid
-      ** condition so that it does not execute if we are already in
-      ** explain mode. However, always executing it allows us an easy
-      ** was to reset to explain mode in case the user previously
-      ** did an .explain followed by a .width, .mode or .header
-      ** command.
-      */
+    }
+    if( val==1 && p->mode!=MODE_Explain ){
+      p->normalMode = p->mode;
       p->mode = MODE_Explain;
-      p->showHeader = 1;
-      memset(p->colWidth,0,sizeof(p->colWidth));
-      p->colWidth[0] = 4;                  /* addr */
-      p->colWidth[1] = 13;                 /* opcode */
-      p->colWidth[2] = 4;                  /* P1 */
-      p->colWidth[3] = 4;                  /* P2 */
-      p->colWidth[4] = 4;                  /* P3 */
-      p->colWidth[5] = 13;                 /* P4 */
-      p->colWidth[6] = 2;                  /* P5 */
-      p->colWidth[7] = 13;                  /* Comment */
-    }else if (p->normalMode.valid) {
-      p->normalMode.valid = 0;
-      p->mode = p->normalMode.mode;
-      p->showHeader = p->normalMode.showHeader;
-      memcpy(p->colWidth,p->normalMode.colWidth,sizeof(p->colWidth));
+      p->autoExplain = 0;
+    }else if( val==0 ){
+      if( p->mode==MODE_Explain ) p->mode = p->normalMode;
+      p->autoExplain = 0;
+    }else if( val==99 ){
+      if( p->mode==MODE_Explain ) p->mode = p->normalMode;
+      p->autoExplain = 1;
     }
   }else
 
@@ -2995,7 +3158,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     open_db(p, 0);
     memcpy(&data, p, sizeof(data));
     data.showHeader = 0;
-    data.mode = MODE_Semi;
+    data.cMode = data.mode = MODE_Semi;
     rc = sqlite3_exec(p->db,
        "SELECT sql FROM"
        "  (SELECT sql sql, type type, tbl_name tbl_name, name name, rowid x"
@@ -3020,7 +3183,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       raw_printf(p->out, "ANALYZE sqlite_master;\n");
       sqlite3_exec(p->db, "SELECT 'ANALYZE sqlite_master'",
                    callback, &data, &zErrMsg);
-      data.mode = MODE_Insert;
+      data.cMode = data.mode = MODE_Insert;
       data.zDestTable = "sqlite_stat1";
       shell_exec(p->db, "SELECT * FROM sqlite_stat1",
                  shell_callback, &data,&zErrMsg);
@@ -3138,7 +3301,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       char *zCreate = sqlite3_mprintf("CREATE TABLE %s", zTable);
       char cSep = '(';
       while( xRead(&sCtx) ){
-        zCreate = sqlite3_mprintf("%z%c\n  \"%s\" TEXT", zCreate, cSep, sCtx.z);
+        zCreate = sqlite3_mprintf("%z%c\n  \"%w\" TEXT", zCreate, cSep, sCtx.z);
         cSep = ',';
         if( sCtx.cTerm!=sCtx.cColSep ) break;
       }
@@ -3252,7 +3415,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     open_db(p, 0);
     memcpy(&data, p, sizeof(data));
     data.showHeader = 0;
-    data.mode = MODE_List;
+    data.cMode = data.mode = MODE_List;
     if( nArg==1 ){
       rc = sqlite3_exec(p->db,
         "SELECT name FROM sqlite_master "
@@ -3438,6 +3601,7 @@ static int do_meta_command(char *zLine, ShellState *p){
          "ascii column csv html insert line list tabs tcl\n");
       rc = 1;
     }
+    p->cMode = p->mode;
   }else
 
   if( c=='n' && strncmp(azArg[0], "nullvalue", n)==0 ){
@@ -3459,6 +3623,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     p->zDbFilename = zNewFilename;
     open_db(p, 1);
     if( p->db!=0 ){
+      session_close_all(p);
       sqlite3_close(savedDb);
       sqlite3_free(p->zFreeOnClose);
       p->zFreeOnClose = zNewFilename;
@@ -3627,7 +3792,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     open_db(p, 0);
     memcpy(&data, p, sizeof(data));
     data.showHeader = 0;
-    data.mode = MODE_Semi;
+    data.cMode = data.mode = MODE_Semi;
     if( nArg==2 ){
       int i;
       for(i=0; azArg[1][i]; i++) azArg[1][i] = ToLower(azArg[1][i]);
@@ -3699,7 +3864,6 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
   }else
 
-
 #if defined(SQLITE_DEBUG) && defined(SQLITE_ENABLE_SELECTTRACE)
   if( c=='s' && n==11 && strncmp(azArg[0], "selecttrace", n)==0 ){
     extern int sqlite3SelectTrace;
@@ -3707,6 +3871,198 @@ static int do_meta_command(char *zLine, ShellState *p){
   }else
 #endif
 
+#if defined(SQLITE_ENABLE_SESSION)
+  if( c=='s' && strncmp(azArg[0],"session",n)==0 && n>=3 ){
+    OpenSession *pSession = &p->aSession[0];
+    char **azCmd = &azArg[1];
+    int iSes = 0;
+    int nCmd = nArg - 1;
+    int i;
+    if( nArg<=1 ) goto session_syntax_error;
+    open_db(p, 0);
+    if( nArg>=3 ){
+      for(iSes=0; iSes<p->nSession; iSes++){
+        if( strcmp(p->aSession[iSes].zName, azArg[1])==0 ) break;
+      }
+      if( iSes<p->nSession ){
+        pSession = &p->aSession[iSes];
+        azCmd++;
+        nCmd--;
+      }else{
+        pSession = &p->aSession[0];
+        iSes = 0;
+      }
+    }
+
+    /* .session attach TABLE
+    ** Invoke the sqlite3session_attach() interface to attach a particular
+    ** table so that it is never filtered.
+    */
+    if( strcmp(azCmd[0],"attach")==0 ){
+      if( nCmd!=2 ) goto session_syntax_error;
+      if( pSession->p==0 ){
+        session_not_open:
+        fprintf(stderr, "ERROR: No sessions are open\n");
+      }else{
+        rc = sqlite3session_attach(pSession->p, azCmd[1]);
+        if( rc ){
+          fprintf(stderr, "ERROR: sqlite3session_attach() returns %d\n", rc);
+          rc = 0;
+        }
+      }
+    }else
+
+    /* .session changeset FILE
+    ** .session patchset FILE
+    ** Write a changeset or patchset into a file.  The file is overwritten.
+    */
+    if( strcmp(azCmd[0],"changeset")==0 || strcmp(azCmd[0],"patchset")==0 ){
+      FILE *out = 0;
+      if( nCmd!=2 ) goto session_syntax_error;
+      if( pSession->p==0 ) goto session_not_open;
+      out = fopen(azCmd[1], "wb");
+      if( out==0 ){
+        fprintf(stderr, "ERROR: cannot open \"%s\" for writing\n", azCmd[1]);
+      }else{
+        int szChng;
+        void *pChng;
+        if( azCmd[0][0]=='c' ){
+          rc = sqlite3session_changeset(pSession->p, &szChng, &pChng);
+        }else{
+          rc = sqlite3session_patchset(pSession->p, &szChng, &pChng);
+        }
+        if( rc ){
+          printf("Error: error code %d\n", rc);
+          rc = 0;
+        }
+        if( pChng 
+          && fwrite(pChng, szChng, 1, out)!=1 ){
+          fprintf(stderr, "ERROR: Failed to write entire %d-byte output\n",
+                  szChng);
+        }
+        sqlite3_free(pChng);
+        fclose(out);
+      }
+    }else
+
+    /* .session close
+    ** Close the identified session
+    */
+    if( strcmp(azCmd[0], "close")==0 ){
+      if( nCmd!=1 ) goto session_syntax_error;
+      if( p->nSession ){
+        session_close(pSession);
+        p->aSession[iSes] = p->aSession[--p->nSession];
+      }
+    }else
+
+    /* .session enable ?BOOLEAN?
+    ** Query or set the enable flag
+    */
+    if( strcmp(azCmd[0], "enable")==0 ){
+      int ii;
+      if( nCmd>2 ) goto session_syntax_error;
+      ii = nCmd==1 ? -1 : booleanValue(azCmd[1]);
+      if( p->nSession ){
+        ii = sqlite3session_enable(pSession->p, ii);
+        fprintf(p->out, "session %s enable flag = %d\n", pSession->zName, ii);
+      }
+    }else
+
+    /* .session filter GLOB ....
+    ** Set a list of GLOB patterns of table names to be excluded.
+    */
+    if( strcmp(azCmd[0], "filter")==0 ){
+      int ii, nByte;
+      if( nCmd<2 ) goto session_syntax_error;
+      if( p->nSession ){
+        for(ii=0; ii<pSession->nFilter; ii++){
+          sqlite3_free(pSession->azFilter[ii]);
+        }
+        sqlite3_free(pSession->azFilter);
+        nByte = sizeof(pSession->azFilter[0])*(nCmd-1);
+        pSession->azFilter = sqlite3_malloc( nByte );
+        if( pSession->azFilter==0 ){
+          fprintf(stderr, "Error: out or memory\n");
+          exit(1);
+        }
+        for(ii=1; ii<nCmd; ii++){
+          pSession->azFilter[ii-1] = sqlite3_mprintf("%s", azCmd[ii]); 
+        }
+        pSession->nFilter = ii-1;
+      }
+    }else
+
+    /* .session indirect ?BOOLEAN?
+    ** Query or set the indirect flag
+    */
+    if( strcmp(azCmd[0], "indirect")==0 ){
+      int ii;
+      if( nCmd>2 ) goto session_syntax_error;
+      ii = nCmd==1 ? -1 : booleanValue(azCmd[1]);
+      if( p->nSession ){
+        ii = sqlite3session_indirect(pSession->p, ii);
+        fprintf(p->out, "session %s indirect flag = %d\n", pSession->zName,ii);
+      }
+    }else
+
+    /* .session isempty
+    ** Determine if the session is empty
+    */
+    if( strcmp(azCmd[0], "isempty")==0 ){
+      int ii;
+      if( nCmd!=1 ) goto session_syntax_error;
+      if( p->nSession ){
+        ii = sqlite3session_isempty(pSession->p);
+        fprintf(p->out, "session %s isempty flag = %d\n", pSession->zName, ii);
+      }
+    }else
+
+    /* .session list
+    ** List all currently open sessions
+    */
+    if( strcmp(azCmd[0],"list")==0 ){
+      for(i=0; i<p->nSession; i++){
+        fprintf(p->out, "%d %s\n", i, p->aSession[i].zName);
+      }
+    }else
+
+    /* .session open DB NAME
+    ** Open a new session called NAME on the attached database DB.
+    ** DB is normally "main".
+    */
+    if( strcmp(azCmd[0],"open")==0 ){
+      char *zName;
+      if( nCmd!=3 ) goto session_syntax_error;
+      zName = azCmd[2];
+      if( zName[0]==0 ) goto session_syntax_error;
+      for(i=0; i<p->nSession; i++){
+        if( strcmp(p->aSession[i].zName,zName)==0 ){
+          fprintf(stderr, "Session \"%s\" already exists\n", zName);
+          goto meta_command_exit;
+        }
+      }
+      if( p->nSession>=ArraySize(p->aSession) ){
+        fprintf(stderr, "Maximum of %d sessions\n", ArraySize(p->aSession));
+        goto meta_command_exit;
+      }
+      pSession = &p->aSession[p->nSession];
+      rc = sqlite3session_create(p->db, azCmd[1], &pSession->p);
+      if( rc ){
+        fprintf(stderr, "Cannot open session: error code=%d\n", rc);
+        rc = 0;
+        goto meta_command_exit;
+      }
+      pSession->nFilter = 0;
+      sqlite3session_table_filter(pSession->p, session_filter, pSession);
+      p->nSession++;
+      pSession->zName = sqlite3_mprintf("%s", zName);
+    }else
+    /* If no command name matches, show a syntax error */
+    session_syntax_error:
+    session_help(p);
+  }else
+#endif
 
 #ifdef SQLITE_DEBUG
   /* Undocumented commands for internal testing.  Subject to change
@@ -3775,7 +4131,8 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
     utf8_printf(p->out, "%12.12s: %s\n","echo", p->echoOn ? "on" : "off");
     utf8_printf(p->out, "%12.12s: %s\n","eqp", p->autoEQP ? "on" : "off");
-    utf8_printf(p->out,"%9.9s: %s\n","explain",p->normalMode.valid?"on":"off");
+    utf8_printf(p->out, "%12.12s: %s\n","explain",
+         p->mode==MODE_Explain ? "on" : p->autoExplain ? "auto" : "off");
     utf8_printf(p->out,"%12.12s: %s\n","headers", p->showHeader ? "on" : "off");
     utf8_printf(p->out, "%12.12s: %s\n","mode", modeDescr[p->mode]);
     utf8_printf(p->out, "%12.12s: ", "nullvalue");
@@ -3800,8 +4157,10 @@ static int do_meta_command(char *zLine, ShellState *p){
   if( c=='s' && strncmp(azArg[0], "stats", n)==0 ){
     if( nArg==2 ){
       p->statsOn = booleanValue(azArg[1]);
+    }else if( nArg==1 ){
+      display_stats(p->db, p, 0);
     }else{
-      raw_printf(stderr, "Usage: .stats on|off\n");
+      raw_printf(stderr, "Usage: .stats ?on|off?\n");
       rc = 1;
     }
   }else
@@ -4166,6 +4525,24 @@ static int do_meta_command(char *zLine, ShellState *p){
         raw_printf(p->out, "vfs.iVersion   = %d\n", pVfs->iVersion);
         raw_printf(p->out, "vfs.szOsFile   = %d\n", pVfs->szOsFile);
         raw_printf(p->out, "vfs.mxPathname = %d\n", pVfs->mxPathname);
+      }
+    }
+  }else
+
+  if( c=='v' && strncmp(azArg[0], "vfslist", n)==0 ){
+    sqlite3_vfs *pVfs;
+    sqlite3_vfs *pCurrent = 0;
+    if( p->db ){
+      sqlite3_file_control(p->db, "main", SQLITE_FCNTL_VFS_POINTER, &pCurrent);
+    }
+    for(pVfs=sqlite3_vfs_find(0); pVfs; pVfs=pVfs->pNext){
+      utf8_printf(p->out, "vfs.zName      = \"%s\"%s\n", pVfs->zName,
+           pVfs==pCurrent ? "  <--- CURRENT" : "");
+      raw_printf(p->out, "vfs.iVersion   = %d\n", pVfs->iVersion);
+      raw_printf(p->out, "vfs.szOsFile   = %d\n", pVfs->szOsFile);
+      raw_printf(p->out, "vfs.mxPathname = %d\n", pVfs->mxPathname);
+      if( pVfs->pNext ){
+        raw_printf(p->out, "-----------------------------------\n");
       }
     }
   }else
@@ -4556,7 +4933,8 @@ static void usage(int showDetail){
 */
 static void main_init(ShellState *data) {
   memset(data, 0, sizeof(*data));
-  data->mode = MODE_List;
+  data->normalMode = data->cMode = data->mode = MODE_List;
+  data->autoExplain = 1;
   memcpy(data->colSeparator,SEP_Column, 2);
   memcpy(data->rowSeparator,SEP_Row, 2);
   data->showHeader = 0;
@@ -4889,6 +5267,7 @@ int SQLITE_CDECL main(int argc, char **argv){
       raw_printf(stderr,"Use -help for a list of options.\n");
       return 1;
     }
+    data.cMode = data.mode;
   }
 
   if( !readStdin ){
@@ -4951,6 +5330,7 @@ int SQLITE_CDECL main(int argc, char **argv){
   }
   set_table_name(&data, 0);
   if( data.db ){
+    session_close_all(&data);
     sqlite3_close(data.db);
   }
   sqlite3_free(data.zFreeOnClose); 

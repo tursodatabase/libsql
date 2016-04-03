@@ -401,6 +401,48 @@ int sqlite3rbu_close(sqlite3rbu *pRbu, char **pzErrmsg);
 sqlite3_int64 sqlite3rbu_progress(sqlite3rbu *pRbu);
 
 /*
+** Obtain permyriadage (permyriadage is to 10000 as percentage is to 100) 
+** progress indications for the two stages of an RBU update. This API may
+** be useful for driving GUI progress indicators and similar.
+**
+** An RBU update is divided into two stages:
+**
+**   * Stage 1, in which changes are accumulated in an oal/wal file, and
+**   * Stage 2, in which the contents of the wal file are copied into the
+**     main database.
+**
+** The update is visible to non-RBU clients during stage 2. During stage 1
+** non-RBU reader clients may see the original database.
+**
+** If this API is called during stage 2 of the update, output variable 
+** (*pnOne) is set to 10000 to indicate that stage 1 has finished and (*pnTwo)
+** to a value between 0 and 10000 to indicate the permyriadage progress of
+** stage 2. A value of 5000 indicates that stage 2 is half finished, 
+** 9000 indicates that it is 90% finished, and so on.
+**
+** If this API is called during stage 1 of the update, output variable 
+** (*pnTwo) is set to 0 to indicate that stage 2 has not yet started. The
+** value to which (*pnOne) is set depends on whether or not the RBU 
+** database contains an "rbu_count" table. The rbu_count table, if it 
+** exists, must contain the same columns as the following:
+**
+**   CREATE TABLE rbu_count(tbl TEXT PRIMARY KEY, cnt INTEGER) WITHOUT ROWID;
+**
+** There must be one row in the table for each source (data_xxx) table within
+** the RBU database. The 'tbl' column should contain the name of the source
+** table. The 'cnt' column should contain the number of rows within the
+** source table.
+**
+** If the rbu_count table is present and populated correctly and this
+** API is called during stage 1, the *pnOne output variable is set to the
+** permyriadage progress of the same stage. If the rbu_count table does
+** not exist, then (*pnOne) is set to -1 during stage 1. If the rbu_count
+** table exists but is not correctly populated, the value of the *pnOne
+** output variable during stage 1 is undefined.
+*/
+void sqlite3rbu_bp_progress(sqlite3rbu *pRbu, int *pnOne, int *pnTwo);
+
+/*
 ** Create an RBU VFS named zName that accesses the underlying file-system
 ** via existing VFS zParent. Or, if the zParent parameter is passed NULL, 
 ** then the new RBU VFS uses the default system VFS to access the file-system.

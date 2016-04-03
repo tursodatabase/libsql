@@ -14,11 +14,11 @@
 */
 
 
-
 #include "fts5Int.h"
 
 #define FTS5_DEFAULT_PAGE_SIZE   4050
 #define FTS5_DEFAULT_AUTOMERGE      4
+#define FTS5_DEFAULT_USERMERGE      4
 #define FTS5_DEFAULT_CRISISMERGE   16
 #define FTS5_DEFAULT_HASHSIZE    (1024*1024)
 
@@ -195,6 +195,33 @@ void sqlite3Fts5Dequote(char *z){
   }
 }
 
+
+struct Fts5Enum {
+  const char *zName;
+  int eVal;
+};
+typedef struct Fts5Enum Fts5Enum;
+
+static int fts5ConfigSetEnum(
+  const Fts5Enum *aEnum, 
+  const char *zEnum, 
+  int *peVal
+){
+  int nEnum = (int)strlen(zEnum);
+  int i;
+  int iVal = -1;
+
+  for(i=0; aEnum[i].zName; i++){
+    if( sqlite3_strnicmp(aEnum[i].zName, zEnum, nEnum)==0 ){
+      if( iVal>=0 ) return SQLITE_ERROR;
+      iVal = aEnum[i].eVal;
+    }
+  }
+
+  *peVal = iVal;
+  return iVal<0 ? SQLITE_ERROR : SQLITE_OK;
+}
+
 /*
 ** Parse a "special" CREATE VIRTUAL TABLE directive and update
 ** configuration object pConfig as appropriate.
@@ -252,7 +279,7 @@ static int fts5ConfigParseSpecial(
         p++;
       }
 
-      if( rc==SQLITE_OK && (nPre<=0 || nPre>=1000) ){
+      if( nPre<=0 || nPre>=1000 ){
         *pzErr = sqlite3_mprintf("prefix length out of range (max 999)");
         rc = SQLITE_ERROR;
         break;
@@ -345,6 +372,20 @@ static int fts5ConfigParseSpecial(
     return rc;
   }
 
+  if( sqlite3_strnicmp("detail", zCmd, nCmd)==0 ){
+    const Fts5Enum aDetail[] = {
+      { "none", FTS5_DETAIL_NONE },
+      { "full", FTS5_DETAIL_FULL },
+      { "columns", FTS5_DETAIL_COLUMNS },
+      { 0, 0 }
+    };
+
+    if( (rc = fts5ConfigSetEnum(aDetail, zArg, &pConfig->eDetail)) ){
+      *pzErr = sqlite3_mprintf("malformed detail=... directive");
+    }
+    return rc;
+  }
+
   *pzErr = sqlite3_mprintf("unrecognized option: \"%.*s\"", nCmd, zCmd);
   return SQLITE_ERROR;
 }
@@ -401,7 +442,9 @@ static const char *fts5ConfigGobbleWord(
       *pbQuoted = 1;
     }else{
       zRet = fts5ConfigSkipBareword(zIn);
-      zOut[zRet-zIn] = '\0';
+      if( zRet ){
+        zOut[zRet-zIn] = '\0';
+      }
     }
   }
 
@@ -500,6 +543,7 @@ int sqlite3Fts5ConfigParse(
   pRet->zDb = sqlite3Fts5Strndup(&rc, azArg[1], -1);
   pRet->zName = sqlite3Fts5Strndup(&rc, azArg[2], -1);
   pRet->bColumnsize = 1;
+  pRet->eDetail = FTS5_DETAIL_FULL;
 #ifdef SQLITE_DEBUG
   pRet->bPrefixIndex = 1;
 #endif
@@ -816,6 +860,18 @@ int sqlite3Fts5ConfigSetValue(
     }
   }
 
+  else if( 0==sqlite3_stricmp(zKey, "usermerge") ){
+    int nUsermerge = -1;
+    if( SQLITE_INTEGER==sqlite3_value_numeric_type(pVal) ){
+      nUsermerge = sqlite3_value_int(pVal);
+    }
+    if( nUsermerge<2 || nUsermerge>16 ){
+      *pbBadkey = 1;
+    }else{
+      pConfig->nUsermerge = nUsermerge;
+    }
+  }
+
   else if( 0==sqlite3_stricmp(zKey, "crisismerge") ){
     int nCrisisMerge = -1;
     if( SQLITE_INTEGER==sqlite3_value_numeric_type(pVal) ){
@@ -862,6 +918,7 @@ int sqlite3Fts5ConfigLoad(Fts5Config *pConfig, int iCookie){
   /* Set default values */
   pConfig->pgsz = FTS5_DEFAULT_PAGE_SIZE;
   pConfig->nAutomerge = FTS5_DEFAULT_AUTOMERGE;
+  pConfig->nUsermerge = FTS5_DEFAULT_USERMERGE;
   pConfig->nCrisisMerge = FTS5_DEFAULT_CRISISMERGE;
   pConfig->nHashSize = FTS5_DEFAULT_HASHSIZE;
 
@@ -902,4 +959,3 @@ int sqlite3Fts5ConfigLoad(Fts5Config *pConfig, int iCookie){
   }
   return rc;
 }
-

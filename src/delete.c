@@ -366,6 +366,9 @@ void sqlite3DeleteFrom(
    && pWhere==0
    && !bComplex
    && !IsVirtual(pTab)
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
+   && db->xPreUpdateCallback==0
+#endif
   ){
     assert( !isView );
     sqlite3TableLock(pParse, iDb, pTab->tnum, 1, pTab->zName);
@@ -439,7 +442,7 @@ void sqlite3DeleteFrom(
       ** one, so just keep it in its register(s) and fall through to the
       ** delete code.  */
       nKey = nPk; /* OP_Found will use an unpacked key */
-      aToOpen = sqlite3DbMallocRaw(db, nIdx+2);
+      aToOpen = sqlite3DbMallocRawNN(db, nIdx+2);
       if( aToOpen==0 ){
         sqlite3WhereEnd(pWInfo);
         goto delete_from_cleanup;
@@ -479,13 +482,12 @@ void sqlite3DeleteFrom(
     */
     if( !isView ){
       int iAddrOnce = 0;
-      u8 p5 = (eOnePass==ONEPASS_OFF ? 0 : OPFLAG_FORDELETE);
       if( eOnePass==ONEPASS_MULTI ){
         iAddrOnce = sqlite3CodeOnce(pParse); VdbeCoverage(v);
       }
       testcase( IsVirtual(pTab) );
-      sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenWrite, p5, iTabCur, 
-                                 aToOpen, &iDataCur, &iIdxCur);
+      sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenWrite, OPFLAG_FORDELETE,
+                                 iTabCur, aToOpen, &iDataCur, &iIdxCur);
       assert( pPk || IsVirtual(pTab) || iDataCur==iTabCur );
       assert( pPk || IsVirtual(pTab) || iIdxCur==iDataCur+1 );
       if( eOnePass==ONEPASS_MULTI ) sqlite3VdbeJumpHere(v, iAddrOnce);
@@ -716,17 +718,27 @@ void sqlite3GenerateRowDelete(
 
   /* Delete the index and table entries. Skip this step if pTab is really
   ** a view (in which case the only effect of the DELETE statement is to
-  ** fire the INSTEAD OF triggers).  */ 
+  ** fire the INSTEAD OF triggers).  
+  **
+  ** If variable 'count' is non-zero, then this OP_Delete instruction should
+  ** invoke the update-hook. The pre-update-hook, on the other hand should
+  ** be invoked unless table pTab is a system table. The difference is that
+  ** the update-hook is not invoked for rows removed by REPLACE, but the 
+  ** pre-update-hook is.
+  */ 
   if( pTab->pSelect==0 ){
+    u8 p5 = 0;
     sqlite3GenerateRowIndexDelete(pParse, pTab, iDataCur, iIdxCur,0,iIdxNoSeek);
     sqlite3VdbeAddOp2(v, OP_Delete, iDataCur, (count?OPFLAG_NCHANGE:0));
-    if( count ){
-      sqlite3VdbeChangeP4(v, -1, pTab->zName, P4_TRANSIENT);
+    sqlite3VdbeChangeP4(v, -1, (char*)pTab, P4_TABLE);
+    if( eMode!=ONEPASS_OFF ){
+      sqlite3VdbeChangeP5(v, OPFLAG_AUXDELETE);
     }
     if( iIdxNoSeek>=0 ){
       sqlite3VdbeAddOp1(v, OP_Delete, iIdxNoSeek);
     }
-    sqlite3VdbeChangeP5(v, eMode==ONEPASS_MULTI);
+    if( eMode==ONEPASS_MULTI ) p5 |= OPFLAG_SAVEPOSITION;
+    sqlite3VdbeChangeP5(v, p5);
   }
 
   /* Do any ON CASCADE, SET NULL or SET DEFAULT operations required to

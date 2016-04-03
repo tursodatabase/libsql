@@ -231,7 +231,7 @@ SQLITE_NOINLINE int sqlite3VdbeMemTranslate(Mem *pMem, u8 desiredEnc){
     rc = sqlite3VdbeMemMakeWriteable(pMem);
     if( rc!=SQLITE_OK ){
       assert( rc==SQLITE_NOMEM );
-      return SQLITE_NOMEM;
+      return SQLITE_NOMEM_BKPT;
     }
     zIn = (u8*)pMem->z;
     zTerm = &zIn[pMem->n&~1];
@@ -273,7 +273,7 @@ SQLITE_NOINLINE int sqlite3VdbeMemTranslate(Mem *pMem, u8 desiredEnc){
   zTerm = &zIn[pMem->n];
   zOut = sqlite3DbMallocRaw(pMem->db, len);
   if( !zOut ){
-    return SQLITE_NOMEM;
+    return SQLITE_NOMEM_BKPT;
   }
   z = zOut;
 
@@ -316,7 +316,7 @@ SQLITE_NOINLINE int sqlite3VdbeMemTranslate(Mem *pMem, u8 desiredEnc){
 
   c = pMem->flags;
   sqlite3VdbeMemRelease(pMem);
-  pMem->flags = MEM_Str|MEM_Term|(c&MEM_AffMask);
+  pMem->flags = MEM_Str|MEM_Term|(c&(MEM_AffMask|MEM_Subtype));
   pMem->enc = desiredEnc;
   pMem->z = (char*)zOut;
   pMem->zMalloc = pMem->z;

@@ -296,7 +296,7 @@ do_test intpkey-3.8 {
   count {
     SELECT * FROM t1 WHERE c=='world' AND a>7;
   }
-} {11 hello world 4}
+} {11 hello world 3}
 do_test intpkey-3.9 {
   count {
     SELECT * FROM t1 WHERE 7<a;

@@ -169,21 +169,6 @@ int sqlite3BtreeHoldsMutex(Btree *p){
 #endif
 
 
-#ifndef SQLITE_OMIT_INCRBLOB
-/*
-** Enter and leave a mutex on a Btree given a cursor owned by that
-** Btree.  These entry points are used by incremental I/O and can be
-** omitted if that module is not used.
-*/
-void sqlite3BtreeEnterCursor(BtCursor *pCur){
-  sqlite3BtreeEnter(pCur->pBtree);
-}
-void sqlite3BtreeLeaveCursor(BtCursor *pCur){
-  sqlite3BtreeLeave(pCur->pBtree);
-}
-#endif /* SQLITE_OMIT_INCRBLOB */
-
-
 /*
 ** Enter the mutex on every Btree associated with a database
 ** connection.  This is needed (for example) prior to parsing
@@ -215,14 +200,6 @@ void sqlite3BtreeLeaveAll(sqlite3 *db){
     p = db->aDb[i].pBt;
     if( p ) sqlite3BtreeLeave(p);
   }
-}
-
-/*
-** Return true if a particular Btree requires a lock.  Return FALSE if
-** no lock is ever required since it is not sharable.
-*/
-int sqlite3BtreeSharable(Btree *p){
-  return p->sharable;
 }
 
 #ifndef NDEBUG
@@ -298,4 +275,23 @@ void sqlite3BtreeEnterAll(sqlite3 *db){
   }
 }
 #endif /* if SQLITE_THREADSAFE */
+
+#ifndef SQLITE_OMIT_INCRBLOB
+/*
+** Enter a mutex on a Btree given a cursor owned by that Btree. 
+**
+** These entry points are used by incremental I/O only. Enter() is required 
+** any time OMIT_SHARED_CACHE is not defined, regardless of whether or not 
+** the build is threadsafe. Leave() is only required by threadsafe builds.
+*/
+void sqlite3BtreeEnterCursor(BtCursor *pCur){
+  sqlite3BtreeEnter(pCur->pBtree);
+}
+# if SQLITE_THREADSAFE
+void sqlite3BtreeLeaveCursor(BtCursor *pCur){
+  sqlite3BtreeLeave(pCur->pBtree);
+}
+# endif
+#endif /* ifndef SQLITE_OMIT_INCRBLOB */
+
 #endif /* ifndef SQLITE_OMIT_SHARED_CACHE */

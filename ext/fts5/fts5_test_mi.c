@@ -41,16 +41,17 @@
 */
 
 
-#ifdef SQLITE_TEST
 #ifdef SQLITE_ENABLE_FTS5
 
 #include "fts5.h"
-#include <tcl.h>
 #include <assert.h>
 #include <string.h>
 
 typedef struct Fts5MatchinfoCtx Fts5MatchinfoCtx;
+
+#ifndef SQLITE_AMALGAMATION
 typedef unsigned int u32;
+#endif
 
 struct Fts5MatchinfoCtx {
   int nCol;                       /* Number of cols in FTS5 table */
@@ -67,18 +68,22 @@ struct Fts5MatchinfoCtx {
 ** If an error occurs, return NULL and leave an error in the database 
 ** handle (accessible using sqlite3_errcode()/errmsg()).
 */
-static fts5_api *fts5_api_from_db(sqlite3 *db){
-  fts5_api *pRet = 0;
+static int fts5_api_from_db(sqlite3 *db, fts5_api **ppApi){
   sqlite3_stmt *pStmt = 0;
+  int rc;
 
-  if( SQLITE_OK==sqlite3_prepare(db, "SELECT fts5()", -1, &pStmt, 0)
-   && SQLITE_ROW==sqlite3_step(pStmt) 
-   && sizeof(pRet)==sqlite3_column_bytes(pStmt, 0)
-  ){
-    memcpy(&pRet, sqlite3_column_blob(pStmt, 0), sizeof(pRet));
+  *ppApi = 0;
+  rc = sqlite3_prepare(db, "SELECT fts5()", -1, &pStmt, 0);
+  if( rc==SQLITE_OK ){
+    if( SQLITE_ROW==sqlite3_step(pStmt) 
+        && sizeof(fts5_api*)==sqlite3_column_bytes(pStmt, 0)
+      ){
+      memcpy(ppApi, sqlite3_column_blob(pStmt, 0), sizeof(fts5_api*));
+    }
+    rc = sqlite3_finalize(pStmt);
   }
-  sqlite3_finalize(pStmt);
-  return pRet;
+
+  return rc;
 }
 
 
@@ -134,7 +139,7 @@ static int fts5MatchinfoXCb(
   int iPrev = -1;
 
   for(pApi->xPhraseFirst(pFts, 0, &iter, &iCol, &iOff); 
-      iOff>=0; 
+      iCol>=0; 
       pApi->xPhraseNext(pFts, &iter, &iCol, &iOff)
   ){
     aOut[iCol*3+1]++;
@@ -211,18 +216,31 @@ static int fts5MatchinfoLocalCb(
   int rc = SQLITE_OK;
 
   switch( f ){
-    case 'b': 
+    case 'b': {
+      int iPhrase;
+      int nInt = ((p->nCol + 31) / 32) * p->nPhrase;
+      for(i=0; i<nInt; i++) aOut[i] = 0;
+
+      for(iPhrase=0; iPhrase<p->nPhrase; iPhrase++){
+        Fts5PhraseIter iter;
+        int iCol;
+        for(pApi->xPhraseFirstColumn(pFts, iPhrase, &iter, &iCol);
+            iCol>=0; 
+            pApi->xPhraseNextColumn(pFts, &iter, &iCol)
+        ){
+          aOut[iPhrase * ((p->nCol+31)/32) + iCol/32] |= ((u32)1 << iCol%32);
+        }
+      }
+
+      break;
+    }
+
     case 'x':
     case 'y': {
       int nMul = (f=='x' ? 3 : 1);
       int iPhrase;
 
-      if( f=='b' ){
-        int nInt = ((p->nCol + 31) / 32) * p->nPhrase;
-        for(i=0; i<nInt; i++) aOut[i] = 0;
-      }else{
-        for(i=0; i<(p->nCol*p->nPhrase); i++) aOut[i*nMul] = 0;
-      }
+      for(i=0; i<(p->nCol*p->nPhrase); i++) aOut[i*nMul] = 0;
 
       for(iPhrase=0; iPhrase<p->nPhrase; iPhrase++){
         Fts5PhraseIter iter;
@@ -231,11 +249,7 @@ static int fts5MatchinfoLocalCb(
             iOff>=0; 
             pApi->xPhraseNext(pFts, &iter, &iCol, &iOff)
         ){
-          if( f=='b' ){
-            aOut[iPhrase * ((p->nCol+31)/32) + iCol/32] |= ((u32)1 << iCol%32);
-          }else{
-            aOut[nMul * (iCol + iPhrase * p->nCol)]++;
-          }
+          aOut[nMul * (iCol + iPhrase * p->nCol)]++;
         }
       }
 
@@ -389,14 +403,15 @@ int sqlite3Fts5TestRegisterMatchinfo(sqlite3 *db){
   /* Extract the FTS5 API pointer from the database handle. The 
   ** fts5_api_from_db() function above is copied verbatim from the 
   ** FTS5 documentation. Refer there for details. */
-  pApi = fts5_api_from_db(db);
+  rc = fts5_api_from_db(db, &pApi);
+  if( rc!=SQLITE_OK ) return rc;
 
   /* If fts5_api_from_db() returns NULL, then either FTS5 is not registered
   ** with this database handle, or an error (OOM perhaps?) has occurred.
   **
   ** Also check that the fts5_api object is version 2 or newer.  
   */ 
-  if( pApi==0 || pApi->iVersion<1 ){
+  if( pApi==0 || pApi->iVersion<2 ){
     return SQLITE_ERROR;
   }
 
@@ -407,5 +422,4 @@ int sqlite3Fts5TestRegisterMatchinfo(sqlite3 *db){
 }
 
 #endif /* SQLITE_ENABLE_FTS5 */
-#endif /* SQLITE_TEST */
 

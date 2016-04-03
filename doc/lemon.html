@@ -5,14 +5,17 @@
 <body bgcolor=white>
 <h1 align=center>The Lemon Parser Generator</h1>
 
-<p>Lemon is an LALR(1) parser generator for C or C++.  
-It does the same job as ``bison'' and ``yacc''.
-But lemon is not another bison or yacc clone.  It
+<p>Lemon is an LALR(1) parser generator for C.
+It does the same job as "bison" and "yacc".
+But lemon is not a bison or yacc clone.  Lemon
 uses a different grammar syntax which is designed to
-reduce the number of coding errors.  Lemon also uses a more
-sophisticated parsing engine that is faster than yacc and
-bison and which is both reentrant and thread-safe.
-Furthermore, Lemon implements features that can be used
+reduce the number of coding errors.  Lemon also uses a
+parsing engine that is faster than yacc and
+bison and which is both reentrant and threadsafe.
+(Update: Since the previous sentence was written, bison
+has also been updated so that it too can generate a
+reentrant and threadsafe parser.)
+Lemon also implements features that can be used
 to eliminate resource leaks, making is suitable for use
 in long-running programs such as graphical user interfaces
 or embedded controllers.</p>
@@ -44,18 +47,18 @@ one and three files of outputs.
     automaton.
 </ul>
 By default, all three of these output files are generated.
-The header file is suppressed if the ``-m'' command-line option is
-used and the report file is omitted when ``-q'' is selected.</p>
+The header file is suppressed if the "-m" command-line option is
+used and the report file is omitted when "-q" is selected.</p>
 
-<p>The grammar specification file uses a ``.y'' suffix, by convention.
+<p>The grammar specification file uses a ".y" suffix, by convention.
 In the examples used in this document, we'll assume the name of the
-grammar file is ``gram.y''.  A typical use of Lemon would be the
+grammar file is "gram.y".  A typical use of Lemon would be the
 following command:
 <pre>
    lemon gram.y
 </pre>
-This command will generate three output files named ``gram.c'',
-``gram.h'' and ``gram.out''.
+This command will generate three output files named "gram.c",
+"gram.h" and "gram.out".
 The first is C code to implement the parser.  The second
 is the header file that defines numerical values for all
 terminal symbols, and the last is the report that explains
@@ -71,39 +74,35 @@ with a brief explanation of what each does by typing
 </pre>
 As of this writing, the following command-line options are supported:
 <ul>
-<li><tt>-b</tt>
-<li><tt>-c</tt>
-<li><tt>-g</tt>
-<li><tt>-m</tt>
-<li><tt>-q</tt>
-<li><tt>-s</tt>
-<li><tt>-x</tt>
+<li><b>-b</b>
+Show only the basis for each parser state in the report file.
+<li><b>-c</b>
+Do not compress the generated action tables.
+<li><b>-D<i>name</i></b>
+Define C preprocessor macro <i>name</i>.  This macro is useable by
+"%ifdef" lines in the grammar file.
+<li><b>-g</b>
+Do not generate a parser.  Instead write the input grammar to standard
+output with all comments, actions, and other extraneous text removed.
+<li><b>-l</b>
+Omit "#line" directives int the generated parser C code.
+<li><b>-m</b>
+Cause the output C source code to be compatible with the "makeheaders"
+program. 
+<li><b>-p</b>
+Display all conflicts that are resolved by 
+<a href='#precrules'>precedence rules</a>.
+<li><b>-q</b>
+Suppress generation of the report file.
+<li><b>-r</b>
+Do not sort or renumber the parser states as part of optimization.
+<li><b>-s</b>
+Show parser statistics before existing.
+<li><b>-T<i>file</i></b>
+Use <i>file</i> as the template for the generated C-code parser implementation.
+<li><b>-x</b>
+Print the Lemon version number.
 </ul>
-The ``-b'' option reduces the amount of text in the report file by
-printing only the basis of each parser state, rather than the full
-configuration.
-The ``-c'' option suppresses action table compression.  Using -c
-will make the parser a little larger and slower but it will detect
-syntax errors sooner.
-The ``-g'' option causes no output files to be generated at all.
-Instead, the input grammar file is printed on standard output but
-with all comments, actions and other extraneous text deleted.  This
-is a useful way to get a quick summary of a grammar.
-The ``-m'' option causes the output C source file to be compatible
-with the ``makeheaders'' program.
-Makeheaders is a program that automatically generates header files
-from C source code.  When the ``-m'' option is used, the header
-file is not output since the makeheaders program will take care
-of generated all header files automatically.
-The ``-q'' option suppresses the report file.
-Using ``-s'' causes a brief summary of parser statistics to be
-printed.  Like this:
-<pre>
-   Parser statistics: 74 terminals, 70 nonterminals, 179 rules
-                      340 states, 2026 parser table entries, 0 conflicts
-</pre>
-Finally, the ``-x'' option causes Lemon to print its version number
-and then stops without attempting to read the grammar or generate a parser.</p>
 
 <h3>The Parser Interface</h3>
 
@@ -121,12 +120,12 @@ A new parser is created as follows:
 </pre>
 The ParseAlloc() routine allocates and initializes a new parser and
 returns a pointer to it.
-The actual data structure used to represent a parser is opaque --
+The actual data structure used to represent a parser is opaque &mdash;
 its internal structure is not visible or usable by the calling routine.
 For this reason, the ParseAlloc() routine returns a pointer to void
 rather than a pointer to some particular structure.
 The sole argument to the ParseAlloc() routine is a pointer to the
-subroutine used to allocate memory.  Typically this means ``malloc()''.</p>
+subroutine used to allocate memory.  Typically this means malloc().</p>
 
 <p>After a program is finished using a parser, it can reclaim all
 memory allocated by that parser by calling
@@ -151,18 +150,19 @@ type of the next token in the data stream.
 There is one token type for each terminal symbol in the grammar.
 The gram.h file generated by Lemon contains #define statements that
 map symbolic terminal symbol names into appropriate integer values.
-(A value of 0 for the second argument is a special flag to the
-parser to indicate that the end of input has been reached.)
+A value of 0 for the second argument is a special flag to the
+parser to indicate that the end of input has been reached.
 The third argument is the value of the given token.  By default,
 the type of the third argument is integer, but the grammar will
 usually redefine this type to be some kind of structure.
 Typically the second argument will be a broad category of tokens
-such as ``identifier'' or ``number'' and the third argument will
+such as "identifier" or "number" and the third argument will
 be the name of the identifier or the value of the number.</p>
 
 <p>The Parse() function may have either three or four arguments,
-depending on the grammar.  If the grammar specification file request
-it, the Parse() function will have a fourth parameter that can be
+depending on the grammar.  If the grammar specification file requests
+it (via the <a href='#extraarg'><tt>extra_argument</tt> directive</a>),
+the Parse() function will have a fourth parameter that can be
 of any type chosen by the programmer.  The parser doesn't do anything
 with this argument except to pass it through to action routines.
 This is a convenient mechanism for passing state information down
@@ -192,7 +192,7 @@ following:
 </pre>
 This example shows a user-written routine that parses a file of
 text and returns a pointer to the parse tree.
-(We've omitted all error-handling from this example to keep it
+(All error-handling code is omitted from this example to keep it
 simple.)
 We assume the existence of some kind of tokenizer which is created
 using TokenizerCreate() on line 8 and deleted by TokenizerFree()
@@ -263,6 +263,12 @@ with prior yacc and bison experience.
 But after years of experience using Lemon, I firmly
 believe that the Lemon way of doing things is better.</p>
 
+<p><i>Updated as of 2016-02-16:</i>
+The text above was written in the 1990s.
+We are told that Bison has lately been enhanced to support the
+tokenizer-calls-parser paradigm used by Lemon, and to obviate the
+need for global variables.</p>
+
 <h2>Input File Syntax</h2>
 
 <p>The main purpose of the grammar specification file for Lemon is
@@ -280,7 +286,7 @@ tokens) and it honors the same commenting conventions as C and C++.</p>
 <h3>Terminals and Nonterminals</h3>
 
 <p>A terminal symbol (token) is any string of alphanumeric
-and underscore characters
+and/or underscore characters
 that begins with an upper case letter.
 A terminal can contain lowercase letters after the first character,
 but the usual convention is to make terminals all upper case.
@@ -307,7 +313,7 @@ must have alphanumeric names.</p>
 <p>The main component of a Lemon grammar file is a sequence of grammar
 rules.
 Each grammar rule consists of a nonterminal symbol followed by
-the special symbol ``::='' and then a list of terminals and/or nonterminals.
+the special symbol "::=" and then a list of terminals and/or nonterminals.
 The rule is terminated by a period.
 The list of terminals and nonterminals on the right-hand side of the
 rule can be empty.
@@ -323,9 +329,9 @@ A typical sequence of grammar rules might look something like this:
 </pre>
 </p>
 
-<p>There is one non-terminal in this example, ``expr'', and five
-terminal symbols or tokens: ``PLUS'', ``TIMES'', ``LPAREN'',
-``RPAREN'' and ``VALUE''.</p>
+<p>There is one non-terminal in this example, "expr", and five
+terminal symbols or tokens: "PLUS", "TIMES", "LPAREN",
+"RPAREN" and "VALUE".</p>
 
 <p>Like yacc and bison, Lemon allows the grammar to specify a block
 of C code that will be executed whenever a grammar rule is reduced
@@ -341,15 +347,15 @@ For example:
 
 <p>In order to be useful, grammar actions must normally be linked to
 their associated grammar rules.
-In yacc and bison, this is accomplished by embedding a ``$$'' in the
+In yacc and bison, this is accomplished by embedding a "$$" in the
 action to stand for the value of the left-hand side of the rule and
-symbols ``$1'', ``$2'', and so forth to stand for the value of
+symbols "$1", "$2", and so forth to stand for the value of
 the terminal or nonterminal at position 1, 2 and so forth on the
 right-hand side of the rule.
 This idea is very powerful, but it is also very error-prone.  The
 single most common source of errors in a yacc or bison grammar is
 to miscount the number of symbols on the right-hand side of a grammar
-rule and say ``$7'' when you really mean ``$8''.</p>
+rule and say "$7" when you really mean "$8".</p>
 
 <p>Lemon avoids the need to count grammar symbols by assigning symbolic
 names to each symbol in a grammar rule and then using those symbolic
@@ -379,7 +385,7 @@ For example, the rule
 <pre>
   expr(A) ::= expr(B) PLUS expr(C).  { A = B; }
 </pre>
-will generate an error because the linking symbol ``C'' is used
+will generate an error because the linking symbol "C" is used
 in the grammar rule but not in the reduce action.</p>
 
 <p>The Lemon notation for linking grammar rules to reduce actions
@@ -387,6 +393,7 @@ also facilitates the use of destructors for reclaiming memory
 allocated by the values of terminals and nonterminals on the
 right-hand side of a rule.</p>
 
+<a name='precrules'></a>
 <h3>Precedence Rules</h3>
 
 <p>Lemon resolves parsing ambiguities in exactly the same way as
@@ -398,7 +405,10 @@ whichever rule comes first in the grammar file.</p>
 yacc and bison, Lemon allows a measure of control 
 over the resolution of paring conflicts using precedence rules.
 A precedence value can be assigned to any terminal symbol
-using the %left, %right or %nonassoc directives.  Terminal symbols
+using the 
+<a href='#pleft'>%left</a>,
+<a href='#pright'>%right</a> or
+<a href='#pnonassoc'>%nonassoc</a> directives.  Terminal symbols
 mentioned in earlier directives have a lower precedence that
 terminal symbols mentioned in later directives.  For example:</p>
 
@@ -518,7 +528,11 @@ other than that, the order of directives in Lemon is arbitrary.</p>
 <li><tt>%default_destructor</tt>
 <li><tt>%default_type</tt>
 <li><tt>%destructor</tt>
+<li><tt>%endif</tt>
 <li><tt>%extra_argument</tt>
+<li><tt>%fallback</tt>
+<li><tt>%ifdef</tt>
+<li><tt>%ifndef</tt>
 <li><tt>%include</tt>
 <li><tt>%left</tt>
 <li><tt>%name</tt>
@@ -530,49 +544,57 @@ other than that, the order of directives in Lemon is arbitrary.</p>
 <li><tt>%stack_size</tt>
 <li><tt>%start_symbol</tt>
 <li><tt>%syntax_error</tt>
+<li><tt>%token_class</tt>
 <li><tt>%token_destructor</tt>
 <li><tt>%token_prefix</tt>
 <li><tt>%token_type</tt>
 <li><tt>%type</tt>
+<li><tt>%wildcard</tt>
 </ul>
 Each of these directives will be described separately in the
 following sections:</p>
 
+<a name='pcode'></a>
 <h4>The <tt>%code</tt> directive</h4>
 
-<p>The %code directive is used to specify addition C/C++ code that
+<p>The %code directive is used to specify addition C code that
 is added to the end of the main output file.  This is similar to
-the %include directive except that %include is inserted at the
-beginning of the main output file.</p>
+the <a href='#pinclude'>%include</a> directive except that %include
+is inserted at the beginning of the main output file.</p>
 
 <p>%code is typically used to include some action routines or perhaps
-a tokenizer as part of the output file.</p>
+a tokenizer or even the "main()" function 
+as part of the output file.</p>
 
+<a name='default_destructor'></a>
 <h4>The <tt>%default_destructor</tt> directive</h4>
 
 <p>The %default_destructor directive specifies a destructor to 
 use for non-terminals that do not have their own destructor
 specified by a separate %destructor directive.  See the documentation
-on the %destructor directive below for additional information.</p>
+on the <a name='#destructor'>%destructor</a> directive below for
+additional information.</p>
 
 <p>In some grammers, many different non-terminal symbols have the
 same datatype and hence the same destructor.  This directive is
 a convenience way to specify the same destructor for all those
 non-terminals using a single statement.</p>
 
+<a name='default_type'></a>
 <h4>The <tt>%default_type</tt> directive</h4>
 
 <p>The %default_type directive specifies the datatype of non-terminal
 symbols that do no have their own datatype defined using a separate
-%type directive.  See the documentation on %type below for addition
-information.</p>
+<a href='#ptype'>%type</a> directive.  
+</p>
 
+<a name='destructor'></a>
 <h4>The <tt>%destructor</tt> directive</h4>
 
 <p>The %destructor directive is used to specify a destructor for
 a non-terminal symbol.
-(See also the %token_destructor directive which is used to
-specify a destructor for terminal symbols.)</p>
+(See also the <a href='#token_destructor'>%token_destructor</a>
+directive which is used to specify a destructor for terminal symbols.)</p>
 
 <p>A non-terminal's destructor is called to dispose of the
 non-terminal's value whenever the non-terminal is popped from
@@ -595,28 +617,28 @@ or other resources held by that non-terminal.</p>
 </pre>
 This example is a bit contrived but it serves to illustrate how
 destructors work.  The example shows a non-terminal named
-``nt'' that holds values of type ``void*''.  When the rule for
-an ``nt'' reduces, it sets the value of the non-terminal to
+"nt" that holds values of type "void*".  When the rule for
+an "nt" reduces, it sets the value of the non-terminal to
 space obtained from malloc().  Later, when the nt non-terminal
 is popped from the stack, the destructor will fire and call
 free() on this malloced space, thus avoiding a memory leak.
-(Note that the symbol ``$$'' in the destructor code is replaced
+(Note that the symbol "$$" in the destructor code is replaced
 by the value of the non-terminal.)</p>
 
 <p>It is important to note that the value of a non-terminal is passed
 to the destructor whenever the non-terminal is removed from the
 stack, unless the non-terminal is used in a C-code action.  If
 the non-terminal is used by C-code, then it is assumed that the
-C-code will take care of destroying it if it should really
-be destroyed.  More commonly, the value is used to build some
+C-code will take care of destroying it.
+More commonly, the value is used to build some
 larger structure and we don't want to destroy it, which is why
 the destructor is not called in this circumstance.</p>
 
-<p>By appropriate use of destructors, it is possible to
-build a parser using Lemon that can be used within a long-running
-program, such as a GUI, that will not leak memory or other resources.
+<p>Destructors help avoid memory leaks by automatically freeing
+allocated objects when they go out of scope.
 To do the same using yacc or bison is much more difficult.</p>
 
+<a name="extraarg"></a>
 <h4>The <tt>%extra_argument</tt> directive</h4>
 
 The %extra_argument directive instructs Lemon to add a 4th parameter
@@ -630,17 +652,66 @@ and so forth.  For example, if the grammar file contains:</p>
 </pre></p>
 
 <p>Then the Parse() function generated will have an 4th parameter
-of type ``MyStruct*'' and all action routines will have access to
-a variable named ``pAbc'' that is the value of the 4th parameter
+of type "MyStruct*" and all action routines will have access to
+a variable named "pAbc" that is the value of the 4th parameter
 in the most recent call to Parse().</p>
 
+<a name='pfallback'></a>
+<h4>The <tt>%fallback</tt> directive</h4>
+
+<p>The %fallback directive specifies an alternative meaning for one
+or more tokens.  The alternative meaning is tried if the original token
+would have generated a syntax error.
+
+<p>The %fallback directive was added to support robust parsing of SQL
+syntax in <a href="https://www.sqlite.org/">SQLite</a>.
+The SQL language contains a large assortment of keywords, each of which
+appears as a different token to the language parser.  SQL contains so
+many keywords, that it can be difficult for programmers to keep up with
+them all.  Programmers will, therefore, sometimes mistakenly use an
+obscure language keyword for an identifier.  The %fallback directive
+provides a mechanism to tell the parser:  "If you are unable to parse
+this keyword, try treating it as an identifier instead."
+
+<p>The syntax of %fallback is as follows:
+
+<blockquote>
+<tt>%fallback</tt>  <i>ID</i> <i>TOKEN...</i> <b>.</b>
+</blockquote>
+
+<p>In words, the %fallback directive is followed by a list of token names
+terminated by a period.  The first token name is the fallback token - the
+token to which all the other tokens fall back to.  The second and subsequent
+arguments are tokens which fall back to the token identified by the first
+argument.
+
+<a name='pifdef'></a>
+<h4>The <tt>%ifdef</tt>, <tt>%ifndef</tt>, and <tt>%endif</tt> directives.</h4>
+
+<p>The %ifdef, %ifndef, and %endif directives are similar to
+#ifdef, #ifndef, and #endif in the C-preprocessor, just not as general.
+Each of these directives must begin at the left margin.  No whitespace
+is allowed between the "%" and the directive name.
+
+<p>Grammar text in between "%ifdef MACRO" and the next nested "%endif" is
+ignored unless the "-DMACRO" command-line option is used.  Grammar text
+betwen "%ifndef MACRO" and the next nested "%endif" is included except when
+the "-DMACRO" command-line option is used.
+
+<p>Note that the argument to %ifdef and %ifndef must be a single 
+preprocessor symbol name, not a general expression.  There is no "%else"
+directive.
+
+
+<a name='pinclude'></a>
 <h4>The <tt>%include</tt> directive</h4>
 
 <p>The %include directive specifies C code that is included at the
 top of the generated parser.  You can include any text you want --
 the Lemon parser generator copies it blindly.  If you have multiple
-%include directives in your grammar file the value of the last
-%include directive overwrites all the others.</p.
+%include directives in your grammar file, their values are concatenated
+so that all %include code ultimately appears near the top of the
+generated parser, in the same order as it appeared in the grammer.</p>
 
 <p>The %include directive is very handy for getting some extra #include
 preprocessor statements at the beginning of the generated parser.
@@ -653,12 +724,13 @@ For example:</p>
 <p>This might be needed, for example, if some of the C actions in the
 grammar call functions that are prototyed in unistd.h.</p>
 
+<a name='pleft'></a>
 <h4>The <tt>%left</tt> directive</h4>
 
-The %left directive is used (along with the %right and
-%nonassoc directives) to declare precedences of terminal
-symbols.  Every terminal symbol whose name appears after
-a %left directive but before the next period (``.'') is
+The %left directive is used (along with the <a href='#pright'>%right</a> and
+<a href='#pnonassoc'>%nonassoc</a> directives) to declare precedences of 
+terminal symbols.  Every terminal symbol whose name appears after
+a %left directive but before the next period (".") is
 given the same left-associative precedence value.  Subsequent
 %left directives have higher precedence.  For example:</p>
 
@@ -679,10 +751,11 @@ a large amount of stack space if you make heavy use or right-associative
 operators.  For this reason, it is recommended that you use %left
 rather than %right whenever possible.</p>
 
+<a name='pname'></a>
 <h4>The <tt>%name</tt> directive</h4>
 
 <p>By default, the functions generated by Lemon all begin with the
-five-character string ``Parse''.  You can change this string to something
+five-character string "Parse".  You can change this string to something
 different using the %name directive.  For instance:</p>
 
 <p><pre>
@@ -701,16 +774,19 @@ The %name directive allows you to generator two or more different
 parsers and link them all into the same executable.
 </p>
 
+<a name='pnonassoc'></a>
 <h4>The <tt>%nonassoc</tt> directive</h4>
 
 <p>This directive is used to assign non-associative precedence to
-one or more terminal symbols.  See the section on precedence rules
-or on the %left directive for additional information.</p>
+one or more terminal symbols.  See the section on 
+<a href='#precrules'>precedence rules</a>
+or on the <a href='#pleft'>%left</a> directive for additional information.</p>
 
+<a name='parse_accept'></a>
 <h4>The <tt>%parse_accept</tt> directive</h4>
 
 <p>The %parse_accept directive specifies a block of C code that is
-executed whenever the parser accepts its input string.  To ``accept''
+executed whenever the parser accepts its input string.  To "accept"
 an input string means that the parser was able to process all tokens
 without error.</p>
 
@@ -722,7 +798,7 @@ without error.</p>
    }
 </pre></p>
 
-
+<a name='parse_failure'></a>
 <h4>The <tt>%parse_failure</tt> directive</h4>
 
 <p>The %parse_failure directive specifies a block of C code that
@@ -737,12 +813,15 @@ only invoked when parsing is unable to continue.</p>
    }
 </pre></p>
 
+<a name='pright'></a>
 <h4>The <tt>%right</tt> directive</h4>
 
 <p>This directive is used to assign right-associative precedence to
-one or more terminal symbols.  See the section on precedence rules
-or on the %left directive for additional information.</p>
+one or more terminal symbols.  See the section on 
+<a href='#precrules'>precedence rules</a>
+or on the <a href='#pleft'>%left</a> directive for additional information.</p>
 
+<a name='stack_overflow'></a>
 <h4>The <tt>%stack_overflow</tt> directive</h4>
 
 <p>The %stack_overflow directive specifies a block of C code that
@@ -771,6 +850,7 @@ Not like this:
    list ::= .
 </pre>
 
+<a name='stack_size'></a>
 <h4>The <tt>%stack_size</tt> directive</h4>
 
 <p>If stack overflow is a problem and you can't resolve the trouble
@@ -783,6 +863,7 @@ with a stack of the requested size.  The default value is 100.</p>
    %stack_size 2000
 </pre></p>
 
+<a name='start_symbol'></a>
 <h4>The <tt>%start_symbol</tt> directive</h4>
 
 <p>By default, the start-symbol for the grammar that Lemon generates
@@ -793,6 +874,7 @@ can choose a different start-symbol using the %start_symbol directive.</p>
    %start_symbol  prog
 </pre></p>
 
+<a name='token_destructor'></a>
 <h4>The <tt>%token_destructor</tt> directive</h4>
 
 <p>The %destructor directive assigns a destructor to a non-terminal
@@ -805,6 +887,7 @@ the %token_type directive) and so they use a common destructor.  Other
 than that, the token destructor works just like the non-terminal
 destructors.</p>
 
+<a name='token_prefix'></a>
 <h4>The <tt>%token_prefix</tt> directive</h4>
 
 <p>Lemon generates #defines that assign small integer constants
@@ -830,6 +913,7 @@ to cause Lemon to produce these symbols instead:
     #define TOKEN_PLUS       4
 </pre>
 
+<a name='token_type'></a><a name='ptype'></a>
 <h4>The <tt>%token_type</tt> and <tt>%type</tt> directives</h4>
 
 <p>These directives are used to specify the data types for values
@@ -845,7 +929,7 @@ token structure.  Like this:</p>
 </pre></p>
 
 <p>If the data type of terminals is not specified, the default value
-is ``int''.</p>
+is "int".</p>
 
 <p>Non-terminal symbols can each have their own data types.  Typically
 the data type  of a non-terminal is a pointer to the root of a parse-tree
@@ -866,6 +950,17 @@ non-terminal whose data type requires 1K of storage, then your 100
 entry parser stack will require 100K of heap space.  If you are willing
 and able to pay that price, fine.  You just need to know.</p>
 
+<a name='pwildcard'></a>
+<h4>The <tt>%wildcard</tt> directive</h4>
+
+<p>The %wildcard directive is followed by a single token name and a
+period.  This directive specifies that the identified token should 
+match any input token.
+
+<p>When the generated parser has the choice of matching an input against
+the wildcard token and some other token, the other token is always used.
+The wildcard token is only matched if there are no other alternatives.
+
 <h3>Error Processing</h3>
 
 <p>After extensive experimentation over several years, it has been
@@ -877,7 +972,7 @@ first invokes the code specified by the %syntax_error directive, if
 any.  It then enters its error recovery strategy.  The error recovery
 strategy is to begin popping the parsers stack until it enters a
 state where it is permitted to shift a special non-terminal symbol
-named ``error''.  It then shifts this non-terminal and continues
+named "error".  It then shifts this non-terminal and continues
 parsing.  But the %syntax_error routine will not be called again
 until at least three new tokens have been successfully shifted.</p>
 
@@ -886,7 +981,7 @@ is unable to shift the error symbol, then the %parse_failed routine
 is invoked and the parser resets itself to its start state, ready
 to begin parsing a new file.  This is what will happen at the very
 first syntax error, of course, if there are no instances of the 
-``error'' non-terminal in your grammar.</p>
+"error" non-terminal in your grammar.</p>
 
 </body>
 </html>

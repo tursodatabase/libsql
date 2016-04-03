@@ -55,6 +55,8 @@ struct PgHdr {
 #define PGHDR_DONT_WRITE      0x020  /* Do not write content to disk */
 #define PGHDR_MMAP            0x040  /* This is an mmap page object */
 
+#define PGHDR_WAL_APPEND      0x080  /* Appended to wal file */
+
 /* Initialize and shutdown the page cache subsystem */
 int sqlite3PcacheInitialize(void);
 void sqlite3PcacheShutdown(void);

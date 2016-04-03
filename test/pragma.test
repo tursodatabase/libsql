@@ -186,7 +186,15 @@ do_test pragma-1.10 {
     PRAGMA synchronous;
   }
 } {123 123 1}
-do_test pragma-1.11 {
+do_test pragma-1.11.1 {
+  execsql {
+    PRAGMA synchronous=EXTRA;
+    PRAGMA cache_size;
+    PRAGMA default_cache_size;
+    PRAGMA synchronous;
+  }
+} {123 123 3}
+do_test pragma-1.11.2 {
   execsql {
     PRAGMA synchronous=FULL;
     PRAGMA cache_size;
@@ -224,14 +232,20 @@ do_test pragma-1.14.1 {
     PRAGMA synchronous=4;
     PRAGMA synchronous;
   }
-} {0}
+} {4}
 do_test pragma-1.14.2 {
   execsql {
     PRAGMA synchronous=3;
     PRAGMA synchronous;
   }
-} {0}
+} {3}
 do_test pragma-1.14.3 {
+  execsql {
+    PRAGMA synchronous=8;
+    PRAGMA synchronous;
+  }
+} {0}
+do_test pragma-1.14.4 {
   execsql {
     PRAGMA synchronous=10;
     PRAGMA synchronous;
@@ -1727,73 +1741,75 @@ forcedelete data_dir
 } ;# endif windows
 
 database_may_be_corrupt
+if {![nonzero_reserved_bytes]} {
 
-do_test 21.1 {
-  # Create a corrupt database in testerr.db. And a non-corrupt at test.db.
-  #
-  db close
-  forcedelete test.db
-  sqlite3 db test.db
-  execsql { 
-    PRAGMA page_size = 1024;
-    PRAGMA auto_vacuum = 0;
-    CREATE TABLE t1(a PRIMARY KEY, b);
-    INSERT INTO t1 VALUES(1, 1);
-  }
-  for {set i 0} {$i < 10} {incr i} {
-    execsql { INSERT INTO t1 SELECT a + (1 << $i), b + (1 << $i) FROM t1 }
-  }
-  db close
-  forcecopy test.db testerr.db
-  hexio_write testerr.db 15000 [string repeat 55 100]
-} {100}
-
-set mainerr {*** in database main ***
+  do_test 21.1 {
+    # Create a corrupt database in testerr.db. And a non-corrupt at test.db.
+    #
+    db close
+    forcedelete test.db
+    sqlite3 db test.db
+    execsql { 
+      PRAGMA page_size = 1024;
+      PRAGMA auto_vacuum = 0;
+      CREATE TABLE t1(a PRIMARY KEY, b);
+      INSERT INTO t1 VALUES(1, 1);
+    }
+    for {set i 0} {$i < 10} {incr i} {
+      execsql { INSERT INTO t1 SELECT a + (1 << $i), b + (1 << $i) FROM t1 }
+    }
+    db close
+    forcecopy test.db testerr.db
+    hexio_write testerr.db 15000 [string repeat 55 100]
+  } {100}
+  
+  set mainerr {*** in database main ***
 Multiple uses for byte 672 of page 15}
-set auxerr {*** in database aux ***
+  set auxerr {*** in database aux ***
 Multiple uses for byte 672 of page 15}
-
-set mainerr {/{\*\*\* in database main \*\*\*
+  
+  set mainerr {/{\*\*\* in database main \*\*\*
 Multiple uses for byte 672 of page 15}.*/}
-set auxerr {/{\*\*\* in database aux \*\*\*
+  set auxerr {/{\*\*\* in database aux \*\*\*
 Multiple uses for byte 672 of page 15}.*/}
-
-do_test 22.2 {
-  catch { db close }
-  sqlite3 db testerr.db
-  execsql { PRAGMA integrity_check }
-} $mainerr
-
-do_test 22.3.1 {
-  catch { db close }
-  sqlite3 db test.db
-  execsql { 
-    ATTACH 'testerr.db' AS 'aux';
-    PRAGMA integrity_check;
-  }
-} $auxerr
-do_test 22.3.2 {
-  execsql { PRAGMA main.integrity_check; }
-} {ok}
-do_test 22.3.3 {
-  execsql { PRAGMA aux.integrity_check; }
-} $auxerr
-
-do_test 22.4.1 {
-  catch { db close }
-  sqlite3 db testerr.db
-  execsql { 
-    ATTACH 'test.db' AS 'aux';
-    PRAGMA integrity_check;
-  }
-} $mainerr
-do_test 22.4.2 {
-  execsql { PRAGMA main.integrity_check; }
-} $mainerr
-do_test 22.4.3 {
-  execsql { PRAGMA aux.integrity_check; }
-} {ok}
-
+  
+  do_test 22.2 {
+    catch { db close }
+    sqlite3 db testerr.db
+    execsql { PRAGMA integrity_check }
+  } $mainerr
+  
+  do_test 22.3.1 {
+    catch { db close }
+    sqlite3 db test.db
+    execsql { 
+      ATTACH 'testerr.db' AS 'aux';
+      PRAGMA integrity_check;
+    }
+  } $auxerr
+  do_test 22.3.2 {
+    execsql { PRAGMA main.integrity_check; }
+  } {ok}
+  do_test 22.3.3 {
+    execsql { PRAGMA aux.integrity_check; }
+  } $auxerr
+  
+  do_test 22.4.1 {
+    catch { db close }
+    sqlite3 db testerr.db
+    execsql { 
+      ATTACH 'test.db' AS 'aux';
+      PRAGMA integrity_check;
+    }
+  } $mainerr
+  do_test 22.4.2 {
+    execsql { PRAGMA main.integrity_check; }
+  } $mainerr
+  do_test 22.4.3 {
+    execsql { PRAGMA aux.integrity_check; }
+  } {ok}
+}
+  
 db close
 forcedelete test.db test.db-wal test.db-journal
 sqlite3 db test.db

@@ -41,6 +41,7 @@
 #else
 # include <unistd.h>
 #endif
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -1244,6 +1245,19 @@ static void usage(const char *argv0){
     if( isDirSep(argv0[i]) ) zTail = argv0+i+1;
   }
   fprintf(stderr,"Usage: %s DATABASE ?OPTIONS? ?SCRIPT?\n", zTail);
+  fprintf(stderr,
+    "Options:\n"
+    "   --errlog FILENAME           Write errors to FILENAME\n"
+    "   --journalmode MODE          Use MODE as the journal_mode\n"
+    "   --log FILENAME              Log messages to FILENAME\n"
+    "   --quiet                     Suppress unnecessary output\n"
+    "   --vfs NAME                  Use NAME as the VFS\n"
+    "   --repeat N                  Repeat the test N times\n"
+    "   --sqltrace                  Enable SQL tracing\n"
+    "   --sync                      Enable synchronous disk writes\n"
+    "   --timeout MILLISEC          Busy timeout is MILLISEC\n"
+    "   --trace BOOLEAN             Enable or disable tracing\n"
+  );
   exit(1);
 }
 
@@ -1275,6 +1289,8 @@ int SQLITE_CDECL main(int argc, char **argv){
   const char *zJMode;
   const char *zNRep;
   int nRep = 1, iRep;
+  int iTmout = 0;              /* Default: no timeout */
+  const char *zTmout;
 
   g.argv0 = argv[0];
   g.iTrace = 1;
@@ -1301,6 +1317,8 @@ int SQLITE_CDECL main(int argc, char **argv){
   zTrace = findOption(argv+2, &n, "trace", 1);
   if( zTrace ) g.iTrace = atoi(zTrace);
   if( findOption(argv+2, &n, "quiet", 0)!=0 ) g.iTrace = 0;
+  zTmout = findOption(argv+2, &n, "timeout", 1);
+  if( zTmout ) iTmout = atoi(zTmout);
   g.bSqlTrace = findOption(argv+2, &n, "sqltrace", 0)!=0;
   g.bSync = findOption(argv+2, &n, "sync", 0)!=0;
   if( g.zErrLog ){
@@ -1321,6 +1339,7 @@ int SQLITE_CDECL main(int argc, char **argv){
     sqlite3_snprintf(sizeof(g.zName), g.zName, "%05d.client%02d",
                      GETPID(), iClient);
   }else{
+    int nTry = 0;
     if( g.iTrace>0 ){
       printf("BEGIN: %s", argv[0]);
       for(i=1; i<argc; i++) printf(" %s", argv[i]);
@@ -1332,11 +1351,22 @@ int SQLITE_CDECL main(int argc, char **argv){
       fflush(stdout);
     }
     iClient =  0;
-    unlink(g.zDbFile);
+    do{
+      if( (nTry%5)==4 ) printf("... %strying to unlink '%s'\n",
+                               nTry>5 ? "still " : "", g.zDbFile);
+      rc = unlink(g.zDbFile);
+      if( rc && errno==ENOENT ) rc = 0;
+    }while( rc!=0 && (++nTry)<60 && sqlite3_sleep(1000)>0 );
+    if( rc!=0 ){
+      fatalError("unable to unlink '%s' after %d attempts\n",
+                 g.zDbFile, nTry);
+    }
     openFlags |= SQLITE_OPEN_CREATE;
   }
   rc = sqlite3_open_v2(g.zDbFile, &g.db, openFlags, g.zVfs);
   if( rc ) fatalError("cannot open [%s]", g.zDbFile);
+  if( iTmout>0 ) sqlite3_busy_timeout(g.db, iTmout);
+  
   if( zJMode ){
 #if defined(_WIN32)
     if( sqlite3_stricmp(zJMode,"persist")==0

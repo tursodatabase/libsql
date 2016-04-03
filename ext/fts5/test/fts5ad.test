@@ -11,6 +11,8 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing the FTS5 module.
 #
+# More specifically, the focus is on testing prefix queries, both with and
+# without prefix indexes.
 #
 
 source [file join [file dirname [info script]] fts5_common.tcl]
@@ -22,8 +24,10 @@ ifcapable !fts5 {
   return
 }
 
+foreach_detail_mode $testprefix {
+
 do_execsql_test 1.0 {
-  CREATE VIRTUAL TABLE yy USING fts5(x, y);
+  CREATE VIRTUAL TABLE yy USING fts5(x, y, detail=%DETAIL%);
   INSERT INTO yy VALUES('Changes the result to be', 'the list of all matching');
   INSERT INTO yy VALUES('indices (or all  matching', 'values if -inline is');
   INSERT INTO yy VALUES('specified as  well.) If', 'indices are returned, the');
@@ -53,23 +57,23 @@ foreach {tn match res} {
 
 foreach {T create} {
   2 {
-    CREATE VIRTUAL TABLE t1 USING fts5(a, b);
+    CREATE VIRTUAL TABLE t1 USING fts5(a, b, detail=%DETAIL%);
     INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
   }
   
   3 {
-    CREATE VIRTUAL TABLE t1 USING fts5(a, b, prefix=1,2,3,4,5);
+    CREATE VIRTUAL TABLE t1 USING fts5(a, b, prefix="1,2,3,4", detail=%DETAIL%);
     INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
   }
 
   4 {
-    CREATE VIRTUAL TABLE t1 USING fts5(a, b);
+    CREATE VIRTUAL TABLE t1 USING fts5(a, b, detail=%DETAIL%);
     INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
     BEGIN;
   }
   
   5 {
-    CREATE VIRTUAL TABLE t1 USING fts5(a, b, prefix=1,2,3,4,5);
+    CREATE VIRTUAL TABLE t1 USING fts5(a, b, prefix="1,2,3,4", detail=%DETAIL%);
     INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
     BEGIN;
   }
@@ -233,6 +237,8 @@ foreach {T create} {
   }
 
   catchsql COMMIT
+}
+
 }
 
 finish_test

@@ -276,7 +276,6 @@ struct MemPage {
   u8 nOverflow;        /* Number of overflow cell bodies in aCell[] */
   u8 intKey;           /* True if table b-trees.  False for index b-trees */
   u8 intKeyLeaf;       /* True if the leaf of an intKey table */
-  u8 noPayload;        /* True if internal intKey page (thus w/o data) */
   u8 leaf;             /* True if a leaf page */
   u8 hdrOffset;        /* 100 for page 1.  0 otherwise */
   u8 childPtrSize;     /* 0 if leaf==1.  4 if leaf==0 */

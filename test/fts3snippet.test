@@ -559,4 +559,3 @@ do_test 4.2 {
 
 set sqlite_fts3_enable_parentheses 0
 finish_test
-

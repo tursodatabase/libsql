@@ -76,7 +76,7 @@ do_test tempdb-2.2 {
   }
   catchsql { INSERT INTO t1 SELECT * FROM t2 }
   set sqlite_open_file_count
-} [expr 1 + (0==$jrnl_in_memory) + (0==$subj_in_memory)]
+} [expr 1 + (0==$jrnl_in_memory)]
 do_test tempdb-2.3 {
   execsql {
     PRAGMA temp_store = 'memory';

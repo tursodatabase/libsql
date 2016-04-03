@@ -41,27 +41,6 @@ do_faultsim_test 1 -faults oom-* -prep {
 }
 
 #-------------------------------------------------------------------------
-# An OOM within an "ORDER BY rank" query.
-#
-db func rnddoc fts5_rnddoc 
-do_execsql_test 2.0 {
-  CREATE VIRTUAL TABLE xx USING fts5(x);
-  INSERT INTO xx VALUES ('abc ' || rnddoc(10));
-  INSERT INTO xx VALUES ('abc abc' || rnddoc(9));
-  INSERT INTO xx VALUES ('abc abc abc' || rnddoc(8));
-} {}
-faultsim_save_and_close
-
-do_faultsim_test 2 -faults oom-* -prep {
-  faultsim_restore_and_reopen
-  execsql { SELECT * FROM xx }
-} -body {
-  execsql { SELECT rowid FROM xx WHERE xx MATCH 'abc' ORDER BY rank }
-} -test {
-  faultsim_test_result [list 0 {3 2 1}]
-}
-
-#-------------------------------------------------------------------------
 # An OOM while "reseeking" an FTS cursor.
 #
 do_execsql_test 3.0 {
@@ -107,7 +86,7 @@ set ::res [db eval {SELECT rowid, x1 FROM x1 WHERE x1 MATCH '*reads'}]
 do_faultsim_test 4 -faults oom-* -body {
   db eval {SELECT rowid, x, x1 FROM x1 WHERE x1 MATCH '*reads'}
 } -test {
-  faultsim_test_result {0 {0 {} 4}}
+  faultsim_test_result {0 {0 {} 3}}
 }
 
 #-------------------------------------------------------------------------

@@ -46,7 +46,8 @@ do_test stmt-1.4 {
     INSERT INTO t1 SELECT a+1, b+1 FROM t1;
   }
   set sqlite_open_file_count
-} {3}
+  # 2016-03-04: statement-journal open deferred
+} {2}
 do_test stmt-1.5 {
   execsql COMMIT
   set sqlite_open_file_count
@@ -61,7 +62,8 @@ do_test stmt-1.6.1 {
 do_test stmt-1.6.2 {
   execsql { INSERT INTO t1 SELECT a+4, b+4 FROM t1 }
   set sqlite_open_file_count
-} {3}
+  # 2016-03-04: statement-journal open deferred
+} {2}
 do_test stmt-1.7 {
   execsql COMMIT
   set sqlite_open_file_count
@@ -84,7 +86,7 @@ filecount stmt-2.3 { INSERT INTO t1 SELECT 9, 9   } 2
 filecount stmt-2.4 { 
     INSERT INTO t1 SELECT 9, 9;
     INSERT INTO t1 SELECT 10, 10;
-} 3
+} 2
 
 do_test stmt-2.5 {
   execsql { CREATE INDEX i1 ON t1(b) }
@@ -92,6 +94,6 @@ do_test stmt-2.5 {
 filecount stmt-2.6 { 
   REPLACE INTO t1 VALUES(5, 5);
   REPLACE INTO t1 VALUES(5, 5); 
-} 3
+} 2
 
 finish_test

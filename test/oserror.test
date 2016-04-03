@@ -95,7 +95,7 @@ do_test 1.4.1 {
 
 do_re_test 1.4.2 { 
   lindex $::log 0
-} {^os_unix.c:\d*: \(\d+\) (open|readlink)\(.*test.db\) - }
+} {^os_unix.c:\d*: \(\d+\) (open|readlink|lstat)\(.*test.db\) - }
 
 #--------------------------------------------------------------------------
 # Tests oserror-1.* test failures in the unlink() system call.

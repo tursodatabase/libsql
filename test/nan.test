@@ -151,45 +151,47 @@ sqlite3_finalize $::STMT
 # Then it reads the value of the database to verify it is converted into
 # NULL.
 #
-do_test nan-3.1 {
-  db eval {
-    DELETE FROM t1;
-    INSERT INTO t1 VALUES(0.5);
-    PRAGMA auto_vacuum=OFF;
-    PRAGMA page_size=1024;
-    VACUUM;
-  }
-  hexio_read test.db 2040 8
-} {3FE0000000000000}
-do_test nan-3.2 {
-  db eval {
-    SELECT x, typeof(x) FROM t1
-  }
-} {0.5 real}
-do_test nan-3.3 {
-  db close
-  hexio_write test.db 2040 FFF8000000000000
-  sqlite3 db test.db
-  db eval {SELECT x, typeof(x) FROM t1}
-} {{} null}
-do_test nan-3.4 {
-  db close
-  hexio_write test.db 2040 7FF8000000000000
-  sqlite3 db test.db
-  db eval {SELECT x, typeof(x) FROM t1}
-} {{} null}
-do_test nan-3.5 {
-  db close
-  hexio_write test.db 2040 FFFFFFFFFFFFFFFF
-  sqlite3 db test.db
-  db eval {SELECT x, typeof(x) FROM t1}
-} {{} null}
-do_test nan-3.6 {
-  db close
-  hexio_write test.db 2040 7FFFFFFFFFFFFFFF
-  sqlite3 db test.db
-  db eval {SELECT x, typeof(x) FROM t1}
-} {{} null}
+if {![nonzero_reserved_bytes]} {
+  do_test nan-3.1 {
+    db eval {
+      DELETE FROM t1;
+      INSERT INTO t1 VALUES(0.5);
+      PRAGMA auto_vacuum=OFF;
+      PRAGMA page_size=1024;
+      VACUUM;
+    }
+    hexio_read test.db 2040 8
+  } {3FE0000000000000}
+  do_test nan-3.2 {
+    db eval {
+      SELECT x, typeof(x) FROM t1
+    }
+  } {0.5 real}
+  do_test nan-3.3 {
+    db close
+    hexio_write test.db 2040 FFF8000000000000
+    sqlite3 db test.db
+    db eval {SELECT x, typeof(x) FROM t1}
+  } {{} null}
+  do_test nan-3.4 {
+    db close
+    hexio_write test.db 2040 7FF8000000000000
+    sqlite3 db test.db
+    db eval {SELECT x, typeof(x) FROM t1}
+  } {{} null}
+  do_test nan-3.5 {
+    db close
+    hexio_write test.db 2040 FFFFFFFFFFFFFFFF
+    sqlite3 db test.db
+    db eval {SELECT x, typeof(x) FROM t1}
+  } {{} null}
+  do_test nan-3.6 {
+    db close
+    hexio_write test.db 2040 7FFFFFFFFFFFFFFF
+    sqlite3 db test.db
+    db eval {SELECT x, typeof(x) FROM t1}
+  } {{} null}
+}
 
 # Verify that the sqlite3AtoF routine is able to handle extreme
 # numbers.

@@ -10,11 +10,13 @@
 #
 TOP = .
 
+# <<mark>>
 # Set this non-0 to create and use the SQLite amalgamation file.
 #
 !IFNDEF USE_AMALGAMATION
 USE_AMALGAMATION = 1
 !ENDIF
+# <</mark>>
 
 # Set this non-0 to enable full warnings (-W4, etc) when compiling.
 #
@@ -68,11 +70,13 @@ USE_WP81_OPTS = 0
 SPLIT_AMALGAMATION = 0
 !ENDIF
 
+# <<mark>>
 # Set this non-0 to use the International Components for Unicode (ICU).
 #
 !IFNDEF USE_ICU
 USE_ICU = 0
 !ENDIF
+# <</mark>>
 
 # Set this non-0 to dynamically link to the MSVC runtime library.
 #
@@ -122,20 +126,28 @@ USE_RC = 1
 FOR_WINRT = 0
 !ENDIF
 
-# Set this non-0 to compile binaries suitable for the UAP environment.
+# Set this non-0 to compile binaries suitable for the UWP environment.
 # This setting does not apply to any binaries that require Tcl to operate
 # properly (i.e. the text fixture, etc).
 #
-!IFNDEF FOR_UAP
-FOR_UAP = 0
+!IFNDEF FOR_UWP
+FOR_UWP = 0
 !ENDIF
 
+# Set this non-0 to compile binaries suitable for the Windows 10 platform.
+#
+!IFNDEF FOR_WIN10
+FOR_WIN10 = 0
+!ENDIF
+
+# <<mark>>
 # Set this non-0 to skip attempting to look for and/or link with the Tcl
 # runtime library.
 #
 !IFNDEF NO_TCL
 NO_TCL = 0
 !ENDIF
+# <</mark>>
 
 # Set this to non-0 to create and use PDBs.
 #
@@ -186,6 +198,65 @@ DEBUG = 0
 OPTIMIZATIONS = 2
 !ENDIF
 
+# Set the source code file to be used by executables and libraries when
+# they need the amalgamation.
+#
+!IFNDEF SQLITE3C
+!IF $(SPLIT_AMALGAMATION)!=0
+SQLITE3C = sqlite3-all.c
+!ELSE
+SQLITE3C = sqlite3.c
+!ENDIF
+!ENDIF
+
+# Set the include code file to be used by executables and libraries when
+# they need SQLite.
+#
+!IFNDEF SQLITE3H
+SQLITE3H = sqlite3.h
+!ENDIF
+
+# This is the name to use for the SQLite dynamic link library (DLL).
+#
+!IFNDEF SQLITE3DLL
+!IF $(FOR_WIN10)!=0
+SQLITE3DLL = winsqlite3.dll
+!ELSE
+SQLITE3DLL = sqlite3.dll
+!ENDIF
+!ENDIF
+
+# This is the name to use for the SQLite import library (LIB).
+#
+!IFNDEF SQLITE3LIB
+!IF $(FOR_WIN10)!=0
+SQLITE3LIB = winsqlite3.lib
+!ELSE
+SQLITE3LIB = sqlite3.lib
+!ENDIF
+!ENDIF
+
+# This is the name to use for the SQLite shell executable (EXE).
+#
+!IFNDEF SQLITE3EXE
+!IF $(FOR_WIN10)!=0
+SQLITE3EXE = winsqlite3shell.exe
+!ELSE
+SQLITE3EXE = sqlite3.exe
+!ENDIF
+!ENDIF
+
+# This is the argument used to set the program database (PDB) file for the
+# SQLite shell executable (EXE).
+#
+!IFNDEF SQLITE3EXEPDB
+!IF $(FOR_WIN10)!=0
+SQLITE3EXEPDB =
+!ELSE
+SQLITE3EXEPDB = /pdb:sqlite3sh.pdb
+!ENDIF
+!ENDIF
+
 # These are the "standard" SQLite compilation options used when compiling for
 # the Windows platform.
 #
@@ -193,11 +264,35 @@ OPTIMIZATIONS = 2
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_FTS3=1
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_RTREE=1
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_COLUMN_METADATA=1
+OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_SESSION=1
+OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_PREUPDATE_HOOK=1
+!ENDIF
+
+# These are the "extended" SQLite compilation options used when compiling for
+# the Windows 10 platform.
+#
+!IFNDEF EXT_FEATURE_FLAGS
+!IF $(FOR_WIN10)!=0
+EXT_FEATURE_FLAGS = $(EXT_FEATURE_FLAGS) -DSQLITE_ENABLE_FTS4=1
+EXT_FEATURE_FLAGS = $(EXT_FEATURE_FLAGS) -DSQLITE_SYSTEM_MALLOC=1
+EXT_FEATURE_FLAGS = $(EXT_FEATURE_FLAGS) -DSQLITE_OMIT_LOCALTIME=1
+!ELSE
+EXT_FEATURE_FLAGS =
+!ENDIF
 !ENDIF
 
 ###############################################################################
 ############################### END OF OPTIONS ################################
 ###############################################################################
+
+# When compiling for the Windows 10 platform, the PLATFORM macro must be set
+# to an appropriate value (e.g. x86, x64, arm, arm64, etc).
+#
+!IF $(FOR_WIN10)!=0
+!IFNDEF PLATFORM
+!ERROR Using the FOR_WIN10 option requires a value for PLATFORM.
+!ENDIF
+!ENDIF
 
 # This assumes that MSVC is always installed in 32-bit Program Files directory
 # and sets the variable for use in locating other 32-bit installs accordingly.
@@ -211,6 +306,14 @@ PROGRAMFILES_X86 = $(PROGRAMFILES_X86:\\=\)
 #
 !IFNDEF CC
 CC = cl.exe
+!ENDIF
+
+# Check for the predefined command macro CSC.  This should point to a working
+# C Sharp compiler binary.  If it is not defined, simply define it to the
+# legacy default value 'csc.exe'.
+#
+!IFNDEF CSC
+CSC = csc.exe
 !ENDIF
 
 # Check for the command macro LD.  This should point to the linker binary for
@@ -229,7 +332,7 @@ LD = link.exe
 RC = rc.exe
 !ENDIF
 
-# Check for the MSVC runtime library path macro.  Othertise, this value will
+# Check for the MSVC runtime library path macro.  Otherwise, this value will
 # default to the 'lib' directory underneath the MSVC installation directory.
 #
 !IFNDEF CRTLIBPATH
@@ -266,7 +369,7 @@ NCC = $(NCC:\\=\)
 NCC = $(CC)
 !ENDIF
 
-# Check for the MSVC native runtime library path macro.  Othertise,
+# Check for the MSVC native runtime library path macro.  Otherwise,
 # this value will default to the 'lib' directory underneath the MSVC
 # installation directory.
 #
@@ -276,7 +379,7 @@ NCRTLIBPATH = $(VCINSTALLDIR)\lib
 
 NCRTLIBPATH = $(NCRTLIBPATH:\\=\)
 
-# Check for the Platform SDK library path macro.  Othertise, this
+# Check for the Platform SDK library path macro.  Otherwise, this
 # value will default to the 'lib' directory underneath the Windows
 # SDK installation directory (the environment variable used appears
 # to be available when using Visual C++ 2008 or later via the
@@ -287,6 +390,16 @@ NSDKLIBPATH = $(WINDOWSSDKDIR)\lib
 !ENDIF
 
 NSDKLIBPATH = $(NSDKLIBPATH:\\=\)
+
+# Check for the UCRT library path macro.  Otherwise, this value will
+# default to the version-specific, platform-specific 'lib' directory
+# underneath the Windows SDK installation directory.
+#
+!IFNDEF UCRTLIBPATH
+UCRTLIBPATH = $(WINDOWSSDKDIR)\lib\$(WINDOWSSDKLIBVERSION)\ucrt\$(PLATFORM)
+!ENDIF
+
+UCRTLIBPATH = $(UCRTLIBPATH:\\=\)
 
 # C compiler and options for use in building executables that
 # will run on the platform that is doing the build.
@@ -328,7 +441,7 @@ TCC = $(CC) -nologo -W3 $(CCOPTS) $(TCCOPTS)
 !ENDIF
 
 TCC = $(TCC) -DSQLITE_OS_WIN=1 -I. -I$(TOP) -I$(TOP)\src -fp:precise
-RCC = $(RC) -DSQLITE_OS_WIN=1 -I$(TOP) -I$(TOP)\src $(RCOPTS) $(RCCOPTS)
+RCC = $(RC) -DSQLITE_OS_WIN=1 -I. -I$(TOP) -I$(TOP)\src $(RCOPTS) $(RCCOPTS)
 
 # Check if we want to use the "stdcall" calling convention when compiling.
 # This is not supported by the compilers for non-x86 platforms.  It should
@@ -337,7 +450,7 @@ RCC = $(RC) -DSQLITE_OS_WIN=1 -I$(TOP) -I$(TOP)\src $(RCOPTS) $(RCCOPTS)
 # to how the Tcl library functions are declared and exported (i.e. without
 # an explicit calling convention, which results in "cdecl").
 #
-!IF $(USE_STDCALL)!=0
+!IF $(USE_STDCALL)!=0 || $(FOR_WIN10)!=0
 !IF "$(PLATFORM)"=="x86"
 CORE_CCONV_OPTS = -Gz -DSQLITE_CDECL=__cdecl -DSQLITE_STDCALL=__stdcall
 SHELL_CCONV_OPTS = -Gz -DSQLITE_CDECL=__cdecl -DSQLITE_STDCALL=__stdcall
@@ -358,7 +471,7 @@ SHELL_CCONV_OPTS =
 # These are additional compiler options used for the core library.
 #
 !IFNDEF CORE_COMPILE_OPTS
-!IF $(DYNAMIC_SHELL)!=0
+!IF $(DYNAMIC_SHELL)!=0 || $(FOR_WIN10)!=0
 CORE_COMPILE_OPTS = $(CORE_CCONV_OPTS) -DSQLITE_API=__declspec(dllexport)
 !ELSE
 CORE_COMPILE_OPTS = $(CORE_CCONV_OPTS)
@@ -371,8 +484,10 @@ CORE_COMPILE_OPTS = $(CORE_CCONV_OPTS)
 !IFNDEF CORE_LINK_DEP
 !IF $(DYNAMIC_SHELL)!=0
 CORE_LINK_DEP =
-!ELSE
+!ELSEIF $(FOR_WIN10)==0 || "$(PLATFORM)"=="x86"
 CORE_LINK_DEP = sqlite3.def
+!ELSE
+CORE_LINK_DEP =
 !ENDIF
 !ENDIF
 
@@ -381,38 +496,51 @@ CORE_LINK_DEP = sqlite3.def
 !IFNDEF CORE_LINK_OPTS
 !IF $(DYNAMIC_SHELL)!=0
 CORE_LINK_OPTS =
-!ELSE
+!ELSEIF $(FOR_WIN10)==0 || "$(PLATFORM)"=="x86"
 CORE_LINK_OPTS = /DEF:sqlite3.def
+!ELSE
+CORE_LINK_OPTS =
 !ENDIF
 !ENDIF
 
 # These are additional compiler options used for the shell executable.
 #
 !IFNDEF SHELL_COMPILE_OPTS
-!IF $(DYNAMIC_SHELL)!=0
-SHELL_COMPILE_OPTS = -DSQLITE_SHELL_JSON1 $(SHELL_CCONV_OPTS) -DSQLITE_API=__declspec(dllimport)
+!IF $(DYNAMIC_SHELL)!=0 || $(FOR_WIN10)!=0
+SHELL_COMPILE_OPTS = $(SHELL_CCONV_OPTS) -DSQLITE_API=__declspec(dllimport)
 !ELSE
-SHELL_COMPILE_OPTS = -DSQLITE_SHELL_JSON1 $(SHELL_CCONV_OPTS)
+SHELL_COMPILE_OPTS = $(SHELL_CCONV_OPTS)
+!ENDIF
+!ENDIF
+
+# This is the source code that the shell executable should be compiled
+# with.
+#
+!IFNDEF SHELL_CORE_SRC
+!IF $(DYNAMIC_SHELL)!=0 || $(FOR_WIN10)!=0
+SHELL_CORE_SRC =
+!ELSE
+SHELL_CORE_SRC = $(SQLITE3C)
 !ENDIF
 !ENDIF
 
 # This is the core library that the shell executable should depend on.
 #
 !IFNDEF SHELL_CORE_DEP
-!IF $(DYNAMIC_SHELL)!=0
-SHELL_CORE_DEP = sqlite3.dll
+!IF $(DYNAMIC_SHELL)!=0 || $(FOR_WIN10)!=0
+SHELL_CORE_DEP = $(SQLITE3DLL)
 !ELSE
-SHELL_CORE_DEP = libsqlite3.lib
+SHELL_CORE_DEP =
 !ENDIF
 !ENDIF
 
 # This is the core library that the shell executable should link with.
 #
 !IFNDEF SHELL_CORE_LIB
-!IF $(DYNAMIC_SHELL)!=0
-SHELL_CORE_LIB = sqlite3.lib
+!IF $(DYNAMIC_SHELL)!=0 || $(FOR_WIN10)!=0
+SHELL_CORE_LIB = $(SQLITE3LIB)
 !ELSE
-SHELL_CORE_LIB = libsqlite3.lib
+SHELL_CORE_LIB =
 !ENDIF
 !ENDIF
 
@@ -441,6 +569,13 @@ TCC = $(TCC) -DWINAPI_FAMILY=WINAPI_FAMILY_APP
 RCC = $(RCC) -DWINAPI_FAMILY=WINAPI_FAMILY_APP
 !ENDIF
 
+# C compiler options for the Windows 10 platform (needs MSVC 2015).
+#
+!IF $(FOR_WIN10)!=0
+TCC = $(TCC) /d2guard4 -D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE
+BCC = $(BCC) /d2guard4 -D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE
+!ENDIF
+
 # Also, we need to dynamically link to the correct MSVC runtime
 # when compiling for WinRT (e.g. debug or release) OR if the
 # USE_CRT_DLL option is set to force dynamically linking to the
@@ -464,6 +599,7 @@ BCC = $(BCC) -MT
 !ENDIF
 !ENDIF
 
+# <<mark>>
 # The mksqlite3c.tcl and mksqlite3h.tcl scripts will pull in
 # any extension header files by default.  For non-amalgamation
 # builds, we need to make sure the compiler can find these.
@@ -473,6 +609,8 @@ TCC = $(TCC) -I$(TOP)\ext\fts3
 RCC = $(RCC) -I$(TOP)\ext\fts3
 TCC = $(TCC) -I$(TOP)\ext\rtree
 RCC = $(RCC) -I$(TOP)\ext\rtree
+TCC = $(TCC) -I$(TOP)\ext\session
+RCC = $(RCC) -I$(TOP)\ext\session
 !ENDIF
 
 # The mksqlite3c.tcl script accepts some options on the command
@@ -487,6 +625,7 @@ MKSQLITE3C_ARGS = --linemacros
 MKSQLITE3C_ARGS =
 !ENDIF
 !ENDIF
+# <</mark>>
 
 # Define -DNDEBUG to compile without debugging (i.e., for production usage)
 # Omitting the define will cause extra debugging code to be inserted and
@@ -498,7 +637,7 @@ BCC = $(BCC) -DNDEBUG
 RCC = $(RCC) -DNDEBUG
 !ENDIF
 
-!IF $(DEBUG)>0 || $(API_ARMOR)!=0
+!IF $(DEBUG)>0 || $(API_ARMOR)!=0 || $(FOR_WIN10)!=0
 TCC = $(TCC) -DSQLITE_ENABLE_API_ARMOR=1
 RCC = $(RCC) -DSQLITE_ENABLE_API_ARMOR=1
 !ENDIF
@@ -551,6 +690,7 @@ RCC = $(RCC) -DSQLITE_WIN32_MALLOC_VALIDATE=1
 !ENDIF
 !ENDIF
 
+# <<mark>>
 # The locations of the Tcl header and library files.  Also, the library that
 # non-stubs enabled programs using Tcl must link against.  These variables
 # (TCLINCDIR, TCLLIBDIR, and LIBTCL) may be overridden via the environment
@@ -602,6 +742,7 @@ LIBICU = icuuc.lib icuin.lib
 !IFNDEF TCLSH_CMD
 TCLSH_CMD = tclsh85
 !ENDIF
+# <</mark>>
 
 # Compiler options needed for programs that use the readline() library.
 #
@@ -659,8 +800,8 @@ REQ_FEATURE_FLAGS = $(REQ_FEATURE_FLAGS) -DSQLITE_WIN32_USE_UUID=1
 # Add the required and optional SQLite compilation options into the command
 # lines used to invoke the MSVC code and resource compilers.
 #
-TCC = $(TCC) $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS)
-RCC = $(RCC) $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS)
+TCC = $(TCC) $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS) $(EXT_FEATURE_FLAGS)
+RCC = $(RCC) $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS) $(EXT_FEATURE_FLAGS)
 
 # Add in any optional parameters specified on the commane line, e.g.
 # nmake /f Makefile.msc all "OPTS=-DSQLITE_ENABLE_FOO=1 -DSQLITE_OMIT_FOO=1"
@@ -700,6 +841,7 @@ TCC = $(TCC) -Zi
 BCC = $(BCC) -Zi
 !ENDIF
 
+# <<mark>>
 # If ICU support is enabled, add the compiler options for it.
 #
 !IF $(USE_ICU)!=0
@@ -710,6 +852,7 @@ RCC = $(RCC) -I$(TOP)\ext\icu
 TCC = $(TCC) -I$(ICUINCDIR)
 RCC = $(RCC) -I$(ICUINCDIR)
 !ENDIF
+# <</mark>>
 
 # Command line prefixes for compiling code, compiling resources,
 # linking, etc.
@@ -787,13 +930,23 @@ LTLINKOPTS = $(LTLINKOPTS) WindowsPhoneCore.lib RuntimeObject.lib PhoneAppModelH
 LTLINKOPTS = $(LTLINKOPTS) /NODEFAULTLIB:kernel32.lib /NODEFAULTLIB:ole32.lib
 !ENDIF
 
-# When compiling for UAP, some extra linker options are also required.
+# When compiling for UWP or the Windows 10 platform, some extra linker
+# options are also required.
 #
-!IF $(FOR_UAP)!=0
+!IF $(FOR_UWP)!=0 || $(FOR_WIN10)!=0
 LTLINKOPTS = $(LTLINKOPTS) /DYNAMICBASE /NODEFAULTLIB:kernel32.lib
 LTLINKOPTS = $(LTLINKOPTS) mincore.lib
 !IFDEF PSDKLIBPATH
 LTLINKOPTS = $(LTLINKOPTS) "/LIBPATH:$(PSDKLIBPATH)"
+!ENDIF
+!ENDIF
+
+!IF $(FOR_WIN10)!=0
+LTLINKOPTS = $(LTLINKOPTS) /guard:cf "/LIBPATH:$(UCRTLIBPATH)"
+!IF $(DEBUG)>1
+LTLINKOPTS = $(LTLINKOPTS) /NODEFAULTLIB:libucrtd.lib /DEFAULTLIB:ucrtd.lib
+!ELSE
+LTLINKOPTS = $(LTLINKOPTS) /NODEFAULTLIB:libucrt.lib /DEFAULTLIB:ucrt.lib
 !ENDIF
 !ENDIF
 
@@ -805,6 +958,7 @@ LDFLAGS = /DEBUG $(LDOPTS)
 LDFLAGS = $(LDOPTS)
 !ENDIF
 
+# <<mark>>
 # Start with the Tcl related linker options.
 #
 !IF $(NO_TCL)==0
@@ -818,10 +972,12 @@ LTLIBS = $(LIBTCL)
 LTLIBPATHS = $(LTLIBPATHS) /LIBPATH:$(ICULIBDIR)
 LTLIBS = $(LTLIBS) $(LIBICU)
 !ENDIF
+# <</mark>>
 
 # You should not have to change anything below this line
 ###############################################################################
 
+# <<mark>>
 # Object files for the SQLite library (non-amalgamation).
 #
 LIBOBJS0 = vdbe.lo parse.lo alter.lo analyze.lo attach.lo auth.lo \
@@ -833,18 +989,20 @@ LIBOBJS0 = vdbe.lo parse.lo alter.lo analyze.lo attach.lo auth.lo \
          fts3_tokenize_vtab.lo fts3_unicode.lo fts3_unicode2.lo fts3_write.lo \
          fts5.lo \
          func.lo global.lo hash.lo \
-         icu.lo insert.lo journal.lo legacy.lo loadext.lo \
+         icu.lo insert.lo legacy.lo loadext.lo \
          main.lo malloc.lo mem0.lo mem1.lo mem2.lo mem3.lo mem5.lo \
          memjournal.lo \
          mutex.lo mutex_noop.lo mutex_unix.lo mutex_w32.lo \
          notify.lo opcodes.lo os.lo os_unix.lo os_win.lo \
          pager.lo pcache.lo pcache1.lo pragma.lo prepare.lo printf.lo \
-         random.lo resolve.lo rowset.lo rtree.lo select.lo status.lo \
+         random.lo resolve.lo rowset.lo rtree.lo \
+         sqlite3session.lo select.lo sqlite3rbu.lo status.lo \
          table.lo threads.lo tokenize.lo treeview.lo trigger.lo \
          update.lo util.lo vacuum.lo \
          vdbeapi.lo vdbeaux.lo vdbeblob.lo vdbemem.lo vdbesort.lo \
          vdbetrace.lo wal.lo walker.lo where.lo wherecode.lo whereexpr.lo \
          utf.lo vtab.lo
+# <</mark>>
 
 # Object files for the amalgamation.
 #
@@ -852,11 +1010,15 @@ LIBOBJS1 = sqlite3.lo
 
 # Determine the real value of LIBOBJ based on the 'configure' script
 #
+# <<mark>>
 !IF $(USE_AMALGAMATION)==0
 LIBOBJ = $(LIBOBJS0)
 !ELSE
+# <</mark>>
 LIBOBJ = $(LIBOBJS1)
+# <<mark>>
 !ENDIF
+# <</mark>>
 
 # Determine if embedded resource compilation and usage are enabled.
 #
@@ -866,9 +1028,10 @@ LIBRESOBJS = sqlite3res.lo
 LIBRESOBJS =
 !ENDIF
 
-# All of the source code files.
+# <<mark>>
+# Core source code files, part 1.
 #
-SRC1 = \
+SRC00 = \
   $(TOP)\src\alter.c \
   $(TOP)\src\analyze.c \
   $(TOP)\src\attach.c \
@@ -877,8 +1040,6 @@ SRC1 = \
   $(TOP)\src\bitvec.c \
   $(TOP)\src\btmutex.c \
   $(TOP)\src\btree.c \
-  $(TOP)\src\btree.h \
-  $(TOP)\src\btreeInt.h \
   $(TOP)\src\build.c \
   $(TOP)\src\callback.c \
   $(TOP)\src\complete.c \
@@ -892,10 +1053,7 @@ SRC1 = \
   $(TOP)\src\func.c \
   $(TOP)\src\global.c \
   $(TOP)\src\hash.c \
-  $(TOP)\src\hash.h \
-  $(TOP)\src\hwtime.h \
   $(TOP)\src\insert.c \
-  $(TOP)\src\journal.c \
   $(TOP)\src\legacy.c \
   $(TOP)\src\loadext.c \
   $(TOP)\src\main.c \
@@ -906,29 +1064,22 @@ SRC1 = \
   $(TOP)\src\mem3.c \
   $(TOP)\src\mem5.c \
   $(TOP)\src\memjournal.c \
-  $(TOP)\src\msvc.h \
   $(TOP)\src\mutex.c \
-  $(TOP)\src\mutex.h \
   $(TOP)\src\mutex_noop.c \
   $(TOP)\src\mutex_unix.c \
   $(TOP)\src\mutex_w32.c \
   $(TOP)\src\notify.c \
   $(TOP)\src\os.c \
-  $(TOP)\src\os.h \
-  $(TOP)\src\os_common.h \
-  $(TOP)\src\os_setup.h \
   $(TOP)\src\os_unix.c \
-  $(TOP)\src\os_win.c \
-  $(TOP)\src\os_win.h
-SRC2 = \
+  $(TOP)\src\os_win.c
+
+# Core source code files, part 2.
+#
+SRC01 = \
   $(TOP)\src\pager.c \
-  $(TOP)\src\pager.h \
-  $(TOP)\src\parse.y \
   $(TOP)\src\pcache.c \
-  $(TOP)\src\pcache.h \
   $(TOP)\src\pcache1.c \
   $(TOP)\src\pragma.c \
-  $(TOP)\src\pragma.h \
   $(TOP)\src\prepare.c \
   $(TOP)\src\printf.c \
   $(TOP)\src\random.c \
@@ -936,11 +1087,6 @@ SRC2 = \
   $(TOP)\src\rowset.c \
   $(TOP)\src\select.c \
   $(TOP)\src\status.c \
-  $(TOP)\src\shell.c \
-  $(TOP)\src\sqlite.h.in \
-  $(TOP)\src\sqlite3ext.h \
-  $(TOP)\src\sqliteInt.h \
-  $(TOP)\src\sqliteLimit.h \
   $(TOP)\src\table.c \
   $(TOP)\src\threads.c \
   $(TOP)\src\tclsqlite.c \
@@ -952,83 +1098,134 @@ SRC2 = \
   $(TOP)\src\util.c \
   $(TOP)\src\vacuum.c \
   $(TOP)\src\vdbe.c \
-  $(TOP)\src\vdbe.h \
   $(TOP)\src\vdbeapi.c \
   $(TOP)\src\vdbeaux.c \
   $(TOP)\src\vdbeblob.c \
   $(TOP)\src\vdbemem.c \
   $(TOP)\src\vdbesort.c \
   $(TOP)\src\vdbetrace.c \
-  $(TOP)\src\vdbeInt.h \
   $(TOP)\src\vtab.c \
-  $(TOP)\src\vxworks.h \
   $(TOP)\src\wal.c \
-  $(TOP)\src\wal.h \
   $(TOP)\src\walker.c \
   $(TOP)\src\where.c \
   $(TOP)\src\wherecode.c \
-  $(TOP)\src\whereexpr.c \
+  $(TOP)\src\whereexpr.c
+
+# Shell source code files.
+#
+SRC02 = \
+  $(TOP)\src\shell.c
+
+# Core miscellaneous files.
+#
+SRC03 = \
+  $(TOP)\src\parse.y
+
+# Core header files, part 1.
+#
+SRC04 = \
+  $(TOP)\src\btree.h \
+  $(TOP)\src\btreeInt.h \
+  $(TOP)\src\hash.h \
+  $(TOP)\src\hwtime.h \
+  $(TOP)\src\msvc.h \
+  $(TOP)\src\mutex.h \
+  $(TOP)\src\os.h \
+  $(TOP)\src\os_common.h \
+  $(TOP)\src\os_setup.h \
+  $(TOP)\src\os_win.h
+
+# Core header files, part 2.
+#
+SRC05 = \
+  $(TOP)\src\pager.h \
+  $(TOP)\src\pcache.h \
+  $(TOP)\src\pragma.h \
+  $(TOP)\src\sqlite.h.in \
+  $(TOP)\src\sqlite3ext.h \
+  $(TOP)\src\sqliteInt.h \
+  $(TOP)\src\sqliteLimit.h \
+  $(TOP)\src\vdbe.h \
+  $(TOP)\src\vdbeInt.h \
+  $(TOP)\src\vxworks.h \
+  $(TOP)\src\wal.h \
   $(TOP)\src\whereInt.h
 
-# Source code for extensions
+# Extension source code files, part 1.
 #
-SRC3 = \
+SRC06 = \
   $(TOP)\ext\fts1\fts1.c \
-  $(TOP)\ext\fts1\fts1.h \
   $(TOP)\ext\fts1\fts1_hash.c \
-  $(TOP)\ext\fts1\fts1_hash.h \
   $(TOP)\ext\fts1\fts1_porter.c \
-  $(TOP)\ext\fts1\fts1_tokenizer.h \
   $(TOP)\ext\fts1\fts1_tokenizer1.c \
   $(TOP)\ext\fts2\fts2.c \
-  $(TOP)\ext\fts2\fts2.h \
   $(TOP)\ext\fts2\fts2_hash.c \
-  $(TOP)\ext\fts2\fts2_hash.h \
   $(TOP)\ext\fts2\fts2_icu.c \
   $(TOP)\ext\fts2\fts2_porter.c \
-  $(TOP)\ext\fts2\fts2_tokenizer.h \
   $(TOP)\ext\fts2\fts2_tokenizer.c \
   $(TOP)\ext\fts2\fts2_tokenizer1.c
-SRC4 = \
+
+# Extension source code files, part 2.
+#
+SRC07 = \
   $(TOP)\ext\fts3\fts3.c \
-  $(TOP)\ext\fts3\fts3.h \
-  $(TOP)\ext\fts3\fts3Int.h \
   $(TOP)\ext\fts3\fts3_aux.c \
   $(TOP)\ext\fts3\fts3_expr.c \
   $(TOP)\ext\fts3\fts3_hash.c \
-  $(TOP)\ext\fts3\fts3_hash.h \
   $(TOP)\ext\fts3\fts3_icu.c \
   $(TOP)\ext\fts3\fts3_porter.c \
   $(TOP)\ext\fts3\fts3_snippet.c \
-  $(TOP)\ext\fts3\fts3_tokenizer.h \
   $(TOP)\ext\fts3\fts3_tokenizer.c \
   $(TOP)\ext\fts3\fts3_tokenizer1.c \
   $(TOP)\ext\fts3\fts3_tokenize_vtab.c \
   $(TOP)\ext\fts3\fts3_unicode.c \
   $(TOP)\ext\fts3\fts3_unicode2.c \
   $(TOP)\ext\fts3\fts3_write.c \
-  $(TOP)\ext\icu\sqliteicu.h \
   $(TOP)\ext\icu\icu.c \
-  $(TOP)\ext\rtree\rtree.h \
   $(TOP)\ext\rtree\rtree.c \
-  $(TOP)\ext\rbu\sqlite3rbu.h \
+  $(TOP)\ext\session\sqlite3session.c \
   $(TOP)\ext\rbu\sqlite3rbu.c \
   $(TOP)\ext\misc\json1.c
 
+# Extension header files, part 1.
+#
+SRC08 = \
+  $(TOP)\ext\fts1\fts1.h \
+  $(TOP)\ext\fts1\fts1_hash.h \
+  $(TOP)\ext\fts1\fts1_tokenizer.h \
+  $(TOP)\ext\fts2\fts2.h \
+  $(TOP)\ext\fts2\fts2_hash.h \
+  $(TOP)\ext\fts2\fts2_tokenizer.h
+
+# Extension header files, part 2.
+#
+SRC09 = \
+  $(TOP)\ext\fts3\fts3.h \
+  $(TOP)\ext\fts3\fts3Int.h \
+  $(TOP)\ext\fts3\fts3_hash.h \
+  $(TOP)\ext\fts3\fts3_tokenizer.h \
+  $(TOP)\ext\icu\sqliteicu.h \
+  $(TOP)\ext\rtree\rtree.h \
+  $(TOP)\ext\rbu\sqlite3rbu.h \
+  $(TOP)\ext\session\sqlite3session.h
 
 # Generated source code files
 #
-SRC5 = \
-  keywordhash.h \
+SRC10 = \
   opcodes.c \
+  parse.c
+
+# Generated header files
+#
+SRC11 = \
+  keywordhash.h \
   opcodes.h \
-  parse.c \
   parse.h \
-  sqlite3.h
+  $(SQLITE3H)
 
 # All source code files.
 #
-SRC = $(SRC1) $(SRC2) $(SRC3) $(SRC4) $(SRC5)
+SRC = $(SRC00) $(SRC01) $(SRC02) $(SRC03) $(SRC04) $(SRC05) $(SRC06) $(SRC07) $(SRC08) $(SRC09) $(SRC10) $(SRC11)
 
 # Source code to the test files.
 #
@@ -1045,6 +1242,7 @@ TESTSRC = \
   $(TOP)\src\test_autoext.c \
   $(TOP)\src\test_async.c \
   $(TOP)\src\test_backup.c \
+  $(TOP)\src\test_bestindex.c \
   $(TOP)\src\test_blob.c \
   $(TOP)\src\test_btree.c \
   $(TOP)\src\test_config.c \
@@ -1075,9 +1273,10 @@ TESTSRC = \
   $(TOP)\src\test_wsd.c \
   $(TOP)\ext\fts3\fts3_term.c \
   $(TOP)\ext\fts3\fts3_test.c \
-  $(TOP)\ext\rbu\test_rbu.c
+  $(TOP)\ext\rbu\test_rbu.c \
+  $(TOP)\ext\session\test_session.c
 
-# Statically linked extensions
+# Statically linked extensions.
 #
 TESTEXT = \
   $(TOP)\ext\misc\amatch.c \
@@ -1087,6 +1286,7 @@ TESTEXT = \
   $(TOP)\ext\misc\fuzzer.c \
   $(TOP)\ext\fts5\fts5_tcl.c \
   $(TOP)\ext\fts5\fts5_test_mi.c \
+  $(TOP)\ext\fts5\fts5_test_tok.c \
   $(TOP)\ext\misc\ieee754.c \
   $(TOP)\ext\misc\nextchar.c \
   $(TOP)\ext\misc\percentile.c \
@@ -1096,56 +1296,15 @@ TESTEXT = \
   $(TOP)\ext\misc\totype.c \
   $(TOP)\ext\misc\wholenumber.c
 
-
 # Source code to the library files needed by the test fixture
+# (non-amalgamation)
 #
 TESTSRC2 = \
-  $(TOP)\src\attach.c \
-  $(TOP)\src\backup.c \
-  $(TOP)\src\bitvec.c \
-  $(TOP)\src\btree.c \
-  $(TOP)\src\build.c \
-  $(TOP)\src\ctime.c \
-  $(TOP)\src\date.c \
-  $(TOP)\src\dbstat.c \
-  $(TOP)\src\expr.c \
-  $(TOP)\src\func.c \
-  $(TOP)\src\insert.c \
-  $(TOP)\src\wal.c \
-  $(TOP)\src\main.c \
-  $(TOP)\src\mem5.c \
-  $(TOP)\src\os.c \
-  $(TOP)\src\os_unix.c \
-  $(TOP)\src\os_win.c \
-  $(TOP)\src\pager.c \
-  $(TOP)\src\pragma.c \
-  $(TOP)\src\prepare.c \
-  $(TOP)\src\printf.c \
-  $(TOP)\src\random.c \
-  $(TOP)\src\pcache.c \
-  $(TOP)\src\pcache1.c \
-  $(TOP)\src\select.c \
-  $(TOP)\src\tokenize.c \
-  $(TOP)\src\utf.c \
-  $(TOP)\src\util.c \
-  $(TOP)\src\vdbeapi.c \
-  $(TOP)\src\vdbeaux.c \
-  $(TOP)\src\vdbe.c \
-  $(TOP)\src\vdbemem.c \
-  $(TOP)\src\vdbesort.c \
-  $(TOP)\src\vdbetrace.c \
-  $(TOP)\src\where.c \
-  $(TOP)\src\wherecode.c \
-  $(TOP)\src\whereexpr.c \
-  parse.c \
-  $(TOP)\ext\fts3\fts3.c \
-  $(TOP)\ext\fts3\fts3_aux.c \
-  $(TOP)\ext\fts3\fts3_expr.c \
-  $(TOP)\ext\fts3\fts3_tokenizer.c \
-  $(TOP)\ext\fts3\fts3_tokenize_vtab.c \
-  $(TOP)\ext\fts3\fts3_unicode.c \
-  $(TOP)\ext\fts3\fts3_unicode2.c \
-  $(TOP)\ext\fts3\fts3_write.c \
+  $(SRC00) \
+  $(SRC01) \
+  $(SRC06) \
+  $(SRC07) \
+  $(SRC10) \
   $(TOP)\ext\async\sqlite3async.c
 
 # Header files used by all library source files.
@@ -1167,7 +1326,7 @@ HDR = \
    $(TOP)\src\pcache.h \
    parse.h \
    $(TOP)\src\pragma.h \
-   sqlite3.h \
+   $(SQLITE3H) \
    $(TOP)\src\sqlite3ext.h \
    $(TOP)\src\sqliteInt.h \
    $(TOP)\src\sqliteLimit.h \
@@ -1197,12 +1356,14 @@ EXTHDR = $(EXTHDR) \
   $(TOP)\ext\icu\sqliteicu.h
 EXTHDR = $(EXTHDR) \
   $(TOP)\ext\rtree\sqlite3rtree.h
+EXTHDR = $(EXTHDR) \
+  $(TOP)\ext\session\sqlite3session.h
 
 # executables needed for testing
 #
 TESTPROGS = \
   testfixture.exe \
-  sqlite3.exe \
+  $(SQLITE3EXE) \
   sqlite3_analyzer.exe \
   sqldiff.exe
 
@@ -1213,45 +1374,89 @@ FUZZDATA = \
   $(TOP)\test\fuzzdata2.db \
   $(TOP)\test\fuzzdata3.db \
   $(TOP)\test\fuzzdata4.db
+# <</mark>>
 
-# Extra compiler options for various shell tools
+# Additional compiler options for the shell.  These are only effective
+# when the shell is not being dynamically linked.
 #
-SHELL_COMPILE_OPTS = -DSQLITE_ENABLE_FTS4 -DSQLITE_ENABLE_FTS5
+!IF $(DYNAMIC_SHELL)==0 && $(FOR_WIN10)==0
+SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_SHELL_JSON1 -DSQLITE_ENABLE_FTS4 -DSQLITE_ENABLE_EXPLAIN_COMMENTS
+!ENDIF
+
+# <<mark>>
+# Extra compiler options for various test tools.
+#
+MPTESTER_COMPILE_OPTS = -DSQLITE_SHELL_JSON1 -DSQLITE_ENABLE_FTS5
 FUZZERSHELL_COMPILE_OPTS = -DSQLITE_ENABLE_JSON1
 FUZZCHECK_COMPILE_OPTS = -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_MEMSYS5
 
-# Standard options to testfixture
+# Standard options to testfixture.
 #
 TESTOPTS = --verbose=file --output=test-out.txt
+
+# Extra targets for the "all" target that require Tcl.
+#
+!IF $(NO_TCL)==0
+ALL_TCL_TARGETS = libtclsqlite3.lib
+!ELSE
+ALL_TCL_TARGETS =
+!ENDIF
+# <</mark>>
 
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
 #
-all:	dll libsqlite3.lib sqlite3.exe libtclsqlite3.lib
+all:	dll libsqlite3.lib shell $(ALL_TCL_TARGETS)
 
+# Dynamic link library section.
+#
+dll:	$(SQLITE3DLL)
+
+# Shell executable.
+#
+shell:	$(SQLITE3EXE)
+
+# <<mark>>
 libsqlite3.lib:	$(LIBOBJ)
 	$(LTLIB) $(LTLIBOPTS) /OUT:$@ $(LIBOBJ) $(TLIBS)
 
 libtclsqlite3.lib:	tclsqlite.lo libsqlite3.lib
 	$(LTLIB) $(LTLIBOPTS) $(LTLIBPATHS) /OUT:$@ tclsqlite.lo libsqlite3.lib $(LIBTCLSTUB) $(TLIBS)
+# <</mark>>
 
-sqlite3.exe:	$(TOP)\src\shell.c $(SHELL_CORE_DEP) $(LIBRESOBJS) sqlite3.h
-	$(LTLINK) $(SHELL_COMPILE_OPTS) $(SHELL_COMPILE_OPTS) $(READLINE_FLAGS) $(TOP)\src\shell.c \
-		/link /pdb:sqlite3sh.pdb $(LDFLAGS) $(LTLINKOPTS) $(SHELL_LINK_OPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LIBREADLINE) $(LTLIBS) $(TLIBS)
+$(SQLITE3DLL):	$(LIBOBJ) $(LIBRESOBJS) $(CORE_LINK_DEP)
+	$(LD) $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) /DLL $(CORE_LINK_OPTS) /OUT:$@ $(LIBOBJ) $(LIBRESOBJS) $(LTLIBS) $(TLIBS)
 
-sqldiff.exe:	$(TOP)\tool\sqldiff.c sqlite3.c sqlite3.h
-	$(LTLINK) $(NO_WARN) $(TOP)\tool\sqldiff.c sqlite3.c /link $(LDFLAGS) $(LTLINKOPTS)
+# <<block2>>
+sqlite3.def:	libsqlite3.lib
+	echo EXPORTS > sqlite3.def
+	dumpbin /all libsqlite3.lib \
+		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl include "^\s+1 _?(sqlite3_[^@]*)(?:@\d+)?$$" \1 \
+		| sort >> sqlite3.def
+# <</block2>>
 
-fuzzershell.exe:	$(TOP)\tool\fuzzershell.c sqlite3.c sqlite3.h
-	$(LTLINK) $(NO_WARN) $(FUZZERSHELL_COMPILE_OPTS) \
-	  $(TOP)\tool\fuzzershell.c sqlite3.c /link $(LDFLAGS) $(LTLINKOPTS)
+$(SQLITE3EXE):	$(TOP)\src\shell.c $(SHELL_CORE_DEP) $(LIBRESOBJS) $(SHELL_CORE_SRC) $(SQLITE3H)
+	$(LTLINK) $(SHELL_COMPILE_OPTS) $(READLINE_FLAGS) $(TOP)\src\shell.c $(SHELL_CORE_SRC) \
+		/link $(SQLITE3EXEPDB) $(LDFLAGS) $(LTLINKOPTS) $(SHELL_LINK_OPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LIBREADLINE) $(LTLIBS) $(TLIBS)
 
-fuzzcheck.exe:	$(TOP)\test\fuzzcheck.c sqlite3.c sqlite3.h
-	$(LTLINK) $(NO_WARN) $(FUZZCHECK_COMPILE_OPTS) $(TOP)\test\fuzzcheck.c sqlite3.c /link $(LDFLAGS) $(LTLINKOPTS)
+# <<mark>>
+sqldiff.exe:	$(TOP)\tool\sqldiff.c $(SQLITE3C) $(SQLITE3H)
+	$(LTLINK) $(NO_WARN) $(TOP)\tool\sqldiff.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
-mptester.exe:	$(TOP)\mptest\mptest.c $(SHELL_CORE_DEP) $(LIBRESOBJS) sqlite3.h
-	$(LTLINK) $(NO_WARN) $(SHELL_COMPILE_OPTS) $(TOP)\mptest\mptest.c \
-		/link $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) $(SHELL_LINK_OPTS) $(LIBRESOBJS) $(LIBREADLINE) $(LTLIBS) $(TLIBS)
+srcck1.exe:	$(TOP)\tool\srcck1.c
+	$(BCC) $(NO_WARN) -Fe$@ $(TOP)\tool\srcck1.c
+
+sourcetest:	srcck1.exe sqlite3.c
+	srcck1.exe sqlite3.c
+
+fuzzershell.exe:	$(TOP)\tool\fuzzershell.c $(SQLITE3C) $(SQLITE3H)
+	$(LTLINK) $(NO_WARN) $(FUZZERSHELL_COMPILE_OPTS) $(TOP)\tool\fuzzershell.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
+
+fuzzcheck.exe:	$(TOP)\test\fuzzcheck.c $(SQLITE3C) $(SQLITE3H)
+	$(LTLINK) $(NO_WARN) $(FUZZCHECK_COMPILE_OPTS) $(TOP)\test\fuzzcheck.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
+
+mptester.exe:	$(TOP)\mptest\mptest.c $(SQLITE3C) $(SQLITE3H)
+	$(LTLINK) $(NO_WARN) $(MPTESTER_COMPILE_OPTS) $(TOP)\mptest\mptest.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
 MPTEST1 = mptester mptest.db $(TOP)\mptest\crash01.test --repeat 20
 MPTEST2 = mptester mptest.db $(TOP)\mptest\multiwrite01.test --repeat 20
@@ -1276,11 +1481,18 @@ mptest:	mptester.exe
 .target_source:	$(SRC) $(TOP)\tool\vdbe-compress.tcl fts5.c
 	-rmdir /Q/S tsrc 2>NUL
 	-mkdir tsrc
-	for %i in ($(SRC1)) do copy /Y %i tsrc
-	for %i in ($(SRC2)) do copy /Y %i tsrc
-	for %i in ($(SRC3)) do copy /Y %i tsrc
-	for %i in ($(SRC4)) do copy /Y %i tsrc
-	for %i in ($(SRC5)) do copy /Y %i tsrc
+	for %i in ($(SRC00)) do copy /Y %i tsrc
+	for %i in ($(SRC01)) do copy /Y %i tsrc
+	for %i in ($(SRC02)) do copy /Y %i tsrc
+	for %i in ($(SRC03)) do copy /Y %i tsrc
+	for %i in ($(SRC04)) do copy /Y %i tsrc
+	for %i in ($(SRC05)) do copy /Y %i tsrc
+	for %i in ($(SRC06)) do copy /Y %i tsrc
+	for %i in ($(SRC07)) do copy /Y %i tsrc
+	for %i in ($(SRC08)) do copy /Y %i tsrc
+	for %i in ($(SRC09)) do copy /Y %i tsrc
+	for %i in ($(SRC10)) do copy /Y %i tsrc
+	for %i in ($(SRC11)) do copy /Y %i tsrc
 	copy /Y fts5.c tsrc
 	copy /Y fts5.h tsrc
 	del /Q tsrc\sqlite.h.in tsrc\parse.y 2>NUL
@@ -1291,24 +1503,18 @@ mptest:	mptester.exe
 sqlite3.c:	.target_source sqlite3ext.h $(TOP)\tool\mksqlite3c.tcl
 	$(TCLSH_CMD) $(TOP)\tool\mksqlite3c.tcl $(MKSQLITE3C_ARGS)
 	copy tsrc\shell.c .
+	copy $(TOP)\ext\session\sqlite3session.h .
 
 sqlite3-all.c:	sqlite3.c $(TOP)\tool\split-sqlite3c.tcl
 	$(TCLSH_CMD) $(TOP)\tool\split-sqlite3c.tcl
-
-# Set the source code file to be used by executables and libraries when
-# they need the amalgamation.
-#
-!IF $(SPLIT_AMALGAMATION)!=0
-SQLITE3C = sqlite3-all.c
-!ELSE
-SQLITE3C = sqlite3.c
-!ENDIF
+# <</mark>>
 
 # Rule to build the amalgamation
 #
 sqlite3.lo:	$(SQLITE3C)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(SQLITE3C)
 
+# <<mark>>
 # Rules to build the LEMON compiler generator
 #
 lempar.c:	$(TOP)\tool\lempar.c
@@ -1329,11 +1535,13 @@ parse.lo:	parse.c $(HDR)
 
 opcodes.lo:	opcodes.c
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c opcodes.c
+# <</mark>>
 
 # Rule to build the Win32 resources object file.
 #
 !IF $(USE_RC)!=0
-$(LIBRESOBJS):	$(TOP)\src\sqlite3.rc $(HDR)
+# <<block1>>
+$(LIBRESOBJS):	$(TOP)\src\sqlite3.rc $(SQLITE3H)
 	echo #ifndef SQLITE_RESOURCE_VERSION > sqlite3rc.h
 	for /F %%V in ('type "$(TOP)\VERSION"') do ( \
 		echo #define SQLITE_RESOURCE_VERSION %%V \
@@ -1341,8 +1549,10 @@ $(LIBRESOBJS):	$(TOP)\src\sqlite3.rc $(HDR)
 	)
 	echo #endif >> sqlite3rc.h
 	$(LTRCOMPILE) -fo $(LIBRESOBJS) $(TOP)\src\sqlite3.rc
+# <</block1>>
 !ENDIF
 
+# <<mark>>
 # Rules to build individual *.lo files from files in the src directory.
 #
 alter.lo:	$(TOP)\src\alter.c $(HDR)
@@ -1410,9 +1620,6 @@ hash.lo:	$(TOP)\src\hash.c $(HDR)
 
 insert.lo:	$(TOP)\src\insert.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\insert.c
-
-journal.lo:	$(TOP)\src\journal.c $(HDR)
-	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\journal.c
 
 legacy.lo:	$(TOP)\src\legacy.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\legacy.c
@@ -1573,7 +1780,7 @@ tclsqlite.lo:	$(TOP)\src\tclsqlite.c $(HDR)
 tclsqlite-shell.lo:	$(TOP)\src\tclsqlite.c $(HDR)
 	$(LTCOMPILE) $(NO_WARN) -DTCLSH=1 -DBUILD_sqlite -I$(TCLINCDIR) -c $(TOP)\src\tclsqlite.c
 
-tclsqlite3.exe:	tclsqlite-shell.lo $(SQLITE3C) $(LIBRESOBJS)
+tclsqlite3.exe:	tclsqlite-shell.lo $(SQLITE3C) $(SQLITE3H) $(LIBRESOBJS)
 	$(LTLINK) $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) /OUT:$@ tclsqlite-shell.lo $(LIBRESOBJS) $(LTLIBS) $(TLIBS)
 
 # Rules to build opcodes.c and opcodes.h
@@ -1591,18 +1798,18 @@ parse.h:	parse.c
 parse.c:	$(TOP)\src\parse.y lemon.exe $(TOP)\tool\addopcodes.tcl
 	del /Q parse.y parse.h parse.h.temp 2>NUL
 	copy $(TOP)\src\parse.y .
-	.\lemon.exe $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS) $(OPTS) parse.y
+	.\lemon.exe $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS) $(EXT_FEATURE_FLAGS) $(OPTS) parse.y
 	move parse.h parse.h.temp
 	$(TCLSH_CMD) $(TOP)\tool\addopcodes.tcl parse.h.temp > parse.h
 
-sqlite3.h:	$(TOP)\src\sqlite.h.in $(TOP)\manifest.uuid $(TOP)\VERSION
-	$(TCLSH_CMD) $(TOP)\tool\mksqlite3h.tcl $(TOP:\=/) > sqlite3.h
+$(SQLITE3H):	$(TOP)\src\sqlite.h.in $(TOP)\manifest.uuid $(TOP)\VERSION
+	$(TCLSH_CMD) $(TOP)\tool\mksqlite3h.tcl $(TOP:\=/) > $(SQLITE3H)
 
-sqlite3ext.h: .target_source
+sqlite3ext.h:	.target_source
 	copy tsrc\sqlite3ext.h .
 
 mkkeywordhash.exe:	$(TOP)\tool\mkkeywordhash.c
-	$(BCC) $(NO_WARN) -Fe$@ $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS) $(OPTS) \
+	$(BCC) $(NO_WARN) -Fe$@ $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS) $(EXT_FEATURE_FLAGS) $(OPTS) \
 		$(TOP)\tool\mkkeywordhash.c /link $(LDFLAGS) $(NLTLINKOPTS) $(NLTLIBPATHS)
 
 keywordhash.h:	$(TOP)\tool\mkkeywordhash.c mkkeywordhash.exe
@@ -1675,6 +1882,9 @@ fts3_write.lo:	$(TOP)\ext\fts3\fts3_write.c $(HDR) $(EXTHDR)
 rtree.lo:	$(TOP)\ext\rtree\rtree.c $(HDR) $(EXTHDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) $(NO_WARN) -DSQLITE_CORE -c $(TOP)\ext\rtree\rtree.c
 
+sqlite3session.lo:	$(TOP)\ext\session\sqlite3sesion.c $(HDR) $(EXTHDR)
+	$(LTCOMPILE) $(CORE_COMPILE_OPTS) $(NO_WARN) -DSQLITE_CORE -c $(TOP)\ext\session\sqlite3session.c
+
 # FTS5 things
 #
 FTS5_SRC = \
@@ -1697,11 +1907,11 @@ FTS5_SRC = \
 fts5parse.c:	$(TOP)\ext\fts5\fts5parse.y lemon.exe
 	copy $(TOP)\ext\fts5\fts5parse.y .
 	del /Q fts5parse.h 2>NUL
-	.\lemon.exe $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS) $(OPTS) fts5parse.y
+	.\lemon.exe $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS) $(EXT_FEATURE_FLAGS) $(OPTS) fts5parse.y
 
-fts5parse.h: fts5parse.c
+fts5parse.h:	fts5parse.c
 
-fts5.c: $(FTS5_SRC)
+fts5.c:	$(FTS5_SRC)
 	$(TCLSH_CMD) $(TOP)\ext\fts5\tool\mkfts5c.tcl
 	copy $(TOP)\ext\fts5\fts5.h .
 
@@ -1714,6 +1924,9 @@ fts5_ext.lo:	fts5.c $(HDR) $(EXTHDR)
 fts5.dll:	fts5_ext.lo
 	$(LD) $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) /DLL /OUT:$@ fts5_ext.lo
 
+sqlite3rbu.lo:	$(TOP)\ext\rbu\sqlite3rbu.c $(HDR) $(EXTHDR)
+	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)\ext\rbu\sqlite3rbu.c
+
 # Rules to build the 'testfixture' application.
 #
 # If using the amalgamation, use sqlite3.c directly to build the test
@@ -1724,8 +1937,10 @@ fts5.dll:	fts5_ext.lo
 TESTFIXTURE_FLAGS = -DTCLSH=1 -DSQLITE_TEST=1 -DSQLITE_CRASH_TEST=1
 TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_SERVER=1 -DSQLITE_PRIVATE=""
 TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_CORE $(NO_WARN)
+TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_SERIES_CONSTRAINT_VERIFY=1
+TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_DEFAULT_PAGE_SIZE=1024
 
-TESTFIXTURE_SRC0 = $(TESTEXT) $(TESTSRC2) $(SHELL_CORE_DEP)
+TESTFIXTURE_SRC0 = $(TESTEXT) $(TESTSRC2)
 TESTFIXTURE_SRC1 = $(TESTEXT) $(SQLITE3C)
 !IF $(USE_AMALGAMATION)==0
 TESTFIXTURE_SRC = $(TESTSRC) $(TOP)\src\tclsqlite.c $(TESTFIXTURE_SRC0)
@@ -1733,13 +1948,13 @@ TESTFIXTURE_SRC = $(TESTSRC) $(TOP)\src\tclsqlite.c $(TESTFIXTURE_SRC0)
 TESTFIXTURE_SRC = $(TESTSRC) $(TOP)\src\tclsqlite.c $(TESTFIXTURE_SRC1)
 !ENDIF
 
-testfixture.exe:	$(TESTFIXTURE_SRC) $(LIBRESOBJS) $(HDR)
+testfixture.exe:	$(TESTFIXTURE_SRC) $(SQLITE3H) $(LIBRESOBJS) $(HDR)
 	$(LTLINK) -DSQLITE_NO_SYNC=1 $(TESTFIXTURE_FLAGS) \
 		-DBUILD_sqlite -I$(TCLINCDIR) \
 		$(TESTFIXTURE_SRC) \
 		/link $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LTLIBS) $(TLIBS)
 
-extensiontest: testfixture.exe testloadext.dll
+extensiontest:	testfixture.exe testloadext.dll
 	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\loadext.test $(TESTOPTS)
 
@@ -1755,7 +1970,7 @@ fulltestonly:	$(TESTPROGS) fuzztest
 	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\full.test
 
-queryplantest:	testfixture.exe sqlite3.exe
+queryplantest:	testfixture.exe shell
 	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\permutations.test queryplanner $(TESTOPTS)
 
@@ -1767,14 +1982,14 @@ fastfuzztest:	fuzzcheck.exe
 
 # Minimal testing that runs in less than 3 minutes (on a fast machine)
 #
-quicktest:	testfixture.exe
+quicktest:	testfixture.exe sourcetest
 	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\extraquick.test $(TESTOPTS)
 
 # This is the common case.  Run many tests that do not take too long,
 # including fuzzcheck, sqlite3_analyzer, and sqldiff tests.
 #
-test:	$(TESTPROGS) fastfuzztest
+test:	$(TESTPROGS) sourcetest fastfuzztest
 	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\veryquick.test $(TESTOPTS)
 
@@ -1782,7 +1997,7 @@ smoketest:	$(TESTPROGS)
 	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\main.test $(TESTOPTS)
 
-sqlite3_analyzer.c: $(SQLITE3C) $(TOP)\src\tclsqlite.c $(TOP)\tool\spaceanal.tcl
+sqlite3_analyzer.c:	$(SQLITE3C) $(SQLITE3H) $(TOP)\src\tclsqlite.c $(TOP)\tool\spaceanal.tcl
 	echo #define TCLSH 2 > $@
 	echo #define SQLITE_ENABLE_DBSTAT_VTAB 1 >> $@
 	copy $@ + $(SQLITE3C) + $(TOP)\src\tclsqlite.c $@
@@ -1798,48 +2013,63 @@ sqlite3_analyzer.exe:	sqlite3_analyzer.c $(LIBRESOBJS)
 testloadext.lo:	$(TOP)\src\test_loadext.c
 	$(LTCOMPILE) $(NO_WARN) -c $(TOP)\src\test_loadext.c
 
-testloadext.dll: testloadext.lo
+testloadext.dll:	testloadext.lo
 	$(LD) $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) /DLL /OUT:$@ testloadext.lo
 
-showdb.exe:	$(TOP)\tool\showdb.c $(SQLITE3C)
+showdb.exe:	$(TOP)\tool\showdb.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \
 		$(TOP)\tool\showdb.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
-showstat4.exe:	$(TOP)\tool\showstat4.c $(SQLITE3C)
+showstat4.exe:	$(TOP)\tool\showstat4.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \
 		$(TOP)\tool\showstat4.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
-showjournal.exe:	$(TOP)\tool\showjournal.c $(SQLITE3C)
+showjournal.exe:	$(TOP)\tool\showjournal.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \
 		$(TOP)\tool\showjournal.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
-showwal.exe:	$(TOP)\tool\showwal.c $(SQLITE3C)
+showwal.exe:	$(TOP)\tool\showwal.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \
 		$(TOP)\tool\showwal.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
-fts3view.exe:	$(TOP)\ext\fts3\tool\fts3view.c $(SQLITE3C)
+changeset.exe:	$(TOP)\ext\session\changeset.c $(SQLITE3C)
+	$(LTLINK) $(NO_WARN) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \
+		$(TOP)\ext\session\changeset.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
+
+fts3view.exe:	$(TOP)\ext\fts3\tool\fts3view.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \
 		$(TOP)\ext\fts3\tool\fts3view.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
-rollback-test.exe:	$(TOP)\tool\rollback-test.c $(SQLITE3C)
+rollback-test.exe:	$(TOP)\tool\rollback-test.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \
 		$(TOP)\tool\rollback-test.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
-LogEst.exe:	$(TOP)\tool\logest.c sqlite3.h
+LogEst.exe:	$(TOP)\tool\logest.c $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) -Fe$@ $(TOP)\tool\LogEst.c /link $(LDFLAGS) $(LTLINKOPTS)
 
-wordcount.exe:	$(TOP)\test\wordcount.c $(SQLITE3C)
+wordcount.exe:	$(TOP)\test\wordcount.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \
 		$(TOP)\test\wordcount.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
-speedtest1.exe:	$(TOP)\test\speedtest1.c $(SQLITE3C)
+speedtest1.exe:	$(TOP)\test\speedtest1.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \
 		$(TOP)\test\speedtest1.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
+rbu.exe:	$(TOP)\ext\rbu\rbu.c $(TOP)\ext\rbu\sqlite3rbu.c $(SQLITE3C) $(SQLITE3H)
+	$(LTLINK) $(NO_WARN) -DSQLITE_ENABLE_RBU -Fe$@ \
+		$(TOP)\ext\rbu\rbu.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
+
+moreclean:	clean
+	del /Q $(SQLITE3C) $(SQLITE3H) 2>NUL
+# <</mark>>
+
 clean:
 	del /Q *.exp *.lo *.ilk *.lib *.obj *.ncb *.pdb *.sdf *.suo 2>NUL
-	del /Q *.bsc *.cod *.da *.bb *.bbg gmon.out 2>NUL
-	del /Q sqlite3.h opcodes.c opcodes.h 2>NUL
+	del /Q *.bsc *.def *.cod *.da *.bb *.bbg *.vc gmon.out 2>NUL
+	del /Q $(SQLITE3EXE) $(SQLITE3DLL) Replace.exe 2>NUL
+# <<mark>>
+	del /Q sqlite3.c sqlite3.h 2>NUL
+	del /Q opcodes.c opcodes.h 2>NUL
 	del /Q lemon.* lempar.c parse.* 2>NUL
 	del /Q mkkeywordhash.* keywordhash.h 2>NUL
 	del /Q notasharedlib.* 2>NUL
@@ -1854,26 +2084,14 @@ clean:
 	del /Q testloadext.dll 2>NUL
 	del /Q testfixture.exe test.db 2>NUL
 	del /Q LogEst.exe fts3view.exe rollback-test.exe showdb.exe 2>NUL
+	del /Q changeset.exe 2>NUL
 	del /Q showjournal.exe showstat4.exe showwal.exe speedtest1.exe 2>NUL
-	del /Q mptester.exe wordcount.exe 2>NUL
-	del /Q sqlite3.exe sqlite3.dll sqlite3.def 2>NUL
+	del /Q mptester.exe wordcount.exe rbu.exe srcck1.exe 2>NUL
 	del /Q sqlite3.c sqlite3-*.c 2>NUL
 	del /Q sqlite3rc.h 2>NUL
-	del /Q shell.c sqlite3ext.h 2>NUL
+	del /Q shell.c sqlite3ext.h sqlite3session.h 2>NUL
 	del /Q sqlite3_analyzer.exe sqlite3_analyzer.c 2>NUL
 	del /Q sqlite-*-output.vsix 2>NUL
 	del /Q fuzzershell.exe fuzzcheck.exe sqldiff.exe 2>NUL
 	del /Q fts5.* fts5parse.* 2>NUL
-
-# Dynamic link library section.
-#
-dll: sqlite3.dll
-
-sqlite3.def: libsqlite3.lib
-	echo EXPORTS > sqlite3.def
-	dumpbin /all libsqlite3.lib \
-		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl include "^\s+1 _?(sqlite3_.*)$$" \1 \
-		| sort >> sqlite3.def
-
-sqlite3.dll: $(LIBOBJ) $(LIBRESOBJS) $(CORE_LINK_DEP)
-	$(LD) $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) /DLL $(CORE_LINK_OPTS) /OUT:$@ $(LIBOBJ) $(LIBRESOBJS) $(LTLIBS) $(TLIBS)
+# <</mark>>

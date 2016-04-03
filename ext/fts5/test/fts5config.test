@@ -44,6 +44,8 @@ foreach {tn opt} {
   3 {prefix='$'}
   4 {prefix='1,2,'}
   5 {prefix=',1'}
+  6 {prefix='1,2,3...'}
+  7 {prefix='1,2,3xyz'}
 } {
   set res [list 1 {malformed prefix=... directive}]
   do_catchsql_test 2.$tn "CREATE VIRTUAL TABLE f1 USING fts5(x, $opt)" $res
@@ -159,6 +161,8 @@ do_catchsql_test 8.1 {
 #   9.1.* 'pgsz' options.
 #   9.2.* 'automerge' options.
 #   9.3.* 'crisismerge' options.
+#   9.4.* a non-existant option.
+#   9.5.* 'hashsize' options.
 #
 do_execsql_test 9.0 {
   CREATE VIRTUAL TABLE abc USING fts5(a, b);
@@ -203,6 +207,16 @@ do_catchsql_test 9.4.1 {
   INSERT INTO abc(abc, rank) VALUES('nosuchoption', 1);
 } {1 {SQL logic error or missing database}}
 
+do_catchsql_test 9.5.1 {
+  INSERT INTO abc(abc, rank) VALUES('hashsize', 'not an integer');
+} {1 {SQL logic error or missing database}}
+do_catchsql_test 9.5.2 {
+  INSERT INTO abc(abc, rank) VALUES('hashsize', -500000);
+} {1 {SQL logic error or missing database}}
+do_catchsql_test 9.5.3 {
+  INSERT INTO abc(abc, rank) VALUES('hashsize', 500000);
+} {0 {}}
+
 #-------------------------------------------------------------------------
 # Too many prefix indexes. Maximum allowed is 31.
 #
@@ -212,6 +226,41 @@ foreach {tn spec} {
 } {
   set sql "CREATE VIRTUAL TABLE xyz USING fts5(x, $spec)"
   do_catchsql_test 10.$tn $sql {1 {too many prefix indexes (max 31)}}
+}
+
+#-------------------------------------------------------------------------
+# errors in the detail= option.
+#
+foreach {tn opt} {
+  1 {detail=x}  
+  2 {detail='x'}
+  3 {detail='$'}
+  4 {detail='1,2,'}
+  5 {detail=',1'}
+  6 {detail=''}
+} {
+  set res [list 1 {malformed detail=... directive}]
+  do_catchsql_test 11.$tn "CREATE VIRTUAL TABLE f1 USING fts5(x, $opt)" $res
+}
+
+do_catchsql_test 12.1 {
+  INSERT INTO t1(t1, rank) VALUES('rank', NULL);;
+} {1 {SQL logic error or missing database}}
+
+#-------------------------------------------------------------------------
+# errors in the 'usermerge' option
+#
+do_execsql_test 13.0 {
+  CREATE VIRTUAL TABLE tt USING fts5(ttt);
+}
+foreach {tn val} {
+  1     -1
+  2     4.2
+  3     17
+  4     1
+} {
+  set sql "INSERT INTO tt(tt, rank) VALUES('usermerge', $val)"
+  do_catchsql_test 13.$tn $sql {1 {SQL logic error or missing database}}
 }
 
 finish_test

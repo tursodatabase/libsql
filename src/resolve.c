@@ -656,16 +656,16 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       notValid(pParse, pNC, "functions", NC_PartIdx);
       zId = pExpr->u.zToken;
       nId = sqlite3Strlen30(zId);
-      pDef = sqlite3FindFunction(pParse->db, zId, nId, n, enc, 0);
+      pDef = sqlite3FindFunction(pParse->db, zId, n, enc, 0);
       if( pDef==0 ){
-        pDef = sqlite3FindFunction(pParse->db, zId, nId, -2, enc, 0);
+        pDef = sqlite3FindFunction(pParse->db, zId, -2, enc, 0);
         if( pDef==0 ){
           no_such_func = 1;
         }else{
           wrong_num_args = 1;
         }
       }else{
-        is_agg = pDef->xFunc==0;
+        is_agg = pDef->xFinalize!=0;
         if( pDef->funcFlags & SQLITE_FUNC_UNLIKELY ){
           ExprSetProperty(pExpr, EP_Unlikely|EP_Skip);
           if( n==2 ){
@@ -1393,10 +1393,12 @@ int sqlite3ResolveExprNames(
 #endif
   savedHasAgg = pNC->ncFlags & (NC_HasAgg|NC_MinMaxAgg);
   pNC->ncFlags &= ~(NC_HasAgg|NC_MinMaxAgg);
-  memset(&w, 0, sizeof(w));
+  w.pParse = pNC->pParse;
   w.xExprCallback = resolveExprStep;
   w.xSelectCallback = resolveSelectStep;
-  w.pParse = pNC->pParse;
+  w.xSelectCallback2 = 0;
+  w.walkerDepth = 0;
+  w.eCode = 0;
   w.u.pNC = pNC;
   sqlite3WalkExpr(&w, pExpr);
 #if SQLITE_MAX_EXPR_DEPTH>0

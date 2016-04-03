@@ -26,6 +26,7 @@ typedef struct Fts5HashEntry Fts5HashEntry;
 
 
 struct Fts5Hash {
+  int eDetail;                    /* Copy of Fts5Config.eDetail */
   int *pnByte;                    /* Pointer to bytes counter */
   int nEntry;                     /* Number of entries currently in hash */
   int nSlot;                      /* Size of aSlot[] array */
@@ -61,9 +62,10 @@ struct Fts5HashEntry {
   int nAlloc;                     /* Total size of allocation */
   int iSzPoslist;                 /* Offset of space for 4-byte poslist size */
   int nData;                      /* Total bytes of data (incl. structure) */
+  int nKey;                       /* Length of zKey[] in bytes */
   u8 bDel;                        /* Set delete-flag @ iSzPoslist */
-
-  int iCol;                       /* Column of last value written */
+  u8 bContent;                    /* Set content-flag (detail=none mode) */
+  i16 iCol;                       /* Column of last value written */
   int iPos;                       /* Position of last value written */
   i64 iRowid;                     /* Rowid of last value written */
   char zKey[8];                   /* Nul-terminated entry key */
@@ -79,7 +81,7 @@ struct Fts5HashEntry {
 /*
 ** Allocate a new hash table.
 */
-int sqlite3Fts5HashNew(Fts5Hash **ppNew, int *pnByte){
+int sqlite3Fts5HashNew(Fts5Config *pConfig, Fts5Hash **ppNew, int *pnByte){
   int rc = SQLITE_OK;
   Fts5Hash *pNew;
 
@@ -90,6 +92,7 @@ int sqlite3Fts5HashNew(Fts5Hash **ppNew, int *pnByte){
     int nByte;
     memset(pNew, 0, sizeof(Fts5Hash));
     pNew->pnByte = pnByte;
+    pNew->eDetail = pConfig->eDetail;
 
     pNew->nSlot = 1024;
     nByte = sizeof(Fts5HashEntry*) * pNew->nSlot;
@@ -182,26 +185,46 @@ static int fts5HashResize(Fts5Hash *pHash){
   return SQLITE_OK;
 }
 
-static void fts5HashAddPoslistSize(Fts5HashEntry *p){
+static void fts5HashAddPoslistSize(Fts5Hash *pHash, Fts5HashEntry *p){
   if( p->iSzPoslist ){
     u8 *pPtr = (u8*)p;
-    int nSz = (p->nData - p->iSzPoslist - 1);         /* Size in bytes */
-    int nPos = nSz*2 + p->bDel;                       /* Value of nPos field */
-
-    assert( p->bDel==0 || p->bDel==1 );
-    if( nPos<=127 ){
-      pPtr[p->iSzPoslist] = (u8)nPos;
+    if( pHash->eDetail==FTS5_DETAIL_NONE ){
+      assert( p->nData==p->iSzPoslist );
+      if( p->bDel ){
+        pPtr[p->nData++] = 0x00;
+        if( p->bContent ){
+          pPtr[p->nData++] = 0x00;
+        }
+      }
     }else{
-      int nByte = sqlite3Fts5GetVarintLen((u32)nPos);
-      memmove(&pPtr[p->iSzPoslist + nByte], &pPtr[p->iSzPoslist + 1], nSz);
-      sqlite3Fts5PutVarint(&pPtr[p->iSzPoslist], nPos);
-      p->nData += (nByte-1);
+      int nSz = (p->nData - p->iSzPoslist - 1);       /* Size in bytes */
+      int nPos = nSz*2 + p->bDel;                     /* Value of nPos field */
+
+      assert( p->bDel==0 || p->bDel==1 );
+      if( nPos<=127 ){
+        pPtr[p->iSzPoslist] = (u8)nPos;
+      }else{
+        int nByte = sqlite3Fts5GetVarintLen((u32)nPos);
+        memmove(&pPtr[p->iSzPoslist + nByte], &pPtr[p->iSzPoslist + 1], nSz);
+        sqlite3Fts5PutVarint(&pPtr[p->iSzPoslist], nPos);
+        p->nData += (nByte-1);
+      }
     }
-    p->bDel = 0;
+
     p->iSzPoslist = 0;
+    p->bDel = 0;
+    p->bContent = 0;
   }
 }
 
+/*
+** Add an entry to the in-memory hash table. The key is the concatenation
+** of bByte and (pToken/nToken). The value is (iRowid/iCol/iPos).
+**
+**     (bByte || pToken) -> (iRowid,iCol,iPos)
+**
+** Or, if iCol is negative, then the value is a delete marker.
+*/
 int sqlite3Fts5HashWrite(
   Fts5Hash *pHash,
   i64 iRowid,                     /* Rowid for this entry */
@@ -214,13 +237,16 @@ int sqlite3Fts5HashWrite(
   Fts5HashEntry *p;
   u8 *pPtr;
   int nIncr = 0;                  /* Amount to increment (*pHash->pnByte) by */
+  int bNew;                       /* If non-delete entry should be written */
+  
+  bNew = (pHash->eDetail==FTS5_DETAIL_FULL);
 
   /* Attempt to locate an existing hash entry */
   iHash = fts5HashKey2(pHash->nSlot, (u8)bByte, (const u8*)pToken, nToken);
   for(p=pHash->aSlot[iHash]; p; p=p->pHashNext){
     if( p->zKey[0]==bByte 
+     && p->nKey==nToken
      && memcmp(&p->zKey[1], pToken, nToken)==0 
-     && p->zKey[nToken+1]==0 
     ){
       break;
     }
@@ -228,15 +254,18 @@ int sqlite3Fts5HashWrite(
 
   /* If an existing hash entry cannot be found, create a new one. */
   if( p==0 ){
+    /* Figure out how much space to allocate */
     int nByte = FTS5_HASHENTRYSIZE + (nToken+1) + 1 + 64;
     if( nByte<128 ) nByte = 128;
 
+    /* Grow the Fts5Hash.aSlot[] array if necessary. */
     if( (pHash->nEntry*2)>=pHash->nSlot ){
       int rc = fts5HashResize(pHash);
       if( rc!=SQLITE_OK ) return rc;
       iHash = fts5HashKey2(pHash->nSlot, (u8)bByte, (const u8*)pToken, nToken);
     }
 
+    /* Allocate new Fts5HashEntry and add it to the hash table. */
     p = (Fts5HashEntry*)sqlite3_malloc(nByte);
     if( !p ) return SQLITE_NOMEM;
     memset(p, 0, FTS5_HASHENTRYSIZE);
@@ -244,72 +273,98 @@ int sqlite3Fts5HashWrite(
     p->zKey[0] = bByte;
     memcpy(&p->zKey[1], pToken, nToken);
     assert( iHash==fts5HashKey(pHash->nSlot, (u8*)p->zKey, nToken+1) );
+    p->nKey = nToken;
     p->zKey[nToken+1] = '\0';
     p->nData = nToken+1 + 1 + FTS5_HASHENTRYSIZE;
-    p->nData += sqlite3Fts5PutVarint(&((u8*)p)[p->nData], iRowid);
-    p->iSzPoslist = p->nData;
-    p->nData += 1;
-    p->iRowid = iRowid;
     p->pHashNext = pHash->aSlot[iHash];
     pHash->aSlot[iHash] = p;
     pHash->nEntry++;
-    nIncr += p->nData;
-  }
 
-  /* Check there is enough space to append a new entry. Worst case scenario
-  ** is:
-  **
-  **     + 9 bytes for a new rowid,
-  **     + 4 byte reserved for the "poslist size" varint.
-  **     + 1 byte for a "new column" byte,
-  **     + 3 bytes for a new column number (16-bit max) as a varint,
-  **     + 5 bytes for the new position offset (32-bit max).
-  */
-  if( (p->nAlloc - p->nData) < (9 + 4 + 1 + 3 + 5) ){
-    int nNew = p->nAlloc * 2;
-    Fts5HashEntry *pNew;
-    Fts5HashEntry **pp;
-    pNew = (Fts5HashEntry*)sqlite3_realloc(p, nNew);
-    if( pNew==0 ) return SQLITE_NOMEM;
-    pNew->nAlloc = nNew;
-    for(pp=&pHash->aSlot[iHash]; *pp!=p; pp=&(*pp)->pHashNext);
-    *pp = pNew;
-    p = pNew;
+    /* Add the first rowid field to the hash-entry */
+    p->nData += sqlite3Fts5PutVarint(&((u8*)p)[p->nData], iRowid);
+    p->iRowid = iRowid;
+
+    p->iSzPoslist = p->nData;
+    if( pHash->eDetail!=FTS5_DETAIL_NONE ){
+      p->nData += 1;
+      p->iCol = (pHash->eDetail==FTS5_DETAIL_FULL ? 0 : -1);
+    }
+
+    nIncr += p->nData;
+  }else{
+
+    /* Appending to an existing hash-entry. Check that there is enough 
+    ** space to append the largest possible new entry. Worst case scenario 
+    ** is:
+    **
+    **     + 9 bytes for a new rowid,
+    **     + 4 byte reserved for the "poslist size" varint.
+    **     + 1 byte for a "new column" byte,
+    **     + 3 bytes for a new column number (16-bit max) as a varint,
+    **     + 5 bytes for the new position offset (32-bit max).
+    */
+    if( (p->nAlloc - p->nData) < (9 + 4 + 1 + 3 + 5) ){
+      int nNew = p->nAlloc * 2;
+      Fts5HashEntry *pNew;
+      Fts5HashEntry **pp;
+      pNew = (Fts5HashEntry*)sqlite3_realloc(p, nNew);
+      if( pNew==0 ) return SQLITE_NOMEM;
+      pNew->nAlloc = nNew;
+      for(pp=&pHash->aSlot[iHash]; *pp!=p; pp=&(*pp)->pHashNext);
+      *pp = pNew;
+      p = pNew;
+    }
+    nIncr -= p->nData;
   }
+  assert( (p->nAlloc - p->nData) >= (9 + 4 + 1 + 3 + 5) );
+
   pPtr = (u8*)p;
-  nIncr -= p->nData;
 
   /* If this is a new rowid, append the 4-byte size field for the previous
   ** entry, and the new rowid for this entry.  */
   if( iRowid!=p->iRowid ){
-    fts5HashAddPoslistSize(p);
+    fts5HashAddPoslistSize(pHash, p);
     p->nData += sqlite3Fts5PutVarint(&pPtr[p->nData], iRowid - p->iRowid);
-    p->iSzPoslist = p->nData;
-    p->nData += 1;
-    p->iCol = 0;
-    p->iPos = 0;
     p->iRowid = iRowid;
+    bNew = 1;
+    p->iSzPoslist = p->nData;
+    if( pHash->eDetail!=FTS5_DETAIL_NONE ){
+      p->nData += 1;
+      p->iCol = (pHash->eDetail==FTS5_DETAIL_FULL ? 0 : -1);
+      p->iPos = 0;
+    }
   }
 
   if( iCol>=0 ){
-    /* Append a new column value, if necessary */
-    assert( iCol>=p->iCol );
-    if( iCol!=p->iCol ){
-      pPtr[p->nData++] = 0x01;
-      p->nData += sqlite3Fts5PutVarint(&pPtr[p->nData], iCol);
-      p->iCol = iCol;
-      p->iPos = 0;
-    }
+    if( pHash->eDetail==FTS5_DETAIL_NONE ){
+      p->bContent = 1;
+    }else{
+      /* Append a new column value, if necessary */
+      assert( iCol>=p->iCol );
+      if( iCol!=p->iCol ){
+        if( pHash->eDetail==FTS5_DETAIL_FULL ){
+          pPtr[p->nData++] = 0x01;
+          p->nData += sqlite3Fts5PutVarint(&pPtr[p->nData], iCol);
+          p->iCol = iCol;
+          p->iPos = 0;
+        }else{
+          bNew = 1;
+          p->iCol = iPos = iCol;
+        }
+      }
 
-    /* Append the new position offset */
-    p->nData += sqlite3Fts5PutVarint(&pPtr[p->nData], iPos - p->iPos + 2);
-    p->iPos = iPos;
+      /* Append the new position offset, if necessary */
+      if( bNew ){
+        p->nData += sqlite3Fts5PutVarint(&pPtr[p->nData], iPos - p->iPos + 2);
+        p->iPos = iPos;
+      }
+    }
   }else{
     /* This is a delete. Set the delete flag. */
     p->bDel = 1;
   }
-  nIncr += p->nData;
 
+  nIncr += p->nData;
   *pHash->pnByte += nIncr;
   return SQLITE_OK;
 }
@@ -423,7 +478,7 @@ int sqlite3Fts5HashQuery(
   }
 
   if( p ){
-    fts5HashAddPoslistSize(p);
+    fts5HashAddPoslistSize(pHash, p);
     *ppDoclist = (const u8*)&p->zKey[nTerm+1];
     *pnDoclist = p->nData - (FTS5_HASHENTRYSIZE + nTerm + 1);
   }else{
@@ -459,7 +514,7 @@ void sqlite3Fts5HashScanEntry(
   Fts5HashEntry *p;
   if( (p = pHash->pScan) ){
     int nTerm = (int)strlen(p->zKey);
-    fts5HashAddPoslistSize(p);
+    fts5HashAddPoslistSize(pHash, p);
     *pzTerm = p->zKey;
     *ppDoclist = (const u8*)&p->zKey[nTerm+1];
     *pnDoclist = p->nData - (FTS5_HASHENTRYSIZE + nTerm + 1);

@@ -287,8 +287,7 @@ void sqlite3FinishTrigger(
     pStepList->pTrig = pTrig;
     pStepList = pStepList->pNext;
   }
-  nameToken.z = pTrig->zName;
-  nameToken.n = sqlite3Strlen30(nameToken.z);
+  sqlite3TokenInit(&nameToken, pTrig->zName);
   sqlite3FixInit(&sFix, pParse, iDb, "trigger", &nameToken);
   if( sqlite3FixTriggerStep(&sFix, pTrig->step_list) 
    || sqlite3FixExpr(&sFix, pTrig->pWhen) 
@@ -324,7 +323,7 @@ void sqlite3FinishTrigger(
     assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
     pTrig = sqlite3HashInsert(pHash, zName, pTrig);
     if( pTrig ){
-      db->mallocFailed = 1;
+      sqlite3OomFault(db);
     }else if( pLink->pSchema==pLink->pTabSchema ){
       Table *pTab;
       pTab = sqlite3HashFind(&pLink->pTabSchema->tblHash, pLink->table);
@@ -952,8 +951,8 @@ void sqlite3CodeRowTriggerDirect(
   if( pPrg ){
     int bRecursive = (p->zName && 0==(pParse->db->flags&SQLITE_RecTriggers));
 
-    sqlite3VdbeAddOp3(v, OP_Program, reg, ignoreJump, ++pParse->nMem);
-    sqlite3VdbeChangeP4(v, -1, (const char *)pPrg->pProgram, P4_SUBPROGRAM);
+    sqlite3VdbeAddOp4(v, OP_Program, reg, ignoreJump, ++pParse->nMem,
+                      (const char *)pPrg->pProgram, P4_SUBPROGRAM);
     VdbeComment(
         (v, "Call: %s.%s", (p->zName?p->zName:"fkey"), onErrorText(orconf)));
 

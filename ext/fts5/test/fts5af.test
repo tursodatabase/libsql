@@ -24,9 +24,10 @@ ifcapable !fts5 {
   return
 }
 
+foreach_detail_mode $testprefix {
 
 do_execsql_test 1.0 {
-  CREATE VIRTUAL TABLE t1 USING fts5(x, y);
+  CREATE VIRTUAL TABLE t1 USING fts5(x, y, detail=%DETAIL%);
 }
 
 proc do_snippet_test {tn doc match res} {
@@ -111,34 +112,37 @@ foreach {tn doc res} {
   do_snippet_test 1.$tn $doc X $res
 }
 
-foreach {tn doc res} {
-  1.1 {X Y o o o o o} {[X Y] o o o o o}
-  1.2 {o X Y o o o o} {o [X Y] o o o o}
-  1.3 {o o X Y o o o} {o o [X Y] o o o}
-  1.4 {o o o X Y o o} {o o o [X Y] o o}
-  1.5 {o o o o X Y o} {o o o o [X Y] o}
-  1.6 {o o o o o X Y} {o o o o o [X Y]}
+if {[detail_is_full]} {
+  foreach {tn doc res} {
+    1.1 {X Y o o o o o} {[X Y] o o o o o}
+    1.2 {o X Y o o o o} {o [X Y] o o o o}
+    1.3 {o o X Y o o o} {o o [X Y] o o o}
+    1.4 {o o o X Y o o} {o o o [X Y] o o}
+    1.5 {o o o o X Y o} {o o o o [X Y] o}
+    1.6 {o o o o o X Y} {o o o o o [X Y]}
 
-  2.1 {X Y o o o o o o} {[X Y] o o o o o...}
-  2.2 {o X Y o o o o o} {o [X Y] o o o o...}
-  2.3 {o o X Y o o o o} {o o [X Y] o o o...}
-  2.4 {o o o X Y o o o} {...o o [X Y] o o o}
-  2.5 {o o o o X Y o o} {...o o o [X Y] o o}
-  2.6 {o o o o o X Y o} {...o o o o [X Y] o}
-  2.7 {o o o o o o X Y} {...o o o o o [X Y]}
+    2.1 {X Y o o o o o o} {[X Y] o o o o o...}
+    2.2 {o X Y o o o o o} {o [X Y] o o o o...}
+    2.3 {o o X Y o o o o} {o o [X Y] o o o...}
+    2.4 {o o o X Y o o o} {...o o [X Y] o o o}
+    2.5 {o o o o X Y o o} {...o o o [X Y] o o}
+    2.6 {o o o o o X Y o} {...o o o o [X Y] o}
+    2.7 {o o o o o o X Y} {...o o o o o [X Y]}
 
-  3.1 {X Y o o o o o o o} {[X Y] o o o o o...}
-  3.2 {o X Y o o o o o o} {o [X Y] o o o o...}
-  3.3 {o o X Y o o o o o} {o o [X Y] o o o...}
-  3.4 {o o o X Y o o o o} {...o o [X Y] o o o...}
-  3.5 {o o o o X Y o o o} {...o o [X Y] o o o}
-  3.6 {o o o o o X Y o o} {...o o o [X Y] o o}
-  3.7 {o o o o o o X Y o} {...o o o o [X Y] o}
-  3.8 {o o o o o o o X Y} {...o o o o o [X Y]}
-
-} {
-  do_snippet_test 2.$tn $doc "X + Y" $res
+    3.1 {X Y o o o o o o o} {[X Y] o o o o o...}
+    3.2 {o X Y o o o o o o} {o [X Y] o o o o...}
+    3.3 {o o X Y o o o o o} {o o [X Y] o o o...}
+    3.4 {o o o X Y o o o o} {...o o [X Y] o o o...}
+    3.5 {o o o o X Y o o o} {...o o [X Y] o o o}
+    3.6 {o o o o o X Y o o} {...o o o [X Y] o o}
+    3.7 {o o o o o o X Y o} {...o o o o [X Y] o}
+    3.8 {o o o o o o o X Y} {...o o o o o [X Y]}
+  } {
+    do_snippet_test 2.$tn $doc "X + Y" $res
+  }
 }
+
+} ;# foreach_detail_mode 
 
 finish_test
 

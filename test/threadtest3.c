@@ -880,7 +880,7 @@ static double currentTime(void){
   double t;
   static sqlite3_vfs *pTimelimitVfs = 0;
   if( pTimelimitVfs==0 ) pTimelimitVfs = sqlite3_vfs_find(0);
-  if( pTimelimitVfs->iVersion>=1 && pTimelimitVfs->xCurrentTimeInt64!=0 ){
+  if( pTimelimitVfs->iVersion>=2 && pTimelimitVfs->xCurrentTimeInt64!=0 ){
     sqlite3_int64 tm;
     pTimelimitVfs->xCurrentTimeInt64(pTimelimitVfs, &tm);
     t = tm/86400000.0;
