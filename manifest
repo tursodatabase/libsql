@@ -1,5 +1,5 @@
-C Merge\supdates\sfrom\strunk.
-D 2016-04-03T20:45:04.922
+C Replace\sthe\snew\sfprintf()\scalls.
+D 2016-04-03T20:50:02.891
 F Makefile.in e812bb732d7af01baa09f1278bd4f4a2e3a09449
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc fe57d7e3e74fa383fd01ced796c0ffd966fc094a
@@ -13,7 +13,7 @@ F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am 42f7eb1fb2b06ddd6c6adab3e4388cc0a237ba40
 F autoconf/Makefile.msc dc0d0500e4a827cb3891d08d846dd6dd40241b51
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
-F autoconf/README.txt 4f04b0819303aabaa35fff5f7b257fb0c1ef95f1 w autoconf/README
+F autoconf/README.txt 4f04b0819303aabaa35fff5f7b257fb0c1ef95f1
 F autoconf/configure.ac d807b567f73a2b0986ccdd206b782cecb4d08fff
 F autoconf/tea/Makefile.in b438a7020446c8a8156e8d97c8914a04833da6fd
 F autoconf/tea/README 3e9a3c060f29a44344ab50aec506f4db903fb873
@@ -374,7 +374,7 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c b8f7174e5f8c33c44ded3a25a973d0bb89228c20
 F src/rowset.c 9fe4b3ad7cc00944386bb600233d8f523de07a6e
 F src/select.c 7849cee0a01952a9c93cd28989daedfa57731143
-F src/shell.c c8a75d0d77c3fe691e0f5f970ddc5e49908ebe97
+F src/shell.c e126f647f63da3d5d820f012359b89075cd7de99
 F src/sqlite.h.in c46a7b85d3f37371cacea8f98ec825f5e52c420c
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 98f72cbfe00169c39089115427d06ea05fe4b4a2
@@ -1010,7 +1010,7 @@ F test/savepoint4.test c8f8159ade6d2acd9128be61e1230f1c1edc6cc0
 F test/savepoint5.test 0735db177e0ebbaedc39812c8d065075d563c4fd
 F test/savepoint6.test f41279c5e137139fa5c21485773332c7adb98cd7
 F test/savepoint7.test db3db281486c925095f305aad09fe806e5188ff3
-F test/savepointfault.test f044eac64b59f09746c7020ee261734de82bf9b2 w test/savepoint3.test
+F test/savepointfault.test f044eac64b59f09746c7020ee261734de82bf9b2
 F test/scanstatus.test 5253c219e331318a437f436268e0e82345700285
 F test/schema.test 8f7999be894260f151adf15c2c7540f1c6d6a481
 F test/schema2.test 906408621ea881fdb496d878b1822572a34e32c5
@@ -1376,7 +1376,7 @@ F test/whereH.test e4b07f7a3c2f5d31195cd33710054c78667573b2
 F test/whereI.test eab5b226bbc344ac70d7dc09b963a064860ae6d7
 F test/whereJ.test 55a3221706a7ab706293f17cc8f96da563bf0767
 F test/whereK.test f8e3cf26a8513ecc7f514f54df9f0572c046c42b
-F test/wherefault.test 1374c3aa198388925246475f84ad4cd5f9528864 w test/where8m.test
+F test/wherefault.test 1374c3aa198388925246475f84ad4cd5f9528864
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/wild001.test bca33f499866f04c24510d74baf1e578d4e44b1c
 F test/win32heap.test ea19770974795cff26e11575e12d422dbd16893c
@@ -1480,7 +1480,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5cbab63756f6f276996f39d16d70b178581f63cd 59814f35d13db1f6379b9ae218b5432bc03c6197
-R 7b729d340f074699d469d04257844002
+P 566b551e5a81440a5c8ff865ceb4422c76d67cf7
+R c328759cdfd1946a4f3790cce9b56b06
 U mistachkin
-Z ad64521de5ede9ab99c45ca3b47e617d
+Z fca762cd11972041ea0ef005e2621264

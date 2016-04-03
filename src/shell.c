@@ -2038,7 +2038,7 @@ static char zHelp[] =
 ** Print help information for the ".sessions" command
 */
 void session_help(ShellState *p){
-  fprintf(p->out,
+  raw_printf(p->out,
     ".session ?NAME? SUBCOMMAND ?ARGS...?\n"
     "If ?NAME? is omitted, the first defined session is used.\n"
     "Subcommands:\n"
@@ -3902,11 +3902,11 @@ static int do_meta_command(char *zLine, ShellState *p){
       if( nCmd!=2 ) goto session_syntax_error;
       if( pSession->p==0 ){
         session_not_open:
-        fprintf(stderr, "ERROR: No sessions are open\n");
+        raw_printf(stderr, "ERROR: No sessions are open\n");
       }else{
         rc = sqlite3session_attach(pSession->p, azCmd[1]);
         if( rc ){
-          fprintf(stderr, "ERROR: sqlite3session_attach() returns %d\n", rc);
+          raw_printf(stderr, "ERROR: sqlite3session_attach() returns %d\n", rc);
           rc = 0;
         }
       }
@@ -3922,7 +3922,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       if( pSession->p==0 ) goto session_not_open;
       out = fopen(azCmd[1], "wb");
       if( out==0 ){
-        fprintf(stderr, "ERROR: cannot open \"%s\" for writing\n", azCmd[1]);
+        utf8_printf(stderr, "ERROR: cannot open \"%s\" for writing\n", azCmd[1]);
       }else{
         int szChng;
         void *pChng;
@@ -3937,7 +3937,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         }
         if( pChng 
           && fwrite(pChng, szChng, 1, out)!=1 ){
-          fprintf(stderr, "ERROR: Failed to write entire %d-byte output\n",
+          raw_printf(stderr, "ERROR: Failed to write entire %d-byte output\n",
                   szChng);
         }
         sqlite3_free(pChng);
@@ -3965,7 +3965,8 @@ static int do_meta_command(char *zLine, ShellState *p){
       ii = nCmd==1 ? -1 : booleanValue(azCmd[1]);
       if( p->nSession ){
         ii = sqlite3session_enable(pSession->p, ii);
-        fprintf(p->out, "session %s enable flag = %d\n", pSession->zName, ii);
+        utf8_printf(p->out, "session %s enable flag = %d\n",
+                    pSession->zName, ii);
       }
     }else
 
@@ -3983,7 +3984,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         nByte = sizeof(pSession->azFilter[0])*(nCmd-1);
         pSession->azFilter = sqlite3_malloc( nByte );
         if( pSession->azFilter==0 ){
-          fprintf(stderr, "Error: out or memory\n");
+          raw_printf(stderr, "Error: out or memory\n");
           exit(1);
         }
         for(ii=1; ii<nCmd; ii++){
@@ -4002,7 +4003,8 @@ static int do_meta_command(char *zLine, ShellState *p){
       ii = nCmd==1 ? -1 : booleanValue(azCmd[1]);
       if( p->nSession ){
         ii = sqlite3session_indirect(pSession->p, ii);
-        fprintf(p->out, "session %s indirect flag = %d\n", pSession->zName,ii);
+        utf8_printf(p->out, "session %s indirect flag = %d\n",
+                    pSession->zName, ii);
       }
     }else
 
@@ -4014,7 +4016,8 @@ static int do_meta_command(char *zLine, ShellState *p){
       if( nCmd!=1 ) goto session_syntax_error;
       if( p->nSession ){
         ii = sqlite3session_isempty(pSession->p);
-        fprintf(p->out, "session %s isempty flag = %d\n", pSession->zName, ii);
+        utf8_printf(p->out, "session %s isempty flag = %d\n",
+                    pSession->zName, ii);
       }
     }else
 
@@ -4023,7 +4026,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     */
     if( strcmp(azCmd[0],"list")==0 ){
       for(i=0; i<p->nSession; i++){
-        fprintf(p->out, "%d %s\n", i, p->aSession[i].zName);
+        utf8_printf(p->out, "%d %s\n", i, p->aSession[i].zName);
       }
     }else
 
@@ -4038,18 +4041,18 @@ static int do_meta_command(char *zLine, ShellState *p){
       if( zName[0]==0 ) goto session_syntax_error;
       for(i=0; i<p->nSession; i++){
         if( strcmp(p->aSession[i].zName,zName)==0 ){
-          fprintf(stderr, "Session \"%s\" already exists\n", zName);
+          utf8_printf(stderr, "Session \"%s\" already exists\n", zName);
           goto meta_command_exit;
         }
       }
       if( p->nSession>=ArraySize(p->aSession) ){
-        fprintf(stderr, "Maximum of %d sessions\n", ArraySize(p->aSession));
+        raw_printf(stderr, "Maximum of %d sessions\n", ArraySize(p->aSession));
         goto meta_command_exit;
       }
       pSession = &p->aSession[p->nSession];
       rc = sqlite3session_create(p->db, azCmd[1], &pSession->p);
       if( rc ){
-        fprintf(stderr, "Cannot open session: error code=%d\n", rc);
+        raw_printf(stderr, "Cannot open session: error code=%d\n", rc);
         rc = 0;
         goto meta_command_exit;
       }
