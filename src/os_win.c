@@ -1635,50 +1635,50 @@ void sqlite3MemSetDefault(void){
 **
 ** Space to hold the returned string is obtained from malloc.
 */
-static LPWSTR winUtf8ToUnicode(const char *zFilename){
+static LPWSTR winUtf8ToUnicode(const char *zText){
   int nChar;
-  LPWSTR zWideFilename;
+  LPWSTR zWideText;
 
-  nChar = osMultiByteToWideChar(CP_UTF8, 0, zFilename, -1, NULL, 0);
+  nChar = osMultiByteToWideChar(CP_UTF8, 0, zText, -1, NULL, 0);
   if( nChar==0 ){
     return 0;
   }
-  zWideFilename = sqlite3MallocZero( nChar*sizeof(zWideFilename[0]) );
-  if( zWideFilename==0 ){
+  zWideText = sqlite3MallocZero( nChar*sizeof(WCHAR) );
+  if( zWideText==0 ){
     return 0;
   }
-  nChar = osMultiByteToWideChar(CP_UTF8, 0, zFilename, -1, zWideFilename,
+  nChar = osMultiByteToWideChar(CP_UTF8, 0, zText, -1, zWideText,
                                 nChar);
   if( nChar==0 ){
-    sqlite3_free(zWideFilename);
-    zWideFilename = 0;
+    sqlite3_free(zWideText);
+    zWideText = 0;
   }
-  return zWideFilename;
+  return zWideText;
 }
 
 /*
 ** Convert Microsoft Unicode to UTF-8.  Space to hold the returned string is
 ** obtained from sqlite3_malloc().
 */
-static char *winUnicodeToUtf8(LPCWSTR zWideFilename){
+static char *winUnicodeToUtf8(LPCWSTR zWideText){
   int nByte;
-  char *zFilename;
+  char *zText;
 
-  nByte = osWideCharToMultiByte(CP_UTF8, 0, zWideFilename, -1, 0, 0, 0, 0);
+  nByte = osWideCharToMultiByte(CP_UTF8, 0, zWideText, -1, 0, 0, 0, 0);
   if( nByte == 0 ){
     return 0;
   }
-  zFilename = sqlite3MallocZero( nByte );
-  if( zFilename==0 ){
+  zText = sqlite3MallocZero( nByte );
+  if( zText==0 ){
     return 0;
   }
-  nByte = osWideCharToMultiByte(CP_UTF8, 0, zWideFilename, -1, zFilename, nByte,
+  nByte = osWideCharToMultiByte(CP_UTF8, 0, zWideText, -1, zText, nByte,
                                 0, 0);
   if( nByte == 0 ){
-    sqlite3_free(zFilename);
-    zFilename = 0;
+    sqlite3_free(zText);
+    zText = 0;
   }
-  return zFilename;
+  return zText;
 }
 
 /*
@@ -1688,12 +1688,12 @@ static char *winUnicodeToUtf8(LPCWSTR zWideFilename){
 ** Space to hold the returned string is obtained
 ** from sqlite3_malloc.
 */
-static LPWSTR winMbcsToUnicode(const char *zFilename){
+static LPWSTR winMbcsToUnicode(const char *zText, int useAnsi){
   int nByte;
   LPWSTR zMbcsFilename;
-  int codepage = osAreFileApisANSI() ? CP_ACP : CP_OEMCP;
+  int codepage = useAnsi ? CP_ACP : CP_OEMCP;
 
-  nByte = osMultiByteToWideChar(codepage, 0, zFilename, -1, NULL,
+  nByte = osMultiByteToWideChar(codepage, 0, zText, -1, NULL,
                                 0)*sizeof(WCHAR);
   if( nByte==0 ){
     return 0;
@@ -1702,7 +1702,7 @@ static LPWSTR winMbcsToUnicode(const char *zFilename){
   if( zMbcsFilename==0 ){
     return 0;
   }
-  nByte = osMultiByteToWideChar(codepage, 0, zFilename, -1, zMbcsFilename,
+  nByte = osMultiByteToWideChar(codepage, 0, zText, -1, zMbcsFilename,
                                 nByte);
   if( nByte==0 ){
     sqlite3_free(zMbcsFilename);
@@ -1718,60 +1718,128 @@ static LPWSTR winMbcsToUnicode(const char *zFilename){
 ** Space to hold the returned string is obtained from
 ** sqlite3_malloc().
 */
-static char *winUnicodeToMbcs(LPCWSTR zWideFilename){
+static char *winUnicodeToMbcs(LPCWSTR zWideText, int useAnsi){
   int nByte;
-  char *zFilename;
-  int codepage = osAreFileApisANSI() ? CP_ACP : CP_OEMCP;
+  char *zText;
+  int codepage = useAnsi ? CP_ACP : CP_OEMCP;
 
-  nByte = osWideCharToMultiByte(codepage, 0, zWideFilename, -1, 0, 0, 0, 0);
+  nByte = osWideCharToMultiByte(codepage, 0, zWideText, -1, 0, 0, 0, 0);
   if( nByte == 0 ){
     return 0;
   }
-  zFilename = sqlite3MallocZero( nByte );
-  if( zFilename==0 ){
+  zText = sqlite3MallocZero( nByte );
+  if( zText==0 ){
     return 0;
   }
-  nByte = osWideCharToMultiByte(codepage, 0, zWideFilename, -1, zFilename,
+  nByte = osWideCharToMultiByte(codepage, 0, zWideText, -1, zText,
                                 nByte, 0, 0);
   if( nByte == 0 ){
-    sqlite3_free(zFilename);
-    zFilename = 0;
+    sqlite3_free(zText);
+    zText = 0;
   }
-  return zFilename;
+  return zText;
 }
 
 /*
 ** Convert multibyte character string to UTF-8.  Space to hold the
 ** returned string is obtained from sqlite3_malloc().
 */
-char *sqlite3_win32_mbcs_to_utf8(const char *zFilename){
-  char *zFilenameUtf8;
+char *sqlite3_win32_mbcs_to_utf8(const char *zText){
+  char *zTextUtf8;
   LPWSTR zTmpWide;
 
-  zTmpWide = winMbcsToUnicode(zFilename);
+  zTmpWide = winMbcsToUnicode(zText, osAreFileApisANSI());
   if( zTmpWide==0 ){
     return 0;
   }
-  zFilenameUtf8 = winUnicodeToUtf8(zTmpWide);
+  zTextUtf8 = winUnicodeToUtf8(zTmpWide);
   sqlite3_free(zTmpWide);
-  return zFilenameUtf8;
+  return zTextUtf8;
+}
+
+/*
+** Convert multibyte character string to UTF-8 using the ANSI codepage.
+** Space to hold the returned string is obtained from sqlite3_malloc().
+*/
+char *sqlite3_win32_mbcs_to_utf8_via_ansi(const char *zText){
+  char *zTextUtf8;
+  LPWSTR zTmpWide;
+
+  zTmpWide = winMbcsToUnicode(zText, 1);
+  if( zTmpWide==0 ){
+    return 0;
+  }
+  zTextUtf8 = winUnicodeToUtf8(zTmpWide);
+  sqlite3_free(zTmpWide);
+  return zTextUtf8;
+}
+
+/*
+** Convert multibyte character string to UTF-8 using the OEM codepage.
+** Space to hold the returned string is obtained from sqlite3_malloc().
+*/
+char *sqlite3_win32_mbcs_to_utf8_via_oem(const char *zText){
+  char *zTextUtf8;
+  LPWSTR zTmpWide;
+
+  zTmpWide = winMbcsToUnicode(zText, 0);
+  if( zTmpWide==0 ){
+    return 0;
+  }
+  zTextUtf8 = winUnicodeToUtf8(zTmpWide);
+  sqlite3_free(zTmpWide);
+  return zTextUtf8;
 }
 
 /*
 ** Convert UTF-8 to multibyte character string.  Space to hold the
 ** returned string is obtained from sqlite3_malloc().
 */
-char *sqlite3_win32_utf8_to_mbcs(const char *zFilename){
-  char *zFilenameMbcs;
+char *sqlite3_win32_utf8_to_mbcs(const char *zText){
+  char *zTextMbcs;
   LPWSTR zTmpWide;
 
-  zTmpWide = winUtf8ToUnicode(zFilename);
+  zTmpWide = winUtf8ToUnicode(zText);
   if( zTmpWide==0 ){
     return 0;
   }
-  zFilenameMbcs = winUnicodeToMbcs(zTmpWide);
+  zTextMbcs = winUnicodeToMbcs(zTmpWide, osAreFileApisANSI());
   sqlite3_free(zTmpWide);
-  return zFilenameMbcs;
+  return zTextMbcs;
+}
+
+/*
+** Convert UTF-8 to multibyte character string using the ANSI codepage.
+** Space to hold the returned string is obtained from sqlite3_malloc().
+*/
+char *sqlite3_win32_utf8_to_mbcs_via_ansi(const char *zText){
+  char *zTextMbcs;
+  LPWSTR zTmpWide;
+
+  zTmpWide = winUtf8ToUnicode(zText);
+  if( zTmpWide==0 ){
+    return 0;
+  }
+  zTextMbcs = winUnicodeToMbcs(zTmpWide, 1);
+  sqlite3_free(zTmpWide);
+  return zTextMbcs;
+}
+
+/*
+** Convert UTF-8 to multibyte character string using the OEM codepage.
+** Space to hold the returned string is obtained from sqlite3_malloc().
+*/
+char *sqlite3_win32_utf8_to_mbcs_via_oem(const char *zText){
+  char *zTextMbcs;
+  LPWSTR zTmpWide;
+
+  zTmpWide = winUtf8ToUnicode(zText);
+  if( zTmpWide==0 ){
+    return 0;
+  }
+  zTextMbcs = winUnicodeToMbcs(zTmpWide, 0);
+  sqlite3_free(zTmpWide);
+  return zTextMbcs;
 }
 
 /*
