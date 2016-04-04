@@ -1,5 +1,5 @@
-C Improved\shandling\sof\sUTF8\sby\sthe\scommand-line\sshell.
-D 2016-04-04T17:34:54.498
+C Improve\serror\smessages\sfrom\sthe\s'shell1-5.0'\stest.
+D 2016-04-04T17:59:37.790
 F Makefile.in e812bb732d7af01baa09f1278bd4f4a2e3a09449
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc fe57d7e3e74fa383fd01ced796c0ffd966fc094a
@@ -1051,7 +1051,7 @@ F test/sharedA.test 0cdf1a76dfa00e6beee66af5b534b1e8df2720f5
 F test/sharedB.test 16cc7178e20965d75278f410943109b77b2e645e
 F test/shared_err.test 2f2aee20db294b9924e81f6ccbe60f19e21e8506
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test a216486c6aeae4d3e75e37d64e4b6c8974108750
+F test/shell1.test b3df199cef9bc722d4078c893a7093d31174ea11
 F test/shell2.test e242a9912f44f4c23c3d1d802a83e934e84c853b
 F test/shell3.test da513d522ef6f01cee8475dcf8332bff8982b3dd
 F test/shell4.test 69995ee1cc278eb149aa8746ce1f935f4eaf98b9
@@ -1482,8 +1482,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 65c7bcc42786a254966c531ba9062abb8fc8c5bf f4cbd18db47af4af990d7891dcc831e92b3f17e0
-R 6a3470f790b8def5155325c3cfdf4cee
-T +closed f4cbd18db47af4af990d7891dcc831e92b3f17e0
-U drh
-Z cd8719efec0532e424e0fef6159fe981
+P 4534ebf15fbcd6fe2028957b7aa591b6cd5da95f
+R f892094f49f405a0a06a581ad52203d2
+U mistachkin
+Z b9fa5f032554b733f702cb8290f0ece6
