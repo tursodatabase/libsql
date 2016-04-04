@@ -2432,8 +2432,53 @@ do_test auth-6.3 {
   execsql {SELECT rowid, * FROM t6}
 } {101 1 2 3 4 5 6 7 8}
 
+#-------------------------------------------------------------------------
+# Test that view names are included as zArg4.
+#
+do_execsql_test auth-7.1 {
+  CREATE TABLE t7(a, b, c);
+  CREATE VIEW v7 AS SELECT * FROM t7;
+} {}
+set ::authargs [list]
+proc auth {args} {
+  eval lappend ::authargs [lrange $args 0 4]
+  return SQLITE_OK
+}
+
+do_test auth-7.2 {
+  execsql {SELECT a, c FROM v7}
+  set ::authargs
+} [list                          \
+  SQLITE_SELECT {} {} {} {}      \
+  SQLITE_READ t7 a main v7       \
+  SQLITE_READ t7 b main v7       \
+  SQLITE_READ t7 c main v7       \
+  SQLITE_READ v7 a main {}       \
+  SQLITE_READ v7 c main {}       \
+  SQLITE_SELECT {} {} {} v7      \
+]
+
+set ::authargs [list]
+do_test auth-7.3 {
+  execsql {SELECT a, c FROM t7}
+  set ::authargs
+} [list                          \
+  SQLITE_SELECT {} {} {} {}      \
+  SQLITE_READ t7 a main {}       \
+  SQLITE_READ t7 c main {}       \
+]
+
+set ::authargs [list]
+do_test auth-7.4 {
+  execsql {SELECT a, c FROM t7 AS v7}
+  set ::authargs
+} [list                          \
+  SQLITE_SELECT {} {} {} {}      \
+  SQLITE_READ t7 a main {}       \
+  SQLITE_READ t7 c main {}       \
+]
+
+
 rename proc {}
 rename proc_real proc
-
-
 finish_test

@@ -1,5 +1,5 @@
-C Enhance\ssqlite3session_apply()\sand\ssqlite3session_apply_strm()\sso\sthat\nconflicts\sare\sretried\sbefore\sthe\sxConflict()\scallback\sis\sinvoked,\sas\slong\nas\sthe\s"apply"\soperation\sis\smaking\sforward\sprogress.
-D 2016-04-04T14:57:25.972
+C Test\sthat\sthe\sview\sname\sis\spassed\sto\sthe\sauthorization\scallback\swhen\sa\sSELECT\sstatement\sis\srun\son\sa\sview.
+D 2016-04-04T16:40:44.335
 F Makefile.in e812bb732d7af01baa09f1278bd4f4a2e3a09449
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc fe57d7e3e74fa383fd01ced796c0ffd966fc094a
@@ -497,7 +497,7 @@ F test/attach2.test 0ec5defa340363de6cd50fd595046465e9aaba2d
 F test/attach3.test 359eb65d00102cdfcef6fa4e81dc1648f8f80b27
 F test/attach4.test 53bf502f17647c6d6c5add46dda6bac8b6f4665c
 F test/attachmalloc.test 3a4bfca9545bfe906a8d2e622de10fbac5b711b0
-F test/auth.test 855233ef26eb3601b6886567ea4e326c72959360
+F test/auth.test 872a122b3977c1d1bb9fd637dc20016e5c01880f
 F test/auth2.test 264c6af53cad9aba5218c68bbe18036e39007bfa
 F test/auth3.test 5cfa94ed90c6617c42b7ba4b133fd79678b251c7
 F test/autoinc.test c58912526998a39e11f66b533e23cfabea7f25b7
@@ -1482,8 +1482,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e375fe52cea7903c11ecef71c3452c67a96b663e 49763fc3ae2fb6117b0443ea28661568467f9bf2
-R 29983b81bb4a270732770d4dd854ff08
-T +closed 49763fc3ae2fb6117b0443ea28661568467f9bf2
-U drh
-Z eb92f633faf3f47383a6550496ee5fc7
+P 42a219668413e18dae917b03b04a21d108cc44be
+R 27f4603d27093d983cb0f53232a8c10f
+U dan
+Z 39b2019f8e2190d9694d9394017c15aa
