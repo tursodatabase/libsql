@@ -1,5 +1,5 @@
-C Add\sthe\s".auth\sON|OFF"\scommand\sto\sthe\scommand-line\sshell.
-D 2016-04-04T17:23:10.395
+C Improved\shandling\sof\sUTF8\sby\sthe\scommand-line\sshell.
+D 2016-04-04T17:34:54.498
 F Makefile.in e812bb732d7af01baa09f1278bd4f4a2e3a09449
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc fe57d7e3e74fa383fd01ced796c0ffd966fc094a
@@ -360,7 +360,7 @@ F src/os.h 91ff889115ecd01f436d3611f7f5ea4dc12d92f1
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c b1ccb273771f41dbdbe0ba7c1ad63c38ad5972ec
-F src/os_win.c ff870d89f4cb088a04cbf5ea0cbd9ff1b089ff4a
+F src/os_win.c b3ba9573d8d893e70a6a8015bbee572ecf7ffbef
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 38718a019ca762ba4f6795425d5a54db70d1790d
 F src/pager.h e1d38a2f14849e219df0f91f8323504d134c8a56
@@ -376,7 +376,7 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c b8f7174e5f8c33c44ded3a25a973d0bb89228c20
 F src/rowset.c 9fe4b3ad7cc00944386bb600233d8f523de07a6e
 F src/select.c 7849cee0a01952a9c93cd28989daedfa57731143
-F src/shell.c e0996a0be612c8d2630fdf8bcedf4c4260a29734
+F src/shell.c b7922fa264f8c8d72a5ec6dd0b091e15a93c4de5
 F src/sqlite.h.in c46a7b85d3f37371cacea8f98ec825f5e52c420c
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 98f72cbfe00169c39089115427d06ea05fe4b4a2
@@ -1051,7 +1051,7 @@ F test/sharedA.test 0cdf1a76dfa00e6beee66af5b534b1e8df2720f5
 F test/sharedB.test 16cc7178e20965d75278f410943109b77b2e645e
 F test/shared_err.test 2f2aee20db294b9924e81f6ccbe60f19e21e8506
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test dff5b20ad989770aface6d714491121172dfe8b0
+F test/shell1.test a216486c6aeae4d3e75e37d64e4b6c8974108750
 F test/shell2.test e242a9912f44f4c23c3d1d802a83e934e84c853b
 F test/shell3.test da513d522ef6f01cee8475dcf8332bff8982b3dd
 F test/shell4.test 69995ee1cc278eb149aa8746ce1f935f4eaf98b9
@@ -1482,7 +1482,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8627a4cd6d64bd076b56c1e8ccc3b1dfc1b4c07d
-R 327fee759e5533f8bd09762659f3f70b
+P 65c7bcc42786a254966c531ba9062abb8fc8c5bf f4cbd18db47af4af990d7891dcc831e92b3f17e0
+R 6a3470f790b8def5155325c3cfdf4cee
+T +closed f4cbd18db47af4af990d7891dcc831e92b3f17e0
 U drh
-Z ff39f0b57606b297cab9fa07bc83cd18
+Z cd8719efec0532e424e0fef6159fe981
