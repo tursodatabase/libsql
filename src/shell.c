@@ -4999,7 +4999,7 @@ static char *cmdline_option_value(int argc, char **argv, int i){
 int SQLITE_CDECL main(int argc, char **argv){
 #else
 int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
-  char **argv = 0;
+  char **argv;
 #endif
   char *zErrMsg = 0;
   ShellState data;
@@ -5013,6 +5013,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 
   setBinaryMode(stdin, 0);
   setvbuf(stderr, 0, _IONBF, 0); /* Make sure stderr is unbuffered */
+  stdin_is_interactive = isatty(0);
+  stdout_is_console = isatty(1);
 
 #if USE_SYSTEM_SQLITE+0!=1
   if( strcmp(sqlite3_sourceid(),SQLITE_SOURCE_ID)!=0 ){
@@ -5037,9 +5039,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
     }
   }
 #endif
+  assert( argc>=1 && argv && argv[0] );
   Argv0 = argv[0];
-  stdin_is_interactive = isatty(0);
-  stdout_is_console = isatty(1);
 
   /* Make sure we have a valid signal handler early, before anything
   ** else is done.
