@@ -1,5 +1,5 @@
-C Revise\sand\senhance\sthe\sWin32\sstring\sconversion\sroutines.
-D 2016-04-03T22:44:16.657
+C More\srefactoring\sand\scleanup\swork\son\sthe\sWin32\sstring\sconversion\sand\sutility\sroutines.
+D 2016-04-04T02:05:46.170
 F Makefile.in e812bb732d7af01baa09f1278bd4f4a2e3a09449
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc fe57d7e3e74fa383fd01ced796c0ffd966fc094a
@@ -358,7 +358,7 @@ F src/os.h 91ff889115ecd01f436d3611f7f5ea4dc12d92f1
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c b1ccb273771f41dbdbe0ba7c1ad63c38ad5972ec
-F src/os_win.c 01ae58949a28edaecd5645abbe29ac9d2ee983fd
+F src/os_win.c b3ba9573d8d893e70a6a8015bbee572ecf7ffbef
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 38718a019ca762ba4f6795425d5a54db70d1790d
 F src/pager.h e1d38a2f14849e219df0f91f8323504d134c8a56
@@ -1480,7 +1480,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f76c3a0ca40989fe9401c3b6f662f8e6ef2a730c
-R 9a8e623b20453c0fbff989d22019add7
+P 345860c92195544aad44ea9b0d14c9ebbd50adf2
+R 8daf8efac2ee8825007360be7ce04871
 U mistachkin
-Z 149573e0b667520348654eca6c5f3228
+Z a69ce6a98d15b1e2f1ce825b8343a90e
