@@ -1,5 +1,5 @@
-C Preupdate\shook\sdocumentation\sfixes.\s\sNo\schanges\sto\scode.
-D 2016-04-01T17:54:07.826
+C Fix\sharmless\scompiler\swarnings.
+D 2016-04-04T12:38:05.153
 F Makefile.in e812bb732d7af01baa09f1278bd4f4a2e3a09449
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc fe57d7e3e74fa383fd01ced796c0ffd966fc094a
@@ -311,7 +311,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c 1bb0709b3048e24217b80ec6bd78a3e99a47c01b
-F src/analyze.c 39b21e4d9ad8a647e9834aa5ba99a74fb6c98879
+F src/analyze.c 37fedc80ac966ce1745811746e68e4d8fa64c7fe
 F src/attach.c 771153bd1f4ab0b97a44a13dde2c7e5e1efeba22
 F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c f60f0aa55d25d853ffde53d0b0370a7bb7ee41ce
@@ -374,7 +374,7 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c b8f7174e5f8c33c44ded3a25a973d0bb89228c20
 F src/rowset.c 9fe4b3ad7cc00944386bb600233d8f523de07a6e
 F src/select.c 7849cee0a01952a9c93cd28989daedfa57731143
-F src/shell.c cd3f82fdc5c895b817a375b7ab8319cb41f447ce
+F src/shell.c faa783401b0c25e52e4054a7292a78ab2f76d210
 F src/sqlite.h.in c46a7b85d3f37371cacea8f98ec825f5e52c420c
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 98f72cbfe00169c39089115427d06ea05fe4b4a2
@@ -1480,7 +1480,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a62340dc0507e36f6dec05b1fda68d8399ec62ec
-R 17cbd88111da841c5ced2fa2ee956e9f
+P 59814f35d13db1f6379b9ae218b5432bc03c6197
+R 5dc90b5728244567537e2c75af0c4605
 U drh
-Z dfefbe59c009b860b7f7e89f1f29dda4
+Z 8cacf12e28835de4a8d101570828c9f0

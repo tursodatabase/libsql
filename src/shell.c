@@ -2140,17 +2140,19 @@ static void session_close(OpenSession *pSession){
 #endif
 
 /*
-** Close all OpenSession objects and release all assocaited resources.
+** Close all OpenSession objects and release all associated resources.
 */
-static void session_close_all(ShellState *p){
 #if defined(SQLITE_ENABLE_SESSION)
+static void session_close_all(ShellState *p){
   int i;
   for(i=0; i<p->nSession; i++){
     session_close(&p->aSession[i]);
   }
   p->nSession = 0;
-#endif
 }
+#else
+# define session_close_all(X)
+#endif
 
 /*
 ** Implementation of the xFilter function for an open session.  Omit
