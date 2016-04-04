@@ -2016,11 +2016,13 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
     /* Neither operand is NULL.  Do a comparison. */
     affinity = pOp->p5 & SQLITE_AFF_MASK;
     if( affinity>=SQLITE_AFF_NUMERIC ){
-      if( (flags1 & (MEM_Int|MEM_Real|MEM_Str))==MEM_Str ){
-        applyNumericAffinity(pIn1,0);
-      }
-      if( (flags3 & (MEM_Int|MEM_Real|MEM_Str))==MEM_Str ){
-        applyNumericAffinity(pIn3,0);
+      if( (flags1 | flags3)&MEM_Str ){
+        if( (flags1 & (MEM_Int|MEM_Real|MEM_Str))==MEM_Str ){
+          applyNumericAffinity(pIn1,0);
+        }
+        if( (flags3 & (MEM_Int|MEM_Real|MEM_Str))==MEM_Str ){
+          applyNumericAffinity(pIn3,0);
+        }
       }
     }else if( affinity==SQLITE_AFF_TEXT ){
       if( (flags1 & MEM_Str)==0 && (flags1 & (MEM_Int|MEM_Real))!=0 ){

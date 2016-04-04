@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings.
-D 2016-04-04T12:38:05.153
+C Minor\sperformance\soptimization\sin\sthe\scomparison\sopcodes\sof\sthe\sVDBE.
+D 2016-04-04T13:46:24.704
 F Makefile.in e812bb732d7af01baa09f1278bd4f4a2e3a09449
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc fe57d7e3e74fa383fd01ced796c0ffd966fc094a
@@ -439,7 +439,7 @@ F src/update.c 3e67ab3c0814635f355fb1f8ab010a2b9e016e7d
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c 8873d696c9ccc4206058c402e09e101f1b81561a
 F src/vacuum.c feb1eabb20987983d9350cad98299b21fa811f52
-F src/vdbe.c 0f0e4a6255f9a5272857a818314d081db26bcd90
+F src/vdbe.c 936166d3dc5aa00364877603f545707896c1519e
 F src/vdbe.h c16ba943d407baa1c7085eefea73a063fc631863
 F src/vdbeInt.h ddb157974436d87652de7dc641f7191496d9a8cd
 F src/vdbeapi.c ba85b78fe08dc4a9ce747e62c89a2b4a4547e74c
@@ -1480,7 +1480,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 59814f35d13db1f6379b9ae218b5432bc03c6197
-R 5dc90b5728244567537e2c75af0c4605
+P 0213d6af84965676626c2fb4d78b4c74675207cc
+R 20833b687cd0398f4e539411826fc13a
 U drh
-Z 8cacf12e28835de4a8d101570828c9f0
+Z 68baca12d82e219ae03586c49d91929a
