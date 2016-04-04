@@ -910,10 +910,13 @@ do_test shell1-5.0 {
   }
 } {}
 
+# The string used here is the word "test" in Chinese.
+# In UTF-8, it is encoded as: \xE6\xB5\x8B\xE8\xAF\x95
+set test \u6D4B\u8BD5
+
 do_test shell1-6.0 {
-  # The base file name here is the word "test" in Chinese.
-  # In UTF-8, it is encoded as: \xE6\xB5\x8B\xE8\xAF\x95
-  set fileName \u6D4B\u8BD5; append fileName .db
+  set fileName $test; append fileName .db
+  catch {forcedelete $fileName}
   set x [catchcmdex $fileName "CREATE TABLE t1(x);\n.schema\n"]
   set code [lindex $x 0]
   set res [string trim [lindex $x 1]]
@@ -927,6 +930,21 @@ do_test shell1-6.0 {
     error "file \"$fileName\" (Unicode) does not exist"
   }
   forcedelete $fileName
+} {}
+
+do_test shell1-6.1 {
+  catch {forcedelete test3.db}
+  set x [catchcmdex test3.db \
+      "CREATE TABLE [encoding convertto utf-8 $test](x);\n.schema\n"]
+  set code [lindex $x 0]
+  set res [string trim [lindex $x 1]]
+  if {$code ne "0"} {
+    error "failed with error: $res"
+  }
+  if {$res ne "CREATE TABLE ${test}(x);"} {
+    error "failed with mismatch: $res"
+  }
+  forcedelete test3.db
 } {}
 
 finish_test
