@@ -1,5 +1,5 @@
-C More\srefactoring\sand\scleanup\swork\son\sthe\sWin32\sstring\sconversion\sand\sutility\sroutines.
-D 2016-04-04T02:05:46.170
+C Experimental\schanges\sto\sthe\scommand\sline\sshell\sto\smake\sit\swork\sbetter\swith\sUnicode\son\sWindows.
+D 2016-04-04T02:16:44.372
 F Makefile.in e812bb732d7af01baa09f1278bd4f4a2e3a09449
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc fe57d7e3e74fa383fd01ced796c0ffd966fc094a
@@ -374,7 +374,7 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c b8f7174e5f8c33c44ded3a25a973d0bb89228c20
 F src/rowset.c 9fe4b3ad7cc00944386bb600233d8f523de07a6e
 F src/select.c 7849cee0a01952a9c93cd28989daedfa57731143
-F src/shell.c e126f647f63da3d5d820f012359b89075cd7de99
+F src/shell.c cfe5edc196c7ab109b6ea728a69dc9346e03f4f7
 F src/sqlite.h.in c46a7b85d3f37371cacea8f98ec825f5e52c420c
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 98f72cbfe00169c39089115427d06ea05fe4b4a2
@@ -1049,7 +1049,7 @@ F test/sharedA.test 0cdf1a76dfa00e6beee66af5b534b1e8df2720f5
 F test/sharedB.test 16cc7178e20965d75278f410943109b77b2e645e
 F test/shared_err.test 2f2aee20db294b9924e81f6ccbe60f19e21e8506
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test dff5b20ad989770aface6d714491121172dfe8b0
+F test/shell1.test 95b172b3854413a566e1e16da0a9aeae25966f4c
 F test/shell2.test e242a9912f44f4c23c3d1d802a83e934e84c853b
 F test/shell3.test da513d522ef6f01cee8475dcf8332bff8982b3dd
 F test/shell4.test 69995ee1cc278eb149aa8746ce1f935f4eaf98b9
@@ -1480,7 +1480,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 345860c92195544aad44ea9b0d14c9ebbd50adf2
-R 8daf8efac2ee8825007360be7ce04871
+P 02ccb444a3d0b9a52ffd04cae9d9b6f654128c35
+R 12b05bab5737c52c6e35683f2e505d88
 U mistachkin
-Z a69ce6a98d15b1e2f1ce825b8343a90e
+Z 02f8d2df1ede1dbca37f29a3d0ba1aa0

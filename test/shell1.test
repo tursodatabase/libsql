@@ -76,20 +76,20 @@ do_test shell1-1.3.3 {
 
 # -echo                print commands before execution
 do_test shell1-1.4.1 {
-  catchcmd "-echo test.db" "" 
+  catchcmd "-echo test.db" ""
 } {0 {}}
 
 # -[no]header          turn headers on or off
 do_test shell1-1.5.1 {
-  catchcmd "-header test.db" "" 
+  catchcmd "-header test.db" ""
 } {0 {}}
 do_test shell1-1.5.2 {
-  catchcmd "-noheader test.db" "" 
+  catchcmd "-noheader test.db" ""
 } {0 {}}
 
 # -bail                stop after hitting an error
 do_test shell1-1.6.1 {
-  catchcmd "-bail test.db" "" 
+  catchcmd "-bail test.db" ""
 } {0 {}}
 
 # -interactive         force interactive I/O
@@ -103,40 +103,40 @@ do_test shell1-1.7.1 {
 
 # -batch               force batch I/O
 do_test shell1-1.8.1 {
-  catchcmd "-batch test.db" "" 
+  catchcmd "-batch test.db" ""
 } {0 {}}
 
 # -column              set output mode to 'column'
 do_test shell1-1.9.1 {
-  catchcmd "-column test.db" "" 
+  catchcmd "-column test.db" ""
 } {0 {}}
 
 # -csv                 set output mode to 'csv'
 do_test shell1-1.10.1 {
-  catchcmd "-csv test.db" "" 
+  catchcmd "-csv test.db" ""
 } {0 {}}
 
 # -html                set output mode to HTML
 do_test shell1-1.11.1 {
-  catchcmd "-html test.db" "" 
+  catchcmd "-html test.db" ""
 } {0 {}}
 
 # -line                set output mode to 'line'
 do_test shell1-1.12.1 {
-  catchcmd "-line test.db" "" 
+  catchcmd "-line test.db" ""
 } {0 {}}
 
 # -list                set output mode to 'list'
 do_test shell1-1.13.1 {
-  catchcmd "-list test.db" "" 
+  catchcmd "-list test.db" ""
 } {0 {}}
 
 # -separator 'x'       set output field separator (|)
 do_test shell1-1.14.1 {
-  catchcmd "-separator 'x' test.db" "" 
+  catchcmd "-separator 'x' test.db" ""
 } {0 {}}
 do_test shell1-1.14.2 {
-  catchcmd "-separator x test.db" "" 
+  catchcmd "-separator x test.db" ""
 } {0 {}}
 do_test shell1-1.14.3 {
   set res [catchcmd "-separator" ""]
@@ -147,7 +147,7 @@ do_test shell1-1.14.3 {
 
 # -stats               print memory stats before each finalize
 do_test shell1-1.14b.1 {
-  catchcmd "-stats test.db" "" 
+  catchcmd "-stats test.db" ""
 } {0 {}}
 
 # -nullvalue 'text'    set text string for NULL values
@@ -175,7 +175,7 @@ do_test shell1-1.16.1 {
 
 # check first token handling
 do_test shell1-2.1.1 {
-  catchcmd "test.db" ".foo" 
+  catchcmd "test.db" ".foo"
 } {1 {Error: unknown command or invalid arguments:  "foo". Enter ".help" for help}}
 do_test shell1-2.1.2 {
   catchcmd "test.db" ".\"foo OFF\""
@@ -908,6 +908,25 @@ do_test shell1-5.0 {
       error "failed with byte $hex mismatch"
     }
   }
+} {}
+
+do_test shell1-6.0 {
+  # The file name here is the word "test" in Chinese.
+  # In UTF-8, it is encoded as: \xE6\xB5\x8B\xE8\xAF\x95
+  set fileName \u6D4B\u8BD5; append fileName .db
+  set x [catchcmdex $fileName "CREATE TABLE t1(x);\n.schema\n"]
+  set code [lindex $x 0]
+  set res [string trim [lindex $x 1]]
+  if {$code ne "0"} {
+    error "failed with error: $res"
+  }
+  if {$res ne "CREATE TABLE t1(x);"} {
+    error "failed with mismatch: $res"
+  }
+  if {![file exists $fileName]} {
+    error "file \"$fileName\" (MBCS) does not exist"
+  }
+  forcedelete $fileName
 } {}
 
 finish_test
