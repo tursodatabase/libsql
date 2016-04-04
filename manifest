@@ -1,5 +1,5 @@
-C Minor\sperformance\soptimization\sin\sthe\scomparison\sopcodes\sof\sthe\sVDBE.
-D 2016-04-04T13:46:24.704
+C Enhance\ssqlite3session_apply()\sand\ssqlite3session_apply_strm()\sso\sthat\nconflicts\sare\sretried\sbefore\sthe\sxConflict()\scallback\sis\sinvoked,\sas\slong\nas\sthe\s"apply"\soperation\sis\smaking\sforward\sprogress.
+D 2016-04-04T14:57:25.972
 F Makefile.in e812bb732d7af01baa09f1278bd4f4a2e3a09449
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc fe57d7e3e74fa383fd01ced796c0ffd966fc094a
@@ -273,7 +273,7 @@ F ext/rtree/sqlite3rtree.h 9c5777af3d2921c7b4ae4954e8e5697502289d28
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F ext/session/changeset.c 4ccbaa4531944c24584bf6a61ba3a39c62b6267a
-F ext/session/session1.test 5dab50ce55c859e829bae24f0787013f51775fc5
+F ext/session/session1.test 98f384736e2bc21ccf5ed81bdadcff4ad863393b
 F ext/session/session2.test 284de45abae4cc1082bc52012ee81521d5ac58e0
 F ext/session/session3.test a7a9ce59b8d1e49e2cc23d81421ac485be0eea01
 F ext/session/session4.test a6ed685da7a5293c5d6f99855bcf41dbc352ca84
@@ -287,9 +287,11 @@ F ext/session/sessionC.test 97556f5164ac29f2344b24bd7de6a3a35a95c390
 F ext/session/sessionD.test d4744c78334162851d2a2f285c7e603e31b49aa2
 F ext/session/sessionE.test e60a238c47f0feb3bb707e7f35e22be09c7e8f26
 F ext/session/sessionF.test c2f178d4dfd723a5fd94a730ea2ccb44c669e3ce
+F ext/session/sessionG.test 01ef705096a9d3984eebdcca79807a211dee1b60
 F ext/session/session_common.tcl a1293167d14774b5e728836720497f40fe4ea596
 F ext/session/sessionfault.test d52cbb7bee48cc8ee80335e07eb72fcb6b15eb40
-F ext/session/sqlite3session.c b10af3e87ae437bb197b3a23a584d2dc8ad8981a
+F ext/session/sessionfault2.test ac1dfd77a0fb0ea310aee40a16645ef1b66d3f88
+F ext/session/sqlite3session.c 2fc72bd989c424a15802da766c7ebd8eed47bcf6
 F ext/session/sqlite3session.h 64e9e7f185725ef43b97f4a9a0c0df0669844f1d
 F ext/session/test_session.c 187bd344c5ae9d5be85e22ef7c3010f0c17307ce
 F ext/userauth/sqlite3userauth.h 19cb6f0e31316d0ee4afdfb7a85ef9da3333a220
@@ -1480,7 +1482,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0213d6af84965676626c2fb4d78b4c74675207cc
-R 20833b687cd0398f4e539411826fc13a
+P e375fe52cea7903c11ecef71c3452c67a96b663e 49763fc3ae2fb6117b0443ea28661568467f9bf2
+R 29983b81bb4a270732770d4dd854ff08
+T +closed 49763fc3ae2fb6117b0443ea28661568467f9bf2
 U drh
-Z 68baca12d82e219ae03586c49d91929a
+Z eb92f633faf3f47383a6550496ee5fc7
