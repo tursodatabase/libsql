@@ -3123,8 +3123,13 @@ case OP_Transaction: {
   assert( p->readOnly==0 || pOp->p2==0 );
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
   assert( DbMaskTest(p->btreeMask, pOp->p1) );
-  if( pOp->p2 && (db->flags & SQLITE_QueryOnly)!=0 ){
-    rc = SQLITE_READONLY;
+  if( pOp->p2 && (db->flags & (SQLITE_QueryOnly|SQLITE_RequireTxn))!=0 ){
+    if( db->flags & SQLITE_QueryOnly ){
+      rc = SQLITE_READONLY;
+    }else if( db->autoCommit && (pOp->p2&02)==0 ){
+      sqlite3VdbeError(p, "cannot write outside of a transaction");
+      rc = SQLITE_ERROR;
+    }
     goto abort_due_to_error;
   }
   pBt = db->aDb[pOp->p1].pBt;
@@ -3176,9 +3181,8 @@ case OP_Transaction: {
     iGen = iMeta = 0;
   }
   assert( pOp->p5==0 || pOp->p4type==P4_INT32 );
-  if( pOp->p5 && (iMeta!=pOp->p3 || iGen!=pOp->p4.i) ){
-    sqlite3DbFree(db, p->zErrMsg);
-    p->zErrMsg = sqlite3DbStrDup(db, "database schema has changed");
+  if( (pOp->p5&0x01)!=0 && (iMeta!=pOp->p3 || iGen!=pOp->p4.i) ){
+    sqlite3VdbeError(p, "database schema has changed");
     /* If the schema-cookie from the database file matches the cookie 
     ** stored with the in-memory representation of the schema, do
     ** not reload the schema from the database file.
