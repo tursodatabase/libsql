@@ -5300,7 +5300,7 @@ int sqlite3PagerGet(
   int rc = SQLITE_OK;
   PgHdr *pPg = 0;
   u32 iFrame = 0;                 /* Frame to read from WAL file */
-  const int noContent = (flags & PAGER_GET_NOCONTENT);
+#define noContent  ((flags & PAGER_GET_NOCONTENT)!=0)
 
   /* It is acceptable to use a read-only (mmap) page for any page except
   ** page 1 if there is no write-transaction open or the ACQUIRE_READONLY
@@ -5432,8 +5432,10 @@ int sqlite3PagerGet(
         testcase( rc==SQLITE_NOMEM );
         sqlite3EndBenignMalloc();
       }
-      memset(pPg->pData, 0, pPager->pageSize);
-      IOTRACE(("ZERO %p %d\n", pPager, pgno));
+      if( (flags & PAGER_GET_NOINIT)==0 ){
+        memset(pPg->pData, 0, pPager->pageSize);
+        IOTRACE(("ZERO %p %d\n", pPager, pgno));
+      }
     }else{
       if( pagerUseWal(pPager) && bMmapOk==0 ){
         rc = sqlite3WalFindFrame(pPager->pWal, pgno, &iFrame);
@@ -5461,6 +5463,7 @@ pager_acquire_err:
   *ppPage = 0;
   return rc;
 }
+#undef noContent
 
 /*
 ** Acquire a page if it is already in the in-memory cache.  Do

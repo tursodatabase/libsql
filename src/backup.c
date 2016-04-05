@@ -293,7 +293,8 @@ static int backupOnePage(
     DbPage *pDestPg = 0;
     Pgno iDest = (Pgno)(iOff/nDestPgsz)+1;
     if( iDest==PENDING_BYTE_PAGE(p->pDest->pBt) ) continue;
-    if( SQLITE_OK==(rc = sqlite3PagerGet(pDestPager, iDest, &pDestPg, 0))
+    if( SQLITE_OK==(rc = sqlite3PagerGet(pDestPager, iDest, &pDestPg, 
+                                         PAGER_GET_NOINIT))
      && SQLITE_OK==(rc = sqlite3PagerWrite(pDestPg))
     ){
       const u8 *zIn = &zSrcData[iOff%nSrcPgsz];

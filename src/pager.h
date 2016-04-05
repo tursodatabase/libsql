@@ -83,6 +83,7 @@ typedef struct PgHdr DbPage;
 */
 #define PAGER_GET_NOCONTENT     0x01  /* Do not load data from disk */
 #define PAGER_GET_READONLY      0x02  /* Read-only page is acceptable */
+#define PAGER_GET_NOINIT        0x04  /* Do not initialize the page */
 
 /*
 ** Flags for sqlite3PagerSetFlags()
