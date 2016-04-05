@@ -2786,7 +2786,7 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
 
   addr1 = sqlite3VdbeAddOp2(v, OP_SorterSort, iSorter, 0); VdbeCoverage(v);
   assert( pKey!=0 || db->mallocFailed || pParse->nErr );
-  if( IsUniqueIndex(pIndex) && pKey!=0 ){
+  if( IsUniqueIndex(pIndex) /*&& pKey!=0*/ ){
     int j2 = sqlite3VdbeCurrentAddr(v) + 3;
     sqlite3VdbeGoto(v, j2);
     addr2 = sqlite3VdbeCurrentAddr(v);

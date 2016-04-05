@@ -1,5 +1,5 @@
-C Use\sSQLITE_WITHIN()\sfor\spointer\srange\scomparisons\sin\ssome\stesting\scode.
-D 2016-04-05T13:35:43.174
+C Remove\san\sunnecessary\sconditional\sfrom\sthe\sindex\sbuilder.
+D 2016-04-05T14:01:34.379
 F Makefile.in e812bb732d7af01baa09f1278bd4f4a2e3a09449
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc fe57d7e3e74fa383fd01ced796c0ffd966fc094a
@@ -322,7 +322,7 @@ F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
 F src/btree.c 556203aab543e91f4e20cc273a507ed712c8da26
 F src/btree.h a5008b9afe56e8e54ade6c436a910f112defcca9
 F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
-F src/build.c 39faaaeecb77eb3936d4bd5024e865e3836ca323
+F src/build.c ab763de47337f1acf03de6b36cbc13c90d20b932
 F src/callback.c 2e76147783386374bf01b227f752c81ec872d730
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 60e135af364d777a9ab41c97e5e89cd224da6198
@@ -1482,7 +1482,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 85b979319bcb8ec301ae39b36ad60348e4515be7
-R 78bf202733e4247e84509df93eee1af7
+P 7cacf4e954c8de5af5efb56d8271a5ac1edc1c04
+R 5ad558ecd8aa9ab49f6924d29c53367a
 U drh
-Z b9b3193def70d2175e83a878eda9a91d
+Z 440953881a474ce081fa2537f4e8dbc0
