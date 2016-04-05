@@ -1,5 +1,5 @@
-C Remove\ssuperfluous\sdirectories\sfrom\sthe\sMakefile\sclean\stargets.
-D 2016-04-05T19:46:10.423
+C Carry\stable\scolumn\stypes\sthrough\sinto\sVIEW\sdefinitions,\swhere\spossible.
+D 2016-04-05T20:59:12.069
 F Makefile.in eba680121821b8a60940a81454316f47a341487a
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1f123a0757f6f04f0341accb46457e116817159a
@@ -322,7 +322,7 @@ F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
 F src/btree.c 556203aab543e91f4e20cc273a507ed712c8da26
 F src/btree.h a5008b9afe56e8e54ade6c436a910f112defcca9
 F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
-F src/build.c c5cf206191880f88142352629d53fed174fc10bd
+F src/build.c 1944d95f0250ec72dab939f8319a12e237aaad61
 F src/callback.c 2e76147783386374bf01b227f752c81ec872d730
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 60e135af364d777a9ab41c97e5e89cd224da6198
@@ -375,12 +375,12 @@ F src/printf.c 63e6fb12bbe702dd664dc3703776c090383a5a26
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c b8f7174e5f8c33c44ded3a25a973d0bb89228c20
 F src/rowset.c 9fe4b3ad7cc00944386bb600233d8f523de07a6e
-F src/select.c 7849cee0a01952a9c93cd28989daedfa57731143
+F src/select.c d9b8628acb98f1a38921888d823a6b70c7a7774b
 F src/shell.c b7922fa264f8c8d72a5ec6dd0b091e15a93c4de5
 F src/sqlite.h.in 7f437b068314f053e6417d452c59f08d05092591
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 98f72cbfe00169c39089115427d06ea05fe4b4a2
-F src/sqliteInt.h 594bf31a7a0cc788688ca947e562576e23bd7904
+F src/sqliteInt.h 292fbc9dd900c64e93a15dfd73ccd9e03475e6a6
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
@@ -1308,7 +1308,7 @@ F test/vacuum3.test 77ecdd54592b45a0bcb133339f99f1ae0ae94d0d
 F test/vacuum4.test d3f8ecff345f166911568f397d2432c16d2867d9
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/veryquick.test 57ab846bacf7b90cf4e9a672721ea5c5b669b661
-F test/view.test f6c3a39e0c819891265e1d0754e99960d81ef6c9
+F test/view.test 765802c7a66d37fabd5ac8e2f2dbe572b43eb9ab
 F test/vtab1.test 7c4b81abd88361ada9cbe414c459efca26be6bda
 F test/vtab2.test f8cd1bb9aba7143eba97812d9617880a36d247ad
 F test/vtab3.test b45f47d20f225ccc9c28dc915d92740c2dee311e
@@ -1482,7 +1482,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cf569f9f2fab1828e4bfced111fd9a6ee23ea8c0
-R 7e27a98746fe808f972e7a0e53304d1b
-U mistachkin
-Z 787b56c7aa73e42a20b98bed3736a925
+P 0bf9926c7a7865694edd48535777248e73d86bbf
+R c7f5a7683cc4a0d14362e20e6891847a
+U drh
+Z ec8e2cff7764d808576889c190bbf60c
