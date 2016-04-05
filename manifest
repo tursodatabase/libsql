@@ -1,5 +1,5 @@
-C Carry\stable\scolumn\stypes\sthrough\sinto\sVIEW\sdefinitions,\swhere\spossible.
-D 2016-04-05T20:59:12.069
+C Defer\sopening\sthe\sfile\sused\sfor\sthe\stemp\sdatabase\s(where\sCREATE\sTEMP\sTABLE\stables\sare\sstored)\suntil\sthe\sdatabase\sis\stoo\slarge\sto\sreside\sentirely\swithin\sthe\scache.\sThere\sare\slikely\sstill\sproblems\son\sthis\sbranch.
+D 2016-04-05T21:07:58.179
 F Makefile.in eba680121821b8a60940a81454316f47a341487a
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1f123a0757f6f04f0341accb46457e116817159a
@@ -362,10 +362,10 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c b1ccb273771f41dbdbe0ba7c1ad63c38ad5972ec
 F src/os_win.c b3ba9573d8d893e70a6a8015bbee572ecf7ffbef
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
-F src/pager.c 38718a019ca762ba4f6795425d5a54db70d1790d
+F src/pager.c 123dbae47bf27915a4b567915ff8dcc27cfcd369
 F src/pager.h e1d38a2f14849e219df0f91f8323504d134c8a56
 F src/parse.y 5ea8c81c5c41b27887f41b4a7e1c58470d7d3821
-F src/pcache.c 647bb53a86b7bbcf55ad88089b3ea5a9170b90df
+F src/pcache.c e9c00846d3dcdaa75b288c6f16238c2fe2177823
 F src/pcache.h 4d0ccaad264d360981ec5e6a2b596d6e85242545
 F src/pcache1.c c40cdb93586e21b5dd826b5e671240bd91c26b05
 F src/pragma.c faf42922bb7ab2f6672cb550356c1967abae3c84
@@ -1110,6 +1110,7 @@ F test/tableopts.test dba698ba97251017b7c80d738c198d39ab747930
 F test/tclsqlite.test e1306001a0ca92250b691ea6d3cecaca5b6342aa
 F test/tempdb.test bd92eba8f20e16a9136e434e20b280794de3cdb6
 F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
+F test/temptable2.test f3b198e386f6494082c87accc8780cdf84b36e6d
 F test/temptrigger.test 8ec228b0db5d7ebc4ee9b458fc28cb9e7873f5e1
 F test/tester.tcl 7b740ee852c55e1e72b6ebe5044acee7aa4e5553
 F test/thread001.test 9f22fd3525a307ff42a326b6bc7b0465be1745a5
@@ -1482,7 +1483,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0bf9926c7a7865694edd48535777248e73d86bbf
-R c7f5a7683cc4a0d14362e20e6891847a
-U drh
-Z ec8e2cff7764d808576889c190bbf60c
+P fb555c3c2af7f5e62ff839658f4fba7b645d3a68
+R f511e5baaeaad693345498b91b98e90f
+T *branch * tempfiles-lazy-open
+T *sym-tempfiles-lazy-open *
+T -sym-trunk *
+U dan
+Z 505ba6148fb8f2c79237e86b07655c1c

@@ -254,7 +254,7 @@ sqlite3_pcache_page *sqlite3PcacheFetch(
 
 /*
 ** If the sqlite3PcacheFetch() routine is unable to allocate a new
-** page because new clean pages are available for reuse and the cache
+** page because no clean pages are available for reuse and the cache
 ** size limit has been reached, then this routine can be invoked to 
 ** try harder to allocate a page.  This routine might invoke the stress
 ** callback to spill dirty pages to the journal.  It will then try to
@@ -440,6 +440,17 @@ void sqlite3PcacheCleanAll(PCache *pCache){
 }
 
 /*
+** Clear the PGHDR_NEED_SYNC and PGHDR_WRITEABLE flag from all dirty pages.
+*/
+void sqlite3PcacheClearWritable(PCache *pCache){
+  PgHdr *p;
+  for(p=pCache->pDirty; p; p=p->pDirtyNext){
+    p->flags &= ~(PGHDR_NEED_SYNC|PGHDR_WRITEABLE);
+  }
+  pCache->pSynced = pCache->pDirtyTail;
+}
+
+/*
 ** Clear the PGHDR_NEED_SYNC flag from all dirty pages.
 */
 void sqlite3PcacheClearSyncFlags(PCache *pCache){
@@ -484,7 +495,7 @@ void sqlite3PcacheTruncate(PCache *pCache, Pgno pgno){
       ** it must be that pgno==0.
       */
       assert( p->pgno>0 );
-      if( ALWAYS(p->pgno>pgno) ){
+      if( p->pgno>pgno ){
         assert( p->flags&PGHDR_DIRTY );
         sqlite3PcacheMakeClean(p);
       }

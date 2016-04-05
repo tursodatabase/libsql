@@ -2006,7 +2006,11 @@ static int pager_end_transaction(Pager *pPager, int hasMaster, int bCommit){
   sqlite3BitvecDestroy(pPager->pInJournal);
   pPager->pInJournal = 0;
   pPager->nRec = 0;
-  sqlite3PcacheCleanAll(pPager->pPCache);
+  if( pPager->tempFile==0 || MEMDB ){
+    sqlite3PcacheCleanAll(pPager->pPCache);
+  }else{
+    sqlite3PcacheClearWritable(pPager->pPCache);
+  }
   sqlite3PcacheTruncate(pPager->pPCache, pPager->dbSize);
 
   if( pagerUseWal(pPager) ){
@@ -2374,9 +2378,13 @@ static int pager_playback_one_page(
       ** be written out into the database file before its journal file
       ** segment is synced. If a crash occurs during or following this,
       ** database corruption may ensue.
+      **
+      ** Update: Another exception is for temp files that are not 
+      ** in-memory databases. In this case the page may have been dirty
+      ** at the start of the transaction.
       */
       assert( !pagerUseWal(pPager) );
-      sqlite3PcacheMakeClean(pPg);
+      if( pPager->tempFile==0 ) sqlite3PcacheMakeClean(pPg);
     }
     pager_set_pagehash(pPg);
 
@@ -4258,8 +4266,9 @@ static int pager_write_pagelist(Pager *pPager, PgHdr *pList){
 
   /* This function is only called for rollback pagers in WRITER_DBMOD state. */
   assert( !pagerUseWal(pPager) );
-  assert( pPager->eState==PAGER_WRITER_DBMOD );
+  assert( pPager->tempFile || pPager->eState==PAGER_WRITER_DBMOD );
   assert( pPager->eLock==EXCLUSIVE_LOCK );
+  assert( pPager->tempFile==0 || pList->pDirty==0 );
 
   /* If the file is a temp-file has not yet been opened, open it now. It
   ** is not possible for rc to be other than SQLITE_OK if this branch
@@ -5941,6 +5950,7 @@ int sqlite3PagerWrite(PgHdr *pPg){
     if( pPager->nSavepoint ) return subjournalPageIfRequired(pPg);
     return SQLITE_OK;
   }else if( pPager->sectorSize > (u32)pPager->pageSize ){
+    assert( pPager->tempFile==0 );
     return pagerWriteLargeSector(pPg);
   }else{
     return pager_write(pPg);
@@ -6179,11 +6189,11 @@ int sqlite3PagerCommitPhaseOne(
   /* If no database changes have been made, return early. */
   if( pPager->eState<PAGER_WRITER_CACHEMOD ) return SQLITE_OK;
 
-  if( MEMDB ){
+  assert( MEMDB==0 || pPager->tempFile );
+  if( pPager->tempFile ){
     /* If this is an in-memory db, or no pages have been written to, or this
     ** function has already been called, it is mostly a no-op.  However, any
-    ** backup in progress needs to be restarted.
-    */
+    ** backup in progress needs to be restarted.  */
     sqlite3BackupRestart(pPager->pBackup);
   }else{
     if( pagerUseWal(pPager) ){
@@ -6845,7 +6855,7 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno, int isCommit){
   ** the journal needs to be sync()ed before database page pPg->pgno 
   ** can be written to. The caller has already promised not to write to it.
   */
-  if( (pPg->flags&PGHDR_NEED_SYNC) && !isCommit ){
+  if( (pPg->flags&PGHDR_NEED_SYNC) && !isCommit && pPager->tempFile==0 ){
     needSyncPgno = pPg->pgno;
     assert( pPager->journalMode==PAGER_JOURNALMODE_OFF ||
             pageInJournal(pPager, pPg) || pPg->pgno>pPager->dbOrigSize );
