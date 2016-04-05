@@ -1,5 +1,5 @@
-C Fix\sdocumentation\stypos.\s\sComment\schanges\sonly.\s\sNo\schanges\sto\scode.
-D 2016-04-04T18:04:56.616
+C Do\snot\sallow\spointer\sarithmetic\sto\smove\sa\spointer\sacross\sa\smemory\sallocation\nboundary.
+D 2016-04-05T13:19:19.622
 F Makefile.in e812bb732d7af01baa09f1278bd4f4a2e3a09449
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc fe57d7e3e74fa383fd01ced796c0ffd966fc094a
@@ -319,7 +319,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c f60f0aa55d25d853ffde53d0b0370a7bb7ee41ce
 F src/bitvec.c 3ee4c8b2c94ed3a7377256e18199e6ff5cf33f63
 F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
-F src/btree.c 577fb5674e2f0aa0a38246afc19e1885a0b8c9b0
+F src/btree.c 2b5504ac632a0d7a1cac94eacee3042f1d79de38
 F src/btree.h a5008b9afe56e8e54ade6c436a910f112defcca9
 F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
 F src/build.c 39faaaeecb77eb3936d4bd5024e865e3836ca323
@@ -1482,7 +1482,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cefd36ff7b7f142bcebdb16b4d24ae274cdf2709
-R febb375a1eed9f049740185e3c47f862
+P d5fc2f7f90f8cbd53810c7a445b0e9c9a0e39182
+R 1653d2df23c45643b8fad503f203cef3
 U drh
-Z 64b7ed851fe55fe722cd357618c3eec9
+Z 587fa086f1daad23618d760100c57f67
