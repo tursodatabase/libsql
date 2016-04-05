@@ -6708,7 +6708,7 @@ static int editPage(
   for(i=0; i<nNew && !CORRUPT_DB; i++){
     u8 *pCell = pCArray->apCell[i+iNew];
     int iOff = get2byteAligned(&pPg->aCellIdx[i*2]);
-    if( pCell>=aData && pCell<&aData[pPg->pBt->usableSize] ){
+    if( SQLITE_WITHIN(pCell, aData, &aData[pPg->pBt->usableSize]) ){
       pCell = &pTmp[pCell - aData];
     }
     assert( 0==memcmp(pCell, &aData[iOff],
