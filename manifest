@@ -1,8 +1,8 @@
-C Incorrect\sversion\sof\sbuild.c\schecked\sin\sat\s[87e5f5a6c60e3]\s(because\sI\nneglected\sto\spress\sthe\s"Save"\sbutton\son\sthe\stext\seditor).\s\sThere\sis\sno\schange\nto\sthe\slogic,\sjust\simproved\spresentation.
-D 2016-04-05T15:59:23.006
-F Makefile.in e812bb732d7af01baa09f1278bd4f4a2e3a09449
+C Remove\ssuperfluous\sdirectories\sfrom\sthe\sMakefile\sclean\stargets.
+D 2016-04-05T19:46:10.423
+F Makefile.in eba680121821b8a60940a81454316f47a341487a
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc fe57d7e3e74fa383fd01ced796c0ffd966fc094a
+F Makefile.msc 1f123a0757f6f04f0341accb46457e116817159a
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION 5d234da9b5dae329fab75ff75884cfe0a9cb3fda
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -300,7 +300,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 942e1fd30eb352492cf599aa7fcb5334783e4cbf
+F main.mk a283660f75c3c4b75d8c9d12a40fa38a066eee9d
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -1482,7 +1482,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ed128e8b826cd9620b7146d01d461ed28b9a672d
-R 27e5e4c2995b5324778005dedfa90fe5
-U drh
-Z ed5acb084f4d8b134ae4eeee3cdc81ad
+P cf569f9f2fab1828e4bfced111fd9a6ee23ea8c0
+R 7e27a98746fe808f972e7a0e53304d1b
+U mistachkin
+Z 787b56c7aa73e42a20b98bed3736a925

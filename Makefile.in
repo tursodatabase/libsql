@@ -1228,7 +1228,6 @@ clean:
 	rm -f lemon$(BEXE) lempar.c parse.* sqlite*.tar.gz
 	rm -f mkkeywordhash$(BEXE) keywordhash.h
 	rm -f *.da *.bb *.bbg gmon.out
-	rm -rf quota2a quota2b quota2c
 	rm -rf tsrc .target_source
 	rm -f tclsqlite3$(TEXE)
 	rm -f testfixture$(TEXE) test.db

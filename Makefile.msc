@@ -2075,9 +2075,6 @@ clean:
 	del /Q notasharedlib.* 2>NUL
 	-rmdir /Q/S .deps 2>NUL
 	-rmdir /Q/S .libs 2>NUL
-	-rmdir /Q/S quota2a 2>NUL
-	-rmdir /Q/S quota2b 2>NUL
-	-rmdir /Q/S quota2c 2>NUL
 	-rmdir /Q/S tsrc 2>NUL
 	del /Q .target_source 2>NUL
 	del /Q tclsqlite3.exe 2>NUL
