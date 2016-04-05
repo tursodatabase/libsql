@@ -526,7 +526,8 @@ static int fts3_test_varint_cmd(
 #ifdef SQLITE_ENABLE_FTS3
   char aBuf[24];
   int rc;
-  Tcl_WideInt w, w2;
+  Tcl_WideInt w;
+  sqlite3_int64 w2;
   int nByte, nByte2;
 
   if( objc!=2 ){

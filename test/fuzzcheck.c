@@ -70,6 +70,7 @@
 #include <stdarg.h>
 #include <ctype.h>
 #include "sqlite3.h"
+#include <assert.h>
 #define ISSPACE(X) isspace((unsigned char)(X))
 #define ISDIGIT(X) isdigit((unsigned char)(X))
 
@@ -188,7 +189,7 @@ static int progressHandler(void *pVdbeLimitFlag){
 ** Reallocate memory.  Show and error and quit if unable.
 */
 static void *safe_realloc(void *pOld, int szNew){
-  void *pNew = realloc(pOld, szNew);
+  void *pNew = realloc(pOld, szNew<=0 ? 1 : szNew);
   if( pNew==0 ) fatalError("unable to realloc for %d bytes", szNew);
   return pNew;
 }
@@ -255,8 +256,9 @@ static VFile *createVFile(const char *zName, int sz, unsigned char *pData){
   if( i>=MX_FILE ) return 0;
   pNew = &g.aFile[i];
   if( zName ){
-    pNew->zFilename = safe_realloc(0, strlen(zName)+1);
-    memcpy(pNew->zFilename, zName, strlen(zName)+1);
+    int nName = (int)strlen(zName)+1;
+    pNew->zFilename = safe_realloc(0, nName);
+    memcpy(pNew->zFilename, zName, nName);
   }else{
     pNew->zFilename = 0;
   }
@@ -620,12 +622,14 @@ static void inmemVfsRegister(void){
 */
 static void runSql(sqlite3 *db, const char *zSql, unsigned  runFlags){
   const char *zMore;
+  const char *zEnd = &zSql[strlen(zSql)];
   sqlite3_stmt *pStmt;
 
   while( zSql && zSql[0] ){
     zMore = 0;
     pStmt = 0;
     sqlite3_prepare_v2(db, zSql, -1, &pStmt, &zMore);
+    assert( zMore<=zEnd );
     if( zMore==zSql ) break;
     if( runFlags & SQL_TRACE ){
       const char *z = zSql;
@@ -783,8 +787,7 @@ static void showHelp(void){
 "  --export-db DIR       Write databases to files(s) in DIR. Works with --dbid\n"
 "  --export-sql DIR      Write SQL to file(s) in DIR. Also works with --sqlid\n"
 "  --help                Show this help text\n"
-"  -q                    Reduced output\n"
-"  --quiet               Reduced output\n"
+"  -q|--quiet            Reduced output\n"
 "  --limit-mem N         Limit memory used by test SQLite instance to N bytes\n"
 "  --limit-vdbe          Panic if an sync SQL runs for more than 100,000 cycles\n"
 "  --load-sql ARGS...    Load SQL scripts fro files into SOURCE-DB\n"
@@ -795,8 +798,7 @@ static void showHelp(void){
 "  --result-trace        Show the results of each SQL command\n"
 "  --sqlid N             Use only SQL where sqlid=N\n"
 "  --timeout N           Abort if any single test case needs more than N seconds\n"
-"  -v                    Increased output\n"
-"  --verbose             Increased output\n"
+"  -v|--verbose          Increased output.  Repeat for more output.\n"
   );
 }
 
@@ -919,8 +921,8 @@ int main(int argc, char **argv){
       }else
       if( strcmp(z,"verbose")==0 || strcmp(z,"v")==0 ){
         quietFlag = 0;
-        verboseFlag = 1;
-        runFlags |= SQL_TRACE;
+        verboseFlag++;
+        if( verboseFlag>1 ) runFlags |= SQL_TRACE;
       }else
       {
         fatalError("unknown option: %s", argv[i]);
@@ -1055,7 +1057,7 @@ int main(int argc, char **argv){
     /* Print the description, if there is one */
     if( !quietFlag ){
       zDbName = azSrcDb[iSrcDb];
-      i = strlen(zDbName) - 1;
+      i = (int)strlen(zDbName) - 1;
       while( i>0 && zDbName[i-1]!='/' && zDbName[i-1]!='\\' ){ i--; }
       zDbName += i;
       sqlite3_prepare_v2(db, "SELECT msg FROM readme", -1, &pStmt, 0);

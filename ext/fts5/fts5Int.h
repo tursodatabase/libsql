@@ -26,10 +26,11 @@ SQLITE_EXTENSION_INIT1
 typedef unsigned char  u8;
 typedef unsigned int   u32;
 typedef unsigned short u16;
+typedef short i16;
 typedef sqlite3_int64 i64;
 typedef sqlite3_uint64 u64;
 
-#define ArraySize(x) (sizeof(x) / sizeof(x[0]))
+#define ArraySize(x) ((int)(sizeof(x) / sizeof(x[0])))
 
 #define testcase(x)
 #define ALWAYS(x) 1
@@ -46,6 +47,10 @@ typedef sqlite3_uint64 u64;
 
 #endif
 
+/* Truncate very long tokens to this many bytes. Hard limit is 
+** (65536-1-1-4-9)==65521 bytes. The limiting factor is the 16-bit offset
+** field that occurs at the start of each leaf page (see fts5_index.c). */
+#define FTS5_MAX_TOKEN_SIZE 32768
 
 /*
 ** Maximum number of prefix indexes on single FTS5 table. This must be
@@ -78,6 +83,16 @@ extern int sqlite3_fts5_may_be_corrupt;
 # define assert_nc(x) assert(sqlite3_fts5_may_be_corrupt || (x))
 #else
 # define assert_nc(x) assert(x)
+#endif
+
+/* Mark a function parameter as unused, to suppress nuisance compiler
+** warnings. */
+#ifndef UNUSED_PARAM
+# define UNUSED_PARAM(X)  (void)(X)
+#endif
+
+#ifndef UNUSED_PARAM2
+# define UNUSED_PARAM2(X, Y)  (void)(X), (void)(Y)
 #endif
 
 typedef struct Fts5Global Fts5Global;
@@ -161,6 +176,7 @@ struct Fts5Config {
   int pgsz;                       /* Approximate page size used in %_data */
   int nAutomerge;                 /* 'automerge' setting */
   int nCrisisMerge;               /* Maximum allowed segments per level */
+  int nUsermerge;                 /* 'usermerge' setting */
   int nHashSize;                  /* Bytes of memory for in-memory hash */
   char *zRank;                    /* Name of rank function */
   char *zRankArgs;                /* Arguments to rank function */
@@ -225,8 +241,8 @@ int sqlite3Fts5ConfigParseRank(const char*, char**, char**);
 typedef struct Fts5Buffer Fts5Buffer;
 struct Fts5Buffer {
   u8 *p;
-  u32 n;
-  u32 nSpace;
+  int n;
+  int nSpace;
 };
 
 int sqlite3Fts5BufferSize(int*, Fts5Buffer*, u32);
@@ -247,7 +263,7 @@ char *sqlite3Fts5Mprintf(int *pRc, const char *zFmt, ...);
 #define fts5BufferSet(a,b,c,d)        sqlite3Fts5BufferSet(a,b,c,d)
 
 #define fts5BufferGrow(pRc,pBuf,nn) ( \
-  (pBuf)->n + (nn) <= (pBuf)->nSpace ? 0 : \
+  (u32)((pBuf)->n) + (u32)(nn) <= (u32)((pBuf)->nSpace) ? 0 : \
     sqlite3Fts5BufferSize((pRc),(pBuf),(nn)+(pBuf)->n) \
 )
 
@@ -282,6 +298,7 @@ struct Fts5PoslistWriter {
   i64 iPrev;
 };
 int sqlite3Fts5PoslistWriterAppend(Fts5Buffer*, Fts5PoslistWriter*, i64);
+void sqlite3Fts5PoslistSafeAppend(Fts5Buffer*, i64*, i64);
 
 int sqlite3Fts5PoslistNext64(
   const u8 *a, int n,             /* Buffer containing poslist */
@@ -315,6 +332,15 @@ void sqlite3Fts5TermsetFree(Fts5Termset*);
 typedef struct Fts5Index Fts5Index;
 typedef struct Fts5IndexIter Fts5IndexIter;
 
+struct Fts5IndexIter {
+  i64 iRowid;
+  const u8 *pData;
+  int nData;
+  u8 bEof;
+};
+
+#define sqlite3Fts5IterEof(x) ((x)->bEof)
+
 /*
 ** Values used as part of the flags argument passed to IndexQuery().
 */
@@ -323,21 +349,17 @@ typedef struct Fts5IndexIter Fts5IndexIter;
 #define FTS5INDEX_QUERY_TEST_NOIDX 0x0004   /* Do not use prefix index */
 #define FTS5INDEX_QUERY_SCAN       0x0008   /* Scan query (fts5vocab) */
 
+/* The following are used internally by the fts5_index.c module. They are
+** defined here only to make it easier to avoid clashes with the flags
+** above. */
+#define FTS5INDEX_QUERY_SKIPEMPTY  0x0010
+#define FTS5INDEX_QUERY_NOOUTPUT   0x0020
+
 /*
 ** Create/destroy an Fts5Index object.
 */
 int sqlite3Fts5IndexOpen(Fts5Config *pConfig, int bCreate, Fts5Index**, char**);
 int sqlite3Fts5IndexClose(Fts5Index *p);
-
-/*
-** for(
-**   sqlite3Fts5IndexQuery(p, "token", 5, 0, 0, &pIter);
-**   0==sqlite3Fts5IterEof(pIter);
-**   sqlite3Fts5IterNext(pIter)
-** ){
-**   i64 iRowid = sqlite3Fts5IterRowid(pIter);
-** }
-*/
 
 /*
 ** Return a simple checksum value based on the arguments.
@@ -378,12 +400,8 @@ int sqlite3Fts5IndexQuery(
 ** The various operations on open token or token prefix iterators opened
 ** using sqlite3Fts5IndexQuery().
 */
-int sqlite3Fts5IterEof(Fts5IndexIter*);
 int sqlite3Fts5IterNext(Fts5IndexIter*);
 int sqlite3Fts5IterNextFrom(Fts5IndexIter*, i64 iMatch);
-i64 sqlite3Fts5IterRowid(Fts5IndexIter*);
-int sqlite3Fts5IterPoslist(Fts5IndexIter*,Fts5Colset*, const u8**, int*, i64*);
-int sqlite3Fts5IterPoslistBuffer(Fts5IndexIter *pIter, Fts5Buffer *pBuf);
 
 /*
 ** Close an iterator opened by sqlite3Fts5IndexQuery().
@@ -466,10 +484,9 @@ int sqlite3Fts5IndexReads(Fts5Index *p);
 int sqlite3Fts5IndexReinit(Fts5Index *p);
 int sqlite3Fts5IndexOptimize(Fts5Index *p);
 int sqlite3Fts5IndexMerge(Fts5Index *p, int nMerge);
+int sqlite3Fts5IndexReset(Fts5Index *p);
 
 int sqlite3Fts5IndexLoadConfig(Fts5Index *p);
-
-int sqlite3Fts5IterCollist(Fts5IndexIter*, const u8 **, int*);
 
 /*
 ** End of interface to code in fts5_index.c.
@@ -610,6 +627,7 @@ int sqlite3Fts5StorageDeleteAll(Fts5Storage *p);
 int sqlite3Fts5StorageRebuild(Fts5Storage *p);
 int sqlite3Fts5StorageOptimize(Fts5Storage *p);
 int sqlite3Fts5StorageMerge(Fts5Storage *p, int nMerge);
+int sqlite3Fts5StorageReset(Fts5Storage *p);
 
 /*
 ** End of interface to code in fts5_storage.c.
@@ -670,7 +688,7 @@ int sqlite3Fts5ExprPopulatePoslists(
 void sqlite3Fts5ExprCheckPoslists(Fts5Expr*, i64);
 void sqlite3Fts5ExprClearEof(Fts5Expr*);
 
-int sqlite3Fts5ExprClonePhrase(Fts5Config*, Fts5Expr*, int, Fts5Expr**);
+int sqlite3Fts5ExprClonePhrase(Fts5Expr*, int, Fts5Expr**);
 
 int sqlite3Fts5ExprPhraseCollist(Fts5Expr *, int, const u8 **, int *);
 
@@ -687,6 +705,12 @@ Fts5ExprNode *sqlite3Fts5ParseNode(
   Fts5ExprNode *pLeft,
   Fts5ExprNode *pRight,
   Fts5ExprNearset *pNear
+);
+
+Fts5ExprNode *sqlite3Fts5ParseImplicitAnd(
+  Fts5Parse *pParse,
+  Fts5ExprNode *pLeft,
+  Fts5ExprNode *pRight
 );
 
 Fts5ExprPhrase *sqlite3Fts5ParseTerm(

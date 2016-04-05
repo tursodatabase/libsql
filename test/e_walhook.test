@@ -161,10 +161,10 @@ do_test 5.2 {
 
 
 
-# EVIDENCE-OF: R-42842-27162 Note that the sqlite3_wal_autocheckpoint()
+# EVIDENCE-OF: R-57445-43425 Note that the sqlite3_wal_autocheckpoint()
 # interface and the wal_autocheckpoint pragma both invoke
-# sqlite3_wal_hook() and will those overwrite any prior
-# sqlite3_wal_hook() settings.
+# sqlite3_wal_hook() and will overwrite any prior sqlite3_wal_hook()
+# settings.
 #
 set ::old_wal_hook 0
 proc my_old_wal_hook {args} { incr ::old_wal_hook ; return 0 }

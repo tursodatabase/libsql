@@ -31,7 +31,6 @@ foreach {tn script} {
     catch { db eval {PRAGMA threads=7} }
   }
 } {
-
   eval $script
 
   do_execsql_test $tn.1 {
@@ -67,17 +66,22 @@ foreach {tn script} {
   
   do_execsql_test $tn.2.4 { PRAGMA integrity_check } {ok}
   
-  do_execsql_test $tn.3 {
-    PRAGMA cache_size = 5;
-    WITH r(x,y) AS (
-      SELECT 1, randomblob(100)
-      UNION ALL
-      SELECT x+1, randomblob(100) FROM r
-      LIMIT 1000000
-    )
-    SELECT count(x), length(y) FROM r GROUP BY (x%5)
-  } {
-    200000 100 200000 100 200000 100 200000 100 200000 100
+  # Because it uses so much data, this test can take 12-13 seconds even on
+  # a modern workstation. So it is omitted from "veryquick" and other
+  # permutations.test tests.
+  if {[isquick]==0} {
+    do_execsql_test $tn.3 {
+      PRAGMA cache_size = 5;
+      WITH r(x,y) AS (
+          SELECT 1, randomblob(100)
+          UNION ALL
+          SELECT x+1, randomblob(100) FROM r
+          LIMIT 1000000
+          )
+        SELECT count(x), length(y) FROM r GROUP BY (x%5)
+    } {
+      200000 100 200000 100 200000 100 200000 100 200000 100
+    }
   }
 }
 

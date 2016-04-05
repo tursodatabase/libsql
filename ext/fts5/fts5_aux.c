@@ -158,6 +158,8 @@ static int fts5HighlightCb(
   int rc = SQLITE_OK;
   int iPos;
 
+  UNUSED_PARAM2(pToken, nToken);
+
   if( tflags & FTS5_TOKEN_COLOCATED ) return SQLITE_OK;
   iPos = p->iPos++;
 
@@ -391,6 +393,7 @@ static int fts5CountCb(
   void *pUserData                 /* Pointer to sqlite3_int64 variable */
 ){
   sqlite3_int64 *pn = (sqlite3_int64*)pUserData;
+  UNUSED_PARAM2(pApi, pFts);
   (*pn)++;
   return SQLITE_OK;
 }
@@ -544,7 +547,7 @@ int sqlite3Fts5AuxInit(fts5_api *pApi){
   int rc = SQLITE_OK;             /* Return code */
   int i;                          /* To iterate through builtin functions */
 
-  for(i=0; rc==SQLITE_OK && i<(int)ArraySize(aBuiltin); i++){
+  for(i=0; rc==SQLITE_OK && i<ArraySize(aBuiltin); i++){
     rc = pApi->xCreateFunction(pApi,
         aBuiltin[i].zFunc,
         aBuiltin[i].pUserData,

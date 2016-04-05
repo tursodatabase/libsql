@@ -62,10 +62,10 @@ struct Fts5HashEntry {
   int nAlloc;                     /* Total size of allocation */
   int iSzPoslist;                 /* Offset of space for 4-byte poslist size */
   int nData;                      /* Total bytes of data (incl. structure) */
+  int nKey;                       /* Length of zKey[] in bytes */
   u8 bDel;                        /* Set delete-flag @ iSzPoslist */
   u8 bContent;                    /* Set content-flag (detail=none mode) */
-
-  int iCol;                       /* Column of last value written */
+  i16 iCol;                       /* Column of last value written */
   int iPos;                       /* Position of last value written */
   i64 iRowid;                     /* Rowid of last value written */
   char zKey[8];                   /* Nul-terminated entry key */
@@ -245,8 +245,8 @@ int sqlite3Fts5HashWrite(
   iHash = fts5HashKey2(pHash->nSlot, (u8)bByte, (const u8*)pToken, nToken);
   for(p=pHash->aSlot[iHash]; p; p=p->pHashNext){
     if( p->zKey[0]==bByte 
+     && p->nKey==nToken
      && memcmp(&p->zKey[1], pToken, nToken)==0 
-     && p->zKey[nToken+1]==0 
     ){
       break;
     }
@@ -273,6 +273,7 @@ int sqlite3Fts5HashWrite(
     p->zKey[0] = bByte;
     memcpy(&p->zKey[1], pToken, nToken);
     assert( iHash==fts5HashKey(pHash->nSlot, (u8*)p->zKey, nToken+1) );
+    p->nKey = nToken;
     p->zKey[nToken+1] = '\0';
     p->nData = nToken+1 + 1 + FTS5_HASHENTRYSIZE;
     p->pHashNext = pHash->aSlot[iHash];

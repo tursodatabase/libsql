@@ -286,8 +286,11 @@ struct rule {
   const char **rhsalias;   /* An alias for each RHS symbol (NULL if none) */
   int line;                /* Line number at which code begins */
   const char *code;        /* The code executed when this rule is reduced */
+  const char *codePrefix;  /* Setup code before code[] above */
+  const char *codeSuffix;  /* Breakdown code after code[] above */
   struct symbol *precsym;  /* Precedence symbol for this rule */
   int index;               /* An index number for this rule */
+  int iRule;               /* Rule number as used in the generated tables */
   Boolean canReduce;       /* True if this rule is ever reduced */
   struct rule *nextlhs;    /* Next rule with the same LHS */
   struct rule *next;       /* Next rule in the global list */
@@ -370,6 +373,7 @@ struct plink {
 struct lemon {
   struct state **sorted;   /* Table of states sorted by state number */
   struct rule *rule;       /* List of all rules */
+  struct rule *startRule;  /* First rule */
   int nstate;              /* Number of states */
   int nxstate;             /* nstate with tail degenerate states removed */
   int nrule;               /* Number of rules */
@@ -856,12 +860,12 @@ void FindStates(struct lemon *lemp)
       ErrorMsg(lemp->filename,0,
 "The specified start symbol \"%s\" is not \
 in a nonterminal of the grammar.  \"%s\" will be used as the start \
-symbol instead.",lemp->start,lemp->rule->lhs->name);
+symbol instead.",lemp->start,lemp->startRule->lhs->name);
       lemp->errorcnt++;
-      sp = lemp->rule->lhs;
+      sp = lemp->startRule->lhs;
     }
   }else{
-    sp = lemp->rule->lhs;
+    sp = lemp->startRule->lhs;
   }
 
   /* Make sure the start symbol doesn't occur on the right-hand side of
@@ -1115,9 +1119,9 @@ void FindActions(struct lemon *lemp)
   /* Add the accepting token */
   if( lemp->start ){
     sp = Symbol_find(lemp->start);
-    if( sp==0 ) sp = lemp->rule->lhs;
+    if( sp==0 ) sp = lemp->startRule->lhs;
   }else{
-    sp = lemp->rule->lhs;
+    sp = lemp->startRule->lhs;
   }
   /* Add to the first state (which is always the starting state of the
   ** finite state machine) an action to ACCEPT if the lookahead is the
@@ -1495,6 +1499,54 @@ static void handle_T_option(char *z){
   lemon_strcpy(user_templatename, z);
 }
 
+/* Merge together to lists of rules order by rule.iRule */
+static struct rule *Rule_merge(struct rule *pA, struct rule *pB){
+  struct rule *pFirst = 0;
+  struct rule **ppPrev = &pFirst;
+  while( pA && pB ){
+    if( pA->iRule<pB->iRule ){
+      *ppPrev = pA;
+      ppPrev = &pA->next;
+      pA = pA->next;
+    }else{
+      *ppPrev = pB;
+      ppPrev = &pB->next;
+      pB = pB->next;
+    }
+  }
+  if( pA ){
+    *ppPrev = pA;
+  }else{
+    *ppPrev = pB;
+  }
+  return pFirst;
+}
+
+/*
+** Sort a list of rules in order of increasing iRule value
+*/
+static struct rule *Rule_sort(struct rule *rp){
+  int i;
+  struct rule *pNext;
+  struct rule *x[32];
+  memset(x, 0, sizeof(x));
+  while( rp ){
+    pNext = rp->next;
+    rp->next = 0;
+    for(i=0; i<sizeof(x)/sizeof(x[0]) && x[i]; i++){
+      rp = Rule_merge(x[i], rp);
+      x[i] = 0;
+    }
+    x[i] = rp;
+    rp = pNext;
+  }
+  rp = 0;
+  for(i=0; i<sizeof(x)/sizeof(x[0]); i++){
+    rp = Rule_merge(x[i], rp);
+  }
+  return rp;
+}
+
 /* forward reference */
 static const char *minimum_size_type(int lwr, int upr, int *pnByte);
 
@@ -1543,6 +1595,7 @@ int main(int argc, char **argv)
   int i;
   int exitcode;
   struct lemon lem;
+  struct rule *rp;
 
   OptInit(argv,options,stderr);
   if( version ){
@@ -1588,6 +1641,16 @@ int main(int argc, char **argv)
   lem.nsymbol = i - 1;
   for(i=1; ISUPPER(lem.symbols[i]->name[0]); i++);
   lem.nterminal = i;
+
+  /* Assign sequential rule numbers */
+  for(i=0, rp=lem.rule; rp; rp=rp->next){
+    rp->iRule = rp->code ? i++ : -1;
+  }
+  for(rp=lem.rule; rp; rp=rp->next){
+    if( rp->iRule<0 ) rp->iRule = i++;
+  }
+  lem.startRule = lem.rule;
+  lem.rule = Rule_sort(lem.rule);
 
   /* Generate a reprint of the grammar, if requested on the command line */
   if( rpflag ){
@@ -3052,13 +3115,13 @@ int PrintAction(
     }
     case REDUCE: {
       struct rule *rp = ap->x.rp;
-      fprintf(fp,"%*s reduce       %-7d",indent,ap->sp->name,rp->index);
+      fprintf(fp,"%*s reduce       %-7d",indent,ap->sp->name,rp->iRule);
       RulePrint(fp, rp, -1);
       break;
     }
     case SHIFTREDUCE: {
       struct rule *rp = ap->x.rp;
-      fprintf(fp,"%*s shift-reduce %-7d",indent,ap->sp->name,rp->index);
+      fprintf(fp,"%*s shift-reduce %-7d",indent,ap->sp->name,rp->iRule);
       RulePrint(fp, rp, -1);
       break;
     }
@@ -3071,7 +3134,7 @@ int PrintAction(
     case SRCONFLICT:
     case RRCONFLICT:
       fprintf(fp,"%*s reduce       %-7d ** Parsing conflict **",
-        indent,ap->sp->name,ap->x.rp->index);
+        indent,ap->sp->name,ap->x.rp->iRule);
       break;
     case SSCONFLICT:
       fprintf(fp,"%*s shift        %-7d ** Parsing conflict **", 
@@ -3088,7 +3151,7 @@ int PrintAction(
     case RD_RESOLVED:
       if( showPrecedenceConflict ){
         fprintf(fp,"%*s reduce %-7d -- dropped by precedence",
-                indent,ap->sp->name,ap->x.rp->index);
+                indent,ap->sp->name,ap->x.rp->iRule);
       }else{
         result = 0;
       }
@@ -3119,7 +3182,7 @@ void ReportOutput(struct lemon *lemp)
     while( cfp ){
       char buf[20];
       if( cfp->dot==cfp->rp->nrhs ){
-        lemon_sprintf(buf,"(%d)",cfp->rp->index);
+        lemon_sprintf(buf,"(%d)",cfp->rp->iRule);
         fprintf(fp,"    %5s ",buf);
       }else{
         fprintf(fp,"          ");
@@ -3220,8 +3283,8 @@ PRIVATE int compute_action(struct lemon *lemp, struct action *ap)
   int act;
   switch( ap->type ){
     case SHIFT:  act = ap->x.stp->statenum;                        break;
-    case SHIFTREDUCE: act = ap->x.rp->index + lemp->nstate;        break;
-    case REDUCE: act = ap->x.rp->index + lemp->nstate+lemp->nrule; break;
+    case SHIFTREDUCE: act = ap->x.rp->iRule + lemp->nstate;        break;
+    case REDUCE: act = ap->x.rp->iRule + lemp->nstate+lemp->nrule; break;
     case ERROR:  act = lemp->nstate + lemp->nrule*2;               break;
     case ACCEPT: act = lemp->nstate + lemp->nrule*2 + 1;           break;
     default:     act = -1; break;
@@ -3430,6 +3493,7 @@ PRIVATE char *append_str(const char *zText, int n, int p1, int p2){
   int c;
   char zInt[40];
   if( zText==0 ){
+    if( used==0 && z!=0 ) z[0] = 0;
     used = 0;
     return z;
   }
@@ -3466,12 +3530,21 @@ PRIVATE char *append_str(const char *zText, int n, int p1, int p2){
 ** zCode is a string that is the action associated with a rule.  Expand
 ** the symbols in this string so that the refer to elements of the parser
 ** stack.
+**
+** Return 1 if the expanded code requires that "yylhsminor" local variable
+** to be defined.
 */
-PRIVATE void translate_code(struct lemon *lemp, struct rule *rp){
+PRIVATE int translate_code(struct lemon *lemp, struct rule *rp){
   char *cp, *xp;
   int i;
-  char lhsused = 0;    /* True if the LHS element has been used */
-  char used[MAXRHS];   /* True for each RHS element which is used */
+  int rc = 0;            /* True if yylhsminor is used */
+  int dontUseRhs0 = 0;   /* If true, use of left-most RHS label is illegal */
+  const char *zSkip = 0; /* The zOvwrt comment within rp->code, or NULL */
+  char lhsused = 0;      /* True if the LHS element has been used */
+  char lhsdirect;        /* True if LHS writes directly into stack */
+  char used[MAXRHS];     /* True for each RHS element which is used */
+  char zLhs[50];         /* Convert the LHS symbol into this string */
+  char zOvwrt[900];      /* Comment that to allow LHS to overwrite RHS */
 
   for(i=0; i<rp->nrhs; i++) used[i] = 0;
   lhsused = 0;
@@ -3482,23 +3555,83 @@ PRIVATE void translate_code(struct lemon *lemp, struct rule *rp){
     rp->line = rp->ruleline;
   }
 
+
+  if( rp->lhsalias==0 ){
+    /* There is no LHS value symbol. */
+    lhsdirect = 1;
+  }else if( rp->nrhs==0 ){
+    /* If there are no RHS symbols, then writing directly to the LHS is ok */
+    lhsdirect = 1;
+  }else if( rp->rhsalias[0]==0 ){
+    /* The left-most RHS symbol has not value.  LHS direct is ok.  But
+    ** we have to call the distructor on the RHS symbol first. */
+    lhsdirect = 1;
+    if( has_destructor(rp->rhs[0],lemp) ){
+      append_str(0,0,0,0);
+      append_str("  yy_destructor(yypParser,%d,&yymsp[%d].minor);\n", 0,
+                 rp->rhs[0]->index,1-rp->nrhs);
+      rp->codePrefix = Strsafe(append_str(0,0,0,0));
+    }
+  }else if( strcmp(rp->lhsalias,rp->rhsalias[0])==0 ){
+    /* The LHS symbol and the left-most RHS symbol are the same, so 
+    ** direct writing is allowed */
+    lhsdirect = 1;
+    lhsused = 1;
+    used[0] = 1;
+    if( rp->lhs->dtnum!=rp->rhs[0]->dtnum ){
+      ErrorMsg(lemp->filename,rp->ruleline,
+        "%s(%s) and %s(%s) share the same label but have "
+        "different datatypes.",
+        rp->lhs->name, rp->lhsalias, rp->rhs[0]->name, rp->rhsalias[0]);
+      lemp->errorcnt++;
+    }    
+  }else{
+    lemon_sprintf(zOvwrt, "/*%s-overwrites-%s*/",
+                  rp->lhsalias, rp->rhsalias[0]);
+    zSkip = strstr(rp->code, zOvwrt);
+    if( zSkip!=0 ){
+      /* The code contains a special comment that indicates that it is safe
+      ** for the LHS label to overwrite left-most RHS label. */
+      lhsdirect = 1;
+    }else{
+      lhsdirect = 0;
+    }
+  }
+  if( lhsdirect ){
+    sprintf(zLhs, "yymsp[%d].minor.yy%d",1-rp->nrhs,rp->lhs->dtnum);
+  }else{
+    rc = 1;
+    sprintf(zLhs, "yylhsminor.yy%d",rp->lhs->dtnum);
+  }
+
   append_str(0,0,0,0);
 
   /* This const cast is wrong but harmless, if we're careful. */
   for(cp=(char *)rp->code; *cp; cp++){
+    if( cp==zSkip ){
+      append_str(zOvwrt,0,0,0);
+      cp += lemonStrlen(zOvwrt)-1;
+      dontUseRhs0 = 1;
+      continue;
+    }
     if( ISALPHA(*cp) && (cp==rp->code || (!ISALNUM(cp[-1]) && cp[-1]!='_')) ){
       char saved;
       for(xp= &cp[1]; ISALNUM(*xp) || *xp=='_'; xp++);
       saved = *xp;
       *xp = 0;
       if( rp->lhsalias && strcmp(cp,rp->lhsalias)==0 ){
-        append_str("yygotominor.yy%d",0,rp->lhs->dtnum,0);
+        append_str(zLhs,0,0,0);
         cp = xp;
         lhsused = 1;
       }else{
         for(i=0; i<rp->nrhs; i++){
           if( rp->rhsalias[i] && strcmp(cp,rp->rhsalias[i])==0 ){
-            if( cp!=rp->code && cp[-1]=='@' ){
+            if( i==0 && dontUseRhs0 ){
+              ErrorMsg(lemp->filename,rp->ruleline,
+                 "Label %s used after '%s'.",
+                 rp->rhsalias[0], zOvwrt);
+              lemp->errorcnt++;
+            }else if( cp!=rp->code && cp[-1]=='@' ){
               /* If the argument is of the form @X then substituted
               ** the token number of X, not the value of X */
               append_str("yymsp[%d].major",-1,i-rp->nrhs+1,0);
@@ -3523,6 +3656,11 @@ PRIVATE void translate_code(struct lemon *lemp, struct rule *rp){
     append_str(cp, 1, 0, 0);
   } /* End loop */
 
+  /* Main code generation completed */
+  cp = append_str(0,0,0,0);
+  if( cp && cp[0] ) rp->code = Strsafe(cp);
+  append_str(0,0,0,0);
+
   /* Check to make sure the LHS has been used */
   if( rp->lhsalias && !lhsused ){
     ErrorMsg(lemp->filename,rp->ruleline,
@@ -3531,27 +3669,55 @@ PRIVATE void translate_code(struct lemon *lemp, struct rule *rp){
     lemp->errorcnt++;
   }
 
-  /* Generate destructor code for RHS symbols which are not used in the
-  ** reduce code */
+  /* Generate destructor code for RHS minor values which are not referenced.
+  ** Generate error messages for unused labels and duplicate labels.
+  */
   for(i=0; i<rp->nrhs; i++){
-    if( rp->rhsalias[i] && !used[i] ){
-      ErrorMsg(lemp->filename,rp->ruleline,
-        "Label %s for \"%s(%s)\" is never used.",
-        rp->rhsalias[i],rp->rhs[i]->name,rp->rhsalias[i]);
-      lemp->errorcnt++;
-    }else if( rp->rhsalias[i]==0 ){
-      if( has_destructor(rp->rhs[i],lemp) ){
-        append_str("  yy_destructor(yypParser,%d,&yymsp[%d].minor);\n", 0,
-           rp->rhs[i]->index,i-rp->nrhs+1);
-      }else{
-        /* No destructor defined for this term */
+    if( rp->rhsalias[i] ){
+      if( i>0 ){
+        int j;
+        if( rp->lhsalias && strcmp(rp->lhsalias,rp->rhsalias[i])==0 ){
+          ErrorMsg(lemp->filename,rp->ruleline,
+            "%s(%s) has the same label as the LHS but is not the left-most "
+            "symbol on the RHS.",
+            rp->rhs[i]->name, rp->rhsalias);
+          lemp->errorcnt++;
+        }
+        for(j=0; j<i; j++){
+          if( rp->rhsalias[j] && strcmp(rp->rhsalias[j],rp->rhsalias[i])==0 ){
+            ErrorMsg(lemp->filename,rp->ruleline,
+              "Label %s used for multiple symbols on the RHS of a rule.",
+              rp->rhsalias[i]);
+            lemp->errorcnt++;
+            break;
+          }
+        }
       }
+      if( !used[i] ){
+        ErrorMsg(lemp->filename,rp->ruleline,
+          "Label %s for \"%s(%s)\" is never used.",
+          rp->rhsalias[i],rp->rhs[i]->name,rp->rhsalias[i]);
+        lemp->errorcnt++;
+      }
+    }else if( i>0 && has_destructor(rp->rhs[i],lemp) ){
+      append_str("  yy_destructor(yypParser,%d,&yymsp[%d].minor);\n", 0,
+         rp->rhs[i]->index,i-rp->nrhs+1);
     }
   }
-  if( rp->code ){
-    cp = append_str(0,0,0,0);
-    rp->code = Strsafe(cp?cp:"");
+
+  /* If unable to write LHS values directly into the stack, write the
+  ** saved LHS value now. */
+  if( lhsdirect==0 ){
+    append_str("  yymsp[%d].minor.yy%d = ", 0, 1-rp->nrhs, rp->lhs->dtnum);
+    append_str(zLhs, 0, 0, 0);
+    append_str(";\n", 0, 0, 0);
   }
+
+  /* Suffix code generation complete */
+  cp = append_str(0,0,0,0);
+  if( cp ) rp->codeSuffix = Strsafe(cp);
+
+  return rc;
 }
 
 /* 
@@ -3566,6 +3732,12 @@ PRIVATE void emit_code(
 ){
  const char *cp;
 
+ /* Setup code prior to the #line directive */
+ if( rp->codePrefix && rp->codePrefix[0] ){
+   fprintf(out, "{%s", rp->codePrefix);
+   for(cp=rp->codePrefix; *cp; cp++){ if( *cp=='\n' ) (*lineno)++; }
+ }
+
  /* Generate code to do the reduce action */
  if( rp->code ){
    if( !lemp->nolinenosflag ){
@@ -3573,15 +3745,23 @@ PRIVATE void emit_code(
      tplt_linedir(out,rp->line,lemp->filename);
    }
    fprintf(out,"{%s",rp->code);
-   for(cp=rp->code; *cp; cp++){
-     if( *cp=='\n' ) (*lineno)++;
-   } /* End loop */
+   for(cp=rp->code; *cp; cp++){ if( *cp=='\n' ) (*lineno)++; }
    fprintf(out,"}\n"); (*lineno)++;
    if( !lemp->nolinenosflag ){
      (*lineno)++;
      tplt_linedir(out,*lineno,lemp->outname);
    }
- } /* End if( rp->code ) */
+ }
+
+ /* Generate breakdown code that occurs after the #line directive */
+ if( rp->codeSuffix && rp->codeSuffix[0] ){
+   fprintf(out, "%s", rp->codeSuffix);
+   for(cp=rp->codeSuffix; *cp; cp++){ if( *cp=='\n' ) (*lineno)++; }
+ }
+
+ if( rp->codePrefix ){
+   fprintf(out, "}\n"); (*lineno)++;
+ }
 
  return;
 }
@@ -4122,7 +4302,7 @@ void ReportTable(
   ** when tracing REDUCE actions.
   */
   for(i=0, rp=lemp->rule; rp; rp=rp->next, i++){
-    assert( rp->index==i );
+    assert( rp->iRule==i );
     fprintf(out," /* %3d */ \"", i);
     writeRuleText(out, rp);
     fprintf(out,"\",\n"); lineno++;
@@ -4206,22 +4386,26 @@ void ReportTable(
   tplt_xfer(lemp->name,in,out,&lineno);
 
   /* Generate code which execution during each REDUCE action */
+  i = 0;
   for(rp=lemp->rule; rp; rp=rp->next){
-    translate_code(lemp, rp);
+    i += translate_code(lemp, rp);
+  }
+  if( i ){
+    fprintf(out,"        YYMINORTYPE yylhsminor;\n"); lineno++;
   }
   /* First output rules other than the default: rule */
   for(rp=lemp->rule; rp; rp=rp->next){
     struct rule *rp2;               /* Other rules with the same action */
     if( rp->code==0 ) continue;
     if( rp->code[0]=='\n' && rp->code[1]==0 ) continue; /* Will be default: */
-    fprintf(out,"      case %d: /* ", rp->index);
+    fprintf(out,"      case %d: /* ", rp->iRule);
     writeRuleText(out, rp);
     fprintf(out, " */\n"); lineno++;
     for(rp2=rp->next; rp2; rp2=rp2->next){
       if( rp2->code==rp->code ){
-        fprintf(out,"      case %d: /* ", rp2->index);
+        fprintf(out,"      case %d: /* ", rp2->iRule);
         writeRuleText(out, rp2);
-        fprintf(out," */ yytestcase(yyruleno==%d);\n", rp2->index); lineno++;
+        fprintf(out," */ yytestcase(yyruleno==%d);\n", rp2->iRule); lineno++;
         rp2->code = 0;
       }
     }
@@ -4235,9 +4419,9 @@ void ReportTable(
   for(rp=lemp->rule; rp; rp=rp->next){
     if( rp->code==0 ) continue;
     assert( rp->code[0]=='\n' && rp->code[1]==0 );
-    fprintf(out,"      /* (%d) ", rp->index);
+    fprintf(out,"      /* (%d) ", rp->iRule);
     writeRuleText(out, rp);
-    fprintf(out, " */ yytestcase(yyruleno==%d);\n", rp->index); lineno++;
+    fprintf(out, " */ yytestcase(yyruleno==%d);\n", rp->iRule); lineno++;
   }
   fprintf(out,"        break;\n"); lineno++;
   tplt_xfer(lemp->name,in,out,&lineno);

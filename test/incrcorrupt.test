@@ -124,4 +124,3 @@ do_test 2.16 { sqlite3_errcode db } {SQLITE_CORRUPT}
 do_test 2.17 { sqlite3_errmsg db } {database disk image is malformed}
 
 finish_test
-

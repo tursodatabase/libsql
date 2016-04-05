@@ -59,11 +59,11 @@ do_test 1.4 {
     INSERT INTO x1(x1) VALUES('merge=4,4');
     SELECT level, end_block, length(root) FROM x1_segdir;
   }
-} {0 {0 110} 110 0 {0 132} 132 0 {0 129} 129 1 {128 658} 2}
+} {1 {224 921} 2}
 
 do_execsql_test 1.5 {
   SELECT length(block) FROM x1_segments;
-} {658 {}}
+} {921 {}}
 
 do_test 1.6 {
   foreach L {
@@ -71,27 +71,33 @@ do_test 1.6 {
     {That perched above Dead Man's Creek, beside the mountain road.}
     {He turned the cycle down the hill and mounted for the fray,}
     {But 'ere he'd gone a dozen yards it bolted clean away.}
+
     {It left the track, and through the trees, just like a silver steak,}
     {It whistled down the awful slope towards the Dead Man's Creek.}
     {It shaved a stump by half an inch, it dodged a big white-box:}
     {The very wallaroos in fright went scrambling up the rocks,}
+
     {The wombats hiding in their caves dug deeper underground,}
     {As Mulga Bill, as white as chalk, sat tight to every bound.}
     {It struck a stone and gave a spring that cleared a fallen tree,}
     {It raced beside a precipice as close as close could be;}
+
     {And then as Mulga Bill let out one last despairing shriek}
     {It made a leap of twenty feet into the Dead Man's Creek.}
+    {It shaved a stump by half an inch, it dodged a big white-box:}
+    {The very wallaroos in fright went scrambling up the rocks,}
+    {The wombats hiding in their caves dug deeper underground,}
   } {
     execsql { INSERT INTO x1 VALUES($L) }
   }
   execsql { 
     SELECT level, end_block, length(root) FROM x1_segdir;
   }
-} {1 {128 658} 2 1 {130 1377} 6 0 {0 117} 117}
+} {1 {224 921} 2 1 {226 1230} 7 0 {0 98} 98}
 
 do_execsql_test 1.7 {
-  SELECT sum(length(block)) FROM x1_segments WHERE blockid IN (129, 130);
-} {1377}
+  SELECT sum(length(block)) FROM x1_segments WHERE blockid IN (224,225,226)
+} {1230}
 
 #-------------------------------------------------------------------------
 #
@@ -131,24 +137,24 @@ do_execsql_test 2.5 {
   SELECT end_block FROM x2_segdir WHERE level=3;
   INSERT INTO x2(x2) VALUES('merge=4,4');
   SELECT end_block FROM x2_segdir WHERE level=3;
-} {{3828 -3430} {3828 -10191} {3828 -14109}}
+} {{5588 -3950} {5588 -11766} {5588 -15541}}
 
 do_execsql_test 2.6 {
   SELECT sum(length(block)) FROM x2_segdir, x2_segments WHERE 
     blockid BETWEEN start_block AND leaves_end_block
     AND level=3
-} {14109}
+} {15541}
 
 do_execsql_test 2.7 { 
   INSERT INTO x2(x2) VALUES('merge=1000,4');
   SELECT end_block FROM x2_segdir WHERE level=3;
-} {{3828 86120}}
+} {{5588 127563}}
 
 do_execsql_test 2.8 {
   SELECT sum(length(block)) FROM x2_segdir, x2_segments WHERE 
     blockid BETWEEN start_block AND leaves_end_block
     AND level=3
-} {86120}
+} {127563}
 
 #--------------------------------------------------------------------------
 # Test that delete markers are removed from FTS segments when possible.
@@ -391,7 +397,7 @@ do_execsql_test 7.2 {
 } {
   0 0 {118 117483} 0 1 {238 118006} 0 2 {358 118006} 
   0 3 {478 118006} 0 4 {598 118006} 0 5 {718 118006}
-  1 0 {16014 -51226}
+  1 0 {23694 -69477}
 }
 
 do_execsql_test 7.3 {
@@ -400,7 +406,7 @@ do_execsql_test 7.3 {
 } {
   0 0 {118 117483} 0 1 {238 118006} 0 2 {358 118006} 
   0 3 {478 118006} 0 4 {598 118006} 0 5 {718 118006}
-  1 0 16014
+  1 0 23694
 }
 
 do_execsql_test 7.4 {
@@ -409,29 +415,26 @@ do_execsql_test 7.4 {
 } {
   0 0 {118 117483} 0 1 {238 118006} 0 2 {358 118006} 
   0 3 {478 118006} 0 4 {598 118006} 0 5 {718 118006}
-  1 0 16014
+  1 0 23694
 }
 
 do_execsql_test 7.5 {
   INSERT INTO x6(x6) VALUES('merge=2500,4');
-  SELECT level, idx, end_block FROM x6_segdir;
+  SELECT level, idx, start_block, leaves_end_block, end_block FROM x6_segdir;
 } {
-  0 0 {598 118006} 0 1 {718 118006} 1 0 16014
+  1 0 719 1171 23694
 }
 
 do_execsql_test 7.6 {
   INSERT INTO x6(x6) VALUES('merge=2500,2');
   SELECT level, idx, start_block, leaves_end_block, end_block FROM x6_segdir;
 } {
-  2 0 23695 24147 {41262 633507}
+  1 0 719 1171 23694
 }
 
 do_execsql_test 7.7 {
   SELECT sum(length(block)) FROM x6_segments 
-  WHERE blockid BETWEEN 23695 AND 24147
-} {633507}
-
+} {635247}
 
 
 finish_test
-

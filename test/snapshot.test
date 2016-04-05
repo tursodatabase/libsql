@@ -17,6 +17,15 @@ source $testdir/tester.tcl
 ifcapable !snapshot {finish_test; return}
 set testprefix snapshot
 
+# This test does not work with the inmemory_journal permutation. The reason
+# is that each connection opened as part of this permutation executes
+# "PRAGMA journal_mode=memory", which fails if the database is in wal mode
+# and there are one or more existing connections.
+if {[permutation]=="inmemory_journal"} {
+  finish_test
+  return
+}
+
 #-------------------------------------------------------------------------
 # Check some error conditions in snapshot_get(). It is an error if:
 #
@@ -55,7 +64,6 @@ do_execsql_test 2.1.0 {
     SELECT * FROM t1;
 } {1 2 3 4 5 6 7 8}
 
-breakpoint
 do_test 2.1.1 {
   set snapshot [sqlite3_snapshot_get db main]
   execsql {
@@ -335,6 +343,26 @@ do_test 6.3 {
   sqlite3_snapshot_open db2 main $::snapshot
   db2 eval { SELECT * FROM x1 }
 } {z zz zzz}
+do_test 6.4 {
+  db2 close
+  sqlite3 db2 test.db 
+  db2 eval "PRAGMA application_id"
+  db2 eval "BEGIN"
+  sqlite3_snapshot_open db2 main $::snapshot
+  db2 eval { SELECT * FROM x1 }
+} {z zz zzz}
+
+# EVIDENCE-OF: R-55491-50411 A snapshot will fail to open if the
+# database connection D has not previously completed at least one read
+# operation against the database file.
+#
+do_test 6.5 {
+  db2 close
+  sqlite3 db2 test.db 
+  db2 eval "BEGIN"
+  list [catch {sqlite3_snapshot_open db2 main $::snapshot} msg] $msg
+} {1 SQLITE_ERROR}
+
 sqlite3_snapshot_free $snapshot
 
 finish_test

@@ -83,38 +83,49 @@ do_test 1.5 {
 do_test 2.0 {
   catch { db close }
   catch { db2 close }
-  forcedelete test.db test.db2
+  forcedelete test.db test.db2 test.db3
   sqlite3 db test.db
   execsql { CREATE TABLE t1(x) }
   file link test.db2 test.db
-  sqlite3 db2 test.db2
-  file exists test.db-journal
-} 0
+  file link test.db3 test.db2
+  set {} {}
+} {}
 
-do_test 2.1 {
-  execsql {
-    BEGIN;
-      INSERT INTO t1 VALUES(1);
-  } db2
-  file exists test.db-journal
-} 1
-do_test 2.2 {
-  file exists test.db2-journal
-} 0
-do_test 2.3 {
-  execsql {
-    COMMIT;
-    PRAGMA journal_mode = wal;
-    INSERT INTO t1 VALUES(2);
-  } db2
-  file exists test.db-wal
-} 1
-do_test 2.4 {
-  file exists test.db2-wal
-} 0
-do_execsql_test 2.5 {
-  SELECT * FROM t1;
-} {1 2}
+foreach {tn f} {1 test.db2 2 test.db3} {
+  do_test 2.$tn.1 {
+    sqlite3 db2 $f
+    file exists test.db-journal
+  } 0
+  do_test 2.$tn.2 {
+    execsql {
+      BEGIN;
+        INSERT INTO t1 VALUES(1);
+    } db2
+    file exists test.db-journal
+  } 1
+  do_test 2.$tn.3 {
+    list [file exists test2.db-journal] [file exists test3.db-journal]
+  } {0 0}
+  do_test 2.$tn.4 {
+    execsql {
+      COMMIT;
+      PRAGMA journal_mode = wal;
+      INSERT INTO t1 VALUES(2);
+    } db2
+    file exists test.db-wal
+  } 1
+  do_test 2.$tn.5 {
+    list [file exists test2.db-wal] [file exists test3.db-wal]
+  } {0 0}
+  do_execsql_test 2.$tn.6 {
+    SELECT * FROM t1;
+  } {1 2}
+  db2 close
+  do_execsql_test 2.$tn.7 {
+    DELETE FROM t1;
+    PRAGMA journal_mode = delete;
+  } delete
+}
 
 # Try to open a ridiculously long pathname.  Bug found by
 # Kostya Serebryany using libFuzzer on 2015-11-30.
@@ -125,5 +136,56 @@ do_test 3.1 {
   set res
 } {unable to open database file}
 
+#-------------------------------------------------------------------------
+# Test that relative symlinks that are not located in the cwd work.
+#
+do_test 4.1 {
+  forcedelete x y z
+  file mkdir x
+  file mkdir y
+  file mkdir z
+  sqlite3 db x/test.db
+  file link y/test.db ../x/test.db
+  file link z/test.db ../y/test.db
+  execsql {
+    PRAGMA journal_mode = wal;
+    CREATE TABLE t1(x, y);
+    INSERT INTO t1 VALUES('hello', 'world');
+  }
+} {wal}
+
+do_test 4.2.1 {
+  db close
+  sqlite3 db y/test.db
+  db eval { SELECT * FROM t1 }
+} {hello world}
+do_test 4.2.2 {
+  list [file exists x/test.db-wal] [file exists y/test.db-wal]
+} {1 0}
+
+do_test 4.3.1 {
+  db close
+  sqlite3 db z/test.db
+  db eval { SELECT * FROM t1 }
+} {hello world}
+do_test 4.3.2 {
+  list [file exists x/test.db-wal] [file exists y/test.db-wal] \
+       [file exists z/test.db-wal]
+} {1 0 0}
+
+do_test 4.4.0 {
+  forcedelete w
+  file mkdir w
+  file link w/test.db [file join [pwd] x/test.db] 
+  set {} {}
+} {}
+do_test 4.4.1 {
+  db close
+  sqlite3 db w/test.db
+  db eval { SELECT * FROM t1 }
+} {hello world}
+do_test 4.4.2 {
+  list [file exists x/test.db-wal] [file exists w/test.db-wal]
+} {1 0}
 
 finish_test

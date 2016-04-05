@@ -212,7 +212,7 @@ do_multiclient_test tn {
       INSERT INTO t2 SELECT x||y, y||x FROM t2;
     }
     file size test.db-wal
-  } {147800}
+  } [expr {[nonzero_reserved_bytes]?148848:147800}]
   do_test 1.4.4.2 {
     csql1 { SELECT * FROM t1 }
   } {0 {a b c d e f g h i j k l 1 2 3 4 5 6}}

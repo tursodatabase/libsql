@@ -374,6 +374,27 @@ proc do_not_use_codec {} {
   reset_db
 }
 
+# Return true if the "reserved_bytes" integer on database files is non-zero.
+#
+proc nonzero_reserved_bytes {} {
+  return [sqlite3 -has-codec]
+}
+
+# Print a HELP message and exit
+#
+proc print_help_and_quit {} {
+  puts {Options:
+  --pause                  Wait for user input before continuing
+  --soft-heap-limit=N      Set the soft-heap-limit to N
+  --maxerror=N             Quit after N errors
+  --verbose=(0|1)          Control the amount of output.  Default '1'
+  --output=FILE            set --verbose=2 and output to FILE.  Implies -q
+  -q                       Shorthand for --verbose=0
+  --help                   This message
+}
+  exit 1
+}
+
 # The following block only runs the first time this file is sourced. It
 # does not run in slave interpreters (since the ::cmdlinearg array is
 # populated before the test script is run in slave interpreters).
@@ -396,6 +417,8 @@ if {[info exists cmdlinearg]==0} {
   #   --match=$pattern
   #   --verbose=$val
   #   --output=$filename
+  #   -q                                      Reduce output
+  #   --testdir=$dir                          Run tests in subdirectory $dir
   #   --help
   #
   set cmdlinearg(soft-heap-limit)    0
@@ -410,6 +433,7 @@ if {[info exists cmdlinearg]==0} {
   set cmdlinearg(match)             ""
   set cmdlinearg(verbose)           ""
   set cmdlinearg(output)            ""
+  set cmdlinearg(testdir)           "testdir"
 
   set leftover [list]
   foreach a $argv {
@@ -439,6 +463,7 @@ if {[info exists cmdlinearg]==0} {
       }
       {^-+binarylog=.+$} {
         foreach {dummy cmdlinearg(binarylog)} [split $a =] break
+        set cmdlinearg(binarylog) [file normalize $cmdlinearg(binarylog)]
       }
       {^-+soak=.+$} {
         foreach {dummy cmdlinearg(soak)} [split $a =] break
@@ -471,6 +496,7 @@ if {[info exists cmdlinearg]==0} {
 
       {^-+output=.+$} {
         foreach {dummy cmdlinearg(output)} [split $a =] break
+        set cmdlinearg(output) [file normalize $cmdlinearg(output)]
         if {$cmdlinearg(verbose)==""} {
           set cmdlinearg(verbose) 2
         }
@@ -483,11 +509,29 @@ if {[info exists cmdlinearg]==0} {
           error "option --verbose= must be set to a boolean or to \"file\""
         }
       }
+      {^-+testdir=.*$} {
+        foreach {dummy cmdlinearg(testdir)} [split $a =] break
+      }
+      {.*help.*} {
+         print_help_and_quit
+      }
+      {^-q$} {
+        set cmdlinearg(output) test-out.txt
+        set cmdlinearg(verbose) 2
+      }
 
       default {
-        lappend leftover $a
+        lappend leftover [file normalize $a]
       }
     }
+  }
+  set testdir [file normalize $testdir]
+  set cmdlinearg(TESTFIXTURE_HOME) [pwd]
+  set cmdlinearg(INFO_SCRIPT) [file normalize [info script]]
+  set argv0 [file normalize $argv0]
+  if {$cmdlinearg(testdir)!=""} {
+    file mkdir $cmdlinearg(testdir)
+    cd $cmdlinearg(testdir)
   }
   set argv $leftover
 
@@ -835,6 +879,12 @@ proc fix_testname {varname} {
   } {
     set testname "${::testprefix}-$testname"
   }
+}
+
+proc normalize_list {L} {
+  set L2 [list]
+  foreach l $L {lappend L2 $l}
+  set L2
 }
 
 proc do_execsql_test {testname sql {result {}}} {
@@ -1905,6 +1955,12 @@ proc presql {} {
   set presql
 }
 
+proc isquick {} {
+  set ret 0
+  catch {set ret $::G(isquick)}
+  set ret
+}
+
 #-------------------------------------------------------------------------
 #
 proc slave_test_script {script} {
@@ -2085,6 +2141,41 @@ proc test_restore_config_pagecache {} {
   autoinstall_test_functions
   sqlite3 db test.db
 }
+
+proc test_find_binary {nm} {
+  if {$::tcl_platform(platform)=="windows"} {
+    set ret "$nm.exe"
+  } else {
+    set ret $nm
+  }
+  set ret [file normalize [file join $::cmdlinearg(TESTFIXTURE_HOME) $ret]]
+  if {![file executable $ret]} {
+    finish_test
+    return ""
+  }
+  return $ret
+}
+
+# Find the name of the 'shell' executable (e.g. "sqlite3.exe") to use for
+# the tests in shell[1-5].test. If no such executable can be found, invoke
+# [finish_test ; return] in the callers context.
+#
+proc test_find_cli {} {
+  set prog [test_find_binary sqlite3]
+  if {$prog==""} { return -code return }
+  return $prog
+}
+
+# Find the name of the 'sqldiff' executable (e.g. "sqlite3.exe") to use for
+# the tests in sqldiff tests. If no such executable can be found, invoke
+# [finish_test ; return] in the callers context.
+#
+proc test_find_sqldiff {} {
+  set prog [test_find_binary sqldiff]
+  if {$prog==""} { return -code return }
+  return $prog
+}
+
 
 # If the library is compiled with the SQLITE_DEFAULT_AUTOVACUUM macro set
 # to non-zero, then set the global variable $AUTOVACUUM to 1.

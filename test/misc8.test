@@ -94,5 +94,18 @@ do_execsql_test misc8-2.1 {
   0 10 {} 10 {} {}
 }
 
+# 2016-02-26: An assertion fault found by the libFuzzer project
+#
+do_execsql_test misc8-3.0 {
+  SELECT *
+    FROM
+         (
+           (SELECT 0 AS i) AS x1,
+           (SELECT 1) AS x2
+         ) AS x3,
+         (SELECT 6 AS j UNION ALL SELECT 7) AS x4
+   WHERE i<rowid
+   ORDER BY 1;
+} {0 1 6 0 1 7}
 
 finish_test

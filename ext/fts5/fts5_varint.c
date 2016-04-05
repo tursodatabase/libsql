@@ -333,7 +333,10 @@ int sqlite3Fts5PutVarint(unsigned char *p, u64 v){
 
 
 int sqlite3Fts5GetVarintLen(u32 iVal){
+#if 0
   if( iVal<(1 << 7 ) ) return 1;
+#endif
+  assert( iVal>=(1 << 7) );
   if( iVal<(1 << 14) ) return 2;
   if( iVal<(1 << 21) ) return 3;
   if( iVal<(1 << 28) ) return 4;

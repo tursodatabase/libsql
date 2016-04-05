@@ -1,4 +1,4 @@
-# 2013-07-11
+# 2012 December 17
 #
 # The author disclaims copyright to this source code.  In place of
 # a legal notice, here is a blessing:
@@ -23,6 +23,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix fkey6
 
 ifcapable {!foreignkey} {
   finish_test
@@ -170,6 +171,59 @@ do_execsql_test fkey6-2.6 {
   COMMIT;
   PRAGMA defer_foreign_keys;
 } {0}
+
+#--------------------------------------------------------------------------
+# Test that defer_foreign_keys disables RESTRICT.
+#
+do_execsql_test 3.1 {
+  CREATE TABLE p2(a PRIMARY KEY, b);
+  CREATE TABLE c2(x, y REFERENCES p2 ON DELETE RESTRICT ON UPDATE RESTRICT);
+  INSERT INTO p2 VALUES(1, 'one');
+  INSERT INTO p2 VALUES(2, 'two');
+  INSERT INTO c2 VALUES('i', 1);
+}
+
+do_catchsql_test 3.2.1 {
+  BEGIN;
+    UPDATE p2 SET a=a-1;
+} {1 {FOREIGN KEY constraint failed}}
+do_execsql_test 3.2.2 { COMMIT }
+
+do_execsql_test 3.2.3 {
+  BEGIN;
+    PRAGMA defer_foreign_keys = 1;
+    UPDATE p2 SET a=a-1;
+  COMMIT;
+}
+
+do_execsql_test 3.2.4 {
+  BEGIN;
+    PRAGMA defer_foreign_keys = 1;
+    UPDATE p2 SET a=a-1;
+}
+do_catchsql_test 3.2.5 {
+  COMMIT;
+} {1 {FOREIGN KEY constraint failed}}
+do_execsql_test 3.2.6 { ROLLBACK }
+
+do_execsql_test 3.3.1 {
+  CREATE TRIGGER p2t AFTER DELETE ON p2 BEGIN
+    INSERT INTO p2 VALUES(old.a, 'deleted!');
+  END;
+}
+do_catchsql_test 3.3.2 {
+  BEGIN;
+    DELETE FROM p2 WHERE a=1;
+} {1 {FOREIGN KEY constraint failed}}
+do_execsql_test 3.3.3 { COMMIT }
+
+do_execsql_test 3.3.4 {
+  BEGIN;
+    PRAGMA defer_foreign_keys = 1;
+    DELETE FROM p2 WHERE a=1;
+  COMMIT;
+  SELECT * FROM p2;
+} {0 one 1 deleted!}
 
 
 finish_test

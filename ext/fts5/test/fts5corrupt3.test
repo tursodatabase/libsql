@@ -179,6 +179,10 @@ for {set i 1} {1} {incr i} {
   if {$end<=$i} break
   lset var end [expr $end - $i]
   set struct [binary format c* $var]
+
+  db close
+  sqlite3 db test.db
+
   db eval {
     BEGIN;
     UPDATE t1_data SET block = $struct WHERE id=10;
@@ -334,11 +338,8 @@ do_catchsql_test 6.3.5 {
 } {1 {database disk image is malformed}}
 
 
-}
-
 #------------------------------------------------------------------------
 #
-reset_db
 reset_db
 proc rnddoc {n} {
   set map [list a b c d]
@@ -370,6 +371,41 @@ do_test 7.1 {
     db eval ROLLBACK  
   }
 } {}
+
+}
+
+#------------------------------------------------------------------------
+# Corruption within the structure record.
+#
+reset_db
+do_execsql_test 8.1 {
+  CREATE VIRTUAL TABLE t1 USING fts5(x, y);
+  INSERT INTO t1 VALUES('one', 'two');
+}
+
+do_test 9.1.1 {
+  set    blob "12345678"    ;# cookie
+  append blob "0105"        ;# 1 level, total of 5 segments
+  append blob "06"          ;# write counter
+  append blob "0002"        ;# first level has 0 segments merging, 2 other.
+  append blob "450108"      ;# first segment
+  execsql "REPLACE INTO t1_data VALUES(10, X'$blob')"
+} {}
+do_catchsql_test 9.1.2 {
+  SELECT * FROM t1('one AND two');
+} {1 {database disk image is malformed}}
+
+do_test 9.2.1 {
+  set    blob "12345678"    ;# cookie
+  append blob "0205"        ;# 2 levels, total of 5 segments
+  append blob "06"          ;# write counter
+  append blob "0001"        ;# first level has 0 segments merging, 1 other.
+  append blob "450108"      ;# first segment
+  execsql "REPLACE INTO t1_data VALUES(10, X'$blob')"
+} {}
+do_catchsql_test 9.2.2 {
+  SELECT * FROM t1('one AND two');
+} {1 {database disk image is malformed}}
 
 sqlite3_fts5_may_be_corrupt 0
 finish_test

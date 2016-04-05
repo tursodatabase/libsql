@@ -97,7 +97,7 @@ do_test mutex1-1.9 {
 #   * Multi-threaded mode,
 #   * Single-threaded mode.
 #
-ifcapable threadsafe&&shared_cache {
+ifcapable threadsafe1&&shared_cache {
   set enable_shared_cache [sqlite3_enable_shared_cache 1]
   foreach {mode mutexes} {
     singlethread {}

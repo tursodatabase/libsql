@@ -11,6 +11,8 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing the FTS5 module.
 #
+# More specifically, the focus is on testing prefix queries, both with and
+# without prefix indexes.
 #
 
 source [file join [file dirname [info script]] fts5_common.tcl]

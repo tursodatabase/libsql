@@ -1093,7 +1093,7 @@ static int test_db_config_lookaside(
   if( Tcl_GetIntFromObj(interp, objv[3], &sz) ) return TCL_ERROR;
   if( Tcl_GetIntFromObj(interp, objv[4], &cnt) ) return TCL_ERROR;
   if( bufid==0 ){
-    rc = sqlite3_db_config(db, SQLITE_DBCONFIG_LOOKASIDE, 0, sz, cnt);
+    rc = sqlite3_db_config(db, SQLITE_DBCONFIG_LOOKASIDE, (void*)0, sz, cnt);
   }else if( bufid>=1 && bufid<=2 && sz*cnt<=sizeof(azBuf[0]) ){
     rc = sqlite3_db_config(db, SQLITE_DBCONFIG_LOOKASIDE, azBuf[bufid], sz,cnt);
   }else{

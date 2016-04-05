@@ -22,26 +22,38 @@ set -u
 
 TMPSPACE=./mkpkg_tmp_dir
 VERSION=`cat $TOP/VERSION`
+HASH=`sed 's/^\(..........\).*/\1/' $TOP/manifest.uuid`
+DATETIME=`grep '^D' $TOP/manifest | sed -e 's/[^0-9]//g' -e 's/\(............\).*/\1/'`
 
-# Set global variable $ARTIFACT to the "3xxyyzz" string incorporated 
-# into artifact filenames. And $VERSION2 to the "3.x.y[.z]" form.
-xx=`echo $VERSION|sed 's/3\.\([0-9]*\)\..*/\1/'`
-yy=`echo $VERSION|sed 's/3\.[^.]*\.\([0-9]*\).*/\1/'`
-zz=0
-set +e
-  zz=`echo $VERSION|sed 's/3\.[^.]*\.[^.]*\.\([0-9]*\).*/\1/'|grep -v '\.'`
-set -e
-ARTIFACT=`printf "3%.2d%.2d%.2d" $xx $yy $zz`
+# If this script is given an argument of --snapshot, then generate a
+# snapshot tarball named for the current checkout SHA1 hash, rather than
+# the version number.
+#
+if test "$#" -ge 1 -a x$1 != x--snapshot
+then
+  # Set global variable $ARTIFACT to the "3xxyyzz" string incorporated 
+  # into artifact filenames. And $VERSION2 to the "3.x.y[.z]" form.
+  xx=`echo $VERSION|sed 's/3\.\([0-9]*\)\..*/\1/'`
+  yy=`echo $VERSION|sed 's/3\.[^.]*\.\([0-9]*\).*/\1/'`
+  zz=0
+  set +e
+    zz=`echo $VERSION|sed 's/3\.[^.]*\.[^.]*\.\([0-9]*\).*/\1/'|grep -v '\.'`
+  set -e
+  TARBALLNAME=`printf "sqlite-autoconf-3%.2d%.2d%.2d" $xx $yy $zz`
+else
+  TARBALLNAME=sqlite-snapshot-$DATETIME
+fi
 
 rm -rf $TMPSPACE
-cp -R $TOP/autoconf $TMPSPACE
-
-cp sqlite3.c          $TMPSPACE
-cp sqlite3.h          $TMPSPACE
-cp sqlite3ext.h       $TMPSPACE
-cp $TOP/sqlite3.1     $TMPSPACE
-cp $TOP/sqlite3.pc.in $TMPSPACE
-cp $TOP/src/shell.c   $TMPSPACE
+cp -R $TOP/autoconf       $TMPSPACE
+cp sqlite3.c              $TMPSPACE
+cp sqlite3.h              $TMPSPACE
+cp sqlite3ext.h           $TMPSPACE
+cp $TOP/sqlite3.1         $TMPSPACE
+cp $TOP/sqlite3.pc.in     $TMPSPACE
+cp $TOP/src/shell.c       $TMPSPACE
+cp $TOP/src/sqlite3.rc    $TMPSPACE
+cp $TOP/tool/Replace.cs   $TMPSPACE
 
 cat $TMPSPACE/configure.ac |
 sed "s/--SQLITE-VERSION--/$VERSION/" > $TMPSPACE/tmp
@@ -73,6 +85,8 @@ rm -rf autom4te.cache
 cd ../
 ./configure && make dist
 tar -xzf sqlite-$VERSION.tar.gz
-mv sqlite-$VERSION sqlite-autoconf-$ARTIFACT
-tar -czf sqlite-autoconf-$ARTIFACT.tar.gz sqlite-autoconf-$ARTIFACT
-mv sqlite-autoconf-$ARTIFACT.tar.gz ..
+mv sqlite-$VERSION $TARBALLNAME
+tar -czf $TARBALLNAME.tar.gz $TARBALLNAME
+mv $TARBALLNAME.tar.gz ..
+cd ..
+ls -l $TARBALLNAME.tar.gz

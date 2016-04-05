@@ -75,6 +75,7 @@ AC_ARG_ENABLE(threadsafe, [AS_HELP_STRING(
 THREADSAFE_FLAGS=-DSQLITE_THREADSAFE=0
 if test x"$enable_threadsafe" != "xno"; then
   THREADSAFE_FLAGS="-D_REENTRANT=1 -DSQLITE_THREADSAFE=1"
+  AC_SEARCH_LIBS(pthread_create, pthread)
   AC_SEARCH_LIBS(pthread_mutexattr_init, pthread)
 fi
 AC_SUBST(THREADSAFE_FLAGS)
@@ -129,7 +130,7 @@ AC_ARG_ENABLE(static-shell, [AS_HELP_STRING(
   [statically link libsqlite3 into shell tool [default=yes]])], 
   [], [enable_static_shell=yes])
 if test x"$enable_static_shell" == "xyes"; then
-  EXTRA_SHELL_OBJ=sqlite3.$OBJEXT
+  EXTRA_SHELL_OBJ=sqlite3-sqlite3.$OBJEXT
 else
   EXTRA_SHELL_OBJ=libsqlite3.la
 fi

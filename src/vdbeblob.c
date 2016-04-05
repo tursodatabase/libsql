@@ -30,6 +30,8 @@ struct Incrblob {
   BtCursor *pCsr;         /* Cursor pointing at blob row */
   sqlite3_stmt *pStmt;    /* Statement holding cursor open */
   sqlite3 *db;            /* The associated database */
+  char *zDb;              /* Database name */
+  Table *pTab;            /* Table object */
 };
 
 
@@ -173,6 +175,8 @@ int sqlite3_blob_open(
       sqlite3BtreeLeaveAll(db);
       goto blob_open_out;
     }
+    pBlob->pTab = pTab;
+    pBlob->zDb = db->aDb[sqlite3SchemaToIndex(db, pTab->pSchema)].zName;
 
     /* Now search pTab for the exact column. */
     for(iCol=0; iCol<pTab->nCol; iCol++) {
@@ -249,19 +253,17 @@ int sqlite3_blob_open(
       ** which closes the b-tree cursor and (possibly) commits the 
       ** transaction.
       */
-      static const int iLn = VDBE_OFFSET_LINENO(4);
+      static const int iLn = VDBE_OFFSET_LINENO(2);
       static const VdbeOpList openBlob[] = {
-                                    /* addr/ofst */
-        /* {OP_Transaction, 0, 0, 0},  // 0/   inserted separately */
-        {OP_TableLock, 0, 0, 0},       /* 1/0: Acquire a read or write lock */
-        {OP_OpenRead, 0, 0, 0},        /* 2/1: Open a cursor */
-        {OP_Variable, 1, 1, 0},        /* 3/2: Move ?1 into reg[1] */
-        {OP_NotExists, 0, 8, 1},       /* 4/3: Seek the cursor */
-        {OP_Column, 0, 0, 1},          /* 5/4  */
-        {OP_ResultRow, 1, 0, 0},       /* 6/5  */
-        {OP_Goto, 0, 3, 0},            /* 7/6  */
-        {OP_Close, 0, 0, 0},           /* 8/7  */
-        {OP_Halt, 0, 0, 0},            /* 9/8  */
+        {OP_TableLock,      0, 0, 0},  /* 0: Acquire a read or write lock */
+        {OP_OpenRead,       0, 0, 0},  /* 1: Open a cursor */
+        {OP_Variable,       1, 1, 0},  /* 2: Move ?1 into reg[1] */
+        {OP_NotExists,      0, 7, 1},  /* 3: Seek the cursor */
+        {OP_Column,         0, 0, 1},  /* 4  */
+        {OP_ResultRow,      1, 0, 0},  /* 5  */
+        {OP_Goto,           0, 2, 0},  /* 6  */
+        {OP_Close,          0, 0, 0},  /* 7  */
+        {OP_Halt,           0, 0, 0},  /* 8  */
       };
       Vdbe *v = (Vdbe *)pBlob->pStmt;
       int iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
@@ -396,6 +398,30 @@ static int blobReadWrite(
     */
     assert( db == v->db );
     sqlite3BtreeEnterCursor(p->pCsr);
+
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
+    if( xCall==sqlite3BtreePutData && db->xPreUpdateCallback ){
+      /* If a pre-update hook is registered and this is a write cursor, 
+      ** invoke it here. 
+      ** 
+      ** TODO: The preupdate-hook is passed SQLITE_DELETE, even though this
+      ** operation should really be an SQLITE_UPDATE. This is probably
+      ** incorrect, but is convenient because at this point the new.* values 
+      ** are not easily obtainable. And for the sessions module, an 
+      ** SQLITE_UPDATE where the PK columns do not change is handled in the 
+      ** same way as an SQLITE_DELETE (the SQLITE_DELETE code is actually
+      ** slightly more efficient). Since you cannot write to a PK column
+      ** using the incremental-blob API, this works. For the sessions module
+      ** anyhow.
+      */
+      sqlite3_int64 iKey;
+      sqlite3BtreeKeySize(p->pCsr, &iKey);
+      sqlite3VdbePreUpdateHook(
+          v, v->apCsr[0], SQLITE_DELETE, p->zDb, p->pTab, iKey, -1
+      );
+    }
+#endif
+
     rc = xCall(p->pCsr, iOffset+p->iOffset, n, z);
     sqlite3BtreeLeaveCursor(p->pCsr);
     if( rc==SQLITE_ABORT ){

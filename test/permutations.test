@@ -86,7 +86,13 @@ proc test_set {args} {
 #
 set alltests [list]
 foreach f [glob $testdir/*.test] { lappend alltests [file tail $f] }
-foreach f [glob -nocomplain $testdir/../ext/rtree/*.test] { 
+foreach f [glob -nocomplain       \
+    $testdir/../ext/rtree/*.test  \
+    $testdir/../ext/fts5/test/*.test   \
+] { 
+  lappend alltests $f 
+}
+foreach f [glob -nocomplain $testdir/../ext/session/*.test] { 
   lappend alltests $f 
 }
 
@@ -97,6 +103,7 @@ set alltests [test_set $alltests -exclude {
   all.test        async.test         quick.test  veryquick.test
   memleak.test    permutations.test  soak.test   fts3.test
   mallocAll.test  rtree.test         full.test   extraquick.test
+  session.test
 }]
 
 set allquicktests [test_set $alltests -exclude {
@@ -113,7 +120,14 @@ set allquicktests [test_set $alltests -exclude {
   vtab_err.test walslow.test walcrash.test walcrash3.test
   walthread.test rtree3.test indexfault.test securedel2.test
   sort3.test sort4.test fts4growth.test fts4growth2.test
-  bigsort.test rbu.test
+  bigsort.test rbu.test walprotocol.test mmap4.test fuzzer2.test
+  walcrash2.test e_fkey.test backup.test
+
+  fts4merge.test fts4merge2.test fts4merge4.test fts4check.test
+  fts3cov.test fts3snippet.test fts3corrupt2.test fts3an.test
+  fts3defer.test fts4langid.test fts3sort.test fts5unicode.test
+
+  rtree4.test
 }]
 if {[info exists ::env(QUICKTEST_INCLUDE)]} {
   set allquicktests [concat $allquicktests $::env(QUICKTEST_INCLUDE)]
@@ -150,7 +164,8 @@ test_suite "veryquick" -prefix "" -description {
   This test suite is the same as the "quick" tests, except that some files
   that test malloc and IO errors are omitted.
 } -files [
-  test_set $allquicktests -exclude *malloc* *ioerr* *fault* *bigfile*
+  test_set $allquicktests -exclude *malloc* *ioerr* *fault* *bigfile* *_err* \
+      *fts5corrupt* *fts5big* *fts5aj*
 ]
 
 test_suite "extraquick" -prefix "" -description {
@@ -158,7 +173,7 @@ test_suite "extraquick" -prefix "" -description {
   This test suite is the same as the "veryquick" tests, except that
   slower tests are omitted.
 } -files [
-  test_set $allquicktests -exclude *malloc* *ioerr* *fault* *bigfile* \
+  test_set $allquicktests -exclude *malloc* *ioerr* *fault* *bigfile* *_err* \
      wal3.test fts4merge* sort2.test mmap1.test walcrash* \
      percentile.test where8m.test walcksum.test savepoint3.test \
      fuzzer1.test fuzzer3.test fts3expr3.test
@@ -176,7 +191,7 @@ test_suite "valgrind" -prefix "" -description {
   Run the "veryquick" test suite with a couple of multi-process tests (that
   fail under valgrind) omitted.
 } -files [
-  test_set $allquicktests -exclude *malloc* *ioerr* *fault* wal.test \
+  test_set $allquicktests -exclude *malloc* *ioerr* *fault* *_err* wal.test \
               shell*.test crash8.test atof1.test selectG.test \
               tkt-fc62af4523.test numindex1.test
 ] -initialize {
@@ -189,7 +204,8 @@ test_suite "valgrind-nolookaside" -prefix "" -description {
   Run the "veryquick" test suite with a couple of multi-process tests (that
   fail under valgrind) omitted.
 } -files [
-  test_set $allquicktests -exclude *malloc* *ioerr* *fault* wal.test atof1.test
+  test_set $allquicktests -exclude *malloc* *ioerr* *fault* *_err* \
+      wal.test atof1.test
 ] -initialize {
   set ::G(valgrind) 1
   catch {db close}
@@ -266,7 +282,7 @@ test_suite "nofaultsim" -prefix "" -description {
   This test suite is the same as the "quick" tests, except that some files
   that test malloc and IO errors are omitted.
 } -files [
-  test_set $allquicktests -exclude *malloc* *ioerr* *fault*
+  test_set $allquicktests -exclude *malloc* *ioerr* *fault* *_err*
 ] -initialize {
   catch {db close}
   sqlite3_shutdown
@@ -604,6 +620,7 @@ test_suite "utf16" -description {
     trace.test trigger1.test trigger2.test trigger3.test
     trigger4.test types2.test types.test unique.test update.test
     vacuum.test view.test where.test
+    bestindex1.test
 }
 
 # Run some tests in exclusive locking mode.
@@ -962,6 +979,26 @@ test_suite "rtree" -description {
   All R-tree related tests. Provides coverage of source file rtree.c.
 } -files [glob -nocomplain $::testdir/../ext/rtree/*.test]
 
+test_suite "session" -description {
+  All session module related tests. 
+} -files [glob -nocomplain $::testdir/../ext/session/*.test]
+
+test_suite "session_eec" -description {
+  All session module related tests with sqlite3_extended_result_codes() set. 
+} -files [
+  glob -nocomplain $::testdir/../ext/session/*.test
+] -dbconfig {
+  sqlite3_extended_result_codes $::dbhandle 1
+}
+
+test_suite "session_strm" -description {
+  All session module related tests using the streaming APIs.
+} -files [
+  glob -nocomplain $::testdir/../ext/session/*.test
+] -dbconfig {
+  set ::sqlite3session_streams 1
+}
+
 test_suite "rbu" -description {
   RBU tests.
 } -files [
@@ -1055,12 +1092,12 @@ proc help {} {
   exit -1
 }
 
-if {[info script] == $argv0} {
+if {[file tail $argv0] == "permutations.test"} {
   proc main {argv} {
     if {[llength $argv]==0} {
       help
     } else {
-      set suite [lindex $argv 0]
+      set suite [file tail [lindex $argv 0]]
       if {[info exists ::testspec($suite)]==0} help
       set extra ""
       if {[llength $argv]>1} { set extra [list -files [lrange $argv 1 end]] }

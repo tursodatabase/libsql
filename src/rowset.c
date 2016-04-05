@@ -181,7 +181,7 @@ static struct RowSetEntry *rowSetEntryAlloc(RowSet *p){
   assert( p!=0 );
   if( p->nFresh==0 ){
     struct RowSetChunk *pNew;
-    pNew = sqlite3DbMallocRaw(p->db, sizeof(*pNew));
+    pNew = sqlite3DbMallocRawNN(p->db, sizeof(*pNew));
     if( pNew==0 ){
       return 0;
     }

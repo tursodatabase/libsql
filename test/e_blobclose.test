@@ -168,4 +168,3 @@ do_execsql_test 3.5 {
 do_test 4.0 { sqlite3_blob_close 0 } {}
 
 finish_test
-

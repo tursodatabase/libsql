@@ -72,6 +72,10 @@ test_expr icu-2.6 {i1=$::OGRAVE} {upper(i1)}     $::OGRAVE
 test_expr icu-2.7 {i1=$::szlig} {upper(i1)}      "SS"
 test_expr icu-2.8 {i1='SS'} {lower(i1)}          "ss"
 
+do_execsql_test icu-2.9 {
+  SELECT upper(char(0xfb04,0xfb04,0xfb04,0xfb04));
+} {FFLFFLFFLFFL}
+
 # In turkish (locale="tr_TR"), the lower case version of I
 # is "small dotless i" (code point 0x131 (decimal 305)).
 #
@@ -132,5 +136,10 @@ do_catchsql_test icu-5.4 {
 } {0 1}
 do_catchsql_test icu-5.4 { SELECT 'abc' REGEXP }    {1 {near " ": syntax error}}
 do_catchsql_test icu-5.5 { SELECT 'abc' REGEXP, 1 } {1 {near ",": syntax error}}
+
+
+do_malloc_test icu-6.10 -sqlbody {
+  SELECT upper(char(0xfb04,0xdf,0xfb04,0xe8,0xfb04));
+}
 
 finish_test
