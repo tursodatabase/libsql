@@ -113,8 +113,12 @@ do_execsql_test 4.1.3 {
 
   SELECT count(*) FROM t2;
   SELECT count(*) FROM t1;
-  PRAGMA temp.page_count;
-} {500 10 292}
+} {500 10}
+
+do_test 4.1.4 {
+  set n [db one { PRAGMA temp.page_count }]
+  expr ($n >280 && $n < 300) 
+} 1
 
 do_execsql_test 4.1.4 { PRAGMA temp.integrity_check } {ok}
 
@@ -133,11 +137,14 @@ do_execsql_test 5.1.1 {
   CREATE TEMP TABLE t1(a, b);
   CREATE INDEX i1 ON t1(a, b);
   INSERT INTO t1 VALUES(1, 2);
+}
 
-  PRAGMA temp.page_count;
-} {286}
+do_test 5.1.2 {
+  set n [db one { PRAGMA temp.page_count }]
+  expr ($n > 280 && $n < 290)
+} {1}
 
-do_execsql_test 5.1.2 {
+do_execsql_test 5.1.3 {
   BEGIN;
     UPDATE t1 SET a=2;
     UPDATE t2 SET a=randomblob(100);
@@ -145,13 +152,13 @@ do_execsql_test 5.1.2 {
   ROLLBACK;
 } {1}
 
-do_execsql_test 5.1.3 {
+do_execsql_test 5.1.4 {
   UPDATE t2 SET a=randomblob(100);
 
   SELECT * FROM t1;
 } {1 2}
 
-do_execsql_test 5.1.4 { PRAGMA temp.integrity_check } {ok}
+do_execsql_test 5.1.5 { PRAGMA temp.integrity_check } {ok}
 
 #-------------------------------------------------------------------------
 # Test this:
@@ -192,7 +199,7 @@ do_execsql_test 6.2 {
 } {two 500 two}
 
 #-------------------------------------------------------------------------
-
+#
 reset_db
 sqlite3 db ""
 do_execsql_test 7.1 {
@@ -210,6 +217,57 @@ do_execsql_test 7.1 {
   ROLLBACK;
   PRAGMA integrity_check;
 } {ok}
+
+#-------------------------------------------------------------------------
+# Try changing the page size using a backup operation when pages are
+# stored in main-memory only.
+#
+reset_db
+do_execsql_test 8.1 {
+  CREATE TABLE t2(a, b);
+  CREATE INDEX i2 ON t2(a, b);
+  WITH x(i) AS ( SELECT 1 UNION ALL SELECT i+1 FROM x WHERE i<20 )
+  INSERT INTO t2 SELECT randomblob(100), randomblob(100) FROM x;
+  PRAGMA page_count;
+} {13}
+
+do_test 8.2 {
+  sqlite3 tmp ""
+  execsql {
+    PRAGMA page_size = 8192;
+    CREATE TABLE t1(a, b);
+    CREATE INDEX i1 ON t1(a, b);
+    WITH x(i) AS ( SELECT 1 UNION ALL SELECT i+1 FROM x WHERE i<100 )
+    INSERT INTO t1 SELECT randomblob(100), randomblob(100) FROM x;
+    PRAGMA page_count;
+  } tmp
+} {10}
+
+do_test 8.3 {
+  sqlite3_backup B tmp main db main
+  B step 5
+  B finish
+} {SQLITE_READONLY}
+
+do_test 8.4 {
+  execsql {
+    SELECT count(*) FROM t1;
+    PRAGMA integrity_check;
+    PRAGMA page_size;
+  } tmp
+} {100 ok 8192}
+
+do_test 8.5 { 
+  tmp eval { UPDATE t1 SET a=randomblob(100) }
+} {}
+
+do_test 8.6 {
+  sqlite3_backup B tmp main db main
+  B step 1000
+  B finish
+} {SQLITE_READONLY}
+
+tmp close
 
 finish_test
 

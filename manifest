@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\stest\sscript\slock.test.\sFix\sminor\sissues\sin\spager.c.
-D 2016-04-06T16:27:50.054
+C For\sa\spager\sbacked\sby\sa\stemp\sfile,\sstore\sthe\smain\sjournal\sin\smemory\suntil\sit\sis\sat\sleast\ssqlite3_config.nStmtSpill\sbytes\sin\ssize.\sPrevent\sthe\sbackup\sAPI\sfrom\sbeing\sused\sto\schange\sthe\spage-size\sof\sa\stemp\sfile.
+D 2016-04-06T18:20:51.565
 F Makefile.in eba680121821b8a60940a81454316f47a341487a
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1f123a0757f6f04f0341accb46457e116817159a
@@ -362,7 +362,7 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c b1ccb273771f41dbdbe0ba7c1ad63c38ad5972ec
 F src/os_win.c b3ba9573d8d893e70a6a8015bbee572ecf7ffbef
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
-F src/pager.c 2047e837a5df26c16271e77e6b30021d0cdc98b7
+F src/pager.c 91d7462aa2429e30d64c705f75ba36cace90c241
 F src/pager.h e1d38a2f14849e219df0f91f8323504d134c8a56
 F src/parse.y 5ea8c81c5c41b27887f41b4a7e1c58470d7d3821
 F src/pcache.c e9c00846d3dcdaa75b288c6f16238c2fe2177823
@@ -387,7 +387,7 @@ F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
 F src/tclsqlite.c 56569acc73d36e836b64aefecbbb709a92ba0077
 F src/test1.c 7187b7e924bfc97780e6fd2a40dad94a32bddca0
 F src/test2.c 5586f43fcd9a1be0830793cf9d354082c261b25b
-F src/test3.c a8887dabbbee3059af338f20d290084a63ed1b0f
+F src/test3.c 0df6f8dbb4cbaa7106397c70a271fa6a43659042
 F src/test4.c d168f83cc78d02e8d35567bb5630e40dcd85ac1e
 F src/test5.c 5a34feec76d9b3a86aab30fd4f6cc9c48cbab4c1
 F src/test6.c 41cacf3b0dd180823919bf9e1fbab287c9266723
@@ -976,7 +976,7 @@ F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
 F test/permutations.test cd1fa041074ed08eeaa563e4d1bacb0c69337ec1
-F test/pragma.test afbf028be1c35b68f57db8eb015c4a3c59d8f28e
+F test/pragma.test 36daccdbfbdd958a5f65c034141ab2bfd959808e
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
 F test/pragma3.test 3f1984a04657331f838df5c519b443c2088df922
 F test/printf.test b3ff34e73d59124140eaf89f7672e21bc2ca5fcc
@@ -1110,7 +1110,7 @@ F test/tableopts.test dba698ba97251017b7c80d738c198d39ab747930
 F test/tclsqlite.test e1306001a0ca92250b691ea6d3cecaca5b6342aa
 F test/tempdb.test bd92eba8f20e16a9136e434e20b280794de3cdb6
 F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
-F test/temptable2.test c16f96e996bf6f587a4df4199c62cf0ac9a1c0ea
+F test/temptable2.test 707c01c00b4a8fd050e0db5dcef448e998b9ddb5
 F test/temptrigger.test 8ec228b0db5d7ebc4ee9b458fc28cb9e7873f5e1
 F test/tester.tcl 7b740ee852c55e1e72b6ebe5044acee7aa4e5553
 F test/thread001.test 9f22fd3525a307ff42a326b6bc7b0465be1745a5
@@ -1483,7 +1483,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P afe9bd9b4b5dc98dccf1bced80567515ab5c0117
-R 35c99f2c80a6bf5e586b897ba6d7e956
+P 84de8813c3b4007e3c7c3a286ce13020f2065c7b
+R 54ab030014fa87b230c7ab4f5fdc139b
 U dan
-Z 67c50ed57a780aa24194c52733684bdf
+Z dbab9fc4f54135fb156cdc6ccf0d8253

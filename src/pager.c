@@ -1170,6 +1170,8 @@ static int jrnlBufferSize(Pager *pPager){
 
   return JOURNAL_HDR_SZ(pPager) + JOURNAL_PG_SZ(pPager);
 }
+#else
+# define jrnlBufferSize(x) 0
 #endif
 
 /*
@@ -5562,24 +5564,24 @@ static int pager_open_journal(Pager *pPager){
       if( pPager->journalMode==PAGER_JOURNALMODE_MEMORY ){
         sqlite3MemJournalOpen(pPager->jfd);
       }else{
-        const int flags =                   /* VFS flags to open journal file */
-          SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|
-          (pPager->tempFile ? 
-            (SQLITE_OPEN_DELETEONCLOSE|SQLITE_OPEN_TEMP_JOURNAL):
-            (SQLITE_OPEN_MAIN_JOURNAL)
-          );
+        int flags = SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE;
+        int nSpill;
 
+        if( pPager->tempFile ){
+          flags |= (SQLITE_OPEN_DELETEONCLOSE|SQLITE_OPEN_TEMP_JOURNAL);
+          nSpill = sqlite3Config.nStmtSpill;
+        }else{
+          flags |= SQLITE_OPEN_MAIN_JOURNAL;
+          nSpill = jrnlBufferSize(pPager);
+        }
+          
         /* Verify that the database still has the same name as it did when
         ** it was originally opened. */
         rc = databaseIsUnmoved(pPager);
         if( rc==SQLITE_OK ){
-#ifdef SQLITE_ENABLE_ATOMIC_WRITE
-          rc = sqlite3JournalOpen(
-              pVfs, pPager->zJournal, pPager->jfd, flags, jrnlBufferSize(pPager)
+          rc = sqlite3JournalOpen (
+              pVfs, pPager->zJournal, pPager->jfd, flags, nSpill
           );
-#else
-          rc = sqlite3OsOpen(pVfs, pPager->zJournal, pPager->jfd, flags, 0);
-#endif
         }
       }
       assert( rc!=SQLITE_OK || isOpen(pPager->jfd) );
@@ -6532,10 +6534,10 @@ void sqlite3PagerCacheStat(Pager *pPager, int eStat, int reset, int *pnVal){
 }
 
 /*
-** Return true if this is an in-memory pager.
+** Return true if this is an in-memory or temp-file backed pager.
 */
 int sqlite3PagerIsMemdb(Pager *pPager){
-  return MEMDB;
+  return pPager->tempFile;
 }
 
 /*
