@@ -6855,7 +6855,7 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno, int isCommit){
   ** the journal needs to be sync()ed before database page pPg->pgno 
   ** can be written to. The caller has already promised not to write to it.
   */
-  if( (pPg->flags&PGHDR_NEED_SYNC) && !isCommit /* && pPager->tempFile==0 */ ){
+  if( (pPg->flags&PGHDR_NEED_SYNC) && !isCommit ){
     needSyncPgno = pPg->pgno;
     assert( pPager->journalMode==PAGER_JOURNALMODE_OFF ||
             pageInJournal(pPager, pPg) || pPg->pgno>pPager->dbOrigSize );
@@ -7142,7 +7142,8 @@ sqlite3_backup **sqlite3PagerBackupPtr(Pager *pPager){
 ** Unless this is an in-memory or temporary database, clear the pager cache.
 */
 void sqlite3PagerClearCache(Pager *pPager){
-  if( !MEMDB && pPager->tempFile==0 ) pager_reset(pPager);
+  assert( MEMDB==0 || pPager->tempFile );
+  if( pPager->tempFile==0 ) pager_reset(pPager);
 }
 #endif
 

@@ -1,5 +1,5 @@
-C Add\stests\sto\sthis\sbranch.\sFix\sa\sproblem\swith\stemporary\sdatabases\sin\sauto-vacuum\smode.
-D 2016-04-06T15:39:03.038
+C Fix\sa\sproblem\sin\stest\sscript\slock.test.\sFix\sminor\sissues\sin\spager.c.
+D 2016-04-06T16:27:50.054
 F Makefile.in eba680121821b8a60940a81454316f47a341487a
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1f123a0757f6f04f0341accb46457e116817159a
@@ -362,7 +362,7 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c b1ccb273771f41dbdbe0ba7c1ad63c38ad5972ec
 F src/os_win.c b3ba9573d8d893e70a6a8015bbee572ecf7ffbef
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
-F src/pager.c 685f3cc08d045f64d20133144fb9a437914ea4c7
+F src/pager.c 2047e837a5df26c16271e77e6b30021d0cdc98b7
 F src/pager.h e1d38a2f14849e219df0f91f8323504d134c8a56
 F src/parse.y 5ea8c81c5c41b27887f41b4a7e1c58470d7d3821
 F src/pcache.c e9c00846d3dcdaa75b288c6f16238c2fe2177823
@@ -877,7 +877,7 @@ F test/like3.test 3608a2042b6f922f900fbfd5d3ce4e7eca57f7c4
 F test/limit.test 0c99a27a87b14c646a9d583c7c89fd06c352663e
 F test/loadext.test 648cb95f324d1775c54a55c12271b2d1156b633b
 F test/loadext2.test 0408380b57adca04004247179837a18e866a74f7
-F test/lock.test b984ab9034e7389be0d863fe4e64cbbc4d2028f5
+F test/lock.test be4fe08118fb988fed741f429b7dd5d65e1c90db
 F test/lock2.test 5242d8ac4e2d59c403aebff606af449b455aceff
 F test/lock3.test f271375930711ae044080f4fe6d6eda930870d00
 F test/lock4.test e175ae13865bc87680607563bafba21f31a26f12
@@ -1483,7 +1483,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P be5a549eba6cf8e29cb6b9824fd6d0db9d03ca7f
-R 71d9b48ce9c812093890a1f227fcf740
+P afe9bd9b4b5dc98dccf1bced80567515ab5c0117
+R 35c99f2c80a6bf5e586b897ba6d7e956
 U dan
-Z 749bb77cf880284a6ac38e76d6c94ae0
+Z 67c50ed57a780aa24194c52733684bdf

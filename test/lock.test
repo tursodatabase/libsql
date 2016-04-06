@@ -423,8 +423,9 @@ do_test lock-6.5 {
 #   * there exists one or more active read-only statements, and
 #   * a transaction that modified zero database pages is committed.
 # 
-set temp_status unlocked
-if {$TEMP_STORE>=2} {set temp_status unknown}
+#set temp_status unlocked
+#if {$TEMP_STORE>=2} {set temp_status unknown}
+set temp_status unknown
 do_test lock-7.1 {
   set STMT [sqlite3_prepare $DB "SELECT * FROM sqlite_master" -1 TAIL]
   sqlite3_step $STMT
