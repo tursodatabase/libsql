@@ -6815,7 +6815,7 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno, int isCommit){
   /* In order to be able to rollback, an in-memory database must journal
   ** the page we are moving from.
   */
-  if( MEMDB ){
+  if( pPager->tempFile ){
     rc = sqlite3PagerWrite(pPg);
     if( rc ) return rc;
   }
@@ -6855,7 +6855,7 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno, int isCommit){
   ** the journal needs to be sync()ed before database page pPg->pgno 
   ** can be written to. The caller has already promised not to write to it.
   */
-  if( (pPg->flags&PGHDR_NEED_SYNC) && !isCommit && pPager->tempFile==0 ){
+  if( (pPg->flags&PGHDR_NEED_SYNC) && !isCommit /* && pPager->tempFile==0 */ ){
     needSyncPgno = pPg->pgno;
     assert( pPager->journalMode==PAGER_JOURNALMODE_OFF ||
             pageInJournal(pPager, pPg) || pPg->pgno>pPager->dbOrigSize );
@@ -6872,7 +6872,7 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno, int isCommit){
   assert( !pPgOld || pPgOld->nRef==1 );
   if( pPgOld ){
     pPg->flags |= (pPgOld->flags&PGHDR_NEED_SYNC);
-    if( MEMDB ){
+    if( pPager->tempFile ){
       /* Do not discard pages from an in-memory database since we might
       ** need to rollback later.  Just move the page out of the way. */
       sqlite3PcacheMove(pPgOld, pPager->dbSize+1);
@@ -6889,7 +6889,7 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno, int isCommit){
   ** to exist, in case the transaction needs to roll back.  Use pPgOld
   ** as the original page since it has already been allocated.
   */
-  if( MEMDB ){
+  if( pPager->tempFile ){
     assert( pPgOld );
     sqlite3PcacheMove(pPgOld, origPgno);
     sqlite3PagerUnrefNotNull(pPgOld);

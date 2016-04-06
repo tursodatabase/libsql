@@ -153,5 +153,63 @@ do_execsql_test 5.1.3 {
 
 do_execsql_test 5.1.4 { PRAGMA temp.integrity_check } {ok}
 
+#-------------------------------------------------------------------------
+# Test this:
+#
+#   1. Page is DIRTY at the start of a transaction.
+#   2. Page is written out as part of the transaction.
+#   3. Page is then read back in.
+#   4. Transaction is rolled back. Is the page now clean or dirty?
+#
+# This actually does work. Step 4 marks the page as clean. But it also
+# writes to the database file itself. So marking it clean is correct - 
+# the page does match the contents of the db file.
+#
+reset_db
+
+do_execsql_test 6.1 {
+  PRAGMA main.cache_size = 10;
+  PRAGMA temp.cache_size = 10;
+
+  CREATE TEMP TABLE t1(x);
+  INSERT INTO t1 VALUES('one');
+
+  CREATE TEMP TABLE t2(a, b);
+  CREATE INDEX i2 ON t2(a, b);
+  WITH x(i) AS ( SELECT 1 UNION ALL SELECT i+1 FROM x WHERE i<500 )
+  INSERT INTO t2 SELECT randomblob(100), randomblob(100) FROM x;
+}
+
+do_execsql_test 6.2 {
+  UPDATE t1 SET x='two';             -- step 1
+  BEGIN;
+    UPDATE t2 SET a=randomblob(100); -- step 2
+    SELECT * FROM t1;                -- step 3
+  ROLLBACK;                          -- step 4
+
+  SELECT count(*) FROM t2;
+  SELECT * FROM t1;
+} {two 500 two}
+
+#-------------------------------------------------------------------------
+
+reset_db
+sqlite3 db ""
+do_execsql_test 7.1 {
+  PRAGMA auto_vacuum=INCREMENTAL;
+  CREATE TABLE t1(x);
+  INSERT INTO t1 VALUES(zeroblob(900));
+  INSERT INTO t1 VALUES(zeroblob(900));
+  INSERT INTO t1 SELECT x FROM t1;
+  INSERT INTO t1 SELECT x FROM t1;
+  INSERT INTO t1 SELECT x FROM t1;
+  INSERT INTO t1 SELECT x FROM t1;
+  BEGIN;
+  DELETE FROM t1 WHERE rowid%2;
+  PRAGMA incremental_vacuum(4);
+  ROLLBACK;
+  PRAGMA integrity_check;
+} {ok}
+
 finish_test
 
