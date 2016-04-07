@@ -3457,6 +3457,7 @@ void sqlite3CollapseDatabaseArray(sqlite3*);
 void sqlite3CommitInternalChanges(sqlite3*);
 void sqlite3DeleteColumnNames(sqlite3*,Table*);
 int sqlite3ColumnsFromExprList(Parse*,ExprList*,i16*,Column**);
+void sqlite3SelectAddColumnTypeAndCollation(Parse*,Table*,Select*);
 Table *sqlite3ResultSetOfSelect(Parse*,Select*);
 void sqlite3OpenMasterTable(Parse *, int);
 Index *sqlite3PrimaryKeyIndex(Table*);

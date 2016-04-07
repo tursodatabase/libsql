@@ -92,6 +92,26 @@ do_test view-1.8 {
   }
 } {2 3 5 6 8 9}
 
+do_execsql_test view-1.10 {
+  CREATE TABLE t9(x INTEGER);
+  CREATE VIEW v9a AS SELECT x FROM t9;
+  CREATE VIEW v9b AS SELECT * FROM t9;
+  CREATE VIEW v9c(x) AS SELECT x FROM t9;
+  CREATE VIEW v9d(x) AS SELECT * FROM t9;
+} {}
+do_execsql_test view-1.11 {
+  PRAGMA table_info(v9a);
+} {0 x INTEGER 0 {} 0}
+do_execsql_test view-1.12 {
+  PRAGMA table_info(v9b);
+} {0 x INTEGER 0 {} 0}
+do_execsql_test view-1.13 {
+  PRAGMA table_info(v9c);
+} {0 x INTEGER 0 {} 0}
+do_execsql_test view-1.14 {
+  PRAGMA table_info(v9d);
+} {0 x INTEGER 0 {} 0}
+
 do_test view-2.1 {
   execsql {
     CREATE VIEW v2 AS SELECT * FROM t1 WHERE a>5
