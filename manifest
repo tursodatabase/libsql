@@ -1,5 +1,5 @@
-C Instead\sof\sjust\scommenting\sout\sthe\sunneeded\scode\sin\sthe\sprevious\scheck-in,\nremove\sit\scompletely.
-D 2016-04-07T14:05:20.785
+C Avoid\sdecrementing\sa\spointer\soff\sthe\sfront\send\sof\sthe\sbuffer\sin\sOP_MakeRecord.
+D 2016-04-07T14:16:16.723
 F Makefile.in eba680121821b8a60940a81454316f47a341487a
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1f123a0757f6f04f0341accb46457e116817159a
@@ -441,7 +441,7 @@ F src/update.c 3e67ab3c0814635f355fb1f8ab010a2b9e016e7d
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c 19509465217b673b38d5804a72778908b138953f
 F src/vacuum.c feb1eabb20987983d9350cad98299b21fa811f52
-F src/vdbe.c 936166d3dc5aa00364877603f545707896c1519e
+F src/vdbe.c e16e8625829858b2bf343c3cdd72bb43eab7d643
 F src/vdbe.h c16ba943d407baa1c7085eefea73a063fc631863
 F src/vdbeInt.h ddb157974436d87652de7dc641f7191496d9a8cd
 F src/vdbeapi.c ba85b78fe08dc4a9ce747e62c89a2b4a4547e74c
@@ -1482,7 +1482,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e84e88e31b67afe42e2494d984ab1cafd107465a
-R 498c228ba25f81bda5f3077b10bd4000
+P 8415d4848ab36ca33b23d1fad6b063544de04a3b
+R 03453ebf1870335c86f4514ee1d5c7ac
 U drh
-Z 41c10e3b5fbbcc81e08050bb9e8f982f
+Z 0a2d3c19f1c3d2a6467caf636e91907c
