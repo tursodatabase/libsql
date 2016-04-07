@@ -94,6 +94,7 @@ static int memjrnlRead(
 #endif
 
   assert( (iAmt+iOfst)<=p->endpoint.iOffset );
+  assert( p->readpoint.iOffset==0 || p->readpoint.pChunk!=0 );
   if( p->readpoint.iOffset!=iOfst || iOfst==0 ){
     sqlite3_int64 iOff = 0;
     for(pChunk=p->pFirst; 
@@ -104,6 +105,7 @@ static int memjrnlRead(
     }
   }else{
     pChunk = p->readpoint.pChunk;
+    assert( pChunk!=0 );
   }
 
   iChunkOffset = (int)(iOfst%p->nChunkSize);
@@ -115,7 +117,7 @@ static int memjrnlRead(
     nRead -= iSpace;
     iChunkOffset = 0;
   } while( nRead>=0 && (pChunk=pChunk->pNext)!=0 && nRead>0 );
-  p->readpoint.iOffset = iOfst+iAmt;
+  p->readpoint.iOffset = pChunk ? iOfst+iAmt : 0;
   p->readpoint.pChunk = pChunk;
 
   return SQLITE_OK;
