@@ -1,5 +1,5 @@
-C Update\scomments\son\sthe\sunix\sfile\slocking\sprotocol.\s\sNo\schanges\sto\scode.
-D 2016-04-07T13:45:20.032
+C Remove\san\sunnecessary\stest\sfor\sa\sNULL\spointer\sin\sfreeP4().
+D 2016-04-07T14:01:10.659
 F Makefile.in eba680121821b8a60940a81454316f47a341487a
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1f123a0757f6f04f0341accb46457e116817159a
@@ -445,7 +445,7 @@ F src/vdbe.c 936166d3dc5aa00364877603f545707896c1519e
 F src/vdbe.h c16ba943d407baa1c7085eefea73a063fc631863
 F src/vdbeInt.h ddb157974436d87652de7dc641f7191496d9a8cd
 F src/vdbeapi.c ba85b78fe08dc4a9ce747e62c89a2b4a4547e74c
-F src/vdbeaux.c fa06ba5441714160ab5f64422660ee286968672f
+F src/vdbeaux.c a61e39702bef0b8eae9e9e97658aef484f7dbe4d
 F src/vdbeblob.c c9f2f494b911c6fa34efd9803f0a10807da80f77
 F src/vdbemem.c 5cfef60e60e19cab6275d1b975bf4c791d575beb
 F src/vdbesort.c 307460bfa4de4d1c3901fcd42089159131e34062
@@ -1482,7 +1482,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P da81d7afeb0566a09a505ba5fce901e991e4a029
-R c31dba9b364f6a5e65569f6b94115698
+P 716b20de4306de1653ba5bcdbfb8d210d2d46e1a
+R aaba6ad1b1539c59b560283e3f15aaba
 U drh
-Z 3e3e5fb3cba3f9bdb43d997a64c47647
+Z cf4238e507b7767ffc7c561acb505e47

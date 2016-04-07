@@ -791,7 +791,7 @@ static void vdbeFreeOpArray(sqlite3 *, Op *, int);
 ** Delete a P4 value if necessary.
 */
 static void freeP4(sqlite3 *db, int p4type, void *p4){
-  if( p4 ){
+  /*if( p4 )*/{
     assert( db );
     switch( p4type ){
       case P4_FUNCCTX: {
