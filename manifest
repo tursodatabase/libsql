@@ -1,5 +1,5 @@
-C Add\sa\scouple\soptions\sto\sthe\sMSVC\smakefile.
-D 2016-04-06T17:32:23.768
+C Prevent\sthe\sin-memory\sjournal\sread\scursor\sfrom\sentering\san\sinconsistent\sstate\nwhen\sit\sreads\sthe\slast\sfew\sbytes\sout\sof\sthe\sjournal\sfile.\s\sFix\sfor\nticket\s[7f7f8026eda38].
+D 2016-04-07T21:22:16.307
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b00bcf0ec7001857aea81ee39fae45d20f5f4e59
@@ -325,7 +325,7 @@ F src/mem1.c 6919bcf12f221868ea066eec27e579fed95ce98b
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
 F src/mem3.c 8768ac94694f31ffaf8b4d0ea5dc08af7010a35a
 F src/mem5.c 9bf955937b07f8c32541c8a9991f33ce3173d944
-F src/memjournal.c 5253fd4335a8d9c64e5df25cb9da6329af5242c7
+F src/memjournal.c 2815ef7684671d93a1ec6a31e1e63c45de4b4d31
 F src/msvc.h d9ba56c6851227ab44b3f228a35f3f5772296495
 F src/mutex.c 8e45800ee78e0cd1f1f3fe8e398853307f4a085c
 F src/mutex.h 779d588e3b7756ec3ecf7d78cde1d84aba414f85
@@ -1459,10 +1459,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e9bb4cf40f4971974a74468ef922bdee481c988b
-R df37ee2a76161156de26d87e281cecd3
-T *branch * branch-3.12.0
-T *sym-branch-3.12.0 *
-T -sym-trunk *
-U mistachkin
-Z 6c1198e706bb6e69068eb7abaf257f68
+P ea4de04d67aea5102fc640833cd0ec494990c109
+Q +c4b9c611bdcd85f31d68aaf114ee34a9f27eba6d
+R 5945c0680345e67d7d967acfb4c9368b
+U drh
+Z e67f9905999b6698f873c3efc43111f0
