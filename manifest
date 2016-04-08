@@ -1,5 +1,5 @@
-C Enhance\sthe\squery\splanner\sso\sthat\sIS\sand\sIS\sNULL\soperators\sare\sable\sto\sdrive\nan\sindex\son\sa\sLEFT\sOUTER\sJOIN.
-D 2016-04-07T23:18:44.800
+C Version\s3.12.1
+D 2016-04-08T15:09:49.426
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b00bcf0ec7001857aea81ee39fae45d20f5f4e59
@@ -1459,8 +1459,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 300f1b61a0a1e486bdd63ab14b8a06574d4b3fc9
-Q +c648539b52ca28c0b2cb61208e2c32b1d29626a1
+P 84d2a09eab28b65ab7015e89c2057851c7894842
 R 53ca277f27cb21538c9d98930a79d380
+T +bgcolor * #d0c0ff
+T +sym-release *
+T +sym-version-3.12.1 *
 U drh
-Z 0e0ae1cbd0507466230e7807074e834c
+Z d74ba186b3dc4e9d8ac039d3fb832fcf
