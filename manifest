@@ -1,5 +1,5 @@
-C Add\stest\scases\sfor\sticket\s[7f7f8026eda387d544].
-D 2016-04-07T21:14:35.631
+C Update\sdocumentation\sfor\ssqlite3_snapshot_open().\s\sNo\scode\schanges.
+D 2016-04-08T19:44:31.621
 F Makefile.in eba680121821b8a60940a81454316f47a341487a
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1f123a0757f6f04f0341accb46457e116817159a
@@ -377,7 +377,7 @@ F src/resolve.c b8f7174e5f8c33c44ded3a25a973d0bb89228c20
 F src/rowset.c 9fe4b3ad7cc00944386bb600233d8f523de07a6e
 F src/select.c d9b8628acb98f1a38921888d823a6b70c7a7774b
 F src/shell.c b7922fa264f8c8d72a5ec6dd0b091e15a93c4de5
-F src/sqlite.h.in 7f437b068314f053e6417d452c59f08d05092591
+F src/sqlite.h.in c8f41612dc1a9b5212a891e1b65a5f589b8b884a
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 98f72cbfe00169c39089115427d06ea05fe4b4a2
 F src/sqliteInt.h 292fbc9dd900c64e93a15dfd73ccd9e03475e6a6
@@ -1482,7 +1482,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c4b9c611bdcd85f31d68aaf114ee34a9f27eba6d
-R 761448207abe334cc70f1f29da291a77
+P 87aa9357fbe6749bae60e30af54ca16e48678802
+R 531fbfe926ebd5a12c160e3eacaeb55c
 U drh
-Z 2b1e9b9a1cc02d13e96c99c5d4c59d63
+Z f425ca7a54f66ad3173991f366076015
