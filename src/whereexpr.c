@@ -1356,6 +1356,9 @@ void sqlite3WhereTabFuncArgs(
     pColRef->pTab = pTab;
     pTerm = sqlite3PExpr(pParse, TK_EQ, pColRef,
                          sqlite3ExprDup(pParse->db, pArgs->a[j].pExpr, 0), 0);
+    if( pTerm && (pItem->fg.jointype & JT_OUTER)!=0 ){
+      ExprSetProperty(pTerm, EP_FromJoin);
+    }
     whereClauseInsert(pWC, pTerm, TERM_DYNAMIC);
   }
 }

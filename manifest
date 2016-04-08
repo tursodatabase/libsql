@@ -1,5 +1,5 @@
-C Update\sdocumentation\sfor\ssqlite3_snapshot_open().\s\sNo\scode\schanges.
-D 2016-04-08T19:44:31.621
+C Attempt\sto\streat\sthe\sarguments\sto\sa\stable-valued\sfunction\sas\sif\sthey\soccur\nin\sthe\sON\sclause\sof\sa\sLEFT\sJOIN\srather\sthan\sin\sthe\sWHERE\sclause.\s\sBut\sthis\ncauses\sundesirable\sbehavior\swith\sgenerate_series,\sas\sdemonstrated\sby\stest\ncases.\s\sThis\sis\san\sincremental\scheck-in\spending\sfurther\swork.
+D 2016-04-08T21:35:34.942
 F Makefile.in eba680121821b8a60940a81454316f47a341487a
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1f123a0757f6f04f0341accb46457e116817159a
@@ -458,7 +458,7 @@ F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
 F src/where.c 99cc6270fc3915201e2a90bbac3768f007a89c44
 F src/whereInt.h 93297d56edd137b7ea004490690fb6e2ce028a34
 F src/wherecode.c 863aedf086131743763c1960637fde904eadc442
-F src/whereexpr.c fb87944b1254234e5bba671aaf6dee476241506a
+F src/whereexpr.c 2a0b17d835a84e4947186f82d096d74803c12bc1
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1103,7 +1103,7 @@ F test/symlink.test c9ebe7330d228249e447038276bfc8a7b22f4849
 F test/sync.test 2f607e1821aa3af3c5c53b58835c05e511c95899
 F test/syscall.test f59ba4e25f7ba4a4c031026cc2ef8b6e4b4c639c
 F test/sysfault.test c9f2b0d8d677558f74de750c75e12a5454719d04
-F test/tabfunc01.test f977868fa8bb7beb4b2072883190411653473906
+F test/tabfunc01.test e7b2dd45cbde1189e8b2d33276422ae9e781e646
 F test/table.test b708f3e5fa2542fa51dfab21fc07b36ea445cb2f
 F test/tableapi.test 2674633fa95d80da917571ebdd759a14d9819126
 F test/tableopts.test dba698ba97251017b7c80d738c198d39ab747930
@@ -1482,7 +1482,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 87aa9357fbe6749bae60e30af54ca16e48678802
-R 531fbfe926ebd5a12c160e3eacaeb55c
+P 1dfa5234d3ee38c6af2d18a6294afa93232821e7
+R 7e97b049085868f070af930661ace4a7
+T *branch * tabfunc-in-left-join
+T *sym-tabfunc-in-left-join *
+T -sym-trunk *
 U drh
-Z f425ca7a54f66ad3173991f366076015
+Z f7afd61e77ab0a815259a2286bcc9be6

@@ -69,6 +69,28 @@ do_execsql_test tabfunc01-1.22 {
   CREATE VIEW v2(x) AS SELECT value FROM generate_series(1,5);
   SELECT * FROM v2;
 } {1 2 3 4 5}
+do_execsql_test tabfunc01-1.22.2 {
+  SELECT * FROM generate_series(1,5) AS A
+    LEFT JOIN generate_series(4,8) AS B ON A.value=B.value;
+} {1 {} 2 {} 3 {} 4 4 5 5}
+do_execsql_test tabfunc01-1.22.3 {
+  CREATE TEMP TABLE t22 AS SELECT value AS x FROM generate_series(1,5);
+  SELECT * FROM t22 AS A LEFT JOIN generate_series(4,8) AS B ON A.x=B.value;
+} {1 {} 2 {} 3 {} 4 4 5 5}
+do_execsql_test tabfunc01-1.22.4 {
+  WITH x1(x) AS (SELECT value FROM generate_series(1,5))
+  SELECT * FROM x1 AS A LEFT JOIN generate_series(4,8) AS B ON A.x=B.value;
+} {1 {} 2 {} 3 {} 4 4 5 5}
+do_execsql_test tabfunc01-1.22.5 {
+  SELECT * FROM (SELECT value AS x FROM generate_series(1,5)) AS A
+    LEFT JOIN generate_series(4,8) AS B ON A.x=B.value;
+} {1 {} 2 {} 3 {} 4 4 5 5}
+do_execsql_test tabfunc01-1.22.6 {
+  SELECT * FROM v2 LEFT JOIN generate_series(4,8) ON value=x;
+} {1 {} 2 {} 3 {} 4 4 5 5}
+do_execsql_test tabfunc01-1.22.7 {
+  SELECT * FROM generate_series(1,21,10) AS a LEFT JOIN v2 ON a.value=v2.x;
+} {1 1 11 {} 21 {}}
 do_catchsql_test tabfunc01-1.23.1 {
   SELECT * FROM v2(55);
 } {1 {'v2' is not a function}}
@@ -134,5 +156,25 @@ do_execsql_test tabfunc01-500 {
   SELECT * FROM generate_series WHERE start IN (1,7) AND stop=20 AND step=10
   ORDER BY +1;
 } {1 7 11 17}
+
+# When a table-valued function appears as the right table in a LEFT JOIN,
+# the function arguments are understood as if they appear in the ON clause,
+# not in the WHERE clause.
+#
+do_execsql_test tabfunc01-600 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(x);
+  INSERT INTO t1 VALUES(4),(11),(17);
+  SELECT * FROM t1 LEFT JOIN generate_series(9,13) ON x=value ORDER BY +x;
+} {4 {} 11 11 17 {}}
+do_execsql_test tabfunc01-601 {
+  SELECT * FROM t1 LEFT JOIN generate_series ON x=value
+   WHERE start=9 AND stop=13
+   ORDER BY +x;
+} {11 11}
+do_execsql_test tabfunc01-602 {
+  SELECT * FROM t1 LEFT JOIN generate_series ON x=value AND start=9 AND stop=13
+   ORDER BY +x;
+} {4 {} 11 11 17 {}}
 
 finish_test
