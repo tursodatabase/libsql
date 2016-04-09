@@ -1,5 +1,5 @@
-C Update\sdocumentation\sfor\ssqlite3_snapshot_open().\s\sNo\scode\schanges.
-D 2016-04-08T19:44:31.621
+C Limit\sthe\snumber\sof\sdigits\sshown\sin\sthe\s"prereq"\smask\sfor\s".wheretrace"\ndebugging\soutput.
+D 2016-04-09T14:36:07.399
 F Makefile.in eba680121821b8a60940a81454316f47a341487a
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1f123a0757f6f04f0341accb46457e116817159a
@@ -455,7 +455,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 10deb6b43887662691e5f53d10b3c171c401169b
 F src/wal.h 2f7c831cf3b071fa548bf2d5cac640846a7ff19c
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
-F src/where.c 99cc6270fc3915201e2a90bbac3768f007a89c44
+F src/where.c 24ab561466d92d313747c04edb1a36a7af8663be
 F src/whereInt.h 93297d56edd137b7ea004490690fb6e2ce028a34
 F src/wherecode.c 863aedf086131743763c1960637fde904eadc442
 F src/whereexpr.c fb87944b1254234e5bba671aaf6dee476241506a
@@ -1482,7 +1482,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 87aa9357fbe6749bae60e30af54ca16e48678802
-R 531fbfe926ebd5a12c160e3eacaeb55c
+P 1dfa5234d3ee38c6af2d18a6294afa93232821e7
+R 8cb0faecb86a13a69a59d8a42b73cabb
 U drh
-Z f425ca7a54f66ad3173991f366076015
+Z ae55d26bb66b3417bd5295b83c3ebe20
