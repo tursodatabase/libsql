@@ -95,4 +95,38 @@ do_test savepoint7-2.2 {
   list $rc $msg [db eval {SELECT * FROM t2}]
 } {1 {abort due to ROLLBACK} {}}
 
+# Ticket: https://www.sqlite.org/src/tktview/7f7f8026eda387d544b
+# Segfault in the in-memory journal logic triggered by a tricky
+# combination of SAVEPOINT operations.
+#
+unset -nocomplain i
+for {set i 248} {$i<=253} {incr i} {
+  do_test savepoint7-3.$i {
+    db close
+    forcedelete test.db
+    sqlite3 db test.db
+    db eval {
+      PRAGMA page_size=1024;
+      PRAGMA temp_store=MEMORY;
+      BEGIN;
+      CREATE TABLE t1(x INTEGER PRIMARY KEY, y TEXT);
+      WITH RECURSIVE c(x) AS (VALUES(1) UNION SELECT x+1 FROM c WHERE x<$::i)
+      INSERT INTO t1(x,y) SELECT x*10, printf('%04d%.800c',x,'*') FROM c;
+      SAVEPOINT one;
+        SELECT count(*) FROM t1;
+        WITH RECURSIVE c(x) AS (VALUES(1) UNION SELECT x+1 FROM c WHERE x<$::i)
+        INSERT INTO t1(x,y) SELECT x*10+1, printf('%04d%.800c',x,'*') FROM c;
+      ROLLBACK TO one;
+        SELECT count(*) FROM t1;
+        SAVEPOINT twoB;
+          WITH RECURSIVE c(x) AS (VALUES(1) UNION SELECT x+1 FROM c WHERE x<10)
+          INSERT INTO t1(x,y) SELECT x*10+2, printf('%04d%.800c',x,'*') FROM c;
+        ROLLBACK TO twoB;
+      RELEASE one;
+      COMMIT;
+    }
+  } [list $i $i]
+}
+
+
 finish_test

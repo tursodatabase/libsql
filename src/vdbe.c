@@ -2755,7 +2755,9 @@ case OP_MakeRecord: {
     testcase( serial_type==127 );
     testcase( serial_type==128 );
     nHdr += serial_type<=127 ? 1 : sqlite3VarintLen(serial_type);
-  }while( (--pRec)>=pData0 );
+    if( pRec==pData0 ) break;
+    pRec--;
+  }while(1);
 
   /* EVIDENCE-OF: R-22564-11647 The header begins with a single varint
   ** which determines the total number of bytes in the header. The varint

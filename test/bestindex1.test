@@ -165,4 +165,111 @@ foreach {tn mode} {
   } $plan($mode)
 }
 
+# 2016-04-09.
+# Demonstrate a register overwrite problem when using two virtual
+# tables where the outer loop uses the IN operator.
+#
+set G(collist) [list PrimaryKey flagA columnA]
+set G(cols) [join $G(collist) ,]
+set G(nulls) "NULL"
+
+proc vtab_command {method args} {
+  global G
+
+  switch -- $method {
+    xConnect {
+      return "CREATE TABLE t1($G(cols))"
+    }
+
+    xBestIndex {
+      set clist [lindex $args 0]
+      #puts $clist
+      set W [list]
+      set U [list]
+
+      set i 0
+      for {set idx 0} {$idx < [llength $clist]} {incr idx} {
+        array set c [lindex $clist $idx]
+        if {$c(op)=="eq" && $c(usable)} {
+          lappend W "[lindex $G(collist) $c(column)] = %$i%"
+          lappend U use $idx
+          incr i
+        }
+      }
+
+      if {$W==""} {
+        set sql "SELECT rowid, * FROM t1"
+      } else {
+        set sql "SELECT rowid, * FROM t1 WHERE [join $W { AND }]"
+      }
+
+      return [concat [list idxstr $sql] $U]
+    }
+
+    xFilter {
+      foreach {idxnum idxstr vals} $args {}
+
+      set map [list]
+      for {set i 0} {$i < [llength $vals]} {incr i} {
+        lappend map "%$i%" 
+        set v [lindex $vals $i]
+        if {[string is integer $v]} { 
+          lappend map $v 
+        } else {
+          lappend map "'$v'"
+        }
+      }
+      set sql [string map $map $idxstr]
+
+      #puts "SQL: $sql"
+      return [list sql $sql]
+    }
+  }
+
+  return {}
+}
+
+db close
+forcedelete test.db
+sqlite3 db test.db
+register_tcl_module db
+
+do_execsql_test 3.1 "
+  CREATE TABLE t1($G(cols));
+  INSERT INTO t1 VALUES(1, 0, 'ValueA');
+  INSERT INTO t1 VALUES(2, 0, 'ValueA');
+  INSERT INTO t1 VALUES(3, 0, 'ValueB');
+  INSERT INTO t1 VALUES(4, 0, 'ValueB');
+"
+
+do_execsql_test 3.2 {
+  CREATE VIRTUAL TABLE VirtualTableA USING tcl(vtab_command);
+  CREATE VIRTUAL TABLE VirtualTableB USING tcl(vtab_command);
+}
+
+do_execsql_test 3.3 { SELECT primarykey FROM VirtualTableA } {1 2 3 4}
+
+do_execsql_test 3.4 {
+  SELECT * FROM 
+  VirtualTableA a CROSS JOIN VirtualTableB b ON b.PrimaryKey=a.PrimaryKey
+  WHERE a.ColumnA IN ('ValueA', 'ValueB') AND a.FlagA=0
+} {
+  1 0 ValueA 1 0 ValueA
+  2 0 ValueA 2 0 ValueA
+  3 0 ValueB 3 0 ValueB
+  4 0 ValueB 4 0 ValueB
+}
+
+do_execsql_test 3.5 {
+  SELECT * FROM 
+  VirtualTableA a CROSS JOIN VirtualTableB b ON b.PrimaryKey=a.PrimaryKey
+  WHERE a.FlagA=0 AND a.ColumnA IN ('ValueA', 'ValueB') 
+} {
+  1 0 ValueA 1 0 ValueA
+  2 0 ValueA 2 0 ValueA
+  3 0 ValueB 3 0 ValueB
+  4 0 ValueB 4 0 ValueB
+}
+
+
 finish_test
