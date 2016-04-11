@@ -738,8 +738,8 @@ void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr){
 /*
 ** Recursively delete an expression tree.
 */
-void sqlite3ExprDelete(sqlite3 *db, Expr *p){
-  if( p==0 ) return;
+static SQLITE_NOINLINE void sqlite3ExprDeleteNN(sqlite3 *db, Expr *p){
+  assert( p!=0 );
   /* Sanity check: Assert that the IntValue is non-negative if it exists */
   assert( !ExprHasProperty(p, EP_IntValue) || p->u.iValue>=0 );
   if( !ExprHasProperty(p, EP_TokenOnly) ){
@@ -757,6 +757,9 @@ void sqlite3ExprDelete(sqlite3 *db, Expr *p){
   if( !ExprHasProperty(p, EP_Static) ){
     sqlite3DbFree(db, p);
   }
+}
+void sqlite3ExprDelete(sqlite3 *db, Expr *p){
+  if( p ) sqlite3ExprDeleteNN(db, p);
 }
 
 /*

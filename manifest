@@ -1,5 +1,5 @@
-C Remove\sthe\sVdbeOp.opflags\sfield\sand\sits\sassociated\sinitialization\soverhead.\nUpdate\smkopcodeh.tcl\sto\sreorder\sopcode\snumbers\sto\shelp\sthe\sresolveP2Values()\nroutine\srun\sfaster.
-D 2016-04-11T13:36:42.250
+C Performance\simprovement\sin\ssqlite3ExprDelete().
+D 2016-04-11T14:49:39.785
 F Makefile.in eba680121821b8a60940a81454316f47a341487a
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1f123a0757f6f04f0341accb46457e116817159a
@@ -329,7 +329,7 @@ F src/ctime.c 60e135af364d777a9ab41c97e5e89cd224da6198
 F src/date.c 0b73e681c11fca867fec554750c07fe0d4e417c1
 F src/dbstat.c c845548d4346e606e2f2b7d2e714ace2b8a7dd1b
 F src/delete.c 78eb999114ec04fcf1b7d123ccedb4b5b734930e
-F src/expr.c a195d2d047ca59f9b87cae737b785d17cdd3cc3f
+F src/expr.c 702260035c6f23051bdae7a0be28e4884b892386
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 4c0bd09e602b8ae8d36d81e31e4872d0b53c87bb
 F src/func.c 552d300265aed09eea21f68ac742a440550c0062
@@ -1482,7 +1482,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ef1966c2469a0f5dbdb31a0287bd37badb2b8f28
-R 39896b563a0174d278e56658538b5996
+P 099478fa7521ba52262ef2bf24dd8f0114ce92e1
+R 5159c43d8f5df7b2df207c9931eea763
 U drh
-Z 4b0063de72cbcb5b307015ce248a50de
+Z 20edece30066cfe56abf703e4a6fcff0
