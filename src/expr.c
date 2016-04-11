@@ -563,6 +563,22 @@ Expr *sqlite3PExpr(
 }
 
 /*
+** Add pSelect to the Expr.x.pSelect field.  Or, if pExpr is NULL (due
+** do a memory allocation failure) then delete the pSelect object.
+*/
+void sqlite3PExprAddSelect(Parse *pParse, Expr *pExpr, Select *pSelect){
+  if( pExpr ){
+    pExpr->x.pSelect = pSelect;
+    ExprSetProperty(pExpr, EP_xIsSelect|EP_Subquery);
+    sqlite3ExprSetHeightAndFlags(pParse, pExpr);
+  }else{
+    assert( pParse->db->mallocFailed );
+    sqlite3SelectDelete(pParse->db, pSelect);
+  }
+}
+
+
+/*
 ** If the expression is always either TRUE or FALSE (respectively),
 ** then return 1.  If one cannot determine the truth value of the
 ** expression at compile-time return 0.

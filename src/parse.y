@@ -1122,36 +1122,19 @@ expr(A) ::= expr(A) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
   expr(A) ::= LP(B) select(X) RP(E). {
     spanSet(&A,&B,&E); /*A-overwrites-B*/
     A.pExpr = sqlite3PExpr(pParse, TK_SELECT, 0, 0, 0);
-    if( A.pExpr ){
-      A.pExpr->x.pSelect = X;
-      ExprSetProperty(A.pExpr, EP_xIsSelect|EP_Subquery);
-      sqlite3ExprSetHeightAndFlags(pParse, A.pExpr);
-    }else{
-      sqlite3SelectDelete(pParse->db, X);
-    }
+    sqlite3PExprAddSelect(pParse, A.pExpr, X);
   }
   expr(A) ::= expr(A) in_op(N) LP select(Y) RP(E).  [IN] {
     A.pExpr = sqlite3PExpr(pParse, TK_IN, A.pExpr, 0, 0);
-    if( A.pExpr ){
-      A.pExpr->x.pSelect = Y;
-      ExprSetProperty(A.pExpr, EP_xIsSelect|EP_Subquery);
-      sqlite3ExprSetHeightAndFlags(pParse, A.pExpr);
-    }else{
-      sqlite3SelectDelete(pParse->db, Y);
-    }
+    sqlite3PExprAddSelect(pParse, A.pExpr, Y);
     exprNot(pParse, N, &A);
     A.zEnd = &E.z[E.n];
   }
   expr(A) ::= expr(A) in_op(N) nm(Y) dbnm(Z). [IN] {
     SrcList *pSrc = sqlite3SrcListAppend(pParse->db, 0,&Y,&Z);
+    Select *pSelect = sqlite3SelectNew(pParse, 0,pSrc,0,0,0,0,0,0,0);
     A.pExpr = sqlite3PExpr(pParse, TK_IN, A.pExpr, 0, 0);
-    if( A.pExpr ){
-      A.pExpr->x.pSelect = sqlite3SelectNew(pParse, 0,pSrc,0,0,0,0,0,0,0);
-      ExprSetProperty(A.pExpr, EP_xIsSelect|EP_Subquery);
-      sqlite3ExprSetHeightAndFlags(pParse, A.pExpr);
-    }else{
-      sqlite3SrcListDelete(pParse->db, pSrc);
-    }
+    sqlite3PExprAddSelect(pParse, A.pExpr, pSelect);
     exprNot(pParse, N, &A);
     A.zEnd = Z.z ? &Z.z[Z.n] : &Y.z[Y.n];
   }
@@ -1159,13 +1142,7 @@ expr(A) ::= expr(A) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
     Expr *p;
     spanSet(&A,&B,&E); /*A-overwrites-B*/
     p = A.pExpr = sqlite3PExpr(pParse, TK_EXISTS, 0, 0, 0);
-    if( p ){
-      p->x.pSelect = Y;
-      ExprSetProperty(p, EP_xIsSelect|EP_Subquery);
-      sqlite3ExprSetHeightAndFlags(pParse, p);
-    }else{
-      sqlite3SelectDelete(pParse->db, Y);
-    }
+    sqlite3PExprAddSelect(pParse, p, Y);
   }
 %endif SQLITE_OMIT_SUBQUERY
 

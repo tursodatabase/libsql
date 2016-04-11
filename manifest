@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\sthe\scode\sgenerator\sfor\sjoins\son\svirtual\stables\swhere\sthe\nouter\sloop\sof\sthe\sjoin\suses\sthe\sIN\soperator.
-D 2016-04-09T18:04:28.474
+C Factor\sout\sthe\scommon\soperation\sof\ssetting\sthe\sExpr.x.pSelect\sfield\sof\san\nExpr\sobject\sinto\sa\ssubroutine.
+D 2016-04-11T01:06:47.056
 F Makefile.in eba680121821b8a60940a81454316f47a341487a
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1f123a0757f6f04f0341accb46457e116817159a
@@ -328,8 +328,8 @@ F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 60e135af364d777a9ab41c97e5e89cd224da6198
 F src/date.c 0b73e681c11fca867fec554750c07fe0d4e417c1
 F src/dbstat.c c845548d4346e606e2f2b7d2e714ace2b8a7dd1b
-F src/delete.c eeac28b3d3d88e3541bdf93e91ea7492a7b67842
-F src/expr.c 289ffac5240b60fee0a824d3d5ab2d7bd2630c94
+F src/delete.c 78eb999114ec04fcf1b7d123ccedb4b5b734930e
+F src/expr.c a195d2d047ca59f9b87cae737b785d17cdd3cc3f
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 4c0bd09e602b8ae8d36d81e31e4872d0b53c87bb
 F src/func.c 552d300265aed09eea21f68ac742a440550c0062
@@ -364,7 +364,7 @@ F src/os_win.c b3ba9573d8d893e70a6a8015bbee572ecf7ffbef
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 38718a019ca762ba4f6795425d5a54db70d1790d
 F src/pager.h e1d38a2f14849e219df0f91f8323504d134c8a56
-F src/parse.y 5ea8c81c5c41b27887f41b4a7e1c58470d7d3821
+F src/parse.y b6fcbc84ea5a278ab7f1d12ce6eeff6bfa4024d3
 F src/pcache.c 647bb53a86b7bbcf55ad88089b3ea5a9170b90df
 F src/pcache.h 4d0ccaad264d360981ec5e6a2b596d6e85242545
 F src/pcache1.c c40cdb93586e21b5dd826b5e671240bd91c26b05
@@ -380,7 +380,7 @@ F src/shell.c b7922fa264f8c8d72a5ec6dd0b091e15a93c4de5
 F src/sqlite.h.in c8f41612dc1a9b5212a891e1b65a5f589b8b884a
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 98f72cbfe00169c39089115427d06ea05fe4b4a2
-F src/sqliteInt.h 292fbc9dd900c64e93a15dfd73ccd9e03475e6a6
+F src/sqliteInt.h 8a3ca5847b3cbd0ee3333f5615e3db049f550727
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
@@ -1482,7 +1482,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ca2ef8a86cf806cbbcc64db03251b1df5b2c5501
-R 920ccaed1d45e79230b5478d43226c00
+P 6c56b3a04778bc62ca50307ad838dd301cd91ac2
+R 08b902f57778a5f41e0cd6430d22ec7f
 U drh
-Z d3ef20e624c3b08c97c9ab19fe0be036
+Z 9c3d824161c7c538f7604747bea88424
