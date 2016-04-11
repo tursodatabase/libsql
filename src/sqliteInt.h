@@ -212,16 +212,6 @@
 #endif
 
 /*
-** The MSVC CRT on Windows CE may not have a localtime() function.  So
-** declare a substitute.  The function itself is defined in "os_win.c".
-*/
-#if defined(_WIN32_WCE) && \
-    (!defined(SQLITE_MSVC_LOCALTIME_API) || !SQLITE_MSVC_LOCALTIME_API)
-#  include <time.h>
-struct tm *__cdecl localtime(const time_t *);
-#endif
-
-/*
 ** The SQLITE_THREADSAFE macro must be defined as 0, 1, or 2.
 ** 0 means mutexes are permanently disable and the library is never
 ** threadsafe.  1 means the library is serialized which is the highest
