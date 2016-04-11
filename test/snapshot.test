@@ -365,4 +365,38 @@ do_test 6.5 {
 
 sqlite3_snapshot_free $snapshot
 
+#-------------------------------------------------------------------------
+# The following tests investigate the sqlite3_snapshot_cmp() API.
+#
+catch { db2 close }
+reset_db
+do_execsql_test 7.1 {
+  PRAGMA journal_mode = wal;
+  CREATE TABLE t1(x);
+} wal
+
+do_test 7.1.2 {
+  execsql { BEGIN ; PRAGMA application_id }
+  set p1 [sqlite3_snapshot_get db main]
+  execsql {
+    INSERT INTO t1 VALUES(10);
+    COMMIT;
+  }
+  execsql { BEGIN ; PRAGMA application_id }
+  set p2 [sqlite3_snapshot_get db main]
+  execsql COMMIT
+
+  sqlite3_snapshot_cmp $p1 $p2
+} {-1}
+
+do_test 7.1.3 {
+  sqlite3_snapshot_cmp $p2 $p1
+} {1}
+
+do_test 7.1.4 {
+  list [sqlite3_snapshot_cmp $p1 $p1] [sqlite3_snapshot_cmp $p2 $p2]
+} {0 0}
+sqlite3_snapshot_free $p1
+sqlite3_snapshot_free $p2
+
 finish_test

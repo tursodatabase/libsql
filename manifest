@@ -1,5 +1,5 @@
-C Performance\soptimization\sto\ssqlite3Dequote()\sand\sits\scallers.
-D 2016-04-11T19:01:08.150
+C Add\sthe\ssqlite3_snapshot_cmp()\sAPI.
+D 2016-04-11T19:59:52.090
 F Makefile.in eba680121821b8a60940a81454316f47a341487a
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1f123a0757f6f04f0341accb46457e116817159a
@@ -377,7 +377,7 @@ F src/resolve.c b8f7174e5f8c33c44ded3a25a973d0bb89228c20
 F src/rowset.c 9fe4b3ad7cc00944386bb600233d8f523de07a6e
 F src/select.c d9b8628acb98f1a38921888d823a6b70c7a7774b
 F src/shell.c b7922fa264f8c8d72a5ec6dd0b091e15a93c4de5
-F src/sqlite.h.in c8f41612dc1a9b5212a891e1b65a5f589b8b884a
+F src/sqlite.h.in 1ce5ab46279c809302078a10fca0c8107a88504e
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 98f72cbfe00169c39089115427d06ea05fe4b4a2
 F src/sqliteInt.h b3744b29555b83054f315f62d61b3a6558fa9e1c
@@ -385,7 +385,7 @@ F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
 F src/tclsqlite.c 56569acc73d36e836b64aefecbbb709a92ba0077
-F src/test1.c 7187b7e924bfc97780e6fd2a40dad94a32bddca0
+F src/test1.c 457c601302b8a0f5960dffd17b6a2877603841dd
 F src/test2.c 5586f43fcd9a1be0830793cf9d354082c261b25b
 F src/test3.c a8887dabbbee3059af338f20d290084a63ed1b0f
 F src/test4.c d168f83cc78d02e8d35567bb5630e40dcd85ac1e
@@ -452,7 +452,7 @@ F src/vdbesort.c 307460bfa4de4d1c3901fcd42089159131e34062
 F src/vdbetrace.c f75c5455d8cf389ef86a8bfdfd3177e0e3692484
 F src/vtab.c 23b6cdfa996152d43b390504ed4a942c8caf3a00
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 10deb6b43887662691e5f53d10b3c171c401169b
+F src/wal.c 4db22ed7e77bcf672b1a685d6ddeffba8d5be302
 F src/wal.h 2f7c831cf3b071fa548bf2d5cac640846a7ff19c
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
 F src/where.c 24ab561466d92d313747c04edb1a36a7af8663be
@@ -1065,7 +1065,7 @@ F test/skipscan2.test d1d1450952b7275f0b0a3a981f0230532743951a
 F test/skipscan3.test ec5bab3f81c7038b43450e7b3062e04a198bdbb5
 F test/skipscan5.test 67817a4b6857c47e0e33ba3e506da6f23ef68de2
 F test/skipscan6.test 5866039d03a56f5bd0b3d172a012074a1d90a15b
-F test/snapshot.test 9ed24c792fb05382814258daf68b2256f23de57f
+F test/snapshot.test 4488cd49f82095b07a64b63e35ca5f07ae3cf6ff
 F test/snapshot_fault.test 062ff0438a074978d45e9f9a92e7ad459b74ee73
 F test/soak.test 0b5b6375c9f4110c828070b826b3b4b0bb65cd5f
 F test/softheap1.test 843cd84db9891b2d01b9ab64cef3e9020f98d087
@@ -1482,7 +1482,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2764aeaa11f38cf2ff4d6191e6d5466ddb203022
-R 77a187fd869dda6e2e45282c54ce5af5
-U drh
-Z 40ab6d9a31ee32331ca9ef8f86a7bc32
+P 9efe2265b1e70172778d333c5b9d9a76095427ab
+R 90e72a50c886c4c06c826581c1212ad7
+T *branch * snapshot-cmp
+T *sym-snapshot-cmp *
+T -sym-trunk *
+U dan
+Z 6bc91ca9d3bb5c1b79f55141c1c596ee
