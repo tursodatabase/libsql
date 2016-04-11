@@ -1,5 +1,5 @@
-C Performance\soptimization\sfor\sthe\ssqlite3ExprListDelete()\sroutine.
-D 2016-04-11T18:25:05.809
+C Performance\soptimization\sto\ssqlite3Dequote()\sand\sits\scallers.
+D 2016-04-11T19:01:08.150
 F Makefile.in eba680121821b8a60940a81454316f47a341487a
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1f123a0757f6f04f0341accb46457e116817159a
@@ -329,11 +329,11 @@ F src/ctime.c 60e135af364d777a9ab41c97e5e89cd224da6198
 F src/date.c 0b73e681c11fca867fec554750c07fe0d4e417c1
 F src/dbstat.c c845548d4346e606e2f2b7d2e714ace2b8a7dd1b
 F src/delete.c 78eb999114ec04fcf1b7d123ccedb4b5b734930e
-F src/expr.c 57fa7eb870a37c69a40cfe4c25b062e37fea12b7
+F src/expr.c 17d4e745ef6a3fd2e4ef863f5f9a4912f1ba1198
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 4c0bd09e602b8ae8d36d81e31e4872d0b53c87bb
 F src/func.c 552d300265aed09eea21f68ac742a440550c0062
-F src/global.c 884d4c7eba9f5fc25c96a23b21520da19b7713e2
+F src/global.c c45ea22aff29334f6a9ec549235ac3357c970015
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
 F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
@@ -380,7 +380,7 @@ F src/shell.c b7922fa264f8c8d72a5ec6dd0b091e15a93c4de5
 F src/sqlite.h.in c8f41612dc1a9b5212a891e1b65a5f589b8b884a
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 98f72cbfe00169c39089115427d06ea05fe4b4a2
-F src/sqliteInt.h e4a3229829dd20db9a0348d2119711272c33c757
+F src/sqliteInt.h b3744b29555b83054f315f62d61b3a6558fa9e1c
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
@@ -439,7 +439,7 @@ F src/treeview.c e4b41a37530a191579d3c53142cc44ee2eb99373
 F src/trigger.c e14840ee0c3e549e758ec9bf3e4146e166002280
 F src/update.c 3e67ab3c0814635f355fb1f8ab010a2b9e016e7d
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
-F src/util.c 19509465217b673b38d5804a72778908b138953f
+F src/util.c 187a0a2aaa3c5d2ccd2ab0143b2fd9e86d6bc816
 F src/vacuum.c feb1eabb20987983d9350cad98299b21fa811f52
 F src/vdbe.c d3843a66d74a7696477ee5141e5eb9a7e5e2401c
 F src/vdbe.h 5591b5add447096e31288b5a0a78ec5d7b5c5170
@@ -1482,7 +1482,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e35b345cf858018ae0c07f79725f8d58062168db
-R 042d362729c0d167c05760c4bdfc93ba
+P 2764aeaa11f38cf2ff4d6191e6d5466ddb203022
+R 77a187fd869dda6e2e45282c54ce5af5
 U drh
-Z 1727510a3b08bf1e72294ab7bbf28d3f
+Z 40ab6d9a31ee32331ca9ef8f86a7bc32

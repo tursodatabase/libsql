@@ -471,15 +471,13 @@ Expr *sqlite3ExprAlloc(
         pNew->flags |= EP_IntValue;
         pNew->u.iValue = iValue;
       }else{
-        int c;
         pNew->u.zToken = (char*)&pNew[1];
         assert( pToken->z!=0 || pToken->n==0 );
         if( pToken->n ) memcpy(pNew->u.zToken, pToken->z, pToken->n);
         pNew->u.zToken[pToken->n] = 0;
-        if( dequote && nExtra>=3 
-             && ((c = pToken->z[0])=='\'' || c=='"' || c=='[' || c=='`') ){
+        if( dequote && sqlite3Isquote(pNew->u.zToken[0]) ){
+          if( pNew->u.zToken[0]=='"' ) pNew->flags |= EP_DblQuoted;
           sqlite3Dequote(pNew->u.zToken);
-          if( c=='"' ) pNew->flags |= EP_DblQuoted;
         }
       }
     }
@@ -1229,7 +1227,7 @@ void sqlite3ExprListSetName(
     pItem = &pList->a[pList->nExpr-1];
     assert( pItem->zName==0 );
     pItem->zName = sqlite3DbStrNDup(pParse->db, pName->z, pName->n);
-    if( dequote && pItem->zName ) sqlite3Dequote(pItem->zName);
+    if( dequote ) sqlite3Dequote(pItem->zName);
   }
 }
 
