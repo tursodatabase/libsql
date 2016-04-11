@@ -1,5 +1,5 @@
-C Rename\sthe\sOP_MX_JUMP\smacro\sto\sSQLITE_MX_JUMP_OPCODE\sto\savoid\sconfusing\sthe\nopcode\sname\sgenerator.
-D 2016-04-11T16:35:05.793
+C Simplification\sand\sperformance\simprovements\sin\ssqlite3ExprDup()\sand\sits\nsubroutines.\s\sMore\swork\sis\spossible\sin\sthis\sarea.
+D 2016-04-11T16:43:43.285
 F Makefile.in eba680121821b8a60940a81454316f47a341487a
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1f123a0757f6f04f0341accb46457e116817159a
@@ -329,7 +329,7 @@ F src/ctime.c 60e135af364d777a9ab41c97e5e89cd224da6198
 F src/date.c 0b73e681c11fca867fec554750c07fe0d4e417c1
 F src/dbstat.c c845548d4346e606e2f2b7d2e714ace2b8a7dd1b
 F src/delete.c 78eb999114ec04fcf1b7d123ccedb4b5b734930e
-F src/expr.c 702260035c6f23051bdae7a0be28e4884b892386
+F src/expr.c 16829fcf84b41d16b3d2e74e4e30ea8315cbba88
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 4c0bd09e602b8ae8d36d81e31e4872d0b53c87bb
 F src/func.c 552d300265aed09eea21f68ac742a440550c0062
@@ -1482,7 +1482,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 60ad80e3af4bae9f5c74fedf09eec9689e2e3dbf
-R f6edf7124a508a9e875e2a5fe8999259
+P e554a4c38bda9c73bf129bb7c665c53ccc4d96a8
+R ddaad63736e0e0e6322e4bbbe74f8062
 U drh
-Z 1a9da7914d71f57fbfab1a0d0fb98803
+Z db16ea712247dfbc518b4dea8f54265a
