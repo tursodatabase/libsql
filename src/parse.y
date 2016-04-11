@@ -871,7 +871,7 @@ expr(A) ::= nm(X) DOT nm(Y) DOT nm(Z). {
 term(A) ::= INTEGER|FLOAT|BLOB(X). {spanExpr(&A,pParse,@X,X);/*A-overwrites-X*/}
 term(A) ::= STRING(X).             {spanExpr(&A,pParse,@X,X);/*A-overwrites-X*/}
 expr(A) ::= VARIABLE(X).     {
-  if( X.z[0]!='#' ){
+  if( !(X.z[0]=='#' && sqlite3Isdigit(X.z[1])) ){
     spanExpr(&A, pParse, TK_VARIABLE, X);
     sqlite3ExprAssignVarNumber(pParse, A.pExpr);
   }else{
