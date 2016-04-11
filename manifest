@@ -1,5 +1,5 @@
-C Fixes\sfor\sOOM\sand\sIO\serror\shandling\swith\stemp\sfile\sdatabases.
-D 2016-04-11T18:07:47.205
+C Add\sextra\stests\sto\stemptable2.test.
+D 2016-04-11T18:49:37.527
 F Makefile.in eba680121821b8a60940a81454316f47a341487a
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1f123a0757f6f04f0341accb46457e116817159a
@@ -1111,7 +1111,7 @@ F test/tclsqlite.test e1306001a0ca92250b691ea6d3cecaca5b6342aa
 F test/tempdb.test bd92eba8f20e16a9136e434e20b280794de3cdb6
 F test/tempfault.test 0c80f23c651cf6452c27cacf09f4c2ee9527a912
 F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
-F test/temptable2.test 707c01c00b4a8fd050e0db5dcef448e998b9ddb5
+F test/temptable2.test f04c411560dadebcc44aba631c602c908dfe1dd8
 F test/temptrigger.test 8ec228b0db5d7ebc4ee9b458fc28cb9e7873f5e1
 F test/tester.tcl 7b740ee852c55e1e72b6ebe5044acee7aa4e5553
 F test/thread001.test 9f22fd3525a307ff42a326b6bc7b0465be1745a5
@@ -1484,7 +1484,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 982b753d0b6a3ed9fba33ed41523b2cd42280276
-R 46e56336ea4184d65ce3043234f11f03
+P 4eb06e843af60d5e533793618c6e0e9b7ef7a1a6
+R d2dfbf56b62d35c4cf496af1896eae37
 U dan
-Z 58afa17a4e51610cdca345488b854923
+Z db78b11117984d67b6a3aa7fe90754f9
