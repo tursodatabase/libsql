@@ -871,11 +871,15 @@ expr(A) ::= nm(X) DOT nm(Y) DOT nm(Z). {
 term(A) ::= INTEGER|FLOAT|BLOB(X). {spanExpr(&A,pParse,@X,X);/*A-overwrites-X*/}
 term(A) ::= STRING(X).             {spanExpr(&A,pParse,@X,X);/*A-overwrites-X*/}
 expr(A) ::= VARIABLE(X).     {
-  Token t = X; /*A-overwrites-X*/
-  if( t.n>=2 && t.z[0]=='#' && sqlite3Isdigit(t.z[1]) ){
+  if( X.z[0]!='#' ){
+    spanExpr(&A, pParse, TK_VARIABLE, X);
+    sqlite3ExprAssignVarNumber(pParse, A.pExpr);
+  }else{
     /* When doing a nested parse, one can include terms in an expression
     ** that look like this:   #1 #2 ...  These terms refer to registers
     ** in the virtual machine.  #N is the N-th register. */
+    Token t = X; /*A-overwrites-X*/
+    assert( t.n>=2 );
     spanSet(&A, &t, &t);
     if( pParse->nested==0 ){
       sqlite3ErrorMsg(pParse, "near \"%T\": syntax error", &t);
@@ -884,9 +888,6 @@ expr(A) ::= VARIABLE(X).     {
       A.pExpr = sqlite3PExpr(pParse, TK_REGISTER, 0, 0, &t);
       if( A.pExpr ) sqlite3GetInt32(&t.z[1], &A.pExpr->iTable);
     }
-  }else{
-    spanExpr(&A, pParse, TK_VARIABLE, t);
-    sqlite3ExprAssignVarNumber(pParse, A.pExpr);
   }
 }
 expr(A) ::= expr(A) COLLATE ids(C). {
