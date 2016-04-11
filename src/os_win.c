@@ -26,16 +26,6 @@
 #include "os_win.h"
 
 /*
-** The MSVC CRT on Windows CE may not have a localtime() function.  So
-** declare a substitute.
-*/
-#if SQLITE_OS_WINCE && \
-    (!defined(SQLITE_MSVC_LOCALTIME_API) || !SQLITE_MSVC_LOCALTIME_API)
-#  include <time.h>
-struct tm *__cdecl localtime(const time_t *);
-#endif
-
-/*
 ** Compiling and using WAL mode requires several APIs that are only
 ** available in Windows platforms based on the NT kernel.
 */
@@ -2132,8 +2122,9 @@ static void winLogIoerr(int nRetry, int lineno){
 ** The MSVC CRT on Windows CE may not have a localtime() function.  So
 ** define a substitute.
 */
-#if SQLITE_OS_WINCE && \
+#if !defined(SQLITE_OMIT_LOCALTIME) && defined(_WIN32_WCE) && \
     (!defined(SQLITE_MSVC_LOCALTIME_API) || !SQLITE_MSVC_LOCALTIME_API)
+#  include <time.h>
 struct tm *__cdecl localtime(const time_t *t)
 {
   static struct tm y;
