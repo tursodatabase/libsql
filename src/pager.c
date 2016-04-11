@@ -958,7 +958,7 @@ static int assert_pager_state(Pager *p){
       ** back to OPEN state.
       */
       assert( pPager->errCode!=SQLITE_OK );
-      assert( sqlite3PcacheRefCount(pPager->pPCache)>0 );
+      assert( sqlite3PcacheRefCount(pPager->pPCache)>0 || pPager->tempFile );
       break;
   }
 
@@ -1819,11 +1819,14 @@ static void pager_unlock(Pager *pPager){
   ** trusted. Now that there are no outstanding references to the pager,
   ** it can safely move back to PAGER_OPEN state. This happens in both
   ** normal and exclusive-locking mode.
-  */
-  if( pPager->errCode ){
-    assert( !MEMDB );
+  **
+  ** Exception: There is no way out of the error state for temp files.
+  ** This is because it is not possible to call pager_reset() on a temp
+  ** file pager (as this may discard the only copy of some data).  */
+  assert( pPager->errCode==SQLITE_OK || !MEMDB );
+  if( pPager->tempFile==0 && pPager->errCode ){
     pager_reset(pPager);
-    pPager->changeCountDone = pPager->tempFile;
+    pPager->changeCountDone = 0;
     pPager->eState = PAGER_OPEN;
     pPager->errCode = SQLITE_OK;
     if( USEFETCH(pPager) ) sqlite3OsUnfetch(pPager->fd, 0, 0);
@@ -5034,8 +5037,8 @@ int sqlite3PagerSharedLock(Pager *pPager){
   */
   assert( sqlite3PcacheRefCount(pPager->pPCache)==0 );
   assert( assert_pager_state(pPager) );
+  if( pPager->tempFile && pPager->errCode ) { return pPager->errCode; }
   assert( pPager->eState==PAGER_OPEN || pPager->eState==PAGER_READER );
-  if( NEVER(MEMDB && pPager->errCode) ){ return pPager->errCode; }
 
   if( !pagerUseWal(pPager) && pPager->eState==PAGER_OPEN ){
     int bHotJournal = 1;          /* True if there exists a hot journal-file */

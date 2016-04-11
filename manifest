@@ -1,5 +1,5 @@
-C Update\sthis\sbranch\swith\sthe\slatest\schanges\sfrom\sthe\strunk.
-D 2016-04-11T09:39:25.021
+C Fixes\sfor\sOOM\sand\sIO\serror\shandling\swith\stemp\sfile\sdatabases.
+D 2016-04-11T18:07:47.205
 F Makefile.in eba680121821b8a60940a81454316f47a341487a
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1f123a0757f6f04f0341accb46457e116817159a
@@ -362,7 +362,7 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c bde4844f0849cab5924c6a81178f8500774ce76b
 F src/os_win.c b3ba9573d8d893e70a6a8015bbee572ecf7ffbef
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
-F src/pager.c 91d7462aa2429e30d64c705f75ba36cace90c241
+F src/pager.c 4cc8a5b3979db65725eaa03650a6d54219122b8d
 F src/pager.h e1d38a2f14849e219df0f91f8323504d134c8a56
 F src/parse.y 52cdeb4f37634d0ccd2998aab099b7bbb690b0d3
 F src/pcache.c e9c00846d3dcdaa75b288c6f16238c2fe2177823
@@ -551,7 +551,7 @@ F test/capi3c.test 0b9edb0c2156a964b9271cd5ea7ae56736cc2fcb
 F test/capi3d.test 485048dc5cd07bc68011e4917ad035ad6047ab82
 F test/capi3e.test 3d49c01ef2a1a55f41d73cba2b23b5059ec460fe
 F test/cast.test 4c275cbdc8202d6f9c54a3596701719868ac7dc3
-F test/cffault.test aadc1f61f8811cb600e3e069acbf8796f472a096
+F test/cffault.test 9d6b20606afe712374952eec4f8fd74b1a8097ef
 F test/check.test 85a84bfc4be0e83f668747211c7cd45a6721d485
 F test/close.test 83947daf3b700631f90f4850ddaab455be4af73d
 F test/closure01.test b1703ba40639cfc9b295cf478d70739415eec6a4
@@ -1109,6 +1109,7 @@ F test/tableapi.test 2674633fa95d80da917571ebdd759a14d9819126
 F test/tableopts.test dba698ba97251017b7c80d738c198d39ab747930
 F test/tclsqlite.test e1306001a0ca92250b691ea6d3cecaca5b6342aa
 F test/tempdb.test bd92eba8f20e16a9136e434e20b280794de3cdb6
+F test/tempfault.test 0c80f23c651cf6452c27cacf09f4c2ee9527a912
 F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptable2.test 707c01c00b4a8fd050e0db5dcef448e998b9ddb5
 F test/temptrigger.test 8ec228b0db5d7ebc4ee9b458fc28cb9e7873f5e1
@@ -1483,7 +1484,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 84c557010c211595d2ec80b62c63af1c7f4714bd ef1966c2469a0f5dbdb31a0287bd37badb2b8f28
-R 95ac2720b81ae4f698b1e227fe8fc71b
+P 982b753d0b6a3ed9fba33ed41523b2cd42280276
+R 46e56336ea4184d65ce3043234f11f03
 U dan
-Z 4e2c4b80dd3173e2cb79a80f72f7a7a8
+Z 58afa17a4e51610cdca345488b854923
