@@ -1,5 +1,5 @@
-C Performance\soptimizations\sin\sthe\scolumn\scache\sof\sthe\scode\sgenerator,\sand\nespecially\sthe\ssqlite3ExprCacheRemove()\sroutine.
-D 2016-04-11T18:15:37.821
+C Performance\soptimization\sfor\sthe\ssqlite3ExprListDelete()\sroutine.
+D 2016-04-11T18:25:05.809
 F Makefile.in eba680121821b8a60940a81454316f47a341487a
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1f123a0757f6f04f0341accb46457e116817159a
@@ -329,7 +329,7 @@ F src/ctime.c 60e135af364d777a9ab41c97e5e89cd224da6198
 F src/date.c 0b73e681c11fca867fec554750c07fe0d4e417c1
 F src/dbstat.c c845548d4346e606e2f2b7d2e714ace2b8a7dd1b
 F src/delete.c 78eb999114ec04fcf1b7d123ccedb4b5b734930e
-F src/expr.c 22d553f3e6425586513219a9dfbbf6c57581c736
+F src/expr.c 57fa7eb870a37c69a40cfe4c25b062e37fea12b7
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 4c0bd09e602b8ae8d36d81e31e4872d0b53c87bb
 F src/func.c 552d300265aed09eea21f68ac742a440550c0062
@@ -1482,7 +1482,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 476cc2838824e0667e80ce527b9caa551dee4a77
-R add6544c70f21201cd7c87d168cad7da
+P e35b345cf858018ae0c07f79725f8d58062168db
+R 042d362729c0d167c05760c4bdfc93ba
 U drh
-Z 1ce8fe8f94193e403ead86e0c919fda1
+Z 1727510a3b08bf1e72294ab7bbf28d3f

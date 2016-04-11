@@ -1278,10 +1278,9 @@ void sqlite3ExprListCheckLength(
 /*
 ** Delete an entire expression list.
 */
-void sqlite3ExprListDelete(sqlite3 *db, ExprList *pList){
+static SQLITE_NOINLINE void exprListDeleteNN(sqlite3 *db, ExprList *pList){
   int i;
   struct ExprList_item *pItem;
-  if( pList==0 ) return;
   assert( pList->a!=0 || pList->nExpr==0 );
   for(pItem=pList->a, i=0; i<pList->nExpr; i++, pItem++){
     sqlite3ExprDelete(db, pItem->pExpr);
@@ -1290,6 +1289,9 @@ void sqlite3ExprListDelete(sqlite3 *db, ExprList *pList){
   }
   sqlite3DbFree(db, pList->a);
   sqlite3DbFree(db, pList);
+}
+void sqlite3ExprListDelete(sqlite3 *db, ExprList *pList){
+  if( pList ) exprListDeleteNN(db, pList);
 }
 
 /*
