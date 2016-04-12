@@ -1,5 +1,5 @@
-C Merge\senhancements\sfrom\strunk.
-D 2016-04-12T16:10:10.308
+C Once\sa\stemporary\sdatabase\sfile\shas\sbeen\sopened,\sflush\sall\sdirty\spages\sto\sdisk\swhen\scomitting\sa\stransaction.
+D 2016-04-12T19:09:29.339
 F Makefile.in eba680121821b8a60940a81454316f47a341487a
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 71b8b16cf9393f68e2e2035486ca104872558836
@@ -362,7 +362,7 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c bde4844f0849cab5924c6a81178f8500774ce76b
 F src/os_win.c b3ba9573d8d893e70a6a8015bbee572ecf7ffbef
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
-F src/pager.c 4cc8a5b3979db65725eaa03650a6d54219122b8d
+F src/pager.c 525f3698f9a6b47a6e0f5496675529a183c2462b
 F src/pager.h e1d38a2f14849e219df0f91f8323504d134c8a56
 F src/parse.y 10eb2f3fb62341291528c7984498054731f9d31e
 F src/pcache.c e9c00846d3dcdaa75b288c6f16238c2fe2177823
@@ -1484,7 +1484,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 04b1890fbc19eb3fa935083c1664fbbfb67dad93 7e7289655185e7643ead6d685922528bc4d9e0ae
-R 5d35ce920fcfc7013551c54ce7d1cde0
-U drh
-Z 97342c74358cb773c29965a93119c3f8
+P 9682c0433c04713c28bd9105a7e20af7372f873e
+R ade8e2f9d92ad43fcc4c6c4e5d1634ec
+U dan
+Z 4a91ff9d1af5229ff41acb5284c79d70

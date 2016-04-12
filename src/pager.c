@@ -2011,7 +2011,7 @@ static int pager_end_transaction(Pager *pPager, int hasMaster, int bCommit){
   sqlite3BitvecDestroy(pPager->pInJournal);
   pPager->pInJournal = 0;
   pPager->nRec = 0;
-  if( pPager->tempFile==0 || MEMDB ){
+  if( isOpen(pPager->fd) || MEMDB ){
     sqlite3PcacheCleanAll(pPager->pPCache);
   }else{
     sqlite3PcacheClearWritable(pPager->pPCache);
@@ -4273,7 +4273,7 @@ static int pager_write_pagelist(Pager *pPager, PgHdr *pList){
   assert( !pagerUseWal(pPager) );
   assert( pPager->tempFile || pPager->eState==PAGER_WRITER_DBMOD );
   assert( pPager->eLock==EXCLUSIVE_LOCK );
-  assert( pPager->tempFile==0 || pList->pDirty==0 );
+  assert( isOpen(pPager->fd) || pList->pDirty==0 );
 
   /* If the file is a temp-file has not yet been opened, open it now. It
   ** is not possible for rc to be other than SQLITE_OK if this branch
@@ -6195,7 +6195,8 @@ int sqlite3PagerCommitPhaseOne(
   if( pPager->eState<PAGER_WRITER_CACHEMOD ) return SQLITE_OK;
 
   assert( MEMDB==0 || pPager->tempFile );
-  if( pPager->tempFile ){
+  assert( isOpen(pPager->fd) || pPager->tempFile );
+  if( !isOpen(pPager->fd) ){
     /* If this is an in-memory db, or no pages have been written to, or this
     ** function has already been called, it is mostly a no-op.  However, any
     ** backup in progress needs to be restarted.  */
