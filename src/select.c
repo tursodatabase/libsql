@@ -74,7 +74,7 @@ static void clearSelect(sqlite3 *db, Select *p, int bFree){
     sqlite3ExprListDelete(db, p->pOrderBy);
     sqlite3ExprDelete(db, p->pLimit);
     sqlite3ExprDelete(db, p->pOffset);
-    sqlite3WithDelete(db, p->pWith);
+    if( p->pWith ) sqlite3WithDelete(db, p->pWith);
     if( bFree ) sqlite3DbFree(db, p);
     p = pPrior;
     bFree = 1;
@@ -169,7 +169,7 @@ void sqlite3SelectSetName(Select *p, const char *zName){
 ** Delete the given Select structure and all of its substructures.
 */
 void sqlite3SelectDelete(sqlite3 *db, Select *p){
-  clearSelect(db, p, 1);
+  if( p ) clearSelect(db, p, 1);
 }
 
 /*
@@ -1789,19 +1789,19 @@ Table *sqlite3ResultSetOfSelect(Parse *pParse, Select *pSelect){
 ** Get a VDBE for the given parser context.  Create a new one if necessary.
 ** If an error occurs, return NULL and leave a message in pParse.
 */
-Vdbe *sqlite3GetVdbe(Parse *pParse){
-  Vdbe *v = pParse->pVdbe;
-  if( v==0 ){
-    v = pParse->pVdbe = sqlite3VdbeCreate(pParse);
-    if( v ) sqlite3VdbeAddOp0(v, OP_Init);
-    if( pParse->pToplevel==0
-     && OptimizationEnabled(pParse->db,SQLITE_FactorOutConst)
-    ){
-      pParse->okConstFactor = 1;
-    }
-
+static SQLITE_NOINLINE Vdbe *allocVdbe(Parse *pParse){
+  Vdbe *v = pParse->pVdbe = sqlite3VdbeCreate(pParse);
+  if( v ) sqlite3VdbeAddOp0(v, OP_Init);
+  if( pParse->pToplevel==0
+   && OptimizationEnabled(pParse->db,SQLITE_FactorOutConst)
+  ){
+    pParse->okConstFactor = 1;
   }
   return v;
+}
+Vdbe *sqlite3GetVdbe(Parse *pParse){
+  Vdbe *v = pParse->pVdbe;
+  return v ? v : allocVdbe(pParse);
 }
 
 

@@ -1882,7 +1882,7 @@ fts3_write.lo:	$(TOP)\ext\fts3\fts3_write.c $(HDR) $(EXTHDR)
 rtree.lo:	$(TOP)\ext\rtree\rtree.c $(HDR) $(EXTHDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) $(NO_WARN) -DSQLITE_CORE -c $(TOP)\ext\rtree\rtree.c
 
-sqlite3session.lo:	$(TOP)\ext\session\sqlite3sesion.c $(HDR) $(EXTHDR)
+sqlite3session.lo:	$(TOP)\ext\session\sqlite3session.c $(HDR) $(EXTHDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) $(NO_WARN) -DSQLITE_CORE -c $(TOP)\ext\session\sqlite3session.c
 
 # FTS5 things
