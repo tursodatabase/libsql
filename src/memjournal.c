@@ -13,6 +13,15 @@
 ** This file contains code use to implement an in-memory rollback journal.
 ** The in-memory rollback journal is used to journal transactions for
 ** ":memory:" databases and when the journal_mode=MEMORY pragma is used.
+**
+** Update:  The in-memory journal is also used to temporarily cache
+** smaller journals that are not critical for power-loss recovery.
+** For example, statement journals that are not too big will be held
+** entirely in memory, thus reducing the number of file I/O calls, and
+** more importantly, reducing temporary file creation events.  If these
+** journals become too large for memory, they are spilled to disk.  But
+** in the common case, they are usually small and no file I/O needs to
+** occur.
 */
 #include "sqliteInt.h"
 
