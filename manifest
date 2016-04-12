@@ -1,5 +1,5 @@
-C Improved\slocaltime()\ssupport\sfor\sWindowsCE
-D 2016-04-12T16:23:30.244
+C Add\sthe\s--temp\soption\sto\sthe\sspeedtest1.c\sperformance\stest\sprogram.
+D 2016-04-12T16:59:39.643
 F Makefile.in eba680121821b8a60940a81454316f47a341487a
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 71b8b16cf9393f68e2e2035486ca104872558836
@@ -1083,7 +1083,7 @@ F test/speed3.test d32043614c08c53eafdc80f33191d5bd9b920523
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
-F test/speedtest1.c 21af8db2492a903835b654517ac8d90aed0af91f
+F test/speedtest1.c 870ea1f3086ace7125f578cfae7ac1137b3e0bdd
 F test/spellfix.test f9c1f431e2c096c8775fec032952320c0e4700db
 F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
 F test/spellfix3.test 0f9efaaa502a0e0a09848028518a6fb096c8ad33
@@ -1482,8 +1482,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7e7289655185e7643ead6d685922528bc4d9e0ae 541c6da23850673f5d2a2e31c3967b796ee2effc
-R ff0c266585dc1c24384af2892b8942ce
-T +closed 541c6da23850673f5d2a2e31c3967b796ee2effc
+P 662c32af0276a9ef4eea2d29e2523ccc44b6d128
+R cf025f2af3ea009a3845c13fd71354e9
 U drh
-Z 2794cf8f4a03e9c72f55b1cbc1df2c40
+Z ba428edd13c3659c3e56c28f6b7f2005
