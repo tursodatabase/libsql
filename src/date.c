@@ -51,8 +51,9 @@
 #ifndef SQLITE_OMIT_DATETIME_FUNCS
 
 /*
-** The MSVC CRT on Windows CE may not have a localtime() function.  So
-** declare a substitute.
+** The MSVC CRT on Windows CE may not have a localtime() function.
+** So declare a substitute.  The substitute function itself is
+** defined in "os_win.c".
 */
 #if !defined(SQLITE_OMIT_LOCALTIME) && defined(_WIN32_WCE) && \
     (!defined(SQLITE_MSVC_LOCALTIME_API) || !SQLITE_MSVC_LOCALTIME_API)

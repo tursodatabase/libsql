@@ -2119,11 +2119,15 @@ static void winLogIoerr(int nRetry, int lineno){
 }
 
 /*
-** The MSVC CRT on Windows CE may not have a localtime() function.  So
-** define a substitute.
+** This #if does not rely on the SQLITE_OS_WINCE define because the
+** corresponding section in "date.c" cannot use it.
 */
 #if !defined(SQLITE_OMIT_LOCALTIME) && defined(_WIN32_WCE) && \
     (!defined(SQLITE_MSVC_LOCALTIME_API) || !SQLITE_MSVC_LOCALTIME_API)
+/*
+** The MSVC CRT on Windows CE may not have a localtime() function.
+** So define a substitute.
+*/
 #  include <time.h>
 struct tm *__cdecl localtime(const time_t *t)
 {
