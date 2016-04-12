@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sin\sthe\s'session'\smodule.
-D 2016-04-12T19:20:22.748
+C Compilation\sfix\sfor\sa\sC99-ism\sin\sthe\s'fts3view'\stool.
+D 2016-04-12T19:30:31.230
 F Makefile.in eba680121821b8a60940a81454316f47a341487a
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 71b8b16cf9393f68e2e2035486ca104872558836
@@ -91,7 +91,7 @@ F ext/fts3/fts3_unicode2.c c3d01968d497bd7001e7dc774ba75b372738c057
 F ext/fts3/fts3_write.c c3863f23b6b4623c8b9d5cf31c12ce4469f78ca9
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
-F ext/fts3/tool/fts3view.c 5d78b668f4e9598af9147f8999632599fb0d9dd5
+F ext/fts3/tool/fts3view.c 202801a2056995b763864d60c2dee744d46f1677
 F ext/fts3/unicode/CaseFolding.txt 8c678ca52ecc95e16bc7afc2dbf6fc9ffa05db8c
 F ext/fts3/unicode/UnicodeData.txt cd07314edb62d49fde34debdaf92fa2aa69011e7
 F ext/fts3/unicode/mkunicode.tcl 2debed3f582d77b3fdd0b8830880250021571fd8
@@ -1482,7 +1482,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b65b69f6b686c6555876b6fc701da95cc49120b5
-R ccc0acaae74ee3b966fc3362e59511d7
+P a18a6ce2271865d04cd75a8a5baa63798b7393db
+R d725baf71b4a1cdc4415395863dd2840
 U mistachkin
-Z 60a8c701bde6b1e9a5a93858cf1bfd0c
+Z 4008d4d2d72bf9083c3fc9e1b20a35f7
