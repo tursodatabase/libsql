@@ -151,7 +151,7 @@ static unsigned char *fileRead(sqlite3_int64 ofst, int nByte){
       exit(1);
     }
   }else{
-    lseek(g.dbfd, ofst, SEEK_SET);
+    lseek(g.dbfd, (long)ofst, SEEK_SET);
     got = read(g.dbfd, aData, nByte);
     if( got>0 && got<nByte ) memset(aData+got, 0, nByte-got);
   }
@@ -1098,7 +1098,7 @@ int main(int argc, char **argv){
   sqlite3_free(zPgSz);
 
   printf("Pagesize: %d\n", g.pagesize);
-  g.mxPage = (szFile+g.pagesize-1)/g.pagesize;
+  g.mxPage = (int)((szFile+g.pagesize-1)/g.pagesize);
 
   printf("Available pages: 1..%d\n", g.mxPage);
   if( nArg==2 ){
