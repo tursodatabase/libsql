@@ -314,7 +314,8 @@ static void test_append_value(Tcl_Obj *pList, sqlite3_value *pVal){
         pObj = Tcl_NewStringObj(z, n);
         break;
       }
-      case SQLITE_BLOB:
+      default:
+        assert( sqlite3_value_type(pVal)==SQLITE_BLOB );
         Tcl_ListObjAppendElement(0, pList, Tcl_NewStringObj("b", 1));
         pObj = Tcl_NewByteArrayObj(
             sqlite3_value_blob(pVal),
@@ -871,7 +872,6 @@ static int test_sqlite3session_foreach(
 
     pOld = Tcl_NewObj();
     if( op!=SQLITE_INSERT ){
-      int i;
       for(i=0; i<nCol; i++){
         sqlite3_value *pVal;
         sqlite3changeset_old(pIter, i, &pVal);
@@ -880,7 +880,6 @@ static int test_sqlite3session_foreach(
     }
     pNew = Tcl_NewObj();
     if( op!=SQLITE_DELETE ){
-      int i;
       for(i=0; i<nCol; i++){
         sqlite3_value *pVal;
         sqlite3changeset_new(pIter, i, &pVal);

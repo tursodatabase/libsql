@@ -1,5 +1,5 @@
-C More\sharmless\scompiler\swarning\sfixes.
-D 2016-04-12T20:05:06.603
+C Even\smore\scompiler\swarning\sfixes.
+D 2016-04-12T20:15:12.629
 F Makefile.in eba680121821b8a60940a81454316f47a341487a
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 71b8b16cf9393f68e2e2035486ca104872558836
@@ -293,7 +293,7 @@ F ext/session/sessionfault.test d52cbb7bee48cc8ee80335e07eb72fcb6b15eb40
 F ext/session/sessionfault2.test ac1dfd77a0fb0ea310aee40a16645ef1b66d3f88
 F ext/session/sqlite3session.c 7cd68ba5ecd42b67f81b35e1b745377b930321dc
 F ext/session/sqlite3session.h 64e9e7f185725ef43b97f4a9a0c0df0669844f1d
-F ext/session/test_session.c 187bd344c5ae9d5be85e22ef7c3010f0c17307ce
+F ext/session/test_session.c 464f2c8bf502795d95969387eb8e93f68c513c15
 F ext/userauth/sqlite3userauth.h 19cb6f0e31316d0ee4afdfb7a85ef9da3333a220
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
@@ -384,7 +384,7 @@ F src/sqliteInt.h b3744b29555b83054f315f62d61b3a6558fa9e1c
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
-F src/tclsqlite.c 56569acc73d36e836b64aefecbbb709a92ba0077
+F src/tclsqlite.c 9c4c4589d078de37813ded708d8838b338ffb060
 F src/test1.c 457c601302b8a0f5960dffd17b6a2877603841dd
 F src/test2.c 5586f43fcd9a1be0830793cf9d354082c261b25b
 F src/test3.c a8887dabbbee3059af338f20d290084a63ed1b0f
@@ -1482,10 +1482,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bedb88a4b9c808ea781ae69058399a1a3a3d15fa
-R 03018f5836a18841da04ba58f1cc328d
-T *branch * warnings
-T *sym-warnings *
-T -sym-trunk *
+P ab69527c1608da0b668f3b49e967661dd99cc3d4
+R 20e961c07d1c1c471c08312c9c1778dd
 U mistachkin
-Z baaf8c0d1237121c0d8a28eaa252b406
+Z 5d6bc734cb4437d7a6fe4e81cf260e24
