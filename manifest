@@ -1,5 +1,5 @@
-C Add\sthe\ssqlite3_snapshot_cmp()\sinterface\s(available\sonly\swith\nSQLITE_ENABLE_SNAPSHOT).
-D 2016-04-12T16:04:07.576
+C Improved\slocaltime()\ssupport\sfor\sWindowsCE
+D 2016-04-12T16:23:30.244
 F Makefile.in eba680121821b8a60940a81454316f47a341487a
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 71b8b16cf9393f68e2e2035486ca104872558836
@@ -326,7 +326,7 @@ F src/build.c 1944d95f0250ec72dab939f8319a12e237aaad61
 F src/callback.c 2e76147783386374bf01b227f752c81ec872d730
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 60e135af364d777a9ab41c97e5e89cd224da6198
-F src/date.c 0b73e681c11fca867fec554750c07fe0d4e417c1
+F src/date.c 1cc9fb516ec9932c6fd4d2a0d2f8bc4480145c39
 F src/dbstat.c c845548d4346e606e2f2b7d2e714ace2b8a7dd1b
 F src/delete.c 78eb999114ec04fcf1b7d123ccedb4b5b734930e
 F src/expr.c 17d4e745ef6a3fd2e4ef863f5f9a4912f1ba1198
@@ -360,7 +360,7 @@ F src/os.h 91ff889115ecd01f436d3611f7f5ea4dc12d92f1
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c bde4844f0849cab5924c6a81178f8500774ce76b
-F src/os_win.c b3ba9573d8d893e70a6a8015bbee572ecf7ffbef
+F src/os_win.c b169437dff859e308b3726594094a2f8ca922941
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 38718a019ca762ba4f6795425d5a54db70d1790d
 F src/pager.h e1d38a2f14849e219df0f91f8323504d134c8a56
@@ -1482,8 +1482,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 07f10deabb0f4207408142541e3913d638dfcdeb 8fc834741bf6c8a832a180795c3d6f5c3dcfcd62
-R 5656733bddcb2f7451211326ac2ed136
-T +closed 8fc834741bf6c8a832a180795c3d6f5c3dcfcd62
+P 7e7289655185e7643ead6d685922528bc4d9e0ae 541c6da23850673f5d2a2e31c3967b796ee2effc
+R ff0c266585dc1c24384af2892b8942ce
+T +closed 541c6da23850673f5d2a2e31c3967b796ee2effc
 U drh
-Z b8985dfa1dcfaa5a463be54da15766b9
+Z 2794cf8f4a03e9c72f55b1cbc1df2c40
