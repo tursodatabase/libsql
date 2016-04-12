@@ -935,9 +935,9 @@ static int sessionTableInfo(
   int nDbCol = 0;
   int nThis;
   int i;
-  u8 *pAlloc;
+  u8 *pAlloc = 0;
   char **azCol = 0;
-  u8 *abPK;
+  u8 *abPK = 0;
 
   assert( pazCol && pabPK );
 
@@ -3655,7 +3655,7 @@ static int sessionConflictHandler(
   void *pCtx,                     /* First argument for conflict handler */
   int *pbReplace                  /* OUT: Set to true if PK row is found */
 ){
-  int res;                        /* Value returned by conflict handler */
+  int res = 0;                    /* Value returned by conflict handler */
   int rc;
   int nCol;
   int op;
