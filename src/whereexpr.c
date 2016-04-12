@@ -1282,10 +1282,10 @@ Bitmask sqlite3WhereExprUsage(WhereMaskSet *pMaskSet, Expr *p){
     return mask;
   }
   mask = sqlite3WhereExprUsage(pMaskSet, p->pRight);
-  mask |= sqlite3WhereExprUsage(pMaskSet, p->pLeft);
+  if( p->pLeft ) mask |= sqlite3WhereExprUsage(pMaskSet, p->pLeft);
   if( ExprHasProperty(p, EP_xIsSelect) ){
     mask |= exprSelectUsage(pMaskSet, p->x.pSelect);
-  }else{
+  }else if( p->x.pList ){
     mask |= sqlite3WhereExprListUsage(pMaskSet, p->x.pList);
   }
   return mask;
