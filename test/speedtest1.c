@@ -1369,11 +1369,7 @@ int main(int argc, char **argv){
                   argv[i], argv[0]);
     }
   }
-#if 0
-  if( zDbName==0 ){
-    fatal_error(zHelp, argv[0]);
-  }
-#endif
+  if( zDbName!=0 ) unlink(zDbName);
 #if SQLITE_VERSION_NUMBER>=3006001
   if( nHeap>0 ){
     pHeap = malloc( nHeap );
