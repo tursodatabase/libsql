@@ -368,8 +368,19 @@ sqlite3_snapshot_free $snapshot
 #-------------------------------------------------------------------------
 # The following tests investigate the sqlite3_snapshot_cmp() API.
 #
+
+# Compare snapshots $p1 and $p2, checking that the result is $r.
+#
+proc do_snapshot_cmp_test {tn p1 p2 r} {
+  uplevel [list do_test $tn.1 [list sqlite3_snapshot_cmp $p1 $p2] $r]
+  uplevel [list do_test $tn.2 [list sqlite3_snapshot_cmp $p2 $p1] [expr $r*-1]]
+  uplevel [list do_test $tn.3 [list sqlite3_snapshot_cmp $p1 $p1] 0]
+  uplevel [list do_test $tn.4 [list sqlite3_snapshot_cmp $p2 $p2] 0]
+}
+
 catch { db2 close }
 reset_db
+
 do_execsql_test 7.1 {
   PRAGMA journal_mode = wal;
   CREATE TABLE t1(x);
@@ -385,17 +396,46 @@ do_test 7.1.2 {
   execsql { BEGIN ; PRAGMA application_id }
   set p2 [sqlite3_snapshot_get db main]
   execsql COMMIT
+} {}
 
-  sqlite3_snapshot_cmp $p1 $p2
-} {-1}
+do_snapshot_cmp_test 7.1.3 $p1 $p2 -1
+sqlite3_snapshot_free $p1
+sqlite3_snapshot_free $p2
 
-do_test 7.1.3 {
-  sqlite3_snapshot_cmp $p2 $p1
-} {1}
+do_execsql_test 7.2.1 {
+  INSERT INTO t1 VALUES(11);
+  INSERT INTO t1 VALUES(12);
+  INSERT INTO t1 VALUES(13);
+  BEGIN; 
+    PRAGMA application_id;
+} {0}
+do_test 7.2.2 {
+  set p1 [sqlite3_snapshot_get db main]
+  execsql {
+    COMMIT;
+    INSERT INTO t1 VALUES(14);
+    PRAGMA wal_checkpoint;
+    BEGIN;
+      PRAGMA application_id;
+  }
+  set p2 [sqlite3_snapshot_get db main]
+  execsql COMMIT
+} {}
 
-do_test 7.1.4 {
-  list [sqlite3_snapshot_cmp $p1 $p1] [sqlite3_snapshot_cmp $p2 $p2]
-} {0 0}
+do_snapshot_cmp_test 7.2.3 $p1 $p2 -1
+sqlite3_snapshot_free $p2
+
+do_test 7.3.1 {
+  execsql {
+    INSERT INTO t1 VALUES(14);
+    BEGIN;
+      PRAGMA application_id;
+  }
+  set p2 [sqlite3_snapshot_get db main]
+  execsql COMMIT
+} {}
+
+do_snapshot_cmp_test 7.3.2 $p1 $p2 -1
 sqlite3_snapshot_free $p1
 sqlite3_snapshot_free $p2
 

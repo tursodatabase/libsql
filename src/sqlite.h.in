@@ -8136,9 +8136,15 @@ SQLITE_EXPERIMENTAL void sqlite3_snapshot_free(sqlite3_snapshot*);
 ** of two valid snapshot handles. 
 **
 ** If the two snapshot handles are not associated with the same database 
-** file, the results are undefined. If either of the snapshot handles
-** is no longer valid because the database snapshot they refer to has been
-** destroyed by a checkpoint, the results are undefined. 
+** file, the result of the comparison is undefined. 
+**
+** Additionally, the result of the comparison is only valid if both of the
+** snapshot handles were obtained by calling sqlite3_snapshot_get() since the
+** last time the wal file was deleted. The wal file is deleted when the
+** database is changed back to rollback mode or when the number of database
+** clients drops to zero. If either snapshot handle was obtained before the 
+** wal file was last deleted, the value returned by this function 
+** is undefined.
 **
 ** Otherwise, this API returns a negative value if P1 refers to an older
 ** snapshot than P2, zero if the two handles refer to the same database
