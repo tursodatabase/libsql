@@ -1,5 +1,5 @@
-C Performance\simprovements\sin\ssqlite3WhereExprUsage().
-D 2016-04-12T00:00:33.150
+C Avoid\sunnecessary\scalls\sto\sobject\sdestructors\sfor\sa\ssmall\sperformance\sgain.
+D 2016-04-12T00:16:54.551
 F Makefile.in eba680121821b8a60940a81454316f47a341487a
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 71b8b16cf9393f68e2e2035486ca104872558836
@@ -375,7 +375,7 @@ F src/printf.c 63e6fb12bbe702dd664dc3703776c090383a5a26
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c b8f7174e5f8c33c44ded3a25a973d0bb89228c20
 F src/rowset.c 9fe4b3ad7cc00944386bb600233d8f523de07a6e
-F src/select.c d9b8628acb98f1a38921888d823a6b70c7a7774b
+F src/select.c ac6d3e0cb7bd40863d228097dd8f08376d413877
 F src/shell.c b7922fa264f8c8d72a5ec6dd0b091e15a93c4de5
 F src/sqlite.h.in c8f41612dc1a9b5212a891e1b65a5f589b8b884a
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -434,7 +434,7 @@ F src/test_windirent.c 8f5fada630348558d5745b334702f301da1ffc61
 F src/test_windirent.h b12055cab6227f7be10f5c19296f67c60cc5e2a5
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
-F src/tokenize.c 3d338cdd00d916ce8a05c397001d64ed58e6fe1c
+F src/tokenize.c 3b29883b0ce4a6c6f643965b66b5ca6613178e59
 F src/treeview.c e4b41a37530a191579d3c53142cc44ee2eb99373
 F src/trigger.c e14840ee0c3e549e758ec9bf3e4146e166002280
 F src/update.c 3e67ab3c0814635f355fb1f8ab010a2b9e016e7d
@@ -1482,7 +1482,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3189a7f1851f823218d85a2455bf218d00d81543
-R a88db109e8e64abc37a80f82dbafc726
+P fdf752394b48fb7b9afe7b8a7d83f859985cc2d2
+R a8b7046af026a40f393575d3c7a134ae
 U drh
-Z 61fba36ce9cee6b2faa0d1bd0f21f7e0
+Z 78d3bdd6a4f18eec259d071eee201b93
