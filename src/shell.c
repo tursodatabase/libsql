@@ -1062,7 +1062,7 @@ static int shell_callback(
     }
     case MODE_Pretty: {  /* .schema and .fullschema with --indent */
       char *z;
-      int i,j;
+      int j;
       int nParen = 0;
       char cEnd = 0;
       char c;
@@ -1089,8 +1089,7 @@ static int shell_callback(
       while( j>0 && IsSpace(z[j-1]) ){ j--; }
       z[j] = 0;
       if( strlen30(z)>=79 ){
-        for(i=j=0; z[i]; i++){
-          char c = z[i];
+        for(i=j=0; (c = z[i])!=0; i++){
           if( c==cEnd ){
             cEnd = 0;
           }else if( c=='"' || c=='\'' || c=='`' ){
