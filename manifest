@@ -1,5 +1,5 @@
-C Once\sa\stemporary\sdatabase\sfile\shas\sbeen\sopened,\sflush\sall\sdirty\spages\sto\sdisk\swhen\scomitting\sa\stransaction.
-D 2016-04-12T19:09:29.339
+C On\scommit,\sflush\sdirty\stemp-file\spages\sonly\sif\sthe\sfile\sis\salready\sopen\sand\s25%\sor\smore\sof\sthe\scache\sis\sdirty.
+D 2016-04-13T16:52:11.775
 F Makefile.in eba680121821b8a60940a81454316f47a341487a
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 71b8b16cf9393f68e2e2035486ca104872558836
@@ -362,11 +362,11 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c bde4844f0849cab5924c6a81178f8500774ce76b
 F src/os_win.c b3ba9573d8d893e70a6a8015bbee572ecf7ffbef
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
-F src/pager.c 525f3698f9a6b47a6e0f5496675529a183c2462b
+F src/pager.c 4d849ad718980d698157cd136a40dc91cbeff4d3
 F src/pager.h e1d38a2f14849e219df0f91f8323504d134c8a56
 F src/parse.y 10eb2f3fb62341291528c7984498054731f9d31e
-F src/pcache.c e9c00846d3dcdaa75b288c6f16238c2fe2177823
-F src/pcache.h 4d0ccaad264d360981ec5e6a2b596d6e85242545
+F src/pcache.c d63b34cce0a8aba1fa552428b2790e13877db553
+F src/pcache.h 60bc9893bfc0e16f8178fb5d8b6fcb8fab1d93c0
 F src/pcache1.c c40cdb93586e21b5dd826b5e671240bd91c26b05
 F src/pragma.c faf42922bb7ab2f6672cb550356c1967abae3c84
 F src/pragma.h 64c78a648751b9f4f297276c4eb7507b14b4628c
@@ -1484,7 +1484,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9682c0433c04713c28bd9105a7e20af7372f873e
-R ade8e2f9d92ad43fcc4c6c4e5d1634ec
+P bbac71aa2aa2380d393cda3be64b0208b464b27e
+R d455655e720096e5ec7c439c248aa874
+T *branch * tempfiles-25
+T *sym-tempfiles-25 *
+T -sym-tempfiles-lazy-open *
 U dan
-Z 4a91ff9d1af5229ff41acb5284c79d70
+Z 1d78549afb34b97c4ff4b3e2f6fd7c59

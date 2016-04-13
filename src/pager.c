@@ -1874,6 +1874,25 @@ static int pager_error(Pager *pPager, int rc){
 static int pager_truncate(Pager *pPager, Pgno nPage);
 
 /*
+** The write transaction open on the pager passed as the only argument is
+** being committed. This function returns true if all dirty pages should
+** be flushed to disk, or false otherwise. Pages should be flushed to disk
+** unless one of the following is true:
+**
+**   * The db is an in-memory database.
+**
+**   * The db is a temporary database and the db file has not been opened.
+**
+**   * The db is a temporary database and the cache contains less than
+**     C/4 dirty pages, where C is the configured cache-size.
+*/
+static int pagerFlushOnCommit(Pager *pPager){
+  if( pPager->tempFile==0 ) return 1;
+  if( !isOpen(pPager->fd) ) return 0;
+  return (sqlite3PCachePercentDirty(pPager->pPCache)>=25);
+}
+
+/*
 ** This routine ends a transaction. A transaction is usually ended by 
 ** either a COMMIT or a ROLLBACK operation. This routine may be called 
 ** after rollback of a hot-journal, or if an error occurs while opening
@@ -2011,7 +2030,7 @@ static int pager_end_transaction(Pager *pPager, int hasMaster, int bCommit){
   sqlite3BitvecDestroy(pPager->pInJournal);
   pPager->pInJournal = 0;
   pPager->nRec = 0;
-  if( isOpen(pPager->fd) || MEMDB ){
+  if( pagerFlushOnCommit(pPager) ){
     sqlite3PcacheCleanAll(pPager->pPCache);
   }else{
     sqlite3PcacheClearWritable(pPager->pPCache);

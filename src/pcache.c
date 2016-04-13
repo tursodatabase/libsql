@@ -686,6 +686,17 @@ void sqlite3PcacheShrink(PCache *pCache){
 */
 int sqlite3HeaderSizePcache(void){ return ROUND8(sizeof(PgHdr)); }
 
+/*
+** Return the number of dirty pages currently in the cache, as a percentage
+** of the configured cache size.
+*/
+int sqlite3PCachePercentDirty(PCache *pCache){
+  PgHdr *pDirty;
+  int nDirty = 0;
+  int nCache = numberOfCachePages(pCache);
+  for(pDirty=pCache->pDirty; pDirty; pDirty=pDirty->pDirtyNext) nDirty++;
+  return (int)(((i64)nDirty * 100) / nCache);
+}
 
 #if defined(SQLITE_CHECK_PAGES) || defined(SQLITE_DEBUG)
 /*

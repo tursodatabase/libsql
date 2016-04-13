@@ -173,4 +173,7 @@ void sqlite3PCacheSetDefault(void);
 int sqlite3HeaderSizePcache(void);
 int sqlite3HeaderSizePcache1(void);
 
+/* Number of dirty pages as a percentage of the configured cache size */
+int sqlite3PCachePercentDirty(PCache*);
+
 #endif /* _PCACHE_H_ */
