@@ -3035,7 +3035,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     /* set ppHook to point at pUpdateHook or pRollbackHook, depending on 
     ** whether [$db update_hook] or [$db rollback_hook] was invoked.
     */
-    Tcl_Obj **ppHook; 
+    Tcl_Obj **ppHook = 0; 
     if( choice==DB_WAL_HOOK ) ppHook = &pDb->pWalHook;
     if( choice==DB_UPDATE_HOOK ) ppHook = &pDb->pUpdateHook;
     if( choice==DB_ROLLBACK_HOOK ) ppHook = &pDb->pRollbackHook;

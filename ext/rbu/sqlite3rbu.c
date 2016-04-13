@@ -3356,7 +3356,7 @@ sqlite3 *sqlite3rbu_db(sqlite3rbu *pRbu, int bRbu){
 */
 static void rbuEditErrmsg(sqlite3rbu *p){
   if( p->rc==SQLITE_CONSTRAINT && p->zErrmsg ){
-    int i;
+    unsigned int i;
     size_t nErrmsg = strlen(p->zErrmsg);
     for(i=0; i<(nErrmsg-8); i++){
       if( memcmp(&p->zErrmsg[i], "rbu_imp_", 8)==0 ){
