@@ -669,6 +669,7 @@ struct ShellState {
 #define MODE_Csv      7  /* Quote strings, numbers are plain */
 #define MODE_Explain  8  /* Like MODE_Column, but do not truncate data */
 #define MODE_Ascii    9  /* Use ASCII unit and record separators (0x1F/0x1E) */
+#define MODE_Pretty  10  /* Pretty-print schemas */
 
 static const char *modeDescr[] = {
   "line",
@@ -681,6 +682,7 @@ static const char *modeDescr[] = {
   "csv",
   "explain",
   "ascii",
+  "prettyprint",
 };
 
 /*
@@ -1054,7 +1056,71 @@ static int shell_callback(
       }
       break;
     }
-    case MODE_Semi:
+    case MODE_Semi: {   /* .schema and .fullschema output */
+      utf8_printf(p->out, "%s;\n", azArg[0]);
+      break;
+    }
+    case MODE_Pretty: {  /* .schema and .fullschema with --indent */
+      char *z;
+      int i,j;
+      int nParen = 0;
+      char cEnd = 0;
+      char c;
+      int nLine = 0;
+      assert( nArg==1 );
+      if( azArg[0]==0 ) break;
+      if( sqlite3_strlike("CREATE VIEW%", azArg[0], 0)==0
+       || sqlite3_strlike("CREATE TRIG%", azArg[0], 0)==0
+      ){
+        utf8_printf(p->out, "%s;\n", azArg[0]);
+        break;
+      }
+      z = sqlite3_mprintf("%s", azArg[0]);
+      j = 0;
+      for(i=0; IsSpace(z[i]); i++){}
+      for(; (c = z[i])!=0; i++){
+        if( IsSpace(c) ){
+          if( IsSpace(z[j-1]) || z[j-1]=='(' ) continue;
+        }else if( (c=='(' || c==')') && j>0 && IsSpace(z[j-1]) ){
+          j--;
+        }
+        z[j++] = c;
+      }
+      while( j>0 && IsSpace(z[j-1]) ){ j--; }
+      z[j] = 0;
+      if( strlen30(z)>=79 ){
+        for(i=j=0; z[i]; i++){
+          char c = z[i];
+          if( c==cEnd ){
+            cEnd = 0;
+          }else if( c=='"' || c=='\'' || c=='`' ){
+            cEnd = c;
+          }else if( c=='[' ){
+            cEnd = ']';
+          }else if( c=='(' ){
+            nParen++;
+          }else if( c==')' ){
+            nParen--;
+            if( nLine>0 && nParen==0 && j>0 ){
+              utf8_printf(p->out, "%.*s\n", j, z);
+              j = 0;
+            }
+          }
+          z[j++] = c;
+          if( nParen==1 && (c=='(' || c==',' || c=='\n') ){
+            if( c=='\n' ) j--;
+            utf8_printf(p->out, "%.*s\n  ", j, z);
+            j = 0;
+            nLine++;
+            while( IsSpace(z[i+1]) ){ i++; }
+          }
+        }
+        z[j] = 0;
+      }
+      utf8_printf(p->out, "%s;\n", z);
+      sqlite3_free(z);
+      break;
+    }
     case MODE_List: {
       if( p->cnt++==0 && p->showHeader ){
         for(i=0; i<nArg; i++){
@@ -1069,8 +1135,6 @@ static int shell_callback(
         utf8_printf(p->out, "%s", z);
         if( i<nArg-1 ){
           utf8_printf(p->out, "%s", p->colSeparator);
-        }else if( p->cMode==MODE_Semi ){
-          utf8_printf(p->out, ";%s", p->rowSeparator);
         }else{
           utf8_printf(p->out, "%s", p->rowSeparator);
         }
@@ -2024,7 +2088,7 @@ static char zHelp[] =
   ".eqp on|off            Enable or disable automatic EXPLAIN QUERY PLAN\n"
   ".exit                  Exit this program\n"
   ".explain ?on|off|auto? Turn EXPLAIN output mode on or off or to automatic\n"
-  ".fullschema            Show schema and the content of sqlite_stat tables\n"
+  ".fullschema ?--indent? Show schema and the content of sqlite_stat tables\n"
   ".headers on|off        Turn display of headers on or off\n"
   ".help                  Show this message\n"
   ".import FILE TABLE     Import data from FILE into TABLE\n"
@@ -2060,9 +2124,8 @@ static char zHelp[] =
   ".restore ?DB? FILE     Restore content of DB (default \"main\") from FILE\n"
   ".save FILE             Write in-memory database into FILE\n"
   ".scanstats on|off      Turn sqlite3_stmt_scanstatus() metrics on or off\n"
-  ".schema ?TABLE?        Show the CREATE statements\n"
-  "                         If TABLE specified, only show tables matching\n"
-  "                         LIKE pattern TABLE.\n"
+  ".schema ?PATTERN?      Show the CREATE statements matching PATTERN\n"
+  "                          Add --indent for pretty-printing\n"
   ".separator COL ?ROW?   Change the column separator and optionally the row\n"
   "                         separator for both the output mode and .import\n"
 #if defined(SQLITE_ENABLE_SESSION)
@@ -2934,6 +2997,17 @@ static int shellNomemError(void){
 }
 
 /*
+** Compare the string as a command-line option with either one or two
+** initial "-" characters.
+*/
+static int optionMatch(const char *zStr, const char *zOpt){
+  if( zStr[0]!='-' ) return 0;
+  zStr++;
+  if( zStr[0]=='-' ) zStr++;
+  return strcmp(zStr, zOpt)==0;
+}
+
+/*
 ** If an input line begins with "." then invoke this routine to
 ** process that line.
 **
@@ -3219,15 +3293,19 @@ static int do_meta_command(char *zLine, ShellState *p){
     ShellState data;
     char *zErrMsg = 0;
     int doStats = 0;
+    memcpy(&data, p, sizeof(data));
+    data.showHeader = 0;
+    data.cMode = data.mode = MODE_Semi;
+    if( nArg==2 && optionMatch(azArg[1], "indent") ){
+      data.cMode = data.mode = MODE_Pretty;
+      nArg = 1;
+    }
     if( nArg!=1 ){
-      raw_printf(stderr, "Usage: .fullschema\n");
+      raw_printf(stderr, "Usage: .fullschema ?--indent?\n");
       rc = 1;
       goto meta_command_exit;
     }
     open_db(p, 0);
-    memcpy(&data, p, sizeof(data));
-    data.showHeader = 0;
-    data.cMode = data.mode = MODE_Semi;
     rc = sqlite3_exec(p->db,
        "SELECT sql FROM"
        "  (SELECT sql sql, type type, tbl_name tbl_name, name name, rowid x"
@@ -3862,7 +3940,12 @@ static int do_meta_command(char *zLine, ShellState *p){
     memcpy(&data, p, sizeof(data));
     data.showHeader = 0;
     data.cMode = data.mode = MODE_Semi;
-    if( nArg==2 ){
+    if( nArg>=2 && optionMatch(azArg[1], "indent") ){
+      data.cMode = data.mode = MODE_Pretty;
+      nArg--;
+      if( nArg==2 ) azArg[1] = azArg[2];
+    }
+    if( nArg==2 && azArg[1][0]!='-' ){
       int i;
       for(i=0; azArg[1][i]; i++) azArg[1][i] = ToLower(azArg[1][i]);
       if( strcmp(azArg[1],"sqlite_master")==0 ){
@@ -3917,7 +4000,7 @@ static int do_meta_command(char *zLine, ShellState *p){
          callback, &data, &zErrMsg
       );
     }else{
-      raw_printf(stderr, "Usage: .schema ?LIKE-PATTERN?\n");
+      raw_printf(stderr, "Usage: .schema ?--indent? ?LIKE-PATTERN?\n");
       rc = 1;
       goto meta_command_exit;
     }
