@@ -345,11 +345,11 @@ int sqlite3Fts5HashWrite(
         if( pHash->eDetail==FTS5_DETAIL_FULL ){
           pPtr[p->nData++] = 0x01;
           p->nData += sqlite3Fts5PutVarint(&pPtr[p->nData], iCol);
-          p->iCol = iCol;
+          p->iCol = (i16)iCol;
           p->iPos = 0;
         }else{
           bNew = 1;
-          p->iCol = iPos = iCol;
+          p->iCol = (i16)(iPos = iCol);
         }
       }
 

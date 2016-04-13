@@ -935,9 +935,9 @@ static int sessionTableInfo(
   int nDbCol = 0;
   int nThis;
   int i;
-  u8 *pAlloc;
+  u8 *pAlloc = 0;
   char **azCol = 0;
-  u8 *abPK;
+  u8 *abPK = 0;
 
   assert( pazCol && pabPK );
 
@@ -1593,9 +1593,9 @@ static void sessionDeleteTable(SessionTable *pList){
     pNext = pTab->pNext;
     for(i=0; i<pTab->nChange; i++){
       SessionChange *p;
-      SessionChange *pNext;
-      for(p=pTab->apChange[i]; p; p=pNext){
-        pNext = p->pNext;
+      SessionChange *pNextChange;
+      for(p=pTab->apChange[i]; p; p=pNextChange){
+        pNextChange = p->pNext;
         sqlite3_free(p);
       }
     }
@@ -2882,7 +2882,6 @@ static int sessionChangesetNext(
       ** modified fields are present in the new.* record. The old.* record
       ** is currently completely empty. This block shifts the PK fields from
       ** new.* to old.*, to accommodate the code that reads these arrays.  */
-      int i;
       for(i=0; i<p->nCol; i++){
         assert( p->apValue[i]==0 );
         assert( p->abPK[i]==0 || p->apValue[i+p->nCol] );
@@ -3655,7 +3654,7 @@ static int sessionConflictHandler(
   void *pCtx,                     /* First argument for conflict handler */
   int *pbReplace                  /* OUT: Set to true if PK row is found */
 ){
-  int res;                        /* Value returned by conflict handler */
+  int res = 0;                    /* Value returned by conflict handler */
   int rc;
   int nCol;
   int op;

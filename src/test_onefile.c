@@ -508,7 +508,7 @@ static int fsSync(sqlite3_file *pFile, int flags){
   if( p->eType==DATABASE_FILE ){
     unsigned char zSize[4];
     zSize[0] = (pReal->nDatabase&0xFF000000)>>24;
-    zSize[1] = (pReal->nDatabase&0x00FF0000)>>16;
+    zSize[1] = (unsigned char)((pReal->nDatabase&0x00FF0000)>>16);
     zSize[2] = (pReal->nDatabase&0x0000FF00)>>8;
     zSize[3] = (pReal->nDatabase&0x000000FF);
     rc = pRealFile->pMethods->xWrite(pRealFile, zSize, 4, 0);
