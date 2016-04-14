@@ -1,5 +1,5 @@
-C Additional\s".selecttrace"\sdebugging\soutput\swhen\sthe\squery\sis\stransformed\sfrom\sa\nDISTINCT\sinto\sa\sGROUP\sBY.
-D 2016-04-14T13:06:49.646
+C Since\sthe\sreturn\svalue\sof\ssqlite3OsClose()\sis\salways\signored,\swe\smight\sas\nwell\smake\sit\s"void"\sinstead\sof\s"int",\sand\sthereby\ssave\s50\sbytes\sin\sthe\ncompiled\sbinary.
+D 2016-04-14T13:16:58.757
 F Makefile.in eba680121821b8a60940a81454316f47a341487a
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 71b8b16cf9393f68e2e2035486ca104872558836
@@ -355,8 +355,8 @@ F src/mutex_noop.c 9d4309c075ba9cc7249e19412d3d62f7f94839c4
 F src/mutex_unix.c 27bb6cc49485ee46711a6580ab7b3f1402211d23
 F src/mutex_w32.c 5e6fe1c298fb5a8a15aaed4161d5759311431c17
 F src/notify.c 9711a7575036f0d3040ba61bc6e217f13a9888e7
-F src/os.c ca10edb445ad2c5fdc7285b49d72bcdf261fa23e
-F src/os.h 91ff889115ecd01f436d3611f7f5ea4dc12d92f1
+F src/os.c 4d83917f072ad958fba9235136fa2ed43df47905
+F src/os.h 8e976e59eb4ca1c0fca6d35ee803e38951cb0343
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c bde4844f0849cab5924c6a81178f8500774ce76b
@@ -402,14 +402,14 @@ F src/test_blob.c b2551a9b5573232db5f66f292307c37067937239
 F src/test_btree.c 2e9978eca99a9a4bfa8cae949efb00886860a64f
 F src/test_config.c 7003f6f35134de6f19c6588f44783e43390ea277
 F src/test_demovfs.c 0de72c2c89551629f58486fde5734b7d90758852
-F src/test_devsym.c e7498904e72ba7491d142d5c83b476c4e76993bc
+F src/test_devsym.c 7e73009d5297b603c11c66d7c7d6723d4b5c73e1
 F src/test_fs.c f10f840ca4f8c72e4837908bd8347ac4bcab074b
 F src/test_func.c 37453d346cfcf118774efd5bf6187f7e6a7e3254
 F src/test_hexio.c abfdecb6fa58c354623978efceb088ca18e379cd
 F src/test_init.c 66b33120ffe9cd853b5a905ec850d51151337b32
 F src/test_intarray.c 870124b95ec4c645d4eb84f15efb7133528fb1a5
 F src/test_intarray.h 9dc57417fb65bc7835cc18548852cc08cc062202
-F src/test_journal.c 5360fbe1d1e4416ca36290562fd5a2e3f70f32aa
+F src/test_journal.c da540964c675fde39487da2bc664096af97190d8
 F src/test_loadext.c 337056bae59f80b9eb00ba82088b39d0f4fe6dfd
 F src/test_malloc.c 94c18e88d6df6d471a0d04ddb809f833d1739950
 F src/test_multiplex.c eafc567ebe162e36f17b5062285dfe90461cf8e9
@@ -428,7 +428,7 @@ F src/test_superlock.c 06797157176eb7085027d9dd278c0d7a105e3ec9
 F src/test_syscall.c 2e21ca7f7dc54a028f1967b63f1e76155c356f9b
 F src/test_tclvar.c d86412527da65468ee6fa1b8607c65d0af736bc4
 F src/test_thread.c af391ec03d23486dffbcc250b7e58e073f172af9
-F src/test_vfs.c 3b65d42e18b262805716bd96178c81da8f2d9283
+F src/test_vfs.c 4d02f38bfb8f7f273da7ba84bfe000f5babf206c
 F src/test_vfstrace.c bab9594adc976cbe696ff3970728830b4c5ed698
 F src/test_windirent.c 8f5fada630348558d5745b334702f301da1ffc61
 F src/test_windirent.h b12055cab6227f7be10f5c19296f67c60cc5e2a5
@@ -1482,7 +1482,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 55a62483b9121a8b373d038a26fdebc4308661f6
-R 7bb58a4f89e336cb6f9f8cccdaf5c333
+P 5a46914510af4d5557b299db65c68d5df1070766
+R c53fd5d7b34fa75485d686014ecb828c
 U drh
-Z 71b74109092a6d83b57a993cec7348f7
+Z 23b6889e197e2a1c3244550aa7848950

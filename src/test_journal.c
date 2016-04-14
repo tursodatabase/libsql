@@ -256,7 +256,8 @@ static int jtClose(sqlite3_file *pFile){
     *pp = p->pNext;
   }
   leaveJtMutex();
-  return sqlite3OsClose(p->pReal);
+  sqlite3OsClose(p->pReal);
+  return SQLITE_OK;
 }
 
 /*
