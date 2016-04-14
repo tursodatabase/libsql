@@ -1,5 +1,5 @@
-C Correctly\sinterpret\snegative\s"PRAGMA\scache_size"\svalues\swhen\sdetermining\sthe\scache-size\sused\sfor\ssorting\slarge\samounts\sof\sdata\s(i.e.\sthe\sfunctionality\sin\svdbesort.c).
-D 2016-04-14T15:44:37.886
+C Add\sthe\sSF_HasAgg\sconstant\s(currently\sunused).\s\sAlso\senhance\sthe\scomments\son\nmany\sother\sconstant\sdefinitions\sto\sdetail\sconstraints\son\stheir\svalues.
+D 2016-04-14T16:40:13.322
 F Makefile.in eba680121821b8a60940a81454316f47a341487a
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 71b8b16cf9393f68e2e2035486ca104872558836
@@ -363,7 +363,7 @@ F src/os_unix.c bde4844f0849cab5924c6a81178f8500774ce76b
 F src/os_win.c b169437dff859e308b3726594094a2f8ca922941
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 38718a019ca762ba4f6795425d5a54db70d1790d
-F src/pager.h e1d38a2f14849e219df0f91f8323504d134c8a56
+F src/pager.h 329bdf078a4e0a3b35084534d58625d21fd03681
 F src/parse.y 10eb2f3fb62341291528c7984498054731f9d31e
 F src/pcache.c 647bb53a86b7bbcf55ad88089b3ea5a9170b90df
 F src/pcache.h 4d0ccaad264d360981ec5e6a2b596d6e85242545
@@ -380,7 +380,7 @@ F src/shell.c ebcdf99f3e7c7409bd463eae443f1bd01e3e2d02
 F src/sqlite.h.in 64eb70a3b309751bebf73a5552a51244f68f0ea5
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 98f72cbfe00169c39089115427d06ea05fe4b4a2
-F src/sqliteInt.h b3744b29555b83054f315f62d61b3a6558fa9e1c
+F src/sqliteInt.h 49cd2b5cd07cca7c462608540cb6dfa8ab03ba89
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
@@ -456,7 +456,7 @@ F src/wal.c 4db22ed7e77bcf672b1a685d6ddeffba8d5be302
 F src/wal.h 2f7c831cf3b071fa548bf2d5cac640846a7ff19c
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
 F src/where.c bae50f2f18f9e8584549a77363858623b07e4915
-F src/whereInt.h 43466b107862e348e5c2a709cc4812a611e27908
+F src/whereInt.h 7de94b751f088fe3fdc8cc04a491376f0900a059
 F src/wherecode.c 8fdad9fbba723df1c1e8d07e7ea8507572040340
 F src/whereexpr.c eacc0e60d029a082b4fc0cc42ea98544add1319e
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1482,7 +1482,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 67d7f79c5e5be41a18817c802b5c4d349e3a83a4
-R 7d2f177c9a481d6a3916beb1fe8bc290
-U dan
-Z 2305c008703672127d77c74ca18473e8
+P 79147dca87cfd7eb62d57baa3b70fa2a8542232a
+R 6419c618333708e1ee248e43219e551e
+U drh
+Z 76d9f185ebd1be8244746d28959cec5d
