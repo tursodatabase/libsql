@@ -1,5 +1,5 @@
-C Since\sthe\sreturn\svalue\sof\ssqlite3OsClose()\sis\salways\signored,\swe\smight\sas\nwell\smake\sit\s"void"\sinstead\sof\s"int",\sand\sthereby\ssave\s50\sbytes\sin\sthe\ncompiled\sbinary.
-D 2016-04-14T13:16:58.757
+C Rename\sWhereInfo.pResultSet\sto\spDistinctSet\sto\smore\saccurately\sreflect\swhat\nit\srepresents.
+D 2016-04-14T13:35:26.807
 F Makefile.in eba680121821b8a60940a81454316f47a341487a
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 71b8b16cf9393f68e2e2035486ca104872558836
@@ -455,8 +455,8 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 4db22ed7e77bcf672b1a685d6ddeffba8d5be302
 F src/wal.h 2f7c831cf3b071fa548bf2d5cac640846a7ff19c
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
-F src/where.c 24ab561466d92d313747c04edb1a36a7af8663be
-F src/whereInt.h 93297d56edd137b7ea004490690fb6e2ce028a34
+F src/where.c bae50f2f18f9e8584549a77363858623b07e4915
+F src/whereInt.h 43466b107862e348e5c2a709cc4812a611e27908
 F src/wherecode.c 8fdad9fbba723df1c1e8d07e7ea8507572040340
 F src/whereexpr.c eacc0e60d029a082b4fc0cc42ea98544add1319e
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1482,7 +1482,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5a46914510af4d5557b299db65c68d5df1070766
-R c53fd5d7b34fa75485d686014ecb828c
+P 7ee570e7a9a2159a8c0d41805c00f91ca0de00e3
+R ba684bc23f92ec8865bd177b82e2674c
 U drh
-Z 23b6889e197e2a1c3244550aa7848950
+Z 37e357b73543209990ea5ecc9fc91d8e
