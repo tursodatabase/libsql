@@ -354,15 +354,17 @@ static void icuRegexpFunc(sqlite3_context *p, int nArg, sqlite3_value **apArg){
 ** http://www.icu-project.org/userguide/posix.html#case_mappings
 */
 static void icuCaseFunc16(sqlite3_context *p, int nArg, sqlite3_value **apArg){
-  const UChar *zInput;
-  UChar *zOutput = 0;
-  int nInput;
-  int nOut;
+  const UChar *zInput;            /* Pointer to input string */
+  UChar *zOutput = 0;             /* Pointer to output buffer */
+  int nInput;                     /* Size of utf-16 input string in bytes */
+  int nOut;                       /* Size of output buffer in bytes */
   int cnt;
+  int bToUpper;                   /* True for toupper(), false for tolower() */
   UErrorCode status;
   const char *zLocale = 0;
 
   assert(nArg==1 || nArg==2);
+  bToUpper = (sqlite3_user_data(p)!=0);
   if( nArg==2 ){
     zLocale = (const char *)sqlite3_value_text(apArg[1]);
   }
@@ -386,19 +388,23 @@ static void icuCaseFunc16(sqlite3_context *p, int nArg, sqlite3_value **apArg){
     }
     zOutput = zNew;
     status = U_ZERO_ERROR;
-    if( sqlite3_user_data(p) ){
+    if( bToUpper ){
       nOut = 2*u_strToUpper(zOutput,nOut/2,zInput,nInput/2,zLocale,&status);
     }else{
       nOut = 2*u_strToLower(zOutput,nOut/2,zInput,nInput/2,zLocale,&status);
     }
-    if( !U_SUCCESS(status) ){
-      if( status==U_BUFFER_OVERFLOW_ERROR ) continue;
-      icuFunctionError(p,
-          sqlite3_user_data(p) ? "u_strToUpper" : "u_strToLower", status);
-      return;
+
+    if( U_SUCCESS(status) ){
+      sqlite3_result_text16(p, zOutput, nOut, xFree);
+    }else if( status==U_BUFFER_OVERFLOW_ERROR ){
+      assert( cnt==0 );
+      continue;
+    }else{
+      icuFunctionError(p, bToUpper ? "u_strToUpper" : "u_strToLower", status);
     }
+    return;
   }
-  sqlite3_result_text16(p, zOutput, nOut, xFree);
+  assert( 0 );     /* Unreachable */
 }
 
 /*
