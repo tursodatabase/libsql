@@ -5092,6 +5092,13 @@ int sqlite3Select(
     ** the sDistinct.isTnct is still set.  Hence, isTnct represents the
     ** original setting of the SF_Distinct flag, not the current setting */
     assert( sDistinct.isTnct );
+
+#if SELECTTRACE_ENABLED
+    if( sqlite3SelectTrace & 0x400 ){
+      SELECTTRACE(0x400,pParse,p,("Transform DISTINCT into GROUP BY:\n"));
+      sqlite3TreeViewSelect(0, p, 0);
+    }
+#endif
   }
 
   /* If there is an ORDER BY clause, then create an ephemeral index to
