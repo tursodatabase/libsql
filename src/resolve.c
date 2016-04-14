@@ -391,12 +391,12 @@ static int lookupName(
       for(j=0; j<pEList->nExpr; j++){
         char *zAs = pEList->a[j].zName;
         if( zAs!=0 && sqlite3StrICmp(zAs, zCol)==0 ){
-          Expr *pOrig;
           assert( pExpr->pLeft==0 && pExpr->pRight==0 );
           assert( pExpr->x.pList==0 );
           assert( pExpr->x.pSelect==0 );
-          pOrig = pEList->a[j].pExpr;
-          if( (pNC->ncFlags&NC_AllowAgg)==0 && ExprHasProperty(pOrig, EP_Agg) ){
+          if( (pNC->ncFlags&NC_AllowAgg)==0
+           && ExprHasProperty(pEList->a[j].pExpr, EP_Agg)
+          ){
             sqlite3ErrorMsg(pParse, "misuse of aliased aggregate %s", zAs);
             return WRC_Abort;
           }
@@ -714,11 +714,16 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           notValid(pParse, pNC, "non-deterministic functions", NC_IdxExpr);
         }
       }
+#if 0
+      /* This error condition will be caught later, during code
+      ** generation */
       if( is_agg && (pNC->ncFlags & NC_AllowAgg)==0 ){
         sqlite3ErrorMsg(pParse, "misuse of aggregate function %.*s()", nId,zId);
         pNC->nErr++;
         is_agg = 0;
-      }else if( no_such_func && pParse->db->init.busy==0 ){
+      }else 
+#endif
+      if( no_such_func && pParse->db->init.busy==0 ){
         sqlite3ErrorMsg(pParse, "no such function: %.*s", nId, zId);
         pNC->nErr++;
       }else if( wrong_num_args ){
@@ -1208,20 +1213,9 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
     /* Resolve names in the result set. */
     if( sqlite3ResolveExprListNames(&sNC, p->pEList) ) return WRC_Abort;
   
-    /* If there are no aggregate functions in the result-set, and no GROUP BY 
-    ** expression, do not allow aggregates in any of the other expressions.
-    */
-    assert( (p->selFlags & SF_Aggregate)==0 );
-    pGroupBy = p->pGroupBy;
-    if( pGroupBy || (sNC.ncFlags & NC_HasAgg)!=0 ){
-      assert( NC_MinMaxAgg==SF_MinMaxAgg );
-      p->selFlags |= SF_Aggregate | (sNC.ncFlags&NC_MinMaxAgg);
-    }else{
-      sNC.ncFlags &= ~NC_AllowAgg;
-    }
-  
     /* If a HAVING clause is present, then there must be a GROUP BY clause.
     */
+    pGroupBy = p->pGroupBy;
     if( p->pHaving && !pGroupBy ){
       sqlite3ErrorMsg(pParse, "a GROUP BY clause is required before HAVING");
       return WRC_Abort;
@@ -1236,8 +1230,20 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
     ** re-evaluated for each reference to it.
     */
     sNC.pEList = p->pEList;
-    if( sqlite3ResolveExprNames(&sNC, p->pHaving) ) return WRC_Abort;
     if( sqlite3ResolveExprNames(&sNC, p->pWhere) ) return WRC_Abort;
+    if( sqlite3ResolveExprNames(&sNC, p->pHaving) ) return WRC_Abort;
+
+    /* If there are no aggregate functions in the result-set, and no GROUP BY 
+    ** expression, do not allow aggregates in any of the other expressions.
+    */
+    assert( (p->selFlags & SF_Aggregate)==0 );
+    if( pGroupBy || (sNC.ncFlags & NC_HasAgg)!=0 ){
+      assert( NC_MinMaxAgg==SF_MinMaxAgg );
+      assert( NC_HasAgg==SF_HasAgg );
+      p->selFlags |= SF_Aggregate | (sNC.ncFlags&(NC_MinMaxAgg|NC_HasAgg));
+    }else{
+      sNC.ncFlags &= ~NC_AllowAgg;
+    }
 
     /* Resolve names in table-valued-function arguments */
     for(i=0; i<p->pSrc->nSrc; i++){

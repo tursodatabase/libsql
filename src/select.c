@@ -4899,12 +4899,12 @@ int sqlite3Select(
       goto select_end;
     }
 
-    isAggSub = (pSub->selFlags & SF_Aggregate)!=0;
+    isAggSub = pSub->selFlags & (SF_Aggregate|SF_HasAgg);
     if( flattenSubquery(pParse, p, i, isAgg, isAggSub) ){
       /* This subquery can be absorbed into its parent. */
       if( isAggSub ){
         isAgg = 1;
-        p->selFlags |= SF_Aggregate;
+        p->selFlags |= isAggSub;
       }
       i = -1;
     }
@@ -5062,6 +5062,7 @@ int sqlite3Select(
   pGroupBy = p->pGroupBy;
   pHaving = p->pHaving;
   sDistinct.isTnct = (p->selFlags & SF_Distinct)!=0;
+  assert( (p->selFlags & SF_HasAgg)==0 || (p->selFlags & SF_Aggregate)!=0 );
 
 #if SELECTTRACE_ENABLED
   if( sqlite3SelectTrace & 0x400 ){
@@ -5269,6 +5270,9 @@ int sqlite3Select(
     }
     sAggInfo.mxReg = pParse->nMem;
     if( db->mallocFailed ) goto select_end;
+
+    /* Not true if there are errors in the input SQL!:
+    ** assert( (sAggInfo.nFunc>0)==((p->selFlags&SF_HasAgg)!=0) ); */
 
     /* Processing for aggregates with GROUP BY is very different and
     ** much more complex than aggregates without a GROUP BY.
@@ -5656,6 +5660,7 @@ int sqlite3Select(
   /* The SELECT has been coded. If there is an error in the Parse structure,
   ** set the return code to 1. Otherwise 0. */
   rc = (pParse->nErr>0);
+  assert( (sAggInfo.nFunc>0)==((p->selFlags&SF_HasAgg)!=0) || rc!=SQLITE_OK );
 
   /* Control jumps to here if an error is encountered above, or upon
   ** successful coding of the SELECT.

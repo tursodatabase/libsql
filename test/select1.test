@@ -223,7 +223,7 @@ do_test select1-2.19 {
 do_test select1-2.20 {
   set v [catch {execsql {SELECT SUM(min(f1)) FROM test1}} msg]
   lappend v $msg
-} {1 {misuse of aggregate function min()}}
+} {1 {misuse of aggregate: min()}}
 
 # Ticket #2526
 #
