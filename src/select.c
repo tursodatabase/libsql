@@ -3787,6 +3787,8 @@ static int pushDownWhereTerms(
   int nChng = 0;
   if( pWhere==0 ) return 0;
   if( (pSubq->selFlags & (SF_Aggregate|SF_Recursive))!=0 ){
+     testcase( pSubq->selFlags & SF_Aggregate );
+     testcase( pSubq->selFlags & SF_Recursive );
      return 0; /* restrictions (1) and (2) */
   }
   if( pSubq->pLimit!=0 ){

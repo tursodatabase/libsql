@@ -1,5 +1,5 @@
-C Rename\sWhereInfo.pResultSet\sto\spDistinctSet\sto\smore\saccurately\sreflect\swhat\nit\srepresents.
-D 2016-04-14T13:35:26.807
+C Add\ssome\smissing\stestcase()\smacros\sto\sthe\spushDownWhereTerms()\sroutine.
+D 2016-04-14T15:38:33.232
 F Makefile.in eba680121821b8a60940a81454316f47a341487a
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 71b8b16cf9393f68e2e2035486ca104872558836
@@ -375,7 +375,7 @@ F src/printf.c 63e6fb12bbe702dd664dc3703776c090383a5a26
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c b8f7174e5f8c33c44ded3a25a973d0bb89228c20
 F src/rowset.c 9fe4b3ad7cc00944386bb600233d8f523de07a6e
-F src/select.c 6c7f3cf68af334ed1ec40c20b5cff9b1e632d824
+F src/select.c 30217121bdf6b587462150b8ee9e1467f7a6036b
 F src/shell.c ebcdf99f3e7c7409bd463eae443f1bd01e3e2d02
 F src/sqlite.h.in 64eb70a3b309751bebf73a5552a51244f68f0ea5
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1482,7 +1482,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7ee570e7a9a2159a8c0d41805c00f91ca0de00e3
-R ba684bc23f92ec8865bd177b82e2674c
+P 5317961411695e107e8cefdeaba62280429979ca
+R 57400ecb51ad9ca239da236d61c38933
 U drh
-Z 37e357b73543209990ea5ecc9fc91d8e
+Z b18926ac3da54e5d3b9c23fea213722b
