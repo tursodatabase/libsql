@@ -237,13 +237,16 @@ impl FromSql for DateTime<Local> {
                         Err(err) => Err(Error::FromSqlConversionFailure(Box::new(err))),
                     }
                 } else {
+                    // TODO from_utc_datetime versus from from_local_datetime
                     NaiveDateTime::column_result(stmt, col).map(|dt| Local.from_utc_datetime(&dt))
                 }
             }
             ffi::SQLITE_INTEGER => {
+                // TODO from_utc_datetime versus from from_local_datetime
                 NaiveDateTime::column_result(stmt, col).map(|dt| Local.from_utc_datetime(&dt))
             }
             ffi::SQLITE_FLOAT => {
+                // TODO from_utc_datetime versus from from_local_datetime
                 NaiveDateTime::column_result(stmt, col).map(|dt| Local.from_utc_datetime(&dt))
             }
             _ => Err(Error::InvalidColumnType),
