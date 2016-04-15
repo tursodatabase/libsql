@@ -1,5 +1,5 @@
-C CLI\senhancement:\s\sAdd\sthe\s".eqp\sfull"\soption,\sthat\sshows\sboth\sthe\sEXPLAIN\nQUERY\sPLAN\sand\sthe\sEXPLAIN\soutput\sfor\seach\scommand\srun.\s\sAlso\sdisable\nany\s".wheretrace"\sand\s".selecttrace"\swhen\sshowing\sEQP\soutput.
-D 2016-04-15T15:03:27.144
+C Add\sthe\sexperimental\ssqlite3rbu_vacuum()\sAPI\sfunction.\sFor\sopening\san\sRBU\shandle\sthat\srebuilds\sa\sdatabase\sfrom\sscratch.
+D 2016-04-15T20:46:41.467
 F Makefile.in eba680121821b8a60940a81454316f47a341487a
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 71b8b16cf9393f68e2e2035486ca104872558836
@@ -246,9 +246,10 @@ F ext/rbu/rbufault2.test 9a7f19edd6ea35c4c9f807d8a3db0a03a5670c06
 F ext/rbu/rbufts.test 828cd689da825f0a7b7c53ffc1f6f7fdb6fa5bda
 F ext/rbu/rbuprogress.test 2023a7df2c523e3df1cb532eff811cda385a789a
 F ext/rbu/rbusave.test 0f43b6686084f426ddd040b878426452fd2c2f48
-F ext/rbu/sqlite3rbu.c 9097f1d95666dbef72ca61d5b6a13a84660735ac
-F ext/rbu/sqlite3rbu.h d7cc99350c10134f358fe1a8997d9225b3f712b2
-F ext/rbu/test_rbu.c 3505641a78b723589b8780d5f9b2faeeb73e037d
+F ext/rbu/rbuvacuum.test 75b4231f85622859e814c7f028afad0303f72f60
+F ext/rbu/sqlite3rbu.c 79b8be4a0c8276b2b2b24c88edf3944216ccd35b
+F ext/rbu/sqlite3rbu.h 1342ab6121e715b8da59ec35c5b5c16060be7a6b
+F ext/rbu/test_rbu.c 430b8b9520c233505371d564d3561e0b554355f4
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 0b870ccb7b58b734a2a8e1e2755a7c0ded070920
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
@@ -1482,7 +1483,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d23e581351fb8eea28e7b13b3dcadfc817c3a05f
-R e880e1f26ac9fef78137656188a6e0aa
-U drh
-Z dc2294cde78bca18f07e3e2fb59a4dd5
+P 3e217d6265ecd16db783bed7ce1d9d0f9c4828bb
+R d2c575fe1215bc1b298a105940b3f837
+T *branch * rbu-vacuum
+T *sym-rbu-vacuum *
+T -sym-trunk *
+U dan
+Z af92587ff7c9268b9a60aaab80a1a468

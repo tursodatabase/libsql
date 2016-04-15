@@ -176,6 +176,7 @@ typedef struct RbuUpdateStmt RbuUpdateStmt;
 
 #if !defined(SQLITE_AMALGAMATION)
 typedef unsigned int u32;
+typedef unsigned short u16;
 typedef unsigned char u8;
 typedef sqlite3_int64 i64;
 #endif
@@ -401,6 +402,11 @@ struct rbu_file {
   rbu_file *pWalFd;               /* Wal file descriptor for this main db */
   rbu_file *pMainNext;            /* Next MAIN_DB file */
 };
+
+/*
+** True for an RBU vacuum handle, or false otherwise.
+*/
+#define rbuIsVacuum(p) ((p)->zTarget==0)
 
 
 /*************************************************************************
@@ -850,8 +856,11 @@ static int rbuObjIterNext(sqlite3rbu *p, RbuObjIter *pIter){
 
 /*
 ** The implementation of the rbu_target_name() SQL function. This function
-** accepts one argument - the name of a table in the RBU database. If the
-** table name matches the pattern:
+** accepts one or two arguments. The first argument is the name of a table -
+** the name of a table in the RBU database.  The second, if it is present, is 1
+** for a view or 0 for a table. 
+**
+** For a non-vacuum RBU handle, if the table name matches the pattern:
 **
 **     data[0-9]_<name>
 **
@@ -862,21 +871,33 @@ static int rbuObjIterNext(sqlite3rbu *p, RbuObjIter *pIter){
 **     "data_t1"     -> "t1"
 **     "data0123_t2" -> "t2"
 **     "dataAB_t3"   -> NULL
+**
+** For an rbu vacuum handle, a copy of the first argument is returned if
+** the second argument is either missing or 0 (not a view).
 */
 static void rbuTargetNameFunc(
-  sqlite3_context *context,
+  sqlite3_context *pCtx,
   int argc,
   sqlite3_value **argv
 ){
+  sqlite3rbu *p = sqlite3_user_data(pCtx);
   const char *zIn;
-  assert( argc==1 );
+  assert( argc==1 || argc==2 );
 
   zIn = (const char*)sqlite3_value_text(argv[0]);
-  if( zIn && strlen(zIn)>4 && memcmp("data", zIn, 4)==0 ){
-    int i;
-    for(i=4; zIn[i]>='0' && zIn[i]<='9'; i++);
-    if( zIn[i]=='_' && zIn[i+1] ){
-      sqlite3_result_text(context, &zIn[i+1], -1, SQLITE_STATIC);
+  if( zIn ){
+    if( rbuIsVacuum(p) ){
+      if( argc==1 || 0==sqlite3_value_int(argv[1]) ){
+        sqlite3_result_text(pCtx, zIn, -1, SQLITE_STATIC);
+      }
+    }else{
+      if( strlen(zIn)>4 && memcmp("data", zIn, 4)==0 ){
+        int i;
+        for(i=4; zIn[i]>='0' && zIn[i]<='9'; i++);
+        if( zIn[i]=='_' && zIn[i+1] ){
+          sqlite3_result_text(pCtx, &zIn[i+1], -1, SQLITE_STATIC);
+        }
+      }
     }
   }
 }
@@ -894,7 +915,8 @@ static int rbuObjIterFirst(sqlite3rbu *p, RbuObjIter *pIter){
   memset(pIter, 0, sizeof(RbuObjIter));
 
   rc = prepareAndCollectError(p->dbRbu, &pIter->pTblIter, &p->zErrmsg, 
-      "SELECT rbu_target_name(name) AS target, name FROM sqlite_master "
+      "SELECT rbu_target_name(name, type='view') AS target, name "
+      "FROM sqlite_master "
       "WHERE type IN ('table', 'view') AND target IS NOT NULL "
       "ORDER BY name"
   );
@@ -1270,6 +1292,7 @@ static int rbuObjIterCacheTableInfo(sqlite3rbu *p, RbuObjIter *pIter){
     pStmt = 0;
 
     if( p->rc==SQLITE_OK
+     && rbuIsVacuum(p)==0
      && bRbuRowid!=(pIter->eType==RBU_PK_VTAB || pIter->eType==RBU_PK_NONE)
     ){
       p->rc = SQLITE_ERROR;
@@ -1409,6 +1432,8 @@ static char *rbuObjIterGetIndexCols(
         for(i=0; pIter->abTblPk[i]==0; i++);
         assert( i<pIter->nTblCol );
         zCol = pIter->azTblCol[i];
+      }else if( rbuIsVacuum(p) ){
+        zCol = "_rowid_";
       }else{
         zCol = "rbu_rowid";
       }
@@ -1949,7 +1974,7 @@ static int rbuObjIterPrepareAll(
       }
 
       /* And to delete index entries */
-      if( p->rc==SQLITE_OK ){
+      if( rbuIsVacuum(p)==0 && p->rc==SQLITE_OK ){
         p->rc = prepareFreeAndCollectError(
             p->dbMain, &pIter->pDelete, &p->zErrmsg,
           sqlite3_mprintf("DELETE FROM \"rbu_imp_%w\" WHERE %s", zTbl, zWhere)
@@ -1959,6 +1984,15 @@ static int rbuObjIterPrepareAll(
       /* Create the SELECT statement to read keys in sorted order */
       if( p->rc==SQLITE_OK ){
         char *zSql;
+        if( rbuIsVacuum(p) ){
+          zSql = sqlite3_mprintf(
+              "SELECT %s, 0 AS rbu_control FROM '%q' ORDER BY %s%s",
+              zCollist, 
+              pIter->zDataTbl,
+              zCollist, zLimit
+          );
+        }else
+
         if( pIter->eType==RBU_PK_EXTERNAL || pIter->eType==RBU_PK_NONE ){
           zSql = sqlite3_mprintf(
               "SELECT %s, rbu_control FROM %s.'rbu_tmp_%q' ORDER BY %s%s",
@@ -1985,7 +2019,9 @@ static int rbuObjIterPrepareAll(
       sqlite3_free(zWhere);
       sqlite3_free(zBind);
     }else{
-      int bRbuRowid = (pIter->eType==RBU_PK_VTAB || pIter->eType==RBU_PK_NONE);
+      int bRbuRowid = (pIter->eType==RBU_PK_VTAB)
+                    ||(pIter->eType==RBU_PK_NONE)
+                    ||(pIter->eType==RBU_PK_EXTERNAL && rbuIsVacuum(p));
       const char *zTbl = pIter->zTbl;       /* Table this step applies to */
       const char *zWrite;                   /* Imposter table name */
 
@@ -2012,8 +2048,10 @@ static int rbuObjIterPrepareAll(
         );
       }
 
-      /* Create the DELETE statement to write to the target PK b-tree */
-      if( p->rc==SQLITE_OK ){
+      /* Create the DELETE statement to write to the target PK b-tree.
+      ** Because it only performs INSERT operations, this is not required for
+      ** an rbu vacuum handle.  */
+      if( rbuIsVacuum(p)==0 && p->rc==SQLITE_OK ){
         p->rc = prepareFreeAndCollectError(p->dbMain, &pIter->pDelete, pz,
             sqlite3_mprintf(
               "DELETE FROM \"%s%w\" WHERE %s", zWrite, zTbl, zWhere
@@ -2021,7 +2059,7 @@ static int rbuObjIterPrepareAll(
         );
       }
 
-      if( pIter->abIndexed ){
+      if( rbuIsVacuum(p)==0 && pIter->abIndexed ){
         const char *zRbuRowid = "";
         if( pIter->eType==RBU_PK_EXTERNAL || pIter->eType==RBU_PK_NONE ){
           zRbuRowid = ", rbu_rowid";
@@ -2071,10 +2109,16 @@ static int rbuObjIterPrepareAll(
 
       /* Create the SELECT statement to read keys from data_xxx */
       if( p->rc==SQLITE_OK ){
+        const char *zRbuRowid = "";
+        if( bRbuRowid ){
+          zRbuRowid = rbuIsVacuum(p) ? ",_rowid_ " : ",rbu_rowid";
+        }
         p->rc = prepareFreeAndCollectError(p->dbRbu, &pIter->pSelect, pz,
             sqlite3_mprintf(
-              "SELECT %s, rbu_control%s FROM '%q'%s", 
-              zCollist, (bRbuRowid ? ", rbu_rowid" : ""), 
+              "SELECT %s,%s rbu_control%s FROM '%q'%s", 
+              zCollist, 
+              (rbuIsVacuum(p) ? "0 AS " : ""),
+              zRbuRowid,
               pIter->zDataTbl, zLimit
             )
         );
@@ -2184,6 +2228,95 @@ static sqlite3 *rbuOpenDbhandle(sqlite3rbu *p, const char *zName){
 }
 
 /*
+** Free an RbuState object allocated by rbuLoadState().
+*/
+static void rbuFreeState(RbuState *p){
+  if( p ){
+    sqlite3_free(p->zTbl);
+    sqlite3_free(p->zIdx);
+    sqlite3_free(p);
+  }
+}
+
+/*
+** Allocate an RbuState object and load the contents of the rbu_state 
+** table into it. Return a pointer to the new object. It is the 
+** responsibility of the caller to eventually free the object using
+** sqlite3_free().
+**
+** If an error occurs, leave an error code and message in the rbu handle
+** and return NULL.
+*/
+static RbuState *rbuLoadState(sqlite3rbu *p){
+  RbuState *pRet = 0;
+  sqlite3_stmt *pStmt = 0;
+  int rc;
+  int rc2;
+
+  pRet = (RbuState*)rbuMalloc(p, sizeof(RbuState));
+  if( pRet==0 ) return 0;
+
+  rc = prepareFreeAndCollectError(p->dbRbu, &pStmt, &p->zErrmsg, 
+      sqlite3_mprintf("SELECT k, v FROM %s.rbu_state", p->zStateDb)
+  );
+  while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
+    switch( sqlite3_column_int(pStmt, 0) ){
+      case RBU_STATE_STAGE:
+        pRet->eStage = sqlite3_column_int(pStmt, 1);
+        if( pRet->eStage!=RBU_STAGE_OAL
+         && pRet->eStage!=RBU_STAGE_MOVE
+         && pRet->eStage!=RBU_STAGE_CKPT
+        ){
+          p->rc = SQLITE_CORRUPT;
+        }
+        break;
+
+      case RBU_STATE_TBL:
+        pRet->zTbl = rbuStrndup((char*)sqlite3_column_text(pStmt, 1), &rc);
+        break;
+
+      case RBU_STATE_IDX:
+        pRet->zIdx = rbuStrndup((char*)sqlite3_column_text(pStmt, 1), &rc);
+        break;
+
+      case RBU_STATE_ROW:
+        pRet->nRow = sqlite3_column_int(pStmt, 1);
+        break;
+
+      case RBU_STATE_PROGRESS:
+        pRet->nProgress = sqlite3_column_int64(pStmt, 1);
+        break;
+
+      case RBU_STATE_CKPT:
+        pRet->iWalCksum = sqlite3_column_int64(pStmt, 1);
+        break;
+
+      case RBU_STATE_COOKIE:
+        pRet->iCookie = (u32)sqlite3_column_int64(pStmt, 1);
+        break;
+
+      case RBU_STATE_OALSZ:
+        pRet->iOalSz = (u32)sqlite3_column_int64(pStmt, 1);
+        break;
+
+      case RBU_STATE_PHASEONESTEP:
+        pRet->nPhaseOneStep = sqlite3_column_int64(pStmt, 1);
+        break;
+
+      default:
+        rc = SQLITE_CORRUPT;
+        break;
+    }
+  }
+  rc2 = sqlite3_finalize(pStmt);
+  if( rc==SQLITE_OK ) rc = rc2;
+
+  p->rc = rc;
+  return pRet;
+}
+
+
+/*
 ** Open the database handle and attach the RBU database as "rbu". If an
 ** error occurs, leave an error code and message in the RBU handle.
 */
@@ -2191,8 +2324,7 @@ static void rbuOpenDatabase(sqlite3rbu *p){
   assert( p->rc==SQLITE_OK );
   assert( p->dbMain==0 && p->dbRbu==0 );
 
-  p->eStage = 0;
-  p->dbMain = rbuOpenDbhandle(p, p->zTarget);
+  /* Open the RBU database */
   p->dbRbu = rbuOpenDbhandle(p, p->zRbu);
 
   /* If using separate RBU and state databases, attach the state database to
@@ -2202,6 +2334,38 @@ static void rbuOpenDatabase(sqlite3rbu *p){
     memcpy(p->zStateDb, "stat", 4);
   }else{
     memcpy(p->zStateDb, "main", 4);
+  }
+
+  /* If it has not already been created, create the rbu_state table */
+  rbuMPrintfExec(p, p->dbRbu, RBU_CREATE_STATE, p->zStateDb);
+
+  if( rbuIsVacuum(p) ){
+    int bOpen = 0;
+    if( p->eStage>=RBU_STAGE_MOVE ){
+      bOpen = 1;
+    }else{
+      RbuState *pState = rbuLoadState(p);
+      if( pState ){
+        bOpen = (pState->eStage>RBU_STAGE_MOVE);
+        rbuFreeState(pState);
+      }
+    }
+    if( bOpen ) p->dbMain = rbuOpenDbhandle(p, p->zRbu);
+  }
+
+  p->eStage = 0;
+  if( p->dbMain==0 ){
+    if( p->zTarget ){
+      p->dbMain = rbuOpenDbhandle(p, p->zTarget);
+    }else{
+      char *zTarget = sqlite3_mprintf("%s-vacuum", p->zRbu);
+      if( zTarget==0 ){
+        p->rc = SQLITE_NOMEM;
+        return;
+      }
+      p->dbMain = rbuOpenDbhandle(p, zTarget);
+      sqlite3_free(zTarget);
+    }
   }
 
   if( p->rc==SQLITE_OK ){
@@ -2218,7 +2382,7 @@ static void rbuOpenDatabase(sqlite3rbu *p){
 
   if( p->rc==SQLITE_OK ){
     p->rc = sqlite3_create_function(p->dbRbu, 
-        "rbu_target_name", 1, SQLITE_UTF8, (void*)p, rbuTargetNameFunc, 0, 0
+        "rbu_target_name", -1, SQLITE_UTF8, (void*)p, rbuTargetNameFunc, 0, 0
     );
   }
 
@@ -2477,9 +2641,14 @@ static LPWSTR rbuWinUtf8ToUnicode(const char *zFilename){
 */
 static void rbuMoveOalFile(sqlite3rbu *p){
   const char *zBase = sqlite3_db_filename(p->dbMain, "main");
-
-  char *zWal = sqlite3_mprintf("%s-wal", zBase);
   char *zOal = sqlite3_mprintf("%s-oal", zBase);
+  char *zWal;
+
+  if( rbuIsVacuum(p) ){
+    zWal = sqlite3_mprintf("%s-wal", sqlite3_db_filename(p->dbRbu, "main"));
+  }else{
+    zWal = sqlite3_mprintf("%s-wal", zBase);
+  }
 
   assert( p->eStage==RBU_STAGE_MOVE );
   assert( p->rc==SQLITE_OK && p->zErrmsg==0 );
@@ -2500,8 +2669,8 @@ static void rbuMoveOalFile(sqlite3rbu *p){
 
       /* Re-open the databases. */
       rbuObjIterFinalize(&p->objiter);
-      sqlite3_close(p->dbMain);
       sqlite3_close(p->dbRbu);
+      sqlite3_close(p->dbMain);
       p->dbMain = 0;
       p->dbRbu = 0;
 
@@ -2663,19 +2832,24 @@ static void rbuStepOneOp(sqlite3rbu *p, int eType){
     p->rc = sqlite3_bind_value(pWriter, i+1, pVal);
     if( p->rc ) return;
   }
-  if( pIter->zIdx==0
-   && (pIter->eType==RBU_PK_VTAB || pIter->eType==RBU_PK_NONE) 
-  ){
-    /* For a virtual table, or a table with no primary key, the 
-    ** SELECT statement is:
-    **
-    **   SELECT <cols>, rbu_control, rbu_rowid FROM ....
-    **
-    ** Hence column_value(pIter->nCol+1).
-    */
-    assertColumnName(pIter->pSelect, pIter->nCol+1, "rbu_rowid");
-    pVal = sqlite3_column_value(pIter->pSelect, pIter->nCol+1);
-    p->rc = sqlite3_bind_value(pWriter, pIter->nCol+1, pVal);
+  if( pIter->zIdx==0 ){
+    if( pIter->eType==RBU_PK_VTAB 
+     || pIter->eType==RBU_PK_NONE 
+     || (pIter->eType==RBU_PK_EXTERNAL && rbuIsVacuum(p)) 
+    ){
+      /* For a virtual table, or a table with no primary key, the 
+      ** SELECT statement is:
+      **
+      **   SELECT <cols>, rbu_control, rbu_rowid FROM ....
+      **
+      ** Hence column_value(pIter->nCol+1).
+      */
+      assertColumnName(pIter->pSelect, pIter->nCol+1, 
+          rbuIsVacuum(p) ? "rowid" : "rbu_rowid"
+      );
+      pVal = sqlite3_column_value(pIter->pSelect, pIter->nCol+1);
+      p->rc = sqlite3_bind_value(pWriter, pIter->nCol+1, pVal);
+    }
   }
   if( p->rc==SQLITE_OK ){
     sqlite3_step(pWriter);
@@ -2840,7 +3014,7 @@ int sqlite3rbu_step(sqlite3rbu *p){
             /* Clean up the rbu_tmp_xxx table for the previous table. It 
             ** cannot be dropped as there are currently active SQL statements.
             ** But the contents can be deleted.  */
-            if( pIter->abIndexed ){
+            if( rbuIsVacuum(p)==0 && pIter->abIndexed ){
               rbuMPrintfExec(p, p->dbRbu, 
                   "DELETE FROM %s.'rbu_tmp_%q'", p->zStateDb, pIter->zDataTbl
               );
@@ -2925,94 +3099,6 @@ int sqlite3rbu_step(sqlite3rbu *p){
   }else{
     return SQLITE_NOMEM;
   }
-}
-
-/*
-** Free an RbuState object allocated by rbuLoadState().
-*/
-static void rbuFreeState(RbuState *p){
-  if( p ){
-    sqlite3_free(p->zTbl);
-    sqlite3_free(p->zIdx);
-    sqlite3_free(p);
-  }
-}
-
-/*
-** Allocate an RbuState object and load the contents of the rbu_state 
-** table into it. Return a pointer to the new object. It is the 
-** responsibility of the caller to eventually free the object using
-** sqlite3_free().
-**
-** If an error occurs, leave an error code and message in the rbu handle
-** and return NULL.
-*/
-static RbuState *rbuLoadState(sqlite3rbu *p){
-  RbuState *pRet = 0;
-  sqlite3_stmt *pStmt = 0;
-  int rc;
-  int rc2;
-
-  pRet = (RbuState*)rbuMalloc(p, sizeof(RbuState));
-  if( pRet==0 ) return 0;
-
-  rc = prepareFreeAndCollectError(p->dbRbu, &pStmt, &p->zErrmsg, 
-      sqlite3_mprintf("SELECT k, v FROM %s.rbu_state", p->zStateDb)
-  );
-  while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
-    switch( sqlite3_column_int(pStmt, 0) ){
-      case RBU_STATE_STAGE:
-        pRet->eStage = sqlite3_column_int(pStmt, 1);
-        if( pRet->eStage!=RBU_STAGE_OAL
-         && pRet->eStage!=RBU_STAGE_MOVE
-         && pRet->eStage!=RBU_STAGE_CKPT
-        ){
-          p->rc = SQLITE_CORRUPT;
-        }
-        break;
-
-      case RBU_STATE_TBL:
-        pRet->zTbl = rbuStrndup((char*)sqlite3_column_text(pStmt, 1), &rc);
-        break;
-
-      case RBU_STATE_IDX:
-        pRet->zIdx = rbuStrndup((char*)sqlite3_column_text(pStmt, 1), &rc);
-        break;
-
-      case RBU_STATE_ROW:
-        pRet->nRow = sqlite3_column_int(pStmt, 1);
-        break;
-
-      case RBU_STATE_PROGRESS:
-        pRet->nProgress = sqlite3_column_int64(pStmt, 1);
-        break;
-
-      case RBU_STATE_CKPT:
-        pRet->iWalCksum = sqlite3_column_int64(pStmt, 1);
-        break;
-
-      case RBU_STATE_COOKIE:
-        pRet->iCookie = (u32)sqlite3_column_int64(pStmt, 1);
-        break;
-
-      case RBU_STATE_OALSZ:
-        pRet->iOalSz = (u32)sqlite3_column_int64(pStmt, 1);
-        break;
-
-      case RBU_STATE_PHASEONESTEP:
-        pRet->nPhaseOneStep = sqlite3_column_int64(pStmt, 1);
-        break;
-
-      default:
-        rc = SQLITE_CORRUPT;
-        break;
-    }
-  }
-  rc2 = sqlite3_finalize(pStmt);
-  if( rc==SQLITE_OK ) rc = rc2;
-
-  p->rc = rc;
-  return pRet;
 }
 
 /*
@@ -3205,15 +3291,63 @@ static void rbuInitPhaseOneSteps(sqlite3rbu *p){
 }
 
 /*
-** Open and return a new RBU handle. 
+** The RBU handle passed as the only argument has just been opened and 
+** the state database is empty. If this RBU handle was opened for an
+** RBU vacuum operation, create the schema in the target db.
 */
-sqlite3rbu *sqlite3rbu_open(
+static void rbuCreateTargetSchema(sqlite3rbu *p){
+  sqlite3_stmt *pSql = 0;
+  sqlite3_stmt *pInsert = 0;
+  int rc2;
+
+  assert( rbuIsVacuum(p) );
+
+  p->rc = prepareAndCollectError(p->dbRbu, &pSql, &p->zErrmsg, 
+    "SELECT sql FROM sqlite_master WHERE sql!='' AND rootpage!=0"
+    " ORDER BY type DESC"
+  );
+  while( p->rc==SQLITE_OK && sqlite3_step(pSql)==SQLITE_ROW ){
+    const char *zSql = sqlite3_column_text(pSql, 0);
+    p->rc = sqlite3_exec(p->dbMain, zSql, 0, 0, &p->zErrmsg);
+  }
+  rbuFinalize(p, pSql);
+  if( p->rc!=SQLITE_OK ) return;
+
+  p->rc = sqlite3_exec(p->dbMain, "PRAGMA writable_schema=1", 0,0, &p->zErrmsg);
+
+  if( p->rc==SQLITE_OK ){
+    p->rc = prepareAndCollectError(p->dbRbu, &pSql, &p->zErrmsg, 
+        "SELECT * FROM sqlite_master WHERE rootpage=0 OR rootpage IS NULL" 
+    );
+  }
+
+  if( p->rc==SQLITE_OK ){
+    p->rc = prepareAndCollectError(p->dbMain, &pInsert, &p->zErrmsg, 
+        "INSERT INTO sqlite_master VALUES(?,?,?,?,?)"
+    );
+  }
+
+  while( p->rc==SQLITE_OK && sqlite3_step(pSql)==SQLITE_ROW ){
+    int i;
+    for(i=0; i<5; i++){
+      sqlite3_bind_value(pInsert, i+1, sqlite3_column_value(pSql, i));
+    }
+    sqlite3_step(pInsert);
+    p->rc = sqlite3_reset(pInsert);
+  }
+
+  rbuFinalize(p, pSql);
+  rbuFinalize(p, pInsert);
+}
+
+
+static sqlite3rbu *openRbuHandle(
   const char *zTarget, 
   const char *zRbu,
   const char *zState
 ){
   sqlite3rbu *p;
-  size_t nTarget = strlen(zTarget);
+  size_t nTarget = zTarget ? strlen(zTarget) : 0;
   size_t nRbu = strlen(zRbu);
   size_t nState = zState ? strlen(zState) : 0;
   size_t nByte = sizeof(sqlite3rbu) + nTarget+1 + nRbu+1+ nState+1;
@@ -3226,21 +3360,23 @@ sqlite3rbu *sqlite3rbu_open(
     memset(p, 0, sizeof(sqlite3rbu));
     rbuCreateVfs(p);
 
-    /* Open the target database */
+    /* Open the target, RBU and state databases */
     if( p->rc==SQLITE_OK ){
-      p->zTarget = (char*)&p[1];
-      memcpy(p->zTarget, zTarget, nTarget+1);
-      p->zRbu = &p->zTarget[nTarget+1];
+      char *pCsr = (char*)&p[1];
+      if( zTarget ){
+        p->zTarget = pCsr;
+        memcpy(p->zTarget, zTarget, nTarget+1);
+        pCsr += nTarget+1;
+      }
+      p->zRbu = pCsr;
       memcpy(p->zRbu, zRbu, nRbu+1);
+      pCsr += nRbu+1;
       if( zState ){
-        p->zState = &p->zRbu[nRbu+1];
+        p->zState = pCsr;
         memcpy(p->zState, zState, nState+1);
       }
       rbuOpenDatabase(p);
     }
-
-    /* If it has not already been created, create the rbu_state table */
-    rbuMPrintfExec(p, p->dbRbu, RBU_CREATE_STATE, p->zStateDb);
 
     if( p->rc==SQLITE_OK ){
       pState = rbuLoadState(p);
@@ -3304,6 +3440,12 @@ sqlite3rbu *sqlite3rbu_open(
           }
         }
 
+        /* If this is an RBU vacuum operation and the state table was empty
+        ** when this handle was opened, create the target database schema. */
+        if( pState->eStage==0 && rbuIsVacuum(p) ){
+          rbuCreateTargetSchema(p);
+        }
+
         /* Point the object iterator at the first object */
         if( p->rc==SQLITE_OK ){
           p->rc = rbuObjIterFirst(p, &p->objiter);
@@ -3336,6 +3478,28 @@ sqlite3rbu *sqlite3rbu_open(
   return p;
 }
 
+/*
+** Open and return a new RBU handle. 
+*/
+sqlite3rbu *sqlite3rbu_open(
+  const char *zTarget, 
+  const char *zRbu,
+  const char *zState
+){
+  /* TODO: Check that zTarget and zRbu are non-NULL */
+  return openRbuHandle(zTarget, zRbu, zState);
+}
+
+/*
+** Open a handle to begin or resume an RBU VACUUM operation.
+*/
+sqlite3rbu *sqlite3rbu_vacuum(
+  const char *zTarget, 
+  const char *zState
+){
+  /* TODO: Check that both arguments are non-NULL */
+  return openRbuHandle(0, zTarget, zState);
+}
 
 /*
 ** Return the database handle used by pRbu.
@@ -3391,8 +3555,8 @@ int sqlite3rbu_close(sqlite3rbu *p, char **pzErrmsg){
     rbuObjIterFinalize(&p->objiter);
 
     /* Close the open database handle and VFS object. */
-    sqlite3_close(p->dbMain);
     sqlite3_close(p->dbRbu);
+    sqlite3_close(p->dbMain);
     rbuDeleteVfs(p);
     sqlite3_free(p->aBuf);
     sqlite3_free(p->aFrame);
@@ -3595,6 +3759,26 @@ static u32 rbuGetU32(u8 *aBuf){
 }
 
 /*
+** Write an unsigned 32-bit value in big-endian format to the supplied
+** buffer.
+*/
+static void rbuPutU32(u8 *aBuf, u32 iVal){
+  aBuf[0] = (iVal >> 24) & 0xFF;
+  aBuf[1] = (iVal >> 16) & 0xFF;
+  aBuf[2] = (iVal >>  8) & 0xFF;
+  aBuf[3] = (iVal >>  0) & 0xFF;
+}
+
+/*
+** Write an unsigned 16-bit value in big-endian format to the supplied
+** buffer.
+*/
+static void rbuPutU16(u8 *aBuf, u16 iVal){
+  aBuf[0] = (iVal >>  8) & 0xFF;
+  aBuf[1] = (iVal >>  0) & 0xFF;
+}
+
+/*
 ** Read data from an rbuVfs-file.
 */
 static int rbuVfsRead(
@@ -3619,6 +3803,34 @@ static int rbuVfsRead(
       memset(zBuf, 0, iAmt);
     }else{
       rc = p->pReal->pMethods->xRead(p->pReal, zBuf, iAmt, iOfst);
+      /* If this is being called to read the first page of the target 
+      ** database as part of an rbu vacuum operation, synthesize the 
+      ** contents of the first page if it does not yet exist. Otherwise,
+      ** SQLite will not check for a *-wal file.  */
+      if( p->pRbu && rbuIsVacuum(p->pRbu) 
+       && rc==SQLITE_IOERR_SHORT_READ && iOfst==0
+       && (p->openFlags & SQLITE_OPEN_MAIN_DB)
+      ){
+        sqlite3_file *pFd = 0;
+        rc = sqlite3_file_control(
+            p->pRbu->dbRbu, "main", SQLITE_FCNTL_FILE_POINTER, (void*)&pFd
+        );
+        if( rc==SQLITE_OK ){
+          rc = pFd->pMethods->xRead(pFd, zBuf, iAmt, iOfst);
+        }
+        if( rc==SQLITE_OK ){
+          rbuPutU32(&zBuf[52], 0);          /* largest root page number */
+          rbuPutU32(&zBuf[36], 0);          /* number of free pages */
+          rbuPutU32(&zBuf[32], 0);          /* first page on free list trunk */
+          rbuPutU32(&zBuf[28], 1);          /* size of db file in pages */
+
+          if( iAmt>100 ){
+            assert( iAmt>=101 );
+            memset(&zBuf[101], 0, iAmt-101);
+            rbuPutU16(&zBuf[105], iAmt & 0xFFFF);
+          }
+        }
+      }
     }
     if( rc==SQLITE_OK && iOfst==0 && (p->openFlags & SQLITE_OPEN_MAIN_DB) ){
       /* These look like magic numbers. But they are stable, as they are part
@@ -3693,7 +3905,20 @@ static int rbuVfsSync(sqlite3_file *pFile, int flags){
 */
 static int rbuVfsFileSize(sqlite3_file *pFile, sqlite_int64 *pSize){
   rbu_file *p = (rbu_file *)pFile;
-  return p->pReal->pMethods->xFileSize(p->pReal, pSize);
+  int rc;
+  rc = p->pReal->pMethods->xFileSize(p->pReal, pSize);
+
+  /* If this is an RBU vacuum operation and this is the target database,
+  ** pretend that it has at least one page. Otherwise, SQLite will not
+  ** check for the existance of a *-wal file. rbuVfsRead() contains 
+  ** similar logic.  */
+  if( rc==SQLITE_OK && *pSize==0 
+   && p->pRbu && rbuIsVacuum(p->pRbu) 
+   && (p->openFlags & SQLITE_OPEN_MAIN_DB)
+  ){
+    *pSize = 1024;
+  }
+  return rc;
 }
 
 /*

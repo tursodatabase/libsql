@@ -315,6 +315,14 @@ sqlite3rbu *sqlite3rbu_open(
 );
 
 /*
+** Open an RBU handle to perform an RBU vacuum database file zTarget.
+*/
+sqlite3rbu *sqlite3rbu_vacuum(
+  const char *zTarget, 
+  const char *zState
+);
+
+/*
 ** Internally, each RBU connection uses a separate SQLite database 
 ** connection to access the target and rbu update databases. This
 ** API allows the application direct access to these database handles.

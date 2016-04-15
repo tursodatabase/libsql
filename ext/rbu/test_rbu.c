@@ -188,6 +188,34 @@ static int test_sqlite3rbu(
 }
 
 /*
+** Tclcmd: sqlite3rbu_vacuum CMD <target-db> <state-db>
+*/
+static int test_sqlite3rbu_vacuum(
+  ClientData clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3rbu *pRbu = 0;
+  const char *zCmd;
+  const char *zTarget;
+  const char *zStateDb = 0;
+
+  if( objc!=4 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "NAME TARGET-DB STATE-DB");
+    return TCL_ERROR;
+  }
+  zCmd = Tcl_GetString(objv[1]);
+  zTarget = Tcl_GetString(objv[2]);
+  zStateDb = Tcl_GetString(objv[3]);
+
+  pRbu = sqlite3rbu_vacuum(zTarget, zStateDb);
+  Tcl_CreateObjCommand(interp, zCmd, test_sqlite3rbu_cmd, (ClientData)pRbu, 0);
+  Tcl_SetObjResult(interp, objv[1]);
+  return TCL_OK;
+}
+
+/*
 ** Tclcmd: sqlite3rbu_create_vfs ?-default? NAME PARENT
 */
 static int test_sqlite3rbu_create_vfs(
@@ -274,6 +302,7 @@ int SqliteRbu_Init(Tcl_Interp *interp){
      Tcl_ObjCmdProc *xProc;
   } aObjCmd[] = {
     { "sqlite3rbu", test_sqlite3rbu },
+    { "sqlite3rbu_vacuum", test_sqlite3rbu_vacuum },
     { "sqlite3rbu_create_vfs", test_sqlite3rbu_create_vfs },
     { "sqlite3rbu_destroy_vfs", test_sqlite3rbu_destroy_vfs },
     { "sqlite3rbu_internal_test", test_sqlite3rbu_internal_test },
