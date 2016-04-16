@@ -2213,11 +2213,15 @@ static int rbuGetUpdateStmt(
   return p->rc;
 }
 
-static sqlite3 *rbuOpenDbhandle(sqlite3rbu *p, const char *zName){
+static sqlite3 *rbuOpenDbhandle(
+  sqlite3rbu *p, 
+  const char *zName, 
+  int bUseVfs
+){
   sqlite3 *db = 0;
   if( p->rc==SQLITE_OK ){
     const int flags = SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|SQLITE_OPEN_URI;
-    p->rc = sqlite3_open_v2(zName, &db, flags, p->zVfsName);
+    p->rc = sqlite3_open_v2(zName, &db, flags, bUseVfs ? p->zVfsName : 0);
     if( p->rc ){
       p->zErrmsg = sqlite3_mprintf("%s", sqlite3_errmsg(db));
       sqlite3_close(db);
@@ -2326,7 +2330,7 @@ static void rbuOpenDatabase(sqlite3rbu *p){
   assert( rbuIsVacuum(p) || p->zTarget!=0 );
 
   /* Open the RBU database */
-  p->dbRbu = rbuOpenDbhandle(p, p->zRbu);
+  p->dbRbu = rbuOpenDbhandle(p, p->zRbu, 1);
 
   /* If using separate RBU and state databases, attach the state database to
   ** the RBU db handle now.  */
@@ -2351,24 +2355,26 @@ static void rbuOpenDatabase(sqlite3rbu *p){
         rbuFreeState(pState);
       }
     }
-    if( bOpen ) p->dbMain = rbuOpenDbhandle(p, p->zRbu);
+    if( bOpen ) p->dbMain = rbuOpenDbhandle(p, p->zRbu, 1);
   }
 
   p->eStage = 0;
   if( p->dbMain==0 ){
     if( !rbuIsVacuum(p) ){
-      p->dbMain = rbuOpenDbhandle(p, p->zTarget);
+      p->dbMain = rbuOpenDbhandle(p, p->zTarget, 1);
     }else{
+      int frc = sqlite3_file_control(p->dbRbu, "main", SQLITE_FCNTL_ZIPVFS, 0);
       char *zTarget = sqlite3_mprintf("file:%s-vacuum?rbu_memory=1", p->zRbu);
       if( zTarget==0 ){
         p->rc = SQLITE_NOMEM;
         return;
       }
-      p->dbMain = rbuOpenDbhandle(p, zTarget);
+      p->dbMain = rbuOpenDbhandle(p, zTarget, frc!=SQLITE_OK);
       sqlite3_free(zTarget);
       if( p->rc==SQLITE_OK ){
         p->rc = sqlite3_exec(p->dbMain, 
-            "PRAGMA journal_mode=off; BEGIN EXCLUSIVE; COMMIT;", 0, 0, 0
+            "PRAGMA journal_mode=off; PRAGMA zipvfs_journal_mode = off;"
+            "BEGIN EXCLUSIVE; COMMIT;", 0, 0, 0
         );
       }
     }
@@ -3310,7 +3316,6 @@ static void rbuInitPhaseOneSteps(sqlite3rbu *p){
 static void rbuCreateTargetSchema(sqlite3rbu *p){
   sqlite3_stmt *pSql = 0;
   sqlite3_stmt *pInsert = 0;
-  int rc2;
 
   assert( rbuIsVacuum(p) );
 
@@ -3319,7 +3324,7 @@ static void rbuCreateTargetSchema(sqlite3rbu *p){
     " ORDER BY type DESC"
   );
   while( p->rc==SQLITE_OK && sqlite3_step(pSql)==SQLITE_ROW ){
-    const char *zSql = sqlite3_column_text(pSql, 0);
+    const char *zSql = (const char*)sqlite3_column_text(pSql, 0);
     p->rc = sqlite3_exec(p->dbMain, zSql, 0, 0, &p->zErrmsg);
   }
   rbuFinalize(p, pSql);
@@ -3780,15 +3785,6 @@ static void rbuPutU32(u8 *aBuf, u32 iVal){
   aBuf[1] = (iVal >> 16) & 0xFF;
   aBuf[2] = (iVal >>  8) & 0xFF;
   aBuf[3] = (iVal >>  0) & 0xFF;
-}
-
-/*
-** Write an unsigned 16-bit value in big-endian format to the supplied
-** buffer.
-*/
-static void rbuPutU16(u8 *aBuf, u16 iVal){
-  aBuf[0] = (iVal >>  8) & 0xFF;
-  aBuf[1] = (iVal >>  0) & 0xFF;
 }
 
 /*
