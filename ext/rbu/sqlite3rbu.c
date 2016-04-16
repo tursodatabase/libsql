@@ -2323,6 +2323,7 @@ static RbuState *rbuLoadState(sqlite3rbu *p){
 static void rbuOpenDatabase(sqlite3rbu *p){
   assert( p->rc==SQLITE_OK );
   assert( p->dbMain==0 && p->dbRbu==0 );
+  assert( rbuIsVacuum(p) || p->zTarget!=0 );
 
   /* Open the RBU database */
   p->dbRbu = rbuOpenDbhandle(p, p->zRbu);
@@ -2355,16 +2356,21 @@ static void rbuOpenDatabase(sqlite3rbu *p){
 
   p->eStage = 0;
   if( p->dbMain==0 ){
-    if( p->zTarget ){
+    if( !rbuIsVacuum(p) ){
       p->dbMain = rbuOpenDbhandle(p, p->zTarget);
     }else{
-      char *zTarget = sqlite3_mprintf("%s-vacuum", p->zRbu);
+      char *zTarget = sqlite3_mprintf("file:%s-vacuum?rbu_memory=1", p->zRbu);
       if( zTarget==0 ){
         p->rc = SQLITE_NOMEM;
         return;
       }
       p->dbMain = rbuOpenDbhandle(p, zTarget);
       sqlite3_free(zTarget);
+      if( p->rc==SQLITE_OK ){
+        p->rc = sqlite3_exec(p->dbMain, 
+            "PRAGMA journal_mode=off; BEGIN EXCLUSIVE; COMMIT;", 0, 0, 0
+        );
+      }
     }
   }
 
@@ -2641,14 +2647,15 @@ static LPWSTR rbuWinUtf8ToUnicode(const char *zFilename){
 */
 static void rbuMoveOalFile(sqlite3rbu *p){
   const char *zBase = sqlite3_db_filename(p->dbMain, "main");
-  char *zOal = sqlite3_mprintf("%s-oal", zBase);
+  const char *zMove = zBase;
+  char *zOal;
   char *zWal;
 
   if( rbuIsVacuum(p) ){
-    zWal = sqlite3_mprintf("%s-wal", sqlite3_db_filename(p->dbRbu, "main"));
-  }else{
-    zWal = sqlite3_mprintf("%s-wal", zBase);
+    zMove = sqlite3_db_filename(p->dbRbu, "main");
   }
+  zOal = sqlite3_mprintf("%s-oal", zMove);
+  zWal = sqlite3_mprintf("%s-wal", zMove);
 
   assert( p->eStage==RBU_STAGE_MOVE );
   assert( p->rc==SQLITE_OK && p->zErrmsg==0 );
@@ -2928,13 +2935,18 @@ static int rbuStep(sqlite3rbu *p){
 
 /*
 ** Increment the schema cookie of the main database opened by p->dbMain.
+**
+** Or, if this is an RBU vacuum, set the schema cookie of the main db
+** opened by p->dbMain to one more than the schema cookie of the main
+** db opened by p->dbRbu.
 */
 static void rbuIncrSchemaCookie(sqlite3rbu *p){
   if( p->rc==SQLITE_OK ){
+    sqlite3 *dbread = (rbuIsVacuum(p) ? p->dbRbu : p->dbMain);
     int iCookie = 1000000;
     sqlite3_stmt *pStmt;
 
-    p->rc = prepareAndCollectError(p->dbMain, &pStmt, &p->zErrmsg, 
+    p->rc = prepareAndCollectError(dbread, &pStmt, &p->zErrmsg, 
         "PRAGMA schema_version"
     );
     if( p->rc==SQLITE_OK ){
@@ -3408,6 +3420,7 @@ static sqlite3rbu *openRbuHandle(
     }
 
     if( p->rc==SQLITE_OK
+     && !rbuIsVacuum(p)
      && (p->eStage==RBU_STAGE_OAL || p->eStage==RBU_STAGE_MOVE)
      && pState->eStage!=0 && p->pTargetFd->iCookie!=pState->iCookie
     ){   
@@ -3803,34 +3816,6 @@ static int rbuVfsRead(
       memset(zBuf, 0, iAmt);
     }else{
       rc = p->pReal->pMethods->xRead(p->pReal, zBuf, iAmt, iOfst);
-      /* If this is being called to read the first page of the target 
-      ** database as part of an rbu vacuum operation, synthesize the 
-      ** contents of the first page if it does not yet exist. Otherwise,
-      ** SQLite will not check for a *-wal file.  */
-      if( p->pRbu && rbuIsVacuum(p->pRbu) 
-       && rc==SQLITE_IOERR_SHORT_READ && iOfst==0
-       && (p->openFlags & SQLITE_OPEN_MAIN_DB)
-      ){
-        sqlite3_file *pFd = 0;
-        rc = sqlite3_file_control(
-            p->pRbu->dbRbu, "main", SQLITE_FCNTL_FILE_POINTER, (void*)&pFd
-        );
-        if( rc==SQLITE_OK ){
-          rc = pFd->pMethods->xRead(pFd, zBuf, iAmt, iOfst);
-        }
-        if( rc==SQLITE_OK ){
-          rbuPutU32(&zBuf[52], 0);          /* largest root page number */
-          rbuPutU32(&zBuf[36], 0);          /* number of free pages */
-          rbuPutU32(&zBuf[32], 0);          /* first page on free list trunk */
-          rbuPutU32(&zBuf[28], 1);          /* size of db file in pages */
-
-          if( iAmt>100 ){
-            assert( iAmt>=101 );
-            memset(&zBuf[101], 0, iAmt-101);
-            rbuPutU16(&zBuf[105], iAmt & 0xFFFF);
-          }
-        }
-      }
     }
     if( rc==SQLITE_OK && iOfst==0 && (p->openFlags & SQLITE_OPEN_MAIN_DB) ){
       /* These look like magic numbers. But they are stable, as they are part
@@ -3838,6 +3823,13 @@ static int rbuVfsRead(
       u8 *pBuf = (u8*)zBuf;
       p->iCookie = rbuGetU32(&pBuf[24]);
       p->iWriteVer = pBuf[19];
+      if( pRbu && rbuIsVacuum(p->pRbu) ){
+        rbu_file *pRbuFd = 0;
+        sqlite3_file_control(pRbu->dbRbu, "main", 
+            SQLITE_FCNTL_FILE_POINTER, (void*)&pRbuFd
+        );
+        rbuPutU32(&pBuf[24], pRbuFd->iCookie+1);
+      }
     }
   }
   return rc;
@@ -3905,20 +3897,7 @@ static int rbuVfsSync(sqlite3_file *pFile, int flags){
 */
 static int rbuVfsFileSize(sqlite3_file *pFile, sqlite_int64 *pSize){
   rbu_file *p = (rbu_file *)pFile;
-  int rc;
-  rc = p->pReal->pMethods->xFileSize(p->pReal, pSize);
-
-  /* If this is an RBU vacuum operation and this is the target database,
-  ** pretend that it has at least one page. Otherwise, SQLite will not
-  ** check for the existance of a *-wal file. rbuVfsRead() contains 
-  ** similar logic.  */
-  if( rc==SQLITE_OK && *pSize==0 
-   && p->pRbu && rbuIsVacuum(p->pRbu) 
-   && (p->openFlags & SQLITE_OPEN_MAIN_DB)
-  ){
-    *pSize = 1024;
-  }
-  return rc;
+  return p->pReal->pMethods->xFileSize(p->pReal, pSize);
 }
 
 /*
@@ -4156,6 +4135,33 @@ static rbu_file *rbuFindMaindb(rbu_vfs *pRbuVfs, const char *zWal){
   return pDb;
 }
 
+/* 
+** A main database named zName has just been opened. The following 
+** function returns a pointer to a buffer owned by SQLite that contains
+** the name of the *-wal file this db connection will use. SQLite
+** happens to pass a pointer to this buffer when using xAccess()
+** or xOpen() to operate on the *-wal file.  
+*/
+static const char *rbuMainToWal(const char *zName, int flags){
+  int n = (int)strlen(zName);
+  const char *z = &zName[n];
+  if( flags & SQLITE_OPEN_URI ){
+    int odd = 0;
+    while( 1 ){
+      if( z[0]==0 ){
+        odd = 1 - odd;
+        if( odd && z[1]==0 ) break;
+      }
+      z++;
+    }
+    z += 2;
+  }else{
+    while( *z==0 ) z++;
+  }
+  z += (n + 8 + 1);
+  return z;
+}
+
 /*
 ** Open an rbu file handle.
 */
@@ -4191,6 +4197,7 @@ static int rbuVfsOpen(
   rbu_file *pFd = (rbu_file *)pFile;
   int rc = SQLITE_OK;
   const char *zOpen = zName;
+  int oflags = flags;
 
   memset(pFd, 0, sizeof(rbu_file));
   pFd->pReal = (sqlite3_file*)&pFd[1];
@@ -4203,23 +4210,7 @@ static int rbuVfsOpen(
       ** the name of the *-wal file this db connection will use. SQLite
       ** happens to pass a pointer to this buffer when using xAccess()
       ** or xOpen() to operate on the *-wal file.  */
-      int n = (int)strlen(zName);
-      const char *z = &zName[n];
-      if( flags & SQLITE_OPEN_URI ){
-        int odd = 0;
-        while( 1 ){
-          if( z[0]==0 ){
-            odd = 1 - odd;
-            if( odd && z[1]==0 ) break;
-          }
-          z++;
-        }
-        z += 2;
-      }else{
-        while( *z==0 ) z++;
-      }
-      z += (n + 8 + 1);
-      pFd->zWal = z;
+      pFd->zWal = rbuMainToWal(zName, flags);
     }
     else if( flags & SQLITE_OPEN_WAL ){
       rbu_file *pDb = rbuFindMaindb(pRbuVfs, zName);
@@ -4229,10 +4220,17 @@ static int rbuVfsOpen(
           ** code ensures that the string passed to xOpen() is terminated by a
           ** pair of '\0' bytes in case the VFS attempts to extract a URI 
           ** parameter from it.  */
-          size_t nCopy = strlen(zName);
-          char *zCopy = sqlite3_malloc64(nCopy+2);
+          const char *zBase = zName;
+          size_t nCopy;
+          char *zCopy;
+          if( rbuIsVacuum(pDb->pRbu) ){
+            zBase = sqlite3_db_filename(pDb->pRbu->dbRbu, "main");
+            zBase = rbuMainToWal(zBase, SQLITE_OPEN_URI);
+          }
+          nCopy = strlen(zBase);
+          zCopy = sqlite3_malloc64(nCopy+2);
           if( zCopy ){
-            memcpy(zCopy, zName, nCopy);
+            memcpy(zCopy, zBase, nCopy);
             zCopy[nCopy-3] = 'o';
             zCopy[nCopy] = '\0';
             zCopy[nCopy+1] = '\0';
@@ -4247,8 +4245,17 @@ static int rbuVfsOpen(
     }
   }
 
+  if( oflags & SQLITE_OPEN_MAIN_DB 
+   && sqlite3_uri_boolean(zName, "rbu_memory", 0) 
+  ){
+    assert( oflags & SQLITE_OPEN_MAIN_DB );
+    oflags =  SQLITE_OPEN_TEMP_DB | SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE |
+              SQLITE_OPEN_EXCLUSIVE | SQLITE_OPEN_DELETEONCLOSE;
+    zOpen = 0;
+  }
+
   if( rc==SQLITE_OK ){
-    rc = pRealVfs->xOpen(pRealVfs, zOpen, pFd->pReal, flags, pOutFlags);
+    rc = pRealVfs->xOpen(pRealVfs, zOpen, pFd->pReal, oflags, pOutFlags);
   }
   if( pFd->pReal->pMethods ){
     /* The xOpen() operation has succeeded. Set the sqlite3_file.pMethods
