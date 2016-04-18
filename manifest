@@ -1,5 +1,5 @@
-C Changes\sso\sthat\srbu\svacuum\sworks\swith\szipvfs\sdatabases.
-D 2016-04-16T19:02:53.248
+C Add\sthe\s-vacuum\sswitch\sto\sthe\s"rbu"\sdemonstration\sprogram.
+D 2016-04-18T09:17:05.073
 F Makefile.in eba680121821b8a60940a81454316f47a341487a
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 71b8b16cf9393f68e2e2035486ca104872558836
@@ -222,7 +222,7 @@ F ext/misc/totype.c 4a167594e791abeed95e0a8db028822b5e8fe512
 F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
-F ext/rbu/rbu.c ba3983dceffa0938532e79142f391737513de023
+F ext/rbu/rbu.c b2c0b5e6ae1a89affc0edfc127ebfa5f637a0ce4
 F ext/rbu/rbu1.test 42bd835e019eff789ec241017965277baeb658b1
 F ext/rbu/rbu10.test 046b0980041d30700464a800bbf6733ed2df515d
 F ext/rbu/rbu11.test 9bc68c2d3dbeb1720153626e3bd0466dcc017702
@@ -1483,7 +1483,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P dc19aacc7e99213edca9bb57b5c11a8a1ac99113
-R 51e4311e92cd324079b6a63abfa03656
+P bae7f875f476f6e01112751cb404fef42ba0a01c
+R 446c70a62698b2fec86a1f84d13dd5af
 U dan
-Z c0a4c5c182b536f7f5ddad73d82153a8
+Z be7942fa7aee76e8d89cc36d886361a8
