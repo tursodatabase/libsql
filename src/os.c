@@ -81,13 +81,11 @@ int sqlite3_memdebug_vfs_oom_test = 1;
 ** of this would be completely automatic if SQLite were coded using
 ** C++ instead of plain old C.
 */
-int sqlite3OsClose(sqlite3_file *pId){
-  int rc = SQLITE_OK;
+void sqlite3OsClose(sqlite3_file *pId){
   if( pId->pMethods ){
-    rc = pId->pMethods->xClose(pId);
+    pId->pMethods->xClose(pId);
     pId->pMethods = 0;
   }
-  return rc;
 }
 int sqlite3OsRead(sqlite3_file *id, void *pBuf, int amt, i64 offset){
   DO_OS_MALLOC_TEST(id);
@@ -305,12 +303,10 @@ int sqlite3OsOpenMalloc(
   }
   return rc;
 }
-int sqlite3OsCloseFree(sqlite3_file *pFile){
-  int rc = SQLITE_OK;
+void sqlite3OsCloseFree(sqlite3_file *pFile){
   assert( pFile );
-  rc = sqlite3OsClose(pFile);
+  sqlite3OsClose(pFile);
   sqlite3_free(pFile);
-  return rc;
 }
 
 /*

@@ -68,7 +68,11 @@ typedef struct PgHdr DbPage;
 #define PAGER_LOCKINGMODE_EXCLUSIVE   1
 
 /*
-** Numeric constants that encode the journalmode.  
+** Numeric constants that encode the journalmode.
+**
+** The numeric values encoded here (other than PAGER_JOURNALMODE_QUERY)
+** are exposed in the API via the "PRAGMA journal_mode" command and
+** therefore cannot be changed without a compatibility break.
 */
 #define PAGER_JOURNALMODE_QUERY     (-1)  /* Query the value of journalmode */
 #define PAGER_JOURNALMODE_DELETE      0   /* Commit by deleting journal file */
@@ -86,6 +90,11 @@ typedef struct PgHdr DbPage;
 
 /*
 ** Flags for sqlite3PagerSetFlags()
+**
+** Value constraints (enforced via assert()):
+**    PAGER_FULLFSYNC      == SQLITE_FullFSync
+**    PAGER_CKPT_FULLFSYNC == SQLITE_CkptFullFSync
+**    PAGER_CACHE_SPILL    == SQLITE_CacheSpill
 */
 #define PAGER_SYNCHRONOUS_OFF       0x01  /* PRAGMA synchronous=OFF */
 #define PAGER_SYNCHRONOUS_NORMAL    0x02  /* PRAGMA synchronous=NORMAL */

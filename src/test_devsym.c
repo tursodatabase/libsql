@@ -133,7 +133,8 @@ struct DevsymGlobal g = {0, 0, 512};
 */
 static int devsymClose(sqlite3_file *pFile){
   devsym_file *p = (devsym_file *)pFile;
-  return sqlite3OsClose(p->pReal);
+  sqlite3OsClose(p->pReal);
+  return SQLITE_OK;
 }
 
 /*

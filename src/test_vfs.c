@@ -306,7 +306,6 @@ static void tvfsExecTcl(
 ** Close an tvfs-file.
 */
 static int tvfsClose(sqlite3_file *pFile){
-  int rc;
   TestvfsFile *pTestfile = (TestvfsFile *)pFile;
   TestvfsFd *pFd = pTestfile->pFd;
   Testvfs *p = (Testvfs *)pFd->pVfs->pAppData;
@@ -324,10 +323,10 @@ static int tvfsClose(sqlite3_file *pFile){
   if( pFile->pMethods ){
     ckfree((char *)pFile->pMethods);
   }
-  rc = sqlite3OsClose(pFd->pReal);
+  sqlite3OsClose(pFd->pReal);
   ckfree((char *)pFd);
   pTestfile->pFd = 0;
-  return rc;
+  return SQLITE_OK;
 }
 
 /*

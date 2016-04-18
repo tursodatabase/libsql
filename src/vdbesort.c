@@ -931,7 +931,6 @@ int sqlite3VdbeSorterInit(
 ){
   int pgsz;                       /* Page size of main database */
   int i;                          /* Used to iterate through aTask[] */
-  int mxCache;                    /* Cache size */
   VdbeSorter *pSorter;            /* The new sorter */
   KeyInfo *pKeyInfo;              /* Copy of pCsr->pKeyInfo with db==0 */
   int szKeyInfo;                  /* Size of pCsr->pKeyInfo in bytes */
@@ -988,11 +987,20 @@ int sqlite3VdbeSorterInit(
     }
 
     if( !sqlite3TempInMemory(db) ){
+      i64 mxCache;                /* Cache size in bytes*/
       u32 szPma = sqlite3GlobalConfig.szPma;
       pSorter->mnPmaSize = szPma * pgsz;
+
       mxCache = db->aDb[0].pSchema->cache_size;
-      if( mxCache<(int)szPma ) mxCache = (int)szPma;
-      pSorter->mxPmaSize = MIN((i64)mxCache*pgsz, SQLITE_MAX_PMASZ);
+      if( mxCache<0 ){
+        /* A negative cache-size value C indicates that the cache is abs(C)
+        ** KiB in size.  */
+        mxCache = mxCache * -1024;
+      }else{
+        mxCache = mxCache * pgsz;
+      }
+      mxCache = MIN(mxCache, SQLITE_MAX_PMASZ);
+      pSorter->mxPmaSize = MAX(pSorter->mnPmaSize, (int)mxCache);
 
       /* EVIDENCE-OF: R-26747-61719 When the application provides any amount of
       ** scratch memory using SQLITE_CONFIG_SCRATCH, SQLite avoids unnecessary

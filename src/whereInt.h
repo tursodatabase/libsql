@@ -408,7 +408,7 @@ struct WhereInfo {
   Parse *pParse;            /* Parsing and code generating context */
   SrcList *pTabList;        /* List of tables in the join */
   ExprList *pOrderBy;       /* The ORDER BY clause or NULL */
-  ExprList *pResultSet;     /* Result set. DISTINCT operates on these */
+  ExprList *pDistinctSet;   /* DISTINCT over all these values */
   WhereLoop *pLoops;        /* List of all WhereLoop objects */
   Bitmask revMask;          /* Mask of ORDER BY terms that need reversing */
   LogEst nRowOut;           /* Estimated number of output rows */
@@ -492,6 +492,14 @@ void sqlite3WhereTabFuncArgs(Parse*, struct SrcList_item*, WhereClause*);
 ** operators that are of interest to the query planner.  An
 ** OR-ed combination of these values can be used when searching for
 ** particular WhereTerms within a WhereClause.
+**
+** Value constraints:
+**     WO_EQ    == SQLITE_INDEX_CONSTRAINT_EQ
+**     WO_LT    == SQLITE_INDEX_CONSTRAINT_LT
+**     WO_LE    == SQLITE_INDEX_CONSTRAINT_LE
+**     WO_GT    == SQLITE_INDEX_CONSTRAINT_GT
+**     WO_GE    == SQLITE_INDEX_CONSTRAINT_GE
+**     WO_MATCH == SQLITE_INDEX_CONSTRAINT_MATCH
 */
 #define WO_IN     0x0001
 #define WO_EQ     0x0002
