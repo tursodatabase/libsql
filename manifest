@@ -1,5 +1,5 @@
-C Increase\sthe\sversion\snumber\sto\s3.12.2.
-D 2016-04-18T15:59:16.905
+C Fix\sthe\ssqlite3BtreeDelete()\sroutine\sso\sthat\sit\spreserves\sthe\scorrect\nkey\seven\swhen\sthe\srow\sbeing\sdeleted\sis\snot\son\sa\sleaf\spage.\nFix\sfor\sticket\s[a306e56ff68b8fa56]
+D 2016-04-18T16:06:03.711
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b00bcf0ec7001857aea81ee39fae45d20f5f4e59
@@ -297,7 +297,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c f60f0aa55d25d853ffde53d0b0370a7bb7ee41ce
 F src/bitvec.c 3ee4c8b2c94ed3a7377256e18199e6ff5cf33f63
 F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
-F src/btree.c 577fb5674e2f0aa0a38246afc19e1885a0b8c9b0
+F src/btree.c c833d5ac4469a761435c211956315d000b246fdd
 F src/btree.h a5008b9afe56e8e54ade6c436a910f112defcca9
 F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
 F src/build.c 16bbcb166a06b4909a4c645273c474645dbdce66
@@ -593,7 +593,7 @@ F test/default.test 0cb49b1c315a0d81c81d775e407f66906a2a604d
 F test/delete.test e1bcdf8926234e27aac24b346ad83d3329ec8b6f
 F test/delete2.test 3a03f2cca1f9a67ec469915cb8babd6485db43fa
 F test/delete3.test 555e84a00a99230b7d049d477a324a631126a6ab
-F test/delete4.test 3ac0b8d23689ba764c2e8b78c1b56b8f1b942fa2
+F test/delete4.test 738044ee892ee0c84e0848e36ba92c55f907d52b
 F test/descidx1.test 6d03b44c8538fe0eb4924e19fba10cdd8f3c9240
 F test/descidx2.test 9f1a0c83fd57f8667c82310ca21b30a350888b5d
 F test/descidx3.test 09ddbe3f5295f482d2f8b687cf6db8bad7acd9a2
@@ -1459,7 +1459,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ab9d279f40f81e5a95de10f70324960cf091c368
-R 98297537d8f146517a1f23e21a9df1a6
+P 9c37e9ce07b42bdbaa0cecfdd2bc8181b1eded47
+Q +ca2ef8a86cf806cbbcc64db03251b1df5b2c5501
+R 4710e941720805c2cc7e949e21895ad6
 U drh
-Z c9af401b6ea9af28f45209d059fd0667
+Z e361cdd0aa73a2909e88537a2c8c4051
