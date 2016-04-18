@@ -695,7 +695,7 @@ int sqlite3PCachePercentDirty(PCache *pCache){
   int nDirty = 0;
   int nCache = numberOfCachePages(pCache);
   for(pDirty=pCache->pDirty; pDirty; pDirty=pDirty->pDirtyNext) nDirty++;
-  return (int)(((i64)nDirty * 100) / nCache);
+  return nCache ? (int)(((i64)nDirty * 100) / nCache) : 0;
 }
 
 #if defined(SQLITE_CHECK_PAGES) || defined(SQLITE_DEBUG)

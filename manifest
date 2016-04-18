@@ -1,5 +1,5 @@
-C Merge\senhancements\sfrom\strunk\svia\stempfiles-lazy-open.
-D 2016-04-13T19:20:23.336
+C sqlite3PCachePerecentDirty()\sshould\sreturn\s0\sif\sthe\spcache\sis\sempty.
+D 2016-04-18T13:30:50.144
 F Makefile.in eba680121821b8a60940a81454316f47a341487a
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 71b8b16cf9393f68e2e2035486ca104872558836
@@ -365,7 +365,7 @@ F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 4d849ad718980d698157cd136a40dc91cbeff4d3
 F src/pager.h e1d38a2f14849e219df0f91f8323504d134c8a56
 F src/parse.y 10eb2f3fb62341291528c7984498054731f9d31e
-F src/pcache.c d63b34cce0a8aba1fa552428b2790e13877db553
+F src/pcache.c b3230ecfc7f797063fbe167f2845da363e8f07f8
 F src/pcache.h 60bc9893bfc0e16f8178fb5d8b6fcb8fab1d93c0
 F src/pcache1.c c40cdb93586e21b5dd826b5e671240bd91c26b05
 F src/pragma.c faf42922bb7ab2f6672cb550356c1967abae3c84
@@ -1484,7 +1484,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f6babf2920340f25815c0a3c58de1e902c2f5542 e2edd34e79af906e7069e3e837730b12de0b73fe
-R ae2dffba3d0e430c251b8372421692c3
+P ae16310c4e9a9b7e94874bd912fc6a4324cfaa2b
+R 0620b8f840563243b73e6076ebdcd81f
 U drh
-Z 2aed413a070df399f71581c0517ce593
+Z 04d9a6e624a4591b3aa3f8ec5734f1ff
