@@ -1,5 +1,5 @@
-C The\slast\sparameter\sto\spread64()\sand\spwrite64()\sshould\sbe\soff64_t,\snot\soff_t.
-D 2016-04-18T13:09:55.691
+C Remove\squotes\sfrom\sidentifiers\sused\sas\sdatatype\snames\sin\sa\sCREATE\sTABLE\nstatement.\s\sFix\sfor\sticket\s[7d7525cb01b68]
+D 2016-04-18T15:46:14.499
 F Makefile.in eba680121821b8a60940a81454316f47a341487a
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 71b8b16cf9393f68e2e2035486ca104872558836
@@ -322,7 +322,7 @@ F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
 F src/btree.c 3ae6aea66cc4e13d30162ff0d0d43c7088e34abf
 F src/btree.h a5008b9afe56e8e54ade6c436a910f112defcca9
 F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
-F src/build.c 1944d95f0250ec72dab939f8319a12e237aaad61
+F src/build.c 42e8ee74dfa3a4b99bfb2c201f8a66ab50688d95
 F src/callback.c 2e76147783386374bf01b227f752c81ec872d730
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 60e135af364d777a9ab41c97e5e89cd224da6198
@@ -845,7 +845,7 @@ F test/insert5.test 394f96728d1258f406fe5f5aeb0aaf29487c39a6
 F test/instr.test 737bbf80685232033f3abedc6ae92f75860b5dd2
 F test/intarray.test 066b7d7ac38d25bf96f87f1b017bfc687551cdd4
 F test/interrupt.test dfe9a67a94b0b2d8f70545ba1a6cca10780d71cc
-F test/intpkey.test 70aab09756b9bd3bcb6b0358f971d7bbace46522
+F test/intpkey.test 153b70e32d008f4f4b2dff8daf448a6110b62a9c
 F test/io.test f95bca1783b01ea7761671560d023360d2dfa4cc
 F test/ioerr.test 2a24bd6ed5a8b062e64bfe1f6cf94fb25e92210d
 F test/ioerr2.test 2593563599e2cc6b6b4fcf5878b177bdd5d8df26
@@ -976,7 +976,7 @@ F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
 F test/permutations.test cd1fa041074ed08eeaa563e4d1bacb0c69337ec1
-F test/pragma.test afbf028be1c35b68f57db8eb015c4a3c59d8f28e
+F test/pragma.test dd5313eee9c6d9d4726593a68ede8768d3b50ccc
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
 F test/pragma3.test 3f1984a04657331f838df5c519b443c2088df922
 F test/printf.test b3ff34e73d59124140eaf89f7672e21bc2ca5fcc
@@ -1482,7 +1482,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3e217d6265ecd16db783bed7ce1d9d0f9c4828bb
-R 436b9ab5479b24882bf9b5114230dd45
+P 3a7d72986fabe9434ff5bd02c93169314f072b23
+R 761e3cafabae5f2f003bf21bdc2befe8
 U drh
-Z ed45643e1c73eeadd299c981e6f9488a
+Z 8a9e64fdc933327d2408de0f01f55efc

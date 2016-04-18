@@ -628,10 +628,10 @@ ifcapable tempdb&&attach {
 }
 do_test pragma-6.2 {
   execsql {
-    CREATE TABLE t2(a,b,c);
+    CREATE TABLE t2(a TYPE_X, b [TYPE_Y], c "TYPE_Z");
     pragma table_info(t2)
   }
-} {0 a {} 0 {} 0 1 b {} 0 {} 0 2 c {} 0 {} 0}
+} {0 a TYPE_X 0 {} 0 1 b TYPE_Y 0 {} 0 2 c TYPE_Z 0 {} 0}
 do_test pragma-6.2.1 {
   execsql {
     pragma table_info;

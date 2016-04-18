@@ -1086,6 +1086,7 @@ void sqlite3AddColumn(Parse *pParse, Token *pName, Token *pType){
     zType = z + sqlite3Strlen30(z) + 1;
     memcpy(zType, pType->z, pType->n);
     zType[pType->n] = 0;
+    sqlite3Dequote(zType);
     pCol->affinity = sqlite3AffinityType(zType, &pCol->szEst);
     pCol->colFlags |= COLFLAG_HASTYPE;
   }
