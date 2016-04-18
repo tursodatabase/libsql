@@ -1,5 +1,5 @@
-C CLI\senhancement:\s\sAdd\sthe\s".eqp\sfull"\soption,\sthat\sshows\sboth\sthe\sEXPLAIN\nQUERY\sPLAN\sand\sthe\sEXPLAIN\soutput\sfor\seach\scommand\srun.\s\sAlso\sdisable\nany\s".wheretrace"\sand\s".selecttrace"\swhen\sshowing\sEQP\soutput.
-D 2016-04-15T15:03:27.144
+C The\slast\sparameter\sto\spread64()\sand\spwrite64()\sshould\sbe\soff64_t,\snot\soff_t.
+D 2016-04-18T13:09:55.691
 F Makefile.in eba680121821b8a60940a81454316f47a341487a
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 71b8b16cf9393f68e2e2035486ca104872558836
@@ -359,7 +359,7 @@ F src/os.c 4d83917f072ad958fba9235136fa2ed43df47905
 F src/os.h 8e976e59eb4ca1c0fca6d35ee803e38951cb0343
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c bde4844f0849cab5924c6a81178f8500774ce76b
+F src/os_unix.c d0b41a47eb5f0dc00e423a1723aadeab0e78c85f
 F src/os_win.c b169437dff859e308b3726594094a2f8ca922941
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 38718a019ca762ba4f6795425d5a54db70d1790d
@@ -425,7 +425,7 @@ F src/test_schema.c 2bdba21b82f601da69793e1f1d11bf481a79b091
 F src/test_server.c a2615049954cbb9cfb4a62e18e2f0616e4dc38fe
 F src/test_sqllog.c 0d138a8180a312bf996b37fa66da5c5799d4d57b
 F src/test_superlock.c 06797157176eb7085027d9dd278c0d7a105e3ec9
-F src/test_syscall.c 2e21ca7f7dc54a028f1967b63f1e76155c356f9b
+F src/test_syscall.c 4889d374f5a5856b7951f7a67c6401f7b938c6f5
 F src/test_tclvar.c d86412527da65468ee6fa1b8607c65d0af736bc4
 F src/test_thread.c af391ec03d23486dffbcc250b7e58e073f172af9
 F src/test_vfs.c 4d02f38bfb8f7f273da7ba84bfe000f5babf206c
@@ -1482,7 +1482,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d23e581351fb8eea28e7b13b3dcadfc817c3a05f
-R e880e1f26ac9fef78137656188a6e0aa
+P 3e217d6265ecd16db783bed7ce1d9d0f9c4828bb
+R 436b9ab5479b24882bf9b5114230dd45
 U drh
-Z dc2294cde78bca18f07e3e2fb59a4dd5
+Z ed45643e1c73eeadd299c981e6f9488a
