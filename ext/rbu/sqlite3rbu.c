@@ -190,6 +190,8 @@ typedef sqlite3_int64 i64;
 #define WAL_LOCK_CKPT   1
 #define WAL_LOCK_READ0  3
 
+#define SQLITE_FCNTL_RBUCNT    5149216
+
 /*
 ** A structure to store values read from the rbu_state table in memory.
 */
@@ -393,6 +395,7 @@ struct rbu_file {
   int openFlags;                  /* Flags this file was opened with */
   u32 iCookie;                    /* Cookie value for main db files */
   u8 iWriteVer;                   /* "write-version" value for main db files */
+  u8 bNolock;
 
   int nShm;                       /* Number of entries in apShm[] array */
   char **apShm;                   /* Array of mmap'd *-shm regions */
@@ -2325,12 +2328,17 @@ static RbuState *rbuLoadState(sqlite3rbu *p){
 ** error occurs, leave an error code and message in the RBU handle.
 */
 static void rbuOpenDatabase(sqlite3rbu *p){
+  int nRbu = 0;
   assert( p->rc==SQLITE_OK );
   assert( p->dbMain==0 && p->dbRbu==0 );
   assert( rbuIsVacuum(p) || p->zTarget!=0 );
 
   /* Open the RBU database */
   p->dbRbu = rbuOpenDbhandle(p, p->zRbu, 1);
+
+  if( rbuIsVacuum(p) ){
+    sqlite3_file_control(p->dbRbu, "main", SQLITE_FCNTL_RBUCNT, &nRbu);
+  }
 
   /* If using separate RBU and state databases, attach the state database to
   ** the RBU db handle now.  */
@@ -2355,7 +2363,7 @@ static void rbuOpenDatabase(sqlite3rbu *p){
         rbuFreeState(pState);
       }
     }
-    if( bOpen ) p->dbMain = rbuOpenDbhandle(p, p->zRbu, 1);
+    if( bOpen ) p->dbMain = rbuOpenDbhandle(p, p->zRbu, nRbu<=1);
   }
 
   p->eStage = 0;
@@ -2363,20 +2371,13 @@ static void rbuOpenDatabase(sqlite3rbu *p){
     if( !rbuIsVacuum(p) ){
       p->dbMain = rbuOpenDbhandle(p, p->zTarget, 1);
     }else{
-      int frc = sqlite3_file_control(p->dbRbu, "main", SQLITE_FCNTL_ZIPVFS, 0);
       char *zTarget = sqlite3_mprintf("file:%s-vacuum?rbu_memory=1", p->zRbu);
       if( zTarget==0 ){
         p->rc = SQLITE_NOMEM;
         return;
       }
-      p->dbMain = rbuOpenDbhandle(p, zTarget, frc!=SQLITE_OK);
+      p->dbMain = rbuOpenDbhandle(p, zTarget, nRbu<=1);
       sqlite3_free(zTarget);
-      if( p->rc==SQLITE_OK ){
-        p->rc = sqlite3_exec(p->dbMain, 
-            "PRAGMA journal_mode=off; PRAGMA zipvfs_journal_mode = off;"
-            "BEGIN EXCLUSIVE; COMMIT;", 0, 0, 0
-        );
-      }
     }
   }
 
@@ -3445,7 +3446,7 @@ static sqlite3rbu *openRbuHandle(
         ** created at this point. */
         p->rc = sqlite3_exec(db, "BEGIN IMMEDIATE", 0, 0, &p->zErrmsg);
         if( p->rc==SQLITE_OK ){
-          p->rc = sqlite3_exec(p->dbRbu, "BEGIN IMMEDIATE", 0, 0, &p->zErrmsg);
+          p->rc = sqlite3_exec(p->dbRbu, "BEGIN", 0, 0, &p->zErrmsg);
         }
 
         /* Check if the main database is a zipvfs db. If it is, set the upper
@@ -3787,6 +3788,11 @@ static void rbuPutU32(u8 *aBuf, u32 iVal){
   aBuf[3] = (iVal >>  0) & 0xFF;
 }
 
+static void rbuPutU16(u8 *aBuf, u16 iVal){
+  aBuf[0] = (iVal >>  8) & 0xFF;
+  aBuf[1] = (iVal >>  0) & 0xFF;
+}
+
 /*
 ** Read data from an rbuVfs-file.
 */
@@ -3812,6 +3818,37 @@ static int rbuVfsRead(
       memset(zBuf, 0, iAmt);
     }else{
       rc = p->pReal->pMethods->xRead(p->pReal, zBuf, iAmt, iOfst);
+#if 1
+      /* If this is being called to read the first page of the target 
+      ** database as part of an rbu vacuum operation, synthesize the 
+      ** contents of the first page if it does not yet exist. Otherwise,
+      ** SQLite will not check for a *-wal file.  */
+      if( p->pRbu && rbuIsVacuum(p->pRbu) 
+          && rc==SQLITE_IOERR_SHORT_READ && iOfst==0
+          && (p->openFlags & SQLITE_OPEN_MAIN_DB)
+      ){
+        sqlite3_file *pFd = 0;
+        rc = sqlite3_file_control(
+            p->pRbu->dbRbu, "main", SQLITE_FCNTL_FILE_POINTER, (void*)&pFd
+        );
+        if( rc==SQLITE_OK ){
+          rc = pFd->pMethods->xRead(pFd, zBuf, iAmt, iOfst);
+        }
+        if( rc==SQLITE_OK ){
+          u8 *aBuf = (u8*)zBuf;
+          rbuPutU32(&aBuf[52], 0);          /* largest root page number */
+          rbuPutU32(&aBuf[36], 0);          /* number of free pages */
+          rbuPutU32(&aBuf[32], 0);          /* first page on free list trunk */
+          rbuPutU32(&aBuf[28], 1);          /* size of db file in pages */
+
+          if( iAmt>100 ){
+            assert( iAmt>=101 );
+            memset(&aBuf[101], 0, iAmt-101);
+            rbuPutU16(&aBuf[105], iAmt & 0xFFFF);
+          }
+        }
+      }
+#endif
     }
     if( rc==SQLITE_OK && iOfst==0 && (p->openFlags & SQLITE_OPEN_MAIN_DB) ){
       /* These look like magic numbers. But they are stable, as they are part
@@ -3893,7 +3930,20 @@ static int rbuVfsSync(sqlite3_file *pFile, int flags){
 */
 static int rbuVfsFileSize(sqlite3_file *pFile, sqlite_int64 *pSize){
   rbu_file *p = (rbu_file *)pFile;
-  return p->pReal->pMethods->xFileSize(p->pReal, pSize);
+  int rc;
+  rc = p->pReal->pMethods->xFileSize(p->pReal, pSize);
+
+  /* If this is an RBU vacuum operation and this is the target database,
+  ** pretend that it has at least one page. Otherwise, SQLite will not
+  ** check for the existance of a *-wal file. rbuVfsRead() contains 
+  ** similar logic.  */
+  if( rc==SQLITE_OK && *pSize==0 
+   && p->pRbu && rbuIsVacuum(p->pRbu) 
+   && (p->openFlags & SQLITE_OPEN_MAIN_DB)
+  ){
+    *pSize = 1024;
+  }
+  return rc;
 }
 
 /*
@@ -3905,7 +3955,9 @@ static int rbuVfsLock(sqlite3_file *pFile, int eLock){
   int rc = SQLITE_OK;
 
   assert( p->openFlags & (SQLITE_OPEN_MAIN_DB|SQLITE_OPEN_TEMP_DB) );
-  if( pRbu && eLock==SQLITE_LOCK_EXCLUSIVE && pRbu->eStage!=RBU_STAGE_DONE ){
+  if( eLock==SQLITE_LOCK_EXCLUSIVE 
+   && (p->bNolock || (pRbu && pRbu->eStage!=RBU_STAGE_DONE))
+  ){
     /* Do not allow EXCLUSIVE locks. Preventing SQLite from taking this 
     ** prevents it from checkpointing the database from sqlite3_close(). */
     rc = SQLITE_BUSY;
@@ -3967,6 +4019,11 @@ static int rbuVfsFileControl(sqlite3_file *pFile, int op, void *pArg){
       }
     }
     return rc;
+  }
+  else if( op==SQLITE_FCNTL_RBUCNT ){
+    int *pnRbu = (int*)pArg;
+    (*pnRbu)++;
+    p->bNolock = 1;
   }
 
   rc = xControl(p->pReal, op, pArg);
