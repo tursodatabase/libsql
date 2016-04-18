@@ -370,6 +370,10 @@ struct sqlite3rbu {
   int pgsz;
   u8 *aBuf;
   i64 iWalCksum;
+
+  /* Used in RBU vacuum mode only */
+  int nRbu;                       /* Number of RBU VFS in the stack */
+  rbu_file *pRbuFd;               /* Fd for main db of dbRbu */
 };
 
 /*
@@ -2328,7 +2332,6 @@ static RbuState *rbuLoadState(sqlite3rbu *p){
 ** error occurs, leave an error code and message in the RBU handle.
 */
 static void rbuOpenDatabase(sqlite3rbu *p){
-  int nRbu = 0;
   assert( p->rc==SQLITE_OK );
   assert( p->dbMain==0 && p->dbRbu==0 );
   assert( rbuIsVacuum(p) || p->zTarget!=0 );
@@ -2337,7 +2340,7 @@ static void rbuOpenDatabase(sqlite3rbu *p){
   p->dbRbu = rbuOpenDbhandle(p, p->zRbu, 1);
 
   if( rbuIsVacuum(p) ){
-    sqlite3_file_control(p->dbRbu, "main", SQLITE_FCNTL_RBUCNT, &nRbu);
+    sqlite3_file_control(p->dbRbu, "main", SQLITE_FCNTL_RBUCNT, (void*)p);
   }
 
   /* If using separate RBU and state databases, attach the state database to
@@ -2354,6 +2357,9 @@ static void rbuOpenDatabase(sqlite3rbu *p){
 
   if( rbuIsVacuum(p) ){
     int bOpen = 0;
+    p->nRbu = 0;
+    p->pRbuFd = 0;
+    sqlite3_file_control(p->dbRbu, "main", SQLITE_FCNTL_RBUCNT, (void*)p);
     if( p->eStage>=RBU_STAGE_MOVE ){
       bOpen = 1;
     }else{
@@ -2363,7 +2369,7 @@ static void rbuOpenDatabase(sqlite3rbu *p){
         rbuFreeState(pState);
       }
     }
-    if( bOpen ) p->dbMain = rbuOpenDbhandle(p, p->zRbu, nRbu<=1);
+    if( bOpen ) p->dbMain = rbuOpenDbhandle(p, p->zRbu, p->nRbu<=1);
   }
 
   p->eStage = 0;
@@ -2376,7 +2382,7 @@ static void rbuOpenDatabase(sqlite3rbu *p){
         p->rc = SQLITE_NOMEM;
         return;
       }
-      p->dbMain = rbuOpenDbhandle(p, zTarget, nRbu<=1);
+      p->dbMain = rbuOpenDbhandle(p, zTarget, p->nRbu<=1);
       sqlite3_free(zTarget);
     }
   }
@@ -3823,17 +3829,12 @@ static int rbuVfsRead(
       ** database as part of an rbu vacuum operation, synthesize the 
       ** contents of the first page if it does not yet exist. Otherwise,
       ** SQLite will not check for a *-wal file.  */
-      if( p->pRbu && rbuIsVacuum(p->pRbu) 
+      if( pRbu && rbuIsVacuum(pRbu) 
           && rc==SQLITE_IOERR_SHORT_READ && iOfst==0
           && (p->openFlags & SQLITE_OPEN_MAIN_DB)
       ){
-        sqlite3_file *pFd = 0;
-        rc = sqlite3_file_control(
-            p->pRbu->dbRbu, "main", SQLITE_FCNTL_FILE_POINTER, (void*)&pFd
-        );
-        if( rc==SQLITE_OK ){
-          rc = pFd->pMethods->xRead(pFd, zBuf, iAmt, iOfst);
-        }
+        sqlite3_file *pFd = (sqlite3_file*)pRbu->pRbuFd;
+        rc = pFd->pMethods->xRead(pFd, zBuf, iAmt, iOfst);
         if( rc==SQLITE_OK ){
           u8 *aBuf = (u8*)zBuf;
           rbuPutU32(&aBuf[52], 0);          /* largest root page number */
@@ -4021,8 +4022,9 @@ static int rbuVfsFileControl(sqlite3_file *pFile, int op, void *pArg){
     return rc;
   }
   else if( op==SQLITE_FCNTL_RBUCNT ){
-    int *pnRbu = (int*)pArg;
-    (*pnRbu)++;
+    sqlite3rbu *pRbu = (sqlite3rbu*)pArg;
+    pRbu->nRbu++;
+    pRbu->pRbuFd = p;
     p->bNolock = 1;
   }
 
