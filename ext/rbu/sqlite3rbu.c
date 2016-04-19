@@ -2380,7 +2380,21 @@ static void rbuOpenDatabase(sqlite3rbu *p){
       p->rc = SQLITE_ERROR;
       p->zErrmsg = sqlite3_mprintf("cannot vacuum wal mode database");
     }else{
-      char *zTarget = sqlite3_mprintf("file:%s-vacuum?rbu_memory=1", p->zRbu);
+      char *zTarget;
+      char *zExtra = 0;
+      if( strlen(p->zRbu)>=5 && 0==memcmp("file:", p->zRbu, 5) ){
+        zExtra = &p->zRbu[5];
+        while( *zExtra ){
+          if( *zExtra++=='?' ) break;
+        }
+        if( *zExtra=='\0' ) zExtra = 0;
+      }
+
+      zTarget = sqlite3_mprintf("file:%s-vacuum?rbu_memory=1%s%s", 
+          sqlite3_db_filename(p->dbRbu, "main"),
+          (zExtra==0 ? "" : "&"), (zExtra==0 ? "" : zExtra)
+      );
+
       if( zTarget==0 ){
         p->rc = SQLITE_NOMEM;
         return;

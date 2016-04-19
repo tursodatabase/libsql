@@ -1,5 +1,5 @@
-C Detect\sattempts\sto\suse\srbu\svacuum\son\sa\swal\smode\sdatabase\s(not\sallowed).\sAnd\sattempts\sto\swrite\sto\sa\sdatabase\sin\sthe\smiddle\sof\san\srbu\svacuum\s(which\sprevents\sthe\svacuum\sfrom\sresuming).
-D 2016-04-19T16:20:24.513
+C When\san\sRBU\svacuum\sis\sstarted\son\sa\sdb\sidentified\susing\sa\sURI\sfilename,\spass\sthe\ssame\sURI\sparameters\swhen\screating\sthe\snew\sversion\sof\sthe\sdb.\sThis\sensures\sthat\sRBU\svacuum\sworks\swith\spassword\sprotected\sdatabases.
+D 2016-04-19T17:11:05.418
 F Makefile.in eba680121821b8a60940a81454316f47a341487a
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 71b8b16cf9393f68e2e2035486ca104872558836
@@ -247,7 +247,7 @@ F ext/rbu/rbufts.test 828cd689da825f0a7b7c53ffc1f6f7fdb6fa5bda
 F ext/rbu/rbuprogress.test 2023a7df2c523e3df1cb532eff811cda385a789a
 F ext/rbu/rbusave.test 0f43b6686084f426ddd040b878426452fd2c2f48
 F ext/rbu/rbuvacuum.test b7194617c22f69e2015082a5414585aae2827a29
-F ext/rbu/sqlite3rbu.c d269d60bddb770fc9bbe747c47522f946562878d
+F ext/rbu/sqlite3rbu.c 0447a8a306411e585d8595465abbed7709f1feb7
 F ext/rbu/sqlite3rbu.h 1342ab6121e715b8da59ec35c5b5c16060be7a6b
 F ext/rbu/test_rbu.c 430b8b9520c233505371d564d3561e0b554355f4
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
@@ -1483,7 +1483,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 29407d70e44ad9ea5ddaf1011d0e212b602a3ddf
-R da49b342c9cd61c56db951e40b34afc9
+P 00b2f4b09ffca5156e43c4db2bfe0b2c979c49b0
+R e7445097e6cb895f2eea40503c71f11e
 U dan
-Z 3a78d0d54b42b6cec75432abbb63bed7
+Z 90c42b90d6761cf98f1c67d89391cb68
