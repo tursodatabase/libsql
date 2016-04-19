@@ -399,7 +399,7 @@ struct rbu_file {
   int openFlags;                  /* Flags this file was opened with */
   u32 iCookie;                    /* Cookie value for main db files */
   u8 iWriteVer;                   /* "write-version" value for main db files */
-  u8 bNolock;
+  u8 bNolock;                     /* True to fail EXCLUSIVE locks */
 
   int nShm;                       /* Number of entries in apShm[] array */
   char **apShm;                   /* Array of mmap'd *-shm regions */
@@ -2373,9 +2373,12 @@ static void rbuOpenDatabase(sqlite3rbu *p){
   }
 
   p->eStage = 0;
-  if( p->dbMain==0 ){
+  if( p->rc==SQLITE_OK && p->dbMain==0 ){
     if( !rbuIsVacuum(p) ){
       p->dbMain = rbuOpenDbhandle(p, p->zTarget, 1);
+    }else if( p->pRbuFd->pWalFd ){
+      p->rc = SQLITE_ERROR;
+      p->zErrmsg = sqlite3_mprintf("cannot vacuum wal mode database");
     }else{
       char *zTarget = sqlite3_mprintf("file:%s-vacuum?rbu_memory=1", p->zRbu);
       if( zTarget==0 ){
@@ -2987,6 +2990,7 @@ static void rbuIncrSchemaCookie(sqlite3rbu *p){
 static void rbuSaveState(sqlite3rbu *p, int eStage){
   if( p->rc==SQLITE_OK || p->rc==SQLITE_DONE ){
     sqlite3_stmt *pInsert = 0;
+    rbu_file *pFd = (rbuIsVacuum(p) ? p->pRbuFd : p->pTargetFd);
     int rc;
 
     assert( p->zErrmsg==0 );
@@ -3009,7 +3013,7 @@ static void rbuSaveState(sqlite3rbu *p, int eStage){
           RBU_STATE_ROW, p->nStep, 
           RBU_STATE_PROGRESS, p->nProgress,
           RBU_STATE_CKPT, p->iWalCksum,
-          RBU_STATE_COOKIE, (i64)p->pTargetFd->iCookie,
+          RBU_STATE_COOKIE, (i64)pFd->iCookie,
           RBU_STATE_OALSZ, p->iOalSz,
           RBU_STATE_PHASEONESTEP, p->nPhaseOneStep
       )
@@ -3431,17 +3435,21 @@ static sqlite3rbu *openRbuHandle(
       }
     }
 
-    if( p->rc==SQLITE_OK
-     && !rbuIsVacuum(p)
+    if( p->rc==SQLITE_OK 
      && (p->eStage==RBU_STAGE_OAL || p->eStage==RBU_STAGE_MOVE)
-     && pState->eStage!=0 && p->pTargetFd->iCookie!=pState->iCookie
-    ){   
-      /* At this point (pTargetFd->iCookie) contains the value of the
-      ** change-counter cookie (the thing that gets incremented when a 
-      ** transaction is committed in rollback mode) currently stored on 
-      ** page 1 of the database file. */
-      p->rc = SQLITE_BUSY;
-      p->zErrmsg = sqlite3_mprintf("database modified during rbu update");
+     && pState->eStage!=0
+    ){
+      rbu_file *pFd = (rbuIsVacuum(p) ? p->pRbuFd : p->pTargetFd);
+      if( pFd->iCookie!=pState->iCookie ){   
+        /* At this point (pTargetFd->iCookie) contains the value of the
+        ** change-counter cookie (the thing that gets incremented when a 
+        ** transaction is committed in rollback mode) currently stored on 
+        ** page 1 of the database file. */
+        p->rc = SQLITE_BUSY;
+        p->zErrmsg = sqlite3_mprintf("database modified during rbu %s",
+            (rbuIsVacuum(p) ? "vacuum" : "update")
+        );
+      }
     }
 
     if( p->rc==SQLITE_OK ){
@@ -3841,6 +3849,7 @@ static int rbuVfsRead(
           rbuPutU32(&aBuf[36], 0);          /* number of free pages */
           rbuPutU32(&aBuf[32], 0);          /* first page on free list trunk */
           rbuPutU32(&aBuf[28], 1);          /* size of db file in pages */
+          rbuPutU32(&aBuf[24], pRbu->pRbuFd->iCookie+1);  /* Change counter */
 
           if( iAmt>100 ){
             assert( iAmt>=101 );
@@ -3857,13 +3866,6 @@ static int rbuVfsRead(
       u8 *pBuf = (u8*)zBuf;
       p->iCookie = rbuGetU32(&pBuf[24]);
       p->iWriteVer = pBuf[19];
-      if( pRbu && rbuIsVacuum(p->pRbu) ){
-        rbu_file *pRbuFd = 0;
-        sqlite3_file_control(pRbu->dbRbu, "main", 
-            SQLITE_FCNTL_FILE_POINTER, (void*)&pRbuFd
-        );
-        rbuPutU32(&pBuf[24], pRbuFd->iCookie+1);
-      }
     }
   }
   return rc;
