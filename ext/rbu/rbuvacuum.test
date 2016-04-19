@@ -174,6 +174,73 @@ foreach step {0 1} {
     SELECT * FROM t4 ORDER BY b
   } {a b c d e f j k l}
 
+  reset_db
+  do_execsql_test 1.7.0 {
+    CREATE TABLE t1(a INTEGER PRIMARY KEY AUTOINCREMENT, b);
+    INSERT INTO t1 VALUES(NULL, 'one');
+    INSERT INTO t1 VALUES(NULL, 'two');
+    DELETE FROM t1 WHERE a=2;
+    INSERT INTO t1 VALUES(NULL, 'three');
+    INSERT INTO t1 VALUES(NULL, 'four');
+    DELETE FROM t1 WHERE a=4;
+    INSERT INTO t1 VALUES(NULL, 'five');
+    INSERT INTO t1 VALUES(NULL, 'six');
+    DELETE FROM t1 WHERE a=6;
+    SELECT * FROM t1;
+  } {1 one 3 three 5 five}
+  do_rbu_vacuum_test 1.7.1 $step
+  do_execsql_test 1.7.2 {
+    INSERT INTO t1 VALUES(NULL, 'seven');
+    SELECT * FROM t1;
+  } {1 one 3 three 5 five 7 seven}
+
+  reset_db
+  do_execsql_test 1.8.0 {
+    CREATE TABLE t1(a INTEGER PRIMARY KEY AUTOINCREMENT, b);
+    CREATE INDEX i1 ON t1(b);
+    INSERT INTO t1 VALUES(NULL, 'one');
+    INSERT INTO t1 VALUES(NULL, 'two');
+    INSERT INTO t1 VALUES(NULL, 'three');
+    INSERT INTO t1 VALUES(NULL, 'four');
+    INSERT INTO t1 VALUES(NULL, 'five');
+    INSERT INTO t1 VALUES(NULL, 'six');
+    ANALYZE;
+    SELECT * FROM sqlite_stat1;
+  } {t1 i1 {6 1}}
+  do_rbu_vacuum_test 1.8.1 $step
+  do_execsql_test 1.7.2 {
+    SELECT * FROM sqlite_stat1;
+  } {t1 i1 {6 1}}
+
+  reset_db
+  do_execsql_test 1.9.0 {
+    PRAGMA page_size = 8192;
+    PRAGMA auto_vacuum = 2;
+    PRAGMA user_version = 412;
+    PRAGMA application_id = 413;
+
+    CREATE TABLE t1(a INTEGER PRIMARY KEY AUTOINCREMENT, b);
+    CREATE INDEX i1 ON t1(b);
+    INSERT INTO t1 VALUES(NULL, 'one');
+    INSERT INTO t1 VALUES(NULL, 'two');
+    INSERT INTO t1 VALUES(NULL, 'three');
+    INSERT INTO t1 VALUES(NULL, 'four');
+    INSERT INTO t1 VALUES(NULL, 'five');
+    INSERT INTO t1 VALUES(NULL, 'six');
+
+    PRAGMA main.page_size;
+    PRAGMA main.auto_vacuum;
+    PRAGMA main.user_version;
+    PRAGMA main.application_id;
+  } {8192 2 412 413}
+
+  do_rbu_vacuum_test 1.9.1 $step
+  do_execsql_test 1.9.2 {
+    PRAGMA main.page_size;
+    PRAGMA main.auto_vacuum;
+    PRAGMA main.user_version;
+    PRAGMA main.application_id;
+  } {8192 2 412 413}
 }
 
 #-------------------------------------------------------------------------
@@ -229,7 +296,6 @@ for {set i 1} 1 {incr i} {
   do_test 2.2.$i.2 {
     list [catch { rbu close } msg] $msg
   } {1 {SQLITE_BUSY - database modified during rbu vacuum}}
-
 }
 
 catch { db close }

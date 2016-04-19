@@ -3334,6 +3334,38 @@ static void rbuInitPhaseOneSteps(sqlite3rbu *p){
 }
 
 /*
+** The second argument passed to this function is the name of a PRAGMA 
+** setting - "page_size", "auto_vacuum", "user_version" or "application_id".
+** This function executes the following on sqlite3rbu.dbRbu:
+**
+**   "PRAGMA main.$zPragma"
+**
+** where $zPragma is the string passed as the second argument, then
+** on sqlite3rbu.dbMain:
+**
+**   "PRAGMA main.$zPragma = $val"
+**
+** where $val is the value returned by the first PRAGMA invocation.
+**
+** In short, it copies the value  of the specified PRAGMA setting from
+** dbRbu to dbMain.
+*/
+static void rbuCopyPragma(sqlite3rbu *p, const char *zPragma){
+  if( p->rc==SQLITE_OK ){
+    sqlite3_stmt *pPragma = 0;
+    p->rc = prepareFreeAndCollectError(p->dbRbu, &pPragma, &p->zErrmsg, 
+        sqlite3_mprintf("PRAGMA main.%s", zPragma)
+    );
+    if( p->rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pPragma) ){
+      p->rc = rbuMPrintfExec(p, p->dbMain, "PRAGMA main.%s = %d",
+          zPragma, sqlite3_column_int(pPragma, 0)
+      );
+    }
+    rbuFinalize(p, pPragma);
+  }
+}
+
+/*
 ** The RBU handle passed as the only argument has just been opened and 
 ** the state database is empty. If this RBU handle was opened for an
 ** RBU vacuum operation, create the schema in the target db.
@@ -3343,19 +3375,21 @@ static void rbuCreateTargetSchema(sqlite3rbu *p){
   sqlite3_stmt *pInsert = 0;
 
   assert( rbuIsVacuum(p) );
+  p->rc = sqlite3_exec(p->dbMain, "PRAGMA writable_schema=1", 0,0, &p->zErrmsg);
+  if( p->rc==SQLITE_OK ){
+    p->rc = prepareAndCollectError(p->dbRbu, &pSql, &p->zErrmsg, 
+      "SELECT sql FROM sqlite_master WHERE sql!='' AND rootpage!=0"
+      " AND name!='sqlite_sequence' "
+      " ORDER BY type DESC"
+    );
+  }
 
-  p->rc = prepareAndCollectError(p->dbRbu, &pSql, &p->zErrmsg, 
-    "SELECT sql FROM sqlite_master WHERE sql!='' AND rootpage!=0"
-    " ORDER BY type DESC"
-  );
   while( p->rc==SQLITE_OK && sqlite3_step(pSql)==SQLITE_ROW ){
     const char *zSql = (const char*)sqlite3_column_text(pSql, 0);
     p->rc = sqlite3_exec(p->dbMain, zSql, 0, 0, &p->zErrmsg);
   }
   rbuFinalize(p, pSql);
   if( p->rc!=SQLITE_OK ) return;
-
-  p->rc = sqlite3_exec(p->dbMain, "PRAGMA writable_schema=1", 0,0, &p->zErrmsg);
 
   if( p->rc==SQLITE_OK ){
     p->rc = prepareAndCollectError(p->dbRbu, &pSql, &p->zErrmsg, 
@@ -3470,6 +3504,11 @@ static sqlite3rbu *openRbuHandle(
       if( p->eStage==RBU_STAGE_OAL ){
         sqlite3 *db = p->dbMain;
 
+        if( pState->eStage==0 && rbuIsVacuum(p) ){
+          rbuCopyPragma(p, "page_size");
+          rbuCopyPragma(p, "auto_vacuum");
+        }
+
         /* Open transactions both databases. The *-oal file is opened or
         ** created at this point. */
         p->rc = sqlite3_exec(db, "BEGIN IMMEDIATE", 0, 0, &p->zErrmsg);
@@ -3491,6 +3530,8 @@ static sqlite3rbu *openRbuHandle(
         ** when this handle was opened, create the target database schema. */
         if( pState->eStage==0 && rbuIsVacuum(p) ){
           rbuCreateTargetSchema(p);
+          rbuCopyPragma(p, "user_version");
+          rbuCopyPragma(p, "application_id");
         }
 
         /* Point the object iterator at the first object */
@@ -3854,12 +3895,14 @@ static int rbuVfsRead(
       if( pRbu && rbuIsVacuum(pRbu) 
           && rc==SQLITE_IOERR_SHORT_READ && iOfst==0
           && (p->openFlags & SQLITE_OPEN_MAIN_DB)
+          && pRbu->pRbuFd->base.pMethods
       ){
         sqlite3_file *pFd = (sqlite3_file*)pRbu->pRbuFd;
         rc = pFd->pMethods->xRead(pFd, zBuf, iAmt, iOfst);
         if( rc==SQLITE_OK ){
           u8 *aBuf = (u8*)zBuf;
-          rbuPutU32(&aBuf[52], 0);          /* largest root page number */
+          u32 iRoot = rbuGetU32(&aBuf[52]) ? 1 : 0;
+          rbuPutU32(&aBuf[52], iRoot);      /* largest root page number */
           rbuPutU32(&aBuf[36], 0);          /* number of free pages */
           rbuPutU32(&aBuf[32], 0);          /* first page on free list trunk */
           rbuPutU32(&aBuf[28], 1);          /* size of db file in pages */
