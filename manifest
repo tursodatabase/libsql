@@ -1,5 +1,5 @@
-C Updates\sto\sensure\sthe\svalues\sof\sPRAGMA\ssettings\slike\s"page_size",\s"auto_vacuum",\s"user_version"\sand\s"application_id"\sare\snot\slost\swhen\sa\sdatabase\sis\sRBU\svacuumed.
-D 2016-04-19T19:27:09.289
+C Add\sfault\sinjection\stests\sfor\srbu\svacuum.\sFix\ssome\sproblems\srevealed\sby\sthe\ssame.
+D 2016-04-20T17:47:52.967
 F Makefile.in eba680121821b8a60940a81454316f47a341487a
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 71b8b16cf9393f68e2e2035486ca104872558836
@@ -243,11 +243,12 @@ F ext/rbu/rbucrash.test 8d2ed5d4b05fef6c00c2a6b5f7ead71fa172a695
 F ext/rbu/rbudiff.test 2df0a8a7d998ecf81764c21eeda3cde5611c5091
 F ext/rbu/rbufault.test cc0be8d5d392d98b0c2d6a51be377ea989250a89
 F ext/rbu/rbufault2.test 9a7f19edd6ea35c4c9f807d8a3db0a03a5670c06
+F ext/rbu/rbufault3.test 54a399888ac4af44c68f9f58afbed23149428bca
 F ext/rbu/rbufts.test 828cd689da825f0a7b7c53ffc1f6f7fdb6fa5bda
 F ext/rbu/rbuprogress.test 2023a7df2c523e3df1cb532eff811cda385a789a
 F ext/rbu/rbusave.test 0f43b6686084f426ddd040b878426452fd2c2f48
 F ext/rbu/rbuvacuum.test ecd7ce1cd8528d6230b56f4840bbb7188cee6946
-F ext/rbu/sqlite3rbu.c a6c02a67834f9e6c2adb18a9191aa0ae65057cfb
+F ext/rbu/sqlite3rbu.c cc44505ef06053077f35b08c4ba11dc8bcf310dc
 F ext/rbu/sqlite3rbu.h 1342ab6121e715b8da59ec35c5b5c16060be7a6b
 F ext/rbu/test_rbu.c 430b8b9520c233505371d564d3561e0b554355f4
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
@@ -1483,7 +1484,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ca021ba88106500f347ed65199a4832bc9eb5ef8
-R 8122ed3aabc11f4475527c60a5badfa5
+P 74ffea76b8c9ddd7699ce6ca77dce005bd7922ac
+R f86f4403b5c8adf842292353673eca81
 U dan
-Z 8cbed13b6f72dec5a4cc65417abbee63
+Z 6e60b344cf662b4bf49e9c442360b79f

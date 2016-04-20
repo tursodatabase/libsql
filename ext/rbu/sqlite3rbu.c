@@ -2339,7 +2339,7 @@ static void rbuOpenDatabase(sqlite3rbu *p){
   /* Open the RBU database */
   p->dbRbu = rbuOpenDbhandle(p, p->zRbu, 1);
 
-  if( rbuIsVacuum(p) ){
+  if( p->rc==SQLITE_OK && rbuIsVacuum(p) ){
     sqlite3_file_control(p->dbRbu, "main", SQLITE_FCNTL_RBUCNT, (void*)p);
   }
 
@@ -2355,11 +2355,13 @@ static void rbuOpenDatabase(sqlite3rbu *p){
   /* If it has not already been created, create the rbu_state table */
   rbuMPrintfExec(p, p->dbRbu, RBU_CREATE_STATE, p->zStateDb);
 
-  if( rbuIsVacuum(p) ){
+  if( p->rc==SQLITE_OK && rbuIsVacuum(p) ){
     int bOpen = 0;
+    int rc;
     p->nRbu = 0;
     p->pRbuFd = 0;
-    sqlite3_file_control(p->dbRbu, "main", SQLITE_FCNTL_RBUCNT, (void*)p);
+    rc = sqlite3_file_control(p->dbRbu, "main", SQLITE_FCNTL_RBUCNT, (void*)p);
+    if( rc!=SQLITE_NOTFOUND ) p->rc = rc;
     if( p->eStage>=RBU_STAGE_MOVE ){
       bOpen = 1;
     }else{
@@ -3411,6 +3413,9 @@ static void rbuCreateTargetSchema(sqlite3rbu *p){
     sqlite3_step(pInsert);
     p->rc = sqlite3_reset(pInsert);
   }
+  if( p->rc==SQLITE_OK ){
+    p->rc = sqlite3_exec(p->dbMain, "PRAGMA writable_schema=0",0,0,&p->zErrmsg);
+  }
 
   rbuFinalize(p, pSql);
   rbuFinalize(p, pInsert);
@@ -3511,7 +3516,9 @@ static sqlite3rbu *openRbuHandle(
 
         /* Open transactions both databases. The *-oal file is opened or
         ** created at this point. */
-        p->rc = sqlite3_exec(db, "BEGIN IMMEDIATE", 0, 0, &p->zErrmsg);
+        if( p->rc==SQLITE_OK ){
+          p->rc = sqlite3_exec(db, "BEGIN IMMEDIATE", 0, 0, &p->zErrmsg);
+        }
         if( p->rc==SQLITE_OK ){
           p->rc = sqlite3_exec(p->dbRbu, "BEGIN", 0, 0, &p->zErrmsg);
         }
@@ -3528,7 +3535,7 @@ static sqlite3rbu *openRbuHandle(
 
         /* If this is an RBU vacuum operation and the state table was empty
         ** when this handle was opened, create the target database schema. */
-        if( pState->eStage==0 && rbuIsVacuum(p) ){
+        if( p->rc==SQLITE_OK && pState->eStage==0 && rbuIsVacuum(p) ){
           rbuCreateTargetSchema(p);
           rbuCopyPragma(p, "user_version");
           rbuCopyPragma(p, "application_id");
@@ -3895,7 +3902,7 @@ static int rbuVfsRead(
       if( pRbu && rbuIsVacuum(pRbu) 
           && rc==SQLITE_IOERR_SHORT_READ && iOfst==0
           && (p->openFlags & SQLITE_OPEN_MAIN_DB)
-          && pRbu->pRbuFd->base.pMethods
+          && pRbu->rc==SQLITE_OK
       ){
         sqlite3_file *pFd = (sqlite3_file*)pRbu->pRbuFd;
         rc = pFd->pMethods->xRead(pFd, zBuf, iAmt, iOfst);
