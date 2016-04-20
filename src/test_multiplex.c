@@ -539,7 +539,7 @@ static int multiplexOpen(
     memset(pGroup, 0, sz);
     pMultiplexOpen->pGroup = pGroup;
     pGroup->bEnabled = (unsigned char)-1;
-    pGroup->bTruncate = sqlite3_uri_boolean(zUri, "truncate", 
+    pGroup->bTruncate = (unsigned char)sqlite3_uri_boolean(zUri, "truncate", 
                                    (flags & SQLITE_OPEN_MAIN_DB)==0);
     pGroup->szChunk = (int)sqlite3_uri_int64(zUri, "chunksize",
                                         SQLITE_MULTIPLEX_CHUNK_SIZE);
@@ -978,7 +978,7 @@ static int multiplexFileControl(sqlite3_file *pConn, int op, void *pArg){
     case MULTIPLEX_CTRL_ENABLE:
       if( pArg ) {
         int bEnabled = *(int *)pArg;
-        pGroup->bEnabled = bEnabled;
+        pGroup->bEnabled = (unsigned char)bEnabled;
         rc = SQLITE_OK;
       }
       break;

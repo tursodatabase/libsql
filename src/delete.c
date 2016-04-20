@@ -143,7 +143,7 @@ Expr *sqlite3LimitWhere(
   */
   if( pOrderBy && (pLimit == 0) ) {
     sqlite3ErrorMsg(pParse, "ORDER BY without LIMIT on %s", zStmtType);
-    goto limit_where_cleanup_2;
+    goto limit_where_cleanup;
   }
 
   /* We only need to generate a select expression if there
@@ -165,16 +165,16 @@ Expr *sqlite3LimitWhere(
   */
 
   pSelectRowid = sqlite3PExpr(pParse, TK_ROW, 0, 0, 0);
-  if( pSelectRowid == 0 ) goto limit_where_cleanup_2;
+  if( pSelectRowid == 0 ) goto limit_where_cleanup;
   pEList = sqlite3ExprListAppend(pParse, 0, pSelectRowid);
-  if( pEList == 0 ) goto limit_where_cleanup_2;
+  if( pEList == 0 ) goto limit_where_cleanup;
 
   /* duplicate the FROM clause as it is needed by both the DELETE/UPDATE tree
   ** and the SELECT subtree. */
   pSelectSrc = sqlite3SrcListDup(pParse->db, pSrc, 0);
   if( pSelectSrc == 0 ) {
     sqlite3ExprListDelete(pParse->db, pEList);
-    goto limit_where_cleanup_2;
+    goto limit_where_cleanup;
   }
 
   /* generate the SELECT expression tree. */
@@ -184,21 +184,11 @@ Expr *sqlite3LimitWhere(
 
   /* now generate the new WHERE rowid IN clause for the DELETE/UDPATE */
   pWhereRowid = sqlite3PExpr(pParse, TK_ROW, 0, 0, 0);
-  if( pWhereRowid == 0 ) goto limit_where_cleanup_1;
-  pInClause = sqlite3PExpr(pParse, TK_IN, pWhereRowid, 0, 0);
-  if( pInClause == 0 ) goto limit_where_cleanup_1;
-
-  pInClause->x.pSelect = pSelect;
-  pInClause->flags |= EP_xIsSelect;
-  sqlite3ExprSetHeightAndFlags(pParse, pInClause);
+  pInClause = pWhereRowid ? sqlite3PExpr(pParse, TK_IN, pWhereRowid, 0, 0) : 0;
+  sqlite3PExprAddSelect(pParse, pInClause, pSelect);
   return pInClause;
 
-  /* something went wrong. clean up anything allocated. */
-limit_where_cleanup_1:
-  sqlite3SelectDelete(pParse->db, pSelect);
-  return 0;
-
-limit_where_cleanup_2:
+limit_where_cleanup:
   sqlite3ExprDelete(pParse->db, pWhere);
   sqlite3ExprListDelete(pParse->db, pOrderBy);
   sqlite3ExprDelete(pParse->db, pLimit);
@@ -366,6 +356,9 @@ void sqlite3DeleteFrom(
    && pWhere==0
    && !bComplex
    && !IsVirtual(pTab)
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
+   && db->xPreUpdateCallback==0
+#endif
   ){
     assert( !isView );
     sqlite3TableLock(pParse, iDb, pTab->tnum, 1, pTab->zName);
@@ -715,14 +708,19 @@ void sqlite3GenerateRowDelete(
 
   /* Delete the index and table entries. Skip this step if pTab is really
   ** a view (in which case the only effect of the DELETE statement is to
-  ** fire the INSTEAD OF triggers).  */ 
+  ** fire the INSTEAD OF triggers).  
+  **
+  ** If variable 'count' is non-zero, then this OP_Delete instruction should
+  ** invoke the update-hook. The pre-update-hook, on the other hand should
+  ** be invoked unless table pTab is a system table. The difference is that
+  ** the update-hook is not invoked for rows removed by REPLACE, but the 
+  ** pre-update-hook is.
+  */ 
   if( pTab->pSelect==0 ){
     u8 p5 = 0;
     sqlite3GenerateRowIndexDelete(pParse, pTab, iDataCur, iIdxCur,0,iIdxNoSeek);
     sqlite3VdbeAddOp2(v, OP_Delete, iDataCur, (count?OPFLAG_NCHANGE:0));
-    if( count ){
-      sqlite3VdbeChangeP4(v, -1, pTab->zName, P4_TRANSIENT);
-    }
+    sqlite3VdbeChangeP4(v, -1, (char*)pTab, P4_TABLE);
     if( eMode!=ONEPASS_OFF ){
       sqlite3VdbeChangeP5(v, OPFLAG_AUXDELETE);
     }

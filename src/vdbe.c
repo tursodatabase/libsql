@@ -87,6 +87,16 @@ static void updateMaxBlobsize(Mem *p){
 #endif
 
 /*
+** This macro evaluates to true if either the update hook or the preupdate
+** hook are enabled for database connect DB.
+*/
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
+# define HAS_UPDATE_HOOK(DB) ((DB)->xPreUpdateCallback||(DB)->xUpdateCallback)
+#else
+# define HAS_UPDATE_HOOK(DB) ((DB)->xUpdateCallback)
+#endif
+
+/*
 ** The next global variable is incremented each time the OP_Found opcode
 ** is executed. This is used to test whether or not the foreign key
 ** operation implemented using OP_FkIsZero is working. This variable
@@ -664,37 +674,39 @@ int sqlite3VdbeExec(
 
     /* Sanity checking on other operands */
 #ifdef SQLITE_DEBUG
-    assert( pOp->opflags==sqlite3OpcodeProperty[pOp->opcode] );
-    if( (pOp->opflags & OPFLG_IN1)!=0 ){
-      assert( pOp->p1>0 );
-      assert( pOp->p1<=(p->nMem+1 - p->nCursor) );
-      assert( memIsValid(&aMem[pOp->p1]) );
-      assert( sqlite3VdbeCheckMemInvariants(&aMem[pOp->p1]) );
-      REGISTER_TRACE(pOp->p1, &aMem[pOp->p1]);
-    }
-    if( (pOp->opflags & OPFLG_IN2)!=0 ){
-      assert( pOp->p2>0 );
-      assert( pOp->p2<=(p->nMem+1 - p->nCursor) );
-      assert( memIsValid(&aMem[pOp->p2]) );
-      assert( sqlite3VdbeCheckMemInvariants(&aMem[pOp->p2]) );
-      REGISTER_TRACE(pOp->p2, &aMem[pOp->p2]);
-    }
-    if( (pOp->opflags & OPFLG_IN3)!=0 ){
-      assert( pOp->p3>0 );
-      assert( pOp->p3<=(p->nMem+1 - p->nCursor) );
-      assert( memIsValid(&aMem[pOp->p3]) );
-      assert( sqlite3VdbeCheckMemInvariants(&aMem[pOp->p3]) );
-      REGISTER_TRACE(pOp->p3, &aMem[pOp->p3]);
-    }
-    if( (pOp->opflags & OPFLG_OUT2)!=0 ){
-      assert( pOp->p2>0 );
-      assert( pOp->p2<=(p->nMem+1 - p->nCursor) );
-      memAboutToChange(p, &aMem[pOp->p2]);
-    }
-    if( (pOp->opflags & OPFLG_OUT3)!=0 ){
-      assert( pOp->p3>0 );
-      assert( pOp->p3<=(p->nMem+1 - p->nCursor) );
-      memAboutToChange(p, &aMem[pOp->p3]);
+    {
+      u8 opProperty = sqlite3OpcodeProperty[pOp->opcode];
+      if( (opProperty & OPFLG_IN1)!=0 ){
+        assert( pOp->p1>0 );
+        assert( pOp->p1<=(p->nMem+1 - p->nCursor) );
+        assert( memIsValid(&aMem[pOp->p1]) );
+        assert( sqlite3VdbeCheckMemInvariants(&aMem[pOp->p1]) );
+        REGISTER_TRACE(pOp->p1, &aMem[pOp->p1]);
+      }
+      if( (opProperty & OPFLG_IN2)!=0 ){
+        assert( pOp->p2>0 );
+        assert( pOp->p2<=(p->nMem+1 - p->nCursor) );
+        assert( memIsValid(&aMem[pOp->p2]) );
+        assert( sqlite3VdbeCheckMemInvariants(&aMem[pOp->p2]) );
+        REGISTER_TRACE(pOp->p2, &aMem[pOp->p2]);
+      }
+      if( (opProperty & OPFLG_IN3)!=0 ){
+        assert( pOp->p3>0 );
+        assert( pOp->p3<=(p->nMem+1 - p->nCursor) );
+        assert( memIsValid(&aMem[pOp->p3]) );
+        assert( sqlite3VdbeCheckMemInvariants(&aMem[pOp->p3]) );
+        REGISTER_TRACE(pOp->p3, &aMem[pOp->p3]);
+      }
+      if( (opProperty & OPFLG_OUT2)!=0 ){
+        assert( pOp->p2>0 );
+        assert( pOp->p2<=(p->nMem+1 - p->nCursor) );
+        memAboutToChange(p, &aMem[pOp->p2]);
+      }
+      if( (opProperty & OPFLG_OUT3)!=0 ){
+        assert( pOp->p3>0 );
+        assert( pOp->p3<=(p->nMem+1 - p->nCursor) );
+        memAboutToChange(p, &aMem[pOp->p3]);
+      }
     }
 #endif
 #if defined(SQLITE_DEBUG) || defined(VDBE_PROFILE)
@@ -2006,11 +2018,13 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
     /* Neither operand is NULL.  Do a comparison. */
     affinity = pOp->p5 & SQLITE_AFF_MASK;
     if( affinity>=SQLITE_AFF_NUMERIC ){
-      if( (flags1 & (MEM_Int|MEM_Real|MEM_Str))==MEM_Str ){
-        applyNumericAffinity(pIn1,0);
-      }
-      if( (flags3 & (MEM_Int|MEM_Real|MEM_Str))==MEM_Str ){
-        applyNumericAffinity(pIn3,0);
+      if( (flags1 | flags3)&MEM_Str ){
+        if( (flags1 & (MEM_Int|MEM_Real|MEM_Str))==MEM_Str ){
+          applyNumericAffinity(pIn1,0);
+        }
+        if( (flags3 & (MEM_Int|MEM_Real|MEM_Str))==MEM_Str ){
+          applyNumericAffinity(pIn3,0);
+        }
       }
     }else if( affinity==SQLITE_AFF_TEXT ){
       if( (flags1 & MEM_Str)==0 && (flags1 & (MEM_Int|MEM_Real))!=0 ){
@@ -2743,7 +2757,9 @@ case OP_MakeRecord: {
     testcase( serial_type==127 );
     testcase( serial_type==128 );
     nHdr += serial_type<=127 ? 1 : sqlite3VarintLen(serial_type);
-  }while( (--pRec)>=pData0 );
+    if( pRec==pData0 ) break;
+    pRec--;
+  }while(1);
 
   /* EVIDENCE-OF: R-22564-11647 The header begins with a single varint
   ** which determines the total number of bytes in the header. The varint
@@ -2891,7 +2907,7 @@ case OP_Savepoint: {
         }else{
           db->nSavepoint++;
         }
-    
+
         /* Link the new savepoint into the database handle's list. */
         pNew->pNext = db->pSavepoint;
         db->pSavepoint = pNew;
@@ -4279,9 +4295,9 @@ case OP_NewRowid: {           /* out2 */
 ** is part of an INSERT operation.  The difference is only important to
 ** the update hook.
 **
-** Parameter P4 may point to a string containing the table-name, or
-** may be NULL. If it is not NULL, then the update-hook 
-** (sqlite3.xUpdateCallback) is invoked following a successful insert.
+** Parameter P4 may point to a Table structure, or may be NULL. If it is 
+** not NULL, then the update-hook (sqlite3.xUpdateCallback) is invoked 
+** following a successful insert.
 **
 ** (WARNING/TODO: If P1 is a pseudo-cursor and P2 is dynamically
 ** allocated, then ownership of P2 is transferred to the pseudo-cursor
@@ -4307,9 +4323,10 @@ case OP_InsertInt: {
   int nZero;        /* Number of zero-bytes to append */
   int seekResult;   /* Result of prior seek or 0 if no USESEEKRESULT flag */
   const char *zDb;  /* database name - used by the update hook */
-  const char *zTbl; /* Table name - used by the opdate hook */
+  Table *pTab;      /* Table structure - used by update and pre-update hooks */
   int op;           /* Opcode for update hook: SQLITE_UPDATE or SQLITE_INSERT */
 
+  op = 0;
   pData = &aMem[pOp->p2];
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   assert( memIsValid(pData) );
@@ -4318,6 +4335,7 @@ case OP_InsertInt: {
   assert( pC->eCurType==CURTYPE_BTREE );
   assert( pC->uc.pCursor!=0 );
   assert( pC->isTable );
+  assert( pOp->p4type==P4_TABLE || pOp->p4type>=P4_STATIC );
   REGISTER_TRACE(pOp->p2, pData);
 
   if( pOp->opcode==OP_Insert ){
@@ -4330,6 +4348,28 @@ case OP_InsertInt: {
     assert( pOp->opcode==OP_InsertInt );
     iKey = pOp->p3;
   }
+
+  if( pOp->p4type==P4_TABLE && HAS_UPDATE_HOOK(db) ){
+    assert( pC->isTable );
+    assert( pC->iDb>=0 );
+    zDb = db->aDb[pC->iDb].zName;
+    pTab = pOp->p4.pTab;
+    assert( HasRowid(pTab) );
+    op = ((pOp->p5 & OPFLAG_ISUPDATE) ? SQLITE_UPDATE : SQLITE_INSERT);
+  }else{
+    pTab = 0; /* Not needed.  Silence a comiler warning. */
+    zDb = 0;  /* Not needed.  Silence a compiler warning. */
+  }
+
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
+  /* Invoke the pre-update hook, if any */
+  if( db->xPreUpdateCallback 
+   && pOp->p4type==P4_TABLE
+   && !(pOp->p5 & OPFLAG_ISUPDATE)
+  ){
+    sqlite3VdbePreUpdateHook(p, pC, SQLITE_INSERT, zDb, pTab, iKey, pOp->p2);
+  }
+#endif
 
   if( pOp->p5 & OPFLAG_NCHANGE ) p->nChange++;
   if( pOp->p5 & OPFLAG_LASTROWID ) db->lastRowid = lastRowid = iKey;
@@ -4354,18 +4394,13 @@ case OP_InsertInt: {
 
   /* Invoke the update-hook if required. */
   if( rc ) goto abort_due_to_error;
-  if( db->xUpdateCallback && pOp->p4.z ){
-    zDb = db->aDb[pC->iDb].zName;
-    zTbl = pOp->p4.z;
-    op = ((pOp->p5 & OPFLAG_ISUPDATE) ? SQLITE_UPDATE : SQLITE_INSERT);
-    assert( pC->isTable );
-    db->xUpdateCallback(db->pUpdateArg, op, zDb, zTbl, iKey);
-    assert( pC->iDb>=0 );
+  if( db->xUpdateCallback && op ){
+    db->xUpdateCallback(db->pUpdateArg, op, zDb, pTab->zName, iKey);
   }
   break;
 }
 
-/* Opcode: Delete P1 P2 * P4 P5
+/* Opcode: Delete P1 P2 P3 P4 P5
 **
 ** Delete the record at which the P1 cursor is currently pointing.
 **
@@ -4389,15 +4424,24 @@ case OP_InsertInt: {
 ** P1 must not be pseudo-table.  It has to be a real table with
 ** multiple rows.
 **
-** If P4 is not NULL, then it is the name of the table that P1 is
-** pointing to.  The update hook will be invoked, if it exists.
-** If P4 is not NULL then the P1 cursor must have been positioned
-** using OP_NotFound prior to invoking this opcode.
+** If P4 is not NULL then it points to a Table struture. In this case either 
+** the update or pre-update hook, or both, may be invoked. The P1 cursor must
+** have been positioned using OP_NotFound prior to invoking this opcode in 
+** this case. Specifically, if one is configured, the pre-update hook is 
+** invoked if P4 is not NULL. The update-hook is invoked if one is configured, 
+** P4 is not NULL, and the OPFLAG_NCHANGE flag is set in P2.
+**
+** If the OPFLAG_ISUPDATE flag is set in P2, then P3 contains the address
+** of the memory cell that contains the value that the rowid of the row will
+** be set to by the update.
 */
 case OP_Delete: {
   VdbeCursor *pC;
-  u8 hasUpdateCallback;
+  const char *zDb;
+  Table *pTab;
+  int opflags;
 
+  opflags = pOp->p2;
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
@@ -4405,22 +4449,48 @@ case OP_Delete: {
   assert( pC->uc.pCursor!=0 );
   assert( pC->deferredMoveto==0 );
 
-  hasUpdateCallback = db->xUpdateCallback && pOp->p4.z && pC->isTable;
-  if( pOp->p5 && hasUpdateCallback ){
-    sqlite3BtreeKeySize(pC->uc.pCursor, &pC->movetoTarget);
-  }
-
 #ifdef SQLITE_DEBUG
-  /* The seek operation that positioned the cursor prior to OP_Delete will
-  ** have also set the pC->movetoTarget field to the rowid of the row that
-  ** is being deleted */
-  if( pOp->p4.z && pC->isTable && pOp->p5==0 ){
+  if( pOp->p4type==P4_TABLE && HasRowid(pOp->p4.pTab) && pOp->p5==0 ){
+    /* If p5 is zero, the seek operation that positioned the cursor prior to
+    ** OP_Delete will have also set the pC->movetoTarget field to the rowid of
+    ** the row that is being deleted */
     i64 iKey = 0;
     sqlite3BtreeKeySize(pC->uc.pCursor, &iKey);
-    assert( pC->movetoTarget==iKey ); 
+    assert( pC->movetoTarget==iKey );
   }
 #endif
 
+  /* If the update-hook or pre-update-hook will be invoked, set zDb to
+  ** the name of the db to pass as to it. Also set local pTab to a copy
+  ** of p4.pTab. Finally, if p5 is true, indicating that this cursor was
+  ** last moved with OP_Next or OP_Prev, not Seek or NotFound, set 
+  ** VdbeCursor.movetoTarget to the current rowid.  */
+  if( pOp->p4type==P4_TABLE && HAS_UPDATE_HOOK(db) ){
+    assert( pC->iDb>=0 );
+    assert( pOp->p4.pTab!=0 );
+    zDb = db->aDb[pC->iDb].zName;
+    pTab = pOp->p4.pTab;
+    if( (pOp->p5 & OPFLAG_SAVEPOSITION)!=0 && pC->isTable ){
+      sqlite3BtreeKeySize(pC->uc.pCursor, &pC->movetoTarget);
+    }
+  }else{
+    zDb = 0;   /* Not needed.  Silence a compiler warning. */
+    pTab = 0;  /* Not needed.  Silence a compiler warning. */
+  }
+
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
+  /* Invoke the pre-update-hook if required. */
+  if( db->xPreUpdateCallback && pOp->p4.pTab && HasRowid(pTab) ){
+    assert( !(opflags & OPFLAG_ISUPDATE) || (aMem[pOp->p3].flags & MEM_Int) );
+    sqlite3VdbePreUpdateHook(p, pC,
+        (opflags & OPFLAG_ISUPDATE) ? SQLITE_UPDATE : SQLITE_DELETE, 
+        zDb, pTab, pC->movetoTarget,
+        pOp->p3
+    );
+  }
+  if( opflags & OPFLAG_ISNOOP ) break;
+#endif
+ 
   /* Only flags that can be set are SAVEPOISTION and AUXDELETE */ 
   assert( (pOp->p5 & ~(OPFLAG_SAVEPOSITION|OPFLAG_AUXDELETE))==0 );
   assert( OPFLAG_SAVEPOSITION==BTREE_SAVEPOSITION );
@@ -4442,15 +4512,18 @@ case OP_Delete: {
 
   rc = sqlite3BtreeDelete(pC->uc.pCursor, pOp->p5);
   pC->cacheStatus = CACHE_STALE;
+  if( rc ) goto abort_due_to_error;
 
   /* Invoke the update-hook if required. */
-  if( rc ) goto abort_due_to_error;
-  if( hasUpdateCallback ){
-    db->xUpdateCallback(db->pUpdateArg, SQLITE_DELETE,
-                        db->aDb[pC->iDb].zName, pOp->p4.z, pC->movetoTarget);
-    assert( pC->iDb>=0 );
+  if( opflags & OPFLAG_NCHANGE ){
+    p->nChange++;
+    if( db->xUpdateCallback && HasRowid(pTab) ){
+      db->xUpdateCallback(db->pUpdateArg, SQLITE_DELETE, zDb, pTab->zName,
+          pC->movetoTarget);
+      assert( pC->iDb>=0 );
+    }
   }
-  if( pOp->p2 & OPFLAG_NCHANGE ) p->nChange++;
+
   break;
 }
 /* Opcode: ResetCount * * * * *
@@ -6845,11 +6918,12 @@ default: {          /* This is really OP_Noop and OP_Explain */
 
 #ifdef SQLITE_DEBUG
     if( db->flags & SQLITE_VdbeTrace ){
+      u8 opProperty = sqlite3OpcodeProperty[pOrigOp->opcode];
       if( rc!=0 ) printf("rc=%d\n",rc);
-      if( pOrigOp->opflags & (OPFLG_OUT2) ){
+      if( opProperty & (OPFLG_OUT2) ){
         registerTrace(pOrigOp->p2, &aMem[pOrigOp->p2]);
       }
-      if( pOrigOp->opflags & OPFLG_OUT3 ){
+      if( opProperty & OPFLG_OUT3 ){
         registerTrace(pOrigOp->p3, &aMem[pOrigOp->p3]);
       }
     }

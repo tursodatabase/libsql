@@ -1826,7 +1826,7 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
   analysisInfo sInfo;
   HashElem *i;
   char *zSql;
-  int rc;
+  int rc = SQLITE_OK;
 
   assert( iDb>=0 && iDb<db->nDb );
   assert( db->aDb[iDb].pBt!=0 );
@@ -1835,30 +1835,33 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
   assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
   for(i=sqliteHashFirst(&db->aDb[iDb].pSchema->idxHash);i;i=sqliteHashNext(i)){
     Index *pIdx = sqliteHashData(i);
-    sqlite3DefaultRowEst(pIdx);
+    pIdx->aiRowLogEst[0] = 0;
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
     sqlite3DeleteIndexSamples(db, pIdx);
     pIdx->aSample = 0;
 #endif
   }
 
-  /* Check to make sure the sqlite_stat1 table exists */
+  /* Load new statistics out of the sqlite_stat1 table */
   sInfo.db = db;
   sInfo.zDatabase = db->aDb[iDb].zName;
-  if( sqlite3FindTable(db, "sqlite_stat1", sInfo.zDatabase)==0 ){
-    return SQLITE_ERROR;
+  if( sqlite3FindTable(db, "sqlite_stat1", sInfo.zDatabase)!=0 ){
+    zSql = sqlite3MPrintf(db, 
+        "SELECT tbl,idx,stat FROM %Q.sqlite_stat1", sInfo.zDatabase);
+    if( zSql==0 ){
+      rc = SQLITE_NOMEM_BKPT;
+    }else{
+      rc = sqlite3_exec(db, zSql, analysisLoader, &sInfo, 0);
+      sqlite3DbFree(db, zSql);
+    }
   }
 
-  /* Load new statistics out of the sqlite_stat1 table */
-  zSql = sqlite3MPrintf(db, 
-      "SELECT tbl,idx,stat FROM %Q.sqlite_stat1", sInfo.zDatabase);
-  if( zSql==0 ){
-    rc = SQLITE_NOMEM_BKPT;
-  }else{
-    rc = sqlite3_exec(db, zSql, analysisLoader, &sInfo, 0);
-    sqlite3DbFree(db, zSql);
+  /* Set appropriate defaults on all indexes not in the sqlite_stat1 table */
+  assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
+  for(i=sqliteHashFirst(&db->aDb[iDb].pSchema->idxHash);i;i=sqliteHashNext(i)){
+    Index *pIdx = sqliteHashData(i);
+    if( pIdx->aiRowLogEst[0]==0 ) sqlite3DefaultRowEst(pIdx);
   }
-
 
   /* Load the statistics from the sqlite_stat4 table. */
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4

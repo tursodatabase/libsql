@@ -941,7 +941,13 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         }
       }
     }
-    sqlite3ReleaseTempRange(pParse, iReg, nConstraint+2);
+    /* These registers need to be preserved in case there is an IN operator
+    ** loop.  So we could deallocate the registers here (and potentially
+    ** reuse them later) if (pLoop->wsFlags & WHERE_IN_ABLE)==0.  But it seems
+    ** simpler and safer to simply not reuse the registers.
+    **
+    **    sqlite3ReleaseTempRange(pParse, iReg, nConstraint+2);
+    */
     sqlite3ExprCachePop(pParse);
   }else
 #endif /* SQLITE_OMIT_VIRTUALTABLE */

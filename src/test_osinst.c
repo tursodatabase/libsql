@@ -644,9 +644,9 @@ static void vfslog_flush(VfslogVfs *p){
 
 static void put32bits(unsigned char *p, unsigned int v){
   p[0] = v>>24;
-  p[1] = v>>16;
-  p[2] = v>>8;
-  p[3] = v;
+  p[1] = (unsigned char)(v>>16);
+  p[2] = (unsigned char)(v>>8);
+  p[3] = (unsigned char)v;
 }
 
 static void vfslog_call(

@@ -108,10 +108,13 @@ static int ts_ftruncate(int fd, off_t n);
 static int ts_fcntl(int fd, int cmd, ... );
 static int ts_read(int fd, void *aBuf, size_t nBuf);
 static int ts_pread(int fd, void *aBuf, size_t nBuf, off_t off);
-static int ts_pread64(int fd, void *aBuf, size_t nBuf, off_t off);
+/* Note:  pread64() and pwrite64() actually use off64_t as the type on their
+** last parameter.  But that datatype is not defined on many systems 
+** (ex: Mac, OpenBSD).  So substitute a likely equivalent: sqlite3_uint64 */
+static int ts_pread64(int fd, void *aBuf, size_t nBuf, sqlite3_uint64 off);
 static int ts_write(int fd, const void *aBuf, size_t nBuf);
 static int ts_pwrite(int fd, const void *aBuf, size_t nBuf, off_t off);
-static int ts_pwrite64(int fd, const void *aBuf, size_t nBuf, off_t off);
+static int ts_pwrite64(int fd, const void *aBuf, size_t nBuf, sqlite3_uint64 off);
 static int ts_fchmod(int fd, mode_t mode);
 static int ts_fallocate(int fd, off_t off, off_t len);
 static void *ts_mmap(void *, size_t, int, int, int, off_t);
@@ -155,11 +158,11 @@ struct TestSyscallArray {
 #define orig_fcntl     ((int(*)(int,int,...))aSyscall[7].xOrig)
 #define orig_read      ((ssize_t(*)(int,void*,size_t))aSyscall[8].xOrig)
 #define orig_pread     ((ssize_t(*)(int,void*,size_t,off_t))aSyscall[9].xOrig)
-#define orig_pread64   ((ssize_t(*)(int,void*,size_t,off_t))aSyscall[10].xOrig)
+#define orig_pread64   ((ssize_t(*)(int,void*,size_t,sqlite3_uint64))aSyscall[10].xOrig)
 #define orig_write     ((ssize_t(*)(int,const void*,size_t))aSyscall[11].xOrig)
 #define orig_pwrite    ((ssize_t(*)(int,const void*,size_t,off_t))\
                        aSyscall[12].xOrig)
-#define orig_pwrite64  ((ssize_t(*)(int,const void*,size_t,off_t))\
+#define orig_pwrite64  ((ssize_t(*)(int,const void*,size_t,sqlite3_uint64))\
                        aSyscall[13].xOrig)
 #define orig_fchmod    ((int(*)(int,mode_t))aSyscall[14].xOrig)
 #define orig_fallocate ((int(*)(int,off_t,off_t))aSyscall[15].xOrig)
@@ -326,7 +329,7 @@ static int ts_pread(int fd, void *aBuf, size_t nBuf, off_t off){
 /*
 ** A wrapper around pread64().
 */
-static int ts_pread64(int fd, void *aBuf, size_t nBuf, off_t off){
+static int ts_pread64(int fd, void *aBuf, size_t nBuf, sqlite3_uint64 off){
   if( tsIsFailErrno("pread64") ){
     return -1;
   }
@@ -357,7 +360,7 @@ static int ts_pwrite(int fd, const void *aBuf, size_t nBuf, off_t off){
 /*
 ** A wrapper around pwrite64().
 */
-static int ts_pwrite64(int fd, const void *aBuf, size_t nBuf, off_t off){
+static int ts_pwrite64(int fd, const void *aBuf, size_t nBuf, sqlite3_uint64 off){
   if( tsIsFailErrno("pwrite64") ){
     return -1;
   }

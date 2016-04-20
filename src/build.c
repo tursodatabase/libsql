@@ -1086,6 +1086,7 @@ void sqlite3AddColumn(Parse *pParse, Token *pName, Token *pType){
     zType = z + sqlite3Strlen30(z) + 1;
     memcpy(zType, pType->z, pType->n);
     zType[pType->n] = 0;
+    sqlite3Dequote(zType);
     pCol->affinity = sqlite3AffinityType(zType, &pCol->szEst);
     pCol->colFlags |= COLFLAG_HASTYPE;
   }
@@ -2176,44 +2177,55 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
   ** statement that defines the view.
   */
   assert( pTable->pSelect );
-  if( pTable->pCheck ){
+  pSel = sqlite3SelectDup(db, pTable->pSelect, 0);
+  if( pSel ){
+    n = pParse->nTab;
+    sqlite3SrcListAssignCursors(pParse, pSel->pSrc);
+    pTable->nCol = -1;
     db->lookaside.bDisable++;
-    sqlite3ColumnsFromExprList(pParse, pTable->pCheck, 
-                               &pTable->nCol, &pTable->aCol);
-    db->lookaside.bDisable--;
-  }else{
-    pSel = sqlite3SelectDup(db, pTable->pSelect, 0);
-    if( pSel ){
-      n = pParse->nTab;
-      sqlite3SrcListAssignCursors(pParse, pSel->pSrc);
-      pTable->nCol = -1;
-      db->lookaside.bDisable++;
 #ifndef SQLITE_OMIT_AUTHORIZATION
-      xAuth = db->xAuth;
-      db->xAuth = 0;
-      pSelTab = sqlite3ResultSetOfSelect(pParse, pSel);
-      db->xAuth = xAuth;
+    xAuth = db->xAuth;
+    db->xAuth = 0;
+    pSelTab = sqlite3ResultSetOfSelect(pParse, pSel);
+    db->xAuth = xAuth;
 #else
-      pSelTab = sqlite3ResultSetOfSelect(pParse, pSel);
+    pSelTab = sqlite3ResultSetOfSelect(pParse, pSel);
 #endif
-      db->lookaside.bDisable--;
-      pParse->nTab = n;
-      if( pSelTab ){
-        assert( pTable->aCol==0 );
-        pTable->nCol = pSelTab->nCol;
-        pTable->aCol = pSelTab->aCol;
-        pSelTab->nCol = 0;
-        pSelTab->aCol = 0;
-        sqlite3DeleteTable(db, pSelTab);
-        assert( sqlite3SchemaMutexHeld(db, 0, pTable->pSchema) );
-      }else{
-        pTable->nCol = 0;
-        nErr++;
+    pParse->nTab = n;
+    if( pTable->pCheck ){
+      /* CREATE VIEW name(arglist) AS ...
+      ** The names of the columns in the table are taken from
+      ** arglist which is stored in pTable->pCheck.  The pCheck field
+      ** normally holds CHECK constraints on an ordinary table, but for
+      ** a VIEW it holds the list of column names.
+      */
+      sqlite3ColumnsFromExprList(pParse, pTable->pCheck, 
+                                 &pTable->nCol, &pTable->aCol);
+      if( db->mallocFailed==0 
+       && pParse->nErr==0
+       && pTable->nCol==pSel->pEList->nExpr
+      ){
+        sqlite3SelectAddColumnTypeAndCollation(pParse, pTable, pSel);
       }
-      sqlite3SelectDelete(db, pSel);
-    } else {
+    }else if( pSelTab ){
+      /* CREATE VIEW name AS...  without an argument list.  Construct
+      ** the column names from the SELECT statement that defines the view.
+      */
+      assert( pTable->aCol==0 );
+      pTable->nCol = pSelTab->nCol;
+      pTable->aCol = pSelTab->aCol;
+      pSelTab->nCol = 0;
+      pSelTab->aCol = 0;
+      assert( sqlite3SchemaMutexHeld(db, 0, pTable->pSchema) );
+    }else{
+      pTable->nCol = 0;
       nErr++;
     }
+    if( pSelTab ) sqlite3DeleteTable(db, pSelTab);
+    sqlite3SelectDelete(db, pSel);
+    db->lookaside.bDisable--;
+  } else {
+    nErr++;
   }
   pTable->pSchema->schemaFlags |= DB_UnresetViews;
 #endif /* SQLITE_OMIT_VIEW */
@@ -2762,6 +2774,7 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
     tnum = pIndex->tnum;
   }
   pKey = sqlite3KeyInfoOfIndex(pParse, pIndex);
+  assert( pKey!=0 || db->mallocFailed || pParse->nErr );
 
   /* Open the sorter cursor if we are to use one. */
   iSorter = pParse->nTab++;
@@ -2785,8 +2798,7 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
   sqlite3VdbeChangeP5(v, OPFLAG_BULKCSR|((memRootPage>=0)?OPFLAG_P2ISREG:0));
 
   addr1 = sqlite3VdbeAddOp2(v, OP_SorterSort, iSorter, 0); VdbeCoverage(v);
-  assert( pKey!=0 || db->mallocFailed || pParse->nErr );
-  if( IsUniqueIndex(pIndex) && pKey!=0 ){
+  if( IsUniqueIndex(pIndex) ){
     int j2 = sqlite3VdbeCurrentAddr(v) + 3;
     sqlite3VdbeGoto(v, j2);
     addr2 = sqlite3VdbeCurrentAddr(v);
