@@ -1,5 +1,5 @@
-C Fix\sa\slocking\srace\scondition\sin\sWindows\s10\sthat\scan\soccur\swhen\stwo\sor\smore\nprocesses\sattempt\sto\srecover\sthe\ssame\shot\sjournal\sat\sthe\ssame\stime.
-D 2016-04-20T18:31:27.150
+C When\san\serror\soccurs\swhile\stransitioning\sout\sof\sWAL\smode,\smake\ssure\sthe\nlocking\sstate\sis\snot\sleft\sat\sEXCLUSIVE.
+D 2016-04-20T19:30:47.222
 F Makefile.in eba680121821b8a60940a81454316f47a341487a
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 71b8b16cf9393f68e2e2035486ca104872558836
@@ -362,7 +362,7 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c d0b41a47eb5f0dc00e423a1723aadeab0e78c85f
 F src/os_win.c 1997a873bfc8296a701bd8e2df8c3d5da5afe956
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
-F src/pager.c 38718a019ca762ba4f6795425d5a54db70d1790d
+F src/pager.c d20fa46d5beda38095be6070dd4c59e502817c72
 F src/pager.h 329bdf078a4e0a3b35084534d58625d21fd03681
 F src/parse.y 10eb2f3fb62341291528c7984498054731f9d31e
 F src/pcache.c 647bb53a86b7bbcf55ad88089b3ea5a9170b90df
@@ -1482,7 +1482,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P eba27d4d17a76884292667d570d542e580ee3e77
-R 91e3493cbc66272eab1ca1f4455591b7
+P 38a4e9d92887898b779493c71e4500f777a4e2e7
+R d900f17deba1f548d837d30ffbaf8602
 U drh
-Z f74379d7acb8dab3d54fff08dd9ef3d2
+Z 44c6d07231ede184477737327be6aaec
