@@ -2352,8 +2352,44 @@ static void rbuOpenDatabase(sqlite3rbu *p){
     memcpy(p->zStateDb, "main", 4);
   }
 
+#if 0
+  if( p->rc==SQLITE_OK && rbuIsVacuum(p) ){
+    p->rc = sqlite3_exec(p->dbRbu, "BEGIN", 0, 0, 0);
+  }
+#endif
+
   /* If it has not already been created, create the rbu_state table */
   rbuMPrintfExec(p, p->dbRbu, RBU_CREATE_STATE, p->zStateDb);
+
+#if 0
+  if( rbuIsVacuum(p) ){
+    if( p->rc==SQLITE_OK ){
+      int rc2;
+      int bOk = 0;
+      sqlite3_stmt *pCnt = 0;
+      p->rc = prepareAndCollectError(p->dbRbu, &pCnt, &p->zErrmsg,
+          "SELECT count(*) FROM stat.sqlite_master"
+      );
+      if( p->rc==SQLITE_OK 
+       && sqlite3_step(pCnt)==SQLITE_ROW
+       && 1==sqlite3_column_int(pCnt, 0)
+      ){
+        bOk = 1;
+      }
+      rc2 = sqlite3_finalize(pCnt);
+      if( p->rc==SQLITE_OK ) p->rc = rc2;
+
+      if( p->rc==SQLITE_OK && bOk==0 ){
+        p->rc = SQLITE_ERROR;
+        p->zErrmsg = sqlite3_mprintf("invalid state database");
+      }
+    
+      if( p->rc==SQLITE_OK ){
+        p->rc = sqlite3_exec(p->dbRbu, "COMMIT", 0, 0, 0);
+      }
+    }
+  }
+#endif
 
   if( p->rc==SQLITE_OK && rbuIsVacuum(p) ){
     int bOpen = 0;
