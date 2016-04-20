@@ -460,22 +460,7 @@ static int sqlite3LoadExtension(
 
 
   if( pzErrMsg ) *pzErrMsg = 0;
-
-  /* Ticket #1863.  To avoid a creating security problems for older
-  ** applications that relink against newer versions of SQLite, the
-  ** ability to run load_extension is turned off by default.  One
-  ** must call sqlite3_enable_load_extension() to turn on extension
-  ** loading.  Otherwise you get the following error.
-  */
-  if( (db->flags & SQLITE_LoadExtension)==0 ){
-    if( pzErrMsg ){
-      *pzErrMsg = sqlite3_mprintf("not authorized");
-    }
-    return SQLITE_ERROR;
-  }
-
   zEntry = zProc ? zProc : "sqlite3_extension_init";
-
   handle = sqlite3OsDlOpen(pVfs, zFile);
 #if SQLITE_OS_UNIX || SQLITE_OS_WIN
   for(ii=0; ii<ArraySize(azEndings) && handle==0; ii++){
