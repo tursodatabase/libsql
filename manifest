@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\srbu\svacuum\son\stables\swith\sa\slarge\ssqlite_master\stable.
-D 2016-04-21T15:26:26.501
+C If\sa\scall\sto\ssqlite3rbu_close()\son\san\srbu\shandle\sopened\sby\ssqlite3rbu_vacuum()\sreturns\sother\sthan\sSQLITE_OK,\sdelete\sthe\scontents\sof\sthe\srbu_state\stable.\sThis\sensures\sthat\sif\san\sRBU\svacuum\soperation\seither\scompletes\ssuccessfully\sor\sencounters\san\serror,\sthe\snext\scall\sto\ssqlite3rbu_vacuum()\swith\sthe\ssame\sparameters\sstarts\sa\snew\sRBU\svacuum\soperation.
+D 2016-04-21T16:44:38.130
 F Makefile.in eba680121821b8a60940a81454316f47a341487a
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 71b8b16cf9393f68e2e2035486ca104872558836
@@ -247,9 +247,9 @@ F ext/rbu/rbufault3.test 54a399888ac4af44c68f9f58afbed23149428bca
 F ext/rbu/rbufts.test 828cd689da825f0a7b7c53ffc1f6f7fdb6fa5bda
 F ext/rbu/rbuprogress.test 2023a7df2c523e3df1cb532eff811cda385a789a
 F ext/rbu/rbusave.test 0f43b6686084f426ddd040b878426452fd2c2f48
-F ext/rbu/rbuvacuum.test aa405cff38b15a89f6c97f91f1c6a67b2140b358
-F ext/rbu/sqlite3rbu.c 8310553b029e749329a89b3880a21f80876755c3
-F ext/rbu/sqlite3rbu.h efcafd0e36861943a88deb181753236f84dbc244
+F ext/rbu/rbuvacuum.test bcbc1dcd8e2a46a811e46477692ae1c0e8917a85
+F ext/rbu/sqlite3rbu.c 20922328dcebe89589638923bb46840df8bc7733
+F ext/rbu/sqlite3rbu.h 2acd0a6344a6079de15c8dc9d84d3df83a665930
 F ext/rbu/test_rbu.c 430b8b9520c233505371d564d3561e0b554355f4
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 0b870ccb7b58b734a2a8e1e2755a7c0ded070920
@@ -1484,7 +1484,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P da5c753ddac3cbfdf03710a82f5fd9fa2e29e819
-R e2636288f7318e2301180a849b5ff72b
+P 23eac52e987996afe8db847921aef434cebd25b5
+R 9f2af869b142a7169421543b9ca51ae8
 U dan
-Z d9d3e7dacedd64ed84574ca4c0316d8e
+Z 717b7e491d25b95d9f80b6c2df00ade7

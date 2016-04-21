@@ -330,7 +330,11 @@ sqlite3rbu *sqlite3rbu_open(
 ** handle specifying the same target and state databases.
 **
 ** This function does not delete the state database after an RBU vacuum
-** is completed, even if it created it.
+** is completed, even if it created it. However, if the call to
+** sqlite3rbu_close() returns any value other than SQLITE_OK, the contents
+** of the state tables within the state database are zeroed. This way,
+** the next call to sqlite3rbu_vacuum() opens a handle that starts a 
+** new RBU vacuum operation.
 **
 ** As with sqlite3rbu_open(), Zipvfs users should rever to the comment
 ** describing the sqlite3rbu_create_vfs() API function below for 

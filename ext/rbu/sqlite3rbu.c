@@ -3685,6 +3685,16 @@ int sqlite3rbu_close(sqlite3rbu *p, char **pzErrmsg){
     /* Close any open statement handles. */
     rbuObjIterFinalize(&p->objiter);
 
+    /* If this is an RBU vacuum handle and the vacuum has either finished
+    ** successfully or encountered an error, delete the contents of the 
+    ** state table. This causes the next call to sqlite3rbu_vacuum() 
+    ** specifying the current target and state databases to start a new
+    ** vacuum from scratch.  */
+    if( rbuIsVacuum(p) && p->rc!=SQLITE_OK && p->dbRbu ){
+      int rc2 = sqlite3_exec(p->dbRbu, "DELETE FROM stat.rbu_state", 0, 0, 0);
+      if( p->rc==SQLITE_DONE && rc2!=SQLITE_OK ) p->rc = rc2;
+    }
+
     /* Close the open database handle and VFS object. */
     sqlite3_close(p->dbRbu);
     sqlite3_close(p->dbMain);

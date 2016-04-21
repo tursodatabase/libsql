@@ -19,7 +19,6 @@ set ::testprefix rbuvacuum
 
 proc do_rbu_vacuum_test {tn step} {
   uplevel [list do_test $tn.1 {
-    forcedelete state.db
     if {$step==0} { sqlite3rbu_vacuum rbu test.db state.db }
     while 1 {
       if {$step==1} { sqlite3rbu_vacuum rbu test.db state.db }
@@ -275,7 +274,6 @@ do_execsql_test 2.1.0 {
   INSERT INTO t1 VALUES(9, 10);
 } wal
 do_test 2.1.1 {
-  forcedelete state.db
   sqlite3rbu_vacuum rbu test.db state.db
   rbu step
 } {SQLITE_ERROR}
@@ -294,7 +292,6 @@ do_execsql_test 2.2.0 {
 }
 db_save_and_close
 for {set i 1} 1 {incr i} {
-  forcedelete state.db
   db_restore_and_reopen
 
   sqlite3rbu_vacuum rbu test.db state.db
