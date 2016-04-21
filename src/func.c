@@ -1386,13 +1386,10 @@ static void loadExt(sqlite3_context *context, int argc, sqlite3_value **argv){
   sqlite3 *db = sqlite3_context_db_handle(context);
   char *zErrMsg = 0;
 
-  /* Disallow the load_extension function unless the SQLITE_LoadExtension
+  /* Disallow the load_extension() SQL function unless the SQLITE_LoadExtFunc
   ** flag is set.  See the sqlite3_enable_load_extension() API.
   */
-  if( (db->flags & SQLITE_LoadExtension)==0 ){
-    sqlite3_result_error(context, "not authorized", -1);
-    return;
-  }
+  if( (db->flags & SQLITE_LoadExtFunc)==0 ) return;
 
   if( argc==2 ){
     zProc = (const char *)sqlite3_value_text(argv[1]);
