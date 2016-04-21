@@ -6988,6 +6988,7 @@ static int test_sqlite3_db_config(
     { "FKEY",            SQLITE_DBCONFIG_ENABLE_FKEY },
     { "TRIGGER",         SQLITE_DBCONFIG_ENABLE_TRIGGER },
     { "FTS3_TOKENIZER",  SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER },
+    { "LOAD_EXTENSION",  SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION },
   };
   int i;
   int v;

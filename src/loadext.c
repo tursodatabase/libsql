@@ -464,8 +464,9 @@ static int sqlite3LoadExtension(
   /* Ticket #1863.  To avoid a creating security problems for older
   ** applications that relink against newer versions of SQLite, the
   ** ability to run load_extension is turned off by default.  One
-  ** must call sqlite3_enable_load_extension() to turn on extension
-  ** loading.  Otherwise you get the following error.
+  ** must call either sqlite3_enable_load_extension(db) or
+  ** sqlite3_db_config(db, SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION, 1, 0)
+  ** to turn on extension loading.
   */
   if( (db->flags & SQLITE_LoadExtension)==0 ){
     if( pzErrMsg ){
@@ -604,9 +605,9 @@ void sqlite3CloseExtensions(sqlite3 *db){
 int sqlite3_enable_load_extension(sqlite3 *db, int onoff){
   sqlite3_mutex_enter(db->mutex);
   if( onoff ){
-    db->flags |= SQLITE_LoadExtension;
+    db->flags |= SQLITE_LoadExtension|SQLITE_LoadExtFunc;
   }else{
-    db->flags &= ~SQLITE_LoadExtension;
+    db->flags &= ~(SQLITE_LoadExtension|SQLITE_LoadExtFunc);
   }
   sqlite3_mutex_leave(db->mutex);
   return SQLITE_OK;
