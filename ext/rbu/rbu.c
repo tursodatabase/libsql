@@ -24,12 +24,22 @@
 */
 void usage(const char *zArgv0){
   fprintf(stderr, 
-"Usage: %s [-step NSTEP] TARGET-DB RBU-DB\n"
+"Usage: %s ?OPTIONS? TARGET-DB RBU-DB\n"
 "\n"
-"  Argument RBU-DB must be an RBU database containing an update suitable for\n"
-"  target database TARGET-DB. If NSTEP is set to less than or equal to zero\n"
-"  (the default value), this program attempts to apply the entire update to\n"
-"  the target database.\n"
+"Where options are:\n"
+"\n"
+"    -step NSTEP\n"
+"    -vacuum\n"
+"\n"
+"  If the -vacuum switch is not present, argument RBU-DB must be an RBU\n"
+"  database containing an update suitable for target database TARGET-DB.\n"
+"  Or, if -vacuum is specified, then TARGET-DB is a database to vacuum using\n"
+"  RBU, and RBU-DB is used as the state database for the vacuum (refer to\n"
+"  API documentation for details).\n"
+"\n"
+"  If NSTEP is set to less than or equal to zero (the default value), this \n"
+"  program attempts to perform the entire update or vacuum operation before\n"
+"  exiting\n"
 "\n"
 "  If NSTEP is greater than zero, then a maximum of NSTEP calls are made\n"
 "  to sqlite3rbu_step(). If the RBU update has not been completely applied\n"
@@ -69,29 +79,43 @@ int main(int argc, char **argv){
   char *zErrmsg;                  /* Error message, if any */
   sqlite3rbu *pRbu;               /* RBU handle */
   int nStep = 0;                  /* Maximum number of step() calls */
+  int bVacuum = 0;
   int rc;
   sqlite3_int64 nProgress = 0;
+  int nArg = argc-2;
 
-  /* Process command line arguments. Following this block local variables 
-  ** zTarget, zRbu and nStep are all set. */
-  if( argc==5 ){
-    size_t nArg1 = strlen(argv[1]);
-    if( nArg1>5 || nArg1<2 || memcmp("-step", argv[1], nArg1) ) usage(argv[0]);
-    nStep = atoi(argv[2]);
-  }else if( argc!=3 ){
-    usage(argv[0]);
+  if( argc<3 ) usage(argv[0]);
+  for(i=1; i<nArg; i++){
+    const char *zArg = argv[i];
+    int nArg = strlen(zArg);
+    if( nArg>1 && nArg<=8 && 0==memcmp(zArg, "-vacuum", nArg) ){
+      bVacuum = 1;
+    }else if( nArg>1 && nArg<=5 && 0==memcmp(zArg, "-step", nArg) && i<nArg-1 ){
+      i++;
+      nStep = atoi(argv[i]);
+    }else{
+      usage(argv[0]);
+    }
   }
+
   zTarget = argv[argc-2];
   zRbu = argv[argc-1];
 
   report_default_vfs();
 
-  /* Open an RBU handle. If nStep is less than or equal to zero, call
+  /* Open an RBU handle. A vacuum handle if -vacuum was specified, or a
+  ** regular RBU update handle otherwise.  */
+  if( bVacuum ){
+    pRbu = sqlite3rbu_vacuum(zTarget, zRbu);
+  }else{
+    pRbu = sqlite3rbu_open(zTarget, zRbu, 0);
+  }
+  report_rbu_vfs(pRbu);
+
+  /* If nStep is less than or equal to zero, call
   ** sqlite3rbu_step() until either the RBU has been completely applied
   ** or an error occurs. Or, if nStep is greater than zero, call
   ** sqlite3rbu_step() a maximum of nStep times.  */
-  pRbu = sqlite3rbu_open(zTarget, zRbu, 0);
-  report_rbu_vfs(pRbu);
   for(i=0; (nStep<=0 || i<nStep) && sqlite3rbu_step(pRbu)==SQLITE_OK; i++);
   nProgress = sqlite3rbu_progress(pRbu);
   rc = sqlite3rbu_close(pRbu, &zErrmsg);
