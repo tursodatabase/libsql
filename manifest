@@ -1,5 +1,5 @@
-C Revert\ssqlite3_enable_load_extension()\sto\sits\soriginal\slong-standing\sbehavior.\nAdd\sSQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION\swhich\swill\senable\sonly\sthe\sC-API\sand\nleave\sthe\sSQL\sfunction\sdisabled.
-D 2016-04-21T01:30:09.828
+C Test\scases\sfor\sSQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION.
+D 2016-04-21T01:58:21.573
 F Makefile.in eba680121821b8a60940a81454316f47a341487a
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 71b8b16cf9393f68e2e2035486ca104872558836
@@ -332,7 +332,7 @@ F src/delete.c 78eb999114ec04fcf1b7d123ccedb4b5b734930e
 F src/expr.c 17d4e745ef6a3fd2e4ef863f5f9a4912f1ba1198
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 4c0bd09e602b8ae8d36d81e31e4872d0b53c87bb
-F src/func.c b61726e7a1b8f41464d8391d0f2d8a6be1a45281
+F src/func.c ef4c18c8a66143413ce41a58d582d2c14ddf78e1
 F src/global.c c45ea22aff29334f6a9ec549235ac3357c970015
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
 F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
@@ -875,7 +875,7 @@ F test/like.test 81632c437a947bf1f7130b19537da6a1a844806a
 F test/like2.test 3b2ee13149ba4a8a60b59756f4e5d345573852da
 F test/like3.test 3608a2042b6f922f900fbfd5d3ce4e7eca57f7c4
 F test/limit.test 0c99a27a87b14c646a9d583c7c89fd06c352663e
-F test/loadext.test 648cb95f324d1775c54a55c12271b2d1156b633b
+F test/loadext.test 42a3b8166dfcadcb0e0c8710dc520d97c31a8b98
 F test/loadext2.test 0408380b57adca04004247179837a18e866a74f7
 F test/lock.test b984ab9034e7389be0d863fe4e64cbbc4d2028f5
 F test/lock2.test 5242d8ac4e2d59c403aebff606af449b455aceff
@@ -1482,7 +1482,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P edb454e45ae008e051e2f48d704a855b0c3e4be9
-R 1ffd5268513054a5c042ef7eabb85336
+P b2ae5bfa32e608625bd177907596df3dbc2212e1
+R 142ad50676c76bf1cd4debbac256d360
 U drh
-Z 6cdb5487d5064dce1cac61ac30e9bbbf
+Z d6546b0e1c5ecba4524ffa3ce100a1b6
