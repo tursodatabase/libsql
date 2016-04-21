@@ -6551,8 +6551,8 @@ static int pageInsertArray(
     u8 *pSlot;
     sz = cachedCellSize(pCArray, i);
     if( (aData[1]==0 && aData[2]==0) || (pSlot = pageFindSlot(pPg,sz,&rc))==0 ){
+      if( (pData - pBegin)<sz ) return 1;
       pData -= sz;
-      if( pData<pBegin ) return 1;
       pSlot = pData;
     }
     /* pSlot and pCArray->apCell[i] will never overlap on a well-formed
@@ -6714,7 +6714,7 @@ static int editPage(
   for(i=0; i<nNew && !CORRUPT_DB; i++){
     u8 *pCell = pCArray->apCell[i+iNew];
     int iOff = get2byteAligned(&pPg->aCellIdx[i*2]);
-    if( pCell>=aData && pCell<&aData[pPg->pBt->usableSize] ){
+    if( SQLITE_WITHIN(pCell, aData, &aData[pPg->pBt->usableSize]) ){
       pCell = &pTmp[pCell - aData];
     }
     assert( 0==memcmp(pCell, &aData[iOff],
@@ -8146,6 +8146,28 @@ int sqlite3BtreeDelete(BtCursor *pCur, u8 flags){
   pPage = pCur->apPage[iCellDepth];
   pCell = findCell(pPage, iCellIdx);
 
+  /* If the bPreserve flag is set to true, then the cursor position must
+  ** be preserved following this delete operation. If the current delete
+  ** will cause a b-tree rebalance, then this is done by saving the cursor
+  ** key and leaving the cursor in CURSOR_REQUIRESEEK state before 
+  ** returning. 
+  **
+  ** Or, if the current delete will not cause a rebalance, then the cursor
+  ** will be left in CURSOR_SKIPNEXT state pointing to the entry immediately
+  ** before or after the deleted entry. In this case set bSkipnext to true.  */
+  if( bPreserve ){
+    if( !pPage->leaf 
+     || (pPage->nFree+cellSizePtr(pPage,pCell)+2)>(int)(pBt->usableSize*2/3)
+    ){
+      /* A b-tree rebalance will be required after deleting this entry.
+      ** Save the cursor key.  */
+      rc = saveCursorKey(pCur);
+      if( rc ) return rc;
+    }else{
+      bSkipnext = 1;
+    }
+  }
+
   /* If the page containing the entry to delete is not a leaf page, move
   ** the cursor to the largest entry in the tree that is smaller than
   ** the entry being deleted. This cell will replace the cell being deleted
@@ -8170,28 +8192,6 @@ int sqlite3BtreeDelete(BtCursor *pCur, u8 flags){
   ** invalidate any incrblob cursors open on the row being deleted.  */
   if( pCur->pKeyInfo==0 ){
     invalidateIncrblobCursors(p, pCur->info.nKey, 0);
-  }
-
-  /* If the bPreserve flag is set to true, then the cursor position must
-  ** be preserved following this delete operation. If the current delete
-  ** will cause a b-tree rebalance, then this is done by saving the cursor
-  ** key and leaving the cursor in CURSOR_REQUIRESEEK state before 
-  ** returning. 
-  **
-  ** Or, if the current delete will not cause a rebalance, then the cursor
-  ** will be left in CURSOR_SKIPNEXT state pointing to the entry immediately
-  ** before or after the deleted entry. In this case set bSkipnext to true.  */
-  if( bPreserve ){
-    if( !pPage->leaf 
-     || (pPage->nFree+cellSizePtr(pPage,pCell)+2)>(int)(pBt->usableSize*2/3)
-    ){
-      /* A b-tree rebalance will be required after deleting this entry.
-      ** Save the cursor key.  */
-      rc = saveCursorKey(pCur);
-      if( rc ) return rc;
-    }else{
-      bSkipnext = 1;
-    }
   }
 
   /* Make the page containing the entry to be deleted writable. Then free any

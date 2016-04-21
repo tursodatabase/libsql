@@ -7360,6 +7360,7 @@ int sqlite3PagerCloseWal(Pager *pPager){
         rc = sqlite3OsDelete(pPager->pVfs, pPager->zWal, 0);
         if( rc==SQLITE_IOERR_DELETE_NOENT ) rc = SQLITE_OK;
       }
+      if( rc && !pPager->exclusiveMode ) pagerUnlockDb(pPager, SHARED_LOCK);
     }
   }
   return rc;

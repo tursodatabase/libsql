@@ -390,7 +390,7 @@ static int editdist1(const char *zA, const char *zB, int *pnMatch){
 
   /* Special processing if either string is empty */
   if( nA==0 ){
-    cBprev = dc;
+    cBprev = (char)dc;
     for(xB=res=0; (cB = zB[xB])!=0; xB++){
       res += insertOrDeleteCost(cBprev, cB, zB[xB+1])/FINAL_INS_COST_DIV;
       cBprev = cB;
@@ -398,7 +398,7 @@ static int editdist1(const char *zA, const char *zB, int *pnMatch){
     return res;
   }
   if( nB==0 ){
-    cAprev = dc;
+    cAprev = (char)dc;
     for(xA=res=0; (cA = zA[xA])!=0; xA++){
       res += insertOrDeleteCost(cAprev, cA, zA[xA+1]);
       cAprev = cA;
@@ -420,8 +420,8 @@ static int editdist1(const char *zA, const char *zB, int *pnMatch){
 
   /* Compute the Wagner edit distance */
   m[0] = 0;
-  cx[0] = dc;
-  cBprev = dc;
+  cx[0] = (char)dc;
+  cBprev = (char)dc;
   for(xB=1; xB<=nB; xB++){
     cBnext = zB[xB];
     cB = zB[xB-1];
@@ -429,7 +429,7 @@ static int editdist1(const char *zA, const char *zB, int *pnMatch){
     m[xB] = m[xB-1] + insertOrDeleteCost(cBprev, cB, cBnext);
     cBprev = cB;
   }
-  cAprev = dc;
+  cAprev = (char)dc;
   for(xA=1; xA<=nA; xA++){
     int lastA = (xA==nA);
     cA = zA[xA-1];
@@ -476,7 +476,7 @@ static int editdist1(const char *zA, const char *zB, int *pnMatch){
       d = m[xB];
       dc = cx[xB];
       m[xB] = totalCost;
-      cx[xB] = ncx;
+      cx[xB] = (char)ncx;
       cBprev = cB;
     }
     cAprev = cA;
@@ -711,9 +711,9 @@ static int editDist3ConfigLoad(
       if( nExtra<0 ) nExtra = 0;
       pCost = sqlite3_malloc64( sizeof(*pCost) + nExtra );
       if( pCost==0 ){ rc = SQLITE_NOMEM; break; }
-      pCost->nFrom = nFrom;
-      pCost->nTo = nTo;
-      pCost->iCost = iCost;
+      pCost->nFrom = (u8)nFrom;
+      pCost->nTo = (u8)nTo;
+      pCost->iCost = (u16)iCost;
       memcpy(pCost->a, zFrom, nFrom);
       memcpy(pCost->a + nFrom, zTo, nTo);
       pCost->pNext = pLang->pCost;
@@ -1616,7 +1616,7 @@ static unsigned char *transliterate(const unsigned char *zIn, int nIn){
     zIn += sz;
     nIn -= sz;
     if( c<=127 ){
-      zOut[nOut++] = c;
+      zOut[nOut++] = (unsigned char)c;
     }else{
       int xTop, xBtm, x;
       xTop = sizeof(translit)/sizeof(translit[0]) - 1;

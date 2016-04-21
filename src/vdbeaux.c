@@ -78,6 +78,7 @@ const char *sqlite3_sql(sqlite3_stmt *pStmt){
 void sqlite3VdbeSwap(Vdbe *pA, Vdbe *pB){
   Vdbe tmp, *pTmp;
   char *zTmp;
+  assert( pA->db==pB->db );
   tmp = *pA;
   *pA = *pB;
   *pB = tmp;
@@ -544,73 +545,84 @@ int sqlite3VdbeAssertMayAbort(Vdbe *v, int mayAbort){
 ** (4) Initialize the p4.xAdvance pointer on opcodes that use it.
 **
 ** (5) Reclaim the memory allocated for storing labels.
+**
+** This routine will only function correctly if the mkopcodeh.tcl generator
+** script numbers the opcodes correctly.  Changes to this routine must be
+** coordinated with changes to mkopcodeh.tcl.
 */
 static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
-  int i;
   int nMaxArgs = *pMaxFuncArgs;
   Op *pOp;
   Parse *pParse = p->pParse;
   int *aLabel = pParse->aLabel;
   p->readOnly = 1;
   p->bIsReader = 0;
-  for(pOp=p->aOp, i=p->nOp-1; i>=0; i--, pOp++){
-    u8 opcode = pOp->opcode;
+  pOp = &p->aOp[p->nOp-1];
+  while(1){
 
-    /* NOTE: Be sure to update mkopcodeh.tcl when adding or removing
-    ** cases from this switch! */
-    switch( opcode ){
-      case OP_Transaction: {
-        if( pOp->p2!=0 ) p->readOnly = 0;
-        /* fall thru */
-      }
-      case OP_AutoCommit:
-      case OP_Savepoint: {
-        p->bIsReader = 1;
-        break;
-      }
+    /* Only JUMP opcodes and the short list of special opcodes in the switch
+    ** below need to be considered.  The mkopcodeh.tcl generator script groups
+    ** all these opcodes together near the front of the opcode list.  Skip
+    ** any opcode that does not need processing by virtual of the fact that
+    ** it is larger than SQLITE_MX_JUMP_OPCODE, as a performance optimization.
+    */
+    if( pOp->opcode<=SQLITE_MX_JUMP_OPCODE ){
+      /* NOTE: Be sure to update mkopcodeh.tcl when adding or removing
+      ** cases from this switch! */
+      switch( pOp->opcode ){
+        case OP_Transaction: {
+          if( pOp->p2!=0 ) p->readOnly = 0;
+          /* fall thru */
+        }
+        case OP_AutoCommit:
+        case OP_Savepoint: {
+          p->bIsReader = 1;
+          break;
+        }
 #ifndef SQLITE_OMIT_WAL
-      case OP_Checkpoint:
+        case OP_Checkpoint:
 #endif
-      case OP_Vacuum:
-      case OP_JournalMode: {
-        p->readOnly = 0;
-        p->bIsReader = 1;
-        break;
-      }
+        case OP_Vacuum:
+        case OP_JournalMode: {
+          p->readOnly = 0;
+          p->bIsReader = 1;
+          break;
+        }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-      case OP_VUpdate: {
-        if( pOp->p2>nMaxArgs ) nMaxArgs = pOp->p2;
-        break;
-      }
-      case OP_VFilter: {
-        int n;
-        assert( p->nOp - i >= 3 );
-        assert( pOp[-1].opcode==OP_Integer );
-        n = pOp[-1].p1;
-        if( n>nMaxArgs ) nMaxArgs = n;
-        break;
-      }
+        case OP_VUpdate: {
+          if( pOp->p2>nMaxArgs ) nMaxArgs = pOp->p2;
+          break;
+        }
+        case OP_VFilter: {
+          int n;
+          assert( (pOp - p->aOp) >= 3 );
+          assert( pOp[-1].opcode==OP_Integer );
+          n = pOp[-1].p1;
+          if( n>nMaxArgs ) nMaxArgs = n;
+          break;
+        }
 #endif
-      case OP_Next:
-      case OP_NextIfOpen:
-      case OP_SorterNext: {
-        pOp->p4.xAdvance = sqlite3BtreeNext;
-        pOp->p4type = P4_ADVANCE;
-        break;
+        case OP_Next:
+        case OP_NextIfOpen:
+        case OP_SorterNext: {
+          pOp->p4.xAdvance = sqlite3BtreeNext;
+          pOp->p4type = P4_ADVANCE;
+          break;
+        }
+        case OP_Prev:
+        case OP_PrevIfOpen: {
+          pOp->p4.xAdvance = sqlite3BtreePrevious;
+          pOp->p4type = P4_ADVANCE;
+          break;
+        }
       }
-      case OP_Prev:
-      case OP_PrevIfOpen: {
-        pOp->p4.xAdvance = sqlite3BtreePrevious;
-        pOp->p4type = P4_ADVANCE;
-        break;
+      if( (sqlite3OpcodeProperty[pOp->opcode] & OPFLG_JUMP)!=0 && pOp->p2<0 ){
+        assert( ADDR(pOp->p2)<pParse->nLabel );
+        pOp->p2 = aLabel[ADDR(pOp->p2)];
       }
     }
-
-    pOp->opflags = sqlite3OpcodeProperty[opcode];
-    if( (pOp->opflags & OPFLG_JUMP)!=0 && pOp->p2<0 ){
-      assert( ADDR(pOp->p2)<pParse->nLabel );
-      pOp->p2 = aLabel[ADDR(pOp->p2)];
-    }
+    if( pOp==p->aOp ) break;
+    pOp--;
   }
   sqlite3DbFree(p->db, pParse->aLabel);
   pParse->aLabel = 0;
@@ -790,52 +802,50 @@ static void vdbeFreeOpArray(sqlite3 *, Op *, int);
 ** Delete a P4 value if necessary.
 */
 static void freeP4(sqlite3 *db, int p4type, void *p4){
-  if( p4 ){
-    assert( db );
-    switch( p4type ){
-      case P4_FUNCCTX: {
-        freeEphemeralFunction(db, ((sqlite3_context*)p4)->pFunc);
-        /* Fall through into the next case */
-      }
-      case P4_REAL:
-      case P4_INT64:
-      case P4_DYNAMIC:
-      case P4_INTARRAY: {
-        sqlite3DbFree(db, p4);
-        break;
-      }
-      case P4_KEYINFO: {
-        if( db->pnBytesFreed==0 ) sqlite3KeyInfoUnref((KeyInfo*)p4);
-        break;
-      }
+  assert( db );
+  switch( p4type ){
+    case P4_FUNCCTX: {
+      freeEphemeralFunction(db, ((sqlite3_context*)p4)->pFunc);
+      /* Fall through into the next case */
+    }
+    case P4_REAL:
+    case P4_INT64:
+    case P4_DYNAMIC:
+    case P4_INTARRAY: {
+      sqlite3DbFree(db, p4);
+      break;
+    }
+    case P4_KEYINFO: {
+      if( db->pnBytesFreed==0 ) sqlite3KeyInfoUnref((KeyInfo*)p4);
+      break;
+    }
 #ifdef SQLITE_ENABLE_CURSOR_HINTS
-      case P4_EXPR: {
-        sqlite3ExprDelete(db, (Expr*)p4);
-        break;
-      }
+    case P4_EXPR: {
+      sqlite3ExprDelete(db, (Expr*)p4);
+      break;
+    }
 #endif
-      case P4_MPRINTF: {
-        if( db->pnBytesFreed==0 ) sqlite3_free(p4);
-        break;
+    case P4_MPRINTF: {
+      if( db->pnBytesFreed==0 ) sqlite3_free(p4);
+      break;
+    }
+    case P4_FUNCDEF: {
+      freeEphemeralFunction(db, (FuncDef*)p4);
+      break;
+    }
+    case P4_MEM: {
+      if( db->pnBytesFreed==0 ){
+        sqlite3ValueFree((sqlite3_value*)p4);
+      }else{
+        Mem *p = (Mem*)p4;
+        if( p->szMalloc ) sqlite3DbFree(db, p->zMalloc);
+        sqlite3DbFree(db, p);
       }
-      case P4_FUNCDEF: {
-        freeEphemeralFunction(db, (FuncDef*)p4);
-        break;
-      }
-      case P4_MEM: {
-        if( db->pnBytesFreed==0 ){
-          sqlite3ValueFree((sqlite3_value*)p4);
-        }else{
-          Mem *p = (Mem*)p4;
-          if( p->szMalloc ) sqlite3DbFree(db, p->zMalloc);
-          sqlite3DbFree(db, p);
-        }
-        break;
-      }
-      case P4_VTAB : {
-        if( db->pnBytesFreed==0 ) sqlite3VtabUnlock((VTable *)p4);
-        break;
-      }
+      break;
+    }
+    case P4_VTAB : {
+      if( db->pnBytesFreed==0 ) sqlite3VtabUnlock((VTable *)p4);
+      break;
     }
   }
 }
@@ -1315,6 +1325,10 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
     }
     case P4_ADVANCE: {
       zTemp[0] = 0;
+      break;
+    }
+    case P4_TABLE: {
+      sqlite3XPrintf(&x, "%s", pOp->p4.pTab->zName);
       break;
     }
     default: {
@@ -3507,6 +3521,7 @@ void sqlite3VdbeRecordUnpack(
     pMem->db = pKeyInfo->db;
     /* pMem->flags = 0; // sqlite3VdbeSerialGet() will set this for us */
     pMem->szMalloc = 0;
+    pMem->z = 0;
     d += sqlite3VdbeSerialGet(&aKey[d], serial_type, pMem);
     pMem++;
     if( (++u)>=p->nField ) break;
@@ -4486,3 +4501,87 @@ void sqlite3VtabImportErrmsg(Vdbe *p, sqlite3_vtab *pVtab){
   }
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
+
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
+
+/*
+** If the second argument is not NULL, release any allocations associated 
+** with the memory cells in the p->aMem[] array. Also free the UnpackedRecord
+** structure itself, using sqlite3DbFree().
+**
+** This function is used to free UnpackedRecord structures allocated by
+** the vdbeUnpackRecord() function found in vdbeapi.c.
+*/
+static void vdbeFreeUnpacked(sqlite3 *db, UnpackedRecord *p){
+  if( p ){
+    int i;
+    for(i=0; i<p->nField; i++){
+      Mem *pMem = &p->aMem[i];
+      if( pMem->zMalloc ) sqlite3VdbeMemRelease(pMem);
+    }
+    sqlite3DbFree(db, p);
+  }
+}
+#endif /* SQLITE_ENABLE_PREUPDATE_HOOK */
+
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
+/*
+** Invoke the pre-update hook. If this is an UPDATE or DELETE pre-update call,
+** then cursor passed as the second argument should point to the row about
+** to be update or deleted. If the application calls sqlite3_preupdate_old(),
+** the required value will be read from the row the cursor points to.
+*/
+void sqlite3VdbePreUpdateHook(
+  Vdbe *v,                        /* Vdbe pre-update hook is invoked by */
+  VdbeCursor *pCsr,               /* Cursor to grab old.* values from */
+  int op,                         /* SQLITE_INSERT, UPDATE or DELETE */
+  const char *zDb,                /* Database name */
+  Table *pTab,                    /* Modified table */
+  i64 iKey1,                      /* Initial key value */
+  int iReg                        /* Register for new.* record */
+){
+  sqlite3 *db = v->db;
+  i64 iKey2;
+  PreUpdate preupdate;
+  const char *zTbl = pTab->zName;
+  static const u8 fakeSortOrder = 0;
+
+  assert( db->pPreUpdate==0 );
+  memset(&preupdate, 0, sizeof(PreUpdate));
+  if( op==SQLITE_UPDATE ){
+    iKey2 = v->aMem[iReg].u.i;
+  }else{
+    iKey2 = iKey1;
+  }
+
+  assert( pCsr->nField==pTab->nCol 
+       || (pCsr->nField==pTab->nCol+1 && op==SQLITE_DELETE && iReg==-1)
+  );
+
+  preupdate.v = v;
+  preupdate.pCsr = pCsr;
+  preupdate.op = op;
+  preupdate.iNewReg = iReg;
+  preupdate.keyinfo.db = db;
+  preupdate.keyinfo.enc = ENC(db);
+  preupdate.keyinfo.nField = pTab->nCol;
+  preupdate.keyinfo.aSortOrder = (u8*)&fakeSortOrder;
+  preupdate.iKey1 = iKey1;
+  preupdate.iKey2 = iKey2;
+  preupdate.iPKey = pTab->iPKey;
+
+  db->pPreUpdate = &preupdate;
+  db->xPreUpdateCallback(db->pPreUpdateArg, db, op, zDb, zTbl, iKey1, iKey2);
+  db->pPreUpdate = 0;
+  sqlite3DbFree(db, preupdate.aRecord);
+  vdbeFreeUnpacked(db, preupdate.pUnpacked);
+  vdbeFreeUnpacked(db, preupdate.pNewUnpacked);
+  if( preupdate.aNew ){
+    int i;
+    for(i=0; i<pCsr->nField; i++){
+      sqlite3VdbeMemRelease(&preupdate.aNew[i]);
+    }
+    sqlite3DbFree(db, preupdate.aNew);
+  }
+}
+#endif /* SQLITE_ENABLE_PREUPDATE_HOOK */

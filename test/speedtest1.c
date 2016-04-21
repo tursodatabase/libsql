@@ -30,6 +30,7 @@ static const char zHelp[] =
   "  --shrink-memory     Invoke sqlite3_db_release_memory() frequently.\n"
   "  --size N            Relative test size.  Default=100\n"
   "  --stats             Show statistics at the end\n"
+  "  --temp N            N from 0 to 9.  0: no temp table. 9: all temp tables\n"
   "  --testset T         Run test-set T\n"
   "  --trace             Turn on SQL tracing\n"
   "  --threads N         Use up to N threads for sorting\n"
@@ -69,6 +70,7 @@ static struct Global {
   int bExplain;              /* Print SQL with EXPLAIN prefix */
   int bVerify;               /* Try to verify that results are correct */
   int bMemShrink;            /* Call sqlite3_db_release_memory() often */
+  int eTemp;                 /* 0: no TEMP.  9: always TEMP. */
   int szTest;                /* Scale factor for test iterations */
   const char *zWR;           /* Might be WITHOUT ROWID */
   const char *zNN;           /* Might be NOT NULL */
@@ -77,6 +79,12 @@ static struct Global {
   int nResult;               /* Size of the current result */
   char zResult[3000];        /* Text of the current result */
 } g;
+
+/* Return " TEMP" or "", as appropriate for creating a table.
+*/
+static const char *isTemp(int N){
+  return g.eTemp>=N ? " TEMP" : "";
+}
 
 
 /* Print an error message and exit */
@@ -459,8 +467,8 @@ void testset_main(void){
   maxb = roundup_allones(sz);
   speedtest1_begin_test(100, "%d INSERTs into table with no index", n);
   speedtest1_exec("BEGIN");
-  speedtest1_exec("CREATE TABLE t1(a INTEGER %s, b INTEGER %s, c TEXT %s);",
-                  g.zNN, g.zNN, g.zNN);
+  speedtest1_exec("CREATE%s TABLE t1(a INTEGER %s, b INTEGER %s, c TEXT %s);",
+                  isTemp(9), g.zNN, g.zNN, g.zNN);
   speedtest1_prepare("INSERT INTO t1 VALUES(?1,?2,?3); --  %d times", n);
   for(i=1; i<=n; i++){
     x1 = swizzle(i,maxb);
@@ -477,8 +485,9 @@ void testset_main(void){
   n = sz;
   speedtest1_begin_test(110, "%d ordered INSERTS with one index/PK", n);
   speedtest1_exec("BEGIN");
-  speedtest1_exec("CREATE TABLE t2(a INTEGER %s %s, b INTEGER %s, c TEXT %s) %s",
-                   g.zNN, g.zPK, g.zNN, g.zNN, g.zWR);
+  speedtest1_exec(
+     "CREATE%s TABLE t2(a INTEGER %s %s, b INTEGER %s, c TEXT %s) %s",
+     isTemp(5), g.zNN, g.zPK, g.zNN, g.zNN, g.zWR);
   speedtest1_prepare("INSERT INTO t2 VALUES(?1,?2,?3); -- %d times", n);
   for(i=1; i<=n; i++){
     x1 = swizzle(i,maxb);
@@ -495,8 +504,9 @@ void testset_main(void){
   n = sz;
   speedtest1_begin_test(120, "%d unordered INSERTS with one index/PK", n);
   speedtest1_exec("BEGIN");
-  speedtest1_exec("CREATE TABLE t3(a INTEGER %s %s, b INTEGER %s, c TEXT %s) %s",
-                   g.zNN, g.zPK, g.zNN, g.zNN, g.zWR);
+  speedtest1_exec(
+      "CREATE%s TABLE t3(a INTEGER %s %s, b INTEGER %s, c TEXT %s) %s",
+      isTemp(3), g.zNN, g.zPK, g.zNN, g.zNN, g.zWR);
   speedtest1_prepare("INSERT INTO t3 VALUES(?1,?2,?3); -- %d times", n);
   for(i=1; i<=n; i++){
     x1 = swizzle(i,maxb);
@@ -654,12 +664,12 @@ void testset_main(void){
   speedtest1_begin_test(180, "%d INSERTS with three indexes", n);
   speedtest1_exec("BEGIN");
   speedtest1_exec(
-    "CREATE TABLE t4(\n"
+    "CREATE%s TABLE t4(\n"
     "  a INTEGER %s %s,\n"
     "  b INTEGER %s,\n"
     "  c TEXT %s\n"
     ") %s",
-    g.zNN, g.zPK, g.zNN, g.zNN, g.zWR);
+    isTemp(1), g.zNN, g.zPK, g.zNN, g.zNN, g.zWR);
   speedtest1_exec("CREATE INDEX t4b ON t4(b)");
   speedtest1_exec("CREATE INDEX t4c ON t4(c)");
   speedtest1_exec("INSERT INTO t4 SELECT * FROM t1");
@@ -1047,7 +1057,7 @@ void testset_rtree(int p1, int p2){
   speedtest1_end_test();
 
   speedtest1_begin_test(101, "Copy from rtree to a regular table");
-  speedtest1_exec("CREATE TABLE t1(id INTEGER PRIMARY KEY,x0,x1,y0,y1,z0,z1)");
+  speedtest1_exec(" TABLE t1(id INTEGER PRIMARY KEY,x0,x1,y0,y1,z0,z1)");
   speedtest1_exec("INSERT INTO t1 SELECT * FROM rt1");
   speedtest1_end_test();
 
@@ -1236,7 +1246,8 @@ int main(int argc, char **argv){
   int rc;                       /* API return code */
 
   /* Display the version of SQLite being tested */
-  printf("Speedtest1 for SQLite %s %.50s\n", sqlite3_libversion(), sqlite3_sourceid());
+  printf("-- Speedtest1 for SQLite %s %.50s\n",
+         sqlite3_libversion(), sqlite3_sourceid());
 
   /* Process command-line arguments */
   g.zWR = "";
@@ -1320,6 +1331,13 @@ int main(int argc, char **argv){
         g.szTest = integerValue(argv[++i]);
       }else if( strcmp(z,"stats")==0 ){
         showStats = 1;
+      }else if( strcmp(z,"temp")==0 ){
+        if( i>=argc-1 ) fatal_error("missing argument on %s\n", argv[i]);
+        i++;
+        if( argv[i][0]<'0' || argv[i][0]>'9' || argv[i][1]!=0 ){
+          fatal_error("argument to --temp should be integer between 0 and 9");
+        }
+        g.eTemp = argv[i][0] - '0';
       }else if( strcmp(z,"testset")==0 ){
         if( i>=argc-1 ) fatal_error("missing argument on %s\n", argv[i]);
         zTSet = argv[++i];
@@ -1351,11 +1369,7 @@ int main(int argc, char **argv){
                   argv[i], argv[0]);
     }
   }
-#if 0
-  if( zDbName==0 ){
-    fatal_error(zHelp, argv[0]);
-  }
-#endif
+  if( zDbName!=0 ) unlink(zDbName);
 #if SQLITE_VERSION_NUMBER>=3006001
   if( nHeap>0 ){
     pHeap = malloc( nHeap );

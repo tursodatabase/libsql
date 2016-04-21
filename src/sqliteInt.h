@@ -988,6 +988,7 @@ typedef struct LookasideSlot LookasideSlot;
 typedef struct Module Module;
 typedef struct NameContext NameContext;
 typedef struct Parse Parse;
+typedef struct PreUpdate PreUpdate;
 typedef struct PrintfArguments PrintfArguments;
 typedef struct RowSet RowSet;
 typedef struct Savepoint Savepoint;
@@ -1272,6 +1273,13 @@ struct sqlite3 {
   void (*xRollbackCallback)(void*); /* Invoked at every commit. */
   void *pUpdateArg;
   void (*xUpdateCallback)(void*,int, const char*,const char*,sqlite_int64);
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
+  void *pPreUpdateArg;          /* First argument to xPreUpdateCallback */
+  void (*xPreUpdateCallback)(   /* Registered using sqlite3_preupdate_hook() */
+    void*,sqlite3*,int,char const*,char const*,sqlite3_int64,sqlite3_int64
+  );
+  PreUpdate *pPreUpdate;        /* Context for active pre-update callback */
+#endif /* SQLITE_ENABLE_PREUPDATE_HOOK */
 #ifndef SQLITE_OMIT_WAL
   int (*xWalCallback)(void *, sqlite3 *, const char *, int);
   void *pWalArg;
@@ -1342,6 +1350,11 @@ struct sqlite3 {
 
 /*
 ** Possible values for the sqlite3.flags.
+**
+** Value constraints (enforced via assert()):
+**      SQLITE_FullFSync     == PAGER_FULLFSYNC
+**      SQLITE_CkptFullFSync == PAGER_CKPT_FULLFSYNC
+**      SQLITE_CacheSpill    == PAGER_CACHE_SPILL
 */
 #define SQLITE_VdbeTrace      0x00000001  /* True to trace VDBE execution */
 #define SQLITE_InternChanges  0x00000002  /* Uncommitted Hash table changes */
@@ -1369,13 +1382,14 @@ struct sqlite3 {
 #define SQLITE_AutoIndex      0x00100000  /* Enable automatic indexes */
 #define SQLITE_PreferBuiltin  0x00200000  /* Preference to built-in funcs */
 #define SQLITE_LoadExtension  0x00400000  /* Enable load_extension */
-#define SQLITE_EnableTrigger  0x00800000  /* True to enable triggers */
-#define SQLITE_DeferFKs       0x01000000  /* Defer all FK constraints */
-#define SQLITE_QueryOnly      0x02000000  /* Disable database changes */
-#define SQLITE_VdbeEQP        0x04000000  /* Debug EXPLAIN QUERY PLAN */
-#define SQLITE_Vacuum         0x08000000  /* Currently in a VACUUM */
-#define SQLITE_CellSizeCk     0x10000000  /* Check btree cell sizes on load */
-#define SQLITE_Fts3Tokenizer  0x20000000  /* Enable fts3_tokenizer(2) */
+#define SQLITE_LoadExtFunc    0x00800000  /* Enable load_extension() SQL func */
+#define SQLITE_EnableTrigger  0x01000000  /* True to enable triggers */
+#define SQLITE_DeferFKs       0x02000000  /* Defer all FK constraints */
+#define SQLITE_QueryOnly      0x04000000  /* Disable database changes */
+#define SQLITE_VdbeEQP        0x08000000  /* Debug EXPLAIN QUERY PLAN */
+#define SQLITE_Vacuum         0x10000000  /* Currently in a VACUUM */
+#define SQLITE_CellSizeCk     0x20000000  /* Check btree cell sizes on load */
+#define SQLITE_Fts3Tokenizer  0x40000000  /* Enable fts3_tokenizer(2) */
 
 
 /*
@@ -1476,6 +1490,13 @@ struct FuncDestructor {
 ** values must correspond to OPFLAG_LENGTHARG and OPFLAG_TYPEOFARG.  And
 ** SQLITE_FUNC_CONSTANT must be the same as SQLITE_DETERMINISTIC.  There
 ** are assert() statements in the code to verify this.
+**
+** Value constraints (enforced via assert()):
+**     SQLITE_FUNC_MINMAX    ==  NC_MinMaxAgg      == SF_MinMaxAgg
+**     SQLITE_FUNC_LENGTH    ==  OPFLAG_LENGTHARG
+**     SQLITE_FUNC_TYPEOF    ==  OPFLAG_TYPEOFARG
+**     SQLITE_FUNC_CONSTANT  ==  SQLITE_DETERMINISTIC from the API
+**     SQLITE_FUNC_ENCMASK   depends on SQLITE_UTF* macros in the API
 */
 #define SQLITE_FUNC_ENCMASK  0x0003 /* SQLITE_UTF8, SQLITE_UTF16BE or UTF16LE */
 #define SQLITE_FUNC_LIKE     0x0004 /* Candidate for the LIKE optimization */
@@ -2475,6 +2496,9 @@ struct SrcList {
 /*
 ** Flags appropriate for the wctrlFlags parameter of sqlite3WhereBegin()
 ** and the WhereInfo.wctrlFlags member.
+**
+** Value constraints (enforced via assert()):
+**     WHERE_USE_LIMIT  == SF_FixedLimit
 */
 #define WHERE_ORDERBY_NORMAL   0x0000 /* No-op */
 #define WHERE_ORDERBY_MIN      0x0001 /* ORDER BY processing for min() func */
@@ -2535,15 +2559,16 @@ struct NameContext {
 /*
 ** Allowed values for the NameContext, ncFlags field.
 **
-** Note:  NC_MinMaxAgg must have the same value as SF_MinMaxAgg and
-** SQLITE_FUNC_MINMAX.
+** Value constraints (all checked via assert()):
+**    NC_HasAgg    == SF_HasAgg
+**    NC_MinMaxAgg == SF_MinMaxAgg == SQLITE_FUNC_MINMAX
 **
 */
 #define NC_AllowAgg  0x0001  /* Aggregate functions are allowed here */
-#define NC_HasAgg    0x0002  /* One or more aggregate functions seen */
+#define NC_PartIdx   0x0002  /* True if resolving a partial index WHERE */
 #define NC_IsCheck   0x0004  /* True if resolving names in a CHECK constraint */
 #define NC_InAggFunc 0x0008  /* True if analyzing arguments to an agg func */
-#define NC_PartIdx   0x0010  /* True if resolving a partial index WHERE */
+#define NC_HasAgg    0x0010  /* One or more aggregate functions seen */
 #define NC_IdxExpr   0x0020  /* True if resolving columns of CREATE INDEX */
 #define NC_MinMaxAgg 0x1000  /* min/max aggregates seen.  See note above */
 
@@ -2592,24 +2617,30 @@ struct Select {
 /*
 ** Allowed values for Select.selFlags.  The "SF" prefix stands for
 ** "Select Flag".
+**
+** Value constraints (all checked via assert())
+**     SF_HasAgg     == NC_HasAgg
+**     SF_MinMaxAgg  == NC_MinMaxAgg     == SQLITE_FUNC_MINMAX
+**     SF_FixedLimit == WHERE_USE_LIMIT
 */
 #define SF_Distinct       0x00001  /* Output should be DISTINCT */
 #define SF_All            0x00002  /* Includes the ALL keyword */
 #define SF_Resolved       0x00004  /* Identifiers have been resolved */
-#define SF_Aggregate      0x00008  /* Contains aggregate functions */
-#define SF_UsesEphemeral  0x00010  /* Uses the OpenEphemeral opcode */
-#define SF_Expanded       0x00020  /* sqlite3SelectExpand() called on this */
-#define SF_HasTypeInfo    0x00040  /* FROM subqueries have Table metadata */
-#define SF_Compound       0x00080  /* Part of a compound query */
-#define SF_Values         0x00100  /* Synthesized from VALUES clause */
-#define SF_MultiValue     0x00200  /* Single VALUES term with multiple rows */
-#define SF_NestedFrom     0x00400  /* Part of a parenthesized FROM clause */
-#define SF_MaybeConvert   0x00800  /* Need convertCompoundSelectToSubquery() */
+#define SF_Aggregate      0x00008  /* Contains agg functions or a GROUP BY */
+#define SF_HasAgg         0x00010  /* Contains aggregate functions */
+#define SF_UsesEphemeral  0x00020  /* Uses the OpenEphemeral opcode */
+#define SF_Expanded       0x00040  /* sqlite3SelectExpand() called on this */
+#define SF_HasTypeInfo    0x00080  /* FROM subqueries have Table metadata */
+#define SF_Compound       0x00100  /* Part of a compound query */
+#define SF_Values         0x00200  /* Synthesized from VALUES clause */
+#define SF_MultiValue     0x00400  /* Single VALUES term with multiple rows */
+#define SF_NestedFrom     0x00800  /* Part of a parenthesized FROM clause */
 #define SF_MinMaxAgg      0x01000  /* Aggregate containing min() or max() */
 #define SF_Recursive      0x02000  /* The recursive part of a recursive CTE */
 #define SF_FixedLimit     0x04000  /* nSelectRow set by a constant LIMIT */
-#define SF_Converted      0x08000  /* By convertCompoundSelectToSubquery() */
-#define SF_IncludeHidden  0x10000  /* Include hidden columns in output */
+#define SF_MaybeConvert   0x08000  /* Need convertCompoundSelectToSubquery() */
+#define SF_Converted      0x10000  /* By convertCompoundSelectToSubquery() */
+#define SF_IncludeHidden  0x20000  /* Include hidden columns in output */
 
 
 /*
@@ -2806,6 +2837,7 @@ struct Parse {
   u8 hasCompound;      /* Need to invoke convertCompoundSelectToSubquery() */
   u8 okConstFactor;    /* OK to factor out constants */
   u8 disableLookaside; /* Number of times lookaside has been disabled */
+  u8 nColCache;        /* Number of entries in aColCache[] */
   int aTempReg[8];     /* Holding area for temporary registers */
   int nRangeReg;       /* Size of the temporary register block */
   int iRangeReg;       /* First register in temporary register block */
@@ -2919,6 +2951,15 @@ struct AuthContext {
 
 /*
 ** Bitfield flags for P5 value in various opcodes.
+**
+** Value constraints (enforced via assert()):
+**    OPFLAG_LENGTHARG    == SQLITE_FUNC_LENGTH
+**    OPFLAG_TYPEOFARG    == SQLITE_FUNC_TYPEOF
+**    OPFLAG_BULKCSR      == BTREE_BULKLOAD
+**    OPFLAG_SEEKEQ       == BTREE_SEEK_EQ
+**    OPFLAG_FORDELETE    == BTREE_FORDELETE
+**    OPFLAG_SAVEPOSITION == BTREE_SAVEPOSITION
+**    OPFLAG_AUXDELETE    == BTREE_AUXDELETE
 */
 #define OPFLAG_NCHANGE       0x01    /* OP_Insert: Set to update db->nChange */
                                      /* Also used in P2 (not P5) of OP_Delete */
@@ -2927,6 +2968,9 @@ struct AuthContext {
 #define OPFLAG_ISUPDATE      0x04    /* This OP_Insert is an sql UPDATE */
 #define OPFLAG_APPEND        0x08    /* This is likely to be an append */
 #define OPFLAG_USESEEKRESULT 0x10    /* Try to avoid a seek in BtreeInsert() */
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
+#define OPFLAG_ISNOOP        0x40    /* OP_Delete does pre-update-hook only */
+#endif
 #define OPFLAG_LENGTHARG     0x40    /* OP_Column only used for length() */
 #define OPFLAG_TYPEOFARG     0x80    /* OP_Column only used for typeof() */
 #define OPFLAG_BULKCSR       0x01    /* OP_Open** used to open bulk cursor */
@@ -3290,6 +3334,7 @@ int sqlite3CantopenError(int);
 # define sqlite3Isdigit(x)   (sqlite3CtypeMap[(unsigned char)(x)]&0x04)
 # define sqlite3Isxdigit(x)  (sqlite3CtypeMap[(unsigned char)(x)]&0x08)
 # define sqlite3Tolower(x)   (sqlite3UpperToLower[(unsigned char)(x)])
+# define sqlite3Isquote(x)   (sqlite3CtypeMap[(unsigned char)(x)]&0x80)
 #else
 # define sqlite3Toupper(x)   toupper((unsigned char)(x))
 # define sqlite3Isspace(x)   isspace((unsigned char)(x))
@@ -3298,6 +3343,7 @@ int sqlite3CantopenError(int);
 # define sqlite3Isdigit(x)   isdigit((unsigned char)(x))
 # define sqlite3Isxdigit(x)  isxdigit((unsigned char)(x))
 # define sqlite3Tolower(x)   tolower((unsigned char)(x))
+# define sqlite3Isquote(x)   ((x)=='"'||(x)=='\''||(x)=='['||(x)=='`')
 #endif
 #ifndef SQLITE_OMIT_COMPILEOPTION_DIAGS
 int sqlite3IsIdChar(u8);
@@ -3421,7 +3467,7 @@ char *sqlite3VMPrintf(sqlite3*,const char*, va_list);
 
 void sqlite3SetString(char **, sqlite3*, const char*);
 void sqlite3ErrorMsg(Parse*, const char*, ...);
-int sqlite3Dequote(char*);
+void sqlite3Dequote(char*);
 void sqlite3TokenInit(Token*,char*);
 int sqlite3KeywordCode(const unsigned char*, int);
 int sqlite3RunParser(Parse*, const char*, char **);
@@ -3438,6 +3484,7 @@ Expr *sqlite3ExprAlloc(sqlite3*,int,const Token*,int);
 Expr *sqlite3Expr(sqlite3*,int,const char*);
 void sqlite3ExprAttachSubtrees(sqlite3*,Expr*,Expr*,Expr*);
 Expr *sqlite3PExpr(Parse*, int, Expr*, Expr*, const Token*);
+void sqlite3PExprAddSelect(Parse*, Expr*, Select*);
 Expr *sqlite3ExprAnd(sqlite3*,Expr*, Expr*);
 Expr *sqlite3ExprFunction(Parse*,ExprList*, Token*);
 void sqlite3ExprAssignVarNumber(Parse*, Expr*);
@@ -3457,6 +3504,7 @@ void sqlite3CollapseDatabaseArray(sqlite3*);
 void sqlite3CommitInternalChanges(sqlite3*);
 void sqlite3DeleteColumnNames(sqlite3*,Table*);
 int sqlite3ColumnsFromExprList(Parse*,ExprList*,i16*,Column**);
+void sqlite3SelectAddColumnTypeAndCollation(Parse*,Table*,Select*);
 Table *sqlite3ResultSetOfSelect(Parse*,Select*);
 void sqlite3OpenMasterTable(Parse *, int);
 Index *sqlite3PrimaryKeyIndex(Table*);

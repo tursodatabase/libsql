@@ -74,7 +74,7 @@ static void clearSelect(sqlite3 *db, Select *p, int bFree){
     sqlite3ExprListDelete(db, p->pOrderBy);
     sqlite3ExprDelete(db, p->pLimit);
     sqlite3ExprDelete(db, p->pOffset);
-    sqlite3WithDelete(db, p->pWith);
+    if( p->pWith ) sqlite3WithDelete(db, p->pWith);
     if( bFree ) sqlite3DbFree(db, p);
     p = pPrior;
     bFree = 1;
@@ -169,7 +169,7 @@ void sqlite3SelectSetName(Select *p, const char *zName){
 ** Delete the given Select structure and all of its substructures.
 */
 void sqlite3SelectDelete(sqlite3 *db, Select *p){
-  clearSelect(db, p, 1);
+  if( p ) clearSelect(db, p, 1);
 }
 
 /*
@@ -1704,7 +1704,7 @@ int sqlite3ColumnsFromExprList(
 ** This routine requires that all identifiers in the SELECT
 ** statement be resolved.
 */
-static void selectAddColumnTypeAndCollation(
+void sqlite3SelectAddColumnTypeAndCollation(
   Parse *pParse,        /* Parsing contexts */
   Table *pTab,          /* Add column type information to this table */
   Select *pSelect       /* SELECT used to determine types and collations */
@@ -1726,10 +1726,20 @@ static void selectAddColumnTypeAndCollation(
   sNC.pSrcList = pSelect->pSrc;
   a = pSelect->pEList->a;
   for(i=0, pCol=pTab->aCol; i<pTab->nCol; i++, pCol++){
+    const char *zType;
+    int n, m;
     p = a[i].pExpr;
-    columnType(&sNC, p, 0, 0, 0, &pCol->szEst);
+    zType = columnType(&sNC, p, 0, 0, 0, &pCol->szEst);
     szAll += pCol->szEst;
     pCol->affinity = sqlite3ExprAffinity(p);
+    if( zType && (m = sqlite3Strlen30(zType))>0 ){
+      n = sqlite3Strlen30(pCol->zName);
+      pCol->zName = sqlite3DbReallocOrFree(db, pCol->zName, n+m+2);
+      if( pCol->zName ){
+        memcpy(&pCol->zName[n+1], zType, m+1);
+        pCol->colFlags |= COLFLAG_HASTYPE;
+      }
+    }
     if( pCol->affinity==0 ) pCol->affinity = SQLITE_AFF_BLOB;
     pColl = sqlite3ExprCollSeq(pParse, p);
     if( pColl && pCol->zColl==0 ){
@@ -1766,7 +1776,7 @@ Table *sqlite3ResultSetOfSelect(Parse *pParse, Select *pSelect){
   pTab->zName = 0;
   pTab->nRowLogEst = 200; assert( 200==sqlite3LogEst(1048576) );
   sqlite3ColumnsFromExprList(pParse, pSelect->pEList, &pTab->nCol, &pTab->aCol);
-  selectAddColumnTypeAndCollation(pParse, pTab, pSelect);
+  sqlite3SelectAddColumnTypeAndCollation(pParse, pTab, pSelect);
   pTab->iPKey = -1;
   if( db->mallocFailed ){
     sqlite3DeleteTable(db, pTab);
@@ -1779,19 +1789,19 @@ Table *sqlite3ResultSetOfSelect(Parse *pParse, Select *pSelect){
 ** Get a VDBE for the given parser context.  Create a new one if necessary.
 ** If an error occurs, return NULL and leave a message in pParse.
 */
-Vdbe *sqlite3GetVdbe(Parse *pParse){
-  Vdbe *v = pParse->pVdbe;
-  if( v==0 ){
-    v = pParse->pVdbe = sqlite3VdbeCreate(pParse);
-    if( v ) sqlite3VdbeAddOp0(v, OP_Init);
-    if( pParse->pToplevel==0
-     && OptimizationEnabled(pParse->db,SQLITE_FactorOutConst)
-    ){
-      pParse->okConstFactor = 1;
-    }
-
+static SQLITE_NOINLINE Vdbe *allocVdbe(Parse *pParse){
+  Vdbe *v = pParse->pVdbe = sqlite3VdbeCreate(pParse);
+  if( v ) sqlite3VdbeAddOp0(v, OP_Init);
+  if( pParse->pToplevel==0
+   && OptimizationEnabled(pParse->db,SQLITE_FactorOutConst)
+  ){
+    pParse->okConstFactor = 1;
   }
   return v;
+}
+Vdbe *sqlite3GetVdbe(Parse *pParse){
+  Vdbe *v = pParse->pVdbe;
+  return v ? v : allocVdbe(pParse);
 }
 
 
@@ -3777,6 +3787,8 @@ static int pushDownWhereTerms(
   int nChng = 0;
   if( pWhere==0 ) return 0;
   if( (pSubq->selFlags & (SF_Aggregate|SF_Recursive))!=0 ){
+     testcase( pSubq->selFlags & SF_Aggregate );
+     testcase( pSubq->selFlags & SF_Recursive );
      return 0; /* restrictions (1) and (2) */
   }
   if( pSubq->pLimit!=0 ){
@@ -4550,7 +4562,7 @@ static void selectAddSubqueryTypeInfo(Walker *pWalker, Select *p){
       Select *pSel = pFrom->pSelect;
       if( pSel ){
         while( pSel->pPrior ) pSel = pSel->pPrior;
-        selectAddColumnTypeAndCollation(pParse, pTab, pSel);
+        sqlite3SelectAddColumnTypeAndCollation(pParse, pTab, pSel);
       }
     }
   }
@@ -5082,6 +5094,13 @@ int sqlite3Select(
     ** the sDistinct.isTnct is still set.  Hence, isTnct represents the
     ** original setting of the SF_Distinct flag, not the current setting */
     assert( sDistinct.isTnct );
+
+#if SELECTTRACE_ENABLED
+    if( sqlite3SelectTrace & 0x400 ){
+      SELECTTRACE(0x400,pParse,p,("Transform DISTINCT into GROUP BY:\n"));
+      sqlite3TreeViewSelect(0, p, 0);
+    }
+#endif
   }
 
   /* If there is an ORDER BY clause, then create an ephemeral index to

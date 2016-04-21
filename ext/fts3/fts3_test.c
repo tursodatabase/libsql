@@ -458,7 +458,7 @@ static int testTokenizerNext(
       if( pCsr->iLangid & 0x00000001 ){
         for(i=0; i<nToken; i++) pCsr->aBuffer[i] = pToken[i];
       }else{
-        for(i=0; i<nToken; i++) pCsr->aBuffer[i] = testTolower(pToken[i]);
+        for(i=0; i<nToken; i++) pCsr->aBuffer[i] = (char)testTolower(pToken[i]);
       }
       pCsr->iToken++;
       pCsr->iInput = (int)(p - pCsr->aInput);

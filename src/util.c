@@ -242,18 +242,13 @@ void sqlite3ErrorMsg(Parse *pParse, const char *zFormat, ...){
 ** brackets from around identifiers.  For example:  "[a-b-c]" becomes
 ** "a-b-c".
 */
-int sqlite3Dequote(char *z){
+void sqlite3Dequote(char *z){
   char quote;
   int i, j;
-  if( z==0 ) return -1;
+  if( z==0 ) return;
   quote = z[0];
-  switch( quote ){
-    case '\'':  break;
-    case '"':   break;
-    case '`':   break;                /* For MySQL compatibility */
-    case '[':   quote = ']';  break;  /* For MS SqlServer compatibility */
-    default:    return -1;
-  }
+  if( !sqlite3Isquote(quote) ) return;
+  if( quote=='[' ) quote = ']';
   for(i=1, j=0;; i++){
     assert( z[i] );
     if( z[i]==quote ){
@@ -268,7 +263,6 @@ int sqlite3Dequote(char *z){
     }
   }
   z[j] = 0;
-  return j;
 }
 
 /*
@@ -1448,7 +1442,6 @@ LogEst sqlite3LogEstFromDouble(double x){
 */
 u64 sqlite3LogEstToInt(LogEst x){
   u64 n;
-  if( x<10 ) return 1;
   n = x%10;
   x /= 10;
   if( n>=5 ) n -= 2;

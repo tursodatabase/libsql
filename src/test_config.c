@@ -156,6 +156,12 @@ static void set_options(Tcl_Interp *interp){
   Tcl_SetVar2(interp, "sqlite_options", "mem5", "0", TCL_GLOBAL_ONLY);
 #endif
 
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
+  Tcl_SetVar2(interp, "sqlite_options", "preupdate", "1", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "preupdate", "0", TCL_GLOBAL_ONLY);
+#endif
+
 #ifdef SQLITE_ENABLE_SNAPSHOT
   Tcl_SetVar2(interp, "sqlite_options", "snapshot", "1", TCL_GLOBAL_ONLY);
 #else
@@ -532,6 +538,12 @@ Tcl_SetVar2(interp, "sqlite_options", "mergesort", "1", TCL_GLOBAL_ONLY);
   Tcl_SetVar2(interp, "sqlite_options", "schema_version", "0", TCL_GLOBAL_ONLY);
 #else
   Tcl_SetVar2(interp, "sqlite_options", "schema_version", "1", TCL_GLOBAL_ONLY);
+#endif
+
+#ifdef SQLITE_ENABLE_SESSION
+  Tcl_SetVar2(interp, "sqlite_options", "session", "1", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "session", "0", TCL_GLOBAL_ONLY);
 #endif
 
 #ifdef SQLITE_ENABLE_STAT4

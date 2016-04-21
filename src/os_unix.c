@@ -693,7 +693,7 @@ static struct unix_syscall {
 #else
   { "pread64",      (sqlite3_syscall_ptr)0,          0  },
 #endif
-#define osPread64   ((ssize_t(*)(int,void*,size_t,off_t))aSyscall[10].pCurrent)
+#define osPread64 ((ssize_t(*)(int,void*,size_t,off64_t))aSyscall[10].pCurrent)
 
   { "write",        (sqlite3_syscall_ptr)write,      0  },
 #define osWrite     ((ssize_t(*)(int,const void*,size_t))aSyscall[11].pCurrent)
@@ -711,7 +711,7 @@ static struct unix_syscall {
 #else
   { "pwrite64",     (sqlite3_syscall_ptr)0,          0  },
 #endif
-#define osPwrite64  ((ssize_t(*)(int,const void*,size_t,off_t))\
+#define osPwrite64  ((ssize_t(*)(int,const void*,size_t,off64_t))\
                     aSyscall[13].pCurrent)
 
   { "fchmod",       (sqlite3_syscall_ptr)fchmod,          0  },
@@ -1815,7 +1815,7 @@ static int unixLock(sqlite3_file *id, int eFileLock){
   ** lock transitions in terms of the POSIX advisory shared and exclusive
   ** lock primitives (called read-locks and write-locks below, to avoid
   ** confusion with SQLite lock names). The algorithms are complicated
-  ** slightly in order to be compatible with windows systems simultaneously
+  ** slightly in order to be compatible with Windows95 systems simultaneously
   ** accessing the same database file, in case that is ever required.
   **
   ** Symbols defined in os.h indentify the 'pending byte' and the 'reserved
@@ -1823,8 +1823,14 @@ static int unixLock(sqlite3_file *id, int eFileLock){
   ** range', a range of 510 bytes at a well known offset.
   **
   ** To obtain a SHARED lock, a read-lock is obtained on the 'pending
-  ** byte'.  If this is successful, a random byte from the 'shared byte
-  ** range' is read-locked and the lock on the 'pending byte' released.
+  ** byte'.  If this is successful, 'shared byte range' is read-locked
+  ** and the lock on the 'pending byte' released.  (Legacy note:  When
+  ** SQLite was first developed, Windows95 systems were still very common,
+  ** and Widnows95 lacks a shared-lock capability.  So on Windows95, a
+  ** single randomly selected by from the 'shared byte range' is locked.
+  ** Windows95 is now pretty much extinct, but this work-around for the
+  ** lack of shared-locks on Windows95 lives on, for backwards
+  ** compatibility.)
   **
   ** A process may only obtain a RESERVED lock after it has a SHARED lock.
   ** A RESERVED lock is implemented by grabbing a write-lock on the
@@ -1843,11 +1849,6 @@ static int unixLock(sqlite3_file *id, int eFileLock){
   ** range'. Since all other locks require a read-lock on one of the bytes
   ** within this range, this ensures that no other locks are held on the
   ** database. 
-  **
-  ** The reason a single byte cannot be used instead of the 'shared byte
-  ** range' is that some versions of windows do not support read-locks. By
-  ** locking a random byte from a range, concurrent SHARED locks may exist
-  ** even if the locking primitive used is always a write-lock.
   */
   int rc = SQLITE_OK;
   unixFile *pFile = (unixFile*)id;

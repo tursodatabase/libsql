@@ -41,7 +41,7 @@ typedef struct SubProgram SubProgram;
 struct VdbeOp {
   u8 opcode;          /* What operation to perform */
   signed char p4type; /* One of the P4_xxx constants for p4 */
-  u8 opflags;         /* Mask of the OPFLG_* flags in opcodes.h */
+  u8 notUsed1;
   u8 p5;              /* Fifth parameter is an unsigned character */
   int p1;             /* First operand */
   int p2;             /* Second parameter (often the jump destination) */
@@ -60,6 +60,7 @@ struct VdbeOp {
     KeyInfo *pKeyInfo;     /* Used when p4type is P4_KEYINFO */
     int *ai;               /* Used when p4type is P4_INTARRAY */
     SubProgram *pProgram;  /* Used when p4type is P4_SUBPROGRAM */
+    Table *pTab;           /* Used when p4type is P4_TABLE */
 #ifdef SQLITE_ENABLE_CURSOR_HINTS
     Expr *pExpr;           /* Used when p4type is P4_EXPR */
 #endif
@@ -124,7 +125,8 @@ typedef struct VdbeOpList VdbeOpList;
 #define P4_INTARRAY (-15) /* P4 is a vector of 32-bit integers */
 #define P4_SUBPROGRAM  (-18) /* P4 is a pointer to a SubProgram structure */
 #define P4_ADVANCE  (-19) /* P4 is a pointer to BtreeNext() or BtreePrev() */
-#define P4_FUNCCTX  (-20) /* P4 is a pointer to an sqlite3_context object */
+#define P4_TABLE    (-20) /* P4 is a pointer to a Table structure */
+#define P4_FUNCCTX  (-21) /* P4 is a pointer to an sqlite3_context object */
 
 /* Error message codes for OP_Halt */
 #define P5_ConstraintNotNull 1

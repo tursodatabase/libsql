@@ -71,6 +71,7 @@ fconfigure stdout -translation lf
 set filelist [subst {
   $TOP/src/sqlite.h.in
   $TOP/ext/rtree/sqlite3rtree.h
+  $TOP/ext/session/sqlite3session.h
   $TOP/ext/fts5/fts5.h
 }]
 
@@ -91,6 +92,9 @@ set cdecllist {
 #
 foreach file $filelist {
   set in [open $file]
+  if {![regexp {sqlite\.h\.in} $file]} {
+    puts "/******** Begin file [file tail $file] *********/"
+  }
   while {![eof $in]} {
   
     set line [gets $in]
@@ -124,4 +128,7 @@ foreach file $filelist {
     puts $line
   }
   close $in
+  if {![regexp {sqlite\.h\.in} $file]} {
+    puts "/******** End of [file tail $file] *********/"
+  }
 }

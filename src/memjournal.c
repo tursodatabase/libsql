@@ -13,6 +13,15 @@
 ** This file contains code use to implement an in-memory rollback journal.
 ** The in-memory rollback journal is used to journal transactions for
 ** ":memory:" databases and when the journal_mode=MEMORY pragma is used.
+**
+** Update:  The in-memory journal is also used to temporarily cache
+** smaller journals that are not critical for power-loss recovery.
+** For example, statement journals that are not too big will be held
+** entirely in memory, thus reducing the number of file I/O calls, and
+** more importantly, reducing temporary file creation events.  If these
+** journals become too large for memory, they are spilled to disk.  But
+** in the common case, they are usually small and no file I/O needs to
+** occur.
 */
 #include "sqliteInt.h"
 
@@ -94,6 +103,7 @@ static int memjrnlRead(
 #endif
 
   assert( (iAmt+iOfst)<=p->endpoint.iOffset );
+  assert( p->readpoint.iOffset==0 || p->readpoint.pChunk!=0 );
   if( p->readpoint.iOffset!=iOfst || iOfst==0 ){
     sqlite3_int64 iOff = 0;
     for(pChunk=p->pFirst; 
@@ -104,6 +114,7 @@ static int memjrnlRead(
     }
   }else{
     pChunk = p->readpoint.pChunk;
+    assert( pChunk!=0 );
   }
 
   iChunkOffset = (int)(iOfst%p->nChunkSize);
@@ -115,7 +126,7 @@ static int memjrnlRead(
     nRead -= iSpace;
     iChunkOffset = 0;
   } while( nRead>=0 && (pChunk=pChunk->pNext)!=0 && nRead>0 );
-  p->readpoint.iOffset = iOfst+iAmt;
+  p->readpoint.iOffset = pChunk ? iOfst+iAmt : 0;
   p->readpoint.pChunk = pChunk;
 
   return SQLITE_OK;

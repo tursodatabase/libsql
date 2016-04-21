@@ -92,6 +92,9 @@ foreach f [glob -nocomplain       \
 ] { 
   lappend alltests $f 
 }
+foreach f [glob -nocomplain $testdir/../ext/session/*.test] { 
+  lappend alltests $f 
+}
 
 if {$::tcl_platform(platform)!="unix"} {
   set alltests [test_set $alltests -exclude crash.test crash2.test]
@@ -100,6 +103,7 @@ set alltests [test_set $alltests -exclude {
   all.test        async.test         quick.test  veryquick.test
   memleak.test    permutations.test  soak.test   fts3.test
   mallocAll.test  rtree.test         full.test   extraquick.test
+  session.test
 }]
 
 set allquicktests [test_set $alltests -exclude {
@@ -974,6 +978,26 @@ test_suite "wal" -description {
 test_suite "rtree" -description {
   All R-tree related tests. Provides coverage of source file rtree.c.
 } -files [glob -nocomplain $::testdir/../ext/rtree/*.test]
+
+test_suite "session" -description {
+  All session module related tests. 
+} -files [glob -nocomplain $::testdir/../ext/session/*.test]
+
+test_suite "session_eec" -description {
+  All session module related tests with sqlite3_extended_result_codes() set. 
+} -files [
+  glob -nocomplain $::testdir/../ext/session/*.test
+] -dbconfig {
+  sqlite3_extended_result_codes $::dbhandle 1
+}
+
+test_suite "session_strm" -description {
+  All session module related tests using the streaming APIs.
+} -files [
+  glob -nocomplain $::testdir/../ext/session/*.test
+] -dbconfig {
+  set ::sqlite3session_streams 1
+}
 
 test_suite "rbu" -description {
   RBU tests.

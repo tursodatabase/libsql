@@ -604,5 +604,16 @@ do_test intpkey-15.7 {
   }
 } {}
 
+# 2016-04-18 ticket https://www.sqlite.org/src/tktview/7d7525cb01b68712495d3a
+# Be sure to escape quoted typenames.
+#
+do_execsql_test intpkey-16.0 {
+  CREATE TABLE t16a(id "INTEGER" PRIMARY KEY AUTOINCREMENT, b [TEXT], c `INT`);
+} {}
+do_execsql_test intpkey-16.1 {
+  PRAGMA table_info=t16a;
+} {0 id INTEGER 0 {} 1 1 b TEXT 0 {} 0 2 c INT 0 {} 0}
+
+
 
 finish_test

@@ -807,6 +807,7 @@ int sqlite3_db_config(sqlite3 *db, int op, ...){
         { SQLITE_DBCONFIG_ENABLE_FKEY,           SQLITE_ForeignKeys    },
         { SQLITE_DBCONFIG_ENABLE_TRIGGER,        SQLITE_EnableTrigger  },
         { SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER, SQLITE_Fts3Tokenizer  },
+        { SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION, SQLITE_LoadExtension  },
       };
       unsigned int i;
       rc = SQLITE_ERROR; /* IMP: R-42790-23372 */
@@ -1928,6 +1929,27 @@ void *sqlite3_rollback_hook(
   sqlite3_mutex_leave(db->mutex);
   return pRet;
 }
+
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
+/*
+** Register a callback to be invoked each time a row is updated,
+** inserted or deleted using this database connection.
+*/
+void *sqlite3_preupdate_hook(
+  sqlite3 *db,              /* Attach the hook to this database */
+  void(*xCallback)(         /* Callback function */
+    void*,sqlite3*,int,char const*,char const*,sqlite3_int64,sqlite3_int64),
+  void *pArg                /* First callback argument */
+){
+  void *pRet;
+  sqlite3_mutex_enter(db->mutex);
+  pRet = db->pPreUpdateArg;
+  db->xPreUpdateCallback = xCallback;
+  db->pPreUpdateArg = pArg;
+  sqlite3_mutex_leave(db->mutex);
+  return pRet;
+}
+#endif /* SQLITE_ENABLE_PREUPDATE_HOOK */
 
 #ifndef SQLITE_OMIT_WAL
 /*

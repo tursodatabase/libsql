@@ -3244,7 +3244,7 @@ static void fts5IterSetOutputs_Col100(Fts5Iter *pIter, Fts5SegIter *pSeg){
         if( aiCol==aiColEnd ) goto setoutputs_col_out;
       }
       if( *aiCol==iPrev ){
-        *aOut++ = (iPrev - iPrevOut) + 2;
+        *aOut++ = (u8)((iPrev - iPrevOut) + 2);
         iPrevOut = iPrev;
       }
     }

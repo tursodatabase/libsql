@@ -2359,6 +2359,31 @@ static int test_snapshot_free(
 }
 #endif /* SQLITE_ENABLE_SNAPSHOT */
 
+#ifdef SQLITE_ENABLE_SNAPSHOT
+/*
+** Usage: sqlite3_snapshot_cmp SNAPSHOT1 SNAPSHOT2
+*/
+static int test_snapshot_cmp(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int res;
+  sqlite3_snapshot *p1;
+  sqlite3_snapshot *p2;
+  if( objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "SNAPSHOT1 SNAPSHOT2");
+    return TCL_ERROR;
+  }
+  p1 = (sqlite3_snapshot*)sqlite3TestTextToPtr(Tcl_GetString(objv[1]));
+  p2 = (sqlite3_snapshot*)sqlite3TestTextToPtr(Tcl_GetString(objv[2]));
+  res = sqlite3_snapshot_cmp(p1, p2);
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(res));
+  return TCL_OK;
+}
+#endif /* SQLITE_ENABLE_SNAPSHOT */
+
 /*
 ** Usage:  sqlite3_next_stmt  DB  STMT
 **
@@ -7154,6 +7179,7 @@ static int test_sqlite3_db_config(
     { "FKEY",            SQLITE_DBCONFIG_ENABLE_FKEY },
     { "TRIGGER",         SQLITE_DBCONFIG_ENABLE_TRIGGER },
     { "FTS3_TOKENIZER",  SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER },
+    { "LOAD_EXTENSION",  SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION },
   };
   int i;
   int v;
@@ -7447,6 +7473,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_snapshot_get", test_snapshot_get, 0 },
      { "sqlite3_snapshot_open", test_snapshot_open, 0 },
      { "sqlite3_snapshot_free", test_snapshot_free, 0 },
+     { "sqlite3_snapshot_cmp", test_snapshot_cmp, 0 },
 #endif
   };
   static int bitmask_size = sizeof(Bitmask)*8;

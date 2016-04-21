@@ -906,6 +906,12 @@ proc fix_testname {varname} {
   }
 }
 
+proc normalize_list {L} {
+  set L2 [list]
+  foreach l $L {lappend L2 $l}
+  set L2
+}
+
 proc do_execsql_test {testname sql {result {}}} {
   fix_testname testname
   uplevel do_test [list $testname] [list "execsql {$sql}"] [list [list {*}$result]]
