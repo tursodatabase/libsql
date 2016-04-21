@@ -1,5 +1,5 @@
-C Add\sa\sdocumentation\scomment\sfor\ssqlite3rbu_vacuum()\sto\ssqlite3rbu.h.
-D 2016-04-20T20:08:58.990
+C Fix\sa\sproblem\sin\srbu\svacuum\son\stables\swith\sa\slarge\ssqlite_master\stable.
+D 2016-04-21T15:26:26.501
 F Makefile.in eba680121821b8a60940a81454316f47a341487a
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 71b8b16cf9393f68e2e2035486ca104872558836
@@ -247,8 +247,8 @@ F ext/rbu/rbufault3.test 54a399888ac4af44c68f9f58afbed23149428bca
 F ext/rbu/rbufts.test 828cd689da825f0a7b7c53ffc1f6f7fdb6fa5bda
 F ext/rbu/rbuprogress.test 2023a7df2c523e3df1cb532eff811cda385a789a
 F ext/rbu/rbusave.test 0f43b6686084f426ddd040b878426452fd2c2f48
-F ext/rbu/rbuvacuum.test ecd7ce1cd8528d6230b56f4840bbb7188cee6946
-F ext/rbu/sqlite3rbu.c 80ab68658a1dc1921a3eee7c666c948ea640087c
+F ext/rbu/rbuvacuum.test aa405cff38b15a89f6c97f91f1c6a67b2140b358
+F ext/rbu/sqlite3rbu.c 8310553b029e749329a89b3880a21f80876755c3
 F ext/rbu/sqlite3rbu.h efcafd0e36861943a88deb181753236f84dbc244
 F ext/rbu/test_rbu.c 430b8b9520c233505371d564d3561e0b554355f4
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
@@ -1484,7 +1484,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f042fdd1ea7febec7228e51efc2b0281805e196a
-R 20401012c91c212b91bec1accca1e5a8
+P da5c753ddac3cbfdf03710a82f5fd9fa2e29e819
+R e2636288f7318e2301180a849b5ff72b
 U dan
-Z ebff3ad2f969914e02c51eda888da39a
+Z d9d3e7dacedd64ed84574ca4c0316d8e

@@ -241,6 +241,21 @@ foreach step {0 1} {
     PRAGMA main.user_version;
     PRAGMA main.application_id;
   } {8192 2 412 413}
+
+  # Vacuum a database with a large sqlite_master table.
+  #
+  reset_db
+  do_test 1.10.1 {
+    for {set i 1} {$i < 50} {incr i} {
+      execsql "PRAGMA page_size = 1024"
+      execsql "CREATE TABLE t$i (a, b, c, PRIMARY KEY(a, b));"
+      execsql "
+        INSERT INTO t$i VALUES(1, 2, 3);
+        INSERT INTO t$i VALUES(4, 5, 6);
+      "
+    }
+  } {}
+  do_rbu_vacuum_test 1.10.2 $step
 }
 
 #-------------------------------------------------------------------------

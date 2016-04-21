@@ -3952,9 +3952,9 @@ static int rbuVfsRead(
           rbuPutU32(&aBuf[24], pRbu->pRbuFd->iCookie+1);  /* Change counter */
 
           if( iAmt>100 ){
-            assert( iAmt>=101 );
-            memset(&aBuf[101], 0, iAmt-101);
+            memset(&aBuf[100], 0, iAmt-100);
             rbuPutU16(&aBuf[105], iAmt & 0xFFFF);
+            aBuf[100] = 0x0D;
           }
         }
       }
