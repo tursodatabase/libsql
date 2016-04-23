@@ -5420,10 +5420,10 @@ static const char *unixTempFileDir(void){
     if( zDir==0 ) continue;
     if( osStat(zDir, &buf) ) continue;
     if( !S_ISDIR(buf.st_mode) ) continue;
-    if( osAccess(zDir, 07) ) continue;
-    break;
+    if( osAccess(zDir, 03) ) continue;
+    return zDir;
   }
-  return zDir;
+  return 0;
 }
 
 /*
@@ -5439,9 +5439,11 @@ static int unixGetTempname(int nBuf, char *zBuf){
   ** using the io-error infrastructure to test that SQLite handles this
   ** function failing. 
   */
+  zBuf[0] = 0;
   SimulateIOError( return SQLITE_IOERR );
 
   zDir = unixTempFileDir();
+  if( zDir==0 ) return SQLITE_IOERR_GETTEMPPATH;
   do{
     u64 r;
     sqlite3_randomness(sizeof(r), &r);
