@@ -1,5 +1,5 @@
-C Change\sthe\stemporary\sdirectory\ssearch\salgorithm\son\sunix\sso\sthat\sdirectories\nwith\sonly\s-wx\spermission\sare\sallowed.\s\sAnd\sdo\snot\sallow\s"."\sto\sbe\sreturned\sif\nit\slacks\s-wx\spermission.
-D 2016-04-21T23:37:24.378
+C Fix\sthe\sfix\sto\sthe\stemporary\sdirectory\ssearch\salgorithm\sso\sthat\sit\scontinues\nto\sreturn\s"."\sas\sa\sfallback\sif\sthat\sdirectory\shas\sthe\scorrect\spermissions.
+D 2016-04-23T20:59:23.071
 F Makefile.in eba680121821b8a60940a81454316f47a341487a
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 71b8b16cf9393f68e2e2035486ca104872558836
@@ -361,7 +361,7 @@ F src/os.c 4d83917f072ad958fba9235136fa2ed43df47905
 F src/os.h 8e976e59eb4ca1c0fca6d35ee803e38951cb0343
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c c96826e21e897bf9c6ae896be9de8d55d63a4ed5
+F src/os_unix.c 2488a2b6456709ad6398df2302d427a980e2695a
 F src/os_win.c 1997a873bfc8296a701bd8e2df8c3d5da5afe956
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c d20fa46d5beda38095be6070dd4c59e502817c72
@@ -1484,7 +1484,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bd4a6f8313eb71399a7141ebf7f2617d7b1464c3
-R 90c3ca98d0d4d69b4119d1fe5513a916
+P 67985761aa93fb613b87d340e75371fa55b0f778
+R 0a3904801876ad35cfb663a63395f63c
 U drh
-Z f4304caf089d5c38523c57ca13360c36
+Z 2d6519bfb47a62ce49b104a4f37d1acb
