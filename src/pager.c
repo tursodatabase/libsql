@@ -2034,7 +2034,7 @@ static int pager_end_transaction(Pager *pPager, int hasMaster, int bCommit){
   sqlite3BitvecDestroy(pPager->pInJournal);
   pPager->pInJournal = 0;
   pPager->nRec = 0;
-  if( pagerFlushOnCommit(pPager) ){
+  if( MEMDB || pagerFlushOnCommit(pPager) ){
     sqlite3PcacheCleanAll(pPager->pPCache);
   }else{
     sqlite3PcacheClearWritable(pPager->pPCache);
@@ -5381,7 +5381,7 @@ int sqlite3PagerGet(
       );
 
       if( rc==SQLITE_OK && pData ){
-        if( pPager->eState>PAGER_READER ){
+        if( pPager->eState>PAGER_READER || pPager->tempFile ){
           pPg = sqlite3PagerLookup(pPager, pgno);
         }
         if( pPg==0 ){
@@ -6219,7 +6219,7 @@ int sqlite3PagerCommitPhaseOne(
 
   assert( MEMDB==0 || pPager->tempFile );
   assert( isOpen(pPager->fd) || pPager->tempFile );
-  if( !isOpen(pPager->fd) ){
+  if( 0==pagerFlushOnCommit(pPager) ){
     /* If this is an in-memory db, or no pages have been written to, or this
     ** function has already been called, it is mostly a no-op.  However, any
     ** backup in progress needs to be restarted.  */
