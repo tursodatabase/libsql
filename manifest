@@ -1,5 +1,5 @@
-C Remove\san\sobsolete\scomment\sfrom\sthe\spager.\s\sNo\scode\schanges.
-D 2016-04-25T19:28:34.469
+C Add\san\ssqlite3FaultSim()\sall\sto\smake\sit\seasier\sto\ssimulate\sIO\serrors\sin\na\sVACUUM\scommit.
+D 2016-04-25T22:39:42.651
 F Makefile.in a905f3180accdafbd5a534bf26126ee5306d5056
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 71b8b16cf9393f68e2e2035486ca104872558836
@@ -364,7 +364,7 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c 2488a2b6456709ad6398df2302d427a980e2695a
 F src/os_win.c 1997a873bfc8296a701bd8e2df8c3d5da5afe956
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
-F src/pager.c 456ea27c2a467c161b1466b8f4f5307f12314d31
+F src/pager.c a8d30c49c231e9a20d05257613db922532588963
 F src/pager.h 329bdf078a4e0a3b35084534d58625d21fd03681
 F src/parse.y 10eb2f3fb62341291528c7984498054731f9d31e
 F src/pcache.c b3230ecfc7f797063fbe167f2845da363e8f07f8
@@ -1486,7 +1486,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3ae44770fdecc40c8097f1de0b504f36585a2232
-R db63125d858bb9f2f1e3791a791b0b06
+P 36f97ca8874a03ac8699f44fe0da95b0be507cc7
+R 54e681c99d31e5095466803c5f1b64d8
 U drh
-Z 7c3cc56899db1d72bed3171f2d6f3ea7
+Z 6d6cde3ceb3c27e62273721031ebad91
