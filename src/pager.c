@@ -872,6 +872,7 @@ static int assert_pager_state(Pager *p){
   ** state.
   */
   if( MEMDB ){
+    assert( !isOpen(p->fd) );
     assert( p->noSync );
     assert( p->journalMode==PAGER_JOURNALMODE_OFF 
          || p->journalMode==PAGER_JOURNALMODE_MEMORY 
@@ -3204,6 +3205,8 @@ static int pagerPagecount(Pager *pPager, Pgno *pnPage){
   */
   assert( pPager->eState==PAGER_OPEN );
   assert( pPager->eLock>=SHARED_LOCK );
+  assert( isOpen(pPager->fd) );
+  assert( pPager->tempFile==0 );
   nPage = sqlite3WalDbsize(pPager->pWal);
 
   /* If the number of pages in the database is not available from the
@@ -3211,14 +3214,11 @@ static int pagerPagecount(Pager *pPager, Pgno *pnPage){
   ** the database file.  If the size of the database file is not an
   ** integer multiple of the page-size, round up the result.
   */
-  if( nPage==0 ){
+  if( nPage==0 && ALWAYS(isOpen(pPager->fd)) ){
     i64 n = 0;                    /* Size of db file in bytes */
-    assert( isOpen(pPager->fd) || pPager->tempFile );
-    if( isOpen(pPager->fd) ){
-      int rc = sqlite3OsFileSize(pPager->fd, &n);
-      if( rc!=SQLITE_OK ){
-        return rc;
-      }
+    int rc = sqlite3OsFileSize(pPager->fd, &n);
+    if( rc!=SQLITE_OK ){
+      return rc;
     }
     nPage = (Pgno)((n+pPager->pageSize-1) / pPager->pageSize);
   }
@@ -4964,6 +4964,7 @@ static int hasHotJournal(Pager *pPager, int *pExists){
     if( rc==SQLITE_OK && !locked ){
       Pgno nPage;                 /* Number of pages in database file */
 
+      assert( pPager->tempFile==0 );
       rc = pagerPagecount(pPager, &nPage);
       if( rc==SQLITE_OK ){
         /* If the database is zero pages in size, that means that either (1) the
@@ -5448,7 +5449,8 @@ int sqlite3PagerGet(
       goto pager_acquire_err;
     }
 
-    if( MEMDB || pPager->dbSize<pgno || noContent || !isOpen(pPager->fd) ){
+    assert( !isOpen(pPager->fd) || !MEMDB );
+    if( !isOpen(pPager->fd) || pPager->dbSize<pgno || noContent ){
       if( pgno>pPager->mxPgno ){
         rc = SQLITE_FULL;
         goto pager_acquire_err;
