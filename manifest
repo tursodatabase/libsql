@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sthe\sMakefile.
-D 2016-04-25T01:43:24.306
+C When\schecking\sfor\sthe\sWHERE-clause\spush-down\soptimization,\sverify\sthat\nall\sterms\sof\sthe\scompound\sinner\sSELECT\sare\snon-aggregate,\snot\sjust\sthe\nlast\sterm.\s\sFix\sfor\sticket\s[f7f8c97e97597].
+D 2016-04-25T02:20:10.236
 F Makefile.in a905f3180accdafbd5a534bf26126ee5306d5056
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 71b8b16cf9393f68e2e2035486ca104872558836
@@ -377,7 +377,7 @@ F src/printf.c 63e6fb12bbe702dd664dc3703776c090383a5a26
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c b8f7174e5f8c33c44ded3a25a973d0bb89228c20
 F src/rowset.c 9fe4b3ad7cc00944386bb600233d8f523de07a6e
-F src/select.c 30217121bdf6b587462150b8ee9e1467f7a6036b
+F src/select.c fd4a7ce2937497181063cfedb92058ac89491a5d
 F src/shell.c 14ff7f660530a52b117d110ba3390b7b2eb719b6
 F src/sqlite.h.in 9984129d86243424b765fcb3f147c697bd20bb54
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1026,7 +1026,7 @@ F test/securedel2.test 2d54c28e46eb1fd6902089958b20b1b056c6f1c5
 F test/select1.test be62204d2bd9a5a8a149e9974cfddce893d8f686
 F test/select2.test 352480e0e9c66eda9c3044e412abdf5be0215b56
 F test/select3.test 2ce595f8fb8e2ac10071d3b4e424cadd4634a054
-F test/select4.test d926792a5e4d88fef0ddcddeb45d27ce75f7296c
+F test/select4.test 5389d9895968d1196c457d59b3ee6515d771d328
 F test/select5.test e758b8ef94f69b111df4cb819008856655dcd535
 F test/select6.test 39eac4a5c03650b2b473c532882273283ee8b7a0
 F test/select7.test 95e370c42d47c3c52377d05e9ffc01ccff7c1f61
@@ -1484,7 +1484,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b38fe522cfc971b37ca04e7b63a92bbb6e0b01e1
-R 5aa002889bfcaf382a8424adff459dd7
-U mistachkin
-Z 272f168dd75d48a808379cca7049b3ce
+P d0a579b35105810821bbfec6b50ecfebac7a17ee
+R 858c551be0612332d0982a3a42946fb6
+U drh
+Z c1158477a3c6966fdb5709eb9b3c8fe5
