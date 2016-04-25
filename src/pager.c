@@ -1820,10 +1820,7 @@ static void pager_unlock(Pager *pPager){
   ** trusted. Now that there are no outstanding references to the pager,
   ** it can safely move back to PAGER_OPEN state. This happens in both
   ** normal and exclusive-locking mode.
-  **
-  ** Exception: There is no way out of the error state for temp files.
-  ** This is because it is not possible to call pager_reset() on a temp
-  ** file pager (as this may discard the only copy of some data).  */
+  */
   assert( pPager->errCode==SQLITE_OK || !MEMDB );
   if( pPager->errCode ){
     if( pPager->tempFile==0 ){
