@@ -1,6 +1,6 @@
-C Fix\sthe\sfix\sto\sthe\stemporary\sdirectory\ssearch\salgorithm\sso\sthat\sit\scontinues\nto\sreturn\s"."\sas\sa\sfallback\sif\sthat\sdirectory\shas\sthe\scorrect\spermissions.
-D 2016-04-23T20:59:23.071
-F Makefile.in eba680121821b8a60940a81454316f47a341487a
+C Fix\sa\stypo\sin\sthe\sMakefile.
+D 2016-04-25T01:43:24.306
+F Makefile.in a905f3180accdafbd5a534bf26126ee5306d5056
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 71b8b16cf9393f68e2e2035486ca104872558836
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
@@ -1484,7 +1484,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 67985761aa93fb613b87d340e75371fa55b0f778
-R 0a3904801876ad35cfb663a63395f63c
-U drh
-Z 2d6519bfb47a62ce49b104a4f37d1acb
+P b38fe522cfc971b37ca04e7b63a92bbb6e0b01e1
+R 5aa002889bfcaf382a8424adff459dd7
+U mistachkin
+Z 272f168dd75d48a808379cca7049b3ce

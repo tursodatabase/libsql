@@ -1032,7 +1032,7 @@ FTS5_SRC = \
 fts5parse.c:	$(TOP)/ext/fts5/fts5parse.y lemon 
 	cp $(TOP)/ext/fts5/fts5parse.y .
 	rm -f fts5parse.h
-	./lemon $(OPTS) fts5parse.y
+	./lemon$(BEXE) $(OPTS) fts5parse.y
 
 fts5parse.h: fts5parse.c
 
