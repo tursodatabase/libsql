@@ -1,5 +1,5 @@
-C When\schecking\sfor\sthe\sWHERE-clause\spush-down\soptimization,\sverify\sthat\nall\sterms\sof\sthe\scompound\sinner\sSELECT\sare\snon-aggregate,\snot\sjust\sthe\nlast\sterm.\s\sFix\sfor\sticket\s[f7f8c97e97597].
-D 2016-04-25T02:20:10.236
+C Update\sthe\sRBU\svacuum\scode\sso\sthat\sdatabases\sthat\suse\scustom\scollation\ssequences\scan\sbe\svacuumed.
+D 2016-04-25T19:25:12.645
 F Makefile.in a905f3180accdafbd5a534bf26126ee5306d5056
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 71b8b16cf9393f68e2e2035486ca104872558836
@@ -247,10 +247,10 @@ F ext/rbu/rbufault3.test 54a399888ac4af44c68f9f58afbed23149428bca
 F ext/rbu/rbufts.test 828cd689da825f0a7b7c53ffc1f6f7fdb6fa5bda
 F ext/rbu/rbuprogress.test 2023a7df2c523e3df1cb532eff811cda385a789a
 F ext/rbu/rbusave.test 0f43b6686084f426ddd040b878426452fd2c2f48
-F ext/rbu/rbuvacuum.test bcbc1dcd8e2a46a811e46477692ae1c0e8917a85
-F ext/rbu/sqlite3rbu.c 20922328dcebe89589638923bb46840df8bc7733
+F ext/rbu/rbuvacuum.test 66e02cf299836770e718e95c36686be0b26dbda3
+F ext/rbu/sqlite3rbu.c bf36625990c6865ecf08bd844d8097ed2d0a6958
 F ext/rbu/sqlite3rbu.h 2acd0a6344a6079de15c8dc9d84d3df83a665930
-F ext/rbu/test_rbu.c 430b8b9520c233505371d564d3561e0b554355f4
+F ext/rbu/test_rbu.c 9bbdf6bd8efd58fbc4f192698df50569598fbb9e
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 0b870ccb7b58b734a2a8e1e2755a7c0ded070920
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
@@ -1484,7 +1484,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d0a579b35105810821bbfec6b50ecfebac7a17ee
-R 858c551be0612332d0982a3a42946fb6
-U drh
-Z c1158477a3c6966fdb5709eb9b3c8fe5
+P ec215f94ac9748c0acd82af0cc9e7a92249462f9
+R c0a43d6aa5e9f6d906be746461438b7f
+U dan
+Z 33a592aa08c77e06ce6e19e096f78faa
