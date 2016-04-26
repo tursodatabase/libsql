@@ -224,6 +224,7 @@ do_execsql_test 7.1 {
 #
 reset_db
 do_execsql_test 8.1 {
+  PRAGMA auto_vacuum = OFF;
   CREATE TABLE t2(a, b);
   CREATE INDEX i2 ON t2(a, b);
   WITH x(i) AS ( SELECT 1 UNION ALL SELECT i+1 FROM x WHERE i<20 )
@@ -234,6 +235,7 @@ do_execsql_test 8.1 {
 do_test 8.2 {
   sqlite3 tmp ""
   execsql {
+    PRAGMA auto_vacuum = OFF;
     PRAGMA page_size = 8192;
     CREATE TABLE t1(a, b);
     CREATE INDEX i1 ON t1(a, b);
