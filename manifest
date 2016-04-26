@@ -1,5 +1,5 @@
-C Fix\sthe\s"checksymbols"\starget\sin\sMakefile.in\sto\sbe\sable\sto\sdeal\swith\sthe\nsqlite3changegroup\sfamily\sof\sinterfaces.
-D 2016-04-26T13:13:53.622
+C The\spcache\sand\sthe\sbuilt-in\sVFSes\sshould\snot\suse\smutexes\swhen\nSQLITE_CONFIG_SINGLETHREAD\sis\sset.
+D 2016-04-26T18:58:54.655
 F Makefile.in 9e816d0323e418fbc0f8b2c05fc14e0b3763d9e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 71b8b16cf9393f68e2e2035486ca104872558836
@@ -361,15 +361,15 @@ F src/os.c 4d83917f072ad958fba9235136fa2ed43df47905
 F src/os.h 8e976e59eb4ca1c0fca6d35ee803e38951cb0343
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c 2488a2b6456709ad6398df2302d427a980e2695a
-F src/os_win.c 1997a873bfc8296a701bd8e2df8c3d5da5afe956
+F src/os_unix.c 8422fba2eb592fbbb2d4006b6f2a67cad8951495
+F src/os_win.c 852fc2ff6084296348ed3739c548b2cf32df394e
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c d20fa46d5beda38095be6070dd4c59e502817c72
 F src/pager.h 329bdf078a4e0a3b35084534d58625d21fd03681
 F src/parse.y 10eb2f3fb62341291528c7984498054731f9d31e
 F src/pcache.c 647bb53a86b7bbcf55ad88089b3ea5a9170b90df
 F src/pcache.h 4d0ccaad264d360981ec5e6a2b596d6e85242545
-F src/pcache1.c c40cdb93586e21b5dd826b5e671240bd91c26b05
+F src/pcache1.c 7f51d2b541aab57596adf62db2c4bb025d34f04d
 F src/pragma.c faf42922bb7ab2f6672cb550356c1967abae3c84
 F src/pragma.h 64c78a648751b9f4f297276c4eb7507b14b4628c
 F src/prepare.c 22df6171aec1d86904ed2ad30c2348a5748aa04e
@@ -1484,7 +1484,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7dd48c10790a7b9c4165214399c261a0aa701297
-R 5836a38779892d93c5f443eeb9cd4151
+P d819bfbd46dc7f065d2a3ab0ef9f8322d8394e11
+R 2246a8395360136a36ef2a0e4a464571
 U drh
-Z a0cff4b059a2c6bf807105b3b6e856e6
+Z fce32975c383f8c036923c0ce041e29e
