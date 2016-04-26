@@ -20,8 +20,9 @@
 #include <tcl.h>
 #include <assert.h>
 
-/* From main.c (apparently...) */
+/* From main.c */ 
 extern const char *sqlite3ErrName(int);
+extern int sqlite3TestMakePointerStr(Tcl_Interp*, char*, void*);
 
 void test_rbu_delta(sqlite3_context *pCtx, int nArg, sqlite3_value **apVal){
   Tcl_Interp *interp = (Tcl_Interp*)sqlite3_user_data(pCtx);
@@ -66,7 +67,8 @@ static int test_sqlite3rbu_cmd(
     {"create_rbu_delta", 2, ""},  /* 2 */
     {"savestate", 2, ""},         /* 3 */
     {"dbMain_eval", 3, "SQL"},    /* 4 */
-    {"bp_progress", 2, ""},    /* 5 */
+    {"bp_progress", 2, ""},       /* 5 */
+    {"db", 3, "RBU"},             /* 6 */
     {0,0,0}
   };
   int iCmd;
@@ -146,6 +148,22 @@ static int test_sqlite3rbu_cmd(
       Tcl_ListObjAppendElement(interp, pObj, Tcl_NewIntObj(one));
       Tcl_ListObjAppendElement(interp, pObj, Tcl_NewIntObj(two));
       Tcl_SetObjResult(interp, pObj);
+      break;
+    }
+
+    case 6: /* db */ {
+      int bArg;
+      if( Tcl_GetBooleanFromObj(interp, objv[2], &bArg) ){
+        ret = TCL_ERROR;
+      }else{
+        char zBuf[50];
+        sqlite3 *db = sqlite3rbu_db(pRbu, bArg);
+        if( sqlite3TestMakePointerStr(interp, zBuf, (void*)db) ){
+          ret = TCL_ERROR;
+        }else{
+          Tcl_SetResult(interp, zBuf, TCL_VOLATILE);
+        }
+      }
       break;
     }
 

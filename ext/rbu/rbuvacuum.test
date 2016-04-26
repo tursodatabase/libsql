@@ -255,7 +255,41 @@ foreach step {0 1} {
     }
   } {}
   do_rbu_vacuum_test 1.10.2 $step
+
+  # Database with empty tables.
+  #
+  reset_db
+  do_execsql_test 1.11.1 {
+    CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+    CREATE TABLE t2(a INTEGER PRIMARY KEY, b);
+    CREATE TABLE t3(a INTEGER PRIMARY KEY, b);
+    CREATE TABLE t4(a INTEGER PRIMARY KEY, b);
+    INSERT INTO t4 VALUES(1, 2);
+  }
+  do_rbu_vacuum_test 1.11.2 $step
+  do_execsql_test 1.11.3 {
+    SELECT * FROM t1;
+    SELECT * FROM t2;
+    SELECT * FROM t3;
+    SELECT * FROM t4;
+  } {1 2}
+  reset_db
+  do_execsql_test 1.12.1 {
+    CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+    CREATE TABLE t2(a INTEGER PRIMARY KEY, b);
+    CREATE TABLE t3(a INTEGER PRIMARY KEY, b);
+    CREATE TABLE t4(a INTEGER PRIMARY KEY, b);
+    INSERT INTO t1 VALUES(1, 2);
+  }
+  do_rbu_vacuum_test 1.12.2 $step
+  do_execsql_test 1.12.3 {
+    SELECT * FROM t1;
+    SELECT * FROM t2;
+    SELECT * FROM t3;
+    SELECT * FROM t4;
+  } {1 2}
 }
+set ::testprefix rbuvacuum
 
 #-------------------------------------------------------------------------
 # Test some error cases:
@@ -309,6 +343,67 @@ for {set i 1} 1 {incr i} {
     list [catch { rbu close } msg] $msg
   } {1 {SQLITE_BUSY - database modified during rbu vacuum}}
 }
+
+#-------------------------------------------------------------------------
+# Test that a database that uses custom collation sequences can be RBU
+# vacuumed.
+#
+reset_db
+forcedelete state.db
+proc noop {args} {}
+proc length_cmp {x y} {
+  set n1 [string length $x]
+  set n2 [string length $y]
+  return [expr $n1 - $n2]
+}
+sqlite3_create_collation_v2 db length length_cmp noop
+
+do_execsql_test 3.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+  INSERT INTO t1 VALUES(1, 'i');
+  INSERT INTO t1 VALUES(2, 'iiii');
+  INSERT INTO t1 VALUES(3, 'ii');
+  INSERT INTO t1 VALUES(4, 'iii');
+  SELECT a FROM t1 ORDER BY b COLLATE length;
+} {1 3 4 2}
+do_execsql_test 3.1 {
+  CREATE INDEX i1 ON t1(b COLLATE length);
+}
+
+do_test 3.2 {
+  sqlite3rbu_vacuum rbu test.db state.db
+  while {[rbu step]=="SQLITE_OK"} {}
+  list [catch { rbu close } msg] $msg
+} {1 {SQLITE_ERROR - no such collation sequence: length}}
+
+do_test 3.3 {
+  sqlite3rbu_vacuum rbu test.db state.db
+  set db1 [rbu db 0]
+  sqlite3_create_collation_v2 $db1 length length_cmp noop
+  while {[rbu step]=="SQLITE_OK"} {}
+  list [catch { rbu close } msg] $msg
+} {1 {SQLITE_ERROR - no such collation sequence: length}}
+
+do_test 3.4 {
+  sqlite3rbu_vacuum rbu test.db state.db
+  set db1 [rbu db 1]
+  sqlite3_create_collation_v2 $db1 length length_cmp noop
+  while {[rbu step]=="SQLITE_OK"} {}
+  list [catch { rbu close } msg] $msg
+} {1 {SQLITE_ERROR - no such collation sequence: length}}
+
+do_test 3.5 {
+  sqlite3rbu_vacuum rbu test.db state.db
+  set db1 [rbu db 0]
+  set db2 [rbu db 1]
+
+  sqlite3_create_collation_v2 $db1 length length_cmp noop
+  sqlite3_create_collation_v2 $db2 length length_cmp noop
+
+  while {[rbu step]=="SQLITE_OK"} {}
+  list [catch { rbu close } msg] $msg
+} {0 SQLITE_DONE}
+
 
 catch { db close }
 finish_test

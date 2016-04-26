@@ -3082,6 +3082,92 @@ static void rbuSaveState(sqlite3rbu *p, int eStage){
 
 
 /*
+** The second argument passed to this function is the name of a PRAGMA 
+** setting - "page_size", "auto_vacuum", "user_version" or "application_id".
+** This function executes the following on sqlite3rbu.dbRbu:
+**
+**   "PRAGMA main.$zPragma"
+**
+** where $zPragma is the string passed as the second argument, then
+** on sqlite3rbu.dbMain:
+**
+**   "PRAGMA main.$zPragma = $val"
+**
+** where $val is the value returned by the first PRAGMA invocation.
+**
+** In short, it copies the value  of the specified PRAGMA setting from
+** dbRbu to dbMain.
+*/
+static void rbuCopyPragma(sqlite3rbu *p, const char *zPragma){
+  if( p->rc==SQLITE_OK ){
+    sqlite3_stmt *pPragma = 0;
+    p->rc = prepareFreeAndCollectError(p->dbRbu, &pPragma, &p->zErrmsg, 
+        sqlite3_mprintf("PRAGMA main.%s", zPragma)
+    );
+    if( p->rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pPragma) ){
+      p->rc = rbuMPrintfExec(p, p->dbMain, "PRAGMA main.%s = %d",
+          zPragma, sqlite3_column_int(pPragma, 0)
+      );
+    }
+    rbuFinalize(p, pPragma);
+  }
+}
+
+/*
+** The RBU handle passed as the only argument has just been opened and 
+** the state database is empty. If this RBU handle was opened for an
+** RBU vacuum operation, create the schema in the target db.
+*/
+static void rbuCreateTargetSchema(sqlite3rbu *p){
+  sqlite3_stmt *pSql = 0;
+  sqlite3_stmt *pInsert = 0;
+
+  assert( rbuIsVacuum(p) );
+  p->rc = sqlite3_exec(p->dbMain, "PRAGMA writable_schema=1", 0,0, &p->zErrmsg);
+  if( p->rc==SQLITE_OK ){
+    p->rc = prepareAndCollectError(p->dbRbu, &pSql, &p->zErrmsg, 
+      "SELECT sql FROM sqlite_master WHERE sql!='' AND rootpage!=0"
+      " AND name!='sqlite_sequence' "
+      " ORDER BY type DESC"
+    );
+  }
+
+  while( p->rc==SQLITE_OK && sqlite3_step(pSql)==SQLITE_ROW ){
+    const char *zSql = (const char*)sqlite3_column_text(pSql, 0);
+    p->rc = sqlite3_exec(p->dbMain, zSql, 0, 0, &p->zErrmsg);
+  }
+  rbuFinalize(p, pSql);
+  if( p->rc!=SQLITE_OK ) return;
+
+  if( p->rc==SQLITE_OK ){
+    p->rc = prepareAndCollectError(p->dbRbu, &pSql, &p->zErrmsg, 
+        "SELECT * FROM sqlite_master WHERE rootpage=0 OR rootpage IS NULL" 
+    );
+  }
+
+  if( p->rc==SQLITE_OK ){
+    p->rc = prepareAndCollectError(p->dbMain, &pInsert, &p->zErrmsg, 
+        "INSERT INTO sqlite_master VALUES(?,?,?,?,?)"
+    );
+  }
+
+  while( p->rc==SQLITE_OK && sqlite3_step(pSql)==SQLITE_ROW ){
+    int i;
+    for(i=0; i<5; i++){
+      sqlite3_bind_value(pInsert, i+1, sqlite3_column_value(pSql, i));
+    }
+    sqlite3_step(pInsert);
+    p->rc = sqlite3_reset(pInsert);
+  }
+  if( p->rc==SQLITE_OK ){
+    p->rc = sqlite3_exec(p->dbMain, "PRAGMA writable_schema=0",0,0,&p->zErrmsg);
+  }
+
+  rbuFinalize(p, pSql);
+  rbuFinalize(p, pInsert);
+}
+
+/*
 ** Step the RBU object.
 */
 int sqlite3rbu_step(sqlite3rbu *p){
@@ -3089,6 +3175,15 @@ int sqlite3rbu_step(sqlite3rbu *p){
     switch( p->eStage ){
       case RBU_STAGE_OAL: {
         RbuObjIter *pIter = &p->objiter;
+
+        /* If this is an RBU vacuum operation and the state table was empty
+        ** when this handle was opened, create the target database schema. */
+        if( rbuIsVacuum(p) && p->nProgress==0 && p->rc==SQLITE_OK ){
+          rbuCreateTargetSchema(p);
+          rbuCopyPragma(p, "user_version");
+          rbuCopyPragma(p, "application_id");
+        }
+
         while( p->rc==SQLITE_OK && pIter->zTbl ){
 
           if( pIter->bCleanup ){
@@ -3371,92 +3466,6 @@ static void rbuInitPhaseOneSteps(sqlite3rbu *p){
   }
 }
 
-/*
-** The second argument passed to this function is the name of a PRAGMA 
-** setting - "page_size", "auto_vacuum", "user_version" or "application_id".
-** This function executes the following on sqlite3rbu.dbRbu:
-**
-**   "PRAGMA main.$zPragma"
-**
-** where $zPragma is the string passed as the second argument, then
-** on sqlite3rbu.dbMain:
-**
-**   "PRAGMA main.$zPragma = $val"
-**
-** where $val is the value returned by the first PRAGMA invocation.
-**
-** In short, it copies the value  of the specified PRAGMA setting from
-** dbRbu to dbMain.
-*/
-static void rbuCopyPragma(sqlite3rbu *p, const char *zPragma){
-  if( p->rc==SQLITE_OK ){
-    sqlite3_stmt *pPragma = 0;
-    p->rc = prepareFreeAndCollectError(p->dbRbu, &pPragma, &p->zErrmsg, 
-        sqlite3_mprintf("PRAGMA main.%s", zPragma)
-    );
-    if( p->rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pPragma) ){
-      p->rc = rbuMPrintfExec(p, p->dbMain, "PRAGMA main.%s = %d",
-          zPragma, sqlite3_column_int(pPragma, 0)
-      );
-    }
-    rbuFinalize(p, pPragma);
-  }
-}
-
-/*
-** The RBU handle passed as the only argument has just been opened and 
-** the state database is empty. If this RBU handle was opened for an
-** RBU vacuum operation, create the schema in the target db.
-*/
-static void rbuCreateTargetSchema(sqlite3rbu *p){
-  sqlite3_stmt *pSql = 0;
-  sqlite3_stmt *pInsert = 0;
-
-  assert( rbuIsVacuum(p) );
-  p->rc = sqlite3_exec(p->dbMain, "PRAGMA writable_schema=1", 0,0, &p->zErrmsg);
-  if( p->rc==SQLITE_OK ){
-    p->rc = prepareAndCollectError(p->dbRbu, &pSql, &p->zErrmsg, 
-      "SELECT sql FROM sqlite_master WHERE sql!='' AND rootpage!=0"
-      " AND name!='sqlite_sequence' "
-      " ORDER BY type DESC"
-    );
-  }
-
-  while( p->rc==SQLITE_OK && sqlite3_step(pSql)==SQLITE_ROW ){
-    const char *zSql = (const char*)sqlite3_column_text(pSql, 0);
-    p->rc = sqlite3_exec(p->dbMain, zSql, 0, 0, &p->zErrmsg);
-  }
-  rbuFinalize(p, pSql);
-  if( p->rc!=SQLITE_OK ) return;
-
-  if( p->rc==SQLITE_OK ){
-    p->rc = prepareAndCollectError(p->dbRbu, &pSql, &p->zErrmsg, 
-        "SELECT * FROM sqlite_master WHERE rootpage=0 OR rootpage IS NULL" 
-    );
-  }
-
-  if( p->rc==SQLITE_OK ){
-    p->rc = prepareAndCollectError(p->dbMain, &pInsert, &p->zErrmsg, 
-        "INSERT INTO sqlite_master VALUES(?,?,?,?,?)"
-    );
-  }
-
-  while( p->rc==SQLITE_OK && sqlite3_step(pSql)==SQLITE_ROW ){
-    int i;
-    for(i=0; i<5; i++){
-      sqlite3_bind_value(pInsert, i+1, sqlite3_column_value(pSql, i));
-    }
-    sqlite3_step(pInsert);
-    p->rc = sqlite3_reset(pInsert);
-  }
-  if( p->rc==SQLITE_OK ){
-    p->rc = sqlite3_exec(p->dbMain, "PRAGMA writable_schema=0",0,0,&p->zErrmsg);
-  }
-
-  rbuFinalize(p, pSql);
-  rbuFinalize(p, pInsert);
-}
-
 
 static sqlite3rbu *openRbuHandle(
   const char *zTarget, 
@@ -3567,14 +3576,6 @@ static sqlite3rbu *openRbuHandle(
           if( frc==SQLITE_OK ){
             p->rc = sqlite3_exec(db, "PRAGMA journal_mode=off",0,0,&p->zErrmsg);
           }
-        }
-
-        /* If this is an RBU vacuum operation and the state table was empty
-        ** when this handle was opened, create the target database schema. */
-        if( p->rc==SQLITE_OK && pState->eStage==0 && rbuIsVacuum(p) ){
-          rbuCreateTargetSchema(p);
-          rbuCopyPragma(p, "user_version");
-          rbuCopyPragma(p, "application_id");
         }
 
         /* Point the object iterator at the first object */
