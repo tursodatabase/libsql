@@ -384,9 +384,6 @@ int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
     z+=incr;
   }
 
-  /* skip leading zeroes */
-  while( z<zEnd && z[0]=='0' ) z+=incr, nDigits++;
-
   /* copy max significant digits to significand */
   while( z<zEnd && sqlite3Isdigit(*z) && s<((LARGEST_INT64-9)/10) ){
     s = s*10 + (*z - '0');
