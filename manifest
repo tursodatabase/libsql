@@ -1,6 +1,6 @@
-C Update\sthe\sRBU\svacuum\scode\sso\sthat\sdatabases\sthat\suse\scustom\scollation\ssequences\scan\sbe\svacuumed.
-D 2016-04-25T19:25:12.645
-F Makefile.in a905f3180accdafbd5a534bf26126ee5306d5056
+C Fix\sthe\s"checksymbols"\starget\sin\sMakefile.in\sto\sbe\sable\sto\sdeal\swith\sthe\nsqlite3changegroup\sfamily\sof\sinterfaces.
+D 2016-04-26T13:13:53.622
+F Makefile.in 9e816d0323e418fbc0f8b2c05fc14e0b3763d9e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 71b8b16cf9393f68e2e2035486ca104872558836
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
@@ -1484,7 +1484,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ec215f94ac9748c0acd82af0cc9e7a92249462f9
-R c0a43d6aa5e9f6d906be746461438b7f
-U dan
-Z 33a592aa08c77e06ce6e19e096f78faa
+P 7dd48c10790a7b9c4165214399c261a0aa701297
+R 5836a38779892d93c5f443eeb9cd4151
+U drh
+Z a0cff4b059a2c6bf807105b3b6e856e6
