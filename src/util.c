@@ -431,9 +431,7 @@ int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
   }
 
   /* skip trailing spaces */
-  if( nDigits && eValid ){
-    while( z<zEnd && sqlite3Isspace(*z) ) z+=incr;
-  }
+  while( z<zEnd && sqlite3Isspace(*z) ) z+=incr;
 
 do_atof_calc:
   /* adjust exponent by d, and update sign */
@@ -449,7 +447,7 @@ do_atof_calc:
   if( !s ) {
     /* In the IEEE 754 standard, zero is signed.
     ** Add the sign if we've seen at least one digit */
-    result = (sign<0 && nDigits) ? -(double)0 : (double)0;
+    result = sign<0 ? -(double)0 : (double)0;
   } else {
     /* attempt to reduce exponent */
     if( esign>0 ){

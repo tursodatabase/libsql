@@ -1,5 +1,5 @@
-C Further\ssimplifications\sto\ssqlite3AtoF()\sto\sremove\sunneeded\sbranches.
-D 2016-04-26T23:14:45.113
+C Remove\sstill\smore\sunnecessary\sbranches\sfrom\ssqlite3AtoF().
+D 2016-04-27T02:35:03.572
 F Makefile.in 9e816d0323e418fbc0f8b2c05fc14e0b3763d9e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 71b8b16cf9393f68e2e2035486ca104872558836
@@ -441,7 +441,7 @@ F src/treeview.c e4b41a37530a191579d3c53142cc44ee2eb99373
 F src/trigger.c e14840ee0c3e549e758ec9bf3e4146e166002280
 F src/update.c 3e67ab3c0814635f355fb1f8ab010a2b9e016e7d
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
-F src/util.c 7ea35eef53451786b4729d2a64ba9a8574a11e31
+F src/util.c 562f7a85d933b7173a29e331deb28d85d6208f7c
 F src/vacuum.c feb1eabb20987983d9350cad98299b21fa811f52
 F src/vdbe.c d3843a66d74a7696477ee5141e5eb9a7e5e2401c
 F src/vdbe.h 5591b5add447096e31288b5a0a78ec5d7b5c5170
@@ -1484,7 +1484,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a9d007494cfe30a26dca5352655dc7702351476e
-R bdb81af968b0eff03040af96472e5367
+P dd69e53cb077873171af5312c633ca185595bf31
+R 4f22b05e3bc28723a991a2f87c87962e
 U drh
-Z 7162b1b4b927db763c29ab3a71a81028
+Z 439e39a464407086f87a7be758f8e1c8
