@@ -1,5 +1,5 @@
-C Fix\san\sissue\sin\stemptable2.test\spreventing\sit\sfrom\sworking\swith\sSQLITE_DEFAULT_AUTOVACUUM=1\sbuilds.
-D 2016-04-26T17:10:03.745
+C Fix\sa\scouple\sof\stest\sscript\sproblems\son\sthis\sbranch.\sBoth\srelated\sto\sthe\sfact\sthat\stemp\sdatabase\spage\ssizes\scan\sno\slonger\sbe\schanged\sby\sVACUUM\sor\sthe\sbackup\sAPI\safter\sthe\stemp\sdb\sis\spopulated.
+D 2016-04-27T11:24:42.387
 F Makefile.in 9e816d0323e418fbc0f8b2c05fc14e0b3763d9e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 71b8b16cf9393f68e2e2035486ca104872558836
@@ -512,7 +512,7 @@ F test/autovacuum.test 92c24eedbdb68e49f3fb71f26f9ce6d8988cac15
 F test/autovacuum_ioerr2.test 8a367b224183ad801e0e24dcb7d1501f45f244b4
 F test/avtrans.test 0252654f4295ddda3b2cce0e894812259e655a85
 F test/backcompat.test 3e64cedda754c778ef6bbe417b6e7a295e662a4d
-F test/backup.test b79299a536a4c6d919094786595b95be56d02014
+F test/backup.test dd4a5ff756e3df3931dacb1791db0584d4bad989
 F test/backup2.test 34986ef926ea522911a51dfdb2f8e99b7b75ebcf
 F test/backup4.test 8f6fd48e0dfde77b9a3bb26dc471ede3e101df32
 F test/backup5.test ee5da6d7fe5082f5b9b0bbfa31d016f52412a2e4
@@ -968,7 +968,7 @@ F test/pager1.test 841868017e9dd3cb459b8d78862091a7d9cff21d
 F test/pager2.test 67b8f40ae98112bcdba1f2b2d03ea83266418c71
 F test/pager3.test 3856d9c80839be0668efee1b74811b1b7f7fc95f
 F test/pager4.test a122e9e6925d5b23b31e3dfef8c6a44bbf19590e
-F test/pagerfault.test ae9ee0db5a30aecda9db8290ce3dd12e5f7bbaa1
+F test/pagerfault.test 42ff797b1e6426c141cc7ee8b7417c9f27427950
 F test/pagerfault2.test caf4c7facb914fd3b03a17b31ae2b180c8d6ca1f
 F test/pagerfault3.test 1003fcda009bf48a8e22a516e193b6ef0dd1bbd8
 F test/pageropt.test 84e4cc5cbca285357f7906e99b21be4f2bf5abc0
@@ -1486,7 +1486,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 04911cee0cd5467ee99744b774d692219e5e1425
-R 849d538a2e2ee898d96d5ba70eff854f
+P e790aac02e4b427b4891b514a050699d159b03b1
+R 167ee4a4f32b4f8204918ef34f7c21ee
 U dan
-Z 496f6fcde8513321efb142fd9a4f11c8
+Z bbfd58a46d92c2867a1001ebb15e237d
