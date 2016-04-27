@@ -18,7 +18,7 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 source $testdir/malloc_common.tcl
 
-ifcapable !wal { finish_test ; return }
+if {![wal_is_capable]} { finish_test ; return }
 
 do_execsql_test tkt-313723c356.1 {
   PRAGMA page_size = 1024;
