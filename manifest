@@ -1,5 +1,5 @@
-C Ensure\sthat\squota.test\sdeletes\sthe\sdirectory\snamed\s"test.db"\sthat\sit\screates.
-D 2016-04-28T09:53:14.110
+C Avoid\srunning\ssessionfault.test\sand\ssessionfault2.test\sas\spart\sof\sthe\s"inmemory_journal"\spermutation.
+D 2016-04-28T14:54:54.590
 F Makefile.in 9e816d0323e418fbc0f8b2c05fc14e0b3763d9e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 71b8b16cf9393f68e2e2035486ca104872558836
@@ -977,7 +977,7 @@ F test/parser1.test 222b5cbf3e2e659fec1bf7d723488c8b9c94f1d0
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
-F test/permutations.test 44b5d257ff1e2bf102ffea50bd31f793de0c14f7
+F test/permutations.test b6b3e165fdc1b8c82a820033646dbfc6a7a01746
 F test/pragma.test dd5313eee9c6d9d4726593a68ede8768d3b50ccc
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
 F test/pragma3.test 14c12bc5352b1e100e0b6b44f371053a81ccf8ed
@@ -1484,7 +1484,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2662d8fef791f7b8b3b14f9c27dfedec84620dee
-R c0f9313eefa2a94509287d7302d3c22e
+P 045edd4b17c6b76079ac90773c035d8c1f8d525d
+R e73b09d1e2cd9d2d69ece961d0e8362f
 U dan
-Z e1c90065dd206cf7c15216b8288594e5
+Z aff771281cb418c17327081bdcd3c618
