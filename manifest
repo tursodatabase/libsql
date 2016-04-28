@@ -1,5 +1,5 @@
-C Remove\san\sunnecessary\sconditional\sfrom\sthe\ssqlite3DecOrHexToI64()\sroutine.
-D 2016-04-28T03:52:18.237
+C Use\scomments\sto\smark\sseveral\sbranches\sas\soptimizations.\s\sNo\schanges\sto\scode.
+D 2016-04-28T14:15:12.903
 F Makefile.in 9e816d0323e418fbc0f8b2c05fc14e0b3763d9e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 71b8b16cf9393f68e2e2035486ca104872558836
@@ -336,7 +336,7 @@ F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 4c0bd09e602b8ae8d36d81e31e4872d0b53c87bb
 F src/func.c ef4c18c8a66143413ce41a58d582d2c14ddf78e1
 F src/global.c c45ea22aff29334f6a9ec549235ac3357c970015
-F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
+F src/hash.c 55b5fb474100cee0b901edaf203e26c970940f36
 F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
 F src/insert.c 8f4e9fcbd8e95e85f15647ba8b413b18d556ec2b
@@ -441,7 +441,7 @@ F src/treeview.c e4b41a37530a191579d3c53142cc44ee2eb99373
 F src/trigger.c e14840ee0c3e549e758ec9bf3e4146e166002280
 F src/update.c 3e67ab3c0814635f355fb1f8ab010a2b9e016e7d
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
-F src/util.c 41cac9db948cd1f746636cc6a0c60d4234d4053f
+F src/util.c 810ec3f22e2d1b62e66c30fe3621ebdedd23584d
 F src/vacuum.c feb1eabb20987983d9350cad98299b21fa811f52
 F src/vdbe.c d3843a66d74a7696477ee5141e5eb9a7e5e2401c
 F src/vdbe.h 5591b5add447096e31288b5a0a78ec5d7b5c5170
@@ -1484,7 +1484,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 46d4ffff3bd33d7e901e76cfac1cbde38d4f61d0
-R 229317c8b5ac201d05335df0607fe343
+P fcf85bfe50b254e825ee63a4cd0aa0b333b06eed
+R 197c644a6cd9b0806f84f77482d9fe15
 U drh
-Z 98856d3d087818ace0a186a1d76b304b
+Z 413f6650964e5d2ab342130728703294
