@@ -1,5 +1,5 @@
-C Modify\sthe\spermutations.test\sscript\sso\sas\sto\sset\sany\spermutation\sspecific\sconfiguration\svalues\sbefore\srunning\seach\sindividual\stest\sscript.
-D 2016-04-27T18:54:49.294
+C Ensure\sthat\squota.test\sdeletes\sthe\sdirectory\snamed\s"test.db"\sthat\sit\screates.
+D 2016-04-28T09:53:14.110
 F Makefile.in 9e816d0323e418fbc0f8b2c05fc14e0b3763d9e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 71b8b16cf9393f68e2e2035486ca104872558836
@@ -988,7 +988,7 @@ F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
 F test/queryonly.test 5f653159e0f552f0552d43259890c1089391dcca
 F test/quick.test 1681febc928d686362d50057c642f77a02c62e57
 F test/quota-glob.test 32901e9eed6705d68ca3faee2a06b73b57cb3c26
-F test/quota.test 36cd78b178c4eb0401d4f25754ef410fbd9df2a7
+F test/quota.test bfb269ce81ea52f593f9648316cd5013d766dd2a
 F test/quota2.test 7dc12e08b11cbc4c16c9ba2aa2e040ea8d8ab4b8
 F test/quote.test 215897dbe8de1a6f701265836d6601cc6ed103e6
 F test/randexpr1.tcl 40dec52119ed3a2b8b2a773bce24b63a3a746459
@@ -1484,10 +1484,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0065fe97cb8e5076acae1bf1560fd2f69dab9014
-R 7df43ef0b7e3be4f42f2974bf9ebb1f9
-T *branch * permutations-fix
-T *sym-permutations-fix *
-T -sym-trunk *
+P 2662d8fef791f7b8b3b14f9c27dfedec84620dee
+R c0f9313eefa2a94509287d7302d3c22e
 U dan
-Z 8c7c480375d878fe85148ba2747a0470
+Z e1c90065dd206cf7c15216b8288594e5
