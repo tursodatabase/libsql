@@ -15,6 +15,33 @@
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
 
+/* Special Comments:
+**
+** Some comments have special meaning to the tools that measure test
+** coverage:
+**
+**    NO_TEST                     - The branches on this line are not
+**                                  measured by branch coverage.  This is
+**                                  used on lines of code that actually
+**                                  implement parts of coverage testing.
+**
+**    OPTIMIZATION-IF-TRUE        - This branch is allowed to alway be false
+**                                  and the correct answer is still obtained,
+**                                  though perhaps more slowly.
+**
+**    OPTIMIZATION-IF-FALSE       - This branch is allowed to alway be true
+**                                  and the correct answer is still obtained,
+**                                  though perhaps more slowly.
+**
+**    PREVENTS-HARMLESS-OVERREAD  - This branch prevents a buffer overread
+**                                  that would be harmless and undetectable
+**                                  if it did occur.  
+**
+** In all cases, the special comment must be enclosed in the usual
+** slash-asterisk...asterisk-slash comment marks, with no spaces between the 
+** asterisks and the comment text.
+*/
+
 /*
 ** Make sure that rand_s() is available on Windows systems with MSVC 2005
 ** or higher.

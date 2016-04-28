@@ -179,7 +179,9 @@ void sqlite3RowSetClear(RowSet *p){
 */
 static struct RowSetEntry *rowSetEntryAlloc(RowSet *p){
   assert( p!=0 );
-  if( p->nFresh==0 ){
+  if( p->nFresh==0 ){  /*OPTIMIZATION-IF-FALSE*/
+    /* We could allocate a fresh RowSetEntry each time one is needed, but it
+    ** is more efficient to pull a preallocated entry from the pool */
     struct RowSetChunk *pNew;
     pNew = sqlite3DbMallocRawNN(p->db, sizeof(*pNew));
     if( pNew==0 ){
@@ -213,7 +215,9 @@ void sqlite3RowSetInsert(RowSet *p, i64 rowid){
   pEntry->pRight = 0;
   pLast = p->pLast;
   if( pLast ){
-    if( (p->rsFlags & ROWSET_SORTED)!=0 && rowid<=pLast->v ){
+    if( rowid<=pLast->v ){  /*OPTIMIZATION-IF-FALSE*/
+      /* Avoid unnecessary sorts by preserving the ROWSET_SORTED flags
+      ** where possible */
       p->rsFlags &= ~ROWSET_SORTED;
     }
     pLast->pRight = pEntry;
@@ -335,16 +339,19 @@ static struct RowSetEntry *rowSetNDeepTree(
 ){
   struct RowSetEntry *p;         /* Root of the new tree */
   struct RowSetEntry *pLeft;     /* Left subtree */
-  if( *ppList==0 ){
-    return 0;
+  if( *ppList==0 ){ /*OPTIMIZATION-IF-TRUE*/
+    /* Prevent unnecessary deep recursion when we run out of entries */
+    return 0; 
   }
   if( iDepth>1 ){   /*OPTIMIZATION-IF-TRUE*/
     /* This branch causes a *balanced* tree to be generated.  A valid tree
-    ** is still generated without this branch, but it is wildly unbalanced
-    ** and inefficient. */
+    ** is still generated without this branch, but the tree is wildly
+    ** unbalanced and inefficient. */
     pLeft = rowSetNDeepTree(ppList, iDepth-1);
     p = *ppList;
-    if( p==0 ){
+    if( p==0 ){     /*OPTIMIZATION-IF-FALSE*/
+      /* It is safe to always return here, but the resulting tree
+      ** would be unbalanced */
       return pLeft;
     }
     p->pLeft = pLeft;
