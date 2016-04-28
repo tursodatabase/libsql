@@ -338,20 +338,23 @@ static struct RowSetEntry *rowSetNDeepTree(
   if( *ppList==0 ){
     return 0;
   }
-  if( iDepth==1 ){
+  if( iDepth>1 ){   /*OPTIMIZATION-IF-TRUE*/
+    /* This branch cases a *balanced* tree to be generated.  A valid tree
+    ** is still generated without this branch, but it is wildly unbalanced
+    ** and inefficient. */
+    pLeft = rowSetNDeepTree(ppList, iDepth-1);
+    p = *ppList;
+    if( p==0 ){
+      return pLeft;
+    }
+    p->pLeft = pLeft;
+    *ppList = p->pRight;
+    p->pRight = rowSetNDeepTree(ppList, iDepth-1);
+  }else{
     p = *ppList;
     *ppList = p->pRight;
     p->pLeft = p->pRight = 0;
-    return p;
   }
-  pLeft = rowSetNDeepTree(ppList, iDepth-1);
-  p = *ppList;
-  if( p==0 ){
-    return pLeft;
-  }
-  p->pLeft = pLeft;
-  *ppList = p->pRight;
-  p->pRight = rowSetNDeepTree(ppList, iDepth-1);
   return p;
 }
 

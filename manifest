@@ -1,5 +1,5 @@
-C Use\scomments\sto\smark\sseveral\sbranches\sas\soptimizations.\s\sNo\schanges\sto\scode.
-D 2016-04-28T14:15:12.903
+C Rearrange\ssome\scode\sin\sthe\sRowSet\slogic\sfor\sclarity\sof\spresentation,\swhile\nadding\san\s/*OPTIMIZATION-IF-TRUE*/\scomment.\s\sIt\sshould\soperate\sidentically.
+D 2016-04-28T18:53:08.454
 F Makefile.in 9e816d0323e418fbc0f8b2c05fc14e0b3763d9e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 71b8b16cf9393f68e2e2035486ca104872558836
@@ -376,7 +376,7 @@ F src/prepare.c 22df6171aec1d86904ed2ad30c2348a5748aa04e
 F src/printf.c 63e6fb12bbe702dd664dc3703776c090383a5a26
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c b8f7174e5f8c33c44ded3a25a973d0bb89228c20
-F src/rowset.c 9fe4b3ad7cc00944386bb600233d8f523de07a6e
+F src/rowset.c d68d95e167cb234f51d655c9546f46752c9f6d45
 F src/select.c fd4a7ce2937497181063cfedb92058ac89491a5d
 F src/shell.c 14ff7f660530a52b117d110ba3390b7b2eb719b6
 F src/sqlite.h.in 9984129d86243424b765fcb3f147c697bd20bb54
@@ -1484,7 +1484,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fcf85bfe50b254e825ee63a4cd0aa0b333b06eed
-R 197c644a6cd9b0806f84f77482d9fe15
+P 33e627472780b872716c504f2d585cc057c390a5
+R a33e3686da943dcb038124577baa15b4
 U drh
-Z 413f6650964e5d2ab342130728703294
+Z bac1d4beccda46e9aa1657c47d678425
