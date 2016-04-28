@@ -658,7 +658,6 @@ int sqlite3DecOrHexToI64(const char *z, i64 *pOut){
 #ifndef SQLITE_OMIT_HEX_INTEGER
   if( z[0]=='0'
    && (z[1]=='x' || z[1]=='X')
-   && sqlite3Isxdigit(z[2])
   ){
     u64 u = 0;
     int i, k;
