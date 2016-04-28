@@ -55,7 +55,7 @@ void sqlite3HashClear(Hash *pH){
 static unsigned int strHash(const char *z){
   unsigned int h = 0;
   unsigned char c;
-  while( (c = (unsigned char)*z++)!=0 ){
+  while( (c = (unsigned char)*z++)!=0 ){     /*OPTIMIZATION-IF-TRUE*/
     h = (h<<3) ^ h ^ sqlite3UpperToLower[c];
   }
   return h;
@@ -148,7 +148,7 @@ static HashElem *findElementWithHash(
   int count;                     /* Number of elements left to test */
   unsigned int h;                /* The computed hash */
 
-  if( pH->ht ){
+  if( pH->ht ){   /*OPTIMIZATION-IF-TRUE*/
     struct _ht *pEntry;
     h = strHash(pKey) % pH->htsize;
     pEntry = &pH->ht[h];

@@ -574,7 +574,7 @@ int sqlite3Atoi64(const char *zNum, i64 *pNum, int length, u8 enc){
   int neg = 0; /* assume positive */
   int i;
   int c = 0;
-  int nonNum = 0;
+  int nonNum = 0;  /* True if input contains UTF16 with high byte non-zero */
   const char *zStart;
   const char *zEnd = zNum + length;
   assert( enc==SQLITE_UTF8 || enc==SQLITE_UTF16LE || enc==SQLITE_UTF16BE );
@@ -585,7 +585,7 @@ int sqlite3Atoi64(const char *zNum, i64 *pNum, int length, u8 enc){
     assert( SQLITE_UTF16LE==2 && SQLITE_UTF16BE==3 );
     for(i=3-enc; i<length && zNum[i]==0; i+=2){}
     nonNum = i<length;
-    zEnd = zNum+i+enc-3;
+    zEnd = &zNum[i^1];
     zNum += (enc&1);
   }
   while( zNum<zEnd && sqlite3Isspace(*zNum) ) zNum+=incr;
@@ -612,8 +612,11 @@ int sqlite3Atoi64(const char *zNum, i64 *pNum, int length, u8 enc){
   testcase( i==18 );
   testcase( i==19 );
   testcase( i==20 );
-  if( (c!=0 && &zNum[i]<zEnd) || (i==0 && zStart==zNum)
-       || i>19*incr || nonNum ){
+  if( &zNum[i]<zEnd              /* Extra bytes at the end */
+   || (i==0 && zStart==zNum)     /* No digits */
+   || i>19*incr                  /* Too many digits */
+   || nonNum                     /* UTF16 with high-order bytes non-zero */
+  ){
     /* zNum is empty or contains non-numeric text or is longer
     ** than 19 digits (thus guaranteeing that it is too large) */
     return 1;
@@ -655,7 +658,6 @@ int sqlite3DecOrHexToI64(const char *z, i64 *pOut){
 #ifndef SQLITE_OMIT_HEX_INTEGER
   if( z[0]=='0'
    && (z[1]=='x' || z[1]=='X')
-   && sqlite3Isxdigit(z[2])
   ){
     u64 u = 0;
     int i, k;
@@ -1417,7 +1419,7 @@ LogEst sqlite3LogEst(u64 x){
     if( x<2 ) return 0;
     while( x<8 ){  y -= 10; x <<= 1; }
   }else{
-    while( x>255 ){ y += 40; x >>= 4; }
+    while( x>255 ){ y += 40; x >>= 4; }  /*OPTIMIZATION-IF-TRUE*/
     while( x>15 ){  y += 10; x >>= 1; }
   }
   return a[x&7] + y - 10;
