@@ -57,8 +57,9 @@
 ** of the first SMALLEST is O(NlogN).  Second and subsequent SMALLEST
 ** primitives are constant time.  The cost of DESTROY is O(N).
 **
-** There is an added cost of O(N) when switching between TEST and
-** SMALLEST primitives.
+** TEST and SMALLEST may not be used by the same RowSet.  This used to
+** be possible, but the feature was not used, so it was removed in order
+** to simplify the code.
 */
 #include "sqliteInt.h"
 
@@ -389,58 +390,36 @@ static struct RowSetEntry *rowSetListToTree(struct RowSetEntry *pList){
 }
 
 /*
-** Take all the entries on p->pEntry and on the trees in p->pForest and
-** sort them all together into one big ordered list on p->pEntry.
-**
-** This routine should only be called once in the life of a RowSet.
-*/
-static void rowSetToList(RowSet *p){
-
-  /* This routine is called only once */
-  assert( p!=0 && (p->rsFlags & ROWSET_NEXT)==0 );
-
-  if( (p->rsFlags & ROWSET_SORTED)==0 ){
-    p->pEntry = rowSetEntrySort(p->pEntry);
-  }
-
-  /* While this module could theoretically support it, sqlite3RowSetNext()
-  ** is never called after sqlite3RowSetText() for the same RowSet.  So
-  ** there is never a forest to deal with.  Should this change, simply
-  ** remove the assert() and the #if 0. */
-  assert( p->pForest==0 );
-#if 0
-  while( p->pForest ){
-    struct RowSetEntry *pTree = p->pForest->pLeft;
-    if( pTree ){
-      struct RowSetEntry *pHead, *pTail;
-      rowSetTreeToList(pTree, &pHead, &pTail);
-      p->pEntry = rowSetEntryMerge(p->pEntry, pHead);
-    }
-    p->pForest = p->pForest->pRight;
-  }
-#endif
-  p->rsFlags |= ROWSET_NEXT;  /* Verify this routine is never called again */
-}
-
-/*
 ** Extract the smallest element from the RowSet.
 ** Write the element into *pRowid.  Return 1 on success.  Return
 ** 0 if the RowSet is already empty.
 **
 ** After this routine has been called, the sqlite3RowSetInsert()
-** routine may not be called again.  
+** routine may not be called again.
+**
+** This routine may not be called after sqlite3RowSetTest() has
+** been used.  Older versions of RowSet allowed that, but as the
+** capability was not used by the code generator, it was removed
+** for code economy.
 */
 int sqlite3RowSetNext(RowSet *p, i64 *pRowid){
   assert( p!=0 );
+  assert( p->pForest==0 );  /* Cannot be used with sqlite3RowSetText() */
 
   /* Merge the forest into a single sorted list on first call */
-  if( (p->rsFlags & ROWSET_NEXT)==0 ) rowSetToList(p);
+  if( (p->rsFlags & ROWSET_NEXT)==0 ){  /*OPTIMIZATION-IF-FALSE*/
+    if( (p->rsFlags & ROWSET_SORTED)==0 ){  /*OPTIMIZATION-IF-FALSE*/
+      p->pEntry = rowSetEntrySort(p->pEntry);
+    }
+    p->rsFlags |= ROWSET_SORTED|ROWSET_NEXT;
+  }
 
   /* Return the next entry on the list */
   if( p->pEntry ){
     *pRowid = p->pEntry->v;
     p->pEntry = p->pEntry->pRight;
-    if( p->pEntry==0 ){
+    if( p->pEntry==0 ){ /*OPTIMIZATION-IF-TRUE*/
+      /* Free memory immediately, rather than waiting on sqlite3_finalize() */
       sqlite3RowSetClear(p);
     }
     return 1;
@@ -463,13 +442,15 @@ int sqlite3RowSetTest(RowSet *pRowSet, int iBatch, sqlite3_int64 iRowid){
   /* This routine is never called after sqlite3RowSetNext() */
   assert( pRowSet!=0 && (pRowSet->rsFlags & ROWSET_NEXT)==0 );
 
-  /* Sort entries into the forest on the first test of a new batch 
+  /* Sort entries into the forest on the first test of a new batch.
+  ** To save unnecessary work, only do this when the batch number changes.
   */
-  if( iBatch!=pRowSet->iBatch ){
+  if( iBatch!=pRowSet->iBatch ){  /*OPTIMIZATION-IF-FALSE*/
     p = pRowSet->pEntry;
     if( p ){
       struct RowSetEntry **ppPrevTree = &pRowSet->pForest;
-      if( (pRowSet->rsFlags & ROWSET_SORTED)==0 ){
+      if( (pRowSet->rsFlags & ROWSET_SORTED)==0 ){ /*OPTIMIZATION-IF-FALSE*/
+        /* Only sort the current set of entiries if they need it */
         p = rowSetEntrySort(p);
       }
       for(pTree = pRowSet->pForest; pTree; pTree=pTree->pRight){
