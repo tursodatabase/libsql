@@ -1,5 +1,5 @@
-C Merge\senhancements\sfrom\strunk,\sand\sin\sparticular\sthe\sTEMP\sfile\sdeferred\sI/O\nenhancements.
-D 2016-04-29T15:52:58.135
+C Fix\sthe\snolock\sVFS\sso\sthat\sit\ssupports\sshared\smemory.
+D 2016-04-29T17:07:39.260
 F Makefile.in c3d3154bf7fed85676ea6d758cc9c9048b52e750
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 71b8b16cf9393f68e2e2035486ca104872558836
@@ -364,7 +364,7 @@ F src/os.c bb97ef31f4674b0bb57d13a981835db7dc1da677
 F src/os.h 8e976e59eb4ca1c0fca6d35ee803e38951cb0343
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c 5b8248666530f217a6e7a0e79e6671e25bff1333
+F src/os_unix.c dc9694fd389773f34ce36b3e16be18e7b3582ea5
 F src/os_win.c b717a28c34e158dbd392b57ead178903e17968ce
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c c02274c29feb73f909b6253cd89fa5f48dfe9627
@@ -1491,7 +1491,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a15c49aed09a6f431022bc73aa98b04165649192 9d0a5ae00273686ea35b43bc2ffaa8775c176363
-R 7da8933ea701b90b2c17009a72176bef
+P 81b76901e63d670c0f2302f56f1aeafcc7ff9922
+R f0d12fbe4bb3184fb47d2dfaba836095
 U drh
-Z d8f4c0090b880980f62cef0bab3b783e
+Z 508511613f1701b953ca3dfef90a6686
