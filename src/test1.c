@@ -5213,7 +5213,9 @@ static int vfs_unregister_all(
 /*
 ** tclcmd:   vfs_reregister_all
 **
-** Restore all VFSes that were removed using vfs_unregister_all
+** Restore all VFSes that were removed using vfs_unregister_all. Taking
+** care to put the linked list back together in the same order as it was
+** in before vfs_unregister_all was invoked.
 */
 static int vfs_reregister_all(
   ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
@@ -5222,8 +5224,8 @@ static int vfs_reregister_all(
   Tcl_Obj *CONST objv[]  /* Command arguments */
 ){
   int i;
-  for(i=0; i<nVfs; i++){
-    sqlite3_vfs_register(apVfs[i], i==0);
+  for(i=nVfs-1; i>=0; i--){
+    sqlite3_vfs_register(apVfs[i], 1);
   }
   return TCL_OK;
 }

@@ -722,14 +722,20 @@ static int test_syscall(
   };
   int iCmd;
   int rc;
+  sqlite3_vfs *pVfs = sqlite3_vfs_find(0);
 
   if( objc<2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "SUB-COMMAND ...");
     return TCL_ERROR;
   }
-  rc = Tcl_GetIndexFromObjStruct(interp, 
-      objv[1], aCmd, sizeof(aCmd[0]), "sub-command", 0, &iCmd
-  );
+  if( pVfs->iVersion<3 || pVfs->xSetSystemCall==0 ){
+    Tcl_AppendResult(interp, "VFS does not support xSetSystemCall", 0);
+    rc = TCL_ERROR;
+  }else{
+    rc = Tcl_GetIndexFromObjStruct(interp, 
+        objv[1], aCmd, sizeof(aCmd[0]), "sub-command", 0, &iCmd
+    );
+  }
   if( rc!=TCL_OK ) return rc;
   return aCmd[iCmd].xCmd(clientData, interp, objc, objv);
 }

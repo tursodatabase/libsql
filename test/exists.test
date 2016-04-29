@@ -19,6 +19,7 @@ source $testdir/lock_common.tcl
 
 
 foreach jm {rollback wal} {
+  if {![wal_is_capable] && $jm=="wal"} continue
 
   set testprefix exists-$jm
 
