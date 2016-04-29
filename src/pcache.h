@@ -99,6 +99,7 @@ void sqlite3PcacheDrop(PgHdr*);         /* Remove page from cache */
 void sqlite3PcacheMakeDirty(PgHdr*);    /* Make sure page is marked dirty */
 void sqlite3PcacheMakeClean(PgHdr*);    /* Mark a single page as clean */
 void sqlite3PcacheCleanAll(PCache*);    /* Mark all dirty list pages as clean */
+void sqlite3PcacheClearWritable(PCache*);
 
 /* Change a page number.  Used by incr-vacuum. */
 void sqlite3PcacheMove(PgHdr*, Pgno);
@@ -172,5 +173,8 @@ void sqlite3PCacheSetDefault(void);
 /* Return the header size */
 int sqlite3HeaderSizePcache(void);
 int sqlite3HeaderSizePcache1(void);
+
+/* Number of dirty pages as a percentage of the configured cache size */
+int sqlite3PCachePercentDirty(PCache*);
 
 #endif /* _PCACHE_H_ */
