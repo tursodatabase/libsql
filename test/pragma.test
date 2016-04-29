@@ -1083,7 +1083,20 @@ do_test pragma-8.2.15 {
 # "memory" or "disk" as appropriate.
 #
 proc check_temp_store {} {
-  db eval {CREATE TEMP TABLE IF NOT EXISTS a(b)}
+  db eval {
+    PRAGMA temp.cache_size = 1;
+    CREATE TEMP TABLE IF NOT EXISTS a(b);
+    DELETE FROM a;
+    INSERT INTO a VALUES(randomblob(1000));
+    INSERT INTO a SELECT * FROM a;
+    INSERT INTO a SELECT * FROM a;
+    INSERT INTO a SELECT * FROM a;
+    INSERT INTO a SELECT * FROM a;
+    INSERT INTO a SELECT * FROM a;
+    INSERT INTO a SELECT * FROM a;
+    INSERT INTO a SELECT * FROM a;
+    INSERT INTO a SELECT * FROM a;
+  }
   db eval {PRAGMA database_list} {
     if {$name=="temp"} {
       set bt [btree_from_db db 1]

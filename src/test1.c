@@ -1271,7 +1271,7 @@ static int sqlite3_mprintf_int64(
     return TCL_ERROR;
   }
   for(i=2; i<5; i++){
-    if( sqlite3Atoi64(argv[i], &a[i-2], 1000000, SQLITE_UTF8) ){
+    if( sqlite3Atoi64(argv[i], &a[i-2], sqlite3Strlen30(argv[i]), SQLITE_UTF8) ){
       Tcl_AppendResult(interp, "argument is not a valid 64-bit integer", 0);
       return TCL_ERROR;
     }
@@ -5231,7 +5231,9 @@ static int vfs_unregister_all(
 /*
 ** tclcmd:   vfs_reregister_all
 **
-** Restore all VFSes that were removed using vfs_unregister_all
+** Restore all VFSes that were removed using vfs_unregister_all. Taking
+** care to put the linked list back together in the same order as it was
+** in before vfs_unregister_all was invoked.
 */
 static int vfs_reregister_all(
   ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
@@ -5240,8 +5242,8 @@ static int vfs_reregister_all(
   Tcl_Obj *CONST objv[]  /* Command arguments */
 ){
   int i;
-  for(i=0; i<nVfs; i++){
-    sqlite3_vfs_register(apVfs[i], i==0);
+  for(i=nVfs-1; i>=0; i--){
+    sqlite3_vfs_register(apVfs[i], 1);
   }
   return TCL_OK;
 }

@@ -3785,14 +3785,18 @@ static int pushDownWhereTerms(
 ){
   Expr *pNew;
   int nChng = 0;
+  Select *pX;           /* For looping over compound SELECTs in pSubq */
   if( pWhere==0 ) return 0;
-  if( (pSubq->selFlags & (SF_Aggregate|SF_Recursive))!=0 ){
-     testcase( pSubq->selFlags & SF_Aggregate );
-     testcase( pSubq->selFlags & SF_Recursive );
-     return 0; /* restrictions (1) and (2) */
+  for(pX=pSubq; pX; pX=pX->pPrior){
+    if( (pX->selFlags & (SF_Aggregate|SF_Recursive))!=0 ){
+      testcase( pX->selFlags & SF_Aggregate );
+      testcase( pX->selFlags & SF_Recursive );
+      testcase( pX!=pSubq );
+      return 0; /* restrictions (1) and (2) */
+    }
   }
   if( pSubq->pLimit!=0 ){
-     return 0; /* restriction (3) */
+    return 0; /* restriction (3) */
   }
   while( pWhere->op==TK_AND ){
     nChng += pushDownWhereTerms(db, pSubq, pWhere->pRight, iCursor);

@@ -204,7 +204,7 @@ db close
 # delete the journal file when committing the transaction that switches
 # the system to WAL mode.
 #
-ifcapable wal {
+if {[wal_is_capable]} {
   do_test journal2-2.1 {
     faultsim_delete_and_reopen
     set ::oplog [list]

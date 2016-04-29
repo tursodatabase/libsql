@@ -547,7 +547,7 @@ static int btree_from_db(
 /*
 ** Usage:   btree_ismemdb ID
 **
-** Return true if the B-Tree is in-memory.
+** Return true if the B-Tree is currently stored entirely in memory.
 */
 static int btree_ismemdb(
   void *NotUsed,
@@ -557,6 +557,7 @@ static int btree_ismemdb(
 ){
   Btree *pBt;
   int res;
+  sqlite3_file *pFile;
 
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
@@ -566,7 +567,8 @@ static int btree_ismemdb(
   pBt = sqlite3TestTextToPtr(argv[1]);
   sqlite3_mutex_enter(pBt->db->mutex);
   sqlite3BtreeEnter(pBt);
-  res = sqlite3PagerIsMemdb(sqlite3BtreePager(pBt));
+  pFile = sqlite3PagerFile(sqlite3BtreePager(pBt));
+  res = (pFile->pMethods==0);
   sqlite3BtreeLeave(pBt);
   sqlite3_mutex_leave(pBt->db->mutex);
   Tcl_SetObjResult(interp, Tcl_NewBooleanObj(res));

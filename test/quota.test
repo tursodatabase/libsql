@@ -527,4 +527,6 @@ do_faultsim_test quota-5.6 -prep {
 }
 
 catch { sqlite3_quota_shutdown }
+catch { db close }
+forcedelete test.db
 finish_test

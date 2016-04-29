@@ -215,7 +215,7 @@ static VdbeCursor *allocateCursor(
       (eCurType==CURTYPE_BTREE?sqlite3BtreeCursorSize():0);
 
   assert( iCur>=0 && iCur<p->nCursor );
-  if( p->apCsr[iCur] ){
+  if( p->apCsr[iCur] ){ /*OPTIMIZATION-IF-FALSE*/
     sqlite3VdbeFreeCursor(p, p->apCsr[iCur]);
     p->apCsr[iCur] = 0;
   }
@@ -292,7 +292,7 @@ static void applyAffinity(
   if( affinity>=SQLITE_AFF_NUMERIC ){
     assert( affinity==SQLITE_AFF_INTEGER || affinity==SQLITE_AFF_REAL
              || affinity==SQLITE_AFF_NUMERIC );
-    if( (pRec->flags & MEM_Int)==0 ){
+    if( (pRec->flags & MEM_Int)==0 ){ /*OPTIMIZATION-IF-FALSE*/
       if( (pRec->flags & MEM_Real)==0 ){
         if( pRec->flags & MEM_Str ) applyNumericAffinity(pRec,1);
       }else{
@@ -302,10 +302,13 @@ static void applyAffinity(
   }else if( affinity==SQLITE_AFF_TEXT ){
     /* Only attempt the conversion to TEXT if there is an integer or real
     ** representation (blob and NULL do not get converted) but no string
-    ** representation.
-    */
-    if( 0==(pRec->flags&MEM_Str) && (pRec->flags&(MEM_Real|MEM_Int)) ){
-      sqlite3VdbeMemStringify(pRec, enc, 1);
+    ** representation.  It would be harmless to repeat the conversion if 
+    ** there is already a string rep, but it is pointless to waste those
+    ** CPU cycles. */
+    if( 0==(pRec->flags&MEM_Str) ){ /*OPTIMIZATION-IF-FALSE*/
+      if( (pRec->flags&(MEM_Real|MEM_Int)) ){
+        sqlite3VdbeMemStringify(pRec, enc, 1);
+      }
     }
     pRec->flags &= ~(MEM_Real|MEM_Int);
   }
@@ -542,7 +545,7 @@ static Mem *out2Prerelease(Vdbe *p, VdbeOp *pOp){
   assert( pOp->p2<=(p->nMem+1 - p->nCursor) );
   pOut = &p->aMem[pOp->p2];
   memAboutToChange(p, pOut);
-  if( VdbeMemDynamic(pOut) ){
+  if( VdbeMemDynamic(pOut) ){ /*OPTIMIZATION-IF-FALSE*/
     return out2PrereleaseWithClear(pOut);
   }else{
     pOut->flags = MEM_Int;
