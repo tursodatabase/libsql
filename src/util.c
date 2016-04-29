@@ -355,7 +355,7 @@ int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
   int eValid = 1;  /* True exponent is either not used or is well-formed */
   double result;
   int nDigits = 0;
-  int nonNum = 0;
+  int nonNum = 0;  /* True if input contains UTF16 with high byte non-zero */
 
   assert( enc==SQLITE_UTF8 || enc==SQLITE_UTF16LE || enc==SQLITE_UTF16BE );
   *pResult = 0.0;   /* Default return value, in case of an error */
@@ -368,7 +368,7 @@ int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
     assert( SQLITE_UTF16LE==2 && SQLITE_UTF16BE==3 );
     for(i=3-enc; i<length && z[i]==0; i+=2){}
     nonNum = i<length;
-    zEnd = z+i+enc-3;
+    zEnd = &z[i^1];
     z += (enc&1);
   }
 
@@ -383,9 +383,6 @@ int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
   }else if( *z=='+' ){
     z+=incr;
   }
-
-  /* skip leading zeroes */
-  while( z<zEnd && z[0]=='0' ) z+=incr, nDigits++;
 
   /* copy max significant digits to significand */
   while( z<zEnd && sqlite3Isdigit(*z) && s<((LARGEST_INT64-9)/10) ){
@@ -403,12 +400,13 @@ int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
     z+=incr;
     /* copy digits from after decimal to significand
     ** (decrease exponent by d to shift decimal right) */
-    while( z<zEnd && sqlite3Isdigit(*z) && s<((LARGEST_INT64-9)/10) ){
-      s = s*10 + (*z - '0');
-      z+=incr, nDigits++, d--;
+    while( z<zEnd && sqlite3Isdigit(*z) ){
+      if( s<((LARGEST_INT64-9)/10) ){
+        s = s*10 + (*z - '0');
+        d--;
+      }
+      z+=incr, nDigits++;
     }
-    /* skip non-significant digits */
-    while( z<zEnd && sqlite3Isdigit(*z) ) z+=incr, nDigits++;
   }
   if( z>=zEnd ) goto do_atof_calc;
 
@@ -416,7 +414,12 @@ int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
   if( *z=='e' || *z=='E' ){
     z+=incr;
     eValid = 0;
-    if( z>=zEnd ) goto do_atof_calc;
+
+    /* This branch is needed to avoid a (harmless) buffer overread.  The 
+    ** special comment alerts the mutation tester that the correct answer
+    ** is obtained even if the branch is omitted */
+    if( z>=zEnd ) goto do_atof_calc;              /*PREVENTS-HARMLESS-OVERREAD*/
+
     /* get sign of exponent */
     if( *z=='-' ){
       esign = -1;
@@ -433,9 +436,7 @@ int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
   }
 
   /* skip trailing spaces */
-  if( nDigits && eValid ){
-    while( z<zEnd && sqlite3Isspace(*z) ) z+=incr;
-  }
+  while( z<zEnd && sqlite3Isspace(*z) ) z+=incr;
 
 do_atof_calc:
   /* adjust exponent by d, and update sign */
@@ -447,41 +448,51 @@ do_atof_calc:
     esign = 1;
   }
 
-  /* if 0 significand */
-  if( !s ) {
-    /* In the IEEE 754 standard, zero is signed.
-    ** Add the sign if we've seen at least one digit */
-    result = (sign<0 && nDigits) ? -(double)0 : (double)0;
+  if( s==0 ) {
+    /* In the IEEE 754 standard, zero is signed. */
+    result = sign<0 ? -(double)0 : (double)0;
   } else {
-    /* attempt to reduce exponent */
-    if( esign>0 ){
-      while( s<(LARGEST_INT64/10) && e>0 ) e--,s*=10;
-    }else{
-      while( !(s%10) && e>0 ) e--,s/=10;
+    /* Attempt to reduce exponent.
+    **
+    ** Branches that are not required for the correct answer but which only
+    ** help to obtain the correct answer faster are marked with special
+    ** comments, as a hint to the mutation tester.
+    */
+    while( e>0 ){                                       /*OPTIMIZATION-IF-TRUE*/
+      if( esign>0 ){
+        if( s>=(LARGEST_INT64/10) ) break;             /*OPTIMIZATION-IF-FALSE*/
+        s *= 10;
+      }else{
+        if( s%10!=0 ) break;                           /*OPTIMIZATION-IF-FALSE*/
+        s /= 10;
+      }
+      e--;
     }
 
     /* adjust the sign of significand */
     s = sign<0 ? -s : s;
 
-    /* if exponent, scale significand as appropriate
-    ** and store in result. */
-    if( e ){
+    if( e==0 ){                                         /*OPTIMIZATION-IF-TRUE*/
+      result = (double)s;
+    }else{
       LONGDOUBLE_TYPE scale = 1.0;
       /* attempt to handle extremely small/large numbers better */
-      if( e>307 && e<342 ){
-        while( e%308 ) { scale *= 1.0e+1; e -= 1; }
-        if( esign<0 ){
-          result = s / scale;
-          result /= 1.0e+308;
-        }else{
-          result = s * scale;
-          result *= 1.0e+308;
-        }
-      }else if( e>=342 ){
-        if( esign<0 ){
-          result = 0.0*s;
-        }else{
-          result = 1e308*1e308*s;  /* Infinity */
+      if( e>307 ){                                      /*OPTIMIZATION-IF-TRUE*/
+        if( e<342 ){                                    /*OPTIMIZATION-IF-TRUE*/
+          while( e%308 ) { scale *= 1.0e+1; e -= 1; }
+          if( esign<0 ){
+            result = s / scale;
+            result /= 1.0e+308;
+          }else{
+            result = s * scale;
+            result *= 1.0e+308;
+          }
+        }else{ assert( e>=342 );
+          if( esign<0 ){
+            result = 0.0*s;
+          }else{
+            result = 1e308*1e308*s;  /* Infinity */
+          }
         }
       }else{
         /* 1.0e+22 is the largest power of 10 than can be 
@@ -494,8 +505,6 @@ do_atof_calc:
           result = s * scale;
         }
       }
-    } else {
-      result = (double)s;
     }
   }
 
@@ -503,7 +512,7 @@ do_atof_calc:
   *pResult = result;
 
   /* return true if number and no extra non-whitespace chracters after */
-  return z>=zEnd && nDigits>0 && eValid && nonNum==0;
+  return z==zEnd && nDigits>0 && eValid && nonNum==0;
 #else
   return !sqlite3Atoi64(z, pResult, length, enc);
 #endif /* SQLITE_OMIT_FLOATING_POINT */
@@ -565,7 +574,7 @@ int sqlite3Atoi64(const char *zNum, i64 *pNum, int length, u8 enc){
   int neg = 0; /* assume positive */
   int i;
   int c = 0;
-  int nonNum = 0;
+  int nonNum = 0;  /* True if input contains UTF16 with high byte non-zero */
   const char *zStart;
   const char *zEnd = zNum + length;
   assert( enc==SQLITE_UTF8 || enc==SQLITE_UTF16LE || enc==SQLITE_UTF16BE );
@@ -576,7 +585,7 @@ int sqlite3Atoi64(const char *zNum, i64 *pNum, int length, u8 enc){
     assert( SQLITE_UTF16LE==2 && SQLITE_UTF16BE==3 );
     for(i=3-enc; i<length && zNum[i]==0; i+=2){}
     nonNum = i<length;
-    zEnd = zNum+i+enc-3;
+    zEnd = &zNum[i^1];
     zNum += (enc&1);
   }
   while( zNum<zEnd && sqlite3Isspace(*zNum) ) zNum+=incr;
@@ -603,8 +612,11 @@ int sqlite3Atoi64(const char *zNum, i64 *pNum, int length, u8 enc){
   testcase( i==18 );
   testcase( i==19 );
   testcase( i==20 );
-  if( (c!=0 && &zNum[i]<zEnd) || (i==0 && zStart==zNum)
-       || i>19*incr || nonNum ){
+  if( &zNum[i]<zEnd              /* Extra bytes at the end */
+   || (i==0 && zStart==zNum)     /* No digits */
+   || i>19*incr                  /* Too many digits */
+   || nonNum                     /* UTF16 with high-order bytes non-zero */
+  ){
     /* zNum is empty or contains non-numeric text or is longer
     ** than 19 digits (thus guaranteeing that it is too large) */
     return 1;
@@ -646,7 +658,6 @@ int sqlite3DecOrHexToI64(const char *z, i64 *pOut){
 #ifndef SQLITE_OMIT_HEX_INTEGER
   if( z[0]=='0'
    && (z[1]=='x' || z[1]=='X')
-   && sqlite3Isxdigit(z[2])
   ){
     u64 u = 0;
     int i, k;
@@ -1408,7 +1419,7 @@ LogEst sqlite3LogEst(u64 x){
     if( x<2 ) return 0;
     while( x<8 ){  y -= 10; x <<= 1; }
   }else{
-    while( x>255 ){ y += 40; x >>= 4; }
+    while( x>255 ){ y += 40; x >>= 4; }  /*OPTIMIZATION-IF-TRUE*/
     while( x>15 ){  y += 10; x >>= 1; }
   }
   return a[x&7] + y - 10;

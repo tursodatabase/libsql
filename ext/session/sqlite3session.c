@@ -592,14 +592,19 @@ static int sessionChangeEqual(
   int iCol;                       /* Used to iterate through table columns */
 
   for(iCol=0; iCol<pTab->nCol; iCol++){
-    int n1 = sessionSerialLen(a1);
-    int n2 = sessionSerialLen(a2);
+    if( pTab->abPK[iCol] ){
+      int n1 = sessionSerialLen(a1);
+      int n2 = sessionSerialLen(a2);
 
-    if( pTab->abPK[iCol] && (n1!=n2 || memcmp(a1, a2, n1)) ){
-      return 0;
+      if( pTab->abPK[iCol] && (n1!=n2 || memcmp(a1, a2, n1)) ){
+        return 0;
+      }
+      a1 += n1;
+      a2 += n2;
+    }else{
+      if( bLeftPkOnly==0 ) a1 += sessionSerialLen(a1);
+      if( bRightPkOnly==0 ) a2 += sessionSerialLen(a2);
     }
-    if( pTab->abPK[iCol] || bLeftPkOnly==0 ) a1 += n1;
-    if( pTab->abPK[iCol] || bRightPkOnly==0 ) a2 += n2;
   }
 
   return 1;

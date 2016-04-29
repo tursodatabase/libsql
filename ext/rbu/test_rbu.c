@@ -20,8 +20,9 @@
 #include <tcl.h>
 #include <assert.h>
 
-/* From main.c (apparently...) */
+/* From main.c */ 
 extern const char *sqlite3ErrName(int);
+extern int sqlite3TestMakePointerStr(Tcl_Interp*, char*, void*);
 
 void test_rbu_delta(sqlite3_context *pCtx, int nArg, sqlite3_value **apVal){
   Tcl_Interp *interp = (Tcl_Interp*)sqlite3_user_data(pCtx);
@@ -66,7 +67,8 @@ static int test_sqlite3rbu_cmd(
     {"create_rbu_delta", 2, ""},  /* 2 */
     {"savestate", 2, ""},         /* 3 */
     {"dbMain_eval", 3, "SQL"},    /* 4 */
-    {"bp_progress", 2, ""},    /* 5 */
+    {"bp_progress", 2, ""},       /* 5 */
+    {"db", 3, "RBU"},             /* 6 */
     {0,0,0}
   };
   int iCmd;
@@ -149,6 +151,22 @@ static int test_sqlite3rbu_cmd(
       break;
     }
 
+    case 6: /* db */ {
+      int bArg;
+      if( Tcl_GetBooleanFromObj(interp, objv[2], &bArg) ){
+        ret = TCL_ERROR;
+      }else{
+        char zBuf[50];
+        sqlite3 *db = sqlite3rbu_db(pRbu, bArg);
+        if( sqlite3TestMakePointerStr(interp, zBuf, (void*)db) ){
+          ret = TCL_ERROR;
+        }else{
+          Tcl_SetResult(interp, zBuf, TCL_VOLATILE);
+        }
+      }
+      break;
+    }
+
     default: /* seems unlikely */
       assert( !"cannot happen" );
       break;
@@ -182,6 +200,34 @@ static int test_sqlite3rbu(
   if( objc==5 ) zStateDb = Tcl_GetString(objv[4]);
 
   pRbu = sqlite3rbu_open(zTarget, zRbu, zStateDb);
+  Tcl_CreateObjCommand(interp, zCmd, test_sqlite3rbu_cmd, (ClientData)pRbu, 0);
+  Tcl_SetObjResult(interp, objv[1]);
+  return TCL_OK;
+}
+
+/*
+** Tclcmd: sqlite3rbu_vacuum CMD <target-db> <state-db>
+*/
+static int test_sqlite3rbu_vacuum(
+  ClientData clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3rbu *pRbu = 0;
+  const char *zCmd;
+  const char *zTarget;
+  const char *zStateDb = 0;
+
+  if( objc!=4 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "NAME TARGET-DB STATE-DB");
+    return TCL_ERROR;
+  }
+  zCmd = Tcl_GetString(objv[1]);
+  zTarget = Tcl_GetString(objv[2]);
+  zStateDb = Tcl_GetString(objv[3]);
+
+  pRbu = sqlite3rbu_vacuum(zTarget, zStateDb);
   Tcl_CreateObjCommand(interp, zCmd, test_sqlite3rbu_cmd, (ClientData)pRbu, 0);
   Tcl_SetObjResult(interp, objv[1]);
   return TCL_OK;
@@ -274,6 +320,7 @@ int SqliteRbu_Init(Tcl_Interp *interp){
      Tcl_ObjCmdProc *xProc;
   } aObjCmd[] = {
     { "sqlite3rbu", test_sqlite3rbu },
+    { "sqlite3rbu_vacuum", test_sqlite3rbu_vacuum },
     { "sqlite3rbu_create_vfs", test_sqlite3rbu_create_vfs },
     { "sqlite3rbu_destroy_vfs", test_sqlite3rbu_destroy_vfs },
     { "sqlite3rbu_internal_test", test_sqlite3rbu_internal_test },

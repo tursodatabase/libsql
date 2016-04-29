@@ -315,6 +315,38 @@ sqlite3rbu *sqlite3rbu_open(
 );
 
 /*
+** Open an RBU handle to perform an RBU vacuum on database file zTarget.
+** An RBU vacuum is similar to SQLite's built-in VACUUM command, except
+** that it can be suspended and resumed like an RBU update.
+**
+** The second argument to this function, which may not be NULL, identifies 
+** a database in which to store the state of the RBU vacuum operation if
+** it is suspended. The first time sqlite3rbu_vacuum() is called, to start
+** an RBU vacuum operation, the state database should either not exist or
+** be empty (contain no tables). If an RBU vacuum is suspended by calling
+** sqlite3rbu_close() on the RBU handle before sqlite3rbu_step() has
+** returned SQLITE_DONE, the vacuum state is stored in the state database. 
+** The vacuum can be resumed by calling this function to open a new RBU
+** handle specifying the same target and state databases.
+**
+** This function does not delete the state database after an RBU vacuum
+** is completed, even if it created it. However, if the call to
+** sqlite3rbu_close() returns any value other than SQLITE_OK, the contents
+** of the state tables within the state database are zeroed. This way,
+** the next call to sqlite3rbu_vacuum() opens a handle that starts a 
+** new RBU vacuum operation.
+**
+** As with sqlite3rbu_open(), Zipvfs users should rever to the comment
+** describing the sqlite3rbu_create_vfs() API function below for 
+** a description of the complications associated with using RBU with 
+** zipvfs databases.
+*/
+sqlite3rbu *sqlite3rbu_vacuum(
+  const char *zTarget, 
+  const char *zState
+);
+
+/*
 ** Internally, each RBU connection uses a separate SQLite database 
 ** connection to access the target and rbu update databases. This
 ** API allows the application direct access to these database handles.

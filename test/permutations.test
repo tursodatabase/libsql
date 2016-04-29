@@ -728,7 +728,7 @@ test_suite "inmemory_journal" -description {
   ioerr.test ioerr2.test ioerr3.test ioerr4.test ioerr5.test
   vacuum3.test incrblob_err.test diskfull.test backup_ioerr.test
   e_fts3.test fts3cov.test fts3malloc.test fts3rnd.test
-  fts3snippet.test mmapfault.test
+  fts3snippet.test mmapfault.test sessionfault.test sessionfault2.test
 
   # Exclude test scripts that use tcl IO to access journal files or count
   # the number of fsync() calls.
@@ -942,7 +942,9 @@ test_suite "journaltest" -description {
   unregister_jt_vfs
 } -files [test_set $::allquicktests -exclude {
   wal* incrvacuum.test ioerr.test corrupt4.test io.test crash8.test 
-  async4.test bigfile.test backcompat.test
+  async4.test bigfile.test backcompat.test e_wal* fstat.test mmap2.test
+  pager1.test syscall.test tkt3457.test *malloc* mmap* multiplex* nolock*
+  pager2.test *fault* rowal* snapshot* superlock* symlink.test
 }]
 
 if {[info commands register_demovfs] != ""} {
@@ -1050,14 +1052,12 @@ proc run_tests {name args} {
   set ::G(isquick)           1
   set ::G(perm:dbconfig)     $options(-dbconfig)
 
-  uplevel $options(-initialize)
-
   foreach file [lsort $options(-files)] {
+    uplevel $options(-initialize)
     if {[file tail $file] == $file} { set file [file join $::testdir $file] }
     slave_test_file $file
+    uplevel $options(-shutdown)
   }
-
-  uplevel $options(-shutdown)
 
   unset ::G(perm:name)
   unset ::G(perm:prefix)

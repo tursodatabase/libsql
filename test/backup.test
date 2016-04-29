@@ -164,7 +164,7 @@ foreach zOpenScript [list {
   set file_dest temp
 }] {
 foreach rows_dest {0 3 10} {
-foreach pgsz_dest {512 1024 2048} {
+foreach pgsz_dest {512 1024 2048 4096} {
 foreach nPagePerStep {1 200} {
 
   # Open the databases.
@@ -176,17 +176,16 @@ foreach nPagePerStep {1 200} {
   # in-memory destination is only possible if the initial destination
   # page size is the same as the source page size (in this case 1024 bytes).
   #
-  set isMemDest [expr {
-    $zDestFile eq ":memory:" || $file_dest eq "temp" && $TEMP_STORE>=2
-  }]
+  set isMemDest [expr { $zDestFile eq ":memory:" || $file_dest eq "temp" }]
 
-  if { $isMemDest==0 || $pgsz_dest == 1024 } {
-    if 0 {
-      puts -nonewline "Test $iTest: src=$zSrcFile dest=$zDestFile"
-      puts -nonewline " (as $db_dest.$file_dest)"
-      puts -nonewline " rows_dest=$rows_dest pgsz_dest=$pgsz_dest"
-      puts ""
-    }
+  if 0 {
+    puts -nonewline "Test $iTest: src=$zSrcFile dest=$zDestFile"
+    puts -nonewline " (as $db_dest.$file_dest)"
+    puts -nonewline " rows_dest=$rows_dest pgsz_dest=$pgsz_dest"
+    puts ""
+  }
+
+  if { $isMemDest==0 || $pgsz_dest==1024 || $rows_dest==0 } {
 
     # Set up the content of the source database.
     execsql {

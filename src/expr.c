@@ -2360,7 +2360,7 @@ static void cacheEntryClear(Parse *pParse, struct yColCache *p){
   }
   p->iReg = 0;
   pParse->nColCache--;
-  assert( cacheIsValid(pParse) );
+  assert( pParse->db->mallocFailed || cacheIsValid(pParse) );
 }
 
 
@@ -2405,7 +2405,7 @@ void sqlite3ExprCacheStore(Parse *pParse, int iTab, int iCol, int iReg){
       p->tempReg = 0;
       p->lru = pParse->iCacheCnt++;
       pParse->nColCache++;
-      assert( cacheIsValid(pParse) );
+      assert( pParse->db->mallocFailed || cacheIsValid(pParse) );
       return;
     }
   }

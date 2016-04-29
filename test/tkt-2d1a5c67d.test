@@ -19,7 +19,8 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix tkt-2d1a5c67d
 
-ifcapable {!wal || !vtab} {finish_test; return}
+ifcapable {!vtab} {finish_test; return}
+if {[wal_is_capable]==0} {finish_test; return}
 
 for {set ii 1} {$ii<=10} {incr ii} {
   do_test tkt-2d1a5c67d.1.$ii {

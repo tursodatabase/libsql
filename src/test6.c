@@ -701,6 +701,10 @@ static int cfCurrentTime(sqlite3_vfs *pCfVfs, double *pTimeOut){
   sqlite3_vfs *pVfs = (sqlite3_vfs *)pCfVfs->pAppData;
   return pVfs->xCurrentTime(pVfs, pTimeOut);
 }
+static int cfGetLastError(sqlite3_vfs *pCfVfs, int n, char *z){
+  sqlite3_vfs *pVfs = (sqlite3_vfs *)pCfVfs->pAppData;
+  return pVfs->xGetLastError(pVfs, n, z);
+}
 
 static int processDevSymArgs(
   Tcl_Interp *interp,
@@ -827,7 +831,7 @@ static int crashEnableCmd(
     cfRandomness,         /* xRandomness */
     cfSleep,              /* xSleep */
     cfCurrentTime,        /* xCurrentTime */
-    0,                    /* xGetlastError */
+    cfGetLastError,       /* xGetLastError */
     0,                    /* xCurrentTimeInt64 */
   };
 
@@ -940,6 +944,27 @@ static int devSymObjCmd(
   devsym_register(iDc, iSectorSize);
 
   return TCL_OK;
+
+}
+
+/*
+** tclcmd: unregister_devsim
+*/
+static int dsUnregisterObjCmd(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  void devsym_unregister(void);
+
+  if( objc!=1 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "");
+    return TCL_ERROR;
+  }
+
+  devsym_unregister();
+  return TCL_OK;
 }
 
 /*
@@ -1010,6 +1035,7 @@ int Sqlitetest6_Init(Tcl_Interp *interp){
   Tcl_CreateObjCommand(interp, "sqlite3_crash_enable", crashEnableCmd, 0, 0);
   Tcl_CreateObjCommand(interp, "sqlite3_crashparams", crashParamsObjCmd, 0, 0);
   Tcl_CreateObjCommand(interp, "sqlite3_simulate_device", devSymObjCmd, 0, 0);
+  Tcl_CreateObjCommand(interp, "unregister_devsim", dsUnregisterObjCmd, 0, 0);
   Tcl_CreateObjCommand(interp, "register_jt_vfs", jtObjCmd, 0, 0);
   Tcl_CreateObjCommand(interp, "unregister_jt_vfs", jtUnregisterObjCmd, 0, 0);
 #endif
