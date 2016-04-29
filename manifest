@@ -1,5 +1,5 @@
-C Merge\slatest\schanges\sfrom\strunk\swith\sthis\sbranch.
-D 2016-04-28T14:59:05.489
+C Fix\san\salmost\sentirely\sharmless\sbuffer\soverread\sin\sthe\ssessions\smodule.
+D 2016-04-29T10:13:22.999
 F Makefile.in 9e816d0323e418fbc0f8b2c05fc14e0b3763d9e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 71b8b16cf9393f68e2e2035486ca104872558836
@@ -293,7 +293,7 @@ F ext/session/sessionG.test 01ef705096a9d3984eebdcca79807a211dee1b60
 F ext/session/session_common.tcl a1293167d14774b5e728836720497f40fe4ea596
 F ext/session/sessionfault.test da273f2712b6411e85e71465a1733b8501dbf6f7
 F ext/session/sessionfault2.test 04aa0bc9aa70ea43d8de82c4f648db4de1e990b0
-F ext/session/sqlite3session.c beb300cd1b5c5054062c8e6e807b10475e363410
+F ext/session/sqlite3session.c beb43b6b888801bb006320bc236baa95f4cc32ae
 F ext/session/sqlite3session.h 64e9e7f185725ef43b97f4a9a0c0df0669844f1d
 F ext/session/test_session.c 464f2c8bf502795d95969387eb8e93f68c513c15
 F ext/userauth/sqlite3userauth.h 19cb6f0e31316d0ee4afdfb7a85ef9da3333a220
@@ -1484,7 +1484,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5973d3bf2e5aa979ccc9a4a3a0eb08b67098b499 33e627472780b872716c504f2d585cc057c390a5
-R 66281bc4e8738b7ab348496eadeeb2b1
+P 45467ee49872f495d5276cf830f10c3cf4ac8e3c
+R 50a6a2b7911c16c6704703bf8b17ce71
 U dan
-Z 4d2c4cbb1442cfb28a5ae33052756c7a
+Z da972510c8d8b75cf481b4f80618fa01
