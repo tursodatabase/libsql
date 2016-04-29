@@ -89,7 +89,7 @@ do_test zerodamage-2.1 {
   concat [file_control_powersafe_overwrite db -1] [set ::max_journal_size]
 } {0 0 24704}
 
-ifcapable wal {
+if {[wal_is_capable]} {
   # Run a WAL-mode transaction with POWERSAFE_OVERWRITE on to verify that the
   # WAL file does not get too big.
   #

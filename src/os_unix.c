@@ -4288,10 +4288,12 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
     pShmNode->h = -1;
     pDbFd->pInode->pShmNode = pShmNode;
     pShmNode->pInode = pDbFd->pInode;
-    pShmNode->mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
-    if( pShmNode->mutex==0 ){
-      rc = SQLITE_NOMEM_BKPT;
-      goto shm_open_err;
+    if( sqlite3GlobalConfig.bCoreMutex ){
+      pShmNode->mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
+      if( pShmNode->mutex==0 ){
+        rc = SQLITE_NOMEM_BKPT;
+        goto shm_open_err;
+      }
     }
 
     if( pInode->bProcessLock==0 ){

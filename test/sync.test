@@ -81,6 +81,7 @@ do_test sync-1.3 {
   set sqlite_sync_count
 } 11
 ifcapable pager_pragmas {
+if {[permutation]!="journaltest"} {
   do_test sync-1.4 {
     set sqlite_sync_count 0
     execsql {
@@ -93,6 +94,7 @@ ifcapable pager_pragmas {
     }
     set sqlite_sync_count
   } 0
+}
 }
 
 

@@ -1944,6 +1944,12 @@ proc wal_check_journal_mode {testname {db db}} {
   }
 }
 
+proc wal_is_capable {} {
+  ifcapable !wal { return 0 }
+  if {[permutation]=="journaltest"} { return 0 }
+  return 1
+}
+
 proc permutation {} {
   set perm ""
   catch {set perm $::G(perm:name)}

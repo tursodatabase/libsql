@@ -37,7 +37,7 @@ do_execsql_test stat-0.0 {
   SELECT * FROM stat;
 } {}
 
-ifcapable wal {
+if {[wal_is_capable]} {
   do_execsql_test stat-0.1 {
     PRAGMA journal_mode = WAL;
     PRAGMA journal_mode = delete;

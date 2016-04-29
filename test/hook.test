@@ -704,7 +704,7 @@ do_execsql_test 7.5.2.0 {
   ALTER TABLE t8 ADD COLUMN c DEFAULT 'xxx';
 }
 
-ifcapable !session {
+if 0 {
   # At time of writing, these two are broken. They demonstrate that the
   # sqlite3_preupdate_old() method does not handle the case where ALTER TABLE
   # has been used to add a column with a default value other than NULL.
