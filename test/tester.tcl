@@ -521,7 +521,11 @@ if {[info exists cmdlinearg]==0} {
       }
 
       default {
-        lappend leftover [file normalize $a]
+        if {[file tail $a]==$a} {
+          lappend leftover $a
+        } else {
+          lappend leftover [file normalize $a]
+        }
       }
     }
   }
