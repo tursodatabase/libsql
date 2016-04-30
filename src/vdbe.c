@@ -949,8 +949,6 @@ case OP_HaltIfNull: {      /* in3 */
 ** is the same as executing Halt.
 */
 case OP_Halt: {
-  const char *zType;
-  const char *zLogFmt;
   VdbeFrame *pFrame;
   int pcx;
 
@@ -979,34 +977,28 @@ case OP_Halt: {
   p->rc = pOp->p1;
   p->errorAction = (u8)pOp->p2;
   p->pc = pcx;
+  assert( pOp->p5>=0 && pOp->p5<=4 );
   if( p->rc ){
     if( pOp->p5 ){
       static const char * const azType[] = { "NOT NULL", "UNIQUE", "CHECK",
                                              "FOREIGN KEY" };
-      assert( pOp->p5>=1 && pOp->p5<=4 );
       testcase( pOp->p5==1 );
       testcase( pOp->p5==2 );
       testcase( pOp->p5==3 );
       testcase( pOp->p5==4 );
-      zType = azType[pOp->p5-1];
+      sqlite3VdbeError(p, "%s constraint failed", azType[pOp->p5-1]);
+      if( pOp->p4.z ){
+        p->zErrMsg = sqlite3MPrintf(db, "%z: %s", p->zErrMsg, pOp->p4.z);
+      }
     }else{
-      zType = 0;
-    }
-    assert( zType!=0 || pOp->p4.z!=0 );
-    zLogFmt = "abort at %d in [%s]: %s";
-    if( zType && pOp->p4.z ){
-      sqlite3VdbeError(p, "%s constraint failed: %s", zType, pOp->p4.z);
-    }else if( pOp->p4.z ){
       sqlite3VdbeError(p, "%s", pOp->p4.z);
-    }else{
-      sqlite3VdbeError(p, "%s constraint failed", zType);
     }
-    sqlite3_log(pOp->p1, zLogFmt, pcx, p->zSql, p->zErrMsg);
+    sqlite3_log(pOp->p1, "abort at %d in [%s]: %s", pcx, p->zSql, p->zErrMsg);
   }
   rc = sqlite3VdbeHalt(p);
   assert( rc==SQLITE_BUSY || rc==SQLITE_OK || rc==SQLITE_ERROR );
   if( rc==SQLITE_BUSY ){
-    p->rc = rc = SQLITE_BUSY;
+    p->rc = SQLITE_BUSY;
   }else{
     assert( rc==SQLITE_OK || (p->rc&0xff)==SQLITE_CONSTRAINT );
     assert( rc==SQLITE_OK || db->nDeferredCons>0 || db->nDeferredImmCons>0 );
