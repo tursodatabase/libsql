@@ -111,11 +111,11 @@ static unsigned int findCloseParen(const char *z){
 ** Print error messages whenever a side effect is found.  Return the number
 ** of problems seen.
 */
-static unsigned int findAllSideEffects(const unsigned char *z){
+static unsigned int findAllSideEffects(const char *z){
   unsigned int lineno = 1;   /* Line number */
   unsigned int i;
   unsigned int nErr = 0;
-  unsigned char c, prevC = 0;
+  char c, prevC = 0;
   for(i=0; (c = z[i])!=0; prevC=c, i++){
     if( c=='\n' ){ lineno++; continue; }
     if( isalpha(c) && !isalpha(prevC) ){
@@ -125,7 +125,7 @@ static unsigned int findAllSideEffects(const unsigned char *z){
        || strncmp(&z[i],"testcase(",9)==0
       ){
         unsigned int n;
-        unsigned const char *z2 = &z[i+5];
+        const char *z2 = &z[i+5];
         while( z2[0]!='(' ){ z2++; }
         z2++;
         n = findCloseParen(z2);
@@ -141,7 +141,7 @@ static unsigned int findAllSideEffects(const unsigned char *z){
 }
 
 int main(int argc, char **argv){
-  unsigned char *z;
+  char *z;
   unsigned int nErr = 0;
   if( argc!=2 ){
     fprintf(stderr, "Usage: %s FILENAME\n", argv[0]);
