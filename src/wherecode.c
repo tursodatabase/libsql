@@ -560,9 +560,10 @@ static int codeAllEqualityTerms(
 
 #ifndef SQLITE_LIKE_DOESNT_MATCH_BLOBS
 /*
-** If the most recently coded instruction is a constant range contraint
-** that originated from the LIKE optimization, then change the P3 to be
-** pLoop->iLikeRepCntr and set P5.
+** If the most recently coded instruction is a constant range constraint
+** (a string literal) that originated from the LIKE optimization, then 
+** set P3 and P5 on the OP_String opcode so that the string will be cast
+** to a BLOB at appropriate times.
 **
 ** The LIKE optimization trys to evaluate "x LIKE 'abc%'" as a range
 ** expression: "x>='ABC' AND x<'abd'".  But this requires that the range
@@ -587,8 +588,8 @@ static void whereLikeOptimizationStringFixup(
     assert( pOp!=0 );
     assert( pOp->opcode==OP_String8 
             || pTerm->pWC->pWInfo->pParse->db->mallocFailed );
-    pOp->p3 = pLevel->iLikeRepCntr;
-    pOp->p5 = 1;
+    pOp->p3 = (int)(pLevel->iLikeRepCntr>>1);  /* Register holding counter */
+    pOp->p5 = (u8)(pLevel->iLikeRepCntr&1);    /* ASC or DESC */
   }
 }
 #else
@@ -1175,14 +1176,17 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       if( (pRangeEnd->wtFlags & TERM_LIKEOPT)!=0 ){
         assert( pRangeStart!=0 );                     /* LIKE opt constraints */
         assert( pRangeStart->wtFlags & TERM_LIKEOPT );   /* occur in pairs */
-        pLevel->iLikeRepCntr = ++pParse->nMem;
-        testcase( bRev );
-        testcase( pIdx->aSortOrder[nEq]==SQLITE_SO_DESC );
-        sqlite3VdbeAddOp2(v, OP_Integer,
-                          bRev ^ (pIdx->aSortOrder[nEq]==SQLITE_SO_DESC),
-                          pLevel->iLikeRepCntr);
+        pLevel->iLikeRepCntr = (u32)++pParse->nMem;
+        sqlite3VdbeAddOp2(v, OP_Integer, 1, (int)pLevel->iLikeRepCntr);
         VdbeComment((v, "LIKE loop counter"));
         pLevel->addrLikeRep = sqlite3VdbeCurrentAddr(v);
+        /* iLikeRepCntr actually stores 2x the counter register number.  The
+        ** bottom bit indicates whether the search order is ASC or DESC. */
+        testcase( bRev );
+        testcase( pIdx->aSortOrder[nEq]==SQLITE_SO_DESC );
+        assert( (bRev & ~1)==0 );
+        pLevel->iLikeRepCntr <<=1;
+        pLevel->iLikeRepCntr |= bRev ^ (pIdx->aSortOrder[nEq]==SQLITE_SO_DESC);
       }
 #endif
       if( pRangeStart==0
@@ -1696,11 +1700,17 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       continue;
     }
     if( pTerm->wtFlags & TERM_LIKECOND ){
+      /* If the TERM_LIKECOND flag is set, that means that the range search
+      ** is sufficient to guarantee that the LIKE operator is true, so we
+      ** can skip the call to the like(A,B) function.  But this only works
+      ** for strings.  So do not skip the call to the function on the pass
+      ** that compares BLOBs. */
 #ifdef SQLITE_LIKE_DOESNT_MATCH_BLOBS
       continue;
 #else
-      assert( pLevel->iLikeRepCntr>0 );
-      skipLikeAddr = sqlite3VdbeAddOp1(v, OP_IfNot, pLevel->iLikeRepCntr);
+      u32 x = pLevel->iLikeRepCntr;
+      assert( x>0 );
+      skipLikeAddr = sqlite3VdbeAddOp1(v, (x&1)? OP_IfNot : OP_If, (int)(x>>1));
       VdbeCoverage(v);
 #endif
     }

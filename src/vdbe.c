@@ -950,8 +950,6 @@ case OP_HaltIfNull: {      /* in3 */
 ** is the same as executing Halt.
 */
 case OP_Halt: {
-  const char *zType;
-  const char *zLogFmt;
   VdbeFrame *pFrame;
   int pcx;
 
@@ -980,34 +978,28 @@ case OP_Halt: {
   p->rc = pOp->p1;
   p->errorAction = (u8)pOp->p2;
   p->pc = pcx;
+  assert( pOp->p5>=0 && pOp->p5<=4 );
   if( p->rc ){
     if( pOp->p5 ){
       static const char * const azType[] = { "NOT NULL", "UNIQUE", "CHECK",
                                              "FOREIGN KEY" };
-      assert( pOp->p5>=1 && pOp->p5<=4 );
       testcase( pOp->p5==1 );
       testcase( pOp->p5==2 );
       testcase( pOp->p5==3 );
       testcase( pOp->p5==4 );
-      zType = azType[pOp->p5-1];
+      sqlite3VdbeError(p, "%s constraint failed", azType[pOp->p5-1]);
+      if( pOp->p4.z ){
+        p->zErrMsg = sqlite3MPrintf(db, "%z: %s", p->zErrMsg, pOp->p4.z);
+      }
     }else{
-      zType = 0;
-    }
-    assert( zType!=0 || pOp->p4.z!=0 );
-    zLogFmt = "abort at %d in [%s]: %s";
-    if( zType && pOp->p4.z ){
-      sqlite3VdbeError(p, "%s constraint failed: %s", zType, pOp->p4.z);
-    }else if( pOp->p4.z ){
       sqlite3VdbeError(p, "%s", pOp->p4.z);
-    }else{
-      sqlite3VdbeError(p, "%s constraint failed", zType);
     }
-    sqlite3_log(pOp->p1, zLogFmt, pcx, p->zSql, p->zErrMsg);
+    sqlite3_log(pOp->p1, "abort at %d in [%s]: %s", pcx, p->zSql, p->zErrMsg);
   }
   rc = sqlite3VdbeHalt(p);
   assert( rc==SQLITE_BUSY || rc==SQLITE_OK || rc==SQLITE_ERROR );
   if( rc==SQLITE_BUSY ){
-    p->rc = rc = SQLITE_BUSY;
+    p->rc = SQLITE_BUSY;
   }else{
     assert( rc==SQLITE_OK || (p->rc&0xff)==SQLITE_CONSTRAINT );
     assert( rc==SQLITE_OK || db->nDeferredCons>0 || db->nDeferredImmCons>0 );
@@ -1073,10 +1065,7 @@ case OP_String8: {         /* same as TK_STRING, out2 */
 #ifndef SQLITE_OMIT_UTF16
   if( encoding!=SQLITE_UTF8 ){
     rc = sqlite3VdbeMemSetStr(pOut, pOp->p4.z, -1, SQLITE_UTF8, SQLITE_STATIC);
-    if( rc ){
-      assert( rc==SQLITE_TOOBIG ); /* This is the only possible error here */
-      goto too_big;
-    }
+    assert( rc==SQLITE_OK || rc==SQLITE_TOOBIG );
     if( SQLITE_OK!=sqlite3VdbeChangeEncoding(pOut, encoding) ) goto no_mem;
     assert( pOut->szMalloc>0 && pOut->zMalloc==pOut->z );
     assert( VdbeMemDynamic(pOut)==0 );
@@ -1089,10 +1078,12 @@ case OP_String8: {         /* same as TK_STRING, out2 */
     pOp->p4.z = pOut->z;
     pOp->p1 = pOut->n;
   }
+  testcase( rc==SQLITE_TOOBIG );
 #endif
   if( pOp->p1>db->aLimit[SQLITE_LIMIT_LENGTH] ){
     goto too_big;
   }
+  assert( rc==SQLITE_OK );
   /* Fall through to the next case, OP_String */
 }
   
@@ -1101,10 +1092,12 @@ case OP_String8: {         /* same as TK_STRING, out2 */
 **
 ** The string value P4 of length P1 (bytes) is stored in register P2.
 **
-** If P5!=0 and the content of register P3 is greater than zero, then
+** If P3 is not zero and the content of register P3 is equal to P5, then
 ** the datatype of the register P2 is converted to BLOB.  The content is
 ** the same sequence of bytes, it is merely interpreted as a BLOB instead
-** of a string, as if it had been CAST.
+** of a string, as if it had been CAST.  In other words:
+**
+** if( P3!=0 and reg[P3]==P5 ) reg[P2] := CAST(reg[P2] as BLOB)
 */
 case OP_String: {          /* out2 */
   assert( pOp->p4.z!=0 );
@@ -1115,12 +1108,11 @@ case OP_String: {          /* out2 */
   pOut->enc = encoding;
   UPDATE_MAX_BLOBSIZE(pOut);
 #ifndef SQLITE_LIKE_DOESNT_MATCH_BLOBS
-  if( pOp->p5 ){
-    assert( pOp->p3>0 );
+  if( pOp->p3>0 ){
     assert( pOp->p3<=(p->nMem+1 - p->nCursor) );
     pIn3 = &aMem[pOp->p3];
     assert( pIn3->flags & MEM_Int );
-    if( pIn3->u.i ) pOut->flags = MEM_Blob|MEM_Static|MEM_Term;
+    if( pIn3->u.i==pOp->p5 ) pOut->flags = MEM_Blob|MEM_Static|MEM_Term;
   }
 #endif
   break;
@@ -5975,21 +5967,6 @@ case OP_DecrJumpZero: {      /* jump, in1 */
   break;
 }
 
-
-/* Opcode: JumpZeroIncr P1 P2 * * *
-** Synopsis: if (r[P1]++)==0 ) goto P2
-**
-** The register P1 must contain an integer.  If register P1 is initially
-** zero, then jump to P2.  Increment register P1 regardless of whether or
-** not the jump is taken.
-*/
-case OP_JumpZeroIncr: {        /* jump, in1 */
-  pIn1 = &aMem[pOp->p1];
-  assert( pIn1->flags&MEM_Int );
-  VdbeBranchTaken(pIn1->u.i==0, 2);
-  if( (pIn1->u.i++)==0 ) goto jump_to_p2;
-  break;
-}
 
 /* Opcode: AggStep0 * P2 P3 P4 P5
 ** Synopsis: accum=r[P3] step(r[P2@P5])

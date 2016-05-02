@@ -6590,18 +6590,22 @@ static const char *unixTempFileDir(void){
      "/tmp",
      "."
   };
-  unsigned int i;
+  unsigned int i = 0;
   struct stat buf;
   const char *zDir = sqlite3_temp_directory;
 
   if( !azDirs[0] ) azDirs[0] = getenv("SQLITE_TMPDIR");
   if( !azDirs[1] ) azDirs[1] = getenv("TMPDIR");
-  for(i=0; i<=sizeof(azDirs)/sizeof(azDirs[0]); zDir=azDirs[i++]){
-    if( zDir==0 ) continue;
-    if( osStat(zDir, &buf) ) continue;
-    if( !S_ISDIR(buf.st_mode) ) continue;
-    if( osAccess(zDir, 03) ) continue;
-    return zDir;
+  while(1){
+    if( zDir!=0
+     && osStat(zDir, &buf)==0
+     && S_ISDIR(buf.st_mode)
+     && osAccess(zDir, 03)==0
+    ){
+      return zDir;
+    }
+    if( i>=sizeof(azDirs)/sizeof(azDirs[0]) ) break;
+    zDir = azDirs[i++];
   }
   return 0;
 }
