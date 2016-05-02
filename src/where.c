@@ -4607,13 +4607,8 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     }
 #ifndef SQLITE_LIKE_DOESNT_MATCH_BLOBS
     if( pLevel->addrLikeRep ){
-      int op;
-      if( sqlite3VdbeGetOp(v, pLevel->addrLikeRep-1)->p1 ){
-        op = OP_DecrJumpZero;
-      }else{
-        op = OP_JumpZeroIncr;
-      }
-      sqlite3VdbeAddOp2(v, op, pLevel->iLikeRepCntr, pLevel->addrLikeRep);
+      sqlite3VdbeAddOp2(v, OP_DecrJumpZero, (int)(pLevel->iLikeRepCntr>>1),
+                        pLevel->addrLikeRep);
       VdbeCoverage(v);
     }
 #endif

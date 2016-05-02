@@ -70,7 +70,7 @@ struct WhereLevel {
   int addrFirst;        /* First instruction of interior of the loop */
   int addrBody;         /* Beginning of the body of this loop */
 #ifndef SQLITE_LIKE_DOESNT_MATCH_BLOBS
-  int iLikeRepCntr;     /* LIKE range processing counter register */
+  u32 iLikeRepCntr;     /* LIKE range processing counter register (times 2) */
   int addrLikeRep;      /* LIKE range processing address */
 #endif
   u8 iFrom;             /* Which entry in the FROM clause */

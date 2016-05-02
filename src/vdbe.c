@@ -1091,10 +1091,12 @@ case OP_String8: {         /* same as TK_STRING, out2 */
 **
 ** The string value P4 of length P1 (bytes) is stored in register P2.
 **
-** If P5!=0 and the content of register P3 is greater than zero, then
+** If P3 is not zero and the content of register P3 is equal to P5, then
 ** the datatype of the register P2 is converted to BLOB.  The content is
 ** the same sequence of bytes, it is merely interpreted as a BLOB instead
-** of a string, as if it had been CAST.
+** of a string, as if it had been CAST.  In other words:
+**
+** if( P3!=0 and reg[P3]==P5 ) reg[P2] := CAST(reg[P2] as BLOB)
 */
 case OP_String: {          /* out2 */
   assert( pOp->p4.z!=0 );
@@ -1105,12 +1107,11 @@ case OP_String: {          /* out2 */
   pOut->enc = encoding;
   UPDATE_MAX_BLOBSIZE(pOut);
 #ifndef SQLITE_LIKE_DOESNT_MATCH_BLOBS
-  if( pOp->p5 ){
-    assert( pOp->p3>0 );
+  if( pOp->p3>0 ){
     assert( pOp->p3<=(p->nMem+1 - p->nCursor) );
     pIn3 = &aMem[pOp->p3];
     assert( pIn3->flags & MEM_Int );
-    if( pIn3->u.i ) pOut->flags = MEM_Blob|MEM_Static|MEM_Term;
+    if( pIn3->u.i==pOp->p5 ) pOut->flags = MEM_Blob|MEM_Static|MEM_Term;
   }
 #endif
   break;
@@ -5965,21 +5966,6 @@ case OP_DecrJumpZero: {      /* jump, in1 */
   break;
 }
 
-
-/* Opcode: JumpZeroIncr P1 P2 * * *
-** Synopsis: if (r[P1]++)==0 ) goto P2
-**
-** The register P1 must contain an integer.  If register P1 is initially
-** zero, then jump to P2.  Increment register P1 regardless of whether or
-** not the jump is taken.
-*/
-case OP_JumpZeroIncr: {        /* jump, in1 */
-  pIn1 = &aMem[pOp->p1];
-  assert( pIn1->flags&MEM_Int );
-  VdbeBranchTaken(pIn1->u.i==0, 2);
-  if( (pIn1->u.i++)==0 ) goto jump_to_p2;
-  break;
-}
 
 /* Opcode: AggStep0 * P2 P3 P4 P5
 ** Synopsis: accum=r[P3] step(r[P2@P5])
