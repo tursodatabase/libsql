@@ -230,7 +230,7 @@ do_execsql_test 8.1 {
   CREATE TABLE t2(a, b);
   CREATE INDEX i2 ON t2(a, b);
   WITH x(i) AS ( SELECT 1 UNION ALL SELECT i+1 FROM x WHERE i<20 )
-  INSERT INTO t2 SELECT randomblob(100), randomblob(100) FROM x;
+  INSERT INTO t2 SELECT randomblob(100), randomblob(100) FROM x ORDER BY 1, 2;
   PRAGMA page_count;
 } {13}
 
@@ -242,7 +242,7 @@ do_test 8.2 {
     CREATE TABLE t1(a, b);
     CREATE INDEX i1 ON t1(a, b);
     WITH x(i) AS ( SELECT 1 UNION ALL SELECT i+1 FROM x WHERE i<100 )
-    INSERT INTO t1 SELECT randomblob(100), randomblob(100) FROM x;
+    INSERT INTO t1 SELECT randomblob(100), randomblob(100) FROM x ORDER BY 1, 2;
     PRAGMA page_count;
   } tmp
 } {10}
