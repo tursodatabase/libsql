@@ -161,4 +161,27 @@ do_execsql_test 5.0 {
   SELECT a FROM t1 WHERE b=2;
 } {}
 
+# 2016-05-02
+# Ticket https://www.sqlite.org/src/tktview/dc6ebeda93960877
+# A subquery in the WHERE clause of a one-pass DELETE can cause an
+# incorrect answer.
+#
+db close
+forcedelete test.db
+sqlite3 db test.db
+do_execsql_test 6.0 {
+  CREATE TABLE t2(x INT);
+  INSERT INTO t2(x) VALUES(1),(2),(3),(4),(5);
+  DELETE FROM t2 WHERE EXISTS(SELECT 1 FROM t2 AS v WHERE v.x=t2.x-1);
+  SELECT x FROM t2;
+} {1}
+do_execsql_test 6.1 {
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t2(x INT);
+  INSERT INTO t2(x) VALUES(1),(2),(3),(4),(5);
+  DELETE FROM t2 WHERE EXISTS(SELECT 1 FROM t2 AS v WHERE v.x=t2.x+1);
+  SELECT x FROM t2;
+} {5}
+
+
 finish_test
