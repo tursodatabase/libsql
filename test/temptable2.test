@@ -343,14 +343,15 @@ do_execsql_test 10.1 {
   INSERT INTO t2 VALUES(3, 4);
 }
 
-if {[permutation]!="journaltest"} {
-  # The journaltest permutation does not support mmap, so this part of
-  # the test is omitted.
-  do_execsql_test 10.2 { PRAGMA mmap_size = 512000 } 512000
+ifcapable mmap {
+  if {[permutation]!="journaltest"} {
+    # The journaltest permutation does not support mmap, so this part of
+    # the test is omitted.
+    do_execsql_test 10.2 { PRAGMA mmap_size = 512000 } 512000
+  }
 }
 
 do_execsql_test 10.3 { SELECT * FROM t2 } {1 2 3 4}
 do_execsql_test 10.4 { PRAGMA integrity_check } ok
 
 finish_test
-
