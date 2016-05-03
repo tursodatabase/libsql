@@ -616,6 +616,16 @@ if test "${enable_rtree}" = "yes" ; then
 fi
 
 #########
+# See whether we should enable the SESSION extension
+AC_ARG_ENABLE(session, AC_HELP_STRING([--enable-session],
+      [Enable the SESSION extension]),
+      [enable_session=yes],[enable_session=no])
+if test "${enable_session}" = "yes" ; then
+  OPT_FEATURE_FLAGS+=" -DSQLITE_ENABLE_SESSION"
+  OPT_FEATURE_FLAGS+=" -DSQLITE_ENABLE_PREUPDATE_HOOK"
+fi
+
+#########
 # attempt to duplicate any OMITS and ENABLES into the $(OPT_FEATURE_FLAGS) parameter
 for option in $CFLAGS $CPPFLAGS
 do

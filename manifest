@@ -1,8 +1,8 @@
-C Avoid\sleft-shifts\sof\ssigned\sintegers.
-D 2016-05-03T00:04:55.196
-F Makefile.in 9e816d0323e418fbc0f8b2c05fc14e0b3763d9e8
+C Turn\sthe\ssession\sextension\soff\sby\sdefault.\s\sEnable\susing\s--enable-session\son\nconfigure\sscripts,\sor\susing\sthe\sSESSION=1\sargument\sto\snmake\son\sWindows.
+D 2016-05-03T13:14:18.288
+F Makefile.in 9eda6e1c90d05c199c3ec8a7069b0682ad307657
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 71b8b16cf9393f68e2e2035486ca104872558836
+F Makefile.msc a7f34be67d16284e4208370365a9728094861194
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION 5d234da9b5dae329fab75ff75884cfe0a9cb3fda
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -10,11 +10,11 @@ F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
-F autoconf/Makefile.am 42f7eb1fb2b06ddd6c6adab3e4388cc0a237ba40
-F autoconf/Makefile.msc dc0d0500e4a827cb3891d08d846dd6dd40241b51
+F autoconf/Makefile.am 1a47d071e3d5435f8f7ebff7eb6703848bbd65d4
+F autoconf/Makefile.msc ac014aab0b8314d6baa30cbd1dd4ce983f306b5d
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/README.txt 4f04b0819303aabaa35fff5f7b257fb0c1ef95f1
-F autoconf/configure.ac d807b567f73a2b0986ccdd206b782cecb4d08fff
+F autoconf/configure.ac e2299fe80eb256dafdc68cf250e37ea1a0a6ec71
 F autoconf/tea/Makefile.in b438a7020446c8a8156e8d97c8914a04833da6fd
 F autoconf/tea/README 3e9a3c060f29a44344ab50aec506f4db903fb873
 F autoconf/tea/aclocal.m4 52c47aac44ce0ddb1f918b6993e8beb8eee88f43
@@ -30,8 +30,8 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 6376abec766e9a0785178b1823b5a587e9f1ccbc
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure dbd42c55ca6b65e0fb37ef54121755f26a890edf x
-F configure.ac 89e4e02a83d8a1528011f8395621b8c3186b4089
+F configure df9f793ad47eaeb3648a9090fbc0b96955e88b5a x
+F configure.ac 02b972db825685b4b0cca0234b2aa97f71bd15a5
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html e2118945e5f07ed146b45c9cd2b2dd6eabb8ebf2
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
@@ -998,7 +998,7 @@ F test/rdonly.test 64e2696c322e3538df0b1ed624e21f9a23ed9ff8
 F test/regexp1.test 497ea812f264d12b6198d6e50a76be4a1973a9d8
 F test/regexp2.test aa7ffcc21350007a78361b82bcf3b74d12227144
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
-F test/releasetest.tcl f2519836bebefcc7db36b4946e8028d4885baa59
+F test/releasetest.tcl 7d80014d0245b3f9d02d393d420bf03ca155aec0
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
 F test/rollback.test 458fe73eb3ffdfdf9f6ba3e9b7350a6220414dea
 F test/rollback2.test 8435d6ff0f13f51d2a4181c232e706005fa90fc5
@@ -1486,7 +1486,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5830cf72e9e870830d088399f1ccb03ed6522582
-R 350580348db69c537adc1a64222fc40a
+P 0715ce164333e27671efbec8796f238df98cc287
+R b2e26094738bdcbd727f209d6b0330cd
+T *branch * session-make
+T *sym-session-make *
+T -sym-trunk *
 U drh
-Z 10c9aec7cf14a46e7039005f7f038452
+Z 7002cda7adeb2152eae684546f496804
