@@ -1,8 +1,8 @@
-C The\ssession\sextension\sis\sdisabled\sby\sdefault.\s\sTo\senable\sit\susing\n--enable-session\son\s./configure\son\sunix\sand\sadd\sSESSION=1\sto\sthe\snmake\non\sWindows.\s\sOr\sadd\s-DSQLITE_ENABLE_SESSION\sand\n-DSQLITE_ENABLE_PREUPDATE_HOOK\sto\sbuild\smanually.
-D 2016-05-03T14:57:07.139
+C Minor\sstyle\stweaks\sin\sthe\sMSVC\smakefile.
+D 2016-05-03T19:40:54.328
 F Makefile.in 9eda6e1c90d05c199c3ec8a7069b0682ad307657
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc a7f34be67d16284e4208370365a9728094861194
+F Makefile.msc db82b35aef27f412fef14d8534afc022138bcdfd
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION 5d234da9b5dae329fab75ff75884cfe0a9cb3fda
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -11,7 +11,7 @@ F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am 1a47d071e3d5435f8f7ebff7eb6703848bbd65d4
-F autoconf/Makefile.msc ac014aab0b8314d6baa30cbd1dd4ce983f306b5d
+F autoconf/Makefile.msc 0eca137c12542bd76c253a2d24380f29ade59b95
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/README.txt 4f04b0819303aabaa35fff5f7b257fb0c1ef95f1
 F autoconf/configure.ac e2299fe80eb256dafdc68cf250e37ea1a0a6ec71
@@ -1486,8 +1486,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0715ce164333e27671efbec8796f238df98cc287 e462cde2a50c39cc2f8d8624aada19280b8226eb
-R b2e26094738bdcbd727f209d6b0330cd
-T +closed e462cde2a50c39cc2f8d8624aada19280b8226eb
-U drh
-Z be2a8ff6db06dcbc7ab32e285c183e7e
+P bcaa650e8796984b275eceba0ed477f360295d01
+R 962b079d2f6aa84ad32617180232ff75
+U mistachkin
+Z 45ce4bc83f501da24480cd14c4b0de07
