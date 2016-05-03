@@ -908,6 +908,7 @@ enable_fts4
 enable_fts5
 enable_json1
 enable_rtree
+enable_session
 enable_gcov
 '
       ac_precious_vars='build_alias
@@ -1556,6 +1557,7 @@ Optional Features:
   --enable-fts5           Enable the FTS5 extension
   --enable-json1          Enable the JSON1 extension
   --enable-rtree          Enable the RTREE extension
+  --enable-session        Enable the SESSION extension
   --enable-gcov           Enable coverage testing using gcov
 
 Optional Packages:
@@ -3923,13 +3925,13 @@ if ${lt_cv_nm_interface+:} false; then :
 else
   lt_cv_nm_interface="BSD nm"
   echo "int some_variable = 0;" > conftest.$ac_ext
-  (eval echo "\"\$as_me:3926: $ac_compile\"" >&5)
+  (eval echo "\"\$as_me:3928: $ac_compile\"" >&5)
   (eval "$ac_compile" 2>conftest.err)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:3929: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
+  (eval echo "\"\$as_me:3931: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
   (eval "$NM \"conftest.$ac_objext\"" 2>conftest.err > conftest.out)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:3932: output\"" >&5)
+  (eval echo "\"\$as_me:3934: output\"" >&5)
   cat conftest.out >&5
   if $GREP 'External.*some_variable' conftest.out > /dev/null; then
     lt_cv_nm_interface="MS dumpbin"
@@ -5135,7 +5137,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 5138 "configure"' > conftest.$ac_ext
+  echo '#line 5140 "configure"' > conftest.$ac_ext
   if { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_compile\""; } >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -6660,11 +6662,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6663: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6665: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:6667: \$? = $ac_status" >&5
+   echo "$as_me:6669: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -6999,11 +7001,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7002: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7004: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:7006: \$? = $ac_status" >&5
+   echo "$as_me:7008: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -7104,11 +7106,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7107: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7109: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:7111: \$? = $ac_status" >&5
+   echo "$as_me:7113: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -7159,11 +7161,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7162: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7164: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:7166: \$? = $ac_status" >&5
+   echo "$as_me:7168: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -9539,7 +9541,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 9542 "configure"
+#line 9544 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -9635,7 +9637,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 9638 "configure"
+#line 9640 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -11492,6 +11494,20 @@ fi
 
 if test "${enable_rtree}" = "yes" ; then
   OPT_FEATURE_FLAGS+=" -DSQLITE_ENABLE_RTREE"
+fi
+
+#########
+# See whether we should enable the SESSION extension
+# Check whether --enable-session was given.
+if test "${enable_session+set}" = set; then :
+  enableval=$enable_session; enable_session=yes
+else
+  enable_session=no
+fi
+
+if test "${enable_session}" = "yes" ; then
+  OPT_FEATURE_FLAGS+=" -DSQLITE_ENABLE_SESSION"
+  OPT_FEATURE_FLAGS+=" -DSQLITE_ENABLE_PREUPDATE_HOOK"
 fi
 
 #########

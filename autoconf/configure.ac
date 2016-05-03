@@ -123,6 +123,18 @@ AC_SUBST(JSON1_FLAGS)
 #-----------------------------------------------------------------------
 
 #-----------------------------------------------------------------------
+#   --enable-session
+#
+AC_ARG_ENABLE(session, [AS_HELP_STRING(
+  [--enable-session], [enable the session extension [default=no]])], 
+  [], [enable_session=no])
+if test x"$enable_session" == "xyes"; then
+  SESSION_FLAGS="-DSQLITE_ENABLE_SESSION -DSQLITE_ENABLE_PREUPDATE_HOOK"
+fi
+AC_SUBST(SESSION_FLAGS)
+#-----------------------------------------------------------------------
+
+#-----------------------------------------------------------------------
 #   --enable-static-shell
 #
 AC_ARG_ENABLE(static-shell, [AS_HELP_STRING(
