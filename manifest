@@ -1,5 +1,5 @@
-C The\ssession\sextension\sis\sdisabled\sby\sdefault.\s\sTo\senable\sit\susing\n--enable-session\son\s./configure\son\sunix\sand\sadd\sSESSION=1\sto\sthe\snmake\non\sWindows.\s\sOr\sadd\s-DSQLITE_ENABLE_SESSION\sand\n-DSQLITE_ENABLE_PREUPDATE_HOOK\sto\sbuild\smanually.
-D 2016-05-03T14:57:07.139
+C Add\sthe\sexperimental\sSQLITE_FCNTL_WIN32_GET_HANDLE\sfile\scontrol.
+D 2016-05-03T19:36:54.758
 F Makefile.in 9eda6e1c90d05c199c3ec8a7069b0682ad307657
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a7f34be67d16284e4208370365a9728094861194
@@ -362,7 +362,7 @@ F src/os.h 8e976e59eb4ca1c0fca6d35ee803e38951cb0343
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c a9443cdab41d7f3cdf0df3a5aab62fd6e1c9b234
-F src/os_win.c 852fc2ff6084296348ed3739c548b2cf32df394e
+F src/os_win.c 75edd38c5efbb177cbfdce7128635a2bb53cf16c
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c a8d30c49c231e9a20d05257613db922532588963
 F src/pager.h 329bdf078a4e0a3b35084534d58625d21fd03681
@@ -379,7 +379,7 @@ F src/resolve.c b8f7174e5f8c33c44ded3a25a973d0bb89228c20
 F src/rowset.c 49eb91c588a2bab36647368e031dc5b66928149d
 F src/select.c fd4a7ce2937497181063cfedb92058ac89491a5d
 F src/shell.c 14ff7f660530a52b117d110ba3390b7b2eb719b6
-F src/sqlite.h.in 9984129d86243424b765fcb3f147c697bd20bb54
+F src/sqlite.h.in 07a295a39a41cfd136bf63bdcfe478caaee78042
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 98f72cbfe00169c39089115427d06ea05fe4b4a2
 F src/sqliteInt.h f4a53f3547dab80dc7db975fa1192d9bad1f38e8
@@ -387,7 +387,7 @@ F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
 F src/tclsqlite.c 9c4c4589d078de37813ded708d8838b338ffb060
-F src/test1.c c0e5b69f99e95a2c9f55fdb6e46b44f1a15292d8
+F src/test1.c 7862c314d742153639ecb6ec2daf29936cc066cd
 F src/test2.c 5586f43fcd9a1be0830793cf9d354082c261b25b
 F src/test3.c 0df6f8dbb4cbaa7106397c70a271fa6a43659042
 F src/test4.c d168f83cc78d02e8d35567bb5630e40dcd85ac1e
@@ -664,7 +664,7 @@ F test/expr.test 79c3e7502d9e571553b85f0ecc8ff2ac7d0e4931
 F test/extension01.test 00d13cec817f331a687a243e0e5a2d87b0e358c9
 F test/extraquick.test cb254400bd42bfb777ff675356aabf3287978f79
 F test/fallocate.test 3e979af17dfa7e5e9dda5eba1a696c04fa9d47f7
-F test/filectrl.test 7c13f96457435238da99aff7343ad6a3a4885787
+F test/filectrl.test c6547e6c3c4c3ef9707a0b3dc147de718135cacc
 F test/filefmt.test e4edbdc637ca9576ccf4337a3cce627d9df7a56c
 F test/fkey1.test 13e3d48236a2b9f5c5ebd232eef9b3ab682a8a2c
 F test/fkey2.test f3d27ecba480a348c328965d154214719bb158a9
@@ -1486,8 +1486,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0715ce164333e27671efbec8796f238df98cc287 e462cde2a50c39cc2f8d8624aada19280b8226eb
-R b2e26094738bdcbd727f209d6b0330cd
-T +closed e462cde2a50c39cc2f8d8624aada19280b8226eb
-U drh
-Z be2a8ff6db06dcbc7ab32e285c183e7e
+P bcaa650e8796984b275eceba0ed477f360295d01
+R 7e9bbb4137cb671c555aabb8a094cd9b
+T *branch * win32GetHandle
+T *sym-win32GetHandle *
+T -sym-trunk *
+U mistachkin
+Z e75ba582b3d5fa180704c51e0604373b
