@@ -6700,8 +6700,8 @@ static int sorter_test_sort4_helper(
   const char *zSql2;
   int nStep; 
   int iStep; 
-  int iCksum1 = 0; 
-  int iCksum2 = 0; 
+  unsigned int iCksum1 = 0; 
+  unsigned int iCksum2 = 0; 
   int rc;
   int iB;
   sqlite3 *db;
@@ -6728,7 +6728,7 @@ static int sorter_test_sort4_helper(
       return TCL_ERROR;
     }
 
-    iCksum1 += (iCksum1 << 3) + a;
+    iCksum1 += (iCksum1 << 3) + (unsigned int)a;
   }
   rc = sqlite3_finalize(pStmt);
   if( rc!=SQLITE_OK ) goto sql_error;
@@ -6737,7 +6737,7 @@ static int sorter_test_sort4_helper(
   if( rc!=SQLITE_OK ) goto sql_error;
   for(iStep=0; SQLITE_ROW==sqlite3_step(pStmt); iStep++){
     int a = sqlite3_column_int(pStmt, 0);
-    iCksum2 += (iCksum2 << 3) + a;
+    iCksum2 += (iCksum2 << 3) + (unsigned int)a;
   }
   rc = sqlite3_finalize(pStmt);
   if( rc!=SQLITE_OK ) goto sql_error;
