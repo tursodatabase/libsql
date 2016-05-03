@@ -29,11 +29,19 @@ pub fn drop_int_array(conn: &Connection, name: &str) -> Result<()> {
     conn.execute_batch(&format!("DROP TABLE temp.\"{0}\"", escape_double_quote(name)))
 }
 
-init_module!(INT_ARRAY_MODULE, IntArrayVTab, IntArrayVTabCursor,
-    int_array_create, int_array_best_index, int_array_destroy,
-    int_array_open, int_array_close,
-    int_array_filter, int_array_next, int_array_eof,
-    int_array_column, int_array_rowid);
+init_module!(INT_ARRAY_MODULE,
+             IntArrayVTab,
+             IntArrayVTabCursor,
+             int_array_create,
+             int_array_best_index,
+             int_array_destroy,
+             int_array_open,
+             int_array_close,
+             int_array_filter,
+             int_array_next,
+             int_array_eof,
+             int_array_column,
+             int_array_rowid);
 
 #[repr(C)]
 struct IntArrayVTab {

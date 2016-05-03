@@ -353,7 +353,9 @@ impl<'a> Context<'a> {
 ///
 /// `A` is the type of the aggregation context and `T` is the type of the final result.
 /// Implementations should be stateless.
-pub trait Aggregate<A, T> where T: ToResult {
+pub trait Aggregate<A, T>
+    where T: ToResult
+{
     /// Initializes the aggregation context. Will be called prior to the first call
     /// to `step()` to set up the context for an invocation of the function. (Note:
     /// `init()` will not be called if the there are no rows.)

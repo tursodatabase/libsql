@@ -18,11 +18,19 @@ pub fn load_module(conn: &Connection) -> Result<()> {
     conn.create_module("csv", &CSV_MODULE, aux)
 }
 
-init_module!(CSV_MODULE, CSVTab, CSVTabCursor,
-    csv_create, csv_best_index, csv_destroy,
-    csv_open, csv_close,
-    csv_filter, csv_next, csv_eof,
-    csv_column, csv_rowid);
+init_module!(CSV_MODULE,
+             CSVTab,
+             CSVTabCursor,
+             csv_create,
+             csv_best_index,
+             csv_destroy,
+             csv_open,
+             csv_close,
+             csv_filter,
+             csv_next,
+             csv_eof,
+             csv_column,
+             csv_rowid);
 
 #[repr(C)]
 struct CSVTab {

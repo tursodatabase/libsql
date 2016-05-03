@@ -950,7 +950,8 @@ pub struct MappedRows<'stmt, F> {
     map: F,
 }
 
-impl<'stmt, T, F> Iterator for MappedRows<'stmt, F> where F: FnMut(&Row) -> T
+impl<'stmt, T, F> Iterator for MappedRows<'stmt, F>
+    where F: FnMut(&Row) -> T
 {
     type Item = Result<T>;
 
