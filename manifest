@@ -1,5 +1,5 @@
-C Merge\senhancements\sand\sbug\sfixes\sfrom\strunk.
-D 2016-05-02T15:00:23.726
+C Fix\sthe\sbuild\swhen\sSQLITE_ENABLE_DATA_PROTECTION\sis\sdefined.
+D 2016-05-03T02:43:50.717
 F Makefile.in c3d3154bf7fed85676ea6d758cc9c9048b52e750
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 71b8b16cf9393f68e2e2035486ca104872558836
@@ -367,7 +367,7 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c defa2c6c6e01219459fa783d2f55841271c4eebc
 F src/os_win.c b717a28c34e158dbd392b57ead178903e17968ce
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
-F src/pager.c c02274c29feb73f909b6253cd89fa5f48dfe9627
+F src/pager.c c93fda2f27f84afb21117c34ae397b5fabcfec3e
 F src/pager.h 7b85589162a781d75fb62c4750ba31ddce9500c5
 F src/parse.y 10eb2f3fb62341291528c7984498054731f9d31e
 F src/pcache.c b3230ecfc7f797063fbe167f2845da363e8f07f8
@@ -1491,7 +1491,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ce11f8e8a38b36fd78c104ba7b6900f77d7b586b e4af967533f290862dfba1d9ef44d4c9ddd8a01b
-R ea66785569ab542699ebf09c5ffedb81
+P f52765ee7bddf047ce32d7448ee0c409e27d349a
+R 4d12f454d1c2823bac7a9bcdbe3bca5d
 U drh
-Z 8c801c8d8833e45d48758273d9554e3c
+Z 8daef19354af3f45cf84a317710b2669

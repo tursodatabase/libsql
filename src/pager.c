@@ -5616,7 +5616,7 @@ static int pager_open_journal(Pager *pPager){
         int nSpill;
 
 #if SQLITE_ENABLE_DATA_PROTECTION
-        flags |= (pPager->vfsFlags&SQLITE_OPEN_FILEPROTECTION_MASK)|
+        flags |= (pPager->vfsFlags&SQLITE_OPEN_FILEPROTECTION_MASK);
 #endif
         if( pPager->tempFile ){
           flags |= (SQLITE_OPEN_DELETEONCLOSE|SQLITE_OPEN_TEMP_JOURNAL);
