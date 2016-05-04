@@ -179,15 +179,14 @@ impl FromSql for DateTime<UTC> {
     unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> Result<DateTime<UTC>> {
         match sqlite3_column_type(stmt, col) {
             ffi::SQLITE_TEXT => {
-                let s = try!(String::column_result(stmt, col));
+                let mut s = try!(String::column_result(stmt, col));
                 if s.len() > 23 {
-                    let fmt = if s.as_bytes()[10] == b'T' {
-                        "%Y-%m-%dT%H:%M:%S%.f%:z"
-                    } else {
-                        "%Y-%m-%d %H:%M:%S%.f%:z"
+                    if s.as_bytes()[10] == b' ' {
+                        s.as_mut_vec()[10] = b'T';
                     };
-                    match UTC.datetime_from_str(&s, fmt) {
-                        Ok(dt) => Ok(dt),
+                    // It cannot be used when the offset can be missing.
+                    match DateTime::parse_from_rfc3339(&s) {
+                        Ok(dt) => Ok(dt.with_timezone(&UTC)),
                         Err(err) => Err(Error::FromSqlConversionFailure(Box::new(err))),
                     }
                 } else {
@@ -220,20 +219,19 @@ impl ToSql for DateTime<Local> {
 
 /// "YYYY-MM-DD HH:MM:SS.SSS[+-]HH:MM"/"YYYY-MM-DD HH:MM"/"YYYY-MM-DD HH:MM:SS"/"YYYY-MM-DD HH:MM:SS.SSS"/ Julian Day / Unix Time => ISO 8601 date and time with time zone.
 /// ("YYYY-MM-DDTHH:MM:SS.SSS[+-]HH:MM"/"YYYY-MM-DDTHH:MM"/"YYYY-MM-DDTHH:MM:SS"/"YYYY-MM-DDTHH:MM:SS.SSS" also supported)
-/// When the timezone is not specified, Local is used.
+/// When the timezone is not specified, UTC is used.
 impl FromSql for DateTime<Local> {
     unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> Result<DateTime<Local>> {
         match sqlite3_column_type(stmt, col) {
             ffi::SQLITE_TEXT => {
-                let s = try!(String::column_result(stmt, col));
+                let mut s = try!(String::column_result(stmt, col));
                 if s.len() > 23 {
-                    let fmt = if s.as_bytes()[10] == b'T' {
-                        "%Y-%m-%dT%H:%M:%S%.f%:z"
-                    } else {
-                        "%Y-%m-%d %H:%M:%S%.f%:z"
+                    if s.as_bytes()[10] == b' ' {
+                        s.as_mut_vec()[10] = b'T';
                     };
-                    match Local.datetime_from_str(&s, fmt) {
-                        Ok(dt) => Ok(dt),
+                    // It cannot be used when the offset can be missing.
+                    match DateTime::parse_from_rfc3339(&s) {
+                        Ok(dt) => Ok(dt.with_timezone(&Local)),
                         Err(err) => Err(Error::FromSqlConversionFailure(Box::new(err))),
                     }
                 } else {
@@ -370,5 +368,50 @@ mod test {
         assert_eq!(local, v);
         let i: DateTime<Local> = db.query_row("SELECT i FROM foo", &[], |r| r.get(0)).unwrap();
         assert_eq!(local, i);
+    }
+
+    #[test]
+    fn test_timezone() {
+        // Worst
+        UTC.datetime_from_str("2016-05-04 17:00:42.862471+08:00",
+                              "%Y-%m-%d %H:%M:%S%.f%:z")
+           .unwrap_err();
+        UTC.datetime_from_str("2016-05-04 17:00:42.862471Z", "%Y-%m-%d %H:%M:%S%.f%:z")
+           .unwrap_err();
+        UTC.datetime_from_str("2016-05-04 17:00:42.862471", "%Y-%m-%d %H:%M:%S%.f%:z").unwrap_err();
+
+        UTC.datetime_from_str("2016-05-04 17:00:42.862471+08:00", "%Y-%m-%d %H:%M:%S%.f%z")
+           .unwrap_err();
+        UTC.datetime_from_str("2016-05-04 17:00:42.862471Z", "%Y-%m-%d %H:%M:%S%.f%z").unwrap_err();
+        UTC.datetime_from_str("2016-05-04 17:00:42.862471", "%Y-%m-%d %H:%M:%S%.f%z").unwrap_err();
+
+        // Better but...
+        DateTime::parse_from_str("2016-05-04 17:00:42.862471+08:00", "%Y-%m-%d %H:%M:%S%.f%z")
+            .unwrap()
+            .with_timezone(&UTC);
+        DateTime::parse_from_str("2016-05-04 17:00:42.862471Z", "%Y-%m-%d %H:%M:%S%.f%z")
+            .unwrap_err(); // Invalid
+        DateTime::parse_from_str("2016-05-04 17:00:42.862471", "%Y-%m-%d %H:%M:%S%.f%z")
+            .unwrap_err(); // TooShort
+
+        DateTime::parse_from_str("2016-05-04 17:00:42.862471+08:00",
+                                 "%Y-%m-%d %H:%M:%S%.f%:z")
+            .unwrap()
+            .with_timezone(&UTC);
+        DateTime::parse_from_str("2016-05-04 17:00:42.862471Z", "%Y-%m-%d %H:%M:%S%.f%:z")
+            .unwrap_err(); // Invalid
+        DateTime::parse_from_str("2016-05-04 17:00:42.862471", "%Y-%m-%d %H:%M:%S%.f%:z")
+            .unwrap_err(); // TooShort
+
+        // Best but in SQLite, the timezone indicator is optional
+        DateTime::parse_from_rfc3339("2016-05-04T17:00:42.862471+08:00")
+            .unwrap()
+            .with_timezone(&UTC);
+        DateTime::parse_from_rfc3339("2016-05-04T17:00:42.862471Z").unwrap().with_timezone(&UTC);
+        DateTime::parse_from_rfc3339("2016-05-04T17:00:42.862471").unwrap_err(); // TooShort
+
+        "2016-05-04T17:00:42.862471+08:00".parse::<DateTime<UTC>>().unwrap();
+        "2016-05-04T17:00:42.862471Z".parse::<DateTime<UTC>>().unwrap();
+        "2016-05-04T17:00:42.862471".parse::<DateTime<UTC>>().unwrap_err(); // TooShort
     }
 }
