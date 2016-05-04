@@ -1,5 +1,5 @@
 
-#ifndef __SQLITESESSION_H_
+#if !defined(__SQLITESESSION_H_) && defined(SQLITE_ENABLE_SESSION)
 #define __SQLITESESSION_H_ 1
 
 /*
@@ -1274,4 +1274,4 @@ int sqlite3changegroup_output_strm(sqlite3_changegroup*,
 }
 #endif
 
-#endif  /* SQLITE_ENABLE_SESSION && SQLITE_ENABLE_PREUPDATE_HOOK */
+#endif  /* !defined(__SQLITESESSION_H_) && defined(SQLITE_ENABLE_SESSION) */
