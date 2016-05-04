@@ -1,5 +1,5 @@
-C Portability\senhancements\sto\sthe\sconfigure\sscript\son\sthe\samalgamation\starball.
-D 2016-05-04T14:20:15.883
+C Only\sdisable\sthe\sone-pass\sDELETE\soptimization\sif\sthe\sWHERE\sclause\scontains\na\scorrelated\ssubquery.\s\sUncorrelated\ssubqueries\sare\sallowed.\s\sThis\sis\sa\nrefinement\sof\scheck-in\s[3f221f592a9a1]\sthat\sis\sthe\sfix\sfor\nticket\s[dc6ebeda9396087].
+D 2016-05-04T14:45:30.802
 F Makefile.in 9eda6e1c90d05c199c3ec8a7069b0682ad307657
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc db82b35aef27f412fef14d8534afc022138bcdfd
@@ -330,7 +330,7 @@ F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 60e135af364d777a9ab41c97e5e89cd224da6198
 F src/date.c 1cc9fb516ec9932c6fd4d2a0d2f8bc4480145c39
 F src/dbstat.c c845548d4346e606e2f2b7d2e714ace2b8a7dd1b
-F src/delete.c 362f89f8e6783e672c4ab06b90fca0177f9a576d
+F src/delete.c 3f16e7ceb9e5084b127e0a4e10a9b06ca66c0b2e
 F src/expr.c 8796c0739b2ad091e6779253f62aad6e767e2be1
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 4c0bd09e602b8ae8d36d81e31e4872d0b53c87bb
@@ -375,14 +375,14 @@ F src/pragma.h 64c78a648751b9f4f297276c4eb7507b14b4628c
 F src/prepare.c 22df6171aec1d86904ed2ad30c2348a5748aa04e
 F src/printf.c 63e6fb12bbe702dd664dc3703776c090383a5a26
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
-F src/resolve.c b8f7174e5f8c33c44ded3a25a973d0bb89228c20
+F src/resolve.c cca3aa77b95706df5d635a2141a4d1de60ae6598
 F src/rowset.c 49eb91c588a2bab36647368e031dc5b66928149d
 F src/select.c fd4a7ce2937497181063cfedb92058ac89491a5d
 F src/shell.c 14ff7f660530a52b117d110ba3390b7b2eb719b6
 F src/sqlite.h.in 9984129d86243424b765fcb3f147c697bd20bb54
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 98f72cbfe00169c39089115427d06ea05fe4b4a2
-F src/sqliteInt.h f4a53f3547dab80dc7db975fa1192d9bad1f38e8
+F src/sqliteInt.h c8483dd77894a72d38a76b6251a4ac949a37d6e8
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
@@ -1487,7 +1487,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6341ab2ffef298ca16b323358afbea4a4c1fb0e1
-R a3cd249f5ae281a2f2bd8ab97d7cb0bc
+P 7184c4b8869ffc00944abdd8d2c521cb11ea5824
+R 0a6e5fa4a5a2f4a10bd60c5e077cbc66
 U drh
-Z 6738ef2f38ef30f9c397b3159a787329
+Z 06351e9e2a2d525f9337b5a6815ea254

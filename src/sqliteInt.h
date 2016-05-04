@@ -2597,6 +2597,7 @@ struct NameContext {
 #define NC_InAggFunc 0x0008  /* True if analyzing arguments to an agg func */
 #define NC_HasAgg    0x0010  /* One or more aggregate functions seen */
 #define NC_IdxExpr   0x0020  /* True if resolving columns of CREATE INDEX */
+#define NC_VarSelect 0x0040  /* A correlated subquery has been seen */
 #define NC_MinMaxAgg 0x1000  /* min/max aggregates seen.  See note above */
 
 /*
