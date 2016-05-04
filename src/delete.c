@@ -239,7 +239,7 @@ void sqlite3DeleteFrom(
   int addrBypass = 0;    /* Address of jump over the delete logic */
   int addrLoop = 0;      /* Top of the delete loop */
   int addrEphOpen = 0;   /* Instruction to open the Ephemeral table */
-  int bComplex;          /* True if there are triggers or FKs or or
+  int bComplex;          /* True if there are triggers or FKs or
                          ** subqueries in the WHERE clause */
  
 #ifndef SQLITE_OMIT_TRIGGER
