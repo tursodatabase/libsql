@@ -342,7 +342,7 @@ static void scrubBackupOverflow(ScrubState *p, int pgno, u32 nByte){
   if( aBuf==0 ) return;
   while( nByte>0 && pgno!=0 ){
     a = scrubBackupRead(p, pgno, aBuf);
-    if( a ) break;
+    if( a==0 ) break;
     if( nByte >= (p->szUsable)-4 ){
       nByte -= (p->szUsable) - 4;
     }else{
@@ -372,6 +372,7 @@ static void scrubBackupBtree(ScrubState *p, int pgno, int iDepth){
   u8 *aTop;
   u8 *aCell;
   u32 x, y;
+  int ln = 0;
 
   
   if( p->rcErr ) return;
@@ -394,21 +395,21 @@ static void scrubBackupBtree(ScrubState *p, int pgno, int iDepth){
   /* Zero out the gap between the cell index and the start of the
   ** cell content area */
   x = scrubBackupInt16(&aTop[5]);  /* First byte of cell content area */
-  if( x>p->szUsable ) goto btree_corrupt;
+  if( x>p->szUsable ){ ln=__LINE__; goto btree_corrupt; }
   y = szHdr + nPrefix + nCell*2;
-  if( y>x ) goto btree_corrupt;
+  if( y>x ){ ln=__LINE__; goto btree_corrupt; }
   if( y<x ) memset(a+y, 0, x-y);  /* Zero the gap */
 
   /* Zero out all the free blocks */  
   pc = scrubBackupInt16(&aTop[1]);
-  if( pc<x+4 ) goto btree_corrupt;
+  if( pc>0 && pc<x ){ ln=__LINE__; goto btree_corrupt; }
   while( pc ){
-    if( pc>(p->szUsable)-4 ) goto btree_corrupt;
+    if( pc>(p->szUsable)-4 ){ ln=__LINE__; goto btree_corrupt; }
     n = scrubBackupInt16(&a[pc+2]);
-    if( pc+n>(p->szUsable) ) goto btree_corrupt;
+    if( pc+n>(p->szUsable) ){ ln=__LINE__; goto btree_corrupt; }
     if( n>4 ) memset(&a[pc+4], 0, n-4);
     x = scrubBackupInt16(&a[pc]);
-    if( x<pc+4 && x>0 ) goto btree_corrupt;
+    if( x<pc+4 && x>0 ){ ln=__LINE__; goto btree_corrupt; }
     pc = x;
   }
 
@@ -419,18 +420,18 @@ static void scrubBackupBtree(ScrubState *p, int pgno, int iDepth){
   for(i=0; i<nCell; i++){
     u32 X, M, K, nLocal;
     sqlite3_int64 P;
-    pc = scrubBackupInt16(&aCell[i]);
-    if( pc <= szHdr ) goto btree_corrupt;
-    if( pc > p->szUsable-3 ) goto btree_corrupt;
+    pc = scrubBackupInt16(&aCell[i*2]);
+    if( pc <= szHdr ){ ln=__LINE__; goto btree_corrupt; }
+    if( pc > p->szUsable-3 ){ ln=__LINE__; goto btree_corrupt; }
     if( aTop[0]==0x05 || aTop[0]==0x02 ){
-      if( pc+4 > p->szUsable ) goto btree_corrupt;
+      if( pc+4 > p->szUsable ){ ln=__LINE__; goto btree_corrupt; }
       iChild = scrubBackupInt32(&a[pc]);
       pc += 4;
       scrubBackupBtree(p, iChild, iDepth+1);
       if( aTop[0]==0x05 ) continue;
     }
     pc += scrubBackupVarint(&a[pc], &P);
-    if( pc >= p->szUsable ) goto btree_corrupt;
+    if( pc >= p->szUsable ){ ln=__LINE__; goto btree_corrupt; }
     if( aTop[0]==0x0d ){
       X = p->szUsable - 35;
     }else{
@@ -444,10 +445,10 @@ static void scrubBackupBtree(ScrubState *p, int pgno, int iDepth){
     K = M + ((P-M)%(p->szUsable-4));
     if( aTop[0]==0x0d ){
       pc += scrubBackupVarintSize(&a[pc]);
-      if( pc > (p->szUsable-4) ) goto btree_corrupt;
+      if( pc > (p->szUsable-4) ){ ln=__LINE__; goto btree_corrupt; }
     }
     nLocal = K<=X ? K : M;
-    if( pc+nLocal > p->szUsable-4 ) goto btree_corrupt;
+    if( pc+nLocal > p->szUsable-4 ){ ln=__LINE__; goto btree_corrupt; }
     iChild = scrubBackupInt32(&a[pc+nLocal]);
     scrubBackupOverflow(p, iChild, P-nLocal);
   }
@@ -463,7 +464,8 @@ static void scrubBackupBtree(ScrubState *p, int pgno, int iDepth){
   return;
 
 btree_corrupt:
-  scrubBackupErr(p, "corruption on page %d of source database", pgno);
+  scrubBackupErr(p, "corruption on page %d of source database (errid=%d)",
+                 pgno, ln);
   if( pgno>1 ) sqlite3_free(a);  
 }
 
@@ -524,7 +526,7 @@ int sqlite3_scrub_backup(
   /* Copy all of the btrees */
   scrubBackupBtree(&s, 1, 0);
   pStmt = scrubBackupPrepare(&s, s.dbSrc,
-       "SELECT rootpage FROM sqlite_master WHERE rootpage IS NOT NULL");
+       "SELECT rootpage FROM sqlite_master WHERE coalesce(rootpage,0)>0");
   if( pStmt==0 ) goto scrub_abort;
   while( sqlite3_step(pStmt)==SQLITE_ROW ){
     i = (u32)sqlite3_column_int(pStmt, 0);
