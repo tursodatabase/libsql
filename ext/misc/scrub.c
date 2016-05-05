@@ -57,6 +57,9 @@
 
 typedef struct ScrubState ScrubState;
 typedef unsigned char u8;
+typedef unsigned short u16;
+typedef unsigned int u32;
+
 
 /* State information for a scrub-and-backup operation */
 struct ScrubState {
@@ -68,8 +71,9 @@ struct ScrubState {
   sqlite3_file *pSrc;      /* Source file handle */
   sqlite3 *dbDest;         /* Destination database connection */
   sqlite3_file *pDest;     /* Destination file handle */
-  unsigned int szPage;     /* Page size */
-  unsigned int nPage;      /* Number of pages */
+  u32 szPage;              /* Page size */
+  u32 szUsable;            /* Usable bytes on each page */
+  u32 nPage;               /* Number of pages */
   u8 *page1;               /* Content of page 1 */
 };
 
@@ -116,7 +120,7 @@ static u8 *scrubBackupRead(ScrubState *p, int pgno, u8 *pBuf){
 }
 
 /* Write a page to the destination database */
-static void scrubBackupWrite(ScrubState *p, int pgno, u8 *pData){
+static void scrubBackupWrite(ScrubState *p, int pgno, const u8 *pData){
   int rc;
   sqlite3_int64 iOff;
   if( p->rcErr ) return;
@@ -245,33 +249,293 @@ static void scrubBackupOpenDest(ScrubState *p){
   }
 }
 
+/* Read a 32-bit big-endian integer */
+static u32 scrubBackupInt32(const u8 *a){
+  u32 v = a[3];
+  v += ((u32)a[2])<<8;
+  v += ((u32)a[1])<<16;
+  v += ((u32)a[0])<<24;
+  return v;
+}
+
+/* Read a 16-bit big-endian integer */
+static u32 scrubBackupInt16(const u8 *a){
+  return (a[0]<<8) + a[1];
+}
+
+/*
+** Read a varint.  Put the value in *pVal and return the number of bytes.
+*/
+static int scrubBackupVarint(const u8 *z, sqlite3_int64 *pVal){
+  sqlite3_int64 v = 0;
+  int i;
+  for(i=0; i<8; i++){
+    v = (v<<7) + (z[i]&0x7f);
+    if( (z[i]&0x80)==0 ){ *pVal = v; return i+1; }
+  }
+  v = (v<<8) + (z[i]&0xff);
+  *pVal = v;
+  return 9;
+}
+
+/*
+** Return the number of bytes in a varint.
+*/
+static int scrubBackupVarintSize(const u8 *z){
+  int i;
+  for(i=0; i<8; i++){
+    if( (z[i]&0x80)==0 ){ return i+1; }
+  }
+  return 9;
+}
+
+/*
+** Copy the freelist trunk page given, and all its descendents,
+** zeroing out as much as possible in the process.
+*/
+static void scrubBackupFreelist(ScrubState *p, int pgno, u32 nFree){
+  u8 *a, *aBuf;
+  u32 n, mx;
+
+  if( p->rcErr ) return;
+  aBuf = scrubBackupAllocPage(p);
+  if( aBuf==0 ) return;
+ 
+  while( pgno && nFree){
+    a = scrubBackupRead(p, pgno, aBuf);
+    if( a==0 ) break;
+    n = scrubBackupInt32(&a[4]);
+    mx = p->szUsable/4 - 2;
+    if( n<mx ){
+      memset(&a[n*4+8], 0, 4*(mx-n));
+    }
+    scrubBackupWrite(p, pgno, a);
+    pgno = scrubBackupInt32(a);
+#if 0
+    /* There is really no point in copying the freelist leaf pages.
+    ** Simply leave them uninitialized in the destination database.  The
+    ** OS filesystem should zero those pages for us automatically.
+    */
+    for(i=0; i<n && nFree; i++){
+      u32 iLeaf = scrubBackupInt32(&a[i*4+8]);
+      if( aZero==0 ){
+        aZero = scrubBackupAllocPage(p);
+        if( aZero==0 ){ pgno = 0; break; }
+        memset(aZero, 0, p->szPage);
+      }
+      scrubBackupWrite(p, iLeaf, aZero);
+      nFree--;
+    }
+#endif
+  }
+  sqlite3_free(aBuf);
+}
+
+/*
+** Copy an overflow chain from source to destination.  Zero out any
+** unused tail at the end of the overflow chain.
+*/
+static void scrubBackupOverflow(ScrubState *p, int pgno, u32 nByte){
+  u8 *a, *aBuf;
+
+  aBuf = scrubBackupAllocPage(p);
+  if( aBuf==0 ) return;
+  while( nByte>0 && pgno!=0 ){
+    a = scrubBackupRead(p, pgno, aBuf);
+    if( a ) break;
+    if( nByte >= (p->szUsable)-4 ){
+      nByte -= (p->szUsable) - 4;
+    }else{
+      u32 x = (p->szUsable - 4) - nByte;
+      u32 i = p->szUsable - x;
+      memset(&a[i], 0, x);
+      nByte = 0;
+    }
+    scrubBackupWrite(p, pgno, a);
+    pgno = scrubBackupInt32(a);
+  }
+  sqlite3_free(aBuf);      
+}
+   
+
+/*
+** Copy B-Tree page pgno, and all of its children, from source to destination.
+** Zero out deleted content during the copy.
+*/
+static void scrubBackupBtree(ScrubState *p, int pgno, int iDepth){
+  u8 *a;
+  u32 i, n, pc;
+  u32 nCell;
+  u32 nPrefix;
+  u32 szHdr;
+  u32 iChild;
+  u8 *aTop;
+  u8 *aCell;
+  u32 x, y;
+
+  
+  if( p->rcErr ) return;
+  if( iDepth>50 ){
+    scrubBackupErr(p, "corrupt: b-tree too deep at page %d", pgno);
+    return;
+  }
+  if( pgno==1 ){
+    a = p->page1;
+  }else{
+    a = scrubBackupRead(p, pgno, 0);
+    if( a==0 ) return;
+  }
+  nPrefix = pgno==1 ? 100 : 0;
+  aTop = &a[nPrefix];
+  szHdr = 8 + 4*(aTop[0]==0x02 || aTop[0]==0x05);
+  aCell = aTop + szHdr;
+  nCell = scrubBackupInt16(&aTop[3]);
+
+  /* Zero out the gap between the cell index and the start of the
+  ** cell content area */
+  x = scrubBackupInt16(&aTop[5]);  /* First byte of cell content area */
+  if( x>p->szUsable ) goto btree_corrupt;
+  y = szHdr + nPrefix + nCell*2;
+  if( y>x ) goto btree_corrupt;
+  if( y<x ) memset(a+y, 0, x-y);  /* Zero the gap */
+
+  /* Zero out all the free blocks */  
+  pc = scrubBackupInt16(&aTop[1]);
+  if( pc<x+4 ) goto btree_corrupt;
+  while( pc ){
+    if( pc>(p->szUsable)-4 ) goto btree_corrupt;
+    n = scrubBackupInt16(&a[pc+2]);
+    if( pc+n>(p->szUsable) ) goto btree_corrupt;
+    if( n>4 ) memset(&a[pc+4], 0, n-4);
+    x = scrubBackupInt16(&a[pc]);
+    if( x<pc+4 && x>0 ) goto btree_corrupt;
+    pc = x;
+  }
+
+  /* Write this one page */
+  scrubBackupWrite(p, pgno, a);
+
+  /* Walk the tree and process child pages */
+  for(i=0; i<nCell; i++){
+    u32 X, M, K, nLocal;
+    sqlite3_int64 P;
+    pc = scrubBackupInt16(&aCell[i]);
+    if( pc <= szHdr ) goto btree_corrupt;
+    if( pc > p->szUsable-3 ) goto btree_corrupt;
+    if( aTop[0]==0x05 || aTop[0]==0x02 ){
+      if( pc+4 > p->szUsable ) goto btree_corrupt;
+      iChild = scrubBackupInt32(&a[pc]);
+      pc += 4;
+      scrubBackupBtree(p, iChild, iDepth+1);
+      if( aTop[0]==0x05 ) continue;
+    }
+    pc += scrubBackupVarint(&a[pc], &P);
+    if( pc >= p->szUsable ) goto btree_corrupt;
+    if( aTop[0]==0x0d ){
+      X = p->szUsable - 35;
+    }else{
+      X = ((p->szUsable - 12)*64/255) - 23;
+    }
+    if( P<=X ){
+      /* All content is local.  No overflow */
+      continue;
+    }
+    M = ((p->szUsable - 12)*32/255)-23;
+    K = M + ((P-M)%(p->szUsable-4));
+    if( aTop[0]==0x0d ){
+      pc += scrubBackupVarintSize(&a[pc]);
+      if( pc > (p->szUsable-4) ) goto btree_corrupt;
+    }
+    nLocal = K<=X ? K : M;
+    if( pc+nLocal > p->szUsable-4 ) goto btree_corrupt;
+    iChild = scrubBackupInt32(&a[pc+nLocal]);
+    scrubBackupOverflow(p, iChild, P-nLocal);
+  }
+
+  /* Walk the right-most tree */
+  if( aTop[0]==0x05 || aTop[0]==0x02 ){
+    iChild = scrubBackupInt32(&aTop[8]);
+    scrubBackupBtree(p, iChild, iDepth+1);
+  }
+
+  /* All done */
+  if( pgno>1 ) sqlite3_free(a);
+  return;
+
+btree_corrupt:
+  scrubBackupErr(p, "corruption on page %d of source database", pgno);
+  if( pgno>1 ) sqlite3_free(a);  
+}
+
+/*
+** Copy all ptrmap pages from source to destination.
+** This routine is only called if the source database is in autovacuum
+** or incremental vacuum mode.
+*/
+static void scrubBackupPtrmap(ScrubState *p){
+  u32 pgno = 2;
+  u32 J = p->szUsable/5;
+  u32 iLock = (1073742335/p->szPage)+1;
+  u8 *a, *pBuf;
+  if( p->rcErr ) return;
+  pBuf = scrubBackupAllocPage(p);
+  if( pBuf==0 ) return;
+  while( pgno<=p->nPage ){
+    a = scrubBackupRead(p, pgno, pBuf);
+    if( a==0 ) break;
+    scrubBackupWrite(p, pgno, a);
+    pgno += J+1;
+    if( pgno==iLock ) pgno++;
+  }
+  sqlite3_free(pBuf);
+}
+
 int sqlite3_scrub_backup(
   const char *zSrcFile,    /* Source file */
   const char *zDestFile,   /* Destination file */
   char **pzErr             /* Write error here if non-NULL */
 ){
   ScrubState s;
-  unsigned int i;
-  u8 *pBuf = 0;
-  u8 *pData;
+  u32 n, i;
+  sqlite3_stmt *pStmt;
 
   memset(&s, 0, sizeof(s));
   s.zSrcFile = zSrcFile;
   s.zDestFile = zDestFile;
 
+  /* Open both source and destination databases */
   scrubBackupOpenSrc(&s);
   scrubBackupOpenDest(&s);
-  pBuf = scrubBackupAllocPage(&s);
 
-  for(i=1; s.rcErr==0 && i<=s.nPage; i++){
-    pData = scrubBackupRead(&s, i, pBuf);
-    scrubBackupWrite(&s, i, pData);
+  /* Read in page 1 */
+  s.page1 = scrubBackupRead(&s, 1, 0);
+  if( s.page1==0 ) goto scrub_abort;
+  s.szUsable = s.szPage - s.page1[20];
+
+  /* Copy the freelist */    
+  n = scrubBackupInt32(&s.page1[36]);
+  i = scrubBackupInt32(&s.page1[32]);
+  if( n ) scrubBackupFreelist(&s, i, n);
+
+  /* Copy ptrmap pages */
+  n = scrubBackupInt32(&s.page1[52]);
+  if( n ) scrubBackupPtrmap(&s);
+
+  /* Copy all of the btrees */
+  scrubBackupBtree(&s, 1, 0);
+  pStmt = scrubBackupPrepare(&s, s.dbSrc,
+       "SELECT rootpage FROM sqlite_master WHERE rootpage IS NOT NULL");
+  if( pStmt==0 ) goto scrub_abort;
+  while( sqlite3_step(pStmt)==SQLITE_ROW ){
+    i = (u32)sqlite3_column_int(pStmt, 0);
+    scrubBackupBtree(&s, i, 0);
   }
+  sqlite3_finalize(pStmt);
 
+scrub_abort:    
   /* Close the destination database without closing the transaction. If we
   ** commit, page zero will be overwritten. */
   sqlite3_close(s.dbDest);
-
   sqlite3_close(s.dbSrc);
   sqlite3_free(s.page1);
   if( pzErr ){
