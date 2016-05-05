@@ -15,26 +15,26 @@
 ** Conversion types fall into various categories as defined by the
 ** following enumeration.
 */
-#define etRADIX       1 /* Integer types.  %d, %x, %o, and so forth */
-#define etFLOAT       2 /* Floating point.  %f */
-#define etEXP         3 /* Exponentional notation. %e and %E */
-#define etGENERIC     4 /* Floating or exponential, depending on exponent. %g */
-#define etSIZE        5 /* Return number of characters processed so far. %n */
-#define etSTRING      6 /* Strings. %s */
-#define etDYNSTRING   7 /* Dynamically allocated strings. %z */
-#define etPERCENT     8 /* Percent symbol. %% */
-#define etCHARX       9 /* Characters. %c */
+#define etRADIX       0 /* Integer types.  %d, %x, %o, and so forth */
+#define etFLOAT       1 /* Floating point.  %f */
+#define etEXP         2 /* Exponentional notation. %e and %E */
+#define etGENERIC     3 /* Floating or exponential, depending on exponent. %g */
+#define etSIZE        4 /* Return number of characters processed so far. %n */
+#define etSTRING      5 /* Strings. %s */
+#define etDYNSTRING   6 /* Dynamically allocated strings. %z */
+#define etPERCENT     7 /* Percent symbol. %% */
+#define etCHARX       8 /* Characters. %c */
 /* The rest are extensions, not normally found in printf() */
-#define etSQLESCAPE  10 /* Strings with '\'' doubled.  %q */
-#define etSQLESCAPE2 11 /* Strings with '\'' doubled and enclosed in '',
+#define etSQLESCAPE   9 /* Strings with '\'' doubled.  %q */
+#define etSQLESCAPE2 10 /* Strings with '\'' doubled and enclosed in '',
                           NULL pointers replaced by SQL NULL.  %Q */
-#define etTOKEN      12 /* a pointer to a Token structure */
-#define etSRCLIST    13 /* a pointer to a SrcList */
-#define etPOINTER    14 /* The %p conversion */
-#define etSQLESCAPE3 15 /* %w -> Strings with '\"' doubled */
-#define etORDINAL    16 /* %r -> 1st, 2nd, 3rd, 4th, etc.  English only */
+#define etTOKEN      11 /* a pointer to a Token structure */
+#define etSRCLIST    12 /* a pointer to a SrcList */
+#define etPOINTER    13 /* The %p conversion */
+#define etSQLESCAPE3 14 /* %w -> Strings with '\"' doubled */
+#define etORDINAL    15 /* %r -> 1st, 2nd, 3rd, 4th, etc.  English only */
 
-#define etINVALID     0 /* Any unrecognized conversion type */
+#define etINVALID    16 /* Any unrecognized conversion type */
 
 
 /*
@@ -189,7 +189,7 @@ void sqlite3VXPrintf(
   etByte flag_long;          /* True if "l" flag is present */
   etByte flag_longlong;      /* True if the "ll" flag is present */
   etByte done;               /* Loop termination flag */
-  etByte xtype = 0;          /* Conversion paradigm */
+  etByte xtype = etINVALID;  /* Conversion paradigm */
   u8 bArgList;               /* True for SQLITE_PRINTF_SQLFUNC */
   u8 useIntern;              /* Ok to use internal conversions (ex: %T) */
   char prefix;               /* Prefix character.  "+" or "-" or " " or '\0'. */
