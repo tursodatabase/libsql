@@ -157,7 +157,7 @@ static void scrubBackupOpenSrc(ScrubState *p){
   int rc;
   /* Open the source database file */
   p->rcErr = sqlite3_open_v2(p->zSrcFile, &p->dbSrc,
-                 SQLITE_OPEN_READONLY |
+                 SQLITE_OPEN_READWRITE |
                  SQLITE_OPEN_URI | SQLITE_OPEN_PRIVATECACHE, 0);
   if( p->rcErr ){
     scrubBackupErr(p, "cannot open source database: %s",
@@ -538,6 +538,9 @@ scrub_abort:
   /* Close the destination database without closing the transaction. If we
   ** commit, page zero will be overwritten. */
   sqlite3_close(s.dbDest);
+
+  /* But do close out the read-transaction on the source database */
+  sqlite3_exec(s.dbSrc, "COMMIT;", 0, 0, 0);
   sqlite3_close(s.dbSrc);
   sqlite3_free(s.page1);
   if( pzErr ){
@@ -549,6 +552,17 @@ scrub_abort:
 }   
 
 #ifdef SCRUB_STANDALONE
+/* Error and warning log */
+static void errorLogCallback(void *pNotUsed, int iErr, const char *zMsg){
+  const char *zType;
+  switch( iErr&0xff ){
+    case SQLITE_WARNING: zType = "WARNING";  break;
+    case SQLITE_NOTICE:  zType = "NOTICE";   break;
+    default:             zType = "ERROR";    break;
+  }
+  fprintf(stderr, "%s: %s\n", zType, zMsg);
+}
+
 /* The main() routine when this utility is run as a stand-alone program */
 int main(int argc, char **argv){
   char *zErr = 0;
@@ -557,6 +571,7 @@ int main(int argc, char **argv){
     fprintf(stderr,"Usage: %s SOURCE DESTINATION\n", argv[0]);
     exit(1);
   }
+  sqlite3_config(SQLITE_CONFIG_LOG, errorLogCallback, 0);
   rc = sqlite3_scrub_backup(argv[1], argv[2], &zErr);
   if( rc==SQLITE_NOMEM ){
     fprintf(stderr, "%s: out of memory\n", argv[0]);

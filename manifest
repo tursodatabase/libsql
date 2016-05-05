@@ -1,5 +1,5 @@
-C Working\swhen\srun\sagainst\ssqlite.fossil.
-D 2016-05-05T23:39:30.803
+C Additional\serror\sreporting.\s\sOpen\sthe\ssource\sdatabase\sread/write\sso\sthat\nit\scan\sdelete\sthe\sWAL\sfile\swhen\sdone.
+D 2016-05-05T23:59:22.078
 F Makefile.in f59e0763ff448719fc1bd25513882b0567286317
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 306d73e854b1a92ea06e5d1e637faa5c44de53c7
@@ -215,7 +215,7 @@ F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
 F ext/misc/percentile.c bcbee3c061b884eccb80e21651daaae8e1e43c63
 F ext/misc/regexp.c a68d25c659bd2d893cd1215667bbf75ecb9dc7d4
 F ext/misc/rot13.c 1ac6f95f99b575907b9b09c81a349114cf9be45a
-F ext/misc/scrub.c 548a116cb0b4d8705eac392ab13d28fe2aebefe6
+F ext/misc/scrub.c a3380a5ff0698f88a56a23c999ee5e53768ac3ae
 F ext/misc/series.c e11e534ada797d5b816d7e7a93c022306563ca35
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c bf1b922c2750698e9a3d4c50cce6974adb7e93be
@@ -1488,7 +1488,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P aeb88bdf6fe9e5839b1503ab5740b27bc09d4842
-R 6bcd08fd9f0774891e37784b87170024
+P b0bd9dd6255be161ea289ba6caa3fbd568128f62
+R dbc8e27f8b8809d87c6c9be80d710e34
 U drh
-Z cbd8d4738f2e299be1c42951defbac8d
+Z 950b8c8bc6ebdccefe511e872cba5384
