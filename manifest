@@ -1,8 +1,8 @@
-C Renumber\sinternal\sconstants\sin\sthe\sprintf()\simplemention\sfor\sa\ssmall\nperformance\simprovement.
-D 2016-05-05T11:53:12.439
-F Makefile.in 9eda6e1c90d05c199c3ec8a7069b0682ad307657
+C Initial\scheck-in\sof\sthe\s"scrub.exe"\sutility\sprogram\sprototype.\s\sNot\syet\nfully\sfunctional.\s\sIn\sparticular,\sno\sscrubbing\sis\sdone.
+D 2016-05-05T17:15:23.301
+F Makefile.in f59e0763ff448719fc1bd25513882b0567286317
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc db82b35aef27f412fef14d8534afc022138bcdfd
+F Makefile.msc 306d73e854b1a92ea06e5d1e637faa5c44de53c7
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION 5d234da9b5dae329fab75ff75884cfe0a9cb3fda
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -215,6 +215,7 @@ F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
 F ext/misc/percentile.c bcbee3c061b884eccb80e21651daaae8e1e43c63
 F ext/misc/regexp.c a68d25c659bd2d893cd1215667bbf75ecb9dc7d4
 F ext/misc/rot13.c 1ac6f95f99b575907b9b09c81a349114cf9be45a
+F ext/misc/scrub.c 76a9c795078a65bd021d5b5cd9e4655e7d0306c0
 F ext/misc/series.c e11e534ada797d5b816d7e7a93c022306563ca35
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c bf1b922c2750698e9a3d4c50cce6974adb7e93be
@@ -302,7 +303,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk a283660f75c3c4b75d8c9d12a40fa38a066eee9d
+F main.mk 0fb2b051c9dbcf7f26a8455cf115ae9457448b93
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -1487,7 +1488,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 71af9ac165ac02272f4886f69bd9ab4770fd7bb6
-R 89655379113728f544ce9a18ad294b0b
+P 69d11447f4b1a8c536c3b6573d2a3419da870412
+R 98e582093972832acc05b11fc975c102
+T *branch * scrub-backup
+T *sym-scrub-backup *
+T -sym-trunk *
 U drh
-Z f65addcdc03169dedb02067b28293d6c
+Z e2196386eaeffd3910bcf89f26dcb9bb
