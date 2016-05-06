@@ -388,8 +388,7 @@ TESTSRC2 = \
   $(TOP)/ext/fts3/fts3_write.c \
   $(TOP)/ext/async/sqlite3async.c \
   $(TOP)/ext/session/sqlite3session.c \
-  $(TOP)/ext/session/test_session.c \
-  $(FTS5_SRC)
+  $(TOP)/ext/session/test_session.c 
 
 # Header files used by all library source files.
 #
