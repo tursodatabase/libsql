@@ -1,5 +1,5 @@
-C Renumber\sinternal\sconstants\sin\sthe\sprintf()\simplemention\sfor\sa\ssmall\nperformance\simprovement.
-D 2016-05-05T11:53:12.439
+C Fix\sa\sbug\sin\ssqlite_analyzer\scausing\sit\sreport\s(slightly)\sincorrect\svalues\sfor\sthe\snumber\sof\sentries\sin\sindexes\sor\sWITHOUT\sROWID\stables.
+D 2016-05-06T15:16:02.765
 F Makefile.in 9eda6e1c90d05c199c3ec8a7069b0682ad307657
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc db82b35aef27f412fef14d8534afc022138bcdfd
@@ -1447,7 +1447,7 @@ F tool/showlocks.c 9920bcc64f58378ff1118caead34147201f48c68
 F tool/showstat4.c bda40d6e395df7edb6e9ea630784d3d762c35b4b
 F tool/showwal.c ec79959834f7b21f1e0a2aa52bb7c056d2203977
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
-F tool/spaceanal.tcl 93c1fdc9733c525b17a2024c7df193daa002e037
+F tool/spaceanal.tcl 85d90e6674d8298e3eaf82dbcef3abc2d5317f3e
 F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
 F tool/speedtest16.c ecb6542862151c3e6509bbc00509b234562ae81e
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
@@ -1487,7 +1487,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 71af9ac165ac02272f4886f69bd9ab4770fd7bb6
-R 89655379113728f544ce9a18ad294b0b
-U drh
-Z f65addcdc03169dedb02067b28293d6c
+P 69d11447f4b1a8c536c3b6573d2a3419da870412
+R 56e7e963139ae94efddd96a9288ff8e5
+U dan
+Z 82199c527d2c64b9169490d91c3a80bb
