@@ -352,7 +352,8 @@ void sqlite3Update(
   if( HasRowid(pTab) ){
     sqlite3VdbeAddOp3(v, OP_Null, 0, regRowSet, regOldRowid);
     pWInfo = sqlite3WhereBegin(
-        pParse, pTabList, pWhere, 0, 0, WHERE_ONEPASS_DESIRED, iIdxCur
+        pParse, pTabList, pWhere, 0, 0,
+            WHERE_ONEPASS_DESIRED | WHERE_SEEK_TABLE, iIdxCur
     );
     if( pWInfo==0 ) goto update_cleanup;
     okOnePass = sqlite3WhereOkOnePass(pWInfo, aiCurOnePass);

@@ -1,5 +1,5 @@
-C Corrections\sto\scomments\son\sthe\swhereScanInit()\sinterface.
-D 2016-05-06T18:47:23.830
+C Simplification\sto\sthe\slogic\sused\sto\sdecide\sbetween\sOP_Seek\sand\sOP_NotExists.\nUse\sOP_NotExists\sfor\sboth\sDELETE\sand\sUPDATE.
+D 2016-05-06T20:23:12.122
 F Makefile.in 9eda6e1c90d05c199c3ec8a7069b0682ad307657
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc db82b35aef27f412fef14d8534afc022138bcdfd
@@ -439,7 +439,7 @@ F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 3b29883b0ce4a6c6f643965b66b5ca6613178e59
 F src/treeview.c e4b41a37530a191579d3c53142cc44ee2eb99373
 F src/trigger.c e14840ee0c3e549e758ec9bf3e4146e166002280
-F src/update.c 3e67ab3c0814635f355fb1f8ab010a2b9e016e7d
+F src/update.c 4f05ea8cddfa367d045e03589756c02199e8f9bd
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c 810ec3f22e2d1b62e66c30fe3621ebdedd23584d
 F src/vacuum.c feb1eabb20987983d9350cad98299b21fa811f52
@@ -459,7 +459,7 @@ F src/wal.h 2f7c831cf3b071fa548bf2d5cac640846a7ff19c
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
 F src/where.c fd321cc2c5ee346a2e146b93892ed01bb7a839c0
 F src/whereInt.h 3b1fc240e322613ba4e9dc857ca9c7c3390acc74
-F src/wherecode.c 6e2da2449d5589b2ce988afae125a61cad665c86
+F src/wherecode.c 23fc19ca546ce323ba5c4be96b88e3ba08cf6b8f
 F src/whereexpr.c eacc0e60d029a082b4fc0cc42ea98544add1319e
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -847,7 +847,7 @@ F test/insert5.test 394f96728d1258f406fe5f5aeb0aaf29487c39a6
 F test/instr.test 737bbf80685232033f3abedc6ae92f75860b5dd2
 F test/intarray.test 066b7d7ac38d25bf96f87f1b017bfc687551cdd4
 F test/interrupt.test dfe9a67a94b0b2d8f70545ba1a6cca10780d71cc
-F test/intpkey.test bd82146463500ecb5e793b5ea2865eaa1c7bdfb6
+F test/intpkey.test 890cc2df52c2dd10ae5ef922c1edcdfa2a4228f8
 F test/io.test f95bca1783b01ea7761671560d023360d2dfa4cc
 F test/ioerr.test 2a24bd6ed5a8b062e64bfe1f6cf94fb25e92210d
 F test/ioerr2.test 2593563599e2cc6b6b4fcf5878b177bdd5d8df26
@@ -1487,7 +1487,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 93a2bace5704f7ecad56541a6b3e06a88f7f393f
-R 3ca4ebdcc8bebe388d97851d25aa812d
+P ab7ab415d19524f6c3901e474d3a154f55d28530
+R f6a10a5aa5f2ff9434de04bd402f6c3f
 U drh
-Z e6d944ba38affdbccc4e07da270b6c3d
+Z 447839f87caf188b0aa6e0197947c00d
