@@ -1324,7 +1324,9 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     if( omitTable ){
       /* pIdx is a covering index.  No need to access the main table. */
     }else if( HasRowid(pIdx->pTable) ){
-      if( pWInfo->eOnePass!=ONEPASS_OFF ){
+      if( pWInfo->eOnePass!=ONEPASS_OFF
+       || (pWInfo->wctrlFlags & WHERE_SEEK_TABLE)!=0
+      ){
         iRowidReg = ++pParse->nMem;
         sqlite3VdbeAddOp2(v, OP_IdxRowid, iIdxCur, iRowidReg);
         sqlite3ExprCacheStore(pParse, iCur, -1, iRowidReg);
@@ -1520,7 +1522,8 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     wctrlFlags =  WHERE_OMIT_OPEN_CLOSE
                 | WHERE_FORCE_TABLE
                 | WHERE_ONETABLE_ONLY
-                | WHERE_NO_AUTOINDEX;
+                | WHERE_NO_AUTOINDEX
+                | (pWInfo->wctrlFlags & WHERE_SEEK_TABLE);
     for(ii=0; ii<pOrWc->nTerm; ii++){
       WhereTerm *pOrTerm = &pOrWc->a[ii];
       if( pOrTerm->leftCursor==iCur || (pOrTerm->eOperator & WO_AND)!=0 ){

@@ -2543,6 +2543,7 @@ struct SrcList {
 #define WHERE_REOPEN_IDX       0x1000 /* Try to use OP_ReopenIdx */
 #define WHERE_ONEPASS_MULTIROW 0x2000 /* ONEPASS is ok with multiple rows */
 #define WHERE_USE_LIMIT        0x4000 /* There is a constant LIMIT clause */
+#define WHERE_SEEK_TABLE       0x8000 /* Do not defer seeks on main table */
 
 /* Allowed return values from sqlite3WhereIsDistinct()
 */
