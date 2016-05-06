@@ -1,5 +1,5 @@
-C Renumber\sinternal\sconstants\sin\sthe\sprintf()\simplemention\sfor\sa\ssmall\nperformance\simprovement.
-D 2016-05-05T11:53:12.439
+C Do\snot\sscan\sindexes\sthat\shave\sthe\sinteger\sprimary\skey\sas\stheir\sleft-most\ncolumn.\s\sThis\sfixes\sthe\scrash\sof\sticket\s[16c9801ceba]\sbut\sit\sseems\slike\nthe\swrong\sfix.\s\sMore\sinvestigation\sneeded.
+D 2016-05-06T11:31:10.902
 F Makefile.in 9eda6e1c90d05c199c3ec8a7069b0682ad307657
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc db82b35aef27f412fef14d8534afc022138bcdfd
@@ -457,7 +457,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 4db22ed7e77bcf672b1a685d6ddeffba8d5be302
 F src/wal.h 2f7c831cf3b071fa548bf2d5cac640846a7ff19c
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
-F src/where.c 019e5b10dedcf54ef077ce23dd8fce38d614dcf4
+F src/where.c a7ce00ffd7844495582af957a222602e517b14de
 F src/whereInt.h 3b1fc240e322613ba4e9dc857ca9c7c3390acc74
 F src/wherecode.c 28951741be3974701186281ced0564e9586a0db3
 F src/whereexpr.c eacc0e60d029a082b4fc0cc42ea98544add1319e
@@ -847,7 +847,7 @@ F test/insert5.test 394f96728d1258f406fe5f5aeb0aaf29487c39a6
 F test/instr.test 737bbf80685232033f3abedc6ae92f75860b5dd2
 F test/intarray.test 066b7d7ac38d25bf96f87f1b017bfc687551cdd4
 F test/interrupt.test dfe9a67a94b0b2d8f70545ba1a6cca10780d71cc
-F test/intpkey.test 153b70e32d008f4f4b2dff8daf448a6110b62a9c
+F test/intpkey.test 18ec1f3f39a18ed51d2dbd9ce184cc421191ff70
 F test/io.test f95bca1783b01ea7761671560d023360d2dfa4cc
 F test/ioerr.test 2a24bd6ed5a8b062e64bfe1f6cf94fb25e92210d
 F test/ioerr2.test 2593563599e2cc6b6b4fcf5878b177bdd5d8df26
@@ -1487,7 +1487,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 71af9ac165ac02272f4886f69bd9ab4770fd7bb6
-R 89655379113728f544ce9a18ad294b0b
+P 69d11447f4b1a8c536c3b6573d2a3419da870412
+R 88ac4ed286db19382d4843a346c44c60
+T *branch * ticket-16c9801ce
+T *sym-ticket-16c9801ce *
+T -sym-trunk *
 U drh
-Z f65addcdc03169dedb02067b28293d6c
+Z a8fa257e80e1a139c1678ae44101daf6
