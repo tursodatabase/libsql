@@ -627,5 +627,13 @@ do_execsql_test intpkey-17.0 {
   DELETE FROM t17 WHERE x=99 OR x<130;
   SELECT * FROM t17;
 } {248 giraffe}
+do_execsql_test intpkey-17.1 {
+  DROP INDEX t17x;
+  DELETE FROM t17;
+  INSERT INTO t17(x,y) VALUES(123,'elephant'),(248,'giraffe');
+  CREATE INDEX t17x ON t17(abs(x));
+  DELETE FROM t17 WHERE abs(x) IS NULL OR abs(x)<130;
+  SELECT * FROM t17;
+} {248 giraffe}
 
 finish_test

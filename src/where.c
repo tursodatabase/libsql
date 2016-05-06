@@ -289,7 +289,7 @@ static WhereTerm *whereScanInit(
     j = iColumn;
     iColumn = pIdx->aiColumn[j];
     if( iColumn==XN_EXPR ) pScan->pIdxExpr = pIdx->aColExpr->a[j].pExpr;
-    if( iColumn==pIdx->pTable->iPKey && j>0 ) iColumn = XN_ROWID;
+    if( iColumn==pIdx->pTable->iPKey ) iColumn = XN_ROWID;
   }
   if( pIdx && iColumn>=0 ){
     pScan->idxaff = pIdx->pTable->aCol[iColumn].affinity;
