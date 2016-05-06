@@ -261,7 +261,10 @@ static WhereTerm *whereScanNext(WhereScan *pScan){
 **
 ** The scanner will be searching the WHERE clause pWC.  It will look
 ** for terms of the form "X <op> <expr>" where X is column iColumn of table
-** iCur.  The <op> must be one of the operators described by opMask.
+** iCur.   Or if pIdx!=0 then X is column iColumn of index pIdx.  pIdx
+** must be one of the indexes of table iCur.
+**
+** The <op> must be one of the operators described by opMask.
 **
 ** If the search is for X and the WHERE clause contains terms of the
 ** form X=Y then this routine might also return terms of the form
@@ -309,11 +312,12 @@ static WhereTerm *whereScanInit(
 
 /*
 ** Search for a term in the WHERE clause that is of the form "X <op> <expr>"
-** where X is a reference to the iColumn of table iCur and <op> is one of
-** the WO_xx operator codes specified by the op parameter.
-** Return a pointer to the term.  Return 0 if not found.
+** where X is a reference to the iColumn of table iCur or of index pIdx
+** if pIdx!=0 and <op> is one of the WO_xx operator codes specified by
+** the op parameter.  Return a pointer to the term.  Return 0 if not found.
 **
-** If pIdx!=0 then search for terms matching the iColumn-th column of pIdx
+** If pIdx!=0 then it must be one of the indexes of table iCur.  
+** Search for terms matching the iColumn-th column of pIdx
 ** rather than the iColumn-th column of table iCur.
 **
 ** The term returned might by Y=<expr> if there is another constraint in

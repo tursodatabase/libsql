@@ -1,5 +1,5 @@
-C For\sDELETE\soperations,\smake\ssure\sthat\sseeks\son\sthe\smain\stable\sare\snot\ndeferred,\ssince\sif\sthey\sare\sand\snone\sof\sthe\sindexes\sreference\scolumns\sof\nthe\stable,\sthe\sseek\smight\snever\soccur\suntil\sthe\sOP_Delete\sopcode,\swhich\sis\ntoo\slate.\s\sFix\sfor\sticket\s[16c9801ceba49].
-D 2016-05-06T16:49:54.299
+C Corrections\sto\scomments\son\sthe\swhereScanInit()\sinterface.
+D 2016-05-06T18:47:23.830
 F Makefile.in 9eda6e1c90d05c199c3ec8a7069b0682ad307657
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc db82b35aef27f412fef14d8534afc022138bcdfd
@@ -457,7 +457,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 4db22ed7e77bcf672b1a685d6ddeffba8d5be302
 F src/wal.h 2f7c831cf3b071fa548bf2d5cac640846a7ff19c
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
-F src/where.c 019e5b10dedcf54ef077ce23dd8fce38d614dcf4
+F src/where.c fd321cc2c5ee346a2e146b93892ed01bb7a839c0
 F src/whereInt.h 3b1fc240e322613ba4e9dc857ca9c7c3390acc74
 F src/wherecode.c 6e2da2449d5589b2ce988afae125a61cad665c86
 F src/whereexpr.c eacc0e60d029a082b4fc0cc42ea98544add1319e
@@ -1487,8 +1487,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 933a1c818c1d1ccec8680e1ba87f2cbe37cc9f7d 150dd09ebd7b17234a79e1811a0fae8b0a7a40d5
-R 999c47253628cf8504ca9429ccbba492
-T +closed 150dd09ebd7b17234a79e1811a0fae8b0a7a40d5
+P 93a2bace5704f7ecad56541a6b3e06a88f7f393f
+R 3ca4ebdcc8bebe388d97851d25aa812d
 U drh
-Z 0a4c84a453e835d42d347d7d3d2d52db
+Z e6d944ba38affdbccc4e07da270b6c3d
