@@ -101,8 +101,7 @@ pub type Result<T> = result::Result<T, Error>;
 
 unsafe fn errmsg_to_string(errmsg: *const c_char) -> String {
     let c_slice = CStr::from_ptr(errmsg).to_bytes();
-    let utf8_str = str::from_utf8(c_slice);
-    utf8_str.unwrap_or("Invalid string encoding").to_owned()
+    String::from_utf8_lossy(c_slice).into_owned()
 }
 
 fn str_to_cstring(s: &str) -> Result<CString> {
