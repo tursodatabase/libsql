@@ -638,7 +638,7 @@ do_execsql_test intpkey-17.1 {
 do_execsql_test intpkey-17.2 {
   DELETE FROM t17;
   INSERT INTO t17(x,y) VALUES(123,'elephant'),(248,'giraffe');
-  UPDATE FROM t17 SET y='ostrich' WHERE abs(x)=248;
+  UPDATE t17 SET y='ostrich' WHERE abs(x)=248;
   SELECT * FROM t17 ORDER BY +x;
 } {123 elephant 248 ostrich}
 
