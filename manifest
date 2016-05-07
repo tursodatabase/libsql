@@ -1,5 +1,5 @@
-C Fix\stypo\sin\sthe\sintpkey-17.2\stest.
-D 2016-05-07T12:15:15.906
+C Make\sthe\ssqlite3DeleteTable()\sroutine\ssmaller\sand\sfaster.
+D 2016-05-07T12:15:34.317
 F Makefile.in 9eda6e1c90d05c199c3ec8a7069b0682ad307657
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc db82b35aef27f412fef14d8534afc022138bcdfd
@@ -324,7 +324,7 @@ F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
 F src/btree.c 3ae6aea66cc4e13d30162ff0d0d43c7088e34abf
 F src/btree.h a5008b9afe56e8e54ade6c436a910f112defcca9
 F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
-F src/build.c 42e8ee74dfa3a4b99bfb2c201f8a66ab50688d95
+F src/build.c d65be62254ca9df36e1e1c433324f0333f80009c
 F src/callback.c 2e76147783386374bf01b227f752c81ec872d730
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 60e135af364d777a9ab41c97e5e89cd224da6198
@@ -1487,7 +1487,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3a695263183303e3f64eb2320752d0fdef53eaf2
-R 51aec2bae3f4c90b051a05d513fd048f
+P a45fda657d987f5c923d141584841a6c62dfb504
+R de01d2c88028a3b709951f9d3730409b
 U drh
-Z 7d38c3073c92b6f84127f76ce4d99aa3
+Z c83c111125ba50dd275150f90f412c72
