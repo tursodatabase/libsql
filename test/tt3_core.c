@@ -65,6 +65,135 @@
 ** End of test code/infrastructure interface macros.
 *************************************************************************/
 
+
+/************************************************************************
+** Start of command line processing utilities.
+*/
+#define CMDLINE_INT   1
+#define CMDLINE_BOOL  2
+
+typedef struct CmdlineArg CmdlineArg;
+struct CmdlineArg {
+  const char *zSwitch;
+  int eType;
+  int iOffset;
+};
+
+static void cmdline_error(const char *zFmt, ...){
+  va_list ap;                   /* ... arguments */
+  char *zMsg = 0;
+  va_start(ap, zFmt);
+  zMsg = sqlite3_vmprintf(zFmt, ap);
+  fprintf(stderr, "%s\n", zMsg);
+  sqlite3_free(zMsg);
+  va_end(ap);
+  exit(-1);
+}
+
+static void cmdline_usage(const char *zPrg, CmdlineArg *apArg){
+  int i;
+  fprintf(stderr, "Usage: %s SWITCHES\n", zPrg);
+  fprintf(stderr, "\n");
+  fprintf(stderr, "where switches are\n");
+  for(i=0; apArg[i].zSwitch; i++){
+    const char *zExtra = "";
+    switch( apArg[i].eType ){
+      case CMDLINE_INT: zExtra = "N"; break;
+      case CMDLINE_BOOL: zExtra = ""; break;
+      default:
+        zExtra = "???";
+        break;
+    }
+    fprintf(stderr, "  %s %s\n", apArg[i].zSwitch, zExtra);
+  }
+  fprintf(stderr, "\n");
+  exit(-2);
+}
+
+static char *cmdline_construct(CmdlineArg *apArg, void *pObj){
+  unsigned char *p = (unsigned char*)pObj;
+  char *zRet = 0;
+  int iArg;
+
+  for(iArg=0; apArg[iArg].zSwitch; iArg++){
+    const char *zSpace = (zRet ? " " : "");
+    CmdlineArg *pArg = &apArg[iArg];
+
+    switch( pArg->eType ){
+      case CMDLINE_INT: {
+        zRet = sqlite3_mprintf("%z%s%s %d", zRet, zSpace, pArg->zSwitch, 
+            *(int*)(p + pArg->iOffset)
+        );
+        break;
+      };
+
+      case CMDLINE_BOOL: 
+        if( *(int*)(p + pArg->iOffset) ){
+          zRet = sqlite3_mprintf("%z%s%s", zRet, zSpace, pArg->zSwitch);
+        }
+        break;
+        
+      default:
+        zRet = sqlite3_mprintf("%z%s%s ???", zRet, zSpace, pArg->zSwitch);
+    }
+  }
+
+  return zRet;
+}
+
+static void cmdline_process(
+ CmdlineArg *apArg, 
+ int argc,
+ const char **argv,
+ void *pObj
+){
+  int i;
+  int iArg;
+  unsigned char *p = (unsigned char*)pObj;
+
+  for(i=1; i<argc; i++){
+    const char *z = argv[i];
+    int n = strlen(z);
+    int iOpt = -1;
+
+    for(iArg=0; apArg[iArg].zSwitch; iArg++){
+      if( 0==sqlite3_strnicmp(apArg[iArg].zSwitch, z, n) ){
+        if( iOpt>=0 ){
+          cmdline_error("ambiguous switch: %s", z);
+        }
+        iOpt = iArg;
+        switch( apArg[iArg].eType ){
+          case CMDLINE_INT:
+            i++;
+            if( i==argc ){
+              cmdline_error("option requires an argument: %s", z);
+            }
+            *(int*)(p + apArg[iArg].iOffset) = atoi(argv[i]);
+            break;
+
+          case CMDLINE_BOOL:
+            *(int*)(p + apArg[iArg].iOffset) = 1;
+            break;
+
+          default:
+            assert( 0 );
+            cmdline_error("internal error");
+            return;
+        }
+      }
+    }
+
+    if( iOpt<0 ){
+      cmdline_usage(argv[0], apArg);
+    }
+  }
+}
+
+/*
+** End of command line processing utilities.
+*************************************************************************/
+
+
 /*
  * This code implements the MD5 message-digest algorithm.
  * The algorithm is due to Ron Rivest.  This code was
