@@ -1,5 +1,5 @@
-C Update\sa\scomment\sin\sfts5.h.\sNo\schanges\sto\scode.
-D 2016-05-09T19:03:42.623
+C Omit\sthe\sunnecessary\sWHERE_REOPEN_IDX\sflag\sin\sthe\sWHERE\sinterface.
+D 2016-05-09T19:58:56.729
 F Makefile.in 9eda6e1c90d05c199c3ec8a7069b0682ad307657
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc db82b35aef27f412fef14d8534afc022138bcdfd
@@ -382,7 +382,7 @@ F src/shell.c 14ff7f660530a52b117d110ba3390b7b2eb719b6
 F src/sqlite.h.in 9984129d86243424b765fcb3f147c697bd20bb54
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 98f72cbfe00169c39089115427d06ea05fe4b4a2
-F src/sqliteInt.h 8ec741711b8f42aae2c7a22e3d04f15270e0b6be
+F src/sqliteInt.h 47a90c85a42210a05387051aaaa661f5c307703d
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
@@ -457,9 +457,9 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 4db22ed7e77bcf672b1a685d6ddeffba8d5be302
 F src/wal.h 2f7c831cf3b071fa548bf2d5cac640846a7ff19c
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
-F src/where.c fd321cc2c5ee346a2e146b93892ed01bb7a839c0
+F src/where.c ad8ad50ccf25795f6830b6b864bbfcd060ff08dd
 F src/whereInt.h 3b1fc240e322613ba4e9dc857ca9c7c3390acc74
-F src/wherecode.c 23fc19ca546ce323ba5c4be96b88e3ba08cf6b8f
+F src/wherecode.c d227fca7d766a10fe4ba4d812210f5631f5a98b3
 F src/whereexpr.c eacc0e60d029a082b4fc0cc42ea98544add1319e
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1487,7 +1487,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 48505cde05d74748454dc135d4ec25954ecf020e
-R 1969cb0ebb207c1f7d211b0f782f1262
-U dan
-Z aa90d8f8ef0b8ff7fa6722d460d8bb52
+P 14e53d0e2f62d82ae1d64a72fd9711548e3bf5ea
+R 91f64055039542194e221b2aa9a3eada
+T *branch * dev
+T *sym-dev *
+T -sym-trunk *
+U drh
+Z 6a1a8543c69edff1da4c7cb6389abc41

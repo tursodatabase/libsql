@@ -4479,7 +4479,7 @@ WhereInfo *sqlite3WhereBegin(
         pWInfo->aiCurOnePass[1] = iIndexCur;
       }else if( iAuxArg && (wctrlFlags & WHERE_ONETABLE_ONLY)!=0 ){
         iIndexCur = iAuxArg;
-        if( wctrlFlags & WHERE_REOPEN_IDX ) op = OP_ReopenIdx;
+        op = OP_ReopenIdx;
       }else{
         iIndexCur = pParse->nTab++;
       }
