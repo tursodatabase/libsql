@@ -352,10 +352,6 @@ do_test 6.4 {
   db2 eval { SELECT * FROM x1 }
 } {z zz zzz}
 
-# EVIDENCE-OF: R-55491-50411 A snapshot will fail to open if the
-# database connection D has not previously completed at least one read
-# operation against the database file.
-#
 do_test 6.5 {
   db2 close
   sqlite3 db2 test.db 

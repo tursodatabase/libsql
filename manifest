@@ -1,5 +1,5 @@
-C Enhancements\sto\stest/sort5.test\sso\sthat\sit\sworks\swith\sSEE.
-D 2016-05-09T22:35:06.768
+C Fixes\sto\srequirements\smarks.\s\sNo\schanges\sto\scode.
+D 2016-05-09T23:11:47.940
 F Makefile.in 9eda6e1c90d05c199c3ec8a7069b0682ad307657
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc db82b35aef27f412fef14d8534afc022138bcdfd
@@ -321,7 +321,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c f60f0aa55d25d853ffde53d0b0370a7bb7ee41ce
 F src/bitvec.c 3ee4c8b2c94ed3a7377256e18199e6ff5cf33f63
 F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
-F src/btree.c 3ae6aea66cc4e13d30162ff0d0d43c7088e34abf
+F src/btree.c e53a01547d61a3d567daf7a7acc30122fe071aef
 F src/btree.h a5008b9afe56e8e54ade6c436a910f112defcca9
 F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
 F src/build.c d65be62254ca9df36e1e1c433324f0333f80009c
@@ -1067,7 +1067,7 @@ F test/skipscan2.test d1d1450952b7275f0b0a3a981f0230532743951a
 F test/skipscan3.test ec5bab3f81c7038b43450e7b3062e04a198bdbb5
 F test/skipscan5.test 67817a4b6857c47e0e33ba3e506da6f23ef68de2
 F test/skipscan6.test 5866039d03a56f5bd0b3d172a012074a1d90a15b
-F test/snapshot.test 3adc4ef09d407b501f899a6c329bdf45dc725c1b
+F test/snapshot.test a19465046168b4420b5afeed37c3214e42a49f4a
 F test/snapshot_fault.test 062ff0438a074978d45e9f9a92e7ad459b74ee73
 F test/soak.test 0b5b6375c9f4110c828070b826b3b4b0bb65cd5f
 F test/softheap1.test 843cd84db9891b2d01b9ab64cef3e9020f98d087
@@ -1487,7 +1487,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f5875489810101c13a7917bde86e6a23b088e386
-R 06ee44fd877a285d72041ef6be8504fa
+P 8a39c8ee49e6e80c83613546cf328801c80b7c4d
+R 01d61c4cbbe70cd264566714c11f8bfc
 U drh
-Z 8edbf80d5eb509893c5370ddbed126a1
+Z 2c227e9e751dfce43bc8d679164f39de
