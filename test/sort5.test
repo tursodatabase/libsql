@@ -94,6 +94,12 @@ foreach {tn pgsz cachesz bTemp} {
     PRAGMA cache_size = $cachesz;
   "
 
+  if {[db one {PRAGMA page_size}]!=$pgsz} {
+    # SEE is not able to change page sizes and that messes up the
+    # results that follow.
+    continue
+  }
+
   do_test 2.$tn.1 {
     set ::iTemp 0
     catch { array unset F }
