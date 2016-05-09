@@ -1,5 +1,5 @@
-C Fix\sthe\sFTS5\sxQueryPhrase()\sAPI\sfunction\sso\sthat\sit\srecognizes\scolumn\sfilters.
-D 2016-05-09T18:05:44.940
+C Update\sa\scomment\sin\sfts5.h.\sNo\schanges\sto\scode.
+D 2016-05-09T19:03:42.623
 F Makefile.in 9eda6e1c90d05c199c3ec8a7069b0682ad307657
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc db82b35aef27f412fef14d8534afc022138bcdfd
@@ -97,7 +97,7 @@ F ext/fts3/unicode/UnicodeData.txt cd07314edb62d49fde34debdaf92fa2aa69011e7
 F ext/fts3/unicode/mkunicode.tcl 2debed3f582d77b3fdd0b8830880250021571fd8
 F ext/fts3/unicode/parseunicode.tcl da577d1384810fb4e2b209bf3313074353193e95
 F ext/fts5/extract_api_docs.tcl a36e54ec777172ddd3f9a88daf593b00848368e0
-F ext/fts5/fts5.h ff9c2782e8ed890b0de2f697a8d63971939e70c7
+F ext/fts5/fts5.h b770c5e0a8d2ee071ddffc7ab722dbf3474a8abe
 F ext/fts5/fts5Int.h 3677076aecbf645a7f2a019115c6a4ec3272dd78
 F ext/fts5/fts5_aux.c daa57fb45216491814520bbb587e97bf81ced458
 F ext/fts5/fts5_buffer.c 4c1502d4c956cd092c89ce4480867f9d8bf325cd
@@ -1487,7 +1487,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d75140b851a34a5eb66041e294e421628efbc5ba
-R 0be9ab31bb2adcc738c00ca21c762730
+P 48505cde05d74748454dc135d4ec25954ecf020e
+R 1969cb0ebb207c1f7d211b0f782f1262
 U dan
-Z f838a2dc20bbd55fb4fc1e757536b6a8
+Z aa90d8f8ef0b8ff7fa6722d460d8bb52
