@@ -1,5 +1,5 @@
-C Make\sthe\ssqlite3DeleteTable()\sroutine\ssmaller\sand\sfaster.
-D 2016-05-07T12:15:34.317
+C Fix\sthe\sFTS5\sxQueryPhrase()\sAPI\sfunction\sso\sthat\sit\srecognizes\scolumn\sfilters.
+D 2016-05-09T18:05:44.940
 F Makefile.in 9eda6e1c90d05c199c3ec8a7069b0682ad307657
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc db82b35aef27f412fef14d8534afc022138bcdfd
@@ -102,7 +102,7 @@ F ext/fts5/fts5Int.h 3677076aecbf645a7f2a019115c6a4ec3272dd78
 F ext/fts5/fts5_aux.c daa57fb45216491814520bbb587e97bf81ced458
 F ext/fts5/fts5_buffer.c 4c1502d4c956cd092c89ce4480867f9d8bf325cd
 F ext/fts5/fts5_config.c 5af9c360e99669d29f06492c370892394aba0857
-F ext/fts5/fts5_expr.c 5ca4bafe29aa3d27683c90e836192e4aefd20a3f
+F ext/fts5/fts5_expr.c da2b33c2aac91e96641c0a7cf2bbaa36eb2667f7
 F ext/fts5/fts5_hash.c 880998e596b60f078348d48732ca4ad9a90caad2
 F ext/fts5/fts5_index.c b429e23fabb57506f71e406997cc46b89190dc97
 F ext/fts5/fts5_main.c b4a0fc5bf17f2f1f056ee76cdd7d2af08b360f55
@@ -131,7 +131,7 @@ F ext/fts5/test/fts5ak.test fb26389985407826f6076bb9f382c67d3db6b5d9
 F ext/fts5/test/fts5al.test 18c277f5986df0a3d9071dfd7128afeb16fe9d5d
 F ext/fts5/test/fts5alter.test 6022c61467a82aa11c70822ccad22b328dcf0d04
 F ext/fts5/test/fts5auto.test 401c20e89f1114d733b94809be1e6f893e16c09e
-F ext/fts5/test/fts5aux.test 8c687c948cc98e9a94be014df7d518acc1b3b74f
+F ext/fts5/test/fts5aux.test 5dd158a1e7869e27e9762a2a452b189c728d1be3
 F ext/fts5/test/fts5auxdata.test 141a7cbffcceb1bd2799b4b29c183ff8780d586e
 F ext/fts5/test/fts5bigpl.test 04ee0d7eebbebf17c31f5a0b5c5f9494eac3a0cb
 F ext/fts5/test/fts5bigtok.test 017a9397b14e7598883a6328ead4a6539b42d59a
@@ -1487,7 +1487,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a45fda657d987f5c923d141584841a6c62dfb504
-R de01d2c88028a3b709951f9d3730409b
-U drh
-Z c83c111125ba50dd275150f90f412c72
+P d75140b851a34a5eb66041e294e421628efbc5ba
+R 0be9ab31bb2adcc738c00ca21c762730
+U dan
+Z f838a2dc20bbd55fb4fc1e757536b6a8
