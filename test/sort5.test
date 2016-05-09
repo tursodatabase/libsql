@@ -78,10 +78,7 @@ execsql { CREATE TABLE t1(x) }
 # each a bit over 100 bytes in size. In total a little more than 1MiB 
 # of data.
 #
-breakpoint
 foreach {tn pgsz cachesz bTemp} {
-  2 1024   1000  1
-
   1 4096   1000  0
   2 1024   1000  1
 
@@ -113,4 +110,3 @@ foreach {tn pgsz cachesz bTemp} {
 }
 
 finish_test
-
