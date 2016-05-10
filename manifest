@@ -1,5 +1,5 @@
-C Fixes\sto\srequirements\smarks.\s\sNo\schanges\sto\scode.
-D 2016-05-09T23:11:47.940
+C Fix\sa\sproblem\sin\ssqlite3PagerMovepage()\swhen\sworking\son\sa\stemp\stable\sfor\swhich\npages\shave\sbeen\sspilled.
+D 2016-05-10T20:03:08.453
 F Makefile.in 9eda6e1c90d05c199c3ec8a7069b0682ad307657
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc db82b35aef27f412fef14d8534afc022138bcdfd
@@ -364,7 +364,7 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c a9443cdab41d7f3cdf0df3a5aab62fd6e1c9b234
 F src/os_win.c 852fc2ff6084296348ed3739c548b2cf32df394e
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
-F src/pager.c c512873311087cd22372f2b076fc869e090e8e16
+F src/pager.c dd77be61e439d2bc8d5d4cb8c29595f3ff1c446c
 F src/pager.h 329bdf078a4e0a3b35084534d58625d21fd03681
 F src/parse.y 10eb2f3fb62341291528c7984498054731f9d31e
 F src/pcache.c b3230ecfc7f797063fbe167f2845da363e8f07f8
@@ -1115,6 +1115,7 @@ F test/tempdb2.test 4fc92055f2a3f7626c0f2eabbb637dc021b311d5
 F test/tempfault.test 0c0d349c9a99bf5f374655742577f8712c647900
 F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptable2.test cd396beb41117a5302fff61767c35fa4270a0d5e
+F test/temptable3.test 9542fcacdb9a0eb7cf5307527bb92292383b04da
 F test/temptrigger.test 8ec228b0db5d7ebc4ee9b458fc28cb9e7873f5e1
 F test/tester.tcl 3ace46dee55f07e28a1e3ab03258b929fefcee5b
 F test/thread001.test 9f22fd3525a307ff42a326b6bc7b0465be1745a5
@@ -1487,7 +1488,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8a39c8ee49e6e80c83613546cf328801c80b7c4d
-R 01d61c4cbbe70cd264566714c11f8bfc
+P 79ecd0ef20c12198e950a730871444a980a0f1b2
+R 12f0dc762faa7f80daee4e78c774b1d6
 U drh
-Z 2c227e9e751dfce43bc8d679164f39de
+Z 8009b8aea3267bebcd4c327c4f222d7d

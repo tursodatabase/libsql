@@ -6926,8 +6926,7 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno, int isCommit){
   ** to exist, in case the transaction needs to roll back.  Use pPgOld
   ** as the original page since it has already been allocated.
   */
-  if( pPager->tempFile ){
-    assert( pPgOld );
+  if( pPager->tempFile && pPgOld ){
     sqlite3PcacheMove(pPgOld, origPgno);
     sqlite3PagerUnrefNotNull(pPgOld);
   }
