@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\ssqlite3PagerMovepage()\swhen\sworking\son\sa\stemp\stable\sfor\swhich\npages\shave\sbeen\sspilled.
-D 2016-05-10T20:03:08.453
+C Add\sanother\stest\scase\sto\stemptable3.test.
+D 2016-05-10T20:16:43.237
 F Makefile.in 9eda6e1c90d05c199c3ec8a7069b0682ad307657
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc db82b35aef27f412fef14d8534afc022138bcdfd
@@ -1115,7 +1115,7 @@ F test/tempdb2.test 4fc92055f2a3f7626c0f2eabbb637dc021b311d5
 F test/tempfault.test 0c0d349c9a99bf5f374655742577f8712c647900
 F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptable2.test cd396beb41117a5302fff61767c35fa4270a0d5e
-F test/temptable3.test 9542fcacdb9a0eb7cf5307527bb92292383b04da
+F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 8ec228b0db5d7ebc4ee9b458fc28cb9e7873f5e1
 F test/tester.tcl 3ace46dee55f07e28a1e3ab03258b929fefcee5b
 F test/thread001.test 9f22fd3525a307ff42a326b6bc7b0465be1745a5
@@ -1488,7 +1488,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 79ecd0ef20c12198e950a730871444a980a0f1b2
-R 12f0dc762faa7f80daee4e78c774b1d6
-U drh
-Z 8009b8aea3267bebcd4c327c4f222d7d
+P 20cf8811caf705b482be100baecb3ef72aee2d5a
+R 3a9fed64484c9373e69d538aa10775ab
+U dan
+Z 7b172879dcc2b05a1f7487ac7eeeddea
