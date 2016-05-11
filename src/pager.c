@@ -2032,12 +2032,14 @@ static int pager_end_transaction(Pager *pPager, int hasMaster, int bCommit){
   sqlite3BitvecDestroy(pPager->pInJournal);
   pPager->pInJournal = 0;
   pPager->nRec = 0;
-  if( MEMDB || pagerFlushOnCommit(pPager) ){
-    sqlite3PcacheCleanAll(pPager->pPCache);
-  }else{
-    sqlite3PcacheClearWritable(pPager->pPCache);
+  if( rc==SQLITE_OK ){
+    if( MEMDB || pagerFlushOnCommit(pPager) ){
+      sqlite3PcacheCleanAll(pPager->pPCache);
+    }else{
+      sqlite3PcacheClearWritable(pPager->pPCache);
+    }
+    sqlite3PcacheTruncate(pPager->pPCache, pPager->dbSize);
   }
-  sqlite3PcacheTruncate(pPager->pPCache, pPager->dbSize);
 
   if( pagerUseWal(pPager) ){
     /* Drop the WAL write-lock, if any. Also, if the connection was in 
