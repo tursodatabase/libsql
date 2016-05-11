@@ -1,5 +1,5 @@
-C Remove\sa\sredundant\scondition\sfrom\spcache.c.\sAdd\san\sOPTIMIZATION-IF-TRUE\scomment\sto\sanother\scondition\sthat\srequires\sit.
-D 2016-05-11T20:03:23.145
+C For\sin-memory\sdatabases,\sit\sdoes\snot\smatter\sif\spcache\sentries\sare\smarked\n"clean"\sor\s"writable".
+D 2016-05-11T23:54:14.261
 F Makefile.in 9eda6e1c90d05c199c3ec8a7069b0682ad307657
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc db82b35aef27f412fef14d8534afc022138bcdfd
@@ -364,11 +364,11 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c a9443cdab41d7f3cdf0df3a5aab62fd6e1c9b234
 F src/os_win.c 852fc2ff6084296348ed3739c548b2cf32df394e
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
-F src/pager.c cb7a3990eabd895f6487c0856a7fec02b5e40faa
+F src/pager.c 76fe5ad6998772a6abda30145c181e99e7743a1d
 F src/pager.h 329bdf078a4e0a3b35084534d58625d21fd03681
 F src/parse.y 10eb2f3fb62341291528c7984498054731f9d31e
-F src/pcache.c 95ee5008eddda9c61b8d053de8eebf72cf5df7c6
-F src/pcache.h 6b865be765d1ebd06145219550b10921c7da7cc9
+F src/pcache.c 132a78c71bd510fde0085bfc44608bc64b945d48
+F src/pcache.h 33b40350df1b6c278e019dee37f87e1bac276223
 F src/pcache1.c 7f51d2b541aab57596adf62db2c4bb025d34f04d
 F src/pragma.c faf42922bb7ab2f6672cb550356c1967abae3c84
 F src/pragma.h 64c78a648751b9f4f297276c4eb7507b14b4628c
@@ -1488,7 +1488,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9cc8cad78fdfe044ad6726ebfe6909c1e242fa55
-R bd613f88cc94ba593741d724ce8bf946
-U dan
-Z ba94a14dc94ea0c9562dd2071f1152d6
+P 3bfd2621d13b4f842f3af6d35519653f4eb8cad7
+R 399bfb6002bea3bb0fdfe001a40139f7
+T *branch * pager-dev
+T *sym-pager-dev *
+T -sym-trunk *
+U drh
+Z 75fe10a9420951c23350bd3808039177
