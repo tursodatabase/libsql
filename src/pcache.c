@@ -15,6 +15,22 @@
 
 /*
 ** A complete page cache is an instance of this structure.
+**
+** pDirty, pDirtyTail, pSynced:
+**   All dirty pages are linked into the doubly linked list using
+**   PgHdr.pDirtyNext and pDirtyPrev. The list is maintained in LRU order
+**   such that p was added to the list more recently than p->pDirtyNext.
+**   PCache.pDirty points to the first (newest) element in the list and
+**   pDirtyTail to the last (oldest).
+**
+**   The PCache.pSynced variable is used to optimize searching for a dirty
+**   page to eject from the cache mid-transaction. It is better to eject
+**   a page that does not require a journal sync than one that does. 
+**   Therefore, pSynced is maintained to that it *almost* always points
+**   to either the oldest page in the pDirty/pDirtyTail list that has a
+**   clear PGHDR_NEED_SYNC flag or to a page that is older than this one
+**   (so that the right page to eject can be found by following pDirtyPrev
+**   pointers).
 */
 struct PCache {
   PgHdr *pDirty, *pDirtyTail;         /* List of dirty pages in LRU order */
@@ -66,11 +82,7 @@ static void pcacheManageDirtyList(PgHdr *pPage, u8 addRemove){
   
     /* Update the PCache1.pSynced variable if necessary. */
     if( p->pSynced==pPage ){
-      PgHdr *pSynced = pPage->pDirtyPrev;
-      while( pSynced && (pSynced->flags&PGHDR_NEED_SYNC) ){
-        pSynced = pSynced->pDirtyPrev;
-      }
-      p->pSynced = pSynced;
+      p->pSynced = pPage->pDirtyPrev;
     }
   
     if( pPage->pDirtyNext ){
@@ -296,7 +308,11 @@ int sqlite3PcacheFetchStress(
     ** page that does not require a journal-sync (one with PGHDR_NEED_SYNC
     ** cleared), but if that is not possible settle for any other 
     ** unreferenced dirty page.
-    */
+    **
+    ** If the LRU page in the dirty list that has a clear PGHDR_NEED_SYNC
+    ** flag is currently referenced, then the following may leave pSynced
+    ** set incorrectly (pointing to other than the LRU page with NEED_SYNC
+    ** cleared). This is Ok, as pSynced is just an optimization.  */
     for(pPg=pCache->pSynced; 
         pPg && (pPg->nRef || (pPg->flags&PGHDR_NEED_SYNC)); 
         pPg=pPg->pDirtyPrev
