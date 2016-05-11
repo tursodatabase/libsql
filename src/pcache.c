@@ -94,10 +94,15 @@ static void pcacheManageDirtyList(PgHdr *pPage, u8 addRemove){
     if( pPage->pDirtyPrev ){
       pPage->pDirtyPrev->pDirtyNext = pPage->pDirtyNext;
     }else{
+      /* If there are now no dirty pages in the cache, set eCreate to 2. 
+      ** This is an optimization that allows sqlite3PcacheFetch() to skip
+      ** searching for a dirty page to eject from the cache when it might
+      ** otherwise have to.  */
       assert( pPage==p->pDirty );
       p->pDirty = pPage->pDirtyNext;
-      if( p->pDirty==0 && p->bPurgeable ){
-        assert( p->eCreate==1 );
+      assert( p->bPurgeable || p->eCreate==2 );
+      if( p->pDirty==0 ){         /*OPTIMIZATION-IF-TRUE*/
+        assert( p->bPurgeable==0 || p->eCreate==1 );
         p->eCreate = 2;
       }
     }
@@ -266,6 +271,7 @@ sqlite3_pcache_page *sqlite3PcacheFetch(
   assert( pCache->pCache!=0 );
   assert( createFlag==3 || createFlag==0 );
   assert( pgno>0 );
+  assert( pCache->eCreate==((pCache->bPurgeable && pCache->pDirty) ? 1 : 2) );
 
   /* eCreate defines what to do if the page does not exist.
   **    0     Do not allocate a new page.  (createFlag==0)

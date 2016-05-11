@@ -1,5 +1,5 @@
-C Remove\ssome\sa\ssmall\samount\sof\sredundant\scode\srelated\sto\sPCache.pSynced\sfrom\spcache.c.
-D 2016-05-11T15:41:15.317
+C Remove\sa\sredundant\scondition\sfrom\spcache.c.\sAdd\san\sOPTIMIZATION-IF-TRUE\scomment\sto\sanother\scondition\sthat\srequires\sit.
+D 2016-05-11T20:03:23.145
 F Makefile.in 9eda6e1c90d05c199c3ec8a7069b0682ad307657
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc db82b35aef27f412fef14d8534afc022138bcdfd
@@ -367,7 +367,7 @@ F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c cb7a3990eabd895f6487c0856a7fec02b5e40faa
 F src/pager.h 329bdf078a4e0a3b35084534d58625d21fd03681
 F src/parse.y 10eb2f3fb62341291528c7984498054731f9d31e
-F src/pcache.c 4af980bc2a987cf81ddbe867d238c9ccdbaac95c
+F src/pcache.c 95ee5008eddda9c61b8d053de8eebf72cf5df7c6
 F src/pcache.h 6b865be765d1ebd06145219550b10921c7da7cc9
 F src/pcache1.c 7f51d2b541aab57596adf62db2c4bb025d34f04d
 F src/pragma.c faf42922bb7ab2f6672cb550356c1967abae3c84
@@ -1488,7 +1488,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 345ce1c9f64f2a424663b4dfcbe4586d9df7bff6
-R 410857f6cadf18a1818aed66391afc72
+P 9cc8cad78fdfe044ad6726ebfe6909c1e242fa55
+R bd613f88cc94ba593741d724ce8bf946
 U dan
-Z b239392669bc1d86adff0f06ee03f5ae
+Z ba94a14dc94ea0c9562dd2071f1152d6
