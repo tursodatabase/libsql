@@ -1,5 +1,5 @@
-C Add\spcache\stracing\smacros.\s\sOff\sby\sdefault.\s\sRequires\schanging\san\s"#if\s0"\nand\srecompiling\sto\senable.
-D 2016-05-11T10:57:04.047
+C Always\struncate,\srather\sthan\spersist,\sthe\srollback\sjournal\sof\sa\sTEMP\sdatabase.
+D 2016-05-11T11:04:17.716
 F Makefile.in 9eda6e1c90d05c199c3ec8a7069b0682ad307657
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc db82b35aef27f412fef14d8534afc022138bcdfd
@@ -364,7 +364,7 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c a9443cdab41d7f3cdf0df3a5aab62fd6e1c9b234
 F src/os_win.c 852fc2ff6084296348ed3739c548b2cf32df394e
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
-F src/pager.c dd77be61e439d2bc8d5d4cb8c29595f3ff1c446c
+F src/pager.c 146d724b2c35f5d2d98676188681db9ade33486d
 F src/pager.h 329bdf078a4e0a3b35084534d58625d21fd03681
 F src/parse.y 10eb2f3fb62341291528c7984498054731f9d31e
 F src/pcache.c c128cafaac069e94931c3a743d5cf3d0c7b760d6
@@ -1488,7 +1488,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 223640243efc52c14bb2bb540833a2a624eaa41a
-R 0792de46be2b6fbaa9f6c79c63b41f67
+P d9313d19c75a62f558b3df6b15595b15bbfa0b62
+R 4210b2f60d7aff505c38881d5c5427ee
 U drh
-Z 0ddceb59c6efe2505feeee700b7e5172
+Z a22a7f46bad36a1990f0c6b07c454824
