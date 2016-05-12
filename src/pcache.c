@@ -14,7 +14,13 @@
 #include "sqliteInt.h"
 
 /*
-** A complete page cache is an instance of this structure.
+** A complete page cache is an instance of this structure.  Every
+** entry in the cache holds a single page of the database file.  The
+** btree layer only operates on the cached copy of the database pages.
+**
+** A page cache entry is "clean" if it exactly matches what is currently
+** on disk.  A page is "dirty" if it has been modified and needs to be
+** persisted to disk.
 **
 ** pDirty, pDirtyTail, pSynced:
 **   All dirty pages are linked into the doubly linked list using
