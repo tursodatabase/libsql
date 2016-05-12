@@ -1,5 +1,5 @@
-C Add\sa\smissing\sOPTIMIZATION-IF-FALSE\scomment\sto\spcache.c.
-D 2016-05-12T09:48:23.099
+C Remove\san\sunnecessary\scall\sto\ssqlite3PcacheMakeClean()\sinside\sof\sthe\sROLLBACK\nlogic.
+D 2016-05-12T12:01:20.280
 F Makefile.in 9eda6e1c90d05c199c3ec8a7069b0682ad307657
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc db82b35aef27f412fef14d8534afc022138bcdfd
@@ -364,10 +364,10 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c a9443cdab41d7f3cdf0df3a5aab62fd6e1c9b234
 F src/os_win.c 852fc2ff6084296348ed3739c548b2cf32df394e
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
-F src/pager.c cb7a3990eabd895f6487c0856a7fec02b5e40faa
+F src/pager.c b7f9341d1c8917d0050f11597c588d0b4e379df9
 F src/pager.h 329bdf078a4e0a3b35084534d58625d21fd03681
 F src/parse.y 10eb2f3fb62341291528c7984498054731f9d31e
-F src/pcache.c 481e549dec06c01e8db84f80af835b3386a83bb0
+F src/pcache.c 0e8453c2aaa8a72e09c58edeb0f0976dc652e827
 F src/pcache.h 6b865be765d1ebd06145219550b10921c7da7cc9
 F src/pcache1.c 7f51d2b541aab57596adf62db2c4bb025d34f04d
 F src/pragma.c faf42922bb7ab2f6672cb550356c1967abae3c84
@@ -1488,7 +1488,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3bfd2621d13b4f842f3af6d35519653f4eb8cad7
-R 1f5b4032d8f04ae7caac9d7a76ea1776
-U dan
-Z c8fcd1a1ab31e8e9159bebaf1a63834b
+P bc202e5b418d5a57bfc766883c4417c94829d96e
+R 94f384a80fd36cfa7eab53c97f52730e
+U drh
+Z 3db2648b2bf79fa343d087598efa8f84

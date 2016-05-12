@@ -2387,33 +2387,10 @@ static int pager_playback_one_page(
     pData = pPg->pData;
     memcpy(pData, (u8*)aData, pPager->pageSize);
     pPager->xReiniter(pPg);
-    if( isMainJrnl && (!isSavepnt || *pOffset<=pPager->journalHdr) ){
-      /* If the contents of this page were just restored from the main 
-      ** journal file, then its content must be as they were when the 
-      ** transaction was first opened. In this case we can mark the page
-      ** as clean, since there will be no need to write it out to the
-      ** database.
-      **
-      ** There is one exception to this rule. If the page is being rolled
-      ** back as part of a savepoint (or statement) rollback from an 
-      ** unsynced portion of the main journal file, then it is not safe
-      ** to mark the page as clean. This is because marking the page as
-      ** clean will clear the PGHDR_NEED_SYNC flag. Since the page is
-      ** already in the journal file (recorded in Pager.pInJournal) and
-      ** the PGHDR_NEED_SYNC flag is cleared, if the page is written to
-      ** again within this transaction, it will be marked as dirty but
-      ** the PGHDR_NEED_SYNC flag will not be set. It could then potentially
-      ** be written out into the database file before its journal file
-      ** segment is synced. If a crash occurs during or following this,
-      ** database corruption may ensue.
-      **
-      ** Update: Another exception is for temp files that are not 
-      ** in-memory databases. In this case the page may have been dirty
-      ** at the start of the transaction.
-      */
-      assert( !pagerUseWal(pPager) );
-      if( pPager->tempFile==0 ) sqlite3PcacheMakeClean(pPg);
-    }
+    /* It used to be that sqlite3PcacheMakeClean(pPg) was called here.  But
+    ** that call was dangerous and had no detectable benefit since the cache
+    ** is normally cleaned by sqlite3PcacheCleanAll() after rollback and so
+    ** has been removed. */
     pager_set_pagehash(pPg);
 
     /* If this was page 1, then restore the value of Pager.dbFileVers.

@@ -470,7 +470,7 @@ void sqlite3PcacheMakeDirty(PgHdr *p){
 ** make it so.
 */
 void sqlite3PcacheMakeClean(PgHdr *p){
-  if( (p->flags & PGHDR_DIRTY) ){
+  if( ALWAYS((p->flags & PGHDR_DIRTY)!=0) ){
     assert( (p->flags & PGHDR_CLEAN)==0 );
     pcacheManageDirtyList(p, PCACHE_DIRTYLIST_REMOVE);
     p->flags &= ~(PGHDR_DIRTY|PGHDR_NEED_SYNC|PGHDR_WRITEABLE);
