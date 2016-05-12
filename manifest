@@ -1,5 +1,5 @@
-C Simplification\sof\sthe\ssqlite3FaultSim()\scall\sinside\sof\nsqlite3PagerCommitPhaseOne().
-D 2016-05-12T19:05:35.053
+C Disable\sALWAYS\sand\sNEVER\swhen\scompiled\swith\sSQLITE_MUTATION_TEST.
+D 2016-05-12T19:17:09.294
 F Makefile.in 9eda6e1c90d05c199c3ec8a7069b0682ad307657
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc db82b35aef27f412fef14d8534afc022138bcdfd
@@ -382,7 +382,7 @@ F src/shell.c 14ff7f660530a52b117d110ba3390b7b2eb719b6
 F src/sqlite.h.in 9984129d86243424b765fcb3f147c697bd20bb54
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 98f72cbfe00169c39089115427d06ea05fe4b4a2
-F src/sqliteInt.h 8ec741711b8f42aae2c7a22e3d04f15270e0b6be
+F src/sqliteInt.h 4fe51e4e26d9d576040198cef4f78df3d987387d
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
@@ -1488,7 +1488,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3fd71092063bf1d30e03cf2497ea9c57b3ec82eb
-R 86cdc8fab77fed5ebeb6f9ac3a200e04
+P 1b0f4cc362cda1dc175aa363ae4e612b7d1164c3
+R cbaa515ed65f02858509b96594eef6a3
 U drh
-Z 30e0270ee86eb0dad7cf2e94ccef570b
+Z d111db0e0c72ae873465e360a322abe1
