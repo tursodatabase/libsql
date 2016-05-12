@@ -124,7 +124,15 @@ static void pcacheManageDirtyList(PgHdr *pPage, u8 addRemove){
       }
     }
     p->pDirty = pPage;
-    if( !p->pSynced && 0==(pPage->flags&PGHDR_NEED_SYNC) ){
+
+    /* If pSynced is NULL and this page has a clear NEED_SYNC flag, set
+    ** pSynced to point to it. Checking the NEED_SYNC flag is an 
+    ** optimization, as if pSynced points to a page with the NEED_SYNC
+    ** flag set sqlite3PcacheFetchStress() searches through all newer 
+    ** entries of the dirty-list for a page with NEED_SYNC clear anyway.  */
+    if( !p->pSynced 
+     && 0==(pPage->flags&PGHDR_NEED_SYNC)   /*OPTIMIZATION-IF-FALSE*/
+    ){
       p->pSynced = pPage;
     }
   }
