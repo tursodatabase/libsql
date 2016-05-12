@@ -6831,6 +6831,7 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno, int isCommit){
   /* In order to be able to rollback, an in-memory database must journal
   ** the page we are moving from.
   */
+  assert( pPager->tempFile || !MEMDB );
   if( pPager->tempFile ){
     rc = sqlite3PagerWrite(pPg);
     if( rc ) return rc;
