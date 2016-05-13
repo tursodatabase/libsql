@@ -1,5 +1,5 @@
-C Fix\spager_end_transaction()\sto\sensure\sthat\sa\sROLLBACK\sdoes\snot\sclobber\nunwritten\spages\sin\sa\sTEMP\sfile\spcache.
-D 2016-05-13T11:50:00.812
+C Clarification\sof\sthe\spagerFlushOnCommit()\slogic.
+D 2016-05-13T12:12:38.291
 F Makefile.in 9eda6e1c90d05c199c3ec8a7069b0682ad307657
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc db82b35aef27f412fef14d8534afc022138bcdfd
@@ -364,7 +364,7 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c a9443cdab41d7f3cdf0df3a5aab62fd6e1c9b234
 F src/os_win.c 852fc2ff6084296348ed3739c548b2cf32df394e
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
-F src/pager.c 64f42bd0d20f180f99727ce5a3755a97c9a12700
+F src/pager.c 665c5a4da55952ac144c29d83e7f24393ce80dce
 F src/pager.h 329bdf078a4e0a3b35084534d58625d21fd03681
 F src/parse.y 10eb2f3fb62341291528c7984498054731f9d31e
 F src/pcache.c ad5ce697dc5a734caddb2b1eac83b195da95ddbe
@@ -1488,7 +1488,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 32a62e3bd46cf58586617d3f8b1a971c91df205e
-R 7ea6babb6ca28821d5ebb371842cc2c9
+P 9495d33879221c1821331dc72c61a6a3d182f526
+R 6b2058239dcedcc73d7ba7314be4d002
 U drh
-Z 5e0d604d556f91727b00c6f570867611
+Z 481738e778b68e5e24387a60a8825df4

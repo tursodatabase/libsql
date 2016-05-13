@@ -1876,20 +1876,24 @@ static int pager_error(Pager *pPager, int rc){
 static int pager_truncate(Pager *pPager, Pgno nPage);
 
 /*
-** The write transaction open on the pager passed as the only argument is
-** being committed. This function returns true if all dirty pages should
-** be flushed to disk, or false otherwise. Pages should be flushed to disk
-** unless one of the following is true:
+** The write transaction open on pPager is being committed (bCommit==1)
+** or rolled back (bCommit==0).
 **
-**   * The db is an in-memory database.
+** Return TRUE if and only if all dirty pages should be flushed to disk.
 **
-**   * The db is a temporary database and the db file has not been opened.
+** Rules:
 **
-**   * The db is a temporary database and the cache contains less than
-**     C/4 dirty pages, where C is the configured cache-size.
+**   *  For non-TEMP databases, always sync to disk.  This is necessary
+**      for transactions to be durable.
+**
+**   *  Sync TEMP database only on a COMMIT (not a ROLLBACK) when the backing
+**      file has been created already (via a spill on pagerStress()) and
+**      when the number of dirty pages in memory exceeds 25% of the total
+**      cache size.
 */
-static int pagerFlushOnCommit(Pager *pPager){
+static int pagerFlushOnCommit(Pager *pPager, int bCommit){
   if( pPager->tempFile==0 ) return 1;
+  if( !bCommit ) return 0;
   if( !isOpen(pPager->fd) ) return 0;
   return (sqlite3PCachePercentDirty(pPager->pPCache)>=25);
 }
@@ -2033,7 +2037,7 @@ static int pager_end_transaction(Pager *pPager, int hasMaster, int bCommit){
   pPager->pInJournal = 0;
   pPager->nRec = 0;
   if( rc==SQLITE_OK ){
-    if( !pPager->tempFile || (bCommit && pagerFlushOnCommit(pPager)) ){
+    if( pagerFlushOnCommit(pPager, bCommit) ){
       sqlite3PcacheCleanAll(pPager->pPCache);
     }else{
       sqlite3PcacheClearWritable(pPager->pPCache);
@@ -6206,7 +6210,7 @@ int sqlite3PagerCommitPhaseOne(
 
   assert( MEMDB==0 || pPager->tempFile );
   assert( isOpen(pPager->fd) || pPager->tempFile );
-  if( 0==pagerFlushOnCommit(pPager) ){
+  if( 0==pagerFlushOnCommit(pPager, 1) ){
     /* If this is an in-memory db, or no pages have been written to, or this
     ** function has already been called, it is mostly a no-op.  However, any
     ** backup in progress needs to be restarted.  */
