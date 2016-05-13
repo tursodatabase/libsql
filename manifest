@@ -1,5 +1,5 @@
-C Remove\sthe\sunused\sPGHDR_NEED_READ\sflag.\s\sAdd\sinvariant\schecking\s(during\nSQLITE_DEBUG\sbuilds\sonly)\sfor\sthe\sPgHdr\sobject.
-D 2016-05-13T15:22:06.587
+C Improvements\sto\sa\scomment\sin\sthe\spcache.c\sfile.\s\sNo\schanges\sto\scode.
+D 2016-05-13T17:22:33.997
 F Makefile.in 9eda6e1c90d05c199c3ec8a7069b0682ad307657
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc db82b35aef27f412fef14d8534afc022138bcdfd
@@ -367,7 +367,7 @@ F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 3910579bfbe323dfabed2b95d201159b61b8ef42
 F src/pager.h 329bdf078a4e0a3b35084534d58625d21fd03681
 F src/parse.y 10eb2f3fb62341291528c7984498054731f9d31e
-F src/pcache.c e93f1e1b4c6134d59b4bd4f3f684f406987ef299
+F src/pcache.c f398c0084399e7481482cbc6a578a3cc4c3675f3
 F src/pcache.h 2cedcd8407eb23017d92790b112186886e179490
 F src/pcache1.c 7f51d2b541aab57596adf62db2c4bb025d34f04d
 F src/pragma.c faf42922bb7ab2f6672cb550356c1967abae3c84
@@ -1488,7 +1488,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3401d9dcdbec390564574e8d2972c944c204e025
-R 440a1b1b52d8bc83687d285c09ed1eae
+P 771c5411e9ebcad00fb4b97556b519488284b87b
+R fc31f84edb2e71fa53cb5f4572b3042f
 U drh
-Z 63614a0e4a8fa1151ab9567f8bbeafca
+Z 0bbb954743a2d2dee1416e855a012aec

@@ -129,6 +129,13 @@ int sqlite3PcachePageSanity(PgHdr *pPg){
   ** in step 3, and page might be written into the database without first
   ** syncing the rollback journal, which might cause corruption on a power
   ** loss.
+  **
+  ** Another example is when the database page size is smaller than the
+  ** disk sector size.  When any page of a sector is journalled, all pages
+  ** in that sector are marked NEED_SYNC even if they are still CLEAN, just
+  ** in case they are later modified, since all pages in the same sector
+  ** must be journalled and synced before any of those pages can be safely
+  ** written.
   */
   return 1;
 }
