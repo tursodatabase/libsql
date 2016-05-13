@@ -2033,7 +2033,7 @@ static int pager_end_transaction(Pager *pPager, int hasMaster, int bCommit){
   pPager->pInJournal = 0;
   pPager->nRec = 0;
   if( rc==SQLITE_OK ){
-    if( pagerFlushOnCommit(pPager) ){
+    if( !pPager->tempFile || (bCommit && pagerFlushOnCommit(pPager)) ){
       sqlite3PcacheCleanAll(pPager->pPCache);
     }else{
       sqlite3PcacheClearWritable(pPager->pPCache);
