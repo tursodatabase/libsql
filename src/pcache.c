@@ -53,11 +53,18 @@ struct PCache {
   sqlite3_pcache *pCache;             /* Pluggable cache module */
 };
 
+/********************************** Test and Debug Logic **********************/
 /*
-** Debug tracing macros
+** Debug tracing macros.  Enable by by changing the "0" to "1" and
+** recompiling.
+**
+** When sqlite3PcacheTrace is 1, single line trace messages are issued.
+** When sqlite3PcacheTrace is 2, a dump of the pcache showing all cache entries
+** is displayed for many operations, resulting in a lot of output.
 */
 #if defined(SQLITE_DEBUG) && 0
-  int sqlite3PcacheTrace = 2;
+  int sqlite3PcacheTrace = 2;       /* 0: off  1: simple  2: cache dumps */
+  int sqlite3PcacheMxDump = 9999;   /* Max cache entries for pcacheDump() */
 # define pcacheTrace(X) if(sqlite3PcacheTrace){sqlite3DebugPrintf X;}
   void pcacheDump(PCache *pCache){
     int N;
@@ -69,7 +76,7 @@ struct PCache {
     if( sqlite3PcacheTrace<2 ) return;
     if( pCache->pCache==0 ) return;
     N = sqlite3PcachePagecount(pCache);
-    if( N>5 ) N = 5;
+    if( N>sqlite3PcacheMxDump ) N = sqlite3PcacheMxDump;
     for(i=1; i<=N; i++){
        pLower = sqlite3GlobalConfig.pcache2.xFetch(pCache->pCache, i, 0);
        if( pLower==0 ) continue;
@@ -87,6 +94,46 @@ struct PCache {
 # define pcacheTrace(X)
 # define pcacheDump(X)
 #endif
+
+/*
+** Check invariants on a PgHdr entry.  Return true if everything is OK.
+** Return false if any invariant is violated.
+**
+** This routine is for use inside of assert() statements only.  For
+** example:
+**
+**          assert( sqlite3PcachePageSanity(pPg) );
+*/
+#if SQLITE_DEBUG
+int sqlite3PcachePageSanity(PgHdr *pPg){
+  PCache *pCache;
+  assert( pPg!=0 );
+  assert( pPg->pgno>0 );    /* Page number is 1 or more */
+  pCache = pPg->pCache;
+  assert( pCache!=0 );      /* Every page has an associated PCache */
+  if( pPg->flags & PGHDR_CLEAN ){
+    assert( (pPg->flags & PGHDR_DIRTY)==0 );/* Cannot be both CLEAN and DIRTY */
+    assert( pCache->pDirty!=pPg );          /* CLEAN pages not on dirty list */
+    assert( pCache->pDirtyTail!=pPg );
+  }
+  /* WRITEABLE pages must also be DIRTY */
+  if( pPg->flags & PGHDR_WRITEABLE ){
+    assert( pPg->flags & PGHDR_DIRTY );     /* WRITEABLE implies DIRTY */
+  }
+  /* NEED_SYNC can be set independently of WRITEABLE.  This can happen,
+  ** for example, when using the sqlite3PagerDontWrite() optimization:
+  **    (1)  Page X is journalled, and gets WRITEABLE and NEED_SEEK.
+  **    (2)  Page X moved to freelist, WRITEABLE is cleared
+  **    (3)  Page X reused, WRITEABLE is set again
+  ** If NEED_SYNC had been cleared in step 2, then it would not be reset
+  ** in step 3, and page might be written into the database without first
+  ** syncing the rollback journal, which might cause corruption on a power
+  ** loss.
+  */
+  return 1;
+}
+#endif /* SQLITE_DEBUG */
+
 
 /********************************** Linked List Management ********************/
 
@@ -439,6 +486,7 @@ PgHdr *sqlite3PcacheFetchFinish(
   }
   pCache->nRefSum++;
   pPgHdr->nRef++;
+  assert( sqlite3PcachePageSanity(pPgHdr) );
   return pPgHdr;
 }
 
@@ -467,6 +515,7 @@ void SQLITE_NOINLINE sqlite3PcacheRelease(PgHdr *p){
 */
 void sqlite3PcacheRef(PgHdr *p){
   assert(p->nRef>0);
+  assert( sqlite3PcachePageSanity(p) );
   p->nRef++;
   p->pCache->nRefSum++;
 }
@@ -478,6 +527,7 @@ void sqlite3PcacheRef(PgHdr *p){
 */
 void sqlite3PcacheDrop(PgHdr *p){
   assert( p->nRef==1 );
+  assert( sqlite3PcachePageSanity(p) );
   if( p->flags&PGHDR_DIRTY ){
     pcacheManageDirtyList(p, PCACHE_DIRTYLIST_REMOVE);
   }
@@ -491,6 +541,7 @@ void sqlite3PcacheDrop(PgHdr *p){
 */
 void sqlite3PcacheMakeDirty(PgHdr *p){
   assert( p->nRef>0 );
+  assert( sqlite3PcachePageSanity(p) );
   if( p->flags & (PGHDR_CLEAN|PGHDR_DONT_WRITE) ){    /*OPTIMIZATION-IF-FALSE*/
     p->flags &= ~PGHDR_DONT_WRITE;
     if( p->flags & PGHDR_CLEAN ){
@@ -499,6 +550,7 @@ void sqlite3PcacheMakeDirty(PgHdr *p){
       assert( (p->flags & (PGHDR_DIRTY|PGHDR_CLEAN))==PGHDR_DIRTY );
       pcacheManageDirtyList(p, PCACHE_DIRTYLIST_ADD);
     }
+    assert( sqlite3PcachePageSanity(p) );
   }
 }
 
@@ -507,12 +559,14 @@ void sqlite3PcacheMakeDirty(PgHdr *p){
 ** make it so.
 */
 void sqlite3PcacheMakeClean(PgHdr *p){
+  assert( sqlite3PcachePageSanity(p) );
   if( ALWAYS((p->flags & PGHDR_DIRTY)!=0) ){
     assert( (p->flags & PGHDR_CLEAN)==0 );
     pcacheManageDirtyList(p, PCACHE_DIRTYLIST_REMOVE);
     p->flags &= ~(PGHDR_DIRTY|PGHDR_NEED_SYNC|PGHDR_WRITEABLE);
     p->flags |= PGHDR_CLEAN;
     pcacheTrace(("%p.CLEAN %d\n",p->pCache,p->pgno));
+    assert( sqlite3PcachePageSanity(p) );
     if( p->nRef==0 ){
       pcacheUnpin(p);
     }
@@ -560,6 +614,7 @@ void sqlite3PcacheMove(PgHdr *p, Pgno newPgno){
   PCache *pCache = p->pCache;
   assert( p->nRef>0 );
   assert( newPgno>0 );
+  assert( sqlite3PcachePageSanity(p) );
   pcacheTrace(("%p.MOVE %d -> %d\n",pCache,p->pgno,newPgno));
   sqlite3GlobalConfig.pcache2.xRekey(pCache->pCache, p->pPage, p->pgno,newPgno);
   p->pgno = newPgno;
