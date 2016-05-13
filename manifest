@@ -1,5 +1,5 @@
-C Disable\sALWAYS\sand\sNEVER\swhen\scompiled\swith\sSQLITE_MUTATION_TEST.
-D 2016-05-12T19:17:09.294
+C Additional\sdebugging\sand\stracing\slogic\sfor\spcache.c,\sturned\soff\sby\sdefault\nusing\san\s"#if\s0".
+D 2016-05-13T04:24:25.046
 F Makefile.in 9eda6e1c90d05c199c3ec8a7069b0682ad307657
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc db82b35aef27f412fef14d8534afc022138bcdfd
@@ -367,7 +367,7 @@ F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c b6b3f2aff301cb025b23a8586666c91355cb3c69
 F src/pager.h 329bdf078a4e0a3b35084534d58625d21fd03681
 F src/parse.y 10eb2f3fb62341291528c7984498054731f9d31e
-F src/pcache.c 3ef140add88d8d3eee3a80a79412f450bd216d3b
+F src/pcache.c ad5ce697dc5a734caddb2b1eac83b195da95ddbe
 F src/pcache.h 33b40350df1b6c278e019dee37f87e1bac276223
 F src/pcache1.c 7f51d2b541aab57596adf62db2c4bb025d34f04d
 F src/pragma.c faf42922bb7ab2f6672cb550356c1967abae3c84
@@ -1488,7 +1488,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1b0f4cc362cda1dc175aa363ae4e612b7d1164c3
-R cbaa515ed65f02858509b96594eef6a3
+P 24d9fbc1d0f99b90577ecd6edcd3bc1abc76633f
+R d638f11a5a2154aefeed14f79e8ebc4d
 U drh
-Z d111db0e0c72ae873465e360a322abe1
+Z 291bccc6a32f88cd8cda8747cf2307e8

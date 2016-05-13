@@ -57,10 +57,35 @@ struct PCache {
 ** Debug tracing macros
 */
 #if defined(SQLITE_DEBUG) && 0
-  int sqlite3PcacheTrace = 1;
+  int sqlite3PcacheTrace = 2;
 # define pcacheTrace(X) if(sqlite3PcacheTrace){sqlite3DebugPrintf X;}
-#else
+  void pcacheDump(PCache *pCache){
+    int N;
+    int i, j;
+    sqlite3_pcache_page *pLower;
+    PgHdr *pPg;
+    unsigned char *a;
+  
+    if( sqlite3PcacheTrace<2 ) return;
+    if( pCache->pCache==0 ) return;
+    N = sqlite3PcachePagecount(pCache);
+    if( N>5 ) N = 5;
+    for(i=1; i<=N; i++){
+       pLower = sqlite3GlobalConfig.pcache2.xFetch(pCache->pCache, i, 0);
+       if( pLower==0 ) continue;
+       pPg = (PgHdr*)pLower->pExtra;
+       printf("%3d: nRef %2d flgs %02x data ", i, pPg->nRef, pPg->flags);
+       a = (unsigned char *)pLower->pBuf;
+       for(j=0; j<12; j++) printf("%02x", a[j]);
+       printf("\n");
+       if( pPg->pPage==0 ){
+         sqlite3GlobalConfig.pcache2.xUnpin(pCache->pCache, pLower, 0);
+       }
+    }
+  }
+  #else
 # define pcacheTrace(X)
+# define pcacheDump(X)
 #endif
 
 /********************************** Linked List Management ********************/
@@ -142,6 +167,7 @@ static void pcacheManageDirtyList(PgHdr *pPage, u8 addRemove){
       p->pSynced = pPage;
     }
   }
+  pcacheDump(p);
 }
 
 /*
@@ -152,6 +178,7 @@ static void pcacheUnpin(PgHdr *p){
   if( p->pCache->bPurgeable ){
     pcacheTrace(("%p.UNPIN %d\n", p->pCache, p->pgno));
     sqlite3GlobalConfig.pcache2.xUnpin(p->pCache->pCache, p->pPage, 0);
+    pcacheDump(p->pCache);
   }
 }
 
@@ -352,6 +379,7 @@ int sqlite3PcacheFetchStress(
 #endif
       pcacheTrace(("%p.SPILL %d\n",pCache,pPg->pgno));
       rc = pCache->xStress(pCache->pStress, pPg);
+      pcacheDump(pCache);
       if( rc!=SQLITE_OK && rc!=SQLITE_BUSY ){
         return rc;
       }
@@ -496,6 +524,7 @@ void sqlite3PcacheMakeClean(PgHdr *p){
 */
 void sqlite3PcacheCleanAll(PCache *pCache){
   PgHdr *p;
+  pcacheTrace(("%p.CLEAN-ALL\n",pCache));
   while( (p = pCache->pDirty)!=0 ){
     sqlite3PcacheMakeClean(p);
   }
@@ -506,6 +535,7 @@ void sqlite3PcacheCleanAll(PCache *pCache){
 */
 void sqlite3PcacheClearWritable(PCache *pCache){
   PgHdr *p;
+  pcacheTrace(("%p.CLEAR-WRITEABLE\n",pCache));
   for(p=pCache->pDirty; p; p=p->pDirtyNext){
     p->flags &= ~(PGHDR_NEED_SYNC|PGHDR_WRITEABLE);
   }
