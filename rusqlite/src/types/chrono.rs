@@ -54,10 +54,6 @@ impl FromSql for NaiveDate {
             _ => Err(Error::InvalidColumnType),
         }
     }
-
-    unsafe fn column_has_valid_sqlite_type(_: *mut sqlite3_stmt, _: c_int) -> bool {
-        true // to avoid double check
-    }
 }
 
 /// ISO 8601 time without timezone => "HH:MM:SS.SSS"
@@ -158,10 +154,6 @@ impl FromSql for NaiveDateTime {
             _ => Err(Error::InvalidColumnType),
         }
     }
-
-    unsafe fn column_has_valid_sqlite_type(_: *mut sqlite3_stmt, _: c_int) -> bool {
-        true // to avoid double check
-    }
 }
 
 /// ISO 8601 date and time with time zone => "YYYY-MM-DD HH:MM:SS.SSS[+-]HH:MM"
@@ -201,10 +193,6 @@ impl FromSql for DateTime<UTC> {
             }
             _ => Err(Error::InvalidColumnType),
         }
-    }
-
-    unsafe fn column_has_valid_sqlite_type(_: *mut sqlite3_stmt, _: c_int) -> bool {
-        true // to avoid double check
     }
 }
 
@@ -246,10 +234,6 @@ impl FromSql for DateTime<Local> {
             }
             _ => Err(Error::InvalidColumnType),
         }
-    }
-
-    unsafe fn column_has_valid_sqlite_type(_: *mut sqlite3_stmt, _: c_int) -> bool {
-        true // to avoid double check
     }
 }
 

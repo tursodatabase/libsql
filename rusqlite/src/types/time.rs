@@ -42,10 +42,6 @@ impl FromSql for time::Timespec {
             _ => Err(Error::InvalidColumnType),
         }
     }
-
-    unsafe fn column_has_valid_sqlite_type(_: *mut sqlite3_stmt, _: c_int) -> bool {
-        true // to avoid double check
-    }
 }
 
 #[cfg(test)]
