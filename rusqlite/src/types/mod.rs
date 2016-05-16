@@ -67,6 +67,8 @@ pub use ffi::{SQLITE_INTEGER, SQLITE_FLOAT, SQLITE_TEXT, SQLITE_BLOB, SQLITE_NUL
 mod time;
 #[cfg(feature = "chrono")]
 mod chrono;
+#[cfg(feature = "serde_json")]
+mod serde_json;
 
 /// A trait for types that can be converted into SQLite values.
 pub trait ToSql {
