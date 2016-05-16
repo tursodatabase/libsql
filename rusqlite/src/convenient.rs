@@ -1,5 +1,3 @@
-use super::ffi;
-
 use {Error, Result, Statement};
 use types::ToSql;
 
@@ -26,15 +24,10 @@ impl<'conn> Statement<'conn> {
     /// and `false` if the SQL returns an empty set.
     pub fn exists(&mut self, params: &[&ToSql]) -> Result<bool> {
         self.reset_if_needed();
-        unsafe {
-            try!(self.bind_parameters(params));
-            let r = ffi::sqlite3_step(self.stmt);
-            ffi::sqlite3_reset(self.stmt);
-            match r {
-                ffi::SQLITE_DONE => Ok(false),
-                ffi::SQLITE_ROW => Ok(true),
-                _ => Err(self.conn.decode_result(r).unwrap_err()),
-            }
+        let mut rows = try!(self.query(params));
+        match rows.next() {
+            Some(_) => Ok(true),
+            None => Ok(false),
         }
     }
 }
