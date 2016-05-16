@@ -522,8 +522,8 @@ impl Connection {
 impl fmt::Debug for Connection {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("Connection")
-         .field("path", &self.path)
-         .finish()
+            .field("path", &self.path)
+            .finish()
     }
 }
 
@@ -538,7 +538,7 @@ bitflags! {
     #[doc = "Flags for opening SQLite database connections."]
     #[doc = "See [sqlite3_open_v2](http://www.sqlite.org/c3ref/open.html) for details."]
     #[repr(C)]
-    flags OpenFlags: c_int {
+    pub flags OpenFlags: ::libc::c_int {
         const SQLITE_OPEN_READ_ONLY     = 0x00000001,
         const SQLITE_OPEN_READ_WRITE    = 0x00000002,
         const SQLITE_OPEN_CREATE        = 0x00000004,
@@ -709,7 +709,6 @@ pub type SqliteStatement<'conn> = Statement<'conn>;
 pub struct Statement<'conn> {
     conn: &'conn Connection,
     stmt: *mut ffi::sqlite3_stmt,
-    needs_reset: bool,
     column_count: c_int,
 }
 
@@ -718,7 +717,6 @@ impl<'conn> Statement<'conn> {
         Statement {
             conn: conn,
             stmt: stmt,
-            needs_reset: false,
             column_count: unsafe { ffi::sqlite3_column_count(stmt) },
         }
     }
@@ -827,13 +825,10 @@ impl<'conn> Statement<'conn> {
     ///
     /// Will return `Err` if binding parameters fails.
     pub fn query<'a>(&'a mut self, params: &[&ToSql]) -> Result<Rows<'a>> {
-        self.reset_if_needed();
-
         unsafe {
             try!(self.bind_parameters(params));
         }
 
-        self.needs_reset = true;
         Ok(Rows::new(self))
     }
 
@@ -907,15 +902,6 @@ impl<'conn> Statement<'conn> {
         Ok(())
     }
 
-    fn reset_if_needed(&mut self) {
-        if self.needs_reset {
-            unsafe {
-                ffi::sqlite3_reset(self.stmt);
-            };
-            self.needs_reset = false;
-        }
-    }
-
     fn finalize_(&mut self) -> Result<()> {
         let r = unsafe { ffi::sqlite3_finalize(self.stmt) };
         self.stmt = ptr::null_mut();
@@ -930,10 +916,10 @@ impl<'conn> fmt::Debug for Statement<'conn> {
             str::from_utf8(c_slice)
         };
         f.debug_struct("Statement")
-         .field("conn", self.conn)
-         .field("stmt", &self.stmt)
-         .field("sql", &sql)
-         .finish()
+            .field("conn", self.conn)
+            .field("stmt", &self.stmt)
+            .field("sql", &sql)
+            .finish()
     }
 }
 
@@ -976,7 +962,7 @@ impl<'stmt, T, E, F> Iterator for AndThenRows<'stmt, F>
     fn next(&mut self) -> Option<Self::Item> {
         self.rows.next().map(|row_result| {
             row_result.map_err(E::from)
-                      .and_then(|row| (self.map)(&row))
+                .and_then(|row| (self.map)(&row))
         })
     }
 }
@@ -1017,17 +1003,15 @@ pub type SqliteRows<'stmt> = Rows<'stmt>;
 /// `min`/`max` (which could return a stale row unless the last row happened to be the min or max,
 /// respectively).
 pub struct Rows<'stmt> {
-    stmt: &'stmt Statement<'stmt>,
+    stmt: Option<&'stmt Statement<'stmt>>,
     current_row: Rc<Cell<c_int>>,
-    failed: bool,
 }
 
 impl<'stmt> Rows<'stmt> {
     fn new(stmt: &'stmt Statement<'stmt>) -> Rows<'stmt> {
         Rows {
-            stmt: stmt,
+            stmt: Some(stmt),
             current_row: Rc::new(Cell::new(0)),
-            failed: false,
         }
     }
 
@@ -1037,31 +1021,47 @@ impl<'stmt> Rows<'stmt> {
             None => Err(Error::QueryReturnedNoRows),
         }
     }
+
+    fn reset(&mut self) {
+        if let Some(stmt) = self.stmt.take() {
+            unsafe {
+                ffi::sqlite3_reset(stmt.stmt);
+            }
+        }
+    }
 }
 
 impl<'stmt> Iterator for Rows<'stmt> {
     type Item = Result<Row<'stmt>>;
 
     fn next(&mut self) -> Option<Result<Row<'stmt>>> {
-        if self.failed {
-            return None;
-        }
-        match unsafe { ffi::sqlite3_step(self.stmt.stmt) } {
-            ffi::SQLITE_ROW => {
-                let current_row = self.current_row.get() + 1;
-                self.current_row.set(current_row);
-                Some(Ok(Row {
-                    stmt: self.stmt,
-                    current_row: self.current_row.clone(),
-                    row_idx: current_row,
-                }))
+        self.stmt.and_then(|stmt| {
+            match unsafe { ffi::sqlite3_step(stmt.stmt) } {
+                ffi::SQLITE_ROW => {
+                    let current_row = self.current_row.get() + 1;
+                    self.current_row.set(current_row);
+                    Some(Ok(Row {
+                        stmt: stmt,
+                        current_row: self.current_row.clone(),
+                        row_idx: current_row,
+                    }))
+                }
+                ffi::SQLITE_DONE => {
+                    self.reset();
+                    None
+                }
+                code => {
+                    self.reset();
+                    Some(Err(stmt.conn.decode_result(code).unwrap_err()))
+                }
             }
-            ffi::SQLITE_DONE => None,
-            code => {
-                self.failed = true;
-                Some(Err(self.stmt.conn.decode_result(code).unwrap_err()))
-            }
-        }
+        })
+    }
+}
+
+impl<'stmt> Drop for Rows<'stmt> {
+    fn drop(&mut self) {
+        self.reset();
     }
 }
 

@@ -4,7 +4,6 @@ use libc::{c_char, c_int, c_void};
 use std::ffi::{CStr, CString};
 use std::mem;
 use std::ptr;
-use std::str;
 use std::time::Duration;
 
 use super::ffi;
