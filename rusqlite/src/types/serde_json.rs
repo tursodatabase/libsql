@@ -22,23 +22,18 @@ impl ToSql for Value {
 /// Deserialize text/blob to JSON `Value`.
 impl FromSql for Value {
     unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> Result<Value> {
-        match sqlite3_column_type(stmt, col) {
+        let value_result = match sqlite3_column_type(stmt, col) {
             ffi::SQLITE_TEXT => {
                 let s = try!(String::column_result(stmt, col));
-                match serde_json::from_str(&s) {
-                    Ok(v) => Ok(v),
-                    Err(err) => Err(Error::FromSqlConversionFailure(Box::new(err))),
-                }
+                serde_json::from_str(&s)
             }
             ffi::SQLITE_BLOB => {
-                let blob: Vec<u8> = try!(FromSql::column_result(stmt, col));
-                match serde_json::from_slice(&blob[..]) {
-                    Ok(v) => Ok(v),
-                    Err(err) => Err(Error::FromSqlConversionFailure(Box::new(err))),
-                }
+                let blob = try!(Vec::<u8>::column_result(stmt, col));
+                serde_json::from_slice(&blob)
             }
-            _ => Err(Error::InvalidColumnType),
-        }
+            _ => return Err(Error::InvalidColumnType)
+        };
+        value_result.map_err(|err| { Error::FromSqlConversionFailure(Box::new(err)) })
     }
 }
 
@@ -57,7 +52,7 @@ mod test {
     fn test_json_value() {
         let db = checked_memory_handle();
 
-        let json = "{\"foo\": 13, \"bar\": \"baz\"}";
+        let json = r#"{"foo": 13, "bar": "baz"}"#;
         let data: serde_json::Value = serde_json::from_str(json).unwrap();
         db.execute("INSERT INTO foo (t, b) VALUES (?, ?)",
                    &[&data, &json.as_bytes()])
