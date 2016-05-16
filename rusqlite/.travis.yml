@@ -14,4 +14,5 @@ script:
     - cargo test --features trace
     - cargo test --features functions
     - cargo test --features chrono
-    - cargo test --features "backup blob chrono functions load_extension trace"
+    - cargo test --features serde_json
+    - cargo test --features "backup blob chrono functions load_extension serde_json trace"
