@@ -23,12 +23,14 @@ impl<'conn> Statement<'conn> {
     /// Return `true` if a query in the SQL statement it executes returns one or more rows
     /// and `false` if the SQL returns an empty set.
     pub fn exists(&mut self, params: &[&ToSql]) -> Result<bool> {
-        self.reset_if_needed();
         let mut rows = try!(self.query(params));
-        match rows.next() {
-            Some(_) => Ok(true),
-            None => Ok(false),
-        }
+        let exists = {
+            match rows.next() {
+                Some(_) => true,
+                None => false,
+            }
+        };
+        Ok(exists)
     }
 }
 
