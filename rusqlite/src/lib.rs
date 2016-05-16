@@ -1004,7 +1004,7 @@ pub type SqliteRows<'stmt> = Rows<'stmt>;
 pub struct Rows<'stmt> {
     stmt: &'stmt Statement<'stmt>,
     current_row: Rc<Cell<c_int>>,
-    failed: bool,
+    done: bool,
 }
 
 impl<'stmt> Rows<'stmt> {
@@ -1012,7 +1012,7 @@ impl<'stmt> Rows<'stmt> {
         Rows {
             stmt: stmt,
             current_row: Rc::new(Cell::new(0)),
-            failed: false,
+            done: false,
         }
     }
 
@@ -1028,7 +1028,7 @@ impl<'stmt> Iterator for Rows<'stmt> {
     type Item = Result<Row<'stmt>>;
 
     fn next(&mut self) -> Option<Result<Row<'stmt>>> {
-        if self.failed {
+        if self.done {
             return None;
         }
         match unsafe { ffi::sqlite3_step(self.stmt.stmt) } {
@@ -1041,9 +1041,12 @@ impl<'stmt> Iterator for Rows<'stmt> {
                     row_idx: current_row,
                 }))
             }
-            ffi::SQLITE_DONE => None,
+            ffi::SQLITE_DONE => {
+                self.done = true;
+                None
+            }
             code => {
-                self.failed = true;
+                self.done = true;
                 Some(Err(self.stmt.conn.decode_result(code).unwrap_err()))
             }
         }
