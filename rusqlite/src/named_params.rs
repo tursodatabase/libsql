@@ -113,10 +113,7 @@ impl<'conn> Statement<'conn> {
     ///
     /// Will return `Err` if binding parameters fails.
     pub fn query_named<'a>(&'a mut self, params: &[(&str, &ToSql)]) -> Result<Rows<'a>> {
-        self.reset_if_needed();
         try!(self.bind_parameters_named(params));
-
-        self.needs_reset = true;
         Ok(Rows::new(self))
     }
 

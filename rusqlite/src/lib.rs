@@ -708,7 +708,6 @@ pub type SqliteStatement<'conn> = Statement<'conn>;
 pub struct Statement<'conn> {
     conn: &'conn Connection,
     stmt: *mut ffi::sqlite3_stmt,
-    needs_reset: bool,
     column_count: c_int,
 }
 
@@ -717,7 +716,6 @@ impl<'conn> Statement<'conn> {
         Statement {
             conn: conn,
             stmt: stmt,
-            needs_reset: false,
             column_count: unsafe { ffi::sqlite3_column_count(stmt) },
         }
     }
@@ -826,13 +824,10 @@ impl<'conn> Statement<'conn> {
     ///
     /// Will return `Err` if binding parameters fails.
     pub fn query<'a>(&'a mut self, params: &[&ToSql]) -> Result<Rows<'a>> {
-        self.reset_if_needed();
-
         unsafe {
             try!(self.bind_parameters(params));
         }
 
-        self.needs_reset = true;
         Ok(Rows::new(self))
     }
 
@@ -904,15 +899,6 @@ impl<'conn> Statement<'conn> {
         }
 
         Ok(())
-    }
-
-    fn reset_if_needed(&mut self) {
-        if self.needs_reset {
-            unsafe {
-                ffi::sqlite3_reset(self.stmt);
-            };
-            self.needs_reset = false;
-        }
     }
 
     fn finalize_(&mut self) -> Result<()> {
@@ -1060,6 +1046,14 @@ impl<'stmt> Iterator for Rows<'stmt> {
                 self.failed = true;
                 Some(Err(self.stmt.conn.decode_result(code).unwrap_err()))
             }
+        }
+    }
+}
+
+impl<'stmt> Drop for Rows<'stmt> {
+    fn drop(&mut self) {
+        unsafe {
+            ffi::sqlite3_reset(self.stmt.stmt);
         }
     }
 }
