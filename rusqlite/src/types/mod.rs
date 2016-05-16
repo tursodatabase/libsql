@@ -52,8 +52,6 @@
 //! }
 //! ```
 
-extern crate time;
-
 use libc::{c_int, c_double, c_char};
 use std::ffi::CStr;
 use std::mem;
@@ -66,7 +64,11 @@ pub use ffi::sqlite3_column_type;
 
 pub use ffi::{SQLITE_INTEGER, SQLITE_FLOAT, SQLITE_TEXT, SQLITE_BLOB, SQLITE_NULL};
 
-const SQLITE_DATETIME_FMT: &'static str = "%Y-%m-%d %H:%M:%S";
+mod time;
+#[cfg(feature = "chrono")]
+mod chrono;
+#[cfg(feature = "serde_json")]
+mod serde_json;
 
 /// A trait for types that can be converted into SQLite values.
 pub trait ToSql {
@@ -151,13 +153,6 @@ impl<'a> ToSql for &'a [u8] {
 impl ToSql for Vec<u8> {
     unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
         (&self[..]).bind_parameter(stmt, col)
-    }
-}
-
-impl ToSql for time::Timespec {
-    unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
-        let time_str = time::at_utc(*self).strftime(SQLITE_DATETIME_FMT).unwrap().to_string();
-        time_str.bind_parameter(stmt, col)
     }
 }
 
@@ -263,22 +258,6 @@ impl FromSql for Vec<u8> {
     }
 }
 
-impl FromSql for time::Timespec {
-    unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> Result<time::Timespec> {
-        let col_str = FromSql::column_result(stmt, col);
-        col_str.and_then(|txt: String| {
-            match time::strptime(&txt, SQLITE_DATETIME_FMT) {
-                Ok(tm) => Ok(tm.to_timespec()),
-                Err(err) => Err(Error::FromSqlConversionFailure(Box::new(err))),
-            }
-        })
-    }
-
-    unsafe fn column_has_valid_sqlite_type(stmt: *mut sqlite3_stmt, col: c_int) -> bool {
-        String::column_has_valid_sqlite_type(stmt, col)
-    }
-}
-
 impl<T: FromSql> FromSql for Option<T> {
     unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> Result<Option<T>> {
         if sqlite3_column_type(stmt, col) == ffi::SQLITE_NULL {
@@ -321,17 +300,14 @@ impl FromSql for Value {
             _ => Err(Error::InvalidColumnType),
         }
     }
-
-    unsafe fn column_has_valid_sqlite_type(_: *mut sqlite3_stmt, _: c_int) -> bool {
-        true
-    }
 }
 
 #[cfg(test)]
 #[cfg_attr(feature="clippy", allow(similar_names))]
 mod test {
+    extern crate time;
+
     use Connection;
-    use super::time;
     use Error;
     use libc::{c_int, c_double};
     use std::f64::EPSILON;
@@ -362,20 +338,6 @@ mod test {
 
         let from: String = db.query_row("SELECT t FROM foo", &[], |r| r.get(0)).unwrap();
         assert_eq!(from, s);
-    }
-
-    #[test]
-    fn test_timespec() {
-        let db = checked_memory_handle();
-
-        let ts = time::Timespec {
-            sec: 10_000,
-            nsec: 0,
-        };
-        db.execute("INSERT INTO foo(t) VALUES (?)", &[&ts]).unwrap();
-
-        let from: time::Timespec = db.query_row("SELECT t FROM foo", &[], |r| r.get(0)).unwrap();
-        assert_eq!(from, ts);
     }
 
     #[test]
@@ -456,7 +418,6 @@ mod test {
         assert!(is_invalid_column_type(row.get_checked::<i32, c_double>(2).err().unwrap()));
         assert!(is_invalid_column_type(row.get_checked::<i32, String>(2).err().unwrap()));
         assert!(is_invalid_column_type(row.get_checked::<i32, Vec<u8>>(2).err().unwrap()));
-        assert!(is_invalid_column_type(row.get_checked::<i32, time::Timespec>(2).err().unwrap()));
         assert!(is_invalid_column_type(row.get_checked::<i32, Option<c_double>>(2).err().unwrap()));
 
         // 3 is actually a float (c_double)
@@ -464,7 +425,6 @@ mod test {
         assert!(is_invalid_column_type(row.get_checked::<i32, i64>(3).err().unwrap()));
         assert!(is_invalid_column_type(row.get_checked::<i32, String>(3).err().unwrap()));
         assert!(is_invalid_column_type(row.get_checked::<i32, Vec<u8>>(3).err().unwrap()));
-        assert!(is_invalid_column_type(row.get_checked::<i32, time::Timespec>(3).err().unwrap()));
         assert!(is_invalid_column_type(row.get_checked::<i32, Option<c_int>>(3).err().unwrap()));
 
         // 4 is actually NULL
