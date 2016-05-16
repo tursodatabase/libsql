@@ -1,5 +1,6 @@
 # Version UPCOMING (...)
 
+* Adds support for serializing types from the `serde_json` crate. Requires the `serde_json` feature.
 * Adds support for serializing types from the `chrono` crate. Requires the `chrono` feature.
 * Removes `load_extension` feature from `libsqlite3-sys`. `load_extension` is still available
   on rusqlite itself.
