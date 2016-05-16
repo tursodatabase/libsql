@@ -1002,17 +1002,15 @@ pub type SqliteRows<'stmt> = Rows<'stmt>;
 /// `min`/`max` (which could return a stale row unless the last row happened to be the min or max,
 /// respectively).
 pub struct Rows<'stmt> {
-    stmt: &'stmt Statement<'stmt>,
+    stmt: Option<&'stmt Statement<'stmt>>,
     current_row: Rc<Cell<c_int>>,
-    done: bool,
 }
 
 impl<'stmt> Rows<'stmt> {
     fn new(stmt: &'stmt Statement<'stmt>) -> Rows<'stmt> {
         Rows {
-            stmt: stmt,
+            stmt: Some(stmt),
             current_row: Rc::new(Cell::new(0)),
-            done: false,
         }
     }
 
@@ -1022,42 +1020,47 @@ impl<'stmt> Rows<'stmt> {
             None => Err(Error::QueryReturnedNoRows),
         }
     }
+
+    fn reset(&mut self) {
+        if let Some(stmt) = self.stmt.take() {
+            unsafe {
+                ffi::sqlite3_reset(stmt.stmt);
+            }
+        }
+    }
 }
 
 impl<'stmt> Iterator for Rows<'stmt> {
     type Item = Result<Row<'stmt>>;
 
     fn next(&mut self) -> Option<Result<Row<'stmt>>> {
-        if self.done {
-            return None;
-        }
-        match unsafe { ffi::sqlite3_step(self.stmt.stmt) } {
-            ffi::SQLITE_ROW => {
-                let current_row = self.current_row.get() + 1;
-                self.current_row.set(current_row);
-                Some(Ok(Row {
-                    stmt: self.stmt,
-                    current_row: self.current_row.clone(),
-                    row_idx: current_row,
-                }))
+        self.stmt.and_then(|stmt| {
+            match unsafe { ffi::sqlite3_step(stmt.stmt) } {
+                ffi::SQLITE_ROW => {
+                    let current_row = self.current_row.get() + 1;
+                    self.current_row.set(current_row);
+                    Some(Ok(Row {
+                        stmt: stmt,
+                        current_row: self.current_row.clone(),
+                        row_idx: current_row,
+                    }))
+                }
+                ffi::SQLITE_DONE => {
+                    self.reset();
+                    None
+                }
+                code => {
+                    self.reset();
+                    Some(Err(stmt.conn.decode_result(code).unwrap_err()))
+                }
             }
-            ffi::SQLITE_DONE => {
-                self.done = true;
-                None
-            }
-            code => {
-                self.done = true;
-                Some(Err(self.stmt.conn.decode_result(code).unwrap_err()))
-            }
-        }
+        })
     }
 }
 
 impl<'stmt> Drop for Rows<'stmt> {
     fn drop(&mut self) {
-        unsafe {
-            ffi::sqlite3_reset(self.stmt.stmt);
-        }
+        self.reset();
     }
 }
 
