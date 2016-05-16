@@ -16,7 +16,7 @@ impl<'conn> Statement<'conn> {
         match changes {
             1 if prev_rowid != new_rowid => Ok(new_rowid),
             1 if prev_rowid == new_rowid => Err(Error::StatementFailedToInsertRow),
-            _ => Err(Error::StatementChangedRows(changes))
+            _ => Err(Error::StatementChangedRows(changes)),
         }
     }
 
