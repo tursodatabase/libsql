@@ -915,6 +915,9 @@ do_test shell1-5.0 {
   }
 } {}
 
+# These test cases do not work on MinGW
+if 0 {
+
 # The string used here is the word "test" in Chinese.
 # In UTF-8, it is encoded as: \xE6\xB5\x8B\xE8\xAF\x95
 set test \u6D4B\u8BD5
@@ -951,5 +954,6 @@ do_test shell1-6.1 {
   }
   forcedelete test3.db
 } {}
+}
 
 finish_test

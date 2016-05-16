@@ -1,5 +1,5 @@
-C Improvements\sto\sa\scomment\sin\sthe\spcache.c\sfile.\s\sNo\schanges\sto\scode.
-D 2016-05-13T17:22:33.997
+C Disable\sshell.exe\stest\scases\sfor\sUTF8\sfilenames\sas\sthey\sdo\snot\swork\son\sMinGW.
+D 2016-05-16T11:55:09.207
 F Makefile.in 9eda6e1c90d05c199c3ec8a7069b0682ad307657
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc db82b35aef27f412fef14d8534afc022138bcdfd
@@ -1053,7 +1053,7 @@ F test/sharedA.test 0cdf1a76dfa00e6beee66af5b534b1e8df2720f5
 F test/sharedB.test 16cc7178e20965d75278f410943109b77b2e645e
 F test/shared_err.test 2f2aee20db294b9924e81f6ccbe60f19e21e8506
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test 023657b3f8ba108dbd5ff2ebc8fceb3cf6d4ff9f
+F test/shell1.test c90b0415cea6eeefb86b4ab1651b06247922ca52
 F test/shell2.test e242a9912f44f4c23c3d1d802a83e934e84c853b
 F test/shell3.test da513d522ef6f01cee8475dcf8332bff8982b3dd
 F test/shell4.test 69995ee1cc278eb149aa8746ce1f935f4eaf98b9
@@ -1488,7 +1488,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 771c5411e9ebcad00fb4b97556b519488284b87b
-R fc31f84edb2e71fa53cb5f4572b3042f
+P b369980f0c4550a9034833caa2c7c85d6030f5ff
+R d8533b8fd6cbe0fbe7678e18e240aa96
 U drh
-Z 0bbb954743a2d2dee1416e855a012aec
+Z 2e128c8e8599dacb44997bdb31a5993e
