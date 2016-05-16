@@ -91,10 +91,11 @@ impl FromSql for NaiveDateTime {
     }
 }
 
-/// Date and time with time zone => RFC3339 timestamp ("YYYY-MM-DDTHH:MM:SS.SSS[+-]HH:MM").
-impl<Tz: TimeZone> ToSql for DateTime<Tz> where Tz::Offset: ::std::fmt::Display {
+/// Date and time with time zone => UTC RFC3339 timestamp ("YYYY-MM-DDTHH:MM:SS.SSS+00:00").
+impl<Tz: TimeZone> ToSql for DateTime<Tz> {
     unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
-        self.to_rfc3339().bind_parameter(stmt, col)
+        let utc_dt = self.with_timezone(&UTC);
+        utc_dt.to_rfc3339().bind_parameter(stmt, col)
     }
 }
 
@@ -205,9 +206,10 @@ mod test {
 
         db.execute("INSERT INTO foo (t) VALUES (?)", &[&local]).unwrap();
 
+        // Stored string should be in UTC
         let s: String = db.query_row("SELECT t FROM foo", &[], |r| r.get(0)).unwrap();
-        let offset = Local.offset_from_utc_datetime(&dt);
-        assert_eq!(format!("2016-02-23T23:56:04.789{:}", offset), s);
+        assert!(s.ends_with("+00:00"));
+
         let v: DateTime<Local> = db.query_row("SELECT t FROM foo", &[], |r| r.get(0)).unwrap();
         assert_eq!(local, v);
     }
