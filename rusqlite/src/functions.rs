@@ -333,7 +333,9 @@ impl<'a> Context<'a> {
 ///
 /// `A` is the type of the aggregation context and `T` is the type of the final result.
 /// Implementations should be stateless.
-pub trait Aggregate<A, T> where T: ToResult {
+pub trait Aggregate<A, T>
+    where T: ToResult
+{
     /// Initializes the aggregation context. Will be called prior to the first call
     /// to `step()` to set up the context for an invocation of the function. (Note:
     /// `init()` will not be called if the there are no rows.)
@@ -769,16 +771,16 @@ mod test {
     fn test_varargs_function() {
         let db = Connection::open_in_memory().unwrap();
         db.create_scalar_function("my_concat", -1, true, |ctx| {
-              let mut ret = String::new();
+                let mut ret = String::new();
 
-              for idx in 0..ctx.len() {
-                  let s = try!(ctx.get::<String>(idx));
-                  ret.push_str(&s);
-              }
+                for idx in 0..ctx.len() {
+                    let s = try!(ctx.get::<String>(idx));
+                    ret.push_str(&s);
+                }
 
-              Ok(ret)
-          })
-          .unwrap();
+                Ok(ret)
+            })
+            .unwrap();
 
         for &(expected, query) in &[("", "SELECT my_concat()"),
                                     ("onetwo", "SELECT my_concat('one', 'two')"),
@@ -829,18 +831,18 @@ mod test {
         // sum should return NULL when given no columns (contrast with count below)
         let no_result = "SELECT my_sum(i) FROM (SELECT 2 AS i WHERE 1 <> 1)";
         let result: Option<i64> = db.query_row(no_result, &[], |r| r.get(0))
-                                    .unwrap();
+            .unwrap();
         assert!(result.is_none());
 
         let single_sum = "SELECT my_sum(i) FROM (SELECT 2 AS i UNION ALL SELECT 2)";
         let result: i64 = db.query_row(single_sum, &[], |r| r.get(0))
-                            .unwrap();
+            .unwrap();
         assert_eq!(4, result);
 
         let dual_sum = "SELECT my_sum(i), my_sum(j) FROM (SELECT 2 AS i, 1 AS j UNION ALL SELECT \
                         2, 1)";
         let result: (i64, i64) = db.query_row(dual_sum, &[], |r| (r.get(0), r.get(1)))
-                                   .unwrap();
+            .unwrap();
         assert_eq!((4, 2), result);
     }
 
@@ -856,7 +858,7 @@ mod test {
 
         let single_sum = "SELECT my_count(i) FROM (SELECT 2 AS i UNION ALL SELECT 2)";
         let result: i64 = db.query_row(single_sum, &[], |r| r.get(0))
-                            .unwrap();
+            .unwrap();
         assert_eq!(2, result);
     }
 }

@@ -521,8 +521,8 @@ impl Connection {
 impl fmt::Debug for Connection {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("Connection")
-         .field("path", &self.path)
-         .finish()
+            .field("path", &self.path)
+            .finish()
     }
 }
 
@@ -929,10 +929,10 @@ impl<'conn> fmt::Debug for Statement<'conn> {
             str::from_utf8(c_slice)
         };
         f.debug_struct("Statement")
-         .field("conn", self.conn)
-         .field("stmt", &self.stmt)
-         .field("sql", &sql)
-         .finish()
+            .field("conn", self.conn)
+            .field("stmt", &self.stmt)
+            .field("sql", &sql)
+            .finish()
     }
 }
 
@@ -949,7 +949,8 @@ pub struct MappedRows<'stmt, F> {
     map: F,
 }
 
-impl<'stmt, T, F> Iterator for MappedRows<'stmt, F> where F: FnMut(&Row) -> T
+impl<'stmt, T, F> Iterator for MappedRows<'stmt, F>
+    where F: FnMut(&Row) -> T
 {
     type Item = Result<T>;
 
@@ -974,7 +975,7 @@ impl<'stmt, T, E, F> Iterator for AndThenRows<'stmt, F>
     fn next(&mut self) -> Option<Self::Item> {
         self.rows.next().map(|row_result| {
             row_result.map_err(E::from)
-                      .and_then(|row| (self.map)(&row))
+                .and_then(|row| (self.map)(&row))
         })
     }
 }
