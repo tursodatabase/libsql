@@ -31,9 +31,9 @@ impl FromSql for Value {
                 let blob = try!(Vec::<u8>::column_result(stmt, col));
                 serde_json::from_slice(&blob)
             }
-            _ => return Err(Error::InvalidColumnType)
+            _ => return Err(Error::InvalidColumnType),
         };
-        value_result.map_err(|err| { Error::FromSqlConversionFailure(Box::new(err)) })
+        value_result.map_err(|err| Error::FromSqlConversionFailure(Box::new(err)))
     }
 }
 
@@ -55,8 +55,8 @@ mod test {
         let json = r#"{"foo": 13, "bar": "baz"}"#;
         let data: serde_json::Value = serde_json::from_str(json).unwrap();
         db.execute("INSERT INTO foo (t, b) VALUES (?, ?)",
-                   &[&data, &json.as_bytes()])
-          .unwrap();
+                     &[&data, &json.as_bytes()])
+            .unwrap();
 
         let t: serde_json::Value = db.query_row("SELECT t FROM foo", &[], |r| r.get(0)).unwrap();
         assert_eq!(data, t);
