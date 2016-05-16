@@ -129,7 +129,7 @@ impl FromSql for DateTime<Local> {
 #[cfg(test)]
 mod test {
     use Connection;
-    use super::chrono::{DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, UTC};
+    use super::chrono::{DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, UTC, Duration};
 
     fn checked_memory_handle() -> Connection {
         let db = Connection::open_in_memory().unwrap();
@@ -192,8 +192,15 @@ mod test {
 
         let s: String = db.query_row("SELECT t FROM foo", &[], |r| r.get(0)).unwrap();
         assert_eq!("2016-02-23T23:56:04.789+00:00", s);
-        let v: DateTime<UTC> = db.query_row("SELECT t FROM foo", &[], |r| r.get(0)).unwrap();
-        assert_eq!(utc, v);
+
+        let v1: DateTime<UTC> = db.query_row("SELECT t FROM foo", &[], |r| r.get(0)).unwrap();
+        assert_eq!(utc, v1);
+
+        let v2: DateTime<UTC> = db.query_row("SELECT '2016-02-23 23:56:04.789'", &[], |r| r.get(0)).unwrap();
+        assert_eq!(utc, v2);
+
+        let v3: DateTime<UTC> = db.query_row("SELECT '2016-02-23 23:56:04'", &[], |r| r.get(0)).unwrap();
+        assert_eq!(utc - Duration::milliseconds(789), v3);
     }
 
     #[test]
