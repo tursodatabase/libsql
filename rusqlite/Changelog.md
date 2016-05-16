@@ -1,5 +1,7 @@
 # Version UPCOMING (...)
 
+* Adds `insert` convenience method to `Statement` which returns the row ID of an inserted row.
+* Adds `exists` convenience method returning whether a query finds one or more rows.
 * Adds support for serializing types from the `serde_json` crate. Requires the `serde_json` feature.
 * Adds support for serializing types from the `chrono` crate. Requires the `chrono` feature.
 * Removes `load_extension` feature from `libsqlite3-sys`. `load_extension` is still available
