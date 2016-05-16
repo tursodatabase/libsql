@@ -52,8 +52,6 @@
 //! }
 //! ```
 
-extern crate time;
-
 use libc::{c_int, c_double, c_char};
 use std::ffi::CStr;
 use std::mem;
@@ -66,7 +64,11 @@ pub use ffi::sqlite3_column_type;
 
 pub use ffi::{SQLITE_INTEGER, SQLITE_FLOAT, SQLITE_TEXT, SQLITE_BLOB, SQLITE_NULL};
 
-const SQLITE_DATETIME_FMT: &'static str = "%Y-%m-%d %H:%M:%S";
+mod time;
+#[cfg(feature = "chrono")]
+mod chrono;
+#[cfg(feature = "serde_json")]
+mod serde_json;
 
 /// A trait for types that can be converted into SQLite values.
 pub trait ToSql {
@@ -102,9 +104,10 @@ raw_to_impl!(c_double, sqlite3_bind_double);
 
 impl ToSql for bool {
     unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
-        match *self {
-            true => ffi::sqlite3_bind_int(stmt, col, 1),
-            _ => ffi::sqlite3_bind_int(stmt, col, 0),
+        if *self {
+            ffi::sqlite3_bind_int(stmt, col, 1)
+        } else {
+            ffi::sqlite3_bind_int(stmt, col, 0)
         }
     }
 }
@@ -150,13 +153,6 @@ impl<'a> ToSql for &'a [u8] {
 impl ToSql for Vec<u8> {
     unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
         (&self[..]).bind_parameter(stmt, col)
-    }
-}
-
-impl ToSql for time::Timespec {
-    unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
-        let time_str = time::at_utc(*self).strftime(SQLITE_DATETIME_FMT).unwrap().to_string();
-        time_str.bind_parameter(stmt, col)
     }
 }
 
@@ -229,7 +225,7 @@ impl FromSql for String {
     unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> Result<String> {
         let c_text = ffi::sqlite3_column_text(stmt, col);
         if c_text.is_null() {
-            Ok("".to_string())
+            Ok("".to_owned())
         } else {
             let c_slice = CStr::from_ptr(c_text as *const c_char).to_bytes();
             let utf8_str = try!(str::from_utf8(c_slice));
@@ -262,28 +258,12 @@ impl FromSql for Vec<u8> {
     }
 }
 
-impl FromSql for time::Timespec {
-    unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> Result<time::Timespec> {
-        let col_str = FromSql::column_result(stmt, col);
-        col_str.and_then(|txt: String| {
-            match time::strptime(&txt, SQLITE_DATETIME_FMT) {
-                Ok(tm) => Ok(tm.to_timespec()),
-                Err(err) => Err(Error::FromSqlConversionFailure(Box::new(err))),
-            }
-        })
-    }
-
-    unsafe fn column_has_valid_sqlite_type(stmt: *mut sqlite3_stmt, col: c_int) -> bool {
-        String::column_has_valid_sqlite_type(stmt, col)
-    }
-}
-
 impl<T: FromSql> FromSql for Option<T> {
     unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> Result<Option<T>> {
         if sqlite3_column_type(stmt, col) == ffi::SQLITE_NULL {
             Ok(None)
         } else {
-            FromSql::column_result(stmt, col).map(|t| Some(t))
+            FromSql::column_result(stmt, col).map(Some)
         }
     }
 
@@ -312,26 +292,25 @@ pub enum Value {
 impl FromSql for Value {
     unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> Result<Value> {
         match sqlite3_column_type(stmt, col) {
-            ffi::SQLITE_TEXT => FromSql::column_result(stmt, col).map(|t| Value::Text(t)),
+            ffi::SQLITE_TEXT => FromSql::column_result(stmt, col).map(Value::Text),
             ffi::SQLITE_INTEGER => Ok(Value::Integer(ffi::sqlite3_column_int64(stmt, col))),
             ffi::SQLITE_FLOAT => Ok(Value::Real(ffi::sqlite3_column_double(stmt, col))),
             ffi::SQLITE_NULL => Ok(Value::Null),
-            ffi::SQLITE_BLOB => FromSql::column_result(stmt, col).map(|t| Value::Blob(t)),
+            ffi::SQLITE_BLOB => FromSql::column_result(stmt, col).map(Value::Blob),
             _ => Err(Error::InvalidColumnType),
         }
-    }
-
-    unsafe fn column_has_valid_sqlite_type(_: *mut sqlite3_stmt, _: c_int) -> bool {
-        true
     }
 }
 
 #[cfg(test)]
+#[cfg_attr(feature="clippy", allow(similar_names))]
 mod test {
+    extern crate time;
+
     use Connection;
-    use super::time;
     use Error;
     use libc::{c_int, c_double};
+    use std::f64::EPSILON;
 
     fn checked_memory_handle() -> Connection {
         let db = Connection::open_in_memory().unwrap();
@@ -355,24 +334,10 @@ mod test {
         let db = checked_memory_handle();
 
         let s = "hello, world!";
-        db.execute("INSERT INTO foo(t) VALUES (?)", &[&s.to_string()]).unwrap();
+        db.execute("INSERT INTO foo(t) VALUES (?)", &[&s.to_owned()]).unwrap();
 
         let from: String = db.query_row("SELECT t FROM foo", &[], |r| r.get(0)).unwrap();
         assert_eq!(from, s);
-    }
-
-    #[test]
-    fn test_timespec() {
-        let db = checked_memory_handle();
-
-        let ts = time::Timespec {
-            sec: 10_000,
-            nsec: 0,
-        };
-        db.execute("INSERT INTO foo(t) VALUES (?)", &[&ts]).unwrap();
-
-        let from: time::Timespec = db.query_row("SELECT t FROM foo", &[], |r| r.get(0)).unwrap();
-        assert_eq!(from, ts);
     }
 
     #[test]
@@ -402,6 +367,7 @@ mod test {
     }
 
     #[test]
+    #[cfg_attr(feature="clippy", allow(cyclomatic_complexity))]
     fn test_mismatched_types() {
         fn is_invalid_column_type(err: Error) -> bool {
             match err {
@@ -422,54 +388,52 @@ mod test {
         let row = rows.next().unwrap().unwrap();
 
         // check the correct types come back as expected
-        assert_eq!(vec![1, 2], row.get_checked::<i32,Vec<u8>>(0).unwrap());
-        assert_eq!("text", row.get_checked::<i32,String>(1).unwrap());
-        assert_eq!(1, row.get_checked::<i32,c_int>(2).unwrap());
-        assert_eq!(1.5, row.get_checked::<i32,c_double>(3).unwrap());
-        assert!(row.get_checked::<i32,Option<c_int>>(4).unwrap().is_none());
-        assert!(row.get_checked::<i32,Option<c_double>>(4).unwrap().is_none());
-        assert!(row.get_checked::<i32,Option<String>>(4).unwrap().is_none());
+        assert_eq!(vec![1, 2], row.get_checked::<i32, Vec<u8>>(0).unwrap());
+        assert_eq!("text", row.get_checked::<i32, String>(1).unwrap());
+        assert_eq!(1, row.get_checked::<i32, c_int>(2).unwrap());
+        assert!((1.5 - row.get_checked::<i32, c_double>(3).unwrap()).abs() < EPSILON);
+        assert!(row.get_checked::<i32, Option<c_int>>(4).unwrap().is_none());
+        assert!(row.get_checked::<i32, Option<c_double>>(4).unwrap().is_none());
+        assert!(row.get_checked::<i32, Option<String>>(4).unwrap().is_none());
 
         // check some invalid types
 
         // 0 is actually a blob (Vec<u8>)
-        assert!(is_invalid_column_type(row.get_checked::<i32,c_int>(0).err().unwrap()));
-        assert!(is_invalid_column_type(row.get_checked::<i32,c_int>(0).err().unwrap()));
-        assert!(is_invalid_column_type(row.get_checked::<i32,i64>(0).err().unwrap()));
-        assert!(is_invalid_column_type(row.get_checked::<i32,c_double>(0).err().unwrap()));
-        assert!(is_invalid_column_type(row.get_checked::<i32,String>(0).err().unwrap()));
-        assert!(is_invalid_column_type(row.get_checked::<i32,time::Timespec>(0).err().unwrap()));
-        assert!(is_invalid_column_type(row.get_checked::<i32,Option<c_int>>(0).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<i32, c_int>(0).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<i32, c_int>(0).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<i32, i64>(0).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<i32, c_double>(0).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<i32, String>(0).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<i32, time::Timespec>(0).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<i32, Option<c_int>>(0).err().unwrap()));
 
         // 1 is actually a text (String)
-        assert!(is_invalid_column_type(row.get_checked::<i32,c_int>(1).err().unwrap()));
-        assert!(is_invalid_column_type(row.get_checked::<i32,i64>(1).err().unwrap()));
-        assert!(is_invalid_column_type(row.get_checked::<i32,c_double>(1).err().unwrap()));
-        assert!(is_invalid_column_type(row.get_checked::<i32,Vec<u8>>(1).err().unwrap()));
-        assert!(is_invalid_column_type(row.get_checked::<i32,Option<c_int>>(1).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<i32, c_int>(1).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<i32, i64>(1).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<i32, c_double>(1).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<i32, Vec<u8>>(1).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<i32, Option<c_int>>(1).err().unwrap()));
 
         // 2 is actually an integer
-        assert!(is_invalid_column_type(row.get_checked::<i32,c_double>(2).err().unwrap()));
-        assert!(is_invalid_column_type(row.get_checked::<i32,String>(2).err().unwrap()));
-        assert!(is_invalid_column_type(row.get_checked::<i32,Vec<u8>>(2).err().unwrap()));
-        assert!(is_invalid_column_type(row.get_checked::<i32,time::Timespec>(2).err().unwrap()));
-        assert!(is_invalid_column_type(row.get_checked::<i32,Option<c_double>>(2).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<i32, c_double>(2).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<i32, String>(2).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<i32, Vec<u8>>(2).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<i32, Option<c_double>>(2).err().unwrap()));
 
         // 3 is actually a float (c_double)
-        assert!(is_invalid_column_type(row.get_checked::<i32,c_int>(3).err().unwrap()));
-        assert!(is_invalid_column_type(row.get_checked::<i32,i64>(3).err().unwrap()));
-        assert!(is_invalid_column_type(row.get_checked::<i32,String>(3).err().unwrap()));
-        assert!(is_invalid_column_type(row.get_checked::<i32,Vec<u8>>(3).err().unwrap()));
-        assert!(is_invalid_column_type(row.get_checked::<i32,time::Timespec>(3).err().unwrap()));
-        assert!(is_invalid_column_type(row.get_checked::<i32,Option<c_int>>(3).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<i32, c_int>(3).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<i32, i64>(3).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<i32, String>(3).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<i32, Vec<u8>>(3).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<i32, Option<c_int>>(3).err().unwrap()));
 
         // 4 is actually NULL
-        assert!(is_invalid_column_type(row.get_checked::<i32,c_int>(4).err().unwrap()));
-        assert!(is_invalid_column_type(row.get_checked::<i32,i64>(4).err().unwrap()));
-        assert!(is_invalid_column_type(row.get_checked::<i32,c_double>(4).err().unwrap()));
-        assert!(is_invalid_column_type(row.get_checked::<i32,String>(4).err().unwrap()));
-        assert!(is_invalid_column_type(row.get_checked::<i32,Vec<u8>>(4).err().unwrap()));
-        assert!(is_invalid_column_type(row.get_checked::<i32,time::Timespec>(4).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<i32, c_int>(4).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<i32, i64>(4).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<i32, c_double>(4).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<i32, String>(4).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<i32, Vec<u8>>(4).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<i32, time::Timespec>(4).err().unwrap()));
     }
 
     #[test]
@@ -486,11 +450,14 @@ mod test {
 
         let row = rows.next().unwrap().unwrap();
         assert_eq!(Value::Blob(vec![1, 2]),
-                   row.get_checked::<i32,Value>(0).unwrap());
+                   row.get_checked::<i32, Value>(0).unwrap());
         assert_eq!(Value::Text(String::from("text")),
-                   row.get_checked::<i32,Value>(1).unwrap());
-        assert_eq!(Value::Integer(1), row.get_checked::<i32,Value>(2).unwrap());
-        assert_eq!(Value::Real(1.5), row.get_checked::<i32,Value>(3).unwrap());
-        assert_eq!(Value::Null, row.get_checked::<i32,Value>(4).unwrap());
+                   row.get_checked::<i32, Value>(1).unwrap());
+        assert_eq!(Value::Integer(1), row.get_checked::<i32, Value>(2).unwrap());
+        match row.get_checked::<i32, Value>(3).unwrap() {
+            Value::Real(val) => assert!((1.5 - val).abs() < EPSILON),
+            x => panic!("Invalid Value {:?}", x),
+        }
+        assert_eq!(Value::Null, row.get_checked::<i32, Value>(4).unwrap());
     }
 }

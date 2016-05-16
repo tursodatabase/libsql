@@ -352,7 +352,8 @@ mod test {
 
         {
             // ... but it should've written the first 10 bytes
-            let mut blob = db.blob_open(DatabaseName::Main, "test", "content", rowid, false).unwrap();
+            let mut blob = db.blob_open(DatabaseName::Main, "test", "content", rowid, false)
+                             .unwrap();
             let mut bytes = [0u8; 10];
             assert_eq!(10, blob.read(&mut bytes[..]).unwrap());
             assert_eq!(b"0123456701", &bytes);
@@ -369,7 +370,8 @@ mod test {
 
         {
             // ... but it should've written the first 10 bytes
-            let mut blob = db.blob_open(DatabaseName::Main, "test", "content", rowid, false).unwrap();
+            let mut blob = db.blob_open(DatabaseName::Main, "test", "content", rowid, false)
+                             .unwrap();
             let mut bytes = [0u8; 10];
             assert_eq!(10, blob.read(&mut bytes[..]).unwrap());
             assert_eq!(b"aaaaaaaaaa", &bytes);

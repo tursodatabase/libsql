@@ -1,9 +1,19 @@
 # Version UPCOMING (...)
 
+* Adds support for serializing types from the `serde_json` crate. Requires the `serde_json` feature.
+* Adds support for serializing types from the `chrono` crate. Requires the `chrono` feature.
+* Removes `load_extension` feature from `libsqlite3-sys`. `load_extension` is still available
+  on rusqlite itself.
+* Fixes crash on nightly Rust when using the `trace` feature.
+* Adds optional `clippy` feature and addresses issues it found.
 * Adds `column_count()` method to `Statement` and `Row`.
 * Adds `types::Value` for dynamic column types.
 * Adds support for user-defined aggregate functions (behind the existing `functions` Cargo feature).
 * Introduces a `RowIndex` trait allowing columns to be fetched via index (as before) or name (new).
+* Introduces `ZeroBlob` type under the `blob` module/feature exposing SQLite's zeroblob API.
+* Adds CI testing for Windows via AppVeyor.
+* Fixes a warning building libsqlite3-sys under Rust 1.6.
+* Adds an unsafe `handle()` method to `Connection`. Please file an issue if you actually use it.
 
 # Version 0.6.0 (2015-12-17)
 
