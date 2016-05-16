@@ -21,7 +21,7 @@ trace = []
 
 [dependencies]
 time = "~0.1.0"
-bitflags = "~0.1"
+bitflags = "0.7"
 libc = "~0.2"
 clippy = {version = "~0.0.58", optional = true}
 chrono = { version = "~0.2", optional = true }
