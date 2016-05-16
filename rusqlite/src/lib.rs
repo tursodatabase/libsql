@@ -87,6 +87,7 @@ pub mod types;
 mod transaction;
 mod named_params;
 mod error;
+mod convenient;
 #[cfg(feature = "load_extension")]mod load_extension_guard;
 #[cfg(feature = "trace")]pub mod trace;
 #[cfg(feature = "backup")]pub mod backup;
