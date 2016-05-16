@@ -14,7 +14,6 @@ use ffi::sqlite3_column_type;
 
 const JULIAN_DAY: f64 = 2440587.5; // 1970-01-01 00:00:00 is JD 2440587.5
 const DAY_IN_SECONDS: f64 = 86400.0;
-const JULIAN_DAY_GREGORIAN: f64 = 1721424.5; // Jan 1, 1 proleptic Gregorian calendar
 
 /// ISO 8601 calendar date without timezone => "YYYY-MM-DD"
 impl ToSql for NaiveDate {
@@ -24,35 +23,18 @@ impl ToSql for NaiveDate {
     }
 }
 
-/// "YYYY-MM-DD" or Julian Day => ISO 8601 calendar date without timezone.
+/// "YYYY-MM-DD" => ISO 8601 calendar date without timezone.
 impl FromSql for NaiveDate {
     unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> Result<NaiveDate> {
-        match sqlite3_column_type(stmt, col) {
-            ffi::SQLITE_TEXT => {
-                let s = try!(String::column_result(stmt, col));
-                match NaiveDate::parse_from_str(&s, "%Y-%m-%d") {
-                    Ok(dt) => Ok(dt),
-                    Err(err) => Err(Error::FromSqlConversionFailure(Box::new(err))),
-                }
-            }
-            ffi::SQLITE_FLOAT => {
-                // if column affinity is REAL and an integer/unix timestamp is inserted => unexpected result
-                let mut jd = ffi::sqlite3_column_double(stmt, col);
-                jd -= JULIAN_DAY_GREGORIAN;
-                if jd < i32::min_value() as f64 || jd > i32::max_value() as f64 {
-                    let err: Box<error::Error + Sync + Send> = "out-of-range date".into();
-                    return Err(Error::FromSqlConversionFailure(err));
-                }
-                match NaiveDate::from_num_days_from_ce_opt(jd as i32) {
-                    Some(dt) => Ok(dt),
-                    None => {
-                        let err: Box<error::Error + Sync + Send> = "out-of-range date".into();
-                        Err(Error::FromSqlConversionFailure(err))
-                    }
-                }
-            }
-            _ => Err(Error::InvalidColumnType),
+        let s = try!(String::column_result(stmt, col));
+        match NaiveDate::parse_from_str(&s, "%Y-%m-%d") {
+            Ok(dt) => Ok(dt),
+            Err(err) => Err(Error::FromSqlConversionFailure(Box::new(err))),
         }
+    }
+
+    unsafe fn column_has_valid_sqlite_type(stmt: *mut sqlite3_stmt, col: c_int) -> bool {
+        String::column_has_valid_sqlite_type(stmt, col)
     }
 }
 
@@ -80,7 +62,7 @@ impl FromSql for NaiveTime {
     }
 
     unsafe fn column_has_valid_sqlite_type(stmt: *mut sqlite3_stmt, col: c_int) -> bool {
-        sqlite3_column_type(stmt, col) == ffi::SQLITE_TEXT
+        String::column_has_valid_sqlite_type(stmt, col)
     }
 }
 
@@ -256,14 +238,11 @@ mod test {
         let db = checked_memory_handle();
         let date = NaiveDate::from_ymd(2016, 2, 23);
         db.execute("INSERT INTO foo (t) VALUES (?)", &[&date]).unwrap();
-        db.execute("UPDATE foo SET f = julianday(t)", &[]).unwrap();
 
         let s: String = db.query_row("SELECT t FROM foo", &[], |r| r.get(0)).unwrap();
         assert_eq!("2016-02-23", s);
         let t: NaiveDate = db.query_row("SELECT t FROM foo", &[], |r| r.get(0)).unwrap();
         assert_eq!(date, t);
-        let f: NaiveDate = db.query_row("SELECT f FROM foo", &[], |r| r.get(0)).unwrap();
-        assert_eq!(date, f);
     }
 
     #[test]
