@@ -1,5 +1,5 @@
-C Disable\sshell.exe\stest\scases\sfor\sUTF8\sfilenames\sas\sthey\sdo\snot\swork\son\sMinGW.
-D 2016-05-16T11:55:09.207
+C Do\snot\srun\ssnapshot_fault.test\sas\spart\sof\sthe\sinmemory_journal\spermutation.
+D 2016-05-16T14:35:15.401
 F Makefile.in 9eda6e1c90d05c199c3ec8a7069b0682ad307657
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc db82b35aef27f412fef14d8534afc022138bcdfd
@@ -977,7 +977,7 @@ F test/parser1.test 222b5cbf3e2e659fec1bf7d723488c8b9c94f1d0
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
-F test/permutations.test b6b3e165fdc1b8c82a820033646dbfc6a7a01746
+F test/permutations.test 544a2f317fc5045bc512ae432f89eae303c0d640
 F test/pragma.test 1e94755164a3a3264cd39836de4bebcb7809e5f8
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
 F test/pragma3.test 14c12bc5352b1e100e0b6b44f371053a81ccf8ed
@@ -1488,7 +1488,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b369980f0c4550a9034833caa2c7c85d6030f5ff
-R d8533b8fd6cbe0fbe7678e18e240aa96
-U drh
-Z 2e128c8e8599dacb44997bdb31a5993e
+P 386bcbba8ed733ee84958e6bd6e9d33c150e6c18
+R 0e39e66ffd1d7cd6d62e8fa571ff36a1
+U dan
+Z 786140f96f9b408e2c11236687959ca4
