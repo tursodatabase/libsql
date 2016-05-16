@@ -300,10 +300,6 @@ impl FromSql for Value {
             _ => Err(Error::InvalidColumnType),
         }
     }
-
-    unsafe fn column_has_valid_sqlite_type(_: *mut sqlite3_stmt, _: c_int) -> bool {
-        true
-    }
 }
 
 #[cfg(test)]
