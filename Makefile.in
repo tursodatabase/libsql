@@ -82,7 +82,6 @@ TEMP_STORE = -DSQLITE_TEMP_STORE=@TEMP_STORE@
 # The same set of OMIT and ENABLE flags should be passed to the 
 # LEMON parser generator and the mkkeywordhash tool as well.
 OPT_FEATURE_FLAGS = @OPT_FEATURE_FLAGS@
-OPT_FEATURE_FLAGS += -DSQLITE_ENABLE_SESSION -DSQLITE_ENABLE_PREUPDATE_HOOK
 
 TCC += $(OPT_FEATURE_FLAGS)
 

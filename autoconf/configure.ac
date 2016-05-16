@@ -103,7 +103,7 @@ AC_SUBST(DYNAMIC_EXTENSION_FLAGS)
 AC_ARG_ENABLE(fts5, [AS_HELP_STRING(
   [--enable-fts5], [include fts5 support [default=no]])], 
   [], [enable_fts5=no])
-if test x"$enable_fts5" == "xyes"; then
+if test x"$enable_fts5" = "xyes"; then
   AC_SEARCH_LIBS(log, m)
   FTS5_FLAGS=-DSQLITE_ENABLE_FTS5
 fi
@@ -116,10 +116,22 @@ AC_SUBST(FTS5_FLAGS)
 AC_ARG_ENABLE(json1, [AS_HELP_STRING(
   [--enable-json1], [include json1 support [default=no]])], 
   [], [enable_json1=no])
-if test x"$enable_json1" == "xyes"; then
+if test x"$enable_json1" = "xyes"; then
   JSON1_FLAGS=-DSQLITE_ENABLE_JSON1
 fi
 AC_SUBST(JSON1_FLAGS)
+#-----------------------------------------------------------------------
+
+#-----------------------------------------------------------------------
+#   --enable-session
+#
+AC_ARG_ENABLE(session, [AS_HELP_STRING(
+  [--enable-session], [enable the session extension [default=no]])], 
+  [], [enable_session=no])
+if test x"$enable_session" = "xyes"; then
+  SESSION_FLAGS="-DSQLITE_ENABLE_SESSION -DSQLITE_ENABLE_PREUPDATE_HOOK"
+fi
+AC_SUBST(SESSION_FLAGS)
 #-----------------------------------------------------------------------
 
 #-----------------------------------------------------------------------
@@ -129,7 +141,7 @@ AC_ARG_ENABLE(static-shell, [AS_HELP_STRING(
   [--enable-static-shell], 
   [statically link libsqlite3 into shell tool [default=yes]])], 
   [], [enable_static_shell=yes])
-if test x"$enable_static_shell" == "xyes"; then
+if test x"$enable_static_shell" = "xyes"; then
   EXTRA_SHELL_OBJ=sqlite3-sqlite3.$OBJEXT
 else
   EXTRA_SHELL_OBJ=libsqlite3.la

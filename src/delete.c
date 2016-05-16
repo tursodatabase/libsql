@@ -239,7 +239,7 @@ void sqlite3DeleteFrom(
   int addrBypass = 0;    /* Address of jump over the delete logic */
   int addrLoop = 0;      /* Top of the delete loop */
   int addrEphOpen = 0;   /* Instruction to open the Ephemeral table */
-  int bComplex;          /* True if there are triggers or FKs or or
+  int bComplex;          /* True if there are triggers or FKs or
                          ** subqueries in the WHERE clause */
  
 #ifndef SQLITE_OMIT_TRIGGER
@@ -373,8 +373,8 @@ void sqlite3DeleteFrom(
   }else
 #endif /* SQLITE_OMIT_TRUNCATE_OPTIMIZATION */
   {
-    u16 wcf = WHERE_ONEPASS_DESIRED|WHERE_DUPLICATES_OK;
-    if( pWhere && ExprHasProperty(pWhere, EP_Subquery) ) bComplex = 1;
+    u16 wcf = WHERE_ONEPASS_DESIRED|WHERE_DUPLICATES_OK|WHERE_SEEK_TABLE;
+    if( sNC.ncFlags & NC_VarSelect ) bComplex = 1;
     wcf |= (bComplex ? 0 : WHERE_ONEPASS_MULTIROW);
     if( HasRowid(pTab) ){
       /* For a rowid table, initialize the RowSet to an empty set */

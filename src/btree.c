@@ -1682,11 +1682,11 @@ static int decodeFlags(MemPage *pPage, int flagByte){
   pPage->xCellSize = cellSizePtr;
   pBt = pPage->pBt;
   if( flagByte==(PTF_LEAFDATA | PTF_INTKEY) ){
-    /* EVIDENCE-OF: R-03640-13415 A value of 5 means the page is an interior
-    ** table b-tree page. */
+    /* EVIDENCE-OF: R-07291-35328 A value of 5 (0x05) means the page is an
+    ** interior table b-tree page. */
     assert( (PTF_LEAFDATA|PTF_INTKEY)==5 );
-    /* EVIDENCE-OF: R-20501-61796 A value of 13 means the page is a leaf
-    ** table b-tree page. */
+    /* EVIDENCE-OF: R-26900-09176 A value of 13 (0x0d) means the page is a
+    ** leaf table b-tree page. */
     assert( (PTF_LEAFDATA|PTF_INTKEY|PTF_LEAF)==13 );
     pPage->intKey = 1;
     if( pPage->leaf ){
@@ -1700,11 +1700,11 @@ static int decodeFlags(MemPage *pPage, int flagByte){
     pPage->maxLocal = pBt->maxLeaf;
     pPage->minLocal = pBt->minLeaf;
   }else if( flagByte==PTF_ZERODATA ){
-    /* EVIDENCE-OF: R-27225-53936 A value of 2 means the page is an interior
-    ** index b-tree page. */
+    /* EVIDENCE-OF: R-43316-37308 A value of 2 (0x02) means the page is an
+    ** interior index b-tree page. */
     assert( (PTF_ZERODATA)==2 );
-    /* EVIDENCE-OF: R-16571-11615 A value of 10 means the page is a leaf
-    ** index b-tree page. */
+    /* EVIDENCE-OF: R-59615-42828 A value of 10 (0x0a) means the page is a
+    ** leaf index b-tree page. */
     assert( (PTF_ZERODATA|PTF_LEAF)==10 );
     pPage->intKey = 0;
     pPage->intKeyLeaf = 0;

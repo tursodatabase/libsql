@@ -198,6 +198,12 @@ DEBUG = 0
 OPTIMIZATIONS = 2
 !ENDIF
 
+# Set this to non-0 to enable support for the session extension.
+#
+!IFNDEF SESSION
+SESSION = 0
+!ENDIF
+
 # Set the source code file to be used by executables and libraries when
 # they need the amalgamation.
 #
@@ -264,6 +270,12 @@ SQLITE3EXEPDB = /pdb:sqlite3sh.pdb
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_FTS3=1
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_RTREE=1
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_COLUMN_METADATA=1
+!ENDIF
+
+# Should the session extension be enabled?  If so, add compilation options
+# to enable it.
+#
+!IF $(SESSION)!=0
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_SESSION=1
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_PREUPDATE_HOOK=1
 !ENDIF

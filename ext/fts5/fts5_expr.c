@@ -1655,6 +1655,17 @@ int sqlite3Fts5ExprClonePhrase(
     pNew->pRoot->pNear = (Fts5ExprNearset*)sqlite3Fts5MallocZero(&rc, 
         sizeof(Fts5ExprNearset) + sizeof(Fts5ExprPhrase*));
   }
+  if( rc==SQLITE_OK ){
+    Fts5Colset *pColsetOrig = pOrig->pNode->pNear->pColset;
+    if( pColsetOrig ){
+      int nByte = sizeof(Fts5Colset) + pColsetOrig->nCol * sizeof(int);
+      Fts5Colset *pColset = (Fts5Colset*)sqlite3Fts5MallocZero(&rc, nByte);
+      if( pColset ){ 
+        memcpy(pColset, pColsetOrig, nByte);
+      }
+      pNew->pRoot->pNear->pColset = pColset;
+    }
+  }
 
   for(i=0; rc==SQLITE_OK && i<pOrig->nTerm; i++){
     int tflags = 0;
