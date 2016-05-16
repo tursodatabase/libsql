@@ -102,7 +102,16 @@ impl<Tz: TimeZone> ToSql for DateTime<Tz> {
 /// RFC3339 ("YYYY-MM-DDTHH:MM:SS.SSS[+-]HH:MM") into DateTime<UTC>.
 impl FromSql for DateTime<UTC> {
     unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> Result<DateTime<UTC>> {
-        let s = try!(String::column_result(stmt, col));
+        let s = {
+            let mut s = try!(String::column_result(stmt, col));
+            if s.len() >= 11 {
+                let sbytes = s.as_mut_vec();
+                if sbytes[10] == b' ' {
+                    sbytes[10] = b'T';
+                }
+            }
+            s
+        };
         match DateTime::parse_from_rfc3339(&s) {
             Ok(dt) => Ok(dt.with_timezone(&UTC)),
             Err(_) => NaiveDateTime::column_result(stmt, col).map(|dt| UTC.from_utc_datetime(&dt)),
@@ -201,6 +210,9 @@ mod test {
 
         let v3: DateTime<UTC> = db.query_row("SELECT '2016-02-23 23:56:04'", &[], |r| r.get(0)).unwrap();
         assert_eq!(utc - Duration::milliseconds(789), v3);
+
+        let v4: DateTime<UTC> = db.query_row("SELECT '2016-02-23 23:56:04.789+00:00'", &[], |r| r.get(0)).unwrap();
+        assert_eq!(utc, v4);
     }
 
     #[test]
