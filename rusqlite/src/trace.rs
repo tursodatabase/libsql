@@ -27,9 +27,8 @@ pub unsafe fn config_log(callback: Option<fn(c_int, &str)>) -> Result<()> {
         let c_slice = unsafe { CStr::from_ptr(msg).to_bytes() };
         let callback: fn(c_int, &str) = unsafe { mem::transmute(p_arg) };
 
-        if let Ok(s) = str::from_utf8(c_slice) {
-            callback(err, s);
-        }
+        let s = String::from_utf8_lossy(c_slice);
+        callback(err, &s);
     }
 
     let rc = match callback {
@@ -70,9 +69,8 @@ impl Connection {
         unsafe extern "C" fn trace_callback(p_arg: *mut c_void, z_sql: *const c_char) {
             let trace_fn: fn(&str) = mem::transmute(p_arg);
             let c_slice = CStr::from_ptr(z_sql).to_bytes();
-            if let Ok(s) = str::from_utf8(c_slice) {
-                trace_fn(s);
-            }
+            let s = String::from_utf8_lossy(c_slice);
+            trace_fn(&s);
         }
 
         let c = self.db.borrow_mut();
@@ -96,13 +94,12 @@ impl Connection {
                                               nanoseconds: u64) {
             let profile_fn: fn(&str, Duration) = mem::transmute(p_arg);
             let c_slice = CStr::from_ptr(z_sql).to_bytes();
-            if let Ok(s) = str::from_utf8(c_slice) {
-                const NANOS_PER_SEC: u64 = 1_000_000_000;
+            let s = String::from_utf8_lossy(c_slice);
+            const NANOS_PER_SEC: u64 = 1_000_000_000;
 
-                let duration = Duration::new(nanoseconds / NANOS_PER_SEC,
-                                             (nanoseconds % NANOS_PER_SEC) as u32);
-                profile_fn(s, duration);
-            }
+            let duration = Duration::new(nanoseconds / NANOS_PER_SEC,
+                                         (nanoseconds % NANOS_PER_SEC) as u32);
+            profile_fn(&s, duration);
         }
 
         let c = self.db.borrow_mut();
