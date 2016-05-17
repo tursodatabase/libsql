@@ -901,21 +901,18 @@ impl<'conn> Statement<'conn> {
         Ok(())
     }
 
-    #[cfg(feature = "cache")]
-    fn clear_bindings(&mut self) {
-        self.stmt.clear_bindings();
-    }
-
-    #[cfg(feature = "cache")]
-    fn eq(&self, sql: &str) -> bool {
-        let c_slice = self.stmt.sql().to_bytes();
-        sql.as_bytes().eq(c_slice)
-    }
-
     fn finalize_(&mut self) -> Result<()> {
         let mut stmt = RawStatement::new(ptr::null_mut());
         mem::swap(&mut stmt, &mut self.stmt);
         self.conn.decode_result(stmt.finalize())
+    }
+}
+
+impl<'conn> Into<RawStatement> for Statement<'conn> {
+    fn into(mut self) -> RawStatement {
+        let mut stmt = RawStatement::new(ptr::null_mut());
+        mem::swap(&mut stmt, &mut self.stmt);
+        stmt
     }
 }
 

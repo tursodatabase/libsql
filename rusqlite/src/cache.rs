@@ -4,12 +4,13 @@ use std::cell::RefCell;
 use std::collections::VecDeque;
 use std::ops::{Deref, DerefMut};
 use {Result, Connection, Statement};
+use raw_statement::RawStatement;
 
 /// Prepared statements LRU cache.
 #[derive(Debug)]
 pub struct StatementCache<'conn> {
     conn: &'conn Connection,
-    cache: RefCell<VecDeque<Statement<'conn>>>, // back = LRU
+    cache: RefCell<VecDeque<RawStatement>>, // back = LRU
 }
 
 /// Cacheable statement.
@@ -39,7 +40,7 @@ impl<'c, 's> Drop for CachedStatement<'c, 's> {
     #[allow(unused_must_use)]
     fn drop(&mut self) {
         if let Some(stmt) = self.stmt.take() {
-            self.cache.cache_stmt(stmt);
+            self.cache.cache_stmt(stmt.into());
         }
     }
 }
@@ -74,15 +75,18 @@ impl<'conn> StatementCache<'conn> {
     /// Will return `Err` if no cached statement can be found and the underlying SQLite prepare call fails.
     pub fn get<'s>(&'s self, sql: &str) -> Result<CachedStatement<'conn, 's>> {
         let mut cache = self.cache.borrow_mut();
-        let stmt = match cache.iter().rposition(|entry| entry.eq(sql)) {
-            Some(index) => Ok(cache.swap_remove_front(index).unwrap()), // FIXME Not LRU compliant
+        let stmt = match cache.iter().rposition(|entry| entry.sql().to_bytes().eq(sql.as_bytes())) {
+            Some(index) => {
+                let raw_stmt = cache.swap_remove_front(index).unwrap(); // FIXME Not LRU compliant
+                Ok(Statement::new(self.conn, raw_stmt))
+            }
             _ => self.conn.prepare(sql),
         };
         stmt.map(|stmt| CachedStatement::new(stmt, self))
     }
 
     // Return a statement to the cache.
-    fn cache_stmt(&self, mut stmt: Statement<'conn>) {
+    fn cache_stmt(&self, stmt: RawStatement) {
         let mut cache = self.cache.borrow_mut();
         if cache.capacity() == cache.len() {
             // is full
