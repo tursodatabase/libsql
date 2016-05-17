@@ -80,12 +80,14 @@ use raw_statement::RawStatement;
 
 pub use transaction::{SqliteTransaction, Transaction, TransactionBehavior};
 pub use error::{SqliteError, Error};
+pub use cache::CachedStatement;
 
 #[cfg(feature = "load_extension")]
 pub use load_extension_guard::{SqliteLoadExtensionGuard, LoadExtensionGuard};
 
 pub mod types;
 mod transaction;
+mod cache;
 mod named_params;
 mod error;
 mod convenient;
@@ -93,7 +95,6 @@ mod raw_statement;
 #[cfg(feature = "load_extension")]mod load_extension_guard;
 #[cfg(feature = "trace")]pub mod trace;
 #[cfg(feature = "backup")]pub mod backup;
-#[cfg(feature = "cache")]mod cache;
 #[cfg(feature = "functions")]pub mod functions;
 #[cfg(feature = "blob")]pub mod blob;
 

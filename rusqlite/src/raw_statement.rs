@@ -44,7 +44,6 @@ impl RawStatement {
         }
     }
 
-    #[cfg(feature = "cache")]
     pub fn clear_bindings(&self) -> c_int {
         unsafe { ffi::sqlite3_clear_bindings(self.0) }
     }
