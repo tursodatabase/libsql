@@ -1,7 +1,9 @@
 # Version UPCOMING (...)
 
-* Adds a `cache` Cargo feature that provides `cache::StatementCache` for caching prepared
-  statements.
+* Adds `Connection::prepare_cached`. `Connection` now keeps an internal cache of any statements
+  prepared via this method. The size of this cache defaults to 16 (`prepare_cached` will always
+  work but may re-prepare statements if more are prepared than the cache holds), and can be
+  controlled via `Connection::set_prepared_statement_cache_capacity`.
 * Adds `insert` convenience method to `Statement` which returns the row ID of an inserted row.
 * Adds `exists` convenience method returning whether a query finds one or more rows.
 * Adds support for serializing types from the `serde_json` crate. Requires the `serde_json` feature.
