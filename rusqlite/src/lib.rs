@@ -76,6 +76,7 @@ use libc::{c_int, c_char};
 
 use types::{ToSql, FromSql};
 use error::{error_from_sqlite_code, error_from_handle};
+use raw_statement::RawStatement;
 
 pub use transaction::{SqliteTransaction, Transaction, TransactionBehavior};
 pub use error::{SqliteError, Error};
@@ -88,6 +89,7 @@ mod transaction;
 mod named_params;
 mod error;
 mod convenient;
+mod raw_statement;
 #[cfg(feature = "load_extension")]mod load_extension_guard;
 #[cfg(feature = "trace")]pub mod trace;
 #[cfg(feature = "backup")]pub mod backup;
@@ -687,7 +689,7 @@ impl InnerConnection {
                                     &mut c_stmt,
                                     ptr::null_mut())
         };
-        self.decode_result(r).map(|_| Statement::new(conn, c_stmt))
+        self.decode_result(r).map(|_| Statement::new(conn, RawStatement::new(c_stmt)))
     }
 
     fn changes(&mut self) -> c_int {
@@ -708,16 +710,17 @@ pub type SqliteStatement<'conn> = Statement<'conn>;
 /// A prepared statement.
 pub struct Statement<'conn> {
     conn: &'conn Connection,
-    stmt: *mut ffi::sqlite3_stmt,
+    stmt: RawStatement,
     column_count: c_int,
 }
 
 impl<'conn> Statement<'conn> {
-    fn new(conn: &Connection, stmt: *mut ffi::sqlite3_stmt) -> Statement {
+    fn new(conn: &Connection, stmt: RawStatement) -> Statement {
+        let column_count = stmt.column_count();
         Statement {
             conn: conn,
             stmt: stmt,
-            column_count: unsafe { ffi::sqlite3_column_count(stmt) },
+            column_count: column_count,
         }
     }
 
@@ -726,7 +729,7 @@ impl<'conn> Statement<'conn> {
         let n = self.column_count;
         let mut cols = Vec::with_capacity(n as usize);
         for i in 0..n {
-            let slice = unsafe { CStr::from_ptr(ffi::sqlite3_column_name(self.stmt, i)) };
+            let slice = self.stmt.column_name(i);
             let s = str::from_utf8(slice.to_bytes()).unwrap();
             cols.push(s);
         }
@@ -747,8 +750,7 @@ impl<'conn> Statement<'conn> {
         let bytes = name.as_bytes();
         let n = self.column_count;
         for i in 0..n {
-            let slice = unsafe { CStr::from_ptr(ffi::sqlite3_column_name(self.stmt, i)) };
-            if bytes == slice.to_bytes() {
+            if bytes == self.stmt.column_name(i).to_bytes() {
                 return Ok(i);
             }
         }
@@ -779,15 +781,13 @@ impl<'conn> Statement<'conn> {
     /// Will return `Err` if binding parameters fails, the executed statement returns rows (in
     /// which case `query` should be used instead), or the underling SQLite call fails.
     pub fn execute(&mut self, params: &[&ToSql]) -> Result<c_int> {
-        unsafe {
-            try!(self.bind_parameters(params));
-            self.execute_()
-        }
+        try!(self.bind_parameters(params));
+        self.execute_()
     }
 
-    unsafe fn execute_(&mut self) -> Result<c_int> {
-        let r = ffi::sqlite3_step(self.stmt);
-        ffi::sqlite3_reset(self.stmt);
+    fn execute_(&mut self) -> Result<c_int> {
+        let r = self.stmt.step();
+        self.stmt.reset();
         match r {
             ffi::SQLITE_DONE => {
                 if self.column_count == 0 {
@@ -825,10 +825,7 @@ impl<'conn> Statement<'conn> {
     ///
     /// Will return `Err` if binding parameters fails.
     pub fn query<'a>(&'a mut self, params: &[&ToSql]) -> Result<Rows<'a>> {
-        unsafe {
-            try!(self.bind_parameters(params));
-        }
-
+        try!(self.bind_parameters(params));
         Ok(Rows::new(self))
     }
 
@@ -889,14 +886,16 @@ impl<'conn> Statement<'conn> {
         self.finalize_()
     }
 
-    unsafe fn bind_parameters(&mut self, params: &[&ToSql]) -> Result<()> {
-        assert!(params.len() as c_int == ffi::sqlite3_bind_parameter_count(self.stmt),
+    fn bind_parameters(&mut self, params: &[&ToSql]) -> Result<()> {
+        assert!(params.len() as c_int == self.stmt.bind_parameter_count(),
                 "incorrect number of parameters to query(): expected {}, got {}",
-                ffi::sqlite3_bind_parameter_count(self.stmt),
+                self.stmt.bind_parameter_count(),
                 params.len());
 
         for (i, p) in params.iter().enumerate() {
-            try!(self.conn.decode_result(p.bind_parameter(self.stmt, (i + 1) as c_int)));
+            try!(unsafe {
+                self.conn.decode_result(p.bind_parameter(self.stmt.ptr(), (i + 1) as c_int))
+            });
         }
 
         Ok(())
@@ -904,32 +903,25 @@ impl<'conn> Statement<'conn> {
 
     #[cfg(feature = "cache")]
     fn clear_bindings(&mut self) {
-        unsafe {
-            ffi::sqlite3_clear_bindings(self.stmt);
-        };
+        self.stmt.clear_bindings();
     }
 
     #[cfg(feature = "cache")]
     fn eq(&self, sql: &str) -> bool {
-        unsafe {
-            let c_slice = CStr::from_ptr(ffi::sqlite3_sql(self.stmt)).to_bytes();
-            str::from_utf8(c_slice).unwrap().eq(sql)
-        }
+        let c_slice = self.stmt.sql().to_bytes();
+        sql.as_bytes().eq(c_slice)
     }
 
     fn finalize_(&mut self) -> Result<()> {
-        let r = unsafe { ffi::sqlite3_finalize(self.stmt) };
-        self.stmt = ptr::null_mut();
-        self.conn.decode_result(r)
+        let mut stmt = RawStatement::new(ptr::null_mut());
+        mem::swap(&mut stmt, &mut self.stmt);
+        self.conn.decode_result(stmt.finalize())
     }
 }
 
 impl<'conn> fmt::Debug for Statement<'conn> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let sql = unsafe {
-            let c_slice = CStr::from_ptr(ffi::sqlite3_sql(self.stmt)).to_bytes();
-            str::from_utf8(c_slice)
-        };
+        let sql = str::from_utf8(self.stmt.sql().to_bytes());
         f.debug_struct("Statement")
             .field("conn", self.conn)
             .field("stmt", &self.stmt)
@@ -1039,9 +1031,7 @@ impl<'stmt> Rows<'stmt> {
 
     fn reset(&mut self) {
         if let Some(stmt) = self.stmt.take() {
-            unsafe {
-                ffi::sqlite3_reset(stmt.stmt);
-            }
+            stmt.stmt.reset();
         }
     }
 }
@@ -1051,7 +1041,7 @@ impl<'stmt> Iterator for Rows<'stmt> {
 
     fn next(&mut self) -> Option<Result<Row<'stmt>>> {
         self.stmt.and_then(|stmt| {
-            match unsafe { ffi::sqlite3_step(stmt.stmt) } {
+            match stmt.stmt.step() {
                 ffi::SQLITE_ROW => {
                     let current_row = self.current_row.get() + 1;
                     self.current_row.set(current_row);
@@ -1146,8 +1136,8 @@ impl<'stmt> Row<'stmt> {
         unsafe {
             let idx = try!(idx.idx(self.stmt));
 
-            if T::column_has_valid_sqlite_type(self.stmt.stmt, idx) {
-                FromSql::column_result(self.stmt.stmt, idx)
+            if T::column_has_valid_sqlite_type(self.stmt.stmt.ptr(), idx) {
+                FromSql::column_result(self.stmt.stmt.ptr(), idx)
             } else {
                 Err(Error::InvalidColumnType)
             }
