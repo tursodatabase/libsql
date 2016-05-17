@@ -164,11 +164,18 @@ static void scrubBackupOpenSrc(ScrubState *p){
                       sqlite3_errmsg(p->dbSrc));
     return;
   }
-  p->rcErr = sqlite3_exec(p->dbSrc, "BEGIN", 0, 0, 0);
+  p->rcErr = sqlite3_exec(p->dbSrc, "SELECT 1 FROM sqlite_master; BEGIN;",
+                          0, 0, 0);
   if( p->rcErr ){
     scrubBackupErr(p,
        "cannot start a read transaction on the source database: %s",
        sqlite3_errmsg(p->dbSrc));
+    return;
+  }
+  rc = sqlite3_wal_checkpoint_v2(p->dbSrc, "main", SQLITE_CHECKPOINT_FULL,
+                                 0, 0);
+  if( rc ){
+    scrubBackupErr(p, "cannot checkpoint the source database");
     return;
   }
   pStmt = scrubBackupPrepare(p, p->dbSrc, "PRAGMA page_size");
