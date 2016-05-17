@@ -33,7 +33,7 @@ impl Connection {
     ///
     /// Will return `Err` if `sql` cannot be converted to a C-compatible string or if the
     /// underlying SQLite call fails.
-    pub fn prepare_cached<'a>(&'a self, sql: &str) -> Result<CachedStatement<'a, 'a>> {
+    pub fn prepare_cached<'a>(&'a self, sql: &str) -> Result<CachedStatement<'a>> {
         self.cache.get(&self, sql)
     }
 }
@@ -48,26 +48,26 @@ pub struct StatementCache {
 ///
 /// Statement will return automatically to the cache by default.
 /// If you want the statement to be discarded, call `discard()` on it.
-pub struct CachedStatement<'c: 's, 's> {
-    stmt: Option<Statement<'c>>,
-    cache: &'s StatementCache,
+pub struct CachedStatement<'conn> {
+    stmt: Option<Statement<'conn>>,
+    cache: &'conn StatementCache,
 }
 
-impl<'c, 's> Deref for CachedStatement<'c, 's> {
-    type Target = Statement<'c>;
+impl<'conn> Deref for CachedStatement<'conn> {
+    type Target = Statement<'conn>;
 
-    fn deref(&self) -> &Statement<'c> {
+    fn deref(&self) -> &Statement<'conn> {
         self.stmt.as_ref().unwrap()
     }
 }
 
-impl<'c, 's> DerefMut for CachedStatement<'c, 's> {
-    fn deref_mut(&mut self) -> &mut Statement<'c> {
+impl<'conn> DerefMut for CachedStatement<'conn> {
+    fn deref_mut(&mut self) -> &mut Statement<'conn> {
         self.stmt.as_mut().unwrap()
     }
 }
 
-impl<'c, 's> Drop for CachedStatement<'c, 's> {
+impl<'conn> Drop for CachedStatement<'conn> {
     #[allow(unused_must_use)]
     fn drop(&mut self) {
         if let Some(stmt) = self.stmt.take() {
@@ -76,8 +76,8 @@ impl<'c, 's> Drop for CachedStatement<'c, 's> {
     }
 }
 
-impl<'c, 's> CachedStatement<'c, 's> {
-    fn new(stmt: Statement<'c>, cache: &'s StatementCache) -> CachedStatement<'c, 's> {
+impl<'conn> CachedStatement<'conn> {
+    fn new(stmt: Statement<'conn>, cache: &'conn StatementCache) -> CachedStatement<'conn> {
         CachedStatement {
             stmt: Some(stmt),
             cache: cache,
@@ -103,7 +103,7 @@ impl StatementCache {
     /// # Failure
     ///
     /// Will return `Err` if no cached statement can be found and the underlying SQLite prepare call fails.
-    pub fn get<'conn, 's>(&'s self, conn: &'conn Connection, sql: &str) -> Result<CachedStatement<'conn, 's>> {
+    pub fn get<'conn>(&'conn self, conn: &'conn Connection, sql: &str) -> Result<CachedStatement<'conn>> {
         let mut cache = self.cache.borrow_mut();
         let stmt = match cache.iter().rposition(|entry| entry.sql().to_bytes().eq(sql.as_bytes())) {
             Some(index) => {
