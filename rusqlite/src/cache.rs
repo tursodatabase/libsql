@@ -92,9 +92,7 @@ impl<'conn> CachedStatement<'conn> {
 impl StatementCache {
     /// Create a statement cache.
     pub fn with_capacity(capacity: usize) -> StatementCache {
-        StatementCache {
-            cache: RefCell::new(VecDeque::with_capacity(capacity)),
-        }
+        StatementCache { cache: RefCell::new(VecDeque::with_capacity(capacity)) }
     }
 
     /// Search the cache for a prepared-statement object that implements `sql`.
@@ -102,10 +100,15 @@ impl StatementCache {
     ///
     /// # Failure
     ///
-    /// Will return `Err` if no cached statement can be found and the underlying SQLite prepare call fails.
-    pub fn get<'conn>(&'conn self, conn: &'conn Connection, sql: &str) -> Result<CachedStatement<'conn>> {
+    /// Will return `Err` if no cached statement can be found and the underlying SQLite prepare
+    /// call fails.
+    pub fn get<'conn>(&'conn self,
+                      conn: &'conn Connection,
+                      sql: &str)
+                      -> Result<CachedStatement<'conn>> {
         let mut cache = self.cache.borrow_mut();
-        let stmt = match cache.iter().rposition(|entry| entry.sql().to_bytes().eq(sql.as_bytes())) {
+        let stmt = match cache.iter()
+            .rposition(|entry| entry.sql().to_bytes().eq(sql.as_bytes())) {
             Some(index) => {
                 let raw_stmt = cache.swap_remove_front(index).unwrap(); // FIXME Not LRU compliant
                 Ok(Statement::new(conn, raw_stmt))
@@ -159,7 +162,7 @@ mod test {
             let mut stmt = db.prepare_cached(sql).unwrap();
             assert_eq!(0, cache.len());
             assert_eq!(0,
-                       stmt.query(&[]).unwrap().get_expected_row().unwrap().get::<i32,i64>(0));
+                       stmt.query(&[]).unwrap().get_expected_row().unwrap().get::<i32, i64>(0));
         }
         assert_eq!(1, cache.len());
 
@@ -167,7 +170,7 @@ mod test {
             let mut stmt = db.prepare_cached(sql).unwrap();
             assert_eq!(0, cache.len());
             assert_eq!(0,
-                       stmt.query(&[]).unwrap().get_expected_row().unwrap().get::<i32,i64>(0));
+                       stmt.query(&[]).unwrap().get_expected_row().unwrap().get::<i32, i64>(0));
         }
         assert_eq!(1, cache.len());
 
@@ -186,7 +189,7 @@ mod test {
             let mut stmt = db.prepare_cached(sql).unwrap();
             assert_eq!(0, cache.len());
             assert_eq!(0,
-                       stmt.query(&[]).unwrap().get_expected_row().unwrap().get::<i32,i64>(0));
+                       stmt.query(&[]).unwrap().get_expected_row().unwrap().get::<i32, i64>(0));
             stmt.discard();
         }
         assert_eq!(0, cache.len());
