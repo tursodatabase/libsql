@@ -77,6 +77,7 @@ use libc::{c_int, c_char};
 use types::{ToSql, FromSql};
 use error::{error_from_sqlite_code, error_from_handle};
 use raw_statement::RawStatement;
+use cache::StatementCache;
 
 pub use transaction::{SqliteTransaction, Transaction, TransactionBehavior};
 pub use error::{SqliteError, Error};
@@ -97,6 +98,9 @@ mod raw_statement;
 #[cfg(feature = "backup")]pub mod backup;
 #[cfg(feature = "functions")]pub mod functions;
 #[cfg(feature = "blob")]pub mod blob;
+
+// Number of cached prepared statements we'll hold on to.
+const STATEMENT_CACHE_DEFAULT_CAPACITY: usize = 16;
 
 /// Old name for `Result`. `SqliteResult` is deprecated.
 pub type SqliteResult<T> = Result<T>;
@@ -150,6 +154,7 @@ pub type SqliteConnection = Connection;
 /// A connection to a SQLite database.
 pub struct Connection {
     db: RefCell<InnerConnection>,
+    cache: StatementCache,
     path: Option<PathBuf>,
 }
 
@@ -194,6 +199,7 @@ impl Connection {
         InnerConnection::open_with_flags(&c_path, flags).map(|db| {
             Connection {
                 db: RefCell::new(db),
+                cache: StatementCache::with_capacity(STATEMENT_CACHE_DEFAULT_CAPACITY),
                 path: Some(path.as_ref().to_path_buf()),
             }
         })
@@ -212,6 +218,7 @@ impl Connection {
         InnerConnection::open_with_flags(&c_memory, flags).map(|db| {
             Connection {
                 db: RefCell::new(db),
+                cache: StatementCache::with_capacity(STATEMENT_CACHE_DEFAULT_CAPACITY),
                 path: None,
             }
         })

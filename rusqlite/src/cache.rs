@@ -6,6 +6,38 @@ use std::ops::{Deref, DerefMut};
 use {Result, Connection, Statement};
 use raw_statement::RawStatement;
 
+impl Connection {
+    /// Prepare a SQL statement for execution, returning a previously prepared (but
+    /// not currently in-use) statement if one is available. The returned statement
+    /// will be cached for reuse by future calls to `prepare_cached` once it is
+    /// dropped.
+    ///
+    /// ```rust,no_run
+    /// # use rusqlite::{Connection, Result};
+    /// fn insert_new_people(conn: &Connection) -> Result<()> {
+    ///     {
+    ///         let mut stmt = try!(conn.prepare_cached("INSERT INTO People (name) VALUES (?)"));
+    ///         try!(stmt.execute(&[&"Joe Smith"]));
+    ///     }
+    ///     {
+    ///         // This will return the same underlying SQLite statement handle without
+    ///         // having to prepare it again.
+    ///         let mut stmt = try!(conn.prepare_cached("INSERT INTO People (name) VALUES (?)"));
+    ///         try!(stmt.execute(&[&"Bob Jones"]));
+    ///     }
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if `sql` cannot be converted to a C-compatible string or if the
+    /// underlying SQLite call fails.
+    pub fn prepare_cached<'a>(&'a self, sql: &str) -> Result<CachedStatement<'a, 'a>> {
+        self.cache.get(&self, sql)
+    }
+}
+
 /// Prepared statements LRU cache.
 #[derive(Debug)]
 pub struct StatementCache {
@@ -93,21 +125,6 @@ impl StatementCache {
         stmt.clear_bindings();
         cache.push_front(stmt)
     }
-
-    /// Flush the prepared statement cache
-    pub fn clear(&self) {
-        self.cache.borrow_mut().clear();
-    }
-
-    /// Return current cache size.
-    pub fn len(&self) -> usize {
-        self.cache.borrow().len()
-    }
-
-    /// Return maximum cache size.
-    pub fn capacity(&self) -> usize {
-        self.cache.borrow().capacity()
-    }
 }
 
 #[cfg(test)]
@@ -115,16 +132,31 @@ mod test {
     use Connection;
     use super::StatementCache;
 
+    impl StatementCache {
+        fn clear(&self) {
+            self.cache.borrow_mut().clear();
+        }
+
+        fn len(&self) -> usize {
+            self.cache.borrow().len()
+        }
+
+        fn capacity(&self) -> usize {
+            self.cache.borrow().capacity()
+        }
+    }
+
     #[test]
     fn test_cache() {
         let db = Connection::open_in_memory().unwrap();
-        let cache = StatementCache::with_capacity(15);
+        let cache = &db.cache;
+        let initial_capacity = cache.capacity();
         assert_eq!(0, cache.len());
-        assert_eq!(15, cache.capacity());
+        assert!(initial_capacity > 0);
 
         let sql = "PRAGMA schema_version";
         {
-            let mut stmt = cache.get(&db, sql).unwrap();
+            let mut stmt = db.prepare_cached(sql).unwrap();
             assert_eq!(0, cache.len());
             assert_eq!(0,
                        stmt.query(&[]).unwrap().get_expected_row().unwrap().get::<i32,i64>(0));
@@ -132,7 +164,7 @@ mod test {
         assert_eq!(1, cache.len());
 
         {
-            let mut stmt = cache.get(&db, sql).unwrap();
+            let mut stmt = db.prepare_cached(sql).unwrap();
             assert_eq!(0, cache.len());
             assert_eq!(0,
                        stmt.query(&[]).unwrap().get_expected_row().unwrap().get::<i32,i64>(0));
@@ -141,17 +173,17 @@ mod test {
 
         cache.clear();
         assert_eq!(0, cache.len());
-        assert_eq!(15, cache.capacity());
+        assert_eq!(initial_capacity, cache.capacity());
     }
 
     #[test]
     fn test_discard() {
         let db = Connection::open_in_memory().unwrap();
-        let cache = StatementCache::with_capacity(15);
+        let cache = &db.cache;
 
         let sql = "PRAGMA schema_version";
         {
-            let mut stmt = cache.get(&db, sql).unwrap();
+            let mut stmt = db.prepare_cached(sql).unwrap();
             assert_eq!(0, cache.len());
             assert_eq!(0,
                        stmt.query(&[]).unwrap().get_expected_row().unwrap().get::<i32,i64>(0));
