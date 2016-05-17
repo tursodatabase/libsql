@@ -36,6 +36,14 @@ impl Connection {
     pub fn prepare_cached<'a>(&'a self, sql: &str) -> Result<CachedStatement<'a>> {
         self.cache.get(&self, sql)
     }
+
+    /// Set the maximum number of cached prepared statements this connection will hold.
+    /// By default, a connection will hold a relatively small number of cached statements.
+    /// If you need more, or know that you will not use cached statements, you can set
+    /// the capacity manually using this method.
+    pub fn set_prepared_statement_cache_capacity(&self, capacity: usize) {
+        self.cache.set_capacity(capacity)
+    }
 }
 
 /// Prepared statements LRU cache.
@@ -93,14 +101,18 @@ impl StatementCache {
         StatementCache(RefCell::new(LruCache::new(capacity)))
     }
 
-    /// Search the cache for a prepared-statement object that implements `sql`.
-    /// If no such prepared-statement can be found, allocate and prepare a new one.
-    ///
-    /// # Failure
-    ///
-    /// Will return `Err` if no cached statement can be found and the underlying SQLite prepare
-    /// call fails.
-    pub fn get<'conn>(&'conn self,
+    fn set_capacity(&self, capacity: usize) {
+        self.0.borrow_mut().set_capacity(capacity)
+    }
+
+    // Search the cache for a prepared-statement object that implements `sql`.
+    // If no such prepared-statement can be found, allocate and prepare a new one.
+    //
+    // # Failure
+    //
+    // Will return `Err` if no cached statement can be found and the underlying SQLite prepare
+    // call fails.
+    fn get<'conn>(&'conn self,
                       conn: &'conn Connection,
                       sql: &str)
                       -> Result<CachedStatement<'conn>> {
@@ -168,6 +180,41 @@ mod test {
         cache.clear();
         assert_eq!(0, cache.len());
         assert_eq!(initial_capacity, cache.capacity());
+    }
+
+    #[test]
+    fn test_set_capacity() {
+        let db = Connection::open_in_memory().unwrap();
+        let cache = &db.cache;
+
+        let sql = "PRAGMA schema_version";
+        {
+            let mut stmt = db.prepare_cached(sql).unwrap();
+            assert_eq!(0, cache.len());
+            assert_eq!(0,
+                       stmt.query(&[]).unwrap().get_expected_row().unwrap().get::<i32, i64>(0));
+        }
+        assert_eq!(1, cache.len());
+
+        db.set_prepared_statement_cache_capacity(0);
+        assert_eq!(0, cache.len());
+
+        {
+            let mut stmt = db.prepare_cached(sql).unwrap();
+            assert_eq!(0, cache.len());
+            assert_eq!(0,
+                       stmt.query(&[]).unwrap().get_expected_row().unwrap().get::<i32, i64>(0));
+        }
+        assert_eq!(0, cache.len());
+
+        db.set_prepared_statement_cache_capacity(8);
+        {
+            let mut stmt = db.prepare_cached(sql).unwrap();
+            assert_eq!(0, cache.len());
+            assert_eq!(0,
+                       stmt.query(&[]).unwrap().get_expected_row().unwrap().get::<i32, i64>(0));
+        }
+        assert_eq!(1, cache.len());
     }
 
     #[test]
