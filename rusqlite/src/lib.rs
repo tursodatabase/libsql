@@ -55,6 +55,7 @@
 
 extern crate libc;
 extern crate libsqlite3_sys as ffi;
+extern crate lru_cache;
 #[macro_use]
 extern crate bitflags;
 #[cfg(test)]

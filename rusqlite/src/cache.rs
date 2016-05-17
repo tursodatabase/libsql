@@ -1,8 +1,8 @@
 //! Prepared statements cache for faster execution.
 
 use std::cell::RefCell;
-use std::collections::VecDeque;
 use std::ops::{Deref, DerefMut};
+use lru_cache::LruCache;
 use {Result, Connection, Statement};
 use raw_statement::RawStatement;
 
@@ -40,9 +40,7 @@ impl Connection {
 
 /// Prepared statements LRU cache.
 #[derive(Debug)]
-pub struct StatementCache {
-    cache: RefCell<VecDeque<RawStatement>>, // back = LRU
-}
+pub struct StatementCache(RefCell<LruCache<String, RawStatement>>);
 
 /// Cacheable statement.
 ///
@@ -92,7 +90,7 @@ impl<'conn> CachedStatement<'conn> {
 impl StatementCache {
     /// Create a statement cache.
     pub fn with_capacity(capacity: usize) -> StatementCache {
-        StatementCache { cache: RefCell::new(VecDeque::with_capacity(capacity)) }
+        StatementCache(RefCell::new(LruCache::new(capacity)))
     }
 
     /// Search the cache for a prepared-statement object that implements `sql`.
@@ -106,27 +104,20 @@ impl StatementCache {
                       conn: &'conn Connection,
                       sql: &str)
                       -> Result<CachedStatement<'conn>> {
-        let mut cache = self.cache.borrow_mut();
-        let stmt = match cache.iter()
-            .rposition(|entry| entry.sql().to_bytes().eq(sql.as_bytes())) {
-            Some(index) => {
-                let raw_stmt = cache.swap_remove_front(index).unwrap(); // FIXME Not LRU compliant
-                Ok(Statement::new(conn, raw_stmt))
-            }
-            _ => conn.prepare(sql),
+        let mut cache = self.0.borrow_mut();
+        let stmt = match cache.remove(sql) {
+            Some(raw_stmt) => Ok(Statement::new(conn, raw_stmt)),
+            None => conn.prepare(sql),
         };
         stmt.map(|stmt| CachedStatement::new(stmt, self))
     }
 
     // Return a statement to the cache.
     fn cache_stmt(&self, stmt: RawStatement) {
-        let mut cache = self.cache.borrow_mut();
-        if cache.capacity() == cache.len() {
-            // is full
-            cache.pop_back(); // LRU dropped
-        }
+        let mut cache = self.0.borrow_mut();
         stmt.clear_bindings();
-        cache.push_front(stmt)
+        let sql = String::from_utf8_lossy(stmt.sql().to_bytes()).to_string();
+        cache.insert(sql, stmt);
     }
 }
 
@@ -137,15 +128,15 @@ mod test {
 
     impl StatementCache {
         fn clear(&self) {
-            self.cache.borrow_mut().clear();
+            self.0.borrow_mut().clear();
         }
 
         fn len(&self) -> usize {
-            self.cache.borrow().len()
+            self.0.borrow().len()
         }
 
         fn capacity(&self) -> usize {
-            self.cache.borrow().capacity()
+            self.0.borrow().capacity()
         }
     }
 
