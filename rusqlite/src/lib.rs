@@ -93,7 +93,7 @@ mod raw_statement;
 #[cfg(feature = "load_extension")]mod load_extension_guard;
 #[cfg(feature = "trace")]pub mod trace;
 #[cfg(feature = "backup")]pub mod backup;
-#[cfg(feature = "cache")]pub mod cache;
+#[cfg(feature = "cache")]mod cache;
 #[cfg(feature = "functions")]pub mod functions;
 #[cfg(feature = "blob")]pub mod blob;
 

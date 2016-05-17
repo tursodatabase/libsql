@@ -8,8 +8,7 @@ use raw_statement::RawStatement;
 
 /// Prepared statements LRU cache.
 #[derive(Debug)]
-pub struct StatementCache<'conn> {
-    conn: &'conn Connection,
+pub struct StatementCache {
     cache: RefCell<VecDeque<RawStatement>>, // back = LRU
 }
 
@@ -19,7 +18,7 @@ pub struct StatementCache<'conn> {
 /// If you want the statement to be discarded, call `discard()` on it.
 pub struct CachedStatement<'c: 's, 's> {
     stmt: Option<Statement<'c>>,
-    cache: &'s StatementCache<'c>,
+    cache: &'s StatementCache,
 }
 
 impl<'c, 's> Deref for CachedStatement<'c, 's> {
@@ -46,7 +45,7 @@ impl<'c, 's> Drop for CachedStatement<'c, 's> {
 }
 
 impl<'c, 's> CachedStatement<'c, 's> {
-    fn new(stmt: Statement<'c>, cache: &'s StatementCache<'c>) -> CachedStatement<'c, 's> {
+    fn new(stmt: Statement<'c>, cache: &'s StatementCache) -> CachedStatement<'c, 's> {
         CachedStatement {
             stmt: Some(stmt),
             cache: cache,
@@ -58,11 +57,10 @@ impl<'c, 's> CachedStatement<'c, 's> {
     }
 }
 
-impl<'conn> StatementCache<'conn> {
+impl StatementCache {
     /// Create a statement cache.
-    pub fn new(conn: &'conn Connection, capacity: usize) -> StatementCache<'conn> {
+    pub fn with_capacity(capacity: usize) -> StatementCache {
         StatementCache {
-            conn: conn,
             cache: RefCell::new(VecDeque::with_capacity(capacity)),
         }
     }
@@ -73,14 +71,14 @@ impl<'conn> StatementCache<'conn> {
     /// # Failure
     ///
     /// Will return `Err` if no cached statement can be found and the underlying SQLite prepare call fails.
-    pub fn get<'s>(&'s self, sql: &str) -> Result<CachedStatement<'conn, 's>> {
+    pub fn get<'conn, 's>(&'s self, conn: &'conn Connection, sql: &str) -> Result<CachedStatement<'conn, 's>> {
         let mut cache = self.cache.borrow_mut();
         let stmt = match cache.iter().rposition(|entry| entry.sql().to_bytes().eq(sql.as_bytes())) {
             Some(index) => {
                 let raw_stmt = cache.swap_remove_front(index).unwrap(); // FIXME Not LRU compliant
-                Ok(Statement::new(self.conn, raw_stmt))
+                Ok(Statement::new(conn, raw_stmt))
             }
-            _ => self.conn.prepare(sql),
+            _ => conn.prepare(sql),
         };
         stmt.map(|stmt| CachedStatement::new(stmt, self))
     }
@@ -120,13 +118,13 @@ mod test {
     #[test]
     fn test_cache() {
         let db = Connection::open_in_memory().unwrap();
-        let cache = StatementCache::new(&db, 15);
+        let cache = StatementCache::with_capacity(15);
         assert_eq!(0, cache.len());
         assert_eq!(15, cache.capacity());
 
         let sql = "PRAGMA schema_version";
         {
-            let mut stmt = cache.get(sql).unwrap();
+            let mut stmt = cache.get(&db, sql).unwrap();
             assert_eq!(0, cache.len());
             assert_eq!(0,
                        stmt.query(&[]).unwrap().get_expected_row().unwrap().get::<i32,i64>(0));
@@ -134,7 +132,7 @@ mod test {
         assert_eq!(1, cache.len());
 
         {
-            let mut stmt = cache.get(sql).unwrap();
+            let mut stmt = cache.get(&db, sql).unwrap();
             assert_eq!(0, cache.len());
             assert_eq!(0,
                        stmt.query(&[]).unwrap().get_expected_row().unwrap().get::<i32,i64>(0));
@@ -149,11 +147,11 @@ mod test {
     #[test]
     fn test_discard() {
         let db = Connection::open_in_memory().unwrap();
-        let cache = StatementCache::new(&db, 15);
+        let cache = StatementCache::with_capacity(15);
 
         let sql = "PRAGMA schema_version";
         {
-            let mut stmt = cache.get(sql).unwrap();
+            let mut stmt = cache.get(&db, sql).unwrap();
             assert_eq!(0, cache.len());
             assert_eq!(0,
                        stmt.query(&[]).unwrap().get_expected_row().unwrap().get::<i32,i64>(0));
