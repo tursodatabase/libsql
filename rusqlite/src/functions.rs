@@ -88,9 +88,10 @@ raw_to_impl!(c_double, sqlite3_result_double);
 
 impl<'a> ToResult for bool {
     unsafe fn set_result(&self, ctx: *mut sqlite3_context) {
-        match *self {
-            true => ffi::sqlite3_result_int(ctx, 1),
-            _ => ffi::sqlite3_result_int(ctx, 0),
+        if *self {
+            ffi::sqlite3_result_int(ctx, 1)
+        } else {
+            ffi::sqlite3_result_int(ctx, 0)
         }
     }
 }
@@ -214,7 +215,7 @@ impl FromValue for String {
     unsafe fn parameter_value(v: *mut sqlite3_value) -> Result<String> {
         let c_text = ffi::sqlite3_value_text(v);
         if c_text.is_null() {
-            Ok("".to_string())
+            Ok("".to_owned())
         } else {
             let c_slice = CStr::from_ptr(c_text as *const c_char).to_bytes();
             let utf8_str = try!(str::from_utf8(c_slice));
@@ -250,7 +251,7 @@ impl<T: FromValue> FromValue for Option<T> {
         if sqlite3_value_type(v) == ffi::SQLITE_NULL {
             Ok(None)
         } else {
-            FromValue::parameter_value(v).map(|t| Some(t))
+            FromValue::parameter_value(v).map(Some)
         }
     }
 
@@ -273,6 +274,10 @@ impl<'a> Context<'a> {
     /// Returns the number of arguments to the function.
     pub fn len(&self) -> usize {
         self.args.len()
+    }
+    /// Returns `true` when there is no argument.
+    pub fn is_empty(&self) -> bool {
+        self.args.is_empty()
     }
 
     /// Returns the `idx`th argument as a `T`.
@@ -302,7 +307,7 @@ impl<'a> Context<'a> {
             ffi::sqlite3_set_auxdata(self.ctx,
                                      arg,
                                      mem::transmute(boxed),
-                                     Some(mem::transmute(free_boxed_value::<T>)))
+                                     Some(free_boxed_value::<T>))
         };
     }
 
@@ -328,7 +333,9 @@ impl<'a> Context<'a> {
 ///
 /// `A` is the type of the aggregation context and `T` is the type of the final result.
 /// Implementations should be stateless.
-pub trait Aggregate<A, T> where T: ToResult {
+pub trait Aggregate<A, T>
+    where T: ToResult
+{
     /// Initializes the aggregation context. Will be called prior to the first call
     /// to `step()` to set up the context for an invocation of the function. (Note:
     /// `init()` will not be called if the there are no rows.)
@@ -475,7 +482,7 @@ impl InnerConnection {
                                             Some(call_boxed_closure::<F, T>),
                                             None,
                                             None,
-                                            Some(mem::transmute(free_boxed_value::<F>)))
+                                            Some(free_boxed_value::<F>))
         };
         self.decode_result(r)
     }
@@ -592,7 +599,7 @@ impl InnerConnection {
                                             None,
                                             Some(call_boxed_step::<A, D, T>),
                                             Some(call_boxed_final::<A, D, T>),
-                                            Some(mem::transmute(free_boxed_value::<D>)))
+                                            Some(free_boxed_value::<D>))
         };
         self.decode_result(r)
     }
@@ -621,6 +628,7 @@ mod test {
     use std::collections::HashMap;
     use libc::c_double;
     use self::regex::Regex;
+    use std::f64::EPSILON;
 
     use {Connection, Error, Result};
     use functions::{Aggregate, Context};
@@ -637,7 +645,7 @@ mod test {
         db.create_scalar_function("half", 1, true, half).unwrap();
         let result: Result<f64> = db.query_row("SELECT half(6)", &[], |r| r.get(0));
 
-        assert_eq!(3f64, result.unwrap());
+        assert!((3f64 - result.unwrap()).abs() < EPSILON);
     }
 
     #[test]
@@ -645,7 +653,7 @@ mod test {
         let db = Connection::open_in_memory().unwrap();
         db.create_scalar_function("half", 1, true, half).unwrap();
         let result: Result<f64> = db.query_row("SELECT half(6)", &[], |r| r.get(0));
-        assert_eq!(3f64, result.unwrap());
+        assert!((3f64 - result.unwrap()).abs() < EPSILON);
 
         db.remove_function("half", 1).unwrap();
         let result: Result<f64> = db.query_row("SELECT half(6)", &[], |r| r.get(0));
@@ -763,16 +771,16 @@ mod test {
     fn test_varargs_function() {
         let db = Connection::open_in_memory().unwrap();
         db.create_scalar_function("my_concat", -1, true, |ctx| {
-              let mut ret = String::new();
+                let mut ret = String::new();
 
-              for idx in 0..ctx.len() {
-                  let s = try!(ctx.get::<String>(idx));
-                  ret.push_str(&s);
-              }
+                for idx in 0..ctx.len() {
+                    let s = try!(ctx.get::<String>(idx));
+                    ret.push_str(&s);
+                }
 
-              Ok(ret)
-          })
-          .unwrap();
+                Ok(ret)
+            })
+            .unwrap();
 
         for &(expected, query) in &[("", "SELECT my_concat()"),
                                     ("onetwo", "SELECT my_concat('one', 'two')"),
@@ -823,18 +831,18 @@ mod test {
         // sum should return NULL when given no columns (contrast with count below)
         let no_result = "SELECT my_sum(i) FROM (SELECT 2 AS i WHERE 1 <> 1)";
         let result: Option<i64> = db.query_row(no_result, &[], |r| r.get(0))
-                                    .unwrap();
+            .unwrap();
         assert!(result.is_none());
 
         let single_sum = "SELECT my_sum(i) FROM (SELECT 2 AS i UNION ALL SELECT 2)";
         let result: i64 = db.query_row(single_sum, &[], |r| r.get(0))
-                            .unwrap();
+            .unwrap();
         assert_eq!(4, result);
 
         let dual_sum = "SELECT my_sum(i), my_sum(j) FROM (SELECT 2 AS i, 1 AS j UNION ALL SELECT \
                         2, 1)";
         let result: (i64, i64) = db.query_row(dual_sum, &[], |r| (r.get(0), r.get(1)))
-                                   .unwrap();
+            .unwrap();
         assert_eq!((4, 2), result);
     }
 
@@ -850,7 +858,7 @@ mod test {
 
         let single_sum = "SELECT my_count(i) FROM (SELECT 2 AS i UNION ALL SELECT 2)";
         let result: i64 = db.query_row(single_sum, &[], |r| r.get(0))
-                            .unwrap();
+            .unwrap();
         assert_eq!(2, result);
     }
 }

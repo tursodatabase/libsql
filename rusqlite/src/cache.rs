@@ -88,7 +88,6 @@ impl<'conn> StatementCache<'conn> {
             // is full
             cache.pop_back(); // LRU dropped
         }
-        stmt.reset_if_needed();
         stmt.clear_bindings();
         cache.push_front(stmt)
     }

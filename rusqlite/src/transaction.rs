@@ -47,9 +47,7 @@ pub struct Transaction<'conn> {
 
 impl<'conn> Transaction<'conn> {
     /// Begin a new transaction. Cannot be nested; see `savepoint` for nested transactions.
-    pub fn new(conn: &Connection,
-               behavior: TransactionBehavior)
-               -> Result<Transaction> {
+    pub fn new(conn: &Connection, behavior: TransactionBehavior) -> Result<Transaction> {
         let query = match behavior {
             TransactionBehavior::Deferred => "BEGIN DEFERRED",
             TransactionBehavior::Immediate => "BEGIN IMMEDIATE",
@@ -91,7 +89,7 @@ impl<'conn> Transaction<'conn> {
     ///     tx.commit()
     /// }
     /// ```
-    pub fn savepoint<'a>(&'a self) -> Result<Transaction<'a>> {
+    pub fn savepoint(&self) -> Result<Transaction> {
         self.conn.execute_batch("SAVEPOINT sp").map(|_| {
             Transaction {
                 conn: self.conn,
@@ -176,6 +174,7 @@ impl<'conn> Drop for Transaction<'conn> {
 }
 
 #[cfg(test)]
+#[cfg_attr(feature="clippy", allow(similar_names))]
 mod test {
     use Connection;
 
