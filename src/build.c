@@ -592,15 +592,9 @@ void sqlite3DeleteColumnNames(sqlite3 *db, Table *pTable){
 ** db parameter can be used with db->pnBytesFreed to measure the memory
 ** used by the Table object.
 */
-void sqlite3DeleteTable(sqlite3 *db, Table *pTable){
+static void SQLITE_NOINLINE deleteTable(sqlite3 *db, Table *pTable){
   Index *pIndex, *pNext;
   TESTONLY( int nLookaside; ) /* Used to verify lookaside not used for schema */
-
-  assert( !pTable || pTable->nRef>0 );
-
-  /* Do not delete the table until the reference count reaches zero. */
-  if( !pTable ) return;
-  if( ((!db || db->pnBytesFreed==0) && (--pTable->nRef)>0) ) return;
 
   /* Record the number of outstanding lookaside allocations in schema Tables
   ** prior to doing any free() operations.  Since schema Tables do not use
@@ -641,6 +635,13 @@ void sqlite3DeleteTable(sqlite3 *db, Table *pTable){
   /* Verify that no lookaside memory was used by schema tables */
   assert( nLookaside==0 || nLookaside==db->lookaside.nOut );
 }
+void sqlite3DeleteTable(sqlite3 *db, Table *pTable){
+  /* Do not delete the table until the reference count reaches zero. */
+  if( !pTable ) return;
+  if( ((!db || db->pnBytesFreed==0) && (--pTable->nRef)>0) ) return;
+  deleteTable(db, pTable);
+}
+
 
 /*
 ** Unlink the given table from the hash tables and the delete the
@@ -2221,7 +2222,7 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
       pTable->nCol = 0;
       nErr++;
     }
-    if( pSelTab ) sqlite3DeleteTable(db, pSelTab);
+    sqlite3DeleteTable(db, pSelTab);
     sqlite3SelectDelete(db, pSel);
     db->lookaside.bDisable--;
   } else {

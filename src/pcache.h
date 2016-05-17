@@ -26,7 +26,7 @@ struct PgHdr {
   sqlite3_pcache_page *pPage;    /* Pcache object page handle */
   void *pData;                   /* Page data */
   void *pExtra;                  /* Extra content */
-  PgHdr *pDirty;                 /* Transient list of dirty pages */
+  PgHdr *pDirty;                 /* Transient list of dirty sorted by pgno */
   Pager *pPager;                 /* The pager this page is part of */
   Pgno pgno;                     /* Page number for this page */
 #ifdef SQLITE_CHECK_PAGES
@@ -51,11 +51,10 @@ struct PgHdr {
 #define PGHDR_WRITEABLE       0x004  /* Journaled and ready to modify */
 #define PGHDR_NEED_SYNC       0x008  /* Fsync the rollback journal before
                                      ** writing this page to the database */
-#define PGHDR_NEED_READ       0x010  /* Content is unread */
-#define PGHDR_DONT_WRITE      0x020  /* Do not write content to disk */
-#define PGHDR_MMAP            0x040  /* This is an mmap page object */
+#define PGHDR_DONT_WRITE      0x010  /* Do not write content to disk */
+#define PGHDR_MMAP            0x020  /* This is an mmap page object */
 
-#define PGHDR_WAL_APPEND      0x080  /* Appended to wal file */
+#define PGHDR_WAL_APPEND      0x040  /* Appended to wal file */
 
 /* Initialize and shutdown the page cache subsystem */
 int sqlite3PcacheInitialize(void);
@@ -136,6 +135,11 @@ int sqlite3PcachePagecount(PCache*);
 ** library is built.
 */
 void sqlite3PcacheIterateDirty(PCache *pCache, void (*xIter)(PgHdr *));
+#endif
+
+#if defined(SQLITE_DEBUG)
+/* Check invariants on a PgHdr object */
+int sqlite3PcachePageSanity(PgHdr*);
 #endif
 
 /* Set and get the suggested cache-size for the specified pager-cache.

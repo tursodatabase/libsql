@@ -411,7 +411,7 @@
 ** be true and false so that the unreachable code they specify will
 ** not be counted as untested code.
 */
-#if defined(SQLITE_COVERAGE_TEST)
+#if defined(SQLITE_COVERAGE_TEST) || defined(SQLITE_MUTATION_TEST)
 # define ALWAYS(X)      (1)
 # define NEVER(X)       (0)
 #elif !defined(NDEBUG)
@@ -2543,6 +2543,7 @@ struct SrcList {
 #define WHERE_REOPEN_IDX       0x1000 /* Try to use OP_ReopenIdx */
 #define WHERE_ONEPASS_MULTIROW 0x2000 /* ONEPASS is ok with multiple rows */
 #define WHERE_USE_LIMIT        0x4000 /* There is a constant LIMIT clause */
+#define WHERE_SEEK_TABLE       0x8000 /* Do not defer seeks on main table */
 
 /* Allowed return values from sqlite3WhereIsDistinct()
 */
