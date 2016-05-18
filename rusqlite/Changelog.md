@@ -1,5 +1,10 @@
 # Version UPCOMING (...)
 
+* BREAKING CHANGE: Creating transactions from a `Connection` or savepoints from a `Transaction`
+  now take `&mut self` instead of `&self` to correctly represent that transactions within a
+  connection are inherently nested. While a transaction is alive, the parent connection or
+  transaction is unusable, so `Transaction` now implements `Deref<Target=Connection>`, giving
+  access to `Connection`'s methods via the `Transaction` itself.
 * Adds `Connection::prepare_cached`. `Connection` now keeps an internal cache of any statements
   prepared via this method. The size of this cache defaults to 16 (`prepare_cached` will always
   work but may re-prepare statements if more are prepared than the cache holds), and can be
