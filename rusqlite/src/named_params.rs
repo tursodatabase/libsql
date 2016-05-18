@@ -90,7 +90,7 @@ impl<'conn> Statement<'conn> {
         unsafe { self.execute_() }
     }
 
-    /// Execute the prepared statement with named parameter(s), returning an iterator over the
+    /// Execute the prepared statement with named parameter(s), returning a handle for the
     /// resulting rows. If any parameters that were in the prepared statement are not included in
     /// `params`, they will continue to use the most-recently bound value from a previous call to
     /// `query_named`, or `NULL` if they have never been bound.
@@ -102,7 +102,7 @@ impl<'conn> Statement<'conn> {
     /// fn query(conn: &Connection) -> Result<()> {
     ///     let mut stmt = try!(conn.prepare("SELECT * FROM test where name = :name"));
     ///     let mut rows = try!(stmt.query_named(&[(":name", &"one")]));
-    ///     for row in rows {
+    ///     while let Some(row) = rows.next() {
     ///         // ...
     ///     }
     ///     Ok(())
@@ -116,6 +116,8 @@ impl<'conn> Statement<'conn> {
         try!(self.bind_parameters_named(params));
         Ok(Rows::new(self))
     }
+
+    // TODO: add query_map_named and query_and_then_named
 
     fn bind_parameters_named(&mut self, params: &[(&str, &ToSql)]) -> Result<()> {
         for &(name, value) in params {
