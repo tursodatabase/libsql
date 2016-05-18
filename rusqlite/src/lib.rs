@@ -237,7 +237,7 @@ impl Connection {
     /// # Failure
     ///
     /// Will return `Err` if the underlying SQLite call fails.
-    pub fn transaction(&self) -> Result<Transaction> {
+    pub fn transaction(&mut self) -> Result<Transaction> {
         Transaction::new(self, TransactionBehavior::Deferred)
     }
 
@@ -248,7 +248,7 @@ impl Connection {
     /// # Failure
     ///
     /// Will return `Err` if the underlying SQLite call fails.
-    pub fn transaction_with_behavior(&self, behavior: TransactionBehavior) -> Result<Transaction> {
+    pub fn transaction_with_behavior(&mut self, behavior: TransactionBehavior) -> Result<Transaction> {
         Transaction::new(self, behavior)
     }
 
