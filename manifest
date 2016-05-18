@@ -1,5 +1,5 @@
-C Do\snot\srun\ssnapshot_fault.test\sas\spart\sof\sthe\sinmemory_journal\spermutation.
-D 2016-05-16T14:35:15.401
+C Version\s3.13.0
+D 2016-05-18T10:57:30.274
 F Makefile.in 9eda6e1c90d05c199c3ec8a7069b0682ad307657
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc db82b35aef27f412fef14d8534afc022138bcdfd
@@ -1488,7 +1488,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 386bcbba8ed733ee84958e6bd6e9d33c150e6c18
+P 995c084bde44e678facc5f5d95a2335ce61e57b0
 R 0e39e66ffd1d7cd6d62e8fa571ff36a1
-U dan
-Z 786140f96f9b408e2c11236687959ca4
+T +bgcolor * #d0c0ff
+T +sym-release *
+T +sym-version-3.13.0 *
+U drh
+Z ecdfa0c32602745fc488e92155fa5f0d
