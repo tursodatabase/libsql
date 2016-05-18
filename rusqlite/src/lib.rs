@@ -213,45 +213,6 @@ impl Connection {
         })
     }
 
-    /// Begin a new transaction with the default behavior (DEFERRED).
-    ///
-    /// The transaction defaults to rolling back when it is dropped. If you want the transaction to
-    /// commit, you must call `commit` or `set_commit`.
-    ///
-    /// ## Example
-    ///
-    /// ```rust,no_run
-    /// # use rusqlite::{Connection, Result};
-    /// # fn do_queries_part_1(conn: &Connection) -> Result<()> { Ok(()) }
-    /// # fn do_queries_part_2(conn: &Connection) -> Result<()> { Ok(()) }
-    /// fn perform_queries(conn: &Connection) -> Result<()> {
-    ///     let tx = try!(conn.transaction());
-    ///
-    ///     try!(do_queries_part_1(conn)); // tx causes rollback if this fails
-    ///     try!(do_queries_part_2(conn)); // tx causes rollback if this fails
-    ///
-    ///     tx.commit()
-    /// }
-    /// ```
-    ///
-    /// # Failure
-    ///
-    /// Will return `Err` if the underlying SQLite call fails.
-    pub fn transaction(&mut self) -> Result<Transaction> {
-        Transaction::new(self, TransactionBehavior::Deferred)
-    }
-
-    /// Begin a new transaction with a specified behavior.
-    ///
-    /// See `transaction`.
-    ///
-    /// # Failure
-    ///
-    /// Will return `Err` if the underlying SQLite call fails.
-    pub fn transaction_with_behavior(&mut self, behavior: TransactionBehavior) -> Result<Transaction> {
-        Transaction::new(self, behavior)
-    }
-
     /// Convenience method to run multiple SQL statements (that cannot take any parameters).
     ///
     /// Uses [sqlite3_exec](http://www.sqlite.org/c3ref/exec.html) under the hood.
