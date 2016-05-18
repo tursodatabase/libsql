@@ -1455,6 +1455,9 @@ $(SQLITE3EXE):	$(TOP)\src\shell.c $(SHELL_CORE_DEP) $(LIBRESOBJS) $(SHELL_CORE_S
 sqldiff.exe:	$(TOP)\tool\sqldiff.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(TOP)\tool\sqldiff.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
+scrub.exe:	$(TOP)\ext\misc\scrub.c $(SQLITE3C) $(SQLITE3H)
+	$(LTLINK) $(NO_WARN) $(TOP)\ext\misc\scrub.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
+
 srcck1.exe:	$(TOP)\tool\srcck1.c
 	$(BCC) $(NO_WARN) -Fe$@ $(TOP)\tool\srcck1.c
 

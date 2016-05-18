@@ -487,6 +487,9 @@ sqldiff$(EXE):	$(TOP)/tool/sqldiff.c sqlite3.c sqlite3.h
 	$(TCCX) -o sqldiff$(EXE) -DSQLITE_THREADSAFE=0 \
 		$(TOP)/tool/sqldiff.c sqlite3.c $(TLIBS) $(THREADLIB)
 
+scrub$(EXE):	$(TOP)/ext/misc/scrub.c sqlite3.o
+	$(TCC) -I. -DSCRUB_STANDALONE -o scrub$(EXE) $(TOP)/ext/misc/scrub.c sqlite3.o $(THREADLIB)
+
 srcck1$(EXE):	$(TOP)/tool/srcck1.c
 	$(BCC) -o srcck1$(EXE) $(TOP)/tool/srcck1.c
 

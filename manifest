@@ -1,8 +1,8 @@
-C Omit\sthe\sunnecessary\sWHERE_REOPEN_IDX\sflag\sin\sthe\sWHERE\sinterface.
-D 2016-05-18T21:01:27.099
-F Makefile.in 9eda6e1c90d05c199c3ec8a7069b0682ad307657
+C Add\sthe\s"scrub"\sutility\sprogram\sthat\ssimultaneously\sbacks-up\sa\slive\sdatabase\nand\serases\sall\sdeleted\scontent.
+D 2016-05-18T21:03:27.980
+F Makefile.in f59e0763ff448719fc1bd25513882b0567286317
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc db82b35aef27f412fef14d8534afc022138bcdfd
+F Makefile.msc 306d73e854b1a92ea06e5d1e637faa5c44de53c7
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION 5d234da9b5dae329fab75ff75884cfe0a9cb3fda
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -215,6 +215,7 @@ F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
 F ext/misc/percentile.c bcbee3c061b884eccb80e21651daaae8e1e43c63
 F ext/misc/regexp.c a68d25c659bd2d893cd1215667bbf75ecb9dc7d4
 F ext/misc/rot13.c 1ac6f95f99b575907b9b09c81a349114cf9be45a
+F ext/misc/scrub.c ea0903701e3ac02b4466ce9cffd0325c7ddbfcf0
 F ext/misc/series.c e11e534ada797d5b816d7e7a93c022306563ca35
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c bf1b922c2750698e9a3d4c50cce6974adb7e93be
@@ -302,7 +303,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 86e6a8d79186ace5ff8b306093da1728d953f796
+F main.mk eab7db27ac2a32b1172a85aa850c0b9c3a00524c
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -1488,8 +1489,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fc49f556e48970561d7ab6a2f24fdd7d9eb81ff2 da94a6e0ebacad8f235dcd653a25474327f26137
-R 9e1f8e54236f8755244237de4975d385
-T +closed da94a6e0ebacad8f235dcd653a25474327f26137
+P 915416d15f43c4e1d3afa8121bb6fa09f9f67e30 ab1c5ce50f139070d7a322f43132a93c8af2ed68
+R d7177fcfb6d0afbc5b91ed78ec9dbdb9
+T +closed ab1c5ce50f139070d7a322f43132a93c8af2ed68
 U drh
-Z 85bf8286938cce8189356318f458d85b
+Z c9dd9bd914e72b28b0a6b209c46c7aec
