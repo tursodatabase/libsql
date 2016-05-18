@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::ops::Deref;
 use {Result, Connection};
 
@@ -91,10 +92,11 @@ impl<'conn> Transaction<'conn> {
     /// }
     /// ```
     pub fn savepoint(&mut self) -> Result<Transaction> {
-        self.conn.execute_batch("SAVEPOINT sp").map(|_| {
+        let new_depth = self.depth + 1;
+        self.conn.execute_batch(&format!("SAVEPOINT sp{}", new_depth)).map(|_| {
             Transaction {
                 conn: self.conn,
-                depth: self.depth + 1,
+                depth: new_depth,
                 commit: false,
                 finished: false,
             }
@@ -128,11 +130,12 @@ impl<'conn> Transaction<'conn> {
 
     fn commit_(&mut self) -> Result<()> {
         self.finished = true;
-        self.conn.execute_batch(if self.depth == 0 {
-            "COMMIT"
+        let sql = if self.depth == 0 {
+            Cow::Borrowed("COMMIT")
         } else {
-            "RELEASE sp"
-        })
+            Cow::Owned(format!("RELEASE sp{}", self.depth))
+        };
+        self.conn.execute_batch(&sql)
     }
 
     /// A convenience method which consumes and rolls back a transaction.
@@ -142,11 +145,12 @@ impl<'conn> Transaction<'conn> {
 
     fn rollback_(&mut self) -> Result<()> {
         self.finished = true;
-        self.conn.execute_batch(if self.depth == 0 {
-            "ROLLBACK"
+        let sql = if self.depth == 0 {
+            Cow::Borrowed("ROLLBACK")
         } else {
-            "ROLLBACK TO sp"
-        })
+            Cow::Owned(format!("ROLLBACK TO sp{}", self.depth))
+        };
+        self.conn.execute_batch(&sql)
     }
 
     /// Consumes the transaction, committing or rolling back according to the current setting
@@ -235,29 +239,40 @@ mod test {
 
     #[test]
     fn test_savepoint() {
+        fn assert_current_sum(x: i32, conn: &Connection) {
+            let i = conn.query_row("SELECT SUM(x) FROM foo", &[], |r| r.get(0)).unwrap();
+            assert_eq!(x, i);
+        }
+
         let mut db = checked_memory_handle();
         {
             let mut tx = db.transaction().unwrap();
             tx.execute_batch("INSERT INTO foo VALUES(1)").unwrap();
+            assert_current_sum(1, &tx);
             tx.set_commit();
             {
                 let mut sp1 = tx.savepoint().unwrap();
                 sp1.execute_batch("INSERT INTO foo VALUES(2)").unwrap();
-                sp1.set_commit();
+                assert_current_sum(3, &sp1);
+                // will rollback sp1
                 {
                     let mut sp2 = sp1.savepoint().unwrap();
                     sp2.execute_batch("INSERT INTO foo VALUES(4)").unwrap();
+                    assert_current_sum(7, &sp2);
                     // will rollback sp2
                     {
                         let sp3 = sp2.savepoint().unwrap();
                         sp3.execute_batch("INSERT INTO foo VALUES(8)").unwrap();
+                        assert_current_sum(15, &sp3);
                         sp3.commit().unwrap();
                         // committed sp3, but will be erased by sp2 rollback
                     }
+                    assert_current_sum(15, &sp2);
                 }
+                assert_current_sum(3, &sp1);
             }
+            assert_current_sum(1, &tx);
         }
-        assert_eq!(3i32,
-                   db.query_row("SELECT SUM(x) FROM foo", &[], |r| r.get(0)).unwrap());
+        assert_current_sum(1, &db);
     }
 }
