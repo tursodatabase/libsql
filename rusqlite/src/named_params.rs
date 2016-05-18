@@ -1,8 +1,10 @@
+use std::convert;
+use std::result;
 use libc::c_int;
 
 use super::ffi;
 
-use {Result, Error, Connection, Statement, Rows, Row, str_to_cstring};
+use {Result, Error, Connection, Statement, MappedRows, AndThenRows, Rows, Row, str_to_cstring};
 use types::ToSql;
 
 impl Connection {
@@ -117,7 +119,93 @@ impl<'conn> Statement<'conn> {
         Ok(Rows::new(self))
     }
 
-    // TODO: add query_map_named and query_and_then_named
+    /// Execute the prepared statement with named parameter(s), returning an iterator over the
+    /// result of calling the mapping function over the query's rows. If any parameters that were
+    /// in the prepared statement are not included in `params`, they will continue to use the
+    /// most-recently bound value from a previous call to `query_named`, or `NULL` if they have
+    /// never been bound.
+    ///
+    /// ## Example
+    ///
+    /// ```rust,no_run
+    /// # use rusqlite::{Connection, Result};
+    /// fn get_names(conn: &Connection) -> Result<Vec<String>> {
+    ///     let mut stmt = try!(conn.prepare("SELECT name FROM people WHERE id = :id"));
+    ///     let rows = try!(stmt.query_map_named(&[(":id", &"one")], |row| row.get(0)));
+    ///
+    ///     let mut names = Vec::new();
+    ///     for name_result in rows {
+    ///         names.push(try!(name_result));
+    ///     }
+    ///
+    ///     Ok(names)
+    /// }
+    /// ```
+    ///
+    /// ## Failure
+    ///
+    /// Will return `Err` if binding parameters fails.
+    pub fn query_map_named<'a, T, F>(&'a mut self,
+                                     params: &[(&str, &ToSql)],
+                                     f: F)
+                                     -> Result<MappedRows<'a, F>>
+        where F: FnMut(&Row) -> T
+    {
+        let rows = try!(self.query_named(params));
+        Ok(MappedRows {
+            rows: rows,
+            map: f,
+        })
+    }
+
+    /// Execute the prepared statement with named parameter(s), returning an iterator over the
+    /// result of calling the mapping function over the query's rows. If any parameters that were
+    /// in the prepared statement are not included in `params`, they will continue to use the
+    /// most-recently bound value from a previous call to `query_named`, or `NULL` if they have
+    /// never been bound.
+    ///
+    /// ## Example
+    ///
+    /// ```rust,no_run
+    /// # use rusqlite::{Connection, Result};
+    /// struct Person { name: String };
+    ///
+    /// fn name_to_person(name: String) -> Result<Person> {
+    ///     // ... check for valid name
+    ///     Ok(Person{ name: name })
+    /// }
+    ///
+    /// fn get_names(conn: &Connection) -> Result<Vec<Person>> {
+    ///     let mut stmt = try!(conn.prepare("SELECT name FROM people WHERE id = :id"));
+    ///     let rows = try!(stmt.query_and_then_named(&[(":id", &"one")], |row| {
+    ///         name_to_person(row.get(0))
+    ///     }));
+    ///
+    ///     let mut persons = Vec::new();
+    ///     for person_result in rows {
+    ///         persons.push(try!(person_result));
+    ///     }
+    ///
+    ///     Ok(persons)
+    /// }
+    /// ```
+    ///
+    /// ## Failure
+    ///
+    /// Will return `Err` if binding parameters fails.
+    pub fn query_and_then_named<'a, T, E, F>(&'a mut self,
+                                             params: &[(&str, &ToSql)],
+                                             f: F)
+                                             -> Result<AndThenRows<'a, F>>
+        where E: convert::From<Error>,
+              F: FnMut(&Row) -> result::Result<T, E>
+    {
+        let rows = try!(self.query_named(params));
+        Ok(AndThenRows {
+            rows: rows,
+            map: f,
+        })
+    }
 
     fn bind_parameters_named(&mut self, params: &[(&str, &ToSql)]) -> Result<()> {
         for &(name, value) in params {
@@ -134,6 +222,7 @@ impl<'conn> Statement<'conn> {
 #[cfg(test)]
 mod test {
     use Connection;
+    use error::Error;
 
     #[test]
     fn test_execute_named() {
@@ -147,9 +236,9 @@ mod test {
 
         assert_eq!(3i32,
                    db.query_row_named("SELECT SUM(x) FROM foo WHERE x > :x",
-                                      &[(":x", &0i32)],
-                                      |r| r.get(0))
-                     .unwrap());
+                                        &[(":x", &0i32)],
+                                        |r| r.get(0))
+                       .unwrap());
     }
 
     #[test]
@@ -164,20 +253,77 @@ mod test {
 
         assert_eq!(1i32,
                    db.query_row_named("SELECT COUNT(*) FROM test WHERE name = :name",
-                                      &[(":name", &"one")],
-                                      |r| r.get(0))
-                     .unwrap());
+                                        &[(":name", &"one")],
+                                        |r| r.get(0))
+                       .unwrap());
     }
 
     #[test]
     fn test_query_named() {
         let db = Connection::open_in_memory().unwrap();
-        let sql = "CREATE TABLE test (id INTEGER PRIMARY KEY NOT NULL, name TEXT NOT NULL, flag \
-                   INTEGER)";
+        let sql = r#"
+        CREATE TABLE test (id INTEGER PRIMARY KEY NOT NULL, name TEXT NOT NULL, flag INTEGER);
+        INSERT INTO test(id, name) VALUES (1, "one");
+        "#;
         db.execute_batch(sql).unwrap();
 
-        let mut stmt = db.prepare("SELECT * FROM test where name = :name").unwrap();
-        stmt.query_named(&[(":name", &"one")]).unwrap();
+        let mut stmt = db.prepare("SELECT id FROM test where name = :name").unwrap();
+        let mut rows = stmt.query_named(&[(":name", &"one")]).unwrap();
+
+        let id: i32 = rows.next().unwrap().unwrap().get(0);
+        assert_eq!(1, id);
+    }
+
+    #[test]
+    fn test_query_map_named() {
+        let db = Connection::open_in_memory().unwrap();
+        let sql = r#"
+        CREATE TABLE test (id INTEGER PRIMARY KEY NOT NULL, name TEXT NOT NULL, flag INTEGER);
+        INSERT INTO test(id, name) VALUES (1, "one");
+        "#;
+        db.execute_batch(sql).unwrap();
+
+        let mut stmt = db.prepare("SELECT id FROM test where name = :name").unwrap();
+        let mut rows = stmt.query_map_named(&[(":name", &"one")], |row| {
+            let id: i32 = row.get(0);
+            2 * id
+        }).unwrap();
+
+        let doubled_id: i32 = rows.next().unwrap().unwrap();
+        assert_eq!(2, doubled_id);
+    }
+
+    #[test]
+    fn test_query_and_then_named() {
+
+        let db = Connection::open_in_memory().unwrap();
+        let sql = r#"
+        CREATE TABLE test (id INTEGER PRIMARY KEY NOT NULL, name TEXT NOT NULL, flag INTEGER);
+        INSERT INTO test(id, name) VALUES (1, "one");
+        INSERT INTO test(id, name) VALUES (2, "one");
+        "#;
+        db.execute_batch(sql).unwrap();
+
+        let mut stmt = db.prepare("SELECT id FROM test where name = :name ORDER BY id ASC").unwrap();
+        let mut rows = stmt.query_and_then_named(&[(":name", &"one")], |row| {
+            let id: i32 = row.get(0);
+            if id == 1 {
+                Ok(id)
+            } else {
+                Err(Error::SqliteSingleThreadedMode)
+            }
+        }).unwrap();
+
+        // first row should be Ok
+        let doubled_id: i32 = rows.next().unwrap().unwrap();
+        assert_eq!(1, doubled_id);
+
+        // second row should be Err
+        match rows.next().unwrap() {
+            Ok(_) => panic!("invalid Ok"),
+            Err(Error::SqliteSingleThreadedMode) => (),
+            Err(_) => panic!("invalid Err"),
+        }
     }
 
     #[test]

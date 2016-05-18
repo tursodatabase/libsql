@@ -5,6 +5,7 @@
   connection are inherently nested. While a transaction is alive, the parent connection or
   transaction is unusable, so `Transaction` now implements `Deref<Target=Connection>`, giving
   access to `Connection`'s methods via the `Transaction` itself.
+* Adds `query_map_named` and `query_and_then_named` to `Statement`.
 * Adds `insert` convenience method to `Statement` which returns the row ID of an inserted row.
 * Adds `exists` convenience method returning whether a query finds one or more rows.
 * Adds support for serializing types from the `serde_json` crate. Requires the `serde_json` feature.

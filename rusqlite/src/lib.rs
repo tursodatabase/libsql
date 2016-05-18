@@ -824,7 +824,7 @@ impl<'conn> Statement<'conn> {
     /// }
     /// ```
     ///
-    /// # Failure
+    /// ## Failure
     ///
     /// Will return `Err` if binding parameters fails.
     pub fn query<'a>(&'a mut self, params: &[&ToSql]) -> Result<Rows<'a>> {
@@ -838,7 +838,24 @@ impl<'conn> Statement<'conn> {
     /// Executes the prepared statement and maps a function over the resulting rows, returning
     /// an iterator over the mapped function results.
     ///
-    /// # Failure
+    /// ## Example
+    ///
+    /// ```rust,no_run
+    /// # use rusqlite::{Connection, Result};
+    /// fn get_names(conn: &Connection) -> Result<Vec<String>> {
+    ///     let mut stmt = try!(conn.prepare("SELECT name FROM people"));
+    ///     let rows = try!(stmt.query_map(&[], |row| row.get(0)));
+    ///
+    ///     let mut names = Vec::new();
+    ///     for name_result in rows {
+    ///         names.push(try!(name_result));
+    ///     }
+    ///
+    ///     Ok(names)
+    /// }
+    /// ```
+    ///
+    /// ## Failure
     ///
     /// Will return `Err` if binding parameters fails.
     pub fn query_map<'a, T, F>(&'a mut self, params: &[&ToSql], f: F) -> Result<MappedRows<'a, F>>
