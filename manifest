@@ -1,5 +1,5 @@
-C Version\s3.13.0
-D 2016-05-18T10:57:30.274
+C Omit\sthe\sunnecessary\sWHERE_REOPEN_IDX\sflag\sin\sthe\sWHERE\sinterface.
+D 2016-05-18T21:01:27.099
 F Makefile.in 9eda6e1c90d05c199c3ec8a7069b0682ad307657
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc db82b35aef27f412fef14d8534afc022138bcdfd
@@ -382,7 +382,7 @@ F src/shell.c 14ff7f660530a52b117d110ba3390b7b2eb719b6
 F src/sqlite.h.in 9984129d86243424b765fcb3f147c697bd20bb54
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 98f72cbfe00169c39089115427d06ea05fe4b4a2
-F src/sqliteInt.h 4fe51e4e26d9d576040198cef4f78df3d987387d
+F src/sqliteInt.h 7c600fe863a30b39ba9afcedba5ee3dad657f8c2
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
@@ -457,9 +457,9 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 4db22ed7e77bcf672b1a685d6ddeffba8d5be302
 F src/wal.h 2f7c831cf3b071fa548bf2d5cac640846a7ff19c
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
-F src/where.c fd321cc2c5ee346a2e146b93892ed01bb7a839c0
+F src/where.c ad8ad50ccf25795f6830b6b864bbfcd060ff08dd
 F src/whereInt.h 3b1fc240e322613ba4e9dc857ca9c7c3390acc74
-F src/wherecode.c 23fc19ca546ce323ba5c4be96b88e3ba08cf6b8f
+F src/wherecode.c d227fca7d766a10fe4ba4d812210f5631f5a98b3
 F src/whereexpr.c eacc0e60d029a082b4fc0cc42ea98544add1319e
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1488,10 +1488,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 995c084bde44e678facc5f5d95a2335ce61e57b0
-R 0e39e66ffd1d7cd6d62e8fa571ff36a1
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.13.0 *
+P fc49f556e48970561d7ab6a2f24fdd7d9eb81ff2 da94a6e0ebacad8f235dcd653a25474327f26137
+R 9e1f8e54236f8755244237de4975d385
+T +closed da94a6e0ebacad8f235dcd653a25474327f26137
 U drh
-Z ecdfa0c32602745fc488e92155fa5f0d
+Z 85bf8286938cce8189356318f458d85b

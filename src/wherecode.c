@@ -1629,7 +1629,6 @@ Bitmask sqlite3WhereCodeOneLoopStart(
           ){
             assert( pSubWInfo->a[0].iIdxCur==iCovCur );
             pCov = pSubLoop->u.btree.pIndex;
-            wctrlFlags |= WHERE_REOPEN_IDX;
           }else{
             pCov = 0;
           }

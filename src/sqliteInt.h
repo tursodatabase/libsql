@@ -2540,7 +2540,7 @@ struct SrcList {
 #define WHERE_DISTINCTBY       0x0200 /* pOrderby is really a DISTINCT clause */
 #define WHERE_WANT_DISTINCT    0x0400 /* All output needs to be distinct */
 #define WHERE_SORTBYGROUP      0x0800 /* Support sqlite3WhereIsSorted() */
-#define WHERE_REOPEN_IDX       0x1000 /* Try to use OP_ReopenIdx */
+                           /*  0x1000    not currently used */
 #define WHERE_ONEPASS_MULTIROW 0x2000 /* ONEPASS is ok with multiple rows */
 #define WHERE_USE_LIMIT        0x4000 /* There is a constant LIMIT clause */
 #define WHERE_SEEK_TABLE       0x8000 /* Do not defer seeks on main table */
