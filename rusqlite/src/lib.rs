@@ -1131,10 +1131,9 @@ impl<'stmt> Row<'stmt> {
         unsafe {
             let idx = try!(idx.idx(self.stmt));
 
-            if T::column_has_valid_sqlite_type(self.stmt.stmt, idx) {
-                FromSql::column_result(self.stmt.stmt, idx)
-            } else {
-                Err(Error::InvalidColumnType)
+            match T::column_has_valid_sqlite_type(self.stmt.stmt, idx) {
+                Ok(()) => FromSql::column_result(self.stmt.stmt, idx),
+                Err(e) => Err(e),
             }
         }
     }
@@ -1456,6 +1455,19 @@ mod test {
         }
     }
 
+    #[test]
+    #[should_panic]
+    fn test_rows_dropped() {
+        let db = checked_memory_handle();
+        db.execute_batch("CREATE TABLE foo(x INTEGER)").unwrap();
+        db.execute_batch("INSERT INTO foo(x) VALUES(1)").unwrap();
+
+        let mut stmt = db.prepare("SELECT x FROM foo").unwrap();
+        let row = stmt.query(&[]).unwrap().next().unwrap().unwrap();
+
+        assert_eq!(1i32, row.get(0));
+    }
+
     mod query_and_then_tests {
         extern crate libsqlite3_sys as ffi;
         use super::*;
@@ -1536,7 +1548,7 @@ mod test {
                 .collect();
 
             match bad_type.unwrap_err() {
-                Error::InvalidColumnType => (),
+                Error::InvalidColumnType(_, _) => (),
                 err => panic!("Unexpected error {}", err),
             }
 
@@ -1596,7 +1608,7 @@ mod test {
                 .collect();
 
             match bad_type.unwrap_err() {
-                CustomError::Sqlite(Error::InvalidColumnType) => (),
+                CustomError::Sqlite(Error::InvalidColumnType(_, _)) => (),
                 err => panic!("Unexpected error {}", err),
             }
 
@@ -1658,7 +1670,7 @@ mod test {
             });
 
             match bad_type.unwrap_err() {
-                CustomError::Sqlite(Error::InvalidColumnType) => (),
+                CustomError::Sqlite(Error::InvalidColumnType(_, _)) => (),
                 err => panic!("Unexpected error {}", err),
             }
 

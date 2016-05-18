@@ -27,7 +27,7 @@ impl FromSql for NaiveDate {
         }
     }
 
-    unsafe fn column_has_valid_sqlite_type(stmt: *mut sqlite3_stmt, col: c_int) -> bool {
+    unsafe fn column_has_valid_sqlite_type(stmt: *mut sqlite3_stmt, col: c_int) -> Result<()> {
         String::column_has_valid_sqlite_type(stmt, col)
     }
 }
@@ -55,7 +55,7 @@ impl FromSql for NaiveTime {
         }
     }
 
-    unsafe fn column_has_valid_sqlite_type(stmt: *mut sqlite3_stmt, col: c_int) -> bool {
+    unsafe fn column_has_valid_sqlite_type(stmt: *mut sqlite3_stmt, col: c_int) -> Result<()> {
         String::column_has_valid_sqlite_type(stmt, col)
     }
 }
@@ -86,7 +86,7 @@ impl FromSql for NaiveDateTime {
         }
     }
 
-    unsafe fn column_has_valid_sqlite_type(stmt: *mut sqlite3_stmt, col: c_int) -> bool {
+    unsafe fn column_has_valid_sqlite_type(stmt: *mut sqlite3_stmt, col: c_int) -> Result<()> {
         String::column_has_valid_sqlite_type(stmt, col)
     }
 }
@@ -118,7 +118,7 @@ impl FromSql for DateTime<UTC> {
         }
     }
 
-    unsafe fn column_has_valid_sqlite_type(stmt: *mut sqlite3_stmt, col: c_int) -> bool {
+    unsafe fn column_has_valid_sqlite_type(stmt: *mut sqlite3_stmt, col: c_int) -> Result<()> {
         String::column_has_valid_sqlite_type(stmt, col)
     }
 }
@@ -130,7 +130,7 @@ impl FromSql for DateTime<Local> {
         Ok(utc_dt.with_timezone(&Local))
     }
 
-    unsafe fn column_has_valid_sqlite_type(stmt: *mut sqlite3_stmt, col: c_int) -> bool {
+    unsafe fn column_has_valid_sqlite_type(stmt: *mut sqlite3_stmt, col: c_int) -> Result<()> {
         DateTime::<UTC>::column_has_valid_sqlite_type(stmt, col)
     }
 }

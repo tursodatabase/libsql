@@ -24,7 +24,7 @@ impl FromSql for time::Timespec {
         }
     }
 
-    unsafe fn column_has_valid_sqlite_type(stmt: *mut sqlite3_stmt, col: c_int) -> bool {
+    unsafe fn column_has_valid_sqlite_type(stmt: *mut sqlite3_stmt, col: c_int) -> Result<()> {
         String::column_has_valid_sqlite_type(stmt, col)
     }
 }

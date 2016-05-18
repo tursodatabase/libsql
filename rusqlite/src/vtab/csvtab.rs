@@ -267,7 +267,8 @@ mod test {
                                     WHERE v1.rowid < v2.rowid")
                           .unwrap();
 
-            let row = s.query(&[]).unwrap().next().unwrap().unwrap();
+            let mut rows = s.query(&[]).unwrap();
+            let row = rows.next().unwrap().unwrap();
             assert_eq!(row.get::<i32, i32>(0), 2);
         }
         db.execute_batch("DROP TABLE vtab").unwrap();

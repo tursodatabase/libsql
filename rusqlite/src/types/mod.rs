@@ -83,8 +83,17 @@ pub trait FromSql: Sized {
     /// the type reported by SQLite matches a type suitable for Self. This method is used
     /// by `Row::get_checked` to confirm that the column contains a valid type before
     /// attempting to retrieve the value.
-    unsafe fn column_has_valid_sqlite_type(_: *mut sqlite3_stmt, _: c_int) -> bool {
-        true
+    unsafe fn column_has_valid_sqlite_type(_: *mut sqlite3_stmt, _: c_int) -> Result<()> {
+        Ok(())
+    }
+}
+
+unsafe fn column_has_expected_typed(stmt: *mut sqlite3_stmt, col: c_int, expected_type: c_int) -> Result<()> {
+    let actual_type = sqlite3_column_type(stmt, col);
+    if actual_type == expected_type {
+        Ok(())
+    } else {
+        Err(Error::InvalidColumnType(col, actual_type))
     }
 }
 
@@ -197,8 +206,8 @@ macro_rules! raw_from_impl(
                 Ok(ffi::$f(stmt, col))
             }
 
-            unsafe fn column_has_valid_sqlite_type(stmt: *mut sqlite3_stmt, col: c_int) -> bool {
-                sqlite3_column_type(stmt, col) == $c
+            unsafe fn column_has_valid_sqlite_type(stmt: *mut sqlite3_stmt, col: c_int) -> Result<()> {
+                column_has_expected_typed(stmt, col, $c)
             }
         }
     )
@@ -216,8 +225,8 @@ impl FromSql for bool {
         }
     }
 
-    unsafe fn column_has_valid_sqlite_type(stmt: *mut sqlite3_stmt, col: c_int) -> bool {
-        sqlite3_column_type(stmt, col) == ffi::SQLITE_INTEGER
+    unsafe fn column_has_valid_sqlite_type(stmt: *mut sqlite3_stmt, col: c_int) -> Result<()> {
+        column_has_expected_typed(stmt, col, ffi::SQLITE_INTEGER)
     }
 }
 
@@ -233,8 +242,8 @@ impl FromSql for String {
         }
     }
 
-    unsafe fn column_has_valid_sqlite_type(stmt: *mut sqlite3_stmt, col: c_int) -> bool {
-        sqlite3_column_type(stmt, col) == ffi::SQLITE_TEXT
+    unsafe fn column_has_valid_sqlite_type(stmt: *mut sqlite3_stmt, col: c_int) -> Result<()> {
+        column_has_expected_typed(stmt, col, ffi::SQLITE_TEXT)
     }
 }
 
@@ -253,8 +262,8 @@ impl FromSql for Vec<u8> {
         Ok(from_raw_parts(mem::transmute(c_blob), len).to_vec())
     }
 
-    unsafe fn column_has_valid_sqlite_type(stmt: *mut sqlite3_stmt, col: c_int) -> bool {
-        sqlite3_column_type(stmt, col) == ffi::SQLITE_BLOB
+    unsafe fn column_has_valid_sqlite_type(stmt: *mut sqlite3_stmt, col: c_int) -> Result<()> {
+        column_has_expected_typed(stmt, col, ffi::SQLITE_BLOB)
     }
 }
 
@@ -267,9 +276,12 @@ impl<T: FromSql> FromSql for Option<T> {
         }
     }
 
-    unsafe fn column_has_valid_sqlite_type(stmt: *mut sqlite3_stmt, col: c_int) -> bool {
-        sqlite3_column_type(stmt, col) == ffi::SQLITE_NULL ||
-        T::column_has_valid_sqlite_type(stmt, col)
+    unsafe fn column_has_valid_sqlite_type(stmt: *mut sqlite3_stmt, col: c_int) -> Result<()> {
+        if sqlite3_column_type(stmt, col) == ffi::SQLITE_NULL {
+            Ok(())
+        } else {
+            T::column_has_valid_sqlite_type(stmt, col)
+        }
     }
 }
 
@@ -297,7 +309,7 @@ impl FromSql for Value {
             ffi::SQLITE_FLOAT => Ok(Value::Real(ffi::sqlite3_column_double(stmt, col))),
             ffi::SQLITE_NULL => Ok(Value::Null),
             ffi::SQLITE_BLOB => FromSql::column_result(stmt, col).map(Value::Blob),
-            _ => Err(Error::InvalidColumnType),
+            ct => Err(Error::InvalidColumnType(col, ct)),
         }
     }
 }
@@ -371,7 +383,7 @@ mod test {
     fn test_mismatched_types() {
         fn is_invalid_column_type(err: Error) -> bool {
             match err {
-                Error::InvalidColumnType => true,
+                Error::InvalidColumnType(_, _) => true,
                 _ => false,
             }
         }

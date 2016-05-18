@@ -173,7 +173,6 @@ mod test {
             }
         }
 
-        s.reset_if_needed();
         p1.borrow_mut().clear();
         p2.borrow_mut().clear();
         p3.borrow_mut().clear();
@@ -182,18 +181,19 @@ mod test {
         p3.borrow_mut().append(&mut vec![-5, -10]);
 
         {
-            let row = s.query(&[]).unwrap().next().unwrap().unwrap();
+            let mut rows = s.query(&[]).unwrap();
+            let row = rows.next().unwrap().unwrap();
             assert_eq!(1, row.get(0));
             assert_eq!(11, row.get(1));
             assert_eq!(-5, row.get(2));
         }
 
-        s.reset_if_needed();
         p2.borrow_mut().clear();
         p3.borrow_mut().clear();
         p2.borrow_mut().append(&mut vec![3, 4, 5]);
         p3.borrow_mut().append(&mut vec![0, -5]);
-        assert!(s.query(&[]).unwrap().next().is_none());
+        let mut rows = s.query(&[]).unwrap();
+        assert!(rows.next().is_none());
 
         int_array::drop_int_array(&db, "ex1").unwrap();
         int_array::drop_int_array(&db, "ex2").unwrap();

@@ -54,7 +54,7 @@ pub enum Error {
 
     /// Error when the value of a particular column is requested, but the type of the result in
     /// that column cannot be converted to the requested Rust type.
-    InvalidColumnType,
+    InvalidColumnType(c_int, c_int),
 
     /// Error when a query that was expected to insert one row did not insert any or insert many.
     StatementChangedRows(c_int),
@@ -114,7 +114,7 @@ impl fmt::Display for Error {
             Error::GetFromStaleRow => write!(f, "Attempted to get a value from a stale row"),
             Error::InvalidColumnIndex(i) => write!(f, "Invalid column index: {}", i),
             Error::InvalidColumnName(ref name) => write!(f, "Invalid column name: {}", name),
-            Error::InvalidColumnType => write!(f, "Invalid column type"),
+            Error::InvalidColumnType(i, t) => write!(f, "Invalid column type {} at index: {}", t, i),
             Error::StatementChangedRows(i) => write!(f, "Query changed {} rows", i),
             Error::StatementFailedToInsertRow => write!(f, "Statement failed to insert new row"),
 
@@ -148,7 +148,7 @@ impl error::Error for Error {
             Error::GetFromStaleRow => "attempted to get a value from a stale row",
             Error::InvalidColumnIndex(_) => "invalid column index",
             Error::InvalidColumnName(_) => "invalid column name",
-            Error::InvalidColumnType => "invalid column type",
+            Error::InvalidColumnType(_, _) => "invalid column type",
             Error::StatementChangedRows(_) => "query inserted zero or more than one row",
             Error::StatementFailedToInsertRow => "statement failed to insert new row",
 
@@ -176,7 +176,7 @@ impl error::Error for Error {
             Error::GetFromStaleRow |
             Error::InvalidColumnIndex(_) |
             Error::InvalidColumnName(_) |
-            Error::InvalidColumnType |
+            Error::InvalidColumnType(_, _) |
             Error::InvalidPath(_) => None,
             Error::StatementChangedRows(_) => None,
             Error::StatementFailedToInsertRow => None,

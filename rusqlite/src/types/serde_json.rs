@@ -31,7 +31,7 @@ impl FromSql for Value {
                 let blob = try!(Vec::<u8>::column_result(stmt, col));
                 serde_json::from_slice(&blob)
             }
-            _ => return Err(Error::InvalidColumnType),
+            ct => return Err(Error::InvalidColumnType(col, ct)),
         };
         value_result.map_err(|err| Error::FromSqlConversionFailure(Box::new(err)))
     }
