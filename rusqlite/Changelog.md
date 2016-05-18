@@ -5,6 +5,11 @@
   connection are inherently nested. While a transaction is alive, the parent connection or
   transaction is unusable, so `Transaction` now implements `Deref<Target=Connection>`, giving
   access to `Connection`'s methods via the `Transaction` itself.
+* BREAKING CHANGE: `Transaction::set_commit` and `Transaction::set_rollback` have been replaced
+  by `Transaction::set_drop_behavior`.
+* BREAKING CHANGE: `Transaction::savepoint()` now returns a `Savepoint` instead of another
+  `Transaction`. Unlike `Transaction`, `Savepoint`s can be rolled back while keeping the current
+  savepoint active.
 * Adds `insert` convenience method to `Statement` which returns the row ID of an inserted row.
 * Adds `exists` convenience method returning whether a query finds one or more rows.
 * Adds support for serializing types from the `serde_json` crate. Requires the `serde_json` feature.
