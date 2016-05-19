@@ -1,5 +1,5 @@
-C Optimization\smarks\sin\svdbe.c.\s\sNo\slogic\schanges.
-D 2016-05-19T17:51:19.307
+C Clean\sup\sthe\sWHERE_*\smacros\sused\sfor\sthe\swctrlFlags\sparameter\son\sthe\s\nsqlite3WhereBegin()\sinterface,\sfreeing\sup\ssome\sbits\sto\sbe\sused\sfor\sother\sthings.
+D 2016-05-19T18:56:33.988
 F Makefile.in f59e0763ff448719fc1bd25513882b0567286317
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 306d73e854b1a92ea06e5d1e637faa5c44de53c7
@@ -383,7 +383,7 @@ F src/shell.c 14ff7f660530a52b117d110ba3390b7b2eb719b6
 F src/sqlite.h.in 9984129d86243424b765fcb3f147c697bd20bb54
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 98f72cbfe00169c39089115427d06ea05fe4b4a2
-F src/sqliteInt.h 7c600fe863a30b39ba9afcedba5ee3dad657f8c2
+F src/sqliteInt.h 36ad4f5a86e1bef5e34c301b60bb24837f87d662
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
@@ -458,9 +458,9 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 4db22ed7e77bcf672b1a685d6ddeffba8d5be302
 F src/wal.h 2f7c831cf3b071fa548bf2d5cac640846a7ff19c
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
-F src/where.c ad8ad50ccf25795f6830b6b864bbfcd060ff08dd
+F src/where.c 72fd2e1258625c1aee8e33a529914aea2d487422
 F src/whereInt.h 3b1fc240e322613ba4e9dc857ca9c7c3390acc74
-F src/wherecode.c d227fca7d766a10fe4ba4d812210f5631f5a98b3
+F src/wherecode.c e3f18fcda2d7f8218a09dc33cf495dca0efa6e3e
 F src/whereexpr.c eacc0e60d029a082b4fc0cc42ea98544add1319e
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1489,7 +1489,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4737cadc414c5f6d256fcceacb19d80d66a8c8e7
-R 9f8362ea36557124657ddc486fb3880d
+P cf2737415aff7de7e133da174b645324c99d5758
+R b3dd248e38fe4d745483b43457d811f8
 U drh
-Z f893c9ab14ca925d78367a321ac969dc
+Z 077055ad654ddf765f85d8f018c402ea
