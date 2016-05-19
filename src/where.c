@@ -3262,7 +3262,7 @@ static i8 wherePathSatisfiesOrderBy(
   WhereInfo *pWInfo,    /* The WHERE clause */
   ExprList *pOrderBy,   /* ORDER BY or GROUP BY or DISTINCT clause to check */
   WherePath *pPath,     /* The WherePath to check */
-  u16 wctrlFlags,       /* Might contain WHERE_GROUPBY or WHERE_DISTINCTBY */
+  u16 wctrlFlags,       /* WHERE_GROUPBY or _DISTINCTBY or _ORDERBY_LIMIT */
   u16 nLoop,            /* Number of entries in pPath->aLoop[] */
   WhereLoop *pLast,     /* Add this WhereLoop to the end of pPath->aLoop[] */
   Bitmask *pRevMask     /* OUT: Mask of WhereLoops to run in reverse order */
@@ -3273,6 +3273,7 @@ static i8 wherePathSatisfiesOrderBy(
   u8 isOrderDistinct;   /* All prior WhereLoops are order-distinct */
   u8 distinctColumns;   /* True if the loop has UNIQUE NOT NULL columns */
   u8 isMatch;           /* iColumn matches a term of the ORDER BY clause */
+  u16 eqOpMask;         /* Allowed equality operators */
   u16 nKeyCol;          /* Number of key columns in pIndex */
   u16 nColumn;          /* Total number of ordered columns in the index */
   u16 nOrderBy;         /* Number terms in the ORDER BY clause */
@@ -3323,9 +3324,16 @@ static i8 wherePathSatisfiesOrderBy(
   obDone = MASKBIT(nOrderBy)-1;
   orderDistinctMask = 0;
   ready = 0;
+  eqOpMask = WO_EQ | WO_IS | WO_ISNULL;
+  if( wctrlFlags & WHERE_ORDERBY_LIMIT ) eqOpMask |= WO_IN;
   for(iLoop=0; isOrderDistinct && obSat<obDone && iLoop<=nLoop; iLoop++){
     if( iLoop>0 ) ready |= pLoop->maskSelf;
-    pLoop = iLoop<nLoop ? pPath->aLoop[iLoop] : pLast;
+    if( iLoop<nLoop ){
+      pLoop = pPath->aLoop[iLoop];
+      if( wctrlFlags & WHERE_ORDERBY_LIMIT ) continue;
+    }else{
+      pLoop = pLast;
+    }
     if( pLoop->wsFlags & WHERE_VIRTUALTABLE ){
       if( pLoop->u.vtab.isOrdered ) obSat = obDone;
       break;
@@ -3343,7 +3351,7 @@ static i8 wherePathSatisfiesOrderBy(
       if( pOBExpr->op!=TK_COLUMN ) continue;
       if( pOBExpr->iTable!=iCur ) continue;
       pTerm = sqlite3WhereFindTerm(&pWInfo->sWC, iCur, pOBExpr->iColumn,
-                       ~ready, WO_EQ|WO_ISNULL|WO_IS, 0);
+                       ~ready, eqOpMask, 0);
       if( pTerm==0 ) continue;
       if( (pTerm->eOperator&(WO_EQ|WO_IS))!=0 && pOBExpr->iColumn>=0 ){
         const char *z1, *z2;
@@ -3383,10 +3391,12 @@ static i8 wherePathSatisfiesOrderBy(
       for(j=0; j<nColumn; j++){
         u8 bOnce;   /* True to run the ORDER BY search loop */
 
-        /* Skip over == and IS NULL terms */
+        /* Skip over == and IS and ISNULL terms.
+        ** (Also skip IN terms when doing WHERE_ORDERBY_LIMIT processing)
+        */
         if( j<pLoop->u.btree.nEq
          && pLoop->nSkip==0
-         && ((i = pLoop->aLTerm[j]->eOperator) & (WO_EQ|WO_ISNULL|WO_IS))!=0
+         && ((i = pLoop->aLTerm[j]->eOperator) & eqOpMask)!=0
         ){
           if( i & WO_ISNULL ){
             testcase( isOrderDistinct );
@@ -3913,6 +3923,15 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
       pWInfo->revMask = pFrom->revLoop;
       if( pWInfo->nOBSat<=0 ){
         pWInfo->nOBSat = 0;
+        if( nLoop>0 ){
+          Bitmask m;
+          int rc = wherePathSatisfiesOrderBy(pWInfo, pWInfo->pOrderBy, pFrom,
+                      WHERE_ORDERBY_LIMIT, nLoop-1, pFrom->aLoop[nLoop-1], &m);
+          if( rc==pWInfo->pOrderBy->nExpr ){
+            pWInfo->bOrderedInnerLoop = 1;
+            pWInfo->revMask = m;
+          }
+        }
       }
     }
     if( (pWInfo->wctrlFlags & WHERE_SORTBYGROUP)
