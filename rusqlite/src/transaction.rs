@@ -1,4 +1,3 @@
-use std::borrow::Cow;
 use std::ops::Deref;
 use {Result, Connection};
 
@@ -14,16 +13,30 @@ pub enum TransactionBehavior {
     Exclusive,
 }
 
+/// Options for how a Transaction or Savepoint should behave when it is dropped.
+#[derive(Copy,Clone,PartialEq,Eq)]
+pub enum DropBehavior {
+    /// Roll back the changes. This is the default.
+    Rollback,
+
+    /// Commit the changes.
+    Commit,
+
+    /// Do not commit or roll back changes - this will leave the transaction or savepoint
+    /// open, so should be used with care.
+    Ignore,
+}
+
 /// Old name for `Transaction`. `SqliteTransaction` is deprecated.
 pub type SqliteTransaction<'conn> = Transaction<'conn>;
 
-///
 /// Represents a transaction on a database connection.
 ///
 /// ## Note
 ///
-/// Transactions will roll back by default. Use the `set_commit` or `commit` methods to commit the
-/// transaction.
+/// Transactions will roll back by default. Use `commit` method to explicitly commit the
+/// transaction, or use `set_drop_behavior` to change what happens when the transaction
+/// is dropped.
 ///
 /// ## Example
 ///
@@ -42,9 +55,39 @@ pub type SqliteTransaction<'conn> = Transaction<'conn>;
 /// ```
 pub struct Transaction<'conn> {
     conn: &'conn Connection,
+    drop_behavior: DropBehavior,
+    committed: bool,
+}
+
+/// Represents a savepoint on a database connection.
+///
+/// ## Note
+///
+/// Savepoints will roll back by default. Use `commit` method to explicitly commit the
+/// savepoint, or use `set_drop_behavior` to change what happens when the savepoint
+/// is dropped.
+///
+/// ## Example
+///
+/// ```rust,no_run
+/// # use rusqlite::{Connection, Result};
+/// # fn do_queries_part_1(conn: &Connection) -> Result<()> { Ok(()) }
+/// # fn do_queries_part_2(conn: &Connection) -> Result<()> { Ok(()) }
+/// fn perform_queries(conn: &Connection) -> Result<()> {
+///     let sp = try!(conn.savepoint());
+///
+///     try!(do_queries_part_1(conn)); // sp causes rollback if this fails
+///     try!(do_queries_part_2(conn)); // sp causes rollback if this fails
+///
+///     sp.commit()
+/// }
+/// ```
+pub struct Savepoint<'conn> {
+    conn: &'conn Connection,
+    name: String,
     depth: u32,
-    commit: bool,
-    finished: bool,
+    drop_behavior: DropBehavior,
+    committed: bool,
 }
 
 impl<'conn> Transaction<'conn> {
@@ -58,9 +101,8 @@ impl<'conn> Transaction<'conn> {
         conn.execute_batch(query).map(move |_| {
             Transaction {
                 conn: conn,
-                depth: 0,
-                commit: false,
-                finished: false,
+                drop_behavior: DropBehavior::Rollback,
+                committed: false,
             }
         })
     }
@@ -91,36 +133,23 @@ impl<'conn> Transaction<'conn> {
     ///     tx.commit()
     /// }
     /// ```
-    pub fn savepoint(&mut self) -> Result<Transaction> {
-        let new_depth = self.depth + 1;
-        self.conn.execute_batch(&format!("SAVEPOINT sp{}", new_depth)).map(|_| {
-            Transaction {
-                conn: self.conn,
-                depth: new_depth,
-                commit: false,
-                finished: false,
-            }
-        })
+    pub fn savepoint(&mut self) -> Result<Savepoint> {
+        Savepoint::with_depth(self.conn, 1)
     }
 
-    /// Returns whether or not the transaction is currently set to commit.
-    pub fn will_commit(&self) -> bool {
-        self.commit
+    /// Create a new savepoint with a custom savepoint name. See `savepoint()`.
+    pub fn savepoint_with_name<T: Into<String>>(&mut self, name: T) -> Result<Savepoint> {
+        Savepoint::with_depth_and_name(self.conn, 1, name)
     }
 
-    /// Returns whether or not the transaction is currently set to rollback.
-    pub fn will_rollback(&self) -> bool {
-        !self.commit
+    /// Get the current setting for what happens to the transaction when it is dropped.
+    pub fn drop_behavior(&self) -> DropBehavior {
+        self.drop_behavior
     }
 
-    /// Set the transaction to commit at its completion.
-    pub fn set_commit(&mut self) {
-        self.commit = true
-    }
-
-    /// Set the transaction to rollback at its completion.
-    pub fn set_rollback(&mut self) {
-        self.commit = false
+    /// Configure the transaction to perform the specified action when it is dropped.
+    pub fn set_drop_behavior(&mut self, drop_behavior: DropBehavior) {
+        self.drop_behavior = drop_behavior
     }
 
     /// A convenience method which consumes and commits a transaction.
@@ -129,13 +158,8 @@ impl<'conn> Transaction<'conn> {
     }
 
     fn commit_(&mut self) -> Result<()> {
-        self.finished = true;
-        let sql = if self.depth == 0 {
-            Cow::Borrowed("COMMIT")
-        } else {
-            Cow::Owned(format!("RELEASE sp{}", self.depth))
-        };
-        self.conn.execute_batch(&sql)
+        self.committed = true;
+        self.conn.execute_batch("COMMIT")
     }
 
     /// A convenience method which consumes and rolls back a transaction.
@@ -144,17 +168,12 @@ impl<'conn> Transaction<'conn> {
     }
 
     fn rollback_(&mut self) -> Result<()> {
-        self.finished = true;
-        let sql = if self.depth == 0 {
-            Cow::Borrowed("ROLLBACK")
-        } else {
-            Cow::Owned(format!("ROLLBACK TO sp{}", self.depth))
-        };
-        self.conn.execute_batch(&sql)
+        self.committed = true;
+        self.conn.execute_batch("ROLLBACK")
     }
 
     /// Consumes the transaction, committing or rolling back according to the current setting
-    /// (see `will_commit`, `will_rollback`).
+    /// (see `drop_behavior`).
     ///
     /// Functionally equivalent to the `Drop` implementation, but allows callers to see any
     /// errors that occur.
@@ -163,10 +182,13 @@ impl<'conn> Transaction<'conn> {
     }
 
     fn finish_(&mut self) -> Result<()> {
-        match (self.finished, self.commit) {
-            (true, _) => Ok(()),
-            (false, true) => self.commit_(),
-            (false, false) => self.rollback_(),
+        if self.committed {
+            return Ok(());
+        }
+        match self.drop_behavior() {
+            DropBehavior::Commit => self.commit_(),
+            DropBehavior::Rollback => self.rollback_(),
+            DropBehavior::Ignore => Ok(()),
         }
     }
 }
@@ -186,10 +208,196 @@ impl<'conn> Drop for Transaction<'conn> {
     }
 }
 
+impl<'conn> Savepoint<'conn> {
+    fn with_depth_and_name<T: Into<String>>(conn: &Connection, depth: u32, name: T) -> Result<Savepoint> {
+        let name = name.into();
+        conn.execute_batch(&format!("SAVEPOINT {}", name)).map(|_| {
+            Savepoint {
+                conn: conn,
+                name: name,
+                depth: depth,
+                drop_behavior: DropBehavior::Rollback,
+                committed: false,
+            }
+        })
+    }
+
+    fn with_depth(conn: &Connection, depth: u32) -> Result<Savepoint> {
+        let name = format!("_rusqlite_sp_{}", depth);
+        Savepoint::with_depth_and_name(conn, depth, name)
+    }
+
+    /// Begin a new savepoint. Can be nested.
+    pub fn new(conn: &mut Connection) -> Result<Savepoint> {
+        Savepoint::with_depth(conn, 0)
+    }
+
+    /// Begin a new savepoint with a user-provided savepoint name.
+    pub fn with_name<T: Into<String>>(conn: &mut Connection, name: T) -> Result<Savepoint> {
+        Savepoint::with_depth_and_name(conn, 0, name)
+    }
+
+    /// Begin a nested savepoint.
+    pub fn savepoint(&mut self) -> Result<Savepoint> {
+        Savepoint::with_depth(self.conn, self.depth + 1)
+    }
+
+    /// Begin a nested savepoint with a user-provided savepoint name.
+    pub fn savepoint_with_name<T: Into<String>>(&mut self, name: T) -> Result<Savepoint> {
+        Savepoint::with_depth_and_name(self.conn, self.depth + 1, name)
+    }
+
+    /// Get the current setting for what happens to the savepoint when it is dropped.
+    pub fn drop_behavior(&self) -> DropBehavior {
+        self.drop_behavior
+    }
+
+    /// Configure the savepoint to perform the specified action when it is dropped.
+    pub fn set_drop_behavior(&mut self, drop_behavior: DropBehavior) {
+        self.drop_behavior = drop_behavior
+    }
+
+    /// A convenience method which consumes and commits a savepoint.
+    pub fn commit(mut self) -> Result<()> {
+        self.commit_()
+    }
+
+    fn commit_(&mut self) -> Result<()> {
+        self.committed = true;
+        self.conn.execute_batch(&format!("RELEASE {}", self.name))
+    }
+
+    /// A convenience method which rolls back a savepoint.
+    ///
+    /// ## Note
+    ///
+    /// Unlike `Transaction`s, savepoints remain active after they have been rolled back,
+    /// and can be rolled back again or committed.
+    pub fn rollback(&mut self) -> Result<()> {
+        self.conn.execute_batch(&format!("ROLLBACK TO {}", self.name))
+    }
+
+    /// Consumes the savepoint, committing or rolling back according to the current setting
+    /// (see `drop_behavior`).
+    ///
+    /// Functionally equivalent to the `Drop` implementation, but allows callers to see any
+    /// errors that occur.
+    pub fn finish(mut self) -> Result<()> {
+        self.finish_()
+    }
+
+    fn finish_(&mut self) -> Result<()> {
+        if self.committed {
+            return Ok(());
+        }
+        match self.drop_behavior() {
+            DropBehavior::Commit => self.commit_(),
+            DropBehavior::Rollback => self.rollback(),
+            DropBehavior::Ignore => Ok(()),
+        }
+    }
+}
+
+impl<'conn> Deref for Savepoint<'conn> {
+    type Target = Connection;
+
+    fn deref(&self) -> &Connection {
+        self.conn
+    }
+}
+
+#[allow(unused_must_use)]
+impl<'conn> Drop for Savepoint<'conn> {
+    fn drop(&mut self) {
+        self.finish_();
+    }
+}
+
+impl Connection {
+    /// Begin a new transaction with the default behavior (DEFERRED).
+    ///
+    /// The transaction defaults to rolling back when it is dropped. If you want the transaction to
+    /// commit, you must call `commit` or `set_drop_behavior(DropBehavior::Commit)`.
+    ///
+    /// ## Example
+    ///
+    /// ```rust,no_run
+    /// # use rusqlite::{Connection, Result};
+    /// # fn do_queries_part_1(conn: &Connection) -> Result<()> { Ok(()) }
+    /// # fn do_queries_part_2(conn: &Connection) -> Result<()> { Ok(()) }
+    /// fn perform_queries(conn: &Connection) -> Result<()> {
+    ///     let tx = try!(conn.transaction());
+    ///
+    ///     try!(do_queries_part_1(conn)); // tx causes rollback if this fails
+    ///     try!(do_queries_part_2(conn)); // tx causes rollback if this fails
+    ///
+    ///     tx.commit()
+    /// }
+    /// ```
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if the underlying SQLite call fails.
+    pub fn transaction(&mut self) -> Result<Transaction> {
+        Transaction::new(self, TransactionBehavior::Deferred)
+    }
+
+    /// Begin a new transaction with a specified behavior.
+    ///
+    /// See `transaction`.
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if the underlying SQLite call fails.
+    pub fn transaction_with_behavior(&mut self, behavior: TransactionBehavior) -> Result<Transaction> {
+        Transaction::new(self, behavior)
+    }
+
+    /// Begin a new savepoint with the default behavior (DEFERRED).
+    ///
+    /// The savepoint defaults to rolling back when it is dropped. If you want the savepoint to
+    /// commit, you must call `commit` or `set_drop_behavior(DropBehavior::Commit)`.
+    ///
+    /// ## Example
+    ///
+    /// ```rust,no_run
+    /// # use rusqlite::{Connection, Result};
+    /// # fn do_queries_part_1(conn: &Connection) -> Result<()> { Ok(()) }
+    /// # fn do_queries_part_2(conn: &Connection) -> Result<()> { Ok(()) }
+    /// fn perform_queries(conn: &Connection) -> Result<()> {
+    ///     let sp = try!(conn.savepoint());
+    ///
+    ///     try!(do_queries_part_1(conn)); // sp causes rollback if this fails
+    ///     try!(do_queries_part_2(conn)); // sp causes rollback if this fails
+    ///
+    ///     sp.commit()
+    /// }
+    /// ```
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if the underlying SQLite call fails.
+    pub fn savepoint(&mut self) -> Result<Savepoint> {
+        Savepoint::new(self)
+    }
+
+    /// Begin a new savepoint with a specified name.
+    ///
+    /// See `savepoint`.
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if the underlying SQLite call fails.
+    pub fn savepoint_with_name<T: Into<String>>(&mut self, name: T) -> Result<Savepoint> {
+        Savepoint::with_name(self, name)
+    }
+}
+
 #[cfg(test)]
 #[cfg_attr(feature="clippy", allow(similar_names))]
 mod test {
     use Connection;
+    use super::DropBehavior;
 
     fn checked_memory_handle() -> Connection {
         let db = Connection::open_in_memory().unwrap();
@@ -208,7 +416,7 @@ mod test {
         {
             let mut tx = db.transaction().unwrap();
             tx.execute_batch("INSERT INTO foo VALUES(2)").unwrap();
-            tx.set_commit()
+            tx.set_drop_behavior(DropBehavior::Commit)
         }
         {
             let tx = db.transaction().unwrap();
@@ -221,35 +429,36 @@ mod test {
     fn test_explicit_rollback_commit() {
         let mut db = checked_memory_handle();
         {
-            let tx = db.transaction().unwrap();
-            tx.execute_batch("INSERT INTO foo VALUES(1)").unwrap();
-            tx.rollback().unwrap();
-        }
-        {
-            let tx = db.transaction().unwrap();
-            tx.execute_batch("INSERT INTO foo VALUES(2)").unwrap();
+            let mut tx = db.transaction().unwrap();
+            {
+                let mut sp = tx.savepoint().unwrap();
+                sp.execute_batch("INSERT INTO foo VALUES(1)").unwrap();
+                sp.rollback().unwrap();
+                sp.execute_batch("INSERT INTO foo VALUES(2)").unwrap();
+                sp.commit().unwrap();
+            }
             tx.commit().unwrap();
         }
         {
             let tx = db.transaction().unwrap();
-            assert_eq!(2i32,
+            tx.execute_batch("INSERT INTO foo VALUES(4)").unwrap();
+            tx.commit().unwrap();
+        }
+        {
+            let tx = db.transaction().unwrap();
+            assert_eq!(6i32,
                        tx.query_row("SELECT SUM(x) FROM foo", &[], |r| r.get(0)).unwrap());
         }
     }
 
     #[test]
     fn test_savepoint() {
-        fn assert_current_sum(x: i32, conn: &Connection) {
-            let i = conn.query_row("SELECT SUM(x) FROM foo", &[], |r| r.get(0)).unwrap();
-            assert_eq!(x, i);
-        }
-
         let mut db = checked_memory_handle();
         {
             let mut tx = db.transaction().unwrap();
             tx.execute_batch("INSERT INTO foo VALUES(1)").unwrap();
             assert_current_sum(1, &tx);
-            tx.set_commit();
+            tx.set_drop_behavior(DropBehavior::Commit);
             {
                 let mut sp1 = tx.savepoint().unwrap();
                 sp1.execute_batch("INSERT INTO foo VALUES(2)").unwrap();
@@ -274,5 +483,65 @@ mod test {
             assert_current_sum(1, &tx);
         }
         assert_current_sum(1, &db);
+    }
+
+    #[test]
+    fn test_ignore_drop_behavior() {
+        let mut db = checked_memory_handle();
+
+        let mut tx = db.transaction().unwrap();
+        {
+            let mut sp1 = tx.savepoint().unwrap();
+            insert(1, &sp1);
+            sp1.rollback().unwrap();
+            insert(2, &sp1);
+            {
+                let mut sp2 = sp1.savepoint().unwrap();
+                sp2.set_drop_behavior(DropBehavior::Ignore);
+                insert(4, &sp2);
+            }
+            assert_current_sum(6, &sp1);
+            sp1.commit().unwrap();
+        }
+        assert_current_sum(6, &tx);
+    }
+
+    #[test]
+    fn test_savepoint_names() {
+        let mut db = checked_memory_handle();
+
+        {
+            let mut sp1 = db.savepoint_with_name("my_sp").unwrap();
+            insert(1, &sp1);
+            assert_current_sum(1, &sp1);
+            {
+                let mut sp2 = sp1.savepoint_with_name("my_sp").unwrap();
+                sp2.set_drop_behavior(DropBehavior::Commit);
+                insert(2, &sp2);
+                assert_current_sum(3, &sp2);
+                sp2.rollback().unwrap();
+                assert_current_sum(1, &sp2);
+                insert(4, &sp2);
+            }
+            assert_current_sum(5, &sp1);
+            sp1.rollback().unwrap();
+            {
+                let mut sp2 = sp1.savepoint_with_name("my_sp").unwrap();
+                sp2.set_drop_behavior(DropBehavior::Ignore);
+                insert(8, &sp2);
+            }
+            assert_current_sum(8, &sp1);
+            sp1.commit().unwrap();
+        }
+        assert_current_sum(8, &db);
+    }
+
+    fn insert(x: i32, conn: &Connection) {
+        conn.execute("INSERT INTO foo VALUES(?)", &[&x]).unwrap();
+    }
+
+    fn assert_current_sum(x: i32, conn: &Connection) {
+        let i = conn.query_row("SELECT SUM(x) FROM foo", &[], |r| r.get(0)).unwrap();
+        assert_eq!(x, i);
     }
 }

@@ -2,8 +2,6 @@ use std::convert;
 use std::result;
 use libc::c_int;
 
-use super::ffi;
-
 use {Result, Error, Connection, Statement, MappedRows, AndThenRows, Rows, Row, str_to_cstring};
 use types::ToSql;
 
@@ -58,11 +56,7 @@ impl<'conn> Statement<'conn> {
     /// is valid but not a bound parameter of this statement.
     pub fn parameter_index(&self, name: &str) -> Result<Option<i32>> {
         let c_name = try!(str_to_cstring(name));
-        let c_index = unsafe { ffi::sqlite3_bind_parameter_index(self.stmt, c_name.as_ptr()) };
-        Ok(match c_index {
-            0 => None, // A zero is returned if no matching parameter is found.
-            n => Some(n),
-        })
+        Ok(self.stmt.bind_parameter_index(&c_name))
     }
 
     /// Execute the prepared statement with named parameter(s). If any parameters
@@ -89,7 +83,7 @@ impl<'conn> Statement<'conn> {
     /// which case `query` should be used instead), or the underling SQLite call fails.
     pub fn execute_named(&mut self, params: &[(&str, &ToSql)]) -> Result<c_int> {
         try!(self.bind_parameters_named(params));
-        unsafe { self.execute_() }
+        self.execute_()
     }
 
     /// Execute the prepared statement with named parameter(s), returning a handle for the
@@ -210,7 +204,7 @@ impl<'conn> Statement<'conn> {
     fn bind_parameters_named(&mut self, params: &[(&str, &ToSql)]) -> Result<()> {
         for &(name, value) in params {
             if let Some(i) = try!(self.parameter_index(name)) {
-                try!(self.conn.decode_result(unsafe { value.bind_parameter(self.stmt, i) }));
+                try!(self.conn.decode_result(unsafe { value.bind_parameter(self.stmt.ptr(), i) }));
             } else {
                 return Err(Error::InvalidParameterName(name.into()));
             }
