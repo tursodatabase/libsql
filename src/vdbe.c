@@ -2417,7 +2417,7 @@ case OP_Column: {
   assert( pC->eCurType!=CURTYPE_SORTER );
   pCrsr = pC->uc.pCursor;
 
-  if( pC->cacheStatus!=p->cacheCtr ){
+  if( pC->cacheStatus!=p->cacheCtr ){                /*OPTIMIZATION-IF-FALSE*/
     if( pC->nullRow ){
       if( pC->eCurType==CURTYPE_PSEUDO ){
         assert( pC->uc.pseudoTableReg>0 );
@@ -2464,7 +2464,7 @@ case OP_Column: {
     aOffset[0] = offset;
 
 
-    if( avail<offset ){
+    if( avail<offset ){      /*OPTIMIZATION-IF-FALSE*/
       /* pC->aRow does not have to hold the entire row, but it does at least
       ** need to cover the header of the record.  If pC->aRow does not contain
       ** the complete header, then set it to zero, forcing the header to be
