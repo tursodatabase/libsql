@@ -44,11 +44,11 @@ pub type SqliteTransaction<'conn> = Transaction<'conn>;
 /// # use rusqlite::{Connection, Result};
 /// # fn do_queries_part_1(conn: &Connection) -> Result<()> { Ok(()) }
 /// # fn do_queries_part_2(conn: &Connection) -> Result<()> { Ok(()) }
-/// fn perform_queries(conn: &Connection) -> Result<()> {
+/// fn perform_queries(conn: &mut Connection) -> Result<()> {
 ///     let tx = try!(conn.transaction());
 ///
-///     try!(do_queries_part_1(conn)); // tx causes rollback if this fails
-///     try!(do_queries_part_2(conn)); // tx causes rollback if this fails
+///     try!(do_queries_part_1(&tx)); // tx causes rollback if this fails
+///     try!(do_queries_part_2(&tx)); // tx causes rollback if this fails
 ///
 ///     tx.commit()
 /// }
@@ -73,11 +73,11 @@ pub struct Transaction<'conn> {
 /// # use rusqlite::{Connection, Result};
 /// # fn do_queries_part_1(conn: &Connection) -> Result<()> { Ok(()) }
 /// # fn do_queries_part_2(conn: &Connection) -> Result<()> { Ok(()) }
-/// fn perform_queries(conn: &Connection) -> Result<()> {
+/// fn perform_queries(conn: &mut Connection) -> Result<()> {
 ///     let sp = try!(conn.savepoint());
 ///
-///     try!(do_queries_part_1(conn)); // sp causes rollback if this fails
-///     try!(do_queries_part_2(conn)); // sp causes rollback if this fails
+///     try!(do_queries_part_1(&sp)); // sp causes rollback if this fails
+///     try!(do_queries_part_2(&sp)); // sp causes rollback if this fails
 ///
 ///     sp.commit()
 /// }
@@ -119,12 +119,12 @@ impl<'conn> Transaction<'conn> {
     /// ```rust,no_run
     /// # use rusqlite::{Connection, Result};
     /// # fn perform_queries_part_1_succeeds(conn: &Connection) -> bool { true }
-    /// fn perform_queries(conn: &Connection) -> Result<()> {
-    ///     let tx = try!(conn.transaction());
+    /// fn perform_queries(conn: &mut Connection) -> Result<()> {
+    ///     let mut tx = try!(conn.transaction());
     ///
     ///     {
     ///         let sp = try!(tx.savepoint());
-    ///         if perform_queries_part_1_succeeds(conn) {
+    ///         if perform_queries_part_1_succeeds(&sp) {
     ///             try!(sp.commit());
     ///         }
     ///         // otherwise, sp will rollback
@@ -325,11 +325,11 @@ impl Connection {
     /// # use rusqlite::{Connection, Result};
     /// # fn do_queries_part_1(conn: &Connection) -> Result<()> { Ok(()) }
     /// # fn do_queries_part_2(conn: &Connection) -> Result<()> { Ok(()) }
-    /// fn perform_queries(conn: &Connection) -> Result<()> {
+    /// fn perform_queries(conn: &mut Connection) -> Result<()> {
     ///     let tx = try!(conn.transaction());
     ///
-    ///     try!(do_queries_part_1(conn)); // tx causes rollback if this fails
-    ///     try!(do_queries_part_2(conn)); // tx causes rollback if this fails
+    ///     try!(do_queries_part_1(&tx)); // tx causes rollback if this fails
+    ///     try!(do_queries_part_2(&tx)); // tx causes rollback if this fails
     ///
     ///     tx.commit()
     /// }
@@ -364,11 +364,11 @@ impl Connection {
     /// # use rusqlite::{Connection, Result};
     /// # fn do_queries_part_1(conn: &Connection) -> Result<()> { Ok(()) }
     /// # fn do_queries_part_2(conn: &Connection) -> Result<()> { Ok(()) }
-    /// fn perform_queries(conn: &Connection) -> Result<()> {
+    /// fn perform_queries(conn: &mut Connection) -> Result<()> {
     ///     let sp = try!(conn.savepoint());
     ///
-    ///     try!(do_queries_part_1(conn)); // sp causes rollback if this fails
-    ///     try!(do_queries_part_2(conn)); // sp causes rollback if this fails
+    ///     try!(do_queries_part_1(&sp)); // sp causes rollback if this fails
+    ///     try!(do_queries_part_2(&sp)); // sp causes rollback if this fails
     ///
     ///     sp.commit()
     /// }
