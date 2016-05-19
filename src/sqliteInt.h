@@ -2533,7 +2533,8 @@ struct SrcList {
 #define WHERE_ONEPASS_DESIRED  0x0004 /* Want to do one-pass UPDATE/DELETE */
 #define WHERE_ONEPASS_MULTIROW 0x0008 /* ONEPASS is ok with multiple rows */
 #define WHERE_DUPLICATES_OK    0x0010 /* Ok to return a row more than once */
-#define WHERE_OR_SUBCLAUSE     0x0020 /* Sub-WHERE for an OR term */
+#define WHERE_OR_SUBCLAUSE     0x0020 /* Processing a sub-WHERE as part of
+                                      ** the OR optimization  */
 #define WHERE_GROUPBY          0x0040 /* pOrderBy is really a GROUP BY */
 #define WHERE_DISTINCTBY       0x0080 /* pOrderby is really a DISTINCT clause */
 #define WHERE_WANT_DISTINCT    0x0100 /* All output needs to be distinct */
@@ -2542,7 +2543,7 @@ struct SrcList {
                         /*     0x0800    not currently used */
                         /*     0x1000    not currently used */
                         /*     0x2000    not currently used */
-#define WHERE_USE_LIMIT        0x4000 /* There is a constant LIMIT clause */
+#define WHERE_USE_LIMIT        0x4000 /* Use the LIMIT in cost estimates */
                         /*     0x8000    not currently used */
 
 /* Allowed return values from sqlite3WhereIsDistinct()
