@@ -2403,6 +2403,7 @@ case OP_Column: {
 
   /* If the cursor cache is stale, bring it up-to-date */
   rc = sqlite3VdbeCursorMoveto(&pC, &p2);
+  if( rc ) goto abort_due_to_error;
 
   assert( pOp->p3>0 && pOp->p3<=(p->nMem+1 - p->nCursor) );
   pDest = &aMem[pOp->p3];
@@ -2416,7 +2417,6 @@ case OP_Column: {
   assert( pC->eCurType!=CURTYPE_SORTER );
   pCrsr = pC->uc.pCursor;
 
-  if( rc ) goto abort_due_to_error;
   if( pC->cacheStatus!=p->cacheCtr ){
     if( pC->nullRow ){
       if( pC->eCurType==CURTYPE_PSEUDO ){
