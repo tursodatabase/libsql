@@ -160,8 +160,8 @@ impl error::Error for Error {
             Error::InvalidColumnIndex(_) |
             Error::InvalidColumnName(_) |
             Error::InvalidColumnType |
-            Error::InvalidPath(_) => None,
-            Error::StatementChangedRows(_) => None,
+            Error::InvalidPath(_) |
+            Error::StatementChangedRows(_) |
             Error::StatementFailedToInsertRow => None,
 
             #[cfg(feature = "functions")]
