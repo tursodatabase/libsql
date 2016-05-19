@@ -5,6 +5,11 @@
   connection are inherently nested. While a transaction is alive, the parent connection or
   transaction is unusable, so `Transaction` now implements `Deref<Target=Connection>`, giving
   access to `Connection`'s methods via the `Transaction` itself.
+* BREAKING CHANGE: `Transaction::set_commit` and `Transaction::set_rollback` have been replaced
+  by `Transaction::set_drop_behavior`.
+* BREAKING CHANGE: `Transaction::savepoint()` now returns a `Savepoint` instead of another
+  `Transaction`. Unlike `Transaction`, `Savepoint`s can be rolled back while keeping the current
+  savepoint active.
 * Adds `Connection::prepare_cached`. `Connection` now keeps an internal cache of any statements
   prepared via this method. The size of this cache defaults to 16 (`prepare_cached` will always
   work but may re-prepare statements if more are prepared than the cache holds), and can be
