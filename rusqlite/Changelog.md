@@ -1,5 +1,15 @@
 # Version UPCOMING (...)
 
+* BREAKING CHANGE: `Rows` no longer implements `Iterator`. It still has a `next()` method, but
+  the lifetime of the returned `Row` is now tied to the lifetime of the vending `Rows` object.
+  This behavior is more correct. Previously there were runtime checks to prevent misuse, but
+  other changes in this release to reset statements as soon as possible introduced yet another
+  hazard related to the lack of these lifetime connections. We were already recommending the
+  use of `query_map` and `query_and_then` over raw `query`; both of theose still return handles
+  that implement `Iterator`.
+* BREAKING CHANGE: `Transaction::savepoint()` now returns a `Savepoint` instead of another
+  `Transaction`. Unlike `Transaction`, `Savepoint`s can be rolled back while keeping the current
+  savepoint active.
 * BREAKING CHANGE: Creating transactions from a `Connection` or savepoints from a `Transaction`
   now take `&mut self` instead of `&self` to correctly represent that transactions within a
   connection are inherently nested. While a transaction is alive, the parent connection or
@@ -7,13 +17,11 @@
   access to `Connection`'s methods via the `Transaction` itself.
 * BREAKING CHANGE: `Transaction::set_commit` and `Transaction::set_rollback` have been replaced
   by `Transaction::set_drop_behavior`.
-* BREAKING CHANGE: `Transaction::savepoint()` now returns a `Savepoint` instead of another
-  `Transaction`. Unlike `Transaction`, `Savepoint`s can be rolled back while keeping the current
-  savepoint active.
 * Adds `Connection::prepare_cached`. `Connection` now keeps an internal cache of any statements
   prepared via this method. The size of this cache defaults to 16 (`prepare_cached` will always
   work but may re-prepare statements if more are prepared than the cache holds), and can be
   controlled via `Connection::set_prepared_statement_cache_capacity`.
+* Adds `query_map_named` and `query_and_then_named` to `Statement`.
 * Adds `insert` convenience method to `Statement` which returns the row ID of an inserted row.
 * Adds `exists` convenience method returning whether a query finds one or more rows.
 * Adds support for serializing types from the `serde_json` crate. Requires the `serde_json` feature.

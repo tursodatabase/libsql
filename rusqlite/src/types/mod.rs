@@ -365,17 +365,21 @@ mod test {
         let mut stmt = db.prepare("SELECT t, b FROM foo ORDER BY ROWID ASC").unwrap();
         let mut rows = stmt.query(&[]).unwrap();
 
-        let row1 = rows.next().unwrap().unwrap();
-        let s1: Option<String> = row1.get(0);
-        let b1: Option<Vec<u8>> = row1.get(1);
-        assert_eq!(s.unwrap(), s1.unwrap());
-        assert!(b1.is_none());
+        {
+            let row1 = rows.next().unwrap().unwrap();
+            let s1: Option<String> = row1.get(0);
+            let b1: Option<Vec<u8>> = row1.get(1);
+            assert_eq!(s.unwrap(), s1.unwrap());
+            assert!(b1.is_none());
+        }
 
-        let row2 = rows.next().unwrap().unwrap();
-        let s2: Option<String> = row2.get(0);
-        let b2: Option<Vec<u8>> = row2.get(1);
-        assert!(s2.is_none());
-        assert_eq!(b, b2);
+        {
+            let row2 = rows.next().unwrap().unwrap();
+            let s2: Option<String> = row2.get(0);
+            let b2: Option<Vec<u8>> = row2.get(1);
+            assert!(s2.is_none());
+            assert_eq!(b, b2);
+        }
     }
 
     #[test]

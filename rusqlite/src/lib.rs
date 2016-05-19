@@ -64,12 +64,12 @@ extern crate lazy_static;
 
 use std::default::Default;
 use std::convert;
+use std::marker::PhantomData;
 use std::mem;
 use std::ptr;
 use std::fmt;
 use std::path::{Path, PathBuf};
-use std::rc::Rc;
-use std::cell::{RefCell, Cell};
+use std::cell::RefCell;
 use std::ffi::{CStr, CString};
 use std::result;
 use std::str;
@@ -769,7 +769,11 @@ impl<'conn> Statement<'conn> {
         }
     }
 
-    /// Execute the prepared statement, returning an iterator over the resulting rows.
+    /// Execute the prepared statement, returning a handle to the resulting rows.
+    ///
+    /// Due to lifetime restricts, the rows handle returned by `query` does not
+    /// implement the `Iterator` trait. Consider using `query_map` or `query_and_then`
+    /// instead, which do.
     ///
     /// ## Example
     ///
@@ -780,7 +784,7 @@ impl<'conn> Statement<'conn> {
     ///     let mut rows = try!(stmt.query(&[]));
     ///
     ///     let mut names = Vec::new();
-    ///     for result_row in rows {
+    ///     while let Some(result_row) = rows.next() {
     ///         let row = try!(result_row);
     ///         names.push(row.get(0));
     ///     }
@@ -789,7 +793,7 @@ impl<'conn> Statement<'conn> {
     /// }
     /// ```
     ///
-    /// # Failure
+    /// ## Failure
     ///
     /// Will return `Err` if binding parameters fails.
     pub fn query<'a>(&'a mut self, params: &[&ToSql]) -> Result<Rows<'a>> {
@@ -797,13 +801,27 @@ impl<'conn> Statement<'conn> {
         Ok(Rows::new(self))
     }
 
-    /// Executes the prepared statement and maps a function over the resulting
-    /// rows.
+    /// Executes the prepared statement and maps a function over the resulting rows, returning
+    /// an iterator over the mapped function results.
     ///
-    /// Unlike the iterator produced by `query`, the returned iterator does not expose the possibility
-    /// for accessing stale rows.
+    /// ## Example
     ///
-    /// # Failure
+    /// ```rust,no_run
+    /// # use rusqlite::{Connection, Result};
+    /// fn get_names(conn: &Connection) -> Result<Vec<String>> {
+    ///     let mut stmt = try!(conn.prepare("SELECT name FROM people"));
+    ///     let rows = try!(stmt.query_map(&[], |row| row.get(0)));
+    ///
+    ///     let mut names = Vec::new();
+    ///     for name_result in rows {
+    ///         names.push(try!(name_result));
+    ///     }
+    ///
+    ///     Ok(names)
+    /// }
+    /// ```
+    ///
+    /// ## Failure
     ///
     /// Will return `Err` if binding parameters fails.
     pub fn query_map<'a, T, F>(&'a mut self, params: &[&ToSql], f: F) -> Result<MappedRows<'a, F>>
@@ -820,9 +838,6 @@ impl<'conn> Statement<'conn> {
     /// Executes the prepared statement and maps a function over the resulting
     /// rows, where the function returns a `Result` with `Error` type implementing
     /// `std::convert::From<Error>` (so errors can be unified).
-    ///
-    /// Unlike the iterator produced by `query`, the returned iterator does not expose the possibility
-    /// for accessing stale rows.
     ///
     /// # Failure
     ///
@@ -914,7 +929,8 @@ impl<'stmt, T, F> Iterator for MappedRows<'stmt, F>
     type Item = Result<T>;
 
     fn next(&mut self) -> Option<Result<T>> {
-        self.rows.next().map(|row_result| row_result.map(|row| (self.map)(&row)))
+        let map = &mut self.map;
+        self.rows.next().map(|row_result| row_result.map(|row| (map)(&row)))
     }
 }
 
@@ -932,9 +948,10 @@ impl<'stmt, T, E, F> Iterator for AndThenRows<'stmt, F>
     type Item = result::Result<T, E>;
 
     fn next(&mut self) -> Option<Self::Item> {
+        let map = &mut self.map;
         self.rows.next().map(|row_result| {
             row_result.map_err(E::from)
-                .and_then(|row| (self.map)(&row))
+                .and_then(|row| (map)(&row))
         })
     }
 }
@@ -942,52 +959,19 @@ impl<'stmt, T, E, F> Iterator for AndThenRows<'stmt, F>
 /// Old name for `Rows`. `SqliteRows` is deprecated.
 pub type SqliteRows<'stmt> = Rows<'stmt>;
 
-/// An iterator over the resulting rows of a query.
-///
-/// ## Warning
-///
-/// Strongly consider using `query_map` or `query_and_then` instead of `query`; the former do not
-/// suffer from the following problem.
-///
-/// Due to the way SQLite returns result rows of a query, it is not safe to attempt to get values
-/// from a row after it has become stale (i.e., `next()` has been called again on the `Rows`
-/// iterator). For example:
-///
-/// ```rust,no_run
-/// # use rusqlite::{Connection, Result};
-/// fn bad_function_will_panic(conn: &Connection) -> Result<i64> {
-///     let mut stmt = try!(conn.prepare("SELECT id FROM my_table"));
-///     let mut rows = try!(stmt.query(&[]));
-///
-///     let row0 = try!(rows.next().unwrap());
-///     // row 0 is valid for now...
-///
-///     let row1 = try!(rows.next().unwrap());
-///     // row 0 is now STALE, and row 1 is valid
-///
-///     let my_id = row0.get(0); // WILL PANIC because row 0 is stale
-///     Ok(my_id)
-/// }
-/// ```
-///
-/// Please note that this means some of the methods on `Iterator` are not useful, such as `collect`
-/// (which would result in a collection of rows, only the last of which can safely be used) and
-/// `min`/`max` (which could return a stale row unless the last row happened to be the min or max,
-/// respectively).
+/// An handle for the resulting rows of a query.
 pub struct Rows<'stmt> {
     stmt: Option<&'stmt Statement<'stmt>>,
-    current_row: Rc<Cell<c_int>>,
 }
 
 impl<'stmt> Rows<'stmt> {
     fn new(stmt: &'stmt Statement<'stmt>) -> Rows<'stmt> {
         Rows {
             stmt: Some(stmt),
-            current_row: Rc::new(Cell::new(0)),
         }
     }
 
-    fn get_expected_row(&mut self) -> Result<Row<'stmt>> {
+    fn get_expected_row<'a>(&'a mut self) -> Result<Row<'a, 'stmt>> {
         match self.next() {
             Some(row) => row,
             None => Err(Error::QueryReturnedNoRows),
@@ -999,21 +983,24 @@ impl<'stmt> Rows<'stmt> {
             stmt.stmt.reset();
         }
     }
-}
 
-impl<'stmt> Iterator for Rows<'stmt> {
-    type Item = Result<Row<'stmt>>;
-
-    fn next(&mut self) -> Option<Result<Row<'stmt>>> {
+    /// Attempt to get the next row from the query. Returns `Some(Ok(Row))` if there
+    /// is another row, `Some(Err(...))` if there was an error getting the next
+    /// row, and `None` if all rows have been retrieved.
+    ///
+    /// ## Note
+    ///
+    /// This interface is not compatible with Rust's `Iterator` trait, because the
+    /// lifetime of the returned row is tied to the lifetime of `self`. This is a
+    /// "streaming iterator". For a more natural interface, consider using `query_map`
+    /// or `query_and_then` instead, which return types that implement `Iterator`.
+    pub fn next<'a>(&'a mut self) -> Option<Result<Row<'a, 'stmt>>> {
         self.stmt.and_then(|stmt| {
             match stmt.stmt.step() {
                 ffi::SQLITE_ROW => {
-                    let current_row = self.current_row.get() + 1;
-                    self.current_row.set(current_row);
                     Some(Ok(Row {
                         stmt: stmt,
-                        current_row: self.current_row.clone(),
-                        row_idx: current_row,
+                        phantom: PhantomData,
                     }))
                 }
                 ffi::SQLITE_DONE => {
@@ -1036,46 +1023,22 @@ impl<'stmt> Drop for Rows<'stmt> {
 }
 
 /// Old name for `Row`. `SqliteRow` is deprecated.
-pub type SqliteRow<'stmt> = Row<'stmt>;
+pub type SqliteRow<'a, 'stmt> = Row<'a, 'stmt>;
 
 /// A single result row of a query.
-pub struct Row<'stmt> {
+pub struct Row<'a, 'stmt> {
     stmt: &'stmt Statement<'stmt>,
-    current_row: Rc<Cell<c_int>>,
-    row_idx: c_int,
+    phantom: PhantomData<&'a ()>,
 }
 
-impl<'stmt> Row<'stmt> {
+impl<'a, 'stmt> Row<'a, 'stmt> {
     /// Get the value of a particular column of the result row.
-    ///
-    /// Note that `Row` can panic at runtime if you use it incorrectly. When you are
-    /// retrieving the rows of a query, a row becomes stale once you have requested the next row,
-    /// and the values can no longer be retrieved. In general (when using looping over the rows,
-    /// for example) this isn't an issue, but it means you cannot do something like this:
-    ///
-    /// ```rust,no_run
-    /// # use rusqlite::{Connection, Result};
-    /// fn bad_function_will_panic(conn: &Connection) -> Result<i64> {
-    ///     let mut stmt = try!(conn.prepare("SELECT id FROM my_table"));
-    ///     let mut rows = try!(stmt.query(&[]));
-    ///
-    ///     let row0 = try!(rows.next().unwrap());
-    ///     // row 0 is value now...
-    ///
-    ///     let row1 = try!(rows.next().unwrap());
-    ///     // row 0 is now STALE, and row 1 is valid
-    ///
-    ///     let my_id = row0.get(0); // WILL PANIC because row 0 is stale
-    ///     Ok(my_id)
-    /// }
-    /// ```
     ///
     /// ## Failure
     ///
     /// Panics if the underlying SQLite column type is not a valid type as a source for `T`.
     ///
-    /// Panics if `idx` is outside the range of columns in the returned query or if this row
-    /// is stale.
+    /// Panics if `idx` is outside the range of columns in the returned query.
     pub fn get<I: RowIndex, T: FromSql>(&self, idx: I) -> T {
         self.get_checked(idx).unwrap()
     }
@@ -1092,12 +1055,7 @@ impl<'stmt> Row<'stmt> {
     ///
     /// Returns an `Error::InvalidColumnName` if `idx` is not a valid column name
     /// for this row.
-    ///
-    /// Returns an `Error::GetFromStaleRow` if this row is stale.
     pub fn get_checked<I: RowIndex, T: FromSql>(&self, idx: I) -> Result<T> {
-        if self.row_idx != self.current_row.get() {
-            return Err(Error::GetFromStaleRow);
-        }
         unsafe {
             let idx = try!(idx.idx(self.stmt));
 
@@ -1287,15 +1245,24 @@ mod test {
 
         let mut query = db.prepare("SELECT x FROM foo WHERE x < ? ORDER BY x DESC").unwrap();
         {
-            let rows = query.query(&[&4i32]).unwrap();
-            let v: Vec<i32> = rows.map(|r| r.unwrap().get(0)).collect();
+            let mut rows = query.query(&[&4i32]).unwrap();
+            let mut v = Vec::<i32>::new();
+
+            while let Some(row) = rows.next() {
+                v.push(row.unwrap().get(0));
+            }
 
             assert_eq!(v, [3i32, 2, 1]);
         }
 
         {
-            let rows = query.query(&[&3i32]).unwrap();
-            let v: Vec<i32> = rows.map(|r| r.unwrap().get(0)).collect();
+            let mut rows = query.query(&[&3i32]).unwrap();
+            let mut v = Vec::<i32>::new();
+
+            while let Some(row) = rows.next() {
+                v.push(row.unwrap().get(0));
+            }
+
             assert_eq!(v, [2i32, 1]);
         }
     }
@@ -1356,26 +1323,6 @@ mod test {
 
         let err = db.prepare("SELECT * FROM does_not_exist").unwrap_err();
         assert!(format!("{}", err).contains("does_not_exist"));
-    }
-
-    #[test]
-    fn test_row_expiration() {
-        let db = checked_memory_handle();
-        db.execute_batch("CREATE TABLE foo(x INTEGER)").unwrap();
-        db.execute_batch("INSERT INTO foo(x) VALUES(1)").unwrap();
-        db.execute_batch("INSERT INTO foo(x) VALUES(2)").unwrap();
-
-        let mut stmt = db.prepare("SELECT x FROM foo ORDER BY x").unwrap();
-        let mut rows = stmt.query(&[]).unwrap();
-        let first = rows.next().unwrap().unwrap();
-        let second = rows.next().unwrap().unwrap();
-
-        assert_eq!(2i32, second.get(0));
-
-        match first.get_checked::<i32, i32>(0).unwrap_err() {
-            Error::GetFromStaleRow => (),
-            err => panic!("Unexpected error {}", err),
-        }
     }
 
     #[test]

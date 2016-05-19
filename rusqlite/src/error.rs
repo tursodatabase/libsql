@@ -40,10 +40,6 @@ pub enum Error {
     /// did not return any.
     QueryReturnedNoRows,
 
-    /// Error when trying to access a `Row` after stepping past it. See the discussion on
-    /// the `Rows` type for more details.
-    GetFromStaleRow,
-
     /// Error when the value of a particular column is requested, but the index is out of range
     /// for the statement.
     InvalidColumnIndex(c_int),
@@ -111,7 +107,6 @@ impl fmt::Display for Error {
                 write!(f, "Execute returned results - did you mean to call query?")
             }
             Error::QueryReturnedNoRows => write!(f, "Query returned no rows"),
-            Error::GetFromStaleRow => write!(f, "Attempted to get a value from a stale row"),
             Error::InvalidColumnIndex(i) => write!(f, "Invalid column index: {}", i),
             Error::InvalidColumnName(ref name) => write!(f, "Invalid column name: {}", name),
             Error::InvalidColumnType(i, t) => write!(f, "Invalid column type {} at index: {}", t, i),
@@ -145,7 +140,6 @@ impl error::Error for Error {
                 "execute returned results - did you mean to call query?"
             }
             Error::QueryReturnedNoRows => "query returned no rows",
-            Error::GetFromStaleRow => "attempted to get a value from a stale row",
             Error::InvalidColumnIndex(_) => "invalid column index",
             Error::InvalidColumnName(_) => "invalid column name",
             Error::InvalidColumnType(_, _) => "invalid column type",
@@ -173,7 +167,6 @@ impl error::Error for Error {
             Error::InvalidParameterName(_) |
             Error::ExecuteReturnedResults |
             Error::QueryReturnedNoRows |
-            Error::GetFromStaleRow |
             Error::InvalidColumnIndex(_) |
             Error::InvalidColumnName(_) |
             Error::InvalidColumnType(_, _) |
