@@ -1,5 +1,12 @@
 # Version UPCOMING (...)
 
+* BREAKING CHANGE: `Rows` no longer implements `Iterator`. It still has a `next()` method, but
+  the lifetime of the returned `Row` is now tied to the lifetime of the vending `Rows` object.
+  This behavior is more correct. Previously there were runtime checks to prevent misuse, but
+  other changes in this release to reset statements as soon as possible introduced yet another
+  hazard related to the lack of these lifetime connections. We were already recommending the
+  use of `query_map` and `query_and_then` over raw `query`; both of theose still return handles
+  that implement `Iterator`.
 * BREAKING CHANGE: Creating transactions from a `Connection` or savepoints from a `Transaction`
   now take `&mut self` instead of `&self` to correctly represent that transactions within a
   connection are inherently nested. While a transaction is alive, the parent connection or
