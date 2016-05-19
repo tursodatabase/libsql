@@ -720,22 +720,19 @@ pub type SqliteStatement<'conn> = Statement<'conn>;
 pub struct Statement<'conn> {
     conn: &'conn Connection,
     stmt: RawStatement,
-    column_count: c_int,
 }
 
 impl<'conn> Statement<'conn> {
     fn new(conn: &Connection, stmt: RawStatement) -> Statement {
-        let column_count = stmt.column_count();
         Statement {
             conn: conn,
             stmt: stmt,
-            column_count: column_count,
         }
     }
 
     /// Get all the column names in the result set of the prepared statement.
     pub fn column_names(&self) -> Vec<&str> {
-        let n = self.column_count;
+        let n = self.column_count();
         let mut cols = Vec::with_capacity(n as usize);
         for i in 0..n {
             let slice = self.stmt.column_name(i);
@@ -747,7 +744,7 @@ impl<'conn> Statement<'conn> {
 
     /// Return the number of columns in the result set returned by the prepared statement.
     pub fn column_count(&self) -> i32 {
-        self.column_count
+        self.stmt.column_count()
     }
 
     /// Returns the column index in the result set for a given column name.
@@ -757,7 +754,7 @@ impl<'conn> Statement<'conn> {
     /// Will return an `Error::InvalidColumnName` when there is no column with the specified `name`.
     pub fn column_index(&self, name: &str) -> Result<i32> {
         let bytes = name.as_bytes();
-        let n = self.column_count;
+        let n = self.column_count();
         for i in 0..n {
             if bytes == self.stmt.column_name(i).to_bytes() {
                 return Ok(i);
@@ -799,7 +796,7 @@ impl<'conn> Statement<'conn> {
         self.stmt.reset();
         match r {
             ffi::SQLITE_DONE => {
-                if self.column_count == 0 {
+                if self.column_count() == 0 {
                     Ok(self.conn.changes())
                 } else {
                     Err(Error::ExecuteReturnedResults)
@@ -1166,7 +1163,7 @@ pub trait RowIndex {
 impl RowIndex for i32 {
     #[inline]
     fn idx(&self, stmt: &Statement) -> Result<i32> {
-        if *self < 0 || *self >= stmt.column_count {
+        if *self < 0 || *self >= stmt.column_count() {
             Err(Error::InvalidColumnIndex(*self))
         } else {
             Ok(*self)

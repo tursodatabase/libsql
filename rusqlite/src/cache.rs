@@ -113,9 +113,9 @@ impl StatementCache {
     // Will return `Err` if no cached statement can be found and the underlying SQLite prepare
     // call fails.
     fn get<'conn>(&'conn self,
-                      conn: &'conn Connection,
-                      sql: &str)
-                      -> Result<CachedStatement<'conn>> {
+                  conn: &'conn Connection,
+                  sql: &str)
+                  -> Result<CachedStatement<'conn>> {
         let mut cache = self.0.borrow_mut();
         let stmt = match cache.remove(sql) {
             Some(raw_stmt) => Ok(Statement::new(conn, raw_stmt)),
@@ -231,5 +231,39 @@ mod test {
             stmt.discard();
         }
         assert_eq!(0, cache.len());
+    }
+
+    #[test]
+    fn test_ddl() {
+        let db = Connection::open_in_memory().unwrap();
+        db.execute_batch(r#"
+            CREATE TABLE foo (x INT);
+            INSERT INTO foo VALUES (1);
+        "#)
+            .unwrap();
+
+        let sql = "SELECT * FROM foo";
+
+        {
+            let mut stmt = db.prepare_cached(sql).unwrap();
+            assert_eq!(1i32,
+                       stmt.query_map(&[], |r| r.get(0)).unwrap().next().unwrap().unwrap());
+        }
+
+        db.execute_batch(r#"
+            ALTER TABLE foo ADD COLUMN y INT;
+            UPDATE foo SET y = 2;
+        "#)
+            .unwrap();
+
+        {
+            let mut stmt = db.prepare_cached(sql).unwrap();
+            assert_eq!((1i32, 2i32),
+                       stmt.query_map(&[], |r| (r.get(0), r.get(1)))
+                           .unwrap()
+                           .next()
+                           .unwrap()
+                           .unwrap());
+        }
     }
 }
