@@ -52,6 +52,18 @@ int sqlite3WhereIsOrdered(WhereInfo *pWInfo){
 }
 
 /*
+** Return TRUE if the innermost loop of the WHERE clause implementation
+** returns rows in ORDER BY order for complete run of the inner loop.
+**
+** Across multiple iterations of outer loops, the output rows need not be
+** sorted.  As long as rows are sorted for just the innermost loop, this
+** routine can return TRUE.
+*/
+int sqlite3WhereOrderedInnerLoop(WhereInfo *pWInfo){
+  return pWInfo->bOrderedInnerLoop;
+}
+
+/*
 ** Return the VDBE address or label to jump to in order to continue
 ** immediately with the next row of a WHERE clause.
 */
@@ -3898,8 +3910,10 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
       }
     }else{
       pWInfo->nOBSat = pFrom->isOrdered;
-      if( pWInfo->nOBSat<0 ) pWInfo->nOBSat = 0;
       pWInfo->revMask = pFrom->revLoop;
+      if( pWInfo->nOBSat<=0 ){
+        pWInfo->nOBSat = 0;
+      }
     }
     if( (pWInfo->wctrlFlags & WHERE_SORTBYGROUP)
         && pWInfo->nOBSat==pWInfo->pOrderBy->nExpr && nLoop>0
