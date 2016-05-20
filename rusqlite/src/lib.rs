@@ -965,9 +965,7 @@ pub struct Rows<'stmt> {
 
 impl<'stmt> Rows<'stmt> {
     fn new(stmt: &'stmt Statement<'stmt>) -> Rows<'stmt> {
-        Rows {
-            stmt: Some(stmt),
-        }
+        Rows { stmt: Some(stmt) }
     }
 
     fn get_expected_row<'a>(&'a mut self) -> Result<Row<'a, 'stmt>> {
