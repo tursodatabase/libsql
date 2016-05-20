@@ -1,5 +1,5 @@
-C Appears\sto\swork\snow.\s\sNeeds\stest\scases,\smore\scomments,\sand\scode\soptimization.
-D 2016-05-19T22:40:04.862
+C A\sfew\ssimple\stest\scases\sfor\sthe\sORDER\sBY\sLIMIT\soptimization.
+D 2016-05-20T00:21:42.961
 F Makefile.in f59e0763ff448719fc1bd25513882b0567286317
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 306d73e854b1a92ea06e5d1e637faa5c44de53c7
@@ -878,6 +878,7 @@ F test/like.test 81632c437a947bf1f7130b19537da6a1a844806a
 F test/like2.test 3b2ee13149ba4a8a60b59756f4e5d345573852da
 F test/like3.test 3608a2042b6f922f900fbfd5d3ce4e7eca57f7c4
 F test/limit.test 0c99a27a87b14c646a9d583c7c89fd06c352663e
+F test/limit2.test 55c9f4d08c89311e00afd75045ee1a2aca205cb4
 F test/loadext.test 42a3b8166dfcadcb0e0c8710dc520d97c31a8b98
 F test/loadext2.test 0408380b57adca04004247179837a18e866a74f7
 F test/lock.test be4fe08118fb988fed741f429b7dd5d65e1c90db
@@ -1489,7 +1490,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 852d1eda6ecca1171f6ed800b06f5b4854672002
-R 664cd7ecddde2637b78c890f65cd5e15
+P 990fe50c9182f74c9b54a12602c4c30d891273e6
+R b3508f6593a9fbd22c3973de159c4a41
 U drh
-Z a9319f97e8df1737542ca3813ad100bc
+Z 1bcf9218783f46102cc72fd7dcd4a1fb
