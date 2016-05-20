@@ -1,4 +1,4 @@
-# Version 0.7.0 (2016-05-19)
+# Version 0.7.1 (2016-05-19)
 
 * BREAKING CHANGE: `Rows` no longer implements `Iterator`. It still has a `next()` method, but
   the lifetime of the returned `Row` is now tied to the lifetime of the vending `Rows` object.
