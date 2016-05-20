@@ -41,14 +41,15 @@ AC_ARG_ENABLE(editline, [AS_HELP_STRING(
 AC_ARG_ENABLE(readline, [AS_HELP_STRING(
   [--enable-readline], 
   [use readline])], 
-  [], [enable_readline=no])
+  [], [enable_readline=yes])
 if test x"$enable_editline" != xno ; then
   sLIBS=$LIBS
   LIBS=""
   AC_SEARCH_LIBS([readline],[edit],[enable_readline=no],[enable_editline=no])
   READLINE_LIBS=$LIBS
   if test x"$LIBS" != "x"; then
-     AC_DEFINE([HAVE_EDITLINE],1,Define to use BSD editline)
+    AC_DEFINE([HAVE_EDITLINE],1,Define to use BSD editline)
+    enable_readline=no
   else
     unset ac_cv_search_readline
   fi

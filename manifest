@@ -1,5 +1,5 @@
-C Fixup\scomments\son\swctrlFlags\svalue\sdefinitions.
-D 2016-05-19T19:31:30.127
+C Autoconf\sconfigure.ac\sadjustment\sto\stry\sto\sget\sit\sto\slook\sfor\sboth\seditline\nand\sreadline\sautomatically.
+D 2016-05-20T12:22:16.170
 F Makefile.in f59e0763ff448719fc1bd25513882b0567286317
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 306d73e854b1a92ea06e5d1e637faa5c44de53c7
@@ -14,7 +14,7 @@ F autoconf/Makefile.am 1a47d071e3d5435f8f7ebff7eb6703848bbd65d4
 F autoconf/Makefile.msc 0eca137c12542bd76c253a2d24380f29ade59b95
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/README.txt 4f04b0819303aabaa35fff5f7b257fb0c1ef95f1
-F autoconf/configure.ac ad7001cdde3d6ae6053bc0b66009869d7c5012a8
+F autoconf/configure.ac 7754404e955900cfdeba08862cdfa802eca5b0af
 F autoconf/tea/Makefile.in b438a7020446c8a8156e8d97c8914a04833da6fd
 F autoconf/tea/README 3e9a3c060f29a44344ab50aec506f4db903fb873
 F autoconf/tea/aclocal.m4 52c47aac44ce0ddb1f918b6993e8beb8eee88f43
@@ -1489,7 +1489,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d01305841da94b2d47e32744802f69525bf590df
-R be830660ecf90ba00189952af638cb97
+P 58b516e8c0b00a41bc0364eab267bc2ecb9efeff
+R 1ccdb41fa76e9f52d7032b7d9c7cb950
 U drh
-Z 54bddff0ee366139e2fb13081e6cf75a
+Z 54717b5e62279adb2d1cf6e8a28ff9fe
