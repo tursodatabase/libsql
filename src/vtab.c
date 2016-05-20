@@ -418,7 +418,7 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
     v = sqlite3GetVdbe(pParse);
     sqlite3ChangeCookie(pParse, iDb);
 
-    sqlite3VdbeAddOp2(v, OP_Expire, 0, 0);
+    sqlite3VdbeAddOp0(v, OP_Expire);
     zWhere = sqlite3MPrintf(db, "name='%q' AND type='table'", pTab->zName);
     sqlite3VdbeAddParseSchemaOp(v, iDb, zWhere);
 

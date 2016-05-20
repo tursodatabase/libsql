@@ -1,5 +1,5 @@
-C Optimizations\sto\slink\slist\smerge\ssort\scode\sin\svdbesort.c,\spcache.c,\sand\nrowset.c.\s\sResulting\sbinaries\sare\s10\sbytes\ssmaller\sand\suse\s0.03%\sfewer\sCPU\ncycles.
-D 2016-05-20T14:54:54.663
+C Use\ssqlite3VdbeAddOp0()\sto\scode\sOP_Expire,\sto\ssave\sa\sfew\sbytes.
+D 2016-05-20T15:15:07.708
 F Makefile.in f59e0763ff448719fc1bd25513882b0567286317
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 306d73e854b1a92ea06e5d1e637faa5c44de53c7
@@ -325,7 +325,7 @@ F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
 F src/btree.c e53a01547d61a3d567daf7a7acc30122fe071aef
 F src/btree.h a5008b9afe56e8e54ade6c436a910f112defcca9
 F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
-F src/build.c d65be62254ca9df36e1e1c433324f0333f80009c
+F src/build.c 785fa789319d93c6ae20efbd01d4da9ce8f8a793
 F src/callback.c 2e76147783386374bf01b227f752c81ec872d730
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 60e135af364d777a9ab41c97e5e89cd224da6198
@@ -371,7 +371,7 @@ F src/parse.y 10eb2f3fb62341291528c7984498054731f9d31e
 F src/pcache.c 50fb5728dbfb92461f89f8763ff8b60d0dbeba2c
 F src/pcache.h 2cedcd8407eb23017d92790b112186886e179490
 F src/pcache1.c 7f51d2b541aab57596adf62db2c4bb025d34f04d
-F src/pragma.c faf42922bb7ab2f6672cb550356c1967abae3c84
+F src/pragma.c 9fdce031ddcb57f0f56e4a8b421b7e7a77de73b0
 F src/pragma.h 64c78a648751b9f4f297276c4eb7507b14b4628c
 F src/prepare.c 22df6171aec1d86904ed2ad30c2348a5748aa04e
 F src/printf.c a5f0ca08ddede803c241266abb46356ec748ded1
@@ -453,7 +453,7 @@ F src/vdbeblob.c c9f2f494b911c6fa34efd9803f0a10807da80f77
 F src/vdbemem.c 5cfef60e60e19cab6275d1b975bf4c791d575beb
 F src/vdbesort.c 91fda3909326860382b0ca8aa251e609c6a9d62c
 F src/vdbetrace.c f75c5455d8cf389ef86a8bfdfd3177e0e3692484
-F src/vtab.c 23b6cdfa996152d43b390504ed4a942c8caf3a00
+F src/vtab.c ce0f2ebb589b459b32c640b33af64bfa5b29aaf8
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 4db22ed7e77bcf672b1a685d6ddeffba8d5be302
 F src/wal.h 2f7c831cf3b071fa548bf2d5cac640846a7ff19c
@@ -1490,7 +1490,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 559733b09e9630fac9d9318a7ecbaba9134e9160
-R db641f928488147ea4b353a0a8e4e73d
+P 9033afbb31b28a8ad6856ac1f773d8e83bc9ec1c
+R 1cd6e2cbb63bca846e6fd848dfba7f80
 U drh
-Z 8f08ede060795a413d5c246d730b7a0d
+Z cefb033da9b34db496e79185da92ee9c
