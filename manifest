@@ -1,10 +1,10 @@
-C Use\ssqlite3VdbeAddOp0()\sto\scode\sOP_Expire,\sto\ssave\sa\sfew\sbytes.
-D 2016-05-20T15:15:07.708
+C Increase\sthe\sversion\snumber\sto\s3.14.0\ssince\swe\sare\salready\smaking\ssignificant\ncode\schanges.
+D 2016-05-20T15:24:14.463
 F Makefile.in f59e0763ff448719fc1bd25513882b0567286317
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 306d73e854b1a92ea06e5d1e637faa5c44de53c7
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
-F VERSION 5d234da9b5dae329fab75ff75884cfe0a9cb3fda
+F VERSION cb29eb11e493dd85b3eeec4053c03949bf98478e
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
@@ -30,7 +30,7 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 6376abec766e9a0785178b1823b5a587e9f1ccbc
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure df9f793ad47eaeb3648a9090fbc0b96955e88b5a x
+F configure 96fdf3870e30c6f60c6a56d27f5f6e4159b9bdc6 x
 F configure.ac 02b972db825685b4b0cca0234b2aa97f71bd15a5
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html e2118945e5f07ed146b45c9cd2b2dd6eabb8ebf2
@@ -1490,7 +1490,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9033afbb31b28a8ad6856ac1f773d8e83bc9ec1c
-R 1cd6e2cbb63bca846e6fd848dfba7f80
+P 3d55d24dcb27f07d1e645738ee4707e4df923036
+R 89664580415a847eedcfc718be56bf0d
 U drh
-Z cefb033da9b34db496e79185da92ee9c
+Z 8bf855953d20db149698d180b3489eaf
