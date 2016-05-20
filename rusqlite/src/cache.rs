@@ -90,6 +90,8 @@ impl<'conn> CachedStatement<'conn> {
         }
     }
 
+    /// Discard the statement, preventing it from being returned to its `Connection`'s collection
+    /// of cached statements.
     pub fn discard(mut self) {
         self.stmt = None;
     }
