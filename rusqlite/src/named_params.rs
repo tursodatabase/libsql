@@ -279,9 +279,10 @@ mod test {
 
         let mut stmt = db.prepare("SELECT id FROM test where name = :name").unwrap();
         let mut rows = stmt.query_map_named(&[(":name", &"one")], |row| {
-            let id: i32 = row.get(0);
-            2 * id
-        }).unwrap();
+                let id: i32 = row.get(0);
+                2 * id
+            })
+            .unwrap();
 
         let doubled_id: i32 = rows.next().unwrap().unwrap();
         assert_eq!(2, doubled_id);
@@ -298,15 +299,17 @@ mod test {
         "#;
         db.execute_batch(sql).unwrap();
 
-        let mut stmt = db.prepare("SELECT id FROM test where name = :name ORDER BY id ASC").unwrap();
+        let mut stmt = db.prepare("SELECT id FROM test where name = :name ORDER BY id ASC")
+            .unwrap();
         let mut rows = stmt.query_and_then_named(&[(":name", &"one")], |row| {
-            let id: i32 = row.get(0);
-            if id == 1 {
-                Ok(id)
-            } else {
-                Err(Error::SqliteSingleThreadedMode)
-            }
-        }).unwrap();
+                let id: i32 = row.get(0);
+                if id == 1 {
+                    Ok(id)
+                } else {
+                    Err(Error::SqliteSingleThreadedMode)
+                }
+            })
+            .unwrap();
 
         // first row should be Ok
         let doubled_id: i32 = rows.next().unwrap().unwrap();

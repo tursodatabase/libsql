@@ -319,7 +319,9 @@ impl Connection {
     /// ```rust,no_run
     /// # use rusqlite::{Result,Connection};
     /// fn preferred_locale(conn: &Connection) -> Result<String> {
-    ///     conn.query_row_and_then("SELECT value FROM preferences WHERE name='locale'", &[], |row| {
+    ///     conn.query_row_and_then("SELECT value FROM preferences WHERE name='locale'",
+    ///                             &[],
+    ///                             |row| {
     ///         row.get_checked(0)
     ///     })
     /// }
@@ -709,9 +711,12 @@ impl<'conn> Statement<'conn> {
     }
 
     /// Returns the column index in the result set for a given column name.
-    /// If there is no AS clause then the name of the column is unspecified and may change from one release of SQLite to the next.
+    ///
+    /// If there is no AS clause then the name of the column is unspecified and may change from one
+    /// release of SQLite to the next.
     ///
     /// # Failure
+    ///
     /// Will return an `Error::InvalidColumnName` when there is no column with the specified `name`.
     pub fn column_index(&self, name: &str) -> Result<i32> {
         let bytes = name.as_bytes();
@@ -965,9 +970,7 @@ pub struct Rows<'stmt> {
 
 impl<'stmt> Rows<'stmt> {
     fn new(stmt: &'stmt Statement<'stmt>) -> Rows<'stmt> {
-        Rows {
-            stmt: Some(stmt),
-        }
+        Rows { stmt: Some(stmt) }
     }
 
     fn get_expected_row<'a>(&'a mut self) -> Result<Row<'a, 'stmt>> {
