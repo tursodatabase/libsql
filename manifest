@@ -1,5 +1,5 @@
-C Another\soptimization\son\sthe\sOP_Column\sopcode.
-D 2016-05-20T21:40:11.890
+C Add\sa\ssimple\sTCL\sscript\sfor\ssumming\scachegrind\sinformation\sfor\seach\sVDBE\nopcdoe.
+D 2016-05-20T23:51:14.900
 F Makefile.in f59e0763ff448719fc1bd25513882b0567286317
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 306d73e854b1a92ea06e5d1e637faa5c44de53c7
@@ -1439,6 +1439,7 @@ F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
 F tool/mkvsix.tcl 4abcaf3267171b2faadaf9b82a0dfbaa6e98f8b7
 F tool/offsets.c fe4262fdfa378e8f5499a42136d17bf3b98f6091
 F tool/omittest.tcl 34d7ac01fe4fd18e3637f64abe12c40eca0f6b97
+F tool/opcodesum.tcl 740ed206ba8c5040018988129abbf3089a0ccf4a
 F tool/pagesig.c ff0ca355fd3c2398e933da5e22439bbff89b803b
 F tool/replace.tcl 7727c60a04299b65a92f5e1590896fea0f25b9e0
 F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
@@ -1490,7 +1491,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9db8f2147339ba519c4ec32e34068e9f4a25e099
-R b59019073443c960ff19359461f0425d
+P 1765672c2599eb03d39c52cd2dc32ea1e5ee069e
+R 247c58a1e4c62949bc3249c61dcdd977
 U drh
-Z be39c49e0fa0986f111ad70cd504ec49
+Z 3e7f8cdf9cdb094239005245e5b11ebd
