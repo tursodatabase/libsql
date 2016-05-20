@@ -687,7 +687,7 @@ void sqlite3PcacheClear(PCache *pCache){
 
 /*
 ** Merge two lists of pages connected by pDirty and in pgno order.
-** Do not both fixing the pDirtyPrev pointers.
+** Do not bother fixing the pDirtyPrev pointers.
 */
 static PgHdr *pcacheMergeDirtyList(PgHdr *pA, PgHdr *pB){
   PgHdr result, *pTail;
