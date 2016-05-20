@@ -47,8 +47,8 @@ impl CSVTab {
     fn reader(&self) -> result::Result<csv::Reader<File>, csv::Error> {
         csv::Reader::from_file(&self.filename).map(|reader| {
             reader.has_headers(self.has_headers)
-                  .delimiter(self.delimiter)
-                  .quote(self.quote)
+                .delimiter(self.delimiter)
+                .quote(self.quote)
         })
     }
 }
@@ -228,7 +228,7 @@ impl From<csv::Error> for Error {
 
 #[cfg(test)]
 mod test {
-    use {Connection,Result};
+    use {Connection, Result};
     use vtab::csvtab;
 
     #[test]
@@ -244,7 +244,8 @@ mod test {
                 assert_eq!(vec!["rowid", "colA", "colB", "colC"], headers);
             }
 
-            let ids: Result<Vec<i32>> = s.query_map(&[], |row| row.get::<i32, i32>(0)).unwrap().collect();
+            let ids: Result<Vec<i32>> =
+                s.query_map(&[], |row| row.get::<i32, i32>(0)).unwrap().collect();
             let sum = ids.unwrap().iter().fold(0, |acc, &id| acc + id);
             assert_eq!(sum, 15);
         }
@@ -258,9 +259,10 @@ mod test {
         db.execute_batch("CREATE VIRTUAL TABLE vtab USING csv('test.csv', HAS_HEADERS)").unwrap();
 
         {
-            let mut s = db.prepare("SELECT v1.rowid, v1.* FROM vtab v1 NATURAL JOIN vtab v2 \
-                                    WHERE v1.rowid < v2.rowid")
-                          .unwrap();
+            let mut s =
+                db.prepare("SELECT v1.rowid, v1.* FROM vtab v1 NATURAL JOIN vtab v2 WHERE \
+                              v1.rowid < v2.rowid")
+                    .unwrap();
 
             let mut rows = s.query(&[]).unwrap();
             let row = rows.next().unwrap().unwrap();

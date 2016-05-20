@@ -109,7 +109,9 @@ impl fmt::Display for Error {
             Error::QueryReturnedNoRows => write!(f, "Query returned no rows"),
             Error::InvalidColumnIndex(i) => write!(f, "Invalid column index: {}", i),
             Error::InvalidColumnName(ref name) => write!(f, "Invalid column name: {}", name),
-            Error::InvalidColumnType(i, t) => write!(f, "Invalid column type {} at index: {}", t, i),
+            Error::InvalidColumnType(i, t) => {
+                write!(f, "Invalid column type {} at index: {}", t, i)
+            }
             Error::StatementChangedRows(i) => write!(f, "Query changed {} rows", i),
             Error::StatementFailedToInsertRow => write!(f, "Statement failed to insert new row"),
 

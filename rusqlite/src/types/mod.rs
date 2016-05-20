@@ -88,7 +88,10 @@ pub trait FromSql: Sized {
     }
 }
 
-unsafe fn column_has_expected_typed(stmt: *mut sqlite3_stmt, col: c_int, expected_type: c_int) -> Result<()> {
+unsafe fn column_has_expected_typed(stmt: *mut sqlite3_stmt,
+                                    col: c_int,
+                                    expected_type: c_int)
+                                    -> Result<()> {
     let actual_type = sqlite3_column_type(stmt, col);
     if actual_type == expected_type {
         Ok(())

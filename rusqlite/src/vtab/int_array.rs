@@ -31,8 +31,9 @@ pub fn drop_int_array(conn: &Connection, name: &str) -> Result<()> {
     conn.execute_batch(&format!("DROP TABLE temp.\"{0}\"", escape_double_quote(name)))
     // http://www.mail-archive.com/sqlite-users%40mailinglists.sqlite.org/msg08423.html
     // "Once a virtual table module has been created, it cannot be modified or destroyed, except by closing the database connection."
-    /*let aux: Option<()> = None;
-    conn.create_module(name, ptr::null() as *const ffi::sqlite3_module, aux)*/
+    // let aux: Option<()> = None;
+    // conn.create_module(name, ptr::null() as *const ffi::sqlite3_module, aux)
+
 }
 
 init_module!(INT_ARRAY_MODULE,
