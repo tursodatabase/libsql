@@ -1342,19 +1342,18 @@ static int vdbeSortAllocUnpacked(SortSubtask *pTask){
 
 /*
 ** Merge the two sorted lists p1 and p2 into a single list.
-** Set *ppOut to the head of the new list.
 */
-static void vdbeSorterMerge(
+static SorterRecord *vdbeSorterMerge(
   SortSubtask *pTask,             /* Calling thread context */
   SorterRecord *p1,               /* First list to merge */
-  SorterRecord *p2,               /* Second list to merge */
-  SorterRecord **ppOut            /* OUT: Head of merged list */
+  SorterRecord *p2                /* Second list to merge */
 ){
   SorterRecord *pFinal = 0;
   SorterRecord **pp = &pFinal;
   int bCached = 0;
 
-  while( p1 && p2 ){
+  assert( p1!=0 && p2!=0 );
+  for(;;){
     int res;
     res = pTask->xCompare(
         pTask, &bCached, SRVAL(p1), p1->nVal, SRVAL(p2), p2->nVal
@@ -1364,15 +1363,22 @@ static void vdbeSorterMerge(
       *pp = p1;
       pp = &p1->u.pNext;
       p1 = p1->u.pNext;
+      if( p1==0 ){
+        *pp = p2;
+        break;
+      }
     }else{
       *pp = p2;
       pp = &p2->u.pNext;
       p2 = p2->u.pNext;
       bCached = 0;
+      if( p2==0 ){
+        *pp = p1;
+        break;
+      }
     }
   }
-  *pp = p1 ? p1 : p2;
-  *ppOut = pFinal;
+  return pFinal;
 }
 
 /*
@@ -1425,7 +1431,7 @@ static int vdbeSorterSort(SortSubtask *pTask, SorterList *pList){
 
     p->u.pNext = 0;
     for(i=0; aSlot[i]; i++){
-      vdbeSorterMerge(pTask, p, aSlot[i], &p);
+      p = vdbeSorterMerge(pTask, p, aSlot[i]);
       aSlot[i] = 0;
     }
     aSlot[i] = p;
@@ -1434,7 +1440,8 @@ static int vdbeSorterSort(SortSubtask *pTask, SorterList *pList){
 
   p = 0;
   for(i=0; i<64; i++){
-    vdbeSorterMerge(pTask, p, aSlot[i], &p);
+    if( aSlot[i]==0 ) continue;
+    p = p ? vdbeSorterMerge(pTask, p, aSlot[i]) : aSlot[i];
   }
   pList->pList = p;
 

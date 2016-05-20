@@ -242,27 +242,25 @@ static struct RowSetEntry *rowSetEntryMerge(
   struct RowSetEntry *pTail;
 
   pTail = &head;
-  while( pA && pB ){
+  assert( pA!=0 && pB!=0 );
+  for(;;){
     assert( pA->pRight==0 || pA->v<=pA->pRight->v );
     assert( pB->pRight==0 || pB->v<=pB->pRight->v );
-    if( pA->v<pB->v ){
-      pTail->pRight = pA;
+    if( pA->v<=pB->v ){
+      if( pA->v<pB->v ) pTail = pTail->pRight = pA;
       pA = pA->pRight;
-      pTail = pTail->pRight;
-    }else if( pB->v<pA->v ){
-      pTail->pRight = pB;
-      pB = pB->pRight;
-      pTail = pTail->pRight;
+      if( pA==0 ){
+        pTail->pRight = pB;
+        break;
+      }
     }else{
-      pA = pA->pRight;
+      pTail = pTail->pRight = pB;
+      pB = pB->pRight;
+      if( pB==0 ){
+        pTail->pRight = pA;
+        break;
+      }
     }
-  }
-  if( pA ){
-    assert( pA->pRight==0 || pA->v<=pA->pRight->v );
-    pTail->pRight = pA;
-  }else{
-    assert( pB==0 || pB->pRight==0 || pB->v<=pB->pRight->v );
-    pTail->pRight = pB;
   }
   return head.pRight;
 }
@@ -286,9 +284,10 @@ static struct RowSetEntry *rowSetEntrySort(struct RowSetEntry *pIn){
     aBucket[i] = pIn;
     pIn = pNext;
   }
-  pIn = 0;
-  for(i=0; i<sizeof(aBucket)/sizeof(aBucket[0]); i++){
-    pIn = rowSetEntryMerge(pIn, aBucket[i]);
+  pIn = aBucket[0];
+  for(i=1; i<sizeof(aBucket)/sizeof(aBucket[0]); i++){
+    if( aBucket[i]==0 ) continue;
+    pIn = pIn ? rowSetEntryMerge(pIn, aBucket[i]) : aBucket[i];
   }
   return pIn;
 }
