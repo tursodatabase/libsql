@@ -80,7 +80,8 @@ use error::{error_from_sqlite_code, error_from_handle};
 use raw_statement::RawStatement;
 use cache::StatementCache;
 
-pub use transaction::{SqliteTransaction, Savepoint, Transaction, TransactionBehavior};
+pub use transaction::{SqliteTransaction, SqliteTransactionBehavior, DropBehavior, Savepoint,
+                      Transaction, TransactionBehavior};
 pub use error::{SqliteError, Error};
 pub use cache::CachedStatement;
 
