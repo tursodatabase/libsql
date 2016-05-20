@@ -2531,9 +2531,7 @@ case OP_Column: {
         pC->aType[i++] = t;
         aOffset[i] = (u32)(offset64 & 0xffffffff);
       }while( i<=p2 && zHdr<zEndHdr );
-      pC->nHdrParsed = i;
-      pC->iHdrOffset = (u32)(zHdr - zData);
-  
+
       /* The record is corrupt if any of the following are true:
       ** (1) the bytes of the header extend past the declared header size
       ** (2) the entire header was used but not all data was used
@@ -2546,8 +2544,10 @@ case OP_Column: {
         rc = SQLITE_CORRUPT_BKPT;
         goto abort_due_to_error;
       }
-      if( pC->aRow==0 ) sqlite3VdbeMemRelease(&sMem);
 
+      pC->nHdrParsed = i;
+      pC->iHdrOffset = (u32)(zHdr - zData);
+      if( pC->aRow==0 ) sqlite3VdbeMemRelease(&sMem);
     }else{
       t = 0;
     }
