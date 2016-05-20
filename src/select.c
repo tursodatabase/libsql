@@ -611,6 +611,7 @@ static void pushOntoSorter(
       ** LIMIT+OFFSET entries of the sorter. */
       int iBrk = sqlite3VdbeCurrentAddr(v) + 2;
       sqlite3VdbeAddOp3(v, OP_Eq, regBase+nExpr, iBrk, r1);
+      sqlite3VdbeChangeP5(v, SQLITE_NULLEQ);
       VdbeCoverage(v);
     }
     sqlite3VdbeJumpHere(v, addr);
