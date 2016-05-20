@@ -163,14 +163,12 @@ mod test {
         p3.borrow_mut().append(&mut vec![-1, -5, -10]);
 
         {
-            let rows = s.query(&[]).unwrap();
-            for row in rows {
-                let row = row.unwrap();
+            s.query_map(&[], |row| {
                 let i1: i64 = row.get(0);
                 assert!(i1 == 1 || i1 == 3);
                 assert_eq!(11, row.get(1));
                 assert_eq!(-5, row.get(2));
-            }
+            }).unwrap();
         }
 
         p1.borrow_mut().clear();

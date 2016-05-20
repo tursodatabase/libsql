@@ -209,7 +209,10 @@ impl<'conn> Drop for Transaction<'conn> {
 }
 
 impl<'conn> Savepoint<'conn> {
-    fn with_depth_and_name<T: Into<String>>(conn: &Connection, depth: u32, name: T) -> Result<Savepoint> {
+    fn with_depth_and_name<T: Into<String>>(conn: &Connection,
+                                            depth: u32,
+                                            name: T)
+                                            -> Result<Savepoint> {
         let name = name.into();
         conn.execute_batch(&format!("SAVEPOINT {}", name)).map(|_| {
             Savepoint {
@@ -349,7 +352,9 @@ impl Connection {
     /// # Failure
     ///
     /// Will return `Err` if the underlying SQLite call fails.
-    pub fn transaction_with_behavior(&mut self, behavior: TransactionBehavior) -> Result<Transaction> {
+    pub fn transaction_with_behavior(&mut self,
+                                     behavior: TransactionBehavior)
+                                     -> Result<Transaction> {
         Transaction::new(self, behavior)
     }
 

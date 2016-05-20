@@ -111,7 +111,8 @@ impl<'a> ToResult for &'a str {
                                          length as c_int,
                                          ffi::SQLITE_TRANSIENT())
             }
-            Err(_) => ffi::sqlite3_result_error_code(ctx, ffi::SQLITE_MISUSE), // TODO sqlite3_result_error
+            // TODO sqlite3_result_error
+            Err(_) => ffi::sqlite3_result_error_code(ctx, ffi::SQLITE_MISUSE),
         }
     }
 }
@@ -730,9 +731,10 @@ mod test {
 
         assert_eq!(true, result.unwrap());
 
-        let result: Result<i64> = db.query_row("SELECT COUNT(*) FROM foo WHERE regexp('l.s[aeiouy]', x) == 1",
-                                  &[],
-                                  |r| r.get(0));
+        let result: Result<i64> =
+            db.query_row("SELECT COUNT(*) FROM foo WHERE regexp('l.s[aeiouy]', x) == 1",
+                         &[],
+                         |r| r.get(0));
 
         assert_eq!(2, result.unwrap());
     }
@@ -780,9 +782,10 @@ mod test {
 
         assert_eq!(true, result.unwrap());
 
-        let result: Result<i64> = db.query_row("SELECT COUNT(*) FROM foo WHERE regexp('l.s[aeiouy]', x) == 1",
-                                  &[],
-                                  |r| r.get(0));
+        let result: Result<i64> =
+            db.query_row("SELECT COUNT(*) FROM foo WHERE regexp('l.s[aeiouy]', x) == 1",
+                         &[],
+                         |r| r.get(0));
 
         assert_eq!(2, result.unwrap());
     }

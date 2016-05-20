@@ -228,7 +228,7 @@ impl From<csv::Error> for Error {
 
 #[cfg(test)]
 mod test {
-    use Connection;
+    use {Connection,Result};
     use vtab::csvtab;
 
     #[test]
@@ -244,13 +244,8 @@ mod test {
                 assert_eq!(vec!["rowid", "colA", "colB", "colC"], headers);
             }
 
-            let rows = s.query(&[]).unwrap();
-            let mut sum = 0;
-            for row in rows {
-                let row = row.unwrap();
-                let id: i64 = row.get(0);
-                sum = sum + id;
-            }
+            let ids: Result<Vec<i32>> = s.query_map(&[], |row| row.get::<i32, i32>(0)).unwrap().collect();
+            let sum = ids.unwrap().iter().fold(0, |acc, &id| acc + id);
             assert_eq!(sum, 15);
         }
         db.execute_batch("DROP TABLE vtab").unwrap();
