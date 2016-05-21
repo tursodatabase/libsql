@@ -1,5 +1,5 @@
-C Add\soptions\sto\sbc_test1.c\sto\smake\sit\smore\sflexible.
-D 2016-05-07T18:02:53.432
+C Use\spthreads\smutexes\sand\sconditions\sto\ssynchronize\sthreads\sin\sbc_test1.
+D 2016-05-21T18:50:56.299
 F Makefile.in 9e816d0323e418fbc0f8b2c05fc14e0b3763d9e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 71b8b16cf9393f68e2e2035486ca104872558836
@@ -521,7 +521,7 @@ F test/backup_malloc.test 7162d604ec2b4683c4b3799a48657fb8b5e2d450
 F test/badutf.test d5360fc31f643d37a973ab0d8b4fb85799c3169f
 F test/badutf2.test f5bc7f2d280670ecd79b9cf4f0f1760c607fe51f
 F test/bc_common.tcl b5e42d80305be95697e6370e015af571e5333a1c
-F test/bc_test1.c 3f10831d71c7e0bc53640c1989d31ded030a0fcc
+F test/bc_test1.c 874d03ffabbd565a6cf9a7eec23d3deafd3c8f1c
 F test/bestindex1.test 0cf1bd2d7b97d3a3a8c10736125274f64765c4ee
 F test/bestindex2.test 4a06b8922ab2fd09434870da8d1cdf525aaf7060
 F test/between.test 34d375fb5ce1ae283ffe82b6b233e9f38e84fc6c
@@ -1491,7 +1491,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 128c7eaed5479b615d75ebce1d781ea661e0fb2d
-R 86fffa805f6f27d07092161192388b60
+P ec6ef5f2c2dc18e1a19c205f365f4071f0870b68
+R 9d74e8a08d57f3a5262646881b7fcf49
 U dan
-Z aab288310f3155f4f7b4c6e3e47a2d89
+Z 51f0c57ee889307d403d3ab523c9aec8
