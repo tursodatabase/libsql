@@ -4285,13 +4285,12 @@ case OP_Insert:
 case OP_InsertInt: {
   Mem *pData;       /* MEM cell holding data for the record to be inserted */
   Mem *pKey;        /* MEM cell holding key  for the record */
-  i64 iKey;         /* The integer ROWID or key for the record to be inserted */
   VdbeCursor *pC;   /* Cursor to table into which insert is written */
-  int nZero;        /* Number of zero-bytes to append */
   int seekResult;   /* Result of prior seek or 0 if no USESEEKRESULT flag */
   const char *zDb;  /* database name - used by the update hook */
   Table *pTab;      /* Table structure - used by update and pre-update hooks */
   int op;           /* Opcode for update hook: SQLITE_UPDATE or SQLITE_INSERT */
+  BtreePayload x;   /* Payload to be inserted */
 
   op = 0;
   pData = &aMem[pOp->p2];
@@ -4310,10 +4309,10 @@ case OP_InsertInt: {
     assert( pKey->flags & MEM_Int );
     assert( memIsValid(pKey) );
     REGISTER_TRACE(pOp->p3, pKey);
-    iKey = pKey->u.i;
+    x.nKey = pKey->u.i;
   }else{
     assert( pOp->opcode==OP_InsertInt );
-    iKey = pOp->p3;
+    x.nKey = pOp->p3;
   }
 
   if( pOp->p4type==P4_TABLE && HAS_UPDATE_HOOK(db) ){
@@ -4334,26 +4333,28 @@ case OP_InsertInt: {
    && pOp->p4type==P4_TABLE
    && !(pOp->p5 & OPFLAG_ISUPDATE)
   ){
-    sqlite3VdbePreUpdateHook(p, pC, SQLITE_INSERT, zDb, pTab, iKey, pOp->p2);
+    sqlite3VdbePreUpdateHook(p, pC, SQLITE_INSERT, zDb, pTab, x.nKey, pOp->p2);
   }
 #endif
 
   if( pOp->p5 & OPFLAG_NCHANGE ) p->nChange++;
-  if( pOp->p5 & OPFLAG_LASTROWID ) db->lastRowid = lastRowid = iKey;
+  if( pOp->p5 & OPFLAG_LASTROWID ) db->lastRowid = lastRowid = x.nKey;
   if( pData->flags & MEM_Null ){
-    pData->z = 0;
-    pData->n = 0;
+    x.pData = 0;
+    x.nData = 0;
   }else{
     assert( pData->flags & (MEM_Blob|MEM_Str) );
+    x.pData = pData->z;
+    x.nData = pData->n;
   }
   seekResult = ((pOp->p5 & OPFLAG_USESEEKRESULT) ? pC->seekResult : 0);
   if( pData->flags & MEM_Zero ){
-    nZero = pData->u.nZero;
+    x.nZero = pData->u.nZero;
   }else{
-    nZero = 0;
+    x.nZero = 0;
   }
-  rc = sqlite3BtreeInsert(pC->uc.pCursor, 0, iKey,
-                          pData->z, pData->n, nZero,
+  x.pKey = 0;
+  rc = sqlite3BtreeInsert(pC->uc.pCursor, &x,
                           (pOp->p5 & OPFLAG_APPEND)!=0, seekResult
   );
   pC->deferredMoveto = 0;
@@ -4362,7 +4363,7 @@ case OP_InsertInt: {
   /* Invoke the update-hook if required. */
   if( rc ) goto abort_due_to_error;
   if( db->xUpdateCallback && op ){
-    db->xUpdateCallback(db->pUpdateArg, op, zDb, pTab->zName, iKey);
+    db->xUpdateCallback(db->pUpdateArg, op, zDb, pTab->zName, x.nKey);
   }
   break;
 }
@@ -4977,8 +4978,7 @@ next_tail:
 case OP_SorterInsert:       /* in2 */
 case OP_IdxInsert: {        /* in2 */
   VdbeCursor *pC;
-  int nKey;
-  const char *zKey;
+  BtreePayload x;
 
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
@@ -4994,9 +4994,12 @@ case OP_IdxInsert: {        /* in2 */
   if( pOp->opcode==OP_SorterInsert ){
     rc = sqlite3VdbeSorterWrite(pC, pIn2);
   }else{
-    nKey = pIn2->n;
-    zKey = pIn2->z;
-    rc = sqlite3BtreeInsert(pC->uc.pCursor, zKey, nKey, "", 0, 0, pOp->p3, 
+    x.nKey = pIn2->n;
+    x.pKey = pIn2->z;
+    x.nData = 0;
+    x.nZero = 0;
+    x.pData = 0;
+    rc = sqlite3BtreeInsert(pC->uc.pCursor, &x, pOp->p3, 
         ((pOp->p5 & OPFLAG_USESEEKRESULT) ? pC->seekResult : 0)
         );
     assert( pC->deferredMoveto==0 );

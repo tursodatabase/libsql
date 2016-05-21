@@ -6072,9 +6072,7 @@ static int clearCell(
 static int fillInCell(
   MemPage *pPage,                /* The page that contains the cell */
   unsigned char *pCell,          /* Complete text of the cell */
-  const void *pKey, i64 nKey,    /* The key */
-  const void *pData,int nData,   /* The data */
-  int nZero,                     /* Extra zero bytes to append to pData */
+  const BtreePayload *pX,        /* Payload with which to construct the cell */
   int *pnSize                    /* Write cell size here */
 ){
   int nPayload;
@@ -6098,24 +6096,23 @@ static int fillInCell(
 
   /* Fill in the header. */
   nHeader = pPage->childPtrSize;
-  nPayload = nData + nZero;
+  nPayload = pX->nData + pX->nZero;
   if( pPage->intKeyLeaf ){
     nHeader += putVarint32(&pCell[nHeader], nPayload);
   }else{
-    assert( nData==0 );
-    assert( nZero==0 );
+    assert( pX->nData==0 );
+    assert( pX->nZero==0 );
   }
-  nHeader += putVarint(&pCell[nHeader], *(u64*)&nKey);
+  nHeader += putVarint(&pCell[nHeader], *(u64*)&pX->nKey);
   
-  /* Fill in the payload size */
+  /* Fill in the payload */
   if( pPage->intKey ){
-    pSrc = pData;
-    nSrc = nData;
+    pSrc = pX->pData;
+    nSrc = pX->nData;
   }else{ 
-    assert( nKey<=0x7fffffff && pKey!=0 );
-    nPayload = (int)nKey;
-    pSrc = pKey;
-    nSrc = (int)nKey;
+    assert( pX->nKey<=0x7fffffff && pX->pKey!=0 );
+    nSrc = nPayload = (int)pX->nKey;
+    pSrc = pX->pKey;
   }
   if( nPayload<=pPage->maxLocal ){
     n = nHeader + nPayload;
@@ -6154,7 +6151,7 @@ static int fillInCell(
     CellInfo info;
     pPage->xParseCell(pPage, pCell, &info);
     assert( nHeader==(int)(info.pPayload - pCell) );
-    assert( info.nKey==nKey );
+    assert( info.nKey==pX->nKey );
     assert( *pnSize == info.nSize );
     assert( spaceLeft == info.nLocal );
   }
@@ -7923,13 +7920,19 @@ static int balance(BtCursor *pCur){
 
 
 /*
-** Insert a new record into the BTree.  The key is given by (pKey,nKey)
-** and the data is given by (pData,nData).  The cursor is used only to
-** define what table the record should be inserted into.  The cursor
-** is left pointing at a random location.
+** Insert a new record into the BTree.  The content of the new record
+** is described by the pX object.  The pCur cursor is used only to
+** define what table the record should be inserted into, and is left
+** pointing at a random location.
 **
-** For an INTKEY table, only the nKey value of the key is used.  pKey is
-** ignored.  For a ZERODATA table, the pData and nData are both ignored.
+** For a table btree (used for rowid tables), only the pX.nKey value of
+** the key is used. The pX.pKey value must be NULL.  The pX.nKey is the
+** rowid or INTEGER PRIMARY KEY of the row.  The pX.nData,pData,nZero fields
+** hold the content of the row.
+**
+** For an index btree (used for indexes and WITHOUT ROWID tables), the
+** key is an arbitrary byte sequence stored in pX.pKey,nKey.  The 
+** pX.pData,nData,nZero fields must be zero.
 **
 ** If the seekResult parameter is non-zero, then a successful call to
 ** MovetoUnpacked() to seek cursor pCur to (pKey, nKey) has already
@@ -7946,9 +7949,7 @@ static int balance(BtCursor *pCur){
 */
 int sqlite3BtreeInsert(
   BtCursor *pCur,                /* Insert data into the table of this cursor */
-  const void *pKey, i64 nKey,    /* The key of the new record */
-  const void *pData, int nData,  /* The data of the new record */
-  int nZero,                     /* Number of extra 0 bytes to append to data */
+  const BtreePayload *pX,        /* Content of the row to be inserted */
   int appendBias,                /* True if this is likely an append */
   int seekResult                 /* Result of prior MovetoUnpacked() call */
 ){
@@ -7978,7 +7979,7 @@ int sqlite3BtreeInsert(
   ** keys with no associated data. If the cursor was opened expecting an
   ** intkey table, the caller should be inserting integer keys with a
   ** blob of associated data.  */
-  assert( (pKey==0)==(pCur->pKeyInfo==0) );
+  assert( (pX->pKey==0)==(pCur->pKeyInfo==0) );
 
   /* Save the positions of any other cursors open on this table.
   **
@@ -7997,38 +7998,38 @@ int sqlite3BtreeInsert(
   }
 
   if( pCur->pKeyInfo==0 ){
-    assert( pKey==0 );
+    assert( pX->pKey==0 );
     /* If this is an insert into a table b-tree, invalidate any incrblob 
     ** cursors open on the row being replaced */
-    invalidateIncrblobCursors(p, nKey, 0);
+    invalidateIncrblobCursors(p, pX->nKey, 0);
 
     /* If the cursor is currently on the last row and we are appending a
     ** new row onto the end, set the "loc" to avoid an unnecessary
     ** btreeMoveto() call */
-    if( (pCur->curFlags&BTCF_ValidNKey)!=0 && nKey>0
-      && pCur->info.nKey==nKey-1 ){
+    if( (pCur->curFlags&BTCF_ValidNKey)!=0 && pX->nKey>0
+      && pCur->info.nKey==pX->nKey-1 ){
        loc = -1;
     }else if( loc==0 ){
-      rc = sqlite3BtreeMovetoUnpacked(pCur, 0, nKey, appendBias, &loc);
+      rc = sqlite3BtreeMovetoUnpacked(pCur, 0, pX->nKey, appendBias, &loc);
       if( rc ) return rc;
     }
   }else if( loc==0 ){
-    rc = btreeMoveto(pCur, pKey, nKey, appendBias, &loc);
+    rc = btreeMoveto(pCur, pX->pKey, pX->nKey, appendBias, &loc);
     if( rc ) return rc;
   }
   assert( pCur->eState==CURSOR_VALID || (pCur->eState==CURSOR_INVALID && loc) );
 
   pPage = pCur->apPage[pCur->iPage];
-  assert( pPage->intKey || nKey>=0 );
+  assert( pPage->intKey || pX->nKey>=0 );
   assert( pPage->leaf || !pPage->intKey );
 
   TRACE(("INSERT: table=%d nkey=%lld ndata=%d page=%d %s\n",
-          pCur->pgnoRoot, nKey, nData, pPage->pgno,
+          pCur->pgnoRoot, pX->nKey, pX->nData, pPage->pgno,
           loc==0 ? "overwrite" : "new entry"));
   assert( pPage->isInit );
   newCell = pBt->pTmpSpace;
   assert( newCell!=0 );
-  rc = fillInCell(pPage, newCell, pKey, nKey, pData, nData, nZero, &szNew);
+  rc = fillInCell(pPage, newCell, pX, &szNew);
   if( rc ) goto end_insert;
   assert( szNew==pPage->xCellSize(pPage, newCell) );
   assert( szNew <= MX_CELL_SIZE(pBt) );

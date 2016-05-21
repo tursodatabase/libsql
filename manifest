@@ -1,5 +1,5 @@
-C Remove\ssome\sunused\slegacy\scode\sfrom\sthe\sbtree\sinsert\slogic.
-D 2016-05-21T19:10:21.800
+C Simplify\sthe\ssqlite3BtreeInsert()\sinterface\sby\sgathering\sthe\sfive\sarguments\ndescribing\sthe\scontent\sto\sbe\sinserted\sinto\sthe\snew\sBtreePayload\sstructure,\sand\nthus\sreducing\sthe\snumber\sof\sparameters\sfrom\seight\sto\sfour.
+D 2016-05-21T20:03:42.980
 F Makefile.in f59e0763ff448719fc1bd25513882b0567286317
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 306d73e854b1a92ea06e5d1e637faa5c44de53c7
@@ -322,8 +322,8 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 6df65fdd569c901a418887a1a76f82ec35044556
 F src/bitvec.c 3ee4c8b2c94ed3a7377256e18199e6ff5cf33f63
 F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
-F src/btree.c 09df167470e82b34f92d60cdd1a44f397ae8e105
-F src/btree.h a5008b9afe56e8e54ade6c436a910f112defcca9
+F src/btree.c e312cc3fdff31fdcc727b973fa0f195573b86393
+F src/btree.h 1342a9b2cc2089e3534d3ef00204786783f6aea6
 F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
 F src/build.c 785fa789319d93c6ae20efbd01d4da9ce8f8a793
 F src/callback.c 2e76147783386374bf01b227f752c81ec872d730
@@ -390,7 +390,7 @@ F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
 F src/tclsqlite.c 9c4c4589d078de37813ded708d8838b338ffb060
 F src/test1.c c0e5b69f99e95a2c9f55fdb6e46b44f1a15292d8
 F src/test2.c 5586f43fcd9a1be0830793cf9d354082c261b25b
-F src/test3.c 0df6f8dbb4cbaa7106397c70a271fa6a43659042
+F src/test3.c d2c9efd2985ff8f5502ffd3253156984778d77d8
 F src/test4.c d168f83cc78d02e8d35567bb5630e40dcd85ac1e
 F src/test5.c 5a34feec76d9b3a86aab30fd4f6cc9c48cbab4c1
 F src/test6.c 2c014d4977efd6107ec9eef3dfdec56ac516f824
@@ -444,7 +444,7 @@ F src/update.c 4f05ea8cddfa367d045e03589756c02199e8f9bd
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c 810ec3f22e2d1b62e66c30fe3621ebdedd23584d
 F src/vacuum.c feb1eabb20987983d9350cad98299b21fa811f52
-F src/vdbe.c 975ac1d3d326bcb36b4e99255daeaf81ff6659d1
+F src/vdbe.c f2706d5564d2b2887a27c909e8e1575250029503
 F src/vdbe.h 5591b5add447096e31288b5a0a78ec5d7b5c5170
 F src/vdbeInt.h ddb157974436d87652de7dc641f7191496d9a8cd
 F src/vdbeapi.c ba85b78fe08dc4a9ce747e62c89a2b4a4547e74c
@@ -1492,7 +1492,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1dbaf7a119edc5150a5d4be1b72f652a574e5bc5
-R 46d65e39155fd1bfd348824fd7a5487b
+P 2ce1166717ac3c0cec37b2f6d70d8359fbaefc71
+R 560ed5c35c4c6718e1a252b0b3f02845
 U drh
-Z 20edc765018d44eea5900b69fe208cfe
+Z ca823f4324bb11c74d57e3f017091386
