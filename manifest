@@ -1,5 +1,5 @@
-C Add\sthe\sshell-script\sused\sfor\sroutine\sperformance\stesting.
-D 2016-05-21T00:45:54.756
+C Small\ssize\sreduction\sand\sperformance\sincrease\sin\sthe\ssqlite3BtreeInsert()\nlogic.
+D 2016-05-21T11:23:26.914
 F Makefile.in f59e0763ff448719fc1bd25513882b0567286317
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 306d73e854b1a92ea06e5d1e637faa5c44de53c7
@@ -322,7 +322,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 6df65fdd569c901a418887a1a76f82ec35044556
 F src/bitvec.c 3ee4c8b2c94ed3a7377256e18199e6ff5cf33f63
 F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
-F src/btree.c e53a01547d61a3d567daf7a7acc30122fe071aef
+F src/btree.c ab4ab00fa42b9f31a3c4f4232ab7dffe15a37728
 F src/btree.h a5008b9afe56e8e54ade6c436a910f112defcca9
 F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
 F src/build.c 785fa789319d93c6ae20efbd01d4da9ce8f8a793
@@ -1492,7 +1492,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 96cf821b6a69e2e8df33271b7bb674bd12a1ef7b
-R ca27df5abd7cea75d52374965a3f09f5
+P 8e366f18f5bbd594390e7b091083e99639de324e
+R 59f3ac52df516414b0292061ce466d2b
 U drh
-Z 7380639ab417b2bbe053c05d7bd1cc2b
+Z 1ed41a6ca1c9810f6f5090ac3b0958c0
