@@ -1,5 +1,5 @@
-C Simplify\sthe\ssqlite3BtreeInsert()\sinterface\sby\sgathering\sthe\sfive\sarguments\ndescribing\sthe\scontent\sto\sbe\sinserted\sinto\sthe\snew\sBtreePayload\sstructure,\sand\nthus\sreducing\sthe\snumber\sof\sparameters\sfrom\seight\sto\sfour.
-D 2016-05-21T20:03:42.980
+C More\stweaks\sto\simprove\sthe\sperformance\sof\sthe\sinsert\slogic,\sslightly.
+D 2016-05-21T23:25:29.377
 F Makefile.in f59e0763ff448719fc1bd25513882b0567286317
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 306d73e854b1a92ea06e5d1e637faa5c44de53c7
@@ -322,7 +322,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 6df65fdd569c901a418887a1a76f82ec35044556
 F src/bitvec.c 3ee4c8b2c94ed3a7377256e18199e6ff5cf33f63
 F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
-F src/btree.c e312cc3fdff31fdcc727b973fa0f195573b86393
+F src/btree.c 2128172fc1c420a6fa6878827fa595407795069a
 F src/btree.h 1342a9b2cc2089e3534d3ef00204786783f6aea6
 F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
 F src/build.c 785fa789319d93c6ae20efbd01d4da9ce8f8a793
@@ -1492,7 +1492,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2ce1166717ac3c0cec37b2f6d70d8359fbaefc71
-R 560ed5c35c4c6718e1a252b0b3f02845
+P 55f348cdd24c7812ea4b63345514764b69f64dc8
+R c264a769216b385e0f4c9931cdb639d6
 U drh
-Z ca823f4324bb11c74d57e3f017091386
+Z 3ab4f00ccff5a15915c6caecbe082e94

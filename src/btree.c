@@ -6096,24 +6096,23 @@ static int fillInCell(
 
   /* Fill in the header. */
   nHeader = pPage->childPtrSize;
-  nPayload = pX->nData + pX->nZero;
-  if( pPage->intKeyLeaf ){
+  if( pPage->intKey ){
+    nPayload = pX->nData + pX->nZero;
+    pSrc = pX->pData;
+    nSrc = pX->nData;
+    assert( pPage->intKeyLeaf ); /* fillInCell() only called for leaves */
     nHeader += putVarint32(&pCell[nHeader], nPayload);
+    nHeader += putVarint(&pCell[nHeader], *(u64*)&pX->nKey);
   }else{
     assert( pX->nData==0 );
     assert( pX->nZero==0 );
-  }
-  nHeader += putVarint(&pCell[nHeader], *(u64*)&pX->nKey);
-  
-  /* Fill in the payload */
-  if( pPage->intKey ){
-    pSrc = pX->pData;
-    nSrc = pX->nData;
-  }else{ 
     assert( pX->nKey<=0x7fffffff && pX->pKey!=0 );
     nSrc = nPayload = (int)pX->nKey;
     pSrc = pX->pKey;
+    nHeader += putVarint32(&pCell[nHeader], nPayload);
   }
+  
+  /* Fill in the payload */
   if( nPayload<=pPage->maxLocal ){
     n = nHeader + nPayload;
     testcase( n==3 );
