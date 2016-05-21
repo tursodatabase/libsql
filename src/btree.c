@@ -6111,7 +6111,6 @@ static int fillInCell(
   if( pPage->intKey ){
     pSrc = pData;
     nSrc = nData;
-    nData = 0;
   }else{ 
     assert( nKey<=0x7fffffff && pKey!=0 );
     nPayload = (int)nKey;
@@ -6240,10 +6239,6 @@ static int fillInCell(
     pSrc += n;
     nSrc -= n;
     spaceLeft -= n;
-    if( nSrc==0 ){
-      nSrc = nData;
-      pSrc = pData;
-    }
   }
   releasePage(pToRelease);
   return SQLITE_OK;

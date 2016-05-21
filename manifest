@@ -1,5 +1,5 @@
-C Yet\sanother\sminor\ssize\sreduction\sand\sperformance\sincrease\sin\sthe\sb-tree\ninsert\slogic.
-D 2016-05-21T12:29:04.510
+C Remove\ssome\sunused\slegacy\scode\sfrom\sthe\sbtree\sinsert\slogic.
+D 2016-05-21T19:10:21.800
 F Makefile.in f59e0763ff448719fc1bd25513882b0567286317
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 306d73e854b1a92ea06e5d1e637faa5c44de53c7
@@ -322,7 +322,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 6df65fdd569c901a418887a1a76f82ec35044556
 F src/bitvec.c 3ee4c8b2c94ed3a7377256e18199e6ff5cf33f63
 F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
-F src/btree.c da39b19be8a0fad4eb8a3d9e2d95a8ccc3eb8dd1
+F src/btree.c 09df167470e82b34f92d60cdd1a44f397ae8e105
 F src/btree.h a5008b9afe56e8e54ade6c436a910f112defcca9
 F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
 F src/build.c 785fa789319d93c6ae20efbd01d4da9ce8f8a793
@@ -1492,7 +1492,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 656aa1ecf5129ae43c56a990e95038b5d8cbdcee
-R 213b2db355637b4ec446a3f8344f0ebf
+P 1dbaf7a119edc5150a5d4be1b72f652a574e5bc5
+R 46d65e39155fd1bfd348824fd7a5487b
 U drh
-Z 69c744da391089b891fa26fe7438d9c6
+Z 20edc765018d44eea5900b69fe208cfe
