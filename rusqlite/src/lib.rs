@@ -882,7 +882,12 @@ impl<'conn> Statement<'conn> {
 
         for (i, p) in params.iter().enumerate() {
             try!(unsafe {
-                self.conn.decode_result(p.bind_parameter(self.stmt.ptr(), (i + 1) as c_int))
+                self.conn.decode_result(
+                    // This should be
+                    // `p.bind_parameter(self.stmt.ptr(), (i + 1) as c_int)`
+                    // but that doesn't compile until Rust 1.9 due to a compiler bug.
+                    ToSql::bind_parameter(*p, self.stmt.ptr(), (i + 1) as c_int)
+                )
             });
         }
 

@@ -204,7 +204,12 @@ impl<'conn> Statement<'conn> {
     fn bind_parameters_named(&mut self, params: &[(&str, &ToSql)]) -> Result<()> {
         for &(name, value) in params {
             if let Some(i) = try!(self.parameter_index(name)) {
-                try!(self.conn.decode_result(unsafe { value.bind_parameter(self.stmt.ptr(), i) }));
+                try!(self.conn.decode_result(unsafe {
+                    // This should be
+                    // `value.bind_parameter(self.stmt.ptr(), i)`
+                    // but that doesn't compile until Rust 1.9 due to a compiler bug.
+                    ToSql::bind_parameter(value, self.stmt.ptr(), i)
+                }));
             } else {
                 return Err(Error::InvalidParameterName(name.into()));
             }
