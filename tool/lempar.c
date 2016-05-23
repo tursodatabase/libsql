@@ -203,9 +203,9 @@ typedef struct yyStackEntry yyStackEntry;
 /* The state of the parser is completely contained in an instance of
 ** the following structure */
 struct yyParser {
-  int yyidx;                    /* Index of top element in stack */
+  yyStackEntry *yytos;          /* Pointer to top element of the stack */
 #ifdef YYTRACKMAXSTACKDEPTH
-  int yyidxMax;                 /* Maximum value of yyidx */
+  int yyhwm;                    /* High-water mark of the stack */
 #endif
 #ifndef YYNOERRORRECOVERY
   int yyerrcnt;                 /* Shifts left before out of the error */
@@ -317,9 +317,9 @@ void *ParseAlloc(void *(*mallocProc)(YYMALLOCARGTYPE)){
   yyParser *pParser;
   pParser = (yyParser*)(*mallocProc)( (YYMALLOCARGTYPE)sizeof(yyParser) );
   if( pParser ){
-    pParser->yyidx = -1;
+    pParser->yytos = 0;
 #ifdef YYTRACKMAXSTACKDEPTH
-    pParser->yyidxMax = 0;
+    pParser->yyhwm = 0;
 #endif
 #if YYSTACKDEPTH<=0
     pParser->yystack = NULL;
@@ -369,8 +369,8 @@ static void yy_destructor(
 */
 static void yy_pop_parser_stack(yyParser *pParser){
   yyStackEntry *yytos;
-  assert( pParser->yyidx>=0 );
-  yytos = &pParser->yystack[pParser->yyidx--];
+  assert( pParser->yytos!=0 );
+  yytos = pParser->yytos--;
 #ifndef NDEBUG
   if( yyTraceFILE ){
     fprintf(yyTraceFILE,"%sPopping %s\n",
@@ -397,7 +397,7 @@ void ParseFree(
 #ifndef YYPARSEFREENEVERNULL
   if( pParser==0 ) return;
 #endif
-  while( pParser->yyidx>=0 ) yy_pop_parser_stack(pParser);
+  while( pParser->yytos>=pParser->yystack ) yy_pop_parser_stack(pParser);
 #if YYSTACKDEPTH<=0
   free(pParser->yystack);
 #endif
@@ -410,7 +410,7 @@ void ParseFree(
 #ifdef YYTRACKMAXSTACKDEPTH
 int ParseStackPeak(void *p){
   yyParser *pParser = (yyParser*)p;
-  return pParser->yyidxMax;
+  return pParser->yyhwm;
 }
 #endif
 
@@ -423,7 +423,7 @@ static unsigned int yy_find_shift_action(
   YYCODETYPE iLookAhead     /* The look-ahead token */
 ){
   int i;
-  int stateno = pParser->yystack[pParser->yyidx].stateno;
+  int stateno = pParser->yytos->stateno;
  
   if( stateno>=YY_MIN_REDUCE ) return stateno;
   assert( stateno <= YY_SHIFT_COUNT );
@@ -516,13 +516,13 @@ static int yy_find_reduce_action(
 */
 static void yyStackOverflow(yyParser *yypParser){
    ParseARG_FETCH;
-   yypParser->yyidx--;
+   yypParser->yytos--;
 #ifndef NDEBUG
    if( yyTraceFILE ){
      fprintf(yyTraceFILE,"%sStack Overflow!\n",yyTracePrompt);
    }
 #endif
-   while( yypParser->yyidx>=0 ) yy_pop_parser_stack(yypParser);
+   while( yypParser->yytos>=yypParser->yystack ) yy_pop_parser_stack(yypParser);
    /* Here code is inserted which will execute if the parser
    ** stack every overflows */
 /******** Begin %stack_overflow code ******************************************/
@@ -539,11 +539,11 @@ static void yyTraceShift(yyParser *yypParser, int yyNewState){
   if( yyTraceFILE ){
     if( yyNewState<YYNSTATE ){
       fprintf(yyTraceFILE,"%sShift '%s', go to state %d\n",
-         yyTracePrompt,yyTokenName[yypParser->yystack[yypParser->yyidx].major],
+         yyTracePrompt,yyTokenName[yypParser->yytos->major],
          yyNewState);
     }else{
       fprintf(yyTraceFILE,"%sShift '%s'\n",
-         yyTracePrompt,yyTokenName[yypParser->yystack[yypParser->yyidx].major]);
+         yyTracePrompt,yyTokenName[yypParser->yytos->major]);
     }
   }
 }
@@ -561,27 +561,28 @@ static void yy_shift(
   ParseTOKENTYPE yyMinor        /* The minor token to shift in */
 ){
   yyStackEntry *yytos;
-  yypParser->yyidx++;
+  yypParser->yytos++;
 #ifdef YYTRACKMAXSTACKDEPTH
-  if( yypParser->yyidx>yypParser->yyidxMax ){
-    yypParser->yyidxMax = yypParser->yyidx;
+  if( (int)(yypParser->yytos - yypParser->yystack)>yypParser->yyhwm ){
+    yypParser->yyhwm++;
+    assert( yypParser->yyhwm == (int)(yypParser->yytos - yypParser->yystack) );
   }
 #endif
 #if YYSTACKDEPTH>0 
-  if( yypParser->yyidx>=YYSTACKDEPTH ){
+  if( yypParser->yytos>=&yypParser->yystack[YYSTACKDEPTH] ){
     yyStackOverflow(yypParser);
     return;
   }
 #else
-  if( yypParser->yyidx>=yypParser->yystksz ){
+  if( yypParser->yytos>=&yypParser->yystack[yypParser->yystksz] ){
     yyGrowStack(yypParser);
-    if( yypParser->yyidx>=yypParser->yystksz ){
+    if( yypParser->yytos>=&yypParser->yystach[yypParser->yystksz] ){
       yyStackOverflow(yypParser);
       return;
     }
   }
 #endif
-  yytos = &yypParser->yystack[yypParser->yyidx];
+  yytos = yypParser->yytos;
   yytos->stateno = (YYACTIONTYPE)yyNewState;
   yytos->major = (YYCODETYPE)yyMajor;
   yytos->minor.yy0 = yyMinor;
@@ -613,7 +614,7 @@ static void yy_reduce(
   yyStackEntry *yymsp;            /* The top of the parser's stack */
   int yysize;                     /* Amount to pop the stack */
   ParseARG_FETCH;
-  yymsp = &yypParser->yystack[yypParser->yyidx];
+  yymsp = yypParser->yytos;
 #ifndef NDEBUG
   if( yyTraceFILE && yyruleno<(int)(sizeof(yyRuleName)/sizeof(yyRuleName[0])) ){
     yysize = yyRuleInfo[yyruleno].nrhs;
@@ -627,19 +628,20 @@ static void yy_reduce(
   ** enough on the stack to push the LHS value */
   if( yyRuleInfo[yyruleno].nrhs==0 ){
 #ifdef YYTRACKMAXSTACKDEPTH
-    if( yypParser->yyidx>yypParser->yyidxMax ){
-      yypParser->yyidxMax = yypParser->yyidx;
+    if( (int)(yypParser->yytos - yypParser->yystack)>yypParser->yyhwm ){
+      yypParser->yyhwm++;
+      assert( yypParser->yyhwm == (int)(yypParser->yytos - yypParser->yystack));
     }
 #endif
 #if YYSTACKDEPTH>0 
-    if( yypParser->yyidx>=YYSTACKDEPTH-1 ){
+    if( yypParser->yytos>=&yypParser->yystack[YYSTACKDEPTH-1] ){
       yyStackOverflow(yypParser);
       return;
     }
 #else
-    if( yypParser->yyidx>=yypParser->yystksz-1 ){
+    if( yypParser->yytos>=&yypParser->yystack[yypParser->yystksz-1] ){
       yyGrowStack(yypParser);
-      if( yypParser->yyidx>=yypParser->yystksz-1 ){
+      if( yypParser->yytos>=&yypParser->yystack[yypParser->yystksz-1] ){
         yyStackOverflow(yypParser);
         return;
       }
@@ -665,15 +667,17 @@ static void yy_reduce(
   yysize = yyRuleInfo[yyruleno].nrhs;
   yyact = yy_find_reduce_action(yymsp[-yysize].stateno,(YYCODETYPE)yygoto);
   if( yyact <= YY_MAX_SHIFTREDUCE ){
-    if( yyact>YY_MAX_SHIFT ) yyact += YY_MIN_REDUCE - YY_MIN_SHIFTREDUCE;
-    yypParser->yyidx -= yysize - 1;
+    if( yyact>YY_MAX_SHIFT ){
+      yyact += YY_MIN_REDUCE - YY_MIN_SHIFTREDUCE;
+    }
     yymsp -= yysize-1;
+    yypParser->yytos = yymsp;
     yymsp->stateno = (YYACTIONTYPE)yyact;
     yymsp->major = (YYCODETYPE)yygoto;
     yyTraceShift(yypParser, yyact);
   }else{
     assert( yyact == YY_ACCEPT_ACTION );
-    yypParser->yyidx -= yysize;
+    yypParser->yytos -= yysize;
     yy_accept(yypParser);
   }
 }
@@ -691,7 +695,8 @@ static void yy_parse_failed(
     fprintf(yyTraceFILE,"%sFail!\n",yyTracePrompt);
   }
 #endif
-  while( yypParser->yyidx>=0 ) yy_pop_parser_stack(yypParser);
+  while( yypParser->yytos>=yypParser->yystack ) yy_pop_parser_stack(yypParser);
+  yypParser->yytos = 0;
   /* Here code is inserted which will be executed whenever the
   ** parser fails */
 /************ Begin %parse_failure code ***************************************/
@@ -729,7 +734,8 @@ static void yy_accept(
     fprintf(yyTraceFILE,"%sAccept!\n",yyTracePrompt);
   }
 #endif
-  while( yypParser->yyidx>=0 ) yy_pop_parser_stack(yypParser);
+  while( yypParser->yytos>=yypParser->yystack ) yy_pop_parser_stack(yypParser);
+  yypParser->yytos = 0;
   /* Here code is inserted which will be executed whenever the
   ** parser accepts */
 /*********** Begin %parse_accept code *****************************************/
@@ -775,14 +781,14 @@ void Parse(
 
   /* (re)initialize the parser, if necessary */
   yypParser = (yyParser*)yyp;
-  if( yypParser->yyidx<0 ){
+  if( yypParser->yytos==0 ){
 #if YYSTACKDEPTH<=0
     if( yypParser->yystksz <=0 ){
       yyStackOverflow(yypParser);
       return;
     }
 #endif
-    yypParser->yyidx = 0;
+    yypParser->yytos = yypParser->yystack;
 #ifndef YYNOERRORRECOVERY
     yypParser->yyerrcnt = -1;
 #endif
@@ -809,7 +815,9 @@ void Parse(
   do{
     yyact = yy_find_shift_action(yypParser,(YYCODETYPE)yymajor);
     if( yyact <= YY_MAX_SHIFTREDUCE ){
-      if( yyact > YY_MAX_SHIFT ) yyact += YY_MIN_REDUCE - YY_MIN_SHIFTREDUCE;
+      if( yyact > YY_MAX_SHIFT ){
+        yyact += YY_MIN_REDUCE - YY_MIN_SHIFTREDUCE;
+      }
       yy_shift(yypParser,yyact,yymajor,yyminor);
 #ifndef YYNOERRORRECOVERY
       yypParser->yyerrcnt--;
@@ -851,7 +859,7 @@ void Parse(
       if( yypParser->yyerrcnt<0 ){
         yy_syntax_error(yypParser,yymajor,yyminor);
       }
-      yymx = yypParser->yystack[yypParser->yyidx].major;
+      yymx = yypParser->yytos->major;
       if( yymx==YYERRORSYMBOL || yyerrorhit ){
 #ifndef NDEBUG
         if( yyTraceFILE ){
@@ -862,16 +870,15 @@ void Parse(
         yy_destructor(yypParser, (YYCODETYPE)yymajor, &yyminorunion);
         yymajor = YYNOCODE;
       }else{
-        while(
-          yypParser->yyidx >= 0 &&
-          yymx != YYERRORSYMBOL &&
-          (yyact = yy_find_reduce_action(
-                        yypParser->yystack[yypParser->yyidx].stateno,
+        while( yypParser->yytos >= &yypParser->yystack
+            && yymx != YYERRORSYMBOL
+            && (yyact = yy_find_reduce_action(
+                        yypParser->yytos->stateno,
                         YYERRORSYMBOL)) >= YY_MIN_REDUCE
         ){
           yy_pop_parser_stack(yypParser);
         }
-        if( yypParser->yyidx < 0 || yymajor==0 ){
+        if( yypParser->yytos < yypParser->yystack || yymajor==0 ){
           yy_destructor(yypParser,(YYCODETYPE)yymajor,&yyminorunion);
           yy_parse_failed(yypParser);
           yymajor = YYNOCODE;
@@ -914,14 +921,16 @@ void Parse(
       yymajor = YYNOCODE;
 #endif
     }
-  }while( yymajor!=YYNOCODE && yypParser->yyidx>=0 );
+  }while( yymajor!=YYNOCODE && yypParser->yytos>=yypParser->yystack );
 #ifndef NDEBUG
   if( yyTraceFILE ){
-    int i;
+    yyStackEntry *i;
+    char cDiv = '[';
     fprintf(yyTraceFILE,"%sReturn. Stack=",yyTracePrompt);
-    for(i=1; i<=yypParser->yyidx; i++)
-      fprintf(yyTraceFILE,"%c%s", i==1 ? '[' : ' ', 
-              yyTokenName[yypParser->yystack[i].major]);
+    for(i=&yypParser->yystack[1]; i<=yypParser->yytos; i++){
+      fprintf(yyTraceFILE,"%c%s", cDiv, yyTokenName[i->major]);
+      cDiv = ' ';
+    }
     fprintf(yyTraceFILE,"]\n");
   }
 #endif
