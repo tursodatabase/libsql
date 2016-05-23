@@ -341,6 +341,7 @@ struct action {
     struct state *stp;     /* The new state, if a shift */
     struct rule *rp;       /* The rule, if a reduce */
   } x;
+  struct symbol *spOpt;    /* SHIFTREDUCE optimization to this symbol */
   struct action *next;     /* Next action for this state */
   struct action *collide;  /* Next action with the same hash */
 };
@@ -532,6 +533,7 @@ void Action_add(
   *app = newaction;
   newaction->type = type;
   newaction->sp = sp;
+  newaction->spOpt = 0;
   if( type==SHIFT ){
     newaction->x.stp = (struct state *)arg;
   }else{
@@ -3167,6 +3169,9 @@ int PrintAction(
       result = 0;
       break;
   }
+  if( result && ap->spOpt ){
+    fprintf(fp,"  /* because %s==%s */", ap->sp->name, ap->spOpt->name);
+  }
   return result;
 }
 
@@ -4509,7 +4514,7 @@ void ReportHeader(struct lemon *lemp)
 void CompressTables(struct lemon *lemp)
 {
   struct state *stp;
-  struct action *ap, *ap2;
+  struct action *ap, *ap2, *nextap;
   struct rule *rp, *rp2, *rbest;
   int nbest, n;
   int i;
@@ -4584,6 +4589,36 @@ void CompressTables(struct lemon *lemp)
         ap->type = SHIFTREDUCE;
         ap->x.rp = pNextState->pDfltReduce;
       }
+    }
+  }
+
+  /* If a SHIFTREDUCE action specifies a rule that has a single RHS term
+  ** (meaning that the SHIFTREDUCE will land back in the state where it
+  ** started) and if there is no C-code associated with the reduce action,
+  ** then we can go ahead and convert the action to be the same as the
+  ** action for the RHS of the rule.
+  */
+  for(i=0; i<lemp->nstate; i++){
+    stp = lemp->sorted[i];
+    for(ap=stp->ap; ap; ap=nextap){
+      nextap = ap->next;
+      if( ap->type!=SHIFTREDUCE ) continue;
+      rp = ap->x.rp;
+      if( rp->noCode==0 ) continue;
+      if( rp->nrhs!=1 ) continue;
+#if 1
+      /* Only apply this optimization to non-terminals.  It would be OK to
+      ** apply it to terminal symbols too, but that makes the parser tables
+      ** larger. */
+      if( ap->sp->index<lemp->nterminal ) continue;
+#endif
+      /* If we reach this point, it means the optimization can be applied */
+      nextap = ap;
+      for(ap2=stp->ap; ap2 && (ap2==ap || ap2->sp!=rp->lhs); ap2=ap2->next){}
+      assert( ap2!=0 );
+      ap->spOpt = ap2->sp;
+      ap->type = ap2->type;
+      ap->x = ap2->x;
     }
   }
 }
