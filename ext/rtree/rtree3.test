@@ -47,7 +47,8 @@ ifcapable !rtree {
 #
 #   rtree3-8: Test OOM while registering the r-tree module with sqlite.
 #
-
+#   rtree3-11: OOM following a constraint failure
+#
 do_faultsim_test rtree3-1 -faults oom* -prep {
   faultsim_delete_and_reopen
 } -body {
@@ -232,6 +233,34 @@ do_faultsim_test rtree3-10 -faults oom-* -prep {
   execsql { SELECT ii FROM rt WHERE ii MATCH cube(4.5, 5.5, 6.5, 1, 1, 1) }
 } -test {
   faultsim_test_result {0 2}
+}
+
+
+do_test rtree3-11.prep {
+  faultsim_delete_and_reopen
+  execsql { 
+    CREATE VIRTUAL TABLE rt USING rtree(ii, x1, x2, y1, y2);
+    INSERT INTO rt VALUES(1, 2, 3, 4, 5);
+  }
+  faultsim_save_and_close
+} {}
+do_faultsim_test rtree3-10.1 -faults oom-* -prep {
+  faultsim_restore_and_reopen
+  execsql { SELECT * FROM rt }
+} -body {
+  execsql { INSERT INTO rt VALUES(1, 2, 3, 4, 5) }
+} -test {
+  faultsim_test_result {1 {UNIQUE constraint failed: rt.ii}} \
+                       {1 {constraint failed}}
+}
+do_faultsim_test rtree3-10.2 -faults oom-* -prep {
+  faultsim_restore_and_reopen
+  execsql { SELECT * FROM rt }
+} -body {
+  execsql { INSERT INTO rt VALUES(2, 2, 3, 5, 4) }
+} -test {
+  faultsim_test_result {1 {rtree constraint failed: rt.(y1<=y2)}} \
+                       {1 {constraint failed}}
 }
 
 finish_test

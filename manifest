@@ -1,5 +1,5 @@
-C Lemon\senhancement:\savoid\sunnecessary\sreduce\sactions\sthat\sconvert\sone\nnon-terminal\sinto\sanother\sbut\shave\sno\sside\seffects.
-D 2016-05-23T16:15:02.530
+C Improve\sthe\serror\smessages\sgenerated\sby\sthe\srtree\smodule\swhen\sa\sconstraint\sfails.
+D 2016-05-23T16:16:13.470
 F Makefile.in f59e0763ff448719fc1bd25513882b0567286317
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 306d73e854b1a92ea06e5d1e637faa5c44de53c7
@@ -253,11 +253,11 @@ F ext/rbu/sqlite3rbu.c bf36625990c6865ecf08bd844d8097ed2d0a6958
 F ext/rbu/sqlite3rbu.h 2acd0a6344a6079de15c8dc9d84d3df83a665930
 F ext/rbu/test_rbu.c 9bbdf6bd8efd58fbc4f192698df50569598fbb9e
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 0b870ccb7b58b734a2a8e1e2755a7c0ded070920
+F ext/rtree/rtree.c 7ebca7d18261f402d67de9e151be7fb2ed62b8f5
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
-F ext/rtree/rtree1.test 96a80c08440c932cd72aac50660e7af2612d2cda
+F ext/rtree/rtree1.test 42dadfc7b44a436cd74a1bebc0b9b689e4eaf7ec
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
-F ext/rtree/rtree3.test a494da55c30ee0bc9b01a91c80c81b387b22d2dc
+F ext/rtree/rtree3.test 2cafe8265d1ff28f206fce88d114f208349df482
 F ext/rtree/rtree4.test c8fe384f60ebd49540a5fecc990041bf452eb6e0
 F ext/rtree/rtree5.test 6a510494f12454bf57ef28f45bc7764ea279431e
 F ext/rtree/rtree6.test 773a90db2dce6a8353dd0d5b64bca69b29761196
@@ -1492,7 +1492,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b91a5b8297756289d45c8fce0d3399c253517eb0
-R e62078de0c6378c8386e96fef92b2fe6
-U drh
-Z f3f44e1ca319aa39a93bd7b358420b1f
+P a86e782ad1aa6f5a8b2c54f9dcf0fa61960843f3
+R 656cb7a661842081cb14458e0c90ff63
+U dan
+Z 1b4990ccdee5b0865b4104871945d857
