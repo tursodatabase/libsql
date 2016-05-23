@@ -10757,6 +10757,20 @@ else
       fi
     fi
 
+    # Recent versions of Xcode on Macs hid the tclConfig.sh file
+    # in a strange place.
+    if test x"${ac_cv_c_tclconfig}" = x ; then
+      if test x"$cross_compiling" = xno; then
+        for i in /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX*.sdk/usr/lib
+        do
+          if test -f "$i/tclConfig.sh" ; then
+            ac_cv_c_tclconfig="$i"
+            break
+          fi
+        done
+      fi
+    fi
+
     # then check for a private Tcl installation
     if test x"${ac_cv_c_tclconfig}" = x ; then
       for i in \

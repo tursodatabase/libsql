@@ -1,5 +1,5 @@
-C More\stweaks\sto\simprove\sthe\sperformance\sof\sthe\sinsert\slogic,\sslightly.
-D 2016-05-21T23:25:29.377
+C Update\sthe\sconfigure\sscript\swith\sadditional\shints\son\sthe\slocation\sof\ntclConfig.sh,\shints\sneeded\sby\sthe\slatest\sversions\sof\sXcode.
+D 2016-05-23T00:10:58.949
 F Makefile.in f59e0763ff448719fc1bd25513882b0567286317
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 306d73e854b1a92ea06e5d1e637faa5c44de53c7
@@ -30,8 +30,8 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 6376abec766e9a0785178b1823b5a587e9f1ccbc
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 96fdf3870e30c6f60c6a56d27f5f6e4159b9bdc6 x
-F configure.ac 02b972db825685b4b0cca0234b2aa97f71bd15a5
+F configure 25cf7eb52a88846e4c1978016a9db22763c54f41 x
+F configure.ac 480e1a17d5316b1751c8edcb15b8e6b8ab0a6cc3
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html e2118945e5f07ed146b45c9cd2b2dd6eabb8ebf2
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
@@ -1492,7 +1492,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 55f348cdd24c7812ea4b63345514764b69f64dc8
-R c264a769216b385e0f4c9931cdb639d6
+P dec1307581216e01ad508ffe4455b957e3356654
+R 335eb72f63a6d15e3459420d579ffc36
 U drh
-Z 3ab4f00ccff5a15915c6caecbe082e94
+Z 180e9fbd5ff0ebef42d9658da1e8cd36
