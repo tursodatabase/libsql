@@ -1,5 +1,5 @@
-C Improve\sthe\serror\smessages\sgenerated\sby\sthe\srtree\smodule\swhen\sa\sconstraint\sfails.
-D 2016-05-23T16:16:13.470
+C Avoid\sa\sminor\serror\smessage\swhen\srunning\sRTREE\swithout\san\ssqlite_stat1\stable.
+D 2016-05-23T19:02:58.893
 F Makefile.in f59e0763ff448719fc1bd25513882b0567286317
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 306d73e854b1a92ea06e5d1e637faa5c44de53c7
@@ -253,7 +253,7 @@ F ext/rbu/sqlite3rbu.c bf36625990c6865ecf08bd844d8097ed2d0a6958
 F ext/rbu/sqlite3rbu.h 2acd0a6344a6079de15c8dc9d84d3df83a665930
 F ext/rbu/test_rbu.c 9bbdf6bd8efd58fbc4f192698df50569598fbb9e
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 7ebca7d18261f402d67de9e151be7fb2ed62b8f5
+F ext/rtree/rtree.c d26a815b0df1c412a6881dae8d7fd3c9c08cce68
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test 42dadfc7b44a436cd74a1bebc0b9b689e4eaf7ec
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
@@ -266,10 +266,11 @@ F ext/rtree/rtree8.test db79c812f9e4a11f9b1f3f9934007884610a713a
 F ext/rtree/rtree9.test b5eb13849545dfd271a54ff16784cb00d8792aea
 F ext/rtree/rtreeA.test ace05e729a36e342d40cf94e9efc7b4723d9dcdf
 F ext/rtree/rtreeB.test c85f9ce78766c4e68b8b89fbf2979ee9cfa82b4e
-F ext/rtree/rtreeC.test 90aaaffe2fd4f0dcd12289cad5515f6d41f45ffd
+F ext/rtree/rtreeC.test c0a9c67f2efa98b6fae12acb8a28348d231a481d
 F ext/rtree/rtreeD.test 636630357638f5983701550b37f0f5867130d2ca
 F ext/rtree/rtreeE.test 45a147a64a76306172819562309681d8e90f94bb
 F ext/rtree/rtreeF.test 66deb9fd1611c7ca2e374adba63debdc2dbb12b4
+F ext/rtree/rtreeG.test 3b185719630795f38594f64cd7d1de86a33f91f1
 F ext/rtree/rtree_perf.tcl 6c18c1f23cd48e0f948930c98dfdd37dfccb5195
 F ext/rtree/rtree_util.tcl 06aab2ed5b826545bf215fff90ecb9255a8647ea
 F ext/rtree/sqlite3rtree.h 9c5777af3d2921c7b4ae4954e8e5697502289d28
@@ -1492,7 +1493,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a86e782ad1aa6f5a8b2c54f9dcf0fa61960843f3
-R 656cb7a661842081cb14458e0c90ff63
-U dan
-Z 1b4990ccdee5b0865b4104871945d857
+P 3ad2531efb64b7c53b777ddf3681203217052b32 9589e9377118efc356c73ea1aab2d7e6c2f7fc36
+R f2db7693c08d0e8ea5e5a43c2bcc91ff
+T +closed 9589e9377118efc356c73ea1aab2d7e6c2f7fc36
+U drh
+Z 97b14e25d3ed8655aacd892bebd6d043
