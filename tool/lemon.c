@@ -288,6 +288,8 @@ struct rule {
   const char *code;        /* The code executed when this rule is reduced */
   const char *codePrefix;  /* Setup code before code[] above */
   const char *codeSuffix;  /* Breakdown code after code[] above */
+  int noCode;              /* True if this rule has no associated C code */
+  int codeEmitted;         /* True if the code has been emitted already */
   struct symbol *precsym;  /* Precedence symbol for this rule */
   int index;               /* An index number for this rule */
   int iRule;               /* Rule number as used in the generated tables */
@@ -349,7 +351,7 @@ struct state {
   struct config *bp;       /* The basis configurations for this state */
   struct config *cfp;      /* All configurations in this set */
   int statenum;            /* Sequential number for this state */
-  struct action *ap;       /* Array of actions for this state */
+  struct action *ap;       /* List of actions for this state */
   int nTknAct, nNtAct;     /* Number of actions on terminals and nonterminals */
   int iTknOfst, iNtOfst;   /* yy_action[] offset for terminals and nonterms */
   int iDfltReduce;         /* Default action is to REDUCE by this rule */
@@ -1499,7 +1501,7 @@ static void handle_T_option(char *z){
   lemon_strcpy(user_templatename, z);
 }
 
-/* Merge together to lists of rules order by rule.iRule */
+/* Merge together to lists of rules ordered by rule.iRule */
 static struct rule *Rule_merge(struct rule *pA, struct rule *pB){
   struct rule *pFirst = 0;
   struct rule **ppPrev = &pFirst;
@@ -1642,7 +1644,10 @@ int main(int argc, char **argv)
   for(i=1; ISUPPER(lem.symbols[i]->name[0]); i++);
   lem.nterminal = i;
 
-  /* Assign sequential rule numbers */
+  /* Assign sequential rule numbers.  Start with 0.  Put rules that have no
+  ** reduce action C-code associated with them last, so that the switch()
+  ** statement that selects reduction actions will have a smaller jump table.
+  */
   for(i=0, rp=lem.rule; rp; rp=rp->next){
     rp->iRule = rp->code ? i++ : -1;
   }
@@ -2211,6 +2216,7 @@ to follow the previous rule.");
         }else{
           psp->prevrule->line = psp->tokenlineno;
           psp->prevrule->code = &x[1];
+          psp->prevrule->noCode = 0;
         }
       }else if( x[0]=='[' ){
         psp->state = PRECEDENCE_MARK_1;
@@ -2317,6 +2323,7 @@ to follow the previous rule.");
           rp->lhsalias = psp->lhsalias;
           rp->nrhs = psp->nrhs;
           rp->code = 0;
+          rp->noCode = 1;
           rp->precsym = 0;
           rp->index = psp->gp->nrule++;
           rp->nextlhs = rp->lhs->rule;
@@ -3527,9 +3534,8 @@ PRIVATE char *append_str(const char *zText, int n, int p1, int p2){
 }
 
 /*
-** zCode is a string that is the action associated with a rule.  Expand
-** the symbols in this string so that the refer to elements of the parser
-** stack.
+** Write and transform the rp->code string so that symbols are expanded.
+** Populate the rp->codePrefix and rp->codeSuffix strings, as appropriate.
 **
 ** Return 1 if the expanded code requires that "yylhsminor" local variable
 ** to be defined.
@@ -3553,6 +3559,9 @@ PRIVATE int translate_code(struct lemon *lemp, struct rule *rp){
     static char newlinestr[2] = { '\n', '\0' };
     rp->code = newlinestr;
     rp->line = rp->ruleline;
+    rp->noCode = 1;
+  }else{
+    rp->noCode = 0;
   }
 
 
@@ -3568,6 +3577,7 @@ PRIVATE int translate_code(struct lemon *lemp, struct rule *rp){
       append_str("  yy_destructor(yypParser,%d,&yymsp[%d].minor);\n", 0,
                  rp->rhs[0]->index,1-rp->nrhs);
       rp->codePrefix = Strsafe(append_str(0,0,0,0));
+      rp->noCode = 0;
     }
   }else if( rp->lhsalias==0 ){
     /* There is no LHS value symbol. */
@@ -3715,7 +3725,10 @@ PRIVATE int translate_code(struct lemon *lemp, struct rule *rp){
 
   /* Suffix code generation complete */
   cp = append_str(0,0,0,0);
-  if( cp && cp[0] ) rp->codeSuffix = Strsafe(cp);
+  if( cp && cp[0] ){
+    rp->codeSuffix = Strsafe(cp);
+    rp->noCode = 0;
+  }
 
   return rc;
 }
@@ -4396,13 +4409,9 @@ void ReportTable(
   /* First output rules other than the default: rule */
   for(rp=lemp->rule; rp; rp=rp->next){
     struct rule *rp2;               /* Other rules with the same action */
-    if( rp->code==0 ) continue;
-    if( rp->code[0]=='\n'
-     && rp->code[1]==0
-     && rp->codePrefix==0
-     && rp->codeSuffix==0
-    ){
-      /* No actions, so this will be part of the "default:" rule */
+    if( rp->codeEmitted ) continue;
+    if( rp->noCode ){
+      /* No C code actions, so this will be part of the "default:" rule */
       continue;
     }
     fprintf(out,"      case %d: /* ", rp->iRule);
@@ -4414,21 +4423,19 @@ void ReportTable(
         fprintf(out,"      case %d: /* ", rp2->iRule);
         writeRuleText(out, rp2);
         fprintf(out," */ yytestcase(yyruleno==%d);\n", rp2->iRule); lineno++;
-        rp2->code = 0;
+        rp2->codeEmitted = 1;
       }
     }
     emit_code(out,rp,lemp,&lineno);
     fprintf(out,"        break;\n"); lineno++;
-    rp->code = 0;
+    rp->codeEmitted = 1;
   }
   /* Finally, output the default: rule.  We choose as the default: all
   ** empty actions. */
   fprintf(out,"      default:\n"); lineno++;
   for(rp=lemp->rule; rp; rp=rp->next){
-    if( rp->code==0 ) continue;
-    assert( rp->code[0]=='\n' && rp->code[1]==0 );
-    assert( rp->codePrefix==0 );
-    assert( rp->codeSuffix==0 );
+    if( rp->codeEmitted ) continue;
+    assert( rp->noCode );
     fprintf(out,"      /* (%d) ", rp->iRule);
     writeRuleText(out, rp);
     fprintf(out, " */ yytestcase(yyruleno==%d);\n", rp->iRule); lineno++;
