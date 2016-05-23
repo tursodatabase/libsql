@@ -1,5 +1,5 @@
-C Fix\sRTREE\sso\sthat\sit\sdoes\snot\srun\squeries\sagainst\sthe\ssqlite_stat1\sif\sthat\ntable\sdoes\snot\sexist.
-D 2016-05-23T18:12:04.371
+C Fix\sthe\srtreeG.test\stest\scase.
+D 2016-05-23T18:27:07.523
 F Makefile.in f59e0763ff448719fc1bd25513882b0567286317
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 306d73e854b1a92ea06e5d1e637faa5c44de53c7
@@ -270,7 +270,7 @@ F ext/rtree/rtreeC.test c0a9c67f2efa98b6fae12acb8a28348d231a481d
 F ext/rtree/rtreeD.test 636630357638f5983701550b37f0f5867130d2ca
 F ext/rtree/rtreeE.test 45a147a64a76306172819562309681d8e90f94bb
 F ext/rtree/rtreeF.test 66deb9fd1611c7ca2e374adba63debdc2dbb12b4
-F ext/rtree/rtreeG.test fad67b4ec080cbe41bafb68517361b74ac4632d5
+F ext/rtree/rtreeG.test 3b185719630795f38594f64cd7d1de86a33f91f1
 F ext/rtree/rtree_perf.tcl 6c18c1f23cd48e0f948930c98dfdd37dfccb5195
 F ext/rtree/rtree_util.tcl 06aab2ed5b826545bf215fff90ecb9255a8647ea
 F ext/rtree/sqlite3rtree.h 9c5777af3d2921c7b4ae4954e8e5697502289d28
@@ -1493,7 +1493,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bfbb6dd84b5e1335e1eae857a03fa33a71fd67a5
-R 917b797124e2db7975ec6ce19d0d3f10
+P 48526a2fe5373e3d19e8b813cc8a342d6b7c9c3d
+R f2db7693c08d0e8ea5e5a43c2bcc91ff
 U drh
-Z 1720c00f1c890b6da656d7cb35d019e7
+Z 8e18f408557ba2afd41610ebc5947af3
