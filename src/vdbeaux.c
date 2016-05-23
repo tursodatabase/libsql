@@ -791,7 +791,7 @@ void sqlite3VdbeJumpHere(Vdbe *p, int addr){
 ** the FuncDef is not ephermal, then do nothing.
 */
 static void freeEphemeralFunction(sqlite3 *db, FuncDef *pDef){
-  if( ALWAYS(pDef) && (pDef->funcFlags & SQLITE_FUNC_EPHEM)!=0 ){
+  if( (pDef->funcFlags & SQLITE_FUNC_EPHEM)!=0 ){
     sqlite3DbFree(db, pDef);
   }
 }
@@ -801,12 +801,20 @@ static void vdbeFreeOpArray(sqlite3 *, Op *, int);
 /*
 ** Delete a P4 value if necessary.
 */
+static SQLITE_NOINLINE void freeP4Mem(sqlite3 *db, Mem *p){
+  if( p->szMalloc ) sqlite3DbFree(db, p->zMalloc);
+  sqlite3DbFree(db, p);
+}
+static SQLITE_NOINLINE void freeP4FuncCtx(sqlite3 *db, sqlite3_context *p){
+  freeEphemeralFunction(db, p->pFunc);
+  sqlite3DbFree(db, p);
+}
 static void freeP4(sqlite3 *db, int p4type, void *p4){
   assert( db );
   switch( p4type ){
     case P4_FUNCCTX: {
-      freeEphemeralFunction(db, ((sqlite3_context*)p4)->pFunc);
-      /* Fall through into the next case */
+      freeP4FuncCtx(db, (sqlite3_context*)p4);
+      break;
     }
     case P4_REAL:
     case P4_INT64:
@@ -837,9 +845,7 @@ static void freeP4(sqlite3 *db, int p4type, void *p4){
       if( db->pnBytesFreed==0 ){
         sqlite3ValueFree((sqlite3_value*)p4);
       }else{
-        Mem *p = (Mem*)p4;
-        if( p->szMalloc ) sqlite3DbFree(db, p->zMalloc);
-        sqlite3DbFree(db, p);
+        freeP4Mem(db, (Mem*)p4);
       }
       break;
     }

@@ -618,27 +618,27 @@ static int btree_insert(
 ){
   BtCursor *pCur;
   int rc;
-  void *pKey = 0;
-  int nKey = 0;
-  void *pData = 0;
-  int nData = 0;
+  BtreePayload x;
 
   if( objc!=4 && objc!=3 ){
     Tcl_WrongNumArgs(interp, 1, objv, "?-intkey? CSR KEY VALUE");
     return TCL_ERROR;
   }
 
+  memset(&x, 0, sizeof(x));
   if( objc==4 ){
-    if( Tcl_GetIntFromObj(interp, objv[2], &nKey) ) return TCL_ERROR;
-    pData = (void*)Tcl_GetByteArrayFromObj(objv[3], &nData);
+    if( Tcl_GetIntFromObj(interp, objv[2], &rc) ) return TCL_ERROR;
+    x.nKey = rc;
+    x.pData = (void*)Tcl_GetByteArrayFromObj(objv[3], &x.nData);
   }else{
-    pKey = (void*)Tcl_GetByteArrayFromObj(objv[2], &nKey);
+    x.pKey = (void*)Tcl_GetByteArrayFromObj(objv[2], &rc);
+    x.nKey = rc;
   }
   pCur = (BtCursor*)sqlite3TestTextToPtr(Tcl_GetString(objv[1]));
 
   sqlite3_mutex_enter(pCur->pBtree->db->mutex);
   sqlite3BtreeEnter(pCur->pBtree);
-  rc = sqlite3BtreeInsert(pCur, pKey, nKey, pData, nData, 0, 0, 0);
+  rc = sqlite3BtreeInsert(pCur, &x, 0, 0);
   sqlite3BtreeLeave(pCur->pBtree);
   sqlite3_mutex_leave(pCur->pBtree->db->mutex);
 

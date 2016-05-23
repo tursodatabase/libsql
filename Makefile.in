@@ -602,6 +602,10 @@ sqlite3$(TEXE):	$(TOP)/src/shell.c sqlite3.c
 sqldiff$(TEXE):	$(TOP)/tool/sqldiff.c sqlite3.c sqlite3.h
 	$(LTLINK) -o $@ $(TOP)/tool/sqldiff.c sqlite3.c $(TLIBS)
 
+scrub$(TEXE):	$(TOP)/ext/misc/scrub.c sqlite3.o
+	$(LTLINK) -o $@ -I. -DSCRUB_STANDALONE \
+		$(TOP)/ext/misc/scrub.c sqlite3.o $(TLIBS)
+
 srcck1$(BEXE):	$(TOP)/tool/srcck1.c
 	$(BCC) -o srcck1$(BEXE) $(TOP)/tool/srcck1.c
 
