@@ -3012,6 +3012,11 @@ static int rtreeQueryStat1(sqlite3 *db, Rtree *pRtree){
   int rc;
   i64 nRow = 0;
 
+  if( sqlite3_table_column_metadata(db,pRtree->zDb,"sqlite_stat1",
+          0,0,0,0,0,0)==SQLITE_ERROR ){
+    pRtree->nRowEst = RTREE_DEFAULT_ROWEST;
+    return SQLITE_OK;
+  }
   zSql = sqlite3_mprintf(zFmt, pRtree->zDb, pRtree->zName);
   if( zSql==0 ){
     rc = SQLITE_NOMEM;

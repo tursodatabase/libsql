@@ -1,0 +1,34 @@
+# 2016-05-32
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file contains tests for the r-tree module.
+#
+# Verify that no invalid SQL is run during initialization
+
+if {![info exists testdir]} {
+  set testdir [file join [file dirname [info script]] .. .. test]
+} 
+source $testdir/tester.tcl
+ifcapable !rtree { finish_test ; return }
+
+db close
+sqlite3_shutdown
+test_sqlite3_log [list lappend ::log]
+set ::log [list]
+sqlite3 db test.db
+
+
+set ::log {}
+do_test rtreeG-1.1 {
+  db eval {CREATE VIRTUAL TABLE t1 USING rtree(a,b,c);}
+  set ::log
+} {}
+
+finish_test
