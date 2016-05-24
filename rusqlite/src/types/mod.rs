@@ -58,7 +58,9 @@ pub use ffi::{SQLITE_INTEGER, SQLITE_FLOAT, SQLITE_TEXT, SQLITE_BLOB, SQLITE_NUL
 
 pub use self::from_sql::FromSql;
 pub use self::to_sql::ToSql;
+pub use self::borrowed_value::BorrowedValue;
 
+mod borrowed_value;
 mod from_sql;
 mod to_sql;
 mod time;
