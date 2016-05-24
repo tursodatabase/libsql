@@ -11,16 +11,6 @@ pub enum BorrowedValue<'a> {
 }
 
 impl<'a> BorrowedValue<'a> {
-    pub fn to_value(&self) -> Value {
-        match *self {
-            BorrowedValue::Null => Value::Null,
-            BorrowedValue::Integer(i) => Value::Integer(i),
-            BorrowedValue::Real(r) => Value::Real(r),
-            BorrowedValue::Text(s) => Value::Text(s.to_string()),
-            BorrowedValue::Blob(b) => Value::Blob(b.to_vec()),
-        }
-    }
-
     pub fn as_i64(&self) -> Result<i64> {
         match *self {
             BorrowedValue::Integer(i) => Ok(i),
@@ -46,6 +36,30 @@ impl<'a> BorrowedValue<'a> {
         match *self {
             BorrowedValue::Blob(ref b) => Ok(b),
             _ => Err(Error::InvalidColumnType),
+        }
+    }
+}
+
+impl<'a> From<BorrowedValue<'a>> for Value {
+    fn from(borrowed: BorrowedValue) -> Value {
+        match borrowed {
+            BorrowedValue::Null => Value::Null,
+            BorrowedValue::Integer(i) => Value::Integer(i),
+            BorrowedValue::Real(r) => Value::Real(r),
+            BorrowedValue::Text(s) => Value::Text(s.to_string()),
+            BorrowedValue::Blob(b) => Value::Blob(b.to_vec()),
+        }
+    }
+}
+
+impl<'a> From<&'a Value> for BorrowedValue<'a> {
+    fn from(value: &'a Value) -> BorrowedValue<'a> {
+        match *value {
+            Value::Null => BorrowedValue::Null,
+            Value::Integer(i) => BorrowedValue::Integer(i),
+            Value::Real(r) => BorrowedValue::Real(r),
+            Value::Text(ref s) => BorrowedValue::Text(s),
+            Value::Blob(ref b) => BorrowedValue::Blob(b),
         }
     }
 }

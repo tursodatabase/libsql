@@ -55,6 +55,6 @@ impl<T: FromSql> FromSql for Option<T> {
 
 impl FromSql for Value {
     fn column_result(value: BorrowedValue) -> Result<Self> {
-        Ok(value.to_value())
+        Ok(value.into())
     }
 }
