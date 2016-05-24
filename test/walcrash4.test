@@ -46,6 +46,7 @@ for {set nExtra 0} {$nExtra < 10} {incr nExtra} {
         sqlite3_test_control_pending_byte $::sqlite_pending_byte
         sqlite3 db test.db -vfs crash
         db eval {
+          PRAGMA main.synchronous=FULL;
           BEGIN;
           CREATE TABLE t1(x UNIQUE);
         }
