@@ -3109,16 +3109,21 @@ int sqlite3WalFrames(
   ** past the sector boundary is written after the sync.
   */
   if( isCommit && (sync_flags & WAL_SYNC_TRANSACTIONS)!=0 ){
+    int bSync = 1;
     if( pWal->padToSectorBoundary ){
       int sectorSize = sqlite3SectorSize(pWal->pWalFd);
       w.iSyncPoint = ((iOffset+sectorSize-1)/sectorSize)*sectorSize;
+      bSync = (w.iSyncPoint==iOffset);
+      testcase( bSync );
       while( iOffset<w.iSyncPoint ){
         rc = walWriteOneFrame(&w, pLast, nTruncate, iOffset);
         if( rc ) return rc;
         iOffset += szFrame;
         nExtra++;
       }
-    }else{
+    }
+    if( bSync ){
+      assert( rc==SQLITE_OK );
       rc = sqlite3OsSync(w.pFd, sync_flags & SQLITE_SYNC_MASK);
     }
   }

@@ -215,7 +215,9 @@ static int writeListSync(CrashFile *pFile, int isCrash){
   }
 
 #ifdef TRACE_CRASHTEST
-  printf("Sync %s (is %s crash)\n", pFile->zName, (isCrash?"a":"not a"));
+  if( pFile ){
+    printf("Sync %s (is %s crash)\n", pFile->zName, (isCrash?"a":"not a"));
+  }
 #endif
 
   ppPtr = &g.pWriteList;
@@ -800,6 +802,27 @@ static int processDevSymArgs(
 }
 
 /*
+** tclcmd:   sqlite3_crash_now
+**
+** Simulate a crash immediately. This function does not return 
+** (writeListSync() calls exit(-1)).
+*/
+static int crashNowCmd(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  if( objc!=1 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "");
+    return TCL_ERROR;
+  }
+  writeListSync(0, 1);
+  assert( 0 );
+  return TCL_OK;
+}
+
+/*
 ** tclcmd:   sqlite_crash_enable ENABLE
 **
 ** Parameter ENABLE must be a boolean value. If true, then the "crash"
@@ -1034,6 +1057,7 @@ int Sqlitetest6_Init(Tcl_Interp *interp){
 #ifndef SQLITE_OMIT_DISKIO
   Tcl_CreateObjCommand(interp, "sqlite3_crash_enable", crashEnableCmd, 0, 0);
   Tcl_CreateObjCommand(interp, "sqlite3_crashparams", crashParamsObjCmd, 0, 0);
+  Tcl_CreateObjCommand(interp, "sqlite3_crash_now", crashNowCmd, 0, 0);
   Tcl_CreateObjCommand(interp, "sqlite3_simulate_device", devSymObjCmd, 0, 0);
   Tcl_CreateObjCommand(interp, "unregister_devsim", dsUnregisterObjCmd, 0, 0);
   Tcl_CreateObjCommand(interp, "register_jt_vfs", jtObjCmd, 0, 0);

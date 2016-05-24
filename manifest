@@ -1,5 +1,5 @@
-C Improvements\sto\sthe\sinitialization\sof\sthe\spush-down\sautomoton\sfor\sthe\nLemon-generated\sparser.\s\sSmaller\sand\sfaster.
-D 2016-05-24T00:40:54.799
+C Fix\san\sobscure\sproblem\swith\stransactions\swritten\sin\s"PRAGMA\ssynchronous=full"\smode\son\ssystems\sthat\sdo\snot\ssupport\sPOWERSAFE_OVERWRITE\scausing\san\sxSync()\scall\sto\sbe\somitted\sif\sthe\slast\sframe\swritten\sby\sa\stransaction\sis\saligned\sto\sa\ssector\sboundary.\sThis\smeans\sthat\sif\sa\spower\sfailure\sor\sOS\scrash\soccurs\svery\ssoon\safter\ssuch\sa\stransaction\sis\scommitted,\sit\smay\sbe\slost\sfollowing\ssystem\srecovery.
+D 2016-05-24T16:20:51.379
 F Makefile.in f59e0763ff448719fc1bd25513882b0567286317
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 306d73e854b1a92ea06e5d1e637faa5c44de53c7
@@ -394,7 +394,7 @@ F src/test2.c 5586f43fcd9a1be0830793cf9d354082c261b25b
 F src/test3.c d2c9efd2985ff8f5502ffd3253156984778d77d8
 F src/test4.c d168f83cc78d02e8d35567bb5630e40dcd85ac1e
 F src/test5.c 5a34feec76d9b3a86aab30fd4f6cc9c48cbab4c1
-F src/test6.c 2c014d4977efd6107ec9eef3dfdec56ac516f824
+F src/test6.c a684b7abd01352ab50cb79c0bf727e6b3f381a3d
 F src/test7.c 9c89a4f1ed6bb13af0ed805b8d782bd83fcd57e3
 F src/test8.c fa262391d3edea6490a71bfaa8fed477ccbbac75
 F src/test9.c bea1e8cf52aa93695487badedd6e1886c321ea60
@@ -456,7 +456,7 @@ F src/vdbesort.c 91fda3909326860382b0ca8aa251e609c6a9d62c
 F src/vdbetrace.c f75c5455d8cf389ef86a8bfdfd3177e0e3692484
 F src/vtab.c ce0f2ebb589b459b32c640b33af64bfa5b29aaf8
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 4db22ed7e77bcf672b1a685d6ddeffba8d5be302
+F src/wal.c 02eeecc265f6ffd0597378f5d8ae9070b62a406a
 F src/wal.h 2f7c831cf3b071fa548bf2d5cac640846a7ff19c
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
 F src/where.c 0e54a03d11d4e99ad25528f42ff4c9a6fa7a23da
@@ -1356,6 +1356,7 @@ F test/walcksum.test bb234a1bb42248b3515d992b719708015c384278
 F test/walcrash.test 21038858cc552077b0522f50b0fa87e38139306a
 F test/walcrash2.test a0edab4e5390f03b99a790de89aad15d6ec70b36
 F test/walcrash3.test e426aa58122d20f2b9fbe9a507f9eb8cab85b8af
+F test/walcrash4.test 2907eaa670156daf41bb865c30a08ad13088262c
 F test/walfault.test 1f8389f7709877e9b4cc679033d71d6fe529056b
 F test/walhook.test ed00a40ba7255da22d6b66433ab61fab16a63483
 F test/walmode.test 4022fe03ae6e830583672caa101f046438a0473c
@@ -1493,7 +1494,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3c2a770549d5bb65fcd6cc684e0a0ae6d641ac68
-R f0cfba4e984837df73820e425fc5291f
-U drh
-Z 2da99ff99cbfd3def15eb678236b100e
+P 3b28b68e232060f8b2fe2fe6fa478280da2006ff
+R 517787a46c326083f1c71f4f2bce6c10
+U dan
+Z 8b1bf46b6e26241c0a55d35f24f797fc
