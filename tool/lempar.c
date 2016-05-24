@@ -275,12 +275,15 @@ static const char *const yyRuleName[] = {
 */
 static void yyGrowStack(yyParser *p){
   int newSize;
+  int idx;
   yyStackEntry *pNew;
 
   newSize = p->yystksz*2 + 100;
+  idx = p->yytos ? (int)(p->yytos - p->yystack) : 0;
   pNew = realloc(p->yystack, newSize*sizeof(pNew[0]));
   if( pNew ){
     p->yystack = pNew;
+    p->yytos = &p->yystack[idx];
     p->yystksz = newSize;
 #ifndef NDEBUG
     if( yyTraceFILE ){
@@ -317,15 +320,18 @@ void *ParseAlloc(void *(*mallocProc)(YYMALLOCARGTYPE)){
   yyParser *pParser;
   pParser = (yyParser*)(*mallocProc)( (YYMALLOCARGTYPE)sizeof(yyParser) );
   if( pParser ){
-    pParser->yytos = 0;
 #ifdef YYTRACKMAXSTACKDEPTH
     pParser->yyhwm = 0;
 #endif
 #if YYSTACKDEPTH<=0
+    pParser->yytos = NULL;
     pParser->yystack = NULL;
     pParser->yystksz = 0;
     yyGrowStack(pParser);
 #endif
+    pParser->yytos = pParser->yystack;
+    pParser->yystack[0].stateno = 0;
+    pParser->yystack[0].major = 0;
   }
   return pParser;
 }
@@ -397,7 +403,7 @@ void ParseFree(
 #ifndef YYPARSEFREENEVERNULL
   if( pParser==0 ) return;
 #endif
-  while( pParser->yytos>=pParser->yystack ) yy_pop_parser_stack(pParser);
+  while( pParser->yytos>pParser->yystack ) yy_pop_parser_stack(pParser);
 #if YYSTACKDEPTH<=0
   free(pParser->yystack);
 #endif
@@ -522,7 +528,7 @@ static void yyStackOverflow(yyParser *yypParser){
      fprintf(yyTraceFILE,"%sStack Overflow!\n",yyTracePrompt);
    }
 #endif
-   while( yypParser->yytos>=yypParser->yystack ) yy_pop_parser_stack(yypParser);
+   while( yypParser->yytos>yypParser->yystack ) yy_pop_parser_stack(yypParser);
    /* Here code is inserted which will execute if the parser
    ** stack every overflows */
 /******** Begin %stack_overflow code ******************************************/
@@ -695,8 +701,7 @@ static void yy_parse_failed(
     fprintf(yyTraceFILE,"%sFail!\n",yyTracePrompt);
   }
 #endif
-  while( yypParser->yytos>=yypParser->yystack ) yy_pop_parser_stack(yypParser);
-  yypParser->yytos = 0;
+  while( yypParser->yytos>yypParser->yystack ) yy_pop_parser_stack(yypParser);
   /* Here code is inserted which will be executed whenever the
   ** parser fails */
 /************ Begin %parse_failure code ***************************************/
@@ -734,8 +739,7 @@ static void yy_accept(
     fprintf(yyTraceFILE,"%sAccept!\n",yyTracePrompt);
   }
 #endif
-  while( yypParser->yytos>=yypParser->yystack ) yy_pop_parser_stack(yypParser);
-  yypParser->yytos = 0;
+  while( yypParser->yytos>yypParser->yystack ) yy_pop_parser_stack(yypParser);
   /* Here code is inserted which will be executed whenever the
   ** parser accepts */
 /*********** Begin %parse_accept code *****************************************/
@@ -781,26 +785,7 @@ void Parse(
 
   /* (re)initialize the parser, if necessary */
   yypParser = (yyParser*)yyp;
-  if( yypParser->yytos==0 ){
-#if YYSTACKDEPTH<=0
-    if( yypParser->yystksz <=0 ){
-      yyStackOverflow(yypParser);
-      return;
-    }
-#endif
-    yypParser->yytos = yypParser->yystack;
-#ifndef YYNOERRORRECOVERY
-    yypParser->yyerrcnt = -1;
-#endif
-    yypParser->yystack[0].stateno = 0;
-    yypParser->yystack[0].major = 0;
-#ifndef NDEBUG
-    if( yyTraceFILE ){
-      fprintf(yyTraceFILE,"%sInitialize. Empty stack. State 0\n",
-              yyTracePrompt);
-    }
-#endif
-  }
+  assert( yypParser->yytos!=0 );
 #if !defined(YYERRORSYMBOL) && !defined(YYNOERRORRECOVERY)
   yyendofinput = (yymajor==0);
 #endif
@@ -921,7 +906,7 @@ void Parse(
       yymajor = YYNOCODE;
 #endif
     }
-  }while( yymajor!=YYNOCODE && yypParser->yytos>=yypParser->yystack );
+  }while( yymajor!=YYNOCODE && yypParser->yytos>yypParser->yystack );
 #ifndef NDEBUG
   if( yyTraceFILE ){
     yyStackEntry *i;
