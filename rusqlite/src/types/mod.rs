@@ -4,7 +4,9 @@
 //! the `ToSql` and `FromSql` traits are provided for the basic types that SQLite provides methods
 //! for:
 //!
-//! * C integers and doubles (`c_int` and `c_double`)
+//! * Integers (`i32` and `i64`; SQLite uses `i64` internally, so getting an `i32` will truncate
+//!   if the value is too large or too small).
+//! * Reals (`f64`)
 //! * Strings (`String` and `&str`)
 //! * Blobs (`Vec<u8>` and `&[u8]`)
 //!
@@ -14,12 +16,6 @@
 //! [datetime](https://www.sqlite.org/lang_datefunc.html) function.  Note that this storage
 //! truncates timespecs to the nearest second. If you want different storage for timespecs, you can
 //! use a newtype. For example, to store timespecs as doubles:
-//!
-//! `ToSql` and `FromSql` are also implemented for `Option<T>` where `T` implements `ToSql` or
-//! `FromSql` for the cases where you want to know if a value was NULL (which gets translated to
-//! `None`). If you get a value that was NULL in SQLite but you store it into a non-`Option` value
-//! in Rust, you will get a "sensible" zero value - 0 for numeric types (including timespecs), an
-//! empty string, or an empty vector of bytes.
 //!
 //! ```rust,ignore
 //! extern crate rusqlite;
@@ -51,6 +47,10 @@
 //!     }
 //! }
 //! ```
+//!
+//! `ToSql` and `FromSql` are also implemented for `Option<T>` where `T` implements `ToSql` or
+//! `FromSql` for the cases where you want to know if a value was NULL (which gets translated to
+//! `None`).
 
 pub use ffi::sqlite3_stmt;
 pub use ffi::sqlite3_column_type;
@@ -88,8 +88,10 @@ mod serde_json;
 #[derive(Copy,Clone)]
 pub struct Null;
 
-/// Dynamic type value (http://sqlite.org/datatype3.html)
-/// Value's type is dictated by SQLite (not by the caller).
+/// Owning [dynamic type value](http://sqlite.org/datatype3.html). Value's type is typically
+/// dictated by SQLite (not by the caller).
+///
+/// See [`BorrowedValue`](enum.BorrowedValue.html) for a non-owning dynamic type value.
 #[derive(Clone,Debug,PartialEq)]
 pub enum Value {
     /// The value is a `NULL` value.

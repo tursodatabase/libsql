@@ -1,6 +1,7 @@
 use super::{BorrowedValue, Value};
 use ::Result;
 
+/// A trait for types that can be created from a SQLite value.
 pub trait FromSql: Sized {
     fn column_result(value: BorrowedValue) -> Result<Self>;
 }
