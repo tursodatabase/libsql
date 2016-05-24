@@ -739,7 +739,7 @@ static void yy_accept(
     fprintf(yyTraceFILE,"%sAccept!\n",yyTracePrompt);
   }
 #endif
-  while( yypParser->yytos>yypParser->yystack ) yy_pop_parser_stack(yypParser);
+  assert( yypParser->yytos==yypParser->yystack );
   /* Here code is inserted which will be executed whenever the
   ** parser accepts */
 /*********** Begin %parse_accept code *****************************************/
