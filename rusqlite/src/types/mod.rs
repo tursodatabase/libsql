@@ -15,7 +15,7 @@
 //! `"%Y-%m-%d %H:%M:%S"`, as SQLite's builtin
 //! [datetime](https://www.sqlite.org/lang_datefunc.html) function.  Note that this storage
 //! truncates timespecs to the nearest second. If you want different storage for timespecs, you can
-//! use a newtype. For example, to store timespecs as doubles:
+//! use a newtype. For example, to store timespecs as `f64`s:
 //!
 //! ```rust,ignore
 //! extern crate rusqlite;
@@ -29,10 +29,8 @@
 //! pub struct TimespecSql(pub time::Timespec);
 //!
 //! impl FromSql for TimespecSql {
-//!     unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int)
-//!             -> Result<TimespecSql> {
-//!         let as_f64_result = FromSql::column_result(stmt, col);
-//!         as_f64_result.map(|as_f64: f64| {
+//!     fn column_result(value: BorrowedValue) -> Result<Self> {
+//!         f64::column_result(value).map(|as_f64| {
 //!             TimespecSql(time::Timespec{ sec: as_f64.trunc() as i64,
 //!                                         nsec: (as_f64.fract() * 1.0e9) as i32 })
 //!         })
