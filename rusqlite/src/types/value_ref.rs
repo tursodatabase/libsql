@@ -7,7 +7,7 @@ use super::Value;
 ///
 /// See [`Value`](enum.Value.html) for an owning dynamic type value.
 #[derive(Copy,Clone,Debug,PartialEq)]
-pub enum BorrowedValue<'a> {
+pub enum ValueRef<'a> {
     /// The value is a `NULL` value.
     Null,
     /// The value is a signed integer.
@@ -20,12 +20,12 @@ pub enum BorrowedValue<'a> {
     Blob(&'a [u8]),
 }
 
-impl<'a> BorrowedValue<'a> {
+impl<'a> ValueRef<'a> {
     /// If `self` is case `Integer`, returns the integral value. Otherwise, returns
     /// `Err(Error::InvalidColumnType)`.
     pub fn as_i64(&self) -> Result<i64> {
         match *self {
-            BorrowedValue::Integer(i) => Ok(i),
+            ValueRef::Integer(i) => Ok(i),
             _ => Err(Error::InvalidColumnType),
         }
     }
@@ -34,7 +34,7 @@ impl<'a> BorrowedValue<'a> {
     /// `Err(Error::InvalidColumnType)`.
     pub fn as_f64(&self) -> Result<f64> {
         match *self {
-            BorrowedValue::Real(f) => Ok(f),
+            ValueRef::Real(f) => Ok(f),
             _ => Err(Error::InvalidColumnType),
         }
     }
@@ -43,7 +43,7 @@ impl<'a> BorrowedValue<'a> {
     /// `Err(Error::InvalidColumnType)`.
     pub fn as_str(&self) -> Result<&str> {
         match *self {
-            BorrowedValue::Text(ref t) => Ok(t),
+            ValueRef::Text(ref t) => Ok(t),
             _ => Err(Error::InvalidColumnType),
         }
     }
@@ -52,32 +52,32 @@ impl<'a> BorrowedValue<'a> {
     /// `Err(Error::InvalidColumnType)`.
     pub fn as_blob(&self) -> Result<&[u8]> {
         match *self {
-            BorrowedValue::Blob(ref b) => Ok(b),
+            ValueRef::Blob(ref b) => Ok(b),
             _ => Err(Error::InvalidColumnType),
         }
     }
 }
 
-impl<'a> From<BorrowedValue<'a>> for Value {
-    fn from(borrowed: BorrowedValue) -> Value {
+impl<'a> From<ValueRef<'a>> for Value {
+    fn from(borrowed: ValueRef) -> Value {
         match borrowed {
-            BorrowedValue::Null => Value::Null,
-            BorrowedValue::Integer(i) => Value::Integer(i),
-            BorrowedValue::Real(r) => Value::Real(r),
-            BorrowedValue::Text(s) => Value::Text(s.to_string()),
-            BorrowedValue::Blob(b) => Value::Blob(b.to_vec()),
+            ValueRef::Null => Value::Null,
+            ValueRef::Integer(i) => Value::Integer(i),
+            ValueRef::Real(r) => Value::Real(r),
+            ValueRef::Text(s) => Value::Text(s.to_string()),
+            ValueRef::Blob(b) => Value::Blob(b.to_vec()),
         }
     }
 }
 
-impl<'a> From<&'a Value> for BorrowedValue<'a> {
-    fn from(value: &'a Value) -> BorrowedValue<'a> {
+impl<'a> From<&'a Value> for ValueRef<'a> {
+    fn from(value: &'a Value) -> ValueRef<'a> {
         match *value {
-            Value::Null => BorrowedValue::Null,
-            Value::Integer(i) => BorrowedValue::Integer(i),
-            Value::Real(r) => BorrowedValue::Real(r),
-            Value::Text(ref s) => BorrowedValue::Text(s),
-            Value::Blob(ref b) => BorrowedValue::Blob(b),
+            Value::Null => ValueRef::Null,
+            Value::Integer(i) => ValueRef::Integer(i),
+            Value::Real(r) => ValueRef::Real(r),
+            Value::Text(ref s) => ValueRef::Text(s),
+            Value::Blob(ref b) => ValueRef::Blob(b),
         }
     }
 }

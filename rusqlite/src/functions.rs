@@ -62,7 +62,7 @@ pub use ffi::sqlite3_value;
 pub use ffi::sqlite3_value_type;
 pub use ffi::sqlite3_value_numeric_type;
 
-use types::{Null, FromSql, BorrowedValue};
+use types::{Null, FromSql, ValueRef};
 
 use {Result, Error, Connection, str_to_cstring, InnerConnection};
 
@@ -156,14 +156,14 @@ impl ToResult for Null {
     }
 }
 
-impl<'a> BorrowedValue<'a> {
-    unsafe fn from_value(value: *mut sqlite3_value) -> BorrowedValue<'a> {
+impl<'a> ValueRef<'a> {
+    unsafe fn from_value(value: *mut sqlite3_value) -> ValueRef<'a> {
         use std::slice::from_raw_parts;
 
         match ffi::sqlite3_value_type(value) {
-            ffi::SQLITE_NULL => BorrowedValue::Null,
-            ffi::SQLITE_INTEGER => BorrowedValue::Integer(ffi::sqlite3_value_int64(value)),
-            ffi::SQLITE_FLOAT => BorrowedValue::Real(ffi::sqlite3_value_double(value)),
+            ffi::SQLITE_NULL => ValueRef::Null,
+            ffi::SQLITE_INTEGER => ValueRef::Integer(ffi::sqlite3_value_int64(value)),
+            ffi::SQLITE_FLOAT => ValueRef::Real(ffi::sqlite3_value_double(value)),
             ffi::SQLITE_TEXT => {
                 let text = ffi::sqlite3_value_text(value);
                 assert!(!text.is_null(), "unexpected SQLITE_TEXT value type with NULL data");
@@ -171,7 +171,7 @@ impl<'a> BorrowedValue<'a> {
 
                 // sqlite3_value_text returns UTF8 data, so our unwrap here should be fine.
                 let s = s.to_str().expect("sqlite3_value_text returned invalid UTF-8");
-                BorrowedValue::Text(s)
+                ValueRef::Text(s)
             }
             ffi::SQLITE_BLOB => {
                 let blob = ffi::sqlite3_value_blob(value);
@@ -180,7 +180,7 @@ impl<'a> BorrowedValue<'a> {
                 let len = ffi::sqlite3_value_bytes(value);
                 assert!(len >= 0, "unexpected negative return from sqlite3_value_bytes");
 
-                BorrowedValue::Blob(from_raw_parts(blob as *const u8, len as usize))
+                ValueRef::Blob(from_raw_parts(blob as *const u8, len as usize))
             }
             _ => unreachable!("sqlite3_value_type returned invalid value")
         }
@@ -216,7 +216,7 @@ impl<'a> Context<'a> {
     /// Will return Err if the underlying SQLite type cannot be converted to a `T`.
     pub fn get<T: FromSql>(&self, idx: usize) -> Result<T> {
         let arg = self.args[idx];
-        let value = unsafe { BorrowedValue::from_value(arg) };
+        let value = unsafe { ValueRef::from_value(arg) };
         FromSql::column_result(value).map_err(|err| match err {
             Error::InvalidColumnType => Error::InvalidFunctionParameterType,
             _ => err

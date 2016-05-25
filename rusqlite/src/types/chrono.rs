@@ -7,7 +7,7 @@ use self::chrono::{NaiveDate, NaiveTime, NaiveDateTime, DateTime, TimeZone, UTC,
 use libc::c_int;
 
 use {Error, Result};
-use types::{FromSql, ToSql, BorrowedValue};
+use types::{FromSql, ToSql, ValueRef};
 
 use ffi::sqlite3_stmt;
 
@@ -21,7 +21,7 @@ impl ToSql for NaiveDate {
 
 /// "YYYY-MM-DD" => ISO 8601 calendar date without timezone.
 impl FromSql for NaiveDate {
-    fn column_result(value: BorrowedValue) -> Result<Self> {
+    fn column_result(value: ValueRef) -> Result<Self> {
         value.as_str().and_then(|s| match NaiveDate::parse_from_str(s, "%Y-%m-%d") {
             Ok(dt) => Ok(dt),
             Err(err) => Err(Error::FromSqlConversionFailure(Box::new(err))),
@@ -39,7 +39,7 @@ impl ToSql for NaiveTime {
 
 /// "HH:MM"/"HH:MM:SS"/"HH:MM:SS.SSS" => ISO 8601 time without timezone.
 impl FromSql for NaiveTime {
-    fn column_result(value: BorrowedValue) -> Result<Self> {
+    fn column_result(value: ValueRef) -> Result<Self> {
         value.as_str().and_then(|s| {
             let fmt = match s.len() {
                 5 => "%H:%M",
@@ -65,7 +65,7 @@ impl ToSql for NaiveDateTime {
 /// "YYYY-MM-DD HH:MM:SS"/"YYYY-MM-DD HH:MM:SS.SSS" => ISO 8601 combined date and time
 /// without timezone. ("YYYY-MM-DDTHH:MM:SS"/"YYYY-MM-DDTHH:MM:SS.SSS" also supported)
 impl FromSql for NaiveDateTime {
-    fn column_result(value: BorrowedValue) -> Result<Self> {
+    fn column_result(value: ValueRef) -> Result<Self> {
         value.as_str().and_then(|s| {
             let fmt = if s.len() >= 11 && s.as_bytes()[10] == b'T' {
                 "%Y-%m-%dT%H:%M:%S%.f"
@@ -91,7 +91,7 @@ impl<Tz: TimeZone> ToSql for DateTime<Tz> {
 
 /// RFC3339 ("YYYY-MM-DDTHH:MM:SS.SSS[+-]HH:MM") into DateTime<UTC>.
 impl FromSql for DateTime<UTC> {
-    fn column_result(value: BorrowedValue) -> Result<Self> {
+    fn column_result(value: ValueRef) -> Result<Self> {
         {
             // Try to parse value as rfc3339 first.
             let s = try!(value.as_str());
@@ -121,7 +121,7 @@ impl FromSql for DateTime<UTC> {
 
 /// RFC3339 ("YYYY-MM-DDTHH:MM:SS.SSS[+-]HH:MM") into DateTime<Local>.
 impl FromSql for DateTime<Local> {
-    fn column_result(value: BorrowedValue) -> Result<Self> {
+    fn column_result(value: ValueRef) -> Result<Self> {
         let utc_dt = try!(DateTime::<UTC>::column_result(value));
         Ok(utc_dt.with_timezone(&Local))
     }

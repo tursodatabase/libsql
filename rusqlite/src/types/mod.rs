@@ -29,7 +29,7 @@
 //! pub struct TimespecSql(pub time::Timespec);
 //!
 //! impl FromSql for TimespecSql {
-//!     fn column_result(value: BorrowedValue) -> Result<Self> {
+//!     fn column_result(value: ValueRef) -> Result<Self> {
 //!         f64::column_result(value).map(|as_f64| {
 //!             TimespecSql(time::Timespec{ sec: as_f64.trunc() as i64,
 //!                                         nsec: (as_f64.fract() * 1.0e9) as i32 })
@@ -56,9 +56,9 @@ pub use ffi::{SQLITE_INTEGER, SQLITE_FLOAT, SQLITE_TEXT, SQLITE_BLOB, SQLITE_NUL
 
 pub use self::from_sql::FromSql;
 pub use self::to_sql::ToSql;
-pub use self::borrowed_value::BorrowedValue;
+pub use self::value_ref::ValueRef;
 
-mod borrowed_value;
+mod value_ref;
 mod from_sql;
 mod to_sql;
 mod time;
@@ -89,7 +89,7 @@ pub struct Null;
 /// Owning [dynamic type value](http://sqlite.org/datatype3.html). Value's type is typically
 /// dictated by SQLite (not by the caller).
 ///
-/// See [`BorrowedValue`](enum.BorrowedValue.html) for a non-owning dynamic type value.
+/// See [`ValueRef`](enum.ValueRef.html) for a non-owning dynamic type value.
 #[derive(Clone,Debug,PartialEq)]
 pub enum Value {
     /// The value is a `NULL` value.

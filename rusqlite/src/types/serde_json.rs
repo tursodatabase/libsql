@@ -5,7 +5,7 @@ use libc::c_int;
 use self::serde_json::Value;
 
 use {Error, Result};
-use types::{FromSql, ToSql, BorrowedValue};
+use types::{FromSql, ToSql, ValueRef};
 
 use ffi::sqlite3_stmt;
 
@@ -19,10 +19,10 @@ impl ToSql for Value {
 
 /// Deserialize text/blob to JSON `Value`.
 impl FromSql for Value {
-    fn column_result(value: BorrowedValue) -> Result<Self> {
+    fn column_result(value: ValueRef) -> Result<Self> {
         match value {
-            BorrowedValue::Text(ref s) => serde_json::from_str(s),
-            BorrowedValue::Blob(ref b) => serde_json::from_slice(b),
+            ValueRef::Text(ref s) => serde_json::from_str(s),
+            ValueRef::Blob(ref b) => serde_json::from_slice(b),
             _ => return Err(Error::InvalidColumnType),
         }.map_err(|err| Error::FromSqlConversionFailure(Box::new(err)))
     }
