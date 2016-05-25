@@ -1,5 +1,6 @@
 use super::{BorrowedValue, Value};
 use ::Result;
+use ::error::Error;
 
 /// A trait for types that can be created from a SQLite value.
 pub trait FromSql: Sized {
@@ -20,7 +21,11 @@ impl FromSql for i64 {
 
 impl FromSql for f64 {
     fn column_result(value: BorrowedValue) -> Result<Self> {
-        value.as_f64()
+        match value {
+            BorrowedValue::Integer(i) => Ok(i as f64),
+            BorrowedValue::Real(f) => Ok(f),
+            _ => Err(Error::InvalidColumnType),
+        }
     }
 }
 

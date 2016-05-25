@@ -223,10 +223,9 @@ mod test {
         assert!(is_invalid_column_type(row.get_checked::<i32, Option<c_int>>(1).err().unwrap()));
 
         // 2 is actually an integer
-        assert!(is_invalid_column_type(row.get_checked::<i32, c_double>(2).err().unwrap()));
         assert!(is_invalid_column_type(row.get_checked::<i32, String>(2).err().unwrap()));
         assert!(is_invalid_column_type(row.get_checked::<i32, Vec<u8>>(2).err().unwrap()));
-        assert!(is_invalid_column_type(row.get_checked::<i32, Option<c_double>>(2).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<i32, Option<String>>(2).err().unwrap()));
 
         // 3 is actually a float (c_double)
         assert!(is_invalid_column_type(row.get_checked::<i32, c_int>(3).err().unwrap()));
