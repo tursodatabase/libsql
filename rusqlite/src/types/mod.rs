@@ -51,8 +51,6 @@
 //! `None`).
 
 pub use ffi::sqlite3_stmt;
-pub use ffi::sqlite3_column_type;
-pub use ffi::{SQLITE_INTEGER, SQLITE_FLOAT, SQLITE_TEXT, SQLITE_BLOB, SQLITE_NULL};
 
 pub use self::from_sql::FromSql;
 pub use self::to_sql::ToSql;
