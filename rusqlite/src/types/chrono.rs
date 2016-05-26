@@ -1,11 +1,13 @@
 //! Convert most of the [Time Strings](http://sqlite.org/lang_datefunc.html) to chrono types.
 extern crate chrono;
 
+use std::borrow::Cow;
+
 use self::chrono::{NaiveDate, NaiveTime, NaiveDateTime, DateTime, TimeZone, UTC, Local};
 use libc::c_int;
 
 use {Error, Result};
-use types::{FromSql, ToSql};
+use types::{FromSql, ToSql, ValueRef};
 
 use ffi::sqlite3_stmt;
 
@@ -19,16 +21,11 @@ impl ToSql for NaiveDate {
 
 /// "YYYY-MM-DD" => ISO 8601 calendar date without timezone.
 impl FromSql for NaiveDate {
-    unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> Result<NaiveDate> {
-        let s = try!(String::column_result(stmt, col));
-        match NaiveDate::parse_from_str(&s, "%Y-%m-%d") {
+    fn column_result(value: ValueRef) -> Result<Self> {
+        value.as_str().and_then(|s| match NaiveDate::parse_from_str(s, "%Y-%m-%d") {
             Ok(dt) => Ok(dt),
             Err(err) => Err(Error::FromSqlConversionFailure(Box::new(err))),
-        }
-    }
-
-    unsafe fn column_has_valid_sqlite_type(stmt: *mut sqlite3_stmt, col: c_int) -> bool {
-        String::column_has_valid_sqlite_type(stmt, col)
+        })
     }
 }
 
@@ -42,21 +39,18 @@ impl ToSql for NaiveTime {
 
 /// "HH:MM"/"HH:MM:SS"/"HH:MM:SS.SSS" => ISO 8601 time without timezone.
 impl FromSql for NaiveTime {
-    unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> Result<NaiveTime> {
-        let s = try!(String::column_result(stmt, col));
-        let fmt = match s.len() {
-            5 => "%H:%M",
-            8 => "%H:%M:%S",
-            _ => "%H:%M:%S%.f",
-        };
-        match NaiveTime::parse_from_str(&s, fmt) {
-            Ok(dt) => Ok(dt),
-            Err(err) => Err(Error::FromSqlConversionFailure(Box::new(err))),
-        }
-    }
-
-    unsafe fn column_has_valid_sqlite_type(stmt: *mut sqlite3_stmt, col: c_int) -> bool {
-        String::column_has_valid_sqlite_type(stmt, col)
+    fn column_result(value: ValueRef) -> Result<Self> {
+        value.as_str().and_then(|s| {
+            let fmt = match s.len() {
+                5 => "%H:%M",
+                8 => "%H:%M:%S",
+                _ => "%H:%M:%S%.f",
+            };
+            match NaiveTime::parse_from_str(s, fmt) {
+                Ok(dt) => Ok(dt),
+                Err(err) => Err(Error::FromSqlConversionFailure(Box::new(err))),
+            }
+        })
     }
 }
 
@@ -71,23 +65,19 @@ impl ToSql for NaiveDateTime {
 /// "YYYY-MM-DD HH:MM:SS"/"YYYY-MM-DD HH:MM:SS.SSS" => ISO 8601 combined date and time
 /// without timezone. ("YYYY-MM-DDTHH:MM:SS"/"YYYY-MM-DDTHH:MM:SS.SSS" also supported)
 impl FromSql for NaiveDateTime {
-    unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> Result<NaiveDateTime> {
-        let s = try!(String::column_result(stmt, col));
+    fn column_result(value: ValueRef) -> Result<Self> {
+        value.as_str().and_then(|s| {
+            let fmt = if s.len() >= 11 && s.as_bytes()[10] == b'T' {
+                "%Y-%m-%dT%H:%M:%S%.f"
+            } else {
+                "%Y-%m-%d %H:%M:%S%.f"
+            };
 
-        let fmt = if s.len() >= 11 && s.as_bytes()[10] == b'T' {
-            "%Y-%m-%dT%H:%M:%S%.f"
-        } else {
-            "%Y-%m-%d %H:%M:%S%.f"
-        };
-
-        match NaiveDateTime::parse_from_str(&s, fmt) {
-            Ok(dt) => Ok(dt),
-            Err(err) => Err(Error::FromSqlConversionFailure(Box::new(err))),
-        }
-    }
-
-    unsafe fn column_has_valid_sqlite_type(stmt: *mut sqlite3_stmt, col: c_int) -> bool {
-        String::column_has_valid_sqlite_type(stmt, col)
+            match NaiveDateTime::parse_from_str(s, fmt) {
+                Ok(dt) => Ok(dt),
+                Err(err) => Err(Error::FromSqlConversionFailure(Box::new(err))),
+            }
+        })
     }
 }
 
@@ -101,37 +91,39 @@ impl<Tz: TimeZone> ToSql for DateTime<Tz> {
 
 /// RFC3339 ("YYYY-MM-DDTHH:MM:SS.SSS[+-]HH:MM") into DateTime<UTC>.
 impl FromSql for DateTime<UTC> {
-    unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> Result<DateTime<UTC>> {
-        let s = {
-            let mut s = try!(String::column_result(stmt, col));
-            if s.len() >= 11 {
-                let sbytes = s.as_mut_vec();
-                if sbytes[10] == b' ' {
+    fn column_result(value: ValueRef) -> Result<Self> {
+        {
+            // Try to parse value as rfc3339 first.
+            let s = try!(value.as_str());
+
+            // If timestamp looks space-separated, make a copy and replace it with 'T'.
+            let s = if s.len() >= 11 && s.as_bytes()[10] == b' ' {
+                let mut s = s.to_string();
+                unsafe {
+                    let sbytes = s.as_mut_vec();
                     sbytes[10] = b'T';
                 }
-            }
-            s
-        };
-        match DateTime::parse_from_rfc3339(&s) {
-            Ok(dt) => Ok(dt.with_timezone(&UTC)),
-            Err(_) => NaiveDateTime::column_result(stmt, col).map(|dt| UTC.from_utc_datetime(&dt)),
-        }
-    }
+                Cow::Owned(s)
+            } else {
+                Cow::Borrowed(s)
+            };
 
-    unsafe fn column_has_valid_sqlite_type(stmt: *mut sqlite3_stmt, col: c_int) -> bool {
-        String::column_has_valid_sqlite_type(stmt, col)
+            match DateTime::parse_from_rfc3339(&s) {
+                Ok(dt) => return Ok(dt.with_timezone(&UTC)),
+                Err(_) => (),
+            }
+        }
+
+        // Couldn't parse as rfc3339 - fall back to NaiveDateTime.
+        NaiveDateTime::column_result(value).map(|dt| UTC.from_utc_datetime(&dt))
     }
 }
 
 /// RFC3339 ("YYYY-MM-DDTHH:MM:SS.SSS[+-]HH:MM") into DateTime<Local>.
 impl FromSql for DateTime<Local> {
-    unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> Result<DateTime<Local>> {
-        let utc_dt = try!(DateTime::<UTC>::column_result(stmt, col));
+    fn column_result(value: ValueRef) -> Result<Self> {
+        let utc_dt = try!(DateTime::<UTC>::column_result(value));
         Ok(utc_dt.with_timezone(&Local))
-    }
-
-    unsafe fn column_has_valid_sqlite_type(stmt: *mut sqlite3_stmt, col: c_int) -> bool {
-        DateTime::<UTC>::column_has_valid_sqlite_type(stmt, col)
     }
 }
 

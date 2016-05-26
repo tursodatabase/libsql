@@ -1,3 +1,9 @@
+# Version UPCOMING (...)
+
+* BREAKING CHANGE: The `FromSql` trait has been redesigned. It now requires a single, safe
+  method instead of the previous definition which required implementing one or two unsafe
+  methods.
+
 # Version 0.7.2 (2016-05-19)
 
 * BREAKING CHANGE: `Rows` no longer implements `Iterator`. It still has a `next()` method, but

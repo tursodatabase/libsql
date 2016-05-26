@@ -20,6 +20,10 @@ impl RawStatement {
         unsafe { ffi::sqlite3_column_count(self.0) }
     }
 
+    pub fn column_type(&self, idx: c_int) -> c_int {
+        unsafe { ffi::sqlite3_column_type(self.0, idx) }
+    }
+
     pub fn column_name(&self, idx: c_int) -> &CStr {
         unsafe { CStr::from_ptr(ffi::sqlite3_column_name(self.0, idx)) }
     }

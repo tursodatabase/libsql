@@ -5,11 +5,9 @@ use libc::c_int;
 use self::serde_json::Value;
 
 use {Error, Result};
-use types::{FromSql, ToSql};
+use types::{FromSql, ToSql, ValueRef};
 
-use ffi;
 use ffi::sqlite3_stmt;
-use ffi::sqlite3_column_type;
 
 /// Serialize JSON `Value` to text.
 impl ToSql for Value {
@@ -21,19 +19,12 @@ impl ToSql for Value {
 
 /// Deserialize text/blob to JSON `Value`.
 impl FromSql for Value {
-    unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> Result<Value> {
-        let value_result = match sqlite3_column_type(stmt, col) {
-            ffi::SQLITE_TEXT => {
-                let s = try!(String::column_result(stmt, col));
-                serde_json::from_str(&s)
-            }
-            ffi::SQLITE_BLOB => {
-                let blob = try!(Vec::<u8>::column_result(stmt, col));
-                serde_json::from_slice(&blob)
-            }
+    fn column_result(value: ValueRef) -> Result<Self> {
+        match value {
+            ValueRef::Text(ref s) => serde_json::from_str(s),
+            ValueRef::Blob(ref b) => serde_json::from_slice(b),
             _ => return Err(Error::InvalidColumnType),
-        };
-        value_result.map_err(|err| Error::FromSqlConversionFailure(Box::new(err)))
+        }.map_err(|err| Error::FromSqlConversionFailure(Box::new(err)))
     }
 }
 

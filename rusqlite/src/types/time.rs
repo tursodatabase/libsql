@@ -2,7 +2,7 @@ extern crate time;
 
 use libc::c_int;
 use {Error, Result};
-use types::{FromSql, ToSql};
+use types::{FromSql, ToSql, ValueRef};
 
 use ffi::sqlite3_stmt;
 
@@ -16,16 +16,11 @@ impl ToSql for time::Timespec {
 }
 
 impl FromSql for time::Timespec {
-    unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> Result<time::Timespec> {
-        let s = try!(String::column_result(stmt, col));
-        match time::strptime(&s, SQLITE_DATETIME_FMT) {
+    fn column_result(value: ValueRef) -> Result<Self> {
+        value.as_str().and_then(|s| match time::strptime(s, SQLITE_DATETIME_FMT) {
             Ok(tm) => Ok(tm.to_timespec()),
             Err(err) => Err(Error::FromSqlConversionFailure(Box::new(err))),
-        }
-    }
-
-    unsafe fn column_has_valid_sqlite_type(stmt: *mut sqlite3_stmt, col: c_int) -> bool {
-        String::column_has_valid_sqlite_type(stmt, col)
+        })
     }
 }
 

@@ -4,7 +4,9 @@
 //! the `ToSql` and `FromSql` traits are provided for the basic types that SQLite provides methods
 //! for:
 //!
-//! * C integers and doubles (`c_int` and `c_double`)
+//! * Integers (`i32` and `i64`; SQLite uses `i64` internally, so getting an `i32` will truncate
+//!   if the value is too large or too small).
+//! * Reals (`f64`)
 //! * Strings (`String` and `&str`)
 //! * Blobs (`Vec<u8>` and `&[u8]`)
 //!
@@ -13,13 +15,7 @@
 //! `"%Y-%m-%d %H:%M:%S"`, as SQLite's builtin
 //! [datetime](https://www.sqlite.org/lang_datefunc.html) function.  Note that this storage
 //! truncates timespecs to the nearest second. If you want different storage for timespecs, you can
-//! use a newtype. For example, to store timespecs as doubles:
-//!
-//! `ToSql` and `FromSql` are also implemented for `Option<T>` where `T` implements `ToSql` or
-//! `FromSql` for the cases where you want to know if a value was NULL (which gets translated to
-//! `None`). If you get a value that was NULL in SQLite but you store it into a non-`Option` value
-//! in Rust, you will get a "sensible" zero value - 0 for numeric types (including timespecs), an
-//! empty string, or an empty vector of bytes.
+//! use a newtype. For example, to store timespecs as `f64`s:
 //!
 //! ```rust,ignore
 //! extern crate rusqlite;
@@ -33,10 +29,8 @@
 //! pub struct TimespecSql(pub time::Timespec);
 //!
 //! impl FromSql for TimespecSql {
-//!     unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int)
-//!             -> Result<TimespecSql> {
-//!         let as_f64_result = FromSql::column_result(stmt, col);
-//!         as_f64_result.map(|as_f64: f64| {
+//!     fn column_result(value: ValueRef) -> Result<Self> {
+//!         f64::column_result(value).map(|as_f64| {
 //!             TimespecSql(time::Timespec{ sec: as_f64.trunc() as i64,
 //!                                         nsec: (as_f64.fract() * 1.0e9) as i32 })
 //!         })
@@ -51,14 +45,18 @@
 //!     }
 //! }
 //! ```
+//!
+//! `ToSql` and `FromSql` are also implemented for `Option<T>` where `T` implements `ToSql` or
+//! `FromSql` for the cases where you want to know if a value was NULL (which gets translated to
+//! `None`).
 
 pub use ffi::sqlite3_stmt;
-pub use ffi::sqlite3_column_type;
-pub use ffi::{SQLITE_INTEGER, SQLITE_FLOAT, SQLITE_TEXT, SQLITE_BLOB, SQLITE_NULL};
 
 pub use self::from_sql::FromSql;
 pub use self::to_sql::ToSql;
+pub use self::value_ref::ValueRef;
 
+mod value_ref;
 mod from_sql;
 mod to_sql;
 mod time;
@@ -86,8 +84,10 @@ mod serde_json;
 #[derive(Copy,Clone)]
 pub struct Null;
 
-/// Dynamic type value (http://sqlite.org/datatype3.html)
-/// Value's type is dictated by SQLite (not by the caller).
+/// Owning [dynamic type value](http://sqlite.org/datatype3.html). Value's type is typically
+/// dictated by SQLite (not by the caller).
+///
+/// See [`ValueRef`](enum.ValueRef.html) for a non-owning dynamic type value.
 #[derive(Clone,Debug,PartialEq)]
 pub enum Value {
     /// The value is a `NULL` value.
@@ -219,10 +219,9 @@ mod test {
         assert!(is_invalid_column_type(row.get_checked::<i32, Option<c_int>>(1).err().unwrap()));
 
         // 2 is actually an integer
-        assert!(is_invalid_column_type(row.get_checked::<i32, c_double>(2).err().unwrap()));
         assert!(is_invalid_column_type(row.get_checked::<i32, String>(2).err().unwrap()));
         assert!(is_invalid_column_type(row.get_checked::<i32, Vec<u8>>(2).err().unwrap()));
-        assert!(is_invalid_column_type(row.get_checked::<i32, Option<c_double>>(2).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<i32, Option<String>>(2).err().unwrap()));
 
         // 3 is actually a float (c_double)
         assert!(is_invalid_column_type(row.get_checked::<i32, c_int>(3).err().unwrap()));
