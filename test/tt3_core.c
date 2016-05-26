@@ -69,8 +69,9 @@
 /************************************************************************
 ** Start of command line processing utilities.
 */
-#define CMDLINE_INT   1
-#define CMDLINE_BOOL  2
+#define CMDLINE_INT     1
+#define CMDLINE_BOOL    2
+#define CMDLINE_STRING  3
 
 typedef struct CmdlineArg CmdlineArg;
 struct CmdlineArg {
@@ -98,6 +99,7 @@ static void cmdline_usage(const char *zPrg, CmdlineArg *apArg){
   for(i=0; apArg[i].zSwitch; i++){
     const char *zExtra = "";
     switch( apArg[i].eType ){
+      case CMDLINE_STRING: zExtra = "STRING"; break;
       case CMDLINE_INT: zExtra = "N"; break;
       case CMDLINE_BOOL: zExtra = ""; break;
       default:
@@ -120,6 +122,14 @@ static char *cmdline_construct(CmdlineArg *apArg, void *pObj){
     CmdlineArg *pArg = &apArg[iArg];
 
     switch( pArg->eType ){
+      case CMDLINE_STRING: {
+        char *zVal = *(char**)(p + pArg->iOffset);
+        if( zVal ){
+          zRet = sqlite3_mprintf("%z%s%s %s", zRet, zSpace, pArg->zSwitch,zVal);
+        }
+        break;
+      };
+
       case CMDLINE_INT: {
         zRet = sqlite3_mprintf("%z%s%s %d", zRet, zSpace, pArg->zSwitch, 
             *(int*)(p + pArg->iOffset)
@@ -169,6 +179,14 @@ static void cmdline_process(
               cmdline_error("option requires an argument: %s", z);
             }
             *(int*)(p + apArg[iArg].iOffset) = atoi(argv[i]);
+            break;
+
+          case CMDLINE_STRING:
+            i++;
+            if( i==argc ){
+              cmdline_error("option requires an argument: %s", z);
+            }
+            *(char**)(p + apArg[iArg].iOffset) = sqlite3_mprintf("%s", argv[i]);
             break;
 
           case CMDLINE_BOOL:

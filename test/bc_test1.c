@@ -17,8 +17,28 @@
 #include <stddef.h>
 #include "tt3_core.c"
 
+#ifdef USE_OSINST
+# include "../src/test_osinst.c"
+#else
+# define vfslog_time() 0
+#endif
 
 typedef struct Config Config;
+typedef struct ThreadCtx ThreadCtx;
+
+#define THREAD_TIME_INSERT   0
+#define THREAD_TIME_COMMIT   1
+#define THREAD_TIME_ROLLBACK 2
+#define THREAD_TIME_WRITER   3
+#define THREAD_TIME_CKPT     4
+
+struct ThreadCtx {
+  Config *pConfig;
+  Sqlite *pDb;
+  Error *pErr;
+  sqlite3_int64 aTime[5];
+};
+
 struct Config {
   int nIPT;                       /* --inserts-per-transaction */
   int nThread;                    /* --threads */
@@ -26,6 +46,12 @@ struct Config {
   int bMutex;                     /* --mutex */
   int nAutoCkpt;                  /* --autockpt */
   int bRm;                        /* --rm */
+  int bClearCache;                /* --clear-cache */
+  int nMmap;                      /* mmap limit in MB */
+  char *zFile;
+  int bOsinst;                    /* True to use osinst */
+
+  ThreadCtx *aCtx;                /* Array of size nThread */
 
   pthread_cond_t cond;
   pthread_mutex_t mutex;
@@ -33,17 +59,12 @@ struct Config {
   sqlite3_vfs *pVfs;
 };
 
-typedef struct WalHookCtx WalHookCtx;
-struct WalHookCtx {
-  Config *pConfig;
-  Sqlite *pDb;
-  Error *pErr;
-};
 
 typedef struct VfsWrapperFd VfsWrapperFd;
 struct VfsWrapperFd {
   sqlite3_file base;              /* Base class */
   int bWriter;                    /* True if holding shm WRITER lock */
+  int iTid;
   Config *pConfig;
   sqlite3_file *pFd;              /* Underlying file descriptor */
 };
@@ -106,6 +127,11 @@ static int vfsWrapOpen(
   Config *pConfig = (Config*)pVfs->pAppData;
   VfsWrapperFd *pWrapper = (VfsWrapperFd*)pFd;
   int rc;
+
+  memset(pWrapper, 0, sizeof(VfsWrapperFd));
+  if( flags & SQLITE_OPEN_MAIN_DB ){
+    pWrapper->iTid = (int)sqlite3_uri_int64(zName, "tid", 0);
+  }
 
   pWrapper->pFd = (sqlite3_file*)&pWrapper[1];
   pWrapper->pConfig = pConfig;
@@ -258,18 +284,24 @@ static int vfsWrapShmLock(sqlite3_file *pFd, int offset, int n, int flags){
     pthread_mutex_lock(&pConfig->mutex);
     pWrapper->bWriter = 1;
     bMutex = 1;
-  }
-
-  if( offset==0 && (flags & SQLITE_SHM_UNLOCK) && pWrapper->bWriter ){
-    pthread_mutex_unlock(&pConfig->mutex);
-    pWrapper->bWriter = 0;
+    if( pWrapper->iTid ){
+      sqlite3_int64 t = vfslog_time();
+      pConfig->aCtx[pWrapper->iTid-1].aTime[THREAD_TIME_WRITER] -= t;
+    }
   }
 
   rc = pWrapper->pFd->pMethods->xShmLock(pWrapper->pFd, offset, n, flags);
 
-  if( rc!=SQLITE_OK && bMutex ){
+  if( (rc!=SQLITE_OK && bMutex)
+   || (offset==0 && (flags & SQLITE_SHM_UNLOCK) && pWrapper->bWriter)
+  ){
+    assert( pWrapper->bWriter );
     pthread_mutex_unlock(&pConfig->mutex);
     pWrapper->bWriter = 0;
+    if( pWrapper->iTid ){
+      sqlite3_int64 t = vfslog_time();
+      pConfig->aCtx[pWrapper->iTid-1].aTime[THREAD_TIME_WRITER] += t;
+    }
   }
 
   return rc;
@@ -317,15 +349,16 @@ static void create_vfs(Config *pConfig){
 ** Wal hook used by connections in thread_main().
 */
 static int thread_wal_hook(
-  void *pArg,                     /* Pointer to Config object */
+  void *pArg,                     /* Pointer to ThreadCtx object */
   sqlite3 *db,
   const char *zDb, 
   int nFrame
 ){
-  WalHookCtx *pCtx = (WalHookCtx*)pArg;
+  ThreadCtx *pCtx = (ThreadCtx*)pArg;
   Config *pConfig = pCtx->pConfig;
 
-  if( nFrame>=pConfig->nAutoCkpt ){
+  if( pConfig->nAutoCkpt && nFrame>=pConfig->nAutoCkpt ){
+    pCtx->aTime[THREAD_TIME_CKPT] -= vfslog_time();
     pthread_mutex_lock(&pConfig->mutex);
     if( pConfig->nCondWait>=0 ){
       pConfig->nCondWait++;
@@ -338,6 +371,7 @@ static int thread_wal_hook(
       pConfig->nCondWait--;
     }
     pthread_mutex_unlock(&pConfig->mutex);
+    pCtx->aTime[THREAD_TIME_CKPT] += vfslog_time();
   }
 
   return SQLITE_OK;
@@ -345,35 +379,63 @@ static int thread_wal_hook(
 
 
 static char *thread_main(int iTid, void *pArg){
-  WalHookCtx ctx;
   Config *pConfig = (Config*)pArg;
   Error err = {0};                /* Error code and message */
   Sqlite db = {0};                /* SQLite database connection */
   int nAttempt = 0;               /* Attempted transactions */
   int nCommit = 0;                /* Successful transactions */
   int j;
+  ThreadCtx *pCtx = &pConfig->aCtx[iTid-1];
+  char *zUri = 0;
 
-  opendb(&err, &db, "xyz.db", 0);
+#ifdef USE_OSINST
+  char *zOsinstName = 0;
+  char *zLogName = 0;
+  if( pConfig->bOsinst ){
+    zOsinstName = sqlite3_mprintf("osinst%d", iTid);
+    zLogName = sqlite3_mprintf("bc_test1.log.%d.%d", (int)getpid(), iTid);
+    zUri = sqlite3_mprintf(
+        "file:%s?vfs=%s&tid=%d", pConfig->zFile, zOsinstName, iTid
+    );
+    sqlite3_vfslog_new(zOsinstName, 0, zLogName);
+    opendb(&err, &db, zUri, 0);
+  }else
+#endif
+  {
+    zUri = sqlite3_mprintf("file:%s?tid=%d", pConfig->zFile, iTid);
+    opendb(&err, &db, zUri, 0);
+  }
+
   sqlite3_busy_handler(db.db, 0, 0);
   sql_script_printf(&err, &db, 
-      "PRAGMA wal_autocheckpoint = %d;"
-      "PRAGMA synchronous = 0;", pConfig->nAutoCkpt
+      "PRAGMA wal_autocheckpoint = 0;"
+      "PRAGMA synchronous = 0;"
+      "PRAGMA mmap_limit = %lld;",
+      (i64)(pConfig->nMmap) * 1024 * 1024
   );
 
-  ctx.pConfig = pConfig;
-  ctx.pErr = &err;
-  ctx.pDb = &db;
-  sqlite3_wal_hook(db.db, thread_wal_hook, (void*)&ctx);
+  pCtx->pConfig = pConfig;
+  pCtx->pErr = &err;
+  pCtx->pDb = &db;
+  sqlite3_wal_hook(db.db, thread_wal_hook, (void*)pCtx);
 
   while( !timetostop(&err) ){
     execsql(&err, &db, "BEGIN CONCURRENT");
+
+    pCtx->aTime[THREAD_TIME_INSERT] -= vfslog_time();
     for(j=0; j<pConfig->nIPT; j++){
       execsql(&err, &db, 
           "INSERT INTO t1 VALUES"
           "(randomblob(10), randomblob(20), randomblob(30), randomblob(200))"
       );
     }
+    pCtx->aTime[THREAD_TIME_INSERT] += vfslog_time();
+
+    pCtx->aTime[THREAD_TIME_COMMIT] -= vfslog_time();
     execsql(&err, &db, "COMMIT");
+    pCtx->aTime[THREAD_TIME_COMMIT] += vfslog_time();
+
+    pCtx->aTime[THREAD_TIME_ROLLBACK] -= vfslog_time();
     nAttempt++;
     if( err.rc==SQLITE_OK ){
       nCommit++;
@@ -381,16 +443,41 @@ static char *thread_main(int iTid, void *pArg){
       clear_error(&err, SQLITE_BUSY);
       execsql(&err, &db, "ROLLBACK");
     }
+    pCtx->aTime[THREAD_TIME_ROLLBACK] += vfslog_time();
+
+    if( pConfig->bClearCache ){
+      sqlite3_db_release_memory(db.db);
+    }
   }
 
   closedb(&err, &db);
+
+#ifdef USE_OSINST
+  if( pConfig->bOsinst ){
+    sqlite3_vfslog_finalize(zOsinstName);
+    sqlite3_free(zOsinstName);
+    sqlite3_free(zLogName);
+  }
+#endif
+  sqlite3_free(zUri);
 
   pthread_mutex_lock(&pConfig->mutex);
   pConfig->nCondWait = -1;
   pthread_cond_broadcast(&pConfig->cond);
   pthread_mutex_unlock(&pConfig->mutex);
 
-  return sqlite3_mprintf("%d/%d successful commits", nCommit, nAttempt);
+  return sqlite3_mprintf("commits: %d/%d insert: %dms"
+      " commit: %dms"
+      " rollback: %dms" 
+      " writer: %dms"
+      " checkpoint: %dms", 
+      nCommit, nAttempt, 
+      (int)(pCtx->aTime[THREAD_TIME_INSERT]/1000), 
+      (int)(pCtx->aTime[THREAD_TIME_COMMIT]/1000), 
+      (int)(pCtx->aTime[THREAD_TIME_ROLLBACK]/1000),
+      (int)(pCtx->aTime[THREAD_TIME_WRITER]/1000),
+      (int)(pCtx->aTime[THREAD_TIME_CKPT]/1000)
+  );
 }
 
 int main(int argc, const char **argv){
@@ -407,6 +494,10 @@ int main(int argc, const char **argv){
     { "--mutex",   CMDLINE_BOOL, offsetof(Config, bMutex) },
     { "--rm",      CMDLINE_BOOL, offsetof(Config, bRm) },
     { "--autockpt",CMDLINE_INT,  offsetof(Config, nAutoCkpt) },
+    { "--mmap",    CMDLINE_INT,  offsetof(Config, nMmap) },
+    { "--clear-cache",    CMDLINE_BOOL,  offsetof(Config, bClearCache) },
+    { "--file",    CMDLINE_STRING,  offsetof(Config, zFile) },
+    { "--osinst",  CMDLINE_BOOL,  offsetof(Config, bOsinst) },
     { 0, 0, 0 }
   };
 
@@ -416,6 +507,9 @@ int main(int argc, const char **argv){
     printf("With: %s\n", z);
     sqlite3_free(z);
   }
+  if( conf.zFile==0 ){
+    conf.zFile = "xyz.db";
+  }
 
   /* Create the special VFS - "wrapper". And the mutex and condition 
   ** variable. */
@@ -423,8 +517,11 @@ int main(int argc, const char **argv){
   pthread_mutex_init(&conf.mutex, 0);
   pthread_cond_init(&conf.cond, 0);
 
+  conf.aCtx = sqlite3_malloc(sizeof(ThreadCtx) * conf.nThread);
+  memset(conf.aCtx, 0, sizeof(ThreadCtx) * conf.nThread);
+
   /* Ensure the schema has been created */
-  opendb(&err, &db, "xyz.db", conf.bRm);
+  opendb(&err, &db, conf.zFile, conf.bRm);
   sql_script(&err, &db,
       "PRAGMA journal_mode = wal;"
       "CREATE TABLE IF NOT EXISTS t1(a PRIMARY KEY, b, c, d) WITHOUT ROWID;"
@@ -434,7 +531,7 @@ int main(int argc, const char **argv){
 
   setstoptime(&err, conf.nSecond*1000);
   if( conf.nThread==1 ){
-    char *z = thread_main(0, (void*)&conf);
+    char *z = thread_main(1, (void*)&conf);
     printf("Thread 0 says: %s\n", (z==0 ? "..." : z));
     fflush(stdout);
   }else{
@@ -445,10 +542,11 @@ int main(int argc, const char **argv){
   }
 
   if( err.rc==SQLITE_OK ){
-    printf("Database is %dK\n", (int)(filesize(&err, "xyz.db") / 1024));
+    printf("Database is %dK\n", (int)(filesize(&err, conf.zFile) / 1024));
   }
   if( err.rc==SQLITE_OK ){
-    printf("Wal file is %dK\n", (int)(filesize(&err, "xyz.db-wal") / 1024));
+    char *zWal = sqlite3_mprintf("%s-wal", conf.zFile);
+    printf("Wal file is %dK\n", (int)(filesize(&err, zWal) / 1024));
   }
 
   closedb(&err, &db);
