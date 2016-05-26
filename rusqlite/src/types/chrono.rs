@@ -21,8 +21,8 @@ impl ToSql for NaiveDate {
 
 /// "YYYY-MM-DD" => ISO 8601 calendar date without timezone.
 impl FromSql for NaiveDate {
-    fn column_result(value: ValueRef) -> Result<Self> {
-        value.as_str().and_then(|s| match NaiveDate::parse_from_str(s, "%Y-%m-%d") {
+    fn column_result(value: ValueRef, idx: i32) -> Result<Self> {
+        value.as_str(idx).and_then(|s| match NaiveDate::parse_from_str(s, "%Y-%m-%d") {
             Ok(dt) => Ok(dt),
             Err(err) => Err(Error::FromSqlConversionFailure(Box::new(err))),
         })
@@ -39,8 +39,8 @@ impl ToSql for NaiveTime {
 
 /// "HH:MM"/"HH:MM:SS"/"HH:MM:SS.SSS" => ISO 8601 time without timezone.
 impl FromSql for NaiveTime {
-    fn column_result(value: ValueRef) -> Result<Self> {
-        value.as_str().and_then(|s| {
+    fn column_result(value: ValueRef, idx: i32) -> Result<Self> {
+        value.as_str(idx).and_then(|s| {
             let fmt = match s.len() {
                 5 => "%H:%M",
                 8 => "%H:%M:%S",
@@ -65,8 +65,8 @@ impl ToSql for NaiveDateTime {
 /// "YYYY-MM-DD HH:MM:SS"/"YYYY-MM-DD HH:MM:SS.SSS" => ISO 8601 combined date and time
 /// without timezone. ("YYYY-MM-DDTHH:MM:SS"/"YYYY-MM-DDTHH:MM:SS.SSS" also supported)
 impl FromSql for NaiveDateTime {
-    fn column_result(value: ValueRef) -> Result<Self> {
-        value.as_str().and_then(|s| {
+    fn column_result(value: ValueRef, idx: i32) -> Result<Self> {
+        value.as_str(idx).and_then(|s| {
             let fmt = if s.len() >= 11 && s.as_bytes()[10] == b'T' {
                 "%Y-%m-%dT%H:%M:%S%.f"
             } else {
@@ -91,10 +91,10 @@ impl<Tz: TimeZone> ToSql for DateTime<Tz> {
 
 /// RFC3339 ("YYYY-MM-DDTHH:MM:SS.SSS[+-]HH:MM") into DateTime<UTC>.
 impl FromSql for DateTime<UTC> {
-    fn column_result(value: ValueRef) -> Result<Self> {
+    fn column_result(value: ValueRef, idx: i32) -> Result<Self> {
         {
             // Try to parse value as rfc3339 first.
-            let s = try!(value.as_str());
+            let s = try!(value.as_str(idx));
 
             // If timestamp looks space-separated, make a copy and replace it with 'T'.
             let s = if s.len() >= 11 && s.as_bytes()[10] == b' ' {
@@ -115,14 +115,14 @@ impl FromSql for DateTime<UTC> {
         }
 
         // Couldn't parse as rfc3339 - fall back to NaiveDateTime.
-        NaiveDateTime::column_result(value).map(|dt| UTC.from_utc_datetime(&dt))
+        NaiveDateTime::column_result(value, idx).map(|dt| UTC.from_utc_datetime(&dt))
     }
 }
 
 /// RFC3339 ("YYYY-MM-DDTHH:MM:SS.SSS[+-]HH:MM") into DateTime<Local>.
 impl FromSql for DateTime<Local> {
-    fn column_result(value: ValueRef) -> Result<Self> {
-        let utc_dt = try!(DateTime::<UTC>::column_result(value));
+    fn column_result(value: ValueRef, idx: i32) -> Result<Self> {
+        let utc_dt = try!(DateTime::<UTC>::column_result(value, idx));
         Ok(utc_dt.with_timezone(&Local))
     }
 }

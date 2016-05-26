@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use std::str;
 use libc::c_int;
 use {ffi, errmsg_to_string};
+use types::Type;
 
 /// Old name for `Error`. `SqliteError` is deprecated.
 pub type SqliteError = Error;
@@ -50,7 +51,7 @@ pub enum Error {
 
     /// Error when the value of a particular column is requested, but the type of the result in
     /// that column cannot be converted to the requested Rust type.
-    InvalidColumnType,
+    InvalidColumnType(i32, Type),
 
     /// Error when a query that was expected to insert one row did not insert any or insert many.
     StatementChangedRows(c_int),
@@ -62,7 +63,7 @@ pub enum Error {
     /// Error returned by `functions::Context::get` when the function argument cannot be converted
     /// to the requested type.
     #[cfg(feature = "functions")]
-    InvalidFunctionParameterType,
+    InvalidFunctionParameterType(i32, Type),
 
     /// An error case available for implementors of custom user functions (e.g.,
     /// `create_scalar_function`).
@@ -103,12 +104,16 @@ impl fmt::Display for Error {
             Error::QueryReturnedNoRows => write!(f, "Query returned no rows"),
             Error::InvalidColumnIndex(i) => write!(f, "Invalid column index: {}", i),
             Error::InvalidColumnName(ref name) => write!(f, "Invalid column name: {}", name),
-            Error::InvalidColumnType => write!(f, "Invalid column type"),
+            Error::InvalidColumnType(i, ref t) => {
+                write!(f, "Invalid column type {} at index: {}", t, i)
+            }
             Error::StatementChangedRows(i) => write!(f, "Query changed {} rows", i),
             Error::StatementFailedToInsertRow => write!(f, "Statement failed to insert new row"),
 
             #[cfg(feature = "functions")]
-            Error::InvalidFunctionParameterType => write!(f, "Invalid function parameter type"),
+            Error::InvalidFunctionParameterType(i, ref t) => {
+                write!(f, "Invalid function parameter type {} at index {}", t, i)
+            }
             #[cfg(feature = "functions")]
             Error::UserFunctionError(ref err) => err.fmt(f),
         }
@@ -134,12 +139,12 @@ impl error::Error for Error {
             Error::QueryReturnedNoRows => "query returned no rows",
             Error::InvalidColumnIndex(_) => "invalid column index",
             Error::InvalidColumnName(_) => "invalid column name",
-            Error::InvalidColumnType => "invalid column type",
+            Error::InvalidColumnType(_, _) => "invalid column type",
             Error::StatementChangedRows(_) => "query inserted zero or more than one row",
             Error::StatementFailedToInsertRow => "statement failed to insert new row",
 
             #[cfg(feature = "functions")]
-            Error::InvalidFunctionParameterType => "invalid function parameter type",
+            Error::InvalidFunctionParameterType(_, _) => "invalid function parameter type",
             #[cfg(feature = "functions")]
             Error::UserFunctionError(ref err) => err.description(),
         }
@@ -159,13 +164,13 @@ impl error::Error for Error {
             Error::QueryReturnedNoRows |
             Error::InvalidColumnIndex(_) |
             Error::InvalidColumnName(_) |
-            Error::InvalidColumnType |
+            Error::InvalidColumnType(_, _) |
             Error::InvalidPath(_) |
             Error::StatementChangedRows(_) |
             Error::StatementFailedToInsertRow => None,
 
             #[cfg(feature = "functions")]
-            Error::InvalidFunctionParameterType => None,
+            Error::InvalidFunctionParameterType(_, _) => None,
 
             #[cfg(feature = "functions")]
             Error::UserFunctionError(ref err) => Some(&**err),

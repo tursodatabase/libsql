@@ -1,6 +1,6 @@
 use ::Result;
 use ::error::Error;
-use super::Value;
+use super::{Value, Type};
 
 /// A non-owning [dynamic type value](http://sqlite.org/datatype3.html). Typically the
 /// memory backing this value is owned by SQLite.
@@ -21,39 +21,51 @@ pub enum ValueRef<'a> {
 }
 
 impl<'a> ValueRef<'a> {
+    pub fn data_type(&self) -> Type {
+        match *self {
+            ValueRef::Null => Type::Null,
+            ValueRef::Integer(_) => Type::Integer,
+            ValueRef::Real(_) => Type::Real,
+            ValueRef::Text(_) => Type::Text,
+            ValueRef::Blob(_) => Type::Blob,
+        }
+    }
+}
+
+impl<'a> ValueRef<'a> {
     /// If `self` is case `Integer`, returns the integral value. Otherwise, returns
     /// `Err(Error::InvalidColumnType)`.
-    pub fn as_i64(&self) -> Result<i64> {
+    pub fn as_i64(&self, idx: i32) -> Result<i64> {
         match *self {
             ValueRef::Integer(i) => Ok(i),
-            _ => Err(Error::InvalidColumnType),
+            _ => Err(Error::InvalidColumnType(idx, self.data_type())),
         }
     }
 
     /// If `self` is case `Real`, returns the floating point value. Otherwise, returns
     /// `Err(Error::InvalidColumnType)`.
-    pub fn as_f64(&self) -> Result<f64> {
+    pub fn as_f64(&self, idx: i32) -> Result<f64> {
         match *self {
             ValueRef::Real(f) => Ok(f),
-            _ => Err(Error::InvalidColumnType),
+            _ => Err(Error::InvalidColumnType(idx, self.data_type())),
         }
     }
 
     /// If `self` is case `Text`, returns the string value. Otherwise, returns
     /// `Err(Error::InvalidColumnType)`.
-    pub fn as_str(&self) -> Result<&str> {
+    pub fn as_str(&self, idx: i32) -> Result<&str> {
         match *self {
             ValueRef::Text(ref t) => Ok(t),
-            _ => Err(Error::InvalidColumnType),
+            _ => Err(Error::InvalidColumnType(idx, self.data_type())),
         }
     }
 
     /// If `self` is case `Blob`, returns the byte slice. Otherwise, returns
     /// `Err(Error::InvalidColumnType)`.
-    pub fn as_blob(&self) -> Result<&[u8]> {
+    pub fn as_blob(&self, idx: i32) -> Result<&[u8]> {
         match *self {
             ValueRef::Blob(ref b) => Ok(b),
-            _ => Err(Error::InvalidColumnType),
+            _ => Err(Error::InvalidColumnType(idx, self.data_type())),
         }
     }
 }

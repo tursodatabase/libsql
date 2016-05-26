@@ -182,7 +182,7 @@ impl<'a> ValueRef<'a> {
 
                 ValueRef::Blob(from_raw_parts(blob as *const u8, len as usize))
             }
-            _ => unreachable!("sqlite3_value_type returned invalid value")
+            _ => unreachable!("sqlite3_value_type returned invalid value"),
         }
     }
 }
@@ -217,9 +217,9 @@ impl<'a> Context<'a> {
     pub fn get<T: FromSql>(&self, idx: usize) -> Result<T> {
         let arg = self.args[idx];
         let value = unsafe { ValueRef::from_value(arg) };
-        FromSql::column_result(value).map_err(|err| match err {
-            Error::InvalidColumnType => Error::InvalidFunctionParameterType,
-            _ => err
+        FromSql::column_result(value, idx as i32).map_err(|err| match err {
+            Error::InvalidColumnType(i, t) => Error::InvalidFunctionParameterType(i, t),
+            _ => err,
         })
     }
 

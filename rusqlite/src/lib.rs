@@ -1066,7 +1066,7 @@ impl<'a, 'stmt> Row<'a, 'stmt> {
     pub fn get_checked<I: RowIndex, T: FromSql>(&self, idx: I) -> Result<T> {
         let idx = try!(idx.idx(self.stmt));
         let value = unsafe { ValueRef::new(&self.stmt.stmt, idx) };
-        FromSql::column_result(value)
+        FromSql::column_result(value, idx)
     }
 
     /// Return the number of columns in the current row.
@@ -1112,7 +1112,8 @@ impl<'a> ValueRef<'a> {
             ffi::SQLITE_FLOAT => ValueRef::Real(ffi::sqlite3_column_double(raw, col)),
             ffi::SQLITE_TEXT => {
                 let text = ffi::sqlite3_column_text(raw, col);
-                assert!(!text.is_null(), "unexpected SQLITE_TEXT column type with NULL data");
+                assert!(!text.is_null(),
+                        "unexpected SQLITE_TEXT column type with NULL data");
                 let s = CStr::from_ptr(text as *const c_char);
 
                 // sqlite3_column_text returns UTF8 data, so our unwrap here should be fine.
@@ -1121,14 +1122,16 @@ impl<'a> ValueRef<'a> {
             }
             ffi::SQLITE_BLOB => {
                 let blob = ffi::sqlite3_column_blob(raw, col);
-                assert!(!blob.is_null(), "unexpected SQLITE_BLOB column type with NULL data");
+                assert!(!blob.is_null(),
+                        "unexpected SQLITE_BLOB column type with NULL data");
 
                 let len = ffi::sqlite3_column_bytes(raw, col);
-                assert!(len >= 0, "unexpected negative return from sqlite3_column_bytes");
+                assert!(len >= 0,
+                        "unexpected negative return from sqlite3_column_bytes");
 
                 ValueRef::Blob(from_raw_parts(blob as *const u8, len as usize))
             }
-            _ => unreachable!("sqlite3_column_type returned invalid value")
+            _ => unreachable!("sqlite3_column_type returned invalid value"),
         }
     }
 }
@@ -1488,7 +1491,7 @@ mod test {
                 .collect();
 
             match bad_type.unwrap_err() {
-                Error::InvalidColumnType => (),
+                Error::InvalidColumnType(_, _) => (),
                 err => panic!("Unexpected error {}", err),
             }
 
@@ -1548,7 +1551,7 @@ mod test {
                 .collect();
 
             match bad_type.unwrap_err() {
-                CustomError::Sqlite(Error::InvalidColumnType) => (),
+                CustomError::Sqlite(Error::InvalidColumnType(_, _)) => (),
                 err => panic!("Unexpected error {}", err),
             }
 
@@ -1610,7 +1613,7 @@ mod test {
             });
 
             match bad_type.unwrap_err() {
-                CustomError::Sqlite(Error::InvalidColumnType) => (),
+                CustomError::Sqlite(Error::InvalidColumnType(_, _)) => (),
                 err => panic!("Unexpected error {}", err),
             }
 

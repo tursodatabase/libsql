@@ -56,6 +56,8 @@ pub use self::from_sql::FromSql;
 pub use self::to_sql::ToSql;
 pub use self::value_ref::ValueRef;
 
+use std::fmt;
+
 mod value_ref;
 mod from_sql;
 mod to_sql;
@@ -100,6 +102,39 @@ pub enum Value {
     Text(String),
     /// The value is a blob of data
     Blob(Vec<u8>),
+}
+
+impl Value {
+    pub fn data_type(&self) -> Type {
+        match *self {
+            Value::Null => Type::Null,
+            Value::Integer(_) => Type::Integer,
+            Value::Real(_) => Type::Real,
+            Value::Text(_) => Type::Text,
+            Value::Blob(_) => Type::Blob,
+        }
+    }
+}
+
+#[derive(Clone,Debug,PartialEq)]
+pub enum Type {
+    Null,
+    Integer,
+    Real,
+    Text,
+    Blob,
+}
+
+impl fmt::Display for Type {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            Type::Null => write!(f, "Null"),
+            Type::Integer => write!(f, "Integer"),
+            Type::Real => write!(f, "Real"),
+            Type::Text => write!(f, "Text"),
+            Type::Blob => write!(f, "Blob"),
+        }
+    }
 }
 
 #[cfg(test)]
@@ -175,7 +210,7 @@ mod test {
     fn test_mismatched_types() {
         fn is_invalid_column_type(err: Error) -> bool {
             match err {
-                Error::InvalidColumnType => true,
+                Error::InvalidColumnType(_, _) => true,
                 _ => false,
             }
         }
