@@ -3,6 +3,8 @@
 * BREAKING CHANGE: The `FromSql` trait has been redesigned. It now requires a single, safe
   method instead of the previous definition which required implementing one or two unsafe
   methods.
+* BREAKING CHANGE: The `ToSql` trait has been redesigned. It can now be implemented without
+  `unsafe`, and implementors can choose to return either borrowed or owned results.
 
 # Version 0.7.2 (2016-05-19)
 
