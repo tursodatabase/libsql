@@ -57,10 +57,10 @@ use std::slice;
 use libc::{c_int, c_char, c_void};
 
 use ffi;
-pub use ffi::sqlite3_context;
-pub use ffi::sqlite3_value;
-pub use ffi::sqlite3_value_type;
-pub use ffi::sqlite3_value_numeric_type;
+use ffi::sqlite3_context;
+use ffi::sqlite3_value;
+use ffi::sqlite3_value_type;
+use ffi::sqlite3_value_numeric_type;
 
 use types::{ToSql, ToSqlOutput, FromSql, ValueRef};
 
