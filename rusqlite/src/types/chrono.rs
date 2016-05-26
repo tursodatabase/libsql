@@ -4,18 +4,15 @@ extern crate chrono;
 use std::borrow::Cow;
 
 use self::chrono::{NaiveDate, NaiveTime, NaiveDateTime, DateTime, TimeZone, UTC, Local};
-use libc::c_int;
 
 use {Error, Result};
-use types::{FromSql, ToSql, ValueRef};
-
-use ffi::sqlite3_stmt;
+use types::{FromSql, ToSql, ToSqlOutput, ValueRef};
 
 /// ISO 8601 calendar date without timezone => "YYYY-MM-DD"
 impl ToSql for NaiveDate {
-    unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
+    fn to_sql(&self) -> Result<ToSqlOutput> {
         let date_str = self.format("%Y-%m-%d").to_string();
-        date_str.bind_parameter(stmt, col)
+        Ok(ToSqlOutput::from(date_str))
     }
 }
 
@@ -31,9 +28,9 @@ impl FromSql for NaiveDate {
 
 /// ISO 8601 time without timezone => "HH:MM:SS.SSS"
 impl ToSql for NaiveTime {
-    unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
+    fn to_sql(&self) -> Result<ToSqlOutput> {
         let date_str = self.format("%H:%M:%S%.f").to_string();
-        date_str.bind_parameter(stmt, col)
+        Ok(ToSqlOutput::from(date_str))
     }
 }
 
@@ -56,9 +53,9 @@ impl FromSql for NaiveTime {
 
 /// ISO 8601 combined date and time without timezone => "YYYY-MM-DD HH:MM:SS.SSS"
 impl ToSql for NaiveDateTime {
-    unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
+    fn to_sql(&self) -> Result<ToSqlOutput> {
         let date_str = self.format("%Y-%m-%dT%H:%M:%S%.f").to_string();
-        date_str.bind_parameter(stmt, col)
+        Ok(ToSqlOutput::from(date_str))
     }
 }
 
@@ -83,9 +80,8 @@ impl FromSql for NaiveDateTime {
 
 /// Date and time with time zone => UTC RFC3339 timestamp ("YYYY-MM-DDTHH:MM:SS.SSS+00:00").
 impl<Tz: TimeZone> ToSql for DateTime<Tz> {
-    unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
-        let utc_dt = self.with_timezone(&UTC);
-        utc_dt.to_rfc3339().bind_parameter(stmt, col)
+    fn to_sql(&self) -> Result<ToSqlOutput> {
+        Ok(ToSqlOutput::from(self.with_timezone(&UTC).to_rfc3339()))
     }
 }
 

@@ -70,6 +70,18 @@ impl<'a> From<ValueRef<'a>> for Value {
     }
 }
 
+impl<'a> From<&'a str> for ValueRef<'a> {
+    fn from(s: &str) -> ValueRef {
+        ValueRef::Text(s)
+    }
+}
+
+impl<'a> From<&'a [u8]> for ValueRef<'a> {
+    fn from(s: &[u8]) -> ValueRef {
+        ValueRef::Blob(s)
+    }
+}
+
 impl<'a> From<&'a Value> for ValueRef<'a> {
     fn from(value: &'a Value) -> ValueRef<'a> {
         match *value {

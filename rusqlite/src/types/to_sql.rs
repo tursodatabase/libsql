@@ -1,95 +1,87 @@
-use std::mem;
+use super::{Null, Value, ValueRef};
+use ::Result;
 
-use libc::{c_double, c_int};
+pub enum ToSqlOutput<'a> {
+    Borrowed(ValueRef<'a>),
+    Owned(Value),
 
-use super::Null;
-use ::{ffi, str_to_cstring};
-use ffi::sqlite3_stmt;
+    #[cfg(feature = "blob")]
+    ZeroBlob(i32),
+}
+
+impl<'a, T: ?Sized> From<&'a T> for ToSqlOutput<'a> where &'a T: Into<ValueRef<'a>> {
+    fn from(t: &'a T) -> Self {
+        ToSqlOutput::Borrowed(t.into())
+    }
+}
+
+impl<'a, T: Into<Value>> From<T> for ToSqlOutput<'a> {
+    fn from(t: T) -> Self {
+        ToSqlOutput::Owned(t.into())
+    }
+}
 
 /// A trait for types that can be converted into SQLite values.
 pub trait ToSql {
-    unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int;
+    fn to_sql(&self) -> Result<ToSqlOutput>;
 }
 
-macro_rules! raw_to_impl(
-    ($t:ty, $f:ident) => (
+// We should be able to use a generic impl like this:
+//
+// impl<T: Copy> ToSql for T where T: Into<Value> {
+//     fn to_sql(&self) -> Result<ToSqlOutput> {
+//         Ok(ToSqlOutput::from((*self).into()))
+//     }
+// }
+//
+// instead of the following macro, but this runs afoul of
+// https://github.com/rust-lang/rust/issues/30191 and reports conflicting
+// implementations even when there aren't any.
+
+macro_rules! to_sql_self(
+    ($t:ty) => (
         impl ToSql for $t {
-            unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
-                ffi::$f(stmt, col, *self)
+            fn to_sql(&self) -> Result<ToSqlOutput> {
+                Ok(ToSqlOutput::from(*self))
             }
         }
     )
 );
 
-raw_to_impl!(c_int, sqlite3_bind_int); // i32
-raw_to_impl!(i64, sqlite3_bind_int64);
-raw_to_impl!(c_double, sqlite3_bind_double);
+to_sql_self!(Null);
+to_sql_self!(i32);
+to_sql_self!(i64);
+to_sql_self!(f64);
 
-impl ToSql for bool {
-    unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
-        if *self {
-            ffi::sqlite3_bind_int(stmt, col, 1)
-        } else {
-            ffi::sqlite3_bind_int(stmt, col, 0)
-        }
-    }
-}
-
-impl<'a> ToSql for &'a str {
-    unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
-        let length = self.len();
-        if length > ::std::i32::MAX as usize {
-            return ffi::SQLITE_TOOBIG;
-        }
-        match str_to_cstring(self) {
-            Ok(c_str) => {
-                ffi::sqlite3_bind_text(stmt,
-                                       col,
-                                       c_str.as_ptr(),
-                                       length as c_int,
-                                       ffi::SQLITE_TRANSIENT())
-            }
-            Err(_) => ffi::SQLITE_MISUSE,
-        }
+impl<'a, T: ?Sized> ToSql for &'a T where &'a T: Into<ToSqlOutput<'a>> {
+    fn to_sql(&self) -> Result<ToSqlOutput> {
+        Ok(ToSqlOutput::from((*self).into()))
     }
 }
 
 impl ToSql for String {
-    unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
-        (&self[..]).bind_parameter(stmt, col)
-    }
-}
-
-impl<'a> ToSql for &'a [u8] {
-    unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
-        if self.len() > ::std::i32::MAX as usize {
-            return ffi::SQLITE_TOOBIG;
-        }
-        ffi::sqlite3_bind_blob(stmt,
-                               col,
-                               mem::transmute(self.as_ptr()),
-                               self.len() as c_int,
-                               ffi::SQLITE_TRANSIENT())
+    fn to_sql(&self) -> Result<ToSqlOutput> {
+        Ok(ToSqlOutput::from(self.as_str()))
     }
 }
 
 impl ToSql for Vec<u8> {
-    unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
-        (&self[..]).bind_parameter(stmt, col)
+    fn to_sql(&self) -> Result<ToSqlOutput> {
+        Ok(ToSqlOutput::from(self.as_slice()))
+    }
+}
+
+impl ToSql for Value {
+    fn to_sql(&self) -> Result<ToSqlOutput> {
+        Ok(ToSqlOutput::from(self))
     }
 }
 
 impl<T: ToSql> ToSql for Option<T> {
-    unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
+    fn to_sql(&self) -> Result<ToSqlOutput> {
         match *self {
-            None => ffi::sqlite3_bind_null(stmt, col),
-            Some(ref t) => t.bind_parameter(stmt, col),
+            None => Ok(ToSqlOutput::from(Null)),
+            Some(ref t) => t.to_sql(),
         }
-    }
-}
-
-impl ToSql for Null {
-    unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
-        ffi::sqlite3_bind_null(stmt, col)
     }
 }
