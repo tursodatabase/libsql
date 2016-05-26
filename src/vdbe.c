@@ -4023,6 +4023,30 @@ case OP_Found: {        /* jump, in3 */
   break;
 }
 
+/* Opcode: SeekRowid P1 P2 P3 * *
+** Synopsis: intkey=r[P3]
+**
+** P1 is the index of a cursor open on an SQL table btree (with integer
+** keys).  If register P3 does not contain an integer or if P1 does not
+** contain a record with rowid P3 then jump immediately to P2.  
+** Or, if P2 is 0, raise an SQLITE_CORRUPT error. If P1 does contain
+** a record with rowid P3 then 
+** leave the cursor pointing at that record and fall through to the next
+** instruction.
+**
+** The OP_NotExists opcode performs the same operation, but with OP_NotExists
+** the P3 register must be guaranteed to contain an integer value.  With this
+** opcode, register P3 might not contain an integer.
+**
+** The OP_NotFound opcode performs the same operation on index btrees
+** (with arbitrary multi-value keys).
+**
+** This opcode leaves the cursor in a state where it cannot be advanced
+** in either direction.  In other words, the Next and Prev opcodes will
+** not work following this opcode.
+**
+** See also: Found, NotFound, NoConflict, SeekRowid
+*/
 /* Opcode: NotExists P1 P2 P3 * *
 ** Synopsis: intkey=r[P3]
 **
@@ -4033,6 +4057,10 @@ case OP_Found: {        /* jump, in3 */
 ** leave the cursor pointing at that record and fall through to the next
 ** instruction.
 **
+** The OP_SeekRowid opcode performs the same operation but also allows the
+** P3 register to contain a non-integer value, in which case the jump is
+** always taken.  This opcode requires that P3 always contain an integer.
+**
 ** The OP_NotFound opcode performs the same operation on index btrees
 ** (with arbitrary multi-value keys).
 **
@@ -4040,14 +4068,21 @@ case OP_Found: {        /* jump, in3 */
 ** in either direction.  In other words, the Next and Prev opcodes will
 ** not work following this opcode.
 **
-** See also: Found, NotFound, NoConflict
+** See also: Found, NotFound, NoConflict, SeekRowid
 */
-case OP_NotExists: {        /* jump, in3 */
+case OP_SeekRowid: {        /* jump, in3 */
   VdbeCursor *pC;
   BtCursor *pCrsr;
   int res;
   u64 iKey;
 
+  pIn3 = &aMem[pOp->p3];
+  if( (pIn3->flags & MEM_Int)==0 ){
+    applyAffinity(pIn3, SQLITE_AFF_NUMERIC, encoding);
+    if( (pIn3->flags & MEM_Int)==0 ) goto jump_to_p2;
+  }
+  /* Fall through into OP_NotExists */
+case OP_NotExists:          /* jump, in3 */
   pIn3 = &aMem[pOp->p3];
   assert( pIn3->flags & MEM_Int );
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
@@ -4250,10 +4285,12 @@ case OP_NewRowid: {           /* out2 */
 ** sqlite3_last_insert_rowid() function (otherwise it is unmodified).
 **
 ** If the OPFLAG_USESEEKRESULT flag of P5 is set and if the result of
-** the last seek operation (OP_NotExists) was a success, then this
+** the last seek operation (OP_NotExists or OP_SeekRowid) was a success,
+** then this
 ** operation will not attempt to find the appropriate row before doing
 ** the insert but will instead overwrite the row that the cursor is
-** currently pointing to.  Presumably, the prior OP_NotExists opcode
+** currently pointing to.  Presumably, the prior OP_NotExists or
+** OP_SeekRowid opcode
 ** has already positioned the cursor correctly.  This is an optimization
 ** that boosts performance by avoiding redundant seeks.
 **
@@ -4611,8 +4648,9 @@ case OP_RowData: {
   pCrsr = pC->uc.pCursor;
 
   /* The OP_RowKey and OP_RowData opcodes always follow OP_NotExists or
-  ** OP_Rewind/Op_Next with no intervening instructions that might invalidate
-  ** the cursor.  If this where not the case, on of the following assert()s
+  ** OP_SeekRowid or OP_Rewind/Op_Next with no intervening instructions
+  ** that might invalidate the cursor.
+  ** If this where not the case, on of the following assert()s
   ** would fail.  Should this ever change (because of changes in the code
   ** generator) then the fix would be to insert a call to
   ** sqlite3VdbeCursorMoveto().
