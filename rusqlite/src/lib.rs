@@ -888,7 +888,8 @@ impl<'conn> Statement<'conn> {
 
             #[cfg(feature = "blob")]
             ToSqlOutput::ZeroBlob(len) => {
-                return self.conn.decode_result(unsafe { ffi::sqlite3_bind_zeroblob(ptr, col, len) });
+                return self.conn
+                    .decode_result(unsafe { ffi::sqlite3_bind_zeroblob(ptr, col, len) });
             }
         };
         self.conn.decode_result(match value {
@@ -916,7 +917,11 @@ impl<'conn> Statement<'conn> {
                 } else if length == 0 {
                     ffi::sqlite3_bind_zeroblob(ptr, col, 0)
                 } else {
-                    ffi::sqlite3_bind_blob(ptr, col, b.as_ptr() as *const c_void, length as c_int, ffi::SQLITE_TRANSIENT())
+                    ffi::sqlite3_bind_blob(ptr,
+                                           col,
+                                           b.as_ptr() as *const c_void,
+                                           length as c_int,
+                                           ffi::SQLITE_TRANSIENT())
                 }
             },
         })
@@ -1153,7 +1158,8 @@ impl<'a> ValueRef<'a> {
             ffi::SQLITE_FLOAT => ValueRef::Real(ffi::sqlite3_column_double(raw, col)),
             ffi::SQLITE_TEXT => {
                 let text = ffi::sqlite3_column_text(raw, col);
-                assert!(!text.is_null(), "unexpected SQLITE_TEXT column type with NULL data");
+                assert!(!text.is_null(),
+                        "unexpected SQLITE_TEXT column type with NULL data");
                 let s = CStr::from_ptr(text as *const c_char);
 
                 // sqlite3_column_text returns UTF8 data, so our unwrap here should be fine.
@@ -1162,10 +1168,12 @@ impl<'a> ValueRef<'a> {
             }
             ffi::SQLITE_BLOB => {
                 let blob = ffi::sqlite3_column_blob(raw, col);
-                assert!(!blob.is_null(), "unexpected SQLITE_BLOB column type with NULL data");
+                assert!(!blob.is_null(),
+                        "unexpected SQLITE_BLOB column type with NULL data");
 
                 let len = ffi::sqlite3_column_bytes(raw, col);
-                assert!(len >= 0, "unexpected negative return from sqlite3_column_bytes");
+                assert!(len >= 0,
+                        "unexpected negative return from sqlite3_column_bytes");
 
                 ValueRef::Blob(from_raw_parts(blob as *const u8, len as usize))
             }

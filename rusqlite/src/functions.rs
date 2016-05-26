@@ -106,7 +106,10 @@ fn set_result<'a>(ctx: *mut sqlite3_context, result: &ToSqlOutput<'a>) {
             } else if length == 0 {
                 ffi::sqlite3_result_zeroblob(ctx, 0)
             } else {
-                ffi::sqlite3_result_blob(ctx, b.as_ptr() as *const c_void, length as c_int, ffi::SQLITE_TRANSIENT());
+                ffi::sqlite3_result_blob(ctx,
+                                         b.as_ptr() as *const c_void,
+                                         length as c_int,
+                                         ffi::SQLITE_TRANSIENT());
             }
         },
     }
@@ -139,7 +142,8 @@ impl<'a> ValueRef<'a> {
             ffi::SQLITE_FLOAT => ValueRef::Real(ffi::sqlite3_value_double(value)),
             ffi::SQLITE_TEXT => {
                 let text = ffi::sqlite3_value_text(value);
-                assert!(!text.is_null(), "unexpected SQLITE_TEXT value type with NULL data");
+                assert!(!text.is_null(),
+                        "unexpected SQLITE_TEXT value type with NULL data");
                 let s = CStr::from_ptr(text as *const c_char);
 
                 // sqlite3_value_text returns UTF8 data, so our unwrap here should be fine.
@@ -148,10 +152,12 @@ impl<'a> ValueRef<'a> {
             }
             ffi::SQLITE_BLOB => {
                 let blob = ffi::sqlite3_value_blob(value);
-                assert!(!blob.is_null(), "unexpected SQLITE_BLOB value type with NULL data");
+                assert!(!blob.is_null(),
+                        "unexpected SQLITE_BLOB value type with NULL data");
 
                 let len = ffi::sqlite3_value_bytes(value);
-                assert!(len >= 0, "unexpected negative return from sqlite3_value_bytes");
+                assert!(len >= 0,
+                        "unexpected negative return from sqlite3_value_bytes");
 
                 ValueRef::Blob(from_raw_parts(blob as *const u8, len as usize))
             }

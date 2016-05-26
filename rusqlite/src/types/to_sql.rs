@@ -14,7 +14,9 @@ pub enum ToSqlOutput<'a> {
     ZeroBlob(i32),
 }
 
-impl<'a, T: ?Sized> From<&'a T> for ToSqlOutput<'a> where &'a T: Into<ValueRef<'a>> {
+impl<'a, T: ?Sized> From<&'a T> for ToSqlOutput<'a>
+    where &'a T: Into<ValueRef<'a>>
+{
     fn from(t: &'a T) -> Self {
         ToSqlOutput::Borrowed(t.into())
     }
@@ -59,7 +61,9 @@ to_sql_self!(i32);
 to_sql_self!(i64);
 to_sql_self!(f64);
 
-impl<'a, T: ?Sized> ToSql for &'a T where &'a T: Into<ToSqlOutput<'a>> {
+impl<'a, T: ?Sized> ToSql for &'a T
+    where &'a T: Into<ToSqlOutput<'a>>
+{
     fn to_sql(&self) -> Result<ToSqlOutput> {
         Ok(ToSqlOutput::from((*self).into()))
     }
