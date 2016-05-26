@@ -1,10 +1,15 @@
 use super::{Null, Value, ValueRef};
 use ::Result;
 
+/// ToSqlOutput represents the possible output types for implementors of the ToSql trait.
 pub enum ToSqlOutput<'a> {
+    /// A borrowed SQLite-representable value.
     Borrowed(ValueRef<'a>),
+
+    /// An owned SQLite-representable value.
     Owned(Value),
 
+    /// A BLOB of the given length that is filled with zeroes.
     #[cfg(feature = "blob")]
     ZeroBlob(i32),
 }
