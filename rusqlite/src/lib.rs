@@ -105,6 +105,7 @@ mod raw_statement;
 const STATEMENT_CACHE_DEFAULT_CAPACITY: usize = 16;
 
 /// Old name for `Result`. `SqliteResult` is deprecated.
+#[deprecated]
 pub type SqliteResult<T> = Result<T>;
 
 /// A typedef of the result returned by many methods.
@@ -151,6 +152,7 @@ impl<'a> DatabaseName<'a> {
 }
 
 /// Old name for `Connection`. `SqliteConnection` is deprecated.
+#[deprecated]
 pub type SqliteConnection = Connection;
 
 /// A connection to a SQLite database.
@@ -367,6 +369,7 @@ impl Connection {
     ///
     /// This method should be considered deprecated. Use `query_row` instead, which now
     /// does exactly the same thing.
+    #[deprecated]
     pub fn query_row_safe<T, F>(&self, sql: &str, params: &[&ToSql], f: F) -> Result<T>
         where F: FnOnce(Row) -> T
     {
@@ -507,6 +510,7 @@ struct InnerConnection {
 }
 
 /// Old name for `OpenFlags`. `SqliteOpenFlags` is deprecated.
+#[deprecated]
 pub type SqliteOpenFlags = OpenFlags;
 
 bitflags! {
@@ -678,6 +682,7 @@ impl Drop for InnerConnection {
 }
 
 /// Old name for `Statement`. `SqliteStatement` is deprecated.
+#[deprecated]
 pub type SqliteStatement<'conn> = Statement<'conn>;
 
 /// A prepared statement.
@@ -967,6 +972,7 @@ impl<'stmt, T, E, F> Iterator for AndThenRows<'stmt, F>
 }
 
 /// Old name for `Rows`. `SqliteRows` is deprecated.
+#[deprecated]
 pub type SqliteRows<'stmt> = Rows<'stmt>;
 
 /// An handle for the resulting rows of a query.
@@ -1031,6 +1037,7 @@ impl<'stmt> Drop for Rows<'stmt> {
 }
 
 /// Old name for `Row`. `SqliteRow` is deprecated.
+#[deprecated]
 pub type SqliteRow<'a, 'stmt> = Row<'a, 'stmt>;
 
 /// A single result row of a query.

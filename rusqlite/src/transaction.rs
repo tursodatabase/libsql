@@ -2,6 +2,7 @@ use std::ops::Deref;
 use {Result, Connection};
 
 /// Old name for `TransactionBehavior`. `SqliteTransactionBehavior` is deprecated.
+#[deprecated]
 pub type SqliteTransactionBehavior = TransactionBehavior;
 
 /// Options for transaction behavior. See [BEGIN
@@ -28,6 +29,7 @@ pub enum DropBehavior {
 }
 
 /// Old name for `Transaction`. `SqliteTransaction` is deprecated.
+#[deprecated]
 pub type SqliteTransaction<'conn> = Transaction<'conn>;
 
 /// Represents a transaction on a database connection.

@@ -1,6 +1,7 @@
 use {Result, Connection};
 
 /// Old name for `LoadExtensionGuard`. `SqliteLoadExtensionGuard` is deprecated.
+#[deprecated]
 pub type SqliteLoadExtensionGuard<'conn> = LoadExtensionGuard<'conn>;
 
 /// RAII guard temporarily enabling SQLite extensions to be loaded.
