@@ -52,8 +52,10 @@
 
 pub use self::from_sql::FromSql;
 pub use self::to_sql::{ToSql, ToSqlOutput};
+pub use self::value::Value;
 pub use self::value_ref::ValueRef;
 
+mod value;
 mod value_ref;
 mod from_sql;
 mod to_sql;
@@ -81,60 +83,6 @@ mod serde_json;
 /// ```
 #[derive(Copy,Clone)]
 pub struct Null;
-
-/// Owning [dynamic type value](http://sqlite.org/datatype3.html). Value's type is typically
-/// dictated by SQLite (not by the caller).
-///
-/// See [`ValueRef`](enum.ValueRef.html) for a non-owning dynamic type value.
-#[derive(Clone,Debug,PartialEq)]
-pub enum Value {
-    /// The value is a `NULL` value.
-    Null,
-    /// The value is a signed integer.
-    Integer(i64),
-    /// The value is a floating point number.
-    Real(f64),
-    /// The value is a text string.
-    Text(String),
-    /// The value is a blob of data
-    Blob(Vec<u8>),
-}
-
-impl From<Null> for Value {
-    fn from(_: Null) -> Value {
-        Value::Null
-    }
-}
-
-impl From<i32> for Value {
-    fn from(i: i32) -> Value {
-        Value::Integer(i as i64)
-    }
-}
-
-impl From<i64> for Value {
-    fn from(i: i64) -> Value {
-        Value::Integer(i)
-    }
-}
-
-impl From<f64> for Value {
-    fn from(f: f64) -> Value {
-        Value::Real(f)
-    }
-}
-
-impl From<String> for Value {
-    fn from(s: String) -> Value {
-        Value::Text(s)
-    }
-}
-
-impl From<Vec<u8>> for Value {
-    fn from(v: Vec<u8>) -> Value {
-        Value::Blob(v)
-    }
-}
 
 #[cfg(test)]
 #[cfg_attr(feature="clippy", allow(similar_names))]
