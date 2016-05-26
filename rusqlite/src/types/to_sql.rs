@@ -49,6 +49,7 @@ macro_rules! to_sql_self(
 );
 
 to_sql_self!(Null);
+to_sql_self!(bool);
 to_sql_self!(i32);
 to_sql_self!(i64);
 to_sql_self!(f64);

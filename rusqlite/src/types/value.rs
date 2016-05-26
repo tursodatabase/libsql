@@ -24,6 +24,12 @@ impl From<Null> for Value {
     }
 }
 
+impl From<bool> for Value {
+    fn from(i: bool) -> Value {
+        Value::Integer(i as i64)
+    }
+}
+
 impl From<i32> for Value {
     fn from(i: i32) -> Value {
         Value::Integer(i as i64)
