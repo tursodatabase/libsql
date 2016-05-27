@@ -1,5 +1,5 @@
-C Fix\sLemon\sso\sthat\sit\sactually\sworks\swith\s-DYYSTACKDEPTH=0.
-D 2016-05-27T04:10:47.610
+C Improvements\sto\sWHERE-clause\sdebug\stracing.\s\sShow\sTK_MATCH\sexpressions\sand\nshow\smore\sdetails\son\sWhereTerm\straces.
+D 2016-05-27T12:30:20.162
 F Makefile.in f59e0763ff448719fc1bd25513882b0567286317
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 306d73e854b1a92ea06e5d1e637faa5c44de53c7
@@ -439,7 +439,7 @@ F src/test_windirent.h b12055cab6227f7be10f5c19296f67c60cc5e2a5
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 3b29883b0ce4a6c6f643965b66b5ca6613178e59
-F src/treeview.c e4b41a37530a191579d3c53142cc44ee2eb99373
+F src/treeview.c c56d6ddbed564efda746236b35bcbb8238daac4b
 F src/trigger.c e14840ee0c3e549e758ec9bf3e4146e166002280
 F src/update.c 4f05ea8cddfa367d045e03589756c02199e8f9bd
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
@@ -459,8 +459,8 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 02eeecc265f6ffd0597378f5d8ae9070b62a406a
 F src/wal.h 2f7c831cf3b071fa548bf2d5cac640846a7ff19c
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
-F src/where.c 0e54a03d11d4e99ad25528f42ff4c9a6fa7a23da
-F src/whereInt.h 6e18240be400bef8e4dbafea605251707c5dbf49
+F src/where.c b9f5b0ddb14c3827e70b5379e659cf4cfd524c4d
+F src/whereInt.h e5b939701a7ceffc5a3a8188a37f9746416ebcd0
 F src/wherecode.c ba71a4e4bada29aa9842200e6299714bf18c812c
 F src/whereexpr.c eacc0e60d029a082b4fc0cc42ea98544add1319e
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1495,7 +1495,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 28d439f816d2fa5263e1c4ddecf3bf1ac2dd6549
-R 8847199d288118b0d192a3b11dedaea9
+P a9be4c2d56d08fea2cd1aab20b19092a45ef7620
+R 2beba98fee0a4944905820065cc75fbf
 U drh
-Z bc76551811bb8ec7ccdce96ef01b993f
+Z 8d7a3e9d02c8c2b09e27f05110ad65d3

@@ -437,6 +437,9 @@ struct WhereInfo {
 ** where.c:
 */
 Bitmask sqlite3WhereGetMask(WhereMaskSet*,int);
+#ifdef WHERETRACE_ENABLED
+void sqlite3WhereClausePrint(WhereClause *pWC);
+#endif
 WhereTerm *sqlite3WhereFindTerm(
   WhereClause *pWC,     /* The WHERE clause to be searched */
   int iCur,             /* Cursor number of LHS */
