@@ -582,7 +582,7 @@ static void yy_shift(
 #else
   if( yypParser->yytos>=&yypParser->yystack[yypParser->yystksz] ){
     yyGrowStack(yypParser);
-    if( yypParser->yytos>=&yypParser->yystach[yypParser->yystksz] ){
+    if( yypParser->yytos>=&yypParser->yystack[yypParser->yystksz] ){
       yyStackOverflow(yypParser);
       return;
     }
