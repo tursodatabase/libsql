@@ -45,6 +45,13 @@ static const char * const azCompileOpt[] = {
 #if SQLITE_CHECK_PAGES
   "CHECK_PAGES",
 #endif
+#if defined(_MSC_VER)
+  "COMPILER=msvc-" CTIMEOPT_VAL(_MSC_VER),
+#elif defined(__GNUC__) && defined(__VERSION__)
+  "COMPILER=gcc-" CTIMEOPT_VAL(__VERSION__),
+#elif defined(__clang__) && defined(__clang_version__)
+  "COMPILER=clang-" CTIMEOPT_VAL(__clang_version__),
+#endif
 #if SQLITE_COVERAGE_TEST
   "COVERAGE_TEST",
 #endif

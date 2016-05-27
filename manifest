@@ -1,5 +1,5 @@
-C Improvements\sto\sWHERE-clause\sdebug\stracing.\s\sShow\sTK_MATCH\sexpressions\sand\nshow\smore\sdetails\son\sWhereTerm\straces.
-D 2016-05-27T12:30:20.162
+C Add\sbasic\scompiler\sinformation\sto\sthe\sresults\sof\s'PRAGMA\scompile_options'.
+D 2016-05-27T18:09:45.039
 F Makefile.in f59e0763ff448719fc1bd25513882b0567286317
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 306d73e854b1a92ea06e5d1e637faa5c44de53c7
@@ -329,7 +329,7 @@ F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
 F src/build.c 785fa789319d93c6ae20efbd01d4da9ce8f8a793
 F src/callback.c 2e76147783386374bf01b227f752c81ec872d730
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
-F src/ctime.c 60e135af364d777a9ab41c97e5e89cd224da6198
+F src/ctime.c dc03a31584045e0d7ee62659416c557bc35c679e
 F src/date.c 1cc9fb516ec9932c6fd4d2a0d2f8bc4480145c39
 F src/dbstat.c c845548d4346e606e2f2b7d2e714ace2b8a7dd1b
 F src/delete.c 4aba4214a377ce8ddde2d2e609777bcc8235200f
@@ -1495,7 +1495,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a9be4c2d56d08fea2cd1aab20b19092a45ef7620
-R 2beba98fee0a4944905820065cc75fbf
-U drh
-Z 8d7a3e9d02c8c2b09e27f05110ad65d3
+P 71087c12bc75a82f5d1051600a442ef6efc5e899
+R 5414a76b2e5839d41b19cee14a1187ef
+T *branch * ctimeCompiler
+T *sym-ctimeCompiler *
+T -sym-trunk *
+U mistachkin
+Z 2c1781ffb1db3ba053f96360f37bbb14
