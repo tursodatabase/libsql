@@ -214,6 +214,7 @@ struct yyParser {
 #if YYSTACKDEPTH<=0
   int yystksz;                  /* Current side of the stack */
   yyStackEntry *yystack;        /* The parser's stack */
+  yyStackEntry yystk0;          /* First stack entry */
 #else
   yyStackEntry yystack[YYSTACKDEPTH];  /* The parser's stack */
 #endif
@@ -271,27 +272,34 @@ static const char *const yyRuleName[] = {
 
 #if YYSTACKDEPTH<=0
 /*
-** Try to increase the size of the parser stack.
+** Try to increase the size of the parser stack.  Return the number
+** of errors.  Return 0 on success.
 */
-static void yyGrowStack(yyParser *p){
+static int yyGrowStack(yyParser *p){
   int newSize;
   int idx;
   yyStackEntry *pNew;
 
   newSize = p->yystksz*2 + 100;
   idx = p->yytos ? (int)(p->yytos - p->yystack) : 0;
-  pNew = realloc(p->yystack, newSize*sizeof(pNew[0]));
+  if( p->yystack==&p->yystk0 ){
+    pNew = malloc(newSize*sizeof(pNew[0]));
+    if( pNew ) pNew[0] = p->yystk0;
+  }else{
+    pNew = realloc(p->yystack, newSize*sizeof(pNew[0]));
+  }
   if( pNew ){
     p->yystack = pNew;
     p->yytos = &p->yystack[idx];
-    p->yystksz = newSize;
 #ifndef NDEBUG
     if( yyTraceFILE ){
-      fprintf(yyTraceFILE,"%sStack grows to %d entries!\n",
-              yyTracePrompt, p->yystksz);
+      fprintf(yyTraceFILE,"%sStack grows from %d to %d entries.\n",
+              yyTracePrompt, p->yystksz, newSize);
     }
 #endif
+    p->yystksz = newSize;
   }
+  return pNew==0; 
 }
 #endif
 
@@ -327,7 +335,10 @@ void *ParseAlloc(void *(*mallocProc)(YYMALLOCARGTYPE)){
     pParser->yytos = NULL;
     pParser->yystack = NULL;
     pParser->yystksz = 0;
-    yyGrowStack(pParser);
+    if( yyGrowStack(pParser) ){
+      pParser->yystack = &pParser->yystk0;
+      pParser->yystksz = 1;
+    }
 #endif
     pParser->yytos = pParser->yystack;
     pParser->yystack[0].stateno = 0;
@@ -405,7 +416,7 @@ void ParseFree(
 #endif
   while( pParser->yytos>pParser->yystack ) yy_pop_parser_stack(pParser);
 #if YYSTACKDEPTH<=0
-  free(pParser->yystack);
+  if( pParser->yystack!=&pParser->yystk0 ) free(pParser->yystack);
 #endif
   (*freeProc)((void*)pParser);
 }
@@ -581,8 +592,7 @@ static void yy_shift(
   }
 #else
   if( yypParser->yytos>=&yypParser->yystack[yypParser->yystksz] ){
-    yyGrowStack(yypParser);
-    if( yypParser->yytos>=&yypParser->yystack[yypParser->yystksz] ){
+    if( yyGrowStack(yypParser) ){
       yyStackOverflow(yypParser);
       return;
     }
@@ -646,11 +656,11 @@ static void yy_reduce(
     }
 #else
     if( yypParser->yytos>=&yypParser->yystack[yypParser->yystksz-1] ){
-      yyGrowStack(yypParser);
-      if( yypParser->yytos>=&yypParser->yystack[yypParser->yystksz-1] ){
+      if( yyGrowStack(yypParser) ){
         yyStackOverflow(yypParser);
         return;
       }
+      yymsp = yypParser->yytos;
     }
 #endif
   }

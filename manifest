@@ -1,5 +1,5 @@
-C Fix\sthe\sLemon-generated\sparser\sso\sthat\sit\scompiles\swith\s-DYYSTACKDEPTH=0.\nIt\sdoes\scompile\snow,\sbut\sthere\sare\ssubtle\sissues\sstill.
-D 2016-05-27T01:07:18.565
+C Fix\sLemon\sso\sthat\sit\sactually\sworks\swith\s-DYYSTACKDEPTH=0.
+D 2016-05-27T04:10:47.610
 F Makefile.in f59e0763ff448719fc1bd25513882b0567286317
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 306d73e854b1a92ea06e5d1e637faa5c44de53c7
@@ -929,7 +929,7 @@ F test/misc1.test 6430dabfb4b4fa480633590118964201f94d3ccc
 F test/misc2.test 00d7de54eda90e237fc9a38b9e5ccc769ebf6d4d
 F test/misc3.test cf3dda47d5dda3e53fc5804a100d3c82be736c9d
 F test/misc4.test 0d8be3466adf123a7791a66ba2bc8e8d229e87f3
-F test/misc5.test f96428ea95b3820aafc6f1c50cf48a09e4597ee1
+F test/misc5.test fff0f75e834bc09a39f6079320dd8c37de956f4f
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test edd0b63e2ee29a256900b0514f6fff27e19e9bb2
 F test/misc8.test 21ac9d35a5e110279ae9e1588b8914f54de1c60b
@@ -1423,7 +1423,7 @@ F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/lemon.c 09a96bed19955697a5e20c49ad863ec2005815a2
-F tool/lempar.c 7689ddc408a54f9c23e7f9e17e597752b71fa537
+F tool/lempar.c f06b7e98a6b7efb404375b6f4a0c71c85faa1512
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
 F tool/logest.c 11346aa019e2e77a00902aa7d0cabd27bd2e8cca
@@ -1495,7 +1495,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ffe80a1bfa014943a614fc6993c1749b9bfec4c1
-R 8a7f49776364e838d9d2230beef644f3
+P 28d439f816d2fa5263e1c4ddecf3bf1ac2dd6549
+R 8847199d288118b0d192a3b11dedaea9
 U drh
-Z 81291c1e83b5b57f970177cd78c139d0
+Z bc76551811bb8ec7ccdce96ef01b993f
