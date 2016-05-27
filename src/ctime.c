@@ -50,7 +50,7 @@ static const char * const azCompileOpt[] = {
 #elif defined(__GNUC__) && defined(__VERSION__)
   "COMPILER=gcc-" __VERSION__,
 #elif defined(__clang__) && defined(__clang_version__)
-  "COMPILER=clang-" CTIMEOPT_VAL(__clang_version__),
+  "COMPILER=clang-" __clang_version__,
 #endif
 #if SQLITE_COVERAGE_TEST
   "COVERAGE_TEST",
