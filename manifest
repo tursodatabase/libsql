@@ -1,5 +1,5 @@
-C Enhance\s"PRAGMA\scompile_options"\sso\sthat\sit\sshows\sthe\sversion\sof\sthe\scompiler\nused\sto\sgenerate\sthe\sexecutable,\sfor\scommon\scompilers.
-D 2016-05-28T15:22:33.400
+C Enhance\sthe\ssqlite3_load_extension()\sinterface\sto\spermit\sextensions\sto\nreturn\sSQLITE_OK_LOAD_PERMANENTLY\swhich\swill\sprevent\sthe\sextensions\sfrom\nunloading\swhen\sthe\sdatabase\sconnection\scloses.
+D 2016-05-28T17:23:08.946
 F Makefile.in f59e0763ff448719fc1bd25513882b0567286317
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 306d73e854b1a92ea06e5d1e637faa5c44de53c7
@@ -221,7 +221,7 @@ F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c bf1b922c2750698e9a3d4c50cce6974adb7e93be
 F ext/misc/totype.c 4a167594e791abeed95e0a8db028822b5e8fe512
 F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
-F ext/misc/vfsstat.c 318bb69270291bfff3d5bb58b46397ed7b507589
+F ext/misc/vfsstat.c 9b41dd28f523f56f688529db12b9a6895a3e6896
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
 F ext/rbu/rbu.c b2c0b5e6ae1a89affc0edfc127ebfa5f637a0ce4
@@ -344,7 +344,7 @@ F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
 F src/insert.c 8f4e9fcbd8e95e85f15647ba8b413b18d556ec2b
 F src/legacy.c 75d3023be8f0d2b99d60f905090341a03358c58e
-F src/loadext.c 8b3a73f0624c5f7cadbd5cb89940783bee1d39a6
+F src/loadext.c 4237fd37ca589f1d90b3ea925dd9df20da8e0c84
 F src/main.c 405d13e3a4f7c5add9fb27702ae70ed0a6e32cca
 F src/malloc.c 1443d1ad95d67c21d77af7ae3f44678252f0efec
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
@@ -382,7 +382,7 @@ F src/resolve.c cca3aa77b95706df5d635a2141a4d1de60ae6598
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c a0c4abf54bc6bd3a9c77a36ef3d1676045706cb2
 F src/shell.c 14ff7f660530a52b117d110ba3390b7b2eb719b6
-F src/sqlite.h.in 9984129d86243424b765fcb3f147c697bd20bb54
+F src/sqlite.h.in 5f8113dbec74c6c093ead9930afb8c9fbd9f643d
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 98f72cbfe00169c39089115427d06ea05fe4b4a2
 F src/sqliteInt.h 09621b4b7dba808b24262c2480ea75b045001853
@@ -1496,8 +1496,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cbf72b04bb0650b62336d86b22ef59315ccdc183 3f710bc3617691fa7432a24f1410d4651ca181b6
-R b8a29334efa74a5834e7230ac30a1859
-T +closed 3f710bc3617691fa7432a24f1410d4651ca181b6
+P 6a0f200957ea294a2ae06c0b039a10ac838925f2
+R 6ce9b533604a3edd0071ae2a75774cc3
+T *branch * load-permanently
+T *sym-load-permanently *
+T -sym-trunk *
 U drh
-Z e6aad793d53e0a92b777c64d70afe184
+Z 6a4e05708813f8abe1e82b227d71ac00
