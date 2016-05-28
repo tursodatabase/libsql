@@ -437,7 +437,7 @@ static int sqlite3LoadExtension(
   const char *zProc,    /* Entry point.  Use "sqlite3_extension_init" if 0 */
   char **pzErrMsg       /* Put error message here if not 0 */
 ){
-  sqlite3_vfs *pVfs = db->pVfs;
+  sqlite3_vfs *pVfs = db ? db->pVfs : sqlite3_vfs_find(0);
   void *handle;
   int (*xInit)(sqlite3*,char**,const sqlite3_api_routines*);
   char *zErrmsg = 0;
@@ -468,7 +468,7 @@ static int sqlite3LoadExtension(
   ** sqlite3_db_config(db, SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION, 1, 0)
   ** to turn on extension loading.
   */
-  if( (db->flags & SQLITE_LoadExtension)==0 ){
+  if( db && (db->flags & SQLITE_LoadExtension)==0 ){
     if( pzErrMsg ){
       *pzErrMsg = sqlite3_mprintf("not authorized");
     }
@@ -558,17 +558,18 @@ static int sqlite3LoadExtension(
   }
 
   /* Append the new shared library handle to the db->aExtension array. */
-  aHandle = sqlite3DbMallocZero(db, sizeof(handle)*(db->nExtension+1));
-  if( aHandle==0 ){
-    return SQLITE_NOMEM_BKPT;
+  if( db ){
+    aHandle = sqlite3DbMallocZero(db, sizeof(handle)*(db->nExtension+1));
+    if( aHandle==0 ){
+      return SQLITE_NOMEM_BKPT;
+    }
+    if( db->nExtension>0 ){
+      memcpy(aHandle, db->aExtension, sizeof(handle)*db->nExtension);
+    }
+    sqlite3DbFree(db, db->aExtension);
+    db->aExtension = aHandle;
+    db->aExtension[db->nExtension++] = handle;
   }
-  if( db->nExtension>0 ){
-    memcpy(aHandle, db->aExtension, sizeof(handle)*db->nExtension);
-  }
-  sqlite3DbFree(db, db->aExtension);
-  db->aExtension = aHandle;
-
-  db->aExtension[db->nExtension++] = handle;
   return SQLITE_OK;
 }
 int sqlite3_load_extension(
@@ -578,6 +579,7 @@ int sqlite3_load_extension(
   char **pzErrMsg       /* Put error message here if not 0 */
 ){
   int rc;
+  if( db==0 ) return sqlite3LoadExtension(0, zFile, zProc, pzErrMsg);
   sqlite3_mutex_enter(db->mutex);
   rc = sqlite3LoadExtension(db, zFile, zProc, pzErrMsg);
   rc = sqlite3ApiExit(db, rc);

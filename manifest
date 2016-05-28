@@ -1,5 +1,5 @@
-C Add\sthe\svfsstat.c\sloadable\sextension\s-\sa\sVFS\sshim\sthat\smeasures\sthe\samount\nof\sI/O,\sand\san\seponymous\svirtual\stable\sthat\sis\sused\sto\sextract\sand\sview\nthe\smeasurements.
-D 2016-05-28T14:53:48.676
+C Enhance\sthe\ssqlite3_load_extension()\sAPI\sso\sthat\sthe\sfirst\sparameter\s(the\s"db"\nparameter)\scan\sbe\sNULL.\s\sAn\sextension\sthat\sis\snot\sassociated\swith\sany\s\ndatabase\sconnection\sremains\sloaded\sfor\sthe\slife\sof\sthe\sprocess.
+D 2016-05-28T15:03:06.118
 F Makefile.in f59e0763ff448719fc1bd25513882b0567286317
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 306d73e854b1a92ea06e5d1e637faa5c44de53c7
@@ -344,7 +344,7 @@ F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
 F src/insert.c 8f4e9fcbd8e95e85f15647ba8b413b18d556ec2b
 F src/legacy.c 75d3023be8f0d2b99d60f905090341a03358c58e
-F src/loadext.c 8b3a73f0624c5f7cadbd5cb89940783bee1d39a6
+F src/loadext.c f2316d5ccd905d86260392fb8d2b5fd67335ed77
 F src/main.c 405d13e3a4f7c5add9fb27702ae70ed0a6e32cca
 F src/malloc.c 1443d1ad95d67c21d77af7ae3f44678252f0efec
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
@@ -381,7 +381,7 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c cca3aa77b95706df5d635a2141a4d1de60ae6598
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c a0c4abf54bc6bd3a9c77a36ef3d1676045706cb2
-F src/shell.c 14ff7f660530a52b117d110ba3390b7b2eb719b6
+F src/shell.c c80b8d562b66d27172b0e98333f2f27876d8b4aa
 F src/sqlite.h.in 9984129d86243424b765fcb3f147c697bd20bb54
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 98f72cbfe00169c39089115427d06ea05fe4b4a2
@@ -1496,7 +1496,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 71087c12bc75a82f5d1051600a442ef6efc5e899
-R 3d452eed48a36d85ceafabad1e13a1b0
+P 0987487dd4ebfcf66ddeec8ceca47775216a0887
+R e12f783957b755fbf23064ac37b7305b
+T *branch * persistent-extensions
+T *sym-persistent-extensions *
+T -sym-trunk *
 U drh
-Z 226f41fb99617919dc67fcf97f9a5431
+Z 7c91f0eea3a925fa49de1662b44330b3

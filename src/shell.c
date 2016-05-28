@@ -3755,7 +3755,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
     zFile = azArg[1];
     zProc = nArg>=3 ? azArg[2] : 0;
-    open_db(p, 0);
+    /*    open_db(p, 0); */
     rc = sqlite3_load_extension(p->db, zFile, zProc, &zErrMsg);
     if( rc!=SQLITE_OK ){
       utf8_printf(stderr, "Error: %s\n", zErrMsg);
