@@ -1,5 +1,5 @@
-C Remove\san\sunnecessary\smalloc\sfrom\sthe\svfsstat\sextension.
-D 2016-05-28T17:45:15.304
+C Experimental\schange\sto\sallow\svirtual\stables\sto\stake\sadvantage\sof\sLIKE,\sREGEXP\sand\sGLOB\sterms\sthat\sare\spart\sof\sOR\sexpressions\swithin\sWHERE\sclauses.
+D 2016-05-28T18:53:55.546
 F Makefile.in f59e0763ff448719fc1bd25513882b0567286317
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 306d73e854b1a92ea06e5d1e637faa5c44de53c7
@@ -463,7 +463,7 @@ F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
 F src/where.c b9f5b0ddb14c3827e70b5379e659cf4cfd524c4d
 F src/whereInt.h e5b939701a7ceffc5a3a8188a37f9746416ebcd0
 F src/wherecode.c ba71a4e4bada29aa9842200e6299714bf18c812c
-F src/whereexpr.c eacc0e60d029a082b4fc0cc42ea98544add1319e
+F src/whereexpr.c c32d47085dbaca0b8fd013210f56693c7d220d48
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -526,6 +526,7 @@ F test/badutf2.test f5bc7f2d280670ecd79b9cf4f0f1760c607fe51f
 F test/bc_common.tcl b5e42d80305be95697e6370e015af571e5333a1c
 F test/bestindex1.test 0cf1bd2d7b97d3a3a8c10736125274f64765c4ee
 F test/bestindex2.test 4a06b8922ab2fd09434870da8d1cdf525aaf7060
+F test/bestindex3.test b80da904d23581d233a7ceee7d6bbad2b23a8133
 F test/between.test 34d375fb5ce1ae283ffe82b6b233e9f38e84fc6c
 F test/bigfile.test aa74f4e5db51c8e54a1d9de9fa65d01d1eb20b59
 F test/bigfile2.test 1b489a3a39ae90c7f027b79110d6b4e1dbc71bfc
@@ -1496,7 +1497,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6a0f200957ea294a2ae06c0b039a10ac838925f2
-R 829320b2f280fbfaceb9a39efce4a03a
-U drh
-Z aae9a2c9c9808c4a6dec915905c542ff
+P 24f258c2392290168cf34622b89a4a406a3dd853
+R 983129af8245564f55ecb1fc34584518
+T *branch * vtab-experimental
+T *sym-vtab-experimental *
+T -sym-trunk *
+U dan
+Z 81d42b1213db363a99013be9cf2ad43d
