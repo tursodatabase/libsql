@@ -1,5 +1,5 @@
-C Enhance\s"PRAGMA\scompile_options"\sso\sthat\sit\sshows\sthe\sversion\sof\sthe\scompiler\nused\sto\sgenerate\sthe\sexecutable,\sfor\scommon\scompilers.
-D 2016-05-28T15:22:33.400
+C Remove\san\sunnecessary\smalloc\sfrom\sthe\svfsstat\sextension.
+D 2016-05-28T17:45:15.304
 F Makefile.in f59e0763ff448719fc1bd25513882b0567286317
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 306d73e854b1a92ea06e5d1e637faa5c44de53c7
@@ -221,7 +221,7 @@ F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c bf1b922c2750698e9a3d4c50cce6974adb7e93be
 F ext/misc/totype.c 4a167594e791abeed95e0a8db028822b5e8fe512
 F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
-F ext/misc/vfsstat.c 318bb69270291bfff3d5bb58b46397ed7b507589
+F ext/misc/vfsstat.c 20f206b6d38911dfac4b4db88171204d0373f7df
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
 F ext/rbu/rbu.c b2c0b5e6ae1a89affc0edfc127ebfa5f637a0ce4
@@ -1496,8 +1496,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cbf72b04bb0650b62336d86b22ef59315ccdc183 3f710bc3617691fa7432a24f1410d4651ca181b6
-R b8a29334efa74a5834e7230ac30a1859
-T +closed 3f710bc3617691fa7432a24f1410d4651ca181b6
+P 6a0f200957ea294a2ae06c0b039a10ac838925f2
+R 829320b2f280fbfaceb9a39efce4a03a
 U drh
-Z e6aad793d53e0a92b777c64d70afe184
+Z aae9a2c9c9808c4a6dec915905c542ff

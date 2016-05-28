@@ -804,14 +804,10 @@ int sqlite3_vfsstat_init(
   const sqlite3_api_routines *pApi
 ){
   int rc = SQLITE_OK;
-  VStatVfs *pNew;
   SQLITE_EXTENSION_INIT2(pApi);
-  pNew = sqlite3_malloc(sizeof(vstat_vfs));
-  if( pNew==0 ) return SQLITE_NOMEM;
-  memcpy(&pNew->base, &vstat_vfs, sizeof(vstat_vfs));
-  pNew->pVfs = sqlite3_vfs_find(0);
-  pNew->base.szOsFile = sizeof(VStatFile) + pNew->pVfs->szOsFile;
-  rc = sqlite3_vfs_register(&pNew->base, 1);
+  vstat_vfs.pVfs = sqlite3_vfs_find(0);
+  vstat_vfs.base.szOsFile = sizeof(VStatFile) + pNew->pVfs->szOsFile;
+  rc = sqlite3_vfs_register(&vstat_vfs.base, 1);
   if( rc==SQLITE_OK ){
     rc = sqlite3_auto_extension((void(*)(void))vstatRegister);
   }
