@@ -1,5 +1,5 @@
-C Check\sfor\sClang\sbefore\sGCC.
-D 2016-05-27T21:13:43.995
+C Clang\scan\sdefine\s_MSC_VER\sin\ssome\scircumstances;\stherefore,\scheck\sfor\sClang\sfirst.
+D 2016-05-28T00:13:21.036
 F Makefile.in f59e0763ff448719fc1bd25513882b0567286317
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 306d73e854b1a92ea06e5d1e637faa5c44de53c7
@@ -329,7 +329,7 @@ F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
 F src/build.c 785fa789319d93c6ae20efbd01d4da9ce8f8a793
 F src/callback.c 2e76147783386374bf01b227f752c81ec872d730
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
-F src/ctime.c 89ae9d9959010022a14bb36dea1b360da760b092
+F src/ctime.c 999a828425b35b8092a8cde25690e71c20906344
 F src/date.c 1cc9fb516ec9932c6fd4d2a0d2f8bc4480145c39
 F src/dbstat.c c845548d4346e606e2f2b7d2e714ace2b8a7dd1b
 F src/delete.c 4aba4214a377ce8ddde2d2e609777bcc8235200f
@@ -1495,7 +1495,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5c966f200018043f5258eb03e043bb25c7766131
-R f374868f610dd3d0429b813be905b071
+P 7c2cd4b05f88a759bdf72d3a249db5984fd7105d
+R 49f2ff6c03dd42bcf8b96859a75667c2
 U mistachkin
-Z 313307f37a580f7772d82428c7123b20
+Z 7fd0da57a78dfad092dddeef636c580c
