@@ -1,5 +1,5 @@
-C Add\sthe\svfsstat.c\sloadable\sextension\s-\sa\sVFS\sshim\sthat\smeasures\sthe\samount\nof\sI/O,\sand\san\seponymous\svirtual\stable\sthat\sis\sused\sto\sextract\sand\sview\nthe\smeasurements.
-D 2016-05-28T14:53:48.676
+C Update\sthe\samalgamation-tarball\sconfigure\sscript\sso\sthat\sit\scan\suse\sheader\sfile\s"readline/readline.h"\swith\slibrary\sfile\s"libedit".
+D 2016-05-28T15:09:35.313
 F Makefile.in f59e0763ff448719fc1bd25513882b0567286317
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 306d73e854b1a92ea06e5d1e637faa5c44de53c7
@@ -14,7 +14,7 @@ F autoconf/Makefile.am 1a47d071e3d5435f8f7ebff7eb6703848bbd65d4
 F autoconf/Makefile.msc 0eca137c12542bd76c253a2d24380f29ade59b95
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/README.txt 4f04b0819303aabaa35fff5f7b257fb0c1ef95f1
-F autoconf/configure.ac 7754404e955900cfdeba08862cdfa802eca5b0af
+F autoconf/configure.ac cacf2616abf6e4a569bde2ef365c143caeec40bc
 F autoconf/tea/Makefile.in b438a7020446c8a8156e8d97c8914a04833da6fd
 F autoconf/tea/README 3e9a3c060f29a44344ab50aec506f4db903fb873
 F autoconf/tea/aclocal.m4 52c47aac44ce0ddb1f918b6993e8beb8eee88f43
@@ -1496,7 +1496,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 71087c12bc75a82f5d1051600a442ef6efc5e899
-R 3d452eed48a36d85ceafabad1e13a1b0
-U drh
-Z 226f41fb99617919dc67fcf97f9a5431
+P 0987487dd4ebfcf66ddeec8ceca47775216a0887
+R 3c226086b91b471db1b9e5c3998de4c9
+U dan
+Z 4323e6121ccb1a6dc1ad24e971c3fe39
