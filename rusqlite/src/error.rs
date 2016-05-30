@@ -53,6 +53,10 @@ pub enum Error {
     /// that column cannot be converted to the requested Rust type.
     InvalidColumnType(i32, Type),
 
+    /// Error when an SQLite value is requested, but the type of the result cannot be converted to the
+    /// requested Rust type.
+    InvalidType(Type),
+
     /// Error when a query that was expected to insert one row did not insert any or insert many.
     StatementChangedRows(c_int),
 
@@ -63,7 +67,7 @@ pub enum Error {
     /// Error returned by `functions::Context::get` when the function argument cannot be converted
     /// to the requested type.
     #[cfg(feature = "functions")]
-    InvalidFunctionParameterType(i32, Type),
+    InvalidFunctionParameterType(usize, Type),
 
     /// An error case available for implementors of custom user functions (e.g.,
     /// `create_scalar_function`).
@@ -107,6 +111,9 @@ impl fmt::Display for Error {
             Error::InvalidColumnType(i, ref t) => {
                 write!(f, "Invalid column type {} at index: {}", t, i)
             }
+            Error::InvalidType(ref t) => {
+                write!(f, "Invalid type {}", t)
+            }
             Error::StatementChangedRows(i) => write!(f, "Query changed {} rows", i),
             Error::StatementFailedToInsertRow => write!(f, "Statement failed to insert new row"),
 
@@ -140,6 +147,7 @@ impl error::Error for Error {
             Error::InvalidColumnIndex(_) => "invalid column index",
             Error::InvalidColumnName(_) => "invalid column name",
             Error::InvalidColumnType(_, _) => "invalid column type",
+            Error::InvalidType(_) => "invalid type",
             Error::StatementChangedRows(_) => "query inserted zero or more than one row",
             Error::StatementFailedToInsertRow => "statement failed to insert new row",
 
@@ -165,6 +173,7 @@ impl error::Error for Error {
             Error::InvalidColumnIndex(_) |
             Error::InvalidColumnName(_) |
             Error::InvalidColumnType(_, _) |
+            Error::InvalidType(_) |
             Error::InvalidPath(_) |
             Error::StatementChangedRows(_) |
             Error::StatementFailedToInsertRow => None,

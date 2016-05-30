@@ -19,11 +19,11 @@ impl ToSql for Value {
 
 /// Deserialize text/blob to JSON `Value`.
 impl FromSql for Value {
-    fn column_result(value: ValueRef, idx: i32) -> Result<Self> {
+    fn column_result(value: ValueRef) -> Result<Self> {
         match value {
                 ValueRef::Text(ref s) => serde_json::from_str(s),
                 ValueRef::Blob(ref b) => serde_json::from_slice(b),
-                _ => return Err(Error::InvalidColumnType(idx, value.data_type())),
+                _ => return Err(Error::InvalidType(value.data_type())),
             }
             .map_err(|err| Error::FromSqlConversionFailure(Box::new(err)))
     }

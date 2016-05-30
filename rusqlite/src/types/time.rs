@@ -16,8 +16,8 @@ impl ToSql for time::Timespec {
 }
 
 impl FromSql for time::Timespec {
-    fn column_result(value: ValueRef, idx: i32) -> Result<Self> {
-        value.as_str(idx).and_then(|s| match time::strptime(s, SQLITE_DATETIME_FMT) {
+    fn column_result(value: ValueRef) -> Result<Self> {
+        value.as_str().and_then(|s| match time::strptime(s, SQLITE_DATETIME_FMT) {
             Ok(tm) => Ok(tm.to_timespec()),
             Err(err) => Err(Error::FromSqlConversionFailure(Box::new(err))),
         })

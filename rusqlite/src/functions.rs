@@ -217,8 +217,8 @@ impl<'a> Context<'a> {
     pub fn get<T: FromSql>(&self, idx: usize) -> Result<T> {
         let arg = self.args[idx];
         let value = unsafe { ValueRef::from_value(arg) };
-        FromSql::column_result(value, idx as i32).map_err(|err| match err {
-            Error::InvalidColumnType(i, t) => Error::InvalidFunctionParameterType(i, t),
+        FromSql::column_result(value).map_err(|err| match err {
+            Error::InvalidType(t) => Error::InvalidFunctionParameterType(idx, t),
             _ => err,
         })
     }

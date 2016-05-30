@@ -1066,7 +1066,10 @@ impl<'a, 'stmt> Row<'a, 'stmt> {
     pub fn get_checked<I: RowIndex, T: FromSql>(&self, idx: I) -> Result<T> {
         let idx = try!(idx.idx(self.stmt));
         let value = unsafe { ValueRef::new(&self.stmt.stmt, idx) };
-        FromSql::column_result(value, idx)
+        FromSql::column_result(value).map_err(|err| match err {
+            Error::InvalidType(t) => Error::InvalidColumnType(idx, t),
+            _ => err,
+        })
     }
 
     /// Return the number of columns in the current row.
