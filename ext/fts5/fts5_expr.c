@@ -2617,17 +2617,6 @@ void sqlite3Fts5ExprCheckPoslists(Fts5Expr *pExpr, i64 iRowid){
   fts5ExprCheckPoslists(pExpr->pRoot, iRowid);
 }
 
-static void fts5ExprClearEof(Fts5ExprNode *pNode){
-  int i;
-  for(i=0; i<pNode->nChild; i++){
-    fts5ExprClearEof(pNode->apChild[i]);
-  }
-  pNode->bEof = 0;
-}
-void sqlite3Fts5ExprClearEof(Fts5Expr *pExpr){
-  fts5ExprClearEof(pExpr->pRoot);
-}
-
 /*
 ** This function is only called for detail=columns tables. 
 */
