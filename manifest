@@ -1,5 +1,5 @@
-C Add\sfurther\sinstrumentation\sto\sthe\sbc_test1.c\stest\sapp.
-D 2016-05-26T20:52:15.750
+C Minor\stweaks\sto\sthe\sbc_test1\stest\sprogram.
+D 2016-05-30T05:45:32.809
 F Makefile.in 9e816d0323e418fbc0f8b2c05fc14e0b3763d9e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 71b8b16cf9393f68e2e2035486ca104872558836
@@ -521,7 +521,7 @@ F test/backup_malloc.test 7162d604ec2b4683c4b3799a48657fb8b5e2d450
 F test/badutf.test d5360fc31f643d37a973ab0d8b4fb85799c3169f
 F test/badutf2.test f5bc7f2d280670ecd79b9cf4f0f1760c607fe51f
 F test/bc_common.tcl b5e42d80305be95697e6370e015af571e5333a1c
-F test/bc_test1.c 05cd99276a5dc2de0e28f3b1095c343393e12f87
+F test/bc_test1.c 64b3438cbb0a267de11c2c01e9ec7a96ebdbc3a3
 F test/bestindex1.test 0cf1bd2d7b97d3a3a8c10736125274f64765c4ee
 F test/bestindex2.test 4a06b8922ab2fd09434870da8d1cdf525aaf7060
 F test/between.test 34d375fb5ce1ae283ffe82b6b233e9f38e84fc6c
@@ -1295,7 +1295,7 @@ F test/triggerC.test 302d8995f5ffe63bbc15053abb3ef7a39cf5a092
 F test/triggerD.test 8e7f3921a92a5797d472732108109e44575fa650
 F test/triggerE.test 15fa63f1097db1f83dd62d121616006978063d1f
 F test/tt3_checkpoint.c 9e75cf7c1c364f52e1c47fd0f14c4340a9db0fe1
-F test/tt3_core.c 01a7cd1a4f10a666f404c46360da15468522d52e
+F test/tt3_core.c 8cd89ead95410f70e7fb02c79f1e040f9c5ad5cf
 F test/tt3_index.c 39eec10a35f57672225be4d182862152896dee4a
 F test/tt3_lookaside1.c 0377e202c3c2a50d688cb65ba203afeda6fafeb9
 F test/tt3_stress.c c57d804716165811d979d4a719e05baccd79277f
@@ -1491,7 +1491,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f33aa76f074d8686a5a5c0edecabb71cb259c48d
-R 3e6ef002903d2cc9312cf24b4caaa4ad
+P 5528de4a53c19557798b6169e1d738f1a301e131
+R 4e1a86c5f70b95ae38ae7d31e017c12f
 U dan
-Z 14c81df2e8a28af21f0d7f0b336be7a7
+Z f49d8d592868742b4ebcfcd7d10075da

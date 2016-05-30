@@ -488,19 +488,20 @@ int main(int argc, const char **argv){
   int i;
 
   CmdlineArg apArg[] = {
-    { "--seconds", CMDLINE_INT,  offsetof(Config, nSecond) },
-    { "--inserts", CMDLINE_INT,  offsetof(Config, nIPT) },
-    { "--threads", CMDLINE_INT,  offsetof(Config, nThread) },
-    { "--mutex",   CMDLINE_BOOL, offsetof(Config, bMutex) },
-    { "--rm",      CMDLINE_BOOL, offsetof(Config, bRm) },
-    { "--autockpt",CMDLINE_INT,  offsetof(Config, nAutoCkpt) },
-    { "--mmap",    CMDLINE_INT,  offsetof(Config, nMmap) },
-    { "--clear-cache",    CMDLINE_BOOL,  offsetof(Config, bClearCache) },
-    { "--file",    CMDLINE_STRING,  offsetof(Config, zFile) },
-    { "--osinst",  CMDLINE_BOOL,  offsetof(Config, bOsinst) },
+    { "-seconds", CMDLINE_INT,  offsetof(Config, nSecond) },
+    { "-inserts", CMDLINE_INT,  offsetof(Config, nIPT) },
+    { "-threads", CMDLINE_INT,  offsetof(Config, nThread) },
+    { "-mutex",   CMDLINE_BOOL, offsetof(Config, bMutex) },
+    { "-rm",      CMDLINE_BOOL, offsetof(Config, bRm) },
+    { "-autockpt",CMDLINE_INT,  offsetof(Config, nAutoCkpt) },
+    { "-mmap",    CMDLINE_INT,  offsetof(Config, nMmap) },
+    { "-clear-cache",    CMDLINE_BOOL,  offsetof(Config, bClearCache) },
+    { "-file",    CMDLINE_STRING,  offsetof(Config, zFile) },
+    { "-osinst",  CMDLINE_BOOL,  offsetof(Config, bOsinst) },
     { 0, 0, 0 }
   };
 
+  conf.nAutoCkpt = 1000;
   cmdline_process(apArg, argc, argv, (void*)&conf);
   if( err.rc==SQLITE_OK ){
     char *z = cmdline_construct(apArg, (void*)&conf);

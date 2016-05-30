@@ -166,6 +166,11 @@ static void cmdline_process(
     int n = strlen(z);
     int iOpt = -1;
 
+    if( z[0]=='-' && z[1]=='-' ){
+      z++;
+      n--;
+    }
+
     for(iArg=0; apArg[iArg].zSwitch; iArg++){
       if( 0==sqlite3_strnicmp(apArg[iArg].zSwitch, z, n) ){
         if( iOpt>=0 ){
