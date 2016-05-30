@@ -24,7 +24,7 @@ impl FromSql for f64 {
         match value {
             ValueRef::Integer(i) => Ok(i as f64),
             ValueRef::Real(f) => Ok(f),
-            _ => Err(Error::InvalidType(value.data_type())),
+            _ => Err(Error::InvalidType),
         }
     }
 }

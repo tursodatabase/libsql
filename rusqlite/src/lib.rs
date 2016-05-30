@@ -1067,7 +1067,7 @@ impl<'a, 'stmt> Row<'a, 'stmt> {
         let idx = try!(idx.idx(self.stmt));
         let value = unsafe { ValueRef::new(&self.stmt.stmt, idx) };
         FromSql::column_result(value).map_err(|err| match err {
-            Error::InvalidType(t) => Error::InvalidColumnType(idx, t),
+            Error::InvalidType => Error::InvalidColumnType(idx, value.data_type()),
             _ => err,
         })
     }

@@ -218,7 +218,7 @@ impl<'a> Context<'a> {
         let arg = self.args[idx];
         let value = unsafe { ValueRef::from_value(arg) };
         FromSql::column_result(value).map_err(|err| match err {
-            Error::InvalidType(t) => Error::InvalidFunctionParameterType(idx, t),
+            Error::InvalidType => Error::InvalidFunctionParameterType(idx, value.data_type()),
             _ => err,
         })
     }

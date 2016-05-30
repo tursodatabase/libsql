@@ -38,7 +38,7 @@ impl<'a> ValueRef<'a> {
     pub fn as_i64(&self) -> Result<i64> {
         match *self {
             ValueRef::Integer(i) => Ok(i),
-            _ => Err(Error::InvalidType(self.data_type())),
+            _ => Err(Error::InvalidType),
         }
     }
 
@@ -47,7 +47,7 @@ impl<'a> ValueRef<'a> {
     pub fn as_f64(&self) -> Result<f64> {
         match *self {
             ValueRef::Real(f) => Ok(f),
-            _ => Err(Error::InvalidType(self.data_type())),
+            _ => Err(Error::InvalidType),
         }
     }
 
@@ -56,7 +56,7 @@ impl<'a> ValueRef<'a> {
     pub fn as_str(&self) -> Result<&str> {
         match *self {
             ValueRef::Text(ref t) => Ok(t),
-            _ => Err(Error::InvalidType(self.data_type())),
+            _ => Err(Error::InvalidType),
         }
     }
 
@@ -65,7 +65,7 @@ impl<'a> ValueRef<'a> {
     pub fn as_blob(&self) -> Result<&[u8]> {
         match *self {
             ValueRef::Blob(ref b) => Ok(b),
-            _ => Err(Error::InvalidType(self.data_type())),
+            _ => Err(Error::InvalidType),
         }
     }
 }

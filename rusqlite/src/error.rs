@@ -55,7 +55,7 @@ pub enum Error {
 
     /// Error when an SQLite value is requested, but the type of the result cannot be converted to the
     /// requested Rust type.
-    InvalidType(Type),
+    InvalidType,
 
     /// Error when a query that was expected to insert one row did not insert any or insert many.
     StatementChangedRows(c_int),
@@ -111,9 +111,7 @@ impl fmt::Display for Error {
             Error::InvalidColumnType(i, ref t) => {
                 write!(f, "Invalid column type {} at index: {}", t, i)
             }
-            Error::InvalidType(ref t) => {
-                write!(f, "Invalid type {}", t)
-            }
+            Error::InvalidType => write!(f, "Invalid type"),
             Error::StatementChangedRows(i) => write!(f, "Query changed {} rows", i),
             Error::StatementFailedToInsertRow => write!(f, "Statement failed to insert new row"),
 
@@ -147,7 +145,7 @@ impl error::Error for Error {
             Error::InvalidColumnIndex(_) => "invalid column index",
             Error::InvalidColumnName(_) => "invalid column name",
             Error::InvalidColumnType(_, _) => "invalid column type",
-            Error::InvalidType(_) => "invalid type",
+            Error::InvalidType => "invalid type",
             Error::StatementChangedRows(_) => "query inserted zero or more than one row",
             Error::StatementFailedToInsertRow => "statement failed to insert new row",
 
@@ -173,7 +171,7 @@ impl error::Error for Error {
             Error::InvalidColumnIndex(_) |
             Error::InvalidColumnName(_) |
             Error::InvalidColumnType(_, _) |
-            Error::InvalidType(_) |
+            Error::InvalidType |
             Error::InvalidPath(_) |
             Error::StatementChangedRows(_) |
             Error::StatementFailedToInsertRow => None,

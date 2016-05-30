@@ -23,7 +23,7 @@ impl FromSql for Value {
         match value {
                 ValueRef::Text(ref s) => serde_json::from_str(s),
                 ValueRef::Blob(ref b) => serde_json::from_slice(b),
-                _ => return Err(Error::InvalidType(value.data_type())),
+                _ => return Err(Error::InvalidType),
             }
             .map_err(|err| Error::FromSqlConversionFailure(Box::new(err)))
     }
