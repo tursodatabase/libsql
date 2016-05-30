@@ -6,7 +6,7 @@ use libc::c_int;
 use {ffi, errmsg_to_string};
 
 /// Old name for `Error`. `SqliteError` is deprecated.
-#[deprecated]
+#[deprecated(since = "0.6.0", note = "Use Error instead")]
 pub type SqliteError = Error;
 
 /// Enum listing possible errors from rusqlite.
