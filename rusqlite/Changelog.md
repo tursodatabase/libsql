@@ -3,6 +3,8 @@
 * BREAKING CHANGE: The `FromSql` trait has been redesigned. It now requires a single, safe
   method instead of the previous definition which required implementing one or two unsafe
   methods.
+* Added `#[deprecated(since = "...", note = "...")]` flags (new in Rust 1.9 for libraries) to
+  all deprecated APIs.
 
 # Version 0.7.2 (2016-05-19)
 
