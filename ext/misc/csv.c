@@ -315,13 +315,16 @@ static int csv_boolean(const char *z){
 /*
 ** Parameters:
 **    filename=FILENAME          Required
-**    schema=SCHEMA              Optional
+**    schema=SCHEMA              Alternative CSV schema.
 **    header=YES|NO              First row of CSV defines the names of
 **                               columns if "yes".  Default "no".
+**    columns=N                  Assum the CSV file contains N columns.
 **    testflags=N                Bitmask of test flags.  Optional
 **
-** If header=no and not columns are listed, then the columns are named
-** "c0", "c1", "c2", and so forth.
+** If schema= is omitted, then the columns are named "c0", "c1", "c2",
+** and so forth.  If columns=N is omitted, then the file is opened and
+** the number of columns in the first row is counted to determine the
+** column count.  If header=YES, then the first row is skipped.
 */
 static int csvtabConnect(
   sqlite3 *db,
@@ -330,14 +333,16 @@ static int csvtabConnect(
   sqlite3_vtab **ppVtab,
   char **pzErr
 ){
-  CsvTable *pNew = 0;
-  int bHeader = -1;
-  int rc = SQLITE_OK;
-  int i;
-  char *zFilename = 0;
-  char *zSchema = 0;
-  int tstFlags = 0;
-  CsvReader sRdr;
+  CsvTable *pNew = 0;        /* The CsvTable object to construct */
+  int bHeader = -1;          /* header= flags.  -1 means not seen yet */
+  int rc = SQLITE_OK;        /* Result code from this routine */
+  int i;                     /* Loop counter */
+  char *zFilename = 0;       /* Value of the filename= parameter */
+  char *zSchema = 0;         /* Value of the schema= parameter */
+  int tstFlags = 0;          /* Value of the testflags= parameter */
+  int nCol = -99;            /* Value of the columns= parameter */
+  CsvReader sRdr;            /* A CSV file reader used to store an error
+                             ** message and/or to count the number of columns */
 
   memset(&sRdr, 0, sizeof(sRdr));
   for(i=3; i<argc; i++){
@@ -382,6 +387,17 @@ static int csvtabConnect(
     if( (zValue = csv_parameter("testflags",9,z))!=0 ){
       tstFlags = (unsigned int)atoi(zValue);
     }else
+    if( (zValue = csv_parameter("columns",7,z))!=0 ){
+      if( nCol>0 ){
+        csv_errmsg(&sRdr, "more than one 'columns' parameter");
+        goto csvtab_connect_error;
+      }
+      nCol = atoi(zValue);
+      if( nCol<=0 ){
+        csv_errmsg(&sRdr, "must have at least one column");
+        goto csvtab_connect_error;
+      }
+    }else
     {
       csv_errmsg(&sRdr, "unrecognized parameter '%s'", z);
       goto csvtab_connect_error;
@@ -391,18 +407,22 @@ static int csvtabConnect(
     csv_errmsg(&sRdr, "missing 'filename' parameter");
     goto csvtab_connect_error;
   }
-  if( csv_reader_open(&sRdr, zFilename) ){
+  if( nCol<=0 && csv_reader_open(&sRdr, zFilename) ){
     goto csvtab_connect_error;
   }
   pNew = sqlite3_malloc( sizeof(*pNew) );
   *ppVtab = (sqlite3_vtab*)pNew;
   if( pNew==0 ) goto csvtab_connect_oom;
   memset(pNew, 0, sizeof(*pNew));
-  do{
-    const char *z = csv_read_one_field(&sRdr);
-    if( z==0 ) goto csvtab_connect_oom;
-    pNew->nCol++;
-  }while( sRdr.cTerm==',' );
+  if( nCol>0 ){
+    pNew->nCol = nCol;
+  }else{
+    do{
+      const char *z = csv_read_one_field(&sRdr);
+      if( z==0 ) goto csvtab_connect_oom;
+      pNew->nCol++;
+    }while( sRdr.cTerm==',' );
+  }
   pNew->zFilename = zFilename;
   pNew->tstFlags = tstFlags;
   zFilename = 0;
@@ -593,15 +613,26 @@ static int csvtabBestIndex(
 ){
   CsvTable *pTab = (CsvTable*)tab;
   int i;
+  int nConst = 0;
   pIdxInfo->estimatedCost = 1000000;
   if( (pTab->tstFlags & CSVTEST_FIDX)==0 ){
     return SQLITE_OK;
   }
+  /* The usual (an sensible) case is to take the "return SQLITE_OK" above.
+  ** The code below only runs when testflags=1.  The following code
+  ** generates an artifical and unrealistic plan which is useful
+  ** for testing virtual table logic but is useless for real applications. */
   for(i=0; i<pIdxInfo->nConstraint; i++){
+    unsigned char op;
     if( pIdxInfo->aConstraint[i].usable==0 ) continue;
-    if( pIdxInfo->aConstraint[i].op==SQLITE_INDEX_CONSTRAINT_EQ ){
+    op = pIdxInfo->aConstraint[i].op;
+    if( op==SQLITE_INDEX_CONSTRAINT_EQ 
+     || op==SQLITE_INDEX_CONSTRAINT_LIKE
+     || op==SQLITE_INDEX_CONSTRAINT_GLOB
+    ){
       pIdxInfo->estimatedCost = 10;
-      break;
+      pIdxInfo->aConstraintUsage[nConst].argvIndex = nConst+1;
+      nConst++;
     }
   }
   return SQLITE_OK;
