@@ -218,7 +218,11 @@ typedef struct CsvTable {
   char *zFilename;                /* Name of the CSV file */
   long iStart;                    /* Offset to start of data in zFilename */
   int nCol;                       /* Number of columns in the CSV file */
+  unsigned int tstFlags;          /* Bit values used for testing */
 } CsvTable;
+
+/* Allowed values for tstFlags */
+#define CSVTEST_FIDX  0x0001      /* Pretend that constrained searchs cost less*/
 
 /* A cursor for the CSV virtual table */
 typedef struct CsvCursor {
@@ -314,6 +318,7 @@ static int csv_boolean(const char *z){
 **    schema=SCHEMA              Optional
 **    header=YES|NO              First row of CSV defines the names of
 **                               columns if "yes".  Default "no".
+**    testflags=N                Bitmask of test flags.  Optional
 **
 ** If header=no and not columns are listed, then the columns are named
 ** "c0", "c1", "c2", and so forth.
@@ -331,6 +336,7 @@ static int csvtabConnect(
   int i;
   char *zFilename = 0;
   char *zSchema = 0;
+  int tstFlags = 0;
   CsvReader sRdr;
 
   memset(&sRdr, 0, sizeof(sRdr));
@@ -373,6 +379,9 @@ static int csvtabConnect(
         goto csvtab_connect_error;
       }
     }else
+    if( (zValue = csv_parameter("testflags",9,z))!=0 ){
+      tstFlags = (unsigned int)atoi(zValue);
+    }else
     {
       csv_errmsg(&sRdr, "unrecognized parameter '%s'", z);
       goto csvtab_connect_error;
@@ -395,6 +404,7 @@ static int csvtabConnect(
     pNew->nCol++;
   }while( sRdr.cTerm==',' );
   pNew->zFilename = zFilename;
+  pNew->tstFlags = tstFlags;
   zFilename = 0;
   pNew->iStart = bHeader==1 ? ftell(sRdr.in) : 0;
   csv_reader_reset(&sRdr);
@@ -426,6 +436,7 @@ csvtab_connect_error:
     *pzErr = sqlite3_mprintf("%s", sRdr.zErr);
   }
   csv_reader_reset(&sRdr);
+  if( rc==SQLITE_OK ) rc = SQLITE_ERROR;
   return rc;
 }
 
@@ -571,12 +582,28 @@ static int csvtabFilter(
 }
 
 /*
-** Only a forwards full table scan is supported.  xBestIndex is a no-op.
+** Only a forwards full table scan is supported.  xBestIndex is mostly
+** a no-op.  If CSVTEST_FIDX is set, then the presence of equality
+** constraints lowers the estimated cost, which is fiction, but is useful
+** for testing certain kinds of virtual table behavior.
 */
 static int csvtabBestIndex(
   sqlite3_vtab *tab,
   sqlite3_index_info *pIdxInfo
 ){
+  CsvTable *pTab = (CsvTable*)tab;
+  int i;
+  pIdxInfo->estimatedCost = 1000000;
+  if( (pTab->tstFlags & CSVTEST_FIDX)==0 ){
+    return SQLITE_OK;
+  }
+  for(i=0; i<pIdxInfo->nConstraint; i++){
+    if( pIdxInfo->aConstraint[i].usable==0 ) continue;
+    if( pIdxInfo->aConstraint[i].op==SQLITE_INDEX_CONSTRAINT_EQ ){
+      pIdxInfo->estimatedCost = 10;
+      break;
+    }
+  }
   return SQLITE_OK;
 }
 
