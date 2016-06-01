@@ -1,5 +1,5 @@
-C Fix\scompilation\sissues\swith\sthe\sVFS\sstat\sextension.
-D 2016-06-01T05:02:05.387
+C Fix\san\sissue\spreventing\sRBU\svacuum\sfrom\sworking\swith\svirtual\stables.
+D 2016-06-01T10:37:50.553
 F Makefile.in f59e0763ff448719fc1bd25513882b0567286317
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 306d73e854b1a92ea06e5d1e637faa5c44de53c7
@@ -241,7 +241,7 @@ F ext/rbu/rbu9.test 0806d1772c9f4981774ff028de6656e4183082af
 F ext/rbu/rbuA.test c1a7b3e2d926b8f8448bb3b4ae787e314ee4b2b3
 F ext/rbu/rbuB.test c25bc325b8072a766e56bb76c001866b405925c2
 F ext/rbu/rbuC.test efe47db508a0269b683cb2a1913a425ffd39a831
-F ext/rbu/rbu_common.tcl 0398545fed614f807d5f0ba55a85a51f08ba8f1a
+F ext/rbu/rbu_common.tcl 3a4b916b6f5dca9c9da9a30863e272fe5ea4414f
 F ext/rbu/rbucrash.test 8d2ed5d4b05fef6c00c2a6b5f7ead71fa172a695
 F ext/rbu/rbudiff.test 2df0a8a7d998ecf81764c21eeda3cde5611c5091
 F ext/rbu/rbufault.test cc0be8d5d392d98b0c2d6a51be377ea989250a89
@@ -250,8 +250,9 @@ F ext/rbu/rbufault3.test 54a399888ac4af44c68f9f58afbed23149428bca
 F ext/rbu/rbufts.test 828cd689da825f0a7b7c53ffc1f6f7fdb6fa5bda
 F ext/rbu/rbuprogress.test 2023a7df2c523e3df1cb532eff811cda385a789a
 F ext/rbu/rbusave.test 0f43b6686084f426ddd040b878426452fd2c2f48
-F ext/rbu/rbuvacuum.test 66e02cf299836770e718e95c36686be0b26dbda3
-F ext/rbu/sqlite3rbu.c bf36625990c6865ecf08bd844d8097ed2d0a6958
+F ext/rbu/rbuvacuum.test 4a977447c15c2581ab668781d9ef4294382530e0
+F ext/rbu/rbuvacuum2.test 45009e127c3fb385e5c0fd5a8a63fb922a79d0ab
+F ext/rbu/sqlite3rbu.c a37a7dfb225c497171aa60120e81b884954361c7
 F ext/rbu/sqlite3rbu.h 2acd0a6344a6079de15c8dc9d84d3df83a665930
 F ext/rbu/test_rbu.c 9bbdf6bd8efd58fbc4f192698df50569598fbb9e
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
@@ -1497,7 +1498,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 28ebeadd6a4c9ff2ce9fc86a0f0fe2f6cf94d3ac
-R 439a7441f751d5eee3dcb1d6f6a64d80
-U mistachkin
-Z fb90ffd16972fce7722c3409e726b839
+P f6e956525b03fa07190e5521edac4758c386cc80
+R e1810942aeafbc52047febcf823bcd33
+U dan
+Z 9391b61c89a105fa8d99de95f920a23b

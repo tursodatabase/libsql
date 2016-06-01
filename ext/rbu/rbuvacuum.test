@@ -17,23 +17,6 @@
 source [file join [file dirname [info script]] rbu_common.tcl]
 set ::testprefix rbuvacuum
 
-proc do_rbu_vacuum_test {tn step} {
-  uplevel [list do_test $tn.1 {
-    if {$step==0} { sqlite3rbu_vacuum rbu test.db state.db }
-    while 1 {
-      if {$step==1} { sqlite3rbu_vacuum rbu test.db state.db }
-      set rc [rbu step]
-      if {$rc!="SQLITE_OK"} break
-      if {$step==1} { rbu close }
-    }
-    rbu close
-  } {SQLITE_DONE}]
-
-  uplevel [list do_execsql_test $tn.2 {
-    PRAGMA integrity_check
-  } ok]
-}
-
 foreach step {0 1} {
 
   set ::testprefix rbuvacuum-step=$step
@@ -403,7 +386,6 @@ do_test 3.5 {
   while {[rbu step]=="SQLITE_OK"} {}
   list [catch { rbu close } msg] $msg
 } {0 SQLITE_DONE}
-
 
 catch { db close }
 finish_test
