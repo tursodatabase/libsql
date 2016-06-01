@@ -402,7 +402,7 @@ static int vstatShmLock(sqlite3_file *pFile, int offset, int n, int flags){
 /* Memory barrier operation on shared memory */
 static void vstatShmBarrier(sqlite3_file *pFile){
   VStatFile *p = (VStatFile *)pFile;
-  return p->pReal->pMethods->xShmBarrier(p->pReal);
+  p->pReal->pMethods->xShmBarrier(p->pReal);
 }
 
 /* Unmap a shared memory segment */
@@ -806,7 +806,7 @@ int sqlite3_vfsstat_init(
   int rc = SQLITE_OK;
   SQLITE_EXTENSION_INIT2(pApi);
   vstat_vfs.pVfs = sqlite3_vfs_find(0);
-  vstat_vfs.base.szOsFile = sizeof(VStatFile) + pNew->pVfs->szOsFile;
+  vstat_vfs.base.szOsFile = sizeof(VStatFile) + vstat_vfs.pVfs->szOsFile;
   rc = sqlite3_vfs_register(&vstat_vfs.base, 1);
   if( rc==SQLITE_OK ){
     rc = sqlite3_auto_extension((void(*)(void))vstatRegister);

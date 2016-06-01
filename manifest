@@ -1,5 +1,5 @@
-C Add\sthe\scolumns=N\sparameter\sto\sthe\sCSV\sextension.
-D 2016-05-31T18:44:33.835
+C Fix\scompilation\sissues\swith\sthe\sVFS\sstat\sextension.
+D 2016-06-01T05:02:05.387
 F Makefile.in f59e0763ff448719fc1bd25513882b0567286317
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 306d73e854b1a92ea06e5d1e637faa5c44de53c7
@@ -222,7 +222,7 @@ F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c bf1b922c2750698e9a3d4c50cce6974adb7e93be
 F ext/misc/totype.c 4a167594e791abeed95e0a8db028822b5e8fe512
 F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
-F ext/misc/vfsstat.c 20f206b6d38911dfac4b4db88171204d0373f7df
+F ext/misc/vfsstat.c aed1f11904f07487d71015c8826885f57e4644b3
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
 F ext/rbu/rbu.c b2c0b5e6ae1a89affc0edfc127ebfa5f637a0ce4
@@ -1497,7 +1497,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b93fb2fe0df1b3bea2bc2a4e1528da74ab290593
-R 65e8595850caa2b47ebf66d47e8638e5
-U drh
-Z b14790ed4c9841c10d8b6970f4ae5ca1
+P 28ebeadd6a4c9ff2ce9fc86a0f0fe2f6cf94d3ac
+R 439a7441f751d5eee3dcb1d6f6a64d80
+U mistachkin
+Z fb90ffd16972fce7722c3409e726b839
