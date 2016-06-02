@@ -6,6 +6,12 @@
 * Added `#[deprecated(since = "...", note = "...")]` flags (new in Rust 1.9 for libraries) to
   all deprecated APIs.
 
+# Version 0.7.3 (2016-06-01)
+
+* Fixes an incorrect failure from the `insert()` convenience function when back-to-back inserts to
+  different tables both returned the same row ID
+  ([#171](https://github.com/jgallagher/rusqlite/issues/171)).
+
 # Version 0.7.2 (2016-05-19)
 
 * BREAKING CHANGE: `Rows` no longer implements `Iterator`. It still has a `next()` method, but
