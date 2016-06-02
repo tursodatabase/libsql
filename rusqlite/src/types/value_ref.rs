@@ -1,5 +1,4 @@
-use ::Result;
-use ::error::Error;
+use ::types::FromSqlError;
 use super::{Value, Type};
 
 /// A non-owning [dynamic type value](http://sqlite.org/datatype3.html). Typically the
@@ -35,37 +34,37 @@ impl<'a> ValueRef<'a> {
 impl<'a> ValueRef<'a> {
     /// If `self` is case `Integer`, returns the integral value. Otherwise, returns
     /// `Err(Error::InvalidColumnType)`.
-    pub fn as_i64(&self) -> Result<i64> {
+    pub fn as_i64(&self) -> Result<i64, FromSqlError> {
         match *self {
             ValueRef::Integer(i) => Ok(i),
-            _ => Err(Error::InvalidType),
+            _ => Err(FromSqlError::InvalidType),
         }
     }
 
     /// If `self` is case `Real`, returns the floating point value. Otherwise, returns
     /// `Err(Error::InvalidColumnType)`.
-    pub fn as_f64(&self) -> Result<f64> {
+    pub fn as_f64(&self) -> Result<f64, FromSqlError> {
         match *self {
             ValueRef::Real(f) => Ok(f),
-            _ => Err(Error::InvalidType),
+            _ => Err(FromSqlError::InvalidType),
         }
     }
 
     /// If `self` is case `Text`, returns the string value. Otherwise, returns
     /// `Err(Error::InvalidColumnType)`.
-    pub fn as_str(&self) -> Result<&str> {
+    pub fn as_str(&self) -> Result<&str, FromSqlError> {
         match *self {
             ValueRef::Text(ref t) => Ok(t),
-            _ => Err(Error::InvalidType),
+            _ => Err(FromSqlError::InvalidType),
         }
     }
 
     /// If `self` is case `Blob`, returns the byte slice. Otherwise, returns
     /// `Err(Error::InvalidColumnType)`.
-    pub fn as_blob(&self) -> Result<&[u8]> {
+    pub fn as_blob(&self) -> Result<&[u8], FromSqlError> {
         match *self {
             ValueRef::Blob(ref b) => Ok(b),
-            _ => Err(Error::InvalidType),
+            _ => Err(FromSqlError::InvalidType),
         }
     }
 }

@@ -75,7 +75,7 @@ use std::result;
 use std::str;
 use libc::{c_int, c_char};
 
-use types::{ToSql, FromSql, ValueRef};
+use types::{ToSql, FromSql, FromSqlError, ValueRef};
 use error::{error_from_sqlite_code, error_from_handle};
 use raw_statement::RawStatement;
 use cache::StatementCache;
@@ -1067,8 +1067,10 @@ impl<'a, 'stmt> Row<'a, 'stmt> {
         let idx = try!(idx.idx(self.stmt));
         let value = unsafe { ValueRef::new(&self.stmt.stmt, idx) };
         FromSql::column_result(value).map_err(|err| match err {
-            Error::InvalidType => Error::InvalidColumnType(idx, value.data_type()),
-            _ => err,
+            FromSqlError::InvalidType => Error::InvalidColumnType(idx, value.data_type()),
+            FromSqlError::Other(err) => {
+                Error::FromSqlConversionFailure(idx as usize, value.data_type(), err)
+            }
         })
     }
 

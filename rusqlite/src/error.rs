@@ -19,8 +19,9 @@ pub enum Error {
     /// allow single-threaded use only.
     SqliteSingleThreadedMode,
 
-    /// An error case available for implementors of the `FromSql` trait.
-    FromSqlConversionFailure(Box<error::Error + Send + Sync>),
+    /// Error when the value of a particular column is requested, but it cannot be converted to
+    /// the requested Rust type.
+    FromSqlConversionFailure(usize, Type, Box<error::Error + Send + Sync>),
 
     /// Error converting a string to UTF-8.
     Utf8Error(str::Utf8Error),
@@ -51,11 +52,7 @@ pub enum Error {
 
     /// Error when the value of a particular column is requested, but the type of the result in
     /// that column cannot be converted to the requested Rust type.
-    InvalidColumnType(i32, Type),
-
-    /// Error when an SQLite value is requested, but the type of the result cannot be converted to the
-    /// requested Rust type.
-    InvalidType,
+    InvalidColumnType(c_int, Type),
 
     /// Error when a query that was expected to insert one row did not insert any or insert many.
     StatementChangedRows(c_int),
@@ -97,7 +94,13 @@ impl fmt::Display for Error {
                 write!(f,
                        "SQLite was compiled or configured for single-threaded use only")
             }
-            Error::FromSqlConversionFailure(ref err) => err.fmt(f),
+            Error::FromSqlConversionFailure(i, ref t, ref err) => {
+                write!(f,
+                       "Conversion error from type {} at index: {}, {}",
+                       t,
+                       i,
+                       err)
+            }
             Error::Utf8Error(ref err) => err.fmt(f),
             Error::NulError(ref err) => err.fmt(f),
             Error::InvalidParameterName(ref name) => write!(f, "Invalid parameter name: {}", name),
@@ -111,7 +114,6 @@ impl fmt::Display for Error {
             Error::InvalidColumnType(i, ref t) => {
                 write!(f, "Invalid column type {} at index: {}", t, i)
             }
-            Error::InvalidType => write!(f, "Invalid type"),
             Error::StatementChangedRows(i) => write!(f, "Query changed {} rows", i),
             Error::StatementFailedToInsertRow => write!(f, "Statement failed to insert new row"),
 
@@ -133,7 +135,7 @@ impl error::Error for Error {
             Error::SqliteSingleThreadedMode => {
                 "SQLite was compiled or configured for single-threaded use only"
             }
-            Error::FromSqlConversionFailure(ref err) => err.description(),
+            Error::FromSqlConversionFailure(_, _, ref err) => err.description(),
             Error::Utf8Error(ref err) => err.description(),
             Error::InvalidParameterName(_) => "invalid parameter name",
             Error::NulError(ref err) => err.description(),
@@ -145,7 +147,6 @@ impl error::Error for Error {
             Error::InvalidColumnIndex(_) => "invalid column index",
             Error::InvalidColumnName(_) => "invalid column name",
             Error::InvalidColumnType(_, _) => "invalid column type",
-            Error::InvalidType => "invalid type",
             Error::StatementChangedRows(_) => "query inserted zero or more than one row",
             Error::StatementFailedToInsertRow => "statement failed to insert new row",
 
@@ -160,7 +161,7 @@ impl error::Error for Error {
     fn cause(&self) -> Option<&error::Error> {
         match *self {
             Error::SqliteFailure(ref err, _) => Some(err),
-            Error::FromSqlConversionFailure(ref err) => Some(&**err),
+            Error::FromSqlConversionFailure(_, _, ref err) => Some(&**err),
             Error::Utf8Error(ref err) => Some(err),
             Error::NulError(ref err) => Some(err),
 
@@ -171,7 +172,6 @@ impl error::Error for Error {
             Error::InvalidColumnIndex(_) |
             Error::InvalidColumnName(_) |
             Error::InvalidColumnType(_, _) |
-            Error::InvalidType |
             Error::InvalidPath(_) |
             Error::StatementChangedRows(_) |
             Error::StatementFailedToInsertRow => None,

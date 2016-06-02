@@ -52,7 +52,7 @@
 
 pub use ffi::sqlite3_stmt;
 
-pub use self::from_sql::FromSql;
+pub use self::from_sql::{FromSql, FromSqlError};
 pub use self::to_sql::ToSql;
 pub use self::value_ref::ValueRef;
 

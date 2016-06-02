@@ -1,8 +1,7 @@
 extern crate time;
 
 use libc::c_int;
-use {Error, Result};
-use types::{FromSql, ToSql, ValueRef};
+use types::{FromSql, FromSqlError, ToSql, ValueRef};
 
 use ffi::sqlite3_stmt;
 
@@ -16,10 +15,10 @@ impl ToSql for time::Timespec {
 }
 
 impl FromSql for time::Timespec {
-    fn column_result(value: ValueRef) -> Result<Self> {
+    fn column_result(value: ValueRef) -> Result<Self, FromSqlError> {
         value.as_str().and_then(|s| match time::strptime(s, SQLITE_DATETIME_FMT) {
             Ok(tm) => Ok(tm.to_timespec()),
-            Err(err) => Err(Error::FromSqlConversionFailure(Box::new(err))),
+            Err(err) => Err(FromSqlError::Other(Box::new(err))),
         })
     }
 }
