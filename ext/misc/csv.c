@@ -53,6 +53,9 @@ SQLITE_EXTENSION_INIT1
 /* Max size of the error message in a CsvReader */
 #define CSV_MXERR 200
 
+/* Size of the CsvReader input buffer */
+#define CSV_INBUFSZ 1024
+
 /* A context object used when read a CSV file. */
 typedef struct CsvReader CsvReader;
 struct CsvReader {
@@ -61,18 +64,31 @@ struct CsvReader {
   int n;                 /* Number of bytes in z */
   int nAlloc;            /* Space allocated for z[] */
   int nLine;             /* Current line number */
-  int cTerm;             /* Character that terminated the most recent field */
+  char cTerm;            /* Character that terminated the most recent field */
+  size_t iIn;            /* Next unread character in the input buffer */
+  size_t nIn;            /* Number of characters in the input buffer */
+  char *zIn;             /* The input buffer */
   char zErr[CSV_MXERR];  /* Error message */
 };
 
 /* Initialize a CsvReader object */
 static void csv_reader_init(CsvReader *p){
-  memset(p, 0, sizeof(*p));
+  p->in = 0;
+  p->z = 0;
+  p->n = 0;
+  p->nAlloc = 0;
+  p->nLine = 0;
+  p->nIn = 0;
+  p->zIn = 0;
+  p->zErr[0] = 0;
 }
 
 /* Close and reset a CsvReader object */
 static void csv_reader_reset(CsvReader *p){
-  if( p->in ) fclose(p->in);
+  if( p->in ){
+    fclose(p->in);
+    sqlite3_free(p->zIn);
+  }
   sqlite3_free(p->z);
   csv_reader_init(p);
 }
@@ -88,13 +104,54 @@ static void csv_errmsg(CsvReader *p, const char *zFormat, ...){
 /* Open the file associated with a CsvReader
 ** Return the number of errors.
 */
-static int csv_reader_open(CsvReader *p, const char *zFilename){
-  p->in = fopen(zFilename, "rb");
-  if( p->in==0 ){
-    csv_errmsg(p, "cannot open '%s' for reading", zFilename);
-    return 1;
+static int csv_reader_open(
+  CsvReader *p,               /* The reader to open */
+  const char *zFilename,      /* Read from this filename */
+  const char *zData           /*  ... or use this data */
+){
+  if( zFilename ){
+    p->zIn = sqlite3_malloc( CSV_INBUFSZ );
+    if( p->zIn==0 ){
+      csv_errmsg(p, "out of memory");
+      return 1;
+    }
+    p->in = fopen(zFilename, "rb");
+    if( p->in==0 ){
+      csv_reader_reset(p);
+      csv_errmsg(p, "cannot open '%s' for reading", zFilename);
+      return 1;
+    }
+  }else{
+    assert( p->in==0 );
+    p->zIn = (char*)zData;
+    p->nIn = strlen(zData);
   }
   return 0;
+}
+
+/* The input buffer has overflowed.  Refill the input buffer, then
+** return the next character
+*/
+static CSV_NOINLINE int csv_getc_refill(CsvReader *p){
+  size_t got;
+
+  assert( p->iIn>=p->nIn );  /* Only called on an empty input buffer */
+  assert( p->in!=0 );        /* Only called if reading froma file */
+
+  got = fread(p->zIn, 1, CSV_INBUFSZ, p->in);
+  if( got==0 ) return EOF;
+  p->nIn = got;
+  p->iIn = 1;
+  return p->zIn[0];
+}
+
+/* Return the next character of input.  Return EOF at end of input. */
+static int csv_getc(CsvReader *p){
+  if( p->iIn >= p->nIn ){
+    if( p->in!=0 ) return csv_getc_refill(p);
+    return EOF;
+  }
+  return p->zIn[p->iIn++];
 }
 
 /* Increase the size of p->z and append character c to the end. 
@@ -137,7 +194,7 @@ static int csv_append(CsvReader *p, char c){
 static char *csv_read_one_field(CsvReader *p){
   int c;
   p->n = 0;
-  c = fgetc(p->in);
+  c = csv_getc(p);
   if( c==EOF ){
     p->cTerm = EOF;
     return "";
@@ -148,7 +205,7 @@ static char *csv_read_one_field(CsvReader *p){
     int cQuote = c;
     pc = ppc = 0;
     while( 1 ){
-      c = fgetc(p->in);
+      c = csv_getc(p);
       if( c=='\n' ) p->nLine++;
       if( c==cQuote ){
         if( pc==cQuote ){
@@ -182,7 +239,7 @@ static char *csv_read_one_field(CsvReader *p){
   }else{
     while( c!=EOF && c!=',' && c!='\n' ){
       if( csv_append(p, (char)c) ) return 0;
-      c = fgetc(p->in);
+      c = csv_getc(p);
     }
     if( c=='\n' ){
       p->nLine++;
@@ -216,6 +273,7 @@ static int csvtabRowid(sqlite3_vtab_cursor*,sqlite3_int64*);
 typedef struct CsvTable {
   sqlite3_vtab base;              /* Base class.  Must be first */
   char *zFilename;                /* Name of the CSV file */
+  char *zData;                    /* Raw CSV data in lieu of zFilename */
   long iStart;                    /* Offset to start of data in zFilename */
   int nCol;                       /* Number of columns in the CSV file */
   unsigned int tstFlags;          /* Bit values used for testing */
@@ -290,6 +348,37 @@ static const char *csv_parameter(const char *zTag, int nTag, const char *z){
   return csv_skip_whitespace(z+1);
 }
 
+/* Decode a parameter that requires a dequoted string.
+**
+** Return 1 if the parameter is seen, or 0 if not.  1 is returned
+** even if there is an error.  If an error occurs, then an error message
+** is left in p->zErr.  If there are no errors, p->zErr[0]==0.
+*/
+static int csv_string_parameter(
+  CsvReader *p,            /* Leave the error message here, if there is one */
+  const char *zParam,      /* Parameter we are checking for */
+  const char *zArg,        /* Raw text of the virtual table argment */
+  char **pzVal             /* Write the dequoted string value here */
+){
+  const char *zValue;
+  zValue = csv_parameter(zParam,strlen(zParam),zArg);
+  if( zValue==0 ) return 0;
+  p->zErr[0] = 0;
+  if( *pzVal ){
+    csv_errmsg(p, "more than one '%s' parameter", zParam);
+    return 1;
+  }
+  *pzVal = sqlite3_mprintf("%s", zValue);
+  if( *pzVal==0 ){
+    csv_errmsg(p, "out of memory");
+    return 1;
+  }
+  csv_trim_whitespace(*pzVal);
+  csv_dequote(*pzVal);
+  return 1;
+}
+
+
 /* Return 0 if the argument is false and 1 if it is true.  Return -1 if
 ** we cannot really tell.
 */
@@ -314,11 +403,12 @@ static int csv_boolean(const char *z){
 
 /*
 ** Parameters:
-**    filename=FILENAME          Required
+**    filename=FILENAME          Name of file containing CSV content
+**    data=TEXT                  Direct CSV content.
 **    schema=SCHEMA              Alternative CSV schema.
 **    header=YES|NO              First row of CSV defines the names of
 **                               columns if "yes".  Default "no".
-**    columns=N                  Assum the CSV file contains N columns.
+**    columns=N                  Assume the CSV file contains N columns.
 **    testflags=N                Bitmask of test flags.  Optional
 **
 ** If schema= is omitted, then the columns are named "c0", "c1", "c2",
@@ -336,37 +426,31 @@ static int csvtabConnect(
   CsvTable *pNew = 0;        /* The CsvTable object to construct */
   int bHeader = -1;          /* header= flags.  -1 means not seen yet */
   int rc = SQLITE_OK;        /* Result code from this routine */
-  int i;                     /* Loop counter */
-  char *zFilename = 0;       /* Value of the filename= parameter */
-  char *zSchema = 0;         /* Value of the schema= parameter */
-  int tstFlags = 0;          /* Value of the testflags= parameter */
+  int i, j;                  /* Loop counters */
+  int tstFlags = 0;          /* Value for testflags=N parameter */
   int nCol = -99;            /* Value of the columns= parameter */
   CsvReader sRdr;            /* A CSV file reader used to store an error
                              ** message and/or to count the number of columns */
+  static const char *azParam[] = {
+     "filename", "data", "schema", 
+  };
+  char *azPValue[3];         /* Parameter values */
+# define CSV_FILENAME (azPValue[0])
+# define CSV_DATA     (azPValue[1])
+# define CSV_SCHEMA   (azPValue[2])
 
+
+  assert( sizeof(azPValue)==sizeof(azParam) );
   memset(&sRdr, 0, sizeof(sRdr));
+  memset(azPValue, 0, sizeof(azPValue));
   for(i=3; i<argc; i++){
     const char *z = argv[i];
     const char *zValue;
-    if( (zValue = csv_parameter("filename",8,z))!=0 ){
-      if( zFilename ){
-        csv_errmsg(&sRdr, "more than one 'filename' parameter");
-        goto csvtab_connect_error;
-      }
-      zFilename = sqlite3_mprintf("%s", zValue);
-      if( zFilename==0 ) goto csvtab_connect_oom;
-      csv_trim_whitespace(zFilename);
-      csv_dequote(zFilename);
-    }else
-    if( (zValue = csv_parameter("schema",6,z))!=0 ){
-      if( zSchema ){
-        csv_errmsg(&sRdr, "more than one 'schema' parameter");
-        goto csvtab_connect_error;
-      }
-      zSchema = sqlite3_mprintf("%s", zValue);
-      if( zSchema==0 ) goto csvtab_connect_oom;
-      csv_trim_whitespace(zSchema);
-      csv_dequote(zSchema);
+    for(j=0; j<sizeof(azParam)/sizeof(azParam[0]); j++){
+      if( csv_string_parameter(&sRdr, azParam[j], z, &azPValue[j]) ) break;
+    }
+    if( j<sizeof(azParam)/sizeof(azParam[0]) ){
+      if( sRdr.zErr[0] ) goto csvtab_connect_error;
     }else
     if( (zValue = csv_parameter("header",6,z))!=0 ){
       int x;
@@ -403,11 +487,11 @@ static int csvtabConnect(
       goto csvtab_connect_error;
     }
   }
-  if( zFilename==0 ){
-    csv_errmsg(&sRdr, "missing 'filename' parameter");
+  if( (CSV_FILENAME==0)==(CSV_DATA==0) ){
+    csv_errmsg(&sRdr, "must either filename= or data= but not both");
     goto csvtab_connect_error;
   }
-  if( nCol<=0 && csv_reader_open(&sRdr, zFilename) ){
+  if( nCol<=0 && csv_reader_open(&sRdr, CSV_FILENAME, CSV_DATA) ){
     goto csvtab_connect_error;
   }
   pNew = sqlite3_malloc( sizeof(*pNew) );
@@ -423,24 +507,26 @@ static int csvtabConnect(
       pNew->nCol++;
     }while( sRdr.cTerm==',' );
   }
-  pNew->zFilename = zFilename;
+  pNew->zFilename = CSV_FILENAME;  CSV_FILENAME = 0;
+  pNew->zData = CSV_DATA;          CSV_DATA = 0;
   pNew->tstFlags = tstFlags;
-  zFilename = 0;
   pNew->iStart = bHeader==1 ? ftell(sRdr.in) : 0;
   csv_reader_reset(&sRdr);
-  if( zSchema==0 ){
+  if( CSV_SCHEMA==0 ){
     char *zSep = "";
-    zSchema = sqlite3_mprintf("CREATE TABLE x(");
-    if( zSchema==0 ) goto csvtab_connect_oom;
+    CSV_SCHEMA = sqlite3_mprintf("CREATE TABLE x(");
+    if( CSV_SCHEMA==0 ) goto csvtab_connect_oom;
     for(i=0; i<pNew->nCol; i++){
-      zSchema = sqlite3_mprintf("%z%sc%d TEXT",zSchema, zSep, i);
+      CSV_SCHEMA = sqlite3_mprintf("%z%sc%d TEXT",CSV_SCHEMA, zSep, i);
       zSep = ",";
     }
-    zSchema = sqlite3_mprintf("%z);", zSchema);
+    CSV_SCHEMA = sqlite3_mprintf("%z);", CSV_SCHEMA);
   }
-  rc = sqlite3_declare_vtab(db, zSchema);
+  rc = sqlite3_declare_vtab(db, CSV_SCHEMA);
   if( rc ) goto csvtab_connect_error;
-  sqlite3_free(zSchema);
+  for(i=0; i<sizeof(azPValue)/sizeof(azPValue[0]); i++){
+    sqlite3_free(azPValue[i]);
+  }
   return SQLITE_OK;
 
 csvtab_connect_oom:
@@ -449,8 +535,9 @@ csvtab_connect_oom:
 
 csvtab_connect_error:
   if( pNew ) csvtabDisconnect(&pNew->base);
-  sqlite3_free(zFilename);
-  sqlite3_free(zSchema);
+  for(i=0; i<sizeof(azPValue)/sizeof(azPValue[0]); i++){
+    sqlite3_free(azPValue[i]);
+  }
   if( sRdr.zErr[0] ){
     sqlite3_free(*pzErr);
     *pzErr = sqlite3_mprintf("%s", sRdr.zErr);
@@ -508,7 +595,7 @@ static int csvtabOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
   memset(pCur, 0, sizeof(*pCur) + sizeof(char*)*pTab->nCol );
   pCur->azVal = (char**)&pCur[1];
   *ppCursor = &pCur->base;
-  if( csv_reader_open(&pCur->rdr, pTab->zFilename) ){
+  if( csv_reader_open(&pCur->rdr, pTab->zFilename, pTab->zData) ){
     csv_xfer_error(pTab, &pCur->rdr);
     return SQLITE_ERROR;
   }
@@ -597,12 +684,20 @@ static int csvtabFilter(
   CsvCursor *pCur = (CsvCursor*)pVtabCursor;
   CsvTable *pTab = (CsvTable*)pVtabCursor->pVtab;
   pCur->iRowid = 0;
-  fseek(pCur->rdr.in, pTab->iStart, SEEK_SET);
+  if( pCur->rdr.in==0 ){
+    assert( pCur->rdr.zIn==pTab->zData );
+    assert( pTab->iStart<=pCur->rdr.nIn );
+    pCur->rdr.iIn = pTab->iStart;
+  }else{
+    fseek(pCur->rdr.in, pTab->iStart, SEEK_SET);
+    pCur->rdr.iIn = 0;
+    pCur->rdr.nIn = 0;
+  }
   return csvtabNext(pVtabCursor);
 }
 
 /*
-** Only a forwards full table scan is supported.  xBestIndex is mostly
+** Only a forward full table scan is supported.  xBestIndex is mostly
 ** a no-op.  If CSVTEST_FIDX is set, then the presence of equality
 ** constraints lowers the estimated cost, which is fiction, but is useful
 ** for testing certain kinds of virtual table behavior.
@@ -618,10 +713,17 @@ static int csvtabBestIndex(
   if( (pTab->tstFlags & CSVTEST_FIDX)==0 ){
     return SQLITE_OK;
   }
-  /* The usual (an sensible) case is to take the "return SQLITE_OK" above.
-  ** The code below only runs when testflags=1.  The following code
+  /* The usual (and sensible) case is to take the "return SQLITE_OK" above.
+  ** The code below only runs when testflags=1.  The code below
   ** generates an artifical and unrealistic plan which is useful
-  ** for testing virtual table logic but is useless for real applications. */
+  ** for testing virtual table logic but is not helpfulto real applications.
+  **
+  ** Any ==, LIKE, or GLOB constraint is marked as usable by the virtual
+  ** table (even though it is not) and the cost of running the virtual table
+  ** is reduced from 1 million to just 10.  The constraints are *not* marked
+  ** as omittable, however, so the query planner should still generate a
+  ** plan that gives a correct answer, even if they plan is not optimal.
+  */
   for(i=0; i<pIdxInfo->nConstraint; i++){
     unsigned char op;
     if( pIdxInfo->aConstraint[i].usable==0 ) continue;
