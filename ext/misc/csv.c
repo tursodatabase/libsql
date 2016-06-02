@@ -302,6 +302,7 @@ static void csv_xfer_error(CsvTable *pTab, CsvReader *pRdr){
 static int csvtabDisconnect(sqlite3_vtab *pVtab){
   CsvTable *p = (CsvTable*)pVtab;
   sqlite3_free(p->zFilename);
+  sqlite3_free(p->zData);
   sqlite3_free(p);
   return SQLITE_OK;
 }

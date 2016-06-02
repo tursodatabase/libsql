@@ -2535,7 +2535,7 @@ void sqlite3ExprCodeGetColumnOfTable(
   }else{
     int op = IsVirtual(pTab) ? OP_VColumn : OP_Column;
     int x = iCol;
-    if( !HasRowid(pTab) ){
+    if( !HasRowid(pTab) && !IsVirtual(pTab) ){
       x = sqlite3ColumnOfIndex(sqlite3PrimaryKeyIndex(pTab), iCol);
     }
     sqlite3VdbeAddOp3(v, op, iTabCur, x, regOut);
