@@ -1,5 +1,5 @@
-C An\sexperimental\sbranch\swith\scode\sthat\sallows\svirtual\stables\sto\sbe\sdeclared\nas\sWITHOUT\sROWID\stables.\sThis\smight\sbe\suseful\sfor\svirtual\stables\sthat\smodel\nexternal\sdata\ssources\sthat\sdo\snot\shave\sa\sconvenient\sway\sof\scomputing\sa\sunique\nrowid.\s\sThe\scurrent\scheck-in\salmost\sworks,\sbut\sthere\sare\sstill\sserious\sissues.
-D 2016-05-31T21:18:15.834
+C Fix\scorner\scases\sin\sthe\sWITHOUT\sROWID\svirtual\stable\slogic.
+D 2016-06-02T16:22:53.508
 F Makefile.in f59e0763ff448719fc1bd25513882b0567286317
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 306d73e854b1a92ea06e5d1e637faa5c44de53c7
@@ -328,7 +328,7 @@ F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
 F src/btree.c 2128172fc1c420a6fa6878827fa595407795069a
 F src/btree.h 1342a9b2cc2089e3534d3ef00204786783f6aea6
 F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
-F src/build.c 7acc29d0944bd9995864148286e9daeb0cbce742
+F src/build.c 555b459d1f25fba6c56266e60bbbdc93bdf5f66a
 F src/callback.c 2e76147783386374bf01b227f752c81ec872d730
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 999a828425b35b8092a8cde25690e71c20906344
@@ -456,7 +456,7 @@ F src/vdbeblob.c c9f2f494b911c6fa34efd9803f0a10807da80f77
 F src/vdbemem.c 5cfef60e60e19cab6275d1b975bf4c791d575beb
 F src/vdbesort.c 91fda3909326860382b0ca8aa251e609c6a9d62c
 F src/vdbetrace.c f75c5455d8cf389ef86a8bfdfd3177e0e3692484
-F src/vtab.c 694e444986746b7e3bb9bd3d74e3284dd7209990
+F src/vtab.c a80b4e40ed8687daa3303e970d938b1f613a3eeb
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 02eeecc265f6ffd0597378f5d8ae9070b62a406a
 F src/wal.h 2f7c831cf3b071fa548bf2d5cac640846a7ff19c
@@ -1497,10 +1497,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 28ebeadd6a4c9ff2ce9fc86a0f0fe2f6cf94d3ac
-R f4a0fccb57a153a0ab74e7b69ae020b2
-T *branch * without-rowid-vtab
-T *sym-without-rowid-vtab *
-T -sym-trunk *
+P 49638f180e26477974cacc69b79e0be0a5e18b29
+R cf24c2970498f36ff11e1ac85a33493a
 U drh
-Z 938f365203a268d591e6d60732902516
+Z 5a84619c2e2d24987b3ea5aba48efb6c

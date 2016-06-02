@@ -607,9 +607,7 @@ static void SQLITE_NOINLINE deleteTable(sqlite3 *db, Table *pTable){
     pNext = pIndex->pNext;
     assert( pIndex->pSchema==pTable->pSchema
          || (IsVirtual(pTable) && pIndex->idxType!=SQLITE_IDXTYPE_APPDEF) );
-    if( pIndex->idxType==SQLITE_IDXTYPE_APPDEF
-     && (!db || db->pnBytesFreed==0)
-    ){
+    if( (db==0 || db->pnBytesFreed==0) && !IsVirtual(pTable) ){
       char *zName = pIndex->zName; 
       TESTONLY ( Index *pOld = ) sqlite3HashInsert(
          &pIndex->pSchema->idxHash, zName, 0
@@ -1718,6 +1716,7 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
     assert( pParse->pNewTable==pTab );
     sqlite3CreateIndex(pParse, 0, 0, 0, pList, pTab->keyConf, 0, 0, 0, 0,
                        SQLITE_IDXTYPE_PRIMARYKEY);
+    if( db->mallocFailed ) return;
     pPk = sqlite3PrimaryKeyIndex(pTab);
     pTab->iPKey = -1;
   }else{
@@ -3278,6 +3277,7 @@ void sqlite3CreateIndex(
             pIdx->onError = pIndex->onError;
           }
         }
+        if( idxType==SQLITE_IDXTYPE_PRIMARYKEY ) pIdx->idxType = idxType;
         goto exit_create_index;
       }
     }
@@ -3287,7 +3287,7 @@ void sqlite3CreateIndex(
   ** in-memory database structures. 
   */
   assert( pParse->nErr==0 );
-  if( db->init.busy ){
+  if( db->init.busy && !IN_DECLARE_VTAB ){
     Index *p;
     assert( sqlite3SchemaMutexHeld(db, 0, pIndex->pSchema) );
     p = sqlite3HashInsert(&pIndex->pSchema->idxHash, 

@@ -755,13 +755,20 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
     ){
       if( !pTab->aCol ){
         Table *pNew = pParse->pNewTable;
+        Index *pIdx;
         pTab->aCol = pNew->aCol;
         pTab->nCol = pNew->nCol;
         pTab->tabFlags |= pNew->tabFlags & TF_WithoutRowid;
-        pTab->pIndex = pNew->pIndex;
         pNew->nCol = 0;
         pNew->aCol = 0;
-        pNew->pIndex = 0;
+        assert( pTab->pIndex==0 );
+        pIdx = pNew->pIndex;
+        if( pIdx ){
+          assert( pIdx->pNext==0 );
+          pTab->pIndex = pIdx;
+          pNew->pIndex = 0;
+          pIdx->pTable = pTab;
+        }
       }
       pCtx->bDeclared = 1;
     }else{
