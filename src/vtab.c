@@ -762,6 +762,9 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
         pNew->nCol = 0;
         pNew->aCol = 0;
         assert( pTab->pIndex==0 );
+        if( !HasRowid(pNew) && pCtx->pVTable->pMod->pModule->xUpdate!=0 ){
+          rc = SQLITE_ERROR;
+        }
         pIdx = pNew->pIndex;
         if( pIdx ){
           assert( pIdx->pNext==0 );

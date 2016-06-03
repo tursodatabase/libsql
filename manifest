@@ -1,5 +1,5 @@
-C Add\sthe\sCSV\sextension\sto\sthe\stest\sfixture.\s\sFix\sa\smemory\sleak\sin\sthe\sCSV\nextension.\s\sAdd\stest\scases\sfor\sthe\sCSV\sextension,\sincluding\sone\sthat\suses\na\sWITHOUT\sROWID\svirtual\stable\sparticipating\sin\sthe\sOR\soptimization.
-D 2016-06-02T23:13:21.510
+C Performance\soptimizations\son\sthe\sCSV\svirtual\stable.\s\sDisallow\sWITHOUT\sROWID\nvirtual\stables\sthat\shave\san\sxUpdate\smethod,\sfor\snow.
+D 2016-06-03T01:01:57.592
 F Makefile.in 7321ef0b584224781ec7731408857fa8962c32cc
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 831503fc4e988f571590af1405645fff121b5f1e
@@ -206,7 +206,7 @@ F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/misc/amatch.c 211108e201105e4bb0c076527b8cfd34330fc234
 F ext/misc/closure.c 0d2a038df8fbae7f19de42e7c7d71f2e4dc88704
 F ext/misc/compress.c 122faa92d25033d6c3f07c39231de074ab3d2e83
-F ext/misc/csv.c 58ad4e9eb25310a2712e0cb78592dc15924f0379
+F ext/misc/csv.c f01126ba170fd4ef7c752b156568a80c912d4441
 F ext/misc/eval.c f971962e92ebb8b0a4e6b62949463ee454d88fa2
 F ext/misc/fileio.c d4171c815d6543a9edef8308aab2951413cd8d0f
 F ext/misc/fuzzer.c 7c64b8197bb77b7d64eff7cac7848870235d4c25
@@ -456,7 +456,7 @@ F src/vdbeblob.c c9f2f494b911c6fa34efd9803f0a10807da80f77
 F src/vdbemem.c 5cfef60e60e19cab6275d1b975bf4c791d575beb
 F src/vdbesort.c 91fda3909326860382b0ca8aa251e609c6a9d62c
 F src/vdbetrace.c f75c5455d8cf389ef86a8bfdfd3177e0e3692484
-F src/vtab.c a80b4e40ed8687daa3303e970d938b1f613a3eeb
+F src/vtab.c a9e8175477539660814a4704e8eaba6df3678651
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 02eeecc265f6ffd0597378f5d8ae9070b62a406a
 F src/wal.h 2f7c831cf3b071fa548bf2d5cac640846a7ff19c
@@ -612,7 +612,7 @@ F test/crashM.test d95f59046fa749b0d0822edf18a717788c8f318d
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test b5de160630b209c4b8925bdcbbaf48cc90b67fe8
 F test/cse.test 277350a26264495e86b1785f34d2d0c8600e021c
-F test/csv01.test 44a9786f6cb4dcf40f3d5d59844dbb88d2265e5d
+F test/csv01.test 69aecc17f11f597390b47700aec8d748b8364140
 F test/ctime.test 7bd009071e242aac4f18521581536b652b789a47
 F test/cursorhint.test 7bc346788390475e77a345da2b92270d04d35856
 F test/date.test 984ac1e3e5e031386866f034006148d3972b4a65
@@ -1498,7 +1498,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 769191042aa14e6eccdfe2391fc1011171d5c9ad
-R 7cb009be35227902926fe0d852282f91
+P 95f483e86e30ae68108904400e18ed41d389446b
+R 110a9ed97c9cb7052ae396116c46b04d
 U drh
-Z 7f2a8b3dbd34984ea991a68c56b4587b
+Z 863bf523824cd922d795a07ca8451a6d
