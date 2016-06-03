@@ -1,5 +1,5 @@
-C Fix\san\sissue\spreventing\sRBU\svacuum\sfrom\sworking\swith\svirtual\stables.
-D 2016-06-01T10:37:50.553
+C Enhance\sthe\ssqlite3_load_extension()\sinterface\sto\spermit\sextensions\sto\s\nreturn\sSQLITE_OK_LOAD_PERMANENTLY\swhich\swill\sprevents\sunloading\swhen\nthe\sdatabase\sconnection\scloses.
+D 2016-06-03T13:35:55.049
 F Makefile.in f59e0763ff448719fc1bd25513882b0567286317
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 306d73e854b1a92ea06e5d1e637faa5c44de53c7
@@ -222,7 +222,7 @@ F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c bf1b922c2750698e9a3d4c50cce6974adb7e93be
 F ext/misc/totype.c 4a167594e791abeed95e0a8db028822b5e8fe512
 F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
-F ext/misc/vfsstat.c aed1f11904f07487d71015c8826885f57e4644b3
+F ext/misc/vfsstat.c 6110aeeaab2f1df17a923c8a8acef3c74f6dc515
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
 F ext/rbu/rbu.c b2c0b5e6ae1a89affc0edfc127ebfa5f637a0ce4
@@ -346,7 +346,7 @@ F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
 F src/insert.c 8f4e9fcbd8e95e85f15647ba8b413b18d556ec2b
 F src/legacy.c 75d3023be8f0d2b99d60f905090341a03358c58e
-F src/loadext.c 8b3a73f0624c5f7cadbd5cb89940783bee1d39a6
+F src/loadext.c 4237fd37ca589f1d90b3ea925dd9df20da8e0c84
 F src/main.c 405d13e3a4f7c5add9fb27702ae70ed0a6e32cca
 F src/malloc.c 1443d1ad95d67c21d77af7ae3f44678252f0efec
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
@@ -384,7 +384,7 @@ F src/resolve.c cca3aa77b95706df5d635a2141a4d1de60ae6598
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c a0c4abf54bc6bd3a9c77a36ef3d1676045706cb2
 F src/shell.c 14ff7f660530a52b117d110ba3390b7b2eb719b6
-F src/sqlite.h.in 9984129d86243424b765fcb3f147c697bd20bb54
+F src/sqlite.h.in 5f8113dbec74c6c093ead9930afb8c9fbd9f643d
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 98f72cbfe00169c39089115427d06ea05fe4b4a2
 F src/sqliteInt.h 09621b4b7dba808b24262c2480ea75b045001853
@@ -1498,7 +1498,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f6e956525b03fa07190e5521edac4758c386cc80
-R e1810942aeafbc52047febcf823bcd33
-U dan
-Z 9391b61c89a105fa8d99de95f920a23b
+P 3bd85fa5a9a489fd505c973e37c33a76c1b0e957 d3f99a5e8d0486d0917dfe96987c179a6f63b850
+R ae39387c327ccfd8ae1b949a8c2348a2
+T +closed d3f99a5e8d0486d0917dfe96987c179a6f63b850
+U drh
+Z 5e388deebe72b8e4fdd13fe3fcf9419e

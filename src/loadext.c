@@ -446,6 +446,7 @@ static int sqlite3LoadExtension(
   void **aHandle;
   u64 nMsg = 300 + sqlite3Strlen30(zFile);
   int ii;
+  int rc;
 
   /* Shared library endings to try if zFile cannot be loaded as written */
   static const char *azEndings[] = {
@@ -548,7 +549,9 @@ static int sqlite3LoadExtension(
     return SQLITE_ERROR;
   }
   sqlite3_free(zAltEntry);
-  if( xInit(db, &zErrmsg, &sqlite3Apis) ){
+  rc = xInit(db, &zErrmsg, &sqlite3Apis);
+  if( rc ){
+    if( rc==SQLITE_OK_LOAD_PERMANENTLY ) return SQLITE_OK;
     if( pzErrMsg ){
       *pzErrMsg = sqlite3_mprintf("error during initialization: %s", zErrmsg);
     }
