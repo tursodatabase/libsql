@@ -1,5 +1,5 @@
-C Disallow\saccess\sto\sthe\srowid\scolumn\son\sWITHOUT\sROWID\svirtual\stables.
-D 2016-06-03T17:27:14.741
+C Fix\sa\smemory\sleak\swhen\sa\sWITHOUT\sROWID\seponymous\svirtual\stable\sis\sused.
+D 2016-06-03T18:21:04.549
 F Makefile.in 7321ef0b584224781ec7731408857fa8962c32cc
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 831503fc4e988f571590af1405645fff121b5f1e
@@ -337,7 +337,7 @@ F src/dbstat.c c845548d4346e606e2f2b7d2e714ace2b8a7dd1b
 F src/delete.c 4aba4214a377ce8ddde2d2e609777bcc8235200f
 F src/expr.c 798146ea4c87d723e8a157d88450ac9c43256998
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
-F src/fkey.c 4c0bd09e602b8ae8d36d81e31e4872d0b53c87bb
+F src/fkey.c bc4145347595b7770f9a598cff1c848302cf5413
 F src/func.c ef4c18c8a66143413ce41a58d582d2c14ddf78e1
 F src/global.c c45ea22aff29334f6a9ec549235ac3357c970015
 F src/hash.c 55b5fb474100cee0b901edaf203e26c970940f36
@@ -456,7 +456,7 @@ F src/vdbeblob.c c9f2f494b911c6fa34efd9803f0a10807da80f77
 F src/vdbemem.c 5cfef60e60e19cab6275d1b975bf4c791d575beb
 F src/vdbesort.c 91fda3909326860382b0ca8aa251e609c6a9d62c
 F src/vdbetrace.c f75c5455d8cf389ef86a8bfdfd3177e0e3692484
-F src/vtab.c 7a143175f5586d99f78f61b43a563caa03eb4d63
+F src/vtab.c 948d2d4984219eee37a7bf427d6667e21e6eb92e
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 02eeecc265f6ffd0597378f5d8ae9070b62a406a
 F src/wal.h 2f7c831cf3b071fa548bf2d5cac640846a7ff19c
@@ -1498,7 +1498,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3134b3266c36c9d018e8d365ef46ef638c0792f4
-R 6bd90244b320ac429cd2120cdab002d9
+P d31c25972bfb6d04caad05534505698776e7e6d5
+R 531a893078b3c566412693ad918cbea6
 U drh
-Z 5fa00a97540dd1b5ac1a6e73a3f78ebc
+Z 4ddeb8f309e9f433c6376653796d4760

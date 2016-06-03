@@ -1101,7 +1101,7 @@ void sqlite3VtabMakeWritable(Parse *pParse, Table *pTab){
 }
 
 /*
-** Check to see if virtual tale module pMod can be have an eponymous
+** Check to see if virtual table module pMod can be have an eponymous
 ** virtual table instance.  If it can, create one if one does not already
 ** exist. Return non-zero if the eponymous virtual table instance exists
 ** when this routine returns, and return zero if it does not exist.
@@ -1118,17 +1118,18 @@ int sqlite3VtabEponymousTableInit(Parse *pParse, Module *pMod){
   const sqlite3_module *pModule = pMod->pModule;
   Table *pTab;
   char *zErr = 0;
-  int nName;
   int rc;
   sqlite3 *db = pParse->db;
   if( pMod->pEpoTab ) return 1;
   if( pModule->xCreate!=0 && pModule->xCreate!=pModule->xConnect ) return 0;
-  nName = sqlite3Strlen30(pMod->zName) + 1;
-  pTab = sqlite3DbMallocZero(db, sizeof(Table) + nName);
+  pTab = sqlite3DbMallocZero(db, sizeof(Table));
   if( pTab==0 ) return 0;
+  pTab->zName = sqlite3DbStrDup(db, pMod->zName);
+  if( pTab->zName==0 ){
+    sqlite3DbFree(db, pTab);
+    return 0;
+  }
   pMod->pEpoTab = pTab;
-  pTab->zName = (char*)&pTab[1];
-  memcpy(pTab->zName, pMod->zName, nName);
   pTab->nRef = 1;
   pTab->pSchema = db->aDb[0].pSchema;
   pTab->tabFlags |= TF_Virtual;
@@ -1154,9 +1155,11 @@ int sqlite3VtabEponymousTableInit(Parse *pParse, Module *pMod){
 void sqlite3VtabEponymousTableClear(sqlite3 *db, Module *pMod){
   Table *pTab = pMod->pEpoTab;
   if( pTab!=0 ){
-    sqlite3DeleteColumnNames(db, pTab);
-    sqlite3VtabClear(db, pTab);
-    sqlite3DbFree(db, pTab);
+    /* Mark the table as Ephemeral prior to deleting it, so that the
+    ** sqlite3DeleteTable() routine will know that it is not stored in 
+    ** the schema. */
+    pTab->tabFlags |= TF_Ephemeral;
+    sqlite3DeleteTable(db, pTab);
     pMod->pEpoTab = 0;
   }
 }
