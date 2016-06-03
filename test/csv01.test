@@ -88,6 +88,11 @@ do_execsql_test 3.1 {
   SELECT a FROM t3 WHERE +b=6 OR c=7 OR d=12 ORDER BY +a;
 } {5 9}
 
+# The rowid column is not visible on a WITHOUT ROWID virtual table
+do_catchsql_test 3.2 {
+  SELECT rowid, a FROM t3;
+} {1 {no such column: rowid}}
+
 do_catchsql_test 4.0 {
   DROP TABLE t3;
   CREATE VIRTUAL TABLE temp.t4 USING csv_wr(
