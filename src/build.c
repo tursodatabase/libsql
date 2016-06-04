@@ -3287,8 +3287,9 @@ void sqlite3CreateIndex(
   ** in-memory database structures. 
   */
   assert( pParse->nErr==0 );
-  if( db->init.busy && !IN_DECLARE_VTAB ){
+  if( db->init.busy ){
     Index *p;
+    assert( !IN_DECLARE_VTAB );
     assert( sqlite3SchemaMutexHeld(db, 0, pIndex->pSchema) );
     p = sqlite3HashInsert(&pIndex->pSchema->idxHash, 
                           pIndex->zName, pIndex);

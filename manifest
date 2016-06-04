@@ -1,5 +1,5 @@
-C The\sOR\soptimization\sis\susable\son\svirtual\stables\swith\sLIKE,\sREGEXP\sand/or\sGLOB\nterms\sin\sthe\sWHERE\sclause.
-D 2016-06-03T18:59:37.684
+C Remove\san\sunreachable\sbranch\sin\sthe\sUNIQUE\sconstraint\sparsing.
+D 2016-06-04T13:57:41.807
 F Makefile.in 7321ef0b584224781ec7731408857fa8962c32cc
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 831503fc4e988f571590af1405645fff121b5f1e
@@ -329,7 +329,7 @@ F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
 F src/btree.c 2128172fc1c420a6fa6878827fa595407795069a
 F src/btree.h 1342a9b2cc2089e3534d3ef00204786783f6aea6
 F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
-F src/build.c 555b459d1f25fba6c56266e60bbbdc93bdf5f66a
+F src/build.c e827e57e4a29c00e8429c5fd4d9d4572cb1b32a4
 F src/callback.c 2e76147783386374bf01b227f752c81ec872d730
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 999a828425b35b8092a8cde25690e71c20906344
@@ -1500,8 +1500,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P aa7e9d0cc15c050205b09d5a50f985e4ade571d0 242507b4ff96bc4c7c7844dbe1c2b8508dbf1d01
-R dfe54e67ed3ff0c24bd7773ed3ea50c6
-T +closed 242507b4ff96bc4c7c7844dbe1c2b8508dbf1d01
+P fa3a89fc0b88d5ad7f5c232198847b3483eef611
+R 792813b3b416caa613200f5d3538ce28
 U drh
-Z 465e32629738d03f290a2446a78a1b88
+Z d457dbe5f31dc59ad0f374dbed05972f
