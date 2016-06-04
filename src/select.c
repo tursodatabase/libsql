@@ -1028,7 +1028,7 @@ static void selectInnerLoop(
 */
 KeyInfo *sqlite3KeyInfoAlloc(sqlite3 *db, int N, int X){
   int nExtra = (N+X)*(sizeof(CollSeq*)+1);
-  KeyInfo *p = sqlite3Malloc(sizeof(KeyInfo) + nExtra);
+  KeyInfo *p = sqlite3DbMallocRaw(db, sizeof(KeyInfo) + nExtra);
   if( p ){
     p->aSortOrder = (u8*)&p->aColl[N+X];
     p->nField = (u16)N;
@@ -1050,7 +1050,7 @@ void sqlite3KeyInfoUnref(KeyInfo *p){
   if( p ){
     assert( p->nRef>0 );
     p->nRef--;
-    if( p->nRef==0 ) sqlite3DbFree(0, p);
+    if( p->nRef==0 ) sqlite3DbFree(p->db, p);
   }
 }
 

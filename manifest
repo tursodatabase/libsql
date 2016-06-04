@@ -1,5 +1,5 @@
-C Fix\sup\sspeedtest1.c\sso\sthat\sit\swill\scompile\sand\srun\son\sSQLite\sversions\sprior\nto\s3.6.18\s(circa\s2009-09-11).
-D 2016-06-04T16:33:48.064
+C Allocate\sKeyInfo\sobjects\sfrom\slookaside\sif\spossible.
+D 2016-06-04T17:12:26.466
 F Makefile.in 7321ef0b584224781ec7731408857fa8962c32cc
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 831503fc4e988f571590af1405645fff121b5f1e
@@ -382,7 +382,7 @@ F src/printf.c a5f0ca08ddede803c241266abb46356ec748ded1
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c cca3aa77b95706df5d635a2141a4d1de60ae6598
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c a0c4abf54bc6bd3a9c77a36ef3d1676045706cb2
+F src/select.c f3c6e9065fb34f6a23af27ec7f1f717ffbfc2ee4
 F src/shell.c 14ff7f660530a52b117d110ba3390b7b2eb719b6
 F src/sqlite.h.in 5f8113dbec74c6c093ead9930afb8c9fbd9f643d
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1500,7 +1500,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 313e990c741d7db082f1d9b9f3f4c65fdd91b812
-R 0ccf0692aa5b1e3235a74f8650fcfe4f
+P 9583c0fb39f357a76e0c99ea03b034aea3e03c75
+R 065fce549d6916be91d3267449fff27c
 U drh
-Z a2bd3a06dcb83b470b97f0c6e2306afd
+Z 36eef125b8bc40e49e28e0447e72ab1c
