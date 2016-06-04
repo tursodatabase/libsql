@@ -619,8 +619,9 @@ static int saveCursorKey(BtCursor *pCur){
     pCur->nKey = sqlite3BtreeIntegerKey(pCur);
   }else{
     /* For an index btree, save the complete key content */
+    void *pKey;
     pCur->nKey = sqlite3BtreePayloadSize(pCur);
-    void *pKey = sqlite3Malloc( pCur->nKey );
+    pKey = sqlite3Malloc( pCur->nKey );
     if( pKey ){
       rc = sqlite3BtreeKey(pCur, 0, (int)pCur->nKey, pKey);
       if( rc==SQLITE_OK ){

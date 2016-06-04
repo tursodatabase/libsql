@@ -4646,7 +4646,7 @@ case OP_RowData: {
 #endif
 
   n = sqlite3BtreePayloadSize(pCrsr);
-  if( n>db->aLimit[SQLITE_LIMIT_LENGTH] ){
+  if( n>(u32)db->aLimit[SQLITE_LIMIT_LENGTH] ){
     goto too_big;
   }
   testcase( n==0 );
