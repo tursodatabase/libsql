@@ -1,5 +1,5 @@
-C Fix\sa\sC99-ism\sand\sa\scompiler\swarning\sfor\sMSVC.
-D 2016-06-04T20:58:35.587
+C Improved\scomment\son\scursorOwnsBtShared().\s\sNo\schanges\sto\scode.
+D 2016-06-04T21:05:54.667
 F Makefile.in 7321ef0b584224781ec7731408857fa8962c32cc
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 831503fc4e988f571590af1405645fff121b5f1e
@@ -326,7 +326,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 6df65fdd569c901a418887a1a76f82ec35044556
 F src/bitvec.c 3ee4c8b2c94ed3a7377256e18199e6ff5cf33f63
 F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
-F src/btree.c 579a8160f57db168425ef940276319bed48a95d3
+F src/btree.c b8875cff2d98d662a7e25d73483bccc2374d8bdb
 F src/btree.h 2107a2630e02c8cba58bb12ce14e731e734ea29c
 F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
 F src/build.c e827e57e4a29c00e8429c5fd4d9d4572cb1b32a4
@@ -1500,7 +1500,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bef35e18dd19732f7859287b097feeb593e5900f
-R 7b13c2762e2abdaed13574cfe801f7ea
+P aa53a36ea2eb90cc4939e37e6ad320b4211692fd
+R 31679baf828d6d3e0ee835dac82e6874
 U drh
-Z c33407f01f615b8db559b27222022193
+Z bd564a0c26801286c1f95fad1a35ec86
