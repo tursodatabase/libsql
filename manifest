@@ -1,5 +1,5 @@
-C Remove\san\sunreachable\sbranch\sin\sthe\sUNIQUE\sconstraint\sparsing.
-D 2016-06-04T13:57:41.807
+C Fix\sup\sspeedtest1.c\sso\sthat\sit\swill\scompile\sand\srun\son\sSQLite\sversions\sprior\nto\s3.6.18\s(circa\s2009-09-11).
+D 2016-06-04T16:33:48.064
 F Makefile.in 7321ef0b584224781ec7731408857fa8962c32cc
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 831503fc4e988f571590af1405645fff121b5f1e
@@ -1093,7 +1093,7 @@ F test/speed3.test d32043614c08c53eafdc80f33191d5bd9b920523
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
-F test/speedtest1.c 4476f7030775507f060d27b789e1f4123c5a5866
+F test/speedtest1.c 28221f433d358dd3fcf2ca504ed51409aa66ffaf
 F test/spellfix.test f9c1f431e2c096c8775fec032952320c0e4700db
 F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
 F test/spellfix3.test 0f9efaaa502a0e0a09848028518a6fb096c8ad33
@@ -1500,7 +1500,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fa3a89fc0b88d5ad7f5c232198847b3483eef611
-R 792813b3b416caa613200f5d3538ce28
+P 313e990c741d7db082f1d9b9f3f4c65fdd91b812
+R 0ccf0692aa5b1e3235a74f8650fcfe4f
 U drh
-Z d457dbe5f31dc59ad0f374dbed05972f
+Z a2bd3a06dcb83b470b97f0c6e2306afd
