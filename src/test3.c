@@ -385,8 +385,7 @@ static int btree_payload_size(
   const char **argv      /* Text of each argument */
 ){
   BtCursor *pCur;
-  int n2;
-  u64 n1;
+  u32 n;
   char zBuf[50];
 
   if( argc!=2 ){
@@ -396,17 +395,9 @@ static int btree_payload_size(
   }
   pCur = sqlite3TestTextToPtr(argv[1]);
   sqlite3BtreeEnter(pCur->pBtree);
-
-  /* The cursor may be in "require-seek" state. If this is the case, the
-  ** call to BtreeDataSize() will fix it. */
-  sqlite3BtreeDataSize(pCur, (u32*)&n2);
-  if( pCur->apPage[pCur->iPage]->intKey ){
-    n1 = 0;
-  }else{
-    sqlite3BtreeKeySize(pCur, (i64*)&n1);
-  }
+  n = sqlite3BtreePayloadSize(pCur);
   sqlite3BtreeLeave(pCur->pBtree);
-  sqlite3_snprintf(sizeof(zBuf),zBuf, "%d", (int)(n1+n2));
+  sqlite3_snprintf(sizeof(zBuf),zBuf, "%u", n);
   Tcl_AppendResult(interp, zBuf, 0);
   return SQLITE_OK;
 }

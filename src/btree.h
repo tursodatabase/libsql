@@ -284,11 +284,10 @@ int sqlite3BtreeLast(BtCursor*, int *pRes);
 int sqlite3BtreeNext(BtCursor*, int *pRes);
 int sqlite3BtreeEof(BtCursor*);
 int sqlite3BtreePrevious(BtCursor*, int *pRes);
-int sqlite3BtreeKeySize(BtCursor*, i64 *pSize);
+i64 sqlite3BtreeIntegerKey(BtCursor*);
 int sqlite3BtreeKey(BtCursor*, u32 offset, u32 amt, void*);
-const void *sqlite3BtreeKeyFetch(BtCursor*, u32 *pAmt);
-const void *sqlite3BtreeDataFetch(BtCursor*, u32 *pAmt);
-int sqlite3BtreeDataSize(BtCursor*, u32 *pSize);
+const void *sqlite3BtreePayloadFetch(BtCursor*, u32 *pAmt);
+u32 sqlite3BtreePayloadSize(BtCursor*);
 int sqlite3BtreeData(BtCursor*, u32 offset, u32 amt, void*);
 
 char *sqlite3BtreeIntegrityCheck(Btree*, int *aRoot, int nRoot, int, int*);

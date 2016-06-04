@@ -1650,8 +1650,7 @@ int sqlite3_preupdate_old(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
     u32 nRec;
     u8 *aRec;
 
-    rc = sqlite3BtreeDataSize(p->pCsr->uc.pCursor, &nRec);
-    if( rc!=SQLITE_OK ) goto preupdate_old_out;
+    nRec = sqlite3BtreePayloadSize(p->pCsr->uc.pCursor);
     aRec = sqlite3DbMallocRaw(db, nRec);
     if( !aRec ) goto preupdate_old_out;
     rc = sqlite3BtreeData(p->pCsr->uc.pCursor, 0, nRec, aRec);

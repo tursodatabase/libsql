@@ -1,5 +1,5 @@
-C Allocate\sKeyInfo\sobjects\sfrom\slookaside\sif\spossible.
-D 2016-06-04T17:12:26.466
+C Change\sthe\ssqlite3BtreeKeySize()\sinterface\sinto\ssqlite3BtreeIntegerKey()\sand\nmake\sit\sonly\swork\sfor\stable\sbtrees.\s\sChange\ssqlite3BtreeDataSize()\sinto\nsqlite3BtreePayloadSize()\sand\smake\sit\swork\sfor\sall\sbtrees.\s\sCombine\nsqlite3BtreeDataFetch()\sand\ssqlite3BtreeKeyFetch()\sinto\sa\ssingle\nsqlite3BtreePayloadFetch()\sroutine.\s\sThese\schanges\sseem\sto\smake\sthe\nb-tree\sinterface\smore\srational\sand\sthey\sreduce\sboth\sbinary\ssize\sand\nCPU\susage.
+D 2016-06-04T20:37:10.186
 F Makefile.in 7321ef0b584224781ec7731408857fa8962c32cc
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 831503fc4e988f571590af1405645fff121b5f1e
@@ -326,8 +326,8 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 6df65fdd569c901a418887a1a76f82ec35044556
 F src/bitvec.c 3ee4c8b2c94ed3a7377256e18199e6ff5cf33f63
 F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
-F src/btree.c 2128172fc1c420a6fa6878827fa595407795069a
-F src/btree.h 1342a9b2cc2089e3534d3ef00204786783f6aea6
+F src/btree.c b55e96857e89734ae0ef2e77ed07b5e55314f1d9
+F src/btree.h 2107a2630e02c8cba58bb12ce14e731e734ea29c
 F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
 F src/build.c e827e57e4a29c00e8429c5fd4d9d4572cb1b32a4
 F src/callback.c 2e76147783386374bf01b227f752c81ec872d730
@@ -394,7 +394,7 @@ F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
 F src/tclsqlite.c 9c4c4589d078de37813ded708d8838b338ffb060
 F src/test1.c 43b37ab2b7338fd3313e74902f0d6c821eae843b
 F src/test2.c 5586f43fcd9a1be0830793cf9d354082c261b25b
-F src/test3.c d2c9efd2985ff8f5502ffd3253156984778d77d8
+F src/test3.c c75c8af0eadb335236c9e61b51044c58a8f7dd59
 F src/test4.c d168f83cc78d02e8d35567bb5630e40dcd85ac1e
 F src/test5.c 5a34feec76d9b3a86aab30fd4f6cc9c48cbab4c1
 F src/test6.c a684b7abd01352ab50cb79c0bf727e6b3f381a3d
@@ -448,13 +448,13 @@ F src/update.c 4f05ea8cddfa367d045e03589756c02199e8f9bd
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c 810ec3f22e2d1b62e66c30fe3621ebdedd23584d
 F src/vacuum.c feb1eabb20987983d9350cad98299b21fa811f52
-F src/vdbe.c 45e4da739187028281e342f79fae0f4145055bec
+F src/vdbe.c f6d37b366fe426637708ad6ad21d93e8b52512e2
 F src/vdbe.h 5591b5add447096e31288b5a0a78ec5d7b5c5170
 F src/vdbeInt.h ddb157974436d87652de7dc641f7191496d9a8cd
-F src/vdbeapi.c ba85b78fe08dc4a9ce747e62c89a2b4a4547e74c
-F src/vdbeaux.c 1d6b9a979d1036db7bc39990e9e683f19520bc5c
-F src/vdbeblob.c c9f2f494b911c6fa34efd9803f0a10807da80f77
-F src/vdbemem.c 5cfef60e60e19cab6275d1b975bf4c791d575beb
+F src/vdbeapi.c 02bcbc2ca5d2004b029088b05b468b394881e103
+F src/vdbeaux.c c90275b0e55a2b32c03dc09314194fe46f2429d8
+F src/vdbeblob.c 83d2d266383157b02e2b809350bb197e89d7895b
+F src/vdbemem.c 1ecaa5ee0caff07255f25d04e8dc88befb6f88d1
 F src/vdbesort.c 91fda3909326860382b0ca8aa251e609c6a9d62c
 F src/vdbetrace.c f75c5455d8cf389ef86a8bfdfd3177e0e3692484
 F src/vtab.c 948d2d4984219eee37a7bf427d6667e21e6eb92e
@@ -1500,7 +1500,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9583c0fb39f357a76e0c99ea03b034aea3e03c75
-R 065fce549d6916be91d3267449fff27c
+P b411107a3609d53af4e147f01e311b858b78420b
+R 80a60ad5ffc5ad6e753a2a298aeee05c
+T *branch * btree-refactor
+T *sym-btree-refactor *
+T -sym-trunk *
 U drh
-Z 36eef125b8bc40e49e28e0447e72ab1c
+Z 4c3d5b0be019f44c3e1bc23daff07019
