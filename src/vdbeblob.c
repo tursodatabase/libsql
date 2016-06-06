@@ -415,7 +415,7 @@ static int blobReadWrite(
       ** anyhow.
       */
       sqlite3_int64 iKey;
-      sqlite3BtreeKeySize(p->pCsr, &iKey);
+      iKey = sqlite3BtreeIntegerKey(p->pCsr);
       sqlite3VdbePreUpdateHook(
           v, v->apCsr[0], SQLITE_DELETE, p->zDb, p->pTab, iKey, -1
       );
