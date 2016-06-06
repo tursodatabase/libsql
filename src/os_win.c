@@ -5274,6 +5274,13 @@ static int winFullPathname(
   SimulateIOError( return SQLITE_ERROR );
   UNUSED_PARAMETER(nFull);
   assert( nFull>=pVfs->mxPathname );
+  /* If this path name begins with "/X:", where "X" is any alphabetic
+  ** character, discard the initial "/" from the pathname.
+  */
+  if( zRelative[0]=='/' && winIsDriveLetterAndColon(zRelative+1) ){
+    zRelative++;
+  }
+
   if ( sqlite3_data_directory && !winIsVerbatimPathname(zRelative) ){
     /*
     ** NOTE: We are dealing with a relative path name and the data
@@ -5329,6 +5336,13 @@ static int winFullPathname(
 
 #if (SQLITE_OS_WINCE || SQLITE_OS_WINRT) && !defined(__CYGWIN__)
   SimulateIOError( return SQLITE_ERROR );
+  /* If this path name begins with "/X:", where "X" is any alphabetic
+  ** character, discard the initial "/" from the pathname.
+  */
+  if( zRelative[0]=='/' && winIsDriveLetterAndColon(zRelative+1) ){
+    zRelative++;
+  }
+
   /* WinCE has no concept of a relative pathname, or so I am told. */
   /* WinRT has no way to convert a relative path to an absolute one. */
   if ( sqlite3_data_directory && !winIsVerbatimPathname(zRelative) ){
