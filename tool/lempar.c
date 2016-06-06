@@ -340,6 +340,9 @@ void *ParseAlloc(void *(*mallocProc)(YYMALLOCARGTYPE)){
       pParser->yystksz = 1;
     }
 #endif
+#ifndef YYNOERRORRECOVERY
+    pParser->yyerrcnt = -1;
+#endif
     pParser->yytos = pParser->yystack;
     pParser->yystack[0].stateno = 0;
     pParser->yystack[0].major = 0;
