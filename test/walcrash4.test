@@ -35,6 +35,14 @@ do_execsql_test 1.0 {
 
 faultsim_save_and_close
 
+# The error message is different on unix and windows
+#
+if {$::tcl_platform(platform)=="windows"} {
+ set msg "child killed: unknown signal"
+} else {
+ set msg "child process exited abnormally"
+}
+
 for {set nExtra 0} {$nExtra < 10} {incr nExtra} {
   for {set i 0} {$i < 10} {incr i} {
     do_test 1.nExtra=$nExtra.i=$i.1 {
@@ -63,7 +71,7 @@ for {set nExtra 0} {$nExtra < 10} {incr nExtra} {
     
       set r [catch { exec [info nameofexec] crash.tcl >@stdout } msg]
       list $r $msg
-    } {1 {child process exited abnormally}}
+    } "1 {$msg}"
   
     do_execsql_test 1.nExtra=$nExtra.i=$i.2 { 
       SELECT count(*) FROM t1;

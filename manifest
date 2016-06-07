@@ -1,5 +1,5 @@
-C In\swinFullPathname,\stranslate\s'/X:'\sto\s'X:'\sbefore\sdoing\sanything\selse.
-D 2016-06-06T20:36:26.843
+C Fix\sthe\swalcrash4.test\stest\smodule\sso\sthat\sit\sworks\son\swindows.
+D 2016-06-07T20:25:19.931
 F Makefile.in 7321ef0b584224781ec7731408857fa8962c32cc
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 831503fc4e988f571590af1405645fff121b5f1e
@@ -1361,7 +1361,7 @@ F test/walcksum.test bb234a1bb42248b3515d992b719708015c384278
 F test/walcrash.test 21038858cc552077b0522f50b0fa87e38139306a
 F test/walcrash2.test a0edab4e5390f03b99a790de89aad15d6ec70b36
 F test/walcrash3.test e426aa58122d20f2b9fbe9a507f9eb8cab85b8af
-F test/walcrash4.test fa7d92ab84fe3ff409e1cda88a622545e2bc2b66
+F test/walcrash4.test 3374d6a0813bfe9d841a973958e0552b545a6423
 F test/walfault.test 1f8389f7709877e9b4cc679033d71d6fe529056b
 F test/walhook.test ed00a40ba7255da22d6b66433ab61fab16a63483
 F test/walmode.test 4022fe03ae6e830583672caa101f046438a0473c
@@ -1500,7 +1500,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f8470ffc49918099820cc0008b9089e5fe8a7dff
-R c81f8bc1e79df8beab98e4603e5f0a7e
-U mistachkin
-Z 376528e39cb88246cfc2bf50694a3c28
+P e404ad705d0e2d96025d05cc88348ffcd0703533
+R 17828d50ca8a72aedc66939901a97177
+U drh
+Z c43be01e1ddab6118f1ee2a4247dca79
