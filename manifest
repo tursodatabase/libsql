@@ -1,5 +1,5 @@
-C Fix\sthe\sdbhash\sutility\sso\sthat\sit\signores\sthe\sroot\spage\snumber\swhen\shashing\nthe\ssqlite_master\stable.\s\sAdd\snew\scommand-line\soptions.\s\sAdd\sthe\sability\sto\nhash\smultiple\sdatabases\swith\sa\ssingle\scommand.
-D 2016-06-08T13:49:28.865
+C Fix\san\sundersized\sbuffer\sin\sthe\sSHA1\simplementation.
+D 2016-06-08T13:59:35.817
 F Makefile.in f3f7d2060ce03af4584e711ef3a626ef0b1d6340
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 50149765ef72f4e652b9a0f1f6462c4784bb9423
@@ -1420,7 +1420,7 @@ F tool/build-all-msvc.bat 3e4e4043b53f1aede4308e0d2567bbd773614630 x
 F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
 F tool/cg_anno.tcl 692ce4b8693d59e3a3de77ca97f4139ecfa641b0 x
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
-F tool/dbhash.c 3e7a97ebdaff842f99ee1eab3787717582d665b8
+F tool/dbhash.c a06228aa21ebc4e6ea8daa486601d938499238a5
 F tool/extract.c 054069d81b095fbdc189a6f5d4466e40380505e2
 F tool/fast_vacuum.c 5ba0d6f5963a0a63bdc42840f678bad75b2ebce1
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
@@ -1501,7 +1501,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2247649ca215c06205b33b2250eb809baf39263a
-R 8393151ede059e20b861d67944f07343
+P 44f157e0f0d5a76ef9002b2592164c4fdae89e34
+R 654981991ade95156b7aa25e1b0590de
 U drh
-Z e6c66d0412cbc063d2ea74dc380f683a
+Z 0f8b86024c43c03c854a2dd32c154497

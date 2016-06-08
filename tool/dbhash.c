@@ -209,7 +209,7 @@ static void hash_finish(const char *zName){
   unsigned char finalcount[8];
   unsigned char digest[20];
   static const char zEncode[] = "0123456789abcdef";
-  char zOut[40];
+  char zOut[41];
 
   for (i = 0; i < 8; i++){
     finalcount[i] = (unsigned char)((g.cx.count[(i >= 4 ? 0 : 1)]
