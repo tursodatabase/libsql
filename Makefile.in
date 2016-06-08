@@ -539,7 +539,8 @@ TESTPROGS = \
   testfixture$(TEXE) \
   sqlite3$(TEXE) \
   sqlite3_analyzer$(TEXE) \
-  sqldiff$(TEXE)
+  sqldiff$(TEXE) \
+  dbhash$(TEXE)
 
 # Databases containing fuzzer test cases
 #
@@ -589,6 +590,9 @@ sqlite3$(TEXE):	$(TOP)/src/shell.c sqlite3.c
 
 sqldiff$(TEXE):	$(TOP)/tool/sqldiff.c sqlite3.c sqlite3.h
 	$(LTLINK) -o $@ $(TOP)/tool/sqldiff.c sqlite3.c $(TLIBS)
+
+dbhash$(TEXE):	$(TOP)/tool/dbhash.c sqlite3.c sqlite3.h
+	$(LTLINK) -o $@ $(TOP)/tool/dbhash.c sqlite3.c $(TLIBS)
 
 scrub$(TEXE):	$(TOP)/ext/misc/scrub.c sqlite3.o
 	$(LTLINK) -o $@ -I. -DSCRUB_STANDALONE \
@@ -1251,6 +1255,7 @@ clean:
 	rm -f fuzzershell fuzzershell.exe
 	rm -f fuzzcheck fuzzcheck.exe
 	rm -f sqldiff sqldiff.exe
+	rm -f dbhash dbhash.exe
 	rm -f fts5.* fts5parse.*
 
 distclean:	clean
