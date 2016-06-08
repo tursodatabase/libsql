@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** This is a utility program that computes a hash on the content
+** This is a utility program that computes an SHA1 hash on the content
 ** of an SQLite database.
 **
 ** The hash is computed over just the content of the database.  Free
@@ -40,11 +40,15 @@ struct SHA1Context {
 */
 struct GlobalVars {
   const char *zArgv0;       /* Name of program */
-  int bSchemaPK;            /* Use the schema-defined PK, not the true PK */
   unsigned fDebug;          /* Debug flags */
   sqlite3 *db;              /* The database connection */
   SHA1Context cx;           /* SHA1 hash context */
 } g;
+
+/*
+** Debugging flags
+*/
+#define DEBUG_FULLTRACE   0x00000001   /* Trace hash to stderr */
 
 /******************************************************************************
 ** The Hash Engine
@@ -200,7 +204,7 @@ static void hash_step(const unsigned char *data,  unsigned int len){
 
 
 /* Add padding and compute and output the message digest. */
-static void hash_finish(void){
+static void hash_finish(const char *zName){
   unsigned int i;
   unsigned char finalcount[8];
   unsigned char digest[20];
@@ -224,7 +228,7 @@ static void hash_finish(void){
     zOut[i*2+1] = zEncode[digest[i] & 0xf];
   }
   zOut[i*2]= 0;
-  printf("%s\n", zOut);
+  printf("%s %s\n", zOut, zName);
 }
 /* End of the hashing logic
 *******************************************************************************/
@@ -286,19 +290,28 @@ static sqlite3_stmt *db_prepare(const char *zFormat, ...){
 }
 
 /*
-** Compute the hash for a single table named zTab
+** Compute the hash for all rows of the query formed from the printf-style
+** zFormat and its argument.
 */
-static void hash_one_table(const char *zTab){
-  sqlite3_stmt *pStmt;
-  int nCol;
-  int i;
-  pStmt = db_prepare("SELECT * FROM \"%w\";", zTab);
+static void hash_one_query(const char *zFormat, ...){
+  va_list ap;
+  sqlite3_stmt *pStmt;        /* The query defined by zFormat and "..." */
+  int nCol;                   /* Number of columns in the result set */
+  int i;                      /* Loop counter */
+
+  /* Prepare the query defined by zFormat and "..." */
+  va_start(ap, zFormat);
+  pStmt = db_vprepare(zFormat, ap);
+  va_end(ap);
   nCol = sqlite3_column_count(pStmt);
+
+  /* Compute a hash over the result of the query */
   while( SQLITE_ROW==sqlite3_step(pStmt) ){
     for(i=0; i<nCol; i++){
       switch( sqlite3_column_type(pStmt,i) ){
         case SQLITE_NULL: {
           hash_step((const unsigned char*)"0",1);
+          if( g.fDebug & DEBUG_FULLTRACE ) fprintf(stderr, "NULL\n");
           break;
         }
         case SQLITE_INTEGER: {
@@ -313,6 +326,9 @@ static void hash_one_table(const char *zTab){
           }
           hash_step((const unsigned char*)"1",1);
           hash_step(x,8);
+          if( g.fDebug & DEBUG_FULLTRACE ){
+            fprintf(stderr, "INT %s\n", sqlite3_column_text(pStmt,i));
+          }
           break;
         }
         case SQLITE_FLOAT: {
@@ -327,6 +343,9 @@ static void hash_one_table(const char *zTab){
           }
           hash_step((const unsigned char*)"2",1);
           hash_step(x,8);
+          if( g.fDebug & DEBUG_FULLTRACE ){
+            fprintf(stderr, "FLOAT %s\n", sqlite3_column_text(pStmt,i));
+          }
           break;
         }
         case SQLITE_TEXT: {
@@ -334,6 +353,9 @@ static void hash_one_table(const char *zTab){
           const unsigned char *z = sqlite3_column_text(pStmt, i);
           hash_step((const unsigned char*)"3", 1);
           hash_step(z, n);
+          if( g.fDebug & DEBUG_FULLTRACE ){
+            fprintf(stderr, "TEXT '%s'\n", sqlite3_column_text(pStmt,i));
+          }
           break;
         }
         case SQLITE_BLOB: {
@@ -341,6 +363,9 @@ static void hash_one_table(const char *zTab){
           const unsigned char *z = sqlite3_column_blob(pStmt, i);
           hash_step((const unsigned char*)"4", 1);
           hash_step(z, n);
+          if( g.fDebug & DEBUG_FULLTRACE ){
+            fprintf(stderr, "BLOB (%d bytes)\n", n);
+          }
           break;
         }
       }
@@ -354,18 +379,28 @@ static void hash_one_table(const char *zTab){
 ** Print sketchy documentation for this utility program
 */
 static void showHelp(void){
-  printf("Usage: %s DB\n", g.zArgv0);
+  printf("Usage: %s [options] FILE ...\n", g.zArgv0);
   printf(
-"Compute a hash on the content of database DB\n"
+"Compute a SHA1 hash on the content of database FILE.  System tables such as\n"
+"sqlite_stat1, sqlite_stat4, and sqlite_sequence are omitted from the hash.\n"
+"Options:\n"
+"   --debug N           Set debugging flags to N (experts only)\n"
+"   --like PATTERN      Only hash tables whose name is LIKE the pattern\n"
+"   --schema-only       Only hash the schema - omit table content\n"
+"   --without-schema    Only hash table content - omit the schema\n"
   );
 }
 
 int main(int argc, char **argv){
-  const char *zDb = 0;
-  int i;
-  int rc;
-  char *zErrMsg;
-  sqlite3_stmt *pStmt;
+  const char *zDb = 0;         /* Name of the database currently being hashed */
+  int i;                       /* Loop counter */
+  int rc;                      /* Subroutine return code */
+  char *zErrMsg;               /* Error message when opening database */
+  sqlite3_stmt *pStmt;         /* An SQLite query */
+  const char *zLike = 0;       /* LIKE pattern of tables to hash */
+  int omitSchema = 0;          /* True to compute hash on content only */
+  int omitContent = 0;         /* True to compute hash on schema only */
+  int nFile = 0;               /* Number of input filenames seen */
 
   g.zArgv0 = argv[0];
   sqlite3_config(SQLITE_CONFIG_SINGLETHREAD);
@@ -382,43 +417,90 @@ int main(int argc, char **argv){
         showHelp();
         return 0;
       }else
-      if( strcmp(z,"primarykey")==0 ){
-        g.bSchemaPK = 1;
+      if( strcmp(z,"like")==0 ){
+        if( i==argc-1 ) cmdlineError("missing argument to %s", argv[i]);
+        if( zLike!=0 ) cmdlineError("only one --like allowed");
+        zLike = argv[++i];
+      }else
+      if( strcmp(z,"schema-only")==0 ){
+        omitContent = 1;
+      }else
+      if( strcmp(z,"without-schema")==0 ){
+        omitSchema = 1;
       }else
       {
         cmdlineError("unknown option: %s", argv[i]);
       }
-    }else if( zDb==0 ){
-      zDb = argv[i];
     }else{
-      cmdlineError("unknown argument: %s", argv[i]);
+      nFile++;
+      if( nFile<i ) argv[nFile] = argv[i];
     }
   }
-  if( zDb==0 ){
-    cmdlineError("database argument missing");
+  if( nFile==0 ){
+    cmdlineError("no input files specified - nothing to do");
   }
-  rc = sqlite3_open(zDb, &g.db);
-  if( rc ){
-    cmdlineError("cannot open database file \"%s\"", zDb);
+  if( omitSchema && omitContent ){
+    cmdlineError("only one of --without-schema and --omit-schema allowed");
   }
-  rc = sqlite3_exec(g.db, "SELECT * FROM sqlite_master", 0, 0, &zErrMsg);
-  if( rc || zErrMsg ){
-    cmdlineError("\"%s\" does not appear to be a valid SQLite database", zDb);
-  }
+  if( zLike==0 ) zLike = "%";
 
-  /* Handle tables one by one */
-  pStmt = db_prepare(
-    "SELECT name FROM sqlite_master\n"
-    " WHERE type='table' AND sql NOT LIKE 'CREATE VIRTUAL%%'\n"
-    "UNION SELECT 'sqlite_master' AS name\n"
-    " ORDER BY name;\n"
-  );
-  hash_init();
-  while( SQLITE_ROW==sqlite3_step(pStmt) ){
-    hash_one_table((const char*)sqlite3_column_text(pStmt,0));
-  }
-  hash_finish();
+  for(i=1; i<=nFile; i++){
+    static const int openFlags = 
+       SQLITE_OPEN_READWRITE |     /* Read/write so hot journals can recover */
+       SQLITE_OPEN_URI
+    ;
+    zDb = argv[i];
+    rc = sqlite3_open_v2(zDb, &g.db, openFlags, 0);
+    if( rc ){
+      fprintf(stderr, "cannot open database file '%s'\n", zDb);
+      continue;
+    }
+    rc = sqlite3_exec(g.db, "SELECT * FROM sqlite_master", 0, 0, &zErrMsg);
+    if( rc || zErrMsg ){
+      sqlite3_close(g.db);
+      g.db = 0;
+      fprintf(stderr, "'%s' is not a valid SQLite database\n", zDb);
+      continue;
+    }
 
-  sqlite3_close(g.db);
+    /* Start the hash */
+    hash_init();
+  
+    /* Hash table content */
+    if( !omitContent ){
+      pStmt = db_prepare(
+        "SELECT name FROM sqlite_master\n"
+        " WHERE type='table' AND sql NOT LIKE 'CREATE VIRTUAL%%'\n"
+        "   AND name NOT LIKE 'sqlite_%%'\n"
+        "   AND name LIKE '%q'\n"
+        " ORDER BY name COLLATE nocase;\n",
+        zLike
+      );
+      while( SQLITE_ROW==sqlite3_step(pStmt) ){
+        /* We want rows of the table to be hashed in PRIMARY KEY order.
+        ** Technically, an ORDER BY clause is required to guarantee that
+        ** order.  However, though not guaranteed by the documentation, every
+        ** historical version of SQLite has always output rows in PRIMARY KEY
+        ** order when there is no WHERE or GROUP BY clause, so the ORDER BY
+        ** can be safely omitted. */
+        hash_one_query("SELECT * FROM \"%w\"", sqlite3_column_text(pStmt,0));
+      }
+      sqlite3_finalize(pStmt);
+    }
+  
+    /* Hash the database schema */
+    if( !omitSchema ){
+      hash_one_query(
+         "SELECT type, name, tbl_name, sql FROM sqlite_master\n"
+         " WHERE tbl_name LIKE '%q'\n"
+         " ORDER BY name COLLATE nocase;\n",
+         zLike
+      );
+    }
+  
+    /* Finish and output the hash and close the database connection. */
+    hash_finish(zDb);
+    sqlite3_close(g.db);
+  }
   return 0;
 }
