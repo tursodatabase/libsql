@@ -3434,10 +3434,11 @@ void sqlite3DefaultRowEst(Index *pIdx){
   int i;
 
   /* Set the first entry (number of rows in the index) to the estimated 
-  ** number of rows in the table. Or 10, if the estimated number of rows 
-  ** in the table is less than that.  */
+  ** number of rows in the table, or half the number of rows in the table
+  ** for a partial index.   But do not let the estimate drop below 10. */
   a[0] = pIdx->pTable->nRowLogEst;
-  if( a[0]<33 ) a[0] = 33;        assert( 33==sqlite3LogEst(10) );
+  if( pIdx->pPartIdxWhere!=0 ) a[0] -= 10;  assert( 10==sqlite3LogEst(2) );
+  if( a[0]<33 ) a[0] = 33;                  assert( 33==sqlite3LogEst(10) );
 
   /* Estimate that a[1] is 10, a[2] is 9, a[3] is 8, a[4] is 7, a[5] is
   ** 6 and each subsequent value (if any) is 5.  */

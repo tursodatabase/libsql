@@ -1,5 +1,5 @@
-C Add\sthe\s"dbhash.exe"\sutility\sprogram\sthat\scomputes\sa\sSHA1\shash\sover\sthe\ninvariant\scontent\sof\san\sSQLite\sdatabase\sfile.\s\sFree\sspace\sin\sthe\sfile,\sthe\npage\ssize,\sauto_vacuum\sstatus,\stext\sencoding,\sand\sso\sforth\sdo\snot\schange\sthe\nhash.\s\sOnly\sthe\scontent\smatters.
-D 2016-06-08T14:04:50.483
+C Prefer\sto\suse\spartial\sindexes\sfor\sfull\stable\sscans\swhen\sthat\sis\spossible.
+D 2016-06-08T18:07:21.900
 F Makefile.in f3f7d2060ce03af4584e711ef3a626ef0b1d6340
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 50149765ef72f4e652b9a0f1f6462c4784bb9423
@@ -329,7 +329,7 @@ F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
 F src/btree.c 2781fb1db1e46390a9c27a2162395f371577ac66
 F src/btree.h 2107a2630e02c8cba58bb12ce14e731e734ea29c
 F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
-F src/build.c e827e57e4a29c00e8429c5fd4d9d4572cb1b32a4
+F src/build.c 535879738a9f9e351624ebe827bdfb6ef16475ae
 F src/callback.c 2e76147783386374bf01b227f752c81ec872d730
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 999a828425b35b8092a8cde25690e71c20906344
@@ -462,7 +462,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 02eeecc265f6ffd0597378f5d8ae9070b62a406a
 F src/wal.h 2f7c831cf3b071fa548bf2d5cac640846a7ff19c
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
-F src/where.c b9f5b0ddb14c3827e70b5379e659cf4cfd524c4d
+F src/where.c 74f0798525b6306682d7234f230ea93f86959b9b
 F src/whereInt.h e5b939701a7ceffc5a3a8188a37f9746416ebcd0
 F src/wherecode.c ba71a4e4bada29aa9842200e6299714bf18c812c
 F src/whereexpr.c c32d47085dbaca0b8fd013210f56693c7d220d48
@@ -840,7 +840,7 @@ F test/index2.test f835d5e13ca163bd78c4459ca15fd2e4ed487407
 F test/index3.test 81bc47890b8abfb181bc35f8d10b56c069803386
 F test/index4.test ab92e736d5946840236cd61ac3191f91a7856bf6
 F test/index5.test 8621491915800ec274609e42e02a97d67e9b13e7
-F test/index6.test 7102ec371414c42dfb1d5ca37eb4519aa9edc23a
+F test/index6.test 43b4e29258b978fcdab84fc61df4f5212119dd09
 F test/index7.test 9c6765a74fc3fcde7aebc5b3bd40d98df14a527c
 F test/indexedby.test 9c4cd331224e57f79fbf411ae245e6272d415985
 F test/indexexpr1.test cb71b6586177b840e28110dd952178bb2bdfedc2
@@ -1501,8 +1501,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2091a4c9231c7871f27661adc27dd7df26500f6c fb2768154c513881886e89801e906bea959197b3
-R 654981991ade95156b7aa25e1b0590de
-T +closed fb2768154c513881886e89801e906bea959197b3
+P f48a4ad33ecd4a86f5529596ff11829ba38b0875
+R f8f1ecf8d68a5747b29b0c8ae33faacb
 U drh
-Z 4625be77e802d56f2b1c496e15a4bd85
+Z bc2339201021198d1e3ee60eab532825

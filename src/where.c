@@ -2761,6 +2761,7 @@ static int whereLoopAddBtree(
       /* Full scan via index */
       if( b
        || !HasRowid(pTab)
+       || pProbe->pPartIdxWhere!=0
        || ( m==0
          && pProbe->bUnordered==0
          && (pProbe->szIdxRow<pTab->szTabRow)
