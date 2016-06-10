@@ -1052,7 +1052,7 @@ void sqlite3Pragma(
   */
   case PragTyp_TABLE_INFO: if( zRight ){
     Table *pTab;
-    pTab = sqlite3FindTable(db, zRight, zDb);
+    pTab = sqlite3LocateTable(pParse, LOCATE_NOERR, zRight, zDb);
     if( pTab ){
       static const char *azCol[] = {
          "cid", "name", "type", "notnull", "dflt_value", "pk"
