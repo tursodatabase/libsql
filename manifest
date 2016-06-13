@@ -1,5 +1,5 @@
-C Fix\sthe\sdeclaration\sof\sthe\stable\simplemented\sby\sDBSTAT\sso\sthat\sit\suses\ncorrect\sdatatypes.
-D 2016-06-13T15:59:37.932
+C Fix\sRBU\sso\sthat\sit\sbuilds\swith\s-DSQLITE_ENABLE_8_3_NAMES.\nFix\s"PRAGMA\scompile_options"\sfor\sSQLITE_ENABLE_8_3_NAMES\ssuch\sthat\sit\sreports\nthe\snumeric\ssetting:\s"1"\sor\s"2".
+D 2016-06-13T19:58:46.382
 F Makefile.in f3f7d2060ce03af4584e711ef3a626ef0b1d6340
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 50149765ef72f4e652b9a0f1f6462c4784bb9423
@@ -252,7 +252,7 @@ F ext/rbu/rbuprogress.test 2023a7df2c523e3df1cb532eff811cda385a789a
 F ext/rbu/rbusave.test 0f43b6686084f426ddd040b878426452fd2c2f48
 F ext/rbu/rbuvacuum.test 4a977447c15c2581ab668781d9ef4294382530e0
 F ext/rbu/rbuvacuum2.test 45009e127c3fb385e5c0fd5a8a63fb922a79d0ab
-F ext/rbu/sqlite3rbu.c a37a7dfb225c497171aa60120e81b884954361c7
+F ext/rbu/sqlite3rbu.c 3d35b1dc46f5ca0f0f59db8e6163fe7627ea107c
 F ext/rbu/sqlite3rbu.h 2acd0a6344a6079de15c8dc9d84d3df83a665930
 F ext/rbu/test_rbu.c 9bbdf6bd8efd58fbc4f192698df50569598fbb9e
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
@@ -332,7 +332,7 @@ F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
 F src/build.c d1fdfd7ab8f5447e494ef15825973bf0719527c6
 F src/callback.c 2e76147783386374bf01b227f752c81ec872d730
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
-F src/ctime.c 999a828425b35b8092a8cde25690e71c20906344
+F src/ctime.c 61949e83c4c36e37195a8398ebc752780b534d95
 F src/date.c 1cc9fb516ec9932c6fd4d2a0d2f8bc4480145c39
 F src/dbstat.c 4f6f7f52b49beb9636ffbd517cfe44a402ba4ad0
 F src/delete.c 4aba4214a377ce8ddde2d2e609777bcc8235200f
@@ -1501,7 +1501,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fcf6114be94b260641e7c78a58db16a31ac5ab35
-R 39b9428988b60189530e38dc24c060de
+P a1e1cdc51d1c68502f43ac72c28ba87cb1916a0d
+R c278a2e099b6be15733b154091fd5a26
 U drh
-Z 57ee65d1a2a24e95107b0a8e8a3984a2
+Z 0e8cfd82e8662e22b8b1a31845a5f102

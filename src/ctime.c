@@ -71,7 +71,7 @@ static const char * const azCompileOpt[] = {
   "DISABLE_LFS",
 #endif
 #if SQLITE_ENABLE_8_3_NAMES
-  "ENABLE_8_3_NAMES",
+  "ENABLE_8_3_NAMES=" CTIMEOPT_VAL(SQLITE_ENABLE_8_3_NAMES),
 #endif
 #if SQLITE_ENABLE_API_ARMOR
   "ENABLE_API_ARMOR",
