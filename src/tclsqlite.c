@@ -2325,6 +2325,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   */
   case DB_EXISTS: 
   case DB_ONECOLUMN: {
+    Tcl_Obj *pResult = 0;
     DbEvalContext sEval;
     if( objc!=3 ){
       Tcl_WrongNumArgs(interp, 2, objv, "SQL");
@@ -2335,14 +2336,15 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     rc = dbEvalStep(&sEval);
     if( choice==DB_ONECOLUMN ){
       if( rc==TCL_OK ){
-        Tcl_SetObjResult(interp, dbEvalColumnValue(&sEval, 0));
+        pResult = dbEvalColumnValue(&sEval, 0);
       }else if( rc==TCL_BREAK ){
         Tcl_ResetResult(interp);
       }
     }else if( rc==TCL_BREAK || rc==TCL_OK ){
-      Tcl_SetObjResult(interp, Tcl_NewBooleanObj(rc==TCL_OK));
+      pResult = Tcl_NewBooleanObj(rc==TCL_OK);
     }
     dbEvalFinalize(&sEval);
+    if( pResult ) Tcl_SetObjResult(interp, pResult);
 
     if( rc==TCL_BREAK ){
       rc = TCL_OK;

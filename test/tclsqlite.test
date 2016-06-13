@@ -635,6 +635,39 @@ do_test tcl-14.2 {
   db one {SELECT x FROM t6 WHERE xCall()!='value'}
 } {}
 
+# Verify that the "exists" and "onecolumn" methods work when
+# a "profile" is registered.
+#
+catch {db close}
+sqlite3 db :memory:
+proc noop-profile {args} {
+  return
+}
+do_test tcl-15.0 {
+  db eval {CREATE TABLE t1(a); INSERT INTO t1 VALUES(1),(2),(3);}
+  db onecolumn {SELECT a FROM t1 WHERE a>2}
+} {3}
+do_test tcl-15.1 {
+  db exists {SELECT a FROM t1 WHERE a>2}
+} {1}
+do_test tcl-15.2 {
+  db exists {SELECT a FROM t1 WHERE a>3}
+} {0}
+db profile noop-profile
+do_test tcl-15.3 {
+  db onecolumn {SELECT a FROM t1 WHERE a>2}
+} {3}
+do_test tcl-15.4 {
+  db exists {SELECT a FROM t1 WHERE a>2}
+} {1}
+do_test tcl-15.5 {
+  db exists {SELECT a FROM t1 WHERE a>3}
+} {0}
+
+
+
+
+
 
 
 finish_test

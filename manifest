@@ -1,5 +1,5 @@
-C Enhance\s"PRAGMA\stable_info"\sto\sthat\sit\sprovides\sinformation\sabout\seponymous\nvirtual\stables.
-D 2016-06-10T22:49:01.448
+C Fix\sthe\s"onecolumn"\sand\s"exists"\smethods\sof\sthe\sTCL\sinterface\sso\sthat\sthey\nwork\sin\scombination\swith\sthe\s"profile"\scallback.
+D 2016-06-13T12:34:38.095
 F Makefile.in f3f7d2060ce03af4584e711ef3a626ef0b1d6340
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 50149765ef72f4e652b9a0f1f6462c4784bb9423
@@ -391,7 +391,7 @@ F src/sqliteInt.h b425bb606c14c078b1c9feb7cf72f2f3a35be188
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
-F src/tclsqlite.c 9c4c4589d078de37813ded708d8838b338ffb060
+F src/tclsqlite.c 25fbbbb97f76dbfd113153fb63f52d7ecfac5dd0
 F src/test1.c 43b37ab2b7338fd3313e74902f0d6c821eae843b
 F src/test2.c 5586f43fcd9a1be0830793cf9d354082c261b25b
 F src/test3.c c75c8af0eadb335236c9e61b51044c58a8f7dd59
@@ -1117,7 +1117,7 @@ F test/tabfunc01.test f977868fa8bb7beb4b2072883190411653473906
 F test/table.test b708f3e5fa2542fa51dfab21fc07b36ea445cb2f
 F test/tableapi.test 2674633fa95d80da917571ebdd759a14d9819126
 F test/tableopts.test dba698ba97251017b7c80d738c198d39ab747930
-F test/tclsqlite.test e1306001a0ca92250b691ea6d3cecaca5b6342aa
+F test/tclsqlite.test cf0d0a3fd03d64892cec2d48aae9fb2f148680a5
 F test/tempdb.test bd92eba8f20e16a9136e434e20b280794de3cdb6
 F test/tempdb2.test 4fc92055f2a3f7626c0f2eabbb637dc021b311d5
 F test/tempfault.test 0c0d349c9a99bf5f374655742577f8712c647900
@@ -1501,7 +1501,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fe1874321ba31cec9ae65387920c33d8d0178ed8
-R bcb028582306bc8630ca7310032e2582
+P 53a1e5d51304cb3de700c1807a2c945a40240576
+R 728aa3483f448a04bb6de7c432f92c81
 U drh
-Z 24931a2c89ab34cc35408cff5c484569
+Z f275382679f329597f4cef7fe1c1d3e9
