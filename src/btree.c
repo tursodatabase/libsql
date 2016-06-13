@@ -5070,7 +5070,7 @@ int sqlite3BtreeMovetoUnpacked(
   assert( sqlite3_mutex_held(pCur->pBtree->db->mutex) );
   assert( pRes );
   assert( (pIdxKey==0)==(pCur->pKeyInfo==0) );
-  assert( (pIdxKey==0)==(pCur->curIntKey!=0) || pCur->eState!=CURSOR_VALID );
+  assert( pCur->eState!=CURSOR_VALID || (pIdxKey==0)==(pCur->curIntKey!=0) );
 
   /* If the cursor is already positioned at the point we are trying
   ** to move to, then just return without doing any work */
