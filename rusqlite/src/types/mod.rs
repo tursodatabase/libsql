@@ -130,6 +130,17 @@ mod test {
     }
 
     #[test]
+    fn test_empty_blob() {
+        let db = checked_memory_handle();
+
+        let empty = vec![];
+        db.execute("INSERT INTO foo(b) VALUES (?)", &[&empty]).unwrap();
+
+        let v: Vec<u8> = db.query_row("SELECT b FROM foo", &[], |r| r.get(0)).unwrap();
+        assert_eq!(v, empty);
+    }
+
+    #[test]
     fn test_str() {
         let db = checked_memory_handle();
 
