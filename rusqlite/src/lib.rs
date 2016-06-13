@@ -1123,12 +1123,17 @@ impl<'a> ValueRef<'a> {
             }
             ffi::SQLITE_BLOB => {
                 let blob = ffi::sqlite3_column_blob(raw, col);
-                assert!(!blob.is_null(), "unexpected SQLITE_BLOB column type with NULL data");
 
                 let len = ffi::sqlite3_column_bytes(raw, col);
                 assert!(len >= 0, "unexpected negative return from sqlite3_column_bytes");
+                if len > 0 {
+                    assert!(!blob.is_null(), "unexpected SQLITE_BLOB column type with NULL data");
+                    ValueRef::Blob(from_raw_parts(blob as *const u8, len as usize))
+                } else {
+                    // The return value from sqlite3_column_blob() for a zero-length BLOB is a NULL pointer.
+                    ValueRef::Blob(&[])
+                }
 
-                ValueRef::Blob(from_raw_parts(blob as *const u8, len as usize))
             }
             _ => unreachable!("sqlite3_column_type returned invalid value")
         }
