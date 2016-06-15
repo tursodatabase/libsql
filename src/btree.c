@@ -456,6 +456,15 @@ static void releasePage(MemPage *pPage);  /* Forward reference */
 static int cursorHoldsMutex(BtCursor *p){
   return sqlite3_mutex_held(p->pBt->mutex);
 }
+
+/* Verify that the cursor and the BtShared agree about what is the current
+** database connetion. This is important in shared-cache mode. If the database 
+** connection pointers get out-of-sync, it is possible for routines like
+** btreeInitPage() to reference an stale connection pointer that references a
+** a connection that has already closed.  This routine is used inside assert()
+** statements only and for the purpose of double-checking that the btree code
+** does keep the database connection pointers up-to-date.
+*/
 static int cursorOwnsBtShared(BtCursor *p){
   assert( cursorHoldsMutex(p) );
   return (p->pBtree->db==p->pBt->db);
@@ -615,21 +624,19 @@ static void btreeReleaseAllCursorPages(BtCursor *pCur){
 ** the key.
 */
 static int saveCursorKey(BtCursor *pCur){
-  int rc;
+  int rc = SQLITE_OK;
   assert( CURSOR_VALID==pCur->eState );
   assert( 0==pCur->pKey );
   assert( cursorHoldsMutex(pCur) );
 
-  rc = sqlite3BtreeKeySize(pCur, &pCur->nKey);
-  assert( rc==SQLITE_OK );  /* KeySize() cannot fail */
-
-  /* If this is an intKey table, then the above call to BtreeKeySize()
-  ** stores the integer key in pCur->nKey. In this case this value is
-  ** all that is required. Otherwise, if pCur is not open on an intKey
-  ** table, then malloc space for and store the pCur->nKey bytes of key 
-  ** data.  */
-  if( 0==pCur->curIntKey ){
-    void *pKey = sqlite3Malloc( pCur->nKey );
+  if( pCur->curIntKey ){
+    /* Only the rowid is required for a table btree */
+    pCur->nKey = sqlite3BtreeIntegerKey(pCur);
+  }else{
+    /* For an index btree, save the complete key content */
+    void *pKey;
+    pCur->nKey = sqlite3BtreePayloadSize(pCur);
+    pKey = sqlite3Malloc( pCur->nKey );
     if( pKey ){
       rc = sqlite3BtreeKey(pCur, 0, (int)pCur->nKey, pKey);
       if( rc==SQLITE_OK ){
@@ -4268,46 +4275,33 @@ int sqlite3BtreeCursorIsValid(BtCursor *pCur){
 #endif /* NDEBUG */
 
 /*
-** Set *pSize to the size of the buffer needed to hold the value of
-** the key for the current entry.  If the cursor is not pointing
-** to a valid entry, *pSize is set to 0. 
-**
-** For a table with the INTKEY flag set, this routine returns the key
-** itself, not the number of bytes in the key.
-**
-** The caller must position the cursor prior to invoking this routine.
-** 
-** This routine cannot fail.  It always returns SQLITE_OK.  
+** Return the value of the integer key or "rowid" for a table btree.
+** This routine is only valid for a cursor that is pointing into a
+** ordinary table btree.  If the cursor points to an index btree or
+** is invalid, the result of this routine is undefined.
 */
-int sqlite3BtreeKeySize(BtCursor *pCur, i64 *pSize){
+i64 sqlite3BtreeIntegerKey(BtCursor *pCur){
   assert( cursorHoldsMutex(pCur) );
   assert( pCur->eState==CURSOR_VALID );
+  assert( pCur->curIntKey );
   getCellInfo(pCur);
-  *pSize = pCur->info.nKey;
-  return SQLITE_OK;
+  return pCur->info.nKey;
 }
 
 /*
-** Set *pSize to the number of bytes of data in the entry the
-** cursor currently points to.
+** Return the number of bytes of payload for the entry that pCur is
+** currently pointing to.  For table btrees, this will be the amount
+** of data.  For index btrees, this will be the size of the key.
 **
 ** The caller must guarantee that the cursor is pointing to a non-NULL
 ** valid entry.  In other words, the calling procedure must guarantee
 ** that the cursor has Cursor.eState==CURSOR_VALID.
-**
-** Failure is not possible.  This function always returns SQLITE_OK.
-** It might just as well be a procedure (returning void) but we continue
-** to return an integer result code for historical reasons.
 */
-int sqlite3BtreeDataSize(BtCursor *pCur, u32 *pSize){
-  assert( cursorOwnsBtShared(pCur) );
+u32 sqlite3BtreePayloadSize(BtCursor *pCur){
+  assert( cursorHoldsMutex(pCur) );
   assert( pCur->eState==CURSOR_VALID );
-  assert( pCur->iPage>=0 );
-  assert( pCur->iPage<BTCURSOR_MAX_DEPTH );
-  assert( pCur->apPage[pCur->iPage]->intKeyLeaf==1 );
   getCellInfo(pCur);
-  *pSize = pCur->info.nPayload;
-  return SQLITE_OK;
+  return pCur->info.nPayload;
 }
 
 /*
@@ -4749,10 +4743,7 @@ static const void *fetchPayload(
 ** These routines is used to get quick access to key and data
 ** in the common case where no overflow pages are used.
 */
-const void *sqlite3BtreeKeyFetch(BtCursor *pCur, u32 *pAmt){
-  return fetchPayload(pCur, pAmt);
-}
-const void *sqlite3BtreeDataFetch(BtCursor *pCur, u32 *pAmt){
+const void *sqlite3BtreePayloadFetch(BtCursor *pCur, u32 *pAmt){
   return fetchPayload(pCur, pAmt);
 }
 
@@ -5085,11 +5076,12 @@ int sqlite3BtreeMovetoUnpacked(
   assert( sqlite3_mutex_held(pCur->pBtree->db->mutex) );
   assert( pRes );
   assert( (pIdxKey==0)==(pCur->pKeyInfo==0) );
+  assert( pCur->eState!=CURSOR_VALID || (pIdxKey==0)==(pCur->curIntKey!=0) );
 
   /* If the cursor is already positioned at the point we are trying
   ** to move to, then just return without doing any work */
-  if( pCur->eState==CURSOR_VALID && (pCur->curFlags & BTCF_ValidNKey)!=0
-   && pCur->curIntKey 
+  if( pIdxKey==0
+   && pCur->eState==CURSOR_VALID && (pCur->curFlags & BTCF_ValidNKey)!=0
   ){
     if( pCur->info.nKey==intKey ){
       *pRes = 0;

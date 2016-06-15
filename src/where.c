@@ -1648,15 +1648,37 @@ static void whereTermPrint(WhereTerm *pTerm, int iTerm){
     sqlite3DebugPrintf("TERM-%-3d NULL\n", iTerm);
   }else{
     char zType[4];
+    char zLeft[50];
     memcpy(zType, "...", 4);
     if( pTerm->wtFlags & TERM_VIRTUAL ) zType[0] = 'V';
     if( pTerm->eOperator & WO_EQUIV  ) zType[1] = 'E';
     if( ExprHasProperty(pTerm->pExpr, EP_FromJoin) ) zType[2] = 'L';
+    if( pTerm->eOperator & WO_SINGLE ){
+      sqlite3_snprintf(sizeof(zLeft),zLeft,"left={%d:%d}",
+                       pTerm->leftCursor, pTerm->u.leftColumn);
+    }else if( (pTerm->eOperator & WO_OR)!=0 && pTerm->u.pOrInfo!=0 ){
+      sqlite3_snprintf(sizeof(zLeft),zLeft,"indexable=0x%lld", 
+                       pTerm->u.pOrInfo->indexable);
+    }else{
+      sqlite3_snprintf(sizeof(zLeft),zLeft,"left=%d", pTerm->leftCursor);
+    }
     sqlite3DebugPrintf(
-       "TERM-%-3d %p %s cursor=%-3d prob=%-3d op=0x%03x wtFlags=0x%04x\n",
-       iTerm, pTerm, zType, pTerm->leftCursor, pTerm->truthProb,
+       "TERM-%-3d %p %s %-12s prob=%-3d op=0x%03x wtFlags=0x%04x\n",
+       iTerm, pTerm, zType, zLeft, pTerm->truthProb,
        pTerm->eOperator, pTerm->wtFlags);
     sqlite3TreeViewExpr(0, pTerm->pExpr, 0);
+  }
+}
+#endif
+
+#ifdef WHERETRACE_ENABLED
+/*
+** Show the complete content of a WhereClause
+*/
+void sqlite3WhereClausePrint(WhereClause *pWC){
+  int i;
+  for(i=0; i<pWC->nTerm; i++){
+    whereTermPrint(&pWC->a[i], i);
   }
 }
 #endif
@@ -2739,6 +2761,7 @@ static int whereLoopAddBtree(
       /* Full scan via index */
       if( b
        || !HasRowid(pTab)
+       || pProbe->pPartIdxWhere!=0
        || ( m==0
          && pProbe->bUnordered==0
          && (pProbe->szIdxRow<pTab->szTabRow)
@@ -3124,9 +3147,7 @@ static int whereLoopAddOr(
         WHERETRACE(0x200, ("OR-term %d of %p has %d subterms:\n", 
                    (int)(pOrTerm-pOrWC->a), pTerm, sSubBuild.pWC->nTerm));
         if( sqlite3WhereTrace & 0x400 ){
-          for(i=0; i<sSubBuild.pWC->nTerm; i++){
-            whereTermPrint(&sSubBuild.pWC->a[i], i);
-          }
+          sqlite3WhereClausePrint(sSubBuild.pWC);
         }
 #endif
 #ifndef SQLITE_OMIT_VIRTUALTABLE
@@ -4310,10 +4331,7 @@ WhereInfo *sqlite3WhereBegin(
     sqlite3DebugPrintf(")\n");
   }
   if( sqlite3WhereTrace & 0x100 ){ /* Display all terms of the WHERE clause */
-    int i;
-    for(i=0; i<sWLB.pWC->nTerm; i++){
-      whereTermPrint(&sWLB.pWC->a[i], i);
-    }
+    sqlite3WhereClausePrint(sWLB.pWC);
   }
 #endif
 

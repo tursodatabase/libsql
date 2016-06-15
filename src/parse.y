@@ -300,7 +300,8 @@ ccons ::= NULL onconf.
 ccons ::= NOT NULL onconf(R).    {sqlite3AddNotNull(pParse, R);}
 ccons ::= PRIMARY KEY sortorder(Z) onconf(R) autoinc(I).
                                  {sqlite3AddPrimaryKey(pParse,0,R,I,Z);}
-ccons ::= UNIQUE onconf(R).      {sqlite3CreateIndex(pParse,0,0,0,0,R,0,0,0,0);}
+ccons ::= UNIQUE onconf(R).      {sqlite3CreateIndex(pParse,0,0,0,0,R,0,0,0,0,
+                                   SQLITE_IDXTYPE_UNIQUE);}
 ccons ::= CHECK LP expr(X) RP.   {sqlite3AddCheckConstraint(pParse,X.pExpr);}
 ccons ::= REFERENCES nm(T) eidlist_opt(TA) refargs(R).
                                  {sqlite3CreateForeignKey(pParse,0,&T,TA,R);}
@@ -349,7 +350,8 @@ tcons ::= CONSTRAINT nm(X).      {pParse->constraintName = X;}
 tcons ::= PRIMARY KEY LP sortlist(X) autoinc(I) RP onconf(R).
                                  {sqlite3AddPrimaryKey(pParse,X,R,I,0);}
 tcons ::= UNIQUE LP sortlist(X) RP onconf(R).
-                                 {sqlite3CreateIndex(pParse,0,0,0,X,R,0,0,0,0);}
+                                 {sqlite3CreateIndex(pParse,0,0,0,X,R,0,0,0,0,
+                                       SQLITE_IDXTYPE_UNIQUE);}
 tcons ::= CHECK LP expr(E) RP onconf.
                                  {sqlite3AddCheckConstraint(pParse,E.pExpr);}
 tcons ::= FOREIGN KEY LP eidlist(FA) RP
@@ -1198,7 +1200,7 @@ cmd ::= createkw(S) uniqueflag(U) INDEX ifnotexists(NE) nm(X) dbnm(D)
         ON nm(Y) LP sortlist(Z) RP where_opt(W). {
   sqlite3CreateIndex(pParse, &X, &D, 
                      sqlite3SrcListAppend(pParse->db,0,&Y,0), Z, U,
-                      &S, W, SQLITE_SO_ASC, NE);
+                      &S, W, SQLITE_SO_ASC, NE, SQLITE_IDXTYPE_APPDEF);
 }
 
 %type uniqueflag {int}

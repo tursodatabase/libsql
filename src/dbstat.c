@@ -58,10 +58,10 @@
 */
 #define VTAB_SCHEMA                                                         \
   "CREATE TABLE xx( "                                                       \
-  "  name       STRING,           /* Name of table or index */"             \
-  "  path       INTEGER,          /* Path to page from root */"             \
+  "  name       TEXT,             /* Name of table or index */"             \
+  "  path       TEXT,             /* Path to page from root */"             \
   "  pageno     INTEGER,          /* Page number */"                        \
-  "  pagetype   STRING,           /* 'internal', 'leaf' or 'overflow' */"   \
+  "  pagetype   TEXT,             /* 'internal', 'leaf' or 'overflow' */"   \
   "  ncell      INTEGER,          /* Cells on page (0 for overflow) */"     \
   "  payload    INTEGER,          /* Bytes of payload on this page */"      \
   "  unused     INTEGER,          /* Bytes of unused space on this page */" \

@@ -4315,8 +4315,7 @@ int sqlite3VdbeIdxRowid(sqlite3 *db, BtCursor *pCur, i64 *rowid){
   ** this code can safely assume that nCellKey is 32-bits  
   */
   assert( sqlite3BtreeCursorIsValid(pCur) );
-  VVA_ONLY(rc =) sqlite3BtreeKeySize(pCur, &nCellKey);
-  assert( rc==SQLITE_OK );     /* pCur is always valid so KeySize cannot fail */
+  nCellKey = sqlite3BtreePayloadSize(pCur);
   assert( (nCellKey & SQLITE_MAX_U32)==(u64)nCellKey );
 
   /* Read in the complete content of the index entry */
@@ -4393,8 +4392,7 @@ int sqlite3VdbeIdxKeyCompare(
   assert( pC->eCurType==CURTYPE_BTREE );
   pCur = pC->uc.pCursor;
   assert( sqlite3BtreeCursorIsValid(pCur) );
-  VVA_ONLY(rc =) sqlite3BtreeKeySize(pCur, &nCellKey);
-  assert( rc==SQLITE_OK );    /* pCur is always valid so KeySize cannot fail */
+  nCellKey = sqlite3BtreePayloadSize(pCur);
   /* nCellKey will always be between 0 and 0xffffffff because of the way
   ** that btreeParseCellPtr() and sqlite3GetVarint32() are implemented */
   if( nCellKey<=0 || nCellKey>0x7fffffff ){

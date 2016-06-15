@@ -5278,6 +5278,18 @@ static int winFullPathname(
   int nFull,                    /* Size of output buffer in bytes */
   char *zFull                   /* Output buffer */
 ){
+#if !SQLITE_OS_WINCE && !SQLITE_OS_WINRT && !defined(__CYGWIN__)
+  DWORD nByte;
+  void *zConverted;
+  char *zOut;
+#endif
+
+  /* If this path name begins with "/X:", where "X" is any alphabetic
+  ** character, discard the initial "/" from the pathname.
+  */
+  if( zRelative[0]=='/' && winIsDriveLetterAndColon(zRelative+1) ){
+    zRelative++;
+  }
 
 #if defined(__CYGWIN__)
   SimulateIOError( return SQLITE_ERROR );
@@ -5356,17 +5368,6 @@ static int winFullPathname(
 #endif
 
 #if !SQLITE_OS_WINCE && !SQLITE_OS_WINRT && !defined(__CYGWIN__)
-  DWORD nByte;
-  void *zConverted;
-  char *zOut;
-
-  /* If this path name begins with "/X:", where "X" is any alphabetic
-  ** character, discard the initial "/" from the pathname.
-  */
-  if( zRelative[0]=='/' && winIsDriveLetterAndColon(zRelative+1) ){
-    zRelative++;
-  }
-
   /* It's odd to simulate an io-error here, but really this is just
   ** using the io-error infrastructure to test that SQLite handles this
   ** function failing. This function could fail if, for example, the

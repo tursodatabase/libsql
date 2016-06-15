@@ -921,12 +921,14 @@ static int rbuObjIterFirst(sqlite3rbu *p, RbuObjIter *pIter){
   int rc;
   memset(pIter, 0, sizeof(RbuObjIter));
 
-  rc = prepareAndCollectError(p->dbRbu, &pIter->pTblIter, &p->zErrmsg, 
+  rc = prepareFreeAndCollectError(p->dbRbu, &pIter->pTblIter, &p->zErrmsg, 
+    sqlite3_mprintf(
       "SELECT rbu_target_name(name, type='view') AS target, name "
       "FROM sqlite_master "
       "WHERE type IN ('table', 'view') AND target IS NOT NULL "
+      " %s "
       "ORDER BY name"
-  );
+  , rbuIsVacuum(p) ? "AND rootpage!=0 AND rootpage IS NOT NULL" : ""));
 
   if( rc==SQLITE_OK ){
     rc = prepareAndCollectError(p->dbMain, &pIter->pIdxIter, &p->zErrmsg,
@@ -2505,9 +2507,9 @@ static void rbuFileSuffix3(const char *zBase, char *z){
 #endif
   {
     int i, sz;
-    sz = sqlite3Strlen30(z);
+    sz = (int)strlen(z)&0xffffff;
     for(i=sz-1; i>0 && z[i]!='/' && z[i]!='.'; i--){}
-    if( z[i]=='.' && ALWAYS(sz>i+4) ) memmove(&z[i+1], &z[sz-3], 4);
+    if( z[i]=='.' && sz>i+4 ) memmove(&z[i+1], &z[sz-3], 4);
   }
 #endif
 }

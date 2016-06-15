@@ -36,3 +36,20 @@ proc step_rbu {target rbu} {
   set rc
 }
 
+proc do_rbu_vacuum_test {tn step} {
+  uplevel [list do_test $tn.1 {
+    if {$step==0} { sqlite3rbu_vacuum rbu test.db state.db }
+    while 1 {
+      if {$step==1} { sqlite3rbu_vacuum rbu test.db state.db }
+      set rc [rbu step]
+      if {$rc!="SQLITE_OK"} break
+      if {$step==1} { rbu close }
+    }
+    rbu close
+  } {SQLITE_DONE}]
+
+  uplevel [list do_execsql_test $tn.2 {
+    PRAGMA integrity_check
+  } ok]
+}
+

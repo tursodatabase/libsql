@@ -991,11 +991,7 @@ int sqlite3VdbeMemFromBtree(
   /* Note: the calls to BtreeKeyFetch() and DataFetch() below assert() 
   ** that both the BtShared and database handle mutexes are held. */
   assert( (pMem->flags & MEM_RowSet)==0 );
-  if( key ){
-    zData = (char *)sqlite3BtreeKeyFetch(pCur, &available);
-  }else{
-    zData = (char *)sqlite3BtreeDataFetch(pCur, &available);
-  }
+  zData = (char *)sqlite3BtreePayloadFetch(pCur, &available);
   assert( zData!=0 );
 
   if( offset+amt<=available ){

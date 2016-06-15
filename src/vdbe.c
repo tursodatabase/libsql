@@ -2381,7 +2381,6 @@ case OP_NotNull: {            /* same as TK_NOTNULL, jump, in1 */
 ** skipped for length() and all content loading can be skipped for typeof().
 */
 case OP_Column: {
-  i64 payloadSize64; /* Number of bytes in the record */
   int p2;            /* column number to retrieve */
   VdbeCursor *pC;    /* The VDBE cursor */
   BtCursor *pCrsr;   /* The BTree cursor */
@@ -2434,22 +2433,9 @@ case OP_Column: {
     }else{
       assert( pC->eCurType==CURTYPE_BTREE );
       assert( pCrsr );
-      if( pC->isTable==0 ){
-        assert( sqlite3BtreeCursorIsValid(pCrsr) );
-        VVA_ONLY(rc =) sqlite3BtreeKeySize(pCrsr, &payloadSize64);
-        assert( rc==SQLITE_OK ); /* True because of CursorMoveto() call above */
-        /* sqlite3BtreeParseCellPtr() uses getVarint32() to extract the
-        ** payload size, so it is impossible for payloadSize64 to be
-        ** larger than 32 bits. */
-        assert( (payloadSize64 & SQLITE_MAX_U32)==(u64)payloadSize64 );
-        pC->aRow = sqlite3BtreeKeyFetch(pCrsr, &avail);
-        pC->payloadSize = (u32)payloadSize64;
-      }else{
-        assert( sqlite3BtreeCursorIsValid(pCrsr) );
-        VVA_ONLY(rc =) sqlite3BtreeDataSize(pCrsr, &pC->payloadSize);
-        assert( rc==SQLITE_OK );   /* DataSize() cannot fail */
-        pC->aRow = sqlite3BtreeDataFetch(pCrsr, &avail);
-      }
+      assert( sqlite3BtreeCursorIsValid(pCrsr) );
+      pC->payloadSize = sqlite3BtreePayloadSize(pCrsr);
+      pC->aRow = sqlite3BtreePayloadFetch(pCrsr, &avail);
       assert( avail<=65536 );  /* Maximum page size is 64KiB */
       if( pC->payloadSize <= (u32)avail ){
         pC->szRow = pC->payloadSize;
@@ -4024,6 +4010,30 @@ case OP_Found: {        /* jump, in3 */
   break;
 }
 
+/* Opcode: SeekRowid P1 P2 P3 * *
+** Synopsis: intkey=r[P3]
+**
+** P1 is the index of a cursor open on an SQL table btree (with integer
+** keys).  If register P3 does not contain an integer or if P1 does not
+** contain a record with rowid P3 then jump immediately to P2.  
+** Or, if P2 is 0, raise an SQLITE_CORRUPT error. If P1 does contain
+** a record with rowid P3 then 
+** leave the cursor pointing at that record and fall through to the next
+** instruction.
+**
+** The OP_NotExists opcode performs the same operation, but with OP_NotExists
+** the P3 register must be guaranteed to contain an integer value.  With this
+** opcode, register P3 might not contain an integer.
+**
+** The OP_NotFound opcode performs the same operation on index btrees
+** (with arbitrary multi-value keys).
+**
+** This opcode leaves the cursor in a state where it cannot be advanced
+** in either direction.  In other words, the Next and Prev opcodes will
+** not work following this opcode.
+**
+** See also: Found, NotFound, NoConflict, SeekRowid
+*/
 /* Opcode: NotExists P1 P2 P3 * *
 ** Synopsis: intkey=r[P3]
 **
@@ -4034,6 +4044,10 @@ case OP_Found: {        /* jump, in3 */
 ** leave the cursor pointing at that record and fall through to the next
 ** instruction.
 **
+** The OP_SeekRowid opcode performs the same operation but also allows the
+** P3 register to contain a non-integer value, in which case the jump is
+** always taken.  This opcode requires that P3 always contain an integer.
+**
 ** The OP_NotFound opcode performs the same operation on index btrees
 ** (with arbitrary multi-value keys).
 **
@@ -4041,14 +4055,21 @@ case OP_Found: {        /* jump, in3 */
 ** in either direction.  In other words, the Next and Prev opcodes will
 ** not work following this opcode.
 **
-** See also: Found, NotFound, NoConflict
+** See also: Found, NotFound, NoConflict, SeekRowid
 */
-case OP_NotExists: {        /* jump, in3 */
+case OP_SeekRowid: {        /* jump, in3 */
   VdbeCursor *pC;
   BtCursor *pCrsr;
   int res;
   u64 iKey;
 
+  pIn3 = &aMem[pOp->p3];
+  if( (pIn3->flags & MEM_Int)==0 ){
+    applyAffinity(pIn3, SQLITE_AFF_NUMERIC, encoding);
+    if( (pIn3->flags & MEM_Int)==0 ) goto jump_to_p2;
+  }
+  /* Fall through into OP_NotExists */
+case OP_NotExists:          /* jump, in3 */
   pIn3 = &aMem[pOp->p3];
   assert( pIn3->flags & MEM_Int );
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
@@ -4167,8 +4188,7 @@ case OP_NewRowid: {           /* out2 */
         v = 1;   /* IMP: R-61914-48074 */
       }else{
         assert( sqlite3BtreeCursorIsValid(pC->uc.pCursor) );
-        rc = sqlite3BtreeKeySize(pC->uc.pCursor, &v);
-        assert( rc==SQLITE_OK );   /* Cannot fail following BtreeLast() */
+        v = sqlite3BtreeIntegerKey(pC->uc.pCursor);
         if( v>=MAX_ROWID ){
           pC->useRandomRowid = 1;
         }else{
@@ -4251,10 +4271,12 @@ case OP_NewRowid: {           /* out2 */
 ** sqlite3_last_insert_rowid() function (otherwise it is unmodified).
 **
 ** If the OPFLAG_USESEEKRESULT flag of P5 is set and if the result of
-** the last seek operation (OP_NotExists) was a success, then this
+** the last seek operation (OP_NotExists or OP_SeekRowid) was a success,
+** then this
 ** operation will not attempt to find the appropriate row before doing
 ** the insert but will instead overwrite the row that the cursor is
-** currently pointing to.  Presumably, the prior OP_NotExists opcode
+** currently pointing to.  Presumably, the prior OP_NotExists or
+** OP_SeekRowid opcode
 ** has already positioned the cursor correctly.  This is an optimization
 ** that boosts performance by avoiding redundant seeks.
 **
@@ -4423,8 +4445,7 @@ case OP_Delete: {
     /* If p5 is zero, the seek operation that positioned the cursor prior to
     ** OP_Delete will have also set the pC->movetoTarget field to the rowid of
     ** the row that is being deleted */
-    i64 iKey = 0;
-    sqlite3BtreeKeySize(pC->uc.pCursor, &iKey);
+    i64 iKey = sqlite3BtreeIntegerKey(pC->uc.pCursor);
     assert( pC->movetoTarget==iKey );
   }
 #endif
@@ -4440,7 +4461,7 @@ case OP_Delete: {
     zDb = db->aDb[pC->iDb].zName;
     pTab = pOp->p4.pTab;
     if( (pOp->p5 & OPFLAG_SAVEPOSITION)!=0 && pC->isTable ){
-      sqlite3BtreeKeySize(pC->uc.pCursor, &pC->movetoTarget);
+      pC->movetoTarget = sqlite3BtreeIntegerKey(pC->uc.pCursor);
     }
   }else{
     zDb = 0;   /* Not needed.  Silence a compiler warning. */
@@ -4594,7 +4615,6 @@ case OP_RowData: {
   VdbeCursor *pC;
   BtCursor *pCrsr;
   u32 n;
-  i64 n64;
 
   pOut = &aMem[pOp->p2];
   memAboutToChange(p, pOut);
@@ -4612,8 +4632,9 @@ case OP_RowData: {
   pCrsr = pC->uc.pCursor;
 
   /* The OP_RowKey and OP_RowData opcodes always follow OP_NotExists or
-  ** OP_Rewind/Op_Next with no intervening instructions that might invalidate
-  ** the cursor.  If this where not the case, on of the following assert()s
+  ** OP_SeekRowid or OP_Rewind/Op_Next with no intervening instructions
+  ** that might invalidate the cursor.
+  ** If this where not the case, on of the following assert()s
   ** would fail.  Should this ever change (because of changes in the code
   ** generator) then the fix would be to insert a call to
   ** sqlite3VdbeCursorMoveto().
@@ -4625,20 +4646,9 @@ case OP_RowData: {
   if( rc!=SQLITE_OK ) goto abort_due_to_error;
 #endif
 
-  if( pC->isTable==0 ){
-    assert( !pC->isTable );
-    VVA_ONLY(rc =) sqlite3BtreeKeySize(pCrsr, &n64);
-    assert( rc==SQLITE_OK );    /* True because of CursorMoveto() call above */
-    if( n64>db->aLimit[SQLITE_LIMIT_LENGTH] ){
-      goto too_big;
-    }
-    n = (u32)n64;
-  }else{
-    VVA_ONLY(rc =) sqlite3BtreeDataSize(pCrsr, &n);
-    assert( rc==SQLITE_OK );    /* DataSize() cannot fail */
-    if( n>(u32)db->aLimit[SQLITE_LIMIT_LENGTH] ){
-      goto too_big;
-    }
+  n = sqlite3BtreePayloadSize(pCrsr);
+  if( n>(u32)db->aLimit[SQLITE_LIMIT_LENGTH] ){
+    goto too_big;
   }
   testcase( n==0 );
   if( sqlite3VdbeMemClearAndResize(pOut, MAX(n,32)) ){
@@ -4703,8 +4713,7 @@ case OP_Rowid: {                 /* out2 */
       pOut->flags = MEM_Null;
       break;
     }
-    rc = sqlite3BtreeKeySize(pC->uc.pCursor, &v);
-    assert( rc==SQLITE_OK );  /* Always so because of CursorRestore() above */
+    v = sqlite3BtreeIntegerKey(pC->uc.pCursor);
   }
   pOut->u.i = v;
   break;

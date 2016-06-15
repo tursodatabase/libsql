@@ -194,13 +194,13 @@ do_test rtree-2.1.3 {
 
 do_test rtree-2.2.1 {
   catchsql { INSERT INTO t1 VALUES(2, 1, 3, 2, 4) }
-} {1 {constraint failed}}
+} {1 {UNIQUE constraint failed: t1.ii}}
 do_test rtree-2.2.2 {
   catchsql { INSERT INTO t1 VALUES(4, 1, 3, 4, 2) }
-} {1 {constraint failed}}
+} {1 {rtree constraint failed: t1.(y1<=y2)}}
 do_test rtree-2.2.3 {
   catchsql { INSERT INTO t1 VALUES(4, 3, 1, 2, 4) }
-} {1 {constraint failed}}
+} {1 {rtree constraint failed: t1.(x1<=x2)}}
 do_test rtree-2.2.4 {
   execsql { SELECT ii FROM t1 ORDER BY ii }
 } {1 2 3}
@@ -236,7 +236,7 @@ do_test rtree-3.1.3 {
 # Test the constraint on the coordinates (c[i]<=c[i+1] where (i%2==0)):
 do_test rtree-3.2.1 {
   catchsql { INSERT INTO t1 VALUES(7, 2, 6, 4, 3) }
-} {1 {constraint failed}}
+} {1 {rtree constraint failed: t1.(y1<=y2)}}
 do_test rtree-3.2.2 {
   catchsql { INSERT INTO t1 VALUES(8, 2, 6, 3, 3) }
 } {0 {}}
@@ -490,11 +490,11 @@ foreach {tn sql_template testdata} {
   }
 
   4    "INSERT %CONF% INTO t1 VALUES(2, 7, 6, 7, 7)" {
-    ROLLBACK 0 1 {1 1 2 3 4   2 2 3 4 5   3 3 4 5 6}
-    ABORT    0 1 {1 1 2 3 4   2 2 3 4 5   3 3 4 5 6   4 4 5 6 7}
+    ROLLBACK 0 2 {1 1 2 3 4   2 2 3 4 5   3 3 4 5 6}
+    ABORT    0 2 {1 1 2 3 4   2 2 3 4 5   3 3 4 5 6   4 4 5 6 7}
     IGNORE   0 0 {1 1 2 3 4   2 2 3 4 5   3 3 4 5 6   4 4 5 6 7}
-    FAIL     0 1 {1 1 2 3 4   2 2 3 4 5   3 3 4 5 6   4 4 5 6 7}
-    REPLACE  0 1 {1 1 2 3 4   2 2 3 4 5   3 3 4 5 6   4 4 5 6 7}
+    FAIL     0 2 {1 1 2 3 4   2 2 3 4 5   3 3 4 5 6   4 4 5 6 7}
+    REPLACE  0 2 {1 1 2 3 4   2 2 3 4 5   3 3 4 5 6   4 4 5 6 7}
   }
 
 } {
@@ -510,7 +510,9 @@ foreach {tn sql_template testdata} {
     }
 
     set res(0) {0 {}}
-    set res(1) {1 {constraint failed}}
+    set res(1) {1 {UNIQUE constraint failed: t1.idx}}
+    set res(2) {1 {rtree constraint failed: t1.(x1<=x2)}}
+
     do_catchsql_test $testname.1 $sql $res($error)
     do_test $testname.2 [list sql_uses_stmt db $sql] $uses
     do_execsql_test $testname.3 { SELECT * FROM t1 ORDER BY idx } $data

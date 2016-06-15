@@ -32,6 +32,9 @@ db func a_string a_string
 
 register_dbstat_vtab db
 do_execsql_test stat-0.0 {
+  PRAGMA table_info(dbstat);
+} {/0 name TEXT .* 1 path TEXT .* 9 pgsize INTEGER/}
+do_execsql_test stat-0.1 {
   PRAGMA auto_vacuum = OFF;
   CREATE VIRTUAL TABLE temp.stat USING dbstat;
   SELECT * FROM stat;

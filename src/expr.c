@@ -2222,8 +2222,7 @@ static void sqlite3ExprCodeIN(
     if( eType==IN_INDEX_ROWID ){
       /* In this case, the RHS is the ROWID of table b-tree
       */
-      sqlite3VdbeAddOp2(v, OP_MustBeInt, r1, destIfFalse); VdbeCoverage(v);
-      sqlite3VdbeAddOp3(v, OP_NotExists, pExpr->iTable, destIfFalse, r1);
+      sqlite3VdbeAddOp3(v, OP_SeekRowid, pExpr->iTable, destIfFalse, r1);
       VdbeCoverage(v);
     }else{
       /* In this case, the RHS is an index b-tree.
@@ -2536,7 +2535,7 @@ void sqlite3ExprCodeGetColumnOfTable(
   }else{
     int op = IsVirtual(pTab) ? OP_VColumn : OP_Column;
     int x = iCol;
-    if( !HasRowid(pTab) ){
+    if( !HasRowid(pTab) && !IsVirtual(pTab) ){
       x = sqlite3ColumnOfIndex(sqlite3PrimaryKeyIndex(pTab), iCol);
     }
     sqlite3VdbeAddOp3(v, op, iTabCur, x, regOut);
