@@ -1,5 +1,5 @@
-C Fix\sRBU\sso\sthat\sit\sbuilds\swith\s-DSQLITE_ENABLE_8_3_NAMES.\nFix\s"PRAGMA\scompile_options"\sfor\sSQLITE_ENABLE_8_3_NAMES\ssuch\sthat\sit\sreports\nthe\snumeric\ssetting:\s"1"\sor\s"2".
-D 2016-06-13T19:58:46.382
+C Fix\sa\stypo\sin\sa\scomment\son\sthe\sSrcList\sobject.
+D 2016-06-16T11:16:53.415
 F Makefile.in f3f7d2060ce03af4584e711ef3a626ef0b1d6340
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 50149765ef72f4e652b9a0f1f6462c4784bb9423
@@ -387,7 +387,7 @@ F src/shell.c 14ff7f660530a52b117d110ba3390b7b2eb719b6
 F src/sqlite.h.in 5f8113dbec74c6c093ead9930afb8c9fbd9f643d
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 98f72cbfe00169c39089115427d06ea05fe4b4a2
-F src/sqliteInt.h b425bb606c14c078b1c9feb7cf72f2f3a35be188
+F src/sqliteInt.h 2ac73e9fdd138f4607139d9bd6a1e6dcd01837dc
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
@@ -1501,7 +1501,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a1e1cdc51d1c68502f43ac72c28ba87cb1916a0d
-R c278a2e099b6be15733b154091fd5a26
+P 0230ca17ba20ecd3d213788ad6891973d52a7b72
+R 1a1c29c9329c6a84a9521e4c335dbb95
 U drh
-Z 0e8cfd82e8662e22b8b1a31845a5f102
+Z 2cdcc0a9545b2084d273426178a84d04

@@ -2485,7 +2485,7 @@ struct SrcList {
     int regReturn;    /* Register holding return address of addrFillSub */
     int regResult;    /* Registers holding results of a co-routine */
     struct {
-      u8 jointype;      /* Type of join between this able and the previous */
+      u8 jointype;      /* Type of join between this table and the previous */
       unsigned notIndexed :1;    /* True if there is a NOT INDEXED clause */
       unsigned isIndexedBy :1;   /* True if there is an INDEXED BY clause */
       unsigned isTabFunc :1;     /* True if table-valued-function syntax */
