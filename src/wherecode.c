@@ -678,6 +678,7 @@ static int codeCursorHintFixExpr(Walker *pWalker, Expr *pExpr){
 ** Insert an OP_CursorHint instruction if it is appropriate to do so.
 */
 static void codeCursorHint(
+  struct SrcList_item *pTabItem,  /* FROM clause item */
   WhereInfo *pWInfo,    /* The where clause */
   WhereLevel *pLevel,   /* Which loop to provide hints for */
   WhereTerm *pEndRange  /* Hint this end-of-scan boundary term if not NULL */
@@ -708,7 +709,31 @@ static void codeCursorHint(
     pTerm = &pWC->a[i];
     if( pTerm->wtFlags & (TERM_VIRTUAL|TERM_CODED) ) continue;
     if( pTerm->prereqAll & pLevel->notReady ) continue;
-    if( ExprHasProperty(pTerm->pExpr, EP_FromJoin) ) continue;
+
+    /* Any terms specified as part of the ON(...) clause for any LEFT 
+    ** JOIN for which the current table is not the rhs are omitted
+    ** from the cursor-hint. 
+    **
+    ** If this table is the rhs of a LEFT JOIN, only terms that were
+    ** specified as part of the ON(...) clause may be included in the 
+    ** hint. This is to address the following:
+    **
+    **   SELECT ... t1 LEFT JOIN t2 ON (t1.a=t2.b) WHERE t2.c IS NULL;
+    **
+    ** If the (t2.c IS NULL) constraint is pushed down to the cursor, it
+    ** might filter out all rows that match (t1.a=t2.b), causing SQLite
+    ** to add a row of NULL values to the output that should not be
+    ** present (since the ON clause does actually match rows within t2).
+    */
+    if( pTabItem->fg.jointype & JT_LEFT ){
+      if( !ExprHasProperty(pTerm->pExpr, EP_FromJoin) 
+       || pTerm->pExpr->iRightJoinTable!=pTabItem->iCursor
+      ){
+        continue;
+      }
+    }else{
+      if( ExprHasProperty(pTerm->pExpr, EP_FromJoin) ) continue;
+    }
 
     /* All terms in pWLoop->aLTerm[] except pEndRange are used to initialize
     ** the cursor.  These terms are not needed as hints for a pure range
@@ -742,7 +767,7 @@ static void codeCursorHint(
   }
 }
 #else
-# define codeCursorHint(A,B,C)  /* No-op */
+# define codeCursorHint(A,B,C,D)  /* No-op */
 #endif /* SQLITE_ENABLE_CURSOR_HINTS */
 
 /*
@@ -998,7 +1023,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       pStart = pEnd;
       pEnd = pTerm;
     }
-    codeCursorHint(pWInfo, pLevel, pEnd);
+    codeCursorHint(pTabItem, pWInfo, pLevel, pEnd);
     if( pStart ){
       Expr *pX;             /* The expression that defines the start bound */
       int r1, rTemp;        /* Registers for holding the start boundary */
@@ -1212,7 +1237,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     ** and store the values of those terms in an array of registers
     ** starting at regBase.
     */
-    codeCursorHint(pWInfo, pLevel, pRangeEnd);
+    codeCursorHint(pTabItem, pWInfo, pLevel, pRangeEnd);
     regBase = codeAllEqualityTerms(pParse,pLevel,bRev,nExtraReg,&zStartAff);
     assert( zStartAff==0 || sqlite3Strlen30(zStartAff)>=nEq );
     if( zStartAff ) cEndAff = zStartAff[nEq];
@@ -1660,7 +1685,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       ** a pseudo-cursor.  No need to Rewind or Next such cursors. */
       pLevel->op = OP_Noop;
     }else{
-      codeCursorHint(pWInfo, pLevel, 0);
+      codeCursorHint(pTabItem, pWInfo, pLevel, 0);
       pLevel->op = aStep[bRev];
       pLevel->p1 = iCur;
       pLevel->p2 = 1 + sqlite3VdbeAddOp2(v, aStart[bRev], iCur, addrBrk);
