@@ -55,43 +55,43 @@ do_execsql_test 1.0 {
   CREATE TABLE t3(e, f);
 }
 
-do_extract_hints_test $tn.1.1 {
+do_extract_hints_test 1.1 {
   SELECT * FROM t1 WHERE a=1;
 } {
   t1 EQ(c0,1)
 }
 
-do_extract_hints_test $tn.1.2 {
+do_extract_hints_test 1.2 {
   SELECT * FROM t1 CROSS JOIN t2 ON (a=c) WHERE d IS NULL;
 } {
   t2 {AND(ISNULL(c1),EQ(r[1],c0))}
 }
 
-do_extract_hints_test $tn.1.3 {
+do_extract_hints_test 1.3 {
   SELECT * FROM t1 LEFT JOIN t2 ON (a=c) WHERE d IS NULL;
 } {
   t2 {EQ(r[2],c0)}
 }
 
-do_extract_hints_test $tn.1.4 {
+do_extract_hints_test 1.4 {
   SELECT * FROM t1 LEFT JOIN t2 ON (a=c AND a=10) WHERE d IS NULL;
 } {
   t2 {AND(EQ(r[2],c0),EQ(r[3],10))}
 }
 
-do_extract_hints_test $tn.1.5 {
+do_extract_hints_test 1.5 {
   SELECT * FROM t1 CROSS JOIN t2 ON (a=c AND a=10) WHERE d IS NULL;
 } {
   t1 EQ(c0,10) t2 {AND(ISNULL(c1),EQ(r[3],c0))}
 }
 
-do_extract_hints_test $tn.1.6 {
+do_extract_hints_test 1.6 {
   SELECT * FROM t1 LEFT JOIN t2 ON (a=c) LEFT JOIN t3 ON (d=f);
 } {
   t2 {EQ(r[2],c0)} t3 {EQ(r[6],c1)}
 }
 
-do_extract_hints_test $tn.1.6 {
+do_extract_hints_test 1.6 {
   SELECT * FROM t1 LEFT JOIN t2 ON (a=c AND d=e) LEFT JOIN t3 ON (d=f);
 } {
   t2 {EQ(r[2],c0)} t3 {EQ(r[6],c1)}
