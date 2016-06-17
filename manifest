@@ -1,5 +1,5 @@
-C Fix\sa\sduplicate\stest\sname\sin\scursorhint2.test.
-D 2016-06-17T14:59:40.619
+C Include\sWHERE\sterms\sin\sthe\scursor-hint\spassed\sto\sa\scursor\sopened\sfor\sthe\srhs\sof\sa\sLEFT\sJOIN\siff\swe\scan\sbe\ssure\sthat\sthose\sterms\swill\snot\sevaluate\sto\strue\sif\sthe\sLEFT\sJOIN\sgenerates\sa\srow\sof\sNULLs.
+D 2016-06-17T19:27:13.114
 F Makefile.in f3f7d2060ce03af4584e711ef3a626ef0b1d6340
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 50149765ef72f4e652b9a0f1f6462c4784bb9423
@@ -464,7 +464,7 @@ F src/wal.h 2f7c831cf3b071fa548bf2d5cac640846a7ff19c
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
 F src/where.c 74f0798525b6306682d7234f230ea93f86959b9b
 F src/whereInt.h e5b939701a7ceffc5a3a8188a37f9746416ebcd0
-F src/wherecode.c b9d5f7d8ebed2e09376fd785a111ffd9dfd59ffc
+F src/wherecode.c c1b11ad09468577afd3c36cd8c854fb6dd77f258
 F src/whereexpr.c c32d47085dbaca0b8fd013210f56693c7d220d48
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -617,7 +617,7 @@ F test/cse.test 277350a26264495e86b1785f34d2d0c8600e021c
 F test/csv01.test 0929a9ce47021519512be92861f29e32d2538e5f
 F test/ctime.test 7bd009071e242aac4f18521581536b652b789a47
 F test/cursorhint.test 7bc346788390475e77a345da2b92270d04d35856
-F test/cursorhint2.test aa52c25d84366531af871f0bed91a7147b2b37e8
+F test/cursorhint2.test cef69bab25b9141071b4239fa5c3b4ce18eeafd0
 F test/date.test 984ac1e3e5e031386866f034006148d3972b4a65
 F test/dbstatus.test 8de104bb5606f19537d23cd553b41349b5ab1204
 F test/dbstatus2.test e93ab03bfae6d62d4d935f20de928c19ca0ed0ab
@@ -1502,7 +1502,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c1a5a57cf10dca91082963dcbd3e3ffebc3707ef
-R ae6a6e72981ae73e95b7048747b6cd4f
+P fcd12b69cee1335224a65aa6d22c4e302b889398
+R aa7c436ce5d8105be03298dc84afa8de
 U dan
-Z 130058fba07c74a7ae7dc91c3a4fa1a9
+Z a2cf93e232f8c6f0bcf6400999626f67

@@ -626,6 +626,31 @@ static int codeCursorHintCheckExpr(Walker *pWalker, Expr *pExpr){
   return WRC_Continue;
 }
 
+/*
+** Test whether or not expression pExpr, which was part of a WHERE clause,
+** should be included in the cursor-hint for a table that is on the rhs
+** of a LEFT JOIN. Set Walker.eCode to non-zero before returning if the 
+** expression is not suitable.
+**
+** An expression is unsuitable if it might evaluate to non NULL even if
+** a TK_COLUMN node that does affect the value of the expression is set
+** to NULL. For example:
+**
+**   col IS NULL
+**   col IS NOT NULL
+**   coalesce(col, 1)
+**   CASE WHEN col THEN 0 ELSE 1 END
+*/
+static int codeCursorHintIsOrFunction(Walker *pWalker, Expr *pExpr){
+  if( pExpr->op==TK_IS || pExpr->op==TK_FUNCTION 
+   || pExpr->op==TK_ISNULL || pExpr->op==TK_ISNOT 
+   || pExpr->op==TK_NOTNULL || pExpr->op==TK_CASE 
+  ){
+    pWalker->eCode = 1;
+  }
+  return WRC_Continue;
+}
+
 
 /*
 ** This function is called on every node of an expression tree used as an
@@ -714,22 +739,33 @@ static void codeCursorHint(
     ** JOIN for which the current table is not the rhs are omitted
     ** from the cursor-hint. 
     **
-    ** If this table is the rhs of a LEFT JOIN, only terms that were
-    ** specified as part of the ON(...) clause may be included in the 
-    ** hint. This is to address the following:
+    ** If this table is the rhs of a LEFT JOIN, "IS" or "IS NULL" terms 
+    ** that were specified as part of the WHERE clause must be excluded.
+    ** This is to address the following:
     **
     **   SELECT ... t1 LEFT JOIN t2 ON (t1.a=t2.b) WHERE t2.c IS NULL;
     **
-    ** If the (t2.c IS NULL) constraint is pushed down to the cursor, it
-    ** might filter out all rows that match (t1.a=t2.b), causing SQLite
-    ** to add a row of NULL values to the output that should not be
-    ** present (since the ON clause does actually match rows within t2).
+    ** Say there is a single row in t2 that matches (t1.a=t2.b), but its
+    ** t2.c values is not NULL. If the (t2.c IS NULL) constraint is 
+    ** pushed down to the cursor, this row is filtered out, causing
+    ** SQLite to synthesize a row of NULL values. Which does match the
+    ** WHERE clause, and so the query returns a row. Which is incorrect.
+    **
+    ** For the same reason, WHERE terms such as:
+    **
+    **   WHERE 1 = (t2.c IS NULL)
+    **
+    ** are also excluded. See codeCursorHintIsOrFunction() for details.
     */
     if( pTabItem->fg.jointype & JT_LEFT ){
-      if( !ExprHasProperty(pTerm->pExpr, EP_FromJoin) 
-       || pTerm->pExpr->iRightJoinTable!=pTabItem->iCursor
+      Expr *pExpr = pTerm->pExpr;
+      if( !ExprHasProperty(pExpr, EP_FromJoin) 
+       || pExpr->iRightJoinTable!=pTabItem->iCursor
       ){
-        continue;
+        sWalker.eCode = 0;
+        sWalker.xExprCallback = codeCursorHintIsOrFunction;
+        sqlite3WalkExpr(&sWalker, pTerm->pExpr);
+        if( sWalker.eCode ) continue;
       }
     }else{
       if( ExprHasProperty(pTerm->pExpr, EP_FromJoin) ) continue;
