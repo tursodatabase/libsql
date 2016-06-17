@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sthe\scursorhint2.test\sscript.
-D 2016-06-17T14:47:37.300
+C Fix\sa\sduplicate\stest\sname\sin\scursorhint2.test.
+D 2016-06-17T14:59:40.619
 F Makefile.in f3f7d2060ce03af4584e711ef3a626ef0b1d6340
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 50149765ef72f4e652b9a0f1f6462c4784bb9423
@@ -617,7 +617,7 @@ F test/cse.test 277350a26264495e86b1785f34d2d0c8600e021c
 F test/csv01.test 0929a9ce47021519512be92861f29e32d2538e5f
 F test/ctime.test 7bd009071e242aac4f18521581536b652b789a47
 F test/cursorhint.test 7bc346788390475e77a345da2b92270d04d35856
-F test/cursorhint2.test c4c49b4b34eabc3d61ff111d477113f5c901d7fa
+F test/cursorhint2.test aa52c25d84366531af871f0bed91a7147b2b37e8
 F test/date.test 984ac1e3e5e031386866f034006148d3972b4a65
 F test/dbstatus.test 8de104bb5606f19537d23cd553b41349b5ab1204
 F test/dbstatus2.test e93ab03bfae6d62d4d935f20de928c19ca0ed0ab
@@ -1376,7 +1376,7 @@ F test/walslow.test c05c68d4dc2700a982f89133ce103a1a84cc285f
 F test/walthread.test de8dbaf6d9e41481c460ba31ca61e163d7348f8e
 F test/where.test f0c325563acde44f2c4ea6ba348e9e29f7121757
 F test/where2.test 478d2170637b9211f593120648858593bf2445a1
-F test/where3.test 1ad55ba900bd7747f98b6082e65bd3e442c5004e
+F test/where3.test 54cdeb02157acc979de41530b804ae7b09552bf1
 F test/where4.test 4a371bfcc607f41d233701bdec33ac2972908ba8
 F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
 F test/where6.test 5da5a98cec820d488e82708301b96cb8c18a258b
@@ -1502,7 +1502,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2a2346b04235c6d0b7a8e64c92ee31018285c29f
-R f8aa0cb7edf61b31b26c82b3f234b1ab
+P c1a5a57cf10dca91082963dcbd3e3ffebc3707ef
+R ae6a6e72981ae73e95b7048747b6cd4f
 U dan
-Z ac8df9edec12a135c248b7ca97a78998
+Z 130058fba07c74a7ae7dc91c3a4fa1a9
