@@ -1,5 +1,5 @@
-C For\sa\stable\son\sthe\srhs\sof\sa\sLEFT\sJOIN\soperator,\sdo\snot\sinclude\sterms\slike\s"IS\sNULL"\sfrom\sthe\sWHERE\sclause\sin\sthe\scursor-hint.\sThese\smay\sbe\sfalse\sfor\srows\sthat\sthe\scursor\swould\sotherwise\svisit,\sbut\strue\sfor\sa\srow\sof\sall\sNULL\svalues\sgenerated\sby\sthe\sLEFT\sJOIN.
-D 2016-06-20T17:25:50.750
+C Update\sthe\ssqldiff\sutility\sso\sthat\sif\sthe\s--vtab\sswitch\sis\sspecified\s"rtree",\s"fts3",\s"fts4"\sand\s"fts5"\stables\sare\sdiff'd\sdirectly\sand\sthe\sunderlying\sreal\sdatabase\stables\signored.\sWithout\sthis\sswitch,\sall\svirtual\stables\sare\signored\sand\sthe\sdiff\sis\sperformed\son\sthe\sunderlying\sreal\stables.
+D 2016-06-21T10:34:41.782
 F Makefile.in f3f7d2060ce03af4584e711ef3a626ef0b1d6340
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 50149765ef72f4e652b9a0f1f6462c4784bb9423
@@ -243,7 +243,7 @@ F ext/rbu/rbuB.test c25bc325b8072a766e56bb76c001866b405925c2
 F ext/rbu/rbuC.test efe47db508a0269b683cb2a1913a425ffd39a831
 F ext/rbu/rbu_common.tcl 3a4b916b6f5dca9c9da9a30863e272fe5ea4414f
 F ext/rbu/rbucrash.test 8d2ed5d4b05fef6c00c2a6b5f7ead71fa172a695
-F ext/rbu/rbudiff.test 2df0a8a7d998ecf81764c21eeda3cde5611c5091
+F ext/rbu/rbudiff.test 4c9f8df6f723f553781d3d117501b7e9d170a145
 F ext/rbu/rbufault.test cc0be8d5d392d98b0c2d6a51be377ea989250a89
 F ext/rbu/rbufault2.test 9a7f19edd6ea35c4c9f807d8a3db0a03a5670c06
 F ext/rbu/rbufault3.test 54a399888ac4af44c68f9f58afbed23149428bca
@@ -1469,7 +1469,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 7ce07da76b5e745783e703a834417d725b7d45fd
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
-F tool/sqldiff.c ca315aca4e2d24233e8f2000edea5880c53d1875
+F tool/sqldiff.c 131e9c6e09d3d78e3c4ae8b5fd23451521723aac
 F tool/srcck1.c 4c39bdfa9a92edd20233ee720df84dbeb2417602
 F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
@@ -1502,8 +1502,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0b1579caf06a2c42433b8bc9dc28c9ad381aa07c 7455d932f5079ffe40462a8c119fc22b8a9bcbcc
-R 6b36cf1cbd5dc0e94253a2a90e40c230
-T +closed 7455d932f5079ffe40462a8c119fc22b8a9bcbcc
+P 913e595615e2ef40fb431f6e7678f6fc8439782e
+R a344dc9988f1497ebec3b8ad168c1397
+T *branch * sqldiff-vtab-support
+T *sym-sqldiff-vtab-support *
+T -sym-trunk *
 U dan
-Z 537cf80c06fd3994884c97d3059d4966
+Z 6909c0a252ed2326d78857113119f0ab
