@@ -1,5 +1,5 @@
-C For\sa\stable\son\sthe\srhs\sof\sa\sLEFT\sJOIN\soperator,\sdo\snot\sinclude\sterms\slike\s"IS\sNULL"\sfrom\sthe\sWHERE\sclause\sin\sthe\scursor-hint.\sThese\smay\sbe\sfalse\sfor\srows\sthat\sthe\scursor\swould\sotherwise\svisit,\sbut\strue\sfor\sa\srow\sof\sall\sNULL\svalues\sgenerated\sby\sthe\sLEFT\sJOIN.
-D 2016-06-20T17:25:50.750
+C Fix\sthe\sbuild\sfor\s-DSQLITE_OMIT_VIRTUALTABLE
+D 2016-06-23T12:35:04.863
 F Makefile.in f3f7d2060ce03af4584e711ef3a626ef0b1d6340
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 50149765ef72f4e652b9a0f1f6462c4784bb9423
@@ -462,7 +462,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 02eeecc265f6ffd0597378f5d8ae9070b62a406a
 F src/wal.h 2f7c831cf3b071fa548bf2d5cac640846a7ff19c
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
-F src/where.c 74f0798525b6306682d7234f230ea93f86959b9b
+F src/where.c 0ce4793497af2feb051147a5cc6356f95d3ab381
 F src/whereInt.h e5b939701a7ceffc5a3a8188a37f9746416ebcd0
 F src/wherecode.c e20cb381ff621e56a4684c71e31999aca2547ca6
 F src/whereexpr.c c32d47085dbaca0b8fd013210f56693c7d220d48
@@ -1502,8 +1502,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0b1579caf06a2c42433b8bc9dc28c9ad381aa07c 7455d932f5079ffe40462a8c119fc22b8a9bcbcc
-R 6b36cf1cbd5dc0e94253a2a90e40c230
-T +closed 7455d932f5079ffe40462a8c119fc22b8a9bcbcc
-U dan
-Z 537cf80c06fd3994884c97d3059d4966
+P 913e595615e2ef40fb431f6e7678f6fc8439782e
+R b96a3531b275feb80cf3ff7b27074eda
+U drh
+Z 55a9839fb9d4bac563e41eaf1345cb2c
