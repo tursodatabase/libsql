@@ -1,5 +1,5 @@
-C Fix\sthe\sMakefile.in\sto\savoid\sunnecessary\srecompiles\sof\ssqlite3.c.
-D 2016-06-24T02:50:44.909
+C Fix\sthe\sctime.test\sscript\sso\sthat\sit\sworks\swith\sclang.
+D 2016-06-24T06:23:13.369
 F Makefile.in bc2b4864a23a4a21c3e26d7b4350f51bab324d45
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 50149765ef72f4e652b9a0f1f6462c4784bb9423
@@ -615,7 +615,7 @@ F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test b5de160630b209c4b8925bdcbbaf48cc90b67fe8
 F test/cse.test 277350a26264495e86b1785f34d2d0c8600e021c
 F test/csv01.test 0929a9ce47021519512be92861f29e32d2538e5f
-F test/ctime.test 7bd009071e242aac4f18521581536b652b789a47
+F test/ctime.test 0b995accd44a52914bd4744d5c1b6e1a56c7897c
 F test/cursorhint.test 7bc346788390475e77a345da2b92270d04d35856
 F test/cursorhint2.test 2b45341d32d1aae9991a00ef31ebca339b274255
 F test/date.test 984ac1e3e5e031386866f034006148d3972b4a65
@@ -1502,7 +1502,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b8671e9434180878cfe15d70b793fdee69aabccf
-R bb5fcfa23277d6cebd22a760da9dcde6
+P 67c39e16442d9359b24d60d5f97bd66c19eff16a
+R 7e79191b4d7cf82834abc676eac1270e
 U drh
-Z 138a4cc0f4ecfcd1f7ccb81cfc01b8ef
+Z 811d7c2149778ab6cb4ca3f8ac5802c8

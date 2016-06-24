@@ -196,9 +196,10 @@ set tc 1
 foreach opt $opts {
   do_test ctime-2.5.$tc {
     set N [ expr {$tc-1} ]
-    set ans1 [ catchsql {
+    set ans1 [catch {db one {
       SELECT sqlite_compileoption_get($N);
-    } ]
+    }} msg]
+    lappend ans1 $msg
     set ans2 [ catchsql {
       SELECT sqlite_compileoption_used($opt);
     } ]
