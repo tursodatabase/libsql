@@ -1,5 +1,5 @@
-C Update\sthe\ssqldiff\sutility\sso\sthat\sif\sthe\s--vtab\sswitch\sis\sspecified\s"rtree",\s"fts3",\s"fts4"\sand\s"fts5"\stables\sare\sdiff'd\sdirectly\sand\sthe\sunderlying\sreal\sdatabase\stables\signored.\sWithout\sthis\sswitch,\sall\svirtual\stables\sare\signored\sand\sthe\sdiff\sis\sperformed\son\sthe\sunderlying\sreal\stables.
-D 2016-06-23T16:48:35.249
+C Provide\sfor\sa\sseparate\sdefault\spage\ssize\sfor\sTEMP\sand\stransient\sdatabase\nfiles\sand\sinitialize\sthat\sseparate\sdefault\spage\ssize\sto\s1024\sinstead\sof\s4096.
+D 2016-06-24T02:21:35.836
 F Makefile.in f3f7d2060ce03af4584e711ef3a626ef0b1d6340
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 50149765ef72f4e652b9a0f1f6462c4784bb9423
@@ -369,7 +369,7 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c a9443cdab41d7f3cdf0df3a5aab62fd6e1c9b234
 F src/os_win.c d4b8faf8896b65818e67070711fdd00d8e620bd6
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
-F src/pager.c c368634b888b1c8740aea83b36bfd266f2443e60
+F src/pager.c 3bae603f893f358673f9f0a069d15f562130f64a
 F src/pager.h 8ab6b6feeee4bc0439bfde7ee59ba99df98b9bc3
 F src/parse.y 01b9f37c4c7009ab56fda98bc7db4c42643cecfe
 F src/pcache.c 5583c8ade4b05075a60ba953ef471d1c1a9c05df
@@ -388,7 +388,7 @@ F src/sqlite.h.in 5f8113dbec74c6c093ead9930afb8c9fbd9f643d
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 98f72cbfe00169c39089115427d06ea05fe4b4a2
 F src/sqliteInt.h 2ac73e9fdd138f4607139d9bd6a1e6dcd01837dc
-F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
+F src/sqliteLimit.h c845c0868ec889abeee9334521c17d827484f1a3
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
 F src/tclsqlite.c 25fbbbb97f76dbfd113153fb63f52d7ecfac5dd0
@@ -1502,8 +1502,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 911131424857430d46784b167399ecf192584ca2 5d0a9d4c45730e47576bc77373fa7075a74051a5
-R 208a102d85ab541408c6c49f684969ef
-T +closed 5d0a9d4c45730e47576bc77373fa7075a74051a5
-U dan
-Z c85e872c7e55cfaaf069baf7060cb813
+P b8671e9434180878cfe15d70b793fdee69aabccf
+R 1c3f81d2d3509190d87e6d1fe97f2094
+T *branch * temp-page-size
+T *sym-temp-page-size *
+T -sym-trunk *
+U drh
+Z 361052b2190761b3c945d24c157898b5

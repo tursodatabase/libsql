@@ -4643,6 +4643,9 @@ int sqlite3PagerOpen(
       sqlite3DbFree(0, zPathname);
       return rc;
     }
+  }else{
+    /* a temporary or transient database */
+    szPageDflt = SQLITE_DEFAULT_TEMP_PAGE_SIZE;
   }
 
   /* Allocate memory for the Pager structure, PCache object, the
