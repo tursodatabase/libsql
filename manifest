@@ -1,5 +1,5 @@
-C Fix\sthe\sctime.test\sscript\sso\sthat\sit\sworks\swith\sclang.
-D 2016-06-24T06:23:13.369
+C Fix\sthe\shandling\sof\sOP_Eq\sopcodes\sthat\scompare\sa\sregister\sagainst\sitself\nand\sthat\srequire\san\saffinity\schange.
+D 2016-06-25T11:43:47.381
 F Makefile.in bc2b4864a23a4a21c3e26d7b4350f51bab324d45
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 50149765ef72f4e652b9a0f1f6462c4784bb9423
@@ -448,7 +448,7 @@ F src/update.c 4f05ea8cddfa367d045e03589756c02199e8f9bd
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c 810ec3f22e2d1b62e66c30fe3621ebdedd23584d
 F src/vacuum.c feb1eabb20987983d9350cad98299b21fa811f52
-F src/vdbe.c e23a15d352e63b51cf08af8052e678e67c54ec09
+F src/vdbe.c 22b46c3b725e950e9f2760e2d76953d592600ad4
 F src/vdbe.h 5591b5add447096e31288b5a0a78ec5d7b5c5170
 F src/vdbeInt.h ddb157974436d87652de7dc641f7191496d9a8cd
 F src/vdbeapi.c 02bcbc2ca5d2004b029088b05b468b394881e103
@@ -1041,7 +1041,7 @@ F test/select6.test 39eac4a5c03650b2b473c532882273283ee8b7a0
 F test/select7.test 95e370c42d47c3c52377d05e9ffc01ccff7c1f61
 F test/select8.test 8c8f5ae43894c891efc5755ed905467d1d67ad5d
 F test/select9.test aebc2bb0c3bc44606125033cbcaac2c8d1f33a95
-F test/selectA.test e452bdb975f488ea46d091382a9185b5853ed2c7
+F test/selectA.test 101e722370ac6e84978c2958b8931c78b10a1709
 F test/selectB.test 954e4e49cf1f896d61794e440669e03a27ceea25
 F test/selectC.test 871fb55d884d3de5943c4057ebd22c2459e71977
 F test/selectD.test b0f02a04ef7737decb24e08be2c39b9664b43394
@@ -1502,7 +1502,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 67c39e16442d9359b24d60d5f97bd66c19eff16a
-R 7e79191b4d7cf82834abc676eac1270e
+P 77e4f7a36e6e0ebe842bcb36b2557a5bfba90d3f
+R 3ef1ee60339b9a478f36c983b60b7e48
 U drh
-Z 811d7c2149778ab6cb4ca3f8ac5802c8
+Z 7d552df043719cedc46422a9795a23bd

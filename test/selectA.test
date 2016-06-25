@@ -1434,5 +1434,14 @@ do_catchsql_test 5.4 {
   SELECT * FROM t8 UNION SELECT * FROM t9 ORDER BY a+b COLLATE NOCASE
 } {1 {1st ORDER BY term does not match any column in the result set}}
 
+do_execsql_test 6.1 {
+  DROP TABLE IF EXISTS t1;
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t1(a INTEGER);
+  CREATE TABLE t2(b TEXT);
+  INSERT INTO t2(b) VALUES('12345');
+  SELECT * FROM (SELECT a FROM t1 UNION SELECT b FROM t2) WHERE a=a;
+} {12345}
+
 
 finish_test
