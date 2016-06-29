@@ -1,6 +1,6 @@
-C Prevent\sthe\sWhereLoop.rSetup\scost\sestimate\sfrom\sgoing\snegative\son\scomplex\nqueries.
-D 2016-06-26T04:06:28.081
-F Makefile.in bc2b4864a23a4a21c3e26d7b4350f51bab324d45
+C Add\sa\sprototype\sintarray($PTR,$N)\stable\svalued\sfunction.
+D 2016-06-29T05:00:30.819
+F Makefile.in 541d493154ec3b0b20b2f1d495ec66f55905191e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 50149765ef72f4e652b9a0f1f6462c4784bb9423
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
@@ -204,6 +204,7 @@ F ext/icu/README.txt d9fbbad0c2f647c3fdf715fc9fd64af53aedfc43
 F ext/icu/icu.c 43df9d8ef2fae7a325100ebd713ab089dc829dd7
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/misc/amatch.c 211108e201105e4bb0c076527b8cfd34330fc234
+F ext/misc/array.c 20af0591e6611755dd8a9d1124e9c9a8cf42761f
 F ext/misc/closure.c 0d2a038df8fbae7f19de42e7c7d71f2e4dc88704
 F ext/misc/compress.c 122faa92d25033d6c3f07c39231de074ab3d2e83
 F ext/misc/csv.c f01126ba170fd4ef7c752b156568a80c912d4441
@@ -392,7 +393,7 @@ F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
 F src/tclsqlite.c 25fbbbb97f76dbfd113153fb63f52d7ecfac5dd0
-F src/test1.c 43b37ab2b7338fd3313e74902f0d6c821eae843b
+F src/test1.c 081e4ed40525590406a51f7e7e4cee31cdb5d029
 F src/test2.c 5586f43fcd9a1be0830793cf9d354082c261b25b
 F src/test3.c c75c8af0eadb335236c9e61b51044c58a8f7dd59
 F src/test4.c d168f83cc78d02e8d35567bb5630e40dcd85ac1e
@@ -1114,7 +1115,7 @@ F test/symlink.test c9ebe7330d228249e447038276bfc8a7b22f4849
 F test/sync.test 2f84bdbc2b2df1fcb0220575b4b9f8cea94b7529
 F test/syscall.test f59ba4e25f7ba4a4c031026cc2ef8b6e4b4c639c
 F test/sysfault.test c9f2b0d8d677558f74de750c75e12a5454719d04
-F test/tabfunc01.test f977868fa8bb7beb4b2072883190411653473906
+F test/tabfunc01.test a1976cbc37cbcdd4b4bd1e52d19a173dd62ab9e0
 F test/table.test b708f3e5fa2542fa51dfab21fc07b36ea445cb2f
 F test/tableapi.test 2674633fa95d80da917571ebdd759a14d9819126
 F test/tableopts.test dba698ba97251017b7c80d738c198d39ab747930
@@ -1502,7 +1503,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 507014e4c7a70cd09410c89c8ed466c8edab39d2
-R ae55d782914cbf2db58c75f82f862316
+P f81050859170c8708a1b296da8dd3ef0dd314a11
+R 609a6d062299b01b515e433d814c02e8
+T *branch * prototype-int-array
+T *sym-prototype-int-array *
+T -sym-trunk *
 U drh
-Z e21bca843071316b56d3c29d5bf9cc08
+Z 45472ddb0e35914c318f364b2c8020fb

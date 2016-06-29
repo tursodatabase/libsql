@@ -3242,6 +3242,46 @@ static int test_bind_int(
 
 
 /*
+** Usage:   sqlite3_bind_intarray  STMT N INT  ...
+**
+** Create a C-language array of integers from the arguments.  Bind a pointer
+** to this array to the NAME parameter of STMT.
+*/
+static int test_bind_intarray(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_stmt *pStmt;
+  int idx;
+  int i;
+  static int *p = 0;
+
+  sqlite3_free(p);
+  p = 0;
+  if( objc<4 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"",
+        Tcl_GetStringFromObj(objv[0], 0), " STMT NAME INT...", 0);
+    return TCL_ERROR;
+  }
+
+  if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[2], &idx) ) return TCL_ERROR;
+  p = sqlite3_malloc( sizeof(int)*(objc-3) );
+  if( p==0 ) return TCL_ERROR;
+  for(i=0; i<objc-3; i++){
+    if( Tcl_GetIntFromObj(interp, objv[3+i], &p[i]) ){
+      sqlite3_free(p);
+      return TCL_ERROR;
+    }
+  }  
+  sqlite3_bind_int64(pStmt, idx, (sqlite3_int64)p);
+  return TCL_OK;
+}
+
+
+/*
 ** Usage:   sqlite3_bind_int64  STMT N VALUE
 **
 ** Test the sqlite3_bind_int64 interface.  STMT is a prepared statement.
@@ -6583,6 +6623,7 @@ static int tclLoadStaticExtensionCmd(
   Tcl_Obj *CONST objv[]
 ){
   extern int sqlite3_amatch_init(sqlite3*,char**,const sqlite3_api_routines*);
+  extern int sqlite3_array_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_closure_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_csv_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_eval_init(sqlite3*,char**,const sqlite3_api_routines*);
@@ -6601,6 +6642,7 @@ static int tclLoadStaticExtensionCmd(
     int (*pInit)(sqlite3*,char**,const sqlite3_api_routines*);
   } aExtension[] = {
     { "amatch",                sqlite3_amatch_init               },
+    { "array",                 sqlite3_array_init                },
     { "closure",               sqlite3_closure_init              },
     { "csv",                   sqlite3_csv_init                  },
     { "eval",                  sqlite3_eval_init                 },
@@ -7096,6 +7138,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "register_dbstat_vtab",          test_register_dbstat_vtab  },
      { "sqlite3_connection_pointer",    get_sqlite_pointer, 0 },
      { "sqlite3_bind_int",              test_bind_int,      0 },
+     { "sqlite3_bind_intarray",         test_bind_intarray, 0 },
      { "sqlite3_bind_zeroblob",         test_bind_zeroblob, 0 },
      { "sqlite3_bind_zeroblob64",       test_bind_zeroblob64, 0 },
      { "sqlite3_bind_int64",            test_bind_int64,    0 },
