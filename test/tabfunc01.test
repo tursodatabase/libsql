@@ -155,6 +155,29 @@ do_test tabfunc01-621 {
   sqlite3_column_int $VM 0
 } 22
 sqlite3_finalize $VM
+
+do_test tabfunc01-650 {
+  db eval {
+    DROP TABLE IF EXISTS t6;
+    CREATE TABLE t6(x INTEGER PRIMARY KEY, y BLOB);
+    WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<100)
+      INSERT INTO t6(x,y) SELECT x, randomblob(x) FROM c;
+  }
+  set TAIL {}
+  set VM [sqlite3_prepare db {
+     SELECT length(y) FROM t6 WHERE x IN (SELECT value FROM intarray(?1,3));
+  } -1 TAIL]
+  string trim $TAIL
+} {}
+do_test tabfunc01-660 {
+  sqlite3_bind_intarray $VM 1 11 22 33 44 55
+  sqlite3_step $VM
+} SQLITE_ROW
+do_test tabfunc01-661 {
+  sqlite3_column_int $VM 0
+} 11
+sqlite3_finalize $VM
+
 catch {sqlite3_bind_intarray}
 
 finish_test
