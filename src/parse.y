@@ -1142,6 +1142,15 @@ expr(A) ::= expr(A) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
     exprNot(pParse, N, &A);
     A.zEnd = Z.z ? &Z.z[Z.n] : &Y.z[Y.n];
   }
+  expr(A) ::= expr(A) in_op(N) nm(Y) dbnm(Z) LP exprlist(E) RP. [IN] {
+    SrcList *pSrc = sqlite3SrcListAppend(pParse->db, 0,&Y,&Z);
+    Select *pSelect = sqlite3SelectNew(pParse, 0,pSrc,0,0,0,0,0,0,0);
+    sqlite3SrcListFuncArgs(pParse, pSrc, E);
+    A.pExpr = sqlite3PExpr(pParse, TK_IN, A.pExpr, 0, 0);
+    sqlite3PExprAddSelect(pParse, A.pExpr, pSelect);
+    exprNot(pParse, N, &A);
+    A.zEnd = Z.z ? &Z.z[Z.n] : &Y.z[Y.n];
+  }
   expr(A) ::= EXISTS(B) LP select(Y) RP(E). {
     Expr *p;
     spanSet(&A,&B,&E); /*A-overwrites-B*/
