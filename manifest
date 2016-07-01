@@ -1,5 +1,5 @@
-C Proposed\sfix\sfor\sa\sproblem\sin\sthe\squery\splanner.
-D 2016-06-28T22:27:56.883
+C Add\stest\scases\sto\sthe\stransitive\sconstraint\sfix.
+D 2016-07-01T19:48:43.147
 F Makefile.in bc2b4864a23a4a21c3e26d7b4350f51bab324d45
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 50149765ef72f4e652b9a0f1f6462c4784bb9423
@@ -574,6 +574,7 @@ F test/collate7.test 8ec29d98f3ee4ccebce6e16ce3863fb6b8c7b868
 F test/collate8.test cd9b3d3f999b8520ffaa7cc1647061fc5bab1334
 F test/collate9.test 3adcc799229545940df2f25308dd1ad65869145a
 F test/collateA.test b8218ab90d1fa5c59dcf156efabb1b2599c580d6
+F test/collateB.test 8ec2accd2d7166c1eff0d2a39bc90262c6f89632
 F test/colmeta.test 2c765ea61ee37bc43bbe6d6047f89004e6508eb1
 F test/colname.test 08948a4809d22817e0e5de89c7c0a8bd90cb551b
 F test/conflict.test 029faa2d81a0d1cafb5f88614beb663d972c01db
@@ -1502,10 +1503,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f81050859170c8708a1b296da8dd3ef0dd314a11
-R dcdb165f171e6961986899e464931036
-T *branch * planner-fix
-T *sym-planner-fix *
-T -sym-trunk *
+P a33d23560959a127e37d8213dc00210cd4b05352
+R 9c182c2a1bd41d85d1ee54cc469d61e7
 U drh
-Z 35245dfa6950894f0d3652717f7690e0
+Z ef208312357a37b91bc1f6c737863420
