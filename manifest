@@ -1,5 +1,5 @@
-C Prevent\sthe\sWhereLoop.rSetup\scost\sestimate\sfrom\sgoing\snegative\son\scomplex\nqueries.
-D 2016-06-26T04:06:28.081
+C Fix\sthe\stransitive\sconstraint\slogic\serror\sthat\scan\sresult\sin\sa\snull\spointer\ndereference.\s\sFix\sfor\sticket\s[e8d439c77685eca6].
+D 2016-07-01T20:12:39.149
 F Makefile.in bc2b4864a23a4a21c3e26d7b4350f51bab324d45
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 50149765ef72f4e652b9a0f1f6462c4784bb9423
@@ -465,7 +465,7 @@ F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
 F src/where.c 48eed8ebe319c6cbc7bf7682018f32af0f5189f5
 F src/whereInt.h e5b939701a7ceffc5a3a8188a37f9746416ebcd0
 F src/wherecode.c e20cb381ff621e56a4684c71e31999aca2547ca6
-F src/whereexpr.c c32d47085dbaca0b8fd013210f56693c7d220d48
+F src/whereexpr.c d7dcbf14ce1b5876c1f76496162c30fcba669563
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -574,6 +574,7 @@ F test/collate7.test 8ec29d98f3ee4ccebce6e16ce3863fb6b8c7b868
 F test/collate8.test cd9b3d3f999b8520ffaa7cc1647061fc5bab1334
 F test/collate9.test 3adcc799229545940df2f25308dd1ad65869145a
 F test/collateA.test b8218ab90d1fa5c59dcf156efabb1b2599c580d6
+F test/collateB.test 8ec2accd2d7166c1eff0d2a39bc90262c6f89632
 F test/colmeta.test 2c765ea61ee37bc43bbe6d6047f89004e6508eb1
 F test/colname.test 08948a4809d22817e0e5de89c7c0a8bd90cb551b
 F test/conflict.test 029faa2d81a0d1cafb5f88614beb663d972c01db
@@ -1502,7 +1503,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 507014e4c7a70cd09410c89c8ed466c8edab39d2
-R ae55d782914cbf2db58c75f82f862316
+P f81050859170c8708a1b296da8dd3ef0dd314a11 c952af89c22ddc31491f142b9511608a4c8f9737
+R 9c182c2a1bd41d85d1ee54cc469d61e7
+T +closed c952af89c22ddc31491f142b9511608a4c8f9737
 U drh
-Z e21bca843071316b56d3c29d5bf9cc08
+Z 6ff2c1fb4a902fab6eeb4b75477a29a3
