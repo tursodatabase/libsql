@@ -1,5 +1,5 @@
-C Prevent\sthe\sWhereLoop.rSetup\scost\sestimate\sfrom\sgoing\snegative\son\scomplex\nqueries.
-D 2016-06-26T04:06:28.081
+C Add\sthe\ssqlite3rbu_state()\sAPI.\sUsed\sto\sdetermine\sthe\scurrent\sstate\s(creating\sOAL,\sready\sto\smove\sOAL,\sincremental-checkpoint,\sfinished\sor\serror)\sof\san\sRBU\soperation.
+D 2016-07-01T12:39:58.096
 F Makefile.in bc2b4864a23a4a21c3e26d7b4350f51bab324d45
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 50149765ef72f4e652b9a0f1f6462c4784bb9423
@@ -226,14 +226,14 @@ F ext/misc/vfsstat.c 6110aeeaab2f1df17a923c8a8acef3c74f6dc515
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
 F ext/rbu/rbu.c b2c0b5e6ae1a89affc0edfc127ebfa5f637a0ce4
-F ext/rbu/rbu1.test 42bd835e019eff789ec241017965277baeb658b1
+F ext/rbu/rbu1.test 43836fac8c7179a358eaf38a8a1ef3d6e6285842
 F ext/rbu/rbu10.test 046b0980041d30700464a800bbf6733ed2df515d
 F ext/rbu/rbu11.test 9bc68c2d3dbeb1720153626e3bd0466dcc017702
 F ext/rbu/rbu12.test bde22ed0004dd5d1888c72a84ae407e574aeae16
 F ext/rbu/rbu13.test 462ff799c4afedc3ef8a47ff818c0ffbf14ae4f2
 F ext/rbu/rbu14.test 01f5dcba904aecadbaea69d4ccdc2ea43dd30560
 F ext/rbu/rbu3.test 8bd4c6b87367c358981b6a47dc3d654fa60bff90
-F ext/rbu/rbu5.test 2e24fee3e615aecd99bbdd46967935a641e866f7
+F ext/rbu/rbu5.test cf1fa84d6107efd73e292a7be8e1fb31953ca45c
 F ext/rbu/rbu6.test 32e8ed60631b6facdb6366bd2b5f5f25245e7edb
 F ext/rbu/rbu7.test fd025d5ba440fcfe151fbb0e3835e1e7fe964fa1
 F ext/rbu/rbu8.test 3bbf2c35d71a843c463efe93946f14ad10c3ede0
@@ -241,7 +241,7 @@ F ext/rbu/rbu9.test 0806d1772c9f4981774ff028de6656e4183082af
 F ext/rbu/rbuA.test c1a7b3e2d926b8f8448bb3b4ae787e314ee4b2b3
 F ext/rbu/rbuB.test c25bc325b8072a766e56bb76c001866b405925c2
 F ext/rbu/rbuC.test efe47db508a0269b683cb2a1913a425ffd39a831
-F ext/rbu/rbu_common.tcl 3a4b916b6f5dca9c9da9a30863e272fe5ea4414f
+F ext/rbu/rbu_common.tcl a38e8e2d4a50fd6aaf151633714c1b1d2fae3ead
 F ext/rbu/rbucrash.test 8d2ed5d4b05fef6c00c2a6b5f7ead71fa172a695
 F ext/rbu/rbudiff.test 4c9f8df6f723f553781d3d117501b7e9d170a145
 F ext/rbu/rbufault.test cc0be8d5d392d98b0c2d6a51be377ea989250a89
@@ -252,9 +252,9 @@ F ext/rbu/rbuprogress.test 2023a7df2c523e3df1cb532eff811cda385a789a
 F ext/rbu/rbusave.test 0f43b6686084f426ddd040b878426452fd2c2f48
 F ext/rbu/rbuvacuum.test 4a977447c15c2581ab668781d9ef4294382530e0
 F ext/rbu/rbuvacuum2.test 45009e127c3fb385e5c0fd5a8a63fb922a79d0ab
-F ext/rbu/sqlite3rbu.c 3d35b1dc46f5ca0f0f59db8e6163fe7627ea107c
-F ext/rbu/sqlite3rbu.h 2acd0a6344a6079de15c8dc9d84d3df83a665930
-F ext/rbu/test_rbu.c 9bbdf6bd8efd58fbc4f192698df50569598fbb9e
+F ext/rbu/sqlite3rbu.c 948677ee0ec57da51148e6c5f64ac68afcf36ab2
+F ext/rbu/sqlite3rbu.h db8858120c9be14b60c9225f9da28221f5f6b945
+F ext/rbu/test_rbu.c 9f043b74c46c45b231f4313aed1fccb379a76fe6
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c d26a815b0df1c412a6881dae8d7fd3c9c08cce68
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
@@ -1502,7 +1502,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 507014e4c7a70cd09410c89c8ed466c8edab39d2
-R ae55d782914cbf2db58c75f82f862316
-U drh
-Z e21bca843071316b56d3c29d5bf9cc08
+P f81050859170c8708a1b296da8dd3ef0dd314a11
+R 2c74d9aac55f1cbb7c7d3232cf9071e1
+T *branch * rbu-state-api
+T *sym-rbu-state-api *
+T -sym-trunk *
+U dan
+Z b7514d1a78fc46b36ed5446f76a12e50
