@@ -50,7 +50,7 @@ pub enum Error {
 
     /// Error when the value of a particular column is requested, but the type of the result in
     /// that column cannot be converted to the requested Rust type.
-    InvalidColumnType(c_int, c_int),
+    InvalidColumnType,
 
     /// Error when a query that was expected to insert one row did not insert any or insert many.
     StatementChangedRows(c_int),
@@ -109,9 +109,7 @@ impl fmt::Display for Error {
             Error::QueryReturnedNoRows => write!(f, "Query returned no rows"),
             Error::InvalidColumnIndex(i) => write!(f, "Invalid column index: {}", i),
             Error::InvalidColumnName(ref name) => write!(f, "Invalid column name: {}", name),
-            Error::InvalidColumnType(i, t) => {
-                write!(f, "Invalid column type {} at index: {}", t, i)
-            }
+            Error::InvalidColumnType => write!(f, "Invalid column type"),
             Error::StatementChangedRows(i) => write!(f, "Query changed {} rows", i),
             Error::StatementFailedToInsertRow => write!(f, "Statement failed to insert new row"),
 
@@ -144,7 +142,7 @@ impl error::Error for Error {
             Error::QueryReturnedNoRows => "query returned no rows",
             Error::InvalidColumnIndex(_) => "invalid column index",
             Error::InvalidColumnName(_) => "invalid column name",
-            Error::InvalidColumnType(_, _) => "invalid column type",
+            Error::InvalidColumnType => "invalid column type",
             Error::StatementChangedRows(_) => "query inserted zero or more than one row",
             Error::StatementFailedToInsertRow => "statement failed to insert new row",
 
@@ -171,7 +169,7 @@ impl error::Error for Error {
             Error::QueryReturnedNoRows |
             Error::InvalidColumnIndex(_) |
             Error::InvalidColumnName(_) |
-            Error::InvalidColumnType(_, _) |
+            Error::InvalidColumnType |
             Error::InvalidPath(_) |
             Error::StatementChangedRows(_) |
             Error::StatementFailedToInsertRow => None,
