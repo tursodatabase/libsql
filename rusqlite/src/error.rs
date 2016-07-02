@@ -6,6 +6,7 @@ use libc::c_int;
 use {ffi, errmsg_to_string};
 
 /// Old name for `Error`. `SqliteError` is deprecated.
+#[deprecated(since = "0.6.0", note = "Use Error instead")]
 pub type SqliteError = Error;
 
 /// Enum listing possible errors from rusqlite.
@@ -54,10 +55,6 @@ pub enum Error {
 
     /// Error when a query that was expected to insert one row did not insert any or insert many.
     StatementChangedRows(c_int),
-
-    /// Error when a query that was expected to insert a row did not change the connection's
-    /// last_insert_rowid().
-    StatementFailedToInsertRow,
 
     /// Error returned by `functions::Context::get` when the function argument cannot be converted
     /// to the requested type.
@@ -111,7 +108,6 @@ impl fmt::Display for Error {
             Error::InvalidColumnName(ref name) => write!(f, "Invalid column name: {}", name),
             Error::InvalidColumnType => write!(f, "Invalid column type"),
             Error::StatementChangedRows(i) => write!(f, "Query changed {} rows", i),
-            Error::StatementFailedToInsertRow => write!(f, "Statement failed to insert new row"),
 
             #[cfg(feature = "functions")]
             Error::InvalidFunctionParameterType => write!(f, "Invalid function parameter type"),
@@ -144,7 +140,6 @@ impl error::Error for Error {
             Error::InvalidColumnName(_) => "invalid column name",
             Error::InvalidColumnType => "invalid column type",
             Error::StatementChangedRows(_) => "query inserted zero or more than one row",
-            Error::StatementFailedToInsertRow => "statement failed to insert new row",
 
             #[cfg(feature = "functions")]
             Error::InvalidFunctionParameterType => "invalid function parameter type",
@@ -171,8 +166,7 @@ impl error::Error for Error {
             Error::InvalidColumnName(_) |
             Error::InvalidColumnType |
             Error::InvalidPath(_) |
-            Error::StatementChangedRows(_) |
-            Error::StatementFailedToInsertRow => None,
+            Error::StatementChangedRows(_) => None,
 
             #[cfg(feature = "functions")]
             Error::InvalidFunctionParameterType => None,
