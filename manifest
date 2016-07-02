@@ -1,5 +1,5 @@
-C Add\sthe\sability\sto\shave\sa\stable-valued\sfunction\son\sthe\sRHS\sof\san\sIN\soperator.
-D 2016-06-29T06:19:19.192
+C Merge\sthe\salternative\stable-valued\sfunction\sRHS\sof\sIN\soperator\simplementation\nfrom\strunk.
+D 2016-07-02T20:51:31.298
 F Makefile.in 541d493154ec3b0b20b2f1d495ec66f55905191e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 50149765ef72f4e652b9a0f1f6462c4784bb9423
@@ -372,7 +372,7 @@ F src/os_win.c d4b8faf8896b65818e67070711fdd00d8e620bd6
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c c368634b888b1c8740aea83b36bfd266f2443e60
 F src/pager.h 8ab6b6feeee4bc0439bfde7ee59ba99df98b9bc3
-F src/parse.y 300a30380bfa73c0a0d2e0ae4c4d0cd844d80199
+F src/parse.y f374ab20106362eb3f5c01b3e6a002f0bbead7ff
 F src/pcache.c 5583c8ade4b05075a60ba953ef471d1c1a9c05df
 F src/pcache.h 2cedcd8407eb23017d92790b112186886e179490
 F src/pcache1.c 7f51d2b541aab57596adf62db2c4bb025d34f04d
@@ -466,7 +466,7 @@ F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
 F src/where.c 48eed8ebe319c6cbc7bf7682018f32af0f5189f5
 F src/whereInt.h e5b939701a7ceffc5a3a8188a37f9746416ebcd0
 F src/wherecode.c e20cb381ff621e56a4684c71e31999aca2547ca6
-F src/whereexpr.c c32d47085dbaca0b8fd013210f56693c7d220d48
+F src/whereexpr.c d7dcbf14ce1b5876c1f76496162c30fcba669563
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -575,6 +575,7 @@ F test/collate7.test 8ec29d98f3ee4ccebce6e16ce3863fb6b8c7b868
 F test/collate8.test cd9b3d3f999b8520ffaa7cc1647061fc5bab1334
 F test/collate9.test 3adcc799229545940df2f25308dd1ad65869145a
 F test/collateA.test b8218ab90d1fa5c59dcf156efabb1b2599c580d6
+F test/collateB.test 8ec2accd2d7166c1eff0d2a39bc90262c6f89632
 F test/colmeta.test 2c765ea61ee37bc43bbe6d6047f89004e6508eb1
 F test/colname.test 08948a4809d22817e0e5de89c7c0a8bd90cb551b
 F test/conflict.test 029faa2d81a0d1cafb5f88614beb663d972c01db
@@ -1115,7 +1116,7 @@ F test/symlink.test c9ebe7330d228249e447038276bfc8a7b22f4849
 F test/sync.test 2f84bdbc2b2df1fcb0220575b4b9f8cea94b7529
 F test/syscall.test f59ba4e25f7ba4a4c031026cc2ef8b6e4b4c639c
 F test/sysfault.test c9f2b0d8d677558f74de750c75e12a5454719d04
-F test/tabfunc01.test 32e620a19963c50dcf6958dc5bb352de96d948fb
+F test/tabfunc01.test 96e56e22e5be82818d9673e9e993e9f26f80079a
 F test/table.test b708f3e5fa2542fa51dfab21fc07b36ea445cb2f
 F test/tableapi.test 2674633fa95d80da917571ebdd759a14d9819126
 F test/tableopts.test dba698ba97251017b7c80d738c198d39ab747930
@@ -1503,7 +1504,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 06e1fab7527c6b4330a58f8d8873afaf2d67ae86
-R a95030951795f74126be51a632f80a74
+P ba1b441b6003808810667d749635fe6b2e8c6165 bead151e72215e6ca2a90eb049cfca414dccea04
+R ab2f6bd04c16fa8193c86a3894a34997
 U drh
-Z 5d31abe2efd2f25b296efdbc945337ef
+Z f71a4b07caffe5df9d8bd19d720e6958

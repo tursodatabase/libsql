@@ -1134,18 +1134,10 @@ expr(A) ::= expr(A) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
     exprNot(pParse, N, &A);
     A.zEnd = &E.z[E.n];
   }
-  expr(A) ::= expr(A) in_op(N) nm(Y) dbnm(Z). [IN] {
+  expr(A) ::= expr(A) in_op(N) nm(Y) dbnm(Z) paren_exprlist(E). [IN] {
     SrcList *pSrc = sqlite3SrcListAppend(pParse->db, 0,&Y,&Z);
     Select *pSelect = sqlite3SelectNew(pParse, 0,pSrc,0,0,0,0,0,0,0);
-    A.pExpr = sqlite3PExpr(pParse, TK_IN, A.pExpr, 0, 0);
-    sqlite3PExprAddSelect(pParse, A.pExpr, pSelect);
-    exprNot(pParse, N, &A);
-    A.zEnd = Z.z ? &Z.z[Z.n] : &Y.z[Y.n];
-  }
-  expr(A) ::= expr(A) in_op(N) nm(Y) dbnm(Z) LP exprlist(E) RP. [IN] {
-    SrcList *pSrc = sqlite3SrcListAppend(pParse->db, 0,&Y,&Z);
-    Select *pSelect = sqlite3SelectNew(pParse, 0,pSrc,0,0,0,0,0,0,0);
-    sqlite3SrcListFuncArgs(pParse, pSrc, E);
+    if( E )  sqlite3SrcListFuncArgs(pParse, pSelect ? pSrc : 0, E);
     A.pExpr = sqlite3PExpr(pParse, TK_IN, A.pExpr, 0, 0);
     sqlite3PExprAddSelect(pParse, A.pExpr, pSelect);
     exprNot(pParse, N, &A);
@@ -1201,6 +1193,14 @@ nexprlist(A) ::= nexprlist(A) COMMA expr(Y).
     {A = sqlite3ExprListAppend(pParse,A,Y.pExpr);}
 nexprlist(A) ::= expr(Y).
     {A = sqlite3ExprListAppend(pParse,0,Y.pExpr); /*A-overwrites-Y*/}
+
+/* A paren_exprlist is an optional expression list contained inside
+** of parenthesis */
+%type paren_exprlist {ExprList*}
+%destructor paren_exprlist {sqlite3ExprListDelete(pParse->db, $$);}
+paren_exprlist(A) ::= .   {A = 0;}
+paren_exprlist(A) ::= LP exprlist(X) RP.  {A = X;}
+
 
 
 ///////////////////////////// The CREATE INDEX command ///////////////////////

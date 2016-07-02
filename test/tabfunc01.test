@@ -136,6 +136,15 @@ do_execsql_test tabfunc01-500 {
   ORDER BY +1;
 } {1 7 11 17}
 
+# Table-valued functions on the RHS of an IN operator
+#
+do_execsql_test tabfunc01-600 {
+  CREATE TABLE t600(a INTEGER PRIMARY KEY, b TEXT);
+  WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<100)
+    INSERT INTO t600(a,b) SELECT x, printf('(%03d)',x) FROM c;
+  SELECT b FROM t600 WHERE a IN generate_series(2,52,10);
+} {(002) (012) (022) (032) (042) (052)}
+
 
 do_test tabfunc01-600 {
   set TAIL {}
