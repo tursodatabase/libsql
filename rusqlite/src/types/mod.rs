@@ -4,7 +4,9 @@
 //! the `ToSql` and `FromSql` traits are provided for the basic types that SQLite provides methods
 //! for:
 //!
-//! * C integers and doubles (`c_int` and `c_double`)
+//! * Integers (`i32` and `i64`; SQLite uses `i64` internally, so getting an `i32` will truncate
+//!   if the value is too large or too small).
+//! * Reals (`f64`)
 //! * Strings (`String` and `&str`)
 //! * Blobs (`Vec<u8>` and `&[u8]`)
 //!
@@ -13,13 +15,7 @@
 //! `"%Y-%m-%d %H:%M:%S"`, as SQLite's builtin
 //! [datetime](https://www.sqlite.org/lang_datefunc.html) function.  Note that this storage
 //! truncates timespecs to the nearest second. If you want different storage for timespecs, you can
-//! use a newtype. For example, to store timespecs as doubles:
-//!
-//! `ToSql` and `FromSql` are also implemented for `Option<T>` where `T` implements `ToSql` or
-//! `FromSql` for the cases where you want to know if a value was NULL (which gets translated to
-//! `None`). If you get a value that was NULL in SQLite but you store it into a non-`Option` value
-//! in Rust, you will get a "sensible" zero value - 0 for numeric types (including timespecs), an
-//! empty string, or an empty vector of bytes.
+//! use a newtype. For example, to store timespecs as `f64`s:
 //!
 //! ```rust,ignore
 //! extern crate rusqlite;
@@ -33,10 +29,8 @@
 //! pub struct TimespecSql(pub time::Timespec);
 //!
 //! impl FromSql for TimespecSql {
-//!     unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int)
-//!             -> Result<TimespecSql> {
-//!         let as_f64_result = FromSql::column_result(stmt, col);
-//!         as_f64_result.map(|as_f64: f64| {
+//!     fn column_result(value: ValueRef) -> Result<Self> {
+//!         f64::column_result(value).map(|as_f64| {
 //!             TimespecSql(time::Timespec{ sec: as_f64.trunc() as i64,
 //!                                         nsec: (as_f64.fract() * 1.0e9) as i32 })
 //!         })
@@ -51,131 +45,25 @@
 //!     }
 //! }
 //! ```
-
-use libc::{c_int, c_double, c_char};
-use std::ffi::CStr;
-use std::mem;
-use std::str;
-use super::ffi;
-use super::{Result, Error, str_to_cstring};
+//!
+//! `ToSql` and `FromSql` are also implemented for `Option<T>` where `T` implements `ToSql` or
+//! `FromSql` for the cases where you want to know if a value was NULL (which gets translated to
+//! `None`).
 
 pub use ffi::sqlite3_stmt;
-pub use ffi::sqlite3_column_type;
 
-pub use ffi::{SQLITE_INTEGER, SQLITE_FLOAT, SQLITE_TEXT, SQLITE_BLOB, SQLITE_NULL};
+pub use self::from_sql::FromSql;
+pub use self::to_sql::ToSql;
+pub use self::value_ref::ValueRef;
 
+mod value_ref;
+mod from_sql;
+mod to_sql;
 mod time;
 #[cfg(feature = "chrono")]
 mod chrono;
 #[cfg(feature = "serde_json")]
 mod serde_json;
-
-/// A trait for types that can be converted into SQLite values.
-pub trait ToSql {
-    unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int;
-}
-
-/// A trait for types that can be created from a SQLite value.
-pub trait FromSql: Sized {
-    unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> Result<Self>;
-
-    /// FromSql types can implement this method and use sqlite3_column_type to check that
-    /// the type reported by SQLite matches a type suitable for Self. This method is used
-    /// by `Row::get_checked` to confirm that the column contains a valid type before
-    /// attempting to retrieve the value.
-    unsafe fn column_has_valid_sqlite_type(_: *mut sqlite3_stmt, _: c_int) -> Result<()> {
-        Ok(())
-    }
-}
-
-unsafe fn column_has_expected_typed(stmt: *mut sqlite3_stmt,
-                                    col: c_int,
-                                    expected_type: c_int)
-                                    -> Result<()> {
-    let actual_type = sqlite3_column_type(stmt, col);
-    if actual_type == expected_type {
-        Ok(())
-    } else {
-        Err(Error::InvalidColumnType(col, actual_type))
-    }
-}
-
-macro_rules! raw_to_impl(
-    ($t:ty, $f:ident) => (
-        impl ToSql for $t {
-            unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
-                ffi::$f(stmt, col, *self)
-            }
-        }
-    )
-);
-
-raw_to_impl!(c_int, sqlite3_bind_int); // i32
-raw_to_impl!(i64, sqlite3_bind_int64);
-raw_to_impl!(c_double, sqlite3_bind_double);
-
-impl ToSql for bool {
-    unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
-        if *self {
-            ffi::sqlite3_bind_int(stmt, col, 1)
-        } else {
-            ffi::sqlite3_bind_int(stmt, col, 0)
-        }
-    }
-}
-
-impl<'a> ToSql for &'a str {
-    unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
-        let length = self.len();
-        if length > ::std::i32::MAX as usize {
-            return ffi::SQLITE_TOOBIG;
-        }
-        match str_to_cstring(self) {
-            Ok(c_str) => {
-                ffi::sqlite3_bind_text(stmt,
-                                       col,
-                                       c_str.as_ptr(),
-                                       length as c_int,
-                                       ffi::SQLITE_TRANSIENT())
-            }
-            Err(_) => ffi::SQLITE_MISUSE,
-        }
-    }
-}
-
-impl ToSql for String {
-    unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
-        (&self[..]).bind_parameter(stmt, col)
-    }
-}
-
-impl<'a> ToSql for &'a [u8] {
-    unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
-        if self.len() > ::std::i32::MAX as usize {
-            return ffi::SQLITE_TOOBIG;
-        }
-        ffi::sqlite3_bind_blob(stmt,
-                               col,
-                               mem::transmute(self.as_ptr()),
-                               self.len() as c_int,
-                               ffi::SQLITE_TRANSIENT())
-    }
-}
-
-impl ToSql for Vec<u8> {
-    unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
-        (&self[..]).bind_parameter(stmt, col)
-    }
-}
-
-impl<T: ToSql> ToSql for Option<T> {
-    unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
-        match *self {
-            None => ffi::sqlite3_bind_null(stmt, col),
-            Some(ref t) => t.bind_parameter(stmt, col),
-        }
-    }
-}
 
 /// Empty struct that can be used to fill in a query parameter as `NULL`.
 ///
@@ -196,100 +84,11 @@ impl<T: ToSql> ToSql for Option<T> {
 #[derive(Copy,Clone)]
 pub struct Null;
 
-impl ToSql for Null {
-    unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
-        ffi::sqlite3_bind_null(stmt, col)
-    }
-}
 
-macro_rules! raw_from_impl(
-    ($t:ty, $f:ident, $c:expr) => (
-        impl FromSql for $t {
-            unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> Result<$t> {
-                Ok(ffi::$f(stmt, col))
-            }
-
-            unsafe fn column_has_valid_sqlite_type(stmt: *mut sqlite3_stmt, col: c_int) -> Result<()> {
-                column_has_expected_typed(stmt, col, $c)
-            }
-        }
-    )
-);
-
-raw_from_impl!(c_int, sqlite3_column_int, ffi::SQLITE_INTEGER); // i32
-raw_from_impl!(i64, sqlite3_column_int64, ffi::SQLITE_INTEGER);
-raw_from_impl!(c_double, sqlite3_column_double, ffi::SQLITE_FLOAT); // f64
-
-impl FromSql for bool {
-    unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> Result<bool> {
-        match ffi::sqlite3_column_int(stmt, col) {
-            0 => Ok(false),
-            _ => Ok(true),
-        }
-    }
-
-    unsafe fn column_has_valid_sqlite_type(stmt: *mut sqlite3_stmt, col: c_int) -> Result<()> {
-        column_has_expected_typed(stmt, col, ffi::SQLITE_INTEGER)
-    }
-}
-
-impl FromSql for String {
-    unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> Result<String> {
-        let c_text = ffi::sqlite3_column_text(stmt, col);
-        if c_text.is_null() {
-            Ok("".to_owned())
-        } else {
-            let c_slice = CStr::from_ptr(c_text as *const c_char).to_bytes();
-            let utf8_str = try!(str::from_utf8(c_slice));
-            Ok(utf8_str.into())
-        }
-    }
-
-    unsafe fn column_has_valid_sqlite_type(stmt: *mut sqlite3_stmt, col: c_int) -> Result<()> {
-        column_has_expected_typed(stmt, col, ffi::SQLITE_TEXT)
-    }
-}
-
-impl FromSql for Vec<u8> {
-    unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> Result<Vec<u8>> {
-        use std::slice::from_raw_parts;
-        let c_blob = ffi::sqlite3_column_blob(stmt, col);
-        let len = ffi::sqlite3_column_bytes(stmt, col);
-
-        // The documentation for sqlite3_column_bytes indicates it is always non-negative,
-        // but we should assert here just to be sure.
-        assert!(len >= 0,
-                "unexpected negative return from sqlite3_column_bytes");
-        let len = len as usize;
-
-        Ok(from_raw_parts(mem::transmute(c_blob), len).to_vec())
-    }
-
-    unsafe fn column_has_valid_sqlite_type(stmt: *mut sqlite3_stmt, col: c_int) -> Result<()> {
-        column_has_expected_typed(stmt, col, ffi::SQLITE_BLOB)
-    }
-}
-
-impl<T: FromSql> FromSql for Option<T> {
-    unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> Result<Option<T>> {
-        if sqlite3_column_type(stmt, col) == ffi::SQLITE_NULL {
-            Ok(None)
-        } else {
-            FromSql::column_result(stmt, col).map(Some)
-        }
-    }
-
-    unsafe fn column_has_valid_sqlite_type(stmt: *mut sqlite3_stmt, col: c_int) -> Result<()> {
-        if sqlite3_column_type(stmt, col) == ffi::SQLITE_NULL {
-            Ok(())
-        } else {
-            T::column_has_valid_sqlite_type(stmt, col)
-        }
-    }
-}
-
-/// Dynamic type value (http://sqlite.org/datatype3.html)
-/// Value's type is dictated by SQLite (not by the caller).
+/// Owning [dynamic type value](http://sqlite.org/datatype3.html). Value's type is typically
+/// dictated by SQLite (not by the caller).
+///
+/// See [`ValueRef`](enum.ValueRef.html) for a non-owning dynamic type value.
 #[derive(Clone,Debug,PartialEq)]
 pub enum Value {
     /// The value is a `NULL` value.
@@ -302,19 +101,6 @@ pub enum Value {
     Text(String),
     /// The value is a blob of data
     Blob(Vec<u8>),
-}
-
-impl FromSql for Value {
-    unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> Result<Value> {
-        match sqlite3_column_type(stmt, col) {
-            ffi::SQLITE_TEXT => FromSql::column_result(stmt, col).map(Value::Text),
-            ffi::SQLITE_INTEGER => Ok(Value::Integer(ffi::sqlite3_column_int64(stmt, col))),
-            ffi::SQLITE_FLOAT => Ok(Value::Real(ffi::sqlite3_column_double(stmt, col))),
-            ffi::SQLITE_NULL => Ok(Value::Null),
-            ffi::SQLITE_BLOB => FromSql::column_result(stmt, col).map(Value::Blob),
-            ct => Err(Error::InvalidColumnType(col, ct)),
-        }
-    }
 }
 
 #[cfg(test)]
@@ -434,10 +220,9 @@ mod test {
         assert!(is_invalid_column_type(row.get_checked::<i32, Option<c_int>>(1).err().unwrap()));
 
         // 2 is actually an integer
-        assert!(is_invalid_column_type(row.get_checked::<i32, c_double>(2).err().unwrap()));
         assert!(is_invalid_column_type(row.get_checked::<i32, String>(2).err().unwrap()));
         assert!(is_invalid_column_type(row.get_checked::<i32, Vec<u8>>(2).err().unwrap()));
-        assert!(is_invalid_column_type(row.get_checked::<i32, Option<c_double>>(2).err().unwrap()));
+        assert!(is_invalid_column_type(row.get_checked::<i32, Option<String>>(2).err().unwrap()));
 
         // 3 is actually a float (c_double)
         assert!(is_invalid_column_type(row.get_checked::<i32, c_int>(3).err().unwrap()));

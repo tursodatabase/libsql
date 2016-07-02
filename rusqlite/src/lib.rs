@@ -75,7 +75,7 @@ use std::result;
 use std::str;
 use libc::{c_int, c_char};
 
-use types::{ToSql, FromSql};
+use types::{ToSql, FromSql, ValueRef};
 use error::{error_from_sqlite_code, error_from_handle};
 use raw_statement::RawStatement;
 use cache::StatementCache;
@@ -883,7 +883,12 @@ impl<'conn> Statement<'conn> {
 
         for (i, p) in params.iter().enumerate() {
             try!(unsafe {
-                self.conn.decode_result(p.bind_parameter(self.stmt.ptr(), (i + 1) as c_int))
+                self.conn.decode_result(
+                    // This should be
+                    // `p.bind_parameter(self.stmt.ptr(), (i + 1) as c_int)`
+                    // but that doesn't compile until Rust 1.9 due to a compiler bug.
+                    ToSql::bind_parameter(*p, self.stmt.ptr(), (i + 1) as c_int)
+                )
             });
         }
 
@@ -1060,14 +1065,9 @@ impl<'a, 'stmt> Row<'a, 'stmt> {
     /// Returns an `Error::InvalidColumnName` if `idx` is not a valid column name
     /// for this row.
     pub fn get_checked<I: RowIndex, T: FromSql>(&self, idx: I) -> Result<T> {
-        unsafe {
-            let idx = try!(idx.idx(self.stmt));
-
-            match T::column_has_valid_sqlite_type(self.stmt.stmt.ptr(), idx) {
-                Ok(()) => FromSql::column_result(self.stmt.stmt.ptr(), idx),
-                Err(e) => Err(e),
-            }
-        }
+        let idx = try!(idx.idx(self.stmt));
+        let value = unsafe { ValueRef::new(&self.stmt.stmt, idx) };
+        FromSql::column_result(value)
     }
 
     /// Return the number of columns in the current row.
@@ -1098,6 +1098,39 @@ impl<'a> RowIndex for &'a str {
     #[inline]
     fn idx(&self, stmt: &Statement) -> Result<i32> {
         stmt.column_index(*self)
+    }
+}
+
+impl<'a> ValueRef<'a> {
+    unsafe fn new(stmt: &RawStatement, col: c_int) -> ValueRef {
+        use std::slice::from_raw_parts;
+
+        let raw = stmt.ptr();
+
+        match stmt.column_type(col) {
+            ffi::SQLITE_NULL => ValueRef::Null,
+            ffi::SQLITE_INTEGER => ValueRef::Integer(ffi::sqlite3_column_int64(raw, col)),
+            ffi::SQLITE_FLOAT => ValueRef::Real(ffi::sqlite3_column_double(raw, col)),
+            ffi::SQLITE_TEXT => {
+                let text = ffi::sqlite3_column_text(raw, col);
+                assert!(!text.is_null(), "unexpected SQLITE_TEXT column type with NULL data");
+                let s = CStr::from_ptr(text as *const c_char);
+
+                // sqlite3_column_text returns UTF8 data, so our unwrap here should be fine.
+                let s = s.to_str().expect("sqlite3_column_text returned invalid UTF-8");
+                ValueRef::Text(s)
+            }
+            ffi::SQLITE_BLOB => {
+                let blob = ffi::sqlite3_column_blob(raw, col);
+                assert!(!blob.is_null(), "unexpected SQLITE_BLOB column type with NULL data");
+
+                let len = ffi::sqlite3_column_bytes(raw, col);
+                assert!(len >= 0, "unexpected negative return from sqlite3_column_bytes");
+
+                ValueRef::Blob(from_raw_parts(blob as *const u8, len as usize))
+            }
+            _ => unreachable!("sqlite3_column_type returned invalid value")
+        }
     }
 }
 
