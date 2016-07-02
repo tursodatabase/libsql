@@ -324,6 +324,7 @@ TESTSRC = \
 #
 TESTSRC += \
   $(TOP)/ext/misc/amatch.c \
+  $(TOP)/ext/misc/array.c \
   $(TOP)/ext/misc/closure.c \
   $(TOP)/ext/misc/csv.c \
   $(TOP)/ext/misc/eval.c \

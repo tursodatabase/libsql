@@ -25,7 +25,7 @@
 ** The intarray "function" is really a virtual table with the
 ** following schema:
 **
-**     CREATE FUNCTION intarray(
+**     CREATE TABLE intarray(
 **       value,
 **       pointer HIDDEN,
 **       count HIDDEN
@@ -168,7 +168,7 @@ static int intarrayRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
 */
 static int intarrayEof(sqlite3_vtab_cursor *cur){
   intarray_cursor *pCur = (intarray_cursor*)cur;
-  return pCur->iRowid>=pCur->iCnt;
+  return pCur->iRowid>pCur->iCnt;
 }
 
 /*
@@ -181,7 +181,6 @@ static int intarrayFilter(
   int argc, sqlite3_value **argv
 ){
   intarray_cursor *pCur = (intarray_cursor *)pVtabCursor;
-  int i = 0;
   if( idxNum ){
     pCur->iPtr = sqlite3_value_int64(argv[0]);
     pCur->iCnt = sqlite3_value_int64(argv[1]);
@@ -210,10 +209,8 @@ static int intarrayBestIndex(
   sqlite3_index_info *pIdxInfo
 ){
   int i;                 /* Loop over constraints */
-  int idxNum = 0;        /* The query plan bitmask */
   int ptrIdx = -1;       /* Index of the pointer= constraint, or -1 if none */
   int cntIdx = -1;       /* Index of the count= constraint, or -1 if none */
-  int nArg = 0;          /* Number of arguments that intarrayFilter() expects */
 
   const struct sqlite3_index_constraint *pConstraint;
   pConstraint = pIdxInfo->aConstraint;

@@ -201,6 +201,17 @@ do_test tabfunc01-671 {
 do_test tabfunc01-672 {
   sqlite3_column_int $VM 0
 } 11
+do_test tabfunc01-673 {
+  sqlite3_step $VM
+  sqlite3_column_int $VM 0
+} 22
+do_test tabfunc01-674 {
+  sqlite3_step $VM
+  sqlite3_column_int $VM 0
+} 33
+do_test tabfunc01-675 {
+  sqlite3_step $VM
+} {SQLITE_DONE}
 sqlite3_finalize $VM
 
 catch {sqlite3_bind_intarray}
