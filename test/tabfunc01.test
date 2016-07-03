@@ -22,7 +22,7 @@ ifcapable !vtab {
   return
 }
 load_static_extension db series
-load_static_extension db array
+load_static_extension db carray
 
 do_execsql_test tabfunc01-1.1 {
   SELECT *, '|' FROM generate_series WHERE start=1 AND stop=9 AND step=2;
@@ -146,74 +146,51 @@ do_execsql_test tabfunc01-600 {
 } {(002) (012) (022) (032) (042) (052)}
 
 
-do_test tabfunc01-600 {
-  set TAIL {}
-  set VM [sqlite3_prepare db {SELECT * FROM intarray(?2,?3)} -1 TAIL]
-  set TAIL
-} {}
-do_test tabfunc01-610 {
-  sqlite3_bind_intarray $VM 2 11 22 33 44 55
-  sqlite3_bind_int $VM 3 4
-  sqlite3_step $VM
-} SQLITE_ROW
-do_test tabfunc01-620 {
-  sqlite3_column_int $VM 0
-} 11
-do_test tabfunc01-621 {
-  sqlite3_step $VM
-  sqlite3_column_int $VM 0
-} 22
-sqlite3_finalize $VM
-
-do_test tabfunc01-650 {
+do_test tabfunc01-700 {
+  set PTR [intarray_addr 5 7 13 17 23]
   db eval {
-    DROP TABLE IF EXISTS t6;
-    CREATE TABLE t6(x INTEGER PRIMARY KEY, y BLOB);
-    WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<100)
-      INSERT INTO t6(x,y) SELECT x, randomblob(x) FROM c;
+    SELECT b FROM t600, carray($PTR,5) WHERE a=value;
   }
-  set TAIL {}
-  set VM [sqlite3_prepare db {
-     SELECT length(y) FROM t6 WHERE x IN (SELECT value FROM intarray(?1,3));
-  } -1 TAIL]
-  string trim $TAIL
-} {}
-do_test tabfunc01-660 {
-  sqlite3_bind_intarray $VM 1 11 22 33 44 55
-  sqlite3_step $VM
-} SQLITE_ROW
-do_test tabfunc01-661 {
-  sqlite3_column_int $VM 0
-} 11
-sqlite3_finalize $VM
+} {(005) (007) (013) (017) (023)}
+do_test tabfunc01-701 {
+  db eval {
+    SELECT b FROM t600 WHERE a IN carray($PTR,5,'int32');
+  }
+} {(005) (007) (013) (017) (023)}
+do_test tabfunc01-702 {
+  db eval {
+    SELECT b FROM t600 WHERE a IN carray($PTR,4,'int32');
+  }
+} {(005) (007) (013) (017)}
+do_catchsql_test tabfunc01-710 {
+  SELECT b FROM t600 WHERE a IN carray($PTR,5,'int33');
+} {1 {unknown datatype: 'int33'}}
 
-do_test tabfunc01-670 {
-  set TAIL {}
-  set VM [sqlite3_prepare db {
-     SELECT length(y) FROM t6 WHERE x IN intarray(?1,3);
-  } -1 TAIL]
-  string trim $TAIL
-} {}
-do_test tabfunc01-671 {
-  sqlite3_bind_intarray $VM 1 11 22 33 44 55
-  sqlite3_step $VM
-} SQLITE_ROW
-do_test tabfunc01-672 {
-  sqlite3_column_int $VM 0
-} 11
-do_test tabfunc01-673 {
-  sqlite3_step $VM
-  sqlite3_column_int $VM 0
-} 22
-do_test tabfunc01-674 {
-  sqlite3_step $VM
-  sqlite3_column_int $VM 0
-} 33
-do_test tabfunc01-675 {
-  sqlite3_step $VM
-} {SQLITE_DONE}
-sqlite3_finalize $VM
+do_test tabfunc01-720 {
+  set PTR [int64array_addr 5 7 13 17 23]
+  db eval {
+    SELECT b FROM t600, carray($PTR,5,'int64') WHERE a=value;
+  }
+} {(005) (007) (013) (017) (023)}
 
-catch {sqlite3_bind_intarray}
+do_test tabfunc01-730 {
+  set PTR [doublearray_addr 5.0 7.0 13.0 17.0 23.0]
+  db eval {
+    SELECT b FROM t600, carray($PTR,5,'double') WHERE a=value;
+  }
+} {(005) (007) (013) (017) (023)}
+
+do_test tabfunc01-740 {
+  set PTR [textarray_addr 5 7 13 17 23]
+  db eval {
+    SELECT b FROM t600, carray($PTR,5,'char*') WHERE a=value;
+  }
+} {(005) (007) (013) (017) (023)}
+
+
+intarray_addr
+int64array_addr
+doublearray_addr
+textarray_addr
 
 finish_test
