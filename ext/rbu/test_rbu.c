@@ -69,6 +69,8 @@ static int test_sqlite3rbu_cmd(
     {"dbMain_eval", 3, "SQL"},    /* 4 */
     {"bp_progress", 2, ""},       /* 5 */
     {"db", 3, "RBU"},             /* 6 */
+    {"state", 2, ""},             /* 7 */
+    {"progress", 2, ""},          /* 8 */
     {0,0,0}
   };
   int iCmd;
@@ -164,6 +166,18 @@ static int test_sqlite3rbu_cmd(
           Tcl_SetResult(interp, zBuf, TCL_VOLATILE);
         }
       }
+      break;
+    }
+    case 7: /* state */ {
+      const char *aRes[] = { 0, "oal", "move", "checkpoint", "done", "error" };
+      int eState = sqlite3rbu_state(pRbu);
+      assert( eState>0 && eState<=5 );
+      Tcl_SetResult(interp, (char*)aRes[eState], TCL_STATIC);
+      break;
+    }
+    case 8: /* progress */ {
+      sqlite3_int64 nStep =  sqlite3rbu_progress(pRbu);
+      Tcl_SetObjResult(interp, Tcl_NewWideIntObj(nStep));
       break;
     }
 
