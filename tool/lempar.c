@@ -390,6 +390,7 @@ static void yy_destructor(
 static void yy_pop_parser_stack(yyParser *pParser){
   yyStackEntry *yytos;
   assert( pParser->yytos!=0 );
+  assert( pParser->yytos > pParser->yystack );
   yytos = pParser->yytos--;
 #ifndef NDEBUG
   if( yyTraceFILE ){
@@ -799,7 +800,6 @@ void Parse(
 #endif
   yyParser *yypParser;  /* The parser */
 
-  /* (re)initialize the parser, if necessary */
   yypParser = (yyParser*)yyp;
   assert( yypParser->yytos!=0 );
 #if !defined(YYERRORSYMBOL) && !defined(YYNOERRORRECOVERY)
@@ -879,6 +879,9 @@ void Parse(
         if( yypParser->yytos < yypParser->yystack || yymajor==0 ){
           yy_destructor(yypParser,(YYCODETYPE)yymajor,&yyminorunion);
           yy_parse_failed(yypParser);
+#ifndef YYNOERRORRECOVERY
+          yypParser->yyerrcnt = -1;
+#endif
           yymajor = YYNOCODE;
         }else if( yymx!=YYERRORSYMBOL ){
           yy_shift(yypParser,yyact,YYERRORSYMBOL,yyminor);
