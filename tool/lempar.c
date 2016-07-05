@@ -898,6 +898,9 @@ void Parse(
       ** they intend to abandon the parse upon the first syntax error seen.
       */
       yy_syntax_error(yypParser,yymajor, yyminor);
+#ifndef YYNOERRORRECOVERY
+      yypParser->yyerrcnt = -1;
+#endif
       yy_destructor(yypParser,(YYCODETYPE)yymajor,&yyminorunion);
       yymajor = YYNOCODE;
       

@@ -1,5 +1,5 @@
-C Attempt\sto\sreset\sthe\serror\scount\sin\sthe\sLemon-generated\sparser\safter\na\sparse\sfailure.
-D 2016-07-05T12:47:28.882
+C More\sfixes\sto\sFossil\sso\sthat\sit\sautomatically\sresets\sits\serror\scounter\sat\sthe\nend\sof\sa\sparse.
+D 2016-07-05T16:11:26.639
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -1432,7 +1432,7 @@ F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/lemon.c 09a96bed19955697a5e20c49ad863ec2005815a2
-F tool/lempar.c f2c88a13ab6611ce752d176fa8c83318ca715df0
+F tool/lempar.c 072ff9985f36796b95bdc895820f2d77255a7067
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
 F tool/logest.c 11346aa019e2e77a00902aa7d0cabd27bd2e8cca
@@ -1504,7 +1504,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0357875fbb1bb462feef5121287b2f84da88e497
-R a578f6c3df8fc8ba3d5f62a27a2cbf5b
+P 91889fa30e84760e0d4b3d429c4abdef5a3f7931
+R 9a4b1699bf11208d065bcf8cf2e02081
 U drh
-Z 5d179a5613158bad283b799b101c68f6
+Z a4f82b8f6b61ef506efe9cc9a72c59ae
