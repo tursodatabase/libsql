@@ -1418,7 +1418,7 @@ static int test_db_status(
     { "CACHE_MISS",          SQLITE_DBSTATUS_CACHE_MISS          },
     { "CACHE_WRITE",         SQLITE_DBSTATUS_CACHE_WRITE         },
     { "DEFERRED_FKS",        SQLITE_DBSTATUS_DEFERRED_FKS        },
-    { "PROPORTIONAL_CACHE_USED", SQLITE_DBSTATUS_PROPORTIONAL_CACHE_USED },
+    { "CACHE_USED_SHARED",   SQLITE_DBSTATUS_CACHE_USED_SHARED   },
   };
   Tcl_Obj *pResult;
   if( objc!=4 ){

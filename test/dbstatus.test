@@ -380,12 +380,12 @@ foreach ::lookaside_buffer_size {0 64 120} {
 }
 
 #-------------------------------------------------------------------------
-# The following tests focus on DBSTATUS_PROPORTIONAL_CACHE_USED
+# The following tests focus on DBSTATUS_CACHE_USED_SHARED
 #
 ifcapable shared_cache {
   proc do_cacheused_test {tn db res} {
     set cu [sqlite3_db_status $db SQLITE_DBSTATUS_CACHE_USED 0]
-    set pcu [sqlite3_db_status $db SQLITE_DBSTATUS_PROPORTIONAL_CACHE_USED 0]
+    set pcu [sqlite3_db_status $db SQLITE_DBSTATUS_CACHE_USED_SHARED 0]
     set cu [lindex $cu 1]
     set pcu [lindex $pcu 1]
     uplevel [list do_test $tn [list list $cu $pcu] [list {*}$res]]
