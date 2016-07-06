@@ -135,17 +135,22 @@ foreach omit {0 1} {
 #-------------------------------------------------------------------------
 # Test the same pattern works with ordinary tables.
 #
-do_execsql_test 2.1 {
-  CREATE TABLE t2(x TEXT COLLATE nocase, y TEXT);
-  CREATE INDEX t2x ON t2(x COLLATE nocase);
-  CREATE INDEX t2y ON t2(y);
-}
+# This test does not work if the ICU extension is enabled. ICU overrides
+# LIKE - and this optimization only works with the built-in LIKE function.
+#
+ifcapable !icu {
+  do_execsql_test 2.1 {
+    CREATE TABLE t2(x TEXT COLLATE nocase, y TEXT);
+    CREATE INDEX t2x ON t2(x COLLATE nocase);
+    CREATE INDEX t2y ON t2(y);
+  }
 
-do_eqp_test 2.2 {
-  SELECT * FROM t2 WHERE x LIKE 'abc%' OR y = 'def'
-} {
-  0 0 0 {SEARCH TABLE t2 USING INDEX t2x (x>? AND x<?)}
-  0 0 0 {SEARCH TABLE t2 USING INDEX t2y (y=?)}
+  do_eqp_test 2.2 {
+    SELECT * FROM t2 WHERE x LIKE 'abc%' OR y = 'def'
+  } {
+    0 0 0 {SEARCH TABLE t2 USING INDEX t2x (x>? AND x<?)}
+    0 0 0 {SEARCH TABLE t2 USING INDEX t2y (y=?)}
+  }
 }
 
 #-------------------------------------------------------------------------
