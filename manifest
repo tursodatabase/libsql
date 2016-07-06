@@ -1,5 +1,5 @@
-C Fix\sa\smemory\sleak\sin\srecently\sadded\stest\scode.
-D 2016-07-06T09:19:14.702
+C Add\sthe\sSQLITE_DBSTATUS_PROPORTIONAL_CACHE_USED\ssqlite3_db_status()\sparameter.
+D 2016-07-06T10:12:02.240
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -327,8 +327,8 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 6df65fdd569c901a418887a1a76f82ec35044556
 F src/bitvec.c 3ee4c8b2c94ed3a7377256e18199e6ff5cf33f63
 F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
-F src/btree.c 0621247619df15790f7ed5f14926cfb3925c10b1
-F src/btree.h 2107a2630e02c8cba58bb12ce14e731e734ea29c
+F src/btree.c dc4e5f3e95fd57b610422e36e0913662ecd6814c
+F src/btree.h aee84823bb383d6ae3728b068f9130d2b36b71eb
 F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
 F src/build.c d1fdfd7ab8f5447e494ef15825973bf0719527c6
 F src/callback.c 2e76147783386374bf01b227f752c81ec872d730
@@ -385,12 +385,12 @@ F src/resolve.c cca3aa77b95706df5d635a2141a4d1de60ae6598
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c f3c6e9065fb34f6a23af27ec7f1f717ffbfc2ee4
 F src/shell.c 14ff7f660530a52b117d110ba3390b7b2eb719b6
-F src/sqlite.h.in 5f8113dbec74c6c093ead9930afb8c9fbd9f643d
+F src/sqlite.h.in 801a34f86508662fbfc8e014f03ccf0c8bef0b4c
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 98f72cbfe00169c39089115427d06ea05fe4b4a2
 F src/sqliteInt.h 2ac73e9fdd138f4607139d9bd6a1e6dcd01837dc
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
-F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
+F src/status.c d92daea3bb48023da57931719f2a2784f5487c0b
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
 F src/tclsqlite.c 25fbbbb97f76dbfd113153fb63f52d7ecfac5dd0
 F src/test1.c 08faa045c45b1d3f62c28c93cae955f518317f68
@@ -419,7 +419,7 @@ F src/test_intarray.c 870124b95ec4c645d4eb84f15efb7133528fb1a5
 F src/test_intarray.h 9dc57417fb65bc7835cc18548852cc08cc062202
 F src/test_journal.c d3b83f2bcb7792c709e57abddc456a2b1818643a
 F src/test_loadext.c 337056bae59f80b9eb00ba82088b39d0f4fe6dfd
-F src/test_malloc.c 94c18e88d6df6d471a0d04ddb809f833d1739950
+F src/test_malloc.c 20954ab49e09be3433c8d2fd7a8bd0a0f1c76de7
 F src/test_multiplex.c eafc567ebe162e36f17b5062285dfe90461cf8e9
 F src/test_multiplex.h c08e4e8f8651f0c5e0509b138ff4d5b43ed1f5d3
 F src/test_mutex.c dbdfaff8580071f2212a0deae3325a93a737819c
@@ -621,7 +621,7 @@ F test/ctime.test 0b995accd44a52914bd4744d5c1b6e1a56c7897c
 F test/cursorhint.test 7bc346788390475e77a345da2b92270d04d35856
 F test/cursorhint2.test 2b45341d32d1aae9991a00ef31ebca339b274255
 F test/date.test 984ac1e3e5e031386866f034006148d3972b4a65
-F test/dbstatus.test 8de104bb5606f19537d23cd553b41349b5ab1204
+F test/dbstatus.test c0c8752043074ab6479d2560341ae02f072ad3b9
 F test/dbstatus2.test e93ab03bfae6d62d4d935f20de928c19ca0ed0ab
 F test/default.test 0cb49b1c315a0d81c81d775e407f66906a2a604d
 F test/delete.test e1bcdf8926234e27aac24b346ad83d3329ec8b6f
@@ -1504,7 +1504,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2683b375ad1291172fdb47d94e16fcf869c78c8a
-R bad3fed306e6177658099344318135b4
+P 724e4cdc25fc80b8face57b3398cd338994fb23c
+R 266d0a5d75bc1363b05e057e04a42c8c
+T *branch * dbstatus-prop-cache-used
+T *sym-dbstatus-prop-cache-used *
+T -sym-trunk *
 U dan
-Z b779329b8bc265169140036a21a84f9f
+Z d4bd876af7d67d4b270c7d6acc73f5f1
