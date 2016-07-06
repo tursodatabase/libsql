@@ -410,7 +410,7 @@ static char *thread_main(int iTid, void *pArg){
   sql_script_printf(&err, &db, 
       "PRAGMA wal_autocheckpoint = 0;"
       "PRAGMA synchronous = 0;"
-      "PRAGMA mmap_limit = %lld;",
+      "PRAGMA mmap_size = %lld;",
       (i64)(pConfig->nMmap) * 1024 * 1024
   );
 
