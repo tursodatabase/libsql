@@ -3371,7 +3371,8 @@ static int test_textarray_addr(
     for(i=0; i<objc-1; i++){
       p[i] = sqlite3_mprintf("%s", Tcl_GetString(objv[1+i]));
     }
-  }  
+  }
+  n = objc-1;
   Tcl_SetObjResult(interp, Tcl_NewWideIntObj((sqlite3_int64)p));
   return TCL_OK;
 }
