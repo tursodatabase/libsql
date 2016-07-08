@@ -921,6 +921,9 @@ void Parse(
       yy_destructor(yypParser,(YYCODETYPE)yymajor,&yyminorunion);
       if( yyendofinput ){
         yy_parse_failed(yypParser);
+#ifndef YYNOERRORRECOVERY
+        yypParser->yyerrcnt = -1;
+#endif
       }
       yymajor = YYNOCODE;
 #endif
