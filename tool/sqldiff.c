@@ -684,7 +684,7 @@ static void diff_one_table(const char *zTab, FILE *out){
 
   /* Run the query and output differences */
   if( !g.bSchemaOnly ){
-    pStmt = db_prepare(sql.z);
+    pStmt = db_prepare("%s", sql.z);
     while( SQLITE_ROW==sqlite3_step(pStmt) ){
       int iType = sqlite3_column_int(pStmt, nPk);
       if( iType==1 || iType==2 ){
@@ -1461,7 +1461,7 @@ static void summarize_one_table(const char *zTab, FILE *out){
   }
 
   /* Run the query and output difference summary */
-  pStmt = db_prepare(sql.z);
+  pStmt = db_prepare("%s", sql.z);
   nUpdate = 0;
   nInsert = 0;
   nDelete = 0;
@@ -2018,7 +2018,7 @@ int main(int argc, char **argv){
     xDiff(zTab, out);
   }else{
     /* Handle tables one by one */
-    pStmt = db_prepare( all_tables_sql() );
+    pStmt = db_prepare("%s", all_tables_sql() );
     while( SQLITE_ROW==sqlite3_step(pStmt) ){
       xDiff((const char*)sqlite3_column_text(pStmt,0), out);
     }
