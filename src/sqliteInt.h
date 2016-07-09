@@ -12,8 +12,8 @@
 ** Internal interface definitions for SQLite.
 **
 */
-#ifndef _SQLITEINT_H_
-#define _SQLITEINT_H_
+#ifndef SQLITEINT_H
+#define SQLITEINT_H
 
 /* Special Comments:
 **
@@ -4237,4 +4237,4 @@ int sqlite3ThreadJoin(SQLiteThread*, void**);
 int sqlite3DbstatRegister(sqlite3*);
 #endif
 
-#endif /* _SQLITEINT_H_ */
+#endif /* SQLITEINT_H */
