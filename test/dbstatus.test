@@ -69,16 +69,12 @@ ifcapable stat4||stat3 {
   set STAT3 0
 }
 
-ifcapable malloc_usable_size {
-  finish_test
-  return
-}
-
 #---------------------------------------------------------------------------
 # Run the dbstatus-2 and dbstatus-3 tests with several of different
 # lookaside buffer sizes.
 #
 foreach ::lookaside_buffer_size {0 64 120} {
+  ifcapable malloc_usable_size break
 
   # Do not run any of these tests if there is SQL configured to run
   # as part of the [sqlite3] command. This prevents the script from
@@ -388,7 +384,7 @@ ifcapable shared_cache {
     set pcu [sqlite3_db_status $db SQLITE_DBSTATUS_CACHE_USED_SHARED 0]
     set cu [lindex $cu 1]
     set pcu [lindex $pcu 1]
-    uplevel [list do_test $tn [list list $cu $pcu] [list {*}$res]]
+    uplevel [list do_test $tn [list list $cu $pcu] "#/$res/"]
   }
   reset_db
   sqlite3 db file:test.db?cache=shared

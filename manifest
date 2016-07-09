@@ -1,5 +1,5 @@
-C Fix\sa\scompiler\swarning\sin\stest\scode\s-\sin\sthe\sint64array_addr\sTCL\scommand.
-D 2016-07-09T17:15:05.420
+C Add\sthe\s"#/value-list/"\sstyle\sof\sresults\sfor\sapproximate\svalue\smatching\nin\sthe\sdo_test\scommand\sof\sthe\stest\sinfrastructure.\s\sUse\sthis\snew\sresult\sstyle\nto\smake\sthe\sSQLITE_DBSTATUS_CACHE_SIZE_SHARED\stests\scross-platform.
+D 2016-07-09T17:47:01.013
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -621,7 +621,7 @@ F test/ctime.test 0b995accd44a52914bd4744d5c1b6e1a56c7897c
 F test/cursorhint.test 7bc346788390475e77a345da2b92270d04d35856
 F test/cursorhint2.test 2b45341d32d1aae9991a00ef31ebca339b274255
 F test/date.test 984ac1e3e5e031386866f034006148d3972b4a65
-F test/dbstatus.test 254427f026b55ab6eba99bd8493f4edbc370bb13
+F test/dbstatus.test 85833ba5bc95262749d080dcd40af87072ea8d5b
 F test/dbstatus2.test e93ab03bfae6d62d4d935f20de928c19ca0ed0ab
 F test/default.test 0cb49b1c315a0d81c81d775e407f66906a2a604d
 F test/delete.test e1bcdf8926234e27aac24b346ad83d3329ec8b6f
@@ -1128,7 +1128,7 @@ F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptable2.test cd396beb41117a5302fff61767c35fa4270a0d5e
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 8ec228b0db5d7ebc4ee9b458fc28cb9e7873f5e1
-F test/tester.tcl 3ace46dee55f07e28a1e3ab03258b929fefcee5b
+F test/tester.tcl a52b5be1bb586afa1c8bcdcd4b86588645e1ae52
 F test/thread001.test 9f22fd3525a307ff42a326b6bc7b0465be1745a5
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -1505,7 +1505,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8b22f777a11438ab0baadc7d9e471f415b734d1f
-R 8809172c97ecd2789d873e485f1080c5
+P 29fb988f1afc3fe623097acee1a5d08bf8386626
+R 767a7d8abd9b9525d1b45069b4c3dba2
 U drh
-Z b4d622f88577c8bb575918451a798624
+Z df36acb2648e26f22b53c52b73476f6c
