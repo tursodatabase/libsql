@@ -1,5 +1,5 @@
-C Fix\scompiler\swarnings\son\swindows.
-D 2016-07-09T16:38:25.217
+C Fix\sa\scompiler\swarning\sin\stest\scode\s-\sin\sthe\sint64array_addr\sTCL\scommand.
+D 2016-07-09T17:15:05.420
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -393,7 +393,7 @@ F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c 5b18f9526900f61189ab0b83f1ef41d9f871a2ab
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
 F src/tclsqlite.c 25fbbbb97f76dbfd113153fb63f52d7ecfac5dd0
-F src/test1.c 08faa045c45b1d3f62c28c93cae955f518317f68
+F src/test1.c 640f862c490c8eee09a9d02d0d128c6a8a75336d
 F src/test2.c 5586f43fcd9a1be0830793cf9d354082c261b25b
 F src/test3.c c75c8af0eadb335236c9e61b51044c58a8f7dd59
 F src/test4.c d168f83cc78d02e8d35567bb5630e40dcd85ac1e
@@ -1505,7 +1505,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5471aca0158851d3fb0a2517306917536deb38bb
-R 51759f55d04de93087e3d229894a3277
+P 8b22f777a11438ab0baadc7d9e471f415b734d1f
+R 8809172c97ecd2789d873e485f1080c5
 U drh
-Z 7d1dfc3636ab19ed9a6789ae76c95a5f
+Z b4d622f88577c8bb575918451a798624

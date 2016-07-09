@@ -3299,11 +3299,13 @@ static int test_int64array_addr(
     p = sqlite3_malloc( sizeof(p[0])*(objc-1) );
     if( p==0 ) return TCL_ERROR;
     for(i=0; i<objc-1; i++){
-      if( Tcl_GetWideIntFromObj(interp, objv[1+i], &p[i]) ){
+      Tcl_WideInt v;
+      if( Tcl_GetWideIntFromObj(interp, objv[1+i], &v) ){
         sqlite3_free(p);
         p = 0;
         return TCL_ERROR;
       }
+      p[i] = v;
     }
   }  
   Tcl_SetObjResult(interp, Tcl_NewWideIntObj((sqlite3_int64)p));
