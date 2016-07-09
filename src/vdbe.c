@@ -1958,6 +1958,7 @@ case OP_Cast: {                  /* in1 */
 ** the content of register P3 is greater than or equal to the content of
 ** register P1.  See the Lt opcode for additional information.
 */
+case OP_Cmp:              /* in1, in3 */
 case OP_Eq:               /* same as TK_EQ, jump, in1, in3 */
 case OP_Ne:               /* same as TK_NE, jump, in1, in3 */
 case OP_Lt:               /* same as TK_LT, jump, in1, in3 */
@@ -2056,7 +2057,8 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
     case OP_Lt:    res = res<0;      break;
     case OP_Le:    res = res<=0;     break;
     case OP_Gt:    res = res>0;      break;
-    default:       res = res>=0;     break;
+    case OP_Ge:    res = res>=0;     break;
+    default: assert( pOp->opcode==OP_Cmp ); break;
   }
 
   /* Undo any changes made by applyAffinity() to the input registers. */
@@ -2072,6 +2074,7 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
     pOut->u.i = res;
     REGISTER_TRACE(pOp->p2, pOut);
   }else{
+    assert( pOp->opcode!=OP_Cmp );
     VdbeBranchTaken(res!=0, (pOp->p5 & SQLITE_NULLEQ)?2:3);
     if( res ){
       goto jump_to_p2;
@@ -3867,7 +3870,42 @@ seek_not_found:
   }
   break;
 }
+
+/* Opcode: CmpTest P1 P2 P3 * *
+**
+** P2 is a jump destination. Register P1 is guaranteed to contain either
+** an integer value or a NULL. The jump is taken if P1 contains any value
+** other than 0 (i.e. NULL does cause a jump).
+** 
+** If P1 is not NULL, its value is modified to integer value 0 or 1 
+** according to the value of the P3 operand:
+**
+**   P3            modification
+**   --------------------------
+**   OP_Lt         (P1 = (P1 < 0))
+**   OP_Le         (P1 = (P1 <= 0))
+**   OP_Gt         (P1 = (P1 > 0))
+**   OP_Ge         (P1 = (P1 >= 0))
+*/
+case OP_CmpTest: {                /* in1, jump */
+  int bJump;
   
+  pIn1 = &aMem[pOp->p1];
+  if( (pIn1->flags & MEM_Int) ){
+    bJump = (pIn1->u.i!=0);
+    switch( pOp->p3 ){
+      case OP_Lt: pIn1->u.i = (pIn1->u.i < 0); break;
+      case OP_Le: pIn1->u.i = (pIn1->u.i <= 0); break;
+      case OP_Gt: pIn1->u.i = (pIn1->u.i > 0); break;
+      default: assert( pOp->p3==OP_Ge ); pIn1->u.i = (pIn1->u.i >= 0); break;
+    }
+  }else{
+    bJump = 1;
+  }
+
+  if( bJump ) goto jump_to_p2;
+  break;
+}
 
 /* Opcode: Found P1 P2 P3 P4 *
 ** Synopsis: key=r[P3@P4]

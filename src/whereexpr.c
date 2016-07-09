@@ -95,7 +95,7 @@ static int whereClauseInsert(WhereClause *pWC, Expr *p, u16 wtFlags){
 /*
 ** Return TRUE if the given operator is one of the operators that is
 ** allowed for an indexable WHERE clause term.  The allowed operators are
-** "=", "<", ">", "<=", ">=", "IN", and "IS NULL"
+** "=", "<", ">", "<=", ">=", "IN", "IS", and "IS NULL"
 */
 static int allowedOp(int op){
   assert( TK_GT>TK_EQ && TK_GT<TK_GE );
@@ -831,6 +831,7 @@ static Bitmask exprSelectUsage(WhereMaskSet *pMaskSet, Select *pS){
 */
 static int exprMightBeIndexed(
   SrcList *pFrom,        /* The FROM clause */
+  int op,
   Bitmask mPrereq,       /* Bitmask of FROM clause terms referenced by pExpr */
   Expr *pExpr,           /* An operand of a comparison operator */
   int *piCur,            /* Write the referenced table cursor number here */
@@ -839,6 +840,17 @@ static int exprMightBeIndexed(
   Index *pIdx;
   int i;
   int iCur;
+
+  /* If this expression is a vector to the left or right of a 
+  ** inequality constraint (>, <, >= or <=), perform the processing 
+  ** on the first element of the vector.  */
+  assert( TK_GT+1==TK_LE && TK_GT+2==TK_LT && TK_GT+3==TK_GE );
+  if( (pExpr->flags & (EP_Vector|EP_xIsSelect))==EP_Vector 
+   && (op>=TK_GT && op<=TK_GE)
+  ){
+    pExpr = pExpr->x.pList->a[0].pExpr;
+  }
+
   if( pExpr->op==TK_COLUMN ){
     *piCur = pExpr->iTable;
     *piColumn = pExpr->iColumn;
@@ -860,6 +872,17 @@ static int exprMightBeIndexed(
     }
   }
   return 0;
+}
+
+static Expr *exprVectorExpr(Parse *pParse, Expr *p, int iField){
+  Expr *pRet;
+  if( p->flags & EP_xIsSelect ){
+    pRet = sqlite3PExpr(pParse, TK_SELECT_COLUMN, p, 0, 0);
+    if( pRet ) pRet->iColumn = iField;
+  }else{
+    pRet = sqlite3ExprDup(pParse->db, p->x.pList->a[iField].pExpr, 0);
+  }
+  return pRet;
 }
 
 /*
@@ -937,14 +960,14 @@ static void exprAnalyze(
     Expr *pLeft = sqlite3ExprSkipCollate(pExpr->pLeft);
     Expr *pRight = sqlite3ExprSkipCollate(pExpr->pRight);
     u16 opMask = (pTerm->prereqRight & prereqLeft)==0 ? WO_ALL : WO_EQUIV;
-    if( exprMightBeIndexed(pSrc, prereqLeft, pLeft, &iCur, &iColumn) ){
+    if( exprMightBeIndexed(pSrc, op, prereqLeft, pLeft, &iCur, &iColumn) ){
       pTerm->leftCursor = iCur;
       pTerm->u.leftColumn = iColumn;
       pTerm->eOperator = operatorMask(op) & opMask;
     }
     if( op==TK_IS ) pTerm->wtFlags |= TERM_IS;
     if( pRight 
-     && exprMightBeIndexed(pSrc, pTerm->prereqRight, pRight, &iCur, &iColumn)
+     && exprMightBeIndexed(pSrc, op, pTerm->prereqRight, pRight, &iCur,&iColumn)
     ){
       WhereTerm *pNew;
       Expr *pDup;
@@ -1151,6 +1174,26 @@ static void exprAnalyze(
     }
   }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
+
+  if( pWC->op==TK_AND 
+  && (pExpr->op==TK_EQ || pExpr->op==TK_IS)
+  && (pExpr->pLeft->flags & EP_Vector)
+  && ( (pExpr->pLeft->flags & EP_xIsSelect)==0 
+    || (pExpr->pRight->flags & EP_xIsSelect)==0
+  )){
+    int i;
+    for(i=0; i<sqlite3ExprVectorSize(pExpr->pLeft); i++){
+      int idxNew;
+      Expr *pNew;
+      Expr *pLeft = exprVectorExpr(pParse, pExpr->pLeft, i);
+      Expr *pRight = exprVectorExpr(pParse, pExpr->pRight, i);
+
+      pNew = sqlite3PExpr(pParse, pExpr->op, pLeft, pRight, 0);
+      idxNew = whereClauseInsert(pWC, pNew, TERM_VIRTUAL|TERM_DYNAMIC);
+      exprAnalyze(pSrc, pWC, idxNew);
+      markTermAsChild(pWC, idxNew, idxTerm);
+    }
+  }
 
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
   /* When sqlite_stat3 histogram data is available an operator of the

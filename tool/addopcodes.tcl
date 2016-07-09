@@ -37,6 +37,7 @@ set extras {
   UMINUS
   UPLUS
   REGISTER
+  SELECT_COLUMN
   ASTERISK
   SPAN
   SPACE

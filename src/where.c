@@ -2187,6 +2187,51 @@ static void whereLoopOutputAdjust(
   if( pLoop->nOut > nRow-iReduce )  pLoop->nOut = nRow - iReduce;
 }
 
+/* 
+** Term pTerm is a vector range comparison operation. The first comparison
+** in the vector can be optimized using column nEq of the index.  
+*/
+int whereRangeVectorLen(
+  Parse *pParse, int iCur, Index *pIdx, int nEq, WhereTerm *pTerm
+){
+  int nCmp = sqlite3ExprVectorSize(pTerm->pExpr->pLeft);
+  int i;
+
+  nCmp = MIN(nCmp, (pIdx->nColumn - nEq));
+  for(i=1; i<nCmp; i++){
+    /* Test if comparison i of pTerm is compatible with column (i+nEq) 
+    ** of the index. If not, exit the loop.  */
+    char aff;                     /* Comparison affinity */
+    char idxaff = 0;              /* Indexed columns affinity */
+    CollSeq *pColl;               /* Comparison collation sequence */
+    Expr *pLhs = pTerm->pExpr->pLeft->x.pList->a[i].pExpr;
+    Expr *pRhs = pTerm->pExpr->pRight;
+    if( pRhs->flags & EP_xIsSelect ){
+      pRhs = pRhs->x.pSelect->pEList->a[i].pExpr;
+    }else{
+      pRhs = pRhs->x.pList->a[i].pExpr;
+    }
+
+    /* Check that the LHS of the comparison is a column reference to
+    ** the right column of the right source table. 
+    */
+    if( pLhs->op!=TK_COLUMN 
+     || pLhs->iTable!=iCur 
+     || pLhs->iColumn!=pIdx->aiColumn[i+nEq] 
+    ){
+      break;
+    }
+
+    aff = sqlite3CompareAffinity(pRhs, sqlite3ExprAffinity(pLhs));
+    idxaff = pIdx->pTable->aCol[pLhs->iColumn].affinity;
+    if( aff!=idxaff ) break;
+
+    pColl = sqlite3BinaryCompareCollSeq(pParse, pLhs, pRhs);
+    if( sqlite3StrICmp(pColl->zName, pIdx->azColl[i+nEq]) ) break;
+  }
+  return i;
+}
+
 /*
 ** Adjust the cost C by the costMult facter T.  This only occurs if
 ** compiled with -DSQLITE_ENABLE_COSTMULT
@@ -2225,6 +2270,8 @@ static int whereLoopAddBtreeIndex(
   Bitmask saved_prereq;           /* Original value of pNew->prereq */
   u16 saved_nLTerm;               /* Original value of pNew->nLTerm */
   u16 saved_nEq;                  /* Original value of pNew->u.btree.nEq */
+  u16 saved_nBtm;                 /* Original value of pNew->u.btree.nBtm */
+  u16 saved_nTop;                 /* Original value of pNew->u.btree.nTop */
   u16 saved_nSkip;                /* Original value of pNew->nSkip */
   u32 saved_wsFlags;              /* Original value of pNew->wsFlags */
   LogEst saved_nOut;              /* Original value of pNew->nOut */
@@ -2241,6 +2288,7 @@ static int whereLoopAddBtreeIndex(
   if( pNew->wsFlags & WHERE_BTM_LIMIT ){
     opMask = WO_LT|WO_LE;
   }else{
+    assert( pNew->u.btree.nBtm==0 );
     opMask = WO_EQ|WO_IN|WO_GT|WO_GE|WO_LT|WO_LE|WO_ISNULL|WO_IS;
   }
   if( pProbe->bUnordered ) opMask &= ~(WO_GT|WO_GE|WO_LT|WO_LE);
@@ -2248,6 +2296,8 @@ static int whereLoopAddBtreeIndex(
   assert( pNew->u.btree.nEq<pProbe->nColumn );
 
   saved_nEq = pNew->u.btree.nEq;
+  saved_nBtm = pNew->u.btree.nBtm;
+  saved_nTop = pNew->u.btree.nTop;
   saved_nSkip = pNew->nSkip;
   saved_nLTerm = pNew->nLTerm;
   saved_wsFlags = pNew->wsFlags;
@@ -2291,6 +2341,8 @@ static int whereLoopAddBtreeIndex(
 
     pNew->wsFlags = saved_wsFlags;
     pNew->u.btree.nEq = saved_nEq;
+    pNew->u.btree.nBtm = saved_nBtm;
+    pNew->u.btree.nTop = saved_nTop;
     pNew->nLTerm = saved_nLTerm;
     if( whereLoopResize(db, pNew, pNew->nLTerm+1) ) break; /* OOM */
     pNew->aLTerm[pNew->nLTerm++] = pTerm;
@@ -2334,6 +2386,9 @@ static int whereLoopAddBtreeIndex(
       testcase( eOp & WO_GT );
       testcase( eOp & WO_GE );
       pNew->wsFlags |= WHERE_COLUMN_RANGE|WHERE_BTM_LIMIT;
+      pNew->u.btree.nBtm = whereRangeVectorLen(
+          pParse, pSrc->iCursor, pProbe, saved_nEq, pTerm
+      );
       pBtm = pTerm;
       pTop = 0;
       if( pTerm->wtFlags & TERM_LIKEOPT ){
@@ -2346,12 +2401,16 @@ static int whereLoopAddBtreeIndex(
         if( whereLoopResize(db, pNew, pNew->nLTerm+1) ) break; /* OOM */
         pNew->aLTerm[pNew->nLTerm++] = pTop;
         pNew->wsFlags |= WHERE_TOP_LIMIT;
+        pNew->u.btree.nTop = 1;
       }
     }else{
       assert( eOp & (WO_LT|WO_LE) );
       testcase( eOp & WO_LT );
       testcase( eOp & WO_LE );
       pNew->wsFlags |= WHERE_COLUMN_RANGE|WHERE_TOP_LIMIT;
+      pNew->u.btree.nTop = whereRangeVectorLen(
+          pParse, pSrc->iCursor, pProbe, saved_nEq, pTerm
+      );
       pTop = pTerm;
       pBtm = (pNew->wsFlags & WHERE_BTM_LIMIT)!=0 ?
                      pNew->aLTerm[pNew->nLTerm-2] : 0;
@@ -2451,6 +2510,8 @@ static int whereLoopAddBtreeIndex(
   }
   pNew->prereq = saved_prereq;
   pNew->u.btree.nEq = saved_nEq;
+  pNew->u.btree.nBtm = saved_nBtm;
+  pNew->u.btree.nTop = saved_nTop;
   pNew->nSkip = saved_nSkip;
   pNew->wsFlags = saved_wsFlags;
   pNew->nOut = saved_nOut;
@@ -2572,7 +2633,7 @@ static int whereUsablePartialIndex(int iTab, WhereClause *pWC, Expr *pWhere){
 
 /*
 ** Add all WhereLoop objects for a single table of the join where the table
-** is idenfied by pBuilder->pNew->iTab.  That table is guaranteed to be
+** is identified by pBuilder->pNew->iTab.  That table is guaranteed to be
 ** a b-tree table, not a virtual table.
 **
 ** The costs (WhereLoop.rRun) of the b-tree loops added by this function
@@ -2726,6 +2787,8 @@ static int whereLoopAddBtree(
     }
     rSize = pProbe->aiRowLogEst[0];
     pNew->u.btree.nEq = 0;
+    pNew->u.btree.nBtm = 0;
+    pNew->u.btree.nTop = 0;
     pNew->nSkip = 0;
     pNew->nLTerm = 0;
     pNew->iSortIdx = 0;

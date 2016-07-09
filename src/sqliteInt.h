@@ -2317,6 +2317,8 @@ struct Expr {
 #define EP_CanBeNull 0x100000 /* Can be null despite NOT NULL constraint */
 #define EP_Subquery  0x200000 /* Tree contains a TK_SELECT operator */
 #define EP_Alias     0x400000 /* Is an alias for a result set column */
+#define EP_VectorOk  0x800000 /* This expression may be a row value */
+#define EP_Vector    0x1000000/* This expression is a row value */
 
 /*
 ** Combinations of two or more EP_* flags
@@ -2762,7 +2764,7 @@ struct Select {
 */
 struct SelectDest {
   u8 eDest;            /* How to dispose of the results.  On of SRT_* above. */
-  char affSdst;        /* Affinity used when eDest==SRT_Set */
+  char *zAffSdst;      /* Affinity used when eDest==SRT_Set */
   int iSDParm;         /* A parameter used by the eDest disposal method */
   int iSdst;           /* Base register where results are written */
   int nSdst;           /* Number of registers allocated */
@@ -4236,5 +4238,7 @@ int sqlite3ThreadJoin(SQLiteThread*, void**);
 #if defined(SQLITE_ENABLE_DBSTAT_VTAB) || defined(SQLITE_TEST)
 int sqlite3DbstatRegister(sqlite3*);
 #endif
+
+int sqlite3ExprVectorSize(Expr *pExpr);
 
 #endif /* SQLITEINT_H */

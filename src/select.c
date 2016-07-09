@@ -88,7 +88,7 @@ static void clearSelect(sqlite3 *db, Select *p, int bFree){
 void sqlite3SelectDestInit(SelectDest *pDest, int eDest, int iParm){
   pDest->eDest = (u8)eDest;
   pDest->iSDParm = iParm;
-  pDest->affSdst = 0;
+  pDest->zAffSdst = 0;
   pDest->iSdst = 0;
   pDest->nSdst = 0;
 }
@@ -673,7 +673,7 @@ static int checkForMultiColumnSelectError(
   int nExpr            /* Number of result columns returned by SELECT */
 ){
   int eDest = pDest->eDest;
-  if( nExpr>1 && (eDest==SRT_Mem || eDest==SRT_Set) ){
+  if( 0 && nExpr>1 && eDest==SRT_Set ){
     sqlite3ErrorMsg(pParse, "only a single result allowed for "
        "a SELECT that is part of an expression");
     return 1;
@@ -892,9 +892,6 @@ static void selectInnerLoop(
     ** item into the set table with bogus data.
     */
     case SRT_Set: {
-      assert( nResultCol==1 );
-      pDest->affSdst =
-                  sqlite3CompareAffinity(pEList->a[0].pExpr, pDest->affSdst);
       if( pSort ){
         /* At first glance you would think we could optimize out the
         ** ORDER BY in this case since the order of entries in the set
@@ -903,8 +900,10 @@ static void selectInnerLoop(
         pushOntoSorter(pParse, pSort, p, regResult, regResult, 1, nPrefixReg);
       }else{
         int r1 = sqlite3GetTempReg(pParse);
-        sqlite3VdbeAddOp4(v, OP_MakeRecord, regResult,1,r1, &pDest->affSdst, 1);
-        sqlite3ExprCacheAffinityChange(pParse, regResult, 1);
+        assert( sqlite3Strlen30(pDest->zAffSdst)==nResultCol );
+        sqlite3VdbeAddOp4(v, OP_MakeRecord, regResult, nResultCol, 
+            r1, pDest->zAffSdst, 1);
+        sqlite3ExprCacheAffinityChange(pParse, regResult, nResultCol);
         sqlite3VdbeAddOp2(v, OP_IdxInsert, iParm, r1);
         sqlite3ReleaseTempReg(pParse, r1);
       }
@@ -924,9 +923,9 @@ static void selectInnerLoop(
     ** of the scan loop.
     */
     case SRT_Mem: {
-      assert( nResultCol==1 );
+      assert( nResultCol==pDest->nSdst );
       if( pSort ){
-        pushOntoSorter(pParse, pSort, p, regResult, regResult, 1, nPrefixReg);
+        pushOntoSorter(pParse, pSort, p, regResult, regResult, nResultCol, nPrefixReg);
       }else{
         assert( regResult==iParm );
         /* The LIMIT clause will jump out of the loop for us */
@@ -1241,7 +1240,7 @@ static void generateSortTail(
     sqlite3VdbeResolveLabel(v, pSort->labelBkOut);
   }
   iTab = pSort->iECursor;
-  if( eDest==SRT_Output || eDest==SRT_Coroutine ){
+  if( eDest==SRT_Output || eDest==SRT_Coroutine || eDest==SRT_Mem ){
     regRowid = 0;
     regRow = pDest->iSdst;
     nSortData = nColumn;
@@ -1283,16 +1282,15 @@ static void generateSortTail(
     }
 #ifndef SQLITE_OMIT_SUBQUERY
     case SRT_Set: {
-      assert( nColumn==1 );
-      sqlite3VdbeAddOp4(v, OP_MakeRecord, regRow, 1, regRowid,
-                        &pDest->affSdst, 1);
-      sqlite3ExprCacheAffinityChange(pParse, regRow, 1);
+      assert( nColumn==sqlite3Strlen30(pDest->zAffSdst) );
+      sqlite3VdbeAddOp4(v, OP_MakeRecord, regRow, nColumn, regRowid,
+                        pDest->zAffSdst, 1);
+      sqlite3ExprCacheAffinityChange(pParse, regRow, nColumn);
       sqlite3VdbeAddOp2(v, OP_IdxInsert, iParm, regRowid);
       break;
     }
     case SRT_Mem: {
-      assert( nColumn==1 );
-      sqlite3ExprCodeMove(pParse, regRow, iParm, 1);
+      /* sqlite3ExprCodeMove(pParse, regRow, iParm, nColumn); */
       /* The LIMIT clause will terminate the loop for us */
       break;
     }
@@ -2659,10 +2657,9 @@ static int generateOutputSubroutine(
     case SRT_Set: {
       int r1;
       assert( pIn->nSdst==1 || pParse->nErr>0 );
-      pDest->affSdst = 
-         sqlite3CompareAffinity(p->pEList->a[0].pExpr, pDest->affSdst);
       r1 = sqlite3GetTempReg(pParse);
-      sqlite3VdbeAddOp4(v, OP_MakeRecord, pIn->iSdst, 1, r1, &pDest->affSdst,1);
+      sqlite3VdbeAddOp4(v, OP_MakeRecord, pIn->iSdst, pIn->nSdst, 
+          r1, pDest->zAffSdst,1);
       sqlite3ExprCacheAffinityChange(pParse, pIn->iSdst, 1);
       sqlite3VdbeAddOp2(v, OP_IdxInsert, pDest->iSDParm, r1);
       sqlite3ReleaseTempReg(pParse, r1);

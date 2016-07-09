@@ -217,6 +217,7 @@ columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,&A,&Y);}
 %left CONCAT.
 %left COLLATE.
 %right BITNOT.
+%right VECTOR.
 
 // An IDENTIFIER can be a generic identifier, or one of several
 // keywords.  Any non-standard keyword can also be an identifier.
@@ -943,6 +944,14 @@ term(A) ::= CTIME_KW(OP). {
     if( doNot ){
       pSpan->pExpr = sqlite3PExpr(pParse, TK_NOT, pSpan->pExpr, 0, 0);
     }
+  }
+}
+
+expr(A) ::= LP(L) nexprlist(X) COMMA expr(Y) RP(R). { 
+  A.pExpr = sqlite3PExpr(pParse, TK_VECTOR, 0, 0, 0);
+  if( A.pExpr ){
+    A.pExpr->x.pList = sqlite3ExprListAppend(pParse, X, Y.pExpr);
+    spanSet(&A, &L, &R);
   }
 }
 

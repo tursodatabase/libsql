@@ -122,6 +122,8 @@ struct WhereLoop {
   union {
     struct {               /* Information for internal btree tables */
       u16 nEq;               /* Number of equality constraints */
+      u16 nBtm;              /* Size of BTM vector */
+      u16 nTop;              /* Size of TOP vector */
       Index *pIndex;         /* Index used, or NULL */
     } btree;
     struct {               /* Information for virtual tables */
