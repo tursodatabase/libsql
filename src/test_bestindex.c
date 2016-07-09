@@ -179,8 +179,8 @@ static int tclConnect(
     return SQLITE_ERROR;
   }
 
-  zCmd = sqlite3_malloc(strlen(argv[3])+1);
-  pTab = (tcl_vtab*)sqlite3_malloc(sizeof(tcl_vtab));
+  zCmd = sqlite3_malloc64(strlen(argv[3])+1);
+  pTab = (tcl_vtab*)sqlite3_malloc64(sizeof(tcl_vtab));
   if( zCmd && pTab ){
     memcpy(zCmd, argv[3], strlen(argv[3])+1);
     tclDequote(zCmd);

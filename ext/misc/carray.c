@@ -303,7 +303,7 @@ static int carrayBestIndex(
     pIdxInfo->aConstraintUsage[cntIdx].argvIndex = 2;
     pIdxInfo->aConstraintUsage[cntIdx].omit = 1;
     pIdxInfo->estimatedCost = (double)1;
-    pIdxInfo->estimatedRows = (double)100;
+    pIdxInfo->estimatedRows = 100;
     pIdxInfo->idxNum = 2;
     if( ctypeIdx>=0 ){
       pIdxInfo->aConstraintUsage[ctypeIdx].argvIndex = 3;
@@ -312,7 +312,7 @@ static int carrayBestIndex(
     }
   }else{
     pIdxInfo->estimatedCost = (double)2147483647;
-    pIdxInfo->estimatedRows = (double)2147483647;
+    pIdxInfo->estimatedRows = 2147483647;
     pIdxInfo->idxNum = 0;
   }
   return SQLITE_OK;

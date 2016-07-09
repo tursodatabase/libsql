@@ -375,7 +375,7 @@ static int csv_string_parameter(
   char **pzVal             /* Write the dequoted string value here */
 ){
   const char *zValue;
-  zValue = csv_parameter(zParam,strlen(zParam),zArg);
+  zValue = csv_parameter(zParam,(int)strlen(zParam),zArg);
   if( zValue==0 ) return 0;
   p->zErr[0] = 0;
   if( *pzVal ){
@@ -616,7 +616,7 @@ static int csvtabOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
   CsvCursor *pCur;
   size_t nByte;
   nByte = sizeof(*pCur) + (sizeof(char*)+sizeof(int))*pTab->nCol;
-  pCur = sqlite3_malloc( nByte );
+  pCur = sqlite3_malloc64( nByte );
   if( pCur==0 ) return SQLITE_NOMEM;
   memset(pCur, 0, nByte);
   pCur->azVal = (char**)&pCur[1];
@@ -647,7 +647,7 @@ static int csvtabNext(sqlite3_vtab_cursor *cur){
     }
     if( i<pTab->nCol ){
       if( pCur->aLen[i] < pCur->rdr.n+1 ){
-        char *zNew = sqlite3_realloc(pCur->azVal[i], pCur->rdr.n+1);
+        char *zNew = sqlite3_realloc64(pCur->azVal[i], pCur->rdr.n+1);
         if( zNew==0 ){
           csv_errmsg(&pCur->rdr, "out of memory");
           csv_xfer_error(pTab, &pCur->rdr);
