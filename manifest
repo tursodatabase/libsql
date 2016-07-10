@@ -1,5 +1,5 @@
-C Add\sthe\s"#/value-list/"\sstyle\sof\sresults\sfor\sapproximate\svalue\smatching\nin\sthe\sdo_test\scommand\sof\sthe\stest\sinfrastructure.\s\sUse\sthis\snew\sresult\sstyle\nto\smake\sthe\sSQLITE_DBSTATUS_CACHE_SIZE_SHARED\stests\scross-platform.
-D 2016-07-09T17:47:01.013
+C Fix\stypos\sin\scomments.\s\sNo\schanges\sto\scode.
+D 2016-07-10T19:35:10.288
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -337,7 +337,7 @@ F src/ctime.c 61949e83c4c36e37195a8398ebc752780b534d95
 F src/date.c 1cc9fb516ec9932c6fd4d2a0d2f8bc4480145c39
 F src/dbstat.c 4f6f7f52b49beb9636ffbd517cfe44a402ba4ad0
 F src/delete.c 4aba4214a377ce8ddde2d2e609777bcc8235200f
-F src/expr.c 523a5b1db2b6d88c6eefb224877bf635a3bcfc92
+F src/expr.c 21b153e1046c624e9387a17d3261f69b461e700c
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c bc4145347595b7770f9a598cff1c848302cf5413
 F src/func.c 61a4114cf7004f10c542cfabbab9f2bcb9033045
@@ -465,7 +465,7 @@ F src/wal.h 6dd221ed384afdc204bc61e25c23ef7fd5a511f2
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
 F src/where.c 48eed8ebe319c6cbc7bf7682018f32af0f5189f5
 F src/whereInt.h e5b939701a7ceffc5a3a8188a37f9746416ebcd0
-F src/wherecode.c e20cb381ff621e56a4684c71e31999aca2547ca6
+F src/wherecode.c 11e38f5e2dc5c007143fbf7fdb14bca40a6b74ad
 F src/whereexpr.c d7dcbf14ce1b5876c1f76496162c30fcba669563
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1505,7 +1505,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 29fb988f1afc3fe623097acee1a5d08bf8386626
-R 767a7d8abd9b9525d1b45069b4c3dba2
-U drh
-Z df36acb2648e26f22b53c52b73476f6c
+P c869bf34a8ee42ac6542862e59c7a4b89b042f79
+R e7b82c5fd816fe8e3d4680426d718eac
+U mistachkin
+Z bc88f0dbd9511ddf1cf929c200555b61
