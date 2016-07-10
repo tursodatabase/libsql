@@ -569,7 +569,7 @@ static int codeAllEqualityTerms(
 ** expression: "x>='ABC' AND x<'abd'".  But this requires that the range
 ** scan loop run twice, once for strings and a second time for BLOBs.
 ** The OP_String opcodes on the second pass convert the upper and lower
-** bound string contants to blobs.  This routine makes the necessary changes
+** bound string constants to blobs.  This routine makes the necessary changes
 ** to the OP_String opcodes for that to happen.
 **
 ** Except, of course, if SQLITE_LIKE_DOESNT_MATCH_BLOBS is defined, then

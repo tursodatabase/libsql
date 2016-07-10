@@ -1,5 +1,5 @@
-C Add\ssome\ssupport\sfor\susing\srow\svalue\sconstructors\sin\scertain\sparts\sof\sSQL\sexpressions.\sThere\sare\smany\sbugs\son\sthis\sbranch.
-D 2016-07-09T20:23:55.716
+C Merge\scomment\stypo\sfixes\sfrom\strunk.
+D 2016-07-10T19:35:45.597
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -465,7 +465,7 @@ F src/wal.h 6dd221ed384afdc204bc61e25c23ef7fd5a511f2
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
 F src/where.c 898a45969bae1298cbaaaf05e6aeacfb45971293
 F src/whereInt.h 1ad3be2a43cb821418e1100476a3a14cd57635c4
-F src/wherecode.c a66c589bdcaa9da45d9576d54663666083e0c109
+F src/wherecode.c 877ceb19cf00a5fd5aeea4e3ff633dcdf173f164
 F src/whereexpr.c d88ee6ce356cb9fd986d0e81249a2cd66a513093
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1507,10 +1507,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c869bf34a8ee42ac6542862e59c7a4b89b042f79
-R e70f91ca2d7d2c655198f54d385cd62e
-T *branch * rowvalue
-T *sym-rowvalue *
-T -sym-trunk *
-U dan
-Z e86f169a98e6cbe5718a428ba6e6f5e0
+P b2204215b231202aef7a218411cc2ddaecf28f35 77c692a6704cd877ba35d0afb774ab9b46364d59
+R 1a7620cc6269220b48a9fcbcbb9b68d1
+U mistachkin
+Z cf1dd7dc395b0586dda9fa40ccf71a27
