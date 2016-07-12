@@ -756,6 +756,9 @@ static void yy_accept(
     fprintf(yyTraceFILE,"%sAccept!\n",yyTracePrompt);
   }
 #endif
+#ifndef YYNOERRORRECOVERY
+  yypParser->yyerrcnt = -1;
+#endif
   assert( yypParser->yytos==yypParser->yystack );
   /* Here code is inserted which will be executed whenever the
   ** parser accepts */
@@ -898,9 +901,6 @@ void Parse(
       ** they intend to abandon the parse upon the first syntax error seen.
       */
       yy_syntax_error(yypParser,yymajor, yyminor);
-#ifndef YYNOERRORRECOVERY
-      yypParser->yyerrcnt = -1;
-#endif
       yy_destructor(yypParser,(YYCODETYPE)yymajor,&yyminorunion);
       yymajor = YYNOCODE;
       

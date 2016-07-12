@@ -1,5 +1,5 @@
-C Fix\stypos\sin\scomments.\s\sNo\schanges\sto\scode.
-D 2016-07-10T19:35:10.288
+C Fix\sthe\serror\scounter\sreset\sin\sLemon\sgenerated\sparsers.\s\sThis\shas\sno\seffect\non\sSQLite.
+D 2016-07-12T19:54:49.418
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -1433,7 +1433,7 @@ F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/lemon.c 09a96bed19955697a5e20c49ad863ec2005815a2
-F tool/lempar.c 77c685a612526aae9c0d9b3175176e5bcd3854d0
+F tool/lempar.c 57ffa9852901f6abc45981f0d882f31d1ccb06c0
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
 F tool/logest.c 11346aa019e2e77a00902aa7d0cabd27bd2e8cca
@@ -1505,7 +1505,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c869bf34a8ee42ac6542862e59c7a4b89b042f79
-R e7b82c5fd816fe8e3d4680426d718eac
-U mistachkin
-Z bc88f0dbd9511ddf1cf929c200555b61
+P 77c692a6704cd877ba35d0afb774ab9b46364d59
+R cb6d43e13605575cc663251c668c01f6
+U drh
+Z 3209e04e0b1433ba8d0db8fc637ac637
