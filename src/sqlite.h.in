@@ -2805,7 +2805,7 @@ SQLITE_DEPRECATED void *sqlite3_profile(sqlite3*,
 ** The C argument is a copy of the context pointer passed in as the
 ** fourth argument to [sqlite3_trace_v2()].
 ** The P argument is a pointer whose meaning depends on T.
-** The X argument is an unsigned 64-bit integer whose meaning also
+** The X argument is an 64-bit integer whose meaning also
 ** depends on T.
 **
 ** <dl>
@@ -2874,7 +2874,7 @@ SQLITE_DEPRECATED void *sqlite3_profile(sqlite3*,
 ** The T argument is one of the [SQLITE_TRACE]
 ** constants to indicate why the callback was invoked.
 ** The C argument is a copy of the context pointer.
-** The P and X arguments are a pointer and an unsigned 64-bit integer
+** The P and X arguments are a pointer and a 64-bit integer
 ** whose meanings depend on T.
 **
 ** The sqlite3_trace_v2() interface is intended to replace the legacy
@@ -2883,7 +2883,7 @@ SQLITE_DEPRECATED void *sqlite3_profile(sqlite3*,
 */
 int sqlite3_trace_v2(
   sqlite3*,
-  int(*xCallback)(unsigned,void*,void*,sqlite3_uint64),
+  int(*xCallback)(unsigned,void*,void*,sqlite3_int64),
   unsigned uMask,
   void *pCtx
 );

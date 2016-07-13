@@ -1033,6 +1033,9 @@ static int sqlite3Close(sqlite3 *db, int forceZombie){
     return SQLITE_MISUSE_BKPT;
   }
   sqlite3_mutex_enter(db->mutex);
+  if( db->mTrace & SQLITE_TRACE_CLOSE ){
+    db->xTrace(SQLITE_TRACE_CLOSE, db->pTraceArg, db, 0);
+  }
 
   /* Force xDisconnect calls on all virtual tables */
   disconnectAllVtab(db);
@@ -1801,6 +1804,7 @@ int sqlite3_overload_function(
 ** trace is a pointer to a function that is invoked at the start of each
 ** SQL statement.
 */
+#ifndef SQLITE_OMIT_DEPRECATED
 void *sqlite3_trace(sqlite3 *db, void (*xTrace)(void*,const char*), void *pArg){
   void *pOld;
 
@@ -1812,11 +1816,36 @@ void *sqlite3_trace(sqlite3 *db, void (*xTrace)(void*,const char*), void *pArg){
 #endif
   sqlite3_mutex_enter(db->mutex);
   pOld = db->pTraceArg;
-  db->xTrace = xTrace;
+  db->mTrace = SQLITE_TRACE_LEGACY;
+  db->xTrace = (int(*)(u32,void*,void*,i64))xTrace;
   db->pTraceArg = pArg;
   sqlite3_mutex_leave(db->mutex);
   return pOld;
 }
+#endif /* SQLITE_OMIT_DEPRECATED */
+
+/* Register a trace callback using the version-2 interface.
+*/
+int sqlite3_trace_v2(
+  sqlite3 *db,                                       /* Trace this connection */
+  int(*xTrace)(unsigned,void*,void*,sqlite3_int64),  /* Callback to invoke */
+  unsigned mTrace,                                   /* OPs to be traced */
+  void *pArg                                         /* Context */
+){
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( !sqlite3SafetyCheckOk(db) ){
+    (void)SQLITE_MISUSE_BKPT;
+    return 0;
+  }
+#endif
+  sqlite3_mutex_enter(db->mutex);
+  db->mTrace = mTrace;
+  db->xTrace = xTrace;
+  db->pTraceArg = pArg;
+  sqlite3_mutex_leave(db->mutex);
+  return SQLITE_OK;
+}
+
 /*
 ** Register a profile function.  The pArg from the previously registered 
 ** profile function is returned.  

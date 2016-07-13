@@ -1,5 +1,5 @@
-C Interface\sdesign\sfor\sa\snew\ssqlite3_trace_v2()\smethod\sthat\ssupersedes\nsqlite3_trace()\sand\ssqlite3_profile().
-D 2016-07-13T21:30:03.340
+C First\scut\sat\simplementing\sthe\snew\ssqlite3_trace_v2()\sinterface.
+D 2016-07-13T22:55:01.845
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -348,7 +348,7 @@ F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/insert.c 8f4e9fcbd8e95e85f15647ba8b413b18d556ec2b
 F src/legacy.c 75d3023be8f0d2b99d60f905090341a03358c58e
 F src/loadext.c 4237fd37ca589f1d90b3ea925dd9df20da8e0c84
-F src/main.c 405d13e3a4f7c5add9fb27702ae70ed0a6e32cca
+F src/main.c 05658dfa4be5704e4d6542fe0f2452be5b9df09e
 F src/malloc.c 1443d1ad95d67c21d77af7ae3f44678252f0efec
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 6919bcf12f221868ea066eec27e579fed95ce98b
@@ -385,10 +385,10 @@ F src/resolve.c cca3aa77b95706df5d635a2141a4d1de60ae6598
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c f3c6e9065fb34f6a23af27ec7f1f717ffbfc2ee4
 F src/shell.c a8a9e392a6a2777fabf5feb536931cb190f235e5
-F src/sqlite.h.in 63774172623fe82336ad0757f373343a87bd0b36
+F src/sqlite.h.in 0fde7379e6a9d900802976de51cb1256f0fdac59
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
-F src/sqlite3ext.h 2a170163d121095c6ab1ef05ed0413722f391d01
-F src/sqliteInt.h dcf43b8abc5605b70f54ba80f42b6ad054b8ba95
+F src/sqlite3ext.h 3875aa5b3c4bb5d8d14c387628c5fe852b2846bf
+F src/sqliteInt.h 5b8a3e1dc92e7459b69954cce9f653bd2391deb8
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c 5b18f9526900f61189ab0b83f1ef41d9f871a2ab
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
@@ -448,11 +448,11 @@ F src/trigger.c e14840ee0c3e549e758ec9bf3e4146e166002280
 F src/update.c 4f05ea8cddfa367d045e03589756c02199e8f9bd
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c 810ec3f22e2d1b62e66c30fe3621ebdedd23584d
-F src/vacuum.c feb1eabb20987983d9350cad98299b21fa811f52
-F src/vdbe.c 22b46c3b725e950e9f2760e2d76953d592600ad4
+F src/vacuum.c 459ff7cb3c589451111ff2d3b6eb31be83a46a54
+F src/vdbe.c c6bb62aa69a6faf1197eee36336c6de99bb4733f
 F src/vdbe.h 67bc551f7faf04c33493892e4b378aada823ed10
 F src/vdbeInt.h c59381049af5c7751a83456c39b80d1a6fde1f9d
-F src/vdbeapi.c 02bcbc2ca5d2004b029088b05b468b394881e103
+F src/vdbeapi.c a466743c8e6de100c11e044b693c9469d2cf598a
 F src/vdbeaux.c c90275b0e55a2b32c03dc09314194fe46f2429d8
 F src/vdbeblob.c 83d2d266383157b02e2b809350bb197e89d7895b
 F src/vdbemem.c 1ecaa5ee0caff07255f25d04e8dc88befb6f88d1
@@ -1505,10 +1505,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 824b39e54fb9ba562be4d92cc9a54aee1cdf84cb
-R eb1a84643390ea5aba50eced8805fb76
-T *branch * sqlite3_trace_v2
-T *sym-sqlite3_trace_v2 *
-T -sym-trunk *
+P 0c569f759f6c4701321d7fea5e7ccb371743bb6b
+R eeeb6e6908fe861e59edc045bbf20a73
 U drh
-Z 6025cf3e994164a26dea4fb0e96d3f78
+Z 1f8408ee484498502acfe0ea8cf0fbae
