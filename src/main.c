@@ -1816,7 +1816,7 @@ void *sqlite3_trace(sqlite3 *db, void (*xTrace)(void*,const char*), void *pArg){
 #endif
   sqlite3_mutex_enter(db->mutex);
   pOld = db->pTraceArg;
-  db->mTrace = SQLITE_TRACE_LEGACY;
+  db->mTrace = xTrace ? SQLITE_TRACE_LEGACY : 0;
   db->xTrace = (int(*)(u32,void*,void*,i64))xTrace;
   db->pTraceArg = pArg;
   sqlite3_mutex_leave(db->mutex);

@@ -145,7 +145,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   saved_mTrace = db->mTrace;
   db->flags |= SQLITE_WriteSchema | SQLITE_IgnoreChecks | SQLITE_PreferBuiltin;
   db->flags &= ~(SQLITE_ForeignKeys | SQLITE_ReverseOrder);
-  db->xTrace = 0;
+  db->mTrace = 0;
 
   pMain = db->aDb[0].pBt;
   isMemDb = sqlite3PagerIsMemdb(sqlite3BtreePager(pMain));
