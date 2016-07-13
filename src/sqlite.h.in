@@ -2755,6 +2755,9 @@ int sqlite3_set_authorizer(
 ** CAPI3REF: Tracing And Profiling Functions
 ** METHOD: sqlite3
 **
+** These routines are deprecated. Use the [sqlite3_trace_v2()] interface
+** instead of the routines described here.
+**
 ** These routines register callback functions that can be used for
 ** tracing and profiling the execution of SQL statements.
 **
@@ -2780,9 +2783,110 @@ int sqlite3_set_authorizer(
 ** sqlite3_profile() function is considered experimental and is
 ** subject to change in future versions of SQLite.
 */
-void *sqlite3_trace(sqlite3*, void(*xTrace)(void*,const char*), void*);
-SQLITE_EXPERIMENTAL void *sqlite3_profile(sqlite3*,
+SQLITE_DEPRECATED void *sqlite3_trace(sqlite3*,
+   void(*xTrace)(void*,const char*), void*);
+SQLITE_DEPRECATED void *sqlite3_profile(sqlite3*,
    void(*xProfile)(void*,const char*,sqlite3_uint64), void*);
+
+/*
+** CAPI3REF: SQL Trace Event Codes
+** KEYWORDS: SQLITE_TRACE
+**
+** These constants identify classes of events that can be monitored
+** using the [sqlite3_trace_v2()] tracing logic.  The third argument
+** to [sqlite3_trace_v2()] is an OR-ed combination of one or more of
+** the following constants.  The first argument to the trace callback
+** is one of the following constants.
+**
+** New tracing constants may be added in future releases.
+**
+** A trace callback has four arguments: xCallback(T,C,P,X).
+** The T argument is one of the integer type codes above.
+** The C argument is a copy of the context pointer passed in as the
+** fourth argument to [sqlite3_trace_v2()].
+** The P argument is a pointer whose meaning depends on T.
+** The X argument is an unsigned 64-bit integer whose meaning also
+** depends on T.
+**
+** <dl>
+** [[SQLITE_TRACE_SQL]] <dt>SQLITE_TRACE_SQL</dt>
+** <dd>An SQLITE_TRACE_SQL callback provides the same functionality
+** as the legacy [sqlite3_trace()] callback.
+** The P argument is a pointer to the constant UTF-8 string that is text
+** describing an SQL statement that is starting to run with all
+** [bound parameter] expanded.  The X argument is unused.  The size
+** of the expansion of [bound parameters] is limited by the
+** [SQLITE_TRACE_SIZE_LIMIT] compile-time option.
+**
+** [[SQLITE_TRACE_STMT]] <dt>SQLITE_TRACE_STMT</dt>
+** <dd>An SQLITE_TRACE_STMT callback is invoked on the same occasions
+** as SQLITE_TRACE_SQL.  The difference is that the P argument is a
+** pointer to the [prepared statement] rather than an SQL string.
+** The X argument is unused.
+**
+** [[SQLITE_TRACE_PROFILE]] <dt>SQLITE_TRACE_PROFILE</dt>
+** <dd>An SQLITE_TRACE_PROFILE callback provides approximately the same
+** information as is provided by the [sqlite3_profile()] callback.
+** The P argument is a pointer to the [prepared statement] and the
+** X argument is an estimate of the number of nanosecond for which
+** the prepared statement ran.  The SQLITE_TRACE_PROFILE callback is
+** invoked when the statement finishes.
+**
+** [[SQLITE_TRACE_ROW]] <dt>SQLITE_TRACE_ROW</dt>
+** <dd>An SQLITE_TRACE_ROW callback is invoked whenever a prepared
+** statement generates a single row of result.  
+** The P argument is a pointer to the [prepared statement] and the
+** X argument is unused.
+**
+** [[SQLITE_TRACE_CLOSE]] <dt>SQLITE_TRACE_CLOSE</dt>
+** <dd>An SQLITE_TRACE_CLOSE callback is invoked when a database
+** connection closes.
+** The P argument is a pointer to the [database connection] object
+** and the X argument is unused.
+** </dl>
+*/
+#define SQLITE_TRACE_SQL        0x0001
+#define SQLITE_TRACE_STMT       0x0002
+#define SQLITE_TRACE_PROFILE    0x0004
+#define SQLITE_TRACE_ROW        0x0008
+#define SQLITE_TRACE_CLOSE      0x0010
+
+/*
+** CAPI3REF: SQL Trace Hook
+** METHOD: sqlite3
+**
+** The sqlite3_trace_v2(D,X,M,P) interface registers a trace callback
+** function X against [database connection] D, using property mask M
+** and context pointer P.  If the X callback is
+** NULL or if the M mask is zero, then tracing is disabled.  The
+** M argument must be one or more of the [SQLITE_TRACE]
+** constants.
+**
+** Each call to either sqlite3_trace() or sqlite3_trace_v2() overrides 
+** (cancels) any prior calls to sqlite3_trace() or sqlite3_trace_v2().
+**
+** The X callback is invoked whenever any of the events identified by 
+** mask M occur.  The integer return value from the callback is currently
+** ignored, though this may change in future releases.  Callback
+** implementations should return zero to ensure future compatibility.
+**
+** A trace callback is invoked with four arguments: callback(T,C,P,X).
+** The T argument is one of the [SQLITE_TRACE]
+** constants to indicate why the callback was invoked.
+** The C argument is a copy of the context pointer.
+** The P and X arguments are a pointer and an unsigned 64-bit integer
+** whose meanings depend on T.
+**
+** The sqlite3_trace_v2() interface is intended to replace the legacy
+** interfaces [sqlite3_trace()] and [sqlite3_profile()], both of which
+** are deprecated.
+*/
+int sqlite3_trace_v2(
+  sqlite3*,
+  int(*xCallback)(unsigned,void*,void*,sqlite3_uint64),
+  unsigned uMask,
+  void *pCtx
+);
 
 /*
 ** CAPI3REF: Query Progress Callbacks
