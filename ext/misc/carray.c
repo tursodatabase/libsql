@@ -14,7 +14,7 @@
 ** returns the values in a C-language array.
 ** Examples:
 **
-**      SELECT * FROM array($ptr,5)
+**      SELECT * FROM carray($ptr,5)
 **
 ** The query above returns 5 integers contained in a C-language array
 ** at the address $ptr.  $ptr is a pointer to the array of integers that
@@ -24,7 +24,7 @@
 ** the C-language array.  Allowed values of the third parameter are
 ** 'int32', 'int64', 'double', 'char*'.  Example:
 **
-**      SELECT * FROM array($ptr,10,'char*');
+**      SELECT * FROM carray($ptr,10,'char*');
 **
 ** HOW IT WORKS
 **
@@ -358,11 +358,6 @@ int sqlite3_carray_init(
   int rc = SQLITE_OK;
   SQLITE_EXTENSION_INIT2(pApi);
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-  if( sqlite3_libversion_number()<3008012 ){
-    *pzErrMsg = sqlite3_mprintf(
-        "carray() requires SQLite 3.8.12 or later");
-    return SQLITE_ERROR;
-  }
   rc = sqlite3_create_module(db, "carray", &carrayModule, 0);
 #endif
   return rc;

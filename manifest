@@ -1,5 +1,5 @@
-C Fix\sthe\serror\scounter\sreset\sin\sLemon\sgenerated\sparsers.\s\sThis\shas\sno\seffect\non\sSQLite.
-D 2016-07-12T19:54:49.418
+C Fix\sheader\scomments\sand\sremove\san\sunnecessary\sversion\srestriction\sfrom\sthe\ncarray()\stable-valued\sfunction\simplementation.
+D 2016-07-13T00:55:28.831
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -204,7 +204,7 @@ F ext/icu/README.txt d9fbbad0c2f647c3fdf715fc9fd64af53aedfc43
 F ext/icu/icu.c 43df9d8ef2fae7a325100ebd713ab089dc829dd7
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/misc/amatch.c 211108e201105e4bb0c076527b8cfd34330fc234
-F ext/misc/carray.c 29f3b2dbb93b93cedcc571660203d1e24d921bd3
+F ext/misc/carray.c 214c9e9d909ceaae3b2f5f917cc2204deca85cc6
 F ext/misc/closure.c 0d2a038df8fbae7f19de42e7c7d71f2e4dc88704
 F ext/misc/compress.c 122faa92d25033d6c3f07c39231de074ab3d2e83
 F ext/misc/csv.c b92692b057707f5b7bb91feaedde790b2e38304e
@@ -1505,7 +1505,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 77c692a6704cd877ba35d0afb774ab9b46364d59
-R cb6d43e13605575cc663251c668c01f6
+P 3ef93950d30b34d852d6bbc101d433a04112868a
+R 51e8986673c5be3a3aaceb79764f3cbc
 U drh
-Z 3209e04e0b1433ba8d0db8fc637ac637
+Z 12b2ac3f05d95585a2345745d9c04f9c
