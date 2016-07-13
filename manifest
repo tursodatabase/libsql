@@ -1,5 +1,5 @@
-C Fix\sheader\scomments\sand\sremove\san\sunnecessary\sversion\srestriction\sfrom\sthe\ncarray()\stable-valued\sfunction\simplementation.
-D 2016-07-13T00:55:28.831
+C Fix\sharmless\scompiler\swarnings\sin\sshell.c\sfor\sNetBSD.
+D 2016-07-13T13:05:13.449
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -384,7 +384,7 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c cca3aa77b95706df5d635a2141a4d1de60ae6598
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c f3c6e9065fb34f6a23af27ec7f1f717ffbfc2ee4
-F src/shell.c 14ff7f660530a52b117d110ba3390b7b2eb719b6
+F src/shell.c a8a9e392a6a2777fabf5feb536931cb190f235e5
 F src/sqlite.h.in b9ba728c1083b7a8ab5f6a628b25cd2a00325fbf
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 2a170163d121095c6ab1ef05ed0413722f391d01
@@ -1505,7 +1505,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3ef93950d30b34d852d6bbc101d433a04112868a
-R 51e8986673c5be3a3aaceb79764f3cbc
+P 021d0fb8d85e44839d2b4fdb90b15f0e1f2442e6
+R f2c7097376b33c065f9732879605d098
 U drh
-Z 12b2ac3f05d95585a2345745d9c04f9c
+Z e160e6d632f23e86ebc551e9950cc211
