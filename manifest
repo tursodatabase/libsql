@@ -1,5 +1,5 @@
-C Merge\scomment\stypo\sfixes\sfrom\strunk.
-D 2016-07-10T19:35:45.597
+C Modifications\stowards\sbetter\svector\sIN(...)\ssupport\son\sthis\sbranch.\sNot\sactivated\syet.
+D 2016-07-13T19:48:13.115
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -337,7 +337,7 @@ F src/ctime.c 61949e83c4c36e37195a8398ebc752780b534d95
 F src/date.c 1cc9fb516ec9932c6fd4d2a0d2f8bc4480145c39
 F src/dbstat.c 4f6f7f52b49beb9636ffbd517cfe44a402ba4ad0
 F src/delete.c 4aba4214a377ce8ddde2d2e609777bcc8235200f
-F src/expr.c 330854fe9fdea1d244abaef6d680f6b91df07cb4
+F src/expr.c 939362d26f5e99a4802ae94ae6e47d4def72b8f3
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c bc4145347595b7770f9a598cff1c848302cf5413
 F src/func.c 61a4114cf7004f10c542cfabbab9f2bcb9033045
@@ -1507,7 +1507,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b2204215b231202aef7a218411cc2ddaecf28f35 77c692a6704cd877ba35d0afb774ab9b46364d59
-R 1a7620cc6269220b48a9fcbcbb9b68d1
-U mistachkin
-Z cf1dd7dc395b0586dda9fa40ccf71a27
+P 728c5aa436a5f55c86b019c415a2b71d1b0a8fd6
+R 6c0b20cb1573f5c43e78ae5a07a06597
+U dan
+Z 35590bc4128842477cd3208768d4edc0

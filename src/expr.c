@@ -309,6 +309,12 @@ static int codeCompare(
   return addr;
 }
 
+/*
+** If the expression passed as the only argument is of type TK_VECTOR 
+** return the number of expressions in the vector. Or, if the expression
+** is a sub-select, return the number of columns in the sub-select. For
+** any other type of expression, return 1.
+*/
 int sqlite3ExprVectorSize(Expr *pExpr){
   if( (pExpr->flags & EP_Vector)==0 ) return 1;
   if( pExpr->flags & EP_xIsSelect ){
@@ -318,7 +324,10 @@ int sqlite3ExprVectorSize(Expr *pExpr){
 }
 
 static Expr *exprVectorField(Expr *pVector, int i){
-  if( pVector->flags & EP_xIsSelect ){
+  if( (pVector->flags & EP_Vector)==0 ){
+    assert( i==0 );
+    return pVector;
+  }else if( pVector->flags & EP_xIsSelect ){
     return pVector->x.pSelect->pEList->a[i].pExpr;
   }
   return pVector->x.pList->a[i].pExpr;
@@ -1703,12 +1712,12 @@ int sqlite3IsRowid(const char *z){
 ** table, then return NULL.
 */
 #ifndef SQLITE_OMIT_SUBQUERY
-static Select *isCandidateForInOpt(Expr *pX){
+static Select *isCandidateForInOpt(Expr *pX, int bNullSensitive){
   Select *p;
   SrcList *pSrc;
   ExprList *pEList;
-  Expr *pRes;
   Table *pTab;
+  int i;
   if( !ExprHasProperty(pX, EP_xIsSelect) ) return 0;  /* Not a subquery */
   if( ExprHasProperty(pX, EP_VarSelect)  ) return 0;  /* Correlated subq */
   p = pX->x.pSelect;
@@ -1731,10 +1740,18 @@ static Select *isCandidateForInOpt(Expr *pX){
   assert( pTab->pSelect==0 );            /* FROM clause is not a view */
   if( IsVirtual(pTab) ) return 0;        /* FROM clause not a virtual table */
   pEList = p->pEList;
-  if( pEList->nExpr!=1 ) return 0;       /* One column in the result set */
-  pRes = pEList->a[0].pExpr;
-  if( pRes->op!=TK_COLUMN ) return 0;    /* Result is a column */
-  assert( pRes->iTable==pSrc->a[0].iCursor );  /* Not a correlated subquery */
+
+  /* All SELECT results must be columns. If the SELECT returns more than
+  ** one column and the bNullSensitive flag is set, all returned columns
+  ** must be declared NOT NULL. */
+  for(i=0; i<pEList->nExpr; i++){
+    Expr *pRes = pEList->a[i].pExpr;
+    if( pRes->op!=TK_COLUMN ) return 0;
+    assert( pRes->iTable==pSrc->a[0].iCursor );  /* Not a correlated subquery */
+    if( pEList->nExpr>1 && bNullSensitive ){
+      if( pTab->aCol[pRes->iColumn].notNull==0 ) return 0;
+    }
+  }
   return p;
 }
 #endif /* SQLITE_OMIT_SUBQUERY */
@@ -1867,20 +1884,18 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, u32 inFlags, int *prRhsHasNull){
   ** satisfy the query.  This is preferable to generating a new 
   ** ephemeral table.
   */
-  if( pParse->nErr==0 && (p = isCandidateForInOpt(pX))!=0 ){
+  if( pParse->nErr==0 && (p = isCandidateForInOpt(pX, prRhsHasNull!=0))!=0 ){
     sqlite3 *db = pParse->db;              /* Database connection */
     Table *pTab;                           /* Table <table>. */
-    Expr *pExpr;                           /* Expression <column> */
-    i16 iCol;                              /* Index of column <column> */
+    ExprList *pEList = p->pEList;
+    int nExpr = pEList->nExpr;
     i16 iDb;                               /* Database idx for pTab */
 
     assert( p->pEList!=0 );             /* Because of isCandidateForInOpt(p) */
     assert( p->pEList->a[0].pExpr!=0 ); /* Because of isCandidateForInOpt(p) */
     assert( p->pSrc!=0 );               /* Because of isCandidateForInOpt(p) */
     pTab = p->pSrc->a[0].pTab;
-    pExpr = p->pEList->a[0].pExpr;
-    iCol = (i16)pExpr->iColumn;
-   
+
     /* Code an OP_Transaction and OP_TableLock for <table>. */
     iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
     sqlite3CodeVerifySchema(pParse, iDb);
@@ -1891,7 +1906,7 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, u32 inFlags, int *prRhsHasNull){
     ** successful here.
     */
     assert(v);
-    if( iCol<0 ){
+    if( nExpr==1 && pEList->a[0].pExpr->iColumn<0 ){
       int iAddr = sqlite3CodeOnce(pParse);
       VdbeCoverage(v);
 
@@ -1901,23 +1916,54 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, u32 inFlags, int *prRhsHasNull){
       sqlite3VdbeJumpHere(v, iAddr);
     }else{
       Index *pIdx;                         /* Iterator variable */
+      int affinity_ok = 1;
+      int i;
+
+      /* Check that the affinity that will be used to perform each 
+      ** comparison is the same as the affinity of each column. If
+      ** it not, it is not possible to use any index.  */
+      for(i=0; i<nExpr && affinity_ok; i++){
+        Expr *pLhs = exprVectorField(pX->pLeft, i);
+        int iCol = pEList->a[i].pExpr->iColumn;
+        char idxaff = pTab->aCol[iCol].affinity;
+        char cmpaff = sqlite3CompareAffinity(pLhs, idxaff);
+        switch( cmpaff ){
+          case SQLITE_AFF_BLOB:
+            break;
+          case SQLITE_AFF_TEXT:
+            affinity_ok = (idxaff==SQLITE_AFF_TEXT);
+            break;
+          default:
+            affinity_ok = sqlite3IsNumericAffinity(idxaff);
+        }
+      }
 
       /* The collation sequence used by the comparison. If an index is to
       ** be used in place of a temp-table, it must be ordered according
       ** to this collation sequence.  */
-      CollSeq *pReq = sqlite3BinaryCompareCollSeq(pParse, pX->pLeft, pExpr);
-
-      /* Check that the affinity that will be used to perform the 
-      ** comparison is the same as the affinity of the column. If
-      ** it is not, it is not possible to use any index.
-      */
-      int affinity_ok = sqlite3IndexAffinityOk(pX, pTab->aCol[iCol].affinity);
 
       for(pIdx=pTab->pIndex; pIdx && eType==0 && affinity_ok; pIdx=pIdx->pNext){
-        if( (pIdx->aiColumn[0]==iCol)
-         && sqlite3FindCollSeq(db, ENC(db), pIdx->azColl[0], 0)==pReq
-         && (!mustBeUnique || (pIdx->nKeyCol==1 && IsUniqueIndex(pIdx)))
-        ){
+        if( pIdx->nKeyCol<nExpr ) continue;
+        if( mustBeUnique && (pIdx->nKeyCol!=nExpr || !IsUniqueIndex(pIdx)) ){
+          continue;
+        }
+
+        for(i=0; i<nExpr; i++){
+          Expr *pLhs = exprVectorField(pX->pLeft, i);
+          Expr *pRhs = pEList->a[i].pExpr;
+          CollSeq *pReq = sqlite3BinaryCompareCollSeq(pParse, pLhs, pRhs);
+          int j;
+
+          for(j=0; j<nExpr; j++){
+            if( pIdx->aiColumn[j]!=pRhs->iColumn ) continue;
+            assert( pIdx->azColl[j] );
+            if( sqlite3StrICmp(pReq->zName, pIdx->azColl[j])!=0 ) continue;
+            break;
+          }
+          if( j==nExpr ) break;
+        }
+
+        if( i==nExpr ){
           int iAddr = sqlite3CodeOnce(pParse); VdbeCoverage(v);
           sqlite3VdbeAddOp3(v, OP_OpenRead, iTab, pIdx->tnum, iDb);
           sqlite3VdbeSetP4KeyInfo(pParse, pIdx);
@@ -1925,11 +1971,13 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, u32 inFlags, int *prRhsHasNull){
           assert( IN_INDEX_INDEX_DESC == IN_INDEX_INDEX_ASC+1 );
           eType = IN_INDEX_INDEX_ASC + pIdx->aSortOrder[0];
 
-          if( prRhsHasNull && !pTab->aCol[iCol].notNull ){
+          if( prRhsHasNull && nExpr==1 
+           && !pTab->aCol[pEList->a[0].pExpr->iColumn].notNull 
+          ){
 #ifdef SQLITE_ENABLE_COLUMN_USED_MASK
-            const i64 sOne = 1;
+            i64 mask = (1<<nExpr)-1;
             sqlite3VdbeAddOp4Dup8(v, OP_ColumnsUsed, 
-                iTab, 0, 0, (u8*)&sOne, P4_INT64);
+                iTab, 0, 0, (u8*)&mask, P4_INT64);
 #endif
             *prRhsHasNull = ++pParse->nMem;
             sqlite3SetHasNullFlag(v, iTab, *prRhsHasNull);
@@ -1954,7 +2002,6 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, u32 inFlags, int *prRhsHasNull){
   ){
     eType = IN_INDEX_NOOP;
   }
-     
 
   if( eType==0 ){
     /* Could not find an existing table or index to use as the RHS b-tree.
