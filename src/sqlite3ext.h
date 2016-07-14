@@ -282,8 +282,8 @@ struct sqlite3_api_routines {
   /* Version 3.12.0 and later */
   int (*system_errno)(sqlite3*);
   /* Version 3.14.0 and later */
-  int (*trace_v2)(sqlite3*,int(*)(unsigned,void*,void*,sqlite3_uint64),
-      unsigned,void*);
+  int (*trace_v2)(sqlite3*,int(*)(unsigned,void*,void*,void*),unsigned,void*);
+  char *(*expanded_sql)(sqlite3_stmt*);
 };
 
 /*
@@ -531,6 +531,7 @@ struct sqlite3_api_routines {
 #define sqlite3_system_errno           sqlite3_api->system_errno
 /* Version 3.14.0 and later */
 #define sqlite3_trace_v2               sqlite3_api->trace_v2
+#define sqlite3_expanded_sql           sqlite3_api->expanded_sql
 #endif /* !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION) */
 
 #if !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION)

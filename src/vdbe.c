@@ -6785,27 +6785,21 @@ case OP_Init: {          /* jump */
   char *z;
 
 #ifndef SQLITE_OMIT_TRACE
-  if( (db->mTrace & (SQLITE_TRACE_SQL|SQLITE_TRACE_STMT|SQLITE_TRACE_LEGACY))!=0
+  if( (db->mTrace & (SQLITE_TRACE_STMT|SQLITE_TRACE_LEGACY))!=0
    && !p->doingRerun
    && (zTrace = (pOp->p4.z ? pOp->p4.z : p->zSql))!=0
   ){
-    if( db->mTrace & (SQLITE_TRACE_SQL|SQLITE_TRACE_LEGACY) ){
-      z = sqlite3VdbeExpandSql(p, zTrace);
+    z = sqlite3VdbeExpandSql(p, zTrace);
 #ifndef SQLITE_OMIT_DEPRECATED
-      if( SQLITE_TRACE_LEGACY ){
-        void (*x)(void*,const char*);
-        x = (void(*)(void*,const char*))db->xTrace;
-        x(db->pTraceArg, z);
-      }else
+    if( db->mTrace & SQLITE_TRACE_LEGACY ){
+      void (*x)(void*,const char*) = (void(*)(void*,const char*))db->xTrace;
+      x(db->pTraceArg, z);
+    }else
 #endif
-      {
-        db->xTrace(SQLITE_TRACE_SQL,db->pTraceArg,z,0);
-      }
-      sqlite3DbFree(db, z);
+    {
+      (void)db->xTrace(SQLITE_TRACE_STMT,db->pTraceArg,p,z);
     }
-    if( db->mTrace & SQLITE_TRACE_STMT ){
-      (void)db->xTrace(SQLITE_TRACE_STMT,db->pTraceArg,p,0);
-    }
+    sqlite3_free(z);
   }
 #ifdef SQLITE_USE_FCNTL_TRACE
   zTrace = (pOp->p4.z ? pOp->p4.z : p->zSql);

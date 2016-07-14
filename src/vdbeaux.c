@@ -73,6 +73,21 @@ const char *sqlite3_sql(sqlite3_stmt *pStmt){
 }
 
 /*
+** Return the SQL associated with a prepared statement with
+** bound parameters expanded.  Space to hold the returned string is
+** obtained from sqlite3_malloc().  The caller is responsible for
+** freeing the returned string by passing it to sqlite3_free().
+**
+** The SQLITE_TRACE_SIZE_LIMIT puts an upper bound on the size of
+** expanded bound parameters.
+*/
+char *sqlite3_expanded_sql(sqlite3_stmt *pStmt){
+  Vdbe *p = (Vdbe *)pStmt;
+  return p ? sqlite3VdbeExpandSql(p, p->zSql) : 0;
+  if( p->zSql==0 ) return 0;
+}
+
+/*
 ** Swap all content between two VDBE structures.
 */
 void sqlite3VdbeSwap(Vdbe *pA, Vdbe *pB){

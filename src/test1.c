@@ -4386,6 +4386,26 @@ static int test_sql(
   Tcl_SetResult(interp, (char *)sqlite3_sql(pStmt), TCL_VOLATILE);
   return TCL_OK;
 }
+static int test_ex_sql(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_stmt *pStmt;
+  char *z;
+
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "STMT");
+    return TCL_ERROR;
+  }
+
+  if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
+  z = sqlite3_expanded_sql(pStmt);
+  Tcl_SetResult(interp, z, TCL_VOLATILE);
+  sqlite3_free(z);
+  return TCL_OK;
+}
 
 /*
 ** Usage: sqlite3_column_count STMT 
@@ -7276,6 +7296,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_changes",               test_changes       ,0 },
      { "sqlite3_step",                  test_step          ,0 },
      { "sqlite3_sql",                   test_sql           ,0 },
+     { "sqlite3_expanded_sql",          test_ex_sql        ,0 },
      { "sqlite3_next_stmt",             test_next_stmt     ,0 },
      { "sqlite3_stmt_readonly",         test_stmt_readonly ,0 },
      { "sqlite3_stmt_busy",             test_stmt_busy     ,0 },
