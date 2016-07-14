@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sin\sshell.c\sfor\sNetBSD.
-D 2016-07-13T13:05:13.449
+C Fix\sALTER\sTABLE\sso\sthat\sit\sdoes\snot\spromote\sthe\sschema\sversion\spast\s3,\sas\nthat\swill\scause\sDESC\sindexes\sto\sgo\scorrupt.\nTicket\s[f68bf68513a1c].
+D 2016-07-14T19:13:11.812
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -320,7 +320,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c 1bb0709b3048e24217b80ec6bd78a3e99a47c01b
+F src/alter.c cc28ab933ae615b22add0d609794ffb6596b42ea
 F src/analyze.c 37fedc80ac966ce1745811746e68e4d8fa64c7fe
 F src/attach.c 771153bd1f4ab0b97a44a13dde2c7e5e1efeba22
 F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
@@ -475,8 +475,8 @@ F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 6ff7b43c2b4b905c74dc4a813d201d0fa64c5783
 F test/alter.test 2facdddf08d0d48e75dc6cc312cd2b030f4835dd
 F test/alter2.test 7ea05c7d92ac99349a802ef7ada17294dd647060
-F test/alter3.test b3568d11c38c4599c92f24242eda34144d78dc10
-F test/alter4.test c461150723ac957f3b2214aa0b11552cd72023ec
+F test/alter3.test 4d79934d812eaeacc6f22781a080f8cfe012fdc3
+F test/alter4.test 0c33c542247ba5aee4f4a0133ac44bcf8f97e5e0
 F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
 F test/amatch1.test b5ae7065f042b7f4c1c922933f4700add50cdb9f
 F test/analyze.test 3eb35a4af972f98422e5dc0586501b17d103d321
@@ -1505,7 +1505,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 021d0fb8d85e44839d2b4fdb90b15f0e1f2442e6
-R f2c7097376b33c065f9732879605d098
+P 824b39e54fb9ba562be4d92cc9a54aee1cdf84cb
+R 7d842c7254944c448483c1d7ddff9ad6
 U drh
-Z e160e6d632f23e86ebc551e9950cc211
+Z f6a6c237e43006b812e6af2a3e69c586
