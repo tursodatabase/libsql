@@ -1,5 +1,5 @@
-C Initial\swork\son\sthe\sTcl\sAPI\sinterface\sto\sthe\snew\ssqlite3_trace_v2()\sfunction.
-D 2016-07-14T21:26:09.090
+C More\swork\son\sthe\sTcl\sinterface\sand\stests\sfor\sthe\ssqlite3_trace_v2()\sAPI.
+D 2016-07-14T23:17:03.656
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -392,7 +392,7 @@ F src/sqliteInt.h 48cd97eb134665348393dfe277b4c14d1085bfc7
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c 5b18f9526900f61189ab0b83f1ef41d9f871a2ab
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
-F src/tclsqlite.c 361167055f0d0d9883b729f1db698edcd3b46065
+F src/tclsqlite.c 573e63c959b314d77486f3565fa79c60cda3df7e
 F src/test1.c 5124aff86fba753a6994e9621696ccfdc8bbf24e
 F src/test2.c 5586f43fcd9a1be0830793cf9d354082c261b25b
 F src/test3.c c75c8af0eadb335236c9e61b51044c58a8f7dd59
@@ -1285,6 +1285,7 @@ F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
 F test/tpch01.test 04adbf8d8300fa60a222f28d901abd76e7be6dd4
 F test/trace.test 6f676313e3ebd2a50585036d2f212a3319dd5836
 F test/trace2.test f5cb67ad3bc09e0c58e8cca78dfd0b5639259983
+F test/trace3.test bc598719949e59b8ba5152cc42fea75e99766478
 F test/trans.test 6e1b4c6a42dba31bd65f8fa5e61a2708e08ddde6
 F test/trans2.test 62bd045bfc7a1c14c5ba83ba64d21ade31583f76
 F test/trans3.test 91a100e5412b488e22a655fe423a14c26403ab94
@@ -1505,7 +1506,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e7d18c70d2b8f09c9f5b978fe3d69d1088e42322
-R 85912bc13f3699d6087855b14808f819
+P 7b59fa40a01c89cc98414d90a798169c26e04256
+R f3e8ed411550909534d86cfeab7a6746
 U mistachkin
-Z 312d6409632132f635d6a5f40333e628
+Z 5840e23d72dcfac70e0e20acc9abb290

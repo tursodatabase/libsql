@@ -2939,15 +2939,50 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
         Tcl_AppendResult(interp, pDb->zTraceV2, (char*)0);
       }
     }else{
-      Tcl_WideInt wMask;
       char *zTraceV2;
       int len;
+      Tcl_WideInt wMask = 0;
       if( objc==4 ){
-        if( TCL_OK!=Tcl_GetWideIntFromObj(interp, objv[3], &wMask) ){
+        static const char *TTYPE_strs[] = {
+          "statement", "profile", "row", "close", 0
+        };
+        enum TTYPE_enum {
+          TTYPE_STMT, TTYPE_PROFILE, TTYPE_ROW, TTYPE_CLOSE
+        };
+        int i;
+        if( TCL_OK!=Tcl_ListObjLength(interp, objv[3], &len) ){
           return TCL_ERROR;
         }
+        for(i=0; i<len; i++){
+          Tcl_Obj *pObj;
+          int ttype;
+          if( TCL_OK!=Tcl_ListObjIndex(interp, objv[3], i, &pObj) ){
+            return TCL_ERROR;
+          }
+          if( Tcl_GetIndexFromObj(interp, pObj, TTYPE_strs, "trace type",
+                                  0, &ttype)!=TCL_OK ){
+            Tcl_WideInt wType;
+            Tcl_Obj *pError = Tcl_DuplicateObj(Tcl_GetObjResult(interp));
+            Tcl_IncrRefCount(pError);
+            if( TCL_OK==Tcl_GetWideIntFromObj(interp, pObj, &wType) ){
+              Tcl_DecrRefCount(pError);
+              wMask |= wType;
+            }else{
+              Tcl_SetObjResult(interp, pError);
+              Tcl_DecrRefCount(pError);
+              return TCL_ERROR;
+            }
+          }else{
+            switch( (enum TTYPE_enum)ttype ){
+              case TTYPE_STMT:    wMask |= SQLITE_TRACE_STMT;    break;
+              case TTYPE_PROFILE: wMask |= SQLITE_TRACE_PROFILE; break;
+              case TTYPE_ROW:     wMask |= SQLITE_TRACE_ROW;     break;
+              case TTYPE_CLOSE:   wMask |= SQLITE_TRACE_CLOSE;   break;
+            }
+          }
+        }
       }else{
-        wMask = SQLITE_TRACE_STMT;
+        wMask = SQLITE_TRACE_STMT; /* use the "legacy" default */
       }
       if( pDb->zTraceV2 ){
         Tcl_Free(pDb->zTraceV2);
