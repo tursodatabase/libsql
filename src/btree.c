@@ -7340,7 +7340,7 @@ static int balance_nonroot(
       assert( r<nMaxCells );
       (void)cachedCellSize(&b, r);
       if( szRight!=0
-       && (bBulk || szRight+b.szCell[d]+2 > szLeft-(b.szCell[r]+2)) ){
+       && (bBulk || szRight+b.szCell[d]+2 > szLeft-(b.szCell[r]+(i==k-1?0:2)))){
         break;
       }
       szRight += b.szCell[d] + 2;
