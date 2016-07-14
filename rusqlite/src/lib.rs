@@ -306,9 +306,7 @@ impl Connection {
         where F: FnOnce(&Row) -> T
     {
         let mut stmt = try!(self.prepare(sql));
-        let mut rows = try!(stmt.query(params));
-
-        rows.get_expected_row().map(|r| f(&r))
+        stmt.query_row(params, f)
     }
 
     /// Convenience method to execute a query that is expected to return a single row,
