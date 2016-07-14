@@ -6786,7 +6786,7 @@ static int balance_nonroot(
     assert( d<nMaxCells );
     assert( r<nMaxCells );
     while( szRight==0 
-       || (!bBulk && szRight+szCell[d]+2<=szLeft-(szCell[r]+2)) 
+       || (!bBulk && szRight+szCell[d]+2<=szLeft-(szCell[r]+(i==k-1?0:2))) 
     ){
       szRight += szCell[d] + 2;
       szLeft -= szCell[r] + 2;
