@@ -83,8 +83,8 @@ const char *sqlite3_sql(sqlite3_stmt *pStmt){
 */
 char *sqlite3_expanded_sql(sqlite3_stmt *pStmt){
   Vdbe *p = (Vdbe *)pStmt;
-  return p ? sqlite3VdbeExpandSql(p, p->zSql) : 0;
-  if( p->zSql==0 ) return 0;
+  if( p==0 || p->zSql==0 ) return 0;
+  return sqlite3VdbeExpandSql(p, p->zSql);
 }
 
 /*
