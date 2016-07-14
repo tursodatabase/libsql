@@ -282,7 +282,7 @@ struct sqlite3_api_routines {
   /* Version 3.12.0 and later */
   int (*system_errno)(sqlite3*);
   /* Version 3.14.0 and later */
-  int (*trace_v2)(sqlite3*,int(*)(unsigned,void*,void*,void*),unsigned,void*);
+  int (*trace_v2)(sqlite3*,unsigned,int(*)(unsigned,void*,void*,void*),void*);
   char *(*expanded_sql)(sqlite3_stmt*);
 };
 

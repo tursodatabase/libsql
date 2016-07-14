@@ -1,5 +1,5 @@
-C Add\sthe\ssqlite3_expanded_sql()\sinterface.\s\sRefinements\sto\sthe\nsqlite3_trace_v2()\sinterface\sto\smake\sit\smore\suseful.
-D 2016-07-14T01:09:08.369
+C Fix\sa\sparameter\smisordering\son\ssqlite3_trace_v2()\sin\sthe\sloadable\sextension\ninterface.
+D 2016-07-14T01:13:36.176
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -387,7 +387,7 @@ F src/select.c f3c6e9065fb34f6a23af27ec7f1f717ffbfc2ee4
 F src/shell.c a8a9e392a6a2777fabf5feb536931cb190f235e5
 F src/sqlite.h.in 6ba80e88ee17b9071f35121271784ecef60df863
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
-F src/sqlite3ext.h 6fb1639d41907544cb3905c69a348ee64c5da79e
+F src/sqlite3ext.h 46f300b6e300e0fa916d7d58c44b53415b8471a9
 F src/sqliteInt.h 48cd97eb134665348393dfe277b4c14d1085bfc7
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c 5b18f9526900f61189ab0b83f1ef41d9f871a2ab
@@ -1505,7 +1505,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f33526a341132435cb4185149a784eef6b3a1a2d
-R b996b3134868ad007e1e44124ba2e740
+P 99ee7ee58d45b29a0000492306ddc0b90563ff51
+R 2e489e2cf495d4b07e42b94b658ce2d8
 U drh
-Z 809ea44b43d6348d635e64228e5049a8
+Z d214f48401d2ba878ebf65269a7b92c1
