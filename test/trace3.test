@@ -87,6 +87,22 @@ do_test trace3-3.3 {
   }
   set ::stmtlist(record)
 } {/^\{-?\d+ \{SELECT a, b FROM t1 ORDER BY a;\}\}$/}
+do_test trace3-3.4 {
+  set ::stmtlist(record) {}
+  db trace_v2 trace_v2_record statement
+  execsql {
+    SELECT a, b FROM t1 ORDER BY a;
+  }
+  set ::stmtlist(record)
+} {/^\{-?\d+ \{SELECT a, b FROM t1 ORDER BY a;\}\}$/}
+do_test trace3-3.5 {
+  set ::stmtlist(record) {}
+  db trace_v2 trace_v2_record 1
+  execsql {
+    SELECT a, b FROM t1 ORDER BY a;
+  }
+  set ::stmtlist(record)
+} {/^\{-?\d+ \{SELECT a, b FROM t1 ORDER BY a;\}\}$/}
 
 do_test trace3-4.1 {
   set ::stmtlist(record) {}
@@ -96,10 +112,26 @@ do_test trace3-4.1 {
   }
   set ::stmtlist(record)
 } {/^\{-?\d+ -?\d+\}$/}
+do_test trace3-4.2 {
+  set ::stmtlist(record) {}
+  db trace_v2 trace_v2_record 2
+  execsql {
+    SELECT a, b FROM t1 ORDER BY a;
+  }
+  set ::stmtlist(record)
+} {/^\{-?\d+ -?\d+\}$/}
 
 do_test trace3-5.1 {
   set ::stmtlist(record) {}
   db trace_v2 trace_v2_record row
+  execsql {
+    SELECT a, b FROM t1 ORDER BY a;
+  }
+  set ::stmtlist(record)
+} "/^[string trim [string repeat {\d+ } 16]]\$/"
+do_test trace3-5.2 {
+  set ::stmtlist(record) {}
+  db trace_v2 trace_v2_record 4
   execsql {
     SELECT a, b FROM t1 ORDER BY a;
   }
@@ -162,10 +194,14 @@ do_test trace3-8.8 {
 } {{} {SELECT a, b FROM t1 WHERE b = x'123456' ORDER BY a;}}
 
 do_test trace3-9.1 {
+  sqlite3_finalize $STMT
+} {SQLITE_OK}
+
+do_test trace3-10.1 {
   db trace_v2 ""
   db trace_v2
 } {}
-do_test trace3-9.2 {
+do_test trace3-10.2 {
   unset -nocomplain ::stmtlist
   db trace_v2 "" {statement profile row}
   execsql {
@@ -174,9 +210,18 @@ do_test trace3-9.2 {
   array get ::stmtlist
 } {}
 
-do_test trace3-10.1 {
+do_test trace3-11.1 {
   set ::stmtlist(record) {}
   db trace_v2 trace_v2_record close
+  db close
+  set ::stmtlist(record)
+} {/^-?\d+$/}
+
+reset_db
+
+do_test trace3-11.2 {
+  set ::stmtlist(record) {}
+  db trace_v2 trace_v2_record 8
   db close
   set ::stmtlist(record)
 } {/^-?\d+$/}
