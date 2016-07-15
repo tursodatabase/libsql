@@ -601,6 +601,7 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
   Expr *pDflt;              /* Default value for the new column */
   sqlite3 *db;              /* The database connection; */
   Vdbe *v = pParse->pVdbe;  /* The prepared statement under construction */
+  int r1;                   /* Temporary registers */
 
   db = pParse->db;
   if( pParse->nErr || db->mallocFailed ) return;
@@ -695,16 +696,18 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
     db->flags = savedDbFlags;
   }
 
-  /* If the default value of the new column is NULL, then the file
-  ** format to 2. If the default value of the new column is not NULL,
-  ** the file format be 3.  Back when this feature was first added
-  ** in 2006, we went to the trouble to upgrade the file format to the
-  ** minimum support values.  But 10-years on, we can assume that all
-  ** extent versions of SQLite support file-format 4, so we always and
-  ** unconditionally upgrade to 4.
+  /* Make sure the schema version is at least 3.  But do not upgrade
+  ** from less than 3 to 4, as that will corrupt any preexisting DESC
+  ** index.
   */
-  sqlite3VdbeAddOp3(v, OP_SetCookie, iDb, BTREE_FILE_FORMAT, 
-                    SQLITE_MAX_FILE_FORMAT);
+  r1 = sqlite3GetTempReg(pParse);
+  sqlite3VdbeAddOp3(v, OP_ReadCookie, iDb, r1, BTREE_FILE_FORMAT);
+  sqlite3VdbeUsesBtree(v, iDb);
+  sqlite3VdbeAddOp2(v, OP_AddImm, r1, -2);
+  sqlite3VdbeAddOp2(v, OP_IfPos, r1, sqlite3VdbeCurrentAddr(v)+2);
+  VdbeCoverage(v);
+  sqlite3VdbeAddOp3(v, OP_SetCookie, iDb, BTREE_FILE_FORMAT, 3);
+  sqlite3ReleaseTempReg(pParse, r1);
 
   /* Reload the schema of the modified table. */
   reloadTableSchema(pParse, pTab, pTab->zName);

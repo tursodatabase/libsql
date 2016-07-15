@@ -48,6 +48,8 @@ SQLITE_EXTENSION_INIT1
 #include <ctype.h>
 #include <stdio.h>
 
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+
 /*
 ** A macro to hint to the compiler that a function should not be
 ** inlined.
@@ -834,6 +836,7 @@ static sqlite3_module CsvModuleFauxWrite = {
 };
 #endif /* SQLITE_TEST */
 
+#endif /* !defined(SQLITE_OMIT_VIRTUALTABLE) */
 
 
 #ifdef _WIN32
@@ -849,6 +852,7 @@ int sqlite3_csv_init(
   char **pzErrMsg, 
   const sqlite3_api_routines *pApi
 ){
+#ifndef SQLITE_OMIT_VIRTUALTABLE	
   int rc;
   SQLITE_EXTENSION_INIT2(pApi);
   rc = sqlite3_create_module(db, "csv", &CsvModule, 0);
@@ -858,4 +862,7 @@ int sqlite3_csv_init(
   }
 #endif
   return rc;
+#else
+  return SQLITE_OK;
+#endif
 }
