@@ -129,7 +129,7 @@ do_test trace3-7.1 {
 
   set STMT [sqlite3_prepare_v2 $DB \
       "SELECT a, b FROM t1 WHERE b = ? ORDER BY a;" -1 TAIL]
-} {/^[0-9A-F]+$/}
+} {/^[0-9A-Fa-f]+$/}
 
 do_test trace3-8.1 {
   list [sqlite3_bind_null $STMT 1] [sqlite3_expanded_sql $STMT]
