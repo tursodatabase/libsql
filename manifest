@@ -1,5 +1,5 @@
-C Fix\sALTER\sTABLE\sso\sthat\sit\sdoes\snot\spromote\sthe\sschema\sversion\spast\s3,\sas\nthat\swill\scause\sDESC\sindexes\sto\sgo\scorrupt.\nTicket\s[f68bf68513a1c].
-D 2016-07-14T19:13:11.812
+C Disable\sthe\sCSV\sextension\swhen\svirtual\stables\sare\sdisabled.
+D 2016-07-15T02:50:18.913
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -207,7 +207,7 @@ F ext/misc/amatch.c 211108e201105e4bb0c076527b8cfd34330fc234
 F ext/misc/carray.c 214c9e9d909ceaae3b2f5f917cc2204deca85cc6
 F ext/misc/closure.c 0d2a038df8fbae7f19de42e7c7d71f2e4dc88704
 F ext/misc/compress.c 122faa92d25033d6c3f07c39231de074ab3d2e83
-F ext/misc/csv.c b92692b057707f5b7bb91feaedde790b2e38304e
+F ext/misc/csv.c f51b0566ea15e24cce871037e30a4db99ea6cf77
 F ext/misc/eval.c f971962e92ebb8b0a4e6b62949463ee454d88fa2
 F ext/misc/fileio.c d4171c815d6543a9edef8308aab2951413cd8d0f
 F ext/misc/fuzzer.c 7c64b8197bb77b7d64eff7cac7848870235d4c25
@@ -1505,7 +1505,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 824b39e54fb9ba562be4d92cc9a54aee1cdf84cb
-R 7d842c7254944c448483c1d7ddff9ad6
+P a7db6e45ad45be9b3003f61d4163f543498a7c9d
+R ec00a189cb07c46ebd136f03f1e34d37
 U drh
-Z f6a6c237e43006b812e6af2a3e69c586
+Z 4982072efce5132597470baa33eb57d2
