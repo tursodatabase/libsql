@@ -1,5 +1,5 @@
-C More\swork\son\sthe\sTcl\sinterface\sand\stests\sfor\sthe\ssqlite3_trace_v2()\sAPI.
-D 2016-07-14T23:17:03.656
+C Add\stests,\sincluding\ssome\sfor\sthe\ssqlite3_expanded_sql()\sAPI.
+D 2016-07-15T00:07:47.847
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -1285,7 +1285,7 @@ F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
 F test/tpch01.test 04adbf8d8300fa60a222f28d901abd76e7be6dd4
 F test/trace.test 6f676313e3ebd2a50585036d2f212a3319dd5836
 F test/trace2.test f5cb67ad3bc09e0c58e8cca78dfd0b5639259983
-F test/trace3.test bc598719949e59b8ba5152cc42fea75e99766478
+F test/trace3.test fb9242446aeef4f6e559edb126b3d67185b9a1c0
 F test/trans.test 6e1b4c6a42dba31bd65f8fa5e61a2708e08ddde6
 F test/trans2.test 62bd045bfc7a1c14c5ba83ba64d21ade31583f76
 F test/trans3.test 91a100e5412b488e22a655fe423a14c26403ab94
@@ -1506,7 +1506,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7b59fa40a01c89cc98414d90a798169c26e04256
-R f3e8ed411550909534d86cfeab7a6746
+P f3c4aa97d8c10fdb69efc6405b5fa45781f45a61
+R 433ed72af7d798e30b744dbac703a881
 U mistachkin
-Z 5840e23d72dcfac70e0e20acc9abb290
+Z c19e7bc180fcaf3fc05253b5c21f7fa0

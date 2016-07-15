@@ -8,8 +8,9 @@
 #    May you share freely, never taking more than you give.
 #
 #***********************************************************************
-# This file implements regression tests for SQLite library.  The focus
-# of this test file is the "sqlite3_trace_v2()" API.
+# This file implements regression tests for SQLite library.  The focus of
+# this test file is the "sqlite3_trace_v2()" and "sqlite3_expanded_sql()"
+# APIs.
 #
 
 set testdir [file dirname $argv0]
@@ -113,8 +114,67 @@ do_test trace3-6.1 {
   }
   set ::stmtlist(record)
 } "/^[string trim [string repeat {-?\d+ } 16]] \\\{-?\\d+ -?\\d+\\\}\$/"
+do_test trace3-6.2 {
+  set ::stmtlist(record) {}
+  db trace_v2 trace_v2_record {statement profile row}
+  execsql {
+    SELECT a, b FROM t1 ORDER BY a;
+  }
+  set ::stmtlist(record)
+} "/^\\\{-?\\d+ \\\{SELECT a, b FROM t1 ORDER BY a;\\\}\\\} [string trim \
+[string repeat {-?\d+ } 16]] \\\{-?\\d+ -?\\d+\\\}\$/"
 
 do_test trace3-7.1 {
+  set DB [sqlite3_connection_pointer db]
+
+  set STMT [sqlite3_prepare_v2 $DB \
+      "SELECT a, b FROM t1 WHERE b = ? ORDER BY a;" -1 TAIL]
+} {/^[0-9A-F]+$/}
+
+do_test trace3-8.1 {
+  list [sqlite3_bind_null $STMT 1] [sqlite3_expanded_sql $STMT]
+} {{} {SELECT a, b FROM t1 WHERE b = NULL ORDER BY a;}}
+do_test trace3-8.2 {
+  list [sqlite3_bind_int $STMT 1 123] [sqlite3_expanded_sql $STMT]
+} {{} {SELECT a, b FROM t1 WHERE b = 123 ORDER BY a;}}
+do_test trace3-8.3 {
+  list [sqlite3_bind_int64 $STMT 1 123] [sqlite3_expanded_sql $STMT]
+} {{} {SELECT a, b FROM t1 WHERE b = 123 ORDER BY a;}}
+do_test trace3-8.4 {
+  list [sqlite3_bind_text $STMT 1 "some string" 11] \
+      [sqlite3_expanded_sql $STMT]
+} {{} {SELECT a, b FROM t1 WHERE b = 'some string' ORDER BY a;}}
+do_test trace3-8.5 {
+  list [sqlite3_bind_text $STMT 1 "some 'bad' string" 17] \
+      [sqlite3_expanded_sql $STMT]
+} {{} {SELECT a, b FROM t1 WHERE b = 'some ''bad'' string' ORDER BY a;}}
+do_test trace3-8.6 {
+  list [sqlite3_bind_double $STMT 1 123] [sqlite3_expanded_sql $STMT]
+} {{} {SELECT a, b FROM t1 WHERE b = 123.0 ORDER BY a;}}
+do_test trace3-8.7 {
+  list [sqlite3_bind_text16 $STMT 1 \
+      [encoding convertto unicode hi\000yall\000] 16] \
+      [sqlite3_expanded_sql $STMT]
+} {{} {SELECT a, b FROM t1 WHERE b = 'hi' ORDER BY a;}}
+do_test trace3-8.8 {
+  list [sqlite3_bind_blob $STMT 1 "\x12\x34\x56" 3] \
+      [sqlite3_expanded_sql $STMT]
+} {{} {SELECT a, b FROM t1 WHERE b = x'123456' ORDER BY a;}}
+
+do_test trace3-9.1 {
+  db trace_v2 ""
+  db trace_v2
+} {}
+do_test trace3-9.2 {
+  unset -nocomplain ::stmtlist
+  db trace_v2 "" {statement profile row}
+  execsql {
+    SELECT a, b FROM t1 ORDER BY a;
+  }
+  array get ::stmtlist
+} {}
+
+do_test trace3-10.1 {
   set ::stmtlist(record) {}
   db trace_v2 trace_v2_record close
   db close
