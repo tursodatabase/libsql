@@ -192,6 +192,10 @@ do_test trace3-8.8 {
   list [sqlite3_bind_blob $STMT 1 "\x12\x34\x56" 3] \
       [sqlite3_expanded_sql $STMT]
 } {{} {SELECT a, b FROM t1 WHERE b = x'123456' ORDER BY a;}}
+do_test trace3-8.9 {
+  list [sqlite3_bind_blob $STMT 1 "\xAB\xCD\xEF" 3] \
+      [sqlite3_expanded_sql $STMT]
+} {{} {SELECT a, b FROM t1 WHERE b = x'abcdef' ORDER BY a;}}
 
 do_test trace3-9.1 {
   sqlite3_finalize $STMT
