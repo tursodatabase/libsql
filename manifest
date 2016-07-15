@@ -1,5 +1,5 @@
-C Corrections\sand\senhancements\sfor\sthe\snew\stests.
-D 2016-07-15T00:23:01.539
+C Fix\stypo\sin\ssqlite3_trace_v2().
+D 2016-07-15T00:39:47.683
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -348,7 +348,7 @@ F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/insert.c 8f4e9fcbd8e95e85f15647ba8b413b18d556ec2b
 F src/legacy.c 75d3023be8f0d2b99d60f905090341a03358c58e
 F src/loadext.c 4237fd37ca589f1d90b3ea925dd9df20da8e0c84
-F src/main.c ade3b39f3bde9212b3fabcff2367d29052002df6
+F src/main.c 2d3e62a971e7f169a74448e81af9ebde95b07381
 F src/malloc.c 1443d1ad95d67c21d77af7ae3f44678252f0efec
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 6919bcf12f221868ea066eec27e579fed95ce98b
@@ -1506,7 +1506,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5ccbeeea7d7933402f7ccb0b1c9b3038989ca746
-R 614bfc4ccb78b65b369725b4f27e97e3
+P 20e74c638537aa207de41a4f3c932cc05024ea9a
+R 6a6c93d9b0435cebe88086cbb6537465
 U mistachkin
-Z a476d2a0aebfb671981b15fc2ac6c121
+Z 470459b5b02059a7c191e033bd2eea7f

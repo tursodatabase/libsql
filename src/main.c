@@ -1834,8 +1834,7 @@ int sqlite3_trace_v2(
 ){
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( !sqlite3SafetyCheckOk(db) ){
-    (void)SQLITE_MISUSE_BKPT;
-    return 0;
+    return SQLITE_MISUSE_BKPT;
   }
 #endif
   sqlite3_mutex_enter(db->mutex);
