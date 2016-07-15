@@ -3510,7 +3510,9 @@ int sqlite3_prepare16_v2(
 ** will return "SELECT 2345,NULL".
 **
 ** The [SQLITE_TRACE_SIZE_LIMIT] setting limits the size of a 
-** bound parameter expansion.
+** bound parameter expansion.  If SQLite is built with the
+** [SQLITE_OMIT_TRACE] compile-time option then the sqlite3_expanded_sql()
+** interface is non-functional and always returns NULL.
 **
 ** ^The string returned by sqlite3_sql(P) is managed by SQLite and is
 ** automatically freed when the prepared statement is finalized.

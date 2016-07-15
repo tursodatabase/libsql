@@ -3653,7 +3653,7 @@ static int test_bind_blob(
   if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
   if( Tcl_GetIntFromObj(interp, objv[2], &idx) ) return TCL_ERROR;
 
-  value = Tcl_GetByteArrayFromObj(objv[3], &len);
+  value = (char*)Tcl_GetByteArrayFromObj(objv[3], &len);
   if( Tcl_GetIntFromObj(interp, objv[4], &bytes) ) return TCL_ERROR;
 
   if( bytes>len ){

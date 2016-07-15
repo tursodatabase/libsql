@@ -82,9 +82,13 @@ const char *sqlite3_sql(sqlite3_stmt *pStmt){
 ** expanded bound parameters.
 */
 char *sqlite3_expanded_sql(sqlite3_stmt *pStmt){
+#ifdef SQLITE_OMIT_TRACE
+  return 0;
+#else
   Vdbe *p = (Vdbe *)pStmt;
   if( p==0 || p->zSql==0 ) return 0;
   return sqlite3VdbeExpandSql(p, p->zSql);
+#endif
 }
 
 /*
