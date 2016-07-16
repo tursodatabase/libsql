@@ -1718,6 +1718,14 @@ static int walCheckpoint(
     i64 nSize;                    /* Current size of database file */
     u32 nBackfill = pInfo->nBackfill;
 
+    /* ELATDPP: Extra logging added to debug performance problem */
+    sqlite3_log(SQLITE_NOTICE, 
+        "wal: checkpoint salt1=%08x salt2=%08x "
+        "nBackfill=%d mxSafeFrame=%d mxFrame=%d",
+        pWal->hdr.aSalt[0], pWal->hdr.aSalt[1],
+        (int)nBackfill, (int)mxSafeFrame, (int)pWal->hdr.mxFrame
+    );
+
     /* Sync the WAL to disk */
     if( sync_flags ){
       rc = sqlite3OsSync(pWal->pWalFd, sync_flags);
@@ -2817,6 +2825,12 @@ int sqlite3WalFrames(
     iOffset += szFrame;
   }
 
+  /* ELATDPP: Extra logging added to debug performance problem */
+  sqlite3_log(SQLITE_NOTICE, "wal: write nFrame=%d iFrame=%d", 
+      iFrame - pWal->hdr.mxFrame, 
+      pWal->hdr.mxFrame+1
+  );
+
   /* If this is the end of a transaction, then we might need to pad
   ** the transaction and/or sync the WAL file.
   **
@@ -2921,6 +2935,10 @@ int sqlite3WalCheckpoint(
   int isChanged = 0;              /* True if a new wal-index header is loaded */
   int eMode2 = eMode;             /* Mode to pass to walCheckpoint() */
 
+  /* ELATDPP: Extra logging added to debug performance problem */
+  sqlite3_int64 t1, t2;
+  sqlite3OsCurrentTimeInt64(pWal->pVfs, &t1);
+
   assert( pWal->ckptLock==0 );
   assert( pWal->writeLock==0 );
 
@@ -2991,6 +3009,11 @@ int sqlite3WalCheckpoint(
   sqlite3WalEndWriteTransaction(pWal);
   walUnlockExclusive(pWal, WAL_CKPT_LOCK, 1);
   pWal->ckptLock = 0;
+
+  /* ELATDPP: Extra logging added to debug performance problem */
+  sqlite3OsCurrentTimeInt64(pWal->pVfs, &t2);
+  sqlite3_log(SQLITE_NOTICE, "wal: checkpoint rc=%d ms=%lld", rc, t2-t1);
+
   WALTRACE(("WAL%p: checkpoint %s\n", pWal, rc ? "failed" : "ok"));
   return (rc==SQLITE_OK && eMode!=eMode2 ? SQLITE_BUSY : rc);
 }
