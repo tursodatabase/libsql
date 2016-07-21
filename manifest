@@ -1,5 +1,5 @@
-C Add\sthe\slargely\suntested\sSQLITE_FTS5_NO_WITHOUT_ROWID\scompile\stime\soption\sto\sfts5.\sFor\sbuilding\sa\sdynamically\sloadable\sextension\sthat\sdoes\snot\suse\sWITHOUT\sROWID.
-D 2016-07-15T19:17:19.168
+C Add\snew\stest\sfile\svacuummem.test.\sTo\stest\sthat\sany\stemporary\smemory\sused\sby\sVACUUM\sis\sfreed\sas\ssoon\sas\sthe\sVACUUM\shas\sfinished\s(not,\sfor\sexample,\swhen\ssqlite3_close()\sis\sfinally\scalled).
+D 2016-07-21T16:43:54.563
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -1323,6 +1323,7 @@ F test/vacuum.test ce91c39f7f91a4273bf620efad21086b5aa6ef1d
 F test/vacuum2.test aa048abee196c16c9ba308465494009057b79f9b
 F test/vacuum3.test 77ecdd54592b45a0bcb133339f99f1ae0ae94d0d
 F test/vacuum4.test d3f8ecff345f166911568f397d2432c16d2867d9
+F test/vacuummem.test 09c8b72a12405649ed84564367dad729bff88760
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/veryquick.test 57ab846bacf7b90cf4e9a672721ea5c5b669b661
 F test/view.test 765802c7a66d37fabd5ac8e2f2dbe572b43eb9ab
@@ -1505,7 +1506,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ec7180892ac737f0731cf61f2d095a5c1d18ad93
-R e7e67692a9bf28fabbef5b90b609823b
+P d0a1cf1c56c237617fb73cb31f4950365b1f3e9b
+R c861801c1aa1bd5e3e0533101c0a9583
 U dan
-Z 6e92686cc60df8d9ecf6a38e315fe4e5
+Z 9b35e9b2fd0052d524acf36a9f5b4f2b
