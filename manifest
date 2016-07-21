@@ -1,5 +1,5 @@
-C Add\snew\stest\sfile\svacuummem.test.\sTo\stest\sthat\sany\stemporary\smemory\sused\sby\sVACUUM\sis\sfreed\sas\ssoon\sas\sthe\sVACUUM\shas\sfinished\s(not,\sfor\sexample,\swhen\ssqlite3_close()\sis\sfinally\scalled).
-D 2016-07-21T16:43:54.563
+C Add\sextra\stest\scases\sto\sverify\sthe\sfix\sin\s[64ca1a835].
+D 2016-07-21T18:02:20.434
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -176,7 +176,7 @@ F ext/fts5/test/fts5porter.test 7cdc07bef301d70eebbfa75dcaf45c3680e1d0e1
 F ext/fts5/test/fts5porter2.test 2e65633d58a1c525d5af0f6c01e5a59155bb3487
 F ext/fts5/test/fts5prefix.test efd42e00bb8e8a36383f25c838185508681c093f
 F ext/fts5/test/fts5query.test f5ec25f5f2fbb70033424113cdffc101b1985a40
-F ext/fts5/test/fts5rank.test 3e55e7eeb4c98728e4a3171c9e994e1a2f24eb99
+F ext/fts5/test/fts5rank.test 2bdc0c5f22ccc1f9dbe9f4d0b82a491dce6f8a32
 F ext/fts5/test/fts5rebuild.test 03935f617ace91ed23a6099c7c74d905227ff29b
 F ext/fts5/test/fts5restart.test c17728fdea26e7d0f617d22ad5b4b2862b994c17
 F ext/fts5/test/fts5rowid.test 16908a99d6efc9ba21081b4f2b86b3fc699839a6
@@ -1506,7 +1506,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d0a1cf1c56c237617fb73cb31f4950365b1f3e9b
-R c861801c1aa1bd5e3e0533101c0a9583
+P 1b1ad0b28c392ade4321734e9b022a545b845b04
+R 4cf3b663820541379bf632bbc3528bb8
 U dan
-Z 9b35e9b2fd0052d524acf36a9f5b4f2b
+Z d680066d496973101c651a3de727e285
