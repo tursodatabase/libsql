@@ -2946,10 +2946,10 @@ static int db_int(ShellState *p, const char *zSql){
 /*
 ** Convert a 2-byte or 4-byte big-endian integer into a native integer
 */
-unsigned int get2byteInt(unsigned char *a){
+static unsigned int get2byteInt(unsigned char *a){
   return (a[0]<<8) + a[1];
 }
-unsigned int get4byteInt(unsigned char *a){
+static unsigned int get4byteInt(unsigned char *a){
   return (a[0]<<24) + (a[1]<<16) + (a[2]<<8) + a[3];
 }
 

@@ -355,4 +355,23 @@ do_execsql_test alter4-9.3 {
   SELECT typeof(c), c FROM t5;
 } {real 9.22337203685478e+18}
 
+# Confirm that doing an ALTER TABLE on a legacy format database
+# does not corrupt DESC indexes.
+#
+# Ticket https://www.sqlite.org/src/tktview/f68bf68513a1c
+#
+do_test alter4-10.1 {
+  db close
+  sqlite3 db :memory:
+  db eval {
+    PRAGMA legacy_file_format=on;
+    CREATE TABLE t1(a,b,c);
+    CREATE INDEX t1a ON t1(a DESC);
+    INSERT INTO t1 VALUES(1,2,3);
+    INSERT INTO t1 VALUES(2,3,4);
+    ALTER TABLE t1 ADD COLUMN d;
+    PRAGMA integrity_check;
+  }
+} {ok}
+
 finish_test
