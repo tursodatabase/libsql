@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sseen\swith\sMSVC.
-D 2016-07-22T21:26:56.199
+C Revise\sa\swarning\sfix\sfrom\sthe\sprevious\scheck-in\sto\simprove\sclarity.\s\sAlso,\sfix\san\sincorrect\stest\sprefix\s(typo).
+D 2016-07-22T21:35:38.430
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -204,7 +204,7 @@ F ext/icu/README.txt d9fbbad0c2f647c3fdf715fc9fd64af53aedfc43
 F ext/icu/icu.c 43df9d8ef2fae7a325100ebd713ab089dc829dd7
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/misc/amatch.c 211108e201105e4bb0c076527b8cfd34330fc234
-F ext/misc/carray.c b0478416ab01368e40c4e9231c4e15c00a6c1c4c
+F ext/misc/carray.c 40c27641010a4dc67e3690bdb7c9d36ca58b3c2d
 F ext/misc/closure.c 0d2a038df8fbae7f19de42e7c7d71f2e4dc88704
 F ext/misc/compress.c 122faa92d25033d6c3f07c39231de074ab3d2e83
 F ext/misc/csv.c 816a3715356e4210dae2d242057745e937050896
@@ -616,7 +616,7 @@ F test/crashM.test d95f59046fa749b0d0822edf18a717788c8f318d
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test b5de160630b209c4b8925bdcbbaf48cc90b67fe8
 F test/cse.test 277350a26264495e86b1785f34d2d0c8600e021c
-F test/csv01.test 0929a9ce47021519512be92861f29e32d2538e5f
+F test/csv01.test e0ba3caaa57e4c667a0b45977689fb8082f14348
 F test/ctime.test 0b995accd44a52914bd4744d5c1b6e1a56c7897c
 F test/cursorhint.test 7bc346788390475e77a345da2b92270d04d35856
 F test/cursorhint2.test 2b45341d32d1aae9991a00ef31ebca339b274255
@@ -1506,7 +1506,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 87e25fc472604b3978811be53991104c665a95e7
-R 0235f59a00c54f640f61c277b29bcc69
+P 8bb6e6fcedf7d0ae796b8848593106c921ebf21a
+R 5b6ff2c3db1a5eba26e3cea3eedea20b
 U mistachkin
-Z 015e7c1f4d0390bbef94656d13220477
+Z 074e5835acae805d82010c066036788b

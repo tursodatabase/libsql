@@ -13,7 +13,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-set testprefix closure01
+set testprefix csv01
 
 ifcapable !vtab||!cte { finish_test ; return }
 
