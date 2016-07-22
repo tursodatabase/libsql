@@ -1,5 +1,5 @@
-C Add\sextra\stest\scases\sto\sverify\sthe\sfix\sin\s[64ca1a835].
-D 2016-07-21T18:02:20.434
+C Fix\sa\sproblem\swith\supper\scase\smodule\snames\sin\sthe\s"sqldiff\s--vtab"\scommand.
+D 2016-07-22T10:09:26.990
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -244,7 +244,7 @@ F ext/rbu/rbuB.test c25bc325b8072a766e56bb76c001866b405925c2
 F ext/rbu/rbuC.test efe47db508a0269b683cb2a1913a425ffd39a831
 F ext/rbu/rbu_common.tcl a38e8e2d4a50fd6aaf151633714c1b1d2fae3ead
 F ext/rbu/rbucrash.test 8d2ed5d4b05fef6c00c2a6b5f7ead71fa172a695
-F ext/rbu/rbudiff.test 4c9f8df6f723f553781d3d117501b7e9d170a145
+F ext/rbu/rbudiff.test b3c7675810b81de98a930a87fcd40d9ae545619d
 F ext/rbu/rbufault.test cc0be8d5d392d98b0c2d6a51be377ea989250a89
 F ext/rbu/rbufault2.test 9a7f19edd6ea35c4c9f807d8a3db0a03a5670c06
 F ext/rbu/rbufault3.test 54a399888ac4af44c68f9f58afbed23149428bca
@@ -1473,7 +1473,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 7ce07da76b5e745783e703a834417d725b7d45fd
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
-F tool/sqldiff.c af5d80cdc88a91a0f3cccfaa316b5a27b213568a
+F tool/sqldiff.c 4478f0d30230de6adde90bdb0bfe60f68c5ab782
 F tool/srcck1.c 4c39bdfa9a92edd20233ee720df84dbeb2417602
 F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
@@ -1506,7 +1506,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1b1ad0b28c392ade4321734e9b022a545b845b04
-R 4cf3b663820541379bf632bbc3528bb8
+P bf98a2de7ed41a8acca89d7369b353f12182cfb4
+R 21feff5d71e42b08ceb5cf54c6ef8c4f
 U dan
-Z d680066d496973101c651a3de727e285
+Z 0597e24d7597ffc51d59928722cf37fa

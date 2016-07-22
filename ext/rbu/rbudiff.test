@@ -203,7 +203,6 @@ foreach {tn init mod} {
     DELETE FROM 'x''y' WHERE rowid = 1;
     INSERT INTO 'x''y' VALUES('one two three');
   }
-
 } {
 
   forcedelete test.db test.db2
@@ -220,6 +219,65 @@ foreach {tn init mod} {
   do_test 2.$tn.2 { rbudiff_cksum test.db } [rbudiff_cksum test.db2]
 }
 
+}
+
+ifcapable fts5 {
+  foreach {tn init mod} {
+    1 {
+      CREATE VIRTUAL TABLE t1 USING fts5(c);
+      INSERT INTO t1 VALUES('a b c');
+      INSERT INTO t1 VALUES('a b c');
+    } {
+      DELETE FROM t1 WHERE rowid = 1;
+      INSERT INTO t1 VALUES('a b c');
+    }
+
+    2 {
+      CREATE VIRTUAL TABLE t1 USING FTs5(c);
+      INSERT INTO t1 VALUES('a b c');
+      INSERT INTO t1 VALUES('a b c');
+    } {
+      DELETE FROM t1 WHERE rowid = 1;
+      INSERT INTO t1 VALUES('a b c');
+    }
+
+    3 {
+      creAte    virTUal
+tablE t1 USING FTs5(c);
+      INSERT INTO t1 VALUES('a b c');
+      INSERT INTO t1 VALUES('a b c');
+    } {
+      DELETE FROM t1 WHERE rowid = 1;
+      INSERT INTO t1 VALUES('a b c');
+    }
+
+  } {
+    forcedelete test.db test.db2
+    sqlite3 db test.db
+    db eval "$init"
+    sqlite3 db test.db2
+    db eval "$init ; $mod"
+    db eval { INSERT INTO t1(t1) VALUES('optimize') }
+    db close
+
+    do_test 3.$tn.1 {
+      set sql [get_vtab_rbudiff_sql test.db test.db2]
+      apply_rbudiff $sql test.db
+    } {SQLITE_DONE}
+
+    sqlite3 db test.db
+    sqlite3 db2 test.db2
+    do_test 3.$tn.2 { 
+      db2 eval { SELECT * FROM t1 ORDER BY rowid }
+    } [db eval { SELECT * FROM t1 ORDER BY rowid }]
+
+    do_test 3.$tn.3 { 
+      db2 eval { INSERT INTO t1(t1) VALUES('integrity-check') }
+    } {}
+
+    db close
+    db2 close
+  }
 }
 
 finish_test

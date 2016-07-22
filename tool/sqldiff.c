@@ -1822,7 +1822,7 @@ const char *all_tables_sql(){
     int rc;
   
     rc = sqlite3_exec(g.db, 
-        "CREATE TEMP TABLE tblmap(module, postfix);"
+        "CREATE TEMP TABLE tblmap(module COLLATE nocase, postfix);"
         "INSERT INTO temp.tblmap VALUES"
         "('fts3', '_content'), ('fts3', '_segments'), ('fts3', '_segdir'),"
   
