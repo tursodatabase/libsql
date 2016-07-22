@@ -247,7 +247,7 @@ static int carrayFilter(
           "unknown datatype: %Q", zType);
         return SQLITE_ERROR;
       }else{
-        pCur->eType = i;
+        pCur->eType = (unsigned char)i;
       }
     }
   }else{
