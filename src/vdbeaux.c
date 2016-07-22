@@ -86,8 +86,12 @@ char *sqlite3_expanded_sql(sqlite3_stmt *pStmt){
   return 0;
 #else
   Vdbe *p = (Vdbe *)pStmt;
+  char *z;
   if( p==0 || p->zSql==0 ) return 0;
-  return sqlite3VdbeExpandSql(p, p->zSql);
+  sqlite3_mutex_enter(p->db->mutex);
+  z = sqlite3VdbeExpandSql(p, p->zSql);
+  sqlite3_mutex_leave(p->db->mutex);
+  return z;
 #endif
 }
 

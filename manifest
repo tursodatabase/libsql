@@ -1,5 +1,5 @@
-C Add\srequirements\smarks\sto\sthe\ssqlite3_expanded_sql()\sdocumentation.
-D 2016-07-22T20:20:53.758
+C Be\ssure\sto\shold\sthe\sdatabase\sconnection\smutex\swhile\scalling\ssqlite3VdbeExpand()\nfrom\swithin\ssqlite3_expanded_sql().
+D 2016-07-22T20:45:03.857
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -453,7 +453,7 @@ F src/vdbe.c 7b5570f77e32766949fd8f9478e4a9bb06e6ab24
 F src/vdbe.h 67bc551f7faf04c33493892e4b378aada823ed10
 F src/vdbeInt.h c59381049af5c7751a83456c39b80d1a6fde1f9d
 F src/vdbeapi.c 460b90f7f0894753d33df377702c1dc9cc5fa21b
-F src/vdbeaux.c 23df1e66e420a0e591bc877eace43be1f16f0f28
+F src/vdbeaux.c 7a09b945ebc4893e3a15bd68c4634d4aff34ebd5
 F src/vdbeblob.c 83d2d266383157b02e2b809350bb197e89d7895b
 F src/vdbemem.c 1ecaa5ee0caff07255f25d04e8dc88befb6f88d1
 F src/vdbesort.c 91fda3909326860382b0ca8aa251e609c6a9d62c
@@ -1506,7 +1506,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 53c25ebe34e6776a12260078852973b1d581d20f
-R d9d54b2d05c15d2014a2ffa7a3228fb1
+P 409535e6dfc307f26ea3d9f51be51c439b6d7b22
+R 2b4fbb49220ef1cdb35ff0cc787c0937
 U drh
-Z 3464c79040c125df7d1b54a6ef5c52ad
+Z 1a401e59c5d6714d520ae3898a7c3c7e
