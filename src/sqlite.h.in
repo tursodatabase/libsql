@@ -3503,14 +3503,14 @@ int sqlite3_prepare16_v2(
 ** string containing the SQL text of prepared statement P with
 ** [bound parameters] expanded.
 **
-** For example, if a prepared statement is created using the SQL
+** ^(For example, if a prepared statement is created using the SQL
 ** text "SELECT $abc,:xyz" and if parameter $abc is bound to integer 2345
 ** and parameter :xyz is unbound, then sqlite3_sql() will return
 ** the original string, "SELECT $abc,:xyz" but sqlite3_expanded_sql()
-** will return "SELECT 2345,NULL".
+** will return "SELECT 2345,NULL".)^
 **
-** The [SQLITE_TRACE_SIZE_LIMIT] setting limits the size of a 
-** bound parameter expansion.  If SQLite is built with the
+** ^The [SQLITE_TRACE_SIZE_LIMIT] setting limits the size of a 
+** bound parameter expansion.  ^If SQLite is built with the
 ** [SQLITE_OMIT_TRACE] compile-time option then the sqlite3_expanded_sql()
 ** interface is non-functional and always returns NULL.
 **

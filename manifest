@@ -1,5 +1,5 @@
-C The\ssqlite3_expanded_sql()\sfunction\scompiles,\sbut\salways\sreturns\sNULL,\swhen\nthe\sSQLITE_OMIT_TRACE\scompile-time\soption\sis\sused.
-D 2016-07-15T10:01:06.596
+C Add\srequirements\smarks\sto\sthe\ssqlite3_expanded_sql()\sdocumentation.
+D 2016-07-22T20:20:53.758
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -385,7 +385,7 @@ F src/resolve.c cca3aa77b95706df5d635a2141a4d1de60ae6598
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c f3c6e9065fb34f6a23af27ec7f1f717ffbfc2ee4
 F src/shell.c a8a9e392a6a2777fabf5feb536931cb190f235e5
-F src/sqlite.h.in aad252c428329522c4146a8da236e92496b15de5
+F src/sqlite.h.in f1e866f8b789391ba7f77f71164e51b7f8b4b111
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 46f300b6e300e0fa916d7d58c44b53415b8471a9
 F src/sqliteInt.h 48cd97eb134665348393dfe277b4c14d1085bfc7
@@ -1506,7 +1506,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d2b1fa55e8809ffc25a25f256349b8d08beadab5
-R 62f79e8e18332d747e11f9ca2d1624d9
+P 53c25ebe34e6776a12260078852973b1d581d20f
+R d9d54b2d05c15d2014a2ffa7a3228fb1
 U drh
-Z 83a3df8e5ff251b53fc0f846b015b7e8
+Z 3464c79040c125df7d1b54a6ef5c52ad
