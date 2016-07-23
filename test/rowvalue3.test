@@ -1,0 +1,52 @@
+# 2016 June 17
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing "(...) IN (SELECT ...)" expressions
+# where the SELECT statement returns more than one column.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set ::testprefix rowvalue3
+
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(a, b, c);
+  CREATE INDEX i1 ON t1(a, b);
+  INSERT INTO t1 VALUES(1, 2, 3);
+  INSERT INTO t1 VALUES(4, 5, 6);
+  INSERT INTO t1 VALUES(7, 8, 9);
+}
+
+foreach {tn sql res} {
+  1  "SELECT 1 WHERE (4, 5) IN (SELECT a, b FROM t1)"  1
+  2  "SELECT 1 WHERE (5, 5) IN (SELECT a, b FROM t1)"  {}
+  3  "SELECT 1 WHERE (5, 4) IN (SELECT a, b FROM t1)"  {}
+  4  "SELECT 1 WHERE (5, 4) IN (SELECT b, a FROM t1)"  1
+  5  "SELECT 1 WHERE (SELECT a, b FROM t1 WHERE c=6) IN (SELECT a, b FROM t1)" 1
+  6  "SELECT (5, 4) IN (SELECT a, b FROM t1)" 0
+  7  "SELECT 1 WHERE (5, 4) IN (SELECT +b, +a FROM t1)"  1
+  8  "SELECT (5, 4) IN (SELECT +b, +a FROM t1)"  1
+  9  "SELECT (1, 2) IN (SELECT rowid, b FROM t1)"  1
+  10 "SELECT 1 WHERE (1, 2) IN (SELECT rowid, b FROM t1)"  1
+  11 "SELECT 1 WHERE (1, NULL) IN (SELECT rowid, b FROM t1)"  {}
+} {
+  do_execsql_test 1.$tn $sql $res
+}
+
+#explain_i { SELECT (4, NULL) IN (SELECT a, b FROM t1) } 
+#do_execsql_test 2 { SELECT (4, NULL) IN (SELECT a, b FROM t1) } {}
+
+
+
+
+finish_test
+
