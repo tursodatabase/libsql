@@ -1612,6 +1612,39 @@ int sqlite3_stmt_status(sqlite3_stmt *pStmt, int op, int resetFlag){
   return (int)v;
 }
 
+/*
+** Return the SQL associated with a prepared statement
+*/
+const char *sqlite3_sql(sqlite3_stmt *pStmt){
+  Vdbe *p = (Vdbe *)pStmt;
+  return p ? p->zSql : 0;
+}
+
+/*
+** Return the SQL associated with a prepared statement with
+** bound parameters expanded.  Space to hold the returned string is
+** obtained from sqlite3_malloc().  The caller is responsible for
+** freeing the returned string by passing it to sqlite3_free().
+**
+** The SQLITE_TRACE_SIZE_LIMIT puts an upper bound on the size of
+** expanded bound parameters.
+*/
+char *sqlite3_expanded_sql(sqlite3_stmt *pStmt){
+#ifdef SQLITE_OMIT_TRACE
+  return 0;
+#else
+  char *z = 0;
+  const char *zSql = sqlite3_sql(pStmt);
+  if( zSql ){
+    Vdbe *p = (Vdbe *)pStmt;
+    sqlite3_mutex_enter(p->db->mutex);
+    z = sqlite3VdbeExpandSql(p, zSql);
+    sqlite3_mutex_leave(p->db->mutex);
+  }
+  return z;
+#endif
+}
+
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
 /*
 ** Allocate and populate an UnpackedRecord structure based on the serialized
