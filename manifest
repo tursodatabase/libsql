@@ -1,5 +1,5 @@
-C Fix\srecently\sadded\stests\sso\sthat\sthey\swork\sin\sall\sconfigurations.
-D 2016-07-23T14:50:26.969
+C Small\stweak\sto\sthe\sbtree\sbalancer\sfor\simproved\stree\sbalance.
+D 2016-07-23T19:18:55.177
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -327,7 +327,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 6df65fdd569c901a418887a1a76f82ec35044556
 F src/bitvec.c 3ee4c8b2c94ed3a7377256e18199e6ff5cf33f63
 F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
-F src/btree.c dc4e5f3e95fd57b610422e36e0913662ecd6814c
+F src/btree.c 6a42efa461cf3a0c33e8755e9d236371ac80d1b3
 F src/btree.h 075c45707c0f8f8af118f739f36df8098a08b7da
 F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
 F src/build.c d1fdfd7ab8f5447e494ef15825973bf0719527c6
@@ -1507,7 +1507,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 99a6c51887d9d78409944c5a028d5a3ac2e066a7
-R dcbad5b66668d4f45eebea8d8e4c4fc1
+P d0bcaf0cd92ae5bbea7ad68537ba89437d5c39e8 d2a0af7a37e390439c3001fedb5834f47fb24a1f
+R e49116b4c5057a2c64e23fc9fb71ef64
+T +closed d2a0af7a37e390439c3001fedb5834f47fb24a1f
 U drh
-Z b2cb07cac2703599b169fabec6f383c3
+Z 96bd00cbee88b7adc25980f9570baf91
