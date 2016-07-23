@@ -85,12 +85,14 @@ char *sqlite3_expanded_sql(sqlite3_stmt *pStmt){
 #ifdef SQLITE_OMIT_TRACE
   return 0;
 #else
-  Vdbe *p = (Vdbe *)pStmt;
-  char *z;
-  if( p==0 || p->zSql==0 ) return 0;
-  sqlite3_mutex_enter(p->db->mutex);
-  z = sqlite3VdbeExpandSql(p, p->zSql);
-  sqlite3_mutex_leave(p->db->mutex);
+  char *z = 0;
+  const char *zSql = sqlite3_sql(pStmt);
+  if( zSql ){
+    Vdbe *p = (Vdbe *)pStmt;
+    sqlite3_mutex_enter(p->db->mutex);
+    z = sqlite3VdbeExpandSql(p, zSql);
+    sqlite3_mutex_leave(p->db->mutex);
+  }
   return z;
 #endif
 }

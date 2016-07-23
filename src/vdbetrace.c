@@ -81,6 +81,9 @@ char *sqlite3VdbeExpandSql(
   int i;                   /* Loop counter */
   Mem *pVar;               /* Value of a host parameter */
   StrAccum out;            /* Accumulate the output here */
+#ifndef SQLITE_OMIT_UTF16
+  Mem utf8;                /* Used to convert UTF16 parameters into UTF8 for display */
+#endif
   char zBase[100];         /* Initial working space */
 
   db = p->db;
@@ -135,12 +138,16 @@ char *sqlite3VdbeExpandSql(
         int nOut;  /* Number of bytes of the string text to include in output */
 #ifndef SQLITE_OMIT_UTF16
         u8 enc = ENC(db);
-        Mem utf8;
         if( enc!=SQLITE_UTF8 ){
           memset(&utf8, 0, sizeof(utf8));
           utf8.db = db;
-          sqlite3VdbeMemSetStr(&utf8, pVar->z, pVar->n, enc, SQLITE_STATIC);
-          sqlite3VdbeChangeEncoding(&utf8, SQLITE_UTF8);
+          if( SQLITE_NOMEM== sqlite3VdbeMemSetStr(&utf8,pVar->z,pVar->n,enc,SQLITE_STATIC)
+           || SQLITE_NOMEM== sqlite3VdbeChangeEncoding(&utf8, SQLITE_UTF8)
+          ){
+            sqlite3StrAccumReset(&out);
+            sqlite3VdbeMemRelease(&utf8);
+            return 0;
+          }
           pVar = &utf8;
         }
 #endif
