@@ -390,6 +390,7 @@ ifcapable shared_cache {
   sqlite3 db file:test.db?cache=shared
 
   do_execsql_test 4.0 {
+    PRAGMA auto_vacuum=NONE;
     CREATE TABLE t1(a, b, c);
     INSERT INTO t1 VALUES(1, 2, 3);
   }
