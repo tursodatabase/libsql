@@ -1,5 +1,5 @@
-C Add\srequirements\smarks\sto\sthe\ssqlite3_trace_v2()\sinterface\sdocumentation.
-D 2016-07-23T02:07:26.475
+C Improvements\sto\ssqlite3_trace_v2()\sdocumentation.\s\sFix\sthe\nsqlite3VdbeExpandSql()\sroutine\sto\srespond\sbetter\sto\sOOM\sconditions.
+D 2016-07-23T04:58:57.202
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -385,7 +385,7 @@ F src/resolve.c cca3aa77b95706df5d635a2141a4d1de60ae6598
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c f3c6e9065fb34f6a23af27ec7f1f717ffbfc2ee4
 F src/shell.c a8a9e392a6a2777fabf5feb536931cb190f235e5
-F src/sqlite.h.in 35e253c3b408157a9edc3306d4f1b770af73a398
+F src/sqlite.h.in 3dc7317ded4bf66facd845705f45f21d03517940
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 46f300b6e300e0fa916d7d58c44b53415b8471a9
 F src/sqliteInt.h 48cd97eb134665348393dfe277b4c14d1085bfc7
@@ -457,7 +457,7 @@ F src/vdbeaux.c a32d79aeaa88dc2b97c261172d952d395254a055
 F src/vdbeblob.c 83d2d266383157b02e2b809350bb197e89d7895b
 F src/vdbemem.c 1ecaa5ee0caff07255f25d04e8dc88befb6f88d1
 F src/vdbesort.c 91fda3909326860382b0ca8aa251e609c6a9d62c
-F src/vdbetrace.c 05d1f843117c4fdcc1f8b1e950011bbeef0cef84
+F src/vdbetrace.c 41963d5376f0349842b5fc4aaaaacd7d9cdc0834
 F src/vtab.c 948d2d4984219eee37a7bf427d6667e21e6eb92e
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 02eeecc265f6ffd0597378f5d8ae9070b62a406a
@@ -1506,7 +1506,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5a027fe4127d498e0dc0d9439131c6a29085cf0a
-R 424a44eb6e790a98bbdc6c3248de6bc5
+P ebd388e94da4a2b29c2a546f832d359619803ec5
+R 19a6abe5f5ce376943dab16457333fb2
 U drh
-Z 5a7cc904a805d16230629029b0dc335a
+Z 006f9291eaaf608f3169b0980f613014

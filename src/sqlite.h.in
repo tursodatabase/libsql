@@ -2820,7 +2820,7 @@ SQLITE_DEPRECATED void *sqlite3_profile(sqlite3*,
 ** <dd>^An SQLITE_TRACE_PROFILE callback provides approximately the same
 ** information as is provided by the [sqlite3_profile()] callback.
 ** ^The P argument is a pointer to the [prepared statement] and the
-** ^X argument points to a 64-bit integer which is the estimated of
+** X argument points to a 64-bit integer which is the estimated of
 ** the number of nanosecond that the prepared statement took to run.
 ** ^The SQLITE_TRACE_PROFILE callback is invoked when the statement finishes.
 **
@@ -2850,8 +2850,8 @@ SQLITE_DEPRECATED void *sqlite3_profile(sqlite3*,
 ** function X against [database connection] D, using property mask M
 ** and context pointer P.  ^If the X callback is
 ** NULL or if the M mask is zero, then tracing is disabled.  The
-** M argument must be one or more of the [SQLITE_TRACE]
-** constants.
+** M argument should be the bitwise OR-ed combination of
+** zero or more [SQLITE_TRACE] constants.
 **
 ** ^Each call to either sqlite3_trace() or sqlite3_trace_v2() overrides 
 ** (cancels) any prior calls to sqlite3_trace() or sqlite3_trace_v2().
@@ -3509,10 +3509,13 @@ int sqlite3_prepare16_v2(
 ** the original string, "SELECT $abc,:xyz" but sqlite3_expanded_sql()
 ** will return "SELECT 2345,NULL".)^
 **
-** ^The [SQLITE_TRACE_SIZE_LIMIT] setting limits the size of a 
-** bound parameter expansion.  ^If SQLite is built with the
-** [SQLITE_OMIT_TRACE] compile-time option then the sqlite3_expanded_sql()
-** interface is non-functional and always returns NULL.
+** ^The sqlite3_expanded_sql() interface returns NULL if insufficient memory
+** is available to hold the result, or if the result would exceed the
+** the maximum string length determined by the [SQLITE_LIMIT_LENGTH].
+**
+** ^The [SQLITE_TRACE_SIZE_LIMIT] compile-time option limits the size of
+** bound parameter expansions.  ^The [SQLITE_OMIT_TRACE] compile-time
+** option causes sqlite3_expanded_sql() to always return NULL.
 **
 ** ^The string returned by sqlite3_sql(P) is managed by SQLite and is
 ** automatically freed when the prepared statement is finalized.
