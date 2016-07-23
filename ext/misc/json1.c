@@ -1212,6 +1212,25 @@ static void jsonTest1Func(
 ****************************************************************************/
 
 /*
+** Implementation of the json_QUOTE(VALUE) function.  Return a JSON value
+** corresponding to the SQL value input.  Mostly this means putting 
+** double-quotes around strings and returning the unquoted string "null"
+** when given a NULL input.
+*/
+static void jsonQuoteFunc(
+  sqlite3_context *ctx,
+  int argc,
+  sqlite3_value **argv
+){
+  JsonString jx;
+
+  jsonInit(&jx, ctx);
+  jsonAppendValue(&jx, argv[0]);
+  jsonResult(&jx);
+  sqlite3_result_subtype(ctx, JSON_SUBTYPE);
+}
+
+/*
 ** Implementation of the json_array(VALUE,...) function.  Return a JSON
 ** array that contains all values given in arguments.  Or if any argument
 ** is a BLOB, throw an error.
@@ -2124,6 +2143,7 @@ int sqlite3Json1Init(sqlite3 *db){
     { "json_extract",        -1, 0,   jsonExtractFunc       },
     { "json_insert",         -1, 0,   jsonSetFunc           },
     { "json_object",         -1, 0,   jsonObjectFunc        },
+    { "json_quote",           1, 0,   jsonQuoteFunc         },
     { "json_remove",         -1, 0,   jsonRemoveFunc        },
     { "json_replace",        -1, 0,   jsonReplaceFunc       },
     { "json_set",            -1, 1,   jsonSetFunc           },

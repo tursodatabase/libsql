@@ -1,5 +1,5 @@
-C Small\stweak\sto\sthe\sbtree\sbalancer\sfor\simproved\stree\sbalance.
-D 2016-07-23T19:18:55.177
+C Add\sthe\sjson_quote()\sfunction\sto\sthe\sJSON1\sextension.
+D 2016-07-23T19:34:53.707
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -212,7 +212,7 @@ F ext/misc/eval.c f971962e92ebb8b0a4e6b62949463ee454d88fa2
 F ext/misc/fileio.c d4171c815d6543a9edef8308aab2951413cd8d0f
 F ext/misc/fuzzer.c 7c64b8197bb77b7d64eff7cac7848870235d4c25
 F ext/misc/ieee754.c f190d0cc5182529acb15babd177781be1ac1718c
-F ext/misc/json1.c b9c88d5c3b6ecd8c731ffdd7f5b3d902857f8c96
+F ext/misc/json1.c d51a764ba43a49e191bc3536238bfab3def258ca
 F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
 F ext/misc/percentile.c bcbee3c061b884eccb80e21651daaae8e1e43c63
 F ext/misc/regexp.c a68d25c659bd2d893cd1215667bbf75ecb9dc7d4
@@ -877,7 +877,7 @@ F test/journal3.test ff8af941f9e06161d3db1b46bb9f965ff0e7f307
 F test/jrnlmode.test 7864d59cf7f6e552b9b99ba0f38acd167edc10fa
 F test/jrnlmode2.test 81610545a4e6ed239ea8fa661891893385e23a1d
 F test/jrnlmode3.test 556b447a05be0e0963f4311e95ab1632b11c9eaa
-F test/json101.test ef42283f0b60d8bacbc2243448e7c84988578e52
+F test/json101.test 865776ed8580703e1684fe4b8ee2e473333bb121
 F test/json102.test bf3fe7a706d30936a76a0f7a0375e1e8e73aff5a
 F test/json103.test c5f6b85e69de05f6b3195f9f9d5ce9cd179099a0
 F test/keyword1.test 37ef6bba5d2ed5b07ecdd6810571de2956599dff
@@ -1507,8 +1507,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d0bcaf0cd92ae5bbea7ad68537ba89437d5c39e8 d2a0af7a37e390439c3001fedb5834f47fb24a1f
-R e49116b4c5057a2c64e23fc9fb71ef64
-T +closed d2a0af7a37e390439c3001fedb5834f47fb24a1f
+P 8817dedb75430e6c78ff527f7ded4abb35776cef 2c3714aebf5e40e3728877a235b3c1f93defa33e
+R d8b644436fd0d857689e119dadae618e
+T +closed 2c3714aebf5e40e3728877a235b3c1f93defa33e
 U drh
-Z 96bd00cbee88b7adc25980f9570baf91
+Z e34798b2dc952c68e869c2ddf5f79301
