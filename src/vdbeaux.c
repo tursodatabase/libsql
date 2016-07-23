@@ -65,14 +65,6 @@ void sqlite3VdbeSetSql(Vdbe *p, const char *z, int n, int isPrepareV2){
 }
 
 /*
-** Return the SQL associated with a prepared statement
-*/
-const char *sqlite3_sql(sqlite3_stmt *pStmt){
-  Vdbe *p = (Vdbe *)pStmt;
-  return p ? p->zSql : 0;
-}
-
-/*
 ** Swap all content between two VDBE structures.
 */
 void sqlite3VdbeSwap(Vdbe *pA, Vdbe *pB){
