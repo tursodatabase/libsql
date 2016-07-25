@@ -6785,21 +6785,24 @@ case OP_Init: {          /* jump */
   char *z;
 
 #ifndef SQLITE_OMIT_TRACE
+  /* If the P4 argument is not NULL, then it must be an SQL comment string.
+  ** The "--" string is broken up to prevent false-positives with srcck1.c */
+  assert( pOp->p4.z==0 || strncmp(pOp->p4.z, "-" "- ", 3)==0 );
   if( (db->mTrace & (SQLITE_TRACE_STMT|SQLITE_TRACE_LEGACY))!=0
    && !p->doingRerun
    && (zTrace = (pOp->p4.z ? pOp->p4.z : p->zSql))!=0
   ){
-    z = sqlite3VdbeExpandSql(p, zTrace);
 #ifndef SQLITE_OMIT_DEPRECATED
     if( db->mTrace & SQLITE_TRACE_LEGACY ){
       void (*x)(void*,const char*) = (void(*)(void*,const char*))db->xTrace;
+      z = sqlite3VdbeExpandSql(p, zTrace);
       x(db->pTraceArg, z);
+      sqlite3_free(z);
     }else
 #endif
     {
-      (void)db->xTrace(SQLITE_TRACE_STMT,db->pTraceArg,p,z);
+      (void)db->xTrace(SQLITE_TRACE_STMT, db->pTraceArg, p, zTrace);
     }
-    sqlite3_free(z);
   }
 #ifdef SQLITE_USE_FCNTL_TRACE
   zTrace = (pOp->p4.z ? pOp->p4.z : p->zSql);

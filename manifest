@@ -1,5 +1,5 @@
-C Fix\scode\sso\sthat\sthe\sdeprecated\ssqlite3_trace()\sand\ssqlite3_profile()\s\ninterfaces\sare\snot\scalled\swhen\sSQLITE_OMIT_DEPRECATED\sis\sused.
-D 2016-07-25T00:05:56.727
+C Change\sSQLITE_TRACE_STMT\sto\sreturn\sunexpanded\sSQL\stext\sin\sthe\sX\sargument.\nAdd\sdocumentation\son\show\sand\swhen\sto\suse\ssqlite3_expanded_sql(P)\sto\scompute\nthe\sexpanded\stext\sfor\slegacy\ssqlite3_trace()\scompatibility.
+D 2016-07-25T02:31:48.358
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -385,7 +385,7 @@ F src/resolve.c cca3aa77b95706df5d635a2141a4d1de60ae6598
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c f3c6e9065fb34f6a23af27ec7f1f717ffbfc2ee4
 F src/shell.c ad6375a1cbfb13786bfc7ae28e00d822aedefd35
-F src/sqlite.h.in 3dc7317ded4bf66facd845705f45f21d03517940
+F src/sqlite.h.in c6e68a4a47610631822a4f8f83a44c9f75339331
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 46f300b6e300e0fa916d7d58c44b53415b8471a9
 F src/sqliteInt.h 48cd97eb134665348393dfe277b4c14d1085bfc7
@@ -449,7 +449,7 @@ F src/update.c 4f05ea8cddfa367d045e03589756c02199e8f9bd
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c 810ec3f22e2d1b62e66c30fe3621ebdedd23584d
 F src/vacuum.c 544ec90a66a4b0460b7c1baeadbc21b45e6ca0b6
-F src/vdbe.c 7b5570f77e32766949fd8f9478e4a9bb06e6ab24
+F src/vdbe.c 7718d72427fd3abae6603a7a225e3eec12137d4a
 F src/vdbe.h 67bc551f7faf04c33493892e4b378aada823ed10
 F src/vdbeInt.h c59381049af5c7751a83456c39b80d1a6fde1f9d
 F src/vdbeapi.c c3f6715a99995c11748ecad91d25e93fd9fc390b
@@ -1475,7 +1475,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 7ce07da76b5e745783e703a834417d725b7d45fd
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/sqldiff.c 4478f0d30230de6adde90bdb0bfe60f68c5ab782
-F tool/srcck1.c 4c39bdfa9a92edd20233ee720df84dbeb2417602
+F tool/srcck1.c 371de5363b70154012955544f86fdee8f6e5326f
 F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
 F tool/symbols.sh c5a617b8c61a0926747a56c65f5671ef8ac0e148
@@ -1507,7 +1507,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c8e0539b970585cbb3619461a53abb0c3b308a17
-R d97169b5da173af1e8c3e0989fc5f73b
+P 1c5baae3c545096a29a093f7d4387771f1db507c
+R 287171615483ae1144a14be35a6974e0
 U drh
-Z 74b666fd406733750b5703b09cc23966
+Z fb84b0dd7373ed024b44202f95be044f
