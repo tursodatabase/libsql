@@ -11349,14 +11349,14 @@ fi
 #
 # Check whether --enable-memsys3 was given.
 if test "${enable_memsys3+set}" = set; then :
-  enableval=$enable_memsys3;
+  enableval=$enable_memsys3; enable_memsys3=yes
 else
-  enable_memsys3=yes
+  enable_memsys3=no
 fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to support MEMSYS3" >&5
 $as_echo_n "checking whether to support MEMSYS3... " >&6; }
-if test "$enable_memsys3" = "yes"; then
+if test "${enable_memsys3}" = "yes"; then
   SQLITE_ENABLE_MEMSYS3=1
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
@@ -11367,14 +11367,14 @@ fi
 
 # Check whether --enable-memsys5 was given.
 if test "${enable_memsys5+set}" = set; then :
-  enableval=$enable_memsys5;
+  enableval=$enable_memsys5; enable_memsys5=yes
 else
-  enable_memsys3=yes
+  enable_memsys5=no
 fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to support MEMSYS5" >&5
 $as_echo_n "checking whether to support MEMSYS5... " >&6; }
-if test "$enable_memsys5" = "yes"; then
+if test "${enable_memsys5}" = "yes"; then
   SQLITE_ENABLE_MEMSYS5=1
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }

@@ -592,9 +592,10 @@ fi
 # Do we want to support memsys3 and/or memsys5
 #
 AC_ARG_ENABLE(memsys3, 
-AC_HELP_STRING([--enable-memsys3],[Enable MEMSYS3]),,enable_memsys3=yes)
+  AC_HELP_STRING([--enable-memsys3],[Enable MEMSYS3]),
+  [enable_memsys3=yes],[enable_memsys3=no])
 AC_MSG_CHECKING([whether to support MEMSYS3])
-if test "$enable_memsys3" = "yes"; then
+if test "${enable_memsys3}" = "yes"; then
   SQLITE_ENABLE_MEMSYS3=1
   AC_MSG_RESULT([yes])
 else
@@ -602,9 +603,10 @@ else
 fi
 AC_SUBST(SQLITE_MEMSYS5)
 AC_ARG_ENABLE(memsys5, 
-AC_HELP_STRING([--enable-memsys5],[Enable MEMSYS5]),,enable_memsys3=yes)
+  AC_HELP_STRING([--enable-memsys5],[Enable MEMSYS5]),
+  [enable_memsys5=yes],[enable_memsys5=no])
 AC_MSG_CHECKING([whether to support MEMSYS5])
-if test "$enable_memsys5" = "yes"; then
+if test "${enable_memsys5}" = "yes"; then
   SQLITE_ENABLE_MEMSYS5=1
   AC_MSG_RESULT([yes])
 else
