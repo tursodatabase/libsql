@@ -1,5 +1,5 @@
-C Update\sthe\svacuummem.test\sscript\sso\sthat\sit\sworks\son\smac\sas\swell\sas\son\slinux.
-D 2016-07-25T12:01:18.862
+C Disable\sthe\sDBSTATUS_CACHE_USED_SHARED\stests\son\smac\swhen\smemsys3/5\sis\sdisabled\ndue\sto\sdifferences\sin\sthe\sallocation\ssizes\sfor\sthe\sDarwin\smemory\sallocator.
+D 2016-07-25T12:10:25.504
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -621,7 +621,7 @@ F test/ctime.test 0b995accd44a52914bd4744d5c1b6e1a56c7897c
 F test/cursorhint.test 7bc346788390475e77a345da2b92270d04d35856
 F test/cursorhint2.test 2b45341d32d1aae9991a00ef31ebca339b274255
 F test/date.test 984ac1e3e5e031386866f034006148d3972b4a65
-F test/dbstatus.test 2bb4d576f11c0f57f5633dad373ad1a57c2a7195
+F test/dbstatus.test 58b31ba1dee1a6524189666c5882ab145d1f229b
 F test/dbstatus2.test e93ab03bfae6d62d4d935f20de928c19ca0ed0ab
 F test/default.test 0cb49b1c315a0d81c81d775e407f66906a2a604d
 F test/delete.test e1bcdf8926234e27aac24b346ad83d3329ec8b6f
@@ -1507,7 +1507,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ccc22e14dc5d910d632807f49484be54dc2fde83
-R f8760ea1979a3d1e72e54c3ea906ea99
+P ea7fb98b96f13f7dc5ed83ec5e8ad8857e20e06e
+R 3485ec1f1845ad365519b5b860f50dc5
 U drh
-Z 5b9cf50a9e82d7593d62c569e8fac940
+Z 3712e6b13d05abd58f12d65f644b4035
