@@ -1,5 +1,5 @@
-C Minor\stest\sinfrastructure\schanges\sto\sbetter\ssupport\sSEE\stesting.
-D 2016-07-25T16:10:43.028
+C Fix\sa\stest\scase\sin\sFTS5\sto\smake\sit\scompatible\swith\sTcl\s8.5.
+D 2016-07-25T21:11:53.996
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -180,7 +180,7 @@ F ext/fts5/test/fts5rank.test 2bdc0c5f22ccc1f9dbe9f4d0b82a491dce6f8a32
 F ext/fts5/test/fts5rebuild.test 03935f617ace91ed23a6099c7c74d905227ff29b
 F ext/fts5/test/fts5restart.test c17728fdea26e7d0f617d22ad5b4b2862b994c17
 F ext/fts5/test/fts5rowid.test 16908a99d6efc9ba21081b4f2b86b3fc699839a6
-F ext/fts5/test/fts5simple.test cd23d4072ea095d652c9b6db12284cc642e49c98
+F ext/fts5/test/fts5simple.test 5da9b15ed534eb0be9f279d8a2bb2e24d30e4e38
 F ext/fts5/test/fts5simple2.test 98377ae1ff7749a42c21fe1a139c1ed312522c46
 F ext/fts5/test/fts5simple3.test 8e71733b3d1b0e695011d02c68ebc5ca40b6124e
 F ext/fts5/test/fts5synonym.test 6475d189c2e20d60795808f83e36bf9318708d48
@@ -1507,7 +1507,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 38a48cfb9a8212970c4a4f8458643c22ed067e8b
-R abfe7130c6ed9b2d2a4c15502875beef
+P 8dcb9d506b5eef3a21d97877217e0df69966a915
+R 39b75cd52198f904a29885025a5d8665
 U drh
-Z 61654b6f48f562a527ce39380211aaf2
+Z ed1d5b465897ee96bacfa15f366335db
