@@ -41,18 +41,19 @@ do_execsql_test 1.0 {
   CREATE INDEX t1b ON t1(b);
   CREATE INDEX t1c ON t1(c);
 }
+set ans "#/[memory_used]/"
 
-do_test 1.1 { memory_used } {#/2300000/}
+do_test 1.1 { memory_used } $ans
 
 do_execsql_test 1.2 VACUUM
 
-do_test 1.3 { memory_used } {#/2300000/}
+do_test 1.3 { memory_used } $ans
 
 do_execsql_test 1.4 {
   SELECT count(*) FROM t1 WHERE +a IS NOT NULL
 } {100000}
 
-do_test 1.5 { memory_used } {#/2300000/}
+do_test 1.5 { memory_used } $ans
 
 
 
