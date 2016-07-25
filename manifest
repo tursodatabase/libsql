@@ -1,5 +1,5 @@
-C Merge\s3.14\salpha\schanges\sfrom\strunk.
-D 2016-07-25T17:31:24.065
+C Add\sthe\sexperimental\sSQLITE_VACUUM_CACHE_SIZE\smacro.
+D 2016-07-25T18:50:08.352
 F Makefile.in 7ac1f34182d307765c6439c899bd3dac2af587bf
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -452,7 +452,7 @@ F src/trigger.c e14840ee0c3e549e758ec9bf3e4146e166002280
 F src/update.c 4f05ea8cddfa367d045e03589756c02199e8f9bd
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c 810ec3f22e2d1b62e66c30fe3621ebdedd23584d
-F src/vacuum.c 544ec90a66a4b0460b7c1baeadbc21b45e6ca0b6
+F src/vacuum.c d60b11b2fe49759206c25a2a4ee664a1b5087e86
 F src/vdbe.c 5260025793f47c1c51c04154f9762ef3ef310607
 F src/vdbe.h 67bc551f7faf04c33493892e4b378aada823ed10
 F src/vdbeInt.h c59381049af5c7751a83456c39b80d1a6fde1f9d
@@ -1512,7 +1512,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0f707d1532d6c8277cf0f70821a83e0af621ce9b 8dcb9d506b5eef3a21d97877217e0df69966a915
-R 64dc8c8b61235f42fc56ab79725744e6
+P e98cefb17d03ca146d0ff42bdd4dd6a8f3ba6735
+R ad6f83cdc56fc57d19067a2ffbb15128
 U drh
-Z 83a70419ff1cac2c3eaecd0fa6689f92
+Z 3abcf936a88be3fec3b9c064f792931f

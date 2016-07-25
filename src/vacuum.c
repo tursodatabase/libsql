@@ -197,6 +197,9 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   }
 #endif
 
+#if defined(SQLITE_VACUUM_CACHE_SIZE) && SQLITE_VACUUM_CACHE_SIZE+0>=1
+  sqlite3BtreeSetCacheSize(pTemp, SQLITE_VACUUM_CACHE_SIZE);
+#endif
   rc = execSql(db, pzErrMsg, "PRAGMA vacuum_db.synchronous=OFF");
   if( rc!=SQLITE_OK ) goto end_of_vacuum;
 
