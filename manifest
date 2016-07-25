@@ -1,5 +1,5 @@
-C Use\ssqlite3_trace_v2()\sinstead\sof\ssqlite3_trace()\sin\sthe\sshell.
-D 2016-07-23T20:27:41.266
+C Fix\scode\sso\sthat\sthe\sdeprecated\ssqlite3_trace()\sand\ssqlite3_profile()\s\ninterfaces\sare\snot\scalled\swhen\sSQLITE_OMIT_DEPRECATED\sis\sused.
+D 2016-07-25T00:05:56.727
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -347,8 +347,8 @@ F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/insert.c 8f4e9fcbd8e95e85f15647ba8b413b18d556ec2b
 F src/legacy.c 75d3023be8f0d2b99d60f905090341a03358c58e
-F src/loadext.c 4237fd37ca589f1d90b3ea925dd9df20da8e0c84
-F src/main.c 2d3e62a971e7f169a74448e81af9ebde95b07381
+F src/loadext.c 5dd8b5a67d32a98bb75657c2a9e48b2cedbf13a4
+F src/main.c 16c1b2114eae8804caf3a8de8cb47bf2c6d83ad3
 F src/malloc.c 1443d1ad95d67c21d77af7ae3f44678252f0efec
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 6919bcf12f221868ea066eec27e579fed95ce98b
@@ -392,7 +392,7 @@ F src/sqliteInt.h 48cd97eb134665348393dfe277b4c14d1085bfc7
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c 5b18f9526900f61189ab0b83f1ef41d9f871a2ab
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
-F src/tclsqlite.c 573e63c959b314d77486f3565fa79c60cda3df7e
+F src/tclsqlite.c 5c213bf5fee084390f632df2328cf0821d483799
 F src/test1.c 186e3b53c402b7a73bcb4ade2b77709675c39fe3
 F src/test2.c 5586f43fcd9a1be0830793cf9d354082c261b25b
 F src/test3.c c75c8af0eadb335236c9e61b51044c58a8f7dd59
@@ -1507,7 +1507,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 269892abf6e59c417729669cc764d1f237e093fd
-R 38c94a12899d68429eb06d66defc6359
+P c8e0539b970585cbb3619461a53abb0c3b308a17
+R d97169b5da173af1e8c3e0989fc5f73b
 U drh
-Z 4041e092b34c5d7817e039ca6e44ec6c
+Z 74b666fd406733750b5703b09cc23966

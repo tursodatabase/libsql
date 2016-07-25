@@ -1845,6 +1845,7 @@ int sqlite3_trace_v2(
   return SQLITE_OK;
 }
 
+#ifndef SQLITE_OMIT_DEPRECATED
 /*
 ** Register a profile function.  The pArg from the previously registered 
 ** profile function is returned.  
@@ -1873,6 +1874,7 @@ void *sqlite3_profile(
   sqlite3_mutex_leave(db->mutex);
   return pOld;
 }
+#endif /* SQLITE_OMIT_DEPRECATED */
 #endif /* SQLITE_OMIT_TRACE */
 
 /*
