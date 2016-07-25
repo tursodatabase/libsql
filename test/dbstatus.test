@@ -381,7 +381,7 @@ foreach ::lookaside_buffer_size {0 64 120} {
 ifcapable shared_cache {
   if {[permutation]=="memsys3"
       || [permutation]=="memsys5"
-      || $::tcl_platform(os)!="Darwin"} {
+      || $::tcl_platform(os)=="Linux"} {
     proc do_cacheused_test {tn db res} {
       set cu [sqlite3_db_status $db SQLITE_DBSTATUS_CACHE_USED 0]
       set pcu [sqlite3_db_status $db SQLITE_DBSTATUS_CACHE_USED_SHARED 0]

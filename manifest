@@ -1,5 +1,5 @@
-C Disable\sthe\sDBSTATUS_CACHE_USED_SHARED\stests\son\smac\swhen\smemsys3/5\sis\sdisabled\ndue\sto\sdifferences\sin\sthe\sallocation\ssizes\sfor\sthe\sDarwin\smemory\sallocator.
-D 2016-07-25T12:10:25.504
+C Changes\sto\stest\sscripts\sto\sget\sthem\sall\srunning\son\sOpenBSD.
+D 2016-07-25T14:20:01.353
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -621,7 +621,7 @@ F test/ctime.test 0b995accd44a52914bd4744d5c1b6e1a56c7897c
 F test/cursorhint.test 7bc346788390475e77a345da2b92270d04d35856
 F test/cursorhint2.test 2b45341d32d1aae9991a00ef31ebca339b274255
 F test/date.test 984ac1e3e5e031386866f034006148d3972b4a65
-F test/dbstatus.test 58b31ba1dee1a6524189666c5882ab145d1f229b
+F test/dbstatus.test 73149851b3aff14fc6db478e58f9083a66422cf5
 F test/dbstatus2.test e93ab03bfae6d62d4d935f20de928c19ca0ed0ab
 F test/default.test 0cb49b1c315a0d81c81d775e407f66906a2a604d
 F test/delete.test e1bcdf8926234e27aac24b346ad83d3329ec8b6f
@@ -1064,7 +1064,7 @@ F test/sharedA.test 0cdf1a76dfa00e6beee66af5b534b1e8df2720f5
 F test/sharedB.test 16cc7178e20965d75278f410943109b77b2e645e
 F test/shared_err.test 2f2aee20db294b9924e81f6ccbe60f19e21e8506
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test c90b0415cea6eeefb86b4ab1651b06247922ca52
+F test/shell1.test 77896b65f1cde4ee79e38b2c0ed8578a8f4000e5
 F test/shell2.test e242a9912f44f4c23c3d1d802a83e934e84c853b
 F test/shell3.test da513d522ef6f01cee8475dcf8332bff8982b3dd
 F test/shell4.test 69995ee1cc278eb149aa8746ce1f935f4eaf98b9
@@ -1507,7 +1507,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ea7fb98b96f13f7dc5ed83ec5e8ad8857e20e06e
-R 3485ec1f1845ad365519b5b860f50dc5
+P d6f6c87c9c0acf609a9d5bea818bb7a5437109a1
+R f74cc55ec1e76de02d5d11db76d4d3f2
 U drh
-Z 3712e6b13d05abd58f12d65f644b4035
+Z 27b5d9cc228b8d41a7c82f29fd5cd771
