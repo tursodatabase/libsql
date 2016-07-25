@@ -3440,11 +3440,15 @@ int sqlite3HeapNearlyFull(void);
 # define sqlite3StackFree(D,P)       sqlite3DbFree(D,P)
 #endif
 
-#ifdef SQLITE_ENABLE_MEMSYS3
-const sqlite3_mem_methods *sqlite3MemGetMemsys3(void);
-#endif
+/* Do not allow both MEMSYS5 and MEMSYS3 to be defined together.  If they
+** are, disable MEMSYS3
+*/
 #ifdef SQLITE_ENABLE_MEMSYS5
 const sqlite3_mem_methods *sqlite3MemGetMemsys5(void);
+#undef SQLITE_ENABLE_MEMSYS3
+#endif
+#ifdef SQLITE_ENABLE_MEMSYS3
+const sqlite3_mem_methods *sqlite3MemGetMemsys3(void);
 #endif
 
 

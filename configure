@@ -903,8 +903,8 @@ with_readline_inc
 enable_debug
 enable_amalgamation
 enable_load_extension
-enable_memsys3
 enable_memsys5
+enable_memsys3
 enable_fts3
 enable_fts4
 enable_fts5
@@ -1554,8 +1554,8 @@ Optional Features:
                           separately
   --disable-load-extension
                           Disable loading of external extensions
-  --enable-memsys3        Enable MEMSYS3
   --enable-memsys5        Enable MEMSYS5
+  --enable-memsys3        Enable MEMSYS3
   --enable-fts3           Enable the FTS3 extension
   --enable-fts4           Enable the FTS4 extension
   --enable-fts5           Enable the FTS5 extension
@@ -11346,23 +11346,6 @@ fi
 ##########
 # Do we want to support memsys3 and/or memsys5
 #
-# Check whether --enable-memsys3 was given.
-if test "${enable_memsys3+set}" = set; then :
-  enableval=$enable_memsys3; enable_memsys3=yes
-else
-  enable_memsys3=no
-fi
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to support MEMSYS3" >&5
-$as_echo_n "checking whether to support MEMSYS3... " >&6; }
-if test "${enable_memsys3}" = "yes"; then
-  OPT_FEATURE_FLAGS+=" -DSQLITE_ENABLE_MEMSYS3"
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
 # Check whether --enable-memsys5 was given.
 if test "${enable_memsys5+set}" = set; then :
   enableval=$enable_memsys5; enable_memsys5=yes
@@ -11374,6 +11357,23 @@ fi
 $as_echo_n "checking whether to support MEMSYS5... " >&6; }
 if test "${enable_memsys5}" = "yes"; then
   OPT_FEATURE_FLAGS+=" -DSQLITE_ENABLE_MEMSYS5"
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+# Check whether --enable-memsys3 was given.
+if test "${enable_memsys3+set}" = set; then :
+  enableval=$enable_memsys3; enable_memsys3=yes
+else
+  enable_memsys3=no
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to support MEMSYS3" >&5
+$as_echo_n "checking whether to support MEMSYS3... " >&6; }
+if test "${enable_memsys3}" = "yes" -a "${enable_memsys5}" = "no"; then
+  OPT_FEATURE_FLAGS+=" -DSQLITE_ENABLE_MEMSYS3"
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 else

@@ -1,5 +1,5 @@
-C Another\sattempt\sat\sgetting\s--enable-memsysN\sworking.
-D 2016-07-25T11:39:24.067
+C If\sboth\sMEMSYS3\sand\sMEMSYS5\sare\senabled,\sthan\sautomatically\sdisable\sMEMSYS3.
+D 2016-07-25T11:57:21.222
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -30,8 +30,8 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 6376abec766e9a0785178b1823b5a587e9f1ccbc
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure f62e6614b26418ce81392b2c28b2a6cf268f1d5d x
-F configure.ac 83c4e53031a3582d0b9200dcb3700189a24f1b1c
+F configure 35ce04a15ca046262bf9baaa2ced9337708cc653 x
+F configure.ac b5d3df43161374f8dffd2e5f4b88fbb51685b975
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html e2118945e5f07ed146b45c9cd2b2dd6eabb8ebf2
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
@@ -388,7 +388,7 @@ F src/shell.c 9351fc6de11e1d908648c0a92d85627138e3dee5
 F src/sqlite.h.in c6e68a4a47610631822a4f8f83a44c9f75339331
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 46f300b6e300e0fa916d7d58c44b53415b8471a9
-F src/sqliteInt.h 48cd97eb134665348393dfe277b4c14d1085bfc7
+F src/sqliteInt.h 49081ceab08eda9943d555aee57392c5b35d1c60
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c 5b18f9526900f61189ab0b83f1ef41d9f871a2ab
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
@@ -1009,7 +1009,7 @@ F test/rdonly.test 64e2696c322e3538df0b1ed624e21f9a23ed9ff8
 F test/regexp1.test 497ea812f264d12b6198d6e50a76be4a1973a9d8
 F test/regexp2.test aa7ffcc21350007a78361b82bcf3b74d12227144
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
-F test/releasetest.tcl 7d80014d0245b3f9d02d393d420bf03ca155aec0
+F test/releasetest.tcl 3a66c7b8fbe55bcd97c907217c3d812d1d3c6b93
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
 F test/rollback.test 458fe73eb3ffdfdf9f6ba3e9b7350a6220414dea
 F test/rollback2.test 8435d6ff0f13f51d2a4181c232e706005fa90fc5
@@ -1507,7 +1507,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 679552550e085497b98478bbe28056d99fe4aab4
-R 5c303973b5bb214411149d73b1469581
+P 5f40e6ad599eea59a5adc3a11d6f7998872736b4
+R b01daae186a7f9a051c9362d4aae0591
 U drh
-Z 6145af1bb509746e3a2a7850c862eafe
+Z d2602db348bfa53fd2c4a084ddf1dc40
