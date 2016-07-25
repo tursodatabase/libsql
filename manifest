@@ -1,5 +1,5 @@
-C Add\sthe\sexperimental\sSQLITE_VACUUM_CACHE_SIZE\smacro.
-D 2016-07-25T18:50:08.352
+C Merge\sthe\sVACCUM\scache_size\sadjustment\sfrom\strunk.
+D 2016-07-25T22:46:06.502
 F Makefile.in 7ac1f34182d307765c6439c899bd3dac2af587bf
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -180,7 +180,7 @@ F ext/fts5/test/fts5rank.test 2bdc0c5f22ccc1f9dbe9f4d0b82a491dce6f8a32
 F ext/fts5/test/fts5rebuild.test 03935f617ace91ed23a6099c7c74d905227ff29b
 F ext/fts5/test/fts5restart.test c17728fdea26e7d0f617d22ad5b4b2862b994c17
 F ext/fts5/test/fts5rowid.test 16908a99d6efc9ba21081b4f2b86b3fc699839a6
-F ext/fts5/test/fts5simple.test cd23d4072ea095d652c9b6db12284cc642e49c98
+F ext/fts5/test/fts5simple.test 5da9b15ed534eb0be9f279d8a2bb2e24d30e4e38
 F ext/fts5/test/fts5simple2.test 98377ae1ff7749a42c21fe1a139c1ed312522c46
 F ext/fts5/test/fts5simple3.test 8e71733b3d1b0e695011d02c68ebc5ca40b6124e
 F ext/fts5/test/fts5synonym.test 6475d189c2e20d60795808f83e36bf9318708d48
@@ -452,7 +452,7 @@ F src/trigger.c e14840ee0c3e549e758ec9bf3e4146e166002280
 F src/update.c 4f05ea8cddfa367d045e03589756c02199e8f9bd
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c 810ec3f22e2d1b62e66c30fe3621ebdedd23584d
-F src/vacuum.c d60b11b2fe49759206c25a2a4ee664a1b5087e86
+F src/vacuum.c 7949183a9ce2270fc76503384b1159fcb1e39723
 F src/vdbe.c 5260025793f47c1c51c04154f9762ef3ef310607
 F src/vdbe.h 67bc551f7faf04c33493892e4b378aada823ed10
 F src/vdbeInt.h c59381049af5c7751a83456c39b80d1a6fde1f9d
@@ -1512,7 +1512,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e98cefb17d03ca146d0ff42bdd4dd6a8f3ba6735
-R ad6f83cdc56fc57d19067a2ffbb15128
+P 68ecd8e042bd14b8ede69219bd4ed175bf097d0b b78d99548ac53ac10dcc38368cc4b29c8cbcb09b
+R 1a957c8832276cfb650f46ccb586c265
 U drh
-Z 3abcf936a88be3fec3b9c064f792931f
+Z 806e92a20bb0c43bddc31146ba8412fd

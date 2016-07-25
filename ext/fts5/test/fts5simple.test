@@ -265,7 +265,7 @@ do_test 11.0 {
   execsql "
     INSERT INTO t4 VALUES('a b c \x1A');
     INSERT INTO t4 VALUES('a b c d\x1A');
-    INSERT INTO t4 VALUES('a b c \x1Ad');
+    INSERT INTO t4 VALUES('a b c \x1Ag');
     INSERT INTO t4 VALUES('a b c d');
   "
 } {}
