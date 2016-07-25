@@ -373,6 +373,7 @@ proc do_not_use_codec {} {
   set ::do_not_use_codec 1
   reset_db
 }
+unset -nocomplain do_not_use_codec
 
 # Return true if the "reserved_bytes" integer on database files is non-zero.
 #
@@ -745,6 +746,17 @@ proc puts {args} { uplevel puts_override $args }
 
 # Invoke the do_test procedure to run a single test
 #
+# The $expected parameter is the expected result.  The result is the return
+# value from the last TCL command in $cmd.
+#
+# Normally, $expected must match exactly.  But if $expected is of the form
+# "/regexp/" then regular expression matching is used.  If $expected is
+# "~/regexp/" then the regular expression must NOT match.  If $expected is
+# of the form "#/value-list/" then each term in value-list must be numeric
+# and must approximately match the corresponding numeric term in $result.
+# Values must match within 10%.  Or if the $expected term is A..B then the
+# $result term must be in between A and B.
+#
 proc do_test {name cmd expected} {
   global argv cmdlinearg
 
@@ -778,7 +790,7 @@ proc do_test {name cmd expected} {
       output2 "\nError: $result"
       fail_test $name
     } else {
-      if {[regexp {^~?/.*/$} $expected]} {
+      if {[regexp {^[~#]?/.*/$} $expected]} {
         # "expected" is of the form "/PATTERN/" then the result if correct if
         # regular expression PATTERN matches the result.  "~/PATTERN/" means
         # the regular expression must not match.
@@ -792,6 +804,21 @@ proc do_test {name cmd expected} {
             set ok [regexp $re $result]
           }
           set ok [expr {!$ok}]
+        } elseif {[string index $expected 0]=="#"} {
+          # Numeric range value comparison.  Each term of the $result is matched
+          # against one term of $expect.  Both $result and $expected terms must be
+          # numeric.  The values must match within 10%.  Or if $expected is of the
+          # form A..B then the $result term must be between A and B.
+          set e2 [string range $expected 2 end-1]
+          foreach i $result j $e2 {
+            if {[regexp {^(-?\d+)\.\.(-?\d)$} $j all A B]} {
+              set ok [expr {$i+0>=$A && $i+0<=$B}]
+            } else {
+              set ok [expr {$i+0>=0.9*$j && $i+0<=1.1*$j}]
+            }
+            if {!$ok} break
+          }
+          if {$ok && [llength $result]!=[llength $e2]} {set ok 0}
         } else {
           set re [string range $expected 1 end-1]
           if {[string index $re 0]=="*"} {

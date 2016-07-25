@@ -12,34 +12,9 @@
 # Test some properties of the pager_rbu_mode and rbu_mode pragmas.
 #
 
-if {![info exists testdir]} {
-  set testdir [file join [file dirname [info script]] .. .. test]
-}
-source $testdir/tester.tcl
+source [file join [file dirname [info script]] rbu_common.tcl]
 set ::testprefix rbu5
 
-
-# Run the RBU in file $rbu on target database $target until completion.
-#
-proc run_rbu {target rbu} {
-  sqlite3rbu rbu $target $rbu
-  while { [rbu step]=="SQLITE_OK" } {}
-  rbu close
-}
-
-
-# Run the RBU in file $rbu on target database $target one step at a
-# time until completion.
-#
-proc step_rbu {target rbu} {
-  while 1 {
-    sqlite3rbu rbu $target $rbu
-    set rc [rbu step]
-    rbu close
-    if {$rc != "SQLITE_OK"} break
-  }
-  set rc
-}
 
 # Return a list of the primary key columns for table $tbl in the database
 # opened by database handle $db.

@@ -419,6 +419,7 @@ TESTSRC = \
 #
 TESTSRC += \
   $(TOP)/ext/misc/amatch.c \
+  $(TOP)/ext/misc/carray.c \
   $(TOP)/ext/misc/closure.c \
   $(TOP)/ext/misc/csv.c \
   $(TOP)/ext/misc/eval.c \
@@ -601,15 +602,15 @@ sqlite3$(TEXE):	$(TOP)/src/shell.c sqlite3.c
 		$(TOP)/src/shell.c sqlite3.c \
 		$(LIBREADLINE) $(TLIBS) -rpath "$(libdir)"
 
-sqldiff$(TEXE):	$(TOP)/tool/sqldiff.c sqlite3.c sqlite3.h
-	$(LTLINK) -o $@ $(TOP)/tool/sqldiff.c sqlite3.c $(TLIBS)
+sqldiff$(TEXE):	$(TOP)/tool/sqldiff.c sqlite3.lo sqlite3.h
+	$(LTLINK) -o $@ $(TOP)/tool/sqldiff.c sqlite3.lo $(TLIBS)
 
-dbhash$(TEXE):	$(TOP)/tool/dbhash.c sqlite3.c sqlite3.h
-	$(LTLINK) -o $@ $(TOP)/tool/dbhash.c sqlite3.c $(TLIBS)
+dbhash$(TEXE):	$(TOP)/tool/dbhash.c sqlite3.lo sqlite3.h
+	$(LTLINK) -o $@ $(TOP)/tool/dbhash.c sqlite3.lo $(TLIBS)
 
-scrub$(TEXE):	$(TOP)/ext/misc/scrub.c sqlite3.o
+scrub$(TEXE):	$(TOP)/ext/misc/scrub.c sqlite3.lo
 	$(LTLINK) -o $@ -I. -DSCRUB_STANDALONE \
-		$(TOP)/ext/misc/scrub.c sqlite3.o $(TLIBS)
+		$(TOP)/ext/misc/scrub.c sqlite3.lo $(TLIBS)
 
 srcck1$(BEXE):	$(TOP)/tool/srcck1.c
 	$(BCC) -o srcck1$(BEXE) $(TOP)/tool/srcck1.c
@@ -624,8 +625,8 @@ fuzzershell$(TEXE):	$(TOP)/tool/fuzzershell.c sqlite3.c sqlite3.h
 fuzzcheck$(TEXE):	$(TOP)/test/fuzzcheck.c sqlite3.c sqlite3.h
 	$(LTLINK) -o $@ $(FUZZCHECK_OPT) $(TOP)/test/fuzzcheck.c sqlite3.c $(TLIBS)
 
-mptester$(TEXE):	sqlite3.c $(TOP)/mptest/mptest.c
-	$(LTLINK) -o $@ -I. $(TOP)/mptest/mptest.c sqlite3.c \
+mptester$(TEXE):	sqlite3.lo $(TOP)/mptest/mptest.c
+	$(LTLINK) -o $@ -I. $(TOP)/mptest/mptest.c sqlite3.lo \
 		$(TLIBS) -rpath "$(libdir)"
 
 MPTEST1=./mptester$(TEXE) mptest.db $(TOP)/mptest/crash01.test --repeat 20
@@ -1169,8 +1170,8 @@ rollback-test$(TEXE):	$(TOP)/tool/rollback-test.c sqlite3.lo
 LogEst$(TEXE):	$(TOP)/tool/logest.c sqlite3.h
 	$(LTLINK) -I. -o $@ $(TOP)/tool/logest.c
 
-wordcount$(TEXE):	$(TOP)/test/wordcount.c sqlite3.c
-	$(LTLINK) -o $@ $(TOP)/test/wordcount.c sqlite3.c $(TLIBS)
+wordcount$(TEXE):	$(TOP)/test/wordcount.c sqlite3.lo
+	$(LTLINK) -o $@ $(TOP)/test/wordcount.c sqlite3.lo $(TLIBS)
 
 speedtest1$(TEXE):	$(TOP)/test/speedtest1.c sqlite3.lo
 	$(LTLINK) -o $@ $(TOP)/test/speedtest1.c sqlite3.lo $(TLIBS)
@@ -1187,7 +1188,7 @@ loadfts$(EXE): $(TOP)/tool/loadfts.c libsqlite3.la
 #
 VALIDIDS=' sqlite3(changeset|changegroup|session)?_'
 checksymbols: sqlite3.lo
-	nm -g --defined-only sqlite3.o | egrep -v $(VALIDIDS); test $$? -ne 0
+	nm -g --defined-only sqlite3.lo | egrep -v $(VALIDIDS); test $$? -ne 0
 	echo '0 errors out of 1 tests'
 
 # Build the amalgamation-autoconf package.  The amalamgation-tarball target builds

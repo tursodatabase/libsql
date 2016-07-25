@@ -58,7 +58,7 @@ static char *readFile(const char *zFilename){
   return z;
 }
 
-/* Change the C code in the argument to see if it might have
+/* Check the C code in the argument to see if it might have
 ** side effects.  The only accurate way to know this is to do a full
 ** parse of the C code, which this routine does not do.  This routine
 ** uses a simple heuristic of looking for:

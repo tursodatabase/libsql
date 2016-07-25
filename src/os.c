@@ -13,9 +13,7 @@
 ** This file contains OS interface code that is common to all
 ** architectures.
 */
-#define _SQLITE_OS_C_ 1
 #include "sqliteInt.h"
-#undef _SQLITE_OS_C_
 
 /*
 ** If we compile with the SQLITE_TEST macro set, then the following block

@@ -1818,6 +1818,11 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, u32 inFlags, int *prRhsHasNull){
           eType = IN_INDEX_INDEX_ASC + pIdx->aSortOrder[0];
 
           if( prRhsHasNull && !pTab->aCol[iCol].notNull ){
+#ifdef SQLITE_ENABLE_COLUMN_USED_MASK
+            const i64 sOne = 1;
+            sqlite3VdbeAddOp4Dup8(v, OP_ColumnsUsed, 
+                iTab, 0, 0, (u8*)&sOne, P4_INT64);
+#endif
             *prRhsHasNull = ++pParse->nMem;
             sqlite3SetHasNullFlag(v, iTab, *prRhsHasNull);
           }
@@ -1830,7 +1835,7 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, u32 inFlags, int *prRhsHasNull){
   /* If no preexisting index is available for the IN clause
   ** and IN_INDEX_NOOP is an allowed reply
   ** and the RHS of the IN operator is a list, not a subquery
-  ** and the RHS is not contant or has two or fewer terms,
+  ** and the RHS is not constant or has two or fewer terms,
   ** then it is not worth creating an ephemeral table to evaluate
   ** the IN operator so return IN_INDEX_NOOP.
   */

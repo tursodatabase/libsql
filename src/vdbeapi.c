@@ -63,12 +63,19 @@ static int vdbeSafetyNotNull(Vdbe *p){
 */
 static SQLITE_NOINLINE void invokeProfileCallback(sqlite3 *db, Vdbe *p){
   sqlite3_int64 iNow;
+  sqlite3_int64 iElapse;
   assert( p->startTime>0 );
-  assert( db->xProfile!=0 );
+  assert( db->xProfile!=0 || (db->mTrace & SQLITE_TRACE_PROFILE)!=0 );
   assert( db->init.busy==0 );
   assert( p->zSql!=0 );
   sqlite3OsCurrentTimeInt64(db->pVfs, &iNow);
-  db->xProfile(db->pProfileArg, p->zSql, (iNow - p->startTime)*1000000);
+  iElapse = (iNow - p->startTime)*1000000;
+  if( db->xProfile ){
+    db->xProfile(db->pProfileArg, p->zSql, iElapse);
+  }
+  if( db->mTrace & SQLITE_TRACE_PROFILE ){
+    db->xTrace(SQLITE_TRACE_PROFILE, db->pTraceArg, p, (void*)&iElapse);
+  }
   p->startTime = 0;
 }
 /*
@@ -585,7 +592,8 @@ static int sqlite3Step(Vdbe *p){
     );
 
 #ifndef SQLITE_OMIT_TRACE
-    if( db->xProfile && !db->init.busy && p->zSql ){
+    if( (db->xProfile || (db->mTrace & SQLITE_TRACE_PROFILE)!=0)
+        && !db->init.busy && p->zSql ){
       sqlite3OsCurrentTimeInt64(db->pVfs, &p->startTime);
     }else{
       assert( p->startTime==0 );
@@ -1645,6 +1653,39 @@ int sqlite3_stmt_status(sqlite3_stmt *pStmt, int op, int resetFlag){
   v = pVdbe->aCounter[op];
   if( resetFlag ) pVdbe->aCounter[op] = 0;
   return (int)v;
+}
+
+/*
+** Return the SQL associated with a prepared statement
+*/
+const char *sqlite3_sql(sqlite3_stmt *pStmt){
+  Vdbe *p = (Vdbe *)pStmt;
+  return p ? p->zSql : 0;
+}
+
+/*
+** Return the SQL associated with a prepared statement with
+** bound parameters expanded.  Space to hold the returned string is
+** obtained from sqlite3_malloc().  The caller is responsible for
+** freeing the returned string by passing it to sqlite3_free().
+**
+** The SQLITE_TRACE_SIZE_LIMIT puts an upper bound on the size of
+** expanded bound parameters.
+*/
+char *sqlite3_expanded_sql(sqlite3_stmt *pStmt){
+#ifdef SQLITE_OMIT_TRACE
+  return 0;
+#else
+  char *z = 0;
+  const char *zSql = sqlite3_sql(pStmt);
+  if( zSql ){
+    Vdbe *p = (Vdbe *)pStmt;
+    sqlite3_mutex_enter(p->db->mutex);
+    z = sqlite3VdbeExpandSql(p, zSql);
+    sqlite3_mutex_leave(p->db->mutex);
+  }
+  return z;
+#endif
 }
 
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK

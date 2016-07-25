@@ -475,6 +475,44 @@ sqlite3_int64 sqlite3rbu_progress(sqlite3rbu *pRbu);
 void sqlite3rbu_bp_progress(sqlite3rbu *pRbu, int *pnOne, int *pnTwo);
 
 /*
+** Obtain an indication as to the current stage of an RBU update or vacuum.
+** This function always returns one of the SQLITE_RBU_STATE_XXX constants
+** defined in this file. Return values should be interpreted as follows:
+**
+** SQLITE_RBU_STATE_OAL:
+**   RBU is currently building a *-oal file. The next call to sqlite3rbu_step()
+**   may either add further data to the *-oal file, or compute data that will
+**   be added by a subsequent call.
+**
+** SQLITE_RBU_STATE_MOVE:
+**   RBU has finished building the *-oal file. The next call to sqlite3rbu_step()
+**   will move the *-oal file to the equivalent *-wal path. If the current
+**   operation is an RBU update, then the updated version of the database
+**   file will become visible to ordinary SQLite clients following the next
+**   call to sqlite3rbu_step().
+**
+** SQLITE_RBU_STATE_CHECKPOINT:
+**   RBU is currently performing an incremental checkpoint. The next call to
+**   sqlite3rbu_step() will copy a page of data from the *-wal file into
+**   the target database file.
+**
+** SQLITE_RBU_STATE_DONE:
+**   The RBU operation has finished. Any subsequent calls to sqlite3rbu_step()
+**   will immediately return SQLITE_DONE.
+**
+** SQLITE_RBU_STATE_ERROR:
+**   An error has occurred. Any subsequent calls to sqlite3rbu_step() will
+**   immediately return the SQLite error code associated with the error.
+*/
+#define SQLITE_RBU_STATE_OAL        1
+#define SQLITE_RBU_STATE_MOVE       2
+#define SQLITE_RBU_STATE_CHECKPOINT 3
+#define SQLITE_RBU_STATE_DONE       4
+#define SQLITE_RBU_STATE_ERROR      5
+
+int sqlite3rbu_state(sqlite3rbu *pRbu);
+
+/*
 ** Create an RBU VFS named zName that accesses the underlying file-system
 ** via existing VFS zParent. Or, if the zParent parameter is passed NULL, 
 ** then the new RBU VFS uses the default system VFS to access the file-system.

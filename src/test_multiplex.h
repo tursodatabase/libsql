@@ -20,8 +20,8 @@
 **
 */
 
-#ifndef _TEST_MULTIPLEX_H
-#define _TEST_MULTIPLEX_H
+#ifndef SQLITE_TEST_MULTIPLEX_H
+#define SQLITE_TEST_MULTIPLEX_H
 
 /*
 ** CAPI: File-control Operations Supported by Multiplex VFS
@@ -96,4 +96,4 @@ extern int sqlite3_multiplex_shutdown(int eForce);
 }  /* End of the 'extern "C"' block */
 #endif
 
-#endif /* _TEST_MULTIPLEX_H */
+#endif /* SQLITE_TEST_MULTIPLEX_H */

@@ -48,6 +48,8 @@ SQLITE_EXTENSION_INIT1
 #include <ctype.h>
 #include <stdio.h>
 
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+
 /*
 ** A macro to hint to the compiler that a function should not be
 ** inlined.
@@ -230,7 +232,7 @@ static char *csv_read_one_field(CsvReader *p){
          || (c==EOF && pc=='"')
         ){
           do{ p->n--; }while( p->z[p->n]!='"' );
-          p->cTerm = c;
+          p->cTerm = (char)c;
           break;
         }
         if( pc=='"' && c!='\r' ){
@@ -240,7 +242,7 @@ static char *csv_read_one_field(CsvReader *p){
         if( c==EOF ){
           csv_errmsg(p, "line %d: unterminated %c-quoted field\n",
                      startLine, '"');
-          p->cTerm = c;
+          p->cTerm = (char)c;
           break;
         }
       }
@@ -257,7 +259,7 @@ static char *csv_read_one_field(CsvReader *p){
       p->nLine++;
       if( p->n>0 && p->z[p->n-1]=='\r' ) p->n--;
     }
-    p->cTerm = c;
+    p->cTerm = (char)c;
   }
   if( p->z ) p->z[p->n] = 0;
   return p->z;
@@ -336,9 +338,9 @@ static void csv_trim_whitespace(char *z){
 
 /* Dequote the string */
 static void csv_dequote(char *z){
-  int i, j;
+  int j;
   char cQuote = z[0];
-  size_t n;
+  size_t i, n;
 
   if( cQuote!='\'' && cQuote!='"' ) return;
   n = strlen(z);
@@ -375,7 +377,7 @@ static int csv_string_parameter(
   char **pzVal             /* Write the dequoted string value here */
 ){
   const char *zValue;
-  zValue = csv_parameter(zParam,strlen(zParam),zArg);
+  zValue = csv_parameter(zParam,(int)strlen(zParam),zArg);
   if( zValue==0 ) return 0;
   p->zErr[0] = 0;
   if( *pzVal ){
@@ -616,7 +618,7 @@ static int csvtabOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
   CsvCursor *pCur;
   size_t nByte;
   nByte = sizeof(*pCur) + (sizeof(char*)+sizeof(int))*pTab->nCol;
-  pCur = sqlite3_malloc( nByte );
+  pCur = sqlite3_malloc64( nByte );
   if( pCur==0 ) return SQLITE_NOMEM;
   memset(pCur, 0, nByte);
   pCur->azVal = (char**)&pCur[1];
@@ -647,7 +649,7 @@ static int csvtabNext(sqlite3_vtab_cursor *cur){
     }
     if( i<pTab->nCol ){
       if( pCur->aLen[i] < pCur->rdr.n+1 ){
-        char *zNew = sqlite3_realloc(pCur->azVal[i], pCur->rdr.n+1);
+        char *zNew = sqlite3_realloc64(pCur->azVal[i], pCur->rdr.n+1);
         if( zNew==0 ){
           csv_errmsg(&pCur->rdr, "out of memory");
           csv_xfer_error(pTab, &pCur->rdr);
@@ -723,7 +725,8 @@ static int csvtabFilter(
   pCur->iRowid = 0;
   if( pCur->rdr.in==0 ){
     assert( pCur->rdr.zIn==pTab->zData );
-    assert( pTab->iStart<=pCur->rdr.nIn );
+    assert( pTab->iStart>=0 );
+    assert( (size_t)pTab->iStart<=pCur->rdr.nIn );
     pCur->rdr.iIn = pTab->iStart;
   }else{
     fseek(pCur->rdr.in, pTab->iStart, SEEK_SET);
@@ -834,6 +837,7 @@ static sqlite3_module CsvModuleFauxWrite = {
 };
 #endif /* SQLITE_TEST */
 
+#endif /* !defined(SQLITE_OMIT_VIRTUALTABLE) */
 
 
 #ifdef _WIN32
@@ -849,6 +853,7 @@ int sqlite3_csv_init(
   char **pzErrMsg, 
   const sqlite3_api_routines *pApi
 ){
+#ifndef SQLITE_OMIT_VIRTUALTABLE	
   int rc;
   SQLITE_EXTENSION_INIT2(pApi);
   rc = sqlite3_create_module(db, "csv", &CsvModule, 0);
@@ -858,4 +863,7 @@ int sqlite3_csv_init(
   }
 #endif
   return rc;
+#else
+  return SQLITE_OK;
+#endif
 }

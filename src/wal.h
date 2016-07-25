@@ -14,8 +14,8 @@
 ** the implementation of each function in log.c for further details.
 */
 
-#ifndef _WAL_H_
-#define _WAL_H_
+#ifndef SQLITE_WAL_H
+#define SQLITE_WAL_H
 
 #include "sqliteInt.h"
 
@@ -146,4 +146,4 @@ int sqlite3WalFramesize(Wal *pWal);
 sqlite3_file *sqlite3WalFile(Wal *pWal);
 
 #endif /* ifndef SQLITE_OMIT_WAL */
-#endif /* _WAL_H_ */
+#endif /* SQLITE_WAL_H */

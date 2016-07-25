@@ -356,5 +356,34 @@ do_execsql_test json-8.2 {
   SELECT a=json_extract(b,'$[0]') FROM t8;
 } {1}
 
+# The json_quote() function transforms an SQL value into a JSON value.
+# String values are quoted and interior quotes are escaped.  NULL values
+# are rendered as the unquoted string "null".
+#
+do_execsql_test json-9.1 {
+  SELECT json_quote('abc"xyz');
+} {{"abc\"xyz"}}
+do_execsql_test json-9.2 {
+  SELECT json_quote(3.14159);
+} {3.14159}
+do_execsql_test json-9.3 {
+  SELECT json_quote(12345);
+} {12345}
+do_execsql_test json-9.4 {
+  SELECT json_quote(null);
+} {"null"}
+do_catchsql_test json-9.5 {
+  SELECT json_quote(x'30313233');
+} {1 {JSON cannot hold BLOB values}}
+do_catchsql_test json-9.6 {
+  SELECT json_quote(123,456)
+} {1 {wrong number of arguments to function json_quote()}}
+do_catchsql_test json-9.7 {
+  SELECT json_quote()
+} {1 {wrong number of arguments to function json_quote()}}
+
+
+
+
 
 finish_test

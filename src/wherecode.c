@@ -569,7 +569,7 @@ static int codeAllEqualityTerms(
 ** expression: "x>='ABC' AND x<'abd'".  But this requires that the range
 ** scan loop run twice, once for strings and a second time for BLOBs.
 ** The OP_String opcodes on the second pass convert the upper and lower
-** bound string contants to blobs.  This routine makes the necessary changes
+** bound string constants to blobs.  This routine makes the necessary changes
 ** to the OP_String opcodes for that to happen.
 **
 ** Except, of course, if SQLITE_LIKE_DOESNT_MATCH_BLOBS is defined, then
@@ -626,6 +626,38 @@ static int codeCursorHintCheckExpr(Walker *pWalker, Expr *pExpr){
   return WRC_Continue;
 }
 
+/*
+** Test whether or not expression pExpr, which was part of a WHERE clause,
+** should be included in the cursor-hint for a table that is on the rhs
+** of a LEFT JOIN. Set Walker.eCode to non-zero before returning if the 
+** expression is not suitable.
+**
+** An expression is unsuitable if it might evaluate to non NULL even if
+** a TK_COLUMN node that does affect the value of the expression is set
+** to NULL. For example:
+**
+**   col IS NULL
+**   col IS NOT NULL
+**   coalesce(col, 1)
+**   CASE WHEN col THEN 0 ELSE 1 END
+*/
+static int codeCursorHintIsOrFunction(Walker *pWalker, Expr *pExpr){
+  if( pExpr->op==TK_IS 
+   || pExpr->op==TK_ISNULL || pExpr->op==TK_ISNOT 
+   || pExpr->op==TK_NOTNULL || pExpr->op==TK_CASE 
+  ){
+    pWalker->eCode = 1;
+  }else if( pExpr->op==TK_FUNCTION ){
+    int d1;
+    char d2[3];
+    if( 0==sqlite3IsLikeFunction(pWalker->pParse->db, pExpr, &d1, d2) ){
+      pWalker->eCode = 1;
+    }
+  }
+
+  return WRC_Continue;
+}
+
 
 /*
 ** This function is called on every node of an expression tree used as an
@@ -678,6 +710,7 @@ static int codeCursorHintFixExpr(Walker *pWalker, Expr *pExpr){
 ** Insert an OP_CursorHint instruction if it is appropriate to do so.
 */
 static void codeCursorHint(
+  struct SrcList_item *pTabItem,  /* FROM clause item */
   WhereInfo *pWInfo,    /* The where clause */
   WhereLevel *pLevel,   /* Which loop to provide hints for */
   WhereTerm *pEndRange  /* Hint this end-of-scan boundary term if not NULL */
@@ -708,7 +741,42 @@ static void codeCursorHint(
     pTerm = &pWC->a[i];
     if( pTerm->wtFlags & (TERM_VIRTUAL|TERM_CODED) ) continue;
     if( pTerm->prereqAll & pLevel->notReady ) continue;
-    if( ExprHasProperty(pTerm->pExpr, EP_FromJoin) ) continue;
+
+    /* Any terms specified as part of the ON(...) clause for any LEFT 
+    ** JOIN for which the current table is not the rhs are omitted
+    ** from the cursor-hint. 
+    **
+    ** If this table is the rhs of a LEFT JOIN, "IS" or "IS NULL" terms 
+    ** that were specified as part of the WHERE clause must be excluded.
+    ** This is to address the following:
+    **
+    **   SELECT ... t1 LEFT JOIN t2 ON (t1.a=t2.b) WHERE t2.c IS NULL;
+    **
+    ** Say there is a single row in t2 that matches (t1.a=t2.b), but its
+    ** t2.c values is not NULL. If the (t2.c IS NULL) constraint is 
+    ** pushed down to the cursor, this row is filtered out, causing
+    ** SQLite to synthesize a row of NULL values. Which does match the
+    ** WHERE clause, and so the query returns a row. Which is incorrect.
+    **
+    ** For the same reason, WHERE terms such as:
+    **
+    **   WHERE 1 = (t2.c IS NULL)
+    **
+    ** are also excluded. See codeCursorHintIsOrFunction() for details.
+    */
+    if( pTabItem->fg.jointype & JT_LEFT ){
+      Expr *pExpr = pTerm->pExpr;
+      if( !ExprHasProperty(pExpr, EP_FromJoin) 
+       || pExpr->iRightJoinTable!=pTabItem->iCursor
+      ){
+        sWalker.eCode = 0;
+        sWalker.xExprCallback = codeCursorHintIsOrFunction;
+        sqlite3WalkExpr(&sWalker, pTerm->pExpr);
+        if( sWalker.eCode ) continue;
+      }
+    }else{
+      if( ExprHasProperty(pTerm->pExpr, EP_FromJoin) ) continue;
+    }
 
     /* All terms in pWLoop->aLTerm[] except pEndRange are used to initialize
     ** the cursor.  These terms are not needed as hints for a pure range
@@ -742,7 +810,7 @@ static void codeCursorHint(
   }
 }
 #else
-# define codeCursorHint(A,B,C)  /* No-op */
+# define codeCursorHint(A,B,C,D)  /* No-op */
 #endif /* SQLITE_ENABLE_CURSOR_HINTS */
 
 /*
@@ -998,7 +1066,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       pStart = pEnd;
       pEnd = pTerm;
     }
-    codeCursorHint(pWInfo, pLevel, pEnd);
+    codeCursorHint(pTabItem, pWInfo, pLevel, pEnd);
     if( pStart ){
       Expr *pX;             /* The expression that defines the start bound */
       int r1, rTemp;        /* Registers for holding the start boundary */
@@ -1212,7 +1280,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     ** and store the values of those terms in an array of registers
     ** starting at regBase.
     */
-    codeCursorHint(pWInfo, pLevel, pRangeEnd);
+    codeCursorHint(pTabItem, pWInfo, pLevel, pRangeEnd);
     regBase = codeAllEqualityTerms(pParse,pLevel,bRev,nExtraReg,&zStartAff);
     assert( zStartAff==0 || sqlite3Strlen30(zStartAff)>=nEq );
     if( zStartAff ) cEndAff = zStartAff[nEq];
@@ -1660,7 +1728,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       ** a pseudo-cursor.  No need to Rewind or Next such cursors. */
       pLevel->op = OP_Noop;
     }else{
-      codeCursorHint(pWInfo, pLevel, 0);
+      codeCursorHint(pTabItem, pWInfo, pLevel, 0);
       pLevel->op = aStep[bRev];
       pLevel->p1 = iCur;
       pLevel->p2 = 1 + sqlite3VdbeAddOp2(v, aStart[bRev], iCur, addrBrk);

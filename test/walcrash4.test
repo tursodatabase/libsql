@@ -17,6 +17,7 @@ source $testdir/lock_common.tcl
 source $testdir/wal_common.tcl
 ifcapable !wal {finish_test ; return }
 set testprefix walcrash4
+do_not_use_codec
 
 #-------------------------------------------------------------------------
 # At one point, if "PRAGMA synchronous=full" is set and the platform

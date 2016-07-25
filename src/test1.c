@@ -3242,6 +3242,145 @@ static int test_bind_int(
 
 
 /*
+** Usage:   intarray_addr  INT  ...
+**
+** Return the address of a C-language array of 32-bit integers.
+**
+** Space to hold the array is obtained from malloc().  Call this procedure once
+** with no arguments in order to release memory.  Each call to this procedure
+** overwrites the previous array.
+*/
+static int test_intarray_addr(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int i;
+  static int *p = 0;
+
+  sqlite3_free(p);
+  p = 0;
+  if( objc>1 ){
+    p = sqlite3_malloc( sizeof(p[0])*(objc-1) );
+    if( p==0 ) return TCL_ERROR;
+    for(i=0; i<objc-1; i++){
+      if( Tcl_GetIntFromObj(interp, objv[1+i], &p[i]) ){
+        sqlite3_free(p);
+        p = 0;
+        return TCL_ERROR;
+      }
+    }
+  }  
+  Tcl_SetObjResult(interp, Tcl_NewWideIntObj((sqlite3_int64)p));
+  return TCL_OK;
+}
+/*
+** Usage:   intarray_addr  INT  ...
+**
+** Return the address of a C-language array of 32-bit integers.
+**
+** Space to hold the array is obtained from malloc().  Call this procedure once
+** with no arguments in order to release memory.  Each call to this procedure
+** overwrites the previous array.
+*/
+static int test_int64array_addr(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int i;
+  static sqlite3_int64 *p = 0;
+
+  sqlite3_free(p);
+  p = 0;
+  if( objc>1 ){
+    p = sqlite3_malloc( sizeof(p[0])*(objc-1) );
+    if( p==0 ) return TCL_ERROR;
+    for(i=0; i<objc-1; i++){
+      Tcl_WideInt v;
+      if( Tcl_GetWideIntFromObj(interp, objv[1+i], &v) ){
+        sqlite3_free(p);
+        p = 0;
+        return TCL_ERROR;
+      }
+      p[i] = v;
+    }
+  }  
+  Tcl_SetObjResult(interp, Tcl_NewWideIntObj((sqlite3_int64)p));
+  return TCL_OK;
+}
+/*
+** Usage:   doublearray_addr  INT  ...
+**
+** Return the address of a C-language array of doubles.
+**
+** Space to hold the array is obtained from malloc().  Call this procedure once
+** with no arguments in order to release memory.  Each call to this procedure
+** overwrites the previous array.
+*/
+static int test_doublearray_addr(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int i;
+  static double *p = 0;
+
+  sqlite3_free(p);
+  p = 0;
+  if( objc>1 ){
+    p = sqlite3_malloc( sizeof(p[0])*(objc-1) );
+    if( p==0 ) return TCL_ERROR;
+    for(i=0; i<objc-1; i++){
+      if( Tcl_GetDoubleFromObj(interp, objv[1+i], &p[i]) ){
+        sqlite3_free(p);
+        p = 0;
+        return TCL_ERROR;
+      }
+    }
+  }  
+  Tcl_SetObjResult(interp, Tcl_NewWideIntObj((sqlite3_int64)p));
+  return TCL_OK;
+}
+/*
+** Usage:   textarray_addr  TEXT ...
+**
+** Return the address of a C-language array of strings.
+**
+** Space to hold the array is obtained from malloc().  Call this procedure once
+** with no arguments in order to release memory.  Each call to this procedure
+** overwrites the previous array.
+*/
+static int test_textarray_addr(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int i;
+  static int n = 0;
+  static char **p = 0;
+
+  for(i=0; i<n; i++) sqlite3_free(p[i]);
+  sqlite3_free(p);
+  p = 0;
+  if( objc>1 ){
+    p = sqlite3_malloc( sizeof(p[0])*(objc-1) );
+    if( p==0 ) return TCL_ERROR;
+    for(i=0; i<objc-1; i++){
+      p[i] = sqlite3_mprintf("%s", Tcl_GetString(objv[1+i]));
+    }
+  }
+  n = objc-1;
+  Tcl_SetObjResult(interp, Tcl_NewWideIntObj((sqlite3_int64)p));
+  return TCL_OK;
+}
+
+
+/*
 ** Usage:   sqlite3_bind_int64  STMT N VALUE
 **
 ** Test the sqlite3_bind_int64 interface.  STMT is a prepared statement.
@@ -3494,7 +3633,7 @@ static int test_bind_blob(
   Tcl_Obj *CONST objv[]
 ){
   sqlite3_stmt *pStmt;
-  int idx;
+  int len, idx;
   int bytes;
   char *value;
   int rc;
@@ -3513,8 +3652,17 @@ static int test_bind_blob(
 
   if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
   if( Tcl_GetIntFromObj(interp, objv[2], &idx) ) return TCL_ERROR;
-  value = Tcl_GetString(objv[3]);
+
+  value = (char*)Tcl_GetByteArrayFromObj(objv[3], &len);
   if( Tcl_GetIntFromObj(interp, objv[4], &bytes) ) return TCL_ERROR;
+
+  if( bytes>len ){
+    char zBuf[200];
+    sqlite3_snprintf(sizeof(zBuf), zBuf,
+                     "cannot use %d blob bytes, have %d", bytes, len);
+    Tcl_AppendResult(interp, zBuf, -1);
+    return TCL_ERROR;
+  }
 
   rc = sqlite3_bind_blob(pStmt, idx, value, bytes, xDestructor);
   if( sqlite3TestErrCode(interp, StmtToDb(pStmt), rc) ) return TCL_ERROR;
@@ -4263,6 +4411,26 @@ static int test_sql(
 
   if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
   Tcl_SetResult(interp, (char *)sqlite3_sql(pStmt), TCL_VOLATILE);
+  return TCL_OK;
+}
+static int test_ex_sql(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_stmt *pStmt;
+  char *z;
+
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "STMT");
+    return TCL_ERROR;
+  }
+
+  if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
+  z = sqlite3_expanded_sql(pStmt);
+  Tcl_SetResult(interp, z, TCL_VOLATILE);
+  sqlite3_free(z);
   return TCL_OK;
 }
 
@@ -6774,6 +6942,7 @@ static int tclLoadStaticExtensionCmd(
   Tcl_Obj *CONST objv[]
 ){
   extern int sqlite3_amatch_init(sqlite3*,char**,const sqlite3_api_routines*);
+  extern int sqlite3_carray_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_closure_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_csv_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_eval_init(sqlite3*,char**,const sqlite3_api_routines*);
@@ -6792,6 +6961,7 @@ static int tclLoadStaticExtensionCmd(
     int (*pInit)(sqlite3*,char**,const sqlite3_api_routines*);
   } aExtension[] = {
     { "amatch",                sqlite3_amatch_init               },
+    { "carray",                sqlite3_carray_init               },
     { "closure",               sqlite3_closure_init              },
     { "csv",                   sqlite3_csv_init                  },
     { "eval",                  sqlite3_eval_init                 },
@@ -7286,6 +7456,10 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "bad_behavior",                  test_bad_behavior,  (void*)&iZero },
      { "register_dbstat_vtab",          test_register_dbstat_vtab  },
      { "sqlite3_connection_pointer",    get_sqlite_pointer, 0 },
+     { "intarray_addr",                 test_intarray_addr, 0 },
+     { "int64array_addr",               test_int64array_addr, 0 },
+     { "doublearray_addr",              test_doublearray_addr, 0 },
+     { "textarray_addr",                test_textarray_addr, 0 },
      { "sqlite3_bind_int",              test_bind_int,      0 },
      { "sqlite3_bind_zeroblob",         test_bind_zeroblob, 0 },
      { "sqlite3_bind_zeroblob64",       test_bind_zeroblob64, 0 },
@@ -7323,6 +7497,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_changes",               test_changes       ,0 },
      { "sqlite3_step",                  test_step          ,0 },
      { "sqlite3_sql",                   test_sql           ,0 },
+     { "sqlite3_expanded_sql",          test_ex_sql        ,0 },
      { "sqlite3_next_stmt",             test_next_stmt     ,0 },
      { "sqlite3_stmt_readonly",         test_stmt_readonly ,0 },
      { "sqlite3_stmt_busy",             test_stmt_busy     ,0 },
