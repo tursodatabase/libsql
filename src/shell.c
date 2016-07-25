@@ -5324,6 +5324,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       szHeap = integerValue(zSize);
       if( szHeap>0x7fff0000 ) szHeap = 0x7fff0000;
       sqlite3_config(SQLITE_CONFIG_HEAP, malloc((int)szHeap), (int)szHeap, 64);
+#else
+      (void)cmdline_option_value(argc, argv, ++i);
 #endif
     }else if( strcmp(z,"-scratch")==0 ){
       int n, sz;
