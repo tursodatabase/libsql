@@ -1,5 +1,5 @@
-C Fix\sthe\s--enable-memsysN\soptions\sin\sconfigure\sso\sthat\sthey\sactually\swork.
-D 2016-07-25T11:32:09.826
+C Another\sattempt\sat\sgetting\s--enable-memsysN\sworking.
+D 2016-07-25T11:39:24.067
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -30,8 +30,8 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 6376abec766e9a0785178b1823b5a587e9f1ccbc
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 71e6c9bb642ef53357cb8dbc858fc84998f3bc6d x
-F configure.ac b67f6fc9f3e22edabd4be3911289400423e5ffa9
+F configure f62e6614b26418ce81392b2c28b2a6cf268f1d5d x
+F configure.ac 83c4e53031a3582d0b9200dcb3700189a24f1b1c
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html e2118945e5f07ed146b45c9cd2b2dd6eabb8ebf2
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
@@ -1507,7 +1507,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 67e1dc9842dc8a6ae5edef21bdb2ef6d3f4a17b7
-R bb2ee4817e32d59609fbb5b8d40bbd12
+P 679552550e085497b98478bbe28056d99fe4aab4
+R 5c303973b5bb214411149d73b1469581
 U drh
-Z dcc29f2a3f4c1199964573b0937d7a95
+Z 6145af1bb509746e3a2a7850c862eafe
