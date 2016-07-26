@@ -1,5 +1,5 @@
-C In\sthe\sVACUUM\scommand,\sset\sthe\scache_size\sof\sthe\stransient\svacuum_db\sdatabase\nto\sbe\sthe\ssame\sas\sthe\sdatabase\sbeing\svacuumed.
-D 2016-07-25T22:40:12.561
+C Make\ssure\saffinity\sis\sapplied\scorrectly\son\slower-bound\srange\sconstraints\nin\sthe\smin()\soptimization.\s\sFix\sfor\sticket\s[a0bac8b3c3d1bb].
+D 2016-07-26T04:31:14.412
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -465,7 +465,7 @@ F src/wal.h 6dd221ed384afdc204bc61e25c23ef7fd5a511f2
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
 F src/where.c 48eed8ebe319c6cbc7bf7682018f32af0f5189f5
 F src/whereInt.h e5b939701a7ceffc5a3a8188a37f9746416ebcd0
-F src/wherecode.c 11e38f5e2dc5c007143fbf7fdb14bca40a6b74ad
+F src/wherecode.c 99707d11907c71d289ee9553d2d1a22f1fd8ba41
 F src/whereexpr.c d7dcbf14ce1b5876c1f76496162c30fcba669563
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -929,7 +929,7 @@ F test/memdb.test c1f2a343ad14398d5d6debda6ea33e80d0dafcc7
 F test/memleak.test 10b9c6c57e19fc68c32941495e9ba1c50123f6e2
 F test/memsubsys1.test 6d268d0ae90f8d61a2356a1838665654d83de518
 F test/memsubsys2.test 3e4a8d0c05fd3e5fa92017c64666730a520c7e08
-F test/minmax.test 42fbad0e81afaa6e0de41c960329f2b2c3526efd
+F test/minmax.test 6751e87b409fe11b02e70a306d846fa544e25a41
 F test/minmax2.test b44bae787fc7b227597b01b0ca5575c7cb54d3bc
 F test/minmax3.test cc1e8b010136db0d01a6f2a29ba5a9f321034354
 F test/minmax4.test 936941484ebdceb8adec7c86b6cd9b6e5e897c1f
@@ -1507,7 +1507,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a495f8e77e14241150f79e746c7303284f04621a
-R 8704dbefb85fb183a067d36d9af66cac
+P b78d99548ac53ac10dcc38368cc4b29c8cbcb09b
+Q +0e9f534fef72ca142a4296ab5285c82aada38ba7
+R b5725dd72810ef0d52d5b0abd989daf2
 U drh
-Z 422685421478fa78357b95bed0587f82
+Z a046c0beaad1d7947f30a6bdc44927b5
