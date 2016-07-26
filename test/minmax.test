@@ -628,5 +628,19 @@ do_test_13_noopt 13.7 {
   SELECT min(c), count(c) FROM t1 WHERE a='a';
 } {1 5}
 
+# 2016-07-26.  https://www.sqlite.org/src/info/a0bac8b3c3d1bb75
+# Incorrect result on a min() query after a CREATE INDEX.
+#
+do_execsql_test 14.1 {
+  CREATE TABLE t14(a INTEGER, b INTEGER);
+  INSERT INTO t14(a,b) VALUES(100,2),(200,2),(300,2),(400,1),(500,2);
+  SELECT min(a) FROM t14 WHERE b='2' AND a>'50';
+} {100}
+do_execsql_test 14.2 {
+  CREATE INDEX t14ba ON t14(b,a);
+  SELECT min(a) FROM t14 WHERE b='2' AND a>'50';
+} {100}
+
+
 
 finish_test
