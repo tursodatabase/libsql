@@ -356,6 +356,7 @@ static int codeEqualityTerm(
   Vdbe *v = pParse->pVdbe;
   int iReg;                  /* Register holding results */
 
+  assert( pLevel->pWLoop->aLTerm[iEq]==pTerm );
   assert( iTarget>0 );
   if( pX->op==TK_EQ || pX->op==TK_IS ){
     iReg = sqlite3ExprCodeTarget(pParse, pX->pRight, iTarget);
@@ -368,6 +369,9 @@ static int codeEqualityTerm(
     int iTab;
     struct InLoop *pIn;
     WhereLoop *pLoop = pLevel->pWLoop;
+    int i;
+    int nEq = 0;
+    int *aiMap = 0;
 
     if( (pLoop->wsFlags & WHERE_VIRTUALTABLE)==0
       && pLoop->u.btree.pIndex!=0
@@ -379,7 +383,52 @@ static int codeEqualityTerm(
     }
     assert( pX->op==TK_IN );
     iReg = iTarget;
-    eType = sqlite3FindInIndex(pParse, pX, IN_INDEX_LOOP, 0, 0);
+
+    for(i=0; i<iEq; i++){
+      if( pLoop->aLTerm[i] && pLoop->aLTerm[i]->pExpr==pX ){
+        disableTerm(pLevel, pTerm);
+        return iTarget;
+      }
+    }
+    for(i=iEq;i<pLoop->nLTerm; i++){
+      if( pLoop->aLTerm[i] && pLoop->aLTerm[i]->pExpr==pX ) nEq++;
+    }
+
+    if( nEq>1 ){
+      aiMap = (int*)sqlite3DbMallocZero(pParse->db, sizeof(int) * nEq);
+      if( !aiMap ) return 0;
+    }
+
+    if( (pX->flags & EP_xIsSelect)==0 || pX->x.pSelect->pEList->nExpr==1 ){
+      eType = sqlite3FindInIndex(pParse, pX, IN_INDEX_LOOP, 0, 0);
+    }else{
+      sqlite3 *db = pParse->db;
+      ExprList *pOrigRhs = pX->x.pSelect->pEList;
+      ExprList *pOrigLhs = pX->pLeft->x.pList;
+      ExprList *pRhs = 0;         /* New Select.pEList for RHS */
+      ExprList *pLhs = 0;         /* New pX->pLeft vector */
+
+      for(i=iEq;i<pLoop->nLTerm; i++){
+        if( pLoop->aLTerm[i]->pExpr==pX ){
+          int iField = pLoop->aLTerm[i]->iField - 1;
+          Expr *pNewRhs = sqlite3ExprDup(db, pOrigRhs->a[iField].pExpr, 0);
+          Expr *pNewLhs = sqlite3ExprDup(db, pOrigLhs->a[iField].pExpr, 0);
+
+          pRhs = sqlite3ExprListAppend(pParse, pRhs, pNewRhs);
+          pLhs = sqlite3ExprListAppend(pParse, pLhs, pNewLhs);
+        }
+      }
+
+      pX->x.pSelect->pEList = pRhs;
+      pX->pLeft->x.pList = pLhs;
+
+      eType = sqlite3FindInIndex(pParse, pX, IN_INDEX_LOOP, 0, aiMap);
+      pX->x.pSelect->pEList = pOrigRhs;
+      pX->pLeft->x.pList = pOrigLhs;
+      sqlite3ExprListDelete(pParse->db, pLhs);
+      sqlite3ExprListDelete(pParse->db, pRhs);
+    }
+
     if( eType==IN_INDEX_INDEX_DESC ){
       testcase( bRev );
       bRev = !bRev;
@@ -389,28 +438,44 @@ static int codeEqualityTerm(
     VdbeCoverageIf(v, bRev);
     VdbeCoverageIf(v, !bRev);
     assert( (pLoop->wsFlags & WHERE_MULTI_OR)==0 );
+
     pLoop->wsFlags |= WHERE_IN_ABLE;
     if( pLevel->u.in.nIn==0 ){
       pLevel->addrNxt = sqlite3VdbeMakeLabel(v);
     }
-    pLevel->u.in.nIn++;
+
+    i = pLevel->u.in.nIn;
+    pLevel->u.in.nIn += nEq;
     pLevel->u.in.aInLoop =
        sqlite3DbReallocOrFree(pParse->db, pLevel->u.in.aInLoop,
                               sizeof(pLevel->u.in.aInLoop[0])*pLevel->u.in.nIn);
     pIn = pLevel->u.in.aInLoop;
     if( pIn ){
-      pIn += pLevel->u.in.nIn - 1;
-      pIn->iCur = iTab;
-      if( eType==IN_INDEX_ROWID ){
-        pIn->addrInTop = sqlite3VdbeAddOp2(v, OP_Rowid, iTab, iReg);
-      }else{
-        pIn->addrInTop = sqlite3VdbeAddOp3(v, OP_Column, iTab, 0, iReg);
+      int iMap = 0;               /* Index in aiMap[] */
+      pIn += i;
+      for(i=iEq;i<pLoop->nLTerm; i++, pIn++){
+        if( pLoop->aLTerm[i]->pExpr==pX ){
+          if( eType==IN_INDEX_ROWID ){
+            assert( nEq==1 && i==iEq );
+            pIn->addrInTop = sqlite3VdbeAddOp2(v, OP_Rowid, iTab, iReg);
+          }else{
+            int iCol = aiMap ? aiMap[iMap++] : 0;
+            int iOut = iReg + i - iEq;
+            pIn->addrInTop = sqlite3VdbeAddOp3(v,OP_Column,iTab, iCol, iOut);
+          }
+          if( i==iEq ){
+            pIn->iCur = iTab;
+            pIn->eEndLoopOp = bRev ? OP_PrevIfOpen : OP_NextIfOpen;
+          }else{
+            pIn->eEndLoopOp = OP_Noop;
+          }
+        }
+        sqlite3VdbeAddOp1(v, OP_IsNull, iReg); VdbeCoverage(v);
       }
-      pIn->eEndLoopOp = bRev ? OP_PrevIfOpen : OP_NextIfOpen;
-      sqlite3VdbeAddOp1(v, OP_IsNull, iReg); VdbeCoverage(v);
     }else{
       pLevel->u.in.nIn = 0;
     }
+    sqlite3DbFree(pParse->db, aiMap);
 #endif
   }
   disableTerm(pLevel, pTerm);

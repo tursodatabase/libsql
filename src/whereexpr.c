@@ -960,6 +960,12 @@ static void exprAnalyze(
     Expr *pLeft = sqlite3ExprSkipCollate(pExpr->pLeft);
     Expr *pRight = sqlite3ExprSkipCollate(pExpr->pRight);
     u16 opMask = (pTerm->prereqRight & prereqLeft)==0 ? WO_ALL : WO_EQUIV;
+
+    if( op==TK_IN && pTerm->iField>0 ){
+      assert( pLeft->op==TK_VECTOR );
+      pLeft = pLeft->x.pList->a[pTerm->iField-1].pExpr;
+    }
+
     if( exprMightBeIndexed(pSrc, op, prereqLeft, pLeft, &iCur, &iColumn) ){
       pTerm->leftCursor = iCur;
       pTerm->u.leftColumn = iColumn;
@@ -1190,6 +1196,19 @@ static void exprAnalyze(
 
       pNew = sqlite3PExpr(pParse, pExpr->op, pLeft, pRight, 0);
       idxNew = whereClauseInsert(pWC, pNew, TERM_VIRTUAL|TERM_DYNAMIC);
+      exprAnalyze(pSrc, pWC, idxNew);
+      markTermAsChild(pWC, idxNew, idxTerm);
+    }
+  }
+
+  if( pWC->op==TK_AND && pExpr->op==TK_IN && pTerm->iField==0
+   && pExpr->pLeft->op==TK_VECTOR
+  ){
+    int i;
+    for(i=0; i<sqlite3ExprVectorSize(pExpr->pLeft); i++){
+      int idxNew;
+      idxNew = whereClauseInsert(pWC, pExpr, TERM_VIRTUAL);
+      pWC->a[idxNew].iField = i+1;
       exprAnalyze(pSrc, pWC, idxNew);
       markTermAsChild(pWC, idxNew, idxTerm);
     }

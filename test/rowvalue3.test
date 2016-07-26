@@ -42,11 +42,56 @@ foreach {tn sql res} {
   do_execsql_test 1.$tn $sql $res
 }
 
-#explain_i { SELECT (4, NULL) IN (SELECT a, b FROM t1) } 
-#do_execsql_test 2 { SELECT (4, NULL) IN (SELECT a, b FROM t1) } {}
+#-------------------------------------------------------------------------
 
+do_execsql_test 2.0 {
+  CREATE TABLE z1(x, y, z);
+  CREATE TABLE kk(a, b);
 
+  INSERT INTO z1 VALUES('a', 'b', 'c');
+  INSERT INTO z1 VALUES('d', 'e', 'f');
+  INSERT INTO z1 VALUES('g', 'h', 'i');
 
+  -- INSERT INTO kk VALUES('y', 'y');
+  INSERT INTO kk VALUES('d', 'e');
+  -- INSERT INTO kk VALUES('x', 'x');
+
+}
+
+foreach {tn idx} {
+  1 { }
+  2 {  CREATE INDEX z1idx ON z1(x, y) }
+  3 {  CREATE UNIQUE INDEX z1idx ON z1(x, y) }
+} {
+  execsql "DROP INDEX IF EXISTS z1idx"
+  execsql $idx
+
+  do_execsql_test 2.$tn.1 {
+    SELECT * FROM z1 WHERE x IN (SELECT a FROM kk)
+  } {d e f}
+
+  do_execsql_test 2.$tn.2 {
+    SELECT * FROM z1 WHERE (x,y) IN (SELECT a, b FROM kk)
+  } {d e f}
+
+  do_execsql_test 2.$tn.3 {
+    SELECT * FROM z1 WHERE (x, +y) IN (SELECT a, b FROM kk)
+  } {d e f}
+  
+  do_execsql_test 2.$tn.4 {
+    SELECT * FROM z1 WHERE (x, +y) IN (SELECT a, b||'x' FROM kk)
+  } {}
+
+  do_execsql_test 2.$tn.5 {
+    SELECT * FROM z1 WHERE (+x, y) IN (SELECT a, b FROM kk)
+  } {d e f}
+}
+
+explain_i {
+  SELECT * FROM z1 WHERE (x, y) IN (SELECT a, b FROM kk)
+} 
 
 finish_test
+
+
 

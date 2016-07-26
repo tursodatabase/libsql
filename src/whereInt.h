@@ -248,6 +248,7 @@ struct WhereTerm {
   Expr *pExpr;            /* Pointer to the subexpression that is this term */
   int iParent;            /* Disable pWC->a[iParent] when this term disabled */
   int leftCursor;         /* Cursor number of X in "X <op> <expr>" */
+  int iField;             /* Field in (?,?,?) IN (SELECT...) vector */
   union {
     int leftColumn;         /* Column number of X in "X <op> <expr>" */
     WhereOrInfo *pOrInfo;   /* Extra information if (eOperator & WO_OR)!=0 */

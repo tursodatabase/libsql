@@ -767,7 +767,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         }
 
         if( pExpr->op==TK_SELECT && pExpr->x.pSelect->pEList->nExpr>1 ){
-          if( !ExprHasProperty(pExpr, EP_VectorOk) ){
+          if( !ExprHasProperty(pExpr, EP_VectorOk) && 0 ){
             sqlite3ErrorMsg(pParse, "invalid use of row value");
           }else{
             ExprSetProperty(pExpr, EP_Vector);

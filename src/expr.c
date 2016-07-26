@@ -339,6 +339,19 @@ static Expr *exprVectorField(Expr *pVector, int i){
   return pVector->x.pList->a[i].pExpr;
 }
 
+static int exprVectorSubselect(Parse *pParse, Expr *pExpr){
+  int reg = 0;
+  if( pExpr->flags & EP_xIsSelect ){
+    assert( pExpr->op==TK_REGISTER || pExpr->op==TK_SELECT );
+    if( pExpr->op==TK_REGISTER ){
+      reg = pExpr->iTable;
+    }else{
+      reg = sqlite3CodeSubselect(pParse, pExpr, 0, 0);
+    }
+  }
+  return reg;
+}
+
 static void codeVectorCompare(Parse *pParse, Expr *pExpr, int dest){
   Vdbe *v = pParse->pVdbe;
   Expr *pLeft = pExpr->pLeft;
@@ -389,16 +402,8 @@ static void codeVectorCompare(Parse *pParse, Expr *pExpr, int dest){
         break;
     }
 
-    if( pLeft->flags & EP_xIsSelect ){
-      assert( pLeft->op==TK_SELECT || pLeft->op==TK_REGISTER );
-      regLeft = sqlite3ExprCodeTarget(pParse, pLeft, 1);
-      assert( regLeft!=1 );
-    }
-    if( pRight->flags & EP_xIsSelect ){
-      assert( pRight->op==TK_SELECT || pRight->op==TK_REGISTER );
-      regRight = sqlite3ExprCodeTarget(pParse, pRight, 1);
-      assert( regRight!=1 );
-    }
+    regLeft = exprVectorSubselect(pParse, pLeft);
+    regRight = exprVectorSubselect(pParse, pRight);
     if( pParse->nErr ) return;
 
     for(i=0; i<nLeft; i++){
@@ -2064,7 +2069,7 @@ static char *exprINAffinity(Parse *pParse, Expr *pExpr){
     for(i=0; i<nVal; i++){
       Expr *pA;
       char a;
-      if( nVal==1 ){
+      if( nVal==1 && 0 ){
         pA = pLeft;
       }else{    
         pA = exprVectorField(pLeft, i);
@@ -2076,6 +2081,19 @@ static char *exprINAffinity(Parse *pParse, Expr *pExpr){
   }
   return zRet;
 }
+
+#ifndef SQLITE_OMIT_SUBQUERY
+/*
+** Load the Parse object passed as the first argument with an error 
+** message of the form:
+**
+**   "sub-select returns N columns - expected M"
+*/   
+void sqlite3SubselectError(Parse *pParse, int nActual, int nExpect){
+  const char *zFmt = "sub-select returns %d columns - expected %d";
+  sqlite3ErrorMsg(pParse, zFmt, nActual, nExpect);
+}
+#endif
 
 /*
 ** Generate code for scalar subqueries used as a subquery expression, EXISTS,
@@ -2180,8 +2198,7 @@ int sqlite3CodeSubselect(
 
         assert( !isRowid );
         if( pEList->nExpr!=nVal ){
-          sqlite3ErrorMsg(pParse, "SELECT has %d columns - expected %d",
-              pEList->nExpr, nVal);
+          sqlite3SubselectError(pParse, pEList->nExpr, nVal);
         }else{
           SelectDest dest;
           int i;
@@ -3350,9 +3367,14 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
 #ifndef SQLITE_OMIT_SUBQUERY
     case TK_EXISTS:
     case TK_SELECT: {
+      int nCol;
       testcase( op==TK_EXISTS );
       testcase( op==TK_SELECT );
-      inReg = sqlite3CodeSubselect(pParse, pExpr, 0, 0);
+      if( op==TK_SELECT && (nCol = pExpr->x.pSelect->pEList->nExpr)!=1 ){
+        sqlite3SubselectError(pParse, nCol, 1);
+      }else{
+        inReg = sqlite3CodeSubselect(pParse, pExpr, 0, 0);
+      }
       break;
     }
     case TK_IN: {
