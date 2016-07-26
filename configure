@@ -903,6 +903,8 @@ with_readline_inc
 enable_debug
 enable_amalgamation
 enable_load_extension
+enable_memsys5
+enable_memsys3
 enable_fts3
 enable_fts4
 enable_fts5
@@ -1552,6 +1554,8 @@ Optional Features:
                           separately
   --disable-load-extension
                           Disable loading of external extensions
+  --enable-memsys5        Enable MEMSYS5
+  --enable-memsys3        Enable MEMSYS3
   --enable-fts3           Enable the FTS3 extension
   --enable-fts4           Enable the FTS4 extension
   --enable-fts5           Enable the FTS5 extension
@@ -3925,13 +3929,13 @@ if ${lt_cv_nm_interface+:} false; then :
 else
   lt_cv_nm_interface="BSD nm"
   echo "int some_variable = 0;" > conftest.$ac_ext
-  (eval echo "\"\$as_me:3928: $ac_compile\"" >&5)
+  (eval echo "\"\$as_me:3932: $ac_compile\"" >&5)
   (eval "$ac_compile" 2>conftest.err)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:3931: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
+  (eval echo "\"\$as_me:3935: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
   (eval "$NM \"conftest.$ac_objext\"" 2>conftest.err > conftest.out)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:3934: output\"" >&5)
+  (eval echo "\"\$as_me:3938: output\"" >&5)
   cat conftest.out >&5
   if $GREP 'External.*some_variable' conftest.out > /dev/null; then
     lt_cv_nm_interface="MS dumpbin"
@@ -5137,7 +5141,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 5140 "configure"' > conftest.$ac_ext
+  echo '#line 5144 "configure"' > conftest.$ac_ext
   if { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_compile\""; } >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -6662,11 +6666,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6665: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6669: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:6669: \$? = $ac_status" >&5
+   echo "$as_me:6673: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -7001,11 +7005,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7004: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7008: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:7008: \$? = $ac_status" >&5
+   echo "$as_me:7012: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -7106,11 +7110,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7109: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7113: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:7113: \$? = $ac_status" >&5
+   echo "$as_me:7117: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -7161,11 +7165,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7164: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7168: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:7168: \$? = $ac_status" >&5
+   echo "$as_me:7172: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -9541,7 +9545,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 9544 "configure"
+#line 9548 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -9637,7 +9641,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 9640 "configure"
+#line 9644 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -11337,6 +11341,44 @@ fi
 
 else
   OPT_FEATURE_FLAGS="-DSQLITE_OMIT_LOAD_EXTENSION=1"
+fi
+
+##########
+# Do we want to support memsys3 and/or memsys5
+#
+# Check whether --enable-memsys5 was given.
+if test "${enable_memsys5+set}" = set; then :
+  enableval=$enable_memsys5; enable_memsys5=yes
+else
+  enable_memsys5=no
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to support MEMSYS5" >&5
+$as_echo_n "checking whether to support MEMSYS5... " >&6; }
+if test "${enable_memsys5}" = "yes"; then
+  OPT_FEATURE_FLAGS+=" -DSQLITE_ENABLE_MEMSYS5"
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+# Check whether --enable-memsys3 was given.
+if test "${enable_memsys3+set}" = set; then :
+  enableval=$enable_memsys3; enable_memsys3=yes
+else
+  enable_memsys3=no
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to support MEMSYS3" >&5
+$as_echo_n "checking whether to support MEMSYS3... " >&6; }
+if test "${enable_memsys3}" = "yes" -a "${enable_memsys5}" = "no"; then
+  OPT_FEATURE_FLAGS+=" -DSQLITE_ENABLE_MEMSYS3"
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
 fi
 
 #########

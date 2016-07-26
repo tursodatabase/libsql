@@ -1203,13 +1203,14 @@ nexprlist(A) ::= nexprlist(A) COMMA expr(Y).
 nexprlist(A) ::= expr(Y).
     {A = sqlite3ExprListAppend(pParse,0,Y.pExpr); /*A-overwrites-Y*/}
 
+%ifndef SQLITE_OMIT_SUBQUERY
 /* A paren_exprlist is an optional expression list contained inside
 ** of parenthesis */
 %type paren_exprlist {ExprList*}
 %destructor paren_exprlist {sqlite3ExprListDelete(pParse->db, $$);}
 paren_exprlist(A) ::= .   {A = 0;}
 paren_exprlist(A) ::= LP exprlist(X) RP.  {A = X;}
-
+%endif SQLITE_OMIT_SUBQUERY
 
 
 ///////////////////////////// The CREATE INDEX command ///////////////////////

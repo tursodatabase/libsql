@@ -2543,13 +2543,20 @@ static FILE *output_file_open(const char *zFile){
 /*
 ** A routine for handling output from sqlite3_trace().
 */
-static void sql_trace_callback(void *pArg, const char *z){
+static int sql_trace_callback(
+  unsigned mType,
+  void *pArg,
+  void *pP,
+  void *pX
+){
   FILE *f = (FILE*)pArg;
   if( f ){
+    const char *z = (const char*)pX;
     int i = (int)strlen(z);
     while( i>0 && z[i-1]==';' ){ i--; }
     utf8_printf(f, "%.*s;\n", i, z);
   }
+  return 0;
 }
 
 /*
@@ -4655,9 +4662,9 @@ static int do_meta_command(char *zLine, ShellState *p){
     p->traceOut = output_file_open(azArg[1]);
 #if !defined(SQLITE_OMIT_TRACE) && !defined(SQLITE_OMIT_FLOATING_POINT)
     if( p->traceOut==0 ){
-      sqlite3_trace(p->db, 0, 0);
+      sqlite3_trace_v2(p->db, 0, 0, 0);
     }else{
-      sqlite3_trace(p->db, sql_trace_callback, p->traceOut);
+      sqlite3_trace_v2(p->db, SQLITE_TRACE_STMT, sql_trace_callback,p->traceOut);
     }
 #endif
   }else
@@ -5317,6 +5324,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       szHeap = integerValue(zSize);
       if( szHeap>0x7fff0000 ) szHeap = 0x7fff0000;
       sqlite3_config(SQLITE_CONFIG_HEAP, malloc((int)szHeap), (int)szHeap, 64);
+#else
+      (void)cmdline_option_value(argc, argv, ++i);
 #endif
     }else if( strcmp(z,"-scratch")==0 ){
       int n, sz;

@@ -237,7 +237,7 @@ static int carrayFilter(
     if( idxNum<3 ){
       pCur->eType = CARRAY_INT32;
     }else{
-      int i;
+      unsigned char i;
       const char *zType = (const char*)sqlite3_value_text(argv[2]);
       for(i=0; i<sizeof(azType)/sizeof(azType[0]); i++){
         if( sqlite3_stricmp(zType, azType[i])==0 ) break;

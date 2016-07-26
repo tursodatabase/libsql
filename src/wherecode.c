@@ -1416,6 +1416,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       }else{
         startEq = 1;
       }
+      bSeekPastNull = 0;
     }else if( bSeekPastNull ){
       sqlite3VdbeAddOp2(v, OP_Null, 0, regBase+nEq);
       nConstraint++;

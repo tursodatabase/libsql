@@ -379,35 +379,40 @@ foreach ::lookaside_buffer_size {0 64 120} {
 # The following tests focus on DBSTATUS_CACHE_USED_SHARED
 #
 ifcapable shared_cache {
-  proc do_cacheused_test {tn db res} {
-    set cu [sqlite3_db_status $db SQLITE_DBSTATUS_CACHE_USED 0]
-    set pcu [sqlite3_db_status $db SQLITE_DBSTATUS_CACHE_USED_SHARED 0]
-    set cu [lindex $cu 1]
-    set pcu [lindex $pcu 1]
-    uplevel [list do_test $tn [list list $cu $pcu] "#/$res/"]
+  if {[permutation]=="memsys3"
+      || [permutation]=="memsys5"
+      || $::tcl_platform(os)=="Linux"} {
+    proc do_cacheused_test {tn db res} {
+      set cu [sqlite3_db_status $db SQLITE_DBSTATUS_CACHE_USED 0]
+      set pcu [sqlite3_db_status $db SQLITE_DBSTATUS_CACHE_USED_SHARED 0]
+      set cu [lindex $cu 1]
+      set pcu [lindex $pcu 1]
+      uplevel [list do_test $tn [list list $cu $pcu] "#/$res/"]
+    }
+    reset_db
+    sqlite3 db file:test.db?cache=shared
+  
+    do_execsql_test 4.0 {
+      PRAGMA auto_vacuum=NONE;
+      CREATE TABLE t1(a, b, c);
+      INSERT INTO t1 VALUES(1, 2, 3);
+    }
+    do_cacheused_test 4.0.1 db { 4568 4568 }
+    do_execsql_test 4.1 {
+      CREATE TEMP TABLE tt(a, b, c);
+      INSERT INTO tt VALUES(1, 2, 3);
+    }
+    do_cacheused_test 4.1.1 db { 9000 9000 }
+  
+    sqlite3 db2 file:test.db?cache=shared
+    do_cacheused_test 4.2.1 db2 { 4568 2284 }
+    do_cacheused_test 4.2.2 db { 9000 6716 }
+    db close
+    do_cacheused_test 4.2.3 db2 { 4568 4568 }
+    sqlite3 db file:test.db?cache=shared
+    do_cacheused_test 4.2.4 db2 { 4568 2284 }
+    db2 close
   }
-  reset_db
-  sqlite3 db file:test.db?cache=shared
-
-  do_execsql_test 4.0 {
-    CREATE TABLE t1(a, b, c);
-    INSERT INTO t1 VALUES(1, 2, 3);
-  }
-  do_cacheused_test 4.0.1 db { 4568 4568 }
-  do_execsql_test 4.1 {
-    CREATE TEMP TABLE tt(a, b, c);
-    INSERT INTO tt VALUES(1, 2, 3);
-  }
-  do_cacheused_test 4.1.1 db { 9000 9000 }
-
-  sqlite3 db2 file:test.db?cache=shared
-  do_cacheused_test 4.2.1 db2 { 4568 2284 }
-  do_cacheused_test 4.2.2 db { 9000 6716 }
-  db close
-  do_cacheused_test 4.2.3 db2 { 4568 4568 }
-  sqlite3 db file:test.db?cache=shared
-  do_cacheused_test 4.2.4 db2 { 4568 2284 }
-  db2 close
 }
 
 finish_test

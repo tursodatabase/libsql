@@ -373,6 +373,7 @@ proc do_not_use_codec {} {
   set ::do_not_use_codec 1
   reset_db
 }
+unset -nocomplain do_not_use_codec
 
 # Return true if the "reserved_bytes" integer on database files is non-zero.
 #

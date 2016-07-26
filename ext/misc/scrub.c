@@ -74,6 +74,7 @@ struct ScrubState {
   u32 szPage;              /* Page size */
   u32 szUsable;            /* Usable bytes on each page */
   u32 nPage;               /* Number of pages */
+  u32 iLastPage;           /* Page number of last page written so far*/
   u8 *page1;               /* Content of page 1 */
 };
 
@@ -130,6 +131,7 @@ static void scrubBackupWrite(ScrubState *p, int pgno, const u8 *pData){
     scrubBackupErr(p, "write failed for page %d", pgno);
     p->rcErr = SQLITE_IOERR;
   }
+  if( pgno>p->iLastPage ) p->iLastPage = pgno;
 }
 
 /* Prepare a statement against the "db" database. */
@@ -540,6 +542,20 @@ int sqlite3_scrub_backup(
     scrubBackupBtree(&s, i, 0);
   }
   sqlite3_finalize(pStmt);
+
+  /* If the last page of the input db file is a free-list leaf, then the
+  ** backup file on disk is still smaller than the size indicated within 
+  ** the database header. In this case, write a page of zeroes to the 
+  ** last page of the backup database so that SQLite does not mistakenly
+  ** think the db is corrupt.  */
+  if( s.iLastPage<s.nPage ){
+    u8 *aZero = scrubBackupAllocPage(&s);
+    if( aZero ){
+      memset(aZero, 0, s.szPage);
+      scrubBackupWrite(&s, s.nPage, aZero);
+      sqlite3_free(aZero);
+    }
+  }
 
 scrub_abort:    
   /* Close the destination database without closing the transaction. If we

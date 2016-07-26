@@ -232,7 +232,7 @@ static char *csv_read_one_field(CsvReader *p){
          || (c==EOF && pc=='"')
         ){
           do{ p->n--; }while( p->z[p->n]!='"' );
-          p->cTerm = c;
+          p->cTerm = (char)c;
           break;
         }
         if( pc=='"' && c!='\r' ){
@@ -242,7 +242,7 @@ static char *csv_read_one_field(CsvReader *p){
         if( c==EOF ){
           csv_errmsg(p, "line %d: unterminated %c-quoted field\n",
                      startLine, '"');
-          p->cTerm = c;
+          p->cTerm = (char)c;
           break;
         }
       }
@@ -259,7 +259,7 @@ static char *csv_read_one_field(CsvReader *p){
       p->nLine++;
       if( p->n>0 && p->z[p->n-1]=='\r' ) p->n--;
     }
-    p->cTerm = c;
+    p->cTerm = (char)c;
   }
   if( p->z ) p->z[p->n] = 0;
   return p->z;
@@ -338,9 +338,9 @@ static void csv_trim_whitespace(char *z){
 
 /* Dequote the string */
 static void csv_dequote(char *z){
-  int i, j;
+  int j;
   char cQuote = z[0];
-  size_t n;
+  size_t i, n;
 
   if( cQuote!='\'' && cQuote!='"' ) return;
   n = strlen(z);
@@ -725,7 +725,8 @@ static int csvtabFilter(
   pCur->iRowid = 0;
   if( pCur->rdr.in==0 ){
     assert( pCur->rdr.zIn==pTab->zData );
-    assert( pTab->iStart<=pCur->rdr.nIn );
+    assert( pTab->iStart>=0 );
+    assert( (size_t)pTab->iStart<=pCur->rdr.nIn );
     pCur->rdr.iIn = pTab->iStart;
   }else{
     fseek(pCur->rdr.in, pTab->iStart, SEEK_SET);
