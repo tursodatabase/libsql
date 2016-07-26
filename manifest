@@ -1,5 +1,5 @@
-C Merge\sthe\scache_spill\sVACUUM\sfix\sfrom\strunk.
-D 2016-07-26T04:54:54.660
+C Merge\sfixes\sto\ssqlite3_scrub_backup()\sfrom\strunk.
+D 2016-07-26T15:17:14.899
 F Makefile.in 7ac1f34182d307765c6439c899bd3dac2af587bf
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -217,7 +217,7 @@ F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
 F ext/misc/percentile.c bcbee3c061b884eccb80e21651daaae8e1e43c63
 F ext/misc/regexp.c a68d25c659bd2d893cd1215667bbf75ecb9dc7d4
 F ext/misc/rot13.c 1ac6f95f99b575907b9b09c81a349114cf9be45a
-F ext/misc/scrub.c ea0903701e3ac02b4466ce9cffd0325c7ddbfcf0
+F ext/misc/scrub.c 1c5bfb8b0cd18b602fcb55755e84abf0023ac2fb
 F ext/misc/series.c e11e534ada797d5b816d7e7a93c022306563ca35
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c bf1b922c2750698e9a3d4c50cce6974adb7e93be
@@ -1512,7 +1512,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0e9f534fef72ca142a4296ab5285c82aada38ba7 c0e7d98ef2a13ede5ae865083ede1aaffdf43310
-R ad16072200ab87989c8c158553871b49
+P cc6bfdf814d5701591b69ba2d399d4a1f6f6cc98 483994a54dee3c7a3801e0e9d3c96fa9dbd8d2fd
+R e217bb197896d512771b3d30716a58a1
 U drh
-Z fa17d6f6d751fa9f56d6e973bdf235ba
+Z 0e458236bb0fbc79b94c4a82c5b8e052
