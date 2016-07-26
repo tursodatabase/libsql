@@ -1,5 +1,5 @@
-C Make\ssure\saffinity\sis\sapplied\scorrectly\son\slower-bound\srange\sconstraints\nin\sthe\smin()\soptimization.\s\sFix\sfor\sticket\s[a0bac8b3c3d1bb].
-D 2016-07-26T04:23:55.718
+C Merge\sthe\scache_spill\sVACUUM\sfix\sfrom\strunk.
+D 2016-07-26T04:54:54.660
 F Makefile.in 7ac1f34182d307765c6439c899bd3dac2af587bf
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -452,7 +452,7 @@ F src/trigger.c e14840ee0c3e549e758ec9bf3e4146e166002280
 F src/update.c 4f05ea8cddfa367d045e03589756c02199e8f9bd
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c 810ec3f22e2d1b62e66c30fe3621ebdedd23584d
-F src/vacuum.c 7949183a9ce2270fc76503384b1159fcb1e39723
+F src/vacuum.c 9dd2f5d276bc6094d8f1d85ecd41b30c1a002a43
 F src/vdbe.c 5260025793f47c1c51c04154f9762ef3ef310607
 F src/vdbe.h 67bc551f7faf04c33493892e4b378aada823ed10
 F src/vdbeInt.h c59381049af5c7751a83456c39b80d1a6fde1f9d
@@ -1512,7 +1512,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cdb7efd01ed7a8f11681b277098bb3eb12ca39d2
-R 74ba2d4546e92d4ce22c44593dc8a39b
+P 0e9f534fef72ca142a4296ab5285c82aada38ba7 c0e7d98ef2a13ede5ae865083ede1aaffdf43310
+R ad16072200ab87989c8c158553871b49
 U drh
-Z 23277ec96e3d0ab95dacb520e2474cff
+Z fa17d6f6d751fa9f56d6e973bdf235ba
