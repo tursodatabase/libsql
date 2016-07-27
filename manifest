@@ -1,5 +1,5 @@
-C Initialize\sa\svariable\sin\swhere.c\sto\savoid\sa\svalgrind\swarning.
-D 2016-07-27T16:03:54.108
+C Enhance\sthe\squery\splanner\scost\sestimation\sfor\sindex\sscans\sto\stake\sinto\saccount\nWHERE\sclause\sterms\sthat\scan\sbe\scomputed\susing\sonly\sthe\sindex\sand\sthat\sdo\snot\nrequire\slooking\sup\srows\sin\sthe\soriginal\stable.\s\sThis\sfixes\san\sobscure\nperformance\sregression\sthat\sarose\swhen\sthe\sORDER\sBY\sLIMIT\soptimization\swas\nadded\sby\scheck-in\s[bf46179d44843].
+D 2016-07-27T19:30:53.586
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -337,7 +337,7 @@ F src/ctime.c 61949e83c4c36e37195a8398ebc752780b534d95
 F src/date.c 1cc9fb516ec9932c6fd4d2a0d2f8bc4480145c39
 F src/dbstat.c 4f6f7f52b49beb9636ffbd517cfe44a402ba4ad0
 F src/delete.c 4aba4214a377ce8ddde2d2e609777bcc8235200f
-F src/expr.c 21b153e1046c624e9387a17d3261f69b461e700c
+F src/expr.c fbc17c717a80b5b61158ea8f25b5af6f8cad66f8
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c bc4145347595b7770f9a598cff1c848302cf5413
 F src/func.c 61a4114cf7004f10c542cfabbab9f2bcb9033045
@@ -388,7 +388,7 @@ F src/shell.c 9351fc6de11e1d908648c0a92d85627138e3dee5
 F src/sqlite.h.in c6e68a4a47610631822a4f8f83a44c9f75339331
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 46f300b6e300e0fa916d7d58c44b53415b8471a9
-F src/sqliteInt.h 49081ceab08eda9943d555aee57392c5b35d1c60
+F src/sqliteInt.h d25c18c1272a7811e2569c39bfc2fca96156eead
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c 5b18f9526900f61189ab0b83f1ef41d9f871a2ab
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
@@ -463,7 +463,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 02eeecc265f6ffd0597378f5d8ae9070b62a406a
 F src/wal.h 6dd221ed384afdc204bc61e25c23ef7fd5a511f2
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
-F src/where.c 9981707ac01438baea5caa0ca6108237be6630da
+F src/where.c 8ccc01f9227d41bfaf09360f108583be4a36d3b1
 F src/whereInt.h e5b939701a7ceffc5a3a8188a37f9746416ebcd0
 F src/wherecode.c 99707d11907c71d289ee9553d2d1a22f1fd8ba41
 F src/whereexpr.c d7dcbf14ce1b5876c1f76496162c30fcba669563
@@ -845,6 +845,7 @@ F test/index4.test ab92e736d5946840236cd61ac3191f91a7856bf6
 F test/index5.test 8621491915800ec274609e42e02a97d67e9b13e7
 F test/index6.test 43b4e29258b978fcdab84fc61df4f5212119dd09
 F test/index7.test 9c6765a74fc3fcde7aebc5b3bd40d98df14a527c
+F test/index8.test bc2e3db70e8e62459aaa1bd7e4a9b39664f8f9d7
 F test/indexedby.test 9c4cd331224e57f79fbf411ae245e6272d415985
 F test/indexexpr1.test cb71b6586177b840e28110dd952178bb2bdfedc2
 F test/indexfault.test 31d4ab9a7d2f6e9616933eb079722362a883eb1d
@@ -1026,7 +1027,7 @@ F test/savepoint5.test 0735db177e0ebbaedc39812c8d065075d563c4fd
 F test/savepoint6.test f41279c5e137139fa5c21485773332c7adb98cd7
 F test/savepoint7.test cde525ea3075283eb950cdcdefe23ead4f700daa
 F test/savepointfault.test f044eac64b59f09746c7020ee261734de82bf9b2
-F test/scanstatus.test 5253c219e331318a437f436268e0e82345700285
+F test/scanstatus.test 030acbbdcea6a3fc676fee99edc84f6f16c0cf92
 F test/schema.test 8f7999be894260f151adf15c2c7540f1c6d6a481
 F test/schema2.test 906408621ea881fdb496d878b1822572a34e32c5
 F test/schema3.test 1bc1008e1f8cb5654b248c55f27249366eb7ed38
@@ -1507,7 +1508,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 483994a54dee3c7a3801e0e9d3c96fa9dbd8d2fd
-R d3646a4fd33e16c76415db60501a55b1
-U dan
-Z 64999ea9da24ca9027e2e455a4d899cc
+P 4d59df02d3713b3e3804e1a88e676749b2794286 50f8ea37fb9647c4a9da2c269a4d6f54b10ce96b
+R a589b595bdfe9868de18def836f199ce
+T +closed 50f8ea37fb9647c4a9da2c269a4d6f54b10ce96b
+U drh
+Z 994e8dc5cbb7e25d0e8cc4a952504fbd
