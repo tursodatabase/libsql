@@ -3949,7 +3949,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
       if( pWInfo->nOBSat<=0 ){
         pWInfo->nOBSat = 0;
         if( nLoop>0 ){
-          Bitmask m;
+          Bitmask m = 0;
           int rc = wherePathSatisfiesOrderBy(pWInfo, pWInfo->pOrderBy, pFrom,
                       WHERE_ORDERBY_LIMIT, nLoop-1, pFrom->aLoop[nLoop-1], &m);
           if( rc==pWInfo->pOrderBy->nExpr ){
