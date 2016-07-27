@@ -3994,10 +3994,10 @@ static int exprIdxCover(Walker *pWalker, Expr *pExpr){
 }
 
 /*
-** Determine if an index on table iCur that contains the columns in
-** Bitmask m will cover the expression pExpr.  Return true if the index
-** does cover the expression and false if the expression references
-** table columns that are not found in the index.
+** Determine if an index pIdx on table with cursor iCur contains will
+** the expression pExpr.  Return true if the index does cover the
+** expression and false if the pExpr expression references table columns
+** that are not found in the index pIdx.
 **
 ** An index covering an expression means that the expression can be
 ** evaluated using only the index and without having to lookup the

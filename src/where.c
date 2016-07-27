@@ -2478,11 +2478,11 @@ static int whereLoopAddBtreeIndex(
     pNew->nSkip++;
     pNew->aLTerm[pNew->nLTerm++] = 0;
     pNew->wsFlags |= WHERE_SKIPSCAN;
-    nIter = pProbe->aiRowLogEst[saved_nEq] - pProbe->aiRowLogEst[saved_nEq+1];
+    nIter = pProbe->aiRowLogEst[saved_nEq]+1 - pProbe->aiRowLogEst[saved_nEq+1];
     pNew->nOut -= nIter;
     /* TUNING:  Because uncertainties in the estimates for skip-scan queries,
     ** add a 1.375 fudge factor to make skip-scan slightly less likely. */
-    nIter += 5;
+    nIter += 4;
     whereLoopAddBtreeIndex(pBuilder, pSrc, pProbe, nIter + nInMul);
     pNew->nOut = saved_nOut;
     pNew->u.btree.nEq = saved_nEq;

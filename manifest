@@ -1,5 +1,5 @@
-C When\sestimating\sthe\scost\sof\san\sindex\sscan,\sfactor\sin\sthe\scost\ssavings\sof\nbeing\sable\sto\suse\sthe\sindex\sto\sevaluate\ssome\sWHERE\sclause\sterms\swithout\nhaving\sto\sdo\sa\stable\slookup.
-D 2016-07-27T18:27:02.556
+C Add\stest\scases\sand\sfix\sa\scomment.
+D 2016-07-27T19:20:58.611
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -337,7 +337,7 @@ F src/ctime.c 61949e83c4c36e37195a8398ebc752780b534d95
 F src/date.c 1cc9fb516ec9932c6fd4d2a0d2f8bc4480145c39
 F src/dbstat.c 4f6f7f52b49beb9636ffbd517cfe44a402ba4ad0
 F src/delete.c 4aba4214a377ce8ddde2d2e609777bcc8235200f
-F src/expr.c 3347e66d4e27ec5f3ec7573b9a5f899bbd7d1df8
+F src/expr.c fbc17c717a80b5b61158ea8f25b5af6f8cad66f8
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c bc4145347595b7770f9a598cff1c848302cf5413
 F src/func.c 61a4114cf7004f10c542cfabbab9f2bcb9033045
@@ -463,7 +463,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 02eeecc265f6ffd0597378f5d8ae9070b62a406a
 F src/wal.h 6dd221ed384afdc204bc61e25c23ef7fd5a511f2
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
-F src/where.c 7e4d676b5ac4434e5f93606a744d396dc40d9977
+F src/where.c 66a290310e71491ffc9c74108413176438aa8718
 F src/whereInt.h e5b939701a7ceffc5a3a8188a37f9746416ebcd0
 F src/wherecode.c 99707d11907c71d289ee9553d2d1a22f1fd8ba41
 F src/whereexpr.c d7dcbf14ce1b5876c1f76496162c30fcba669563
@@ -845,6 +845,7 @@ F test/index4.test ab92e736d5946840236cd61ac3191f91a7856bf6
 F test/index5.test 8621491915800ec274609e42e02a97d67e9b13e7
 F test/index6.test 43b4e29258b978fcdab84fc61df4f5212119dd09
 F test/index7.test 9c6765a74fc3fcde7aebc5b3bd40d98df14a527c
+F test/index8.test bc2e3db70e8e62459aaa1bd7e4a9b39664f8f9d7
 F test/indexedby.test 9c4cd331224e57f79fbf411ae245e6272d415985
 F test/indexexpr1.test cb71b6586177b840e28110dd952178bb2bdfedc2
 F test/indexfault.test 31d4ab9a7d2f6e9616933eb079722362a883eb1d
@@ -1026,7 +1027,7 @@ F test/savepoint5.test 0735db177e0ebbaedc39812c8d065075d563c4fd
 F test/savepoint6.test f41279c5e137139fa5c21485773332c7adb98cd7
 F test/savepoint7.test cde525ea3075283eb950cdcdefe23ead4f700daa
 F test/savepointfault.test f044eac64b59f09746c7020ee261734de82bf9b2
-F test/scanstatus.test 5253c219e331318a437f436268e0e82345700285
+F test/scanstatus.test 030acbbdcea6a3fc676fee99edc84f6f16c0cf92
 F test/schema.test 8f7999be894260f151adf15c2c7540f1c6d6a481
 F test/schema2.test 906408621ea881fdb496d878b1822572a34e32c5
 F test/schema3.test 1bc1008e1f8cb5654b248c55f27249366eb7ed38
@@ -1507,10 +1508,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 483994a54dee3c7a3801e0e9d3c96fa9dbd8d2fd
-R 9e4bd013f5c2cf2171d472668aed0d1c
-T *branch * improved-index-scan
-T *sym-improved-index-scan *
-T -sym-trunk *
+P a59b5622f7cc6e502d71aabc12c053582cd03609
+R f515f9eadedb75a99af064851213e82e
 U drh
-Z 8f3398744130761f466da0e8b7212fe4
+Z 99f5c72d7c6c2cd0c635c52258200786
