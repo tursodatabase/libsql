@@ -767,14 +767,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         }
 
         if( pExpr->op==TK_SELECT && pExpr->x.pSelect->pEList->nExpr>1 ){
-          if( !ExprHasProperty(pExpr, EP_VectorOk) && 0 ){
-            sqlite3ErrorMsg(pParse, "invalid use of row value");
-          }else{
-            ExprSetProperty(pExpr, EP_Vector);
-          }
-        }
-        if( pExpr->op==TK_IN ){
-          ExprSetProperty(pExpr->pLeft, EP_VectorOk);
+          ExprSetProperty(pExpr, EP_Vector);
         }
       }
       break;
@@ -784,27 +777,8 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       break;
     }
 
-    case TK_BETWEEN: {
-      ExprSetProperty(pExpr->pLeft, EP_VectorOk);
-      ExprSetProperty(pExpr->x.pList->a[0].pExpr, EP_VectorOk);
-      ExprSetProperty(pExpr->x.pList->a[1].pExpr, EP_VectorOk);
-      break;
-    }
-
-    case TK_EQ: case TK_NE: case TK_IS: case TK_ISNOT: 
-    case TK_LE: case TK_LT: case TK_GE: case TK_GT: 
-    {
-      ExprSetProperty(pExpr->pLeft, EP_VectorOk);
-      ExprSetProperty(pExpr->pRight, EP_VectorOk);
-      break;
-    };
-
     case TK_VECTOR: {
-      if( !ExprHasProperty(pExpr, EP_VectorOk) ){
-        sqlite3ErrorMsg(pParse, "invalid use of row value");
-      }else{
-        ExprSetProperty(pExpr, EP_Vector);
-      }
+      ExprSetProperty(pExpr, EP_Vector);
       break;
     }
   }

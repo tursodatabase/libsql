@@ -2480,20 +2480,20 @@ static void sqlite3ExprCodeIN(
   }else{
   
     /* If the LHS is NULL, then the result is either false or NULL depending
-    ** on whether the RHS is empty or not, respectively.
-    */
-    if( nVector==1 && sqlite3ExprCanBeNull(pExpr->pLeft) ){
-      if( destIfNull==destIfFalse ){
-        /* Shortcut for the common case where the false and NULL outcomes are
-        ** the same. */
-        sqlite3VdbeAddOp2(v, OP_IsNull, r1, destIfNull); VdbeCoverage(v);
-      }else{
-        int addr1 = sqlite3VdbeAddOp1(v, OP_NotNull, r1); VdbeCoverage(v);
-        sqlite3VdbeAddOp2(v, OP_Rewind, pExpr->iTable, destIfFalse);
-        VdbeCoverage(v);
-        sqlite3VdbeGoto(v, destIfNull);
-        sqlite3VdbeJumpHere(v, addr1);
+    ** on whether the RHS is empty or not, respectively.  */
+    if( destIfNull==destIfFalse ){
+      for(i=0; i<nVector; i++){
+        Expr *p = exprVectorField(pExpr->pLeft, i);
+        if( sqlite3ExprCanBeNull(p) ){
+          sqlite3VdbeAddOp2(v, OP_IsNull, r1+aiMap[i], destIfNull);
+        }
       }
+    }else if( nVector==1 && sqlite3ExprCanBeNull(pExpr->pLeft) ){
+      int addr1 = sqlite3VdbeAddOp1(v, OP_NotNull, r1); VdbeCoverage(v);
+      sqlite3VdbeAddOp2(v, OP_Rewind, pExpr->iTable, destIfFalse);
+      VdbeCoverage(v);
+      sqlite3VdbeGoto(v, destIfNull);
+      sqlite3VdbeJumpHere(v, addr1);
     }
   
     if( eType==IN_INDEX_ROWID ){
@@ -2501,7 +2501,7 @@ static void sqlite3ExprCodeIN(
       */
       sqlite3VdbeAddOp3(v, OP_SeekRowid, pExpr->iTable, destIfFalse, r1);
       VdbeCoverage(v);
-    }else if( nVector>1 && eType==IN_INDEX_EPH ){
+    }else if( nVector>1 && eType==IN_INDEX_EPH && destIfNull!=destIfFalse ){
       int regNull = sqlite3GetTempReg(pParse);
       int r2 = sqlite3GetTempReg(pParse);
       int r3 = sqlite3GetTempReg(pParse);
@@ -3494,7 +3494,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
     }
 
     case TK_VECTOR: {
-      sqlite3ErrorMsg(pParse, "invalid use of row value (1)");
+      sqlite3ErrorMsg(pParse, "invalid use of row value");
       break;
     }
 

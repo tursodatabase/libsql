@@ -1,5 +1,5 @@
-C Merge\slatest\strunk\schanges\sinto\sthis\sbranch.
-D 2016-07-26T18:15:35.133
+C Fix\ssome\sproblems\swith\smulti-column\sIN(SELECT...)\sprocessing.
+D 2016-07-27T19:33:04.107
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -337,7 +337,7 @@ F src/ctime.c 61949e83c4c36e37195a8398ebc752780b534d95
 F src/date.c 1cc9fb516ec9932c6fd4d2a0d2f8bc4480145c39
 F src/dbstat.c 4f6f7f52b49beb9636ffbd517cfe44a402ba4ad0
 F src/delete.c 4aba4214a377ce8ddde2d2e609777bcc8235200f
-F src/expr.c f84861eaaf557df45bb8f4513a78a05fbb0ad368
+F src/expr.c bee29fbb017db26ad1189d35b2a7fe6ff8da3722
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c bc4145347595b7770f9a598cff1c848302cf5413
 F src/func.c 61a4114cf7004f10c542cfabbab9f2bcb9033045
@@ -381,14 +381,14 @@ F src/pragma.h 64c78a648751b9f4f297276c4eb7507b14b4628c
 F src/prepare.c 22df6171aec1d86904ed2ad30c2348a5748aa04e
 F src/printf.c a5f0ca08ddede803c241266abb46356ec748ded1
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
-F src/resolve.c 5c4d301a855d0245ddcc27365ddcbddd2f244665
+F src/resolve.c d5516a3818748c50f98c18e4601a746e90929f1c
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 0115f5d222f5cf9b5511ec4072088417354d738a
 F src/shell.c 9351fc6de11e1d908648c0a92d85627138e3dee5
 F src/sqlite.h.in c6e68a4a47610631822a4f8f83a44c9f75339331
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 46f300b6e300e0fa916d7d58c44b53415b8471a9
-F src/sqliteInt.h a78e53083262e9a10fd1f09a8777755253c00b44
+F src/sqliteInt.h 9a6af8787f03f54ce02ff88bd45f89bb600c3a4c
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c 5b18f9526900f61189ab0b83f1ef41d9f871a2ab
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
@@ -463,7 +463,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 02eeecc265f6ffd0597378f5d8ae9070b62a406a
 F src/wal.h 6dd221ed384afdc204bc61e25c23ef7fd5a511f2
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
-F src/where.c e7054b2c1fe31fef5136e5735d7958f5c2c7707d
+F src/where.c 0b370db8ce08fac93a098f27eaf425d2269be376
 F src/whereInt.h 14dd243e13b81cbb0a66063d38b70f93a7d6e613
 F src/wherecode.c 3aff7683566af3428f865904aafa7efb1fbd8701
 F src/whereexpr.c b896f8ff6a53cbd3daaee84ec33e39098762bb46
@@ -822,7 +822,7 @@ F test/hook.test 3b7b99d0eece6d279812c2aef6fa08bdfabc633e
 F test/icu.test 73956798bace8982909c00476b216714a6d0559a
 F test/ieee754.test 806fc0ce7f305f57e3331eaceeddcfec9339e607
 F test/imposter1.test c3f1db2d3db2c24611a6596a3fc0ffc14f1466c8
-F test/in.test 41d18d4bcd27c55d0bc6b6ddc8ff9e85e91728a4
+F test/in.test 20c5529986998949908f889c8208b2cd894b2cc9
 F test/in2.test 5d4c61d17493c832f7d2d32bef785119e87bde75
 F test/in3.test 3cbf58c87f4052cee3a58b37b6389777505aa0c0
 F test/in4.test d2b38cba404bc4320f4fe1b595b3d163f212c068
@@ -1019,7 +1019,7 @@ F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
 F test/rowid.test 5b7509f384f4f6fae1af3c8c104c8ca299fea18d
 F test/rowvalue.test 979738b3d49f1d93e3fee56a71d4446217917abc
 F test/rowvalue2.test 8d5dfe75b8f4d1868a2f91f0356f20d36cba64ff
-F test/rowvalue3.test eeec47b4de27217a012dd142956b01af4e9bd6f2
+F test/rowvalue3.test 587c1056016fa6b7a40a9bf6cb85d5443fa47d96
 F test/rtree.test 0c8d9dd458d6824e59683c19ab2ffa9ef946f798
 F test/run-wordcount.sh 891e89c4c2d16e629cd45951d4ed899ad12afc09
 F test/savepoint.test c671fdbd34cd3bfe1518a777526ada595180cf8d
@@ -1510,7 +1510,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 061b8006034f06a0311b4304c8b14d2c8b0153df 483994a54dee3c7a3801e0e9d3c96fa9dbd8d2fd
-R 675e1e72a3d3f117d790dda9dd43e7d1
+P d4f3d52c5a11fc7ad7e8cad76361edbcef13a12f 4d59df02d3713b3e3804e1a88e676749b2794286
+R 1d3755c62e27d021f9887ac09a170360
 U dan
-Z b0c1b915de5ec6a4159f97e64d5655ae
+Z 2549ddc5292b60c5848a8cde952880f9

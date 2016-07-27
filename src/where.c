@@ -3477,20 +3477,38 @@ static i8 wherePathSatisfiesOrderBy(
       rev = revSet = 0;
       distinctColumns = 0;
       for(j=0; j<nColumn; j++){
-        u8 bOnce;   /* True to run the ORDER BY search loop */
+        u8 bOnce = 1; /* True to run the ORDER BY search loop */
 
-        /* Skip over == and IS and ISNULL terms.
-        ** (Also skip IN terms when doing WHERE_ORDERBY_LIMIT processing)
-        */
-        if( j<pLoop->u.btree.nEq
-         && pLoop->nSkip==0
-         && ((i = pLoop->aLTerm[j]->eOperator) & eqOpMask)!=0
-        ){
-          if( i & WO_ISNULL ){
-            testcase( isOrderDistinct );
-            isOrderDistinct = 0;
+        assert( j>=pLoop->u.btree.nEq 
+            || (pLoop->aLTerm[j]==0)==(j<pLoop->nSkip)
+        );
+        if( j<pLoop->u.btree.nEq && j>=pLoop->nSkip ){
+          u16 eOp = pLoop->aLTerm[j]->eOperator;
+
+          /* Skip over == and IS and ISNULL terms.  (Also skip IN terms when
+          ** doing WHERE_ORDERBY_LIMIT processing). 
+          **
+          ** If the current term is a column of an ((?,?) IN (SELECT...)) 
+          ** expression for which the SELECT returns more than one column,
+          ** check that it is the only column used by this loop. Otherwise,
+          ** if it is one of two or more, none of the columns can be
+          ** considered to match an ORDER BY term.  */
+          if( (eOp & eqOpMask)!=0 ){
+            if( eOp & WO_ISNULL ){
+              testcase( isOrderDistinct );
+              isOrderDistinct = 0;
+            }
+            continue;  
+          }else if( eOp & WO_IN ){
+            Expr *pX = pLoop->aLTerm[j]->pExpr;
+            for(i=j+1; i<pLoop->u.btree.nEq; i++){
+              if( pLoop->aLTerm[i]->pExpr==pX ){
+                assert( (pLoop->aLTerm[i]->eOperator & WO_IN) );
+                bOnce = 0;
+                break;
+              }
+            }
           }
-          continue;  
         }
 
         /* Get the column number in the table (iColumn) and sort order
@@ -3519,7 +3537,6 @@ static i8 wherePathSatisfiesOrderBy(
         /* Find the ORDER BY term that corresponds to the j-th column
         ** of the index and mark that ORDER BY term off 
         */
-        bOnce = 1;
         isMatch = 0;
         for(i=0; bOnce && i<nOrderBy; i++){
           if( MASKBIT(i) & obSat ) continue;
@@ -4012,7 +4029,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
       if( pWInfo->nOBSat<=0 ){
         pWInfo->nOBSat = 0;
         if( nLoop>0 ){
-          Bitmask m;
+          Bitmask m = 0;
           int rc = wherePathSatisfiesOrderBy(pWInfo, pWInfo->pOrderBy, pFrom,
                       WHERE_ORDERBY_LIMIT, nLoop-1, pFrom->aLoop[nLoop-1], &m);
           if( rc==pWInfo->pOrderBy->nExpr ){
