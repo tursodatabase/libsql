@@ -1,8 +1,8 @@
-C Decorate\sall\sinterfaces\swith\scalling\sconvention\smacros.
-D 2016-07-28T18:55:57.809
+C The\s'sqlite3ext.h'\scontent\sshould\sbe\sprocessed\sbefore\sbeing\sincluded\sin\sthe\samalgamation.
+D 2016-07-28T19:28:35.475
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc b8894e579e4a5f32d61eb9309dbdbd7c883d2e87
+F Makefile.msc eefec7a26bf73bb04f2241058e23a3ec8a43f656
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION cb29eb11e493dd85b3eeec4053c03949bf98478e
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -1449,7 +1449,7 @@ F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkpragmatab.tcl f0d5bb266d1d388cf86fce5ba01a891e95d72d41
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl aa58ea3be311c81821c2cd3209f55e46b07ab656
-F tool/mksqlite3c.tcl a52ead27e2ac5d4b616e945a0601f628f4328329
+F tool/mksqlite3c.tcl 655181fb25f69b3524b30efd0750c43513415216
 F tool/mksqlite3h.tcl cf5cd68028e69a51ed5c76042672664201f0f756
 F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
 F tool/mkvsix.tcl 4abcaf3267171b2faadaf9b82a0dfbaa6e98f8b7
@@ -1508,8 +1508,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 805d01cdabb48a69eb986a7f084e53eb25d76b7f 97fc6e4328fe72cdd10f11a4b4bc9ce14bdc537f
-R 8897711bcf29ba23a6ba0e1e7c3853bd
-T +closed 97fc6e4328fe72cdd10f11a4b4bc9ce14bdc537f
-U drh
-Z 6ec050f366e0cbc18c7d1fd514c95e5b
+P fd784887e125bf95f4799ad09cbcba6795173487
+R 159053f8c66afb3fed693021893388d2
+U mistachkin
+Z 1fc3620b6fdad23d7ecfea7d673497bf

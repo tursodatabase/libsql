@@ -1359,7 +1359,7 @@ HDR = \
    parse.h \
    $(TOP)\src\pragma.h \
    $(SQLITE3H) \
-   $(TOP)\src\sqlite3ext.h \
+   sqlite3ext.h \
    $(TOP)\src\sqliteInt.h \
    $(TOP)\src\sqliteLimit.h \
    $(TOP)\src\vdbe.h \
@@ -1848,6 +1848,7 @@ $(SQLITE3H):	$(TOP)\src\sqlite.h.in $(TOP)\manifest.uuid $(TOP)\VERSION
 sqlite3ext.h:	.target_source
 	type tsrc\sqlite3ext.h | $(TCLSH_CMD) $(TOP)\tool\replace.tcl regsub "\(\*\)" "(SQLITE_CALLBACK *)" \
 		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl regsub "\(\*" "(SQLITE_APICALL *" > sqlite3ext.h
+	copy /Y sqlite3ext.h tsrc\sqlite3ext.h
 
 mkkeywordhash.exe:	$(TOP)\tool\mkkeywordhash.c
 	$(BCC) $(NO_WARN) -Fe$@ $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS) $(EXT_FEATURE_FLAGS) $(OPTS) \
