@@ -1151,7 +1151,7 @@ static char *local_getline(char *zPrompt, FILE *in){
 ** It is invoked after evaluating the script SCRIPT to commit or rollback
 ** the transaction or savepoint opened by the [transaction] command.
 */
-static int DbTransPostCmd(
+static int SQLITE_TCLAPI DbTransPostCmd(
   ClientData data[],                   /* data[0] is the Sqlite3Db* for $db */
   Tcl_Interp *interp,                  /* Tcl interpreter */
   int result                           /* Result of evaluating SCRIPT */
@@ -1698,7 +1698,7 @@ static int DbUseNre(void){
 **
 **   $db eval SQL ?ARRAYNAME? SCRIPT
 */
-static int DbEvalNextCmd(
+static int SQLITE_TCLAPI DbEvalNextCmd(
   ClientData data[],                   /* data[0] is the (DbEvalContext*) */
   Tcl_Interp *interp,                  /* Tcl interpreter */
   int result                           /* Result so far */
@@ -3256,7 +3256,7 @@ static int SQLITE_TCLAPI DbObjCmd(
 ** Adaptor that provides an objCmd interface to the NRE-enabled
 ** interface implementation.
 */
-static int DbObjCmdAdaptor(
+static int SQLITE_TCLAPI DbObjCmdAdaptor(
   void *cd,
   Tcl_Interp *interp,
   int objc,

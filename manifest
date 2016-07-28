@@ -1,8 +1,8 @@
-C Make\ssure\sthe\sSQLITE_TCLAPI\smacro\sis\salways\sdefined.
-D 2016-07-28T17:11:20.162
+C Adjustments\sto\sget\s'testfixture.exe'\scompiling\swith\sTcl\s8.6\swhen\s__stdcall\sis\senabled.
+D 2016-07-28T18:06:52.992
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 1e5399407885d69150e2659f4710b5712a1e6cef
+F Makefile.msc c7934e2d3ef07c440ad48e2233c0cc8364e72aff
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION cb29eb11e493dd85b3eeec4053c03949bf98478e
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -392,7 +392,7 @@ F src/sqliteInt.h 14516943867eb2c30ce0e3670299958f59ade052
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c 5b18f9526900f61189ab0b83f1ef41d9f871a2ab
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
-F src/tclsqlite.c a9c6e33c44efa93d176ce5e0887d5d533c98b429
+F src/tclsqlite.c 342379845d52c62a778c76c3dd0a2695af723e04
 F src/test1.c 906a04b649c7139e943193a3905d583e325c30c7
 F src/test2.c b7174313e993754303a8b33c43df7c44b46857ab
 F src/test3.c 1339a40be39650ae83894b6578f971dc7f96ea8a
@@ -1508,7 +1508,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 36b72fd609cf151f3db0e65b450d7cd515f2ac49
-R cb104ece8c53bb381905efecad762caf
+P f2f1323cc4d2ad2d6794dbfae8d50b747213e85d
+R f48b462f2c7e74ed51a21c0e6f026658
 U mistachkin
-Z 5c80ddf3854cd75da2e73aafdf02283f
+Z 339efe4a28b4c084d0a9150e8c742a8a

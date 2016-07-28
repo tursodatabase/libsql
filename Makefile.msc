@@ -1994,7 +1994,7 @@ sqlite_tclDecls.h:
 	echo #  define SQLITE_TCLAPI >> sqlite_tclDecls.h
 	echo #endif >> sqlite_tclDecls.h
 	type "$(TCLINCDIR)\tclDecls.h" \
-		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl regsub "^(EXTERN\s+?.*?\s+?)Tcl_" "\1 SQLITE_TCLAPI Tcl_" \
+		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl regsub "^(EXTERN(?: CONST\d+?)?\s+?[^\(]*?\s+?)Tcl_" "\1 SQLITE_TCLAPI Tcl_" \
 		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl regsub "^(EXTERN\s+?(?:void|VOID)\s+?)TclFreeObj" "\1 SQLITE_TCLAPI TclFreeObj" \
 		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl regsub "\(\*tcl_" "(SQLITE_TCLAPI *tcl_" \
 		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl regsub "\(\*tclFreeObj" "(SQLITE_TCLAPI *tclFreeObj" >> sqlite_tclDecls.h
