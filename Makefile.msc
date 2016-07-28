@@ -1846,7 +1846,8 @@ $(SQLITE3H):	$(TOP)\src\sqlite.h.in $(TOP)\manifest.uuid $(TOP)\VERSION
 	$(TCLSH_CMD) $(TOP)\tool\mksqlite3h.tcl $(TOP:\=/) > $(SQLITE3H)
 
 sqlite3ext.h:	.target_source
-	copy tsrc\sqlite3ext.h .
+	type tsrc\sqlite3ext.h | $(TCLSH_CMD) $(TOP)\tool\replace.tcl regsub "\(\*\)" "(SQLITE_CALLBACK *)" \
+		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl regsub "\(\*" "(SQLITE_APICALL *" > sqlite3ext.h
 
 mkkeywordhash.exe:	$(TOP)\tool\mkkeywordhash.c
 	$(BCC) $(NO_WARN) -Fe$@ $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS) $(EXT_FEATURE_FLAGS) $(OPTS) \
