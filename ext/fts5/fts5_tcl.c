@@ -168,7 +168,7 @@ static int xTokenizeCb(
   return rc;
 }
 
-static int xF5tApi(void*, Tcl_Interp*, int, Tcl_Obj *CONST []);
+static int SQLITE_TCLAPI xF5tApi(void*, Tcl_Interp*, int, Tcl_Obj *CONST []);
 
 static int xQueryPhraseCb(
   const Fts5ExtensionApi *pApi, 
@@ -996,7 +996,7 @@ static int SQLITE_TCLAPI f5tCreateTokenizer(
   return TCL_OK;
 }
 
-static void xF5tFree(ClientData clientData){
+static void SQLITE_TCLAPI xF5tFree(ClientData clientData){
   ckfree(clientData);
 }
 

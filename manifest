@@ -1,5 +1,5 @@
-C Use\sthe\sSQLITE_TCLAPI\smacro\sin\sseveral\sextensions\sthat\swere\smissed\sin\sthe\sprevious\scheck-in.
-D 2016-07-28T23:54:45.174
+C Missed\sa\scouple\sTcl\scommand\sdeletion\scallbacks.
+D 2016-07-28T23:58:25.315
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 3340e479e5221f06c3d61726f8f7efff885e4233
@@ -107,7 +107,7 @@ F ext/fts5/fts5_hash.c 880998e596b60f078348d48732ca4ad9a90caad2
 F ext/fts5/fts5_index.c b429e23fabb57506f71e406997cc46b89190dc97
 F ext/fts5/fts5_main.c f85281445dcf8be32d18841c93a6f90fe27dbfe2
 F ext/fts5/fts5_storage.c de0ed8a06738bde433afe11e92295ceaffbc4e58
-F ext/fts5/fts5_tcl.c caede54ed5eade83e1f455356e6dd2b849e1c703
+F ext/fts5/fts5_tcl.c 6805005886d6d9c83bb9b68bb69d32af4b37797e
 F ext/fts5/fts5_test_mi.c 783b86697ebf773c18fc109992426c0173a055bc
 F ext/fts5/fts5_test_tok.c db08af63673c3a7d39f053b36fd6e065017706be
 F ext/fts5/fts5_tokenize.c 2ce7b44183538ec46b7907726262ee43ffdd39a8
@@ -301,7 +301,7 @@ F ext/session/sessionfault.test da273f2712b6411e85e71465a1733b8501dbf6f7
 F ext/session/sessionfault2.test 04aa0bc9aa70ea43d8de82c4f648db4de1e990b0
 F ext/session/sqlite3session.c 37485891b4add26cf61495df193c419f36556a32
 F ext/session/sqlite3session.h 69bf73cfd71e58f2ae5d2aa935b2c1a541aee555
-F ext/session/test_session.c 5f9b1da42c5771fbe5948acd816ae9e8ae781353
+F ext/session/test_session.c d0754c65952cc7c729efd63374e3d61fbd1ae94c
 F ext/userauth/sqlite3userauth.h 19cb6f0e31316d0ee4afdfb7a85ef9da3333a220
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
@@ -1508,7 +1508,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b8218129bc848c61fa6910feae4141dac6ad86fc
-R 66ac7539129e9f0d2a57c9cf5f4708c1
+P df2543652b835353c03956dfbd3e35e5b191372e
+R 4f030271e7adab35739e0e6bab6a4279
 U mistachkin
-Z abcb763c1fb15cc18b4555018b76e16c
+Z 7e68b7e2d6cc6fdfea65df6524031184

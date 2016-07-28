@@ -244,7 +244,7 @@ static int SQLITE_TCLAPI test_session_cmd(
   return TCL_OK;
 }
 
-static void test_session_del(void *clientData){
+static void SQLITE_TCLAPI test_session_del(void *clientData){
   TestSession *p = (TestSession*)clientData;
   if( p->pFilterScript ) Tcl_DecrRefCount(p->pFilterScript);
   sqlite3session_delete(p->pSession);
