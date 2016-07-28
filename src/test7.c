@@ -13,7 +13,11 @@
 ** Derived from test4.c.
 */
 #include "sqliteInt.h"
-#include "tcl.h"
+#if defined(INCLUDE_SQLITE_TCL_H)
+#  include "sqlite_tcl.h"
+#else
+#  include "tcl.h"
+#endif
 
 /*
 ** This test only works on UNIX with a SQLITE_THREADSAFE build that includes

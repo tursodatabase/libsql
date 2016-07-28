@@ -1104,7 +1104,11 @@ int sqlite3_vfslog_register(sqlite3 *db){
 
 #if defined(SQLITE_TEST) || defined(TCLSH)
 
-#include <tcl.h>
+#if defined(INCLUDE_SQLITE_TCL_H)
+#  include "sqlite_tcl.h"
+#else
+#  include "tcl.h"
+#endif
 
 static int test_vfslog(
   void *clientData,

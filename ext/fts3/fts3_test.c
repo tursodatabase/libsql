@@ -18,7 +18,11 @@
 ** that the sqlite3_tokenizer_module.xLanguage() method is invoked correctly.
 */
 
-#include <tcl.h>
+#if defined(INCLUDE_SQLITE_TCL_H)
+#  include "sqlite_tcl.h"
+#else
+#  include "tcl.h"
+#endif
 #include <string.h>
 #include <assert.h>
 

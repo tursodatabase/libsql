@@ -27,7 +27,11 @@
 
 #include "sqliteInt.h"
 #include <string.h>
-#include <tcl.h>
+#if defined(INCLUDE_SQLITE_TCL_H)
+#  include "sqlite_tcl.h"
+#else
+#  include "tcl.h"
+#endif
 
 static struct Wrapped {
   sqlite3_pcache_methods2 pcache;

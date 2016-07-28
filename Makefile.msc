@@ -466,12 +466,12 @@ RCC = $(RC) -DSQLITE_OS_WIN=1 -I. -I$(TOP) -I$(TOP)\src $(RCOPTS) $(RCCOPTS)
 !IF "$(PLATFORM)"=="x86"
 CORE_CCONV_OPTS = -Gz -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall
 SHELL_CCONV_OPTS = -Gz -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall
-TEST_CCONV_OPTS = -Gz -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall
+TEST_CCONV_OPTS = -Gz -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall -DINCLUDE_SQLITE_TCL_H=1 -DSQLITE_TCLAPI=__cdecl
 !ELSE
 !IFNDEF PLATFORM
 CORE_CCONV_OPTS = -Gz -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall
 SHELL_CCONV_OPTS = -Gz -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall
-TEST_CCONV_OPTS = -Gz -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall
+TEST_CCONV_OPTS = -Gz -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall -DINCLUDE_SQLITE_TCL_H=1 -DSQLITE_TCLAPI=__cdecl
 !ELSE
 CORE_CCONV_OPTS =
 SHELL_CCONV_OPTS =
@@ -1239,6 +1239,12 @@ SRC11 = \
   parse.h \
   $(SQLITE3H)
 
+# Generated Tcl header files
+#
+SRC12 = \
+  sqlite_tcl.h \
+  sqlite_tclDecls.h
+
 # All source code files.
 #
 SRC = $(SRC00) $(SRC01) $(SRC02) $(SRC03) $(SRC04) $(SRC05) $(SRC06) $(SRC07) $(SRC08) $(SRC09) $(SRC10) $(SRC11)
@@ -1503,7 +1509,7 @@ mptest:	mptester.exe
 # files are automatically generated.  This target takes care of
 # all that automatic generation.
 #
-.target_source:	$(SRC) $(TOP)\tool\vdbe-compress.tcl fts5.c
+.target_source:	$(SRC) $(TOP)\tool\vdbe-compress.tcl fts5.c sqlite_tcl.h
 	-rmdir /Q/S tsrc 2>NUL
 	-mkdir tsrc
 	for %i in ($(SRC00)) do copy /Y %i tsrc
@@ -1518,6 +1524,7 @@ mptest:	mptester.exe
 	for %i in ($(SRC09)) do copy /Y %i tsrc
 	for %i in ($(SRC10)) do copy /Y %i tsrc
 	for %i in ($(SRC11)) do copy /Y %i tsrc
+	for %i in ($(SRC12)) do copy /Y %i tsrc
 	copy /Y fts5.c tsrc
 	copy /Y fts5.h tsrc
 	del /Q tsrc\sqlite.h.in tsrc\parse.y 2>NUL
@@ -1799,10 +1806,10 @@ wherecode.lo:	$(TOP)\src\wherecode.c $(HDR)
 whereexpr.lo:	$(TOP)\src\whereexpr.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\whereexpr.c
 
-tclsqlite.lo:	$(TOP)\src\tclsqlite.c $(HDR)
+tclsqlite.lo:	$(TOP)\src\tclsqlite.c $(HDR) sqlite_tcl.h
 	$(LTCOMPILE) $(NO_WARN) -DUSE_TCL_STUBS=1 -DBUILD_sqlite -I$(TCLINCDIR) -c $(TOP)\src\tclsqlite.c
 
-tclsqlite-shell.lo:	$(TOP)\src\tclsqlite.c $(HDR)
+tclsqlite-shell.lo:	$(TOP)\src\tclsqlite.c $(HDR) sqlite_tcl.h
 	$(LTCOMPILE) $(NO_WARN) -DTCLSH=1 -DBUILD_sqlite -I$(TCLINCDIR) -c $(TOP)\src\tclsqlite.c
 
 tclsqlite3.exe:	tclsqlite-shell.lo $(SQLITE3C) $(SQLITE3H) $(LIBRESOBJS)
@@ -1974,7 +1981,16 @@ TESTFIXTURE_SRC = $(TESTSRC) $(TOP)\src\tclsqlite.c $(TESTFIXTURE_SRC0)
 TESTFIXTURE_SRC = $(TESTSRC) $(TOP)\src\tclsqlite.c $(TESTFIXTURE_SRC1)
 !ENDIF
 
-testfixture.exe:	$(TESTFIXTURE_SRC) $(SQLITE3H) $(LIBRESOBJS) $(HDR)
+sqlite_tclDecls.h:
+	echo #ifndef SQLITE_TCLAPI > sqlite_tclDecls.h
+	echo #  define SQLITE_TCLAPI __cdecl >> sqlite_tclDecls.h
+	echo #endif >> sqlite_tclDecls.h
+	type "$(TCLINCDIR)\tclDecls.h" | $(TCLSH_CMD) $(TOP)\tool\replace.tcl regsub "^(EXTERN\s+?.*?\s+?)Tcl_" "\1 SQLITE_TCLAPI Tcl_" | $(TCLSH_CMD) $(TOP)\tool\replace.tcl regsub "^(EXTERN\s+?(?:void|VOID)\s+?)TclFreeObj" "\1 SQLITE_TCLAPI TclFreeObj" >> sqlite_tclDecls.h
+
+sqlite_tcl.h:	sqlite_tclDecls.h
+	type "$(TCLINCDIR)\tcl.h" | $(TCLSH_CMD) $(TOP)\tool\replace.tcl exact tclDecls.h sqlite_tclDecls.h >> sqlite_tcl.h
+
+testfixture.exe:	$(TESTFIXTURE_SRC) $(SQLITE3H) $(LIBRESOBJS) $(HDR) sqlite_tcl.h
 	$(LTLINK) -DSQLITE_NO_SYNC=1 $(TESTFIXTURE_FLAGS) \
 		-DBUILD_sqlite -I$(TCLINCDIR) \
 		$(TESTFIXTURE_SRC) \
@@ -2023,7 +2039,7 @@ smoketest:	$(TESTPROGS)
 	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\main.test $(TESTOPTS)
 
-sqlite3_analyzer.c:	$(SQLITE3C) $(SQLITE3H) $(TOP)\src\tclsqlite.c $(TOP)\tool\spaceanal.tcl
+sqlite3_analyzer.c:	$(SQLITE3C) $(SQLITE3H) $(TOP)\src\tclsqlite.c $(TOP)\tool\spaceanal.tcl sqlite_tcl.h
 	echo #define TCLSH 2 > $@
 	echo #define SQLITE_ENABLE_DBSTAT_VTAB 1 >> $@
 	copy $@ + $(SQLITE3C) + $(TOP)\src\tclsqlite.c $@
@@ -2103,7 +2119,7 @@ clean:
 	-rmdir /Q/S .libs 2>NUL
 	-rmdir /Q/S tsrc 2>NUL
 	del /Q .target_source 2>NUL
-	del /Q tclsqlite3.exe 2>NUL
+	del /Q tclsqlite3.exe sqlite_tcl.h sqlite_tclDecls.h 2>NUL
 	del /Q testloadext.dll 2>NUL
 	del /Q testfixture.exe test.db 2>NUL
 	del /Q LogEst.exe fts3view.exe rollback-test.exe showdb.exe 2>NUL

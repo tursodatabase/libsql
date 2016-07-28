@@ -14,7 +14,11 @@
 */
 
 #include "sqlite3.h"
-#include <tcl.h>
+#if defined(INCLUDE_SQLITE_TCL_H)
+#  include "sqlite_tcl.h"
+#else
+#  include "tcl.h"
+#endif
 
 /* Solely for the UNUSED_PARAMETER() macro. */
 #include "sqliteInt.h"
@@ -353,7 +357,11 @@ static int bfs_query_func(sqlite3_rtree_query_info *p){
 *************************************************************************/
 
 #include <assert.h>
-#include "tcl.h"
+#if defined(INCLUDE_SQLITE_TCL_H)
+#  include "sqlite_tcl.h"
+#else
+#  include "tcl.h"
+#endif
 
 typedef struct Cube Cube;
 struct Cube {

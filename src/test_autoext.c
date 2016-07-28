@@ -11,7 +11,11 @@
 *************************************************************************
 ** Test extension for testing the sqlite3_auto_extension() function.
 */
-#include "tcl.h"
+#if defined(INCLUDE_SQLITE_TCL_H)
+#  include "sqlite_tcl.h"
+#else
+#  include "tcl.h"
+#endif
 #include "sqlite3ext.h"
 
 #ifndef SQLITE_OMIT_LOAD_EXTENSION

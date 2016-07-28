@@ -641,7 +641,11 @@ sqlite3_vfs *sqlite3_demovfs(void){
 
 #ifdef SQLITE_TEST
 
-#include <tcl.h>
+#if defined(INCLUDE_SQLITE_TCL_H)
+#  include "sqlite_tcl.h"
+#else
+#  include "tcl.h"
+#endif
 
 #if SQLITE_OS_UNIX
 static int register_demovfs(

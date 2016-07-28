@@ -256,7 +256,11 @@ int sqlite3demo_superlock(
 
 #ifdef SQLITE_TEST
 
-#include <tcl.h>
+#if defined(INCLUDE_SQLITE_TCL_H)
+#  include "sqlite_tcl.h"
+#else
+#  include "tcl.h"
+#endif
 
 struct InterpAndScript {
   Tcl_Interp *interp;

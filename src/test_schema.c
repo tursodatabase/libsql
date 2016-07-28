@@ -35,10 +35,14 @@
 ** to be compiled into an sqlite dynamic extension.
 */
 #ifdef SQLITE_TEST
-  #include "sqliteInt.h"
-  #include "tcl.h"
+#  include "sqliteInt.h"
+#  if defined(INCLUDE_SQLITE_TCL_H)
+#    include "sqlite_tcl.h"
+#  else
+#    include "tcl.h"
+#  endif
 #else
-  #include "sqlite3ext.h"
+#  include "sqlite3ext.h"
   SQLITE_EXTENSION_INIT1
 #endif
 

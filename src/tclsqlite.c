@@ -30,10 +30,14 @@
 ** If requested, include the SQLite compiler options file for MSVC.
 */
 #if defined(INCLUDE_MSVC_H)
-#include "msvc.h"
+# include "msvc.h"
 #endif
 
-#include "tcl.h"
+#if defined(INCLUDE_SQLITE_TCL_H)
+# include "sqlite_tcl.h"
+#else
+# include "tcl.h"
+#endif
 #include <errno.h>
 
 /*
@@ -4123,7 +4127,7 @@ static void init_all(Tcl_Interp *interp){
     Sqlitetesttclvar_Init(interp);
     Sqlitetestfs_Init(interp);
     SqlitetestThread_Init(interp);
-    SqlitetestOnefile_Init(interp);
+    SqlitetestOnefile_Init();
     SqlitetestOsinst_Init(interp);
     Sqlitetestbackup_Init(interp);
     Sqlitetestintarray_Init(interp);
