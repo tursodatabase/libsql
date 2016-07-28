@@ -21,6 +21,8 @@
 #      formatted as an integer (e.g. "3006017").
 #   5) Replaces the string --SOURCE-ID-- with the date and time and sha1 
 #      hash of the fossil-scm manifest for the source tree.
+#   6) Adds the SQLITE_CALLBACK calling convention macro in front of all
+#      callback declarations.
 #
 # This script outputs to stdout.
 #
@@ -125,6 +127,7 @@ foreach file $filelist {
         append line " " $funcname $rest
       }
     }
+    regsub {\(\*} $line {(SQLITE_CALLBACK *} line
     puts $line
   }
   close $in
