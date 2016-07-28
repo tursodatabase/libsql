@@ -1,5 +1,5 @@
-C Change\smksqlite3h.tcl\sto\sautomatically\sinsert\sthe\sSQLITE_CALLBACK\scalling\nconvention\smacros.
-D 2016-07-28T15:09:02.696
+C Modify\sthe\smksqlite3h.tcl\stool\sto\shandle\sthe\ssyscall\stypedef\sspecially.
+D 2016-07-28T15:38:34.103
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc da4c9f5bc46f6f12d7313d12be18a2d2c55e06c0
@@ -1450,7 +1450,7 @@ F tool/mkpragmatab.tcl f0d5bb266d1d388cf86fce5ba01a891e95d72d41
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl aa58ea3be311c81821c2cd3209f55e46b07ab656
 F tool/mksqlite3c.tcl a52ead27e2ac5d4b616e945a0601f628f4328329
-F tool/mksqlite3h.tcl abaf6af11e184c0b69f117fc47ecfa351d81c219
+F tool/mksqlite3h.tcl cf5cd68028e69a51ed5c76042672664201f0f756
 F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
 F tool/mkvsix.tcl 4abcaf3267171b2faadaf9b82a0dfbaa6e98f8b7
 F tool/offsets.c fe4262fdfa378e8f5499a42136d17bf3b98f6091
@@ -1508,7 +1508,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e8be3dfeabaa31b3490793cf8230faae1204be15
-R 44253432508e9739e51133f1558c85ed
-U drh
-Z 863aa68feeed694e590c235a245cfae1
+P 11ab9c9ab562df98c20abf126a8bac178aef77a8
+R a69c68c4276ee266722a065a80ccdc75
+U mistachkin
+Z 9a266ac1c40bfd5d57e83258cb2d1dad

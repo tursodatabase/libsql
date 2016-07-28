@@ -127,6 +127,8 @@ foreach file $filelist {
         append line " " $funcname $rest
       }
     }
+    set line [string map [list (*sqlite3_syscall_ptr) \
+        "(SQLITE_SYSAPI *sqlite3_syscall_ptr)"] $line]
     regsub {\(\*} $line {(SQLITE_CALLBACK *} line
     puts $line
   }
