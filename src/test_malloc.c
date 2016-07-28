@@ -310,7 +310,7 @@ static int textToPointer(const char *z, void **pp){
 **
 ** Raw test interface for sqlite3_malloc().
 */
-static int test_malloc(
+static int SQLITE_TCLAPI test_malloc(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -335,7 +335,7 @@ static int test_malloc(
 **
 ** Raw test interface for sqlite3_realloc().
 */
-static int test_realloc(
+static int SQLITE_TCLAPI test_realloc(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -364,7 +364,7 @@ static int test_realloc(
 **
 ** Raw test interface for sqlite3_free().
 */
-static int test_free(
+static int SQLITE_TCLAPI test_free(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -395,7 +395,7 @@ int sqlite3TestBinToHex(char*,int);
 ** Set a chunk of memory (obtained from malloc, probably) to a
 ** specified hex pattern.
 */
-static int test_memset(
+static int SQLITE_TCLAPI test_memset(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -441,7 +441,7 @@ static int test_memset(
 **
 ** Return memory as hexadecimal text.
 */
-static int test_memget(
+static int SQLITE_TCLAPI test_memget(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -488,7 +488,7 @@ static int test_memget(
 **
 ** Raw test interface for sqlite3_memory_used().
 */
-static int test_memory_used(
+static int SQLITE_TCLAPI test_memory_used(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -503,7 +503,7 @@ static int test_memory_used(
 **
 ** Raw test interface for sqlite3_memory_highwater().
 */
-static int test_memory_highwater(
+static int SQLITE_TCLAPI test_memory_highwater(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -528,7 +528,7 @@ static int test_memory_highwater(
 ** Set the depth of backtracing.  If SQLITE_MEMDEBUG is not defined
 ** then this routine is a no-op.
 */
-static int test_memdebug_backtrace(
+static int SQLITE_TCLAPI test_memdebug_backtrace(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -554,7 +554,7 @@ static int test_memdebug_backtrace(
 **
 ** Write a summary of unfreed memory to FILENAME.
 */
-static int test_memdebug_dump(
+static int SQLITE_TCLAPI test_memdebug_dump(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -579,7 +579,7 @@ static int test_memdebug_dump(
 **
 ** Return the total number of times malloc() has been called.
 */
-static int test_memdebug_malloc_count(
+static int SQLITE_TCLAPI test_memdebug_malloc_count(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -619,7 +619,7 @@ static int test_memdebug_malloc_count(
 **
 ** To disable simulated failures, use a COUNTER of -1.
 */
-static int test_memdebug_fail(
+static int SQLITE_TCLAPI test_memdebug_fail(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -685,7 +685,7 @@ static int test_memdebug_fail(
 ** simulated failure occurs. A negative return value indicates that
 ** no malloc() failure is scheduled.
 */
-static int test_memdebug_pending(
+static int SQLITE_TCLAPI test_memdebug_pending(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -718,7 +718,7 @@ static int sqlite3_memdebug_title_count = 0;
 **
 ** Each title overwrite the previous.
 */
-static int test_memdebug_settitle(
+static int SQLITE_TCLAPI test_memdebug_settitle(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -799,7 +799,7 @@ static void test_memdebug_log_clear(void){
   Tcl_InitHashTable(&aMallocLog, MALLOC_LOG_KEYINTS);
 }
 
-static int test_memdebug_log(
+static int SQLITE_TCLAPI test_memdebug_log(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -897,7 +897,7 @@ static int test_memdebug_log(
 **
 ** A negative SIZE causes the buffer pointer to be NULL.
 */
-static int test_config_scratch(
+static int SQLITE_TCLAPI test_config_scratch(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -937,7 +937,7 @@ static int test_config_scratch(
 **
 ** A negative SIZE causes the buffer pointer to be NULL.
 */
-static int test_config_pagecache(
+static int SQLITE_TCLAPI test_config_pagecache(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -980,7 +980,7 @@ static int test_config_pagecache(
 ** is certainty.  0 is never.  PRNG_SEED is the pseudo-random number generator
 ** seed.
 */
-static int test_alt_pcache(
+static int SQLITE_TCLAPI test_alt_pcache(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -1021,7 +1021,7 @@ static int test_alt_pcache(
 **
 ** Enable or disable memory status reporting using SQLITE_CONFIG_MEMSTATUS.
 */
-static int test_config_memstatus(
+static int SQLITE_TCLAPI test_config_memstatus(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -1042,7 +1042,7 @@ static int test_config_memstatus(
 ** Usage:    sqlite3_config_lookaside  SIZE  COUNT
 **
 */
-static int test_config_lookaside(
+static int SQLITE_TCLAPI test_config_lookaside(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -1076,7 +1076,7 @@ static int test_config_lookaside(
 ** is 10KB in size.  A BUFID of 0 indicates that the buffer should be NULL
 ** which will cause sqlite3_db_config() to allocate space on its own.
 */
-static int test_db_config_lookaside(
+static int SQLITE_TCLAPI test_db_config_lookaside(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -1111,7 +1111,7 @@ static int test_db_config_lookaside(
 /*
 ** Usage:    sqlite3_config_heap NBYTE NMINALLOC
 */
-static int test_config_heap(
+static int SQLITE_TCLAPI test_config_heap(
   void * clientData, 
   Tcl_Interp *interp,
   int objc,
@@ -1148,7 +1148,7 @@ static int test_config_heap(
 /*
 ** Usage:    sqlite3_config_heap_size NBYTE
 */
-static int test_config_heap_size(
+static int SQLITE_TCLAPI test_config_heap_size(
   void * clientData, 
   Tcl_Interp *interp,
   int objc,
@@ -1178,7 +1178,7 @@ static int test_config_heap_size(
 ** Invoke sqlite3_config() or sqlite3_db_config() with invalid
 ** opcodes and verify that they return errors.
 */
-static int test_config_error(
+static int SQLITE_TCLAPI test_config_error(
   void * clientData, 
   Tcl_Interp *interp,
   int objc,
@@ -1216,7 +1216,7 @@ static int test_config_error(
 ** Enables or disables interpretation of URI parameters by default using
 ** SQLITE_CONFIG_URI.
 */
-static int test_config_uri(
+static int SQLITE_TCLAPI test_config_uri(
   void * clientData, 
   Tcl_Interp *interp,
   int objc,
@@ -1245,7 +1245,7 @@ static int test_config_uri(
 ** Enables or disables the use of the covering-index scan optimization.
 ** SQLITE_CONFIG_COVERING_INDEX_SCAN.
 */
-static int test_config_cis(
+static int SQLITE_TCLAPI test_config_cis(
   void * clientData, 
   Tcl_Interp *interp,
   int objc,
@@ -1273,7 +1273,7 @@ static int test_config_cis(
 **
 ** Set the minimum PMA size.
 */
-static int test_config_pmasz(
+static int SQLITE_TCLAPI test_config_pmasz(
   void * clientData, 
   Tcl_Interp *interp,
   int objc,
@@ -1303,7 +1303,7 @@ static int test_config_pmasz(
 **
 ** Write a summary of unfreed memsys3 allocations to FILENAME.
 */
-static int test_dump_memsys3(
+static int SQLITE_TCLAPI test_dump_memsys3(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -1339,7 +1339,7 @@ static int test_dump_memsys3(
 ** Return a list of three elements which are the sqlite3_status() return
 ** code, the current value, and the high-water mark value.
 */
-static int test_status(
+static int SQLITE_TCLAPI test_status(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -1396,7 +1396,7 @@ static int test_status(
 ** Return a list of three elements which are the sqlite3_db_status() return
 ** code, the current value, and the high-water mark value.
 */
-static int test_db_status(
+static int SQLITE_TCLAPI test_db_status(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -1457,7 +1457,7 @@ static int test_db_status(
 /*
 ** install_malloc_faultsim BOOLEAN
 */
-static int test_install_malloc_faultsim(
+static int SQLITE_TCLAPI test_install_malloc_faultsim(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -1481,7 +1481,7 @@ static int test_install_malloc_faultsim(
 /*
 ** sqlite3_install_memsys3
 */
-static int test_install_memsys3(
+static int SQLITE_TCLAPI test_install_memsys3(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -1496,7 +1496,7 @@ static int test_install_memsys3(
   return TCL_OK;
 }
 
-static int test_vfs_oom_test(
+static int SQLITE_TCLAPI test_vfs_oom_test(
   void * clientData,
   Tcl_Interp *interp,
   int objc,

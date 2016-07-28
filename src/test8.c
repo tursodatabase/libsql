@@ -1357,7 +1357,7 @@ static void moduleDestroy(void *p){
 /*
 ** Register the echo virtual table module.
 */
-static int register_echo_module(
+static int SQLITE_TCLAPI register_echo_module(
   ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int objc,              /* Number of arguments */
@@ -1397,7 +1397,7 @@ static int register_echo_module(
 **
 ** sqlite3_declare_vtab DB SQL
 */
-static int declare_vtab(
+static int SQLITE_TCLAPI declare_vtab(
   ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int objc,              /* Number of arguments */

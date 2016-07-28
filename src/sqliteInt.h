@@ -43,6 +43,14 @@
 */
 
 /*
+** Make sure the Tcl calling convention macro is defined.  This macro is
+** only used by test code and Tcl integration code.
+*/
+#ifndef SQLITE_TCLAPI
+#  define SQLITE_TCLAPI
+#endif
+
+/*
 ** Make sure that rand_s() is available on Windows systems with MSVC 2005
 ** or higher.
 */

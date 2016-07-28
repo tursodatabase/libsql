@@ -26,7 +26,7 @@
 /*
 ** c_collation_test
 */
-static int c_collation_test(
+static int SQLITE_TCLAPI c_collation_test(
   ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int objc,              /* Number of arguments */
@@ -67,7 +67,7 @@ error_out:
 /*
 ** c_realloc_test
 */
-static int c_realloc_test(
+static int SQLITE_TCLAPI c_realloc_test(
   ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int objc,              /* Number of arguments */
@@ -108,7 +108,7 @@ error_out:
 /*
 ** c_misuse_test
 */
-static int c_misuse_test(
+static int SQLITE_TCLAPI c_misuse_test(
   ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int objc,              /* Number of arguments */

@@ -440,7 +440,7 @@ static int cube_geom(
 }
 #endif /* SQLITE_ENABLE_RTREE */
 
-static int register_cube_geom(
+static int SQLITE_TCLAPI register_cube_geom(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -468,7 +468,7 @@ static int register_cube_geom(
   return TCL_OK;
 }
 
-static int register_circle_geom(
+static int SQLITE_TCLAPI register_circle_geom(
   void * clientData,
   Tcl_Interp *interp,
   int objc,

@@ -26,7 +26,7 @@
 ** Return a list of file that are shared and the number of
 ** references to each file.
 */
-int sqlite3BtreeSharedCacheReport(
+int SQLITE_TCLAPI sqlite3BtreeSharedCacheReport(
   void * clientData,
   Tcl_Interp *interp,
   int objc,

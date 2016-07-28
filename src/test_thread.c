@@ -76,7 +76,7 @@ extern int sqlite3TestErrCode(Tcl_Interp *, sqlite3 *, int);
 /*
 ** Handler for events of type EvalEvent.
 */
-static int tclScriptEvent(Tcl_Event *evPtr, int flags){
+static int SQLITE_TCLAPI tclScriptEvent(Tcl_Event *evPtr, int flags){
   int rc;
   EvalEvent *p = (EvalEvent *)evPtr;
   rc = Tcl_Eval(p->interp, p->zScript);
@@ -171,7 +171,7 @@ static Tcl_ThreadCreateType tclScriptThread(ClientData pSqlThread){
 **
 **     The caller can wait for the script to terminate using [vwait VARNAME].
 */
-static int sqlthread_spawn(
+static int SQLITE_TCLAPI sqlthread_spawn(
   ClientData clientData,
   Tcl_Interp *interp,
   int objc,
@@ -224,7 +224,7 @@ static int sqlthread_spawn(
 **
 **     NOTE: At the moment, this doesn't work. FIXME.
 */
-static int sqlthread_parent(
+static int SQLITE_TCLAPI sqlthread_parent(
   ClientData clientData,
   Tcl_Interp *interp,
   int objc,
@@ -269,7 +269,7 @@ static int xBusy(void *pArg, int nBusy){
 **     Open a database handle and return the string representation of
 **     the pointer value.
 */
-static int sqlthread_open(
+static int SQLITE_TCLAPI sqlthread_open(
   ClientData clientData,
   Tcl_Interp *interp,
   int objc,
@@ -319,7 +319,7 @@ static int sqlthread_open(
 **     Return the current thread-id (Tcl_GetCurrentThread()) cast to
 **     an integer.
 */
-static int sqlthread_id(
+static int SQLITE_TCLAPI sqlthread_id(
   ClientData clientData,
   Tcl_Interp *interp,
   int objc,
@@ -337,7 +337,7 @@ static int sqlthread_id(
 /*
 ** Dispatch routine for the sub-commands of [sqlthread].
 */
-static int sqlthread_proc(
+static int SQLITE_TCLAPI sqlthread_proc(
   ClientData clientData,
   Tcl_Interp *interp,
   int objc,
@@ -385,7 +385,7 @@ static int sqlthread_proc(
 ** implemented as a script in Tcl 8.5, it is not usually available to
 ** testfixture.
 */ 
-static int clock_seconds_proc(
+static int SQLITE_TCLAPI clock_seconds_proc(
   ClientData clientData,
   Tcl_Interp *interp,
   int objc,
@@ -547,7 +547,7 @@ int sqlite3_blocking_prepare_v2(
 **
 ** Advance the statement to the next row.
 */
-static int blocking_step_proc(
+static int SQLITE_TCLAPI blocking_step_proc(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -573,7 +573,7 @@ static int blocking_step_proc(
 ** Usage: sqlite3_blocking_prepare_v2 DB sql bytes ?tailvar?
 ** Usage: sqlite3_nonblocking_prepare_v2 DB sql bytes ?tailvar?
 */
-static int blocking_prepare_v2_proc(
+static int SQLITE_TCLAPI blocking_prepare_v2_proc(
   void * clientData,
   Tcl_Interp *interp,
   int objc,

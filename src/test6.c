@@ -811,7 +811,7 @@ static int processDevSymArgs(
 ** Simulate a crash immediately. This function does not return 
 ** (writeListSync() calls exit(-1)).
 */
-static int crashNowCmd(
+static int SQLITE_TCLAPI crashNowCmd(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -832,7 +832,7 @@ static int crashNowCmd(
 ** Parameter ENABLE must be a boolean value. If true, then the "crash"
 ** vfs is added to the system. If false, it is removed.
 */
-static int crashEnableCmd(
+static int SQLITE_TCLAPI crashEnableCmd(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -907,7 +907,7 @@ static int crashEnableCmd(
 **   sqlite_crashparams -sect 1024 -char {atomic sequential} ./test.db 1
 **
 */
-static int crashParamsObjCmd(
+static int SQLITE_TCLAPI crashParamsObjCmd(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -954,7 +954,7 @@ error:
   return TCL_ERROR;
 }
 
-static int devSymObjCmd(
+static int SQLITE_TCLAPI devSymObjCmd(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -977,7 +977,7 @@ static int devSymObjCmd(
 /*
 ** tclcmd: unregister_devsim
 */
-static int dsUnregisterObjCmd(
+static int SQLITE_TCLAPI dsUnregisterObjCmd(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -997,7 +997,7 @@ static int dsUnregisterObjCmd(
 /*
 ** tclcmd: register_jt_vfs ?-default? PARENT-VFS
 */
-static int jtObjCmd(
+static int SQLITE_TCLAPI jtObjCmd(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -1035,7 +1035,7 @@ static int jtObjCmd(
 /*
 ** tclcmd: unregister_jt_vfs
 */
-static int jtUnregisterObjCmd(
+static int SQLITE_TCLAPI jtUnregisterObjCmd(
   void * clientData,
   Tcl_Interp *interp,
   int objc,

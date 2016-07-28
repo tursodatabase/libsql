@@ -260,6 +260,9 @@ int sqlite3demo_superlock(
 #  include "sqlite_tcl.h"
 #else
 #  include "tcl.h"
+#  ifndef SQLITE_TCLAPI
+#    define SQLITE_TCLAPI
+#  endif
 #endif
 
 struct InterpAndScript {
@@ -268,11 +271,11 @@ struct InterpAndScript {
 };
 typedef struct InterpAndScript InterpAndScript;
 
-static void superunlock_del(ClientData cd){
+static void SQLITE_TCLAPI superunlock_del(ClientData cd){
   sqlite3demo_superunlock((void *)cd);
 }
 
-static int superunlock_cmd(
+static int SQLITE_TCLAPI superunlock_cmd(
   ClientData cd,
   Tcl_Interp *interp,
   int objc,
@@ -304,7 +307,7 @@ static int superlock_busy(void *pCtx, int nBusy){
 /*
 ** Tclcmd: sqlite3demo_superlock CMDNAME PATH VFS BUSY-HANDLER-SCRIPT
 */
-static int superlock_cmd(
+static int SQLITE_TCLAPI superlock_cmd(
   ClientData cd,
   Tcl_Interp *interp,
   int objc,

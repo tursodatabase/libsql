@@ -37,6 +37,9 @@
 # include "sqlite_tcl.h"
 #else
 # include "tcl.h"
+# ifndef SQLITE_TCLAPI
+#  define SQLITE_TCLAPI
+# endif
 #endif
 #include <errno.h>
 
@@ -208,7 +211,10 @@ static void closeIncrblobChannels(SqliteDb *pDb){
 /*
 ** Close an incremental blob channel.
 */
-static int incrblobClose(ClientData instanceData, Tcl_Interp *interp){
+static int SQLITE_TCLAPI incrblobClose(
+  ClientData instanceData,
+  Tcl_Interp *interp
+){
   IncrblobChannel *p = (IncrblobChannel *)instanceData;
   int rc = sqlite3_blob_close(p->pBlob);
   sqlite3 *db = p->pDb->db;
@@ -237,7 +243,7 @@ static int incrblobClose(ClientData instanceData, Tcl_Interp *interp){
 /*
 ** Read data from an incremental blob channel.
 */
-static int incrblobInput(
+static int SQLITE_TCLAPI incrblobInput(
   ClientData instanceData,
   char *buf,
   int bufSize,
@@ -269,7 +275,7 @@ static int incrblobInput(
 /*
 ** Write data to an incremental blob channel.
 */
-static int incrblobOutput(
+static int SQLITE_TCLAPI incrblobOutput(
   ClientData instanceData,
   CONST char *buf,
   int toWrite,
@@ -302,7 +308,7 @@ static int incrblobOutput(
 /*
 ** Seek an incremental blob channel.
 */
-static int incrblobSeek(
+static int SQLITE_TCLAPI incrblobSeek(
   ClientData instanceData,
   long offset,
   int seekMode,
@@ -328,10 +334,17 @@ static int incrblobSeek(
 }
 
 
-static void incrblobWatch(ClientData instanceData, int mode){
+static void SQLITE_TCLAPI incrblobWatch(
+  ClientData instanceData,
+  int mode
+){
   /* NO-OP */
 }
-static int incrblobHandle(ClientData instanceData, int dir, ClientData *hPtr){
+static int SQLITE_TCLAPI incrblobHandle(
+  ClientData instanceData,
+  int dir,
+  ClientData *hPtr
+){
   return TCL_ERROR;
 }
 
@@ -490,7 +503,7 @@ static void flushStmtCache(SqliteDb *pDb){
 ** TCL calls this procedure when an sqlite3 database command is
 ** deleted.
 */
-static void DbDeleteCmd(void *db){
+static void SQLITE_TCLAPI DbDeleteCmd(void *db){
   SqliteDb *pDb = (SqliteDb*)db;
   flushStmtCache(pDb);
   closeIncrblobChannels(pDb);
@@ -1795,7 +1808,12 @@ static void DbHookCmd(
 ** and calls that connection "db1".  The second command causes this
 ** subroutine to be invoked.
 */
-static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
+static int SQLITE_TCLAPI DbObjCmd(
+  void *cd,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *const*objv
+){
   SqliteDb *pDb = (SqliteDb*)cd;
   int choice;
   int rc = TCL_OK;
@@ -3263,7 +3281,12 @@ static int DbObjCmdAdaptor(
 ** The second argument is the name of the database file.
 **
 */
-static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
+static int SQLITE_TCLAPI DbMain(
+  void *cd,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *const*objv
+){
   SqliteDb *p;
   const char *zArg;
   char *zErrMsg;
@@ -3935,7 +3958,7 @@ static const char *tclsh_main_loop(void);
 
 #ifdef SQLITE_TEST
 static void init_all(Tcl_Interp *);
-static int init_all_cmd(
+static int SQLITE_TCLAPI init_all_cmd(
   ClientData cd,
   Tcl_Interp *interp,
   int objc,
@@ -3965,7 +3988,7 @@ static int init_all_cmd(
 **   to use the sqlite3_prepare_v2() function to prepare statements. If it
 **   is false, sqlite3_prepare().
 */
-static int db_use_legacy_prepare_cmd(
+static int SQLITE_TCLAPI db_use_legacy_prepare_cmd(
   ClientData cd,
   Tcl_Interp *interp,
   int objc,
@@ -4002,7 +4025,7 @@ static int db_use_legacy_prepare_cmd(
 **   return the text representation of the most recently used statement
 **   handle.
 */
-static int db_last_stmt_ptr(
+static int SQLITE_TCLAPI db_last_stmt_ptr(
   ClientData cd,
   Tcl_Interp *interp,
   int objc,

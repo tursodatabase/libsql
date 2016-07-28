@@ -22,6 +22,9 @@
 #  include "sqlite_tcl.h"
 #else
 #  include "tcl.h"
+#  ifndef SQLITE_TCLAPI
+#    define SQLITE_TCLAPI
+#  endif
 #endif
 #include <string.h>
 #include <assert.h>
@@ -147,7 +150,7 @@ static int nm_match_count(
 /*
 ** Tclcmd: fts3_near_match DOCUMENT EXPR ?OPTIONS?
 */
-static int fts3_near_match_cmd(
+static int SQLITE_TCLAPI fts3_near_match_cmd(
   ClientData clientData,
   Tcl_Interp *interp,
   int objc,
@@ -282,7 +285,7 @@ static int fts3_near_match_cmd(
 **    # Restore initial incr-load settings:
 **    eval fts3_configure_incr_load $cfg
 */
-static int fts3_configure_incr_load_cmd(
+static int SQLITE_TCLAPI fts3_configure_incr_load_cmd(
   ClientData clientData,
   Tcl_Interp *interp,
   int objc,
@@ -492,7 +495,7 @@ static int testTokenizerLanguage(
 }
 #endif
 
-static int fts3_test_tokenizer_cmd(
+static int SQLITE_TCLAPI fts3_test_tokenizer_cmd(
   ClientData clientData,
   Tcl_Interp *interp,
   int objc,
@@ -521,7 +524,7 @@ static int fts3_test_tokenizer_cmd(
   return TCL_OK;
 }
 
-static int fts3_test_varint_cmd(
+static int SQLITE_TCLAPI fts3_test_varint_cmd(
   ClientData clientData,
   Tcl_Interp *interp,
   int objc,

@@ -422,7 +422,7 @@ static void *ts_mremap(void *a, size_t b, size_t c, int d, ...){
   return orig_mremap(a, b, c, d, pArg);
 }
 
-static int test_syscall_install(
+static int SQLITE_TCLAPI test_syscall_install(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -458,7 +458,7 @@ static int test_syscall_install(
   return TCL_OK;
 }
 
-static int test_syscall_uninstall(
+static int SQLITE_TCLAPI test_syscall_uninstall(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -482,7 +482,7 @@ static int test_syscall_uninstall(
   return TCL_OK;
 }
 
-static int test_syscall_reset(
+static int SQLITE_TCLAPI test_syscall_reset(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -520,7 +520,7 @@ static int test_syscall_reset(
   return TCL_OK;
 }
 
-static int test_syscall_exists(
+static int SQLITE_TCLAPI test_syscall_exists(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -541,7 +541,7 @@ static int test_syscall_exists(
   return TCL_OK;
 }
 
-static int test_syscall_fault(
+static int SQLITE_TCLAPI test_syscall_fault(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -570,7 +570,7 @@ static int test_syscall_fault(
   return TCL_OK;
 }
 
-static int test_syscall_errno(
+static int SQLITE_TCLAPI test_syscall_errno(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -616,7 +616,7 @@ static int test_syscall_errno(
   return TCL_OK;
 }
 
-static int test_syscall_list(
+static int SQLITE_TCLAPI test_syscall_list(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -646,7 +646,7 @@ static int test_syscall_list(
   return TCL_OK;
 }
 
-static int test_syscall_defaultvfs(
+static int SQLITE_TCLAPI test_syscall_defaultvfs(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -668,7 +668,7 @@ static int ts_getpagesize(void){
   return gSyscall.pgsz;
 }
 
-static int test_syscall_pagesize(
+static int SQLITE_TCLAPI test_syscall_pagesize(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -703,7 +703,7 @@ static int test_syscall_pagesize(
   return TCL_OK;
 }
 
-static int test_syscall(
+static int SQLITE_TCLAPI test_syscall(
   void * clientData,
   Tcl_Interp *interp,
   int objc,

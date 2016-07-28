@@ -1233,6 +1233,9 @@ int sqlite3_multiplex_shutdown(int eForce){
 #  include "sqlite_tcl.h"
 #else
 #  include "tcl.h"
+#  ifndef SQLITE_TCLAPI
+#    define SQLITE_TCLAPI
+#  endif
 #endif
 extern const char *sqlite3ErrName(int);
 
@@ -1240,7 +1243,7 @@ extern const char *sqlite3ErrName(int);
 /*
 ** tclcmd: sqlite3_multiplex_initialize NAME MAKEDEFAULT
 */
-static int test_multiplex_initialize(
+static int SQLITE_TCLAPI test_multiplex_initialize(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -1271,7 +1274,7 @@ static int test_multiplex_initialize(
 /*
 ** tclcmd: sqlite3_multiplex_shutdown
 */
-static int test_multiplex_shutdown(
+static int SQLITE_TCLAPI test_multiplex_shutdown(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -1299,7 +1302,7 @@ static int test_multiplex_shutdown(
 /*
 ** tclcmd:  sqlite3_multiplex_dump
 */
-static int test_multiplex_dump(
+static int SQLITE_TCLAPI test_multiplex_dump(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -1354,7 +1357,7 @@ static int test_multiplex_dump(
 /*
 ** Tclcmd: test_multiplex_control HANDLE DBNAME SUB-COMMAND ?INT-VALUE?
 */
-static int test_multiplex_control(
+static int SQLITE_TCLAPI test_multiplex_control(
   ClientData cd,
   Tcl_Interp *interp,
   int objc,
