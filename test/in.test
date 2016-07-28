@@ -640,4 +640,15 @@ do_test in-13.X {
   db nullvalue ""
 } {}
 
+# At one point the following was causing valgrind to report a "jump
+# depends on unitialized location" problem.
+#
+do_execsql_test in-14.0 {
+  CREATE TABLE c1(a);
+  INSERT INTO c1 VALUES(1), (2), (4), (3);
+}
+do_execsql_test in-14.1 {
+  SELECT * FROM c1 WHERE a IN (SELECT a FROM c1) ORDER BY 1
+} {1 2 3 4}
+
 finish_test

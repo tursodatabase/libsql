@@ -3967,6 +3967,61 @@ int sqlite3ExprImpliesExpr(Expr *pE1, Expr *pE2, int iTab){
 
 /*
 ** An instance of the following structure is used by the tree walker
+** to determine if an expression can be evaluated by reference to the
+** index only, without having to do a search for the corresponding
+** table entry.  The IdxCover.pIdx field is the index.  IdxCover.iCur
+** is the cursor for the table.
+*/
+struct IdxCover {
+  Index *pIdx;     /* The index to be tested for coverage */
+  int iCur;        /* Cursor number for the table corresponding to the index */
+};
+
+/*
+** Check to see if there are references to columns in table 
+** pWalker->u.pIdxCover->iCur can be satisfied using the index
+** pWalker->u.pIdxCover->pIdx.
+*/
+static int exprIdxCover(Walker *pWalker, Expr *pExpr){
+  if( pExpr->op==TK_COLUMN
+   && pExpr->iTable==pWalker->u.pIdxCover->iCur
+   && sqlite3ColumnOfIndex(pWalker->u.pIdxCover->pIdx, pExpr->iColumn)<0
+  ){
+    pWalker->eCode = 1;
+    return WRC_Abort;
+  }
+  return WRC_Continue;
+}
+
+/*
+** Determine if an index pIdx on table with cursor iCur contains will
+** the expression pExpr.  Return true if the index does cover the
+** expression and false if the pExpr expression references table columns
+** that are not found in the index pIdx.
+**
+** An index covering an expression means that the expression can be
+** evaluated using only the index and without having to lookup the
+** corresponding table entry.
+*/
+int sqlite3ExprCoveredByIndex(
+  Expr *pExpr,        /* The index to be tested */
+  int iCur,           /* The cursor number for the corresponding table */
+  Index *pIdx         /* The index that might be used for coverage */
+){
+  Walker w;
+  struct IdxCover xcov;
+  memset(&w, 0, sizeof(w));
+  xcov.iCur = iCur;
+  xcov.pIdx = pIdx;
+  w.xExprCallback = exprIdxCover;
+  w.u.pIdxCover = &xcov;
+  sqlite3WalkExpr(&w, pExpr);
+  return !w.eCode;
+}
+
+
+/*
+** An instance of the following structure is used by the tree walker
 ** to count references to table columns in the arguments of an 
 ** aggregate function, in order to implement the
 ** sqlite3FunctionThisSrc() routine.

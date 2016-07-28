@@ -3257,6 +3257,7 @@ struct Walker {
     struct SrcCount *pSrcCount;                /* Counting column references */
     struct CCurHint *pCCurHint;                /* Used by codeCursorHint() */
     int *aiCol;                                /* array of column indexes */
+    struct IdxCover *pIdxCover;                /* Check for index coverage */
   } u;
 };
 
@@ -3700,6 +3701,7 @@ int sqlite3ExprListCompare(ExprList*, ExprList*, int);
 int sqlite3ExprImpliesExpr(Expr*, Expr*, int);
 void sqlite3ExprAnalyzeAggregates(NameContext*, Expr*);
 void sqlite3ExprAnalyzeAggList(NameContext*,ExprList*);
+int sqlite3ExprCoveredByIndex(Expr*, int iCur, Index *pIdx);
 int sqlite3FunctionUsesThisSrc(Expr*, SrcList*);
 Vdbe *sqlite3GetVdbe(Parse*);
 #ifndef SQLITE_OMIT_BUILTIN_TEST

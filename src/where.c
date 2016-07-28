@@ -2478,11 +2478,11 @@ static int whereLoopAddBtreeIndex(
     pNew->nSkip++;
     pNew->aLTerm[pNew->nLTerm++] = 0;
     pNew->wsFlags |= WHERE_SKIPSCAN;
-    nIter = pProbe->aiRowLogEst[saved_nEq] - pProbe->aiRowLogEst[saved_nEq+1];
+    nIter = pProbe->aiRowLogEst[saved_nEq]+1 - pProbe->aiRowLogEst[saved_nEq+1];
     pNew->nOut -= nIter;
     /* TUNING:  Because uncertainties in the estimates for skip-scan queries,
     ** add a 1.375 fudge factor to make skip-scan slightly less likely. */
-    nIter += 5;
+    nIter += 4;
     whereLoopAddBtreeIndex(pBuilder, pSrc, pProbe, nIter + nInMul);
     pNew->nOut = saved_nOut;
     pNew->u.btree.nEq = saved_nEq;
@@ -2775,11 +2775,34 @@ static int whereLoopAddBtree(
 
         /* The cost of visiting the index rows is N*K, where K is
         ** between 1.1 and 3.0, depending on the relative sizes of the
-        ** index and table rows. If this is a non-covering index scan,
-        ** also add the cost of visiting table rows (N*3.0).  */
+        ** index and table rows. */
         pNew->rRun = rSize + 1 + (15*pProbe->szIdxRow)/pTab->szTabRow;
         if( m!=0 ){
-          pNew->rRun = sqlite3LogEstAdd(pNew->rRun, rSize+16);
+          /* If this is a non-covering index scan, add in the cost of
+          ** doing table lookups.  The cost will be 3x the number of
+          ** lookups.  Take into account WHERE clause terms that can be
+          ** satisfied using just the index, and that do not require a
+          ** table lookup. */
+          LogEst nLookup = rSize + 16;  /* Base cost:  N*3 */
+          int ii;
+          int iCur = pSrc->iCursor;
+          WhereClause *pWC = &pWInfo->sWC;
+          for(ii=0; ii<pWC->nTerm; ii++){
+            WhereTerm *pTerm = &pWC->a[ii];
+            if( !sqlite3ExprCoveredByIndex(pTerm->pExpr, iCur, pProbe) ){
+              break;
+            }
+            /* pTerm can be evaluated using just the index.  So reduce
+            ** the expected number of table lookups accordingly */
+            if( pTerm->truthProb<=0 ){
+              nLookup += pTerm->truthProb;
+            }else{
+              nLookup--;
+              if( pTerm->eOperator & (WO_EQ|WO_IS) ) nLookup -= 19;
+            }
+          }
+          
+          pNew->rRun = sqlite3LogEstAdd(pNew->rRun, nLookup);
         }
         ApplyCostMultiplier(pNew->rRun, pTab->costMult);
         whereLoopOutputAdjust(pWC, pNew, rSize);
@@ -3949,7 +3972,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
       if( pWInfo->nOBSat<=0 ){
         pWInfo->nOBSat = 0;
         if( nLoop>0 ){
-          Bitmask m;
+          Bitmask m = 0;
           int rc = wherePathSatisfiesOrderBy(pWInfo, pWInfo->pOrderBy, pFrom,
                       WHERE_ORDERBY_LIMIT, nLoop-1, pFrom->aLoop[nLoop-1], &m);
           if( rc==pWInfo->pOrderBy->nExpr ){
