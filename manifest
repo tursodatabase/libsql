@@ -1,5 +1,5 @@
-C Enhance\sthe\squery\splanner\scost\sestimation\sfor\sindex\sscans\sto\stake\sinto\saccount\nWHERE\sclause\sterms\sthat\scan\sbe\scomputed\susing\sonly\sthe\sindex\sand\sthat\sdo\snot\nrequire\slooking\sup\srows\sin\sthe\soriginal\stable.\s\sThis\sfixes\san\sobscure\nperformance\sregression\sthat\sarose\swhen\sthe\sORDER\sBY\sLIMIT\soptimization\swas\nadded\sby\scheck-in\s[bf46179d44843].
-D 2016-07-27T19:30:53.586
+C New\stest\scase\sto\sinsure\slegacy\sCREATE\sTABLE\ssyntax\sis\ssupported.
+D 2016-07-28T12:52:30.552
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -985,7 +985,7 @@ F test/pagerfault2.test caf4c7facb914fd3b03a17b31ae2b180c8d6ca1f
 F test/pagerfault3.test 1003fcda009bf48a8e22a516e193b6ef0dd1bbd8
 F test/pageropt.test 84e4cc5cbca285357f7906e99b21be4f2bf5abc0
 F test/pagesize.test 5769fc62d8c890a83a503f67d47508dfdc543305
-F test/parser1.test 222b5cbf3e2e659fec1bf7d723488c8b9c94f1d0
+F test/parser1.test 391b9bf9a229547a129c61ac345ed1a6f5eb1854
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
@@ -1508,8 +1508,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4d59df02d3713b3e3804e1a88e676749b2794286 50f8ea37fb9647c4a9da2c269a4d6f54b10ce96b
-R a589b595bdfe9868de18def836f199ce
-T +closed 50f8ea37fb9647c4a9da2c269a4d6f54b10ce96b
+P 9e2b26811452a5011d0a97a689636fa4409da856
+R d76a2fc86bbf1915af6bf1dd54a28237
 U drh
-Z 994e8dc5cbb7e25d0e8cc4a952504fbd
+Z 803b725d666d5af434be7409c67eabe6
