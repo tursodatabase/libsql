@@ -466,22 +466,30 @@ RCC = $(RC) -DSQLITE_OS_WIN=1 -I. -I$(TOP) -I$(TOP)\src $(RCOPTS) $(RCCOPTS)
 !IF "$(PLATFORM)"=="x86"
 CORE_CCONV_OPTS = -Gz -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall
 SHELL_CCONV_OPTS = -Gz -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall
+# <<mark>>
 TEST_CCONV_OPTS = -Gz -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall -DINCLUDE_SQLITE_TCL_H=1 -DSQLITE_TCLAPI=__cdecl
+# <</mark>>
 !ELSE
 !IFNDEF PLATFORM
 CORE_CCONV_OPTS = -Gz -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall
 SHELL_CCONV_OPTS = -Gz -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall
+# <<mark>>
 TEST_CCONV_OPTS = -Gz -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall -DINCLUDE_SQLITE_TCL_H=1 -DSQLITE_TCLAPI=__cdecl
+# <</mark>>
 !ELSE
 CORE_CCONV_OPTS =
 SHELL_CCONV_OPTS =
+# <<mark>>
 TEST_CCONV_OPTS =
+# <</mark>>
 !ENDIF
 !ENDIF
 !ELSE
 CORE_CCONV_OPTS =
 SHELL_CCONV_OPTS =
+# <<mark>>
 TEST_CCONV_OPTS =
+# <</mark>>
 !ENDIF
 
 # These are additional compiler options used for the core library.
@@ -1983,12 +1991,20 @@ TESTFIXTURE_SRC = $(TESTSRC) $(TOP)\src\tclsqlite.c $(TESTFIXTURE_SRC1)
 
 sqlite_tclDecls.h:
 	echo #ifndef SQLITE_TCLAPI > sqlite_tclDecls.h
-	echo #  define SQLITE_TCLAPI __cdecl >> sqlite_tclDecls.h
+	echo #  define SQLITE_TCLAPI >> sqlite_tclDecls.h
 	echo #endif >> sqlite_tclDecls.h
-	type "$(TCLINCDIR)\tclDecls.h" | $(TCLSH_CMD) $(TOP)\tool\replace.tcl regsub "^(EXTERN\s+?.*?\s+?)Tcl_" "\1 SQLITE_TCLAPI Tcl_" | $(TCLSH_CMD) $(TOP)\tool\replace.tcl regsub "^(EXTERN\s+?(?:void|VOID)\s+?)TclFreeObj" "\1 SQLITE_TCLAPI TclFreeObj" >> sqlite_tclDecls.h
+	type "$(TCLINCDIR)\tclDecls.h" \
+		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl regsub "^(EXTERN\s+?.*?\s+?)Tcl_" "\1 SQLITE_TCLAPI Tcl_" \
+		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl regsub "^(EXTERN\s+?(?:void|VOID)\s+?)TclFreeObj" "\1 SQLITE_TCLAPI TclFreeObj" \
+		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl regsub "\(\*tcl_" "(SQLITE_TCLAPI *tcl_" \
+		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl regsub "\(\*tclFreeObj" "(SQLITE_TCLAPI *tclFreeObj" >> sqlite_tclDecls.h
 
 sqlite_tcl.h:	sqlite_tclDecls.h
-	type "$(TCLINCDIR)\tcl.h" | $(TCLSH_CMD) $(TOP)\tool\replace.tcl exact tclDecls.h sqlite_tclDecls.h >> sqlite_tcl.h
+	type "$(TCLINCDIR)\tcl.h" | $(TCLSH_CMD) $(TOP)\tool\replace.tcl exact tclDecls.h sqlite_tclDecls.h \
+		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl regsub "typedef (.*?)\(Tcl_" "typedef \1 (SQLITE_TCLAPI Tcl_" \
+		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl exact "void (*freeProc)" "void (SQLITE_TCLAPI *freeProc)" \
+		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl exact "Tcl_HashEntry *(*findProc)" "Tcl_HashEntry *(SQLITE_TCLAPI *findProc)" \
+		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl exact "Tcl_HashEntry *(*createProc)" "Tcl_HashEntry *(SQLITE_TCLAPI *createProc)" >> sqlite_tcl.h
 
 testfixture.exe:	$(TESTFIXTURE_SRC) $(SQLITE3H) $(LIBRESOBJS) $(HDR) sqlite_tcl.h
 	$(LTLINK) -DSQLITE_NO_SYNC=1 $(TESTFIXTURE_FLAGS) \
