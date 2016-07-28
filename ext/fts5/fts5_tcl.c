@@ -82,7 +82,7 @@ static int f5tResultToErrorCode(const char *zRes){
   return SQLITE_ERROR;
 }
 
-static int f5tDbAndApi(
+static int SQLITE_TCLAPI f5tDbAndApi(
   Tcl_Interp *interp, 
   Tcl_Obj *pObj, 
   sqlite3 **ppDb, 
@@ -213,7 +213,7 @@ static void xSetAuxdataDestructor(void *p){
 **
 ** Description...
 */
-static int xF5tApi(
+static int SQLITE_TCLAPI xF5tApi(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -606,7 +606,7 @@ static void xF5tDestroy(void *pCtx){
 **
 ** Description...
 */
-static int f5tCreateFunction(
+static int SQLITE_TCLAPI f5tCreateFunction(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -676,7 +676,7 @@ static int xTokenizeCb2(
 **
 ** Description...
 */
-static int f5tTokenize(
+static int SQLITE_TCLAPI f5tTokenize(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -882,7 +882,7 @@ static int f5tTokenizerTokenize(
 /*
 ** sqlite3_fts5_token ?-colocated? TEXT START END
 */
-static int f5tTokenizerReturn(
+static int SQLITE_TCLAPI f5tTokenizerReturn(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -953,7 +953,7 @@ static void f5tDelTokenizer(void *pCtx){
 ** SCRIPT2 should invoke the [sqlite3_fts5_token] command once for each
 ** token within the tokenized text.
 */
-static int f5tCreateTokenizer(
+static int SQLITE_TCLAPI f5tCreateTokenizer(
   ClientData clientData,
   Tcl_Interp *interp,
   int objc,
@@ -1005,7 +1005,7 @@ static void xF5tFree(ClientData clientData){
 **
 ** Set or clear the global "may-be-corrupt" flag. Return the old value.
 */
-static int f5tMayBeCorrupt(
+static int SQLITE_TCLAPI f5tMayBeCorrupt(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -1037,7 +1037,7 @@ static unsigned int f5t_fts5HashKey(int nSlot, const char *p, int n){
   return (h % nSlot);
 }
 
-static int f5tTokenHash(
+static int SQLITE_TCLAPI f5tTokenHash(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -1062,7 +1062,7 @@ static int f5tTokenHash(
   return TCL_OK;
 }
 
-static int f5tRegisterMatchinfo(
+static int SQLITE_TCLAPI f5tRegisterMatchinfo(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -1087,7 +1087,7 @@ static int f5tRegisterMatchinfo(
   return TCL_OK;
 }
 
-static int f5tRegisterTok(
+static int SQLITE_TCLAPI f5tRegisterTok(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
