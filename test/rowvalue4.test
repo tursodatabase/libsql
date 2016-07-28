@@ -1,0 +1,48 @@
+# 2016 July 29
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is syntax errors involving row-value constructors
+# and sub-selects that return multiple arguments.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set ::testprefix rowvalue4
+
+do_execsql_test 0 {
+  CREATE TABLE t1(a, b, c);
+  CREATE INDEX t1bac ON t1(b, a, c);
+}
+
+foreach {tn e} {
+  1 "(1, 2, 3)"
+  2 "1 + (1, 2)"
+  3 "(1,2,3) == (1, 2)"
+} {
+  do_catchsql_test 1.$tn "SELECT $e" {1 {invalid use of row value}}
+}
+
+foreach {tn s error} {
+  1 "SELECT * FROM t1 WHERE a = (1, 2)"       {invalid use of row value}
+  2 "SELECT * FROM t1 WHERE b = (1, 2)"       {invalid use of row value}
+  3 "SELECT * FROM t1 WHERE NOT (b = (1, 2))" {invalid use of row value}
+  4 "SELECT * FROM t1 LIMIT (1, 2)"           {invalid use of row value}
+  5 "SELECT (a, b) IN (SELECT * FROM t1) FROM t1" 
+                             {sub-select returns 3 columns - expected 2}
+
+  6 "SELECT * FROM t1 WHERE (a, b) IN (SELECT * FROM t1)" 
+                             {sub-select returns 3 columns - expected 2}
+} {
+  do_catchsql_test 2.$tn "$s" [list 1 $error]
+}
+
+finish_test
+
