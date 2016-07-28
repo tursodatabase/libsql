@@ -62,7 +62,11 @@
 **   SELECT * FROM fstree WHERE path LIKE '/home/dan/sqlite/%'
 */
 #include "sqliteInt.h"
-#include "tcl.h"
+#if defined(INCLUDE_SQLITE_TCL_H)
+#  include "sqlite_tcl.h"
+#else
+#  include "tcl.h"
+#endif
 
 #include <stdlib.h>
 #include <string.h>
@@ -871,7 +875,7 @@ extern int getDbPointer(Tcl_Interp *interp, const char *zA, sqlite3 **ppDb);
 /*
 ** Register the echo virtual table module.
 */
-static int register_fs_module(
+static int SQLITE_TCLAPI register_fs_module(
   ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int objc,              /* Number of arguments */

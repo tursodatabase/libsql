@@ -13,7 +13,11 @@
 ** implements new SQL functions used by the test scripts.
 */
 #include "sqlite3.h"
-#include "tcl.h"
+#if defined(INCLUDE_SQLITE_TCL_H)
+#  include "sqlite_tcl.h"
+#else
+#  include "tcl.h"
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -689,7 +693,7 @@ static int registerTestFunctions(sqlite3 *db){
 ** the standard set of test functions to be loaded into each new
 ** database connection.
 */
-static int autoinstall_test_funcs(
+static int SQLITE_TCLAPI autoinstall_test_funcs(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -717,7 +721,7 @@ static void tFinal(sqlite3_context *a){}
 ** Make various calls to sqlite3_create_function that do not have valid
 ** parameters.  Verify that the error condition is detected and reported.
 */
-static int abuse_create_function(
+static int SQLITE_TCLAPI abuse_create_function(
   void * clientData,
   Tcl_Interp *interp,
   int objc,

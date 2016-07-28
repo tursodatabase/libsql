@@ -11,7 +11,14 @@
 *************************************************************************
 ** Test extension for testing the sqlite3_auto_extension() function.
 */
-#include "tcl.h"
+#if defined(INCLUDE_SQLITE_TCL_H)
+#  include "sqlite_tcl.h"
+#else
+#  include "tcl.h"
+#  ifndef SQLITE_TCLAPI
+#    define SQLITE_TCLAPI
+#  endif
+#endif
 #include "sqlite3ext.h"
 
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
@@ -87,7 +94,7 @@ static int broken_init(
 **
 ** Register the "sqr" extension to be loaded automatically.
 */
-static int autoExtSqrObjCmd(
+static int SQLITE_TCLAPI autoExtSqrObjCmd(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -103,7 +110,7 @@ static int autoExtSqrObjCmd(
 **
 ** Unregister the "sqr" extension.
 */
-static int cancelAutoExtSqrObjCmd(
+static int SQLITE_TCLAPI cancelAutoExtSqrObjCmd(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -119,7 +126,7 @@ static int cancelAutoExtSqrObjCmd(
 **
 ** Register the "cube" extension to be loaded automatically.
 */
-static int autoExtCubeObjCmd(
+static int SQLITE_TCLAPI autoExtCubeObjCmd(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -135,7 +142,7 @@ static int autoExtCubeObjCmd(
 **
 ** Unregister the "cube" extension.
 */
-static int cancelAutoExtCubeObjCmd(
+static int SQLITE_TCLAPI cancelAutoExtCubeObjCmd(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -151,7 +158,7 @@ static int cancelAutoExtCubeObjCmd(
 **
 ** Register the broken extension to be loaded automatically.
 */
-static int autoExtBrokenObjCmd(
+static int SQLITE_TCLAPI autoExtBrokenObjCmd(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -167,7 +174,7 @@ static int autoExtBrokenObjCmd(
 **
 ** Unregister the broken extension.
 */
-static int cancelAutoExtBrokenObjCmd(
+static int SQLITE_TCLAPI cancelAutoExtBrokenObjCmd(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -186,7 +193,7 @@ static int cancelAutoExtBrokenObjCmd(
 **
 ** Reset all auto-extensions
 */
-static int resetAutoExtObjCmd(
+static int SQLITE_TCLAPI resetAutoExtObjCmd(
   void * clientData,
   Tcl_Interp *interp,
   int objc,

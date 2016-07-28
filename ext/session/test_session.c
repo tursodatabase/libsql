@@ -5,7 +5,11 @@
 #include "sqlite3session.h"
 #include <assert.h>
 #include <string.h>
-#include <tcl.h>
+#if defined(INCLUDE_SQLITE_TCL_H)
+#  include "sqlite_tcl.h"
+#else
+#  include "tcl.h"
+#endif
 
 typedef struct TestSession TestSession;
 struct TestSession {
