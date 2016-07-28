@@ -647,7 +647,7 @@ static void test_setsubtype(
 static int registerTestFunctions(
   sqlite3 *db,
   char **pzErrMsg,
-  const void *pThunk
+  const sqlite3_api_routines *pThunk
 ){
   static const struct {
      char *zName;
@@ -703,7 +703,7 @@ static int SQLITE_TCLAPI autoinstall_test_funcs(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-  extern int Md5_Register(sqlite3 *, char **, const void *);
+  extern int Md5_Register(sqlite3 *, char **, const sqlite3_api_routines *);
   int rc = sqlite3_auto_extension(registerTestFunctions);
   if( rc==SQLITE_OK ){
     rc = sqlite3_auto_extension(Md5_Register);
@@ -803,7 +803,7 @@ int Sqlitetest_func_Init(Tcl_Interp *interp){
      { "abuse_create_function",         abuse_create_function  },
   };
   int i;
-  extern int Md5_Register(sqlite3 *, char **, const void *);
+  extern int Md5_Register(sqlite3 *, char **, const sqlite3_api_routines *);
 
   for(i=0; i<sizeof(aObjCmd)/sizeof(aObjCmd[0]); i++){
     Tcl_CreateObjCommand(interp, aObjCmd[i].zName, aObjCmd[i].xProc, 0, 0);

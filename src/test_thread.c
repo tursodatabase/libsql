@@ -280,7 +280,7 @@ static int SQLITE_TCLAPI sqlthread_open(
   const char *zFilename;
   sqlite3 *db;
   char zBuf[100];
-  extern int Md5_Register(sqlite3 *, char **, const void *);
+  extern int Md5_Register(sqlite3 *, char **, const sqlite3_api_routines *);
 
   UNUSED_PARAMETER(clientData);
   UNUSED_PARAMETER(objc);

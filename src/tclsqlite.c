@@ -3923,7 +3923,7 @@ static void md5finalize(sqlite3_context *context){
 int Md5_Register(
   sqlite3 *db,
   char **pzErrMsg,
-  const void *pThunk
+  const sqlite3_api_routines *pThunk
 ){
   int rc = sqlite3_create_function(db, "md5sum", -1, SQLITE_UTF8, 0, 0,
                                  md5step, md5finalize);
