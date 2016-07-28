@@ -76,4 +76,27 @@ do_catchsql_test parser1-2.2 {
   SELECT x FROM c;
 } {1 {syntax error after column name "x"}}
 
+# Verify that the comma between multiple table constraints is
+# optional.
+#
+# The missing comma is technically a syntax error.  But we have to support
+# it because there might be legacy databases that omit the commas in their
+# sqlite_master tables.
+#
+do_execsql_test parser1-3.1 {
+  CREATE TABLE t300(id INTEGER PRIMARY KEY);
+  CREATE TABLE t301(
+    id INTEGER PRIMARY KEY,
+    c1 INTEGER NOT NULL,
+    c2 INTEGER NOT NULL,
+    c3 BOOLEAN NOT NULL DEFAULT 0,
+    FOREIGN KEY(c1) REFERENCES t300(id) ON DELETE CASCADE ON UPDATE RESTRICT
+        /* no comma */
+    FOREIGN KEY(c2) REFERENCES t300(id) ON DELETE CASCADE ON UPDATE RESTRICT
+        /* no comma */
+    UNIQUE(c1, c2)
+  );
+  PRAGMA foreign_key_list(t301);
+} {0 0 t300 c2 id RESTRICT CASCADE NONE 1 0 t300 c1 id RESTRICT CASCADE NONE}
+
 finish_test

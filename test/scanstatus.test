@@ -333,7 +333,7 @@ do_execsql_test 5.3.2 {
   SELECT count(*) FROM t2 WHERE y = 'j';
 } {19}
 do_scanstatus_test 5.3.3 { 
-  nLoop 1 nVisit 19 nEst 56.0 zName t2xy zExplain
+  nLoop 1 nVisit 19 nEst 52.0 zName t2xy zExplain
   {SEARCH TABLE t2 USING COVERING INDEX t2xy (ANY(x) AND y=?)}
 }
 
@@ -349,7 +349,7 @@ do_execsql_test 5.4.2 {
 do_scanstatus_test 5.4.3 { 
   nLoop 1 nVisit 10 nEst 10.0 zName t1bc 
   zExplain {SCAN TABLE t1 USING COVERING INDEX t1bc}
-  nLoop 10 nVisit 200 nEst 56.0 zName t2xy 
+  nLoop 10 nVisit 200 nEst 52.0 zName t2xy 
   zExplain {SEARCH TABLE t2 USING COVERING INDEX t2xy (ANY(x) AND y=?)}
 }
 
