@@ -1,5 +1,5 @@
-C Improvements\sto\sthe\sway\sthe\sCOMPILER\scompile-time\soption\sis\sset\swhen\scompiling\nwith\sClang.
-D 2016-07-28T17:24:16.495
+C Disable\sthe\sauthorizer\scallback\swhen\sreparsing\sthe\sschema.\s\sThis\savoids\nundesirable\sauthorization\sfailures\sfollowing\san\sALTER\sTABLE.
+D 2016-07-28T18:38:13.187
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -323,7 +323,7 @@ F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c cc28ab933ae615b22add0d609794ffb6596b42ea
 F src/analyze.c 37fedc80ac966ce1745811746e68e4d8fa64c7fe
 F src/attach.c 771153bd1f4ab0b97a44a13dde2c7e5e1efeba22
-F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
+F src/auth.c 5c8e0f37f785f935f589496801edd19840485853
 F src/backup.c 6df65fdd569c901a418887a1a76f82ec35044556
 F src/bitvec.c 3ee4c8b2c94ed3a7377256e18199e6ff5cf33f63
 F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
@@ -506,8 +506,8 @@ F test/attach3.test 359eb65d00102cdfcef6fa4e81dc1648f8f80b27
 F test/attach4.test 53bf502f17647c6d6c5add46dda6bac8b6f4665c
 F test/attachmalloc.test 3a4bfca9545bfe906a8d2e622de10fbac5b711b0
 F test/auth.test 872a122b3977c1d1bb9fd637dc20016e5c01880f
-F test/auth2.test 264c6af53cad9aba5218c68bbe18036e39007bfa
-F test/auth3.test 5cfa94ed90c6617c42b7ba4b133fd79678b251c7
+F test/auth2.test 9eb7fce9f34bf1f50d3f366fb3e606be5a2000a1
+F test/auth3.test b810826b193831929951c0d50783a200e5ef6b72
 F test/autoinc.test c58912526998a39e11f66b533e23cfabea7f25b7
 F test/autoindex1.test 14b63a9f1e405fe6d5bfc8c8d00249c2ebaf13ea
 F test/autoindex2.test 12ef578928102baaa0dc23ad397601a2f4ecb0df
@@ -1508,7 +1508,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6feff15cae8f0427be790355841d49c479c1c586
-R 675b3da4289ec2d84ea94ee475054664
+P 81f9cf86c48f3cd43755ded4dc97388ec650f8af
+R ae8bfc7314166cec8de9b44e7e9859e8
 U drh
-Z 0881f39f36c917424fb94c651f3aec11
+Z 7b0f6930a62d02daa8f4147d6dafd3a6

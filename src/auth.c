@@ -111,6 +111,7 @@ int sqlite3AuthReadCol(
   char *zDb = db->aDb[iDb].zName; /* Name of attached database */
   int rc;                         /* Auth callback return code */
 
+  if( db->init.busy ) return SQLITE_OK;
   rc = db->xAuth(db->pAuthArg, SQLITE_READ, zTab,zCol,zDb,pParse->zAuthContext
 #ifdef SQLITE_USER_AUTHENTICATION
                  ,db->auth.zAuthUser
