@@ -1,8 +1,8 @@
-C Adjustments\sto\sget\s'testfixture.exe'\scompiling\swith\sTcl\s8.6\swhen\s__stdcall\sis\senabled.
-D 2016-07-28T18:06:52.992
+C Fixup\sreserved\sfunction\spointers\sin\sthe\sTcl\sstubs\stable\sand\sseveral\smacros\scontaining\sTcl\sfunction\spointers.
+D 2016-07-28T18:18:53.411
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc c7934e2d3ef07c440ad48e2233c0cc8364e72aff
+F Makefile.msc 959d56a9c117c3dc6f407a71aaa9fbad2df0b3c7
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION cb29eb11e493dd85b3eeec4053c03949bf98478e
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -1508,7 +1508,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f2f1323cc4d2ad2d6794dbfae8d50b747213e85d
-R f48b462f2c7e74ed51a21c0e6f026658
+P 90e89ec9c8efff057a9e43c612427fc5c97ab52d
+R d171dcc0a06f2c3b789ca76207152f9d
 U mistachkin
-Z 339efe4a28b4c084d0a9150e8c742a8a
+Z 48ca1d4dc91e624fdf594bf2bfd310c3
