@@ -4167,7 +4167,7 @@ static void init_all(Tcl_Interp *interp){
 #endif
 
 #define TCLSH_MAIN main   /* Needed to fake out mktclapp */
-int TCLSH_MAIN(int argc, char **argv){
+int SQLITE_CDECL TCLSH_MAIN(int argc, char **argv){
   Tcl_Interp *interp;
 
 #if !defined(_WIN32_WCE)

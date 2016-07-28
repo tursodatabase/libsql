@@ -6444,7 +6444,7 @@ struct win32FileLocker {
 /*
 ** The background thread that does file locking.
 */
-static void win32_file_locker(void *pAppData){
+static void SQLITE_CDECL win32_file_locker(void *pAppData){
   struct win32FileLocker *p = (struct win32FileLocker*)pAppData;
   if( p->evName ){
     HANDLE ev = OpenEvent(EVENT_MODIFY_STATE, FALSE, p->evName);
