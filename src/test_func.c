@@ -644,7 +644,11 @@ static void test_setsubtype(
   sqlite3_result_subtype(context, (unsigned int)sqlite3_value_int(argv[1]));
 }
 
-static int registerTestFunctions(sqlite3 *db){
+static int registerTestFunctions(
+  sqlite3 *db,
+  char **pzErrMsg,
+  const void *pThunk
+){
   static const struct {
      char *zName;
      signed char nArg;
@@ -699,10 +703,10 @@ static int SQLITE_TCLAPI autoinstall_test_funcs(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-  extern int Md5_Register(sqlite3*);
-  int rc = sqlite3_auto_extension((void*)registerTestFunctions);
+  extern int Md5_Register(sqlite3 *, char **, const void *);
+  int rc = sqlite3_auto_extension(registerTestFunctions);
   if( rc==SQLITE_OK ){
-    rc = sqlite3_auto_extension((void*)Md5_Register);
+    rc = sqlite3_auto_extension(Md5_Register);
   }
   Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
   return TCL_OK;
@@ -799,13 +803,13 @@ int Sqlitetest_func_Init(Tcl_Interp *interp){
      { "abuse_create_function",         abuse_create_function  },
   };
   int i;
-  extern int Md5_Register(sqlite3*);
+  extern int Md5_Register(sqlite3 *, char **, const void *);
 
   for(i=0; i<sizeof(aObjCmd)/sizeof(aObjCmd[0]); i++){
     Tcl_CreateObjCommand(interp, aObjCmd[i].zName, aObjCmd[i].xProc, 0, 0);
   }
   sqlite3_initialize();
-  sqlite3_auto_extension((void*)registerTestFunctions);
-  sqlite3_auto_extension((void*)Md5_Register);
+  sqlite3_auto_extension(registerTestFunctions);
+  sqlite3_auto_extension(Md5_Register);
   return TCL_OK;
 }

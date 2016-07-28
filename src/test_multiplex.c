@@ -1197,7 +1197,7 @@ int sqlite3_multiplex_initialize(const char *zOrigVfsName, int makeDefault){
   gMultiplex.sIoMethodsV2.xShmUnmap = multiplexShmUnmap;
   sqlite3_vfs_register(&gMultiplex.sThisVfs, makeDefault);
 
-  sqlite3_auto_extension((void*)multiplexFuncInit);
+  sqlite3_auto_extension(multiplexFuncInit);
 
   return SQLITE_OK;
 }
