@@ -251,12 +251,12 @@ struct sqlite3_api_routines {
   char *(*vsnprintf)(int,char*,const char*,va_list);
   int (*wal_checkpoint_v2)(sqlite3*,const char*,int,int*,int*);
   /* Version 3.8.7 and later */
-  int (*auto_extension)(void(*)(sqlite3*,char**,const sqlite3_api_routines*));
+  int (*auto_extension)(int(*)(sqlite3*,char**,const sqlite3_api_routines*));
   int (*bind_blob64)(sqlite3_stmt*,int,const void*,sqlite3_uint64,
                      void(*)(void*));
   int (*bind_text64)(sqlite3_stmt*,int,const char*,sqlite3_uint64,
                       void(*)(void*),unsigned char);
-  int (*cancel_auto_extension)(void(*)(sqlite3*,char**,
+  int (*cancel_auto_extension)(int(*)(sqlite3*,char**,
                                        const sqlite3_api_routines*));
   int (*load_extension)(sqlite3*,const char*,const char*,char**);
   void *(*malloc64)(sqlite3_uint64);
