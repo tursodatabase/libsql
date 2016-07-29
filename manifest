@@ -1,5 +1,5 @@
-C Add\scalls\sto\ssqlite3_log()\swhen\ssqlite3_mutex_enter()\stakes\smore\sthan\s\n100,000\sCPU\scycles.
-D 2016-07-29T14:10:43.773
+C Use\s__sync_synchronous(),\swhen\savailable,\sinstead\sof\sa\smutex\swhen\sa\smemory\nbarrier\sis\sneeded.
+D 2016-07-29T14:23:23.484
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -212,7 +212,7 @@ F src/os.c 1b147e4cf7cc39e618115c14a086aed44bc91ace
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c fb587121840f690101336879adfa6d0b2cd0e8c7
+F src/os_unix.c e7157dfa077c06aaeecdfc4dcb6b0a489ef5c57a
 F src/os_win.c a019caaae2bcbbc0cc4c39af6e7d7e43d8426053
 F src/os_win.h 09e751b20bbc107ffbd46e13555dc73576d88e21
 F src/pager.c 8d97b3633f098fef817656dcbf167ca904511d78
@@ -1207,7 +1207,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 613c1ceaf4d552dc29aff090825941eaae6baed1
-R 6d8ae7e2095bf3fc683cc774df123cfb
+P 33c7ef7aca69f9b714bc25b2af5ae2a189d3ba78
+R 2ebf89f18db464fb30dce64acaa43e4c
 U drh
-Z 684747d28950efdfa4344d94c57523e7
+Z 3585d2cb51ce851abd09e86c546f6117
