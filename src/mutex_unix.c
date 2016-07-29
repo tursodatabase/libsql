@@ -255,8 +255,13 @@ static void pthreadMutexEnter(sqlite3_mutex *p){
 #endif
   iTimer = sqlite3Hwtime() - iTimer;
   if( iTimer>100000 ){
+    sqlite3_mutex *pMaster = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER);
+    int id = -1;
+    if( p>=pMaster && p<=&pMaster[SQLITE_MUTEX_STATIC_APP3-2] ){
+      id = (int)(p - pMaster) + 2;
+    }
     sqlite3_log(SQLITE_NOTICE, "slow mutex: %lld cycles on %d/%p",
-                iTimer, MUTEX_ID(p), p);
+                iTimer, id, p);
   }
 #endif
 
