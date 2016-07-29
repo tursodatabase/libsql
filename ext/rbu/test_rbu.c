@@ -21,6 +21,9 @@
 #  include "sqlite_tcl.h"
 #else
 #  include "tcl.h"
+#  ifndef SQLITE_TCLAPI
+#    define SQLITE_TCLAPI
+#  endif
 #endif
 #include <assert.h>
 
@@ -53,7 +56,7 @@ void test_rbu_delta(sqlite3_context *pCtx, int nArg, sqlite3_value **apVal){
 }
 
 
-static int test_sqlite3rbu_cmd(
+static int SQLITE_TCLAPI test_sqlite3rbu_cmd(
   ClientData clientData,
   Tcl_Interp *interp,
   int objc,
@@ -196,7 +199,7 @@ static int test_sqlite3rbu_cmd(
 /*
 ** Tclcmd: sqlite3rbu CMD <target-db> <rbu-db> ?<state-db>?
 */
-static int test_sqlite3rbu(
+static int SQLITE_TCLAPI test_sqlite3rbu(
   ClientData clientData,
   Tcl_Interp *interp,
   int objc,
@@ -226,7 +229,7 @@ static int test_sqlite3rbu(
 /*
 ** Tclcmd: sqlite3rbu_vacuum CMD <target-db> <state-db>
 */
-static int test_sqlite3rbu_vacuum(
+static int SQLITE_TCLAPI test_sqlite3rbu_vacuum(
   ClientData clientData,
   Tcl_Interp *interp,
   int objc,
@@ -254,7 +257,7 @@ static int test_sqlite3rbu_vacuum(
 /*
 ** Tclcmd: sqlite3rbu_create_vfs ?-default? NAME PARENT
 */
-static int test_sqlite3rbu_create_vfs(
+static int SQLITE_TCLAPI test_sqlite3rbu_create_vfs(
   ClientData clientData,
   Tcl_Interp *interp,
   int objc,
@@ -289,7 +292,7 @@ static int test_sqlite3rbu_create_vfs(
 /*
 ** Tclcmd: sqlite3rbu_destroy_vfs NAME
 */
-static int test_sqlite3rbu_destroy_vfs(
+static int SQLITE_TCLAPI test_sqlite3rbu_destroy_vfs(
   ClientData clientData,
   Tcl_Interp *interp,
   int objc,
@@ -310,7 +313,7 @@ static int test_sqlite3rbu_destroy_vfs(
 /*
 ** Tclcmd: sqlite3rbu_internal_test
 */
-static int test_sqlite3rbu_internal_test(
+static int SQLITE_TCLAPI test_sqlite3rbu_internal_test(
   ClientData clientData,
   Tcl_Interp *interp,
   int objc,

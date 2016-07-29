@@ -280,7 +280,7 @@ static int SQLITE_TCLAPI sqlthread_open(
   const char *zFilename;
   sqlite3 *db;
   char zBuf[100];
-  extern void Md5_Register(sqlite3*);
+  extern int Md5_Register(sqlite3 *, char **, const sqlite3_api_routines *);
 
   UNUSED_PARAMETER(clientData);
   UNUSED_PARAMETER(objc);
@@ -303,7 +303,7 @@ static int SQLITE_TCLAPI sqlthread_open(
     }
   }
 #endif
-  Md5_Register(db);
+  Md5_Register(db, 0, 0);
   sqlite3_busy_handler(db, xBusy, 0);
   
   if( sqlite3TestMakePointerStr(interp, zBuf, db) ) return TCL_ERROR;

@@ -5707,7 +5707,10 @@ int sqlite3_enable_load_extension(sqlite3 *db, int onoff);
 ** See also: [sqlite3_reset_auto_extension()]
 ** and [sqlite3_cancel_auto_extension()]
 */
-int sqlite3_auto_extension(void (*xEntryPoint)(void));
+typedef struct sqlite3_api_routines sqlite3_api_routines;
+int sqlite3_auto_extension(
+  int (*xEntryPoint)(sqlite3 *, char **, const sqlite3_api_routines *)
+);
 
 /*
 ** CAPI3REF: Cancel Automatic Extension Loading
@@ -5719,7 +5722,9 @@ int sqlite3_auto_extension(void (*xEntryPoint)(void));
 ** unregistered and it returns 0 if X was not on the list of initialization
 ** routines.
 */
-int sqlite3_cancel_auto_extension(void (*xEntryPoint)(void));
+int sqlite3_cancel_auto_extension(
+  int (*xEntryPoint)(sqlite3 *, char **, const sqlite3_api_routines *)
+);
 
 /*
 ** CAPI3REF: Reset Automatic Extension Loading

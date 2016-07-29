@@ -21,6 +21,14 @@
 #include <string.h>
 
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
+/*
+** This is the function signature used for all extension entry points.
+*/
+typedef int (*sqlite3_loadext_entry)(
+  sqlite3 *db,                       /* Handle to the database. */
+  char **pzErrMsg,                   /* Used to set error string on failure. */
+  const sqlite3_api_routines *pThunk /* Extension API function pointers. */
+);
 
 /*
 ** Some API routines are omitted when various features are
@@ -109,6 +117,10 @@
 #define sqlite3_blob_read      0
 #define sqlite3_blob_write     0
 #define sqlite3_blob_reopen    0
+#endif
+
+#if defined(SQLITE_OMIT_TRACE)
+# define sqlite3_trace_v2      0
 #endif
 
 /*
@@ -416,7 +428,10 @@ static const sqlite3_api_routines sqlite3Apis = {
   sqlite3_strlike,
   sqlite3_db_cacheflush,
   /* Version 3.12.0 and later */
-  sqlite3_system_errno
+  sqlite3_system_errno,
+  /* Version 3.14.0 and later */
+  sqlite3_trace_v2,
+  sqlite3_expanded_sql
 };
 
 /*
@@ -439,7 +454,7 @@ static int sqlite3LoadExtension(
 ){
   sqlite3_vfs *pVfs = db->pVfs;
   void *handle;
-  int (*xInit)(sqlite3*,char**,const sqlite3_api_routines*);
+  sqlite3_loadext_entry xInit;
   char *zErrmsg = 0;
   const char *zEntry;
   char *zAltEntry = 0;
@@ -498,8 +513,7 @@ static int sqlite3LoadExtension(
     }
     return SQLITE_ERROR;
   }
-  xInit = (int(*)(sqlite3*,char**,const sqlite3_api_routines*))
-                   sqlite3OsDlSym(pVfs, handle, zEntry);
+  xInit = (sqlite3_loadext_entry)sqlite3OsDlSym(pVfs, handle, zEntry);
 
   /* If no entry point was specified and the default legacy
   ** entry point name "sqlite3_extension_init" was not found, then
@@ -531,8 +545,7 @@ static int sqlite3LoadExtension(
     }
     memcpy(zAltEntry+iEntry, "_init", 6);
     zEntry = zAltEntry;
-    xInit = (int(*)(sqlite3*,char**,const sqlite3_api_routines*))
-                     sqlite3OsDlSym(pVfs, handle, zEntry);
+    xInit = (sqlite3_loadext_entry)sqlite3OsDlSym(pVfs, handle, zEntry);
   }
   if( xInit==0 ){
     if( pzErrMsg ){
@@ -662,7 +675,9 @@ static SQLITE_WSD struct sqlite3AutoExtList {
 ** Register a statically linked extension that is automatically
 ** loaded by every new database connection.
 */
-int sqlite3_auto_extension(void (*xInit)(void)){
+int sqlite3_auto_extension(
+  int (*xInit)(sqlite3 *, char **, const sqlite3_api_routines *)
+){
   int rc = SQLITE_OK;
 #ifndef SQLITE_OMIT_AUTOINIT
   rc = sqlite3_initialize();
@@ -678,7 +693,7 @@ int sqlite3_auto_extension(void (*xInit)(void)){
     wsdAutoextInit;
     sqlite3_mutex_enter(mutex);
     for(i=0; i<wsdAutoext.nExt; i++){
-      if( wsdAutoext.aExt[i]==xInit ) break;
+      if( wsdAutoext.aExt[i]==(void*)xInit ) break;
     }
     if( i==wsdAutoext.nExt ){
       u64 nByte = (wsdAutoext.nExt+1)*sizeof(wsdAutoext.aExt[0]);
@@ -688,7 +703,7 @@ int sqlite3_auto_extension(void (*xInit)(void)){
         rc = SQLITE_NOMEM_BKPT;
       }else{
         wsdAutoext.aExt = aNew;
-        wsdAutoext.aExt[wsdAutoext.nExt] = xInit;
+        wsdAutoext.aExt[wsdAutoext.nExt] = (void*)xInit;
         wsdAutoext.nExt++;
       }
     }
@@ -707,7 +722,9 @@ int sqlite3_auto_extension(void (*xInit)(void)){
 ** Return 1 if xInit was found on the list and removed.  Return 0 if xInit
 ** was not on the list.
 */
-int sqlite3_cancel_auto_extension(void (*xInit)(void)){
+int sqlite3_cancel_auto_extension(
+  int (*xInit)(sqlite3 *, char **, const sqlite3_api_routines *)
+){
 #if SQLITE_THREADSAFE
   sqlite3_mutex *mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER);
 #endif
@@ -716,7 +733,7 @@ int sqlite3_cancel_auto_extension(void (*xInit)(void)){
   wsdAutoextInit;
   sqlite3_mutex_enter(mutex);
   for(i=(int)wsdAutoext.nExt-1; i>=0; i--){
-    if( wsdAutoext.aExt[i]==xInit ){
+    if( wsdAutoext.aExt[i]==(void*)xInit ){
       wsdAutoext.nExt--;
       wsdAutoext.aExt[i] = wsdAutoext.aExt[wsdAutoext.nExt];
       n++;
@@ -756,7 +773,7 @@ void sqlite3AutoLoadExtensions(sqlite3 *db){
   u32 i;
   int go = 1;
   int rc;
-  int (*xInit)(sqlite3*,char**,const sqlite3_api_routines*);
+  sqlite3_loadext_entry xInit;
 
   wsdAutoextInit;
   if( wsdAutoext.nExt==0 ){
@@ -773,8 +790,7 @@ void sqlite3AutoLoadExtensions(sqlite3 *db){
       xInit = 0;
       go = 0;
     }else{
-      xInit = (int(*)(sqlite3*,char**,const sqlite3_api_routines*))
-              wsdAutoext.aExt[i];
+      xInit = (sqlite3_loadext_entry)wsdAutoext.aExt[i];
     }
     sqlite3_mutex_leave(mutex);
     zErrmsg = 0;

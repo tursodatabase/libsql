@@ -3806,7 +3806,12 @@ static void MD5DigestToBase10x8(unsigned char digest[16], char zDigest[50]){
 ** A TCL command for md5.  The argument is the text to be hashed.  The
 ** Result is the hash in base64.
 */
-static int md5_cmd(void*cd, Tcl_Interp *interp, int argc, const char **argv){
+static int SQLITE_TCLAPI md5_cmd(
+  void*cd,
+  Tcl_Interp *interp,
+  int argc,
+  const char **argv
+){
   MD5Context ctx;
   unsigned char digest[16];
   char zBuf[50];
@@ -3830,7 +3835,12 @@ static int md5_cmd(void*cd, Tcl_Interp *interp, int argc, const char **argv){
 ** A TCL command to take the md5 hash of a file.  The argument is the
 ** name of the file.
 */
-static int md5file_cmd(void*cd, Tcl_Interp*interp, int argc, const char **argv){
+static int SQLITE_TCLAPI md5file_cmd(
+  void*cd,
+  Tcl_Interp *interp,
+  int argc,
+  const char **argv
+){
   FILE *in;
   MD5Context ctx;
   void (*converter)(unsigned char*, char*);
@@ -3910,7 +3920,11 @@ static void md5finalize(sqlite3_context *context){
   MD5DigestToBase16(digest, zBuf);
   sqlite3_result_text(context, zBuf, -1, SQLITE_TRANSIENT);
 }
-int Md5_Register(sqlite3 *db){
+int Md5_Register(
+  sqlite3 *db,
+  char **pzErrMsg,
+  const sqlite3_api_routines *pThunk
+){
   int rc = sqlite3_create_function(db, "md5sum", -1, SQLITE_UTF8, 0, 0,
                                  md5step, md5finalize);
   sqlite3_overload_function(db, "md5sum", -1);  /* To exercise this API */

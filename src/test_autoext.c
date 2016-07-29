@@ -100,7 +100,7 @@ static int SQLITE_TCLAPI autoExtSqrObjCmd(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-  int rc = sqlite3_auto_extension((void*)sqr_init);
+  int rc = sqlite3_auto_extension(sqr_init);
   Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
   return SQLITE_OK;
 }
@@ -116,7 +116,7 @@ static int SQLITE_TCLAPI cancelAutoExtSqrObjCmd(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-  int rc = sqlite3_cancel_auto_extension((void*)sqr_init);
+  int rc = sqlite3_cancel_auto_extension(sqr_init);
   Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
   return SQLITE_OK;
 }
@@ -132,7 +132,7 @@ static int SQLITE_TCLAPI autoExtCubeObjCmd(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-  int rc = sqlite3_auto_extension((void*)cube_init);
+  int rc = sqlite3_auto_extension(cube_init);
   Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
   return SQLITE_OK;
 }
@@ -148,7 +148,7 @@ static int SQLITE_TCLAPI cancelAutoExtCubeObjCmd(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-  int rc = sqlite3_cancel_auto_extension((void*)cube_init);
+  int rc = sqlite3_cancel_auto_extension(cube_init);
   Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
   return SQLITE_OK;
 }
@@ -164,7 +164,7 @@ static int SQLITE_TCLAPI autoExtBrokenObjCmd(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-  int rc = sqlite3_auto_extension((void*)broken_init);
+  int rc = sqlite3_auto_extension(broken_init);
   Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
   return SQLITE_OK;
 }
@@ -180,7 +180,7 @@ static int SQLITE_TCLAPI cancelAutoExtBrokenObjCmd(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-  int rc = sqlite3_cancel_auto_extension((void*)broken_init);
+  int rc = sqlite3_cancel_auto_extension(broken_init);
   Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
   return SQLITE_OK;
 }
