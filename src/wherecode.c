@@ -359,7 +359,31 @@ static int codeEqualityTerm(
   assert( pLevel->pWLoop->aLTerm[iEq]==pTerm );
   assert( iTarget>0 );
   if( pX->op==TK_EQ || pX->op==TK_IS ){
-    iReg = sqlite3ExprCodeTarget(pParse, pX->pRight, iTarget);
+    Expr *pRight = pX->pRight;
+    if( pRight->op==TK_SELECT_COLUMN ){
+      /* This case occurs for expressions like "(a, b) == (SELECT ...)". */
+      WhereLoop *pLoop = pLevel->pWLoop;
+      int i;
+      Expr *pSub = pRight->pLeft;
+      assert( pSub->op==TK_SELECT );
+      for(i=pLoop->nSkip; i<iEq; i++){
+        Expr *pExpr = pLoop->aLTerm[i]->pExpr->pRight;
+        if( pExpr && pExpr->op==TK_SELECT_COLUMN && pExpr->pLeft==pSub ) break;
+      }
+
+      if( i==iEq ){
+        iReg = sqlite3CodeSubselect(pParse, pSub, 0, 0);
+        for(/*no-op*/; i<pLoop->nLTerm; i++){
+          Expr *pExpr = pLoop->aLTerm[i]->pExpr->pRight;
+          if( pExpr && pExpr->op==TK_SELECT_COLUMN && pExpr->pLeft==pSub ){
+            sqlite3VdbeAddOp2(v, OP_Copy, iReg+pExpr->iColumn, iTarget-iEq+i);
+          }
+        }
+      }
+      iReg = iTarget;
+    }else{
+      iReg = sqlite3ExprCodeTarget(pParse, pRight, iTarget);
+    }
   }else if( pX->op==TK_ISNULL ){
     iReg = iTarget;
     sqlite3VdbeAddOp2(v, OP_Null, 0, iReg);
@@ -1489,10 +1513,6 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       testcase( op==OP_IdxLE );  VdbeCoverageIf(v, op==OP_IdxLE );
     }
 
-    /* Disable the start and end range terms if possible */
-    /* disableTerm(pLevel, pRangeStart); */
-    /* disableTerm(pLevel, pRangeEnd); */
-
     /* Seek the table cursor, if required */
     if( omitTable ){
       /* pIdx is a covering index.  No need to access the main table. */
@@ -1594,7 +1614,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     u16 wctrlFlags;                    /* Flags for sub-WHERE clause */
     Expr *pAndExpr = 0;                /* An ".. AND (...)" expression */
     Table *pTab = pTabItem->pTab;
-   
+
     pTerm = pLoop->aLTerm[0];
     assert( pTerm!=0 );
     assert( pTerm->eOperator & WO_OR );

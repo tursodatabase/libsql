@@ -46,6 +46,7 @@ foreach {tn sql res} {
   9  "SELECT (1, 2) IN (SELECT rowid, b FROM t1)"  1
   10 "SELECT 1 WHERE (1, 2) IN (SELECT rowid, b FROM t1)"  1
   11 "SELECT 1 WHERE (1, NULL) IN (SELECT rowid, b FROM t1)"  {}
+  12 "SELECT 1 FROM t1 WHERE (a, b) = (SELECT +a, +b FROM t1)" {1}
 } {
   do_execsql_test 1.$tn $sql $res
 }
@@ -207,6 +208,8 @@ foreach {tn idx} {
     " $res
   }
 }
+
+#-------------------------------------------------------------------------
 
 
 finish_test

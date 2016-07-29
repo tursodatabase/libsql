@@ -3512,18 +3512,6 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       break;
     }
 
-    case TK_SELECT_COLUMN: {
-      Expr *pLeft = pExpr->pLeft;
-      assert( pLeft );
-      assert( pLeft->op==TK_SELECT || pLeft->op==TK_REGISTER );
-      if( pLeft->op==TK_SELECT ){
-        pLeft->iTable = sqlite3CodeSubselect(pParse, pLeft, 0, 0);
-        pLeft->op = TK_REGISTER;
-      }
-      inReg = pLeft->iTable + pExpr->iColumn;
-      break;
-    }
-
     /*
     ** Form A:
     **   CASE x WHEN e1 THEN r1 WHEN e2 THEN r2 ... WHEN eN THEN rN ELSE y END

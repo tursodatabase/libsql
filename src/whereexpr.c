@@ -962,7 +962,8 @@ static void exprAnalyze(
     Expr *pRight = sqlite3ExprSkipCollate(pExpr->pRight);
     u16 opMask = (pTerm->prereqRight & prereqLeft)==0 ? WO_ALL : WO_EQUIV;
 
-    if( op==TK_IN && pTerm->iField>0 ){
+    if( pTerm->iField>0 ){
+      assert( op==TK_IN );
       assert( pLeft->op==TK_VECTOR );
       pLeft = pLeft->x.pList->a[pTerm->iField-1].pExpr;
     }
@@ -979,6 +980,7 @@ static void exprAnalyze(
       WhereTerm *pNew;
       Expr *pDup;
       u16 eExtraOp = 0;        /* Extra bits for pNew->eOperator */
+      assert( pTerm->iField==0 );
       if( pTerm->leftCursor>=0 ){
         int idxNew;
         pDup = sqlite3ExprDup(db, pExpr, 0);
