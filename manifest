@@ -1,5 +1,5 @@
-C Merge\sadditional\slinkage\smacro\schanges\sfrom\sthe\sbranch.
-D 2016-07-29T01:55:42.841
+C Fix\stypo\sin\sa\stest\sfile\sinteractive\soutput\sstring.
+D 2016-07-29T02:04:36.873
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 3340e479e5221f06c3d61726f8f7efff885e4233
@@ -1374,7 +1374,7 @@ F test/walmode.test 4022fe03ae6e830583672caa101f046438a0473c
 F test/walnoshm.test 84ca10c544632a756467336b7c3b864d493ee496
 F test/waloverwrite.test dad2f26567f1b45174e54fbf9a8dc1cb876a7f03
 F test/walpersist.test 8c6b7e3ec1ba91b5e4dc4e0921d6d3f87cd356a6
-F test/walprotocol.test 059cb75484a1ecf6357a2c1b3324b8156749221e
+F test/walprotocol.test 0b92feb132ccebd855494d917d3f6c2d717ace20
 F test/walro.test 4ab7ac01b77c2f894235c699d59e3e3c7f15a160
 F test/walshared.test 0befc811dcf0b287efae21612304d15576e35417
 F test/walslow.test c05c68d4dc2700a982f89133ce103a1a84cc285f
@@ -1508,8 +1508,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 45588de385d2a721b3e9f04beb6c7b789dd27d42 71ffa195f5a48280ee522d80ab82e8cdea636961
-R 092b06ead5aa5690fab5536515621278
-T +closed 71ffa195f5a48280ee522d80ab82e8cdea636961
-U drh
-Z 3d26d07289768bac8aea9d48f7d64298
+P 8b0eb22ee12b23421dcb8dbeb46909d813788a0b
+R 1c5c6cdbf6280e0f07ddb24f0c5484bf
+U mistachkin
+Z 2e0de3b0c7e8ecb85c119417abdb6170
