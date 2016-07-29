@@ -411,6 +411,7 @@ static void codeVectorCompare(Parse *pParse, Expr *pExpr, int dest){
       Expr *pL, *pR; 
       int r1, r2;
 
+      if( i ) sqlite3ExprCachePush(pParse);
       if( regLeft ){
         pL = pLeft->x.pSelect->pEList->a[i].pExpr;
         r1 = regLeft+i;
@@ -431,6 +432,7 @@ static void codeVectorCompare(Parse *pParse, Expr *pExpr, int dest){
       sqlite3VdbeAddOp3(v, opTest, dest, addr, p3);
       sqlite3ReleaseTempReg(pParse, regFree1);
       sqlite3ReleaseTempReg(pParse, regFree2);
+      if( i ) sqlite3ExprCachePop(pParse);
     }
   }
 

@@ -1190,17 +1190,20 @@ static void exprAnalyze(
   && ( (pExpr->pLeft->flags & EP_xIsSelect)==0 
     || (pExpr->pRight->flags & EP_xIsSelect)==0
   )){
-    int i;
-    for(i=0; i<sqlite3ExprVectorSize(pExpr->pLeft); i++){
-      int idxNew;
-      Expr *pNew;
-      Expr *pLeft = exprVectorExpr(pParse, pExpr->pLeft, i);
-      Expr *pRight = exprVectorExpr(pParse, pExpr->pRight, i);
+    int nLeft = sqlite3ExprVectorSize(pExpr->pLeft);
+    if( nLeft==sqlite3ExprVectorSize(pExpr->pRight) ){
+      int i;
+      for(i=0; i<sqlite3ExprVectorSize(pExpr->pLeft); i++){
+        int idxNew;
+        Expr *pNew;
+        Expr *pLeft = exprVectorExpr(pParse, pExpr->pLeft, i);
+        Expr *pRight = exprVectorExpr(pParse, pExpr->pRight, i);
 
-      pNew = sqlite3PExpr(pParse, pExpr->op, pLeft, pRight, 0);
-      idxNew = whereClauseInsert(pWC, pNew, TERM_VIRTUAL|TERM_DYNAMIC);
-      exprAnalyze(pSrc, pWC, idxNew);
-      markTermAsChild(pWC, idxNew, idxTerm);
+        pNew = sqlite3PExpr(pParse, pExpr->op, pLeft, pRight, 0);
+        idxNew = whereClauseInsert(pWC, pNew, TERM_VIRTUAL|TERM_DYNAMIC);
+        exprAnalyze(pSrc, pWC, idxNew);
+        markTermAsChild(pWC, idxNew, idxTerm);
+      }
     }
   }
 

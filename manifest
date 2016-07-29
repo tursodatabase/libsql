@@ -1,5 +1,5 @@
-C Change\sthe\sway\s"(a,\sb)\s=\s(SELECT\s*)"\sexpressions\sare\shandled\sin\swhere.c\sif\sthere\sis\san\sindex\son\sone\sof\sthe\scolumns\sonly.
-D 2016-07-29T18:12:12.900
+C Fix\ssome\sissues\swith\svector\srange\sconstraints\sand\sthe\scolumn\scache.\sAlso\svector\srange\sconstraints\sand\srowid\scolumns.
+D 2016-07-29T20:58:19.781
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -337,7 +337,7 @@ F src/ctime.c 61949e83c4c36e37195a8398ebc752780b534d95
 F src/date.c 1cc9fb516ec9932c6fd4d2a0d2f8bc4480145c39
 F src/dbstat.c 4f6f7f52b49beb9636ffbd517cfe44a402ba4ad0
 F src/delete.c 4aba4214a377ce8ddde2d2e609777bcc8235200f
-F src/expr.c d21255d0b778cf819d74092463df7630bbcd9fe7
+F src/expr.c d904598a807ec20500a987566b453307cf2552cd
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c bc4145347595b7770f9a598cff1c848302cf5413
 F src/func.c 61a4114cf7004f10c542cfabbab9f2bcb9033045
@@ -465,8 +465,8 @@ F src/wal.h 6dd221ed384afdc204bc61e25c23ef7fd5a511f2
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
 F src/where.c df58d6ad7878a08aa96c652ccbc6d0949f8fa472
 F src/whereInt.h 14dd243e13b81cbb0a66063d38b70f93a7d6e613
-F src/wherecode.c e259a0b9b0eed28a9b4f5085fa1dfef4c3145361
-F src/whereexpr.c a58e878dad5cad54c100792eb8bafb9840d699f5
+F src/wherecode.c e3159b1d6ecd2d39f99f3ec7926d02c1f04f3053
+F src/whereexpr.c c63e0e48fe32eeb99c0d32e4130ae56af80fcbf5
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1018,7 +1018,7 @@ F test/rollbackfault.test 0e646aeab8840c399cfbfa43daab46fd609cf04a
 F test/rowallock.test 3f88ec6819489d0b2341c7a7528ae17c053ab7cc
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
 F test/rowid.test 5b7509f384f4f6fae1af3c8c104c8ca299fea18d
-F test/rowvalue.test 979738b3d49f1d93e3fee56a71d4446217917abc
+F test/rowvalue.test 8656a46fac138f2a964aebbc37fc256d0a956b9c
 F test/rowvalue2.test 8d5dfe75b8f4d1868a2f91f0356f20d36cba64ff
 F test/rowvalue3.test 5127afb4414bf62546161497c04840c46e371770
 F test/rowvalue4.test 4480898d62d6813e3e38d9d38c02b9a0be5f94be
@@ -1512,7 +1512,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cc3f6542bec99b00d2698889bcea2aa0b587efa0
-R 02d8106109a69b80c3fcb6354dcce9eb
+P 4dfebff2924f46284d5b9cda69175f79b29d6028
+R 6db81bb19ebb4412c650189f8ab65d8e
 U dan
-Z 1ebe0c81a88c1eb2162a3b6fe26c472e
+Z 49cec86004a136f8782fa45723e38de1
