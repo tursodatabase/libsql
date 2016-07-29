@@ -200,6 +200,13 @@ static void pthreadMutexFree(sqlite3_mutex *p){
   sqlite3_free(p);
 }
 
+#include "hwtime.h"
+#ifdef SQLITE_MUTEX_NREF
+# define MUTEX_ID(p)  (p->id)
+#else
+# define MUTEX_ID(p)  0
+#endif
+
 /*
 ** The sqlite3_mutex_enter() and sqlite3_mutex_try() routines attempt
 ** to enter a mutex.  If another thread is already within the mutex,
@@ -212,6 +219,7 @@ static void pthreadMutexFree(sqlite3_mutex *p){
 ** more than once, the behavior is undefined.
 */
 static void pthreadMutexEnter(sqlite3_mutex *p){
+  sqlite3_uint64 iTimer = sqlite3Hwtime();
   assert( p->id==SQLITE_MUTEX_RECURSIVE || pthreadMutexNotheld(p) );
 
 #ifdef SQLITE_HOMEGROWN_RECURSIVE_MUTEX
@@ -245,6 +253,11 @@ static void pthreadMutexEnter(sqlite3_mutex *p){
   p->owner = pthread_self();
   p->nRef++;
 #endif
+  iTimer = sqlite3Hwtime() - iTimer;
+  if( iTimer>100000 ){
+    sqlite3_log(SQLITE_NOTICE, "slow mutex: %lld cycles on %d/%p",
+                iTimer, MUTEX_ID(p), p);
+  }
 #endif
 
 #ifdef SQLITE_DEBUG

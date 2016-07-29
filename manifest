@@ -1,5 +1,5 @@
-C Temporarily\sadd\sextra\ssqlite3_log()\scalls\sto\sthis\sversion\sto\shelp\swith\sdebugging\sa\sperformance\sproblem.
-D 2016-07-16T11:47:45.840
+C Add\scalls\sto\ssqlite3_log()\swhen\ssqlite3_mutex_enter()\stakes\smore\sthan\s\n100,000\sCPU\scycles.
+D 2016-07-29T14:10:43.773
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -205,7 +205,7 @@ F src/memjournal.c 3eb2c0b51adbd869cb6a44780323f05fa904dc85
 F src/mutex.c 84a073c9a23a8d7bdd2ea832522d1730df18812c
 F src/mutex.h 779d588e3b7756ec3ecf7d78cde1d84aba414f85
 F src/mutex_noop.c f3f09fd7a2eb4287cfc799753ffc30380e7b71a1
-F src/mutex_unix.c 1b10d5413dfc794364a8adf3eb3a192926b43fa3
+F src/mutex_unix.c 9af77da894a1d5e16d5b8c11659b4c6de7ca1729
 F src/mutex_w32.c 06bfff9a3a83b53389a51a967643db3967032e1e
 F src/notify.c 9711a7575036f0d3040ba61bc6e217f13a9888e7
 F src/os.c 1b147e4cf7cc39e618115c14a086aed44bc91ace
@@ -1207,10 +1207,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 46bd9533c0b4656e9fb10eb41c9369ba8a113746
-R bce5e212270955da4d92cb60e4c49b45
-T *branch * debug
-T *sym-debug *
-T -sym-btree-balance-bias *
-U dan
-Z 9b01bf4c5271e3c2cb45a6e077ca93cf
+P 613c1ceaf4d552dc29aff090825941eaae6baed1
+R 6d8ae7e2095bf3fc683cc774df123cfb
+U drh
+Z 684747d28950efdfa4344d94c57523e7
