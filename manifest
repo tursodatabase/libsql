@@ -1,5 +1,5 @@
-C Fix\stypo\sin\sa\stest\sfile\sinteractive\soutput\sstring.
-D 2016-07-29T02:04:36.873
+C For\stest\s'shell1-5.0',\sdisable\sround-trip\stesting\sfor\scharacters\sin\sthe\srange\s0xE0\sto\s0xEF\son\sLinux,\sdue\sto\sintermittent\sshell\sportability\sissues.
+D 2016-07-29T04:12:18.810
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 3340e479e5221f06c3d61726f8f7efff885e4233
@@ -1065,7 +1065,7 @@ F test/sharedA.test 0cdf1a76dfa00e6beee66af5b534b1e8df2720f5
 F test/sharedB.test 16cc7178e20965d75278f410943109b77b2e645e
 F test/shared_err.test 2f2aee20db294b9924e81f6ccbe60f19e21e8506
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test 77896b65f1cde4ee79e38b2c0ed8578a8f4000e5
+F test/shell1.test 65b10cd8a90cda9b5af9100a45689a57dcc01a31
 F test/shell2.test e242a9912f44f4c23c3d1d802a83e934e84c853b
 F test/shell3.test da513d522ef6f01cee8475dcf8332bff8982b3dd
 F test/shell4.test 69995ee1cc278eb149aa8746ce1f935f4eaf98b9
@@ -1508,7 +1508,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8b0eb22ee12b23421dcb8dbeb46909d813788a0b
-R 1c5c6cdbf6280e0f07ddb24f0c5484bf
+P 4fedd7902371935e1374ca7df3ffd4c4cf93959b
+R 85f77acfa5a811a346c23b19da557acb
 U mistachkin
-Z 2e0de3b0c7e8ecb85c119417abdb6170
+Z a69746948670b38e6b2794c69171ee54
