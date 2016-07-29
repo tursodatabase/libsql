@@ -199,7 +199,7 @@
 ** be overridden at runtime using the sqlite3_config() API.
 */
 #if !defined(SQLITE_DEFAULT_MEMSTATUS)
-# define SQLITE_DEFAULT_MEMSTATUS 1
+# define SQLITE_DEFAULT_MEMSTATUS 0
 #endif
 
 /*

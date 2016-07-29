@@ -1,5 +1,5 @@
-C Enhance\sa\sdebugging\slog\smessage\sto\sbetter\sidentify\sa\smutex.
-D 2016-07-29T14:31:30.854
+C Turn\smemory\sstatus\soff\sby\sdefault.
+D 2016-07-29T16:32:34.995
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -232,7 +232,7 @@ F src/shell.c 282f8f5278e0c78eb442217531172ec9e1538796
 F src/sqlite.h.in 4a5e5158c189d2bcd45c7c4607c2c0eb6d25c153
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
-F src/sqliteInt.h 90519c3b3e8ee90adfce013234c4bd07275d77b5
+F src/sqliteInt.h 3726a8b41814157986cbd2c58b9537ea96e9df9f
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 961d5926e5a8fda611d385ec22c226b8635cd1cb
 F src/table.c 2e99ef7ef16187e17033d9398dc962ce22dab5cb
@@ -1207,7 +1207,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7d4562e9d577e21406e05300b9a1ad56fded2309
-R 710a8735eaf385edb6fcbb8a5dae0f50
-U dan
-Z 556a1321b6b2b74422c424e03f2895a3
+P e60cb6d8852ebf42659c7f2e86a1f6a2492b4664
+R 2e00b38dde15987fc42ae9a66ffe8ce5
+U drh
+Z 8a353085af5bf0ee7487739267eafd01
