@@ -234,7 +234,7 @@
 ** the SQLITE_DISABLE_INTRINSIC define.
 */
 #if !defined(SQLITE_DISABLE_INTRINSIC)
-#  if defined(_MSC_VER) && _MSC_VER>=1300
+#  if defined(_MSC_VER) && _MSC_VER>=1400
 #    if !defined(_WIN32_WCE)
 #      include <intrin.h>
 #      pragma intrinsic(_byteswap_ushort)

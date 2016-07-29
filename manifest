@@ -1,5 +1,5 @@
-C For\stest\s'shell1-5.0',\sdisable\sround-trip\stesting\sfor\scharacters\sin\sthe\srange\s0xE0\sto\s0xEF\son\sLinux,\sdue\sto\sintermittent\sshell\sportability\sissues.
-D 2016-07-29T04:12:18.810
+C Using\sthe\sheader\sfile\s'intrin.h'\srequires\sMSVC\s2005\sor\slater.
+D 2016-07-29T17:36:27.088
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 3340e479e5221f06c3d61726f8f7efff885e4233
@@ -388,7 +388,7 @@ F src/shell.c 9351fc6de11e1d908648c0a92d85627138e3dee5
 F src/sqlite.h.in cd10e4206b91c4bf03f121ab9209a14af0b48f14
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h f4206565eb5f5cef9a1544d32a076b5f47af1bdc
-F src/sqliteInt.h 14516943867eb2c30ce0e3670299958f59ade052
+F src/sqliteInt.h d6f221a5bd572df935140beda82f357c2185a77c
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c 5b18f9526900f61189ab0b83f1ef41d9f871a2ab
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
@@ -1508,7 +1508,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4fedd7902371935e1374ca7df3ffd4c4cf93959b
-R 85f77acfa5a811a346c23b19da557acb
+P 544c990afd3b64064cc4d970ec5d7eb23eeb9914
+R ceef2b71453325469cbc16ff7674c4c9
 U mistachkin
-Z a69746948670b38e6b2794c69171ee54
+Z 0275ffb3719041525e752ce514a5292f
