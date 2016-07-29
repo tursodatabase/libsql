@@ -21,6 +21,9 @@
 #  include "sqlite_tcl.h"
 #else
 #  include "tcl.h"
+#  ifndef SQLITE_TCLAPI
+#    define SQLITE_TCLAPI
+#  endif
 #endif
 #include <assert.h>
 
