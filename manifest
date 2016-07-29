@@ -1,5 +1,5 @@
-C Update\sthe\sautoconf\smakefile\sfor\sMSVC.
-D 2016-07-29T01:46:57.427
+C Merge\supdates\sfrom\strunk.
+D 2016-07-29T01:47:18.951
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 3340e479e5221f06c3d61726f8f7efff885e4233
@@ -463,7 +463,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 02eeecc265f6ffd0597378f5d8ae9070b62a406a
 F src/wal.h 6dd221ed384afdc204bc61e25c23ef7fd5a511f2
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
-F src/where.c 8ccc01f9227d41bfaf09360f108583be4a36d3b1
+F src/where.c fcaa38d19c2a7bb450cc57810bdc3d4eb36e00b0
 F src/whereInt.h e5b939701a7ceffc5a3a8188a37f9746416ebcd0
 F src/wherecode.c 99707d11907c71d289ee9553d2d1a22f1fd8ba41
 F src/whereexpr.c d7dcbf14ce1b5876c1f76496162c30fcba669563
@@ -1027,7 +1027,7 @@ F test/savepoint5.test 0735db177e0ebbaedc39812c8d065075d563c4fd
 F test/savepoint6.test f41279c5e137139fa5c21485773332c7adb98cd7
 F test/savepoint7.test cde525ea3075283eb950cdcdefe23ead4f700daa
 F test/savepointfault.test f044eac64b59f09746c7020ee261734de82bf9b2
-F test/scanstatus.test 030acbbdcea6a3fc676fee99edc84f6f16c0cf92
+F test/scanstatus.test 5253c219e331318a437f436268e0e82345700285
 F test/schema.test 8f7999be894260f151adf15c2c7540f1c6d6a481
 F test/schema2.test 906408621ea881fdb496d878b1822572a34e32c5
 F test/schema3.test 1bc1008e1f8cb5654b248c55f27249366eb7ed38
@@ -1074,7 +1074,7 @@ F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/show_speedtest1_rtree.tcl 32e6c5f073d7426148a6936a0408f4b5b169aba5
 F test/shrink.test 1b4330b1fd9e818c04726d45cb28db73087535ce
 F test/sidedelete.test f0ad71abe6233e3b153100f3b8d679b19a488329
-F test/skipscan1.test d37a75b4be4eb9dedeb69b4f38b1d0a74b5021d7
+F test/skipscan1.test f2d4482f195f018c3732374d3985fc34bcc3ae1a
 F test/skipscan2.test d1d1450952b7275f0b0a3a981f0230532743951a
 F test/skipscan3.test ec5bab3f81c7038b43450e7b3062e04a198bdbb5
 F test/skipscan5.test 67817a4b6857c47e0e33ba3e506da6f23ef68de2
@@ -1508,7 +1508,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bc8c9b55ddf5227dc6b2116486f4a19bf54fce2b
-R 81c2da6dd9132e2ceb1da7d33d25fdb6
+P 2daf20980d4cb9ed36372778ae1f3e595e503549 c7d51934a4f30d096bb79fc509fc9dd0df5d89a4
+R 092b06ead5aa5690fab5536515621278
 U mistachkin
-Z 72b9cccf5e1018e731ec3108866ee753
+Z 23d60fc77b6ae6b4289b40af8949150e
