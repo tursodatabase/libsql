@@ -1,5 +1,5 @@
-C Add\smacro\snecessary\sfor\sbuilding\sseveral\sextensions\swhen\sthe\s__stdcall\scalling\sconvention\sis\snot\sin\suse.
-D 2016-07-29T01:31:49.222
+C Update\sthe\sautoconf\smakefile\sfor\sMSVC.
+D 2016-07-29T01:46:57.427
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 3340e479e5221f06c3d61726f8f7efff885e4233
@@ -11,7 +11,7 @@ F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am 1a47d071e3d5435f8f7ebff7eb6703848bbd65d4
-F autoconf/Makefile.msc 05a99e98a8895461574ccb9604444d9e97c1f0b6
+F autoconf/Makefile.msc 7a909aa9b538138a21c0626e3ffc4b1f4519f50e
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/README.txt 4f04b0819303aabaa35fff5f7b257fb0c1ef95f1
 F autoconf/configure.ac cacf2616abf6e4a569bde2ef365c143caeec40bc
@@ -1508,7 +1508,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fc5c187602acceedf7152b6927616d134f779a8f
-R d16dc76cf59643dacfea9f5d3d7324b6
+P bc8c9b55ddf5227dc6b2116486f4a19bf54fce2b
+R 81c2da6dd9132e2ceb1da7d33d25fdb6
 U mistachkin
-Z 029d2b66c80fad0a70d5e0c29c8d9e88
+Z 72b9cccf5e1018e731ec3108866ee753
