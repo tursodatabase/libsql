@@ -5,7 +5,14 @@
 #include "sqlite3session.h"
 #include <assert.h>
 #include <string.h>
-#include <tcl.h>
+#if defined(INCLUDE_SQLITE_TCL_H)
+#  include "sqlite_tcl.h"
+#else
+#  include "tcl.h"
+#  ifndef SQLITE_TCLAPI
+#    define SQLITE_TCLAPI
+#  endif
+#endif
 
 typedef struct TestSession TestSession;
 struct TestSession {
@@ -107,7 +114,7 @@ static int testStreamOutput(
 **          $session patchset
 **          $session table_filter SCRIPT
 */
-static int test_session_cmd(
+static int SQLITE_TCLAPI test_session_cmd(
   void *clientData,
   Tcl_Interp *interp,
   int objc,
@@ -240,7 +247,7 @@ static int test_session_cmd(
   return TCL_OK;
 }
 
-static void test_session_del(void *clientData){
+static void SQLITE_TCLAPI test_session_del(void *clientData){
   TestSession *p = (TestSession*)clientData;
   if( p->pFilterScript ) Tcl_DecrRefCount(p->pFilterScript);
   sqlite3session_delete(p->pSession);
@@ -250,7 +257,7 @@ static void test_session_del(void *clientData){
 /*
 ** Tclcmd:  sqlite3session CMD DB-HANDLE DB-NAME
 */
-static int test_sqlite3session(
+static int SQLITE_TCLAPI test_sqlite3session(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -606,7 +613,7 @@ static int testStreamInput(
 /*
 ** sqlite3changeset_apply DB CHANGESET CONFLICT-SCRIPT ?FILTER-SCRIPT?
 */
-static int test_sqlite3changeset_apply(
+static int SQLITE_TCLAPI test_sqlite3changeset_apply(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -661,7 +668,7 @@ static int test_sqlite3changeset_apply(
 /*
 ** sqlite3changeset_apply_replace_all DB CHANGESET 
 */
-static int test_sqlite3changeset_apply_replace_all(
+static int SQLITE_TCLAPI test_sqlite3changeset_apply_replace_all(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -696,7 +703,7 @@ static int test_sqlite3changeset_apply_replace_all(
 /*
 ** sqlite3changeset_invert CHANGESET
 */
-static int test_sqlite3changeset_invert(
+static int SQLITE_TCLAPI test_sqlite3changeset_invert(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -735,7 +742,7 @@ static int test_sqlite3changeset_invert(
 /*
 ** sqlite3changeset_concat LEFT RIGHT
 */
-static int test_sqlite3changeset_concat(
+static int SQLITE_TCLAPI test_sqlite3changeset_concat(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -783,7 +790,7 @@ static int test_sqlite3changeset_concat(
 /*
 ** sqlite3session_foreach VARNAME CHANGESET SCRIPT
 */
-static int test_sqlite3session_foreach(
+static int SQLITE_TCLAPI test_sqlite3session_foreach(
   void * clientData,
   Tcl_Interp *interp,
   int objc,

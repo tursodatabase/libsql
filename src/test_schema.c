@@ -35,10 +35,14 @@
 ** to be compiled into an sqlite dynamic extension.
 */
 #ifdef SQLITE_TEST
-  #include "sqliteInt.h"
-  #include "tcl.h"
+#  include "sqliteInt.h"
+#  if defined(INCLUDE_SQLITE_TCL_H)
+#    include "sqlite_tcl.h"
+#  else
+#    include "tcl.h"
+#  endif
 #else
-  #include "sqlite3ext.h"
+#  include "sqlite3ext.h"
   SQLITE_EXTENSION_INIT1
 #endif
 
@@ -302,7 +306,7 @@ extern int getDbPointer(Tcl_Interp *interp, const char *zA, sqlite3 **ppDb);
 /*
 ** Register the schema virtual table module.
 */
-static int register_schema_module(
+static int SQLITE_TCLAPI register_schema_module(
   ClientData clientData, /* Not used */
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int objc,              /* Number of arguments */

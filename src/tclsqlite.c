@@ -30,10 +30,17 @@
 ** If requested, include the SQLite compiler options file for MSVC.
 */
 #if defined(INCLUDE_MSVC_H)
-#include "msvc.h"
+# include "msvc.h"
 #endif
 
-#include "tcl.h"
+#if defined(INCLUDE_SQLITE_TCL_H)
+# include "sqlite_tcl.h"
+#else
+# include "tcl.h"
+# ifndef SQLITE_TCLAPI
+#  define SQLITE_TCLAPI
+# endif
+#endif
 #include <errno.h>
 
 /*
@@ -204,7 +211,10 @@ static void closeIncrblobChannels(SqliteDb *pDb){
 /*
 ** Close an incremental blob channel.
 */
-static int incrblobClose(ClientData instanceData, Tcl_Interp *interp){
+static int SQLITE_TCLAPI incrblobClose(
+  ClientData instanceData,
+  Tcl_Interp *interp
+){
   IncrblobChannel *p = (IncrblobChannel *)instanceData;
   int rc = sqlite3_blob_close(p->pBlob);
   sqlite3 *db = p->pDb->db;
@@ -233,7 +243,7 @@ static int incrblobClose(ClientData instanceData, Tcl_Interp *interp){
 /*
 ** Read data from an incremental blob channel.
 */
-static int incrblobInput(
+static int SQLITE_TCLAPI incrblobInput(
   ClientData instanceData,
   char *buf,
   int bufSize,
@@ -265,7 +275,7 @@ static int incrblobInput(
 /*
 ** Write data to an incremental blob channel.
 */
-static int incrblobOutput(
+static int SQLITE_TCLAPI incrblobOutput(
   ClientData instanceData,
   CONST char *buf,
   int toWrite,
@@ -298,7 +308,7 @@ static int incrblobOutput(
 /*
 ** Seek an incremental blob channel.
 */
-static int incrblobSeek(
+static int SQLITE_TCLAPI incrblobSeek(
   ClientData instanceData,
   long offset,
   int seekMode,
@@ -324,10 +334,17 @@ static int incrblobSeek(
 }
 
 
-static void incrblobWatch(ClientData instanceData, int mode){
+static void SQLITE_TCLAPI incrblobWatch(
+  ClientData instanceData,
+  int mode
+){
   /* NO-OP */
 }
-static int incrblobHandle(ClientData instanceData, int dir, ClientData *hPtr){
+static int SQLITE_TCLAPI incrblobHandle(
+  ClientData instanceData,
+  int dir,
+  ClientData *hPtr
+){
   return TCL_ERROR;
 }
 
@@ -486,7 +503,7 @@ static void flushStmtCache(SqliteDb *pDb){
 ** TCL calls this procedure when an sqlite3 database command is
 ** deleted.
 */
-static void DbDeleteCmd(void *db){
+static void SQLITE_TCLAPI DbDeleteCmd(void *db){
   SqliteDb *pDb = (SqliteDb*)db;
   flushStmtCache(pDb);
   closeIncrblobChannels(pDb);
@@ -1134,7 +1151,7 @@ static char *local_getline(char *zPrompt, FILE *in){
 ** It is invoked after evaluating the script SCRIPT to commit or rollback
 ** the transaction or savepoint opened by the [transaction] command.
 */
-static int DbTransPostCmd(
+static int SQLITE_TCLAPI DbTransPostCmd(
   ClientData data[],                   /* data[0] is the Sqlite3Db* for $db */
   Tcl_Interp *interp,                  /* Tcl interpreter */
   int result                           /* Result of evaluating SCRIPT */
@@ -1681,7 +1698,7 @@ static int DbUseNre(void){
 **
 **   $db eval SQL ?ARRAYNAME? SCRIPT
 */
-static int DbEvalNextCmd(
+static int SQLITE_TCLAPI DbEvalNextCmd(
   ClientData data[],                   /* data[0] is the (DbEvalContext*) */
   Tcl_Interp *interp,                  /* Tcl interpreter */
   int result                           /* Result so far */
@@ -1791,7 +1808,12 @@ static void DbHookCmd(
 ** and calls that connection "db1".  The second command causes this
 ** subroutine to be invoked.
 */
-static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
+static int SQLITE_TCLAPI DbObjCmd(
+  void *cd,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *const*objv
+){
   SqliteDb *pDb = (SqliteDb*)cd;
   int choice;
   int rc = TCL_OK;
@@ -3234,7 +3256,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
 ** Adaptor that provides an objCmd interface to the NRE-enabled
 ** interface implementation.
 */
-static int DbObjCmdAdaptor(
+static int SQLITE_TCLAPI DbObjCmdAdaptor(
   void *cd,
   Tcl_Interp *interp,
   int objc,
@@ -3259,7 +3281,12 @@ static int DbObjCmdAdaptor(
 ** The second argument is the name of the database file.
 **
 */
-static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
+static int SQLITE_TCLAPI DbMain(
+  void *cd,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *const*objv
+){
   SqliteDb *p;
   const char *zArg;
   char *zErrMsg;
@@ -3779,7 +3806,12 @@ static void MD5DigestToBase10x8(unsigned char digest[16], char zDigest[50]){
 ** A TCL command for md5.  The argument is the text to be hashed.  The
 ** Result is the hash in base64.
 */
-static int md5_cmd(void*cd, Tcl_Interp *interp, int argc, const char **argv){
+static int SQLITE_TCLAPI md5_cmd(
+  void*cd,
+  Tcl_Interp *interp,
+  int argc,
+  const char **argv
+){
   MD5Context ctx;
   unsigned char digest[16];
   char zBuf[50];
@@ -3803,7 +3835,12 @@ static int md5_cmd(void*cd, Tcl_Interp *interp, int argc, const char **argv){
 ** A TCL command to take the md5 hash of a file.  The argument is the
 ** name of the file.
 */
-static int md5file_cmd(void*cd, Tcl_Interp*interp, int argc, const char **argv){
+static int SQLITE_TCLAPI md5file_cmd(
+  void*cd,
+  Tcl_Interp *interp,
+  int argc,
+  const char **argv
+){
   FILE *in;
   MD5Context ctx;
   void (*converter)(unsigned char*, char*);
@@ -3883,7 +3920,11 @@ static void md5finalize(sqlite3_context *context){
   MD5DigestToBase16(digest, zBuf);
   sqlite3_result_text(context, zBuf, -1, SQLITE_TRANSIENT);
 }
-int Md5_Register(sqlite3 *db){
+int Md5_Register(
+  sqlite3 *db,
+  char **pzErrMsg,
+  const sqlite3_api_routines *pThunk
+){
   int rc = sqlite3_create_function(db, "md5sum", -1, SQLITE_UTF8, 0, 0,
                                  md5step, md5finalize);
   sqlite3_overload_function(db, "md5sum", -1);  /* To exercise this API */
@@ -3931,7 +3972,7 @@ static const char *tclsh_main_loop(void);
 
 #ifdef SQLITE_TEST
 static void init_all(Tcl_Interp *);
-static int init_all_cmd(
+static int SQLITE_TCLAPI init_all_cmd(
   ClientData cd,
   Tcl_Interp *interp,
   int objc,
@@ -3961,7 +4002,7 @@ static int init_all_cmd(
 **   to use the sqlite3_prepare_v2() function to prepare statements. If it
 **   is false, sqlite3_prepare().
 */
-static int db_use_legacy_prepare_cmd(
+static int SQLITE_TCLAPI db_use_legacy_prepare_cmd(
   ClientData cd,
   Tcl_Interp *interp,
   int objc,
@@ -3998,7 +4039,7 @@ static int db_use_legacy_prepare_cmd(
 **   return the text representation of the most recently used statement
 **   handle.
 */
-static int db_last_stmt_ptr(
+static int SQLITE_TCLAPI db_last_stmt_ptr(
   ClientData cd,
   Tcl_Interp *interp,
   int objc,
@@ -4123,7 +4164,7 @@ static void init_all(Tcl_Interp *interp){
     Sqlitetesttclvar_Init(interp);
     Sqlitetestfs_Init(interp);
     SqlitetestThread_Init(interp);
-    SqlitetestOnefile_Init(interp);
+    SqlitetestOnefile_Init();
     SqlitetestOsinst_Init(interp);
     Sqlitetestbackup_Init(interp);
     Sqlitetestintarray_Init(interp);
@@ -4167,7 +4208,7 @@ static void init_all(Tcl_Interp *interp){
 #endif
 
 #define TCLSH_MAIN main   /* Needed to fake out mktclapp */
-int TCLSH_MAIN(int argc, char **argv){
+int SQLITE_CDECL TCLSH_MAIN(int argc, char **argv){
   Tcl_Interp *interp;
 
 #if !defined(_WIN32_WCE)

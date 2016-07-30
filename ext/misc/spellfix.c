@@ -2231,7 +2231,7 @@ static int spellfix1Score(int iDistance, int iRank){
 ** Compare two spellfix1_row objects for sorting purposes in qsort() such
 ** that they sort in order of increasing distance.
 */
-static int spellfix1RowCompare(const void *A, const void *B){
+static int SQLITE_CDECL spellfix1RowCompare(const void *A, const void *B){
   const struct spellfix1_row *a = (const struct spellfix1_row*)A;
   const struct spellfix1_row *b = (const struct spellfix1_row*)B;
   return a->iScore - b->iScore;

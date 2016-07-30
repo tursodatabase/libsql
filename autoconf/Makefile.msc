@@ -24,6 +24,13 @@ TOP = .
 USE_FULLWARN = 0
 !ENDIF
 
+# Set this non-0 to enable full runtime error checks (-RTC1, etc).  This
+# has no effect if (any) optimizations are enabled.
+#
+!IFNDEF USE_RUNTIME_CHECKS
+USE_RUNTIME_CHECKS = 0
+!ENDIF
+
 # Set this non-0 to use "stdcall" calling convention for the core library
 # and shell executable.
 #
@@ -449,12 +456,12 @@ RCC = $(RC) -DSQLITE_OS_WIN=1 -I. -I$(TOP) $(RCOPTS) $(RCCOPTS)
 #
 !IF $(USE_STDCALL)!=0 || $(FOR_WIN10)!=0
 !IF "$(PLATFORM)"=="x86"
-CORE_CCONV_OPTS = -Gz -DSQLITE_CDECL=__cdecl -DSQLITE_STDCALL=__stdcall
-SHELL_CCONV_OPTS = -Gz -DSQLITE_CDECL=__cdecl -DSQLITE_STDCALL=__stdcall
+CORE_CCONV_OPTS = -Gz -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall
+SHELL_CCONV_OPTS = -Gz -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall
 !ELSE
 !IFNDEF PLATFORM
-CORE_CCONV_OPTS = -Gz -DSQLITE_CDECL=__cdecl -DSQLITE_STDCALL=__stdcall
-SHELL_CCONV_OPTS = -Gz -DSQLITE_CDECL=__cdecl -DSQLITE_STDCALL=__stdcall
+CORE_CCONV_OPTS = -Gz -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall
+SHELL_CCONV_OPTS = -Gz -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall
 !ELSE
 CORE_CCONV_OPTS =
 SHELL_CCONV_OPTS =
@@ -740,6 +747,10 @@ RCC = $(RCC) -D_DEBUG
 !IF $(DEBUG)>1 || $(OPTIMIZATIONS)==0
 TCC = $(TCC) -Od
 BCC = $(BCC) -Od
+!IF $(USE_RUNTIME_CHECKS)!=0
+TCC = $(TCC) -RTC1
+BCC = $(BCC) -RTC1
+!ENDIF
 !ELSEIF $(OPTIMIZATIONS)>=3
 TCC = $(TCC) -Ox
 BCC = $(BCC) -Ox
