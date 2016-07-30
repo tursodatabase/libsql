@@ -316,11 +316,21 @@ static int codeCompare(
 ** any other type of expression, return 1.
 */
 int sqlite3ExprVectorSize(Expr *pExpr){
-  if( (pExpr->flags & EP_Vector)==0 ) return 1;
+  if( sqlite3ExprIsVector(pExpr)==0 ) return 1;
   if( pExpr->flags & EP_xIsSelect ){
     return pExpr->x.pSelect->pEList->nExpr;
   }
   return pExpr->x.pList->nExpr;
+}
+
+/*
+** Return true if expression pExpr is a vector, or false otherwise.
+*/
+int sqlite3ExprIsVector(Expr *pExpr){
+  return (
+      pExpr->op==TK_VECTOR 
+   || (pExpr->op==TK_SELECT && pExpr->x.pSelect->pEList->nExpr>1)
+  );
 }
 
 /*
@@ -330,7 +340,7 @@ int sqlite3ExprVectorSize(Expr *pExpr){
 ** value. Otherwise, return a copy of the first argument.
 */
 static Expr *exprVectorField(Expr *pVector, int i){
-  if( (pVector->flags & EP_Vector)==0 ){
+  if( sqlite3ExprIsVector(pVector)==0 ){
     assert( i==0 );
     return pVector;
   }else if( pVector->flags & EP_xIsSelect ){
@@ -3171,7 +3181,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
     case TK_NE:
     case TK_EQ: {
       Expr *pLeft = pExpr->pLeft;
-      if( (pLeft->flags & EP_Vector) ){
+      if( sqlite3ExprIsVector(pLeft) ){
         codeVectorCompare(pParse, pExpr, target);
       }else{
         r1 = sqlite3ExprCodeTemp(pParse, pLeft, &regFree1);
@@ -3865,7 +3875,7 @@ static void exprCodeBetween(
   compRight.op = TK_LE;
   compRight.pLeft = &exprX;
   compRight.pRight = pExpr->x.pList->a[1].pExpr;
-  if( (exprX.flags & EP_Vector)==0 ){
+  if( sqlite3ExprIsVector(&exprX)==0 ){
     exprToRegister(&exprX, sqlite3ExprCodeTemp(pParse, &exprX, &regFree1));
   }
   if( xJumpIf ){
@@ -3949,7 +3959,7 @@ void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
     case TK_GE:
     case TK_NE:
     case TK_EQ: {
-      if( pExpr->pLeft->flags & EP_Vector ) goto default_expr;
+      if( sqlite3ExprIsVector(pExpr->pLeft) ) goto default_expr;
       testcase( jumpIfNull==0 );
       r1 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, &regFree1);
       r2 = sqlite3ExprCodeTemp(pParse, pExpr->pRight, &regFree2);
@@ -4103,8 +4113,7 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
     case TK_GE:
     case TK_NE:
     case TK_EQ: {
-      if( pExpr->pLeft->flags & EP_Vector ) goto default_expr;
-
+      if( sqlite3ExprIsVector(pExpr->pLeft) ) goto default_expr;
       testcase( jumpIfNull==0 );
       r1 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, &regFree1);
       r2 = sqlite3ExprCodeTemp(pParse, pExpr->pRight, &regFree2);

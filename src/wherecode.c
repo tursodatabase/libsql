@@ -952,7 +952,7 @@ static void codeDeferredSeek(
 
 static void codeExprOrVector(Parse *pParse, Expr *p, int iReg, int nReg){
   assert( nReg>0 );
-  if( p->flags & EP_Vector ){
+  if( sqlite3ExprIsVector(p) ){
     int i;
     if( (p->flags & EP_xIsSelect)==0 ){
       ExprList *pList = p->x.pList;
@@ -1200,7 +1200,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       pX = pStart->pExpr;
       assert( pX!=0 );
       testcase( pStart->leftCursor!=iCur ); /* transitive constraints */
-      if( pX->pRight->flags & EP_Vector ){
+      if( sqlite3ExprIsVector(pX->pRight) ){
         r1 = rTemp = sqlite3GetTempReg(pParse);
         codeExprOrVector(pParse, pX->pRight, r1, 1);
         op = aMoveOp[(pX->op - TK_GT) | 0x0001];
@@ -1231,7 +1231,9 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       testcase( pEnd->wtFlags & TERM_VIRTUAL );
       memEndValue = ++pParse->nMem;
       codeExprOrVector(pParse, pX->pRight, memEndValue, 1);
-      if( !(pX->pRight->flags&EP_Vector) && (pX->op==TK_LT || pX->op==TK_GT) ){
+      if( 0==sqlite3ExprIsVector(pX->pRight) 
+       && (pX->op==TK_LT || pX->op==TK_GT) 
+      ){
         testOp = bRev ? OP_Le : OP_Ge;
       }else{
         testOp = bRev ? OP_Lt : OP_Gt;
@@ -1440,7 +1442,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       }  
       nConstraint += nBtm;
       testcase( pRangeStart->wtFlags & TERM_VIRTUAL );
-      if( (pRight->flags & EP_Vector)==0 ){
+      if( sqlite3ExprIsVector(pRight)==0 ){
         disableTerm(pLevel, pRangeStart);
       }else{
         startEq = 1;
@@ -1493,7 +1495,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       nConstraint += nTop;
       testcase( pRangeEnd->wtFlags & TERM_VIRTUAL );
 
-      if( (pRight->flags & EP_Vector)==0 ){
+      if( sqlite3ExprIsVector(pRight)==0 ){
         disableTerm(pLevel, pRangeEnd);
       }else{
         endEq = 1;

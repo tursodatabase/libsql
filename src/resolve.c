@@ -765,20 +765,11 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           ExprSetProperty(pExpr, EP_VarSelect);
           pNC->ncFlags |= NC_VarSelect;
         }
-
-        if( pExpr->op==TK_SELECT && pExpr->x.pSelect->pEList->nExpr>1 ){
-          ExprSetProperty(pExpr, EP_Vector);
-        }
       }
       break;
     }
     case TK_VARIABLE: {
       notValid(pParse, pNC, "parameters", NC_IsCheck|NC_PartIdx|NC_IdxExpr);
-      break;
-    }
-
-    case TK_VECTOR: {
-      ExprSetProperty(pExpr, EP_Vector);
       break;
     }
   }

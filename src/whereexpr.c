@@ -845,9 +845,7 @@ static int exprMightBeIndexed(
   ** inequality constraint (>, <, >= or <=), perform the processing 
   ** on the first element of the vector.  */
   assert( TK_GT+1==TK_LE && TK_GT+2==TK_LT && TK_GT+3==TK_GE );
-  if( (pExpr->flags & (EP_Vector|EP_xIsSelect))==EP_Vector 
-   && (op>=TK_GT && op<=TK_GE)
-  ){
+  if( pExpr->op==TK_VECTOR && (op>=TK_GT && op<=TK_GE) ){
     pExpr = pExpr->x.pList->a[0].pExpr;
   }
 
@@ -1186,7 +1184,7 @@ static void exprAnalyze(
 
   if( pWC->op==TK_AND 
   && (pExpr->op==TK_EQ || pExpr->op==TK_IS)
-  && (pExpr->pLeft->flags & EP_Vector)
+  && sqlite3ExprIsVector(pExpr->pLeft)
   && ( (pExpr->pLeft->flags & EP_xIsSelect)==0 
     || (pExpr->pRight->flags & EP_xIsSelect)==0
   )){

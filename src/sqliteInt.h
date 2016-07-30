@@ -2327,7 +2327,6 @@ struct Expr {
 #define EP_CanBeNull 0x100000 /* Can be null despite NOT NULL constraint */
 #define EP_Subquery  0x200000 /* Tree contains a TK_SELECT operator */
 #define EP_Alias     0x400000 /* Is an alias for a result set column */
-#define EP_Vector    0x800000 /* This expression is a row value */
 
 /*
 ** Combinations of two or more EP_* flags
@@ -4256,5 +4255,6 @@ int sqlite3DbstatRegister(sqlite3*);
 #endif
 
 int sqlite3ExprVectorSize(Expr *pExpr);
+int sqlite3ExprIsVector(Expr *pExpr);
 
 #endif /* SQLITEINT_H */
