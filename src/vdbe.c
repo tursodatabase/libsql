@@ -1961,6 +1961,15 @@ case OP_Cast: {                  /* in1 */
 ** This works just like the Lt opcode except that the jump is taken if
 ** the content of register P3 is greater than or equal to the content of
 ** register P1.  See the Lt opcode for additional information.
+**
+** Opcode: Cmp P1 P2 P3 P4 P5
+** Synopsis: P2 = cmp(P1, P3)
+**
+** The SQLITE_STOREP2 flag must be set for this opcode. It compares the
+** values in registers P1 and P3 and stores the result of the comparison
+** in register P2. The results is NULL if either of the two operands are
+** NULL. Otherwise, it is an integer value less than zero, zero or greater 
+** than zero if P3 is less than, equal to or greater than P1, respectively.
 */
 case OP_Cmp:              /* in1, in3 */
 case OP_Eq:               /* same as TK_EQ, jump, in1, in3 */
@@ -1974,6 +1983,7 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
   u16 flags1;         /* Copy of initial value of pIn1->flags */
   u16 flags3;         /* Copy of initial value of pIn3->flags */
 
+  assert( pOp->opcode!=OP_Cmp || (pOp->p5 & SQLITE_STOREP2) );
   pIn1 = &aMem[pOp->p1];
   pIn3 = &aMem[pOp->p3];
   flags1 = pIn1->flags;
@@ -3875,16 +3885,21 @@ seek_not_found:
   break;
 }
 
-/* Opcode: CmpTest P1 P2 P3 * *
+/* Opcode: CmpTest P1 P2 P3 P4 *
 **
 ** P2 is a jump destination. Register P1 is guaranteed to contain either
-** an integer value or a NULL. The jump is taken if P1 contains any value
-** other than 0 (i.e. NULL does cause a jump).
-** 
-** If P1 is not NULL, its value is modified to integer value 0 or 1 
-** according to the value of the P3 operand:
+** an integer value or a NULL. 
 **
-**   P3            modification
+** If P3 is non-zero, it identifies an output register. In this case, if
+** P1 is NULL, P3 is also set to NULL. Or, if P1 is any integer value 
+** other than 0, P3 is set to the value of P4 and a jump to P2 is taken.
+**
+** If P3 is 0, the jump is taken if P1 contains any value other than 0 (i.e.
+** NULL does cause a jump). Additionally, if P1 is not NULL, its value is
+** modified to integer value 0 or 1 according to the value of the P4 integer
+** operand:
+**
+**   P4            modification
 **   --------------------------
 **   OP_Lt         (P1 = (P1 < 0))
 **   OP_Le         (P1 = (P1 <= 0))
@@ -3893,18 +3908,34 @@ seek_not_found:
 */
 case OP_CmpTest: {                /* in1, jump */
   int bJump;
-  
   pIn1 = &aMem[pOp->p1];
-  if( (pIn1->flags & MEM_Int) ){
-    bJump = (pIn1->u.i!=0);
-    switch( pOp->p3 ){
-      case OP_Lt: pIn1->u.i = (pIn1->u.i < 0); break;
-      case OP_Le: pIn1->u.i = (pIn1->u.i <= 0); break;
-      case OP_Gt: pIn1->u.i = (pIn1->u.i > 0); break;
-      default: assert( pOp->p3==OP_Ge ); pIn1->u.i = (pIn1->u.i >= 0); break;
+
+  if( pOp->p3 ){
+    bJump = 0;
+    if( pIn1->flags & MEM_Null ){
+      memAboutToChange(p, &aMem[pOp->p3]);
+      MemSetTypeFlag(&aMem[pOp->p3], MEM_Null);
+    }else if( pIn1->u.i!=0 ){
+      memAboutToChange(p, &aMem[pOp->p3]);
+      MemSetTypeFlag(&aMem[pOp->p3], MEM_Int);
+      aMem[pOp->p3].u.i = pOp->p4.i;
+      bJump = 1;
     }
   }else{
-    bJump = 1;
+    if( (pIn1->flags & MEM_Int) ){
+      bJump = (pIn1->u.i!=0);
+      switch( pOp->p4.i ){
+        case OP_Lt: pIn1->u.i = (pIn1->u.i < 0); break;
+        case OP_Le: pIn1->u.i = (pIn1->u.i <= 0); break;
+        case OP_Gt: pIn1->u.i = (pIn1->u.i > 0); break;
+        default: 
+          assert( pOp->p4.i==OP_Ge ); 
+          pIn1->u.i = (pIn1->u.i >= 0); 
+          break;
+      }
+    }else{
+      bJump = 1;
+    }
   }
 
   if( bJump ) goto jump_to_p2;

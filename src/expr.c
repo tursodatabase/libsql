@@ -349,19 +349,59 @@ static Expr *exprVectorField(Expr *pVector, int i){
   return pVector->x.pList->a[i].pExpr;
 }
 
-static int exprVectorSubselect(Parse *pParse, Expr *pExpr){
+/*
+** If expression pExpr is of type TK_SELECT, generate code to evaluate
+** it. Return the register in which the result is stored (or, if the 
+** sub-select returns more than one column, the first in an array
+** of registers in which the result is stored).
+**
+** If pExpr is not a TK_SELECT expression, return 0.
+*/
+static int exprCodeSubselect(Parse *pParse, Expr *pExpr){
   int reg = 0;
-  if( pExpr->flags & EP_xIsSelect ){
-    assert( pExpr->op==TK_REGISTER || pExpr->op==TK_SELECT );
-    if( pExpr->op==TK_REGISTER ){
-      reg = pExpr->iTable;
-    }else{
-      reg = sqlite3CodeSubselect(pParse, pExpr, 0, 0);
-    }
+  if( pExpr->op==TK_SELECT ){
+    reg = sqlite3CodeSubselect(pParse, pExpr, 0, 0);
   }
   return reg;
 }
 
+/*
+** Argument pVector points to a vector expression - either a TK_VECTOR
+** or TK_SELECT that returns more than one column. This function generates
+** code to evaluate expression iElem of the vector. The number of the
+** register containing the result is returned. 
+**
+** Before returning, output parameter (*ppExpr) is set to point to the
+** Expr object corresponding to element iElem of the vector.
+**
+** If pVector is a TK_SELECT expression, then argument regSelect is 
+** passed the first in an array of registers that contain the results
+** of the sub-select. 
+**
+** If output parameter (*pRegFree) is set to a non-zero value by this
+** function, it is the value of a temporary register that should be
+** freed by the caller.
+*/
+static int exprVectorRegister(
+  Parse *pParse,                  /* Parse context */
+  Expr *pVector,                  /* Vector to extract element from */
+  int iElem,                      /* Element to extract from pVector */
+  int regSelect,                  /* First in array of registers */
+  Expr **ppExpr,                  /* OUT: Expression element */
+  int *pRegFree                   /* OUT: Temp register to free */
+){
+  if( regSelect ){
+    *ppExpr = pVector->x.pSelect->pEList->a[iElem].pExpr;
+     return regSelect+iElem;
+  }
+  *ppExpr = pVector->x.pList->a[iElem].pExpr;
+  return sqlite3ExprCodeTemp(pParse, *ppExpr, pRegFree);
+}
+
+/*
+** Expression pExpr is a comparison between two vector values. Compute
+** the result of the comparison and write it to register dest.
+*/
 static void codeVectorCompare(Parse *pParse, Expr *pExpr, int dest){
   Vdbe *v = pParse->pVdbe;
   Expr *pLeft = pExpr->pLeft;
@@ -377,11 +417,12 @@ static void codeVectorCompare(Parse *pParse, Expr *pExpr, int dest){
   }else{
     int p5 = (pExpr->op==TK_IS || pExpr->op==TK_ISNOT) ? SQLITE_NULLEQ : 0;
     int opCmp;
-    int opTest;
     int i;
-    int p3 = 1;
+    int p3 = 0;
+    int p4 = 0;
     int regLeft = 0;
     int regRight = 0;
+    int regTmp = 0;
 
     assert( pExpr->op==TK_EQ || pExpr->op==TK_NE 
          || pExpr->op==TK_IS || pExpr->op==TK_ISNOT 
@@ -389,61 +430,64 @@ static void codeVectorCompare(Parse *pParse, Expr *pExpr, int dest){
          || pExpr->op==TK_LE || pExpr->op==TK_GE 
     );
 
-    switch( pExpr->op ){
-      case TK_EQ:
-      case TK_IS:
-        opTest = OP_IfNot;
-        opCmp = OP_Eq;
-        break;
-
-      case TK_NE:
-      case TK_ISNOT:
-        opTest = OP_If;
-        opCmp = OP_Ne;
-        break;
-
-      case TK_LT:
-      case TK_LE:
-      case TK_GT:
-      case TK_GE:
-        opCmp = OP_Cmp;
-        opTest = OP_CmpTest;
-        p3 = pExpr->op;
-        break;
+    if( pExpr->op==TK_EQ || pExpr->op==TK_NE ){
+      regTmp = sqlite3GetTempReg(pParse);
+      sqlite3VdbeAddOp2(v, OP_Integer, (pExpr->op==TK_EQ), dest);
     }
 
-    regLeft = exprVectorSubselect(pParse, pLeft);
-    regRight = exprVectorSubselect(pParse, pRight);
-    if( pParse->nErr ) return;
+    regLeft = exprCodeSubselect(pParse, pLeft);
+    regRight = exprCodeSubselect(pParse, pRight);
 
     for(i=0; i<nLeft; i++){
       int regFree1 = 0, regFree2 = 0;
       Expr *pL, *pR; 
       int r1, r2;
-
       if( i ) sqlite3ExprCachePush(pParse);
-      if( regLeft ){
-        pL = pLeft->x.pSelect->pEList->a[i].pExpr;
-        r1 = regLeft+i;
-      }else{
-        pL = pLeft->x.pList->a[i].pExpr;
-        r1 = sqlite3ExprCodeTemp(pParse, pL, &regFree1);
+      r1 = exprVectorRegister(pParse, pLeft, i, regLeft, &pL, &regFree1);
+      r2 = exprVectorRegister(pParse, pRight, i, regRight, &pR, &regFree2);
+
+      switch( pExpr->op ){
+        case TK_IS:
+          codeCompare(
+              pParse, pL, pR, OP_Eq, r1, r2, dest, SQLITE_STOREP2|SQLITE_NULLEQ
+          );
+          sqlite3VdbeAddOp3(v, OP_IfNot, dest, addr, 1);
+          VdbeCoverage(v);
+          break;
+
+        case TK_ISNOT:
+          codeCompare(
+              pParse, pL, pR, OP_Ne, r1, r2, dest, SQLITE_STOREP2|SQLITE_NULLEQ
+          );
+          sqlite3VdbeAddOp3(v, OP_If, dest, addr, 1);
+          VdbeCoverage(v);
+          break;
+
+        case TK_EQ:
+        case TK_NE:
+          codeCompare(pParse, pL, pR, OP_Cmp, r1, r2, regTmp,SQLITE_STOREP2|p5);
+          sqlite3VdbeAddOp4Int(
+              v, OP_CmpTest, regTmp, addr, dest, pExpr->op==TK_NE
+          );
+          VdbeCoverage(v);
+          break;
+
+        case TK_LT:
+        case TK_LE:
+        case TK_GT:
+        case TK_GE:
+          codeCompare(pParse, pL, pR, OP_Cmp, r1, r2, dest, SQLITE_STOREP2|p5);
+          sqlite3VdbeAddOp4Int(v, OP_CmpTest, dest, addr, 0, pExpr->op);
+          VdbeCoverage(v);
+          break;
       }
 
-      if( regRight ){
-        pR = pRight->x.pSelect->pEList->a[i].pExpr;
-        r2 = regRight+i;
-      }else{
-        pR = pRight->x.pList->a[i].pExpr;
-        r2 = sqlite3ExprCodeTemp(pParse, pR, &regFree1);
-      }
-
-      codeCompare(pParse, pL, pR, opCmp, r1, r2, dest, SQLITE_STOREP2 | p5);
-      sqlite3VdbeAddOp3(v, opTest, dest, addr, p3);
       sqlite3ReleaseTempReg(pParse, regFree1);
       sqlite3ReleaseTempReg(pParse, regFree2);
       if( i ) sqlite3ExprCachePop(pParse);
     }
+
+    sqlite3ReleaseTempReg(pParse, regTmp);
   }
 
   sqlite3VdbeResolveLabel(v, addr);

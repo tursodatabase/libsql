@@ -28,6 +28,9 @@ foreach {tn v1 v2 eq ne is isnot} {
   3 "1, 2, NULL" "1, 2, 3"                   {} {}    0 1
   4 "1, 2, NULL" "1, 2, NULL"                {} {}    1 0
   5 "NULL, NULL, NULL" "NULL, NULL, NULL"    {} {}    1 0
+
+  6 "1, NULL, 1" "1, 1, 1"                   {} {}    0 1
+  7 "1, NULL, 1" "1, 1, 2"                   0  1     0 1
 } {
   do_execsql_test 1.$tn.eq "SELECT ($v1) == ($v2)" [list $eq]
   do_execsql_test 1.$tn.ne "SELECT ($v1) != ($v2)" [list $ne]
