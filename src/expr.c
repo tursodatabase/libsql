@@ -1888,7 +1888,7 @@ static int sqlite3InRhsIsConstant(Expr *pIn){
 ** An existing b-tree might be used if the RHS expression pX is a simple
 ** subquery such as:
 **
-**     SELECT <column> FROM <table>
+**     SELECT <column1>, <column2>... FROM <table>
 **
 ** If the RHS of the IN operator is a list or a more complex subquery, then
 ** an ephemeral table might need to be generated from the RHS and then
@@ -1904,14 +1904,14 @@ static int sqlite3InRhsIsConstant(Expr *pIn){
 **
 ** When IN_INDEX_LOOP is used (and the b-tree will be used to iterate
 ** through the set members) then the b-tree must not contain duplicates.
-** An epheremal table must be used unless the selected <column> is guaranteed
-** to be unique - either because it is an INTEGER PRIMARY KEY or it
-** has a UNIQUE constraint or UNIQUE index.
+** An epheremal table must be used unless the selected columns are guaranteed
+** to be unique - either because it is an INTEGER PRIMARY KEY or due to
+** a UNIQUE constraint or index.
 **
 ** When IN_INDEX_MEMBERSHIP is used (and the b-tree will be used 
 ** for fast set membership tests) then an epheremal table must 
-** be used unless <column> is an INTEGER PRIMARY KEY or an index can 
-** be found with <column> as its left-most column.
+** be used unless <columns> is a single INTEGER PRIMARY KEY column or an 
+** index can be found with the specified <columns> as its left-most.
 **
 ** If the IN_INDEX_NOOP_OK and IN_INDEX_MEMBERSHIP are both set and
 ** if the RHS of the IN operator is a list (not a subquery) then this
@@ -1932,6 +1932,17 @@ static int sqlite3InRhsIsConstant(Expr *pIn){
 ** the value in that register will be NULL if the b-tree contains one or more
 ** NULL values, and it will be some non-NULL value if the b-tree contains no
 ** NULL values.
+**
+** If the aiMap parameter is not NULL, it must point to an array containing
+** one element for each column returned by the SELECT statement on the RHS
+** of the IN(...) operator. The i'th entry of the array is populated with the
+** offset of the index column that matches the i'th column returned by the
+** SELECT. For example, if the expression and selected index are:
+**
+**   (?,?,?) IN (SELECT a, b, c FROM t1)
+**   CREATE INDEX i1 ON t1(b, c, a);
+**
+** then aiMap[] is populated with {2, 0, 1}.
 */
 #ifndef SQLITE_OMIT_SUBQUERY
 int sqlite3FindInIndex(
@@ -2119,24 +2130,32 @@ int sqlite3FindInIndex(
 }
 #endif
 
+/*
+** Argument pExpr is an (?, ?...) IN(...) expression. This 
+** function allocates and returns a nul-terminated string containing 
+** the affinities to be used for each column of the comparison.
+**
+** It is the responsibility of the caller to ensure that the returned
+** string is eventually freed using sqlite3DbFree().
+*/
 static char *exprINAffinity(Parse *pParse, Expr *pExpr){
   Expr *pLeft = pExpr->pLeft;
   int nVal = sqlite3ExprVectorSize(pLeft);
+  Select *pSelect = (pExpr->flags & EP_xIsSelect) ? pExpr->x.pSelect : 0;
   char *zRet;
 
+  assert( pExpr->op==TK_IN );
   zRet = sqlite3DbMallocZero(pParse->db, nVal+1);
   if( zRet ){
     int i;
     for(i=0; i<nVal; i++){
-      Expr *pA;
-      char a;
-      if( nVal==1 && 0 ){
-        pA = pLeft;
-      }else{    
-        pA = exprVectorField(pLeft, i);
+      Expr *pA = exprVectorField(pLeft, i);
+      char a = sqlite3ExprAffinity(pA);
+      if( pSelect ){
+        zRet[i] = sqlite3CompareAffinity(pSelect->pEList->a[i].pExpr, a);
+      }else{
+        zRet[i] = a;
       }
-      a = sqlite3ExprAffinity(pA);
-      zRet[i] = sqlite3CompareAffinity(pExpr->x.pSelect->pEList->a[i].pExpr, a);
     }
     zRet[nVal] = '\0';
   }
@@ -2229,11 +2248,12 @@ int sqlite3CodeSubselect(
       int nVal;                   /* Size of vector pLeft */
       
       nVal = sqlite3ExprVectorSize(pLeft);
+      assert( !isRowid || nVal==1 );
 
       /* Whether this is an 'x IN(SELECT...)' or an 'x IN(<exprlist>)'
       ** expression it is handled the same way.  An ephemeral table is 
-      ** filled with single-field index keys representing the results
-      ** from the SELECT or the <exprlist>.
+      ** filled with index keys representing the results from the 
+      ** SELECT or the <exprlist>.
       **
       ** If the 'x' expression is a column value, or the SELECT...
       ** statement returns a column value, then the affinity of that
@@ -2470,18 +2490,19 @@ static void sqlite3ExprCodeIN(
   int *aiMap = 0;       /* Map from vector field to index column */
   char *zAff = 0;       /* Affinity string for comparisons */
   int nVector;          /* Size of vectors for this IN(...) op */
-  int regSelect = 0;
   Expr *pLeft = pExpr->pLeft;
   int i;
 
   if( sqlite3ExprCheckIN(pParse, pExpr) ) return;
+  zAff = exprINAffinity(pParse, pExpr);
   nVector = sqlite3ExprVectorSize(pExpr->pLeft);
   aiMap = (int*)sqlite3DbMallocZero(
       pParse->db, nVector*(sizeof(int) + sizeof(char)) + 1
   );
-  if( !aiMap ) return;
-  zAff = (char*)&aiMap[nVector];
-
+  if( !zAff || !aiMap ){
+    sqlite3DbFree(pParse->db, aiMap);
+    return;
+  }
 
   /* Attempt to compute the RHS. After this step, if anything other than
   ** IN_INDEX_NOOP is returned, the table opened ith cursor pExpr->iTable 
@@ -2505,23 +2526,14 @@ static void sqlite3ExprCodeIN(
   r1 = sqlite3GetTempRange(pParse, nVector);
   sqlite3ExprCachePush(pParse);
   if( nVector>1 && (pLeft->flags & EP_xIsSelect) ){
-    regSelect = sqlite3CodeSubselect(pParse, pLeft, 0, 0);
-  }
-  for(i=0; i<nVector; i++){
-    int iCol = aiMap[i];
-    Expr *pLhs = exprVectorField(pLeft, i);
-
-    if( regSelect ){
-      sqlite3VdbeAddOp3(v, OP_Copy, regSelect+i, r1+iCol, 0);
-    }else{
-      sqlite3ExprCode(pParse, pLhs, r1+iCol);
+    int regSelect = sqlite3CodeSubselect(pParse, pLeft, 0, 0);
+    for(i=0; i<nVector; i++){
+      sqlite3VdbeAddOp3(v, OP_Copy, regSelect+i, r1+aiMap[i], 0);
     }
-
-    zAff[iCol] = sqlite3ExprAffinity(pLhs);
-    if( pExpr->flags & EP_xIsSelect ){
-      zAff[iCol] = sqlite3CompareAffinity(
-          pExpr->x.pSelect->pEList->a[iCol].pExpr, zAff[iCol]
-      );
+  }else{
+    for(i=0; i<nVector; i++){
+      Expr *pLhs = exprVectorField(pLeft, i);
+      sqlite3ExprCode(pParse, pLhs, r1+aiMap[i]);
     }
   }
 
@@ -2678,6 +2690,7 @@ static void sqlite3ExprCodeIN(
   sqlite3ReleaseTempReg(pParse, r1);
   sqlite3ExprCachePop(pParse);
   sqlite3DbFree(pParse->db, aiMap);
+  sqlite3DbFree(pParse->db, zAff);
   VdbeComment((v, "end IN expr"));
 }
 #endif /* SQLITE_OMIT_SUBQUERY */

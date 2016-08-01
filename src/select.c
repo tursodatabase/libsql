@@ -878,7 +878,7 @@ static void selectInnerLoop(
         int r1 = sqlite3GetTempReg(pParse);
         assert( sqlite3Strlen30(pDest->zAffSdst)==nResultCol );
         sqlite3VdbeAddOp4(v, OP_MakeRecord, regResult, nResultCol, 
-            r1, pDest->zAffSdst, 1);
+            r1, pDest->zAffSdst, nResultCol);
         sqlite3ExprCacheAffinityChange(pParse, regResult, nResultCol);
         sqlite3VdbeAddOp2(v, OP_IdxInsert, iParm, r1);
         sqlite3ReleaseTempReg(pParse, r1);
@@ -1261,13 +1261,12 @@ static void generateSortTail(
     case SRT_Set: {
       assert( nColumn==sqlite3Strlen30(pDest->zAffSdst) );
       sqlite3VdbeAddOp4(v, OP_MakeRecord, regRow, nColumn, regRowid,
-                        pDest->zAffSdst, 1);
+                        pDest->zAffSdst, nColumn);
       sqlite3ExprCacheAffinityChange(pParse, regRow, nColumn);
       sqlite3VdbeAddOp2(v, OP_IdxInsert, iParm, regRowid);
       break;
     }
     case SRT_Mem: {
-      /* sqlite3ExprCodeMove(pParse, regRow, iParm, nColumn); */
       /* The LIMIT clause will terminate the loop for us */
       break;
     }

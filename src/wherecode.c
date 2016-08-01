@@ -950,6 +950,15 @@ static void codeDeferredSeek(
   }
 }
 
+/*
+** If the expression passed as the second argument is a vector, generate
+** code to write the first nReg elements of the vector into an array
+** of registers starting with iReg.
+**
+** If the expression is not a vector, then nReg must be passed 1. In
+** this case, generate code to evaluate the expression and leave the
+** result in register iReg.
+*/
 static void codeExprOrVector(Parse *pParse, Expr *p, int iReg, int nReg){
   assert( nReg>0 );
   if( sqlite3ExprIsVector(p) ){
@@ -1238,7 +1247,9 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       }else{
         testOp = bRev ? OP_Lt : OP_Gt;
       }
-      disableTerm(pLevel, pEnd);
+      if( 0==sqlite3ExprIsVector(pX->pRight) ){
+        disableTerm(pLevel, pEnd);
+      }
     }
     start = sqlite3VdbeCurrentAddr(v);
     pLevel->op = bRev ? OP_Prev : OP_Next;

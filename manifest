@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sIN(...)\sconstraints\swhere\sthe\sLHS\sis\sa\ssub-select\sthat\sis\san\saggregate\squery.
-D 2016-08-01T16:37:43.292
+C Fix\sa\sproblem\swith\svector\srange\sconstraints\sinvolving\sthe\srowid\scolumn.\sAnd\sother\sissues.
+D 2016-08-01T20:14:31.976
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 3340e479e5221f06c3d61726f8f7efff885e4233
@@ -337,7 +337,7 @@ F src/ctime.c e77f3dc297b4b65c96da78b4ae4272fdfae863d7
 F src/date.c 1cc9fb516ec9932c6fd4d2a0d2f8bc4480145c39
 F src/dbstat.c 4f6f7f52b49beb9636ffbd517cfe44a402ba4ad0
 F src/delete.c 4aba4214a377ce8ddde2d2e609777bcc8235200f
-F src/expr.c cdde4d3ed7f7cf1911b961141d61a4f06e6f7ebd
+F src/expr.c 4db65a0c33003a00314fb56dca32d9cdbb6448a6
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c bc4145347595b7770f9a598cff1c848302cf5413
 F src/func.c 61a4114cf7004f10c542cfabbab9f2bcb9033045
@@ -383,7 +383,7 @@ F src/printf.c a5f0ca08ddede803c241266abb46356ec748ded1
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c cca3aa77b95706df5d635a2141a4d1de60ae6598
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c bb2a1583fddbf8c2bbba2abbe411882b89e14a12
+F src/select.c 952aa1b4148ed4c0024586e9049b8742a765c6f9
 F src/shell.c 9351fc6de11e1d908648c0a92d85627138e3dee5
 F src/sqlite.h.in cd10e4206b91c4bf03f121ab9209a14af0b48f14
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -463,9 +463,9 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 02eeecc265f6ffd0597378f5d8ae9070b62a406a
 F src/wal.h 6dd221ed384afdc204bc61e25c23ef7fd5a511f2
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
-F src/where.c 61db3a409b6b89383abd0e746965da424676f8ea
+F src/where.c a1c2fde60e806f1e045fdf745bfa449e3be82f55
 F src/whereInt.h 14dd243e13b81cbb0a66063d38b70f93a7d6e613
-F src/wherecode.c 6131be0cb19702665c3decbf243dae58ecc15937
+F src/wherecode.c c01c8af9311b5d6d65de311101f72d94a11ae506
 F src/whereexpr.c 3f5d76b585ab193bb9ae15aadb8deb94346c93e7
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1018,7 +1018,7 @@ F test/rollbackfault.test 0e646aeab8840c399cfbfa43daab46fd609cf04a
 F test/rowallock.test 3f88ec6819489d0b2341c7a7528ae17c053ab7cc
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
 F test/rowid.test 5b7509f384f4f6fae1af3c8c104c8ca299fea18d
-F test/rowvalue.test 5f00f33fb1aa9259b35b44261b651361580d5a34
+F test/rowvalue.test 56b34d31d91340a6e922e753b798880170cc1aa7
 F test/rowvalue2.test 8d5dfe75b8f4d1868a2f91f0356f20d36cba64ff
 F test/rowvalue3.test 5127afb4414bf62546161497c04840c46e371770
 F test/rowvalue4.test 4480898d62d6813e3e38d9d38c02b9a0be5f94be
@@ -1512,7 +1512,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 059d0d05354e6efab7892c97b339ffa0b5303587
-R b99b47b8f7c934c8cffa76149cc68eeb
+P 1f4dba87da4a44ad26223ad965731164c0d9bad9
+R 4b01df8319f11080e804e7c115ca8550
 U dan
-Z 9e6109253ab0bc1e8a84d8639e4d1848
+Z c86f923fed6f969ee44eaf1f0098c9a2

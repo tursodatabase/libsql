@@ -201,6 +201,24 @@ do_execsql_test 8.1 {
   SELECT * FROM j1 WHERE (select min(a) FROM j1) IN (?, ?, ?)
 }
 
+do_execsql_test 9.0 {
+  CREATE TABLE t2(a INTEGER PRIMARY KEY, b, c);
+  INSERT INTO t2 VALUES(1, 1, 1);
+  INSERT INTO t2 VALUES(2, 2, 2);
+  INSERT INTO t2 VALUES(3, 3, 3);
+  INSERT INTO t2 VALUES(4, 4, 4);
+  INSERT INTO t2 VALUES(5, 5, 5);
+}
+
+foreach {tn q res} {
+  1 "(a, b) > (2, 1)" {2 3 4 5}
+  2 "(a, b) > (2, 2)" {3 4 5}
+  3 "(a, b) < (4, 5)" {1 2 3 4}
+  4 "(a, b) < (4, 3)" {1 2 3}
+} {
+  do_execsql_test 9.$tn "SELECT c FROM t2 WHERE $q" $res
+} 
+
 
 finish_test
 

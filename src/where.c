@@ -2189,7 +2189,20 @@ static void whereLoopOutputAdjust(
 
 /* 
 ** Term pTerm is a vector range comparison operation. The first comparison
-** in the vector can be optimized using column nEq of the index.  
+** in the vector can be optimized using column nEq of the index. This
+** function returns the total number of vector elements that can be used
+** as part of the range comparison.
+**
+** For example, if the query is:
+**
+**   WHERE a = ? AND (b, c, d) > (?, ?, ?)
+**
+** and the index:
+**
+**   CREATE INDEX ... ON (a, b, c, d, e)
+**
+** then this function would be invoked with nEq=1. The value returned in
+** this case is 3.
 */
 int whereRangeVectorLen(
   Parse *pParse, int iCur, Index *pIdx, int nEq, WhereTerm *pTerm
