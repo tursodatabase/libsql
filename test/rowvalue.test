@@ -194,6 +194,12 @@ foreach {tn sql res eqp} {
   do_execsql_test 7.$tn.2 $sql $res
 }
 
+do_execsql_test 8.0 {
+  CREATE TABLE j1(a);
+}
+do_execsql_test 8.1 {
+  SELECT * FROM j1 WHERE (select min(a) FROM j1) IN (?, ?, ?)
+}
 
 
 finish_test

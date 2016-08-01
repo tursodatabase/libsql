@@ -310,6 +310,15 @@ static int codeCompare(
 }
 
 /*
+** Return true if expression pExpr is a vector, or false otherwise.
+*/
+int sqlite3ExprIsVector(Expr *pExpr){
+  return ( (pExpr->op==TK_VECTOR)
+        || (pExpr->op==TK_SELECT && pExpr->x.pSelect->pEList->nExpr>1)
+  );
+}
+
+/*
 ** If the expression passed as the only argument is of type TK_VECTOR 
 ** return the number of expressions in the vector. Or, if the expression
 ** is a sub-select, return the number of columns in the sub-select. For
@@ -324,29 +333,22 @@ int sqlite3ExprVectorSize(Expr *pExpr){
 }
 
 /*
-** Return true if expression pExpr is a vector, or false otherwise.
-*/
-int sqlite3ExprIsVector(Expr *pExpr){
-  return (
-      pExpr->op==TK_VECTOR 
-   || (pExpr->op==TK_SELECT && pExpr->x.pSelect->pEList->nExpr>1)
-  );
-}
-
-/*
 ** If the expression passed as the first argument is a TK_VECTOR, return
 ** a pointer to the i'th field of the vector. Or, if the first argument
-** points to a sub-select, return a pointer to the i'th returned column 
-** value. Otherwise, return a copy of the first argument.
+** points to a sub-select that returns more than one column, return a 
+** pointer to the i'th returned column value. Otherwise, return a copy 
+** of the first argument.
 */
 static Expr *exprVectorField(Expr *pVector, int i){
-  if( sqlite3ExprIsVector(pVector)==0 ){
-    assert( i==0 );
-    return pVector;
-  }else if( pVector->flags & EP_xIsSelect ){
-    return pVector->x.pSelect->pEList->a[i].pExpr;
+  assert( i<sqlite3ExprVectorSize(pVector) );
+  if( sqlite3ExprIsVector(pVector) ){
+    if( pVector->op==TK_SELECT ){
+      return pVector->x.pSelect->pEList->a[i].pExpr;
+    }else{
+      return pVector->x.pList->a[i].pExpr;
+    }
   }
-  return pVector->x.pList->a[i].pExpr;
+  return pVector;
 }
 
 /*
@@ -367,34 +369,37 @@ static int exprCodeSubselect(Parse *pParse, Expr *pExpr){
 
 /*
 ** Argument pVector points to a vector expression - either a TK_VECTOR
-** or TK_SELECT that returns more than one column. This function generates
-** code to evaluate expression iElem of the vector. The number of the
-** register containing the result is returned. 
+** or TK_SELECT that returns more than one column. This function returns
+** the register number of a register that contains the value of
+** element iField of the vector.
+**
+** If pVector is a TK_SELECT expression, then code for it must have 
+** already been generated using the exprCodeSubselect() routine. In this
+** case parameter regSelect should be the first in an array of registers
+** containing the results of the sub-select. 
+**
+** If pVector is of type TK_VECTOR, then code for the requested field
+** is generated. In this case (*pRegFree) may be set to the number of
+** a temporary register to be freed by the caller before returning.
 **
 ** Before returning, output parameter (*ppExpr) is set to point to the
 ** Expr object corresponding to element iElem of the vector.
-**
-** If pVector is a TK_SELECT expression, then argument regSelect is 
-** passed the first in an array of registers that contain the results
-** of the sub-select. 
-**
-** If output parameter (*pRegFree) is set to a non-zero value by this
-** function, it is the value of a temporary register that should be
-** freed by the caller.
 */
 static int exprVectorRegister(
   Parse *pParse,                  /* Parse context */
   Expr *pVector,                  /* Vector to extract element from */
-  int iElem,                      /* Element to extract from pVector */
+  int iField,                     /* Field to extract from pVector */
   int regSelect,                  /* First in array of registers */
   Expr **ppExpr,                  /* OUT: Expression element */
   int *pRegFree                   /* OUT: Temp register to free */
 ){
+  assert( pVector->op==TK_VECTOR || pVector->op==TK_SELECT );
+  assert( (pVector->op==TK_VECTOR)==(regSelect==0) );
   if( regSelect ){
-    *ppExpr = pVector->x.pSelect->pEList->a[iElem].pExpr;
-     return regSelect+iElem;
+    *ppExpr = pVector->x.pSelect->pEList->a[iField].pExpr;
+     return regSelect+iField;
   }
-  *ppExpr = pVector->x.pList->a[iElem].pExpr;
+  *ppExpr = pVector->x.pList->a[iField].pExpr;
   return sqlite3ExprCodeTemp(pParse, *ppExpr, pRegFree);
 }
 
@@ -416,10 +421,7 @@ static void codeVectorCompare(Parse *pParse, Expr *pExpr, int dest){
     sqlite3ErrorMsg(pParse, "invalid use of row value");
   }else{
     int p5 = (pExpr->op==TK_IS || pExpr->op==TK_ISNOT) ? SQLITE_NULLEQ : 0;
-    int opCmp;
     int i;
-    int p3 = 0;
-    int p4 = 0;
     int regLeft = 0;
     int regRight = 0;
     int regTmp = 0;
@@ -1777,13 +1779,6 @@ int sqlite3IsRowid(const char *z){
 ** a pointer to the SELECT statement.  If pX is not a SELECT statement,
 ** or if the SELECT statement needs to be manifested into a transient
 ** table, then return NULL.
-** 
-** If parameter bNullSensitive is 0, then this operation will be
-** used in a context in which there is no difference between a result
-** of 0 and one of NULL. For example:
-**
-**     ... WHERE (?,?) IN (SELECT ...)
-**
 */
 #ifndef SQLITE_OMIT_SUBQUERY
 static Select *isCandidateForInOpt(Expr *pX){
@@ -1957,10 +1952,9 @@ int sqlite3FindInIndex(
 
   /* If the RHS of this IN(...) operator is a SELECT, and if it matters 
   ** whether or not the SELECT result contains NULL values, check whether
-  ** or not NULL is actuall possible (it may not be, for example, due 
+  ** or not NULL is actually possible (it may not be, for example, due 
   ** to NOT NULL constraints in the schema). If no NULL values are possible,
-  ** set prRhsHasNull to 0 before continuing.
-  */
+  ** set prRhsHasNull to 0 before continuing.  */
   if( prRhsHasNull && (pX->flags & EP_xIsSelect) ){
     int i;
     ExprList *pEList = pX->x.pSelect->pEList;
