@@ -25,7 +25,6 @@
 #include "sqliteInt.h"
 #include "vdbeInt.h"
 
-
 /*
 ** Allocate nByte bytes of space using sqlite3_malloc(). If the
 ** allocation fails, call sqlite3_result_error_nomem() to notify
@@ -704,9 +703,9 @@ static int SQLITE_TCLAPI autoinstall_test_funcs(
   Tcl_Obj *CONST objv[]
 ){
   extern int Md5_Register(sqlite3 *, char **, const sqlite3_api_routines *);
-  int rc = sqlite3_auto_extension(registerTestFunctions);
+  int rc = sqlite3_auto_extension((void(*)(void))registerTestFunctions);
   if( rc==SQLITE_OK ){
-    rc = sqlite3_auto_extension(Md5_Register);
+    rc = sqlite3_auto_extension((void(*)(void))Md5_Register);
   }
   Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
   return TCL_OK;
@@ -791,6 +790,7 @@ abuse_err:
   return TCL_ERROR;
 }
 
+
 /*
 ** Register commands with the TCL interpreter.
 */
@@ -809,7 +809,7 @@ int Sqlitetest_func_Init(Tcl_Interp *interp){
     Tcl_CreateObjCommand(interp, aObjCmd[i].zName, aObjCmd[i].xProc, 0, 0);
   }
   sqlite3_initialize();
-  sqlite3_auto_extension(registerTestFunctions);
-  sqlite3_auto_extension(Md5_Register);
+  sqlite3_auto_extension((void(*)(void))registerTestFunctions);
+  sqlite3_auto_extension((void(*)(void))Md5_Register);
   return TCL_OK;
 }

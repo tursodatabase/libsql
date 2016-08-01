@@ -676,7 +676,7 @@ static SQLITE_WSD struct sqlite3AutoExtList {
 ** loaded by every new database connection.
 */
 int sqlite3_auto_extension(
-  int (*xInit)(sqlite3 *, char **, const sqlite3_api_routines *)
+  void (*xInit)(void)
 ){
   int rc = SQLITE_OK;
 #ifndef SQLITE_OMIT_AUTOINIT
@@ -723,7 +723,7 @@ int sqlite3_auto_extension(
 ** was not on the list.
 */
 int sqlite3_cancel_auto_extension(
-  int (*xInit)(sqlite3 *, char **, const sqlite3_api_routines *)
+  void (*xInit)(void)
 ){
 #if SQLITE_THREADSAFE
   sqlite3_mutex *mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER);
