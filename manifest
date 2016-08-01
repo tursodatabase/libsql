@@ -1,5 +1,5 @@
-C Add\san\sextra\scompiler\sswitch\sto\sloadext.test\sto\sensure\sthat\sit\spicks\sup\sthe\scorrect\sversion\sof\ssqlite3.h\swhen\sbuilding\sa\stest\sextension.
-D 2016-08-01T16:50:50.941
+C Remove\sa\sduplicate\stypedef\sfrom\sloadext.c\s(remaining\scopy\sis\sin\ssqlite3ext.h).
+D 2016-08-01T16:57:30.301
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 3340e479e5221f06c3d61726f8f7efff885e4233
@@ -347,7 +347,7 @@ F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/insert.c 8f4e9fcbd8e95e85f15647ba8b413b18d556ec2b
 F src/legacy.c 75d3023be8f0d2b99d60f905090341a03358c58e
-F src/loadext.c 0ac0030646e4ec3c775b5c40d1818ec9a7e1ca95
+F src/loadext.c ab2870487f4313a69816f15cb66d6c116051d895
 F src/main.c 16c1b2114eae8804caf3a8de8cb47bf2c6d83ad3
 F src/malloc.c 1443d1ad95d67c21d77af7ae3f44678252f0efec
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
@@ -1508,7 +1508,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a6a112de485eb9d15f6fa75568dcb876f00abb64
-R b52843774fa6a1a75de37b3a2fbcc9cb
+P e57fa6af32a1d1bf7be64b26850730f7e714b6c6
+R 95d57e7a20ef51e72dadff0e39b4eac0
 U dan
-Z 4c7b22bb74a34454d19b7a6d615357b5
+Z dd3eec4e4b9fe5243b233856e0e2f91d

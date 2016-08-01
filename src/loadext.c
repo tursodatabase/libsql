@@ -22,15 +22,6 @@
 
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
 /*
-** This is the function signature used for all extension entry points.
-*/
-typedef int (*sqlite3_loadext_entry)(
-  sqlite3 *db,                       /* Handle to the database. */
-  char **pzErrMsg,                   /* Used to set error string on failure. */
-  const sqlite3_api_routines *pThunk /* Extension API function pointers. */
-);
-
-/*
 ** Some API routines are omitted when various features are
 ** excluded from a build of SQLite.  Substitute a NULL pointer
 ** for any missing APIs.
