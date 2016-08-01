@@ -1223,6 +1223,7 @@ static void jsonQuoteFunc(
   sqlite3_value **argv
 ){
   JsonString jx;
+  UNUSED_PARAM(argc);
 
   jsonInit(&jx, ctx);
   jsonAppendValue(&jx, argv[0]);

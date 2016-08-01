@@ -684,7 +684,7 @@ int sqlite3_auto_extension(
     wsdAutoextInit;
     sqlite3_mutex_enter(mutex);
     for(i=0; i<wsdAutoext.nExt; i++){
-      if( wsdAutoext.aExt[i]==(void*)xInit ) break;
+      if( wsdAutoext.aExt[i]==xInit ) break;
     }
     if( i==wsdAutoext.nExt ){
       u64 nByte = (wsdAutoext.nExt+1)*sizeof(wsdAutoext.aExt[0]);
@@ -694,7 +694,7 @@ int sqlite3_auto_extension(
         rc = SQLITE_NOMEM_BKPT;
       }else{
         wsdAutoext.aExt = aNew;
-        wsdAutoext.aExt[wsdAutoext.nExt] = (void*)xInit;
+        wsdAutoext.aExt[wsdAutoext.nExt] = xInit;
         wsdAutoext.nExt++;
       }
     }
@@ -724,7 +724,7 @@ int sqlite3_cancel_auto_extension(
   wsdAutoextInit;
   sqlite3_mutex_enter(mutex);
   for(i=(int)wsdAutoext.nExt-1; i>=0; i--){
-    if( wsdAutoext.aExt[i]==(void*)xInit ){
+    if( wsdAutoext.aExt[i]==xInit ){
       wsdAutoext.nExt--;
       wsdAutoext.aExt[i] = wsdAutoext.aExt[wsdAutoext.nExt];
       n++;
