@@ -1,5 +1,5 @@
-C Fix\sother\sharmless\scompiler\swarnings.
-D 2016-08-01T17:06:44.553
+C Update\sthe\swordcount.c\stest\sprogram\sand\sadd\sa\snew\sscript\s"time-wordcount.sh"\nfor\sadditional\sperformance\stesting.
+D 2016-08-01T21:17:53.023
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 3340e479e5221f06c3d61726f8f7efff885e4233
@@ -1142,6 +1142,7 @@ F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
 F test/threadtest2.c a70a8e94bef23339d34226eb9521015ef99f4df8
 F test/threadtest3.c 38a612ea62854349ed66372f330a40d73c5cf956
 F test/threadtest4.c c1e67136ceb6c7ec8184e56ac61db28f96bd2925
+F test/time-wordcount.sh 8e0b0f8109367827ad5d58f5cc849705731e4b90
 F test/tkt-02a8e81d44.test 6c80d9c7514e2a42d4918bf87bf6bc54f379110c
 F test/tkt-26ff0c2d1e.test 888324e751512972c6e0d1a09df740d8f5aaf660
 F test/tkt-2a5629202f.test 0521bd25658428baa26665aa53ffed9367d33af2
@@ -1416,7 +1417,7 @@ F test/without_rowid3.test aad4f9d383e199349b6c7e508a778f7dff5dff79
 F test/without_rowid4.test 4e08bcbaee0399f35d58b5581881e7a6243d458a
 F test/without_rowid5.test 89b1c587bd92a0590e440da33e7666bf4891572a
 F test/without_rowid6.test 1f99644e6508447fb050f73697350c7ceca3392e
-F test/wordcount.c 2a0a6c0d0e8e8bbbac1f06d72a6791828c37c0cf
+F test/wordcount.c 97856eec21fd00d77da720007b1888c383f63dcf
 F test/zeroblob.test 3857870fe681b8185654414a9bccfde80b62a0fa
 F test/zerodamage.test e59a56443d6298ecf7435f618f0b27654f0c849e
 F tool/GetFile.cs a15e08acb5dd7539b75ba23501581d7c2b462cb5
@@ -1508,7 +1509,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fd184e5a8f4577aa9a817eb55e771d8d1021b946
-R ee6ea998e955e1020bf52b2850224f49
+P 90d2c490fc2ed4e073711b84f989ca4d496dcfb5
+R 785c152fa91bad6599d646e4e2f00927
 U drh
-Z 082f7342c6c06c2add554ab4b05f638a
+Z e82d6de7fe92cf55ce862dce0d383efb
