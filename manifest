@@ -1,5 +1,5 @@
-C Update\sreleasetest.tcl\sto\sautomatically\sdo\sone\sround\sof\stests\swith\nUSE_STDCALL=1\swhen\srunning\son\sWindows\swith\sMSVC.
-D 2016-08-01T15:00:00.879
+C Add\san\sextra\scompiler\sswitch\sto\sloadext.test\sto\sensure\sthat\sit\spicks\sup\sthe\scorrect\sversion\sof\ssqlite3.h\swhen\sbuilding\sa\stest\sextension.
+D 2016-08-01T16:50:50.941
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 3340e479e5221f06c3d61726f8f7efff885e4233
@@ -889,7 +889,7 @@ F test/like2.test 3b2ee13149ba4a8a60b59756f4e5d345573852da
 F test/like3.test 3608a2042b6f922f900fbfd5d3ce4e7eca57f7c4
 F test/limit.test 0c99a27a87b14c646a9d583c7c89fd06c352663e
 F test/limit2.test 55c9f4d08c89311e00afd75045ee1a2aca205cb4
-F test/loadext.test 42a3b8166dfcadcb0e0c8710dc520d97c31a8b98
+F test/loadext.test d077450695ddb5c1ea3ad7d48e5f5850fe732ad9
 F test/loadext2.test 0408380b57adca04004247179837a18e866a74f7
 F test/lock.test be4fe08118fb988fed741f429b7dd5d65e1c90db
 F test/lock2.test 5242d8ac4e2d59c403aebff606af449b455aceff
@@ -1508,7 +1508,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b6ea2f21f602031ef4dbd47462ac11b0bb0d5de6
-R 8c53f29684f1c5a6b809ef407293ad87
-U drh
-Z efd5176c6b70600d1d70a952504ac1b9
+P a6a112de485eb9d15f6fa75568dcb876f00abb64
+R b52843774fa6a1a75de37b3a2fbcc9cb
+U dan
+Z 4c7b22bb74a34454d19b7a6d615357b5
