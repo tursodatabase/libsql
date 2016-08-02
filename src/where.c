@@ -2862,9 +2862,9 @@ static int whereLoopAddBtree(
           LogEst nLookup = rSize + 16;  /* Base cost:  N*3 */
           int ii;
           int iCur = pSrc->iCursor;
-          WhereClause *pWC = &pWInfo->sWC;
-          for(ii=0; ii<pWC->nTerm; ii++){
-            WhereTerm *pTerm = &pWC->a[ii];
+          WhereClause *pWC2 = &pWInfo->sWC;
+          for(ii=0; ii<pWC2->nTerm; ii++){
+            WhereTerm *pTerm = &pWC2->a[ii];
             if( !sqlite3ExprCoveredByIndex(pTerm->pExpr, iCur, pProbe) ){
               break;
             }

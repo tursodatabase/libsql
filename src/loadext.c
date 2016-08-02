@@ -22,15 +22,6 @@
 
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
 /*
-** This is the function signature used for all extension entry points.
-*/
-typedef int (*sqlite3_loadext_entry)(
-  sqlite3 *db,                       /* Handle to the database. */
-  char **pzErrMsg,                   /* Used to set error string on failure. */
-  const sqlite3_api_routines *pThunk /* Extension API function pointers. */
-);
-
-/*
 ** Some API routines are omitted when various features are
 ** excluded from a build of SQLite.  Substitute a NULL pointer
 ** for any missing APIs.
@@ -676,7 +667,7 @@ static SQLITE_WSD struct sqlite3AutoExtList {
 ** loaded by every new database connection.
 */
 int sqlite3_auto_extension(
-  int (*xInit)(sqlite3 *, char **, const sqlite3_api_routines *)
+  void (*xInit)(void)
 ){
   int rc = SQLITE_OK;
 #ifndef SQLITE_OMIT_AUTOINIT
@@ -693,7 +684,7 @@ int sqlite3_auto_extension(
     wsdAutoextInit;
     sqlite3_mutex_enter(mutex);
     for(i=0; i<wsdAutoext.nExt; i++){
-      if( wsdAutoext.aExt[i]==(void*)xInit ) break;
+      if( wsdAutoext.aExt[i]==xInit ) break;
     }
     if( i==wsdAutoext.nExt ){
       u64 nByte = (wsdAutoext.nExt+1)*sizeof(wsdAutoext.aExt[0]);
@@ -703,7 +694,7 @@ int sqlite3_auto_extension(
         rc = SQLITE_NOMEM_BKPT;
       }else{
         wsdAutoext.aExt = aNew;
-        wsdAutoext.aExt[wsdAutoext.nExt] = (void*)xInit;
+        wsdAutoext.aExt[wsdAutoext.nExt] = xInit;
         wsdAutoext.nExt++;
       }
     }
@@ -723,7 +714,7 @@ int sqlite3_auto_extension(
 ** was not on the list.
 */
 int sqlite3_cancel_auto_extension(
-  int (*xInit)(sqlite3 *, char **, const sqlite3_api_routines *)
+  void (*xInit)(void)
 ){
 #if SQLITE_THREADSAFE
   sqlite3_mutex *mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER);
@@ -733,7 +724,7 @@ int sqlite3_cancel_auto_extension(
   wsdAutoextInit;
   sqlite3_mutex_enter(mutex);
   for(i=(int)wsdAutoext.nExt-1; i>=0; i--){
-    if( wsdAutoext.aExt[i]==(void*)xInit ){
+    if( wsdAutoext.aExt[i]==xInit ){
       wsdAutoext.nExt--;
       wsdAutoext.aExt[i] = wsdAutoext.aExt[wsdAutoext.nExt];
       n++;

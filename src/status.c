@@ -158,7 +158,7 @@ int sqlite3_status64(
   return SQLITE_OK;
 }
 int sqlite3_status(int op, int *pCurrent, int *pHighwater, int resetFlag){
-  sqlite3_int64 iCur, iHwtr;
+  sqlite3_int64 iCur = 0, iHwtr = 0;
   int rc;
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( pCurrent==0 || pHighwater==0 ) return SQLITE_MISUSE_BKPT;

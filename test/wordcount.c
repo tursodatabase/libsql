@@ -30,6 +30,7 @@
 **     --nosync             Use PRAGMA synchronous=OFF
 **     --journal MMMM       Use PRAGMA journal_mode=MMMM
 **     --timer              Time the operation of this program
+**     --tag NAME           Tag all output using NAME.  Use only stdout.
 **
 ** Modes:
 **
@@ -82,6 +83,9 @@
 #include "sqlite3.h"
 #define ISALPHA(X) isalpha((unsigned char)(X))
 
+/* Output tag */
+char *zTag = "--";
+
 /* Return the current wall-clock time */
 static sqlite3_int64 realTime(void){
   static sqlite3_vfs *clockVfs = 0;
@@ -115,7 +119,7 @@ static void traceCallback(void *NotUsed, const char *zSql){
 ** each column separated by a single space. */
 static int printResult(void *NotUsed, int nArg, char **azArg, char **azNm){
   int i;
-  printf("--");
+  printf("%s", zTag);
   for(i=0; i<nArg; i++){
     printf(" %s", azArg[i] ? azArg[i] : "(null)");
   }
@@ -220,6 +224,7 @@ int main(int argc, char **argv){
   FILE *in;                     /* The open input file */
   int rc;                       /* Return code from an SQLite interface */
   int iCur, iHiwtr;             /* Statistics values, current and "highwater" */
+  FILE *pTimer = stderr;        /* Output channel for the timer */
   sqlite3_int64 sumCnt = 0;     /* Sum in QUERY mode */
   sqlite3_int64 startTime;
   char zInput[2000];            /* A single line of input */
@@ -266,6 +271,9 @@ int main(int argc, char **argv){
         commitInterval = atoi(argv[i]);
       }else if( strcmp(z,"journal")==0 && i<argc-1 ){
         zJMode = argv[++i];
+      }else if( strcmp(z,"tag")==0 && i<argc-1 ){
+        zTag = argv[++i];
+        pTimer = stdout;
       }else{
         fatal_error("unknown option: %s\n", argv[i]);
       }
@@ -462,11 +470,11 @@ int main(int argc, char **argv){
   sqlite3_finalize(pDelete);
 
   if( iMode==MODE_QUERY ){
-    printf("sum of cnt: %lld\n", sumCnt);
+    printf("%s sum of cnt: %lld\n", zTag, sumCnt);
     rc = sqlite3_prepare_v2(db,"SELECT sum(cnt*cnt) FROM wordcount", -1,
                             &pSelect, 0);
     if( rc==SQLITE_OK && sqlite3_step(pSelect)==SQLITE_ROW ){
-      printf("double-check: %lld\n", sqlite3_column_int64(pSelect, 0));
+      printf("%s double-check: %lld\n", zTag, sqlite3_column_int64(pSelect, 0));
     }
     sqlite3_finalize(pSelect);
   }
@@ -474,10 +482,10 @@ int main(int argc, char **argv){
 
   if( showTimer ){
     sqlite3_int64 elapseTime = realTime() - startTime;
-    fprintf(stderr, "%3d.%03d wordcount", (int)(elapseTime/1000),
+    fprintf(pTimer, "%3d.%03d wordcount", (int)(elapseTime/1000),
                                    (int)(elapseTime%1000));
-    for(i=1; i<argc; i++) if( i!=showTimer ) fprintf(stderr, " %s", argv[i]);
-    fprintf(stderr, "\n");
+    for(i=1; i<argc; i++) if( i!=showTimer ) fprintf(pTimer, " %s", argv[i]);
+    fprintf(pTimer, "\n");
   }
 
   if( showSummary ){
@@ -501,25 +509,25 @@ int main(int argc, char **argv){
   ** have been finalized */
   if( showStats ){
     sqlite3_db_status(db, SQLITE_DBSTATUS_LOOKASIDE_USED, &iCur, &iHiwtr, 0);
-    printf("-- Lookaside Slots Used:        %d (max %d)\n", iCur,iHiwtr);
+    printf("%s Lookaside Slots Used:        %d (max %d)\n", zTag, iCur,iHiwtr);
     sqlite3_db_status(db, SQLITE_DBSTATUS_LOOKASIDE_HIT, &iCur, &iHiwtr, 0);
-    printf("-- Successful lookasides:       %d\n", iHiwtr);
+    printf("%s Successful lookasides:       %d\n", zTag, iHiwtr);
     sqlite3_db_status(db, SQLITE_DBSTATUS_LOOKASIDE_MISS_SIZE, &iCur,&iHiwtr,0);
-    printf("-- Lookaside size faults:       %d\n", iHiwtr);
+    printf("%s Lookaside size faults:       %d\n", zTag, iHiwtr);
     sqlite3_db_status(db, SQLITE_DBSTATUS_LOOKASIDE_MISS_FULL, &iCur,&iHiwtr,0);
-    printf("-- Lookaside OOM faults:        %d\n", iHiwtr);
+    printf("%s Lookaside OOM faults:        %d\n", zTag, iHiwtr);
     sqlite3_db_status(db, SQLITE_DBSTATUS_CACHE_USED, &iCur, &iHiwtr, 0);
-    printf("-- Pager Heap Usage:            %d bytes\n", iCur);
+    printf("%s Pager Heap Usage:            %d bytes\n", zTag, iCur);
     sqlite3_db_status(db, SQLITE_DBSTATUS_CACHE_HIT, &iCur, &iHiwtr, 1);
-    printf("-- Page cache hits:             %d\n", iCur);
+    printf("%s Page cache hits:             %d\n", zTag, iCur);
     sqlite3_db_status(db, SQLITE_DBSTATUS_CACHE_MISS, &iCur, &iHiwtr, 1);
-    printf("-- Page cache misses:           %d\n", iCur); 
+    printf("%s Page cache misses:           %d\n", zTag, iCur); 
     sqlite3_db_status(db, SQLITE_DBSTATUS_CACHE_WRITE, &iCur, &iHiwtr, 1);
-    printf("-- Page cache writes:           %d\n", iCur); 
+    printf("%s Page cache writes:           %d\n", zTag, iCur); 
     sqlite3_db_status(db, SQLITE_DBSTATUS_SCHEMA_USED, &iCur, &iHiwtr, 0);
-    printf("-- Schema Heap Usage:           %d bytes\n", iCur); 
+    printf("%s Schema Heap Usage:           %d bytes\n", zTag, iCur); 
     sqlite3_db_status(db, SQLITE_DBSTATUS_STMT_USED, &iCur, &iHiwtr, 0);
-    printf("-- Statement Heap Usage:        %d bytes\n", iCur); 
+    printf("%s Statement Heap Usage:        %d bytes\n", zTag, iCur); 
   }
 
   sqlite3_close(db);
@@ -528,19 +536,19 @@ int main(int argc, char **argv){
   ** has closed.  Memory usage should be zero at this point. */
   if( showStats ){
     sqlite3_status(SQLITE_STATUS_MEMORY_USED, &iCur, &iHiwtr, 0);
-    printf("-- Memory Used (bytes):         %d (max %d)\n", iCur,iHiwtr);
+    printf("%s Memory Used (bytes):         %d (max %d)\n", zTag,iCur,iHiwtr);
     sqlite3_status(SQLITE_STATUS_MALLOC_COUNT, &iCur, &iHiwtr, 0);
-    printf("-- Outstanding Allocations:     %d (max %d)\n", iCur,iHiwtr);
+    printf("%s Outstanding Allocations:     %d (max %d)\n",zTag,iCur,iHiwtr);
     sqlite3_status(SQLITE_STATUS_PAGECACHE_OVERFLOW, &iCur, &iHiwtr, 0);
-    printf("-- Pcache Overflow Bytes:       %d (max %d)\n", iCur,iHiwtr);
+    printf("%s Pcache Overflow Bytes:       %d (max %d)\n",zTag,iCur,iHiwtr);
     sqlite3_status(SQLITE_STATUS_SCRATCH_OVERFLOW, &iCur, &iHiwtr, 0);
-    printf("-- Scratch Overflow Bytes:      %d (max %d)\n", iCur,iHiwtr);
+    printf("%s Scratch Overflow Bytes:      %d (max %d)\n",zTag,iCur,iHiwtr);
     sqlite3_status(SQLITE_STATUS_MALLOC_SIZE, &iCur, &iHiwtr, 0);
-    printf("-- Largest Allocation:          %d bytes\n",iHiwtr);
+    printf("%s Largest Allocation:          %d bytes\n",zTag,iHiwtr);
     sqlite3_status(SQLITE_STATUS_PAGECACHE_SIZE, &iCur, &iHiwtr, 0);
-    printf("-- Largest Pcache Allocation:   %d bytes\n",iHiwtr);
+    printf("%s Largest Pcache Allocation:   %d bytes\n",zTag,iHiwtr);
     sqlite3_status(SQLITE_STATUS_SCRATCH_SIZE, &iCur, &iHiwtr, 0);
-    printf("-- Largest Scratch Allocation:  %d bytes\n", iHiwtr);
+    printf("%s Largest Scratch Allocation:  %d bytes\n",zTag,iHiwtr);
   }
   return 0;
 }

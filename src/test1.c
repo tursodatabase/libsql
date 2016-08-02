@@ -6742,7 +6742,6 @@ static int SQLITE_TCLAPI optimization_control(
   return TCL_OK;
 }
 
-typedef struct sqlite3_api_routines sqlite3_api_routines;
 /*
 **     load_static_extension DB NAME ...
 **

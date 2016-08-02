@@ -2550,6 +2550,8 @@ static int sql_trace_callback(
   void *pX
 ){
   FILE *f = (FILE*)pArg;
+  UNUSED_PARAMETER(mType);
+  UNUSED_PARAMETER(pP);
   if( f ){
     const char *z = (const char*)pX;
     int i = (int)strlen(z);
