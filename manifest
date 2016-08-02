@@ -1,5 +1,5 @@
-C Merge\slatest\strunk\schanges\sinto\sthis\sbranch.
-D 2016-08-02T16:24:10.101
+C Fix\sa\sproblem\swith\svector\srange\sconstraints\sand\smixed\sASC/DESC\sindexes.
+D 2016-08-02T17:07:51.146
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 3340e479e5221f06c3d61726f8f7efff885e4233
@@ -463,7 +463,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 02eeecc265f6ffd0597378f5d8ae9070b62a406a
 F src/wal.h 6dd221ed384afdc204bc61e25c23ef7fd5a511f2
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
-F src/where.c 9dcbc1be0e8e84b1d323dae55983bbb902a6c484
+F src/where.c 25eae2e051809c75a8a1a23288f335382ac0215f
 F src/whereInt.h 14dd243e13b81cbb0a66063d38b70f93a7d6e613
 F src/wherecode.c c01c8af9311b5d6d65de311101f72d94a11ae506
 F src/whereexpr.c 4a8cefc7c122132ac9f3ed125c61629a0e3de094
@@ -1020,8 +1020,8 @@ F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
 F test/rowid.test 5b7509f384f4f6fae1af3c8c104c8ca299fea18d
 F test/rowvalue.test 56b34d31d91340a6e922e753b798880170cc1aa7
 F test/rowvalue2.test 8d5dfe75b8f4d1868a2f91f0356f20d36cba64ff
-F test/rowvalue3.test 5127afb4414bf62546161497c04840c46e371770
-F test/rowvalue4.test 4480898d62d6813e3e38d9d38c02b9a0be5f94be
+F test/rowvalue3.test dbe935260851b197dfbbbcb0ac2a15cb5f324fd4
+F test/rowvalue4.test 9e720652d4db9ef3bea50227c69e33d7e64801c6
 F test/rtree.test 0c8d9dd458d6824e59683c19ab2ffa9ef946f798
 F test/run-wordcount.sh 891e89c4c2d16e629cd45951d4ed899ad12afc09
 F test/savepoint.test c671fdbd34cd3bfe1518a777526ada595180cf8d
@@ -1133,7 +1133,7 @@ F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptable2.test cd396beb41117a5302fff61767c35fa4270a0d5e
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 8ec228b0db5d7ebc4ee9b458fc28cb9e7873f5e1
-F test/tester.tcl 542e38e307a6c1c362122d186f580ec3e58a288c
+F test/tester.tcl 4ce5afd5e192db4cae178e1a983b060e0f08c5d6
 F test/thread001.test 9f22fd3525a307ff42a326b6bc7b0465be1745a5
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -1513,7 +1513,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6937677cc2c2db6b21f997559f88a339466cd15b b23c10ac8f65bc88a6c7d88e140217222eb4cbe5
-R bdbd7298ee0fa9cbc2f39cf393323b85
+P d468101b421e073e9debd7381bde1d36af31369e
+R e4db8db490358e0865afed7cef96935f
 U dan
-Z eb5884061bde99d3b56b31ee8ac9fde1
+Z 8c6bb4cf90fd1cc092b885dc43b4c6ef

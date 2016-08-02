@@ -25,6 +25,7 @@
 #      copy_file              FROM TO
 #      delete_file            FILENAME
 #      drop_all_tables        ?DB?
+#      drop_all_indexes       ?DB?
 #      forcecopy              FROM TO
 #      forcedelete            FILENAME
 #
@@ -1950,6 +1951,16 @@ proc drop_all_tables {{db db}} {
     $db eval "PRAGMA foreign_keys = $pk"
   }
 }
+
+# Drop all auxiliary indexes from the main database opened by handle [db].
+#
+proc drop_all_indexes {{db db}} {
+  set L [$db eval {
+    SELECT name FROM sqlite_master WHERE type='index' AND sql LIKE 'create%'
+  }]
+  foreach idx $L { $db eval "DROP INDEX $idx" }
+}
+
 
 #-------------------------------------------------------------------------
 # If a test script is executed with global variable $::G(perm:name) set to

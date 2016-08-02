@@ -2226,11 +2226,13 @@ int whereRangeVectorLen(
     }
 
     /* Check that the LHS of the comparison is a column reference to
-    ** the right column of the right source table. 
-    */
+    ** the right column of the right source table. And that the sort
+    ** order of the index column is the same as the sort order of the
+    ** leftmost index column.  */
     if( pLhs->op!=TK_COLUMN 
      || pLhs->iTable!=iCur 
      || pLhs->iColumn!=pIdx->aiColumn[i+nEq] 
+     || pIdx->aSortOrder[i]!=pIdx->aSortOrder[0]
     ){
       break;
     }

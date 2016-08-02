@@ -17,15 +17,6 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set ::testprefix rowvalue3
 
-# Drop all auxiliary indexes from the main database opened by handle [db].
-#
-proc drop_all_indexes {} {
-  set L [db eval {
-    SELECT name FROM sqlite_master WHERE type='index' AND sql LIKE 'create%'
-  }]
-  foreach idx $L { db eval "DROP INDEX $idx" }
-}
-
 do_execsql_test 1.0 {
   CREATE TABLE t1(a, b, c);
   CREATE INDEX i1 ON t1(a, b);
