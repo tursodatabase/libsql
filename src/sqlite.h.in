@@ -4704,12 +4704,13 @@ sqlite3 *sqlite3_context_db_handle(sqlite3_context*);
 ** SQLite will invoke the destructor function X with parameter P exactly
 ** once, when the metadata is discarded.
 ** SQLite is free to discard the metadata at any time, including: <ul>
-** <li> when the corresponding function parameter changes, or
-** <li> when [sqlite3_reset()] or [sqlite3_finalize()] is called for the
-**      SQL statement, or
-** <li> when sqlite3_set_auxdata() is invoked again on the same parameter, or
-** <li> during the original sqlite3_set_auxdata() call when a memory 
-**      allocation error occurs. </ul>)^
+** <li> ^(when the corresponding function parameter changes)^, or
+** <li> ^(when [sqlite3_reset()] or [sqlite3_finalize()] is called for the
+**      SQL statement)^, or
+** <li> ^(when sqlite3_set_auxdata() is invoked again on the same
+**       parameter)^, or
+** <li> ^(during the original sqlite3_set_auxdata() call when a memory 
+**      allocation error occurs.)^ </ul>
 **
 ** Note the last bullet in particular.  The destructor X in 
 ** sqlite3_set_auxdata(C,N,P,X) might be called immediately, before the
@@ -5670,8 +5671,8 @@ int sqlite3_load_extension(
 **
 ** ^This interface enables or disables both the C-API
 ** [sqlite3_load_extension()] and the SQL function [load_extension()].
-** Use [sqlite3_db_config](db,[SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION],..)
-** to enable or disable only the C-API.
+** ^(Use [sqlite3_db_config](db,[SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION],..)
+** to enable or disable only the C-API.)^
 **
 ** <b>Security warning:</b> It is recommended that extension loading
 ** be disabled using the [SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION] method
