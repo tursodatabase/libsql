@@ -360,6 +360,7 @@ static int codeEqualityTerm(
   assert( iTarget>0 );
   if( pX->op==TK_EQ || pX->op==TK_IS ){
     Expr *pRight = pX->pRight;
+#ifndef SQLITE_OMIT_SUBQUERY
     if( pRight->op==TK_SELECT_COLUMN ){
       /* This case occurs for expressions like "(a, b) == (SELECT ...)". */
       WhereLoop *pLoop = pLevel->pWLoop;
@@ -381,7 +382,9 @@ static int codeEqualityTerm(
         }
       }
       iReg = iTarget;
-    }else{
+    }else
+#endif
+    {
       iReg = sqlite3ExprCodeTarget(pParse, pRight, iTarget);
     }
   }else if( pX->op==TK_ISNULL ){
@@ -962,17 +965,20 @@ static void codeDeferredSeek(
 static void codeExprOrVector(Parse *pParse, Expr *p, int iReg, int nReg){
   assert( nReg>0 );
   if( sqlite3ExprIsVector(p) ){
-    int i;
-    if( (p->flags & EP_xIsSelect)==0 ){
+#ifndef SQLITE_OMIT_SUBQUERY
+    if( (p->flags & EP_xIsSelect) ){
+      Vdbe *v = pParse->pVdbe;
+      int iSelect = sqlite3CodeSubselect(pParse, p, 0, 0);
+      sqlite3VdbeAddOp3(v, OP_Copy, iSelect, iReg, nReg-1);
+    }else
+#endif
+    {
+      int i;
       ExprList *pList = p->x.pList;
       assert( nReg<=pList->nExpr );
       for(i=0; i<nReg; i++){
         sqlite3ExprCode(pParse, pList->a[i].pExpr, iReg+i);
       }
-    }else{
-      Vdbe *v = pParse->pVdbe;
-      int iSelect = sqlite3CodeSubselect(pParse, p, 0, 0);
-      sqlite3VdbeAddOp3(v, OP_Copy, iSelect, iReg, nReg-1);
     }
   }else{
     assert( nReg==1 );

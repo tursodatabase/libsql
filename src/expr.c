@@ -332,6 +332,7 @@ int sqlite3ExprVectorSize(Expr *pExpr){
   return pExpr->x.pList->nExpr;
 }
 
+#ifndef SQLITE_OMIT_SUBQUERY
 /*
 ** If the expression passed as the first argument is a TK_VECTOR, return
 ** a pointer to the i'th field of the vector. Or, if the first argument
@@ -350,6 +351,7 @@ static Expr *exprVectorField(Expr *pVector, int i){
   }
   return pVector;
 }
+#endif
 
 /*
 ** If expression pExpr is of type TK_SELECT, generate code to evaluate
@@ -361,9 +363,11 @@ static Expr *exprVectorField(Expr *pVector, int i){
 */
 static int exprCodeSubselect(Parse *pParse, Expr *pExpr){
   int reg = 0;
+#ifndef SQLITE_OMIT_SUBQUERY
   if( pExpr->op==TK_SELECT ){
     reg = sqlite3CodeSubselect(pParse, pExpr, 0, 0);
   }
+#endif
   return reg;
 }
 
@@ -1829,6 +1833,7 @@ int sqlite3CodeOnce(Parse *pParse){
   return sqlite3VdbeAddOp1(v, OP_Once, pParse->nOnce++);
 }
 
+#ifndef SQLITE_OMIT_SUBQUERY
 /*
 ** Generate code that checks the left-most column of index table iCur to see if
 ** it contains any NULL entries.  Cause the register at regHasNull to be set
@@ -1844,6 +1849,7 @@ static void sqlite3SetHasNullFlag(Vdbe *v, int iCur, int regHasNull){
   VdbeComment((v, "first_entry_in(%d)", iCur));
   sqlite3VdbeJumpHere(v, addr1);
 }
+#endif
 
 
 #ifndef SQLITE_OMIT_SUBQUERY
@@ -2130,6 +2136,7 @@ int sqlite3FindInIndex(
 }
 #endif
 
+#ifndef SQLITE_OMIT_SUBQUERY
 /*
 ** Argument pExpr is an (?, ?...) IN(...) expression. This 
 ** function allocates and returns a nul-terminated string containing 
@@ -2161,6 +2168,7 @@ static char *exprINAffinity(Parse *pParse, Expr *pExpr){
   }
   return zRet;
 }
+#endif
 
 #ifndef SQLITE_OMIT_SUBQUERY
 /*
