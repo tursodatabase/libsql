@@ -873,7 +873,8 @@ static void selectInnerLoop(
         ** ORDER BY in this case since the order of entries in the set
         ** does not matter.  But there might be a LIMIT clause, in which
         ** case the order does matter */
-        pushOntoSorter(pParse, pSort, p, regResult, regResult, 1, nPrefixReg);
+        pushOntoSorter(
+            pParse, pSort, p, regResult, regResult, nResultCol, nPrefixReg);
       }else{
         int r1 = sqlite3GetTempReg(pParse);
         assert( sqlite3Strlen30(pDest->zAffSdst)==nResultCol );
@@ -1221,6 +1222,10 @@ static void generateSortTail(
     regRowid = 0;
     regRow = pDest->iSdst;
     nSortData = nColumn;
+  }else if( eDest==SRT_Set ){
+    regRowid = sqlite3GetTempReg(pParse);
+    regRow = sqlite3GetTempRange(pParse, nColumn);
+    nSortData = nColumn;
   }else{
     regRowid = sqlite3GetTempReg(pParse);
     regRow = sqlite3GetTempReg(pParse);
@@ -1285,7 +1290,11 @@ static void generateSortTail(
     }
   }
   if( regRowid ){
-    sqlite3ReleaseTempReg(pParse, regRow);
+    if( eDest==SRT_Set ){
+      sqlite3ReleaseTempRange(pParse, regRow, nColumn);
+    }else{
+      sqlite3ReleaseTempReg(pParse, regRow);
+    }
     sqlite3ReleaseTempReg(pParse, regRowid);
   }
   /* The bottom of the loop
