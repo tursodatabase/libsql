@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\svector\srange\sconstraints\sinvolving\sthe\srowid\scolumn.\sAnd\sother\sissues.
-D 2016-08-01T20:14:31.976
+C Add\smissing\scomments\sand\smake\ssome\scode\son\sthis\sbranch\sclearer.
+D 2016-08-02T16:18:35.278
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 3340e479e5221f06c3d61726f8f7efff885e4233
@@ -466,7 +466,7 @@ F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
 F src/where.c a1c2fde60e806f1e045fdf745bfa449e3be82f55
 F src/whereInt.h 14dd243e13b81cbb0a66063d38b70f93a7d6e613
 F src/wherecode.c c01c8af9311b5d6d65de311101f72d94a11ae506
-F src/whereexpr.c 3f5d76b585ab193bb9ae15aadb8deb94346c93e7
+F src/whereexpr.c 4a8cefc7c122132ac9f3ed125c61629a0e3de094
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1512,7 +1512,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1f4dba87da4a44ad26223ad965731164c0d9bad9
-R 4b01df8319f11080e804e7c115ca8550
+P 3ef75d45ebcd8ede91596d69e55fe7d685008a60
+R ede02eaf849a0a0aa8962160f6f4e818
 U dan
-Z c86f923fed6f969ee44eaf1f0098c9a2
+Z d2db5fc489c89774ca610a9face0568f

@@ -831,7 +831,7 @@ static Bitmask exprSelectUsage(WhereMaskSet *pMaskSet, Select *pS){
 */
 static int exprMightBeIndexed(
   SrcList *pFrom,        /* The FROM clause */
-  int op,
+  int op,                /* The specific comparison operator */
   Bitmask mPrereq,       /* Bitmask of FROM clause terms referenced by pExpr */
   Expr *pExpr,           /* An operand of a comparison operator */
   int *piCur,            /* Write the referenced table cursor number here */
@@ -1194,6 +1194,10 @@ static void exprAnalyze(
   }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 
+  /* If there is a vector == or IS term - e.g. "(a, b) == (?, ?)" - create
+  ** a virtual term for each component comparison - "a = ?" and "b = ?".
+  ** This is only required if at least one side of the comparison operation
+  ** is not a sub-select.  */
   if( pWC->op==TK_AND 
   && (pExpr->op==TK_EQ || pExpr->op==TK_IS)
   && sqlite3ExprIsVector(pExpr->pLeft)
@@ -1217,6 +1221,11 @@ static void exprAnalyze(
     }
   }
 
+  /* If there is a vector IN term - e.g. "(a, b) IN (SELECT ...)" - create
+  ** a virtual term for each vector component. The expression object
+  ** used by each such virtual term is pExpr (the full vector IN(...) 
+  ** expression). The WhereTerm.iField variable identifies the index within
+  ** the vector on the LHS that the virtual term represents.  */
   if( pWC->op==TK_AND && pExpr->op==TK_IN && pTerm->iField==0
    && pExpr->pLeft->op==TK_VECTOR
   ){
