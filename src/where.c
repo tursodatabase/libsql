@@ -2376,14 +2376,23 @@ static int whereLoopAddBtreeIndex(
       pNew->wsFlags |= WHERE_COLUMN_IN;
       if( ExprHasProperty(pExpr, EP_xIsSelect) ){
         /* "x IN (SELECT ...)":  TUNING: the SELECT returns 25 rows */
+        int i;
         nIn = 46;  assert( 46==sqlite3LogEst(25) );
+
+        /* The expression may actually be of the form (x, y) IN (SELECT...).
+        ** In this case there is a separate term for each of (x) and (y).
+        ** However, the nIn multiplier should only be applied once, not once
+        ** for each such term. The following loop checks that pTerm is the
+        ** first such term in use, and sets nIn back to 0 if it is not. */
+        for(i=0; i<pNew->nLTerm-1; i++){
+          if( pNew->aLTerm[i]->pExpr==pExpr ) nIn = 0;
+        }
       }else if( ALWAYS(pExpr->x.pList && pExpr->x.pList->nExpr) ){
         /* "x IN (value, value, ...)" */
         nIn = sqlite3LogEst(pExpr->x.pList->nExpr);
+        assert( nIn>0 );  /* RHS always has 2 or more terms...  The parser
+                          ** changes "x IN (?)" into "x=?". */
       }
-      assert( nIn>0 );  /* RHS always has 2 or more terms...  The parser
-                        ** changes "x IN (?)" into "x=?". */
-
     }else if( eOp & (WO_EQ|WO_IS) ){
       int iCol = pProbe->aiColumn[saved_nEq];
       pNew->wsFlags |= WHERE_COLUMN_EQ;

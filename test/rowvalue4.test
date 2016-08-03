@@ -212,5 +212,33 @@ ifcapable stat4 {
   }
 }
 
+#------------------------------------------------------------------------
+
+do_execsql_test 5.0 {
+  CREATE TABLE d1(x, y);
+  CREATE TABLE d2(a, b, c);
+  CREATE INDEX d2ab ON d2(a, b);
+  CREATE INDEX d2c ON d2(c);
+
+  WITH i(i) AS (
+    VALUES(1) UNION ALL SELECT i+1 FROM i WHERE i<1000
+  )
+  INSERT INTO d2 SELECT i/3, i%3, i/3 FROM i;
+  ANALYZE;
+}
+
+do_eqp_test 5.1 {
+  SELECT * FROM d2 WHERE 
+    (a, b) IN (SELECT x, y FROM d1) AND
+    (c) IN (SELECT y FROM d1)
+} {
+  0 0 0 {SEARCH TABLE d2 USING INDEX d2ab (a=? AND b=?)}
+  0 0 0 {EXECUTE LIST SUBQUERY 1} 
+  1 0 0 {SCAN TABLE d1}
+  0 0 0 {EXECUTE LIST SUBQUERY 2} 
+  2 0 0 {SCAN TABLE d1}
+}
+
+
 finish_test
 
