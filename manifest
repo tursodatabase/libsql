@@ -1,5 +1,5 @@
-C Fix\sa\sunused\svariable\sthat\scomes\sup\swith\s-DSQLITE_OMIT_DATETIME_FUNCS.
-D 2016-08-02T20:42:24.701
+C Fix\sthe\s--help\soutput\son\sfuzzcheck\sso\sthat\sit\sfix\sin\san\s80-character\swindow.
+D 2016-08-03T13:40:54.644
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 3340e479e5221f06c3d61726f8f7efff885e4233
@@ -807,7 +807,7 @@ F test/fuzz2.test 76dc35b32b6d6f965259508508abce75a6c4d7e1
 F test/fuzz3.test b47377143f0c80f91ed29d722861077ff34415d5
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
 F test/fuzz_malloc.test 328f70aaca63adf29b4c6f06505ed0cf57ca7c26
-F test/fuzzcheck.c f01d432d001ba29e7916df8411be7d4e7cddc574
+F test/fuzzcheck.c f2e8102f7829f7b946ebdb6f1a16c6f942d9de66
 F test/fuzzdata1.db 7ee3227bad0e7ccdeb08a9e6822916777073c664
 F test/fuzzdata2.db f03a420d3b822cc82e4f894ca957618fbe9c4973
 F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
@@ -1509,7 +1509,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 50de96314f75494dc1f5b14d62c595a70c4e0638
-R bccad16ef0c054ea297f2741dafcd976
+P e2f9919e34c70761e4e275eeffca8ccf9159223c
+R 6ce4351ec9908162cf69cba24dd464d6
 U drh
-Z 284a9c0bc53e79a17d5b080e8200faff
+Z fde490c34eba36f3f6bb820fe63440a5
