@@ -1,5 +1,5 @@
-C Fix\sthe\s--help\soutput\son\sfuzzcheck\sso\sthat\sit\sfix\sin\san\s80-character\swindow.
-D 2016-08-03T13:40:54.644
+C Fix\sa\stypo\sin\sa\scomment\sin\sbtree.c.\s\s\sNo\schanges\sto\scode.
+D 2016-08-03T14:51:16.394
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 3340e479e5221f06c3d61726f8f7efff885e4233
@@ -327,7 +327,7 @@ F src/auth.c 5c8e0f37f785f935f589496801edd19840485853
 F src/backup.c 6df65fdd569c901a418887a1a76f82ec35044556
 F src/bitvec.c 3ee4c8b2c94ed3a7377256e18199e6ff5cf33f63
 F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
-F src/btree.c 6a42efa461cf3a0c33e8755e9d236371ac80d1b3
+F src/btree.c 2551bd3ecb8b8988fb8b23aabadfb214dbc38e46
 F src/btree.h 075c45707c0f8f8af118f739f36df8098a08b7da
 F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
 F src/build.c d1fdfd7ab8f5447e494ef15825973bf0719527c6
@@ -1509,7 +1509,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e2f9919e34c70761e4e275eeffca8ccf9159223c
-R 6ce4351ec9908162cf69cba24dd464d6
+P b91444b5db8465f09d112455e722c888b3f94329
+R aa712e9e7089879865bbb38d4c2c515d
 U drh
-Z fde490c34eba36f3f6bb820fe63440a5
+Z 2b4f8b48b03032bd1efbc47f9457218f

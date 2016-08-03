@@ -6385,7 +6385,7 @@ static void insertCell(
 
 /*
 ** A CellArray object contains a cache of pointers and sizes for a
-** consecutive sequence of cells that might be held multiple pages.
+** consecutive sequence of cells that might be held on multiple pages.
 */
 typedef struct CellArray CellArray;
 struct CellArray {
