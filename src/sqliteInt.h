@@ -4006,10 +4006,12 @@ int sqlite3ExprCheckIN(Parse*, Expr*);
 
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
 void sqlite3AnalyzeFunctions(void);
-int sqlite3Stat4ProbeSetValue(Parse*,Index*,UnpackedRecord**,Expr*,u8,int,int*);
+int sqlite3Stat4ProbeSetValue(
+    Parse*,Index*,UnpackedRecord**,Expr*,int,int,int*);
 int sqlite3Stat4ValueFromExpr(Parse*, Expr*, u8, sqlite3_value**);
 void sqlite3Stat4ProbeFree(UnpackedRecord*);
 int sqlite3Stat4Column(sqlite3*, const void*, int, int, sqlite3_value**);
+char sqlite3IndexColumnAffinity(sqlite3*, Index*, int);
 #endif
 
 /*
@@ -4269,5 +4271,6 @@ int sqlite3DbstatRegister(sqlite3*);
 
 int sqlite3ExprVectorSize(Expr *pExpr);
 int sqlite3ExprIsVector(Expr *pExpr);
+Expr *sqlite3ExprVectorField(Expr*, int);
 
 #endif /* SQLITEINT_H */

@@ -340,7 +340,7 @@ int sqlite3ExprVectorSize(Expr *pExpr){
 ** pointer to the i'th returned column value. Otherwise, return a copy 
 ** of the first argument.
 */
-static Expr *exprVectorField(Expr *pVector, int i){
+Expr *sqlite3ExprVectorField(Expr *pVector, int i){
   assert( i<sqlite3ExprVectorSize(pVector) );
   if( sqlite3ExprIsVector(pVector) ){
     if( pVector->op==TK_SELECT ){
@@ -2025,7 +2025,7 @@ int sqlite3FindInIndex(
       ** comparison is the same as the affinity of each column. If
       ** it not, it is not possible to use any index.  */
       for(i=0; i<nExpr && affinity_ok; i++){
-        Expr *pLhs = exprVectorField(pX->pLeft, i);
+        Expr *pLhs = sqlite3ExprVectorField(pX->pLeft, i);
         int iCol = pEList->a[i].pExpr->iColumn;
         char idxaff = pTab->aCol[iCol].affinity;
         char cmpaff = sqlite3CompareAffinity(pLhs, idxaff);
@@ -2051,7 +2051,7 @@ int sqlite3FindInIndex(
         }
 
         for(i=0; i<nExpr; i++){
-          Expr *pLhs = exprVectorField(pX->pLeft, i);
+          Expr *pLhs = sqlite3ExprVectorField(pX->pLeft, i);
           Expr *pRhs = pEList->a[i].pExpr;
           CollSeq *pReq = sqlite3BinaryCompareCollSeq(pParse, pLhs, pRhs);
           int j;
@@ -2156,7 +2156,7 @@ static char *exprINAffinity(Parse *pParse, Expr *pExpr){
   if( zRet ){
     int i;
     for(i=0; i<nVal; i++){
-      Expr *pA = exprVectorField(pLeft, i);
+      Expr *pA = sqlite3ExprVectorField(pLeft, i);
       char a = sqlite3ExprAffinity(pA);
       if( pSelect ){
         zRet[i] = sqlite3CompareAffinity(pSelect->pEList->a[i].pExpr, a);
@@ -2308,7 +2308,7 @@ int sqlite3CodeSubselect(
           assert( pEList->nExpr>0 );
           assert( sqlite3KeyInfoIsWriteable(pKeyInfo) );
           for(i=0; i<nVal; i++){
-            Expr *p = (nVal>1) ? exprVectorField(pLeft, i) : pLeft;
+            Expr *p = (nVal>1) ? sqlite3ExprVectorField(pLeft, i) : pLeft;
             pKeyInfo->aColl[i] = sqlite3BinaryCompareCollSeq(
                 pParse, p, pEList->a[i].pExpr
             );
@@ -2540,7 +2540,7 @@ static void sqlite3ExprCodeIN(
     }
   }else{
     for(i=0; i<nVector; i++){
-      Expr *pLhs = exprVectorField(pLeft, i);
+      Expr *pLhs = sqlite3ExprVectorField(pLeft, i);
       sqlite3ExprCode(pParse, pLhs, r1+aiMap[i]);
     }
   }
@@ -2599,7 +2599,7 @@ static void sqlite3ExprCodeIN(
     ** completely empty, or NULL otherwise.  */
     if( destIfNull==destIfFalse ){
       for(i=0; i<nVector; i++){
-        Expr *p = exprVectorField(pExpr->pLeft, i);
+        Expr *p = sqlite3ExprVectorField(pExpr->pLeft, i);
         if( sqlite3ExprCanBeNull(p) ){
           sqlite3VdbeAddOp2(v, OP_IsNull, r1+aiMap[i], destIfNull);
         }
@@ -2638,7 +2638,7 @@ static void sqlite3ExprCodeIN(
           Expr *p;
           CollSeq *pColl;
           int r2 = sqlite3GetTempReg(pParse);
-          p = exprVectorField(pLeft, i);
+          p = sqlite3ExprVectorField(pLeft, i);
           pColl = sqlite3ExprCollSeq(pParse, p);
 
           sqlite3VdbeAddOp3(v, OP_Column, iIdx, i, r2);
@@ -2656,7 +2656,7 @@ static void sqlite3ExprCodeIN(
         ** result is 1.  */
         sqlite3VdbeJumpHere(v, addr);
         for(i=0; i<nVector; i++){
-          Expr *p = exprVectorField(pExpr->pLeft, i);
+          Expr *p = sqlite3ExprVectorField(pExpr->pLeft, i);
           if( sqlite3ExprCanBeNull(p) ){
             sqlite3VdbeAddOp2(v, OP_IsNull, r1+aiMap[i], destIfNull);
           }

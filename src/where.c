@@ -1207,7 +1207,7 @@ static LogEst whereRangeAdjust(WhereTerm *pTerm, LogEst nNew){
 /*
 ** Return the affinity for a single column of an index.
 */
-static char sqlite3IndexColumnAffinity(sqlite3 *db, Index *pIdx, int iCol){
+char sqlite3IndexColumnAffinity(sqlite3 *db, Index *pIdx, int iCol){
   assert( iCol>=0 && iCol<pIdx->nColumn );
   if( !pIdx->zColAff ){
     if( sqlite3IndexAffinityStr(db, pIdx)==0 ) return SQLITE_AFF_BLOB;
@@ -1384,7 +1384,8 @@ static int whereRangeScanEst(
     if( nEq==pBuilder->nRecValid ){
       UnpackedRecord *pRec = pBuilder->pRec;
       tRowcnt a[2];
-      u8 aff;
+      int nBtm = pLoop->u.btree.nBtm;
+      int nTop = pLoop->u.btree.nTop;
 
       /* Variable iLower will be set to the estimate of the number of rows in 
       ** the index that are less than the lower bound of the range query. The
@@ -1414,8 +1415,6 @@ static int whereRangeScanEst(
         testcase( pRec->nField!=pBuilder->nRecValid );
         pRec->nField = pBuilder->nRecValid;
       }
-      aff = sqlite3IndexColumnAffinity(pParse->db, p, nEq);
-      assert( nEq!=p->nKeyCol || aff==SQLITE_AFF_INTEGER );
       /* Determine iLower and iUpper using ($P) only. */
       if( nEq==0 ){
         iLower = 0;
@@ -1434,17 +1433,20 @@ static int whereRangeScanEst(
       if( p->aSortOrder[nEq] ){
         /* The roles of pLower and pUpper are swapped for a DESC index */
         SWAP(WhereTerm*, pLower, pUpper);
+        SWAP(int, nBtm, nTop);
       }
 
       /* If possible, improve on the iLower estimate using ($P:$L). */
       if( pLower ){
-        int bOk;                    /* True if value is extracted from pExpr */
+        int n;                    /* Values extracted from pExpr */
         Expr *pExpr = pLower->pExpr->pRight;
-        rc = sqlite3Stat4ProbeSetValue(pParse, p, &pRec, pExpr, aff, nEq, &bOk);
-        if( rc==SQLITE_OK && bOk ){
+        rc = sqlite3Stat4ProbeSetValue(pParse, p, &pRec, pExpr, nBtm, nEq, &n);
+        if( rc==SQLITE_OK && n ){
           tRowcnt iNew;
+          u16 mask = WO_GT|WO_LE;
+          if( sqlite3ExprVectorSize(pExpr)>n ) mask = (WO_LE|WO_LT);
           iLwrIdx = whereKeyStats(pParse, p, pRec, 0, a);
-          iNew = a[0] + ((pLower->eOperator & (WO_GT|WO_LE)) ? a[1] : 0);
+          iNew = a[0] + ((pLower->eOperator & mask) ? a[1] : 0);
           if( iNew>iLower ) iLower = iNew;
           nOut--;
           pLower = 0;
@@ -1453,13 +1455,15 @@ static int whereRangeScanEst(
 
       /* If possible, improve on the iUpper estimate using ($P:$U). */
       if( pUpper ){
-        int bOk;                    /* True if value is extracted from pExpr */
+        int n;                    /* Values extracted from pExpr */
         Expr *pExpr = pUpper->pExpr->pRight;
-        rc = sqlite3Stat4ProbeSetValue(pParse, p, &pRec, pExpr, aff, nEq, &bOk);
-        if( rc==SQLITE_OK && bOk ){
+        rc = sqlite3Stat4ProbeSetValue(pParse, p, &pRec, pExpr, nTop, nEq, &n);
+        if( rc==SQLITE_OK && n ){
           tRowcnt iNew;
+          u16 mask = WO_GT|WO_LE;
+          if( sqlite3ExprVectorSize(pExpr)>n ) mask = (WO_LE|WO_LT);
           iUprIdx = whereKeyStats(pParse, p, pRec, 1, a);
-          iNew = a[0] + ((pUpper->eOperator & (WO_GT|WO_LE)) ? a[1] : 0);
+          iNew = a[0] + ((pUpper->eOperator & mask) ? a[1] : 0);
           if( iNew<iUpper ) iUpper = iNew;
           nOut--;
           pUpper = 0;
@@ -1549,7 +1553,6 @@ static int whereEqualScanEst(
   Index *p = pBuilder->pNew->u.btree.pIndex;
   int nEq = pBuilder->pNew->u.btree.nEq;
   UnpackedRecord *pRec = pBuilder->pRec;
-  u8 aff;                   /* Column affinity */
   int rc;                   /* Subfunction return code */
   tRowcnt a[2];             /* Statistics */
   int bOk;
@@ -1573,8 +1576,7 @@ static int whereEqualScanEst(
     return SQLITE_OK;
   }
 
-  aff = sqlite3IndexColumnAffinity(pParse->db, p, nEq-1);
-  rc = sqlite3Stat4ProbeSetValue(pParse, p, &pRec, pExpr, aff, nEq-1, &bOk);
+  rc = sqlite3Stat4ProbeSetValue(pParse, p, &pRec, pExpr, 1, nEq-1, &bOk);
   pBuilder->pRec = pRec;
   if( rc!=SQLITE_OK ) return rc;
   if( bOk==0 ) return SQLITE_NOTFOUND;
