@@ -1,5 +1,5 @@
-C Fix\sstat4-based\scost\sestimates\sfor\svector\srange\sconstraints.
-D 2016-08-03T16:14:33.444
+C Fix\sanother\sproblem\sinvolving\svector\srange\sconstraints\sand\smixed\sASC/DESC\sindexes.
+D 2016-08-03T16:39:04.109
 F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 3340e479e5221f06c3d61726f8f7efff885e4233
@@ -463,7 +463,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 02eeecc265f6ffd0597378f5d8ae9070b62a406a
 F src/wal.h 6dd221ed384afdc204bc61e25c23ef7fd5a511f2
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
-F src/where.c 21095414c4bf8d5fdf05f3be790bf8b65e370f94
+F src/where.c 8bd54861755e2ca54bc36b0dbc655834f363c5ec
 F src/whereInt.h 14dd243e13b81cbb0a66063d38b70f93a7d6e613
 F src/wherecode.c c2392fa30bcb0c555a8ae402d646b357ca428ad6
 F src/whereexpr.c 4a8cefc7c122132ac9f3ed125c61629a0e3de094
@@ -1021,7 +1021,7 @@ F test/rowid.test 5b7509f384f4f6fae1af3c8c104c8ca299fea18d
 F test/rowvalue.test 56b34d31d91340a6e922e753b798880170cc1aa7
 F test/rowvalue2.test 8d5dfe75b8f4d1868a2f91f0356f20d36cba64ff
 F test/rowvalue3.test dbe935260851b197dfbbbcb0ac2a15cb5f324fd4
-F test/rowvalue4.test 86a04529ab1da3879d6ef56defe15446e4575b3d
+F test/rowvalue4.test b902e053544469e06148f504962abf9afb28be65
 F test/rowvaluefault.test 7b16485e3f2b371f3e3d05455b8ded6d0c090244
 F test/rtree.test 0c8d9dd458d6824e59683c19ab2ffa9ef946f798
 F test/run-wordcount.sh 891e89c4c2d16e629cd45951d4ed899ad12afc09
@@ -1514,7 +1514,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e496b2d63984311e6ae117677e6c2417ae24b6bc
-R 2ab02159e20122e5dc19c46ffdea23b5
+P 18af74abc8ceae47ab9fbee3e3e5bb37db8fcba5
+R 411ee4bf09cf9ee92d07e741a8c6b68c
 U dan
-Z 1b607e01edb5341321c1446f2f3437dc
+Z eb44e2dff5400ed92495955ac9fc17ab

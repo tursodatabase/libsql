@@ -95,6 +95,7 @@ foreach {nm idx} {
   idx7 { CREATE INDEX t2abc ON t2(a DESC, b DESC) }
   idx8 { CREATE INDEX t2abc ON t2(c, b, a); }
   idx9 { CREATE INDEX t2d ON t2(d); }
+  idx10 { CREATE INDEX t2abc ON t2(a DESC, b, c DESC); }
 } {
   drop_all_indexes
   execsql $idx
@@ -113,6 +114,9 @@ foreach {nm idx} {
       {1 2 3 4 5 6 7 8 9 10 11 12 13}
 
     10 "(a, b, c) = (SELECT a, b, c FROM t2 WHERE d=14)" 14
+
+    11 "a = 2 AND (b, c) > (2, 2)" {15 16 17 18}
+    12 "a = 2 AND (b, c) < (3, 3) AND (b, c) > (1, 1)" {11 12 13 14 15 16 17}
   } {
     set result [db eval "SELECT d FROM t2 WHERE $where"]
     do_test 2.1.$nm.$tn { lsort -integer $result } $res

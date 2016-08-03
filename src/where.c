@@ -2234,7 +2234,7 @@ int whereRangeVectorLen(
     if( pLhs->op!=TK_COLUMN 
      || pLhs->iTable!=iCur 
      || pLhs->iColumn!=pIdx->aiColumn[i+nEq] 
-     || pIdx->aSortOrder[i]!=pIdx->aSortOrder[0]
+     || pIdx->aSortOrder[i+nEq]!=pIdx->aSortOrder[nEq]
     ){
       break;
     }
