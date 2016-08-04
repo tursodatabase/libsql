@@ -19,8 +19,6 @@
 #define SQLITE3EXT_H
 #include "sqlite3.h"
 
-typedef struct sqlite3_api_routines sqlite3_api_routines;
-
 /*
 ** The following structure holds pointers to all of the SQLite API
 ** routines.
@@ -285,6 +283,16 @@ struct sqlite3_api_routines {
   int (*trace_v2)(sqlite3*,unsigned,int(*)(unsigned,void*,void*,void*),void*);
   char *(*expanded_sql)(sqlite3_stmt*);
 };
+
+/*
+** This is the function signature used for all extension entry points.  It
+** is also defined in the file "loadext.c".
+*/
+typedef int (*sqlite3_loadext_entry)(
+  sqlite3 *db,                       /* Handle to the database. */
+  char **pzErrMsg,                   /* Used to set error string on failure. */
+  const sqlite3_api_routines *pThunk /* Extension API function pointers. */
+);
 
 /*
 ** The following macros redefine the API routines so that they are

@@ -112,7 +112,6 @@ foreach hdr {
    pragma.h
    rtree.h
    sqlite3session.h
-   sqlite3ext.h
    sqlite3.h
    sqlite3ext.h
    sqlite3rbu.h
@@ -233,7 +232,7 @@ proc copy_file {filename} {
           if {[lsearch -exact $cdecllist $funcname] >= 0} {
             append line SQLITE_CDECL
           } else {
-            append line SQLITE_STDCALL
+            append line SQLITE_APICALL
           }
           append line " " $funcname $rest
           puts $out $line

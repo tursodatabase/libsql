@@ -947,7 +947,10 @@ int sqlite3VtabBegin(sqlite3 *db, VTable *pVTab){
       if( rc==SQLITE_OK ){
         int iSvpt = db->nStatement + db->nSavepoint;
         addToVTrans(db, pVTab);
-        if( iSvpt ) rc = sqlite3VtabSavepoint(db, SAVEPOINT_BEGIN, iSvpt-1);
+        if( iSvpt && pModule->xSavepoint ){
+          pVTab->iSavepoint = iSvpt;
+          rc = pModule->xSavepoint(pVTab->pVtab, iSvpt-1);
+        }
       }
     }
   }

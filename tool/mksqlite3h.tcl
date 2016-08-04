@@ -21,6 +21,8 @@
 #      formatted as an integer (e.g. "3006017").
 #   5) Replaces the string --SOURCE-ID-- with the date and time and sha1 
 #      hash of the fossil-scm manifest for the source tree.
+#   6) Adds the SQLITE_CALLBACK calling convention macro in front of all
+#      callback declarations.
 #
 # This script outputs to stdout.
 #
@@ -120,11 +122,14 @@ foreach file $filelist {
         if {[lsearch -exact $cdecllist $funcname] >= 0} {
           append line SQLITE_CDECL
         } else {
-          append line SQLITE_STDCALL
+          append line SQLITE_APICALL
         }
         append line " " $funcname $rest
       }
     }
+    set line [string map [list (*sqlite3_syscall_ptr) \
+        "(SQLITE_SYSAPI *sqlite3_syscall_ptr)"] $line]
+    regsub {\(\*} $line {(SQLITE_CALLBACK *} line
     puts $line
   }
   close $in
