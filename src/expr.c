@@ -2943,6 +2943,11 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       assert( !ExprHasProperty(pExpr, EP_IntValue) );
       zId = pExpr->u.zToken;
       pDef = sqlite3FindFunction(db, zId, nFarg, enc, 0);
+#ifdef SQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
+      if( pDef==0 && pParse->explain ){
+        pDef = sqlite3FindFunction(db, "unknown", nFarg, enc, 0);
+      }
+#endif
       if( pDef==0 || pDef->xFinalize!=0 ){
         sqlite3ErrorMsg(pParse, "unknown function: %s()", zId);
         break;
