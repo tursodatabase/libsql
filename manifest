@@ -1,8 +1,8 @@
-C Make\ssure\sthe\sORDER\sBY\sLIMIT\soptimization\sis\snot\sapplied\sif\sthe\sinner-most\nloop\scan\sonly\shave\sa\ssingle\siteration\sand\sis\shence\snot\sreally\sa\sloop.
-D 2016-08-04T09:09:44.760
-F Makefile.in 6c20d44f72d4564f11652b26291a214c8367e5db
+C Add\sthe\sexperimental\sSQLITE_ENABLE_UNKNOWN_SQL_FUNCTION\scompile-time\soption.\nWhen\senabled,\sthe\s"unknown\sfunction"\serror\sis\ssuppressed\sfor\sEXPLAIN\sand\na\sno-op\sfunction\snamed\s"unknown()"\sis\ssubstituted.\s\sThis\sfacilitiates\susing\nthe\scommand-line\sshell\sto\sanalyze\squeries\sfrom\sapplications\sthat\scontain\nmany\sapplication-defined\sfunctions\sthat\sare\snot\snormally\savailable\sto\sthe\nshell.
+D 2016-08-04T12:35:17.002
+F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 3340e479e5221f06c3d61726f8f7efff885e4233
+F Makefile.msc 817e65faf9ad66a8d462e5b5e645be600213efb8
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION cb29eb11e493dd85b3eeec4053c03949bf98478e
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -308,7 +308,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk e9d66f1b1c4874221d12d940be3ce5f397c10741
+F main.mk 1883ecab643b136e8ab3fdc33785e6ea8b5ceb46
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -337,10 +337,10 @@ F src/ctime.c e77f3dc297b4b65c96da78b4ae4272fdfae863d7
 F src/date.c 95c9a8d00767e7221a8e9a31f4e913fc8029bf6b
 F src/dbstat.c 4f6f7f52b49beb9636ffbd517cfe44a402ba4ad0
 F src/delete.c 4aba4214a377ce8ddde2d2e609777bcc8235200f
-F src/expr.c fbc17c717a80b5b61158ea8f25b5af6f8cad66f8
+F src/expr.c 9c5eca8602f6c496e8d4eefefe2aae3d831dd510
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c bc4145347595b7770f9a598cff1c848302cf5413
-F src/func.c 61a4114cf7004f10c542cfabbab9f2bcb9033045
+F src/func.c 29cc9acb170ec1387b9f63eb52cd85f8de96c771
 F src/global.c c45ea22aff29334f6a9ec549235ac3357c970015
 F src/hash.c 55b5fb474100cee0b901edaf203e26c970940f36
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
@@ -381,7 +381,7 @@ F src/pragma.h 64c78a648751b9f4f297276c4eb7507b14b4628c
 F src/prepare.c 22df6171aec1d86904ed2ad30c2348a5748aa04e
 F src/printf.c a5f0ca08ddede803c241266abb46356ec748ded1
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
-F src/resolve.c cca3aa77b95706df5d635a2141a4d1de60ae6598
+F src/resolve.c 0392c6686586b1d4dac9a4106959f03ddd70e9aa
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c f3c6e9065fb34f6a23af27ec7f1f717ffbfc2ee4
 F src/shell.c 79dda477be6c96eba6e952a934957ad36f87acc7
@@ -1509,7 +1509,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 722c12816347ee9fce7a090cfebef2c5841e7445
-R fd11dfb179ebaeb65493cf49055d4419
+P 13e3bd3de6b434b6182ef36be108d7ee0be8ca53
+Q +4ada023ca075628fdafc3bc4520239b9789cff29
+R f1859801c403afb60ddad5424514cd57
 U drh
-Z c8d986adc7b509414bb3aed9ed932c87
+Z 688b79edff11cfb7031a01d005983417
