@@ -77,6 +77,28 @@ do_test limit2-120.3 {
   expr {$fast_count < 0.02*$slow_count}
 } {1}
 
+# Bug report against the new ORDER BY LIMIT optimization just prior to
+# release.  (Unreleased so there is no ticket).
+#
+# Make sure the optimization is not applied if the inner loop can only
+# provide a single row of output.
+#
+do_execsql_test limit2-200 {
+  CREATE TABLE t200(a, b);
+  WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<1000)
+    INSERT INTO t200(a,b) SELECT x, x FROM c;
+  CREATE TABLE t201(x INTEGER PRIMARY KEY, y);
+  INSERT INTO t201(x,y) VALUES(2,12345);
+
+  SELECT *, '|' FROM t200, t201 WHERE x=b ORDER BY y LIMIT 3;
+} {2 2 2 12345 |}
+do_execsql_test limit2-210 {
+  SELECT *, '|' FROM t200 LEFT JOIN t201 ON x=b ORDER BY y LIMIT 3;
+} {1 1 {} {} | 3 3 {} {} | 4 4 {} {} |}
+
+
+
+
 
 
 finish_test
