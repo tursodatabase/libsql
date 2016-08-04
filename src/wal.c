@@ -2738,6 +2738,8 @@ int sqlite3WalFrames(
   i64 iOffset;                    /* Next byte to write in WAL file */
   WalWriter w;                    /* The writer */
 
+  START_DEBUG_TIMER;
+
   assert( pList );
   assert( pWal->writeLock );
 
@@ -2904,6 +2906,10 @@ int sqlite3WalFrames(
       walIndexWriteHdr(pWal);
       pWal->iCallback = iFrame;
     }
+  }
+
+  END_DEBUG_TIMER( DEBUG_TIMER_BIG_TIMEOUT ) {
+    sqlite3_log(SQLITE_NOTICE, "slow sqlite3WalFrames: %llu uS", iDebugTimer);
   }
 
   WALTRACE(("WAL%p: frame write %s\n", pWal, rc ? "failed" : "ok"));

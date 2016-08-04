@@ -6106,6 +6106,8 @@ int sqlite3PagerCommitPhaseOne(
 ){
   int rc = SQLITE_OK;             /* Return code */
 
+  START_DEBUG_TIMER;
+
   assert( pPager->eState==PAGER_WRITER_LOCKED
        || pPager->eState==PAGER_WRITER_CACHEMOD
        || pPager->eState==PAGER_WRITER_DBMOD
@@ -6253,6 +6255,10 @@ commit_phase_one_exit:
   if( rc==SQLITE_OK && !pagerUseWal(pPager) ){
     pPager->eState = PAGER_WRITER_FINISHED;
   }
+  END_DEBUG_TIMER( DEBUG_TIMER_BIG_TIMEOUT ) {
+    sqlite3_log(SQLITE_NOTICE, 
+        "slow sqlite3PagerCommitPhaseOne: %llu uS", iDebugTimer);
+  }
   return rc;
 }
 
@@ -6274,6 +6280,7 @@ commit_phase_one_exit:
 */
 int sqlite3PagerCommitPhaseTwo(Pager *pPager){
   int rc = SQLITE_OK;                  /* Return code */
+  START_DEBUG_TIMER;
 
   /* This routine should not be called if a prior error has occurred.
   ** But if (due to a coding error elsewhere in the system) it does get
@@ -6308,6 +6315,10 @@ int sqlite3PagerCommitPhaseTwo(Pager *pPager){
 
   PAGERTRACE(("COMMIT %d\n", PAGERID(pPager)));
   rc = pager_end_transaction(pPager, pPager->setMaster, 1);
+  END_DEBUG_TIMER( DEBUG_TIMER_BIG_TIMEOUT ){
+    sqlite3_log(SQLITE_NOTICE, 
+        "slow sqlite3PagerCommitPhaseTwo: %llu uS", iDebugTimer);
+  }
   return pager_error(pPager, rc);
 }
 

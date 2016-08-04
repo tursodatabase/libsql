@@ -3815,4 +3815,21 @@ int sqlite3ThreadCreate(SQLiteThread**,void*(*)(void*),void*);
 int sqlite3ThreadJoin(SQLiteThread*, void**);
 #endif
 
+#define START_DEBUG_TIMER \
+  sqlite3_uint64 iDebugTimerStart, iDebugTimer;                     \
+  struct timeval debug_timer_var;                                   \
+  gettimeofday(&debug_timer_var, 0);                                \
+  iDebugTimerStart = 1000000*(sqlite3_uint64)debug_timer_var.tv_sec \
+                     + debug_timer_var.tv_usec;
+
+#define END_DEBUG_TIMER(nDebugUsec) \
+  gettimeofday(&debug_timer_var, 0);                                \
+  iDebugTimer = 1000000*(sqlite3_uint64)debug_timer_var.tv_sec      \
+                +debug_timer_var.tv_usec-iDebugTimerStart;          \
+  if( iDebugTimer>=nDebugUsec )
+
+
+#define DEBUG_TIMER_BIG_TIMEOUT  10000
+#define DEBUG_TIMER_SMALL_TIMEOUT 1000
+
 #endif /* _SQLITEINT_H_ */

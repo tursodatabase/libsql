@@ -219,12 +219,10 @@ static void pthreadMutexFree(sqlite3_mutex *p){
 ** more than once, the behavior is undefined.
 */
 static void pthreadMutexEnter(sqlite3_mutex *p){
-  struct timeval x;
-  sqlite3_uint64 iBegin, iEnd;
+
+  START_DEBUG_TIMER;
   assert( p->id==SQLITE_MUTEX_RECURSIVE || pthreadMutexNotheld(p) );
 
-  gettimeofday(&x, 0);
-  iBegin = 1000000*(sqlite3_uint64)x.tv_sec + x.tv_usec;
 #ifdef SQLITE_HOMEGROWN_RECURSIVE_MUTEX
   /* If recursive mutexes are not available, then we have to grow
   ** our own.  This implementation assumes that pthread_equal()
@@ -256,16 +254,13 @@ static void pthreadMutexEnter(sqlite3_mutex *p){
   p->owner = pthread_self();
   p->nRef++;
 #endif
-  gettimeofday(&x, 0);
-  iEnd = 1000000*(sqlite3_uint64)x.tv_sec + x.tv_usec;
-  if( iEnd > iBegin+500 ){
+  END_DEBUG_TIMER(500) {
     sqlite3_mutex *pMaster = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER);
     int id = -1;
     if( p>=pMaster && p<=&pMaster[SQLITE_MUTEX_STATIC_APP3-2] ){
       id = (int)(p - pMaster) + 2;
     }
-    sqlite3_log(SQLITE_NOTICE, "slow mutex: %llu uS on %d/%p",
-                iEnd - iBegin, id, p);
+    sqlite3_log(SQLITE_NOTICE, "slow mutex: %llu uS on %d/%p",iDebugTimer,id,p);
   }
 #endif
 

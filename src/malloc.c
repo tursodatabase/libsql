@@ -296,6 +296,7 @@ static int mallocWithAlarm(int n, void **pp){
 */
 void *sqlite3Malloc(u64 n){
   void *p;
+  START_DEBUG_TIMER
   if( n==0 || n>=0x7fffff00 ){
     /* A memory allocation of a number of bytes which is near the maximum
     ** signed integer value might cause an integer overflow inside of the
@@ -311,6 +312,10 @@ void *sqlite3Malloc(u64 n){
     p = sqlite3GlobalConfig.m.xMalloc((int)n);
   }
   assert( EIGHT_BYTE_ALIGNMENT(p) );  /* IMP: R-11148-40995 */
+  END_DEBUG_TIMER( DEBUG_TIMER_SMALL_TIMEOUT ){
+    sqlite3_log(SQLITE_NOTICE, 
+        "slow sqlite3Malloc(%llu): %llu uS", n, iDebugTimer);
+  }
   return p;
 }
 
@@ -475,6 +480,7 @@ sqlite3_uint64 sqlite3_msize(void *p){
 ** Free memory previously obtained from sqlite3Malloc().
 */
 void sqlite3_free(void *p){
+  START_DEBUG_TIMER;
   if( p==0 ) return;  /* IMP: R-49053-54554 */
   assert( sqlite3MemdebugHasType(p, MEMTYPE_HEAP) );
   assert( sqlite3MemdebugNoType(p, ~MEMTYPE_HEAP) );
@@ -486,6 +492,9 @@ void sqlite3_free(void *p){
     sqlite3_mutex_leave(mem0.mutex);
   }else{
     sqlite3GlobalConfig.m.xFree(p);
+  }
+  END_DEBUG_TIMER( DEBUG_TIMER_SMALL_TIMEOUT ){
+    sqlite3_log(SQLITE_NOTICE, "slow sqlite3_free(ptr): %llu uS", iDebugTimer);
   }
 }
 

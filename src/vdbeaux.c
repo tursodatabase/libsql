@@ -1905,6 +1905,7 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
   int nTrans = 0;  /* Number of databases with an active write-transaction */
   int rc = SQLITE_OK;
   int needXcommit = 0;
+  START_DEBUG_TIMER;
 
 #ifdef SQLITE_OMIT_VIRTUALTABLE
   /* With this option, sqlite3VtabSync() is defined to be simply 
@@ -2134,6 +2135,9 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
   }
 #endif
 
+  END_DEBUG_TIMER( DEBUG_TIMER_BIG_TIMEOUT ) {
+    sqlite3_log(SQLITE_NOTICE, "slow vdbeCommit: %llu uS", iDebugTimer);
+  }
   return rc;
 }
 
