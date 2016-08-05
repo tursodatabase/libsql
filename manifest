@@ -1,5 +1,5 @@
-C Undo\scommit\s[f250166bb].\sIt\sis\srequired\sto\shandle\sIO\sand\sother\serrors\sthat\soccur\swithin\sa\sVACUUM\sof\sa\sZipvfs\sdatabase.
-D 2016-08-05T16:16:26.624
+C Have\sthe\sTEA\spackage\sbuild\swithout\sSQLITE_OMIT_DEPRECATED.\sAs\sit\suses\srecently\sdeprecated\sinterfaces\ssqlite3_profile()\sand\ssqlite3_trace().
+D 2016-08-05T20:54:45.205
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -18,7 +18,7 @@ F autoconf/configure.ac cacf2616abf6e4a569bde2ef365c143caeec40bc
 F autoconf/tea/Makefile.in b438a7020446c8a8156e8d97c8914a04833da6fd
 F autoconf/tea/README 3e9a3c060f29a44344ab50aec506f4db903fb873
 F autoconf/tea/aclocal.m4 52c47aac44ce0ddb1f918b6993e8beb8eee88f43
-F autoconf/tea/configure.ac 93d43c79e936fb16556e22498177d7e8571efa04
+F autoconf/tea/configure.ac 8aa16e3f0a5ca7959d4af198f46934ec187d395f
 F autoconf/tea/doc/sqlite3.n e1fe45d4f5286ee3d0ccc877aca2a0def488e9bb
 F autoconf/tea/license.terms 13bd403c9610fd2b76ece0ab50c4c5eda933d523
 F autoconf/tea/pkgIndex.tcl.in 3ef61715cf1c7bdcff56947ffadb26bc991ca39d
@@ -1509,7 +1509,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0f57effa3642e66a863f32cc7fba86d167084af3
-R 7173910e7a14fcd3861af608a7447a5a
+P ae72513af37cd806a6d94aaa7c47a740e119d3b1
+R 40e4a12455b009781006c09c1ead4d48
 U dan
-Z 5568e465afb61eecd4219a0cc50c6e2e
+Z 73dc717651276499651d605bdf75c66a
