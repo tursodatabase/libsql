@@ -3037,6 +3037,13 @@ void sqlite3CreateIndex(
     if( zName==0 ){
       goto exit_create_index;
     }
+
+    /* Automatic index names generated from within sqlite3_declare_vtab()
+    ** must have names that are distinct from normal automatic index names.
+    ** The following statement converts "sqlite3_autoindex..." into
+    ** "sqlite3_butoindex..." in order to make the names distinct.
+    ** The "vtab_err.test" test demonstrates the need of this statement. */
+    if( IN_DECLARE_VTAB ) zName[7]++;
   }
 
   /* Check for authorization to create an index.
