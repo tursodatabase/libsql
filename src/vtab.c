@@ -807,7 +807,7 @@ int sqlite3VtabCallDestroy(sqlite3 *db, int iDb, const char *zTab){
   Table *pTab;
 
   pTab = sqlite3FindTable(db, zTab, db->aDb[iDb].zName);
-  if( ALWAYS(pTab!=0 && pTab->pVTable!=0) ){
+  if( pTab!=0 && ALWAYS(pTab->pVTable!=0) ){
     VTable *p;
     int (*xDestroy)(sqlite3_vtab *);
     for(p=pTab->pVTable; p; p=p->pNext){

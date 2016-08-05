@@ -1,5 +1,5 @@
-C Fix\sa\svery\sobscure\sproblem\sfollowing\sOOM\sin\ssqlite3_declare_vtab().
-D 2016-08-05T14:35:47.568
+C Remove\san\sincorrect\sALWAYS()\sstatement\sand\sadd\sa\stest\scase\sto\sshow\swhen\nthe\scondition\sis\ssometimes\sfalse.
+D 2016-08-05T15:34:42.171
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -458,7 +458,7 @@ F src/vdbeblob.c 83d2d266383157b02e2b809350bb197e89d7895b
 F src/vdbemem.c 1ecaa5ee0caff07255f25d04e8dc88befb6f88d1
 F src/vdbesort.c 91fda3909326860382b0ca8aa251e609c6a9d62c
 F src/vdbetrace.c 41963d5376f0349842b5fc4aaaaacd7d9cdc0834
-F src/vtab.c 6fece06fdd50eb2b0673e37e627ce6710e4af5be
+F src/vtab.c 6b3cfaff7e4397739d6b48511e777ca58c6d06d4
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 02eeecc265f6ffd0597378f5d8ae9070b62a406a
 F src/wal.h 6dd221ed384afdc204bc61e25c23ef7fd5a511f2
@@ -1104,7 +1104,7 @@ F test/spellfix3.test 0f9efaaa502a0e0a09848028518a6fb096c8ad33
 F test/sqldiff1.test 28cd737cf1b0078b1ec1bbf425e674c47785835e
 F test/sqllimits1.test a74ee2a3740b9f9c2437c246d8fb77354862a142
 F test/sqllog.test 6af6cb0b09f4e44e1917e06ce85be7670302517a
-F test/stat.test ab95d28503d0f6d98ffd8ce204643c9da090ebf1
+F test/stat.test f8f1279ffffabe6df825723af18cc6e0ae70a893
 F test/statfault.test f525a7bf633e50afd027700e9a486090684b1ac1
 F test/stmt.test 64844332db69cf1a735fcb3e11548557fc95392f
 F test/subquery.test d7268d193dd33d5505df965399d3a594e76ae13f
@@ -1509,7 +1509,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9adda385267d1a0ecff259b42a284913668441a2
-R 36d01c6d4e5d55fe676a3ca2e553d6b8
+P 68eac74874d0646369bef3650c6cb271cca62ab4
+R 8d5524e3947549ded2372df1ac699079
 U drh
-Z 0d50083da402e96d80dd6dfcbaebaad9
+Z 5feee06a3e8967a54a24fbeb2c1f3aea
