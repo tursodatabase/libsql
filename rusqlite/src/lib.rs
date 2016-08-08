@@ -50,6 +50,7 @@
 //!     }
 //! }
 //! ```
+#![allow(unknown_lints)]
 
 extern crate libc;
 extern crate libsqlite3_sys as ffi;
@@ -975,6 +976,7 @@ pub struct Rows<'stmt> {
     stmt: Option<&'stmt Statement<'stmt>>,
 }
 
+#[allow(should_implement_trait)]
 impl<'stmt> Rows<'stmt> {
     fn new(stmt: &'stmt Statement<'stmt>) -> Rows<'stmt> {
         Rows { stmt: Some(stmt) }

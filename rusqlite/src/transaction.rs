@@ -401,7 +401,6 @@ impl Connection {
 }
 
 #[cfg(test)]
-#[cfg_attr(feature="clippy", allow(similar_names))]
 mod test {
     use Connection;
     use super::DropBehavior;

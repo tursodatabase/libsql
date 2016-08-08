@@ -103,7 +103,6 @@ pub enum Value {
 }
 
 #[cfg(test)]
-#[cfg_attr(feature="clippy", allow(similar_names))]
 mod test {
     extern crate time;
 
@@ -182,7 +181,6 @@ mod test {
     }
 
     #[test]
-    #[cfg_attr(feature="clippy", allow(cyclomatic_complexity))]
     fn test_mismatched_types() {
         fn is_invalid_column_type(err: Error) -> bool {
             match err {
