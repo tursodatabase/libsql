@@ -205,7 +205,7 @@ ifcapable stat4 {
     0 0 0 {SEARCH TABLE c1 USING INDEX c1ab (a=?)}
   }
   do_eqp_test 3.2.5 { SELECT * FROM c1 WHERE a=1 AND (c, d)>(1, 'o') } {
-    0 0 0 {SEARCH TABLE c1 USING INDEX c1cd (c>?)}
+    0 0 0 {SEARCH TABLE c1 USING INDEX c1cd ((c,d)>(?,?))}
   }
   do_eqp_test 3.2.6 { SELECT * FROM c1 WHERE a=1 AND (c, +b)>(1, 'c') } {
     0 0 0 {SEARCH TABLE c1 USING INDEX c1ab (a=?)}
@@ -237,6 +237,40 @@ do_eqp_test 5.1 {
   1 0 0 {SCAN TABLE d1}
   0 0 0 {EXECUTE LIST SUBQUERY 2} 
   2 0 0 {SCAN TABLE d1}
+}
+
+do_execsql_test 6.0 {
+  CREATE TABLE e1(a, b, c, d, e);
+  CREATE INDEX e1ab ON e1(a, b);
+  CREATE INDEX e1cde ON e1(c, d, e);
+}
+
+do_eqp_test 6.1 {
+  SELECT * FROM e1 WHERE (a, b) > (?, ?)
+} {
+  0 0 0 {SEARCH TABLE e1 USING INDEX e1ab ((a,b)>(?,?))}
+}
+do_eqp_test 6.2 {
+  SELECT * FROM e1 WHERE (a, b) < (?, ?)
+} {
+  0 0 0 {SEARCH TABLE e1 USING INDEX e1ab ((a,b)<(?,?))}
+}
+do_eqp_test 6.3 {
+  SELECT * FROM e1 WHERE c = ? AND (d, e) > (?, ?)
+} {
+  0 0 0 {SEARCH TABLE e1 USING INDEX e1cde (c=? AND (d,e)>(?,?))}
+}
+do_eqp_test 6.4 {
+  SELECT * FROM e1 WHERE c = ? AND (d, e) < (?, ?)
+} {
+  0 0 0 {SEARCH TABLE e1 USING INDEX e1cde (c=? AND (d,e)<(?,?))}
+}
+
+do_eqp_test 6.5 {
+  SELECT * FROM e1 WHERE (d, e) BETWEEN (?, ?) AND (?, ?) AND c = ?
+} {
+  0 0 0 
+  {SEARCH TABLE e1 USING INDEX e1cde (c=? AND (d,e)>(?,?) AND (d,e)<(?,?))}
 }
 
 

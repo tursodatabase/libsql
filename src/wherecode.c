@@ -21,6 +21,17 @@
 #include "whereInt.h"
 
 #ifndef SQLITE_OMIT_EXPLAIN
+
+/*
+** Return the name of the i-th column of the pIdx index.
+*/
+static const char *explainIndexColumnName(Index *pIdx, int i){
+  i = pIdx->aiColumn[i];
+  if( i==XN_EXPR ) return "<expr>";
+  if( i==XN_ROWID ) return "rowid";
+  return pIdx->pTable->aCol[i].zName;
+}
+
 /*
 ** This routine is a helper for explainIndexRange() below
 **
@@ -31,24 +42,32 @@
 */
 static void explainAppendTerm(
   StrAccum *pStr,             /* The text expression being built */
-  int iTerm,                  /* Index of this term.  First is zero */
-  const char *zColumn,        /* Name of the column */
+  Index *pIdx,                /* Index to read column names from */
+  int nTerm,                  /* Number of terms */
+  int iTerm,                  /* Zero-based index of first term. */
+  int bAnd,                   /* Non-zero to append " AND " */
   const char *zOp             /* Name of the operator */
 ){
-  if( iTerm ) sqlite3StrAccumAppend(pStr, " AND ", 5);
-  sqlite3StrAccumAppendAll(pStr, zColumn);
-  sqlite3StrAccumAppend(pStr, zOp, 1);
-  sqlite3StrAccumAppend(pStr, "?", 1);
-}
+  int i;
 
-/*
-** Return the name of the i-th column of the pIdx index.
-*/
-static const char *explainIndexColumnName(Index *pIdx, int i){
-  i = pIdx->aiColumn[i];
-  if( i==XN_EXPR ) return "<expr>";
-  if( i==XN_ROWID ) return "rowid";
-  return pIdx->pTable->aCol[i].zName;
+  assert( nTerm>=1 );
+  if( bAnd ) sqlite3StrAccumAppend(pStr, " AND ", 5);
+
+  if( nTerm>1 ) sqlite3StrAccumAppend(pStr, "(", 1);
+  for(i=0; i<nTerm; i++){
+    if( i ) sqlite3StrAccumAppend(pStr, ",", 1);
+    sqlite3StrAccumAppendAll(pStr, explainIndexColumnName(pIdx, iTerm+i));
+  }
+  if( nTerm>1 ) sqlite3StrAccumAppend(pStr, ")", 1);
+
+  sqlite3StrAccumAppend(pStr, zOp, 1);
+
+  if( nTerm>1 ) sqlite3StrAccumAppend(pStr, "(", 1);
+  for(i=0; i<nTerm; i++){
+    if( i ) sqlite3StrAccumAppend(pStr, ",", 1);
+    sqlite3StrAccumAppend(pStr, "?", 1);
+  }
+  if( nTerm>1 ) sqlite3StrAccumAppend(pStr, ")", 1);
 }
 
 /*
@@ -81,12 +100,11 @@ static void explainIndexRange(StrAccum *pStr, WhereLoop *pLoop){
 
   j = i;
   if( pLoop->wsFlags&WHERE_BTM_LIMIT ){
-    const char *z = explainIndexColumnName(pIndex, i);
-    explainAppendTerm(pStr, i++, z, ">");
+    explainAppendTerm(pStr, pIndex, pLoop->u.btree.nBtm, j, i, ">");
+    i = 1;
   }
   if( pLoop->wsFlags&WHERE_TOP_LIMIT ){
-    const char *z = explainIndexColumnName(pIndex, j);
-    explainAppendTerm(pStr, i, z, "<");
+    explainAppendTerm(pStr, pIndex, pLoop->u.btree.nTop, j, i, "<");
   }
   sqlite3StrAccumAppend(pStr, ")", 1);
 }
