@@ -318,7 +318,7 @@ struct Fts5ExtensionApi {
 ** behaviour. The structure methods are expected to function as follows:
 **
 ** xCreate:
-**   This function is used to allocate and inititalize a tokenizer instance.
+**   This function is used to allocate and initialize a tokenizer instance.
 **   A tokenizer instance is required to actually tokenize text.
 **
 **   The first argument passed to this function is a copy of the (void*)
@@ -577,4 +577,3 @@ struct fts5_api {
 #endif
 
 #endif /* _FTS5_H */
-
