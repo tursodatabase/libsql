@@ -1960,7 +1960,7 @@ struct sqlite3_mem_methods {
 ** C-API [sqlite3_load_extension()] and the SQL function [load_extension()].
 ** There should be two additional arguments.
 ** When the first argument to this interface is 1, then only the C-API is
-** enabled and the SQL function remains disabled.  If the first argment to
+** enabled and the SQL function remains disabled.  If the first argument to
 ** this interface is 0, then both the C-API and the SQL function are disabled.
 ** If the first argument is -1, then no changes are made to state of either the
 ** C-API or the SQL function.
@@ -5538,7 +5538,7 @@ SQLITE_DEPRECATED void sqlite3_soft_heap_limit(int N);
 ** column exists.  ^The sqlite3_table_column_metadata() interface returns
 ** SQLITE_ERROR and if the specified column does not exist.
 ** ^If the column-name parameter to sqlite3_table_column_metadata() is a
-** NULL pointer, then this routine simply checks for the existance of the
+** NULL pointer, then this routine simply checks for the existence of the
 ** table and returns SQLITE_OK if the table exists and SQLITE_ERROR if it
 ** does not.
 **
@@ -8133,7 +8133,7 @@ int sqlite3_db_cacheflush(sqlite3*);
 ** ^The second parameter to the preupdate callback is a pointer to
 ** the [database connection] that registered the preupdate hook.
 ** ^The third parameter to the preupdate callback is one of the constants
-** [SQLITE_INSERT], [SQLITE_DELETE], or [SQLITE_UPDATE] to indentify the
+** [SQLITE_INSERT], [SQLITE_DELETE], or [SQLITE_UPDATE] to identify the
 ** kind of update operation that is about to occur.
 ** ^(The fourth parameter to the preupdate callback is the name of the
 ** database within the database connection that is being modified.  This

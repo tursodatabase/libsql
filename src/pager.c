@@ -7195,6 +7195,17 @@ sqlite3_backup **sqlite3PagerBackupPtr(Pager *pPager){
   return &pPager->pBackup;
 }
 
+#ifndef SQLITE_OMIT_VACUUM
+/*
+** Unless this is an in-memory or temporary database, clear the pager cache.
+*/
+void sqlite3PagerClearCache(Pager *pPager){
+  assert( MEMDB==0 || pPager->tempFile );
+  if( pPager->tempFile==0 ) pager_reset(pPager);
+}
+#endif
+
+
 #ifndef SQLITE_OMIT_WAL
 /*
 ** This function is called when the user invokes "PRAGMA wal_checkpoint",
@@ -7430,6 +7441,5 @@ int sqlite3PagerWalFramesize(Pager *pPager){
   return sqlite3WalFramesize(pPager->pWal);
 }
 #endif
-
 
 #endif /* SQLITE_OMIT_DISKIO */
