@@ -826,7 +826,8 @@ static sqlite3_index_info *allocateIndexInfo(
   WhereClause *pWC,
   Bitmask mUnusable,              /* Ignore terms with these prereqs */
   struct SrcList_item *pSrc,
-  ExprList *pOrderBy
+  ExprList *pOrderBy,
+  u16 *pmNoOmit                   /* Mask of terms not to omit */
 ){
   int i, j;
   int nTerm;
@@ -836,6 +837,7 @@ static sqlite3_index_info *allocateIndexInfo(
   WhereTerm *pTerm;
   int nOrderBy;
   sqlite3_index_info *pIdxInfo;
+  u16 mNoOmit = 0;
 
   /* Count the number of possible WHERE clause constraints referring
   ** to this virtual table */
@@ -924,6 +926,15 @@ static sqlite3_index_info *allocateIndexInfo(
     assert( WO_GE==SQLITE_INDEX_CONSTRAINT_GE );
     assert( WO_MATCH==SQLITE_INDEX_CONSTRAINT_MATCH );
     assert( pTerm->eOperator & (WO_IN|WO_EQ|WO_LT|WO_LE|WO_GT|WO_GE|WO_MATCH) );
+
+    if( op & (WO_LT|WO_LE|WO_GT|WO_GE)
+     && sqlite3ExprIsVector(pTerm->pExpr->pRight) 
+    ){
+      if( i<16 ) mNoOmit |= (1 << i);
+      if( op==WO_LT ) pIdxCons[j].op = WO_LE;
+      if( op==WO_GT ) pIdxCons[j].op = WO_GE;
+    }
+
     j++;
   }
   for(i=0; i<nOrderBy; i++){
@@ -932,6 +943,7 @@ static sqlite3_index_info *allocateIndexInfo(
     pIdxOrderBy[i].desc = pOrderBy->a[i].sortOrder;
   }
 
+  *pmNoOmit = mNoOmit;
   return pIdxInfo;
 }
 
@@ -2943,6 +2955,7 @@ static int whereLoopAddVirtualOne(
   Bitmask mUsable,                /* Mask of usable tables */
   u16 mExclude,                   /* Exclude terms using these operators */
   sqlite3_index_info *pIdxInfo,   /* Populated object for xBestIndex */
+  u16 mNoOmit,                    /* Do not omit these constraints */
   int *pbIn                       /* OUT: True if plan uses an IN(...) op */
 ){
   WhereClause *pWC = pBuilder->pWC;
@@ -3031,6 +3044,7 @@ static int whereLoopAddVirtualOne(
       }
     }
   }
+  pNew->u.vtab.omitMask &= ~mNoOmit;
 
   pNew->nLTerm = mxTerm+1;
   assert( pNew->nLTerm<=pNew->nLSlot );
@@ -3104,6 +3118,7 @@ static int whereLoopAddVirtual(
   int bIn;                     /* True if plan uses IN(...) operator */
   WhereLoop *pNew;
   Bitmask mBest;               /* Tables used by best possible plan */
+  u16 mNoOmit;
 
   assert( (mPrereq & mUnusable)==0 );
   pWInfo = pBuilder->pWInfo;
@@ -3112,7 +3127,8 @@ static int whereLoopAddVirtual(
   pNew = pBuilder->pNew;
   pSrc = &pWInfo->pTabList->a[pNew->iTab];
   assert( IsVirtual(pSrc->pTab) );
-  p = allocateIndexInfo(pParse, pWC, mUnusable, pSrc, pBuilder->pOrderBy);
+  p = allocateIndexInfo(pParse, pWC, mUnusable, pSrc, pBuilder->pOrderBy, 
+      &mNoOmit);
   if( p==0 ) return SQLITE_NOMEM_BKPT;
   pNew->rSetup = 0;
   pNew->wsFlags = WHERE_VIRTUALTABLE;
@@ -3126,7 +3142,7 @@ static int whereLoopAddVirtual(
 
   /* First call xBestIndex() with all constraints usable. */
   WHERETRACE(0x40, ("  VirtualOne: all usable\n"));
-  rc = whereLoopAddVirtualOne(pBuilder, mPrereq, ALLBITS, 0, p, &bIn);
+  rc = whereLoopAddVirtualOne(pBuilder, mPrereq, ALLBITS, 0, p, mNoOmit, &bIn);
 
   /* If the call to xBestIndex() with all terms enabled produced a plan
   ** that does not require any source tables (IOW: a plan with mBest==0),
@@ -3143,7 +3159,8 @@ static int whereLoopAddVirtual(
     ** xBestIndex again, this time with IN(...) terms disabled. */
     if( bIn ){
       WHERETRACE(0x40, ("  VirtualOne: all usable w/o IN\n"));
-      rc = whereLoopAddVirtualOne(pBuilder, mPrereq, ALLBITS, WO_IN, p, &bIn);
+      rc = whereLoopAddVirtualOne(
+          pBuilder, mPrereq, ALLBITS, WO_IN, p, mNoOmit, &bIn);
       assert( bIn==0 );
       mBestNoIn = pNew->prereq & ~mPrereq;
       if( mBestNoIn==0 ){
@@ -3169,7 +3186,8 @@ static int whereLoopAddVirtual(
       if( mNext==mBest || mNext==mBestNoIn ) continue;
       WHERETRACE(0x40, ("  VirtualOne: mPrev=%04llx mNext=%04llx\n",
                        (sqlite3_uint64)mPrev, (sqlite3_uint64)mNext));
-      rc = whereLoopAddVirtualOne(pBuilder, mPrereq, mNext|mPrereq, 0, p, &bIn);
+      rc = whereLoopAddVirtualOne(
+          pBuilder, mPrereq, mNext|mPrereq, 0, p, mNoOmit, &bIn);
       if( pNew->prereq==mPrereq ){
         seenZero = 1;
         if( bIn==0 ) seenZeroNoIN = 1;
@@ -3181,7 +3199,8 @@ static int whereLoopAddVirtual(
     ** usable), make a call here with all source tables disabled */
     if( rc==SQLITE_OK && seenZero==0 ){
       WHERETRACE(0x40, ("  VirtualOne: all disabled\n"));
-      rc = whereLoopAddVirtualOne(pBuilder, mPrereq, mPrereq, 0, p, &bIn);
+      rc = whereLoopAddVirtualOne(
+          pBuilder, mPrereq, mPrereq, 0, p, mNoOmit, &bIn);
       if( bIn==0 ) seenZeroNoIN = 1;
     }
 
@@ -3190,7 +3209,8 @@ static int whereLoopAddVirtual(
     ** operator, make a final call to obtain one here.  */
     if( rc==SQLITE_OK && seenZeroNoIN==0 ){
       WHERETRACE(0x40, ("  VirtualOne: all disabled and w/o IN\n"));
-      rc = whereLoopAddVirtualOne(pBuilder, mPrereq, mPrereq, WO_IN, p, &bIn);
+      rc = whereLoopAddVirtualOne(
+          pBuilder, mPrereq, mPrereq, WO_IN, p, mNoOmit, &bIn);
     }
   }
 

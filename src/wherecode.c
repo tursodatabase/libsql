@@ -1099,7 +1099,12 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         codeEqualityTerm(pParse, pTerm, pLevel, j, bRev, iTarget);
         addrNotFound = pLevel->addrNxt;
       }else{
-        sqlite3ExprCode(pParse, pTerm->pExpr->pRight, iTarget);
+        Expr *pRight = pTerm->pExpr->pRight;
+        if( pRight->op==TK_SELECT_COLUMN ){
+          codeEqualityTerm(pParse, pTerm, pLevel, j, bRev, iTarget);
+        }else{
+          codeExprOrVector(pParse, pRight, iTarget, 1);
+        }
       }
     }
     sqlite3VdbeAddOp2(v, OP_Integer, pLoop->u.vtab.idxNum, iReg);

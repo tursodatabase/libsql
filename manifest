@@ -1,5 +1,5 @@
-C Fix\sthe\sEXPLAIN\sQUERY\sPLAN\soutput\sfor\srow\svalue\srange\sconstaints\sthat\suse\san\sindex.
-D 2016-08-08T18:42:08.741
+C Fix\ssome\scases\sinvolving\srow\svalues\sand\svirtual\stables.
+D 2016-08-08T20:15:41.766
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -463,9 +463,9 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 02eeecc265f6ffd0597378f5d8ae9070b62a406a
 F src/wal.h 6dd221ed384afdc204bc61e25c23ef7fd5a511f2
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
-F src/where.c f60310d9fa2dd275698f3a768d2c63917353f22d
+F src/where.c 457a2c8cd94a1dbe8d2e5113f6078f2e6b9067d5
 F src/whereInt.h 14dd243e13b81cbb0a66063d38b70f93a7d6e613
-F src/wherecode.c c24645572eba538c04c5ff8b8f6e9c0278107563
+F src/wherecode.c 92202261a6e41f897a595417c5b0c75c8acf713d
 F src/whereexpr.c 4a8cefc7c122132ac9f3ed125c61629a0e3de094
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1514,7 +1514,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0e927a7e0250a65fd8e97b322cd69e93fadd13f0
-R c87cf26a8b83e76d6d485dba242f3437
+P bb60651163553c5e46bf7b2805490570cea647b8
+R 874f48b6764b2a2fd58ccae5d488cbf6
 U dan
-Z eb833a77a96d41ac0d9eabbd9e7d8788
+Z 25cd4c4731603d2ae10da74afc2be17b
