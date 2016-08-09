@@ -1,5 +1,5 @@
-C Minor\supdate\sto\sthe\sway\sfts5\scolumn\sfilters\sare\sparsed.
-D 2016-08-09T19:48:37.555
+C Fix\sharmless\scompiler\swarning.
+D 2016-08-09T21:01:52.333
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -98,7 +98,7 @@ F ext/fts3/unicode/mkunicode.tcl 2debed3f582d77b3fdd0b8830880250021571fd8
 F ext/fts3/unicode/parseunicode.tcl da577d1384810fb4e2b209bf3313074353193e95
 F ext/fts5/extract_api_docs.tcl a36e54ec777172ddd3f9a88daf593b00848368e0
 F ext/fts5/fts5.h 62f3e33ceeb9a428db139f9c012186b371da1cc7
-F ext/fts5/fts5Int.h 17d72c55d6e0d23cd6a3936312a5fd8cddcbd962
+F ext/fts5/fts5Int.h b2eda36e0f224365c8e23dc8f559311834f1c13f
 F ext/fts5/fts5_aux.c daa57fb45216491814520bbb587e97bf81ced458
 F ext/fts5/fts5_buffer.c 4c1502d4c956cd092c89ce4480867f9d8bf325cd
 F ext/fts5/fts5_config.c 5af9c360e99669d29f06492c370892394aba0857
@@ -1510,7 +1510,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e517545650631d1e8a7ee63c6646a8b183a0a894
-R da20bee26e7c2a9f4b1bf24d21e0ff86
-U dan
-Z a6c95b8c36e7e9259f54069259e2a828
+P 14864f2b8470fe98dbd17f59963bf1be8d4962f9
+R 3c3d32515aedcf447480f55f3548a5e0
+U drh
+Z 4951f1f9d58f89a54689c68080c6d7fb
