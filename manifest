@@ -1,5 +1,5 @@
-C Add\sextra\slogging\scalls\sto\sthis\sbranch.
-D 2016-08-04T14:08:06.316
+C Refocus\sthe\stimer\son\sthe\spager_end_transaction()\sroutine.
+D 2016-08-09T01:21:16.687
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -195,7 +195,7 @@ F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c de741e66e5ddc1598d904d7289239696e40ed994
 F src/main.c 8207ece1b4005b1efab55d1505d8ffb45bfced05
-F src/malloc.c 218f15781b9a92d6433c02d5097ea6c5656ae953
+F src/malloc.c 3c3ac67969612493d435e14b6832793209afd2ec
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c faf615aafd8be74a71494dfa027c113ea5c6615f
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
@@ -215,7 +215,7 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c e7157dfa077c06aaeecdfc4dcb6b0a489ef5c57a
 F src/os_win.c a019caaae2bcbbc0cc4c39af6e7d7e43d8426053
 F src/os_win.h 09e751b20bbc107ffbd46e13555dc73576d88e21
-F src/pager.c 5099402a6038e79e7823be3c193b89d4381671d1
+F src/pager.c 0d363201cc4b0f1a27f0f70f29a1e88bb5e5a31a
 F src/pager.h d1eee3c3f741be247ce6d82752a178515fc8578b
 F src/parse.y 5dfead8aed90cb0c7c1115898ee2266804daff45
 F src/pcache.c 4121a0571c18581ee9f82f086d5e2030051ebd6a
@@ -232,7 +232,7 @@ F src/shell.c 282f8f5278e0c78eb442217531172ec9e1538796
 F src/sqlite.h.in 4a5e5158c189d2bcd45c7c4607c2c0eb6d25c153
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
-F src/sqliteInt.h 2821f805b8d3f5dca402ab5b02b45af333c09c16
+F src/sqliteInt.h 6422d7d1e8bd346607877cf66fbd40d7f48ded56
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 961d5926e5a8fda611d385ec22c226b8635cd1cb
 F src/table.c 2e99ef7ef16187e17033d9398dc962ce22dab5cb
@@ -292,7 +292,7 @@ F src/vacuum.c 59f03f92bcff57faa6a8ca256eb29ccddfb0614a
 F src/vdbe.c 5ee15a66ce07e0482b92aa29e4dd0c5827a22d79
 F src/vdbe.h 09f5b4e3719fa454f252322b1cdab5cf1f361327
 F src/vdbeInt.h e2a060a55ee18a6ab973353a5e2ec7ee569bf787
-F src/vdbeapi.c c56dc899791cd5708479c01fceae0b27b2643520
+F src/vdbeapi.c 4fc644896359dc095481b80336888eb3aad7c4aa
 F src/vdbeaux.c e755d2a3d873a8211689219b385e7c86243ad24d
 F src/vdbeblob.c 848238dc73e93e48432991bb5651bf87d865eca4
 F src/vdbemem.c 31d8eabb0cd78bfeab4e5124c7363c3e9e54db9f
@@ -1207,7 +1207,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 92b9fead353d50eb41f5ab7e3a887dd4e5c3aa80
-R 97d498068ede0b7b0205f624119fd57b
-U dan
-Z 74a7e885da65e56edb7ed4dbb325dbed
+P 491f1ef36e60aa65d71444b604064e3505cabd18
+R e29c5144299bab68bda60556e6dafd92
+U drh
+Z 44d6270f2b449a107198473da9531b56

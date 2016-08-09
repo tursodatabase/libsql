@@ -3815,6 +3815,7 @@ int sqlite3ThreadCreate(SQLiteThread**,void*(*)(void*),void*);
 int sqlite3ThreadJoin(SQLiteThread*, void**);
 #endif
 
+#include <sys/time.h>
 #define START_DEBUG_TIMER \
   sqlite3_uint64 iDebugTimerStart, iDebugTimer;                     \
   struct timeval debug_timer_var;                                   \

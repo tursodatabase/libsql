@@ -546,8 +546,8 @@ end_of_step:
     rc = sqlite3VdbeTransferError(p);
   }
   END_DEBUG_TIMER( DEBUG_TIMER_BIG_TIMEOUT ) {
-    sqlite3_log(SQLITE_NOTICE, "slow sqlite3Step(%s): %llu uS", 
-        (p->zSql ? p->zSql : ""), iDebugTimer
+    sqlite3_log(SQLITE_NOTICE, "slow (%llu) sqlite3Step(%s)", 
+        iDebugTimer, (p->zSql ? p->zSql : "")
     );
   }
   return (rc&db->errMask);
