@@ -3829,8 +3829,11 @@ int sqlite3ThreadJoin(SQLiteThread*, void**);
                 +debug_timer_var.tv_usec-iDebugTimerStart;          \
   if( iDebugTimer>=nDebugUsec )
 
-
-#define DEBUG_TIMER_BIG_TIMEOUT  10000
-#define DEBUG_TIMER_SMALL_TIMEOUT 1000
+#ifndef DEBUG_TIMER_BIG_TIMEOUT
+# define DEBUG_TIMER_BIG_TIMEOUT  10000
+#endif
+#ifndef DEBUG_TIMER_SMALL_TIMEOUT
+# define DEBUG_TIMER_SMALL_TIMEOUT 1000
+#endif
 
 #endif /* _SQLITEINT_H_ */

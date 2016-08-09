@@ -1,5 +1,5 @@
-C Add\sa\sdebug\stimer\sto\spcache1Truncate().\sChange\sthe\sformatting\sof\ssome\sother\smessages\sto\smake\sthem\seasier\sto\sread.
-D 2016-08-09T11:23:22.870
+C Add\sanother\stimer\son\spcache1TruncateUnsafe().
+D 2016-08-09T11:44:06.664
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -220,7 +220,7 @@ F src/pager.h d1eee3c3f741be247ce6d82752a178515fc8578b
 F src/parse.y 5dfead8aed90cb0c7c1115898ee2266804daff45
 F src/pcache.c 4121a0571c18581ee9f82f086d5e2030051ebd6a
 F src/pcache.h 9b559127b83f84ff76d735c8262f04853be0c59a
-F src/pcache1.c 12c155d0cd5360bfd8f79468fca573eb1e0d27b9
+F src/pcache1.c eeb485caa40fda583d21977a7b5fbd3852904d7f
 F src/pragma.c 3f3e959390a10c0131676f0e307acce372777e0f
 F src/prepare.c 6ef0cf2f9274982988ed6b7cab1be23147e94196
 F src/printf.c 090fac0f779c93c8a95089a125339686648835e4
@@ -232,7 +232,7 @@ F src/shell.c 282f8f5278e0c78eb442217531172ec9e1538796
 F src/sqlite.h.in 4a5e5158c189d2bcd45c7c4607c2c0eb6d25c153
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
-F src/sqliteInt.h 6422d7d1e8bd346607877cf66fbd40d7f48ded56
+F src/sqliteInt.h c5d6a3bd2f2514ed08e3b842201b211ad3795d25
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 961d5926e5a8fda611d385ec22c226b8635cd1cb
 F src/table.c 2e99ef7ef16187e17033d9398dc962ce22dab5cb
@@ -1207,7 +1207,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9d4eb6e4750939c48aff267000bd69a73e1dc364
-R 99ef2da78b11da155f4c9630100d5493
-U dan
-Z f7da3a3db4e7fac2b6c81a30d5eadd3b
+P 7d0af4b53c440f4628f0cecdc40459335630fa4e
+R 67c20c387fa50de70cf8667debaaa82a
+U drh
+Z 63fcef9cf7b93ddf816f7412e9d532bf

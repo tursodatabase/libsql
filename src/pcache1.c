@@ -500,6 +500,8 @@ static void pcache1TruncateUnsafe(
 ){
   TESTONLY( unsigned int nPage = 0; )  /* To assert pCache->nPage is correct */
   unsigned int h;
+  START_DEBUG_TIMER;
+  int nFree = 0;
   assert( sqlite3_mutex_held(pCache->pGroup->mutex) );
   for(h=0; h<pCache->nHash; h++){
     PgHdr1 **pp = &pCache->apHash[h]; 
@@ -507,6 +509,7 @@ static void pcache1TruncateUnsafe(
     while( (pPage = *pp)!=0 ){
       if( pPage->iKey>=iLimit ){
         pCache->nPage--;
+        nFree++;
         *pp = pPage->pNext;
         if( !pPage->isPinned ) pcache1PinPage(pPage);
         pcache1FreePage(pPage);
@@ -517,6 +520,10 @@ static void pcache1TruncateUnsafe(
     }
   }
   assert( pCache->nPage==nPage );
+  END_DEBUG_TIMER( DEBUG_TIMER_BIG_TIMEOUT ){
+    sqlite3_log(SQLITE_NOTICE, "slow pcache1TruncateUnsafe() %lld nFree=%d",
+                iDebugTimer, nFree);
+  }
 }
 
 /******************************************************************************/
