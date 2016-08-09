@@ -927,12 +927,17 @@ static void pcache1Rekey(
 */
 static void pcache1Truncate(sqlite3_pcache *p, unsigned int iLimit){
   PCache1 *pCache = (PCache1 *)p;
+  START_DEBUG_TIMER;
   pcache1EnterMutex(pCache->pGroup);
   if( iLimit<=pCache->iMaxKey ){
     pcache1TruncateUnsafe(pCache, iLimit);
     pCache->iMaxKey = iLimit-1;
   }
   pcache1LeaveMutex(pCache->pGroup);
+  END_DEBUG_TIMER( DEBUG_TIMER_BIG_TIMEOUT ){
+    sqlite3_log(SQLITE_NOTICE, "slow pcache1Truncate(%d): %llu uS",
+      (int)iLimit, iDebugTimer);
+  }
 }
 
 /*

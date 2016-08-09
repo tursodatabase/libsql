@@ -1975,7 +1975,7 @@ static int pager_end_transaction(Pager *pPager, int hasMaster, int bCommit){
     }
   }
   END_DEBUG_TIMER( DEBUG_TIMER_BIG_TIMEOUT ){
-    sqlite3_log(SQLITE_NOTICE, "slow pager_end_transaction(1): %llu %d", 
+    sqlite3_log(SQLITE_NOTICE, "slow pager_end_transaction(1): %llu uS wal=%d", 
       iDebugTimer, pagerUseWal(pPager));
     iDebugTimerStart += iDebugTimer;
   }
@@ -1996,13 +1996,13 @@ static int pager_end_transaction(Pager *pPager, int hasMaster, int bCommit){
   pPager->nRec = 0;
   sqlite3PcacheCleanAll(pPager->pPCache);
   END_DEBUG_TIMER( DEBUG_TIMER_BIG_TIMEOUT ){
-    sqlite3_log(SQLITE_NOTICE, "slow pager_end_transaction(2): %llu %d", 
+    sqlite3_log(SQLITE_NOTICE, "slow pager_end_transaction(2): %llu uS wal=%d", 
       iDebugTimer, pagerUseWal(pPager));
     iDebugTimerStart += iDebugTimer;
   }
   sqlite3PcacheTruncate(pPager->pPCache, pPager->dbSize);
   END_DEBUG_TIMER( DEBUG_TIMER_BIG_TIMEOUT ){
-    sqlite3_log(SQLITE_NOTICE, "slow pager_end_transaction(3): %llu %d",
+    sqlite3_log(SQLITE_NOTICE, "slow pager_end_transaction(3): %llu uS wal=%d",
       iDebugTimer, pagerUseWal(pPager));
     iDebugTimerStart += iDebugTimer;
   }
@@ -2025,7 +2025,7 @@ static int pager_end_transaction(Pager *pPager, int hasMaster, int bCommit){
     rc = pager_truncate(pPager, pPager->dbSize);
   }
   END_DEBUG_TIMER( DEBUG_TIMER_BIG_TIMEOUT ){
-    sqlite3_log(SQLITE_NOTICE, "slow pager_end_transaction(4): %llu %d",
+    sqlite3_log(SQLITE_NOTICE, "slow pager_end_transaction(4): %llu uS wal=%d",
       iDebugTimer, pagerUseWal(pPager));
     iDebugTimerStart += iDebugTimer;
   }
@@ -2045,7 +2045,7 @@ static int pager_end_transaction(Pager *pPager, int hasMaster, int bCommit){
   pPager->setMaster = 0;
 
   END_DEBUG_TIMER( DEBUG_TIMER_BIG_TIMEOUT ){
-    sqlite3_log(SQLITE_NOTICE, "slow pager_end_transaction(5): %llu %d",
+    sqlite3_log(SQLITE_NOTICE, "slow pager_end_transaction(5): %llu uS wal=%d",
       iDebugTimer, pagerUseWal(pPager));
   }
   return (rc==SQLITE_OK?rc2:rc);
