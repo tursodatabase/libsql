@@ -1,5 +1,5 @@
-C Fix\ssome\scases\sinvolving\srow\svalues\sand\svirtual\stables.
-D 2016-08-08T20:15:41.766
+C Add\srowvalue5.test,\swhich\sshould\shave\sbeen\spart\sof\sthe\sprevious\scommit\son\sthis\sbranch.
+D 2016-08-09T05:48:40.637
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -1022,6 +1022,7 @@ F test/rowvalue.test 56b34d31d91340a6e922e753b798880170cc1aa7
 F test/rowvalue2.test 8d5dfe75b8f4d1868a2f91f0356f20d36cba64ff
 F test/rowvalue3.test dbe935260851b197dfbbbcb0ac2a15cb5f324fd4
 F test/rowvalue4.test 8d3b26c7ab26314b625cd2b113d782b011b91851
+F test/rowvalue5.test 01c7e0bc4048f30b58e6eb27ecd26e5bd312635e
 F test/rowvaluefault.test 7b16485e3f2b371f3e3d05455b8ded6d0c090244
 F test/rtree.test 0c8d9dd458d6824e59683c19ab2ffa9ef946f798
 F test/run-wordcount.sh 891e89c4c2d16e629cd45951d4ed899ad12afc09
@@ -1514,7 +1515,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bb60651163553c5e46bf7b2805490570cea647b8
-R 874f48b6764b2a2fd58ccae5d488cbf6
+P 156a41f30a0afd9a70e6c26470dcc468a11bd402
+R c38c81cb8ebb8c1f60f796251d669e34
 U dan
-Z 25cd4c4731603d2ae10da74afc2be17b
+Z f2cc02b61092cf3b9735f66f5f90cbf0
