@@ -1,8 +1,8 @@
-C Fix\sharmless\scompiler\swarning.
-D 2016-08-09T21:01:52.333
-F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
+C Prototype\sfor\sthe\sremember(V,PTR)\sextension\sfunction.
+D 2016-08-09T21:08:42.832
+F Makefile.in 6b7b3d1c441dd80a22cf0103061fc0815ca86294
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
+F Makefile.msc 7ec77041ea6d86996c7b9f8ad2cf463e1eb24846
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION cb29eb11e493dd85b3eeec4053c03949bf98478e
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -217,6 +217,7 @@ F ext/misc/json1.c 9799e4252b305edcbe659329eec3ca80ed85f968
 F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
 F ext/misc/percentile.c 92699c8cd7d517ff610e6037e56506f8904dae2e
 F ext/misc/regexp.c a68d25c659bd2d893cd1215667bbf75ecb9dc7d4
+F ext/misc/remember.c 8440f8d0b452c5cdefb62b57135ccd1267aa729d
 F ext/misc/rot13.c 1ac6f95f99b575907b9b09c81a349114cf9be45a
 F ext/misc/scrub.c 1c5bfb8b0cd18b602fcb55755e84abf0023ac2fb
 F ext/misc/series.c e11e534ada797d5b816d7e7a93c022306563ca35
@@ -309,7 +310,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 1883ecab643b136e8ab3fdc33785e6ea8b5ceb46
+F main.mk e9a25e0027df155957ea88ef317a7c80b1372537
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -394,7 +395,7 @@ F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
 F src/tclsqlite.c bdae822f21e229b6daced15938b6343ce44ef454
-F src/test1.c 0a0909cf7962d2359db329c08d15b90b4b6e724f
+F src/test1.c 4276cd840acf0fc5f2b04250c9343b209cc60e1b
 F src/test2.c b7174313e993754303a8b33c43df7c44b46857ab
 F src/test3.c 1339a40be39650ae83894b6578f971dc7f96ea8a
 F src/test4.c 18ec393bb4d0ad1de729f0b94da7267270f3d8e6
@@ -1118,7 +1119,7 @@ F test/symlink.test c9ebe7330d228249e447038276bfc8a7b22f4849
 F test/sync.test 2f84bdbc2b2df1fcb0220575b4b9f8cea94b7529
 F test/syscall.test f59ba4e25f7ba4a4c031026cc2ef8b6e4b4c639c
 F test/sysfault.test c9f2b0d8d677558f74de750c75e12a5454719d04
-F test/tabfunc01.test 50a9fb379f9747fd0d40ea6d8fa3a101361bb537
+F test/tabfunc01.test 8b2ef53caa37854864c89e1e57e8a10efd4f5e43
 F test/table.test b708f3e5fa2542fa51dfab21fc07b36ea445cb2f
 F test/tableapi.test 2674633fa95d80da917571ebdd759a14d9819126
 F test/tableopts.test dba698ba97251017b7c80d738c198d39ab747930
@@ -1510,7 +1511,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 14864f2b8470fe98dbd17f59963bf1be8d4962f9
-R 3c3d32515aedcf447480f55f3548a5e0
+P 9a5a4f6e3bc265fecf79a7f63d14abbf239da636
+R a4aeba273d85b5b6518de32b9203944f
+T *branch * rememberFunc
+T *sym-rememberFunc *
+T -sym-trunk *
 U drh
-Z 4951f1f9d58f89a54689c68080c6d7fb
+Z c510cdb1fe7f1007d6a0bc0b22076879

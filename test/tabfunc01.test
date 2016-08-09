@@ -23,6 +23,7 @@ ifcapable !vtab {
 }
 load_static_extension db series
 load_static_extension db carray
+load_static_extension db remember
 
 do_execsql_test tabfunc01-1.1 {
   SELECT *, '|' FROM generate_series WHERE start=1 AND stop=9 AND step=2;
@@ -172,6 +173,19 @@ do_test tabfunc01-720 {
     SELECT b FROM t600, carray($PTR,5,'int64') WHERE a=value;
   }
 } {(005) (007) (013) (017) (023)}
+do_test tabfunc01-721 {
+  db eval {
+    SELECT remember(123,$PTR);
+    SELECT value FROM carray($PTR,5,'int64');
+  }
+} {123 123 7 13 17 23}
+do_test tabfunc01-722 {
+  set PTR2 [expr {$PTR+16}]
+  db eval {
+    SELECT remember(987,$PTR2);
+    SELECT value FROM carray($PTR,5,'int64');
+  }
+} {987 123 7 987 17 23}
 
 do_test tabfunc01-730 {
   set PTR [doublearray_addr 5.0 7.0 13.0 17.0 23.0]
