@@ -119,18 +119,27 @@ cnearset(A) ::= colset(X) COLON nearset(Y). {
 %destructor colset { sqlite3_free($$); }
 %type colsetlist {Fts5Colset*}
 %destructor colsetlist { sqlite3_free($$); }
+%type minus_opt {int}
 
 colset(A) ::= LCP colsetlist(X) RCP. { A = X; }
+colset(A) ::= MINUS STRING(X). {
+  sqlite3Fts5ParseColsetNegative(pParse, 1);
+  A = sqlite3Fts5ParseColset(pParse, 0, &X);
+}
 colset(A) ::= STRING(X). {
+  sqlite3Fts5ParseColsetNegative(pParse, 0);
   A = sqlite3Fts5ParseColset(pParse, 0, &X);
 }
 
 colsetlist(A) ::= colsetlist(Y) STRING(X). { 
   A = sqlite3Fts5ParseColset(pParse, Y, &X); }
-colsetlist(A) ::= STRING(X). { 
+colsetlist(A) ::= minus_opt(M) STRING(X). { 
+  sqlite3Fts5ParseColsetNegative(pParse, M);
   A = sqlite3Fts5ParseColset(pParse, 0, &X); 
 }
 
+minus_opt(A) ::= MINUS. { A = 1; }
+minus_opt(A) ::= .      { A = 0; }
 
 %type nearset     {Fts5ExprNearset*}
 %type nearphrases {Fts5ExprNearset*}
