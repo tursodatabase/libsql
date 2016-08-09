@@ -124,7 +124,6 @@ struct Fts5Parse {
   char *zErr;
   int rc;
   int nPhrase;                    /* Size of apPhrase array */
-  int bNegativeCollist;           /* Column list being parsed started with - */
   Fts5ExprPhrase **apPhrase;      /* Array of all phrases */
   Fts5ExprNode *pExpr;            /* Result of a successful parse */
 };
@@ -1796,49 +1795,30 @@ static Fts5Colset *fts5ParseColset(
 }
 
 /*
-** The second argument passed to this function may be NULL, or it may be
-** an existing Fts5Colset object. If it is passed NULL, this function
-** returns a pointer to a new Fts5Colset object containing entries for
-** all table columns except column iCol. If an OOM error occurs trying to
-** allocate the Fts5Colset object, an error code is stored in pParse and 
-** NULL returned.
-**
-** If the second argument is not NULL, a copy of it is returned. Before
-** returning, any entry for column iCol is removed. It is not an error
-** if the Fts5Colset object does not contain an entry for column iCol
-** when this function is called.
+** Allocate and return an Fts5Colset object specifying the inverse of
+** the colset passed as the second argument. Free the colset passed
+** as the second argument before returning.
 */
-static Fts5Colset *fts5ParseNegativeColset(
-  Fts5Parse *pParse,              /* Store SQLITE_NOMEM here if required */
-  Fts5Colset *p,                  /* Existing colset object */
-  int iCol                        /* New column to add to colset object */
-){
-  int i;
-  Fts5Colset *pRet = p;
+Fts5Colset *sqlite3Fts5ParseColsetInvert(Fts5Parse *pParse, Fts5Colset *p){
+  Fts5Colset *pRet;
+  int nCol = pParse->pConfig->nCol;
 
-  if( pRet==0 ){
-    int nCol = pParse->pConfig->nCol;
-    pRet = (Fts5Colset*)sqlite3Fts5MallocZero(&pParse->rc,
-        sizeof(Fts5Colset) + sizeof(int)*nCol
-    );
-    if( pRet==0 ) return 0;
-    pRet->nCol = nCol;
+  pRet = (Fts5Colset*)sqlite3Fts5MallocZero(&pParse->rc, 
+      sizeof(Fts5Colset) + sizeof(int)*nCol
+  );
+  if( pRet ){
+    int i;
+    int iOld = 0;
     for(i=0; i<nCol; i++){
-      pRet->aiCol[i] = i;
-    }
-  }
-
-  for(i=0; i<pRet->nCol; i++){
-    if( pRet->aiCol[i]==iCol ){
-      int nByte = sizeof(int)*(pRet->nCol-i-1);
-      if( nByte ){
-        memmove(&pRet->aiCol[i], &pRet->aiCol[i+1], nByte);
+      if( iOld>=p->nCol || p->aiCol[iOld]!=i ){
+        pRet->aiCol[pRet->nCol++] = i;
+      }else{
+        iOld++;
       }
-      pRet->nCol--;
-      break;
     }
   }
 
+  sqlite3_free(p);
   return pRet;
 }
 
@@ -1860,8 +1840,6 @@ Fts5Colset *sqlite3Fts5ParseColset(
     }
     if( iCol==pConfig->nCol ){
       sqlite3Fts5ParseError(pParse, "no such column: %s", z);
-    }else if( pParse->bNegativeCollist ){
-      pRet = fts5ParseNegativeColset(pParse, pColset, iCol);
     }else{
       pRet = fts5ParseColset(pParse, pColset, iCol);
     }
@@ -1874,16 +1852,6 @@ Fts5Colset *sqlite3Fts5ParseColset(
   }
 
   return pRet;
-}
-
-/*
-** Set (bVal==1) or clear (bVal==0) the Fts5Parse.bNegativeCollist flag.
-**
-** The parser calls this function as it begins to parse a colset (Fts5Colset
-** object) with bVal set to 1 if the colset begins with a "-" or 0 otherwise.
-*/
-void sqlite3Fts5ParseColsetNegative(Fts5Parse *pParse, int bVal){
-  pParse->bNegativeCollist = bVal;
 }
 
 void sqlite3Fts5ParseSetColset(
