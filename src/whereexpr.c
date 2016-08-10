@@ -290,7 +290,7 @@ static int isMatchOfColumn(
   Expr *pExpr,                    /* Test this expression */
   unsigned char *peOp2            /* OUT: 0 for MATCH, or else an op2 value */
 ){
-  struct Op2 {
+  static const struct Op2 {
     const char *zOp;
     unsigned char eOp2;
   } aOp[] = {
