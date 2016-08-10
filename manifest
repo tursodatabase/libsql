@@ -1,10 +1,10 @@
-C Improved\scomments\son\sthe\slempar.c\sparser\stemplate.\s\sAdjust\sthe\nYY_SHIFT_USE_DFLT\sconstant\sin\sthe\sLemon-generated\sparser\stables\sso\sas\nto\sguarantee\sthat\sit\sis\salways\sout\sof\srange\sof\sthe\syy_lookahead[]\stable.
-D 2016-08-10T13:30:43.279
+C Increment\sthe\sversion\snumber\sto\s3.15.
+D 2016-08-10T13:34:16.502
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
-F VERSION cb29eb11e493dd85b3eeec4053c03949bf98478e
+F VERSION 25e2e333adeff5965520bc8db999c658898c972d
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
@@ -30,7 +30,7 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 6376abec766e9a0785178b1823b5a587e9f1ccbc
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 35ce04a15ca046262bf9baaa2ced9337708cc653 x
+F configure 3f44893bc0e51c30653e02b0fd4dc2ab585e446a x
 F configure.ac b5d3df43161374f8dffd2e5f4b88fbb51685b975
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html e2118945e5f07ed146b45c9cd2b2dd6eabb8ebf2
@@ -1510,7 +1510,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b07a26df06a2ffb946ff8a1cc7f43eaf701a94b5
-R f8409033fe00bbe724670b3d36a1f97d
+P 83622f3f50030e4d6abafb99d99742928aaf157c
+R d9d741532efbea2110f3ccf4d8076cf7
 U drh
-Z c9080bc44cd5d5b39b4e8d736cb94a4a
+Z 14b0337226a0ad8779ef18ae936fbfbf
