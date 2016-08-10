@@ -637,19 +637,19 @@ static void pcache1TruncateUnsafe(
   assert( sqlite3_mutex_held(pCache->pGroup->mutex) );
   assert( pCache->iMaxKey >= iLimit );
   assert( pCache->nHash > 0 );
-  if( pCache->iMaxKey - iLimit < pCache->nHash/2 ){
+  if( pCache->iMaxKey - iLimit < pCache->nHash ){
     /* If we are just shaving the last few pages off the end of the
     ** cache, then there is no point in scanning the entire hash table.
     ** Only scan those hash slots that might contain pages that need to
     ** be removed. */
-    iStop = iLimit % pCache->nHash;
-    h = pCache->iMaxKey % pCache->nHash;
+    h = iLimit % pCache->nHash;
+    iStop = pCache->iMaxKey % pCache->nHash;
     TESTONLY( nPage = -10; )  /* Disable the pCache->nPage validity check */
   }else{
     /* This is the general case where many pages are being removed.
     ** It is necessary to scan the entire hash table */
-    iStop = 0;
-    h = pCache->nHash - 1;
+    h = pCache->nHash/2;
+    iStop = h - 1;
   }
   for(;;){
     PgHdr1 **pp;
@@ -668,7 +668,7 @@ static void pcache1TruncateUnsafe(
       }
     }
     if( h==iStop ) break;
-    h = h ? h-1 : pCache->nHash - 1;
+    h = (h+1) % pCache->nHash;
   }
   assert( nPage<0 || pCache->nPage==(unsigned)nPage );
 }
