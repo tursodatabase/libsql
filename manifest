@@ -1,5 +1,5 @@
-C Fix\spcache1TruncateUnsafe()\srun\sfaster\sfor\sthe\scase\swhere\siLimit\sis\nvery\sclose\sto\siMaxKey.
-D 2016-08-10T11:50:12.345
+C Improved\scomments\son\sthe\slempar.c\sparser\stemplate.\s\sAdjust\sthe\nYY_SHIFT_USE_DFLT\sconstant\sin\sthe\sLemon-generated\sparser\stables\sso\sas\nto\sguarantee\sthat\sit\sis\salways\sout\sof\srange\sof\sthe\syy_lookahead[]\stable.
+D 2016-08-10T13:30:43.279
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -1437,8 +1437,8 @@ F tool/fuzzershell.c 94019b185caceffc9f7c7b678a6489e42bc2aefa
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
-F tool/lemon.c 09a96bed19955697a5e20c49ad863ec2005815a2
-F tool/lempar.c 321ebbf1c85ab5435434042590eca0616da24b3d
+F tool/lemon.c e3aa9ba3469804d7cae13b5e041aab192b7b381a
+F tool/lempar.c 147e42a5cd83ce38275fde0d07a5df3330cb9b3b
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
 F tool/logest.c 11346aa019e2e77a00902aa7d0cabd27bd2e8cca
@@ -1510,8 +1510,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ba6663beefcc8060e6f3be6ab37c13fdbb08b7de
-Q +9ab53605d562a926c5620cba9dc96a3b812a432f
-R 045183d4dc58e68027bf139105903731
+P b07a26df06a2ffb946ff8a1cc7f43eaf701a94b5
+R f8409033fe00bbe724670b3d36a1f97d
 U drh
-Z 7fb6739dae3ac730e38720df5d5c1de9
+Z c9080bc44cd5d5b39b4e8d736cb94a4a
