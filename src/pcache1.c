@@ -521,8 +521,11 @@ static void pcache1TruncateUnsafe(
   }
   assert( pCache->nPage==nPage );
   END_DEBUG_TIMER( DEBUG_TIMER_BIG_TIMEOUT ){
-    sqlite3_log(SQLITE_NOTICE, "slow pcache1TruncateUnsafe() %lld nFree=%d",
-                iDebugTimer, nFree);
+    sqlite3_log(SQLITE_NOTICE, 
+       "slow pcache1TruncateUnsafe() %lld "
+       " nFree=%d nHash=%d nPage=%d iLimit=%d iMaxKey=%d",
+       iDebugTimer,
+       nFree, pCache->nHash, pCache->nPage, iLimit, pCache->iMaxKey);
   }
 }
 
@@ -934,17 +937,12 @@ static void pcache1Rekey(
 */
 static void pcache1Truncate(sqlite3_pcache *p, unsigned int iLimit){
   PCache1 *pCache = (PCache1 *)p;
-  START_DEBUG_TIMER;
   pcache1EnterMutex(pCache->pGroup);
   if( iLimit<=pCache->iMaxKey ){
     pcache1TruncateUnsafe(pCache, iLimit);
     pCache->iMaxKey = iLimit-1;
   }
   pcache1LeaveMutex(pCache->pGroup);
-  END_DEBUG_TIMER( DEBUG_TIMER_BIG_TIMEOUT ){
-    sqlite3_log(SQLITE_NOTICE, "slow pcache1Truncate(%d): %llu uS",
-      (int)iLimit, iDebugTimer);
-  }
 }
 
 /*

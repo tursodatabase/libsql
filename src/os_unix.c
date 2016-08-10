@@ -4629,12 +4629,8 @@ static void unixShmBarrier(
   sqlite3_file *fd                /* Database file holding the shared memory */
 ){
   UNUSED_PARAMETER(fd);
-#if defined(__GNUC__) && GCC_VERSION>=4001000
-  __sync_synchronize();
-#else
   unixEnterMutex();
   unixLeaveMutex();
-#endif
 }
 
 /*

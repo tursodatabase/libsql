@@ -395,7 +395,6 @@ void sqlite3_result_error_nomem(sqlite3_context *pCtx){
 */
 static int doWalCallbacks(sqlite3 *db){
   int rc = SQLITE_OK;
-  START_DEBUG_TIMER;
 #ifndef SQLITE_OMIT_WAL
   int i;
   for(i=0; i<db->nDb; i++){
@@ -408,9 +407,6 @@ static int doWalCallbacks(sqlite3 *db){
     }
   }
 #endif
-  END_DEBUG_TIMER( DEBUG_TIMER_BIG_TIMEOUT ) {
-    sqlite3_log(SQLITE_NOTICE, "slow doWalCallbacks: %llu uS", iDebugTimer);
-  }
   return rc;
 }
 
@@ -426,7 +422,6 @@ static int doWalCallbacks(sqlite3 *db){
 static int sqlite3Step(Vdbe *p){
   sqlite3 *db;
   int rc;
-  START_DEBUG_TIMER;
 
   assert(p);
   if( p->magic!=VDBE_MAGIC_RUN ){
@@ -544,11 +539,6 @@ end_of_step:
     ** caller. Set the error code in the database handle to the same value.
     */ 
     rc = sqlite3VdbeTransferError(p);
-  }
-  END_DEBUG_TIMER( DEBUG_TIMER_BIG_TIMEOUT ) {
-    sqlite3_log(SQLITE_NOTICE, "slow (%llu) sqlite3Step(%s)", 
-        iDebugTimer, (p->zSql ? p->zSql : "")
-    );
   }
   return (rc&db->errMask);
 }

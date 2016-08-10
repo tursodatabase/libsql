@@ -61,13 +61,9 @@ int sqlite3_memdebug_vfs_oom_test = 1;
 */
 int sqlite3OsClose(sqlite3_file *pId){
   int rc = SQLITE_OK;
-  START_DEBUG_TIMER;
   if( pId->pMethods ){
     rc = pId->pMethods->xClose(pId);
     pId->pMethods = 0;
-  }
-  END_DEBUG_TIMER( DEBUG_TIMER_SMALL_TIMEOUT ){
-    sqlite3_log(SQLITE_NOTICE, "slow sqlite3OsClose: %llu uS", iDebugTimer);
   }
   return rc;
 }
@@ -83,15 +79,8 @@ int sqlite3OsTruncate(sqlite3_file *id, i64 size){
   return id->pMethods->xTruncate(id, size);
 }
 int sqlite3OsSync(sqlite3_file *id, int flags){
-  int rc;
-  START_DEBUG_TIMER;
-  rc = id->pMethods->xSync(id, flags);
-  END_DEBUG_TIMER( DEBUG_TIMER_SMALL_TIMEOUT ){
-    sqlite3_log(SQLITE_NOTICE, 
-        "slow sqlite3OsSync(ptr, %d): %llu uS", flags, iDebugTimer
-    );
-  }
-  return rc;
+  DO_OS_MALLOC_TEST(id);
+  return id->pMethods->xSync(id, flags);
 }
 int sqlite3OsFileSize(sqlite3_file *id, i64 *pSize){
   DO_OS_MALLOC_TEST(id);
@@ -118,8 +107,6 @@ int sqlite3OsCheckReservedLock(sqlite3_file *id, int *pResOut){
 ** routine has no return value since the return value would be meaningless.
 */
 int sqlite3OsFileControl(sqlite3_file *id, int op, void *pArg){
-  int rc;
-  START_DEBUG_TIMER;
 #ifdef SQLITE_TEST
   if( op!=SQLITE_FCNTL_COMMIT_PHASETWO ){
     /* Faults are not injected into COMMIT_PHASETWO because, assuming SQLite
@@ -135,12 +122,7 @@ int sqlite3OsFileControl(sqlite3_file *id, int op, void *pArg){
     DO_OS_MALLOC_TEST(id);
   }
 #endif
-  rc = id->pMethods->xFileControl(id, op, pArg);
-  END_DEBUG_TIMER( DEBUG_TIMER_SMALL_TIMEOUT ){
-    sqlite3_log(SQLITE_NOTICE, 
-        "slow sqlite3OsFileControl: %llu uS", iDebugTimer);
-  }
-  return rc;
+  return id->pMethods->xFileControl(id, op, pArg);
 }
 void sqlite3OsFileControlHint(sqlite3_file *id, int op, void *pArg){
   (void)id->pMethods->xFileControl(id, op, pArg);
@@ -154,25 +136,10 @@ int sqlite3OsDeviceCharacteristics(sqlite3_file *id){
   return id->pMethods->xDeviceCharacteristics(id);
 }
 int sqlite3OsShmLock(sqlite3_file *id, int offset, int n, int flags){
-  int rc;
-  START_DEBUG_TIMER;
-  rc = id->pMethods->xShmLock(id, offset, n, flags);
-  END_DEBUG_TIMER( DEBUG_TIMER_SMALL_TIMEOUT ){
-    sqlite3_log(SQLITE_NOTICE, 
-        "slow sqlite3OsShmLock(ptr, %d, %d, %d): %llu uS", 
-        offset, n, flags, iDebugTimer
-    );
-  }
-  return rc;
+  return id->pMethods->xShmLock(id, offset, n, flags);
 }
 void sqlite3OsShmBarrier(sqlite3_file *id){
-  START_DEBUG_TIMER;
   id->pMethods->xShmBarrier(id);
-  END_DEBUG_TIMER( DEBUG_TIMER_SMALL_TIMEOUT ){
-    sqlite3_log(SQLITE_NOTICE, 
-        "slow sqlite3OsShmBarrier: %llu uS", iDebugTimer
-    );
-  }
 }
 int sqlite3OsShmUnmap(sqlite3_file *id, int deleteFlag){
   return id->pMethods->xShmUnmap(id, deleteFlag);

@@ -200,13 +200,6 @@ static void pthreadMutexFree(sqlite3_mutex *p){
   sqlite3_free(p);
 }
 
-#include <sys/time.h>
-#ifdef SQLITE_MUTEX_NREF
-# define MUTEX_ID(p)  (p->id)
-#else
-# define MUTEX_ID(p)  0
-#endif
-
 /*
 ** The sqlite3_mutex_enter() and sqlite3_mutex_try() routines attempt
 ** to enter a mutex.  If another thread is already within the mutex,
@@ -219,8 +212,6 @@ static void pthreadMutexFree(sqlite3_mutex *p){
 ** more than once, the behavior is undefined.
 */
 static void pthreadMutexEnter(sqlite3_mutex *p){
-
-  START_DEBUG_TIMER;
   assert( p->id==SQLITE_MUTEX_RECURSIVE || pthreadMutexNotheld(p) );
 
 #ifdef SQLITE_HOMEGROWN_RECURSIVE_MUTEX
@@ -254,14 +245,6 @@ static void pthreadMutexEnter(sqlite3_mutex *p){
   p->owner = pthread_self();
   p->nRef++;
 #endif
-  END_DEBUG_TIMER(500) {
-    sqlite3_mutex *pMaster = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER);
-    int id = -1;
-    if( p>=pMaster && p<=&pMaster[SQLITE_MUTEX_STATIC_APP3-2] ){
-      id = (int)(p - pMaster) + 2;
-    }
-    sqlite3_log(SQLITE_NOTICE, "slow mutex: %llu uS on %d/%p",iDebugTimer,id,p);
-  }
 #endif
 
 #ifdef SQLITE_DEBUG

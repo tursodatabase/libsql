@@ -1907,7 +1907,6 @@ static int pager_truncate(Pager *pPager, Pgno nPage);
 static int pager_end_transaction(Pager *pPager, int hasMaster, int bCommit){
   int rc = SQLITE_OK;      /* Error code from journal finalization operation */
   int rc2 = SQLITE_OK;     /* Error code from db file unlock operation */
-  START_DEBUG_TIMER;
 
   /* Do nothing if the pager does not have an open write transaction
   ** or at least a RESERVED lock. This function may be called when there
@@ -1974,11 +1973,6 @@ static int pager_end_transaction(Pager *pPager, int hasMaster, int bCommit){
       }
     }
   }
-  END_DEBUG_TIMER( DEBUG_TIMER_BIG_TIMEOUT ){
-    sqlite3_log(SQLITE_NOTICE, "slow pager_end_transaction(1): %llu uS wal=%d", 
-      iDebugTimer, pagerUseWal(pPager));
-    iDebugTimerStart += iDebugTimer;
-  }
 
 #ifdef SQLITE_CHECK_PAGES
   sqlite3PcacheIterateDirty(pPager->pPCache, pager_set_pagehash);
@@ -1995,17 +1989,7 @@ static int pager_end_transaction(Pager *pPager, int hasMaster, int bCommit){
   pPager->pInJournal = 0;
   pPager->nRec = 0;
   sqlite3PcacheCleanAll(pPager->pPCache);
-  END_DEBUG_TIMER( DEBUG_TIMER_BIG_TIMEOUT ){
-    sqlite3_log(SQLITE_NOTICE, "slow pager_end_transaction(2): %llu uS wal=%d", 
-      iDebugTimer, pagerUseWal(pPager));
-    iDebugTimerStart += iDebugTimer;
-  }
   sqlite3PcacheTruncate(pPager->pPCache, pPager->dbSize);
-  END_DEBUG_TIMER( DEBUG_TIMER_BIG_TIMEOUT ){
-    sqlite3_log(SQLITE_NOTICE, "slow pager_end_transaction(3): %llu uS wal=%d",
-      iDebugTimer, pagerUseWal(pPager));
-    iDebugTimerStart += iDebugTimer;
-  }
 
   if( pagerUseWal(pPager) ){
     /* Drop the WAL write-lock, if any. Also, if the connection was in 
@@ -2024,11 +2008,6 @@ static int pager_end_transaction(Pager *pPager, int hasMaster, int bCommit){
     assert( pPager->eLock==EXCLUSIVE_LOCK );
     rc = pager_truncate(pPager, pPager->dbSize);
   }
-  END_DEBUG_TIMER( DEBUG_TIMER_BIG_TIMEOUT ){
-    sqlite3_log(SQLITE_NOTICE, "slow pager_end_transaction(4): %llu uS wal=%d",
-      iDebugTimer, pagerUseWal(pPager));
-    iDebugTimerStart += iDebugTimer;
-  }
 
   if( rc==SQLITE_OK && bCommit && isOpen(pPager->fd) ){
     rc = sqlite3OsFileControl(pPager->fd, SQLITE_FCNTL_COMMIT_PHASETWO, 0);
@@ -2044,10 +2023,6 @@ static int pager_end_transaction(Pager *pPager, int hasMaster, int bCommit){
   pPager->eState = PAGER_READER;
   pPager->setMaster = 0;
 
-  END_DEBUG_TIMER( DEBUG_TIMER_BIG_TIMEOUT ){
-    sqlite3_log(SQLITE_NOTICE, "slow pager_end_transaction(5): %llu uS wal=%d",
-      iDebugTimer, pagerUseWal(pPager));
-  }
   return (rc==SQLITE_OK?rc2:rc);
 }
 
