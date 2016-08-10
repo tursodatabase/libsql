@@ -1,5 +1,5 @@
-C Performance\soptimization\sin\sthe\syy_find_shift_action()\sroutine\sof\sthe\nLemon-generated\sparser.
-D 2016-08-10T01:43:30.837
+C Fix\spcache1TruncateUnsafe()\srun\sfaster\sfor\sthe\scase\swhere\siLimit\sis\nvery\sclose\sto\siMaxKey.
+D 2016-08-10T11:50:12.345
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -376,7 +376,7 @@ F src/pager.h 966d2769e76ae347c8a32c4165faf6e6cb64546d
 F src/parse.y 99b676e6fc2f4e331ab93e76b3987cffdbd28efa
 F src/pcache.c 5583c8ade4b05075a60ba953ef471d1c1a9c05df
 F src/pcache.h 2cedcd8407eb23017d92790b112186886e179490
-F src/pcache1.c 7f51d2b541aab57596adf62db2c4bb025d34f04d
+F src/pcache1.c dc8a6052e5136d6b5e6afe51f37485145646f5ab
 F src/pragma.c c8b499756658cb8b82cfdbb5845c22cf11f297aa
 F src/pragma.h 64c78a648751b9f4f297276c4eb7507b14b4628c
 F src/prepare.c 22df6171aec1d86904ed2ad30c2348a5748aa04e
@@ -1510,7 +1510,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9a5a4f6e3bc265fecf79a7f63d14abbf239da636
-R fb6cb5f47404a4ca8ae3044e53622029
+P ba6663beefcc8060e6f3be6ab37c13fdbb08b7de
+Q +9ab53605d562a926c5620cba9dc96a3b812a432f
+R 045183d4dc58e68027bf139105903731
 U drh
-Z 1ed24d5681cad4ee5c357b2d89914ae1
+Z 7fb6739dae3ac730e38720df5d5c1de9
