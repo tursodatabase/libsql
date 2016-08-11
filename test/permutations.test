@@ -746,6 +746,11 @@ test_suite "inmemory_journal" -description {
 
   # WAL mode is different.
   wal* tkt-2d1a5c67d.test backcompat.test e_wal* rowallock.test
+
+  # This test does not work as the "PRAGMA journal_mode = memory"
+  # statement switches the database out of wal mode at inopportune
+  # times.
+  snapshot_fault.test
 }]
 
 ifcapable mem3 {

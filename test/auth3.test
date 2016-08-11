@@ -12,8 +12,7 @@
 # Test that the truncate optimization is disabled if the SQLITE_DELETE
 # authorization callback returns SQLITE_IGNORE.
 #
-# $Id: auth3.test,v 1.2 2009/05/04 01:58:31 drh Exp $
-#
+# Test that authorizer is disabled during schema parsing.
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -107,5 +106,23 @@ do_test auth3-2.2 {
   }
   set sqlite_search_count
 } {1}
+
+# 2016-07-28.  A problem report from a private client complaining about
+# an authorizer failure during an ALTER TABLE.  The solution (I think) is
+# to disable the authorizer during schema parsing.
+#
+proc auth {code args} {
+  if {$code=="SQLITE_READ" && [regexp {DoNotRead} $args]} {
+    return SQLITE_DENY
+  }
+  return SQLITE_OK
+}
+do_execsql_test auth3-3.0 {
+  CREATE TEMPORARY TABLE TempTable (
+      key TEXT NOT NULL ON CONFLICT FAIL UNIQUE ON CONFLICT REPLACE,
+      value TEXT NOT NULL ON CONFLICT FAIL);
+  ALTER TABLE TempTable RENAME TO DoNotRead;
+  SELECT name FROM sqlite_temp_master;
+} {DoNotRead sqlite_autoindex_DoNotRead_1}
 
 finish_test

@@ -211,4 +211,42 @@ do_execsql_test 4.2.2 {
   INSERT INTO t01(t01) VALUES('integrity-check');
 } {}
 
+do_execsql_test 4.3.1 {
+  CREATE VIRTUAL TABLE t02 USING fts4;
+  INSERT INTO t01 VALUES('1 1 1');
+  INSERT INTO t02 VALUES('2 2 2');
+  BEGIN;
+    SAVEPOINT abc;
+      INSERT INTO t01 VALUES('a b c');
+      INSERT INTO t02 VALUES('a b c');
+    ROLLBACK TO abc;
+  COMMIT;
+}
+do_execsql_test 4.3.2 {
+  SELECT * FROM t01 WHERE t01 MATCH 'b';
+  INSERT INTO t01(t01) VALUES('integrity-check');
+} {}
+
+do_execsql_test 4.4.1 {
+  CREATE TABLE A(ID INTEGER PRIMARY KEY, AnotherID INTEGER, Notes TEXT);
+  CREATE VIRTUAL TABLE AFTS USING FTS4 (Notes);
+  CREATE TRIGGER A_DeleteTrigger AFTER DELETE ON A FOR EACH ROW BEGIN 
+    DELETE FROM AFTS WHERE rowid=OLD.ID; 
+  END;
+  CREATE TABLE B(ID INTEGER PRIMARY KEY,Notes TEXT);
+  CREATE VIRTUAL TABLE BFTS USING FTS3 (Notes);
+  CREATE TRIGGER B_DeleteTrigger AFTER DELETE ON B FOR EACH ROW BEGIN 
+    DELETE FROM BFTS WHERE rowid=OLD.ID; 
+  END;
+}
+		
+do_execsql_test 4.4.2 {
+  BEGIN TRANSACTION;
+    DELETE FROM A WHERE AnotherID=1;
+    DELETE FROM B WHERE ID=1;
+  COMMIT;
+}
+		
+
+
 finish_test

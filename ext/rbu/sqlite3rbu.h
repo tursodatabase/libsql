@@ -319,15 +319,21 @@ sqlite3rbu *sqlite3rbu_open(
 ** An RBU vacuum is similar to SQLite's built-in VACUUM command, except
 ** that it can be suspended and resumed like an RBU update.
 **
-** The second argument to this function, which may not be NULL, identifies 
-** a database in which to store the state of the RBU vacuum operation if
-** it is suspended. The first time sqlite3rbu_vacuum() is called, to start
-** an RBU vacuum operation, the state database should either not exist or
-** be empty (contain no tables). If an RBU vacuum is suspended by calling
+** The second argument to this function identifies a database in which 
+** to store the state of the RBU vacuum operation if it is suspended. The 
+** first time sqlite3rbu_vacuum() is called, to start an RBU vacuum
+** operation, the state database should either not exist or be empty
+** (contain no tables). If an RBU vacuum is suspended by calling 
 ** sqlite3rbu_close() on the RBU handle before sqlite3rbu_step() has
 ** returned SQLITE_DONE, the vacuum state is stored in the state database. 
 ** The vacuum can be resumed by calling this function to open a new RBU
 ** handle specifying the same target and state databases.
+**
+** If the second argument passed to this function is NULL, then the
+** name of the state database is "<database>-vacuum", where <database>
+** is the name of the target database file. In this case, on UNIX, if the
+** state database is not already present in the file-system, it is created
+** with the same permissions as the target db is made.
 **
 ** This function does not delete the state database after an RBU vacuum
 ** is completed, even if it created it. However, if the call to
@@ -473,6 +479,44 @@ sqlite3_int64 sqlite3rbu_progress(sqlite3rbu *pRbu);
 ** output variable during stage 1 is undefined.
 */
 void sqlite3rbu_bp_progress(sqlite3rbu *pRbu, int *pnOne, int *pnTwo);
+
+/*
+** Obtain an indication as to the current stage of an RBU update or vacuum.
+** This function always returns one of the SQLITE_RBU_STATE_XXX constants
+** defined in this file. Return values should be interpreted as follows:
+**
+** SQLITE_RBU_STATE_OAL:
+**   RBU is currently building a *-oal file. The next call to sqlite3rbu_step()
+**   may either add further data to the *-oal file, or compute data that will
+**   be added by a subsequent call.
+**
+** SQLITE_RBU_STATE_MOVE:
+**   RBU has finished building the *-oal file. The next call to sqlite3rbu_step()
+**   will move the *-oal file to the equivalent *-wal path. If the current
+**   operation is an RBU update, then the updated version of the database
+**   file will become visible to ordinary SQLite clients following the next
+**   call to sqlite3rbu_step().
+**
+** SQLITE_RBU_STATE_CHECKPOINT:
+**   RBU is currently performing an incremental checkpoint. The next call to
+**   sqlite3rbu_step() will copy a page of data from the *-wal file into
+**   the target database file.
+**
+** SQLITE_RBU_STATE_DONE:
+**   The RBU operation has finished. Any subsequent calls to sqlite3rbu_step()
+**   will immediately return SQLITE_DONE.
+**
+** SQLITE_RBU_STATE_ERROR:
+**   An error has occurred. Any subsequent calls to sqlite3rbu_step() will
+**   immediately return the SQLite error code associated with the error.
+*/
+#define SQLITE_RBU_STATE_OAL        1
+#define SQLITE_RBU_STATE_MOVE       2
+#define SQLITE_RBU_STATE_CHECKPOINT 3
+#define SQLITE_RBU_STATE_DONE       4
+#define SQLITE_RBU_STATE_ERROR      5
+
+int sqlite3rbu_state(sqlite3rbu *pRbu);
 
 /*
 ** Create an RBU VFS named zName that accesses the underlying file-system

@@ -45,7 +45,7 @@ do_test where3-1.1 {
   }
 } {222 two 2 222 {} {}}
 
-ifcapable explain {
+ifcapable explain&&!cursorhints {
   do_test where3-1.1.1 {
      explain_no_trace {SELECT * FROM t1, t2 LEFT JOIN t3 ON q=x
                         WHERE p=2 AND a=q}
@@ -86,7 +86,7 @@ do_test where3-1.2 {
   }
 } {1 {Value for C1.1} {Value for C2.1} 2 {} {Value for C2.2} 3 {Value for C1.3} {Value for C2.3}}
 
-ifcapable explain {
+ifcapable explain&&!cursorhints {
   do_test where3-1.2.1 {
      explain_no_trace {
        SELECT parent1.parent1key, child1.value, child2.value

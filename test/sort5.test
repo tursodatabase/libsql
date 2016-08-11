@@ -78,10 +78,7 @@ execsql { CREATE TABLE t1(x) }
 # each a bit over 100 bytes in size. In total a little more than 1MiB 
 # of data.
 #
-breakpoint
 foreach {tn pgsz cachesz bTemp} {
-  2 1024   1000  1
-
   1 4096   1000  0
   2 1024   1000  1
 
@@ -96,6 +93,12 @@ foreach {tn pgsz cachesz bTemp} {
     VACUUM;
     PRAGMA cache_size = $cachesz;
   "
+
+  if {[db one {PRAGMA page_size}]!=$pgsz} {
+    # SEE is not able to change page sizes and that messes up the
+    # results that follow.
+    continue
+  }
 
   do_test 2.$tn.1 {
     set ::iTemp 0
@@ -113,4 +116,3 @@ foreach {tn pgsz cachesz bTemp} {
 }
 
 finish_test
-

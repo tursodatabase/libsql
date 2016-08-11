@@ -324,7 +324,9 @@ TESTSRC = \
 #
 TESTSRC += \
   $(TOP)/ext/misc/amatch.c \
+  $(TOP)/ext/misc/carray.c \
   $(TOP)/ext/misc/closure.c \
+  $(TOP)/ext/misc/csv.c \
   $(TOP)/ext/misc/eval.c \
   $(TOP)/ext/misc/fileio.c \
   $(TOP)/ext/misc/fuzzer.c \
@@ -388,8 +390,7 @@ TESTSRC2 = \
   $(TOP)/ext/fts3/fts3_write.c \
   $(TOP)/ext/async/sqlite3async.c \
   $(TOP)/ext/session/sqlite3session.c \
-  $(TOP)/ext/session/test_session.c \
-  $(FTS5_SRC)
+  $(TOP)/ext/session/test_session.c 
 
 # Header files used by all library source files.
 #
@@ -451,7 +452,8 @@ TESTPROGS = \
   testfixture$(EXE) \
   sqlite3$(EXE) \
   sqlite3_analyzer$(EXE) \
-  sqldiff$(EXE)
+  sqldiff$(EXE) \
+  dbhash$(EXE)
 
 # Databases containing fuzzer test cases
 #
@@ -468,6 +470,8 @@ TESTOPTS = --verbose=file --output=test-out.txt
 # Extra compiler options for various shell tools
 #
 SHELL_OPT = -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_FTS4 -DSQLITE_ENABLE_FTS5
+SHELL_OPT += -DSQLITE_ENABLE_EXPLAIN_COMMENTS
+SHELL_OPT += -DSQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
 FUZZERSHELL_OPT = -DSQLITE_ENABLE_JSON1
 FUZZCHECK_OPT = -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_MEMSYS5
 
@@ -487,6 +491,13 @@ sqlite3$(EXE):	$(TOP)/src/shell.c libsqlite3.a sqlite3.h
 sqldiff$(EXE):	$(TOP)/tool/sqldiff.c sqlite3.c sqlite3.h
 	$(TCCX) -o sqldiff$(EXE) -DSQLITE_THREADSAFE=0 \
 		$(TOP)/tool/sqldiff.c sqlite3.c $(TLIBS) $(THREADLIB)
+
+dbhash$(EXE):	$(TOP)/tool/dbhash.c sqlite3.c sqlite3.h
+	$(TCCX) -o dbhash$(EXE) -DSQLITE_THREADSAFE=0 \
+		$(TOP)/tool/dbhash.c sqlite3.c $(TLIBS) $(THREADLIB)
+
+scrub$(EXE):	$(TOP)/ext/misc/scrub.c sqlite3.o
+	$(TCC) -I. -DSCRUB_STANDALONE -o scrub$(EXE) $(TOP)/ext/misc/scrub.c sqlite3.o $(THREADLIB)
 
 srcck1$(EXE):	$(TOP)/tool/srcck1.c
 	$(BCC) -o srcck1$(EXE) $(TOP)/tool/srcck1.c

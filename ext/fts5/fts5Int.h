@@ -686,7 +686,6 @@ int sqlite3Fts5ExprPopulatePoslists(
     Fts5Config*, Fts5Expr*, Fts5PoslistPopulator*, int, const char*, int
 );
 void sqlite3Fts5ExprCheckPoslists(Fts5Expr*, i64);
-void sqlite3Fts5ExprClearEof(Fts5Expr*);
 
 int sqlite3Fts5ExprClonePhrase(Fts5Expr*, int, Fts5Expr**);
 
@@ -738,6 +737,7 @@ void sqlite3Fts5ParseNodeFree(Fts5ExprNode*);
 
 void sqlite3Fts5ParseSetDistance(Fts5Parse*, Fts5ExprNearset*, Fts5Token*);
 void sqlite3Fts5ParseSetColset(Fts5Parse*, Fts5ExprNearset*, Fts5Colset*);
+Fts5Colset *sqlite3Fts5ParseColsetInvert(Fts5Parse*, Fts5Colset*);
 void sqlite3Fts5ParseFinished(Fts5Parse *pParse, Fts5ExprNode *p);
 void sqlite3Fts5ParseNear(Fts5Parse *pParse, Fts5Token*);
 

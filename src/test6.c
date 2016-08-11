@@ -16,7 +16,11 @@
 */
 #if SQLITE_TEST          /* This file is used for testing only */
 #include "sqliteInt.h"
-#include "tcl.h"
+#if defined(INCLUDE_SQLITE_TCL_H)
+#  include "sqlite_tcl.h"
+#else
+#  include "tcl.h"
+#endif
 
 #ifndef SQLITE_OMIT_DISKIO  /* This file is a no-op if disk I/O is disabled */
 
@@ -215,7 +219,9 @@ static int writeListSync(CrashFile *pFile, int isCrash){
   }
 
 #ifdef TRACE_CRASHTEST
-  printf("Sync %s (is %s crash)\n", pFile->zName, (isCrash?"a":"not a"));
+  if( pFile ){
+    printf("Sync %s (is %s crash)\n", pFile->zName, (isCrash?"a":"not a"));
+  }
 #endif
 
   ppPtr = &g.pWriteList;
@@ -800,12 +806,33 @@ static int processDevSymArgs(
 }
 
 /*
+** tclcmd:   sqlite3_crash_now
+**
+** Simulate a crash immediately. This function does not return 
+** (writeListSync() calls exit(-1)).
+*/
+static int SQLITE_TCLAPI crashNowCmd(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  if( objc!=1 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "");
+    return TCL_ERROR;
+  }
+  writeListSync(0, 1);
+  assert( 0 );
+  return TCL_OK;
+}
+
+/*
 ** tclcmd:   sqlite_crash_enable ENABLE
 **
 ** Parameter ENABLE must be a boolean value. If true, then the "crash"
 ** vfs is added to the system. If false, it is removed.
 */
-static int crashEnableCmd(
+static int SQLITE_TCLAPI crashEnableCmd(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -880,7 +907,7 @@ static int crashEnableCmd(
 **   sqlite_crashparams -sect 1024 -char {atomic sequential} ./test.db 1
 **
 */
-static int crashParamsObjCmd(
+static int SQLITE_TCLAPI crashParamsObjCmd(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -927,7 +954,7 @@ error:
   return TCL_ERROR;
 }
 
-static int devSymObjCmd(
+static int SQLITE_TCLAPI devSymObjCmd(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -950,7 +977,7 @@ static int devSymObjCmd(
 /*
 ** tclcmd: unregister_devsim
 */
-static int dsUnregisterObjCmd(
+static int SQLITE_TCLAPI dsUnregisterObjCmd(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -970,7 +997,7 @@ static int dsUnregisterObjCmd(
 /*
 ** tclcmd: register_jt_vfs ?-default? PARENT-VFS
 */
-static int jtObjCmd(
+static int SQLITE_TCLAPI jtObjCmd(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -1008,7 +1035,7 @@ static int jtObjCmd(
 /*
 ** tclcmd: unregister_jt_vfs
 */
-static int jtUnregisterObjCmd(
+static int SQLITE_TCLAPI jtUnregisterObjCmd(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -1034,6 +1061,7 @@ int Sqlitetest6_Init(Tcl_Interp *interp){
 #ifndef SQLITE_OMIT_DISKIO
   Tcl_CreateObjCommand(interp, "sqlite3_crash_enable", crashEnableCmd, 0, 0);
   Tcl_CreateObjCommand(interp, "sqlite3_crashparams", crashParamsObjCmd, 0, 0);
+  Tcl_CreateObjCommand(interp, "sqlite3_crash_now", crashNowCmd, 0, 0);
   Tcl_CreateObjCommand(interp, "sqlite3_simulate_device", devSymObjCmd, 0, 0);
   Tcl_CreateObjCommand(interp, "unregister_devsim", dsUnregisterObjCmd, 0, 0);
   Tcl_CreateObjCommand(interp, "register_jt_vfs", jtObjCmd, 0, 0);

@@ -51,10 +51,16 @@ array set ::Configs [strip_comments {
   "Default" {
     -O2
     --disable-amalgamation --disable-shared
+    --enable-session
   }
   "Sanitize" {
     CC=clang -fsanitize=undefined
     -DSQLITE_ENABLE_STAT4
+    --enable-session
+  }
+  "Stdcall" {
+    -DUSE_STDCALL=1
+    -O2
   }
   "Have-Not" {
     # The "Have-Not" configuration sets all possible -UHAVE_feature options
@@ -106,7 +112,7 @@ array set ::Configs [strip_comments {
     -DSQLITE_ENABLE_OVERSIZE_CELL_CHECK=1
     -DSQLITE_ENABLE_STAT4
     -DSQLITE_ENABLE_STMT_SCANSTATUS
-    --enable-json1 --enable-fts5
+    --enable-json1 --enable-fts5 --enable-session
   }
   "Debug-One" {
     --disable-shared
@@ -118,7 +124,6 @@ array set ::Configs [strip_comments {
     -DSQLITE_ENABLE_FTS3=1
     -DSQLITE_ENABLE_RTREE=1
     -DSQLITE_ENABLE_MEMSYS5=1
-    -DSQLITE_ENABLE_MEMSYS3=1
     -DSQLITE_ENABLE_COLUMN_METADATA=1
     -DSQLITE_ENABLE_STAT4
     -DSQLITE_ENABLE_HIDDEN_COLUMNS
@@ -132,6 +137,7 @@ array set ::Configs [strip_comments {
     -DSQLITE_ENABLE_RBU
     -DSQLITE_MAX_ATTACHED=125
     -DLONGDOUBLE_TYPE=double
+    --enable-session
   }
   "Device-One" {
     -O2
@@ -168,7 +174,7 @@ array set ::Configs [strip_comments {
     -DSQLITE_OMIT_TRACE=1
     -DSQLITE_TEMP_STORE=3
     -DSQLITE_THREADSAFE=2
-    --enable-json1 --enable-fts5
+    --enable-json1 --enable-fts5 --enable-session
   }
   "Locking-Style" {
     -O2
@@ -296,10 +302,12 @@ array set ::Platforms [strip_comments {
     "Apple"                   "threadtest fulltest"
   }
   "Windows NT-intel" {
+    "Stdcall"                 test
     "Have-Not"                test
     "Default"                 "mptest fulltestonly"
   }
   "Windows NT-amd64" {
+    "Stdcall"                 test
     "Have-Not"                test
     "Default"                 "mptest fulltestonly"
   }
@@ -723,6 +731,9 @@ proc makeCommand { targets makeOpts cflags opts } {
     set nmakeDir [file nativename $::SRCDIR]
     set nmakeFile [file nativename [file join $nmakeDir Makefile.msc]]
     lappend result nmake /f $nmakeFile TOP=$nmakeDir
+    if {[regexp {USE_STDCALL=1} $cflags]} {
+      lappend result USE_STDCALL=1
+    }
   } else {
     lappend result make
   }

@@ -15,8 +15,8 @@
 ** 6000 lines long) it was split up into several smaller files and
 ** this header information was factored out.
 */
-#ifndef _VDBEINT_H_
-#define _VDBEINT_H_
+#ifndef SQLITE_VDBEINT_H
+#define SQLITE_VDBEINT_H
 
 /*
 ** The maximum number of times that a statement will try to reparse
@@ -558,4 +558,4 @@ int sqlite3VdbeMemHandleBom(Mem *pMem);
   #define ExpandBlob(P) SQLITE_OK
 #endif
 
-#endif /* !defined(_VDBEINT_H_) */
+#endif /* !defined(SQLITE_VDBEINT_H) */

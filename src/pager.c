@@ -1926,20 +1926,24 @@ static int pager_error(Pager *pPager, int rc){
 static int pager_truncate(Pager *pPager, Pgno nPage);
 
 /*
-** The write transaction open on the pager passed as the only argument is
-** being committed. This function returns true if all dirty pages should
-** be flushed to disk, or false otherwise. Pages should be flushed to disk
-** unless one of the following is true:
+** The write transaction open on pPager is being committed (bCommit==1)
+** or rolled back (bCommit==0).
 **
-**   * The db is an in-memory database.
+** Return TRUE if and only if all dirty pages should be flushed to disk.
 **
-**   * The db is a temporary database and the db file has not been opened.
+** Rules:
 **
-**   * The db is a temporary database and the cache contains less than
-**     C/4 dirty pages, where C is the configured cache-size.
+**   *  For non-TEMP databases, always sync to disk.  This is necessary
+**      for transactions to be durable.
+**
+**   *  Sync TEMP database only on a COMMIT (not a ROLLBACK) when the backing
+**      file has been created already (via a spill on pagerStress()) and
+**      when the number of dirty pages in memory exceeds 25% of the total
+**      cache size.
 */
-static int pagerFlushOnCommit(Pager *pPager){
+static int pagerFlushOnCommit(Pager *pPager, int bCommit){
   if( pPager->tempFile==0 ) return 1;
+  if( !bCommit ) return 0;
   if( !isOpen(pPager->fd) ) return 0;
   return (sqlite3PCachePercentDirty(pPager->pPCache)>=25);
 }
@@ -2047,7 +2051,7 @@ static int pager_end_transaction(Pager *pPager, int hasMaster, int bCommit){
     }else if( pPager->journalMode==PAGER_JOURNALMODE_PERSIST
       || (pPager->exclusiveMode && pPager->journalMode!=PAGER_JOURNALMODE_WAL)
     ){
-      rc = zeroJournalHdr(pPager, hasMaster);
+      rc = zeroJournalHdr(pPager, hasMaster||pPager->tempFile);
       pPager->journalOff = 0;
     }else{
       /* This branch may be executed with Pager.journalMode==MEMORY if
@@ -2081,12 +2085,14 @@ static int pager_end_transaction(Pager *pPager, int hasMaster, int bCommit){
 
   pagerFreeBitvecs(pPager);
   pPager->nRec = 0;
-  if( MEMDB || pagerFlushOnCommit(pPager) ){
-    sqlite3PcacheCleanAll(pPager->pPCache);
-  }else{
-    sqlite3PcacheClearWritable(pPager->pPCache);
+  if( rc==SQLITE_OK ){
+    if( pagerFlushOnCommit(pPager, bCommit) ){
+      sqlite3PcacheCleanAll(pPager->pPCache);
+    }else{
+      sqlite3PcacheClearWritable(pPager->pPCache);
+    }
+    sqlite3PcacheTruncate(pPager->pPCache, pPager->dbSize);
   }
-  sqlite3PcacheTruncate(pPager->pPCache, pPager->dbSize);
 
   if( pagerUseWal(pPager) ){
     /* Drop the WAL write-lock, if any. Also, if the connection was in 
@@ -2420,7 +2426,6 @@ static int pager_playback_one_page(
     assert( (pPager->doNotSpill & SPILLFLAG_ROLLBACK)!=0 );
     pPager->doNotSpill &= ~SPILLFLAG_ROLLBACK;
     if( rc!=SQLITE_OK ) return rc;
-    pPg->flags &= ~PGHDR_NEED_READ;
     sqlite3PcacheMakeDirty(pPg);
   }
   if( pPg ){
@@ -2434,33 +2439,10 @@ static int pager_playback_one_page(
     pData = pPg->pData;
     memcpy(pData, (u8*)aData, pPager->pageSize);
     pPager->xReiniter(pPg);
-    if( isMainJrnl && (!isSavepnt || *pOffset<=pPager->journalHdr) ){
-      /* If the contents of this page were just restored from the main 
-      ** journal file, then its content must be as they were when the 
-      ** transaction was first opened. In this case we can mark the page
-      ** as clean, since there will be no need to write it out to the
-      ** database.
-      **
-      ** There is one exception to this rule. If the page is being rolled
-      ** back as part of a savepoint (or statement) rollback from an 
-      ** unsynced portion of the main journal file, then it is not safe
-      ** to mark the page as clean. This is because marking the page as
-      ** clean will clear the PGHDR_NEED_SYNC flag. Since the page is
-      ** already in the journal file (recorded in Pager.pInJournal) and
-      ** the PGHDR_NEED_SYNC flag is cleared, if the page is written to
-      ** again within this transaction, it will be marked as dirty but
-      ** the PGHDR_NEED_SYNC flag will not be set. It could then potentially
-      ** be written out into the database file before its journal file
-      ** segment is synced. If a crash occurs during or following this,
-      ** database corruption may ensue.
-      **
-      ** Update: Another exception is for temp files that are not 
-      ** in-memory databases. In this case the page may have been dirty
-      ** at the start of the transaction.
-      */
-      assert( !pagerUseWal(pPager) );
-      if( pPager->tempFile==0 ) sqlite3PcacheMakeClean(pPg);
-    }
+    /* It used to be that sqlite3PcacheMakeClean(pPg) was called here.  But
+    ** that call was dangerous and had no detectable benefit since the cache
+    ** is normally cleaned by sqlite3PcacheCleanAll() after rollback and so
+    ** has been removed. */
     pager_set_pagehash(pPg);
 
     /* If this was page 1, then restore the value of Pager.dbFileVers.
@@ -6086,14 +6068,21 @@ int sqlite3PagerIswriteable(DbPage *pPg){
 **
 ** Tests show that this optimization can quadruple the speed of large 
 ** DELETE operations.
+**
+** This optimization cannot be used with a temp-file, as the page may
+** have been dirty at the start of the transaction. In that case, if
+** memory pressure forces page pPg out of the cache, the data does need 
+** to be written out to disk so that it may be read back in if the 
+** current transaction is rolled back.
 */
 void sqlite3PagerDontWrite(PgHdr *pPg){
   Pager *pPager = pPg->pPager;
-  if( (pPg->flags&PGHDR_DIRTY) && pPager->nSavepoint==0 ){
+  if( !pPager->tempFile && (pPg->flags&PGHDR_DIRTY) && pPager->nSavepoint==0 ){
     PAGERTRACE(("DONT_WRITE page %d of %d\n", pPg->pgno, PAGERID(pPager)));
     IOTRACE(("CLEAN %p %d\n", pPager, pPg->pgno))
     pPg->flags |= PGHDR_DONT_WRITE;
     pPg->flags &= ~PGHDR_WRITEABLE;
+    testcase( pPg->flags & PGHDR_NEED_SYNC );
     pager_set_pagehash(pPg);
   }
 }
@@ -6363,7 +6352,7 @@ int sqlite3PagerCommitPhaseOne(
   if( NEVER(pPager->errCode) ) return pPager->errCode;
 
   /* Provide the ability to easily simulate an I/O error during testing */
-  if( (rc = sqlite3FaultSim(400))!=SQLITE_OK ) return rc;
+  if( sqlite3FaultSim(400) ) return SQLITE_IOERR;
 
   PAGERTRACE(("DATABASE SYNC: File=%s zMaster=%s nSize=%d\n", 
       pPager->zFilename, zMaster, pPager->dbSize));
@@ -6373,7 +6362,7 @@ int sqlite3PagerCommitPhaseOne(
 
   assert( MEMDB==0 || pPager->tempFile );
   assert( isOpen(pPager->fd) || pPager->tempFile );
-  if( 0==pagerFlushOnCommit(pPager) ){
+  if( 0==pagerFlushOnCommit(pPager, 1) ){
     /* If this is an in-memory db, or no pages have been written to, or this
     ** function has already been called, it is mostly a no-op.  However, any
     ** backup in progress needs to be restarted.  */
@@ -6998,6 +6987,7 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno, int isCommit){
   /* In order to be able to rollback, an in-memory database must journal
   ** the page we are moving from.
   */
+  assert( pPager->tempFile || !MEMDB );
   if( pPager->tempFile ){
     rc = sqlite3PagerWrite(pPg);
     if( rc ) return rc;
@@ -7072,8 +7062,7 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno, int isCommit){
   ** to exist, in case the transaction needs to roll back.  Use pPgOld
   ** as the original page since it has already been allocated.
   */
-  if( pPager->tempFile ){
-    assert( pPgOld );
+  if( pPager->tempFile && pPgOld ){
     sqlite3PcacheMove(pPgOld, origPgno);
     sqlite3PagerUnrefNotNull(pPgOld);
   }
@@ -7330,6 +7319,7 @@ void sqlite3PagerClearCache(Pager *pPager){
 }
 #endif
 
+
 #ifndef SQLITE_OMIT_WAL
 /*
 ** This function is called when the user invokes "PRAGMA wal_checkpoint",
@@ -7554,6 +7544,5 @@ int sqlite3PagerWalFramesize(Pager *pPager){
   return sqlite3WalFramesize(pPager->pWal);
 }
 #endif
-
 
 #endif /* SQLITE_OMIT_DISKIO */

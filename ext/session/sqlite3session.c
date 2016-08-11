@@ -278,19 +278,18 @@ static int sessionVarintGet(u8 *aBuf, int *piVal){
   return getVarint32(aBuf, *piVal);
 }
 
+/* Load an unaligned and unsigned 32-bit integer */
+#define SESSION_UINT32(x) (((u32)(x)[0]<<24)|((x)[1]<<16)|((x)[2]<<8)|(x)[3])
+
 /*
 ** Read a 64-bit big-endian integer value from buffer aRec[]. Return
 ** the value read.
 */
 static sqlite3_int64 sessionGetI64(u8 *aRec){
-  return (((sqlite3_int64)aRec[0]) << 56)
-       + (((sqlite3_int64)aRec[1]) << 48)
-       + (((sqlite3_int64)aRec[2]) << 40)
-       + (((sqlite3_int64)aRec[3]) << 32)
-       + (((sqlite3_int64)aRec[4]) << 24)
-       + (((sqlite3_int64)aRec[5]) << 16)
-       + (((sqlite3_int64)aRec[6]) <<  8)
-       + (((sqlite3_int64)aRec[7]) <<  0);
+  u64 x = SESSION_UINT32(aRec);
+  u32 y = SESSION_UINT32(aRec+4);
+  x = (x<<32) + y;
+  return (sqlite3_int64)x;
 }
 
 /*

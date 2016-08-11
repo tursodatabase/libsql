@@ -376,4 +376,15 @@ do_execsql_test index6-10.3eqp {
   SELECT e FROM t10 WHERE a=1 AND b=2 ORDER BY d DESC;
 } {~/USING INDEX t10x/}
 
+# A partial index will be used for a full table scan, where possible
+do_execsql_test index6-11.1 {
+  CREATE TABLE t11(a,b,c);
+  CREATE INDEX t11x ON t11(a) WHERE b<>99;
+  EXPLAIN QUERY PLAN SELECT a FROM t11 WHERE b<>99;
+} {/USING INDEX t11x/}
+do_execsql_test index6-11.2 {
+  EXPLAIN QUERY PLAN SELECT a FROM t11 WHERE b<>99 AND c<>98;
+} {/USING INDEX t11x/}
+  
+
 finish_test

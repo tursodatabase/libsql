@@ -3196,6 +3196,15 @@ static void fts5IterSetOutputs_Nocolset(Fts5Iter *pIter, Fts5SegIter *pSeg){
 }
 
 /*
+** xSetOutputs callback used when the Fts5Colset object has nCol==0 (match
+** against no columns at all).
+*/
+static void fts5IterSetOutputs_ZeroColset(Fts5Iter *pIter, Fts5SegIter *pSeg){
+  UNUSED_PARAM(pSeg);
+  pIter->base.nData = 0;
+}
+
+/*
 ** xSetOutputs callback used by detail=col when there is a column filter
 ** and there are 100 or more columns. Also called as a fallback from
 ** fts5IterSetOutputs_Col100 if the column-list spans more than one page.
@@ -3298,6 +3307,10 @@ static void fts5IterSetOutputCb(int *pRc, Fts5Iter *pIter){
 
     else if( pIter->pColset==0 ){
       pIter->xSetOutputs = fts5IterSetOutputs_Nocolset;
+    }
+
+    else if( pIter->pColset->nCol==0 ){
+      pIter->xSetOutputs = fts5IterSetOutputs_ZeroColset;
     }
 
     else if( pConfig->eDetail==FTS5_DETAIL_FULL ){

@@ -230,7 +230,7 @@ do_execsql_test 8.1 {
   CREATE TABLE t2(a, b);
   CREATE INDEX i2 ON t2(a, b);
   WITH x(i) AS ( SELECT 1 UNION ALL SELECT i+1 FROM x WHERE i<20 )
-  INSERT INTO t2 SELECT randomblob(100), randomblob(100) FROM x;
+  INSERT INTO t2 SELECT randomblob(100), randomblob(100) FROM x ORDER BY 1, 2;
   PRAGMA page_count;
 } {13}
 
@@ -242,7 +242,7 @@ do_test 8.2 {
     CREATE TABLE t1(a, b);
     CREATE INDEX i1 ON t1(a, b);
     WITH x(i) AS ( SELECT 1 UNION ALL SELECT i+1 FROM x WHERE i<100 )
-    INSERT INTO t1 SELECT randomblob(100), randomblob(100) FROM x;
+    INSERT INTO t1 SELECT randomblob(100), randomblob(100) FROM x ORDER BY 1, 2;
     PRAGMA page_count;
   } tmp
 } {10}
@@ -343,14 +343,15 @@ do_execsql_test 10.1 {
   INSERT INTO t2 VALUES(3, 4);
 }
 
-if {[permutation]!="journaltest"} {
-  # The journaltest permutation does not support mmap, so this part of
-  # the test is omitted.
-  do_execsql_test 10.2 { PRAGMA mmap_size = 512000 } 512000
+ifcapable mmap {
+  if {[permutation]!="journaltest"} {
+    # The journaltest permutation does not support mmap, so this part of
+    # the test is omitted.
+    do_execsql_test 10.2 { PRAGMA mmap_size = 512000 } 512000
+  }
 }
 
 do_execsql_test 10.3 { SELECT * FROM t2 } {1 2 3 4}
 do_execsql_test 10.4 { PRAGMA integrity_check } ok
 
 finish_test
-

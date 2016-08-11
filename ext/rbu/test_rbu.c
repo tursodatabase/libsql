@@ -17,7 +17,14 @@
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_RBU)
 
 #include "sqlite3rbu.h"
-#include <tcl.h>
+#if defined(INCLUDE_SQLITE_TCL_H)
+#  include "sqlite_tcl.h"
+#else
+#  include "tcl.h"
+#  ifndef SQLITE_TCLAPI
+#    define SQLITE_TCLAPI
+#  endif
+#endif
 #include <assert.h>
 
 /* From main.c */ 
@@ -49,7 +56,7 @@ void test_rbu_delta(sqlite3_context *pCtx, int nArg, sqlite3_value **apVal){
 }
 
 
-static int test_sqlite3rbu_cmd(
+static int SQLITE_TCLAPI test_sqlite3rbu_cmd(
   ClientData clientData,
   Tcl_Interp *interp,
   int objc,
@@ -69,6 +76,8 @@ static int test_sqlite3rbu_cmd(
     {"dbMain_eval", 3, "SQL"},    /* 4 */
     {"bp_progress", 2, ""},       /* 5 */
     {"db", 3, "RBU"},             /* 6 */
+    {"state", 2, ""},             /* 7 */
+    {"progress", 2, ""},          /* 8 */
     {0,0,0}
   };
   int iCmd;
@@ -166,6 +175,18 @@ static int test_sqlite3rbu_cmd(
       }
       break;
     }
+    case 7: /* state */ {
+      const char *aRes[] = { 0, "oal", "move", "checkpoint", "done", "error" };
+      int eState = sqlite3rbu_state(pRbu);
+      assert( eState>0 && eState<=5 );
+      Tcl_SetResult(interp, (char*)aRes[eState], TCL_STATIC);
+      break;
+    }
+    case 8: /* progress */ {
+      sqlite3_int64 nStep =  sqlite3rbu_progress(pRbu);
+      Tcl_SetObjResult(interp, Tcl_NewWideIntObj(nStep));
+      break;
+    }
 
     default: /* seems unlikely */
       assert( !"cannot happen" );
@@ -178,7 +199,7 @@ static int test_sqlite3rbu_cmd(
 /*
 ** Tclcmd: sqlite3rbu CMD <target-db> <rbu-db> ?<state-db>?
 */
-static int test_sqlite3rbu(
+static int SQLITE_TCLAPI test_sqlite3rbu(
   ClientData clientData,
   Tcl_Interp *interp,
   int objc,
@@ -208,7 +229,7 @@ static int test_sqlite3rbu(
 /*
 ** Tclcmd: sqlite3rbu_vacuum CMD <target-db> <state-db>
 */
-static int test_sqlite3rbu_vacuum(
+static int SQLITE_TCLAPI test_sqlite3rbu_vacuum(
   ClientData clientData,
   Tcl_Interp *interp,
   int objc,
@@ -219,13 +240,13 @@ static int test_sqlite3rbu_vacuum(
   const char *zTarget;
   const char *zStateDb = 0;
 
-  if( objc!=4 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "NAME TARGET-DB STATE-DB");
+  if( objc!=3 && objc!=4 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "NAME TARGET-DB ?STATE-DB?");
     return TCL_ERROR;
   }
   zCmd = Tcl_GetString(objv[1]);
   zTarget = Tcl_GetString(objv[2]);
-  zStateDb = Tcl_GetString(objv[3]);
+  if( objc==4 ) zStateDb = Tcl_GetString(objv[3]);
 
   pRbu = sqlite3rbu_vacuum(zTarget, zStateDb);
   Tcl_CreateObjCommand(interp, zCmd, test_sqlite3rbu_cmd, (ClientData)pRbu, 0);
@@ -236,7 +257,7 @@ static int test_sqlite3rbu_vacuum(
 /*
 ** Tclcmd: sqlite3rbu_create_vfs ?-default? NAME PARENT
 */
-static int test_sqlite3rbu_create_vfs(
+static int SQLITE_TCLAPI test_sqlite3rbu_create_vfs(
   ClientData clientData,
   Tcl_Interp *interp,
   int objc,
@@ -271,7 +292,7 @@ static int test_sqlite3rbu_create_vfs(
 /*
 ** Tclcmd: sqlite3rbu_destroy_vfs NAME
 */
-static int test_sqlite3rbu_destroy_vfs(
+static int SQLITE_TCLAPI test_sqlite3rbu_destroy_vfs(
   ClientData clientData,
   Tcl_Interp *interp,
   int objc,
@@ -292,7 +313,7 @@ static int test_sqlite3rbu_destroy_vfs(
 /*
 ** Tclcmd: sqlite3rbu_internal_test
 */
-static int test_sqlite3rbu_internal_test(
+static int SQLITE_TCLAPI test_sqlite3rbu_internal_test(
   ClientData clientData,
   Tcl_Interp *interp,
   int objc,
@@ -333,7 +354,11 @@ int SqliteRbu_Init(Tcl_Interp *interp){
 }
 
 #else
-#include <tcl.h>
+#if defined(INCLUDE_SQLITE_TCL_H)
+#  include "sqlite_tcl.h"
+#else
+#  include "tcl.h"
+#endif
 int SqliteRbu_Init(Tcl_Interp *interp){ return TCL_OK; }
 #endif /* !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_RBU) */
 #endif /* defined(SQLITE_TEST) */

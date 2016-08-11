@@ -18,7 +18,11 @@
 ** easier and safer to build our own mechanism.
 */
 #include "sqliteInt.h"
-#include "tcl.h"
+#if defined(INCLUDE_SQLITE_TCL_H)
+#  include "sqlite_tcl.h"
+#else
+#  include "tcl.h"
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -94,7 +98,7 @@ int sqlite3TestHexToBin(const unsigned char *zIn, int N, unsigned char *aOut){
 ** beginning of the file.  Convert that information to hexadecimal
 ** and return the resulting HEX string.
 */
-static int hexio_read(
+static int SQLITE_TCLAPI hexio_read(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -144,7 +148,7 @@ static int hexio_read(
 ** Write DATA into file FILENAME beginning at OFFSET from the
 ** beginning of the file.  DATA is expressed in hexadecimal.
 */
-static int hexio_write(
+static int SQLITE_TCLAPI hexio_write(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -192,7 +196,7 @@ static int hexio_write(
 ** the value of that integer.  HEXDATA can contain between 2 and 8
 ** hexadecimal digits.
 */
-static int hexio_get_int(
+static int SQLITE_TCLAPI hexio_get_int(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -232,7 +236,7 @@ static int hexio_get_int(
 **
 ** Render INTEGER has a 16-bit big-endian integer in hexadecimal.
 */
-static int hexio_render_int16(
+static int SQLITE_TCLAPI hexio_render_int16(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -259,7 +263,7 @@ static int hexio_render_int16(
 **
 ** Render INTEGER has a 32-bit big-endian integer in hexadecimal.
 */
-static int hexio_render_int32(
+static int SQLITE_TCLAPI hexio_render_int32(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -289,7 +293,7 @@ static int hexio_render_int32(
 ** The UTF8 might not be well-formed.  Run this string through
 ** sqlite3Utf8to8() convert it back to hex and return the result.
 */
-static int utf8_to_utf8(
+static int SQLITE_TCLAPI utf8_to_utf8(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -340,7 +344,7 @@ static int getFts3Varint(const char *p, sqlite_int64 *v){
 ** Read a varint from the start of BLOB. Set variable VARNAME to contain
 ** the interpreted value. Return the number of bytes of BLOB consumed.
 */
-static int read_fts3varint(
+static int SQLITE_TCLAPI read_fts3varint(
   void * clientData,
   Tcl_Interp *interp,
   int objc,

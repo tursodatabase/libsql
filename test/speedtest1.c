@@ -1216,6 +1216,10 @@ static void displayLinuxIoStats(FILE *out){
 }   
 #endif
 
+#if SQLITE_VERSION_NUMBER<3006018
+#  define sqlite3_sourceid(X) "(before 3.6.18)"
+#endif
+
 int main(int argc, char **argv){
   int doAutovac = 0;            /* True for --autovacuum */
   int cacheSize = 0;            /* Desired cache size.  0 means default */

@@ -152,6 +152,7 @@ set tabledef {CREATE TABLE space_used(
    name clob,        -- Name of a table or index in the database file
    tblname clob,     -- Name of associated table
    is_index boolean, -- TRUE if it is an index, false for a table
+   is_without_rowid boolean, -- TRUE if WITHOUT ROWID table  
    nentry int,       -- Number of entries in the BTree
    leaf_entries int, -- Number of leaf entries
    depth int,        -- Depth of the b-tree
@@ -184,7 +185,7 @@ set sql { SELECT name, tbl_name FROM sqlite_master WHERE rootpage>0 }
 foreach {name tblname} [concat sqlite_master sqlite_master [db eval $sql]] {
 
   set is_index [expr {$name!=$tblname}]
-  set idx_btree [expr {$is_index || [is_without_rowid $name]}]
+  set is_without_rowid [is_without_rowid $name]
   db eval {
     SELECT 
       sum(ncell) AS nentry,
@@ -235,6 +236,7 @@ foreach {name tblname} [concat sqlite_master sqlite_master [db eval $sql]] {
       $name,
       $tblname,
       $is_index,
+      $is_without_rowid,
       $nentry,
       $leaf_entries,
       $depth,
@@ -330,12 +332,15 @@ proc subreport {title where showFrag} {
   # following query returns exactly one row (because it is an aggregate).
   #
   # The results of the query are stored directly by SQLite into local 
-  # variables (i.e. $nentry, $nleaf etc.).
+  # variables (i.e. $nentry, $payload etc.).
   #
   mem eval "
     SELECT
-      int(sum(nentry)) AS nentry,
-      int(sum(leaf_entries)) AS nleaf,
+      int(sum(
+        CASE WHEN (is_without_rowid OR is_index) THEN nentry 
+             ELSE leaf_entries 
+        END
+      )) AS nentry,
       int(sum(payload)) AS payload,
       int(sum(ovfl_payload)) AS ovfl_payload,
       max(mx_payload) AS mx_payload,
@@ -375,8 +380,8 @@ proc subreport {title where showFrag} {
   set storage [expr {$total_pages*$pageSize}]
   set payload_percent [percent $payload $storage {of storage consumed}]
   set total_unused [expr {$ovfl_unused+$int_unused+$leaf_unused}]
-  set avg_payload [divide $payload $nleaf]
-  set avg_unused [divide $total_unused $nleaf]
+  set avg_payload [divide $payload $nentry]
+  set avg_unused [divide $total_unused $nentry]
   if {$int_pages>0} {
     # TODO: Is this formula correct?
     set nTab [mem eval "
@@ -390,12 +395,12 @@ proc subreport {title where showFrag} {
     "]
     set avg_fanout [format %.2f $avg_fanout]
   }
-  set ovfl_cnt_percent [percent $ovfl_cnt $nleaf {of all entries}]
+  set ovfl_cnt_percent [percent $ovfl_cnt $nentry {of all entries}]
 
   # Print out the sub-report statistics.
   #
   statline {Percentage of total database} $total_pages_percent
-  statline {Number of entries} $nleaf
+  statline {Number of entries} $nentry
   statline {Bytes of storage consumed} $storage
   if {$compressed_size!=$storage} {
     set compressed_size [expr {$compressed_size+$compressOverhead*$total_pages}]

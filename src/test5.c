@@ -17,7 +17,11 @@
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
-#include "tcl.h"
+#if defined(INCLUDE_SQLITE_TCL_H)
+#  include "sqlite_tcl.h"
+#else
+#  include "tcl.h"
+#endif
 #include <stdlib.h>
 #include <string.h>
 
@@ -26,7 +30,7 @@
 ** object with the encoded representation of the string, including
 ** the NULL terminator.
 */
-static int binarize(
+static int SQLITE_TCLAPI binarize(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -54,7 +58,7 @@ static int binarize(
 ** If <do-calls> is 0, then the calls to sqlite3_value_text() are not
 ** actually made.
 */
-static int test_value_overhead(
+static int SQLITE_TCLAPI test_value_overhead(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -118,7 +122,7 @@ static u8 name_to_enc(Tcl_Interp *interp, Tcl_Obj *pObj){
 ** Usage:   test_translate <string/blob> <from enc> <to enc> ?<transient>?
 **
 */
-static int test_translate(
+static int SQLITE_TCLAPI test_translate(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -182,7 +186,7 @@ static int test_translate(
 ** translation. If there is a problem an assert() will fail.
 **/
 void sqlite3UtfSelfTest(void);
-static int test_translate_selftest(
+static int SQLITE_TCLAPI test_translate_selftest(
   void * clientData,
   Tcl_Interp *interp,
   int objc,

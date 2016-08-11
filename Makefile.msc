@@ -198,6 +198,12 @@ DEBUG = 0
 OPTIMIZATIONS = 2
 !ENDIF
 
+# Set this to non-0 to enable support for the session extension.
+#
+!IFNDEF SESSION
+SESSION = 0
+!ENDIF
+
 # Set the source code file to be used by executables and libraries when
 # they need the amalgamation.
 #
@@ -264,6 +270,12 @@ SQLITE3EXEPDB = /pdb:sqlite3sh.pdb
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_FTS3=1
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_RTREE=1
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_COLUMN_METADATA=1
+!ENDIF
+
+# Should the session extension be enabled?  If so, add compilation options
+# to enable it.
+#
+!IF $(SESSION)!=0
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_SESSION=1
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_PREUPDATE_HOOK=1
 !ENDIF
@@ -1280,7 +1292,9 @@ TESTSRC = \
 #
 TESTEXT = \
   $(TOP)\ext\misc\amatch.c \
+  $(TOP)\ext\misc\carray.c \
   $(TOP)\ext\misc\closure.c \
+  $(TOP)\ext\misc\csv.c \
   $(TOP)\ext\misc\eval.c \
   $(TOP)\ext\misc\fileio.c \
   $(TOP)\ext\misc\fuzzer.c \
@@ -1365,7 +1379,8 @@ TESTPROGS = \
   testfixture.exe \
   $(SQLITE3EXE) \
   sqlite3_analyzer.exe \
-  sqldiff.exe
+  sqldiff.exe \
+  dbhash.exe
 
 # Databases containing fuzzer test cases
 #
@@ -1442,6 +1457,12 @@ $(SQLITE3EXE):	$(TOP)\src\shell.c $(SHELL_CORE_DEP) $(LIBRESOBJS) $(SHELL_CORE_S
 # <<mark>>
 sqldiff.exe:	$(TOP)\tool\sqldiff.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(TOP)\tool\sqldiff.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
+
+dbhash.exe:	$(TOP)\tool\dbhash.c $(SQLITE3C) $(SQLITE3H)
+	$(LTLINK) $(NO_WARN) $(TOP)\tool\dbhash.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
+
+scrub.exe:	$(TOP)\ext\misc\scrub.c $(SQLITE3C) $(SQLITE3H)
+	$(LTLINK) $(NO_WARN) $(TOP)\ext\misc\scrub.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
 srcck1.exe:	$(TOP)\tool\srcck1.c
 	$(BCC) $(NO_WARN) -Fe$@ $(TOP)\tool\srcck1.c
@@ -2089,6 +2110,6 @@ clean:
 	del /Q shell.c sqlite3ext.h sqlite3session.h 2>NUL
 	del /Q sqlite3_analyzer.exe sqlite3_analyzer.c 2>NUL
 	del /Q sqlite-*-output.vsix 2>NUL
-	del /Q fuzzershell.exe fuzzcheck.exe sqldiff.exe 2>NUL
+	del /Q fuzzershell.exe fuzzcheck.exe sqldiff.exe dbhash.exe 2>NUL
 	del /Q fts5.* fts5parse.* 2>NUL
 # <</mark>>

@@ -22,6 +22,7 @@ ifcapable !vtab {
   return
 }
 load_static_extension db series
+load_static_extension db carray
 
 do_execsql_test tabfunc01-1.1 {
   SELECT *, '|' FROM generate_series WHERE start=1 AND stop=9 AND step=2;
@@ -134,5 +135,62 @@ do_execsql_test tabfunc01-500 {
   SELECT * FROM generate_series WHERE start IN (1,7) AND stop=20 AND step=10
   ORDER BY +1;
 } {1 7 11 17}
+
+# Table-valued functions on the RHS of an IN operator
+#
+do_execsql_test tabfunc01-600 {
+  CREATE TABLE t600(a INTEGER PRIMARY KEY, b TEXT);
+  WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<100)
+    INSERT INTO t600(a,b) SELECT x, printf('(%03d)',x) FROM c;
+  SELECT b FROM t600 WHERE a IN generate_series(2,52,10);
+} {(002) (012) (022) (032) (042) (052)}
+
+
+do_test tabfunc01-700 {
+  set PTR [intarray_addr 5 7 13 17 23]
+  db eval {
+    SELECT b FROM t600, carray($PTR,5) WHERE a=value;
+  }
+} {(005) (007) (013) (017) (023)}
+do_test tabfunc01-701 {
+  db eval {
+    SELECT b FROM t600 WHERE a IN carray($PTR,5,'int32');
+  }
+} {(005) (007) (013) (017) (023)}
+do_test tabfunc01-702 {
+  db eval {
+    SELECT b FROM t600 WHERE a IN carray($PTR,4,'int32');
+  }
+} {(005) (007) (013) (017)}
+do_catchsql_test tabfunc01-710 {
+  SELECT b FROM t600 WHERE a IN carray($PTR,5,'int33');
+} {1 {unknown datatype: 'int33'}}
+
+do_test tabfunc01-720 {
+  set PTR [int64array_addr 5 7 13 17 23]
+  db eval {
+    SELECT b FROM t600, carray($PTR,5,'int64') WHERE a=value;
+  }
+} {(005) (007) (013) (017) (023)}
+
+do_test tabfunc01-730 {
+  set PTR [doublearray_addr 5.0 7.0 13.0 17.0 23.0]
+  db eval {
+    SELECT b FROM t600, carray($PTR,5,'double') WHERE a=value;
+  }
+} {(005) (007) (013) (017) (023)}
+
+do_test tabfunc01-740 {
+  set PTR [textarray_addr 5 7 13 17 23]
+  db eval {
+    SELECT b FROM t600, carray($PTR,5,'char*') WHERE a=value;
+  }
+} {(005) (007) (013) (017) (023)}
+
+
+intarray_addr
+int64array_addr
+doublearray_addr
+textarray_addr
 
 finish_test

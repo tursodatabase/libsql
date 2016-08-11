@@ -2543,13 +2543,22 @@ static FILE *output_file_open(const char *zFile){
 /*
 ** A routine for handling output from sqlite3_trace().
 */
-static void sql_trace_callback(void *pArg, const char *z){
+static int sql_trace_callback(
+  unsigned mType,
+  void *pArg,
+  void *pP,
+  void *pX
+){
   FILE *f = (FILE*)pArg;
+  UNUSED_PARAMETER(mType);
+  UNUSED_PARAMETER(pP);
   if( f ){
+    const char *z = (const char*)pX;
     int i = (int)strlen(z);
     while( i>0 && z[i-1]==';' ){ i--; }
     utf8_printf(f, "%.*s;\n", i, z);
   }
+  return 0;
 }
 
 /*
@@ -2946,10 +2955,10 @@ static int db_int(ShellState *p, const char *zSql){
 /*
 ** Convert a 2-byte or 4-byte big-endian integer into a native integer
 */
-unsigned int get2byteInt(unsigned char *a){
+static unsigned int get2byteInt(unsigned char *a){
   return (a[0]<<8) + a[1];
 }
-unsigned int get4byteInt(unsigned char *a){
+static unsigned int get4byteInt(unsigned char *a){
   return (a[0]<<24) + (a[1]<<16) + (a[2]<<8) + a[3];
 }
 
@@ -4655,9 +4664,9 @@ static int do_meta_command(char *zLine, ShellState *p){
     p->traceOut = output_file_open(azArg[1]);
 #if !defined(SQLITE_OMIT_TRACE) && !defined(SQLITE_OMIT_FLOATING_POINT)
     if( p->traceOut==0 ){
-      sqlite3_trace(p->db, 0, 0);
+      sqlite3_trace_v2(p->db, 0, 0, 0);
     }else{
-      sqlite3_trace(p->db, sql_trace_callback, p->traceOut);
+      sqlite3_trace_v2(p->db, SQLITE_TRACE_STMT, sql_trace_callback,p->traceOut);
     }
 #endif
   }else
@@ -5317,6 +5326,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       szHeap = integerValue(zSize);
       if( szHeap>0x7fff0000 ) szHeap = 0x7fff0000;
       sqlite3_config(SQLITE_CONFIG_HEAP, malloc((int)szHeap), (int)szHeap, 64);
+#else
+      (void)cmdline_option_value(argc, argv, ++i);
 #endif
     }else if( strcmp(z,"-scratch")==0 ){
       int n, sz;

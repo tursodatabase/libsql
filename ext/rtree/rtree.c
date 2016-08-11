@@ -2800,6 +2800,53 @@ static RtreeValue rtreeValueUp(sqlite3_value *v){
 }
 #endif /* !defined(SQLITE_RTREE_INT_ONLY) */
 
+/*
+** A constraint has failed while inserting a row into an rtree table. 
+** Assuming no OOM error occurs, this function sets the error message 
+** (at pRtree->base.zErrMsg) to an appropriate value and returns
+** SQLITE_CONSTRAINT.
+**
+** Parameter iCol is the index of the leftmost column involved in the
+** constraint failure. If it is 0, then the constraint that failed is
+** the unique constraint on the id column. Otherwise, it is the rtree
+** (c1<=c2) constraint on columns iCol and iCol+1 that has failed.
+**
+** If an OOM occurs, SQLITE_NOMEM is returned instead of SQLITE_CONSTRAINT.
+*/
+static int rtreeConstraintError(Rtree *pRtree, int iCol){
+  sqlite3_stmt *pStmt = 0;
+  char *zSql; 
+  int rc;
+
+  assert( iCol==0 || iCol%2 );
+  zSql = sqlite3_mprintf("SELECT * FROM %Q.%Q", pRtree->zDb, pRtree->zName);
+  if( zSql ){
+    rc = sqlite3_prepare_v2(pRtree->db, zSql, -1, &pStmt, 0);
+  }else{
+    rc = SQLITE_NOMEM;
+  }
+  sqlite3_free(zSql);
+
+  if( rc==SQLITE_OK ){
+    if( iCol==0 ){
+      const char *zCol = sqlite3_column_name(pStmt, 0);
+      pRtree->base.zErrMsg = sqlite3_mprintf(
+          "UNIQUE constraint failed: %s.%s", pRtree->zName, zCol
+      );
+    }else{
+      const char *zCol1 = sqlite3_column_name(pStmt, iCol);
+      const char *zCol2 = sqlite3_column_name(pStmt, iCol+1);
+      pRtree->base.zErrMsg = sqlite3_mprintf(
+          "rtree constraint failed: %s.(%s<=%s)", pRtree->zName, zCol1, zCol2
+      );
+    }
+  }
+
+  sqlite3_finalize(pStmt);
+  return (rc==SQLITE_OK ? SQLITE_CONSTRAINT : rc);
+}
+
+
 
 /*
 ** The xUpdate method for rtree module virtual tables.
@@ -2850,7 +2897,7 @@ static int rtreeUpdate(
         cell.aCoord[ii].f = rtreeValueDown(azData[ii+3]);
         cell.aCoord[ii+1].f = rtreeValueUp(azData[ii+4]);
         if( cell.aCoord[ii].f>cell.aCoord[ii+1].f ){
-          rc = SQLITE_CONSTRAINT;
+          rc = rtreeConstraintError(pRtree, ii+1);
           goto constraint;
         }
       }
@@ -2861,7 +2908,7 @@ static int rtreeUpdate(
         cell.aCoord[ii].i = sqlite3_value_int(azData[ii+3]);
         cell.aCoord[ii+1].i = sqlite3_value_int(azData[ii+4]);
         if( cell.aCoord[ii].i>cell.aCoord[ii+1].i ){
-          rc = SQLITE_CONSTRAINT;
+          rc = rtreeConstraintError(pRtree, ii+1);
           goto constraint;
         }
       }
@@ -2882,7 +2929,7 @@ static int rtreeUpdate(
           if( sqlite3_vtab_on_conflict(pRtree->db)==SQLITE_REPLACE ){
             rc = rtreeDeleteRowid(pRtree, cell.iRowid);
           }else{
-            rc = SQLITE_CONSTRAINT;
+            rc = rtreeConstraintError(pRtree, 0);
             goto constraint;
           }
         }
@@ -2965,6 +3012,11 @@ static int rtreeQueryStat1(sqlite3 *db, Rtree *pRtree){
   int rc;
   i64 nRow = 0;
 
+  if( sqlite3_table_column_metadata(db,pRtree->zDb,"sqlite_stat1",
+          0,0,0,0,0,0)==SQLITE_ERROR ){
+    pRtree->nRowEst = RTREE_DEFAULT_ROWEST;
+    return SQLITE_OK;
+  }
   zSql = sqlite3_mprintf(zFmt, pRtree->zDb, pRtree->zName);
   if( zSql==0 ){
     rc = SQLITE_NOMEM;
