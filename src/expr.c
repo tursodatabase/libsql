@@ -2056,6 +2056,9 @@ int sqlite3FindInIndex(
           CollSeq *pReq = sqlite3BinaryCompareCollSeq(pParse, pLhs, pRhs);
           int j;
 
+          assert( pReq || pParse->nErr );
+          if( pReq==0 ) break;
+
           for(j=0; j<nExpr; j++){
             if( pIdx->aiColumn[j]!=pRhs->iColumn ) continue;
             assert( pIdx->azColl[j] );

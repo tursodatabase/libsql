@@ -273,6 +273,24 @@ do_eqp_test 6.5 {
   {SEARCH TABLE e1 USING INDEX e1cde (c=? AND (d,e)>(?,?) AND (d,e)<(?,?))}
 }
 
+#-------------------------------------------------------------------------
+
+do_execsql_test 7.1 {
+  CREATE TABLE f1(a, b, c);
+  CREATE INDEX f1ab ON f1(a, b);
+}
+
+do_catchsql_test 7.2 {
+  SELECT (a COLLATE nocase, b) IN (SELECT a, b FROM f1) FROM f1;
+} {0 {}}
+
+do_catchsql_test 7.3 {
+  SELECT (a COLLATE nose, b) IN (SELECT a, b FROM f1) FROM f1;
+} {1 {no such collation sequence: nose}}
+
+do_catchsql_test 7.4 {
+  SELECT * FROM f1 WHERE (?, ? COLLATE nose) > (a, b);
+} {1 {no such collation sequence: nose}}
 
 finish_test
 

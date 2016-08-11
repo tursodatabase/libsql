@@ -1,5 +1,5 @@
-C Add\srowvalue5.test,\swhich\sshould\shave\sbeen\spart\sof\sthe\sprevious\scommit\son\sthis\sbranch.
-D 2016-08-09T05:48:40.637
+C Fix\ssome\sproblems\swith\shandling\s"no\ssuch\scollation\ssequence"\serrors.
+D 2016-08-11T12:01:52.255
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -337,7 +337,7 @@ F src/ctime.c e77f3dc297b4b65c96da78b4ae4272fdfae863d7
 F src/date.c 95c9a8d00767e7221a8e9a31f4e913fc8029bf6b
 F src/dbstat.c 4f6f7f52b49beb9636ffbd517cfe44a402ba4ad0
 F src/delete.c 4aba4214a377ce8ddde2d2e609777bcc8235200f
-F src/expr.c 94b3d94696e86840f2d0d038c638eefde57c2a40
+F src/expr.c dfc2275726e0a4916f10fe6b5b4f45fff835e790
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c bc4145347595b7770f9a598cff1c848302cf5413
 F src/func.c 29cc9acb170ec1387b9f63eb52cd85f8de96c771
@@ -463,7 +463,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 02eeecc265f6ffd0597378f5d8ae9070b62a406a
 F src/wal.h 6dd221ed384afdc204bc61e25c23ef7fd5a511f2
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
-F src/where.c 457a2c8cd94a1dbe8d2e5113f6078f2e6b9067d5
+F src/where.c 5bee250c8233c43bd7f53897d12b8468004f63db
 F src/whereInt.h 14dd243e13b81cbb0a66063d38b70f93a7d6e613
 F src/wherecode.c 92202261a6e41f897a595417c5b0c75c8acf713d
 F src/whereexpr.c 4a8cefc7c122132ac9f3ed125c61629a0e3de094
@@ -1021,7 +1021,7 @@ F test/rowid.test 5b7509f384f4f6fae1af3c8c104c8ca299fea18d
 F test/rowvalue.test 56b34d31d91340a6e922e753b798880170cc1aa7
 F test/rowvalue2.test 8d5dfe75b8f4d1868a2f91f0356f20d36cba64ff
 F test/rowvalue3.test dbe935260851b197dfbbbcb0ac2a15cb5f324fd4
-F test/rowvalue4.test 8d3b26c7ab26314b625cd2b113d782b011b91851
+F test/rowvalue4.test ed3f7974099f0fc508c9f95df55d37c49f43be65
 F test/rowvalue5.test 01c7e0bc4048f30b58e6eb27ecd26e5bd312635e
 F test/rowvaluefault.test 7b16485e3f2b371f3e3d05455b8ded6d0c090244
 F test/rtree.test 0c8d9dd458d6824e59683c19ab2ffa9ef946f798
@@ -1515,7 +1515,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 156a41f30a0afd9a70e6c26470dcc468a11bd402
-R c38c81cb8ebb8c1f60f796251d669e34
+P ea03e219ced87777f0c3c6bbb0274078dbb829e2
+R 3327e29017db82c17326a5b9067bf8a5
 U dan
-Z f2cc02b61092cf3b9735f66f5f90cbf0
+Z 2191ed49fb7f045b414ebf34ab584005

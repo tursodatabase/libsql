@@ -2256,7 +2256,7 @@ int whereRangeVectorLen(
     if( aff!=idxaff ) break;
 
     pColl = sqlite3BinaryCompareCollSeq(pParse, pLhs, pRhs);
-    if( sqlite3StrICmp(pColl->zName, pIdx->azColl[i+nEq]) ) break;
+    if( pColl==0 || sqlite3StrICmp(pColl->zName, pIdx->azColl[i+nEq]) ) break;
   }
   return i;
 }
