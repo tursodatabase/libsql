@@ -3200,6 +3200,7 @@ static void fts5IterSetOutputs_Nocolset(Fts5Iter *pIter, Fts5SegIter *pSeg){
 ** against no columns at all).
 */
 static void fts5IterSetOutputs_ZeroColset(Fts5Iter *pIter, Fts5SegIter *pSeg){
+  UNUSED_PARAM(pSeg);
   pIter->base.nData = 0;
 }
 

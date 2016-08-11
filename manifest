@@ -1,5 +1,5 @@
-C Optimization\sto\ssqlite3WhereExprUsage().
-D 2016-08-10T20:02:21.519
+C Fix\sa\sharmless\scompiler\swarning\sin\sFTS5.
+D 2016-08-11T01:24:56.314
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -104,7 +104,7 @@ F ext/fts5/fts5_buffer.c 4c1502d4c956cd092c89ce4480867f9d8bf325cd
 F ext/fts5/fts5_config.c 5af9c360e99669d29f06492c370892394aba0857
 F ext/fts5/fts5_expr.c df0004b5bffcbe34c329f2992669c6352443f415
 F ext/fts5/fts5_hash.c 880998e596b60f078348d48732ca4ad9a90caad2
-F ext/fts5/fts5_index.c e25ac419fc66f412e6044595b20b4bf8f7cea284
+F ext/fts5/fts5_index.c 05386732609221d066d204b22c4a5275a0225ed4
 F ext/fts5/fts5_main.c f85281445dcf8be32d18841c93a6f90fe27dbfe2
 F ext/fts5/fts5_storage.c de0ed8a06738bde433afe11e92295ceaffbc4e58
 F ext/fts5/fts5_tcl.c 4a901f00c8553740dba63511603f5527d741c26a
@@ -1510,7 +1510,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7319d676aaf95ba7391379f4cdf193b6aa898893
-R 35b146f4e31088e5d413861ddde93f74
+P 95493058fcf40306727a281f21c5a2a0011b7d02
+R 62963055338ff8dad6eebc29c29c9140
 U drh
-Z 2c745f38c120984510a4f6c92123cc21
+Z e11e1549fddd90a07d1f00ccb39e8b50
