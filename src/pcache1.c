@@ -632,12 +632,30 @@ static void pcache1TruncateUnsafe(
   PCache1 *pCache,             /* The cache to truncate */
   unsigned int iLimit          /* Drop pages with this pgno or larger */
 ){
-  TESTONLY( unsigned int nPage = 0; )  /* To assert pCache->nPage is correct */
-  unsigned int h;
+  TESTONLY( int nPage = 0; )  /* To assert pCache->nPage is correct */
+  unsigned int h, iStop;
   assert( sqlite3_mutex_held(pCache->pGroup->mutex) );
-  for(h=0; h<pCache->nHash; h++){
-    PgHdr1 **pp = &pCache->apHash[h]; 
+  assert( pCache->iMaxKey >= iLimit );
+  assert( pCache->nHash > 0 );
+  if( pCache->iMaxKey - iLimit < pCache->nHash ){
+    /* If we are just shaving the last few pages off the end of the
+    ** cache, then there is no point in scanning the entire hash table.
+    ** Only scan those hash slots that might contain pages that need to
+    ** be removed. */
+    h = iLimit % pCache->nHash;
+    iStop = pCache->iMaxKey % pCache->nHash;
+    TESTONLY( nPage = -10; )  /* Disable the pCache->nPage validity check */
+  }else{
+    /* This is the general case where many pages are being removed.
+    ** It is necessary to scan the entire hash table */
+    h = pCache->nHash/2;
+    iStop = h - 1;
+  }
+  for(;;){
+    PgHdr1 **pp;
     PgHdr1 *pPage;
+    assert( h<pCache->nHash );
+    pp = &pCache->apHash[h]; 
     while( (pPage = *pp)!=0 ){
       if( pPage->iKey>=iLimit ){
         pCache->nPage--;
@@ -646,11 +664,13 @@ static void pcache1TruncateUnsafe(
         pcache1FreePage(pPage);
       }else{
         pp = &pPage->pNext;
-        TESTONLY( nPage++; )
+        TESTONLY( if( nPage>=0 ) nPage++; )
       }
     }
+    if( h==iStop ) break;
+    h = (h+1) % pCache->nHash;
   }
-  assert( pCache->nPage==nPage );
+  assert( nPage<0 || pCache->nPage==(unsigned)nPage );
 }
 
 /******************************************************************************/
@@ -1127,7 +1147,7 @@ static void pcache1Destroy(sqlite3_pcache *p){
   PGroup *pGroup = pCache->pGroup;
   assert( pCache->bPurgeable || (pCache->nMax==0 && pCache->nMin==0) );
   pcache1EnterMutex(pGroup);
-  pcache1TruncateUnsafe(pCache, 0);
+  if( pCache->nPage ) pcache1TruncateUnsafe(pCache, 0);
   assert( pGroup->nMaxPage >= pCache->nMax );
   pGroup->nMaxPage -= pCache->nMax;
   assert( pGroup->nMinPage >= pCache->nMin );
