@@ -116,7 +116,7 @@
 **
 **   N between YY_MIN_REDUCE            Reduce by rule N-YY_MIN_REDUCE
 **     and YY_MAX_REDUCE
-
+**
 **   N == YY_ERROR_ACTION               A syntax error has occurred.
 **
 **   N == YY_ACCEPT_ACTION              The parser accepts its input.
@@ -125,16 +125,20 @@
 **                                      slots in the yy_action[] table.
 **
 ** The action table is constructed as a single large table named yy_action[].
-** Given state S and lookahead X, the action is computed as
+** Given state S and lookahead X, the action is computed as either:
 **
-**      yy_action[ yy_shift_ofst[S] + X ]
+**    (A)   N = yy_action[ yy_shift_ofst[S] + X ]
+**    (B)   N = yy_default[S]
 **
-** If the index value yy_shift_ofst[S]+X is out of range or if the value
-** yy_lookahead[yy_shift_ofst[S]+X] is not equal to X or if yy_shift_ofst[S]
-** is equal to YY_SHIFT_USE_DFLT, it means that the action is not in the table
-** and that yy_default[S] should be used instead.  
+** The (A) formula is preferred.  The B formula is used instead if:
+**    (1)  The yy_shift_ofst[S]+X value is out of range, or
+**    (2)  yy_lookahead[yy_shift_ofst[S]+X] is not equal to X, or
+**    (3)  yy_shift_ofst[S] equal YY_SHIFT_USE_DFLT.
+** (Implementation note: YY_SHIFT_USE_DFLT is chosen so that
+** YY_SHIFT_USE_DFLT+X will be out of range for all possible lookaheads X.
+** Hence only tests (1) and (2) need to be evaluated.)
 **
-** The formula above is for computing the action when the lookahead is
+** The formulas above are for computing the action when the lookahead is
 ** a terminal symbol.  If the lookahead is a non-terminal (as occurs after
 ** a reduce action) then the yy_reduce_ofst[] array is used in place of
 ** the yy_shift_ofst[] array and YY_REDUCE_USE_DFLT is used in place of
@@ -450,50 +454,47 @@ static unsigned int yy_find_shift_action(
   assert( stateno <= YY_SHIFT_COUNT );
   do{
     i = yy_shift_ofst[stateno];
-    if( i==YY_SHIFT_USE_DFLT ) return yy_default[stateno];
     assert( iLookAhead!=YYNOCODE );
     i += iLookAhead;
     if( i<0 || i>=YY_ACTTAB_COUNT || yy_lookahead[i]!=iLookAhead ){
-      if( iLookAhead>0 ){
 #ifdef YYFALLBACK
-        YYCODETYPE iFallback;            /* Fallback token */
-        if( iLookAhead<sizeof(yyFallback)/sizeof(yyFallback[0])
-               && (iFallback = yyFallback[iLookAhead])!=0 ){
+      YYCODETYPE iFallback;            /* Fallback token */
+      if( iLookAhead<sizeof(yyFallback)/sizeof(yyFallback[0])
+             && (iFallback = yyFallback[iLookAhead])!=0 ){
 #ifndef NDEBUG
-          if( yyTraceFILE ){
-            fprintf(yyTraceFILE, "%sFALLBACK %s => %s\n",
-               yyTracePrompt, yyTokenName[iLookAhead], yyTokenName[iFallback]);
-          }
-#endif
-          assert( yyFallback[iFallback]==0 ); /* Fallback loop must terminate */
-          iLookAhead = iFallback;
-          continue;
+        if( yyTraceFILE ){
+          fprintf(yyTraceFILE, "%sFALLBACK %s => %s\n",
+             yyTracePrompt, yyTokenName[iLookAhead], yyTokenName[iFallback]);
         }
+#endif
+        assert( yyFallback[iFallback]==0 ); /* Fallback loop must terminate */
+        iLookAhead = iFallback;
+        continue;
+      }
 #endif
 #ifdef YYWILDCARD
-        {
-          int j = i - iLookAhead + YYWILDCARD;
-          if( 
+      {
+        int j = i - iLookAhead + YYWILDCARD;
+        if( 
 #if YY_SHIFT_MIN+YYWILDCARD<0
-            j>=0 &&
+          j>=0 &&
 #endif
 #if YY_SHIFT_MAX+YYWILDCARD>=YY_ACTTAB_COUNT
-            j<YY_ACTTAB_COUNT &&
+          j<YY_ACTTAB_COUNT &&
 #endif
-            yy_lookahead[j]==YYWILDCARD
-          ){
+          yy_lookahead[j]==YYWILDCARD && iLookAhead>0
+        ){
 #ifndef NDEBUG
-            if( yyTraceFILE ){
-              fprintf(yyTraceFILE, "%sWILDCARD %s => %s\n",
-                 yyTracePrompt, yyTokenName[iLookAhead],
-                 yyTokenName[YYWILDCARD]);
-            }
-#endif /* NDEBUG */
-            return yy_action[j];
+          if( yyTraceFILE ){
+            fprintf(yyTraceFILE, "%sWILDCARD %s => %s\n",
+               yyTracePrompt, yyTokenName[iLookAhead],
+               yyTokenName[YYWILDCARD]);
           }
+#endif /* NDEBUG */
+          return yy_action[j];
         }
-#endif /* YYWILDCARD */
       }
+#endif /* YYWILDCARD */
       return yy_default[stateno];
     }else{
       return yy_action[i];

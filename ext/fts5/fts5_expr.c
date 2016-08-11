@@ -167,6 +167,7 @@ static int fts5ExprGetToken(
     case ',':  tok = FTS5_COMMA; break;
     case '+':  tok = FTS5_PLUS;  break;
     case '*':  tok = FTS5_STAR;  break;
+    case '-':  tok = FTS5_MINUS; break;
     case '\0': tok = FTS5_EOF;   break;
 
     case '"': {
@@ -1791,6 +1792,34 @@ static Fts5Colset *fts5ParseColset(
   }
 
   return pNew;
+}
+
+/*
+** Allocate and return an Fts5Colset object specifying the inverse of
+** the colset passed as the second argument. Free the colset passed
+** as the second argument before returning.
+*/
+Fts5Colset *sqlite3Fts5ParseColsetInvert(Fts5Parse *pParse, Fts5Colset *p){
+  Fts5Colset *pRet;
+  int nCol = pParse->pConfig->nCol;
+
+  pRet = (Fts5Colset*)sqlite3Fts5MallocZero(&pParse->rc, 
+      sizeof(Fts5Colset) + sizeof(int)*nCol
+  );
+  if( pRet ){
+    int i;
+    int iOld = 0;
+    for(i=0; i<nCol; i++){
+      if( iOld>=p->nCol || p->aiCol[iOld]!=i ){
+        pRet->aiCol[pRet->nCol++] = i;
+      }else{
+        iOld++;
+      }
+    }
+  }
+
+  sqlite3_free(p);
+  return pRet;
 }
 
 Fts5Colset *sqlite3Fts5ParseColset(
