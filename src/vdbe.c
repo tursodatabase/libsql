@@ -6227,7 +6227,7 @@ case OP_JournalMode: {    /* out2 */
         ** file. An EXCLUSIVE lock may still be held on the database file 
         ** after a successful return. 
         */
-        rc = sqlite3PagerCloseWal(pPager);
+        rc = sqlite3PagerCloseWal(pPager, db);
         if( rc==SQLITE_OK ){
           sqlite3PagerSetJournalMode(pPager, eNew);
         }

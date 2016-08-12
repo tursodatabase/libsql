@@ -1,5 +1,5 @@
-C Add\sthe\s"modeof=<filename>"\sURI\sparameter\sto\sos_unix.c\s-\sused\sto\sspecify\sa\sfile\sto\scopy\spermissions\sfrom\swhen\sa\snew\sdatabase\sis\screated.\sAlso\sallow\spassing\sNULL\sas\sthe\ssecond\sparameter\sto\ssqlite3rbu_vacuum().
-D 2016-08-11T18:05:47.763
+C Have\swal\sfile\scheckpoints\sexit\searly\sif\sthe\ssqlite3_interrupt()\sAPI\sfunction\sis\scalled.
+D 2016-08-12T16:21:15.202
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -328,7 +328,7 @@ F src/auth.c 5c8e0f37f785f935f589496801edd19840485853
 F src/backup.c 17cd25a36d49330df2bacd2cadf2a61f3b525976
 F src/bitvec.c 3ee4c8b2c94ed3a7377256e18199e6ff5cf33f63
 F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
-F src/btree.c 2551bd3ecb8b8988fb8b23aabadfb214dbc38e46
+F src/btree.c 7aa56fb3545b9b84199987ba26e6316ae1abd769
 F src/btree.h 075c45707c0f8f8af118f739f36df8098a08b7da
 F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
 F src/build.c 7c3c780b703c09314032c8f6e4e7c1d80241a818
@@ -349,7 +349,7 @@ F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/insert.c 8f4e9fcbd8e95e85f15647ba8b413b18d556ec2b
 F src/legacy.c 75d3023be8f0d2b99d60f905090341a03358c58e
 F src/loadext.c dd7a2b77902cc66c22555aef02e1a682554b7aec
-F src/main.c 16c1b2114eae8804caf3a8de8cb47bf2c6d83ad3
+F src/main.c 52dad7971461bd1bdaa78c375016ebd883e11608
 F src/malloc.c 1443d1ad95d67c21d77af7ae3f44678252f0efec
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 6919bcf12f221868ea066eec27e579fed95ce98b
@@ -371,8 +371,8 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c be9ca0f901a2b6c1bc93dc338f4863675180c189
 F src/os_win.c 520f23475f1de530c435d30b67b7b15fe90874b0
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 40928c450320da78bb4bd3ae82818f4239e19b7e
-F src/pager.h 966d2769e76ae347c8a32c4165faf6e6cb64546d
+F src/pager.c 3d3ab7cb526615189750420e673d90689a9592a1
+F src/pager.h 0a19b1e212d0f5d0507f186ae1cca4e523d09d1a
 F src/parse.y 99b676e6fc2f4e331ab93e76b3987cffdbd28efa
 F src/pcache.c 5583c8ade4b05075a60ba953ef471d1c1a9c05df
 F src/pcache.h 2cedcd8407eb23017d92790b112186886e179490
@@ -395,7 +395,7 @@ F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
 F src/tclsqlite.c bdae822f21e229b6daced15938b6343ce44ef454
 F src/test1.c 0a0909cf7962d2359db329c08d15b90b4b6e724f
-F src/test2.c b7174313e993754303a8b33c43df7c44b46857ab
+F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
 F src/test3.c 1339a40be39650ae83894b6578f971dc7f96ea8a
 F src/test4.c 18ec393bb4d0ad1de729f0b94da7267270f3d8e6
 F src/test5.c 328aae2c010c57a9829d255dc099d6899311672d
@@ -450,7 +450,7 @@ F src/update.c 4f05ea8cddfa367d045e03589756c02199e8f9bd
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c 810ec3f22e2d1b62e66c30fe3621ebdedd23584d
 F src/vacuum.c 9dd2f5d276bc6094d8f1d85ecd41b30c1a002a43
-F src/vdbe.c ea260b61e73b11a71e70b28a8e25866e2899e5da
+F src/vdbe.c 94c114b3cc72098ea783f04f7a21d7f6b3e1dc73
 F src/vdbe.h 67bc551f7faf04c33493892e4b378aada823ed10
 F src/vdbeInt.h c59381049af5c7751a83456c39b80d1a6fde1f9d
 F src/vdbeapi.c c3f6715a99995c11748ecad91d25e93fd9fc390b
@@ -461,8 +461,8 @@ F src/vdbesort.c 91fda3909326860382b0ca8aa251e609c6a9d62c
 F src/vdbetrace.c 41963d5376f0349842b5fc4aaaaacd7d9cdc0834
 F src/vtab.c 6b3cfaff7e4397739d6b48511e777ca58c6d06d4
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 02eeecc265f6ffd0597378f5d8ae9070b62a406a
-F src/wal.h 6dd221ed384afdc204bc61e25c23ef7fd5a511f2
+F src/wal.c 0b44e89742024d3b6992bf404d2ab692113e1e60
+F src/wal.h bf03a23da3100ab25e5c0363450233cfee09cfc2
 F src/walker.c 2d2cc7fb0f320f7f415215d7247f3c584141ac09
 F src/where.c 5c9df42d50888be8274a5a0eb062eb0629869bd3
 F src/whereInt.h e5b939701a7ceffc5a3a8188a37f9746416ebcd0
@@ -859,6 +859,7 @@ F test/insert5.test 394f96728d1258f406fe5f5aeb0aaf29487c39a6
 F test/instr.test 737bbf80685232033f3abedc6ae92f75860b5dd2
 F test/intarray.test 066b7d7ac38d25bf96f87f1b017bfc687551cdd4
 F test/interrupt.test dfe9a67a94b0b2d8f70545ba1a6cca10780d71cc
+F test/interrupt2.test 829b06f9e20a6c378d8bd121b26c337f4dfa36e5
 F test/intpkey.test ac71107a49a06492b69b82aafaf225400598d3c8
 F test/io.test f95bca1783b01ea7761671560d023360d2dfa4cc
 F test/ioerr.test 2a24bd6ed5a8b062e64bfe1f6cf94fb25e92210d
@@ -1510,7 +1511,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ab83d7077da80ddbcf399d0797d79e964dc64f0e
-R 753cf0ce0fc5b95ce832a2f13995ee3e
+P ed406d31ff54ee3de8db91690a966e5c561f8f94
+R fe020edefec096b26ead32b9e5eecd82
+T *branch * interruptible-checkpoint
+T *sym-interruptible-checkpoint *
+T -sym-trunk *
 U dan
-Z 87571942a0f33f54e925f9d7f08d0ded
+Z f50973b5d64203bd29a6b71f91836967
