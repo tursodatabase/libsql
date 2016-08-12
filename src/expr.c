@@ -2506,12 +2506,13 @@ static void sqlite3ExprCodeIN(
 
   if( sqlite3ExprCheckIN(pParse, pExpr) ) return;
   zAff = exprINAffinity(pParse, pExpr);
+  if( zAff==0 ) return;
   nVector = sqlite3ExprVectorSize(pExpr->pLeft);
   aiMap = (int*)sqlite3DbMallocZero(
       pParse->db, nVector*(sizeof(int) + sizeof(char)) + 1
   );
-  if( !zAff || !aiMap ){
-    sqlite3DbFree(pParse->db, aiMap);
+  if( aiMap==0 ){
+    sqlite3DbFree(pParse->db, zAff);
     return;
   }
 
