@@ -2606,6 +2606,7 @@ static void sqlite3ExprCodeIN(
         Expr *p = sqlite3ExprVectorField(pExpr->pLeft, i);
         if( sqlite3ExprCanBeNull(p) ){
           sqlite3VdbeAddOp2(v, OP_IsNull, r1+aiMap[i], destIfNull);
+          VdbeCoverage(v);
         }
       }
     }else if( nVector==1 && sqlite3ExprCanBeNull(pExpr->pLeft) ){
@@ -2632,11 +2633,13 @@ static void sqlite3ExprCodeIN(
 
         /* Search the index for the key. */
         addr = sqlite3VdbeAddOp4Int(v, OP_Found, iIdx, 0, r1, nVector);
+        VdbeCoverage(v);
 
         /* At this point the specified key is not present in the index, 
         ** so the result of the IN(..) operator must be either NULL or
         ** 0. The vdbe code generated below figures out which.  */
         addrNext = 1+sqlite3VdbeAddOp2(v, OP_Rewind, iIdx, destIfFalse);
+        VdbeCoverage(v);
 
         for(i=0; i<nVector; i++){
           Expr *p;
@@ -2648,7 +2651,9 @@ static void sqlite3ExprCodeIN(
           sqlite3VdbeAddOp3(v, OP_Column, iIdx, i, r2);
           sqlite3VdbeAddOp4(v, OP_Eq, r1+i, 0, r2, (void*)pColl,P4_COLLSEQ);
           sqlite3VdbeChangeP5(v, SQLITE_JUMPIFNULL);
+          VdbeCoverage(v);
           sqlite3VdbeAddOp2(v, OP_Next, iIdx, addrNext);
+          VdbeCoverage(v);
           sqlite3VdbeAddOp2(v, OP_Goto, 0, destIfFalse);
           sqlite3VdbeJumpHere(v, sqlite3VdbeCurrentAddr(v)-3);
           sqlite3ReleaseTempReg(pParse, r2);
@@ -2663,6 +2668,7 @@ static void sqlite3ExprCodeIN(
           Expr *p = sqlite3ExprVectorField(pExpr->pLeft, i);
           if( sqlite3ExprCanBeNull(p) ){
             sqlite3VdbeAddOp2(v, OP_IsNull, r1+aiMap[i], destIfNull);
+            VdbeCoverage(v);
           }
         }
 
