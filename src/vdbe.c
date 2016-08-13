@@ -573,7 +573,7 @@ int sqlite3VdbeExec(
   sqlite3 *db = p->db;       /* The database */
   u8 resetSchemaOnFault = 0; /* Reset schema after an error if positive */
   u8 encoding = ENC(db);     /* The database encoding */
-  int iCompare = 0;          /* Result of last OP_Compare operation */
+  int iCompare = 0;          /* Result of last comparison */
   unsigned nVmStep = 0;      /* Number of virtual machine steps */
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
   unsigned nProgressLimit = 0;/* Invoke xProgress() when nVmStep reaches this */
@@ -585,7 +585,6 @@ int sqlite3VdbeExec(
   Mem *pOut = 0;             /* Output operand */
   int *aPermute = 0;         /* Permutation of columns for OP_Compare */
   i64 lastRowid = db->lastRowid;  /* Saved value of the last insert ROWID */
-  int cmpRes;                /* Result of last comparison operation */
 #ifdef VDBE_PROFILE
   u64 start;                 /* CPU clock count at start of opcode */
 #endif
@@ -2004,16 +2003,16 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
        && (flags3&MEM_Null)!=0
        && (flags3&MEM_Cleared)==0
       ){
-        cmpRes = 0;  /* Operands are equal */
+        iCompare = 0;  /* Operands are equal */
       }else{
-        cmpRes = 1;  /* Operands are not equal */
+        iCompare = 1;  /* Operands are not equal */
       }
     }else{
       /* SQLITE_NULLEQ is clear and at least one operand is NULL,
       ** then the result is always NULL.
       ** The jump is taken if the SQLITE_JUMPIFNULL bit is set.
       */
-      cmpRes = 1;    /* Operands are not equal */
+      iCompare = 1;    /* Operands are not equal */
       if( pOp->p5 & SQLITE_STOREP2 ){
         pOut = &aMem[pOp->p2];
         memAboutToChange(p, pOut);
@@ -2066,15 +2065,15 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
       sqlite3VdbeMemExpandBlob(pIn3);
       flags3 &= ~MEM_Zero;
     }
-    cmpRes = sqlite3MemCompare(pIn3, pIn1, pOp->p4.pColl);
+    iCompare = sqlite3MemCompare(pIn3, pIn1, pOp->p4.pColl);
   }
   switch( pOp->opcode ){
-    case OP_Eq:    res = cmpRes==0;     break;
-    case OP_Ne:    res = cmpRes!=0;     break;
-    case OP_Lt:    res = cmpRes<0;      break;
-    case OP_Le:    res = cmpRes<=0;     break;
-    case OP_Gt:    res = cmpRes>0;      break;
-    case OP_Ge:    res = cmpRes>=0;     break;
+    case OP_Eq:    res = iCompare==0;     break;
+    case OP_Ne:    res = iCompare!=0;     break;
+    case OP_Lt:    res = iCompare<0;      break;
+    case OP_Le:    res = iCompare<=0;     break;
+    case OP_Gt:    res = iCompare>0;      break;
+    default:       res = iCompare>=0;     break;
   }
 
   /* Undo any changes made by applyAffinity() to the input registers. */
@@ -2116,8 +2115,8 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
 case OP_ElseNotEq: {       /* same as TK_ESCAPE, jump */
   assert( pOp>aOp );
   assert( pOp[-1].opcode==OP_Lt || pOp[-1].opcode==OP_Gt );
-  VdbeBranchTaken(cmpRes!=0, 2);
-  if( cmpRes!=0 ) goto jump_to_p2;
+  VdbeBranchTaken(iCompare!=0, 2);
+  if( iCompare!=0 ) goto jump_to_p2;
   break;
 }
 
