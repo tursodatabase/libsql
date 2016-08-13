@@ -2398,12 +2398,19 @@ btree_open_out:
     sqlite3_free(p);
     *ppBtree = 0;
   }else{
+    sqlite3_file *pFile;
+
     /* If the B-Tree was successfully opened, set the pager-cache size to the
     ** default value. Except, when opening on an existing shared pager-cache,
     ** do not change the pager-cache size.
     */
     if( sqlite3BtreeSchema(p, 0, 0)==0 ){
       sqlite3PagerSetCachesize(p->pBt->pPager, SQLITE_DEFAULT_CACHE_SIZE);
+    }
+
+    pFile = sqlite3PagerFile(pBt->pPager);
+    if( pFile->pMethods ){
+      sqlite3OsFileControlHint(pFile, SQLITE_FCNTL_PDB, (void*)&pBt->db);
     }
   }
   if( mutexOpen ){

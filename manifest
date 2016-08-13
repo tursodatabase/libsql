@@ -1,5 +1,5 @@
-C Have\swal\sfile\scheckpoints\sexit\searly\sif\sthe\ssqlite3_interrupt()\sAPI\sfunction\sis\scalled.
-D 2016-08-12T16:21:15.202
+C Questionable\schanges\sto\ssupport\sinterruptible\scheckpoint\sin\sZipVFS.
+D 2016-08-13T14:30:23.488
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -328,7 +328,7 @@ F src/auth.c 5c8e0f37f785f935f589496801edd19840485853
 F src/backup.c 17cd25a36d49330df2bacd2cadf2a61f3b525976
 F src/bitvec.c 3ee4c8b2c94ed3a7377256e18199e6ff5cf33f63
 F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
-F src/btree.c 7aa56fb3545b9b84199987ba26e6316ae1abd769
+F src/btree.c a4a3ac603c88e04c1fde62b58800cd57bf536534
 F src/btree.h 075c45707c0f8f8af118f739f36df8098a08b7da
 F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
 F src/build.c 7c3c780b703c09314032c8f6e4e7c1d80241a818
@@ -386,7 +386,7 @@ F src/resolve.c 0392c6686586b1d4dac9a4106959f03ddd70e9aa
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c f3c6e9065fb34f6a23af27ec7f1f717ffbfc2ee4
 F src/shell.c 79dda477be6c96eba6e952a934957ad36f87acc7
-F src/sqlite.h.in 0f7580280d1b009b507d8beec1ff0f197ba0cc99
+F src/sqlite.h.in 47e4df9bae9d474991a7e1468aab5cb1b6d49def
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
 F src/sqliteInt.h d6f221a5bd572df935140beda82f357c2185a77c
@@ -1511,10 +1511,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ed406d31ff54ee3de8db91690a966e5c561f8f94
-R fe020edefec096b26ead32b9e5eecd82
-T *branch * interruptible-checkpoint
-T *sym-interruptible-checkpoint *
-T -sym-trunk *
+P 8a5f41c7b1718507524adef1a2730e99cf53270a
+R 849b04c7250237751d57f7138163050e
 U dan
-Z f50973b5d64203bd29a6b71f91836967
+Z ee26012ae6b15aa5080b28eefbd3549a
