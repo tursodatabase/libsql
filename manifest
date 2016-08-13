@@ -1,5 +1,5 @@
-C Attempt\sto\ssimplify\sthe\slogic\sand\sgenerated\scode\sfor\svector\scomparisons.\nBasic\scomparison\soperators\sare\sworking,\sbut\sthere\sare\smany\sindexing\stest\nfailures\sstill\sto\sbe\sworked\sthrough.
-D 2016-08-13T10:02:17.801
+C Fix\sto\sthe\svector\sless-than\soperator.\s\sAll\slegacy\stests\spassing\snow.
+D 2016-08-13T12:37:47.521
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -338,7 +338,7 @@ F src/ctime.c e77f3dc297b4b65c96da78b4ae4272fdfae863d7
 F src/date.c 95c9a8d00767e7221a8e9a31f4e913fc8029bf6b
 F src/dbstat.c 4f6f7f52b49beb9636ffbd517cfe44a402ba4ad0
 F src/delete.c 4aba4214a377ce8ddde2d2e609777bcc8235200f
-F src/expr.c 375de68ad2daf3bd339f79074ced5a6db77e2f62
+F src/expr.c d79a02ba0f5b44c3319154641247979c48eec637
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c bc4145347595b7770f9a598cff1c848302cf5413
 F src/func.c 29cc9acb170ec1387b9f63eb52cd85f8de96c771
@@ -1020,7 +1020,7 @@ F test/rowallock.test 3f88ec6819489d0b2341c7a7528ae17c053ab7cc
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
 F test/rowid.test 5b7509f384f4f6fae1af3c8c104c8ca299fea18d
 F test/rowvalue.test 56b34d31d91340a6e922e753b798880170cc1aa7
-F test/rowvalue2.test 8d5dfe75b8f4d1868a2f91f0356f20d36cba64ff
+F test/rowvalue2.test 875068299fd4dd50ef0a47786462c8e1f4065f9a
 F test/rowvalue3.test dbe935260851b197dfbbbcb0ac2a15cb5f324fd4
 F test/rowvalue4.test ed3f7974099f0fc508c9f95df55d37c49f43be65
 F test/rowvalue5.test 01c7e0bc4048f30b58e6eb27ecd26e5bd312635e
@@ -1516,10 +1516,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 381aa73141db8ec59adbcb09e71af660ee4ae5ce
-R b082d1240e853643b05ab20adb3ffc1b
-T *branch * vector-compare
-T *sym-vector-compare *
-T -sym-rowvalue *
+P dfc028cfbe7657d20727a2670ecadb1575eb8cbb
+R 051307c8175981bed144504907ca38ff
 U drh
-Z 873e26b27a2fd221371ad3338313919b
+Z bf986d41b4b86a5837f36c1caf70f646

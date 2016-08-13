@@ -485,14 +485,11 @@ static void codeVectorCompare(
       }else if( opx==TK_NE ){
         sqlite3VdbeAddOp2(v, OP_If, dest, addrDone); VdbeCoverage(v);
         p5 |= SQLITE_KEEPNULL;
-      }else if( opx==op ){
-        assert( op==TK_LT || op==TK_GT );
-        sqlite3VdbeAddOp3(v, OP_If, dest, addrDone, 1);
+      }else{
+        assert( op==TK_LT || op==TK_GT || op==TK_LE || op==TK_GE );
+        sqlite3VdbeAddOp2(v, OP_ElseNotEq, 0, addrDone);
         VdbeCoverageIf(v, op==TK_LT);
         VdbeCoverageIf(v, op==TK_GT);
-      }else{
-        assert( op==TK_LE || op==TK_GE );
-        sqlite3VdbeAddOp2(v, OP_ElseNotEq, 0, addrDone);
         VdbeCoverageIf(v, op==TK_LE);
         VdbeCoverageIf(v, op==TK_GE);
         if( i==nLeft-2 ) opx = op;
