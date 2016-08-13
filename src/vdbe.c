@@ -2004,16 +2004,16 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
        && (flags3&MEM_Null)!=0
        && (flags3&MEM_Cleared)==0
       ){
-        cmpRes = 0;  /* Results are equal */
+        cmpRes = 0;  /* Operands are equal */
       }else{
-        cmpRes = 1;  /* Results are not equal */
+        cmpRes = 1;  /* Operands are not equal */
       }
     }else{
       /* SQLITE_NULLEQ is clear and at least one operand is NULL,
       ** then the result is always NULL.
       ** The jump is taken if the SQLITE_JUMPIFNULL bit is set.
       */
-      cmpRes = 1;
+      cmpRes = 1;    /* Operands are not equal */
       if( pOp->p5 & SQLITE_STOREP2 ){
         pOut = &aMem[pOp->p2];
         memAboutToChange(p, pOut);
@@ -2108,9 +2108,10 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
 /* Opcode: ElseNotEq * P2 * * *
 **
 ** This opcode must immediately follow an Lt or Gt comparison operator.
-** If the operands in that previous comparison are not equal (possibly
-** because one or the other is NULL) then jump to P2.  If the two operands
-** of the prior comparison are equal, fall through.
+** If the operands in that previous comparison had been used with an Eq
+** operator and if the result of that Eq would be NULL or false (0), then
+** then jump to P2.  If the result of comparing the two previous operands
+** using Eq would have been true (1), then fall through.
 */
 case OP_ElseNotEq: {       /* same as TK_ESCAPE, jump */
   assert( pOp>aOp );
