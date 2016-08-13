@@ -1659,7 +1659,7 @@ int sqlite3Fts5ExprClonePhrase(
   if( rc==SQLITE_OK ){
     Fts5Colset *pColsetOrig = pOrig->pNode->pNear->pColset;
     if( pColsetOrig ){
-      int nByte = sizeof(Fts5Colset) + pColsetOrig->nCol * sizeof(int);
+      int nByte = sizeof(Fts5Colset) + (pColsetOrig->nCol-1) * sizeof(int);
       Fts5Colset *pColset = (Fts5Colset*)sqlite3Fts5MallocZero(&rc, nByte);
       if( pColset ){ 
         memcpy(pColset, pColsetOrig, nByte);

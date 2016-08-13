@@ -1,5 +1,5 @@
-C Add\sthe\s"modeof=<filename>"\sURI\sparameter\sto\sos_unix.c\s-\sused\sto\sspecify\sa\sfile\sto\scopy\spermissions\sfrom\swhen\sa\snew\sdatabase\sis\screated.\sAlso\sallow\spassing\sNULL\sas\sthe\ssecond\sparameter\sto\ssqlite3rbu_vacuum().
-D 2016-08-11T18:05:47.763
+C Fix\sa\sbuffer\soverread\sin\sfts5.
+D 2016-08-13T06:38:31.533
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -102,7 +102,7 @@ F ext/fts5/fts5Int.h b2eda36e0f224365c8e23dc8f559311834f1c13f
 F ext/fts5/fts5_aux.c daa57fb45216491814520bbb587e97bf81ced458
 F ext/fts5/fts5_buffer.c 4c1502d4c956cd092c89ce4480867f9d8bf325cd
 F ext/fts5/fts5_config.c 5af9c360e99669d29f06492c370892394aba0857
-F ext/fts5/fts5_expr.c df0004b5bffcbe34c329f2992669c6352443f415
+F ext/fts5/fts5_expr.c 1ee97156421919e497595bfa962bb88ad1665401
 F ext/fts5/fts5_hash.c 880998e596b60f078348d48732ca4ad9a90caad2
 F ext/fts5/fts5_index.c 05386732609221d066d204b22c4a5275a0225ed4
 F ext/fts5/fts5_main.c f85281445dcf8be32d18841c93a6f90fe27dbfe2
@@ -1510,7 +1510,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ab83d7077da80ddbcf399d0797d79e964dc64f0e
-R 753cf0ce0fc5b95ce832a2f13995ee3e
+P ed406d31ff54ee3de8db91690a966e5c561f8f94
+R c7f71e9982fe95b86462907f7307b757
 U dan
-Z 87571942a0f33f54e925f9d7f08d0ded
+Z faa5a19931d7d3892f5c4860f7744222
