@@ -174,8 +174,7 @@ impl VTabCursor<CSVTab> for CSVTabCursor {
     fn filter(&mut self,
               _idx_num: libc::c_int,
               _idx_str: *const libc::c_char,
-              _argc: libc::c_int,
-              _argv: *mut *mut ffi::sqlite3_value)
+              _args: &mut[*mut ffi::sqlite3_value])
               -> Result<()> {
         {
             let offset_first_row = self.vtab().offset_first_row;

@@ -60,8 +60,7 @@ pub trait VTabCursor<V: VTab<Self>>: Sized {
     fn filter(&mut self,
               idx_num: libc::c_int,
               idx_str: *const libc::c_char,
-              argc: libc::c_int,
-              argv: *mut *mut ffi::sqlite3_value)
+              args: &mut[*mut ffi::sqlite3_value])
               -> Result<()>;
     /// Advance cursor to the next row of a result set initiated by `filter`.
     fn next(&mut self) -> Result<()>;
@@ -259,9 +258,11 @@ unsafe extern "C" fn $filter(cursor: *mut ffi::sqlite3_vtab_cursor,
                               argc: libc::c_int,
                               argv: *mut *mut ffi::sqlite3_value)
                               -> libc::c_int {
+    use std::slice;
     use vtab::cursor_error;
+    let mut args = slice::from_raw_parts_mut(argv, argc as usize);
     let cr = cursor as *mut $cursor;
-    cursor_error(cursor, (*cr).filter(idx_num, idx_str, argc, argv))
+    cursor_error(cursor, (*cr).filter(idx_num, idx_str, &mut args))
 }
 unsafe extern "C" fn $next(cursor: *mut ffi::sqlite3_vtab_cursor) -> libc::c_int {
     use vtab::cursor_error;
