@@ -9,7 +9,7 @@ use libc;
 use {Connection, Error, Result};
 use ffi;
 use types::Null;
-use vtab::{declare_vtab, escape_double_quote, VTab, VTabCursor};
+use vtab::{declare_vtab, escape_double_quote, Context, VTab, VTabCursor};
 
 /// Register the "csv" module.
 pub fn load_module(conn: &Connection) -> Result<()> {
@@ -199,17 +199,16 @@ impl VTabCursor<CSVTab> for CSVTabCursor {
     fn eof(&self) -> bool {
         self.eof
     }
-    fn column(&self, ctx: *mut ffi::sqlite3_context, col: libc::c_int) -> Result<()> {
-        use functions::ToResult;
+    fn column(&self, ctx: &mut Context, col: libc::c_int) -> Result<()> {
         if col < 0 || col as usize >= self.cols.len() {
             return Err(Error::ModuleError(format!("column index out of bounds: {}", col)));
         }
         if self.cols.is_empty() {
-            unsafe { Null.set_result(ctx) };
+            ctx.set_result(&Null);
             return Ok(());
         }
         // TODO Affinity
-        unsafe { self.cols[col as usize].set_result(ctx) };
+        ctx.set_result(&self.cols[col as usize]);
         Ok(())
     }
     fn rowid(&self) -> Result<i64> {

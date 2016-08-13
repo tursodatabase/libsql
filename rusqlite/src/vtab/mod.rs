@@ -9,6 +9,7 @@ use libc;
 use {Connection, Error, Result, InnerConnection, str_to_cstring};
 use error::error_from_sqlite_code;
 use ffi;
+use functions::ToResult;
 
 // let conn: Connection = ...;
 // let mod: Module = ...; // VTab builder
@@ -65,9 +66,19 @@ pub trait VTabCursor<V: VTab<Self>>: Sized {
     fn eof(&self) -> bool;
     /// Find the value for the `i`-th column of the current row. `i` is zero-based so the first column is numbered 0.
     /// May return its result back to SQLite using one of the specified `ctx`.
-    fn column(&self, ctx: *mut ffi::sqlite3_context, i: libc::c_int) -> Result<()>;
+    fn column(&self, ctx: &mut Context, i: libc::c_int) -> Result<()>;
     /// Return the rowid of row that the cursor is currently pointing at.
     fn rowid(&self) -> Result<i64>;
+}
+
+pub struct Context(*mut ffi::sqlite3_context);
+
+impl Context {
+    pub fn set_result(&mut self, value: &ToResult) {
+        unsafe {
+            value.set_result(self.0);
+        }
+    }
 }
 
 impl Connection {
@@ -282,9 +293,10 @@ unsafe extern "C" fn $column(cursor: *mut ffi::sqlite3_vtab_cursor,
                               ctx: *mut ffi::sqlite3_context,
                               i: libc::c_int)
                               -> libc::c_int {
-    use vtab::result_error;
+    use vtab::{result_error, Context};
     let cr = cursor as *mut $cursor;
-    result_error(ctx, (*cr).column(ctx, i))
+    let mut ctxt = Context(ctx);
+    result_error(ctx, (*cr).column(&mut ctxt, i))
 }
 unsafe extern "C" fn $rowid(cursor: *mut ffi::sqlite3_vtab_cursor,
                              p_rowid: *mut ffi::sqlite3_int64)

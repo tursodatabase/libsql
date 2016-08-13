@@ -7,7 +7,7 @@ use libc;
 
 use {Connection, Error, Result};
 use ffi;
-use vtab::{declare_vtab, escape_double_quote, VTab, VTabCursor};
+use vtab::{declare_vtab, escape_double_quote, Context, VTab, VTabCursor};
 
 /// Create a specific instance of an intarray object.
 /// The new intarray object is returned.
@@ -119,12 +119,11 @@ impl VTabCursor<IntArrayVTab> for IntArrayVTabCursor {
             self.i >= array.len()
         }
     }
-    fn column(&self, ctx: *mut ffi::sqlite3_context, _i: libc::c_int) -> Result<()> {
-        use functions::ToResult;
+    fn column(&self, ctx: &mut Context, _i: libc::c_int) -> Result<()> {
         let vtab = self.vtab();
         unsafe {
             let array = (*vtab.array).borrow();
-            array[self.i].set_result(ctx);
+            ctx.set_result(&array[self.i]);
         }
         Ok(())
     }
