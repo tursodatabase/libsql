@@ -1,7 +1,6 @@
 //! Create virtual tables.
 //! (See http://sqlite.org/vtab.html)
-use std::borrow::Cow;
-use std::borrow::Cow::{Borrowed, Owned};
+use std::borrow::Cow::{self, Borrowed, Owned};
 use std::ffi::CString;
 use std::mem;
 use std::ptr;
@@ -45,7 +44,7 @@ pub trait VTab<C: VTabCursor<Self>>: Sized {
     /// The `db` parameter is a pointer to the SQLite database connection that is executing the CREATE VIRTUAL TABLE statement.
     fn create(db: *mut ffi::sqlite3,
               aux: *mut libc::c_void,
-              args: &[*const libc::c_char])
+              args: &[&[u8]])
               -> Result<Self>;
     /// Determine the best way to access the virtual table.
     fn best_index(&self, info: *mut ffi::sqlite3_index_info);
@@ -186,10 +185,14 @@ unsafe extern "C" fn $create(db: *mut ffi::sqlite3,
                               err_msg: *mut *mut libc::c_char)
                               -> libc::c_int {
     use std::error::Error as StdError;
+    use std::ffi::CStr;
     use std::slice;
     use vtab::mprintf;
     let args = slice::from_raw_parts(argv, argc as usize);
-    match $vtab::create(db, aux, args) {
+    let vec = args.iter().map(|cs| {
+        CStr::from_ptr(*cs).to_bytes()
+    }).collect::<Vec<_>>();
+    match $vtab::create(db, aux, &vec[..]) {
         Ok(vtab) => {
             let boxed_vtab: *mut $vtab = Box::into_raw(Box::new(vtab));
             *pp_vtab = boxed_vtab as *mut ffi::sqlite3_vtab;

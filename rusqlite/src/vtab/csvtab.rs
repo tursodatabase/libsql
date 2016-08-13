@@ -1,6 +1,5 @@
 //! CSV Virtual Table
 extern crate csv;
-use std::ffi::CStr;
 use std::fs::File;
 use std::path::Path;
 use std::result;
@@ -32,14 +31,17 @@ init_module!(CSV_MODULE,
              csv_column,
              csv_rowid);
 
+/// An instance of the CSV virtual table
 #[repr(C)]
 struct CSVTab {
-    /// Base class
+    /// Base class. Must be first
     base: ffi::sqlite3_vtab,
+    /// Name of the CSV file
     filename: String,
     has_headers: bool,
     delimiter: u8,
     quote: u8,
+    /// Offset to start of data
     offset_first_row: u64,
 }
 
@@ -56,13 +58,13 @@ impl CSVTab {
 impl VTab<CSVTabCursor> for CSVTab {
     fn create(db: *mut ffi::sqlite3,
               _aux: *mut libc::c_void,
-              args: &[*const libc::c_char])
+              args: &[&[u8]])
               -> Result<CSVTab> {
         if args.len() < 4 {
             return Err(Error::ModuleError("no CSV file specified".to_owned()));
         }
         // pull out name of csv file (remove quotes)
-        let mut c_filename = unsafe { CStr::from_ptr(args[3]).to_bytes() };
+        let mut c_filename = args[3];
         if c_filename[0] == b'\'' {
             c_filename = &c_filename[1..c_filename.len() - 1];
         }
@@ -81,8 +83,7 @@ impl VTab<CSVTabCursor> for CSVTab {
         let mut cols: Vec<String> = Vec::new();
 
         let args = &args[4..];
-        for c_arg in args {
-            let c_slice = unsafe { CStr::from_ptr(*c_arg).to_bytes() };
+        for c_slice in args {
             if c_slice.len() == 1 {
                 vtab.delimiter = c_slice[0];
             } else if c_slice.len() == 3 && c_slice[0] == b'\'' {
@@ -121,7 +122,7 @@ impl VTab<CSVTabCursor> for CSVTab {
             }
             sql.push('"');
             sql.push_str(col);
-            sql.push('"');
+            sql.push_str("\" TEXT");
             if i == cols.len() - 1 {
                 sql.push_str(");");
             } else {
@@ -140,11 +141,12 @@ impl VTab<CSVTabCursor> for CSVTab {
     }
 }
 
-
+/// A cursor for the CSV virtual table
 #[repr(C)]
 struct CSVTabCursor {
-    /// Base class
+    /// Base class. Must be first
     base: ffi::sqlite3_vtab_cursor,
+    /// The CSV reader object
     reader: csv::Reader<File>,
     /// Current cursor position
     row_number: usize,
