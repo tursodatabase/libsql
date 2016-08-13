@@ -1,5 +1,5 @@
-C Add\sVdbeCoverage()\smacros\son\snewly\sadded\sVDBE\sbranch\soperations.
-D 2016-08-12T11:25:49.567
+C Attempt\sto\ssimplify\sthe\slogic\sand\sgenerated\scode\sfor\svector\scomparisons.\nBasic\scomparison\soperators\sare\sworking,\sbut\sthere\sare\smany\sindexing\stest\nfailures\sstill\sto\sbe\sworked\sthrough.
+D 2016-08-13T10:02:17.801
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -338,7 +338,7 @@ F src/ctime.c e77f3dc297b4b65c96da78b4ae4272fdfae863d7
 F src/date.c 95c9a8d00767e7221a8e9a31f4e913fc8029bf6b
 F src/dbstat.c 4f6f7f52b49beb9636ffbd517cfe44a402ba4ad0
 F src/delete.c 4aba4214a377ce8ddde2d2e609777bcc8235200f
-F src/expr.c d05cc249f8615bd4655f839ee57c24d11d005dde
+F src/expr.c 375de68ad2daf3bd339f79074ced5a6db77e2f62
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c bc4145347595b7770f9a598cff1c848302cf5413
 F src/func.c 29cc9acb170ec1387b9f63eb52cd85f8de96c771
@@ -389,7 +389,7 @@ F src/shell.c 79dda477be6c96eba6e952a934957ad36f87acc7
 F src/sqlite.h.in 0f7580280d1b009b507d8beec1ff0f197ba0cc99
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
-F src/sqliteInt.h a1cf00afd6a5666a160e81c7a600418a3b59a8a6
+F src/sqliteInt.h 98d9ccfa30c0d4b1b886ed61f409dc6b307e9b0f
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
@@ -450,7 +450,7 @@ F src/update.c 4f05ea8cddfa367d045e03589756c02199e8f9bd
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c 810ec3f22e2d1b62e66c30fe3621ebdedd23584d
 F src/vacuum.c 9dd2f5d276bc6094d8f1d85ecd41b30c1a002a43
-F src/vdbe.c 9f15129214a55044f918a983e1560fd87b0130a8
+F src/vdbe.c 9816bc4f89e4d58340f3cf3354fd062e2da11f8a
 F src/vdbe.h 67bc551f7faf04c33493892e4b378aada823ed10
 F src/vdbeInt.h c59381049af5c7751a83456c39b80d1a6fde1f9d
 F src/vdbeapi.c c3f6715a99995c11748ecad91d25e93fd9fc390b
@@ -1516,7 +1516,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 14009b32b955b42cfd5f0c2ce7d4b3ce19ce201e
-R 57be00fa8f04c7e5888f286343bb13cf
+P 381aa73141db8ec59adbcb09e71af660ee4ae5ce
+R b082d1240e853643b05ab20adb3ffc1b
+T *branch * vector-compare
+T *sym-vector-compare *
+T -sym-rowvalue *
 U drh
-Z c05ca00f4c6d3d32267dd4171ca3bdf0
+Z 873e26b27a2fd221371ad3338313919b
