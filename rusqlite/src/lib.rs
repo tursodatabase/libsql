@@ -93,12 +93,18 @@ mod named_params;
 mod error;
 mod convenient;
 mod raw_statement;
-#[cfg(feature = "load_extension")]mod load_extension_guard;
-#[cfg(feature = "trace")]pub mod trace;
-#[cfg(feature = "backup")]pub mod backup;
-#[cfg(feature = "functions")]pub mod functions;
-#[cfg(feature = "blob")]pub mod blob;
-#[cfg(all(feature = "vtab", feature = "functions"))]pub mod vtab;
+#[cfg(feature = "load_extension")]
+mod load_extension_guard;
+#[cfg(feature = "trace")]
+pub mod trace;
+#[cfg(feature = "backup")]
+pub mod backup;
+#[cfg(feature = "functions")]
+pub mod functions;
+#[cfg(feature = "blob")]
+pub mod blob;
+#[cfg(all(feature = "vtab", feature = "functions"))]
+pub mod vtab;
 
 // Number of cached prepared statements we'll hold on to.
 const STATEMENT_CACHE_DEFAULT_CAPACITY: usize = 16;
@@ -886,9 +892,7 @@ impl<'conn> Statement<'conn> {
 
         for (i, p) in params.iter().enumerate() {
             try!(unsafe {
-                self.conn.decode_result(
-                    p.bind_parameter(self.stmt.ptr(), (i + 1) as c_int)
-                )
+                self.conn.decode_result(p.bind_parameter(self.stmt.ptr(), (i + 1) as c_int))
             });
         }
 
@@ -1115,7 +1119,8 @@ impl<'a> ValueRef<'a> {
             ffi::SQLITE_FLOAT => ValueRef::Real(ffi::sqlite3_column_double(raw, col)),
             ffi::SQLITE_TEXT => {
                 let text = ffi::sqlite3_column_text(raw, col);
-                assert!(!text.is_null(), "unexpected SQLITE_TEXT column type with NULL data");
+                assert!(!text.is_null(),
+                        "unexpected SQLITE_TEXT column type with NULL data");
                 let s = CStr::from_ptr(text as *const c_char);
 
                 // sqlite3_column_text returns UTF8 data, so our unwrap here should be fine.
@@ -1126,9 +1131,11 @@ impl<'a> ValueRef<'a> {
                 let blob = ffi::sqlite3_column_blob(raw, col);
 
                 let len = ffi::sqlite3_column_bytes(raw, col);
-                assert!(len >= 0, "unexpected negative return from sqlite3_column_bytes");
+                assert!(len >= 0,
+                        "unexpected negative return from sqlite3_column_bytes");
                 if len > 0 {
-                    assert!(!blob.is_null(), "unexpected SQLITE_BLOB column type with NULL data");
+                    assert!(!blob.is_null(),
+                            "unexpected SQLITE_BLOB column type with NULL data");
                     ValueRef::Blob(from_raw_parts(blob as *const u8, len as usize))
                 } else {
                     // The return value from sqlite3_column_blob() for a zero-length BLOB is a NULL pointer.
@@ -1136,7 +1143,7 @@ impl<'a> ValueRef<'a> {
                 }
 
             }
-            _ => unreachable!("sqlite3_column_type returned invalid value")
+            _ => unreachable!("sqlite3_column_type returned invalid value"),
         }
     }
 }

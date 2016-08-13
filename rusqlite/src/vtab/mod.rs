@@ -42,10 +42,7 @@ use ffi;
 pub trait VTab<C: VTabCursor<Self>>: Sized {
     /// Create a new instance of a virtual table in response to a CREATE VIRTUAL TABLE statement.
     /// The `db` parameter is a pointer to the SQLite database connection that is executing the CREATE VIRTUAL TABLE statement.
-    fn create(db: *mut ffi::sqlite3,
-              aux: *mut libc::c_void,
-              args: &[&[u8]])
-              -> Result<Self>;
+    fn create(db: *mut ffi::sqlite3, aux: *mut libc::c_void, args: &[&[u8]]) -> Result<Self>;
     /// Determine the best way to access the virtual table.
     fn best_index(&self, info: *mut ffi::sqlite3_index_info);
     /// Create a new cursor used for accessing a virtual table.
@@ -59,8 +56,8 @@ pub trait VTabCursor<V: VTab<Self>>: Sized {
     /// Begin a search of a virtual table.
     fn filter(&mut self,
               idx_num: libc::c_int,
-              idx_str: *const libc::c_char,
-              args: &mut[*mut ffi::sqlite3_value])
+              idx_str: Option<&str>,
+              args: &mut [*mut ffi::sqlite3_value])
               -> Result<()>;
     /// Advance cursor to the next row of a result set initiated by `filter`.
     fn next(&mut self) -> Result<()>;
@@ -258,11 +255,19 @@ unsafe extern "C" fn $filter(cursor: *mut ffi::sqlite3_vtab_cursor,
                               argc: libc::c_int,
                               argv: *mut *mut ffi::sqlite3_value)
                               -> libc::c_int {
+    use std::ffi::CStr;
     use std::slice;
+    use std::str;
     use vtab::cursor_error;
+    let idx_name = if idx_str.is_null() {
+        None
+    } else {
+        let c_slice = CStr::from_ptr(idx_str).to_bytes();
+        Some(str::from_utf8_unchecked(c_slice))
+    };
     let mut args = slice::from_raw_parts_mut(argv, argc as usize);
     let cr = cursor as *mut $cursor;
-    cursor_error(cursor, (*cr).filter(idx_num, idx_str, &mut args))
+    cursor_error(cursor, (*cr).filter(idx_num, idx_name, &mut args))
 }
 unsafe extern "C" fn $next(cursor: *mut ffi::sqlite3_vtab_cursor) -> libc::c_int {
     use vtab::cursor_error;
@@ -365,4 +370,5 @@ pub fn mprintf(err_msg: &str) -> *mut ::libc::c_char {
 }
 
 pub mod int_array;
-#[cfg(feature = "csvtab")]pub mod csvtab;
+#[cfg(feature = "csvtab")]
+pub mod csvtab;

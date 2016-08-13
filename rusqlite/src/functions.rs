@@ -202,7 +202,7 @@ impl<'a> ValueRef<'a> {
 
                 ValueRef::Blob(from_raw_parts(blob as *const u8, len as usize))
             }
-            _ => unreachable!("sqlite3_value_type returned invalid value")
+            _ => unreachable!("sqlite3_value_type returned invalid value"),
         }
     }
 }
@@ -239,7 +239,7 @@ impl<'a> Context<'a> {
         let value = unsafe { ValueRef::from_value(arg) };
         FromSql::column_result(value).map_err(|err| match err {
             Error::InvalidColumnType => Error::InvalidFunctionParameterType,
-            _ => err
+            _ => err,
         })
     }
 
@@ -266,11 +266,7 @@ impl<'a> Context<'a> {
     /// types must be identical.
     pub unsafe fn get_aux<T>(&self, arg: c_int) -> Option<&T> {
         let p = ffi::sqlite3_get_auxdata(self.ctx, arg) as *mut T;
-        if p.is_null() {
-            None
-        } else {
-            Some(&*p)
-        }
+        if p.is_null() { None } else { Some(&*p) }
     }
 }
 

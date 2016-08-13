@@ -102,14 +102,14 @@ impl VTabCursor<IntArrayVTab> for IntArrayVTabCursor {
     }
     fn filter(&mut self,
               _idx_num: libc::c_int,
-              _idx_str: *const libc::c_char,
-              _args: &mut[*mut ffi::sqlite3_value])
+              _idx_str: Option<&str>,
+              _args: &mut [*mut ffi::sqlite3_value])
               -> Result<()> {
         self.i = 0;
         Ok(())
     }
     fn next(&mut self) -> Result<()> {
-        self.i = self.i + 1;
+        self.i += 1;
         Ok(())
     }
     fn eof(&self) -> bool {

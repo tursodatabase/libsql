@@ -90,11 +90,7 @@ impl Connection {
                                    table.as_ptr(),
                                    column.as_ptr(),
                                    row,
-                                   if read_only {
-                                       0
-                                   } else {
-                                       1
-                                   },
+                                   if read_only { 0 } else { 1 },
                                    &mut blob)
         };
         c.decode_result(rc).map(|_| {

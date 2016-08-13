@@ -56,10 +56,7 @@ impl CSVTab {
 }
 
 impl VTab<CSVTabCursor> for CSVTab {
-    fn create(db: *mut ffi::sqlite3,
-              _aux: *mut libc::c_void,
-              args: &[&[u8]])
-              -> Result<CSVTab> {
+    fn create(db: *mut ffi::sqlite3, _aux: *mut libc::c_void, args: &[&[u8]]) -> Result<CSVTab> {
         if args.len() < 4 {
             return Err(Error::ModuleError("no CSV file specified".to_owned()));
         }
@@ -173,8 +170,8 @@ impl VTabCursor<CSVTab> for CSVTabCursor {
 
     fn filter(&mut self,
               _idx_num: libc::c_int,
-              _idx_str: *const libc::c_char,
-              _args: &mut[*mut ffi::sqlite3_value])
+              _idx_str: Option<&str>,
+              _args: &mut [*mut ffi::sqlite3_value])
               -> Result<()> {
         {
             let offset_first_row = self.vtab().offset_first_row;
@@ -196,7 +193,7 @@ impl VTabCursor<CSVTab> for CSVTabCursor {
             }
         }
 
-        self.row_number = self.row_number + 1;
+        self.row_number += 1;
         Ok(())
     }
     fn eof(&self) -> bool {
