@@ -51,6 +51,19 @@ pub trait VTab<C: VTabCursor<Self>>: Sized {
     fn open(&self) -> Result<C>;
 }
 
+bitflags! {
+    #[doc = "Index constraint operator."]
+    #[repr(C)]
+    pub flags IndexConstraintOp: ::libc::c_uchar {
+        const SQLITE_INDEX_CONSTRAINT_EQ    = 2,
+        const SQLITE_INDEX_CONSTRAINT_GT    = 4,
+        const SQLITE_INDEX_CONSTRAINT_LE    = 8,
+        const SQLITE_INDEX_CONSTRAINT_LT    = 16,
+        const SQLITE_INDEX_CONSTRAINT_GE    = 32,
+        const SQLITE_INDEX_CONSTRAINT_MATCH = 64,
+    }
+}
+
 pub struct IndexInfo(*mut ffi::sqlite3_index_info);
 
 impl IndexInfo {
@@ -62,23 +75,26 @@ impl IndexInfo {
     pub fn constraint_column(&self, constraint_idx: usize) -> libc::c_int {
         use std::slice;
         unsafe {
-            let constraints = slice::from_raw_parts((*self.0).aConstraint, (*self.0).nConstraint as usize);
+            let constraints = slice::from_raw_parts((*self.0).aConstraint,
+                                                    (*self.0).nConstraint as usize);
             constraints[constraint_idx].iColumn
         }
     }
     /// Constraint operator
-    pub fn constraint_operator(&self, constraint_idx: usize) -> u8 {
+    pub fn constraint_operator(&self, constraint_idx: usize) -> IndexConstraintOp {
         use std::slice;
         unsafe {
-            let constraints = slice::from_raw_parts((*self.0).aConstraint, (*self.0).nConstraint as usize);
-            constraints[constraint_idx].op
+            let constraints = slice::from_raw_parts((*self.0).aConstraint,
+                                                    (*self.0).nConstraint as usize);
+            IndexConstraintOp::from_bits_truncate(constraints[constraint_idx].op)
         }
     }
     /// True if this constraint is usable
     pub fn constraint_usable(&self, constraint_idx: usize) -> bool {
         use std::slice;
         unsafe {
-            let constraints = slice::from_raw_parts((*self.0).aConstraint, (*self.0).nConstraint as usize);
+            let constraints = slice::from_raw_parts((*self.0).aConstraint,
+                                                    (*self.0).nConstraint as usize);
             constraints[constraint_idx].usable != 0
         }
     }
@@ -108,7 +124,8 @@ impl IndexInfo {
     pub fn set_argv_index(&mut self, constraint_idx: usize, argv_index: libc::c_int) {
         use std::slice;
         unsafe {
-            let mut constraint_usages = slice::from_raw_parts_mut((*self.0).aConstraintUsage, (*self.0).nConstraint as usize);
+            let mut constraint_usages = slice::from_raw_parts_mut((*self.0).aConstraintUsage,
+                                                                  (*self.0).nConstraint as usize);
             constraint_usages[constraint_idx].argvIndex = argv_index;
         }
     }
@@ -116,25 +133,34 @@ impl IndexInfo {
     pub fn set_omit(&mut self, constraint_idx: usize, omit: bool) {
         use std::slice;
         unsafe {
-            let mut constraint_usages = slice::from_raw_parts_mut((*self.0).aConstraintUsage, (*self.0).nConstraint as usize);
+            let mut constraint_usages = slice::from_raw_parts_mut((*self.0).aConstraintUsage,
+                                                                  (*self.0).nConstraint as usize);
             constraint_usages[constraint_idx].omit = if omit { 1 } else { 0 };
         }
     }
     /// Number used to identify the index
     pub fn set_idx_num(&mut self, idx_num: libc::c_int) {
-        unsafe { (*self.0).idxNum = idx_num; }
+        unsafe {
+            (*self.0).idxNum = idx_num;
+        }
     }
     /// True if output is already ordered
     pub fn set_order_by_consumed(&mut self, order_by_consumed: bool) {
-        unsafe { (*self.0).orderByConsumed = if order_by_consumed { 1 } else { 0 }; }
+        unsafe {
+            (*self.0).orderByConsumed = if order_by_consumed { 1 } else { 0 };
+        }
     }
     /// Estimated cost of using this index
     pub fn set_estimated_cost(&mut self, estimated_ost: f64) {
-        unsafe { (*self.0).estimatedCost = estimated_ost; }
+        unsafe {
+            (*self.0).estimatedCost = estimated_ost;
+        }
     }
     /// Estimated number of rows returned
     pub fn set_estimated_rows(&mut self, estimated_rows: i64) {
-        unsafe { (*self.0).estimatedRows = estimated_rows; }
+        unsafe {
+            (*self.0).estimatedRows = estimated_rows;
+        }
     }
 }
 
