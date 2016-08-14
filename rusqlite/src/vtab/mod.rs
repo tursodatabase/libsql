@@ -44,7 +44,7 @@ use types::FromSql;
 pub trait VTab<C: VTabCursor<Self>>: Sized {
     /// Create a new instance of a virtual table in response to a CREATE VIRTUAL TABLE statement.
     /// The `db` parameter is a pointer to the SQLite database connection that is executing the CREATE VIRTUAL TABLE statement.
-    fn create(db: *mut ffi::sqlite3, aux: *mut libc::c_void, args: &[&[u8]]) -> Result<Self>;
+    fn connect(db: *mut ffi::sqlite3, aux: *mut libc::c_void, args: &[&[u8]]) -> Result<Self>;
     /// Determine the best way to access the virtual table.
     fn best_index(&self, info: &mut IndexInfo) -> Result<()>;
     /// Create a new cursor used for accessing a virtual table.
@@ -90,7 +90,7 @@ impl IndexInfo {
         }
     }
     /// True if this constraint is usable
-    pub fn constraint_usable(&self, constraint_idx: usize) -> bool {
+    pub fn is_constraint_usable(&self, constraint_idx: usize) -> bool {
         use std::slice;
         unsafe {
             let constraints = slice::from_raw_parts((*self.0).aConstraint,
@@ -288,18 +288,19 @@ unsafe extern "C" fn free_boxed_value<T>(p: *mut libc::c_void) {
 #[macro_export]
 macro_rules! init_module {
     ($module_name: ident, $vtab: ident, $cursor: ty,
-        $create: ident, $best_index: ident, $destroy: ident,
+        $create: expr, $connect: ident, $best_index: ident,
+        $disconnect: ident, $destroy: expr,
         $open: ident, $close: ident,
         $filter: ident, $next: ident, $eof: ident,
         $column: ident, $rowid: ident) => {
 
 static $module_name: ffi::sqlite3_module = ffi::sqlite3_module {
     iVersion: 1,
-    xCreate: Some($create),
-    xConnect: Some($create), /* A virtual table is eponymous if its xCreate method is the exact same function as the xConnect method */
+    xCreate: $create,
+    xConnect: Some($connect), /* A virtual table is eponymous if its xCreate method is the exact same function as the xConnect method */
     xBestIndex: Some($best_index),
-    xDisconnect: Some($destroy),
-    xDestroy: Some($destroy),
+    xDisconnect: Some($disconnect),
+    xDestroy: $destroy,
     xOpen: Some($open),
     xClose: Some($close),
     xFilter: Some($filter),
@@ -319,7 +320,7 @@ static $module_name: ffi::sqlite3_module = ffi::sqlite3_module {
     xRollbackTo: None,
 };
 
-unsafe extern "C" fn $create(db: *mut ffi::sqlite3,
+unsafe extern "C" fn $connect(db: *mut ffi::sqlite3,
                               aux: *mut libc::c_void,
                               argc: libc::c_int,
                               argv: *const *const libc::c_char,
@@ -334,7 +335,7 @@ unsafe extern "C" fn $create(db: *mut ffi::sqlite3,
     let vec = args.iter().map(|cs| {
         CStr::from_ptr(*cs).to_bytes()
     }).collect::<Vec<_>>();
-    match $vtab::create(db, aux, &vec[..]) {
+    match $vtab::connect(db, aux, &vec[..]) {
         Ok(vtab) => {
             let boxed_vtab: *mut $vtab = Box::into_raw(Box::new(vtab));
             *pp_vtab = boxed_vtab as *mut ffi::sqlite3_vtab;
@@ -375,7 +376,7 @@ unsafe extern "C" fn $best_index(vtab: *mut ffi::sqlite3_vtab,
     }
 
 }
-unsafe extern "C" fn $destroy(vtab: *mut ffi::sqlite3_vtab) -> libc::c_int {
+unsafe extern "C" fn $disconnect(vtab: *mut ffi::sqlite3_vtab) -> libc::c_int {
     let vtab = vtab as *mut $vtab;
     let _: Box<$vtab> = Box::from_raw(vtab);
     ffi::SQLITE_OK
@@ -536,3 +537,4 @@ pub fn mprintf(err_msg: &str) -> *mut ::libc::c_char {
 pub mod int_array;
 #[cfg(feature = "csvtab")]
 pub mod csvtab;
+pub mod series;

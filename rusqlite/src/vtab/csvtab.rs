@@ -20,9 +20,11 @@ pub fn load_module(conn: &Connection) -> Result<()> {
 init_module!(CSV_MODULE,
              CSVTab,
              CSVTabCursor,
-             csv_create,
+             Some(csv_connect),
+             csv_connect,
              csv_best_index,
-             csv_destroy,
+             csv_disconnect,
+             Some(csv_disconnect),
              csv_open,
              csv_close,
              csv_filter,
@@ -56,7 +58,7 @@ impl CSVTab {
 }
 
 impl VTab<CSVTabCursor> for CSVTab {
-    fn create(db: *mut ffi::sqlite3, _aux: *mut libc::c_void, args: &[&[u8]]) -> Result<CSVTab> {
+    fn connect(db: *mut ffi::sqlite3, _aux: *mut libc::c_void, args: &[&[u8]]) -> Result<CSVTab> {
         if args.len() < 4 {
             return Err(Error::ModuleError("no CSV file specified".to_owned()));
         }

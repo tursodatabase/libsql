@@ -1,4 +1,5 @@
 //! Int array virtual table.
+//! Port of C ["intarray"](http://www.sqlite.org/cgi/src/finfo?name=src/test_intarray.h).
 use std::cell::RefCell;
 use std::default::Default;
 use std::mem;
@@ -39,9 +40,11 @@ pub fn drop_int_array(conn: &Connection, name: &str) -> Result<()> {
 init_module!(INT_ARRAY_MODULE,
              IntArrayVTab,
              IntArrayVTabCursor,
-             int_array_create,
+             Some(int_array_connect),
+             int_array_connect,
              int_array_best_index,
-             int_array_destroy,
+             int_array_disconnect,
+             Some(int_array_disconnect),
              int_array_open,
              int_array_close,
              int_array_filter,
@@ -58,10 +61,10 @@ struct IntArrayVTab {
 }
 
 impl VTab<IntArrayVTabCursor> for IntArrayVTab {
-    fn create(db: *mut ffi::sqlite3,
-              aux: *mut libc::c_void,
-              _args: &[&[u8]])
-              -> Result<IntArrayVTab> {
+    fn connect(db: *mut ffi::sqlite3,
+               aux: *mut libc::c_void,
+               _args: &[&[u8]])
+               -> Result<IntArrayVTab> {
         let array = unsafe { mem::transmute(aux) };
         let vtab = IntArrayVTab {
             base: Default::default(),
