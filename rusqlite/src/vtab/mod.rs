@@ -296,7 +296,7 @@ macro_rules! init_module {
 
 static $module_name: ffi::sqlite3_module = ffi::sqlite3_module {
     iVersion: 1,
-    xCreate: $create,
+    xCreate: $create, /* For eponymous-only virtual tables, the xCreate method is NULL */
     xConnect: Some($connect), /* A virtual table is eponymous if its xCreate method is the exact same function as the xConnect method */
     xBestIndex: Some($best_index),
     xDisconnect: Some($disconnect),
