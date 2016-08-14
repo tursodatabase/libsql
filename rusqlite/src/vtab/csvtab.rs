@@ -9,7 +9,7 @@ use libc;
 use {Connection, Error, Result};
 use ffi;
 use types::Null;
-use vtab::{declare_vtab, escape_double_quote, Context, VTab, VTabCursor};
+use vtab::{declare_vtab, escape_double_quote, Context, IndexInfo, VTab, VTabCursor};
 
 /// Register the "csv" module.
 pub fn load_module(conn: &Connection) -> Result<()> {
@@ -131,7 +131,7 @@ impl VTab<CSVTabCursor> for CSVTab {
         Ok(vtab)
     }
 
-    fn best_index(&self, _info: *mut ffi::sqlite3_index_info) {}
+    fn best_index(&self, _info: &mut IndexInfo) {}
 
     fn open(&self) -> Result<CSVTabCursor> {
         Ok(CSVTabCursor::new(try!(self.reader())))

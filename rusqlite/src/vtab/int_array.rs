@@ -7,7 +7,7 @@ use libc;
 
 use {Connection, Error, Result};
 use ffi;
-use vtab::{declare_vtab, escape_double_quote, Context, VTab, VTabCursor};
+use vtab::{declare_vtab, escape_double_quote, Context, IndexInfo, VTab, VTabCursor};
 
 /// Create a specific instance of an intarray object.
 /// The new intarray object is returned.
@@ -71,7 +71,7 @@ impl VTab<IntArrayVTabCursor> for IntArrayVTab {
         Ok(vtab)
     }
 
-    fn best_index(&self, _info: *mut ffi::sqlite3_index_info) {}
+    fn best_index(&self, _info: &mut IndexInfo) {}
 
     fn open(&self) -> Result<IntArrayVTabCursor> {
         Ok(IntArrayVTabCursor::new())

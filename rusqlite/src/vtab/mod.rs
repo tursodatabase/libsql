@@ -45,9 +45,15 @@ pub trait VTab<C: VTabCursor<Self>>: Sized {
     /// The `db` parameter is a pointer to the SQLite database connection that is executing the CREATE VIRTUAL TABLE statement.
     fn create(db: *mut ffi::sqlite3, aux: *mut libc::c_void, args: &[&[u8]]) -> Result<Self>;
     /// Determine the best way to access the virtual table.
-    fn best_index(&self, info: *mut ffi::sqlite3_index_info);
+    fn best_index(&self, info: &mut IndexInfo);
     /// Create a new cursor used for accessing a virtual table.
     fn open(&self) -> Result<C>;
+}
+
+pub struct IndexInfo(*mut ffi::sqlite3_index_info);
+
+impl IndexInfo {
+    // TODO
 }
 
 /// Virtual table cursor trait.
@@ -71,6 +77,7 @@ pub trait VTabCursor<V: VTab<Self>>: Sized {
     fn rowid(&self) -> Result<i64>;
 }
 
+// FIXME clash with functions::Context
 pub struct Context(*mut ffi::sqlite3_context);
 
 impl Context {
@@ -221,7 +228,8 @@ unsafe extern "C" fn $best_index(vtab: *mut ffi::sqlite3_vtab,
                                   info: *mut ffi::sqlite3_index_info)
                                   -> libc::c_int {
     let vtab = vtab as *mut $vtab;
-    (*vtab).best_index(info);
+    let mut idx_info = IndexInfo(info);
+    (*vtab).best_index(&mut idx_info);
     ffi::SQLITE_OK
 }
 unsafe extern "C" fn $destroy(vtab: *mut ffi::sqlite3_vtab) -> libc::c_int {
