@@ -54,7 +54,88 @@ pub trait VTab<C: VTabCursor<Self>>: Sized {
 pub struct IndexInfo(*mut ffi::sqlite3_index_info);
 
 impl IndexInfo {
-    // TODO
+    /// Number of constraints
+    pub fn num_of_constraint(&self) -> usize {
+        unsafe { (*self.0).nConstraint as usize }
+    }
+    /// Column constrained.  -1 for ROWID
+    pub fn constraint_column(&self, constraint_idx: usize) -> libc::c_int {
+        use std::slice;
+        unsafe {
+            let constraints = slice::from_raw_parts((*self.0).aConstraint, (*self.0).nConstraint as usize);
+            constraints[constraint_idx].iColumn
+        }
+    }
+    /// Constraint operator
+    pub fn constraint_operator(&self, constraint_idx: usize) -> u8 {
+        use std::slice;
+        unsafe {
+            let constraints = slice::from_raw_parts((*self.0).aConstraint, (*self.0).nConstraint as usize);
+            constraints[constraint_idx].op
+        }
+    }
+    /// True if this constraint is usable
+    pub fn constraint_usable(&self, constraint_idx: usize) -> bool {
+        use std::slice;
+        unsafe {
+            let constraints = slice::from_raw_parts((*self.0).aConstraint, (*self.0).nConstraint as usize);
+            constraints[constraint_idx].usable != 0
+        }
+    }
+
+    /// Number of terms in the ORDER BY clause
+    pub fn num_of_order_by(&self) -> usize {
+        unsafe { (*self.0).nOrderBy as usize }
+    }
+    /// Column number
+    pub fn order_by_column(&self, order_by_idx: usize) -> libc::c_int {
+        use std::slice;
+        unsafe {
+            let order_bys = slice::from_raw_parts((*self.0).aOrderBy, (*self.0).nOrderBy as usize);
+            order_bys[order_by_idx].iColumn
+        }
+    }
+    /// True for DESC.  False for ASC.
+    pub fn is_order_by_desc(&self, order_by_idx: usize) -> bool {
+        use std::slice;
+        unsafe {
+            let order_bys = slice::from_raw_parts((*self.0).aOrderBy, (*self.0).nOrderBy as usize);
+            order_bys[order_by_idx].desc != 0
+        }
+    }
+
+    /// if `argv_index` > 0, constraint is part of argv to xFilter
+    pub fn set_argv_index(&mut self, constraint_idx: usize, argv_index: libc::c_int) {
+        use std::slice;
+        unsafe {
+            let mut constraint_usages = slice::from_raw_parts_mut((*self.0).aConstraintUsage, (*self.0).nConstraint as usize);
+            constraint_usages[constraint_idx].argvIndex = argv_index;
+        }
+    }
+    /// if `omit`, do not code a test for this constraint
+    pub fn set_omit(&mut self, constraint_idx: usize, omit: bool) {
+        use std::slice;
+        unsafe {
+            let mut constraint_usages = slice::from_raw_parts_mut((*self.0).aConstraintUsage, (*self.0).nConstraint as usize);
+            constraint_usages[constraint_idx].omit = if omit { 1 } else { 0 };
+        }
+    }
+    /// Number used to identify the index
+    pub fn set_idx_num(&mut self, idx_num: libc::c_int) {
+        unsafe { (*self.0).idxNum = idx_num; }
+    }
+    /// True if output is already ordered
+    pub fn set_order_by_consumed(&mut self, order_by_consumed: bool) {
+        unsafe { (*self.0).orderByConsumed = if order_by_consumed { 1 } else { 0 }; }
+    }
+    /// Estimated cost of using this index
+    pub fn set_estimated_cost(&mut self, estimated_ost: f64) {
+        unsafe { (*self.0).estimatedCost = estimated_ost; }
+    }
+    /// Estimated number of rows returned
+    pub fn set_estimated_rows(&mut self, estimated_rows: i64) {
+        unsafe { (*self.0).estimatedRows = estimated_rows; }
+    }
 }
 
 /// Virtual table cursor trait.
