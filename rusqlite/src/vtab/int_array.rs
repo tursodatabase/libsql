@@ -7,7 +7,7 @@ use libc;
 
 use {Connection, Error, Result};
 use ffi;
-use vtab::{declare_vtab, escape_double_quote, Context, IndexInfo, VTab, VTabCursor};
+use vtab::{declare_vtab, escape_double_quote, Context, IndexInfo, Values, VTab, VTabCursor};
 
 /// Create a specific instance of an intarray object.
 /// The new intarray object is returned.
@@ -103,7 +103,7 @@ impl VTabCursor<IntArrayVTab> for IntArrayVTabCursor {
     fn filter(&mut self,
               _idx_num: libc::c_int,
               _idx_str: Option<&str>,
-              _args: &mut [*mut ffi::sqlite3_value])
+              _args: &Values)
               -> Result<()> {
         self.i = 0;
         Ok(())

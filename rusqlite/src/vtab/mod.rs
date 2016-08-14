@@ -10,6 +10,7 @@ use {Connection, Error, Result, InnerConnection, str_to_cstring};
 use error::error_from_sqlite_code;
 use ffi;
 use functions::ToResult;
+use types::FromSql;
 
 // let conn: Connection = ...;
 // let mod: Module = ...; // VTab builder
@@ -61,11 +62,7 @@ pub trait VTabCursor<V: VTab<Self>>: Sized {
     /// Accessor to the associated virtual table.
     fn vtab(&self) -> &mut V;
     /// Begin a search of a virtual table.
-    fn filter(&mut self,
-              idx_num: libc::c_int,
-              idx_str: Option<&str>,
-              args: &mut [*mut ffi::sqlite3_value])
-              -> Result<()>;
+    fn filter(&mut self, idx_num: libc::c_int, idx_str: Option<&str>, args: &Values) -> Result<()>;
     /// Advance cursor to the next row of a result set initiated by `filter`.
     fn next(&mut self) -> Result<()>;
     /// Must return `false` if the cursor currently points to a valid row of data, or `true` otherwise.
@@ -85,6 +82,30 @@ impl Context {
         unsafe {
             value.set_result(self.0);
         }
+    }
+}
+
+pub struct Values<'a> {
+    args: &'a [*mut ffi::sqlite3_value],
+}
+
+impl<'a> Values<'a> {
+    pub fn len(&self) -> usize {
+        self.args.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.args.is_empty()
+    }
+
+    pub fn get<T: FromSql>(&self, idx: usize) -> Result<T> {
+        use types::ValueRef;
+        let arg = self.args[idx];
+        let value = unsafe { ValueRef::from_value(arg) };
+        FromSql::column_result(value).map_err(|err| match err {
+            Error::InvalidColumnType => Error::InvalidFunctionParameterType,
+            _ => err,
+        })
     }
 }
 
@@ -277,16 +298,17 @@ unsafe extern "C" fn $filter(cursor: *mut ffi::sqlite3_vtab_cursor,
     use std::ffi::CStr;
     use std::slice;
     use std::str;
-    use vtab::cursor_error;
+    use vtab::{cursor_error, Values};
     let idx_name = if idx_str.is_null() {
         None
     } else {
         let c_slice = CStr::from_ptr(idx_str).to_bytes();
         Some(str::from_utf8_unchecked(c_slice))
     };
-    let mut args = slice::from_raw_parts_mut(argv, argc as usize);
+    let args = slice::from_raw_parts_mut(argv, argc as usize);
+    let values = Values { args: args };
     let cr = cursor as *mut $cursor;
-    cursor_error(cursor, (*cr).filter(idx_num, idx_name, &mut args))
+    cursor_error(cursor, (*cr).filter(idx_num, idx_name, &values))
 }
 unsafe extern "C" fn $next(cursor: *mut ffi::sqlite3_vtab_cursor) -> libc::c_int {
     use vtab::cursor_error;

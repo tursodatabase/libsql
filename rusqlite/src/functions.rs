@@ -177,7 +177,7 @@ impl ToResult for TooBig {
 }
 
 impl<'a> ValueRef<'a> {
-    unsafe fn from_value(value: *mut sqlite3_value) -> ValueRef<'a> {
+    pub unsafe fn from_value(value: *mut sqlite3_value) -> ValueRef<'a> {
         use std::slice::from_raw_parts;
 
         match ffi::sqlite3_value_type(value) {
