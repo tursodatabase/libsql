@@ -46,7 +46,7 @@ pub trait VTab<C: VTabCursor<Self>>: Sized {
     /// The `db` parameter is a pointer to the SQLite database connection that is executing the CREATE VIRTUAL TABLE statement.
     fn create(db: *mut ffi::sqlite3, aux: *mut libc::c_void, args: &[&[u8]]) -> Result<Self>;
     /// Determine the best way to access the virtual table.
-    fn best_index(&self, info: &mut IndexInfo);
+    fn best_index(&self, info: &mut IndexInfo) -> Result<()>;
     /// Create a new cursor used for accessing a virtual table.
     fn open(&self) -> Result<C>;
 }
@@ -248,10 +248,25 @@ unsafe extern "C" fn $create(db: *mut ffi::sqlite3,
 unsafe extern "C" fn $best_index(vtab: *mut ffi::sqlite3_vtab,
                                   info: *mut ffi::sqlite3_index_info)
                                   -> libc::c_int {
-    let vtab = vtab as *mut $vtab;
+    use std::error::Error as StdError;
+    use vtab::set_err_msg;
+    let vt = vtab as *mut $vtab;
     let mut idx_info = IndexInfo(info);
-    (*vtab).best_index(&mut idx_info);
-    ffi::SQLITE_OK
+    match (*vt).best_index(&mut idx_info) {
+        Ok(_) => ffi::SQLITE_OK,
+        Err(Error::SqliteFailure(err, s)) => {
+            if let Some(err_msg) = s {
+                set_err_msg(vtab, &err_msg);
+            }
+            err.extended_code
+        },
+        Err(err) => {
+            set_err_msg(vtab, err.description());
+            ffi::SQLITE_ERROR
+        }
+
+    }
+
 }
 unsafe extern "C" fn $destroy(vtab: *mut ffi::sqlite3_vtab) -> libc::c_int {
     let vtab = vtab as *mut $vtab;

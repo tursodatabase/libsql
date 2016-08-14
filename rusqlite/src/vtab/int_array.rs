@@ -71,7 +71,9 @@ impl VTab<IntArrayVTabCursor> for IntArrayVTab {
         Ok(vtab)
     }
 
-    fn best_index(&self, _info: &mut IndexInfo) {}
+    fn best_index(&self, _info: &mut IndexInfo) -> Result<()> {
+        Ok(())
+    }
 
     fn open(&self) -> Result<IntArrayVTabCursor> {
         Ok(IntArrayVTabCursor::new())

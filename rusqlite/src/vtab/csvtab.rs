@@ -131,7 +131,9 @@ impl VTab<CSVTabCursor> for CSVTab {
         Ok(vtab)
     }
 
-    fn best_index(&self, _info: &mut IndexInfo) {}
+    fn best_index(&self, _info: &mut IndexInfo) -> Result<()> {
+        Ok(())
+    }
 
     fn open(&self) -> Result<CSVTabCursor> {
         Ok(CSVTabCursor::new(try!(self.reader())))
