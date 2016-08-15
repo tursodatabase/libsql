@@ -293,10 +293,9 @@ impl Connection {
     ///
     /// ```rust
     /// # use rusqlite::{Connection, Result};
-    /// # type c_double = f64;
     /// fn scalar_function_example(db: Connection) -> Result<()> {
     ///     try!(db.create_scalar_function("halve", 1, true, |ctx| {
-    ///         let value = try!(ctx.get::<c_double>(0));
+    ///         let value = try!(ctx.get::<f64>(0));
     ///         Ok(value / 2f64)
     ///     }));
     ///

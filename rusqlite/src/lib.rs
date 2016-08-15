@@ -36,7 +36,7 @@
 //!                  &[&me.name, &me.time_created, &me.data]).unwrap();
 //!
 //!     let mut stmt = conn.prepare("SELECT id, name, time_created, data FROM person").unwrap();
-//!     let mut person_iter = stmt.query_map(&[], |row| {
+//!     let person_iter = stmt.query_map(&[], |row| {
 //!         Person {
 //!             id: row.get(0),
 //!             name: row.get(1),
