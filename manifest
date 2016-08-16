@@ -1,5 +1,5 @@
-C Fix\san\sfts5\sproblem\swith\scorrupt\sdatabase\shandling\sfound\sby\saddress-sanitizer.
-D 2016-08-13T10:34:12.755
+C Fix\sa\sbug\sin\sdestructor\sprocessing\sof\sLemon.\s\sThat\shas\sno\simpact\son\sthe\nSQLite\sgrammar.\s\sThe\sbug\swas\sintroduced\sby\sprior\swork\sto\soptimize\sthe\nLemon-generated\sparser\sused\sby\sSQLite.
+D 2016-08-16T16:46:40.445
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -1437,7 +1437,7 @@ F tool/fuzzershell.c 94019b185caceffc9f7c7b678a6489e42bc2aefa
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
-F tool/lemon.c e3aa9ba3469804d7cae13b5e041aab192b7b381a
+F tool/lemon.c e4fb7d888873ac88f20a41c84a7d1e61f5209a6d
 F tool/lempar.c 147e42a5cd83ce38275fde0d07a5df3330cb9b3b
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
@@ -1510,7 +1510,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fcfbee6c7d33a9ae7feb46044a0c2fe680460d39
-R ca2c772c8f9b99e461286a4305c18761
-U dan
-Z c72588ab1f18a0198f4aa8645b38264f
+P e22252e1da4cd9e41b970970a1c4f466aa6cc133
+R ee584211cd54ecf77179973501b275db
+U drh
+Z fc8c107a10d6a0e11da9056db2b5413b
