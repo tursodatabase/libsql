@@ -160,11 +160,11 @@ foreach {tn query snippet} {
      the maximum x value.
   }
   4 "rollback" {
-     ...[ROLLBACK]. Instead, the pending statement
+     ...Instead, the pending statement
      will return SQLITE_ABORT upon next access after the [ROLLBACK].
   }
   5 "rOllback" {
-     ...[ROLLBACK]. Instead, the pending statement
+     ...Instead, the pending statement
      will return SQLITE_ABORT upon next access after the [ROLLBACK].
   }
   6 "lang*" {
