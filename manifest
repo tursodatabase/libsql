@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sdestructor\sprocessing\sof\sLemon.\s\sThat\shas\sno\simpact\son\sthe\nSQLite\sgrammar.\s\sThe\sbug\swas\sintroduced\sby\sprior\swork\sto\soptimize\sthe\nLemon-generated\sparser\sused\sby\sSQLite.
-D 2016-08-16T16:46:40.445
+C Fix\sa\sproblem\sin\sthe\sfts5\ssnippet()\sauxiliary\sfunction.
+D 2016-08-17T11:14:39.949
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -99,7 +99,7 @@ F ext/fts3/unicode/parseunicode.tcl da577d1384810fb4e2b209bf3313074353193e95
 F ext/fts5/extract_api_docs.tcl a36e54ec777172ddd3f9a88daf593b00848368e0
 F ext/fts5/fts5.h 62f3e33ceeb9a428db139f9c012186b371da1cc7
 F ext/fts5/fts5Int.h b2eda36e0f224365c8e23dc8f559311834f1c13f
-F ext/fts5/fts5_aux.c daa57fb45216491814520bbb587e97bf81ced458
+F ext/fts5/fts5_aux.c e4bec077c5190946dbaac72c6555defd823724ca
 F ext/fts5/fts5_buffer.c 4c1502d4c956cd092c89ce4480867f9d8bf325cd
 F ext/fts5/fts5_config.c 5af9c360e99669d29f06492c370892394aba0857
 F ext/fts5/fts5_expr.c 1ee97156421919e497595bfa962bb88ad1665401
@@ -122,7 +122,7 @@ F ext/fts5/test/fts5ab.test 30325a89453280160106be411bba3acf138e6d1b
 F ext/fts5/test/fts5ac.test 55cad4275a1f5acabfe14d8442a8046b47e49e5f
 F ext/fts5/test/fts5ad.test 36995f0586f30f5602074e012b9224c71ec5171c
 F ext/fts5/test/fts5ae.test 612dcb51f4069226791ff14c17dbfb3138c56f20
-F ext/fts5/test/fts5af.test be858a96b1f5de66ba6d64f0021bd8b2408e126c
+F ext/fts5/test/fts5af.test b6afd7c28ad62d546c30f387fb971f3aaebaac0d
 F ext/fts5/test/fts5ag.test 27180de76c03036be75ee80b93d8c5f540014071
 F ext/fts5/test/fts5ah.test dfb7897711dbcda1dacb038aec310daca139fcf5
 F ext/fts5/test/fts5ai.test 3909d0b949b2afcaae4d5795cd79153da75381df
@@ -1510,7 +1510,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e22252e1da4cd9e41b970970a1c4f466aa6cc133
-R ee584211cd54ecf77179973501b275db
-U drh
-Z fc8c107a10d6a0e11da9056db2b5413b
+P f9035b8e2ea331801402bcb62b203ab092949770
+R c6d38a9772924d9b143e2aa32916b131
+U dan
+Z c5e29b567d02bec227e0b49d5b8a188c

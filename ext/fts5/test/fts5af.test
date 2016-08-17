@@ -108,6 +108,9 @@ foreach {tn doc res} {
   7.4 {o o o X o o X o o} {...o [X] o o [X] o o}
   7.5 {o o o o X o o X o} {...o o [X] o o [X] o}
   7.6 {o o o o o X o o X} {...o o o [X] o o [X]}
+
+  8.1 {o o o o X o o o o o o o o o o o o o o o o o o o o o X X X o o o}
+      {...o o [X] [X] [X] o o...}
 } {
   do_snippet_test 1.$tn $doc X $res
 }

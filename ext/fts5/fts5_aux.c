@@ -189,7 +189,7 @@ static int fts5HighlightCb(
   if( p->iRangeEnd>0 && iPos==p->iRangeEnd ){
     fts5HighlightAppend(&rc, p, &p->zIn[p->iOff], iEndOff - p->iOff);
     p->iOff = iEndOff;
-    if( iPos<p->iter.iEnd ){
+    if( iPos>=p->iter.iStart && iPos<p->iter.iEnd ){
       fts5HighlightAppend(&rc, p, p->zClose, -1);
     }
   }
@@ -350,6 +350,13 @@ static void fts5SnippetFunction(
     if( iBestStart>0 ){
       fts5HighlightAppend(&rc, &ctx, zEllips, -1);
     }
+
+    /* Advance iterator ctx.iter so that it points to the first coalesced
+    ** phrase instance at or following position iBestStart. */
+    while( ctx.iter.iStart>=0 && ctx.iter.iStart<iBestStart && rc==SQLITE_OK ){
+      rc = fts5CInstIterNext(&ctx.iter);
+    }
+
     if( rc==SQLITE_OK ){
       rc = pApi->xTokenize(pFts, ctx.zIn, ctx.nIn, (void*)&ctx,fts5HighlightCb);
     }
