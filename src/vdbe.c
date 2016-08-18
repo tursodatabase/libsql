@@ -573,7 +573,7 @@ int sqlite3VdbeExec(
   sqlite3 *db = p->db;       /* The database */
   u8 resetSchemaOnFault = 0; /* Reset schema after an error if positive */
   u8 encoding = ENC(db);     /* The database encoding */
-  int iCompare = 0;          /* Result of last OP_Compare operation */
+  int iCompare = 0;          /* Result of last comparison */
   unsigned nVmStep = 0;      /* Number of virtual machine steps */
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
   unsigned nProgressLimit = 0;/* Invoke xProgress() when nVmStep reaches this */
@@ -1880,14 +1880,59 @@ case OP_Cast: {                  /* in1 */
 }
 #endif /* SQLITE_OMIT_CAST */
 
+/* Opcode: Eq P1 P2 P3 P4 P5
+** Synopsis: if r[P1]==r[P3] goto P2
+**
+** Compare the values in register P1 and P3.  If reg(P3)==reg(P1) then
+** jump to address P2.  Or if the SQLITE_STOREP2 flag is set in P5, then
+** store the result of comparison in register P2.
+**
+** The SQLITE_AFF_MASK portion of P5 must be an affinity character -
+** SQLITE_AFF_TEXT, SQLITE_AFF_INTEGER, and so forth. An attempt is made 
+** to coerce both inputs according to this affinity before the
+** comparison is made. If the SQLITE_AFF_MASK is 0x00, then numeric
+** affinity is used. Note that the affinity conversions are stored
+** back into the input registers P1 and P3.  So this opcode can cause
+** persistent changes to registers P1 and P3.
+**
+** Once any conversions have taken place, and neither value is NULL, 
+** the values are compared. If both values are blobs then memcmp() is
+** used to determine the results of the comparison.  If both values
+** are text, then the appropriate collating function specified in
+** P4 is used to do the comparison.  If P4 is not specified then
+** memcmp() is used to compare text string.  If both values are
+** numeric, then a numeric comparison is used. If the two values
+** are of different types, then numbers are considered less than
+** strings and strings are considered less than blobs.
+**
+** If SQLITE_NULLEQ is set in P5 then the result of comparison is always either
+** true or false and is never NULL.  If both operands are NULL then the result
+** of comparison is true.  If either operand is NULL then the result is false.
+** If neither operand is NULL the result is the same as it would be if
+** the SQLITE_NULLEQ flag were omitted from P5.
+**
+** If both SQLITE_STOREP2 and SQLITE_KEEPNULL flags are set then the
+** content of r[P2] is only set to 1 (true) if it was not previously NULL.
+*/
+/* Opcode: Ne P1 P2 P3 P4 P5
+** Synopsis: if r[P1]!=r[P3] goto P2
+**
+** This works just like the Eq opcode except that the jump is taken if
+** the operands in registers P1 and P3 are not equal.  See the Eq opcode for
+** additional information.
+**
+** If both SQLITE_STOREP2 and SQLITE_KEEPNULL flags are set then the
+** content of r[P2] is only set to 0 (false) if it was not previously NULL.
+*/
 /* Opcode: Lt P1 P2 P3 P4 P5
 ** Synopsis: if r[P1]<r[P3] goto P2
 **
 ** Compare the values in register P1 and P3.  If reg(P3)<reg(P1) then
-** jump to address P2.  
+** jump to address P2.  Or if the SQLITE_STOREP2 flag is set in P5 store
+** the result of comparison (0 or 1 or NULL) into register P2.
 **
 ** If the SQLITE_JUMPIFNULL bit of P5 is set and either reg(P1) or
-** reg(P3) is NULL then take the jump.  If the SQLITE_JUMPIFNULL 
+** reg(P3) is NULL then the take the jump.  If the SQLITE_JUMPIFNULL 
 ** bit is clear then fall through if either operand is NULL.
 **
 ** The SQLITE_AFF_MASK portion of P5 must be an affinity character -
@@ -1907,39 +1952,6 @@ case OP_Cast: {                  /* in1 */
 ** numeric, then a numeric comparison is used. If the two values
 ** are of different types, then numbers are considered less than
 ** strings and strings are considered less than blobs.
-**
-** If the SQLITE_STOREP2 bit of P5 is set, then do not jump.  Instead,
-** store a boolean result (either 0, or 1, or NULL) in register P2.
-**
-** If the SQLITE_NULLEQ bit is set in P5, then NULL values are considered
-** equal to one another, provided that they do not have their MEM_Cleared
-** bit set.
-*/
-/* Opcode: Ne P1 P2 P3 P4 P5
-** Synopsis: if r[P1]!=r[P3] goto P2
-**
-** This works just like the Lt opcode except that the jump is taken if
-** the operands in registers P1 and P3 are not equal.  See the Lt opcode for
-** additional information.
-**
-** If SQLITE_NULLEQ is set in P5 then the result of comparison is always either
-** true or false and is never NULL.  If both operands are NULL then the result
-** of comparison is false.  If either operand is NULL then the result is true.
-** If neither operand is NULL the result is the same as it would be if
-** the SQLITE_NULLEQ flag were omitted from P5.
-*/
-/* Opcode: Eq P1 P2 P3 P4 P5
-** Synopsis: if r[P1]==r[P3] goto P2
-**
-** This works just like the Lt opcode except that the jump is taken if
-** the operands in registers P1 and P3 are equal.
-** See the Lt opcode for additional information.
-**
-** If SQLITE_NULLEQ is set in P5 then the result of comparison is always either
-** true or false and is never NULL.  If both operands are NULL then the result
-** of comparison is true.  If either operand is NULL then the result is false.
-** If neither operand is NULL the result is the same as it would be if
-** the SQLITE_NULLEQ flag were omitted from P5.
 */
 /* Opcode: Le P1 P2 P3 P4 P5
 ** Synopsis: if r[P1]<=r[P3] goto P2
@@ -1961,17 +1973,7 @@ case OP_Cast: {                  /* in1 */
 ** This works just like the Lt opcode except that the jump is taken if
 ** the content of register P3 is greater than or equal to the content of
 ** register P1.  See the Lt opcode for additional information.
-**
-** Opcode: Cmp P1 P2 P3 P4 P5
-** Synopsis: P2 = cmp(P1, P3)
-**
-** The SQLITE_STOREP2 flag must be set for this opcode. It compares the
-** values in registers P1 and P3 and stores the result of the comparison
-** in register P2. The results is NULL if either of the two operands are
-** NULL. Otherwise, it is an integer value less than zero, zero or greater 
-** than zero if P3 is less than, equal to or greater than P1, respectively.
 */
-case OP_Cmp:              /* in1, in3 */
 case OP_Eq:               /* same as TK_EQ, jump, in1, in3 */
 case OP_Ne:               /* same as TK_NE, jump, in1, in3 */
 case OP_Lt:               /* same as TK_LT, jump, in1, in3 */
@@ -1983,7 +1985,6 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
   u16 flags1;         /* Copy of initial value of pIn1->flags */
   u16 flags3;         /* Copy of initial value of pIn3->flags */
 
-  assert( pOp->opcode!=OP_Cmp || (pOp->p5 & SQLITE_STOREP2) );
   pIn1 = &aMem[pOp->p1];
   pIn3 = &aMem[pOp->p3];
   flags1 = pIn1->flags;
@@ -2002,15 +2003,16 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
        && (flags3&MEM_Null)!=0
        && (flags3&MEM_Cleared)==0
       ){
-        res = 0;  /* Results are equal */
+        iCompare = 0;  /* Operands are equal */
       }else{
-        res = 1;  /* Results are not equal */
+        iCompare = 1;  /* Operands are not equal */
       }
     }else{
       /* SQLITE_NULLEQ is clear and at least one operand is NULL,
       ** then the result is always NULL.
       ** The jump is taken if the SQLITE_JUMPIFNULL bit is set.
       */
+      iCompare = 1;    /* Operands are not equal */
       if( pOp->p5 & SQLITE_STOREP2 ){
         pOut = &aMem[pOp->p2];
         memAboutToChange(p, pOut);
@@ -2063,16 +2065,15 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
       sqlite3VdbeMemExpandBlob(pIn3);
       flags3 &= ~MEM_Zero;
     }
-    res = sqlite3MemCompare(pIn3, pIn1, pOp->p4.pColl);
+    iCompare = sqlite3MemCompare(pIn3, pIn1, pOp->p4.pColl);
   }
   switch( pOp->opcode ){
-    case OP_Eq:    res = res==0;     break;
-    case OP_Ne:    res = res!=0;     break;
-    case OP_Lt:    res = res<0;      break;
-    case OP_Le:    res = res<=0;     break;
-    case OP_Gt:    res = res>0;      break;
-    case OP_Ge:    res = res>=0;     break;
-    default: assert( pOp->opcode==OP_Cmp ); break;
+    case OP_Eq:    res = iCompare==0;     break;
+    case OP_Ne:    res = iCompare!=0;     break;
+    case OP_Lt:    res = iCompare<0;      break;
+    case OP_Le:    res = iCompare<=0;     break;
+    case OP_Gt:    res = iCompare>0;      break;
+    default:       res = iCompare>=0;     break;
   }
 
   /* Undo any changes made by applyAffinity() to the input registers. */
@@ -2083,12 +2084,18 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
 
   if( pOp->p5 & SQLITE_STOREP2 ){
     pOut = &aMem[pOp->p2];
+    if( (pOp->p5 & SQLITE_KEEPNULL)!=0 && (pOut->flags & MEM_Null)!=0 ){
+      /* The KEEPNULL flag prevents OP_Eq from overwriting a NULL with 1
+      ** and prevents OP_Ne from overwriting NULL with 0. */
+      assert( pOp->opcode==OP_Ne || pOp->opcode==OP_Eq );
+      assert( res==0 || res==1 );
+      if( (pOp->opcode==OP_Eq)==res ) break;
+    }
     memAboutToChange(p, pOut);
     MemSetTypeFlag(pOut, MEM_Int);
     pOut->u.i = res;
     REGISTER_TRACE(pOp->p2, pOut);
   }else{
-    assert( pOp->opcode!=OP_Cmp );
     VdbeBranchTaken(res!=0, (pOp->p5 & SQLITE_NULLEQ)?2:3);
     if( res ){
       goto jump_to_p2;
@@ -2096,6 +2103,23 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
   }
   break;
 }
+
+/* Opcode: ElseNotEq * P2 * * *
+**
+** This opcode must immediately follow an Lt or Gt comparison operator.
+** If the operands in that previous comparison had been used with an Eq
+** operator and if the result of that Eq would be NULL or false (0), then
+** then jump to P2.  If the result of comparing the two previous operands
+** using Eq would have been true (1), then fall through.
+*/
+case OP_ElseNotEq: {       /* same as TK_ESCAPE, jump */
+  assert( pOp>aOp );
+  assert( pOp[-1].opcode==OP_Lt || pOp[-1].opcode==OP_Gt );
+  VdbeBranchTaken(iCompare!=0, 2);
+  if( iCompare!=0 ) goto jump_to_p2;
+  break;
+}
+
 
 /* Opcode: Permutation * * * P4 *
 **
@@ -3882,63 +3906,6 @@ seek_not_found:
     assert( pOp[1].opcode==OP_IdxLT || pOp[1].opcode==OP_IdxGT );
     pOp++; /* Skip the OP_IdxLt or OP_IdxGT that follows */
   }
-  break;
-}
-
-/* Opcode: CmpTest P1 P2 P3 P4 *
-**
-** P2 is a jump destination. Register P1 is guaranteed to contain either
-** an integer value or a NULL. 
-**
-** If P3 is non-zero, it identifies an output register. In this case, if
-** P1 is NULL, P3 is also set to NULL. Or, if P1 is any integer value 
-** other than 0, P3 is set to the value of P4 and a jump to P2 is taken.
-**
-** If P3 is 0, the jump is taken if P1 contains any value other than 0 (i.e.
-** NULL does cause a jump). Additionally, if P1 is not NULL, its value is
-** modified to integer value 0 or 1 according to the value of the P4 integer
-** operand:
-**
-**   P4            modification
-**   --------------------------
-**   OP_Lt         (P1 = (P1 < 0))
-**   OP_Le         (P1 = (P1 <= 0))
-**   OP_Gt         (P1 = (P1 > 0))
-**   OP_Ge         (P1 = (P1 >= 0))
-*/
-case OP_CmpTest: {                /* in1, jump */
-  int bJump;
-  pIn1 = &aMem[pOp->p1];
-
-  if( pOp->p3 ){
-    bJump = 0;
-    if( pIn1->flags & MEM_Null ){
-      memAboutToChange(p, &aMem[pOp->p3]);
-      MemSetTypeFlag(&aMem[pOp->p3], MEM_Null);
-    }else if( pIn1->u.i!=0 ){
-      memAboutToChange(p, &aMem[pOp->p3]);
-      MemSetTypeFlag(&aMem[pOp->p3], MEM_Int);
-      aMem[pOp->p3].u.i = pOp->p4.i;
-      bJump = 1;
-    }
-  }else{
-    if( (pIn1->flags & MEM_Int) ){
-      bJump = (pIn1->u.i!=0);
-      switch( pOp->p4.i ){
-        case OP_Lt: pIn1->u.i = (pIn1->u.i < 0); break;
-        case OP_Le: pIn1->u.i = (pIn1->u.i <= 0); break;
-        case OP_Gt: pIn1->u.i = (pIn1->u.i > 0); break;
-        default: 
-          assert( pOp->p4.i==OP_Ge ); 
-          pIn1->u.i = (pIn1->u.i >= 0); 
-          break;
-      }
-    }else{
-      bJump = 1;
-    }
-  }
-
-  if( bJump ) goto jump_to_p2;
   break;
 }
 

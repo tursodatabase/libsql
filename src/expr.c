@@ -409,37 +409,52 @@ static int exprVectorRegister(
 
 /*
 ** Expression pExpr is a comparison between two vector values. Compute
-** the result of the comparison and write it to register dest.
+** the result of the comparison (1, 0, or NULL) and write that
+** result into register dest.
+**
+** The caller must satisfy the following preconditions:
+**
+**    if pExpr->op==TK_IS:      op==TK_EQ and p5==SQLITE_NULLEQ
+**    if pExpr->op==TK_ISNOT:   op==TK_NE and p5==SQLITE_NULLEQ
+**    otherwise:                op==pExpr->op and p5==0
 */
-static void codeVectorCompare(Parse *pParse, Expr *pExpr, int dest){
+static void codeVectorCompare(
+  Parse *pParse,        /* Code generator context */
+  Expr *pExpr,          /* The comparison operation */
+  int dest,             /* Write results into this register */
+  u8 op,                /* Comparison operator */
+  u8 p5                 /* SQLITE_NULLEQ or zero */
+){
   Vdbe *v = pParse->pVdbe;
   Expr *pLeft = pExpr->pLeft;
   Expr *pRight = pExpr->pRight;
   int nLeft = sqlite3ExprVectorSize(pLeft);
   int nRight = sqlite3ExprVectorSize(pRight);
-  int addr = sqlite3VdbeMakeLabel(v);
 
   /* Check that both sides of the comparison are vectors, and that
   ** both are the same length.  */
   if( nLeft!=nRight ){
     sqlite3ErrorMsg(pParse, "invalid use of row value");
   }else{
-    int p5 = (pExpr->op==TK_IS || pExpr->op==TK_ISNOT) ? SQLITE_NULLEQ : 0;
     int i;
     int regLeft = 0;
     int regRight = 0;
-    int regTmp = 0;
+    u8 opx = op;
+    int addrDone = sqlite3VdbeMakeLabel(v);
 
     assert( pExpr->op==TK_EQ || pExpr->op==TK_NE 
          || pExpr->op==TK_IS || pExpr->op==TK_ISNOT 
          || pExpr->op==TK_LT || pExpr->op==TK_GT 
          || pExpr->op==TK_LE || pExpr->op==TK_GE 
     );
+    assert( pExpr->op==op || (pExpr->op==TK_IS && op==TK_EQ)
+              || (pExpr->op==TK_ISNOT && op==TK_NE) );
+    assert( p5==0 || pExpr->op!=op );
+    assert( p5==SQLITE_NULLEQ || pExpr->op==op );
 
-    if( pExpr->op==TK_EQ || pExpr->op==TK_NE ){
-      regTmp = sqlite3GetTempReg(pParse);
-      sqlite3VdbeAddOp2(v, OP_Integer, (pExpr->op==TK_EQ), dest);
-    }
+    p5 |= SQLITE_STOREP2;
+    if( opx==TK_LE ) opx = TK_LT;
+    if( opx==TK_GE ) opx = TK_GT;
 
     regLeft = exprCodeSubselect(pParse, pLeft);
     regRight = exprCodeSubselect(pParse, pRight);
@@ -448,55 +463,40 @@ static void codeVectorCompare(Parse *pParse, Expr *pExpr, int dest){
       int regFree1 = 0, regFree2 = 0;
       Expr *pL, *pR; 
       int r1, r2;
-      if( i ) sqlite3ExprCachePush(pParse);
+      if( i>0 ) sqlite3ExprCachePush(pParse);
       r1 = exprVectorRegister(pParse, pLeft, i, regLeft, &pL, &regFree1);
       r2 = exprVectorRegister(pParse, pRight, i, regRight, &pR, &regFree2);
-
-      switch( pExpr->op ){
-        case TK_IS:
-          codeCompare(
-              pParse, pL, pR, OP_Eq, r1, r2, dest, SQLITE_STOREP2|SQLITE_NULLEQ
-          );
-          sqlite3VdbeAddOp3(v, OP_IfNot, dest, addr, 1);
-          VdbeCoverage(v);
-          break;
-
-        case TK_ISNOT:
-          codeCompare(
-              pParse, pL, pR, OP_Ne, r1, r2, dest, SQLITE_STOREP2|SQLITE_NULLEQ
-          );
-          sqlite3VdbeAddOp3(v, OP_If, dest, addr, 1);
-          VdbeCoverage(v);
-          break;
-
-        case TK_EQ:
-        case TK_NE:
-          codeCompare(pParse, pL, pR, OP_Cmp, r1, r2, regTmp,SQLITE_STOREP2|p5);
-          sqlite3VdbeAddOp4Int(
-              v, OP_CmpTest, regTmp, addr, dest, pExpr->op==TK_NE
-          );
-          VdbeCoverage(v);
-          break;
-
-        case TK_LT:
-        case TK_LE:
-        case TK_GT:
-        case TK_GE:
-          codeCompare(pParse, pL, pR, OP_Cmp, r1, r2, dest, SQLITE_STOREP2|p5);
-          sqlite3VdbeAddOp4Int(v, OP_CmpTest, dest, addr, 0, pExpr->op);
-          VdbeCoverage(v);
-          break;
-      }
-
+      codeCompare(pParse, pL, pR, opx, r1, r2, dest, p5);
+      testcase(op==OP_Lt); VdbeCoverageIf(v,op==OP_Lt);
+      testcase(op==OP_Le); VdbeCoverageIf(v,op==OP_Le);
+      testcase(op==OP_Gt); VdbeCoverageIf(v,op==OP_Gt);
+      testcase(op==OP_Ge); VdbeCoverageIf(v,op==OP_Ge);
+      testcase(op==OP_Eq); VdbeCoverageIf(v,op==OP_Eq);
+      testcase(op==OP_Ne); VdbeCoverageIf(v,op==OP_Ne);
       sqlite3ReleaseTempReg(pParse, regFree1);
       sqlite3ReleaseTempReg(pParse, regFree2);
-      if( i ) sqlite3ExprCachePop(pParse);
+      if( i>0 ) sqlite3ExprCachePop(pParse);
+      if( i==nLeft-1 ){
+        break;
+      }
+      if( opx==TK_EQ ){
+        sqlite3VdbeAddOp2(v, OP_IfNot, dest, addrDone); VdbeCoverage(v);
+        p5 |= SQLITE_KEEPNULL;
+      }else if( opx==TK_NE ){
+        sqlite3VdbeAddOp2(v, OP_If, dest, addrDone); VdbeCoverage(v);
+        p5 |= SQLITE_KEEPNULL;
+      }else{
+        assert( op==TK_LT || op==TK_GT || op==TK_LE || op==TK_GE );
+        sqlite3VdbeAddOp2(v, OP_ElseNotEq, 0, addrDone);
+        VdbeCoverageIf(v, op==TK_LT);
+        VdbeCoverageIf(v, op==TK_GT);
+        VdbeCoverageIf(v, op==TK_LE);
+        VdbeCoverageIf(v, op==TK_GE);
+        if( i==nLeft-2 ) opx = op;
+      }
     }
-
-    sqlite3ReleaseTempReg(pParse, regTmp);
+    sqlite3VdbeResolveLabel(v, addrDone);
   }
-
-  sqlite3VdbeResolveLabel(v, addr);
 }
 
 #if SQLITE_MAX_EXPR_DEPTH>0
@@ -3251,7 +3251,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
     case TK_EQ: {
       Expr *pLeft = pExpr->pLeft;
       if( sqlite3ExprIsVector(pLeft) ){
-        codeVectorCompare(pParse, pExpr, target);
+        codeVectorCompare(pParse, pExpr, target, op, p5);
       }else{
         r1 = sqlite3ExprCodeTemp(pParse, pLeft, &regFree1);
         r2 = sqlite3ExprCodeTemp(pParse, pExpr->pRight, &regFree2);
