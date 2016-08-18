@@ -1,5 +1,5 @@
-C Display\sVECTOR\sexpressions\sin\s.wheretrace\sand\s.selecttrace\sdebugging\soutput.
-D 2016-08-18T17:55:57.954
+C Display\sSELECT_COLUMN\sexpressions\sin\sthe\s.wheretrace\sdebugging\soutput.
+D 2016-08-18T18:09:10.155
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -444,7 +444,7 @@ F src/test_windirent.h b12055cab6227f7be10f5c19296f67c60cc5e2a5
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 78c8085bc7af1922aa687f0f4bbd716821330de5
-F src/treeview.c 0ec6101f55829005fae5f83d33c666224a275e1b
+F src/treeview.c 15406fc49bd7fb1616b4c19b8d1d9fd85211ca8b
 F src/trigger.c 11e20b3b12c847b3b9055594c0f1631266bb53fc
 F src/update.c 8179e699dbd45b92934fd02d3d8e3732e8da8802
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
@@ -1516,7 +1516,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b40b202c1f82808d2240e87b22f1e78b2208cb26
-R 977869bee47fcdc239ba588f810a1009
+P 157347e2580e5078c4081d602e9d1a82d194e719
+R c8603389dbe05aeaf19e13f4475b9214
 U drh
-Z 61690ef4bbd764846f05c0b7918f3dcb
+Z 94f649f5f1dae565622eac65874f963e
