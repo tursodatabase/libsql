@@ -1,5 +1,5 @@
-C Merge\srecent\senhancements\sfrom\strunk.
-D 2016-08-18T15:21:16.759
+C Since\sthe\sTK_VECTOR\stoken\sis\snot\sactually\sused\sby\sthe\sparser,\smake\sit\san\nextra\stoken\scode\sadded\sby\sthe\stool/addopcodes.tcl\sscript\sduring\sparser\sbuild.
+D 2016-08-18T15:36:03.992
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -373,7 +373,7 @@ F src/os_win.c 520f23475f1de530c435d30b67b7b15fe90874b0
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 40928c450320da78bb4bd3ae82818f4239e19b7e
 F src/pager.h 966d2769e76ae347c8a32c4165faf6e6cb64546d
-F src/parse.y a7402dff6fe8238795f15ca194e1f1b734d169f4
+F src/parse.y d240b1518fa9c5cb02b222e1fac8e07d950c9ed9
 F src/pcache.c 5583c8ade4b05075a60ba953ef471d1c1a9c05df
 F src/pcache.h 2cedcd8407eb23017d92790b112186886e179490
 F src/pcache1.c 4bb7a6a5300c67d0b033d25adb509c120c03e812
@@ -1430,7 +1430,7 @@ F test/zerodamage.test e59a56443d6298ecf7435f618f0b27654f0c849e
 F tool/GetFile.cs a15e08acb5dd7539b75ba23501581d7c2b462cb5
 F tool/GetTclKit.bat 629d87562e0487c386db630033931d12d62e6372
 F tool/Replace.cs 02c67258801c2fb5f63231e0ac0f220b4b36ba91
-F tool/addopcodes.tcl 7d4954564d7d4bfde5ba139ebced25542696fa52
+F tool/addopcodes.tcl 10c889c4a65ec6c5604e4a47306fa77ff57ae189
 F tool/build-all-msvc.bat 3e4e4043b53f1aede4308e0d2567bbd773614630 x
 F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
 F tool/cg_anno.tcl 692ce4b8693d59e3a3de77ca97f4139ecfa641b0 x
@@ -1516,7 +1516,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e2ad0b5d8e1e83118c12889150aca2f2a6b2bdde 92a22f01343a898455fd61c3b8e7d7c954f5b569
-R a3d6c4bcdda8d18e3de85b224695f9f6
+P 4768a1066cb9c7627064d7efec44188d6755cb03
+R ad89bbe968192719b16d3d08af2d0d65
 U drh
-Z 554fed64519eb39711e06c16c9610431
+Z f8279b18447d0a73aa27340aaf051f41

@@ -217,7 +217,6 @@ columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,&A,&Y);}
 %left CONCAT.
 %left COLLATE.
 %right BITNOT.
-%right VECTOR.
 
 // An IDENTIFIER can be a generic identifier, or one of several
 // keywords.  Any non-standard keyword can also be an identifier.
