@@ -1,5 +1,5 @@
-C Rename\sthe\sDb.zName\sfield\sto\sDb.zDbSName\sto\smake\sit\smore\sdescriptive\sand\sto\ndistinguish\sit\sfrom\sall\sof\sthe\sother\s"zName"\svariables\sscattered\sthroughout\nthe\scode.
-D 2016-08-18T14:33:11.816
+C Fix\sa\szName\sto\szDbSName\sconversion\smissed\sin\sthe\sprevious\scheck-in.
+D 2016-08-18T20:56:39.177
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -384,7 +384,7 @@ F src/printf.c a5f0ca08ddede803c241266abb46356ec748ded1
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c d67b9a5cc33339256e2088c5a722745fc2ff5219
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c 890c32eab22061b57eb2bddcbb55d6af87db7d12
+F src/select.c fda7fd24b4d8e75479ae581329db0a0b0bf76633
 F src/shell.c 79dda477be6c96eba6e952a934957ad36f87acc7
 F src/sqlite.h.in 0f7580280d1b009b507d8beec1ff0f197ba0cc99
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1510,7 +1510,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a861713cc6a3868a1c89240e8340bc7b2b9559da
-R 99cc7186f7854d08151b32f71928925d
+P 92a22f01343a898455fd61c3b8e7d7c954f5b569
+R 448d737617983f02db48ab96b9c54357
 U drh
-Z 208eab983f2b557e0d2dff78ec685958
+Z dfc7211840822334f717825f8c6da4ce

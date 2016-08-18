@@ -1458,7 +1458,7 @@ static const char *columnTypeImpl(
         zOrigTab = pTab->zName;
         if( pNC->pParse ){
           int iDb = sqlite3SchemaToIndex(pNC->pParse->db, pTab->pSchema);
-          zOrigDb = pNC->pParse->db->aDb[iDb].zName;
+          zOrigDb = pNC->pParse->db->aDb[iDb].zDbSName;
         }
 #else
         if( iCol<0 ){
