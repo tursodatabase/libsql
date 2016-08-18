@@ -789,6 +789,11 @@ int sqlite3_db_config(sqlite3 *db, int op, ...){
   int rc;
   va_start(ap, op);
   switch( op ){
+    case SQLITE_DBCONFIG_MAINDBNAME: {
+      db->aDb[0].zDbSName = va_arg(ap,char*);
+      rc = SQLITE_OK;
+      break;
+    }
     case SQLITE_DBCONFIG_LOOKASIDE: {
       void *pBuf = va_arg(ap, void*); /* IMP: R-26835-10964 */
       int sz = va_arg(ap, int);       /* IMP: R-47871-25994 */
