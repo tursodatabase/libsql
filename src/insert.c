@@ -547,7 +547,7 @@ void sqlite3Insert(
   iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
   assert( iDb<db->nDb );
   pDb = &db->aDb[iDb];
-  zDb = pDb->zName;
+  zDb = pDb->zDbSName;
   if( sqlite3AuthCheck(pParse, SQLITE_INSERT, pTab->zName, 0, zDb) ){
     goto insert_cleanup;
   }

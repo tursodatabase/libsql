@@ -97,7 +97,7 @@ static void attachFunc(
     goto attach_error;
   }
   for(i=0; i<db->nDb; i++){
-    char *z = db->aDb[i].zName;
+    char *z = db->aDb[i].zDbSName;
     assert( z && zName );
     if( sqlite3StrICmp(z, zName)==0 ){
       zErrDyn = sqlite3MPrintf(db, "database %s is already in use", zName);
@@ -162,8 +162,8 @@ static void attachFunc(
     sqlite3BtreeLeave(aNew->pBt);
   }
   aNew->safety_level = SQLITE_DEFAULT_SYNCHRONOUS+1;
-  aNew->zName = sqlite3DbStrDup(db, zName);
-  if( rc==SQLITE_OK && aNew->zName==0 ){
+  aNew->zDbSName = sqlite3DbStrDup(db, zName);
+  if( rc==SQLITE_OK && aNew->zDbSName==0 ){
     rc = SQLITE_NOMEM_BKPT;
   }
 
@@ -275,7 +275,7 @@ static void detachFunc(
   for(i=0; i<db->nDb; i++){
     pDb = &db->aDb[i];
     if( pDb->pBt==0 ) continue;
-    if( sqlite3StrICmp(pDb->zName, zName)==0 ) break;
+    if( sqlite3StrICmp(pDb->zDbSName, zName)==0 ) break;
   }
 
   if( i>=db->nDb ){
@@ -433,7 +433,7 @@ void sqlite3FixInit(
   db = pParse->db;
   assert( db->nDb>iDb );
   pFix->pParse = pParse;
-  pFix->zDb = db->aDb[iDb].zName;
+  pFix->zDb = db->aDb[iDb].zDbSName;
   pFix->pSchema = db->aDb[iDb].pSchema;
   pFix->zType = zType;
   pFix->pName = pName;

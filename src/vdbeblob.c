@@ -176,7 +176,7 @@ int sqlite3_blob_open(
       goto blob_open_out;
     }
     pBlob->pTab = pTab;
-    pBlob->zDb = db->aDb[sqlite3SchemaToIndex(db, pTab->pSchema)].zName;
+    pBlob->zDb = db->aDb[sqlite3SchemaToIndex(db, pTab->pSchema)].zDbSName;
 
     /* Now search pTab for the exact column. */
     for(iCol=0; iCol<pTab->nCol; iCol++) {

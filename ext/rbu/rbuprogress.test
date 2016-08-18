@@ -361,6 +361,8 @@ foreach {bReopen} { 0 1 } {
     }
   } {
 
+    if {$tn=="vtab"} { ifcapable !fts5 break }
+
     foreach {tn2 rbusql r1 r2} {
       1 {
         CREATE TABLE data0_t1(a, b, c, rbu_rowid, rbu_control);
