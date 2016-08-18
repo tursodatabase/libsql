@@ -173,7 +173,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   rc = execSql(db, pzErrMsg, zSql);
   if( db->nDb>nDb ){
     pDb = &db->aDb[db->nDb-1];
-    assert( strcmp(pDb->zName,"vacuum_db")==0 );
+    assert( strcmp(pDb->zDbSName,"vacuum_db")==0 );
   }
   if( rc!=SQLITE_OK ) goto end_of_vacuum;
   pTemp = db->aDb[db->nDb-1].pBt;
