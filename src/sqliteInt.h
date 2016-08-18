@@ -3513,6 +3513,7 @@ char *sqlite3VMPrintf(sqlite3*,const char*, va_list);
 
 #if defined(SQLITE_DEBUG)
   void sqlite3TreeViewExpr(TreeView*, const Expr*, u8);
+  void sqlite3TreeViewBareExprList(TreeView*, const ExprList*, const char*);
   void sqlite3TreeViewExprList(TreeView*, const ExprList*, u8, const char*);
   void sqlite3TreeViewSelect(TreeView*, const Select*, u8);
   void sqlite3TreeViewWith(TreeView*, const With*, u8);

@@ -1,5 +1,5 @@
-C Since\sthe\sTK_VECTOR\stoken\sis\snot\sactually\sused\sby\sthe\sparser,\smake\sit\san\nextra\stoken\scode\sadded\sby\sthe\stool/addopcodes.tcl\sscript\sduring\sparser\sbuild.
-D 2016-08-18T15:36:03.992
+C Display\sVECTOR\sexpressions\sin\s.wheretrace\sand\s.selecttrace\sdebugging\soutput.
+D 2016-08-18T17:55:57.954
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -389,7 +389,7 @@ F src/shell.c 79dda477be6c96eba6e952a934957ad36f87acc7
 F src/sqlite.h.in 0f7580280d1b009b507d8beec1ff0f197ba0cc99
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
-F src/sqliteInt.h 1b51d9e1ae63476fbe69423d531afdefab8aa18f
+F src/sqliteInt.h f4079dcc83ec216d34531792626206a1a35463bc
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
@@ -444,7 +444,7 @@ F src/test_windirent.h b12055cab6227f7be10f5c19296f67c60cc5e2a5
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 78c8085bc7af1922aa687f0f4bbd716821330de5
-F src/treeview.c c56d6ddbed564efda746236b35bcbb8238daac4b
+F src/treeview.c 0ec6101f55829005fae5f83d33c666224a275e1b
 F src/trigger.c 11e20b3b12c847b3b9055594c0f1631266bb53fc
 F src/update.c 8179e699dbd45b92934fd02d3d8e3732e8da8802
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
@@ -1516,7 +1516,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4768a1066cb9c7627064d7efec44188d6755cb03
-R ad89bbe968192719b16d3d08af2d0d65
+P b40b202c1f82808d2240e87b22f1e78b2208cb26
+R 977869bee47fcdc239ba588f810a1009
 U drh
-Z f8279b18447d0a73aa27340aaf051f41
+Z 61690ef4bbd764846f05c0b7918f3dcb
