@@ -1,5 +1,5 @@
-C Display\sSELECT_COLUMN\sexpressions\sin\sthe\s.wheretrace\sdebugging\soutput.
-D 2016-08-18T18:09:10.155
+C Fix\sa\sSQL\sNULL\shandling\sbug\sin\sthe\svector\sIN\soperator\scode\sgeneration.
+D 2016-08-18T19:04:57.401
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -466,7 +466,7 @@ F src/wal.h 6dd221ed384afdc204bc61e25c23ef7fd5a511f2
 F src/walker.c 2d2cc7fb0f320f7f415215d7247f3c584141ac09
 F src/where.c 5bee250c8233c43bd7f53897d12b8468004f63db
 F src/whereInt.h 14dd243e13b81cbb0a66063d38b70f93a7d6e613
-F src/wherecode.c 92202261a6e41f897a595417c5b0c75c8acf713d
+F src/wherecode.c 916b451003afef5f3a0265e62a22d7ca527656fe
 F src/whereexpr.c 8d9903d16ae45d15736745f7b75df2340c729782
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1024,6 +1024,7 @@ F test/rowvalue2.test 875068299fd4dd50ef0a47786462c8e1f4065f9a
 F test/rowvalue3.test dbe935260851b197dfbbbcb0ac2a15cb5f324fd4
 F test/rowvalue4.test ed3f7974099f0fc508c9f95df55d37c49f43be65
 F test/rowvalue5.test 01c7e0bc4048f30b58e6eb27ecd26e5bd312635e
+F test/rowvalue6.test d19b54feb604d5601f8614b15e214e0774c01087
 F test/rowvaluefault.test 7b16485e3f2b371f3e3d05455b8ded6d0c090244
 F test/rtree.test 0c8d9dd458d6824e59683c19ab2ffa9ef946f798
 F test/run-wordcount.sh 891e89c4c2d16e629cd45951d4ed899ad12afc09
@@ -1516,7 +1517,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 157347e2580e5078c4081d602e9d1a82d194e719
-R c8603389dbe05aeaf19e13f4475b9214
+P 3b27a5da100037f75a4efc15e0354a6aa94194f8
+R cb7673431cbb14ee2064b1a631b51486
 U drh
-Z 94f649f5f1dae565622eac65874f963e
+Z e68c3ca3548a25a2524e065bf2465c19
