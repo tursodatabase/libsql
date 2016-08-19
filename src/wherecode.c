@@ -358,8 +358,8 @@ static void codeApplyAffinity(Parse *pParse, int base, int n, char *zAff){
 **
 ** The current value for the constraint is left in register iReg.
 **
-** For a constraint of the form X=expr, the expression is evaluated and its
-** result is left on the stack.  For constraints of the form X IN (...)
+** For a constraint of the form X=expr, the expression is evaluated in
+** straight-line code.  For constraints of the form X IN (...)
 ** this routine sets up a loop that will iterate over all values of X.
 */
 static int codeEqualityTerm(
