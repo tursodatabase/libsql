@@ -2211,7 +2211,9 @@ void sqlite3SubselectError(Parse *pParse, int nActual, int nExpect){
 ** value to non-NULL if the RHS is NULL-free.
 **
 ** For a SELECT or EXISTS operator, return the register that holds the
-** result.  For IN operators or if an error occurs, the return value is 0.
+** result.  For a multi-column SELECT, the result is stored in a contiguous
+** array of registers and the return value is the register of the left-most
+** result column.  Return 0 for IN operators or if an error occurs.
 */
 #ifndef SQLITE_OMIT_SUBQUERY
 int sqlite3CodeSubselect(
@@ -2226,8 +2228,8 @@ int sqlite3CodeSubselect(
   if( NEVER(v==0) ) return 0;
   sqlite3ExprCachePush(pParse);
 
-  /* This code must be run in its entirety every time it is encountered
-  ** if any of the following is true:
+  /* The evaluation of the IN/EXISTS/SELECT must be repeated every time it
+  ** is encountered if any of the following is true:
   **
   **    *  The right-hand side is a correlated subquery
   **    *  The right-hand side is an expression list containing variables
@@ -2387,14 +2389,21 @@ int sqlite3CodeSubselect(
     case TK_EXISTS:
     case TK_SELECT:
     default: {
-      /* If this has to be a scalar SELECT.  Generate code to put the
-      ** value of this select in a memory cell and record the number
-      ** of the memory cell in iColumn.  If this is an EXISTS, write
-      ** an integer 0 (not exists) or 1 (exists) into a memory cell
-      ** and record that memory cell in iColumn.
+      /* Case 3:    (SELECT ... FROM ...)
+      **     or:    EXISTS(SELECT ... FROM ...)
+      **
+      ** For a SELECT, generate code to put the values for all columns of
+      ** the first row into an array of registers and return the index of
+      ** the first register.
+      **
+      ** If this is an EXISTS, write an integer 0 (not exists) or 1 (exists)
+      ** into a register and return that register number.
+      **
+      ** In both cases, the query is augmented with "LIMIT 1".  Any 
+      ** preexisting limit is discarded in place of the new LIMIT 1.
       */
       Select *pSel;                         /* SELECT statement to encode */
-      SelectDest dest;                      /* How to deal with SELECt result */
+      SelectDest dest;                      /* How to deal with SELECT result */
       int nReg;                             /* Registers to allocate */
 
       testcase( pExpr->op==TK_EXISTS );
