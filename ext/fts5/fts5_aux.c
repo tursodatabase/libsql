@@ -422,38 +422,45 @@ static void fts5SnippetFunction(
       rc = pApi->xColumnSize(pFts, i, &nDocsize);
       if( rc!=SQLITE_OK ) break;
 
-      for(ii=0; rc==SQLITE_OK && ii<sFinder.nFirst; ii++){
-        int nScore;
-        memset(aSeen, 0, nPhrase);
-        rc = fts5SnippetScore(pApi, pFts, nDocsize, aSeen, i, 
-            sFinder.aFirst[ii], nToken, &nScore, 0
-        );
-
-        /* Bonus of 100 points for starting at the start of a sentence */
-        nScore += 100;            
-
-        if( rc==SQLITE_OK && nScore>nBestScore ){
-          nBestScore = nScore;
-          iBestCol = i;
-          iBestStart = sFinder.aFirst[ii];
-          nColSize = nDocsize;
-        }
-      }
-
       for(ii=0; rc==SQLITE_OK && ii<nInst; ii++){
         int ip, ic, io;
+        int iAdj;
         int nScore;
+        int jj;
+
         rc = pApi->xInst(pFts, ii, &ip, &ic, &io);
         if( ic!=i || rc!=SQLITE_OK ) continue;
         memset(aSeen, 0, nPhrase);
         rc = fts5SnippetScore(pApi, pFts, nDocsize, aSeen, i,
-            io, nToken, &nScore, &io
+            io, nToken, &nScore, &iAdj
         );
         if( rc==SQLITE_OK && nScore>nBestScore ){
           nBestScore = nScore;
           iBestCol = i;
-          iBestStart = io;
+          iBestStart = iAdj;
           nColSize = nDocsize;
+        }
+
+        if( rc==SQLITE_OK && sFinder.nFirst ){
+          for(jj=0; jj<(sFinder.nFirst-1); jj++){
+            if( sFinder.aFirst[jj+1]>io ) break;
+          }
+
+          if( sFinder.aFirst[jj]<io ){
+            int nScore;
+            memset(aSeen, 0, nPhrase);
+            rc = fts5SnippetScore(pApi, pFts, nDocsize, aSeen, i, 
+              sFinder.aFirst[jj], nToken, &nScore, 0
+            );
+
+            nScore += (sFinder.aFirst[jj]==0 ? 120 : 100);
+            if( rc==SQLITE_OK && nScore>nBestScore ){
+              nBestScore = nScore;
+              iBestCol = i;
+              iBestStart = sFinder.aFirst[jj];
+              nColSize = nDocsize;
+            }
+          }
         }
       }
     }
