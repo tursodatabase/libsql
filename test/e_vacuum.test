@@ -202,12 +202,8 @@ do_execsql_test e_vacuum-2.1.1 {
 } {}
 set original_size [file size test.db2]
 
-# Try everything we can think of to get the aux database vacuumed:
+# Vacuuming the main database does not affect aux
 do_execsql_test e_vacuum-2.1.3 { VACUUM } {}
-do_execsql_test e_vacuum-2.1.4 { VACUUM aux } {}
-do_execsql_test e_vacuum-2.1.5 { VACUUM 'test.db2' } {}
-
-# Despite our efforts, space in the aux database has not been reclaimed:
 do_test e_vacuum-2.1.6 { expr {[file size test.db2]==$::original_size} } 1
 
 # EVIDENCE-OF: R-17495-17419 The VACUUM command may change the ROWIDs of

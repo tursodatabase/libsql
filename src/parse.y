@@ -1285,8 +1285,8 @@ cmd ::= DROP INDEX ifexists(E) fullname(X).   {sqlite3DropIndex(pParse, X, E);}
 //
 %ifndef SQLITE_OMIT_VACUUM
 %ifndef SQLITE_OMIT_ATTACH
-cmd ::= VACUUM.                {sqlite3Vacuum(pParse);}
-cmd ::= VACUUM nm.             {sqlite3Vacuum(pParse);}
+cmd ::= VACUUM.                {sqlite3Vacuum(pParse,0);}
+cmd ::= VACUUM nm(X).          {sqlite3Vacuum(pParse,&X);}
 %endif  SQLITE_OMIT_ATTACH
 %endif  SQLITE_OMIT_VACUUM
 

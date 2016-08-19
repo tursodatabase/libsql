@@ -73,6 +73,7 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
     ** structures that describe the table, index, or view.
     */
     int rc;
+    u8 saved_iDb = db->init.iDb;
     sqlite3_stmt *pStmt;
     TESTONLY(int rcp);            /* Return code from sqlite3_prepare() */
 
@@ -83,7 +84,8 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
     TESTONLY(rcp = ) sqlite3_prepare(db, argv[2], -1, &pStmt, 0);
     rc = db->errCode;
     assert( (rc&0xFF)==(rcp&0xFF) );
-    db->init.iDb = 0;
+    db->init.iDb = saved_iDb;
+    assert( saved_iDb==0 || (db->flags & SQLITE_Vacuum)!=0 );
     if( SQLITE_OK!=rc ){
       if( db->init.orphanTrigger ){
         assert( iDb==1 );
