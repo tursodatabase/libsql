@@ -1677,9 +1677,14 @@ static void whereTermPrint(WhereTerm *pTerm, int iTerm){
       sqlite3_snprintf(sizeof(zLeft),zLeft,"left=%d", pTerm->leftCursor);
     }
     sqlite3DebugPrintf(
-       "TERM-%-3d %p %s %-12s prob=%-3d op=0x%03x wtFlags=0x%04x\n",
+       "TERM-%-3d %p %s %-12s prob=%-3d op=0x%03x wtFlags=0x%04x",
        iTerm, pTerm, zType, zLeft, pTerm->truthProb,
        pTerm->eOperator, pTerm->wtFlags);
+    if( pTerm->iField ){
+      sqlite3DebugPrintf(" iField=%d\n", pTerm->iField);
+    }else{
+      sqlite3DebugPrintf("\n");
+    }
     sqlite3TreeViewExpr(0, pTerm->pExpr, 0);
   }
 }
