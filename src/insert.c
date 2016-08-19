@@ -200,7 +200,9 @@ static int readsTable(Parse *p, int iDb, Table *pTab){
 /*
 ** Locate or create an AutoincInfo structure associated with table pTab
 ** which is in database iDb.  Return the register number for the register
-** that holds the maximum rowid.
+** that holds the maximum rowid.  Return zero if pTab is not an AUTOINCREMENT
+** table.  (Also return zero when doing a VACUUM since we do not want to
+** update the AUTOINCREMENT counters during a VACUUM.)
 **
 ** There is at most one AutoincInfo structure per table even if the
 ** same table is autoincremented multiple times due to inserts within
@@ -223,7 +225,9 @@ static int autoIncBegin(
   Table *pTab         /* The table we are writing to */
 ){
   int memId = 0;      /* Register holding maximum rowid */
-  if( pTab->tabFlags & TF_Autoincrement ){
+  if( (pTab->tabFlags & TF_Autoincrement)!=0
+   && (pParse->db->flags & SQLITE_Vacuum)==0
+  ){
     Parse *pToplevel = sqlite3ParseToplevel(pParse);
     AutoincInfo *pInfo;
 
