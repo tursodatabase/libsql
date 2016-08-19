@@ -22,10 +22,9 @@
 /*
 ** Execute zSql on database db.
 **
-** If zSql begins with 'S' (if it is a SELECT statement) then
-** take each row of result and call execSql() again recursively.
-** It is guaranteed that each row will have only one column that
-** does not begin with 'S'.
+** If zSql returns rows, then each row will have exactly one
+** column.  (This will only happen if zSql begins with "SELECT".)
+** Take each row of result and call execSql() again recursively.
 **
 ** The execSqlF() routine does the same thing, except it accepts
 ** a format string as its third argument
@@ -37,15 +36,17 @@ static int execSql(sqlite3 *db, char **pzErrMsg, const char *zSql){
   /* printf("SQL: [%s]\n", zSql); fflush(stdout); */
   rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
   if( rc!=SQLITE_OK ) return rc;
-  while( SQLITE_ROW==(rc = sqlite3_step(pStmt)) && zSql[0]=='S' ){
+  while( SQLITE_ROW==(rc = sqlite3_step(pStmt)) ){
     const char *zSubSql = (const char*)sqlite3_column_text(pStmt,0);
+    assert( sqlite3_strnicmp(zSql,"SELECT",6)==0 );
     if( zSubSql ){
       assert( zSubSql[0]!='S' );
       rc = execSql(db, pzErrMsg, zSubSql);
       if( rc!=SQLITE_OK ) break;
     }
   }
-  if( rc==SQLITE_ROW || rc==SQLITE_DONE ) rc = SQLITE_OK;
+  assert( rc!=SQLITE_ROW );
+  if( rc==SQLITE_DONE ) rc = SQLITE_OK;
   if( rc ){
     sqlite3SetString(pzErrMsg, db, sqlite3_errmsg(db));
   }
@@ -140,7 +141,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db, int iDb){
   saved_mTrace = db->mTrace;
   db->flags |= (SQLITE_WriteSchema | SQLITE_IgnoreChecks
                  | SQLITE_PreferBuiltin | SQLITE_Vacuum);
-  db->flags &= ~(SQLITE_ForeignKeys | SQLITE_ReverseOrder);
+  db->flags &= ~(SQLITE_ForeignKeys | SQLITE_ReverseOrder | SQLITE_CountRows);
   db->mTrace = 0;
 
   zDbMain = db->aDb[iDb].zDbSName;

@@ -1,5 +1,5 @@
-C Add\sthe\scapability\sto\sVACUUM\san\sattached\sdatabase\sby\sspecifying\sthe\sschema\nname\sas\san\sargument\sto\sthe\sVACUUM\scommand.\s\sSince\sversion\s2.0,\sVACUUM\shas\naccepted\san\sargument\swhich\swas\ssilently\signored.\s\sNow\sit\shas\smeaning.
-D 2016-08-19T14:20:56.900
+C Disable\srow\scounting\son\squeries\srun\swhile\sdoing\sa\sVACUUM.
+D 2016-08-19T15:12:38.157
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -449,7 +449,7 @@ F src/trigger.c 11e20b3b12c847b3b9055594c0f1631266bb53fc
 F src/update.c 8179e699dbd45b92934fd02d3d8e3732e8da8802
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c 810ec3f22e2d1b62e66c30fe3621ebdedd23584d
-F src/vacuum.c 0fecf4ba5ae91a2f1d601345f976b028888803d4
+F src/vacuum.c 913970b9d86dd6c2b8063ef1af421880f1464ec3
 F src/vdbe.c 15376952b0c5dc0afbac6cd8791579dd19ff0a01
 F src/vdbe.h 67bc551f7faf04c33493892e4b378aada823ed10
 F src/vdbeInt.h c59381049af5c7751a83456c39b80d1a6fde1f9d
@@ -1511,10 +1511,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cb9865e14db1c0076618f13400151112f84960cb
-R d22b71c0b6e2dcfd7355ff82dbeacb9a
-T *branch * vacuum-attached-db
-T *sym-vacuum-attached-db *
-T -sym-trunk *
+P 29d63059b4d2bb612523ac55ebfef040d054a64f
+R abd29f9f3d87c2af53d085425233b2a6
 U drh
-Z 9021190c8e1ac254dada8dc6dfa393f1
+Z 5800f169232e621dbe2100315fb2f1aa
