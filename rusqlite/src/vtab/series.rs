@@ -108,18 +108,21 @@ impl VTab<SeriesTabCursor> for SeriesTab {
         let mut num_of_arg = 0;
         if let Some(start_idx) = start_idx {
             num_of_arg += 1;
-            info.set_argv_index(start_idx, num_of_arg);
-            info.set_omit(start_idx, true);
+            let mut constraint_usage = info.constraint_usage(start_idx);
+            constraint_usage.set_argv_index(num_of_arg);
+            constraint_usage.set_omit(true);
         }
         if let Some(stop_idx) = stop_idx {
             num_of_arg += 1;
-            info.set_argv_index(stop_idx, num_of_arg);
-            info.set_omit(stop_idx, true);
+            let mut constraint_usage = info.constraint_usage(stop_idx);
+            constraint_usage.set_argv_index(num_of_arg);
+            constraint_usage.set_omit(true);
         }
         if let Some(step_idx) = step_idx {
             num_of_arg += 1;
-            info.set_argv_index(step_idx, num_of_arg);
-            info.set_omit(step_idx, true);
+            let mut constraint_usage = info.constraint_usage(step_idx);
+            constraint_usage.set_argv_index(num_of_arg);
+            constraint_usage.set_omit(true);
         }
         if idx_num.contains(BOTH) {
             // Both start= and stop= boundaries are available.

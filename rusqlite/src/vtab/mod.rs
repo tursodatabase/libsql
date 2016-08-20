@@ -95,21 +95,13 @@ impl IndexInfo {
     }
 
     /// if `argv_index` > 0, constraint is part of argv to xFilter
-    pub fn set_argv_index(&mut self, constraint_idx: usize, argv_index: libc::c_int) {
-        unsafe {
-            let mut constraint_usages = slice::from_raw_parts_mut((*self.0).aConstraintUsage,
-                                                                  (*self.0).nConstraint as usize);
-            constraint_usages[constraint_idx].argvIndex = argv_index;
-        }
+    pub fn constraint_usage(&mut self, constraint_idx: usize) -> IndexConstraintUsage {
+        let mut constraint_usages = unsafe {
+            slice::from_raw_parts_mut((*self.0).aConstraintUsage, (*self.0).nConstraint as usize)
+        };
+        IndexConstraintUsage(&mut constraint_usages[constraint_idx])
     }
-    /// if `omit`, do not code a test for this constraint
-    pub fn set_omit(&mut self, constraint_idx: usize, omit: bool) {
-        unsafe {
-            let mut constraint_usages = slice::from_raw_parts_mut((*self.0).aConstraintUsage,
-                                                                  (*self.0).nConstraint as usize);
-            constraint_usages[constraint_idx].omit = if omit { 1 } else { 0 };
-        }
-    }
+
     /// Number used to identify the index
     pub fn set_idx_num(&mut self, idx_num: libc::c_int) {
         unsafe {
@@ -165,6 +157,19 @@ impl<'a> IndexConstraint<'a> {
     /// True if this constraint is usable
     pub fn is_usable(&self) -> bool {
         self.0.usable != 0
+    }
+}
+
+pub struct IndexConstraintUsage<'a>(&'a mut ffi::Struct_sqlite3_index_constraint_usage);
+
+impl<'a> IndexConstraintUsage<'a> {
+    /// if `argv_index` > 0, constraint is part of argv to xFilter
+    pub fn set_argv_index(&mut self, argv_index: libc::c_int) {
+        self.0.argvIndex = argv_index;
+    }
+    /// if `omit`, do not code a test for this constraint
+    pub fn set_omit(&mut self, omit: bool) {
+        self.0.omit = if omit { 1 } else { 0 };
     }
 }
 
