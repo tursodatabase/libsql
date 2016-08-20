@@ -1205,7 +1205,11 @@ static Expr *exprDup(sqlite3 *db, Expr *p, int dupFlags, u8 **pzBuffer){
       }
     }else{
       if( !ExprHasProperty(p, EP_TokenOnly) ){
-        pNew->pLeft = sqlite3ExprDup(db, p->pLeft, 0);
+        if( pNew->op==TK_SELECT_COLUMN ){
+          pNew->pLeft = p->pLeft;
+        }else{
+          pNew->pLeft = sqlite3ExprDup(db, p->pLeft, 0);
+        }
         pNew->pRight = sqlite3ExprDup(db, p->pRight, 0);
       }
     }

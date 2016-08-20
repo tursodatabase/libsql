@@ -1,5 +1,5 @@
-C Fix\sa\ssegfault\sthat\scould\soccur\sif\sa\squery\sthat\sused\sa\svector\scomparison\scontained\scertain\stypes\sof\ssyntax\serrors.
-D 2016-08-20T15:01:24.921
+C Do\snot\sduplicate\sthe\sExpr.pLeft\ssubtree\sof\sa\sTK_SELECT_COLUMN\snode.
+D 2016-08-20T17:00:16.608
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -338,7 +338,7 @@ F src/ctime.c e77f3dc297b4b65c96da78b4ae4272fdfae863d7
 F src/date.c 95c9a8d00767e7221a8e9a31f4e913fc8029bf6b
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
 F src/delete.c 76c084f0265f4a3cd1ecf17eee112a94f1ccbc05
-F src/expr.c f1d9c4374246955b9a93edddfc3abfd3297d1455
+F src/expr.c 8e1288b32f542dd8e8a2e21c30e936112968a4ab
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c e2be0968c1adc679c87e467aa5b4f167588f38a8
 F src/func.c 29cc9acb170ec1387b9f63eb52cd85f8de96c771
@@ -1519,7 +1519,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a3ffd283bc931b04170ef737e56bced33d27f06d
-R b7a3d3965778241daed9250312140835
-U dan
-Z 9e9f2920cf64cc9378d276416e2ee3f8
+P 203f07c5e140e74cf91d0c1e20135c21236f0fc1
+R 753238d9341a2b18b0026dcf708bc835
+U drh
+Z d423421ba92880810032946cac8ccbb5
