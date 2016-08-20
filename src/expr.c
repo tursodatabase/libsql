@@ -462,8 +462,8 @@ static int exprVectorRegister(
   int *pRegFree                   /* OUT: Temp register to free */
 ){
   assert( pVector->op==TK_VECTOR || pVector->op==TK_SELECT );
-  assert( (pVector->op==TK_VECTOR)==(regSelect==0) );
-  if( regSelect ){
+  assert( pParse->nErr || (pVector->op==TK_VECTOR)==(regSelect==0) );
+  if( pVector->op==TK_SELECT ){
     *ppExpr = pVector->x.pSelect->pEList->a[iField].pExpr;
      return regSelect+iField;
   }
