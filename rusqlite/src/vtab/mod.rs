@@ -4,13 +4,14 @@ use std::borrow::Cow::{self, Borrowed, Owned};
 use std::ffi::CString;
 use std::mem;
 use std::ptr;
+use std::slice;
 use libc;
 
 use {Connection, Error, Result, InnerConnection, str_to_cstring};
 use error::error_from_sqlite_code;
 use ffi;
 use functions::ToResult;
-use types::FromSql;
+use types::{FromSql, ValueRef};
 
 // let conn: Connection = ...;
 // let mod: Module = ...; // VTab builder
@@ -43,7 +44,8 @@ use types::FromSql;
 /// Virtual table instance trait.
 pub trait VTab<C: VTabCursor<Self>>: Sized {
     /// Create a new instance of a virtual table in response to a CREATE VIRTUAL TABLE statement.
-    /// The `db` parameter is a pointer to the SQLite database connection that is executing the CREATE VIRTUAL TABLE statement.
+    /// The `db` parameter is a pointer to the SQLite database connection that is executing
+    /// the CREATE VIRTUAL TABLE statement.
     fn connect(db: *mut ffi::sqlite3, aux: *mut libc::c_void, args: &[&[u8]]) -> Result<Self>;
     /// Determine the best way to access the virtual table.
     fn best_index(&self, info: &mut IndexInfo) -> Result<()>;
@@ -67,36 +69,10 @@ bitflags! {
 pub struct IndexInfo(*mut ffi::sqlite3_index_info);
 
 impl IndexInfo {
-    /// Number of constraints
-    pub fn num_of_constraint(&self) -> usize {
-        unsafe { (*self.0).nConstraint as usize }
-    }
-    /// Column constrained.  -1 for ROWID
-    pub fn constraint_column(&self, constraint_idx: usize) -> libc::c_int {
-        use std::slice;
-        unsafe {
-            let constraints = slice::from_raw_parts((*self.0).aConstraint,
-                                                    (*self.0).nConstraint as usize);
-            constraints[constraint_idx].iColumn
-        }
-    }
-    /// Constraint operator
-    pub fn constraint_operator(&self, constraint_idx: usize) -> IndexConstraintOp {
-        use std::slice;
-        unsafe {
-            let constraints = slice::from_raw_parts((*self.0).aConstraint,
-                                                    (*self.0).nConstraint as usize);
-            IndexConstraintOp::from_bits_truncate(constraints[constraint_idx].op)
-        }
-    }
-    /// True if this constraint is usable
-    pub fn is_constraint_usable(&self, constraint_idx: usize) -> bool {
-        use std::slice;
-        unsafe {
-            let constraints = slice::from_raw_parts((*self.0).aConstraint,
-                                                    (*self.0).nConstraint as usize);
-            constraints[constraint_idx].usable != 0
-        }
+    pub fn constraints(&self) -> IndexConstraintIter {
+        let constraints =
+            unsafe { slice::from_raw_parts((*self.0).aConstraint, (*self.0).nConstraint as usize) };
+        IndexConstraintIter { iter: constraints.iter() }
     }
 
     /// Number of terms in the ORDER BY clause
@@ -105,7 +81,6 @@ impl IndexInfo {
     }
     /// Column number
     pub fn order_by_column(&self, order_by_idx: usize) -> libc::c_int {
-        use std::slice;
         unsafe {
             let order_bys = slice::from_raw_parts((*self.0).aOrderBy, (*self.0).nOrderBy as usize);
             order_bys[order_by_idx].iColumn
@@ -113,7 +88,6 @@ impl IndexInfo {
     }
     /// True for DESC.  False for ASC.
     pub fn is_order_by_desc(&self, order_by_idx: usize) -> bool {
-        use std::slice;
         unsafe {
             let order_bys = slice::from_raw_parts((*self.0).aOrderBy, (*self.0).nOrderBy as usize);
             order_bys[order_by_idx].desc != 0
@@ -122,7 +96,6 @@ impl IndexInfo {
 
     /// if `argv_index` > 0, constraint is part of argv to xFilter
     pub fn set_argv_index(&mut self, constraint_idx: usize, argv_index: libc::c_int) {
-        use std::slice;
         unsafe {
             let mut constraint_usages = slice::from_raw_parts_mut((*self.0).aConstraintUsage,
                                                                   (*self.0).nConstraint as usize);
@@ -131,7 +104,6 @@ impl IndexInfo {
     }
     /// if `omit`, do not code a test for this constraint
     pub fn set_omit(&mut self, constraint_idx: usize, omit: bool) {
-        use std::slice;
         unsafe {
             let mut constraint_usages = slice::from_raw_parts_mut((*self.0).aConstraintUsage,
                                                                   (*self.0).nConstraint as usize);
@@ -163,6 +135,38 @@ impl IndexInfo {
         }
     }
 }
+pub struct IndexConstraintIter<'a> {
+    iter: slice::Iter<'a, ffi::Struct_sqlite3_index_constraint>,
+}
+
+impl<'a> Iterator for IndexConstraintIter<'a> {
+    type Item = IndexConstraint<'a>;
+
+    fn next(&mut self) -> Option<IndexConstraint<'a>> {
+        self.iter.next().map(|raw| IndexConstraint(raw))
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
+    }
+}
+
+pub struct IndexConstraint<'a>(&'a ffi::Struct_sqlite3_index_constraint);
+
+impl<'a> IndexConstraint<'a> {
+    /// Column constrained.  -1 for ROWID
+    pub fn column(&self) -> libc::c_int {
+        self.0.iColumn
+    }
+    /// Constraint operator
+    pub fn operator(&self) -> IndexConstraintOp {
+        IndexConstraintOp::from_bits_truncate(self.0.op)
+    }
+    /// True if this constraint is usable
+    pub fn is_usable(&self) -> bool {
+        self.0.usable != 0
+    }
+}
 
 /// Virtual table cursor trait.
 pub trait VTabCursor<V: VTab<Self>>: Sized {
@@ -172,9 +176,11 @@ pub trait VTabCursor<V: VTab<Self>>: Sized {
     fn filter(&mut self, idx_num: libc::c_int, idx_str: Option<&str>, args: &Values) -> Result<()>;
     /// Advance cursor to the next row of a result set initiated by `filter`.
     fn next(&mut self) -> Result<()>;
-    /// Must return `false` if the cursor currently points to a valid row of data, or `true` otherwise.
+    /// Must return `false` if the cursor currently points to a valid row of data,
+    /// or `true` otherwise.
     fn eof(&self) -> bool;
-    /// Find the value for the `i`-th column of the current row. `i` is zero-based so the first column is numbered 0.
+    /// Find the value for the `i`-th column of the current row.
+    /// `i` is zero-based so the first column is numbered 0.
     /// May return its result back to SQLite using one of the specified `ctx`.
     fn column(&self, ctx: &mut Context, i: libc::c_int) -> Result<()>;
     /// Return the rowid of row that the cursor is currently pointing at.
@@ -185,7 +191,7 @@ pub trait VTabCursor<V: VTab<Self>>: Sized {
 pub struct Context(*mut ffi::sqlite3_context);
 
 impl Context {
-    pub fn set_result(&mut self, value: &ToResult) {
+    pub fn set_result<T: ToResult>(&mut self, value: &T) {
         unsafe {
             value.set_result(self.0);
         }
@@ -206,13 +212,41 @@ impl<'a> Values<'a> {
     }
 
     pub fn get<T: FromSql>(&self, idx: usize) -> Result<T> {
-        use types::ValueRef;
         let arg = self.args[idx];
         let value = unsafe { ValueRef::from_value(arg) };
         FromSql::column_result(value).map_err(|err| match err {
             Error::InvalidColumnType => Error::InvalidFunctionParameterType,
             _ => err,
         })
+    }
+
+    pub fn iter(&self) -> ValueIter {
+        ValueIter { iter: self.args.iter() }
+    }
+}
+
+impl<'a> IntoIterator for &'a Values<'a> {
+    type Item = ValueRef<'a>;
+    type IntoIter = ValueIter<'a>;
+
+    fn into_iter(self) -> ValueIter<'a> {
+        self.iter()
+    }
+}
+
+pub struct ValueIter<'a> {
+    iter: slice::Iter<'a, *mut ffi::sqlite3_value>,
+}
+
+impl<'a> Iterator for ValueIter<'a> {
+    type Item = ValueRef<'a>;
+
+    fn next(&mut self) -> Option<ValueRef<'a>> {
+        self.iter.next().map(|raw| { unsafe { ValueRef::from_value(*raw) } })
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
     }
 }
 
@@ -297,7 +331,8 @@ macro_rules! init_module {
 static $module_name: ffi::sqlite3_module = ffi::sqlite3_module {
     iVersion: 1,
     xCreate: $create, /* For eponymous-only virtual tables, the xCreate method is NULL */
-    xConnect: Some($connect), /* A virtual table is eponymous if its xCreate method is the exact same function as the xConnect method */
+    xConnect: Some($connect), /* A virtual table is eponymous if its xCreate method is
+                                 the exact same function as the xConnect method */
     xBestIndex: Some($best_index),
     xDisconnect: Some($disconnect),
     xDestroy: $destroy,
@@ -495,8 +530,9 @@ pub unsafe fn set_err_msg(vtab: *mut ffi::sqlite3_vtab, err_msg: &str) {
     (*vtab).zErrMsg = mprintf(err_msg);
 }
 
-/// To raise an error, the `column` method should use this method to set the error message and return the error code.
-pub unsafe fn result_error<T>(ctx: *mut ffi::sqlite3_context, result: Result<T>) -> libc::c_int {
+/// To raise an error, the `column` method should use this method to set the error message
+/// and return the error code.
+unsafe fn result_error<T>(ctx: *mut ffi::sqlite3_context, result: Result<T>) -> libc::c_int {
     use std::error::Error as StdError;
     match result {
         Ok(_) => ffi::SQLITE_OK,
@@ -527,7 +563,8 @@ pub unsafe fn result_error<T>(ctx: *mut ffi::sqlite3_context, result: Result<T>)
     }
 }
 
-// Space to hold this error message string must be obtained from an SQLite memory allocation function.
+// Space to hold this error message string must be obtained
+// from an SQLite memory allocation function.
 pub fn mprintf(err_msg: &str) -> *mut ::libc::c_char {
     let c_format = CString::new("%s").unwrap();
     let c_err = CString::new(err_msg).unwrap();

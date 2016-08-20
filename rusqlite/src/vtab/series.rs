@@ -1,5 +1,5 @@
-//! generate_series virtual table.
-//! Port of C [generate_series "function"](http://www.sqlite.org/cgi/src/finfo?name=ext/misc/series.c).
+//! generate series virtual table.
+//! Port of C [generate series "function"](http://www.sqlite.org/cgi/src/finfo?name=ext/misc/series.c).
 use std::default::Default;
 use libc;
 
@@ -81,14 +81,14 @@ impl VTab<SeriesTabCursor> for SeriesTab {
         let mut stop_idx = None;
         // Index of the step= constraint
         let mut step_idx = None;
-        for i in 0..info.num_of_constraint() {
-            if !info.is_constraint_usable(i) {
+        for (i, constraint) in info.constraints().enumerate() {
+            if !constraint.is_usable() {
                 continue;
             }
-            if info.constraint_operator(i) != vtab::SQLITE_INDEX_CONSTRAINT_EQ {
+            if constraint.operator() != vtab::SQLITE_INDEX_CONSTRAINT_EQ {
                 continue;
             }
-            match info.constraint_column(i) {
+            match constraint.column() {
                 SERIES_COLUMN_START => {
                     start_idx = Some(i);
                     idx_num |= START;
