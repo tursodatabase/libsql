@@ -334,13 +334,21 @@ int sqlite3ExprVectorSize(Expr *pExpr){
 
 #ifndef SQLITE_OMIT_SUBQUERY
 /*
-** If the expression passed as the first argument is a TK_VECTOR, return
-** a pointer to the i'th field of the vector. Or, if the first argument
-** points to a sub-select that returns more than one column, return a 
-** pointer to the i'th returned column value. Otherwise, return a copy 
-** of the first argument.
+** Interpret the pVector input as a vector expression.  If pVector is
+** an ordinary scalar expression, treat it as a vector of size 1.
+**
+** Return a pointer to a subexpression of pVector that is the i-th
+** column of the vector (numbered starting with 0).  The caller must
+** ensure that i is within range.
+**
+** pVector retains ownership of the returned subexpression.
+**
+** If the vector is a (SELECT ...) then the expression returned is
+** just the expression for the i-th term of the result set, and is
+** necessarily ready to be evaluated because the table cursor might
+** not have been positioned yet.
 */
-Expr *sqlite3ExprVectorField(Expr *pVector, int i){
+Expr *sqlite3VectorFieldSubexpr(Expr *pVector, int i){
   assert( i<sqlite3ExprVectorSize(pVector) );
   if( sqlite3ExprIsVector(pVector) ){
     if( pVector->op==TK_SELECT ){
@@ -351,7 +359,57 @@ Expr *sqlite3ExprVectorField(Expr *pVector, int i){
   }
   return pVector;
 }
-#endif
+#endif /* !defined(SQLITE_OMIT_SUBQUERY) */
+
+#ifndef SQLITE_OMIT_SUBQUERY
+/*
+** Compute and return a new Expr object which when passed to
+** sqlite3ExprCode() will generate all necessary code to compute
+** the iField-th column of the vector expression pVector.
+**
+** The caller owns the returned Expr object and is responsible for
+** ensuring that the returned value eventually gets freed.
+**
+** Ownership of pVector is controlled by the takeOwnership parameter.  If
+** takeOwnership is true, this routine takes responsibility for freeing
+** pVector, and may do so before returning, hence the caller must not reference
+** pVector again.  If takeOwnership is false, then the caller takes
+** responsibility for freeing pVector and must ensure the pVector remains
+** valid as long as the returned value remains in use.
+*/
+Expr *sqlite3ExprForVectorField(
+  Parse *pParse,       /* Parsing context */
+  Expr *pVector,       /* The vector.  List of expressions or a sub-SELECT */
+  int iField,          /* Which column of the vector to return */
+  int takeOwnership    /* True to take ownership of pVector before returning */
+){
+  Expr *pRet;
+  assert( sqlite3ExprIsVector(pVector) );
+  /* FIXME: Add support for takeOwnership!=0 */ assert( takeOwnership==0 );
+  if( pVector->flags & EP_xIsSelect ){
+    /* The TK_SELECT_COLUMN Expr node:
+    **
+    ** pLeft:           pVector containing TK_SELECT
+    ** pRight:          pVector if ownership taken
+    ** iColumn:         Index of a column in pVector
+    ** pLeft->iTable:   First in an array of register holding result, or 0
+    **                  if the result is not yet computed.
+    **
+    ** sqlite3ExprDelete() specifically skips the recursive delete of
+    ** pLeft on TK_SELECT_COLUMN nodes.  But pRight is followed, so pVector
+    ** is included on pRight if ownership is taken.  Typically there will
+    ** be multiple TK_SELECT_COLUMN nodes with the same pLeft pointer to 
+    ** the pVector, but only one of them will own the pVector.
+    */
+    pRet = sqlite3PExpr(pParse, TK_SELECT_COLUMN, pVector, 0, 0);
+    if( pRet ) pRet->iColumn = iField;
+    assert( pRet==0 || pRet->iTable==0 );
+  }else{
+    pRet = sqlite3ExprDup(pParse->db, pVector->x.pList->a[iField].pExpr, 0);
+  }
+  return pRet;
+}
+#endif /* !define(SQLITE_OMIT_SUBQUERY) */
 
 /*
 ** If expression pExpr is of type TK_SELECT, generate code to evaluate
@@ -2025,7 +2083,7 @@ int sqlite3FindInIndex(
       ** comparison is the same as the affinity of each column. If
       ** it not, it is not possible to use any index.  */
       for(i=0; i<nExpr && affinity_ok; i++){
-        Expr *pLhs = sqlite3ExprVectorField(pX->pLeft, i);
+        Expr *pLhs = sqlite3VectorFieldSubexpr(pX->pLeft, i);
         int iCol = pEList->a[i].pExpr->iColumn;
         char idxaff = pTab->aCol[iCol].affinity;
         char cmpaff = sqlite3CompareAffinity(pLhs, idxaff);
@@ -2051,7 +2109,7 @@ int sqlite3FindInIndex(
         }
 
         for(i=0; i<nExpr; i++){
-          Expr *pLhs = sqlite3ExprVectorField(pX->pLeft, i);
+          Expr *pLhs = sqlite3VectorFieldSubexpr(pX->pLeft, i);
           Expr *pRhs = pEList->a[i].pExpr;
           CollSeq *pReq = sqlite3BinaryCompareCollSeq(pParse, pLhs, pRhs);
           int j;
@@ -2159,7 +2217,7 @@ static char *exprINAffinity(Parse *pParse, Expr *pExpr){
   if( zRet ){
     int i;
     for(i=0; i<nVal; i++){
-      Expr *pA = sqlite3ExprVectorField(pLeft, i);
+      Expr *pA = sqlite3VectorFieldSubexpr(pLeft, i);
       char a = sqlite3ExprAffinity(pA);
       if( pSelect ){
         zRet[i] = sqlite3CompareAffinity(pSelect->pEList->a[i].pExpr, a);
@@ -2313,7 +2371,7 @@ int sqlite3CodeSubselect(
           assert( pEList->nExpr>0 );
           assert( sqlite3KeyInfoIsWriteable(pKeyInfo) );
           for(i=0; i<nVal; i++){
-            Expr *p = (nVal>1) ? sqlite3ExprVectorField(pLeft, i) : pLeft;
+            Expr *p = (nVal>1) ? sqlite3VectorFieldSubexpr(pLeft, i) : pLeft;
             pKeyInfo->aColl[i] = sqlite3BinaryCompareCollSeq(
                 pParse, p, pEList->a[i].pExpr
             );
@@ -2553,7 +2611,7 @@ static void sqlite3ExprCodeIN(
     }
   }else{
     for(i=0; i<nVector; i++){
-      Expr *pLhs = sqlite3ExprVectorField(pLeft, i);
+      Expr *pLhs = sqlite3VectorFieldSubexpr(pLeft, i);
       sqlite3ExprCode(pParse, pLhs, r1+aiMap[i]);
     }
   }
@@ -2612,7 +2670,7 @@ static void sqlite3ExprCodeIN(
     ** completely empty, or NULL otherwise.  */
     if( destIfNull==destIfFalse ){
       for(i=0; i<nVector; i++){
-        Expr *p = sqlite3ExprVectorField(pExpr->pLeft, i);
+        Expr *p = sqlite3VectorFieldSubexpr(pExpr->pLeft, i);
         if( sqlite3ExprCanBeNull(p) ){
           sqlite3VdbeAddOp2(v, OP_IsNull, r1+aiMap[i], destIfNull);
           VdbeCoverage(v);
@@ -2654,7 +2712,7 @@ static void sqlite3ExprCodeIN(
           Expr *p;
           CollSeq *pColl;
           int r2 = sqlite3GetTempReg(pParse);
-          p = sqlite3ExprVectorField(pLeft, i);
+          p = sqlite3VectorFieldSubexpr(pLeft, i);
           pColl = sqlite3ExprCollSeq(pParse, p);
 
           sqlite3VdbeAddOp3(v, OP_Column, iIdx, i, r2);
@@ -2674,7 +2732,7 @@ static void sqlite3ExprCodeIN(
         ** result is 1.  */
         sqlite3VdbeJumpHere(v, addr);
         for(i=0; i<nVector; i++){
-          Expr *p = sqlite3ExprVectorField(pExpr->pLeft, i);
+          Expr *p = sqlite3VectorFieldSubexpr(pExpr->pLeft, i);
           if( sqlite3ExprCanBeNull(p) ){
             sqlite3VdbeAddOp2(v, OP_IsNull, r1+aiMap[i], destIfNull);
             VdbeCoverage(v);
@@ -3508,6 +3566,13 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       }else{
         inReg = sqlite3CodeSubselect(pParse, pExpr, 0, 0);
       }
+      break;
+    }
+    case TK_SELECT_COLUMN: {
+      if( pExpr->pLeft->iTable==0 ){
+        pExpr->pLeft->iTable = sqlite3CodeSubselect(pParse, pExpr->pLeft, 0, 0);
+      }
+      inReg = pExpr->pLeft->iTable + pExpr->iColumn;
       break;
     }
     case TK_IN: {

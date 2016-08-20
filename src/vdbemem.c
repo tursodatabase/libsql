@@ -1571,7 +1571,7 @@ int sqlite3Stat4ProbeSetValue(
 
     for(i=0; i<nElem; i++){
       sqlite3_value *pVal = 0;
-      Expr *pElem = (pExpr ? sqlite3ExprVectorField(pExpr, i) : 0);
+      Expr *pElem = (pExpr ? sqlite3VectorFieldSubexpr(pExpr, i) : 0);
       u8 aff = sqlite3IndexColumnAffinity(pParse->db, pIdx, iVal+i);
       alloc.iVal = iVal+i;
       rc = stat4ValueFromExpr(pParse, pElem, aff, &alloc, &pVal);

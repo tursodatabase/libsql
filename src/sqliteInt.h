@@ -2298,9 +2298,11 @@ struct Expr {
   int iTable;            /* TK_COLUMN: cursor number of table holding column
                          ** TK_REGISTER: register number
                          ** TK_TRIGGER: 1 -> new, 0 -> old
-                         ** EP_Unlikely:  134217728 times likelihood */
+                         ** EP_Unlikely:  134217728 times likelihood
+                         ** TK_SELECT: 1st register of result vector */
   ynVar iColumn;         /* TK_COLUMN: column index.  -1 for rowid.
-                         ** TK_VARIABLE: variable number (always >= 1). */
+                         ** TK_VARIABLE: variable number (always >= 1).
+                         ** TK_SELECT_COLUMN: column of the result vector */
   i16 iAgg;              /* Which entry in pAggInfo->aCol[] or ->aFunc[] */
   i16 iRightJoinTable;   /* If EP_FromJoin, the right table of the join */
   u8 op2;                /* TK_REGISTER: original value of Expr.op
@@ -4273,6 +4275,7 @@ int sqlite3DbstatRegister(sqlite3*);
 
 int sqlite3ExprVectorSize(Expr *pExpr);
 int sqlite3ExprIsVector(Expr *pExpr);
-Expr *sqlite3ExprVectorField(Expr*, int);
+Expr *sqlite3VectorFieldSubexpr(Expr*, int);
+Expr *sqlite3ExprForVectorField(Parse*,Expr*,int,int);
 
 #endif /* SQLITEINT_H */

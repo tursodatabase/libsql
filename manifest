@@ -1,5 +1,5 @@
-C Replace\sthe\smagic\snumber\s(-2)\swith\sits\ssymbol\sXN_EXPR\sin\sthe\nexprMightBeIndexed()\sroutine.\s\sNo\slogic\schanges.
-D 2016-08-19T19:58:06.626
+C Change\sthe\sway\sTK_SELECT_COLUMN\sis\shandled\sso\sthat\sthe\ssubquery\sis\sonly\ngenerated\sonce\seven\sif\spart\sof\sthe\svector\scomparison\sis\sused\sfor\sindexing\nand\sthe\sother\spart\sis\snow.\s\sThis\schange\salso\sis\sa\spathway\sto\svector\sassignment\nin\sUPDATE\sstatements.
+D 2016-08-20T00:07:01.602
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -338,7 +338,7 @@ F src/ctime.c e77f3dc297b4b65c96da78b4ae4272fdfae863d7
 F src/date.c 95c9a8d00767e7221a8e9a31f4e913fc8029bf6b
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
 F src/delete.c 76c084f0265f4a3cd1ecf17eee112a94f1ccbc05
-F src/expr.c e139851835a8532e3974ca4bc8f6b0e5aef0e06f
+F src/expr.c ff73eb6cae76c2423928d46ceff6f2fdc379a568
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c e2be0968c1adc679c87e467aa5b4f167588f38a8
 F src/func.c 29cc9acb170ec1387b9f63eb52cd85f8de96c771
@@ -389,7 +389,7 @@ F src/shell.c 79dda477be6c96eba6e952a934957ad36f87acc7
 F src/sqlite.h.in 0f7580280d1b009b507d8beec1ff0f197ba0cc99
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
-F src/sqliteInt.h 02b7f4bd9f945fbc46b05f7914b9c43d89517c59
+F src/sqliteInt.h 84f32ad3a5bfaf698b82bf5a9c6939f3e3d79ee0
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
@@ -456,7 +456,7 @@ F src/vdbeInt.h c59381049af5c7751a83456c39b80d1a6fde1f9d
 F src/vdbeapi.c a32d61b7dd05e6890d8fd44d2805f55e2f5ba9f3
 F src/vdbeaux.c a32d79aeaa88dc2b97c261172d952d395254a055
 F src/vdbeblob.c 3e82a797b60c3b9fed7b8de8c539ca7607874937
-F src/vdbemem.c 77d6505956bf4e45c328ab3ebef6b461334cab5d
+F src/vdbemem.c e67dc6d8177fd1830efb5d15e17793408251a187
 F src/vdbesort.c 91fda3909326860382b0ca8aa251e609c6a9d62c
 F src/vdbetrace.c 41963d5376f0349842b5fc4aaaaacd7d9cdc0834
 F src/vtab.c 5ca4fa8b028f9e2ed4793ee1670911a83cfcefd8
@@ -466,8 +466,8 @@ F src/wal.h 6dd221ed384afdc204bc61e25c23ef7fd5a511f2
 F src/walker.c 2d2cc7fb0f320f7f415215d7247f3c584141ac09
 F src/where.c c7cdfd54f383090bb801cdd50d36de1a24684bb2
 F src/whereInt.h 14dd243e13b81cbb0a66063d38b70f93a7d6e613
-F src/wherecode.c f3fd16b9b4cef1345330d22cf3f1628f87a56456
-F src/whereexpr.c bb22074cc2712c5013ecacdf7d652e7568a47bc3
+F src/wherecode.c 0c790c422ea5ecb6c83d6a78f2c4ebc036eea90e
+F src/whereexpr.c 021469f11930cc705a26f7f31ec37640588df1d4
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1518,7 +1518,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P acea4ee136def4815d22eec240c5903a72bde9bd
-R 223c403e8b392fa16a54efbf6c58e1ba
+P d4a5af69cc3bde6f8c02075c07b4d47a0252392d
+R 8a9288690d2190168e2ddd79f5078350
 U drh
-Z b5c0cabb5688d369770dffa65d09a7da
+Z 663c48e63b0d59d8fc6b403d2678eeeb

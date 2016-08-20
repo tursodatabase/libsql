@@ -874,29 +874,6 @@ static int exprMightBeIndexed(
 }
 
 /*
-** The expression passed as the second argument is a vector (either a 
-** TK_VECTOR node or a TK_SELECT that returns more than one column). This
-** function returns a pointer to a new expression object representing
-** field iField of the vector.
-**
-** If pVector is of type TK_VECTOR, the returned object is just a copy of
-** the iField'th element of the vector. Or, if pVector is of type TK_SELECT,
-** the return value points to a new expression object of type 
-** TK_SELECT_COLUMN.
-*/
-static Expr *exprExtractVectorField(Parse *pParse, Expr *pVector, int iField){
-  Expr *pRet;
-  assert( sqlite3ExprIsVector(pVector) );
-  if( pVector->flags & EP_xIsSelect ){
-    pRet = sqlite3PExpr(pParse, TK_SELECT_COLUMN, pVector, 0, 0);
-    if( pRet ) pRet->iColumn = iField;
-  }else{
-    pRet = sqlite3ExprDup(pParse->db, pVector->x.pList->a[iField].pExpr, 0);
-  }
-  return pRet;
-}
-
-/*
 ** The input to this routine is an WhereTerm structure with only the
 ** "pExpr" field filled in.  The job of this routine is to analyze the
 ** subexpression and populate all the other fields of the WhereTerm
@@ -1211,14 +1188,17 @@ static void exprAnalyze(
       for(i=0; i<sqlite3ExprVectorSize(pExpr->pLeft); i++){
         int idxNew;
         Expr *pNew;
-        Expr *pLeft = exprExtractVectorField(pParse, pExpr->pLeft, i);
-        Expr *pRight = exprExtractVectorField(pParse, pExpr->pRight, i);
+        Expr *pLeft = sqlite3ExprForVectorField(pParse, pExpr->pLeft, i, 0);
+        Expr *pRight = sqlite3ExprForVectorField(pParse, pExpr->pRight, i, 0);
 
         pNew = sqlite3PExpr(pParse, pExpr->op, pLeft, pRight, 0);
-        idxNew = whereClauseInsert(pWC, pNew, TERM_VIRTUAL|TERM_DYNAMIC);
+        idxNew = whereClauseInsert(pWC, pNew, TERM_DYNAMIC);
         exprAnalyze(pSrc, pWC, idxNew);
         markTermAsChild(pWC, idxNew, idxTerm);
       }
+      pTerm = &pWC->a[idxTerm];
+      pTerm->wtFlags = TERM_CODED;
+      pTerm->eOperator = 0;
     }
   }
 
