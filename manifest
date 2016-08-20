@@ -1,5 +1,5 @@
-C Fixes\sfor\sproblems\sfollowing\sOOM\serrors.
-D 2016-08-20T18:06:14.286
+C Clarification\sof\scode\scomments\sin\sexpr.c.\s\sClean\sup\sthe\simplementations\nof\ssqlite3ExprIsVector()\sand\ssqlite3ExprVectorSize()\sslightly.
+D 2016-08-20T21:02:38.224
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -338,7 +338,7 @@ F src/ctime.c e77f3dc297b4b65c96da78b4ae4272fdfae863d7
 F src/date.c 95c9a8d00767e7221a8e9a31f4e913fc8029bf6b
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
 F src/delete.c 76c084f0265f4a3cd1ecf17eee112a94f1ccbc05
-F src/expr.c e96f29a02a3927b2afaca1f86fc84e80cac50ca7
+F src/expr.c 4adf875e1bfc155b107ee8e35e7cb1c5599f955b
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c e2be0968c1adc679c87e467aa5b4f167588f38a8
 F src/func.c 29cc9acb170ec1387b9f63eb52cd85f8de96c771
@@ -1519,7 +1519,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8384c77ebb3f65fbc54c199885926f2066f0b140
-R d29ab3049f2812696918a926abccb285
+P 9041ee4a6f0e8389297f887f1431ab5cfe783390
+R bba779342591015bf7eda1fee0ab13af
 U drh
-Z 08f6ec095045e30304bec0161a676b54
+Z 030a18789c82832c6d203bdc6c28c7db

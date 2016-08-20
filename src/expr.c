@@ -313,9 +313,7 @@ static int codeCompare(
 ** Return true if expression pExpr is a vector, or false otherwise.
 */
 int sqlite3ExprIsVector(Expr *pExpr){
-  return ( (pExpr->op==TK_VECTOR)
-        || (pExpr->op==TK_SELECT && pExpr->x.pSelect->pEList->nExpr>1)
-  );
+  return sqlite3ExprVectorSize(pExpr)>1;
 }
 
 /*
@@ -325,28 +323,30 @@ int sqlite3ExprIsVector(Expr *pExpr){
 ** any other type of expression, return 1.
 */
 int sqlite3ExprVectorSize(Expr *pExpr){
-  if( sqlite3ExprIsVector(pExpr)==0 ) return 1;
-  if( pExpr->flags & EP_xIsSelect ){
+  if( pExpr->op==TK_VECTOR ){
+    return pExpr->x.pList->nExpr;
+  }else if( pExpr->op==TK_SELECT ){
     return pExpr->x.pSelect->pEList->nExpr;
+  }else{
+    return 1;
   }
-  return pExpr->x.pList->nExpr;
 }
 
 #ifndef SQLITE_OMIT_SUBQUERY
 /*
-** Interpret the pVector input as a vector expression.  If pVector is
-** an ordinary scalar expression, treat it as a vector of size 1.
-**
 ** Return a pointer to a subexpression of pVector that is the i-th
 ** column of the vector (numbered starting with 0).  The caller must
 ** ensure that i is within range.
 **
+** If pVector is really a scalar (and "scalar" here includes subqueries
+** that return a single column!) then return pVector unmodified.
+**
 ** pVector retains ownership of the returned subexpression.
 **
 ** If the vector is a (SELECT ...) then the expression returned is
-** just the expression for the i-th term of the result set, and is
-** necessarily ready to be evaluated because the table cursor might
-** not have been positioned yet.
+** just the expression for the i-th term of the result set, and may
+** not be ready for evaluation because the table cursor has not yet
+** been positioned.
 */
 Expr *sqlite3VectorFieldSubexpr(Expr *pVector, int i){
   assert( i<sqlite3ExprVectorSize(pVector) );
@@ -374,10 +374,10 @@ Expr *sqlite3VectorFieldSubexpr(Expr *pVector, int i){
 ** ensuring that the returned value eventually gets freed.
 **
 ** The caller retains ownership of pVector.  If pVector is a TK_SELECT,
-** then the return value will reference pVector and so pVector must remain
+** then the returne object will reference pVector and so pVector must remain
 ** valid for the life of the returned object.  If pVector is a TK_VECTOR
 ** or a scalar expression, then it can be deleted as soon as this routine
-** routines.
+** returns.
 **
 ** A trick to cause a TK_SELECT pVector to be deleted together with
 ** the returned Expr object is to attach the pVector to the pRight field
