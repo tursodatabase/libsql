@@ -311,6 +311,12 @@ static int codeCompare(
 
 /*
 ** Return true if expression pExpr is a vector, or false otherwise.
+**
+** A vector is defined as any expression that results in two or more
+** columns of result.  Every TK_VECTOR node is an vector because the
+** parser will not generate a TK_VECTOR with fewer than two entries.
+** But a TK_SELECT might be either a vector or a scalar. It is only
+** considered a vector if it has two or more result columns.
 */
 int sqlite3ExprIsVector(Expr *pExpr){
   return sqlite3ExprVectorSize(pExpr)>1;
