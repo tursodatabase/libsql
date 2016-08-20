@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\svector\sassignments\sin\sthe\sSET\sclause\sof\san\sUPDATE\sstatement.
-D 2016-08-20T00:51:37.333
+C Improvements\sto\scomments.\s\sNo\scode\schanges.
+D 2016-08-20T01:06:22.412
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -338,7 +338,7 @@ F src/ctime.c e77f3dc297b4b65c96da78b4ae4272fdfae863d7
 F src/date.c 95c9a8d00767e7221a8e9a31f4e913fc8029bf6b
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
 F src/delete.c 76c084f0265f4a3cd1ecf17eee112a94f1ccbc05
-F src/expr.c bdc98d3301358bac9b19e23a22375f5220a77274
+F src/expr.c d5cffb307d4e812c41a6fb1f6bc94e6b0801e3e8
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c e2be0968c1adc679c87e467aa5b4f167588f38a8
 F src/func.c 29cc9acb170ec1387b9f63eb52cd85f8de96c771
@@ -1519,7 +1519,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d8feea7dcde83179bff303072426561cfe825e58
-R d0cc8110f72472ebd6ad961310b5fb0d
+P f320d47d6b7b08d9552c8444004bc256348bda90
+R d44ef1061d1c50d06d327d2ef8a626d9
 U drh
-Z 375b2bf2a6add0d9f506b37662f21e95
+Z fa86522a92bb8bcf293bd50750ba2b7b

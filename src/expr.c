@@ -367,11 +367,21 @@ Expr *sqlite3VectorFieldSubexpr(Expr *pVector, int i){
 ** sqlite3ExprCode() will generate all necessary code to compute
 ** the iField-th column of the vector expression pVector.
 **
+** It is ok for pVector to be a scalar (as long as iField==0).  
+** In that case, this routine works like sqlite3ExprDup().
+**
 ** The caller owns the returned Expr object and is responsible for
 ** ensuring that the returned value eventually gets freed.
 **
-** The caller retains ownership of pVector and must ensure that pVector
-** remains valid as long as the returned value is in use.
+** The caller retains ownership of pVector.  If pVector is a TK_SELECT,
+** then the return value will reference pVector and so pVector must remain
+** valid for the life of the returned object.  If pVector is a TK_VECTOR
+** or a scalar expression, then it can be deleted as soon as this routine
+** routines.
+**
+** A trick to cause a TK_SELECT pVector to be deleted together with
+** the returned Expr object is to attach the pVector to the pRight field
+** of the returned TK_SELECT_COLUMN Expr object.
 */
 Expr *sqlite3ExprForVectorField(
   Parse *pParse,       /* Parsing context */
@@ -384,16 +394,17 @@ Expr *sqlite3ExprForVectorField(
     /* The TK_SELECT_COLUMN Expr node:
     **
     ** pLeft:           pVector containing TK_SELECT
-    ** pRight:          pVector if ownership taken
+    ** pRight:          not used.  But recursively deleted.
     ** iColumn:         Index of a column in pVector
     ** pLeft->iTable:   First in an array of register holding result, or 0
     **                  if the result is not yet computed.
     **
     ** sqlite3ExprDelete() specifically skips the recursive delete of
     ** pLeft on TK_SELECT_COLUMN nodes.  But pRight is followed, so pVector
-    ** is included on pRight if ownership is taken.  Typically there will
-    ** be multiple TK_SELECT_COLUMN nodes with the same pLeft pointer to 
-    ** the pVector, but only one of them will own the pVector.
+    ** can be attached to pRight to cause this node to take ownership of
+    ** pVector.  Typically there will be multiple TK_SELECT_COLUMN nodes
+    ** with the same pLeft pointer to the pVector, but only one of them
+    ** will own the pVector.
     */
     pRet = sqlite3PExpr(pParse, TK_SELECT_COLUMN, pVector, 0, 0);
     if( pRet ) pRet->iColumn = iField;
@@ -1436,13 +1447,14 @@ no_mem:
 }
 
 /*
-** pColumns and pExpr for a vector assignment, like this:
+** pColumns and pExpr form a vector assignment which is part of the SET
+** clause of an UPDATE statement.  Like this:
 **
 **        (a,b,c) = (expr1,expr2,expr3)
 ** Or:    (a,b,c) = (SELECT x,y,z FROM ....)
 **
 ** For each term of the vector assignment, append new entries to the
-** expression list.  In the case of a subquery on the LHS, append
+** expression list pList.  In the case of a subquery on the LHS, append
 ** TK_SELECT_COLUMN expressions.
 */
 ExprList *sqlite3ExprListAppendVector(
