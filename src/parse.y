@@ -789,9 +789,15 @@ setlist(A) ::= setlist(A) COMMA nm(X) EQ expr(Y). {
   A = sqlite3ExprListAppend(pParse, A, Y.pExpr);
   sqlite3ExprListSetName(pParse, A, &X, 1);
 }
+setlist(A) ::= setlist(A) COMMA LP idlist(X) RP EQ expr(Y). {
+  A = sqlite3ExprListAppendVector(pParse, A, X, Y.pExpr);
+}
 setlist(A) ::= nm(X) EQ expr(Y). {
   A = sqlite3ExprListAppend(pParse, 0, Y.pExpr);
   sqlite3ExprListSetName(pParse, A, &X, 1);
+}
+setlist(A) ::= LP idlist(X) RP EQ expr(Y). {
+  A = sqlite3ExprListAppendVector(pParse, 0, X, Y.pExpr);
 }
 
 ////////////////////////// The INSERT command /////////////////////////////////

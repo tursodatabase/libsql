@@ -1188,8 +1188,8 @@ static void exprAnalyze(
       for(i=0; i<sqlite3ExprVectorSize(pExpr->pLeft); i++){
         int idxNew;
         Expr *pNew;
-        Expr *pLeft = sqlite3ExprForVectorField(pParse, pExpr->pLeft, i, 0);
-        Expr *pRight = sqlite3ExprForVectorField(pParse, pExpr->pRight, i, 0);
+        Expr *pLeft = sqlite3ExprForVectorField(pParse, pExpr->pLeft, i);
+        Expr *pRight = sqlite3ExprForVectorField(pParse, pExpr->pRight, i);
 
         pNew = sqlite3PExpr(pParse, pExpr->op, pLeft, pRight, 0);
         idxNew = whereClauseInsert(pWC, pNew, TERM_DYNAMIC);

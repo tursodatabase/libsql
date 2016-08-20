@@ -370,23 +370,17 @@ Expr *sqlite3VectorFieldSubexpr(Expr *pVector, int i){
 ** The caller owns the returned Expr object and is responsible for
 ** ensuring that the returned value eventually gets freed.
 **
-** Ownership of pVector is controlled by the takeOwnership parameter.  If
-** takeOwnership is true, this routine takes responsibility for freeing
-** pVector, and may do so before returning, hence the caller must not reference
-** pVector again.  If takeOwnership is false, then the caller takes
-** responsibility for freeing pVector and must ensure the pVector remains
-** valid as long as the returned value remains in use.
+** The caller retains ownership of pVector and must ensure that pVector
+** remains valid as long as the returned value is in use.
 */
 Expr *sqlite3ExprForVectorField(
   Parse *pParse,       /* Parsing context */
   Expr *pVector,       /* The vector.  List of expressions or a sub-SELECT */
-  int iField,          /* Which column of the vector to return */
-  int takeOwnership    /* True to take ownership of pVector before returning */
+  int iField           /* Which column of the vector to return */
 ){
   Expr *pRet;
-  assert( sqlite3ExprIsVector(pVector) );
-  /* FIXME: Add support for takeOwnership!=0 */ assert( takeOwnership==0 );
-  if( pVector->flags & EP_xIsSelect ){
+  if( pVector->op==TK_SELECT ){
+    assert( pVector->flags & EP_xIsSelect );
     /* The TK_SELECT_COLUMN Expr node:
     **
     ** pLeft:           pVector containing TK_SELECT
@@ -405,7 +399,8 @@ Expr *sqlite3ExprForVectorField(
     if( pRet ) pRet->iColumn = iField;
     assert( pRet==0 || pRet->iTable==0 );
   }else{
-    pRet = sqlite3ExprDup(pParse->db, pVector->x.pList->a[iField].pExpr, 0);
+    if( pVector->op==TK_VECTOR ) pVector = pVector->x.pList->a[iField].pExpr;
+    pRet = sqlite3ExprDup(pParse->db, pVector, 0);
   }
   return pRet;
 }
@@ -1438,6 +1433,55 @@ no_mem:
   sqlite3ExprDelete(db, pExpr);
   sqlite3ExprListDelete(db, pList);
   return 0;
+}
+
+/*
+** pColumns and pExpr for a vector assignment, like this:
+**
+**        (a,b,c) = (expr1,expr2,expr3)
+** Or:    (a,b,c) = (SELECT x,y,z FROM ....)
+**
+** For each term of the vector assignment, append new entries to the
+** expression list.  In the case of a subquery on the LHS, append
+** TK_SELECT_COLUMN expressions.
+*/
+ExprList *sqlite3ExprListAppendVector(
+  Parse *pParse,         /* Parsing context */
+  ExprList *pList,       /* List to which to append. Might be NULL */
+  IdList *pColumns,      /* List of names of LHS of the assignment */
+  Expr *pExpr            /* Vector expression to be appended. Might be NULL */
+){
+  sqlite3 *db = pParse->db;
+  int n;
+  int i;
+  if( pColumns==0 ) goto vector_append_error;
+  if( pExpr==0 ) goto vector_append_error;
+  n = sqlite3ExprVectorSize(pExpr);
+  if( pColumns->nId!=n ){
+    sqlite3ErrorMsg(pParse, "%d columns assigned %d values",
+                    pColumns->nId, n);
+    goto vector_append_error;
+  }
+  for(i=0; i<n; i++){
+    Expr *pSubExpr = sqlite3ExprForVectorField(pParse, pExpr, i);
+    pList = sqlite3ExprListAppend(pParse, pList, pSubExpr);
+    if( pList ){
+      pList->a[pList->nExpr-1].zName = pColumns->a[i].zName;
+      pColumns->a[i].zName = 0;
+    }
+  }
+  if( pExpr->op==TK_SELECT ){
+    if( pList && pList->a[0].pExpr ){
+      assert( pList->a[0].pExpr->op==TK_SELECT_COLUMN );
+      pList->a[0].pExpr->pRight = pExpr;
+      pExpr = 0;
+    }
+  }
+
+vector_append_error:
+  sqlite3ExprDelete(db, pExpr);
+  sqlite3IdListDelete(db, pColumns);
+  return pList;
 }
 
 /*

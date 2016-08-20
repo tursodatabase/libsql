@@ -1,5 +1,5 @@
-C Change\sthe\sway\sTK_SELECT_COLUMN\sis\shandled\sso\sthat\sthe\ssubquery\sis\sonly\ngenerated\sonce\seven\sif\spart\sof\sthe\svector\scomparison\sis\sused\sfor\sindexing\nand\sthe\sother\spart\sis\snow.\s\sThis\schange\salso\sis\sa\spathway\sto\svector\sassignment\nin\sUPDATE\sstatements.
-D 2016-08-20T00:07:01.602
+C Add\ssupport\sfor\svector\sassignments\sin\sthe\sSET\sclause\sof\san\sUPDATE\sstatement.
+D 2016-08-20T00:51:37.333
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -338,7 +338,7 @@ F src/ctime.c e77f3dc297b4b65c96da78b4ae4272fdfae863d7
 F src/date.c 95c9a8d00767e7221a8e9a31f4e913fc8029bf6b
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
 F src/delete.c 76c084f0265f4a3cd1ecf17eee112a94f1ccbc05
-F src/expr.c ff73eb6cae76c2423928d46ceff6f2fdc379a568
+F src/expr.c bdc98d3301358bac9b19e23a22375f5220a77274
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c e2be0968c1adc679c87e467aa5b4f167588f38a8
 F src/func.c 29cc9acb170ec1387b9f63eb52cd85f8de96c771
@@ -373,7 +373,7 @@ F src/os_win.c 520f23475f1de530c435d30b67b7b15fe90874b0
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 40928c450320da78bb4bd3ae82818f4239e19b7e
 F src/pager.h 966d2769e76ae347c8a32c4165faf6e6cb64546d
-F src/parse.y 3d02d64f333c4371c4f08fbd79a64964fa27b576
+F src/parse.y 9895eddbbb03c4a47cd760ff4f51cb8d139884d2
 F src/pcache.c 5583c8ade4b05075a60ba953ef471d1c1a9c05df
 F src/pcache.h 2cedcd8407eb23017d92790b112186886e179490
 F src/pcache1.c 4bb7a6a5300c67d0b033d25adb509c120c03e812
@@ -389,7 +389,7 @@ F src/shell.c 79dda477be6c96eba6e952a934957ad36f87acc7
 F src/sqlite.h.in 0f7580280d1b009b507d8beec1ff0f197ba0cc99
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
-F src/sqliteInt.h 84f32ad3a5bfaf698b82bf5a9c6939f3e3d79ee0
+F src/sqliteInt.h db8aa0c875b1a3cdb26e1cee47662c30a34882fd
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
@@ -467,7 +467,7 @@ F src/walker.c 2d2cc7fb0f320f7f415215d7247f3c584141ac09
 F src/where.c c7cdfd54f383090bb801cdd50d36de1a24684bb2
 F src/whereInt.h 14dd243e13b81cbb0a66063d38b70f93a7d6e613
 F src/wherecode.c 0c790c422ea5ecb6c83d6a78f2c4ebc036eea90e
-F src/whereexpr.c 021469f11930cc705a26f7f31ec37640588df1d4
+F src/whereexpr.c 706b539d9fcc884b1b9d4692a87c78019fb59fd2
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1025,6 +1025,7 @@ F test/rowvalue3.test dbe935260851b197dfbbbcb0ac2a15cb5f324fd4
 F test/rowvalue4.test ed3f7974099f0fc508c9f95df55d37c49f43be65
 F test/rowvalue5.test 01c7e0bc4048f30b58e6eb27ecd26e5bd312635e
 F test/rowvalue6.test d19b54feb604d5601f8614b15e214e0774c01087
+F test/rowvalue7.test 3c9a127954d3da309a271babdfc43dbcc5c4da7f
 F test/rowvaluefault.test 7b16485e3f2b371f3e3d05455b8ded6d0c090244
 F test/rtree.test 0c8d9dd458d6824e59683c19ab2ffa9ef946f798
 F test/run-wordcount.sh 891e89c4c2d16e629cd45951d4ed899ad12afc09
@@ -1518,7 +1519,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d4a5af69cc3bde6f8c02075c07b4d47a0252392d
-R 8a9288690d2190168e2ddd79f5078350
+P d8feea7dcde83179bff303072426561cfe825e58
+R d0cc8110f72472ebd6ad961310b5fb0d
 U drh
-Z 663c48e63b0d59d8fc6b403d2678eeeb
+Z 375b2bf2a6add0d9f506b37662f21e95
