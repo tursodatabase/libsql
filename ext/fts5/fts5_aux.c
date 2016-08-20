@@ -441,7 +441,7 @@ static void fts5SnippetFunction(
           nColSize = nDocsize;
         }
 
-        if( rc==SQLITE_OK && sFinder.nFirst ){
+        if( rc==SQLITE_OK && sFinder.nFirst && nDocsize>nToken ){
           for(jj=0; jj<(sFinder.nFirst-1); jj++){
             if( sFinder.aFirst[jj+1]>io ) break;
           }
@@ -468,6 +468,9 @@ static void fts5SnippetFunction(
 
   if( rc==SQLITE_OK ){
     rc = pApi->xColumnText(pFts, iBestCol, &ctx.zIn, &ctx.nIn);
+  }
+  if( rc==SQLITE_OK && nColSize==0 ){
+    rc = pApi->xColumnSize(pFts, iBestCol, &nColSize);
   }
   if( ctx.zIn ){
     if( rc==SQLITE_OK ){
