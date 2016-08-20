@@ -406,8 +406,11 @@ Expr *sqlite3ExprForVectorField(
     ** with the same pLeft pointer to the pVector, but only one of them
     ** will own the pVector.
     */
-    pRet = sqlite3PExpr(pParse, TK_SELECT_COLUMN, pVector, 0, 0);
-    if( pRet ) pRet->iColumn = iField;
+    pRet = sqlite3PExpr(pParse, TK_SELECT_COLUMN, 0, 0, 0);
+    if( pRet ){
+      pRet->iColumn = iField;
+      pRet->pLeft = pVector;
+    }
     assert( pRet==0 || pRet->iTable==0 );
   }else{
     if( pVector->op==TK_VECTOR ) pVector = pVector->x.pList->a[iField].pExpr;
@@ -462,7 +465,8 @@ static int exprVectorRegister(
   int *pRegFree                   /* OUT: Temp register to free */
 ){
   assert( pVector->op==TK_VECTOR || pVector->op==TK_SELECT );
-  assert( pParse->nErr || (pVector->op==TK_VECTOR)==(regSelect==0) );
+  assert( pParse->nErr || pParse->db->mallocFailed
+          || (pVector->op==TK_VECTOR)==(regSelect==0) );
   if( pVector->op==TK_SELECT ){
     *ppExpr = pVector->x.pSelect->pEList->a[iField].pExpr;
      return regSelect+iField;

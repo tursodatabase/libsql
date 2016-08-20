@@ -952,11 +952,14 @@ term(A) ::= CTIME_KW(OP). {
   }
 }
 
-expr(A) ::= LP(L) nexprlist(X) COMMA expr(Y) RP(R). { 
+expr(A) ::= LP(L) nexprlist(X) COMMA expr(Y) RP(R). {
+  ExprList *pList = sqlite3ExprListAppend(pParse, X, Y.pExpr);
   A.pExpr = sqlite3PExpr(pParse, TK_VECTOR, 0, 0, 0);
   if( A.pExpr ){
-    A.pExpr->x.pList = sqlite3ExprListAppend(pParse, X, Y.pExpr);
+    A.pExpr->x.pList = pList;
     spanSet(&A, &L, &R);
+  }else{
+    sqlite3ExprListDelete(pParse->db, pList);
   }
 }
 
