@@ -1173,7 +1173,10 @@ static void exprAnalyze(
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 
   /* If there is a vector == or IS term - e.g. "(a, b) == (?, ?)" - create
-  ** a virtual term for each component comparison - "a = ?" and "b = ?".
+  ** new terms for each component comparison - "a = ?" and "b = ?".  The
+  ** new terms completely replace the original vector comparison, which is
+  ** no longer used.
+  **
   ** This is only required if at least one side of the comparison operation
   ** is not a sub-select.  */
   if( pWC->op==TK_AND 
@@ -1194,10 +1197,9 @@ static void exprAnalyze(
         pNew = sqlite3PExpr(pParse, pExpr->op, pLeft, pRight, 0);
         idxNew = whereClauseInsert(pWC, pNew, TERM_DYNAMIC);
         exprAnalyze(pSrc, pWC, idxNew);
-        markTermAsChild(pWC, idxNew, idxTerm);
       }
       pTerm = &pWC->a[idxTerm];
-      pTerm->wtFlags = TERM_CODED;
+      pTerm->wtFlags = TERM_CODED|TERM_VIRTUAL;  /* Disable the original */
       pTerm->eOperator = 0;
     }
   }

@@ -1,5 +1,5 @@
-C Improvements\sto\scomments.\s\sNo\scode\schanges.
-D 2016-08-20T01:06:22.412
+C Improvements\sto\sthe\svector\scomparison\ssplitter\sin\sexprAnalyze().
+D 2016-08-20T12:00:05.657
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -467,7 +467,7 @@ F src/walker.c 2d2cc7fb0f320f7f415215d7247f3c584141ac09
 F src/where.c c7cdfd54f383090bb801cdd50d36de1a24684bb2
 F src/whereInt.h 14dd243e13b81cbb0a66063d38b70f93a7d6e613
 F src/wherecode.c 0c790c422ea5ecb6c83d6a78f2c4ebc036eea90e
-F src/whereexpr.c 706b539d9fcc884b1b9d4692a87c78019fb59fd2
+F src/whereexpr.c aa54bf11adf6bc7e52f56281f436ab5fd421ce16
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1519,7 +1519,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f320d47d6b7b08d9552c8444004bc256348bda90
-R d44ef1061d1c50d06d327d2ef8a626d9
+P 4165d20f64d778a4e48f511a37cfced8579d4dbe
+R 29e91d5826d73f7831f4580f57f08037
 U drh
-Z fa86522a92bb8bcf293bd50750ba2b7b
+Z 96272366ac5b1657f908e6772496984c
