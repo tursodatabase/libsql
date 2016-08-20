@@ -4064,55 +4064,54 @@ int sqlite3ExprCodeExprList(
 **
 ** Code it as such, taking care to do the common subexpression
 ** elimination of x.
+**
+** The xJumpIf parameter determines details:
+**
+**    NULL:                   Store the boolean result in reg[dest]
+**    sqlite3ExprIfTrue:      Jump to dest if true
+**    sqlite3ExprIfFalse:     Jump to dest if false
+**
+** The jumpIfNull parameter is ignored if xJumpIf is NULL.
 */
 static void exprCodeBetween(
   Parse *pParse,    /* Parsing and code generating context */
   Expr *pExpr,      /* The BETWEEN expression */
-  int dest,         /* Jump here if the jump is taken */
-  void (*xJumpIf)(Parse*,Expr*,int,int),
+  int dest,         /* Jump destination or storage location */
+  void (*xJump)(Parse*,Expr*,int,int), /* Action to take */
   int jumpIfNull    /* Take the jump if the BETWEEN is NULL */
 ){
   Expr exprAnd;     /* The AND operator in  x>=y AND x<=z  */
   Expr compLeft;    /* The  x>=y  term */
   Expr compRight;   /* The  x<=z  term */
-  Expr exprX;       /* The  x  subexpression */
-  int regFree1 = 0; /* Temporary use register */
+
+  assert( xJump==0 || xJump==sqlite3ExprIfTrue || xJump==sqlite3ExprIfFalse );
+  assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
 
   memset(&compLeft, 0, sizeof(Expr));
   memset(&compRight, 0, sizeof(Expr));
   memset(&exprAnd, 0, sizeof(Expr));
-
-  assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
-  exprX = *pExpr->pLeft;
   exprAnd.op = TK_AND;
   exprAnd.pLeft = &compLeft;
   exprAnd.pRight = &compRight;
   compLeft.op = TK_GE;
-  compLeft.pLeft = &exprX;
+  compLeft.pLeft = pExpr->pLeft;
   compLeft.pRight = pExpr->x.pList->a[0].pExpr;
   compRight.op = TK_LE;
-  compRight.pLeft = &exprX;
+  compRight.pLeft = pExpr->pLeft;
   compRight.pRight = pExpr->x.pList->a[1].pExpr;
-  if( sqlite3ExprIsVector(&exprX)==0 ){
-    exprToRegister(&exprX, sqlite3ExprCodeTemp(pParse, &exprX, &regFree1));
-  }
-  if( xJumpIf ){
-    xJumpIf(pParse, &exprAnd, dest, jumpIfNull);
+  if( xJump ){
+    xJump(pParse, &exprAnd, dest, jumpIfNull);
   }else{
-    exprX.flags |= EP_FromJoin;
+    /*exprX.flags |= EP_FromJoin;*/
     sqlite3ExprCodeTarget(pParse, &exprAnd, dest);
   }
-  sqlite3ReleaseTempReg(pParse, regFree1);
 
   /* Ensure adequate test coverage */
-  testcase( jumpIfTrue==0 && jumpIfNull==0 && regFree1==0 );
-  testcase( jumpIfTrue==0 && jumpIfNull==0 && regFree1!=0 );
-  testcase( jumpIfTrue==0 && jumpIfNull!=0 && regFree1==0 );
-  testcase( jumpIfTrue==0 && jumpIfNull!=0 && regFree1!=0 );
-  testcase( jumpIfTrue!=0 && jumpIfNull==0 && regFree1==0 );
-  testcase( jumpIfTrue!=0 && jumpIfNull==0 && regFree1!=0 );
-  testcase( jumpIfTrue!=0 && jumpIfNull!=0 && regFree1==0 );
-  testcase( jumpIfTrue!=0 && jumpIfNull!=0 && regFree1!=0 );
+  testcase( xJump==sqlite3ExprIfTrue  && jumpIfNull==0 );
+  testcase( xJump==sqlite3ExprIfTrue  && jumpIfNull!=0 );
+  testcase( xJump==sqlite3ExprIfFalse && jumpIfNull==0 );
+  testcase( xJump==sqlite3ExprIfFalse && jumpIfNull!=0 );
+  testcase( xJump==0 );
 }
 
 /*
