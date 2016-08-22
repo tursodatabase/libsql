@@ -1,5 +1,5 @@
-C Enhance\sthe\sVACUUM\scommand\sso\sthat\sit\scan\soperate\son\san\sattached\sdatabase.
-D 2016-08-19T15:15:55.612
+C Add\san\sexperimental\smodule\sto\sdetect\sconflicts\sbetween\ssessions\schangesets.
+D 2016-08-22T20:49:06.286
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -281,6 +281,7 @@ F ext/rtree/rtree_util.tcl 06aab2ed5b826545bf215fff90ecb9255a8647ea
 F ext/rtree/sqlite3rtree.h 9c5777af3d2921c7b4ae4954e8e5697502289d28
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
+F ext/session/changebatch1.test 5a69388b91ad02544ef2d9ae27771dbf0f9cea58
 F ext/session/changeset.c 4ccbaa4531944c24584bf6a61ba3a39c62b6267a
 F ext/session/session1.test 98f384736e2bc21ccf5ed81bdadcff4ad863393b
 F ext/session/session2.test 284de45abae4cc1082bc52012ee81521d5ac58e0
@@ -300,16 +301,18 @@ F ext/session/sessionG.test 01ef705096a9d3984eebdcca79807a211dee1b60
 F ext/session/session_common.tcl a1293167d14774b5e728836720497f40fe4ea596
 F ext/session/sessionfault.test da273f2712b6411e85e71465a1733b8501dbf6f7
 F ext/session/sessionfault2.test 04aa0bc9aa70ea43d8de82c4f648db4de1e990b0
+F ext/session/sqlite3changebatch.c 37fb1c87d7b3ccaff194411ff8344d9cc056bd98
+F ext/session/sqlite3changebatch.h 50a302e4fc535324309607b13a1993bca074758b
 F ext/session/sqlite3session.c 37485891b4add26cf61495df193c419f36556a32
 F ext/session/sqlite3session.h 69bf73cfd71e58f2ae5d2aa935b2c1a541aee555
-F ext/session/test_session.c 2caed9a659586428c63ca46e4900347b374487d4
+F ext/session/test_session.c 24968972a5709d2ccf5d570f1a13ce009fbc0d86
 F ext/userauth/sqlite3userauth.h 19cb6f0e31316d0ee4afdfb7a85ef9da3333a220
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 1883ecab643b136e8ab3fdc33785e6ea8b5ceb46
+F main.mk de9447348ea580282aa47dbffd20b042bfbec4e1
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -1511,8 +1514,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cb9865e14db1c0076618f13400151112f84960cb ad35ef116296e5d6aaeb9ef260bf35bee3bd6d20
-R abd29f9f3d87c2af53d085425233b2a6
-T +closed ad35ef116296e5d6aaeb9ef260bf35bee3bd6d20
-U drh
-Z a6de375e7bb722769082d6e640b9c49b
+P 083f9e6270fa4faa402b91231271da4f3915c79f
+R c89955dc116a299d44f6360524b79a8a
+T *branch * changebatch
+T *sym-changebatch *
+T -sym-trunk *
+U dan
+Z f9a59b56ef4c3ca7ba5584bf19e5e811

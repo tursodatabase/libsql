@@ -1,0 +1,55 @@
+# 2016 August 23
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.
+#
+
+if {![info exists testdir]} {
+  set testdir [file join [file dirname [info script]] .. .. test]
+} 
+source $testdir/tester.tcl
+ifcapable !session {finish_test; return}
+
+set testprefix changebatch1
+
+proc do_changebatch_test {tn args} {
+  set C [list]
+  foreach a $args {
+    sqlite3session S db main
+    S attach *
+    execsql $a
+    lappend C [S changeset]
+    S delete
+  }
+
+  sqlite3changebatch cb db
+  set i 1
+  foreach ::cs [lrange $C 0 end-1] {
+    do_test $tn.$i { cb add [set ::cs] } SQLITE_OK
+    incr i
+  }
+
+  set ::cs [lindex $C end]
+  do_test $tn.$i { cb add [set ::cs] } SQLITE_CONSTRAINT
+
+  cb delete
+}
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(a PRIMARY KEY, b);
+}
+
+do_changebatch_test 1.1 {
+  INSERT INTO t1 VALUES(1, 1);
+} {
+  DELETE FROM t1 WHERE a=1;
+}
+
+finish_test
