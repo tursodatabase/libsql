@@ -1,5 +1,5 @@
-C The\sdocs\spromise\sthe\sin\s"x\sBETWEEN\sy\sAND\sz"\sthe\sx\sexpression\sis\sonly\sevaluated\nonce.\s\sThat\sis\sno\slonger\strue,\sand\sso\ssome\stests\sare\sfailing.\s\sThis\sneeds\sto\nbe\sfixed\sbefore\smerging\sto\strunk.
-D 2016-08-20T22:49:28.330
+C Reinstate\sthe\smechanism\sin\sBETWEEN\sthat\savoids\sevaluating\sthe\sfirst\sexpression\nmore\sthan\sonce,\sbut\sfix\sthe\saffinity\sextractor\sso\sthat\sit\sworks\swith\sthis\nmechanism.\s\sThe\sde-duplication\sof\sthe\sfirst\sexpression\sstill\sdoes\snot\swork\nfor\svector\sexpressions,\sthough.
+D 2016-08-22T00:48:58.062
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -338,7 +338,7 @@ F src/ctime.c e77f3dc297b4b65c96da78b4ae4272fdfae863d7
 F src/date.c 95c9a8d00767e7221a8e9a31f4e913fc8029bf6b
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
 F src/delete.c 76c084f0265f4a3cd1ecf17eee112a94f1ccbc05
-F src/expr.c 157f2aa7e573c8d354ccfea9955dac2842467b0e
+F src/expr.c 77215e927ab39426e19340b2e109267f62abe398
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c e2be0968c1adc679c87e467aa5b4f167588f38a8
 F src/func.c 29cc9acb170ec1387b9f63eb52cd85f8de96c771
@@ -1519,7 +1519,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d4562a9e7b1eaff41466210e3a0caaf374ec5a92
-R 79bb83cf9bac81ae1bf4f01bc53e554b
+P e50d264fdc2f08d19202c68f73f18df301cb233d
+R 333f2c163d1312925e2511fcd28df52d
 U drh
-Z 762069ce8b935adb1e168884e493813e
+Z ca2741b6fe90555773b217749c459f72
