@@ -1,5 +1,5 @@
-C Add\san\sexperimental\smodule\sto\sdetect\sconflicts\sbetween\ssessions\schangesets.
-D 2016-08-22T20:49:06.286
+C Add\sa\scouple\sof\sextra\stests\sto\schangebatch1.test.
+D 2016-08-22T21:01:39.413
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -281,7 +281,7 @@ F ext/rtree/rtree_util.tcl 06aab2ed5b826545bf215fff90ecb9255a8647ea
 F ext/rtree/sqlite3rtree.h 9c5777af3d2921c7b4ae4954e8e5697502289d28
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
-F ext/session/changebatch1.test 5a69388b91ad02544ef2d9ae27771dbf0f9cea58
+F ext/session/changebatch1.test b2d1a8c8b8f86881f50b481eae233f8abfb61436
 F ext/session/changeset.c 4ccbaa4531944c24584bf6a61ba3a39c62b6267a
 F ext/session/session1.test 98f384736e2bc21ccf5ed81bdadcff4ad863393b
 F ext/session/session2.test 284de45abae4cc1082bc52012ee81521d5ac58e0
@@ -1514,10 +1514,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 083f9e6270fa4faa402b91231271da4f3915c79f
-R c89955dc116a299d44f6360524b79a8a
-T *branch * changebatch
-T *sym-changebatch *
-T -sym-trunk *
+P 0c9fd6b723041955b5182caa430312e5124fdc83
+R 0bf0e85497e377afe1f85fb7abd8225d
 U dan
-Z f9a59b56ef4c3ca7ba5584bf19e5e811
+Z cf85cb19b321088cfc5e96ee875ee34c
