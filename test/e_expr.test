@@ -847,6 +847,9 @@ foreach {tn x expr res nEval} {
 
   3   5  "x() >= 5 AND x() <= 5"   1  2
   4   5  "x() BETWEEN 5 AND 5"     1  1
+
+  5   9  "(x(),8) >= (9,7) AND (x(),8)<=(9,10)"  1 2
+  6   9  "(x(),8) BETWEEN (9,7) AND (9,10)"      1 1
 } {
   do_test e_expr-13.1.$tn {
     set ::xcount 0

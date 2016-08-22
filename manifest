@@ -1,5 +1,5 @@
-C Reinstate\sthe\smechanism\sin\sBETWEEN\sthat\savoids\sevaluating\sthe\sfirst\sexpression\nmore\sthan\sonce,\sbut\sfix\sthe\saffinity\sextractor\sso\sthat\sit\sworks\swith\sthis\nmechanism.\s\sThe\sde-duplication\sof\sthe\sfirst\sexpression\sstill\sdoes\snot\swork\nfor\svector\sexpressions,\sthough.
-D 2016-08-22T00:48:58.062
+C Fix\sthe\svector\sBETWEEN\soperator\sso\sthat\sit\sonly\sevaluates\sthe\sleft-most\nvector\sexpression\sonce.\s\sAdd\ssupport\sfor\svector\scomparisons\sin\sthe\sCASE\noperator.
+D 2016-08-22T14:30:05.854
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -338,7 +338,7 @@ F src/ctime.c e77f3dc297b4b65c96da78b4ae4272fdfae863d7
 F src/date.c 95c9a8d00767e7221a8e9a31f4e913fc8029bf6b
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
 F src/delete.c 76c084f0265f4a3cd1ecf17eee112a94f1ccbc05
-F src/expr.c 77215e927ab39426e19340b2e109267f62abe398
+F src/expr.c 575d6767abc4d38362bb54599dbb72a09946c5be
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c e2be0968c1adc679c87e467aa5b4f167588f38a8
 F src/func.c 29cc9acb170ec1387b9f63eb52cd85f8de96c771
@@ -644,7 +644,7 @@ F test/e_createtable.test d4c6059d44dcd4b636de9aae322766062b471844
 F test/e_delete.test ab39084f26ae1f033c940b70ebdbbd523dc4962e
 F test/e_droptrigger.test 3cd080807622c13e5bbb61fc9a57bd7754da2412
 F test/e_dropview.test 0c9f7f60989164a70a67a9d9c26d1083bc808306
-F test/e_expr.test 3f9e639b5df18de36c0aa700703589cd65281174
+F test/e_expr.test 1ffa8866d38e7becc76893a8829e9432050e5716
 F test/e_fkey.test a1783fe1f759e1990e6a11adfcf0702dac4d0707
 F test/e_fts3.test 5c02288842e4f941896fd44afdef564dd5fc1459
 F test/e_insert.test 3de217e95094d3d165992a6de1164bbc4bd92dc7
@@ -1026,6 +1026,7 @@ F test/rowvalue4.test 318cdd40e66dfae686537eea581ae49cbb01195d
 F test/rowvalue5.test 01c7e0bc4048f30b58e6eb27ecd26e5bd312635e
 F test/rowvalue6.test d19b54feb604d5601f8614b15e214e0774c01087
 F test/rowvalue7.test 3c9a127954d3da309a271babdfc43dbcc5c4da7f
+F test/rowvalue8.test 5900eddad9e2c3c2e26f1a95f74aafc1232ee5e0
 F test/rowvaluefault.test 7b16485e3f2b371f3e3d05455b8ded6d0c090244
 F test/rtree.test 0c8d9dd458d6824e59683c19ab2ffa9ef946f798
 F test/run-wordcount.sh 891e89c4c2d16e629cd45951d4ed899ad12afc09
@@ -1519,7 +1520,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e50d264fdc2f08d19202c68f73f18df301cb233d
-R 333f2c163d1312925e2511fcd28df52d
+P 2f39987f21bd6dae8d2be610a1fd5f06f8878e9e
+R 46b91546c6e852a3d13f61b9c8a6f99f
 U drh
-Z ca2741b6fe90555773b217749c459f72
+Z cdfb95caa6cbc00a53a66a6c4e92b927

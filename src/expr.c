@@ -14,6 +14,11 @@
 */
 #include "sqliteInt.h"
 
+/* Forward declarations */
+static void exprCodeBetween(Parse*,Expr*,int,void(*)(Parse*,Expr*,int,int),int);
+static int exprCodeVector(Parse *pParse, Expr *p, int *piToFree);
+
+
 /*
 ** Return the 'affinity' of the expression pExpr if any.
 **
@@ -326,9 +331,11 @@ int sqlite3ExprIsVector(Expr *pExpr){
 ** any other type of expression, return 1.
 */
 int sqlite3ExprVectorSize(Expr *pExpr){
-  if( pExpr->op==TK_VECTOR ){
+  u8 op = pExpr->op;
+  if( op==TK_REGISTER ) op = pExpr->op2;
+  if( op==TK_VECTOR ){
     return pExpr->x.pList->nExpr;
-  }else if( pExpr->op==TK_SELECT ){
+  }else if( op==TK_SELECT ){
     return pExpr->x.pSelect->pEList->nExpr;
   }else{
     return 1;
@@ -354,7 +361,9 @@ int sqlite3ExprVectorSize(Expr *pExpr){
 Expr *sqlite3VectorFieldSubexpr(Expr *pVector, int i){
   assert( i<sqlite3ExprVectorSize(pVector) );
   if( sqlite3ExprIsVector(pVector) ){
-    if( pVector->op==TK_SELECT ){
+    if( pVector->op==TK_SELECT
+     || (pVector->op==TK_REGISTER && pVector->op2==TK_SELECT)
+    ){
       return pVector->x.pSelect->pEList->a[i].pExpr;
     }else{
       return pVector->x.pList->a[i].pExpr;
@@ -467,10 +476,13 @@ static int exprVectorRegister(
   Expr **ppExpr,                  /* OUT: Expression element */
   int *pRegFree                   /* OUT: Temp register to free */
 ){
-  assert( pVector->op==TK_VECTOR || pVector->op==TK_SELECT );
-  assert( pParse->nErr || pParse->db->mallocFailed
-          || (pVector->op==TK_VECTOR)==(regSelect==0) );
-  if( pVector->op==TK_SELECT ){
+  u8 op = pVector->op;
+  assert( op==TK_VECTOR || op==TK_SELECT || op==TK_REGISTER );
+  if( op==TK_REGISTER ){
+    *ppExpr = sqlite3VectorFieldSubexpr(pVector, iField);
+    return pVector->iTable+iField;
+  }
+  if( op==TK_SELECT ){
     *ppExpr = pVector->x.pSelect->pEList->a[iField].pExpr;
      return regSelect+iField;
   }
@@ -2630,11 +2642,12 @@ static void sqlite3ExprCodeIN(
 ){
   int rRhsHasNull = 0;  /* Register that is true if RHS contains NULL values */
   int eType;            /* Type of the RHS */
-  int r1;               /* Temporary use register */
+  int r1, r2;           /* Temporary use registers */
   Vdbe *v;              /* Statement under construction */
   int *aiMap = 0;       /* Map from vector field to index column */
   char *zAff = 0;       /* Affinity string for comparisons */
   int nVector;          /* Size of vectors for this IN(...) op */
+  int iDummy;           /* Dummy parameter to exprCodeVector() */
   Expr *pLeft = pExpr->pLeft;
   int i;
 
@@ -2671,16 +2684,9 @@ static void sqlite3ExprCodeIN(
   */
   r1 = sqlite3GetTempRange(pParse, nVector);
   sqlite3ExprCachePush(pParse);
-  if( nVector>1 && (pLeft->flags & EP_xIsSelect) ){
-    int regSelect = sqlite3CodeSubselect(pParse, pLeft, 0, 0);
-    for(i=0; i<nVector; i++){
-      sqlite3VdbeAddOp3(v, OP_Copy, regSelect+i, r1+aiMap[i], 0);
-    }
-  }else{
-    for(i=0; i<nVector; i++){
-      Expr *pLhs = sqlite3VectorFieldSubexpr(pLeft, i);
-      sqlite3ExprCode(pParse, pLhs, r1+aiMap[i]);
-    }
+  r2 = exprCodeVector(pParse, pLeft, &iDummy);
+  for(i=0; i<nVector; i++){
+    sqlite3VdbeAddOp3(v, OP_Copy, r2+i, r1+aiMap[i], 0);
   }
 
   /* If sqlite3FindInIndex() did not find or create an index that is
@@ -3228,7 +3234,9 @@ static int usedAsColumnCache(Parse *pParse, int iFrom, int iTo){
 
 
 /*
-** Convert an expression node to a TK_REGISTER
+** Convert a scalar expression node to a TK_REGISTER referencing
+** register iReg.  The caller must ensure that iReg already contains
+** the correct value for the expression.
 */
 static void exprToRegister(Expr *p, int iReg){
   p->op2 = p->op;
@@ -3237,7 +3245,37 @@ static void exprToRegister(Expr *p, int iReg){
   ExprClearProperty(p, EP_Skip);
 }
 
-static void exprCodeBetween(Parse*,Expr*,int,void(*)(Parse*,Expr*,int,int),int);
+/*
+** Evaluate an expression (either a vector or a scalar expression) and store
+** the result in continguous temporary registers.  Return the index of
+** the first register used to store the result.
+**
+** If the returned result register is a temporary scalar, then also write
+** that register number into *piFreeable.  If the returned result register
+** is not a temporary or if the expression is a vector set *piFreeable
+** to 0.
+*/
+static int exprCodeVector(Parse *pParse, Expr *p, int *piFreeable){
+  int iResult;
+  int nResult = sqlite3ExprVectorSize(p);
+  if( nResult==1 ){
+    iResult = sqlite3ExprCodeTemp(pParse, p, piFreeable);
+  }else{
+    *piFreeable = 0;
+    if( p->op==TK_SELECT ){
+      iResult = sqlite3CodeSubselect(pParse, p, 0, 0);
+    }else{
+      int i;
+      iResult = pParse->nMem+1;
+      pParse->nMem += nResult;
+      for(i=0; i<nResult; i++){
+        sqlite3ExprCode(pParse, p->x.pList->a[i].pExpr, i+iResult);
+      }
+    }
+  }
+  return iResult;
+}
+
 
 /*
 ** Generate code into the current Vdbe to evaluate the given
@@ -3781,7 +3819,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       if( (pX = pExpr->pLeft)!=0 ){
         tempX = *pX;
         testcase( pX->op==TK_COLUMN );
-        exprToRegister(&tempX, sqlite3ExprCodeTemp(pParse, pX, &regFree1));
+        exprToRegister(&tempX, exprCodeVector(pParse, &tempX, &regFree1));
         testcase( regFree1==0 );
         opCompare.op = TK_EQ;
         opCompare.pLeft = &tempX;
@@ -4099,9 +4137,7 @@ static void exprCodeBetween(
   compRight.op = TK_LE;
   compRight.pLeft = &exprX;
   compRight.pRight = pExpr->x.pList->a[1].pExpr;
-  if( sqlite3ExprIsVector(&exprX)==0 ){
-    exprToRegister(&exprX, sqlite3ExprCodeTemp(pParse, &exprX, &regFree1));
-  }
+  exprToRegister(&exprX, exprCodeVector(pParse, &exprX, &regFree1));
   if( xJump ){
     xJump(pParse, &exprAnd, dest, jumpIfNull);
   }else{
