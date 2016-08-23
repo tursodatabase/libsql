@@ -3821,6 +3821,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
         testcase( pX->op==TK_COLUMN );
         exprToRegister(&tempX, exprCodeVector(pParse, &tempX, &regFree1));
         testcase( regFree1==0 );
+        memset(&opCompare, 0, sizeof(opCompare));
         opCompare.op = TK_EQ;
         opCompare.pLeft = &tempX;
         pTest = &opCompare;
