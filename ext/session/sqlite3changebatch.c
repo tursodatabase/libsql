@@ -240,11 +240,26 @@ static int cbFindTable(
   return rc;
 }
 
+static int cbGetChangesetValue(
+  sqlite3_changeset_iter *pIter, 
+  int (*xVal)(sqlite3_changeset_iter*,int,sqlite3_value**),
+  int (*xFallback)(sqlite3_changeset_iter*,int,sqlite3_value**),
+  int iVal,
+  sqlite3_value **ppVal
+){
+  int rc = xVal(pIter, iVal, ppVal);
+  if( rc==SQLITE_OK && *ppVal==0 && xFallback ){
+    rc = xFallback(pIter, iVal, ppVal);
+  }
+  return rc;
+}
+
 static int cbAddToHash(
   sqlite3_changebatch *p, 
   sqlite3_changeset_iter *pIter, 
   BatchIndex *pIdx, 
   int (*xVal)(sqlite3_changeset_iter*,int,sqlite3_value**),
+  int (*xFallback)(sqlite3_changeset_iter*,int,sqlite3_value**),
   int *pbConf
 ){
   BatchIndexEntry *pNew;
@@ -255,12 +270,10 @@ static int cbAddToHash(
 
   for(i=0; rc==SQLITE_OK && i<pIdx->nCol; i++){
     sqlite3_value *pVal;
-    rc = xVal(pIter, pIdx->aiCol[i], &pVal);
+    rc = cbGetChangesetValue(pIter, xVal, xFallback, pIdx->aiCol[i], &pVal);
     if( rc==SQLITE_OK ){
       int eType = 0;
-      if( pVal ){
-        eType = sqlite3_value_type(pVal);
-      }
+      if( pVal ) eType = sqlite3_value_type(pVal);
       switch( eType ){
         case 0:
         case SQLITE_NULL:
@@ -289,7 +302,7 @@ static int cbAddToHash(
 
     for(i=0; rc==SQLITE_OK && i<pIdx->nCol; i++){
       sqlite3_value *pVal;
-      rc = xVal(pIter, pIdx->aiCol[i], &pVal);
+      rc = cbGetChangesetValue(pIter, xVal, xFallback, pIdx->aiCol[i], &pVal);
       if( rc==SQLITE_OK ){
         int eType = sqlite3_value_type(pVal);
         pNew->aRecord[iOut++] = eType;
@@ -381,10 +394,12 @@ int sqlite3changebatch_add(sqlite3_changebatch *p, void *pBuf, int nBuf){
       for(pIdx=pTab->pIdx; pIdx && rc==SQLITE_OK; pIdx=pIdx->pNext){
         if( op==SQLITE_UPDATE && pIdx->bPk ) continue;
         if( op==SQLITE_UPDATE || op==SQLITE_DELETE ){
-          rc = cbAddToHash(p, pIter, pIdx, sqlite3changeset_old, &bConf);
+          rc = cbAddToHash(p, pIter, pIdx, sqlite3changeset_old, 0, &bConf);
         }
         if( op==SQLITE_UPDATE || op==SQLITE_INSERT ){
-          rc = cbAddToHash(p, pIter, pIdx, sqlite3changeset_new, &bConf);
+          rc = cbAddToHash(p, pIter, pIdx, 
+              sqlite3changeset_new, sqlite3changeset_old, &bConf
+          );
         }
       }
       if( rc!=SQLITE_OK ) break;

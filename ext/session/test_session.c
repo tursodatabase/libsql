@@ -113,6 +113,7 @@ static int testStreamOutput(
 **          $session indirect INTEGER
 **          $session patchset
 **          $session table_filter SCRIPT
+**          $session fullchangeset
 */
 static int SQLITE_TCLAPI test_session_cmd(
   void *clientData,
@@ -126,17 +127,17 @@ static int SQLITE_TCLAPI test_session_cmd(
     const char *zSub;
     int nArg;
     const char *zMsg;
-    int iSub;
   } aSub[] = {
-    { "attach",       1, "TABLE",      }, /* 0 */
-    { "changeset",    0, "",           }, /* 1 */
-    { "delete",       0, "",           }, /* 2 */
-    { "enable",       1, "BOOL",       }, /* 3 */
-    { "indirect",     1, "BOOL",       }, /* 4 */
-    { "isempty",      0, "",           }, /* 5 */
-    { "table_filter", 1, "SCRIPT",     }, /* 6 */
+    { "attach",       1, "TABLE"       }, /* 0 */
+    { "changeset",    0, ""            }, /* 1 */
+    { "delete",       0, ""            }, /* 2 */
+    { "enable",       1, "BOOL"        }, /* 3 */
+    { "indirect",     1, "BOOL"        }, /* 4 */
+    { "isempty",      0, ""            }, /* 5 */
+    { "table_filter", 1, "SCRIPT"      }, /* 6 */
     { "patchset",     0, "",           }, /* 7 */
-    { "diff",         2, "FROMDB TBL", }, /* 8 */
+    { "diff",         2, "FROMDB TBL"  }, /* 8 */
+    { "fullchangeset",0, ""            }, /* 9 */
     { 0 }
   };
   int iSub;
@@ -166,10 +167,11 @@ static int SQLITE_TCLAPI test_session_cmd(
       break;
     }
 
+    case 9:        /* fullchangeset */
     case 7:        /* patchset */
     case 1: {      /* changeset */
       TestSessionsBlob o = {0, 0};
-      if( test_tcl_integer(interp, SESSION_STREAM_TCL_VAR) ){
+      if( iSub!=9 && test_tcl_integer(interp, SESSION_STREAM_TCL_VAR) ){
         void *pCtx = (void*)&o;
         if( iSub==7 ){
           rc = sqlite3session_patchset_strm(pSession, testStreamOutput, pCtx);
@@ -179,6 +181,8 @@ static int SQLITE_TCLAPI test_session_cmd(
       }else{
         if( iSub==7 ){
           rc = sqlite3session_patchset(pSession, &o.n, &o.p);
+        }else if( iSub==9 ){
+          rc = sqlite3session_fullchangeset(pSession, &o.n, &o.p);
         }else{
           rc = sqlite3session_changeset(pSession, &o.n, &o.p);
         }
@@ -192,6 +196,7 @@ static int SQLITE_TCLAPI test_session_cmd(
       }
       break;
     }
+
 
     case 2:        /* delete */
       Tcl_DeleteCommand(interp, Tcl_GetString(objv[0]));

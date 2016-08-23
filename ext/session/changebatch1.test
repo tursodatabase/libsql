@@ -19,14 +19,19 @@ ifcapable !session {finish_test; return}
 
 set testprefix changebatch1
 
-proc do_changebatch_test {tn args} {
+proc sql_to_changeset {method sql} {
+  sqlite3session S db main
+  S attach *
+  execsql $sql
+  set ret [S $method]
+  S delete
+  return $ret
+}
+
+proc do_changebatch_test {tn method args} {
   set C [list]
   foreach a $args {
-    sqlite3session S db main
-    S attach *
-    execsql $a
-    lappend C [S changeset]
-    S delete
+    lappend C [sql_to_changeset $method $a]
   }
 
   sqlite3changebatch cb db
@@ -42,49 +47,111 @@ proc do_changebatch_test {tn args} {
   cb delete
 }
 
-do_execsql_test 1.0 {
-  CREATE TABLE t1(a PRIMARY KEY, b);
+proc do_changebatch_test1 {tn args} {
+  uplevel do_changebatch_test $tn changeset $args
 }
-
-do_changebatch_test 1.1 {
-  INSERT INTO t1 VALUES(1, 1);
-} {
-  DELETE FROM t1 WHERE a=1;
-}
-
-do_execsql_test 1.2.0 {
-  INSERT INTO t1 VALUES(1, 1);
-  INSERT INTO t1 VALUES(2, 2);
-  INSERT INTO t1 VALUES(3, 3);
-}
-do_changebatch_test 1.2.1 {
-  DELETE FROM t1 WHERE a=2;
-} {
-  INSERT INTO t1 VALUES(2, 2);
+proc do_changebatch_test2 {tn args} {
+  uplevel do_changebatch_test $tn fullchangeset $args
 }
 
 #-------------------------------------------------------------------------
-do_execsql_test 2.0 {
-  CREATE TABLE x1(a, b PRIMARY KEY, c UNIQUE);
-  CREATE TABLE x2(a PRIMARY KEY, b UNIQUE, c UNIQUE);
-
-  INSERT INTO x1 VALUES(1, 1, 'a');
-  INSERT INTO x1 VALUES(1, 2, 'b');
-  INSERT INTO x1 VALUES(1, 3, 'c');
-}
-
-do_changebatch_test 2.1 {
-  DELETE FROM x1 WHERE b=2;
+# The body of the following loop contains tests for database schemas
+# that do not feature multi-column UNIQUE constraints. In this case
+# it doesn't matter if the changesets are generated using
+# sqlite3session_changeset() or sqlite3session_fullchangeset().
+#
+foreach {tn testfunction} {
+  1 do_changebatch_test1
+  2 do_changebatch_test2
 } {
-  UPDATE x1 SET c='b' WHERE b=3;
+  reset_db
+
+  #-------------------------------------------------------------------------
+  #
+  do_execsql_test $tn.1.0 {
+    CREATE TABLE t1(a PRIMARY KEY, b);
+  }
+  
+  $testfunction $tn.1.1 {
+    INSERT INTO t1 VALUES(1, 1);
+  } {
+    DELETE FROM t1 WHERE a=1;
+  }
+  
+  do_execsql_test $tn.1.2.0 {
+    INSERT INTO t1 VALUES(1, 1);
+    INSERT INTO t1 VALUES(2, 2);
+    INSERT INTO t1 VALUES(3, 3);
+  }
+  $testfunction $tn.1.2.1 {
+    DELETE FROM t1 WHERE a=2;
+  } {
+    INSERT INTO t1 VALUES(2, 2);
+  }
+  
+  #-------------------------------------------------------------------------
+  #
+  do_execsql_test $tn.2.0 {
+    CREATE TABLE x1(a, b PRIMARY KEY, c UNIQUE);
+    CREATE TABLE x2(a PRIMARY KEY, b UNIQUE, c UNIQUE);
+  
+    INSERT INTO x1 VALUES(1, 1, 'a');
+    INSERT INTO x1 VALUES(1, 2, 'b');
+    INSERT INTO x1 VALUES(1, 3, 'c');
+  }
+  
+  $testfunction $tn.2.1 {
+    DELETE FROM x1 WHERE b=2;
+  } {
+    UPDATE x1 SET c='b' WHERE b=3;
+  }
+  
+  $testfunction $tn.2.2 {
+    DELETE FROM x1 WHERE b=1;
+  } {
+    INSERT INTO x1 VALUES(1, 5, 'a');
+  }
 }
 
-do_changebatch_test 2.2 {
-  DELETE FROM x1 WHERE b=1;
-} {
-  INSERT INTO x1 VALUES(1, 5, 'a');
+#-------------------------------------------------------------------------
+# Test some multi-column UNIQUE constraints. First Using _changeset() to
+# demonstrate the problem, then using _fullchangeset() to show that it has
+# been fixed.
+#
+reset_db
+do_execsql_test 3.0 {
+  CREATE TABLE y1(a PRIMARY KEY, b, c, UNIQUE(b, c));
+  INSERT INTO y1 VALUES(1, 1, 1);
+  INSERT INTO y1 VALUES(2, 2, 2);
+  INSERT INTO y1 VALUES(3, 3, 3);
+  INSERT INTO y1 VALUES(4, 3, 4);
+  BEGIN;
 }
+
+do_test 3.1.1 {
+  set c1 [sql_to_changeset changeset { DELETE FROM y1 WHERE a=4    }]
+  set c2 [sql_to_changeset changeset { UPDATE y1 SET c=4 WHERE a=3 }]
+  sqlite3changebatch cb db
+  cb add $c1
+  cb add $c2
+} {SQLITE_OK}
+do_test 3.1.2 {
+  cb delete
+  execsql ROLLBACK
+} {}
+
+do_test 3.1.1 {
+  set c1 [sql_to_changeset fullchangeset { DELETE FROM y1 WHERE a=4    }]
+  set c2 [sql_to_changeset fullchangeset { UPDATE y1 SET c=4 WHERE a=3 }]
+  sqlite3changebatch cb db
+  cb add $c1
+  cb add $c2
+} {SQLITE_CONSTRAINT}
+do_test 3.1.2 {
+  cb delete
+} {}
+
+
 
 finish_test
-
 
