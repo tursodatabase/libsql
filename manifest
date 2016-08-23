@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sin\schangebatch.
-D 2016-08-23T18:09:37.916
+C Add\sfurther\stests\sfor\schangebatch.\sAnd\sa\sfix\sto\sprevent\sa\schangeset\sfrom\sconflicting\swith\sitself.
+D 2016-08-23T19:02:21.914
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -281,7 +281,8 @@ F ext/rtree/rtree_util.tcl 06aab2ed5b826545bf215fff90ecb9255a8647ea
 F ext/rtree/sqlite3rtree.h 9c5777af3d2921c7b4ae4954e8e5697502289d28
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
-F ext/session/changebatch1.test f3e5462189ebe238b57ddf31f17e5f6cb410f895
+F ext/session/changebatch1.test 9ceaa8f7b2a505933e250fbe6cbc550e4ce1e59d
+F ext/session/changebatchfault.test be49c793219bf387ad692a60856b921f0854ad6d
 F ext/session/changeset.c 4ccbaa4531944c24584bf6a61ba3a39c62b6267a
 F ext/session/session1.test 98f384736e2bc21ccf5ed81bdadcff4ad863393b
 F ext/session/session2.test 284de45abae4cc1082bc52012ee81521d5ac58e0
@@ -301,7 +302,7 @@ F ext/session/sessionG.test 01ef705096a9d3984eebdcca79807a211dee1b60
 F ext/session/session_common.tcl a1293167d14774b5e728836720497f40fe4ea596
 F ext/session/sessionfault.test da273f2712b6411e85e71465a1733b8501dbf6f7
 F ext/session/sessionfault2.test 04aa0bc9aa70ea43d8de82c4f648db4de1e990b0
-F ext/session/sqlite3changebatch.c 72ec2f5c70af4e9e938222a98962bc05b82e9bf4
+F ext/session/sqlite3changebatch.c 4b4fe1d52587e5fdb28930466409712f0e4b619d
 F ext/session/sqlite3changebatch.h 50a302e4fc535324309607b13a1993bca074758b
 F ext/session/sqlite3session.c e5591f76aea6058720e04f78ae9e88487eb56c6b
 F ext/session/sqlite3session.h c772b5440f41af44631891aa7f352e9a44b740ad
@@ -1514,7 +1515,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P efa761b2f509844b9212dd20bf0d082c6338e83f
-R 7f5bf9af3be1c169a39e0edb328bafbb
-U drh
-Z e5dc9f2e44b6adaa79d5e6bc2fc1ab5e
+P a721a738184d914fcde3f5684099984a9373dff3
+R b3c5ba41110022813f99ffae5c67351c
+U dan
+Z 78075b3679b308d5ec26925a2eace0fc

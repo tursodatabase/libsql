@@ -154,10 +154,8 @@ static int cbAddIndex(
   }
 
   if( rc==SQLITE_OK ){
-    int rc2;
     while( SQLITE_ROW==sqlite3_step(pIndexInfo) ){ nCol++; }
-    rc2 = sqlite3_reset(pIndexInfo);
-    if( rc==SQLITE_OK ) rc = rc2;
+    rc = sqlite3_reset(pIndexInfo);
   }
 
   pNew = (BatchIndex*)cbMalloc(&rc, sizeof(BatchIndex) + sizeof(int) * nCol);
@@ -172,8 +170,7 @@ static int cbAddIndex(
       int j = sqlite3_column_int(pIndexInfo, 1);
       pNew->aiCol[i] = j;
     }
-    rc2 = sqlite3_reset(pIndexInfo);
-    if( rc==SQLITE_OK ) rc = rc2;
+    rc = sqlite3_reset(pIndexInfo);
   }
 
   if( rc==SQLITE_OK ){
@@ -185,6 +182,19 @@ static int cbAddIndex(
   sqlite3_finalize(pIndexInfo);
 
   return rc;
+}
+
+/*
+** Free the object passed as the first argument.
+*/
+static void cbFreeTable(BatchTable *pTab){
+  BatchIndex *pIdx;
+  BatchIndex *pIdxNext;
+  for(pIdx=pTab->pIdx; pIdx; pIdx=pIdxNext){
+    pIdxNext = pIdx->pNext;
+    cbFree(pIdx);
+  }
+  cbFree(pTab);
 }
 
 /*
@@ -232,6 +242,9 @@ static int cbFindTable(
       if( rc==SQLITE_OK ){
         pRet->pNext = p->pTab;
         p->pTab = pRet;
+      }else{
+        cbFreeTable(pRet);
+        pRet = 0;
       }
     }
   }
@@ -240,6 +253,16 @@ static int cbFindTable(
   return rc;
 }
 
+/*
+** Extract value iVal from the changeset iterator passed as the first
+** argument. Set *ppVal to point to the value before returning.
+**
+** This function attempts to extract the value using function xVal
+** (which is always either sqlite3changeset_new or sqlite3changeset_old).
+** If the call returns SQLITE_OK but does not supply an sqlite3_value*
+** pointer, an attempt to extract the value is made using the xFallback 
+** function.
+*/
 static int cbGetChangesetValue(
   sqlite3_changeset_iter *pIter, 
   int (*xVal)(sqlite3_changeset_iter*,int,sqlite3_value**),
@@ -300,33 +323,33 @@ static int cbAddToHash(
     pNew->iIdxId = pIdx->iId;
     pNew->szRecord = sz;
 
-    for(i=0; rc==SQLITE_OK && i<pIdx->nCol; i++){
+    for(i=0; i<pIdx->nCol; i++){
+      int eType;
       sqlite3_value *pVal;
       rc = cbGetChangesetValue(pIter, xVal, xFallback, pIdx->aiCol[i], &pVal);
-      if( rc==SQLITE_OK ){
-        int eType = sqlite3_value_type(pVal);
-        pNew->aRecord[iOut++] = eType;
-        switch( eType ){
-          case SQLITE_INTEGER: {
-            sqlite3_int64 i64 = sqlite3_value_int64(pVal);
-            memcpy(&pNew->aRecord[iOut], &i64, 8);
-            iOut += 8;
-            break;
-          }
-          case SQLITE_FLOAT: {
-            double d64 = sqlite3_value_double(pVal);
-            memcpy(&pNew->aRecord[iOut], &d64, sizeof(double));
-            iOut += sizeof(double);
-            break;
-          }
+      if( rc!=SQLITE_OK ) break;  /* coverage: condition is never true */
+      eType = sqlite3_value_type(pVal);
+      pNew->aRecord[iOut++] = eType;
+      switch( eType ){
+        case SQLITE_INTEGER: {
+          sqlite3_int64 i64 = sqlite3_value_int64(pVal);
+          memcpy(&pNew->aRecord[iOut], &i64, 8);
+          iOut += 8;
+          break;
+        }
+        case SQLITE_FLOAT: {
+          double d64 = sqlite3_value_double(pVal);
+          memcpy(&pNew->aRecord[iOut], &d64, sizeof(double));
+          iOut += sizeof(double);
+          break;
+        }
 
-          default: {
-            int nByte = sqlite3_value_bytes(pVal);
-            const char *z = (const char*)sqlite3_value_blob(pVal);
-            memcpy(&pNew->aRecord[iOut], z, nByte);
-            iOut += nByte;
-            break;
-          }
+        default: {
+          int nByte = sqlite3_value_bytes(pVal);
+          const char *z = (const char*)sqlite3_value_blob(pVal);
+          memcpy(&pNew->aRecord[iOut], z, nByte);
+          iOut += nByte;
+          break;
         }
       }
     }
@@ -359,9 +382,10 @@ static int cbAddToHash(
       p->apHash[iHash] = pNew;
       p->nEntry++;
     }
+  }else{
+    cbFree(pNew);
   }
 
-  p->iChangesetId++;
   return rc;
 }
 
@@ -391,15 +415,18 @@ int sqlite3changebatch_add(sqlite3_changebatch *p, void *pBuf, int nBuf){
       assert( op==SQLITE_INSERT || op==SQLITE_UPDATE || op==SQLITE_DELETE );
 
       rc = cbFindTable(p, zTab, &pTab);
-      for(pIdx=pTab->pIdx; pIdx && rc==SQLITE_OK; pIdx=pIdx->pNext){
-        if( op==SQLITE_UPDATE && pIdx->bPk ) continue;
-        if( op==SQLITE_UPDATE || op==SQLITE_DELETE ){
-          rc = cbAddToHash(p, pIter, pIdx, sqlite3changeset_old, 0, &bConf);
-        }
-        if( op==SQLITE_UPDATE || op==SQLITE_INSERT ){
-          rc = cbAddToHash(p, pIter, pIdx, 
-              sqlite3changeset_new, sqlite3changeset_old, &bConf
-          );
+      assert( pTab || rc!=SQLITE_OK );
+      if( pTab ){
+        for(pIdx=pTab->pIdx; pIdx && rc==SQLITE_OK; pIdx=pIdx->pNext){
+          if( op==SQLITE_UPDATE && pIdx->bPk ) continue;
+          if( op==SQLITE_UPDATE || op==SQLITE_DELETE ){
+            rc = cbAddToHash(p, pIter, pIdx, sqlite3changeset_old, 0, &bConf);
+          }
+          if( op==SQLITE_UPDATE || op==SQLITE_INSERT ){
+            rc = cbAddToHash(p, pIter, pIdx, 
+                sqlite3changeset_new, sqlite3changeset_old, &bConf
+            );
+          }
         }
       }
       if( rc!=SQLITE_OK ) break;
@@ -412,6 +439,7 @@ int sqlite3changebatch_add(sqlite3_changebatch *p, void *pBuf, int nBuf){
   if( rc==SQLITE_OK && bConf ){
     rc = SQLITE_CONSTRAINT;
   }
+  p->iChangesetId++;
   return rc;
 }
 
@@ -442,14 +470,8 @@ void sqlite3changebatch_delete(sqlite3_changebatch *p){
 
   sqlite3changebatch_zero(p);
   for(pTab=p->pTab; pTab; pTab=pTabNext){
-    BatchIndex *pIdx;
-    BatchIndex *pIdxNext;
-    for(pIdx=pTab->pIdx; pIdx; pIdx=pIdxNext){
-      pIdxNext = pIdx->pNext;
-      cbFree(pIdx);
-    }
     pTabNext = pTab->pNext;
-    cbFree(pTab);
+    cbFreeTable(pTab);
   }
   cbFree(p);
 }
