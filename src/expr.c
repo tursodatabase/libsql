@@ -1489,6 +1489,7 @@ ExprList *sqlite3ExprListAppendVector(
   sqlite3 *db = pParse->db;
   int n;
   int i;
+  int iFirst = pList ? pList->nExpr : 0;
   if( pColumns==0 ) goto vector_append_error;
   if( pExpr==0 ) goto vector_append_error;
   n = sqlite3ExprVectorSize(pExpr);
@@ -1501,14 +1502,15 @@ ExprList *sqlite3ExprListAppendVector(
     Expr *pSubExpr = sqlite3ExprForVectorField(pParse, pExpr, i);
     pList = sqlite3ExprListAppend(pParse, pList, pSubExpr);
     if( pList ){
+      assert( pList->nExpr==iFirst+i+1 );
       pList->a[pList->nExpr-1].zName = pColumns->a[i].zName;
       pColumns->a[i].zName = 0;
     }
   }
   if( pExpr->op==TK_SELECT ){
-    if( pList && pList->a[0].pExpr ){
-      assert( pList->a[0].pExpr->op==TK_SELECT_COLUMN );
-      pList->a[0].pExpr->pRight = pExpr;
+    if( pList && pList->a[iFirst].pExpr ){
+      assert( pList->a[iFirst].pExpr->op==TK_SELECT_COLUMN );
+      pList->a[iFirst].pExpr->pRight = pExpr;
       pExpr = 0;
     }
   }

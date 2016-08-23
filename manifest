@@ -1,5 +1,5 @@
-C Fix\san\suninitialized\svariable\sin\sCASE\sexpression\scode\sgeneration.
-D 2016-08-23T17:30:55.883
+C Fix\sa\sproblem\swith\srowvalue\sUPDATE\swhen\sthe\srowvalue\sis\snot\sthe\sleft-most\sand\nthe\sRHS\sis\sa\smulti-column\ssubquery.
+D 2016-08-23T18:30:10.697
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -338,7 +338,7 @@ F src/ctime.c e77f3dc297b4b65c96da78b4ae4272fdfae863d7
 F src/date.c 95c9a8d00767e7221a8e9a31f4e913fc8029bf6b
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
 F src/delete.c 76c084f0265f4a3cd1ecf17eee112a94f1ccbc05
-F src/expr.c 511768687886e4e55b586678ab4111e49a4a346e
+F src/expr.c 3d3cc24386929991ff0c4264a8dde45b298c599e
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c e2be0968c1adc679c87e467aa5b4f167588f38a8
 F src/func.c 29cc9acb170ec1387b9f63eb52cd85f8de96c771
@@ -1025,7 +1025,7 @@ F test/rowvalue3.test dbe935260851b197dfbbbcb0ac2a15cb5f324fd4
 F test/rowvalue4.test 318cdd40e66dfae686537eea581ae49cbb01195d
 F test/rowvalue5.test 01c7e0bc4048f30b58e6eb27ecd26e5bd312635e
 F test/rowvalue6.test d19b54feb604d5601f8614b15e214e0774c01087
-F test/rowvalue7.test 3c9a127954d3da309a271babdfc43dbcc5c4da7f
+F test/rowvalue7.test 5d06ff19d9e6969e574a2e662a531dd0c67801a8
 F test/rowvalue8.test 5900eddad9e2c3c2e26f1a95f74aafc1232ee5e0
 F test/rowvaluefault.test 7b16485e3f2b371f3e3d05455b8ded6d0c090244
 F test/rtree.test 0c8d9dd458d6824e59683c19ab2ffa9ef946f798
@@ -1520,7 +1520,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 07e69f43a294d35b5145a2b0242ee42d50adab14
-R 4aa2c65fcf3b3b47ff0ca17ab554bdbd
+P c8ffae05e13033ec7425bf0f002df31f550bb7f1
+R 8c42685900faf8a76ebfa8d4883d872e
 U drh
-Z 4308f4ee8b9a3cd69479e48fad7b9733
+Z b8c84bcbf71dd1d1d9c9f62200ebb8ca

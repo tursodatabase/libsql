@@ -43,7 +43,7 @@ do_execsql_test 1.4 {
 } {1 2 11 22 | 3 4 99 55 | 5 6 55 66 |}
 
 do_execsql_test 1.5 {
-  UPDATE t1 SET b = 8, (c,d) = (123,456) WHERE a=3;
+  UPDATE t1 SET b = 8, (c,d) = (SELECT 123,456) WHERE a=3;
   SELECT *,'|' FROM t1 ORDER BY a;
 } {1 2 11 22 | 3 8 123 456 | 5 6 55 66 |}
 
