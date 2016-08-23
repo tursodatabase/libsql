@@ -79,7 +79,7 @@ static int cbHash(sqlite3_changebatch *p, BatchIndexEntry *pEntry){
   unsigned char *pEnd = (unsigned char*)&pEntry->aRecord[pEntry->szRecord];
   unsigned char *pIter;
 
-  for(pIter=pEntry->aRecord; pIter<pEnd; pIter++){
+  for(pIter=(unsigned char*)pEntry->aRecord; pIter<pEnd; pIter++){
     iHash += (iHash << 7) + *pIter;
   }
 
@@ -101,7 +101,7 @@ static int cbHashResize(sqlite3_changebatch *p){
     p->nHash = nNew;
     for(i=0; i<nHash; i++){
       BatchIndexEntry *pEntry;
-      while( pEntry=p->apHash[i] ){
+      while( (pEntry=p->apHash[i])!=0 ){
         int iHash = cbHash(p, pEntry);
         p->apHash[i] = pEntry->pNext;
         pEntry->pNext = apNew[iHash];

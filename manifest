@@ -1,5 +1,5 @@
-C Add\sa\snew\smethod\sto\ssessions\s-\ssqlite3sessions_fullchangeset()\s-\sto\sreturn\sa\schangeset\sthat\salways\scontains\svalues\sfor\sall\sold.*\sfields.\sUpdate\schangebatch\sto\suse\sthese\svalues\sto\smore\sreliably\sdetect\smulti-column\sUNIQUE\sconstraint\sviolations.
-D 2016-08-23T17:02:28.920
+C Fix\sharmless\scompiler\swarnings\sin\schangebatch.
+D 2016-08-23T18:09:37.916
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -301,7 +301,7 @@ F ext/session/sessionG.test 01ef705096a9d3984eebdcca79807a211dee1b60
 F ext/session/session_common.tcl a1293167d14774b5e728836720497f40fe4ea596
 F ext/session/sessionfault.test da273f2712b6411e85e71465a1733b8501dbf6f7
 F ext/session/sessionfault2.test 04aa0bc9aa70ea43d8de82c4f648db4de1e990b0
-F ext/session/sqlite3changebatch.c 7ddd1b44422508306c50c37056bb13d5e0492bd0
+F ext/session/sqlite3changebatch.c 72ec2f5c70af4e9e938222a98962bc05b82e9bf4
 F ext/session/sqlite3changebatch.h 50a302e4fc535324309607b13a1993bca074758b
 F ext/session/sqlite3session.c e5591f76aea6058720e04f78ae9e88487eb56c6b
 F ext/session/sqlite3session.h c772b5440f41af44631891aa7f352e9a44b740ad
@@ -1514,7 +1514,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 207d970b7956c38af42c389b91a741a68b2c4eec
-R fcf84064b854d920af796eb5c195b948
-U dan
-Z e2f66a65ddf5985dbdfd723a07f7b7cc
+P efa761b2f509844b9212dd20bf0d082c6338e83f
+R 7f5bf9af3be1c169a39e0edb328bafbb
+U drh
+Z e5dc9f2e44b6adaa79d5e6bc2fc1ab5e
