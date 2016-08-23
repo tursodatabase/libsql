@@ -34,14 +34,14 @@ foreach {tn e} {
   2 "1 + (1, 2)"
   3 "(1,2,3) == (1, 2)"
 } {
-  do_catchsql_test 1.$tn "SELECT $e" {1 {invalid use of row value}}
+  do_catchsql_test 1.$tn "SELECT $e" {1 {row value misused}}
 }
 
 foreach {tn s error} {
-  1 "SELECT * FROM t1 WHERE a = (1, 2)"       {invalid use of row value}
-  2 "SELECT * FROM t1 WHERE b = (1, 2)"       {invalid use of row value}
-  3 "SELECT * FROM t1 WHERE NOT (b = (1, 2))" {invalid use of row value}
-  4 "SELECT * FROM t1 LIMIT (1, 2)"           {invalid use of row value}
+  1 "SELECT * FROM t1 WHERE a = (1, 2)"       {row value misused}
+  2 "SELECT * FROM t1 WHERE b = (1, 2)"       {row value misused}
+  3 "SELECT * FROM t1 WHERE NOT (b = (1, 2))" {row value misused}
+  4 "SELECT * FROM t1 LIMIT (1, 2)"           {row value misused}
   5 "SELECT (a, b) IN (SELECT * FROM t1) FROM t1" 
                              {sub-select returns 3 columns - expected 2}
 
@@ -309,4 +309,3 @@ do_catchsql_test 8.2 {
 } {1 {sub-select returns 2 columns - expected 1}}
 
 finish_test
-

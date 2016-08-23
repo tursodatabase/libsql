@@ -517,7 +517,7 @@ static void codeVectorCompare(
   /* Check that both sides of the comparison are vectors, and that
   ** both are the same length.  */
   if( nLeft!=nRight ){
-    sqlite3ErrorMsg(pParse, "invalid use of row value");
+    sqlite3ErrorMsg(pParse, "row value misused");
   }else{
     int i;
     int regLeft = 0;
@@ -2610,7 +2610,7 @@ int sqlite3ExprCheckIN(Parse *pParse, Expr *pIn){
     if( (pIn->pLeft->flags & EP_xIsSelect) ){
       sqlite3SubselectError(pParse, nVector, 1);
     }else{
-      sqlite3ErrorMsg(pParse, "invalid use of row value");
+      sqlite3ErrorMsg(pParse, "row value misused");
     }
     return 1;
   }
@@ -3775,7 +3775,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
     }
 
     case TK_VECTOR: {
-      sqlite3ErrorMsg(pParse, "invalid use of row value");
+      sqlite3ErrorMsg(pParse, "row value misused");
       break;
     }
 

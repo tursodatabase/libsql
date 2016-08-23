@@ -150,10 +150,10 @@ do_execsql_test 6.5 {
 } {i ii}
 do_catchsql_test 6.6 {
   SELECT c FROM hh WHERE (a, b) = (SELECT 'abc', 1) COLLATE nocase;
-} {1 {invalid use of row value}}
+} {1 {row value misused}}
 do_catchsql_test 6.7 {
   SELECT c FROM hh WHERE (a, b) = 1;
-} {1 {invalid use of row value}}
+} {1 {row value misused}}
 do_execsql_test 6.8 {
   SELECT c FROM hh WHERE (a COLLATE nocase, b) = (SELECT 'def', 2);
 } {iii iv}
@@ -221,4 +221,3 @@ foreach {tn q res} {
 
 
 finish_test
-
