@@ -2103,6 +2103,7 @@ int sqlite3FindInIndex(
   int mustBeUnique;                     /* True if RHS must be unique */
   Vdbe *v = sqlite3GetVdbe(pParse);     /* Virtual machine being coded */
 
+  if( pParse->db->mallocFailed ) return IN_INDEX_NOOP;
   assert( pX->op==TK_IN );
   mustBeUnique = (inFlags & IN_INDEX_LOOP)!=0;
 
