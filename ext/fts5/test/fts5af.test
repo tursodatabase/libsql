@@ -164,6 +164,17 @@ do_execsql_test 4.0 {
   {1 2 3 4 5...}
 }
 
+do_execsql_test 5.0 {
+  CREATE VIRTUAL TABLE p1 USING fts5(a, b);
+  INSERT INTO p1 VALUES(
+    'x a a a a a a a a a a',
+    'a a a a a a a a a a a a a a a a a a a x'
+  );
+}
+do_execsql_test 5.1 {
+  SELECT snippet(p1, 0, '[', ']', '...', 6) FROM p1('x');
+} {{[x] a a a a a...}}
+
 } ;# foreach_detail_mode 
 
 finish_test

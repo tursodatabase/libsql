@@ -331,6 +331,7 @@ static int fts5SnippetScore(
   int iFirst = -1;
   int nInst;
   int nScore = 0;
+  int iLast = 0;
 
   rc = pApi->xInstCount(pFts, &nInst);
   for(i=0; i<nInst && rc==SQLITE_OK; i++){
@@ -339,14 +340,13 @@ static int fts5SnippetScore(
       nScore += (aSeen[ip] ? 1 : 1000);
       aSeen[ip] = 1;
       if( iFirst<0 ) iFirst = iOff;
+      iLast = iOff + pApi->xPhraseSize(pFts, ip);
     }
   }
 
   *pnScore = nScore;
   if( piPos ){
-    int iLast = iOff + pApi->xPhraseSize(pFts, ip);
     int iAdj = iFirst - (nToken - (iLast-iFirst)) / 2;
-
     if( (iAdj+nToken)>nDocsize ) iAdj = nDocsize - nToken;
     if( iAdj<0 ) iAdj = 0;
     *piPos = iAdj;
