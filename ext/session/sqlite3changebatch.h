@@ -67,6 +67,13 @@ int sqlite3changebatch_add(sqlite3_changebatch*, void *p, int n);
 void sqlite3changebatch_zero(sqlite3_changebatch*);
 
 /*
+** Return a copy of the first argument passed to the sqlite3changebatch_new()
+** call used to create the changebatch object passed as the only argument
+** to this function.
+*/
+sqlite3 *sqlite3changebatch_db(sqlite3_changebatch*);
+
+/*
 ** Delete a changebatch object.
 */
 void sqlite3changebatch_delete(sqlite3_changebatch*);

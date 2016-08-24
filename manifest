@@ -1,5 +1,5 @@
-C Add\sfurther\stests\sfor\schangebatch.\sAnd\sa\sfix\sto\sprevent\sa\schangeset\sfrom\sconflicting\swith\sitself.
-D 2016-08-23T19:02:21.914
+C Add\sthe\ssqlite3changebatch_db()\sAPI.
+D 2016-08-24T19:14:59.159
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -302,8 +302,8 @@ F ext/session/sessionG.test 01ef705096a9d3984eebdcca79807a211dee1b60
 F ext/session/session_common.tcl a1293167d14774b5e728836720497f40fe4ea596
 F ext/session/sessionfault.test da273f2712b6411e85e71465a1733b8501dbf6f7
 F ext/session/sessionfault2.test 04aa0bc9aa70ea43d8de82c4f648db4de1e990b0
-F ext/session/sqlite3changebatch.c 4b4fe1d52587e5fdb28930466409712f0e4b619d
-F ext/session/sqlite3changebatch.h 50a302e4fc535324309607b13a1993bca074758b
+F ext/session/sqlite3changebatch.c 96011bdf72ac12ebf707f4d0f0e719e333631605
+F ext/session/sqlite3changebatch.h e72016998c9a22d439ddfd547b69e1ebac810c24
 F ext/session/sqlite3session.c e5591f76aea6058720e04f78ae9e88487eb56c6b
 F ext/session/sqlite3session.h c772b5440f41af44631891aa7f352e9a44b740ad
 F ext/session/test_session.c 9e6a4313dc94b053edd33f54c3ffc053aeddff45
@@ -1515,7 +1515,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a721a738184d914fcde3f5684099984a9373dff3
-R b3c5ba41110022813f99ffae5c67351c
+P 506d6ff4b64c72d4ca65f0d15e1fdf8a132556bc
+R 437a725ec959b210c45a517f0a4720a0
 U dan
-Z 78075b3679b308d5ec26925a2eace0fc
+Z 7a3026050d391945a1ada937b36aa9ce

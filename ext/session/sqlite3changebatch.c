@@ -476,4 +476,11 @@ void sqlite3changebatch_delete(sqlite3_changebatch *p){
   cbFree(p);
 }
 
+/*
+** Return the db handle.
+*/
+sqlite3 *sqlite3changebatch_db(sqlite3_changebatch *p){
+  return p->db;
+}
+
 #endif /* SQLITE_ENABLE_SESSION && SQLITE_ENABLE_PREUPDATE_HOOK */
