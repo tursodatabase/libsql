@@ -471,7 +471,7 @@ static int codeEqualityTerm(
     if( pIn ){
       int iMap = 0;               /* Index in aiMap[] */
       pIn += i;
-      for(i=iEq;i<pLoop->nLTerm; i++, pIn++){
+      for(i=iEq;i<pLoop->nLTerm; i++){
         int iOut = iReg;
         if( pLoop->aLTerm[i]->pExpr==pX ){
           if( eType==IN_INDEX_ROWID ){
@@ -489,6 +489,7 @@ static int codeEqualityTerm(
           }else{
             pIn->eEndLoopOp = OP_Noop;
           }
+          pIn++;
         }
       }
     }else{
