@@ -1,8 +1,8 @@
-C Fix\sthe\sSQLITE_USER_AUTHENTICATION\slogin\scheck\sso\sthat\sthe\sSQLITE_AUTH_USER\nerror\scode\scorrectly\spropagates\sand\sis\snot\soverwritten\sby\sSQLITE_ERROR.
-D 2016-08-23T14:42:15.107
+C Sync\sup\sthe\sMSVC\sautoconf\smakefile.
+D 2016-08-24T18:21:58.857
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
+F Makefile.msc 5017381e4853b1472e01d5bb926be1268eba429c
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION 25e2e333adeff5965520bc8db999c658898c972d
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -11,7 +11,7 @@ F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am 1a47d071e3d5435f8f7ebff7eb6703848bbd65d4
-F autoconf/Makefile.msc 7a909aa9b538138a21c0626e3ffc4b1f4519f50e
+F autoconf/Makefile.msc a535edafb6165629715b0ba8e21c98ab80732e80
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/README.txt 4f04b0819303aabaa35fff5f7b257fb0c1ef95f1
 F autoconf/configure.ac cacf2616abf6e4a569bde2ef365c143caeec40bc
@@ -1511,7 +1511,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7839519349c7371cdb4e16a215eacd27004cbc62
-R 9d6fb42ced27e9f36e142aa6e0d35f69
-U drh
-Z 4b4f28634d508607542ad65188ee7936
+P c640489db2037f1a284d7b85fa753ccdac1b8f79
+R 959092fa640b62161f63260898254ab1
+U mistachkin
+Z d96a1e74a14d6dd8b06850bfa4844a5e
