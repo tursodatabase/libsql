@@ -221,7 +221,7 @@ static char comparisonAffinity(Expr *pExpr){
     aff = sqlite3CompareAffinity(pExpr->pRight, aff);
   }else if( ExprHasProperty(pExpr, EP_xIsSelect) ){
     aff = sqlite3CompareAffinity(pExpr->x.pSelect->pEList->a[0].pExpr, aff);
-  }else if( !aff ){
+  }else if( NEVER(aff==0) ){
     aff = SQLITE_AFF_BLOB;
   }
   return aff;

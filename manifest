@@ -1,5 +1,5 @@
-C Fix\sa\sbuffer\soverrun\sin\sthe\scode\sfor\shandling\sIN(...)\soperators\swhen\sthe\sLHS\sof\sthe\soperator\scontains\sindexed\scolumns\sor\sexpressions.
-D 2016-08-24T12:22:17.962
+C Add\sa\sNEVER()\son\san\sunreachable\sbranch\sin\scomparisonAffinity().
+D 2016-08-24T15:37:31.592
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -338,7 +338,7 @@ F src/ctime.c e77f3dc297b4b65c96da78b4ae4272fdfae863d7
 F src/date.c 95c9a8d00767e7221a8e9a31f4e913fc8029bf6b
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
 F src/delete.c 76c084f0265f4a3cd1ecf17eee112a94f1ccbc05
-F src/expr.c f433feeeaa43d52a4e029066a1af02bac9ed5f1a
+F src/expr.c c2d3844fb18e7659653e482060ee0c5d3ec5ed10
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c e2be0968c1adc679c87e467aa5b4f167588f38a8
 F src/func.c 29cc9acb170ec1387b9f63eb52cd85f8de96c771
@@ -1520,7 +1520,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1e3bc3698a4b779e6af8e3c727929c4dbddf3edb
-R 66ed27e8c4688d763f7b5bcfa14b1684
-U dan
-Z b0da933895eae6df1437a965446c74bb
+P f41a0391b732a8c4ad188163f34a0f4a22237bb5
+R b0541cab67b62c886354064e8f5cfc4d
+U drh
+Z e7d2fda8d9703a6fa7987d8b8853c395
