@@ -1,8 +1,8 @@
-C Merge\supdates\sfrom\strunk.
-D 2016-08-24T18:49:20.476
+C Modularize\sall\suse\sof\sthe\scalling\sconvention\smacros\sbased\son\sthe\sUSE_STDCALL\snmake\smacro.
+D 2016-08-24T19:58:46.902
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 3340e479e5221f06c3d61726f8f7efff885e4233
+F Makefile.msc 2a8f135e10f383a31f1106cf42edabf3a18a3d08
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION 25e2e333adeff5965520bc8db999c658898c972d
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -1451,9 +1451,9 @@ F tool/mkopcodeh.tcl a01d2c1d8a6205b03fc635adf3735b4c523befd3
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkpragmatab.tcl f0d5bb266d1d388cf86fce5ba01a891e95d72d41
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
-F tool/mksqlite3c-noext.tcl aa58ea3be311c81821c2cd3209f55e46b07ab656
-F tool/mksqlite3c.tcl a52ead27e2ac5d4b616e945a0601f628f4328329
-F tool/mksqlite3h.tcl cf5cd68028e69a51ed5c76042672664201f0f756
+F tool/mksqlite3c-noext.tcl e241889b12b7f857bc7c361776ef113d826e0c28
+F tool/mksqlite3c.tcl b076d24348a84dffd41aab01bc4e19a1ba17581a
+F tool/mksqlite3h.tcl 22fa51b3dc04bef7cc55546c94b8b05478e081f8
 F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
 F tool/mkvsix.tcl 4abcaf3267171b2faadaf9b82a0dfbaa6e98f8b7
 F tool/offsets.c fe4262fdfa378e8f5499a42136d17bf3b98f6091
@@ -1511,7 +1511,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 71ffa195f5a48280ee522d80ab82e8cdea636961 77f7c31a3aa44798cfa5f557242caffb593ce7af
-R 6639d7ca813b34dc442dce0c70a8d49a
+P 428fc38d95dd88b90655a97133d0ad1214c9f176
+R 8fcf2f6bc8929252e1f73eaeed6c2ff1
 U mistachkin
-Z fc90dd7d8c306741e4a70346c0bad323
+Z 8acb335e007f8a860d6f64c92d2219b8
