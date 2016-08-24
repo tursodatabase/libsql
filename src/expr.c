@@ -542,10 +542,11 @@ static void codeVectorCompare(
     regLeft = exprCodeSubselect(pParse, pLeft);
     regRight = exprCodeSubselect(pParse, pRight);
 
-    for(i=0; i<nLeft; i++){
+    for(i=0; 1 /*Loop exits by "break"*/; i++){
       int regFree1 = 0, regFree2 = 0;
       Expr *pL, *pR; 
       int r1, r2;
+      assert( i>=0 && i<nLeft );
       if( i>0 ) sqlite3ExprCachePush(pParse);
       r1 = exprVectorRegister(pParse, pLeft, i, regLeft, &pL, &regFree1);
       r2 = exprVectorRegister(pParse, pRight, i, regRight, &pR, &regFree2);
@@ -1490,7 +1491,9 @@ ExprList *sqlite3ExprListAppendVector(
   int n;
   int i;
   int iFirst = pList ? pList->nExpr : 0;
-  if( pColumns==0 ) goto vector_append_error;
+  /* pColumns can only be NULL due to an OOM but an OOM will cause an
+  ** exit prior to this routine being invoked */
+  if( NEVER(pColumns==0) ) goto vector_append_error;
   if( pExpr==0 ) goto vector_append_error;
   n = sqlite3ExprVectorSize(pExpr);
   if( pColumns->nId!=n ){
