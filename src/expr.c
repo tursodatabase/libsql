@@ -2152,6 +2152,7 @@ int sqlite3FindInIndex(
     */
     assert(v);
     if( nExpr==1 && pEList->a[0].pExpr->iColumn<0 ){
+      /* The "x IN (SELECT rowid FROM table)" case */
       int iAddr = sqlite3CodeOnce(pParse);
       VdbeCoverage(v);
 
@@ -2165,18 +2166,25 @@ int sqlite3FindInIndex(
       int i;
 
       /* Check that the affinity that will be used to perform each 
-      ** comparison is the same as the affinity of each column. If
-      ** it not, it is not possible to use any index.  */
+      ** comparison is the same as the affinity of each column in table
+      ** on the RHS of the IN operator.  If it not, it is not possible to
+      ** use any index of the RHS table.  */
       for(i=0; i<nExpr && affinity_ok; i++){
         Expr *pLhs = sqlite3VectorFieldSubexpr(pX->pLeft, i);
         int iCol = pEList->a[i].pExpr->iColumn;
-        char idxaff = pTab->aCol[iCol].affinity;
+        char idxaff = pTab->aCol[iCol].affinity;  /* RHS table affinity */
         char cmpaff = sqlite3CompareAffinity(pLhs, idxaff);
+        testcase( cmpaff==SQLITE_AFF_BLOB );
+        testcase( cmpaff==SQLITE_AFF_TEXT );
         switch( cmpaff ){
           case SQLITE_AFF_BLOB:
             break;
           case SQLITE_AFF_TEXT:
-            affinity_ok = (idxaff==SQLITE_AFF_TEXT);
+            /* sqlite3CompareAffinity() only returns TEXT if one side or the
+            ** other has no affinity and the other side is TEXT.  Hence,
+            ** the only way for cmpaff to be TEXT is for idxaff to be TEXT
+            ** and for the term on the LHS of the IN to have no affinity. */
+            assert( idxaff==SQLITE_AFF_TEXT );
             break;
           default:
             affinity_ok = sqlite3IsNumericAffinity(idxaff);

@@ -1,5 +1,5 @@
-C Fix\smore\sunreachable\sbranches.
-D 2016-08-24T17:49:07.427
+C In\ssqlite3FindInIndex(),\simprove\sinternal\scomments\sand\savoid\san\nunreachable\sbranch.
+D 2016-08-24T18:51:23.484
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -338,7 +338,7 @@ F src/ctime.c e77f3dc297b4b65c96da78b4ae4272fdfae863d7
 F src/date.c 95c9a8d00767e7221a8e9a31f4e913fc8029bf6b
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
 F src/delete.c 76c084f0265f4a3cd1ecf17eee112a94f1ccbc05
-F src/expr.c 57b6d994d88d390a76ccb0ef81ea7b3bccf06fec
+F src/expr.c 3dc226ccd9eebee600253eba07b8d97534e49337
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c e2be0968c1adc679c87e467aa5b4f167588f38a8
 F src/func.c 29cc9acb170ec1387b9f63eb52cd85f8de96c771
@@ -1520,7 +1520,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 505a2f20eac62d4e170f003255c8984e4f3b0918
-R 3bf744e7d3187456751558defe5b0a1e
+P 6099c180db55396d6307538a5428ae5ef1b82d10
+R fa8e14e08c5acfaa4521c63ce095c576
 U drh
-Z 0d5e4686e1b28bbfaea275d793f60f16
+Z 500a8a58193db1f42f4b49dd37f14aa8
