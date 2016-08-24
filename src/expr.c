@@ -2782,18 +2782,20 @@ static void sqlite3ExprCodeIN(
       
       if( nVector>1 && destIfNull!=destIfFalse ){
         int iIdx = pExpr->iTable;
-        int addr;
+        int addrTop;
         int addrNext;
+        int addrFound;
 
         /* Search the index for the key. */
-        addr = sqlite3VdbeAddOp4Int(v, OP_Found, iIdx, 0, r1, nVector);
+        addrFound = sqlite3VdbeAddOp4Int(v, OP_Found, iIdx, 0, r1, nVector);
         VdbeCoverage(v);
 
         /* At this point the specified key is not present in the index, 
         ** so the result of the IN(..) operator must be either NULL or
         ** 0. The vdbe code generated below figures out which.  */
-        addrNext = 1+sqlite3VdbeAddOp2(v, OP_Rewind, iIdx, destIfFalse);
+        addrTop = 1+sqlite3VdbeAddOp2(v, OP_Rewind, iIdx, destIfFalse);
         VdbeCoverage(v);
+        addrNext = sqlite3VdbeMakeLabel(v);
 
         for(i=0; i<nVector; i++){
           Expr *p;
@@ -2803,21 +2805,21 @@ static void sqlite3ExprCodeIN(
           pColl = sqlite3ExprCollSeq(pParse, p);
 
           sqlite3VdbeAddOp3(v, OP_Column, iIdx, i, r2);
-          sqlite3VdbeAddOp4(v, OP_Eq, r1+i, 0, r2, (void*)pColl,P4_COLLSEQ);
-          sqlite3VdbeChangeP5(v, SQLITE_JUMPIFNULL);
+          sqlite3VdbeAddOp4(v, OP_Ne, r1+i, addrNext, r2,
+                            (void*)pColl, P4_COLLSEQ);
           VdbeCoverage(v);
-          sqlite3VdbeAddOp2(v, OP_Next, iIdx, addrNext);
-          VdbeCoverage(v);
-          sqlite3VdbeAddOp2(v, OP_Goto, 0, destIfFalse);
-          sqlite3VdbeJumpHere(v, sqlite3VdbeCurrentAddr(v)-3);
           sqlite3ReleaseTempReg(pParse, r2);
         }
         sqlite3VdbeAddOp2(v, OP_Goto, 0, destIfNull);
+        sqlite3VdbeResolveLabel(v, addrNext);
+        sqlite3VdbeAddOp2(v, OP_Next, iIdx, addrTop);
+        VdbeCoverage(v);
+        sqlite3VdbeAddOp2(v, OP_Goto, 0, destIfFalse);
 
         /* The key was found in the index. If it contains any NULL values,
         ** then the result of the IN(...) operator is NULL. Otherwise, the
         ** result is 1.  */
-        sqlite3VdbeJumpHere(v, addr);
+        sqlite3VdbeJumpHere(v, addrFound);
         for(i=0; i<nVector; i++){
           Expr *p = sqlite3VectorFieldSubexpr(pExpr->pLeft, i);
           if( sqlite3ExprCanBeNull(p) ){
