@@ -221,8 +221,8 @@ static int lookupName(
       zDb = 0;
     }else{
       for(i=0; i<db->nDb; i++){
-        assert( db->aDb[i].zName );
-        if( sqlite3StrICmp(db->aDb[i].zName,zDb)==0 ){
+        assert( db->aDb[i].zDbSName );
+        if( sqlite3StrICmp(db->aDb[i].zDbSName,zDb)==0 ){
           pSchema = db->aDb[i].pSchema;
           break;
         }
@@ -718,7 +718,11 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         sqlite3ErrorMsg(pParse, "misuse of aggregate function %.*s()", nId,zId);
         pNC->nErr++;
         is_agg = 0;
-      }else if( no_such_func && pParse->db->init.busy==0 ){
+      }else if( no_such_func && pParse->db->init.busy==0
+#ifdef SQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
+                && pParse->explain==0
+#endif
+      ){
         sqlite3ErrorMsg(pParse, "no such function: %.*s", nId, zId);
         pNC->nErr++;
       }else if( wrong_num_args ){

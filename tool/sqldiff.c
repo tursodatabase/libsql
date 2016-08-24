@@ -1302,7 +1302,7 @@ static void rbudiff_one_table(const char *zTab, FILE *out){
       char *zOtaControl;
       int nOtaControl = sqlite3_column_bytes(pStmt, nCol);
 
-      zOtaControl = (char*)sqlite3_malloc(nOtaControl);
+      zOtaControl = (char*)sqlite3_malloc(nOtaControl+1);
       memcpy(zOtaControl, sqlite3_column_text(pStmt, nCol), nOtaControl+1);
 
       for(i=0; i<nCol; i++){

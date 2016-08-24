@@ -319,15 +319,21 @@ sqlite3rbu *sqlite3rbu_open(
 ** An RBU vacuum is similar to SQLite's built-in VACUUM command, except
 ** that it can be suspended and resumed like an RBU update.
 **
-** The second argument to this function, which may not be NULL, identifies 
-** a database in which to store the state of the RBU vacuum operation if
-** it is suspended. The first time sqlite3rbu_vacuum() is called, to start
-** an RBU vacuum operation, the state database should either not exist or
-** be empty (contain no tables). If an RBU vacuum is suspended by calling
+** The second argument to this function identifies a database in which 
+** to store the state of the RBU vacuum operation if it is suspended. The 
+** first time sqlite3rbu_vacuum() is called, to start an RBU vacuum
+** operation, the state database should either not exist or be empty
+** (contain no tables). If an RBU vacuum is suspended by calling 
 ** sqlite3rbu_close() on the RBU handle before sqlite3rbu_step() has
 ** returned SQLITE_DONE, the vacuum state is stored in the state database. 
 ** The vacuum can be resumed by calling this function to open a new RBU
 ** handle specifying the same target and state databases.
+**
+** If the second argument passed to this function is NULL, then the
+** name of the state database is "<database>-vacuum", where <database>
+** is the name of the target database file. In this case, on UNIX, if the
+** state database is not already present in the file-system, it is created
+** with the same permissions as the target db is made.
 **
 ** This function does not delete the state database after an RBU vacuum
 ** is completed, even if it created it. However, if the call to

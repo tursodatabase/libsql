@@ -240,13 +240,13 @@ static int SQLITE_TCLAPI test_sqlite3rbu_vacuum(
   const char *zTarget;
   const char *zStateDb = 0;
 
-  if( objc!=4 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "NAME TARGET-DB STATE-DB");
+  if( objc!=3 && objc!=4 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "NAME TARGET-DB ?STATE-DB?");
     return TCL_ERROR;
   }
   zCmd = Tcl_GetString(objv[1]);
   zTarget = Tcl_GetString(objv[2]);
-  zStateDb = Tcl_GetString(objv[3]);
+  if( objc==4 ) zStateDb = Tcl_GetString(objv[3]);
 
   pRbu = sqlite3rbu_vacuum(zTarget, zStateDb);
   Tcl_CreateObjCommand(interp, zCmd, test_sqlite3rbu_cmd, (ClientData)pRbu, 0);

@@ -1112,7 +1112,6 @@ static void currentTimeFunc(
 ){
   time_t t;
   char *zFormat = (char *)sqlite3_user_data(context);
-  sqlite3 *db;
   sqlite3_int64 iT;
   struct tm *pTm;
   struct tm sNow;

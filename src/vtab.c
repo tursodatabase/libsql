@@ -344,7 +344,7 @@ void sqlite3VtabBeginParse(
   */
   if( pTable->azModuleArg ){
     sqlite3AuthCheck(pParse, SQLITE_CREATE_VTABLE, pTable->zName, 
-            pTable->azModuleArg[0], pParse->db->aDb[iDb].zName);
+            pTable->azModuleArg[0], pParse->db->aDb[iDb].zDbSName);
   }
 #endif
 }
@@ -408,7 +408,7 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
       "UPDATE %Q.%s "
          "SET type='table', name=%Q, tbl_name=%Q, rootpage=0, sql=%Q "
        "WHERE rowid=#%d",
-      db->aDb[iDb].zName, SCHEMA_TABLE(iDb),
+      db->aDb[iDb].zDbSName, SCHEMA_TABLE(iDb),
       pTab->zName,
       pTab->zName,
       zStmt,
@@ -518,7 +518,7 @@ static int vtabCallConstructor(
   pVTable->pMod = pMod;
 
   iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
-  pTab->azModuleArg[1] = db->aDb[iDb].zName;
+  pTab->azModuleArg[1] = db->aDb[iDb].zDbSName;
 
   /* Invoke the virtual table constructor */
   assert( &db->pVtabCtx );
@@ -682,7 +682,7 @@ int sqlite3VtabCallCreate(sqlite3 *db, int iDb, const char *zTab, char **pzErr){
   Module *pMod;
   const char *zMod;
 
-  pTab = sqlite3FindTable(db, zTab, db->aDb[iDb].zName);
+  pTab = sqlite3FindTable(db, zTab, db->aDb[iDb].zDbSName);
   assert( pTab && (pTab->tabFlags & TF_Virtual)!=0 && !pTab->pVTable );
 
   /* Locate the required virtual table module */
@@ -806,8 +806,8 @@ int sqlite3VtabCallDestroy(sqlite3 *db, int iDb, const char *zTab){
   int rc = SQLITE_OK;
   Table *pTab;
 
-  pTab = sqlite3FindTable(db, zTab, db->aDb[iDb].zName);
-  if( ALWAYS(pTab!=0 && pTab->pVTable!=0) ){
+  pTab = sqlite3FindTable(db, zTab, db->aDb[iDb].zDbSName);
+  if( pTab!=0 && ALWAYS(pTab->pVTable!=0) ){
     VTable *p;
     int (*xDestroy)(sqlite3_vtab *);
     for(p=pTab->pVTable; p; p=p->pNext){
@@ -947,7 +947,10 @@ int sqlite3VtabBegin(sqlite3 *db, VTable *pVTab){
       if( rc==SQLITE_OK ){
         int iSvpt = db->nStatement + db->nSavepoint;
         addToVTrans(db, pVTab);
-        if( iSvpt ) rc = sqlite3VtabSavepoint(db, SAVEPOINT_BEGIN, iSvpt-1);
+        if( iSvpt && pModule->xSavepoint ){
+          pVTab->iSavepoint = iSvpt;
+          rc = pModule->xSavepoint(pVTab->pVtab, iSvpt-1);
+        }
       }
     }
   }

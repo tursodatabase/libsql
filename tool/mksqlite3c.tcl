@@ -112,6 +112,7 @@ foreach hdr {
    pragma.h
    rtree.h
    sqlite3session.h
+   sqlite3ext.h
    sqlite3.h
    sqlite3ext.h
    sqlite3rbu.h

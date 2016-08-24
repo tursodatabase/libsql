@@ -502,14 +502,26 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   assert( pParse->nVar==0 );
   assert( pParse->nzVar==0 );
   assert( pParse->azVar==0 );
-  while( zSql[i]!=0 ){
+  while( 1 ){
     assert( i>=0 );
-    pParse->sLastToken.z = &zSql[i];
-    pParse->sLastToken.n = sqlite3GetToken((unsigned char*)&zSql[i],&tokenType);
-    i += pParse->sLastToken.n;
-    if( i>mxSqlLen ){
-      pParse->rc = SQLITE_TOOBIG;
-      break;
+    if( zSql[i]!=0 ){
+      pParse->sLastToken.z = &zSql[i];
+      pParse->sLastToken.n = sqlite3GetToken((u8*)&zSql[i],&tokenType);
+      i += pParse->sLastToken.n;
+      if( i>mxSqlLen ){
+        pParse->rc = SQLITE_TOOBIG;
+        break;
+      }
+    }else{
+      /* Upon reaching the end of input, call the parser two more times
+      ** with tokens TK_SEMI and 0, in that order. */
+      if( lastTokenParsed==TK_SEMI ){
+        tokenType = 0;
+      }else if( lastTokenParsed==0 ){
+        break;
+      }else{
+        tokenType = TK_SEMI;
+      }
     }
     if( tokenType>=TK_SPACE ){
       assert( tokenType==TK_SPACE || tokenType==TK_ILLEGAL );
@@ -530,15 +542,6 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   }
   assert( nErr==0 );
   pParse->zTail = &zSql[i];
-  if( pParse->rc==SQLITE_OK && db->mallocFailed==0 ){
-    assert( zSql[i]==0 );
-    if( lastTokenParsed!=TK_SEMI ){
-      sqlite3Parser(pEngine, TK_SEMI, pParse->sLastToken, pParse);
-    }
-    if( pParse->rc==SQLITE_OK && db->mallocFailed==0 ){
-      sqlite3Parser(pEngine, 0, pParse->sLastToken, pParse);
-    }
-  }
 #ifdef YYTRACKMAXSTACKDEPTH
   sqlite3_mutex_enter(sqlite3MallocMutex());
   sqlite3StatusHighwater(SQLITE_STATUS_PARSER_STACK,
