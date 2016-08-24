@@ -1952,6 +1952,7 @@ static Select *isCandidateForInOpt(Expr *pX){
   assert( pTab->pSelect==0 );            /* FROM clause is not a view */
   if( IsVirtual(pTab) ) return 0;        /* FROM clause not a virtual table */
   pEList = p->pEList;
+  assert( pEList!=0 );
 
   /* All SELECT results must be columns. */
   for(i=0; i<pEList->nExpr; i++){
@@ -2103,7 +2104,6 @@ int sqlite3FindInIndex(
   int mustBeUnique;                     /* True if RHS must be unique */
   Vdbe *v = sqlite3GetVdbe(pParse);     /* Virtual machine being coded */
 
-  if( pParse->db->mallocFailed ) return IN_INDEX_NOOP;
   assert( pX->op==TK_IN );
   mustBeUnique = (inFlags & IN_INDEX_LOOP)!=0;
 

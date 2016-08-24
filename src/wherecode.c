@@ -383,7 +383,7 @@ static int codeEqualityTerm(
     sqlite3VdbeAddOp2(v, OP_Null, 0, iReg);
 #ifndef SQLITE_OMIT_SUBQUERY
   }else{
-    int eType;
+    int eType = IN_INDEX_NOOP;
     int iTab;
     struct InLoop *pIn;
     WhereLoop *pLoop = pLevel->pWLoop;
@@ -436,13 +436,13 @@ static int codeEqualityTerm(
           pLhs = sqlite3ExprListAppend(pParse, pLhs, pNewLhs);
         }
       }
-
-      pX->x.pSelect->pEList = pRhs;
-      pX->pLeft->x.pList = pLhs;
-
-      eType = sqlite3FindInIndex(pParse, pX, IN_INDEX_LOOP, 0, aiMap);
-      pX->x.pSelect->pEList = pOrigRhs;
-      pX->pLeft->x.pList = pOrigLhs;
+      if( !db->mallocFailed ){
+        pX->x.pSelect->pEList = pRhs;
+        pX->pLeft->x.pList = pLhs;
+        eType = sqlite3FindInIndex(pParse, pX, IN_INDEX_LOOP, 0, aiMap);
+        pX->x.pSelect->pEList = pOrigRhs;
+        pX->pLeft->x.pList = pOrigLhs;
+      }
       sqlite3ExprListDelete(pParse->db, pLhs);
       sqlite3ExprListDelete(pParse->db, pRhs);
     }
