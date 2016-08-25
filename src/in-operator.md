@@ -61,9 +61,7 @@ algorithm is suboptimal, especially if there are many rows on the RHS.
 
 The following procedure computes the same answer as the simple full-scan
 algorithm, though it does so with less work in the common case.  This
-is the algorithm that is implemented in SQLite.  The steps must occur
-in the order specified.  Steps 1 and 3 are optional.  All other steps
-are required for correctness.
+is the algorithm that is implemented in SQLite.
 
   1.  If the RHS is a constant list of length 1 or 2, then rewrite the
       IN operator as a simple expression.  Implement
@@ -78,25 +76,21 @@ are required for correctness.
       IN operator is used for membership testing.  If the IN operator is
       driving a loop, then skip this step entirely.
 
-  2.  If the RHS is empty, return FALSE.
+  2.  Check the LHS to see if it is a partial-NULL and if it is, jump
+      ahead to step 4.
 
-  3.  If the LHS is a total-NULL, then return NULL.
+  3.  Do a binary search for the RHS using the LHS as a probe.  If
+      an exact match is found, return TRUE.
 
-  4.  If the LHS is non-NULL, then use the LHS as a probe in a binary
-      search of the RHS 
+  4.  If we do not need to distingish between FALSE and NULL,
+      then return FALSE.
 
-      4-A.  If the binary search finds an exact match, return TRUE
-
-      4-B.  If the RHS is known to be not-null, return FALSE
-
-  5.  At this point, it is known that the result cannot be TRUE.  All
-      that remains is to distinguish between NULL and FALSE.
-      If a NOT-TRUE result is acceptable, then return NOT-TRUE now.
+  5.  If the RHS is non-NULL then return FALSE.
 
   6.  For each row in the RHS, compare that row against the LHS and
-      if the result is NULL, immediately return NULL.  This step is
-      essentially the "Simple Full-scan Algorithm" above with the
-      tests for TRUE removed, since we know that the result cannot be
-      TRUE at this point.
+      if the result is NULL, immediately return NULL.  In the case
+      of a scalar IN operator, we only need to look at the very first
+      row the RHS because for a scalar RHS, all NULLs will always come 
+      first.  If the RHS is empty, this step is a no-op.
 
   7.  Return FALSE.
