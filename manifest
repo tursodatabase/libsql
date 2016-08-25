@@ -1,5 +1,5 @@
-C Add\snotes\son\sthe\simplementation\sof\sthe\sIN\soperator.
-D 2016-08-25T14:00:15.437
+C Corrections\sto\sthe\sIN-operator\snotes.
+D 2016-08-25T14:23:59.673
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -346,7 +346,7 @@ F src/global.c c45ea22aff29334f6a9ec549235ac3357c970015
 F src/hash.c 55b5fb474100cee0b901edaf203e26c970940f36
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
-F src/in-operator.md 8176075ceca5b1a0564d4aff1e415ff6f9037280
+F src/in-operator.md 973fe4522b871fb8cf683d8453760f4f19ac68c8
 F src/insert.c a255eb795cf475e7a0659297144fc80f70eb4e30
 F src/legacy.c 75d3023be8f0d2b99d60f905090341a03358c58e
 F src/loadext.c dd7a2b77902cc66c22555aef02e1a682554b7aec
@@ -1521,7 +1521,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7ae504e62e9bbbbd85a676f3c3922b7fd0cc73d2
-R 85a14e909442e83b4fd5e48b00047186
+P d256b2caeb9e3eb5dd88bb569ec71f91e9991c81
+R e83420368d9fa99d84d7c5701ecba45b
 U drh
-Z fb24d479cf53b7630adc4dea69c62760
+Z a8948efc181e8ffaf5af6c9f4ff55b46

@@ -62,8 +62,8 @@ algorithm is suboptimal, especially if there are many rows on the RHS.
 The following procedure computes the same answer as the simple full-scan
 algorithm, though it does so with less work in the common case.  This
 is the algorithm that is implemented in SQLite.  The steps must occur
-in the order specified.  Except for the INDEX_NOOP optimization of step 1,
-none of the steps can be skipped.
+in the order specified.  Steps 1 and 3 are optional.  All other steps
+are required for correctness.
 
   1.  If the RHS is a constant list of length 1 or 2, then rewrite the
       IN operator as a simple expression.  Implement
@@ -80,17 +80,14 @@ none of the steps can be skipped.
 
   2.  If the RHS is empty, return FALSE.
 
-  3.  If the LHS is a total-NULL or if the RHS contains a total-NULL,
-      then return NULL.
+  3.  If the LHS is a total-NULL, then return NULL.
 
   4.  If the LHS is non-NULL, then use the LHS as a probe in a binary
       search of the RHS 
 
-      <ol type='a'>
-      <li> If the binary search finds an exact match, return TRUE
+      4-A.  If the binary search finds an exact match, return TRUE
 
-      <li> If the RHS is known to be not-null, return FALSE
-      </ol>
+      4-B.  If the RHS is known to be not-null, return FALSE
 
   5.  At this point, it is known that the result cannot be TRUE.  All
       that remains is to distinguish between NULL and FALSE.
