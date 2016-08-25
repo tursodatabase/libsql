@@ -2637,16 +2637,19 @@ int sqlite3ExprCheckIN(Parse *pParse, Expr *pIn){
 **      x IN (SELECT ...)
 **      x IN (value, value, ...)
 **
-** The left-hand side (LHS) is a scalar expression.  The right-hand side (RHS)
-** is an array of zero or more values.  The expression is true if the LHS is
-** contained within the RHS.  The value of the expression is unknown (NULL)
-** if the LHS is NULL or if the LHS is not contained within the RHS and the
-** RHS contains one or more NULL values.
+** The left-hand side (LHS) is a scalar or vector expression.  The 
+** right-hand side (RHS) is an array of zero or more values.  The IN operator
+** is true if the LHS is contained within the RHS.  The result is false
+** if the LHS is definitely not in the RHS.  The result is NULL if the presence
+** of the LHS in the RHS cannot be determined due to NULLs.
 **
 ** This routine generates code that jumps to destIfFalse if the LHS is not 
 ** contained within the RHS.  If due to NULLs we cannot determine if the LHS
 ** is contained in the RHS then jump to destIfNull.  If the LHS is contained
 ** within the RHS then fall through.
+**
+** See the separate in-operator.md documentation file in the canonical
+** SQLite source tree for additional information.
 */
 static void sqlite3ExprCodeIN(
   Parse *pParse,        /* Parsing and code generating context */
@@ -2660,22 +2663,18 @@ static void sqlite3ExprCodeIN(
   Vdbe *v;              /* Statement under construction */
   int *aiMap = 0;       /* Map from vector field to index column */
   char *zAff = 0;       /* Affinity string for comparisons */
-  int nVector;          /* Size of vectors for this IN(...) op */
-  int iDummy;           /* Dummy parameter to exprCodeVector() */
-  Expr *pLeft = pExpr->pLeft;
-  int i;
+  int nVector;                 /* Size of vectors for this IN operator */
+  int iDummy;                  /* Dummy parameter to exprCodeVector() */
+  Expr *pLeft = pExpr->pLeft;  /* The LHS of the IN operator */
+  int i;                       /* loop counter */
 
   if( sqlite3ExprCheckIN(pParse, pExpr) ) return;
   zAff = exprINAffinity(pParse, pExpr);
-  if( zAff==0 ) return;
   nVector = sqlite3ExprVectorSize(pExpr->pLeft);
   aiMap = (int*)sqlite3DbMallocZero(
       pParse->db, nVector*(sizeof(int) + sizeof(char)) + 1
   );
-  if( aiMap==0 ){
-    sqlite3DbFree(pParse->db, zAff);
-    return;
-  }
+  if( pParse->db->mallocFailed ) goto end_code_IN_op;
 
   /* Attempt to compute the RHS. After this step, if anything other than
   ** IN_INDEX_NOOP is returned, the table opened ith cursor pExpr->iTable 
@@ -2691,16 +2690,32 @@ static void sqlite3ExprCodeIN(
   assert( pParse->nErr || nVector==1 || eType==IN_INDEX_EPH
        || eType==IN_INDEX_INDEX_ASC || eType==IN_INDEX_INDEX_DESC 
   );
+#ifdef SQLITE_DEBUG
+  /* Confirm that aiMap[] contains nVector integer values between 0 and
+  ** nVector-1. */
+  for(i=0; i<nVector; i++){
+    int j, cnt;
+    for(cnt=j=0; j<nVector; j++) if( aiMap[j]==i ) cnt++;
+    assert( cnt==1 );
+  }
+#endif
 
   /* Code the LHS, the <expr> from "<expr> IN (...)". If the LHS is a 
   ** vector, then it is stored in an array of nVector registers starting 
   ** at r1.
   */
-  r1 = sqlite3GetTempRange(pParse, nVector);
   sqlite3ExprCachePush(pParse);
   r2 = exprCodeVector(pParse, pLeft, &iDummy);
-  for(i=0; i<nVector; i++){
-    sqlite3VdbeAddOp3(v, OP_Copy, r2+i, r1+aiMap[i], 0);
+  for(i=0; i<nVector && aiMap[i]==i; i++){}
+  if( i==nVector ){
+    /* LHS fields are already in the correct order */
+    r1 = r2;
+  }else{
+    /* Need to reorder the LHS fields according to aiMap */
+    r1 = sqlite3GetTempRange(pParse, nVector);
+    for(i=0; i<nVector; i++){
+      sqlite3VdbeAddOp3(v, OP_Copy, r2+i, r1+aiMap[i], 0);
+    }
   }
 
   /* If sqlite3FindInIndex() did not find or create an index that is
@@ -2861,11 +2876,12 @@ static void sqlite3ExprCodeIN(
       }
     }
   }
-  sqlite3ReleaseTempReg(pParse, r1);
+  if( r2!=r1 ) sqlite3ReleaseTempReg(pParse, r1);
   sqlite3ExprCachePop(pParse);
+  VdbeComment((v, "end IN expr"));
+end_code_IN_op:
   sqlite3DbFree(pParse->db, aiMap);
   sqlite3DbFree(pParse->db, zAff);
-  VdbeComment((v, "end IN expr"));
 }
 #endif /* SQLITE_OMIT_SUBQUERY */
 
