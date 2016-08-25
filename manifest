@@ -1,5 +1,5 @@
-C Sync\sup\sthe\sMSVC\sautoconf\smakefile.
-D 2016-08-24T18:21:58.857
+C Fix\sthe\ssqlite3_trace_v2()\sinterface\sso\sthat\sit\sgoes\sdisabled\sif\seither\sthe\ncallback\sor\smask\sarguments\sare\szero,\sin\saccordance\swith\sthe\sdocumentation.
+D 2016-08-25T22:06:37.897
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5017381e4853b1472e01d5bb926be1268eba429c
@@ -349,7 +349,7 @@ F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/insert.c a255eb795cf475e7a0659297144fc80f70eb4e30
 F src/legacy.c 75d3023be8f0d2b99d60f905090341a03358c58e
 F src/loadext.c dd7a2b77902cc66c22555aef02e1a682554b7aec
-F src/main.c 4dba24a78c9797c4005521107905f42217668b86
+F src/main.c 0bfcf1a5b612dddb4dd0fd04b53ef08ace0f48ff
 F src/malloc.c 1443d1ad95d67c21d77af7ae3f44678252f0efec
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 6919bcf12f221868ea066eec27e579fed95ce98b
@@ -1511,7 +1511,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c640489db2037f1a284d7b85fa753ccdac1b8f79
-R 959092fa640b62161f63260898254ab1
-U mistachkin
-Z d96a1e74a14d6dd8b06850bfa4844a5e
+P 77f7c31a3aa44798cfa5f557242caffb593ce7af
+R e30f608edda41eef799f7d696f256071
+U drh
+Z 8b647e4b12a24ec47b73225bc510e869
