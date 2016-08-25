@@ -6,7 +6,7 @@ IN-Operator Implementation Notes
 An IN operator has one of the following formats:
 
 >
-     x IN (list)
+     x IN (y1,y2,y3,...,yN)
      x IN (subquery)
 
 The "x" is referred to as the LHS (left-hand side).  The list or subquery
@@ -14,9 +14,20 @@ on the right is called the RHS (right-hand side).  If the RHS is a list
 it must be a non-empty list.  But if the RHS is a subquery, it can be an
 empty set.
 
-Both the LHS and RHS can be scalars or vectors.  The two must match.
-In other words, they must both be scalar or else they must both be
-vectors of the same length.
+The LHS can be a scalar (a single quantity) or a vector (a list of
+two or or more values) or a subquery that returns one or more columns.
+We use the term "vector" to mean an actually list of values or a
+subquery that returns two or more columns.  An isolated value or
+a subquery that returns a single columns is called a scalar.
+
+The RHS can be a subquery that returns a single column, a subquery
+that returns two or more columns, or a list of scalars.  It is not
+currently support for the RHS to be a list of vectors.
+
+The number of columns for LHS must match the number of columns for
+the RHS.  If the RHS is a list of values, then the LHS must be a 
+scalar.  If the RHS is a subquery returning N columns, then the LHS
+must be a vector of size N.
 
 NULL values can occur in either or both of the LHS and RHS.
 If the LHS contains only
@@ -84,7 +95,7 @@ is the algorithm that is implemented in SQLite.
 
   4.  If the RHS is non-NULL then return FALSE.
 
-  5.  If we do not need to distingish between FALSE and NULL,
+  5.  If we do not need to distinguish between FALSE and NULL,
       then return FALSE.
   
   6.  For each row in the RHS, compare that row against the LHS and

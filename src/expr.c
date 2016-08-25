@@ -2638,10 +2638,15 @@ int sqlite3ExprCheckIN(Parse *pParse, Expr *pIn){
 **      x IN (value, value, ...)
 **
 ** The left-hand side (LHS) is a scalar or vector expression.  The 
-** right-hand side (RHS) is an array of zero or more values.  The IN operator
-** is true if the LHS is contained within the RHS.  The result is false
-** if the LHS is definitely not in the RHS.  The result is NULL if the presence
-** of the LHS in the RHS cannot be determined due to NULLs.
+** right-hand side (RHS) is an array of zero or more scalar values, or a
+** subquery.  If the RHS is a subquery, the number of result columns must
+** match the number of columns in the vector on the LHS.  If the RHS is
+** a list of values, the LHS must be a scalar. 
+**
+** The IN operator is true if the LHS value is contained within the RHS.
+** The result is false if the LHS is definitely not in the RHS.  The 
+** result is NULL if the presence of the LHS in the RHS cannot be 
+** determined due to NULLs.
 **
 ** This routine generates code that jumps to destIfFalse if the LHS is not 
 ** contained within the RHS.  If due to NULLs we cannot determine if the LHS
@@ -2659,22 +2664,29 @@ static void sqlite3ExprCodeIN(
 ){
   int rRhsHasNull = 0;  /* Register that is true if RHS contains NULL values */
   int eType;            /* Type of the RHS */
-  int r1, r2;           /* Temporary use registers */
+  int rLhs;             /* Register(s) holding the LHS values */
+  int rLhsOrig;         /* LHS values prior to reordering by aiMap[] */
   Vdbe *v;              /* Statement under construction */
   int *aiMap = 0;       /* Map from vector field to index column */
   char *zAff = 0;       /* Affinity string for comparisons */
-  int nVector;                 /* Size of vectors for this IN operator */
-  int iDummy;                  /* Dummy parameter to exprCodeVector() */
-  Expr *pLeft = pExpr->pLeft;  /* The LHS of the IN operator */
-  int i;                       /* loop counter */
+  int nVector;          /* Size of vectors for this IN operator */
+  int iDummy;           /* Dummy parameter to exprCodeVector() */
+  Expr *pLeft;          /* The LHS of the IN operator */
+  int i;                /* loop counter */
+  int destStep2;        /* Where to jump when NULLs seen in step 2 */
+  int destStep6 = 0;    /* Start of code for Step 6 */
+  int addrTruthOp;      /* Address of opcode that determines the IN is true */
+  int destNotNull;      /* Jump here if a comparison is not true in step 6 */
+  int addrTop;          /* Top of the step-6 loop */ 
 
+  pLeft = pExpr->pLeft;
   if( sqlite3ExprCheckIN(pParse, pExpr) ) return;
   zAff = exprINAffinity(pParse, pExpr);
   nVector = sqlite3ExprVectorSize(pExpr->pLeft);
   aiMap = (int*)sqlite3DbMallocZero(
       pParse->db, nVector*(sizeof(int) + sizeof(char)) + 1
   );
-  if( pParse->db->mallocFailed ) goto end_code_IN_op;
+  if( pParse->db->mallocFailed ) goto sqlite3ExprCodeIN_oom_error;
 
   /* Attempt to compute the RHS. After this step, if anything other than
   ** IN_INDEX_NOOP is returned, the table opened ith cursor pExpr->iTable 
@@ -2703,24 +2715,31 @@ static void sqlite3ExprCodeIN(
   /* Code the LHS, the <expr> from "<expr> IN (...)". If the LHS is a 
   ** vector, then it is stored in an array of nVector registers starting 
   ** at r1.
+  **
+  ** sqlite3FindInIndex() might have reordered the fields of the LHS vector
+  ** so that the fields are in the same order as an existing index.   The
+  ** aiMap[] array contains a mapping from the original LHS field order to
+  ** the field order that matches the RHS index.
   */
   sqlite3ExprCachePush(pParse);
-  r2 = exprCodeVector(pParse, pLeft, &iDummy);
-  for(i=0; i<nVector && aiMap[i]==i; i++){}
+  rLhsOrig = exprCodeVector(pParse, pLeft, &iDummy);
+  for(i=0; i<nVector && aiMap[i]==i; i++){} /* Are LHS fields reordered? */
   if( i==nVector ){
-    /* LHS fields are already in the correct order */
-    r1 = r2;
+    /* LHS fields are not reordered */
+    rLhs = rLhsOrig;
   }else{
     /* Need to reorder the LHS fields according to aiMap */
-    r1 = sqlite3GetTempRange(pParse, nVector);
+    rLhs = sqlite3GetTempRange(pParse, nVector);
     for(i=0; i<nVector; i++){
-      sqlite3VdbeAddOp3(v, OP_Copy, r2+i, r1+aiMap[i], 0);
+      sqlite3VdbeAddOp3(v, OP_Copy, rLhsOrig+i, rLhs+aiMap[i], 0);
     }
   }
 
   /* If sqlite3FindInIndex() did not find or create an index that is
   ** suitable for evaluating the IN operator, then evaluate using a
   ** sequence of comparisons.
+  **
+  ** This is step (1) in the in-operator.md optimized algorithm.
   */
   if( eType==IN_INDEX_NOOP ){
     ExprList *pList = pExpr->x.pList;
@@ -2732,7 +2751,7 @@ static void sqlite3ExprCodeIN(
     assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
     if( destIfNull!=destIfFalse ){
       regCkNull = sqlite3GetTempReg(pParse);
-      sqlite3VdbeAddOp3(v, OP_BitAnd, r1, r1, regCkNull);
+      sqlite3VdbeAddOp3(v, OP_BitAnd, rLhs, rLhs, regCkNull);
     }
     for(ii=0; ii<pList->nExpr; ii++){
       r2 = sqlite3ExprCodeTemp(pParse, pList->a[ii].pExpr, &regToFree);
@@ -2740,14 +2759,14 @@ static void sqlite3ExprCodeIN(
         sqlite3VdbeAddOp3(v, OP_BitAnd, regCkNull, r2, regCkNull);
       }
       if( ii<pList->nExpr-1 || destIfNull!=destIfFalse ){
-        sqlite3VdbeAddOp4(v, OP_Eq, r1, labelOk, r2,
+        sqlite3VdbeAddOp4(v, OP_Eq, rLhs, labelOk, r2,
                           (void*)pColl, P4_COLLSEQ);
         VdbeCoverageIf(v, ii<pList->nExpr-1);
         VdbeCoverageIf(v, ii==pList->nExpr-1);
         sqlite3VdbeChangeP5(v, zAff[0]);
       }else{
         assert( destIfNull==destIfFalse );
-        sqlite3VdbeAddOp4(v, OP_Ne, r1, destIfFalse, r2,
+        sqlite3VdbeAddOp4(v, OP_Ne, rLhs, destIfFalse, r2,
                           (void*)pColl, P4_COLLSEQ); VdbeCoverage(v);
         sqlite3VdbeChangeP5(v, zAff[0] | SQLITE_JUMPIFNULL);
       }
@@ -2759,127 +2778,111 @@ static void sqlite3ExprCodeIN(
     }
     sqlite3VdbeResolveLabel(v, labelOk);
     sqlite3ReleaseTempReg(pParse, regCkNull);
+    goto sqlite3ExprCodeIN_finished;
+  }
+
+  /* Step 2: Check to see if the LHS contains any NULL columns.  If the
+  ** LHS does contain NULLs then the result must be either FALSE or NULL.
+  ** We will then skip the binary search of the RHS.
+  */
+  if( destIfNull==destIfFalse ){
+    destStep2 = destIfFalse;
   }else{
-  
-    /* If any value on the LHS is NULL, the result of the IN(...) operator
-    ** must be either false or NULL. If these two are handled identically,
-    ** test the LHS for NULLs and jump directly to destIfNull if any are
-    ** found. 
-    **
-    ** Otherwise, if NULL and false are handled differently, and the
-    ** IN(...) operation is not a vector operation, and the LHS of the
-    ** operator is NULL, then the result is false if the index is 
-    ** completely empty, or NULL otherwise.  */
-    if( destIfNull==destIfFalse ){
-      for(i=0; i<nVector; i++){
-        Expr *p = sqlite3VectorFieldSubexpr(pExpr->pLeft, i);
-        if( sqlite3ExprCanBeNull(p) ){
-          sqlite3VdbeAddOp2(v, OP_IsNull, r1+aiMap[i], destIfNull);
-          VdbeCoverage(v);
-        }
-      }
-    }else if( nVector==1 && sqlite3ExprCanBeNull(pExpr->pLeft) ){
-      int addr1 = sqlite3VdbeAddOp1(v, OP_NotNull, r1); VdbeCoverage(v);
-      sqlite3VdbeAddOp2(v, OP_Rewind, pExpr->iTable, destIfFalse);
+    destStep2 = destStep6 = sqlite3VdbeMakeLabel(v);
+  }
+  for(i=0; i<nVector; i++){
+    Expr *p = sqlite3VectorFieldSubexpr(pExpr->pLeft, i);
+    if( sqlite3ExprCanBeNull(p) ){
+      sqlite3VdbeAddOp2(v, OP_IsNull, rLhs+i, destStep2);
       VdbeCoverage(v);
-      sqlite3VdbeGoto(v, destIfNull);
-      sqlite3VdbeJumpHere(v, addr1);
-    }
-  
-    if( eType==IN_INDEX_ROWID ){
-      /* In this case, the RHS is the ROWID of table b-tree */
-      sqlite3VdbeAddOp3(v, OP_SeekRowid, pExpr->iTable, destIfFalse, r1);
-      VdbeCoverage(v);
-    }else{
-      /* In this case, the RHS is an index b-tree. Apply the comparison
-      ** affinities to each value on the LHS of the operator.  */
-      sqlite3VdbeAddOp4(v, OP_Affinity, r1, nVector, 0, zAff, nVector);
-      
-      if( nVector>1 && destIfNull!=destIfFalse ){
-        int iIdx = pExpr->iTable;
-        int addrTop;
-        int addrNext;
-        int addrFound;
-
-        /* Search the index for the key. */
-        addrFound = sqlite3VdbeAddOp4Int(v, OP_Found, iIdx, 0, r1, nVector);
-        VdbeCoverage(v);
-
-        /* At this point the specified key is not present in the index, 
-        ** so the result of the IN(..) operator must be either NULL or
-        ** 0. The vdbe code generated below figures out which.  */
-        addrTop = 1+sqlite3VdbeAddOp2(v, OP_Rewind, iIdx, destIfFalse);
-        VdbeCoverage(v);
-        addrNext = sqlite3VdbeMakeLabel(v);
-
-        for(i=0; i<nVector; i++){
-          Expr *p;
-          CollSeq *pColl;
-          int r2 = sqlite3GetTempReg(pParse);
-          p = sqlite3VectorFieldSubexpr(pLeft, i);
-          pColl = sqlite3ExprCollSeq(pParse, p);
-
-          sqlite3VdbeAddOp3(v, OP_Column, iIdx, i, r2);
-          sqlite3VdbeAddOp4(v, OP_Ne, r1+i, addrNext, r2,
-                            (void*)pColl, P4_COLLSEQ);
-          VdbeCoverage(v);
-          sqlite3ReleaseTempReg(pParse, r2);
-        }
-        sqlite3VdbeAddOp2(v, OP_Goto, 0, destIfNull);
-        sqlite3VdbeResolveLabel(v, addrNext);
-        sqlite3VdbeAddOp2(v, OP_Next, iIdx, addrTop);
-        VdbeCoverage(v);
-        sqlite3VdbeAddOp2(v, OP_Goto, 0, destIfFalse);
-
-        /* The key was found in the index. If it contains any NULL values,
-        ** then the result of the IN(...) operator is NULL. Otherwise, the
-        ** result is 1.  */
-        sqlite3VdbeJumpHere(v, addrFound);
-        for(i=0; i<nVector; i++){
-          Expr *p = sqlite3VectorFieldSubexpr(pExpr->pLeft, i);
-          if( sqlite3ExprCanBeNull(p) ){
-            sqlite3VdbeAddOp2(v, OP_IsNull, r1+aiMap[i], destIfNull);
-            VdbeCoverage(v);
-          }
-        }
-
-      }else if( rRhsHasNull==0 ){
-        /* This branch runs if it is known at compile time that the RHS
-        ** cannot contain NULL values. This happens as a result
-        ** of "NOT NULL" constraints in the database schema.
-        **
-        ** Also run this branch if NULL is equivalent to FALSE
-        ** for this particular IN operator.  */
-        sqlite3VdbeAddOp4Int(
-            v, OP_NotFound, pExpr->iTable, destIfFalse, r1, nVector
-        );
-        VdbeCoverage(v);
-      }else{
-        /* In this branch, the RHS of the IN might contain a NULL and
-        ** the presence of a NULL on the RHS makes a difference in the
-        ** outcome.
-        */
-        int addr1;
-
-        /* First check to see if the LHS is contained in the RHS.  If so,
-        ** then the answer is TRUE the presence of NULLs in the RHS does
-        ** not matter.  If the LHS is not contained in the RHS, then the
-        ** answer is NULL if the RHS contains NULLs and the answer is
-        ** FALSE if the RHS is NULL-free.
-        */
-        addr1 = sqlite3VdbeAddOp4Int(v, OP_Found, pExpr->iTable, 0, r1, 1);
-        VdbeCoverage(v);
-        sqlite3VdbeAddOp2(v, OP_IsNull, rRhsHasNull, destIfNull);
-        VdbeCoverage(v);
-        sqlite3VdbeGoto(v, destIfFalse);
-        sqlite3VdbeJumpHere(v, addr1);
-      }
     }
   }
-  if( r2!=r1 ) sqlite3ReleaseTempReg(pParse, r1);
+
+  /* Step 3.  The LHS is now known to be non-NULL.  Do the binary search
+  ** of the RHS using the LHS as a probe.  If found, the result is
+  ** true.
+  */
+  if( eType==IN_INDEX_ROWID ){
+    /* In this case, the RHS is the ROWID of table b-tree and so we also
+    ** know that the RHS is non-NULL.  Hence, we combine steps 3 and 4
+    ** into a single opcode. */
+    sqlite3VdbeAddOp3(v, OP_SeekRowid, pExpr->iTable, destIfFalse, rLhs);
+    VdbeCoverage(v);
+    addrTruthOp = sqlite3VdbeAddOp0(v, OP_Goto);  /* Return True */
+  }else{
+    sqlite3VdbeAddOp4(v, OP_Affinity, rLhs, nVector, 0, zAff, nVector);
+    if( destIfFalse==destIfNull ){
+      /* Combine Step 3 and Step 5 into a single opcode */
+      sqlite3VdbeAddOp4Int(v, OP_NotFound, pExpr->iTable, destIfFalse,
+                           rLhs, nVector); VdbeCoverage(v);
+      goto sqlite3ExprCodeIN_finished;
+    }
+    /* Ordinary Step 3, for the case where FALSE and NULL are distinct */
+    addrTruthOp = sqlite3VdbeAddOp4Int(v, OP_Found, pExpr->iTable, 0,
+                                      rLhs, nVector); VdbeCoverage(v);
+  }
+
+  /* Step 4.  If the RHS is known to be non-NULL and we did not find
+  ** an match on the search above, then the result must be FALSE.
+  */
+  if( rRhsHasNull && nVector==1 ){
+    sqlite3VdbeAddOp2(v, OP_NotNull, rRhsHasNull, destIfFalse);
+    VdbeCoverage(v);
+  }
+
+  /* Step 5.  If we do not care about the difference between NULL and
+  ** FALSE, then just return false. 
+  */
+  if( destIfFalse==destIfNull ) sqlite3VdbeGoto(v, destIfFalse);
+
+  /* Step 6: Loop through rows of the RHS.  Compare each row to the LHS.
+  ** If any comparison is NULL, then the result is NULL.  If all
+  ** comparisons are FALSE then the final result is FALSE.
+  **
+  ** For a scalar LHS, it is sufficient to check just the first row
+  ** of the RHS.
+  */
+  if( destStep6 ) sqlite3VdbeResolveLabel(v, destStep6);
+  addrTop = sqlite3VdbeAddOp2(v, OP_Rewind, pExpr->iTable, destIfFalse);
+  VdbeCoverage(v);
+  if( nVector>1 ){
+    destNotNull = sqlite3VdbeMakeLabel(v);
+  }else{
+    /* For nVector==1, combine steps 6 and 7 by immediately returning
+    ** FALSE if the first comparison is not NULL */
+    destNotNull = destIfFalse;
+  }
+  for(i=0; i<nVector; i++){
+    Expr *p;
+    CollSeq *pColl;
+    int r3 = sqlite3GetTempReg(pParse);
+    p = sqlite3VectorFieldSubexpr(pLeft, i);
+    pColl = sqlite3ExprCollSeq(pParse, p);
+    sqlite3VdbeAddOp3(v, OP_Column, pExpr->iTable, i, r3);
+    sqlite3VdbeAddOp4(v, OP_Ne, rLhs+i, destNotNull, r3,
+                      (void*)pColl, P4_COLLSEQ);
+    VdbeCoverage(v);
+    sqlite3ReleaseTempReg(pParse, r3);
+  }
+  sqlite3VdbeAddOp2(v, OP_Goto, 0, destIfNull);
+  if( nVector>1 ){
+    sqlite3VdbeResolveLabel(v, destNotNull);
+    sqlite3VdbeAddOp2(v, OP_Next, pExpr->iTable, addrTop+1);
+    VdbeCoverage(v);
+
+    /* Step 7:  If we reach this point, we know that the result must
+    ** be false. */
+    sqlite3VdbeAddOp2(v, OP_Goto, 0, destIfFalse);
+  }
+
+  /* Jumps here in order to return true. */
+  sqlite3VdbeJumpHere(v, addrTruthOp);
+
+sqlite3ExprCodeIN_finished:
+  if( rLhs!=rLhsOrig ) sqlite3ReleaseTempReg(pParse, rLhs);
   sqlite3ExprCachePop(pParse);
   VdbeComment((v, "end IN expr"));
-end_code_IN_op:
+sqlite3ExprCodeIN_oom_error:
   sqlite3DbFree(pParse->db, aiMap);
   sqlite3DbFree(pParse->db, zAff);
 }
