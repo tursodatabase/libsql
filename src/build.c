@@ -153,8 +153,8 @@ void sqlite3FinishCoding(Parse *pParse){
     if( pParse->nTableLock>0 && db->init.busy==0 ){
       sqlite3UserAuthInit(db);
       if( db->auth.authLevel<UAUTH_User ){
-        pParse->rc = SQLITE_AUTH_USER;
         sqlite3ErrorMsg(pParse, "user not authenticated");
+        pParse->rc = SQLITE_AUTH_USER;
         return;
       }
     }
