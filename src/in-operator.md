@@ -77,16 +77,16 @@ is the algorithm that is implemented in SQLite.
       driving a loop, then skip this step entirely.
 
   2.  Check the LHS to see if it is a partial-NULL and if it is, jump
-      ahead to step 4.
+      ahead to step 5.
 
-  3.  Do a binary search for the RHS using the LHS as a probe.  If
+  3.  Do a binary search of the RHS using the LHS as a probe.  If
       an exact match is found, return TRUE.
 
-  4.  If we do not need to distingish between FALSE and NULL,
+  4.  If the RHS is non-NULL then return FALSE.
+
+  5.  If we do not need to distingish between FALSE and NULL,
       then return FALSE.
-
-  5.  If the RHS is non-NULL then return FALSE.
-
+  
   6.  For each row in the RHS, compare that row against the LHS and
       if the result is NULL, immediately return NULL.  In the case
       of a scalar IN operator, we only need to look at the very first
