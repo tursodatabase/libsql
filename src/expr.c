@@ -2229,6 +2229,11 @@ int sqlite3FindInIndex(
 
         if( i==nExpr ){
           int iAddr = sqlite3CodeOnce(pParse); VdbeCoverage(v);
+#ifndef SQLITE_OMIT_EXPLAIN
+          sqlite3VdbeAddOp4(v, OP_Explain, 0, 0, 0,
+            sqlite3MPrintf(db, "USING INDEX %s FOR IN-OPERATOR", pIdx->zName),
+            P4_DYNAMIC);
+#endif
           sqlite3VdbeAddOp3(v, OP_OpenRead, iTab, pIdx->tnum, iDb);
           sqlite3VdbeSetP4KeyInfo(pParse, pIdx);
           VdbeComment((v, "%s", pIdx->zName));

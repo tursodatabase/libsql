@@ -1,5 +1,5 @@
-C Add\stest\scases\sto\srowvalue2.test.
-D 2016-08-26T19:47:30.838
+C Add\san\sEXPLAIN\sQUERY\sPLAN\sline\sfor\swhen\sa\sindex\sis\sused\sto\simplement\nan\sIN\soperator.
+D 2016-08-26T19:54:12.433
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5017381e4853b1472e01d5bb926be1268eba429c
@@ -338,7 +338,7 @@ F src/ctime.c e77f3dc297b4b65c96da78b4ae4272fdfae863d7
 F src/date.c 95c9a8d00767e7221a8e9a31f4e913fc8029bf6b
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
 F src/delete.c 76c084f0265f4a3cd1ecf17eee112a94f1ccbc05
-F src/expr.c 192dac6da7ff380fde35861d3f9d40bab39fab2c
+F src/expr.c 935366a02ad0c33e7cd19ff382ef9bcdfa1aa7a9
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c e2be0968c1adc679c87e467aa5b4f167588f38a8
 F src/func.c 29cc9acb170ec1387b9f63eb52cd85f8de96c771
@@ -1521,7 +1521,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4b589fbfcc4265902de0f552961d2df497a184da
-R 2639cfd9d35718211068678a56d30d2c
-U dan
-Z 1bf9a10eeccbff62da890e6c842f5df6
+P 078bb69e99891ba3b76a39ac974990714c43908f
+R 155df167db2a04d38d0a374ab683c0e3
+U drh
+Z d9ed9721b1e3c6348d8b59f53fc4268d
