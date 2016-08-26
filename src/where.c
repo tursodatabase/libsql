@@ -2224,7 +2224,11 @@ static void whereLoopOutputAdjust(
 ** this case is 3.
 */
 int whereRangeVectorLen(
-  Parse *pParse, int iCur, Index *pIdx, int nEq, WhereTerm *pTerm
+  Parse *pParse,       /* Parsing context */
+  int iCur,            /* Cursor open on pIdx */
+  Index *pIdx,         /* The index to be used for a inequality constraint */
+  int nEq,             /* Number of prior equality constraints on same index */
+  WhereTerm *pTerm     /* The vector inequality constraint */
 ){
   int nCmp = sqlite3ExprVectorSize(pTerm->pExpr->pLeft);
   int i;
@@ -2261,7 +2265,8 @@ int whereRangeVectorLen(
     if( aff!=idxaff ) break;
 
     pColl = sqlite3BinaryCompareCollSeq(pParse, pLhs, pRhs);
-    if( pColl==0 || sqlite3StrICmp(pColl->zName, pIdx->azColl[i+nEq]) ) break;
+    if( NEVER(pColl==0) ) break;
+    if( sqlite3StrICmp(pColl->zName, pIdx->azColl[i+nEq]) ) break;
   }
   return i;
 }
@@ -3573,7 +3578,11 @@ static i8 wherePathSatisfiesOrderBy(
               isOrderDistinct = 0;
             }
             continue;  
-          }else if( eOp & WO_IN ){
+          }else if( ALWAYS(eOp & WO_IN) ){
+            /* ALWAYS() justification: eOp is an equality operator due to the
+            ** j<pLoop->u.btree.nEq constraint above.  Any equality other
+            ** than WO_IN is captured by the previous "if".  So this one
+            ** always has to be WO_IN. */
             Expr *pX = pLoop->aLTerm[j]->pExpr;
             for(i=j+1; i<pLoop->u.btree.nEq; i++){
               if( pLoop->aLTerm[i]->pExpr==pX ){

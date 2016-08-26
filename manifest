@@ -1,5 +1,5 @@
-C Remove\san\sunreachable\sbranch\sfrom\ssqlite3ExprAffinity()
-D 2016-08-26T01:02:09.972
+C Comment\simprovements.\s\sPut\sALWAYS\sand\sNEVER\smacros\son\sthree\sunreachable\nbranches.
+D 2016-08-26T03:42:57.323
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5017381e4853b1472e01d5bb926be1268eba429c
@@ -338,7 +338,7 @@ F src/ctime.c e77f3dc297b4b65c96da78b4ae4272fdfae863d7
 F src/date.c 95c9a8d00767e7221a8e9a31f4e913fc8029bf6b
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
 F src/delete.c 76c084f0265f4a3cd1ecf17eee112a94f1ccbc05
-F src/expr.c 2fe35bc5e93ac4c692b0b8c563ed6fc022247ed4
+F src/expr.c bca7140549a34c8a71a4cf0605666403af390477
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c e2be0968c1adc679c87e467aa5b4f167588f38a8
 F src/func.c 29cc9acb170ec1387b9f63eb52cd85f8de96c771
@@ -465,10 +465,10 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 02eeecc265f6ffd0597378f5d8ae9070b62a406a
 F src/wal.h 6dd221ed384afdc204bc61e25c23ef7fd5a511f2
 F src/walker.c 2d2cc7fb0f320f7f415215d7247f3c584141ac09
-F src/where.c c7cdfd54f383090bb801cdd50d36de1a24684bb2
+F src/where.c 2f60a506364b22c48371b8b94089c4028a694a0a
 F src/whereInt.h 14dd243e13b81cbb0a66063d38b70f93a7d6e613
 F src/wherecode.c 5a5528c39be09593cada6ae465d7a0f48db0077f
-F src/whereexpr.c aa54bf11adf6bc7e52f56281f436ab5fd421ce16
+F src/whereexpr.c 7f9ada866d48d15d09754ae819c1c40efe3b2aff
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1521,7 +1521,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5789aab8ef59ae1cdfdae123b078ee03da6e08ed
-R 9ebda3b476f4e068ca78a071831449eb
+P 9d96f61481704e5ec399ee425f0ebb246902ecc5
+R 0b547643c3844e6bc7fc81ff0189aeeb
 U drh
-Z ef957217ed40f2345a57bc50f3f65b90
+Z e947ea7de839ffcabb8c6e9f9aa97cfb

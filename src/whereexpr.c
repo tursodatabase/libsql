@@ -846,7 +846,9 @@ static int exprMightBeIndexed(
   ** inequality constraint (>, <, >= or <=), perform the processing 
   ** on the first element of the vector.  */
   assert( TK_GT+1==TK_LE && TK_GT+2==TK_LT && TK_GT+3==TK_GE );
-  if( pExpr->op==TK_VECTOR && (op>=TK_GT && op<=TK_GE) ){
+  assert( TK_IS<TK_GE && TK_ISNULL<TK_GE && TK_IN<TK_GE );
+  assert( op<=TK_GE );
+  if( pExpr->op==TK_VECTOR && (op>=TK_GT && ALWAYS(op<=TK_GE)) ){
     pExpr = pExpr->x.pList->a[0].pExpr;
   }
 

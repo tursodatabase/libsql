@@ -2443,9 +2443,9 @@ int sqlite3CodeSubselect(
         ExprList *pEList = pSelect->pEList;
 
         assert( !isRowid );
-        if( pEList->nExpr!=nVal ){
-          sqlite3SubselectError(pParse, pEList->nExpr, nVal);
-        }else{
+        /* If the LHS and RHS of the IN operator do not match, that
+        ** error will have been caught long before we reach this point. */
+        if( ALWAYS(pEList->nExpr==nVal) ){
           SelectDest dest;
           int i;
           sqlite3SelectDestInit(&dest, SRT_Set, pExpr->iTable);
