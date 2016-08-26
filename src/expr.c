@@ -51,8 +51,9 @@ char sqlite3ExprAffinity(Expr *pExpr){
     return sqlite3AffinityType(pExpr->u.zToken, 0);
   }
 #endif
-  if( (op==TK_AGG_COLUMN || op==TK_COLUMN) && pExpr->pTab!=0 ){
+  if( op==TK_AGG_COLUMN || op==TK_COLUMN ){
     int j = pExpr->iColumn;
+    assert( pExpr->pTab!=0 );
     if( j<0 ) return SQLITE_AFF_INTEGER;
     assert( pExpr->pTab && j<pExpr->pTab->nCol );
     return pExpr->pTab->aCol[j].affinity;
