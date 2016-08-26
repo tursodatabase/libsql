@@ -1960,7 +1960,6 @@ static Select *isCandidateForInOpt(Expr *pX){
   if( IsVirtual(pTab) ) return 0;        /* FROM clause not a virtual table */
   pEList = p->pEList;
   assert( pEList!=0 );
-
   /* All SELECT results must be columns. */
   for(i=0; i<pEList->nExpr; i++){
     Expr *pRes = pEList->a[i].pExpr;
@@ -2150,11 +2149,7 @@ int sqlite3FindInIndex(
     sqlite3CodeVerifySchema(pParse, iDb);
     sqlite3TableLock(pParse, iDb, pTab->tnum, 0, pTab->zName);
 
-    /* This function is only called from two places. In both cases the vdbe
-    ** has already been allocated. So assume sqlite3GetVdbe() is always
-    ** successful here.
-    */
-    assert(v);
+    assert(v);  /* sqlite3GetVdbe() has always been previously called */
     if( nExpr==1 && pEList->a[0].pExpr->iColumn<0 ){
       /* The "x IN (SELECT rowid FROM table)" case */
       int iAddr = sqlite3CodeOnce(pParse);
@@ -2195,67 +2190,79 @@ int sqlite3FindInIndex(
         }
       }
 
-      /* The collation sequence used by the comparison. If an index is to
-      ** be used in place of a temp-table, it must be ordered according
-      ** to this collation sequence.  */
-
-      for(pIdx=pTab->pIndex; pIdx && eType==0 && affinity_ok; pIdx=pIdx->pNext){
-        if( pIdx->nColumn<nExpr ) continue;
-        if( mustBeUnique ){
-          if( pIdx->nKeyCol>nExpr
-           ||(pIdx->nColumn>nExpr && !IsUniqueIndex(pIdx))
-          ){
-            continue;
-          }
-        }
-
-        for(i=0; i<nExpr; i++){
-          Expr *pLhs = sqlite3VectorFieldSubexpr(pX->pLeft, i);
-          Expr *pRhs = pEList->a[i].pExpr;
-          CollSeq *pReq = sqlite3BinaryCompareCollSeq(pParse, pLhs, pRhs);
-          int j;
-
-          assert( pReq!=0 || pRhs->iColumn==XN_ROWID || pParse->nErr );
-          for(j=0; j<nExpr; j++){
-            if( pIdx->aiColumn[j]!=pRhs->iColumn ) continue;
-            assert( pIdx->azColl[j] );
-            if( pReq==0 ) continue;
-            if( sqlite3StrICmp(pReq->zName, pIdx->azColl[j])!=0 ) continue;
-            break;
-          }
-          if( j==nExpr ) break;
-          if( aiMap ) aiMap[i] = j;
-        }
-
-        if( i==nExpr ){
-          int iAddr = sqlite3CodeOnce(pParse); VdbeCoverage(v);
-#ifndef SQLITE_OMIT_EXPLAIN
-          sqlite3VdbeAddOp4(v, OP_Explain, 0, 0, 0,
-            sqlite3MPrintf(db, "USING INDEX %s FOR IN-OPERATOR", pIdx->zName),
-            P4_DYNAMIC);
-#endif
-          sqlite3VdbeAddOp3(v, OP_OpenRead, iTab, pIdx->tnum, iDb);
-          sqlite3VdbeSetP4KeyInfo(pParse, pIdx);
-          VdbeComment((v, "%s", pIdx->zName));
-          assert( IN_INDEX_INDEX_DESC == IN_INDEX_INDEX_ASC+1 );
-          eType = IN_INDEX_INDEX_ASC + pIdx->aSortOrder[0];
-
-          if( prRhsHasNull ){
-            *prRhsHasNull = ++pParse->nMem;
-#ifdef SQLITE_ENABLE_COLUMN_USED_MASK
-            i64 mask = (1<<nExpr)-1;
-            sqlite3VdbeAddOp4Dup8(v, OP_ColumnsUsed, 
-                iTab, 0, 0, (u8*)&mask, P4_INT64);
-#endif
-            if( nExpr==1 ){
-              sqlite3SetHasNullFlag(v, iTab, *prRhsHasNull);
+      if( affinity_ok ){
+        /* Search for an existing index that will work for this IN operator */
+        for(pIdx=pTab->pIndex; pIdx && eType==0; pIdx=pIdx->pNext){
+          Bitmask colUsed;      /* Columns of the index used */
+          Bitmask mCol;         /* Mask for the current column */
+          if( pIdx->nColumn<nExpr ) continue;
+          /* Maximum nColumn is BMS-2, not BMS-1, so that we can compute
+          ** BITMASK(nExpr) without overflowing */
+          testcase( pIdx->nColumn==BMS-2 );
+          testcase( pIdx->nColumn==BMS-1 );
+          if( pIdx->nColumn>=BMS-1 ) continue;
+          if( mustBeUnique ){
+            if( pIdx->nKeyCol>nExpr
+             ||(pIdx->nColumn>nExpr && !IsUniqueIndex(pIdx))
+            ){
+              continue;  /* This index is not unique over the IN RHS columns */
             }
           }
-          sqlite3VdbeJumpHere(v, iAddr);
-        }
-      }
-    }
-  }
+  
+          colUsed = 0;   /* Columns of index used so far */
+          for(i=0; i<nExpr; i++){
+            Expr *pLhs = sqlite3VectorFieldSubexpr(pX->pLeft, i);
+            Expr *pRhs = pEList->a[i].pExpr;
+            CollSeq *pReq = sqlite3BinaryCompareCollSeq(pParse, pLhs, pRhs);
+            int j;
+  
+            assert( pReq!=0 || pRhs->iColumn==XN_ROWID || pParse->nErr );
+            for(j=0; j<nExpr; j++){
+              if( pIdx->aiColumn[j]!=pRhs->iColumn ) continue;
+              assert( pIdx->azColl[j] );
+              if( pReq==0 ) continue;
+              if( sqlite3StrICmp(pReq->zName, pIdx->azColl[j])!=0 ) continue;
+              break;
+            }
+            if( j==nExpr ) break;
+            mCol = MASKBIT(j);
+            if( mCol & colUsed ) break; /* Each column used only once */
+            colUsed |= mCol;
+            if( aiMap ) aiMap[i] = j;
+          }
+  
+          assert( i==nExpr || colUsed!=(MASKBIT(nExpr)-1) );
+          if( colUsed==(MASKBIT(nExpr)-1) ){
+            /* If we reach this point, that means the index pIdx is usable */
+            int iAddr = sqlite3CodeOnce(pParse); VdbeCoverage(v);
+  #ifndef SQLITE_OMIT_EXPLAIN
+            sqlite3VdbeAddOp4(v, OP_Explain, 0, 0, 0,
+              sqlite3MPrintf(db, "USING INDEX %s FOR IN-OPERATOR",pIdx->zName),
+              P4_DYNAMIC);
+  #endif
+            sqlite3VdbeAddOp3(v, OP_OpenRead, iTab, pIdx->tnum, iDb);
+            sqlite3VdbeSetP4KeyInfo(pParse, pIdx);
+            VdbeComment((v, "%s", pIdx->zName));
+            assert( IN_INDEX_INDEX_DESC == IN_INDEX_INDEX_ASC+1 );
+            eType = IN_INDEX_INDEX_ASC + pIdx->aSortOrder[0];
+  
+            if( prRhsHasNull ){
+              *prRhsHasNull = ++pParse->nMem;
+  #ifdef SQLITE_ENABLE_COLUMN_USED_MASK
+              i64 mask = (1<<nExpr)-1;
+              sqlite3VdbeAddOp4Dup8(v, OP_ColumnsUsed, 
+                  iTab, 0, 0, (u8*)&mask, P4_INT64);
+  #endif
+              if( nExpr==1 ){
+                sqlite3SetHasNullFlag(v, iTab, *prRhsHasNull);
+              }
+            }
+            sqlite3VdbeJumpHere(v, iAddr);
+          }
+        } /* End loop over indexes */
+      } /* End if( affinity_ok ) */
+    } /* End if not an rowid index */
+  } /* End attempt to optimize using an index */
 
   /* If no preexisting index is available for the IN clause
   ** and IN_INDEX_NOOP is an allowed reply
