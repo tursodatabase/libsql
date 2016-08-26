@@ -1,5 +1,5 @@
-C Rename\sa\stest\sprocedure\sin\s'speed3.test'\sto\savoid\sa\sname\scollision.
-D 2016-08-26T04:32:59.825
+C Fix\sa\sproblem\sin\sinternal\sfunction\ssqlite3OpenTableAndIndices\scausing\san\soperand\sof\san\sunrelated\sVM\sinstruction\sto\sbe\soverwritten.\sFix\sfor\s[ef360601].
+D 2016-08-26T12:00:50.136
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5017381e4853b1472e01d5bb926be1268eba429c
@@ -346,7 +346,7 @@ F src/global.c c45ea22aff29334f6a9ec549235ac3357c970015
 F src/hash.c 55b5fb474100cee0b901edaf203e26c970940f36
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
-F src/insert.c a255eb795cf475e7a0659297144fc80f70eb4e30
+F src/insert.c 3edb5a1bda44df13531fedfcde5fbcc2fc04c222
 F src/legacy.c 75d3023be8f0d2b99d60f905090341a03358c58e
 F src/loadext.c dd7a2b77902cc66c22555aef02e1a682554b7aec
 F src/main.c 0bfcf1a5b612dddb4dd0fd04b53ef08ace0f48ff
@@ -625,7 +625,7 @@ F test/date.test 984ac1e3e5e031386866f034006148d3972b4a65
 F test/dbstatus.test 73149851b3aff14fc6db478e58f9083a66422cf5
 F test/dbstatus2.test e93ab03bfae6d62d4d935f20de928c19ca0ed0ab
 F test/default.test 0cb49b1c315a0d81c81d775e407f66906a2a604d
-F test/delete.test e1bcdf8926234e27aac24b346ad83d3329ec8b6f
+F test/delete.test acc38fca8ee4851467705b1c2cfea64cd26667e5
 F test/delete2.test 3a03f2cca1f9a67ec469915cb8babd6485db43fa
 F test/delete3.test 555e84a00a99230b7d049d477a324a631126a6ab
 F test/delete4.test 21d2113217eeaacac2d99defe14fe6611615ae86
@@ -1511,7 +1511,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e4aeaa2bc73b57f1ef134cc4f54e2a652a20b5c9
-R 66a24ec1ff987ca240e2459c8e68c102
-U mistachkin
-Z c2fe0f98a34be9a6c1038d1c5b4a377d
+P 84de17bc688f1df2be1a34420470d1b16f8f4e56
+R 02c9439418cd024199aa5b773e0f5efc
+U dan
+Z 9ffa92187a35e8ff63e92d723d120b65
