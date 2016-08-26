@@ -2220,8 +2220,9 @@ int sqlite3FindInIndex(
             for(j=0; j<nExpr; j++){
               if( pIdx->aiColumn[j]!=pRhs->iColumn ) continue;
               assert( pIdx->azColl[j] );
-              if( pReq==0 ) continue;
-              if( sqlite3StrICmp(pReq->zName, pIdx->azColl[j])!=0 ) continue;
+              if( pReq!=0 && sqlite3StrICmp(pReq->zName, pIdx->azColl[j])!=0 ){
+                continue;
+              }
               break;
             }
             if( j==nExpr ) break;
