@@ -2260,6 +2260,7 @@ int whereRangeVectorLen(
       break;
     }
 
+    testcase( pLhs->iColumn==XN_ROWID );
     aff = sqlite3CompareAffinity(pRhs, sqlite3ExprAffinity(pLhs));
     idxaff = sqlite3TableColumnAffinity(pIdx->pTable, pLhs->iColumn);
     if( aff!=idxaff ) break;

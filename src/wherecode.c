@@ -294,7 +294,7 @@ void sqlite3WhereAddScanStatus(
 */
 static void disableTerm(WhereLevel *pLevel, WhereTerm *pTerm){
   int nLoop = 0;
-  while( pTerm
+  while( ALWAYS(pTerm!=0)
       && (pTerm->wtFlags & TERM_CODED)==0
       && (pLevel->iLeftJoin==0 || ExprHasProperty(pTerm->pExpr, EP_FromJoin))
       && (pLevel->notReady & pTerm->prereqAll)==0
@@ -435,7 +435,7 @@ static int codeEqualityTerm(
       }
     }
     for(i=iEq;i<pLoop->nLTerm; i++){
-      if( pLoop->aLTerm[i] && pLoop->aLTerm[i]->pExpr==pX ) nEq++;
+      if( ALWAYS(pLoop->aLTerm[i]) && pLoop->aLTerm[i]->pExpr==pX ) nEq++;
     }
 
     if( nEq>1 ){
@@ -1518,8 +1518,12 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         sqlite3VdbeAddOp2(v, OP_IsNull, regBase+nEq, addrNxt);
         VdbeCoverage(v);
       }
-      updateRangeAffinityStr(pParse, pRight, nTop, zEndAff);
-      codeApplyAffinity(pParse, regBase+nEq, nTop, zEndAff);
+      if( zEndAff ){
+        updateRangeAffinityStr(pParse, pRight, nTop, zEndAff);
+        codeApplyAffinity(pParse, regBase+nEq, nTop, zEndAff);
+      }else{
+        assert( pParse->db->mallocFailed );
+      }
       nConstraint += nTop;
       testcase( pRangeEnd->wtFlags & TERM_VIRTUAL );
 
