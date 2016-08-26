@@ -499,9 +499,13 @@ static int fstreeFilter(
   char aWild[2] = { '\0', '\0' };
 
 #if SQLITE_OS_WIN
-  zRoot = sqlite3_mprintf("%s%c", getenv("SystemDrive"), '/');
+  const char *zDrive = windirent_getenv("fstreeDrive");
+  if( zDrive==0 ){
+    zDrive = windirent_getenv("SystemDrive");
+  }
+  zRoot = sqlite3_mprintf("%s%c", zDrive, '/');
   nRoot = sqlite3Strlen30(zRoot);
-  zPrefix = sqlite3_mprintf("%s", getenv("SystemDrive"));
+  zPrefix = sqlite3_mprintf("%s", zDrive);
   nPrefix = sqlite3Strlen30(zPrefix);
 #else
   zRoot = "/";

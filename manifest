@@ -1,5 +1,5 @@
-C Fix\stypos\sin\s'vtabF.test'\sfile.\s\sNo\schanges\sto\scode.
-D 2016-08-25T23:24:09.049
+C Support\srunning\sthe\sfstree\stests\sin\s'vtabH.test'\son\sWindows\swhen\snot\susing\sthe\ssystem\sdrive.
+D 2016-08-26T01:17:12.349
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5017381e4853b1472e01d5bb926be1268eba429c
@@ -412,7 +412,7 @@ F src/test_btree.c 8b2dc8b8848cf3a4db93f11578f075e82252a274
 F src/test_config.c 4d3d4a886416f369771d69a6dba926866deda788
 F src/test_demovfs.c a0c3bdd45ed044115c2c9f7779e56eafff18741e
 F src/test_devsym.c 4e58dec2602d8e139ca08659f62a62450587cb58
-F src/test_fs.c ac62ce7d5c0c23aa6932891cad5746945564c91c
+F src/test_fs.c e16cbe68d3b107e00a907c20a9a02629870eb69b
 F src/test_func.c a2b4993da973b0ea60dd5d51a7066238ede8c329
 F src/test_hexio.c 1d4469ca61ab202a1fcec6543f584d2407205e8d
 F src/test_init.c 4413c211a94b62157ca4c145b3f27c497f03c664
@@ -439,8 +439,8 @@ F src/test_tclvar.c df9fe1213c2634687a9ca0b0bec0d2119d359ae3
 F src/test_thread.c 911d15fb14e19c0c542bdc8aabf981c2f10a4858
 F src/test_vfs.c f0186261a24de2671d080bcd8050732f0cb64f6e
 F src/test_vfstrace.c bab9594adc976cbe696ff3970728830b4c5ed698
-F src/test_windirent.c 8f5fada630348558d5745b334702f301da1ffc61
-F src/test_windirent.h b12055cab6227f7be10f5c19296f67c60cc5e2a5
+F src/test_windirent.c 600398db0198ca1c77ca183831bf456746b6f5c4
+F src/test_windirent.h 7edc57e2faa727026dbd5d010dd0e2e665d5aa01
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 78c8085bc7af1922aa687f0f4bbd716821330de5
@@ -1347,7 +1347,7 @@ F test/vtabC.test 4528f459a13136f982e75614d120aef165f17292
 F test/vtabD.test 05b3f1d77117271671089e48719524b676842e96
 F test/vtabE.test d5024aa42754962f6bb0afd261681686488e7afe
 F test/vtabF.test 1918844c7c902f6a16c8dacf1ec8f84886d6e78b
-F test/vtabH.test 5f5157a1501d9889ec35c1a1832f69612dd31444
+F test/vtabH.test c7a029dc54ee0e1f21f78c7a6c93a706703bea6d
 F test/vtabI.test 751b07636700dbdea328e4265b6077ccd6811a3f
 F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
@@ -1511,7 +1511,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 37e6c54b1afc634844026b3fe874dd2d550c6558
-R 4cab9f7d7896757fe3fc8a8951123595
+P a8546feec9388d96934b16e516a165cd37d32ce9
+R 66d6b55dfecea97ee12f2bdebb86bb76
 U mistachkin
-Z 99aab80e5b18ffff2a9e94c7e8fbdfe4
+Z 5d798dae32bcc32e75e6cc95a57c626f
