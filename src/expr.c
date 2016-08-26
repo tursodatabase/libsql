@@ -18,6 +18,13 @@
 static void exprCodeBetween(Parse*,Expr*,int,void(*)(Parse*,Expr*,int,int),int);
 static int exprCodeVector(Parse *pParse, Expr *p, int *piToFree);
 
+/*
+** Return the affinity character for a single column of a table.
+*/
+char sqlite3TableColumnAffinity(Table *pTab, int iCol){
+  assert( iCol<pTab->nCol );
+  return iCol>=0 ? pTab->aCol[iCol].affinity : SQLITE_AFF_INTEGER;
+}
 
 /*
 ** Return the 'affinity' of the expression pExpr if any.
@@ -52,11 +59,7 @@ char sqlite3ExprAffinity(Expr *pExpr){
   }
 #endif
   if( op==TK_AGG_COLUMN || op==TK_COLUMN ){
-    int j = pExpr->iColumn;
-    assert( pExpr->pTab!=0 );
-    if( j<0 ) return SQLITE_AFF_INTEGER;
-    assert( pExpr->pTab && j<pExpr->pTab->nCol );
-    return pExpr->pTab->aCol[j].affinity;
+    return sqlite3TableColumnAffinity(pExpr->pTab, pExpr->iColumn);
   }
   return pExpr->affinity;
 }
@@ -2173,7 +2176,7 @@ int sqlite3FindInIndex(
       for(i=0; i<nExpr && affinity_ok; i++){
         Expr *pLhs = sqlite3VectorFieldSubexpr(pX->pLeft, i);
         int iCol = pEList->a[i].pExpr->iColumn;
-        char idxaff = pTab->aCol[iCol].affinity;  /* RHS table affinity */
+        char idxaff = sqlite3TableColumnAffinity(pTab,iCol); /* RHS table */
         char cmpaff = sqlite3CompareAffinity(pLhs, idxaff);
         testcase( cmpaff==SQLITE_AFF_BLOB );
         testcase( cmpaff==SQLITE_AFF_TEXT );
@@ -2208,7 +2211,6 @@ int sqlite3FindInIndex(
           CollSeq *pReq = sqlite3BinaryCompareCollSeq(pParse, pLhs, pRhs);
           int j;
 
-          assert( pReq || pParse->nErr );
           if( pReq==0 ) break;
 
           for(j=0; j<nExpr; j++){
