@@ -2099,11 +2099,11 @@ static int sqlite3InRhsIsConstant(Expr *pIn){
 */
 #ifndef SQLITE_OMIT_SUBQUERY
 int sqlite3FindInIndex(
-  Parse *pParse, 
-  Expr *pX, 
-  u32 inFlags, 
-  int *prRhsHasNull,
-  int *aiMap
+  Parse *pParse,             /* Parsing context */
+  Expr *pX,                  /* The right-hand side (RHS) of the IN operator */
+  u32 inFlags,               /* IN_INDEX_LOOP, _MEMBERSHIP, and/or _NOOP_OK */
+  int *prRhsHasNull,         /* Register holding NULL status.  See notes */
+  int *aiMap                 /* Mapping from Index fields to RHS fields */
 ){
   Select *p;                            /* SELECT to the right of IN operator */
   int eType = 0;                        /* Type of RHS table. IN_INDEX_* */
@@ -2200,9 +2200,13 @@ int sqlite3FindInIndex(
       ** to this collation sequence.  */
 
       for(pIdx=pTab->pIndex; pIdx && eType==0 && affinity_ok; pIdx=pIdx->pNext){
-        if( pIdx->nKeyCol<nExpr ) continue;
-        if( mustBeUnique && (pIdx->nKeyCol!=nExpr || !IsUniqueIndex(pIdx)) ){
-          continue;
+        if( pIdx->nColumn<nExpr ) continue;
+        if( mustBeUnique ){
+          if( pIdx->nKeyCol>nExpr
+           ||(pIdx->nColumn>nExpr && !IsUniqueIndex(pIdx))
+          ){
+            continue;
+          }
         }
 
         for(i=0; i<nExpr; i++){
@@ -2211,11 +2215,11 @@ int sqlite3FindInIndex(
           CollSeq *pReq = sqlite3BinaryCompareCollSeq(pParse, pLhs, pRhs);
           int j;
 
-          if( pReq==0 ) break;
-
+          assert( pReq!=0 || pRhs->iColumn==XN_ROWID || pParse->nErr );
           for(j=0; j<nExpr; j++){
             if( pIdx->aiColumn[j]!=pRhs->iColumn ) continue;
             assert( pIdx->azColl[j] );
+            if( pReq==0 ) continue;
             if( sqlite3StrICmp(pReq->zName, pIdx->azColl[j])!=0 ) continue;
             break;
           }
