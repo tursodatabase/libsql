@@ -152,16 +152,19 @@ if {$tcl_platform(platform)!="windows" || \
   # special files on some Windows platforms.
   #
   set res [list]
-  foreach p [lrange [list_root_files] 0 4] {
+  set root_files [list_root_files]
+  set num_root_files [llength $root_files]
+  set lim_root_files [expr {$num_root_files > 5 ? 5 : $num_root_files}]
+  foreach p [lrange $root_files 0 [expr {$lim_root_files - 1}]] {
     if {$::tcl_platform(platform) eq "windows"} {
       if {![regexp {\$} $p]} {lappend res $p}
     } else {
       lappend res "/$p"
     }
   }
-  do_execsql_test 3.1 {
-    SELECT path FROM fstree WHERE path NOT GLOB '*$*' LIMIT 5;
-  } $res
+  do_execsql_test 3.1 [subst {
+    SELECT path FROM fstree WHERE path NOT GLOB '*\$*' LIMIT $lim_root_files;
+  }] $res
 
   # Read all entries in the current directory.
   #
