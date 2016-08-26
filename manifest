@@ -1,5 +1,5 @@
-C Adapt\sthe\sspecial\scase\sof\s'$'\sin\sitem\snames\sfor\stest\s'vtabH-3.1'\sas\swell.
-D 2016-08-26T02:10:50.317
+C Rename\sa\stest\sprocedure\sin\s'speed3.test'\sto\savoid\sa\sname\scollision.
+D 2016-08-26T04:32:59.825
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5017381e4853b1472e01d5bb926be1268eba429c
@@ -1094,7 +1094,7 @@ F test/speed1.test f2974a91d79f58507ada01864c0e323093065452
 F test/speed1p.explain d841e650a04728b39e6740296b852dccdca9b2cb
 F test/speed1p.test b180e98609c7677382cf618c0ec9b69f789033a8
 F test/speed2.test 53177056baf6556dcbdcf032bbdfc41c1aa74ded
-F test/speed3.test d32043614c08c53eafdc80f33191d5bd9b920523
+F test/speed3.test 694affeb9100526007436334cf7d08f3d74b85ef
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
@@ -1511,7 +1511,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 328f79bb5713abbecaeb0ef3fb37f56a0946b915
-R dade750024fe6ad04559f56926a096ca
+P e4aeaa2bc73b57f1ef134cc4f54e2a652a20b5c9
+R 66a24ec1ff987ca240e2459c8e68c102
 U mistachkin
-Z 8b0930f7f9116d652fcf85daf416c55f
+Z c2fe0f98a34be9a6c1038d1c5b4a377d
