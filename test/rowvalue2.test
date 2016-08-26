@@ -247,5 +247,33 @@ foreach {tn idx} {
   }
 }
 
+do_execsql_test 5.0 {
+  CREATE TABLE r1(a TEXT, iB TEXT);
+  CREATE TABLE r2(x TEXT, zY INTEGER);
+  CREATE INDEX r1ab ON r1(a, iB);
+
+  INSERT INTO r1 VALUES(35, 35);
+  INSERT INTO r2 VALUES(35, 36);
+  INSERT INTO r2 VALUES(35, 4);
+  INSERT INTO r2 VALUES(35, 35);
+} {}
+
+foreach {tn lhs rhs} {
+  1 {x +zY} {a iB}
+  2 {x  zY} {a iB}
+  3 {x  zY} {a +iB}
+  4 {+x  zY} {a iB}
+  5 {x  zY} {+a iB}
+} {
+  foreach op { IS == < <= > >= } {
+    set e1 [make_expr1 $lhs $rhs $op]
+    set e2 [make_expr2 $lhs $rhs $op]
+    do_execsql_test 5.$tn.$op \
+      "SELECT * FROM r1, r2 WHERE $e2 ORDER BY iB" [db eval \
+      "SELECT * FROM r1, r2 WHERE $e1 ORDER BY iB"
+    ]
+  }
+}
+
 
 finish_test

@@ -1,5 +1,5 @@
-C Enhance\ssqlite3FindInIndex()\sso\sthat\sit\sis\sable\sto\smake\suse\sof\sthe\nprimary\skeys\sat\sthe\send\sof\san\sindex.
-D 2016-08-26T19:31:29.011
+C Add\stest\scases\sto\srowvalue2.test.
+D 2016-08-26T19:47:30.838
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5017381e4853b1472e01d5bb926be1268eba429c
@@ -1021,7 +1021,7 @@ F test/rowallock.test 3f88ec6819489d0b2341c7a7528ae17c053ab7cc
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
 F test/rowid.test 5b7509f384f4f6fae1af3c8c104c8ca299fea18d
 F test/rowvalue.test 7d8482dde9023973615eaaca65647f33d70c1f01
-F test/rowvalue2.test 875068299fd4dd50ef0a47786462c8e1f4065f9a
+F test/rowvalue2.test 060d238b7e5639a7c5630cb5e63e311b44efef2b
 F test/rowvalue3.test 01399b7bf150b0d41abce76c18072da777c2500c
 F test/rowvalue4.test 9b40c9be9bdde30fc66cddbfdf6a5af37de4ccac
 F test/rowvalue5.test a440d490c8c0bf606034c09d5c6bbf7840b98f95
@@ -1521,7 +1521,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 87d40195ae5cc2abd9bae45073a615db81263285
-R c0ed51d5af8253a23448fcfb693a50e8
-U drh
-Z 3b9104524847b85ed5a08921e98408a8
+P 4b589fbfcc4265902de0f552961d2df497a184da
+R 2639cfd9d35718211068678a56d30d2c
+U dan
+Z 1bf9a10eeccbff62da890e6c842f5df6
