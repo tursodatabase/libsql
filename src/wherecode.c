@@ -350,6 +350,32 @@ static void codeApplyAffinity(Parse *pParse, int base, int n, char *zAff){
   }
 }
 
+/*
+** Expression pRight, which is the RHS of a comparison operation, is 
+** either a vector of n elements or, if n==1, a scalar expression.
+** Before the comparison operation, affinity zAff is to be applied
+** to the pRight values. This function modifies characters within the
+** affinity string to SQLITE_AFF_BLOB if either:
+**
+**   * the comparison will be performed with no affinity, or
+**   * the affinity change in zAff is guaranteed not to change the value.
+*/
+static void updateRangeAffinityStr(
+  Parse *pParse,                  /* Parse context */
+  Expr *pRight,                   /* RHS of comparison */
+  int n,                          /* Number of vector elements in comparison */
+  char *zAff                      /* Affinity string to modify */
+){
+  int i;
+  for(i=0; i<n; i++){
+    Expr *p = sqlite3VectorFieldSubexpr(pRight, i);
+    if( sqlite3CompareAffinity(p, zAff[i])==SQLITE_AFF_BLOB
+     || sqlite3ExprNeedsNoAffinityChange(p, zAff[i])
+    ){
+      zAff[i] = SQLITE_AFF_BLOB;
+    }
+  }
+}
 
 /*
 ** Generate code for a single equality term of the WHERE clause.  An equality
@@ -1330,7 +1356,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     int nExtraReg = 0;           /* Number of extra registers needed */
     int op;                      /* Instruction opcode */
     char *zStartAff;             /* Affinity for start of range constraint */
-    char cEndAff = 0;            /* Affinity for end of range constraint */
+    char *zEndAff = 0;           /* Affinity for end of range constraint */
     u8 bSeekPastNull = 0;        /* True to seek past initial nulls */
     u8 bStopAtNull = 0;          /* Add condition to terminate at NULLs */
 
@@ -1417,7 +1443,9 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     codeCursorHint(pTabItem, pWInfo, pLevel, pRangeEnd);
     regBase = codeAllEqualityTerms(pParse,pLevel,bRev,nExtraReg,&zStartAff);
     assert( zStartAff==0 || sqlite3Strlen30(zStartAff)>=nEq );
-    if( zStartAff ) cEndAff = zStartAff[nEq];
+    if( zStartAff && nTop ){
+      zEndAff = sqlite3DbStrDup(db, &zStartAff[nEq]);
+    }
     addrNxt = pLevel->addrNxt;
 
     testcase( pRangeStart && (pRangeStart->eOperator & WO_LE)!=0 );
@@ -1441,15 +1469,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         VdbeCoverage(v);
       }
       if( zStartAff ){
-        if( sqlite3CompareAffinity(pRight, zStartAff[nEq])==SQLITE_AFF_BLOB){
-          /* Since the comparison is to be performed with no conversions
-          ** applied to the operands, set the affinity to apply to pRight to 
-          ** SQLITE_AFF_BLOB.  */
-          zStartAff[nEq] = SQLITE_AFF_BLOB;
-        }
-        if( sqlite3ExprNeedsNoAffinityChange(pRight, zStartAff[nEq]) ){
-          zStartAff[nEq] = SQLITE_AFF_BLOB;
-        }
+        updateRangeAffinityStr(pParse, pRight, nBtm, &zStartAff[nEq]);
       }  
       nConstraint += nBtm;
       testcase( pRangeStart->wtFlags & TERM_VIRTUAL );
@@ -1498,11 +1518,8 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         sqlite3VdbeAddOp2(v, OP_IsNull, regBase+nEq, addrNxt);
         VdbeCoverage(v);
       }
-      if( sqlite3CompareAffinity(pRight, cEndAff)!=SQLITE_AFF_BLOB
-       && !sqlite3ExprNeedsNoAffinityChange(pRight, cEndAff)
-      ){
-        codeApplyAffinity(pParse, regBase+nEq, 1, &cEndAff);
-      }
+      updateRangeAffinityStr(pParse, pRight, nTop, zEndAff);
+      codeApplyAffinity(pParse, regBase+nEq, nTop, zEndAff);
       nConstraint += nTop;
       testcase( pRangeEnd->wtFlags & TERM_VIRTUAL );
 
@@ -1517,6 +1534,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       nConstraint++;
     }
     sqlite3DbFree(db, zStartAff);
+    sqlite3DbFree(db, zEndAff);
 
     /* Top of the loop body */
     pLevel->p2 = sqlite3VdbeCurrentAddr(v);

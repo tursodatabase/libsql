@@ -1,5 +1,5 @@
-C Allow\sROWID\svalues\sin\sindexed\svector\scomparisons.
-D 2016-08-26T13:19:49.916
+C Fix\sa\sproblem\swith\saffinity\schanges\sand\svector\srange\scomparisons.
+D 2016-08-26T17:54:46.350
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5017381e4853b1472e01d5bb926be1268eba429c
@@ -467,7 +467,7 @@ F src/wal.h 6dd221ed384afdc204bc61e25c23ef7fd5a511f2
 F src/walker.c 2d2cc7fb0f320f7f415215d7247f3c584141ac09
 F src/where.c bad93f9bc5e62c38d2e0d2f572dd01d359c8d4cb
 F src/whereInt.h 14dd243e13b81cbb0a66063d38b70f93a7d6e613
-F src/wherecode.c 5a5528c39be09593cada6ae465d7a0f48db0077f
+F src/wherecode.c 71de4d2d36fa3afe6160e98334f1a717c226ee86
 F src/whereexpr.c 7f9ada866d48d15d09754ae819c1c40efe3b2aff
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1521,7 +1521,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 397617009e07004596476d6f5644fdf84c376f54
-R bebe23f740f385ed54a0790b48a77a67
-U drh
-Z b30339a1eb9e7f2b74488db2fab0ab4b
+P b0cc6be4eb81f21b11796e1f14d4412bf21dea6e
+R 0bd9bba299be3b1c19235baf0c5a546b
+U dan
+Z 7b1a4a5a11db26063e955544de8c89fc
