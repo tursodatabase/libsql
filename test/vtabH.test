@@ -157,7 +157,7 @@ if {$tcl_platform(platform)!="windows" || \
   set lim_root_files [expr {$num_root_files > 5 ? 5 : $num_root_files}]
   foreach p [lrange $root_files 0 [expr {$lim_root_files - 1}]] {
     if {$::tcl_platform(platform) eq "windows"} {
-      if {![regexp {\$} $p]} {lappend res $p}
+      if {[regexp {\$} $p]} {incr lim_root_files -1} else {lappend res $p}
     } else {
       lappend res "/$p"
     }
