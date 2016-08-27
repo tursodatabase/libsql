@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\sinternal\sfunction\ssqlite3OpenTableAndIndices\scausing\san\soperand\sof\san\sunrelated\sVM\sinstruction\sto\sbe\soverwritten.\sFix\sfor\s[ef360601].
-D 2016-08-26T12:00:50.136
+C Fix\sthe\sextra\scomments\s(added\swith\s-DSQLITE_ENABLE_EXPLAIN_COMMENTS)\sso\sthat\nthe\ssense\sof\s&lt;,\s&lt;=,\s&gt;,\sand\s&gt;=\stests\sis\scorrect\sand\sso\sthat\sthe\nSQLITE_STOREP2\sversion\sis\sshown\scorrectly.\s\sThese\schanges\sare\salready\sin\sthe\nrowvalue\sbranch\sbut\sare\sadded\shere\ssince\sthey\sare\stechnically\sunrelated\sto\nrowvalue.
+D 2016-08-27T14:05:12.248
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5017381e4853b1472e01d5bb926be1268eba429c
@@ -450,11 +450,11 @@ F src/update.c 8179e699dbd45b92934fd02d3d8e3732e8da8802
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c 810ec3f22e2d1b62e66c30fe3621ebdedd23584d
 F src/vacuum.c 913970b9d86dd6c2b8063ef1af421880f1464ec3
-F src/vdbe.c 15376952b0c5dc0afbac6cd8791579dd19ff0a01
+F src/vdbe.c 751dd0a177615388f95123d723ce82395b938ce9
 F src/vdbe.h 67bc551f7faf04c33493892e4b378aada823ed10
 F src/vdbeInt.h c59381049af5c7751a83456c39b80d1a6fde1f9d
 F src/vdbeapi.c a32d61b7dd05e6890d8fd44d2805f55e2f5ba9f3
-F src/vdbeaux.c a32d79aeaa88dc2b97c261172d952d395254a055
+F src/vdbeaux.c 83458783d241cfd6691141c8a105832ee50258e5
 F src/vdbeblob.c 3e82a797b60c3b9fed7b8de8c539ca7607874937
 F src/vdbemem.c 1ecaa5ee0caff07255f25d04e8dc88befb6f88d1
 F src/vdbesort.c 91fda3909326860382b0ca8aa251e609c6a9d62c
@@ -1511,7 +1511,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 84de17bc688f1df2be1a34420470d1b16f8f4e56
-R 02c9439418cd024199aa5b773e0f5efc
-U dan
-Z 9ffa92187a35e8ff63e92d723d120b65
+P 7090147903337864d54ecfb2cd84a3f823973167
+R ad53b888d897b0241520026ffdb78d22
+U drh
+Z c3f9980f15e4ee005b5e39955b2d9131
