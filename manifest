@@ -1,5 +1,5 @@
-C Fix\sthe\s"Synopsis"\son\sthe\sOP_Lt,\sOP_Le,\sOP_Gt,\sand\sOP_Ge\sopcodes,\swhich\nhas\sbeen\sbackwards\sfor\stime\sout\sof\smind.
-D 2016-08-27T01:41:53.133
+C Merge\supdates\sfrom\strunk.
+D 2016-08-27T14:13:58.459
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5017381e4853b1472e01d5bb926be1268eba429c
@@ -347,7 +347,7 @@ F src/hash.c 55b5fb474100cee0b901edaf203e26c970940f36
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c a255eb795cf475e7a0659297144fc80f70eb4e30
+F src/insert.c 3edb5a1bda44df13531fedfcde5fbcc2fc04c222
 F src/legacy.c 75d3023be8f0d2b99d60f905090341a03358c58e
 F src/loadext.c dd7a2b77902cc66c22555aef02e1a682554b7aec
 F src/main.c 0bfcf1a5b612dddb4dd0fd04b53ef08ace0f48ff
@@ -413,7 +413,7 @@ F src/test_btree.c 8b2dc8b8848cf3a4db93f11578f075e82252a274
 F src/test_config.c 4d3d4a886416f369771d69a6dba926866deda788
 F src/test_demovfs.c a0c3bdd45ed044115c2c9f7779e56eafff18741e
 F src/test_devsym.c 4e58dec2602d8e139ca08659f62a62450587cb58
-F src/test_fs.c ac62ce7d5c0c23aa6932891cad5746945564c91c
+F src/test_fs.c e16cbe68d3b107e00a907c20a9a02629870eb69b
 F src/test_func.c a2b4993da973b0ea60dd5d51a7066238ede8c329
 F src/test_hexio.c 1d4469ca61ab202a1fcec6543f584d2407205e8d
 F src/test_init.c 4413c211a94b62157ca4c145b3f27c497f03c664
@@ -440,8 +440,8 @@ F src/test_tclvar.c df9fe1213c2634687a9ca0b0bec0d2119d359ae3
 F src/test_thread.c 911d15fb14e19c0c542bdc8aabf981c2f10a4858
 F src/test_vfs.c f0186261a24de2671d080bcd8050732f0cb64f6e
 F src/test_vfstrace.c bab9594adc976cbe696ff3970728830b4c5ed698
-F src/test_windirent.c 8f5fada630348558d5745b334702f301da1ffc61
-F src/test_windirent.h b12055cab6227f7be10f5c19296f67c60cc5e2a5
+F src/test_windirent.c 600398db0198ca1c77ca183831bf456746b6f5c4
+F src/test_windirent.h 7edc57e2faa727026dbd5d010dd0e2e665d5aa01
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 78c8085bc7af1922aa687f0f4bbd716821330de5
@@ -626,7 +626,7 @@ F test/date.test 984ac1e3e5e031386866f034006148d3972b4a65
 F test/dbstatus.test 73149851b3aff14fc6db478e58f9083a66422cf5
 F test/dbstatus2.test e93ab03bfae6d62d4d935f20de928c19ca0ed0ab
 F test/default.test 0cb49b1c315a0d81c81d775e407f66906a2a604d
-F test/delete.test e1bcdf8926234e27aac24b346ad83d3329ec8b6f
+F test/delete.test acc38fca8ee4851467705b1c2cfea64cd26667e5
 F test/delete2.test 3a03f2cca1f9a67ec469915cb8babd6485db43fa
 F test/delete3.test 555e84a00a99230b7d049d477a324a631126a6ab
 F test/delete4.test 21d2113217eeaacac2d99defe14fe6611615ae86
@@ -1104,7 +1104,7 @@ F test/speed1.test f2974a91d79f58507ada01864c0e323093065452
 F test/speed1p.explain d841e650a04728b39e6740296b852dccdca9b2cb
 F test/speed1p.test b180e98609c7677382cf618c0ec9b69f789033a8
 F test/speed2.test 53177056baf6556dcbdcf032bbdfc41c1aa74ded
-F test/speed3.test d32043614c08c53eafdc80f33191d5bd9b920523
+F test/speed3.test 694affeb9100526007436334cf7d08f3d74b85ef
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
@@ -1356,8 +1356,8 @@ F test/vtabB.test 04df5dc531b9f44d9ca65b9c1b79f12b5922a796
 F test/vtabC.test 4528f459a13136f982e75614d120aef165f17292
 F test/vtabD.test 05b3f1d77117271671089e48719524b676842e96
 F test/vtabE.test d5024aa42754962f6bb0afd261681686488e7afe
-F test/vtabF.test fd5ad376f5a34fe0891df1f3cddb4fe7c3eb077e
-F test/vtabH.test 5f5157a1501d9889ec35c1a1832f69612dd31444
+F test/vtabF.test 1918844c7c902f6a16c8dacf1ec8f84886d6e78b
+F test/vtabH.test 97f61b0253260831af6232163f7852e2653baed6
 F test/vtabI.test 751b07636700dbdea328e4265b6077ccd6811a3f
 F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
@@ -1521,7 +1521,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 829f802be7d4647dd815b739bbc9e1d1ac6a224d
-R 90bb9a2e80849dad7e38b09045c0c98d
+P f51248dcfa22e989dacde41021e96a65f12c5ca8 4d43c4698eef4e3db7556813f0274b4018c7c2b9
+R 00d98e75a44793aa199bbed06e05b243
 U drh
-Z ce5881477602b96772cc87ff99cdf3de
+Z 05fa8b41bb716a6f3fffdda76bb03c28

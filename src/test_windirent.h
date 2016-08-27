@@ -93,6 +93,13 @@ struct DIR {
 };
 
 /*
+** Provide the function prototype for the POSIX compatiable getenv()
+** function.  This function is not thread-safe.
+*/
+
+extern const char *windirent_getenv(const char *name);
+
+/*
 ** Finally, we can provide the function prototypes for the opendir(),
 ** readdir(), readdir_r(), and closedir() POSIX functions.
 */
