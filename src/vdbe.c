@@ -1881,7 +1881,7 @@ case OP_Cast: {                  /* in1 */
 #endif /* SQLITE_OMIT_CAST */
 
 /* Opcode: Eq P1 P2 P3 P4 P5
-** Synopsis: IF r[P1]==r[P3]
+** Synopsis: IF r[P3]==r[P1]
 **
 ** Compare the values in register P1 and P3.  If reg(P3)==reg(P1) then
 ** jump to address P2.  Or if the SQLITE_STOREP2 flag is set in P5, then
@@ -1915,7 +1915,7 @@ case OP_Cast: {                  /* in1 */
 ** content of r[P2] is only set to 1 (true) if it was not previously NULL.
 */
 /* Opcode: Ne P1 P2 P3 P4 P5
-** Synopsis: IF r[P1]!=r[P3]
+** Synopsis: IF r[P3]!=r[P1]
 **
 ** This works just like the Eq opcode except that the jump is taken if
 ** the operands in registers P1 and P3 are not equal.  See the Eq opcode for
@@ -1925,7 +1925,7 @@ case OP_Cast: {                  /* in1 */
 ** content of r[P2] is only set to 0 (false) if it was not previously NULL.
 */
 /* Opcode: Lt P1 P2 P3 P4 P5
-** Synopsis: IF r[P1]<r[P3]
+** Synopsis: IF r[P3]<r[P1]
 **
 ** Compare the values in register P1 and P3.  If reg(P3)<reg(P1) then
 ** jump to address P2.  Or if the SQLITE_STOREP2 flag is set in P5 store
@@ -1954,21 +1954,21 @@ case OP_Cast: {                  /* in1 */
 ** strings and strings are considered less than blobs.
 */
 /* Opcode: Le P1 P2 P3 P4 P5
-** Synopsis: IF r[P1]<=r[P3]
+** Synopsis: IF r[P3]<=r[P1]
 **
 ** This works just like the Lt opcode except that the jump is taken if
 ** the content of register P3 is less than or equal to the content of
 ** register P1.  See the Lt opcode for additional information.
 */
 /* Opcode: Gt P1 P2 P3 P4 P5
-** Synopsis: IF r[P1]>r[P3]
+** Synopsis: IF r[P3]>r[P1]
 **
 ** This works just like the Lt opcode except that the jump is taken if
 ** the content of register P3 is greater than the content of
 ** register P1.  See the Lt opcode for additional information.
 */
 /* Opcode: Ge P1 P2 P3 P4 P5
-** Synopsis: IF r[P1]>=r[P3]
+** Synopsis: IF r[P3]>=r[P1]
 **
 ** This works just like the Lt opcode except that the jump is taken if
 ** the content of register P3 is greater than or equal to the content of
