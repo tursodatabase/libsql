@@ -140,6 +140,15 @@ foreach {tn init mod} {
     );
   }
 
+  4 {
+    CREATE TABLE x1(a, b, c, PRIMARY KEY(a, b, c));
+    INSERT INTO x1 VALUES('u', 'v', NULL);
+    INSERT INTO x1 VALUES('x', 'y', 'z');
+    INSERT INTO x1 VALUES('a', NULL, 'b');
+  } {
+    INSERT INTO x1 VALUES('a', 'b', 'c');
+  }
+
 } {
   catch { db close }
 
@@ -279,6 +288,7 @@ tablE t1 USING FTs5(c);
     db2 close
   }
 }
+
 
 finish_test
 
