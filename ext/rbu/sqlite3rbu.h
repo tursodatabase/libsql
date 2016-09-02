@@ -104,7 +104,7 @@
 ** may also be named data<integer>_<target>, where <integer> is any sequence
 ** of zero or more numeric characters (0-9). This can be significant because
 ** tables within the RBU database are always processed in order sorted by 
-** name. By judicious selection of the the <integer> portion of the names
+** name. By judicious selection of the <integer> portion of the names
 ** of the RBU tables the user can therefore control the order in which they
 ** are processed. This can be useful, for example, to ensure that "external
 ** content" FTS4 tables are updated before their underlying content tables.

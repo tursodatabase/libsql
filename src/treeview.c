@@ -120,7 +120,7 @@ void sqlite3TreeViewWith(TreeView *pView, const With *pWith, u8 moreToFollow){
 
 
 /*
-** Generate a human-readable description of a the Select object.
+** Generate a human-readable description of a Select object.
 */
 void sqlite3TreeViewSelect(TreeView *pView, const Select *p, u8 moreToFollow){
   int n = 0;
