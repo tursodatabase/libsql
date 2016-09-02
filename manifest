@@ -1,5 +1,5 @@
-C Correctly\sdetect\san\sOOM\soccurring\sin\sthe\ssetDestPgsz()\ssubroutine\sof\nbackup.
-D 2016-09-02T21:17:51.499
+C Add\sa\stest\scase\sfor\sthe\sOOM\shandled\sby\sthe\sprevious\scommit.
+D 2016-09-02T21:34:17.199
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5017381e4853b1472e01d5bb926be1268eba429c
@@ -524,7 +524,7 @@ F test/backup2.test 34986ef926ea522911a51dfdb2f8e99b7b75ebcf
 F test/backup4.test 8f6fd48e0dfde77b9a3bb26dc471ede3e101df32
 F test/backup5.test ee5da6d7fe5082f5b9b0bbfa31d016f52412a2e4
 F test/backup_ioerr.test 4c3c7147cee85b024ecf6e150e090c32fdbb5135
-F test/backup_malloc.test 7162d604ec2b4683c4b3799a48657fb8b5e2d450
+F test/backup_malloc.test 833d1b90561a6dbab00079b9591bd4fc90b7c2e1
 F test/badutf.test d5360fc31f643d37a973ab0d8b4fb85799c3169f
 F test/badutf2.test f5bc7f2d280670ecd79b9cf4f0f1760c607fe51f
 F test/bc_common.tcl b5e42d80305be95697e6370e015af571e5333a1c
@@ -1511,7 +1511,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7908fc604991d81140c182b97981fd724ad126ae
-R 927ab162f03d57784d15e59a76583f84
-U drh
-Z 3a29e1d29c21b4d8169c8797b79e666a
+P d9d8a048d4b621435870b4f8dd13b2938ac2f8fd
+R b03bceee349e62c9e4b232e967e75375
+U dan
+Z 94198719997091b0b262fcfd62b5468a
