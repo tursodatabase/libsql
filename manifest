@@ -1,5 +1,5 @@
-C Have\s"sqldiff\s--rbu"\signore\srows\swith\sNULL\svalues\sin\sprimary\skey\sfields.\sRBU\scan't\shandle\ssuch\srows\sand\sthe\sdocumentation\salready\ssays\ssqldiff\signores\sthem.\sBecause\sthe\scode\snow\suses\s"="\sinstead\sof\s"IS"\sto\sfilter\son\sprimary\skey\scolumns,\sdiffs\son\svirtual\stables\sare\sfaster\snow\stoo.
-D 2016-09-01T14:03:28.041
+C Within\sa\sbackup\soperation,\sensure\sthat\sa\sread-transaction\sis\sopened\son\sthe\ssource\sdatabase\sbefore\sits\spage\ssize\sis\sread.\sThis\sensures\sthe\spage-size\sused\sto\swrite\sto\sthe\sbackup\sdatabase\sis\sthe\ssame\sas\sits\sactual\spage-size,\swhich\sis\simportant\sfor\sZipVFS\sdatabases.
+D 2016-09-02T17:18:20.100
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5017381e4853b1472e01d5bb926be1268eba429c
@@ -325,7 +325,7 @@ F src/alter.c 299117695b1f21ac62dfc5b608588810ba22ed0d
 F src/analyze.c 8b62b2cf4da85451534ac0af82cafc418d837f68
 F src/attach.c 4711ff365df4072b8c3dcd55db5d12dcf8ffa0c6
 F src/auth.c 930b376a9c56998557367e6f7f8aaeac82a2a792
-F src/backup.c 17cd25a36d49330df2bacd2cadf2a61f3b525976
+F src/backup.c 7d986927896b70c29a313b9954ab36576aff113d
 F src/bitvec.c 3ee4c8b2c94ed3a7377256e18199e6ff5cf33f63
 F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
 F src/btree.c 2551bd3ecb8b8988fb8b23aabadfb214dbc38e46
@@ -1511,7 +1511,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 38d31e189e7c7899e14455f2c083aa676ce4d4c0
-R ca589e025240033a5748a5eba7e4950c
+P f4ba894a86aa195bcbe2fa69e91cd870ec3fb577
+R 6268e0964e35cc05a56dd4669fe54aba
 U dan
-Z 28ca6847fc75deee037b1b39928043e8
+Z 246b0cb12b0fcdaba66d59db5334a074
