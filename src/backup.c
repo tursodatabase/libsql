@@ -398,7 +398,9 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage){
     ** is especially important on ZipVFS systems, as in that case it is
     ** not possible to create a database file that uses one page size by
     ** writing to it with another.  */
-    if( p->bDestLocked==0 ) setDestPgsz(p);
+    if( p->bDestLocked==0 && rc==SQLITE_OK && setDestPgsz(p)==SQLITE_NOMEM ){
+      rc = SQLITE_NOMEM;
+    }
 
     /* Lock the destination database, if it is not locked already. */
     if( SQLITE_OK==rc && p->bDestLocked==0
