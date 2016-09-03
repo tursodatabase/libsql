@@ -1,5 +1,5 @@
-C Merge\srecent\schanges\sfrom\strunk.
-D 2016-09-02T23:56:32.342
+C Performance\soptimizations.
+D 2016-09-03T01:46:15.276
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5017381e4853b1472e01d5bb926be1268eba429c
@@ -338,7 +338,7 @@ F src/ctime.c e77f3dc297b4b65c96da78b4ae4272fdfae863d7
 F src/date.c 95c9a8d00767e7221a8e9a31f4e913fc8029bf6b
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
 F src/delete.c 76c084f0265f4a3cd1ecf17eee112a94f1ccbc05
-F src/expr.c 6ac2955b85fb32934b5505904da3d4be39d5d877
+F src/expr.c 7e0470e2b82af8d6544132d81da18990d9b9c09d
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c e2be0968c1adc679c87e467aa5b4f167588f38a8
 F src/func.c 29cc9acb170ec1387b9f63eb52cd85f8de96c771
@@ -385,7 +385,7 @@ F src/printf.c a5f0ca08ddede803c241266abb46356ec748ded1
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c d67b9a5cc33339256e2088c5a722745fc2ff5219
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c cf90abce32567023c940ecabf5707c4714c61c92
+F src/select.c 38216d0b2d42a0f475abf86a84c3499e6421ba29
 F src/shell.c 79dda477be6c96eba6e952a934957ad36f87acc7
 F src/sqlite.h.in 4a030e254e204570444b34bf7d40fb4a5416089e
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -451,7 +451,7 @@ F src/update.c 8179e699dbd45b92934fd02d3d8e3732e8da8802
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c 810ec3f22e2d1b62e66c30fe3621ebdedd23584d
 F src/vacuum.c 913970b9d86dd6c2b8063ef1af421880f1464ec3
-F src/vdbe.c 4be39068ea1412a21a2566c71007c87b67928d67
+F src/vdbe.c d8fb59a3ef10636df2447f55c1e82be7b8ad1604
 F src/vdbe.h 67bc551f7faf04c33493892e4b378aada823ed10
 F src/vdbeInt.h c59381049af5c7751a83456c39b80d1a6fde1f9d
 F src/vdbeapi.c a32d61b7dd05e6890d8fd44d2805f55e2f5ba9f3
@@ -1521,7 +1521,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 082fd5f8ac227dbb983da0a772485268af40a484 9bdf7ca1b317fe0ba7efea38fb395bf6130ac89a
-R 5ef4ae610db43c409abf4a916ff574b9
+P c7271fbde1aebb15daaedb7f1fa75fe410fd46f6
+R 617c8c8681735b3b6f061557d07c266d
 U drh
-Z 8a1867c9ed1b748f87443a20db67a6e2
+Z dbe31dcf0712b654c7c10b1471579b28
