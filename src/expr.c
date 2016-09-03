@@ -61,6 +61,12 @@ char sqlite3ExprAffinity(Expr *pExpr){
   if( op==TK_AGG_COLUMN || op==TK_COLUMN ){
     return sqlite3TableColumnAffinity(pExpr->pTab, pExpr->iColumn);
   }
+  if( op==TK_SELECT_COLUMN ){
+    assert( pExpr->pLeft->flags&EP_xIsSelect );
+    return sqlite3ExprAffinity(
+        pExpr->pLeft->x.pSelect->pEList->a[pExpr->iColumn].pExpr
+    );
+  }
   return pExpr->affinity;
 }
 

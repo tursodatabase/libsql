@@ -85,33 +85,31 @@ do_execsql_test 1.5.3 {
 do_execsql_test 1.6.1 {
   SELECT a1.rowid FROM a1 WHERE (a, b) IN (SELECT x, y FROM a2)
 } {15 92}
-
 do_execsql_test 1.6.2 {
   SELECT a1.rowid FROM a1, a2 WHERE EXISTS (
     SELECT 1 FROM a1 WHERE a=x AND b=y
   )
 } {3 14 15 92 3 14 15 92}
 
+# Test that [199df416] is fixed.
+#
 do_execsql_test 2.1 {
   CREATE TABLE b1(a TEXT);
   CREATE TABLE b2(x BLOB);
-
   INSERT INTO b1 VALUES(1);
   INSERT INTO b2 VALUES(1);
 }
-
 do_execsql_test 2.2 { SELECT * FROM b1, b2 WHERE a=x; } {}
 do_execsql_test 2.3 { SELECT * FROM b1 WHERE a IN (SELECT x FROM b2) } {}
-
-do_execsql_test 2.4 {
-  CREATE UNIQUE INDEX b1a ON b1(a);
-}
+do_execsql_test 2.4 { CREATE UNIQUE INDEX b1a ON b1(a); }
 do_execsql_test 2.5 { SELECT * FROM b1 WHERE a IN (SELECT x FROM b2) } {}
 
+# Test that a multi-column version of the query that revealed problem 
+# [199df416] also works.
+#
 do_execsql_test 3.1 {
   CREATE TABLE c1(a INTEGER, b TEXT);
   INSERT INTO c1 VALUES(1, 1);
-
   CREATE TABLE c2(x BLOB, y BLOB);
   INSERT INTO c2 VALUES(1, 1);
 }
@@ -122,23 +120,91 @@ do_execsql_test 3.3 {
   CREATE UNIQUE INDEX c1ab ON c1(a, b);
   SELECT * FROM c1 WHERE (a, b) IN (SELECT x, y FROM c2)
 } {}
+do_execsql_test 3.4 {
+  SELECT * FROM c1 WHERE (a, +b) IN (SELECT x, y FROM c2)
+} {}
 
+do_execsql_test 3.5 {
+  SELECT c1.rowid FROM c1 WHERE b = (SELECT y FROM c2);
+} {}
+do_execsql_test 3.6 {
+  SELECT c1.rowid FROM c1 WHERE (a, b) = (SELECT x, y FROM c2);
+} {}
+
+
+#-------------------------------------------------------------------------
+#
 do_execsql_test 4.0 {
-  CREATE TABLE d1(a TEXT);
-  CREATE TABLE d2(x BLOB);
-  INSERT INTO d1 VALUES(1);
-  INSERT INTO d2 VALUES(1);
-}
-do_execsql_test 4.1 { 
-  SELECT * FROM d1 WHERE a IN (SELECT x FROM b2) 
-} {}
-do_execsql_test 4.2 { 
-  CREATE UNIQUE INDEX d1a ON d1(a);
-}
-do_execsql_test 4.3 { 
-  SELECT * FROM d1 WHERE a IN (SELECT x FROM d2) 
-} {}
+  CREATE TABLE d1(a TEXT, b INTEGER, c NUMERIC);
+  CREATE TABLE d2(x BLOB, y BLOB);
 
+  INSERT INTO d1 VALUES(1, 1, 1);
+  INSERT INTO d1 VALUES(2, 2, 2);
+  INSERT INTO d1 VALUES(3, 3, 3);
+  INSERT INTO d1 VALUES(4, 4, 4);
+
+  INSERT INTO d2 VALUES (1, 1);
+  INSERT INTO d2 VALUES (2, '2');
+  INSERT INTO d2 VALUES ('3', 3);
+  INSERT INTO d2 VALUES ('4', '4');
+}
+
+foreach {tn idx} {
+  1 {}
+  2 { CREATE INDEX idx ON d1(a) }
+  3 { CREATE INDEX idx ON d1(a, c) }
+  4 { CREATE INDEX idx ON d1(c) }
+  5 { CREATE INDEX idx ON d1(c, a) }
+
+  6 { 
+    CREATE INDEX idx ON d1(c, a) ;
+    CREATE INDEX idx1 ON d2(x, y);
+  }
+
+  7 { 
+    CREATE INDEX idx ON d1(c, a) ;
+    CREATE UNIQUE INDEX idx2 ON d2(x, y) ;
+  }
+
+  8 { 
+    CREATE INDEX idx ON d1(c) ;
+    CREATE UNIQUE INDEX idx2 ON d2(x);
+  }
+
+} {
+  execsql { DROP INDEX IF EXISTS idx } 
+  execsql { DROP INDEX IF EXISTS idx2 } 
+  execsql { DROP INDEX IF EXISTS idx3 } 
+  execsql $idx
+
+  do_execsql_test 4.$tn.1 {
+    SELECT rowid FROM d1 WHERE (a, c) IN (SELECT x, y FROM d2);
+  } {3 4}
+
+  do_execsql_test 4.$tn.2 {
+    SELECT rowid FROM d1 WHERE (c, a) IN (SELECT x, y FROM d2);
+  } {2 4}
+
+  do_execsql_test 4.$tn.3 {
+    SELECT rowid FROM d1 WHERE (+c, a) IN (SELECT x, y FROM d2);
+  } {2}
+
+  do_execsql_test 4.$tn.4 {
+    SELECT rowid FROM d1 WHERE (c, a) = (
+      SELECT x, y FROM d2 WHERE d2.rowid=d1.rowid
+    );
+  } {2 4}
+
+  do_execsql_test 4.$tn.5 {
+    SELECT d1.rowid FROM d1, d2 WHERE a = y;
+  } {2 4}
+
+  do_execsql_test 4.$tn.6 {
+    SELECT d1.rowid FROM d1 WHERE a = (
+      SELECT y FROM d2 where d2.rowid=d1.rowid
+    );
+  } {2 4}
+}
 
 finish_test
 
