@@ -649,13 +649,21 @@ static int codeAllEqualityTerms(
     }
     testcase( pTerm->eOperator & WO_ISNULL );
     testcase( pTerm->eOperator & WO_IN );
-    if( (pTerm->eOperator & (WO_ISNULL|WO_IN))==0 ){
-      Expr *pRight = pTerm->pExpr->pRight;
-      if( (pTerm->wtFlags & TERM_IS)==0 && sqlite3ExprCanBeNull(pRight) ){
-        sqlite3VdbeAddOp2(v, OP_IsNull, regBase+j, pLevel->addrBrk);
-        VdbeCoverage(v);
+    if( (pTerm->eOperator & WO_ISNULL)==0 ){
+      Expr *pRight = 0;
+      if( pTerm->eOperator & WO_IN ){
+        if( pTerm->pExpr->flags & EP_xIsSelect ){
+          int iField = pTerm->iField ? pTerm->iField-1 : 0;
+          pRight = pTerm->pExpr->x.pSelect->pEList->a[iField].pExpr;
+        }
+      }else{
+        pRight = pTerm->pExpr->pRight;
+        if( (pTerm->wtFlags & TERM_IS)==0 && sqlite3ExprCanBeNull(pRight) ){
+          sqlite3VdbeAddOp2(v, OP_IsNull, regBase+j, pLevel->addrBrk);
+          VdbeCoverage(v);
+        }
       }
-      if( zAff ){
+      if( pRight && zAff ){
         if( sqlite3CompareAffinity(pRight, zAff[j])==SQLITE_AFF_BLOB ){
           zAff[j] = SQLITE_AFF_BLOB;
         }
