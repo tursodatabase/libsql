@@ -1,5 +1,5 @@
-C Consider\sthe\saffinity\sof\s"b"\swhen\susing\san\s"a\sIN\s(SELECT\sb\s...)"\sexpression\swith\san\sindex\son\s"a".\sFix\sfor\s[199df416].
-D 2016-09-03T15:31:20.197
+C Merge\sthe\sfuzzershell\senhancement\sfrom\strunk.
+D 2016-09-03T16:24:43.721
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5017381e4853b1472e01d5bb926be1268eba429c
@@ -1445,7 +1445,7 @@ F tool/dbhash.c a06228aa21ebc4e6ea8daa486601d938499238a5
 F tool/extract.c 054069d81b095fbdc189a6f5d4466e40380505e2
 F tool/fast_vacuum.c 5ba0d6f5963a0a63bdc42840f678bad75b2ebce1
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
-F tool/fuzzershell.c 94019b185caceffc9f7c7b678a6489e42bc2aefa
+F tool/fuzzershell.c f294ca67a10e87db76af130d75b2c94be36359c6
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
@@ -1522,7 +1522,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f1d06c49ba0d814dc7ffb538aac3f4e6251fd8f0
-R 7e510355146cbd1276c808b956f1d4a6
-U dan
-Z 2c951e6f5da67796ee0d56ffce2dd993
+P f5e49855412e389a8a410db5d7ffb2e3634c5fa3 672c21bcf09c5bfb67e061456a56be45409c4f34
+R 66aa92e29e4f871901eff534f575b0fe
+U drh
+Z af3091527994ed297383eb80433196df
