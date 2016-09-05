@@ -277,6 +277,7 @@ SQLITE3EXEPDB = /pdb:sqlite3sh.pdb
 !ENDIF
 !ENDIF
 
+# <<mark>>
 # These are the names of the customized Tcl header files used by various parts
 # of this makefile when the stdcall calling convention is in use.  It is not
 # used for any other purpose.
@@ -299,6 +300,7 @@ SQLITE_TCL_DEP = $(SQLITETCLDECLSH) $(SQLITETCLH)
 SQLITE_TCL_DEP =
 !ENDIF
 !ENDIF
+# <</mark>>
 
 # These are the "standard" SQLite compilation options used when compiling for
 # the Windows platform.
