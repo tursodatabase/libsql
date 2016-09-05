@@ -308,6 +308,6 @@ do_catchsql_test 8.2 {
   SELECT * FROM c2 CROSS JOIN c3 WHERE 
     ( (a, b) == (SELECT x, y FROM c1) AND c3.d = c ) OR
     ( c == (SELECT x, y FROM c1) AND c3.d = c )
-} {1 {sub-select returns 2 columns - expected 1}}
+} {1 {row value misused}}
 
 finish_test

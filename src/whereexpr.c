@@ -952,10 +952,6 @@ static void exprAnalyze(
     Expr *pRight = sqlite3ExprSkipCollate(pExpr->pRight);
     u16 opMask = (pTerm->prereqRight & prereqLeft)==0 ? WO_ALL : WO_EQUIV;
 
-    if( pRight && sqlite3ExprCheckComparison(pParse, pLeft, pRight) ){
-      return;
-    }
-
     if( pTerm->iField>0 ){
       assert( op==TK_IN );
       assert( pLeft->op==TK_VECTOR );
@@ -1192,22 +1188,21 @@ static void exprAnalyze(
     || (pExpr->pRight->flags & EP_xIsSelect)==0
   )){
     int nLeft = sqlite3ExprVectorSize(pExpr->pLeft);
-    if( nLeft==sqlite3ExprVectorSize(pExpr->pRight) ){
-      int i;
-      for(i=0; i<sqlite3ExprVectorSize(pExpr->pLeft); i++){
-        int idxNew;
-        Expr *pNew;
-        Expr *pLeft = sqlite3ExprForVectorField(pParse, pExpr->pLeft, i);
-        Expr *pRight = sqlite3ExprForVectorField(pParse, pExpr->pRight, i);
+    int i;
+    assert( nLeft==sqlite3ExprVectorSize(pExpr->pRight) );
+    for(i=0; i<nLeft; i++){
+      int idxNew;
+      Expr *pNew;
+      Expr *pLeft = sqlite3ExprForVectorField(pParse, pExpr->pLeft, i);
+      Expr *pRight = sqlite3ExprForVectorField(pParse, pExpr->pRight, i);
 
-        pNew = sqlite3PExpr(pParse, pExpr->op, pLeft, pRight, 0);
-        idxNew = whereClauseInsert(pWC, pNew, TERM_DYNAMIC);
-        exprAnalyze(pSrc, pWC, idxNew);
-      }
-      pTerm = &pWC->a[idxTerm];
-      pTerm->wtFlags = TERM_CODED|TERM_VIRTUAL;  /* Disable the original */
-      pTerm->eOperator = 0;
+      pNew = sqlite3PExpr(pParse, pExpr->op, pLeft, pRight, 0);
+      idxNew = whereClauseInsert(pWC, pNew, TERM_DYNAMIC);
+      exprAnalyze(pSrc, pWC, idxNew);
     }
+    pTerm = &pWC->a[idxTerm];
+    pTerm->wtFlags = TERM_CODED|TERM_VIRTUAL;  /* Disable the original */
+    pTerm->eOperator = 0;
   }
 
   /* If there is a vector IN term - e.g. "(a, b) IN (SELECT ...)" - create

@@ -229,4 +229,31 @@ do_execsql_test 10.0 {
     AND (a,b,e) IN (SELECT 'a','b','d' FROM dual);
 }
 
+do_catchsql_test 11.1 {
+  CREATE TABLE t11(a);
+  SELECT * FROM t11 WHERE (a,a)<=1;
+} {1 {row value misused}}
+do_catchsql_test 11.2 {
+  SELECT * FROM t11 WHERE (a,a)<1;
+} {1 {row value misused}}
+do_catchsql_test 11.3 {
+  SELECT * FROM t11 WHERE (a,a)>=1;
+} {1 {row value misused}}
+do_catchsql_test 11.4 {
+  SELECT * FROM t11 WHERE (a,a)>1;
+} {1 {row value misused}}
+do_catchsql_test 11.5 {
+  SELECT * FROM t11 WHERE (a,a)==1;
+} {1 {row value misused}}
+do_catchsql_test 11.6 {
+  SELECT * FROM t11 WHERE (a,a)<>1;
+} {1 {row value misused}}
+do_catchsql_test 11.7 {
+  SELECT * FROM t11 WHERE (a,a) IS 1;
+} {1 {row value misused}}
+do_catchsql_test 11.8 {
+  SELECT * FROM t11 WHERE (a,a) IS NOT 1;
+} {1 {row value misused}}
+
+
 finish_test
