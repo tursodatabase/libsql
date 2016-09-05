@@ -487,7 +487,7 @@ static int exprVectorRegister(
   int *pRegFree                   /* OUT: Temp register to free */
 ){
   u8 op = pVector->op;
-  assert( op==TK_VECTOR || op==TK_SELECT || op==TK_REGISTER );
+  assert( op==TK_VECTOR || op==TK_REGISTER || op==TK_SELECT );
   if( op==TK_REGISTER ){
     *ppExpr = sqlite3VectorFieldSubexpr(pVector, iField);
     return pVector->iTable+iField;
