@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\scausing\sthe\saffinity\sof\ssub-select\srow-value\selements\sto\sbe\signored\sin\ssome\scontextes.
-D 2016-09-03T19:52:12.432
+C Catch\svector\ssize\smismatch\sproblems\sduring\sname\sresolution\sto\savoid\slater\nproblems.
+D 2016-09-05T12:02:34.649
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5017381e4853b1472e01d5bb926be1268eba429c
@@ -338,7 +338,7 @@ F src/ctime.c e77f3dc297b4b65c96da78b4ae4272fdfae863d7
 F src/date.c 95c9a8d00767e7221a8e9a31f4e913fc8029bf6b
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
 F src/delete.c 76c084f0265f4a3cd1ecf17eee112a94f1ccbc05
-F src/expr.c 23b595cc6e2b609d53c72343b3fe16ce8b5e446d
+F src/expr.c 942c417e84e835ce51c6b732afa0b4572110e1c1
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c e2be0968c1adc679c87e467aa5b4f167588f38a8
 F src/func.c 29cc9acb170ec1387b9f63eb52cd85f8de96c771
@@ -383,7 +383,7 @@ F src/pragma.h 64c78a648751b9f4f297276c4eb7507b14b4628c
 F src/prepare.c 0fcf16eaacc90c1059055519a76b75b516a59a88
 F src/printf.c a5f0ca08ddede803c241266abb46356ec748ded1
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
-F src/resolve.c d67b9a5cc33339256e2088c5a722745fc2ff5219
+F src/resolve.c 24f40fd0c3475821d1ad762a3f2c3455cc839b42
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 38216d0b2d42a0f475abf86a84c3499e6421ba29
 F src/shell.c 79dda477be6c96eba6e952a934957ad36f87acc7
@@ -468,7 +468,7 @@ F src/walker.c 2d2cc7fb0f320f7f415215d7247f3c584141ac09
 F src/where.c 48d705e5196a0611a7be90698eade455ee238536
 F src/whereInt.h 14dd243e13b81cbb0a66063d38b70f93a7d6e613
 F src/wherecode.c 8a9a53cb52dd8a75e07c85e3bc12c1604c735954
-F src/whereexpr.c 7f9ada866d48d15d09754ae819c1c40efe3b2aff
+F src/whereexpr.c c5ec87e234faf62ac2d4e7f7ce18fb1f4bd475ff
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1020,10 +1020,10 @@ F test/rollbackfault.test 0e646aeab8840c399cfbfa43daab46fd609cf04a
 F test/rowallock.test 3f88ec6819489d0b2341c7a7528ae17c053ab7cc
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
 F test/rowid.test 5b7509f384f4f6fae1af3c8c104c8ca299fea18d
-F test/rowvalue.test 7d8482dde9023973615eaaca65647f33d70c1f01
+F test/rowvalue.test 753eb744b7efeb5ac643d35d6e1e5066452ccf79
 F test/rowvalue2.test 060d238b7e5639a7c5630cb5e63e311b44efef2b
 F test/rowvalue3.test 01399b7bf150b0d41abce76c18072da777c2500c
-F test/rowvalue4.test 9b40c9be9bdde30fc66cddbfdf6a5af37de4ccac
+F test/rowvalue4.test 9b60544dcd0231a9fcbe1ec095edb16cdaa7ae13
 F test/rowvalue5.test a440d490c8c0bf606034c09d5c6bbf7840b98f95
 F test/rowvalue6.test d19b54feb604d5601f8614b15e214e0774c01087
 F test/rowvalue7.test 5d06ff19d9e6969e574a2e662a531dd0c67801a8
@@ -1121,7 +1121,7 @@ F test/statfault.test f525a7bf633e50afd027700e9a486090684b1ac1
 F test/stmt.test 64844332db69cf1a735fcb3e11548557fc95392f
 F test/subquery.test d7268d193dd33d5505df965399d3a594e76ae13f
 F test/subquery2.test 438f8a7da1457277b22e4176510f7659b286995f
-F test/subselect.test ccec43f85d488c6c4b6f98ea2dfa95b6086871c0
+F test/subselect.test 0966aa8e720224dbd6a5e769a3ec2a723e332303
 F test/substr.test 18f57c4ca8a598805c4d64e304c418734d843c1a
 F test/subtype1.test 7fe09496352f97053af1437150751be2d0a0cae8
 F test/superlock.test ec94f0556b6488d97f71c79f9061ae08d9ab8f12
@@ -1522,7 +1522,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ed206048484667e4fe6aaeadd65882537d74bd35
-R ebdd3ea482059f46220cc36bb6b2e41e
-U dan
-Z 13aac770e03afb07d71bee955ff12a59
+P 7d9bd22c0715ede2592ee1fa7ebc215aded1ca1b
+R 9a7c982f4a8ba0874174ff495f80018e
+T *branch * early-vector-size-check
+T *sym-early-vector-size-check *
+T -sym-rowvalue *
+U drh
+Z 17a06585da7241edb65fdad418303946
