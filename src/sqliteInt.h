@@ -4009,6 +4009,7 @@ int sqlite3ExprCheckIN(Parse*, Expr*);
 #else
 # define sqlite3ExprCheckIN(x,y) SQLITE_OK
 #endif
+int sqlite3ExprCheckComparison(Parse*, Expr*, Expr*);
 
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
 void sqlite3AnalyzeFunctions(void);

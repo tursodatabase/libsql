@@ -521,14 +521,9 @@ static void codeVectorCompare(
   Vdbe *v = pParse->pVdbe;
   Expr *pLeft = pExpr->pLeft;
   Expr *pRight = pExpr->pRight;
-  int nLeft = sqlite3ExprVectorSize(pLeft);
-  int nRight = sqlite3ExprVectorSize(pRight);
 
-  /* Check that both sides of the comparison are vectors, and that
-  ** both are the same length.  */
-  if( nLeft!=nRight ){
-    sqlite3ErrorMsg(pParse, "row value misused");
-  }else{
+  if( sqlite3ExprCheckComparison(pParse, pLeft, pRight)==0 ){
+    int nLeft = sqlite3ExprVectorSize(pLeft);
     int i;
     int regLeft = 0;
     int regRight = 0;
@@ -2655,6 +2650,29 @@ int sqlite3ExprCheckIN(Parse *pParse, Expr *pIn){
   return 0;
 }
 #endif
+
+/*
+** Expressions pLeft and pRight are the left and right sides of a comparison
+** operator. If either pLeft or pRight is a vector and the other is not, or
+** if they are both vectors but of a different size, leave an error message
+** in the Parse object and return non-zero. Or, if there is no problem, 
+** return 0.
+*/
+int sqlite3ExprCheckComparison(Parse *pParse, Expr *pLeft, Expr *pRight){
+  int nLeft = sqlite3ExprVectorSize(pLeft);
+  int nRight = sqlite3ExprVectorSize(pRight);
+  if( nLeft!=nRight ){
+    if( (pRight->flags & EP_xIsSelect) ){
+      sqlite3SubselectError(pParse, nRight, nLeft);
+    }else if( pLeft->flags & EP_xIsSelect ){
+      sqlite3SubselectError(pParse, nLeft, nRight);
+    }else{
+      sqlite3ErrorMsg(pParse, "row value misused");
+    }
+    return 1;
+  }
+  return 0;
+}
 
 #ifndef SQLITE_OMIT_SUBQUERY
 /*

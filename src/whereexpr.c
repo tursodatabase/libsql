@@ -952,6 +952,10 @@ static void exprAnalyze(
     Expr *pRight = sqlite3ExprSkipCollate(pExpr->pRight);
     u16 opMask = (pTerm->prereqRight & prereqLeft)==0 ? WO_ALL : WO_EQUIV;
 
+    if( pRight && sqlite3ExprCheckComparison(pParse, pLeft, pRight) ){
+      return;
+    }
+
     if( pTerm->iField>0 ){
       assert( op==TK_IN );
       assert( pLeft->op==TK_VECTOR );

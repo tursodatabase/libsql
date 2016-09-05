@@ -47,6 +47,8 @@ foreach {tn s error} {
 
   6 "SELECT * FROM t1 WHERE (a, b) IN (SELECT * FROM t1)" 
                              {sub-select returns 3 columns - expected 2}
+  7 "SELECT * FROM t1 WHERE (c, c) <= 1" {row value misused}
+  8 "SELECT * FROM t1 WHERE (b, b) <= 1" {row value misused}
 } {
   do_catchsql_test 2.$tn "$s" [list 1 $error]
 }
