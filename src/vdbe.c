@@ -1912,7 +1912,8 @@ case OP_Cast: {                  /* in1 */
 ** the SQLITE_NULLEQ flag were omitted from P5.
 **
 ** If both SQLITE_STOREP2 and SQLITE_KEEPNULL flags are set then the
-** content of r[P2] is only set to 1 (true) if it was not previously NULL.
+** content of r[P2] is only changed if the new value is NULL or 0 (false).
+** In other words, a prior r[P2] value will not be overwritten by 1 (true).
 */
 /* Opcode: Ne P1 P2 P3 P4 P5
 ** Synopsis: IF r[P3]!=r[P1]
@@ -1922,7 +1923,8 @@ case OP_Cast: {                  /* in1 */
 ** additional information.
 **
 ** If both SQLITE_STOREP2 and SQLITE_KEEPNULL flags are set then the
-** content of r[P2] is only set to 0 (false) if it was not previously NULL.
+** content of r[P2] is only changed if the new value is NULL or 1 (true).
+** In other words, a prior r[P2] value will not be overwritten by 0 (false).
 */
 /* Opcode: Lt P1 P2 P3 P4 P5
 ** Synopsis: IF r[P3]<r[P1]
@@ -2086,11 +2088,20 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
     pOut = &aMem[pOp->p2];
     iCompare = res;
     res2 = res2!=0;  /* For this path res2 must be exactly 0 or 1 */
-    if( (pOp->p5 & SQLITE_KEEPNULL)!=0 && (pOut->flags & MEM_Null)!=0 ){
+    if( (pOp->p5 & SQLITE_KEEPNULL)!=0 ){
       /* The KEEPNULL flag prevents OP_Eq from overwriting a NULL with 1
-      ** and prevents OP_Ne from overwriting NULL with 0. */
+      ** and prevents OP_Ne from overwriting NULL with 0.  This flag
+      ** is only used in contexts where either:
+      **   (1) op==OP_Eq && (r[P2]==NULL || r[P2]==0)
+      **   (2) op==OP_Ne && (r[P2]==NULL || r[P2]==1)
+      ** Therefore it is not necessary to check the content of r[P2] for
+      ** NULL. */
       assert( pOp->opcode==OP_Ne || pOp->opcode==OP_Eq );
       assert( res2==0 || res2==1 );
+      testcase( res2==0 && pOp->opcode==OP_Eq );
+      testcase( res2==1 && pOp->opcode==OP_Eq );
+      testcase( res2==0 && pOp->opcode==OP_Ne );
+      testcase( res2==1 && pOp->opcode==OP_Ne );
       if( (pOp->opcode==OP_Eq)==res2 ) break;
     }
     memAboutToChange(p, pOut);
