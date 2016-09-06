@@ -395,7 +395,7 @@ Expr *sqlite3VectorFieldSubexpr(Expr *pVector, int i){
 ** ensuring that the returned value eventually gets freed.
 **
 ** The caller retains ownership of pVector.  If pVector is a TK_SELECT,
-** then the returne object will reference pVector and so pVector must remain
+** then the returned object will reference pVector and so pVector must remain
 ** valid for the life of the returned object.  If pVector is a TK_VECTOR
 ** or a scalar expression, then it can be deleted as soon as this routine
 ** returns.

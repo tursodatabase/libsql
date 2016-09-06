@@ -1,5 +1,5 @@
-C Simplified\slogic\sto\sextract\sa\scolumn\sfrom\sa\srow\svalue.
-D 2016-09-05T22:50:48.311
+C Fix\sa\stypo\sin\sa\scomment\sin\sexpr.c.
+D 2016-09-06T12:04:50.217
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5017381e4853b1472e01d5bb926be1268eba429c
@@ -338,7 +338,7 @@ F src/ctime.c e77f3dc297b4b65c96da78b4ae4272fdfae863d7
 F src/date.c 95c9a8d00767e7221a8e9a31f4e913fc8029bf6b
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
 F src/delete.c 76c084f0265f4a3cd1ecf17eee112a94f1ccbc05
-F src/expr.c 32bbbf7ef8d0e49e346612b1832a51a3dcf41818
+F src/expr.c 17af5dc7326543ce395503adc1b88b0a722fcee3
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c e2be0968c1adc679c87e467aa5b4f167588f38a8
 F src/func.c 29cc9acb170ec1387b9f63eb52cd85f8de96c771
@@ -1522,7 +1522,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2fa5288a7ef43f1fb26037c1b5e84b7b90400623
-R 7603658287e131d43381ef690aa890bc
-U drh
-Z 751e7d4fc1004371a10bd2fdff652b35
+P e8f105c3009e9b667db2afc0088b020a2b94d370
+R 48ea3338c1b6c2a2aac4971ca7c78062
+U dan
+Z 231ae31b564ec961477419ce2ce3ecda
