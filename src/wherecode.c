@@ -382,7 +382,11 @@ static void updateRangeAffinityStr(
 ** term can be either X=expr or X IN (...).   pTerm is the term to be 
 ** coded.
 **
-** The current value for the constraint is left in register iReg.
+** The current value for the constraint is left in a register, the index
+** of which is returned.  An attempt is made store the result in iTarget but
+** this is only guaranteed for TK_ISNULL and TK_IN constraints.  If the
+** constraint is a TK_EQ or TK_IS, then the current value might be left in
+** some other register and it is the caller's responsibility to compensate.
 **
 ** For a constraint of the form X=expr, the expression is evaluated in
 ** straight-line code.  For constraints of the form X IN (...)
