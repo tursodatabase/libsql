@@ -2635,7 +2635,7 @@ static int generateOutputSubroutine(
     */
     case SRT_Set: {
       int r1;
-      testcase( pIn->nSdst>1 && pParse->nErr==0 );
+      testcase( pIn->nSdst>1 );
       r1 = sqlite3GetTempReg(pParse);
       sqlite3VdbeAddOp4(v, OP_MakeRecord, pIn->iSdst, pIn->nSdst, 
           r1, pDest->zAffSdst, pIn->nSdst);

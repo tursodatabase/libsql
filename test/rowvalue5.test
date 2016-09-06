@@ -96,15 +96,13 @@ foreach {tn where res} {
   6 "(a, b) = (SELECT 9, 10)"        {{a = 9 AND b = 10}}
   7 "(+a, b) = (SELECT 'a', 'b')"    {{b = 'b'}}
   8 "(a, +b) = (SELECT 'a', 'b')"    {{a = 'a'}}
-  10 "(a, b) IN (SELECT 9, 10 UNION SELECT 11, 12)" 
-      {{a = 9 AND b = 10} {a = 11 AND b = 12}}
-  11 "(+a, b) IN (SELECT 'a', 'b')" {{b = 'b'}}
-  12 "(a, +b) IN (SELECT 'a', 'b')" {{a = 'a'}}
+  11 "(+a, b) IN (SELECT 'a', 'b')"  {{b = 'b'}}
+  12 "(a, +b) IN (SELECT 'a', 'b')"  {{a = 'a'}}
 
-  13 "(a, b) < ('d', 'e')"  {{a <= 'd'}}
-  14 "(a, b) < ('a', 'c')"  {{a <= 'a'}}
-  15 "(a, b) <= ('a', 'b')" {{a <= 'a'}}
-  16 "(a, b) < ('a', 'b')"  {}
+  13 "(a, b) < ('d', 'e')"           {{a <= 'd'}}
+  14 "(a, b) < ('a', 'c')"           {{a <= 'a'}}
+  15 "(a, b) <= ('a', 'b')"          {{a <= 'a'}}
+  16 "(a, b) < ('a', 'b')"           {}
 } {
   do_execsql_test 1.$tn "SELECT expr FROM x1 WHERE $where" $res
 }
