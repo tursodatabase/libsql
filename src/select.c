@@ -1222,14 +1222,10 @@ static void generateSortTail(
     regRowid = 0;
     regRow = pDest->iSdst;
     nSortData = nColumn;
-  }else if( eDest==SRT_Set ){
+  }else{
     regRowid = sqlite3GetTempReg(pParse);
     regRow = sqlite3GetTempRange(pParse, nColumn);
     nSortData = nColumn;
-  }else{
-    regRowid = sqlite3GetTempReg(pParse);
-    regRow = sqlite3GetTempReg(pParse);
-    nSortData = 1;
   }
   nKey = pOrderBy->nExpr - pSort->nOBSat;
   if( pSort->sortFlags & SORTFLAG_UseSorter ){

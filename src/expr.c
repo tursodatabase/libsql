@@ -4991,10 +4991,11 @@ void sqlite3ReleaseTempReg(Parse *pParse, int iReg){
 }
 
 /*
-** Allocate or deallocate a block of nReg consecutive registers
+** Allocate or deallocate a block of nReg consecutive registers.
 */
 int sqlite3GetTempRange(Parse *pParse, int nReg){
   int i, n;
+  if( nReg==1 ) return sqlite3GetTempReg(pParse);
   i = pParse->iRangeReg;
   n = pParse->nRangeReg;
   if( nReg<=n ){
@@ -5008,6 +5009,10 @@ int sqlite3GetTempRange(Parse *pParse, int nReg){
   return i;
 }
 void sqlite3ReleaseTempRange(Parse *pParse, int iReg, int nReg){
+  if( nReg==1 ){
+    sqlite3ReleaseTempReg(pParse, iReg);
+    return;
+  }
   sqlite3ExprCacheRemove(pParse, iReg, nReg);
   if( nReg>pParse->nRangeReg ){
     pParse->nRangeReg = nReg;
