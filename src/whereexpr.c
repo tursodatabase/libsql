@@ -1209,9 +1209,13 @@ static void exprAnalyze(
   ** a virtual term for each vector component. The expression object
   ** used by each such virtual term is pExpr (the full vector IN(...) 
   ** expression). The WhereTerm.iField variable identifies the index within
-  ** the vector on the LHS that the virtual term represents.  */
+  ** the vector on the LHS that the virtual term represents.
+  **
+  ** This only works if the RHS is a simple SELECT, not a compound
+  */
   if( pWC->op==TK_AND && pExpr->op==TK_IN && pTerm->iField==0
    && pExpr->pLeft->op==TK_VECTOR
+   && pExpr->x.pSelect->pPrior==0
   ){
     int i;
     for(i=0; i<sqlite3ExprVectorSize(pExpr->pLeft); i++){
