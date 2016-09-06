@@ -663,25 +663,27 @@ static int codeAllEqualityTerms(
     testcase( pTerm->eOperator & WO_ISNULL );
     testcase( pTerm->eOperator & WO_IN );
     if( (pTerm->eOperator & WO_ISNULL)==0 ){
-      Expr *pRight = 0;
       if( pTerm->eOperator & WO_IN ){
         if( pTerm->pExpr->flags & EP_xIsSelect ){
-          int iField = pTerm->iField ? pTerm->iField-1 : 0;
-          pRight = pTerm->pExpr->x.pSelect->pEList->a[iField].pExpr;
+          /* No affinity ever needs to be (or should be) applied to a value
+          ** from the RHS of an "? IN (SELECT ...)" expression. The 
+          ** sqlite3FindInIndex() routine has already ensured that the 
+          ** affinity of the comparison has been applied to the value.  */
+          zAff[j] = SQLITE_AFF_BLOB;
         }
       }else{
-        pRight = pTerm->pExpr->pRight;
+        Expr *pRight = pTerm->pExpr->pRight;
         if( (pTerm->wtFlags & TERM_IS)==0 && sqlite3ExprCanBeNull(pRight) ){
           sqlite3VdbeAddOp2(v, OP_IsNull, regBase+j, pLevel->addrBrk);
           VdbeCoverage(v);
         }
-      }
-      if( pRight && zAff ){
-        if( sqlite3CompareAffinity(pRight, zAff[j])==SQLITE_AFF_BLOB ){
-          zAff[j] = SQLITE_AFF_BLOB;
-        }
-        if( sqlite3ExprNeedsNoAffinityChange(pRight, zAff[j]) ){
-          zAff[j] = SQLITE_AFF_BLOB;
+        if( zAff ){
+          if( sqlite3CompareAffinity(pRight, zAff[j])==SQLITE_AFF_BLOB ){
+            zAff[j] = SQLITE_AFF_BLOB;
+          }
+          if( sqlite3ExprNeedsNoAffinityChange(pRight, zAff[j]) ){
+            zAff[j] = SQLITE_AFF_BLOB;
+          }
         }
       }
     }

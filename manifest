@@ -1,5 +1,5 @@
-C Fix\sthe\sheader\scomment\son\scodeEqualityTerm().
-D 2016-09-06T15:25:53.108
+C Simplify\sthe\sfix\sin\scommit\s[7d9bd22c].
+D 2016-09-06T16:33:24.850
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5017381e4853b1472e01d5bb926be1268eba429c
@@ -467,7 +467,7 @@ F src/wal.h 6dd221ed384afdc204bc61e25c23ef7fd5a511f2
 F src/walker.c 2d2cc7fb0f320f7f415215d7247f3c584141ac09
 F src/where.c 48d705e5196a0611a7be90698eade455ee238536
 F src/whereInt.h 14dd243e13b81cbb0a66063d38b70f93a7d6e613
-F src/wherecode.c 49125c4db8fbbf1a7013aa261d0d55230ae1b71a
+F src/wherecode.c ea92c232f9de5bf8a719356f8a5b028e7a287d93
 F src/whereexpr.c c5ec87e234faf62ac2d4e7f7ce18fb1f4bd475ff
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1522,7 +1522,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 231c72d9f651f3a70d5c8af080f3ff181b89d939
-R f1724dce64a0910d56689218d8ab18df
-U drh
-Z ba82e808b5a71f302b7f5c7627019f3d
+P b7e710e406ed22bcc316099b5e200b6bb2d9c872
+R 7abdcc30d48bf004d77a6f8aa0e43c0f
+U dan
+Z 63aca3ea6fe182a1ada6faadbb0dd4d6
