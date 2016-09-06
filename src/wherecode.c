@@ -442,11 +442,6 @@ static int codeEqualityTerm(
       if( ALWAYS(pLoop->aLTerm[i]) && pLoop->aLTerm[i]->pExpr==pX ) nEq++;
     }
 
-    if( nEq>1 ){
-      aiMap = (int*)sqlite3DbMallocZero(pParse->db, sizeof(int) * nEq);
-      if( !aiMap ) return 0;
-    }
-
     if( (pX->flags & EP_xIsSelect)==0 || pX->x.pSelect->pEList->nExpr==1 ){
       eType = sqlite3FindInIndex(pParse, pX, IN_INDEX_LOOP, 0, 0);
     }else{
@@ -475,9 +470,12 @@ static int codeEqualityTerm(
           pX->pLeft = pLhs->a[0].pExpr;
         }else{
           pLeft->x.pList = pLhs;
+          aiMap = (int*)sqlite3DbMallocZero(pParse->db, sizeof(int) * nEq);
+          testcase( aiMap==0 );
         }
         pX->x.pSelect->pEList = pRhs;
         eType = sqlite3FindInIndex(pParse, pX, IN_INDEX_LOOP, 0, aiMap);
+        testcase( aiMap!=0 && aiMap[0]!=0 );
         pX->x.pSelect->pEList = pOrigRhs;
         pLeft->x.pList = pOrigLhs;
         pX->pLeft = pLeft;

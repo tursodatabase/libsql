@@ -1,5 +1,5 @@
-C Avoid\sa\sNULL\spointer\sderef\sin\scodeAllEqualityConstraints()\sfollowing\san\sOOM.
-D 2016-09-06T16:53:53.727
+C Avoid\sunnecessary\smemory\sallocations\sfor\saiMap\sin\scodeEqualityConstraints.
+D 2016-09-06T17:13:40.420
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5017381e4853b1472e01d5bb926be1268eba429c
@@ -467,7 +467,7 @@ F src/wal.h 6dd221ed384afdc204bc61e25c23ef7fd5a511f2
 F src/walker.c 2d2cc7fb0f320f7f415215d7247f3c584141ac09
 F src/where.c 48d705e5196a0611a7be90698eade455ee238536
 F src/whereInt.h 14dd243e13b81cbb0a66063d38b70f93a7d6e613
-F src/wherecode.c 4bd3e4c3c9f441a9d1fbd8fb13528f9c1c2c8528
+F src/wherecode.c b0d4febdd9de07ad68faadeacb30df9785f9b979
 F src/whereexpr.c c5ec87e234faf62ac2d4e7f7ce18fb1f4bd475ff
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1522,7 +1522,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bd5a342008575bf66f63881a0bebf43741f2a67b
-R fcb091661f586511d74c9857242646c5
+P c6e528c1c0f17c69c7745b018afa36694118258f
+R 71337de042abb55d5e21dbccb2bcc3d7
 U drh
-Z 30f14ba82e1e5f327ee9c3b7b6a25371
+Z ad68562def745ab96bb3491072f1a7f4
