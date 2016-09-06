@@ -669,7 +669,7 @@ static int codeAllEqualityTerms(
           ** from the RHS of an "? IN (SELECT ...)" expression. The 
           ** sqlite3FindInIndex() routine has already ensured that the 
           ** affinity of the comparison has been applied to the value.  */
-          zAff[j] = SQLITE_AFF_BLOB;
+          if( zAff ) zAff[j] = SQLITE_AFF_BLOB;
         }
       }else{
         Expr *pRight = pTerm->pExpr->pRight;
