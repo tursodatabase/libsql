@@ -235,6 +235,12 @@ do_execsql_test 5.0 {
 do_execsql_test 5.1 {
   SELECT rowid FROM e1 WHERE (a, c) IN (SELECT x, y FROM e2);
 } {1}
+do_execsql_test 5.2 {
+  SELECT rowid FROM e2 WHERE rowid IN (SELECT +c FROM e1);
+} {2}
+do_execsql_test 5.3 {
+  SELECT rowid FROM e2 WHERE rowid IN (SELECT 0+c FROM e1);
+} {2}
 
 finish_test
 

@@ -2482,7 +2482,7 @@ int sqlite3CodeSubselect(
           assert( pEList->nExpr>0 );
           assert( sqlite3KeyInfoIsWriteable(pKeyInfo) );
           for(i=0; i<nVal; i++){
-            Expr *p = (nVal>1) ? sqlite3VectorFieldSubexpr(pLeft, i) : pLeft;
+            Expr *p = sqlite3VectorFieldSubexpr(pLeft, i);
             pKeyInfo->aColl[i] = sqlite3BinaryCompareCollSeq(
                 pParse, p, pEList->a[i].pExpr
             );
