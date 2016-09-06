@@ -463,11 +463,20 @@ static int codeEqualityTerm(
         }
       }
       if( !db->mallocFailed ){
+        Expr *pLeft = pX->pLeft;
+        /* Take care here not to generate a TK_VECTOR containing only a
+        ** single value. Since the parser never creates such a vector, some
+        ** of the subroutines do not handle this case.  */
+        if( pLhs->nExpr==1 ){
+          pX->pLeft = pLhs->a[0].pExpr;
+        }else{
+          pLeft->x.pList = pLhs;
+        }
         pX->x.pSelect->pEList = pRhs;
-        pX->pLeft->x.pList = pLhs;
         eType = sqlite3FindInIndex(pParse, pX, IN_INDEX_LOOP, 0, aiMap);
         pX->x.pSelect->pEList = pOrigRhs;
-        pX->pLeft->x.pList = pOrigLhs;
+        pLeft->x.pList = pOrigLhs;
+        pX->pLeft = pLeft;
       }
       sqlite3ExprListDelete(pParse->db, pLhs);
       sqlite3ExprListDelete(pParse->db, pRhs);

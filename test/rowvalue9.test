@@ -18,6 +18,19 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set ::testprefix rowvalue9
 
+# Tests:
+#
+#  1.*: Test that affinities are handled correctly by various row-value
+#       operations without indexes.
+#
+#  2.*: Test an affinity bug that came up during testing.
+#
+#  3.*: Test a row-value version of the bug tested by 2.*.
+#
+#  4.*: Test that affinities are handled correctly by various row-value
+#       operations with assorted indexes.
+#
+
 do_execsql_test 1.0.1 {
   CREATE TABLE a1(c, b INTEGER, a TEXT, PRIMARY KEY(a, b));
  
@@ -205,6 +218,23 @@ foreach {tn idx} {
     );
   } {2 4}
 }
+
+do_execsql_test 5.0 {
+  CREATE TABLE e1(a TEXT, c NUMERIC);
+  CREATE TABLE e2(x BLOB, y BLOB);
+
+  INSERT INTO e1 VALUES(2, 2);
+
+  INSERT INTO e2 VALUES ('2', 2);
+  INSERT INTO e2 VALUES ('2', '2');
+  INSERT INTO e2 VALUES ('2', '2.0');
+
+  CREATE INDEX e1c ON e1(c);
+}
+
+do_execsql_test 5.1 {
+  SELECT rowid FROM e1 WHERE (a, c) IN (SELECT x, y FROM e2);
+} {1}
 
 finish_test
 
