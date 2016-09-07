@@ -1,5 +1,5 @@
-C Version\s3.14.1
-D 2016-08-11T18:53:32.769
+C Fix\sa\sproblem\sin\sinternal\sfunction\ssqlite3OpenTableAndIndices\scausing\san\s\noperand\sof\san\sunrelated\sVM\sinstruction\sto\sbe\soverwritten.\sFix\sfor\s[ef360601].
+D 2016-09-07T11:27:05.082
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -345,7 +345,7 @@ F src/global.c c45ea22aff29334f6a9ec549235ac3357c970015
 F src/hash.c 55b5fb474100cee0b901edaf203e26c970940f36
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
-F src/insert.c 8f4e9fcbd8e95e85f15647ba8b413b18d556ec2b
+F src/insert.c bceb8351e80c357764ca0600a44696078cc17b3b
 F src/legacy.c 75d3023be8f0d2b99d60f905090341a03358c58e
 F src/loadext.c dd7a2b77902cc66c22555aef02e1a682554b7aec
 F src/main.c 16c1b2114eae8804caf3a8de8cb47bf2c6d83ad3
@@ -624,7 +624,7 @@ F test/date.test 984ac1e3e5e031386866f034006148d3972b4a65
 F test/dbstatus.test 73149851b3aff14fc6db478e58f9083a66422cf5
 F test/dbstatus2.test e93ab03bfae6d62d4d935f20de928c19ca0ed0ab
 F test/default.test 0cb49b1c315a0d81c81d775e407f66906a2a604d
-F test/delete.test e1bcdf8926234e27aac24b346ad83d3329ec8b6f
+F test/delete.test acc38fca8ee4851467705b1c2cfea64cd26667e5
 F test/delete2.test 3a03f2cca1f9a67ec469915cb8babd6485db43fa
 F test/delete3.test 555e84a00a99230b7d049d477a324a631126a6ab
 F test/delete4.test 21d2113217eeaacac2d99defe14fe6611615ae86
@@ -1509,10 +1509,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1adb22f51a00f43dfc348c8743ee2038f8de0e16
-R 038a1531f4509514c454aa51ae40913b
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.14.1 *
+P a12d8059770df4bca59e321c266410344242bf7b
+Q +7090147903337864d54ecfb2cd84a3f823973167
+R 05e6db924bdac13a36bb75bd98924dc9
 U drh
-Z 09e93e302e17985fdc87e91b7a299136
+Z 346147d183ae19693393faa596b49aa5

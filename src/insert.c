@@ -1777,15 +1777,15 @@ int sqlite3OpenTableAndIndices(
   for(i=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
     int iIdxCur = iBase++;
     assert( pIdx->pSchema==pTab->pSchema );
+    if( IsPrimaryKeyIndex(pIdx) && !HasRowid(pTab) ){
+      if( piDataCur ) *piDataCur = iIdxCur;
+      p5 = 0;
+    }
     if( aToOpen==0 || aToOpen[i+1] ){
       sqlite3VdbeAddOp3(v, op, iIdxCur, pIdx->tnum, iDb);
       sqlite3VdbeSetP4KeyInfo(pParse, pIdx);
-      VdbeComment((v, "%s", pIdx->zName));
-    }
-    if( IsPrimaryKeyIndex(pIdx) && !HasRowid(pTab) ){
-      if( piDataCur ) *piDataCur = iIdxCur;
-    }else{
       sqlite3VdbeChangeP5(v, p5);
+      VdbeComment((v, "%s", pIdx->zName));
     }
   }
   if( iBase>pParse->nTab ) pParse->nTab = iBase;
