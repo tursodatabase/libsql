@@ -1,5 +1,5 @@
-C Fix\sthe\sextra\scomments\s(added\swith\s-DSQLITE_ENABLE_EXPLAIN_COMMENTS)\sso\sthat\sthe\ssense\sof\s<,\s<=,\s>,\sand\s>=\stests\sis\scorrect\sand\sso\sthat\sthe\sSQLITE_STOREP2\sversion\sis\sshown\scorrectly.\s\sCherrypick\sof\s[4d43c4698eef4e3d].
-D 2016-09-07T19:47:07.213
+C Fix\sthe\ssqlite3_trace_v2()\sinterface\sso\sthat\sit\sgoes\sdisabled\sif\seither\sthe\scallback\sor\smask\sarguments\sare\szero,\sin\saccordance\swith\sthe\sdocumentation.\s\sCherrypick\sof\s[37e6c54b1afc6348].
+D 2016-09-07T20:12:34.171
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6fef1e10792656c94fe1393092de6c8ba6ea1c88
@@ -348,7 +348,7 @@ F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/insert.c bceb8351e80c357764ca0600a44696078cc17b3b
 F src/legacy.c 75d3023be8f0d2b99d60f905090341a03358c58e
 F src/loadext.c dd7a2b77902cc66c22555aef02e1a682554b7aec
-F src/main.c 16c1b2114eae8804caf3a8de8cb47bf2c6d83ad3
+F src/main.c b8c598bec5f4396e84b71444c92b58819e3a703b
 F src/malloc.c 1443d1ad95d67c21d77af7ae3f44678252f0efec
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 6919bcf12f221868ea066eec27e579fed95ce98b
@@ -1509,8 +1509,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 71866b367f32b5a4cd0c239747fa8e0a60e75698
-Q +4d43c4698eef4e3db7556813f0274b4018c7c2b9
-R f8bf74686fb2550febcd5d6da9820226
+P c844f3daa9173badf476c56ca00284dbbac853d3
+Q +37e6c54b1afc634844026b3fe874dd2d550c6558
+R fc371e43e3f4b7352f443d9dd6d62e30
 U mistachkin
-Z c9e28854a0808d85c3a7226d43beeef5
+Z 42e4da574fefc86caac5d42ce718786c
