@@ -658,30 +658,26 @@ static int codeAllEqualityTerms(
         sqlite3VdbeAddOp2(v, OP_SCopy, r1, regBase+j);
       }
     }
-    testcase( pTerm->eOperator & WO_ISNULL );
-    testcase( pTerm->eOperator & WO_IN );
-    if( (pTerm->eOperator & WO_ISNULL)==0 ){
-      if( pTerm->eOperator & WO_IN ){
-        if( pTerm->pExpr->flags & EP_xIsSelect ){
-          /* No affinity ever needs to be (or should be) applied to a value
-          ** from the RHS of an "? IN (SELECT ...)" expression. The 
-          ** sqlite3FindInIndex() routine has already ensured that the 
-          ** affinity of the comparison has been applied to the value.  */
-          if( zAff ) zAff[j] = SQLITE_AFF_BLOB;
+    if( pTerm->eOperator & WO_IN ){
+      if( pTerm->pExpr->flags & EP_xIsSelect ){
+        /* No affinity ever needs to be (or should be) applied to a value
+        ** from the RHS of an "? IN (SELECT ...)" expression. The 
+        ** sqlite3FindInIndex() routine has already ensured that the 
+        ** affinity of the comparison has been applied to the value.  */
+        if( zAff ) zAff[j] = SQLITE_AFF_BLOB;
+      }
+    }else if( (pTerm->eOperator & WO_ISNULL)==0 ){
+      Expr *pRight = pTerm->pExpr->pRight;
+      if( (pTerm->wtFlags & TERM_IS)==0 && sqlite3ExprCanBeNull(pRight) ){
+        sqlite3VdbeAddOp2(v, OP_IsNull, regBase+j, pLevel->addrBrk);
+        VdbeCoverage(v);
+      }
+      if( zAff ){
+        if( sqlite3CompareAffinity(pRight, zAff[j])==SQLITE_AFF_BLOB ){
+          zAff[j] = SQLITE_AFF_BLOB;
         }
-      }else{
-        Expr *pRight = pTerm->pExpr->pRight;
-        if( (pTerm->wtFlags & TERM_IS)==0 && sqlite3ExprCanBeNull(pRight) ){
-          sqlite3VdbeAddOp2(v, OP_IsNull, regBase+j, pLevel->addrBrk);
-          VdbeCoverage(v);
-        }
-        if( zAff ){
-          if( sqlite3CompareAffinity(pRight, zAff[j])==SQLITE_AFF_BLOB ){
-            zAff[j] = SQLITE_AFF_BLOB;
-          }
-          if( sqlite3ExprNeedsNoAffinityChange(pRight, zAff[j]) ){
-            zAff[j] = SQLITE_AFF_BLOB;
-          }
+        if( sqlite3ExprNeedsNoAffinityChange(pRight, zAff[j]) ){
+          zAff[j] = SQLITE_AFF_BLOB;
         }
       }
     }
