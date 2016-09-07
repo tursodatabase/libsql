@@ -1,5 +1,5 @@
-C Fix\sthe\s".read"\scommand\sin\sthe\scommand-line\sshell\sso\sthat\sit\sunderstands\nthat\sthe\sinput\sis\snot\sinteractive.
-D 2016-09-07T10:10:18.461
+C Add\sthe\sext/misc/memvfs.c\sextension\sthat\simplements\sa\sVFS\sfor\sread-only\ndatabase\sfiles\scontained\sin\smemory.
+D 2016-09-07T18:11:11.252
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5017381e4853b1472e01d5bb926be1268eba429c
@@ -214,6 +214,7 @@ F ext/misc/fileio.c d4171c815d6543a9edef8308aab2951413cd8d0f
 F ext/misc/fuzzer.c 7c64b8197bb77b7d64eff7cac7848870235d4c25
 F ext/misc/ieee754.c f190d0cc5182529acb15babd177781be1ac1718c
 F ext/misc/json1.c 9799e4252b305edcbe659329eec3ca80ed85f968
+F ext/misc/memvfs.c e5225bc22e79dde6b28380f3a068ddf600683a33
 F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
 F ext/misc/percentile.c 92699c8cd7d517ff610e6037e56506f8904dae2e
 F ext/misc/regexp.c a68d25c659bd2d893cd1215667bbf75ecb9dc7d4
@@ -1511,7 +1512,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 820644b886f81e991fceb5f1c3290b8959b34528
-R 2932afc8980d7b223aaea98945be0e61
+P d8451fe84d09db6ec7e1bd5f0708ea1b5e85f3d6
+R 40828d7c09ecd4e3a6b5df17d516ba22
 U drh
-Z 5c5e9ed55e639316842989db4edd69d1
+Z f7bf016242cf820d90b7abae39af230e
