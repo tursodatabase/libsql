@@ -25,6 +25,7 @@
 #      copy_file              FROM TO
 #      delete_file            FILENAME
 #      drop_all_tables        ?DB?
+#      drop_all_indexes       ?DB?
 #      forcecopy              FROM TO
 #      forcedelete            FILENAME
 #
@@ -1289,9 +1290,9 @@ proc explain_i {sql {db db}} {
     set D ""
   }
   foreach opcode {
-      Seek SeekGe SeekGt SeekLe SeekLt NotFound Last Rewind
+      Seek SeekGE SeekGT SeekLE SeekLT NotFound Last Rewind
       NoConflict Next Prev VNext VPrev VFilter
-      SorterSort SorterNext
+      SorterSort SorterNext NextIfOpen
   } {
     set color($opcode) $B
   }
@@ -1312,9 +1313,15 @@ proc explain_i {sql {db db}} {
       set bSeenGoto 1
     }
 
+    if {$opcode=="Once"} {
+      for {set i $addr} {$i<$p2} {incr i} {
+        set star($i) $addr
+      }
+    }
+
     if {$opcode=="Next"  || $opcode=="Prev" 
      || $opcode=="VNext" || $opcode=="VPrev"
-     || $opcode=="SorterNext"
+     || $opcode=="SorterNext" || $opcode=="NextIfOpen"
     } {
       for {set i $p2} {$i<$addr} {incr i} {
         incr x($i) 2
@@ -1337,6 +1344,12 @@ proc explain_i {sql {db db}} {
       output2 ""
     }
     set I [string repeat " " $x($addr)]
+
+    if {[info exists star($addr)]} {
+      set ii [expr $x($star($addr))]
+      append I "  "
+      set I [string replace $I $ii $ii *]
+    }
 
     set col ""
     catch { set col $color($opcode) }
@@ -1938,6 +1951,16 @@ proc drop_all_tables {{db db}} {
     $db eval "PRAGMA foreign_keys = $pk"
   }
 }
+
+# Drop all auxiliary indexes from the main database opened by handle [db].
+#
+proc drop_all_indexes {{db db}} {
+  set L [$db eval {
+    SELECT name FROM sqlite_master WHERE type='index' AND sql LIKE 'create%'
+  }]
+  foreach idx $L { $db eval "DROP INDEX $idx" }
+}
+
 
 #-------------------------------------------------------------------------
 # If a test script is executed with global variable $::G(perm:name) set to

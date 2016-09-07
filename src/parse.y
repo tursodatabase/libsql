@@ -789,9 +789,15 @@ setlist(A) ::= setlist(A) COMMA nm(X) EQ expr(Y). {
   A = sqlite3ExprListAppend(pParse, A, Y.pExpr);
   sqlite3ExprListSetName(pParse, A, &X, 1);
 }
+setlist(A) ::= setlist(A) COMMA LP idlist(X) RP EQ expr(Y). {
+  A = sqlite3ExprListAppendVector(pParse, A, X, Y.pExpr);
+}
 setlist(A) ::= nm(X) EQ expr(Y). {
   A = sqlite3ExprListAppend(pParse, 0, Y.pExpr);
   sqlite3ExprListSetName(pParse, A, &X, 1);
+}
+setlist(A) ::= LP idlist(X) RP EQ expr(Y). {
+  A = sqlite3ExprListAppendVector(pParse, 0, X, Y.pExpr);
 }
 
 ////////////////////////// The INSERT command /////////////////////////////////
@@ -943,6 +949,17 @@ term(A) ::= CTIME_KW(OP). {
     if( doNot ){
       pSpan->pExpr = sqlite3PExpr(pParse, TK_NOT, pSpan->pExpr, 0, 0);
     }
+  }
+}
+
+expr(A) ::= LP(L) nexprlist(X) COMMA expr(Y) RP(R). {
+  ExprList *pList = sqlite3ExprListAppend(pParse, X, Y.pExpr);
+  A.pExpr = sqlite3PExpr(pParse, TK_VECTOR, 0, 0, 0);
+  if( A.pExpr ){
+    A.pExpr->x.pList = pList;
+    spanSet(&A, &L, &R);
+  }else{
+    sqlite3ExprListDelete(pParse->db, pList);
   }
 }
 

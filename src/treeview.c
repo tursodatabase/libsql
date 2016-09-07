@@ -451,6 +451,15 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
       sqlite3TreeViewExpr(pView, pExpr->pRight, 0);
       break;
     }
+    case TK_VECTOR: {
+      sqlite3TreeViewBareExprList(pView, pExpr->x.pList, "VECTOR");
+      break;
+    }
+    case TK_SELECT_COLUMN: {
+      sqlite3TreeViewLine(pView, "SELECT-COLUMN %d", pExpr->iColumn);
+      sqlite3TreeViewSelect(pView, pExpr->pLeft->x.pSelect, 0);
+      break;
+    }
     default: {
       sqlite3TreeViewLine(pView, "op=%d", pExpr->op);
       break;
@@ -467,21 +476,20 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
   sqlite3TreeViewPop(pView);
 }
 
+
 /*
 ** Generate a human-readable explanation of an expression list.
 */
-void sqlite3TreeViewExprList(
+void sqlite3TreeViewBareExprList(
   TreeView *pView,
   const ExprList *pList,
-  u8 moreToFollow,
   const char *zLabel
 ){
-  int i;
-  pView = sqlite3TreeViewPush(pView, moreToFollow);
   if( zLabel==0 || zLabel[0]==0 ) zLabel = "LIST";
   if( pList==0 ){
     sqlite3TreeViewLine(pView, "%s (empty)", zLabel);
   }else{
+    int i;
     sqlite3TreeViewLine(pView, "%s", zLabel);
     for(i=0; i<pList->nExpr; i++){
       int j = pList->a[i].u.x.iOrderByCol;
@@ -493,6 +501,15 @@ void sqlite3TreeViewExprList(
       if( j ) sqlite3TreeViewPop(pView);
     }
   }
+}
+void sqlite3TreeViewExprList(
+  TreeView *pView,
+  const ExprList *pList,
+  u8 moreToFollow,
+  const char *zLabel
+){
+  pView = sqlite3TreeViewPush(pView, moreToFollow);
+  sqlite3TreeViewBareExprList(pView, pList, zLabel);
   sqlite3TreeViewPop(pView);
 }
 
