@@ -1,5 +1,5 @@
-C Version\snumber\sto\s3.14.2.
-D 2016-09-07T12:47:46.925
+C Fix\sthe\s".read"\scommand\sin\sthe\scommand-line\sshell\sso\sthat\sit\sunderstands\nthat\sthe\sinput\sis\snot\sinteractive.
+D 2016-09-07T13:20:29.424
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 50e36f9aa2c4f8e0a02ba1984d7e81001827d97d
@@ -384,7 +384,7 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 0392c6686586b1d4dac9a4106959f03ddd70e9aa
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c f3c6e9065fb34f6a23af27ec7f1f717ffbfc2ee4
-F src/shell.c 79dda477be6c96eba6e952a934957ad36f87acc7
+F src/shell.c de7c7e98846cacbfbe062cbd98bca899dfb720e3
 F src/sqlite.h.in 0f7580280d1b009b507d8beec1ff0f197ba0cc99
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
@@ -1068,7 +1068,7 @@ F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
 F test/shell1.test 65b10cd8a90cda9b5af9100a45689a57dcc01a31
 F test/shell2.test e242a9912f44f4c23c3d1d802a83e934e84c853b
 F test/shell3.test da513d522ef6f01cee8475dcf8332bff8982b3dd
-F test/shell4.test 69995ee1cc278eb149aa8746ce1f935f4eaf98b9
+F test/shell4.test 89ad573879a745974ff2df20ff97c5d6ffffbd5d
 F test/shell5.test 50a732c1c2158b1cd62cf53975ce1ea7ce6b9dc9
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/show_speedtest1_rtree.tcl 32e6c5f073d7426148a6936a0408f4b5b169aba5
@@ -1509,7 +1509,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P af951e036ec7480d04656364fef1c6e24a24b1b2
-R 6e41e85a0ca61605de9fe30d463feb12
+P 925ef2f915c99fa358d988081497dc3a55515816
+Q +d8451fe84d09db6ec7e1bd5f0708ea1b5e85f3d6
+R bb7c8d1dff91c6564d07fbf38ac877d7
 U drh
-Z ea2fcd0cc2c47cd3cbd22b517a17e16f
+Z dcc6177e9e864b7646528523888367fd
