@@ -1,8 +1,8 @@
-C Fix\sthe\s".read"\scommand\sin\sthe\scommand-line\sshell\sso\sthat\sit\sunderstands\nthat\sthe\sinput\sis\snot\sinteractive.
-D 2016-09-07T13:20:29.424
+C Sync\sup\sthe\sMSVC\smakefiles.
+D 2016-09-07T19:23:49.275
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 50e36f9aa2c4f8e0a02ba1984d7e81001827d97d
+F Makefile.msc 6fef1e10792656c94fe1393092de6c8ba6ea1c88
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION 2ecb284dd086175be38bd4340a713df2a03ce5fe
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -1509,8 +1509,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 925ef2f915c99fa358d988081497dc3a55515816
-Q +d8451fe84d09db6ec7e1bd5f0708ea1b5e85f3d6
-R bb7c8d1dff91c6564d07fbf38ac877d7
-U drh
-Z dcc6177e9e864b7646528523888367fd
+P 7c2c0d1dceb6b49822e5f5c5e531744d2a4fd12c
+R 006a06e7e7d96117f2d9fa15f4e085b4
+U mistachkin
+Z f8e2239fba83cac018e472c48ce3c398
