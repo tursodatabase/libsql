@@ -1,5 +1,5 @@
-C The\sORDER\sBY\sLIMIT\soptimization\sis\snot\svalid\sunless\sthe\sinner-most\sIN\soperator\nloop\sis\sactually\sused\sby\sthe\squery\splan.\nFix\sfor\sticket\s[0c4df46116e90f92].
-D 2016-09-07T01:51:46.818
+C Fix\sthe\s".read"\scommand\sin\sthe\scommand-line\sshell\sso\sthat\sit\sunderstands\nthat\sthe\sinput\sis\snot\sinteractive.
+D 2016-09-07T10:10:18.461
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5017381e4853b1472e01d5bb926be1268eba429c
@@ -385,7 +385,7 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c d67b9a5cc33339256e2088c5a722745fc2ff5219
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c fda7fd24b4d8e75479ae581329db0a0b0bf76633
-F src/shell.c 79dda477be6c96eba6e952a934957ad36f87acc7
+F src/shell.c de7c7e98846cacbfbe062cbd98bca899dfb720e3
 F src/sqlite.h.in 4a030e254e204570444b34bf7d40fb4a5416089e
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
@@ -1069,7 +1069,7 @@ F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
 F test/shell1.test 65b10cd8a90cda9b5af9100a45689a57dcc01a31
 F test/shell2.test e242a9912f44f4c23c3d1d802a83e934e84c853b
 F test/shell3.test da513d522ef6f01cee8475dcf8332bff8982b3dd
-F test/shell4.test 69995ee1cc278eb149aa8746ce1f935f4eaf98b9
+F test/shell4.test 89ad573879a745974ff2df20ff97c5d6ffffbd5d
 F test/shell5.test 50a732c1c2158b1cd62cf53975ce1ea7ce6b9dc9
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/show_speedtest1_rtree.tcl 32e6c5f073d7426148a6936a0408f4b5b169aba5
@@ -1511,7 +1511,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 672c21bcf09c5bfb67e061456a56be45409c4f34
-R 8295a9e9a92e0badbb544219a9ddd5bb
+P 820644b886f81e991fceb5f1c3290b8959b34528
+R 2932afc8980d7b223aaea98945be0e61
 U drh
-Z aeaed53bf1e0bb67e40593d62a24bb76
+Z 5c5e9ed55e639316842989db4edd69d1
