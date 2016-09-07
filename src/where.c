@@ -3401,6 +3401,14 @@ static i8 wherePathSatisfiesOrderBy(
       pTerm = sqlite3WhereFindTerm(&pWInfo->sWC, iCur, pOBExpr->iColumn,
                        ~ready, eqOpMask, 0);
       if( pTerm==0 ) continue;
+      if( pTerm->eOperator==WO_IN ){
+        /* IN terms are only valid for sorting in the ORDER BY LIMIT 
+        ** optimization, and then only if they are actually used
+        ** by the query plan */
+        assert( wctrlFlags & WHERE_ORDERBY_LIMIT );
+        for(j=0; j<pLoop->nLTerm && pTerm!=pLoop->aLTerm[j]; j++){}
+        if( j>=pLoop->nLTerm ) continue;
+      }
       if( (pTerm->eOperator&(WO_EQ|WO_IS))!=0 && pOBExpr->iColumn>=0 ){
         const char *z1, *z2;
         pColl = sqlite3ExprCollSeq(pWInfo->pParse, pOrderBy->a[i].pExpr);
