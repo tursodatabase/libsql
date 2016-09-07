@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\sinternal\sfunction\ssqlite3OpenTableAndIndices\scausing\san\s\noperand\sof\san\sunrelated\sVM\sinstruction\sto\sbe\soverwritten.\sFix\sfor\s[ef360601].
-D 2016-09-07T11:27:05.082
+C The\sORDER\sBY\sLIMIT\soptimization\sis\snot\svalid\sunless\sthe\sinner-most\sIN\soperator\nloop\sis\sactually\sused\sby\sthe\squery\splan.\nFix\sfor\sticket\s[0c4df46116e90f92].
+D 2016-09-07T12:08:37.662
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
@@ -463,7 +463,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 02eeecc265f6ffd0597378f5d8ae9070b62a406a
 F src/wal.h 6dd221ed384afdc204bc61e25c23ef7fd5a511f2
 F src/walker.c 0f142b5bd3ed2041fc52d773880748b212e63354
-F src/where.c 5c9df42d50888be8274a5a0eb062eb0629869bd3
+F src/where.c 4bbc3f1dcda64c96ed5f0ffe51be7c0d7adb6c62
 F src/whereInt.h e5b939701a7ceffc5a3a8188a37f9746416ebcd0
 F src/wherecode.c 99707d11907c71d289ee9553d2d1a22f1fd8ba41
 F src/whereexpr.c d7dcbf14ce1b5876c1f76496162c30fcba669563
@@ -888,7 +888,7 @@ F test/like.test 81632c437a947bf1f7130b19537da6a1a844806a
 F test/like2.test 3b2ee13149ba4a8a60b59756f4e5d345573852da
 F test/like3.test 3608a2042b6f922f900fbfd5d3ce4e7eca57f7c4
 F test/limit.test 0c99a27a87b14c646a9d583c7c89fd06c352663e
-F test/limit2.test 40e79f3d95f2077742aa5b7676f58c9af1735d83
+F test/limit2.test ac97b8d07060a0280162ba4159e4c0c765861127
 F test/loadext.test d077450695ddb5c1ea3ad7d48e5f5850fe732ad9
 F test/loadext2.test 0408380b57adca04004247179837a18e866a74f7
 F test/lock.test be4fe08118fb988fed741f429b7dd5d65e1c90db
@@ -1509,8 +1509,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a12d8059770df4bca59e321c266410344242bf7b
-Q +7090147903337864d54ecfb2cd84a3f823973167
-R 05e6db924bdac13a36bb75bd98924dc9
+P e5c30f227b3f6cae18cc85655149636372592bf8
+Q +820644b886f81e991fceb5f1c3290b8959b34528
+R 9e05f10224481d9859c9095e6e7d395f
 U drh
-Z 346147d183ae19693393faa596b49aa5
+Z 1319827703ca94f3fde0a55b291e91eb
