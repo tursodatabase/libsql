@@ -108,7 +108,12 @@ foreach ::tclvar_set_omit {0 1} {
 
 #-------------------------------------------------------------------------
 #
-if {1} {
+if {$tcl_platform(platform)=="windows"} {
+  set drive [string range [pwd] 0 1]
+  set ::env(fstreeDrive) $drive
+}
+if {$tcl_platform(platform)!="windows" || \
+    [regexp -nocase -- {^[A-Z]:} $drive]} {
   reset_db
   register_fs_module db
   do_execsql_test 3.0 {
@@ -119,7 +124,7 @@ if {1} {
   proc list_root_files {} {
     if {$::tcl_platform(platform) eq "windows"} {
       set res [list]
-      foreach name [glob -directory $::env(SystemDrive)/ -- *] {
+      foreach name [glob -directory $::env(fstreeDrive)/ -- *] {
         if {[string index [file tail $name] 0] eq "."} continue
         lappend res $name
       }
@@ -141,6 +146,25 @@ if {1} {
       return [glob -nocomplain $pattern]
     }
   }
+
+  # Read the first 5 entries from the root directory.  Except, ignore
+  # files that contain the "$" character in their names as these are
+  # special files on some Windows platforms.
+  #
+  set res [list]
+  set root_files [list_root_files]
+  set num_root_files [llength $root_files]
+  set lim_root_files [expr {$num_root_files > 5 ? 5 : $num_root_files}]
+  foreach p [lrange $root_files 0 [expr {$lim_root_files - 1}]] {
+    if {$::tcl_platform(platform) eq "windows"} {
+      if {[regexp {\$} $p]} {incr lim_root_files -1} else {lappend res $p}
+    } else {
+      lappend res "/$p"
+    }
+  }
+  do_execsql_test 3.1 [subst {
+    SELECT path FROM fstree WHERE path NOT GLOB '*\$*' LIMIT $lim_root_files;
+  }] $res
 
   # Read all entries in the current directory.
   #

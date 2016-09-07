@@ -18,6 +18,34 @@
 #include "test_windirent.h"
 
 /*
+** Implementation of the POSIX getenv() function using the Win32 API.
+** This function is not thread-safe.
+*/
+const char *windirent_getenv(
+  const char *name
+){
+  static char value[32768]; /* Maximum length, per MSDN */
+  DWORD dwSize = sizeof(value) / sizeof(char); /* Size in chars */
+  DWORD dwRet; /* Value returned by GetEnvironmentVariableA() */
+
+  memset(value, 0, sizeof(value));
+  dwRet = GetEnvironmentVariableA(name, value, dwSize);
+  if( dwRet==0 || dwRet>dwSize ){
+    /*
+    ** The function call to GetEnvironmentVariableA() failed -OR-
+    ** the buffer is not large enough.  Either way, return NULL.
+    */
+    return 0;
+  }else{
+    /*
+    ** The function call to GetEnvironmentVariableA() succeeded
+    ** -AND- the buffer contains the entire value.
+    */
+    return value;
+  }
+}
+
+/*
 ** Implementation of the POSIX opendir() function using the MSVCRT.
 */
 LPDIR opendir(
@@ -32,7 +60,7 @@ LPDIR opendir(
 
   /* TODO: Remove this if Unix-style root paths are not used. */
   if( sqlite3_stricmp(dirname, "/")==0 ){
-    dirname = getenv("SystemDrive");
+    dirname = windirent_getenv("SystemDrive");
   }
 
   _snprintf(data.name, namesize, "%s\\*", dirname);
