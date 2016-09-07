@@ -31,6 +31,13 @@ USE_FULLWARN = 0
 USE_RUNTIME_CHECKS = 0
 !ENDIF
 
+# Set this non-0 to create a SQLite amalgamation file that excludes the
+# various built-in extensions.
+#
+!IFNDEF MINIMAL_AMALGAMATION
+MINIMAL_AMALGAMATION = 0
+!ENDIF
+
 # Set this non-0 to use "stdcall" calling convention for the core library
 # and shell executable.
 #
@@ -255,12 +262,15 @@ SQLITE3EXEPDB = /pdb:sqlite3sh.pdb
 !ENDIF
 !ENDIF
 
+
 # These are the "standard" SQLite compilation options used when compiling for
 # the Windows platform.
 #
 !IFNDEF OPT_FEATURE_FLAGS
+!IF $(MINIMAL_AMALGAMATION)==0
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_FTS3=1
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_RTREE=1
+!ENDIF
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_COLUMN_METADATA=1
 !ENDIF
 

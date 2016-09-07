@@ -1,8 +1,8 @@
-C Correct\saffinity\scomputations\sfor\sa\sSELECT\son\sthe\sRHS\sof\san\sIN\soperator.\nFix\sfor\sticket\s[199df4168c].
-D 2016-09-07T12:20:45.996
+C Makefile\schanges\sto\ssupport\sbuilding\swinsqlite3.dll\susing\sSTDCALL\srather\nthan\sCDECL.
+D 2016-09-07T12:41:06.204
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc d66d0395c38571aab3804f8db0fa20707ae4609a
+F Makefile.msc 50e36f9aa2c4f8e0a02ba1984d7e81001827d97d
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION b62230b0787a5adabb64c590cd8c0443271c1c70
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -11,7 +11,7 @@ F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am 1a47d071e3d5435f8f7ebff7eb6703848bbd65d4
-F autoconf/Makefile.msc 7a909aa9b538138a21c0626e3ffc4b1f4519f50e
+F autoconf/Makefile.msc b6d27f735911fd09a589d3c966936c47a5850c17
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/README.txt 4f04b0819303aabaa35fff5f7b257fb0c1ef95f1
 F autoconf/configure.ac cacf2616abf6e4a569bde2ef365c143caeec40bc
@@ -1449,9 +1449,9 @@ F tool/mkopcodeh.tcl a01d2c1d8a6205b03fc635adf3735b4c523befd3
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkpragmatab.tcl f0d5bb266d1d388cf86fce5ba01a891e95d72d41
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
-F tool/mksqlite3c-noext.tcl aa58ea3be311c81821c2cd3209f55e46b07ab656
-F tool/mksqlite3c.tcl 63af8429841f08552e6da1d93b3dee4a93ff8071
-F tool/mksqlite3h.tcl e7b106fc4f29fbc258e8ba9b88d9108332ea2ade
+F tool/mksqlite3c-noext.tcl e241889b12b7f857bc7c361776ef113d826e0c28
+F tool/mksqlite3c.tcl b076d24348a84dffd41aab01bc4e19a1ba17581a
+F tool/mksqlite3h.tcl 22fa51b3dc04bef7cc55546c94b8b05478e081f8
 F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
 F tool/mkvsix.tcl 4abcaf3267171b2faadaf9b82a0dfbaa6e98f8b7
 F tool/offsets.c fe4262fdfa378e8f5499a42136d17bf3b98f6091
@@ -1509,7 +1509,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b4f8be1f3258823b3a8f316c92f9019f71ef86a0
-R 742bc7defda07dd553a21f17dc41fbef
+P 2d1983ff9f786ead159a900b8c023ab5507ce26b f66d0d8cf6976c62f7bc0e9390b09fb9976178c1
+R 33fc5d91b463202d75ba27a8723a9a5e
 U drh
-Z 287fe50a673ea0ec508c0e86ae809b4b
+Z 5e375284fce0411bc4a20adee34c3b9c
