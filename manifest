@@ -1,5 +1,5 @@
-C Simplify\sthe\saffinity\shandling\slogic\sin\scodeAllEqualityTerms().\s\sLogically\nthe\ssame,\sjust\sa\slittle\seasier\sto\sread\sand\sunderstand.
-D 2016-09-07T13:30:40.808
+C Fix\sa\sproblem\shandling\sexpressions\slike\s"(a,\sb)\sIN\s(SELECT\s...\sORDER\sBY\s1,\s2)"\swhen\sthere\sis\san\sindex\son\s"a"\sbut\snot\s"b".
+D 2016-09-07T19:37:20.043
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5017381e4853b1472e01d5bb926be1268eba429c
@@ -467,7 +467,7 @@ F src/wal.h 6dd221ed384afdc204bc61e25c23ef7fd5a511f2
 F src/walker.c 2d2cc7fb0f320f7f415215d7247f3c584141ac09
 F src/where.c edbd73a87ba2e186928e9bfc14348b1bbb2628c5
 F src/whereInt.h 14dd243e13b81cbb0a66063d38b70f93a7d6e613
-F src/wherecode.c 43522ac811e2e0374603f9fc9a3dda4e1a81f470
+F src/wherecode.c d172dcf99932ba698dd304edc9a368cd52b4b2e5
 F src/whereexpr.c e3db778ed205e982f31960896db71c50612ae009
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1028,7 +1028,7 @@ F test/rowvalue5.test c1adfb2ea104e181f70d55bbd80d803b9917b22b
 F test/rowvalue6.test d19b54feb604d5601f8614b15e214e0774c01087
 F test/rowvalue7.test 5d06ff19d9e6969e574a2e662a531dd0c67801a8
 F test/rowvalue8.test 5900eddad9e2c3c2e26f1a95f74aafc1232ee5e0
-F test/rowvalue9.test 03a5edc94ab5983b98820f6541c62b43560cd84c
+F test/rowvalue9.test e24f9eb02baffc6a67b6eed9e40d4c612c98079d
 F test/rowvaluefault.test 7b16485e3f2b371f3e3d05455b8ded6d0c090244
 F test/rtree.test 0c8d9dd458d6824e59683c19ab2ffa9ef946f798
 F test/run-wordcount.sh 891e89c4c2d16e629cd45951d4ed899ad12afc09
@@ -1522,7 +1522,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 193f036c87857bd77577ceb462af5034c7cc77da
-R 5310dec13b5e77c999328204c9245316
-U drh
-Z 06433047ae27fe630ae84491904304f6
+P bbab9621f512b04684163b98b6fc669c68038044
+R 09b192e18dc26d97d5a589656b60205f
+U dan
+Z 3d9ebf68fced17edbc91ddfab98198fe

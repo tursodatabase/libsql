@@ -445,8 +445,9 @@ static int codeEqualityTerm(
     if( (pX->flags & EP_xIsSelect)==0 || pX->x.pSelect->pEList->nExpr==1 ){
       eType = sqlite3FindInIndex(pParse, pX, IN_INDEX_LOOP, 0, 0);
     }else{
+      Select *pSelect = pX->x.pSelect;
       sqlite3 *db = pParse->db;
-      ExprList *pOrigRhs = pX->x.pSelect->pEList;
+      ExprList *pOrigRhs = pSelect->pEList;
       ExprList *pOrigLhs = pX->pLeft->x.pList;
       ExprList *pRhs = 0;         /* New Select.pEList for RHS */
       ExprList *pLhs = 0;         /* New pX->pLeft vector */
@@ -463,6 +464,21 @@ static int codeEqualityTerm(
       }
       if( !db->mallocFailed ){
         Expr *pLeft = pX->pLeft;
+
+        if( pSelect->pOrderBy ){
+          /* If the SELECT statement has an ORDER BY clause, zero the 
+          ** iOrderByCol variables. These are set to non-zero when an 
+          ** ORDER BY term exactly matches one of the terms of the 
+          ** result-set. Since the result-set of the SELECT statement may
+          ** have been modified or reordered, these variables are no longer 
+          ** set correctly.  Since setting them is just an optimization, 
+          ** it's easiest just to zero them here.  */
+          ExprList *pOrderBy = pSelect->pOrderBy;
+          for(i=0; i<pOrderBy->nExpr; i++){
+            pOrderBy->a[i].u.x.iOrderByCol = 0;
+          }
+        }
+
         /* Take care here not to generate a TK_VECTOR containing only a
         ** single value. Since the parser never creates such a vector, some
         ** of the subroutines do not handle this case.  */
@@ -473,10 +489,10 @@ static int codeEqualityTerm(
           aiMap = (int*)sqlite3DbMallocZero(pParse->db, sizeof(int) * nEq);
           testcase( aiMap==0 );
         }
-        pX->x.pSelect->pEList = pRhs;
+        pSelect->pEList = pRhs;
         eType = sqlite3FindInIndex(pParse, pX, IN_INDEX_LOOP, 0, aiMap);
         testcase( aiMap!=0 && aiMap[0]!=0 );
-        pX->x.pSelect->pEList = pOrigRhs;
+        pSelect->pEList = pOrigRhs;
         pLeft->x.pList = pOrigLhs;
         pX->pLeft = pLeft;
       }
