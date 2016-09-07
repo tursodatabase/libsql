@@ -1094,12 +1094,21 @@ static int displayComment(
   const char *zSynopsis;
   int nOpName;
   int ii, jj;
+  char zAlt[50];
   zOpName = sqlite3OpcodeName(pOp->opcode);
   nOpName = sqlite3Strlen30(zOpName);
   if( zOpName[nOpName+1] ){
     int seenCom = 0;
     char c;
     zSynopsis = zOpName += nOpName + 1;
+    if( strncmp(zSynopsis,"IF ",3)==0 ){
+      if( pOp->p5 & SQLITE_STOREP2 ){
+        sqlite3_snprintf(sizeof(zAlt), zAlt, "r[P2] = (%s)", zSynopsis+3);
+      }else{
+        sqlite3_snprintf(sizeof(zAlt), zAlt, "if %s goto P2", zSynopsis+3);
+      }
+      zSynopsis = zAlt;
+    }
     for(ii=jj=0; jj<nTemp-1 && (c = zSynopsis[ii])!=0; ii++){
       if( c=='P' ){
         c = zSynopsis[++ii];

@@ -1,5 +1,5 @@
-C Merge\sselected\stest\sfixes\sfrom\strunk.
-D 2016-09-07T19:31:06.287
+C Fix\sthe\sextra\scomments\s(added\swith\s-DSQLITE_ENABLE_EXPLAIN_COMMENTS)\sso\sthat\sthe\ssense\sof\s<,\s<=,\s>,\sand\s>=\stests\sis\scorrect\sand\sso\sthat\sthe\sSQLITE_STOREP2\sversion\sis\sshown\scorrectly.\s\sCherrypick\sof\s[4d43c4698eef4e3d].
+D 2016-09-07T19:47:07.213
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6fef1e10792656c94fe1393092de6c8ba6ea1c88
@@ -449,11 +449,11 @@ F src/update.c 4f05ea8cddfa367d045e03589756c02199e8f9bd
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c 810ec3f22e2d1b62e66c30fe3621ebdedd23584d
 F src/vacuum.c 9dd2f5d276bc6094d8f1d85ecd41b30c1a002a43
-F src/vdbe.c ea260b61e73b11a71e70b28a8e25866e2899e5da
+F src/vdbe.c 326034bf0a89ac31e7801480be29cb3a3b452308
 F src/vdbe.h 67bc551f7faf04c33493892e4b378aada823ed10
 F src/vdbeInt.h c59381049af5c7751a83456c39b80d1a6fde1f9d
 F src/vdbeapi.c c3f6715a99995c11748ecad91d25e93fd9fc390b
-F src/vdbeaux.c a32d79aeaa88dc2b97c261172d952d395254a055
+F src/vdbeaux.c 83458783d241cfd6691141c8a105832ee50258e5
 F src/vdbeblob.c 83d2d266383157b02e2b809350bb197e89d7895b
 F src/vdbemem.c 1ecaa5ee0caff07255f25d04e8dc88befb6f88d1
 F src/vdbesort.c 91fda3909326860382b0ca8aa251e609c6a9d62c
@@ -1509,12 +1509,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b3777e1f8e4c44155734b92061422ac96795be3d
-Q +328f79bb5713abbecaeb0ef3fb37f56a0946b915
-Q +3680f95ff34fdcf6a18a99268678a56e4be5a023
-Q +84de17bc688f1df2be1a34420470d1b16f8f4e56
-Q +a8546feec9388d96934b16e516a165cd37d32ce9
-Q +e4aeaa2bc73b57f1ef134cc4f54e2a652a20b5c9
-R 8ce338835ce07201af8e9c9e9593fb0d
+P 71866b367f32b5a4cd0c239747fa8e0a60e75698
+Q +4d43c4698eef4e3db7556813f0274b4018c7c2b9
+R f8bf74686fb2550febcd5d6da9820226
 U mistachkin
-Z b082ecd6cc5d3c88a483c74aaee891ff
+Z c9e28854a0808d85c3a7226d43beeef5
