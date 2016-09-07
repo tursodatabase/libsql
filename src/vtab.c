@@ -344,7 +344,7 @@ void sqlite3VtabBeginParse(
   */
   if( pTable->azModuleArg ){
     sqlite3AuthCheck(pParse, SQLITE_CREATE_VTABLE, pTable->zName, 
-            pTable->azModuleArg[0], pParse->db->aDb[iDb].zName);
+            pTable->azModuleArg[0], pParse->db->aDb[iDb].zDbSName);
   }
 #endif
 }
@@ -408,7 +408,7 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
       "UPDATE %Q.%s "
          "SET type='table', name=%Q, tbl_name=%Q, rootpage=0, sql=%Q "
        "WHERE rowid=#%d",
-      db->aDb[iDb].zName, SCHEMA_TABLE(iDb),
+      db->aDb[iDb].zDbSName, SCHEMA_TABLE(iDb),
       pTab->zName,
       pTab->zName,
       zStmt,
@@ -518,7 +518,7 @@ static int vtabCallConstructor(
   pVTable->pMod = pMod;
 
   iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
-  pTab->azModuleArg[1] = db->aDb[iDb].zName;
+  pTab->azModuleArg[1] = db->aDb[iDb].zDbSName;
 
   /* Invoke the virtual table constructor */
   assert( &db->pVtabCtx );
@@ -672,7 +672,7 @@ static void addToVTrans(sqlite3 *db, VTable *pVTab){
 ** This function is invoked by the vdbe to call the xCreate method
 ** of the virtual table named zTab in database iDb. 
 **
-** If an error occurs, *pzErr is set to point an an English language
+** If an error occurs, *pzErr is set to point to an English language
 ** description of the error and an SQLITE_XXX error code is returned.
 ** In this case the caller must call sqlite3DbFree(db, ) on *pzErr.
 */
@@ -682,7 +682,7 @@ int sqlite3VtabCallCreate(sqlite3 *db, int iDb, const char *zTab, char **pzErr){
   Module *pMod;
   const char *zMod;
 
-  pTab = sqlite3FindTable(db, zTab, db->aDb[iDb].zName);
+  pTab = sqlite3FindTable(db, zTab, db->aDb[iDb].zDbSName);
   assert( pTab && (pTab->tabFlags & TF_Virtual)!=0 && !pTab->pVTable );
 
   /* Locate the required virtual table module */
@@ -806,7 +806,7 @@ int sqlite3VtabCallDestroy(sqlite3 *db, int iDb, const char *zTab){
   int rc = SQLITE_OK;
   Table *pTab;
 
-  pTab = sqlite3FindTable(db, zTab, db->aDb[iDb].zName);
+  pTab = sqlite3FindTable(db, zTab, db->aDb[iDb].zDbSName);
   if( pTab!=0 && ALWAYS(pTab->pVTable!=0) ){
     VTable *p;
     int (*xDestroy)(sqlite3_vtab *);

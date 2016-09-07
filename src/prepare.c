@@ -76,6 +76,7 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
     ** structures that describe the table, index, or view.
     */
     int rc;
+    u8 saved_iDb = db->init.iDb;
     sqlite3_stmt *pStmt;
     TESTONLY(int rcp);            /* Return code from sqlite3_prepare() */
 
@@ -86,7 +87,8 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
     TESTONLY(rcp = ) sqlite3_prepare(db, argv[2], -1, &pStmt, 0);
     rc = db->errCode;
     assert( (rc&0xFF)==(rcp&0xFF) );
-    db->init.iDb = 0;
+    db->init.iDb = saved_iDb;
+    assert( saved_iDb==0 || (db->flags & SQLITE_Vacuum)!=0 );
     if( SQLITE_OK!=rc ){
       if( db->init.orphanTrigger ){
         assert( iDb==1 );
@@ -110,7 +112,7 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
     ** to do here is record the root page number for that index.
     */
     Index *pIndex;
-    pIndex = sqlite3FindIndex(db, argv[0], db->aDb[iDb].zName);
+    pIndex = sqlite3FindIndex(db, argv[0], db->aDb[iDb].zDbSName);
     if( pIndex==0 ){
       /* This can occur if there exists an index on a TEMP table which
       ** has the same name as another index on a permanent index.  Since
@@ -289,7 +291,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
     char *zSql;
     zSql = sqlite3MPrintf(db, 
         "SELECT name, rootpage, sql FROM \"%w\".%s ORDER BY rowid",
-        db->aDb[iDb].zName, zMasterName);
+        db->aDb[iDb].zDbSName, zMasterName);
 #ifndef SQLITE_OMIT_AUTHORIZATION
     {
       sqlite3_xauth xAuth;
@@ -564,7 +566,7 @@ static int sqlite3Prepare(
       assert( sqlite3BtreeHoldsMutex(pBt) );
       rc = sqlite3BtreeSchemaLocked(pBt);
       if( rc ){
-        const char *zDb = db->aDb[i].zName;
+        const char *zDb = db->aDb[i].zDbSName;
         sqlite3ErrorWithMsg(db, rc, "database schema is locked: %s", zDb);
         testcase( db->flags & SQLITE_ReadUncommitted );
         goto end_prepare;

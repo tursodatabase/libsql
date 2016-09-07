@@ -792,6 +792,11 @@ int sqlite3_db_config(sqlite3 *db, int op, ...){
   int rc;
   va_start(ap, op);
   switch( op ){
+    case SQLITE_DBCONFIG_MAINDBNAME: {
+      db->aDb[0].zDbSName = va_arg(ap,char*);
+      rc = SQLITE_OK;
+      break;
+    }
     case SQLITE_DBCONFIG_LOOKASIDE: {
       void *pBuf = va_arg(ap, void*); /* IMP: R-26835-10964 */
       int sz = va_arg(ap, int);       /* IMP: R-47871-25994 */
@@ -1845,6 +1850,8 @@ int sqlite3_trace_v2(
   }
 #endif
   sqlite3_mutex_enter(db->mutex);
+  if( mTrace==0 ) xTrace = 0;
+  if( xTrace==0 ) mTrace = 0;
   db->mTrace = mTrace;
   db->xTrace = xTrace;
   db->pTraceArg = pArg;
@@ -3028,9 +3035,9 @@ static int openDatabase(
   /* The default safety_level for the main database is FULL; for the temp
   ** database it is OFF. This matches the pager layer defaults.  
   */
-  db->aDb[0].zName = "main";
+  db->aDb[0].zDbSName = "main";
   db->aDb[0].safety_level = SQLITE_DEFAULT_SYNCHRONOUS+1;
-  db->aDb[1].zName = "temp";
+  db->aDb[1].zDbSName = "temp";
   db->aDb[1].safety_level = PAGER_SYNCHRONOUS_OFF;
 
   db->magic = SQLITE_MAGIC_OPEN;
@@ -3044,11 +3051,20 @@ static int openDatabase(
   */
   sqlite3Error(db, SQLITE_OK);
   sqlite3RegisterPerConnectionBuiltinFunctions(db);
+  rc = sqlite3_errcode(db);
+
+#ifdef SQLITE_ENABLE_FTS5
+  /* Register any built-in FTS5 module before loading the automatic
+  ** extensions. This allows automatic extensions to register FTS5 
+  ** tokenizers and auxiliary functions.  */
+  if( !db->mallocFailed && rc==SQLITE_OK ){
+    rc = sqlite3Fts5Init(db);
+  }
+#endif
 
   /* Load automatic extensions - extensions that have been registered
   ** using the sqlite3_automatic_extension() API.
   */
-  rc = sqlite3_errcode(db);
   if( rc==SQLITE_OK ){
     sqlite3AutoLoadExtensions(db);
     rc = sqlite3_errcode(db);
@@ -3074,12 +3090,6 @@ static int openDatabase(
 #ifdef SQLITE_ENABLE_FTS3 /* automatically defined by SQLITE_ENABLE_FTS4 */
   if( !db->mallocFailed && rc==SQLITE_OK ){
     rc = sqlite3Fts3Init(db);
-  }
-#endif
-
-#ifdef SQLITE_ENABLE_FTS5
-  if( !db->mallocFailed && rc==SQLITE_OK ){
-    rc = sqlite3Fts5Init(db);
   }
 #endif
 
@@ -4023,7 +4033,7 @@ Btree *sqlite3DbNameToBtree(sqlite3 *db, const char *zDbName){
   int i;
   for(i=0; i<db->nDb; i++){
     if( db->aDb[i].pBt
-     && (zDbName==0 || sqlite3StrICmp(zDbName, db->aDb[i].zName)==0)
+     && (zDbName==0 || sqlite3StrICmp(zDbName, db->aDb[i].zDbSName)==0)
     ){
       return db->aDb[i].pBt;
     }

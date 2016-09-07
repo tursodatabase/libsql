@@ -7387,6 +7387,29 @@ static int SQLITE_TCLAPI test_sqlite3_db_config(
 }
 
 /*
+** Change the name of the main database schema from "main" to "icecube".
+*/
+static int SQLITE_TCLAPI test_dbconfig_maindbname_icecube(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int rc;
+  sqlite3 *db;
+  extern int getDbPointer(Tcl_Interp*, const char*, sqlite3**);
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB");
+    return TCL_ERROR;
+  }else{
+    if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+    rc = sqlite3_db_config(db, SQLITE_DBCONFIG_MAINDBNAME, "icecube");
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
+    return TCL_OK;
+  }
+}
+
+/*
 ** Register commands with the TCL interpreter.
 */
 int Sqlitetest1_Init(Tcl_Interp *interp){
@@ -7520,6 +7543,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_enable_load_extension", test_enable_load,        0},
      { "sqlite3_extended_result_codes", test_extended_result_codes, 0},
      { "sqlite3_limit",                 test_limit,                 0},
+     { "dbconfig_maindbname_icecube",   test_dbconfig_maindbname_icecube },
 
      { "save_prng_state",               save_prng_state,    0 },
      { "restore_prng_state",            restore_prng_state, 0 },

@@ -196,7 +196,6 @@ sqlite3_backup *sqlite3_backup_init(
     p->isAttached = 0;
 
     if( 0==p->pSrc || 0==p->pDest 
-     || setDestPgsz(p)==SQLITE_NOMEM 
      || checkReadTransaction(pDestDb, p->pDest)!=SQLITE_OK 
      ){
       /* One (or both) of the named databases did not exist or an OOM
@@ -384,14 +383,6 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage){
       rc = SQLITE_OK;
     }
 
-    /* Lock the destination database, if it is not locked already. */
-    if( SQLITE_OK==rc && p->bDestLocked==0
-     && SQLITE_OK==(rc = sqlite3BtreeBeginTrans(p->pDest, 2)) 
-    ){
-      p->bDestLocked = 1;
-      sqlite3BtreeGetMeta(p->pDest, BTREE_SCHEMA_VERSION, &p->iDestSchema);
-    }
-
     /* If there is no open read-transaction on the source database, open
     ** one now. If a transaction is opened here, then it will be closed
     ** before this function exits.
@@ -399,6 +390,24 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage){
     if( rc==SQLITE_OK && 0==sqlite3BtreeIsInReadTrans(p->pSrc) ){
       rc = sqlite3BtreeBeginTrans(p->pSrc, 0);
       bCloseTrans = 1;
+    }
+
+    /* If the destination database has not yet been locked (i.e. if this
+    ** is the first call to backup_step() for the current backup operation),
+    ** try to set its page size to the same as the source database. This
+    ** is especially important on ZipVFS systems, as in that case it is
+    ** not possible to create a database file that uses one page size by
+    ** writing to it with another.  */
+    if( p->bDestLocked==0 && rc==SQLITE_OK && setDestPgsz(p)==SQLITE_NOMEM ){
+      rc = SQLITE_NOMEM;
+    }
+
+    /* Lock the destination database, if it is not locked already. */
+    if( SQLITE_OK==rc && p->bDestLocked==0
+     && SQLITE_OK==(rc = sqlite3BtreeBeginTrans(p->pDest, 2)) 
+    ){
+      p->bDestLocked = 1;
+      sqlite3BtreeGetMeta(p->pDest, BTREE_SCHEMA_VERSION, &p->iDestSchema);
     }
 
     /* Do not allow backup if the destination database is in WAL mode

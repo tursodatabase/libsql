@@ -524,7 +524,7 @@ static char *local_getline(char *zLine, FILE *in){
 #if defined(_WIN32) || defined(WIN32)
   /* For interactive input on Windows systems, translate the
   ** multi-byte characterset characters into UTF-8. */
-  if( stdin_is_interactive ){
+  if( stdin_is_interactive && in==stdin ){
     char *zTrans = sqlite3_win32_mbcs_to_utf8_v2(zLine, 0);
     if( zTrans ){
       int nTrans = strlen30(zTrans)+1;
@@ -4905,7 +4905,7 @@ static int process_input(ShellState *p, FILE *in){
     zLine = one_input_line(in, zLine, nSql>0);
     if( zLine==0 ){
       /* End of input */
-      if( stdin_is_interactive ) printf("\n");
+      if( in==0 && stdin_is_interactive ) printf("\n");
       break;
     }
     if( seenInterrupt ){

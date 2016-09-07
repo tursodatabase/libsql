@@ -290,7 +290,7 @@ static int isMatchOfColumn(
   Expr *pExpr,                    /* Test this expression */
   unsigned char *peOp2            /* OUT: 0 for MATCH, or else an op2 value */
 ){
-  struct Op2 {
+  static const struct Op2 {
     const char *zOp;
     unsigned char eOp2;
   } aOp[] = {
@@ -1275,13 +1275,14 @@ void sqlite3WhereClauseClear(WhereClause *pWC){
 ** tree.
 */
 Bitmask sqlite3WhereExprUsage(WhereMaskSet *pMaskSet, Expr *p){
-  Bitmask mask = 0;
+  Bitmask mask;
   if( p==0 ) return 0;
   if( p->op==TK_COLUMN ){
     mask = sqlite3WhereGetMask(pMaskSet, p->iTable);
     return mask;
   }
-  mask = sqlite3WhereExprUsage(pMaskSet, p->pRight);
+  assert( !ExprHasProperty(p, EP_TokenOnly) );
+  mask = p->pRight ? sqlite3WhereExprUsage(pMaskSet, p->pRight) : 0;
   if( p->pLeft ) mask |= sqlite3WhereExprUsage(pMaskSet, p->pLeft);
   if( ExprHasProperty(p, EP_xIsSelect) ){
     mask |= exprSelectUsage(pMaskSet, p->x.pSelect);

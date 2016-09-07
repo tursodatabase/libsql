@@ -2334,15 +2334,18 @@ static RbuState *rbuLoadState(sqlite3rbu *p){
 ** error occurs, leave an error code and message in the RBU handle.
 */
 static void rbuOpenDatabase(sqlite3rbu *p){
-  assert( p->rc==SQLITE_OK );
-  assert( p->dbMain==0 && p->dbRbu==0 );
-  assert( rbuIsVacuum(p) || p->zTarget!=0 );
+  assert( p->rc || (p->dbMain==0 && p->dbRbu==0) );
+  assert( p->rc || rbuIsVacuum(p) || p->zTarget!=0 );
 
   /* Open the RBU database */
   p->dbRbu = rbuOpenDbhandle(p, p->zRbu, 1);
 
   if( p->rc==SQLITE_OK && rbuIsVacuum(p) ){
     sqlite3_file_control(p->dbRbu, "main", SQLITE_FCNTL_RBUCNT, (void*)p);
+    if( p->zState==0 ){
+      const char *zFile = sqlite3_db_filename(p->dbRbu, "main");
+      p->zState = rbuMPrintf(p, "file://%s-vacuum?modeof=%s", zFile, zFile);
+    }
   }
 
   /* If using separate RBU and state databases, attach the state database to
@@ -3477,8 +3480,7 @@ static sqlite3rbu *openRbuHandle(
   sqlite3rbu *p;
   size_t nTarget = zTarget ? strlen(zTarget) : 0;
   size_t nRbu = strlen(zRbu);
-  size_t nState = zState ? strlen(zState) : 0;
-  size_t nByte = sizeof(sqlite3rbu) + nTarget+1 + nRbu+1+ nState+1;
+  size_t nByte = sizeof(sqlite3rbu) + nTarget+1 + nRbu+1;
 
   p = (sqlite3rbu*)sqlite3_malloc64(nByte);
   if( p ){
@@ -3500,8 +3502,7 @@ static sqlite3rbu *openRbuHandle(
       memcpy(p->zRbu, zRbu, nRbu+1);
       pCsr += nRbu+1;
       if( zState ){
-        p->zState = pCsr;
-        memcpy(p->zState, zState, nState+1);
+        p->zState = rbuMPrintf(p, "%s", zState);
       }
       rbuOpenDatabase(p);
     }
@@ -3612,6 +3613,20 @@ static sqlite3rbu *openRbuHandle(
 }
 
 /*
+** Allocate and return an RBU handle with all fields zeroed except for the
+** error code, which is set to SQLITE_MISUSE.
+*/
+static sqlite3rbu *rbuMisuseError(void){
+  sqlite3rbu *pRet;
+  pRet = sqlite3_malloc64(sizeof(sqlite3rbu));
+  if( pRet ){
+    memset(pRet, 0, sizeof(sqlite3rbu));
+    pRet->rc = SQLITE_MISUSE;
+  }
+  return pRet;
+}
+
+/*
 ** Open and return a new RBU handle. 
 */
 sqlite3rbu *sqlite3rbu_open(
@@ -3619,6 +3634,7 @@ sqlite3rbu *sqlite3rbu_open(
   const char *zRbu,
   const char *zState
 ){
+  if( zTarget==0 || zRbu==0 ){ return rbuMisuseError(); }
   /* TODO: Check that zTarget and zRbu are non-NULL */
   return openRbuHandle(zTarget, zRbu, zState);
 }
@@ -3630,6 +3646,7 @@ sqlite3rbu *sqlite3rbu_vacuum(
   const char *zTarget, 
   const char *zState
 ){
+  if( zTarget==0 ){ return rbuMisuseError(); }
   /* TODO: Check that both arguments are non-NULL */
   return openRbuHandle(0, zTarget, zState);
 }
@@ -3707,6 +3724,7 @@ int sqlite3rbu_close(sqlite3rbu *p, char **pzErrmsg){
     rbuEditErrmsg(p);
     rc = p->rc;
     *pzErrmsg = p->zErrmsg;
+    sqlite3_free(p->zState);
     sqlite3_free(p);
   }else{
     rc = SQLITE_NOMEM;

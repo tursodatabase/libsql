@@ -1458,7 +1458,7 @@ static const char *columnTypeImpl(
         zOrigTab = pTab->zName;
         if( pNC->pParse ){
           int iDb = sqlite3SchemaToIndex(pNC->pParse->db, pTab->pSchema);
-          zOrigDb = pNC->pParse->db->aDb[iDb].zName;
+          zOrigDb = pNC->pParse->db->aDb[iDb].zDbSName;
         }
 #else
         if( iCol<0 ){
@@ -4414,7 +4414,7 @@ static int selectExpander(Walker *pWalker, Select *p){
               continue;
             }
             iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
-            zSchemaName = iDb>=0 ? db->aDb[iDb].zName : "*";
+            zSchemaName = iDb>=0 ? db->aDb[iDb].zDbSName : "*";
           }
           for(j=0; j<pTab->nCol; j++){
             char *zName = pTab->aCol[j].zName;

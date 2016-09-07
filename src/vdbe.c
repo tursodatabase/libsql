@@ -1882,7 +1882,7 @@ case OP_Cast: {                  /* in1 */
 #endif /* SQLITE_OMIT_CAST */
 
 /* Opcode: Lt P1 P2 P3 P4 P5
-** Synopsis: if r[P1]<r[P3] goto P2
+** Synopsis: IF r[P3]<r[P1]
 **
 ** Compare the values in register P1 and P3.  If reg(P3)<reg(P1) then
 ** jump to address P2.  
@@ -1917,7 +1917,7 @@ case OP_Cast: {                  /* in1 */
 ** bit set.
 */
 /* Opcode: Ne P1 P2 P3 P4 P5
-** Synopsis: if r[P1]!=r[P3] goto P2
+** Synopsis: IF r[P3]!=r[P1]
 **
 ** This works just like the Lt opcode except that the jump is taken if
 ** the operands in registers P1 and P3 are not equal.  See the Lt opcode for
@@ -1930,7 +1930,7 @@ case OP_Cast: {                  /* in1 */
 ** the SQLITE_NULLEQ flag were omitted from P5.
 */
 /* Opcode: Eq P1 P2 P3 P4 P5
-** Synopsis: if r[P1]==r[P3] goto P2
+** Synopsis: IF r[P3]==r[P1]
 **
 ** This works just like the Lt opcode except that the jump is taken if
 ** the operands in registers P1 and P3 are equal.
@@ -1943,21 +1943,21 @@ case OP_Cast: {                  /* in1 */
 ** the SQLITE_NULLEQ flag were omitted from P5.
 */
 /* Opcode: Le P1 P2 P3 P4 P5
-** Synopsis: if r[P1]<=r[P3] goto P2
+** Synopsis: IF r[P3]<=r[P1]
 **
 ** This works just like the Lt opcode except that the jump is taken if
 ** the content of register P3 is less than or equal to the content of
 ** register P1.  See the Lt opcode for additional information.
 */
 /* Opcode: Gt P1 P2 P3 P4 P5
-** Synopsis: if r[P1]>r[P3] goto P2
+** Synopsis: IF r[P3]>r[P1]
 **
 ** This works just like the Lt opcode except that the jump is taken if
 ** the content of register P3 is greater than the content of
 ** register P1.  See the Lt opcode for additional information.
 */
 /* Opcode: Ge P1 P2 P3 P4 P5
-** Synopsis: if r[P1]>=r[P3] goto P2
+** Synopsis: IF r[P3]>=r[P1]
 **
 ** This works just like the Lt opcode except that the jump is taken if
 ** the content of register P3 is greater than or equal to the content of
@@ -4347,7 +4347,7 @@ case OP_InsertInt: {
   if( pOp->p4type==P4_TABLE && HAS_UPDATE_HOOK(db) ){
     assert( pC->isTable );
     assert( pC->iDb>=0 );
-    zDb = db->aDb[pC->iDb].zName;
+    zDb = db->aDb[pC->iDb].zDbSName;
     pTab = pOp->p4.pTab;
     assert( HasRowid(pTab) );
     op = ((pOp->p5 & OPFLAG_ISUPDATE) ? SQLITE_UPDATE : SQLITE_INSERT);
@@ -4464,7 +4464,7 @@ case OP_Delete: {
   if( pOp->p4type==P4_TABLE && HAS_UPDATE_HOOK(db) ){
     assert( pC->iDb>=0 );
     assert( pOp->p4.pTab!=0 );
-    zDb = db->aDb[pC->iDb].zName;
+    zDb = db->aDb[pC->iDb].zDbSName;
     pTab = pOp->p4.pTab;
     if( (pOp->p5 & OPFLAG_SAVEPOSITION)!=0 && pC->isTable ){
       pC->movetoTarget = sqlite3BtreeIntegerKey(pC->uc.pCursor);
@@ -5434,7 +5434,7 @@ case OP_ParseSchema: {
     initData.pzErrMsg = &p->zErrMsg;
     zSql = sqlite3MPrintf(db,
        "SELECT name, rootpage, sql FROM '%q'.%s WHERE %s ORDER BY rowid",
-       db->aDb[iDb].zName, zMaster, pOp->p4.z);
+       db->aDb[iDb].zDbSName, zMaster, pOp->p4.z);
     if( zSql==0 ){
       rc = SQLITE_NOMEM_BKPT;
     }else{
@@ -6263,15 +6263,14 @@ case OP_JournalMode: {    /* out2 */
 #endif /* SQLITE_OMIT_PRAGMA */
 
 #if !defined(SQLITE_OMIT_VACUUM) && !defined(SQLITE_OMIT_ATTACH)
-/* Opcode: Vacuum * * * * *
+/* Opcode: Vacuum P1 * * * *
 **
-** Vacuum the entire database.  This opcode will cause other virtual
-** machines to be created and run.  It may not be called from within
-** a transaction.
+** Vacuum the entire database P1.  P1 is 0 for "main", and 2 or more
+** for an attached database.  The "temp" database may not be vacuumed.
 */
 case OP_Vacuum: {
   assert( p->readOnly==0 );
-  rc = sqlite3RunVacuum(&p->zErrMsg, db);
+  rc = sqlite3RunVacuum(&p->zErrMsg, db, pOp->p1);
   if( rc ) goto abort_due_to_error;
   break;
 }
@@ -6818,7 +6817,7 @@ case OP_Init: {          /* jump */
     int i;
     for(i=0; i<db->nDb; i++){
       if( DbMaskTest(p->btreeMask, i)==0 ) continue;
-      sqlite3_file_control(db, db->aDb[i].zName, SQLITE_FCNTL_TRACE, zTrace);
+      sqlite3_file_control(db, db->aDb[i].zDbSName, SQLITE_FCNTL_TRACE, zTrace);
     }
   }
 #endif /* SQLITE_USE_FCNTL_TRACE */

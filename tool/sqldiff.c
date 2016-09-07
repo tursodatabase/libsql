@@ -1179,8 +1179,9 @@ static void getRbudiffQuery(
   strPrintf(pSql, " FROM aux.%Q AS n WHERE NOT EXISTS (\n", zTab);
   strPrintf(pSql, "    SELECT 1 FROM ", zTab);
   strPrintf(pSql, " main.%Q AS o WHERE ", zTab);
-  strPrintfArray(pSql, " AND ", "(n.%Q IS o.%Q)", azCol, nPK);
-  strPrintf(pSql, "\n)");
+  strPrintfArray(pSql, " AND ", "(n.%Q = o.%Q)", azCol, nPK);
+  strPrintf(pSql, "\n) AND ");
+  strPrintfArray(pSql, " AND ", "(n.%Q IS NOT NULL)", azCol, nPK);
 
   /* Deleted rows: */
   strPrintf(pSql, "\nUNION ALL\nSELECT ");
@@ -1194,8 +1195,9 @@ static void getRbudiffQuery(
   strPrintf(pSql, " FROM main.%Q AS n WHERE NOT EXISTS (\n", zTab);
   strPrintf(pSql, "    SELECT 1 FROM ", zTab);
   strPrintf(pSql, " aux.%Q AS o WHERE ", zTab);
-  strPrintfArray(pSql, " AND ", "(n.%Q IS o.%Q)", azCol, nPK);
-  strPrintf(pSql, "\n) ");
+  strPrintfArray(pSql, " AND ", "(n.%Q = o.%Q)", azCol, nPK);
+  strPrintf(pSql, "\n) AND ");
+  strPrintfArray(pSql, " AND ", "(n.%Q IS NOT NULL)", azCol, nPK);
 
   /* Updated rows. If all table columns are part of the primary key, there 
   ** can be no updates. In this case this part of the compound SELECT can
@@ -1226,7 +1228,7 @@ static void getRbudiffQuery(
     );
 
     strPrintf(pSql, "\nFROM main.%Q AS o, aux.%Q AS n\nWHERE ", zTab, zTab);
-    strPrintfArray(pSql, " AND ", "(n.%Q IS o.%Q)", azCol, nPK);
+    strPrintfArray(pSql, " AND ", "(n.%Q = o.%Q)", azCol, nPK);
     strPrintf(pSql, " AND ota_control LIKE '%%x%%'");
   }
 
@@ -1302,7 +1304,7 @@ static void rbudiff_one_table(const char *zTab, FILE *out){
       char *zOtaControl;
       int nOtaControl = sqlite3_column_bytes(pStmt, nCol);
 
-      zOtaControl = (char*)sqlite3_malloc(nOtaControl);
+      zOtaControl = (char*)sqlite3_malloc(nOtaControl+1);
       memcpy(zOtaControl, sqlite3_column_text(pStmt, nCol), nOtaControl+1);
 
       for(i=0; i<nCol; i++){

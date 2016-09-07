@@ -29,6 +29,107 @@ struct TestStreamInput {
   int iData;                      /* Bytes of data already read by sessions */
 };
 
+/*
+** Extract an sqlite3* db handle from the object passed as the second
+** argument. If successful, set *pDb to point to the db handle and return
+** TCL_OK. Otherwise, return TCL_ERROR.
+*/
+static int dbHandleFromObj(Tcl_Interp *interp, Tcl_Obj *pObj, sqlite3 **pDb){
+  Tcl_CmdInfo info;
+  if( 0==Tcl_GetCommandInfo(interp, Tcl_GetString(pObj), &info) ){
+    Tcl_AppendResult(interp, "no such handle: ", Tcl_GetString(pObj), 0);
+    return TCL_ERROR;
+  }
+
+  *pDb = *(sqlite3 **)info.objClientData;
+  return TCL_OK;
+}
+
+/*************************************************************************
+** The following code is copied byte-for-byte from the sessions module
+** documentation.  It is used by some of the sessions modules tests to
+** ensure that the example in the documentation does actually work.
+*/ 
+/*
+** Argument zSql points to a buffer containing an SQL script to execute 
+** against the database handle passed as the first argument. As well as
+** executing the SQL script, this function collects a changeset recording
+** all changes made to the "main" database file. Assuming no error occurs,
+** output variables (*ppChangeset) and (*pnChangeset) are set to point
+** to a buffer containing the changeset and the size of the changeset in
+** bytes before returning SQLITE_OK. In this case it is the responsibility
+** of the caller to eventually free the changeset blob by passing it to
+** the sqlite3_free function.
+**
+** Or, if an error does occur, return an SQLite error code. The final
+** value of (*pChangeset) and (*pnChangeset) are undefined in this case.
+*/
+int sql_exec_changeset(
+  sqlite3 *db,                  /* Database handle */
+  const char *zSql,             /* SQL script to execute */
+  int *pnChangeset,             /* OUT: Size of changeset blob in bytes */
+  void **ppChangeset            /* OUT: Pointer to changeset blob */
+){
+  sqlite3_session *pSession = 0;
+  int rc;
+
+  /* Create a new session object */
+  rc = sqlite3session_create(db, "main", &pSession);
+
+  /* Configure the session object to record changes to all tables */
+  if( rc==SQLITE_OK ) rc = sqlite3session_attach(pSession, NULL);
+
+  /* Execute the SQL script */
+  if( rc==SQLITE_OK ) rc = sqlite3_exec(db, zSql, 0, 0, 0);
+
+  /* Collect the changeset */
+  if( rc==SQLITE_OK ){
+    rc = sqlite3session_changeset(pSession, pnChangeset, ppChangeset);
+  }
+
+  /* Delete the session object */
+  sqlite3session_delete(pSession);
+
+  return rc;
+}
+/************************************************************************/
+
+/*
+** Tclcmd: sql_exec_changeset DB SQL
+*/
+static int SQLITE_TCLAPI test_sql_exec_changeset(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  const char *zSql;
+  sqlite3 *db;
+  void *pChangeset;
+  int nChangeset;
+  int rc;
+
+  if( objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB SQL");
+    return TCL_ERROR;
+  }
+  if( dbHandleFromObj(interp, objv[1], &db) ) return TCL_ERROR;
+  zSql = (const char*)Tcl_GetString(objv[2]);
+
+  rc = sql_exec_changeset(db, zSql, &nChangeset, &pChangeset);
+  if( rc!=SQLITE_OK ){
+    Tcl_ResetResult(interp);
+    Tcl_AppendResult(interp, "error in sql_exec_changeset()", 0);
+    return TCL_ERROR;
+  }
+
+  Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(pChangeset, nChangeset));
+  sqlite3_free(pChangeset);
+  return TCL_OK;
+}
+
+
+
 #define SESSION_STREAM_TCL_VAR "sqlite3session_streams"
 
 /*
@@ -919,23 +1020,26 @@ static int SQLITE_TCLAPI test_sqlite3session_foreach(
 }
 
 int TestSession_Init(Tcl_Interp *interp){
-  Tcl_CreateObjCommand(interp, "sqlite3session", test_sqlite3session, 0, 0);
-  Tcl_CreateObjCommand(
-      interp, "sqlite3session_foreach", test_sqlite3session_foreach, 0, 0
-  );
-  Tcl_CreateObjCommand(
-      interp, "sqlite3changeset_invert", test_sqlite3changeset_invert, 0, 0
-  );
-  Tcl_CreateObjCommand(
-      interp, "sqlite3changeset_concat", test_sqlite3changeset_concat, 0, 0
-  );
-  Tcl_CreateObjCommand(
-      interp, "sqlite3changeset_apply", test_sqlite3changeset_apply, 0, 0
-  );
-  Tcl_CreateObjCommand(
-      interp, "sqlite3changeset_apply_replace_all", 
-      test_sqlite3changeset_apply_replace_all, 0, 0
-  );
+  struct Cmd {
+    const char *zCmd;
+    Tcl_ObjCmdProc *xProc;
+  } aCmd[] = {
+    { "sqlite3session", test_sqlite3session },
+    { "sqlite3session_foreach", test_sqlite3session_foreach },
+    { "sqlite3changeset_invert", test_sqlite3changeset_invert },
+    { "sqlite3changeset_concat", test_sqlite3changeset_concat },
+    { "sqlite3changeset_apply", test_sqlite3changeset_apply },
+    { "sqlite3changeset_apply_replace_all", 
+      test_sqlite3changeset_apply_replace_all },
+    { "sql_exec_changeset", test_sql_exec_changeset },
+  };
+  int i;
+
+  for(i=0; i<sizeof(aCmd)/sizeof(struct Cmd); i++){
+    struct Cmd *p = &aCmd[i];
+    Tcl_CreateObjCommand(interp, p->zCmd, p->xProc, 0, 0);
+  }
+
   return TCL_OK;
 }
 

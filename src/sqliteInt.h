@@ -1097,7 +1097,7 @@ typedef struct With With;
 ** databases may be attached.
 */
 struct Db {
-  char *zName;         /* Name of this database */
+  char *zDbSName;      /* Name of this database. (schema name, not filename) */
   Btree *pBt;          /* The B*Tree structure for this database file */
   u8 safety_level;     /* How aggressive at syncing data to disk */
   u8 bSyncSet;         /* True if "PRAGMA synchronous=N" has been run */
@@ -3701,8 +3701,8 @@ Table *sqlite3LocateTableItem(Parse*,u32 flags,struct SrcList_item *);
 Index *sqlite3FindIndex(sqlite3*,const char*, const char*);
 void sqlite3UnlinkAndDeleteTable(sqlite3*,int,const char*);
 void sqlite3UnlinkAndDeleteIndex(sqlite3*,int,const char*);
-void sqlite3Vacuum(Parse*);
-int sqlite3RunVacuum(char**, sqlite3*);
+void sqlite3Vacuum(Parse*,Token*);
+int sqlite3RunVacuum(char**, sqlite3*, int);
 char *sqlite3NameFromToken(sqlite3*, Token*);
 int sqlite3ExprCompare(Expr*, Expr*, int);
 int sqlite3ExprListCompare(ExprList*, ExprList*, int);

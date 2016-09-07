@@ -104,7 +104,7 @@
 ** may also be named data<integer>_<target>, where <integer> is any sequence
 ** of zero or more numeric characters (0-9). This can be significant because
 ** tables within the RBU database are always processed in order sorted by 
-** name. By judicious selection of the the <integer> portion of the names
+** name. By judicious selection of the <integer> portion of the names
 ** of the RBU tables the user can therefore control the order in which they
 ** are processed. This can be useful, for example, to ensure that "external
 ** content" FTS4 tables are updated before their underlying content tables.
@@ -319,15 +319,21 @@ sqlite3rbu *sqlite3rbu_open(
 ** An RBU vacuum is similar to SQLite's built-in VACUUM command, except
 ** that it can be suspended and resumed like an RBU update.
 **
-** The second argument to this function, which may not be NULL, identifies 
-** a database in which to store the state of the RBU vacuum operation if
-** it is suspended. The first time sqlite3rbu_vacuum() is called, to start
-** an RBU vacuum operation, the state database should either not exist or
-** be empty (contain no tables). If an RBU vacuum is suspended by calling
+** The second argument to this function identifies a database in which 
+** to store the state of the RBU vacuum operation if it is suspended. The 
+** first time sqlite3rbu_vacuum() is called, to start an RBU vacuum
+** operation, the state database should either not exist or be empty
+** (contain no tables). If an RBU vacuum is suspended by calling 
 ** sqlite3rbu_close() on the RBU handle before sqlite3rbu_step() has
 ** returned SQLITE_DONE, the vacuum state is stored in the state database. 
 ** The vacuum can be resumed by calling this function to open a new RBU
 ** handle specifying the same target and state databases.
+**
+** If the second argument passed to this function is NULL, then the
+** name of the state database is "<database>-vacuum", where <database>
+** is the name of the target database file. In this case, on UNIX, if the
+** state database is not already present in the file-system, it is created
+** with the same permissions as the target db is made.
 **
 ** This function does not delete the state database after an RBU vacuum
 ** is completed, even if it created it. However, if the call to

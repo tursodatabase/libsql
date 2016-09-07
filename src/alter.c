@@ -413,7 +413,7 @@ void sqlite3AlterRenameTable(
   pTab = sqlite3LocateTableItem(pParse, 0, &pSrc->a[0]);
   if( !pTab ) goto exit_rename_table;
   iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
-  zDb = db->aDb[iDb].zName;
+  zDb = db->aDb[iDb].zDbSName;
   db->flags |= SQLITE_PreferBuiltin;
 
   /* Get a NULL terminated version of the new table name. */
@@ -611,7 +611,7 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
 
   assert( sqlite3BtreeHoldsAllMutexes(db) );
   iDb = sqlite3SchemaToIndex(db, pNew->pSchema);
-  zDb = db->aDb[iDb].zName;
+  zDb = db->aDb[iDb].zDbSName;
   zTab = &pNew->zName[16];  /* Skip the "sqlite_altertab_" prefix on the name */
   pCol = &pNew->aCol[pNew->nCol-1];
   pDflt = pCol->pDflt;

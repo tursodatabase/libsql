@@ -727,12 +727,12 @@ int sqlite3changeset_concat(
 
 
 /*
-** Changegroup handle.
+** CAPI3REF: Changegroup Handle
 */
 typedef struct sqlite3_changegroup sqlite3_changegroup;
 
 /*
-** CAPI3REF: Combine two or more changesets into a single changeset.
+** CAPI3REF: Create A New Changegroup Object
 **
 ** An sqlite3_changegroup object is used to combine two or more changesets
 ** (or patchsets) into a single changeset (or patchset). A single changegroup
@@ -769,6 +769,8 @@ typedef struct sqlite3_changegroup sqlite3_changegroup;
 int sqlite3changegroup_new(sqlite3_changegroup **pp);
 
 /*
+** CAPI3REF: Add A Changeset To A Changegroup
+**
 ** Add all changes within the changeset (or patchset) in buffer pData (size
 ** nData bytes) to the changegroup. 
 **
@@ -844,6 +846,8 @@ int sqlite3changegroup_new(sqlite3_changegroup **pp);
 int sqlite3changegroup_add(sqlite3_changegroup*, int nData, void *pData);
 
 /*
+** CAPI3REF: Obtain A Composite Changeset From A Changegroup
+**
 ** Obtain a buffer containing a changeset (or patchset) representing the
 ** current contents of the changegroup. If the inputs to the changegroup
 ** were themselves changesets, the output is a changeset. Or, if the
@@ -872,7 +876,7 @@ int sqlite3changegroup_output(
 );
 
 /*
-** Delete a changegroup object.
+** CAPI3REF: Delete A Changegroup Object
 */
 void sqlite3changegroup_delete(sqlite3_changegroup*);
 

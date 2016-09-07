@@ -249,7 +249,7 @@ void sqlite3Update(
       int rc;
       rc = sqlite3AuthCheck(pParse, SQLITE_UPDATE, pTab->zName,
                             j<0 ? "ROWID" : pTab->aCol[j].zName,
-                            db->aDb[iDb].zName);
+                            db->aDb[iDb].zDbSName);
       if( rc==SQLITE_DENY ){
         goto update_cleanup;
       }else if( rc==SQLITE_IGNORE ){

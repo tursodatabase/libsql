@@ -156,7 +156,49 @@ foreach step {0 1} {
     trigger tr1 t1 0 {CREATE TRIGGER tr1 AFTER INSERT ON t1 BEGIN SELECT 1; END}
     }
   }
+}
+  
+#-------------------------------------------------------------------------
+# Test that passing a NULL value as the second argument to 
+# sqlite3rbu_vacuum() causes it to:
+#
+#   * Use <database>-vacuum as the state db, and
+#   * Set the state db permissions to the same as those on the db file.
+#
+db close
+if {$::tcl_platform(platform)=="unix"} {
+  forcedelete test.db
 
+  sqlite3 db test.db
+  do_execsql_test 5.0 {
+    CREATE TABLE t1(a, b);
+    INSERT INTO t1 VALUES(1, 2);
+    INSERT INTO t1 VALUES(3, 4);
+    INSERT INTO t1 VALUES(5, 6);
+    INSERT INTO t1 VALUES(7, 8);
+  }
+  db close
+
+  foreach {tn perm} {
+    1 00755
+    2 00666
+    3 00644
+    4 00444
+  } {
+    forcedelete test.db-vacuum
+
+    do_test 5.$tn.1 {
+      file attributes test.db -permissions $perm
+      sqlite3rbu_vacuum rbu test.db
+      rbu step
+    } {SQLITE_OK}
+
+    do_test 5.$tn.2 { file exists test.db-vacuum } 1
+    do_test 5.$tn.3 { file attributes test.db-vacuum -permissions} $perm
+    rbu close
+  }
 }
 
+
 finish_test
+
