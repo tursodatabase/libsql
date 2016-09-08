@@ -1,5 +1,5 @@
-C Sync\sup\sthe\sMSVC\smakefiles.
-D 2016-09-05T20:46:02.202
+C Remove\san\sextra\sspace\sbefore\sfunction\snames\sin\sthe\samalgamation.
+D 2016-09-08T23:16:02.556
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6fef1e10792656c94fe1393092de6c8ba6ea1c88
@@ -1451,9 +1451,9 @@ F tool/mkopcodeh.tcl a01d2c1d8a6205b03fc635adf3735b4c523befd3
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkpragmatab.tcl f0d5bb266d1d388cf86fce5ba01a891e95d72d41
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
-F tool/mksqlite3c-noext.tcl e241889b12b7f857bc7c361776ef113d826e0c28
-F tool/mksqlite3c.tcl b076d24348a84dffd41aab01bc4e19a1ba17581a
-F tool/mksqlite3h.tcl 22fa51b3dc04bef7cc55546c94b8b05478e081f8
+F tool/mksqlite3c-noext.tcl fef88397668ae83166735c41af99d79f56afaabb
+F tool/mksqlite3c.tcl 06b2e6a0f21cc0a5d70fbbd136b3e0a96470645e
+F tool/mksqlite3h.tcl c006c4e5da57c649b24b689511dcd270dd7b0249
 F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
 F tool/mkvsix.tcl 4abcaf3267171b2faadaf9b82a0dfbaa6e98f8b7
 F tool/offsets.c fe4262fdfa378e8f5499a42136d17bf3b98f6091
@@ -1511,7 +1511,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ea635bf97edb35b95b34adcb63f726f3573b1c4d
-R d8ebd39537a766e051577a29d6825c19
+P f66d0d8cf6976c62f7bc0e9390b09fb9976178c1
+R fa000513563ca36d44c377600d4e0d8c
 U mistachkin
-Z 1961d7bb5f7d90748e74759804c9ac8c
+Z e1e69ed364aa2ee4f40d4db15b985daf
