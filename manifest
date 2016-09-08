@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\srow-value\scomparisons,\sincluding\sIN\soperators,\sand\nrow-value\supdates\sin\sthe\sUPDATE\sstatement.
-D 2016-09-07T19:54:24.437
+C Issue\sa\swarning\sand\sprompt\sthe\suser\sto\scontinue\sif\sthe\sreleasetest.tcl\sscript\nis\srun\sin\sa\scheckout\swith\suncommitted\schanges.
+D 2016-09-08T23:12:08.268
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5017381e4853b1472e01d5bb926be1268eba429c
@@ -1013,7 +1013,7 @@ F test/rdonly.test 64e2696c322e3538df0b1ed624e21f9a23ed9ff8
 F test/regexp1.test 497ea812f264d12b6198d6e50a76be4a1973a9d8
 F test/regexp2.test aa7ffcc21350007a78361b82bcf3b74d12227144
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
-F test/releasetest.tcl 53560b838b79c468ec9973e0dfa3d8892628887f
+F test/releasetest.tcl 43a4a0c4607d43f4c6d8acf75a1ff39454785c94
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
 F test/rollback.test 458fe73eb3ffdfdf9f6ba3e9b7350a6220414dea
 F test/rollback2.test 8435d6ff0f13f51d2a4181c232e706005fa90fc5
@@ -1523,8 +1523,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 12b7782a9af91eab913e159149cb28b3f5a6557c 7f2c5c9ee3628c968306a5ab2e5a9a761f1b8055
-R 751b4792e244c0de84e03a1b48f5b06d
-T +closed 7f2c5c9ee3628c968306a5ab2e5a9a761f1b8055
+P ddb5f0558c44569913d22781ab78f3e9b58d7aea
+R 3e19300302271db9c0a9ac444e4e7cc4
 U drh
-Z 8852ee27cbc1c9d45a2ebb8e532166b1
+Z 9a4b9802acab37aa737bc2f82c43cc8f

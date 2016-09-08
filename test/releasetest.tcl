@@ -926,6 +926,21 @@ proc process_options {argv} {
   PUTS ""
 }
 
+# Check to see if there are changes in the checkout.  If there are
+# prompt the user to see if he wants to continue.
+#
+proc check_uncommitted {} {
+  if {[catch {exec fossil changes} res]==0 && [string trim $res]!=""} {
+    puts "The check-out contains uncommitted changes:"
+    puts $res
+    puts -nonewline "Run test anyhow (y/N)? "
+    flush stdout
+    set in [gets stdin]
+    if {$in!="y"} exit
+  }
+}
+
+
 # Main routine.
 #
 proc main {argv} {
@@ -933,6 +948,7 @@ proc main {argv} {
   # Process any command line options.
   set ::EXTRACONFIG {}
   process_options $argv
+  if {!$::DRYRUN} check_uncommitted
   PUTS [string repeat * 79]
 
   set ::NERR 0
