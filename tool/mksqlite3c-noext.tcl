@@ -226,12 +226,12 @@ proc copy_file {filename} {
           }
           if {$useapicall} {
             if {[lsearch -exact $cdecllist $funcname] >= 0} {
-              append line SQLITE_CDECL
+              append line SQLITE_CDECL " "
             } else {
-              append line SQLITE_APICALL
+              append line SQLITE_APICALL " "
             }
           }
-          append line " " $funcname $rest
+          append line $funcname $rest
           puts $out $line
         } else {
           puts $out "SQLITE_PRIVATE $line"
