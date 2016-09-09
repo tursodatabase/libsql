@@ -1,5 +1,5 @@
-C Add\snew\sfile\stest_delete.c,\scontaining\stest\scode\sfor\sdeleting\san\ssqlite\sdatabase.
-D 2016-09-09T20:00:40.358
+C Make\sthe\snew\sfile\stest_delete.c\sportable\sto\sMSVC\son\sWindows.
+D 2016-09-09T20:26:27.991
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e1aa788e84f926e42239ee167c53f785bedacacd
@@ -412,7 +412,7 @@ F src/test_bestindex.c d23f80d334c59662af69191854c76b8d3d0c8c96
 F src/test_blob.c a0f7ad49a0c9d4b72f693fe2a71c58d7e507174d
 F src/test_btree.c 8b2dc8b8848cf3a4db93f11578f075e82252a274
 F src/test_config.c 4d3d4a886416f369771d69a6dba926866deda788
-F src/test_delete.c 3e7c7223fd78da017569aea5521696a2d203d2ba
+F src/test_delete.c f4920c10d7208ac55ee03882de9709cf39a83fec
 F src/test_demovfs.c a0c3bdd45ed044115c2c9f7779e56eafff18741e
 F src/test_devsym.c 4e58dec2602d8e139ca08659f62a62450587cb58
 F src/test_fs.c e16cbe68d3b107e00a907c20a9a02629870eb69b
@@ -1525,10 +1525,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6ac932c92a61cd68cc5b1816216e4748a5c7b3cd
-R 49c1be8b151a3311317589c820143e41
-T *branch * test_delete
-T *sym-test_delete *
-T -sym-trunk *
-U dan
-Z b08ae969e8f18eb5dd37e3842872bc5d
+P fb0b95e9405a3180d13c6318409af361e9df7632
+R 636d380fec130f84b51bc39cdc46924e
+U mistachkin
+Z 84ac5c96a27a266c4f9b67a83c54b319

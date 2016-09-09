@@ -19,8 +19,12 @@
 **     above.
 */
 
-
-#include <unistd.h>
+#if SQLITE_OS_WIN
+#  include <io.h>
+#  define F_OK 0
+#else
+#  include <unistd.h>
+#endif
 #include <string.h>
 #include <errno.h>
 #include "sqlite3.h"
@@ -81,7 +85,7 @@ int sqlite3_delete_database(
 ){
   char *zBuf;                     /* Buffer to sprintf() filenames to */
   int nBuf;                       /* Size of buffer in bytes */
-  int rc;                         /* System error code */
+  int rc = 0;                     /* System error code */
   int i;                          /* Iterate through azFmt[] and aMFile[] */
 
   const char *azFmt[] = { "%s", "%s-journal", "%s-wal", "%s-shm" };
