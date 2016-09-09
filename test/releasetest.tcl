@@ -933,8 +933,10 @@ proc process_options {argv} {
   PUTS ""
 }
 
-# Check to see if there are changes in the checkout.  If there are
-# prompt the user to see if he wants to continue.
+# Check to see if there are uncommitted changes in the SQLite source
+# checkout.  Exit if there are.  Except:  Do nothing if the --force
+# flag is used.  Also, ignore this test if the fossil binary is
+# unavailable, or if the source tree is not a valid fossil checkout.
 #
 proc check_uncommitted {} {
   if {$::FORCE} return
