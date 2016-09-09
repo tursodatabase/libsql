@@ -9,18 +9,19 @@ This Tcl script is used to test the various configurations required
 before releasing a new version. Supported command line options (all
 optional) are:
 
-    --srcdir   TOP-OF-SQLITE-TREE      (see below)
-    --platform PLATFORM                (see below)
-    --config   CONFIGNAME              (Run only CONFIGNAME)
-    --quick                            (Run "veryquick.test" only)
-    --veryquick                        (Run "make smoketest" only)
-    --msvc                             (Use MSVC as the compiler)
     --buildonly                        (Just build testfixture - do not run)
+    --config   CONFIGNAME              (Run only CONFIGNAME)
     --dryrun                           (Print what would have happened)
+    -f|--force                         (Run even if uncommitted changes)
     --info                             (Show diagnostic info)
-    --with-tcl=DIR                     (Use TCL build at DIR)
     --jobs     N                       (Use N processes - default 1)
+    --msvc                             (Use MSVC as the compiler)
+    --platform PLATFORM                (see below)
     --progress                         (Show progress messages)
+    --quick                            (Run "veryquick.test" only)
+    --srcdir   TOP-OF-SQLITE-TREE      (see below)
+    --veryquick                        (Run "make smoketest" only)
+    --with-tcl=DIR                     (Use TCL build at DIR)
 
 The default value for --srcdir is the parent of the directory holding
 this script.
@@ -778,6 +779,7 @@ proc process_options {argv} {
   set ::JOBS           1
   set ::PROGRESS_MSGS  0
   set ::WITHTCL        {}
+  set ::FORCE          0
   set config {}
   set platform $::tcl_platform(os)-$::tcl_platform(machine)
 
@@ -831,6 +833,11 @@ proc process_options {argv} {
 
       -dryrun {
         set ::DRYRUN 1
+      }
+
+      -force -
+      -f {
+        set ::FORCE 1
       }
 
       -trace {
@@ -930,14 +937,16 @@ proc process_options {argv} {
 # prompt the user to see if he wants to continue.
 #
 proc check_uncommitted {} {
+  if {$::FORCE} return
+  set pwd [pwd]
+  cd $::SRCDIR
   if {[catch {exec fossil changes} res]==0 && [string trim $res]!=""} {
-    puts "The check-out contains uncommitted changes:"
+    puts "ERROR: The check-out contains uncommitted changes:"
     puts $res
-    puts -nonewline "Run test anyhow (y/N)? "
-    flush stdout
-    set in [gets stdin]
-    if {$in!="y"} exit
+    puts "Use the -f or --force options to override"
+    exit 1
   }
+  cd $pwd
 }
 
 
