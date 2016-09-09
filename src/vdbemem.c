@@ -575,7 +575,7 @@ int sqlite3VdbeMemNumerify(Mem *pMem){
     }
   }
   assert( (pMem->flags & (MEM_Int|MEM_Real|MEM_Null))!=0 );
-  pMem->flags &= ~(MEM_Str|MEM_Blob);
+  pMem->flags &= ~(MEM_Str|MEM_Blob|MEM_Zero);
   return SQLITE_OK;
 }
 
@@ -1018,9 +1018,6 @@ static SQLITE_NOINLINE const void *valueToText(sqlite3_value* pVal, u8 enc){
   assert( (pVal->flags & (MEM_Null))==0 );
   if( pVal->flags & (MEM_Blob|MEM_Str) ){
     pVal->flags |= MEM_Str;
-    if( pVal->flags & MEM_Zero ){
-      sqlite3VdbeMemExpandBlob(pVal);
-    }
     if( pVal->enc != (enc & ~SQLITE_UTF16_ALIGNED) ){
       sqlite3VdbeChangeEncoding(pVal, enc & ~SQLITE_UTF16_ALIGNED);
     }

@@ -1,5 +1,5 @@
-C Performance\simprovements\sto\sthe\scomparison\soperators\sin\sthe\sbytecode\sengine.
-D 2016-09-09T19:33:00.624
+C Remove\san\sunnecessary\scall\sto\ssqlite3VdbeMemExpandBlob()\swhen\scasting\sto\ntext.
+D 2016-09-09T20:23:59.911
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5017381e4853b1472e01d5bb926be1268eba429c
@@ -458,7 +458,7 @@ F src/vdbeInt.h c59381049af5c7751a83456c39b80d1a6fde1f9d
 F src/vdbeapi.c a32d61b7dd05e6890d8fd44d2805f55e2f5ba9f3
 F src/vdbeaux.c 230b6826656144bcdca6d9c09d38da9d927739be
 F src/vdbeblob.c 3e82a797b60c3b9fed7b8de8c539ca7607874937
-F src/vdbemem.c e67dc6d8177fd1830efb5d15e17793408251a187
+F src/vdbemem.c 1f28b306cd3ea8c74c1783b1f112ee2b16ebff1f
 F src/vdbesort.c 91fda3909326860382b0ca8aa251e609c6a9d62c
 F src/vdbetrace.c 41963d5376f0349842b5fc4aaaaacd7d9cdc0834
 F src/vtab.c e02cacb5c7ae742631edeb9ae9f53d399f093fd8
@@ -1523,7 +1523,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6ac932c92a61cd68cc5b1816216e4748a5c7b3cd
-R f1fdb6c44ee59a1a70f4ca210b22ee73
+P 37803b19d219f4107f29b240d5d314600e4bd236
+R db00fc0ef8aa68ef9774861c5c367c7d
 U drh
-Z 14efbbb4d9b59bda04ac0672b03a8c5e
+Z 32bad86ea2ad95fbb246e2b38f8691c3
