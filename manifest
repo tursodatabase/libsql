@@ -1,5 +1,5 @@
-C In\sreleasetest.tcl,\sthe\s--srcdir\soption\sis\sautomatic,\sso\sno\sneed\sto\smention\nit\sin\sthe\s--help\soutput.
-D 2016-09-09T13:23:36.137
+C Fix\sa\sout-of-order\svariable\sdeclaration\sfor\ssome\scompile-time\sconfigurations.
+D 2016-09-09T15:12:41.801
 F Makefile.in cfd8fb987cd7a6af046daa87daa146d5aad0e088
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5017381e4853b1472e01d5bb926be1268eba429c
@@ -339,7 +339,7 @@ F src/ctime.c e77f3dc297b4b65c96da78b4ae4272fdfae863d7
 F src/date.c 95c9a8d00767e7221a8e9a31f4e913fc8029bf6b
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
 F src/delete.c 76c084f0265f4a3cd1ecf17eee112a94f1ccbc05
-F src/expr.c 028c34005cb804abe8f73453ac08baa44f4b63f9
+F src/expr.c c1de78269522de39f6ad877ab0810a5d48f91f34
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c e2be0968c1adc679c87e467aa5b4f167588f38a8
 F src/func.c 29cc9acb170ec1387b9f63eb52cd85f8de96c771
@@ -1523,7 +1523,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P afaaa276b256f56adf63cb568e486cb3315c3ec2
-R d307f78f7d85e383c9266a539201664c
+P 2bdd838e2c434f1d26b1836ef39fa938ef93131d
+R cdaf391119a3a76bb49bf405a13f8694
 U drh
-Z 810b7b5c52fdba9d6e7019ea79310fb8
+Z f913482662ff429e344c363b85d81ce9

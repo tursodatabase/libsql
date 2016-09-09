@@ -2234,11 +2234,11 @@ int sqlite3FindInIndex(
           if( colUsed==(MASKBIT(nExpr)-1) ){
             /* If we reach this point, that means the index pIdx is usable */
             int iAddr = sqlite3CodeOnce(pParse); VdbeCoverage(v);
-  #ifndef SQLITE_OMIT_EXPLAIN
+#ifndef SQLITE_OMIT_EXPLAIN
             sqlite3VdbeAddOp4(v, OP_Explain, 0, 0, 0,
               sqlite3MPrintf(db, "USING INDEX %s FOR IN-OPERATOR",pIdx->zName),
               P4_DYNAMIC);
-  #endif
+#endif
             sqlite3VdbeAddOp3(v, OP_OpenRead, iTab, pIdx->tnum, iDb);
             sqlite3VdbeSetP4KeyInfo(pParse, pIdx);
             VdbeComment((v, "%s", pIdx->zName));
@@ -2246,12 +2246,12 @@ int sqlite3FindInIndex(
             eType = IN_INDEX_INDEX_ASC + pIdx->aSortOrder[0];
   
             if( prRhsHasNull ){
-              *prRhsHasNull = ++pParse->nMem;
-  #ifdef SQLITE_ENABLE_COLUMN_USED_MASK
+#ifdef SQLITE_ENABLE_COLUMN_USED_MASK
               i64 mask = (1<<nExpr)-1;
               sqlite3VdbeAddOp4Dup8(v, OP_ColumnsUsed, 
                   iTab, 0, 0, (u8*)&mask, P4_INT64);
-  #endif
+#endif
+              *prRhsHasNull = ++pParse->nMem;
               if( nExpr==1 ){
                 sqlite3SetHasNullFlag(v, iTab, *prRhsHasNull);
               }
