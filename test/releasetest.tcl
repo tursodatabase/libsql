@@ -19,12 +19,8 @@ optional) are:
     --platform PLATFORM                (see below)
     --progress                         (Show progress messages)
     --quick                            (Run "veryquick.test" only)
-    --srcdir   TOP-OF-SQLITE-TREE      (see below)
     --veryquick                        (Run "make smoketest" only)
     --with-tcl=DIR                     (Use TCL build at DIR)
-
-The default value for --srcdir is the parent of the directory holding
-this script.
 
 The script determines the default value for --platform using the
 $tcl_platform(os) and $tcl_platform(machine) variables.  Supported
@@ -792,6 +788,12 @@ proc process_options {argv} {
         exit
       }
 
+      # Undocumented legacy option: --srcdir DIRECTORY
+      #
+      # DIRECTORY is the root of the SQLite checkout.  This sets the
+      # SRCDIR global variable.  But that variable is already set
+      # automatically so there really is no reason to have this option.
+      #
       -srcdir {
         incr i
         set ::SRCDIR [file normalize [lindex $argv $i]]
