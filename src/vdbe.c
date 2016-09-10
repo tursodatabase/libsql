@@ -3877,7 +3877,7 @@ case OP_SeekGT: {       /* jump, in3 */
 #ifdef SQLITE_DEBUG
     { int i; for(i=0; i<r.nField; i++) assert( memIsValid(&r.aMem[i]) ); }
 #endif
-    ExpandBlob(r.aMem);
+    (void)ExpandBlob(r.aMem);
     r.eqSeen = 0;
     rc = sqlite3BtreeMovetoUnpacked(pC->uc.pCursor, &r, 0, 0, &res);
     if( rc!=SQLITE_OK ){
@@ -4020,7 +4020,7 @@ case OP_Found: {        /* jump, in3 */
     r.aMem = pIn3;
     for(ii=0; ii<r.nField; ii++){
       assert( memIsValid(&r.aMem[ii]) );
-      ExpandBlob(&r.aMem[ii]);
+      (void)ExpandBlob(&r.aMem[ii]);
 #ifdef SQLITE_DEBUG
       if( ii ) REGISTER_TRACE(pOp->p3+ii, &r.aMem[ii]);
 #endif
@@ -4032,7 +4032,7 @@ case OP_Found: {        /* jump, in3 */
     );
     if( pIdxKey==0 ) goto no_mem;
     assert( pIn3->flags & MEM_Blob );
-    ExpandBlob(pIn3);
+    (void)ExpandBlob(pIn3);
     sqlite3VdbeRecordUnpack(pC->pKeyInfo, pIn3->n, pIn3->z, pIdxKey);
   }
   pIdxKey->default_rc = 0;

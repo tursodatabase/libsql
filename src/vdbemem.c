@@ -192,7 +192,7 @@ int sqlite3VdbeMemMakeWriteable(Mem *pMem){
   int f;
   assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
   assert( (pMem->flags&MEM_RowSet)==0 );
-  ExpandBlob(pMem);
+  (void)ExpandBlob(pMem);
   f = pMem->flags;
   if( (f&(MEM_Str|MEM_Blob)) && (pMem->szMalloc==0 || pMem->z!=pMem->zMalloc) ){
     if( sqlite3VdbeMemGrow(pMem, pMem->n + 2, 1) ){

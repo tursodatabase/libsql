@@ -590,7 +590,8 @@ static int DbProgressHandler(void *cd){
 }
 #endif
 
-#ifndef SQLITE_OMIT_TRACE
+#if !defined(SQLITE_OMIT_TRACE) && !defined(SQLITE_OMIT_FLOATING_POINT) && \
+    !defined(SQLITE_OMIT_DEPRECATED)
 /*
 ** This routine is called by the SQLite trace handler whenever a new
 ** block of SQL is executed.  The TCL script in pDb->zTrace is executed.
@@ -684,7 +685,8 @@ static int DbTraceV2Handler(
 }
 #endif
 
-#ifndef SQLITE_OMIT_TRACE
+#if !defined(SQLITE_OMIT_TRACE) && !defined(SQLITE_OMIT_FLOATING_POINT) && \
+    !defined(SQLITE_OMIT_DEPRECATED)
 /*
 ** This routine is called by the SQLite profile handler after a statement
 ** SQL has executed.  The TCL script in pDb->zProfile is evaluated.
@@ -2747,7 +2749,8 @@ static int SQLITE_TCLAPI DbObjCmd(
       }else{
         pDb->zProfile = 0;
       }
-#if !defined(SQLITE_OMIT_TRACE) && !defined(SQLITE_OMIT_FLOATING_POINT)
+#if !defined(SQLITE_OMIT_TRACE) && !defined(SQLITE_OMIT_FLOATING_POINT) && \
+    !defined(SQLITE_OMIT_DEPRECATED)
       if( pDb->zProfile ){
         pDb->interp = interp;
         sqlite3_profile(pDb->db, DbProfileHandler, pDb);
@@ -2934,8 +2937,8 @@ static int SQLITE_TCLAPI DbObjCmd(
       }else{
         pDb->zTrace = 0;
       }
-#if !defined(SQLITE_OMIT_TRACE) && !defined(SQLITE_OMIT_FLOATING_POINT) \
-    && !defined(SQLITE_OMIT_DEPRECATED)
+#if !defined(SQLITE_OMIT_TRACE) && !defined(SQLITE_OMIT_FLOATING_POINT) && \
+    !defined(SQLITE_OMIT_DEPRECATED)
       if( pDb->zTrace ){
         pDb->interp = interp;
         sqlite3_trace(pDb->db, DbTraceHandler, pDb);
