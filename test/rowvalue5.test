@@ -17,6 +17,11 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set ::testprefix rowvalue5
 
+ifcapable !vtab {
+  finish_test
+  return
+}
+
 proc vtab_command {method args} {
   switch -- $method {
     xConnect {
