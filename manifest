@@ -1,5 +1,5 @@
-C Add\smissing\s"finish_test"\scommand\sto\svacuum5.test.
-D 2016-09-12T13:32:37.608
+C Fix\sa\sbug\sin\ssqldiff\scausing\sit\sto\sconfuse\sblobs\szero\sbytes\sin\ssize\swith\sNULL\svalues.
+D 2016-09-12T14:23:51.714
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e1aa788e84f926e42239ee167c53f785bedacacd
@@ -246,7 +246,7 @@ F ext/rbu/rbuB.test c25bc325b8072a766e56bb76c001866b405925c2
 F ext/rbu/rbuC.test efe47db508a0269b683cb2a1913a425ffd39a831
 F ext/rbu/rbu_common.tcl a38e8e2d4a50fd6aaf151633714c1b1d2fae3ead
 F ext/rbu/rbucrash.test 8d2ed5d4b05fef6c00c2a6b5f7ead71fa172a695
-F ext/rbu/rbudiff.test d099b56b073a737cfe1b8e9f67b77940130719cb
+F ext/rbu/rbudiff.test 3e605cf624d00d04d0fb1316a3acec4fbe3b3ac5
 F ext/rbu/rbufault.test cc0be8d5d392d98b0c2d6a51be377ea989250a89
 F ext/rbu/rbufault2.test 9a7f19edd6ea35c4c9f807d8a3db0a03a5670c06
 F ext/rbu/rbufault3.test 54a399888ac4af44c68f9f58afbed23149428bca
@@ -1492,7 +1492,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 7ce07da76b5e745783e703a834417d725b7d45fd
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
-F tool/sqldiff.c 7f567367d87fdb493e3e65169569a10d9f330c3f
+F tool/sqldiff.c 3fb48a6c6669d2d2c59a7f072a410dd2583579b4
 F tool/srcck1.c 371de5363b70154012955544f86fdee8f6e5326f
 F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
@@ -1525,7 +1525,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e0e042dca98f29c060f76db079afecb3200ffae5
-R 8609acd55843aeec5673875597fa9b85
+P 02f40c3b934ba79f2d45eae3781f2bea0c69c95f
+R e0ea306c3e0718c77bd18c92a1e2cd7b
 U dan
-Z 45148f2e6cf322dfee572c56eb21852c
+Z a9d272d3a5fd3dd4a60c313976b5c5f7
