@@ -2276,6 +2276,7 @@ struct SrcList {
 #define WHERE_WANT_DISTINCT    0x0400 /* All output needs to be distinct */
 #define WHERE_SORTBYGROUP      0x0800 /* Support sqlite3WhereIsSorted() */
 #define WHERE_REOPEN_IDX       0x1000 /* Try to use OP_ReopenIdx */
+#define WHERE_ORDERBY_LIMIT    0x2000 /* ORDERBY+LIMIT on the inner loop */
 
 /* Allowed return values from sqlite3WhereIsDistinct()
 */
@@ -3289,6 +3290,7 @@ void sqlite3WhereEnd(WhereInfo*);
 u64 sqlite3WhereOutputRowCount(WhereInfo*);
 int sqlite3WhereIsDistinct(WhereInfo*);
 int sqlite3WhereIsOrdered(WhereInfo*);
+int sqlite3WhereOrderedInnerLoop(WhereInfo*);
 int sqlite3WhereIsSorted(WhereInfo*);
 int sqlite3WhereContinueLabel(WhereInfo*);
 int sqlite3WhereBreakLabel(WhereInfo*);
