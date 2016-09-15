@@ -620,18 +620,7 @@ int sqlite3_enable_load_extension(sqlite3 *db, int onoff){
   return SQLITE_OK;
 }
 
-#endif /* SQLITE_OMIT_LOAD_EXTENSION */
-
-/*
-** The auto-extension code added regardless of whether or not extension
-** loading is supported.  We need a dummy sqlite3Apis pointer for that
-** code if regular extension loading is not available.  This is that
-** dummy pointer.
-*/
-#ifdef SQLITE_OMIT_LOAD_EXTENSION
-static const sqlite3_api_routines sqlite3Apis = { 0 };
-#endif
-
+#endif /* !defined(SQLITE_OMIT_LOAD_EXTENSION) */
 
 /*
 ** The following object holds the list of automatically loaded
@@ -776,6 +765,11 @@ void sqlite3AutoLoadExtensions(sqlite3 *db){
 #if SQLITE_THREADSAFE
     sqlite3_mutex *mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER);
 #endif
+#ifdef SQLITE_OMIT_LOAD_EXTENSION
+    const sqlite3_api_routines *pThunk = 0;
+#else
+    const sqlite3_api_routines *pThunk = &sqlite3Apis;
+#endif
     sqlite3_mutex_enter(mutex);
     if( i>=wsdAutoext.nExt ){
       xInit = 0;
@@ -785,7 +779,7 @@ void sqlite3AutoLoadExtensions(sqlite3 *db){
     }
     sqlite3_mutex_leave(mutex);
     zErrmsg = 0;
-    if( xInit && (rc = xInit(db, &zErrmsg, &sqlite3Apis))!=0 ){
+    if( xInit && (rc = xInit(db, &zErrmsg, pThunk))!=0 ){
       sqlite3ErrorWithMsg(db, rc,
             "automatic extension loading failed: %s", zErrmsg);
       go = 0;

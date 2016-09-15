@@ -1,5 +1,5 @@
-C Remove\sno-op\scode\s(adding\san\sassert()\sto\sprove\sthat\sthe\scode\swas\sno-op)\nin\sthe\stext\saffinity\slogic\sof\sthe\sbytecode\sengine\scomparison\soperators.
-D 2016-09-15T14:54:51.441
+C Omit\sthe\ssqlite3Apis\sconstant\sobject\swhen\scompiling\swith\nSQLITE_OMIT_LOAD_EXTENSION,\ssince\sit\sis\snot\sused.
+D 2016-09-15T19:15:19.226
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e1aa788e84f926e42239ee167c53f785bedacacd
@@ -350,7 +350,7 @@ F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 3edb5a1bda44df13531fedfcde5fbcc2fc04c222
 F src/legacy.c 75d3023be8f0d2b99d60f905090341a03358c58e
-F src/loadext.c dd7a2b77902cc66c22555aef02e1a682554b7aec
+F src/loadext.c 5d6642d141c07d366e43d359e94ec9de47add41d
 F src/main.c 9821bb4d2399bc5a0b8a5dfc06bede2d1520255c
 F src/malloc.c 1443d1ad95d67c21d77af7ae3f44678252f0efec
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
@@ -1525,7 +1525,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 12df7152109ffce4b3e0ee233c5ea8103edb902a
-R 6b884a026aa6fc5e3121f8fd54dbd58f
+P b9f5bdbf40ac6382e48f09ebcd53cc908e065527
+R 1e31cb38dfd2c7bbbb492df3fcbfb729
 U drh
-Z a5246499f87a7576d63b6cd54f036979
+Z 8ce374e092d6c15d6e5f3b801f1063a4
