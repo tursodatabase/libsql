@@ -2569,10 +2569,12 @@ int sqlite3VdbeHalt(Vdbe *p){
   ** one, or the complete transaction if there is no statement transaction.
   */
 
+  assert( p->aOnceFlag!=0 || db->mallocFailed );
   if( db->mallocFailed ){
     p->rc = SQLITE_NOMEM_BKPT;
+  }else{
+    memset(p->aOnceFlag, 0, p->nOnceFlag);
   }
-  if( p->aOnceFlag ) memset(p->aOnceFlag, 0, p->nOnceFlag);
   closeAllCursors(p);
   if( p->magic!=VDBE_MAGIC_RUN ){
     return SQLITE_OK;
