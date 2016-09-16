@@ -1,5 +1,5 @@
-C Add\sWHERETRACE\smacros\sshowing\severy\sentry\sand\sexit\sfrom\nwhereLoopAddBtreeIndex().
-D 2016-09-16T14:50:38.605
+C Replace\sa\sfaulty\sassert()\swith\sa\stestcase()\sto\sassure\sthe\scondition\sis\ntested.
+D 2016-09-16T15:42:17.759
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e1aa788e84f926e42239ee167c53f785bedacacd
@@ -469,7 +469,7 @@ F src/wal.h 6dd221ed384afdc204bc61e25c23ef7fd5a511f2
 F src/walker.c 2d2cc7fb0f320f7f415215d7247f3c584141ac09
 F src/where.c d0ca1b5e1c56249e7725cea66ce4e172c5845dec
 F src/whereInt.h 14dd243e13b81cbb0a66063d38b70f93a7d6e613
-F src/wherecode.c d172dcf99932ba698dd304edc9a368cd52b4b2e5
+F src/wherecode.c c23f9b26fbcdf3f1e3ff2bcd4377057ffc14e063
 F src/whereexpr.c e3db778ed205e982f31960896db71c50612ae009
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1525,7 +1525,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a3e3b3e1c57178ccd38fc7375ec1de8e8ae45372
-R e3303608d5424eda671e1d828f84ecf6
+P e7653decdcee161d379ced40aa1b27246337b000
+R ba1360097229bdefefc2984ae83db820
 U drh
-Z cc222b0997065c7a36fcdb84d3a6e5ff
+Z 4ae8145ebc191fbb330e31aa85de1aa5

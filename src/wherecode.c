@@ -528,7 +528,7 @@ static int codeEqualityTerm(
         int iOut = iReg;
         if( pLoop->aLTerm[i]->pExpr==pX ){
           if( eType==IN_INDEX_ROWID ){
-            assert( nEq==1 && i==iEq );
+            testcase( nEq>1 );  /* Happens with a UNIQUE index on ROWID */
             pIn->addrInTop = sqlite3VdbeAddOp2(v, OP_Rowid, iTab, iReg);
           }else{
             int iCol = aiMap ? aiMap[iMap++] : 0;
