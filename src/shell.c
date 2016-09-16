@@ -2252,17 +2252,21 @@ static int process_input(ShellState *p, FILE *in);
 static char *readFile(const char *zName){
   FILE *in = fopen(zName, "rb");
   long nIn;
+  size_t nRead;
   char *pBuf;
   if( in==0 ) return 0;
   fseek(in, 0, SEEK_END);
   nIn = ftell(in);
   rewind(in);
-  pBuf = sqlite3_malloc64( nIn );
+  pBuf = sqlite3_malloc64( nIn+1 );
   if( pBuf==0 ) return 0;
-  if( 1!=fread(pBuf, nIn, 1, in) ){
+  nRead = fread(pBuf, nIn, 1, in);
+  fclose(in);
+  if( nRead!=1 ){
     sqlite3_free(pBuf);
     return 0;
   }
+  pBuf[nIn] = 0;
   return pBuf;
 }
 
@@ -5203,8 +5207,13 @@ static int process_input(ShellState *p, FILE *in){
 ** Return a pathname which is the user's home directory.  A
 ** 0 return indicates an error of some kind.
 */
-static char *find_home_dir(void){
+static char *find_home_dir(int clearFlag){
   static char *home_dir = NULL;
+  if( clearFlag ){
+    free(home_dir);
+    home_dir = 0;
+    return 0;
+  }
   if( home_dir ) return home_dir;
 
 #if !defined(_WIN32) && !defined(WIN32) && !defined(_WIN32_WCE) \
@@ -5279,7 +5288,7 @@ static void process_sqliterc(
   FILE *in = NULL;
 
   if (sqliterc == NULL) {
-    home_dir = find_home_dir();
+    home_dir = find_home_dir(0);
     if( home_dir==0 ){
       raw_printf(stderr, "-- warning: cannot find home directory;"
                       " cannot read ~/.sqliterc\n");
@@ -5767,7 +5776,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
         printf(".\nUse \".open FILENAME\" to reopen on a "
                "persistent database.\n");
       }
-      zHome = find_home_dir();
+      zHome = find_home_dir(0);
       if( zHome ){
         nHistory = strlen30(zHome) + 20;
         if( (zHistory = malloc(nHistory))!=0 ){
@@ -5791,6 +5800,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
     sqlite3_close(data.db);
   }
   sqlite3_free(data.zFreeOnClose);
+  find_home_dir(1);
 #if !SQLITE_SHELL_IS_UTF8
   for(i=0; i<argc; i++) sqlite3_free(argv[i]);
   sqlite3_free(argv);
