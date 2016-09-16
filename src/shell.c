@@ -143,6 +143,7 @@
 extern char *sqlite3_win32_unicode_to_utf8(LPCWSTR);
 extern char *sqlite3_win32_mbcs_to_utf8_v2(const char *, int);
 extern char *sqlite3_win32_utf8_to_mbcs_v2(const char *, int);
+extern LPWSTR sqlite3_win32_utf8_to_unicode(const char *zText);
 #endif
 
 /* On Windows, we normally run with output mode of TEXT so that \n characters
@@ -929,7 +930,7 @@ static int shellAuth(
   az[1] = zA2;
   az[2] = zA3;
   az[3] = zA4;
-  raw_printf(p->out, "authorizer: %s", azAction[op]);
+  utf8_printf(p->out, "authorizer: %s", azAction[op]);
   for(i=0; i<4; i++){
     raw_printf(p->out, " ");
     if( az[i] ){
@@ -942,7 +943,7 @@ static int shellAuth(
   return SQLITE_OK;
 }
 #endif
-  
+
 
 /*
 ** This is the callback routine that the shell
@@ -1446,7 +1447,7 @@ static void displayLinuxIoStats(FILE *out){
     for(i=0; i<ArraySize(aTrans); i++){
       int n = (int)strlen(aTrans[i].zPattern);
       if( strncmp(aTrans[i].zPattern, z, n)==0 ){
-        raw_printf(out, "%-36s %s", aTrans[i].zDesc, &z[n]);
+        utf8_printf(out, "%-36s %s", aTrans[i].zDesc, &z[n]);
         break;
       }
     }
@@ -2180,7 +2181,7 @@ static char zHelp[] =
   "                         tcl      TCL list elements\n"
   ".nullvalue STRING      Use STRING in place of NULL values\n"
   ".once FILENAME         Output for the next SQL command only to FILENAME\n"
-  ".open ?-new? ?FILE?    Close existing database and reopen FILE\n"
+  ".open ?--new? ?FILE?   Close existing database and reopen FILE\n"
   "                         The --new starts with an empty file\n"
   ".output ?FILENAME?     Send output to FILENAME or stdout\n"
   ".print STRING...       Print literal STRING\n"
@@ -3204,7 +3205,7 @@ static int optionMatch(const char *zStr, const char *zOpt){
 int shellDeleteFile(const char *zFilename){
   int rc;
 #ifdef _WIN32
-  wchar_t *z = sqlite3_utf8_to_path(zFilename, 0);
+  wchar_t *z = sqlite3_win32_utf8_to_unicode(zFilename);
   rc = _wunlink(z);
   sqlite3_free(z);
 #else
@@ -3380,12 +3381,12 @@ static int do_meta_command(char *zLine, ShellState *p){
       raw_printf(stderr, "Error: cannot read 'testcase-out.txt'\n");
       rc = 2;
     }else if( testcase_glob(azArg[1],zRes)==0 ){
-      raw_printf(stderr,
+      utf8_printf(stderr,
                  "testcase-%s FAILED\n Expected: [%s]\n      Got: [%s]\n",
                  p->zTestcase, azArg[1], zRes);
       rc = 2;
     }else{
-      raw_printf(stdout, "testcase-%s ok\n", p->zTestcase);
+      utf8_printf(stdout, "testcase-%s ok\n", p->zTestcase);
       p->nCheck++;
     }
     sqlite3_free(zRes);
@@ -4016,6 +4017,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       }else if( z[0]=='-' ){
         utf8_printf(stderr, "unknown option: %s\n", z);
         rc = 1;
+        goto meta_command_exit;
       }
     }
     /* If a filename is specified, try to open it first */

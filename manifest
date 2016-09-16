@@ -1,5 +1,5 @@
-C If\sno\sKEY\sis\sspecified\son\sATTACH,\scopy\sthe\smain\sschema\skey\sif\sthe\skey\ssize\nis\snon-zero.\s\sIn\sother\swords,\sallow\sfor\s-1\sas\sa\svalid\skey\ssize\sin\ssupport\nof\sthe\s--textkey\sto\sSEE.
-D 2016-09-16T19:42:47.592
+C Fix\stypo\sin\sthe\sname\sof\sa\sWin32\sstring\sconversion\sroutine.\s\sReplace\sseveral\suses\sof\sraw_printf()\swith\sutf8_printf()\sin\sthe\sshell.
+D 2016-09-16T20:39:21.872
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e1aa788e84f926e42239ee167c53f785bedacacd
@@ -387,7 +387,7 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 3c3cf0dc719cd2a32ab5c1e10c26481dd565492e
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 244f9cc5e4662987cd2ef5c22d1b7027560f3425
-F src/shell.c 131978e994157b3925efd6fdf0e0c4ed9ab2cf91
+F src/shell.c b80396d2fadce4681397707e30078bf416e1dec2
 F src/sqlite.h.in 46ed821aeed0ba45559fb15597d9a400083154a2
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
@@ -1525,7 +1525,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e660402e5e654b7f37ad2ce201df5cbb2b9eb9a6
-R 229c67ed88dfee6249671d401c7e5ca7
-U drh
-Z 23da9c0621ec24a2fd4b8d5523827e43
+P 03573887dbf357f8aa54e4a1cd03b82b0ded8139
+R cbd23b2be6d6c200e751cfcfa4ecc2e3
+U mistachkin
+Z d5990f30391f700f012fd4fd2aa1ad1b
