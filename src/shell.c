@@ -3085,7 +3085,6 @@ static int shellNomemError(void){
   return 1;
 }
 
-#ifdef SQLITE_DEBUG
 /*
 ** Compare the pattern in zGlob[] against the text in z[].  Return TRUE
 ** if they match and FALSE (0) if they do not match.
@@ -3182,7 +3181,6 @@ static int testcase_glob(const char *zGlob, const char *z){
   while( IsSpace(*z) ){ z++; }
   return *z==0;
 }
-#endif /* defined(SQLITE_DEBUG) */
 
 
 /*
