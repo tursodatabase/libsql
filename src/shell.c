@@ -2176,7 +2176,8 @@ static char zHelp[] =
   "                         tcl      TCL list elements\n"
   ".nullvalue STRING      Use STRING in place of NULL values\n"
   ".once FILENAME         Output for the next SQL command only to FILENAME\n"
-  ".open ?FILENAME?       Close existing database and reopen FILENAME\n"
+  ".open ?-new? ?FILE?    Close existing database and reopen FILE\n"
+  "                         The --new starts with an empty file\n"
   ".output ?FILENAME?     Send output to FILENAME or stdout\n"
   ".print STRING...       Print literal STRING\n"
   ".prompt MAIN CONTINUE  Replace the standard prompts\n"
@@ -3194,6 +3195,21 @@ static int optionMatch(const char *zStr, const char *zOpt){
 }
 
 /*
+** Delete a file.
+*/
+int shellDeleteFile(const char *zFilename){
+  int rc;
+#ifdef _WIN32
+  wchar_t *z = sqlite3_utf8_to_path(zFilename, 0);
+  rc = _wunlink(z);
+  sqlite3_free(z);
+#else
+  rc = unlink(zFilename);
+#endif
+  return rc;
+}
+
+/*
 ** If an input line begins with "." then invoke this routine to
 ** process that line.
 **
@@ -3975,22 +3991,35 @@ static int do_meta_command(char *zLine, ShellState *p){
   }else
 
   if( c=='o' && strncmp(azArg[0], "open", n)==0 && n>=2 ){
-    sqlite3 *savedDb = p->db;
-    const char *zSavedFilename = p->zDbFilename;
-    char *zNewFilename = 0;
+    char *zNewFilename;  /* Name of the database file to open */
+    int iName = 1;       /* Index in azArg[] of the filename */
+    /* Close the existing database */
+    session_close_all(p);
+    sqlite3_close(p->db);
     p->db = 0;
-    if( nArg>=2 ) zNewFilename = sqlite3_mprintf("%s", azArg[1]);
-    p->zDbFilename = zNewFilename;
-    open_db(p, 1);
-    if( p->db!=0 ){
-      session_close_all(p);
-      sqlite3_close(savedDb);
-      sqlite3_free(p->zFreeOnClose);
-      p->zFreeOnClose = zNewFilename;
-    }else{
-      sqlite3_free(zNewFilename);
-      p->db = savedDb;
-      p->zDbFilename = zSavedFilename;
+    sqlite3_free(p->zFreeOnClose);
+    p->zFreeOnClose = 0;
+    /* Start a new database file if the --new flag is present */
+    if( nArg>2 && optionMatch(azArg[1],"new") ){
+      iName++;
+      if( nArg>iName ) shellDeleteFile(azArg[iName]);
+    }
+    /* If a filename is specified, try to open it first */
+    zNewFilename = nArg>iName ? sqlite3_mprintf("%s", azArg[iName]) : 0;
+    if( zNewFilename ){
+      p->zDbFilename = zNewFilename;
+      open_db(p, 1);
+      if( p->db==0 ){
+        utf8_printf(stderr, "Error: cannot open '%s'\n", zNewFilename);
+        sqlite3_free(zNewFilename);
+      }else{
+        p->zFreeOnClose = zNewFilename;
+      }
+    }
+    if( p->db==0 ){
+      /* As a fall-back open a TEMP database */
+      p->zDbFilename = 0;
+      open_db(p, 0);
     }
   }else
 
@@ -4520,6 +4549,8 @@ static int do_meta_command(char *zLine, ShellState *p){
       raw_printf(p->out, "%d ", p->colWidth[i]);
     }
     raw_printf(p->out, "\n");
+    utf8_printf(p->out, "%12.12s: %s\n", "filename",
+                p->zDbFilename ? p->zDbFilename : "");
   }else
 
   if( c=='s' && strncmp(azArg[0], "stats", n)==0 ){
