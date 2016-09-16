@@ -525,14 +525,13 @@ static int codeEqualityTerm(
       int iMap = 0;               /* Index in aiMap[] */
       pIn += i;
       for(i=iEq;i<pLoop->nLTerm; i++){
-        int iOut = iReg;
         if( pLoop->aLTerm[i]->pExpr==pX ){
+          int iOut = iReg + i - iEq;
           if( eType==IN_INDEX_ROWID ){
             testcase( nEq>1 );  /* Happens with a UNIQUE index on ROWID */
-            pIn->addrInTop = sqlite3VdbeAddOp2(v, OP_Rowid, iTab, iReg);
+            pIn->addrInTop = sqlite3VdbeAddOp2(v, OP_Rowid, iTab, iOut);
           }else{
             int iCol = aiMap ? aiMap[iMap++] : 0;
-            iOut = iReg + i - iEq;
             pIn->addrInTop = sqlite3VdbeAddOp3(v,OP_Column,iTab, iCol, iOut);
           }
           sqlite3VdbeAddOp1(v, OP_IsNull, iOut); VdbeCoverage(v);
