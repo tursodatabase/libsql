@@ -1,5 +1,5 @@
-C Fix\sproblems\swith\sthe\sfileRead()\sfunction\sin\sthe\scommand-line\sshell.\s\sFix\na\sharmless\smemory\sleak\sin\sthe\scommand-line\sshell,\sto\smake\svalidation\stesting\neasier.
-D 2016-09-16T19:11:03.888
+C If\sno\sKEY\sis\sspecified\son\sATTACH,\scopy\sthe\smain\sschema\skey\sif\sthe\skey\ssize\nis\snon-zero.\s\sIn\sother\swords,\sallow\sfor\s-1\sas\sa\svalid\skey\ssize\sin\ssupport\nof\sthe\s--textkey\sto\sSEE.
+D 2016-09-16T19:42:47.592
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e1aa788e84f926e42239ee167c53f785bedacacd
@@ -324,7 +324,7 @@ F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c 299117695b1f21ac62dfc5b608588810ba22ed0d
 F src/analyze.c 8b62b2cf4da85451534ac0af82cafc418d837f68
-F src/attach.c 4711ff365df4072b8c3dcd55db5d12dcf8ffa0c6
+F src/attach.c 3e78d38abb5a4e3e0048a16ab662e6ffa323687c
 F src/auth.c 930b376a9c56998557367e6f7f8aaeac82a2a792
 F src/backup.c 92c2e3b5fcb47626413717138617f4d32f08aea4
 F src/bitvec.c 3ee4c8b2c94ed3a7377256e18199e6ff5cf33f63
@@ -1525,7 +1525,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9885dac4b98693c4d2ed643022127f1452f19dc6
-R 88f539d71fa2571070b5d308155e3cfc
+P e660402e5e654b7f37ad2ce201df5cbb2b9eb9a6
+R 229c67ed88dfee6249671d401c7e5ca7
 U drh
-Z 09ffb02e347dfbb4f5f38eddcacdd3ba
+Z 23da9c0621ec24a2fd4b8d5523827e43
