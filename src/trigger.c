@@ -96,7 +96,6 @@ void sqlite3BeginTrigger(
   int iDb;                /* The database to store the trigger in */
   Token *pName;           /* The unqualified db name */
   DbFixer sFix;           /* State vector for the DB fixer */
-  int iTabDb;             /* Index of the database holding pTab */
 
   assert( pName1!=0 );   /* pName1->z might be NULL, but not pName1 itself */
   assert( pName2!=0 );
@@ -209,10 +208,10 @@ void sqlite3BeginTrigger(
         " trigger on table: %S", pTableName, 0);
     goto trigger_cleanup;
   }
-  iTabDb = sqlite3SchemaToIndex(db, pTab->pSchema);
 
 #ifndef SQLITE_OMIT_AUTHORIZATION
   {
+    int iTabDb = sqlite3SchemaToIndex(db, pTab->pSchema);
     int code = SQLITE_CREATE_TRIGGER;
     const char *zDb = db->aDb[iTabDb].zDbSName;
     const char *zDbTrig = isTemp ? db->aDb[1].zDbSName : zDb;

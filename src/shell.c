@@ -896,6 +896,7 @@ static void interrupt_handler(int NotUsed){
 }
 #endif
 
+#ifndef SQLITE_OMIT_AUTHORIZATION
 /*
 ** When the ".auth ON" is set, the following authorizer callback is
 ** invoked.  It always returns SQLITE_OK.
@@ -940,6 +941,7 @@ static int shellAuth(
   raw_printf(p->out, "\n");
   return SQLITE_OK;
 }
+#endif
   
 
 /*
@@ -2133,7 +2135,9 @@ static int run_schema_dump_query(
 ** Text of a help message
 */
 static char zHelp[] =
+#ifndef SQLITE_OMIT_AUTHORIZATION
   ".auth ON|OFF           Show authorizer callbacks\n"
+#endif
   ".backup ?DB? FILE      Backup DB (default \"main\") to FILE\n"
   ".bail on|off           Stop after hitting an error.  Default OFF\n"
   ".binary on|off         Turn binary output on or off.  Default OFF\n"
@@ -3250,6 +3254,7 @@ static int do_meta_command(char *zLine, ShellState *p){
   n = strlen30(azArg[0]);
   c = azArg[0][0];
 
+#ifndef SQLITE_OMIT_AUTHORIZATION
   if( c=='a' && strncmp(azArg[0], "auth", n)==0 ){
     if( nArg!=2 ){
       raw_printf(stderr, "Usage: .auth ON|OFF\n");
@@ -3263,6 +3268,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       sqlite3_set_authorizer(p->db, 0, 0);
     }
   }else
+#endif
 
   if( (c=='b' && n>=3 && strncmp(azArg[0], "backup", n)==0)
    || (c=='s' && n>=3 && strncmp(azArg[0], "save", n)==0)

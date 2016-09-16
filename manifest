@@ -1,5 +1,5 @@
-C In\sthe\sshell,\smake\s".testcase"\sand\s".check"\savailable\sin\sall\sconfigurations,\nnot\sjust\sSQLITE_DEBUG.\s\sAll\stestcases\sto\sbe\snamed.\s\sShow\sthe\sresult\sof\seach\ntestcase\son\sstdout.
-D 2016-09-16T02:52:22.198
+C Fix\sSQLITE_OMIT_AUTHORIZATION\sso\sthat\sit\scompiles\scleanly.
+D 2016-09-16T11:53:10.715
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e1aa788e84f926e42239ee167c53f785bedacacd
@@ -332,13 +332,13 @@ F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
 F src/btree.c 2551bd3ecb8b8988fb8b23aabadfb214dbc38e46
 F src/btree.h d05b2fcc290991a8a3d9ea1816ddd55a4359dcde
 F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
-F src/build.c c2ccfcdd99e18894a8750e215b8d9c5398a3c073
+F src/build.c 7438b6dae3022818100a79ebbad707b5c65f9344
 F src/callback.c 2e76147783386374bf01b227f752c81ec872d730
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c e77f3dc297b4b65c96da78b4ae4272fdfae863d7
 F src/date.c 95c9a8d00767e7221a8e9a31f4e913fc8029bf6b
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
-F src/delete.c 76c084f0265f4a3cd1ecf17eee112a94f1ccbc05
+F src/delete.c e91a11e0e86a13ce1917ca5ad7cf14c37ba31e59
 F src/expr.c c1de78269522de39f6ad877ab0810a5d48f91f34
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c e2be0968c1adc679c87e467aa5b4f167588f38a8
@@ -348,7 +348,7 @@ F src/hash.c 55b5fb474100cee0b901edaf203e26c970940f36
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 3edb5a1bda44df13531fedfcde5fbcc2fc04c222
+F src/insert.c 427e96ff168b6b187a52c3d06b9f9e41f6ffb212
 F src/legacy.c 75d3023be8f0d2b99d60f905090341a03358c58e
 F src/loadext.c 5d6642d141c07d366e43d359e94ec9de47add41d
 F src/main.c 9821bb4d2399bc5a0b8a5dfc06bede2d1520255c
@@ -384,10 +384,10 @@ F src/pragma.h 64c78a648751b9f4f297276c4eb7507b14b4628c
 F src/prepare.c 0fcf16eaacc90c1059055519a76b75b516a59a88
 F src/printf.c a5f0ca08ddede803c241266abb46356ec748ded1
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
-F src/resolve.c 24f40fd0c3475821d1ad762a3f2c3455cc839b42
+F src/resolve.c 3c3cf0dc719cd2a32ab5c1e10c26481dd565492e
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 244f9cc5e4662987cd2ef5c22d1b7027560f3425
-F src/shell.c 2c558e83e0961de364570182c0ff26395d7aaba0
+F src/shell.c ae7058efb5084b4b9576dc5485bb3d2870b1974a
 F src/sqlite.h.in 46ed821aeed0ba45559fb15597d9a400083154a2
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
@@ -448,7 +448,7 @@ F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 78c8085bc7af1922aa687f0f4bbd716821330de5
 F src/treeview.c f51b75a28b377adde9f79bc3deb6c7770bcf97c0
-F src/trigger.c 11e20b3b12c847b3b9055594c0f1631266bb53fc
+F src/trigger.c cae81f6c65c4977bc2cbd27d43bfee478710853c
 F src/update.c 8179e699dbd45b92934fd02d3d8e3732e8da8802
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c 810ec3f22e2d1b62e66c30fe3621ebdedd23584d
@@ -1525,7 +1525,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8e5c92039128a430e0509f4f06ea80ba39c35bda
-R 46d709a281b0ceda3453ac789078f257
+P 792afefa9c750910082fd102f1ccd10309759dfc
+R 8c1833647015caee904c1e0d3421d795
 U drh
-Z 03a0324123b8a87d967c8d29c327e230
+Z 8c6311e2ea32e5d653d9fa56ba1b62fa

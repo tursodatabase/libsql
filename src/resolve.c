@@ -646,7 +646,6 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       int no_such_func = 0;       /* True if no such function exists */
       int wrong_num_args = 0;     /* True if wrong number of arguments */
       int is_agg = 0;             /* True if is an aggregate function */
-      int auth;                   /* Authorization to use the function */
       int nId;                    /* Number of characters in function name */
       const char *zId;            /* The function name. */
       FuncDef *pDef;              /* Information about the function */
@@ -690,15 +689,17 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           }             
         }
 #ifndef SQLITE_OMIT_AUTHORIZATION
-        auth = sqlite3AuthCheck(pParse, SQLITE_FUNCTION, 0, pDef->zName, 0);
-        if( auth!=SQLITE_OK ){
-          if( auth==SQLITE_DENY ){
-            sqlite3ErrorMsg(pParse, "not authorized to use function: %s",
-                                    pDef->zName);
-            pNC->nErr++;
+        {
+          int auth = sqlite3AuthCheck(pParse, SQLITE_FUNCTION, 0,pDef->zName,0);
+          if( auth!=SQLITE_OK ){
+            if( auth==SQLITE_DENY ){
+              sqlite3ErrorMsg(pParse, "not authorized to use function: %s",
+                                      pDef->zName);
+              pNC->nErr++;
+            }
+            pExpr->op = TK_NULL;
+            return WRC_Prune;
           }
-          pExpr->op = TK_NULL;
-          return WRC_Prune;
         }
 #endif
         if( pDef->funcFlags & (SQLITE_FUNC_CONSTANT|SQLITE_FUNC_SLOCHNG) ){
