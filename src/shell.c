@@ -626,8 +626,10 @@ struct ShellState {
   int normalMode;        /* Output mode before ".explain on" */
   int writableSchema;    /* True if PRAGMA writable_schema=ON */
   int showHeader;        /* True to show column names in List or Column mode */
+  int nCheck;            /* Number of ".check" commands run */
   unsigned shellFlgs;    /* Various flags */
   char *zDestTable;      /* Name of destination table when MODE_Insert */
+  char zTestcase[30];    /* Name of current test case */
   char colSeparator[20]; /* Column separator character for several modes */
   char rowSeparator[20]; /* Row separator character for MODE_Ascii */
   int colWidth[100];     /* Requested width of each column when in column mode*/
@@ -2136,9 +2138,7 @@ static char zHelp[] =
   ".bail on|off           Stop after hitting an error.  Default OFF\n"
   ".binary on|off         Turn binary output on or off.  Default OFF\n"
   ".changes on|off        Show number of rows changed by SQL\n"
-#ifdef SQLITE_DEBUG
   ".check GLOB            Fail if output since .testcase does not match\n"
-#endif
   ".clone NEWDB           Clone data into NEWDB from the existing database\n"
   ".databases             List names and files of attached databases\n"
   ".dbinfo ?DB?           Show status information about the database\n"
@@ -2200,9 +2200,7 @@ static char zHelp[] =
   ".tables ?TABLE?        List names of tables\n"
   "                         If TABLE specified, only list tables matching\n"
   "                         LIKE pattern TABLE.\n"
-#ifdef SQLITE_DEBUG
-  ".testcase              Begin redirecting output to 'testcase-out.txt'\n"
-#endif
+  ".testcase NAME         Begin redirecting output to 'testcase-out.txt'\n"
   ".timeout MS            Try opening locked tables for MS milliseconds\n"
   ".timer on|off          Turn SQL timer on or off\n"
   ".trace FILE|off        Output each SQL statement as it is run\n"
@@ -3360,7 +3358,6 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
   }else
 
-#ifdef SQLITE_DEBUG
   /* Cancel output redirection, if it is currently set (by .testcase)
   ** Then read the content of the testcase-out.txt file and compare against
   ** azArg[1].  If there are differences, report an error and exit.
@@ -3370,18 +3367,21 @@ static int do_meta_command(char *zLine, ShellState *p){
     output_reset(p);
     if( nArg!=2 ){
       raw_printf(stderr, "Usage: .check GLOB-PATTERN\n");
-      rc = 1;
+      rc = 2;
     }else if( (zRes = readFile("testcase-out.txt"))==0 ){
       raw_printf(stderr, "Error: cannot read 'testcase-out.txt'\n");
       rc = 2;
     }else if( testcase_glob(azArg[1],zRes)==0 ){
-      raw_printf(stderr, ".check failed\n Expected: [%s]\n      Got: [%s]\n",
-                 azArg[1], zRes);
+      raw_printf(stderr,
+                 "testcase-%s FAILED\n Expected: [%s]\n      Got: [%s]\n",
+                 p->zTestcase, azArg[1], zRes);
       rc = 2;
+    }else{
+      raw_printf(stdout, "testcase-%s ok\n", p->zTestcase);
+      p->nCheck++;
     }
     sqlite3_free(zRes);
   }else
-#endif
 
   if( c=='c' && strncmp(azArg[0], "clone", n)==0 ){
     if( nArg==2 ){
@@ -3993,20 +3993,27 @@ static int do_meta_command(char *zLine, ShellState *p){
   if( c=='o' && strncmp(azArg[0], "open", n)==0 && n>=2 ){
     char *zNewFilename;  /* Name of the database file to open */
     int iName = 1;       /* Index in azArg[] of the filename */
+    int newFlag = 0;     /* True to delete file before opening */
     /* Close the existing database */
     session_close_all(p);
     sqlite3_close(p->db);
     p->db = 0;
     sqlite3_free(p->zFreeOnClose);
     p->zFreeOnClose = 0;
-    /* Start a new database file if the --new flag is present */
-    if( nArg>2 && optionMatch(azArg[1],"new") ){
-      iName++;
-      if( nArg>iName ) shellDeleteFile(azArg[iName]);
+    /* Check for command-line arguments */
+    for(iName=1; iName<nArg && azArg[iName][0]=='-'; iName++){
+      const char *z = azArg[iName];
+      if( optionMatch(z,"new") ){
+        newFlag = 1;
+      }else if( z[0]=='-' ){
+        utf8_printf(stderr, "unknown option: %s\n", z);
+        rc = 1;
+      }
     }
     /* If a filename is specified, try to open it first */
     zNewFilename = nArg>iName ? sqlite3_mprintf("%s", azArg[iName]) : 0;
     if( zNewFilename ){
+      if( newFlag ) shellDeleteFile(zNewFilename);
       p->zDbFilename = zNewFilename;
       open_db(p, 1);
       if( p->db==0 ){
@@ -4668,7 +4675,6 @@ static int do_meta_command(char *zLine, ShellState *p){
     sqlite3_free(azResult);
   }else
 
-#ifdef SQLITE_DEBUG
   /* Begin redirecting output to the file "testcase-out.txt" */
   if( c=='t' && strcmp(azArg[0],"testcase")==0 ){
     output_reset(p);
@@ -4676,8 +4682,12 @@ static int do_meta_command(char *zLine, ShellState *p){
     if( p->out==0 ){
       utf8_printf(stderr, "Error: cannot open 'testcase-out.txt'\n");
     }
+    if( nArg>=2 ){
+      sqlite3_snprintf(sizeof(p->zTestcase), p->zTestcase, "%s", azArg[1]);
+    }else{
+      sqlite3_snprintf(sizeof(p->zTestcase), p->zTestcase, "?");
+    }
   }else
-#endif
 
   if( c=='t' && n>=8 && strncmp(azArg[0], "testctrl", n)==0 && nArg>=2 ){
     static const struct {
