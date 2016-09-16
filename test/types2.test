@@ -333,7 +333,7 @@ ifcapable subquery {
   test_boolset types2-8.8 {o IN (SELECT t FROM t4)} {7}
   test_boolset types2-8.9 {i IN (SELECT o FROM t4)} {9 10 11 12}
   test_boolset types2-8.6 {n IN (SELECT o FROM t4)} {9 10 11 12}
-  test_boolset types2-8.7 {t IN (SELECT o FROM t4)} {9 11}
+  test_boolset types2-8.7 {t IN (SELECT o FROM t4)} {}
   test_boolset types2-8.8 {o IN (SELECT o FROM t4)} {9 10}
 }
 

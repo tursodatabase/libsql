@@ -109,3 +109,5 @@ do_execsql_test vacuum5-1.4.2 {
 do_catchsql_test vacuum5-2.0 {
   VACUUM olaf;
 } {1 {unknown database olaf}}
+
+finish_test

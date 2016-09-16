@@ -403,7 +403,8 @@ static void printQuoted(FILE *out, sqlite3_value *X){
         }
         fprintf(out, "'");
       }else{
-        fprintf(out, "NULL");
+        /* Could be an OOM, could be a zero-byte blob */
+        fprintf(out, "X''");
       }
       break;
     }

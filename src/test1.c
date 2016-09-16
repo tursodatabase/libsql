@@ -2389,6 +2389,29 @@ static int SQLITE_TCLAPI test_snapshot_cmp(
 #endif /* SQLITE_ENABLE_SNAPSHOT */
 
 /*
+** Usage: sqlite3_delete_database FILENAME
+*/
+int sqlite3_delete_database(const char*);   /* in test_delete.c */
+static int SQLITE_TCLAPI test_delete_database(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int rc;
+  const char *zFile;
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "FILE");
+    return TCL_ERROR;
+  }
+  zFile = (const char*)Tcl_GetString(objv[1]);
+  rc = sqlite3_delete_database(zFile);
+
+  Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
+  return TCL_OK;
+}
+
+/*
 ** Usage:  sqlite3_next_stmt  DB  STMT
 **
 ** Return the next statment in sequence after STMT.
@@ -7681,6 +7704,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_snapshot_free", test_snapshot_free, 0 },
      { "sqlite3_snapshot_cmp", test_snapshot_cmp, 0 },
 #endif
+     { "sqlite3_delete_database", test_delete_database, 0 },
   };
   static int bitmask_size = sizeof(Bitmask)*8;
   static int longdouble_size = sizeof(LONGDOUBLE_TYPE);

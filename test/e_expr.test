@@ -847,6 +847,9 @@ foreach {tn x expr res nEval} {
 
   3   5  "x() >= 5 AND x() <= 5"   1  2
   4   5  "x() BETWEEN 5 AND 5"     1  1
+
+  5   9  "(x(),8) >= (9,7) AND (x(),8)<=(9,10)"  1 2
+  6   9  "(x(),8) BETWEEN (9,7) AND (9,10)"      1 1
 } {
   do_test e_expr-13.1.$tn {
     set ::xcount 0
@@ -1809,7 +1812,7 @@ do_expr_test e_expr-35.1.6 {
 # The following block tests that errors are returned in a bunch of cases
 # where a subquery returns more than one column.
 #
-set M {only a single result allowed for a SELECT that is part of an expression}
+set M {/1 {sub-select returns [23] columns - expected 1}/}
 foreach {tn sql} {
   1     { SELECT (SELECT * FROM t2 UNION SELECT a+1, b+1 FROM t2) }
   2     { SELECT (SELECT * FROM t2 UNION SELECT a+1, b+1 FROM t2 ORDER BY 1) }
@@ -1818,7 +1821,7 @@ foreach {tn sql} {
   5     { SELECT (SELECT * FROM t2) }
   6     { SELECT (SELECT * FROM (SELECT 1, 2, 3)) }
 } {
-  do_catchsql_test e_expr-35.2.$tn $sql [list 1 $M]
+  do_catchsql_test e_expr-35.2.$tn $sql $M
 }
 
 # EVIDENCE-OF: R-35764-28041 The result of the expression is the value

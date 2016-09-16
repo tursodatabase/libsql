@@ -40,7 +40,7 @@ do_test subselect-1.1 {
 do_test subselect-1.2 {
   set v [catch {execsql {SELECT * FROM t1 WHERE a = (SELECT * FROM t1)}} msg]
   lappend v $msg
-} {1 {only a single result allowed for a SELECT that is part of an expression}}
+} {1 {row value misused}}
 
 # A subselect without an aggregate.
 #
