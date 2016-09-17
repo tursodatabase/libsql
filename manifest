@@ -1,5 +1,5 @@
-C Improved\sdescription\sof\sthe\sElseNotEq\sopcode\sin\scomments.\s\sNo\schanges\sto\scode.
-D 2016-09-17T17:39:01.590
+C Small\sperformance\soptimization\sin\sthe\sfreeSpace()\sroutine\sof\sbtree.c.
+D 2016-09-17T19:34:32.434
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e1aa788e84f926e42239ee167c53f785bedacacd
@@ -329,7 +329,7 @@ F src/auth.c 930b376a9c56998557367e6f7f8aaeac82a2a792
 F src/backup.c 92c2e3b5fcb47626413717138617f4d32f08aea4
 F src/bitvec.c 3ee4c8b2c94ed3a7377256e18199e6ff5cf33f63
 F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
-F src/btree.c 2551bd3ecb8b8988fb8b23aabadfb214dbc38e46
+F src/btree.c 56e1732ecfb3731efcb216266ec26b1b96e5e8c9
 F src/btree.h d05b2fcc290991a8a3d9ea1816ddd55a4359dcde
 F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
 F src/build.c 7438b6dae3022818100a79ebbad707b5c65f9344
@@ -1525,7 +1525,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6fc95dd7a0b44212f30e657a850892a85a12715c
-R 562a09a50cde79cd40aa8ed06ba4df04
+P e011435e2f57ddfe315d5da48e93185d6789fc80
+R 1118d76ecd8c2e7b5eef8b1643f57d9c
 U drh
-Z 32468d94216159db676195bbafc35d3f
+Z f339d94adbbc4640c3413f9f33dceacc
