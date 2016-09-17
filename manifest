@@ -1,5 +1,5 @@
-C Small\sperformance\soptimization\sin\sthe\sfreeSpace()\sroutine\sof\sbtree.c.
-D 2016-09-17T19:34:32.434
+C Minor\senhancement\sto\sthe\sTclKit\sbatch\stool:\sit\sshould\sdownload\sthe\sTclKit\sEXE\salone\swhen\sthe\sTCLKIT_NOENV\senvironment\svariable\sis\sset.
+D 2016-09-17T22:46:13.833
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e1aa788e84f926e42239ee167c53f785bedacacd
@@ -1437,7 +1437,7 @@ F test/wordcount.c 97856eec21fd00d77da720007b1888c383f63dcf
 F test/zeroblob.test 3857870fe681b8185654414a9bccfde80b62a0fa
 F test/zerodamage.test e59a56443d6298ecf7435f618f0b27654f0c849e
 F tool/GetFile.cs a15e08acb5dd7539b75ba23501581d7c2b462cb5
-F tool/GetTclKit.bat 629d87562e0487c386db630033931d12d62e6372
+F tool/GetTclKit.bat f94784e3bdc2f50c539266f5467cbf1f27612cb3
 F tool/Replace.cs 02c67258801c2fb5f63231e0ac0f220b4b36ba91
 F tool/addopcodes.tcl 10c889c4a65ec6c5604e4a47306fa77ff57ae189
 F tool/build-all-msvc.bat 3e4e4043b53f1aede4308e0d2567bbd773614630 x
@@ -1525,7 +1525,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e011435e2f57ddfe315d5da48e93185d6789fc80
-R 1118d76ecd8c2e7b5eef8b1643f57d9c
-U drh
-Z f339d94adbbc4640c3413f9f33dceacc
+P 63962e2a927963575be74c3ce11f39f722c07c72
+R a636a72a27c00683275c0e840ed0e183
+U mistachkin
+Z c511a2952b921071fe5b6c44565784ab
