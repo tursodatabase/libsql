@@ -2121,11 +2121,11 @@ compare_op:
 
 /* Opcode: ElseNotEq * P2 * * *
 **
-** This opcode must immediately follow an Lt or Gt comparison operator.
-** If the operands in that previous comparison had been used with an Eq
-** operator and if the result of that Eq would be NULL or false (0), then
-** then jump to P2.  If the result of comparing the two previous operands
-** using Eq would have been true (1), then fall through.
+** This opcode must immediately follow an OP_Lt or OP_Gt comparison operator.
+** If result of an OP_Eq comparison on the same two operands
+** would have be NULL or false (0), then then jump to P2. 
+** If the result of an OP_Eq comparison on the two previous operands
+** would have been true (1), then fall through.
 */
 case OP_ElseNotEq: {       /* same as TK_ESCAPE, jump */
   assert( pOp>aOp );
