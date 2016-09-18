@@ -22,24 +22,24 @@ vtab = []
 csvtab = ["csv"]
 
 [dependencies]
-time = "~0.1.0"
+time = "0.1"
 bitflags = "0.7"
 lru-cache = "0.0.7"
-libc = "~0.2"
-chrono = { version = "~0.2", optional = true }
+libc = "0.2"
+chrono = { version = "0.2", optional = true }
 serde_json = { version = "0.8", optional = true }
 
 [dev-dependencies]
-tempdir = "~0.3.4"
-lazy_static = "~0.2"
-regex = "~0.1.41"
+tempdir = "0.3"
+lazy_static = "0.2"
+regex = "0.1"
 
 [dependencies.libsqlite3-sys]
 path = "libsqlite3-sys"
 version = "0.5.0"
 
 [dependencies.csv]
-version = "~0.14.3"
+version = "0.14"
 optional = true
 
 [[test]]
