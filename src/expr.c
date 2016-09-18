@@ -1974,7 +1974,7 @@ static Select *isCandidateForInOpt(Expr *pX){
 */
 int sqlite3CodeOnce(Parse *pParse){
   Vdbe *v = sqlite3GetVdbe(pParse);      /* Virtual machine being coded */
-  return sqlite3VdbeAddOp1(v, OP_Once, pParse->nOnce++);
+  return sqlite3VdbeAddOp0(v, OP_Once);
 }
 
 #ifndef SQLITE_OMIT_SUBQUERY

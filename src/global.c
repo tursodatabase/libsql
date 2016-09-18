@@ -225,7 +225,8 @@ SQLITE_WSD struct Sqlite3Config sqlite3Config = {
 #ifndef SQLITE_OMIT_BUILTIN_TEST
    0,                         /* xTestCallback */
 #endif
-   0                          /* bLocaltimeFault */
+   0,                         /* bLocaltimeFault */
+   0x7ffffffe                 /* iOnceResetThreshold */
 };
 
 /*

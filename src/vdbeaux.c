@@ -1869,7 +1869,6 @@ void sqlite3VdbeMakeReady(
   int nMem;                      /* Number of VM memory registers */
   int nCursor;                   /* Number of cursors required */
   int nArg;                      /* Number of arguments in subprograms */
-  int nOnce;                     /* Number of OP_Once instructions */
   int n;                         /* Loop counter */
   struct ReusableSpace x;        /* Reusable bulk memory */
 
@@ -1884,8 +1883,6 @@ void sqlite3VdbeMakeReady(
   nMem = pParse->nMem;
   nCursor = pParse->nTab;
   nArg = pParse->nMaxArg;
-  nOnce = pParse->nOnce;
-  if( nOnce==0 ) nOnce = 1; /* Ensure at least one byte in p->aOnceFlag[] */
   
   /* Each cursor uses a memory cell.  The first cursor (cursor 0) can
   ** use aMem[0] which is not otherwise used by the VDBE program.  Allocate
@@ -1932,7 +1929,6 @@ void sqlite3VdbeMakeReady(
     p->aVar = allocSpace(&x, p->aVar, nVar*sizeof(Mem));
     p->apArg = allocSpace(&x, p->apArg, nArg*sizeof(Mem*));
     p->apCsr = allocSpace(&x, p->apCsr, nCursor*sizeof(VdbeCursor*));
-    p->aOnceFlag = allocSpace(&x, p->aOnceFlag, nOnce);
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
     p->anExec = allocSpace(&x, p->anExec, p->nOp*sizeof(i64));
 #endif
@@ -1942,7 +1938,6 @@ void sqlite3VdbeMakeReady(
   }while( !db->mallocFailed );
 
   p->nCursor = nCursor;
-  p->nOnceFlag = nOnce;
   if( p->aVar ){
     p->nVar = (ynVar)nVar;
     for(n=0; n<nVar; n++){
@@ -2030,8 +2025,6 @@ int sqlite3VdbeFrameRestore(VdbeFrame *pFrame){
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
   v->anExec = pFrame->anExec;
 #endif
-  v->aOnceFlag = pFrame->aOnceFlag;
-  v->nOnceFlag = pFrame->nOnceFlag;
   v->aOp = pFrame->aOp;
   v->nOp = pFrame->nOp;
   v->aMem = pFrame->aMem;
@@ -2569,11 +2562,8 @@ int sqlite3VdbeHalt(Vdbe *p){
   ** one, or the complete transaction if there is no statement transaction.
   */
 
-  assert( p->aOnceFlag!=0 || db->mallocFailed );
   if( db->mallocFailed ){
     p->rc = SQLITE_NOMEM_BKPT;
-  }else{
-    memset(p->aOnceFlag, 0, p->nOnceFlag);
   }
   closeAllCursors(p);
   if( p->magic!=VDBE_MAGIC_RUN ){

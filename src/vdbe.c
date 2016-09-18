@@ -2332,22 +2332,18 @@ case OP_BitNot: {             /* same as TK_BITNOT, in1, out2 */
 
 /* Opcode: Once P1 P2 * * *
 **
-** Check the "once" flag number P1. If it is set, jump to instruction P2. 
-** Otherwise, set the flag and fall through to the next instruction.
-** In other words, this opcode causes all following opcodes up through P2
-** (but not including P2) to run just once and to be skipped on subsequent
-** times through the loop.
-**
-** All "once" flags are initially cleared whenever a prepared statement
-** first begins to run.
+** If the P1 value is equal to the P1 value on the OP_Init opcode at
+** instruction 0, then jump to P2.  If the two P1 values differ, then
+** set the P1 value on this opcode to equal the P1 value on the OP_Init
+** and fall through.
 */
 case OP_Once: {             /* jump */
-  assert( pOp->p1<p->nOnceFlag );
-  VdbeBranchTaken(p->aOnceFlag[pOp->p1]!=0, 2);
-  if( p->aOnceFlag[pOp->p1] ){
+  assert( p->aOp[0].opcode==OP_Init );
+  VdbeBranchTaken(p->aOp[0].p1==pOp->p1, 2);
+  if( p->aOp[0].p1==pOp->p1 ){
     goto jump_to_p2;
   }else{
-    p->aOnceFlag[pOp->p1] = 1;
+    pOp->p1 = p->aOp[0].p1;
   }
   break;
 }
@@ -5790,8 +5786,7 @@ case OP_Program: {        /* jump */
     if( pProgram->nCsr==0 ) nMem++;
     nByte = ROUND8(sizeof(VdbeFrame))
               + nMem * sizeof(Mem)
-              + pProgram->nCsr * sizeof(VdbeCursor *)
-              + pProgram->nOnce * sizeof(u8);
+              + pProgram->nCsr * sizeof(VdbeCursor *);
     pFrame = sqlite3DbMallocZero(db, nByte);
     if( !pFrame ){
       goto no_mem;
@@ -5811,8 +5806,6 @@ case OP_Program: {        /* jump */
     pFrame->aOp = p->aOp;
     pFrame->nOp = p->nOp;
     pFrame->token = pProgram->token;
-    pFrame->aOnceFlag = p->aOnceFlag;
-    pFrame->nOnceFlag = p->nOnceFlag;
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
     pFrame->anExec = p->anExec;
 #endif
@@ -5846,13 +5839,10 @@ case OP_Program: {        /* jump */
   p->apCsr = (VdbeCursor **)&aMem[p->nMem];
   p->aOp = aOp = pProgram->aOp;
   p->nOp = pProgram->nOp;
-  p->aOnceFlag = (u8 *)&p->apCsr[p->nCursor];
-  p->nOnceFlag = pProgram->nOnce;
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
   p->anExec = 0;
 #endif
   pOp = &aOp[-1];
-  memset(p->aOnceFlag, 0, p->nOnceFlag);
 
   break;
 }
@@ -6819,7 +6809,7 @@ case OP_MaxPgcnt: {            /* out2 */
 #endif
 
 
-/* Opcode: Init * P2 * P4 *
+/* Opcode: Init P1 P2 * P4 *
 ** Synopsis: Start at P2
 **
 ** Programs contain a single instance of this opcode as the very first
@@ -6830,9 +6820,13 @@ case OP_MaxPgcnt: {            /* out2 */
 ** Or if P4 is blank, use the string returned by sqlite3_sql().
 **
 ** If P2 is not zero, jump to instruction P2.
+**
+** Increment the value of P1 so that OP_Once opcodes will jump the
+** first time they are evaluated for this run.
 */
 case OP_Init: {          /* jump */
   char *zTrace;
+  int i;
 
   /* If the P4 argument is not NULL, then it must be an SQL comment string.
   ** The "--" string is broken up to prevent false-positives with srcck1.c.
@@ -6844,6 +6838,7 @@ case OP_Init: {          /* jump */
   ** sqlite3_expanded_sql(P) otherwise.
   */
   assert( pOp->p4.z==0 || strncmp(pOp->p4.z, "-" "- ", 3)==0 );
+  assert( pOp==p->aOp );  /* Always instruction 0 */
 
 #ifndef SQLITE_OMIT_TRACE
   if( (db->mTrace & (SQLITE_TRACE_STMT|SQLITE_TRACE_LEGACY))!=0
@@ -6881,6 +6876,13 @@ case OP_Init: {          /* jump */
 #endif /* SQLITE_DEBUG */
 #endif /* SQLITE_OMIT_TRACE */
   assert( pOp->p2>0 );
+  if( pOp->p1>=sqlite3GlobalConfig.iOnceResetThreshold ){
+    for(i=1; i<p->nOp; i++){
+      if( p->aOp[i].opcode==OP_Once ) p->aOp[i].p1 = 0;
+    }
+    pOp->p1 = 0;
+  }
+  pOp->p1++;
   goto jump_to_p2;
 }
 
