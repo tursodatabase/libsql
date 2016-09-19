@@ -46,7 +46,7 @@ static SQLITE_NOINLINE int walkExpr(Walker *pWalker, Expr *pExpr){
   if( pExpr->pRight && walkExpr(pWalker, pExpr->pRight) ) return WRC_Abort;
   if( ExprHasProperty(pExpr, EP_xIsSelect) ){
     if( sqlite3WalkSelect(pWalker, pExpr->x.pSelect) ) return WRC_Abort;
-  }else{
+  }else if( pExpr->x.pList ){
     if( sqlite3WalkExprList(pWalker, pExpr->x.pList) ) return WRC_Abort;
   }
   return WRC_Continue;
