@@ -2410,7 +2410,7 @@ static int whereLoopAddBtreeIndex(
         ** for each such term. The following loop checks that pTerm is the
         ** first such term in use, and sets nIn back to 0 if it is not. */
         for(i=0; i<pNew->nLTerm-1; i++){
-          if( pNew->aLTerm[i]->pExpr==pExpr ) nIn = 0;
+          if( pNew->aLTerm[i] && pNew->aLTerm[i]->pExpr==pExpr ) nIn = 0;
         }
       }else if( ALWAYS(pExpr->x.pList && pExpr->x.pList->nExpr) ){
         /* "x IN (value, value, ...)" */
