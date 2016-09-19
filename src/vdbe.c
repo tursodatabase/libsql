@@ -3176,12 +3176,12 @@ case OP_Transaction: {
     rc = sqlite3BtreeBeginTrans(pBt, pOp->p2);
     testcase( rc==SQLITE_BUSY_SNAPSHOT );
     testcase( rc==SQLITE_BUSY_RECOVERY );
-    if( (rc&0xff)==SQLITE_BUSY ){
-      p->pc = (int)(pOp - aOp);
-      p->rc = rc;
-      goto vdbe_return;
-    }
     if( rc!=SQLITE_OK ){
+      if( (rc&0xff)==SQLITE_BUSY ){
+        p->pc = (int)(pOp - aOp);
+        p->rc = rc;
+        goto vdbe_return;
+      }
       goto abort_due_to_error;
     }
 
