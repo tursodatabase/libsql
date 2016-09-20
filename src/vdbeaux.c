@@ -3712,10 +3712,12 @@ static int vdbeCompareMemString(
 ** The input pBlob is guaranteed to be a Blob that is not marked
 ** with MEM_Zero.  Return true if it could be a zero-blob.
 */
-static int isZeroBlob(const Mem *pBlob){
+static int isAllZero(const char *z, int n){
   int i;
-  for(i=0; i<pBlob->n && pBlob->z[i]==0; i++){}
-  return i==pBlob->n;
+  for(i=0; i<n; i++){
+    if( z[i] ) return 0;
+  }
+  return 1;
 }
 
 /*
@@ -3739,10 +3741,10 @@ static SQLITE_NOINLINE int sqlite3BlobCompare(const Mem *pB1, const Mem *pB2){
     if( pB1->flags & pB2->flags & MEM_Zero ){
       return pB1->u.nZero - pB2->u.nZero;
     }else if( pB1->flags & MEM_Zero ){
-      if( !isZeroBlob(pB2) ) return -1;
+      if( !isAllZero(pB2->z, pB2->n) ) return -1;
       return pB1->u.nZero - n2;
     }else{
-      if( !isZeroBlob(pB1) ) return +1;
+      if( !isAllZero(pB1->z, pB1->n) ) return +1;
       return n1 - pB2->u.nZero;
     }
   }
@@ -4054,6 +4056,7 @@ int sqlite3VdbeRecordCompareWithSkip(
 
     /* RHS is a blob */
     else if( pRhs->flags & MEM_Blob ){
+      assert( (pRhs->flags & MEM_Zero)==0 || pRhs->n==0 );
       getVarint32(&aKey1[idx1], serial_type);
       testcase( serial_type==12 );
       if( serial_type<12 || (serial_type & 0x01) ){
@@ -4065,6 +4068,12 @@ int sqlite3VdbeRecordCompareWithSkip(
         if( (d1+nStr) > (unsigned)nKey1 ){
           pPKey2->errCode = (u8)SQLITE_CORRUPT_BKPT;
           return 0;                /* Corruption */
+        }else if( pRhs->flags & MEM_Zero ){
+          if( !isAllZero((const char*)&aKey1[d1],nStr) ){
+            rc = 1;
+          }else{
+            rc = nStr - pRhs->u.nZero;
+          }
         }else{
           int nCmp = MIN(nStr, pRhs->n);
           rc = memcmp(&aKey1[d1], pRhs->z, nCmp);
