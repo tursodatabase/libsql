@@ -169,7 +169,7 @@ int sqlite3_clear_bindings(sqlite3_stmt *pStmt){
 const void *sqlite3_value_blob(sqlite3_value *pVal){
   Mem *p = (Mem*)pVal;
   if( p->flags & (MEM_Blob|MEM_Str) ){
-    if( sqlite3VdbeMemExpandBlob(p)!=SQLITE_OK ){
+    if( ExpandBlob(p)!=SQLITE_OK ){
       assert( p->flags==MEM_Null && p->z==0 );
       return 0;
     }
@@ -1775,7 +1775,7 @@ int sqlite3_preupdate_new(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
     UnpackedRecord *pUnpack = p->pNewUnpacked;
     if( !pUnpack ){
       Mem *pData = &p->v->aMem[p->iNewReg];
-      rc = sqlite3VdbeMemExpandBlob(pData);
+      rc = ExpandBlob(pData);
       if( rc!=SQLITE_OK ) goto preupdate_new_out;
       pUnpack = vdbeUnpackRecord(&p->keyinfo, pData->n, pData->z);
       if( !pUnpack ){

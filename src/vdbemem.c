@@ -216,25 +216,24 @@ int sqlite3VdbeMemMakeWriteable(Mem *pMem){
 */
 #ifndef SQLITE_OMIT_INCRBLOB
 int sqlite3VdbeMemExpandBlob(Mem *pMem){
-  if( pMem->flags & MEM_Zero ){
-    int nByte;
-    assert( pMem->flags&MEM_Blob );
-    assert( (pMem->flags&MEM_RowSet)==0 );
-    assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
+  int nByte;
+  assert( pMem->flags & MEM_Zero );
+  assert( pMem->flags&MEM_Blob );
+  assert( (pMem->flags&MEM_RowSet)==0 );
+  assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
 
-    /* Set nByte to the number of bytes required to store the expanded blob. */
-    nByte = pMem->n + pMem->u.nZero;
-    if( nByte<=0 ){
-      nByte = 1;
-    }
-    if( sqlite3VdbeMemGrow(pMem, nByte, 1) ){
-      return SQLITE_NOMEM_BKPT;
-    }
-
-    memset(&pMem->z[pMem->n], 0, pMem->u.nZero);
-    pMem->n += pMem->u.nZero;
-    pMem->flags &= ~(MEM_Zero|MEM_Term);
+  /* Set nByte to the number of bytes required to store the expanded blob. */
+  nByte = pMem->n + pMem->u.nZero;
+  if( nByte<=0 ){
+    nByte = 1;
   }
+  if( sqlite3VdbeMemGrow(pMem, nByte, 1) ){
+    return SQLITE_NOMEM_BKPT;
+  }
+
+  memset(&pMem->z[pMem->n], 0, pMem->u.nZero);
+  pMem->n += pMem->u.nZero;
+  pMem->flags &= ~(MEM_Zero|MEM_Term);
   return SQLITE_OK;
 }
 #endif
