@@ -1,5 +1,5 @@
-C Further\sperformance\senhancements\sin\szeroblob()\shandling.
-D 2016-09-20T01:46:15.590
+C Fix\stypo\sin\scomment.
+D 2016-09-20T17:38:27.015
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e1aa788e84f926e42239ee167c53f785bedacacd
@@ -351,7 +351,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 427e96ff168b6b187a52c3d06b9f9e41f6ffb212
 F src/legacy.c 75d3023be8f0d2b99d60f905090341a03358c58e
 F src/loadext.c 5d6642d141c07d366e43d359e94ec9de47add41d
-F src/main.c 14fb66eeb2eea477f9e79434fde3cca3aff0ea5c
+F src/main.c c9e49e376820bccca55fa9bf2ca321a51725db91
 F src/malloc.c 1443d1ad95d67c21d77af7ae3f44678252f0efec
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 6919bcf12f221868ea066eec27e579fed95ce98b
@@ -1525,7 +1525,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5e196fd18169e84806cd45dd1a8190339323e772
-R ee2363badf872b5d247f72b61c66fd19
-U drh
-Z c2808bd7f59f43e75d8ebdcaeda29a11
+P 21b0e3b75c531a5ce33a1503f9bf647d56f56a5b
+R fbaf699c28d2338be6d855595b47c382
+U mistachkin
+Z 7b8f55268a7563995859b0e14fe9f0a8

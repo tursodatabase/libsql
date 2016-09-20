@@ -3785,7 +3785,7 @@ int sqlite3_test_control(int op, ...){
     }
 
     /* Set the threshold at which OP_Once counters reset back to zero.
-    ** By default this is 0xfffffffe (over 2 billion), but that value is
+    ** By default this is 0x7ffffffe (over 2 billion), but that value is
     ** too big to test in a reasonable amount of time, so this control is
     ** provided to set a small and easily reachable reset value.
     */
