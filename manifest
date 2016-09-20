@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarning.
-D 2016-09-20T17:49:01.524
+C Improved\simplementation\sof\s64-bit\ssigned\sinteger\smultiply\sthat\scorrectly\ndetects\soverflow\s(and\spromotes\sto\sfloating-point)\sin\ssome\scorner\scases.\nFix\sfor\sticket\s[1ec41379c9c1e400]
+D 2016-09-20T22:04:05.970
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e1aa788e84f926e42239ee167c53f785bedacacd
@@ -451,7 +451,7 @@ F src/treeview.c f51b75a28b377adde9f79bc3deb6c7770bcf97c0
 F src/trigger.c 3419bb9862983d84d70735fb4c94b21b934cd0c5
 F src/update.c 8179e699dbd45b92934fd02d3d8e3732e8da8802
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
-F src/util.c 810ec3f22e2d1b62e66c30fe3621ebdedd23584d
+F src/util.c 3e2da6101888d073e79ecc6af5e0a2f70fa1e498
 F src/vacuum.c 913970b9d86dd6c2b8063ef1af421880f1464ec3
 F src/vdbe.c 0f87994593787575a4a23f932d27cb4588477436
 F src/vdbe.h c044be7050ac6bf596eecc6ab159f5dbc020a3b7
@@ -675,7 +675,7 @@ F test/exclusive.test 9a57bd66e39144b888ca75c309914fcdefb4e3f9
 F test/exclusive2.test 32798111aae78a5deec980eee383213f189df308
 F test/exec.test e949714dc127eaa5ecc7d723efec1ec27118fdd7
 F test/exists.test 79a75323c78f02bbe9c251ea502a092f9ef63dac
-F test/expr.test 79c3e7502d9e571553b85f0ecc8ff2ac7d0e4931
+F test/expr.test 66a2c9ac34f74f036faa4092f5402c7d3162fc93
 F test/extension01.test 00d13cec817f331a687a243e0e5a2d87b0e358c9
 F test/extraquick.test cb254400bd42bfb777ff675356aabf3287978f79
 F test/fallocate.test 3e979af17dfa7e5e9dda5eba1a696c04fa9d47f7
@@ -1525,7 +1525,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bd3ecbb5c1977744321f4bbac79fd7e2e7c1b5ba
-R 9c6c154d94d3544c30252d0eac8d5092
-U mistachkin
-Z a981fdc618d99724c0721b182be1e085
+P 72429063956614975d90cae2a829cfa4296694da
+R 91d60e6e7ebec7104f81d972c645f360
+U drh
+Z 545cfa3e1675ae70fe7fd8b14cbd5249
