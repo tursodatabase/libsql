@@ -1,5 +1,5 @@
-C Fix\sobsolete\srequirements\smarks.\s\sAdd\snew\stests\sfor\sVACUUM\sof\sattached\ndatabases.
-D 2016-09-21T18:18:57.867
+C Do\snot\srun\svacuummem.test\sif\sENABLE_MEMORY_MANAGEMENT\sis\sdefined.
+D 2016-09-21T19:00:37.910
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e1aa788e84f926e42239ee167c53f785bedacacd
@@ -1342,7 +1342,7 @@ F test/vacuum2.test aa048abee196c16c9ba308465494009057b79f9b
 F test/vacuum3.test 77ecdd54592b45a0bcb133339f99f1ae0ae94d0d
 F test/vacuum4.test d3f8ecff345f166911568f397d2432c16d2867d9
 F test/vacuum5.test 0b7ac80c64eed657b4ce2dd6535092c0d6afec6c
-F test/vacuummem.test e53a3fdca4612a99c515e1afe7934728a2383764
+F test/vacuummem.test 7b42abb3208bd82dd23a7536588396f295a314f2
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/veryquick.test 57ab846bacf7b90cf4e9a672721ea5c5b669b661
 F test/view.test 765802c7a66d37fabd5ac8e2f2dbe572b43eb9ab
@@ -1525,7 +1525,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P be184befa09ef0a670a2a6d9c037b9a27bcf16d8
-R 917601953ec7e55d80d40cade2c4b996
-U drh
-Z b7cd3201e204cce2362e565e0603d566
+P 2b44f9aa7d4e2089dacd6bfcf526dae9309b7af3
+R db79f70a5622e7667604a8f395c4feab
+U dan
+Z 3cf2a9a4785a48ab2e27ceae8a5f7a0d
