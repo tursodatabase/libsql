@@ -1,5 +1,5 @@
-C Do\snot\srun\stest\s"delete_db.test"\swith\seither\sthe\sjournaltest\sor\sinmemoryjournal\spermutations.\sEnsure\sthat\sthe\smultiplexor\stests\sin\sdelete_db.test\sare\sperformed\sin\snon-autovacuum\smode.
-D 2016-09-21T17:47:59.373
+C Avoid\srunning\svacuum5.test\sin\sauto-vacuum\smode.
+D 2016-09-21T17:53:47.044
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e1aa788e84f926e42239ee167c53f785bedacacd
@@ -1341,7 +1341,7 @@ F test/vacuum.test ce91c39f7f91a4273bf620efad21086b5aa6ef1d
 F test/vacuum2.test aa048abee196c16c9ba308465494009057b79f9b
 F test/vacuum3.test 77ecdd54592b45a0bcb133339f99f1ae0ae94d0d
 F test/vacuum4.test d3f8ecff345f166911568f397d2432c16d2867d9
-F test/vacuum5.test d233412f76026a3ea2244aef36e5eb1bac15f8ad
+F test/vacuum5.test 0b7ac80c64eed657b4ce2dd6535092c0d6afec6c
 F test/vacuummem.test e53a3fdca4612a99c515e1afe7934728a2383764
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/veryquick.test 57ab846bacf7b90cf4e9a672721ea5c5b669b661
@@ -1525,7 +1525,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d4928fb5cd63a72808f01778fa5a11395385dedf
-R 655565020380644d43819ad1f36a9dcb
+P 46b7d19e0282ecd7622344aafad8c2feb83c9658
+R 52ea72a55c53720654feb8ce2a5edfe7
 U dan
-Z a8ea3044081061bc4f0bce028e9eb24e
+Z ff2ee29d4ccdec9258ea2f36b3b3b38f
