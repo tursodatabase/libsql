@@ -1,5 +1,5 @@
-C Improved\simplementation\sof\s64-bit\ssigned\sinteger\smultiply\sthat\scorrectly\ndetects\soverflow\s(and\spromotes\sto\sfloating-point)\sin\ssome\scorner\scases.\nFix\sfor\sticket\s[1ec41379c9c1e400]
-D 2016-09-20T22:04:05.970
+C Update\sthe\sfts5vocab\stable\sto\shandle\s"ORDER\sBY\sterm"\sefficiently.
+D 2016-09-21T14:41:09.595
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e1aa788e84f926e42239ee167c53f785bedacacd
@@ -113,7 +113,7 @@ F ext/fts5/fts5_test_tok.c db08af63673c3a7d39f053b36fd6e065017706be
 F ext/fts5/fts5_tokenize.c 2ce7b44183538ec46b7907726262ee43ffdd39a8
 F ext/fts5/fts5_unicode2.c b450b209b157d598f7b9df9f837afb75a14c24bf
 F ext/fts5/fts5_varint.c a5aceacda04dafcbae725413d7a16818ecd65738
-F ext/fts5/fts5_vocab.c dba72ca393d71c2588548b51380387f6b44c77a8
+F ext/fts5/fts5_vocab.c e44fefa7f0c1db252998af071daf06a7147e17e7
 F ext/fts5/fts5parse.y e51b375403421b8b37428a89b095d00597129aae
 F ext/fts5/mkportersteps.tcl 5acf962d2e0074f701620bb5308155fa1e4a63ba
 F ext/fts5/test/fts5_common.tcl b01c584144b5064f30e6c648145a2dd6bc440841
@@ -195,7 +195,7 @@ F ext/fts5/test/fts5unicode3.test 35c3d02aa7acf7d43d8de3bfe32c15ba96e8928e
 F ext/fts5/test/fts5unindexed.test e9539d5b78c677315e7ed8ea911d4fd25437c680
 F ext/fts5/test/fts5update.test 57c7012a7919889048947addae10e0613df45529
 F ext/fts5/test/fts5version.test 978f59541d8cef7e8591f8be2115ec5ccb863e2e
-F ext/fts5/test/fts5vocab.test 480d780aa6b699816c5066225fbd86f3a0239477
+F ext/fts5/test/fts5vocab.test 026799f8d24befc452cbddda79822f5ae8d5f4eb
 F ext/fts5/tool/fts5speed.tcl b0056f91a55b2d1a3684ec05729de92b042e2f85
 F ext/fts5/tool/fts5txt2db.tcl 526a9979c963f1c54fd50976a05a502e533a4c59
 F ext/fts5/tool/loadfts5.tcl 95b03429ee6b138645703c6ca192c3ac96eaf093
@@ -1525,7 +1525,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 72429063956614975d90cae2a829cfa4296694da
-R 91d60e6e7ebec7104f81d972c645f360
-U drh
-Z 545cfa3e1675ae70fe7fd8b14cbd5249
+P db3ebd7c52cfc5fcc7be00f52e9d7c84719f7b93
+R b069306c2d67148a9ccacc36a85fb205
+U dan
+Z 47d40874d45f38572688cc85bd002b66
