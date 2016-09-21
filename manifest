@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sthe\sfts5\sauxiliary\sfunction\sAPI\scausing\sa\scrash\swhen\sa\squery\scontained\sa\sphrase\sof\szero\sterms.
-D 2016-09-21T19:43:34.002
+C Fix\sspeedtest1.c\sso\sthat\sit\sworks\swith\sSQLITE_OMIT_DEPRECATED.\nAdd\sthe\s--lean\sand\s--cachesize\soptions\sto\sspeed-check.sh.
+D 2016-09-21T23:58:49.145
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e1aa788e84f926e42239ee167c53f785bedacacd
@@ -1112,7 +1112,7 @@ F test/speed3.test 694affeb9100526007436334cf7d08f3d74b85ef
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
-F test/speedtest1.c 28221f433d358dd3fcf2ca504ed51409aa66ffaf
+F test/speedtest1.c 43b25ae8e303bcada98e00be036e710de17d346a
 F test/spellfix.test f9c1f431e2c096c8775fec032952320c0e4700db
 F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
 F test/spellfix3.test 0f9efaaa502a0e0a09848028518a6fb096c8ad33
@@ -1485,7 +1485,7 @@ F tool/showstat4.c bda40d6e395df7edb6e9ea630784d3d762c35b4b
 F tool/showwal.c ec79959834f7b21f1e0a2aa52bb7c056d2203977
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
 F tool/spaceanal.tcl 85d90e6674d8298e3eaf82dbcef3abc2d5317f3e
-F tool/speed-check.sh 45d3bf861b009993ff401f0d00e34a4cc937fce4
+F tool/speed-check.sh b6f8540db91bfd1fcfb53646bf657cf53ee03cd0
 F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
 F tool/speedtest16.c ecb6542862151c3e6509bbc00509b234562ae81e
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
@@ -1525,7 +1525,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4a613d856433ac48e8ee0cd7f0e774e484e8acf6
-R b3b313c63559d3f43c5fcc9e87b2dba1
-U dan
-Z ee8b7750ac92f9eff66f8bc864927c4a
+P 0741812d7fcd558479e4849fbb3ba8d03738d018
+R cbecff860fb3e1e414a3a9d25ae007ae
+U drh
+Z 82b45269186e0ae095502a5cdd8c1032
