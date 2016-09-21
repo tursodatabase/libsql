@@ -1,5 +1,5 @@
-C Do\snot\srun\svacuummem.test\sif\sENABLE_MEMORY_MANAGEMENT\sis\sdefined.
-D 2016-09-21T19:00:37.910
+C Fix\sa\sproblem\swith\sthe\sfts5\sauxiliary\sfunction\sAPI\scausing\sa\scrash\swhen\sa\squery\scontained\sa\sphrase\sof\szero\sterms.
+D 2016-09-21T19:43:34.002
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e1aa788e84f926e42239ee167c53f785bedacacd
@@ -102,7 +102,7 @@ F ext/fts5/fts5Int.h b2eda36e0f224365c8e23dc8f559311834f1c13f
 F ext/fts5/fts5_aux.c 2f20784a344701d4c72986e2e692062dd47d568c
 F ext/fts5/fts5_buffer.c 4c1502d4c956cd092c89ce4480867f9d8bf325cd
 F ext/fts5/fts5_config.c 5af9c360e99669d29f06492c370892394aba0857
-F ext/fts5/fts5_expr.c 1ee97156421919e497595bfa962bb88ad1665401
+F ext/fts5/fts5_expr.c c65c5629f4b3a49850fd84ea0731dee2360e144f
 F ext/fts5/fts5_hash.c 880998e596b60f078348d48732ca4ad9a90caad2
 F ext/fts5/fts5_index.c 2d146d5c547f60d22d6fc4014d5e2b64248cd7c4
 F ext/fts5/fts5_main.c f85281445dcf8be32d18841c93a6f90fe27dbfe2
@@ -148,7 +148,7 @@ F ext/fts5/test/fts5determin.test 10648edb75ef1e196b10978fd21a9be0c31e09c3
 F ext/fts5/test/fts5dlidx.test 007e9390c94638760797dbec2990c97c3fa08dfe
 F ext/fts5/test/fts5doclist.test 8edb5b57e5f144030ed74ec00ef6fa4294fed79b
 F ext/fts5/test/fts5ea.test b01e3a18cdfabbff8104a96a5242a06a68a998a0
-F ext/fts5/test/fts5eb.test c516ae0c934be6fd29ec95ea8b5f11f461311535
+F ext/fts5/test/fts5eb.test 14597b5ecc9b2b7039ac5e0b0fca0311a7d22005
 F ext/fts5/test/fts5fault1.test e09040d3e17b8c0837101e8c79c8a874c4376fb7
 F ext/fts5/test/fts5fault2.test d8c6c7f916ccbdfc10b2c69530e9dd3bc8313232
 F ext/fts5/test/fts5fault3.test d6e9577d4312e331a913c72931bf131704efc8f3
@@ -1525,7 +1525,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2b44f9aa7d4e2089dacd6bfcf526dae9309b7af3
-R db79f70a5622e7667604a8f395c4feab
+P 4a613d856433ac48e8ee0cd7f0e774e484e8acf6
+R b3b313c63559d3f43c5fcc9e87b2dba1
 U dan
-Z 3cf2a9a4785a48ab2e27ceae8a5f7a0d
+Z ee8b7750ac92f9eff66f8bc864927c4a
