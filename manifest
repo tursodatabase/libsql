@@ -1,5 +1,5 @@
-C Avoid\srunning\svacuum5.test\sin\sauto-vacuum\smode.
-D 2016-09-21T17:53:47.044
+C Fix\sobsolete\srequirements\smarks.\s\sAdd\snew\stests\sfor\sVACUUM\sof\sattached\ndatabases.
+D 2016-09-21T18:18:57.867
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e1aa788e84f926e42239ee167c53f785bedacacd
@@ -649,7 +649,7 @@ F test/e_delete.test ab39084f26ae1f033c940b70ebdbbd523dc4962e
 F test/e_droptrigger.test 3cd080807622c13e5bbb61fc9a57bd7754da2412
 F test/e_dropview.test 0c9f7f60989164a70a67a9d9c26d1083bc808306
 F test/e_expr.test 1ffa8866d38e7becc76893a8829e9432050e5716
-F test/e_fkey.test a1783fe1f759e1990e6a11adfcf0702dac4d0707
+F test/e_fkey.test 54cc0046d2d952d6c42b0dd94414e7a8f75f79f4
 F test/e_fts3.test 5c02288842e4f941896fd44afdef564dd5fc1459
 F test/e_insert.test 3de217e95094d3d165992a6de1164bbc4bd92dc7
 F test/e_reindex.test 2bebf7b393e519198b7c654407221cf171a439b8
@@ -659,7 +659,7 @@ F test/e_select2.test aceb80ab927d46fba5ce7586ebabf23e2bb0604f
 F test/e_totalchanges.test b12ee5809d3e63aeb83238dd501a7bca7fd72c10
 F test/e_update.test f46c2554d915c9197548681e8d8c33a267e84528
 F test/e_uri.test 25385396082b67fd02ae0038b95a3b3575fe0519
-F test/e_vacuum.test 9e5e47e4059a779c777f47e0f560fc82c99336df
+F test/e_vacuum.test 1b8b4772d05374aa1b8958669138bbb4213ee26a
 F test/e_wal.test ae9a593207a77d711443ee69ffe081fda9243625
 F test/e_walauto.test 248af31e73c98df23476a22bdb815524c9dc3ba8
 F test/e_walckpt.test 28c371a6bb5e5fe7f31679c1df1763a19d19e8a0
@@ -1525,7 +1525,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 46b7d19e0282ecd7622344aafad8c2feb83c9658
-R 52ea72a55c53720654feb8ce2a5edfe7
-U dan
-Z ff2ee29d4ccdec9258ea2f36b3b3b38f
+P be184befa09ef0a670a2a6d9c037b9a27bcf16d8
+R 917601953ec7e55d80d40cade2c4b996
+U drh
+Z b7cd3201e204cce2362e565e0603d566
