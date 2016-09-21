@@ -1,5 +1,5 @@
-C Update\sthe\sfts5vocab\stable\sto\shandle\s"ORDER\sBY\sterm"\sefficiently.
-D 2016-09-21T14:41:09.595
+C Do\snot\srun\stest\s"delete_db.test"\swith\seither\sthe\sjournaltest\sor\sinmemoryjournal\spermutations.\sEnsure\sthat\sthe\smultiplexor\stests\sin\sdelete_db.test\sare\sperformed\sin\snon-autovacuum\smode.
+D 2016-09-21T17:47:59.373
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e1aa788e84f926e42239ee167c53f785bedacacd
@@ -632,7 +632,7 @@ F test/delete.test acc38fca8ee4851467705b1c2cfea64cd26667e5
 F test/delete2.test 3a03f2cca1f9a67ec469915cb8babd6485db43fa
 F test/delete3.test 555e84a00a99230b7d049d477a324a631126a6ab
 F test/delete4.test 21d2113217eeaacac2d99defe14fe6611615ae86
-F test/delete_db.test 906fb709bd71443c2484dcf24b05a21d125d149f
+F test/delete_db.test c70a43629dd4d3e1dd03fdaf7a22153af6a69d92
 F test/descidx1.test 6d03b44c8538fe0eb4924e19fba10cdd8f3c9240
 F test/descidx2.test 9f1a0c83fd57f8667c82310ca21b30a350888b5d
 F test/descidx3.test 09ddbe3f5295f482d2f8b687cf6db8bad7acd9a2
@@ -994,7 +994,7 @@ F test/parser1.test 391b9bf9a229547a129c61ac345ed1a6f5eb1854
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
-F test/permutations.test 544a2f317fc5045bc512ae432f89eae303c0d640
+F test/permutations.test cd0b7bc04bf5e50d3a993d24c834d591f7d4f5fe
 F test/pragma.test 1e94755164a3a3264cd39836de4bebcb7809e5f8
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
 F test/pragma3.test 14c12bc5352b1e100e0b6b44f371053a81ccf8ed
@@ -1525,7 +1525,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P db3ebd7c52cfc5fcc7be00f52e9d7c84719f7b93
-R b069306c2d67148a9ccacc36a85fb205
+P d4928fb5cd63a72808f01778fa5a11395385dedf
+R 655565020380644d43819ad1f36a9dcb
 U dan
-Z 47d40874d45f38572688cc85bd002b66
+Z a8ea3044081061bc4f0bce028e9eb24e
