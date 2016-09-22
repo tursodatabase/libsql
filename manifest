@@ -1,5 +1,5 @@
-C Remove\sthe\sinternal\ssqlite3CodeOnce()\sinterface,\sreplacing\sit\swith\sa\ndirect\scall\sto\ssqlite3VdbeAddOp0(v,OP_Once).\s\sSlightly\ssmaller\sand\sfaster.
-D 2016-09-22T18:53:13.560
+C Fix\sa\spotential\snull-pointer\sdereference\sand\scrash\sin\sthe\scase\swhere\sone\nthread\sis\scalling\ssqlite3_column_text()\sand\sanother\sthread\sis\scalling\nsqlite3_step()\son\sthe\ssame\sprepared\sstatement\sat\sthe\ssame\sinstant.
+D 2016-09-22T21:37:18.049
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5151cc64c4c05f3455f4f692ad11410a810d937f
@@ -456,7 +456,7 @@ F src/vacuum.c 913970b9d86dd6c2b8063ef1af421880f1464ec3
 F src/vdbe.c 0f87994593787575a4a23f932d27cb4588477436
 F src/vdbe.h c044be7050ac6bf596eecc6ab159f5dbc020a3b7
 F src/vdbeInt.h d21f14721dd87975dc9e3bcdbf504f9c098cf611
-F src/vdbeapi.c 1e0505f6a5495c47180eb2e3535a9779f42e72d6
+F src/vdbeapi.c 794f80669e9e3b9b3edc78d80c15968985c7bf21
 F src/vdbeaux.c b9772e4134a17f5b42d32761f5119467815c2458
 F src/vdbeblob.c 3e82a797b60c3b9fed7b8de8c539ca7607874937
 F src/vdbemem.c 07874c2ac7c05f7df1ededc6ec6650c1339b2cad
@@ -1525,7 +1525,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5e892d60935e5c82234d1bfaef4c5026061acceb
-R 4a98fd5ad20cf7ad4821bfd13a964ce7
+P c3774c6a5fe48af91fda28e9e18c6ed9053ea992
+R 6375993a9d5ddbf71b5ded7742ff83bd
 U drh
-Z 0d81e518bb5c5c1a02f800fff5730756
+Z 824a3b47745c16899f3e858caef9c3bd

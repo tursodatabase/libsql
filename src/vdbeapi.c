@@ -952,14 +952,13 @@ static Mem *columnMem(sqlite3_stmt *pStmt, int i){
   Mem *pOut;
 
   pVm = (Vdbe *)pStmt;
-  if( pVm && pVm->pResultSet!=0 && i<pVm->nResColumn && i>=0 ){
-    sqlite3_mutex_enter(pVm->db->mutex);
+  if( pVm==0 ) return (Mem*)columnNullValue();
+  assert( pVm->db );
+  sqlite3_mutex_enter(pVm->db->mutex);
+  if( pVm->pResultSet!=0 && i<pVm->nResColumn && i>=0 ){
     pOut = &pVm->pResultSet[i];
   }else{
-    if( pVm && ALWAYS(pVm->db) ){
-      sqlite3_mutex_enter(pVm->db->mutex);
-      sqlite3Error(pVm->db, SQLITE_RANGE);
-    }
+    sqlite3Error(pVm->db, SQLITE_RANGE);
     pOut = (Mem*)columnNullValue();
   }
   return pOut;
@@ -992,6 +991,8 @@ static void columnMallocFailure(sqlite3_stmt *pStmt)
   */
   Vdbe *p = (Vdbe *)pStmt;
   if( p ){
+    assert( p->db!=0 );
+    assert( sqlite3_mutex_held(p->db->mutex) );
     p->rc = sqlite3ApiExit(p->db, p->rc);
     sqlite3_mutex_leave(p->db->mutex);
   }
