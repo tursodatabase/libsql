@@ -1,5 +1,5 @@
-C Makefile\schanges\sto\ssupport\sbuilding\swinsqlite3.dll\susing\sSTDCALL\srather\sthan\sCDECL.
-D 2016-09-22T18:46:38.171
+C Remove\sthe\sinternal\ssqlite3CodeOnce()\sinterface,\sreplacing\sit\swith\sa\ndirect\scall\sto\ssqlite3VdbeAddOp0(v,OP_Once).\s\sSlightly\ssmaller\sand\sfaster.
+D 2016-09-22T18:53:13.560
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5151cc64c4c05f3455f4f692ad11410a810d937f
@@ -338,8 +338,8 @@ F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c e77f3dc297b4b65c96da78b4ae4272fdfae863d7
 F src/date.c 95c9a8d00767e7221a8e9a31f4e913fc8029bf6b
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
-F src/delete.c e91a11e0e86a13ce1917ca5ad7cf14c37ba31e59
-F src/expr.c f35e6c250bceaadc6a65e0c344e8f8bc398119e6
+F src/delete.c cb3f6300df24c26c609778b2731f82644b5532ec
+F src/expr.c 471ca87aa3b176548814a332172848015f13d823
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c e2be0968c1adc679c87e467aa5b4f167588f38a8
 F src/func.c 29cc9acb170ec1387b9f63eb52cd85f8de96c771
@@ -386,12 +386,12 @@ F src/printf.c a5f0ca08ddede803c241266abb46356ec748ded1
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 3c3cf0dc719cd2a32ab5c1e10c26481dd565492e
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c 244f9cc5e4662987cd2ef5c22d1b7027560f3425
+F src/select.c fb9da69a36382cf9cf57fb7a93247bf3de5a81ae
 F src/shell.c b80396d2fadce4681397707e30078bf416e1dec2
 F src/sqlite.h.in 2683a291ed8db5228024267be6421f0de507b80e
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
-F src/sqliteInt.h 1abb4501bbc28c9badf0ebc1e99bd66585ba04f0
+F src/sqliteInt.h e7c39dc148cd38b947cbdd482986afba3fe9ef22
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
@@ -467,7 +467,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 02eeecc265f6ffd0597378f5d8ae9070b62a406a
 F src/wal.h 6dd221ed384afdc204bc61e25c23ef7fd5a511f2
 F src/walker.c 83042807db1a27175fcb39be8f3e2a839dbdddb2
-F src/where.c e4140408b81539cf9298355138a3749164dfd6a2
+F src/where.c 5f91be9fe122e847c4e72d54d3989eb32a927981
 F src/whereInt.h 14dd243e13b81cbb0a66063d38b70f93a7d6e613
 F src/wherecode.c e412e09abad1eea213d85594cf46db9f877db56d
 F src/whereexpr.c e3db778ed205e982f31960896db71c50612ae009
@@ -1525,8 +1525,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7785b3a25778cc19861c01f4148f72e0f724f55d 20f3c7436f6a8a7bab3968adc010c7c8325e4618
-R 72cc550b3f8e650b8595781f4d1f9482
-T +closed 20f3c7436f6a8a7bab3968adc010c7c8325e4618
-U mistachkin
-Z ffa47cef2805fb0d684496ef32d8ed25
+P 5e892d60935e5c82234d1bfaef4c5026061acceb
+R 4a98fd5ad20cf7ad4821bfd13a964ce7
+U drh
+Z 0d81e518bb5c5c1a02f800fff5730756

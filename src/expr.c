@@ -1968,15 +1968,6 @@ static Select *isCandidateForInOpt(Expr *pX){
 }
 #endif /* SQLITE_OMIT_SUBQUERY */
 
-/*
-** Code an OP_Once instruction and allocate space for its flag. Return the 
-** address of the new instruction.
-*/
-int sqlite3CodeOnce(Parse *pParse){
-  Vdbe *v = sqlite3GetVdbe(pParse);      /* Virtual machine being coded */
-  return sqlite3VdbeAddOp0(v, OP_Once);
-}
-
 #ifndef SQLITE_OMIT_SUBQUERY
 /*
 ** Generate code that checks the left-most column of index table iCur to see if
@@ -2150,7 +2141,7 @@ int sqlite3FindInIndex(
     assert(v);  /* sqlite3GetVdbe() has always been previously called */
     if( nExpr==1 && pEList->a[0].pExpr->iColumn<0 ){
       /* The "x IN (SELECT rowid FROM table)" case */
-      int iAddr = sqlite3CodeOnce(pParse);
+      int iAddr = sqlite3VdbeAddOp0(v, OP_Once);
       VdbeCoverage(v);
 
       sqlite3OpenTable(pParse, iTab, iDb, pTab, OP_OpenRead);
@@ -2233,7 +2224,7 @@ int sqlite3FindInIndex(
           assert( i==nExpr || colUsed!=(MASKBIT(nExpr)-1) );
           if( colUsed==(MASKBIT(nExpr)-1) ){
             /* If we reach this point, that means the index pIdx is usable */
-            int iAddr = sqlite3CodeOnce(pParse); VdbeCoverage(v);
+            int iAddr = sqlite3VdbeAddOp0(v, OP_Once); VdbeCoverage(v);
 #ifndef SQLITE_OMIT_EXPLAIN
             sqlite3VdbeAddOp4(v, OP_Explain, 0, 0, 0,
               sqlite3MPrintf(db, "USING INDEX %s FOR IN-OPERATOR",pIdx->zName),
@@ -2408,7 +2399,7 @@ int sqlite3CodeSubselect(
   ** save the results, and reuse the same result on subsequent invocations.
   */
   if( !ExprHasProperty(pExpr, EP_VarSelect) ){
-    jmpIfDynamic = sqlite3CodeOnce(pParse); VdbeCoverage(v);
+    jmpIfDynamic = sqlite3VdbeAddOp0(v, OP_Once); VdbeCoverage(v);
   }
 
 #ifndef SQLITE_OMIT_EXPLAIN

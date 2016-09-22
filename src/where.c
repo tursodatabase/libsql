@@ -651,7 +651,7 @@ static void constructAutomaticIndex(
   ** transient index on 2nd and subsequent iterations of the loop. */
   v = pParse->pVdbe;
   assert( v!=0 );
-  addrInit = sqlite3CodeOnce(pParse); VdbeCoverage(v);
+  addrInit = sqlite3VdbeAddOp0(v, OP_Once); VdbeCoverage(v);
 
   /* Count the number of columns that will be added to the index
   ** and used to match WHERE clause constraints */
