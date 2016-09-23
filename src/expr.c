@@ -1016,18 +1016,25 @@ static SQLITE_NOINLINE void sqlite3ExprDeleteNN(sqlite3 *db, Expr *p){
   assert( p!=0 );
   /* Sanity check: Assert that the IntValue is non-negative if it exists */
   assert( !ExprHasProperty(p, EP_IntValue) || p->u.iValue>=0 );
-  if( !ExprHasProperty(p, EP_TokenOnly) ){
+#ifdef SQLITE_DEBUG
+  if( ExprHasProperty(p, EP_Leaf) && !ExprHasProperty(p, EP_TokenOnly) ){
+    assert( p->pLeft==0 );
+    assert( p->pRight==0 );
+    assert( p->x.pSelect==0 );
+  }
+#endif
+  if( !ExprHasProperty(p, (EP_TokenOnly|EP_Leaf)) ){
     /* The Expr.x union is never used at the same time as Expr.pRight */
     assert( p->x.pList==0 || p->pRight==0 );
     if( p->pLeft && p->op!=TK_SELECT_COLUMN ) sqlite3ExprDeleteNN(db, p->pLeft);
     sqlite3ExprDelete(db, p->pRight);
-    if( ExprHasProperty(p, EP_MemToken) ) sqlite3DbFree(db, p->u.zToken);
     if( ExprHasProperty(p, EP_xIsSelect) ){
       sqlite3SelectDelete(db, p->x.pSelect);
     }else{
       sqlite3ExprListDelete(db, p->x.pList);
     }
   }
+  if( ExprHasProperty(p, EP_MemToken) ) sqlite3DbFree(db, p->u.zToken);
   if( !ExprHasProperty(p, EP_Static) ){
     sqlite3DbFree(db, p);
   }
@@ -1204,7 +1211,7 @@ static Expr *exprDup(sqlite3 *db, Expr *p, int dupFlags, u8 **pzBuffer){
       memcpy(zToken, p->u.zToken, nToken);
     }
 
-    if( 0==((p->flags|pNew->flags) & EP_TokenOnly) ){
+    if( 0==((p->flags|pNew->flags) & (EP_TokenOnly|EP_Leaf)) ){
       /* Fill in the pNew->x.pSelect or pNew->x.pList member. */
       if( ExprHasProperty(p, EP_xIsSelect) ){
         pNew->x.pSelect = sqlite3SelectDup(db, p->x.pSelect, dupFlags);
@@ -1216,7 +1223,7 @@ static Expr *exprDup(sqlite3 *db, Expr *p, int dupFlags, u8 **pzBuffer){
     /* Fill in pNew->pLeft and pNew->pRight. */
     if( ExprHasProperty(pNew, EP_Reduced|EP_TokenOnly) ){
       zAlloc += dupedExprNodeSize(p, dupFlags);
-      if( ExprHasProperty(pNew, EP_Reduced) ){
+      if( !ExprHasProperty(pNew, EP_TokenOnly|EP_Leaf) ){
         pNew->pLeft = p->pLeft ?
                       exprDup(db, p->pLeft, EXPRDUP_REDUCE, &zAlloc) : 0;
         pNew->pRight = p->pRight ?
@@ -1226,7 +1233,7 @@ static Expr *exprDup(sqlite3 *db, Expr *p, int dupFlags, u8 **pzBuffer){
         *pzBuffer = zAlloc;
       }
     }else{
-      if( !ExprHasProperty(p, EP_TokenOnly) ){
+      if( !ExprHasProperty(p, EP_TokenOnly|EP_Leaf) ){
         if( pNew->op==TK_SELECT_COLUMN ){
           pNew->pLeft = p->pLeft;
         }else{

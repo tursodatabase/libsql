@@ -530,7 +530,7 @@ int sqlite3FixExpr(
         return 1;
       }
     }
-    if( ExprHasProperty(pExpr, EP_TokenOnly) ) break;
+    if( ExprHasProperty(pExpr, EP_TokenOnly|EP_Leaf) ) break;
     if( ExprHasProperty(pExpr, EP_xIsSelect) ){
       if( sqlite3FixSelect(pFix, pExpr->x.pSelect) ) return 1;
     }else{

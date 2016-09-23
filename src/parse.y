@@ -854,6 +854,7 @@ idlist(A) ::= nm(Y).
     pOut->pExpr = sqlite3ExprAlloc(pParse->db, op, &t, 1);
     pOut->zStart = t.z;
     pOut->zEnd = &t.z[t.n];
+    if( pOut->pExpr ) pOut->pExpr->flags |= EP_Leaf;
   }
 }
 

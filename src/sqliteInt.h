@@ -2338,6 +2338,7 @@ struct Expr {
 #define EP_CanBeNull 0x100000 /* Can be null despite NOT NULL constraint */
 #define EP_Subquery  0x200000 /* Tree contains a TK_SELECT operator */
 #define EP_Alias     0x400000 /* Is an alias for a result set column */
+#define EP_Leaf      0x800000 /* Expr.pLeft, .pRight, .u.pSelect all NULL */
 
 /*
 ** Combinations of two or more EP_* flags
