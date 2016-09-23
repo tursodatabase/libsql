@@ -136,5 +136,3 @@ int sqlite3_delete_database(
   sqlite3_free(zBuf);
   return (rc ? SQLITE_ERROR : SQLITE_OK);
 }
-
-

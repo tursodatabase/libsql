@@ -1,5 +1,5 @@
-C New\stest\scase\sfor\sthe\sORDER\sBY\sLIMIT\soptimization.
-D 2016-09-23T18:13:01.106
+C Use\ssqlite3ExprAlloc()\sinstead\sof\ssqlite3PExpr()\sfor\sleaf\snodes\sin\sthe\nexpression\stree,\swhere\sappropriate.\s\sThis\sis\sboth\ssmaller\sand\sfaster.
+D 2016-09-23T20:59:31.640
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5151cc64c4c05f3455f4f692ad11410a810d937f
@@ -339,9 +339,9 @@ F src/ctime.c e77f3dc297b4b65c96da78b4ae4272fdfae863d7
 F src/date.c 95c9a8d00767e7221a8e9a31f4e913fc8029bf6b
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
 F src/delete.c cb3f6300df24c26c609778b2731f82644b5532ec
-F src/expr.c 471ca87aa3b176548814a332172848015f13d823
+F src/expr.c 13bc043a6a6cfde48a7d551242e721af79f7837d
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
-F src/fkey.c e2be0968c1adc679c87e467aa5b4f167588f38a8
+F src/fkey.c b9ca262f6ad4d030a3cab737ebf9b0b3c8b4ac80
 F src/func.c 29cc9acb170ec1387b9f63eb52cd85f8de96c771
 F src/global.c 2917bbc488201b791e5f5dd43d8d2a3ccc315da7
 F src/hash.c 55b5fb474100cee0b901edaf203e26c970940f36
@@ -375,7 +375,7 @@ F src/os_win.c 520f23475f1de530c435d30b67b7b15fe90874b0
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c bf5b71bde3e9b6110e7d6990607db881f6a471a2
 F src/pager.h 966d2769e76ae347c8a32c4165faf6e6cb64546d
-F src/parse.y 0e0b6d46a990d01e4ca1e9d7e1d2d9b5a98f6bcb
+F src/parse.y 2e0ac10d159ae28378d760e1284672dc83c12e59
 F src/pcache.c 5583c8ade4b05075a60ba953ef471d1c1a9c05df
 F src/pcache.h 2cedcd8407eb23017d92790b112186886e179490
 F src/pcache1.c 4bb7a6a5300c67d0b033d25adb509c120c03e812
@@ -412,7 +412,7 @@ F src/test_bestindex.c d23f80d334c59662af69191854c76b8d3d0c8c96
 F src/test_blob.c a0f7ad49a0c9d4b72f693fe2a71c58d7e507174d
 F src/test_btree.c 8b2dc8b8848cf3a4db93f11578f075e82252a274
 F src/test_config.c 4d3d4a886416f369771d69a6dba926866deda788
-F src/test_delete.c f4920c10d7208ac55ee03882de9709cf39a83fec
+F src/test_delete.c 32690ea215abf29dda589a580cd1b790389759b6
 F src/test_demovfs.c a0c3bdd45ed044115c2c9f7779e56eafff18741e
 F src/test_devsym.c 4e58dec2602d8e139ca08659f62a62450587cb58
 F src/test_fs.c e16cbe68d3b107e00a907c20a9a02629870eb69b
@@ -470,7 +470,7 @@ F src/walker.c 83042807db1a27175fcb39be8f3e2a839dbdddb2
 F src/where.c 5f91be9fe122e847c4e72d54d3989eb32a927981
 F src/whereInt.h 14dd243e13b81cbb0a66063d38b70f93a7d6e613
 F src/wherecode.c e412e09abad1eea213d85594cf46db9f877db56d
-F src/whereexpr.c e3db778ed205e982f31960896db71c50612ae009
+F src/whereexpr.c 3d8813ef320f10bd27e6c0d784abe1669cfb514e
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1525,7 +1525,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ee1382a36303eff8d94275ac3b12e5ce398ee620
-R 414a8fb536c6a3f96976785b914f6d34
+P 9a5a489d0d344274d0fc9fb9303503a454f42844
+R 4f7e383818869f5430685b55e782c0cb
 U drh
-Z d5fb1d24e590d07d2266646af9025a8e
+Z 80e3136d01cf534e1ff43bad67f7dd75

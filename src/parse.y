@@ -851,7 +851,7 @@ idlist(A) ::= nm(Y).
   ** that created the expression.
   */
   static void spanExpr(ExprSpan *pOut, Parse *pParse, int op, Token t){
-    pOut->pExpr = sqlite3PExpr(pParse, op, 0, 0, &t);
+    pOut->pExpr = sqlite3ExprAlloc(pParse->db, op, &t, 1);
     pOut->zStart = t.z;
     pOut->zEnd = &t.z[t.n];
   }
