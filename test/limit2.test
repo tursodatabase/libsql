@@ -109,7 +109,15 @@ do_execsql_test limit2-310 {
   SELECT *,'.' FROM t300 WHERE a=0 AND (c=0 OR c=99) ORDER BY c DESC LIMIT 1;
 } {0 1 99 .}
 
-
-
+# Make sure the SELECT loop is ordered correctly for the direction of
+# the ORDER BY
+#
+do_execsql_test limit2-400 {
+  CREATE TABLE t400(a,b);
+  CREATE INDEX t400_ab ON t400(a,b);
+  INSERT INTO t400(a,b) VALUES(1,90),(1,40),(2,80),(2,30),(3,70),(3,20);
+  SELECT *,'x' FROM t400 WHERE a IN (1,2,3) ORDER BY b DESC LIMIT 3;
+  SELECT *,'y' FROM t400 WHERE a IN (1,2,3) ORDER BY +b DESC LIMIT 3;
+} {1 90 x 2 80 x 3 70 x 1 90 y 2 80 y 3 70 y}
 
 finish_test
