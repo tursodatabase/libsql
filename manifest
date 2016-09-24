@@ -1,5 +1,5 @@
-C Add\sthe\sEP_Leaf\sflag\sbit\sto\sthe\sExpr.flags\sfield\sto\sindicate\sExpr\nnodes\sthat\sdo\snot\shave\ssubstructure.\s\sUse\sthat\sbit\sto\savoid\sunnecessary\nrecursion.
-D 2016-09-23T21:36:24.016
+C Add\s-DSQLITE_MAX_EXPR_DEPTH=0\sto\sthe\s--lean\soption\son\sspeed-check.sh.
+D 2016-09-24T01:41:59.614
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5151cc64c4c05f3455f4f692ad11410a810d937f
@@ -1485,7 +1485,7 @@ F tool/showstat4.c bda40d6e395df7edb6e9ea630784d3d762c35b4b
 F tool/showwal.c ec79959834f7b21f1e0a2aa52bb7c056d2203977
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
 F tool/spaceanal.tcl 85d90e6674d8298e3eaf82dbcef3abc2d5317f3e
-F tool/speed-check.sh b6f8540db91bfd1fcfb53646bf657cf53ee03cd0
+F tool/speed-check.sh a57ee04157ad548a5059c642e251a841af04b1d7
 F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
 F tool/speedtest16.c ecb6542862151c3e6509bbc00509b234562ae81e
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
@@ -1525,7 +1525,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P afac0709cec577a7851e3711730712cf12eeb6af
-R 1f3656e4b134bb6d596c11b8715739cb
+P 8a6ea455cd1bf42ae0a7f1f1789baf88d782db13
+R c2a1fbf434060e5ae670df791d65f59d
 U drh
-Z aee870d3bef9f3e934093d2e8b8d0981
+Z e4f27d74e807f7370bdb607111a612f9
