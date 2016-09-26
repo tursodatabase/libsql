@@ -542,8 +542,8 @@ selcollist(A) ::= sclp(A) STAR. {
   Expr *p = sqlite3Expr(pParse->db, TK_ASTERISK, 0);
   A = sqlite3ExprListAppend(pParse, A, p);
 }
-selcollist(A) ::= sclp(A) nm(X) DOT STAR(Y). {
-  Expr *pRight = sqlite3PExpr(pParse, TK_ASTERISK, 0, 0, &Y);
+selcollist(A) ::= sclp(A) nm(X) DOT STAR. {
+  Expr *pRight = sqlite3PExpr(pParse, TK_ASTERISK, 0, 0, 0);
   Expr *pLeft = sqlite3PExpr(pParse, TK_ID, 0, 0, &X);
   Expr *pDot = sqlite3PExpr(pParse, TK_DOT, pLeft, pRight, 0);
   A = sqlite3ExprListAppend(pParse,A, pDot);
@@ -837,10 +837,26 @@ idlist(A) ::= nm(Y).
   ** that created the expression.
   */
   static void spanExpr(ExprSpan *pOut, Parse *pParse, int op, Token t){
-    pOut->pExpr = sqlite3ExprAlloc(pParse->db, op, &t, 1);
+    Expr *p = sqlite3DbMallocRawNN(pParse->db, sizeof(Expr)+t.n+1);
+    if( p ){
+      memset(p, 0, sizeof(Expr));
+      p->op = (u8)op;
+      p->flags = EP_Leaf;
+      p->iAgg = -1;
+      p->u.zToken = (char*)&p[1];
+      memcpy(p->u.zToken, t.z, t.n);
+      p->u.zToken[t.n] = 0;
+      if( sqlite3Isquote(p->u.zToken[0]) ){
+        if( p->u.zToken[0]=='"' ) p->flags |= EP_DblQuoted;
+        sqlite3Dequote(p->u.zToken);
+      }
+#if SQLITE_MAX_EXPR_DEPTH>0
+      p->nHeight = 1;
+#endif  
+    }
+    pOut->pExpr = p;
     pOut->zStart = t.z;
     pOut->zEnd = &t.z[t.n];
-    if( pOut->pExpr ) pOut->pExpr->flags |= EP_Leaf;
   }
 }
 
@@ -864,8 +880,14 @@ expr(A) ::= nm(X) DOT nm(Y) DOT nm(Z). {
   spanSet(&A,&X,&Z); /*A-overwrites-X*/
   A.pExpr = sqlite3PExpr(pParse, TK_DOT, temp1, temp4, 0);
 }
-term(A) ::= INTEGER|FLOAT|BLOB(X). {spanExpr(&A,pParse,@X,X);/*A-overwrites-X*/}
-term(A) ::= STRING(X).             {spanExpr(&A,pParse,@X,X);/*A-overwrites-X*/}
+term(A) ::= FLOAT|BLOB(X). {spanExpr(&A,pParse,@X,X);/*A-overwrites-X*/}
+term(A) ::= STRING(X).     {spanExpr(&A,pParse,@X,X);/*A-overwrites-X*/}
+term(A) ::= INTEGER(X). {
+  A.pExpr = sqlite3ExprAlloc(pParse->db, TK_INTEGER, &X, 1);
+  A.zStart = X.z;
+  A.zEnd = X.z + X.n;
+  if( A.pExpr ) A.pExpr->flags |= EP_Leaf;
+}
 expr(A) ::= VARIABLE(X).     {
   if( !(X.z[0]=='#' && sqlite3Isdigit(X.z[1])) ){
     spanExpr(&A, pParse, TK_VARIABLE, X);
@@ -881,7 +903,7 @@ expr(A) ::= VARIABLE(X).     {
       sqlite3ErrorMsg(pParse, "near \"%T\": syntax error", &t);
       A.pExpr = 0;
     }else{
-      A.pExpr = sqlite3PExpr(pParse, TK_REGISTER, 0, 0, &t);
+      A.pExpr = sqlite3PExpr(pParse, TK_REGISTER, 0, 0, 0);
       if( A.pExpr ) sqlite3GetInt32(&t.z[1], &A.pExpr->iTable);
     }
   }
