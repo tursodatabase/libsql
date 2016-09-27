@@ -3208,10 +3208,9 @@ case OP_Transaction: {
     }
 
     /* Gather the schema version number for checking:
-    ** IMPLEMENTATION-OF: R-32195-19465 The schema version is used by SQLite
-    ** each time a query is executed to ensure that the internal cache of the
-    ** schema used when compiling the SQL query matches the schema of the
-    ** database against which the compiled query is actually executed.
+    ** IMPLEMENTATION-OF: R-03189-51135 As each SQL statement runs, the schema
+    ** version is checked to ensure that the schema has not changed since the
+    ** SQL statement was prepared.
     */
     sqlite3BtreeGetMeta(pBt, BTREE_SCHEMA_VERSION, (u32 *)&iMeta);
     iGen = db->aDb[pOp->p1].pSchema->iGeneration;
