@@ -1,5 +1,5 @@
-C When\sflattening\sa\squery\sof\sthe\sform\s"SELECT\s*\sFROM\s(SELECT\s*\sFROM\stbl\sWHERE\sx=?)\sWHERE\sy=?",\sensure\sthat\sthe\sfinal\sWHERE\sclause\sis\s"x=?\sAND\sy=?"\sinstead\sof\s"y=?\sAND\sx=?".\sAlthough\sit\sis\sstill\snot\sguaranteed,\sthis\smakes\sthe\sorder\sin\swhich\sWHERE\sclause\sterms\sare\sprocessed\scomport\smore\sclosely\sto\susers\sexpectations.
-D 2016-09-26T14:39:05.023
+C Fix\sFTS3\stest\scases\sdue\sto\sthe\sflattener\schange\sof\sthe\sprevious\scheck-in.
+D 2016-09-27T00:03:25.212
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5151cc64c4c05f3455f4f692ad11410a810d937f
@@ -746,7 +746,7 @@ F test/fts3an.test a49ccadc07a2f7d646ec1b81bc09da2d85a85b18
 F test/fts3ao.test 3e4e3d5e75c076520341d0bdf4eb17c00e8cbde2
 F test/fts3atoken.test 4b4c16fdcfc972f2cdbba212375a060a86ccf5f1
 F test/fts3auto.test b981fea19b132b4e6878f50d7c1f369b28f68eb9
-F test/fts3aux1.test f8f287a4a73f381f8fa15b6a70f36245f903d221
+F test/fts3aux1.test ca32c138aa777b476271df2da2c5538b7a43ada1
 F test/fts3aux2.test 7ae2b2c13aefdf4169279a27a5f51780ce57f6ba
 F test/fts3b.test e93bbb653e52afde110ad53bbd793f14fe7a8984
 F test/fts3c.test fc723a9cf10b397fdfc2b32e73c53c8b1ec02958
@@ -1525,7 +1525,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fe89225eab777c2c9cb1cbc31092b9e39f516842
-R bd1b8b7597a40edc8cdb78ec48a115d9
-U dan
-Z c695e6aeed2069a364c17cb8286df68b
+P cf7f9e6d5abff273dd2f8a8dce27d52e1449b3be
+R df2b68a7640c290e9abf22bab0ae371c
+U drh
+Z b1604297e065dc768a551aec0598a153
