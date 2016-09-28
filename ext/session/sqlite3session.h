@@ -423,7 +423,7 @@ int sqlite3session_isempty(sqlite3_session *pSession);
 ** [sqlite3changeset_invert()] functions, all changes within the changeset 
 ** that apply to a single table are grouped together. This means that when 
 ** an application iterates through a changeset using an iterator created by 
-** this function, all changes that relate to a single table are visted 
+** this function, all changes that relate to a single table are visited 
 ** consecutively. There is no chance that the iterator will visit a change 
 ** the applies to table X, then one for table Y, and then later on visit 
 ** another change for table X.
@@ -785,7 +785,7 @@ int sqlite3changegroup_new(sqlite3_changegroup **pp);
 ** apply to the same row as a change already present in the changegroup if
 ** the two rows have the same primary key.
 **
-** Changes to rows that that do not already appear in the changegroup are
+** Changes to rows that do not already appear in the changegroup are
 ** simply copied into it. Or, if both the new changeset and the changegroup
 ** contain changes that apply to a single row, the final contents of the
 ** changegroup depends on the type of each change, as follows:

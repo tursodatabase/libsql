@@ -4466,7 +4466,7 @@ case OP_InsertInt: {
 ** P1 must not be pseudo-table.  It has to be a real table with
 ** multiple rows.
 **
-** If P4 is not NULL then it points to a Table structure. In this case either 
+** If P4 is not NULL then it points to a Table object. In this case either 
 ** the update or pre-update hook, or both, may be invoked. The P1 cursor must
 ** have been positioned using OP_NotFound prior to invoking this opcode in 
 ** this case. Specifically, if one is configured, the pre-update hook is 
