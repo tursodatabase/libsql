@@ -1869,7 +1869,6 @@ void sqlite3VdbeMakeReady(
   int nMem;                      /* Number of VM memory registers */
   int nCursor;                   /* Number of cursors required */
   int nArg;                      /* Number of arguments in subprograms */
-  int nOnce;                     /* Number of OP_Once instructions */
   int n;                         /* Loop counter */
   struct ReusableSpace x;        /* Reusable bulk memory */
 
@@ -1884,8 +1883,6 @@ void sqlite3VdbeMakeReady(
   nMem = pParse->nMem;
   nCursor = pParse->nTab;
   nArg = pParse->nMaxArg;
-  nOnce = pParse->nOnce;
-  if( nOnce==0 ) nOnce = 1; /* Ensure at least one byte in p->aOnceFlag[] */
   
   /* Each cursor uses a memory cell.  The first cursor (cursor 0) can
   ** use aMem[0] which is not otherwise used by the VDBE program.  Allocate
@@ -1932,7 +1929,6 @@ void sqlite3VdbeMakeReady(
     p->aVar = allocSpace(&x, p->aVar, nVar*sizeof(Mem));
     p->apArg = allocSpace(&x, p->apArg, nArg*sizeof(Mem*));
     p->apCsr = allocSpace(&x, p->apCsr, nCursor*sizeof(VdbeCursor*));
-    p->aOnceFlag = allocSpace(&x, p->aOnceFlag, nOnce);
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
     p->anExec = allocSpace(&x, p->anExec, p->nOp*sizeof(i64));
 #endif
@@ -1942,7 +1938,6 @@ void sqlite3VdbeMakeReady(
   }while( !db->mallocFailed );
 
   p->nCursor = nCursor;
-  p->nOnceFlag = nOnce;
   if( p->aVar ){
     p->nVar = (ynVar)nVar;
     for(n=0; n<nVar; n++){
@@ -2030,8 +2025,6 @@ int sqlite3VdbeFrameRestore(VdbeFrame *pFrame){
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
   v->anExec = pFrame->anExec;
 #endif
-  v->aOnceFlag = pFrame->aOnceFlag;
-  v->nOnceFlag = pFrame->nOnceFlag;
   v->aOp = pFrame->aOp;
   v->nOp = pFrame->nOp;
   v->aMem = pFrame->aMem;
@@ -2569,11 +2562,8 @@ int sqlite3VdbeHalt(Vdbe *p){
   ** one, or the complete transaction if there is no statement transaction.
   */
 
-  assert( p->aOnceFlag!=0 || db->mallocFailed );
   if( db->mallocFailed ){
     p->rc = SQLITE_NOMEM_BKPT;
-  }else{
-    memset(p->aOnceFlag, 0, p->nOnceFlag);
   }
   closeAllCursors(p);
   if( p->magic!=VDBE_MAGIC_RUN ){
@@ -3722,10 +3712,12 @@ static int vdbeCompareMemString(
 ** The input pBlob is guaranteed to be a Blob that is not marked
 ** with MEM_Zero.  Return true if it could be a zero-blob.
 */
-static int isZeroBlob(const Mem *pBlob){
+static int isAllZero(const char *z, int n){
   int i;
-  for(i=0; i<pBlob->n && pBlob->z[i]==0; i++){}
-  return i==pBlob->n;
+  for(i=0; i<n; i++){
+    if( z[i] ) return 0;
+  }
+  return 1;
 }
 
 /*
@@ -3749,10 +3741,10 @@ static SQLITE_NOINLINE int sqlite3BlobCompare(const Mem *pB1, const Mem *pB2){
     if( pB1->flags & pB2->flags & MEM_Zero ){
       return pB1->u.nZero - pB2->u.nZero;
     }else if( pB1->flags & MEM_Zero ){
-      if( !isZeroBlob(pB2) ) return -1;
+      if( !isAllZero(pB2->z, pB2->n) ) return -1;
       return pB1->u.nZero - n2;
     }else{
-      if( !isZeroBlob(pB1) ) return +1;
+      if( !isAllZero(pB1->z, pB1->n) ) return +1;
       return n1 - pB2->u.nZero;
     }
   }
@@ -4064,6 +4056,7 @@ int sqlite3VdbeRecordCompareWithSkip(
 
     /* RHS is a blob */
     else if( pRhs->flags & MEM_Blob ){
+      assert( (pRhs->flags & MEM_Zero)==0 || pRhs->n==0 );
       getVarint32(&aKey1[idx1], serial_type);
       testcase( serial_type==12 );
       if( serial_type<12 || (serial_type & 0x01) ){
@@ -4075,6 +4068,12 @@ int sqlite3VdbeRecordCompareWithSkip(
         if( (d1+nStr) > (unsigned)nKey1 ){
           pPKey2->errCode = (u8)SQLITE_CORRUPT_BKPT;
           return 0;                /* Corruption */
+        }else if( pRhs->flags & MEM_Zero ){
+          if( !isAllZero((const char*)&aKey1[d1],nStr) ){
+            rc = 1;
+          }else{
+            rc = nStr - pRhs->u.nZero;
+          }
         }else{
           int nCmp = MIN(nStr, pRhs->n);
           rc = memcmp(&aKey1[d1], pRhs->z, nCmp);

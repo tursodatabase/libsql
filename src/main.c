@@ -3912,6 +3912,15 @@ int sqlite3_test_control(int op, ...){
       break;
     }
 
+    /* Set the threshold at which OP_Once counters reset back to zero.
+    ** By default this is 0x7ffffffe (over 2 billion), but that value is
+    ** too big to test in a reasonable amount of time, so this control is
+    ** provided to set a small and easily reachable reset value.
+    */
+    case SQLITE_TESTCTRL_ONCE_RESET_THRESHOLD: {
+      sqlite3GlobalConfig.iOnceResetThreshold = va_arg(ap, int);
+      break;
+    }
 
     /*   sqlite3_test_control(SQLITE_TESTCTRL_VDBE_COVERAGE, xCallback, ptr);
     **

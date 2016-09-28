@@ -1232,7 +1232,7 @@ static void generateSortTail(
     int regSortOut = ++pParse->nMem;
     iSortTab = pParse->nTab++;
     if( pSort->labelBkOut ){
-      addrOnce = sqlite3CodeOnce(pParse); VdbeCoverage(v);
+      addrOnce = sqlite3VdbeAddOp0(v, OP_Once); VdbeCoverage(v);
     }
     sqlite3VdbeAddOp3(v, OP_OpenPseudo, iSortTab, regSortOut, nKey+1+nSortData);
     if( addrOnce ) sqlite3VdbeJumpHere(v, addrOnce);
@@ -3695,12 +3695,13 @@ static int flattenSubquery(
       assert( pParent->pHaving==0 );
       pParent->pHaving = pParent->pWhere;
       pParent->pWhere = pWhere;
-      pParent->pHaving = sqlite3ExprAnd(db, pParent->pHaving, 
-                                  sqlite3ExprDup(db, pSub->pHaving, 0));
+      pParent->pHaving = sqlite3ExprAnd(db, 
+          sqlite3ExprDup(db, pSub->pHaving, 0), pParent->pHaving
+      );
       assert( pParent->pGroupBy==0 );
       pParent->pGroupBy = sqlite3ExprListDup(db, pSub->pGroupBy, 0);
     }else{
-      pParent->pWhere = sqlite3ExprAnd(db, pParent->pWhere, pWhere);
+      pParent->pWhere = sqlite3ExprAnd(db, pWhere, pParent->pWhere);
     }
     substSelect(db, pParent, iParent, pSub->pEList, 0);
   
@@ -5027,7 +5028,7 @@ int sqlite3Select(
         /* If the subquery is not correlated and if we are not inside of
         ** a trigger, then we only need to compute the value of the subquery
         ** once. */
-        onceAddr = sqlite3CodeOnce(pParse); VdbeCoverage(v);
+        onceAddr = sqlite3VdbeAddOp0(v, OP_Once); VdbeCoverage(v);
         VdbeComment((v, "materialize \"%s\"", pItem->pTab->zName));
       }else{
         VdbeNoopComment((v, "materialize \"%s\"", pItem->pTab->zName));

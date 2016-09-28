@@ -1242,10 +1242,10 @@ static Trigger *fkActionTrigger(
           if( pDflt ){
             pNew = sqlite3ExprDup(db, pDflt, 0);
           }else{
-            pNew = sqlite3PExpr(pParse, TK_NULL, 0, 0, 0);
+            pNew = sqlite3ExprAlloc(db, TK_NULL, 0, 0);
           }
         }else{
-          pNew = sqlite3PExpr(pParse, TK_NULL, 0, 0, 0);
+          pNew = sqlite3ExprAlloc(db, TK_NULL, 0, 0);
         }
         pList = sqlite3ExprListAppend(pParse, pList, pNew);
         sqlite3ExprListSetName(pParse, pList, &tFromCol, 0);

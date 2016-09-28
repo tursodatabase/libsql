@@ -1247,7 +1247,7 @@ static void exprAnalyze(
 
     pNewExpr = sqlite3PExpr(pParse, TK_GT,
                             sqlite3ExprDup(db, pLeft, 0),
-                            sqlite3PExpr(pParse, TK_NULL, 0, 0, 0), 0);
+                            sqlite3ExprAlloc(db, TK_NULL, 0, 0), 0);
 
     idxNew = whereClauseInsert(pWC, pNewExpr,
                               TERM_VIRTUAL|TERM_DYNAMIC|TERM_VNULL);
@@ -1425,7 +1425,7 @@ void sqlite3WhereTabFuncArgs(
                       pTab->zName, j);
       return;
     }
-    pColRef = sqlite3PExpr(pParse, TK_COLUMN, 0, 0, 0);
+    pColRef = sqlite3ExprAlloc(pParse->db, TK_COLUMN, 0, 0);
     if( pColRef==0 ) return;
     pColRef->iTable = pItem->iCursor;
     pColRef->iColumn = k++;

@@ -189,18 +189,18 @@ int sqlite3VdbeMemClearAndResize(Mem *pMem, int szNew){
 ** Return SQLITE_OK on success or SQLITE_NOMEM if malloc fails.
 */
 int sqlite3VdbeMemMakeWriteable(Mem *pMem){
-  int f;
   assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
   assert( (pMem->flags&MEM_RowSet)==0 );
-  (void)ExpandBlob(pMem);
-  f = pMem->flags;
-  if( (f&(MEM_Str|MEM_Blob)) && (pMem->szMalloc==0 || pMem->z!=pMem->zMalloc) ){
-    if( sqlite3VdbeMemGrow(pMem, pMem->n + 2, 1) ){
-      return SQLITE_NOMEM_BKPT;
+  if( (pMem->flags & (MEM_Str|MEM_Blob))!=0 ){
+    if( ExpandBlob(pMem) ) return SQLITE_NOMEM;
+    if( pMem->szMalloc==0 || pMem->z!=pMem->zMalloc ){
+      if( sqlite3VdbeMemGrow(pMem, pMem->n + 2, 1) ){
+        return SQLITE_NOMEM_BKPT;
+      }
+      pMem->z[pMem->n] = 0;
+      pMem->z[pMem->n+1] = 0;
+      pMem->flags |= MEM_Term;
     }
-    pMem->z[pMem->n] = 0;
-    pMem->z[pMem->n+1] = 0;
-    pMem->flags |= MEM_Term;
   }
   pMem->flags &= ~MEM_Ephem;
 #ifdef SQLITE_DEBUG
@@ -216,25 +216,24 @@ int sqlite3VdbeMemMakeWriteable(Mem *pMem){
 */
 #ifndef SQLITE_OMIT_INCRBLOB
 int sqlite3VdbeMemExpandBlob(Mem *pMem){
-  if( pMem->flags & MEM_Zero ){
-    int nByte;
-    assert( pMem->flags&MEM_Blob );
-    assert( (pMem->flags&MEM_RowSet)==0 );
-    assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
+  int nByte;
+  assert( pMem->flags & MEM_Zero );
+  assert( pMem->flags&MEM_Blob );
+  assert( (pMem->flags&MEM_RowSet)==0 );
+  assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
 
-    /* Set nByte to the number of bytes required to store the expanded blob. */
-    nByte = pMem->n + pMem->u.nZero;
-    if( nByte<=0 ){
-      nByte = 1;
-    }
-    if( sqlite3VdbeMemGrow(pMem, nByte, 1) ){
-      return SQLITE_NOMEM_BKPT;
-    }
-
-    memset(&pMem->z[pMem->n], 0, pMem->u.nZero);
-    pMem->n += pMem->u.nZero;
-    pMem->flags &= ~(MEM_Zero|MEM_Term);
+  /* Set nByte to the number of bytes required to store the expanded blob. */
+  nByte = pMem->n + pMem->u.nZero;
+  if( nByte<=0 ){
+    nByte = 1;
   }
+  if( sqlite3VdbeMemGrow(pMem, nByte, 1) ){
+    return SQLITE_NOMEM_BKPT;
+  }
+
+  memset(&pMem->z[pMem->n], 0, pMem->u.nZero);
+  pMem->n += pMem->u.nZero;
+  pMem->flags &= ~(MEM_Zero|MEM_Term);
   return SQLITE_OK;
 }
 #endif

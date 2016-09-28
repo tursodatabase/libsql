@@ -25,6 +25,7 @@ ifcapable !vacuum {
 
 forcedelete test2.db test3.db
 do_execsql_test vacuum5-1.1 {
+  PRAGMA auto_vacuum = 0;
   CREATE TABLE main.t1(a,b);
   WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<1000)
     INSERT INTO t1(a,b) SELECT x, randomblob(1000) FROM c;

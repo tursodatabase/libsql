@@ -473,7 +473,7 @@ void sqlite3DeleteFrom(
     if( !isView ){
       int iAddrOnce = 0;
       if( eOnePass==ONEPASS_MULTI ){
-        iAddrOnce = sqlite3CodeOnce(pParse); VdbeCoverage(v);
+        iAddrOnce = sqlite3VdbeAddOp0(v, OP_Once); VdbeCoverage(v);
       }
       testcase( IsVirtual(pTab) );
       sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenWrite, OPFLAG_FORDELETE,

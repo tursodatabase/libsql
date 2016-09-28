@@ -1458,6 +1458,9 @@ CollSeq *sqlite3LocateCollSeq(Parse *pParse, const char *zName){
 ** set back to prior value.  But schema changes are infrequent
 ** and the probability of hitting the same cookie value is only
 ** 1 chance in 2^32.  So we're safe enough.
+**
+** IMPLEMENTATION-OF: R-34230-56049 SQLite automatically increments
+** the schema-version whenever the schema changes.
 */
 void sqlite3ChangeCookie(Parse *pParse, int iDb){
   sqlite3 *db = pParse->db;

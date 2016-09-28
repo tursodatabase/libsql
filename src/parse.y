@@ -81,15 +81,6 @@ struct LimitVal {
 };
 
 /*
-** An instance of this structure is used to store the LIKE,
-** GLOB, NOT LIKE, and NOT GLOB operators.
-*/
-struct LikeOp {
-  Token eOperator;  /* "like" or "glob" or "regexp" */
-  int bNot;         /* True if the NOT keyword is present */
-};
-
-/*
 ** An instance of the following structure describes the event of a
 ** TRIGGER.  "a" is the event type, one of TK_UPDATE, TK_INSERT,
 ** TK_DELETE, or TK_INSTEAD.  If the event is of the form
@@ -99,11 +90,6 @@ struct LikeOp {
 ** Then the "b" IdList records the list "a,b,c".
 */
 struct TrigEvent { int a; IdList * b; };
-
-/*
-** An instance of this structure holds the ATTACH key and the key type.
-*/
-struct AttachKey { int type;  Token key; };
 
 /*
 ** Disable lookaside memory allocation for objects that might be
@@ -556,8 +542,8 @@ selcollist(A) ::= sclp(A) STAR. {
   Expr *p = sqlite3Expr(pParse->db, TK_ASTERISK, 0);
   A = sqlite3ExprListAppend(pParse, A, p);
 }
-selcollist(A) ::= sclp(A) nm(X) DOT STAR(Y). {
-  Expr *pRight = sqlite3PExpr(pParse, TK_ASTERISK, 0, 0, &Y);
+selcollist(A) ::= sclp(A) nm(X) DOT STAR. {
+  Expr *pRight = sqlite3PExpr(pParse, TK_ASTERISK, 0, 0, 0);
   Expr *pLeft = sqlite3PExpr(pParse, TK_ID, 0, 0, &X);
   Expr *pDot = sqlite3PExpr(pParse, TK_DOT, pLeft, pRight, 0);
   A = sqlite3ExprListAppend(pParse,A, pDot);
@@ -851,7 +837,24 @@ idlist(A) ::= nm(Y).
   ** that created the expression.
   */
   static void spanExpr(ExprSpan *pOut, Parse *pParse, int op, Token t){
-    pOut->pExpr = sqlite3PExpr(pParse, op, 0, 0, &t);
+    Expr *p = sqlite3DbMallocRawNN(pParse->db, sizeof(Expr)+t.n+1);
+    if( p ){
+      memset(p, 0, sizeof(Expr));
+      p->op = (u8)op;
+      p->flags = EP_Leaf;
+      p->iAgg = -1;
+      p->u.zToken = (char*)&p[1];
+      memcpy(p->u.zToken, t.z, t.n);
+      p->u.zToken[t.n] = 0;
+      if( sqlite3Isquote(p->u.zToken[0]) ){
+        if( p->u.zToken[0]=='"' ) p->flags |= EP_DblQuoted;
+        sqlite3Dequote(p->u.zToken);
+      }
+#if SQLITE_MAX_EXPR_DEPTH>0
+      p->nHeight = 1;
+#endif  
+    }
+    pOut->pExpr = p;
     pOut->zStart = t.z;
     pOut->zEnd = &t.z[t.n];
   }
@@ -864,21 +867,27 @@ term(A) ::= NULL(X).        {spanExpr(&A,pParse,@X,X);/*A-overwrites-X*/}
 expr(A) ::= id(X).          {spanExpr(&A,pParse,TK_ID,X); /*A-overwrites-X*/}
 expr(A) ::= JOIN_KW(X).     {spanExpr(&A,pParse,TK_ID,X); /*A-overwrites-X*/}
 expr(A) ::= nm(X) DOT nm(Y). {
-  Expr *temp1 = sqlite3PExpr(pParse, TK_ID, 0, 0, &X);
-  Expr *temp2 = sqlite3PExpr(pParse, TK_ID, 0, 0, &Y);
+  Expr *temp1 = sqlite3ExprAlloc(pParse->db, TK_ID, &X, 1);
+  Expr *temp2 = sqlite3ExprAlloc(pParse->db, TK_ID, &Y, 1);
   spanSet(&A,&X,&Y); /*A-overwrites-X*/
   A.pExpr = sqlite3PExpr(pParse, TK_DOT, temp1, temp2, 0);
 }
 expr(A) ::= nm(X) DOT nm(Y) DOT nm(Z). {
-  Expr *temp1 = sqlite3PExpr(pParse, TK_ID, 0, 0, &X);
-  Expr *temp2 = sqlite3PExpr(pParse, TK_ID, 0, 0, &Y);
-  Expr *temp3 = sqlite3PExpr(pParse, TK_ID, 0, 0, &Z);
+  Expr *temp1 = sqlite3ExprAlloc(pParse->db, TK_ID, &X, 1);
+  Expr *temp2 = sqlite3ExprAlloc(pParse->db, TK_ID, &Y, 1);
+  Expr *temp3 = sqlite3ExprAlloc(pParse->db, TK_ID, &Z, 1);
   Expr *temp4 = sqlite3PExpr(pParse, TK_DOT, temp2, temp3, 0);
   spanSet(&A,&X,&Z); /*A-overwrites-X*/
   A.pExpr = sqlite3PExpr(pParse, TK_DOT, temp1, temp4, 0);
 }
-term(A) ::= INTEGER|FLOAT|BLOB(X). {spanExpr(&A,pParse,@X,X);/*A-overwrites-X*/}
-term(A) ::= STRING(X).             {spanExpr(&A,pParse,@X,X);/*A-overwrites-X*/}
+term(A) ::= FLOAT|BLOB(X). {spanExpr(&A,pParse,@X,X);/*A-overwrites-X*/}
+term(A) ::= STRING(X).     {spanExpr(&A,pParse,@X,X);/*A-overwrites-X*/}
+term(A) ::= INTEGER(X). {
+  A.pExpr = sqlite3ExprAlloc(pParse->db, TK_INTEGER, &X, 1);
+  A.zStart = X.z;
+  A.zEnd = X.z + X.n;
+  if( A.pExpr ) A.pExpr->flags |= EP_Leaf;
+}
 expr(A) ::= VARIABLE(X).     {
   if( !(X.z[0]=='#' && sqlite3Isdigit(X.z[1])) ){
     spanExpr(&A, pParse, TK_VARIABLE, X);
@@ -894,7 +903,7 @@ expr(A) ::= VARIABLE(X).     {
       sqlite3ErrorMsg(pParse, "near \"%T\": syntax error", &t);
       A.pExpr = 0;
     }else{
-      A.pExpr = sqlite3PExpr(pParse, TK_REGISTER, 0, 0, &t);
+      A.pExpr = sqlite3PExpr(pParse, TK_REGISTER, 0, 0, 0);
       if( A.pExpr ) sqlite3GetInt32(&t.z[1], &A.pExpr->iTable);
     }
   }
@@ -975,25 +984,29 @@ expr(A) ::= expr(A) PLUS|MINUS(OP) expr(Y).
 expr(A) ::= expr(A) STAR|SLASH|REM(OP) expr(Y).
                                         {spanBinaryExpr(pParse,@OP,&A,&Y);}
 expr(A) ::= expr(A) CONCAT(OP) expr(Y). {spanBinaryExpr(pParse,@OP,&A,&Y);}
-%type likeop {struct LikeOp}
-likeop(A) ::= LIKE_KW|MATCH(X). {A.eOperator = X; A.bNot = 0;/*A-overwrites-X*/}
-likeop(A) ::= NOT LIKE_KW|MATCH(X). {A.eOperator = X; A.bNot = 1;}
+%type likeop {Token}
+likeop(A) ::= LIKE_KW|MATCH(X).     {A=X;/*A-overwrites-X*/}
+likeop(A) ::= NOT LIKE_KW|MATCH(X). {A=X; A.n|=0x80000000; /*A-overwrite-X*/}
 expr(A) ::= expr(A) likeop(OP) expr(Y).  [LIKE_KW]  {
   ExprList *pList;
+  int bNot = OP.n & 0x80000000;
+  OP.n &= 0x7fffffff;
   pList = sqlite3ExprListAppend(pParse,0, Y.pExpr);
   pList = sqlite3ExprListAppend(pParse,pList, A.pExpr);
-  A.pExpr = sqlite3ExprFunction(pParse, pList, &OP.eOperator);
-  exprNot(pParse, OP.bNot, &A);
+  A.pExpr = sqlite3ExprFunction(pParse, pList, &OP);
+  exprNot(pParse, bNot, &A);
   A.zEnd = Y.zEnd;
   if( A.pExpr ) A.pExpr->flags |= EP_InfixFunc;
 }
 expr(A) ::= expr(A) likeop(OP) expr(Y) ESCAPE expr(E).  [LIKE_KW]  {
   ExprList *pList;
+  int bNot = OP.n & 0x80000000;
+  OP.n &= 0x7fffffff;
   pList = sqlite3ExprListAppend(pParse,0, Y.pExpr);
   pList = sqlite3ExprListAppend(pParse,pList, A.pExpr);
   pList = sqlite3ExprListAppend(pParse,pList, E.pExpr);
-  A.pExpr = sqlite3ExprFunction(pParse, pList, &OP.eOperator);
-  exprNot(pParse, OP.bNot, &A);
+  A.pExpr = sqlite3ExprFunction(pParse, pList, &OP);
+  exprNot(pParse, bNot, &A);
   A.zEnd = E.zEnd;
   if( A.pExpr ) A.pExpr->flags |= EP_InfixFunc;
 }

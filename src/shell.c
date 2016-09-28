@@ -143,6 +143,7 @@
 extern char *sqlite3_win32_unicode_to_utf8(LPCWSTR);
 extern char *sqlite3_win32_mbcs_to_utf8_v2(const char *, int);
 extern char *sqlite3_win32_utf8_to_mbcs_v2(const char *, int);
+extern LPWSTR sqlite3_win32_utf8_to_unicode(const char *zText);
 #endif
 
 /* On Windows, we normally run with output mode of TEXT so that \n characters
@@ -929,7 +930,7 @@ static int shellAuth(
   az[1] = zA2;
   az[2] = zA3;
   az[3] = zA4;
-  raw_printf(p->out, "authorizer: %s", azAction[op]);
+  utf8_printf(p->out, "authorizer: %s", azAction[op]);
   for(i=0; i<4; i++){
     raw_printf(p->out, " ");
     if( az[i] ){
@@ -942,7 +943,7 @@ static int shellAuth(
   return SQLITE_OK;
 }
 #endif
-  
+
 
 /*
 ** This is the callback routine that the shell
@@ -1446,7 +1447,7 @@ static void displayLinuxIoStats(FILE *out){
     for(i=0; i<ArraySize(aTrans); i++){
       int n = (int)strlen(aTrans[i].zPattern);
       if( strncmp(aTrans[i].zPattern, z, n)==0 ){
-        raw_printf(out, "%-36s %s", aTrans[i].zDesc, &z[n]);
+        utf8_printf(out, "%-36s %s", aTrans[i].zDesc, &z[n]);
         break;
       }
     }
@@ -2180,7 +2181,7 @@ static char zHelp[] =
   "                         tcl      TCL list elements\n"
   ".nullvalue STRING      Use STRING in place of NULL values\n"
   ".once FILENAME         Output for the next SQL command only to FILENAME\n"
-  ".open ?-new? ?FILE?    Close existing database and reopen FILE\n"
+  ".open ?--new? ?FILE?   Close existing database and reopen FILE\n"
   "                         The --new starts with an empty file\n"
   ".output ?FILENAME?     Send output to FILENAME or stdout\n"
   ".print STRING...       Print literal STRING\n"
@@ -2252,17 +2253,21 @@ static int process_input(ShellState *p, FILE *in);
 static char *readFile(const char *zName){
   FILE *in = fopen(zName, "rb");
   long nIn;
+  size_t nRead;
   char *pBuf;
   if( in==0 ) return 0;
   fseek(in, 0, SEEK_END);
   nIn = ftell(in);
   rewind(in);
-  pBuf = sqlite3_malloc64( nIn );
+  pBuf = sqlite3_malloc64( nIn+1 );
   if( pBuf==0 ) return 0;
-  if( 1!=fread(pBuf, nIn, 1, in) ){
+  nRead = fread(pBuf, nIn, 1, in);
+  fclose(in);
+  if( nRead!=1 ){
     sqlite3_free(pBuf);
     return 0;
   }
+  pBuf[nIn] = 0;
   return pBuf;
 }
 
@@ -3085,7 +3090,6 @@ static int shellNomemError(void){
   return 1;
 }
 
-#ifdef SQLITE_DEBUG
 /*
 ** Compare the pattern in zGlob[] against the text in z[].  Return TRUE
 ** if they match and FALSE (0) if they do not match.
@@ -3182,7 +3186,6 @@ static int testcase_glob(const char *zGlob, const char *z){
   while( IsSpace(*z) ){ z++; }
   return *z==0;
 }
-#endif /* defined(SQLITE_DEBUG) */
 
 
 /*
@@ -3202,7 +3205,7 @@ static int optionMatch(const char *zStr, const char *zOpt){
 int shellDeleteFile(const char *zFilename){
   int rc;
 #ifdef _WIN32
-  wchar_t *z = sqlite3_utf8_to_path(zFilename, 0);
+  wchar_t *z = sqlite3_win32_utf8_to_unicode(zFilename);
   rc = _wunlink(z);
   sqlite3_free(z);
 #else
@@ -3378,12 +3381,12 @@ static int do_meta_command(char *zLine, ShellState *p){
       raw_printf(stderr, "Error: cannot read 'testcase-out.txt'\n");
       rc = 2;
     }else if( testcase_glob(azArg[1],zRes)==0 ){
-      raw_printf(stderr,
+      utf8_printf(stderr,
                  "testcase-%s FAILED\n Expected: [%s]\n      Got: [%s]\n",
                  p->zTestcase, azArg[1], zRes);
       rc = 2;
     }else{
-      raw_printf(stdout, "testcase-%s ok\n", p->zTestcase);
+      utf8_printf(stdout, "testcase-%s ok\n", p->zTestcase);
       p->nCheck++;
     }
     sqlite3_free(zRes);
@@ -4014,6 +4017,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       }else if( z[0]=='-' ){
         utf8_printf(stderr, "unknown option: %s\n", z);
         rc = 1;
+        goto meta_command_exit;
       }
     }
     /* If a filename is specified, try to open it first */
@@ -5205,8 +5209,13 @@ static int process_input(ShellState *p, FILE *in){
 ** Return a pathname which is the user's home directory.  A
 ** 0 return indicates an error of some kind.
 */
-static char *find_home_dir(void){
+static char *find_home_dir(int clearFlag){
   static char *home_dir = NULL;
+  if( clearFlag ){
+    free(home_dir);
+    home_dir = 0;
+    return 0;
+  }
   if( home_dir ) return home_dir;
 
 #if !defined(_WIN32) && !defined(WIN32) && !defined(_WIN32_WCE) \
@@ -5281,7 +5290,7 @@ static void process_sqliterc(
   FILE *in = NULL;
 
   if (sqliterc == NULL) {
-    home_dir = find_home_dir();
+    home_dir = find_home_dir(0);
     if( home_dir==0 ){
       raw_printf(stderr, "-- warning: cannot find home directory;"
                       " cannot read ~/.sqliterc\n");
@@ -5769,7 +5778,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
         printf(".\nUse \".open FILENAME\" to reopen on a "
                "persistent database.\n");
       }
-      zHome = find_home_dir();
+      zHome = find_home_dir(0);
       if( zHome ){
         nHistory = strlen30(zHome) + 20;
         if( (zHistory = malloc(nHistory))!=0 ){
@@ -5793,6 +5802,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
     sqlite3_close(data.db);
   }
   sqlite3_free(data.zFreeOnClose);
+  find_home_dir(1);
 #if !SQLITE_SHELL_IS_UTF8
   for(i=0; i<argc; i++) sqlite3_free(argv[i]);
   sqlite3_free(argv);

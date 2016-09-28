@@ -157,7 +157,7 @@ int sqlite3session_attach(
 ** CAPI3REF: Set a table filter on a Session Object.
 **
 ** The second argument (xFilter) is the "filter callback". For changes to rows 
-** in tables that are not attached to the Session oject, the filter is called
+** in tables that are not attached to the Session object, the filter is called
 ** to determine whether changes to the table's rows should be tracked or not. 
 ** If xFilter returns 0, changes is not tracked. Note that once a table is 
 ** attached, xFilter will not be called again.
@@ -423,7 +423,7 @@ int sqlite3session_isempty(sqlite3_session *pSession);
 ** [sqlite3changeset_invert()] functions, all changes within the changeset 
 ** that apply to a single table are grouped together. This means that when 
 ** an application iterates through a changeset using an iterator created by 
-** this function, all changes that relate to a single table are visted 
+** this function, all changes that relate to a single table are visited 
 ** consecutively. There is no chance that the iterator will visit a change 
 ** the applies to table X, then one for table Y, and then later on visit 
 ** another change for table X.
@@ -510,7 +510,7 @@ int sqlite3changeset_op(
 ** 0x01 if the corresponding column is part of the tables primary key, or
 ** 0x00 if it is not.
 **
-** If argumet pnCol is not NULL, then *pnCol is set to the number of columns
+** If argument pnCol is not NULL, then *pnCol is set to the number of columns
 ** in the table.
 **
 ** If this function is called when the iterator does not point to a valid
@@ -785,7 +785,7 @@ int sqlite3changegroup_new(sqlite3_changegroup **pp);
 ** apply to the same row as a change already present in the changegroup if
 ** the two rows have the same primary key.
 **
-** Changes to rows that that do not already appear in the changegroup are
+** Changes to rows that do not already appear in the changegroup are
 ** simply copied into it. Or, if both the new changeset and the changegroup
 ** contain changes that apply to a single row, the final contents of the
 ** changegroup depends on the type of each change, as follows:

@@ -421,12 +421,14 @@ void speedtest1_run(void){
   speedtest1_shrink_memory();
 }
 
+#ifndef SQLITE_OMIT_DEPRECATED
 /* The sqlite3_trace() callback function */
 static void traceCallback(void *NotUsed, const char *zSql){
   int n = (int)strlen(zSql);
   while( n>0 && (zSql[n-1]==';' || ISSPACE(zSql[n-1])) ) n--;
   fprintf(stderr,"%.*s;\n", n, zSql);
 }
+#endif /* SQLITE_OMIT_DEPRECATED */
 
 /* Substitute random() function that gives the same random
 ** sequence on each run, for repeatability. */
@@ -1416,7 +1418,9 @@ int main(int argc, char **argv){
 
   /* Set database connection options */
   sqlite3_create_function(g.db, "random", 0, SQLITE_UTF8, 0, randomFunc, 0, 0);
+#ifndef SQLITE_OMIT_DEPRECATED
   if( doTrace ) sqlite3_trace(g.db, traceCallback, 0);
+#endif
   speedtest1_exec("PRAGMA threads=%d", nThread);
   if( zKey ){
     speedtest1_exec("PRAGMA key('%s')", zKey);

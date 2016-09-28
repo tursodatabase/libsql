@@ -22,6 +22,19 @@ if {[permutation]=="memsubsys1"} {
   return
 }
 
+# If ENABLE_MEMORY_MANAGEMENT is defined, when VACUUM is run the temp db
+# is able to borrow space from the main db (and it does, because the
+# temp db is configure with a very small cache). When the VACUUM is
+# finished and the temp db closed, all the page-cache memory currently 
+# assigned to the temp db is freed. If ENABLE_MEMORY_MANAGEMENT is defined
+# this causes the total memory usage to drop much more than expected,
+# causing tests in this file to fail.
+#
+ifcapable memorymanage {
+  finish_test
+  return
+}
+
 
 proc memory_used {} { 
   set stat [sqlite3_status SQLITE_STATUS_MEMORY_USED 1]  

@@ -185,7 +185,7 @@ int sqlite3_clear_bindings(sqlite3_stmt *pStmt){
 const void *sqlite3_value_blob(sqlite3_value *pVal){
   Mem *p = (Mem*)pVal;
   if( p->flags & (MEM_Blob|MEM_Str) ){
-    if( sqlite3VdbeMemExpandBlob(p)!=SQLITE_OK ){
+    if( ExpandBlob(p)!=SQLITE_OK ){
       assert( p->flags==MEM_Null && p->z==0 );
       return 0;
     }
@@ -968,14 +968,13 @@ static Mem *columnMem(sqlite3_stmt *pStmt, int i){
   Mem *pOut;
 
   pVm = (Vdbe *)pStmt;
-  if( pVm && pVm->pResultSet!=0 && i<pVm->nResColumn && i>=0 ){
-    sqlite3_mutex_enter(pVm->db->mutex);
+  if( pVm==0 ) return (Mem*)columnNullValue();
+  assert( pVm->db );
+  sqlite3_mutex_enter(pVm->db->mutex);
+  if( pVm->pResultSet!=0 && i<pVm->nResColumn && i>=0 ){
     pOut = &pVm->pResultSet[i];
   }else{
-    if( pVm && ALWAYS(pVm->db) ){
-      sqlite3_mutex_enter(pVm->db->mutex);
-      sqlite3Error(pVm->db, SQLITE_RANGE);
-    }
+    sqlite3Error(pVm->db, SQLITE_RANGE);
     pOut = (Mem*)columnNullValue();
   }
   return pOut;
@@ -1008,6 +1007,8 @@ static void columnMallocFailure(sqlite3_stmt *pStmt)
   */
   Vdbe *p = (Vdbe *)pStmt;
   if( p ){
+    assert( p->db!=0 );
+    assert( sqlite3_mutex_held(p->db->mutex) );
     p->rc = sqlite3ApiExit(p->db, p->rc);
     sqlite3_mutex_leave(p->db->mutex);
   }
@@ -1818,7 +1819,7 @@ int sqlite3_preupdate_new(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
     UnpackedRecord *pUnpack = p->pNewUnpacked;
     if( !pUnpack ){
       Mem *pData = &p->v->aMem[p->iNewReg];
-      rc = sqlite3VdbeMemExpandBlob(pData);
+      rc = ExpandBlob(pData);
       if( rc!=SQLITE_OK ) goto preupdate_new_out;
       pUnpack = vdbeUnpackRecord(&p->keyinfo, pData->n, pData->z);
       if( !pUnpack ){
