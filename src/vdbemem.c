@@ -1269,10 +1269,7 @@ static int valueFromExpr(
   const char *zNeg = "";
   int rc = SQLITE_OK;
 
-  if( !pExpr ){
-    *ppVal = 0;
-    return SQLITE_OK;
-  }
+  assert( pExpr!=0 );
   while( (op = pExpr->op)==TK_UPLUS || op==TK_SPAN ) pExpr = pExpr->pLeft;
   if( NEVER(op==TK_REGISTER) ) op = pExpr->op2;
 
@@ -1396,7 +1393,7 @@ int sqlite3ValueFromExpr(
   u8 affinity,              /* Affinity to use */
   sqlite3_value **ppVal     /* Write the new value here */
 ){
-  return valueFromExpr(db, pExpr, enc, affinity, ppVal, 0);
+  return pExpr ? valueFromExpr(db, pExpr, enc, affinity, ppVal, 0) : 0;
 }
 
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
