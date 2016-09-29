@@ -1,5 +1,5 @@
-C Use\sKnuth\smultiplicative\shashing\sfor\sthe\ssymbol\stable.
-D 2016-09-28T20:42:31.903
+C Clarification\sand\stypo-fixes\sin\scomments.\s\sNo\schanges\sto\scode.
+D 2016-09-29T15:53:28.199
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5151cc64c4c05f3455f4f692ad11410a810d937f
@@ -343,7 +343,7 @@ F src/expr.c a27090ab1d9d9901c64974c43588a38a486d6a55
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c b9ca262f6ad4d030a3cab737ebf9b0b3c8b4ac80
 F src/func.c 29cc9acb170ec1387b9f63eb52cd85f8de96c771
-F src/global.c 2917bbc488201b791e5f5dd43d8d2a3ccc315da7
+F src/global.c 9da4ca5d74b90715f0ec4957f3d17a4749009f34
 F src/hash.c 63d0ee752a3b92d4695b2b1f5259c4621b2cfebd
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
@@ -455,7 +455,7 @@ F src/util.c 3e2da6101888d073e79ecc6af5e0a2f70fa1e498
 F src/vacuum.c 913970b9d86dd6c2b8063ef1af421880f1464ec3
 F src/vdbe.c 6781329737f4bb140834cd32b15e93b83d60858e
 F src/vdbe.h c044be7050ac6bf596eecc6ab159f5dbc020a3b7
-F src/vdbeInt.h d21f14721dd87975dc9e3bcdbf504f9c098cf611
+F src/vdbeInt.h 581b737c2f6e413c555469480efe31796a71bcad
 F src/vdbeapi.c 794f80669e9e3b9b3edc78d80c15968985c7bf21
 F src/vdbeaux.c b9772e4134a17f5b42d32761f5119467815c2458
 F src/vdbeblob.c 3e82a797b60c3b9fed7b8de8c539ca7607874937
@@ -1525,7 +1525,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 40c0fb0af678797c39a99853f9f4102464c16f4b
-R 781c8f4e56859d80db856b6e4a37be8a
+P cc29ddd6be60bdbf107f285c9eb57d5896ebca2d
+R 647685f38d2c1b34b7290eda763c0ba3
 U drh
-Z f77949e5354e55e63daf682f77676620
+Z 99ca7352da532b6b28eade6076b7309c
