@@ -1,5 +1,5 @@
-C Remove\sthe\speep-hole\soptimization\sof\sremoving\sOP_Close\sopcodes\sthat\scome\nbefore\sOP_Halt,\sas\sthe\sextra\swork\sof\sremoving\sthose\sopcodes\suses\smore\scycles\nthan\sjust\srunning\sthem.
-D 2016-09-29T19:50:02.416
+C Small\ssize\sand\sperformance\soptimization\sto\ssqlite3VdbeChangeP5().
+D 2016-09-29T20:28:34.145
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5151cc64c4c05f3455f4f692ad11410a810d937f
@@ -457,7 +457,7 @@ F src/vdbe.c 6781329737f4bb140834cd32b15e93b83d60858e
 F src/vdbe.h c044be7050ac6bf596eecc6ab159f5dbc020a3b7
 F src/vdbeInt.h 581b737c2f6e413c555469480efe31796a71bcad
 F src/vdbeapi.c 794f80669e9e3b9b3edc78d80c15968985c7bf21
-F src/vdbeaux.c 2fc9c59009dfb63732c2c89b18aaeb3ca172f7b3
+F src/vdbeaux.c 041dd9dd28dfe57dc0104a98c067cadd808a059c
 F src/vdbeblob.c 3e82a797b60c3b9fed7b8de8c539ca7607874937
 F src/vdbemem.c 1b8d5b770a9a3c6d8ed3463104a382bffa6f15c2
 F src/vdbesort.c 91fda3909326860382b0ca8aa251e609c6a9d62c
@@ -1525,7 +1525,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 945f82bc44c5a431c0fef0d36cf016671d7ade1e
-R 20b3d4fe5709ed2dfc36e6f20fdfd324
+P 984a96d79656c1b095aba1f88aca4bb787ba0bd8
+R 6df17638e558d58efae8855e65d389dc
 U drh
-Z e13d1f1073df22720e2a91e1bec2d09c
+Z 789252daa215e2c9b52dcdaab286dc1e

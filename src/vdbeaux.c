@@ -764,7 +764,8 @@ void sqlite3VdbeChangeP3(Vdbe *p, u32 addr, int val){
   sqlite3VdbeGetOp(p,addr)->p3 = val;
 }
 void sqlite3VdbeChangeP5(Vdbe *p, u8 p5){
-  if( !p->db->mallocFailed ) p->aOp[p->nOp-1].p5 = p5;
+  assert( p->nOp>0 || p->db->mallocFailed );
+  if( p->nOp>0 ) p->aOp[p->nOp-1].p5 = p5;
 }
 
 /*
