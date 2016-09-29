@@ -146,7 +146,6 @@ void sqlite3FinishCoding(Parse *pParse){
   assert( !pParse->isMultiWrite 
        || sqlite3VdbeAssertMayAbort(v, pParse->mayAbort));
   if( v ){
-    while( sqlite3VdbeDeletePriorOpcode(v, OP_Close) ){}
     sqlite3VdbeAddOp0(v, OP_Halt);
 
 #if SQLITE_USER_AUTHENTICATION

@@ -2899,7 +2899,6 @@ struct Parse {
   int nSet;            /* Number of sets used so far */
   int nOpAlloc;        /* Number of slots allocated for Vdbe.aOp[] */
   int szOpAlloc;       /* Bytes of memory space allocated for Vdbe.aOp[] */
-  int iFixedOp;        /* Never back out opcodes iFixedOp-1 or earlier */
   int ckBase;          /* Base register of data during check constraints */
   int iSelfTab;        /* Table of an index whose exprs are being coded */
   int iCacheLevel;     /* ColCache valid when aColCache[].iLevel<=iCacheLevel */
