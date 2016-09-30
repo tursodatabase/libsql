@@ -293,6 +293,7 @@ int sqlite3VdbeMemStringify(Mem *pMem, u8 enc, u8 bForce){
 
 
   if( sqlite3VdbeMemClearAndResize(pMem, nByte) ){
+    pMem->enc = 0;
     return SQLITE_NOMEM_BKPT;
   }
 
