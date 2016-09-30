@@ -524,11 +524,13 @@ static int sqlite3Prepare(
   int i;                    /* Loop counter */
 
   /* Allocate the parsing context */
-  pParse = sqlite3StackAllocZero(db, sizeof(*pParse));
+  pParse = sqlite3StackAllocRaw(db, sizeof(*pParse));
   if( pParse==0 ){
     rc = SQLITE_NOMEM_BKPT;
     goto end_prepare;
   }
+  memset(pParse, 0, PARSE_HDR_SZ);
+  memset(PARSE_TAIL(pParse), 0, PARSE_TAIL_SZ);
   pParse->pReprepare = pReprepare;
   assert( ppStmt && *ppStmt==0 );
   /* assert( !db->mallocFailed ); // not true with SQLITE_USE_ALLOCA */
