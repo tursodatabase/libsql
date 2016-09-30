@@ -3176,7 +3176,7 @@ int sqlite3ExprCodeGetColumn(
   struct yColCache *p;
 
   for(i=0, p=pParse->aColCache; i<pParse->nColCache; i++, p++){
-    if( p->iReg>0 && p->iTable==iTable && p->iColumn==iColumn ){
+    if( p->iTable==iTable && p->iColumn==iColumn ){
       p->lru = pParse->iCacheCnt++;
       sqlite3ExprCachePinRegister(pParse, p->iReg);
       return p->iReg;
