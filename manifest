@@ -1,5 +1,5 @@
-C Another\ssimplification\sto\sthe\sParse\sobject.
-D 2016-09-30T19:14:32.049
+C Fix\sthe\sParse.aColCache\scolumn\scache\sso\sthat\sall\sof\sthe\svalid\sentries\sare\s\nin\sthe\sfirst\sParse.nColCache\sslots.
+D 2016-09-30T20:22:27.729
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5151cc64c4c05f3455f4f692ad11410a810d937f
@@ -339,7 +339,7 @@ F src/ctime.c e77f3dc297b4b65c96da78b4ae4272fdfae863d7
 F src/date.c 95c9a8d00767e7221a8e9a31f4e913fc8029bf6b
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
 F src/delete.c cb3f6300df24c26c609778b2731f82644b5532ec
-F src/expr.c a27090ab1d9d9901c64974c43588a38a486d6a55
+F src/expr.c f0ea2e1a7af0047b71e40dfed6902249129710e5
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c b9ca262f6ad4d030a3cab737ebf9b0b3c8b4ac80
 F src/func.c 29cc9acb170ec1387b9f63eb52cd85f8de96c771
@@ -457,7 +457,7 @@ F src/vdbe.c 51e754eec26d892abc6279f5e949545af68ec1b3
 F src/vdbe.h c044be7050ac6bf596eecc6ab159f5dbc020a3b7
 F src/vdbeInt.h 581b737c2f6e413c555469480efe31796a71bcad
 F src/vdbeapi.c 794f80669e9e3b9b3edc78d80c15968985c7bf21
-F src/vdbeaux.c 240fecf157b6a3deb3c68abe614ae30cb8e884cd
+F src/vdbeaux.c 5f97a1aed18b5b064407652654f73f3cd4836a87
 F src/vdbeblob.c 3e82a797b60c3b9fed7b8de8c539ca7607874937
 F src/vdbemem.c 1c330522e6b6e4ddd2ff63c4c0dfafa20c3965a7
 F src/vdbesort.c 91fda3909326860382b0ca8aa251e609c6a9d62c
@@ -1525,7 +1525,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 814e41da3563eecf5514811bc8ab2df4f5cc0d4b
-R 608d1a96b91ee96ffbbec71d9c1f3711
+P c1419727f5e4cb3ef63b5853b6ef3b1e53af0651
+R 1c5f450e057ea86e47df56b91a0fd28e
 U drh
-Z 828299b9894d67f8570c817a01bf6c81
+Z 0c5e41f0df0638c8d6aea45323876192
