@@ -2955,7 +2955,6 @@ struct Parse {
   u8 declareVtab;           /* True if inside sqlite3_declare_vtab() */
   int nVtabLock;            /* Number of virtual tables to lock */
 #endif
-  int nAlias;               /* Number of aliased result set columns */
   int nHeight;              /* Expression tree height of current sub-select */
 #ifndef SQLITE_OMIT_EXPLAIN
   int iSelectId;            /* ID of current select for EXPLAIN output */
