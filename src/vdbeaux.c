@@ -21,8 +21,9 @@
 Vdbe *sqlite3VdbeCreate(Parse *pParse){
   sqlite3 *db = pParse->db;
   Vdbe *p;
-  p = sqlite3DbMallocZero(db, sizeof(Vdbe) );
+  p = sqlite3DbMallocRaw(db, sizeof(Vdbe) );
   if( p==0 ) return 0;
+  memset(&p->aOp, 0, sizeof(Vdbe)-offsetof(Vdbe,aOp));
   p->db = db;
   if( db->pVdbe ){
     db->pVdbe->pPrev = p;
@@ -1826,7 +1827,7 @@ void sqlite3VdbeRewind(Vdbe *p){
   int i;
 #endif
   assert( p!=0 );
-  assert( p->magic==VDBE_MAGIC_INIT );
+  assert( p->magic==VDBE_MAGIC_INIT || p->magic==VDBE_MAGIC_RESET );
 
   /* There should be at least one opcode.
   */
@@ -1953,7 +1954,11 @@ void sqlite3VdbeMakeReady(
   pParse->nzVar =  0;
   pParse->azVar = 0;
   p->explain = pParse->explain;
-  if( db->mallocFailed==0 ){
+  if( db->mallocFailed ){
+    p->nVar = 0;
+    p->nCursor = 0;
+    p->nMem = 0;
+  }else{
     p->nCursor = nCursor;
     p->nVar = (ynVar)nVar;
     initMemArray(p->aVar, nVar, db, MEM_Null);
@@ -2880,7 +2885,7 @@ int sqlite3VdbeReset(Vdbe *p){
   }
 #endif
   p->iCurrentTime = 0;
-  p->magic = VDBE_MAGIC_INIT;
+  p->magic = VDBE_MAGIC_RESET;
   return p->rc & db->errMask;
 }
  
@@ -2951,7 +2956,9 @@ void sqlite3VdbeClearObject(sqlite3 *db, Vdbe *p){
     vdbeFreeOpArray(db, pSub->aOp, pSub->nOp);
     sqlite3DbFree(db, pSub);
   }
-  for(i=p->nzVar-1; i>=0; i--) sqlite3DbFree(db, p->azVar[i]);
+  if( p->magic!=VDBE_MAGIC_INIT ){
+    for(i=p->nzVar-1; i>=0; i--) sqlite3DbFree(db, p->azVar[i]);
+  }
   sqlite3DbFree(db, p->azVar);
   vdbeFreeOpArray(db, p->aOp, p->nOp);
   sqlite3DbFree(db, p->aColName);
