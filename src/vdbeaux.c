@@ -21,7 +21,7 @@
 Vdbe *sqlite3VdbeCreate(Parse *pParse){
   sqlite3 *db = pParse->db;
   Vdbe *p;
-  p = sqlite3DbMallocRaw(db, sizeof(Vdbe) );
+  p = sqlite3DbMallocRawNN(db, sizeof(Vdbe) );
   if( p==0 ) return 0;
   memset(&p->aOp, 0, sizeof(Vdbe)-offsetof(Vdbe,aOp));
   p->db = db;

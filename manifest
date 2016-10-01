@@ -1,5 +1,5 @@
-C Make\ssure\sdeleting\san\sunused\sprepared\sstatement\sdoes\snot\sreference\nuninitialized\sfields\sin\sthe\sstructure.
-D 2016-10-01T16:53:45.240
+C Use\ssqlite3DbMallocRawNN()\swhere\sappropriate,\sinstead\sof\nsqlite3DbMallocRaw().
+D 2016-10-01T19:21:56.256
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5151cc64c4c05f3455f4f692ad11410a810d937f
@@ -386,7 +386,7 @@ F src/printf.c a5f0ca08ddede803c241266abb46356ec748ded1
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 3c3cf0dc719cd2a32ab5c1e10c26481dd565492e
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c 6dede310d202f7a0da7f4ac1921f153707fa3d4f
+F src/select.c ea3af83e2d0f245fef81ea4cf04cb730ce67f722
 F src/shell.c b80396d2fadce4681397707e30078bf416e1dec2
 F src/sqlite.h.in 2683a291ed8db5228024267be6421f0de507b80e
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -457,7 +457,7 @@ F src/vdbe.c 51e754eec26d892abc6279f5e949545af68ec1b3
 F src/vdbe.h c044be7050ac6bf596eecc6ab159f5dbc020a3b7
 F src/vdbeInt.h 0a18713d0a2fec6807d076bd333d9bf3e57530cd
 F src/vdbeapi.c 8272f9342c39ab8d7eb4b9decc6caa7bc75b7d83
-F src/vdbeaux.c 5da1f049feb4d301c7062d4359dd527b248b2e81
+F src/vdbeaux.c a771f17c069b7fa98ea4c7f80414784d0fdc31c8
 F src/vdbeblob.c 3e82a797b60c3b9fed7b8de8c539ca7607874937
 F src/vdbemem.c 1c330522e6b6e4ddd2ff63c4c0dfafa20c3965a7
 F src/vdbesort.c 91fda3909326860382b0ca8aa251e609c6a9d62c
@@ -1525,7 +1525,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6ac6e4462a08cb2f3d28e4a23218fc1b110a2148
-R 5b70bdd1179fbf3ea6befa79ac9a9864
+P 7983eef0422439bfc85950554b000d46a9767ee3
+R 23955f59b163a11f39ff812dd1896e90
 U drh
-Z b7e8c3f1e612d35f7e8186a20da76741
+Z f211d43218fc47d8bea747f857323931
