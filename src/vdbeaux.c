@@ -2949,7 +2949,6 @@ void sqlite3VdbeClearObject(sqlite3 *db, Vdbe *p){
   SubProgram *pSub, *pNext;
   int i;
   assert( p->db==0 || p->db==db );
-  releaseMemArray(p->aVar, p->nVar);
   releaseMemArray(p->aColName, p->nResColumn*COLNAME_N);
   for(pSub=p->pProgram; pSub; pSub=pNext){
     pNext = pSub->pNext;
@@ -2957,13 +2956,14 @@ void sqlite3VdbeClearObject(sqlite3 *db, Vdbe *p){
     sqlite3DbFree(db, pSub);
   }
   if( p->magic!=VDBE_MAGIC_INIT ){
+    releaseMemArray(p->aVar, p->nVar);
     for(i=p->nzVar-1; i>=0; i--) sqlite3DbFree(db, p->azVar[i]);
+    sqlite3DbFree(db, p->azVar);
+    sqlite3DbFree(db, p->pFree);
   }
-  sqlite3DbFree(db, p->azVar);
   vdbeFreeOpArray(db, p->aOp, p->nOp);
   sqlite3DbFree(db, p->aColName);
   sqlite3DbFree(db, p->zSql);
-  sqlite3DbFree(db, p->pFree);
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
   for(i=0; i<p->nScan; i++){
     sqlite3DbFree(db, p->aScan[i].zName);
