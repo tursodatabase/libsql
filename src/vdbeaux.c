@@ -1964,7 +1964,6 @@ void sqlite3VdbeMakeReady(
     initMemArray(p->aVar, nVar, db, MEM_Null);
     p->nMem = nMem;
     initMemArray(p->aMem, nMem, db, MEM_Undefined);
-    memset(p->apArg, 0, nArg*sizeof(Mem*));
     memset(p->apCsr, 0, nCursor*sizeof(VdbeCursor*));
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
     memset(p->anExec, 0, p->nOp*sizeof(i64));
