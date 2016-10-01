@@ -1,5 +1,5 @@
-C Rearrange\sfields\sin\sthe\sParse\sobject\sto\sreduce\sthe\samount\sof\sinitialization\nrequired.
-D 2016-10-01T21:43:37.888
+C Add\sSQLITE_USE_ALLOCA\sto\sthe\s--lean\sconfiguration\sin\sspeed-check.sh.
+D 2016-10-01T23:55:23.573
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5151cc64c4c05f3455f4f692ad11410a810d937f
@@ -1485,7 +1485,7 @@ F tool/showstat4.c bda40d6e395df7edb6e9ea630784d3d762c35b4b
 F tool/showwal.c ec79959834f7b21f1e0a2aa52bb7c056d2203977
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
 F tool/spaceanal.tcl 85d90e6674d8298e3eaf82dbcef3abc2d5317f3e
-F tool/speed-check.sh a57ee04157ad548a5059c642e251a841af04b1d7
+F tool/speed-check.sh da6ce45957c509ba6343fe3fef167e7e2b306262
 F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
 F tool/speedtest16.c ecb6542862151c3e6509bbc00509b234562ae81e
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
@@ -1525,7 +1525,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 34edbfd12d6cfa6bbfa30eef9276a4865eadc869
-R de5ca274755abcf0d716abfc4e191e0a
+P 361940b44dd17bf2b39fc0e0716c0de6b2b7f4f7
+R 4f860bb3856935aeca97748386fce380
 U drh
-Z f893e5ce9e69907538e2c5169945e4a7
+Z ab4e3dcba96bb867e3f78f3c2db73961
