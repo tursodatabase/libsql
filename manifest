@@ -1,5 +1,5 @@
-C Allocate\sParse\sobjects\soff\sof\sthe\sstack\swhere\sappropriate\sfor\sa\ssubstantial\nperformance\sincrease\sand\sa\ssize\sreduction.
-D 2016-10-03T01:21:51.273
+C Make\ssure\sthe\ssqlite_sequence\stable\sis\supdated\swhen\san\soptional\sxfer\noptimization\sis\sused.\s\sFix\sfor\sticket\s[7b3328086a5c1].
+D 2016-10-03T02:59:33.678
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5151cc64c4c05f3455f4f692ad11410a810d937f
@@ -348,7 +348,7 @@ F src/hash.c 63d0ee752a3b92d4695b2b1f5259c4621b2cfebd
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 427e96ff168b6b187a52c3d06b9f9e41f6ffb212
+F src/insert.c 2d5e197f2f60351937b201196965fd14cd88489c
 F src/legacy.c 75d3023be8f0d2b99d60f905090341a03358c58e
 F src/loadext.c 5d6642d141c07d366e43d359e94ec9de47add41d
 F src/main.c c9e49e376820bccca55fa9bf2ca321a51725db91
@@ -512,7 +512,7 @@ F test/attachmalloc.test 3a4bfca9545bfe906a8d2e622de10fbac5b711b0
 F test/auth.test 872a122b3977c1d1bb9fd637dc20016e5c01880f
 F test/auth2.test 9eb7fce9f34bf1f50d3f366fb3e606be5a2000a1
 F test/auth3.test b810826b193831929951c0d50783a200e5ef6b72
-F test/autoinc.test c58912526998a39e11f66b533e23cfabea7f25b7
+F test/autoinc.test c3a55c3667f429f4f4c7bed05f67b4d93e89e79d
 F test/autoindex1.test 14b63a9f1e405fe6d5bfc8c8d00249c2ebaf13ea
 F test/autoindex2.test 12ef578928102baaa0dc23ad397601a2f4ecb0df
 F test/autoindex3.test a3be0d1a53a7d2edff208a5e442312957047e972
@@ -1525,7 +1525,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fe07609efc31c4639c40fbda501c55f443756ad2
-R 23db76cc6247870f7cdbd64de85d5b65
+P ea8affa9e453b201b479162f621b591e7a65a489
+R d26ad0c0cb03510ee8e0623be799ba31
 U drh
-Z 76db15deb9298331c9d3d6c6e8ebd767
+Z 57e862bebfdfe5c6526219d3c30b4bf5

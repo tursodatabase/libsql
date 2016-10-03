@@ -2177,6 +2177,7 @@ static int xferOptimization(
   sqlite3ReleaseTempReg(pParse, regRowid);
   sqlite3ReleaseTempReg(pParse, regData);
   if( emptyDestTest ){
+    sqlite3AutoincrementEnd(pParse);
     sqlite3VdbeAddOp2(v, OP_Halt, SQLITE_OK, 0);
     sqlite3VdbeJumpHere(v, emptyDestTest);
     sqlite3VdbeAddOp2(v, OP_Close, iDest, 0);
