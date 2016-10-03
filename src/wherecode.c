@@ -1987,7 +1987,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
   ** the implied "t1.a=123" constraint.
   */
   for(pTerm=pWC->a, j=pWC->nTerm; j>0; j--, pTerm++){
-    Expr *pE, *pEAlt;
+    Expr *pE, sEAlt;
     WhereTerm *pAlt;
     if( pTerm->wtFlags & (TERM_VIRTUAL|TERM_CODED) ) continue;
     if( (pTerm->eOperator & (WO_EQ|WO_IS))==0 ) continue;
@@ -2005,13 +2005,9 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     testcase( pAlt->eOperator & WO_IS );
     testcase( pAlt->eOperator & WO_IN );
     VdbeModuleComment((v, "begin transitive constraint"));
-    pEAlt = sqlite3StackAllocRaw(db, sizeof(*pEAlt));
-    if( pEAlt ){
-      *pEAlt = *pAlt->pExpr;
-      pEAlt->pLeft = pE->pLeft;
-      sqlite3ExprIfFalse(pParse, pEAlt, addrCont, SQLITE_JUMPIFNULL);
-      sqlite3StackFree(db, pEAlt);
-    }
+    sEAlt = *pAlt->pExpr;
+    sEAlt.pLeft = pE->pLeft;
+    sqlite3ExprIfFalse(pParse, &sEAlt, addrCont, SQLITE_JUMPIFNULL);
   }
 
   /* For a LEFT OUTER JOIN, generate code that will record the fact that

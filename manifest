@@ -1,5 +1,5 @@
-C Add\sSQLITE_USE_ALLOCA\sto\sthe\s--lean\sconfiguration\sin\sspeed-check.sh.
-D 2016-10-01T23:55:23.573
+C Allocate\sParse\sobjects\soff\sof\sthe\sstack\swhere\sappropriate\sfor\sa\ssubstantial\nperformance\sincrease\sand\sa\ssize\sreduction.
+D 2016-10-03T01:21:51.273
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5151cc64c4c05f3455f4f692ad11410a810d937f
@@ -326,10 +326,10 @@ F src/alter.c 299117695b1f21ac62dfc5b608588810ba22ed0d
 F src/analyze.c 8b62b2cf4da85451534ac0af82cafc418d837f68
 F src/attach.c 8c19066b4b5357b5d66154e856c61df01e71203a
 F src/auth.c 930b376a9c56998557367e6f7f8aaeac82a2a792
-F src/backup.c 92c2e3b5fcb47626413717138617f4d32f08aea4
+F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 3ee4c8b2c94ed3a7377256e18199e6ff5cf33f63
 F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
-F src/btree.c 56e1732ecfb3731efcb216266ec26b1b96e5e8c9
+F src/btree.c a0a80fbbb34a35ca02cd829bad693b7854bee313
 F src/btree.h d05b2fcc290991a8a3d9ea1816ddd55a4359dcde
 F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
 F src/build.c 59dcfdc1ee55439d069af301ef7f2e84421b5102
@@ -381,7 +381,7 @@ F src/pcache.h 2cedcd8407eb23017d92790b112186886e179490
 F src/pcache1.c 4bb7a6a5300c67d0b033d25adb509c120c03e812
 F src/pragma.c d932ba278654617cdd281f88a790a3185fca7c44
 F src/pragma.h 64c78a648751b9f4f297276c4eb7507b14b4628c
-F src/prepare.c 3c8b1bc8799a794aa2e825db1a977e93487b01d4
+F src/prepare.c b1140c3d0cf59bc85ace00ce363153041b424b7a
 F src/printf.c a5f0ca08ddede803c241266abb46356ec748ded1
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 3c3cf0dc719cd2a32ab5c1e10c26481dd565492e
@@ -469,7 +469,7 @@ F src/wal.h 6dd221ed384afdc204bc61e25c23ef7fd5a511f2
 F src/walker.c 91a6df7435827e41cff6bb7df50ea00934ee78b0
 F src/where.c 5f91be9fe122e847c4e72d54d3989eb32a927981
 F src/whereInt.h 14dd243e13b81cbb0a66063d38b70f93a7d6e613
-F src/wherecode.c e412e09abad1eea213d85594cf46db9f877db56d
+F src/wherecode.c 81da7e9b1bf1a882f3ee60b96b750322b83f17fd
 F src/whereexpr.c 3d8813ef320f10bd27e6c0d784abe1669cfb514e
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1525,7 +1525,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 361940b44dd17bf2b39fc0e0716c0de6b2b7f4f7
-R 4f860bb3856935aeca97748386fce380
+P fe07609efc31c4639c40fbda501c55f443756ad2
+R 23db76cc6247870f7cdbd64de85d5b65
 U drh
-Z ab4e3dcba96bb867e3f78f3c2db73961
+Z 76db15deb9298331c9d3d6c6e8ebd767

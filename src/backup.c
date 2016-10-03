@@ -83,22 +83,16 @@ static Btree *findBtree(sqlite3 *pErrorDb, sqlite3 *pDb, const char *zDb){
   int i = sqlite3FindDbName(pDb, zDb);
 
   if( i==1 ){
-    Parse *pParse;
+    Parse sParse;
     int rc = 0;
-    pParse = sqlite3StackAllocZero(pErrorDb, sizeof(*pParse));
-    if( pParse==0 ){
-      sqlite3ErrorWithMsg(pErrorDb, SQLITE_NOMEM, "out of memory");
-      rc = SQLITE_NOMEM_BKPT;
-    }else{
-      pParse->db = pDb;
-      if( sqlite3OpenTempDatabase(pParse) ){
-        sqlite3ErrorWithMsg(pErrorDb, pParse->rc, "%s", pParse->zErrMsg);
-        rc = SQLITE_ERROR;
-      }
-      sqlite3DbFree(pErrorDb, pParse->zErrMsg);
-      sqlite3ParserReset(pParse);
-      sqlite3StackFree(pErrorDb, pParse);
+    memset(&sParse, 0, sizeof(sParse));
+    sParse.db = pDb;
+    if( sqlite3OpenTempDatabase(&sParse) ){
+      sqlite3ErrorWithMsg(pErrorDb, sParse.rc, "%s", sParse.zErrMsg);
+      rc = SQLITE_ERROR;
     }
+    sqlite3DbFree(pErrorDb, sParse.zErrMsg);
+    sqlite3ParserReset(&sParse);
     if( rc ){
       return 0;
     }
