@@ -4407,22 +4407,25 @@ WhereInfo *sqlite3WhereBegin(
   ** some architectures. Hence the ROUND8() below.
   */
   nByteWInfo = ROUND8(sizeof(WhereInfo)+(nTabList-1)*sizeof(WhereLevel));
-  pWInfo = sqlite3DbMallocZero(db, nByteWInfo + sizeof(WhereLoop));
+  pWInfo = sqlite3DbMallocRawNN(db, nByteWInfo + sizeof(WhereLoop));
   if( db->mallocFailed ){
     sqlite3DbFree(db, pWInfo);
     pWInfo = 0;
     goto whereBeginError;
   }
-  pWInfo->aiCurOnePass[0] = pWInfo->aiCurOnePass[1] = -1;
-  pWInfo->nLevel = nTabList;
   pWInfo->pParse = pParse;
   pWInfo->pTabList = pTabList;
   pWInfo->pOrderBy = pOrderBy;
   pWInfo->pDistinctSet = pDistinctSet;
+  pWInfo->aiCurOnePass[0] = pWInfo->aiCurOnePass[1] = -1;
+  pWInfo->nLevel = nTabList;
   pWInfo->iBreak = pWInfo->iContinue = sqlite3VdbeMakeLabel(v);
   pWInfo->wctrlFlags = wctrlFlags;
   pWInfo->iLimit = iAuxArg;
   pWInfo->savedNQueryLoop = pParse->nQueryLoop;
+  memset(&pWInfo->nOBSat, 0, 
+         offsetof(WhereInfo,sWC) - offsetof(WhereInfo,nOBSat));
+  memset(&pWInfo->a[0], 0, sizeof(WhereLoop)+nTabList*sizeof(WhereLevel));
   assert( pWInfo->eOnePass==ONEPASS_OFF );  /* ONEPASS defaults to OFF */
   pMaskSet = &pWInfo->sMaskSet;
   sWLB.pWInfo = pWInfo;

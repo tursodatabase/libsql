@@ -77,7 +77,6 @@ static int whereClauseInsert(WhereClause *pWC, Expr *p, u16 wtFlags){
       sqlite3DbFree(db, pOld);
     }
     pWC->nSlot = sqlite3DbMallocSize(db, pWC->a)/sizeof(pWC->a[0]);
-    memset(&pWC->a[pWC->nTerm], 0, sizeof(pWC->a[0])*(pWC->nSlot-pWC->nTerm));
   }
   pTerm = &pWC->a[idx = pWC->nTerm++];
   if( p && ExprHasProperty(p, EP_Unlikely) ){
@@ -89,6 +88,8 @@ static int whereClauseInsert(WhereClause *pWC, Expr *p, u16 wtFlags){
   pTerm->wtFlags = wtFlags;
   pTerm->pWC = pWC;
   pTerm->iParent = -1;
+  memset(&pTerm->eOperator, 0,
+         sizeof(WhereTerm) - offsetof(WhereTerm,eOperator));
   return idx;
 }
 
