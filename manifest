@@ -1,5 +1,5 @@
-C Avoid\sunnecessary\smemset()\scalls\sin\sthe\squery\soptimizer.
-D 2016-10-03T14:44:47.342
+C Avoid\sunnecessary\sstrlen()\scalls\sin\ssqlite3ExprAssignVarNumber()\sby\spassing\sin\nthe\stoken\slength\sfrom\sthe\sparser.
+D 2016-10-03T15:28:24.522
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5151cc64c4c05f3455f4f692ad11410a810d937f
@@ -339,7 +339,7 @@ F src/ctime.c e77f3dc297b4b65c96da78b4ae4272fdfae863d7
 F src/date.c 95c9a8d00767e7221a8e9a31f4e913fc8029bf6b
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
 F src/delete.c cb3f6300df24c26c609778b2731f82644b5532ec
-F src/expr.c 4f75ec38f99cde0b71d8b9da73c83183a732ae99
+F src/expr.c cf99b1a327b4eb0a85d59f1c01d82bc2a318c544
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c b9ca262f6ad4d030a3cab737ebf9b0b3c8b4ac80
 F src/func.c 29cc9acb170ec1387b9f63eb52cd85f8de96c771
@@ -375,7 +375,7 @@ F src/os_win.c 520f23475f1de530c435d30b67b7b15fe90874b0
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c bf5b71bde3e9b6110e7d6990607db881f6a471a2
 F src/pager.h 966d2769e76ae347c8a32c4165faf6e6cb64546d
-F src/parse.y 6ad22b8f4a673de775d68c5c306dddd15839c45f
+F src/parse.y 0338f906b61e311c2b7e11a3f89b0092c780b664
 F src/pcache.c 5ff2a08f76a9c1b22f43eb063b7068fb085465ac
 F src/pcache.h 2cedcd8407eb23017d92790b112186886e179490
 F src/pcache1.c 4bb7a6a5300c67d0b033d25adb509c120c03e812
@@ -391,7 +391,7 @@ F src/shell.c b80396d2fadce4681397707e30078bf416e1dec2
 F src/sqlite.h.in 2683a291ed8db5228024267be6421f0de507b80e
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
-F src/sqliteInt.h 5748a35f10c0a03dc546caf8508f41ae3895ee8b
+F src/sqliteInt.h 8d241c2c0a1a7b6611d3e9398f41d69426da850d
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
@@ -1525,7 +1525,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 012ff6dd306328f7ea71a6600471c871e7ffe37b
-R dd52011ff9f1bb8837d1755ce7de8828
+P 5bb7cde0731d23411e9df02a957010f94203397b
+R ff4f5cc57903ee66db0f97f1966e5988
 U drh
-Z 9037cb2feea122245584ce285587b7bb
+Z 380867cb8aabea21260823e30d45c1c4

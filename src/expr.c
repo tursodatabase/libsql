@@ -938,7 +938,7 @@ Expr *sqlite3ExprFunction(Parse *pParse, ExprList *pList, Token *pToken){
 ** instance of the wildcard, the next sequential variable number is
 ** assigned.
 */
-void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr){
+void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr, u32 n){
   sqlite3 *db = pParse->db;
   const char *z;
 
@@ -947,13 +947,13 @@ void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr){
   z = pExpr->u.zToken;
   assert( z!=0 );
   assert( z[0]!=0 );
+  assert( n==sqlite3Strlen30(z) );
   if( z[1]==0 ){
     /* Wildcard of the form "?".  Assign the next variable number */
     assert( z[0]=='?' );
     pExpr->iColumn = (ynVar)(++pParse->nVar);
   }else{
     ynVar x = 0;
-    u32 n = sqlite3Strlen30(z);
     if( z[0]=='?' ){
       /* Wildcard of the form "?nnn".  Convert "nnn" to an integer and
       ** use it as the variable number */
