@@ -953,13 +953,13 @@ void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr, u32 n){
     assert( z[0]=='?' );
     pExpr->iColumn = (ynVar)(++pParse->nVar);
   }else{
-    ynVar x = 0;
+    ynVar x;
     if( z[0]=='?' ){
       /* Wildcard of the form "?nnn".  Convert "nnn" to an integer and
       ** use it as the variable number */
       i64 i;
       int bOk = 0==sqlite3Atoi64(&z[1], &i, n-1, SQLITE_UTF8);
-      pExpr->iColumn = x = (ynVar)i;
+      x = (ynVar)i;
       testcase( i==0 );
       testcase( i==1 );
       testcase( i==db->aLimit[SQLITE_LIMIT_VARIABLE_NUMBER]-1 );
@@ -967,7 +967,7 @@ void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr, u32 n){
       if( bOk==0 || i<1 || i>db->aLimit[SQLITE_LIMIT_VARIABLE_NUMBER] ){
         sqlite3ErrorMsg(pParse, "variable number must be between ?1 and ?%d",
             db->aLimit[SQLITE_LIMIT_VARIABLE_NUMBER]);
-        x = 0;
+        return;
       }
       if( i>pParse->nVar ){
         pParse->nVar = (int)i;
@@ -978,33 +978,31 @@ void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr, u32 n){
       ** has never appeared before, reuse the same variable number
       */
       ynVar i;
-      for(i=0; i<pParse->nzVar; i++){
+      for(i=x=0; i<pParse->nzVar; i++){
         if( pParse->azVar[i] && strcmp(pParse->azVar[i],z)==0 ){
-          pExpr->iColumn = x = (ynVar)i+1;
+          x = (ynVar)i+1;
           break;
         }
       }
-      if( x==0 ) x = pExpr->iColumn = (ynVar)(++pParse->nVar);
+      if( x==0 ) x = (ynVar)(++pParse->nVar);
     }
-    if( x>0 ){
-      if( x>pParse->nzVar ){
-        char **a;
-        a = sqlite3DbRealloc(db, pParse->azVar, x*sizeof(a[0]));
-        if( a==0 ){
-          assert( db->mallocFailed ); /* Error reported through mallocFailed */
-          return;
-        }
-        pParse->azVar = a;
-        memset(&a[pParse->nzVar], 0, (x-pParse->nzVar)*sizeof(a[0]));
-        pParse->nzVar = x;
+    pExpr->iColumn = x;
+    if( x>pParse->nzVar ){
+      char **a;
+      a = sqlite3DbRealloc(db, pParse->azVar, x*sizeof(a[0]));
+      if( a==0 ){
+        assert( db->mallocFailed ); /* Error reported through mallocFailed */
+        return;
       }
-      if( z[0]!='?' || pParse->azVar[x-1]==0 ){
-        sqlite3DbFree(db, pParse->azVar[x-1]);
-        pParse->azVar[x-1] = sqlite3DbStrNDup(db, z, n);
-      }
+      pParse->azVar = a;
+      memset(&a[pParse->nzVar], 0, (x-pParse->nzVar)*sizeof(a[0]));
+      pParse->nzVar = x;
+    }
+    if( pParse->azVar[x-1]==0 ){
+      pParse->azVar[x-1] = sqlite3DbStrNDup(db, z, n);
     }
   } 
-  if( !pParse->nErr && pParse->nVar>db->aLimit[SQLITE_LIMIT_VARIABLE_NUMBER] ){
+  if( pParse->nVar>db->aLimit[SQLITE_LIMIT_VARIABLE_NUMBER] ){
     sqlite3ErrorMsg(pParse, "too many SQL variables");
   }
 }

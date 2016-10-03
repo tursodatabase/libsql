@@ -1,5 +1,5 @@
-C Avoid\sunnecessary\sstrlen()\scalls\sin\ssqlite3ExprAssignVarNumber()\sby\spassing\sin\nthe\stoken\slength\sfrom\sthe\sparser.
-D 2016-10-03T15:28:24.522
+C Size\sand\sperformance\soptimizations\son\sthe\ssqlite3ExprAssignVarNumber()\sroutine.
+D 2016-10-03T16:33:14.952
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5151cc64c4c05f3455f4f692ad11410a810d937f
@@ -339,7 +339,7 @@ F src/ctime.c e77f3dc297b4b65c96da78b4ae4272fdfae863d7
 F src/date.c 95c9a8d00767e7221a8e9a31f4e913fc8029bf6b
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
 F src/delete.c cb3f6300df24c26c609778b2731f82644b5532ec
-F src/expr.c cf99b1a327b4eb0a85d59f1c01d82bc2a318c544
+F src/expr.c aac0b8d39373ce8f1d47829ce12c3d7af90c46a6
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c b9ca262f6ad4d030a3cab737ebf9b0b3c8b4ac80
 F src/func.c 29cc9acb170ec1387b9f63eb52cd85f8de96c771
@@ -1525,7 +1525,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5bb7cde0731d23411e9df02a957010f94203397b
-R ff4f5cc57903ee66db0f97f1966e5988
+P d15ae2e530cffea60263f203ac5f89b6790f4bd5
+R 02650575d610a64473014408e653c2e2
 U drh
-Z 380867cb8aabea21260823e30d45c1c4
+Z 400dafa0c844d13dbe01d3e4d393d771
