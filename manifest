@@ -1,5 +1,5 @@
-C Add\sa\stest\scase\sfor\sthe\sfix\sin\s[a596b7c6cc].
-D 2016-10-05T15:04:35.219
+C Fix\sharmless\scompiler\swarnings.
+D 2016-10-05T20:10:32.759
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5151cc64c4c05f3455f4f692ad11410a810d937f
@@ -384,7 +384,7 @@ F src/pragma.h 64c78a648751b9f4f297276c4eb7507b14b4628c
 F src/prepare.c b1140c3d0cf59bc85ace00ce363153041b424b7a
 F src/printf.c a5f0ca08ddede803c241266abb46356ec748ded1
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
-F src/resolve.c e918c6434e315fc7f295863dcaa58da10d3a1e9c
+F src/resolve.c 3fac1b2737ea5a724f20b921ac7e259c9be2100b
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c ea3af83e2d0f245fef81ea4cf04cb730ce67f722
 F src/shell.c b80396d2fadce4681397707e30078bf416e1dec2
@@ -469,7 +469,7 @@ F src/wal.h 6dd221ed384afdc204bc61e25c23ef7fd5a511f2
 F src/walker.c 91a6df7435827e41cff6bb7df50ea00934ee78b0
 F src/where.c c264ec85d94a7292753c03bdf71a015625c01106
 F src/whereInt.h 2bcc3d176e6091cb8f50a30b65c006e88a73614d
-F src/wherecode.c 81da7e9b1bf1a882f3ee60b96b750322b83f17fd
+F src/wherecode.c d07f784cda9d51eb04f086171a67eadda17f963f
 F src/whereexpr.c 379d0017fb7bc9e5a4d8cd4b056c747de946430e
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1525,7 +1525,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a596b7c6cc780525120604090493f3f7d962b9fa
-R f1f428b414d0a1cdb093889abe85d0a9
-U dan
-Z 5d912db51972f65526081b21248c8b3d
+P b2ef39b11f7c46e69e53439680c32adbb18903bd
+R f292329ca2bd3e63752265c61e007ecf
+U drh
+Z e19c7a6707a28d226be185a5400d48cc

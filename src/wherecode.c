@@ -361,7 +361,6 @@ static void codeApplyAffinity(Parse *pParse, int base, int n, char *zAff){
 **   * the affinity change in zAff is guaranteed not to change the value.
 */
 static void updateRangeAffinityStr(
-  Parse *pParse,                  /* Parse context */
   Expr *pRight,                   /* RHS of comparison */
   int n,                          /* Number of vector elements in comparison */
   char *zAff                      /* Affinity string to modify */
@@ -1501,7 +1500,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         VdbeCoverage(v);
       }
       if( zStartAff ){
-        updateRangeAffinityStr(pParse, pRight, nBtm, &zStartAff[nEq]);
+        updateRangeAffinityStr(pRight, nBtm, &zStartAff[nEq]);
       }  
       nConstraint += nBtm;
       testcase( pRangeStart->wtFlags & TERM_VIRTUAL );
@@ -1551,7 +1550,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         VdbeCoverage(v);
       }
       if( zEndAff ){
-        updateRangeAffinityStr(pParse, pRight, nTop, zEndAff);
+        updateRangeAffinityStr(pRight, nTop, zEndAff);
         codeApplyAffinity(pParse, regBase+nEq, nTop, zEndAff);
       }else{
         assert( pParse->db->mallocFailed );

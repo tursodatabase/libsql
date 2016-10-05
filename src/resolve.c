@@ -651,7 +651,6 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       u8 enc = ENC(pParse->db);   /* The database encoding */
 
       assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
-//      notValid(pParse, pNC, "functions", NC_PartIdx);
       zId = pExpr->u.zToken;
       nId = sqlite3Strlen30(zId);
       pDef = sqlite3FindFunction(pParse->db, zId, n, enc, 0);
