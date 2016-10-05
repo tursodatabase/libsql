@@ -1,5 +1,5 @@
-C Fix\sthe\sbackup_malloc.test\sscript\sso\sthat\sit\sworks\son\sWindows.
-D 2016-10-05T01:33:57.627
+C Do\snot\sset\sMEM_Blob\sunless\sthe\sappropriate\sfields\sof\sthe\sMem\sobject\shave\nbeen\scorrectly\sinitialized.
+D 2016-10-05T15:02:00.449
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5151cc64c4c05f3455f4f692ad11410a810d937f
@@ -459,7 +459,7 @@ F src/vdbeInt.h 0a18713d0a2fec6807d076bd333d9bf3e57530cd
 F src/vdbeapi.c 8272f9342c39ab8d7eb4b9decc6caa7bc75b7d83
 F src/vdbeaux.c 7229203e4e4a3b6eaeeddc807c2287d912c0da74
 F src/vdbeblob.c 3e82a797b60c3b9fed7b8de8c539ca7607874937
-F src/vdbemem.c 1c330522e6b6e4ddd2ff63c4c0dfafa20c3965a7
+F src/vdbemem.c fcdd73a2001a673f48a244a77b1038928ae729c9
 F src/vdbesort.c 91fda3909326860382b0ca8aa251e609c6a9d62c
 F src/vdbetrace.c 41963d5376f0349842b5fc4aaaaacd7d9cdc0834
 F src/vtab.c e02cacb5c7ae742631edeb9ae9f53d399f093fd8
@@ -1525,7 +1525,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3a9d802fda10585654332b314d317250dc5d894e
-R d615c6e1908364fa884ab39f817d3e59
+P d080012daaaa399663a0f767c792a2fff3e1037a
+R aed24a0e8c9a4a3387c1268ec44fc626
 U drh
-Z 82328ebb1684c06ada6a91008b6e6bcf
+Z 826cac4d495f0a95b9177a12f7f9bfad
