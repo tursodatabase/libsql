@@ -1,5 +1,5 @@
-C Do\snot\sset\sMEM_Blob\sunless\sthe\sappropriate\sfields\sof\sthe\sMem\sobject\shave\nbeen\scorrectly\sinitialized.
-D 2016-10-05T15:02:00.449
+C Add\sa\stest\scase\sfor\sthe\sfix\sin\s[a596b7c6cc].
+D 2016-10-05T15:04:35.219
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5151cc64c4c05f3455f4f692ad11410a810d937f
@@ -924,7 +924,7 @@ F test/mallocE.test db1ed69d7eded1b080952e2a7c37f364ad241b08
 F test/mallocF.test 2d5c590ebc2fc7f0dcebdf5aa8498b9aed69107e
 F test/mallocG.test 0ff91b65c50bdaba680fb75d87fe4ad35bb7934f
 F test/mallocH.test 79b65aed612c9b3ed2dcdaa727c85895fd1bfbdb
-F test/mallocI.test a88c2b9627c8506bf4703d8397420043a786cdb6
+F test/mallocI.test 6c23a71df077fa5d387be90e7e669c5b368ca38a
 F test/mallocJ.test b5d1839da331d96223e5f458856f8ffe1366f62e
 F test/mallocK.test 27cb5566a6e5f2d76f9d4aa2eca45524401fd61e
 F test/mallocL.test fb311ff80afddf3b1a75e52289081f4754d901dc
@@ -1525,7 +1525,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d080012daaaa399663a0f767c792a2fff3e1037a
-R aed24a0e8c9a4a3387c1268ec44fc626
-U drh
-Z 826cac4d495f0a95b9177a12f7f9bfad
+P a596b7c6cc780525120604090493f3f7d962b9fa
+R f1f428b414d0a1cdb093889abe85d0a9
+U dan
+Z 5d912db51972f65526081b21248c8b3d
