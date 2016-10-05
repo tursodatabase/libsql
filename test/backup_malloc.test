@@ -95,6 +95,7 @@ do_execsql_test 3.0 {
 
 do_faultsim_test 3 -faults oom* -prep {
   catch { db close }
+  catch { db2 close }
 
   forcedelete test2.db
   sqlite3 db2 test2.db
