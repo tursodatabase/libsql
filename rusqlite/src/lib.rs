@@ -303,12 +303,12 @@ impl Connection {
     /// Will return `Err` if `sql` cannot be converted to a C-compatible string or if the
     /// underlying SQLite call fails.
     pub fn query_row<T, F>(&self, sql: &str, params: &[&ToSql], f: F) -> Result<T>
-        where F: FnOnce(Row) -> T
+        where F: FnOnce(&Row) -> T
     {
         let mut stmt = try!(self.prepare(sql));
         let mut rows = try!(stmt.query(params));
 
-        rows.get_expected_row().map(f)
+        rows.get_expected_row().map(|r| f(&r))
     }
 
     /// Convenience method to execute a query that is expected to return a single row,
@@ -339,13 +339,13 @@ impl Connection {
                                        params: &[&ToSql],
                                        f: F)
                                        -> result::Result<T, E>
-        where F: FnOnce(Row) -> result::Result<T, E>,
+        where F: FnOnce(&Row) -> result::Result<T, E>,
               E: convert::From<Error>
     {
         let mut stmt = try!(self.prepare(sql));
         let mut rows = try!(stmt.query(params));
 
-        rows.get_expected_row().map_err(E::from).and_then(f)
+        rows.get_expected_row().map_err(E::from).and_then(|r| f(&r))
     }
 
     /// Convenience method to execute a query that is expected to return a single row.
@@ -369,7 +369,7 @@ impl Connection {
     /// does exactly the same thing.
     #[deprecated(since = "0.1.0", note = "Use query_row instead")]
     pub fn query_row_safe<T, F>(&self, sql: &str, params: &[&ToSql], f: F) -> Result<T>
-        where F: FnOnce(Row) -> T
+        where F: FnOnce(&Row) -> T
     {
         self.query_row(sql, params, f)
     }
