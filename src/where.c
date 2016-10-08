@@ -2223,7 +2223,7 @@ static void whereLoopOutputAdjust(
 ** then this function would be invoked with nEq=1. The value returned in
 ** this case is 3.
 */
-int whereRangeVectorLen(
+static int whereRangeVectorLen(
   Parse *pParse,       /* Parsing context */
   int iCur,            /* Cursor open on pIdx */
   Index *pIdx,         /* The index to be used for a inequality constraint */
