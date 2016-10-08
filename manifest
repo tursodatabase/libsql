@@ -1,5 +1,5 @@
-C Corrections\sto\sLemon\sdocumentation.\s\sNo\sSQLite\schanges.
-D 2016-10-08T13:34:08.299
+C Update\stest/trace3.test\sto\saccount\sfor\sthe\sfact\sthat\scasting\sa\spointer\sto\sa\s64-bit\ssigned\sinteger\smight\sproduce\sa\snegative\svalue.
+D 2016-10-08T16:10:29.189
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5151cc64c4c05f3455f4f692ad11410a810d937f
@@ -1302,7 +1302,7 @@ F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
 F test/tpch01.test 04adbf8d8300fa60a222f28d901abd76e7be6dd4
 F test/trace.test 6f676313e3ebd2a50585036d2f212a3319dd5836
 F test/trace2.test f5cb67ad3bc09e0c58e8cca78dfd0b5639259983
-F test/trace3.test 01e4111d582c7b20ab1c63156169157d256bc3d5
+F test/trace3.test 56ab944fddacf628b118cc298503fc45c2e50ab0
 F test/trans.test 6e1b4c6a42dba31bd65f8fa5e61a2708e08ddde6
 F test/trans2.test 62bd045bfc7a1c14c5ba83ba64d21ade31583f76
 F test/trans3.test 91a100e5412b488e22a655fe423a14c26403ab94
@@ -1525,7 +1525,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cbed3d75cf9a24037263d126727db7dd048a4f97
-R 32fe7082776be1c5e19835aad8801e28
-U drh
-Z 8f596491c82d3cdf69733967abe08530
+P c568ae3eef31b49e846fad90e705914e2868a09c
+R 9e5920de6f4128afcff04c7e6fedd0d4
+U dan
+Z 56894571560057d40d60b3ac68f2d6e1
