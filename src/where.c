@@ -3669,7 +3669,7 @@ static i8 wherePathSatisfiesOrderBy(
           }
         }
         if( isMatch ){
-          if( iColumn<0 ){
+          if( iColumn==XN_ROWID ){
             testcase( distinctColumns==0 );
             distinctColumns = 1;
           }

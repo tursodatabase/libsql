@@ -340,4 +340,34 @@ do_execsql_test indexexpr1-1100 {
   SELECT '4:', typeof(a), a FROM t1 WHERE a+0<10;
 } {1: integer 1 2: integer 1 3: integer 1 4: integer 1}
 
+do_execsql_test indexexpr1-1200 {
+  CREATE TABLE t10(a int, b int, c int, d int);
+  INSERT INTO t10(a, b, c, d) VALUES(0, 0, 2, 2);
+  INSERT INTO t10(a, b, c, d) VALUES(0, 0, 0, 0);
+  INSERT INTO t10(a, b, c, d) VALUES(0, 0, 1, 1);
+  INSERT INTO t10(a, b, c, d) VALUES(1, 1, 1, 1);
+  INSERT INTO t10(a, b, c, d) VALUES(1, 1, 0, 0);
+  INSERT INTO t10(a, b, c, d) VALUES(2, 2, 0, 0);
+
+  SELECT a+b, c+d FROM t10 ORDER BY a+b, c+d;
+} {
+  0 0 0 2 0 4 2 0 2 2 4 0
+}
+do_execsql_test indexexpr1-1200.1 {
+  CREATE INDEX t10_ab ON t10(a+b);
+}
+do_execsql_test indexexpr1-1200.2 {
+  SELECT a+b, c+d FROM t10 ORDER BY a+b, c+d;
+} {
+  0 0 0 2 0 4 2 0 2 2 4 0
+}
+do_execsql_test indexexpr1-1200.3 {
+  CREATE INDEX t10_abcd ON t10(a+b,c+d);
+}
+do_execsql_test indexexpr1-1200.4 {
+  SELECT a+b, c+d FROM t10 ORDER BY a+b, c+d;
+} {
+  0 0 0 2 0 4 2 0 2 2 4 0
+}
+
 finish_test
