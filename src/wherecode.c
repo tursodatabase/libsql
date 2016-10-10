@@ -1446,11 +1446,11 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         pLevel->iLikeRepCntr |= bRev ^ (pIdx->aSortOrder[nEq]==SQLITE_SO_DESC);
       }
 #endif
-      if( pRangeStart==0
-       && (j = pIdx->aiColumn[nEq])>=0 
-       && pIdx->pTable->aCol[j].notNull==0
-      ){
-        bSeekPastNull = 1;
+      if( pRangeStart==0 ){
+        j = pIdx->aiColumn[nEq];
+        if( (j>=0 && pIdx->pTable->aCol[j].notNull==0) || j==XN_EXPR ){
+          bSeekPastNull = 1;
+        }
       }
     }
     assert( pRangeEnd==0 || (pRangeEnd->wtFlags & TERM_VNULL)==0 );
