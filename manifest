@@ -1,5 +1,5 @@
-C When\shandling\sORDER\sBY\sexpressions,\sdo\snot\sassume\sall\svalues\sof\san\sindexed\sexpressions\sare\sdistinct.\sFix\sfor\s[4766f444].
-D 2016-10-10T14:34:00.108
+C Remove\sa\sstray\sline\sfrom\ssession4.test\scausing\sa\smemory\sleak.\sNo\schanges\sto\sSQLite\scode.
+D 2016-10-10T14:48:36.237
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5151cc64c4c05f3455f4f692ad11410a810d937f
@@ -286,7 +286,7 @@ F ext/session/changeset.c 4ccbaa4531944c24584bf6a61ba3a39c62b6267a
 F ext/session/session1.test 98f384736e2bc21ccf5ed81bdadcff4ad863393b
 F ext/session/session2.test 284de45abae4cc1082bc52012ee81521d5ac58e0
 F ext/session/session3.test a7a9ce59b8d1e49e2cc23d81421ac485be0eea01
-F ext/session/session4.test a6ed685da7a5293c5d6f99855bcf41dbc352ca84
+F ext/session/session4.test 457b02bdc349eb01151e54de014df77abd3c08c8
 F ext/session/session5.test 716bc6fafd625ce60dfa62ae128971628c1a1169
 F ext/session/session6.test 443789bc2fca12e4f7075cf692c60b8a2bea1a26
 F ext/session/session8.test 8e194b3f655d861ca36de5d4de53f702751bab3b
@@ -1525,7 +1525,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 71797ba431085f9ae381ed5ea6471967926f4043
-R eb83b0ec6e44fd9a4ddc7d39014a988d
+P aebe429e52ffef026cb0803fb164339d61bd2e88
+R bc8709bbb1b64b0bd83c97caf5c75201
 U dan
-Z e53885d9c26ab892c301951bca3836f9
+Z 9c65308e5e48a1f51d309ce5e485020a
