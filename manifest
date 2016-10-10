@@ -1,5 +1,5 @@
-C Update\stest/trace3.test\sto\saccount\sfor\sthe\sfact\sthat\scasting\sa\spointer\sto\sa\s64-bit\ssigned\sinteger\smight\sproduce\sa\snegative\svalue.
-D 2016-10-08T16:10:29.189
+C Fix\sa\scase\sin\swhich\sthe\srtree\smodule\swas\signoring\san\sOOM\swhile\sgenerating\san\serror\smessage.
+D 2016-10-10T10:06:59.217
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5151cc64c4c05f3455f4f692ad11410a810d937f
@@ -259,7 +259,7 @@ F ext/rbu/sqlite3rbu.c e074c38798b90591f7f0cf0032d62f152ce5a95e
 F ext/rbu/sqlite3rbu.h 6fb6294c34a9ca93b5894a33bca530c6f08decba
 F ext/rbu/test_rbu.c 5aa22616afac6f71ebd3d9bc9bf1006cfabcca88
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 0b450226001c8ae4622e382b2aff79127581a763
+F ext/rtree/rtree.c 078fc27417b48aaebe988621bf96ef0e1645b201
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test 42dadfc7b44a436cd74a1bebc0b9b689e4eaf7ec
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
@@ -1525,7 +1525,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c568ae3eef31b49e846fad90e705914e2868a09c
-R 9e5920de6f4128afcff04c7e6fedd0d4
+P 010ec22541a4c37f2d3b01b6a531b4b4264102b7
+R 77f705f1e0cdd507ef3a0aa0a78fee02
 U dan
-Z 56894571560057d40d60b3ac68f2d6e1
+Z e4f9aa06315af4c14cd5c8e66a421664
