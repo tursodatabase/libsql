@@ -4131,6 +4131,8 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
           Bitmask m = 0;
           int rc = wherePathSatisfiesOrderBy(pWInfo, pWInfo->pOrderBy, pFrom,
                       WHERE_ORDERBY_LIMIT, nLoop-1, pFrom->aLoop[nLoop-1], &m);
+          testcase( wsFlags & WHERE_IPK );
+          testcase( wsFlags & WHERE_COLUMN_IN );
           if( rc==pWInfo->pOrderBy->nExpr ){
             pWInfo->bOrderedInnerLoop = 1;
             pWInfo->revMask = m;

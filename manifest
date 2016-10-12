@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\saffecting\squeries\sthat\smatch\sthe\spattern\s(...\sWHERE\sipk\sIN\s(....)\sORDER\sBY\s?\sLIMIT\s?).\sFix\sfor\s[96c1454c].
-D 2016-10-12T14:48:00.157
+C New\stestcase()\smacros\sto\sensure\scoverage\sof\sthe\sORDER\sBY\sLIMIT\soptimization\ncode\sin\swhere.c.
+D 2016-10-12T15:15:30.391
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5151cc64c4c05f3455f4f692ad11410a810d937f
@@ -467,7 +467,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 02eeecc265f6ffd0597378f5d8ae9070b62a406a
 F src/wal.h 6dd221ed384afdc204bc61e25c23ef7fd5a511f2
 F src/walker.c 91a6df7435827e41cff6bb7df50ea00934ee78b0
-F src/where.c 1398bc4921aeb834dae464735c38dd658e075f74
+F src/where.c 7e454887a70a8263f663eab8c9d0f6ecc8ec7ac7
 F src/whereInt.h 2bcc3d176e6091cb8f50a30b65c006e88a73614d
 F src/wherecode.c 717a65294df46f30e9b9933d2a63a4bcbca5a9a8
 F src/whereexpr.c 379d0017fb7bc9e5a4d8cd4b056c747de946430e
@@ -1525,7 +1525,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6624c4964b63e259d5ee006eaa7ec79ddadbd6a6
-R 1f3479e07ee809d93ee626f741dcfe99
-U dan
-Z 2f5dc1d3c0a42075b0dbac13eca4ba40
+P 8e2b25f9b8a7ed087d3cece74239814bee19429e
+R 85b771c181ab2a587da3b9154662733d
+U drh
+Z ed0e3333d86697e18712f68be162b390
