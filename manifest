@@ -1,5 +1,5 @@
-C Remove\sa\sstray\sline\sfrom\ssession4.test\scausing\sa\smemory\sleak.\sNo\schanges\sto\sSQLite\scode.
-D 2016-10-10T14:48:36.237
+C Fix\sa\sproblem\saffecting\squeries\sthat\smatch\sthe\spattern\s(...\sWHERE\sipk\sIN\s(....)\sORDER\sBY\s?\sLIMIT\s?).\sFix\sfor\s[96c1454c].
+D 2016-10-12T14:48:00.157
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5151cc64c4c05f3455f4f692ad11410a810d937f
@@ -467,7 +467,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 02eeecc265f6ffd0597378f5d8ae9070b62a406a
 F src/wal.h 6dd221ed384afdc204bc61e25c23ef7fd5a511f2
 F src/walker.c 91a6df7435827e41cff6bb7df50ea00934ee78b0
-F src/where.c 43b53ef361d1b01002376eff5d33de0898f4dd94
+F src/where.c 1398bc4921aeb834dae464735c38dd658e075f74
 F src/whereInt.h 2bcc3d176e6091cb8f50a30b65c006e88a73614d
 F src/wherecode.c 717a65294df46f30e9b9933d2a63a4bcbca5a9a8
 F src/whereexpr.c 379d0017fb7bc9e5a4d8cd4b056c747de946430e
@@ -893,7 +893,7 @@ F test/like.test 81632c437a947bf1f7130b19537da6a1a844806a
 F test/like2.test 3b2ee13149ba4a8a60b59756f4e5d345573852da
 F test/like3.test 3608a2042b6f922f900fbfd5d3ce4e7eca57f7c4
 F test/limit.test 0c99a27a87b14c646a9d583c7c89fd06c352663e
-F test/limit2.test 7e7744cc548d7e4c92e1dd3edc30dd0f86adafd5
+F test/limit2.test e35f57bd3a62d7c5dcb5ac4306e675c75f974809
 F test/loadext.test d077450695ddb5c1ea3ad7d48e5f5850fe732ad9
 F test/loadext2.test 0408380b57adca04004247179837a18e866a74f7
 F test/lock.test be4fe08118fb988fed741f429b7dd5d65e1c90db
@@ -1525,7 +1525,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P aebe429e52ffef026cb0803fb164339d61bd2e88
-R bc8709bbb1b64b0bd83c97caf5c75201
+P 6624c4964b63e259d5ee006eaa7ec79ddadbd6a6
+R 1f3479e07ee809d93ee626f741dcfe99
 U dan
-Z 9c65308e5e48a1f51d309ce5e485020a
+Z 2f5dc1d3c0a42075b0dbac13eca4ba40
