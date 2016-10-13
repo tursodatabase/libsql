@@ -279,7 +279,7 @@ static int pcache1InitBulk(PCache1 *pCache){
     szBulk = -1024 * (i64)pcache1.nInitPage;
   }
   if( szBulk > pCache->szAlloc*(i64)pCache->nMax ){
-    szBulk = pCache->szAlloc*pCache->nMax;
+    szBulk = pCache->szAlloc*(i64)pCache->nMax;
   }
   zBulk = pCache->pBulk = sqlite3Malloc( szBulk );
   sqlite3EndBenignMalloc();
