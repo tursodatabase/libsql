@@ -848,4 +848,10 @@ do_preupdate_test 7.6.4 {
   DELETE main t1 1 1   0      abc
 }
 
+# No preupdate callbacks for modifying sqlite_master.
+do_preupdate_test 8.1 {
+  CREATE TABLE x1(x, y);
+} {
+}
+
 finish_test

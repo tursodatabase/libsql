@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_FCNTL_WIN32_GET_HANDLE\sfile\scontrol.
-D 2016-10-14T21:27:50.450
+C Add\stest\scase\sto\shook.test.\sNo\schanges\sto\snon-test\scode.
+D 2016-10-15T08:56:18.631
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5151cc64c4c05f3455f4f692ad11410a810d937f
@@ -823,7 +823,7 @@ F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
 F test/genesis.tcl 1e2e2e8e5cc4058549a154ff1892fe5c9de19f98
 F test/hexlit.test d7b0a5f41123df1e43985b91b8b2e70f95282d21
 F test/hidden.test 23c1393a79e846d68fd902d72c85d5e5dcf98711
-F test/hook.test 3b7b99d0eece6d279812c2aef6fa08bdfabc633e
+F test/hook.test 3a01b876691f9151d3e44562354f7d663ff90fce
 F test/icu.test 73956798bace8982909c00476b216714a6d0559a
 F test/ieee754.test 806fc0ce7f305f57e3331eaceeddcfec9339e607
 F test/imposter1.test c3f1db2d3db2c24611a6596a3fc0ffc14f1466c8
@@ -1525,7 +1525,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P aa6de9c40ba2d906772b9032fd5d798661f6d4cc b6ddabe1818c36007c476a31e2e35755630a5f14
-R 60e5658793423fe7463e5f09d2e53763
-U mistachkin
-Z 76feeade398c4222d6ce153559d25186
+P 16039be3739b8d3b34a1e6093eaebb09e07f984b
+R 166049b4e9b829af91339e72272b5c27
+U dan
+Z 7906df778321c686ecad94fabe527fa9
