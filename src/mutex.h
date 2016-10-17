@@ -50,6 +50,13 @@
 #  endif
 #endif
 
+/*
+** Allowed values for sqlite3_mutex.magic
+*/
+#define SQLITE_MUTEXMAGIC_NORMAL  0x1f7a8074
+#define SQLITE_MUTEXMAGIC_TRACE   0x1f7a8075
+#define SQLITE_MUTEXMAGIC_DEAD    0x4b0844f6
+
 #ifdef SQLITE_MUTEX_OMIT
 /*
 ** If this is a no-op implementation, implement everything as macros.

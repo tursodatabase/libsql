@@ -40,7 +40,7 @@ struct sqlite3_mutex {
 #ifdef SQLITE_DEBUG
   volatile int nRef;         /* Number of enterances */
   volatile DWORD owner;      /* Thread holding this mutex */
-  volatile int trace;        /* True to trace changes */
+  volatile u32 magic;        /* True to trace changes */
 #endif
 };
 
@@ -221,7 +221,9 @@ static sqlite3_mutex *winMutexAlloc(int iType){
         p->id = iType;
 #ifdef SQLITE_DEBUG
 #ifdef SQLITE_WIN32_MUTEX_TRACE_DYNAMIC
-        p->trace = 1;
+        p->magic = SQLITE_MUTEXMAGIC_TRACE;
+#else
+        p->magic = SQLITE_MUTEXMAGIC_NORMAL;
 #endif
 #endif
 #if SQLITE_OS_WINRT
@@ -243,7 +245,9 @@ static sqlite3_mutex *winMutexAlloc(int iType){
       p->id = iType;
 #ifdef SQLITE_DEBUG
 #ifdef SQLITE_WIN32_MUTEX_TRACE_STATIC
-      p->trace = 1;
+      p->magic = SQLITE_MUTEXMAGIC_TRACE;
+#else
+      p->magic = SQLITE_MUTEXMAGIC_NORMAL;
 #endif
 #endif
       break;
@@ -260,6 +264,7 @@ static sqlite3_mutex *winMutexAlloc(int iType){
 */
 static void winMutexFree(sqlite3_mutex *p){
   assert( p );
+  assert( (p->magic&~1)==SQLITE_MUTEXMAGIC_NORMAL );
   assert( p->nRef==0 && p->owner==0 );
   if( p->id==SQLITE_MUTEX_FAST || p->id==SQLITE_MUTEX_RECURSIVE ){
     DeleteCriticalSection(&p->mutex);
@@ -286,11 +291,10 @@ static void winMutexEnter(sqlite3_mutex *p){
 #if defined(SQLITE_DEBUG) || defined(SQLITE_TEST)
   DWORD tid = GetCurrentThreadId();
 #endif
+  assert( p );
+  assert( (p->magic&~1)==SQLITE_MUTEXMAGIC_NORMAL );
 #ifdef SQLITE_DEBUG
-  assert( p );
   assert( p->id==SQLITE_MUTEX_RECURSIVE || winMutexNotheld2(p, tid) );
-#else
-  assert( p );
 #endif
   assert( winMutex_isInit==1 );
   EnterCriticalSection(&p->mutex);
@@ -298,9 +302,9 @@ static void winMutexEnter(sqlite3_mutex *p){
   assert( p->nRef>0 || p->owner==0 );
   p->owner = tid;
   p->nRef++;
-  if( p->trace ){
-    OSTRACE(("ENTER-MUTEX tid=%lu, mutex=%p (%d), nRef=%d\n",
-             tid, p, p->trace, p->nRef));
+  if( p->magic&1 ){
+    OSTRACE(("ENTER-MUTEX tid=%lu, mutex=%p (%lu), nRef=%d\n",
+             tid, p, p->magic, p->nRef));
   }
 #endif
 }
@@ -311,7 +315,10 @@ static int winMutexTry(sqlite3_mutex *p){
 #endif
   int rc = SQLITE_BUSY;
   assert( p );
+  assert( (p->magic&~1)==SQLITE_MUTEXMAGIC_NORMAL );
+#ifdef SQLITE_DEBUG
   assert( p->id==SQLITE_MUTEX_RECURSIVE || winMutexNotheld2(p, tid) );
+#endif
   /*
   ** The sqlite3_mutex_try() routine is very rarely used, and when it
   ** is used it is merely an optimization.  So it is OK for it to always
@@ -341,9 +348,9 @@ static int winMutexTry(sqlite3_mutex *p){
   UNUSED_PARAMETER(p);
 #endif
 #ifdef SQLITE_DEBUG
-  if( p->trace ){
-    OSTRACE(("TRY-MUTEX tid=%lu, mutex=%p (%d), owner=%lu, nRef=%d, rc=%s\n",
-             tid, p, p->trace, p->owner, p->nRef, sqlite3ErrName(rc)));
+  if( p->magic&1 ){
+    OSTRACE(("TRY-MUTEX tid=%lu, mutex=%p (%lu), owner=%lu, nRef=%d, rc=%s\n",
+             tid, p, p->magic, p->owner, p->nRef, sqlite3ErrName(rc)));
   }
 #endif
   return rc;
@@ -360,6 +367,7 @@ static void winMutexLeave(sqlite3_mutex *p){
   DWORD tid = GetCurrentThreadId();
 #endif
   assert( p );
+  assert( (p->magic&~1)==SQLITE_MUTEXMAGIC_NORMAL );
 #ifdef SQLITE_DEBUG
   assert( p->nRef>0 );
   assert( p->owner==tid );
@@ -370,9 +378,9 @@ static void winMutexLeave(sqlite3_mutex *p){
   assert( winMutex_isInit==1 );
   LeaveCriticalSection(&p->mutex);
 #ifdef SQLITE_DEBUG
-  if( p->trace ){
-    OSTRACE(("LEAVE-MUTEX tid=%lu, mutex=%p (%d), nRef=%d\n",
-             tid, p, p->trace, p->nRef));
+  if( p->magic&1 ){
+    OSTRACE(("LEAVE-MUTEX tid=%lu, mutex=%p (%lu), nRef=%d\n",
+             tid, p, p->magic, p->nRef));
   }
 #endif
 }
