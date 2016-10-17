@@ -3908,7 +3908,7 @@ void sqlite3BeginTransaction(Parse *pParse, int type){
   if( !v ) return;
   if( type!=TK_DEFERRED ){
     for(i=0; i<db->nDb; i++){
-      sqlite3VdbeAddOp2(v, OP_Transaction, i, (type==TK_EXCLUSIVE)+1);
+      sqlite3VdbeAddOp3(v, OP_Transaction, i, (type==TK_EXCLUSIVE)+1, 1);
       sqlite3VdbeUsesBtree(v, i);
     }
   }

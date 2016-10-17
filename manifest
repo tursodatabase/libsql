@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_DBCONFIG_REQUIRE_TXN\sargument\sfor\ssqlite3_dbconfig()\swhich\swhen\nset\srequires\san\sexplicit\stransaction\sbefore\supdating\sthe\sdatabase.
-D 2016-04-05T17:50:36.562
+C Fix\sSQLITE_DBCONFIG_REQUIRE_TXN\sso\sthat\sit\sallows\sBEGIN\sIMMEDAITE\sand\nBEGIN\sEXCLUSIVE\sto\srun\soutside\sof\sa\stransaction.
+D 2016-10-17T23:44:22.316
 F Makefile.in e812bb732d7af01baa09f1278bd4f4a2e3a09449
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc fe57d7e3e74fa383fd01ced796c0ffd966fc094a
@@ -322,7 +322,7 @@ F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
 F src/btree.c 556203aab543e91f4e20cc273a507ed712c8da26
 F src/btree.h a5008b9afe56e8e54ade6c436a910f112defcca9
 F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
-F src/build.c c5cf206191880f88142352629d53fed174fc10bd
+F src/build.c 2f9da95e68df7a47b5afe4a6c3d16805f22a8e06
 F src/callback.c 2e76147783386374bf01b227f752c81ec872d730
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 60e135af364d777a9ab41c97e5e89cd224da6198
@@ -441,7 +441,7 @@ F src/update.c 3e67ab3c0814635f355fb1f8ab010a2b9e016e7d
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c 8873d696c9ccc4206058c402e09e101f1b81561a
 F src/vacuum.c feb1eabb20987983d9350cad98299b21fa811f52
-F src/vdbe.c 260c47de1b8b3b57825ea1709fb0b60283c8b7cc
+F src/vdbe.c 4cddfd428cca725d466809f23ea86f0e2d47082d
 F src/vdbe.h c16ba943d407baa1c7085eefea73a063fc631863
 F src/vdbeInt.h ddb157974436d87652de7dc641f7191496d9a8cd
 F src/vdbeapi.c ba85b78fe08dc4a9ce747e62c89a2b4a4547e74c
@@ -1482,10 +1482,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cf569f9f2fab1828e4bfced111fd9a6ee23ea8c0
-R e6b61a1d38c394d935d14241736aba21
-T *branch * require-write-txn
-T *sym-require-write-txn *
-T -sym-trunk *
+P b7570ac14df0b799569070c7400904040d30d4cc
+R c8593da974c677005278c9eab4064b65
 U drh
-Z ba47653689e7a4efff681f718284bc92
+Z 7b5f4748a18910c904c188f2b1beb1c1

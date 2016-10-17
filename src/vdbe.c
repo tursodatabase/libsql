@@ -3086,7 +3086,8 @@ case OP_AutoCommit: {
 ** active.
 ** If P2 is non-zero, then a write-transaction is started, or if a 
 ** read-transaction is already active, it is upgraded to a write-transaction.
-** If P2 is zero, then a read-transaction is started.
+** If P2 is zero, then a read-transaction is started.  The 0x02 bit of P2
+** is set for an exclusive transaction.
 **
 ** P1 is the index of the database file on which the transaction is
 ** started.  Index 0 is the main database file and index 1 is the
@@ -3103,7 +3104,7 @@ case OP_AutoCommit: {
 ** entire transaction. If no error is encountered, the statement transaction
 ** will automatically commit when the VDBE halts.
 **
-** If P5!=0 then this opcode also checks the schema cookie against P3
+** If P5==1 then this opcode also checks the schema cookie against P3
 ** and the schema generation counter against P4.
 ** The cookie changes its value whenever the database schema changes.
 ** This operation is used to detect when that the cookie has changed
@@ -3113,6 +3114,9 @@ case OP_AutoCommit: {
 ** generation counter, then an SQLITE_SCHEMA error is raised and execution
 ** halts.  The sqlite3_step() wrapper function might then reprepare the
 ** statement and rerun it from the beginning.
+**
+** If P5==0 and P3==1 this is the transaction started by a BEGIN 
+** IMMEDIATE or BEGIN EXCLUSIVE command.
 */
 case OP_Transaction: {
   Btree *pBt;
@@ -3123,14 +3127,19 @@ case OP_Transaction: {
   assert( p->readOnly==0 || pOp->p2==0 );
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
   assert( DbMaskTest(p->btreeMask, pOp->p1) );
-  if( pOp->p2 && (db->flags & (SQLITE_QueryOnly|SQLITE_RequireTxn))!=0 ){
-    if( db->flags & SQLITE_QueryOnly ){
+  if( pOp->p2 ){
+    if( (db->flags & SQLITE_QueryOnly)!=0 ){
       rc = SQLITE_READONLY;
-    }else if( db->autoCommit && (pOp->p2&02)==0 ){
+      goto abort_due_to_error;
+    }
+    if( (db->flags & SQLITE_RequireTxn)!=0 
+     && db->autoCommit
+     && (pOp->p5!=0 || pOp->p3!=1)
+    ){
       sqlite3VdbeError(p, "cannot write outside of a transaction");
       rc = SQLITE_ERROR;
+      goto abort_due_to_error;
     }
-    goto abort_due_to_error;
   }
   pBt = db->aDb[pOp->p1].pBt;
 
@@ -3181,7 +3190,7 @@ case OP_Transaction: {
     iGen = iMeta = 0;
   }
   assert( pOp->p5==0 || pOp->p4type==P4_INT32 );
-  if( (pOp->p5&0x01)!=0 && (iMeta!=pOp->p3 || iGen!=pOp->p4.i) ){
+  if( pOp->p5==1 && (iMeta!=pOp->p3 || iGen!=pOp->p4.i) ){
     sqlite3VdbeError(p, "database schema has changed");
     /* If the schema-cookie from the database file matches the cookie 
     ** stored with the in-memory representation of the schema, do
