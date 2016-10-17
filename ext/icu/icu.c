@@ -349,7 +349,7 @@ static void icuRegexpFunc(sqlite3_context *p, int nArg, sqlite3_value **apArg){
 ** of upper() or lower().
 **
 **     lower('I', 'en_us') -> 'i'
-**     lower('I', 'tr_tr') -> 'ı' (small dotless i)
+**     lower('I', 'tr_tr') -> '\u131' (small dotless i)
 **
 ** http://www.icu-project.org/userguide/posix.html#case_mappings
 */

@@ -1,5 +1,5 @@
-C Corrections\sto\sa\scouple\srecently\sadded\s'filectrl.test'\sresults.
-D 2016-10-17T18:33:36.378
+C Escape\snon-ASCII\scharacter\sfrom\san\sICU\sextension\scomment.
+D 2016-10-17T18:44:11.779
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5151cc64c4c05f3455f4f692ad11410a810d937f
@@ -202,7 +202,7 @@ F ext/fts5/tool/loadfts5.tcl 95b03429ee6b138645703c6ca192c3ac96eaf093
 F ext/fts5/tool/mkfts5c.tcl d1c2a9ab8e0ec690a52316f33dd9b1d379942f45
 F ext/fts5/tool/showfts5.tcl d54da0e067306663e2d5d523965ca487698e722c
 F ext/icu/README.txt d9fbbad0c2f647c3fdf715fc9fd64af53aedfc43
-F ext/icu/icu.c 43df9d8ef2fae7a325100ebd713ab089dc829dd7
+F ext/icu/icu.c 7d371146fff9c21d4f7a806866c578f61b566511
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/misc/amatch.c 211108e201105e4bb0c076527b8cfd34330fc234
 F ext/misc/carray.c 40c27641010a4dc67e3690bdb7c9d36ca58b3c2d
@@ -1526,7 +1526,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c88d36e251abec24aa7e37cf550e148904b9fd2d
-R a9d0099c5bec3f8fb6b8d6dee554f910
+P 3d89dc4544bc51f8c9fa63a6ecf0458f6d10fc9f
+R fa25023b830313001a08fb629addaf5e
 U mistachkin
-Z 550d80ee0f4b6472f738eb0d0f21304b
+Z 1fb4dc60b08e482dba797565ab552769
