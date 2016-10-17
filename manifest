@@ -1,5 +1,5 @@
-C Add\sdocumentation\sfor\sthe\sOP_SorterInsert\sopcode,\sformerly\somitted\sby\smistake.\nNo\schanges\sto\scode.
-D 2016-10-15T18:37:05.801
+C Small\ssize\sreduction\sand\sperformance\sincrease\sin\sthe\sstring\sduplicator.
+D 2016-10-17T00:48:06.879
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5151cc64c4c05f3455f4f692ad11410a810d937f
@@ -352,7 +352,7 @@ F src/insert.c 2d5e197f2f60351937b201196965fd14cd88489c
 F src/legacy.c 75d3023be8f0d2b99d60f905090341a03358c58e
 F src/loadext.c 5d6642d141c07d366e43d359e94ec9de47add41d
 F src/main.c c9e49e376820bccca55fa9bf2ca321a51725db91
-F src/malloc.c 1443d1ad95d67c21d77af7ae3f44678252f0efec
+F src/malloc.c 5ee7c2d3dcb1b0a902c9c6d0115deef54736bdfa
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 6919bcf12f221868ea066eec27e579fed95ce98b
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
@@ -1525,7 +1525,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2674d779f5453ea6b709a39618d4b8017ab2e3fb
-R 62ebfcb1750081baeac9df5e0126f18d
+P 16d88a907730e3773a1320dbaf1f82c2bc71d71f
+R 2f0998819cd5004bd7aa9d1c4c13ab4c
 U drh
-Z 3a945c0067277a9ffe4be7b7ce64faea
+Z 1e4256190583968ad55966afe2350526
