@@ -1,5 +1,5 @@
-C Escape\snon-ASCII\scharacter\sfrom\san\sICU\sextension\scomment.
-D 2016-10-17T18:44:11.779
+C Add\sthe\s--repeat\soption\sto\sspeedtest1.c\sand\sspeed-check.sh.
+D 2016-10-18T14:35:55.358
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5151cc64c4c05f3455f4f692ad11410a810d937f
@@ -1113,7 +1113,7 @@ F test/speed3.test 694affeb9100526007436334cf7d08f3d74b85ef
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
-F test/speedtest1.c 43b25ae8e303bcada98e00be036e710de17d346a
+F test/speedtest1.c 0258bb629989fcf06534c923c99d0a67d8bfe9d9
 F test/spellfix.test f9c1f431e2c096c8775fec032952320c0e4700db
 F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
 F test/spellfix3.test 0f9efaaa502a0e0a09848028518a6fb096c8ad33
@@ -1486,7 +1486,7 @@ F tool/showstat4.c bda40d6e395df7edb6e9ea630784d3d762c35b4b
 F tool/showwal.c ec79959834f7b21f1e0a2aa52bb7c056d2203977
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
 F tool/spaceanal.tcl ab7d9bf68062907282a64b3e12ccbfad47193c5a
-F tool/speed-check.sh da6ce45957c509ba6343fe3fef167e7e2b306262
+F tool/speed-check.sh b7922d000d66339d5242e7ba47ba6e3f1bc9a538
 F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
 F tool/speedtest16.c ecb6542862151c3e6509bbc00509b234562ae81e
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
@@ -1526,7 +1526,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3d89dc4544bc51f8c9fa63a6ecf0458f6d10fc9f
-R fa25023b830313001a08fb629addaf5e
-U mistachkin
-Z 1fb4dc60b08e482dba797565ab552769
+P 5ec02ecf3d20ce7e3f5249e9a3684f9b67a7d703
+R fc69fe36bbf8dbc4c509c14f32494c61
+U drh
+Z f0cdcbe9fbac1dc86a3b7a6c4617ee29

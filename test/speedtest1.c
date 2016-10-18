@@ -22,6 +22,7 @@ static const char zHelp[] =
   "  --pagesize N        Set the page size to N\n"
   "  --pcache N SZ       Configure N pages of pagecache each of size SZ bytes\n"
   "  --primarykey        Use PRIMARY KEY instead of UNIQUE where appropriate\n"
+  "  --repeat N          Repeat each SELECT N times (default: 1)\n"
   "  --reprepare         Reprepare each statement upon every invocation\n"
   "  --scratch N SZ      Configure scratch memory for N slots of SZ bytes each\n"
   "  --serialized        Set serialized threading mode\n"
@@ -72,6 +73,7 @@ static struct Global {
   int bMemShrink;            /* Call sqlite3_db_release_memory() often */
   int eTemp;                 /* 0: no TEMP.  9: always TEMP. */
   int szTest;                /* Scale factor for test iterations */
+  int nRepeat;               /* Repeat selects this many times */
   const char *zWR;           /* Might be WITHOUT ROWID */
   const char *zNN;           /* Might be NOT NULL */
   const char *zPK;           /* Might be UNIQUE or PRIMARY KEY */
@@ -530,8 +532,10 @@ void testset_main(void){
     " WHERE b BETWEEN ?1 AND ?2; -- %d times", n
   );
   for(i=1; i<=n; i++){
-    x1 = speedtest1_random()%maxb;
-    x2 = speedtest1_random()%10 + sz/5000 + x1;
+    if( (i-1)%g.nRepeat==0 ){
+      x1 = speedtest1_random()%maxb;
+      x2 = speedtest1_random()%10 + sz/5000 + x1;
+    }
     sqlite3_bind_int(g.pStmt, 1, x1);
     sqlite3_bind_int(g.pStmt, 2, x2);
     speedtest1_run();
@@ -548,11 +552,13 @@ void testset_main(void){
     " WHERE c LIKE ?1; -- %d times", n
   );
   for(i=1; i<=n; i++){
-    x1 = speedtest1_random()%maxb;
-    zNum[0] = '%';
-    len = speedtest1_numbername(i, zNum+1, sizeof(zNum)-2);
-    zNum[len] = '%';
-    zNum[len+1] = 0;
+    if( (i-1)%g.nRepeat==0 ){
+      x1 = speedtest1_random()%maxb;
+      zNum[0] = '%';
+      len = speedtest1_numbername(i, zNum+1, sizeof(zNum)-2);
+      zNum[len] = '%';
+      zNum[len+1] = 0;
+    }
     sqlite3_bind_text(g.pStmt, 1, zNum, len, SQLITE_STATIC);
     speedtest1_run();
   }
@@ -568,11 +574,13 @@ void testset_main(void){
     " ORDER BY a; -- %d times", n
   );
   for(i=1; i<=n; i++){
-    x1 = speedtest1_random()%maxb;
-    zNum[0] = '%';
-    len = speedtest1_numbername(i, zNum+1, sizeof(zNum)-2);
-    zNum[len] = '%';
-    zNum[len+1] = 0;
+    if( (i-1)%g.nRepeat==0 ){
+      x1 = speedtest1_random()%maxb;
+      zNum[0] = '%';
+      len = speedtest1_numbername(i, zNum+1, sizeof(zNum)-2);
+      zNum[len] = '%';
+      zNum[len+1] = 0;
+    }
     sqlite3_bind_text(g.pStmt, 1, zNum, len, SQLITE_STATIC);
     speedtest1_run();
   }
@@ -587,11 +595,13 @@ void testset_main(void){
     " ORDER BY a LIMIT 10; -- %d times", n
   );
   for(i=1; i<=n; i++){
-    x1 = speedtest1_random()%maxb;
-    zNum[0] = '%';
-    len = speedtest1_numbername(i, zNum+1, sizeof(zNum)-2);
-    zNum[len] = '%';
-    zNum[len+1] = 0;
+    if( (i-1)%g.nRepeat==0 ){
+      x1 = speedtest1_random()%maxb;
+      zNum[0] = '%';
+      len = speedtest1_numbername(i, zNum+1, sizeof(zNum)-2);
+      zNum[len] = '%';
+      zNum[len+1] = 0;
+    }
     sqlite3_bind_text(g.pStmt, 1, zNum, len, SQLITE_STATIC);
     speedtest1_run();
   }
@@ -618,8 +628,10 @@ void testset_main(void){
     " WHERE b BETWEEN ?1 AND ?2; -- %d times", n
   );
   for(i=1; i<=n; i++){
-    x1 = speedtest1_random()%maxb;
-    x2 = speedtest1_random()%10 + sz/5000 + x1;
+    if( (i-1)%g.nRepeat==0 ){
+      x1 = speedtest1_random()%maxb;
+      x2 = speedtest1_random()%10 + sz/5000 + x1;
+    }
     sqlite3_bind_int(g.pStmt, 1, x1);
     sqlite3_bind_int(g.pStmt, 2, x2);
     speedtest1_run();
@@ -636,8 +648,10 @@ void testset_main(void){
     " WHERE a BETWEEN ?1 AND ?2; -- %d times", n
   );
   for(i=1; i<=n; i++){
-    x1 = speedtest1_random()%maxb;
-    x2 = speedtest1_random()%10 + sz/5000 + x1;
+    if( (i-1)%g.nRepeat==0 ){
+      x1 = speedtest1_random()%maxb;
+      x2 = speedtest1_random()%10 + sz/5000 + x1;
+    }
     sqlite3_bind_int(g.pStmt, 1, x1);
     sqlite3_bind_int(g.pStmt, 2, x2);
     speedtest1_run();
@@ -654,8 +668,10 @@ void testset_main(void){
     " WHERE c BETWEEN ?1 AND (?1||'~'); -- %d times", n
   );
   for(i=1; i<=n; i++){
-    x1 = swizzle(i, maxb);
-    len = speedtest1_numbername(x1, zNum, sizeof(zNum)-1);
+    if( (i-1)%g.nRepeat==0 ){
+      x1 = swizzle(i, maxb);
+      len = speedtest1_numbername(x1, zNum, sizeof(zNum)-1);
+    }
     sqlite3_bind_text(g.pStmt, 1, zNum, len, SQLITE_STATIC);
     speedtest1_run();
   }
@@ -1260,6 +1276,7 @@ int main(int argc, char **argv){
   g.zNN = "";
   g.zPK = "UNIQUE";
   g.szTest = 100;
+  g.nRepeat = 1;
   for(i=1; i<argc; i++){
     const char *z = argv[i];
     if( z[0]=='-' ){
@@ -1317,6 +1334,10 @@ int main(int argc, char **argv){
         i += 2;
       }else if( strcmp(z,"primarykey")==0 ){
         g.zPK = "PRIMARY KEY";
+      }else if( strcmp(z,"repeat")==0 ){
+        if( i>=argc-1 ) fatal_error("missing arguments on %s\n", argv[i]);
+        g.nRepeat = integerValue(argv[i+1]);
+        i += 1;
       }else if( strcmp(z,"reprepare")==0 ){
         g.bReprepare = 1;
       }else if( strcmp(z,"scratch")==0 ){
