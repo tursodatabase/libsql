@@ -463,11 +463,12 @@ void testset_main(void){
   int n;                        /* iteration count */
   int sz;                       /* Size of the tables */
   int maxb;                     /* Maximum swizzled value */
-  unsigned x1, x2;              /* Parameters */
-  int len;                      /* Length of the zNum[] string */
+  unsigned x1 = 0, x2 = 0;      /* Parameters */
+  int len = 0;                  /* Length of the zNum[] string */
   char zNum[2000];              /* A number name */
 
   sz = n = g.szTest*500;
+  zNum[0] = 0;
   maxb = roundup_allones(sz);
   speedtest1_begin_test(100, "%d INSERTs into table with no index", n);
   speedtest1_exec("BEGIN");

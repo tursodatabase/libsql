@@ -1,5 +1,5 @@
-C Add\sthe\s--repeat\soption\sto\sspeedtest1.c\sand\sspeed-check.sh.
-D 2016-10-18T14:35:55.358
+C Fix\sharmless\suninitialized\svariable\swarnings\sin\sspeedtest1.c.
+D 2016-10-18T15:29:57.091
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5151cc64c4c05f3455f4f692ad11410a810d937f
@@ -1113,7 +1113,7 @@ F test/speed3.test 694affeb9100526007436334cf7d08f3d74b85ef
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
-F test/speedtest1.c 0258bb629989fcf06534c923c99d0a67d8bfe9d9
+F test/speedtest1.c ffb96750d02e21d1acdbf63464153580825206d7
 F test/spellfix.test f9c1f431e2c096c8775fec032952320c0e4700db
 F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
 F test/spellfix3.test 0f9efaaa502a0e0a09848028518a6fb096c8ad33
@@ -1526,7 +1526,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5ec02ecf3d20ce7e3f5249e9a3684f9b67a7d703
-R fc69fe36bbf8dbc4c509c14f32494c61
+P 6ca0e06b21b0d5f7ae5bcb7839a11a45da0d2cea
+R 8be4077c354adf7e25cd7dc6c043686c
 U drh
-Z f0cdcbe9fbac1dc86a3b7a6c4617ee29
+Z dabbc883a61a919bd51f75d4eedc92e4
