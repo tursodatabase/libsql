@@ -1381,6 +1381,49 @@ void sqlite3Pragma(
   }
   break;
 
+  /*
+  **   PRAGMA est_row_cnt(<table-or-index>,<fraction>);
+  **
+  ** Seek in <table-or-index> through the first <fraction> of rows and
+  ** estimate the total number of rows based on the path back up to the
+  ** root.
+  */
+  case PragTyp_EST_COUNT: {
+    Index *pIdx;
+    Table *pTab;
+    Pgno iRoot = 0;
+    const char *zName = 0;
+    int regResult;
+    double r;
+    static const char *azCol[] = { "est" };
+    if( (pIdx = sqlite3FindIndex(db, zRight, zDb))!=0 ){
+      iRoot = pIdx->tnum;
+      zName = pIdx->zName;
+    }else if( (pTab = sqlite3FindTable(db, zRight, zDb))!=0 ){
+      iRoot = pTab->tnum;
+      zName = pTab->zName;
+    }else{
+      break;
+    }
+    sqlite3TableLock(pParse, iDb, iRoot, 0, zName);
+    regResult = ++pParse->nMem;
+    setAllColumnNames(v, 1, azCol);
+    if( pValues->nId>=2 ){
+      const char *z = pValues->a[1].zName;
+      sqlite3AtoF(z, &r, sqlite3Strlen30(z), SQLITE_UTF8);
+    }else{
+      r = 0.5;
+    }
+    if( r<0.0 ) r = 0.0;
+    if( r>1.0 ) r = 1.0;
+    sqlite3CodeVerifySchema(pParse, iDb);
+    pParse->nTab++;
+    sqlite3VdbeAddOp4Int(v, OP_OpenRead, 0, iRoot, iDb, 1);
+    sqlite3VdbeAddOp3(v, OP_EstRowCnt, 0, regResult, (int)(r*1000000000));
+    sqlite3VdbeAddOp2(v, OP_ResultRow, regResult, 1);
+  }
+  break;
+
 #ifndef SQLITE_INTEGRITY_CHECK_ERROR_MAX
 # define SQLITE_INTEGRITY_CHECK_ERROR_MAX 100
 #endif

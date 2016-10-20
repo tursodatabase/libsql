@@ -251,6 +251,9 @@ set pragma_def {
   FLAG: NeedSchema
   IF:   !defined(SQLITE_OMIT_INTEGRITY_CHECK)
 
+  NAME: est_count
+  FLAG: NeedSchema
+
   NAME: encoding
   IF:   !defined(SQLITE_OMIT_UTF16)
 
