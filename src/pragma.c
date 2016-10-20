@@ -282,11 +282,7 @@ const char *sqlite3JournalModename(int eMode){
 **
 ** Pragmas are of this form:
 **
-**      PRAGMA [schema.]id [= value]
-**
-** The identifier might also be a string.  The value is a string, and
-** identifier, or a number.  If minusFlag is true, then the value is
-** a number that was preceded by a minus sign.
+**      PRAGMA [schema.]id [= value-list]
 **
 ** If the left side is "database.id" then pId1 is the database name
 ** and pId2 is the id.  If the left side is just "id" then pId1 is the
@@ -296,8 +292,7 @@ void sqlite3Pragma(
   Parse *pParse, 
   Token *pId1,        /* First part of [schema.]id field */
   Token *pId2,        /* Second part of [schema.]id field, or NULL */
-  Token *pValue,      /* Token for <value>, or NULL */
-  int minusFlag       /* True if a '-' sign preceded <value> */
+  IdList *pValues     /* The value-list arguments.  NULL if omitted */
 ){
   char *zLeft = 0;       /* Nul-terminated UTF-8 string <id> */
   char *zRight = 0;      /* Nul-terminated UTF-8 string <value>, or NULL */
@@ -312,14 +307,14 @@ void sqlite3Pragma(
   Vdbe *v = sqlite3GetVdbe(pParse);  /* Prepared statement */
   const struct sPragmaNames *pPragma;
 
-  if( v==0 ) return;
+  if( v==0 ) goto pragma_out;
   sqlite3VdbeRunOnlyOnce(v);
   pParse->nMem = 2;
 
   /* Interpret the [schema.] part of the pragma statement. iDb is the
   ** index of the database this pragma is being applied to in db.aDb[]. */
   iDb = sqlite3TwoPartName(pParse, pId1, pId2, &pId);
-  if( iDb<0 ) return;
+  if( iDb<0 ) goto pragma_out;
   pDb = &db->aDb[iDb];
 
   /* If the temp database has been explicitly named as part of the 
@@ -330,12 +325,8 @@ void sqlite3Pragma(
   }
 
   zLeft = sqlite3NameFromToken(db, pId);
-  if( !zLeft ) return;
-  if( minusFlag ){
-    zRight = sqlite3MPrintf(db, "-%T", pValue);
-  }else{
-    zRight = sqlite3NameFromToken(db, pValue);
-  }
+  if( !zLeft ) goto pragma_out;
+  if( pValues ) zRight = pValues->a[0].zName;
 
   assert( pId2 );
   zDb = pId2->n>0 ? pDb->zDbSName : 0;
@@ -1984,7 +1975,7 @@ void sqlite3Pragma(
 
 pragma_out:
   sqlite3DbFree(db, zLeft);
-  sqlite3DbFree(db, zRight);
+  sqlite3IdListDelete(db, pValues);
 }
 
 #endif /* SQLITE_OMIT_PRAGMA */

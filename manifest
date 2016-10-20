@@ -1,5 +1,5 @@
-C Minor\ssimplification\sof\sthe\scomparison\sopcodes.
-D 2016-10-18T16:36:15.935
+C Add\sthe\sability\sfor\sthe\sPRAGMA\sstatement\sto\saccept\smultiple\sarguments.\nCurrently\sall\sarguments\sother\sthan\sthe\sfirst\sare\signored.
+D 2016-10-20T18:20:10.293
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5151cc64c4c05f3455f4f692ad11410a810d937f
@@ -332,7 +332,7 @@ F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
 F src/btree.c 4d035fb52b0ef9658d43dfe604413185dff7a5d1
 F src/btree.h d05b2fcc290991a8a3d9ea1816ddd55a4359dcde
 F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
-F src/build.c 59dcfdc1ee55439d069af301ef7f2e84421b5102
+F src/build.c e22e66fb34e1e50bb7869a510923bfe58db3071a
 F src/callback.c 2e76147783386374bf01b227f752c81ec872d730
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c e77f3dc297b4b65c96da78b4ae4272fdfae863d7
@@ -375,11 +375,11 @@ F src/os_win.c cf90abd4e50d9f56d2c20ce8e005aff55d7bd8e9
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 49b6c163832498838c92d0c4c90721576ae707b7
 F src/pager.h 0a19b1e212d0f5d0507f186ae1cca4e523d09d1a
-F src/parse.y 0338f906b61e311c2b7e11a3f89b0092c780b664
+F src/parse.y 07f68096c97093793ed04d69db8bb75e55c3e00e
 F src/pcache.c 5ff2a08f76a9c1b22f43eb063b7068fb085465ac
 F src/pcache.h 2cedcd8407eb23017d92790b112186886e179490
 F src/pcache1.c e3967219b2a92b9edcb9324a4ba75009090d3953
-F src/pragma.c d932ba278654617cdd281f88a790a3185fca7c44
+F src/pragma.c 3ad504c61bcddacc231662f83ac41aceea639ff2
 F src/pragma.h 64c78a648751b9f4f297276c4eb7507b14b4628c
 F src/prepare.c b1140c3d0cf59bc85ace00ce363153041b424b7a
 F src/printf.c a5f0ca08ddede803c241266abb46356ec748ded1
@@ -391,7 +391,7 @@ F src/shell.c b80396d2fadce4681397707e30078bf416e1dec2
 F src/sqlite.h.in 7ef021d74ac7d4004c784a16ad015508f171c4bf
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
-F src/sqliteInt.h 8d241c2c0a1a7b6611d3e9398f41d69426da850d
+F src/sqliteInt.h cf6393ad581d692b886e5281f7bb03b02c2a5f26
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
@@ -1526,7 +1526,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2aa7a03b8632dbfd9741018b5b19c372dcfd3647
-R 4e106c87e784e92bad6650fe8613fe88
+P 56474ebca3fdddb8f3c5156f06dc42dc0a65256c
+R 7df9a33a3d365e65a71615f92b26cc61
+T *branch * multi-arg-pragma
+T *sym-multi-arg-pragma *
+T -sym-trunk *
 U drh
-Z 84c64fba90e2b1da59a52306d789b152
+Z 4afce9abc23c76c5686e4f8a5162325b

@@ -204,10 +204,14 @@ columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,&A,&Y);}
 %left COLLATE.
 %right BITNOT.
 
-// An IDENTIFIER can be a generic identifier, or one of several
+// An "id" can be a generic identifier, or one of several
 // keywords.  Any non-standard keyword can also be an identifier.
 //
 %token_class id  ID|INDEXED.
+
+// A "number" can be either an integer or a floating point value
+%token_class number INTEGER|FLOAT.
+
 
 // The following directive causes tokens ABORT, AFTER, ASC, etc. to
 // fallback to ID if they will not parse as their original value.
@@ -254,8 +258,8 @@ typetoken(A) ::= typename(A) LP signed COMMA signed RP(Y). {
 %type typename {Token}
 typename(A) ::= ids(A).
 typename(A) ::= typename(A) ids(Y). {A.n=Y.n+(int)(Y.z-A.z);}
-signed ::= plus_num.
-signed ::= minus_num.
+signed ::= PLUS|MINUS number.
+signed ::= number.
 
 // "carglist" is a list of additional constraints that come after the
 // column name and column type in a CREATE TABLE statement.
@@ -807,12 +811,13 @@ insert_cmd(A) ::= REPLACE.            {A = OE_Replace;}
 %type idlist {IdList*}
 %destructor idlist {sqlite3IdListDelete(pParse->db, $$);}
 
-idlist_opt(A) ::= .                       {A = 0;}
+idlist_opt(A) ::= .                   {A = 0;}
 idlist_opt(A) ::= LP idlist(X) RP.    {A = X;}
 idlist(A) ::= idlist(A) COMMA nm(Y).
-    {A = sqlite3IdListAppend(pParse->db,A,&Y);}
+    {A = sqlite3IdListAppend(pParse,A,sqlite3NameFromToken(pParse->db,&Y));}
 idlist(A) ::= nm(Y).
-    {A = sqlite3IdListAppend(pParse->db,0,&Y); /*A-overwrites-Y*/}
+    {A = sqlite3IdListAppend(pParse,0,sqlite3NameFromToken(pParse->db,&Y));
+     /*A-overwrites-Y*/}
 
 /////////////////////////// Expression Processing /////////////////////////////
 //
@@ -1324,24 +1329,32 @@ cmd ::= VACUUM nm(X).          {sqlite3Vacuum(pParse,&X);}
 ///////////////////////////// The PRAGMA command /////////////////////////////
 //
 %ifndef SQLITE_OMIT_PRAGMA
-cmd ::= PRAGMA nm(X) dbnm(Z).                {sqlite3Pragma(pParse,&X,&Z,0,0);}
-cmd ::= PRAGMA nm(X) dbnm(Z) EQ nmnum(Y).    {sqlite3Pragma(pParse,&X,&Z,&Y,0);}
-cmd ::= PRAGMA nm(X) dbnm(Z) LP nmnum(Y) RP. {sqlite3Pragma(pParse,&X,&Z,&Y,0);}
-cmd ::= PRAGMA nm(X) dbnm(Z) EQ minus_num(Y). 
-                                             {sqlite3Pragma(pParse,&X,&Z,&Y,1);}
-cmd ::= PRAGMA nm(X) dbnm(Z) LP minus_num(Y) RP.
-                                             {sqlite3Pragma(pParse,&X,&Z,&Y,1);}
+cmd ::= PRAGMA nm(X) dbnm(Z).                {sqlite3Pragma(pParse,&X,&Z,0);}
+cmd ::= PRAGMA nm(X) dbnm(Z) EQ pragma_arglist(Y).
+     {sqlite3Pragma(pParse,&X,&Z,Y);}
+cmd ::= PRAGMA nm(X) dbnm(Z) LP pragma_arglist(Y) RP.
+     {sqlite3Pragma(pParse,&X,&Z,Y);}
 
-nmnum(A) ::= plus_num(A).
-nmnum(A) ::= nm(A).
-nmnum(A) ::= ON(A).
-nmnum(A) ::= DELETE(A).
-nmnum(A) ::= DEFAULT(A).
+%type pragma_arglist {IdList*}
+%destructor pragma_arglist {sqlite3IdListDelete(pParse->db,$$);}
+  
+pragma_arglist(A) ::= pragma_arg(X).
+   { A = sqlite3IdListAppend(pParse,0,X)/*A-overwrites-X*/; }
+pragma_arglist(A) ::= pragma_arglist(A) COMMA pragma_arg(Y).
+   { A = sqlite3IdListAppend(pParse,A,Y); }
+
+%type pragma_arg {char*}
+%destructor pragma_arg {sqlite3DbFree(pParse->db,$$);}
+pragma_arg(A) ::= number(X).
+    {A = sqlite3NameFromToken(pParse->db,&X);/*A-overwrites-X*/}
+pragma_arg(A) ::= nm(X).
+    {A = sqlite3NameFromToken(pParse->db,&X);/*A-overwrites-X*/}
+pragma_arg(A) ::= ON|DELETE|DEFAULT(X).
+    {A = sqlite3NameFromToken(pParse->db,&X);/*A-overwrites-X*/}
+pragma_arg(A) ::= PLUS number(X).   {A = sqlite3NameFromToken(pParse->db,&X);}
+pragma_arg(A) ::= MINUS number(X).  {A = sqlite3MPrintf(pParse->db,"-%T",&X);}
+
 %endif SQLITE_OMIT_PRAGMA
-%token_class number INTEGER|FLOAT.
-plus_num(A) ::= PLUS number(X).       {A = X;}
-plus_num(A) ::= number(A).
-minus_num(A) ::= MINUS number(X).     {A = X;}
 //////////////////////////// The CREATE TRIGGER command /////////////////////
 
 %ifndef SQLITE_OMIT_TRIGGER
