@@ -4919,6 +4919,9 @@ case OP_EstRowCnt: {  /* out2 */
   pOut = out2Prerelease(p, pOp);
   pOut->flags = MEM_Real;
   pOut->u.r = n;
+  pC->nullRow = 0;
+  pC->deferredMoveto = 0;
+  pC->cacheStatus = CACHE_STALE;
   break;
 }
 

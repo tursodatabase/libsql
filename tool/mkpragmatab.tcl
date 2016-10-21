@@ -254,6 +254,9 @@ set pragma_def {
   NAME: est_count
   FLAG: NeedSchema
 
+  NAME: btree_sample
+  FLAG: NeedSchema
+
   NAME: encoding
   IF:   !defined(SQLITE_OMIT_UTF16)
 

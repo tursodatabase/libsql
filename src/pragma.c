@@ -1430,6 +1430,84 @@ void sqlite3Pragma(
   }
   break;
 
+  /*
+  **   PRAGMA btree_sample(<table-or-index>,<fraction>,<limit>);
+  **
+  ** Seek in <table-or-index> through the first <fraction> of rows and
+  ** then begin returning rows, one by one.  A max of <limit> rows will
+  ** be returned.
+  */
+  case PragTyp_BTREE_SAMPLE: {
+    Index *pIdx;
+    Table *pTab = 0;
+    Pgno iRoot = 0;
+    int nCol = 0;
+    const char *zName = 0;
+    int iLimit = 10;
+    int i;
+    int regResult;
+    int regLimit;
+    int addrTop;
+    int addrJmp;
+    int addrSkip;
+    double r;
+    if( (pIdx = sqlite3FindIndex(db, zRight, zDb))!=0 ){
+      iRoot = pIdx->tnum;
+      zName = pIdx->zName;
+      nCol = pIdx->nColumn;
+    }else if( (pTab = sqlite3FindTable(db, zRight, zDb))!=0 ){
+      zName = pTab->zName;
+      if( HasRowid(pTab) ){
+        iRoot = pTab->tnum;
+        nCol = pTab->nCol;
+      }else{
+        pIdx = sqlite3PrimaryKeyIndex(pTab);
+        iRoot = pIdx->tnum;
+        nCol = pIdx->nColumn;
+      }
+    }else{
+      break;
+    }
+    sqlite3VdbeSetNumCols(v, nCol);
+    for(i=0; i<nCol; i++){
+      char zCol[30];
+      sqlite3_snprintf(sizeof(zCol),zCol,"c%06d",i);
+      sqlite3VdbeSetColName(v, i, COLNAME_NAME, zCol, SQLITE_TRANSIENT);
+    }
+    if( pValues->nId>=2 ){
+      const char *z = pValues->a[1].zName;
+      sqlite3AtoF(z, &r, sqlite3Strlen30(z), SQLITE_UTF8);
+    }else{
+      r = 0.5;
+    }
+    if( r<0.0 ) r = 0.0;
+    if( r>1.0 ) r = 1.0;
+    if( pValues->nId>=3 ){
+      iLimit = sqlite3Atoi(pValues->a[2].zName);
+    }
+    pParse->nTab++;
+    sqlite3TableLock(pParse, iDb, iRoot, 0, zName);
+    sqlite3CodeVerifySchema(pParse, iDb);
+    sqlite3VdbeAddOp4Int(v, OP_OpenRead, 0, iRoot, iDb, nCol);
+    if( pIdx ) sqlite3VdbeSetP4KeyInfo(pParse, pIdx);
+    regLimit = ++pParse->nMem;
+    regResult = pParse->nMem+1;
+    pParse->nMem += nCol;
+    sqlite3VdbeAddOp2(v, OP_Integer, iLimit, regLimit);
+    addrSkip = sqlite3VdbeAddOp1(v, OP_Rewind, 0); VdbeCoverage(v);
+    sqlite3VdbeAddOp3(v, OP_EstRowCnt, 0, regResult, (int)(r*1000000000));
+    addrTop = sqlite3VdbeCurrentAddr(v);
+    for(i=0; i<nCol; i++){
+      sqlite3VdbeAddOp3(v, OP_Column, 0, i, regResult+i);
+    }
+    sqlite3VdbeAddOp2(v, OP_ResultRow, regResult, nCol);
+    addrJmp = sqlite3VdbeAddOp1(v, OP_DecrJumpZero, regLimit); VdbeCoverage(v);
+    sqlite3VdbeAddOp2(v, OP_Next, 0, addrTop); VdbeCoverage(v);
+    sqlite3VdbeJumpHere(v, addrJmp);
+    sqlite3VdbeJumpHere(v, addrSkip);
+  }
+  break;
+
 #ifndef SQLITE_INTEGRITY_CHECK_ERROR_MAX
 # define SQLITE_INTEGRITY_CHECK_ERROR_MAX 100
 #endif

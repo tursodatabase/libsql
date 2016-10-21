@@ -5095,8 +5095,10 @@ int sqlite3BtreeMovetoProportional(
   }else{
     perChild = mx/pPage->nCell;
     rx = x/perChild;
+    if( rx>=pPage->nCell ) rx = pPage->nCell-1;
   }
   pCur->aiIdx[pCur->iPage] = rx;
+
   return SQLITE_OK;
 }
 
