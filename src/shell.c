@@ -668,11 +668,12 @@ struct ShellState {
 #define MODE_Semi     3  /* Same as MODE_List but append ";" to each line */
 #define MODE_Html     4  /* Generate an XHTML table */
 #define MODE_Insert   5  /* Generate SQL "insert" statements */
-#define MODE_Tcl      6  /* Generate ANSI-C or TCL quoted elements */
-#define MODE_Csv      7  /* Quote strings, numbers are plain */
-#define MODE_Explain  8  /* Like MODE_Column, but do not truncate data */
-#define MODE_Ascii    9  /* Use ASCII unit and record separators (0x1F/0x1E) */
-#define MODE_Pretty  10  /* Pretty-print schemas */
+#define MODE_Quote    6  /* Quote values as for SQL */
+#define MODE_Tcl      7  /* Generate ANSI-C or TCL quoted elements */
+#define MODE_Csv      8  /* Quote strings, numbers are plain */
+#define MODE_Explain  9  /* Like MODE_Column, but do not truncate data */
+#define MODE_Ascii   10  /* Use ASCII unit and record separators (0x1F/0x1E) */
+#define MODE_Pretty  11  /* Pretty-print schemas */
 
 static const char *modeDescr[] = {
   "line",
@@ -681,6 +682,7 @@ static const char *modeDescr[] = {
   "semi",
   "html",
   "insert",
+  "quote",
   "tcl",
   "csv",
   "explain",
@@ -1198,19 +1200,22 @@ static int shell_callback(
       setTextMode(p->out, 1);
       break;
     }
+    case MODE_Quote:
     case MODE_Insert: {
       p->cnt++;
       if( azArg==0 ) break;
-      utf8_printf(p->out,"INSERT INTO %s",p->zDestTable);
-      if( p->showHeader ){
-        raw_printf(p->out,"(");
-        for(i=0; i<nArg; i++){
-          char *zSep = i>0 ? ",": "";
-          utf8_printf(p->out, "%s%s", zSep, azCol[i]);
+      if( p->cMode==MODE_Insert ){
+        utf8_printf(p->out,"INSERT INTO %s",p->zDestTable);
+        if( p->showHeader ){
+          raw_printf(p->out,"(");
+          for(i=0; i<nArg; i++){
+            char *zSep = i>0 ? ",": "";
+            utf8_printf(p->out, "%s%s", zSep, azCol[i]);
+          }
+          raw_printf(p->out,")");
         }
-        raw_printf(p->out,")");
+        raw_printf(p->out," VALUES(");
       }
-      raw_printf(p->out," VALUES(");
       for(i=0; i<nArg; i++){
         char *zSep = i>0 ? ",": "";
         if( (azArg[i]==0) || (aiType && aiType[i]==SQLITE_NULL) ){
@@ -1233,7 +1238,7 @@ static int shell_callback(
           output_quoted_string(p->out, azArg[i]);
         }
       }
-      raw_printf(p->out,");\n");
+      raw_printf(p->out,p->cMode==MODE_Quote?"\n":");\n");
       break;
     }
     case MODE_Ascii: {
@@ -2177,6 +2182,7 @@ static char zHelp[] =
   "                         insert   SQL insert statements for TABLE\n"
   "                         line     One value per line\n"
   "                         list     Values delimited by .separator strings\n"
+  "                         quote    Escape answers as for SQL\n"
   "                         tabs     Tab-separated values\n"
   "                         tcl      TCL list elements\n"
   ".nullvalue STRING      Use STRING in place of NULL values\n"
@@ -3977,6 +3983,8 @@ static int do_meta_command(char *zLine, ShellState *p){
     }else if( c2=='i' && strncmp(azArg[1],"insert",n2)==0 ){
       p->mode = MODE_Insert;
       set_table_name(p, nArg>=3 ? azArg[2] : "table");
+    }else if( c2=='q' && strncmp(azArg[1],"quote",n2)==0 ){
+      p->mode = MODE_Quote;
     }else if( c2=='a' && strncmp(azArg[1],"ascii",n2)==0 ){
       p->mode = MODE_Ascii;
       sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Unit);

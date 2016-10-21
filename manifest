@@ -1,5 +1,5 @@
-C Avoid\susing\sthe\s"direct\soverflow\sread"\soptimization\sto\sread\slarge\sblobs\sif\sthe\npager\slayer\shas\sa\swal\sfile\sopen\s-\seven\sif\sthe\sdatabase\sheader\sindicates\sthat\nthe\sdb\sis\snot\sa\swal\sdatabase.
-D 2016-10-21T10:49:39.630
+C Add\s".mode\squote"\sto\sthe\scommand-line\sshell.
+D 2016-10-21T17:39:30.026
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5151cc64c4c05f3455f4f692ad11410a810d937f
@@ -388,7 +388,7 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 3fac1b2737ea5a724f20b921ac7e259c9be2100b
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c ea3af83e2d0f245fef81ea4cf04cb730ce67f722
-F src/shell.c b80396d2fadce4681397707e30078bf416e1dec2
+F src/shell.c f0e8b54c58a8a13cc046f5af6d72de7e0a118a2b
 F src/sqlite.h.in 7ef021d74ac7d4004c784a16ad015508f171c4bf
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
@@ -1527,7 +1527,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b7d9727bff2e840af4b090872c991693e78e6076
-R 775b940b506452362a073212102869ea
-U dan
-Z 738379ab10ae31c6f3af66e5c08bf61c
+P b54c15f11796a75683eec4b502a22ccb87d621c6
+R cdb213453699e4a8a0bded009eb336d4
+U drh
+Z 3ba463b9129586b08f555ed8d54aa9f2
