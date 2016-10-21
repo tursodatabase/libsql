@@ -1,5 +1,5 @@
-C Add\s".mode\squote"\sto\sthe\scommand-line\sshell.
-D 2016-10-21T17:39:30.026
+C In\sthe\ssessions\smodule,\savoid\srecording\sa\schange\sif\san\sUPDATE\sstatement\noverwrites\sa\scolumn\swith\sREAL\saffinity\scontaining\san\sinteger\svalue\swith\sthe\ssame\svalue.
+D 2016-10-21T21:21:45.978
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5151cc64c4c05f3455f4f692ad11410a810d937f
@@ -284,7 +284,7 @@ F ext/rtree/sqlite3rtree.h 9c5777af3d2921c7b4ae4954e8e5697502289d28
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F ext/session/changeset.c 4ccbaa4531944c24584bf6a61ba3a39c62b6267a
-F ext/session/session1.test 98f384736e2bc21ccf5ed81bdadcff4ad863393b
+F ext/session/session1.test e5125b216d1e8c91e0984b361b0b68529e7c5dfb
 F ext/session/session2.test 284de45abae4cc1082bc52012ee81521d5ac58e0
 F ext/session/session3.test a7a9ce59b8d1e49e2cc23d81421ac485be0eea01
 F ext/session/session4.test 457b02bdc349eb01151e54de014df77abd3c08c8
@@ -456,9 +456,9 @@ F src/util.c 3e2da6101888d073e79ecc6af5e0a2f70fa1e498
 F src/vacuum.c 913970b9d86dd6c2b8063ef1af421880f1464ec3
 F src/vdbe.c c93ae647b3b302234f3593fd686577216aa22543
 F src/vdbe.h c044be7050ac6bf596eecc6ab159f5dbc020a3b7
-F src/vdbeInt.h 0a18713d0a2fec6807d076bd333d9bf3e57530cd
-F src/vdbeapi.c 8272f9342c39ab8d7eb4b9decc6caa7bc75b7d83
-F src/vdbeaux.c 7229203e4e4a3b6eaeeddc807c2287d912c0da74
+F src/vdbeInt.h d8a56a491b752dbb5f671963b8c861ec72ea875e
+F src/vdbeapi.c 97129bec6b1553da50d8e73f523c278bda66d9f6
+F src/vdbeaux.c 52d9b840859f260ce8418be9333dd77c902e1c74
 F src/vdbeblob.c 3e82a797b60c3b9fed7b8de8c539ca7607874937
 F src/vdbemem.c fcdd73a2001a673f48a244a77b1038928ae729c9
 F src/vdbesort.c 91fda3909326860382b0ca8aa251e609c6a9d62c
@@ -1527,7 +1527,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b54c15f11796a75683eec4b502a22ccb87d621c6
-R cdb213453699e4a8a0bded009eb336d4
-U drh
-Z 3ba463b9129586b08f555ed8d54aa9f2
+P c4f5fa78cd8207ce1e46e32e632b8f6ee86047e1
+R c528e2d870af682535c32fe7ab38cc9b
+T *branch * sessions-fix
+T *sym-sessions-fix *
+T -sym-trunk *
+U dan
+Z 40897c5531031ce2803a5defa0bd4f02

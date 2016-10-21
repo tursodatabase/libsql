@@ -430,8 +430,8 @@ struct PreUpdate {
   int iNewReg;                    /* Register for new.* values */
   i64 iKey1;                      /* First key value passed to hook */
   i64 iKey2;                      /* Second key value passed to hook */
-  int iPKey;                      /* If not negative index of IPK column */
   Mem *aNew;                      /* Array of new.* values */
+  Table *pTab;                    /* Schema object being upated */          
 };
 
 /*
