@@ -1441,6 +1441,7 @@ void sqlite3Pragma(
     Index *pIdx;
     Table *pTab = 0;
     Pgno iRoot = 0;
+    Pgno iLock = 0;
     int nCol = 0;
     const char *zName = 0;
     int iLimit = 10;
@@ -1453,16 +1454,17 @@ void sqlite3Pragma(
     double r;
     if( (pIdx = sqlite3FindIndex(db, zRight, zDb))!=0 ){
       iRoot = pIdx->tnum;
+      iLock = pIdx->pTable->tnum;
       zName = pIdx->zName;
       nCol = pIdx->nColumn;
     }else if( (pTab = sqlite3FindTable(db, zRight, zDb))!=0 ){
       zName = pTab->zName;
       if( HasRowid(pTab) ){
-        iRoot = pTab->tnum;
+        iLock = iRoot = pTab->tnum;
         nCol = pTab->nCol;
       }else{
         pIdx = sqlite3PrimaryKeyIndex(pTab);
-        iRoot = pIdx->tnum;
+        iLock = iRoot = pIdx->tnum;
         nCol = pIdx->nColumn;
       }
     }else{
@@ -1486,7 +1488,7 @@ void sqlite3Pragma(
       iLimit = sqlite3Atoi(pValues->a[2].zName);
     }
     pParse->nTab++;
-    sqlite3TableLock(pParse, iDb, iRoot, 0, zName);
+    sqlite3TableLock(pParse, iDb, iLock, 0, zName);
     sqlite3CodeVerifySchema(pParse, iDb);
     sqlite3VdbeAddOp4Int(v, OP_OpenRead, 0, iRoot, iDb, nCol);
     if( pIdx ) sqlite3VdbeSetP4KeyInfo(pParse, pIdx);
