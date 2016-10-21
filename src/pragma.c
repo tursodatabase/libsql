@@ -1390,7 +1390,7 @@ void sqlite3Pragma(
   */
   case PragTyp_EST_COUNT: {
     Index *pIdx;
-    Table *pTab;
+    Table *pTab = 0;
     Pgno iRoot = 0;
     const char *zName = 0;
     int regResult;
@@ -1400,8 +1400,13 @@ void sqlite3Pragma(
       iRoot = pIdx->tnum;
       zName = pIdx->zName;
     }else if( (pTab = sqlite3FindTable(db, zRight, zDb))!=0 ){
-      iRoot = pTab->tnum;
       zName = pTab->zName;
+      if( HasRowid(pTab) ){
+        iRoot = pTab->tnum;
+      }else{
+        pIdx = sqlite3PrimaryKeyIndex(pTab);
+        iRoot = pIdx->tnum;
+      }
     }else{
       break;
     }
@@ -1419,6 +1424,7 @@ void sqlite3Pragma(
     sqlite3CodeVerifySchema(pParse, iDb);
     pParse->nTab++;
     sqlite3VdbeAddOp4Int(v, OP_OpenRead, 0, iRoot, iDb, 1);
+    if( pIdx ) sqlite3VdbeSetP4KeyInfo(pParse, pIdx);
     sqlite3VdbeAddOp3(v, OP_EstRowCnt, 0, regResult, (int)(r*1000000000));
     sqlite3VdbeAddOp2(v, OP_ResultRow, regResult, 1);
   }
