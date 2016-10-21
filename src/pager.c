@@ -817,9 +817,10 @@ static const unsigned char aJournalMagic[] = {
 ** rollback journal. Otherwise false.
 */
 #ifndef SQLITE_OMIT_WAL
-static int pagerUseWal(Pager *pPager){
+int sqlite3PagerUseWal(Pager *pPager){
   return (pPager->pWal!=0);
 }
+# define pagerUseWal(x) sqlite3PagerUseWal(x)
 #else
 # define pagerUseWal(x) 0
 # define pagerRollbackWal(x) 0
