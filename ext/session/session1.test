@@ -569,5 +569,17 @@ do_changeset_test 10.1.2 S "
 "
 do_test 10.1.4 { S delete } {}
 
+#-------------------------------------------------------------------------
+# Test the effect of updating a column from 0.0 to 0.0.
+#
+reset_db
+do_execsql_test 11.1 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b REAL);
+  INSERT INTO t1 VALUES(1, 0.0);
+}
+do_iterator_test 11.2 * {
+  UPDATE t1 SET b = 0.0;
+} {
+}
 
 finish_test
