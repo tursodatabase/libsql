@@ -4864,9 +4864,12 @@ static int moveToRoot(BtCursor *pCur){
   }
 
   if( pCur->iPage>=0 ){
-    while( pCur->iPage ){
-      assert( pCur->apPage[pCur->iPage]!=0 );
-      releasePageNotNull(pCur->apPage[pCur->iPage--]);
+    if( pCur->iPage ){
+      do{
+        assert( pCur->apPage[pCur->iPage]!=0 );
+        releasePageNotNull(pCur->apPage[pCur->iPage--]);
+      }while( pCur->iPage);
+      goto skip_init;
     }
   }else if( pCur->pgnoRoot==0 ){
     pCur->eState = CURSOR_INVALID;
@@ -4877,7 +4880,7 @@ static int moveToRoot(BtCursor *pCur){
                         0, pCur->curPagerFlags);
     if( rc!=SQLITE_OK ){
       pCur->eState = CURSOR_INVALID;
-      return rc;
+       return rc;
     }
     pCur->iPage = 0;
     pCur->curIntKey = pCur->apPage[0]->intKey;
@@ -4900,10 +4903,12 @@ static int moveToRoot(BtCursor *pCur){
     return SQLITE_CORRUPT_BKPT;
   }
 
+skip_init:  
   pCur->aiIdx[0] = 0;
   pCur->info.nSize = 0;
   pCur->curFlags &= ~(BTCF_AtLast|BTCF_ValidNKey|BTCF_ValidOvfl);
 
+  pRoot = pCur->apPage[0];
   if( pRoot->nCell>0 ){
     pCur->eState = CURSOR_VALID;
   }else if( !pRoot->leaf ){

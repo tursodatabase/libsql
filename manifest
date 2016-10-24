@@ -1,5 +1,5 @@
-C In\sthe\ssessions\smodule,\savoid\srecording\sa\schange\sif\san\sUPDATE\sstatement\noverwrites\sa\scolumn\swith\sREAL\saffinity\scontaining\san\sinteger\svalue\swith\s\nthe\ssame\svalue.
-D 2016-10-22T01:22:30.252
+C Performance\soptimization\sin\smoveToRoot().\sAvoid\srepeated\svalidity\schecking\sof\nthe\sroot\spage\son\seach\scall.\sOnce\sis\senough.
+D 2016-10-24T01:01:09.853
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5151cc64c4c05f3455f4f692ad11410a810d937f
@@ -330,7 +330,7 @@ F src/auth.c 930b376a9c56998557367e6f7f8aaeac82a2a792
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 3ee4c8b2c94ed3a7377256e18199e6ff5cf33f63
 F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
-F src/btree.c 0fde2593dcf004ac2e5d5af93867a9099ed3cc9d
+F src/btree.c 6ae1c17347fb2888b2b28a260b947b7717a9fca9
 F src/btree.h d05b2fcc290991a8a3d9ea1816ddd55a4359dcde
 F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
 F src/build.c 59dcfdc1ee55439d069af301ef7f2e84421b5102
@@ -1527,8 +1527,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c4f5fa78cd8207ce1e46e32e632b8f6ee86047e1 b861328ab9ceec6926d97658c3606e6ae9ad39bf
-R c528e2d870af682535c32fe7ab38cc9b
-T +closed b861328ab9ceec6926d97658c3606e6ae9ad39bf
+P 5f3e602831ba2ecaf8ba5411efb387afcde05a33
+R 29a58bbb2dfbc1d411acf8e8bb02ca42
 U drh
-Z 540f4abc4993beff1c2e838919ebaf63
+Z 723cdd59e0d6445a1b308cfb6d241f2f
