@@ -120,24 +120,6 @@ static sqlite3_int64 estEntryCount(const char *zTabIdx){
 }
 
 /*
-** Stat1 for a table.
-*/
-static void analyzeTable(const char *zTab){
-  sqlite3_int64 n = estEntryCount(zTab);
-  sqlite3_stmt *pStmt;
-  if( n==0 ){
-    printf("-- empty table: %s\n", zTab);
-    return;
-  }
-  pStmt = db_prepare(
-     "INSERT INTO temp.est_stat1(tbl,idx,stat)"
-     "VALUES(\"%w\",NULL,'%lld')", zTab, n
-  );
-  sqlite3_step(pStmt);
-  sqlite3_finalize(pStmt);
-}
-
-/*
 ** Compare the i-th column of pStmt against pValue.  Return true if they
 ** are different.
 */
@@ -177,9 +159,9 @@ static int columnNotEqual(sqlite3_stmt *pStmt, int i, sqlite3_value *pValue){
 }
 
 /*
-** Stat1 for an index;
+** Stat1 for an index.  Return non-zero if an entry was created.
 */
-static void analyzeIndex(const char *zTab, const char *zIdx){
+static int analyzeIndex(const char *zTab, const char *zIdx){
   sqlite3_int64 n = estEntryCount(zIdx);
   sqlite3_stmt *pStmt;
   sqlite3_uint64 *aCnt;
@@ -194,7 +176,7 @@ static void analyzeIndex(const char *zTab, const char *zIdx){
   int rc;
 
 # define N_SPAN  5
-  if( n==0 ) return;
+  if( n==0 ) return 0;
   pStmt = db_prepare("PRAGMA index_xinfo=\"%w\"", zIdx);
   while( sqlite3_step(pStmt)==SQLITE_ROW ){
     const char *zColl = (const char*)sqlite3_column_text(pStmt,4);
@@ -203,12 +185,13 @@ static void analyzeIndex(const char *zTab, const char *zIdx){
              " collating sequence \"%s\".\n",
              zIdx, sqlite3_column_text(pStmt, 2), zColl);
       sqlite3_finalize(pStmt);
-      return;
+      return 0;
     }
     if( sqlite3_column_int(pStmt, 5)==0 ) break;
     nCol++;
   }
   sqlite3_finalize(pStmt);
+  if( nCol==0 ) return 0;
   nByte = (sizeof(aCnt[0]) + sizeof(apValue[0]))*nCol + 30*(nCol+1);
   aCnt = sqlite3_malloc( nByte );
   if( aCnt==0 ){
@@ -247,7 +230,7 @@ static void analyzeIndex(const char *zTab, const char *zIdx){
   sqlite3_snprintf(szRes, zRes, "%lld", n);
   k = (int)strlen(zRes);
   for(j=0; j<nCol; j++){
-    sqlite3_snprintf(szRes-k, zRes+k, " %d", nRow/aCnt[j]);
+    sqlite3_snprintf(szRes-k, zRes+k, " %d", (nRow+aCnt[j]-1)/aCnt[j]);
     k += (int)strlen(zRes+k);
   }
   pStmt = db_prepare(
@@ -256,7 +239,42 @@ static void analyzeIndex(const char *zTab, const char *zIdx){
   );
   sqlite3_step(pStmt);
   sqlite3_finalize(pStmt);
+  return 1;
 }
+
+/*
+** Stat1 for a table.
+*/
+static void analyzeTable(const char *zTab){
+  sqlite3_int64 n = estEntryCount(zTab);
+  sqlite3_stmt *pStmt;
+  int nIndex = 0;
+  int isWithoutRowid = 0;
+  if( n==0 ){
+    printf("-- empty table: %s\n", zTab);
+    return;
+  }
+  if( analyzeIndex(zTab,zTab) ){
+    isWithoutRowid = 1;
+    nIndex++;
+  }
+  pStmt = db_prepare("PRAGMA index_list(\"%w\")", zTab);
+  while( sqlite3_step(pStmt)==SQLITE_ROW ){
+    if( sqlite3_column_text(pStmt,3)[0]=='p' && isWithoutRowid ) continue;
+    if( sqlite3_column_int(pStmt,4)==0 ) nIndex++;
+    analyzeIndex(zTab, (const char*)sqlite3_column_text(pStmt,1));
+  }
+  sqlite3_finalize(pStmt);
+  if( nIndex==0 ){
+    pStmt = db_prepare(
+       "INSERT INTO temp.est_stat1(tbl,idx,stat)"
+       "VALUES(\"%w\",NULL,'%lld')", zTab, n
+    );
+    sqlite3_step(pStmt);
+    sqlite3_finalize(pStmt);
+  }
+}
+
 
 /*
 ** Print the sqlite3_value X as an SQL literal.
@@ -401,20 +419,13 @@ int main(int argc, char **argv){
   if( rc || zErrMsg ){
     cmdlineError("Cannot CREATE TEMP TABLE");
   }
-  pStmt = db_prepare("SELECT type, name, tbl_name FROM sqlite_master"
-                     " WHERE type IN ('table','index')"
-                     "   AND rootpage>0"
-                     "   AND (type='index' OR name NOT LIKE 'sqlite_%%')"
-                     " ORDER BY tbl_name, type DESC, name");
+  pStmt = db_prepare("SELECT name FROM sqlite_master"
+                     " WHERE type='table' AND rootpage>0"
+                     "   AND name NOT LIKE 'sqlite_%%'"
+                     " ORDER BY name");
   while( sqlite3_step(pStmt)==SQLITE_ROW ){
-    const char *zType = (const char*)sqlite3_column_text(pStmt, 0);
-    const char *zName = (const char*)sqlite3_column_text(pStmt, 1);
-    const char *zTblName = (const char*)sqlite3_column_text(pStmt, 2);
-    if( zType[0]=='t' ){
-      analyzeTable(zName);
-    }else{
-      analyzeIndex(zTblName, zName);
-    }
+    const char *zName = (const char*)sqlite3_column_text(pStmt, 0);
+    analyzeTable(zName);
   }
   sqlite3_finalize(pStmt);
   dump_table("temp.est_stat1","sqlite_stat1");
