@@ -205,7 +205,7 @@ static int analyzeIndex(const char *zTab, const char *zIdx){
   iLimit = n>10000 ? 100 : 20000;
   pStmt = db_prepare("PRAGMA btree_sample(\"%w\",0.0,%lld)",
                      zIdx, n*2);
-  for(i=0; i<N_SPAN; i++){
+  for(i=0; i<=N_SPAN; i++){
     k = 0;
     while( k<iLimit && (rc = sqlite3_step(pStmt))==SQLITE_ROW ){
       int iFirst;
@@ -217,6 +217,9 @@ static int analyzeIndex(const char *zTab, const char *zIdx){
         aCnt[j]++;
         sqlite3_value_free(apValue[j]);
         apValue[j] = sqlite3_value_dup(sqlite3_column_value(pStmt,j));
+      }
+      if( k==0 && iFirst==nCol ){
+        nRow += n/(N_SPAN+1) - iLimit;
       }
       nRow++;
       k++;
@@ -406,7 +409,7 @@ int main(int argc, char **argv){
   if( zDb==0 ){
     cmdlineError("database filename required");
   }
-  rc = sqlite3_open(zDb, &g.db);
+  rc = sqlite3_open_v2(zDb, &g.db, SQLITE_OPEN_READONLY, 0);
   if( rc ){
     cmdlineError("cannot open database file \"%s\"", zDb);
   }

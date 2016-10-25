@@ -1,5 +1,5 @@
-C Enhance\sfaststat1.c\sto\sdeal\sbetter\swith\sWITHOUT\sROWID\stables.
-D 2016-10-25T18:28:29.534
+C Further\srefinements\sto\sthe\sfaststat1.c\sutility.
+D 2016-10-25T19:21:18.947
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5151cc64c4c05f3455f4f692ad11410a810d937f
@@ -1449,7 +1449,7 @@ F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/dbhash.c a06228aa21ebc4e6ea8daa486601d938499238a5
 F tool/extract.c 054069d81b095fbdc189a6f5d4466e40380505e2
 F tool/fast_vacuum.c 5ba0d6f5963a0a63bdc42840f678bad75b2ebce1
-F tool/faststat1.c 1f95d54b32f96493ca3f1a9421eaf3e72a5c091e
+F tool/faststat1.c 61265716af50e067cd5a095f737ebde25b5179b4
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
 F tool/fuzzershell.c f294ca67a10e87db76af130d75b2c94be36359c6
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
@@ -1528,7 +1528,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c3570e462a41586487c4ab3bd08129affe8bed3c
-R 213daab621065f2ee61de1ff06afe658
+P 65444f2e35cfd51ece1ba6e37b39d181da479137
+R dc5ab078ccee063ac5ecf0c1a702e09d
 U drh
-Z b9d2e2924768dab5d8a474892a087659
+Z e3cb65b107952edc3d499ff83f7648af
