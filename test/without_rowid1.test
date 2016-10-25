@@ -328,5 +328,24 @@ do_catchsql_test 7.3 {
   ) WITHOUT ROWID;
 } {1 {no such column: rowid}}
 
+# The PRAGMA index_info and index_xinfo pragmas work on 
+# WITHOUT ROWID tables too, but not on rowid tables.
+#
+do_execsql_test 8.1 {
+  CREATE TABLE t80a(a TEXT, b INT, c BLOB, PRIMARY KEY(c,b));
+  PRAGMA index_info(t80a);
+} {}
+do_execsql_test 8.2 {
+  PRAGMA index_xinfo(t80a);
+} {}
+do_execsql_test 8.3 {
+  CREATE TABLE t80b(a TEXT, b INT, c BLOB, PRIMARY KEY(c,b)) WITHOUT ROWID;
+  PRAGMA index_info(t80b);
+} {0 2 c 1 1 b}
+do_execsql_test 8.4 {
+  PRAGMA index_xinfo(t80b);
+} {0 2 c 0 BINARY 1 1 1 b 0 BINARY 1 2 0 a 0 BINARY 0}
+
+
   
 finish_test
