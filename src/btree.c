@@ -5080,6 +5080,7 @@ int sqlite3BtreeMovetoProportional(
   pPage = pCur->apPage[0];
   while( !pPage->leaf ){
     perChild = (mx+pPage->nCell)/(pPage->nCell+1);
+    if( perChild<1 ) perChild = 1;
     rx = x/perChild;
     x %= perChild;
     mx = perChild;
@@ -5099,6 +5100,7 @@ int sqlite3BtreeMovetoProportional(
     rx = 0;
   }else{
     perChild = mx/pPage->nCell;
+    if( perChild<1 ) perChild = 1;
     rx = x/perChild;
     if( rx>=pPage->nCell ) rx = pPage->nCell-1;
   }

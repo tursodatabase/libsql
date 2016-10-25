@@ -236,12 +236,8 @@ static int analyzeIndex(const char *zTab, const char *zIdx){
     sqlite3_snprintf(szRes-k, zRes+k, " %d", (nRow+aCnt[j]-1)/aCnt[j]);
     k += (int)strlen(zRes+k);
   }
-  pStmt = db_prepare(
-     "INSERT INTO temp.est_stat1(tbl,idx,stat)"
-     "VALUES(\"%w\",\"%w\",'%s')", zTab, zIdx, zRes
-  );
-  sqlite3_step(pStmt);
-  sqlite3_finalize(pStmt);
+  printf("INSERT INTO sqlite_stat1 VALUES('%s','%s','%s');\n",
+         zTab, zIdx, zRes);
   return 1;
 }
 
@@ -269,98 +265,9 @@ static void analyzeTable(const char *zTab){
   }
   sqlite3_finalize(pStmt);
   if( nIndex==0 ){
-    pStmt = db_prepare(
-       "INSERT INTO temp.est_stat1(tbl,idx,stat)"
-       "VALUES(\"%w\",NULL,'%lld')", zTab, n
-    );
-    sqlite3_step(pStmt);
-    sqlite3_finalize(pStmt);
+    printf("INSERT INTO sqlite_stat1 VALUES('%s',NULL,'%lld');\n", zTab, n);
   }
 }
-
-
-/*
-** Print the sqlite3_value X as an SQL literal.
-*/
-static void printQuoted(FILE *out, sqlite3_value *X){
-  switch( sqlite3_value_type(X) ){
-    case SQLITE_FLOAT: {
-      double r1;
-      char zBuf[50];
-      r1 = sqlite3_value_double(X);
-      sqlite3_snprintf(sizeof(zBuf), zBuf, "%!.15g", r1);
-      fprintf(out, "%s", zBuf);
-      break;
-    }
-    case SQLITE_INTEGER: {
-      fprintf(out, "%lld", sqlite3_value_int64(X));
-      break;
-    }
-    case SQLITE_BLOB: {
-      const unsigned char *zBlob = sqlite3_value_blob(X);
-      int nBlob = sqlite3_value_bytes(X);
-      if( zBlob ){
-        int i;
-        fprintf(out, "x'");
-        for(i=0; i<nBlob; i++){
-          fprintf(out, "%02x", zBlob[i]);
-        }
-        fprintf(out, "'");
-      }else{
-        /* Could be an OOM, could be a zero-byte blob */
-        fprintf(out, "X''");
-      }
-      break;
-    }
-    case SQLITE_TEXT: {
-      const unsigned char *zArg = sqlite3_value_text(X);
-      int i, j;
-
-      if( zArg==0 ){
-        fprintf(out, "NULL");
-      }else{
-        fprintf(out, "'");
-        for(i=j=0; zArg[i]; i++){
-          if( zArg[i]=='\'' ){
-            fprintf(out, "%.*s'", i-j+1, &zArg[j]);
-            j = i+1;
-          }
-        }
-        fprintf(out, "%s'", &zArg[j]);
-      }
-      break;
-    }
-    case SQLITE_NULL: {
-      fprintf(out, "NULL");
-      break;
-    }
-  }
-}
-
-/*
-** Output SQL that will recreate the aux.zTab table.
-*/
-static void dump_table(const char *zTab, const char *zAlias){
-  int i;                    /* Loop counter */
-  int nCol;                 /* Number of result columns */
-  sqlite3_stmt *pStmt;      /* SQL statement */
-  const char *zSep;         /* Separator string */
-
-  pStmt = db_prepare("SELECT * FROM %s", zTab);
-  nCol = sqlite3_column_count(pStmt);
-  while( SQLITE_ROW==sqlite3_step(pStmt) ){
-    printf("INSERT INTO %s VALUES", zAlias);
-    zSep = "(";
-    for(i=0; i<nCol; i++){
-      fprintf(stdout, "%s",zSep);
-      printQuoted(stdout, sqlite3_column_value(pStmt,i));
-      zSep = ",";
-    }
-    fprintf(stdout, ");\n");
-  }
-  sqlite3_finalize(pStmt);
-}
-
 
 /*
 ** Print sketchy documentation for this utility program
@@ -417,11 +324,7 @@ int main(int argc, char **argv){
   if( rc || zErrMsg ){
     cmdlineError("\"%s\" does not appear to be a valid SQLite database", zDb);
   }
-  rc = sqlite3_exec(g.db, "CREATE TEMP TABLE est_stat1(tbl,idx,stat);",
-                    0, 0, &zErrMsg);
-  if( rc || zErrMsg ){
-    cmdlineError("Cannot CREATE TEMP TABLE");
-  }
+  printf("ANALYZE sqlite_master;\nDELETE FROM sqlite_stat1;\n");
   pStmt = db_prepare("SELECT name FROM sqlite_master"
                      " WHERE type='table' AND rootpage>0"
                      "   AND name NOT LIKE 'sqlite_%%'"
@@ -431,7 +334,7 @@ int main(int argc, char **argv){
     analyzeTable(zName);
   }
   sqlite3_finalize(pStmt);
-  dump_table("temp.est_stat1","sqlite_stat1");
+  printf("ANALYZE sqlite_master;\n");
   sqlite3_close(g.db);
   return 0;
 }
