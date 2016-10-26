@@ -55,6 +55,10 @@ foreach {tn uri file} {
 
   ifcapable !curdir { if {$tn==3} break }
 
+  ifcapable uri_00_error {
+    if {[string first %00 $uri]>=0} continue
+  }
+
   if {$tcl_platform(platform)=="windows"} {
     #
     # NOTE: Due to limits on legal characters for file names imposed by
@@ -123,6 +127,10 @@ foreach {tn uri kvlist} {
   13     test.db?&&&&&&&&hello=world&&&&&&&           {}
   14     http:test.db?hello&world                     {}
 } {
+
+  ifcapable uri_00_error {
+    if {[string first %00 $uri]>=0} continue
+  }
 
   if {$tcl_platform(platform) == "windows" && $tn>12} {
     continue

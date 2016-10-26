@@ -1,5 +1,5 @@
-C Add\stest\scase\sto\sdemonstrate\sa\s"BEGIN\sEXCLUSIVE"\scommand\sreturning\nSQLITE_BUSY_SNAPSHOT.
-D 2016-10-25T15:06:11.142
+C Add\scompile\stime\soption\sSQLITE_ENABLE_URI_00_ERROR.\sIf\sdefined,\sany\s"%00"\nescape\sfound\sin\sa\sURI\sis\streated\sas\san\serror.
+D 2016-10-26T12:15:41.516
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5151cc64c4c05f3455f4f692ad11410a810d937f
@@ -336,7 +336,7 @@ F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
 F src/build.c 59dcfdc1ee55439d069af301ef7f2e84421b5102
 F src/callback.c 2e76147783386374bf01b227f752c81ec872d730
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
-F src/ctime.c 72c9d01cf446069234e9b54db6fec3e1fc063f58
+F src/ctime.c a2a52d6e353f459d8ab0f07321f60fafa47d5421
 F src/date.c 95c9a8d00767e7221a8e9a31f4e913fc8029bf6b
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
 F src/delete.c cb3f6300df24c26c609778b2731f82644b5532ec
@@ -352,7 +352,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 2d5e197f2f60351937b201196965fd14cd88489c
 F src/legacy.c 75d3023be8f0d2b99d60f905090341a03358c58e
 F src/loadext.c 5d6642d141c07d366e43d359e94ec9de47add41d
-F src/main.c 395bfa7a200943395f7742a40b6671ec400559ea
+F src/main.c 6890ce0118968d17b18ba52ce2c99166484502ab
 F src/malloc.c 5ee7c2d3dcb1b0a902c9c6d0115deef54736bdfa
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 6919bcf12f221868ea066eec27e579fed95ce98b
@@ -412,7 +412,7 @@ F src/test_backup.c bf5da90c9926df0a4b941f2d92825a01bbe090a0
 F src/test_bestindex.c d23f80d334c59662af69191854c76b8d3d0c8c96
 F src/test_blob.c a0f7ad49a0c9d4b72f693fe2a71c58d7e507174d
 F src/test_btree.c 8b2dc8b8848cf3a4db93f11578f075e82252a274
-F src/test_config.c 4d3d4a886416f369771d69a6dba926866deda788
+F src/test_config.c 371853b4691b482ec0bcdf77ec9e3f96dca75b04
 F src/test_delete.c 32690ea215abf29dda589a580cd1b790389759b6
 F src/test_demovfs.c a0c3bdd45ed044115c2c9f7779e56eafff18741e
 F src/test_devsym.c 4e58dec2602d8e139ca08659f62a62450587cb58
@@ -1336,7 +1336,8 @@ F test/unique2.test 3674e9f2a3f1fbbfd4772ac74b7a97090d0f77d2
 F test/unixexcl.test d936ba2b06794018e136418addd59a2354eeae97
 F test/unordered.test ca7adce0419e4ca0c50f039885e76ed2c531eda8
 F test/update.test 6c68446b8a0a33d522a7c72b320934596a2d7d32
-F test/uri.test 6630ecbdea2aac10df3c89dbae2243f4c2c353e4
+F test/uri.test 3481026f00ade6dfe8adb7acb6e1e47b04369568
+F test/uri2.test 9d493160caf4f9906cc72d6fa3b19dba91265a70
 F test/userauth01.test e740a2697a7b40d7c5003a7d7edaee16acd349a9
 F test/utf16align.test 54cd35a27c005a9b6e7815d887718780b6a462ae
 F test/vacuum.test ce91c39f7f91a4273bf620efad21086b5aa6ef1d
@@ -1527,7 +1528,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 98795c2dd9a6d8fa8d49a9f5c36cdf824cae7246
-R e30d5f9c1b1789e2c9a0ef25079fdb1b
+P b115856408b6aa5538be67beb619d7aff0630bea
+R e2d2bf4e59ce1ff8b210e1974b182dc4
+T *branch * uri-00-error
+T *sym-uri-00-error *
+T -sym-trunk *
 U dan
-Z 8c4ba873f6fa2463459d3dd02e3529e2
+Z 46faa36cce6bb438993a61c047f9eda6
