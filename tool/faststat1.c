@@ -71,6 +71,16 @@ static void runtimeError(const char *zFormat, ...){
 }
 
 /*
+** Return the current time in milliseconds since the julian epoch.
+*/
+static sqlite3_int64 currentTime(void){
+  sqlite3_vfs *pVfs = sqlite3_vfs_find(0);
+  sqlite3_int64 x = 0;
+  (void)pVfs->xCurrentTimeInt64(pVfs, &x);
+  return x;
+}
+
+/*
 ** Prepare a new SQL statement.  Print an error and abort if anything
 ** goes wrong.
 */
@@ -288,9 +298,11 @@ int main(int argc, char **argv){
   int rc;
   char *zErrMsg = 0;
   sqlite3_stmt *pStmt;
+  sqlite3_int64 iStart, iTotal;
 
   g.zArgv0 = argv[0];
   sqlite3_config(SQLITE_CONFIG_SINGLETHREAD);
+  iStart = currentTime();
   for(i=1; i<argc; i++){
     const char *z = argv[i];
     if( z[0]=='-' ){
@@ -336,5 +348,7 @@ int main(int argc, char **argv){
   sqlite3_finalize(pStmt);
   printf("ANALYZE sqlite_master;\n");
   sqlite3_close(g.db);
+  iTotal = currentTime() - iStart;
+  printf("-- elapsed time: %lld.%03lld seconds\n", iTotal/1000, iTotal%1000);
   return 0;
 }
