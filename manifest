@@ -1,5 +1,5 @@
-C Add\scompile\stime\soption\sSQLITE_ENABLE_URI_00_ERROR.\sIf\sdefined,\sany\s"%00"\nescape\sfound\sin\sa\sURI\sis\streated\sas\san\serror.
-D 2016-10-26T12:15:41.516
+C Add\sextra\stests\sto\scheck\sthe\sresult\sof\sincluding\sa\s%00\sescape\sin\sa\sURI\nwhen\sENABLE_URI_00_ERROR\sis\sdefined.
+D 2016-10-26T13:44:07.443
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5151cc64c4c05f3455f4f692ad11410a810d937f
@@ -1337,7 +1337,7 @@ F test/unixexcl.test d936ba2b06794018e136418addd59a2354eeae97
 F test/unordered.test ca7adce0419e4ca0c50f039885e76ed2c531eda8
 F test/update.test 6c68446b8a0a33d522a7c72b320934596a2d7d32
 F test/uri.test 3481026f00ade6dfe8adb7acb6e1e47b04369568
-F test/uri2.test 9d493160caf4f9906cc72d6fa3b19dba91265a70
+F test/uri2.test 9d3ba7a53ee167572d53a298ee4a5d38ec4a8fb7
 F test/userauth01.test e740a2697a7b40d7c5003a7d7edaee16acd349a9
 F test/utf16align.test 54cd35a27c005a9b6e7815d887718780b6a462ae
 F test/vacuum.test ce91c39f7f91a4273bf620efad21086b5aa6ef1d
@@ -1528,10 +1528,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b115856408b6aa5538be67beb619d7aff0630bea
-R e2d2bf4e59ce1ff8b210e1974b182dc4
-T *branch * uri-00-error
-T *sym-uri-00-error *
-T -sym-trunk *
+P e8a9bfece27e2af178a206ad6bce3f24d64e7ee4
+R 2575c94e1207131d6b2a9b2da34d054b
 U dan
-Z 46faa36cce6bb438993a61c047f9eda6
+Z 48feeea4819ce0b9454532b781e85fc2

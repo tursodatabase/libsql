@@ -37,9 +37,20 @@ foreach {tn uri} {
   } {1 {unexpected %00 in uri}}
 
   do_test 1.$tn.2 {
+    set DB2 [sqlite3_open $uri]
+    sqlite3_errcode $DB2
+  } {SQLITE_ERROR}
+
+  catch { sqlite3_close $DB2 }
+
+  do_test 1.$tn.2 {
     sqlite3 db ""
     catchsql { ATTACH $uri AS aux }
   } {1 {unexpected %00 in uri}}
+
+  do_test 1.$tn.3 {
+    sqlite3_errcode db
+  } {SQLITE_ERROR}
 
   catch { db close }
 }
