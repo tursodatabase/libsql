@@ -202,7 +202,6 @@ static WhereTerm *whereScanNext(WhereScan *pScan){
   pWC = pScan->pWC;
   while(1){
     iColumn = pScan->aiColumn[pScan->iEquiv-1];
-    if( iColumn==XN_EXPR && pScan->pIdxExpr==0 ) return 0;
     iCur = pScan->aiCur[pScan->iEquiv-1];
     assert( pWC!=0 );
     do{
@@ -299,24 +298,24 @@ static WhereTerm *whereScanInit(
   u32 opMask,             /* Operator(s) to scan for */
   Index *pIdx             /* Must be compatible with this index */
 ){
-  int j = 0;
-
-  /* memset(pScan, 0, sizeof(*pScan)); */
   pScan->pOrigWC = pWC;
   pScan->pWC = pWC;
   pScan->pIdxExpr = 0;
+  pScan->idxaff = 0;
+  pScan->zCollName = 0;
   if( pIdx ){
-    j = iColumn;
+    int j = iColumn;
     iColumn = pIdx->aiColumn[j];
-    if( iColumn==XN_EXPR ) pScan->pIdxExpr = pIdx->aColExpr->a[j].pExpr;
-    if( iColumn==pIdx->pTable->iPKey ) iColumn = XN_ROWID;
-  }
-  if( pIdx && iColumn>=0 ){
-    pScan->idxaff = pIdx->pTable->aCol[iColumn].affinity;
-    pScan->zCollName = pIdx->azColl[j];
-  }else{
-    pScan->idxaff = 0;
-    pScan->zCollName = 0;
+    if( iColumn==XN_EXPR ){
+      pScan->pIdxExpr = pIdx->aColExpr->a[j].pExpr;
+    }else if( iColumn==pIdx->pTable->iPKey ){
+      iColumn = XN_ROWID;
+    }else if( iColumn>=0 ){
+      pScan->idxaff = pIdx->pTable->aCol[iColumn].affinity;
+      pScan->zCollName = pIdx->azColl[j];
+    }
+  }else if( iColumn==XN_EXPR ){
+    return 0;
   }
   pScan->opMask = opMask;
   pScan->k = 0;
