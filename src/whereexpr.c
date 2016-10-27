@@ -1198,6 +1198,7 @@ static void exprAnalyze(
       Expr *pRight = sqlite3ExprForVectorField(pParse, pExpr->pRight, i);
 
       pNew = sqlite3PExpr(pParse, pExpr->op, pLeft, pRight, 0);
+      transferJoinMarkings(pNew, pExpr);
       idxNew = whereClauseInsert(pWC, pNew, TERM_DYNAMIC);
       exprAnalyze(pSrc, pWC, idxNew);
     }

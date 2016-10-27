@@ -1,5 +1,5 @@
-C Small\ssize\sreduction\sand\sperformance\senhancement\sin\swhereScanInit().
-D 2016-10-26T18:41:43.441
+C Make\ssure\sleft-join\smarkings\sare\stransferred\sto\sthe\svirtual\sscalar\nsubexpressions\swhen\sdecomposing\sa\svector\scomparison\sin\sthe\sON\sclause\sof\na\sLEFT\sJOIN.\nFix\sfor\sticket\s[fef4bb4bd9185ec8f].
+D 2016-10-27T01:02:20.511
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5151cc64c4c05f3455f4f692ad11410a810d937f
@@ -471,7 +471,7 @@ F src/walker.c 91a6df7435827e41cff6bb7df50ea00934ee78b0
 F src/where.c 952f76e7a03727480b274b66ca6641b1657cd591
 F src/whereInt.h 2bcc3d176e6091cb8f50a30b65c006e88a73614d
 F src/wherecode.c 717a65294df46f30e9b9933d2a63a4bcbca5a9a8
-F src/whereexpr.c 379d0017fb7bc9e5a4d8cd4b056c747de946430e
+F src/whereexpr.c a83d70154f3bbce5051a7e9710021f647c0fe4f2
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1025,7 +1025,7 @@ F test/rollbackfault.test 0e646aeab8840c399cfbfa43daab46fd609cf04a
 F test/rowallock.test 3f88ec6819489d0b2341c7a7528ae17c053ab7cc
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
 F test/rowid.test 5b7509f384f4f6fae1af3c8c104c8ca299fea18d
-F test/rowvalue.test 753eb744b7efeb5ac643d35d6e1e5066452ccf79
+F test/rowvalue.test bcd78c91fe2aadade6fd00d2616546650b9ebc9e
 F test/rowvalue2.test 060d238b7e5639a7c5630cb5e63e311b44efef2b
 F test/rowvalue3.test 01399b7bf150b0d41abce76c18072da777c2500c
 F test/rowvalue4.test 4b556d7de161a0dd8cff095c336e913986398bea
@@ -1528,7 +1528,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d861ee17eb900a607de6ec3f4a5d5c24cfb834a0
-R bd2e0f7c23b42c2ba66bc7a6e23d9160
+P c23f5ef337533c1ec6e3ba78a2910352181cc9ee
+R 724eaf97bc578ade21f74a2fb4242a1f
 U drh
-Z f746697b9b9d8bf9f72c796f60e10bfb
+Z c2d38a18abbe8465fdc3725d309eaa8d
