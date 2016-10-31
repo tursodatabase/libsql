@@ -1,5 +1,5 @@
-C Remove\sthe\smutex\sfrom\stest_multiplex.c.
-D 2016-10-27T14:51:02.086
+C Add\sthe\sSQLITE_DBCONFIG_NO_CKPT_ON_CLOSE\ssqlite3_dbconfig()\soption\s-\sfor\ndisabling\sSQLite's\sdefault\scheckpoint-on-close\sbehaviour.
+D 2016-10-31T16:16:49.195
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5151cc64c4c05f3455f4f692ad11410a810d937f
@@ -352,7 +352,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 2d5e197f2f60351937b201196965fd14cd88489c
 F src/legacy.c 75d3023be8f0d2b99d60f905090341a03358c58e
 F src/loadext.c 5d6642d141c07d366e43d359e94ec9de47add41d
-F src/main.c 6890ce0118968d17b18ba52ce2c99166484502ab
+F src/main.c 694ac90557abdaa62151a6090670e107b0f2c2ab
 F src/malloc.c 5ee7c2d3dcb1b0a902c9c6d0115deef54736bdfa
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 6919bcf12f221868ea066eec27e579fed95ce98b
@@ -389,15 +389,15 @@ F src/resolve.c 3fac1b2737ea5a724f20b921ac7e259c9be2100b
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c ea3af83e2d0f245fef81ea4cf04cb730ce67f722
 F src/shell.c f0e8b54c58a8a13cc046f5af6d72de7e0a118a2b
-F src/sqlite.h.in 7ef021d74ac7d4004c784a16ad015508f171c4bf
+F src/sqlite.h.in 97e9b0f952306677db82b055147ed1d99cb7ba66
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
-F src/sqliteInt.h 8d241c2c0a1a7b6611d3e9398f41d69426da850d
+F src/sqliteInt.h 37628fe30c464dc790bcee3bfd3d0caa8f222ed1
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
 F src/tclsqlite.c aef87dcd8cb66564d560ab48d43d19ac812a1eab
-F src/test1.c 1f1a399956c8730d5f7b09c729e98764f2082162
+F src/test1.c f52bed152c97be23be794efa234374d0de593eeb
 F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
 F src/test3.c d03f5b5da9a2410b7a91c64b0d3306ed28ab6fee
 F src/test4.c 18ec393bb4d0ad1de729f0b94da7267270f3d8e6
@@ -465,7 +465,7 @@ F src/vdbesort.c 91fda3909326860382b0ca8aa251e609c6a9d62c
 F src/vdbetrace.c 41963d5376f0349842b5fc4aaaaacd7d9cdc0834
 F src/vtab.c e02cacb5c7ae742631edeb9ae9f53d399f093fd8
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 0b44e89742024d3b6992bf404d2ab692113e1e60
+F src/wal.c 358ab4d296a12bc9dcb6f8974dd155ba8a9b10c4
 F src/wal.h bf03a23da3100ab25e5c0363450233cfee09cfc2
 F src/walker.c 91a6df7435827e41cff6bb7df50ea00934ee78b0
 F src/where.c 952f76e7a03727480b274b66ca6641b1657cd591
@@ -962,6 +962,7 @@ F test/multiplex4.test e8ae4c4bd70606a5727743241f13b5701990abe4
 F test/mutex1.test ea2cc74d97f077b9e74c84cbd024f14d79a8126f
 F test/mutex2.test bfeaeac2e73095b2ac32285d2756e3a65e681660
 F test/nan.test dacc57f80859c06a433d30839336fe227d2038b3
+F test/nockpt.test faeeb1daa357d634103fd0a1d54f449e4a5b3ef1
 F test/nolock.test f196cf8b8fbea4e2ca345140a2b3f3b0da45c76e
 F test/notify1.test 669b2b743618efdc18ca4b02f45423d5d2304abf
 F test/notify2.test 2ecabaa1305083856b7c39cf32816b612740c161
@@ -1528,7 +1529,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 619f5cc71774a37648e185c8502d7af14eb09b7f
-R 93e0c879ea55a634df6077f40936fbef
+P 6374978e8f1ac091394a9f5a1896be92af658bcd
+R f901fbda939dcfa6ff6d756b39418ee6
+T *branch * no-ckpt-on-close
+T *sym-no-ckpt-on-close *
+T -sym-trunk *
 U dan
-Z 9550a31672ece71cb80aa7996bb9624a
+Z 07a9a1e05af7ee54e911d0aed174054e
