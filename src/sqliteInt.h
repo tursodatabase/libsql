@@ -1435,6 +1435,7 @@ struct sqlite3 {
 #define SQLITE_Vacuum         0x10000000  /* Currently in a VACUUM */
 #define SQLITE_CellSizeCk     0x20000000  /* Check btree cell sizes on load */
 #define SQLITE_Fts3Tokenizer  0x40000000  /* Enable fts3_tokenizer(2) */
+#define SQLITE_NoCkptOnClose  0x80000000  /* No checkpoint on close()/DETACH */
 
 
 /*
