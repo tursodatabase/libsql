@@ -4270,7 +4270,7 @@ case OP_NewRowid: {           /* out2 */
       sqlite3VdbeMemIntegerify(pMem);
       assert( (pMem->flags & MEM_Int)!=0 );  /* mem(P3) holds an integer */
       if( pMem->u.i==MAX_ROWID || pC->useRandomRowid ){
-        rc = SQLITE_FULL;   /* IMP: R-12275-61338 */
+        rc = SQLITE_FULL;   /* IMP: R-17817-00630 */
         goto abort_due_to_error;
       }
       if( v<pMem->u.i+1 ){
