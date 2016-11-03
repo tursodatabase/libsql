@@ -1202,7 +1202,6 @@ static int shell_callback(
     }
     case MODE_Quote:
     case MODE_Insert: {
-      p->cnt++;
       if( azArg==0 ) break;
       if( p->cMode==MODE_Insert ){
         utf8_printf(p->out,"INSERT INTO %s",p->zDestTable);
@@ -1215,7 +1214,14 @@ static int shell_callback(
           raw_printf(p->out,")");
         }
         raw_printf(p->out," VALUES(");
+      }else if( p->cnt==0 && p->showHeader ){
+        for(i=0; i<nArg; i++){
+          if( i>0 ) utf8_printf(p->out, ",");
+          output_quoted_string(p->out, azCol[i]);
+        }
+        utf8_printf(p->out,"\n");
       }
+      p->cnt++;
       for(i=0; i<nArg; i++){
         char *zSep = i>0 ? ",": "";
         if( (azArg[i]==0) || (aiType && aiType[i]==SQLITE_NULL) ){
@@ -3855,6 +3861,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     char *zCollist = 0;
     sqlite3_stmt *pStmt;
     int tnum = 0;
+    int i;
     if( nArg!=3 ){
       utf8_printf(stderr, "Usage: .imposter INDEX IMPOSTER\n");
       rc = 1;
@@ -3877,9 +3884,19 @@ static int do_meta_command(char *zLine, ShellState *p){
     zSql = sqlite3_mprintf("PRAGMA index_xinfo='%q'", azArg[1]);
     rc = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
     sqlite3_free(zSql);
+    i = 0;
     while( sqlite3_step(pStmt)==SQLITE_ROW ){
+      char zLabel[20];
       const char *zCol = (const char*)sqlite3_column_text(pStmt,2);
-      if( zCol==0 ) zCol = "_ROWID_";
+      i++;
+      if( zCol==0 ){
+        if( sqlite3_column_int(pStmt,1)==-1 ){
+          zCol = "_ROWID_";
+        }else{
+          sqlite3_snprintf(sizeof(zLabel),zLabel,"expr%d",i);
+          zCol = zLabel;
+        }
+      }
       if( zCollist==0 ){
         zCollist = sqlite3_mprintf("\"%w\"", zCol);
       }else{
