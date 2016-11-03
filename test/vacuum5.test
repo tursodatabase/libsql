@@ -14,6 +14,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix vacuum5
 
 # If the VACUUM statement is disabled in the current build, skip all
 # the tests in this file.
@@ -110,5 +111,42 @@ do_execsql_test vacuum5-1.4.2 {
 do_catchsql_test vacuum5-2.0 {
   VACUUM olaf;
 } {1 {unknown database olaf}}
+
+#-------------------------------------------------------------------------
+# Test that a temp file is opened as part of VACUUM.
+#
+if {$::TEMP_STORE<3} {
+  db close
+  testvfs tvfs 
+  tvfs filter xOpen
+  tvfs script open_cb
+  forcedelete test.db
+
+  set ::openfiles [list]
+  proc open_cb {method args} {
+    lappend ::openfiles [file tail [lindex $args 0]]
+  }
+  sqlite3 db test.db -vfs tvfs
+
+  do_execsql_test 3.0 {
+    PRAGMA page_size = 1024;
+    PRAGMA cache_size = 50;
+    CREATE TABLE t1(i INTEGER PRIMARY KEY, j UNIQUE);
+    WITH s(i) AS (
+      VALUES(1) UNION ALL SELECT i+1 FROM s WHERE i<1000
+    )
+    INSERT INTO t1 SELECT NULL, randomblob(100) FROM s;
+  }
+
+  do_execsql_test 3.1 { VACUUM }
+
+  db close
+  tvfs delete
+  do_test 3.2 {
+    set ::openfiles
+  } {test.db test.db-journal test.db-journal {} test.db-journal}
+} 
+
+
 
 finish_test
