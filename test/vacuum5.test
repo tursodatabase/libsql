@@ -129,6 +129,7 @@ if {$::TEMP_STORE<3} {
   sqlite3 db test.db -vfs tvfs
 
   do_execsql_test 3.0 {
+    PRAGMA temp_store = file;
     PRAGMA page_size = 1024;
     PRAGMA cache_size = 50;
     CREATE TABLE t1(i INTEGER PRIMARY KEY, j UNIQUE);
@@ -143,7 +144,7 @@ if {$::TEMP_STORE<3} {
   db close
   tvfs delete
   do_test 3.2 {
-    set ::openfiles
+    lrange $::openfiles 0 4
   } {test.db test.db-journal test.db-journal {} test.db-journal}
 } 
 

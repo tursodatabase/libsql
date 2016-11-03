@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_FCNTL_WIN32_GET_HANDLE\sfile\scontrol.
-D 2016-11-03T18:49:15.740
+C Fix\sa\stest\scase\sin\svacuum5.test\sso\sthat\sit\sworks\swith\s-DSQLITE_TEMP_STORE=2\nand\s-DSQLITE_ENABLE_ATOMIC_WRITE..
+D 2016-11-03T19:27:20.297
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5151cc64c4c05f3455f4f692ad11410a810d937f
@@ -1342,7 +1342,7 @@ F test/vacuum.test ce91c39f7f91a4273bf620efad21086b5aa6ef1d
 F test/vacuum2.test aa048abee196c16c9ba308465494009057b79f9b
 F test/vacuum3.test 77ecdd54592b45a0bcb133339f99f1ae0ae94d0d
 F test/vacuum4.test d3f8ecff345f166911568f397d2432c16d2867d9
-F test/vacuum5.test 800b5e881fa3dfdc1be252f2a45f107c75176628
+F test/vacuum5.test 49d9febcb6e13c3ac5b96d8df6736f9b85d9bf70
 F test/vacuummem.test 7b42abb3208bd82dd23a7536588396f295a314f2
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/veryquick.test 57ab846bacf7b90cf4e9a672721ea5c5b669b661
@@ -1526,8 +1526,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ccdcce468f51439b353cbf723f1710ac38110b28
-Q +16039be3739b8d3b34a1e6093eaebb09e07f984b
-R 1933547740ff36264301a7e9e48d5e68
-U drh
-Z c1e8dec0cf9ebdae609fe6443bb3d73f
+P 5221e3cc6f81d078766a607408d4e8aa3be0a90e
+Q +3ca80010397676eca57c8a4c9b3a9c2c40629663
+Q +f5dd95e25c703a825ad7af9a4b3886bd3ef8c2e8
+R 1292292e2b28a3c5e4e5e50ea87f1dc9
+U dan
+Z 2614e4a161cf6a6e530f1c03672fcc7c
