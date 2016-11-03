@@ -1,5 +1,5 @@
-C Adjust\sthe\sMSVC\smakefile\sto\suse\sTcl8.6\sby\sdefault.
-D 2016-11-02T19:49:22.697
+C Fix\san\spossible\sNULL\spointer\sdeference\sin\sthe\scommand-line\sshell\sthat\scan\noccur\swhen\susing\simposter\smode.
+D 2016-11-03T02:25:30.134
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e0217f2d35a0448abbe4b066132ae20136e8b408
@@ -388,7 +388,7 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 3fac1b2737ea5a724f20b921ac7e259c9be2100b
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c ea3af83e2d0f245fef81ea4cf04cb730ce67f722
-F src/shell.c f0e8b54c58a8a13cc046f5af6d72de7e0a118a2b
+F src/shell.c 0abcad599065d9e00b91ca4ad7d14b98ea381d91
 F src/sqlite.h.in 97e9b0f952306677db82b055147ed1d99cb7ba66
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
@@ -1529,7 +1529,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3028845329c9b7acdec2ec8b01d00d782347454c
-R dfd07fa2751ad1cca77c9ad8863824f5
+P def8f598b8e33b5bab3a024cc57f4c5e300cd8cd
+R ae537ccc69c194277761110153c77ab0
 U drh
-Z e699b75769ea46dd9ab5a62241677b6a
+Z c8a9d3d6f5e70005dce9f87ade1f94d9

@@ -1901,6 +1901,7 @@ static int shell_exec(
         continue;
       }
       zStmtSql = sqlite3_sql(pStmt);
+      if( zStmtSql==0 ) zStmtSql = "";
       while( IsSpace(zStmtSql[0]) ) zStmtSql++;
 
       /* save off the prepared statment handle and reset row count */
