@@ -4860,13 +4860,15 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     }
 #endif
     if( pLevel->iLeftJoin ){
+      int ws = pLoop->wsFlags;
       addr = sqlite3VdbeAddOp1(v, OP_IfPos, pLevel->iLeftJoin); VdbeCoverage(v);
-      assert( (pLoop->wsFlags & WHERE_IDX_ONLY)==0
-           || (pLoop->wsFlags & WHERE_INDEXED)!=0 );
-      if( (pLoop->wsFlags & WHERE_IDX_ONLY)==0 ){
+      assert( (ws & WHERE_IDX_ONLY)==0 || (ws & WHERE_INDEXED)!=0 );
+      if( (ws & WHERE_IDX_ONLY)==0 ){
         sqlite3VdbeAddOp1(v, OP_NullRow, pTabList->a[i].iCursor);
       }
-      if( pLoop->wsFlags & WHERE_INDEXED ){
+      if( (ws & WHERE_INDEXED) 
+       || ((ws & WHERE_MULTI_OR) && pLevel->u.pCovidx) 
+      ){
         sqlite3VdbeAddOp1(v, OP_NullRow, pLevel->iIdxCur);
       }
       if( pLevel->op==OP_Return ){
