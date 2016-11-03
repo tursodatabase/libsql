@@ -4601,7 +4601,7 @@ static int accessPayload(
          && (bEnd || a==ovflSize)                              /* (6) */
          && pBt->inTransaction==TRANS_READ                     /* (4) */
          && (fd = sqlite3PagerFile(pBt->pPager))->pMethods     /* (3) */
-         && pBt->pPage1->aData[19]==0x01                       /* (5) */
+         && 0==sqlite3PagerUseWal(pBt->pPager)                 /* (5) */
          && &pBuf[-4]>=pBufStart                               /* (7) */
         ){
           u8 aSave[4];
