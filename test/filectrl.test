@@ -43,4 +43,30 @@ do_test filectrl-1.6 {
 } {/etilqs_/}
 db close
 forcedelete .test_control_lockproxy.db-conch test.proxy
+forcedelete test.db test2.db
+
+if {$tcl_platform(platform)=="windows"} {
+  do_test filectrl-2.1 {
+    sqlite3 db test2.db
+    set size [file size test2.db]
+    set handle [file_control_win32_get_handle db]
+    db close
+    forcedelete test2.db
+    list $size $handle [expr {$handle != 0}]
+  } {/^0 \{0 \d+\} 1$/}
+
+  do_test filectrl-2.2 {
+    sqlite3 db test2.db
+    execsql {
+      CREATE TABLE t1(x);
+      INSERT INTO t1 (x) VALUES(RANDOMBLOB(1048576));
+    }
+    set size [file size test2.db]
+    set handle [file_control_win32_get_handle db]
+    db close
+    forcedelete test2.db
+    list $size $handle [expr {$handle != 0}]
+  } {/^1\d+ \{0 \d+\} 1$/}
+}
+
 finish_test
