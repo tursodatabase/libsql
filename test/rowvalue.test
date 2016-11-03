@@ -255,5 +255,15 @@ do_catchsql_test 11.8 {
   SELECT * FROM t11 WHERE (a,a) IS NOT 1;
 } {1 {row value misused}}
 
+# 2016-10-27: https://www.sqlite.org/src/tktview/fef4bb4bd9185ec8f
+# Incorrect result from a LEFT JOIN with a row-value constraint
+#
+do_execsql_test 12.1 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a,b); INSERT INTO t1 VALUES(1,2);
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t2(x,y); INSERT INTO t2 VALUES(3,4);
+  SELECT *,'x' FROM t1 LEFT JOIN t2 ON (a,b)=(x,y);
+} {1 2 {} {} x}
 
 finish_test
