@@ -2164,6 +2164,9 @@ static char zHelp[] =
   ".headers on|off        Turn display of headers on or off\n"
   ".help                  Show this message\n"
   ".import FILE TABLE     Import data from FILE into TABLE\n"
+#ifndef SQLITE_OMIT_TEST_CONTROL
+  ".imposter INDEX TABLE  Create imposter table TABLE on index INDEX\n"
+#endif
   ".indexes ?TABLE?       Show names of all indexes\n"
   "                         If TABLE specified, only show indexes for tables\n"
   "                         matching LIKE pattern TABLE.\n"
@@ -3846,6 +3849,68 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
   }else
 
+#ifndef SQLITE_OMIT_BUILTIN_TEST
+  if( c=='i' && strncmp(azArg[0], "imposter", n)==0 ){
+    char *zSql;
+    char *zCollist = 0;
+    sqlite3_stmt *pStmt;
+    int tnum = 0;
+    if( nArg!=3 ){
+      utf8_printf(stderr, "Usage: .imposter INDEX IMPOSTER\n");
+      rc = 1;
+      goto meta_command_exit;
+    }
+    open_db(p, 0);
+    zSql = sqlite3_mprintf("SELECT rootpage FROM sqlite_master"
+                           " WHERE name='%q' AND type='index'", azArg[1]);
+    sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
+    sqlite3_free(zSql);
+    if( sqlite3_step(pStmt)==SQLITE_ROW ){
+      tnum = sqlite3_column_int(pStmt, 0);
+    }
+    sqlite3_finalize(pStmt);
+    if( tnum==0 ){
+      utf8_printf(stderr, "no such index: \"%s\"\n", azArg[1]);
+      rc = 1;
+      goto meta_command_exit;
+    }
+    zSql = sqlite3_mprintf("PRAGMA index_xinfo='%q'", azArg[1]);
+    rc = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
+    sqlite3_free(zSql);
+    while( sqlite3_step(pStmt)==SQLITE_ROW ){
+      const char *zCol = (const char*)sqlite3_column_text(pStmt,2);
+      if( zCol==0 ) zCol = "_ROWID_";
+      if( zCollist==0 ){
+        zCollist = sqlite3_mprintf("\"%w\"", zCol);
+      }else{
+        zCollist = sqlite3_mprintf("%z,\"%w\"", zCollist, zCol);
+      }
+    }
+    sqlite3_finalize(pStmt);
+    zSql = sqlite3_mprintf(
+          "CREATE TABLE \"%w\"(%s,PRIMARY KEY(%s))WITHOUT ROWID",
+          azArg[2], zCollist, zCollist);
+    sqlite3_free(zCollist);
+    rc = sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, p->db, "main", 1, tnum);
+    if( rc==SQLITE_OK ){
+      rc = sqlite3_exec(p->db, zSql, 0, 0, 0);
+      sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, p->db, "main", 0, 0);
+      if( rc ){
+        utf8_printf(stderr, "Error in [%s]: %s\n", zSql, sqlite3_errmsg(p->db));
+      }else{
+        utf8_printf(stdout, "%s;\n", zSql);
+        utf8_printf(stdout, 
+           "WARNING: writing to an imposter table will corrupt the index!\n"
+        );
+      }
+    }else{
+      utf8_printf(stderr, "SQLITE_TESTCTRL_IMPOSTER returns %d\n", rc);
+      rc = 1;
+    }
+    sqlite3_free(zSql);
+  }else
+#endif /* !defined(SQLITE_OMIT_TEST_CONTROL) */
+
 #ifdef SQLITE_ENABLE_IOTRACE
   if( c=='i' && strncmp(azArg[0], "iotrace", n)==0 ){
     SQLITE_API extern void (SQLITE_CDECL *sqlite3IoTrace)(const char*, ...);
@@ -3868,6 +3933,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
   }else
 #endif
+
   if( c=='l' && n>=5 && strncmp(azArg[0], "limits", n)==0 ){
     static const struct {
        const char *zLimitName;   /* Name of a limit */
@@ -4708,6 +4774,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
   }else
 
+#ifndef SQLITE_OMIT_BUILTIN_TEST
   if( c=='t' && n>=8 && strncmp(azArg[0], "testctrl", n)==0 && nArg>=2 ){
     static const struct {
        const char *zCtrlName;   /* Name of a test-control option */
@@ -4883,6 +4950,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
 #endif
   }else
+#endif /* !defined(SQLITE_OMIT_BUILTIN_TEST) */
 
 #if SQLITE_USER_AUTHENTICATION
   if( c=='u' && strncmp(azArg[0], "user", n)==0 ){
