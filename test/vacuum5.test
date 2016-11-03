@@ -144,7 +144,7 @@ if {$::TEMP_STORE<3} {
   db close
   tvfs delete
   do_test 3.2 {
-    set ::openfiles
+    lrange $::openfiles 0 4
   } {test.db test.db-journal test.db-journal {} test.db-journal}
 } 
 
