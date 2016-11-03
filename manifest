@@ -1,5 +1,5 @@
-C In\sthe\scommand-line\sshell,\sfix\sthe\s.imposter\scommand\sso\sthat\sit\sworks\nwith\sindexes\son\sexpressions.\s\sFix\sthe\s".mode\squote"\smode\sso\sthat\sit\sworks\nwith\s".headers\sON".
-D 2016-11-03T13:12:28.436
+C Fix\sa\stest\scase\sin\svacuum5.test\sso\sthat\sit\sworks\swith\s-DSQLITE_TEMP_STORE=2.
+D 2016-11-03T19:01:20.023
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e0217f2d35a0448abbe4b066132ae20136e8b408
@@ -1345,7 +1345,7 @@ F test/vacuum.test ce91c39f7f91a4273bf620efad21086b5aa6ef1d
 F test/vacuum2.test aa048abee196c16c9ba308465494009057b79f9b
 F test/vacuum3.test 77ecdd54592b45a0bcb133339f99f1ae0ae94d0d
 F test/vacuum4.test d3f8ecff345f166911568f397d2432c16d2867d9
-F test/vacuum5.test 800b5e881fa3dfdc1be252f2a45f107c75176628
+F test/vacuum5.test 93a94eb91b850c5cb4aafc4d8090317ff1a40def
 F test/vacuummem.test 7b42abb3208bd82dd23a7536588396f295a314f2
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/veryquick.test 57ab846bacf7b90cf4e9a672721ea5c5b669b661
@@ -1529,7 +1529,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P be3ec8fdcf1541017ca9375df07645db2a9a3f5a
-R 492f3194b55f82acdeed3f831384acda
-U drh
-Z cf1e2d863175ee56efe47dbfd06f83ec
+P ba9873da94d21873ff76f16a5332fc0092d83f70
+R 6f4b8c4fa3be6db58f3d71607061b052
+U dan
+Z 4bd4a6f70afd6ec41fa3cd32e82508a8
