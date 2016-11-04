@@ -1,5 +1,5 @@
-C Mark\sthe\sICU\sextension\sfunctions\sas\sdeterministic.
-D 2016-11-04T12:03:26.544
+C Avoid\sa\scrash\sthat\scan\soccur\safter\san\sobscure\sOOM\sin\sthe\sbuilt-in\sINSTR()\nfunction.
+D 2016-11-04T12:05:29.977
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e0217f2d35a0448abbe4b066132ae20136e8b408
@@ -343,7 +343,7 @@ F src/delete.c cb3f6300df24c26c609778b2731f82644b5532ec
 F src/expr.c ce7110980fac6dfdfbe1e393443bdb79bad29339
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c b9ca262f6ad4d030a3cab737ebf9b0b3c8b4ac80
-F src/func.c 29cc9acb170ec1387b9f63eb52cd85f8de96c771
+F src/func.c 7057bc2c105b82faa668d8e2ec85fad4540e5c51
 F src/global.c 9da4ca5d74b90715f0ec4957f3d17a4749009f34
 F src/hash.c 63d0ee752a3b92d4695b2b1f5259c4621b2cfebd
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
@@ -862,6 +862,7 @@ F test/insert3.test 1b7db95a03ad9c5013fdf7d6722b6cd66ee55e30
 F test/insert4.test a20432f1c0fbbcff8f11d0e6ab4acb8c9db58023
 F test/insert5.test 394f96728d1258f406fe5f5aeb0aaf29487c39a6
 F test/instr.test 737bbf80685232033f3abedc6ae92f75860b5dd2
+F test/instrfault.test aa90b7c3486a069151b28384ae525644a1f79d51
 F test/intarray.test 066b7d7ac38d25bf96f87f1b017bfc687551cdd4
 F test/interrupt.test dfe9a67a94b0b2d8f70545ba1a6cca10780d71cc
 F test/interrupt2.test 829b06f9e20a6c378d8bd121b26c337f4dfa36e5
@@ -1529,7 +1530,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 97354093bceff28714a605068851cfa026c8272a
-R e3306eee283049a63433ee2c85b74690
-U drh
-Z 8e57808346e33a5bd8a5f1ed64de48bd
+P afbbb6c66a85ff3f4c8dce677e0892a2a51d2b8e
+R 54226d0f905e5410be62ada12fc4c3f1
+U dan
+Z 547f4b4fa61cca40324639e3127db72b
