@@ -1,5 +1,5 @@
-C Fix\sa\stest\scase\sin\svacuum5.test\sso\sthat\sit\sworks\swith\sthe\sin-memory\sjournal\npermutation.
-D 2016-11-04T07:25:43.726
+C Add\san\sassert()\sto\ssilence\sa\scoverity\sfalse-positive.
+D 2016-11-04T11:23:30.899
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e0217f2d35a0448abbe4b066132ae20136e8b408
@@ -448,7 +448,7 @@ F src/test_windirent.h 7edc57e2faa727026dbd5d010dd0e2e665d5aa01
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 78c8085bc7af1922aa687f0f4bbd716821330de5
-F src/treeview.c f51b75a28b377adde9f79bc3deb6c7770bcf97c0
+F src/treeview.c 4e44ade3bfe59d82005039f72e09333ce2b4162c
 F src/trigger.c 3419bb9862983d84d70735fb4c94b21b934cd0c5
 F src/update.c 8179e699dbd45b92934fd02d3d8e3732e8da8802
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
@@ -1529,7 +1529,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1d0e43c549c36d0919a18d61285e94cad29e7a07
-R e8d6a4378d7e8684c490ab3e02196987
-U dan
-Z 85e0796babcc520647a9671cf08776f6
+P 81c86401463df6be4ac21987b3b1703e38ab933b
+R 1ea1eb2b071ef3b9ddfdbffca7d5e856
+U drh
+Z 2ff0a32c09088faef645f25d6f42c670

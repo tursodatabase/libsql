@@ -65,6 +65,7 @@ static void sqlite3TreeViewLine(TreeView *p, const char *zFormat, ...){
   va_start(ap, zFormat);
   sqlite3VXPrintf(&acc, zFormat, ap);
   va_end(ap);
+  assert( acc.nChar>0 );
   if( zBuf[acc.nChar-1]!='\n' ) sqlite3StrAccumAppend(&acc, "\n", 1);
   sqlite3StrAccumFinish(&acc);
   fprintf(stdout,"%s", zBuf);
