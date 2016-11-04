@@ -115,7 +115,7 @@ do_catchsql_test vacuum5-2.0 {
 #-------------------------------------------------------------------------
 # Test that a temp file is opened as part of VACUUM.
 #
-if {$::TEMP_STORE<3} {
+if {$::TEMP_STORE<3 && [permutation]!="inmemory_journal"} {
   db close
   testvfs tvfs 
   tvfs filter xOpen
