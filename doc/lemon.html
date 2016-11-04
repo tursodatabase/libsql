@@ -85,7 +85,7 @@ Define C preprocessor macro <i>name</i>.  This macro is useable by
 Do not generate a parser.  Instead write the input grammar to standard
 output with all comments, actions, and other extraneous text removed.
 <li><b>-l</b>
-Omit "#line" directives int the generated parser C code.
+Omit "#line" directives in the generated parser C code.
 <li><b>-m</b>
 Cause the output C source code to be compatible with the "makeheaders"
 program. 
@@ -929,7 +929,7 @@ token structure.  Like this:</p>
 </pre></p>
 
 <p>If the data type of terminals is not specified, the default value
-is "int".</p>
+is "void*".</p>
 
 <p>Non-terminal symbols can each have their own data types.  Typically
 the data type  of a non-terminal is a pointer to the root of a parse-tree

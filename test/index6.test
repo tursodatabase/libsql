@@ -65,12 +65,15 @@ do_test index6-1.5 {
   catchsql {
     CREATE INDEX bad1 ON t1(a,b) WHERE a!=random();
   }
-} {1 {functions prohibited in partial index WHERE clauses}}
+} {1 {non-deterministic functions prohibited in partial index WHERE clauses}}
 do_test index6-1.6 {
   catchsql {
     CREATE INDEX bad1 ON t1(a,b) WHERE a NOT LIKE 'abc%';
   }
-} {1 {functions prohibited in partial index WHERE clauses}}
+} {0 {}}
+do_execsql_test index6-1.7 {
+  DROP INDEX IF EXISTS bad1;
+}
 
 do_test index6-1.10 {
   execsql {

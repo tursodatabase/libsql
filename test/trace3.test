@@ -128,7 +128,7 @@ do_test trace3-5.1 {
     SELECT a, b FROM t1 ORDER BY a;
   }
   set ::stmtlist(record)
-} "/^[string trim [string repeat {\d+ } 16]]\$/"
+} "/^[string trim [string repeat {-?\d+ } 16]]\$/"
 do_test trace3-5.2 {
   set ::stmtlist(record) {}
   db trace_v2 trace_v2_record 4
@@ -136,7 +136,7 @@ do_test trace3-5.2 {
     SELECT a, b FROM t1 ORDER BY a;
   }
   set ::stmtlist(record)
-} "/^[string trim [string repeat {\d+ } 16]]\$/"
+} "/^[string trim [string repeat {-?\d+ } 16]]\$/"
 
 do_test trace3-6.1 {
   set ::stmtlist(record) {}

@@ -5870,6 +5870,38 @@ static int SQLITE_TCLAPI file_control_win32_av_retry(
 }
 
 /*
+** tclcmd:   file_control_win32_get_handle DB
+**
+** This TCL command runs the sqlite3_file_control interface with
+** the SQLITE_FCNTL_WIN32_GET_HANDLE opcode.
+*/
+static int file_control_win32_get_handle(
+  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  sqlite3 *db;
+  int rc;
+  HANDLE hFile = NULL;
+  char z[100];
+
+  if( objc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"",
+        Tcl_GetStringFromObj(objv[0], 0), " DB", 0);
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ){
+    return TCL_ERROR;
+  }
+  rc = sqlite3_file_control(db, NULL, SQLITE_FCNTL_WIN32_GET_HANDLE,
+                            (void*)&hFile);
+  sqlite3_snprintf(sizeof(z), z, "%d %p", rc, (void*)hFile);
+  Tcl_AppendResult(interp, z, (char*)0);
+  return TCL_OK;
+}
+
+/*
 ** tclcmd:   file_control_win32_set_handle DB HANDLE
 **
 ** This TCL command runs the sqlite3_file_control interface with
@@ -7380,6 +7412,7 @@ static int SQLITE_TCLAPI test_sqlite3_db_config(
     { "TRIGGER",         SQLITE_DBCONFIG_ENABLE_TRIGGER },
     { "FTS3_TOKENIZER",  SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER },
     { "LOAD_EXTENSION",  SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION },
+    { "NO_CKPT_ON_CLOSE",SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE },
   };
   int i;
   int v;
@@ -7637,6 +7670,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "file_control_sizehint_test",  file_control_sizehint_test,   0   },
 #if SQLITE_OS_WIN
      { "file_control_win32_av_retry", file_control_win32_av_retry,  0   },
+     { "file_control_win32_get_handle", file_control_win32_get_handle, 0  },
      { "file_control_win32_set_handle", file_control_win32_set_handle, 0  },
 #endif
      { "file_control_persist_wal",    file_control_persist_wal,     0   },

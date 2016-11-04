@@ -720,7 +720,7 @@ void sqlite3ExprSetHeightAndFlags(Parse *pParse, Expr *p){
 ** is allocated to hold the integer text and the dequote flag is ignored.
 */
 Expr *sqlite3ExprAlloc(
-  sqlite3 *db,            /* Handle for sqlite3DbMallocZero() (may be null) */
+  sqlite3 *db,            /* Handle for sqlite3DbMallocRawNN() */
   int op,                 /* Expression opcode */
   const Token *pToken,    /* Token argument.  Might be NULL */
   int dequote             /* True to dequote */
@@ -938,7 +938,7 @@ Expr *sqlite3ExprFunction(Parse *pParse, ExprList *pList, Token *pToken){
 ** instance of the wildcard, the next sequential variable number is
 ** assigned.
 */
-void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr){
+void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr, u32 n){
   sqlite3 *db = pParse->db;
   const char *z;
 
@@ -947,19 +947,19 @@ void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr){
   z = pExpr->u.zToken;
   assert( z!=0 );
   assert( z[0]!=0 );
+  assert( n==sqlite3Strlen30(z) );
   if( z[1]==0 ){
     /* Wildcard of the form "?".  Assign the next variable number */
     assert( z[0]=='?' );
     pExpr->iColumn = (ynVar)(++pParse->nVar);
   }else{
-    ynVar x = 0;
-    u32 n = sqlite3Strlen30(z);
+    ynVar x;
     if( z[0]=='?' ){
       /* Wildcard of the form "?nnn".  Convert "nnn" to an integer and
       ** use it as the variable number */
       i64 i;
       int bOk = 0==sqlite3Atoi64(&z[1], &i, n-1, SQLITE_UTF8);
-      pExpr->iColumn = x = (ynVar)i;
+      x = (ynVar)i;
       testcase( i==0 );
       testcase( i==1 );
       testcase( i==db->aLimit[SQLITE_LIMIT_VARIABLE_NUMBER]-1 );
@@ -967,7 +967,7 @@ void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr){
       if( bOk==0 || i<1 || i>db->aLimit[SQLITE_LIMIT_VARIABLE_NUMBER] ){
         sqlite3ErrorMsg(pParse, "variable number must be between ?1 and ?%d",
             db->aLimit[SQLITE_LIMIT_VARIABLE_NUMBER]);
-        x = 0;
+        return;
       }
       if( i>pParse->nVar ){
         pParse->nVar = (int)i;
@@ -978,33 +978,31 @@ void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr){
       ** has never appeared before, reuse the same variable number
       */
       ynVar i;
-      for(i=0; i<pParse->nzVar; i++){
+      for(i=x=0; i<pParse->nzVar; i++){
         if( pParse->azVar[i] && strcmp(pParse->azVar[i],z)==0 ){
-          pExpr->iColumn = x = (ynVar)i+1;
+          x = (ynVar)i+1;
           break;
         }
       }
-      if( x==0 ) x = pExpr->iColumn = (ynVar)(++pParse->nVar);
+      if( x==0 ) x = (ynVar)(++pParse->nVar);
     }
-    if( x>0 ){
-      if( x>pParse->nzVar ){
-        char **a;
-        a = sqlite3DbRealloc(db, pParse->azVar, x*sizeof(a[0]));
-        if( a==0 ){
-          assert( db->mallocFailed ); /* Error reported through mallocFailed */
-          return;
-        }
-        pParse->azVar = a;
-        memset(&a[pParse->nzVar], 0, (x-pParse->nzVar)*sizeof(a[0]));
-        pParse->nzVar = x;
+    pExpr->iColumn = x;
+    if( x>pParse->nzVar ){
+      char **a;
+      a = sqlite3DbRealloc(db, pParse->azVar, x*sizeof(a[0]));
+      if( a==0 ){
+        assert( db->mallocFailed ); /* Error reported through mallocFailed */
+        return;
       }
-      if( z[0]!='?' || pParse->azVar[x-1]==0 ){
-        sqlite3DbFree(db, pParse->azVar[x-1]);
-        pParse->azVar[x-1] = sqlite3DbStrNDup(db, z, n);
-      }
+      pParse->azVar = a;
+      memset(&a[pParse->nzVar], 0, (x-pParse->nzVar)*sizeof(a[0]));
+      pParse->nzVar = x;
+    }
+    if( pParse->azVar[x-1]==0 ){
+      pParse->azVar[x-1] = sqlite3DbStrNDup(db, z, n);
     }
   } 
-  if( !pParse->nErr && pParse->nVar>db->aLimit[SQLITE_LIMIT_VARIABLE_NUMBER] ){
+  if( pParse->nVar>db->aLimit[SQLITE_LIMIT_VARIABLE_NUMBER] ){
     sqlite3ErrorMsg(pParse, "too many SQL variables");
   }
 }
@@ -2964,32 +2962,19 @@ static void codeInteger(Parse *pParse, Expr *pExpr, int negFlag, int iMem){
   }
 }
 
-#if defined(SQLITE_DEBUG)
 /*
-** Verify the consistency of the column cache
+** Erase column-cache entry number i
 */
-static int cacheIsValid(Parse *pParse){
-  int i, n;
-  for(i=n=0; i<SQLITE_N_COLCACHE; i++){
-    if( pParse->aColCache[i].iReg>0 ) n++;
-  }
-  return n==pParse->nColCache;
-}
-#endif
-
-/*
-** Clear a cache entry.
-*/
-static void cacheEntryClear(Parse *pParse, struct yColCache *p){
-  if( p->tempReg ){
+static void cacheEntryClear(Parse *pParse, int i){
+  if( pParse->aColCache[i].tempReg ){
     if( pParse->nTempReg<ArraySize(pParse->aTempReg) ){
-      pParse->aTempReg[pParse->nTempReg++] = p->iReg;
+      pParse->aTempReg[pParse->nTempReg++] = pParse->aColCache[i].iReg;
     }
-    p->tempReg = 0;
   }
-  p->iReg = 0;
   pParse->nColCache--;
-  assert( pParse->db->mallocFailed || cacheIsValid(pParse) );
+  if( i<pParse->nColCache ){
+    pParse->aColCache[i] = pParse->aColCache[pParse->nColCache];
+  }
 }
 
 
@@ -3019,46 +3004,33 @@ void sqlite3ExprCacheStore(Parse *pParse, int iTab, int iCol, int iReg){
   ** that the object will never already be in cache.  Verify this guarantee.
   */
 #ifndef NDEBUG
-  for(i=0, p=pParse->aColCache; i<SQLITE_N_COLCACHE; i++, p++){
-    assert( p->iReg==0 || p->iTable!=iTab || p->iColumn!=iCol );
+  for(i=0, p=pParse->aColCache; i<pParse->nColCache; i++, p++){
+    assert( p->iTable!=iTab || p->iColumn!=iCol );
   }
 #endif
 
-  /* Find an empty slot and replace it */
-  for(i=0, p=pParse->aColCache; i<SQLITE_N_COLCACHE; i++, p++){
-    if( p->iReg==0 ){
-      p->iLevel = pParse->iCacheLevel;
-      p->iTable = iTab;
-      p->iColumn = iCol;
-      p->iReg = iReg;
-      p->tempReg = 0;
-      p->lru = pParse->iCacheCnt++;
-      pParse->nColCache++;
-      assert( pParse->db->mallocFailed || cacheIsValid(pParse) );
-      return;
+  /* If the cache is already full, delete the least recently used entry */
+  if( pParse->nColCache>=SQLITE_N_COLCACHE ){
+    minLru = 0x7fffffff;
+    idxLru = -1;
+    for(i=0, p=pParse->aColCache; i<SQLITE_N_COLCACHE; i++, p++){
+      if( p->lru<minLru ){
+        idxLru = i;
+        minLru = p->lru;
+      }
     }
+    p = &pParse->aColCache[idxLru];
+  }else{
+    p = &pParse->aColCache[pParse->nColCache++];
   }
 
-  /* Replace the last recently used */
-  minLru = 0x7fffffff;
-  idxLru = -1;
-  for(i=0, p=pParse->aColCache; i<SQLITE_N_COLCACHE; i++, p++){
-    if( p->lru<minLru ){
-      idxLru = i;
-      minLru = p->lru;
-    }
-  }
-  if( ALWAYS(idxLru>=0) ){
-    p = &pParse->aColCache[idxLru];
-    p->iLevel = pParse->iCacheLevel;
-    p->iTable = iTab;
-    p->iColumn = iCol;
-    p->iReg = iReg;
-    p->tempReg = 0;
-    p->lru = pParse->iCacheCnt++;
-    assert( cacheIsValid(pParse) );
-    return;
-  }
+  /* Add the new entry to the end of the cache */
+  p->iLevel = pParse->iCacheLevel;
+  p->iTable = iTab;
+  p->iColumn = iCol;
+  p->iReg = iReg;
+  p->tempReg = 0;
+  p->lru = pParse->iCacheCnt++;
 }
 
 /*
@@ -3066,13 +3038,14 @@ void sqlite3ExprCacheStore(Parse *pParse, int iTab, int iCol, int iReg){
 ** Purge the range of registers from the column cache.
 */
 void sqlite3ExprCacheRemove(Parse *pParse, int iReg, int nReg){
-  struct yColCache *p;
-  if( iReg<=0 || pParse->nColCache==0 ) return;
-  p = &pParse->aColCache[SQLITE_N_COLCACHE-1];
-  while(1){
-    if( p->iReg >= iReg && p->iReg < iReg+nReg ) cacheEntryClear(pParse, p);
-    if( p==pParse->aColCache ) break;
-    p--;
+  int i = 0;
+  while( i<pParse->nColCache ){
+    struct yColCache *p = &pParse->aColCache[i];
+    if( p->iReg >= iReg && p->iReg < iReg+nReg ){
+      cacheEntryClear(pParse, i);
+    }else{
+      i++;
+    }
   }
 }
 
@@ -3096,8 +3069,7 @@ void sqlite3ExprCachePush(Parse *pParse){
 ** the cache to the state it was in prior the most recent Push.
 */
 void sqlite3ExprCachePop(Parse *pParse){
-  int i;
-  struct yColCache *p;
+  int i = 0;
   assert( pParse->iCacheLevel>=1 );
   pParse->iCacheLevel--;
 #ifdef SQLITE_DEBUG
@@ -3105,9 +3077,11 @@ void sqlite3ExprCachePop(Parse *pParse){
     printf("POP  to %d\n", pParse->iCacheLevel);
   }
 #endif
-  for(i=0, p=pParse->aColCache; i<SQLITE_N_COLCACHE; i++, p++){
-    if( p->iReg && p->iLevel>pParse->iCacheLevel ){
-      cacheEntryClear(pParse, p);
+  while( i<pParse->nColCache ){
+    if( pParse->aColCache[i].iLevel>pParse->iCacheLevel ){
+      cacheEntryClear(pParse, i);
+    }else{
+      i++;
     }
   }
 }
@@ -3121,7 +3095,7 @@ void sqlite3ExprCachePop(Parse *pParse){
 static void sqlite3ExprCachePinRegister(Parse *pParse, int iReg){
   int i;
   struct yColCache *p;
-  for(i=0, p=pParse->aColCache; i<SQLITE_N_COLCACHE; i++, p++){
+  for(i=0, p=pParse->aColCache; i<pParse->nColCache; i++, p++){
     if( p->iReg==iReg ){
       p->tempReg = 0;
     }
@@ -3199,8 +3173,8 @@ int sqlite3ExprCodeGetColumn(
   int i;
   struct yColCache *p;
 
-  for(i=0, p=pParse->aColCache; i<SQLITE_N_COLCACHE; i++, p++){
-    if( p->iReg>0 && p->iTable==iTable && p->iColumn==iColumn ){
+  for(i=0, p=pParse->aColCache; i<pParse->nColCache; i++, p++){
+    if( p->iTable==iTable && p->iColumn==iColumn ){
       p->lru = pParse->iCacheCnt++;
       sqlite3ExprCachePinRegister(pParse, p->iReg);
       return p->iReg;
@@ -3232,18 +3206,20 @@ void sqlite3ExprCodeGetColumnToReg(
 */
 void sqlite3ExprCacheClear(Parse *pParse){
   int i;
-  struct yColCache *p;
 
 #if SQLITE_DEBUG
   if( pParse->db->flags & SQLITE_VdbeAddopTrace ){
     printf("CLEAR\n");
   }
 #endif
-  for(i=0, p=pParse->aColCache; i<SQLITE_N_COLCACHE; i++, p++){
-    if( p->iReg ){
-      cacheEntryClear(pParse, p);
+  for(i=0; i<pParse->nColCache; i++){
+    if( pParse->aColCache[i].tempReg
+     && pParse->nTempReg<ArraySize(pParse->aTempReg)
+    ){
+       pParse->aTempReg[pParse->nTempReg++] = pParse->aColCache[i].iReg;
     }
   }
+  pParse->nColCache = 0;
 }
 
 /*
@@ -3275,7 +3251,7 @@ void sqlite3ExprCodeMove(Parse *pParse, int iFrom, int iTo, int nReg){
 static int usedAsColumnCache(Parse *pParse, int iFrom, int iTo){
   int i;
   struct yColCache *p;
-  for(i=0, p=pParse->aColCache; i<SQLITE_N_COLCACHE; i++, p++){
+  for(i=0, p=pParse->aColCache; i<pParse->nColCache; i++, p++){
     int r = p->iReg;
     if( r>=iFrom && r<=iTo ) return 1;    /*NO_TEST*/
   }
@@ -4624,11 +4600,10 @@ int sqlite3ExprImpliesExpr(Expr *pE1, Expr *pE2, int iTab){
   ){
     return 1;
   }
-  if( pE2->op==TK_NOTNULL
-   && sqlite3ExprCompare(pE1->pLeft, pE2->pLeft, iTab)==0
-   && (pE1->op!=TK_ISNULL && pE1->op!=TK_IS)
-  ){
-    return 1;
+  if( pE2->op==TK_NOTNULL && pE1->op!=TK_ISNULL && pE1->op!=TK_IS ){
+    Expr *pX = sqlite3ExprSkipCollate(pE1->pLeft);
+    testcase( pX!=pE1->pLeft );
+    if( sqlite3ExprCompare(pX, pE2->pLeft, iTab)==0 ) return 1;
   }
   return 0;
 }
@@ -4971,7 +4946,7 @@ void sqlite3ReleaseTempReg(Parse *pParse, int iReg){
   if( iReg && pParse->nTempReg<ArraySize(pParse->aTempReg) ){
     int i;
     struct yColCache *p;
-    for(i=0, p=pParse->aColCache; i<SQLITE_N_COLCACHE; i++, p++){
+    for(i=0, p=pParse->aColCache; i<pParse->nColCache; i++, p++){
       if( p->iReg==iReg ){
         p->tempReg = 1;
         return;

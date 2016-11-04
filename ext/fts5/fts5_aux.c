@@ -292,6 +292,9 @@ static int fts5SentenceFinderCb(
 ){
   int rc = SQLITE_OK;
 
+  UNUSED_PARAM2(pToken, nToken);
+  UNUSED_PARAM(iEndOff);
+
   if( (tflags & FTS5_TOKEN_COLOCATED)==0 ){
     Fts5SFinder *p = (Fts5SFinder*)pContext;
     if( p->iPos>0 ){
@@ -447,7 +450,6 @@ static void fts5SnippetFunction(
           }
 
           if( sFinder.aFirst[jj]<io ){
-            int nScore;
             memset(aSeen, 0, nPhrase);
             rc = fts5SnippetScore(pApi, pFts, nDocsize, aSeen, i, 
               sFinder.aFirst[jj], nToken, &nScore, 0

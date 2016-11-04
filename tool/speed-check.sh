@@ -34,6 +34,7 @@ LEAN_OPTS="$LEAN_OPTS -DSQLITE_OMIT_DECLTYPE"
 LEAN_OPTS="$LEAN_OPTS -DSQLITE_OMIT_DEPRECATED"
 LEAN_OPTS="$LEAN_OPTS -DSQLITE_OMIT_PROGRESS_CALLBACK"
 LEAN_OPTS="$LEAN_OPTS -DSQLITE_OMIT_SHARED_CACHE"
+LEAN_OPTS="$LEAN_OPTS -DSQLITE_USE_ALLOCA"
 doExplain=0
 doCachegrind=1
 while test "$1" != ""; do
@@ -83,6 +84,11 @@ while test "$1" != ""; do
         CC_OPTS="$CC_OPTS -DSQLITE_ENABLE_MEMSYS5"
         shift;
         SPEEDTEST_OPTS="$SPEEDTEST_OPTS --heap $1 64"
+        ;;
+    --repeat)
+        CC_OPTS="$CC_OPTS -DSQLITE_ENABLE_RCACHE"
+        shift;
+        SPEEDTEST_OPTS="$SPEEDTEST_OPTS --repeat $1"
         ;;
     *)
         CC_OPTS="$CC_OPTS $1"

@@ -890,8 +890,9 @@ term(A) ::= INTEGER(X). {
 }
 expr(A) ::= VARIABLE(X).     {
   if( !(X.z[0]=='#' && sqlite3Isdigit(X.z[1])) ){
+    u32 n = X.n;
     spanExpr(&A, pParse, TK_VARIABLE, X);
-    sqlite3ExprAssignVarNumber(pParse, A.pExpr);
+    sqlite3ExprAssignVarNumber(pParse, A.pExpr, n);
   }else{
     /* When doing a nested parse, one can include terms in an expression
     ** that look like this:   #1 #2 ...  These terms refer to registers

@@ -164,17 +164,19 @@ do_extract_hints_test 2.10 {
   x2 {AND(EQ(c1,ADD(32,32)),EQ(c0,r[2]))}
 }
 
-do_extract_hints_test 2.11 {
-  SELECT * FROM x1 LEFT JOIN x2 ON (a=x) WHERE x2.b LIKE 'abc%'
-} {
-  x2 {AND(expr,EQ(c0,r[2]))}
+ifcapable !icu {
+  # This test only works using the built-in LIKE, not the ICU LIKE extension.
+  do_extract_hints_test 2.11 {
+    SELECT * FROM x1 LEFT JOIN x2 ON (a=x) WHERE x2.b LIKE 'abc%'
+  } {
+    x2 {AND(expr,EQ(c0,r[2]))}
+  }
 }
 
-do_extract_hints_test 2.11 {
+do_extract_hints_test 2.12 {
   SELECT * FROM x1 LEFT JOIN x2 ON (a=x) WHERE coalesce(x2.b, 1)
 } {
   x2 {EQ(c0,r[2])}
 }
 
 finish_test
-

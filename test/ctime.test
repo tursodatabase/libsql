@@ -224,5 +224,17 @@ do_test ctime-2.5.$tc {
   } ]
 } {0 {{}}}
 
+#--------------------------------------------------------------------------
+# Test that SQLITE_DIRECT_OVERFLOW_READ is reflected in the output of
+# "PRAGMA compile_options".
+#
+ifcapable direct_read {
+  set res 1
+} else {
+  set res 0
+}
+do_test ctime-3.0.1 {
+  expr [lsearch [db eval {PRAGMA compile_options}] DIRECT_OVERFLOW_READ]>=0
+} $res
 
 finish_test

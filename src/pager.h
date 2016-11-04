@@ -122,7 +122,7 @@ int sqlite3PagerOpen(
   int,
   void(*)(DbPage*)
 );
-int sqlite3PagerClose(Pager *pPager);
+int sqlite3PagerClose(Pager *pPager, sqlite3*);
 int sqlite3PagerReadFileheader(Pager*, int, unsigned char*);
 
 /* Functions used to configure a Pager object. */
@@ -173,15 +173,18 @@ int sqlite3PagerSavepoint(Pager *pPager, int op, int iSavepoint);
 int sqlite3PagerSharedLock(Pager *pPager);
 
 #ifndef SQLITE_OMIT_WAL
-  int sqlite3PagerCheckpoint(Pager *pPager, int, int*, int*);
+  int sqlite3PagerCheckpoint(Pager *pPager, sqlite3*, int, int*, int*);
   int sqlite3PagerWalSupported(Pager *pPager);
   int sqlite3PagerWalCallback(Pager *pPager);
   int sqlite3PagerOpenWal(Pager *pPager, int *pisOpen);
-  int sqlite3PagerCloseWal(Pager *pPager);
+  int sqlite3PagerCloseWal(Pager *pPager, sqlite3*);
+  int sqlite3PagerUseWal(Pager *pPager);
 # ifdef SQLITE_ENABLE_SNAPSHOT
   int sqlite3PagerSnapshotGet(Pager *pPager, sqlite3_snapshot **ppSnapshot);
   int sqlite3PagerSnapshotOpen(Pager *pPager, sqlite3_snapshot *pSnapshot);
 # endif
+#else
+# define sqlite3PagerUseWal(x) 0
 #endif
 
 #ifdef SQLITE_ENABLE_ZIPVFS
