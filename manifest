@@ -1,5 +1,5 @@
-C Avoid\sa\scrash\sthat\scan\soccur\safter\san\sobscure\sOOM\sin\sthe\sbuilt-in\sINSTR()\nfunction.
-D 2016-11-04T12:05:29.977
+C Fix\sthe\sJSON1\sextension\sso\sthat\sthe\sJSON\svalidator\scorrectly\srejects\smalformed\nbackslash\sescapes\swithin\sstring\sliterals.
+D 2016-11-07T13:37:28.861
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e0217f2d35a0448abbe4b066132ae20136e8b408
@@ -213,7 +213,7 @@ F ext/misc/eval.c f971962e92ebb8b0a4e6b62949463ee454d88fa2
 F ext/misc/fileio.c d4171c815d6543a9edef8308aab2951413cd8d0f
 F ext/misc/fuzzer.c 7c64b8197bb77b7d64eff7cac7848870235d4c25
 F ext/misc/ieee754.c f190d0cc5182529acb15babd177781be1ac1718c
-F ext/misc/json1.c 9799e4252b305edcbe659329eec3ca80ed85f968
+F ext/misc/json1.c 813a2ff17b3e951a4b875ef79b5f4a0543cb0a2d
 F ext/misc/memvfs.c e5225bc22e79dde6b28380f3a068ddf600683a33
 F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
 F ext/misc/percentile.c 92699c8cd7d517ff610e6037e56506f8904dae2e
@@ -886,7 +886,7 @@ F test/journal3.test ff8af941f9e06161d3db1b46bb9f965ff0e7f307
 F test/jrnlmode.test 7864d59cf7f6e552b9b99ba0f38acd167edc10fa
 F test/jrnlmode2.test 81610545a4e6ed239ea8fa661891893385e23a1d
 F test/jrnlmode3.test 556b447a05be0e0963f4311e95ab1632b11c9eaa
-F test/json101.test 865776ed8580703e1684fe4b8ee2e473333bb121
+F test/json101.test c0897616f32d95431f37fd291cb78742181980ac
 F test/json102.test bf3fe7a706d30936a76a0f7a0375e1e8e73aff5a
 F test/json103.test c5f6b85e69de05f6b3195f9f9d5ce9cd179099a0
 F test/keyword1.test 37ef6bba5d2ed5b07ecdd6810571de2956599dff
@@ -1530,7 +1530,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P afbbb6c66a85ff3f4c8dce677e0892a2a51d2b8e
-R 54226d0f905e5410be62ada12fc4c3f1
-U dan
-Z 547f4b4fa61cca40324639e3127db72b
+P b86b79c442a58d10aa005ba4f34095375a88d242
+R 7a809bd65e85c52e8075f2c4e33138f7
+U drh
+Z 3735bc72c61a220065b296aebe8a3b9c
