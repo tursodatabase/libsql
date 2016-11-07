@@ -595,12 +595,13 @@ static void jsonReturn(
             c = z[++i];
             if( c=='u' ){
               u32 v = 0, k;
-              for(k=0; k<4 && i<n-2; i++, k++){
+              for(k=0; k<4; i++, k++){
+                assert( i<n-2 );
                 c = z[i+1];
-                if( c>='0' && c<='9' ) v = v*16 + c - '0';
-                else if( c>='A' && c<='F' ) v = v*16 + c - 'A' + 10;
-                else if( c>='a' && c<='f' ) v = v*16 + c - 'a' + 10;
-                else break;
+                assert( safe_isxdigit(c) );
+                if( c<='9' ) v = v*16 + c - '0';
+                else if( c<='F' ) v = v*16 + c - 'A' + 10;
+                else v = v*16 + c - 'a' + 10;
               }
               if( v==0 ) break;
               if( v<=0x7f ){
