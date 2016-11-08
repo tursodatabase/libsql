@@ -1,5 +1,5 @@
-C Avoid\sgenerating\sOP_TableLock\sunnecessary\sinstructions\son\sbtrees\sthat\s\nare\snot\ssharable.
-D 2016-11-08T17:19:22.006
+C Avoid\ssuperfluous\scursor\sseeks\sin\s"INSERT\sOR\sREPLACE"\sstatements.
+D 2016-11-08T19:22:32.125
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e0217f2d35a0448abbe4b066132ae20136e8b408
@@ -349,7 +349,7 @@ F src/hash.c 63d0ee752a3b92d4695b2b1f5259c4621b2cfebd
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 2d5e197f2f60351937b201196965fd14cd88489c
+F src/insert.c 8c1346304a9a386b036652475296103bae27e0a1
 F src/legacy.c 75d3023be8f0d2b99d60f905090341a03358c58e
 F src/loadext.c 5d6642d141c07d366e43d359e94ec9de47add41d
 F src/main.c 694ac90557abdaa62151a6090670e107b0f2c2ab
@@ -454,7 +454,7 @@ F src/update.c 8179e699dbd45b92934fd02d3d8e3732e8da8802
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c 3e2da6101888d073e79ecc6af5e0a2f70fa1e498
 F src/vacuum.c 33c174b28886b2faf26e503b5a49a1c01a9b1c16
-F src/vdbe.c 2edc4fa8a825c79a929766f50bc800ea158646d2
+F src/vdbe.c 20307c93ad55af6ab8f50b17147a4704d4f17dab
 F src/vdbe.h c044be7050ac6bf596eecc6ab159f5dbc020a3b7
 F src/vdbeInt.h d8a56a491b752dbb5f671963b8c861ec72ea875e
 F src/vdbeapi.c 97129bec6b1553da50d8e73f523c278bda66d9f6
@@ -1530,7 +1530,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c2f84f637f994c3b4522b48161185a4a2c5bca23
-R 10ce1648dec21a665da138671841929b
-U drh
-Z 8856bb137559d0d48b8e63db91d4ed8e
+P 8cb8516d2009d52d35a22263e4c892f162b34b81
+R 36e33fba7941647bfb228c5ae67f2b63
+U dan
+Z a11930824d648f16d0f222498c7f4b67
