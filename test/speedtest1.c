@@ -529,7 +529,7 @@ void testset_main(void){
   speedtest1_begin_test(130, "%d SELECTS, numeric BETWEEN, unindexed", n);
   speedtest1_exec("BEGIN");
   speedtest1_prepare(
-    "SELECT count(*), avg(b), sum(length(c)) FROM t1\n"
+    "SELECT count(*), avg(b), sum(length(c)), group_concat(c) FROM t1\n"
     " WHERE b BETWEEN ?1 AND ?2; -- %d times", n
   );
   for(i=1; i<=n; i++){
@@ -549,7 +549,7 @@ void testset_main(void){
   speedtest1_begin_test(140, "%d SELECTS, LIKE, unindexed", n);
   speedtest1_exec("BEGIN");
   speedtest1_prepare(
-    "SELECT count(*), avg(b), sum(length(c)) FROM t1\n"
+    "SELECT count(*), avg(b), sum(length(c)), group_concat(c) FROM t1\n"
     " WHERE c LIKE ?1; -- %d times", n
   );
   for(i=1; i<=n; i++){
@@ -625,7 +625,7 @@ void testset_main(void){
   speedtest1_begin_test(160, "%d SELECTS, numeric BETWEEN, indexed", n);
   speedtest1_exec("BEGIN");
   speedtest1_prepare(
-    "SELECT count(*), avg(b), sum(length(c)) FROM t1\n"
+    "SELECT count(*), avg(b), sum(length(c)), group_concat(a) FROM t1\n"
     " WHERE b BETWEEN ?1 AND ?2; -- %d times", n
   );
   for(i=1; i<=n; i++){
@@ -645,7 +645,7 @@ void testset_main(void){
   speedtest1_begin_test(161, "%d SELECTS, numeric BETWEEN, PK", n);
   speedtest1_exec("BEGIN");
   speedtest1_prepare(
-    "SELECT count(*), avg(b), sum(length(c)) FROM t2\n"
+    "SELECT count(*), avg(b), sum(length(c)), group_concat(a) FROM t2\n"
     " WHERE a BETWEEN ?1 AND ?2; -- %d times", n
   );
   for(i=1; i<=n; i++){
@@ -665,7 +665,7 @@ void testset_main(void){
   speedtest1_begin_test(170, "%d SELECTS, text BETWEEN, indexed", n);
   speedtest1_exec("BEGIN");
   speedtest1_prepare(
-    "SELECT count(*), avg(b), sum(length(c)) FROM t1\n"
+    "SELECT count(*), avg(b), sum(length(c)), group_concat(a) FROM t1\n"
     " WHERE c BETWEEN ?1 AND (?1||'~'); -- %d times", n
   );
   for(i=1; i<=n; i++){
@@ -830,6 +830,61 @@ void testset_main(void){
   sqlite3_bind_int(g.pStmt, 1, est_square_root(g.szTest)*50);
   speedtest1_run();
   speedtest1_end_test();
+
+  sz = n = g.szTest*700;
+  zNum[0] = 0;
+  maxb = roundup_allones(sz/3);
+  speedtest1_begin_test(400, "%d INSERT OR REPLACE ops on an IPK", n);
+  speedtest1_exec("BEGIN");
+  speedtest1_exec("CREATE%s TABLE t5(a INTEGER PRIMARY KEY, b %s);",
+                  isTemp(9), g.zNN);
+  speedtest1_prepare("INSERT OR REPLACE INTO t5 VALUES(?1,?2); --  %d times",n);
+  for(i=1; i<=n; i++){
+    x1 = swizzle(i,maxb);
+    speedtest1_numbername(i, zNum, sizeof(zNum));
+    sqlite3_bind_int(g.pStmt, 1, (sqlite3_int64)x1);
+    sqlite3_bind_text(g.pStmt, 2, zNum, -1, SQLITE_STATIC);
+    speedtest1_run();
+  }
+  speedtest1_exec("COMMIT");
+  speedtest1_end_test();
+  speedtest1_begin_test(410, "%d SELECTS on an IPK", n);
+  speedtest1_prepare("SELECT b FROM t5 WHERE a=?1; --  %d times",n);
+  for(i=1; i<=n; i++){
+    x1 = swizzle(i,maxb);
+    sqlite3_bind_int(g.pStmt, 1, (sqlite3_int64)x1);
+    speedtest1_run();
+  }
+  speedtest1_end_test();
+
+  sz = n = g.szTest*700;
+  zNum[0] = 0;
+  maxb = roundup_allones(sz/3);
+  speedtest1_begin_test(500, "%d INSERT OR REPLACE ops on TEXT PK", n);
+  speedtest1_exec("BEGIN");
+  speedtest1_exec("CREATE%s TABLE t6(a TEXT PRIMARY KEY, b %s)%s;",
+                  isTemp(9), g.zNN,
+                  sqlite3_libversion_number()>=3008002 ? "WITHOUT ROWID" : "");
+  speedtest1_prepare("INSERT OR REPLACE INTO t6 VALUES(?1,?2); --  %d times",n);
+  for(i=1; i<=n; i++){
+    x1 = swizzle(i,maxb);
+    speedtest1_numbername(x1, zNum, sizeof(zNum));
+    sqlite3_bind_int(g.pStmt, 2, i);
+    sqlite3_bind_text(g.pStmt, 1, zNum, -1, SQLITE_STATIC);
+    speedtest1_run();
+  }
+  speedtest1_exec("COMMIT");
+  speedtest1_end_test();
+  speedtest1_begin_test(510, "%d SELECTS on an IPK", n);
+  speedtest1_prepare("SELECT b FROM t6 WHERE a=?1; --  %d times",n);
+  for(i=1; i<=n; i++){
+    x1 = swizzle(i,maxb);
+    speedtest1_numbername(x1, zNum, sizeof(zNum));
+    sqlite3_bind_text(g.pStmt, 1, zNum, -1, SQLITE_STATIC);
+    speedtest1_run();
+  }
+  speedtest1_end_test();
+
 
   speedtest1_begin_test(980, "PRAGMA integrity_check");
   speedtest1_exec("PRAGMA integrity_check");
