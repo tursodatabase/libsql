@@ -560,7 +560,7 @@ void testset_main(void){
       zNum[len] = '%';
       zNum[len+1] = 0;
     }
-    sqlite3_bind_text(g.pStmt, 1, zNum, len, SQLITE_STATIC);
+    sqlite3_bind_text(g.pStmt, 1, zNum, len+1, SQLITE_STATIC);
     speedtest1_run();
   }
   speedtest1_exec("COMMIT");
@@ -582,7 +582,7 @@ void testset_main(void){
       zNum[len] = '%';
       zNum[len+1] = 0;
     }
-    sqlite3_bind_text(g.pStmt, 1, zNum, len, SQLITE_STATIC);
+    sqlite3_bind_text(g.pStmt, 1, zNum, len+1, SQLITE_STATIC);
     speedtest1_run();
   }
   speedtest1_exec("COMMIT");
@@ -603,7 +603,7 @@ void testset_main(void){
       zNum[len] = '%';
       zNum[len+1] = 0;
     }
-    sqlite3_bind_text(g.pStmt, 1, zNum, len, SQLITE_STATIC);
+    sqlite3_bind_text(g.pStmt, 1, zNum, len+1, SQLITE_STATIC);
     speedtest1_run();
   }
   speedtest1_exec("COMMIT");
