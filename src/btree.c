@@ -7940,17 +7940,19 @@ static int balance(BtCursor *pCur){
 ** pX.pData,nData,nZero fields must be zero.
 **
 ** If the seekResult parameter is non-zero, then a successful call to
-** MovetoUnpacked() to seek cursor pCur to (pKey, nKey) has already
-** been performed. seekResult is the search result returned (a negative
-** number if pCur points at an entry that is smaller than (pKey, nKey), or
-** a positive value if pCur points at an entry that is larger than 
-** (pKey, nKey)). 
+** MovetoUnpacked() to seek cursor pCur to (pKey,nKey) has already
+** been performed.  In other words, if seekResult!=0 then the cursor
+** is currently pointing to a cell that will be adjacent to the cell
+** to be inserted.  If seekResult<0 then pCur points to a cell that is
+** smaller then (pKey,nKey).  If seekResult>0 then pCur points to a cell
+** that is larger than (pKey,nKey).
 **
-** If the seekResult parameter is non-zero, then the caller guarantees that
-** cursor pCur is pointing at the existing copy of a row that is to be
-** overwritten.  If the seekResult parameter is 0, then cursor pCur may
-** point to any entry or to no entry at all and so this function has to seek
-** the cursor before the new key can be inserted.
+** If seekResult==0, that means pCur is pointing at some unknown location.
+** In that case, this routine must seek the cursor to the correct insertion
+** point for (pKey,nKey) before doing the insertion.  For index btrees,
+** if pX->nMem is non-zero, then pX->aMem contains pointers to the unpacked
+** key values and pX->aMem can be used instead of pX->pKey to avoid having
+** to decode the key.
 */
 int sqlite3BtreeInsert(
   BtCursor *pCur,                /* Insert data into the table of this cursor */

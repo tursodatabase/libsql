@@ -1,5 +1,5 @@
-C Fix\sa\ssimple\scomment\stypo.\s\sNo\schanges\sto\scode.
-D 2016-11-09T16:03:36.041
+C Comment\schanges\sthat\sattempt\sto\sbetter\sexplain\sthe\sbehavior\sof\sthe\s"seekResult"\nfield\son\sVdbeCursor\sobjects\sand\sthe\sseekResult\sparameter\sto\nsqlite3BtreeInsert()\sand\sthe\sOPFLAG_USESEEKRESULT\sflag\son\sinsert\sopcodes.\nNo\schanges\sto\scode.
+D 2016-11-09T20:14:34.342
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e0217f2d35a0448abbe4b066132ae20136e8b408
@@ -330,7 +330,7 @@ F src/auth.c 930b376a9c56998557367e6f7f8aaeac82a2a792
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 3ee4c8b2c94ed3a7377256e18199e6ff5cf33f63
 F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
-F src/btree.c fa0e4f2656562f18a8aeab5faa5747fc2d6bc497
+F src/btree.c d1a3d691917cb7d67d50318aef990d8f30d172c7
 F src/btree.h 630303068c82a359f6ddf202b205ae927721b090
 F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
 F src/build.c 178f16698cbcb43402c343a9413fe22c99ffee21
@@ -454,9 +454,9 @@ F src/update.c 771335a33c958a186b66ef7e349f978d6bb2aac4
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c 3e2da6101888d073e79ecc6af5e0a2f70fa1e498
 F src/vacuum.c 33c174b28886b2faf26e503b5a49a1c01a9b1c16
-F src/vdbe.c e6bf36b1df5ff32d222e8c96cacb2fb951be42a2
+F src/vdbe.c f1a8e5bf7747f2e731812804cb65d4d07d86862e
 F src/vdbe.h c044be7050ac6bf596eecc6ab159f5dbc020a3b7
-F src/vdbeInt.h d8a56a491b752dbb5f671963b8c861ec72ea875e
+F src/vdbeInt.h 29b25318a0286c4b2599c0fbef6acf524398489a
 F src/vdbeapi.c 97129bec6b1553da50d8e73f523c278bda66d9f6
 F src/vdbeaux.c 52d9b840859f260ce8418be9333dd77c902e1c74
 F src/vdbeblob.c 3e82a797b60c3b9fed7b8de8c539ca7607874937
@@ -1530,7 +1530,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 42db7cd2c0b367f7dfe733bdaf006538937b812a
-R 725472132a567caa1a975d92e1d85b3c
+P 51d0aed8d63d0710e4aa8925ff18cf3c45dc9e42
+R eacb8afe762fb37c4ccfd0b85c6e6ad7
 U drh
-Z 171f352f5da597b47d092f93a00f48a7
+Z e647112eb568bcacd99f7ceac7bd6ee3

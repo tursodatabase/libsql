@@ -4322,15 +4322,10 @@ case OP_NewRowid: {           /* out2 */
 ** then rowid is stored for subsequent return by the
 ** sqlite3_last_insert_rowid() function (otherwise it is unmodified).
 **
-** If the OPFLAG_USESEEKRESULT flag of P5 is set and if the result of
-** the last seek operation (OP_NotExists or OP_SeekRowid) was a success,
-** then this
-** operation will not attempt to find the appropriate row before doing
-** the insert but will instead overwrite the row that the cursor is
-** currently pointing to.  Presumably, the prior OP_NotExists or
-** OP_SeekRowid opcode
-** has already positioned the cursor correctly.  This is an optimization
-** that boosts performance by avoiding redundant seeks.
+** If the OPFLAG_USESEEKRESULT flag of P5 is set, the implementation might
+** run faster by avoiding an unnecessary seek on cursor P1.  However,
+** the OPFLAG_USESEEKRESULT flag must only be set if there have been no prior
+** seeks on the cursor or if the most recent seek used a key equal to P3.
 **
 ** If the OPFLAG_ISUPDATE flag is set, then this opcode is part of an
 ** UPDATE operation.  Otherwise (if the flag is clear) then this opcode
@@ -5036,9 +5031,11 @@ next_tail:
 ** incremented by this instruction.  If the OPFLAG_NCHANGE bit is clear,
 ** then the change counter is unchanged.
 **
-** If P5 has the OPFLAG_USESEEKRESULT bit set, then the cursor must have
-** just done a seek to the spot where the new entry is to be inserted.
-** This flag avoids doing an extra seek.
+** If the OPFLAG_USESEEKRESULT flag of P5 is set, the implementation might
+** run faster by avoiding an unnecessary seek on cursor P1.  However,
+** the OPFLAG_USESEEKRESULT flag must only be set if there have been no prior
+** seeks on the cursor or if the most recent seek used a key equivalent
+** to P2. 
 **
 ** This instruction only works for indices.  The equivalent instruction
 ** for tables is OP_Insert.
