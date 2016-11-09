@@ -834,11 +834,11 @@ void testset_main(void){
   sz = n = g.szTest*700;
   zNum[0] = 0;
   maxb = roundup_allones(sz/3);
-  speedtest1_begin_test(400, "%d INSERT OR REPLACE ops on an IPK", n);
+  speedtest1_begin_test(400, "%d REPLACE ops on an IPK", n);
   speedtest1_exec("BEGIN");
   speedtest1_exec("CREATE%s TABLE t5(a INTEGER PRIMARY KEY, b %s);",
                   isTemp(9), g.zNN);
-  speedtest1_prepare("INSERT OR REPLACE INTO t5 VALUES(?1,?2); --  %d times",n);
+  speedtest1_prepare("REPLACE INTO t5 VALUES(?1,?2); --  %d times",n);
   for(i=1; i<=n; i++){
     x1 = swizzle(i,maxb);
     speedtest1_numbername(i, zNum, sizeof(zNum));
@@ -860,12 +860,12 @@ void testset_main(void){
   sz = n = g.szTest*700;
   zNum[0] = 0;
   maxb = roundup_allones(sz/3);
-  speedtest1_begin_test(500, "%d INSERT OR REPLACE ops on TEXT PK", n);
+  speedtest1_begin_test(500, "%d REPLACE on TEXT PK", n);
   speedtest1_exec("BEGIN");
   speedtest1_exec("CREATE%s TABLE t6(a TEXT PRIMARY KEY, b %s)%s;",
                   isTemp(9), g.zNN,
                   sqlite3_libversion_number()>=3008002 ? "WITHOUT ROWID" : "");
-  speedtest1_prepare("INSERT OR REPLACE INTO t6 VALUES(?1,?2); --  %d times",n);
+  speedtest1_prepare("REPLACE INTO t6 VALUES(?1,?2); --  %d times",n);
   for(i=1; i<=n; i++){
     x1 = swizzle(i,maxb);
     speedtest1_numbername(x1, zNum, sizeof(zNum));
@@ -875,7 +875,7 @@ void testset_main(void){
   }
   speedtest1_exec("COMMIT");
   speedtest1_end_test();
-  speedtest1_begin_test(510, "%d SELECTS on an IPK", n);
+  speedtest1_begin_test(510, "%d SELECTS on a TEXT PK", n);
   speedtest1_prepare("SELECT b FROM t6 WHERE a=?1; --  %d times",n);
   for(i=1; i<=n; i++){
     x1 = swizzle(i,maxb);
@@ -883,6 +883,10 @@ void testset_main(void){
     sqlite3_bind_text(g.pStmt, 1, zNum, -1, SQLITE_STATIC);
     speedtest1_run();
   }
+  speedtest1_end_test();
+  speedtest1_begin_test(520, "%d SELECT DISTINCT", n);
+  speedtest1_exec("SELECT DISTINCT b FROM t5;");
+  speedtest1_exec("SELECT DISTINCT b FROM t6;");
   speedtest1_end_test();
 
 
