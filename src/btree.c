@@ -8019,7 +8019,16 @@ int sqlite3BtreeInsert(
       if( rc ) return rc;
     }
   }else if( loc==0 ){
-    rc = btreeMoveto(pCur, pX->pKey, pX->nKey, appendBias, &loc);
+    if( pX->nMem ){
+      UnpackedRecord r;
+      memset(&r, 0, sizeof(r));
+      r.pKeyInfo = pCur->pKeyInfo;
+      r.aMem = pX->aMem;
+      r.nField = pX->nMem;
+      rc = sqlite3BtreeMovetoUnpacked(pCur, &r, 0, appendBias, &loc);
+    }else{
+      rc = btreeMoveto(pCur, pX->pKey, pX->nKey, appendBias, &loc);
+    }
     if( rc ) return rc;
   }
   assert( pCur->eState==CURSOR_VALID || (pCur->eState==CURSOR_INVALID && loc) );
