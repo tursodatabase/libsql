@@ -1377,7 +1377,7 @@ void sqlite3GenerateConstraintChecks(
     }
 
     if( isUpdate ){
-      /* pkChng!=0 does not mean that the rowid has change, only that
+      /* pkChng!=0 does not mean that the rowid has changed, only that
       ** it might have changed.  Skip the conflict logic below if the rowid
       ** is unchanged. */
       sqlite3VdbeAddOp3(v, OP_Eq, regNewData, addrRowidOk, regOldData);
