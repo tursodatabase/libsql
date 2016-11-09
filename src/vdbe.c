@@ -5024,7 +5024,7 @@ next_tail:
 ** MakeRecord instructions.  This opcode writes that key
 ** into the index P1.  Data for the entry is nil.
 **
-** If P4 is not zero, the it is the number of values in the unpacked
+** If P4 is not zero, then it is the number of values in the unpacked
 ** key of reg(P2).  In that case, P3 is the index of the first register
 ** for the unpacked key.  The availability of the unpacked key can sometimes
 ** be an optimization.
