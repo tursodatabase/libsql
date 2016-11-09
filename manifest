@@ -1,5 +1,5 @@
-C Add\sa\sDISTINCT\squery\sto\sspeedtest1.c.\s\sAlso\schange\sINSERT\sOR\sREPLACE\sinto\njust\sREPLACE.
-D 2016-11-09T01:07:10.116
+C Fix\stypo\sin\sthe\sCSV\sextension.
+D 2016-11-09T01:46:13.326
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e0217f2d35a0448abbe4b066132ae20136e8b408
@@ -208,7 +208,7 @@ F ext/misc/amatch.c 211108e201105e4bb0c076527b8cfd34330fc234
 F ext/misc/carray.c 40c27641010a4dc67e3690bdb7c9d36ca58b3c2d
 F ext/misc/closure.c 0d2a038df8fbae7f19de42e7c7d71f2e4dc88704
 F ext/misc/compress.c 122faa92d25033d6c3f07c39231de074ab3d2e83
-F ext/misc/csv.c 816a3715356e4210dae2d242057745e937050896
+F ext/misc/csv.c 531a46cbad789fca0aa9db69a0e6c8ac9e68767d
 F ext/misc/eval.c f971962e92ebb8b0a4e6b62949463ee454d88fa2
 F ext/misc/fileio.c d4171c815d6543a9edef8308aab2951413cd8d0f
 F ext/misc/fuzzer.c 7c64b8197bb77b7d64eff7cac7848870235d4c25
@@ -1530,7 +1530,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d6dd2ad35ed17e980ed564688499c802e5850386
-R d08cd4afd007fbdaa2d25ecaf2cc91e7
-U drh
-Z 0b6edaf7c64c65fbed1b9876eb6764f5
+P 754ee844958bdc3b96acfd1f5395da5796e54a82
+R eb905f0421ecb200099f22c1d4910f11
+U mistachkin
+Z a09941219c710c6bfaf84cdaf6c10994
