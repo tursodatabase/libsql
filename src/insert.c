@@ -1515,7 +1515,7 @@ void sqlite3GenerateConstraintChecks(
     /* Create a record for this index entry as it should appear after
     ** the insert or update.  Store that record in the aRegIdx[ix] register
     */
-    regIdx = aRegIdx[ix]+1; // sqlite3GetTempRange(pParse, pIdx->nColumn);
+    regIdx = aRegIdx[ix]+1;
     for(i=0; i<pIdx->nColumn; i++){
       int iField = pIdx->aiColumn[i];
       int x;
@@ -1552,7 +1552,6 @@ void sqlite3GenerateConstraintChecks(
     /* Find out what action to take in case there is a uniqueness conflict */
     onError = pIdx->onError;
     if( onError==OE_None ){ 
-//      sqlite3ReleaseTempRange(pParse, regIdx, pIdx->nColumn);
       sqlite3VdbeResolveLabel(v, addrUniqueOk);
       continue;  /* pIdx is not a UNIQUE index */
     }
@@ -1651,7 +1650,6 @@ void sqlite3GenerateConstraintChecks(
       }
     }
     sqlite3VdbeResolveLabel(v, addrUniqueOk);
-    // sqlite3ReleaseTempRange(pParse, regIdx, pIdx->nColumn);
     if( regR!=regIdx ) sqlite3ReleaseTempRange(pParse, regR, nPkField);
   }
   if( ipkTop ){
