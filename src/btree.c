@@ -777,12 +777,10 @@ static int btreeMoveto(
       sqlite3DbFree(pCur->pKeyInfo->db, pFree);
       return SQLITE_CORRUPT_BKPT;
     }
+    rc = sqlite3BtreeMovetoUnpacked(pCur, pIdxKey, bias, pRes);
+    if( pFree ) sqlite3DbFree(pCur->pKeyInfo->db, pFree);
   }else{
-    pIdxKey = 0;
-  }
-  rc = sqlite3BtreeMovetoUnpacked(pCur, pIdxKey, nKey, bias, pRes);
-  if( pFree ){
-    sqlite3DbFree(pCur->pKeyInfo->db, pFree);
+    rc = sqlite3BtreeMovetoIntkey(pCur, nKey, bias, pRes);
   }
   return rc;
 }
@@ -5075,7 +5073,6 @@ int sqlite3BtreeLast(BtCursor *pCur, int *pRes){
 int sqlite3BtreeMovetoUnpacked(
   BtCursor *pCur,          /* The cursor to be moved */
   UnpackedRecord *pIdxKey, /* Unpacked index key */
-  i64 intKey,              /* The table key */
   int biasRight,           /* If true, bias the search to the high end */
   int *pRes                /* Write search results here */
 ){
@@ -5085,35 +5082,15 @@ int sqlite3BtreeMovetoUnpacked(
   assert( cursorOwnsBtShared(pCur) );
   assert( sqlite3_mutex_held(pCur->pBtree->db->mutex) );
   assert( pRes );
-  assert( (pIdxKey==0)==(pCur->pKeyInfo==0) );
-  assert( pCur->eState!=CURSOR_VALID || (pIdxKey==0)==(pCur->curIntKey!=0) );
+  assert( pIdxKey );
+  assert( pCur->curIntKey==0 || pCur->eState!=CURSOR_VALID );
 
-  /* If the cursor is already positioned at the point we are trying
-  ** to move to, then just return without doing any work */
-  if( pIdxKey==0
-   && pCur->eState==CURSOR_VALID && (pCur->curFlags & BTCF_ValidNKey)!=0
-  ){
-    if( pCur->info.nKey==intKey ){
-      *pRes = 0;
-      return SQLITE_OK;
-    }
-    if( (pCur->curFlags & BTCF_AtLast)!=0 && pCur->info.nKey<intKey ){
-      *pRes = -1;
-      return SQLITE_OK;
-    }
-  }
-
-  if( pIdxKey ){
-    xRecordCompare = sqlite3VdbeFindCompare(pIdxKey);
-    pIdxKey->errCode = 0;
-    assert( pIdxKey->default_rc==1 
-         || pIdxKey->default_rc==0 
-         || pIdxKey->default_rc==-1
-    );
-  }else{
-    xRecordCompare = 0; /* All keys are integers */
-  }
-
+  xRecordCompare = sqlite3VdbeFindCompare(pIdxKey);
+  pIdxKey->errCode = 0;
+  assert( pIdxKey->default_rc==1 
+       || pIdxKey->default_rc==0 
+       || pIdxKey->default_rc==-1
+  );
   rc = moveToRoot(pCur);
   if( rc ){
     return rc;
@@ -5126,8 +5103,8 @@ int sqlite3BtreeMovetoUnpacked(
     assert( pCur->pgnoRoot==0 || pCur->apPage[pCur->iPage]->nCell==0 );
     return SQLITE_OK;
   }
-  assert( pCur->apPage[0]->intKey==pCur->curIntKey );
-  assert( pCur->curIntKey || pIdxKey );
+  assert( !pCur->apPage[0]->intKey );
+  assert( !pCur->curIntKey );
   for(;;){
     int lwr, upr, idx, c;
     Pgno chldPg;
@@ -5147,124 +5124,89 @@ int sqlite3BtreeMovetoUnpacked(
     assert( biasRight==0 || biasRight==1 );
     idx = upr>>(1-biasRight); /* idx = biasRight ? upr : (lwr+upr)/2; */
     pCur->aiIdx[pCur->iPage] = (u16)idx;
-    if( xRecordCompare==0 ){
-      for(;;){
-        i64 nCellKey;
-        pCell = findCellPastPtr(pPage, idx);
-        if( pPage->intKeyLeaf ){
-          while( 0x80 <= *(pCell++) ){
-            if( pCell>=pPage->aDataEnd ) return SQLITE_CORRUPT_BKPT;
-          }
-        }
-        getVarint(pCell, (u64*)&nCellKey);
-        if( nCellKey<intKey ){
-          lwr = idx+1;
-          if( lwr>upr ){ c = -1; break; }
-        }else if( nCellKey>intKey ){
-          upr = idx-1;
-          if( lwr>upr ){ c = +1; break; }
-        }else{
-          assert( nCellKey==intKey );
-          pCur->curFlags |= BTCF_ValidNKey;
-          pCur->info.nKey = nCellKey;
-          pCur->aiIdx[pCur->iPage] = (u16)idx;
-          if( !pPage->leaf ){
-            lwr = idx;
-            goto moveto_next_layer;
-          }else{
-            *pRes = 0;
-            rc = SQLITE_OK;
-            goto moveto_finish;
-          }
-        }
-        assert( lwr+upr>=0 );
-        idx = (lwr+upr)>>1;  /* idx = (lwr+upr)/2; */
-      }
-    }else{
-      for(;;){
-        int nCell;  /* Size of the pCell cell in bytes */
-        pCell = findCellPastPtr(pPage, idx);
+    for(;;){
+      int nCell;  /* Size of the pCell cell in bytes */
+      pCell = findCellPastPtr(pPage, idx);
 
-        /* The maximum supported page-size is 65536 bytes. This means that
-        ** the maximum number of record bytes stored on an index B-Tree
-        ** page is less than 16384 bytes and may be stored as a 2-byte
-        ** varint. This information is used to attempt to avoid parsing 
-        ** the entire cell by checking for the cases where the record is 
-        ** stored entirely within the b-tree page by inspecting the first 
-        ** 2 bytes of the cell.
-        */
-        nCell = pCell[0];
-        if( nCell<=pPage->max1bytePayload ){
-          /* This branch runs if the record-size field of the cell is a
-          ** single byte varint and the record fits entirely on the main
-          ** b-tree page.  */
-          testcase( pCell+nCell+1==pPage->aDataEnd );
-          c = xRecordCompare(nCell, (void*)&pCell[1], pIdxKey);
-        }else if( !(pCell[1] & 0x80) 
-          && (nCell = ((nCell&0x7f)<<7) + pCell[1])<=pPage->maxLocal
-        ){
-          /* The record-size field is a 2 byte varint and the record 
-          ** fits entirely on the main b-tree page.  */
-          testcase( pCell+nCell+2==pPage->aDataEnd );
-          c = xRecordCompare(nCell, (void*)&pCell[2], pIdxKey);
-        }else{
-          /* The record flows over onto one or more overflow pages. In
-          ** this case the whole cell needs to be parsed, a buffer allocated
-          ** and accessPayload() used to retrieve the record into the
-          ** buffer before VdbeRecordCompare() can be called. 
-          **
-          ** If the record is corrupt, the xRecordCompare routine may read
-          ** up to two varints past the end of the buffer. An extra 18 
-          ** bytes of padding is allocated at the end of the buffer in
-          ** case this happens.  */
-          void *pCellKey;
-          u8 * const pCellBody = pCell - pPage->childPtrSize;
-          pPage->xParseCell(pPage, pCellBody, &pCur->info);
-          nCell = (int)pCur->info.nKey;
-          testcase( nCell<0 );   /* True if key size is 2^32 or more */
-          testcase( nCell==0 );  /* Invalid key size:  0x80 0x80 0x00 */
-          testcase( nCell==1 );  /* Invalid key size:  0x80 0x80 0x01 */
-          testcase( nCell==2 );  /* Minimum legal index key size */
-          if( nCell<2 ){
-            rc = SQLITE_CORRUPT_BKPT;
-            goto moveto_finish;
-          }
-          pCellKey = sqlite3Malloc( nCell+18 );
-          if( pCellKey==0 ){
-            rc = SQLITE_NOMEM_BKPT;
-            goto moveto_finish;
-          }
-          pCur->aiIdx[pCur->iPage] = (u16)idx;
-          rc = accessPayload(pCur, 0, nCell, (unsigned char*)pCellKey, 2);
-          if( rc ){
-            sqlite3_free(pCellKey);
-            goto moveto_finish;
-          }
-          c = xRecordCompare(nCell, pCellKey, pIdxKey);
-          sqlite3_free(pCellKey);
-        }
-        assert( 
-            (pIdxKey->errCode!=SQLITE_CORRUPT || c==0)
-         && (pIdxKey->errCode!=SQLITE_NOMEM || pCur->pBtree->db->mallocFailed)
-        );
-        if( c<0 ){
-          lwr = idx+1;
-        }else if( c>0 ){
-          upr = idx-1;
-        }else{
-          assert( c==0 );
-          *pRes = 0;
-          rc = SQLITE_OK;
-          pCur->aiIdx[pCur->iPage] = (u16)idx;
-          if( pIdxKey->errCode ) rc = SQLITE_CORRUPT;
+      /* The maximum supported page-size is 65536 bytes. This means that
+      ** the maximum number of record bytes stored on an index B-Tree
+      ** page is less than 16384 bytes and may be stored as a 2-byte
+      ** varint. This information is used to attempt to avoid parsing 
+      ** the entire cell by checking for the cases where the record is 
+      ** stored entirely within the b-tree page by inspecting the first 
+      ** 2 bytes of the cell.
+      */
+      nCell = pCell[0];
+      if( nCell<=pPage->max1bytePayload ){
+        /* This branch runs if the record-size field of the cell is a
+        ** single byte varint and the record fits entirely on the main
+        ** b-tree page.  */
+        testcase( pCell+nCell+1==pPage->aDataEnd );
+        c = xRecordCompare(nCell, (void*)&pCell[1], pIdxKey);
+      }else if( !(pCell[1] & 0x80) 
+        && (nCell = ((nCell&0x7f)<<7) + pCell[1])<=pPage->maxLocal
+      ){
+        /* The record-size field is a 2 byte varint and the record 
+        ** fits entirely on the main b-tree page.  */
+        testcase( pCell+nCell+2==pPage->aDataEnd );
+        c = xRecordCompare(nCell, (void*)&pCell[2], pIdxKey);
+      }else{
+        /* The record flows over onto one or more overflow pages. In
+        ** this case the whole cell needs to be parsed, a buffer allocated
+        ** and accessPayload() used to retrieve the record into the
+        ** buffer before VdbeRecordCompare() can be called. 
+        **
+        ** If the record is corrupt, the xRecordCompare routine may read
+        ** up to two varints past the end of the buffer. An extra 18 
+        ** bytes of padding is allocated at the end of the buffer in
+        ** case this happens.  */
+        void *pCellKey;
+        u8 * const pCellBody = pCell - pPage->childPtrSize;
+        pPage->xParseCell(pPage, pCellBody, &pCur->info);
+        nCell = (int)pCur->info.nKey;
+        testcase( nCell<0 );   /* True if key size is 2^32 or more */
+        testcase( nCell==0 );  /* Invalid key size:  0x80 0x80 0x00 */
+        testcase( nCell==1 );  /* Invalid key size:  0x80 0x80 0x01 */
+        testcase( nCell==2 );  /* Minimum legal index key size */
+        if( nCell<2 ){
+          rc = SQLITE_CORRUPT_BKPT;
           goto moveto_finish;
         }
-        if( lwr>upr ) break;
-        assert( lwr+upr>=0 );
-        idx = (lwr+upr)>>1;  /* idx = (lwr+upr)/2 */
+        pCellKey = sqlite3Malloc( nCell+18 );
+        if( pCellKey==0 ){
+          rc = SQLITE_NOMEM_BKPT;
+          goto moveto_finish;
+        }
+        pCur->aiIdx[pCur->iPage] = (u16)idx;
+        rc = accessPayload(pCur, 0, nCell, (unsigned char*)pCellKey, 2);
+        if( rc ){
+          sqlite3_free(pCellKey);
+          goto moveto_finish;
+        }
+        c = xRecordCompare(nCell, pCellKey, pIdxKey);
+        sqlite3_free(pCellKey);
       }
+      assert( 
+          (pIdxKey->errCode!=SQLITE_CORRUPT || c==0)
+       && (pIdxKey->errCode!=SQLITE_NOMEM || pCur->pBtree->db->mallocFailed)
+      );
+      if( c<0 ){
+        lwr = idx+1;
+      }else if( c>0 ){
+        upr = idx-1;
+      }else{
+        assert( c==0 );
+        *pRes = 0;
+        rc = SQLITE_OK;
+        pCur->aiIdx[pCur->iPage] = (u16)idx;
+        if( pIdxKey->errCode ) rc = SQLITE_CORRUPT;
+        goto moveto_finish;
+      }
+      if( lwr>upr ) break;
+      assert( lwr+upr>=0 );
+      idx = (lwr+upr)>>1;  /* idx = (lwr+upr)/2 */
     }
-    assert( lwr==upr+1 || (pPage->intKey && !pPage->leaf) );
+    assert( lwr==upr+1 );
     assert( pPage->isInit );
     if( pPage->leaf ){
       assert( pCur->aiIdx[pCur->iPage]<pCur->apPage[pCur->iPage]->nCell );
@@ -5273,7 +5215,6 @@ int sqlite3BtreeMovetoUnpacked(
       rc = SQLITE_OK;
       goto moveto_finish;
     }
-moveto_next_layer:
     if( lwr>=pPage->nCell ){
       chldPg = get4byte(&pPage->aData[pPage->hdrOffset+8]);
     }else{
@@ -5284,6 +5225,121 @@ moveto_next_layer:
     if( rc ) break;
   }
 moveto_finish:
+  pCur->info.nSize = 0;
+  pCur->curFlags &= ~(BTCF_ValidNKey|BTCF_ValidOvfl);
+  return rc;
+}
+int sqlite3BtreeMovetoIntkey(
+  BtCursor *pCur,          /* The cursor to be moved */
+  i64 intKey,              /* The table key */
+  int biasRight,           /* If true, bias the search to the high end */
+  int *pRes                /* Write search results here */
+){
+  int rc;
+
+  assert( cursorOwnsBtShared(pCur) );
+  assert( sqlite3_mutex_held(pCur->pBtree->db->mutex) );
+  assert( pRes );
+  assert( pCur->pKeyInfo==0 );
+  assert( pCur->curIntKey || pCur->eState!=CURSOR_VALID );
+
+  /* If the cursor is already positioned at the point we are trying
+  ** to move to, then just return without doing any work */
+  if( pCur->eState==CURSOR_VALID && (pCur->curFlags & BTCF_ValidNKey)!=0 ){
+    if( pCur->info.nKey==intKey ){
+      *pRes = 0;
+      return SQLITE_OK;
+    }
+    if( (pCur->curFlags & BTCF_AtLast)!=0 && pCur->info.nKey<intKey ){
+      *pRes = -1;
+      return SQLITE_OK;
+    }
+  }
+  rc = moveToRoot(pCur);
+  if( rc ){
+    return rc;
+  }
+  assert( pCur->pgnoRoot==0 || pCur->apPage[pCur->iPage] );
+  assert( pCur->pgnoRoot==0 || pCur->apPage[pCur->iPage]->isInit );
+  assert( pCur->eState==CURSOR_INVALID || pCur->apPage[pCur->iPage]->nCell>0 );
+  if( pCur->eState==CURSOR_INVALID ){
+    *pRes = -1;
+    assert( pCur->pgnoRoot==0 || pCur->apPage[pCur->iPage]->nCell==0 );
+    return SQLITE_OK;
+  }
+  assert( pCur->apPage[0]->intKey );
+  assert( pCur->curIntKey );
+  for(;;){
+    int lwr, upr, idx, c;
+    Pgno chldPg;
+    MemPage *pPage = pCur->apPage[pCur->iPage];
+    u8 *pCell;                          /* Pointer to current cell in pPage */
+
+    /* pPage->nCell must be greater than zero. If this is the root-page
+    ** the cursor would have been INVALID above and this for(;;) loop
+    ** not run. If this is not the root-page, then the moveToChild() routine
+    ** would have already detected db corruption. Similarly, pPage must
+    ** be the right kind (index or table) of b-tree page. Otherwise
+    ** a moveToChild() or moveToRoot() call would have detected corruption.  */
+    assert( pPage->nCell>0 );
+    assert( pPage->intKey );
+    lwr = 0;
+    upr = pPage->nCell-1;
+    assert( biasRight==0 || biasRight==1 );
+    idx = upr>>(1-biasRight); /* idx = biasRight ? upr : (lwr+upr)/2; */
+    pCur->aiIdx[pCur->iPage] = (u16)idx;
+    for(;;){
+      i64 nCellKey;
+      pCell = findCellPastPtr(pPage, idx);
+      if( pPage->intKeyLeaf ){
+        while( 0x80 <= *(pCell++) ){
+          if( pCell>=pPage->aDataEnd ) return SQLITE_CORRUPT_BKPT;
+        }
+      }
+      getVarint(pCell, (u64*)&nCellKey);
+      if( nCellKey<intKey ){
+        lwr = idx+1;
+        if( lwr>upr ){ c = -1; break; }
+      }else if( nCellKey>intKey ){
+        upr = idx-1;
+        if( lwr>upr ){ c = +1; break; }
+      }else{
+        assert( nCellKey==intKey );
+        pCur->curFlags |= BTCF_ValidNKey;
+        pCur->info.nKey = nCellKey;
+        pCur->aiIdx[pCur->iPage] = (u16)idx;
+        if( !pPage->leaf ){
+          lwr = idx;
+          goto intkey_moveto_next_layer;
+        }else{
+          *pRes = 0;
+          rc = SQLITE_OK;
+          goto intkey_moveto_finish;
+        }
+      }
+      assert( lwr+upr>=0 );
+      idx = (lwr+upr)>>1;  /* idx = (lwr+upr)/2; */
+    }
+    assert( lwr==upr+1 || !pPage->leaf );
+    assert( pPage->isInit );
+    if( pPage->leaf ){
+      assert( pCur->aiIdx[pCur->iPage]<pCur->apPage[pCur->iPage]->nCell );
+      pCur->aiIdx[pCur->iPage] = (u16)idx;
+      *pRes = c;
+      rc = SQLITE_OK;
+      goto intkey_moveto_finish;
+    }
+intkey_moveto_next_layer:
+    if( lwr>=pPage->nCell ){
+      chldPg = get4byte(&pPage->aData[pPage->hdrOffset+8]);
+    }else{
+      chldPg = get4byte(findCell(pPage, lwr));
+    }
+    pCur->aiIdx[pCur->iPage] = (u16)lwr;
+    rc = moveToChild(pCur, chldPg);
+    if( rc ) break;
+  }
+intkey_moveto_finish:
   pCur->info.nSize = 0;
   pCur->curFlags &= ~(BTCF_ValidNKey|BTCF_ValidOvfl);
   return rc;
@@ -8019,7 +8075,7 @@ int sqlite3BtreeInsert(
                && pCur->info.nKey==pX->nKey-1 ){
       loc = -1;
     }else if( loc==0 ){
-      rc = sqlite3BtreeMovetoUnpacked(pCur, 0, pX->nKey, appendBias, &loc);
+      rc = sqlite3BtreeMovetoIntkey(pCur, pX->nKey, appendBias, &loc);
       if( rc ) return rc;
     }
   }else if( loc==0 ){
@@ -8029,7 +8085,7 @@ int sqlite3BtreeInsert(
       r.pKeyInfo = pCur->pKeyInfo;
       r.aMem = pX->aMem;
       r.nField = pX->nMem;
-      rc = sqlite3BtreeMovetoUnpacked(pCur, &r, 0, appendBias, &loc);
+      rc = sqlite3BtreeMovetoUnpacked(pCur, &r, appendBias, &loc);
     }else{
       rc = btreeMoveto(pCur, pX->pKey, pX->nKey, appendBias, &loc);
     }

@@ -241,6 +241,11 @@ int sqlite3BtreeCloseCursor(BtCursor*);
 int sqlite3BtreeMovetoUnpacked(
   BtCursor*,
   UnpackedRecord *pUnKey,
+  int bias,
+  int *pRes
+);
+int sqlite3BtreeMovetoIntkey(
+  BtCursor*,
   i64 intKey,
   int bias,
   int *pRes
