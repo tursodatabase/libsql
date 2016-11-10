@@ -1,5 +1,5 @@
-C Fix\stypo\sin\sthe\sCSV\sextension.
-D 2016-11-09T01:46:13.326
+C Avoid\sstoring\sredundant\sfields\sin\ssorter\srecords\swhen\sthe\ssort-key\sand\sdata\shave\nfields\sin\scommon\s(as\sin\s"SELECT\sa\sFROM\st1\sORDER\sBY\s1").
+D 2016-11-10T20:14:06.787
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e0217f2d35a0448abbe4b066132ae20136e8b408
@@ -340,7 +340,7 @@ F src/ctime.c a2a52d6e353f459d8ab0f07321f60fafa47d5421
 F src/date.c 95c9a8d00767e7221a8e9a31f4e913fc8029bf6b
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
 F src/delete.c cb3f6300df24c26c609778b2731f82644b5532ec
-F src/expr.c ce7110980fac6dfdfbe1e393443bdb79bad29339
+F src/expr.c 1fd53148e575de810ad10a9eb15f16f2e44ff1dc
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c b9ca262f6ad4d030a3cab737ebf9b0b3c8b4ac80
 F src/func.c 7057bc2c105b82faa668d8e2ec85fad4540e5c51
@@ -387,12 +387,12 @@ F src/printf.c a5f0ca08ddede803c241266abb46356ec748ded1
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 3fac1b2737ea5a724f20b921ac7e259c9be2100b
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c ea3af83e2d0f245fef81ea4cf04cb730ce67f722
+F src/select.c 64b2273747c6485638bfeb6790e3e774e0605d02
 F src/shell.c 63e54cfa1c7ec5b70a4c9a86502bc10280c3d5a3
 F src/sqlite.h.in 803f7050f69b2eea573fac219f3c92582c096027
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
-F src/sqliteInt.h 37628fe30c464dc790bcee3bfd3d0caa8f222ed1
+F src/sqliteInt.h 603953faca895386d4f3a8b7046f3e4e6c071c53
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
@@ -1530,7 +1530,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 754ee844958bdc3b96acfd1f5395da5796e54a82
-R eb905f0421ecb200099f22c1d4910f11
-U mistachkin
-Z a09941219c710c6bfaf84cdaf6c10994
+P b4889588246c33374ff3758e21ccc4ce246380b6
+R e8a5368c67459f65dc206ad3df15a284
+T *branch * sorter-opt
+T *sym-sorter-opt *
+T -sym-trunk *
+U dan
+Z 220ba0a8da96dcdf18555b62136e6fa1
