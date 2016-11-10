@@ -1,5 +1,5 @@
-C When\sdoing\sa\sREPLACE\son\sa\sWITHOUT\sROWID\stable\swith\sno\ssecondary\sindexes,\nbypass\sthe\sOP_NoConflict/OP_Delete\ssequence\sand\sdirectly\soverwrite\sany\npreexisting\srow,\sfor\sa\sperformance\sincrease.
-D 2016-11-10T17:01:36.523
+C Avoid\sa\sfew\sunnecessary\scalls\sto\ssqlite3BtreeMovetoUnpacked().
+D 2016-11-10T20:42:08.396
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e0217f2d35a0448abbe4b066132ae20136e8b408
@@ -330,7 +330,7 @@ F src/auth.c 930b376a9c56998557367e6f7f8aaeac82a2a792
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 3ee4c8b2c94ed3a7377256e18199e6ff5cf33f63
 F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
-F src/btree.c d1a3d691917cb7d67d50318aef990d8f30d172c7
+F src/btree.c 592a72c259752b3cae6928e3f2448a2cb540b032
 F src/btree.h 630303068c82a359f6ddf202b205ae927721b090
 F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
 F src/build.c 178f16698cbcb43402c343a9413fe22c99ffee21
@@ -1530,7 +1530,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 42f8aa6231bf4ed74bebdc85aa79d23dc20b3c14
-R 67c1c35ade05c28c79c38b3258d2929f
+P f7041cbb63b912f9ecad538804b6f2383efbec4e
+R d3d5f8b510b4445e2e54b3c5a8a5e3a5
 U drh
-Z 9380b641677b007c43aa332b4ac80a39
+Z 4683912e0f389e0006dbaa0668a519e9
