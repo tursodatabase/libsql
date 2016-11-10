@@ -1,5 +1,5 @@
-C Remove\sC++\sstyle\scomments.\s\sNo\scode\schanges.
-D 2016-11-10T16:07:43.214
+C When\sdoing\sa\sREPLACE\son\sa\sWITHOUT\sROWID\stable\swith\sno\ssecondary\sindexes,\nbypass\sthe\sOP_NoConflict/OP_Delete\ssequence\sand\sdirectly\soverwrite\sany\npreexisting\srow,\sfor\sa\sperformance\sincrease.
+D 2016-11-10T17:01:36.523
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e0217f2d35a0448abbe4b066132ae20136e8b408
@@ -349,7 +349,7 @@ F src/hash.c 63d0ee752a3b92d4695b2b1f5259c4621b2cfebd
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 63bec2cbffc09d2ea45e0980ded1ebc0e8ef6823
+F src/insert.c 40c64f0ad405d491127ac13ef450a1b44b076e2f
 F src/legacy.c 75d3023be8f0d2b99d60f905090341a03358c58e
 F src/loadext.c 5d6642d141c07d366e43d359e94ec9de47add41d
 F src/main.c 694ac90557abdaa62151a6090670e107b0f2c2ab
@@ -1530,7 +1530,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 67602e40f122cbb6354048a64c5d3a72b2855ec7
-R babf57682996bf94e8ad4ede9c8310bb
+P 42f8aa6231bf4ed74bebdc85aa79d23dc20b3c14
+R 67c1c35ade05c28c79c38b3258d2929f
 U drh
-Z a2fd3a9e97e33aae9cbdedab39a4dc89
+Z 9380b641677b007c43aa332b4ac80a39
