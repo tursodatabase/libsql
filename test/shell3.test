@@ -96,6 +96,6 @@ do_test shell3-2.6 {
 } {0 {}}
 do_test shell3-2.7 {
   catchcmd "foo.db" "CREATE TABLE"
-} {1 {Error: incomplete SQL: CREATE TABLE}}
+} {1 {Error: near line 1: near "TABLE": syntax error}}
 
 finish_test

@@ -4205,50 +4205,18 @@ static int do_meta_command(char *zLine, ShellState *p){
 
   if( c=='r' && n>=3 && strncmp(azArg[0], "read", n)==0 ){
     FILE *alt;
-    char *zFile;
-    int rawMode = 0;
-    if( nArg!=2 && nArg!=3 ){
-      raw_printf(stderr, "Usage: .read [--raw] FILE\n");
+    if( nArg!=2 ){
+      raw_printf(stderr, "Usage: .read FILE\n");
       rc = 1;
       goto meta_command_exit;
     }
-    if( nArg==3 ){
-      const char *z = azArg[1];
-      while( z[0]=='-' ) z++;
-      if( strcmp(z,"raw")==0 ){
-        rawMode = 1;
-      }
-      else{
-        raw_printf(stderr, "unknown option: \"%s\"\n", azArg[1]);
-        rc = 1;
-        goto meta_command_exit;
-      }
-    }
-    zFile = azArg[nArg-1];
-    if( rawMode ){
-      char *z = readFile(zFile);
-      if( z==0 ){
-        utf8_printf(stderr, "Error: cannot open \"%s\"\n", zFile);
-        rc = 1;
-      }else{
-        char *zErr = 0;
-        open_db(p, 1);
-        rc = sqlite3_exec(p->db, z, callback, p, &zErr);
-        sqlite3_free(z);
-        if( zErr ){
-          utf8_printf(stdout, "%s", zErr);
-          sqlite3_free(zErr);
-        }
-      }
+    alt = fopen(azArg[1], "rb");
+    if( alt==0 ){
+      utf8_printf(stderr,"Error: cannot open \"%s\"\n", azArg[1]);
+      rc = 1;
     }else{
-      alt = fopen(zFile, "rb");
-      if( alt==0 ){
-        utf8_printf(stderr,"Error: cannot open \"%s\"\n", azArg[1]);
-        rc = 1;
-      }else{
-        rc = process_input(p, alt);
-        fclose(alt);
-      }
+      rc = process_input(p, alt);
+      fclose(alt);
     }
   }else
 
@@ -5209,6 +5177,42 @@ static int line_is_complete(char *zSql, int nSql){
 }
 
 /*
+** Run a single line of SQL
+*/
+static int runOneSqlLine(ShellState *p, char *zSql, FILE *in, int startline){
+  int rc;
+  char *zErrMsg = 0;
+
+  open_db(p, 0);
+  if( p->backslashOn ) resolve_backslashes(zSql);
+  BEGIN_TIMER;
+  rc = shell_exec(p->db, zSql, shell_callback, p, &zErrMsg);
+  END_TIMER;
+  if( rc || zErrMsg ){
+    char zPrefix[100];
+    if( in!=0 || !stdin_is_interactive ){
+      sqlite3_snprintf(sizeof(zPrefix), zPrefix,
+                       "Error: near line %d:", startline);
+    }else{
+      sqlite3_snprintf(sizeof(zPrefix), zPrefix, "Error:");
+    }
+    if( zErrMsg!=0 ){
+      utf8_printf(stderr, "%s %s\n", zPrefix, zErrMsg);
+      sqlite3_free(zErrMsg);
+      zErrMsg = 0;
+    }else{
+      utf8_printf(stderr, "%s %s\n", zPrefix, sqlite3_errmsg(p->db));
+    }
+    return 1;
+  }else if( p->countChanges ){
+    raw_printf(p->out, "changes: %3d   total_changes: %d\n",
+            sqlite3_changes(p->db), sqlite3_total_changes(p->db));
+  }
+  return 0;
+}
+
+
+/*
 ** Read input from *in and process it.  If *in==0 then input
 ** is interactive - the user is typing it it.  Otherwise, input
 ** is coming from a file or device.  A prompt is issued and history
@@ -5224,7 +5228,6 @@ static int process_input(ShellState *p, FILE *in){
   int nSql = 0;             /* Bytes of zSql[] used */
   int nAlloc = 0;           /* Allocated zSql[] space */
   int nSqlPrior = 0;        /* Bytes of zSql[] used by prior line */
-  char *zErrMsg;            /* Error message returned */
   int rc;                   /* Error code */
   int errCnt = 0;           /* Number of errors seen */
   int lineno = 0;           /* Current line number */
@@ -5284,32 +5287,7 @@ static int process_input(ShellState *p, FILE *in){
     }
     if( nSql && line_contains_semicolon(&zSql[nSqlPrior], nSql-nSqlPrior)
                 && sqlite3_complete(zSql) ){
-      p->cnt = 0;
-      open_db(p, 0);
-      if( p->backslashOn ) resolve_backslashes(zSql);
-      BEGIN_TIMER;
-      rc = shell_exec(p->db, zSql, shell_callback, p, &zErrMsg);
-      END_TIMER;
-      if( rc || zErrMsg ){
-        char zPrefix[100];
-        if( in!=0 || !stdin_is_interactive ){
-          sqlite3_snprintf(sizeof(zPrefix), zPrefix,
-                           "Error: near line %d:", startline);
-        }else{
-          sqlite3_snprintf(sizeof(zPrefix), zPrefix, "Error:");
-        }
-        if( zErrMsg!=0 ){
-          utf8_printf(stderr, "%s %s\n", zPrefix, zErrMsg);
-          sqlite3_free(zErrMsg);
-          zErrMsg = 0;
-        }else{
-          utf8_printf(stderr, "%s %s\n", zPrefix, sqlite3_errmsg(p->db));
-        }
-        errCnt++;
-      }else if( p->countChanges ){
-        raw_printf(p->out, "changes: %3d   total_changes: %d\n",
-                sqlite3_changes(p->db), sqlite3_total_changes(p->db));
-      }
+      errCnt += runOneSqlLine(p, zSql, in, startline);
       nSql = 0;
       if( p->outCount ){
         output_reset(p);
@@ -5320,11 +5298,8 @@ static int process_input(ShellState *p, FILE *in){
       nSql = 0;
     }
   }
-  if( nSql ){
-    if( !_all_whitespace(zSql) ){
-      utf8_printf(stderr, "Error: incomplete SQL: %s\n", zSql);
-      errCnt++;
-    }
+  if( nSql && !_all_whitespace(zSql) ){
+    runOneSqlLine(p, zSql, in, startline);
   }
   free(zSql);
   free(zLine);

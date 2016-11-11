@@ -1,5 +1,5 @@
-C Add\sextra\stests\sfor\sthe\sxBestIndex()\svirtual\stable\smethod.
-D 2016-11-11T09:51:46.009
+C Back\sout\sthe\s"--raw"\soption\son\s".read"\sin\sthe\scommand-line\sshell.\s\sInstead,\nfix\sthe\scommand-line\sshell\sso\sthat\sif\sEOF\sis\sreached\swithout\sseeing\sa\nfinal\ssemicolon,\sit\sgoes\sahead\sand\spasses\sthe\saccumulated\sSQL\stext\sto\nSQLite.
+D 2016-11-11T14:54:22.386
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e0217f2d35a0448abbe4b066132ae20136e8b408
@@ -388,7 +388,7 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 3fac1b2737ea5a724f20b921ac7e259c9be2100b
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c ea3af83e2d0f245fef81ea4cf04cb730ce67f722
-F src/shell.c dd8dbdcfbbac328c9011ce70d516c6872f9bae6e
+F src/shell.c f04e4af75c5517735397d060ed0b4a874104bb41
 F src/sqlite.h.in 803f7050f69b2eea573fac219f3c92582c096027
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
@@ -1087,7 +1087,7 @@ F test/shared_err.test 2f2aee20db294b9924e81f6ccbe60f19e21e8506
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
 F test/shell1.test 65b10cd8a90cda9b5af9100a45689a57dcc01a31
 F test/shell2.test e242a9912f44f4c23c3d1d802a83e934e84c853b
-F test/shell3.test da513d522ef6f01cee8475dcf8332bff8982b3dd
+F test/shell3.test 9b95ba643eaa228376f06a898fb410ee9b6e57c1
 F test/shell4.test 89ad573879a745974ff2df20ff97c5d6ffffbd5d
 F test/shell5.test 50a732c1c2158b1cd62cf53975ce1ea7ce6b9dc9
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
@@ -1531,7 +1531,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6311a8bdb1f2e1813516a32d171aae030bd73fd3
-R 3e019704b19690d86a1b7d773d983727
-U dan
-Z f0d6f5c148a8f8096f5f4aa2078863db
+P 642a8fba91d2bf61b494b845cb499714363209b1
+R 8f6e4afb0238a1c423a3400150605c04
+U drh
+Z 821b86c08ecda9d420b23c0425e87f9f
