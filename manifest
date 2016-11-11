@@ -1,5 +1,5 @@
-C Add\sthe\stest/ossfuzz.c\sinterface\sadaptor\sfor\sOSS-FUZZ.\s\sMake\sprevisions\sfor\ntesting\sthe\sadaptor\susing\sfuzzcheck.c.
-D 2016-11-11T16:33:47.638
+C Fix\sa\sproblem\swith\sswitching\sfrom\swal\sto\srollback\smode\swhen\nSQLITE_DBCONFIG_NO_CKPT_ON_CLOSE\sis\sconfigured.
+D 2016-11-11T17:08:51.459
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e0217f2d35a0448abbe4b066132ae20136e8b408
@@ -374,7 +374,7 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c be9ca0f901a2b6c1bc93dc338f4863675180c189
 F src/os_win.c cf90abd4e50d9f56d2c20ce8e005aff55d7bd8e9
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 549ed86833b484fa3cd4799e3289c83b3ace8859
+F src/pager.c a31e2c25563065ebfc9308f2ba3a061901fd60a8
 F src/pager.h 07d6938df0b74e4abe8f57807a8b0e1084321d8b
 F src/parse.y 0338f906b61e311c2b7e11a3f89b0092c780b664
 F src/pcache.c 5ff2a08f76a9c1b22f43eb063b7068fb085465ac
@@ -465,7 +465,7 @@ F src/vdbesort.c 91fda3909326860382b0ca8aa251e609c6a9d62c
 F src/vdbetrace.c 41963d5376f0349842b5fc4aaaaacd7d9cdc0834
 F src/vtab.c e02cacb5c7ae742631edeb9ae9f53d399f093fd8
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 358ab4d296a12bc9dcb6f8974dd155ba8a9b10c4
+F src/wal.c 7e8557314bcf867ffe3fff1d8ef2d207ace8e065
 F src/wal.h bf03a23da3100ab25e5c0363450233cfee09cfc2
 F src/walker.c 91a6df7435827e41cff6bb7df50ea00934ee78b0
 F src/where.c 952f76e7a03727480b274b66ca6641b1657cd591
@@ -964,7 +964,7 @@ F test/multiplex4.test e8ae4c4bd70606a5727743241f13b5701990abe4
 F test/mutex1.test ea2cc74d97f077b9e74c84cbd024f14d79a8126f
 F test/mutex2.test bfeaeac2e73095b2ac32285d2756e3a65e681660
 F test/nan.test dacc57f80859c06a433d30839336fe227d2038b3
-F test/nockpt.test faeeb1daa357d634103fd0a1d54f449e4a5b3ef1
+F test/nockpt.test c65fc1c921d48805dcfca2dca5d1302839a5a1de
 F test/nolock.test f196cf8b8fbea4e2ca345140a2b3f3b0da45c76e
 F test/notify1.test 669b2b743618efdc18ca4b02f45423d5d2304abf
 F test/notify2.test 2ecabaa1305083856b7c39cf32816b612740c161
@@ -985,7 +985,7 @@ F test/orderby7.test 3d1383d52ade5b9eb3a173b3147fdd296f0202da
 F test/orderby8.test 23ef1a5d72bd3adcc2f65561c654295d1b8047bd
 F test/orderby9.test 87fb9548debcc2cd141c5299002dd94672fa76a3
 F test/oserror.test b32dc34f2363ef18532e3a0a7358e3e7e321974f
-F test/ossfuzz.c 2d64a0e38ec35fb29c09f8474b64c43605e00ce4 w test/oss-fuzz-adaptor.c
+F test/ossfuzz.c 2d64a0e38ec35fb29c09f8474b64c43605e00ce4
 F test/ovfl.test 199c482696defceacee8c8e0e0ef36da62726b2f
 F test/pager1.test 841868017e9dd3cb459b8d78862091a7d9cff21d
 F test/pager2.test 67b8f40ae98112bcdba1f2b2d03ea83266418c71
@@ -1532,7 +1532,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fba5fddb1c40af75634b01c1f06d2610df697e01
-R 7bae7291b6277b17f47b074bc7079f96
-U drh
-Z 392e6662701d2d132b972967184d58cf
+P 119d6ef8478ea6ab07dfd0e974d2f5a8dcfce87e
+R 713cac12bbad56d229ae83741d89e9ae
+U dan
+Z eb4e3f5ce4749269e2c70de28f3602c7

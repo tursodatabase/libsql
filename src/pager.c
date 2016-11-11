@@ -4033,7 +4033,10 @@ int sqlite3PagerClose(Pager *pPager, sqlite3 *db){
   /* pPager->errCode = 0; */
   pPager->exclusiveMode = 0;
 #ifndef SQLITE_OMIT_WAL
-  sqlite3WalClose(pPager->pWal,db,pPager->ckptSyncFlags,pPager->pageSize,pTmp);
+  assert( db || pPager->pWal==0 );
+  sqlite3WalClose(pPager->pWal, db, pPager->ckptSyncFlags, pPager->pageSize,
+      (db && (db->flags & SQLITE_NoCkptOnClose) ? 0 : pTmp)
+  );
   pPager->pWal = 0;
 #endif
   pager_reset(pPager);
