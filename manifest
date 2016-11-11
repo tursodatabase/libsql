@@ -1,5 +1,5 @@
-C Handle\ssome\sobscure\s"row\svalue\smisused"\scases\sthat\scould\scause\ssegfaults\sor\nassertion\sfailures.
-D 2016-11-11T15:49:01.962
+C Add\sthe\stest/ossfuzz.c\sinterface\sadaptor\sfor\sOSS-FUZZ.\s\sMake\sprevisions\sfor\ntesting\sthe\sadaptor\susing\sfuzzcheck.c.
+D 2016-11-11T16:33:47.638
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e0217f2d35a0448abbe4b066132ae20136e8b408
@@ -311,7 +311,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 06dc0b1a9c9e2d05c9275937dd5b894bfe7d17d8
+F main.mk 4b5c097e286a7b57023547b674c508f14e51dd9d
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -814,7 +814,7 @@ F test/fuzz2.test 76dc35b32b6d6f965259508508abce75a6c4d7e1
 F test/fuzz3.test b47377143f0c80f91ed29d722861077ff34415d5
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
 F test/fuzz_malloc.test 328f70aaca63adf29b4c6f06505ed0cf57ca7c26
-F test/fuzzcheck.c f2e8102f7829f7b946ebdb6f1a16c6f942d9de66
+F test/fuzzcheck.c 984470cee0a35b893ad0377a7de75f0c9a758392
 F test/fuzzdata1.db 7ee3227bad0e7ccdeb08a9e6822916777073c664
 F test/fuzzdata2.db f03a420d3b822cc82e4f894ca957618fbe9c4973
 F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
@@ -985,6 +985,7 @@ F test/orderby7.test 3d1383d52ade5b9eb3a173b3147fdd296f0202da
 F test/orderby8.test 23ef1a5d72bd3adcc2f65561c654295d1b8047bd
 F test/orderby9.test 87fb9548debcc2cd141c5299002dd94672fa76a3
 F test/oserror.test b32dc34f2363ef18532e3a0a7358e3e7e321974f
+F test/ossfuzz.c 2d64a0e38ec35fb29c09f8474b64c43605e00ce4 w test/oss-fuzz-adaptor.c
 F test/ovfl.test 199c482696defceacee8c8e0e0ef36da62726b2f
 F test/pager1.test 841868017e9dd3cb459b8d78862091a7d9cff21d
 F test/pager2.test 67b8f40ae98112bcdba1f2b2d03ea83266418c71
@@ -1531,7 +1532,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f98c8ac8c485098f163400d3a92d6afb4008adbe
-R a89e5be61b771e1fa50ceffc5542b881
-U dan
-Z 011fdd87018b196e46b8f2521e403dd0
+P fba5fddb1c40af75634b01c1f06d2610df697e01
+R 7bae7291b6277b17f47b074bc7079f96
+U drh
+Z 392e6662701d2d132b972967184d58cf
