@@ -1,5 +1,5 @@
-C Merge\senhancements\sand\sbug-fixes\sfrom\strunk.
-D 2016-11-11T17:52:57.982
+C Remove\sobselete\sand\sunused\slogic\sin\sthe\supdate\scode\sgenerator.\nFix\sthe\ssqlite3BtreeMovetoUnpacked()\sroutine\sso\sthat\sit\sremembers\sthe\nrowid\sof\sthe\srow\sthat\sit\slanded\son.
+D 2016-11-11T18:19:05.491
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e0217f2d35a0448abbe4b066132ae20136e8b408
@@ -330,7 +330,7 @@ F src/auth.c 930b376a9c56998557367e6f7f8aaeac82a2a792
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 3ee4c8b2c94ed3a7377256e18199e6ff5cf33f63
 F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
-F src/btree.c 592a72c259752b3cae6928e3f2448a2cb540b032
+F src/btree.c cfe038d1844420caddfa0238d52b7b2102dda98b
 F src/btree.h 630303068c82a359f6ddf202b205ae927721b090
 F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
 F src/build.c 178f16698cbcb43402c343a9413fe22c99ffee21
@@ -349,7 +349,7 @@ F src/hash.c 63d0ee752a3b92d4695b2b1f5259c4621b2cfebd
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 40c64f0ad405d491127ac13ef450a1b44b076e2f
+F src/insert.c 0db6364a6a64e521281d6f443b1669a5a16bdbd6
 F src/legacy.c 75d3023be8f0d2b99d60f905090341a03358c58e
 F src/loadext.c 5d6642d141c07d366e43d359e94ec9de47add41d
 F src/main.c 694ac90557abdaa62151a6090670e107b0f2c2ab
@@ -1532,7 +1532,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P eac0e827a61cfec4dd9b6d407ff398e9fda3510b 46e0016207b8e7df2ae6c7491fd0f3c2926eed21
-R 702d892ba95768248d8c7e81d0fa0aa8
+P 5515b827dc1805a3010018cd6abf222b03525d24
+R d4149095f37aacb5dfcbf6f677226eee
 U drh
-Z 50432314c566096bfb1a843cbbc042aa
+Z dccbc7ad9f33eb000a7232f3de148136
