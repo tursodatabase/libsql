@@ -266,4 +266,17 @@ do_execsql_test 12.1 {
   SELECT *,'x' FROM t1 LEFT JOIN t2 ON (a,b)=(x,y);
 } {1 2 {} {} x}
 
+
+foreach {tn sql} {
+  0 "SELECT (1,2) AS x WHERE x=3"
+  1 "SELECT (1,2) BETWEEN 1 AND 2"
+  2 "SELECT 1 BETWEEN (1,2) AND 2"
+  3 "SELECT 2 BETWEEN 1 AND (1,2)"
+  4 "SELECT (1,2) FROM (SELECT 1) ORDER BY 1"
+  5 "SELECT (1,2) FROM (SELECT 1) GROUP BY 1"
+} {
+  do_catchsql_test 13.$tn $sql {1 {row value misused}}
+}
+
+
 finish_test

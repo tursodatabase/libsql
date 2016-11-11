@@ -1,5 +1,5 @@
-C Back\sout\sthe\s"--raw"\soption\son\s".read"\sin\sthe\scommand-line\sshell.\s\sInstead,\nfix\sthe\scommand-line\sshell\sso\sthat\sif\sEOF\sis\sreached\swithout\sseeing\sa\nfinal\ssemicolon,\sit\sgoes\sahead\sand\spasses\sthe\saccumulated\sSQL\stext\sto\nSQLite.
-D 2016-11-11T14:54:22.386
+C Handle\ssome\sobscure\s"row\svalue\smisused"\scases\sthat\scould\scause\ssegfaults\sor\nassertion\sfailures.
+D 2016-11-11T15:49:01.962
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e0217f2d35a0448abbe4b066132ae20136e8b408
@@ -385,7 +385,7 @@ F src/pragma.h 64c78a648751b9f4f297276c4eb7507b14b4628c
 F src/prepare.c b1140c3d0cf59bc85ace00ce363153041b424b7a
 F src/printf.c a5f0ca08ddede803c241266abb46356ec748ded1
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
-F src/resolve.c 3fac1b2737ea5a724f20b921ac7e259c9be2100b
+F src/resolve.c bb070cf5f23611c44ab7e4788803684e385fc3fb
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c ea3af83e2d0f245fef81ea4cf04cb730ce67f722
 F src/shell.c f04e4af75c5517735397d060ed0b4a874104bb41
@@ -1028,7 +1028,7 @@ F test/rollbackfault.test 0e646aeab8840c399cfbfa43daab46fd609cf04a
 F test/rowallock.test 3f88ec6819489d0b2341c7a7528ae17c053ab7cc
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
 F test/rowid.test 5b7509f384f4f6fae1af3c8c104c8ca299fea18d
-F test/rowvalue.test bcd78c91fe2aadade6fd00d2616546650b9ebc9e
+F test/rowvalue.test b5a9c0fa347a763c558da2397499df51da3cdf6b
 F test/rowvalue2.test 060d238b7e5639a7c5630cb5e63e311b44efef2b
 F test/rowvalue3.test 01399b7bf150b0d41abce76c18072da777c2500c
 F test/rowvalue4.test 4b556d7de161a0dd8cff095c336e913986398bea
@@ -1531,7 +1531,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 642a8fba91d2bf61b494b845cb499714363209b1
-R 8f6e4afb0238a1c423a3400150605c04
-U drh
-Z 821b86c08ecda9d420b23c0425e87f9f
+P f98c8ac8c485098f163400d3a92d6afb4008adbe
+R a89e5be61b771e1fa50ceffc5542b881
+U dan
+Z 011fdd87018b196e46b8f2521e403dd0
