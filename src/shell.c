@@ -4205,18 +4205,50 @@ static int do_meta_command(char *zLine, ShellState *p){
 
   if( c=='r' && n>=3 && strncmp(azArg[0], "read", n)==0 ){
     FILE *alt;
-    if( nArg!=2 ){
-      raw_printf(stderr, "Usage: .read FILE\n");
+    char *zFile;
+    int rawMode = 0;
+    if( nArg!=2 && nArg!=3 ){
+      raw_printf(stderr, "Usage: .read [--raw] FILE\n");
       rc = 1;
       goto meta_command_exit;
     }
-    alt = fopen(azArg[1], "rb");
-    if( alt==0 ){
-      utf8_printf(stderr,"Error: cannot open \"%s\"\n", azArg[1]);
-      rc = 1;
+    if( nArg==3 ){
+      const char *z = azArg[1];
+      while( z[0]=='-' ) z++;
+      if( strcmp(z,"raw")==0 ){
+        rawMode = 1;
+      }
+      else{
+        raw_printf(stderr, "unknown option: \"%s\"\n", azArg[1]);
+        rc = 1;
+        goto meta_command_exit;
+      }
+    }
+    zFile = azArg[nArg-1];
+    if( rawMode ){
+      char *z = readFile(zFile);
+      if( z==0 ){
+        utf8_printf(stderr, "Error: cannot open \"%s\"\n", zFile);
+        rc = 1;
+      }else{
+        char *zErr = 0;
+        open_db(p, 1);
+        rc = sqlite3_exec(p->db, z, callback, p, &zErr);
+        sqlite3_free(z);
+        if( zErr ){
+          utf8_printf(stdout, "%s", zErr);
+          sqlite3_free(zErr);
+        }
+      }
     }else{
-      rc = process_input(p, alt);
-      fclose(alt);
+      alt = fopen(zFile, "rb");
+      if( alt==0 ){
+        utf8_printf(stderr,"Error: cannot open \"%s\"\n", azArg[1]);
+        rc = 1;
+      }else{
+        rc = process_input(p, alt);
+        fclose(alt);
+      }
     }
   }else
 
