@@ -1943,7 +1943,7 @@ int sqlite3WalClose(
     **
     ** The EXCLUSIVE lock is not released before returning.
     */
-    if( (db->flags & SQLITE_NoCkptOnClose)==0 
+    if( zBuf!=0
      && SQLITE_OK==(rc = sqlite3OsLock(pWal->pDbFd, SQLITE_LOCK_EXCLUSIVE))
     ){
       if( pWal->exclusiveMode==WAL_NORMAL_MODE ){

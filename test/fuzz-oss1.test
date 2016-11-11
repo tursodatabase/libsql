@@ -1997,5 +1997,9 @@ NULL AND ("9_u" COLLATE NOCASE = ? COLLATE NOCASE))) FROM (SELECT
   }
 } {/.* Goto .*/}
 
+# Crash reported by OSS-FUZZ on 2016-11-10
+do_catchsql_test fuzz-oss1-detach {
+  DETACH x IS #1;
+} {1 {near "#1": syntax error}}
 
 finish_test
