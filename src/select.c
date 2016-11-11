@@ -521,7 +521,7 @@ static void pushOntoSorter(
   int iLimit;                        /* LIMIT counter */
 
   assert( bSeq==0 || bSeq==1 );
-  assert( nData==1 || regData==regOrigData );
+  assert( nData==1 || regData==regOrigData || regOrigData==0 );
   if( nPrefixReg ){
     assert( nPrefixReg==nExpr+bSeq );
     regBase = regData - nExpr - bSeq;
@@ -533,11 +533,11 @@ static void pushOntoSorter(
   iLimit = pSelect->iOffset ? pSelect->iOffset+1 : pSelect->iLimit;
   pSort->labelDone = sqlite3VdbeMakeLabel(v);
   sqlite3ExprCodeExprList(pParse, pSort->pOrderBy, regBase, regOrigData,
-                          SQLITE_ECEL_DUP|SQLITE_ECEL_REF);
+                          SQLITE_ECEL_DUP | (regOrigData? SQLITE_ECEL_REF : 0));
   if( bSeq ){
     sqlite3VdbeAddOp2(v, OP_Sequence, pSort->iECursor, regBase+nExpr);
   }
-  if( nPrefixReg==0 ){
+  if( nPrefixReg==0 && nData>0 ){
     sqlite3ExprCodeMove(pParse, regData, regBase+nExpr+bSeq, nData);
   }
   sqlite3VdbeAddOp3(v, OP_MakeRecord, regBase+nOBSat, nBase-nOBSat, regRecord);
@@ -667,7 +667,7 @@ static void codeDistinct(
 ** If srcTab is negative, then the pEList expressions
 ** are evaluated in order to get the data for this row.  If srcTab is
 ** zero or more, then data is pulled from srcTab and pEList is used only 
-** to get number columns and the datatype for each column.
+** to get the number of columns and the collation sequence for each column.
 */
 static void selectInnerLoop(
   Parse *pParse,          /* The parser context */
@@ -682,12 +682,19 @@ static void selectInnerLoop(
 ){
   Vdbe *v = pParse->pVdbe;
   int i;
-  int hasDistinct;        /* True if the DISTINCT keyword is present */
-  int regResult;              /* Start of memory holding result set */
+  int hasDistinct;            /* True if the DISTINCT keyword is present */
   int eDest = pDest->eDest;   /* How to dispose of results */
   int iParm = pDest->iSDParm; /* First argument to disposal method */
   int nResultCol;             /* Number of result columns */
   int nPrefixReg = 0;         /* Number of extra registers before regResult */
+
+  /* Usually, regResult is the first cell in an array of memory cells
+  ** containing the current result row. In this case regOrig is set to the
+  ** same value. However, if the results are being sent to the sorter, the
+  ** values for any expressions that are also part of the sort-key are omitted
+  ** from this array. In this case regOrig is set to zero.  */
+  int regResult;              /* Start of memory holding current results */
+  int regOrig;                /* Start of memory holding full result (or 0) */
 
   assert( v );
   assert( pEList!=0 );
@@ -719,7 +726,7 @@ static void selectInnerLoop(
     pParse->nMem += nResultCol;
   }
   pDest->nSdst = nResultCol;
-  regResult = pDest->iSdst;
+  regOrig = regResult = pDest->iSdst;
   if( srcTab>=0 ){
     for(i=0; i<nResultCol; i++){
       sqlite3VdbeAddOp3(v, OP_Column, srcTab, i, regResult+i);
@@ -735,7 +742,26 @@ static void selectInnerLoop(
     }else{
       ecelFlags = 0;
     }
-    sqlite3ExprCodeExprList(pParse, pEList, regResult, 0, ecelFlags);
+    assert( eDest!=SRT_Table || pSort==0 );
+    if( pSort && hasDistinct==0 && eDest!=SRT_EphemTab ){
+      /* For each expression in pEList that is a copy of an expression in
+      ** the ORDER BY clause (pSort->pOrderBy), set the associated 
+      ** iOrderByCol value to one more than the index of the ORDER BY 
+      ** expression within the sort-key that pushOntoSorter() will generate.
+      ** This allows the pEList field to be omitted from the sorted record,
+      ** saving space and CPU cycles.  */
+      ecelFlags |= (SQLITE_ECEL_OMITREF|SQLITE_ECEL_REF);
+      for(i=pSort->nOBSat; i<pSort->pOrderBy->nExpr; i++){
+        int j;
+        if( (j = pSort->pOrderBy->a[i].u.x.iOrderByCol)>0 ){
+          pEList->a[j-1].u.x.iOrderByCol = i+1-pSort->nOBSat;
+        }
+      }
+      regOrig = 0;
+      assert( eDest==SRT_Set || eDest==SRT_Mem 
+           || eDest==SRT_Coroutine || eDest==SRT_Output );
+    }
+    nResultCol = sqlite3ExprCodeExprList(pParse,pEList,regResult,0,ecelFlags);
   }
 
   /* If the DISTINCT keyword was present on the SELECT statement
@@ -875,7 +901,7 @@ static void selectInnerLoop(
         ** does not matter.  But there might be a LIMIT clause, in which
         ** case the order does matter */
         pushOntoSorter(
-            pParse, pSort, p, regResult, regResult, nResultCol, nPrefixReg);
+            pParse, pSort, p, regResult, regOrig, nResultCol, nPrefixReg);
       }else{
         int r1 = sqlite3GetTempReg(pParse);
         assert( sqlite3Strlen30(pDest->zAffSdst)==nResultCol );
@@ -901,11 +927,12 @@ static void selectInnerLoop(
     ** memory cells and break out of the scan loop.
     */
     case SRT_Mem: {
-      assert( nResultCol==pDest->nSdst );
       if( pSort ){
+        assert( nResultCol<=pDest->nSdst );
         pushOntoSorter(
-            pParse, pSort, p, regResult, regResult, nResultCol, nPrefixReg);
+            pParse, pSort, p, regResult, regOrig, nResultCol, nPrefixReg);
       }else{
+        assert( nResultCol==pDest->nSdst );
         assert( regResult==iParm );
         /* The LIMIT clause will jump out of the loop for us */
       }
@@ -918,7 +945,7 @@ static void selectInnerLoop(
       testcase( eDest==SRT_Coroutine );
       testcase( eDest==SRT_Output );
       if( pSort ){
-        pushOntoSorter(pParse, pSort, p, regResult, regResult, nResultCol,
+        pushOntoSorter(pParse, pSort, p, regResult, regOrig, nResultCol,
                        nPrefixReg);
       }else if( eDest==SRT_Coroutine ){
         sqlite3VdbeAddOp1(v, OP_Yield, pDest->iSDParm);
@@ -1203,14 +1230,13 @@ static void generateSortTail(
   int iParm = pDest->iSDParm;
   int regRow;
   int regRowid;
+  int iCol;
   int nKey;
   int iSortTab;                   /* Sorter cursor to read from */
   int nSortData;                  /* Trailing values to read from sorter */
   int i;
   int bSeq;                       /* True if sorter record includes seq. no. */
-#ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
   struct ExprList_item *aOutEx = p->pEList->a;
-#endif
 
   assert( addrBreak<0 );
   if( pSort->labelBkOut ){
@@ -1248,8 +1274,14 @@ static void generateSortTail(
     iSortTab = iTab;
     bSeq = 1;
   }
-  for(i=0; i<nSortData; i++){
-    sqlite3VdbeAddOp3(v, OP_Column, iSortTab, nKey+bSeq+i, regRow+i);
+  for(i=0, iCol=nKey+bSeq; i<nSortData; i++){
+    int iRead;
+    if( aOutEx[i].u.x.iOrderByCol ){
+      iRead = aOutEx[i].u.x.iOrderByCol-1;
+    }else{
+      iRead = iCol++;
+    }
+    sqlite3VdbeAddOp3(v, OP_Column, iSortTab, iRead, regRow+i);
     VdbeComment((v, "%s", aOutEx[i].zName ? aOutEx[i].zName : aOutEx[i].zSpan));
   }
   switch( eDest ){

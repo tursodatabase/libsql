@@ -4086,8 +4086,13 @@ int sqlite3ExprCodeExprList(
   if( !ConstFactorOk(pParse) ) flags &= ~SQLITE_ECEL_FACTOR;
   for(pItem=pList->a, i=0; i<n; i++, pItem++){
     Expr *pExpr = pItem->pExpr;
-    if( (flags & SQLITE_ECEL_REF)!=0 && (j = pList->a[i].u.x.iOrderByCol)>0 ){
-      sqlite3VdbeAddOp2(v, copyOp, j+srcReg-1, target+i);
+    if( (flags & SQLITE_ECEL_REF)!=0 && (j = pItem->u.x.iOrderByCol)>0 ){
+      if( flags & SQLITE_ECEL_OMITREF ){
+        i--;
+        n--;
+      }else{
+        sqlite3VdbeAddOp2(v, copyOp, j+srcReg-1, target+i);
+      }
     }else if( (flags & SQLITE_ECEL_FACTOR)!=0 && sqlite3ExprIsConstant(pExpr) ){
       sqlite3ExprCodeAtInit(pParse, pExpr, target+i, 0);
     }else{
