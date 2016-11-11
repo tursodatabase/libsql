@@ -1,5 +1,5 @@
-C Avoid\sstoring\sredundant\sfields\sin\ssorter\srecords\swhen\sthe\ssort-key\s\nand\sdata\shave\sfields\sin\scommon.
-D 2016-11-11T19:08:00.236
+C Fix\sharmless\scompiler\swarnings\sin\stest\scode\sfor\sMSVC.
+D 2016-11-11T20:37:27.949
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e0217f2d35a0448abbe4b066132ae20136e8b408
@@ -410,10 +410,10 @@ F src/test_async.c 195ab49da082053fdb0f949c114b806a49ca770a
 F src/test_autoext.c 915d245e736652a219a907909bb6710f0d587871
 F src/test_backup.c bf5da90c9926df0a4b941f2d92825a01bbe090a0
 F src/test_bestindex.c d23f80d334c59662af69191854c76b8d3d0c8c96
-F src/test_blob.c a0f7ad49a0c9d4b72f693fe2a71c58d7e507174d
+F src/test_blob.c 6a4c7920d1d9c6cc0f7aa50c89c4f80016aeda83
 F src/test_btree.c 8b2dc8b8848cf3a4db93f11578f075e82252a274
 F src/test_config.c 371853b4691b482ec0bcdf77ec9e3f96dca75b04
-F src/test_delete.c 32690ea215abf29dda589a580cd1b790389759b6
+F src/test_delete.c 8499d4d323f2ec8e28301deb3d6ddd8eef8b8139
 F src/test_demovfs.c a0c3bdd45ed044115c2c9f7779e56eafff18741e
 F src/test_devsym.c 4e58dec2602d8e139ca08659f62a62450587cb58
 F src/test_fs.c e16cbe68d3b107e00a907c20a9a02629870eb69b
@@ -1532,8 +1532,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 925840cfdb969a76640a1247cc4a7b2c0de5cb74 dd62d2de6eb12dc1902d6df050c395b1dcac01b4
-R 710cd32b5d7d9f26ab9c8738e2187743
-T +closed dd62d2de6eb12dc1902d6df050c395b1dcac01b4
+P b835cf3e507b910b6a3e0f802ce2c40a72d0c227 1a587d72f981cb7064cfd8916a52a83ad9ba6074
+R 306c4a48ed6a27b97773f1003470ed23
 U drh
-Z 2fa3093086a563b78a5be35466f1815c
+Z d9323491e79664d0c5f2710508245de6

@@ -47,7 +47,7 @@
 */
 static void sqlite3Delete83Name(char *z){
   int i, sz;
-  sz = strlen(z);
+  sz = (int)strlen(z);
   for(i=sz-1; i>0 && z[i]!='/' && z[i]!='.'; i--){}
   if( z[i]=='.' && (sz>i+4) ) memmove(&z[i+1], &z[sz-3], 4);
 }
@@ -105,7 +105,7 @@ int sqlite3_delete_database(
 
   /* Allocate a buffer large enough for any of the files that need to be
   ** deleted.  */
-  nBuf = strlen(zFile) + 100;
+  nBuf = (int)strlen(zFile) + 100;
   zBuf = (char*)sqlite3_malloc(nBuf);
   if( zBuf==0 ) return SQLITE_NOMEM;
 
