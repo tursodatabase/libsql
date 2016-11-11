@@ -1216,10 +1216,10 @@ static int shell_callback(
         raw_printf(p->out," VALUES(");
       }else if( p->cnt==0 && p->showHeader ){
         for(i=0; i<nArg; i++){
-          if( i>0 ) utf8_printf(p->out, ",");
+          if( i>0 ) raw_printf(p->out, ",");
           output_quoted_string(p->out, azCol[i]);
         }
-        utf8_printf(p->out,"\n");
+        raw_printf(p->out,"\n");
       }
       p->cnt++;
       for(i=0; i<nArg; i++){
@@ -3916,12 +3916,12 @@ static int do_meta_command(char *zLine, ShellState *p){
         utf8_printf(stderr, "Error in [%s]: %s\n", zSql, sqlite3_errmsg(p->db));
       }else{
         utf8_printf(stdout, "%s;\n", zSql);
-        utf8_printf(stdout, 
+        raw_printf(stdout,
            "WARNING: writing to an imposter table will corrupt the index!\n"
         );
       }
     }else{
-      utf8_printf(stderr, "SQLITE_TESTCTRL_IMPOSTER returns %d\n", rc);
+      raw_printf(stderr, "SQLITE_TESTCTRL_IMPOSTER returns %d\n", rc);
       rc = 1;
     }
     sqlite3_free(zSql);
@@ -4814,7 +4814,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     output_reset(p);
     p->out = output_file_open("testcase-out.txt");
     if( p->out==0 ){
-      utf8_printf(stderr, "Error: cannot open 'testcase-out.txt'\n");
+      raw_printf(stderr, "Error: cannot open 'testcase-out.txt'\n");
     }
     if( nArg>=2 ){
       sqlite3_snprintf(sizeof(p->zTestcase), p->zTestcase, "%s", azArg[1]);
