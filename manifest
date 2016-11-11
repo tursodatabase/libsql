@@ -1,5 +1,5 @@
-C In\sthe\scommand\sline\sshell,\savoid\susing\sutf8_printf()\sin\sa\scouple\splaces\swhere\sit\sis\ssuperfluous.
-D 2016-11-11T05:19:45.427
+C Add\sextra\stests\sfor\sthe\sxBestIndex()\svirtual\stable\smethod.
+D 2016-11-11T09:51:46.009
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e0217f2d35a0448abbe4b066132ae20136e8b408
@@ -535,6 +535,7 @@ F test/bc_common.tcl b5e42d80305be95697e6370e015af571e5333a1c
 F test/bestindex1.test 0cf1bd2d7b97d3a3a8c10736125274f64765c4ee
 F test/bestindex2.test 4a06b8922ab2fd09434870da8d1cdf525aaf7060
 F test/bestindex3.test dd5fa4f483cd0356549203c4522f8c9e21cb1fc0
+F test/bestindex4.test e6ef2ffe5787e6dbacb5f934ee3f32cf106474a1
 F test/between.test 34d375fb5ce1ae283ffe82b6b233e9f38e84fc6c
 F test/bigfile.test aa74f4e5db51c8e54a1d9de9fa65d01d1eb20b59
 F test/bigfile2.test 1b489a3a39ae90c7f027b79110d6b4e1dbc71bfc
@@ -1530,7 +1531,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 09233770b24d69a305556241a6beeb5e4d77c0d7
-R 5cf5e2ce8ca8e99cb9bee7725cd4410a
-U mistachkin
-Z 9c763fa2ad7418630629cdc53f5357cd
+P 6311a8bdb1f2e1813516a32d171aae030bd73fd3
+R 3e019704b19690d86a1b7d773d983727
+U dan
+Z f0d6f5c148a8f8096f5f4aa2078863db
