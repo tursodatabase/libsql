@@ -1,5 +1,5 @@
-C Fix\stypo\sin\sthe\sCSV\sextension.
-D 2016-11-09T01:46:13.326
+C Take\scare\snot\sto\stry\sto\sgenerate\scode\sfor\sthe\sATTACH\sand\sDETACH\scommands\nif\sthere\swere\ssyntax\serrors\sduring\sparsing.\nFix\sfor\sticket\s[2f1b168ab4d4844]
+D 2016-11-11T03:37:24.086
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e0217f2d35a0448abbe4b066132ae20136e8b408
@@ -325,7 +325,7 @@ F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c 299117695b1f21ac62dfc5b608588810ba22ed0d
 F src/analyze.c 8b62b2cf4da85451534ac0af82cafc418d837f68
-F src/attach.c 8c19066b4b5357b5d66154e856c61df01e71203a
+F src/attach.c f6725410c184a80d8141b294fdf98a854c8a52b5
 F src/auth.c 930b376a9c56998557367e6f7f8aaeac82a2a792
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 3ee4c8b2c94ed3a7377256e18199e6ff5cf33f63
@@ -807,7 +807,7 @@ F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/func3.test d202a7606d23f90988a664e88e268aed1087c11c
 F test/func4.test 6beacdfcb0e18c358e6c2dcacf1b65d1fa80955f
 F test/func5.test cdd224400bc3e48d891827cc913a57051a426fa4
-F test/fuzz-oss1.test 4912e528ec9cf2f42134456933659d371c9e0d74
+F test/fuzz-oss1.test e58330d01cbbd8215ee636b17a03fe220b37dbfa
 F test/fuzz.test 96083052bf5765e4518c1ba686ce2bab785670d1
 F test/fuzz2.test 76dc35b32b6d6f965259508508abce75a6c4d7e1
 F test/fuzz3.test b47377143f0c80f91ed29d722861077ff34415d5
@@ -1530,7 +1530,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 754ee844958bdc3b96acfd1f5395da5796e54a82
-R eb905f0421ecb200099f22c1d4910f11
-U mistachkin
-Z a09941219c710c6bfaf84cdaf6c10994
+P b4889588246c33374ff3758e21ccc4ce246380b6
+R 26247ef800afdc7745db1d52a3a74bf0
+U drh
+Z bdc6c3a824c3e2f132fc99deec6951e5
