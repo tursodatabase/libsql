@@ -18,7 +18,9 @@ static int progress_handler(void *pReturn) {
 */
 static int exec_handler(void *pCnt, int argc, char **argv, char **namev){
   int i;
-  for(i=0; i<argc; i++) sqlite3_free(sqlite3_mprintf("%s", argv[i]));
+  if( argv ){
+    for(i=0; i<argc; i++) sqlite3_free(sqlite3_mprintf("%s", argv[i]));
+  }
   return ((*(int*)pCnt)--)<=0;
 }
 

@@ -1,5 +1,5 @@
-C Avoid\sunnecessary\scalls\sto\ssqlite3ExprCacheAffinityChange()\swhen\sgenerating\nOP_MakeRecord\sopcodes\sthat\sdo\snot\schange\sany\sregister\saffinities.
-D 2016-11-14T15:28:56.925
+C Fix\sthe\sossfuzz.c\stest\smodule\sso\sthat\sit\sdoes\snot\ssegfault\safter\sa\n"PRAGMA\sempty_result_callbacks=1;".\s\sAdd\sthe\sossshell.c\sprogram\sfor\nsimple\scommand-line\stesting\sof\sossfuzz.c.
+D 2016-11-14T17:25:57.150
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e0217f2d35a0448abbe4b066132ae20136e8b408
@@ -311,7 +311,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 4b5c097e286a7b57023547b674c508f14e51dd9d
+F main.mk ec15a47504f15b84390d84a376a91397b77d5e15
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -985,7 +985,8 @@ F test/orderby7.test 3d1383d52ade5b9eb3a173b3147fdd296f0202da
 F test/orderby8.test 23ef1a5d72bd3adcc2f65561c654295d1b8047bd
 F test/orderby9.test 87fb9548debcc2cd141c5299002dd94672fa76a3
 F test/oserror.test b32dc34f2363ef18532e3a0a7358e3e7e321974f
-F test/ossfuzz.c 2d64a0e38ec35fb29c09f8474b64c43605e00ce4
+F test/ossfuzz.c ad79e867fb504338d324b08e0696db65a0c44d68
+F test/ossshell.c d9f1a6f43e7bab45d6be857a5800f5d4a1861db3
 F test/ovfl.test 199c482696defceacee8c8e0e0ef36da62726b2f
 F test/pager1.test 841868017e9dd3cb459b8d78862091a7d9cff21d
 F test/pager2.test 67b8f40ae98112bcdba1f2b2d03ea83266418c71
@@ -1455,7 +1456,7 @@ F tool/dbhash.c a06228aa21ebc4e6ea8daa486601d938499238a5
 F tool/extract.c 054069d81b095fbdc189a6f5d4466e40380505e2
 F tool/fast_vacuum.c 5ba0d6f5963a0a63bdc42840f678bad75b2ebce1
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
-F tool/fuzzershell.c f294ca67a10e87db76af130d75b2c94be36359c6
+F tool/fuzzershell.c d5c870a07452caa5c70a8e49d6c64e403558686d
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
@@ -1532,7 +1533,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e78f6f3bbf4781850960fe6741f7cba480f2c27d
-R 3fa0a5681db4ad4cdeeecb208061d048
+P e211c579b2f092e3283edd5fb9add7c5183bac35
+R f5446ee1d5f38bf5dd192848e11b9c1d
 U drh
-Z 63d0e6fa2d7d17a48902a7d1e28254c8
+Z e378b2bf2d2ef2294a0668dccb47568a
