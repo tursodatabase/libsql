@@ -462,7 +462,8 @@ FUZZDATA = \
   $(TOP)/test/fuzzdata1.db \
   $(TOP)/test/fuzzdata2.db \
   $(TOP)/test/fuzzdata3.db \
-  $(TOP)/test/fuzzdata4.db
+  $(TOP)/test/fuzzdata4.db \
+  $(TOP)/test/fuzzdata5.db
 
 # Standard options to testfixture
 #
