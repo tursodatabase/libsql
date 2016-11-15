@@ -310,6 +310,7 @@ int sqlite3HeaderSizeBtree(void);
 #ifndef NDEBUG
 int sqlite3BtreeCursorIsValid(BtCursor*);
 #endif
+int sqlite3BtreeCursorIsValidNN(BtCursor*);
 
 #ifndef SQLITE_OMIT_BTREECOUNT
 int sqlite3BtreeCount(BtCursor *, i64 *);

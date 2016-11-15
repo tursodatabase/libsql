@@ -4799,6 +4799,13 @@ case OP_NullRow: {
 ** This opcode leaves the cursor configured to move in reverse order,
 ** from the end toward the beginning.  In other words, the cursor is
 ** configured to use Prev, not Next.
+**
+** If P3 is -1, then the cursor is positioned at the end of the btree
+** for the purpose of appending a new entry onto the btree.  In that
+** case P2 must be 0.  It is assumed that the cursor is used only for
+** appending and so if the cursor is valid, then the cursor must already
+** be pointing at the end of the btree and so no changes are made to
+** the cursor.
 */
 case OP_Last: {        /* jump */
   VdbeCursor *pC;
@@ -4812,18 +4819,22 @@ case OP_Last: {        /* jump */
   pCrsr = pC->uc.pCursor;
   res = 0;
   assert( pCrsr!=0 );
-  rc = sqlite3BtreeLast(pCrsr, &res);
-  pC->nullRow = (u8)res;
-  pC->deferredMoveto = 0;
-  pC->cacheStatus = CACHE_STALE;
   pC->seekResult = pOp->p3;
 #ifdef SQLITE_DEBUG
   pC->seekOp = OP_Last;
 #endif
-  if( rc ) goto abort_due_to_error;
-  if( pOp->p2>0 ){
-    VdbeBranchTaken(res!=0,2);
-    if( res ) goto jump_to_p2;
+  if( pOp->p3==0 || !sqlite3BtreeCursorIsValidNN(pCrsr) ){
+    rc = sqlite3BtreeLast(pCrsr, &res);
+    pC->nullRow = (u8)res;
+    pC->deferredMoveto = 0;
+    pC->cacheStatus = CACHE_STALE;
+    if( rc ) goto abort_due_to_error;
+    if( pOp->p2>0 ){
+      VdbeBranchTaken(res!=0,2);
+      if( res ) goto jump_to_p2;
+    }
+  }else{
+    assert( pOp->p2==0 );
   }
   break;
 }
