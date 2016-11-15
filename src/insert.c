@@ -2117,6 +2117,7 @@ static int xferOptimization(
     sqlite3VdbeJumpHere(v, addr1);
   }
   if( HasRowid(pSrc) ){
+    u8 insFlags;
     sqlite3OpenTable(pParse, iSrc, iDbSrc, pSrc, OP_OpenRead);
     emptySrcTest = sqlite3VdbeAddOp2(v, OP_Rewind, iSrc, 0); VdbeCoverage(v);
     if( pDest->iPKey>=0 ){
@@ -2133,9 +2134,16 @@ static int xferOptimization(
       assert( (pDest->tabFlags & TF_Autoincrement)==0 );
     }
     sqlite3VdbeAddOp2(v, OP_RowData, iSrc, regData);
+    if( db->flags & SQLITE_Vacuum ){
+      sqlite3VdbeAddOp3(v, OP_Last, iDest, 0, -1);
+      insFlags = OPFLAG_NCHANGE|OPFLAG_LASTROWID|
+                           OPFLAG_APPEND|OPFLAG_USESEEKRESULT;
+    }else{
+      insFlags = OPFLAG_NCHANGE|OPFLAG_LASTROWID|OPFLAG_APPEND;
+    }
     sqlite3VdbeAddOp4(v, OP_Insert, iDest, regData, regRowid,
                       (char*)pDest, P4_TABLE);
-    sqlite3VdbeChangeP5(v, OPFLAG_NCHANGE|OPFLAG_LASTROWID|OPFLAG_APPEND);
+    sqlite3VdbeChangeP5(v, insFlags);
     sqlite3VdbeAddOp2(v, OP_Next, iSrc, addr1); VdbeCoverage(v);
     sqlite3VdbeAddOp2(v, OP_Close, iSrc, 0);
     sqlite3VdbeAddOp2(v, OP_Close, iDest, 0);
