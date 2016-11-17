@@ -1,5 +1,5 @@
-C Disable\sthe\squery\sflattener\soptimization\sfor\sSELECT\sstatements\sthat\sare\son\nthe\sRHS\sof\svector\sIN\soperators.\s\sThis\sis\sa\shack\sthat\sfixes\sthe\sbug\ndescribed\sin\sticket\s[da7841375186386c].\sA\sbetter\ssolution\sthat\sdoes\snot\ndisable\sthe\squery\sflattener\sis\sneeded,\sbut\sthis\swill\sserver\sfor\sthe\stime\nbeing.
-D 2016-11-17T13:13:25.555
+C Change\sthe\s--enable-debug\soption\son\sconfigure\sso\sthat\sit\senables\sthe\n".selecttrace"\sand\s".wheretrace"\scommands\sin\sthe\scommand-line\sshell.
+D 2016-11-17T13:54:21.139
 F Makefile.in 6b572807415d3f0a379cebc9461416d8df4a12c8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc bb4d970894abbbe0e88d00aac29bd52af8bc95f4
@@ -30,8 +30,8 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 6376abec766e9a0785178b1823b5a587e9f1ccbc
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 1c4248006e233187bed6e6b890befec14f625637 x
-F configure.ac b5d3df43161374f8dffd2e5f4b88fbb51685b975
+F configure adbf03e758431e886bba5ab04b5adfbd496d7b24 x
+F configure.ac 605173e829ab64514ed89f9b53d0da1739d7b0a0
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html b5a3c07d33ecb8e019ce8f7660fe2dbbad9d7977
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
@@ -1534,7 +1534,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 77aeb705c37b1bf61a05b5e4a09f5b5cd67d07bc
-R fd152d0bb86ce30d6ad75d12d28ac69c
+P 005d5b870625d175fdf3c0e87d974006c569d9e1
+R c068ae8a47d20415894fb1f98ce1114d
 U drh
-Z 0a052b186d2930619fca6146d580a03f
+Z 18e3715bfdc10f86213a4f9bab0304db
