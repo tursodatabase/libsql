@@ -202,5 +202,19 @@ foreach {tn idx} {
 
 #-------------------------------------------------------------------------
 
+# 2016-11-17.  Query flattening in a vector SELECT on the RHS of an IN
+# operator.  Ticket https://www.sqlite.org/src/info/da7841375186386c
+#
+do_execsql_test 5.0 {
+  DROP TABLE IF EXISTS t1;
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE T1(a TEXT);
+  INSERT INTO T1(a) VALUES ('aaa');
+  CREATE TABLE T2(a TEXT PRIMARY KEY,n INT);
+  INSERT INTO T2(a, n) VALUES('aaa',0);
+  SELECT * FROM T2
+  WHERE (a,n) IN (SELECT T1.a, V.n FROM T1, (SELECT * FROM (SELECT 0 n)) V);
+} {aaa 0}
+
 
 finish_test
