@@ -5048,20 +5048,33 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
 
     if( pInode->bProcessLock==0 ){
       int openFlags = O_RDWR | O_CREAT;
-      if( sqlite3_uri_boolean(pDbFd->zPath, "readonly_shm", 0)
-#if defined(SQLITE_ENABLE_PERSIST_WAL)&&(SQLITE_ENABLE_LOCKING_STYLE \
-    || defined(__APPLE__))
-         || (pDbFd->openFlags & O_RDWR) != O_RDWR
-#endif
-         ){
+      int fd;                     /* File descriptor for *-shm file */
+      if( sqlite3_uri_boolean(pDbFd->zPath, "readonly_shm", 0) ){
         openFlags = O_RDONLY;
         pShmNode->isReadonly = 1;
       }
-      pShmNode->h = robust_open(zShmFilename, openFlags, (sStat.st_mode&0777));
-      if( pShmNode->h<0 ){
+      fd = robust_open(zShmFilename, openFlags, (sStat.st_mode&0777));
+
+      /* If it was not possible to open the *-shm file in read/write mode,
+      ** and the database file itself has been opened in read-only mode,
+      ** try to open the *-shm file in read-only mode as well. Even if the
+      ** database connection is read-only, it is still better to try opening
+      ** the *-shm file in read/write mode first, as the same file descriptor
+      ** may be also be used by a read/write database connection.  */
+#if defined(SQLITE_ENABLE_PERSIST_WAL)&&(SQLITE_ENABLE_LOCKING_STYLE \
+    || defined(__APPLE__))
+      if( fd<0 && errno!=EISDIR && pShmNode->isReadonly==0 
+       && (pDbFd->openFlags & O_RDWR)!=O_RDWR
+      ){
+        fd = robust_open(zShmFilename, O_RDONLY, (sStat.st_mode&0777));
+        pShmNode->isReadonly = 1;
+      }
+#endif
+      if( fd<0 ){
         rc = unixLogError(SQLITE_CANTOPEN_BKPT, "open", zShmFilename);
         goto shm_open_err;
       }
+      pShmNode->h = fd;
 
       /* If this process is running as root, make sure that the SHM file
       ** is owned by the same user that owns the original database.  Otherwise,
