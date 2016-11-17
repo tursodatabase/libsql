@@ -1,5 +1,5 @@
-C Change\sthe\s--enable-debug\soption\son\sconfigure\sso\sthat\sit\senables\sthe\n".selecttrace"\sand\s".wheretrace"\scommands\sin\sthe\scommand-line\sshell.
-D 2016-11-17T13:54:21.139
+C Fix\sa\sproblem\sin\srtreeD.test\scausing\sit\sto\sfail\sin\sOMIT_BUILTIN_TEST\sbuilds.
+D 2016-11-17T20:05:00.694
 F Makefile.in 6b572807415d3f0a379cebc9461416d8df4a12c8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc bb4d970894abbbe0e88d00aac29bd52af8bc95f4
@@ -274,7 +274,7 @@ F ext/rtree/rtree9.test b5eb13849545dfd271a54ff16784cb00d8792aea
 F ext/rtree/rtreeA.test ace05e729a36e342d40cf94e9efc7b4723d9dcdf
 F ext/rtree/rtreeB.test c85f9ce78766c4e68b8b89fbf2979ee9cfa82b4e
 F ext/rtree/rtreeC.test c0a9c67f2efa98b6fae12acb8a28348d231a481d
-F ext/rtree/rtreeD.test 636630357638f5983701550b37f0f5867130d2ca
+F ext/rtree/rtreeD.test bdfaaf26df8b4eea7364039aca9150bc1e1f8825
 F ext/rtree/rtreeE.test 45a147a64a76306172819562309681d8e90f94bb
 F ext/rtree/rtreeF.test 66deb9fd1611c7ca2e374adba63debdc2dbb12b4
 F ext/rtree/rtreeG.test 3b185719630795f38594f64cd7d1de86a33f91f1
@@ -1534,7 +1534,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 005d5b870625d175fdf3c0e87d974006c569d9e1
-R c068ae8a47d20415894fb1f98ce1114d
-U drh
-Z 18e3715bfdc10f86213a4f9bab0304db
+P 2331192b4ca6a169b6ac0daafb21ceb7c390de65
+R 252cde6585f71191b31af3499dd16889
+U dan
+Z 3bd9299c3f417af0dbc0173ca4fc27e5
