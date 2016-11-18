@@ -182,6 +182,7 @@ int sqlite3PagerSharedLock(Pager *pPager);
 # ifdef SQLITE_ENABLE_SNAPSHOT
   int sqlite3PagerSnapshotGet(Pager *pPager, sqlite3_snapshot **ppSnapshot);
   int sqlite3PagerSnapshotOpen(Pager *pPager, sqlite3_snapshot *pSnapshot);
+  int sqlite3PagerSnapshotRecover(Pager *pPager);
 # endif
 #else
 # define sqlite3PagerUseWal(x) 0

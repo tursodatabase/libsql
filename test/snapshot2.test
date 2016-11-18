@@ -78,5 +78,65 @@ do_test 1.2.4 {
 execsql COMMIT
 db2 close
 
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 2.0 {
+  CREATE TABLE t1(x);
+  PRAGMA journal_mode = wal;
+  INSERT INTO t1 VALUES(1);
+  INSERT INTO t1 VALUES(2);
+} {wal}
+
+do_test 2.1 {
+  db trans { set snap [sqlite3_snapshot_get_blob db main] }
+  sqlite3_db_config db NO_CKPT_ON_CLOSE 1
+  db close
+  sqlite3 db test.db
+
+  execsql {SELECT * FROM sqlite_master}
+  execsql BEGIN
+  sqlite3_snapshot_open_blob db main $snap
+  execsql COMMIT;
+  execsql { INSERT INTO t1 VALUES(3); }
+} {}
+
+do_test 2.2 {
+  sqlite3_db_config db NO_CKPT_ON_CLOSE 1
+  db close
+  sqlite3 db test.db
+
+  execsql {SELECT * FROM sqlite_master}
+  execsql BEGIN
+  list [catch { sqlite3_snapshot_open_blob db main $snap } msg] $msg
+} {1 SQLITE_BUSY_SNAPSHOT}
+
+do_test 2.3 {
+  execsql COMMIT
+  sqlite3_snapshot_recover db main
+  execsql BEGIN
+  sqlite3_snapshot_open_blob db main $snap
+  execsql { SELECT * FROM t1 }
+} {1 2}
+
+do_test 2.4 {
+  execsql COMMIT
+  execsql { SELECT * FROM t1 }
+} {1 2 3}
+
+do_test 2.5 {
+  execsql { PRAGMA wal_checkpoint }
+  sqlite3_db_config db NO_CKPT_ON_CLOSE 1
+  db close
+  sqlite3 db test.db
+
+  execsql {SELECT * FROM sqlite_master}
+  sqlite3_snapshot_recover db main
+  execsql BEGIN
+  list [catch { sqlite3_snapshot_open_blob db main $snap } msg] $msg
+} {1 SQLITE_BUSY_SNAPSHOT}
+
 
 finish_test
+
+

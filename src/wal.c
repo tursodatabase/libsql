@@ -2380,6 +2380,65 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
 }
 
 /*
+** Recover as many snapshots as possible from the wal file.
+*/
+int sqlite3WalSnapshotRecover(Wal *pWal){
+  int dummy;
+  int rc;
+
+  rc = sqlite3WalBeginReadTransaction(pWal, &dummy);
+  if( rc==SQLITE_OK ){
+    rc = walLockExclusive(pWal, WAL_CKPT_LOCK, 1);
+    if( rc==SQLITE_OK ){
+      volatile WalCkptInfo *pInfo = walCkptInfo(pWal);
+      int szPage = (int)pWal->szPage;
+      void *pBuf1 = sqlite3_malloc(szPage);
+      void *pBuf2 = sqlite3_malloc(szPage);
+
+      if( pBuf1==0 || pBuf2==0 ){
+        rc = SQLITE_NOMEM;
+      }else{
+        u32 i = pInfo->nBackfillAttempted;
+        for(i=pInfo->nBackfillAttempted; i>pInfo->nBackfill; i--){
+          volatile ht_slot *dummy;
+          volatile u32 *aPgno;      /* Array of page numbers */
+          u32 iZero;                /* Frame corresponding to aPgno[0] */
+          u32 pgno;                 /* Page number in db file */
+          i64 iDbOff;               /* Offset of db file entry */
+          i64 iWalOff;              /* Offset of wal file entry */
+          rc = walHashGet(pWal, walFramePage(i), &dummy, &aPgno, &iZero);
+
+          if( rc==SQLITE_OK ){
+            pgno = aPgno[i-iZero];
+            iDbOff = (i64)(pgno-1) * szPage;
+            iWalOff = walFrameOffset(i, szPage) + WAL_FRAME_HDRSIZE;
+            rc = sqlite3OsRead(pWal->pWalFd, pBuf1, szPage, iWalOff);
+          }
+
+          if( rc==SQLITE_OK ){
+            rc = sqlite3OsRead(pWal->pDbFd, pBuf2, szPage, iDbOff);
+          }
+
+          if( rc!=SQLITE_OK || 0==memcmp(pBuf1, pBuf2, szPage) ){
+            break;
+          }
+
+          pInfo->nBackfillAttempted = i-1;
+        }
+      }
+
+      sqlite3_free(pBuf1);
+      sqlite3_free(pBuf2);
+      walUnlockExclusive(pWal, WAL_CKPT_LOCK, 1);
+    }
+
+    sqlite3WalEndReadTransaction(pWal);
+  }
+
+  return rc;
+}
+
+/*
 ** Begin a read transaction on the database.
 **
 ** This routine used to be called sqlite3OpenSnapshot() and with good reason:
@@ -2441,7 +2500,11 @@ int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
       ** has not yet set the pInfo->nBackfillAttempted variable to indicate 
       ** its intent. To avoid the race condition this leads to, ensure that
       ** there is no checkpointer process by taking a shared CKPT lock 
-      ** before checking pInfo->nBackfillAttempted.  */
+      ** before checking pInfo->nBackfillAttempted.  
+      **
+      ** TODO: Does the aReadMark[] lock prevent a checkpointer from doing
+      **       this already?
+      */
       rc = walLockShared(pWal, WAL_CKPT_LOCK);
 
       if( rc==SQLITE_OK ){

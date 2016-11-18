@@ -8415,6 +8415,12 @@ SQLITE_EXPERIMENTAL int sqlite3_snapshot_cmp(
 );
 
 /*
+** CAPI3REF: Recover snapshots from a wal file
+** EXPERIMENTAL
+*/
+SQLITE_EXPERIMENTAL int sqlite3_snapshot_recover(sqlite3 *db, const char *zDb);
+
+/*
 ** Undo the hack that converts floating point types to integer for
 ** builds on processors without floating point support.
 */

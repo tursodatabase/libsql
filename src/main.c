@@ -4045,6 +4045,34 @@ int sqlite3_snapshot_open(
 }
 
 /*
+** Recover as many snapshots as possible from the wal file associated with
+** schema zDb of database db.
+*/
+int sqlite3_snapshot_recover(sqlite3 *db, const char *zDb){
+  int rc = SQLITE_ERROR;
+  int iDb;
+#ifndef SQLITE_OMIT_WAL
+
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( !sqlite3SafetyCheckOk(db) ){
+    return SQLITE_MISUSE_BKPT;
+  }
+#endif
+
+  sqlite3_mutex_enter(db->mutex);
+  iDb = sqlite3FindDbName(db, zDb);
+  if( iDb==0 || iDb>1 ){
+    Btree *pBt = db->aDb[iDb].pBt;
+    if( 0==sqlite3BtreeIsInReadTrans(pBt) ){
+      rc = sqlite3PagerSnapshotRecover(sqlite3BtreePager(pBt));
+    }
+  }
+  sqlite3_mutex_leave(db->mutex);
+#endif   /* SQLITE_OMIT_WAL */
+  return rc;
+}
+
+/*
 ** Free a snapshot handle obtained from sqlite3_snapshot_get().
 */
 void sqlite3_snapshot_free(sqlite3_snapshot *pSnapshot){
