@@ -1,5 +1,5 @@
-C Add\stests\sfor\ssnapshot\sinterfaces.
-D 2016-11-18T18:22:05.618
+C Require\sthat\sthe\sdatabase\shandle\sbe\sin\sautocommit\smode\sfor\nsqlite3_snapshot_get()\sto\ssucceed.\sThis\sis\sbecause\sit\smay\sopen\sa\sread\ntransaction\son\sthe\sdatabase\sfile.
+D 2016-11-18T18:43:39.100
 F Makefile.in 6b572807415d3f0a379cebc9461416d8df4a12c8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc bb4d970894abbbe0e88d00aac29bd52af8bc95f4
@@ -352,7 +352,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 0d6e59f9eea62db772eabc0f07901ec26fe01968
 F src/legacy.c 75d3023be8f0d2b99d60f905090341a03358c58e
 F src/loadext.c 5d6642d141c07d366e43d359e94ec9de47add41d
-F src/main.c 694ac90557abdaa62151a6090670e107b0f2c2ab
+F src/main.c 602d7179fda1879d688174dcd74c69c8579045b5
 F src/malloc.c 5ee7c2d3dcb1b0a902c9c6d0115deef54736bdfa
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 6919bcf12f221868ea066eec27e579fed95ce98b
@@ -389,7 +389,7 @@ F src/resolve.c bb070cf5f23611c44ab7e4788803684e385fc3fb
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 672b1af237ad257149fc5189f3277dcbca036eeb
 F src/shell.c f04e4af75c5517735397d060ed0b4a874104bb41
-F src/sqlite.h.in dfe8c1b4ac66635495ec9a6a7205fcb0f27f4451
+F src/sqlite.h.in cc6e3f38d4c1e4df4f569af49c5deb7c32f1ea10
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
 F src/sqliteInt.h c471d791b10c0f2164c8b7a87adc338e703c09cc
@@ -1102,7 +1102,7 @@ F test/skipscan2.test d1d1450952b7275f0b0a3a981f0230532743951a
 F test/skipscan3.test ec5bab3f81c7038b43450e7b3062e04a198bdbb5
 F test/skipscan5.test 67817a4b6857c47e0e33ba3e506da6f23ef68de2
 F test/skipscan6.test 5866039d03a56f5bd0b3d172a012074a1d90a15b
-F test/snapshot.test bb34cc38828bf2e86a49207995fa7dfacd303832
+F test/snapshot.test 85735bd997a4f6d710140c28fd860519a299649f
 F test/snapshot2.test 30bd95f6fefa8be7f29421e27745cac90b66c74d
 F test/snapshot_fault.test 062ff0438a074978d45e9f9a92e7ad459b74ee73
 F test/soak.test 0b5b6375c9f4110c828070b826b3b4b0bb65cd5f
@@ -1535,7 +1535,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 16b9bf92741e4c62874cffd7c6a61763c5054c7a
-R aa1ba4f87ce4a1d41c6deb879752303b
+P 1f7ee7af7b620262ae663d65889b6a87415d4a34
+R 94e3e6505e79390151b9cd467eca8236
 U dan
-Z ee11b90501c467e7c32bf0deb14250e6
+Z 084fdf6a46a9563f3a18164c0feb0d49

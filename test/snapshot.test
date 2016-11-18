@@ -65,6 +65,7 @@ foreach {tn tcl} {
   #
   #  1) snapshot_get() is called on a non-WAL database, or
   #  2) there is an open write transaction on the database.
+  #  3) the database handle is in auto-commit mode
   #
   do_execsql_test $tn.1.0 {
     CREATE TABLE t1(a, b);
@@ -76,7 +77,7 @@ foreach {tn tcl} {
     execsql { BEGIN; SELECT * FROM t1; }
     list [catch { snapshot_get db main } msg] $msg
   } {1 SQLITE_ERROR}
-  do_execsql_test 1.1.2 COMMIT
+  do_execsql_test $tn.1.1.2 COMMIT
 
   do_test $tn.1.2.1 {
     execsql {
@@ -87,7 +88,15 @@ foreach {tn tcl} {
     }
     list [catch { snapshot_get db main } msg] $msg
   } {1 SQLITE_ERROR}
-  do_execsql_test $tn.1.3.2 COMMIT
+  do_execsql_test $tn.1.2.2 COMMIT
+
+  do_test $tn.1.3.1 {
+    list [catch { snapshot_get db main } msg] $msg
+  } {1 SQLITE_ERROR}
+  do_test $tn.1.3.2 {
+    db trans { set snap [snapshot_get db main] }
+    snapshot_free $snap
+  } {}
 
   #-------------------------------------------------------------------------
   # Check that a simple case works. Reuse the database created by the
@@ -153,7 +162,7 @@ foreach {tn tcl} {
 
   do_test $tn.2.3.1 {
     execsql { DELETE FROM t1 WHERE a>6 }
-    set snapshot [snapshot_get db main]
+    db trans { set snapshot [snapshot_get db main] }
     execsql {
       INSERT INTO t1 VALUES('a', 'b');
       INSERT INTO t1 VALUES('c', 'd');
@@ -220,7 +229,7 @@ foreach {tn tcl} {
     }
     list [catch {snapshot_open db main $snapshot } msg] $msg
   } {1 SQLITE_ERROR}
-  do_execsql_test 3.2.4 COMMIT
+  do_execsql_test $tn.3.2.4 COMMIT
 
   do_test $tn.3.3.1 {
     execsql { PRAGMA journal_mode = DELETE }
