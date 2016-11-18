@@ -1,5 +1,5 @@
-C Enhance\sexisting\ssnapshot\stests\sto\sserialize/deserialize\ssnapshots.\sNo\snew\ntests.
-D 2016-11-18T14:38:41.852
+C Add\stests\sfor\ssnapshot\sinterfaces.
+D 2016-11-18T18:22:05.618
 F Makefile.in 6b572807415d3f0a379cebc9461416d8df4a12c8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc bb4d970894abbbe0e88d00aac29bd52af8bc95f4
@@ -1103,6 +1103,7 @@ F test/skipscan3.test ec5bab3f81c7038b43450e7b3062e04a198bdbb5
 F test/skipscan5.test 67817a4b6857c47e0e33ba3e506da6f23ef68de2
 F test/skipscan6.test 5866039d03a56f5bd0b3d172a012074a1d90a15b
 F test/snapshot.test bb34cc38828bf2e86a49207995fa7dfacd303832
+F test/snapshot2.test 30bd95f6fefa8be7f29421e27745cac90b66c74d
 F test/snapshot_fault.test 062ff0438a074978d45e9f9a92e7ad459b74ee73
 F test/soak.test 0b5b6375c9f4110c828070b826b3b4b0bb65cd5f
 F test/softheap1.test 843cd84db9891b2d01b9ab64cef3e9020f98d087
@@ -1534,7 +1535,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b6a81fa1fc1fb78a65894129851a4ec3986640de
-R 17ac6d49deba8d40db4fa5f6ce7fc2ca
+P 16b9bf92741e4c62874cffd7c6a61763c5054c7a
+R aa1ba4f87ce4a1d41c6deb879752303b
 U dan
-Z cee5f11eb9093786088be3369dcd2153
+Z ee11b90501c467e7c32bf0deb14250e6

@@ -1,0 +1,82 @@
+# 2016 November 18
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library. The focus
+# of this file is the sqlite3_snapshot_xxx() APIs.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+ifcapable !snapshot {finish_test; return}
+set testprefix snapshot2
+
+# This test does not work with the inmemory_journal permutation. The reason
+# is that each connection opened as part of this permutation executes
+# "PRAGMA journal_mode=memory", which fails if the database is in wal mode
+# and there are one or more existing connections.
+if {[permutation]=="inmemory_journal"} {
+  finish_test
+  return
+}
+
+#-------------------------------------------------------------------------
+# Check that it is not possible to obtain a snapshot immediately after
+# a wal mode database with an empty wal file is opened. But it is after
+# the file has been written, even by some other connection.
+#
+do_execsql_test 1.0 {
+  PRAGMA journal_mode = wal;
+  CREATE TABLE t1(a, b, c);
+  INSERT INTO t1 VALUES(1, 2, 3);
+  INSERT INTO t1 VALUES(4, 5, 6);
+} {wal}
+
+db close
+do_test 1.1.1 { list [file exists test.db] [file exists test.db-wal] } {1 0}
+
+sqlite3 db test.db
+do_execsql_test 1.1.2 { SELECT * FROM t1 } {1 2 3 4 5 6}
+
+do_test 1.1.3 {
+  execsql BEGIN
+  list [catch { sqlite3_snapshot_get_blob db main } msg] $msg
+} {1 SQLITE_ERROR}
+execsql COMMIT
+
+do_test 1.1.4 {
+  execsql { INSERT INTO t1 VALUES(7, 8, 9) }
+  execsql BEGIN
+  string length [sqlite3_snapshot_get_blob db main]
+} 48
+execsql COMMIT
+
+db close
+do_test 1.2.1 { list [file exists test.db] [file exists test.db-wal] } {1 0}
+
+sqlite3 db test.db
+do_execsql_test 1.2.2 { SELECT * FROM t1 } {1 2 3 4 5 6 7 8 9}
+
+do_test 1.2.3 {
+  execsql BEGIN
+  list [catch { sqlite3_snapshot_get_blob db main } msg] $msg
+} {1 SQLITE_ERROR}
+execsql COMMIT
+
+do_test 1.2.4 {
+  sqlite3 db2 test.db
+  execsql { INSERT INTO t1 VALUES(10, 11, 12) } db2
+  execsql BEGIN
+  string length [sqlite3_snapshot_get_blob db main]
+} 48
+execsql COMMIT
+db2 close
+
+
+finish_test
