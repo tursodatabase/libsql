@@ -1,5 +1,5 @@
-C Experimental\schanges\stoward\smaking\ssnapshots\sserializable.
-D 2016-11-15T17:37:56.374
+C Enhance\sexisting\ssnapshot\stests\sto\sserialize/deserialize\ssnapshots.\sNo\snew\ntests.
+D 2016-11-18T14:38:41.852
 F Makefile.in 6b572807415d3f0a379cebc9461416d8df4a12c8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc bb4d970894abbbe0e88d00aac29bd52af8bc95f4
@@ -397,7 +397,7 @@ F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
 F src/tclsqlite.c aef87dcd8cb66564d560ab48d43d19ac812a1eab
-F src/test1.c f52bed152c97be23be794efa234374d0de593eeb
+F src/test1.c 58de30ed902f78531cf5cf52b883a26d107208c4
 F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
 F src/test3.c d03f5b5da9a2410b7a91c64b0d3306ed28ab6fee
 F src/test4.c 18ec393bb4d0ad1de729f0b94da7267270f3d8e6
@@ -1102,7 +1102,7 @@ F test/skipscan2.test d1d1450952b7275f0b0a3a981f0230532743951a
 F test/skipscan3.test ec5bab3f81c7038b43450e7b3062e04a198bdbb5
 F test/skipscan5.test 67817a4b6857c47e0e33ba3e506da6f23ef68de2
 F test/skipscan6.test 5866039d03a56f5bd0b3d172a012074a1d90a15b
-F test/snapshot.test a19465046168b4420b5afeed37c3214e42a49f4a
+F test/snapshot.test bb34cc38828bf2e86a49207995fa7dfacd303832
 F test/snapshot_fault.test 062ff0438a074978d45e9f9a92e7ad459b74ee73
 F test/soak.test 0b5b6375c9f4110c828070b826b3b4b0bb65cd5f
 F test/softheap1.test 843cd84db9891b2d01b9ab64cef3e9020f98d087
@@ -1534,10 +1534,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 663473850c4274270445b3771911fa773a8c405f
-R 1784ed6bcadef61e22ad39533122ebea
-T *branch * serializable-snapshot
-T *sym-serializable-snapshot *
-T -sym-trunk *
-U drh
-Z 8a16f1f47c269929c7f968ee35b8cb55
+P b6a81fa1fc1fb78a65894129851a4ec3986640de
+R 17ac6d49deba8d40db4fa5f6ce7fc2ca
+U dan
+Z cee5f11eb9093786088be3369dcd2153
