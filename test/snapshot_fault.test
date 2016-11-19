@@ -17,6 +17,8 @@ source $testdir/tester.tcl
 ifcapable !snapshot {finish_test; return}
 set testprefix snapshot_fault
 
+if 1 {
+
 #-------------------------------------------------------------------------
 # Check that an sqlite3_snapshot_open() client cannot be tricked into
 # reading a corrupt snapshot even if a second client fails while 
@@ -159,6 +161,35 @@ do_faultsim_test 3.0 -prep {
   sqlite3_snapshot_free $::snapshot
 }
 
+}
+
+#-------------------------------------------------------------------------
+# Test the handling of faults that occur within sqlite3_snapshot_recover().
+#
+reset_db
+do_execsql_test 4.0 {
+  PRAGMA journal_mode = wal;
+  CREATE TABLE t1(zzz);
+  INSERT INTO t1 VALUES('abc');
+  INSERT INTO t1 VALUES('def');
+} {wal}
+faultsim_save_and_close
+
+do_test 4.1 {
+  faultsim_restore_and_reopen
+  db eval { SELECT * FROM sqlite_master } 
+  sqlite3_snapshot_recover db main
+} {}
+db close
+
+do_faultsim_test 4 -faults oom* -prep {
+  faultsim_restore_and_reopen
+  db eval { SELECT * FROM sqlite_master } 
+} -body {
+  sqlite3_snapshot_recover db main
+} -test {
+  faultsim_test_result {0 {}} {1 SQLITE_NOMEM} {1 SQLITE_IOERR_NOMEM}
+}
 
 
 finish_test

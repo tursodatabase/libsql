@@ -2392,43 +2392,49 @@ int sqlite3WalSnapshotRecover(Wal *pWal){
     if( rc==SQLITE_OK ){
       volatile WalCkptInfo *pInfo = walCkptInfo(pWal);
       int szPage = (int)pWal->szPage;
-      void *pBuf1 = sqlite3_malloc(szPage);
-      void *pBuf2 = sqlite3_malloc(szPage);
+      i64 szDb;                   /* Size of db file in bytes */
 
-      if( pBuf1==0 || pBuf2==0 ){
-        rc = SQLITE_NOMEM;
-      }else{
-        u32 i = pInfo->nBackfillAttempted;
-        for(i=pInfo->nBackfillAttempted; i>pInfo->nBackfill; i--){
-          volatile ht_slot *dummy;
-          volatile u32 *aPgno;      /* Array of page numbers */
-          u32 iZero;                /* Frame corresponding to aPgno[0] */
-          u32 pgno;                 /* Page number in db file */
-          i64 iDbOff;               /* Offset of db file entry */
-          i64 iWalOff;              /* Offset of wal file entry */
-          rc = walHashGet(pWal, walFramePage(i), &dummy, &aPgno, &iZero);
+      rc = sqlite3OsFileSize(pWal->pDbFd, &szDb);
+      if( rc==SQLITE_OK ){
+        void *pBuf1 = sqlite3_malloc(szPage);
+        void *pBuf2 = sqlite3_malloc(szPage);
+        if( pBuf1==0 || pBuf2==0 ){
+          rc = SQLITE_NOMEM;
+        }else{
+          u32 i = pInfo->nBackfillAttempted;
+          for(i=pInfo->nBackfillAttempted; i>pInfo->nBackfill; i--){
+            volatile ht_slot *dummy;
+            volatile u32 *aPgno;      /* Array of page numbers */
+            u32 iZero;                /* Frame corresponding to aPgno[0] */
+            u32 pgno;                 /* Page number in db file */
+            i64 iDbOff;               /* Offset of db file entry */
+            i64 iWalOff;              /* Offset of wal file entry */
 
-          if( rc==SQLITE_OK ){
+            rc = walHashGet(pWal, walFramePage(i), &dummy, &aPgno, &iZero);
+            if( rc!=SQLITE_OK ) break;
             pgno = aPgno[i-iZero];
             iDbOff = (i64)(pgno-1) * szPage;
-            iWalOff = walFrameOffset(i, szPage) + WAL_FRAME_HDRSIZE;
-            rc = sqlite3OsRead(pWal->pWalFd, pBuf1, szPage, iWalOff);
-          }
 
-          if( rc==SQLITE_OK ){
-            rc = sqlite3OsRead(pWal->pDbFd, pBuf2, szPage, iDbOff);
-          }
+            if( iDbOff+szPage<=szDb ){
+              iWalOff = walFrameOffset(i, szPage) + WAL_FRAME_HDRSIZE;
+              rc = sqlite3OsRead(pWal->pWalFd, pBuf1, szPage, iWalOff);
 
-          if( rc!=SQLITE_OK || 0==memcmp(pBuf1, pBuf2, szPage) ){
-            break;
-          }
+              if( rc==SQLITE_OK ){
+                rc = sqlite3OsRead(pWal->pDbFd, pBuf2, szPage, iDbOff);
+              }
 
-          pInfo->nBackfillAttempted = i-1;
+              if( rc!=SQLITE_OK || 0==memcmp(pBuf1, pBuf2, szPage) ){
+                break;
+              }
+            }
+
+            pInfo->nBackfillAttempted = i-1;
+          }
         }
-      }
 
-      sqlite3_free(pBuf1);
-      sqlite3_free(pBuf2);
+        sqlite3_free(pBuf1);
+        sqlite3_free(pBuf2);
+      }
       walUnlockExclusive(pWal, WAL_CKPT_LOCK, 1);
     }
 
