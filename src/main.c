@@ -4064,7 +4064,11 @@ int sqlite3_snapshot_recover(sqlite3 *db, const char *zDb){
   if( iDb==0 || iDb>1 ){
     Btree *pBt = db->aDb[iDb].pBt;
     if( 0==sqlite3BtreeIsInReadTrans(pBt) ){
-      rc = sqlite3PagerSnapshotRecover(sqlite3BtreePager(pBt));
+      rc = sqlite3BtreeBeginTrans(pBt, 0);
+      if( rc==SQLITE_OK ){
+        rc = sqlite3PagerSnapshotRecover(sqlite3BtreePager(pBt));
+        sqlite3BtreeCommit(pBt);
+      }
     }
   }
   sqlite3_mutex_leave(db->mutex);

@@ -2380,70 +2380,76 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
 }
 
 /*
-** Recover as many snapshots as possible from the wal file.
+** Attempt to reduce the value of the WalCkptInfo.nBackfillAttempted 
+** variable so that older snapshots can be accessed. To do this, loop
+** through all wal frames from nBackfillAttempted to (nBackfill+1), 
+** comparing their content to the corresponding page with the database
+** file, if any. Set nBackfillAttempted to the frame number of the
+** first frame for which the wal file content matches the db file.
+**
+** This is only really safe if the file-system is such that any page 
+** writes made by earlier checkpointers were atomic operations, which 
+** is not always true. It is also possible that nBackfillAttempted
+** may be left set to a value larger than expected, if a wal frame
+** contains content that duplicate of an earlier version of the same
+** page.
+**
+** SQLITE_OK is returned if successful, or an SQLite error code if an
+** error occurs. It is not an error if nBackfillAttempted cannot be
+** decreased at all.
 */
 int sqlite3WalSnapshotRecover(Wal *pWal){
-  int dummy;
   int rc;
 
-  rc = sqlite3WalBeginReadTransaction(pWal, &dummy);
+  assert( pWal->readLock>=0 );
+  rc = walLockExclusive(pWal, WAL_CKPT_LOCK, 1);
   if( rc==SQLITE_OK ){
-    rc = walLockExclusive(pWal, WAL_CKPT_LOCK, 1);
+    volatile WalCkptInfo *pInfo = walCkptInfo(pWal);
+    int szPage = (int)pWal->szPage;
+    i64 szDb;                   /* Size of db file in bytes */
+
+    rc = sqlite3OsFileSize(pWal->pDbFd, &szDb);
     if( rc==SQLITE_OK ){
-      volatile WalCkptInfo *pInfo = walCkptInfo(pWal);
-      int szPage = (int)pWal->szPage;
-      i64 szDb;                   /* Size of db file in bytes */
+      void *pBuf1 = sqlite3_malloc(szPage);
+      void *pBuf2 = sqlite3_malloc(szPage);
+      if( pBuf1==0 || pBuf2==0 ){
+        rc = SQLITE_NOMEM;
+      }else{
+        u32 i = pInfo->nBackfillAttempted;
+        for(i=pInfo->nBackfillAttempted; i>pInfo->nBackfill; i--){
+          volatile ht_slot *dummy;
+          volatile u32 *aPgno;      /* Array of page numbers */
+          u32 iZero;                /* Frame corresponding to aPgno[0] */
+          u32 pgno;                 /* Page number in db file */
+          i64 iDbOff;               /* Offset of db file entry */
+          i64 iWalOff;              /* Offset of wal file entry */
 
-      rc = sqlite3OsFileSize(pWal->pDbFd, &szDb);
-      if( rc==SQLITE_OK ){
-        void *pBuf1 = sqlite3_malloc(szPage);
-        void *pBuf2 = sqlite3_malloc(szPage);
-        if( pBuf1==0 || pBuf2==0 ){
-          rc = SQLITE_NOMEM;
-        }else{
-          u32 i = pInfo->nBackfillAttempted;
-          for(i=pInfo->nBackfillAttempted; i>pInfo->nBackfill; i--){
-            volatile ht_slot *dummy;
-            volatile u32 *aPgno;      /* Array of page numbers */
-            u32 iZero;                /* Frame corresponding to aPgno[0] */
-            u32 pgno;                 /* Page number in db file */
-            i64 iDbOff;               /* Offset of db file entry */
-            i64 iWalOff;              /* Offset of wal file entry */
+          rc = walHashGet(pWal, walFramePage(i), &dummy, &aPgno, &iZero);
+          if( rc!=SQLITE_OK ) break;
+          pgno = aPgno[i-iZero];
+          iDbOff = (i64)(pgno-1) * szPage;
 
-            rc = walHashGet(pWal, walFramePage(i), &dummy, &aPgno, &iZero);
-            if( rc!=SQLITE_OK ) break;
-            pgno = aPgno[i-iZero];
-            iDbOff = (i64)(pgno-1) * szPage;
+          if( iDbOff+szPage<=szDb ){
+            iWalOff = walFrameOffset(i, szPage) + WAL_FRAME_HDRSIZE;
+            rc = sqlite3OsRead(pWal->pWalFd, pBuf1, szPage, iWalOff);
 
-            if( iDbOff+szPage<=szDb ){
-              iWalOff = walFrameOffset(i, szPage) + WAL_FRAME_HDRSIZE;
-              rc = sqlite3OsRead(pWal->pWalFd, pBuf1, szPage, iWalOff);
-
-              if( rc==SQLITE_OK ){
-                rc = sqlite3OsRead(pWal->pDbFd, pBuf2, szPage, iDbOff);
-              }
-
-              if( rc!=SQLITE_OK || 0==memcmp(pBuf1, pBuf2, szPage) ){
-                break;
-              }
+            if( rc==SQLITE_OK ){
+              rc = sqlite3OsRead(pWal->pDbFd, pBuf2, szPage, iDbOff);
             }
 
-            pInfo->nBackfillAttempted = i-1;
+            if( rc!=SQLITE_OK || 0==memcmp(pBuf1, pBuf2, szPage) ){
+              break;
+            }
           }
+
+          pInfo->nBackfillAttempted = i-1;
         }
-
-        sqlite3_free(pBuf1);
-        sqlite3_free(pBuf2);
       }
-      walUnlockExclusive(pWal, WAL_CKPT_LOCK, 1);
-    }
 
-    /* End the read transaction opened above. Also zero the cache of the
-    ** wal-index header to force the pager-cache to be flushed when the next
-    ** read transaction is open, as it may not match the current contents of
-    ** pWal->hdr. */
-    sqlite3WalEndReadTransaction(pWal);
-    memset(&pWal->hdr, 0, sizeof(WalIndexHdr));
+      sqlite3_free(pBuf1);
+      sqlite3_free(pBuf2);
+    }
+    walUnlockExclusive(pWal, WAL_CKPT_LOCK, 1);
   }
 
   return rc;

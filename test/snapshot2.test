@@ -131,7 +131,6 @@ do_test 2.5 {
   db close
   sqlite3 db test.db
 
-  execsql {SELECT * FROM sqlite_master}
   sqlite3_snapshot_recover db main
   execsql BEGIN
   list [catch { sqlite3_snapshot_open_blob db main $snap } msg] $msg
