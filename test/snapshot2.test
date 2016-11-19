@@ -153,10 +153,50 @@ do_test 3.1 {
   db2 close
   sqlite3_snapshot_recover db main
 } {}
-breakpoint
 do_execsql_test 3.2 {
   SELECT * FROM t1;
 } {a b c d e f}
+
+#-------------------------------------------------------------------------
+# Check that sqlite3_snapshot_recover() returns an error if it is called
+# with an open read-transaction. Or on a database that does not exist. Or
+# on the temp database. Or on a db that is not in wal mode.
+#
+do_test 4.1 {
+  sqlite3_snapshot_recover db main
+} {}
+do_test 4.2 {
+  execsql {
+    BEGIN;
+      SELECT * FROM sqlite_master;
+  }
+  list [catch { sqlite3_snapshot_recover db main } msg] $msg
+} {1 SQLITE_ERROR}
+do_test 4.3 {
+  execsql COMMIT
+  sqlite3_snapshot_recover db main
+} {}
+do_test 4.4 {
+  list [catch { sqlite3_snapshot_recover db aux } msg] $msg
+} {1 SQLITE_ERROR}
+do_test 4.5 {
+  forcedelete test.db2
+  execsql {
+    ATTACH 'test.db2' AS aux;
+    PRAGMA aux.journal_mode = wal;
+    CREATE TABLE aux.t2(x, y);
+  }
+  list [catch { sqlite3_snapshot_recover db aux } msg] $msg
+} {0 {}}
+do_test 4.6 {
+  list [catch { sqlite3_snapshot_recover db temp } msg] $msg
+} {1 SQLITE_ERROR}
+do_test 4.7 {
+  execsql {
+    PRAGMA aux.journal_mode = delete;
+  }
+  list [catch { sqlite3_snapshot_recover db aux } msg] $msg
+} {1 SQLITE_ERROR}
 
 finish_test
 
