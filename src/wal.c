@@ -2432,7 +2432,12 @@ int sqlite3WalSnapshotRecover(Wal *pWal){
       walUnlockExclusive(pWal, WAL_CKPT_LOCK, 1);
     }
 
+    /* End the read transaction opened above. Also zero the cache of the
+    ** wal-index header to force the pager-cache to be flushed when the next
+    ** read transaction is open, as it may not match the current contents of
+    ** pWal->hdr. */
     sqlite3WalEndReadTransaction(pWal);
+    memset(&pWal->hdr, 0, sizeof(WalIndexHdr));
   }
 
   return rc;

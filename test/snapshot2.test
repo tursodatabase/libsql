@@ -79,6 +79,7 @@ execsql COMMIT
 db2 close
 
 #-------------------------------------------------------------------------
+# Simple tests for sqlite3_snapshot_recover().
 #
 reset_db
 do_execsql_test 2.0 {
@@ -136,6 +137,26 @@ do_test 2.5 {
   list [catch { sqlite3_snapshot_open_blob db main $snap } msg] $msg
 } {1 SQLITE_BUSY_SNAPSHOT}
 
+#-------------------------------------------------------------------------
+# Check that calling sqlite3_snapshot_recover() does not confuse the
+# pager cache.
+reset_db
+do_execsql_test 3.0 {
+  PRAGMA journal_mode = wal;
+  CREATE TABLE t1(x, y);
+  INSERT INTO t1 VALUES('a', 'b');
+  INSERT INTO t1 VALUES('c', 'd');
+} {wal}
+do_test 3.1 {
+  sqlite3 db2 test.db
+  execsql { INSERT INTO t1 VALUES('e', 'f') } db2
+  db2 close
+  sqlite3_snapshot_recover db main
+} {}
+breakpoint
+do_execsql_test 3.2 {
+  SELECT * FROM t1;
+} {a b c d e f}
 
 finish_test
 
