@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings.
-D 2016-11-20T17:59:59.686
+C Enhance\sspeedtest1.c\sso\sthat\sis\sworks\son\solder\sversions\sof\sSQLite,\sbefore\nthe\sintroduction\sof\sthe\sgroup_concat()\saggregate\sfunction.
+D 2016-11-21T18:15:35.996
 F Makefile.in 6b572807415d3f0a379cebc9461416d8df4a12c8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc bb4d970894abbbe0e88d00aac29bd52af8bc95f4
@@ -1120,7 +1120,7 @@ F test/speed3.test 694affeb9100526007436334cf7d08f3d74b85ef
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
-F test/speedtest1.c 2699cdb3c04cdaa44f47bf3cb0b720d8c52883e6
+F test/speedtest1.c dae4b22c620743e2767d0ec9fc11f2d1d6383ff1
 F test/spellfix.test f9c1f431e2c096c8775fec032952320c0e4700db
 F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
 F test/spellfix3.test 0f9efaaa502a0e0a09848028518a6fb096c8ad33
@@ -1534,7 +1534,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0a98c8d76ac86412d5eb68de994658c250989349
-R 38b98996abd27ed143b71be3145a6356
+P b3b7b42d9a4a0e7e2be8b2933328a7bec2f49a81
+R 142d4e960b1bc74fe4e27f638486681b
 U drh
-Z ab3b36c0e8942c1f47487ebf38a820ad
+Z 46dbec5fea6f8ea94f3f3ff9f77bd1e2
