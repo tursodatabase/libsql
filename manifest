@@ -1,5 +1,5 @@
-C Enhance\sspeedtest1.c\sso\sthat\sis\sworks\son\solder\sversions\sof\sSQLite,\sbefore\nthe\sintroduction\sof\sthe\sgroup_concat()\saggregate\sfunction.
-D 2016-11-21T18:15:35.996
+C Remove\sunnecessary\sOP_Close\sopcodes\sat\sthe\send\sof\sINSERT\soperations,\sresulting\nin\ssmaller\sand\sfaster\scode.
+D 2016-11-21T21:33:46.646
 F Makefile.in 6b572807415d3f0a379cebc9461416d8df4a12c8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc bb4d970894abbbe0e88d00aac29bd52af8bc95f4
@@ -349,7 +349,7 @@ F src/hash.c 63d0ee752a3b92d4695b2b1f5259c4621b2cfebd
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 24a42864ae46e4448d15f3207af963a6452b611e
+F src/insert.c b07f929977f36d2279cc3bce41583e30881cb617
 F src/legacy.c 75d3023be8f0d2b99d60f905090341a03358c58e
 F src/loadext.c 5d6642d141c07d366e43d359e94ec9de47add41d
 F src/main.c 694ac90557abdaa62151a6090670e107b0f2c2ab
@@ -1534,7 +1534,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b3b7b42d9a4a0e7e2be8b2933328a7bec2f49a81
-R 142d4e960b1bc74fe4e27f638486681b
+P 9979ba80a649ee61d9d174dc9d9fcab7e9fc1332
+R 92d61cb2d5bdcee0374dbd9c4ae6bd21
 U drh
-Z 46dbec5fea6f8ea94f3f3ff9f77bd1e2
+Z 31a59b2224bec36ffef21dc37a376954
