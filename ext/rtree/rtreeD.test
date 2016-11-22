@@ -19,7 +19,7 @@ if {![info exists testdir]} {
 source [file join [file dirname [info script]] rtree_util.tcl]
 source $testdir/tester.tcl
 source $testdir/lock_common.tcl
-ifcapable !rtree {
+ifcapable !rtree||!builtin_test {
   finish_test
   return
 }

@@ -49,6 +49,7 @@ static const char zHelp[] =
 #include <stdarg.h>
 #include <string.h>
 #include <ctype.h>
+#include <unistd.h>
 #define ISSPACE(X) isspace((unsigned char)(X))
 #define ISDIGIT(X) isdigit((unsigned char)(X))
 
@@ -455,6 +456,68 @@ static int est_square_root(int x){
   return y0;
 }
 
+
+#if SQLITE_VERSION_NUMBER<3005004
+/*
+** An implementation of group_concat().  Used only when testing older
+** versions of SQLite that lack the built-in group_concat().
+*/
+struct groupConcat {
+  char *z;
+  int nAlloc;
+  int nUsed;
+};
+static void groupAppend(struct groupConcat *p, const char *z, int n){
+  if( p->nUsed+n >= p->nAlloc ){
+    int n2 = (p->nAlloc+n+1)*2;
+    char *z2 = sqlite3_realloc(p->z, n2);
+    if( z2==0 ) return;
+    p->z = z2;
+    p->nAlloc = n2;
+  }
+  memcpy(p->z+p->nUsed, z, n);
+  p->nUsed += n;
+}
+static void groupStep(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  const char *zVal;
+  struct groupConcat *p;
+  const char *zSep;
+  int nVal, nSep;
+  assert( argc==1 || argc==2 );
+  if( sqlite3_value_type(argv[0])==SQLITE_NULL ) return;
+  p= (struct groupConcat*)sqlite3_aggregate_context(context, sizeof(*p));
+
+  if( p ){
+    int firstTerm = p->nUsed==0;
+    if( !firstTerm ){
+      if( argc==2 ){
+        zSep = (char*)sqlite3_value_text(argv[1]);
+        nSep = sqlite3_value_bytes(argv[1]);
+      }else{
+        zSep = ",";
+        nSep = 1;
+      }
+      if( nSep ) groupAppend(p, zSep, nSep);
+    }
+    zVal = (char*)sqlite3_value_text(argv[0]);
+    nVal = sqlite3_value_bytes(argv[0]);
+    if( zVal ) groupAppend(p, zVal, nVal);
+  }
+}
+static void groupFinal(sqlite3_context *context){
+  struct groupConcat *p;
+  p = sqlite3_aggregate_context(context, 0);
+  if( p && p->z ){
+    p->z[p->nUsed] = 0;
+    sqlite3_result_text(context, p->z, p->nUsed, sqlite3_free);
+  }
+}
+#endif
+
 /*
 ** The main and default testset
 */
@@ -524,6 +587,10 @@ void testset_main(void){
   speedtest1_exec("COMMIT");
   speedtest1_end_test();
 
+#if SQLITE_VERSION_NUMBER<3005004
+  sqlite3_create_function(g.db, "group_concat", 1, SQLITE_UTF8, 0,
+                          0, groupStep, groupFinal);
+#endif
 
   n = 25;
   speedtest1_begin_test(130, "%d SELECTS, numeric BETWEEN, unindexed", n);
@@ -1370,10 +1437,12 @@ int main(int argc, char **argv){
         nLook = integerValue(argv[i+1]);
         szLook = integerValue(argv[i+2]);
         i += 2;
+#if SQLITE_VERSION_NUMBER>=3006000
       }else if( strcmp(z,"multithread")==0 ){
         sqlite3_config(SQLITE_CONFIG_MULTITHREAD);
       }else if( strcmp(z,"nomemstat")==0 ){
         sqlite3_config(SQLITE_CONFIG_MEMSTATUS, 0);
+#endif
       }else if( strcmp(z,"nosync")==0 ){
         noSync = 1;
       }else if( strcmp(z,"notnull")==0 ){
@@ -1405,10 +1474,12 @@ int main(int argc, char **argv){
         nScratch = integerValue(argv[i+1]);
         szScratch = integerValue(argv[i+2]);
         i += 2;
+#if SQLITE_VERSION_NUMBER>=3006000
       }else if( strcmp(z,"serialized")==0 ){
         sqlite3_config(SQLITE_CONFIG_SERIALIZED);
       }else if( strcmp(z,"singlethread")==0 ){
         sqlite3_config(SQLITE_CONFIG_SINGLETHREAD);
+#endif
       }else if( strcmp(z,"sqlonly")==0 ){
         g.bSqlOnly = 1;
       }else if( strcmp(z,"shrink-memory")==0 ){
