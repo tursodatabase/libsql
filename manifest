@@ -1,5 +1,5 @@
-C Remove\sthe\srequirement\sto\sopen\sthe\swal\sfile\sbefore\ssqlite3_snapshot_recover()\nis\scalled.\sAlso\sadd\ssome\scomments\sto\snew\sfunctions.
-D 2016-11-19T18:31:37.017
+C Enclose\sthe\ssqlite3WalSnapshotRecover()\sroutine\swithin
+D 2016-11-22T21:11:59.294
 F Makefile.in 6b572807415d3f0a379cebc9461416d8df4a12c8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc bb4d970894abbbe0e88d00aac29bd52af8bc95f4
@@ -465,7 +465,7 @@ F src/vdbesort.c 91fda3909326860382b0ca8aa251e609c6a9d62c
 F src/vdbetrace.c 41963d5376f0349842b5fc4aaaaacd7d9cdc0834
 F src/vtab.c e02cacb5c7ae742631edeb9ae9f53d399f093fd8
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 56bba6f4101b55054145ce164951bea4a1b09548
+F src/wal.c 40c543f0a2195d1b0dc88ef12142bea690009344
 F src/wal.h 06b2a0b599cc0f53ea97f497cf8c6b758c999f71
 F src/walker.c 91a6df7435827e41cff6bb7df50ea00934ee78b0
 F src/where.c 952f76e7a03727480b274b66ca6641b1657cd591
@@ -1535,7 +1535,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P db314213c08f27dd0ff5ede3c6a8eda36560809a
-R 0c1e63a3653bf6d9b725483fda2de4a1
-U dan
-Z 573fa32a4bef0fb7a3cf7415ded5b3fe
+P 28393c413cc4505b94411730e728583c5d4baaae
+R 87af84aaf5faeefdf69427a408fd9884
+U drh
+Z eaed2a9cb4277f14d0de83d53d00fc85

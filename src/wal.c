@@ -2379,6 +2379,7 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
   return rc;
 }
 
+#ifdef SQLITE_ENABLE_SNAPSHOT
 /*
 ** Attempt to reduce the value of the WalCkptInfo.nBackfillAttempted 
 ** variable so that older snapshots can be accessed. To do this, loop
@@ -2454,6 +2455,7 @@ int sqlite3WalSnapshotRecover(Wal *pWal){
 
   return rc;
 }
+#endif /* SQLITE_ENABLE_SNAPSHOT */
 
 /*
 ** Begin a read transaction on the database.
