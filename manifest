@@ -1,5 +1,5 @@
-C Remove\sunnecessary\sOP_Close\sopcodes\sfor\sa\ssize\sreduction\sand\sperformance\nincrease.
-D 2016-11-22T01:26:42.349
+C Update\srequirement\smarks\sto\sreflect\schanges\sin\swording\sin\sthe\sdocumentation.\nNo\schanges\sto\scode.
+D 2016-11-22T19:15:05.929
 F Makefile.in 6b572807415d3f0a379cebc9461416d8df4a12c8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc bb4d970894abbbe0e88d00aac29bd52af8bc95f4
@@ -650,13 +650,13 @@ F test/e_createtable.test d4c6059d44dcd4b636de9aae322766062b471844
 F test/e_delete.test ab39084f26ae1f033c940b70ebdbbd523dc4962e
 F test/e_droptrigger.test 3cd080807622c13e5bbb61fc9a57bd7754da2412
 F test/e_dropview.test 0c9f7f60989164a70a67a9d9c26d1083bc808306
-F test/e_expr.test 1ffa8866d38e7becc76893a8829e9432050e5716
+F test/e_expr.test 3520cd3a1843ceb4facd1760f97bd0a2db4b351a
 F test/e_fkey.test 54cc0046d2d952d6c42b0dd94414e7a8f75f79f4
 F test/e_fts3.test 5c02288842e4f941896fd44afdef564dd5fc1459
 F test/e_insert.test 3de217e95094d3d165992a6de1164bbc4bd92dc7
 F test/e_reindex.test 2bebf7b393e519198b7c654407221cf171a439b8
 F test/e_resolve.test a61751c368b109db73df0f20fc75fb47e166b1d8
-F test/e_select.test 52692ff3849541e828ad4661fe3773a9b8711763
+F test/e_select.test 16651bb681e83a1a2875ff4a595ed2b4b4dee375
 F test/e_select2.test aceb80ab927d46fba5ce7586ebabf23e2bb0604f
 F test/e_totalchanges.test b12ee5809d3e63aeb83238dd501a7bca7fd72c10
 F test/e_update.test f46c2554d915c9197548681e8d8c33a267e84528
@@ -1192,7 +1192,7 @@ F test/tkt-78e04e52ea.test 813779f8888f3ca226df656c4eef078f9635f3c9
 F test/tkt-7a31705a7e6.test e75a2bba4eec801b92c8040eb22096ac6d35e844
 F test/tkt-7bbfb7d442.test 7b2cd79c7a17ae6750e75ec1a7846712a69c9d18
 F test/tkt-80ba201079.test 105a721e6aad0ae3c5946d7615d1e4d03f6145b8
-F test/tkt-80e031a00f.test f50046f474ecf67ad5c50cd9200da04ff887d7cd
+F test/tkt-80e031a00f.test 9ee36348b761bf7c14261e002b75a4c0d5a04d4c
 F test/tkt-8454a207b9.test c583a9f814a82a2b5ba95207f55001c9f0cd816c
 F test/tkt-868145d012.test a5f941107ece6a64410ca4755c6329b7eb57a356
 F test/tkt-8c63ff0ec.test 258b7fc8d7e4e1cb5362c7d65c143528b9c4cbed
@@ -1534,7 +1534,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P abeddb6d5a4040e1d0a87a4f32ad79794ba0842b
-R 0b6428f20f271d9267866f8abeb28948
+P 32be7aae92ee48bf2cd260ea41e79c2bc62738f9
+R 49b4ed62c4b9622a332c802f3bc11e93
 U drh
-Z c9fbc8dd9eccb05e2261cb73023007c2
+Z d757a5720bbbbd29737d4e0fbf7742d9
