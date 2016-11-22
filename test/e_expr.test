@@ -1437,6 +1437,13 @@ do_expr_test e_expr-27.2.2 { CAST(NULL AS text) }    null {}
 do_expr_test e_expr-27.2.3 { CAST(NULL AS blob) }    null {}
 do_expr_test e_expr-27.2.4 { CAST(NULL AS number) }  null {}
 
+# EVIDENCE-OF: R-29283-15561 Otherwise, the storage class of the result
+# is determined by applying the rules for determining column affinity to
+# the type-name.
+#
+# The R-29283-15561 requirement above is demonstrated by all of the 
+# subsequent e_expr-26 tests.
+#
 # EVIDENCE-OF: R-43522-35548 Casting a value to a type-name with no
 # affinity causes the value to be converted into a BLOB.
 #
