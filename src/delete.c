@@ -538,14 +538,6 @@ void sqlite3DeleteFrom(
       sqlite3VdbeGoto(v, addrLoop);
       sqlite3VdbeJumpHere(v, addrLoop);
     }     
-  
-    /* Close the cursors open on the table and its indexes. */
-    if( !isView && !IsVirtual(pTab) ){
-      if( !pPk ) sqlite3VdbeAddOp1(v, OP_Close, iDataCur);
-      for(i=0, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
-        sqlite3VdbeAddOp1(v, OP_Close, iIdxCur + i);
-      }
-    }
   } /* End non-truncate path */
 
   /* Update the sqlite_sequence table by storing the content of the

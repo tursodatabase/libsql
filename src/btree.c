@@ -8578,27 +8578,7 @@ static int btreeDropTable(Btree *p, Pgno iTable, int *piMoved){
 
   assert( sqlite3BtreeHoldsMutex(p) );
   assert( p->inTrans==TRANS_WRITE );
-
-  /* It is illegal to drop a table if any cursors are open on the
-  ** database. This is because in auto-vacuum mode the backend may
-  ** need to move another root-page to fill a gap left by the deleted
-  ** root page. If an open cursor was using this page a problem would 
-  ** occur.
-  **
-  ** This error is caught long before control reaches this point.
-  */
-  if( NEVER(pBt->pCursor) ){
-    sqlite3ConnectionBlocked(p->db, pBt->pCursor->pBtree->db);
-    return SQLITE_LOCKED_SHAREDCACHE;
-  }
-
-  /*
-  ** It is illegal to drop the sqlite_master table on page 1.  But again,
-  ** this error is caught long before reaching this point.
-  */
-  if( NEVER(iTable<2) ){
-    return SQLITE_CORRUPT_BKPT;
-  }
+  assert( iTable>=2 );
 
   rc = btreeGetPage(pBt, (Pgno)iTable, &pPage, 0);
   if( rc ) return rc;
