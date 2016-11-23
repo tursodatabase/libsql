@@ -49,13 +49,15 @@ SQLITE_EXTENSION_INIT1
 #ifdef sqlite3Isdigit
    /* Use the SQLite core versions if this routine is part of the
    ** SQLite amalgamation */
-#  define safe_isdigit(x) sqlite3Isdigit(x)
-#  define safe_isalnum(x) sqlite3Isalnum(x)
+#  define safe_isdigit(x)  sqlite3Isdigit(x)
+#  define safe_isalnum(x)  sqlite3Isalnum(x)
+#  define safe_isxdigit(x) sqlite3Isxdigit(x)
 #else
    /* Use the standard library for separate compilation */
 #include <ctype.h>  /* amalgamator: keep */
-#  define safe_isdigit(x) isdigit((unsigned char)(x))
-#  define safe_isalnum(x) isalnum((unsigned char)(x))
+#  define safe_isdigit(x)  isdigit((unsigned char)(x))
+#  define safe_isalnum(x)  isalnum((unsigned char)(x))
+#  define safe_isxdigit(x) isxdigit((unsigned char)(x))
 #endif
 
 /*
@@ -703,6 +705,15 @@ static int jsonParseAddNode(
 }
 
 /*
+** Return true if z[] begins with 4 (or more) hexadecimal digits
+*/
+static int jsonIs4Hex(const char *z){
+  int i;
+  for(i=0; i<4; i++) if( !safe_isxdigit(z[i]) ) return 0;
+  return 1;
+}
+
+/*
 ** Parse a single JSON value which begins at pParse->zJson[i].  Return the
 ** index of the first character past the end of the value parsed.
 **
@@ -776,8 +787,13 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
       if( c==0 ) return -1;
       if( c=='\\' ){
         c = pParse->zJson[++j];
-        if( c==0 ) return -1;
-        jnFlags = JNODE_ESCAPE;
+        if( c=='"' || c=='\\' || c=='/' || c=='b' || c=='f'
+           || c=='n' || c=='r' || c=='t'
+           || (c=='u' && jsonIs4Hex(pParse->zJson+j+1)) ){
+          jnFlags = JNODE_ESCAPE;
+        }else{
+          return -1;
+        }
       }else if( c=='"' ){
         break;
       }
