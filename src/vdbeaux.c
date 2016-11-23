@@ -1271,7 +1271,7 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
       sqlite3XPrintf(&x, "%s(%d)", pDef->zName, pDef->nArg);
       break;
     }
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(VDBE_PROFILE)
     case P4_FUNCCTX: {
       FuncDef *pDef = pOp->p4.pCtx->pFunc;
       sqlite3XPrintf(&x, "%s(%d)", pDef->zName, pDef->nArg);
