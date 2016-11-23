@@ -1661,7 +1661,7 @@ static void jsonObjectFinal(sqlite3_context *ctx){
   if( pStr ){
     jsonAppendChar(pStr, '}');
     if( pStr->bErr ){
-      if( pStr->bErr==0 ) sqlite3_result_error_nomem(ctx);
+      if( pStr->bErr==1 ) sqlite3_result_error_nomem(ctx);
       assert( pStr->bStatic );
     }else{
       sqlite3_result_text(ctx, pStr->zBuf, pStr->nUsed,
@@ -1939,9 +1939,9 @@ static int jsonEachColumn(
       /* For json_each() path and root are the same so fall through
       ** into the root case */
     }
-    case JEACH_ROOT: {
+    default: {
       const char *zRoot = p->zRoot;
-       if( zRoot==0 ) zRoot = "$";
+      if( zRoot==0 ) zRoot = "$";
       sqlite3_result_text(ctx, zRoot, -1, SQLITE_STATIC);
       break;
     }
