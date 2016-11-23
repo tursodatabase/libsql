@@ -1,5 +1,5 @@
-C Prevent\sa\spossible\suse-after-free\sbug\sin\sthe\squery\soptimizer.
-D 2016-11-23T21:08:01.758
+C Code\sconstant\svector\scomponents\soutside\sof\sany\sloops\sin\sCASE\sand\sBETWEEN\nexpressions.\sFix\sfor\s[1a684656].
+D 2016-11-23T21:13:41.487
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5151cc64c4c05f3455f4f692ad11410a810d937f
@@ -340,7 +340,7 @@ F src/ctime.c e77f3dc297b4b65c96da78b4ae4272fdfae863d7
 F src/date.c 95c9a8d00767e7221a8e9a31f4e913fc8029bf6b
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
 F src/delete.c cb3f6300df24c26c609778b2731f82644b5532ec
-F src/expr.c aac0b8d39373ce8f1d47829ce12c3d7af90c46a6
+F src/expr.c bf9c58cf9b6d9be4d2deb2b64aa96f25660a1e7f
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c b9ca262f6ad4d030a3cab737ebf9b0b3c8b4ac80
 F src/func.c 7057bc2c105b82faa668d8e2ec85fad4540e5c51
@@ -1025,7 +1025,7 @@ F test/rollbackfault.test 0e646aeab8840c399cfbfa43daab46fd609cf04a
 F test/rowallock.test 3f88ec6819489d0b2341c7a7528ae17c053ab7cc
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
 F test/rowid.test 5b7509f384f4f6fae1af3c8c104c8ca299fea18d
-F test/rowvalue.test b5a9c0fa347a763c558da2397499df51da3cdf6b
+F test/rowvalue.test f4dc97fe52d4e206e25b3395588b9497a8eed3ff
 F test/rowvalue2.test 060d238b7e5639a7c5630cb5e63e311b44efef2b
 F test/rowvalue3.test 3068f508753af69884b12125995f023da0dbb256
 F test/rowvalue4.test 4b556d7de161a0dd8cff095c336e913986398bea
@@ -1527,8 +1527,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 27438fb43db4eae90fa005e7872debbb1db22c88
-Q +0a98c8d76ac86412d5eb68de994658c250989349
-R f57c0da4c7bd96e5ce0bf2c14119a0cf
+P 661b45068fc8bb885899d6d8ef403f987f5f1a08
+Q +c08aff13ead3e6a8b92c0f031b08f7e556922e70
+R 041166f820534c90782cb4a6b2e5c1da
 U drh
-Z 9c997aae49046968d093549c125592e1
+Z af2b8be7dcac25b5c079b740f3a39767
