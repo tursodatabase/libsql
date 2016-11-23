@@ -794,11 +794,11 @@ TCLLIBDIR = c:\tcl\lib
 !ENDIF
 
 !IFNDEF LIBTCL
-LIBTCL = tcl85.lib
+LIBTCL = tcl86.lib
 !ENDIF
 
 !IFNDEF LIBTCLSTUB
-LIBTCLSTUB = tclstub85.lib
+LIBTCLSTUB = tclstub86.lib
 !ENDIF
 
 !IFNDEF LIBTCLPATH
@@ -828,7 +828,7 @@ LIBICU = icuuc.lib icuin.lib
 # specific Tcl shell to use.
 #
 !IFNDEF TCLSH_CMD
-TCLSH_CMD = tclsh85
+TCLSH_CMD = tclsh
 !ENDIF
 # <</mark>>
 

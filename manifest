@@ -1,8 +1,8 @@
-C Update\sthe\sversion\snumber\sto\s3.15.2.
-D 2016-11-23T21:14:31.069
+C Updates\smakefiles\sand\sbuild\sscripts\son\swindows\sto\sused\sTcl\s8.6.
+D 2016-11-23T21:33:14.142
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 5151cc64c4c05f3455f4f692ad11410a810d937f
+F Makefile.msc e0217f2d35a0448abbe4b066132ae20136e8b408
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION 1efaccf9d0764b8f1ca730ded1f5530961a11844
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -1442,7 +1442,7 @@ F tool/GetFile.cs a15e08acb5dd7539b75ba23501581d7c2b462cb5
 F tool/GetTclKit.bat f94784e3bdc2f50c539266f5467cbf1f27612cb3
 F tool/Replace.cs 02c67258801c2fb5f63231e0ac0f220b4b36ba91
 F tool/addopcodes.tcl 10c889c4a65ec6c5604e4a47306fa77ff57ae189
-F tool/build-all-msvc.bat 3e4e4043b53f1aede4308e0d2567bbd773614630 x
+F tool/build-all-msvc.bat 018c1b273458a90c8ba633c6f0c5654cfcb138bf x
 F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
 F tool/cg_anno.tcl 692ce4b8693d59e3a3de77ca97f4139ecfa641b0 x
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
@@ -1471,7 +1471,7 @@ F tool/mksqlite3c-noext.tcl fef88397668ae83166735c41af99d79f56afaabb
 F tool/mksqlite3c.tcl 06b2e6a0f21cc0a5d70fbbd136b3e0a96470645e
 F tool/mksqlite3h.tcl c006c4e5da57c649b24b689511dcd270dd7b0249
 F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
-F tool/mkvsix.tcl 4abcaf3267171b2faadaf9b82a0dfbaa6e98f8b7
+F tool/mkvsix.tcl b9e0777a213c23156b6542842c238479e496ebf5
 F tool/offsets.c fe4262fdfa378e8f5499a42136d17bf3b98f6091
 F tool/omittest.tcl 34d7ac01fe4fd18e3637f64abe12c40eca0f6b97
 F tool/opcodesum.tcl 740ed206ba8c5040018988129abbf3089a0ccf4a
@@ -1527,7 +1527,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4c6efe600debf783e1cbb3db5df3b4097a707d33
-R 9391deb5c3b63f03d45082e447168917
+P 86dc74cb107a6cce7bdf74ab7ebbac56d32add69
+Q +1d0e43c549c36d0919a18d61285e94cad29e7a07
+Q +def8f598b8e33b5bab3a024cc57f4c5e300cd8cd
+R a287a719b325a63a1a3b8faa3afa552a
 U drh
-Z 7ffcd89b93fb99bedd3183604c1cb514
+Z 16c91235e36dd5d6eaf03801490c3201

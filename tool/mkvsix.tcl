@@ -77,7 +77,7 @@
 # command prompt:
 #
 #                         CD /D C:\dev\sqlite\core
-#                         tclsh85 tool\mkvsix.tcl C:\Temp
+#                         tclsh tool\mkvsix.tcl C:\Temp
 #
 # In the example above, "C:\dev\sqlite\core" represents the root of the source
 # tree for SQLite and "C:\Temp" represents the top-level directory containing
