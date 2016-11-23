@@ -1,5 +1,5 @@
-C Disable\sthe\squery\sflattener\soptimization\sfor\sSELECT\sstatements\sthat\sare\son\nthe\sRHS\sof\svector\sIN\soperators.\s\sThis\sis\sa\shack\sthat\sfixes\sthe\sbug\ndescribed\sin\sticket\s[da7841375186386c].\sA\sbetter\ssolution\sthat\sdoes\snot\ndisable\sthe\squery\sflattener\sis\sneeded,\sbut\sthis\swill\sserver\sfor\sthe\stime\nbeing.
-D 2016-11-23T21:01:38.248
+C Prevent\sa\spossible\suse-after-free\sbug\sin\sthe\squery\soptimizer.
+D 2016-11-23T21:08:01.758
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5151cc64c4c05f3455f4f692ad11410a810d937f
@@ -471,7 +471,7 @@ F src/walker.c 91a6df7435827e41cff6bb7df50ea00934ee78b0
 F src/where.c 125af074723cf390d0e71ed1ca385240e6d4ea7c
 F src/whereInt.h 2bcc3d176e6091cb8f50a30b65c006e88a73614d
 F src/wherecode.c e895f34fe8cd06c386524f84da63eea5040b19b1
-F src/whereexpr.c a83d70154f3bbce5051a7e9710021f647c0fe4f2
+F src/whereexpr.c c19a84ac530835d37217db2181e4fe75901b7b97
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1527,8 +1527,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0f956597995ca0007c51a32c71cf5fb723ed4134
-Q +005d5b870625d175fdf3c0e87d974006c569d9e1
-R 5a4c01bbdab43d8872c60615f528fa6c
+P 27438fb43db4eae90fa005e7872debbb1db22c88
+Q +0a98c8d76ac86412d5eb68de994658c250989349
+R f57c0da4c7bd96e5ce0bf2c14119a0cf
 U drh
-Z bf757a1f37571efe6fd6858b9a0726c1
+Z 9c997aae49046968d093549c125592e1
