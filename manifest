@@ -1,5 +1,5 @@
-C Correctly\sdisplay\sthe\snames\sof\sSQL\sfunctions\sin\sthe\sVDBE_PROFILE\soutput.
-D 2016-11-23T14:19:11.143
+C Code\sconstant\svector\scomponents\soutside\sof\sany\sloops\sin\sCASE\sand\sBETWEEN\nexpressions.\sFix\sfor\s[1a684656].
+D 2016-11-23T19:31:18.510
 F Makefile.in 6b572807415d3f0a379cebc9461416d8df4a12c8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc bb4d970894abbbe0e88d00aac29bd52af8bc95f4
@@ -340,7 +340,7 @@ F src/ctime.c a2a52d6e353f459d8ab0f07321f60fafa47d5421
 F src/date.c 95c9a8d00767e7221a8e9a31f4e913fc8029bf6b
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
 F src/delete.c 99949851e8e9ea4e1db739b0d354d360e1f80f2b
-F src/expr.c d8c8277d77e95d7fcce3b6b6d0f66652e482567f
+F src/expr.c b64811af00daf50c28abf55eb7aaa8fddfc1bd9e
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c b9ca262f6ad4d030a3cab737ebf9b0b3c8b4ac80
 F src/func.c 7057bc2c105b82faa668d8e2ec85fad4540e5c51
@@ -1031,7 +1031,7 @@ F test/rollbackfault.test 0e646aeab8840c399cfbfa43daab46fd609cf04a
 F test/rowallock.test 3f88ec6819489d0b2341c7a7528ae17c053ab7cc
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
 F test/rowid.test 5b7509f384f4f6fae1af3c8c104c8ca299fea18d
-F test/rowvalue.test b5a9c0fa347a763c558da2397499df51da3cdf6b
+F test/rowvalue.test f4dc97fe52d4e206e25b3395588b9497a8eed3ff
 F test/rowvalue2.test 060d238b7e5639a7c5630cb5e63e311b44efef2b
 F test/rowvalue3.test 3068f508753af69884b12125995f023da0dbb256
 F test/rowvalue4.test 4b556d7de161a0dd8cff095c336e913986398bea
@@ -1534,7 +1534,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bee2859b953c935c413de2917588159d03c672d9
-R 2c4c0cbde8a5576e7dee09bc8f314063
-U drh
-Z d768832216e311c9257ef81108e44f2d
+P 161192f17273f32f1b3b82d41135aaca047e9a83
+R 341e1eecb334b8adf0209376efd6d1b8
+U dan
+Z 964cce392c039cd22f462b9221e4b3a8

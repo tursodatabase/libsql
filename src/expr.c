@@ -3296,7 +3296,7 @@ static int exprCodeVector(Parse *pParse, Expr *p, int *piFreeable){
       iResult = pParse->nMem+1;
       pParse->nMem += nResult;
       for(i=0; i<nResult; i++){
-        sqlite3ExprCode(pParse, p->x.pList->a[i].pExpr, i+iResult);
+        sqlite3ExprCodeFactorable(pParse, p->x.pList->a[i].pExpr, i+iResult);
       }
     }
   }
