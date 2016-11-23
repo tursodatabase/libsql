@@ -1,5 +1,5 @@
-C Fix\san\sfts5\sproblem\scausing\sa\scrash\sin\sphrase\squeries\swhere\sthe\sfirst\stoken\sof\nthe\sphrase\smatches\sone\sor\smore\srows\sbut\ssome\sother\stoken\swithin\sthe\sphrase\nmatches\szero.
-D 2016-11-23T20:37:36.717
+C Fix\sa\spotential\suse-after-free\serror\sduring\sparsing\sof\smalformed\nCREATE\sTABLE\sstatement.
+D 2016-11-23T20:44:04.507
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5151cc64c4c05f3455f4f692ad11410a810d937f
@@ -392,7 +392,7 @@ F src/shell.c b80396d2fadce4681397707e30078bf416e1dec2
 F src/sqlite.h.in 1011de924a6a7340c74e5442cb76f7b49c134512
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
-F src/sqliteInt.h 8d241c2c0a1a7b6611d3e9398f41d69426da850d
+F src/sqliteInt.h 9fbddc799b0ea6ca61fce4a0ef8ed2a11358d515
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
@@ -1527,8 +1527,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6492e57e65118bc6366bd92c553f4494a99f97e6
-Q +e78f6f3bbf4781850960fe6741f7cba480f2c27d
-R 2ecb5339659ddc5da65f20f10c176e3c
+P 4efd331e9c680e1eb9c2bf58c5f45c03c0a31772
+Q +c5dbc599b910c02a961675b12b273b8df6d29450
+R 468674797cdbc2f53ac3e01c305314f2
 U drh
-Z b30462f897983c9e3ad5fac73caa69b5
+Z 35e7fa15558d3919e253f6fa44eb958f
