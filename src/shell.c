@@ -4079,7 +4079,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Record);
     }else {
       raw_printf(stderr, "Error: mode should be one of: "
-         "ascii column csv html insert line list tabs tcl\n");
+         "ascii column csv html insert line list quote tabs tcl\n");
       rc = 1;
     }
     p->cMode = p->mode;

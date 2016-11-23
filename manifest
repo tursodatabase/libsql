@@ -1,5 +1,5 @@
-C Code\sconstant\svector\scomponents\soutside\sof\sany\sloops\sin\sCASE\sand\sBETWEEN\nexpressions.\sFix\sfor\s[1a684656].
-D 2016-11-23T19:31:18.510
+C Fix\sthe\serror\smessage\sfor\sinvalid\s".mode"\sarguments\sin\sthe\scommand-line\sshell,\nso\sthat\sit\smentions\sthe\snew\s"quote"\smode.
+D 2016-11-23T23:18:45.525
 F Makefile.in 6b572807415d3f0a379cebc9461416d8df4a12c8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc bb4d970894abbbe0e88d00aac29bd52af8bc95f4
@@ -388,7 +388,7 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c bb070cf5f23611c44ab7e4788803684e385fc3fb
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 672b1af237ad257149fc5189f3277dcbca036eeb
-F src/shell.c b6ba45f741cc0e56ec7a3504855fe1373def2e16
+F src/shell.c a3fc2c719ed6d381895cbdb66a4a9b6a791cb02e
 F src/sqlite.h.in 803f7050f69b2eea573fac219f3c92582c096027
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
@@ -1088,7 +1088,7 @@ F test/sharedA.test 0cdf1a76dfa00e6beee66af5b534b1e8df2720f5
 F test/sharedB.test 16cc7178e20965d75278f410943109b77b2e645e
 F test/shared_err.test 2f2aee20db294b9924e81f6ccbe60f19e21e8506
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test 65b10cd8a90cda9b5af9100a45689a57dcc01a31
+F test/shell1.test 8ff47a4821570b99cc340c4da0ac4efe2ba06627
 F test/shell2.test e242a9912f44f4c23c3d1d802a83e934e84c853b
 F test/shell3.test 9b95ba643eaa228376f06a898fb410ee9b6e57c1
 F test/shell4.test 89ad573879a745974ff2df20ff97c5d6ffffbd5d
@@ -1534,7 +1534,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 161192f17273f32f1b3b82d41135aaca047e9a83
-R 341e1eecb334b8adf0209376efd6d1b8
-U dan
-Z 964cce392c039cd22f462b9221e4b3a8
+P c08aff13ead3e6a8b92c0f031b08f7e556922e70
+R 199e8bdbbce6038cd06aa9b67980383f
+U drh
+Z 0dd279d9766d052bb409f9a65270d351
