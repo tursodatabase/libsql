@@ -1,5 +1,5 @@
-C Take\scare\snot\sto\stry\sto\sgenerate\scode\sfor\sthe\sATTACH\sand\sDETACH\scommands\nif\sthere\swere\ssyntax\serrors\sduring\sparsing.\nFix\sfor\sticket\s[2f1b168ab4d4844]
-D 2016-11-23T19:40:23.266
+C Handle\ssome\sobscure\s"row\svalue\smisused"\scases\sthat\scould\scause\ssegfaults\sor\nassertion\sfailures.
+D 2016-11-23T19:43:48.606
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 5151cc64c4c05f3455f4f692ad11410a810d937f
@@ -385,7 +385,7 @@ F src/pragma.h 64c78a648751b9f4f297276c4eb7507b14b4628c
 F src/prepare.c b1140c3d0cf59bc85ace00ce363153041b424b7a
 F src/printf.c a5f0ca08ddede803c241266abb46356ec748ded1
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
-F src/resolve.c 3fac1b2737ea5a724f20b921ac7e259c9be2100b
+F src/resolve.c bb070cf5f23611c44ab7e4788803684e385fc3fb
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c ea3af83e2d0f245fef81ea4cf04cb730ce67f722
 F src/shell.c b80396d2fadce4681397707e30078bf416e1dec2
@@ -1024,7 +1024,7 @@ F test/rollbackfault.test 0e646aeab8840c399cfbfa43daab46fd609cf04a
 F test/rowallock.test 3f88ec6819489d0b2341c7a7528ae17c053ab7cc
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
 F test/rowid.test 5b7509f384f4f6fae1af3c8c104c8ca299fea18d
-F test/rowvalue.test bcd78c91fe2aadade6fd00d2616546650b9ebc9e
+F test/rowvalue.test b5a9c0fa347a763c558da2397499df51da3cdf6b
 F test/rowvalue2.test 060d238b7e5639a7c5630cb5e63e311b44efef2b
 F test/rowvalue3.test 01399b7bf150b0d41abce76c18072da777c2500c
 F test/rowvalue4.test 4b556d7de161a0dd8cff095c336e913986398bea
@@ -1526,8 +1526,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1136863c76576110e710dd5d69ab6bf347c65e36
-Q +b0ff183b8ffdbebece06cfea1c6781fc0e8e8547
-R 534688f059b6abac9d5805bc477578d2
+P f8cf7ff1560dbd0dde5e6d4c9c22cd8ff43cce09
+Q +fba5fddb1c40af75634b01c1f06d2610df697e01
+R cc14965c773e4ee95acd7e84c4e8fcdc
 U drh
-Z 873fee1c2df99e57735b6ca81b878cf4
+Z 30076a151f3c94f95238356bd6d8d16d
