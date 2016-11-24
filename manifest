@@ -1,5 +1,5 @@
-C Updates\smakefiles\sand\sbuild\sscripts\son\swindows\sto\sused\sTcl\s8.6.
-D 2016-11-23T21:33:14.142
+C Fix\sa\stest\scase\sin\svacuum5.test\sso\sthat\sit\sworks\swith\sthe\sin-memory\sjournal\npermutation.\sCherrypick\sof\s[81c86401].
+D 2016-11-24T13:42:48.830
 F Makefile.in 6fd48ffcf7c2deea7499062d1f3747f986c19678
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e0217f2d35a0448abbe4b066132ae20136e8b408
@@ -1343,7 +1343,7 @@ F test/vacuum.test ce91c39f7f91a4273bf620efad21086b5aa6ef1d
 F test/vacuum2.test aa048abee196c16c9ba308465494009057b79f9b
 F test/vacuum3.test 77ecdd54592b45a0bcb133339f99f1ae0ae94d0d
 F test/vacuum4.test d3f8ecff345f166911568f397d2432c16d2867d9
-F test/vacuum5.test 49d9febcb6e13c3ac5b96d8df6736f9b85d9bf70
+F test/vacuum5.test c87234e8ca4107f349da4edbeda3e4ea5adc93f3
 F test/vacuummem.test 7b42abb3208bd82dd23a7536588396f295a314f2
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/veryquick.test 57ab846bacf7b90cf4e9a672721ea5c5b669b661
@@ -1527,9 +1527,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 86dc74cb107a6cce7bdf74ab7ebbac56d32add69
-Q +1d0e43c549c36d0919a18d61285e94cad29e7a07
-Q +def8f598b8e33b5bab3a024cc57f4c5e300cd8cd
-R a287a719b325a63a1a3b8faa3afa552a
-U drh
-Z 16c91235e36dd5d6eaf03801490c3201
+P f693850affc70c6996ca61b95f9632f8429b1bec
+Q +81c86401463df6be4ac21987b3b1703e38ab933b
+R 1d14b6b58ab1fcbf27ff915cd0c67140
+U dan
+Z cd88cd071fc881adf89d0c8f5ee0d8de
