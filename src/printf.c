@@ -1017,7 +1017,8 @@ char *sqlite3_vsnprintf(int n, char *zBuf, const char *zFormat, va_list ap){
 #endif
   sqlite3StrAccumInit(&acc, 0, zBuf, n, 0);
   sqlite3VXPrintf(&acc, zFormat, ap);
-  return sqlite3StrAccumFinish(&acc);
+  zBuf[acc.nChar] = 0;
+  return zBuf;
 }
 char *sqlite3_snprintf(int n, char *zBuf, const char *zFormat, ...){
   char *z;
