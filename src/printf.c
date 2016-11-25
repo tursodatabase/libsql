@@ -861,18 +861,23 @@ void sqlite3StrAccumAppendAll(StrAccum *p, const char *z){
 ** Return a pointer to the resulting string.  Return a NULL
 ** pointer if any kind of error was encountered.
 */
+static SQLITE_NOINLINE char *strAccumFinishRealloc(StrAccum *p){
+  assert( p->mxAlloc>0 && !isMalloced(p) );
+  p->zText = sqlite3DbMallocRaw(p->db, p->nChar+1 );
+  if( p->zText ){
+    memcpy(p->zText, p->zBase, p->nChar+1);
+    p->printfFlags |= SQLITE_PRINTF_MALLOCED;
+  }else{
+    setStrAccumError(p, STRACCUM_NOMEM);
+  }
+  return p->zText;
+}
 char *sqlite3StrAccumFinish(StrAccum *p){
   if( p->zText ){
     assert( (p->zText==p->zBase)==!isMalloced(p) );
     p->zText[p->nChar] = 0;
     if( p->mxAlloc>0 && !isMalloced(p) ){
-      p->zText = sqlite3DbMallocRaw(p->db, p->nChar+1 );
-      if( p->zText ){
-        memcpy(p->zText, p->zBase, p->nChar+1);
-        p->printfFlags |= SQLITE_PRINTF_MALLOCED;
-      }else{
-        setStrAccumError(p, STRACCUM_NOMEM);
-      }
+      return strAccumFinishRealloc(p);
     }
   }
   return p->zText;
