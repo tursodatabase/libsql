@@ -4167,6 +4167,11 @@ static void exprCodeBetween(
   if( xJump ){
     xJump(pParse, &exprAnd, dest, jumpIfNull);
   }else{
+    /* Mark the expression is being from the ON or USING clause of a join
+    ** so that the sqlite3ExprCodeTarget() routine will not attempt to move
+    ** it into the Parse.pConstExpr list.  We should use a new bit for this,
+    ** for clarity, but we are out of bits in the Expr.flags field so we
+    ** have to reuse the EP_FromJoin bit.  Bummer. */
     exprX.flags |= EP_FromJoin;
     sqlite3ExprCodeTarget(pParse, &exprAnd, dest);
   }

@@ -1,5 +1,5 @@
-C Fix\sthe\serror\smessage\sfor\sinvalid\s".mode"\sarguments\sin\sthe\scommand-line\sshell,\nso\sthat\sit\smentions\sthe\snew\s"quote"\smode.
-D 2016-11-23T23:18:45.525
+C Add\sa\scomment\sto\shelp\sclarify\sthe\sEP_FromJoin\shack\sin\sexprCodeBetween().
+D 2016-11-25T14:30:42.666
 F Makefile.in 6b572807415d3f0a379cebc9461416d8df4a12c8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc bb4d970894abbbe0e88d00aac29bd52af8bc95f4
@@ -340,7 +340,7 @@ F src/ctime.c a2a52d6e353f459d8ab0f07321f60fafa47d5421
 F src/date.c 95c9a8d00767e7221a8e9a31f4e913fc8029bf6b
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
 F src/delete.c 99949851e8e9ea4e1db739b0d354d360e1f80f2b
-F src/expr.c b64811af00daf50c28abf55eb7aaa8fddfc1bd9e
+F src/expr.c 8c224aa28278a5c1eed55247b7a571ff388ad5c2
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c b9ca262f6ad4d030a3cab737ebf9b0b3c8b4ac80
 F src/func.c 7057bc2c105b82faa668d8e2ec85fad4540e5c51
@@ -1534,7 +1534,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c08aff13ead3e6a8b92c0f031b08f7e556922e70
-R 199e8bdbbce6038cd06aa9b67980383f
+P 9a603a18ef626b7d7a24b82eb961d6d8b4926195
+R ef9f01036377c9e5a69b01dd8a74832e
 U drh
-Z 0dd279d9766d052bb409f9a65270d351
+Z 1cc8fc31dc9cfa12819270a952431b2f
