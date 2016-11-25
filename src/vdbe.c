@@ -2470,7 +2470,6 @@ case OP_Column: {
   assert( pC->eCurType!=CURTYPE_VTAB );
   assert( pC->eCurType!=CURTYPE_PSEUDO || pC->nullRow );
   assert( pC->eCurType!=CURTYPE_SORTER );
-  pCrsr = pC->uc.pCursor;
 
   if( pC->cacheStatus!=p->cacheCtr ){                /*OPTIMIZATION-IF-FALSE*/
     if( pC->nullRow ){
@@ -2486,6 +2485,7 @@ case OP_Column: {
         goto op_column_out;
       }
     }else{
+      pCrsr = pC->uc.pCursor;
       assert( pC->eCurType==CURTYPE_BTREE );
       assert( pCrsr );
       assert( sqlite3BtreeCursorIsValid(pCrsr) );
@@ -2549,7 +2549,8 @@ case OP_Column: {
       /* Make sure zData points to enough of the record to cover the header. */
       if( pC->aRow==0 ){
         memset(&sMem, 0, sizeof(sMem));
-        rc = sqlite3VdbeMemFromBtree(pCrsr, 0, aOffset[0], !pC->isTable, &sMem);
+        rc = sqlite3VdbeMemFromBtree(pC->uc.pCursor, 0, aOffset[0],
+                                     !pC->isTable, &sMem);
         if( rc!=SQLITE_OK ) goto abort_due_to_error;
         zData = (u8*)sMem.z;
       }else{
@@ -2662,8 +2663,8 @@ case OP_Column: {
       static u8 aZero[8];  /* This is the bogus content */
       sqlite3VdbeSerialGet(aZero, t, pDest);
     }else{
-      rc = sqlite3VdbeMemFromBtree(pCrsr, aOffset[p2], len, !pC->isTable,
-                                   pDest);
+      rc = sqlite3VdbeMemFromBtree(pC->uc.pCursor, aOffset[p2], len,
+                                   !pC->isTable, pDest);
       if( rc!=SQLITE_OK ) goto abort_due_to_error;
       sqlite3VdbeSerialGet((const u8*)pDest->z, t, pDest);
       pDest->flags &= ~MEM_Ephem;
