@@ -51,5 +51,11 @@ do_execsql_test 1.12 {
   SELECT * FROM c1
 } {1 2 3 4 5 6 7 8 9}
 
+do_execsql_test 1.13 { PRAGMA main.journal_mode } {wal}
+do_test 1.14 { sqlite3_db_config db NO_CKPT_ON_CLOSE 1 } {1}
+do_execsql_test 1.14 { PRAGMA main.journal_mode = delete } {delete}
+do_test 1.15 { file exists test.db-wal } {0}
+
+
 
 finish_test

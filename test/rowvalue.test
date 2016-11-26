@@ -266,4 +266,31 @@ do_execsql_test 12.1 {
   SELECT *,'x' FROM t1 LEFT JOIN t2 ON (a,b)=(x,y);
 } {1 2 {} {} x}
 
+
+foreach {tn sql} {
+  0 "SELECT (1,2) AS x WHERE x=3"
+  1 "SELECT (1,2) BETWEEN 1 AND 2"
+  2 "SELECT 1 BETWEEN (1,2) AND 2"
+  3 "SELECT 2 BETWEEN 1 AND (1,2)"
+  4 "SELECT (1,2) FROM (SELECT 1) ORDER BY 1"
+  5 "SELECT (1,2) FROM (SELECT 1) GROUP BY 1"
+} {
+  do_catchsql_test 13.$tn $sql {1 {row value misused}}
+}
+
+do_execsql_test 14.0 {
+  CREATE TABLE t12(x);
+  INSERT INTO t12 VALUES(2), (4);
+}
+do_execsql_test 14.1 "SELECT 1 WHERE (2,2) BETWEEN (1,1) AND (3,3)" 1
+do_execsql_test 14.2 "SELECT CASE (2,2) WHEN (1, 1) THEN 2 ELSE 1 END" 1
+do_execsql_test 14.3 "SELECT CASE (SELECT 2,2) WHEN (1, 1) THEN 2 ELSE 1 END" 1
+do_execsql_test 14.4 "SELECT 1 WHERE (SELECT 2,2) BETWEEN (1,1) AND (3,3)" 1
+do_execsql_test 14.5 "SELECT 1 FROM t12 WHERE (x,1) BETWEEN (1,1) AND (3,3)" 1
+do_execsql_test 14.6 {
+  SELECT 1 FROM t12 WHERE (1,x) BETWEEN (1,1) AND (3,3)
+} {1 1}
+
 finish_test
+
+

@@ -2312,6 +2312,38 @@ static int SQLITE_TCLAPI test_snapshot_get(
 
 #ifdef SQLITE_ENABLE_SNAPSHOT
 /*
+** Usage: sqlite3_snapshot_recover DB DBNAME
+*/
+static int SQLITE_TCLAPI test_snapshot_recover(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int rc;
+  sqlite3 *db;
+  char *zName;
+
+  if( objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB DBNAME");
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  zName = Tcl_GetString(objv[2]);
+
+  rc = sqlite3_snapshot_recover(db, zName);
+  if( rc!=SQLITE_OK ){
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
+    return TCL_ERROR;
+  }else{
+    Tcl_ResetResult(interp);
+  }
+  return TCL_OK;
+}
+#endif /* SQLITE_ENABLE_SNAPSHOT */
+
+#ifdef SQLITE_ENABLE_SNAPSHOT
+/*
 ** Usage: sqlite3_snapshot_open DB DBNAME SNAPSHOT
 */
 static int SQLITE_TCLAPI test_snapshot_open(
@@ -2383,6 +2415,113 @@ static int SQLITE_TCLAPI test_snapshot_cmp(
   p1 = (sqlite3_snapshot*)sqlite3TestTextToPtr(Tcl_GetString(objv[1]));
   p2 = (sqlite3_snapshot*)sqlite3TestTextToPtr(Tcl_GetString(objv[2]));
   res = sqlite3_snapshot_cmp(p1, p2);
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(res));
+  return TCL_OK;
+}
+#endif /* SQLITE_ENABLE_SNAPSHOT */
+
+#ifdef SQLITE_ENABLE_SNAPSHOT
+/*
+** Usage: sqlite3_snapshot_get_blob DB DBNAME
+*/
+static int SQLITE_TCLAPI test_snapshot_get_blob(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int rc;
+  sqlite3 *db;
+  char *zName;
+  sqlite3_snapshot *pSnapshot = 0;
+
+  if( objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB DBNAME");
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  zName = Tcl_GetString(objv[2]);
+
+  rc = sqlite3_snapshot_get(db, zName, &pSnapshot);
+  if( rc!=SQLITE_OK ){
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
+    return TCL_ERROR;
+  }else{
+    Tcl_SetObjResult(interp, 
+        Tcl_NewByteArrayObj((unsigned char*)pSnapshot, sizeof(sqlite3_snapshot))
+    );
+    sqlite3_snapshot_free(pSnapshot);
+  }
+  return TCL_OK;
+}
+#endif /* SQLITE_ENABLE_SNAPSHOT */
+
+#ifdef SQLITE_ENABLE_SNAPSHOT
+  /*
+  ** Usage: sqlite3_snapshot_open_blob DB DBNAME SNAPSHOT
+*/
+static int SQLITE_TCLAPI test_snapshot_open_blob(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int rc;
+  sqlite3 *db;
+  char *zName;
+  unsigned char *pBlob;
+  int nBlob;
+
+  if( objc!=4 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB DBNAME SNAPSHOT");
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  zName = Tcl_GetString(objv[2]);
+  pBlob = Tcl_GetByteArrayFromObj(objv[3], &nBlob);
+  if( nBlob!=sizeof(sqlite3_snapshot) ){
+    Tcl_AppendResult(interp, "bad SNAPSHOT", 0);
+    return TCL_ERROR;
+  }
+  rc = sqlite3_snapshot_open(db, zName, (sqlite3_snapshot*)pBlob);
+  if( rc!=SQLITE_OK ){
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
+    return TCL_ERROR;
+  }
+  return TCL_OK;
+}
+#endif /* SQLITE_ENABLE_SNAPSHOT */
+
+#ifdef SQLITE_ENABLE_SNAPSHOT
+/*
+** Usage: sqlite3_snapshot_cmp_blob SNAPSHOT1 SNAPSHOT2
+*/
+static int SQLITE_TCLAPI test_snapshot_cmp_blob(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int res;
+  unsigned char *p1;
+  unsigned char *p2;
+  int n1;
+  int n2;
+
+  if( objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "SNAPSHOT1 SNAPSHOT2");
+    return TCL_ERROR;
+  }
+
+  p1 = Tcl_GetByteArrayFromObj(objv[1], &n1);
+  p2 = Tcl_GetByteArrayFromObj(objv[2], &n2);
+
+  if( n1!=sizeof(sqlite3_snapshot) || n1!=n2 ){
+    Tcl_AppendResult(interp, "bad SNAPSHOT", 0);
+    return TCL_ERROR;
+  }
+
+  res = sqlite3_snapshot_cmp((sqlite3_snapshot*)p1, (sqlite3_snapshot*)p2);
   Tcl_SetObjResult(interp, Tcl_NewIntObj(res));
   return TCL_OK;
 }
@@ -7737,6 +7876,10 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_snapshot_open", test_snapshot_open, 0 },
      { "sqlite3_snapshot_free", test_snapshot_free, 0 },
      { "sqlite3_snapshot_cmp", test_snapshot_cmp, 0 },
+     { "sqlite3_snapshot_recover", test_snapshot_recover, 0 },
+     { "sqlite3_snapshot_get_blob", test_snapshot_get_blob, 0 },
+     { "sqlite3_snapshot_open_blob", test_snapshot_open_blob, 0 },
+     { "sqlite3_snapshot_cmp_blob", test_snapshot_cmp_blob, 0 },
 #endif
      { "sqlite3_delete_database", test_delete_database, 0 },
   };

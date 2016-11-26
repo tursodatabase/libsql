@@ -446,6 +446,7 @@ static int codeEqualityTerm(
     }else{
       Select *pSelect = pX->x.pSelect;
       sqlite3 *db = pParse->db;
+      u16 savedDbOptFlags = db->dbOptFlags;
       ExprList *pOrigRhs = pSelect->pEList;
       ExprList *pOrigLhs = pX->pLeft->x.pList;
       ExprList *pRhs = 0;         /* New Select.pEList for RHS */
@@ -489,7 +490,9 @@ static int codeEqualityTerm(
           testcase( aiMap==0 );
         }
         pSelect->pEList = pRhs;
+        db->dbOptFlags |= SQLITE_QueryFlattener;
         eType = sqlite3FindInIndex(pParse, pX, IN_INDEX_LOOP, 0, aiMap);
+        db->dbOptFlags = savedDbOptFlags;
         testcase( aiMap!=0 && aiMap[0]!=0 );
         pSelect->pEList = pOrigRhs;
         pLeft->x.pList = pOrigLhs;
@@ -1844,7 +1847,8 @@ Bitmask sqlite3WhereCodeOneLoopStart(
               }
               if( iSet>=0 ){
                 sqlite3VdbeAddOp3(v, OP_MakeRecord, r, nPk, regRowid);
-                sqlite3VdbeAddOp3(v, OP_IdxInsert, regRowset, regRowid, 0);
+                sqlite3VdbeAddOp4Int(v, OP_IdxInsert, regRowset, regRowid,
+                                     r, nPk);
                 if( iSet ) sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
               }
 

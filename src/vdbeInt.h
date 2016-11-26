@@ -96,7 +96,10 @@ struct VdbeCursor {
   } uc;
   Btree *pBt;           /* Separate file holding temporary table */
   KeyInfo *pKeyInfo;    /* Info about index keys needed by index cursors */
-  int seekResult;       /* Result of previous sqlite3BtreeMoveto() */
+  int seekResult;       /* Result of previous sqlite3BtreeMoveto() or 0
+                        ** if there have been no prior seeks on the cursor. */
+  /* NB: seekResult does not distinguish between "no seeks have ever occurred
+  ** on this cursor" and "the most recent seek was an exact match". */
   i64 seqCount;         /* Sequence counter */
   i64 movetoTarget;     /* Argument to the deferred sqlite3BtreeMoveto() */
   VdbeCursor *pAltCursor; /* Associated index cursor from which to read */
@@ -484,7 +487,7 @@ void sqlite3VdbeIntegerAffinity(Mem*);
 int sqlite3VdbeMemRealify(Mem*);
 int sqlite3VdbeMemNumerify(Mem*);
 void sqlite3VdbeMemCast(Mem*,u8,u8);
-int sqlite3VdbeMemFromBtree(BtCursor*,u32,u32,int,Mem*);
+int sqlite3VdbeMemFromBtree(BtCursor*,u32,u32,Mem*);
 void sqlite3VdbeMemRelease(Mem *p);
 int sqlite3VdbeMemFinalize(Mem*, FuncDef*);
 const char *sqlite3OpcodeName(int);

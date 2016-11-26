@@ -59,6 +59,8 @@ void sqlite3TableLock(
   TableLock *p;
   assert( iDb>=0 );
 
+  if( iDb==1 ) return;
+  if( !sqlite3BtreeSharable(pParse->db->aDb[iDb].pBt) ) return;
   for(i=0; i<pToplevel->nTableLock; i++){
     p = &pToplevel->aTableLock[i];
     if( p->iDb==iDb && p->iTab==iTab ){
@@ -2816,7 +2818,7 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
   }
   sqlite3VdbeAddOp3(v, OP_SorterData, iSorter, regRecord, iIdx);
   sqlite3VdbeAddOp3(v, OP_Last, iIdx, 0, -1);
-  sqlite3VdbeAddOp3(v, OP_IdxInsert, iIdx, regRecord, 0);
+  sqlite3VdbeAddOp2(v, OP_IdxInsert, iIdx, regRecord);
   sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
   sqlite3ReleaseTempReg(pParse, regRecord);
   sqlite3VdbeAddOp2(v, OP_SorterNext, iSorter, addr2); VdbeCoverage(v);

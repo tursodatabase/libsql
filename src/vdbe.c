@@ -2471,7 +2471,6 @@ case OP_Column: {
   assert( pC->eCurType!=CURTYPE_VTAB );
   assert( pC->eCurType!=CURTYPE_PSEUDO || pC->nullRow );
   assert( pC->eCurType!=CURTYPE_SORTER );
-  pCrsr = pC->uc.pCursor;
 
   if( pC->cacheStatus!=p->cacheCtr ){                /*OPTIMIZATION-IF-FALSE*/
     if( pC->nullRow ){
@@ -2487,6 +2486,7 @@ case OP_Column: {
         goto op_column_out;
       }
     }else{
+      pCrsr = pC->uc.pCursor;
       assert( pC->eCurType==CURTYPE_BTREE );
       assert( pCrsr );
       assert( sqlite3BtreeCursorIsValid(pCrsr) );
@@ -2550,7 +2550,7 @@ case OP_Column: {
       /* Make sure zData points to enough of the record to cover the header. */
       if( pC->aRow==0 ){
         memset(&sMem, 0, sizeof(sMem));
-        rc = sqlite3VdbeMemFromBtree(pCrsr, 0, aOffset[0], !pC->isTable, &sMem);
+        rc = sqlite3VdbeMemFromBtree(pC->uc.pCursor, 0, aOffset[0], &sMem);
         if( rc!=SQLITE_OK ) goto abort_due_to_error;
         zData = (u8*)sMem.z;
       }else{
@@ -2663,8 +2663,7 @@ case OP_Column: {
       static u8 aZero[8];  /* This is the bogus content */
       sqlite3VdbeSerialGet(aZero, t, pDest);
     }else{
-      rc = sqlite3VdbeMemFromBtree(pCrsr, aOffset[p2], len, !pC->isTable,
-                                   pDest);
+      rc = sqlite3VdbeMemFromBtree(pC->uc.pCursor, aOffset[p2], len, pDest);
       if( rc!=SQLITE_OK ) goto abort_due_to_error;
       sqlite3VdbeSerialGet((const u8*)pDest->z, t, pDest);
       pDest->flags &= ~MEM_Ephem;
@@ -4323,15 +4322,10 @@ case OP_NewRowid: {           /* out2 */
 ** then rowid is stored for subsequent return by the
 ** sqlite3_last_insert_rowid() function (otherwise it is unmodified).
 **
-** If the OPFLAG_USESEEKRESULT flag of P5 is set and if the result of
-** the last seek operation (OP_NotExists or OP_SeekRowid) was a success,
-** then this
-** operation will not attempt to find the appropriate row before doing
-** the insert but will instead overwrite the row that the cursor is
-** currently pointing to.  Presumably, the prior OP_NotExists or
-** OP_SeekRowid opcode
-** has already positioned the cursor correctly.  This is an optimization
-** that boosts performance by avoiding redundant seeks.
+** If the OPFLAG_USESEEKRESULT flag of P5 is set, the implementation might
+** run faster by avoiding an unnecessary seek on cursor P1.  However,
+** the OPFLAG_USESEEKRESULT flag must only be set if there have been no prior
+** seeks on the cursor or if the most recent seek used a key equal to P3.
 **
 ** If the OPFLAG_ISUPDATE flag is set, then this opcode is part of an
 ** UPDATE operation.  Otherwise (if the flag is clear) then this opcode
@@ -4555,6 +4549,7 @@ case OP_Delete: {
 
   rc = sqlite3BtreeDelete(pC->uc.pCursor, pOp->p5);
   pC->cacheStatus = CACHE_STALE;
+  pC->seekResult = 0;
   if( rc ) goto abort_due_to_error;
 
   /* Invoke the update-hook if required. */
@@ -4644,26 +4639,18 @@ case OP_SorterData: {
 /* Opcode: RowData P1 P2 * * *
 ** Synopsis: r[P2]=data
 **
-** Write into register P2 the complete row data for cursor P1.
+** Write into register P2 the complete row content for the row at 
+** which cursor P1 is currently pointing.
 ** There is no interpretation of the data.  
 ** It is just copied onto the P2 register exactly as 
 ** it is found in the database file.
 **
-** If the P1 cursor must be pointing to a valid row (not a NULL row)
-** of a real table, not a pseudo-table.
-*/
-/* Opcode: RowKey P1 P2 * * *
-** Synopsis: r[P2]=key
-**
-** Write into register P2 the complete row key for cursor P1.
-** There is no interpretation of the data.  
-** The key is copied onto the P2 register exactly as 
-** it is found in the database file.
+** If cursor P1 is an index, then the content is the key of the row.
+** If cursor P2 is a table, then the content extracted is the data.
 **
 ** If the P1 cursor must be pointing to a valid row (not a NULL row)
 ** of a real table, not a pseudo-table.
 */
-case OP_RowKey:
 case OP_RowData: {
   VdbeCursor *pC;
   BtCursor *pCrsr;
@@ -4672,19 +4659,16 @@ case OP_RowData: {
   pOut = &aMem[pOp->p2];
   memAboutToChange(p, pOut);
 
-  /* Note that RowKey and RowData are really exactly the same instruction */
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
   assert( pC->eCurType==CURTYPE_BTREE );
   assert( isSorter(pC)==0 );
-  assert( pC->isTable || pOp->opcode!=OP_RowData );
-  assert( pC->isTable==0 || pOp->opcode==OP_RowData );
   assert( pC->nullRow==0 );
   assert( pC->uc.pCursor!=0 );
   pCrsr = pC->uc.pCursor;
 
-  /* The OP_RowKey and OP_RowData opcodes always follow OP_NotExists or
+  /* The OP_RowData opcodes always follow OP_NotExists or
   ** OP_SeekRowid or OP_Rewind/Op_Next with no intervening instructions
   ** that might invalidate the cursor.
   ** If this where not the case, on of the following assert()s
@@ -4709,11 +4693,7 @@ case OP_RowData: {
   }
   pOut->n = n;
   MemSetTypeFlag(pOut, MEM_Blob);
-  if( pC->isTable==0 ){
-    rc = sqlite3BtreeKey(pCrsr, 0, n, pOut->z);
-  }else{
-    rc = sqlite3BtreeData(pCrsr, 0, n, pOut->z);
-  }
+  rc = sqlite3BtreePayload(pCrsr, 0, n, pOut->z);
   if( rc ) goto abort_due_to_error;
   pOut->enc = SQLITE_UTF8;  /* In case the blob is ever cast to text */
   UPDATE_MAX_BLOBSIZE(pOut);
@@ -4804,6 +4784,13 @@ case OP_NullRow: {
 ** This opcode leaves the cursor configured to move in reverse order,
 ** from the end toward the beginning.  In other words, the cursor is
 ** configured to use Prev, not Next.
+**
+** If P3 is -1, then the cursor is positioned at the end of the btree
+** for the purpose of appending a new entry onto the btree.  In that
+** case P2 must be 0.  It is assumed that the cursor is used only for
+** appending and so if the cursor is valid, then the cursor must already
+** be pointing at the end of the btree and so no changes are made to
+** the cursor.
 */
 case OP_Last: {        /* jump */
   VdbeCursor *pC;
@@ -4817,18 +4804,22 @@ case OP_Last: {        /* jump */
   pCrsr = pC->uc.pCursor;
   res = 0;
   assert( pCrsr!=0 );
-  rc = sqlite3BtreeLast(pCrsr, &res);
-  pC->nullRow = (u8)res;
-  pC->deferredMoveto = 0;
-  pC->cacheStatus = CACHE_STALE;
   pC->seekResult = pOp->p3;
 #ifdef SQLITE_DEBUG
   pC->seekOp = OP_Last;
 #endif
-  if( rc ) goto abort_due_to_error;
-  if( pOp->p2>0 ){
-    VdbeBranchTaken(res!=0,2);
-    if( res ) goto jump_to_p2;
+  if( pOp->p3==0 || !sqlite3BtreeCursorIsValidNN(pCrsr) ){
+    rc = sqlite3BtreeLast(pCrsr, &res);
+    pC->nullRow = (u8)res;
+    pC->deferredMoveto = 0;
+    pC->cacheStatus = CACHE_STALE;
+    if( rc ) goto abort_due_to_error;
+    if( pOp->p2>0 ){
+      VdbeBranchTaken(res!=0,2);
+      if( res ) goto jump_to_p2;
+    }
+  }else{
+    assert( pOp->p2==0 );
   }
   break;
 }
@@ -5017,23 +5008,30 @@ next_tail:
   goto check_for_interrupt;
 }
 
-/* Opcode: IdxInsert P1 P2 P3 * P5
+/* Opcode: IdxInsert P1 P2 P3 P4 P5
 ** Synopsis: key=r[P2]
 **
 ** Register P2 holds an SQL index key made using the
 ** MakeRecord instructions.  This opcode writes that key
 ** into the index P1.  Data for the entry is nil.
 **
-** P3 is a flag that provides a hint to the b-tree layer that this
-** insert is likely to be an append.
+** If P4 is not zero, then it is the number of values in the unpacked
+** key of reg(P2).  In that case, P3 is the index of the first register
+** for the unpacked key.  The availability of the unpacked key can sometimes
+** be an optimization.
+**
+** If P5 has the OPFLAG_APPEND bit set, that is a hint to the b-tree layer
+** that this insert is likely to be an append.
 **
 ** If P5 has the OPFLAG_NCHANGE bit set, then the change counter is
 ** incremented by this instruction.  If the OPFLAG_NCHANGE bit is clear,
 ** then the change counter is unchanged.
 **
-** If P5 has the OPFLAG_USESEEKRESULT bit set, then the cursor must have
-** just done a seek to the spot where the new entry is to be inserted.
-** This flag avoids doing an extra seek.
+** If the OPFLAG_USESEEKRESULT flag of P5 is set, the implementation might
+** run faster by avoiding an unnecessary seek on cursor P1.  However,
+** the OPFLAG_USESEEKRESULT flag must only be set if there have been no prior
+** seeks on the cursor or if the most recent seek used a key equivalent
+** to P2. 
 **
 ** This instruction only works for indices.  The equivalent instruction
 ** for tables is OP_Insert.
@@ -5066,7 +5064,10 @@ case OP_IdxInsert: {        /* in2 */
   }else{
     x.nKey = pIn2->n;
     x.pKey = pIn2->z;
-    rc = sqlite3BtreeInsert(pC->uc.pCursor, &x, pOp->p3, 
+    x.aMem = aMem + pOp->p3;
+    x.nMem = (u16)pOp->p4.i;
+    rc = sqlite3BtreeInsert(pC->uc.pCursor, &x,
+         (pOp->p5 & OPFLAG_APPEND)!=0, 
         ((pOp->p5 & OPFLAG_USESEEKRESULT) ? pC->seekResult : 0)
         );
     assert( pC->deferredMoveto==0 );
@@ -5110,6 +5111,7 @@ case OP_IdxDelete: {
   }
   assert( pC->deferredMoveto==0 );
   pC->cacheStatus = CACHE_STALE;
+  pC->seekResult = 0;
   break;
 }
 

@@ -195,12 +195,14 @@ static int execCallback(void *NotUsed, int argc, char **argv, char **colv){
   int i;
   static unsigned cnt = 0;
   printf("ROW #%u:\n", ++cnt);
-  for(i=0; i<argc; i++){
-    printf(" %s=", colv[i]);
-    if( argv[i] ){
-      printf("[%s]\n", argv[i]);
-    }else{
-      printf("NULL\n");
+  if( argv ){
+    for(i=0; i<argc; i++){
+      printf(" %s=", colv[i]);
+      if( argv[i] ){
+        printf("[%s]\n", argv[i]);
+      }else{
+        printf("NULL\n");
+      }
     }
   }
   fflush(stdout);
