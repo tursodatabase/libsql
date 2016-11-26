@@ -306,62 +306,67 @@ do_multiclient_test tn {
 
 forcedelete $shmpath
 
-#----------------------------------------------------------------------------
+if {$tcl_platform(os)=="Darwin"} {
+  ifcapable enable_persist_wal {
 
-catch {db2 close}
-reset_db
-do_execsql_test 3.1 {
-  CREATE TABLE t1(a, b);
-  PRAGMA journal_mode = wal;
-  INSERT INTO t1 VALUES(1, 2);
-} {wal}
-db_save
-db close
-db_restore
-
-sqlite3 db test.db -readonly 1
-
-do_execsql_test 3.2 { SELECT * FROM t1 } {1 2}
-do_catchsql_test 3.3 { 
-  INSERT INTO t1 VALUES(3, 4) 
-} {1 {attempt to write a readonly database}}
-
-sqlite3 db2 test.db
-do_test 3.4 { 
-  db2 eval { INSERT INTO t1 VALUES(3, 4) }
-} {}
-do_execsql_test 3.5 { SELECT * FROM t1 } {1 2 3 4}
-
-db close
-db2 close
-db_restore
-file attributes $shmpath -permissions r--r--r--
-sqlite3 db test.db -readonly 1
-do_execsql_test 3.6 { SELECT * FROM t1 } {1 2}
-
-db close
-db_restore
-file attributes $shmpath -permissions r--r--r--
-sqlite3 db test.db
-do_test 3.7 {
-  catchsql { SELECT * FROM t1 } 
-} {1 {unable to open database file}}
-
-db close
-db_restore
-file attributes $shmpath -permissions r--r--r--
-sqlite3 db test.db -readonly 1
-do_execsql_test 3.8 { SELECT * FROM t1 } {1 2}
-
-sqlite3 db2 test.db
-do_test 3.9 { db2 eval { SELECT * FROM t1 } } {1 2}
-do_test 3.10 { 
-  catchsql { INSERT INTO t1 VALUES(3, 4) } db2 
-} {1 {attempt to write a readonly database}}
-
-catch { db close }
-catch { db2 close }
-
-forcedelete $shmpath
-
+    #--------------------------------------------------------------------------
+    
+    catch {db2 close}
+    reset_db
+    do_execsql_test 3.1 {
+      CREATE TABLE t1(a, b);
+      PRAGMA journal_mode = wal;
+      INSERT INTO t1 VALUES(1, 2);
+    } {wal}
+    db_save
+    db close
+    db_restore
+    
+    sqlite3 db test.db -readonly 1
+    
+    do_execsql_test 3.2 { SELECT * FROM t1 } {1 2}
+    do_catchsql_test 3.3 { 
+      INSERT INTO t1 VALUES(3, 4) 
+    } {1 {attempt to write a readonly database}}
+    
+    sqlite3 db2 test.db
+    do_test 3.4 { 
+      db2 eval { INSERT INTO t1 VALUES(3, 4) }
+    } {}
+    do_execsql_test 3.5 { SELECT * FROM t1 } {1 2 3 4}
+    
+    db close
+    db2 close
+    db_restore
+    file attributes $shmpath -permissions r--r--r--
+    sqlite3 db test.db -readonly 1
+    do_execsql_test 3.6 { SELECT * FROM t1 } {1 2}
+    
+    db close
+    db_restore
+    file attributes $shmpath -permissions r--r--r--
+    sqlite3 db test.db
+    do_test 3.7 {
+      catchsql { SELECT * FROM t1 } 
+    } {1 {unable to open database file}}
+    
+    db close
+    db_restore
+    file attributes $shmpath -permissions r--r--r--
+    sqlite3 db test.db -readonly 1
+    do_execsql_test 3.8 { SELECT * FROM t1 } {1 2}
+    
+    sqlite3 db2 test.db
+    do_test 3.9 { db2 eval { SELECT * FROM t1 } } {1 2}
+    do_test 3.10 { 
+      catchsql { INSERT INTO t1 VALUES(3, 4) } db2 
+    } {1 {attempt to write a readonly database}}
+    
+    catch { db close }
+    catch { db2 close }
+    
+    forcedelete $shmpath
+  } ;# endif capable enable_persist_wal
+} ;# endif os Darwin
+    
 finish_test
