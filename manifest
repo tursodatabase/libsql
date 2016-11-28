@@ -1,5 +1,5 @@
-C Simplify\ssome\scode\sin\sfts5_expr.c.\sAdd\ssome\sextra\stest\scases\sfor\sthe\ssame.
-D 2016-11-28T14:52:23.554
+C Fix\sbroken\shyperlinks\sto\sthe\ssqlite3_snapshot\sobjection\sdefinition\nin\sthe\sdocumentation.\s\sNo\schanges\sto\scode.
+D 2016-11-28T21:22:26.486
 F Makefile.in 6b572807415d3f0a379cebc9461416d8df4a12c8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc bb4d970894abbbe0e88d00aac29bd52af8bc95f4
@@ -389,7 +389,7 @@ F src/resolve.c bb070cf5f23611c44ab7e4788803684e385fc3fb
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 668c6865b16813dab5f9c18d3672fed11a5c34c5
 F src/shell.c a3fc2c719ed6d381895cbdb66a4a9b6a791cb02e
-F src/sqlite.h.in 566e3aa20e40f3eceda8bfb36c72504b4f10b500
+F src/sqlite.h.in e8e2d108d82647f0a812fdb74accf91c1ec08ddc
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
 F src/sqliteInt.h c471d791b10c0f2164c8b7a87adc338e703c09cc
@@ -1535,7 +1535,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b70c85ce6d07b08e13f4ea99edb8f4855a6d7580
-R e2d59b569b83323f61b57e394e54a92d
-U dan
-Z da120d25a7b116db8d62d3eda200a581
+P 7cc2d60dce90b8d4dca35708e33002ae6387806e
+R de1f3e041fb172133322c08f2e17859a
+U drh
+Z 0f2a9b7b29f5f440f84b18c2372070c3
