@@ -75,6 +75,7 @@ struct DateTime {
   char validJD;      /* True (1) if iJD is valid */
   char validTZ;      /* True (1) if tz is valid */
   char tzSet;        /* Timezone was set explicitly */
+  char isError;      /* An overflow has occurred */
 };
 
 
@@ -367,6 +368,15 @@ static int parseDateOrTime(
 }
 
 /*
+** Return TRUE if the given julian day number is within range.
+**
+** The input is the JulianDay times 86400000.
+*/
+static int validJulianDay(sqlite3_int64 iJD){
+  return iJD>=148699540800000 && iJD<=464269060799999;
+}
+
+/*
 ** Compute the Year, Month, and Day from the julian day number.
 */
 static void computeYMD(DateTime *p){
@@ -376,6 +386,10 @@ static void computeYMD(DateTime *p){
     p->Y = 2000;
     p->M = 1;
     p->D = 1;
+  }else if( !validJulianDay(p->iJD) ){
+    memset(p, 0, sizeof(*p));
+    p->isError = 1;
+    return;
   }else{
     Z = (int)((p->iJD + 43200000)/86400000);
     A = (int)((Z - 1867216.25)/36524.25);
@@ -814,6 +828,7 @@ static int isDate(
     z = sqlite3_value_text(argv[i]);
     if( z==0 || parseModifier(context, (char*)z, p) ) return 1;
   }
+  if( p->isError || (p->validJD && !validJulianDay(p->iJD)) ) return 1;
   return 0;
 }
 
