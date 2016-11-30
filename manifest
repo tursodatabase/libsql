@@ -1,5 +1,5 @@
-C Prevent\sa\swarning\sabout\sinteger\soverflow\swhen\susing\sa\svery\slarge\snegative\nLIMIT.
-D 2016-11-30T01:05:41.141
+C More\simprovements\sto\sboundary\scases\sin\sthe\sdate/time\sfunctions,\sflowing\sout\nof\sbranch\scoverage\stesting.
+D 2016-11-30T04:07:57.427
 F Makefile.in 6b572807415d3f0a379cebc9461416d8df4a12c8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc bb4d970894abbbe0e88d00aac29bd52af8bc95f4
@@ -337,7 +337,7 @@ F src/build.c 178f16698cbcb43402c343a9413fe22c99ffee21
 F src/callback.c 2e76147783386374bf01b227f752c81ec872d730
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c a2a52d6e353f459d8ab0f07321f60fafa47d5421
-F src/date.c 736c1f36c58bb137f64d8d1f72467dc027832563
+F src/date.c 206d0eb85cedec99a9820929579057fb364a72cb
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
 F src/delete.c cac97d1117a3008934da3a6a587b3608e65e1495
 F src/expr.c 8c224aa28278a5c1eed55247b7a571ff388ad5c2
@@ -1535,7 +1535,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P dc453b3403450b1d8cc53daf0721fed025b9053c
-R dc777d9d449bf1af0c4185b27e450723
+P 96106d5620eae51474234f4eec1d2c5bd570d486
+R 533c0afd3cc78feab0c7d06b5d67b3a1
 U drh
-Z 787a300f5849727b901aee7620134dd8
+Z 8875af7104f1fa4c1f8084b812f6f104

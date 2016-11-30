@@ -65,7 +65,7 @@ struct tm *__cdecl localtime(const time_t *);
 */
 typedef struct DateTime DateTime;
 struct DateTime {
-  sqlite3_uint64 iJD; /* The julian day number times 86400000 */
+  sqlite3_int64 iJD;  /* The julian day number times 86400000 */
   int Y, M, D;        /* Year, month, and day */
   int h, m;           /* Hour and minutes */
   int tz;             /* Timezone offset in minutes */
@@ -829,7 +829,9 @@ static int isDate(
   }
   if( (eType = sqlite3_value_type(argv[0]))==SQLITE_FLOAT
                    || eType==SQLITE_INTEGER ){
-    p->iJD = (sqlite3_int64)(sqlite3_value_double(argv[0])*86400000.0 + 0.5);
+    double r = sqlite3_value_double(argv[0]);
+    if( r>106751991167.0 || r<-106751991167.0 ) return 1;
+    p->iJD = (sqlite3_int64)(r*86400000.0 + 0.5);
     p->validJD = 1;
   }else{
     z = sqlite3_value_text(argv[0]);
@@ -841,7 +843,8 @@ static int isDate(
     z = sqlite3_value_text(argv[i]);
     if( z==0 || parseModifier(context, (char*)z, p) ) return 1;
   }
-  if( p->isError || (p->validJD && !validJulianDay(p->iJD)) ) return 1;
+  computeJD(p);
+  if( p->isError || !validJulianDay(p->iJD) ) return 1;
   return 0;
 }
 
