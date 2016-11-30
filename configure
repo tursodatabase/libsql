@@ -11252,7 +11252,7 @@ else
 fi
 
 if test "${use_debug}" = "yes" ; then
-  TARGET_DEBUG="-DSQLITE_DEBUG=1"
+  TARGET_DEBUG="-DSQLITE_DEBUG=1 -DSQLITE_ENABLE_SELECTTRACE -DSQLITE_ENABLE_WHERETRACE"
 else
   TARGET_DEBUG="-DNDEBUG"
 fi
@@ -13829,4 +13829,3 @@ if test -n "$ac_unrecognized_opts" && test "$enable_option_checking" != no; then
   { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: unrecognized options: $ac_unrecognized_opts" >&5
 $as_echo "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
 fi
-

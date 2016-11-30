@@ -208,6 +208,8 @@ static void instrFunc(
     zHaystack = sqlite3_value_text(argv[0]);
     zNeedle = sqlite3_value_text(argv[1]);
     isText = 1;
+    if( zNeedle==0 ) return;
+    assert( zHaystack );
   }
   while( nNeedle<=nHaystack && memcmp(zHaystack, zNeedle, nNeedle)!=0 ){
     N++;

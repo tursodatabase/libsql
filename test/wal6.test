@@ -238,6 +238,8 @@ do_test 4.4.2 {
 # Confirm that it is possible to get an SQLITE_BUSY_SNAPSHOT error from
 # "BEGIN EXCLUSIVE" if the connection already has an open read-transaction.
 #
+db close
+db2 close
 reset_db
 sqlite3 db2 test.db
 do_execsql_test 5.1 {

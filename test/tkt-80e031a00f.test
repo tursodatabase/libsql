@@ -20,10 +20,6 @@ source $testdir/tester.tcl
 source $testdir/lock_common.tcl
 source $testdir/malloc_common.tcl
 
-# EVIDENCE-OF: R-58875-56087 The IN and NOT IN operators take a single
-# scalar operand on the left and a vector operand on the right formed by
-# an explicit list of zero or more scalars or by a single subquery.
-#
 # EVIDENCE-OF: R-52275-55503 When the right operand is an empty set, the
 # result of IN is false and the result of NOT IN is true, regardless of
 # the left operand and even if the left operand is NULL.

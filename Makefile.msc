@@ -794,11 +794,11 @@ TCLLIBDIR = c:\tcl\lib
 !ENDIF
 
 !IFNDEF LIBTCL
-LIBTCL = tcl85.lib
+LIBTCL = tcl86.lib
 !ENDIF
 
 !IFNDEF LIBTCLSTUB
-LIBTCLSTUB = tclstub85.lib
+LIBTCLSTUB = tclstub86.lib
 !ENDIF
 
 !IFNDEF LIBTCLPATH
@@ -828,7 +828,7 @@ LIBICU = icuuc.lib icuin.lib
 # specific Tcl shell to use.
 #
 !IFNDEF TCLSH_CMD
-TCLSH_CMD = tclsh85
+TCLSH_CMD = tclsh
 !ENDIF
 # <</mark>>
 
@@ -1479,7 +1479,8 @@ FUZZDATA = \
   $(TOP)\test\fuzzdata1.db \
   $(TOP)\test\fuzzdata2.db \
   $(TOP)\test\fuzzdata3.db \
-  $(TOP)\test\fuzzdata4.db
+  $(TOP)\test\fuzzdata4.db \
+  $(TOP)\test\fuzzdata5.db
 # <</mark>>
 
 # Additional compiler options for the shell.  These are only effective
@@ -1494,7 +1495,9 @@ SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_SHELL_JSON1 -DSQLITE_ENABLE_
 #
 MPTESTER_COMPILE_OPTS = -DSQLITE_SHELL_JSON1 -DSQLITE_ENABLE_FTS5
 FUZZERSHELL_COMPILE_OPTS = -DSQLITE_ENABLE_JSON1
-FUZZCHECK_COMPILE_OPTS = -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_MEMSYS5
+FUZZCHECK_COMPILE_OPTS = -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_MEMSYS5 -DSQLITE_OSS_FUZZ
+FUZZCHECK_SRC = $(TOP)\test\fuzzcheck.c $(TOP)\test\ossfuzz.c
+OSSSHELL_SRC = $(TOP)\test\ossshell.c $(TOP)\test\ossfuzz.c
 
 # Standard options to testfixture.
 #
@@ -1564,8 +1567,11 @@ sourcetest:	srcck1.exe sqlite3.c
 fuzzershell.exe:	$(TOP)\tool\fuzzershell.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(FUZZERSHELL_COMPILE_OPTS) $(TOP)\tool\fuzzershell.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
-fuzzcheck.exe:	$(TOP)\test\fuzzcheck.c $(SQLITE3C) $(SQLITE3H)
-	$(LTLINK) $(NO_WARN) $(FUZZCHECK_COMPILE_OPTS) $(TOP)\test\fuzzcheck.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
+fuzzcheck.exe:	$(FUZZCHECK_SRC) $(SQLITE3C) $(SQLITE3H)
+	$(LTLINK) $(NO_WARN) $(FUZZCHECK_COMPILE_OPTS) $(FUZZCHECK_SRC) $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
+
+ossshell.exe:	$(OSSSHELL_SRC) $(SQLITE3C) $(SQLITE3H)
+	$(LTLINK) $(NO_WARN) $(FUZZCHECK_COMPILE_OPTS) $(OSSSHELL_SRC) $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
 mptester.exe:	$(TOP)\mptest\mptest.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(MPTESTER_COMPILE_OPTS) $(TOP)\mptest\mptest.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)

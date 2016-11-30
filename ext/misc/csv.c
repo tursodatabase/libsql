@@ -402,7 +402,7 @@ static int csv_boolean(const char *z){
   if( sqlite3_stricmp("yes",z)==0
    || sqlite3_stricmp("on",z)==0
    || sqlite3_stricmp("true",z)==0
-   || (z[0]=='1' && z[0]==0)
+   || (z[0]=='1' && z[1]==0)
   ){
     return 1;
   }

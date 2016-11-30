@@ -159,6 +159,68 @@ do_faultsim_test 3.0 -prep {
   sqlite3_snapshot_free $::snapshot
 }
 
+#-------------------------------------------------------------------------
+# Test the handling of faults that occur within sqlite3_snapshot_recover().
+#
+reset_db
+do_execsql_test 4.0 {
+  PRAGMA journal_mode = wal;
+  CREATE TABLE t1(zzz);
+  INSERT INTO t1 VALUES('abc');
+  INSERT INTO t1 VALUES('def');
+} {wal}
+faultsim_save_and_close
+
+do_test 4.0.1 {
+  faultsim_restore_and_reopen
+  db eval { SELECT * FROM sqlite_master } 
+  sqlite3_snapshot_recover db main
+} {}
+db close
+
+do_faultsim_test 4.0 -faults oom* -prep {
+  faultsim_restore_and_reopen
+  db eval { SELECT * FROM sqlite_master } 
+} -body {
+  sqlite3_snapshot_recover db main
+} -test {
+  faultsim_test_result {0 {}} {1 SQLITE_NOMEM} {1 SQLITE_IOERR_NOMEM}
+}
+
+# The following test cases contrive to call sqlite3_snapshot_recover()
+# before all pages of the *-shm file have been mapped. This tests an
+# extra branch of error handling logic in snapshot_recover().
+#
+reset_db
+do_execsql_test 4.1.0 {
+  PRAGMA page_size = 512;
+  PRAGMA journal_mode = wal;
+  PRAGMA wal_autocheckpoint = 0;
+  CREATE TABLE t1(zzz);
+  INSERT INTO t1 VALUES(randomblob( 500 * 9500 ));
+  PRAGMA user_version = 211;
+} {wal 0}
+
+do_test 4.1.1 {
+  list [file size test.db-shm] [file size test.db]
+} {98304 512}
+
+faultsim_save_and_close
+do_faultsim_test 4.1 -faults shm* -prep {
+  catch { db2 close } 
+  catch { db close } 
+  faultsim_restore_and_reopen
+  sqlite3 db2 test.db
+  db2 eval { SELECT * FROM sqlite_master } 
+  db eval BEGIN
+  sqlite3_snapshot_get_blob db main
+  db eval COMMIT
+} -body {
+  sqlite3_snapshot_recover db main
+} -test {
+  faultsim_test_result {0 {}} {1 SQLITE_IOERR}
+}
+
 
 
 finish_test
