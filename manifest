@@ -1,5 +1,5 @@
-C More\simprovements\sto\sboundary\scases\sin\sthe\sdate/time\sfunctions,\sflowing\sout\nof\sbranch\scoverage\stesting.
-D 2016-11-30T04:07:57.427
+C Change\sthe\sOP_DecrJumpZero\sopcode\sback\sto\sits\sold\sbehavior\sof\salways\ndecrementing,\sexcept\stop\sthe\sdecrementing\swhen\sit\sreaches\sthe\slargest\snegative\nnumber.
+D 2016-11-30T05:08:59.150
 F Makefile.in 6b572807415d3f0a379cebc9461416d8df4a12c8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc bb4d970894abbbe0e88d00aac29bd52af8bc95f4
@@ -454,7 +454,7 @@ F src/update.c 1b8321100cac004f0721ab67b16909dd006e663c
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c 3e2da6101888d073e79ecc6af5e0a2f70fa1e498
 F src/vacuum.c 33c174b28886b2faf26e503b5a49a1c01a9b1c16
-F src/vdbe.c 1802a10926b14de7065950d436e7ce418682faef
+F src/vdbe.c 336a3e5696683a585e56bbbc4f05ce33957d28dd
 F src/vdbe.h c044be7050ac6bf596eecc6ab159f5dbc020a3b7
 F src/vdbeInt.h 9b498d3cb52dc2efb53571fb8ae8e14cf298ce84
 F src/vdbeapi.c ea4e2dc2213cc6bd7bee375a29a9b51c31b93ae0
@@ -1535,7 +1535,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 96106d5620eae51474234f4eec1d2c5bd570d486
-R 533c0afd3cc78feab0c7d06b5d67b3a1
+P 1218005ab7b52ef45db1354d17fdd8a1a1af9854
+R cd48ebcdd22406f3055d813d70fb9f48
 U drh
-Z 8875af7104f1fa4c1f8084b812f6f104
+Z 430b79992fd44a23d3200085781e41a0

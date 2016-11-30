@@ -6022,17 +6022,15 @@ case OP_IfNotZero: {        /* jump, in1 */
 /* Opcode: DecrJumpZero P1 P2 * * *
 ** Synopsis: if (--r[P1])==0 goto P2
 **
-** Register P1 must hold an integer.  If the value in P1 is positive,
-** decrement the value and jump to P2 if the new value is exactly zero.
+** Register P1 must hold an integer.  Decrement the value in P1
+** and jump to P2 if the new value is exactly zero.
 */
 case OP_DecrJumpZero: {      /* jump, in1 */
   pIn1 = &aMem[pOp->p1];
   assert( pIn1->flags&MEM_Int );
-  if( pIn1->u.i>0 ){
-    pIn1->u.i--;
-    VdbeBranchTaken(pIn1->u.i==0, 2);
-    if( pIn1->u.i==0 ) goto jump_to_p2;
-  }
+  if( pIn1->u.i>SMALLEST_INT64 ) pIn1->u.i--;
+  VdbeBranchTaken(pIn1->u.i==0, 2);
+  if( pIn1->u.i==0 ) goto jump_to_p2;
   break;
 }
 
