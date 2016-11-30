@@ -1,5 +1,5 @@
-C Change\sthe\sOP_DecrJumpZero\sopcode\sback\sto\sits\sold\sbehavior\sof\salways\ndecrementing,\sexcept\stop\sthe\sdecrementing\swhen\sit\sreaches\sthe\slargest\snegative\nnumber.
-D 2016-11-30T05:08:59.150
+C Fix\sthen\shandling\sof\sthe\s(oversized)\sinteger\sliteral\s-0x8000000000000000.
+D 2016-11-30T14:47:37.324
 F Makefile.in 6b572807415d3f0a379cebc9461416d8df4a12c8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc bb4d970894abbbe0e88d00aac29bd52af8bc95f4
@@ -340,7 +340,7 @@ F src/ctime.c a2a52d6e353f459d8ab0f07321f60fafa47d5421
 F src/date.c 206d0eb85cedec99a9820929579057fb364a72cb
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
 F src/delete.c cac97d1117a3008934da3a6a587b3608e65e1495
-F src/expr.c 8c224aa28278a5c1eed55247b7a571ff388ad5c2
+F src/expr.c b22e09630f874c52db0770973b7ce55ee50c1dde
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c b9ca262f6ad4d030a3cab737ebf9b0b3c8b4ac80
 F src/func.c 7057bc2c105b82faa668d8e2ec85fad4540e5c51
@@ -824,7 +824,7 @@ F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
 F test/genesis.tcl 1e2e2e8e5cc4058549a154ff1892fe5c9de19f98
-F test/hexlit.test d7b0a5f41123df1e43985b91b8b2e70f95282d21
+F test/hexlit.test 4a6a5f46e3c65c4bf1fa06f5dd5a9507a5627751
 F test/hidden.test 23c1393a79e846d68fd902d72c85d5e5dcf98711
 F test/hook.test 3a01b876691f9151d3e44562354f7d663ff90fce
 F test/icu.test 73956798bace8982909c00476b216714a6d0559a
@@ -1535,7 +1535,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1218005ab7b52ef45db1354d17fdd8a1a1af9854
-R cd48ebcdd22406f3055d813d70fb9f48
+P 9d0d8c2e7c529562889de02346733dcb532e9388
+R 3cdfa3322e8c1e15bb4a1105ccb3dfa9
 U drh
-Z 430b79992fd44a23d3200085781e41a0
+Z 1db6a5b72b559f0fea9bc564b812e94c
