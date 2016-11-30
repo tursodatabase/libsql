@@ -65,17 +65,17 @@ struct tm *__cdecl localtime(const time_t *);
 */
 typedef struct DateTime DateTime;
 struct DateTime {
-  sqlite3_int64 iJD; /* The julian day number times 86400000 */
-  int Y, M, D;       /* Year, month, and day */
-  int h, m;          /* Hour and minutes */
-  int tz;            /* Timezone offset in minutes */
-  double s;          /* Seconds */
-  char validYMD;     /* True (1) if Y,M,D are valid */
-  char validHMS;     /* True (1) if h,m,s are valid */
-  char validJD;      /* True (1) if iJD is valid */
-  char validTZ;      /* True (1) if tz is valid */
-  char tzSet;        /* Timezone was set explicitly */
-  char isError;      /* An overflow has occurred */
+  sqlite3_uint64 iJD; /* The julian day number times 86400000 */
+  int Y, M, D;        /* Year, month, and day */
+  int h, m;           /* Hour and minutes */
+  int tz;             /* Timezone offset in minutes */
+  double s;           /* Seconds */
+  char validYMD;      /* True (1) if Y,M,D are valid */
+  char validHMS;      /* True (1) if h,m,s are valid */
+  char validJD;       /* True (1) if iJD is valid */
+  char validTZ;       /* True (1) if tz is valid */
+  char tzSet;         /* Timezone was set explicitly */
+  char isError;       /* An overflow has occurred */
 };
 
 
@@ -233,6 +233,14 @@ static int parseHhMmSs(const char *zDate, DateTime *p){
 }
 
 /*
+** Put the DateTime object into its error state.
+*/
+static void datetimeError(DateTime *p){
+  memset(p, 0, sizeof(*p));
+  p->isError = 1;
+}
+
+/*
 ** Convert from YYYY-MM-DD HH:MM:SS to julian day.  We always assume
 ** that the YYYY-MM-DD is according to the Gregorian calendar.
 **
@@ -250,6 +258,10 @@ static void computeJD(DateTime *p){
     Y = 2000;  /* If no YMD specified, assume 2000-Jan-01 */
     M = 1;
     D = 1;
+  }
+  if( Y<-4713 || Y>9999 ){
+    datetimeError(p);
+    return;
   }
   if( M<=2 ){
     Y--;
@@ -373,7 +385,7 @@ static int parseDateOrTime(
 ** The input is the JulianDay times 86400000.
 */
 static int validJulianDay(sqlite3_int64 iJD){
-  return iJD>=148699540800000 && iJD<=464269060799999;
+  return iJD>=0 && iJD<=464269060799999;
 }
 
 /*
@@ -387,8 +399,7 @@ static void computeYMD(DateTime *p){
     p->M = 1;
     p->D = 1;
   }else if( !validJulianDay(p->iJD) ){
-    memset(p, 0, sizeof(*p));
-    p->isError = 1;
+    datetimeError(p);
     return;
   }else{
     Z = (int)((p->iJD + 43200000)/86400000);
@@ -713,6 +724,7 @@ static int parseModifier(sqlite3_context *pCtx, const char *zMod, DateTime *p){
     case '8':
     case '9': {
       double rRounder;
+      double rAbs;
       for(n=1; z[n] && z[n]!=':' && !sqlite3Isspace(z[n]); n++){}
       if( !sqlite3AtoF(z, &r, n, SQLITE_UTF8) ){
         rc = 1;
@@ -749,15 +761,16 @@ static int parseModifier(sqlite3_context *pCtx, const char *zMod, DateTime *p){
       computeJD(p);
       rc = 0;
       rRounder = r<0 ? -0.5 : +0.5;
-      if( n==3 && strcmp(z,"day")==0 ){
+      rAbs = r<0 ? -r : r;
+      if( n==3 && strcmp(z,"day")==0 && rAbs<5373485.0 ){
         p->iJD += (sqlite3_int64)(r*86400000.0 + rRounder);
-      }else if( n==4 && strcmp(z,"hour")==0 ){
+      }else if( n==4 && strcmp(z,"hour")==0 && rAbs<128963628.0 ){
         p->iJD += (sqlite3_int64)(r*(86400000.0/24.0) + rRounder);
-      }else if( n==6 && strcmp(z,"minute")==0 ){
+      }else if( n==6 && strcmp(z,"minute")==0 && rAbs<7737817680.0 ){
         p->iJD += (sqlite3_int64)(r*(86400000.0/(24.0*60.0)) + rRounder);
-      }else if( n==6 && strcmp(z,"second")==0 ){
+      }else if( n==6 && strcmp(z,"second")==0 && rAbs<464269060800.0 ){
         p->iJD += (sqlite3_int64)(r*(86400000.0/(24.0*60.0*60.0)) + rRounder);
-      }else if( n==5 && strcmp(z,"month")==0 ){
+      }else if( n==5 && strcmp(z,"month")==0 && rAbs<176546.0 ){
         int x, y;
         computeYMD_HMS(p);
         p->M += (int)r;
@@ -770,7 +783,7 @@ static int parseModifier(sqlite3_context *pCtx, const char *zMod, DateTime *p){
         if( y!=r ){
           p->iJD += (sqlite3_int64)((r - y)*30.0*86400000.0 + rRounder);
         }
-      }else if( n==4 && strcmp(z,"year")==0 ){
+      }else if( n==4 && strcmp(z,"year")==0 && rAbs<14713.0 ){
         int y = (int)r;
         computeYMD_HMS(p);
         p->Y += y;
