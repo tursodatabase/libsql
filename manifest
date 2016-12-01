@@ -1,5 +1,5 @@
-C Modify\sthe\spatternCompare()\sfunction\s(used\sfor\sGLOB,\sLIKE)\sto\sbetter\shandle\npatterns\scontaining\smultiple\swildcard\scharacters\s("*",\s"%").
-D 2016-12-01T17:34:59.799
+C Faster\sversion\sof\spatternCompare()\sthat\suses\snew\sreturn\svalues\srather\sthan\nan\sextra\sparameter\sto\scommunicate\swildcard\sinformation\sback\sup\sto\sparent\nsearches.
+D 2016-12-01T18:49:40.948
 F Makefile.in 7639c6a09da11a9c7c6f2630fc981ee588d1072d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -344,7 +344,7 @@ F src/delete.c cac97d1117a3008934da3a6a587b3608e65e1495
 F src/expr.c b22e09630f874c52db0770973b7ce55ee50c1dde
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c b9ca262f6ad4d030a3cab737ebf9b0b3c8b4ac80
-F src/func.c 528e92597efe1bb80b5dfc18184bd6cbf50d0cf9
+F src/func.c 43916c1d8e6da5d107d91d2b212577d4f69a876a
 F src/global.c 9da4ca5d74b90715f0ec4957f3d17a4749009f34
 F src/hash.c 63d0ee752a3b92d4695b2b1f5259c4621b2cfebd
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
@@ -1536,10 +1536,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d2d30914d81022d7d4e1670caf9326524520deaf
-R e10a8ca94d0faea9fbbc7bdc7c3a49de
-T *branch * pattern-compare-optimization
-T *sym-pattern-compare-optimization *
-T -sym-trunk *
-U dan
-Z 02660061daf6ca9953ba412794b057ac
+P c5e5614d98a752738c081fecdd1e349a1a92b0e5
+R 7fd404505e6cb7c0d4a931aa83fe2cab
+U drh
+Z 7c186ec4fef5aa272b546661aa8fedfc
