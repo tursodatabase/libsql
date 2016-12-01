@@ -1,5 +1,5 @@
-C Performance\simprovement\sfor\sGLOB\sand\sLIKE\smatching\sfor\spatterns\swith\stwo\nor\smore\smulti-character\swildcards\s("*"\sor\s"%").
-D 2016-12-01T18:57:58.894
+C Avoid\sclearing\sthe\sEP_FromJoin\sflag\sfrom\sterms\sin\sON\sclauses\swhen\sflattening\nsub-selects.\sPossible\sfix\sfor\s[2df0107b].
+D 2016-12-01T19:58:01.439
 F Makefile.in 7639c6a09da11a9c7c6f2630fc981ee588d1072d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -388,7 +388,7 @@ F src/printf.c f94da4935d1dd25420ac50c6745db1deb35e07c1
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c bb070cf5f23611c44ab7e4788803684e385fc3fb
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c 668c6865b16813dab5f9c18d3672fed11a5c34c5
+F src/select.c 403775526d5e0e420924fe89f34256dc1dd98d48
 F src/shell.c a3fc2c719ed6d381895cbdb66a4a9b6a791cb02e
 F src/sqlite.h.in e8e2d108d82647f0a812fdb74accf91c1ec08ddc
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -881,7 +881,7 @@ F test/join.test f9d4a28dec81c6e9dc21b73518e024d73b5ebf57
 F test/join2.test f2171c265e57ee298a27e57e7051d22962f9f324
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
-F test/join5.test 8a5c0be6f0c260a5c7177c3b8f07c7856141038a
+F test/join5.test bc98ea4b4e5003f5b1453701ebb8cd7d1c01a550
 F test/join6.test cfe6503791ceb0cbb509966740286ec423cbf10b
 F test/journal1.test 69abc726c51b4a0409189f9a85191205297c0577
 F test/journal2.test 9dac6b4ba0ca79c3b21446bbae993a462c2397c4
@@ -1536,8 +1536,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d2d30914d81022d7d4e1670caf9326524520deaf a1e2b6ce3af690ae91bda3d056357205c4018da7
-R 7fd404505e6cb7c0d4a931aa83fe2cab
-T +closed a1e2b6ce3af690ae91bda3d056357205c4018da7
-U drh
-Z 7e6a99050dfa3d3417fed3aea1612abc
+P 2df0ebf95f6a25c77777c33685303e81550fd739 8bed4cd549759a93c4a087d8d8c08c0068ba8d59
+R 72f6d6d0e28ae71211501e4595390bfd
+T +closed 8bed4cd549759a93c4a087d8d8c08c0068ba8d59
+U dan
+Z a00b285125498e1667085e3791884b85

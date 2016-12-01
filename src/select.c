@@ -3164,6 +3164,10 @@ static Expr *substExpr(
       assert( pEList!=0 && pExpr->iColumn<pEList->nExpr );
       assert( pExpr->pLeft==0 && pExpr->pRight==0 );
       pNew = sqlite3ExprDup(db, pEList->a[pExpr->iColumn].pExpr, 0);
+      if( pNew && (pExpr->flags & EP_FromJoin) ){
+        pNew->iRightJoinTable = pExpr->iRightJoinTable;
+        pNew->flags |= EP_FromJoin;
+      }
       sqlite3ExprDelete(db, pExpr);
       pExpr = pNew;
     }
