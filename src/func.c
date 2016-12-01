@@ -636,7 +636,8 @@ static int patternCompare(
   const u8 *zPattern,              /* The glob pattern */
   const u8 *zString,               /* The string to compare against the glob */
   const struct compareInfo *pInfo, /* Information about how to do the compare */
-  u32 matchOther                   /* The escape char (LIKE) or '[' (GLOB) */
+  u32 matchOther,                  /* The escape char (LIKE) or '[' (GLOB) */
+  int *pbSeenMatchAll              /* OUT: True if have seen matchAll */
 ){
   u32 c, c2;                       /* Next pattern and input string chars */
   u32 matchOne = pInfo->matchOne;  /* "?" or "_" */
@@ -649,6 +650,7 @@ static int patternCompare(
       /* Skip over multiple "*" characters in the pattern.  If there
       ** are also "?" characters, skip those as well, but consume a
       ** single character of the input string for each "?" skipped */
+      *pbSeenMatchAll = 1;
       while( (c=Utf8Read(zPattern)) == matchAll || c == matchOne ){
         if( c==matchOne && sqlite3Utf8Read(&zString)==0 ){
           return 0;
@@ -661,11 +663,14 @@ static int patternCompare(
           c = sqlite3Utf8Read(&zPattern);
           if( c==0 ) return 0;
         }else{
+          int bMA = 0;            /* True if patternCompare sees matchAll */
           /* "[...]" immediately follows the "*".  We have to do a slow
           ** recursive search in this case, but it is an unusual case. */
           assert( matchOther<0x80 );  /* '[' is a single-byte character */
           while( *zString
-                 && patternCompare(&zPattern[-1],zString,pInfo,matchOther)==0 ){
+            && patternCompare(&zPattern[-1],zString,pInfo,matchOther,&bMA)==0
+          ){
+            if( bMA ) return 0;
             SQLITE_SKIP_UTF8(zString);
           }
           return *zString!=0;
@@ -674,7 +679,7 @@ static int patternCompare(
 
       /* At this point variable c contains the first character of the
       ** pattern string past the "*".  Search in the input string for the
-      ** first matching character and recursively contine the match from
+      ** first matching character and recursively continue the match from
       ** that point.
       **
       ** For a case-insensitive search, set variable cx to be the same as
@@ -683,6 +688,7 @@ static int patternCompare(
       */
       if( c<=0x80 ){
         u32 cx;
+        int bMatchAll = 0;
         if( noCase ){
           cx = sqlite3Toupper(c);
           c = sqlite3Tolower(c);
@@ -691,12 +697,19 @@ static int patternCompare(
         }
         while( (c2 = *(zString++))!=0 ){
           if( c2!=c && c2!=cx ) continue;
-          if( patternCompare(zPattern,zString,pInfo,matchOther) ) return 1;
+          if( patternCompare(zPattern,zString,pInfo,matchOther, &bMatchAll) ){
+            return 1;
+          }
+          if( bMatchAll ) break;
         }
       }else{
+        int bMatchAll = 0;
         while( (c2 = Utf8Read(zString))!=0 ){
           if( c2!=c ) continue;
-          if( patternCompare(zPattern,zString,pInfo,matchOther) ) return 1;
+          if( patternCompare(zPattern,zString,pInfo,matchOther, &bMatchAll) ){
+            return 1;
+          }
+          if( bMatchAll ) break;
         }
       }
       return 0;
@@ -755,14 +768,16 @@ static int patternCompare(
 ** The sqlite3_strglob() interface.
 */
 int sqlite3_strglob(const char *zGlobPattern, const char *zString){
-  return patternCompare((u8*)zGlobPattern, (u8*)zString, &globInfo, '[')==0;
+  int dummy = 0;
+  return patternCompare((u8*)zGlobPattern, (u8*)zString, &globInfo, '[', &dummy)==0;
 }
 
 /*
 ** The sqlite3_strlike() interface.
 */
 int sqlite3_strlike(const char *zPattern, const char *zStr, unsigned int esc){
-  return patternCompare((u8*)zPattern, (u8*)zStr, &likeInfoNorm, esc)==0;
+  int dummy = 0;
+  return patternCompare((u8*)zPattern, (u8*)zStr, &likeInfoNorm, esc, &dummy)==0;
 }
 
 /*
@@ -840,10 +855,11 @@ static void likeFunc(
     escape = pInfo->matchSet;
   }
   if( zA && zB ){
+    int dummy = 0;
 #ifdef SQLITE_TEST
     sqlite3_like_count++;
 #endif
-    sqlite3_result_int(context, patternCompare(zB, zA, pInfo, escape));
+    sqlite3_result_int(context, patternCompare(zB, zA, pInfo, escape, &dummy));
   }
 }
 
