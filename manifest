@@ -1,5 +1,5 @@
-C Test\scases\sfor\sthe\simproved\sLIKE/GLOB\smatcher.
-D 2016-12-02T02:19:24.505
+C Extend\sthe\svalid\srange\sof\s'unixepoch'\sdates\sfrom\sJulianDay\s0\sthrough\s9999-12-31.
+D 2016-12-02T17:08:27.447
 F Makefile.in 7639c6a09da11a9c7c6f2630fc981ee588d1072d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -338,7 +338,7 @@ F src/build.c 178f16698cbcb43402c343a9413fe22c99ffee21
 F src/callback.c 2e76147783386374bf01b227f752c81ec872d730
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c a2a52d6e353f459d8ab0f07321f60fafa47d5421
-F src/date.c 206d0eb85cedec99a9820929579057fb364a72cb
+F src/date.c 58d4275a8778c2da80fcb515e2605c791a2b8884
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
 F src/delete.c cac97d1117a3008934da3a6a587b3608e65e1495
 F src/expr.c b22e09630f874c52db0770973b7ce55ee50c1dde
@@ -1536,7 +1536,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a427c4052820d90c3c8c23abf9097f973e564010
-R f16f032d9f385e340b291882ba284c15
+P 0bdb7ae126d3909344640813489ee68ecad041c4
+R de507b0b0d00b8f392dd9c1b935d5409
 U drh
-Z a0288af86999fbddd2602cee91996f35
+Z 8b7f9d120e42b1682165e88e877e78a0
