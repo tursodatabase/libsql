@@ -841,7 +841,13 @@ static int isDate(
   }
   for(i=1; i<argc; i++){
     z = sqlite3_value_text(argv[i]);
-    if( z==0 || parseModifier(context, (char*)z, p) ) return 1;
+    if( z==0 ) return 1;
+    if( p->validJD && !validJulianDay(p->iJD) 
+     && strcmp((const char*)z,"unixepoch")!=0
+    ){
+      return 1;
+    }
+    if( parseModifier(context, (char*)z, p) ) return 1;
   }
   computeJD(p);
   if( p->isError || !validJulianDay(p->iJD) ) return 1;

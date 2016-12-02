@@ -595,6 +595,6 @@ datetest 16.28 {datetime(5373484,'-176545 months')} {-4713-12-01 12:00:00}
 datetest 16.29 {datetime(5373484,'-176546 months')} NULL
 datetest 16.30 {datetime(5373484,'-14712 years')} {-4713-12-31 12:00:00}
 datetest 16.31 {datetime(5373484,'-14713 years')} NULL
-
+datetest 16.32 {datetime('-5e19','-01:00')} NULL
 
 finish_test
