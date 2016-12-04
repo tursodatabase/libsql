@@ -24,7 +24,7 @@ csvtab = ["csv"]
 [dependencies]
 time = "0.1"
 bitflags = "0.7"
-lru-cache = "0.0.7"
+lru-cache = "0.1"
 libc = "0.2"
 chrono = { version = "0.2", optional = true }
 serde_json = { version = "0.8", optional = true }
