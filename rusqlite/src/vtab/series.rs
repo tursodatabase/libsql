@@ -13,7 +13,6 @@ pub fn load_module(conn: &Connection) -> Result<()> {
     conn.create_module("generate_series", &SERIES_MODULE, aux)
 }
 
-
 init_module!(SERIES_MODULE,
              SeriesTab,
              SeriesTabCursor,

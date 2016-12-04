@@ -279,7 +279,7 @@ pub trait Aggregate<A, T>
 {
     /// Initializes the aggregation context. Will be called prior to the first call
     /// to `step()` to set up the context for an invocation of the function. (Note:
-    /// `init()` will not be called if the there are no rows.)
+    /// `init()` will not be called if there are no rows.)
     fn init(&self) -> A;
 
     /// "step" function called once for each row in an aggregate group. May be called

@@ -247,7 +247,7 @@ impl<'a> Iterator for ValueIter<'a> {
     type Item = ValueRef<'a>;
 
     fn next(&mut self) -> Option<ValueRef<'a>> {
-        self.iter.next().map(|raw| { unsafe { ValueRef::from_value(*raw) } })
+        self.iter.next().map(|&raw| { unsafe { ValueRef::from_value(raw) } })
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
@@ -372,8 +372,8 @@ unsafe extern "C" fn $connect(db: *mut ffi::sqlite3,
     use std::slice;
     use vtab::mprintf;
     let args = slice::from_raw_parts(argv, argc as usize);
-    let vec = args.iter().map(|cs| {
-        CStr::from_ptr(*cs).to_bytes()
+    let vec = args.iter().map(|&cs| {
+        CStr::from_ptr(cs).to_bytes()
     }).collect::<Vec<_>>();
     match $vtab::connect(db, aux, &vec[..]) {
         Ok(vtab) => {
