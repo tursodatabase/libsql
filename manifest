@@ -1,5 +1,5 @@
-C Simplify\sthe\sdate/time\sfunction\slogic\sfor\simproved\srebustness\sand\salso\sto\ndecrease\sthe\ssize\sof\sthe\sbinary.
-D 2016-12-02T19:07:03.138
+C Work\saround\sa\sbug\sin\sthe\sdefinition\sof\s"ino_t"\son\ssome\sversions\sof\sAndroid.
+D 2016-12-05T20:06:45.078
 F Makefile.in 7639c6a09da11a9c7c6f2630fc981ee588d1072d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -372,7 +372,7 @@ F src/os.c add02933b1dce7a39a005b00a2f5364b763e9a24
 F src/os.h 8e976e59eb4ca1c0fca6d35ee803e38951cb0343
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c be9ca0f901a2b6c1bc93dc338f4863675180c189
+F src/os_unix.c 30e2c43e4955db990e5b5a81e901f8aa74cc8820
 F src/os_win.c cf90abd4e50d9f56d2c20ce8e005aff55d7bd8e9
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 4e4aea7ced5734753ccbff4cf4bb4d032cf2173e
@@ -1536,7 +1536,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 768c9859b21a3c88be084d6dd87acab4211b3a87
-R 65ce4f7c2b4b3fd05ab801cab333052f
+P 6e144735ed0cd3d4461ae6a4d8034264563e3165
+R 8d68a5c1fa2466ac0f1223eb05620da4
 U drh
-Z 0e9aea10c8c8bd36917285b40426a93d
+Z 14362e44254b879dd6931510df84654e
