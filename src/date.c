@@ -674,7 +674,7 @@ static int parseModifier(
       ** seconds since 1970.  Convert to a real julian day number.
       */
       if( sqlite3_stricmp(z, "unixepoch")==0 && p->rawS ){
-        double r = p->s*1000.0 + 210866760000000.0;
+        r = p->s*1000.0 + 210866760000000.0;
         if( r>=0.0 && r<464269060800000.0 ){
           clearYMD_HMS_TZ(p);
           p->iJD = (sqlite3_int64)r;

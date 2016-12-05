@@ -1,5 +1,5 @@
-C Work\saround\sa\sbug\sin\sthe\sdefinition\sof\s"ino_t"\son\ssome\sversions\sof\sAndroid.
-D 2016-12-05T20:06:45.078
+C Fix\sa\sharmless\sredundant\slocal\svariable\sdeclaration\sin\sthe\sdate/time\sfunction\nlogic.
+D 2016-12-05T20:16:04.626
 F Makefile.in 7639c6a09da11a9c7c6f2630fc981ee588d1072d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -338,7 +338,7 @@ F src/build.c 178f16698cbcb43402c343a9413fe22c99ffee21
 F src/callback.c 2e76147783386374bf01b227f752c81ec872d730
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c a2a52d6e353f459d8ab0f07321f60fafa47d5421
-F src/date.c 116097946bffdfe510b30affa15b36026f632ae6
+F src/date.c 57f23f5835c0b8b2be0e71f3b0a38e5960d053ec
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
 F src/delete.c cac97d1117a3008934da3a6a587b3608e65e1495
 F src/expr.c b22e09630f874c52db0770973b7ce55ee50c1dde
@@ -1536,7 +1536,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6e144735ed0cd3d4461ae6a4d8034264563e3165
-R 8d68a5c1fa2466ac0f1223eb05620da4
+P 8df492c1711bfea250264fdaa4892e0842705f83
+R 8fe53b14c4c2a7f94eb87c2ca6789b39
 U drh
-Z 14362e44254b879dd6931510df84654e
+Z 87a0907e7cda49221885d8ac7a3cd194
