@@ -1,5 +1,5 @@
-C In\sthe\sLEMON\sparser-generator,\sfix\sthe\sstack\soverflow\sprocessing\sso\sthat\sit\ncorrect\sinvokes\sthe\sdestructor\son\sthe\stop-level\sof\sthe\sparse\sstack.
-D 2016-12-06T17:59:05.162
+C Add\smissing\snul-terminator\sto\sa\sTcl_AppendResult()\scall\sin\stclsqlite.c.
+D 2016-12-06T19:33:42.745
 F Makefile.in 7639c6a09da11a9c7c6f2630fc981ee588d1072d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -397,7 +397,7 @@ F src/sqliteInt.h c471d791b10c0f2164c8b7a87adc338e703c09cc
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
-F src/tclsqlite.c aef87dcd8cb66564d560ab48d43d19ac812a1eab
+F src/tclsqlite.c 205c66b9b81d97978a155caa3ef5be9c4de2b174
 F src/test1.c 8a98191a1da8e100f77cdb5cc716df67d405028d
 F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
 F src/test3.c d03f5b5da9a2410b7a91c64b0d3306ed28ab6fee
@@ -1536,7 +1536,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b4bc40d1836d8ed0803b81a734ce48be8e9d434a
-R 81d8a2026014eefac917511077da3519
-U drh
-Z 9f71fcfb3a0f47c77589a0b90da6d3b4
+P e8247065cf1d929f42d13864f8a1886ed4d329cd
+R d584b43abf3b6acb5fcfedbaac517d67
+U dan
+Z 4afd164e190ae9a4d35011e09b19c24e
