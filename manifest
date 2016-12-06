@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\sredundant\slocal\svariable\sdeclaration\sin\sthe\sdate/time\sfunction\nlogic.
-D 2016-12-05T20:16:04.626
+C In\sthe\sLEMON\sparser-generator,\sfix\sthe\sstack\soverflow\sprocessing\sso\sthat\sit\ncorrect\sinvokes\sthe\sdestructor\son\sthe\stop-level\sof\sthe\sparse\sstack.
+D 2016-12-06T17:59:05.162
 F Makefile.in 7639c6a09da11a9c7c6f2630fc981ee588d1072d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -820,7 +820,7 @@ F test/fuzzdata1.db 7ee3227bad0e7ccdeb08a9e6822916777073c664
 F test/fuzzdata2.db f03a420d3b822cc82e4f894ca957618fbe9c4973
 F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
 F test/fuzzdata4.db 1882f0055fb63214d8407ddc7aca9b0b1c59af21
-F test/fuzzdata5.db e143587fe774458ea928abaaa85a98019396f573
+F test/fuzzdata5.db 9f0cdcc5c6e83b90cf9ae343bd07f684d2da2de7
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
@@ -1464,7 +1464,7 @@ F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/lemon.c e4fb7d888873ac88f20a41c84a7d1e61f5209a6d
-F tool/lempar.c 7cf047778e74433126cb02896e3f898d7b1e20aa
+F tool/lempar.c 320d630b44da693407684c64d9fa91a163419dac
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
 F tool/logest.c 11346aa019e2e77a00902aa7d0cabd27bd2e8cca
@@ -1536,7 +1536,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8df492c1711bfea250264fdaa4892e0842705f83
-R 8fe53b14c4c2a7f94eb87c2ca6789b39
+P b4bc40d1836d8ed0803b81a734ce48be8e9d434a
+R 81d8a2026014eefac917511077da3519
 U drh
-Z 87a0907e7cda49221885d8ac7a3cd194
+Z 9f71fcfb3a0f47c77589a0b90da6d3b4
