@@ -1,5 +1,5 @@
-C Add\smissing\snul-terminator\sto\sa\sTcl_AppendResult()\scall\sin\stclsqlite.c.
-D 2016-12-06T19:33:42.745
+C Performance\simprovement\sand\ssize\sreduction\sin\sthe\sExpr\snode\sallocator\nfunction\ssqlite3PExpr().
+D 2016-12-06T22:47:23.006
 F Makefile.in 7639c6a09da11a9c7c6f2630fc981ee588d1072d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -340,10 +340,10 @@ F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c a2a52d6e353f459d8ab0f07321f60fafa47d5421
 F src/date.c 57f23f5835c0b8b2be0e71f3b0a38e5960d053ec
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
-F src/delete.c cac97d1117a3008934da3a6a587b3608e65e1495
-F src/expr.c b22e09630f874c52db0770973b7ce55ee50c1dde
+F src/delete.c a6881ec5a7d1adc6157dfe1596ead3522db04740
+F src/expr.c b4db982acf30aad864a047bf7676fa85761fc55e
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
-F src/fkey.c b9ca262f6ad4d030a3cab737ebf9b0b3c8b4ac80
+F src/fkey.c 4017dc6d8bf894c4818ffbaf392e53c7c68dd761
 F src/func.c 43916c1d8e6da5d107d91d2b212577d4f69a876a
 F src/global.c 9da4ca5d74b90715f0ec4957f3d17a4749009f34
 F src/hash.c 63d0ee752a3b92d4695b2b1f5259c4621b2cfebd
@@ -377,7 +377,7 @@ F src/os_win.c cf90abd4e50d9f56d2c20ce8e005aff55d7bd8e9
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 4e4aea7ced5734753ccbff4cf4bb4d032cf2173e
 F src/pager.h d1e944291030351f362a0a7da9b5c3e34e603e39
-F src/parse.y 0338f906b61e311c2b7e11a3f89b0092c780b664
+F src/parse.y 29153738a7322054359320eb00b5a4cd44389f20
 F src/pcache.c 5ff2a08f76a9c1b22f43eb063b7068fb085465ac
 F src/pcache.h 2cedcd8407eb23017d92790b112186886e179490
 F src/pcache1.c e3967219b2a92b9edcb9324a4ba75009090d3953
@@ -388,12 +388,12 @@ F src/printf.c f94da4935d1dd25420ac50c6745db1deb35e07c1
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c bb070cf5f23611c44ab7e4788803684e385fc3fb
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c 403775526d5e0e420924fe89f34256dc1dd98d48
+F src/select.c ee68944dfee9d548032bba3fdd5a6355011212c0
 F src/shell.c a3fc2c719ed6d381895cbdb66a4a9b6a791cb02e
 F src/sqlite.h.in e8e2d108d82647f0a812fdb74accf91c1ec08ddc
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
-F src/sqliteInt.h c471d791b10c0f2164c8b7a87adc338e703c09cc
+F src/sqliteInt.h bdfd92824dd50ff037373aaada276f90b168952d
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
@@ -471,8 +471,8 @@ F src/wal.h 06b2a0b599cc0f53ea97f497cf8c6b758c999f71
 F src/walker.c 91a6df7435827e41cff6bb7df50ea00934ee78b0
 F src/where.c 6bbf9284f4f15a6fa48663d033870cc0d7f5ee66
 F src/whereInt.h 2bcc3d176e6091cb8f50a30b65c006e88a73614d
-F src/wherecode.c 4ea298998499db5a407ffd70e87e119a86ed7834
-F src/whereexpr.c c19a84ac530835d37217db2181e4fe75901b7b97
+F src/wherecode.c 9a3b1034191c9ea8ac14a5405564402f8b1114b2
+F src/whereexpr.c 87ecdf24beba4498e4380b31c4131febb0a6ceaa
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1536,7 +1536,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e8247065cf1d929f42d13864f8a1886ed4d329cd
-R d584b43abf3b6acb5fcfedbaac517d67
-U dan
-Z 4afd164e190ae9a4d35011e09b19c24e
+P 0820f8b3dedfc846d187844847dfa8617539fc9a
+R 66c67520d75b6cc9d6a9f98310fc2b1f
+U drh
+Z aa79b15c8c6da20e9ca7087094bfadd8

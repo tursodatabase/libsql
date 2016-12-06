@@ -334,7 +334,7 @@ static void addWhereTerm(
   pE1 = sqlite3CreateColumnExpr(db, pSrc, iLeft, iColLeft);
   pE2 = sqlite3CreateColumnExpr(db, pSrc, iRight, iColRight);
 
-  pEq = sqlite3PExpr(pParse, TK_EQ, pE1, pE2, 0);
+  pEq = sqlite3PExpr(pParse, TK_EQ, pE1, pE2);
   if( pEq && isOuterJoin ){
     ExprSetProperty(pEq, EP_FromJoin);
     assert( !ExprHasProperty(pEq, EP_TokenOnly|EP_Reduced) );
@@ -4475,10 +4475,10 @@ static int selectExpander(Walker *pWalker, Select *p){
             if( longNames || pTabList->nSrc>1 ){
               Expr *pLeft;
               pLeft = sqlite3Expr(db, TK_ID, zTabName);
-              pExpr = sqlite3PExpr(pParse, TK_DOT, pLeft, pRight, 0);
+              pExpr = sqlite3PExpr(pParse, TK_DOT, pLeft, pRight);
               if( zSchemaName ){
                 pLeft = sqlite3Expr(db, TK_ID, zSchemaName);
-                pExpr = sqlite3PExpr(pParse, TK_DOT, pLeft, pExpr, 0);
+                pExpr = sqlite3PExpr(pParse, TK_DOT, pLeft, pExpr);
               }
               if( longNames ){
                 zColname = sqlite3MPrintf(db, "%s.%s", zTabName, zName);

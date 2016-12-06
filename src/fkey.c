@@ -584,7 +584,7 @@ static void fkScanChildren(
     assert( iCol>=0 );
     zCol = pFKey->pFrom->aCol[iCol].zName;
     pRight = sqlite3Expr(db, TK_ID, zCol);
-    pEq = sqlite3PExpr(pParse, TK_EQ, pLeft, pRight, 0);
+    pEq = sqlite3PExpr(pParse, TK_EQ, pLeft, pRight);
     pWhere = sqlite3ExprAnd(db, pWhere, pEq);
   }
 
@@ -606,7 +606,7 @@ static void fkScanChildren(
     if( HasRowid(pTab) ){
       pLeft = exprTableRegister(pParse, pTab, regData, -1);
       pRight = exprTableColumn(db, pTab, pSrc->a[0].iCursor, -1);
-      pNe = sqlite3PExpr(pParse, TK_NE, pLeft, pRight, 0);
+      pNe = sqlite3PExpr(pParse, TK_NE, pLeft, pRight);
     }else{
       Expr *pEq, *pAll = 0;
       Index *pPk = sqlite3PrimaryKeyIndex(pTab);
@@ -616,10 +616,10 @@ static void fkScanChildren(
         assert( iCol>=0 );
         pLeft = exprTableRegister(pParse, pTab, regData, iCol);
         pRight = exprTableColumn(db, pTab, pSrc->a[0].iCursor, iCol);
-        pEq = sqlite3PExpr(pParse, TK_EQ, pLeft, pRight, 0);
+        pEq = sqlite3PExpr(pParse, TK_EQ, pLeft, pRight);
         pAll = sqlite3ExprAnd(db, pAll, pEq);
       }
-      pNe = sqlite3PExpr(pParse, TK_NOT, pAll, 0, 0);
+      pNe = sqlite3PExpr(pParse, TK_NOT, pAll, 0);
     }
     pWhere = sqlite3ExprAnd(db, pWhere, pNe);
   }
@@ -1205,10 +1205,9 @@ static Trigger *fkActionTrigger(
       pEq = sqlite3PExpr(pParse, TK_EQ,
           sqlite3PExpr(pParse, TK_DOT, 
             sqlite3ExprAlloc(db, TK_ID, &tOld, 0),
-            sqlite3ExprAlloc(db, TK_ID, &tToCol, 0)
-          , 0),
+            sqlite3ExprAlloc(db, TK_ID, &tToCol, 0)),
           sqlite3ExprAlloc(db, TK_ID, &tFromCol, 0)
-      , 0);
+      );
       pWhere = sqlite3ExprAnd(db, pWhere, pEq);
 
       /* For ON UPDATE, construct the next term of the WHEN clause.
@@ -1220,13 +1219,11 @@ static Trigger *fkActionTrigger(
         pEq = sqlite3PExpr(pParse, TK_IS,
             sqlite3PExpr(pParse, TK_DOT, 
               sqlite3ExprAlloc(db, TK_ID, &tOld, 0),
-              sqlite3ExprAlloc(db, TK_ID, &tToCol, 0),
-              0),
+              sqlite3ExprAlloc(db, TK_ID, &tToCol, 0)),
             sqlite3PExpr(pParse, TK_DOT, 
               sqlite3ExprAlloc(db, TK_ID, &tNew, 0),
-              sqlite3ExprAlloc(db, TK_ID, &tToCol, 0),
-              0),
-            0);
+              sqlite3ExprAlloc(db, TK_ID, &tToCol, 0))
+            );
         pWhen = sqlite3ExprAnd(db, pWhen, pEq);
       }
   
@@ -1235,8 +1232,7 @@ static Trigger *fkActionTrigger(
         if( action==OE_Cascade ){
           pNew = sqlite3PExpr(pParse, TK_DOT, 
             sqlite3ExprAlloc(db, TK_ID, &tNew, 0),
-            sqlite3ExprAlloc(db, TK_ID, &tToCol, 0)
-          , 0);
+            sqlite3ExprAlloc(db, TK_ID, &tToCol, 0));
         }else if( action==OE_SetDflt ){
           Expr *pDflt = pFKey->pFrom->aCol[iFromCol].pDflt;
           if( pDflt ){
@@ -1292,7 +1288,7 @@ static Trigger *fkActionTrigger(
       pStep->pExprList = sqlite3ExprListDup(db, pList, EXPRDUP_REDUCE);
       pStep->pSelect = sqlite3SelectDup(db, pSelect, EXPRDUP_REDUCE);
       if( pWhen ){
-        pWhen = sqlite3PExpr(pParse, TK_NOT, pWhen, 0, 0);
+        pWhen = sqlite3PExpr(pParse, TK_NOT, pWhen, 0);
         pTrigger->pWhen = sqlite3ExprDup(db, pWhen, EXPRDUP_REDUCE);
       }
     }
