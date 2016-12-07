@@ -189,18 +189,18 @@ int sqlite3VdbeMemClearAndResize(Mem *pMem, int szNew){
 ** Return SQLITE_OK on success or SQLITE_NOMEM if malloc fails.
 */
 int sqlite3VdbeMemMakeWriteable(Mem *pMem){
-  int f;
   assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
   assert( (pMem->flags&MEM_RowSet)==0 );
-  ExpandBlob(pMem);
-  f = pMem->flags;
-  if( (f&(MEM_Str|MEM_Blob)) && (pMem->szMalloc==0 || pMem->z!=pMem->zMalloc) ){
-    if( sqlite3VdbeMemGrow(pMem, pMem->n + 2, 1) ){
-      return SQLITE_NOMEM_BKPT;
+  if( (pMem->flags & (MEM_Str|MEM_Blob))!=0 ){
+    if( ExpandBlob(pMem) ) return SQLITE_NOMEM;
+    if( pMem->szMalloc==0 || pMem->z!=pMem->zMalloc ){
+      if( sqlite3VdbeMemGrow(pMem, pMem->n + 2, 1) ){
+        return SQLITE_NOMEM_BKPT;
+      }
+      pMem->z[pMem->n] = 0;
+      pMem->z[pMem->n+1] = 0;
+      pMem->flags |= MEM_Term;
     }
-    pMem->z[pMem->n] = 0;
-    pMem->z[pMem->n+1] = 0;
-    pMem->flags |= MEM_Term;
   }
   pMem->flags &= ~MEM_Ephem;
 #ifdef SQLITE_DEBUG
@@ -216,25 +216,24 @@ int sqlite3VdbeMemMakeWriteable(Mem *pMem){
 */
 #ifndef SQLITE_OMIT_INCRBLOB
 int sqlite3VdbeMemExpandBlob(Mem *pMem){
-  if( pMem->flags & MEM_Zero ){
-    int nByte;
-    assert( pMem->flags&MEM_Blob );
-    assert( (pMem->flags&MEM_RowSet)==0 );
-    assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
+  int nByte;
+  assert( pMem->flags & MEM_Zero );
+  assert( pMem->flags&MEM_Blob );
+  assert( (pMem->flags&MEM_RowSet)==0 );
+  assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
 
-    /* Set nByte to the number of bytes required to store the expanded blob. */
-    nByte = pMem->n + pMem->u.nZero;
-    if( nByte<=0 ){
-      nByte = 1;
-    }
-    if( sqlite3VdbeMemGrow(pMem, nByte, 1) ){
-      return SQLITE_NOMEM_BKPT;
-    }
-
-    memset(&pMem->z[pMem->n], 0, pMem->u.nZero);
-    pMem->n += pMem->u.nZero;
-    pMem->flags &= ~(MEM_Zero|MEM_Term);
+  /* Set nByte to the number of bytes required to store the expanded blob. */
+  nByte = pMem->n + pMem->u.nZero;
+  if( nByte<=0 ){
+    nByte = 1;
   }
+  if( sqlite3VdbeMemGrow(pMem, nByte, 1) ){
+    return SQLITE_NOMEM_BKPT;
+  }
+
+  memset(&pMem->z[pMem->n], 0, pMem->u.nZero);
+  pMem->n += pMem->u.nZero;
+  pMem->flags &= ~(MEM_Zero|MEM_Term);
   return SQLITE_OK;
 }
 #endif
@@ -294,6 +293,7 @@ int sqlite3VdbeMemStringify(Mem *pMem, u8 enc, u8 bForce){
 
 
   if( sqlite3VdbeMemClearAndResize(pMem, nByte) ){
+    pMem->enc = 0;
     return SQLITE_NOMEM_BKPT;
   }
 
@@ -575,7 +575,7 @@ int sqlite3VdbeMemNumerify(Mem *pMem){
     }
   }
   assert( (pMem->flags & (MEM_Int|MEM_Real|MEM_Null))!=0 );
-  pMem->flags &= ~(MEM_Str|MEM_Blob);
+  pMem->flags &= ~(MEM_Str|MEM_Blob|MEM_Zero);
   return SQLITE_OK;
 }
 
@@ -593,7 +593,7 @@ void sqlite3VdbeMemCast(Mem *pMem, u8 aff, u8 encoding){
       if( (pMem->flags & MEM_Blob)==0 ){
         sqlite3ValueApplyAffinity(pMem, SQLITE_AFF_TEXT, encoding);
         assert( pMem->flags & MEM_Str || pMem->db->mallocFailed );
-        MemSetTypeFlag(pMem, MEM_Blob);
+        if( pMem->flags & MEM_Str ) MemSetTypeFlag(pMem, MEM_Blob);
       }else{
         pMem->flags &= ~(MEM_TypeMask&~MEM_Blob);
       }
@@ -934,10 +934,9 @@ int sqlite3VdbeMemSetStr(
 
 /*
 ** Move data out of a btree key or data field and into a Mem structure.
-** The data or key is taken from the entry that pCur is currently pointing
+** The data is payload from the entry that pCur is currently pointing
 ** to.  offset and amt determine what portion of the data or key to retrieve.
-** key is true to get the key or false to get data.  The result is written
-** into the pMem element.
+** The result is written into the pMem element.
 **
 ** The pMem object must have been initialized.  This routine will use
 ** pMem->zMalloc to hold the content from the btree, if possible.  New
@@ -952,17 +951,12 @@ static SQLITE_NOINLINE int vdbeMemFromBtreeResize(
   BtCursor *pCur,   /* Cursor pointing at record to retrieve. */
   u32 offset,       /* Offset from the start of data to return bytes from. */
   u32 amt,          /* Number of bytes to return. */
-  int key,          /* If true, retrieve from the btree key, not data. */
   Mem *pMem         /* OUT: Return data in this Mem structure. */
 ){
   int rc;
   pMem->flags = MEM_Null;
   if( SQLITE_OK==(rc = sqlite3VdbeMemClearAndResize(pMem, amt+2)) ){
-    if( key ){
-      rc = sqlite3BtreeKey(pCur, offset, amt, pMem->z);
-    }else{
-      rc = sqlite3BtreeData(pCur, offset, amt, pMem->z);
-    }
+    rc = sqlite3BtreePayload(pCur, offset, amt, pMem->z);
     if( rc==SQLITE_OK ){
       pMem->z[amt] = 0;
       pMem->z[amt+1] = 0;
@@ -978,7 +972,6 @@ int sqlite3VdbeMemFromBtree(
   BtCursor *pCur,   /* Cursor pointing at record to retrieve. */
   u32 offset,       /* Offset from the start of data to return bytes from. */
   u32 amt,          /* Number of bytes to return. */
-  int key,          /* If true, retrieve from the btree key, not data. */
   Mem *pMem         /* OUT: Return data in this Mem structure. */
 ){
   char *zData;        /* Data from the btree layer */
@@ -999,7 +992,7 @@ int sqlite3VdbeMemFromBtree(
     pMem->flags = MEM_Blob|MEM_Ephem;
     pMem->n = (int)amt;
   }else{
-    rc = vdbeMemFromBtreeResize(pCur, offset, amt, key, pMem);
+    rc = vdbeMemFromBtreeResize(pCur, offset, amt, pMem);
   }
 
   return rc;
@@ -1018,9 +1011,6 @@ static SQLITE_NOINLINE const void *valueToText(sqlite3_value* pVal, u8 enc){
   assert( (pVal->flags & (MEM_Null))==0 );
   if( pVal->flags & (MEM_Blob|MEM_Str) ){
     pVal->flags |= MEM_Str;
-    if( pVal->flags & MEM_Zero ){
-      sqlite3VdbeMemExpandBlob(pVal);
-    }
     if( pVal->enc != (enc & ~SQLITE_UTF16_ALIGNED) ){
       sqlite3VdbeChangeEncoding(pVal, enc & ~SQLITE_UTF16_ALIGNED);
     }
@@ -1273,10 +1263,7 @@ static int valueFromExpr(
   const char *zNeg = "";
   int rc = SQLITE_OK;
 
-  if( !pExpr ){
-    *ppVal = 0;
-    return SQLITE_OK;
-  }
+  assert( pExpr!=0 );
   while( (op = pExpr->op)==TK_UPLUS || op==TK_SPAN ) pExpr = pExpr->pLeft;
   if( NEVER(op==TK_REGISTER) ) op = pExpr->op2;
 
@@ -1400,7 +1387,7 @@ int sqlite3ValueFromExpr(
   u8 affinity,              /* Affinity to use */
   sqlite3_value **ppVal     /* Write the new value here */
 ){
-  return valueFromExpr(db, pExpr, enc, affinity, ppVal, 0);
+  return pExpr ? valueFromExpr(db, pExpr, enc, affinity, ppVal, 0) : 0;
 }
 
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
@@ -1520,9 +1507,9 @@ static int stat4ValueFromExpr(
 ** structures intended to be compared against sample index keys stored 
 ** in the sqlite_stat4 table.
 **
-** A single call to this function attempts to populates field iVal (leftmost 
-** is 0 etc.) of the unpacked record with a value extracted from expression
-** pExpr. Extraction of values is possible if:
+** A single call to this function populates zero or more fields of the
+** record starting with field iVal (fields are numbered from left to
+** right starting with 0). A single field is populated if:
 **
 **  * (pExpr==0). In this case the value is assumed to be an SQL NULL,
 **
@@ -1531,10 +1518,14 @@ static int stat4ValueFromExpr(
 **  * The sqlite3ValueFromExpr() function is able to extract a value 
 **    from the expression (i.e. the expression is a literal value).
 **
-** If a value can be extracted, the affinity passed as the 5th argument
-** is applied to it before it is copied into the UnpackedRecord. Output
-** parameter *pbOk is set to true if a value is extracted, or false 
-** otherwise.
+** Or, if pExpr is a TK_VECTOR, one field is populated for each of the
+** vector components that match either of the two latter criteria listed
+** above.
+**
+** Before any value is appended to the record, the affinity of the 
+** corresponding column within index pIdx is applied to it. Before
+** this function returns, output parameter *pnExtract is set to the
+** number of values appended to the record.
 **
 ** When this function is called, *ppRec must either point to an object
 ** allocated by an earlier call to this function, or must be NULL. If it
@@ -1550,22 +1541,33 @@ int sqlite3Stat4ProbeSetValue(
   Index *pIdx,                    /* Index being probed */
   UnpackedRecord **ppRec,         /* IN/OUT: Probe record */
   Expr *pExpr,                    /* The expression to extract a value from */
-  u8 affinity,                    /* Affinity to use */
+  int nElem,                      /* Maximum number of values to append */
   int iVal,                       /* Array element to populate */
-  int *pbOk                       /* OUT: True if value was extracted */
+  int *pnExtract                  /* OUT: Values appended to the record */
 ){
-  int rc;
-  sqlite3_value *pVal = 0;
-  struct ValueNewStat4Ctx alloc;
+  int rc = SQLITE_OK;
+  int nExtract = 0;
 
-  alloc.pParse = pParse;
-  alloc.pIdx = pIdx;
-  alloc.ppRec = ppRec;
-  alloc.iVal = iVal;
+  if( pExpr==0 || pExpr->op!=TK_SELECT ){
+    int i;
+    struct ValueNewStat4Ctx alloc;
 
-  rc = stat4ValueFromExpr(pParse, pExpr, affinity, &alloc, &pVal);
-  assert( pVal==0 || pVal->db==pParse->db );
-  *pbOk = (pVal!=0);
+    alloc.pParse = pParse;
+    alloc.pIdx = pIdx;
+    alloc.ppRec = ppRec;
+
+    for(i=0; i<nElem; i++){
+      sqlite3_value *pVal = 0;
+      Expr *pElem = (pExpr ? sqlite3VectorFieldSubexpr(pExpr, i) : 0);
+      u8 aff = sqlite3IndexColumnAffinity(pParse->db, pIdx, iVal+i);
+      alloc.iVal = iVal+i;
+      rc = stat4ValueFromExpr(pParse, pElem, aff, &alloc, &pVal);
+      if( !pVal ) break;
+      nExtract++;
+    }
+  }
+
+  *pnExtract = nExtract;
   return rc;
 }
 

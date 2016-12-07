@@ -192,7 +192,7 @@ static void attachFunc(
       case SQLITE_NULL:
         /* No key specified.  Use the key from the main database */
         sqlite3CodecGetKey(db, 0, (void**)&zKey, &nKey);
-        if( nKey>0 || sqlite3BtreeGetOptimalReserve(db->aDb[0].pBt)>0 ){
+        if( nKey || sqlite3BtreeGetOptimalReserve(db->aDb[0].pBt)>0 ){
           rc = sqlite3CodecAttach(db, db->nDb-1, zKey, nKey);
         }
         break;
@@ -325,6 +325,7 @@ static void codeAttach(
   sqlite3* db = pParse->db;
   int regArgs;
 
+  if( pParse->nErr ) goto attach_end;
   memset(&sName, 0, sizeof(NameContext));
   sName.pParse = pParse;
 
@@ -530,7 +531,7 @@ int sqlite3FixExpr(
         return 1;
       }
     }
-    if( ExprHasProperty(pExpr, EP_TokenOnly) ) break;
+    if( ExprHasProperty(pExpr, EP_TokenOnly|EP_Leaf) ) break;
     if( ExprHasProperty(pExpr, EP_xIsSelect) ){
       if( sqlite3FixSelect(pFix, pExpr->x.pSelect) ) return 1;
     }else{

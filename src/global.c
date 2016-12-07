@@ -79,16 +79,13 @@ const unsigned char sqlite3UpperToLower[] = {
 **
 **   (x & ~(map[x]&0x20))
 **
-** Standard function tolower() is implemented using the sqlite3UpperToLower[]
+** The equivalent of tolower() is implemented using the sqlite3UpperToLower[]
 ** array. tolower() is used more often than toupper() by SQLite.
 **
-** Bit 0x40 is set if the character non-alphanumeric and can be used in an 
+** Bit 0x40 is set if the character is non-alphanumeric and can be used in an 
 ** SQLite identifier.  Identifiers are alphanumerics, "_", "$", and any
 ** non-ASCII UTF character. Hence the test for whether or not a character is
 ** part of an identifier is 0x46.
-**
-** SQLite's versions are identical to the standard versions assuming a
-** locale of "C". They are implemented as macros in sqliteInt.h.
 */
 #ifdef SQLITE_ASCII
 const unsigned char sqlite3CtypeMap[256] = {
@@ -161,7 +158,7 @@ const unsigned char sqlite3CtypeMap[256] = {
 #endif
 
 /* Statement journals spill to disk when their size exceeds the following
-** threashold (in bytes). 0 means that statement journals are created and
+** threshold (in bytes). 0 means that statement journals are created and
 ** written to disk immediately (the default behavior for SQLite versions
 ** before 3.12.0).  -1 means always keep the entire statement journal in
 ** memory.  (The statement journal is also always held entirely in memory
@@ -225,7 +222,8 @@ SQLITE_WSD struct Sqlite3Config sqlite3Config = {
 #ifndef SQLITE_OMIT_BUILTIN_TEST
    0,                         /* xTestCallback */
 #endif
-   0                          /* bLocaltimeFault */
+   0,                         /* bLocaltimeFault */
+   0x7ffffffe                 /* iOnceResetThreshold */
 };
 
 /*
@@ -248,7 +246,7 @@ const Token sqlite3IntTokens[] = {
 ** The value of the "pending" byte must be 0x40000000 (1 byte past the
 ** 1-gibabyte boundary) in a compatible database.  SQLite never uses
 ** the database page that contains the pending byte.  It never attempts
-** to read or write that page.  The pending byte page is set assign
+** to read or write that page.  The pending byte page is set aside
 ** for use by the VFS layers as space for managing file locks.
 **
 ** During testing, it is often desirable to move the pending byte to

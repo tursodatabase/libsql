@@ -389,5 +389,19 @@ do_test delete-9.5 {
   set res
 } {1 a b 1 c d 2 a b 2 c d}
 
+do_execsql_test delete-10.0 {
+  CREATE TABLE t1(a INT UNIQUE, b INT);
+  INSERT INTO t1(a,b) VALUES('1','2');
+  SELECT * FROM t1 WHERE a='1' AND b='2';
+} {1 2}
+
+do_execsql_test delete-10.1 {
+  DELETE FROM t1 WHERE a='1' AND b='2';
+}
+
+do_execsql_test delete-10.2 {
+  SELECT * FROM t1 WHERE a='1' AND b='2';
+}
+
 
 finish_test

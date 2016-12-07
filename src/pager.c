@@ -817,9 +817,10 @@ static const unsigned char aJournalMagic[] = {
 ** rollback journal. Otherwise false.
 */
 #ifndef SQLITE_OMIT_WAL
-static int pagerUseWal(Pager *pPager){
+int sqlite3PagerUseWal(Pager *pPager){
   return (pPager->pWal!=0);
 }
+# define pagerUseWal(x) sqlite3PagerUseWal(x)
 #else
 # define pagerUseWal(x) 0
 # define pagerRollbackWal(x) 0
@@ -4021,9 +4022,10 @@ static void pagerFreeMapHdrs(Pager *pPager){
 ** a hot journal may be left in the filesystem but no error is returned
 ** to the caller.
 */
-int sqlite3PagerClose(Pager *pPager){
+int sqlite3PagerClose(Pager *pPager, sqlite3 *db){
   u8 *pTmp = (u8 *)pPager->pTmpSpace;
 
+  assert( db || pagerUseWal(pPager)==0 );
   assert( assert_pager_state(pPager) );
   disable_simulated_io_errors();
   sqlite3BeginBenignMalloc();
@@ -4031,7 +4033,10 @@ int sqlite3PagerClose(Pager *pPager){
   /* pPager->errCode = 0; */
   pPager->exclusiveMode = 0;
 #ifndef SQLITE_OMIT_WAL
-  sqlite3WalClose(pPager->pWal, pPager->ckptSyncFlags, pPager->pageSize, pTmp);
+  assert( db || pPager->pWal==0 );
+  sqlite3WalClose(pPager->pWal, db, pPager->ckptSyncFlags, pPager->pageSize,
+      (db && (db->flags & SQLITE_NoCkptOnClose) ? 0 : pTmp)
+  );
   pPager->pWal = 0;
 #endif
   pager_reset(pPager);
@@ -6656,7 +6661,11 @@ int sqlite3PagerOpenSavepoint(Pager *pPager, int nSavepoint){
 ** savepoint. If no errors occur, SQLITE_OK is returned.
 */ 
 int sqlite3PagerSavepoint(Pager *pPager, int op, int iSavepoint){
-  int rc = pPager->errCode;       /* Return code */
+  int rc = pPager->errCode;
+  
+#ifdef SQLITE_ENABLE_ZIPVFS
+  if( op==SAVEPOINT_RELEASE ) rc = SQLITE_OK;
+#endif
 
   assert( op==SAVEPOINT_RELEASE || op==SAVEPOINT_ROLLBACK );
   assert( iSavepoint>=0 || op==SAVEPOINT_ROLLBACK );
@@ -6697,6 +6706,20 @@ int sqlite3PagerSavepoint(Pager *pPager, int op, int iSavepoint){
       rc = pagerPlaybackSavepoint(pPager, pSavepoint);
       assert(rc!=SQLITE_DONE);
     }
+    
+#ifdef SQLITE_ENABLE_ZIPVFS
+    /* If the cache has been modified but the savepoint cannot be rolled 
+    ** back journal_mode=off, put the pager in the error state. This way,
+    ** if the VFS used by this pager includes ZipVFS, the entire transaction
+    ** can be rolled back at the ZipVFS level.  */
+    else if( 
+        pPager->journalMode==PAGER_JOURNALMODE_OFF 
+     && pPager->eState>=PAGER_WRITER_CACHEMOD
+    ){
+      pPager->errCode = SQLITE_ABORT;
+      pPager->eState = PAGER_ERROR;
+    }
+#endif
   }
 
   return rc;
@@ -7176,10 +7199,16 @@ void sqlite3PagerClearCache(Pager *pPager){
 **
 ** Parameter eMode is one of SQLITE_CHECKPOINT_PASSIVE, FULL or RESTART.
 */
-int sqlite3PagerCheckpoint(Pager *pPager, int eMode, int *pnLog, int *pnCkpt){
+int sqlite3PagerCheckpoint(
+  Pager *pPager,                  /* Checkpoint on this pager */
+  sqlite3 *db,                    /* Db handle used to check for interrupts */
+  int eMode,                      /* Type of checkpoint */
+  int *pnLog,                     /* OUT: Final number of frames in log */
+  int *pnCkpt                     /* OUT: Final number of checkpointed frames */
+){
   int rc = SQLITE_OK;
   if( pPager->pWal ){
-    rc = sqlite3WalCheckpoint(pPager->pWal, eMode,
+    rc = sqlite3WalCheckpoint(pPager->pWal, db, eMode,
         (eMode==SQLITE_CHECKPOINT_PASSIVE ? 0 : pPager->xBusyHandler),
         pPager->pBusyHandlerArg,
         pPager->ckptSyncFlags, pPager->pageSize, (u8 *)pPager->pTmpSpace,
@@ -7311,7 +7340,7 @@ int sqlite3PagerOpenWal(
 ** error (SQLITE_BUSY) is returned and the log connection is not closed.
 ** If successful, the EXCLUSIVE lock is not released before returning.
 */
-int sqlite3PagerCloseWal(Pager *pPager){
+int sqlite3PagerCloseWal(Pager *pPager, sqlite3 *db){
   int rc = SQLITE_OK;
 
   assert( pPager->journalMode==PAGER_JOURNALMODE_WAL );
@@ -7339,7 +7368,7 @@ int sqlite3PagerCloseWal(Pager *pPager){
   if( rc==SQLITE_OK && pPager->pWal ){
     rc = pagerExclusiveLock(pPager);
     if( rc==SQLITE_OK ){
-      rc = sqlite3WalClose(pPager->pWal, pPager->ckptSyncFlags,
+      rc = sqlite3WalClose(pPager->pWal, db, pPager->ckptSyncFlags,
                            pPager->pageSize, (u8*)pPager->pTmpSpace);
       pPager->pWal = 0;
       pagerFixMaplimit(pPager);
@@ -7371,6 +7400,20 @@ int sqlite3PagerSnapshotOpen(Pager *pPager, sqlite3_snapshot *pSnapshot){
   int rc = SQLITE_OK;
   if( pPager->pWal ){
     sqlite3WalSnapshotOpen(pPager->pWal, pSnapshot);
+  }else{
+    rc = SQLITE_ERROR;
+  }
+  return rc;
+}
+
+/*
+** If this is a WAL database, call sqlite3WalSnapshotRecover(). If this 
+** is not a WAL database, return an error.
+*/
+int sqlite3PagerSnapshotRecover(Pager *pPager){
+  int rc;
+  if( pPager->pWal ){
+    rc = sqlite3WalSnapshotRecover(pPager->pWal);
   }else{
     rc = SQLITE_ERROR;
   }

@@ -1723,6 +1723,7 @@ static void walRestartHdr(Wal *pWal, u32 salt1){
 */
 static int walCheckpoint(
   Wal *pWal,                      /* Wal connection */
+  sqlite3 *db,                    /* Check for interrupts on this handle */
   int eMode,                      /* One of PASSIVE, FULL or RESTART */
   int (*xBusy)(void*),            /* Function to call when busy */
   void *pBusyArg,                 /* Context argument for xBusyHandler */
@@ -1817,6 +1818,10 @@ static int walCheckpoint(
       while( rc==SQLITE_OK && 0==walIteratorNext(pIter, &iDbpage, &iFrame) ){
         i64 iOffset;
         assert( walFramePgno(pWal, iFrame)==iDbpage );
+        if( db->u1.isInterrupted ){
+          rc = db->mallocFailed ? SQLITE_NOMEM_BKPT : SQLITE_INTERRUPT;
+          break;
+        }
         if( iFrame<=nBackfill || iFrame>mxSafeFrame || iDbpage>mxPage ){
           continue;
         }
@@ -1921,6 +1926,7 @@ static void walLimitSize(Wal *pWal, i64 nMax){
 */
 int sqlite3WalClose(
   Wal *pWal,                      /* Wal to close */
+  sqlite3 *db,                    /* For interrupt flag */
   int sync_flags,                 /* Flags to pass to OsSync() (or 0) */
   int nBuf,
   u8 *zBuf                        /* Buffer of at least nBuf bytes */
@@ -1937,13 +1943,14 @@ int sqlite3WalClose(
     **
     ** The EXCLUSIVE lock is not released before returning.
     */
-    rc = sqlite3OsLock(pWal->pDbFd, SQLITE_LOCK_EXCLUSIVE);
-    if( rc==SQLITE_OK ){
+    if( zBuf!=0
+     && SQLITE_OK==(rc = sqlite3OsLock(pWal->pDbFd, SQLITE_LOCK_EXCLUSIVE))
+    ){
       if( pWal->exclusiveMode==WAL_NORMAL_MODE ){
         pWal->exclusiveMode = WAL_EXCLUSIVE_MODE;
       }
-      rc = sqlite3WalCheckpoint(
-          pWal, SQLITE_CHECKPOINT_PASSIVE, 0, 0, sync_flags, nBuf, zBuf, 0, 0
+      rc = sqlite3WalCheckpoint(pWal, db, 
+          SQLITE_CHECKPOINT_PASSIVE, 0, 0, sync_flags, nBuf, zBuf, 0, 0
       );
       if( rc==SQLITE_OK ){
         int bPersist = -1;
@@ -2372,6 +2379,84 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
   return rc;
 }
 
+#ifdef SQLITE_ENABLE_SNAPSHOT
+/*
+** Attempt to reduce the value of the WalCkptInfo.nBackfillAttempted 
+** variable so that older snapshots can be accessed. To do this, loop
+** through all wal frames from nBackfillAttempted to (nBackfill+1), 
+** comparing their content to the corresponding page with the database
+** file, if any. Set nBackfillAttempted to the frame number of the
+** first frame for which the wal file content matches the db file.
+**
+** This is only really safe if the file-system is such that any page 
+** writes made by earlier checkpointers were atomic operations, which 
+** is not always true. It is also possible that nBackfillAttempted
+** may be left set to a value larger than expected, if a wal frame
+** contains content that duplicate of an earlier version of the same
+** page.
+**
+** SQLITE_OK is returned if successful, or an SQLite error code if an
+** error occurs. It is not an error if nBackfillAttempted cannot be
+** decreased at all.
+*/
+int sqlite3WalSnapshotRecover(Wal *pWal){
+  int rc;
+
+  assert( pWal->readLock>=0 );
+  rc = walLockExclusive(pWal, WAL_CKPT_LOCK, 1);
+  if( rc==SQLITE_OK ){
+    volatile WalCkptInfo *pInfo = walCkptInfo(pWal);
+    int szPage = (int)pWal->szPage;
+    i64 szDb;                   /* Size of db file in bytes */
+
+    rc = sqlite3OsFileSize(pWal->pDbFd, &szDb);
+    if( rc==SQLITE_OK ){
+      void *pBuf1 = sqlite3_malloc(szPage);
+      void *pBuf2 = sqlite3_malloc(szPage);
+      if( pBuf1==0 || pBuf2==0 ){
+        rc = SQLITE_NOMEM;
+      }else{
+        u32 i = pInfo->nBackfillAttempted;
+        for(i=pInfo->nBackfillAttempted; i>pInfo->nBackfill; i--){
+          volatile ht_slot *dummy;
+          volatile u32 *aPgno;      /* Array of page numbers */
+          u32 iZero;                /* Frame corresponding to aPgno[0] */
+          u32 pgno;                 /* Page number in db file */
+          i64 iDbOff;               /* Offset of db file entry */
+          i64 iWalOff;              /* Offset of wal file entry */
+
+          rc = walHashGet(pWal, walFramePage(i), &dummy, &aPgno, &iZero);
+          if( rc!=SQLITE_OK ) break;
+          pgno = aPgno[i-iZero];
+          iDbOff = (i64)(pgno-1) * szPage;
+
+          if( iDbOff+szPage<=szDb ){
+            iWalOff = walFrameOffset(i, szPage) + WAL_FRAME_HDRSIZE;
+            rc = sqlite3OsRead(pWal->pWalFd, pBuf1, szPage, iWalOff);
+
+            if( rc==SQLITE_OK ){
+              rc = sqlite3OsRead(pWal->pDbFd, pBuf2, szPage, iDbOff);
+            }
+
+            if( rc!=SQLITE_OK || 0==memcmp(pBuf1, pBuf2, szPage) ){
+              break;
+            }
+          }
+
+          pInfo->nBackfillAttempted = i-1;
+        }
+      }
+
+      sqlite3_free(pBuf1);
+      sqlite3_free(pBuf2);
+    }
+    walUnlockExclusive(pWal, WAL_CKPT_LOCK, 1);
+  }
+
+  return rc;
+}
+#endif /* SQLITE_ENABLE_SNAPSHOT */
+
 /*
 ** Begin a read transaction on the database.
 **
@@ -2434,7 +2519,11 @@ int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
       ** has not yet set the pInfo->nBackfillAttempted variable to indicate 
       ** its intent. To avoid the race condition this leads to, ensure that
       ** there is no checkpointer process by taking a shared CKPT lock 
-      ** before checking pInfo->nBackfillAttempted.  */
+      ** before checking pInfo->nBackfillAttempted.  
+      **
+      ** TODO: Does the aReadMark[] lock prevent a checkpointer from doing
+      **       this already?
+      */
       rc = walLockShared(pWal, WAL_CKPT_LOCK);
 
       if( rc==SQLITE_OK ){
@@ -3191,6 +3280,7 @@ int sqlite3WalFrames(
 */
 int sqlite3WalCheckpoint(
   Wal *pWal,                      /* Wal connection */
+  sqlite3 *db,                    /* Check this handle's interrupt flag */
   int eMode,                      /* PASSIVE, FULL, RESTART, or TRUNCATE */
   int (*xBusy)(void*),            /* Function to call when busy */
   void *pBusyArg,                 /* Context argument for xBusyHandler */
@@ -3265,7 +3355,7 @@ int sqlite3WalCheckpoint(
     if( pWal->hdr.mxFrame && walPagesize(pWal)!=nBuf ){
       rc = SQLITE_CORRUPT_BKPT;
     }else{
-      rc = walCheckpoint(pWal, eMode2, xBusy2, pBusyArg, sync_flags, zBuf);
+      rc = walCheckpoint(pWal, db, eMode2, xBusy2, pBusyArg, sync_flags, zBuf);
     }
 
     /* If no error occurred, set the output variables. */
@@ -3385,9 +3475,14 @@ int sqlite3WalHeapMemory(Wal *pWal){
 int sqlite3WalSnapshotGet(Wal *pWal, sqlite3_snapshot **ppSnapshot){
   int rc = SQLITE_OK;
   WalIndexHdr *pRet;
+  static const u32 aZero[4] = { 0, 0, 0, 0 };
 
   assert( pWal->readLock>=0 && pWal->writeLock==0 );
 
+  if( memcmp(&pWal->hdr.aFrameCksum[0],aZero,16)==0 ){
+    *ppSnapshot = 0;
+    return SQLITE_ERROR;
+  }
   pRet = (WalIndexHdr*)sqlite3_malloc(sizeof(WalIndexHdr));
   if( pRet==0 ){
     rc = SQLITE_NOMEM_BKPT;

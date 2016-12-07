@@ -714,6 +714,12 @@ Tcl_SetVar2(interp, "sqlite_options", "mergesort", "1", TCL_GLOBAL_ONLY);
   Tcl_SetVar2(interp, "sqlite_options", "sqllog", "0", TCL_GLOBAL_ONLY);
 #endif
 
+#ifdef SQLITE_ENABLE_URI_00_ERROR
+  Tcl_SetVar2(interp, "sqlite_options", "uri_00_error", "1", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "uri_00_error", "0", TCL_GLOBAL_ONLY);
+#endif
+
 #define LINKVAR(x) { \
     static const int cv_ ## x = SQLITE_ ## x; \
     Tcl_LinkVar(interp, "SQLITE_" #x, (char *)&(cv_ ## x), \

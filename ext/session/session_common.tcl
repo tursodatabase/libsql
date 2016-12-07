@@ -75,6 +75,9 @@ proc do_common_sql {sql} {
 }
 
 proc changeset_from_sql {sql {dbname main}} {
+  if {$dbname == "main"} {
+    return [sql_exec_changeset db $sql]
+  }
   set rc [catch {
     sqlite3session S db $dbname
     db eval "SELECT name FROM $dbname.sqlite_master WHERE type = 'table'" {

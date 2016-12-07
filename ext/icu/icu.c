@@ -349,7 +349,7 @@ static void icuRegexpFunc(sqlite3_context *p, int nArg, sqlite3_value **apArg){
 ** of upper() or lower().
 **
 **     lower('I', 'en_us') -> 'i'
-**     lower('I', 'tr_tr') -> 'ı' (small dotless i)
+**     lower('I', 'tr_tr') -> '\u131' (small dotless i)
 **
 ** http://www.icu-project.org/userguide/posix.html#case_mappings
 */
@@ -500,20 +500,20 @@ int sqlite3IcuInit(sqlite3 *db){
     void *pContext;                           /* sqlite3_user_data() context */
     void (*xFunc)(sqlite3_context*,int,sqlite3_value**);
   } scalars[] = {
-    {"regexp", 2, SQLITE_ANY,          0, icuRegexpFunc},
+    {"regexp", 2, SQLITE_ANY|SQLITE_DETERMINISTIC,          0, icuRegexpFunc},
 
-    {"lower",  1, SQLITE_UTF16,        0, icuCaseFunc16},
-    {"lower",  2, SQLITE_UTF16,        0, icuCaseFunc16},
-    {"upper",  1, SQLITE_UTF16, (void*)1, icuCaseFunc16},
-    {"upper",  2, SQLITE_UTF16, (void*)1, icuCaseFunc16},
+    {"lower",  1, SQLITE_UTF16|SQLITE_DETERMINISTIC,        0, icuCaseFunc16},
+    {"lower",  2, SQLITE_UTF16|SQLITE_DETERMINISTIC,        0, icuCaseFunc16},
+    {"upper",  1, SQLITE_UTF16|SQLITE_DETERMINISTIC, (void*)1, icuCaseFunc16},
+    {"upper",  2, SQLITE_UTF16|SQLITE_DETERMINISTIC, (void*)1, icuCaseFunc16},
 
-    {"lower",  1, SQLITE_UTF8,         0, icuCaseFunc16},
-    {"lower",  2, SQLITE_UTF8,         0, icuCaseFunc16},
-    {"upper",  1, SQLITE_UTF8,  (void*)1, icuCaseFunc16},
-    {"upper",  2, SQLITE_UTF8,  (void*)1, icuCaseFunc16},
+    {"lower",  1, SQLITE_UTF8|SQLITE_DETERMINISTIC,         0, icuCaseFunc16},
+    {"lower",  2, SQLITE_UTF8|SQLITE_DETERMINISTIC,         0, icuCaseFunc16},
+    {"upper",  1, SQLITE_UTF8|SQLITE_DETERMINISTIC,  (void*)1, icuCaseFunc16},
+    {"upper",  2, SQLITE_UTF8|SQLITE_DETERMINISTIC,  (void*)1, icuCaseFunc16},
 
-    {"like",   2, SQLITE_UTF8,         0, icuLikeFunc},
-    {"like",   3, SQLITE_UTF8,         0, icuLikeFunc},
+    {"like",   2, SQLITE_UTF8|SQLITE_DETERMINISTIC,         0, icuLikeFunc},
+    {"like",   3, SQLITE_UTF8|SQLITE_DETERMINISTIC,         0, icuLikeFunc},
 
     {"icu_load_collation",  2, SQLITE_UTF8, (void*)db, icuLoadCollation},
   };

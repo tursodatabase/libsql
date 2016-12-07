@@ -24,6 +24,20 @@ USE_AMALGAMATION = 1
 USE_FULLWARN = 0
 !ENDIF
 
+# Set this non-0 to enable full runtime error checks (-RTC1, etc).  This
+# has no effect if (any) optimizations are enabled.
+#
+!IFNDEF USE_RUNTIME_CHECKS
+USE_RUNTIME_CHECKS = 0
+!ENDIF
+
+# Set this non-0 to create a SQLite amalgamation file that excludes the
+# various built-in extensions.
+#
+!IFNDEF MINIMAL_AMALGAMATION
+MINIMAL_AMALGAMATION = 0
+!ENDIF
+
 # Set this non-0 to use "stdcall" calling convention for the core library
 # and shell executable.
 #
@@ -263,12 +277,39 @@ SQLITE3EXEPDB = /pdb:sqlite3sh.pdb
 !ENDIF
 !ENDIF
 
+# <<mark>>
+# These are the names of the customized Tcl header files used by various parts
+# of this makefile when the stdcall calling convention is in use.  It is not
+# used for any other purpose.
+#
+!IFNDEF SQLITETCLH
+SQLITETCLH = sqlite_tcl.h
+!ENDIF
+
+!IFNDEF SQLITETCLDECLSH
+SQLITETCLDECLSH = sqlite_tclDecls.h
+!ENDIF
+
+# These are the additional targets that the targets that integrate with the
+# Tcl library should depend on when compiling, etc.
+#
+!IFNDEF SQLITE_TCL_DEP
+!IF $(USE_STDCALL)!=0 || $(FOR_WIN10)!=0
+SQLITE_TCL_DEP = $(SQLITETCLDECLSH) $(SQLITETCLH)
+!ELSE
+SQLITE_TCL_DEP =
+!ENDIF
+!ENDIF
+# <</mark>>
+
 # These are the "standard" SQLite compilation options used when compiling for
 # the Windows platform.
 #
 !IFNDEF OPT_FEATURE_FLAGS
+!IF $(MINIMAL_AMALGAMATION)==0
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_FTS3=1
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_RTREE=1
+!ENDIF
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_COLUMN_METADATA=1
 !ENDIF
 
@@ -464,20 +505,32 @@ RCC = $(RC) -DSQLITE_OS_WIN=1 -I. -I$(TOP) -I$(TOP)\src $(RCOPTS) $(RCCOPTS)
 #
 !IF $(USE_STDCALL)!=0 || $(FOR_WIN10)!=0
 !IF "$(PLATFORM)"=="x86"
-CORE_CCONV_OPTS = -Gz -DSQLITE_CDECL=__cdecl -DSQLITE_STDCALL=__stdcall
-SHELL_CCONV_OPTS = -Gz -DSQLITE_CDECL=__cdecl -DSQLITE_STDCALL=__stdcall
+CORE_CCONV_OPTS = -Gz -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall
+SHELL_CCONV_OPTS = -Gz -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall
+# <<mark>>
+TEST_CCONV_OPTS = -Gz -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall -DINCLUDE_SQLITE_TCL_H=1 -DSQLITE_TCLAPI=__cdecl
+# <</mark>>
 !ELSE
 !IFNDEF PLATFORM
-CORE_CCONV_OPTS = -Gz -DSQLITE_CDECL=__cdecl -DSQLITE_STDCALL=__stdcall
-SHELL_CCONV_OPTS = -Gz -DSQLITE_CDECL=__cdecl -DSQLITE_STDCALL=__stdcall
+CORE_CCONV_OPTS = -Gz -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall
+SHELL_CCONV_OPTS = -Gz -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall
+# <<mark>>
+TEST_CCONV_OPTS = -Gz -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall -DINCLUDE_SQLITE_TCL_H=1 -DSQLITE_TCLAPI=__cdecl
+# <</mark>>
 !ELSE
 CORE_CCONV_OPTS =
 SHELL_CCONV_OPTS =
+# <<mark>>
+TEST_CCONV_OPTS =
+# <</mark>>
 !ENDIF
 !ENDIF
 !ELSE
 CORE_CCONV_OPTS =
 SHELL_CCONV_OPTS =
+# <<mark>>
+TEST_CCONV_OPTS =
+# <</mark>>
 !ENDIF
 
 # These are additional compiler options used for the core library.
@@ -630,11 +683,34 @@ RCC = $(RCC) -I$(TOP)\ext\session
 # options are necessary in order to allow debugging symbols to
 # work correctly with Visual Studio when using the amalgamation.
 #
+!IFNDEF MKSQLITE3C_TOOL
+!IF $(MINIMAL_AMALGAMATION)!=0
+MKSQLITE3C_TOOL = $(TOP)\tool\mksqlite3c-noext.tcl
+!ELSE
+MKSQLITE3C_TOOL = $(TOP)\tool\mksqlite3c.tcl
+!ENDIF
+!ENDIF
+
 !IFNDEF MKSQLITE3C_ARGS
 !IF $(DEBUG)>1
 MKSQLITE3C_ARGS = --linemacros
 !ELSE
 MKSQLITE3C_ARGS =
+!ENDIF
+!IF $(USE_STDCALL)!=0 || $(FOR_WIN10)!=0
+MKSQLITE3C_ARGS = $(MKSQLITE3C_ARGS) --useapicall
+!ENDIF
+!ENDIF
+
+# The mksqlite3h.tcl script accepts some options on the command line.
+# When compiling with stdcall support, some of these options are
+# necessary.
+#
+!IFNDEF MKSQLITE3H_ARGS
+!IF $(USE_STDCALL)!=0 || $(FOR_WIN10)!=0
+MKSQLITE3H_ARGS = --useapicall
+!ELSE
+MKSQLITE3H_ARGS =
 !ENDIF
 !ENDIF
 # <</mark>>
@@ -718,11 +794,11 @@ TCLLIBDIR = c:\tcl\lib
 !ENDIF
 
 !IFNDEF LIBTCL
-LIBTCL = tcl85.lib
+LIBTCL = tcl86.lib
 !ENDIF
 
 !IFNDEF LIBTCLSTUB
-LIBTCLSTUB = tclstub85.lib
+LIBTCLSTUB = tclstub86.lib
 !ENDIF
 
 !IFNDEF LIBTCLPATH
@@ -752,7 +828,7 @@ LIBICU = icuuc.lib icuin.lib
 # specific Tcl shell to use.
 #
 !IFNDEF TCLSH_CMD
-TCLSH_CMD = tclsh85
+TCLSH_CMD = tclsh
 !ENDIF
 # <</mark>>
 
@@ -835,6 +911,10 @@ RCC = $(RCC) -D_DEBUG
 !IF $(DEBUG)>1 || $(OPTIMIZATIONS)==0
 TCC = $(TCC) -Od
 BCC = $(BCC) -Od
+!IF $(USE_RUNTIME_CHECKS)!=0
+TCC = $(TCC) -RTC1
+BCC = $(BCC) -RTC1
+!ENDIF
 !ELSEIF $(OPTIMIZATIONS)>=3
 TCC = $(TCC) -Ox
 BCC = $(BCC) -Ox
@@ -1235,6 +1315,16 @@ SRC11 = \
   parse.h \
   $(SQLITE3H)
 
+# Generated Tcl header files
+#
+!IF $(USE_STDCALL)!=0 || $(FOR_WIN10)!=0
+SRC12 = \
+  $(SQLITETCLH) \
+  $(SQLITETCLDECLSH)
+!ELSE
+SRC12 =
+!ENDIF
+
 # All source code files.
 #
 SRC = $(SRC00) $(SRC01) $(SRC02) $(SRC03) $(SRC04) $(SRC05) $(SRC06) $(SRC07) $(SRC08) $(SRC09) $(SRC10) $(SRC11)
@@ -1258,6 +1348,7 @@ TESTSRC = \
   $(TOP)\src\test_blob.c \
   $(TOP)\src\test_btree.c \
   $(TOP)\src\test_config.c \
+  $(TOP)\src\test_delete.c \
   $(TOP)\src\test_demovfs.c \
   $(TOP)\src\test_devsym.c \
   $(TOP)\src\test_fs.c \
@@ -1305,6 +1396,7 @@ TESTEXT = \
   $(TOP)\ext\misc\nextchar.c \
   $(TOP)\ext\misc\percentile.c \
   $(TOP)\ext\misc\regexp.c \
+  $(TOP)\ext\misc\remember.c \
   $(TOP)\ext\misc\series.c \
   $(TOP)\ext\misc\spellfix.c \
   $(TOP)\ext\misc\totype.c \
@@ -1341,7 +1433,7 @@ HDR = \
    parse.h \
    $(TOP)\src\pragma.h \
    $(SQLITE3H) \
-   $(TOP)\src\sqlite3ext.h \
+   sqlite3ext.h \
    $(TOP)\src\sqliteInt.h \
    $(TOP)\src\sqliteLimit.h \
    $(TOP)\src\vdbe.h \
@@ -1388,7 +1480,8 @@ FUZZDATA = \
   $(TOP)\test\fuzzdata1.db \
   $(TOP)\test\fuzzdata2.db \
   $(TOP)\test\fuzzdata3.db \
-  $(TOP)\test\fuzzdata4.db
+  $(TOP)\test\fuzzdata4.db \
+  $(TOP)\test\fuzzdata5.db
 # <</mark>>
 
 # Additional compiler options for the shell.  These are only effective
@@ -1403,7 +1496,9 @@ SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_SHELL_JSON1 -DSQLITE_ENABLE_
 #
 MPTESTER_COMPILE_OPTS = -DSQLITE_SHELL_JSON1 -DSQLITE_ENABLE_FTS5
 FUZZERSHELL_COMPILE_OPTS = -DSQLITE_ENABLE_JSON1
-FUZZCHECK_COMPILE_OPTS = -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_MEMSYS5
+FUZZCHECK_COMPILE_OPTS = -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_MEMSYS5 -DSQLITE_OSS_FUZZ
+FUZZCHECK_SRC = $(TOP)\test\fuzzcheck.c $(TOP)\test\ossfuzz.c
+OSSSHELL_SRC = $(TOP)\test\ossshell.c $(TOP)\test\ossfuzz.c
 
 # Standard options to testfixture.
 #
@@ -1473,8 +1568,11 @@ sourcetest:	srcck1.exe sqlite3.c
 fuzzershell.exe:	$(TOP)\tool\fuzzershell.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(FUZZERSHELL_COMPILE_OPTS) $(TOP)\tool\fuzzershell.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
-fuzzcheck.exe:	$(TOP)\test\fuzzcheck.c $(SQLITE3C) $(SQLITE3H)
-	$(LTLINK) $(NO_WARN) $(FUZZCHECK_COMPILE_OPTS) $(TOP)\test\fuzzcheck.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
+fuzzcheck.exe:	$(FUZZCHECK_SRC) $(SQLITE3C) $(SQLITE3H)
+	$(LTLINK) $(NO_WARN) $(FUZZCHECK_COMPILE_OPTS) $(FUZZCHECK_SRC) $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
+
+ossshell.exe:	$(OSSSHELL_SRC) $(SQLITE3C) $(SQLITE3H)
+	$(LTLINK) $(NO_WARN) $(FUZZCHECK_COMPILE_OPTS) $(OSSSHELL_SRC) $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
 mptester.exe:	$(TOP)\mptest\mptest.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(MPTESTER_COMPILE_OPTS) $(TOP)\mptest\mptest.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
@@ -1499,7 +1597,7 @@ mptest:	mptester.exe
 # files are automatically generated.  This target takes care of
 # all that automatic generation.
 #
-.target_source:	$(SRC) $(TOP)\tool\vdbe-compress.tcl fts5.c
+.target_source:	$(SRC) $(TOP)\tool\vdbe-compress.tcl fts5.c $(SQLITE_TCL_DEP)
 	-rmdir /Q/S tsrc 2>NUL
 	-mkdir tsrc
 	for %i in ($(SRC00)) do copy /Y %i tsrc
@@ -1514,6 +1612,7 @@ mptest:	mptester.exe
 	for %i in ($(SRC09)) do copy /Y %i tsrc
 	for %i in ($(SRC10)) do copy /Y %i tsrc
 	for %i in ($(SRC11)) do copy /Y %i tsrc
+	for %i in ($(SRC12)) do copy /Y %i tsrc
 	copy /Y fts5.c tsrc
 	copy /Y fts5.h tsrc
 	del /Q tsrc\sqlite.h.in tsrc\parse.y 2>NUL
@@ -1521,8 +1620,8 @@ mptest:	mptester.exe
 	move vdbe.new tsrc\vdbe.c
 	echo > .target_source
 
-sqlite3.c:	.target_source sqlite3ext.h $(TOP)\tool\mksqlite3c.tcl
-	$(TCLSH_CMD) $(TOP)\tool\mksqlite3c.tcl $(MKSQLITE3C_ARGS)
+sqlite3.c:	.target_source sqlite3ext.h $(MKSQLITE3C_TOOL)
+	$(TCLSH_CMD) $(MKSQLITE3C_TOOL) $(MKSQLITE3C_ARGS)
 	copy tsrc\shell.c .
 	copy $(TOP)\ext\session\sqlite3session.h .
 
@@ -1795,10 +1894,10 @@ wherecode.lo:	$(TOP)\src\wherecode.c $(HDR)
 whereexpr.lo:	$(TOP)\src\whereexpr.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\whereexpr.c
 
-tclsqlite.lo:	$(TOP)\src\tclsqlite.c $(HDR)
+tclsqlite.lo:	$(TOP)\src\tclsqlite.c $(HDR) $(SQLITE_TCL_DEP)
 	$(LTCOMPILE) $(NO_WARN) -DUSE_TCL_STUBS=1 -DBUILD_sqlite -I$(TCLINCDIR) -c $(TOP)\src\tclsqlite.c
 
-tclsqlite-shell.lo:	$(TOP)\src\tclsqlite.c $(HDR)
+tclsqlite-shell.lo:	$(TOP)\src\tclsqlite.c $(HDR) $(SQLITE_TCL_DEP)
 	$(LTCOMPILE) $(NO_WARN) -DTCLSH=1 -DBUILD_sqlite -I$(TCLINCDIR) -c $(TOP)\src\tclsqlite.c
 
 tclsqlite3.exe:	tclsqlite-shell.lo $(SQLITE3C) $(SQLITE3H) $(LIBRESOBJS)
@@ -1824,10 +1923,16 @@ parse.c:	$(TOP)\src\parse.y lemon.exe $(TOP)\tool\addopcodes.tcl
 	$(TCLSH_CMD) $(TOP)\tool\addopcodes.tcl parse.h.temp > parse.h
 
 $(SQLITE3H):	$(TOP)\src\sqlite.h.in $(TOP)\manifest.uuid $(TOP)\VERSION
-	$(TCLSH_CMD) $(TOP)\tool\mksqlite3h.tcl $(TOP:\=/) > $(SQLITE3H)
+	$(TCLSH_CMD) $(TOP)\tool\mksqlite3h.tcl $(TOP:\=/) > $(SQLITE3H) $(MKSQLITE3H_ARGS)
 
 sqlite3ext.h:	.target_source
-	copy tsrc\sqlite3ext.h .
+!IF $(USE_STDCALL)!=0 || $(FOR_WIN10)!=0
+	type tsrc\sqlite3ext.h | $(TCLSH_CMD) $(TOP)\tool\replace.tcl regsub "\(\*\)" "(SQLITE_CALLBACK *)" \
+		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl regsub "\(\*" "(SQLITE_APICALL *" > sqlite3ext.h
+	copy /Y sqlite3ext.h tsrc\sqlite3ext.h
+!ELSE
+	copy /Y tsrc\sqlite3ext.h sqlite3ext.h
+!ENDIF
 
 mkkeywordhash.exe:	$(TOP)\tool\mkkeywordhash.c
 	$(BCC) $(NO_WARN) -Fe$@ $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS) $(EXT_FEATURE_FLAGS) $(OPTS) \
@@ -1960,6 +2065,7 @@ TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_SERVER=1 -DSQLITE_PRIVATE=""
 TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_CORE $(NO_WARN)
 TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_SERIES_CONSTRAINT_VERIFY=1
 TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_DEFAULT_PAGE_SIZE=1024
+TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) $(TEST_CCONV_OPTS)
 
 TESTFIXTURE_SRC0 = $(TESTEXT) $(TESTSRC2)
 TESTFIXTURE_SRC1 = $(TESTEXT) $(SQLITE3C)
@@ -1969,7 +2075,27 @@ TESTFIXTURE_SRC = $(TESTSRC) $(TOP)\src\tclsqlite.c $(TESTFIXTURE_SRC0)
 TESTFIXTURE_SRC = $(TESTSRC) $(TOP)\src\tclsqlite.c $(TESTFIXTURE_SRC1)
 !ENDIF
 
-testfixture.exe:	$(TESTFIXTURE_SRC) $(SQLITE3H) $(LIBRESOBJS) $(HDR)
+!IF $(USE_STDCALL)!=0 || $(FOR_WIN10)!=0
+sqlite_tclDecls.h:
+	echo #ifndef SQLITE_TCLAPI > $(SQLITETCLDECLSH)
+	echo #  define SQLITE_TCLAPI >> $(SQLITETCLDECLSH)
+	echo #endif >> $(SQLITETCLDECLSH)
+	type "$(TCLINCDIR)\tclDecls.h" \
+		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl regsub "^(EXTERN(?: CONST\d+?)?\s+?[^\(]*?\s+?)Tcl_" "\1 SQLITE_TCLAPI Tcl_" \
+		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl regsub "^(EXTERN\s+?(?:void|VOID)\s+?)TclFreeObj" "\1 SQLITE_TCLAPI TclFreeObj" \
+		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl regsub "\(\*tcl_" "(SQLITE_TCLAPI *tcl_" \
+		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl regsub "\(\*tclFreeObj" "(SQLITE_TCLAPI *tclFreeObj" \
+		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl regsub "\(\*" "(SQLITE_TCLAPI *" >> $(SQLITETCLDECLSH)
+
+sqlite_tcl.h:
+	type "$(TCLINCDIR)\tcl.h" | $(TCLSH_CMD) $(TOP)\tool\replace.tcl exact tclDecls.h sqlite_tclDecls.h \
+		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl regsub "typedef (.*?)\(Tcl_" "typedef \1 (SQLITE_TCLAPI Tcl_" \
+		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl exact "void (*freeProc)" "void (SQLITE_TCLAPI *freeProc)" \
+		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl exact "Tcl_HashEntry *(*findProc)" "Tcl_HashEntry *(SQLITE_TCLAPI *findProc)" \
+		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl exact "Tcl_HashEntry *(*createProc)" "Tcl_HashEntry *(SQLITE_TCLAPI *createProc)" >> $(SQLITETCLH)
+!ENDIF
+
+testfixture.exe:	$(TESTFIXTURE_SRC) $(SQLITE3H) $(LIBRESOBJS) $(HDR) $(SQLITE_TCL_DEP)
 	$(LTLINK) -DSQLITE_NO_SYNC=1 $(TESTFIXTURE_FLAGS) \
 		-DBUILD_sqlite -I$(TCLINCDIR) \
 		$(TESTFIXTURE_SRC) \
@@ -2018,7 +2144,7 @@ smoketest:	$(TESTPROGS)
 	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\main.test $(TESTOPTS)
 
-sqlite3_analyzer.c:	$(SQLITE3C) $(SQLITE3H) $(TOP)\src\tclsqlite.c $(TOP)\tool\spaceanal.tcl
+sqlite3_analyzer.c:	$(SQLITE3C) $(SQLITE3H) $(TOP)\src\tclsqlite.c $(TOP)\tool\spaceanal.tcl $(SQLITE_TCL_DEP)
 	echo #define TCLSH 2 > $@
 	echo #define SQLITE_ENABLE_DBSTAT_VTAB 1 >> $@
 	copy $@ + $(SQLITE3C) + $(TOP)\src\tclsqlite.c $@
@@ -2098,7 +2224,7 @@ clean:
 	-rmdir /Q/S .libs 2>NUL
 	-rmdir /Q/S tsrc 2>NUL
 	del /Q .target_source 2>NUL
-	del /Q tclsqlite3.exe 2>NUL
+	del /Q tclsqlite3.exe $(SQLITETCLH) $(SQLITETCLDECLSH) 2>NUL
 	del /Q testloadext.dll 2>NUL
 	del /Q testfixture.exe test.db 2>NUL
 	del /Q LogEst.exe fts3view.exe rollback-test.exe showdb.exe 2>NUL

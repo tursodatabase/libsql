@@ -293,6 +293,7 @@ TESTSRC = \
   $(TOP)/src/test_blob.c \
   $(TOP)/src/test_btree.c \
   $(TOP)/src/test_config.c \
+  $(TOP)/src/test_delete.c \
   $(TOP)/src/test_demovfs.c \
   $(TOP)/src/test_devsym.c \
   $(TOP)/src/test_fs.c \
@@ -334,6 +335,7 @@ TESTSRC += \
   $(TOP)/ext/misc/nextchar.c \
   $(TOP)/ext/misc/percentile.c \
   $(TOP)/ext/misc/regexp.c \
+  $(TOP)/ext/misc/remember.c \
   $(TOP)/ext/misc/series.c \
   $(TOP)/ext/misc/spellfix.c \
   $(TOP)/ext/misc/totype.c \
@@ -462,7 +464,8 @@ FUZZDATA = \
   $(TOP)/test/fuzzdata1.db \
   $(TOP)/test/fuzzdata2.db \
   $(TOP)/test/fuzzdata3.db \
-  $(TOP)/test/fuzzdata4.db
+  $(TOP)/test/fuzzdata4.db \
+  $(TOP)/test/fuzzdata5.db
 
 # Standard options to testfixture
 #
@@ -511,10 +514,15 @@ fuzzershell$(EXE):	$(TOP)/tool/fuzzershell.c sqlite3.c sqlite3.h
 	  $(FUZZERSHELL_OPT) $(TOP)/tool/fuzzershell.c sqlite3.c \
 	  $(TLIBS) $(THREADLIB)
 
-fuzzcheck$(EXE):	$(TOP)/test/fuzzcheck.c sqlite3.c sqlite3.h
+fuzzcheck$(EXE):	$(TOP)/test/fuzzcheck.c sqlite3.c sqlite3.h $(TOP)/test/ossfuzz.c
 	$(TCCX) -o fuzzcheck$(EXE) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
+		-DSQLITE_ENABLE_MEMSYS5 $(FUZZCHECK_OPT) -DSQLITE_OSS_FUZZ \
+		$(TOP)/test/fuzzcheck.c $(TOP)/test/ossfuzz.c sqlite3.c $(TLIBS) $(THREADLIB)
+
+ossshell$(EXE):	$(TOP)/test/ossfuzz.c $(TOP)/test/ossshell.c sqlite3.c sqlite3.h
+	$(TCCX) -o ossshell$(EXE) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
 		-DSQLITE_ENABLE_MEMSYS5 $(FUZZCHECK_OPT) \
-		$(TOP)/test/fuzzcheck.c sqlite3.c $(TLIBS) $(THREADLIB)
+		$(TOP)/test/ossfuzz.c $(TOP)/test/ossshell.c sqlite3.c $(TLIBS) $(THREADLIB)
 
 mptester$(EXE):	sqlite3.c $(TOP)/mptest/mptest.c
 	$(TCCX) -o $@ -I. $(TOP)/mptest/mptest.c sqlite3.c \

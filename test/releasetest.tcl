@@ -9,21 +9,19 @@ This Tcl script is used to test the various configurations required
 before releasing a new version. Supported command line options (all
 optional) are:
 
-    --srcdir   TOP-OF-SQLITE-TREE      (see below)
-    --platform PLATFORM                (see below)
+    --buildonly                        (Just build testfixture - do not run)
     --config   CONFIGNAME              (Run only CONFIGNAME)
+    --dryrun                           (Print what would have happened)
+    -f|--force                         (Run even if uncommitted changes)
+    --info                             (Show diagnostic info)
+    --jobs     N                       (Use N processes - default 1)
+    --keep                             (Delete no files after each test run)
+    --msvc                             (Use MSVC as the compiler)
+    --platform PLATFORM                (see below)
+    --progress                         (Show progress messages)
     --quick                            (Run "veryquick.test" only)
     --veryquick                        (Run "make smoketest" only)
-    --msvc                             (Use MSVC as the compiler)
-    --buildonly                        (Just build testfixture - do not run)
-    --dryrun                           (Print what would have happened)
-    --info                             (Show diagnostic info)
     --with-tcl=DIR                     (Use TCL build at DIR)
-    --jobs     N                       (Use N processes - default 1)
-    --progress                         (Show progress messages)
-
-The default value for --srcdir is the parent of the directory holding
-this script.
 
 The script determines the default value for --platform using the
 $tcl_platform(os) and $tcl_platform(machine) variables.  Supported
@@ -470,14 +468,15 @@ proc count_tests_and_errors {logfile rcVar errmsgVar} {
 proc run_slave_test {} {
   # Read global vars configuration from stdin.
   set V [gets stdin]
-  foreach {::TRACE ::MSVC ::DRYRUN} $V {}
+  foreach {::TRACE ::MSVC ::DRYRUN ::KEEPFILES} $V {}
 
   # Read the test-suite configuration from stdin.
   set T [gets stdin]
   foreach {title dir configOpts testtarget makeOpts cflags opts} $T {}
 
   # Create and switch to the test directory.
-  set ::env(SQLITE_TMPDIR) [file normalize $dir]
+  set normaldir [file normalize $dir]
+  set ::env(SQLITE_TMPDIR) $normaldir
   trace_cmd file mkdir $dir
   trace_cmd cd $dir
   catch {file delete core}
@@ -500,6 +499,9 @@ proc run_slave_test {} {
       unset -nocomplain ::env(TCLSH_CMD)
     }
   }
+
+  # Clean up lots of extra files if --keep was not specified.
+  if {$::KEEPFILES==0} { cleanup $normaldir }
 
   # Exis successfully if the test passed, or with a non-zero error code
   # otherwise.
@@ -600,7 +602,7 @@ proc run_all_test_suites {alltests} {
       set fd [open "|[info nameofexecutable] $script --slave" r+]
       fconfigure $fd -blocking 0
       fileevent $fd readable [list slave_fileevent $fd $T $tm1]
-      puts $fd [list $::TRACE $::MSVC $::DRYRUN]
+      puts $fd [list $::TRACE $::MSVC $::DRYRUN $::KEEPFILES]
       puts $fd [list {*}$T]
       flush $fd
     }
@@ -778,6 +780,8 @@ proc process_options {argv} {
   set ::JOBS           1
   set ::PROGRESS_MSGS  0
   set ::WITHTCL        {}
+  set ::FORCE          0
+  set ::KEEPFILES      0          ;# Keep extra files after test run
   set config {}
   set platform $::tcl_platform(os)-$::tcl_platform(machine)
 
@@ -790,6 +794,12 @@ proc process_options {argv} {
         exit
       }
 
+      # Undocumented legacy option: --srcdir DIRECTORY
+      #
+      # DIRECTORY is the root of the SQLite checkout.  This sets the
+      # SRCDIR global variable.  But that variable is already set
+      # automatically so there really is no reason to have this option.
+      #
       -srcdir {
         incr i
         set ::SRCDIR [file normalize [lindex $argv $i]]
@@ -833,6 +843,11 @@ proc process_options {argv} {
         set ::DRYRUN 1
       }
 
+      -force -
+      -f {
+        set ::FORCE 1
+      }
+
       -trace {
         set ::TRACE 1
       }
@@ -863,6 +878,10 @@ proc process_options {argv} {
 
       -g {
         lappend ::EXTRACONFIG [lindex $argv $i]
+      }
+
+      -keep {
+        set ::KEEPFILES 1
       }
 
       -with-tcl=* {
@@ -926,6 +945,47 @@ proc process_options {argv} {
   PUTS ""
 }
 
+# Check to see if there are uncommitted changes in the SQLite source
+# checkout.  Exit if there are.  Except:  Do nothing if the --force
+# flag is used.  Also, ignore this test if the fossil binary is
+# unavailable, or if the source tree is not a valid fossil checkout.
+#
+proc check_uncommitted {} {
+  if {$::FORCE} return
+  set pwd [pwd]
+  cd $::SRCDIR
+  if {[catch {exec fossil changes} res]==0 && [string trim $res]!=""} {
+    puts "ERROR: The check-out contains uncommitted changes:"
+    puts $res
+    puts "Use the -f or --force options to override"
+    exit 1
+  }
+  cd $pwd
+}
+
+# A test run has just finished in directory $dir. This command deletes all
+# non-essential files from the directory. Specifically, everything except
+#
+#   * The "testfixture" and "sqlite3" binaries,
+#   * The "test-out.log" and "test.log" log files.
+#
+proc cleanup {dir} {
+  set K(testfixture) 1
+  set K(testfixture.exe) 1
+  set K(sqlite3) 1
+  set K(sqlite3.exe) 1
+  set K(test-out.txt) 1
+  set K(test.log) 1
+
+  foreach f [glob -nocomplain [file join $dir *]] {
+    set tail [file tail $f]
+    if {[info exists K($tail)]==0} { 
+      file delete -force $f
+    }
+  }
+}
+
+
 # Main routine.
 #
 proc main {argv} {
@@ -933,6 +993,7 @@ proc main {argv} {
   # Process any command line options.
   set ::EXTRACONFIG {}
   process_options $argv
+  if {!$::DRYRUN} check_uncommitted
   PUTS [string repeat * 79]
 
   set ::NERR 0

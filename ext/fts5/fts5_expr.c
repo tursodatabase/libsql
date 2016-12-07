@@ -746,49 +746,61 @@ static int fts5ExprNearTest(
 ** Initialize all term iterators in the pNear object. If any term is found
 ** to match no documents at all, return immediately without initializing any
 ** further iterators.
+**
+** If an error occurs, return an SQLite error code. Otherwise, return
+** SQLITE_OK. It is not considered an error if some term matches zero
+** documents.
 */
 static int fts5ExprNearInitAll(
   Fts5Expr *pExpr,
   Fts5ExprNode *pNode
 ){
   Fts5ExprNearset *pNear = pNode->pNear;
-  int i, j;
-  int rc = SQLITE_OK;
+  int i;
 
   assert( pNode->bNomatch==0 );
-  for(i=0; rc==SQLITE_OK && i<pNear->nPhrase; i++){
+  for(i=0; i<pNear->nPhrase; i++){
     Fts5ExprPhrase *pPhrase = pNear->apPhrase[i];
-    for(j=0; j<pPhrase->nTerm; j++){
-      Fts5ExprTerm *pTerm = &pPhrase->aTerm[j];
-      Fts5ExprTerm *p;
-      int bEof = 1;
+    if( pPhrase->nTerm==0 ){
+      pNode->bEof = 1;
+      return SQLITE_OK;
+    }else{
+      int j;
+      for(j=0; j<pPhrase->nTerm; j++){
+        Fts5ExprTerm *pTerm = &pPhrase->aTerm[j];
+        Fts5ExprTerm *p;
+        int bHit = 0;
 
-      for(p=pTerm; p && rc==SQLITE_OK; p=p->pSynonym){
-        if( p->pIter ){
-          sqlite3Fts5IterClose(p->pIter);
-          p->pIter = 0;
+        for(p=pTerm; p; p=p->pSynonym){
+          int rc;
+          if( p->pIter ){
+            sqlite3Fts5IterClose(p->pIter);
+            p->pIter = 0;
+          }
+          rc = sqlite3Fts5IndexQuery(
+              pExpr->pIndex, p->zTerm, (int)strlen(p->zTerm),
+              (pTerm->bPrefix ? FTS5INDEX_QUERY_PREFIX : 0) |
+              (pExpr->bDesc ? FTS5INDEX_QUERY_DESC : 0),
+              pNear->pColset,
+              &p->pIter
+          );
+          assert( (rc==SQLITE_OK)==(p->pIter!=0) );
+          if( rc!=SQLITE_OK ) return rc;
+          if( 0==sqlite3Fts5IterEof(p->pIter) ){
+            bHit = 1;
+          }
         }
-        rc = sqlite3Fts5IndexQuery(
-            pExpr->pIndex, p->zTerm, (int)strlen(p->zTerm),
-            (pTerm->bPrefix ? FTS5INDEX_QUERY_PREFIX : 0) |
-            (pExpr->bDesc ? FTS5INDEX_QUERY_DESC : 0),
-            pNear->pColset,
-            &p->pIter
-        );
-        assert( rc==SQLITE_OK || p->pIter==0 );
-        if( p->pIter && 0==sqlite3Fts5IterEof(p->pIter) ){
-          bEof = 0;
-        }
-      }
 
-      if( bEof ){
-        pNode->bEof = 1;
-        return rc;
+        if( bHit==0 ){
+          pNode->bEof = 1;
+          return SQLITE_OK;
+        }
       }
     }
   }
 
-  return rc;
+  pNode->bEof = 0;
+  return SQLITE_OK;
 }
 
 /*
@@ -921,7 +933,7 @@ static int fts5ExprNodeTest_STRING(
           }
         }else{
           Fts5IndexIter *pIter = pPhrase->aTerm[j].pIter;
-          if( pIter->iRowid==iLast ) continue;
+          if( pIter->iRowid==iLast || pIter->bEof ) continue;
           bMatch = 0;
           if( fts5ExprAdvanceto(pIter, bDesc, &iLast, &rc, &pNode->bEof) ){
             return rc;
@@ -1638,7 +1650,6 @@ int sqlite3Fts5ExprClonePhrase(
 ){
   int rc = SQLITE_OK;             /* Return code */
   Fts5ExprPhrase *pOrig;          /* The phrase extracted from pExpr */
-  int i;                          /* Used to iterate through phrase terms */
   Fts5Expr *pNew = 0;             /* Expression to return via *ppNew */
   TokenCtx sCtx = {0,0};          /* Context object for fts5ParseTokenize */
 
@@ -1668,18 +1679,25 @@ int sqlite3Fts5ExprClonePhrase(
     }
   }
 
-  for(i=0; rc==SQLITE_OK && i<pOrig->nTerm; i++){
-    int tflags = 0;
-    Fts5ExprTerm *p;
-    for(p=&pOrig->aTerm[i]; p && rc==SQLITE_OK; p=p->pSynonym){
-      const char *zTerm = p->zTerm;
-      rc = fts5ParseTokenize((void*)&sCtx, tflags, zTerm, (int)strlen(zTerm),
-          0, 0);
-      tflags = FTS5_TOKEN_COLOCATED;
+  if( pOrig->nTerm ){
+    int i;                          /* Used to iterate through phrase terms */
+    for(i=0; rc==SQLITE_OK && i<pOrig->nTerm; i++){
+      int tflags = 0;
+      Fts5ExprTerm *p;
+      for(p=&pOrig->aTerm[i]; p && rc==SQLITE_OK; p=p->pSynonym){
+        const char *zTerm = p->zTerm;
+        rc = fts5ParseTokenize((void*)&sCtx, tflags, zTerm, (int)strlen(zTerm),
+            0, 0);
+        tflags = FTS5_TOKEN_COLOCATED;
+      }
+      if( rc==SQLITE_OK ){
+        sCtx.pPhrase->aTerm[i].bPrefix = pOrig->aTerm[i].bPrefix;
+      }
     }
-    if( rc==SQLITE_OK ){
-      sCtx.pPhrase->aTerm[i].bPrefix = pOrig->aTerm[i].bPrefix;
-    }
+  }else{
+    /* This happens when parsing a token or quoted phrase that contains
+    ** no token characters at all. (e.g ... MATCH '""'). */
+    sCtx.pPhrase = sqlite3Fts5MallocZero(&rc, sizeof(Fts5ExprPhrase));
   }
 
   if( rc==SQLITE_OK ){

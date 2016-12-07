@@ -80,6 +80,40 @@ do_execsql_test 3.0 {
   SELECT * FROM x3('x OR y OR z');
 }
 
+#-------------------------------------------------------------------------
+# Test that a crash occuring when the second or subsequent tokens in a
+# phrase matched zero rows has been fixed.
+#
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(x);
+  INSERT INTO t1 VALUES('ab');
+  INSERT INTO t1 VALUES('cd');
+  INSERT INTO t1 VALUES('ab cd');
+  INSERT INTO t1 VALUES('ab cdXXX');
+  INSERT INTO t1 VALUES('abXXX cd');
+}
+do_execsql_test 4.1 {
+  SELECT * FROM t1('"ab cd" OR "ab cd" *');
+} {{ab cd} {ab cdXXX}}
+do_execsql_test 4.2 {
+  SELECT * FROM t1('"xy zz" OR "ab cd" *');
+} {{ab cd} {ab cdXXX}}
+do_execsql_test 4.3 {
+  SELECT * FROM t1('"xy zz" OR "xy zz" *');
+}
+do_execsql_test 4.4 {
+  SELECT * FROM t1('"ab cd" OR "xy zz" *');
+} {{ab cd}}
+do_execsql_test 4.5 {
+  CREATE VIRTUAL TABLE t2 USING fts5(x);
+  INSERT INTO t2 VALUES('ab');
+  INSERT INTO t2 VALUES('cd');
+  INSERT INTO t2 VALUES('ef');
+} 
+do_execsql_test 4.6 {
+  SELECT * FROM t2('ab + xyz');
+}
+
 
 finish_test
 

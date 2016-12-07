@@ -751,6 +751,9 @@ test_suite "inmemory_journal" -description {
   # statement switches the database out of wal mode at inopportune
   # times.
   snapshot_fault.test
+  
+  # This test assumes a journal file is created on disk.
+  delete_db.test
 }]
 
 ifcapable mem3 {
@@ -950,6 +953,7 @@ test_suite "journaltest" -description {
   async4.test bigfile.test backcompat.test e_wal* fstat.test mmap2.test
   pager1.test syscall.test tkt3457.test *malloc* mmap* multiplex* nolock*
   pager2.test *fault* rowal* snapshot* superlock* symlink.test
+  delete_db.test
 }]
 
 if {[info commands register_demovfs] != ""} {

@@ -22,6 +22,7 @@ static const char zHelp[] =
   "  --pagesize N        Set the page size to N\n"
   "  --pcache N SZ       Configure N pages of pagecache each of size SZ bytes\n"
   "  --primarykey        Use PRIMARY KEY instead of UNIQUE where appropriate\n"
+  "  --repeat N          Repeat each SELECT N times (default: 1)\n"
   "  --reprepare         Reprepare each statement upon every invocation\n"
   "  --scratch N SZ      Configure scratch memory for N slots of SZ bytes each\n"
   "  --serialized        Set serialized threading mode\n"
@@ -48,6 +49,7 @@ static const char zHelp[] =
 #include <stdarg.h>
 #include <string.h>
 #include <ctype.h>
+#include <unistd.h>
 #define ISSPACE(X) isspace((unsigned char)(X))
 #define ISDIGIT(X) isdigit((unsigned char)(X))
 
@@ -72,6 +74,7 @@ static struct Global {
   int bMemShrink;            /* Call sqlite3_db_release_memory() often */
   int eTemp;                 /* 0: no TEMP.  9: always TEMP. */
   int szTest;                /* Scale factor for test iterations */
+  int nRepeat;               /* Repeat selects this many times */
   const char *zWR;           /* Might be WITHOUT ROWID */
   const char *zNN;           /* Might be NOT NULL */
   const char *zPK;           /* Might be UNIQUE or PRIMARY KEY */
@@ -421,12 +424,14 @@ void speedtest1_run(void){
   speedtest1_shrink_memory();
 }
 
+#ifndef SQLITE_OMIT_DEPRECATED
 /* The sqlite3_trace() callback function */
 static void traceCallback(void *NotUsed, const char *zSql){
   int n = (int)strlen(zSql);
   while( n>0 && (zSql[n-1]==';' || ISSPACE(zSql[n-1])) ) n--;
   fprintf(stderr,"%.*s;\n", n, zSql);
 }
+#endif /* SQLITE_OMIT_DEPRECATED */
 
 /* Substitute random() function that gives the same random
 ** sequence on each run, for repeatability. */
@@ -451,6 +456,68 @@ static int est_square_root(int x){
   return y0;
 }
 
+
+#if SQLITE_VERSION_NUMBER<3005004
+/*
+** An implementation of group_concat().  Used only when testing older
+** versions of SQLite that lack the built-in group_concat().
+*/
+struct groupConcat {
+  char *z;
+  int nAlloc;
+  int nUsed;
+};
+static void groupAppend(struct groupConcat *p, const char *z, int n){
+  if( p->nUsed+n >= p->nAlloc ){
+    int n2 = (p->nAlloc+n+1)*2;
+    char *z2 = sqlite3_realloc(p->z, n2);
+    if( z2==0 ) return;
+    p->z = z2;
+    p->nAlloc = n2;
+  }
+  memcpy(p->z+p->nUsed, z, n);
+  p->nUsed += n;
+}
+static void groupStep(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  const char *zVal;
+  struct groupConcat *p;
+  const char *zSep;
+  int nVal, nSep;
+  assert( argc==1 || argc==2 );
+  if( sqlite3_value_type(argv[0])==SQLITE_NULL ) return;
+  p= (struct groupConcat*)sqlite3_aggregate_context(context, sizeof(*p));
+
+  if( p ){
+    int firstTerm = p->nUsed==0;
+    if( !firstTerm ){
+      if( argc==2 ){
+        zSep = (char*)sqlite3_value_text(argv[1]);
+        nSep = sqlite3_value_bytes(argv[1]);
+      }else{
+        zSep = ",";
+        nSep = 1;
+      }
+      if( nSep ) groupAppend(p, zSep, nSep);
+    }
+    zVal = (char*)sqlite3_value_text(argv[0]);
+    nVal = sqlite3_value_bytes(argv[0]);
+    if( zVal ) groupAppend(p, zVal, nVal);
+  }
+}
+static void groupFinal(sqlite3_context *context){
+  struct groupConcat *p;
+  p = sqlite3_aggregate_context(context, 0);
+  if( p && p->z ){
+    p->z[p->nUsed] = 0;
+    sqlite3_result_text(context, p->z, p->nUsed, sqlite3_free);
+  }
+}
+#endif
+
 /*
 ** The main and default testset
 */
@@ -459,11 +526,12 @@ void testset_main(void){
   int n;                        /* iteration count */
   int sz;                       /* Size of the tables */
   int maxb;                     /* Maximum swizzled value */
-  unsigned x1, x2;              /* Parameters */
-  int len;                      /* Length of the zNum[] string */
+  unsigned x1 = 0, x2 = 0;      /* Parameters */
+  int len = 0;                  /* Length of the zNum[] string */
   char zNum[2000];              /* A number name */
 
   sz = n = g.szTest*500;
+  zNum[0] = 0;
   maxb = roundup_allones(sz);
   speedtest1_begin_test(100, "%d INSERTs into table with no index", n);
   speedtest1_exec("BEGIN");
@@ -519,17 +587,23 @@ void testset_main(void){
   speedtest1_exec("COMMIT");
   speedtest1_end_test();
 
+#if SQLITE_VERSION_NUMBER<3005004
+  sqlite3_create_function(g.db, "group_concat", 1, SQLITE_UTF8, 0,
+                          0, groupStep, groupFinal);
+#endif
 
   n = 25;
   speedtest1_begin_test(130, "%d SELECTS, numeric BETWEEN, unindexed", n);
   speedtest1_exec("BEGIN");
   speedtest1_prepare(
-    "SELECT count(*), avg(b), sum(length(c)) FROM t1\n"
+    "SELECT count(*), avg(b), sum(length(c)), group_concat(c) FROM t1\n"
     " WHERE b BETWEEN ?1 AND ?2; -- %d times", n
   );
   for(i=1; i<=n; i++){
-    x1 = speedtest1_random()%maxb;
-    x2 = speedtest1_random()%10 + sz/5000 + x1;
+    if( (i-1)%g.nRepeat==0 ){
+      x1 = speedtest1_random()%maxb;
+      x2 = speedtest1_random()%10 + sz/5000 + x1;
+    }
     sqlite3_bind_int(g.pStmt, 1, x1);
     sqlite3_bind_int(g.pStmt, 2, x2);
     speedtest1_run();
@@ -542,16 +616,18 @@ void testset_main(void){
   speedtest1_begin_test(140, "%d SELECTS, LIKE, unindexed", n);
   speedtest1_exec("BEGIN");
   speedtest1_prepare(
-    "SELECT count(*), avg(b), sum(length(c)) FROM t1\n"
+    "SELECT count(*), avg(b), sum(length(c)), group_concat(c) FROM t1\n"
     " WHERE c LIKE ?1; -- %d times", n
   );
   for(i=1; i<=n; i++){
-    x1 = speedtest1_random()%maxb;
-    zNum[0] = '%';
-    len = speedtest1_numbername(i, zNum+1, sizeof(zNum)-2);
-    zNum[len] = '%';
-    zNum[len+1] = 0;
-    sqlite3_bind_text(g.pStmt, 1, zNum, len, SQLITE_STATIC);
+    if( (i-1)%g.nRepeat==0 ){
+      x1 = speedtest1_random()%maxb;
+      zNum[0] = '%';
+      len = speedtest1_numbername(i, zNum+1, sizeof(zNum)-2);
+      zNum[len] = '%';
+      zNum[len+1] = 0;
+    }
+    sqlite3_bind_text(g.pStmt, 1, zNum, len+1, SQLITE_STATIC);
     speedtest1_run();
   }
   speedtest1_exec("COMMIT");
@@ -566,12 +642,14 @@ void testset_main(void){
     " ORDER BY a; -- %d times", n
   );
   for(i=1; i<=n; i++){
-    x1 = speedtest1_random()%maxb;
-    zNum[0] = '%';
-    len = speedtest1_numbername(i, zNum+1, sizeof(zNum)-2);
-    zNum[len] = '%';
-    zNum[len+1] = 0;
-    sqlite3_bind_text(g.pStmt, 1, zNum, len, SQLITE_STATIC);
+    if( (i-1)%g.nRepeat==0 ){
+      x1 = speedtest1_random()%maxb;
+      zNum[0] = '%';
+      len = speedtest1_numbername(i, zNum+1, sizeof(zNum)-2);
+      zNum[len] = '%';
+      zNum[len+1] = 0;
+    }
+    sqlite3_bind_text(g.pStmt, 1, zNum, len+1, SQLITE_STATIC);
     speedtest1_run();
   }
   speedtest1_exec("COMMIT");
@@ -585,12 +663,14 @@ void testset_main(void){
     " ORDER BY a LIMIT 10; -- %d times", n
   );
   for(i=1; i<=n; i++){
-    x1 = speedtest1_random()%maxb;
-    zNum[0] = '%';
-    len = speedtest1_numbername(i, zNum+1, sizeof(zNum)-2);
-    zNum[len] = '%';
-    zNum[len+1] = 0;
-    sqlite3_bind_text(g.pStmt, 1, zNum, len, SQLITE_STATIC);
+    if( (i-1)%g.nRepeat==0 ){
+      x1 = speedtest1_random()%maxb;
+      zNum[0] = '%';
+      len = speedtest1_numbername(i, zNum+1, sizeof(zNum)-2);
+      zNum[len] = '%';
+      zNum[len+1] = 0;
+    }
+    sqlite3_bind_text(g.pStmt, 1, zNum, len+1, SQLITE_STATIC);
     speedtest1_run();
   }
   speedtest1_exec("COMMIT");
@@ -612,12 +692,14 @@ void testset_main(void){
   speedtest1_begin_test(160, "%d SELECTS, numeric BETWEEN, indexed", n);
   speedtest1_exec("BEGIN");
   speedtest1_prepare(
-    "SELECT count(*), avg(b), sum(length(c)) FROM t1\n"
+    "SELECT count(*), avg(b), sum(length(c)), group_concat(a) FROM t1\n"
     " WHERE b BETWEEN ?1 AND ?2; -- %d times", n
   );
   for(i=1; i<=n; i++){
-    x1 = speedtest1_random()%maxb;
-    x2 = speedtest1_random()%10 + sz/5000 + x1;
+    if( (i-1)%g.nRepeat==0 ){
+      x1 = speedtest1_random()%maxb;
+      x2 = speedtest1_random()%10 + sz/5000 + x1;
+    }
     sqlite3_bind_int(g.pStmt, 1, x1);
     sqlite3_bind_int(g.pStmt, 2, x2);
     speedtest1_run();
@@ -630,12 +712,14 @@ void testset_main(void){
   speedtest1_begin_test(161, "%d SELECTS, numeric BETWEEN, PK", n);
   speedtest1_exec("BEGIN");
   speedtest1_prepare(
-    "SELECT count(*), avg(b), sum(length(c)) FROM t2\n"
+    "SELECT count(*), avg(b), sum(length(c)), group_concat(a) FROM t2\n"
     " WHERE a BETWEEN ?1 AND ?2; -- %d times", n
   );
   for(i=1; i<=n; i++){
-    x1 = speedtest1_random()%maxb;
-    x2 = speedtest1_random()%10 + sz/5000 + x1;
+    if( (i-1)%g.nRepeat==0 ){
+      x1 = speedtest1_random()%maxb;
+      x2 = speedtest1_random()%10 + sz/5000 + x1;
+    }
     sqlite3_bind_int(g.pStmt, 1, x1);
     sqlite3_bind_int(g.pStmt, 2, x2);
     speedtest1_run();
@@ -648,12 +732,14 @@ void testset_main(void){
   speedtest1_begin_test(170, "%d SELECTS, text BETWEEN, indexed", n);
   speedtest1_exec("BEGIN");
   speedtest1_prepare(
-    "SELECT count(*), avg(b), sum(length(c)) FROM t1\n"
+    "SELECT count(*), avg(b), sum(length(c)), group_concat(a) FROM t1\n"
     " WHERE c BETWEEN ?1 AND (?1||'~'); -- %d times", n
   );
   for(i=1; i<=n; i++){
-    x1 = swizzle(i, maxb);
-    len = speedtest1_numbername(x1, zNum, sizeof(zNum)-1);
+    if( (i-1)%g.nRepeat==0 ){
+      x1 = swizzle(i, maxb);
+      len = speedtest1_numbername(x1, zNum, sizeof(zNum)-1);
+    }
     sqlite3_bind_text(g.pStmt, 1, zNum, len, SQLITE_STATIC);
     speedtest1_run();
   }
@@ -811,6 +897,65 @@ void testset_main(void){
   sqlite3_bind_int(g.pStmt, 1, est_square_root(g.szTest)*50);
   speedtest1_run();
   speedtest1_end_test();
+
+  sz = n = g.szTest*700;
+  zNum[0] = 0;
+  maxb = roundup_allones(sz/3);
+  speedtest1_begin_test(400, "%d REPLACE ops on an IPK", n);
+  speedtest1_exec("BEGIN");
+  speedtest1_exec("CREATE%s TABLE t5(a INTEGER PRIMARY KEY, b %s);",
+                  isTemp(9), g.zNN);
+  speedtest1_prepare("REPLACE INTO t5 VALUES(?1,?2); --  %d times",n);
+  for(i=1; i<=n; i++){
+    x1 = swizzle(i,maxb);
+    speedtest1_numbername(i, zNum, sizeof(zNum));
+    sqlite3_bind_int(g.pStmt, 1, (sqlite3_int64)x1);
+    sqlite3_bind_text(g.pStmt, 2, zNum, -1, SQLITE_STATIC);
+    speedtest1_run();
+  }
+  speedtest1_exec("COMMIT");
+  speedtest1_end_test();
+  speedtest1_begin_test(410, "%d SELECTS on an IPK", n);
+  speedtest1_prepare("SELECT b FROM t5 WHERE a=?1; --  %d times",n);
+  for(i=1; i<=n; i++){
+    x1 = swizzle(i,maxb);
+    sqlite3_bind_int(g.pStmt, 1, (sqlite3_int64)x1);
+    speedtest1_run();
+  }
+  speedtest1_end_test();
+
+  sz = n = g.szTest*700;
+  zNum[0] = 0;
+  maxb = roundup_allones(sz/3);
+  speedtest1_begin_test(500, "%d REPLACE on TEXT PK", n);
+  speedtest1_exec("BEGIN");
+  speedtest1_exec("CREATE%s TABLE t6(a TEXT PRIMARY KEY, b %s)%s;",
+                  isTemp(9), g.zNN,
+                  sqlite3_libversion_number()>=3008002 ? "WITHOUT ROWID" : "");
+  speedtest1_prepare("REPLACE INTO t6 VALUES(?1,?2); --  %d times",n);
+  for(i=1; i<=n; i++){
+    x1 = swizzle(i,maxb);
+    speedtest1_numbername(x1, zNum, sizeof(zNum));
+    sqlite3_bind_int(g.pStmt, 2, i);
+    sqlite3_bind_text(g.pStmt, 1, zNum, -1, SQLITE_STATIC);
+    speedtest1_run();
+  }
+  speedtest1_exec("COMMIT");
+  speedtest1_end_test();
+  speedtest1_begin_test(510, "%d SELECTS on a TEXT PK", n);
+  speedtest1_prepare("SELECT b FROM t6 WHERE a=?1; --  %d times",n);
+  for(i=1; i<=n; i++){
+    x1 = swizzle(i,maxb);
+    speedtest1_numbername(x1, zNum, sizeof(zNum));
+    sqlite3_bind_text(g.pStmt, 1, zNum, -1, SQLITE_STATIC);
+    speedtest1_run();
+  }
+  speedtest1_end_test();
+  speedtest1_begin_test(520, "%d SELECT DISTINCT", n);
+  speedtest1_exec("SELECT DISTINCT b FROM t5;");
+  speedtest1_exec("SELECT DISTINCT b FROM t6;");
+  speedtest1_end_test();
+
 
   speedtest1_begin_test(980, "PRAGMA integrity_check");
   speedtest1_exec("PRAGMA integrity_check");
@@ -1258,6 +1403,7 @@ int main(int argc, char **argv){
   g.zNN = "";
   g.zPK = "UNIQUE";
   g.szTest = 100;
+  g.nRepeat = 1;
   for(i=1; i<argc; i++){
     const char *z = argv[i];
     if( z[0]=='-' ){
@@ -1291,10 +1437,12 @@ int main(int argc, char **argv){
         nLook = integerValue(argv[i+1]);
         szLook = integerValue(argv[i+2]);
         i += 2;
+#if SQLITE_VERSION_NUMBER>=3006000
       }else if( strcmp(z,"multithread")==0 ){
         sqlite3_config(SQLITE_CONFIG_MULTITHREAD);
       }else if( strcmp(z,"nomemstat")==0 ){
         sqlite3_config(SQLITE_CONFIG_MEMSTATUS, 0);
+#endif
       }else if( strcmp(z,"nosync")==0 ){
         noSync = 1;
       }else if( strcmp(z,"notnull")==0 ){
@@ -1315,6 +1463,10 @@ int main(int argc, char **argv){
         i += 2;
       }else if( strcmp(z,"primarykey")==0 ){
         g.zPK = "PRIMARY KEY";
+      }else if( strcmp(z,"repeat")==0 ){
+        if( i>=argc-1 ) fatal_error("missing arguments on %s\n", argv[i]);
+        g.nRepeat = integerValue(argv[i+1]);
+        i += 1;
       }else if( strcmp(z,"reprepare")==0 ){
         g.bReprepare = 1;
       }else if( strcmp(z,"scratch")==0 ){
@@ -1322,10 +1474,12 @@ int main(int argc, char **argv){
         nScratch = integerValue(argv[i+1]);
         szScratch = integerValue(argv[i+2]);
         i += 2;
+#if SQLITE_VERSION_NUMBER>=3006000
       }else if( strcmp(z,"serialized")==0 ){
         sqlite3_config(SQLITE_CONFIG_SERIALIZED);
       }else if( strcmp(z,"singlethread")==0 ){
         sqlite3_config(SQLITE_CONFIG_SINGLETHREAD);
+#endif
       }else if( strcmp(z,"sqlonly")==0 ){
         g.bSqlOnly = 1;
       }else if( strcmp(z,"shrink-memory")==0 ){
@@ -1416,7 +1570,9 @@ int main(int argc, char **argv){
 
   /* Set database connection options */
   sqlite3_create_function(g.db, "random", 0, SQLITE_UTF8, 0, randomFunc, 0, 0);
+#ifndef SQLITE_OMIT_DEPRECATED
   if( doTrace ) sqlite3_trace(g.db, traceCallback, 0);
+#endif
   speedtest1_exec("PRAGMA threads=%d", nThread);
   if( zKey ){
     speedtest1_exec("PRAGMA key('%s')", zKey);

@@ -2840,6 +2840,7 @@ static void fts5MultiIterNext(
   i64 iFrom                       /* Advance at least as far as this */
 ){
   int bUseFrom = bFrom;
+  assert( pIter->base.bEof==0 );
   while( p->rc==SQLITE_OK ){
     int iFirst = pIter->aFirst[1].iFirst;
     int bNewTerm = 0;

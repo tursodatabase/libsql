@@ -1305,36 +1305,21 @@ int sqlite3SubInt64(i64 *pA, i64 iB){
     return sqlite3AddInt64(pA, -iB);
   }
 }
-#define TWOPOWER32 (((i64)1)<<32)
-#define TWOPOWER31 (((i64)1)<<31)
 int sqlite3MulInt64(i64 *pA, i64 iB){
   i64 iA = *pA;
-  i64 iA1, iA0, iB1, iB0, r;
-
-  iA1 = iA/TWOPOWER32;
-  iA0 = iA % TWOPOWER32;
-  iB1 = iB/TWOPOWER32;
-  iB0 = iB % TWOPOWER32;
-  if( iA1==0 ){
-    if( iB1==0 ){
-      *pA *= iB;
-      return 0;
+  if( iB>0 ){
+    if( iA>LARGEST_INT64/iB ) return 1;
+    if( iA<SMALLEST_INT64/iB ) return 1;
+  }else if( iB<0 ){
+    if( iA>0 ){
+      if( iB<SMALLEST_INT64/iA ) return 1;
+    }else if( iA<0 ){
+      if( iB==SMALLEST_INT64 ) return 1;
+      if( iA==SMALLEST_INT64 ) return 1;
+      if( -iA>LARGEST_INT64/-iB ) return 1;
     }
-    r = iA0*iB1;
-  }else if( iB1==0 ){
-    r = iA1*iB0;
-  }else{
-    /* If both iA1 and iB1 are non-zero, overflow will result */
-    return 1;
   }
-  testcase( r==(-TWOPOWER31)-1 );
-  testcase( r==(-TWOPOWER31) );
-  testcase( r==TWOPOWER31 );
-  testcase( r==TWOPOWER31-1 );
-  if( r<(-TWOPOWER31) || r>=TWOPOWER31 ) return 1;
-  r *= TWOPOWER32;
-  if( sqlite3AddInt64(&r, iA0*iB0) ) return 1;
-  *pA = r;
+  *pA = iA*iB;
   return 0;
 }
 
