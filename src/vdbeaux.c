@@ -313,7 +313,11 @@ int sqlite3VdbeAddOp4Int(
   int p4              /* The P4 operand as an integer */
 ){
   int addr = sqlite3VdbeAddOp3(p, op, p1, p2, p3);
-  sqlite3VdbeChangeP4(p, addr, SQLITE_INT_TO_PTR(p4), P4_INT32);
+  if( p->db->mallocFailed==0 ){
+    VdbeOp *pOp = &p->aOp[addr];
+    pOp->p4type = P4_INT32;
+    pOp->p4.i = p4;
+  }
   return addr;
 }
 
