@@ -1,5 +1,5 @@
-C Performance\simprovement\sand\ssize\sreduction\sin\sthe\sExpr\snode\sallocator\nfunction\ssqlite3PExpr().
-D 2016-12-06T22:47:23.006
+C Always\shonor\sthe\ssqlite3.dbOptFlags\sbitmask,\sregardless\sof\scompile-time\noptions.\s\sContinuing\sfix\sfor\sticket\s[da78413751863].
+D 2016-12-07T13:49:11.158
 F Makefile.in 7639c6a09da11a9c7c6f2630fc981ee588d1072d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -393,7 +393,7 @@ F src/shell.c a3fc2c719ed6d381895cbdb66a4a9b6a791cb02e
 F src/sqlite.h.in e8e2d108d82647f0a812fdb74accf91c1ec08ddc
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
-F src/sqliteInt.h bdfd92824dd50ff037373aaada276f90b168952d
+F src/sqliteInt.h 181158754e1bd7837747d2459e54cb0e556f9c82
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
@@ -1536,7 +1536,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0820f8b3dedfc846d187844847dfa8617539fc9a
-R 66c67520d75b6cc9d6a9f98310fc2b1f
+P 2a81763e68cdf9b8c46389b1e1a87bc2084b53e7
+R ad65390018631e2625a804a98b6533cb
 U drh
-Z aa79b15c8c6da20e9ca7087094bfadd8
+Z 680af68799bfcad1d8fa388c257b6fc8
