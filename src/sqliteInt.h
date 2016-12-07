@@ -4286,5 +4286,6 @@ int sqlite3ExprVectorSize(Expr *pExpr);
 int sqlite3ExprIsVector(Expr *pExpr);
 Expr *sqlite3VectorFieldSubexpr(Expr*, int);
 Expr *sqlite3ExprForVectorField(Parse*,Expr*,int);
+void sqlite3VectorErrorMsg(Parse*, Expr*);
 
 #endif /* SQLITEINT_H */

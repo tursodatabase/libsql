@@ -3133,8 +3133,8 @@ static int multiSelectOrderBy(
 
 #if !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW)
 /* Forward Declarations */
-static void substExprList(sqlite3*, ExprList*, int, ExprList*);
-static void substSelect(sqlite3*, Select *, int, ExprList*, int);
+static void substExprList(Parse*, ExprList*, int, ExprList*);
+static void substSelect(Parse*, Select *, int, ExprList*, int);
 
 /*
 ** Scan through the expression pExpr.  Replace every reference to
@@ -3150,40 +3150,46 @@ static void substSelect(sqlite3*, Select *, int, ExprList*, int);
 ** of the subquery rather the result set of the subquery.
 */
 static Expr *substExpr(
-  sqlite3 *db,        /* Report malloc errors to this connection */
+  Parse *pParse,      /* Report errors here */
   Expr *pExpr,        /* Expr in which substitution occurs */
   int iTable,         /* Table to be substituted */
   ExprList *pEList    /* Substitute expressions */
 ){
+  sqlite3 *db = pParse->db;
   if( pExpr==0 ) return 0;
   if( pExpr->op==TK_COLUMN && pExpr->iTable==iTable ){
     if( pExpr->iColumn<0 ){
       pExpr->op = TK_NULL;
     }else{
       Expr *pNew;
+      Expr *pCopy = pEList->a[pExpr->iColumn].pExpr;
       assert( pEList!=0 && pExpr->iColumn<pEList->nExpr );
       assert( pExpr->pLeft==0 && pExpr->pRight==0 );
-      pNew = sqlite3ExprDup(db, pEList->a[pExpr->iColumn].pExpr, 0);
-      if( pNew && (pExpr->flags & EP_FromJoin) ){
-        pNew->iRightJoinTable = pExpr->iRightJoinTable;
-        pNew->flags |= EP_FromJoin;
+      if( sqlite3ExprIsVector(pCopy) ){
+        sqlite3VectorErrorMsg(pParse, pCopy);
+      }else{
+        pNew = sqlite3ExprDup(db, pCopy, 0);
+        if( pNew && (pExpr->flags & EP_FromJoin) ){
+          pNew->iRightJoinTable = pExpr->iRightJoinTable;
+          pNew->flags |= EP_FromJoin;
+        }
+        sqlite3ExprDelete(db, pExpr);
+        pExpr = pNew;
       }
-      sqlite3ExprDelete(db, pExpr);
-      pExpr = pNew;
     }
   }else{
-    pExpr->pLeft = substExpr(db, pExpr->pLeft, iTable, pEList);
-    pExpr->pRight = substExpr(db, pExpr->pRight, iTable, pEList);
+    pExpr->pLeft = substExpr(pParse, pExpr->pLeft, iTable, pEList);
+    pExpr->pRight = substExpr(pParse, pExpr->pRight, iTable, pEList);
     if( ExprHasProperty(pExpr, EP_xIsSelect) ){
-      substSelect(db, pExpr->x.pSelect, iTable, pEList, 1);
+      substSelect(pParse, pExpr->x.pSelect, iTable, pEList, 1);
     }else{
-      substExprList(db, pExpr->x.pList, iTable, pEList);
+      substExprList(pParse, pExpr->x.pList, iTable, pEList);
     }
   }
   return pExpr;
 }
 static void substExprList(
-  sqlite3 *db,         /* Report malloc errors here */
+  Parse *pParse,       /* Report errors here */
   ExprList *pList,     /* List to scan and in which to make substitutes */
   int iTable,          /* Table to be substituted */
   ExprList *pEList     /* Substitute values */
@@ -3191,11 +3197,11 @@ static void substExprList(
   int i;
   if( pList==0 ) return;
   for(i=0; i<pList->nExpr; i++){
-    pList->a[i].pExpr = substExpr(db, pList->a[i].pExpr, iTable, pEList);
+    pList->a[i].pExpr = substExpr(pParse, pList->a[i].pExpr, iTable, pEList);
   }
 }
 static void substSelect(
-  sqlite3 *db,         /* Report malloc errors here */
+  Parse *pParse,       /* Report errors here */
   Select *p,           /* SELECT statement in which to make substitutions */
   int iTable,          /* Table to be replaced */
   ExprList *pEList,    /* Substitute values */
@@ -3206,17 +3212,17 @@ static void substSelect(
   int i;
   if( !p ) return;
   do{
-    substExprList(db, p->pEList, iTable, pEList);
-    substExprList(db, p->pGroupBy, iTable, pEList);
-    substExprList(db, p->pOrderBy, iTable, pEList);
-    p->pHaving = substExpr(db, p->pHaving, iTable, pEList);
-    p->pWhere = substExpr(db, p->pWhere, iTable, pEList);
+    substExprList(pParse, p->pEList, iTable, pEList);
+    substExprList(pParse, p->pGroupBy, iTable, pEList);
+    substExprList(pParse, p->pOrderBy, iTable, pEList);
+    p->pHaving = substExpr(pParse, p->pHaving, iTable, pEList);
+    p->pWhere = substExpr(pParse, p->pWhere, iTable, pEList);
     pSrc = p->pSrc;
     assert( pSrc!=0 );
     for(i=pSrc->nSrc, pItem=pSrc->a; i>0; i--, pItem++){
-      substSelect(db, pItem->pSelect, iTable, pEList, 1);
+      substSelect(pParse, pItem->pSelect, iTable, pEList, 1);
       if( pItem->fg.isTabFunc ){
-        substExprList(db, pItem->u1.pFuncArg, iTable, pEList);
+        substExprList(pParse, pItem->u1.pFuncArg, iTable, pEList);
       }
     }
   }while( doPrior && (p = p->pPrior)!=0 );
@@ -3741,7 +3747,7 @@ static int flattenSubquery(
     }else{
       pParent->pWhere = sqlite3ExprAnd(db, pWhere, pParent->pWhere);
     }
-    substSelect(db, pParent, iParent, pSub->pEList, 0);
+    substSelect(pParse, pParent, iParent, pSub->pEList, 0);
   
     /* The flattened query is distinct if either the inner or the
     ** outer query is distinct. 
@@ -3815,7 +3821,7 @@ static int flattenSubquery(
 ** terms are duplicated into the subquery.
 */
 static int pushDownWhereTerms(
-  sqlite3 *db,          /* The database connection (for malloc()) */
+  Parse *pParse,        /* Parse context (for malloc() and error reporting) */
   Select *pSubq,        /* The subquery whose WHERE clause is to be augmented */
   Expr *pWhere,         /* The WHERE clause of the outer query */
   int iCursor           /* Cursor number of the subquery */
@@ -3836,16 +3842,16 @@ static int pushDownWhereTerms(
     return 0; /* restriction (3) */
   }
   while( pWhere->op==TK_AND ){
-    nChng += pushDownWhereTerms(db, pSubq, pWhere->pRight, iCursor);
+    nChng += pushDownWhereTerms(pParse, pSubq, pWhere->pRight, iCursor);
     pWhere = pWhere->pLeft;
   }
   if( ExprHasProperty(pWhere,EP_FromJoin) ) return 0; /* restriction 5 */
   if( sqlite3ExprIsTableConstant(pWhere, iCursor) ){
     nChng++;
     while( pSubq ){
-      pNew = sqlite3ExprDup(db, pWhere, 0);
-      pNew = substExpr(db, pNew, iCursor, pSubq->pEList);
-      pSubq->pWhere = sqlite3ExprAnd(db, pSubq->pWhere, pNew);
+      pNew = sqlite3ExprDup(pParse->db, pWhere, 0);
+      pNew = substExpr(pParse, pNew, iCursor, pSubq->pEList);
+      pSubq->pWhere = sqlite3ExprAnd(pParse->db, pSubq->pWhere, pNew);
       pSubq = pSubq->pPrior;
     }
   }
@@ -5002,7 +5008,7 @@ int sqlite3Select(
     ** inside the subquery.  This can help the subquery to run more efficiently.
     */
     if( (pItem->fg.jointype & JT_OUTER)==0
-     && pushDownWhereTerms(db, pSub, p->pWhere, pItem->iCursor)
+     && pushDownWhereTerms(pParse, pSub, p->pWhere, pItem->iCursor)
     ){
 #if SELECTTRACE_ENABLED
       if( sqlite3SelectTrace & 0x100 ){

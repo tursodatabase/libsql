@@ -1,5 +1,5 @@
-C Always\shonor\sthe\ssqlite3.dbOptFlags\sbitmask,\sregardless\sof\scompile-time\noptions.\s\sContinuing\sfix\sfor\sticket\s[da78413751863].
-D 2016-12-07T13:49:11.158
+C Prevent\sthe\sflattening\sor\swhere-term\spush-down\soptimizations\sfrom\sobscuring\nmisuses\sof\sSQL\srow\svalues\sthat\scan\slead\sto\scrashes\sor\sassert()\sfailures.
+D 2016-12-07T15:38:37.162
 F Makefile.in 7639c6a09da11a9c7c6f2630fc981ee588d1072d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -341,7 +341,7 @@ F src/ctime.c a2a52d6e353f459d8ab0f07321f60fafa47d5421
 F src/date.c 57f23f5835c0b8b2be0e71f3b0a38e5960d053ec
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
 F src/delete.c a6881ec5a7d1adc6157dfe1596ead3522db04740
-F src/expr.c b4db982acf30aad864a047bf7676fa85761fc55e
+F src/expr.c 0393a016d990c8c2023b737f5a143cdf308d429f
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 4017dc6d8bf894c4818ffbaf392e53c7c68dd761
 F src/func.c 43916c1d8e6da5d107d91d2b212577d4f69a876a
@@ -388,12 +388,12 @@ F src/printf.c f94da4935d1dd25420ac50c6745db1deb35e07c1
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c bb070cf5f23611c44ab7e4788803684e385fc3fb
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c ee68944dfee9d548032bba3fdd5a6355011212c0
+F src/select.c 0e4920c4ab7b5751473a1b457ff7d57f4b54e288
 F src/shell.c a3fc2c719ed6d381895cbdb66a4a9b6a791cb02e
 F src/sqlite.h.in e8e2d108d82647f0a812fdb74accf91c1ec08ddc
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
-F src/sqliteInt.h 181158754e1bd7837747d2459e54cb0e556f9c82
+F src/sqliteInt.h 33b14fb2b549001f2255565068c20fc8d883321e
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
@@ -1032,7 +1032,7 @@ F test/rollbackfault.test 0e646aeab8840c399cfbfa43daab46fd609cf04a
 F test/rowallock.test 3f88ec6819489d0b2341c7a7528ae17c053ab7cc
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
 F test/rowid.test 5b7509f384f4f6fae1af3c8c104c8ca299fea18d
-F test/rowvalue.test f4dc97fe52d4e206e25b3395588b9497a8eed3ff
+F test/rowvalue.test 3f468a9e370a3ee8b267e58049679eb0df2b9d01
 F test/rowvalue2.test 060d238b7e5639a7c5630cb5e63e311b44efef2b
 F test/rowvalue3.test 3068f508753af69884b12125995f023da0dbb256
 F test/rowvalue4.test 4b556d7de161a0dd8cff095c336e913986398bea
@@ -1536,7 +1536,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2a81763e68cdf9b8c46389b1e1a87bc2084b53e7
-R ad65390018631e2625a804a98b6533cb
-U drh
-Z 680af68799bfcad1d8fa388c257b6fc8
+P afab166313e0b8ad530df99887437a362398ed02
+R 805d4861d87a142d84fe0d34bae5d292
+U dan
+Z fc6459b5407c4f6a11de33c5ce52ff74
