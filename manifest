@@ -1,5 +1,5 @@
-C The\suse\sP4_DYNAMIC\sin\splace\sof\sthe\sP4_MPRINTF\soperand\stype.
-D 2016-12-07T20:22:31.737
+C Add\sthe\ssqlite3VdbeAppendP4()\smethod\sfor\sadding\sP4\scontent\sto\sthe\smost\srecently\ncoded\sinstruction.
+D 2016-12-07T21:35:55.152
 F Makefile.in 7639c6a09da11a9c7c6f2630fc981ee588d1072d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -340,8 +340,8 @@ F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 9f2296a4e5d26ebf0e0d95a0af4628f1ea694e7a
 F src/date.c b48378aeac68fa20c811404955a9b62108df47d8
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
-F src/delete.c a6881ec5a7d1adc6157dfe1596ead3522db04740
-F src/expr.c 0393a016d990c8c2023b737f5a143cdf308d429f
+F src/delete.c 42768e673861dffec92664b2036da6be51720e49
+F src/expr.c 84a5e590184ad7ccae22e7ad484d6394dec46f16
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 4017dc6d8bf894c4818ffbaf392e53c7c68dd761
 F src/func.c 43916c1d8e6da5d107d91d2b212577d4f69a876a
@@ -350,7 +350,7 @@ F src/hash.c 63d0ee752a3b92d4695b2b1f5259c4621b2cfebd
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 2f8d2c1fa472409625cecacddd39a3b1c6811a26
+F src/insert.c 4f92d50c588009c46aef4016a8ae4c3c70133621
 F src/legacy.c 75d3023be8f0d2b99d60f905090341a03358c58e
 F src/loadext.c 5d6642d141c07d366e43d359e94ec9de47add41d
 F src/main.c c0daeb1f716de3e93c573aeed6b164faeddee772
@@ -451,15 +451,15 @@ F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 78c8085bc7af1922aa687f0f4bbd716821330de5
 F src/treeview.c 4e44ade3bfe59d82005039f72e09333ce2b4162c
 F src/trigger.c 3419bb9862983d84d70735fb4c94b21b934cd0c5
-F src/update.c 1b8321100cac004f0721ab67b16909dd006e663c
+F src/update.c 1da7c462110bffed442a42884cb0d528c1db46d8
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c e68e8ced7328f22d2cf7b4c898c394a0de34cdf1
 F src/vacuum.c 33c174b28886b2faf26e503b5a49a1c01a9b1c16
 F src/vdbe.c 3986f226945b14b98eb26bd589de3705223c95ad
-F src/vdbe.h 1987921713ee2b948a79f0af192024065db095fb
+F src/vdbe.h 0c74f6305fb43b9b282dacaff102272370e327d4
 F src/vdbeInt.h 9b498d3cb52dc2efb53571fb8ae8e14cf298ce84
 F src/vdbeapi.c ea4e2dc2213cc6bd7bee375a29a9b51c31b93ae0
-F src/vdbeaux.c 8378658e15a82b20fa49718f9204d1286b4fbc26
+F src/vdbeaux.c be0797ca0c392eea2201afbf2eef0b1531e2a8b7
 F src/vdbeblob.c f4f98ea672b242f807c08c92c7faaa79e5091b65
 F src/vdbemem.c 1af2f14ab0f7004b364933ddcfc767fb880d4742
 F src/vdbesort.c 91fda3909326860382b0ca8aa251e609c6a9d62c
@@ -1536,7 +1536,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 04716c907bf9fc9b827e18fdc7b4e1069e201536
-R 5a971bdba4dcd12ecdc94b0ffc7d235f
+P 3954f83798ed78527280c9db6360c62a5134b9ec
+R 868d7a6f4c3cd694f9e2b539e54ae53a
 U drh
-Z 9cd8827513cba2f6d012918afdfa6fc2
+Z c03069fde6cdcd0dcb352e80d6595c45

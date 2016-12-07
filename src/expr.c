@@ -3432,7 +3432,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       if( pExpr->u.zToken[1]!=0 ){
         assert( pExpr->u.zToken[0]=='?' 
              || strcmp(pExpr->u.zToken, pParse->azVar[pExpr->iColumn-1])==0 );
-        sqlite3VdbeChangeP4(v, -1, pParse->azVar[pExpr->iColumn-1], P4_STATIC);
+        sqlite3VdbeAppendP4(v, pParse->azVar[pExpr->iColumn-1], P4_STATIC);
       }
       return target;
     }
