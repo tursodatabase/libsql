@@ -828,10 +828,6 @@ static void freeP4(sqlite3 *db, int p4type, void *p4){
       break;
     }
 #endif
-    case P4_MPRINTF: {
-      if( db->pnBytesFreed==0 ) sqlite3_free(p4);
-      break;
-    }
     case P4_FUNCDEF: {
       freeEphemeralFunction(db, (FuncDef*)p4);
       break;

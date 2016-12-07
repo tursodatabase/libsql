@@ -1142,7 +1142,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     sqlite3VdbeAddOp2(v, OP_Integer, nConstraint, iReg+1);
     sqlite3VdbeAddOp4(v, OP_VFilter, iCur, addrNotFound, iReg,
                       pLoop->u.vtab.idxStr,
-                      pLoop->u.vtab.needFree ? P4_MPRINTF : P4_STATIC);
+                      pLoop->u.vtab.needFree ? P4_DYNAMIC : P4_STATIC);
     VdbeCoverage(v);
     pLoop->u.vtab.needFree = 0;
     pLevel->p1 = iCur;
