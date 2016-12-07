@@ -1,5 +1,5 @@
-C Rename\sthe\sSQLITE_OMIT_BUILTIN_TEST\scompile-time\soption\sto\sSQLITE_UNTESTABLE.
-D 2016-12-07T15:49:02.031
+C Put\sthe\sSQLITE_UNTESTABLE\scompile-time\soption\sin\sthe\scorrect\sorder\sfor\nPRAGMA\scompile_options.
+D 2016-12-07T17:06:12.360
 F Makefile.in 7639c6a09da11a9c7c6f2630fc981ee588d1072d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -337,7 +337,7 @@ F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
 F src/build.c 178f16698cbcb43402c343a9413fe22c99ffee21
 F src/callback.c 2e76147783386374bf01b227f752c81ec872d730
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
-F src/ctime.c bcec3165b4921312a86bc239793246767a66754d
+F src/ctime.c 9f2296a4e5d26ebf0e0d95a0af4628f1ea694e7a
 F src/date.c b48378aeac68fa20c811404955a9b62108df47d8
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
 F src/delete.c a6881ec5a7d1adc6157dfe1596ead3522db04740
@@ -1536,7 +1536,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 433d16ff3adfede3be53d5b0e0512f37e225591b
-R e6d88f40ad98e257f66f33654ad3712f
+P f360818737e73ee4f944685a547abc8f14f47819
+R f5ba64c964c5dccab19f910ff0a2ac41
 U drh
-Z 7632e2864475c2accdb8129364863b0d
+Z 1f3e5852b0694b4e7c0a8b4adaebbb2a
