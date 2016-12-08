@@ -130,11 +130,11 @@ int main(int argc, char **argv){
         }
         printf("'");
       }else{
-        printf("%s\"", zSep);
+        printf("%s'", zSep);
         for(j=0; j<sz; j++){
           char c = (char)aSample[y+j];
           if( ISPRINT(c) ){
-            if( c=='"' || c=='\\' ) putchar('\\');
+            if( c=='\'' || c=='\\' ) putchar('\\');
             putchar(c);
           }else if( c=='\n' ){
             printf("\\n");
@@ -146,7 +146,7 @@ int main(int argc, char **argv){
             printf("\\%03o", c);
           }
         }
-        printf("\"");
+        printf("'");
       }
       zSep = ",";
       y += sz;
