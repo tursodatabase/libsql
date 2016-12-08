@@ -28,7 +28,7 @@ while {![eof $in]} {
     set dest !
   }
   append out($dest) $line\n
-  if {$cntlines && [regexp { *([0-9,]+) } $line all x]} {
+  if {$cntlines} {
     incr linenum
     if {[regexp {^ *([0-9,]+) } $line all x]} {
       set x [string map {, {}} $x]
