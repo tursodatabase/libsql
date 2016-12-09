@@ -78,6 +78,34 @@ do_faultsim_test 2.4 -faults oom* -body {
   faultsim_test_result {0 {{3 2} {2 3}}} 
 }
 
+#-------------------------------------------------------------------------
+#
+reset_db 
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE x1 USING fts5(z);
+}
+
+do_faultsim_test 3.1 -faults oom* -body {
+  execsql {
+    SELECT rowid FROM x1('c') WHERE rowid>1;
+  }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+do_execsql_test 3.2 {
+  INSERT INTO x1 VALUES('a b c');
+  INSERT INTO x1 VALUES('b c d');
+  INSERT INTO x1 VALUES('c d e');
+  INSERT INTO x1 VALUES('d e f');
+}
+do_faultsim_test 3.3 -faults oom* -body {
+  execsql {
+    SELECT rowid FROM x1('c') WHERE rowid>1;
+  }
+} -test {
+  faultsim_test_result {0 {2 3}}
+}
 
 finish_test
 

@@ -1344,7 +1344,10 @@ int sqlite3Fts5ExprFirst(Fts5Expr *p, Fts5Index *pIdx, i64 iFirst, int bDesc){
 
   /* If not at EOF but the current rowid occurs earlier than iFirst in
   ** the iteration order, move to document iFirst or later. */
-  if( pRoot->bEof==0 && fts5RowidCmp(p, pRoot->iRowid, iFirst)<0 ){
+  if( rc==SQLITE_OK 
+   && 0==pRoot->bEof 
+   && fts5RowidCmp(p, pRoot->iRowid, iFirst)<0 
+  ){
     rc = fts5ExprNodeNext(p, pRoot, 1, iFirst);
   }
 
