@@ -8062,7 +8062,12 @@ int sqlite3BtreeInsert(
     }
     rc = clearCell(pPage, oldCell, &info);
     if( info.nSize==szNew && info.nLocal==info.nPayload ){
-      /* Overwrite the old cell with the new */
+      /* Overwrite the old cell with the new if they are the same size.
+      ** We could also try to do this if the old cell is smaller, then add
+      ** the leftover space to the free list.  But experiments show that
+      ** doing that is no faster then skipping this optimization and just
+      ** calling dropCell() and insertCell(). */
+      assert( rc==SQLITE_OK ); /* clearCell never fails when nLocal==nPayload */
       memcpy(oldCell, newCell, szNew);
       return SQLITE_OK;
     }
