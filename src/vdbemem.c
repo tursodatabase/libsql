@@ -1333,6 +1333,7 @@ static int valueFromExpr(
   }else if( op==TK_NULL ){
     pVal = valueNew(db, pCtx);
     if( pVal==0 ) goto no_mem;
+    sqlite3VdbeMemNumerify(pVal);
   }
 #ifndef SQLITE_OMIT_BLOB_LITERAL
   else if( op==TK_BLOB ){

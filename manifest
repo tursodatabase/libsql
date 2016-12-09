@@ -1,5 +1,5 @@
-C Fix\sthe\sshowstat4\sutility\sprogram\sso\sthat\sis\sdisplays\sstrings\susing\nstandard\sSQL\snotation\s(single\squotes)\srather\sthan\sC-style\snotation.
-D 2016-12-08T23:52:38.728
+C Fix\san\sobscure\sproblem\sin\srange\sestimation\swith\sSTAT4.
+D 2016-12-09T00:15:17.019
 F Makefile.in 7639c6a09da11a9c7c6f2630fc981ee588d1072d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -461,7 +461,7 @@ F src/vdbeInt.h 9b498d3cb52dc2efb53571fb8ae8e14cf298ce84
 F src/vdbeapi.c ea4e2dc2213cc6bd7bee375a29a9b51c31b93ae0
 F src/vdbeaux.c be0797ca0c392eea2201afbf2eef0b1531e2a8b7
 F src/vdbeblob.c f4f98ea672b242f807c08c92c7faaa79e5091b65
-F src/vdbemem.c 1af2f14ab0f7004b364933ddcfc767fb880d4742
+F src/vdbemem.c d3fd85b7b7ef3eb75de29c6d7e1d10d3ca78b4fd
 F src/vdbesort.c 91fda3909326860382b0ca8aa251e609c6a9d62c
 F src/vdbetrace.c 41963d5376f0349842b5fc4aaaaacd7d9cdc0834
 F src/vtab.c e02cacb5c7ae742631edeb9ae9f53d399f093fd8
@@ -498,7 +498,7 @@ F test/analyzeB.test a4c1c3048f6d9e090eb76e83eecb18bcf6d31a70
 F test/analyzeC.test 555a6cc388b9818b6eda6df816f01ce0a75d3a93
 F test/analyzeD.test 42af58de25a6436502e43006e9e59e2d71bcb0cf
 F test/analyzeE.test 8684e8ac5722fb97c251887ad97e5d496a98af1d
-F test/analyzeF.test 5d1fe1024ba2dfea3c18bede8c1ccef8aba1ab34
+F test/analyzeF.test f423125b557f11ad71bb29765ef9c34b6dcf4ab7
 F test/analyzer1.test 459fa02c445ddbf0101a3bad47b34290a35f2e49
 F test/async.test 1d0e056ba1bb9729283a0f22718d3a25e82c277b
 F test/async2.test c0a9bd20816d7d6a2ceca7b8c03d3d69c28ffb8b
@@ -1536,7 +1536,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b26df26e184ec6da4b5537526c10f42a293d09b5
-R 20c5d0b862118000112ece07f7baa65b
+P 92998e4afbe4da1723e7e5155071a0e7242bd6ff
+R 146bb5a9bbf2bccc768a9ed3b6a15043
 U drh
-Z fcf8e16d4cd3aef2bba348beb58ea104
+Z eab3e469ec793ab1e1350c15f3974350
