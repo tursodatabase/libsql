@@ -1,5 +1,5 @@
-C Fix\san\sobscure\sproblem\sin\srange\sestimation\swith\sSTAT4.
-D 2016-12-09T00:15:17.019
+C Avoid\sunnecessary\szeroing\sof\sfields\sin\sthe\sMemPage\sobject\sthat\sare\sgoing\nto\sbe\sreinitialized\sbefore\suse\sanyhow.\s\sA\ssmaller\sand\sfaster\sbinary\sresults.
+D 2016-12-09T16:02:00.219
 F Makefile.in 7639c6a09da11a9c7c6f2630fc981ee588d1072d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -331,9 +331,9 @@ F src/auth.c 930b376a9c56998557367e6f7f8aaeac82a2a792
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
-F src/btree.c 9b30dbe2f6306c50dc5af8296e67034400de37cb
+F src/btree.c c73d77875c83407a0048f5e29d1251536e9f009d
 F src/btree.h 2349a588abcd7e0c04f984e15c5c777b61637583
-F src/btreeInt.h c18b7d2a3494695133e4e60ee36061d37f45d9a5
+F src/btreeInt.h 10c4b77c2fb399580babbcc7cf652ac10dba796e
 F src/build.c 178f16698cbcb43402c343a9413fe22c99ffee21
 F src/callback.c 2e76147783386374bf01b227f752c81ec872d730
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
@@ -375,10 +375,10 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c 30e2c43e4955db990e5b5a81e901f8aa74cc8820
 F src/os_win.c cf90abd4e50d9f56d2c20ce8e005aff55d7bd8e9
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 4e4aea7ced5734753ccbff4cf4bb4d032cf2173e
+F src/pager.c 865779c0d33a5804aa6acd547600fca64b511b8a
 F src/pager.h d1e944291030351f362a0a7da9b5c3e34e603e39
 F src/parse.y 29153738a7322054359320eb00b5a4cd44389f20
-F src/pcache.c 5ff2a08f76a9c1b22f43eb063b7068fb085465ac
+F src/pcache.c 219fc5238d5c80e2990ab01e1459db3a96866447
 F src/pcache.h 2cedcd8407eb23017d92790b112186886e179490
 F src/pcache1.c e3967219b2a92b9edcb9324a4ba75009090d3953
 F src/pragma.c d932ba278654617cdd281f88a790a3185fca7c44
@@ -1536,7 +1536,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 92998e4afbe4da1723e7e5155071a0e7242bd6ff
-R 146bb5a9bbf2bccc768a9ed3b6a15043
+P 1f16c9a76bc48331799f33b30d143c632fe0e7db
+R 7472834dbbfbcc03bad94800a01d7495
 U drh
-Z eab3e469ec793ab1e1350c15f3974350
+Z 662ad8d58fb59ba8bcf6c7d7e219ef69
