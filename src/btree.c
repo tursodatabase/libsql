@@ -8068,6 +8068,7 @@ int sqlite3BtreeInsert(
       ** doing that is no faster then skipping this optimization and just
       ** calling dropCell() and insertCell(). */
       assert( rc==SQLITE_OK ); /* clearCell never fails when nLocal==nPayload */
+      if( oldCell+szNew > pPage->aDataEnd ) return SQLITE_CORRUPT_BKPT;
       memcpy(oldCell, newCell, szNew);
       return SQLITE_OK;
     }
