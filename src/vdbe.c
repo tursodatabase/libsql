@@ -221,7 +221,7 @@ static VdbeCursor *allocateCursor(
   }
   if( SQLITE_OK==sqlite3VdbeMemClearAndResize(pMem, nByte) ){
     p->apCsr[iCur] = pCx = (VdbeCursor*)pMem->z;
-    memset(pCx, 0, sizeof(VdbeCursor));
+    memset(pCx, 0, offsetof(VdbeCursor,pAltCursor));
     pCx->eCurType = eCurType;
     pCx->iDb = iDb;
     pCx->nField = nField;
@@ -3527,10 +3527,10 @@ case OP_OpenEphemeral: {
   if( pCx==0 ) goto no_mem;
   pCx->nullRow = 1;
   pCx->isEphemeral = 1;
-  rc = sqlite3BtreeOpen(db->pVfs, 0, db, &pCx->pBt, 
+  rc = sqlite3BtreeOpen(db->pVfs, 0, db, &pCx->pBtx, 
                         BTREE_OMIT_JOURNAL | BTREE_SINGLE | pOp->p5, vfsFlags);
   if( rc==SQLITE_OK ){
-    rc = sqlite3BtreeBeginTrans(pCx->pBt, 1);
+    rc = sqlite3BtreeBeginTrans(pCx->pBtx, 1);
   }
   if( rc==SQLITE_OK ){
     /* If a transient index is required, create it by calling
@@ -3538,21 +3538,20 @@ case OP_OpenEphemeral: {
     ** opening it. If a transient table is required, just use the
     ** automatically created table with root-page 1 (an BLOB_INTKEY table).
     */
-    if( (pKeyInfo = pOp->p4.pKeyInfo)!=0 ){
+    if( (pCx->pKeyInfo = pKeyInfo = pOp->p4.pKeyInfo)!=0 ){
       int pgno;
       assert( pOp->p4type==P4_KEYINFO );
-      rc = sqlite3BtreeCreateTable(pCx->pBt, &pgno, BTREE_BLOBKEY | pOp->p5); 
+      rc = sqlite3BtreeCreateTable(pCx->pBtx, &pgno, BTREE_BLOBKEY | pOp->p5); 
       if( rc==SQLITE_OK ){
         assert( pgno==MASTER_ROOT+1 );
         assert( pKeyInfo->db==db );
         assert( pKeyInfo->enc==ENC(db) );
-        pCx->pKeyInfo = pKeyInfo;
-        rc = sqlite3BtreeCursor(pCx->pBt, pgno, BTREE_WRCSR,
+        rc = sqlite3BtreeCursor(pCx->pBtx, pgno, BTREE_WRCSR,
                                 pKeyInfo, pCx->uc.pCursor);
       }
       pCx->isTable = 0;
     }else{
-      rc = sqlite3BtreeCursor(pCx->pBt, MASTER_ROOT, BTREE_WRCSR,
+      rc = sqlite3BtreeCursor(pCx->pBtx, MASTER_ROOT, BTREE_WRCSR,
                               0, pCx->uc.pCursor);
       pCx->isTable = 1;
     }
