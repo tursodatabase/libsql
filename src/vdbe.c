@@ -5991,12 +5991,25 @@ case OP_IfPos: {        /* jump, in1 */
 ** Otherwise, r[P2] is set to the sum of r[P1] and r[P3].
 */
 case OP_OffsetLimit: {    /* in1, out2, in3 */
+  i64 x;
   pIn1 = &aMem[pOp->p1];
   pIn3 = &aMem[pOp->p3];
   pOut = out2Prerelease(p, pOp);
   assert( pIn1->flags & MEM_Int );
   assert( pIn3->flags & MEM_Int );
-  pOut->u.i = pIn1->u.i<=0 ? -1 : pIn1->u.i+(pIn3->u.i>0?pIn3->u.i:0);
+  x = pIn1->u.i;
+  if( x<=0 || sqlite3AddInt64(&x, pIn3->u.i>0?pIn3->u.i:0) ){
+    /* If the LIMIT is less than or equal to zero, loop forever.  This
+    ** is documented.  But also, if the LIMIT+OFFSET exceeds 2^63 then
+    ** also loop forever.  This is undocumented.  In fact, one could argue
+    ** that the loop should terminate.  But assuming 1 billion iterations
+    ** per second (far exceeding the capabilities of any current hardware)
+    ** it would take nearly 300 years to actually reach the limit.  So
+    ** looping forever is a reasonable approximation. */
+    pOut->u.i = -1;
+  }else{
+    pOut->u.i = x;
+  }
   break;
 }
 
