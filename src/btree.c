@@ -8022,10 +8022,14 @@ int sqlite3BtreeInsert(
   }else if( loc==0 ){
     if( pX->nMem ){
       UnpackedRecord r;
-      memset(&r, 0, sizeof(r));
       r.pKeyInfo = pCur->pKeyInfo;
       r.aMem = pX->aMem;
       r.nField = pX->nMem;
+      r.default_rc = 0;
+      r.errCode = 0;
+      r.r1 = 0;
+      r.r2 = 0;
+      r.eqSeen = 0;
       rc = sqlite3BtreeMovetoUnpacked(pCur, &r, 0, appendBias, &loc);
     }else{
       rc = btreeMoveto(pCur, pX->pKey, pX->nKey, appendBias, &loc);

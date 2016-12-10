@@ -1,5 +1,5 @@
-C Reorder\sthe\sfields\sin\sthe\sVdbeCursor\sobject\sso\sthat\sthose\sthat\sneed\sto\sbe\nbulk\szeroed\son\sallocation\sare\sgrouped\sat\sthe\sbeginning,\sand\sthe\smemset()\nonly\sruns\sover\sthose\sfields\sthat\sreally\sneed\sit.
-D 2016-12-10T12:58:15.294
+C Avoid\san\sunnecessary\smemset()\sin\sthe\ssqlite3BtreeInsert()\sroutine.
+D 2016-12-10T13:12:55.805
 F Makefile.in 7639c6a09da11a9c7c6f2630fc981ee588d1072d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -331,7 +331,7 @@ F src/auth.c 930b376a9c56998557367e6f7f8aaeac82a2a792
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
-F src/btree.c 217c9900de7cf04997aff25faabc366cfe84e8f1
+F src/btree.c 55b5e0e106854ba79aff6b617e60e387c0315214
 F src/btree.h 2349a588abcd7e0c04f984e15c5c777b61637583
 F src/btreeInt.h 10c4b77c2fb399580babbcc7cf652ac10dba796e
 F src/build.c 178f16698cbcb43402c343a9413fe22c99ffee21
@@ -1536,7 +1536,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c9bdf7adb4745cfaf23d9afd496e71fa37793108
-R 15ccb7ac71f3aa4a9f56889c6a3828ff
+P 8165f88bb1d40693d67005a8d5dc499085f64b91
+R 8a2cfd12e003eb0df2bfb3a16ae22c0f
 U drh
-Z 0b109188ec32185ef59cc63fa028b152
+Z ffa21cab9c1b5a6f94b1af69e3c75538
