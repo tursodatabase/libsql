@@ -7017,12 +7017,18 @@ static int balance_nonroot(
   Pgno aPgno[NB+2];            /* Page numbers of new pages before shuffling */
   Pgno aPgOrder[NB+2];         /* Copy of aPgno[] used for sorting pages */
   u16 aPgFlags[NB+2];          /* flags field of new pages before shuffling */
-  CellArray b;                  /* Parsed information on cells being balanced */
+  CellArray b;                 /* Parsed information on cells being balanced */
+  struct DeferredDropCell {    /* Deferred calls to dropCell() for pParent */
+     u16 idx;                     /* The index of the cell to drop */
+     u16 sz;                      /* The size of the cell to drop */
+  } sDDC0, sDDC1;              /* Up to 2 deferred calls */
 
   memset(abDone, 0, sizeof(abDone));
   b.nCell = 0;
   b.apCell = 0;
   pBt = pParent->pBt;
+  sDDC0.sz = sDDC0.idx = 0;
+  sDDC1.sz = sDDC1.idx = 0;
   assert( sqlite3_mutex_held(pBt->mutex) );
   assert( sqlite3PagerIswriteable(pParent->pDbPage) );
 
@@ -7118,7 +7124,12 @@ static int balance_nonroot(
           apDiv[i] = &aOvflSpace[apDiv[i]-pParent->aData];
         }
       }
-      dropCell(pParent, i+nxDiv-pParent->nOverflow, szNew[i], &rc);
+      assert( sDDC1.sz==0 );
+      sDDC1 = sDDC0;
+      sDDC0.idx = i+nxDiv-pParent->nOverflow;
+      sDDC0.sz = szNew[i];
+//printf("dropCell:\n");
+//    dropCell(pParent, i+nxDiv-pParent->nOverflow, szNew[i], &rc);
     }
   }
 
@@ -7586,10 +7597,34 @@ static int balance_nonroot(
     iOvflSpace += sz;
     assert( sz<=pBt->maxLocal+23 );
     assert( iOvflSpace <= (int)pBt->pageSize );
-    insertCell(pParent, nxDiv+i, pCell, sz, pTemp, pNew->pgno, &rc);
+    if( sDDC0.idx==nxDiv+i && sDDC0.sz==sz ){
+      /* overwrite */
+      unsigned char *oldCell = findCell(pParent, sDDC0.idx);
+//printf("overwrite: pg=%d idx=%d sz=%d\n", pParent->pgno, sDDC0.idx, sDDC0.sz);
+      memcpy(oldCell+4, pCell+4, sz-4);
+      put4byte(oldCell, pNew->pgno);
+      sDDC0 = sDDC1;
+      sDDC1.sz = 0;
+    }else{
+      if( sDDC0.sz>0 ){
+        if( sDDC1.sz>0 ){
+//printf("dropCell: pg=%d idx=%d sz=%d\n", pParent->pgno, sDDC1.idx, sDDC1.sz);
+          dropCell(pParent, sDDC1.idx, sDDC1.sz, &rc);
+          sDDC1.sz = 0;
+        }
+//printf("dropCell: pg=%d idx=%d sz=%d\n", pParent->pgno, sDDC0.idx, sDDC0.sz);
+        dropCell(pParent, sDDC0.idx, sDDC0.sz, &rc);
+        sDDC0.sz = 0;
+        if( rc ) goto balance_cleanup;
+      }
+//printf("insertCell: pg=%d idx=%d sz=%d\n", pParent->pgno, nxDiv+i, sz);
+      insertCell(pParent, nxDiv+i, pCell, sz, pTemp, pNew->pgno, &rc);
+    }
     if( rc!=SQLITE_OK ) goto balance_cleanup;
     assert( sqlite3PagerIswriteable(pParent->pDbPage) );
   }
+  if( sDDC1.sz ) dropCell(pParent, sDDC1.idx, sDDC1.sz, &rc);
+  if( sDDC0.sz ) dropCell(pParent, sDDC0.idx, sDDC0.sz, &rc);
 
   /* Now update the actual sibling pages. The order in which they are updated
   ** is important, as this code needs to avoid disrupting any page from which
