@@ -164,7 +164,7 @@ Expr *sqlite3LimitWhere(
   **   );
   */
 
-  pSelectRowid = sqlite3PExpr(pParse, TK_ROW, 0, 0, 0);
+  pSelectRowid = sqlite3PExpr(pParse, TK_ROW, 0, 0);
   if( pSelectRowid == 0 ) goto limit_where_cleanup;
   pEList = sqlite3ExprListAppend(pParse, 0, pSelectRowid);
   if( pEList == 0 ) goto limit_where_cleanup;
@@ -183,8 +183,8 @@ Expr *sqlite3LimitWhere(
   if( pSelect == 0 ) return 0;
 
   /* now generate the new WHERE rowid IN clause for the DELETE/UDPATE */
-  pWhereRowid = sqlite3PExpr(pParse, TK_ROW, 0, 0, 0);
-  pInClause = pWhereRowid ? sqlite3PExpr(pParse, TK_IN, pWhereRowid, 0, 0) : 0;
+  pWhereRowid = sqlite3PExpr(pParse, TK_ROW, 0, 0);
+  pInClause = pWhereRowid ? sqlite3PExpr(pParse, TK_IN, pWhereRowid, 0) : 0;
   sqlite3PExprAddSelect(pParse, pInClause, pSelect);
   return pInClause;
 
@@ -712,7 +712,7 @@ void sqlite3GenerateRowDelete(
     u8 p5 = 0;
     sqlite3GenerateRowIndexDelete(pParse, pTab, iDataCur, iIdxCur,0,iIdxNoSeek);
     sqlite3VdbeAddOp2(v, OP_Delete, iDataCur, (count?OPFLAG_NCHANGE:0));
-    sqlite3VdbeChangeP4(v, -1, (char*)pTab, P4_TABLE);
+    sqlite3VdbeAppendP4(v, (char*)pTab, P4_TABLE);
     if( eMode!=ONEPASS_OFF ){
       sqlite3VdbeChangeP5(v, OPFLAG_AUXDELETE);
     }

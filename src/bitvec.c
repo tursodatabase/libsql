@@ -293,7 +293,7 @@ u32 sqlite3BitvecSize(Bitvec *p){
   return p->iSize;
 }
 
-#ifndef SQLITE_OMIT_BUILTIN_TEST
+#ifndef SQLITE_UNTESTABLE
 /*
 ** Let V[] be an array of unsigned characters sufficient to hold
 ** up to N bits.  Let I be an integer between 0 and N.  0<=I<N.
@@ -408,4 +408,4 @@ bitvec_end:
   sqlite3BitvecDestroy(pBitvec);
   return rc;
 }
-#endif /* SQLITE_OMIT_BUILTIN_TEST */
+#endif /* SQLITE_UNTESTABLE */

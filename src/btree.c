@@ -1743,7 +1743,7 @@ static int btreeInitPage(MemPage *pPage){
   assert( pPage->aData == sqlite3PagerGetData(pPage->pDbPage) );
 
   if( !pPage->isInit ){
-    u16 pc;            /* Address of a freeblock within pPage->aData[] */
+    u32 pc;            /* Address of a freeblock within pPage->aData[] */
     u8 hdr;            /* Offset to beginning of page header */
     u8 *data;          /* Equal to pPage->aData */
     BtShared *pBt;        /* The main btree structure */
@@ -1823,25 +1823,30 @@ static int btreeInitPage(MemPage *pPage){
     ** freeblocks. */
     pc = get2byte(&data[hdr+1]);
     nFree = data[hdr+7] + top;  /* Init nFree to non-freeblock free space */
-    while( pc>0 ){
-      u16 next, size;
-      if( pc<iCellFirst || pc>iCellLast ){
+    if( pc>0 ){
+      u32 next, size;
+      if( pc<iCellFirst ){
         /* EVIDENCE-OF: R-55530-52930 In a well-formed b-tree page, there will
         ** always be at least one cell before the first freeblock.
-        **
-        ** Or, the freeblock is off the end of the page
         */
         return SQLITE_CORRUPT_BKPT; 
       }
-      next = get2byte(&data[pc]);
-      size = get2byte(&data[pc+2]);
-      if( (next>0 && next<=pc+size+3) || pc+size>usableSize ){
-        /* Free blocks must be in ascending order. And the last byte of
-        ** the free-block must lie on the database page.  */
-        return SQLITE_CORRUPT_BKPT; 
+      while( 1 ){
+        if( pc>iCellLast ){
+          return SQLITE_CORRUPT_BKPT; /* Freeblock off the end of the page */
+        }
+        next = get2byte(&data[pc]);
+        size = get2byte(&data[pc+2]);
+        nFree = nFree + size;
+        if( next<=pc+size+3 ) break;
+        pc = next;
       }
-      nFree = nFree + size;
-      pc = next;
+      if( next>0 ){
+        return SQLITE_CORRUPT_BKPT;  /* Freeblock not in ascending order */
+      }
+      if( pc+size>usableSize ){
+        return SQLITE_CORRUPT_BKPT;  /* Last freeblock extends past page end */
+      }
     }
 
     /* At this point, nFree contains the sum of the offset to the start
@@ -2282,7 +2287,7 @@ int sqlite3BtreeOpen(
       goto btree_open_out;
     }
     rc = sqlite3PagerOpen(pVfs, &pBt->pPager, zFilename,
-                          EXTRA_SIZE, flags, vfsFlags, pageReinit);
+                          sizeof(MemPage), flags, vfsFlags, pageReinit);
     if( rc==SQLITE_OK ){
       sqlite3PagerSetMmapLimit(pBt->pPager, db->szMmap);
       rc = sqlite3PagerReadFileheader(pBt->pPager,sizeof(zDbHeader),zDbHeader);
@@ -6063,30 +6068,28 @@ static void freePage(MemPage *pPage, int *pRC){
 static int clearCell(
   MemPage *pPage,          /* The page that contains the Cell */
   unsigned char *pCell,    /* First byte of the Cell */
-  u16 *pnSize              /* Write the size of the Cell here */
+  CellInfo *pInfo          /* Size information about the cell */
 ){
   BtShared *pBt = pPage->pBt;
-  CellInfo info;
   Pgno ovflPgno;
   int rc;
   int nOvfl;
   u32 ovflPageSize;
 
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
-  pPage->xParseCell(pPage, pCell, &info);
-  *pnSize = info.nSize;
-  if( info.nLocal==info.nPayload ){
+  pPage->xParseCell(pPage, pCell, pInfo);
+  if( pInfo->nLocal==pInfo->nPayload ){
     return SQLITE_OK;  /* No overflow pages. Return without doing anything */
   }
-  if( pCell+info.nSize-1 > pPage->aData+pPage->maskPage ){
+  if( pCell+pInfo->nSize-1 > pPage->aData+pPage->maskPage ){
     return SQLITE_CORRUPT_BKPT;  /* Cell extends past end of page */
   }
-  ovflPgno = get4byte(pCell + info.nSize - 4);
+  ovflPgno = get4byte(pCell + pInfo->nSize - 4);
   assert( pBt->usableSize > 4 );
   ovflPageSize = pBt->usableSize - 4;
-  nOvfl = (info.nPayload - info.nLocal + ovflPageSize - 1)/ovflPageSize;
+  nOvfl = (pInfo->nPayload - pInfo->nLocal + ovflPageSize - 1)/ovflPageSize;
   assert( nOvfl>0 || 
-    (CORRUPT_DB && (info.nPayload + ovflPageSize)<ovflPageSize)
+    (CORRUPT_DB && (pInfo->nPayload + ovflPageSize)<ovflPageSize)
   );
   while( nOvfl-- ){
     Pgno iNext = 0;
@@ -6326,7 +6329,6 @@ static void dropCell(MemPage *pPage, int idx, int sz, int *pRC){
   int hdr;        /* Beginning of the header.  0 most pages.  100 page 1 */
 
   if( *pRC ) return;
-
   assert( idx>=0 && idx<pPage->nCell );
   assert( CORRUPT_DB || sz==cellSize(pPage, idx) );
   assert( sqlite3PagerIswriteable(pPage->pDbPage) );
@@ -6410,7 +6412,10 @@ static void insertCell(
       put4byte(pCell, iChild);
     }
     j = pPage->nOverflow++;
-    assert( j<(int)(sizeof(pPage->apOvfl)/sizeof(pPage->apOvfl[0])) );
+    /* Comparison against ArraySize-1 since we hold back one extra slot
+    ** as a contingency.  In other words, never need more than 3 overflow
+    ** slots but 4 are allocated, just to be safe. */
+    assert( j < ArraySize(pPage->apOvfl)-1 );
     pPage->apOvfl[j] = pCell;
     pPage->aiOvfl[j] = (u16)i;
 
@@ -7150,7 +7155,7 @@ static int balance_nonroot(
     nMaxCells += 1+apOld[i]->nCell+apOld[i]->nOverflow;
     if( (i--)==0 ) break;
 
-    if( i+nxDiv==pParent->aiOvfl[0] && pParent->nOverflow ){
+    if( pParent->nOverflow && ALWAYS(i+nxDiv==pParent->aiOvfl[0]) ){
       apDiv[i] = pParent->apOvfl[0];
       pgno = get4byte(apDiv[i]);
       szNew[i] = pParent->xCellSize(pParent, apDiv[i]);
@@ -8089,10 +8094,14 @@ int sqlite3BtreeInsert(
   }else if( loc==0 ){
     if( pX->nMem ){
       UnpackedRecord r;
-      memset(&r, 0, sizeof(r));
       r.pKeyInfo = pCur->pKeyInfo;
       r.aMem = pX->aMem;
       r.nField = pX->nMem;
+      r.default_rc = 0;
+      r.errCode = 0;
+      r.r1 = 0;
+      r.r2 = 0;
+      r.eqSeen = 0;
       rc = sqlite3BtreeMovetoUnpacked(pCur, &r, 0, appendBias, &loc);
     }else{
       rc = btreeMoveto(pCur, pX->pKey, pX->nKey, appendBias, &loc);
@@ -8117,7 +8126,7 @@ int sqlite3BtreeInsert(
   assert( szNew <= MX_CELL_SIZE(pBt) );
   idx = pCur->aiIdx[pCur->iPage];
   if( loc==0 ){
-    u16 szOld;
+    CellInfo info;
     assert( idx<pPage->nCell );
     rc = sqlite3PagerWrite(pPage->pDbPage);
     if( rc ){
@@ -8127,8 +8136,19 @@ int sqlite3BtreeInsert(
     if( !pPage->leaf ){
       memcpy(newCell, oldCell, 4);
     }
-    rc = clearCell(pPage, oldCell, &szOld);
-    dropCell(pPage, idx, szOld, &rc);
+    rc = clearCell(pPage, oldCell, &info);
+    if( info.nSize==szNew && info.nLocal==info.nPayload ){
+      /* Overwrite the old cell with the new if they are the same size.
+      ** We could also try to do this if the old cell is smaller, then add
+      ** the leftover space to the free list.  But experiments show that
+      ** doing that is no faster then skipping this optimization and just
+      ** calling dropCell() and insertCell(). */
+      assert( rc==SQLITE_OK ); /* clearCell never fails when nLocal==nPayload */
+      if( oldCell+szNew > pPage->aDataEnd ) return SQLITE_CORRUPT_BKPT;
+      memcpy(oldCell, newCell, szNew);
+      return SQLITE_OK;
+    }
+    dropCell(pPage, idx, info.nSize, &rc);
     if( rc ) goto end_insert;
   }else if( loc<0 && pPage->nCell>0 ){
     assert( pPage->leaf );
@@ -8204,7 +8224,7 @@ int sqlite3BtreeDelete(BtCursor *pCur, u8 flags){
   unsigned char *pCell;                /* Pointer to cell to delete */
   int iCellIdx;                        /* Index of cell to delete */
   int iCellDepth;                      /* Depth of node containing pCell */ 
-  u16 szCell;                          /* Size of the cell being deleted */
+  CellInfo info;                       /* Size of the cell being deleted */
   int bSkipnext = 0;                   /* Leaf cursor in SKIPNEXT state */
   u8 bPreserve = flags & BTREE_SAVEPOSITION;  /* Keep cursor valid */
 
@@ -8276,8 +8296,8 @@ int sqlite3BtreeDelete(BtCursor *pCur, u8 flags){
   ** itself from within the page.  */
   rc = sqlite3PagerWrite(pPage->pDbPage);
   if( rc ) return rc;
-  rc = clearCell(pPage, pCell, &szCell);
-  dropCell(pPage, iCellIdx, szCell, &rc);
+  rc = clearCell(pPage, pCell, &info);
+  dropCell(pPage, iCellIdx, info.nSize, &rc);
   if( rc ) return rc;
 
   /* If the cell deleted was not located on a leaf page, then the cursor
@@ -8527,7 +8547,7 @@ static int clearDatabasePage(
   unsigned char *pCell;
   int i;
   int hdr;
-  u16 szCell;
+  CellInfo info;
 
   assert( sqlite3_mutex_held(pBt->mutex) );
   if( pgno>btreePagecount(pBt) ){
@@ -8547,7 +8567,7 @@ static int clearDatabasePage(
       rc = clearDatabasePage(pBt, get4byte(pCell), 1, pnChange);
       if( rc ) goto cleardatabasepage_out;
     }
-    rc = clearCell(pPage, pCell, &szCell);
+    rc = clearCell(pPage, pCell, &info);
     if( rc ) goto cleardatabasepage_out;
   }
   if( !pPage->leaf ){

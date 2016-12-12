@@ -1061,7 +1061,14 @@ struct unixFileId {
 #if OS_VXWORKS
   struct vxworksFileId *pId;  /* Unique file ID for vxworks. */
 #else
-  ino_t ino;                  /* Inode number */
+  /* We are told that some versions of Android contain a bug that
+  ** sizes ino_t at only 32-bits instead of 64-bits. (See
+  ** https://android-review.googlesource.com/#/c/115351/3/dist/sqlite3.c)
+  ** To work around this, always allocate 64-bits for the inode number.  
+  ** On small machines that only have 32-bit inodes, this wastes 4 bytes,
+  ** but that should not be a big deal. */
+  /* WAS:  ino_t ino;   */
+  u64 ino;                   /* Inode number */
 #endif
 };
 
@@ -1306,7 +1313,7 @@ static int findInodeInfo(
 #if OS_VXWORKS
   fileId.pId = pFile->pId;
 #else
-  fileId.ino = statbuf.st_ino;
+  fileId.ino = (u64)statbuf.st_ino;
 #endif
   pInode = inodeList;
   while( pInode && memcmp(&fileId, &pInode->fileId, sizeof(fileId)) ){
@@ -1340,7 +1347,8 @@ static int fileHasMoved(unixFile *pFile){
 #else
   struct stat buf;
   return pFile->pInode!=0 &&
-      (osStat(pFile->zPath, &buf)!=0 || buf.st_ino!=pFile->pInode->fileId.ino);
+      (osStat(pFile->zPath, &buf)!=0 
+         || (u64)buf.st_ino!=pFile->pInode->fileId.ino);
 #endif
 }
 
@@ -5512,7 +5520,7 @@ static UnixUnusedFd *findReusableFd(const char *zPath, int flags){
     unixEnterMutex();
     pInode = inodeList;
     while( pInode && (pInode->fileId.dev!=sStat.st_dev
-                     || pInode->fileId.ino!=sStat.st_ino) ){
+                     || pInode->fileId.ino!=(u64)sStat.st_ino) ){
        pInode = pInode->pNext;
     }
     if( pInode ){

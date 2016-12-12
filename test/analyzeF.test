@@ -120,5 +120,31 @@ do_catchsql_test 4.4 {
   SELECT * FROM t1 WHERE x = test_zeroblob(1100000) AND y = 4;
 } {1 {string or blob too big}}
 
+# 2016-12-08: Constraints of the form "x=? AND x IS NOT NULL" were being
+# mishandled.  The sqlite3Stat4ProbeSetValue() routine was assuming that
+# valueNew() was returning a Mem object that was preset to NULL, which is
+# not the case.  The consequence was the the "x IS NOT NULL" constraint
+# was used to drive the index (via the "x>NULL" pseudo-constraint) rather
+# than the "x=?" constraint.
+#
+do_execsql_test 5.1 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b TEXT, c INT);
+  WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<10000)
+    INSERT INTO t1(a, c) SELECT x, x FROM c;
+  UPDATE t1 SET b=printf('x%02x',a/500) WHERE a>4000;
+  UPDATE t1 SET b='xyz' where a>=9998;
+  CREATE INDEX t1b ON t1(b);
+  ANALYZE;
+  SELECT count(*), b FROM t1 GROUP BY 2 ORDER BY 2;
+} {4000 {} 499 x08 500 x09 500 x0a 500 x0b 500 x0c 500 x0d 500 x0e 500 x0f 500 x10 500 x11 500 x12 498 x13 3 xyz}
+do_execsql_test 5.2 {
+  explain query plan
+  SELECT * FROM t1 WHERE b='xyz' AND b IS NOT NULL ORDER BY +a;
+  /*                  v---- Should be "=", not ">"  */
+} {/USING INDEX t1b .b=/}
+do_execsql_test 5.3 {
+  SELECT * FROM t1 WHERE b='xyz' AND b IS NOT NULL ORDER BY +a;
+} {9998 xyz 9998 9999 xyz 9999 10000 xyz 10000}
 
 finish_test

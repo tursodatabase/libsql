@@ -427,7 +427,7 @@ Expr *sqlite3ExprForVectorField(
     ** with the same pLeft pointer to the pVector, but only one of them
     ** will own the pVector.
     */
-    pRet = sqlite3PExpr(pParse, TK_SELECT_COLUMN, 0, 0, 0);
+    pRet = sqlite3PExpr(pParse, TK_SELECT_COLUMN, 0, 0);
     if( pRet ){
       pRet->iColumn = iField;
       pRet->pLeft = pVector;
@@ -819,15 +819,19 @@ Expr *sqlite3PExpr(
   Parse *pParse,          /* Parsing context */
   int op,                 /* Expression opcode */
   Expr *pLeft,            /* Left operand */
-  Expr *pRight,           /* Right operand */
-  const Token *pToken     /* Argument token */
+  Expr *pRight            /* Right operand */
 ){
   Expr *p;
   if( op==TK_AND && pParse->nErr==0 ){
     /* Take advantage of short-circuit false optimization for AND */
     p = sqlite3ExprAnd(pParse->db, pLeft, pRight);
   }else{
-    p = sqlite3ExprAlloc(pParse->db, op & TKFLG_MASK, pToken, 1);
+    p = sqlite3DbMallocRawNN(pParse->db, sizeof(Expr));
+    if( p ){
+      memset(p, 0, sizeof(Expr));
+      p->op = op & TKFLG_MASK;
+      p->iAgg = -1;
+    }
     sqlite3ExprAttachSubtrees(pParse->db, p, pLeft, pRight);
   }
   if( p ) {
@@ -2352,6 +2356,28 @@ void sqlite3SubselectError(Parse *pParse, int nActual, int nExpect){
 #endif
 
 /*
+** Expression pExpr is a vector that has been used in a context where
+** it is not permitted. If pExpr is a sub-select vector, this routine 
+** loads the Parse object with a message of the form:
+**
+**   "sub-select returns N columns - expected 1"
+**
+** Or, if it is a regular scalar vector:
+**
+**   "row value misused"
+*/   
+void sqlite3VectorErrorMsg(Parse *pParse, Expr *pExpr){
+#ifndef SQLITE_OMIT_SUBQUERY
+  if( pExpr->flags & EP_xIsSelect ){
+    sqlite3SubselectError(pParse, pExpr->x.pSelect->pEList->nExpr, 1);
+  }else
+#endif
+  {
+    sqlite3ErrorMsg(pParse, "row value misused");
+  }
+}
+
+/*
 ** Generate code for scalar subqueries used as a subquery expression, EXISTS,
 ** or IN operators.  Examples:
 **
@@ -2633,11 +2659,7 @@ int sqlite3ExprCheckIN(Parse *pParse, Expr *pIn){
       return 1;
     }
   }else if( nVector!=1 ){
-    if( (pIn->pLeft->flags & EP_xIsSelect) ){
-      sqlite3SubselectError(pParse, nVector, 1);
-    }else{
-      sqlite3ErrorMsg(pParse, "row value misused");
-    }
+    sqlite3VectorErrorMsg(pParse, pIn->pLeft);
     return 1;
   }
   return 0;
@@ -3410,7 +3432,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       if( pExpr->u.zToken[1]!=0 ){
         assert( pExpr->u.zToken[0]=='?' 
              || strcmp(pExpr->u.zToken, pParse->azVar[pExpr->iColumn-1])==0 );
-        sqlite3VdbeChangeP4(v, -1, pParse->azVar[pExpr->iColumn-1], P4_STATIC);
+        sqlite3VdbeAppendP4(v, pParse->azVar[pExpr->iColumn-1], P4_STATIC);
       }
       return target;
     }

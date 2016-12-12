@@ -111,7 +111,7 @@ int sqlite3_found_count = 0;
 ** Test a register to see if it exceeds the current maximum blob size.
 ** If it does, record the new maximum blob size.
 */
-#if defined(SQLITE_TEST) && !defined(SQLITE_OMIT_BUILTIN_TEST)
+#if defined(SQLITE_TEST) && !defined(SQLITE_UNTESTABLE)
 # define UPDATE_MAX_BLOBSIZE(P)  updateMaxBlobsize(P)
 #else
 # define UPDATE_MAX_BLOBSIZE(P)
@@ -221,7 +221,7 @@ static VdbeCursor *allocateCursor(
   }
   if( SQLITE_OK==sqlite3VdbeMemClearAndResize(pMem, nByte) ){
     p->apCsr[iCur] = pCx = (VdbeCursor*)pMem->z;
-    memset(pCx, 0, sizeof(VdbeCursor));
+    memset(pCx, 0, offsetof(VdbeCursor,pAltCursor));
     pCx->eCurType = eCurType;
     pCx->iDb = iDb;
     pCx->nField = nField;
@@ -3527,10 +3527,10 @@ case OP_OpenEphemeral: {
   if( pCx==0 ) goto no_mem;
   pCx->nullRow = 1;
   pCx->isEphemeral = 1;
-  rc = sqlite3BtreeOpen(db->pVfs, 0, db, &pCx->pBt, 
+  rc = sqlite3BtreeOpen(db->pVfs, 0, db, &pCx->pBtx, 
                         BTREE_OMIT_JOURNAL | BTREE_SINGLE | pOp->p5, vfsFlags);
   if( rc==SQLITE_OK ){
-    rc = sqlite3BtreeBeginTrans(pCx->pBt, 1);
+    rc = sqlite3BtreeBeginTrans(pCx->pBtx, 1);
   }
   if( rc==SQLITE_OK ){
     /* If a transient index is required, create it by calling
@@ -3538,21 +3538,20 @@ case OP_OpenEphemeral: {
     ** opening it. If a transient table is required, just use the
     ** automatically created table with root-page 1 (an BLOB_INTKEY table).
     */
-    if( (pKeyInfo = pOp->p4.pKeyInfo)!=0 ){
+    if( (pCx->pKeyInfo = pKeyInfo = pOp->p4.pKeyInfo)!=0 ){
       int pgno;
       assert( pOp->p4type==P4_KEYINFO );
-      rc = sqlite3BtreeCreateTable(pCx->pBt, &pgno, BTREE_BLOBKEY | pOp->p5); 
+      rc = sqlite3BtreeCreateTable(pCx->pBtx, &pgno, BTREE_BLOBKEY | pOp->p5); 
       if( rc==SQLITE_OK ){
         assert( pgno==MASTER_ROOT+1 );
         assert( pKeyInfo->db==db );
         assert( pKeyInfo->enc==ENC(db) );
-        pCx->pKeyInfo = pKeyInfo;
-        rc = sqlite3BtreeCursor(pCx->pBt, pgno, BTREE_WRCSR,
+        rc = sqlite3BtreeCursor(pCx->pBtx, pgno, BTREE_WRCSR,
                                 pKeyInfo, pCx->uc.pCursor);
       }
       pCx->isTable = 0;
     }else{
-      rc = sqlite3BtreeCursor(pCx->pBt, MASTER_ROOT, BTREE_WRCSR,
+      rc = sqlite3BtreeCursor(pCx->pBtx, MASTER_ROOT, BTREE_WRCSR,
                               0, pCx->uc.pCursor);
       pCx->isTable = 1;
     }
@@ -6019,12 +6018,25 @@ case OP_IfPos: {        /* jump, in1 */
 ** Otherwise, r[P2] is set to the sum of r[P1] and r[P3].
 */
 case OP_OffsetLimit: {    /* in1, out2, in3 */
+  i64 x;
   pIn1 = &aMem[pOp->p1];
   pIn3 = &aMem[pOp->p3];
   pOut = out2Prerelease(p, pOp);
   assert( pIn1->flags & MEM_Int );
   assert( pIn3->flags & MEM_Int );
-  pOut->u.i = pIn1->u.i<=0 ? -1 : pIn1->u.i+(pIn3->u.i>0?pIn3->u.i:0);
+  x = pIn1->u.i;
+  if( x<=0 || sqlite3AddInt64(&x, pIn3->u.i>0?pIn3->u.i:0) ){
+    /* If the LIMIT is less than or equal to zero, loop forever.  This
+    ** is documented.  But also, if the LIMIT+OFFSET exceeds 2^63 then
+    ** also loop forever.  This is undocumented.  In fact, one could argue
+    ** that the loop should terminate.  But assuming 1 billion iterations
+    ** per second (far exceeding the capabilities of any current hardware)
+    ** it would take nearly 300 years to actually reach the limit.  So
+    ** looping forever is a reasonable approximation. */
+    pOut->u.i = -1;
+  }else{
+    pOut->u.i = x;
+  }
   break;
 }
 

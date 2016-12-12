@@ -959,7 +959,7 @@ int sqlite3VdbeSorterInit(
   }
 #endif
 
-  assert( pCsr->pKeyInfo && pCsr->pBt==0 );
+  assert( pCsr->pKeyInfo && pCsr->pBtx==0 );
   assert( pCsr->eCurType==CURTYPE_SORTER );
   szKeyInfo = sizeof(KeyInfo) + (pCsr->pKeyInfo->nField-1)*sizeof(CollSeq*);
   sz = sizeof(VdbeSorter) + nWorker * sizeof(SortSubtask);

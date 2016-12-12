@@ -3955,7 +3955,8 @@ static int pagerAcquireMapPage(
     *ppPage = p = pPager->pMmapFreelist;
     pPager->pMmapFreelist = p->pDirty;
     p->pDirty = 0;
-    memset(p->pExtra, 0, pPager->nExtra);
+    assert( pPager->nExtra>=8 );
+    memset(p->pExtra, 0, 8);
   }else{
     *ppPage = p = (PgHdr *)sqlite3MallocZero(sizeof(PgHdr) + pPager->nExtra);
     if( p==0 ){
@@ -4555,7 +4556,9 @@ int sqlite3PagerFlush(Pager *pPager){
 **
 ** The nExtra parameter specifies the number of bytes of space allocated
 ** along with each page reference. This space is available to the user
-** via the sqlite3PagerGetExtra() API.
+** via the sqlite3PagerGetExtra() API.  When a new page is allocated, the
+** first 8 bytes of this space are zeroed but the remainder is uninitialized.
+** (The extra space is used by btree as the MemPage object.)
 **
 ** The flags argument is used to specify properties that affect the
 ** operation of the pager. It should be passed some bitwise combination
@@ -4785,8 +4788,8 @@ act_like_temp_file:
 
   /* Initialize the PCache object. */
   if( rc==SQLITE_OK ){
-    assert( nExtra<1000 );
     nExtra = ROUND8(nExtra);
+    assert( nExtra>=8 && nExtra<1000 );
     rc = sqlite3PcacheOpen(szPageDflt, nExtra, !memDb,
                        !memDb?pagerStress:0, (void *)pPager, pPager->pPCache);
   }
@@ -5958,11 +5961,11 @@ int sqlite3PagerWrite(PgHdr *pPg){
   assert( (pPg->flags & PGHDR_MMAP)==0 );
   assert( pPager->eState>=PAGER_WRITER_LOCKED );
   assert( assert_pager_state(pPager) );
-  if( pPager->errCode ){
-    return pPager->errCode;
-  }else if( (pPg->flags & PGHDR_WRITEABLE)!=0 && pPager->dbSize>=pPg->pgno ){
+  if( (pPg->flags & PGHDR_WRITEABLE)!=0 && pPager->dbSize>=pPg->pgno ){
     if( pPager->nSavepoint ) return subjournalPageIfRequired(pPg);
     return SQLITE_OK;
+  }else if( pPager->errCode ){
+    return pPager->errCode;
   }else if( pPager->sectorSize > (u32)pPager->pageSize ){
     assert( pPager->tempFile==0 );
     return pagerWriteLargeSector(pPg);

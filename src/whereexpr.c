@@ -734,7 +734,7 @@ static void exprAnalyzeOrTerm(
       }
       assert( pLeft!=0 );
       pDup = sqlite3ExprDup(db, pLeft, 0);
-      pNew = sqlite3PExpr(pParse, TK_IN, pDup, 0, 0);
+      pNew = sqlite3PExpr(pParse, TK_IN, pDup, 0);
       if( pNew ){
         int idxNew;
         transferJoinMarkings(pNew, pExpr);
@@ -1032,7 +1032,7 @@ static void exprAnalyze(
       int idxNew;
       pNewExpr = sqlite3PExpr(pParse, ops[i], 
                              sqlite3ExprDup(db, pExpr->pLeft, 0),
-                             sqlite3ExprDup(db, pList->a[i].pExpr, 0), 0);
+                             sqlite3ExprDup(db, pList->a[i].pExpr, 0));
       transferJoinMarkings(pNewExpr, pExpr);
       idxNew = whereClauseInsert(pWC, pNewExpr, TERM_VIRTUAL|TERM_DYNAMIC);
       testcase( idxNew==0 );
@@ -1117,7 +1117,7 @@ static void exprAnalyze(
     pNewExpr1 = sqlite3ExprDup(db, pLeft, 0);
     pNewExpr1 = sqlite3PExpr(pParse, TK_GE,
            sqlite3ExprAddCollateString(pParse,pNewExpr1,zCollSeqName),
-           pStr1, 0);
+           pStr1);
     transferJoinMarkings(pNewExpr1, pExpr);
     idxNew1 = whereClauseInsert(pWC, pNewExpr1, wtFlags);
     testcase( idxNew1==0 );
@@ -1125,7 +1125,7 @@ static void exprAnalyze(
     pNewExpr2 = sqlite3ExprDup(db, pLeft, 0);
     pNewExpr2 = sqlite3PExpr(pParse, TK_LT,
            sqlite3ExprAddCollateString(pParse,pNewExpr2,zCollSeqName),
-           pStr2, 0);
+           pStr2);
     transferJoinMarkings(pNewExpr2, pExpr);
     idxNew2 = whereClauseInsert(pWC, pNewExpr2, wtFlags);
     testcase( idxNew2==0 );
@@ -1158,7 +1158,7 @@ static void exprAnalyze(
     if( (prereqExpr & prereqColumn)==0 ){
       Expr *pNewExpr;
       pNewExpr = sqlite3PExpr(pParse, TK_MATCH, 
-                              0, sqlite3ExprDup(db, pRight, 0), 0);
+                              0, sqlite3ExprDup(db, pRight, 0));
       idxNew = whereClauseInsert(pWC, pNewExpr, TERM_VIRTUAL|TERM_DYNAMIC);
       testcase( idxNew==0 );
       pNewTerm = &pWC->a[idxNew];
@@ -1197,7 +1197,7 @@ static void exprAnalyze(
       Expr *pLeft = sqlite3ExprForVectorField(pParse, pExpr->pLeft, i);
       Expr *pRight = sqlite3ExprForVectorField(pParse, pExpr->pRight, i);
 
-      pNew = sqlite3PExpr(pParse, pExpr->op, pLeft, pRight, 0);
+      pNew = sqlite3PExpr(pParse, pExpr->op, pLeft, pRight);
       transferJoinMarkings(pNew, pExpr);
       idxNew = whereClauseInsert(pWC, pNew, TERM_DYNAMIC);
       exprAnalyze(pSrc, pWC, idxNew);
@@ -1249,7 +1249,7 @@ static void exprAnalyze(
 
     pNewExpr = sqlite3PExpr(pParse, TK_GT,
                             sqlite3ExprDup(db, pLeft, 0),
-                            sqlite3ExprAlloc(db, TK_NULL, 0, 0), 0);
+                            sqlite3ExprAlloc(db, TK_NULL, 0, 0));
 
     idxNew = whereClauseInsert(pWC, pNewExpr,
                               TERM_VIRTUAL|TERM_DYNAMIC|TERM_VNULL);
@@ -1435,7 +1435,7 @@ void sqlite3WhereTabFuncArgs(
     pColRef->iColumn = k++;
     pColRef->pTab = pTab;
     pTerm = sqlite3PExpr(pParse, TK_EQ, pColRef,
-                         sqlite3ExprDup(pParse->db, pArgs->a[j].pExpr, 0), 0);
+                         sqlite3ExprDup(pParse->db, pArgs->a[j].pExpr, 0));
     whereClauseInsert(pWC, pTerm, TERM_DYNAMIC);
   }
 }

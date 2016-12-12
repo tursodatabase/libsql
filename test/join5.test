@@ -13,10 +13,10 @@
 # This file implements tests for left outer joins containing ON
 # clauses that restrict the scope of the left term of the join.
 #
-# $Id: join5.test,v 1.2 2007/06/08 00:20:48 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix join5
 
 
 do_test join5-1.1 {
@@ -183,5 +183,33 @@ do_execsql_test join6-4.2 {
     FROM (SELECT 'apple' fruit UNION ALL SELECT 'banana')
          LEFT JOIN (SELECT 1) ON fruit='banana';
 } {apple {} banana 1}
+
+#-------------------------------------------------------------------------
+do_execsql_test 5.0 {
+  CREATE TABLE y1(x, y, z);
+  INSERT INTO y1 VALUES(0, 0, 1);
+  CREATE TABLE y2(a);
+}
+
+do_execsql_test 5.1 {
+  SELECT count(z) FROM y1 LEFT JOIN y2 ON x GROUP BY y;
+} 1
+
+do_execsql_test 5.2 {
+  SELECT count(z) FROM ( SELECT * FROM y1 ) LEFT JOIN y2 ON x GROUP BY y;
+} 1
+
+do_execsql_test 5.3 {
+  CREATE VIEW v1 AS SELECT x, y, z FROM y1;
+  SELECT count(z) FROM v1 LEFT JOIN y2 ON x GROUP BY y;
+} 1
+
+do_execsql_test 5.4 {
+  SELECT count(z) FROM ( SELECT * FROM y1 ) LEFT JOIN y2 ON x
+} 1
+
+do_execsql_test 5.5 {
+  SELECT * FROM ( SELECT * FROM y1 ) LEFT JOIN y2 ON x
+} {0 0 1 {}}
 
 finish_test

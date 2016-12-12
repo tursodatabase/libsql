@@ -980,6 +980,24 @@ do_execsql_test like-13.4 {
   SELECT char(0x4d) LIKE char(0x6d);
 } {1}
 
-
+# Performance testing for patterns with many wildcards.  These LIKE and GLOB
+# patterns were quite slow with SQLite 3.15.2 and earlier.
+#
+do_test like-14.1 {
+  set x [lindex [time {
+    db one {SELECT 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaz'GLOB'*a*a*a*a*a*a*a*a*y'}
+  }] 0]
+  puts -nonewline " ($x ms - want less than 1000) "
+  expr {$x<1000}
+} {1}
+ifcapable !icu {
+  do_test like-14.2 {
+    set x [lindex [time {
+      db one {SELECT 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaz'LIKE'%a%a%a%a%a%a%a%a%y'}
+    }] 0]
+    puts -nonewline " ($x ms - want less than 1000) "
+    expr {$x<1000}
+  } {1}
+}
 
 finish_test
