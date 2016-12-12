@@ -15,6 +15,7 @@ static const char zHelp[] =
   "  --journal M         Set the journal_mode to M\n"
   "  --key KEY           Set the encryption key to KEY\n"
   "  --lookaside N SZ    Configure lookaside for N slots of SZ bytes each\n"
+  "  --mmap SZ           MMAP the first SZ bytes of the database file\n"
   "  --multithread       Set multithreaded mode\n"
   "  --nomemstat         Disable memory statistics\n"
   "  --nosync            Set PRAGMA synchronous=OFF\n"
@@ -1381,6 +1382,7 @@ int main(int argc, char **argv){
   int nScratch = 0, szScratch=0;/* --scratch configuration */
   int showStats = 0;            /* True for --stats */
   int nThread = 0;              /* --threads value */
+  int mmapSize = 0;             /* How big of a memory map to use */
   const char *zTSet = "main";   /* Which --testset torun */
   int doTrace = 0;              /* True for --trace */
   const char *zEncoding = 0;    /* --utf16be or --utf16le */
@@ -1443,6 +1445,11 @@ int main(int argc, char **argv){
       }else if( strcmp(z,"nomemstat")==0 ){
         sqlite3_config(SQLITE_CONFIG_MEMSTATUS, 0);
 #endif
+#if SQLITE_VERSION_NUMBER>=3007017
+      }else if( strcmp(z, "mmap")==0 ){
+        if( i>=argc-1 ) fatal_error("missing argument on %s\n", argv[i]);
+        mmapSize = integerValue(argv[++i]);
+ #endif
       }else if( strcmp(z,"nosync")==0 ){
         noSync = 1;
       }else if( strcmp(z,"notnull")==0 ){
@@ -1573,6 +1580,9 @@ int main(int argc, char **argv){
 #ifndef SQLITE_OMIT_DEPRECATED
   if( doTrace ) sqlite3_trace(g.db, traceCallback, 0);
 #endif
+  if( mmapSize>0 ){
+    speedtest1_exec("PRAGMA mmap_size=%d", mmapSize);
+  }
   speedtest1_exec("PRAGMA threads=%d", nThread);
   if( zKey ){
     speedtest1_exec("PRAGMA key('%s')", zKey);

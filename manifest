@@ -1,5 +1,5 @@
-C Remove\sunnecessary\sMemPage\sinitialization\sresets\sin\sthe\sautovacuum\sptrmap\nprocessing.
-D 2016-12-12T18:12:03.591
+C Add\sthe\s--mmap\soption\sto\sthe\sspeedtest1\sprogram\sand\sto\sthe\sspeed-check.sh\nscript\sthat\sis\sfrequently\sused\sto\srun\sspeedtest1.
+D 2016-12-12T23:24:08.261
 F Makefile.in 7639c6a09da11a9c7c6f2630fc981ee588d1072d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -1122,7 +1122,7 @@ F test/speed3.test 694affeb9100526007436334cf7d08f3d74b85ef
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
-F test/speedtest1.c dae4b22c620743e2767d0ec9fc11f2d1d6383ff1
+F test/speedtest1.c 0c92fd0db4cb778e3b6968db0ea859e28f077823
 F test/spellfix.test f9c1f431e2c096c8775fec032952320c0e4700db
 F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
 F test/spellfix3.test 0f9efaaa502a0e0a09848028518a6fb096c8ad33
@@ -1496,7 +1496,7 @@ F tool/showstat4.c b14159aa062f661b394ba37b6b7b94bfb8012ab9
 F tool/showwal.c ec79959834f7b21f1e0a2aa52bb7c056d2203977
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
 F tool/spaceanal.tcl ab7d9bf68062907282a64b3e12ccbfad47193c5a
-F tool/speed-check.sh b7922d000d66339d5242e7ba47ba6e3f1bc9a538
+F tool/speed-check.sh e6ca0695b047af64201ebe0ef452e423f55d78b1
 F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
 F tool/speedtest16.c ecb6542862151c3e6509bbc00509b234562ae81e
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
@@ -1536,7 +1536,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9675518b33e8d40769daefb860dc748113f750b6
-R 5c1b605906a01e86141edb10d66002b4
+P 1b36fbb9f05f3a5844e198b489bff36ef6cd908c
+R 54a6c1795de20385060d3d26915836b2
 U drh
-Z 43d64d3ee0d93b0119909f8d75d1fdb9
+Z 47f248a7928b3840fe2e23a9066d59e9
