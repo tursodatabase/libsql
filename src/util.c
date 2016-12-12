@@ -42,7 +42,7 @@ void sqlite3Coverage(int x){
 ** Return whatever integer value the test callback returns, or return
 ** SQLITE_OK if no test callback is installed.
 */
-#ifndef SQLITE_OMIT_BUILTIN_TEST
+#ifndef SQLITE_UNTESTABLE
 int sqlite3FaultSim(int iTest){
   int (*xCallback)(int) = sqlite3GlobalConfig.xTestCallback;
   return xCallback ? xCallback(iTest) : SQLITE_OK;

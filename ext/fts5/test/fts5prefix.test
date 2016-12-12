@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# This file containst tests focused on prefix indexes.
+# This file contains tests focused on prefix indexes.
 #
 
 source [file join [file dirname [info script]] fts5_common.tcl]

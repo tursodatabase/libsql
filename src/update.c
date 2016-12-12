@@ -69,7 +69,7 @@ void sqlite3ColumnDefault(Vdbe *v, Table *pTab, int i, int iReg){
     sqlite3ValueFromExpr(sqlite3VdbeDb(v), pCol->pDflt, enc, 
                          pCol->affinity, &pValue);
     if( pValue ){
-      sqlite3VdbeChangeP4(v, -1, (const char *)pValue, P4_MEM);
+      sqlite3VdbeAppendP4(v, pValue, P4_MEM);
     }
 #ifndef SQLITE_OMIT_FLOATING_POINT
     if( pTab->aCol[i].affinity==SQLITE_AFF_REAL ){
@@ -610,7 +610,7 @@ void sqlite3Update(
         regNewRowid
     );
     if( !pParse->nested ){
-      sqlite3VdbeChangeP4(v, -1, (char*)pTab, P4_TABLE);
+      sqlite3VdbeAppendP4(v, pTab, P4_TABLE);
     }
 #else
     if( hasFK || chngKey || pPk!=0 ){

@@ -268,7 +268,7 @@ ccons ::= DEFAULT LP expr(X) RP.      {sqlite3AddDefaultValue(pParse,&X);}
 ccons ::= DEFAULT PLUS term(X).       {sqlite3AddDefaultValue(pParse,&X);}
 ccons ::= DEFAULT MINUS(A) term(X).      {
   ExprSpan v;
-  v.pExpr = sqlite3PExpr(pParse, TK_UMINUS, X.pExpr, 0, 0);
+  v.pExpr = sqlite3PExpr(pParse, TK_UMINUS, X.pExpr, 0);
   v.zStart = A.z;
   v.zEnd = X.zEnd;
   sqlite3AddDefaultValue(pParse,&v);
@@ -543,9 +543,9 @@ selcollist(A) ::= sclp(A) STAR. {
   A = sqlite3ExprListAppend(pParse, A, p);
 }
 selcollist(A) ::= sclp(A) nm(X) DOT STAR. {
-  Expr *pRight = sqlite3PExpr(pParse, TK_ASTERISK, 0, 0, 0);
-  Expr *pLeft = sqlite3PExpr(pParse, TK_ID, 0, 0, &X);
-  Expr *pDot = sqlite3PExpr(pParse, TK_DOT, pLeft, pRight, 0);
+  Expr *pRight = sqlite3PExpr(pParse, TK_ASTERISK, 0, 0);
+  Expr *pLeft = sqlite3ExprAlloc(pParse->db, TK_ID, &X, 1);
+  Expr *pDot = sqlite3PExpr(pParse, TK_DOT, pLeft, pRight);
   A = sqlite3ExprListAppend(pParse,A, pDot);
 }
 
@@ -870,15 +870,15 @@ expr(A) ::= nm(X) DOT nm(Y). {
   Expr *temp1 = sqlite3ExprAlloc(pParse->db, TK_ID, &X, 1);
   Expr *temp2 = sqlite3ExprAlloc(pParse->db, TK_ID, &Y, 1);
   spanSet(&A,&X,&Y); /*A-overwrites-X*/
-  A.pExpr = sqlite3PExpr(pParse, TK_DOT, temp1, temp2, 0);
+  A.pExpr = sqlite3PExpr(pParse, TK_DOT, temp1, temp2);
 }
 expr(A) ::= nm(X) DOT nm(Y) DOT nm(Z). {
   Expr *temp1 = sqlite3ExprAlloc(pParse->db, TK_ID, &X, 1);
   Expr *temp2 = sqlite3ExprAlloc(pParse->db, TK_ID, &Y, 1);
   Expr *temp3 = sqlite3ExprAlloc(pParse->db, TK_ID, &Z, 1);
-  Expr *temp4 = sqlite3PExpr(pParse, TK_DOT, temp2, temp3, 0);
+  Expr *temp4 = sqlite3PExpr(pParse, TK_DOT, temp2, temp3);
   spanSet(&A,&X,&Z); /*A-overwrites-X*/
-  A.pExpr = sqlite3PExpr(pParse, TK_DOT, temp1, temp4, 0);
+  A.pExpr = sqlite3PExpr(pParse, TK_DOT, temp1, temp4);
 }
 term(A) ::= FLOAT|BLOB(X). {spanExpr(&A,pParse,@X,X);/*A-overwrites-X*/}
 term(A) ::= STRING(X).     {spanExpr(&A,pParse,@X,X);/*A-overwrites-X*/}
@@ -904,7 +904,7 @@ expr(A) ::= VARIABLE(X).     {
       sqlite3ErrorMsg(pParse, "near \"%T\": syntax error", &t);
       A.pExpr = 0;
     }else{
-      A.pExpr = sqlite3PExpr(pParse, TK_REGISTER, 0, 0, 0);
+      A.pExpr = sqlite3PExpr(pParse, TK_REGISTER, 0, 0);
       if( A.pExpr ) sqlite3GetInt32(&t.z[1], &A.pExpr->iTable);
     }
   }
@@ -916,7 +916,8 @@ expr(A) ::= expr(A) COLLATE ids(C). {
 %ifndef SQLITE_OMIT_CAST
 expr(A) ::= CAST(X) LP expr(E) AS typetoken(T) RP(Y). {
   spanSet(&A,&X,&Y); /*A-overwrites-X*/
-  A.pExpr = sqlite3PExpr(pParse, TK_CAST, E.pExpr, 0, &T);
+  A.pExpr = sqlite3ExprAlloc(pParse->db, TK_CAST, &T, 1);
+  sqlite3ExprAttachSubtrees(pParse->db, A.pExpr, E.pExpr, 0);
 }
 %endif  SQLITE_OMIT_CAST
 expr(A) ::= id(X) LP distinct(D) exprlist(Y) RP(E). {
@@ -948,7 +949,7 @@ term(A) ::= CTIME_KW(OP). {
     ExprSpan *pLeft,    /* The left operand, and output */
     ExprSpan *pRight    /* The right operand */
   ){
-    pLeft->pExpr = sqlite3PExpr(pParse, op, pLeft->pExpr, pRight->pExpr, 0);
+    pLeft->pExpr = sqlite3PExpr(pParse, op, pLeft->pExpr, pRight->pExpr);
     pLeft->zEnd = pRight->zEnd;
   }
 
@@ -957,14 +958,14 @@ term(A) ::= CTIME_KW(OP). {
   */
   static void exprNot(Parse *pParse, int doNot, ExprSpan *pSpan){
     if( doNot ){
-      pSpan->pExpr = sqlite3PExpr(pParse, TK_NOT, pSpan->pExpr, 0, 0);
+      pSpan->pExpr = sqlite3PExpr(pParse, TK_NOT, pSpan->pExpr, 0);
     }
   }
 }
 
 expr(A) ::= LP(L) nexprlist(X) COMMA expr(Y) RP(R). {
   ExprList *pList = sqlite3ExprListAppend(pParse, X, Y.pExpr);
-  A.pExpr = sqlite3PExpr(pParse, TK_VECTOR, 0, 0, 0);
+  A.pExpr = sqlite3PExpr(pParse, TK_VECTOR, 0, 0);
   if( A.pExpr ){
     A.pExpr->x.pList = pList;
     spanSet(&A, &L, &R);
@@ -1021,7 +1022,7 @@ expr(A) ::= expr(A) likeop(OP) expr(Y) ESCAPE expr(E).  [LIKE_KW]  {
     ExprSpan *pOperand,    /* The operand, and output */
     Token *pPostOp         /* The operand token for setting the span */
   ){
-    pOperand->pExpr = sqlite3PExpr(pParse, op, pOperand->pExpr, 0, 0);
+    pOperand->pExpr = sqlite3PExpr(pParse, op, pOperand->pExpr, 0);
     pOperand->zEnd = &pPostOp->z[pPostOp->n];
   }                           
 }
@@ -1068,7 +1069,7 @@ expr(A) ::= expr(A) IS NOT expr(Y). {
     Token *pPreOp         /* The operand token for setting the span */
   ){
     pOut->zStart = pPreOp->z;
-    pOut->pExpr = sqlite3PExpr(pParse, op, pOperand->pExpr, 0, 0);
+    pOut->pExpr = sqlite3PExpr(pParse, op, pOperand->pExpr, 0);
     pOut->zEnd = pOperand->zEnd;
   }
 }
@@ -1090,7 +1091,7 @@ between_op(A) ::= NOT BETWEEN. {A = 1;}
 expr(A) ::= expr(A) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
   ExprList *pList = sqlite3ExprListAppend(pParse,0, X.pExpr);
   pList = sqlite3ExprListAppend(pParse,pList, Y.pExpr);
-  A.pExpr = sqlite3PExpr(pParse, TK_BETWEEN, A.pExpr, 0, 0);
+  A.pExpr = sqlite3PExpr(pParse, TK_BETWEEN, A.pExpr, 0);
   if( A.pExpr ){
     A.pExpr->x.pList = pList;
   }else{
@@ -1114,7 +1115,7 @@ expr(A) ::= expr(A) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
       ** regardless of the value of expr1.
       */
       sqlite3ExprDelete(pParse->db, A.pExpr);
-      A.pExpr = sqlite3PExpr(pParse, TK_INTEGER, 0, 0, &sqlite3IntTokens[N]);
+      A.pExpr = sqlite3ExprAlloc(pParse->db, TK_INTEGER,&sqlite3IntTokens[N],1);
     }else if( Y->nExpr==1 ){
       /* Expressions of the form:
       **
@@ -1141,9 +1142,9 @@ expr(A) ::= expr(A) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
         pRHS->flags &= ~EP_Collate;
         pRHS->flags |= EP_Generic;
       }
-      A.pExpr = sqlite3PExpr(pParse, N ? TK_NE : TK_EQ, A.pExpr, pRHS, 0);
+      A.pExpr = sqlite3PExpr(pParse, N ? TK_NE : TK_EQ, A.pExpr, pRHS);
     }else{
-      A.pExpr = sqlite3PExpr(pParse, TK_IN, A.pExpr, 0, 0);
+      A.pExpr = sqlite3PExpr(pParse, TK_IN, A.pExpr, 0);
       if( A.pExpr ){
         A.pExpr->x.pList = Y;
         sqlite3ExprSetHeightAndFlags(pParse, A.pExpr);
@@ -1156,11 +1157,11 @@ expr(A) ::= expr(A) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
   }
   expr(A) ::= LP(B) select(X) RP(E). {
     spanSet(&A,&B,&E); /*A-overwrites-B*/
-    A.pExpr = sqlite3PExpr(pParse, TK_SELECT, 0, 0, 0);
+    A.pExpr = sqlite3PExpr(pParse, TK_SELECT, 0, 0);
     sqlite3PExprAddSelect(pParse, A.pExpr, X);
   }
   expr(A) ::= expr(A) in_op(N) LP select(Y) RP(E).  [IN] {
-    A.pExpr = sqlite3PExpr(pParse, TK_IN, A.pExpr, 0, 0);
+    A.pExpr = sqlite3PExpr(pParse, TK_IN, A.pExpr, 0);
     sqlite3PExprAddSelect(pParse, A.pExpr, Y);
     exprNot(pParse, N, &A);
     A.zEnd = &E.z[E.n];
@@ -1169,7 +1170,7 @@ expr(A) ::= expr(A) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
     SrcList *pSrc = sqlite3SrcListAppend(pParse->db, 0,&Y,&Z);
     Select *pSelect = sqlite3SelectNew(pParse, 0,pSrc,0,0,0,0,0,0,0);
     if( E )  sqlite3SrcListFuncArgs(pParse, pSelect ? pSrc : 0, E);
-    A.pExpr = sqlite3PExpr(pParse, TK_IN, A.pExpr, 0, 0);
+    A.pExpr = sqlite3PExpr(pParse, TK_IN, A.pExpr, 0);
     sqlite3PExprAddSelect(pParse, A.pExpr, pSelect);
     exprNot(pParse, N, &A);
     A.zEnd = Z.z ? &Z.z[Z.n] : &Y.z[Y.n];
@@ -1177,7 +1178,7 @@ expr(A) ::= expr(A) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
   expr(A) ::= EXISTS(B) LP select(Y) RP(E). {
     Expr *p;
     spanSet(&A,&B,&E); /*A-overwrites-B*/
-    p = A.pExpr = sqlite3PExpr(pParse, TK_EXISTS, 0, 0, 0);
+    p = A.pExpr = sqlite3PExpr(pParse, TK_EXISTS, 0, 0);
     sqlite3PExprAddSelect(pParse, p, Y);
   }
 %endif SQLITE_OMIT_SUBQUERY
@@ -1185,7 +1186,7 @@ expr(A) ::= expr(A) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
 /* CASE expressions */
 expr(A) ::= CASE(C) case_operand(X) case_exprlist(Y) case_else(Z) END(E). {
   spanSet(&A,&C,&E);  /*A-overwrites-C*/
-  A.pExpr = sqlite3PExpr(pParse, TK_CASE, X, 0, 0);
+  A.pExpr = sqlite3PExpr(pParse, TK_CASE, X, 0);
   if( A.pExpr ){
     A.pExpr->x.pList = Z ? sqlite3ExprListAppend(pParse,Y,Z) : Y;
     sqlite3ExprSetHeightAndFlags(pParse, A.pExpr);
@@ -1445,14 +1446,14 @@ trigger_cmd(A) ::= select(X).
 // The special RAISE expression that may occur in trigger programs
 expr(A) ::= RAISE(X) LP IGNORE RP(Y).  {
   spanSet(&A,&X,&Y);  /*A-overwrites-X*/
-  A.pExpr = sqlite3PExpr(pParse, TK_RAISE, 0, 0, 0); 
+  A.pExpr = sqlite3PExpr(pParse, TK_RAISE, 0, 0); 
   if( A.pExpr ){
     A.pExpr->affinity = OE_Ignore;
   }
 }
 expr(A) ::= RAISE(X) LP raisetype(T) COMMA nm(Z) RP(Y).  {
   spanSet(&A,&X,&Y);  /*A-overwrites-X*/
-  A.pExpr = sqlite3PExpr(pParse, TK_RAISE, 0, 0, &Z); 
+  A.pExpr = sqlite3ExprAlloc(pParse->db, TK_RAISE, &Z, 1); 
   if( A.pExpr ) {
     A.pExpr->affinity = (char)T;
   }

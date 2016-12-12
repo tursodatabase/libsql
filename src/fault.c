@@ -26,7 +26,7 @@
 
 #include "sqliteInt.h"
 
-#ifndef SQLITE_OMIT_BUILTIN_TEST
+#ifndef SQLITE_UNTESTABLE
 
 /*
 ** Global variables.
@@ -84,4 +84,4 @@ void sqlite3EndBenignMalloc(void){
   }
 }
 
-#endif   /* #ifndef SQLITE_OMIT_BUILTIN_TEST */
+#endif   /* #ifndef SQLITE_UNTESTABLE */

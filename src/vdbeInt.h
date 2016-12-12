@@ -73,60 +73,60 @@ typedef struct AuxData AuxData;
 */
 typedef struct VdbeCursor VdbeCursor;
 struct VdbeCursor {
-  u8 eCurType;          /* One of the CURTYPE_* values above */
-  i8 iDb;               /* Index of cursor database in db->aDb[] (or -1) */
-  u8 nullRow;           /* True if pointing to a row with no data */
-  u8 deferredMoveto;    /* A call to sqlite3BtreeMoveto() is needed */
-  u8 isTable;           /* True for rowid tables.  False for indexes */
+  u8 eCurType;            /* One of the CURTYPE_* values above */
+  i8 iDb;                 /* Index of cursor database in db->aDb[] (or -1) */
+  u8 nullRow;             /* True if pointing to a row with no data */
+  u8 deferredMoveto;      /* A call to sqlite3BtreeMoveto() is needed */
+  u8 isTable;             /* True for rowid tables.  False for indexes */
 #ifdef SQLITE_DEBUG
-  u8 seekOp;            /* Most recent seek operation on this cursor */
-  u8 wrFlag;            /* The wrFlag argument to sqlite3BtreeCursor() */
+  u8 seekOp;              /* Most recent seek operation on this cursor */
+  u8 wrFlag;              /* The wrFlag argument to sqlite3BtreeCursor() */
 #endif
-  Bool isEphemeral:1;   /* True for an ephemeral table */
-  Bool useRandomRowid:1;/* Generate new record numbers semi-randomly */
-  Bool isOrdered:1;     /* True if the table is not BTREE_UNORDERED */
-  Pgno pgnoRoot;        /* Root page of the open btree cursor */
-  i16 nField;           /* Number of fields in the header */
-  u16 nHdrParsed;       /* Number of header fields parsed so far */
+  Bool isEphemeral:1;     /* True for an ephemeral table */
+  Bool useRandomRowid:1;  /* Generate new record numbers semi-randomly */
+  Bool isOrdered:1;       /* True if the table is not BTREE_UNORDERED */
+  Btree *pBtx;            /* Separate file holding temporary table */
+  i64 seqCount;           /* Sequence counter */
+  int *aAltMap;           /* Mapping from table to index column numbers */
+
+  /* Cached OP_Column parse information is only valid if cacheStatus matches
+  ** Vdbe.cacheCtr.  Vdbe.cacheCtr will never take on the value of
+  ** CACHE_STALE (0) and so setting cacheStatus=CACHE_STALE guarantees that
+  ** the cache is out of date. */
+  u32 cacheStatus;        /* Cache is valid if this matches Vdbe.cacheCtr */
+  int seekResult;         /* Result of previous sqlite3BtreeMoveto() or 0
+                          ** if there have been no prior seeks on the cursor. */
+  /* NB: seekResult does not distinguish between "no seeks have ever occurred
+  ** on this cursor" and "the most recent seek was an exact match". */
+
+  /* When a new VdbeCursor is allocated, only the fields above are zeroed.
+  ** The fields that follow are uninitialized, and must be individually
+  ** initialized prior to first use. */
+  VdbeCursor *pAltCursor; /* Associated index cursor from which to read */
   union {
     BtCursor *pCursor;          /* CURTYPE_BTREE.  Btree cursor */
     sqlite3_vtab_cursor *pVCur; /* CURTYPE_VTAB.   Vtab cursor */
     int pseudoTableReg;         /* CURTYPE_PSEUDO. Reg holding content. */
     VdbeSorter *pSorter;        /* CURTYPE_SORTER. Sorter object */
   } uc;
-  Btree *pBt;           /* Separate file holding temporary table */
-  KeyInfo *pKeyInfo;    /* Info about index keys needed by index cursors */
-  int seekResult;       /* Result of previous sqlite3BtreeMoveto() or 0
-                        ** if there have been no prior seeks on the cursor. */
-  /* NB: seekResult does not distinguish between "no seeks have ever occurred
-  ** on this cursor" and "the most recent seek was an exact match". */
-  i64 seqCount;         /* Sequence counter */
-  i64 movetoTarget;     /* Argument to the deferred sqlite3BtreeMoveto() */
-  VdbeCursor *pAltCursor; /* Associated index cursor from which to read */
-  int *aAltMap;           /* Mapping from table to index column numbers */
+  KeyInfo *pKeyInfo;      /* Info about index keys needed by index cursors */
+  u32 iHdrOffset;         /* Offset to next unparsed byte of the header */
+  Pgno pgnoRoot;          /* Root page of the open btree cursor */
+  i16 nField;             /* Number of fields in the header */
+  u16 nHdrParsed;         /* Number of header fields parsed so far */
+  i64 movetoTarget;       /* Argument to the deferred sqlite3BtreeMoveto() */
+  u32 *aOffset;           /* Pointer to aType[nField] */
+  const u8 *aRow;         /* Data for the current row, if all on one page */
+  u32 payloadSize;        /* Total number of bytes in the record */
+  u32 szRow;              /* Byte available in aRow */
 #ifdef SQLITE_ENABLE_COLUMN_USED_MASK
-  u64 maskUsed;         /* Mask of columns used by this cursor */
+  u64 maskUsed;           /* Mask of columns used by this cursor */
 #endif
 
-  /* Cached information about the header for the data record that the
-  ** cursor is currently pointing to.  Only valid if cacheStatus matches
-  ** Vdbe.cacheCtr.  Vdbe.cacheCtr will never take on the value of
-  ** CACHE_STALE and so setting cacheStatus=CACHE_STALE guarantees that
-  ** the cache is out of date.
-  **
-  ** aRow might point to (ephemeral) data for the current row, or it might
-  ** be NULL.
-  */
-  u32 cacheStatus;      /* Cache is valid if this matches Vdbe.cacheCtr */
-  u32 payloadSize;      /* Total number of bytes in the record */
-  u32 szRow;            /* Byte available in aRow */
-  u32 iHdrOffset;       /* Offset to next unparsed byte of the header */
-  const u8 *aRow;       /* Data for the current row, if all on one page */
-  u32 *aOffset;         /* Pointer to aType[nField] */
-  u32 aType[1];         /* Type values for all entries in the record */
   /* 2*nField extra array elements allocated for aType[], beyond the one
   ** static element declared in the structure.  nField total array slots for
   ** aType[] and nField+1 array slots for aOffset[] */
+  u32 aType[1];           /* Type values record decode.  MUST BE LAST */
 };
 
 

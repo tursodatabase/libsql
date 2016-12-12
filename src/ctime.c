@@ -233,9 +233,6 @@ static const char * const azCompileOpt[] = {
 #if SQLITE_OMIT_BTREECOUNT
   "OMIT_BTREECOUNT",
 #endif
-#if SQLITE_OMIT_BUILTIN_TEST
-  "OMIT_BUILTIN_TEST",
-#endif
 #if SQLITE_OMIT_CAST
   "OMIT_CAST",
 #endif
@@ -397,6 +394,9 @@ static const char * const azCompileOpt[] = {
 #endif
 #if defined(SQLITE_THREADSAFE)
   "THREADSAFE=" CTIMEOPT_VAL(SQLITE_THREADSAFE),
+#endif
+#if SQLITE_UNTESTABLE
+  "UNTESTABLE"
 #endif
 #if SQLITE_USE_ALLOCA
   "USE_ALLOCA",
