@@ -1,5 +1,5 @@
-C Add\sthe\s--mmap\soption\sto\sthe\sspeedtest1\sprogram\sand\sto\sthe\sspeed-check.sh\nscript\sthat\sis\sfrequently\sused\sto\srun\sspeedtest1.
-D 2016-12-12T23:24:08.261
+C Fix\sa\sproblem\scausing\sSQLite\sto\sreturn\sfalse\s"foreign\skey\sviolation"\serrors\nwhen\sthere\sis\sa\spartial\s(i.e.\sWHERE\sconstrained)\sUNIQUE\sindex\son\sthe\sparent\nkey\scolumns.\sThis\sbug\sdid\snot\scause\sSQLite\sto\sallow\sillegal\sdata\sto\sbe\ninserted\sinto\sthe\sdatabase,\sonly\sto\sreject\slegal\soperations.
+D 2016-12-13T16:57:49.299
 F Makefile.in 7639c6a09da11a9c7c6f2630fc981ee588d1072d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -343,7 +343,7 @@ F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
 F src/delete.c 42768e673861dffec92664b2036da6be51720e49
 F src/expr.c 84a5e590184ad7ccae22e7ad484d6394dec46f16
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
-F src/fkey.c 4017dc6d8bf894c4818ffbaf392e53c7c68dd761
+F src/fkey.c 4f527ddd05250b3f750f17be76ca65ec76b4e6cb
 F src/func.c 43916c1d8e6da5d107d91d2b212577d4f69a876a
 F src/global.c 235021a21ee2cb52b304589f8f9e85a36bbe24fa
 F src/hash.c 63d0ee752a3b92d4695b2b1f5259c4621b2cfebd
@@ -684,7 +684,7 @@ F test/extraquick.test cb254400bd42bfb777ff675356aabf3287978f79
 F test/fallocate.test 3e979af17dfa7e5e9dda5eba1a696c04fa9d47f7
 F test/filectrl.test 6e871c2d35dead1d9a88e176e8d2ca094fec6bb3
 F test/filefmt.test e4edbdc637ca9576ccf4337a3cce627d9df7a56c
-F test/fkey1.test 13e3d48236a2b9f5c5ebd232eef9b3ab682a8a2c
+F test/fkey1.test ba64806ff9a04eecab2679caad377ae99a5e94e4
 F test/fkey2.test f3d27ecba480a348c328965d154214719bb158a9
 F test/fkey3.test 76d475c80b84ee7a5d062e56ccb6ea68882e2b49
 F test/fkey4.test 86446017011273aad8f9a99c1a65019e7bd9ca9d
@@ -1536,7 +1536,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1b36fbb9f05f3a5844e198b489bff36ef6cd908c
-R 54a6c1795de20385060d3d26915836b2
-U drh
-Z 47f248a7928b3840fe2e23a9066d59e9
+P 1a636d5e0eec0a4d968519d1dfd35a983e512c78
+R 5a6882353526d0c1387fb8d5e18f94f5
+U dan
+Z 8572282c856eadf1ae5a34d00073243b
