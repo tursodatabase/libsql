@@ -1022,8 +1022,10 @@ static char *print_pager_state(Pager *p){
 
 /* Forward references to the various page getters */
 static int getPageNormal(Pager*,Pgno,DbPage**,int);
-static int getPageMMap(Pager*,Pgno,DbPage**,int);
 static int getPageError(Pager*,Pgno,DbPage**,int);
+#if SQLITE_MAX_MMAP_SIZE>0
+static int getPageMMap(Pager*,Pgno,DbPage**,int);
+#endif
 
 /*
 ** Set the Pager.xGet method for the appropriate routine used to fetch
@@ -1032,12 +1034,14 @@ static int getPageError(Pager*,Pgno,DbPage**,int);
 static void setGetterMethod(Pager *pPager){
   if( pPager->errCode ){
     pPager->xGet = getPageError;
+#if SQLITE_MAX_MMAP_SIZE>0
   }else if( USEFETCH(pPager)
 #ifdef SQLITE_HAS_CODEC
    && pPager->xCodec==0
 #endif
   ){
     pPager->xGet = getPageMMap;
+#endif /* SQLITE_MAX_MMAP_SIZE>0 */
   }else{
     pPager->xGet = getPageNormal;
   }
@@ -5295,9 +5299,16 @@ static void pagerUnlockIfUnused(Pager *pPager){
 }
 
 /*
-** Acquire a reference to page number pgno in pager pPager (a page
-** reference has type DbPage*). If the requested reference is 
+** The page getter methods each try to acquire a reference to a
+** page with page number pgno. If the requested reference is 
 ** successfully obtained, it is copied to *ppPage and SQLITE_OK returned.
+**
+** There are different implementations of the getter method depending
+** on the current state of the pager.
+**
+**     getPageNormal()         --  The normal getter
+**     getPageError()          --  Used if the pager is in an error state
+**     getPageMmap()           --  Used if memory-mapped I/O is enabled
 **
 ** If the requested page is already in the cache, it is returned. 
 ** Otherwise, a new page object is allocated and populated with data
@@ -5310,14 +5321,14 @@ static void pagerUnlockIfUnused(Pager *pPager){
 ** already in the cache when this function is called, then the extra
 ** data is left as it was when the page object was last used.
 **
-** If the database image is smaller than the requested page or if a 
-** non-zero value is passed as the noContent parameter and the 
+** If the database image is smaller than the requested page or if 
+** the flags parameter contains the PAGER_GET_NOCONTENT bit and the 
 ** requested page is not already stored in the cache, then no 
 ** actual disk read occurs. In this case the memory image of the 
 ** page is initialized to all zeros. 
 **
-** If noContent is true, it means that we do not care about the contents
-** of the page. This occurs in two scenarios:
+** If PAGER_GET_NOCONTENT is true, it means that we do not care about
+** the contents of the page. This occurs in two scenarios:
 **
 **   a) When reading a free-list leaf page from the database, and
 **
@@ -5325,8 +5336,8 @@ static void pagerUnlockIfUnused(Pager *pPager){
 **      a new page into the cache to be filled with the data read
 **      from the savepoint journal.
 **
-** If noContent is true, then the data returned is zeroed instead of
-** being read from the database. Additionally, the bits corresponding
+** If PAGER_GET_NOCONTENT is true, then the data returned is zeroed instead
+** of being read from the database. Additionally, the bits corresponding
 ** to pgno in Pager.pInJournal (bitvec of pages already written to the
 ** journal file) and the PagerSavepoint.pInSavepoint bitvecs of any open
 ** savepoints are set. This means if the page is made writable at any
@@ -5351,9 +5362,8 @@ static int getPageNormal(
   int flags           /* PAGER_GET_XXX flags */
 ){
   int rc = SQLITE_OK;
-  PgHdr *pPg = 0;
-  u32 iFrame = 0;                 /* Frame to read from WAL file */
-  const int noContent = (flags & PAGER_GET_NOCONTENT);
+  PgHdr *pPg;
+  u8 noContent;                   /* True if PAGER_GET_NOCONTENT is set */
   sqlite3_pcache_page *pBase;
 
   if( pgno==0 ){
@@ -5367,10 +5377,10 @@ static int getPageNormal(
 
   pBase = sqlite3PcacheFetch(pPager->pPCache, pgno, 3);
   if( pBase==0 ){
+    pPg = 0;
     rc = sqlite3PcacheFetchStress(pPager->pPCache, pgno, &pBase);
     if( rc!=SQLITE_OK ) goto pager_acquire_err;
     if( pBase==0 ){
-      pPg = *ppPage = 0;
       rc = SQLITE_NOMEM_BKPT;
       goto pager_acquire_err;
     }
@@ -5380,7 +5390,7 @@ static int getPageNormal(
   assert( pPg->pgno==pgno );
   assert( pPg->pPager==pPager || pPg->pPager==0 );
 
-  if( pPg->pPager && !noContent ){
+  if( pPg->pPager ){
     /* In this case the pcache already contains an initialized copy of
     ** the page. Return without further ado.  */
     assert( pgno<=PAGER_MAX_PGNO && pgno!=PAGER_MJ_PGNO(pPager) );
@@ -5401,6 +5411,7 @@ static int getPageNormal(
     }
 
     assert( !isOpen(pPager->fd) || !MEMDB );
+    noContent = (flags & PAGER_GET_NOCONTENT)!=0;
     if( !isOpen(pPager->fd) || pPager->dbSize<pgno || noContent ){
       if( pgno>pPager->mxPgno ){
         rc = SQLITE_FULL;
@@ -5425,7 +5436,8 @@ static int getPageNormal(
       memset(pPg->pData, 0, pPager->pageSize);
       IOTRACE(("ZERO %p %d\n", pPager, pgno));
     }else{
-      if( pagerUseWal(pPager) /*&& bMmapOk==0*/ ){
+      u32 iFrame = 0;                 /* Frame to read from WAL file */
+      if( pagerUseWal(pPager) ){
         rc = sqlite3WalFindFrame(pPager->pWal, pgno, &iFrame);
         if( rc!=SQLITE_OK ) goto pager_acquire_err;
       }
@@ -5450,6 +5462,7 @@ pager_acquire_err:
   return rc;
 }
 
+#if SQLITE_MAX_MMAP_SIZE>0
 /* The page getter for when memory-mapped I/O is enabled */
 static int getPageMMap(
   Pager *pPager,      /* The pager open on the database file */
@@ -5520,6 +5533,7 @@ static int getPageMMap(
   }
   return getPageNormal(pPager, pgno, ppPage, flags);
 }
+#endif /* SQLITE_MAX_MMAP_SIZE>0 */
 
 /* The page getter method for when the pager is an error state */
 static int getPageError(
