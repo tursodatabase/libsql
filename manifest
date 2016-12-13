@@ -1,5 +1,5 @@
-C Add\sthe\s--mmap\soption\sto\sthe\sspeedtest1\sprogram\sand\sto\sthe\sspeed-check.sh\nscript\sthat\sis\sfrequently\sused\sto\srun\sspeedtest1.
-D 2016-12-12T23:24:08.261
+C Make\sthe\ssqlite3PagerGet()\sinterface\sinto\sa\svirtual\smethod,\swith\sdifferent\nimplementations\sbased\son\sthe\scurrent\sstate\sof\sthe\spager.\s\sThis\sgives\sa\ssmall\nperformance\sincrease\sby\savoiding\sunnecessary\sbranches\sinside\sthe\svarious\nmethods.
+D 2016-12-13T14:32:47.273
 F Makefile.in 7639c6a09da11a9c7c6f2630fc981ee588d1072d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -375,7 +375,7 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c 30e2c43e4955db990e5b5a81e901f8aa74cc8820
 F src/os_win.c cf90abd4e50d9f56d2c20ce8e005aff55d7bd8e9
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c eaf8590131ab651420e86e89c3fd12d729f55ad3
+F src/pager.c e99f7edfab2441f55fc1a4f4dd05f3bf0f1a82cd
 F src/pager.h d1e944291030351f362a0a7da9b5c3e34e603e39
 F src/parse.y 29153738a7322054359320eb00b5a4cd44389f20
 F src/pcache.c 219fc5238d5c80e2990ab01e1459db3a96866447
@@ -1536,7 +1536,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1b36fbb9f05f3a5844e198b489bff36ef6cd908c
-R 54a6c1795de20385060d3d26915836b2
+P 1a636d5e0eec0a4d968519d1dfd35a983e512c78
+R d5446ab8495308acac3b07699664fa42
+T *branch * pager-get-method
+T *sym-pager-get-method *
+T -sym-trunk *
 U drh
-Z 47f248a7928b3840fe2e23a9066d59e9
+Z 3a0d20f1bb36125dcd9d753c0baba230
