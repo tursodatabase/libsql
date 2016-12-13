@@ -5366,14 +5366,10 @@ static int getPageNormal(
   u8 noContent;                   /* True if PAGER_GET_NOCONTENT is set */
   sqlite3_pcache_page *pBase;
 
-  if( pgno==0 ){
-    return SQLITE_CORRUPT_BKPT;
-  }
   assert( pPager->errCode==SQLITE_OK );
   assert( pPager->eState>=PAGER_READER );
   assert( assert_pager_state(pPager) );
   assert( pPager->hasHeldSharedLock==1 );
-
 
   pBase = sqlite3PcacheFetch(pPager->pPCache, pgno, 3);
   if( pBase==0 ){
@@ -5399,16 +5395,18 @@ static int getPageNormal(
 
   }else{
     /* The pager cache has created a new page. Its content needs to 
-    ** be initialized.  */
-
-    pPg->pPager = pPager;
-
-    /* The maximum page number is 2^31. Return SQLITE_CORRUPT if a page
-    ** number greater than this, or the unused locking-page, is requested. */
-    if( pgno>PAGER_MAX_PGNO || pgno==PAGER_MJ_PGNO(pPager) ){
+    ** be initialized. But first some error checks:
+    **
+    ** (1) Minimum page number is 1
+    ** (2) The maximum page number is 2^31
+    ** (3) Never try to fetch the locking page
+    */
+    if( pgno==0 || pgno>PAGER_MAX_PGNO || pgno==PAGER_MJ_PGNO(pPager) ){
       rc = SQLITE_CORRUPT_BKPT;
       goto pager_acquire_err;
     }
+
+    pPg->pPager = pPager;
 
     assert( !isOpen(pPager->fd) || !MEMDB );
     noContent = (flags & PAGER_GET_NOCONTENT)!=0;
