@@ -946,6 +946,25 @@ static int shellAuth(
 }
 #endif
 
+/*
+** Print a schema statement.  Part of MODE_Semi and MODE_Pretty output.
+**
+** This routine converts some CREATE TABLE statements for shadow tables
+** in FTS3/4/5 into CREATE TABLE IF NOT EXISTS statements.
+*/
+static void printSchemaLine(FILE *out, const char *z, const char *zTail){
+  if( sqlite3_strglob("CREATE TABLE ['\"]*", z)==0 ){
+    utf8_printf(out, "CREATE TABLE IF NOT EXISTS %s%s", z+13, zTail);
+  }else{
+    utf8_printf(out, "%s%s", z, zTail);
+  }
+}
+static void printSchemaLineN(FILE *out, char *z, int n, const char *zTail){
+  char c = z[n];
+  z[n] = 0;
+  printSchemaLine(out, z, zTail);
+  z[n] = c;
+}
 
 /*
 ** This is the callback routine that the shell
@@ -1064,7 +1083,7 @@ static int shell_callback(
       break;
     }
     case MODE_Semi: {   /* .schema and .fullschema output */
-      utf8_printf(p->out, "%s;\n", azArg[0]);
+      printSchemaLine(p->out, azArg[0], ";\n");
       break;
     }
     case MODE_Pretty: {  /* .schema and .fullschema with --indent */
@@ -1108,14 +1127,14 @@ static int shell_callback(
           }else if( c==')' ){
             nParen--;
             if( nLine>0 && nParen==0 && j>0 ){
-              utf8_printf(p->out, "%.*s\n", j, z);
+              printSchemaLineN(p->out, z, j, "\n");
               j = 0;
             }
           }
           z[j++] = c;
           if( nParen==1 && (c=='(' || c==',' || c=='\n') ){
             if( c=='\n' ) j--;
-            utf8_printf(p->out, "%.*s\n  ", j, z);
+            printSchemaLineN(p->out, z, j, "\n  ");
             j = 0;
             nLine++;
             while( IsSpace(z[i+1]) ){ i++; }
@@ -1123,7 +1142,7 @@ static int shell_callback(
         }
         z[j] = 0;
       }
-      utf8_printf(p->out, "%s;\n", z);
+      printSchemaLine(p->out, z, ";\n");
       sqlite3_free(z);
       break;
     }
@@ -2046,7 +2065,7 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
     sqlite3_free(zIns);
     return 0;
   }else{
-    utf8_printf(p->out, "%s;\n", zSql);
+    printSchemaLine(p->out, zSql, ";\n");
   }
 
   if( strcmp(zType, "table")==0 ){
