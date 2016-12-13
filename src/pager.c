@@ -5472,11 +5472,6 @@ static int getPageMMap(
   PgHdr *pPg = 0;
   u32 iFrame = 0;                 /* Frame to read from WAL file */
 
-  assert( USEFETCH(pPager) );
-#ifdef SQLITE_HAS_CODEC
-  assert( pPager->xCodec==0 );
-#endif
-
   /* It is acceptable to use a read-only (mmap) page for any page except
   ** page 1 if there is no write-transaction open or the ACQUIRE_READONLY
   ** flag was specified by the caller. And so long as the db is not a 
@@ -5484,6 +5479,11 @@ static int getPageMMap(
   const int bMmapOk = (pgno>1
    && (pPager->eState==PAGER_READER || (flags & PAGER_GET_READONLY))
   );
+
+  assert( USEFETCH(pPager) );
+#ifdef SQLITE_HAS_CODEC
+  assert( pPager->xCodec==0 );
+#endif
 
   /* Optimization note:  Adding the "pgno<=1" term before "pgno==0" here
   ** allows the compiler optimizer to reuse the results of the "pgno>1"
@@ -5540,6 +5540,8 @@ static int getPageError(
   DbPage **ppPage,    /* Write a pointer to the page here */
   int flags           /* PAGER_GET_XXX flags */
 ){
+  UNUSED_PARAMETER(pgno);
+  UNUSED_PARAMETER(flags);
   assert( pPager->errCode!=SQLITE_OK );
   *ppPage = 0;
   return pPager->errCode;

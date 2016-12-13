@@ -1743,7 +1743,7 @@ static int btreeInitPage(MemPage *pPage){
   assert( pPage->aData == sqlite3PagerGetData(pPage->pDbPage) );
 
   if( !pPage->isInit ){
-    u32 pc;            /* Address of a freeblock within pPage->aData[] */
+    int pc;            /* Address of a freeblock within pPage->aData[] */
     u8 hdr;            /* Offset to beginning of page header */
     u8 *data;          /* Equal to pPage->aData */
     BtShared *pBt;        /* The main btree structure */
@@ -1844,7 +1844,7 @@ static int btreeInitPage(MemPage *pPage){
       if( next>0 ){
         return SQLITE_CORRUPT_BKPT;  /* Freeblock not in ascending order */
       }
-      if( pc+size>usableSize ){
+      if( pc+size>(unsigned int)usableSize ){
         return SQLITE_CORRUPT_BKPT;  /* Last freeblock extends past page end */
       }
     }
