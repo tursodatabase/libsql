@@ -1,6 +1,6 @@
-C Adjust\sthe\sunix\smakefiles\sso\sthat\s"make\stest"\sruns\sfuzzcheck\sprior\sto\seven\nattempting\sto\sbuild\sthe\sother\stest\sprograms.
-D 2016-12-14T11:23:51.380
-F Makefile.in 609c5f7a19d5b5d2dff61f8a4740581fee34b8af
+C Fix\sthe\sconfigure\smakefile\sto\salign\sit\swith\sthe\smanual\smakefile.\s\sUnsaved\nchanges\sfrom\sthe\sprevious\scheck-in.
+D 2016-12-14T11:39:52.040
+F Makefile.in c194b58fe00c370a48ac6ae6945e92a7781db1c8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
@@ -1536,7 +1536,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0ea2762f1d8f6a93ae2ee3b7b835927a474c6f66
-R 780cd0abdea39fa1a5d5daabb688bd72
+P bb48f7a55945da4cee369bae0809037900fcaac7
+R 9545652591400e7cde029c09f3430ecd
 U drh
-Z 2e2657a5376509e8032ac3542578485e
+Z b9f69002fb2c61130ee41e4f20258d96
