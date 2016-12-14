@@ -3736,9 +3736,12 @@ SrcList *sqlite3SrcListAppend(
     pList = sqlite3DbMallocRawNN(db, sizeof(SrcList) );
     if( pList==0 ) return 0;
     pList->nAlloc = 1;
-    pList->nSrc = 0;
+    pList->nSrc = 1;
+    memset(&pList->a[0], 0, sizeof(pList->a[0]));
+    pList->a[0].iCursor = -1;
+  }else{
+    pList = sqlite3SrcListEnlarge(db, pList, 1, pList->nSrc);
   }
-  pList = sqlite3SrcListEnlarge(db, pList, 1, pList->nSrc);
   if( db->mallocFailed ){
     sqlite3SrcListDelete(db, pList);
     return 0;
