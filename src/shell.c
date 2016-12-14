@@ -2185,6 +2185,7 @@ static char zHelp[] =
   ".eqp on|off|full       Enable or disable automatic EXPLAIN QUERY PLAN\n"
   ".exit                  Exit this program\n"
   ".explain ?on|off|auto? Turn EXPLAIN output mode on or off or to automatic\n"
+  ".fkey_missing_indexes  Find indexes to make FK processing more efficient\n"
   ".fullschema ?--indent? Show schema and the content of sqlite_stat tables\n"
   ".headers on|off        Turn display of headers on or off\n"
   ".help                  Show this message\n"
@@ -3253,6 +3254,446 @@ int shellDeleteFile(const char *zFilename){
   return rc;
 }
 
+
+/**************************************************************************
+** Beginning of implementation of .fkey_missing_indexes
+*/
+typedef struct PragmaVtab PragmaVtab;
+typedef struct PragmaCursor PragmaCursor;
+typedef struct PragmaConfig PragmaConfig;
+
+/*
+** Table structure for "pragma" eponymous virtual tables.
+*/
+struct PragmaVtab {
+  sqlite3_vtab base;
+  PragmaConfig *pConfig;
+  sqlite3 *db;
+};
+
+/*
+** Cursor structure for "pragma" eponymous virtual tables.
+*/
+struct PragmaCursor {
+  sqlite3_vtab_cursor base;
+  sqlite3_stmt *pSelect;
+  sqlite3_stmt *pPragma;
+  sqlite_int64 iRowid;
+};
+
+struct PragmaConfig {
+  const char *zModule;
+  const char *zSchema;
+  const char *zPragma;
+};
+
+/* 
+** Pragma virtual table module xConnect method.
+*/
+static int shellPragmaConnect(
+  sqlite3 *db,
+  void *pAux,
+  int argc, const char *const*argv,
+  sqlite3_vtab **ppVtab,
+  char **pzErr
+){
+  PragmaConfig *pConfig = (PragmaConfig*)pAux;
+  PragmaVtab *pTab = 0;
+  int rc;
+
+  rc = sqlite3_declare_vtab(db, pConfig->zSchema);
+  if( rc==SQLITE_OK ){
+    pTab = (PragmaVtab*)sqlite3_malloc(sizeof(PragmaVtab));
+    if( pTab==0 ){
+      rc = SQLITE_NOMEM;
+    }else{
+      memset(pTab, 0, sizeof(PragmaVtab));
+      pTab->db = db;
+      pTab->pConfig = pConfig;
+    }
+  }else{
+    *pzErr = sqlite3_mprintf("%s", sqlite3_errmsg(db));
+  }
+
+  *ppVtab = (sqlite3_vtab*)pTab;
+  return rc;
+}
+
+/* 
+** Pragma virtual table module xDisconnect method.
+*/
+static int shellPragmaDisconnect(sqlite3_vtab *pVtab){
+  PragmaVtab *pTab = (PragmaVtab*)pVtab;
+  sqlite3_free(pTab);
+  return SQLITE_OK;
+}
+
+/* 
+** Pragma virtual table module xBestIndex method.
+*/
+static int shellPragmaBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
+  return SQLITE_OK;
+}
+
+/* 
+** Pragma virtual table module xOpen method.
+*/
+static int shellPragmaOpen(sqlite3_vtab *pVtab, sqlite3_vtab_cursor **ppCursor){
+  PragmaCursor *pCsr;
+
+  pCsr = (PragmaCursor*)sqlite3_malloc(sizeof(PragmaCursor));
+  if( pCsr==0 ) return SQLITE_NOMEM;
+  memset(pCsr, 0, sizeof(PragmaCursor));
+  pCsr->base.pVtab = pVtab;
+
+  *ppCursor = (sqlite3_vtab_cursor*)pCsr;
+  return SQLITE_OK;
+}
+
+/* 
+** Pragma virtual table module xClose method.
+*/
+static int shellPragmaClose(sqlite3_vtab_cursor *cur){
+  return SQLITE_OK;
+}
+
+/* 
+** Pragma virtual table module xNext method.
+*/
+static int shellPragmaNext(sqlite3_vtab_cursor *pVtabCursor){
+  PragmaCursor *pCsr = (PragmaCursor*)pVtabCursor;
+  PragmaVtab *pTab = (PragmaVtab*)(pVtabCursor->pVtab);
+  sqlite3 *db = pTab->db;
+  int rc = SQLITE_OK;
+
+  /* Increment the xRowid value */
+  pCsr->iRowid++;
+
+  while( 1 ){
+    assert( rc==SQLITE_OK );
+
+    if( pCsr->pPragma ){
+      if( SQLITE_ROW!=sqlite3_step(pCsr->pPragma) ){
+        rc = sqlite3_finalize(pCsr->pPragma);
+        pCsr->pPragma = 0;
+      }
+    }
+
+    if( rc==SQLITE_OK && pCsr->pPragma==0 ){
+      if( SQLITE_ROW!=sqlite3_step(pCsr->pSelect) ){
+        rc = sqlite3_finalize(pCsr->pSelect);
+        pCsr->pSelect = 0;
+      }else{
+        const char *zName = (const char*)sqlite3_column_text(pCsr->pSelect, 0);
+        char *zSql = sqlite3_mprintf(pTab->pConfig->zPragma, zName);
+        if( zSql==0 ){
+          rc = SQLITE_NOMEM;
+        }else{
+          rc = sqlite3_prepare_v2(db, zSql, -1, &pCsr->pPragma, 0);
+          if( rc!=SQLITE_OK ){
+            pTab->base.zErrMsg = sqlite3_mprintf("%s", sqlite3_errmsg(db));
+          }else{
+            continue;
+          }
+        }
+      }
+    }
+
+    break;
+  }
+
+  return rc;
+}
+
+/* 
+** Pragma virtual table module xFilter method.
+*/
+static int shellPragmaFilter(
+  sqlite3_vtab_cursor *pVtabCursor, 
+  int idxNum, const char *idxStr,
+  int argc, sqlite3_value **argv
+){
+  PragmaCursor *pCsr = (PragmaCursor*)pVtabCursor;
+  PragmaVtab *pTab = (PragmaVtab*)(pVtabCursor->pVtab);
+  int rc;
+
+  sqlite3_finalize(pCsr->pSelect);
+  sqlite3_finalize(pCsr->pPragma);
+  pCsr->pSelect = 0;
+  pCsr->pPragma = 0;
+  pCsr->iRowid = 0;
+
+  rc = sqlite3_prepare_v2(pTab->db, 
+      "SELECT name FROM sqlite_master WHERE type = 'table' AND rootpage>0",
+      -1, &pCsr->pSelect, 0
+  );
+  if( rc!=SQLITE_OK ){
+    pTab->base.zErrMsg = sqlite3_mprintf("%s", sqlite3_errmsg(pTab->db));
+    return rc;
+  }
+
+  return shellPragmaNext(pVtabCursor);
+}
+
+/*
+** Pragma virtual table module xEof method.
+*/
+static int shellPragmaEof(sqlite3_vtab_cursor *pVtabCursor){
+  PragmaCursor *pCsr = (PragmaCursor*)pVtabCursor;
+  return (pCsr->pSelect==0);
+}
+
+/* 
+** Pragma virtual table module xColumn method.
+*/
+static int shellPragmaColumn(
+  sqlite3_vtab_cursor *pVtabCursor, 
+  sqlite3_context *ctx, 
+  int i
+){
+  PragmaCursor *pCsr = (PragmaCursor*)pVtabCursor;
+  switch( i ){
+    case 0: /* "database" */
+      sqlite3_result_text(ctx, "main", -1, SQLITE_STATIC);
+      break;
+
+    case 1: /* "child"/"table" */
+      sqlite3_result_value(ctx, sqlite3_column_value(pCsr->pSelect, 0));
+      break;
+
+    default:
+      sqlite3_result_value(ctx, sqlite3_column_value(pCsr->pPragma, i-2));
+      break;
+  }
+
+  return SQLITE_OK;
+}
+
+/* 
+** Pragma virtual table module xRowid method.
+*/
+static int shellPragmaRowid(sqlite3_vtab_cursor *pVtabCursor, sqlite_int64 *p){
+  PragmaCursor *pCsr = (PragmaCursor*)pVtabCursor;
+  *p = pCsr->iRowid;
+  return SQLITE_OK;
+}
+
+/*
+** Register the virtual table module with the supplied database handle.
+*/
+static int shellPragmaRegister(sqlite3 *db){
+  static sqlite3_module shellPragmaModule = {
+    0,                            /* iVersion */
+    shellPragmaConnect,           /* xCreate - create a table */
+    shellPragmaConnect,           /* xConnect - connect to an existing table */
+    shellPragmaBestIndex,         /* xBestIndex - Determine search strategy */
+    shellPragmaDisconnect,        /* xDisconnect - Disconnect from a table */
+    shellPragmaDisconnect,        /* xDestroy - Drop a table */
+    shellPragmaOpen,              /* xOpen - open a cursor */
+    shellPragmaClose,             /* xClose - close a cursor */
+    shellPragmaFilter,            /* xFilter - configure scan constraints */
+    shellPragmaNext,              /* xNext - advance a cursor */
+    shellPragmaEof,               /* xEof */
+    shellPragmaColumn,            /* xColumn - read data */
+    shellPragmaRowid,             /* xRowid - read data */
+    0,                            /* xUpdate - write data */
+    0,                            /* xBegin - begin transaction */
+    0,                            /* xSync - sync transaction */
+    0,                            /* xCommit - commit transaction */
+    0,                            /* xRollback - rollback transaction */
+    0,                            /* xFindFunction - function overloading */
+    0,                            /* xRename - rename the table */
+    0,                            /* xSavepoint */
+    0,                            /* xRelease */
+    0                             /* xRollbackTo */
+  };
+  int rc = SQLITE_OK;
+  int i;
+
+  static PragmaConfig aConfig[] = {
+    { "pragma_foreign_key_list",
+      "CREATE TABLE x(database, child, "
+        "id, seq, parent, child_col, parent_col, on_update, on_delete, match)",
+      "PRAGMA foreign_key_list = %Q"
+    },
+    { "pragma_table_info",
+      "CREATE TABLE x(database, tbl, "
+        "cid, name, type, not_null, dflt_value, pk)",
+      "PRAGMA table_info = %Q"
+    }
+  };
+
+  for(i=0; rc==SQLITE_OK && i<sizeof(aConfig)/sizeof(aConfig[0]); i++){
+    rc = sqlite3_create_module_v2(
+        db, aConfig[i].zModule, &shellPragmaModule, (void*)&aConfig[i], 0
+    );
+  }
+
+  return rc;
+}
+
+/*
+** The implementation of SQL scalar function fkey_collate_clause(). This
+** scalar function is always called with four arguments - the parent
+** table name, the parent column name, the child table name and the child
+** column name.
+**
+**   fkey_collate_clause('parent-tab', 'parent-col', 'child-tab', 'child-col')
+**
+** If either of the named tables or columns do not exist, this function
+** returns an empty string. An empty string is also returned if both tables 
+** and columns exist but have the same default collation sequence. Or,
+** if both exist but the default collation sequences are different, this
+** function returns the string " COLLATE <parent-collation>", where
+** <parent-collation> is the default collation sequence of the parent column.
+*/
+static void shellFkeyCollateClause(
+  sqlite3_context *pCtx, 
+  int nVal, 
+  sqlite3_value **apVal
+){
+  sqlite3 *db = sqlite3_context_db_handle(pCtx);
+  const char *zParent;
+  const char *zParentCol;
+  const char *zParentSeq;
+  const char *zChild;
+  const char *zChildCol;
+  const char *zChildSeq;
+  int rc;
+  
+  assert( nVal==4 );
+  zParent = (const char*)sqlite3_value_text(apVal[0]);
+  zParentCol = (const char*)sqlite3_value_text(apVal[1]);
+  zChild = (const char*)sqlite3_value_text(apVal[2]);
+  zChildCol = (const char*)sqlite3_value_text(apVal[3]);
+
+  sqlite3_result_text(pCtx, "", -1, SQLITE_STATIC);
+  rc = sqlite3_table_column_metadata(
+      db, "main", zParent, zParentCol, 0, &zParentSeq, 0, 0, 0
+  );
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_table_column_metadata(
+        db, "main", zChild, zChildCol, 0, &zChildSeq, 0, 0, 0
+    );
+  }
+
+  if( rc==SQLITE_OK && sqlite3_stricmp(zParentSeq, zChildSeq) ){
+    char *z = sqlite3_mprintf(" COLLATE %s", zParentSeq);
+    sqlite3_result_text(pCtx, z, -1, SQLITE_TRANSIENT);
+    sqlite3_free(z);
+  }
+}
+
+
+/*
+** The implementation of dot-command ".fkey_missing_indexes".
+*/
+static int shellFkeyMissingIndexes(
+  ShellState *pState,             /* Current shell tool state */
+  char **azArg,                   /* Array of arguments passed to dot command */
+  int nArg                        /* Number of entries in azArg[] */
+){
+  sqlite3 *db = pState->db;
+  FILE *out = pState->out;
+  int bVerbose = 0;
+
+  int rc;
+  sqlite3_stmt *pSql = 0;
+  const char *zSql =
+    "SELECT "
+    "     'EXPLAIN QUERY PLAN SELECT rowid FROM ' || quote(child) || ' WHERE ' "
+    "  || group_concat(quote(child) || '.' || quote(child_col) || '=?' || "
+    "        fkey_collate_clause(parent, parent_col, child, child_col),' AND ')"
+    ", "
+    "     'SEARCH TABLE ' || child || ' USING COVERING INDEX*('"
+    "  || group_concat('*=?', ' AND ') || ')'"
+    ", "
+    "     child  || '(' || group_concat(child_col,  ', ') || ')'"
+    ", "
+    "     parent || '(' || group_concat(COALESCE(parent_col, "
+    "       (SELECT name FROM pragma_table_info WHERE tbl=parent AND pk=seq+1)"
+    "     )) || ')'"
+    ", "
+    "     'CREATE INDEX ' || quote(child ||'_'|| group_concat(child_col, '_'))"
+    "  || ' ON ' || quote(child) || '('"
+    "  || group_concat(quote(child_col) ||"
+    "        fkey_collate_clause(parent, parent_col, child, child_col), ', ')"
+    "  || ');'"
+
+    "FROM pragma_foreign_key_list AS o GROUP BY child, id"
+  ;
+
+  if( nArg>2 ){
+    raw_printf(stderr, "Usage: .fkey_lint ?verbose-flag?\n");
+  }
+  if( nArg==2 ) bVerbose = booleanValue(azArg[1]);
+
+  /* Register the pragma eponymous virtual tables */
+  rc = shellPragmaRegister(db);
+  
+  /* Register the fkey_collate_clause() SQL function */
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_function(db, "fkey_collate_clause", 4, SQLITE_UTF8,
+        0, shellFkeyCollateClause, 0, 0
+    );
+  }
+
+
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_prepare_v2(db, zSql, -1, &pSql, 0);
+  }
+
+  if( rc==SQLITE_OK ){
+    int rc2;
+    while( SQLITE_ROW==sqlite3_step(pSql) ){
+      int res = -1;
+      sqlite3_stmt *pExplain = 0;
+      const char *zEQP = (const char*)sqlite3_column_text(pSql, 0);
+      const char *zGlob = (const char*)sqlite3_column_text(pSql, 1);
+      const char *zFrom = (const char*)sqlite3_column_text(pSql, 2);
+      const char *zTarget = (const char*)sqlite3_column_text(pSql, 3);
+      const char *zCI = (const char*)sqlite3_column_text(pSql, 4);
+
+      rc = sqlite3_prepare_v2(db, zEQP, -1, &pExplain, 0);
+      if( rc!=SQLITE_OK ) break;
+      if( SQLITE_ROW==sqlite3_step(pExplain) ){
+        const char *zPlan = (const char*)sqlite3_column_text(pExplain, 3);
+        res = (0==sqlite3_strglob(zGlob, zPlan));
+      }
+      rc = sqlite3_finalize(pExplain);
+      if( rc!=SQLITE_OK ) break;
+
+      if( res<0 ){
+        raw_printf(stderr, "Error: internal error");
+        break;
+      }else if( res==0 ){
+        raw_printf(out, "%s --> %s\n", zCI, zTarget);
+      }else if( bVerbose ){
+        raw_printf(out, "/* no extra indexes required for %s -> %s */\n", 
+            zFrom, zTarget
+        );
+      }
+    }
+
+    if( rc!=SQLITE_OK ){
+      raw_printf(stderr, "%s\n", sqlite3_errmsg(db));
+    }
+
+    rc2 = sqlite3_finalize(pSql);
+    if( rc==SQLITE_OK && rc2!=SQLITE_OK ){
+      rc = rc2;
+      raw_printf(stderr, "%s\n", sqlite3_errmsg(db));
+    }
+  }else{
+    raw_printf(stderr, "%s\n", sqlite3_errmsg(db));
+  }
+
+  return rc;
+}
+/*
+** End of implementation of .fkey_missing_indexes
+**************************************************************************/
+
 /*
 ** If an input line begins with "." then invoke this routine to
 ** process that line.
@@ -3564,6 +4005,10 @@ static int do_meta_command(char *zLine, ShellState *p){
       if( p->mode==MODE_Explain ) p->mode = p->normalMode;
       p->autoExplain = 1;
     }
+  }else
+
+  if( c=='f' && strncmp(azArg[0], "fkey_missing_indexes", n)==0 ){
+    shellFkeyMissingIndexes(p, azArg, nArg);
   }else
 
   if( c=='f' && strncmp(azArg[0], "fullschema", n)==0 ){
