@@ -5386,7 +5386,8 @@ static int getPageNormal(
   assert( pPg->pgno==pgno );
   assert( pPg->pPager==pPager || pPg->pPager==0 );
 
-  if( pPg->pPager ){
+  noContent = (flags & PAGER_GET_NOCONTENT)!=0;
+  if( pPg->pPager && !noContent ){
     /* In this case the pcache already contains an initialized copy of
     ** the page. Return without further ado.  */
     assert( pgno<=PAGER_MAX_PGNO && pgno!=PAGER_MJ_PGNO(pPager) );
@@ -5409,7 +5410,6 @@ static int getPageNormal(
     pPg->pPager = pPager;
 
     assert( !isOpen(pPager->fd) || !MEMDB );
-    noContent = (flags & PAGER_GET_NOCONTENT)!=0;
     if( !isOpen(pPager->fd) || pPager->dbSize<pgno || noContent ){
       if( pgno>pPager->mxPgno ){
         rc = SQLITE_FULL;
