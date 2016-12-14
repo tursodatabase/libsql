@@ -1,5 +1,5 @@
-C Fix\sthe\sconfigure\smakefile\sto\salign\sit\swith\sthe\smanual\smakefile.\s\sUnsaved\nchanges\sfrom\sthe\sprevious\scheck-in.
-D 2016-12-14T11:39:52.040
+C Increase\sthe\ssize\sof\sthe\sreference\scount\son\sTable\sobjects\sto\s32\sbits.
+D 2016-12-14T13:54:25.287
 F Makefile.in c194b58fe00c370a48ac6ae6945e92a7781db1c8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -393,7 +393,7 @@ F src/shell.c f1c7fde7a83421e6ed620df41d200674a2327e65
 F src/sqlite.h.in e8e2d108d82647f0a812fdb74accf91c1ec08ddc
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
-F src/sqliteInt.h 9d0834b980e2d156109d73c307b803d29d2686e8
+F src/sqliteInt.h 69345b355da43b89216e9cea619eb24ddd418896
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
@@ -1536,7 +1536,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bb48f7a55945da4cee369bae0809037900fcaac7
-R 9545652591400e7cde029c09f3430ecd
+P 00a184b65f73f361e1728fea06529f746fab66b5
+R bb3d64fa96b2e381730c4f4039396de5
 U drh
-Z b9f69002fb2c61130ee41e4f20258d96
+Z 286d124da8f3f0702924a8d69dad9e38
