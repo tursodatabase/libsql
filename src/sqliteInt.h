@@ -1801,7 +1801,7 @@ struct Table {
   ExprList *pCheck;    /* All CHECK constraints */
                        /*   ... also used as column name list in a VIEW */
   int tnum;            /* Root BTree page for this table */
-  u32 nRef;            /* Number of pointers to this Table */
+  u32 nTabRef;         /* Number of pointers to this Table */
   i16 iPKey;           /* If not negative, use aCol[iPKey] as the rowid */
   i16 nCol;            /* Number of columns in this table */
   LogEst nRowLogEst;   /* Estimated rows in table - from sqlite_stat1 table */

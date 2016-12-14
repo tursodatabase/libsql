@@ -634,7 +634,7 @@ static void SQLITE_NOINLINE deleteTable(sqlite3 *db, Table *pTable){
 void sqlite3DeleteTable(sqlite3 *db, Table *pTable){
   /* Do not delete the table until the reference count reaches zero. */
   if( !pTable ) return;
-  if( ((!db || db->pnBytesFreed==0) && (--pTable->nRef)>0) ) return;
+  if( ((!db || db->pnBytesFreed==0) && (--pTable->nTabRef)>0) ) return;
   deleteTable(db, pTable);
 }
 
@@ -925,7 +925,7 @@ void sqlite3StartTable(
   pTable->zName = zName;
   pTable->iPKey = -1;
   pTable->pSchema = db->aDb[iDb].pSchema;
-  pTable->nRef = 1;
+  pTable->nTabRef = 1;
   pTable->nRowLogEst = 200; assert( 200==sqlite3LogEst(1048576) );
   assert( pParse->pNewTable==0 );
   pParse->pNewTable = pTable;

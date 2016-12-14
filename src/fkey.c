@@ -1007,7 +1007,7 @@ void sqlite3FkCheck(
       struct SrcList_item *pItem = pSrc->a;
       pItem->pTab = pFKey->pFrom;
       pItem->zName = pFKey->pFrom->zName;
-      pItem->pTab->nRef++;
+      pItem->pTab->nTabRef++;
       pItem->iCursor = pParse->nTab++;
   
       if( regNew!=0 ){

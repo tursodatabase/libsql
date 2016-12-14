@@ -773,7 +773,7 @@ void sqlite3AlterBeginAddColumn(Parse *pParse, SrcList *pSrc){
   pNew = (Table*)sqlite3DbMallocZero(db, sizeof(Table));
   if( !pNew ) goto exit_begin_add_column;
   pParse->pNewTable = pNew;
-  pNew->nRef = 1;
+  pNew->nTabRef = 1;
   pNew->nCol = pTab->nCol;
   assert( pNew->nCol>0 );
   nAlloc = (((pNew->nCol-1)/8)*8)+8;
@@ -793,7 +793,7 @@ void sqlite3AlterBeginAddColumn(Parse *pParse, SrcList *pSrc){
   }
   pNew->pSchema = db->aDb[iDb].pSchema;
   pNew->addColOffset = pTab->addColOffset;
-  pNew->nRef = 1;
+  pNew->nTabRef = 1;
 
   /* Begin a transaction and increment the schema cookie.  */
   sqlite3BeginWriteOperation(pParse, 0, iDb);
