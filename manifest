@@ -1,5 +1,5 @@
-C Refactor\sthe\sTable.nRef\sfield\sas\sTable.nTabRef\sfor\seasier\sgrepping.
-D 2016-12-14T14:07:35.372
+C Do\sexponential\srather\sthan\slinear\sexpansion\sof\sthe\sSrcList.a\sarray\swhen\s\nappending\snew\selements,\sto\sreduce\sthe\snumber\sof\smalloc()\scalls.
+D 2016-12-15T18:59:14.960
 F Makefile.in c194b58fe00c370a48ac6ae6945e92a7781db1c8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -334,7 +334,7 @@ F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
 F src/btree.c b2055dff0b94e03eaad48a760984a2d8e39244e6
 F src/btree.h 2349a588abcd7e0c04f984e15c5c777b61637583
 F src/btreeInt.h 10c4b77c2fb399580babbcc7cf652ac10dba796e
-F src/build.c e2b32766847eb16d4314c99067571ae08b888dfe
+F src/build.c 4c7952b6d4fd68e3d25d4b05a06d65a496c0f7c8
 F src/callback.c 2e76147783386374bf01b227f752c81ec872d730
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 9f2296a4e5d26ebf0e0d95a0af4628f1ea694e7a
@@ -1536,7 +1536,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d08b72c38ff6fae6ddf7dc84a54f6d7189876289
-R ee18812138ebcbd59cf246eeb625fa00
+P 9cae4c2e300e20304ced0dc8c1415c4922185928
+R 9770eba5fe5acae93ed970f661562070
 U drh
-Z c1d49b9032916157524a152005703654
+Z 9a292fcbff4c94ddef7a536330d555ac

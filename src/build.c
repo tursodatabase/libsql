@@ -3658,7 +3658,7 @@ SrcList *sqlite3SrcListEnlarge(
   /* Allocate additional space if needed */
   if( (u32)pSrc->nSrc+nExtra>pSrc->nAlloc ){
     SrcList *pNew;
-    int nAlloc = pSrc->nSrc+nExtra;
+    int nAlloc = pSrc->nSrc*2+nExtra;
     int nGot;
     pNew = sqlite3DbRealloc(db, pSrc,
                sizeof(*pSrc) + (nAlloc-1)*sizeof(pSrc->a[0]) );
