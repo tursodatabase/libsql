@@ -2056,6 +2056,7 @@ static int pragmaVtabBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
   int i, j;
   int seen[2];
 
+  pIdxInfo->estimatedCost = (double)1;
   if( pTab->nHidden==0 ){ return SQLITE_OK; }
   pConstraint = pIdxInfo->aConstraint;
   seen[0] = 0;
