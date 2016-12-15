@@ -3595,7 +3595,10 @@ static int shellFkeyMissingIndexes(
 ){
   sqlite3 *db = pState->db;
   FILE *out = pState->out;
-  int bVerbose = 0;
+  int bVerbose = 0;               /* If -verbose is present */
+  int bGroupByParent = 0;         /* If -groupbyparent is present */
+  int i;
+  const char *zIndent = "";
 
   int rc;
   sqlite3_stmt *pSql = 0;
@@ -3619,14 +3622,27 @@ static int shellFkeyMissingIndexes(
     "  || group_concat(quote(child_col) ||"
     "        fkey_collate_clause(parent, parent_col, child, child_col), ', ')"
     "  || ');'"
+    ", "
+    "     parent "
 
-    "FROM pragma_foreign_key_list AS o GROUP BY child, id"
+    "FROM pragma_foreign_key_list GROUP BY child, id "
+    "ORDER BY (CASE WHEN ? THEN parent ELSE CHILD END)"
   ;
 
-  if( nArg>2 ){
-    raw_printf(stderr, "Usage: .fkey_lint ?verbose-flag?\n");
+  for(i=1; i<nArg; i++){
+    int n = strlen(azArg[i]);
+    if( n>1 && sqlite3_strnicmp("-verbose", azArg[i], n)==0 ){
+      bVerbose = 1;
+    }
+    else if( n>1 && sqlite3_strnicmp("-groupbyparent", azArg[i], n)==0 ){
+      bGroupByParent = 1;
+      zIndent = "    ";
+    }
+    else{
+      raw_printf(stderr, "Usage: .fkey_lint ?-verbose? ?-groupbyparent?\n");
+      return SQLITE_ERROR;
+    }
   }
-  if( nArg==2 ) bVerbose = booleanValue(azArg[1]);
 
   /* Register the pragma eponymous virtual tables */
   rc = shellPragmaRegister(db);
@@ -3642,9 +3658,13 @@ static int shellFkeyMissingIndexes(
   if( rc==SQLITE_OK ){
     rc = sqlite3_prepare_v2(db, zSql, -1, &pSql, 0);
   }
+  if( rc==SQLITE_OK ){
+    sqlite3_bind_int(pSql, 1, bGroupByParent);
+  }
 
   if( rc==SQLITE_OK ){
     int rc2;
+    char *zPrev = 0;
     while( SQLITE_ROW==sqlite3_step(pSql) ){
       int res = -1;
       sqlite3_stmt *pExplain = 0;
@@ -3653,6 +3673,7 @@ static int shellFkeyMissingIndexes(
       const char *zFrom = (const char*)sqlite3_column_text(pSql, 2);
       const char *zTarget = (const char*)sqlite3_column_text(pSql, 3);
       const char *zCI = (const char*)sqlite3_column_text(pSql, 4);
+      const char *zParent = (const char*)sqlite3_column_text(pSql, 5);
 
       rc = sqlite3_prepare_v2(db, zEQP, -1, &pExplain, 0);
       if( rc!=SQLITE_OK ) break;
@@ -3666,14 +3687,26 @@ static int shellFkeyMissingIndexes(
       if( res<0 ){
         raw_printf(stderr, "Error: internal error");
         break;
-      }else if( res==0 ){
-        raw_printf(out, "%s --> %s\n", zCI, zTarget);
-      }else if( bVerbose ){
-        raw_printf(out, "/* no extra indexes required for %s -> %s */\n", 
-            zFrom, zTarget
-        );
+      }else{
+        if( bGroupByParent 
+        && (bVerbose || res==0)
+        && (zPrev==0 || sqlite3_stricmp(zParent, zPrev)) 
+        ){
+          raw_printf(out, "-- Parent table %s\n", zParent);
+          sqlite3_free(zPrev);
+          zPrev = sqlite3_mprintf("%s", zParent);
+        }
+
+        if( res==0 ){
+          raw_printf(out, "%s%s --> %s\n", zIndent, zCI, zTarget);
+        }else if( bVerbose ){
+          raw_printf(out, "%s/* no extra indexes required for %s -> %s */\n", 
+              zIndent, zFrom, zTarget
+          );
+        }
       }
     }
+    sqlite3_free(zPrev);
 
     if( rc!=SQLITE_OK ){
       raw_printf(stderr, "%s\n", sqlite3_errmsg(db));
