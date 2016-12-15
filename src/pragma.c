@@ -1999,8 +1999,7 @@ static int pragmaVtabConnect(
   sqlite3StrAccumInit(&acc, 0, zBuf, sizeof(zBuf), 0);
   sqlite3StrAccumAppendAll(&acc, "CREATE TABLE x");
   for(i=0, j=pPragma->iPragCName; i<pPragma->nPragCName; i++, j++){
-    sqlite3StrAccumAppend(&acc, &cSep, 1);
-    sqlite3StrAccumAppendAll(&acc, pragCName[j]);
+    sqlite3XPrintf(&acc, "%c\"%s\"", cSep, pragCName[j]);
     cSep = ',';
   }
   j = 0;
@@ -2068,20 +2067,20 @@ static int pragmaVtabBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
     j = pConstraint->iColumn - pTab->iHidden;
     assert( j < 2 );
     if( seen[j] ) continue;
-    seen[j] = i;
+    seen[j] = i+1;
   }
   if( seen[0]==0 ){
     pIdxInfo->estimatedCost = (double)2147483647;
     pIdxInfo->estimatedRows = 2147483647;
     return SQLITE_OK;
   }
-  j = seen[0];
+  j = seen[0]-1;
   pIdxInfo->aConstraintUsage[j].argvIndex = 1;
   pIdxInfo->aConstraintUsage[j].omit = 1;
   if( seen[1]==0 ) return SQLITE_OK;
   pIdxInfo->estimatedCost = (double)20;
   pIdxInfo->estimatedRows = 20;
-  j = seen[1];
+  j = seen[1]-1;
   pIdxInfo->aConstraintUsage[j].argvIndex = 2;
   pIdxInfo->aConstraintUsage[j].omit = 1;
   return SQLITE_OK;
@@ -2156,7 +2155,7 @@ static int pragmaVtabFilter(
       return SQLITE_NOMEM;
     }
   }
-  sqlite3StrAccumInit(&acc, 0, 0, 0, pTab->db->aLimit[SQLITE_MAX_SQL_LENGTH]);
+  sqlite3StrAccumInit(&acc, 0, 0, 0, pTab->db->aLimit[SQLITE_LIMIT_SQL_LENGTH]);
   sqlite3StrAccumAppendAll(&acc, "PRAGMA ");
   if( pCsr->azArg[1] ){
     sqlite3XPrintf(&acc, "%Q.", pCsr->azArg[1]);
@@ -2250,7 +2249,7 @@ Module *sqlite3PragmaVtabRegister(sqlite3 *db, const char *zName){
   if( pName==0 ) return 0;
   if( (pName->mPragFlg & (PragFlg_Result0|PragFlg_Result1))==0 ) return 0;
   assert( sqlite3HashFind(&db->aModule, zName)==0 );
-  return sqlite3VtabCreateModule(db, zName, &pragmaVtabModule, 0, 0);
+  return sqlite3VtabCreateModule(db, zName, &pragmaVtabModule, (void*)pName, 0);
 }
 
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
