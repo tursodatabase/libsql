@@ -163,29 +163,29 @@ static int changeTempStorage(Parse *pParse, const char *zStorageType){
 #endif /* SQLITE_PAGER_PRAGMAS */
 
 /*
-** Set the names of the first N columns to the values in azCol[]
+** Set result column names for a pragma.
 */
-static void setAllColumnNames(
-  Vdbe *v,               /* The query under construction */
-  int N,                 /* Number of columns */
-  const char **azCol     /* Names of columns */
+static void setPragmaResultColumnNames(
+  Vdbe *v,                              /* The query under construction */
+  const struct sPragmaNames *pPragma    /* The pragma */
 ){
-  int i;
-  sqlite3VdbeSetNumCols(v, N);
-  for(i=0; i<N; i++){
-    sqlite3VdbeSetColName(v, i, COLNAME_NAME, azCol[i], SQLITE_STATIC);
+  u8 n = pPragma->nPragCName;
+  sqlite3VdbeSetNumCols(v, n==0 ? 1 : n);
+  if( n==0 ){
+    sqlite3VdbeSetColName(v, 0, COLNAME_NAME, pPragma->zName, SQLITE_STATIC);
+  }else{
+    int i, j;
+    for(i=0, j=pPragma->iPragCName; i<n; i++, j++){
+      sqlite3VdbeSetColName(v, i, COLNAME_NAME, pragCName[j], SQLITE_STATIC);
+    }
   }
-}
-static void setOneColumnName(Vdbe *v, const char *z){
-  setAllColumnNames(v, 1, &z);
 }
 
 /*
 ** Generate code to return a single integer value.
 */
-static void returnSingleInt(Vdbe *v, const char *zLabel, i64 value){
+static void returnSingleInt(Vdbe *v, i64 value){
   sqlite3VdbeAddOp4Dup8(v, OP_Int64, 0, 1, 0, (const u8*)&value, P4_INT64);
-  setOneColumnName(v, zLabel);
   sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 1);
 }
 
@@ -194,12 +194,10 @@ static void returnSingleInt(Vdbe *v, const char *zLabel, i64 value){
 */
 static void returnSingleText(
   Vdbe *v,                /* Prepared statement under construction */
-  const char *zLabel,     /* Name of the result column */
   const char *zValue      /* Value to be returned */
 ){
   if( zValue ){
     sqlite3VdbeLoadString(v, 1, (const char*)zValue);
-    setOneColumnName(v, zLabel);
     sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 1);
   }
 }
@@ -365,7 +363,9 @@ void sqlite3Pragma(
   db->busyHandler.nBusy = 0;
   rc = sqlite3_file_control(db, zDb, SQLITE_FCNTL_PRAGMA, (void*)aFcntl);
   if( rc==SQLITE_OK ){
-    returnSingleText(v, "result", aFcntl[0]);
+    sqlite3VdbeSetNumCols(v, 1);
+    sqlite3VdbeSetColName(v, 0, COLNAME_NAME, aFcntl[0], SQLITE_TRANSIENT);
+    returnSingleText(v, aFcntl[0]);
     sqlite3_free(aFcntl[0]);
     goto pragma_out;
   }
@@ -396,8 +396,13 @@ void sqlite3Pragma(
   pPragma = &aPragmaNames[mid];
 
   /* Make sure the database schema is loaded if the pragma requires that */
-  if( (pPragma->mPragFlag & PragFlag_NeedSchema)!=0 ){
+  if( (pPragma->mPragFlg & PragFlg_NeedSchema)!=0 ){
     if( sqlite3ReadSchema(pParse) ) goto pragma_out;
+  }
+
+  /* Register the result column names for pragmas that return results */
+  if( (pPragma->mPragFlg & PragFlg_NoColumns)==0 ){
+    setPragmaResultColumnNames(v, pPragma);
   }
 
   /* Jump to the appropriate pragma handler */
@@ -436,7 +441,6 @@ void sqlite3Pragma(
     VdbeOp *aOp;
     sqlite3VdbeUsesBtree(v, iDb);
     if( !zRight ){
-      setOneColumnName(v, "cache_size");
       pParse->nMem += 2;
       sqlite3VdbeVerifyNoMallocRequired(v, ArraySize(getCacheSize));
       aOp = sqlite3VdbeAddOpList(v, ArraySize(getCacheSize), getCacheSize, iLn);
@@ -471,7 +475,7 @@ void sqlite3Pragma(
     assert( pBt!=0 );
     if( !zRight ){
       int size = ALWAYS(pBt) ? sqlite3BtreeGetPageSize(pBt) : 0;
-      returnSingleInt(v, "page_size", size);
+      returnSingleInt(v, size);
     }else{
       /* Malloc may fail when setting the page-size, as there is an internal
       ** buffer that the pager module resizes using sqlite3_realloc().
@@ -506,7 +510,7 @@ void sqlite3Pragma(
       }
     }
     b = sqlite3BtreeSecureDelete(pBt, b);
-    returnSingleInt(v, "secure_delete", b);
+    returnSingleInt(v, b);
     break;
   }
 
@@ -538,8 +542,6 @@ void sqlite3Pragma(
                         sqlite3AbsInt32(sqlite3Atoi(zRight)));
     }
     sqlite3VdbeAddOp2(v, OP_ResultRow, iReg, 1);
-    sqlite3VdbeSetNumCols(v, 1);
-    sqlite3VdbeSetColName(v, 0, COLNAME_NAME, zLeft, SQLITE_TRANSIENT);
     break;
   }
 
@@ -585,7 +587,7 @@ void sqlite3Pragma(
     if( eMode==PAGER_LOCKINGMODE_EXCLUSIVE ){
       zRet = "exclusive";
     }
-    returnSingleText(v, "locking_mode", zRet);
+    returnSingleText(v, zRet);
     break;
   }
 
@@ -598,7 +600,6 @@ void sqlite3Pragma(
     int eMode;        /* One of the PAGER_JOURNALMODE_XXX symbols */
     int ii;           /* Loop counter */
 
-    setOneColumnName(v, "journal_mode");
     if( zRight==0 ){
       /* If there is no "=MODE" part of the pragma, do a query for the
       ** current mode */
@@ -644,7 +645,7 @@ void sqlite3Pragma(
       if( iLimit<-1 ) iLimit = -1;
     }
     iLimit = sqlite3PagerJournalSizeLimit(pPager, iLimit);
-    returnSingleInt(v, "journal_size_limit", iLimit);
+    returnSingleInt(v, iLimit);
     break;
   }
 
@@ -662,7 +663,7 @@ void sqlite3Pragma(
     Btree *pBt = pDb->pBt;
     assert( pBt!=0 );
     if( !zRight ){
-      returnSingleInt(v, "auto_vacuum", sqlite3BtreeGetAutoVacuum(pBt));
+      returnSingleInt(v, sqlite3BtreeGetAutoVacuum(pBt));
     }else{
       int eAuto = getAutoVacuum(zRight);
       assert( eAuto>=0 && eAuto<=2 );
@@ -741,7 +742,7 @@ void sqlite3Pragma(
   case PragTyp_CACHE_SIZE: {
     assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
     if( !zRight ){
-      returnSingleInt(v, "cache_size", pDb->pSchema->cache_size);
+      returnSingleInt(v, pDb->pSchema->cache_size);
     }else{
       int size = sqlite3Atoi(zRight);
       pDb->pSchema->cache_size = size;
@@ -775,7 +776,7 @@ void sqlite3Pragma(
   case PragTyp_CACHE_SPILL: {
     assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
     if( !zRight ){
-      returnSingleInt(v, "cache_spill", 
+      returnSingleInt(v,
          (db->flags & SQLITE_CacheSpill)==0 ? 0 : 
             sqlite3BtreeSetSpillSize(pDb->pBt,0));
     }else{
@@ -829,7 +830,7 @@ void sqlite3Pragma(
     rc = SQLITE_OK;
 #endif
     if( rc==SQLITE_OK ){
-      returnSingleInt(v, "mmap_size", sz);
+      returnSingleInt(v, sz);
     }else if( rc!=SQLITE_NOTFOUND ){
       pParse->nErr++;
       pParse->rc = rc;
@@ -850,7 +851,7 @@ void sqlite3Pragma(
   */
   case PragTyp_TEMP_STORE: {
     if( !zRight ){
-      returnSingleInt(v, "temp_store", db->temp_store);
+      returnSingleInt(v, db->temp_store);
     }else{
       changeTempStorage(pParse, zRight);
     }
@@ -869,7 +870,7 @@ void sqlite3Pragma(
   */
   case PragTyp_TEMP_STORE_DIRECTORY: {
     if( !zRight ){
-      returnSingleText(v, "temp_store_directory", sqlite3_temp_directory);
+      returnSingleText(v, sqlite3_temp_directory);
     }else{
 #ifndef SQLITE_OMIT_WSD
       if( zRight[0] ){
@@ -913,7 +914,7 @@ void sqlite3Pragma(
   */
   case PragTyp_DATA_STORE_DIRECTORY: {
     if( !zRight ){
-      returnSingleText(v, "data_store_directory", sqlite3_data_directory);
+      returnSingleText(v, sqlite3_data_directory);
     }else{
 #ifndef SQLITE_OMIT_WSD
       if( zRight[0] ){
@@ -952,7 +953,7 @@ void sqlite3Pragma(
       sqlite3_file *pFile = sqlite3PagerFile(pPager);
       sqlite3OsFileControlHint(pFile, SQLITE_GET_LOCKPROXYFILE, 
                            &proxy_file_path);
-      returnSingleText(v, "lock_proxy_file", proxy_file_path);
+      returnSingleText(v, proxy_file_path);
     }else{
       Pager *pPager = sqlite3BtreePager(pDb->pBt);
       sqlite3_file *pFile = sqlite3PagerFile(pPager);
@@ -984,7 +985,7 @@ void sqlite3Pragma(
   */
   case PragTyp_SYNCHRONOUS: {
     if( !zRight ){
-      returnSingleInt(v, "synchronous", pDb->safety_level-1);
+      returnSingleInt(v, pDb->safety_level-1);
     }else{
       if( !db->autoCommit ){
         sqlite3ErrorMsg(pParse, 
@@ -1004,7 +1005,8 @@ void sqlite3Pragma(
 #ifndef SQLITE_OMIT_FLAG_PRAGMAS
   case PragTyp_FLAG: {
     if( zRight==0 ){
-      returnSingleInt(v, pPragma->zName, (db->flags & pPragma->iArg)!=0 );
+      setPragmaResultColumnNames(v, pPragma);
+      returnSingleInt(v, (db->flags & pPragma->iArg)!=0 );
     }else{
       int mask = pPragma->iArg;    /* Mask of bits to set or clear. */
       if( db->autoCommit==0 ){
@@ -1054,16 +1056,12 @@ void sqlite3Pragma(
     Table *pTab;
     pTab = sqlite3LocateTable(pParse, LOCATE_NOERR, zRight, zDb);
     if( pTab ){
-      static const char *azCol[] = {
-         "cid", "name", "type", "notnull", "dflt_value", "pk"
-      };
       int i, k;
       int nHidden = 0;
       Column *pCol;
       Index *pPk = sqlite3PrimaryKeyIndex(pTab);
       pParse->nMem = 6;
       sqlite3CodeVerifySchema(pParse, iDb);
-      setAllColumnNames(v, 6, azCol); assert( 6==ArraySize(azCol) );
       sqlite3ViewGetColumnNames(pParse, pTab);
       for(i=0, pCol=pTab->aCol; i<pTab->nCol; i++, pCol++){
         if( IsHiddenColumn(pCol) ){
@@ -1092,13 +1090,10 @@ void sqlite3Pragma(
   break;
 
   case PragTyp_STATS: {
-    static const char *azCol[] = { "table", "index", "width", "height" };
     Index *pIdx;
     HashElem *i;
-    v = sqlite3GetVdbe(pParse);
     pParse->nMem = 4;
     sqlite3CodeVerifySchema(pParse, iDb);
-    setAllColumnNames(v, 4, azCol);  assert( 4==ArraySize(azCol) );
     for(i=sqliteHashFirst(&pDb->pSchema->tblHash); i; i=sqliteHashNext(i)){
       Table *pTab = sqliteHashData(i);
       sqlite3VdbeMultiLoad(v, 1, "ssii",
@@ -1123,9 +1118,6 @@ void sqlite3Pragma(
     Table *pTab;
     pIdx = sqlite3FindIndex(db, zRight, zDb);
     if( pIdx ){
-      static const char *azCol[] = {
-         "seqno", "cid", "name", "desc", "coll", "key"
-      };
       int i;
       int mx;
       if( pPragma->iArg ){
@@ -1139,8 +1131,7 @@ void sqlite3Pragma(
       }
       pTab = pIdx->pTable;
       sqlite3CodeVerifySchema(pParse, iDb);
-      assert( pParse->nMem<=ArraySize(azCol) );
-      setAllColumnNames(v, pParse->nMem, azCol);
+      assert( pParse->nMem<=pPragma->nPragCName );
       for(i=0; i<mx; i++){
         i16 cnum = pIdx->aiColumn[i];
         sqlite3VdbeMultiLoad(v, 1, "iis", i, cnum,
@@ -1163,13 +1154,8 @@ void sqlite3Pragma(
     int i;
     pTab = sqlite3FindTable(db, zRight, zDb);
     if( pTab ){
-      static const char *azCol[] = {
-        "seq", "name", "unique", "origin", "partial"
-      };
-      v = sqlite3GetVdbe(pParse);
       pParse->nMem = 5;
       sqlite3CodeVerifySchema(pParse, iDb);
-      setAllColumnNames(v, 5, azCol);  assert( 5==ArraySize(azCol) );
       for(pIdx=pTab->pIndex, i=0; pIdx; pIdx=pIdx->pNext, i++){
         const char *azOrigin[] = { "c", "u", "pk" };
         sqlite3VdbeMultiLoad(v, 1, "isisi",
@@ -1185,10 +1171,8 @@ void sqlite3Pragma(
   break;
 
   case PragTyp_DATABASE_LIST: {
-    static const char *azCol[] = { "seq", "name", "file" };
     int i;
     pParse->nMem = 3;
-    setAllColumnNames(v, 3, azCol); assert( 3==ArraySize(azCol) );
     for(i=0; i<db->nDb; i++){
       if( db->aDb[i].pBt==0 ) continue;
       assert( db->aDb[i].zDbSName!=0 );
@@ -1202,11 +1186,9 @@ void sqlite3Pragma(
   break;
 
   case PragTyp_COLLATION_LIST: {
-    static const char *azCol[] = { "seq", "name" };
     int i = 0;
     HashElem *p;
     pParse->nMem = 2;
-    setAllColumnNames(v, 2, azCol); assert( 2==ArraySize(azCol) );
     for(p=sqliteHashFirst(&db->aCollSeq); p; p=sqliteHashNext(p)){
       CollSeq *pColl = (CollSeq *)sqliteHashData(p);
       sqlite3VdbeMultiLoad(v, 1, "is", i++, pColl->zName);
@@ -1222,17 +1204,11 @@ void sqlite3Pragma(
     Table *pTab;
     pTab = sqlite3FindTable(db, zRight, zDb);
     if( pTab ){
-      v = sqlite3GetVdbe(pParse);
       pFK = pTab->pFKey;
       if( pFK ){
-        static const char *azCol[] = {
-           "id", "seq", "table", "from", "to", "on_update", "on_delete",
-           "match"
-        };
         int i = 0; 
         pParse->nMem = 8;
         sqlite3CodeVerifySchema(pParse, iDb);
-        setAllColumnNames(v, 8, azCol); assert( 8==ArraySize(azCol) );
         while(pFK){
           int j;
           for(j=0; j<pFK->nCol; j++){
@@ -1273,14 +1249,11 @@ void sqlite3Pragma(
     int addrTop;           /* Top of a loop checking foreign keys */
     int addrOk;            /* Jump here if the key is OK */
     int *aiCols;           /* child to parent column mapping */
-    static const char *azCol[] = { "table", "rowid", "parent", "fkid" };
 
     regResult = pParse->nMem+1;
     pParse->nMem += 4;
     regKey = ++pParse->nMem;
     regRow = ++pParse->nMem;
-    v = sqlite3GetVdbe(pParse);
-    setAllColumnNames(v, 4, azCol); assert( 4==ArraySize(azCol) );
     sqlite3CodeVerifySchema(pParse, iDb);
     k = sqliteHashFirst(&db->aDb[iDb].pSchema->tblHash);
     while( k ){
@@ -1419,7 +1392,6 @@ void sqlite3Pragma(
 
     /* Initialize the VDBE program */
     pParse->nMem = 6;
-    setOneColumnName(v, "integrity_check");
 
     /* Set the maximum error count */
     mxErr = SQLITE_INTEGRITY_CHECK_ERROR_MAX;
@@ -1671,7 +1643,7 @@ void sqlite3Pragma(
       assert( encnames[SQLITE_UTF8].enc==SQLITE_UTF8 );
       assert( encnames[SQLITE_UTF16LE].enc==SQLITE_UTF16LE );
       assert( encnames[SQLITE_UTF16BE].enc==SQLITE_UTF16BE );
-      returnSingleText(v, "encoding", encnames[ENC(pParse->db)].zName);
+      returnSingleText(v, encnames[ENC(pParse->db)].zName);
     }else{                        /* "PRAGMA encoding = XXX" */
       /* Only change the value of sqlite.enc if the database handle is not
       ** initialized. If the main database exists, the new sqlite.enc value
@@ -1734,7 +1706,7 @@ void sqlite3Pragma(
   case PragTyp_HEADER_VALUE: {
     int iCookie = pPragma->iArg;  /* Which cookie to read or write */
     sqlite3VdbeUsesBtree(v, iDb);
-    if( zRight && (pPragma->mPragFlag & PragFlag_ReadOnly)==0 ){
+    if( zRight && (pPragma->mPragFlg & PragFlg_ReadOnly)==0 ){
       /* Write the specified cookie value */
       static const VdbeOpList setCookie[] = {
         { OP_Transaction,    0,  1,  0},    /* 0 */
@@ -1762,8 +1734,6 @@ void sqlite3Pragma(
       aOp[0].p1 = iDb;
       aOp[1].p1 = iDb;
       aOp[1].p3 = iCookie;
-      sqlite3VdbeSetNumCols(v, 1);
-      sqlite3VdbeSetColName(v, 0, COLNAME_NAME, zLeft, SQLITE_TRANSIENT);
       sqlite3VdbeReusable(v);
     }
   }
@@ -1781,7 +1751,6 @@ void sqlite3Pragma(
     int i = 0;
     const char *zOpt;
     pParse->nMem = 1;
-    setOneColumnName(v, "compile_option");
     while( (zOpt = sqlite3_compileoption_get(i++))!=0 ){
       sqlite3VdbeLoadString(v, 1, zOpt);
       sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 1);
@@ -1798,7 +1767,6 @@ void sqlite3Pragma(
   ** Checkpoint the database.
   */
   case PragTyp_WAL_CHECKPOINT: {
-    static const char *azCol[] = { "busy", "log", "checkpointed" };
     int iBt = (pId2->z?iDb:SQLITE_MAX_ATTACHED);
     int eMode = SQLITE_CHECKPOINT_PASSIVE;
     if( zRight ){
@@ -1810,7 +1778,6 @@ void sqlite3Pragma(
         eMode = SQLITE_CHECKPOINT_TRUNCATE;
       }
     }
-    setAllColumnNames(v, 3, azCol);  assert( 3==ArraySize(azCol) );
     pParse->nMem = 3;
     sqlite3VdbeAddOp3(v, OP_Checkpoint, iBt, eMode, 1);
     sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 3);
@@ -1829,7 +1796,7 @@ void sqlite3Pragma(
     if( zRight ){
       sqlite3_wal_autocheckpoint(db, sqlite3Atoi(zRight));
     }
-    returnSingleInt(v, "wal_autocheckpoint", 
+    returnSingleInt(v, 
        db->xWalCallback==sqlite3WalDefaultHook ? 
            SQLITE_PTR_TO_INT(db->pWalArg) : 0);
   }
@@ -1862,7 +1829,7 @@ void sqlite3Pragma(
     if( zRight ){
       sqlite3_busy_timeout(db, sqlite3Atoi(zRight));
     }
-    returnSingleInt(v, "timeout",  db->busyTimeout);
+    returnSingleInt(v, db->busyTimeout);
     break;
   }
 
@@ -1882,7 +1849,7 @@ void sqlite3Pragma(
     if( zRight && sqlite3DecOrHexToI64(zRight, &N)==SQLITE_OK ){
       sqlite3_soft_heap_limit64(N);
     }
-    returnSingleInt(v, "soft_heap_limit",  sqlite3_soft_heap_limit64(-1));
+    returnSingleInt(v, sqlite3_soft_heap_limit64(-1));
     break;
   }
 
@@ -1901,8 +1868,7 @@ void sqlite3Pragma(
     ){
       sqlite3_limit(db, SQLITE_LIMIT_WORKER_THREADS, (int)(N&0x7fffffff));
     }
-    returnSingleInt(v, "threads",
-                    sqlite3_limit(db, SQLITE_LIMIT_WORKER_THREADS, -1));
+    returnSingleInt(v, sqlite3_limit(db, SQLITE_LIMIT_WORKER_THREADS, -1));
     break;
   }
 
@@ -1914,9 +1880,7 @@ void sqlite3Pragma(
     static const char *const azLockName[] = {
       "unlocked", "shared", "reserved", "pending", "exclusive"
     };
-    static const char *azCol[] = { "database", "status" };
     int i;
-    setAllColumnNames(v, 2, azCol); assert( 2==ArraySize(azCol) );
     pParse->nMem = 2;
     for(i=0; i<db->nDb; i++){
       Btree *pBt;
