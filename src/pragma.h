@@ -114,14 +114,15 @@ static const char *const pragCName[] = {
 };
 
 /* Definitions of all built-in pragmas */
-static const struct sPragmaNames {
+typedef struct PragmaName {
   const char *const zName; /* Name of pragma */
   u8 ePragTyp;             /* PragTyp_XXX value */
   u8 mPragFlg;             /* Zero or more PragFlg_XXX values */
   u8 iPragCName;           /* Start of column names in pragCName[] */
   u8 nPragCName;           /* Num of col names. 0 means use pragma name */
   u32 iArg;                /* Extra argument */
-} aPragmaNames[] = {
+} PragmaName;
+static const PragmaName aPragmaName[] = {
 #if defined(SQLITE_HAS_CODEC) || defined(SQLITE_ENABLE_CEROD)
  {/* zName:     */ "activate_extensions",
   /* ePragTyp:  */ PragTyp_ACTIVATE_EXTENSIONS,

@@ -495,7 +495,7 @@ puts $fd "\175;"
 # Generate the lookup table
 #
 puts $fd "\n/* Definitions of all built-in pragmas */"
-puts $fd "static const struct sPragmaNames \173"
+puts $fd "typedef struct PragmaName \173"
 puts $fd "  const char *const zName; /* Name of pragma */"
 puts $fd "  u8 ePragTyp;             /* PragTyp_XXX value */"
 puts $fd "  u8 mPragFlg;             /* Zero or more PragFlg_XXX values */"
@@ -503,7 +503,8 @@ puts $fd {  u8 iPragCName;           /* Start of column names in pragCName[] */}
 puts $fd "  u8 nPragCName;          \
 /* Num of col names. 0 means use pragma name */"
 puts $fd "  u32 iArg;                /* Extra argument */"
-puts $fd "\175 aPragmaNames\[\] = \173"
+puts $fd "\175 PragmaName;"
+puts $fd "static const PragmaName aPragmaName\[\] = \173"
 
 set current_if {}
 set spacer [format {    %26s } {}]
