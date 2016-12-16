@@ -238,6 +238,7 @@ void sqlite3BtreeCursorHint(BtCursor*, int, ...);
 #endif
 
 int sqlite3BtreeCloseCursor(BtCursor*);
+int sqlite3BtreeMovetoProportional(BtCursor*,u32,u64*);
 int sqlite3BtreeMovetoUnpacked(
   BtCursor*,
   UnpackedRecord *pUnKey,

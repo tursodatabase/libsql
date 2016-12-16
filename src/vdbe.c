@@ -4887,6 +4887,34 @@ case OP_Rewind: {        /* jump */
   break;
 }
 
+/*
+** Opcode: EstRowCnt P1 P2 P3 * * *
+**
+** Estimate the number of entries in btree for cursor P1 do a proportional
+** seek to of P3.  Store the result as a floating point value in P2.
+*/
+case OP_EstRowCnt: {  /* out2 */
+  VdbeCursor *pC;
+  BtCursor *pCrsr;
+  int rc;
+  sqlite3_uint64 n = 0;
+
+  assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  pC = p->apCsr[pOp->p1];
+  assert( pC->eCurType==CURTYPE_BTREE );
+  pCrsr = pC->uc.pCursor;
+  assert( pCrsr );
+  rc = sqlite3BtreeMovetoProportional(pCrsr, pOp->p3, &n);
+  if( rc ) goto abort_due_to_error;
+  pOut = out2Prerelease(p, pOp);
+  pOut->flags = MEM_Real;
+  pOut->u.r = n;
+  pC->nullRow = 0;
+  pC->deferredMoveto = 0;
+  pC->cacheStatus = CACHE_STALE;
+  break;
+}
+
 /* Opcode: Next P1 P2 P3 P4 P5
 **
 ** Advance cursor P1 so that it points to the next key/data pair in its

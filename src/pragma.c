@@ -300,11 +300,7 @@ static const PragmaName *pragmaLocate(const char *zName){
 **
 ** Pragmas are of this form:
 **
-**      PRAGMA [schema.]id [= value]
-**
-** The identifier might also be a string.  The value is a string, and
-** identifier, or a number.  If minusFlag is true, then the value is
-** a number that was preceded by a minus sign.
+**      PRAGMA [schema.]id [= value-list]
 **
 ** If the left side is "database.id" then pId1 is the database name
 ** and pId2 is the id.  If the left side is just "id" then pId1 is the
@@ -314,8 +310,7 @@ void sqlite3Pragma(
   Parse *pParse, 
   Token *pId1,        /* First part of [schema.]id field */
   Token *pId2,        /* Second part of [schema.]id field, or NULL */
-  Token *pValue,      /* Token for <value>, or NULL */
-  int minusFlag       /* True if a '-' sign preceded <value> */
+  IdList *pValues     /* The value-list arguments.  NULL if omitted */
 ){
   char *zLeft = 0;       /* Nul-terminated UTF-8 string <id> */
   char *zRight = 0;      /* Nul-terminated UTF-8 string <value>, or NULL */
@@ -329,14 +324,14 @@ void sqlite3Pragma(
   Vdbe *v = sqlite3GetVdbe(pParse);  /* Prepared statement */
   const PragmaName *pPragma;   /* The pragma */
 
-  if( v==0 ) return;
+  if( v==0 ) goto pragma_out;
   sqlite3VdbeRunOnlyOnce(v);
   pParse->nMem = 2;
 
   /* Interpret the [schema.] part of the pragma statement. iDb is the
   ** index of the database this pragma is being applied to in db.aDb[]. */
   iDb = sqlite3TwoPartName(pParse, pId1, pId2, &pId);
-  if( iDb<0 ) return;
+  if( iDb<0 ) goto pragma_out;
   pDb = &db->aDb[iDb];
 
   /* If the temp database has been explicitly named as part of the 
@@ -347,12 +342,8 @@ void sqlite3Pragma(
   }
 
   zLeft = sqlite3NameFromToken(db, pId);
-  if( !zLeft ) return;
-  if( minusFlag ){
-    zRight = sqlite3MPrintf(db, "-%T", pValue);
-  }else{
-    zRight = sqlite3NameFromToken(db, pValue);
-  }
+  if( !zLeft ) goto pragma_out;
+  if( pValues ) zRight = pValues->a[0].zName;
 
   assert( pId2 );
   zDb = pId2->n>0 ? pDb->zDbSName : 0;
@@ -1124,6 +1115,10 @@ void sqlite3Pragma(
     Index *pIdx;
     Table *pTab;
     pIdx = sqlite3FindIndex(db, zRight, zDb);
+    if( pIdx==0 ){
+      pTab = sqlite3FindTable(db, zRight, zDb);
+      if( pTab && !HasRowid(pTab) ) pIdx = sqlite3PrimaryKeyIndex(pTab);
+    }
     if( pIdx ){
       int i;
       int mx;
@@ -1367,6 +1362,133 @@ void sqlite3Pragma(
     if( zRight ){
       sqlite3RegisterLikeFunctions(db, sqlite3GetBoolean(zRight, 0));
     }
+  }
+  break;
+
+  /*
+  **   PRAGMA est_row_cnt(<table-or-index>,<fraction>);
+  **
+  ** Seek in <table-or-index> through the first <fraction> of rows and
+  ** estimate the total number of rows based on the path back up to the
+  ** root.
+  */
+  case PragTyp_EST_COUNT: {
+    Index *pIdx;
+    Table *pTab = 0;
+    Pgno iRoot = 0;
+    const char *zName = 0;
+    int regResult;
+    double r;
+    if( (pIdx = sqlite3FindIndex(db, zRight, zDb))!=0 ){
+      iRoot = pIdx->tnum;
+      zName = pIdx->zName;
+    }else if( (pTab = sqlite3FindTable(db, zRight, zDb))!=0 ){
+      zName = pTab->zName;
+      if( HasRowid(pTab) ){
+        iRoot = pTab->tnum;
+      }else{
+        pIdx = sqlite3PrimaryKeyIndex(pTab);
+        iRoot = pIdx->tnum;
+      }
+    }else{
+      break;
+    }
+    sqlite3TableLock(pParse, iDb, iRoot, 0, zName);
+    regResult = ++pParse->nMem;
+    if( pValues->nId>=2 ){
+      const char *z = pValues->a[1].zName;
+      sqlite3AtoF(z, &r, sqlite3Strlen30(z), SQLITE_UTF8);
+    }else{
+      r = 0.5;
+    }
+    if( r<0.0 ) r = 0.0;
+    if( r>1.0 ) r = 1.0;
+    sqlite3CodeVerifySchema(pParse, iDb);
+    pParse->nTab++;
+    sqlite3VdbeAddOp4Int(v, OP_OpenRead, 0, iRoot, iDb, 1);
+    if( pIdx ) sqlite3VdbeSetP4KeyInfo(pParse, pIdx);
+    sqlite3VdbeAddOp3(v, OP_EstRowCnt, 0, regResult, (int)(r*1000000000));
+    sqlite3VdbeAddOp2(v, OP_ResultRow, regResult, 1);
+  }
+  break;
+
+  /*
+  **   PRAGMA btree_sample(<table-or-index>,<fraction>,<limit>);
+  **
+  ** Seek in <table-or-index> through the first <fraction> of rows and
+  ** then begin returning rows, one by one.  A max of <limit> rows will
+  ** be returned.
+  */
+  case PragTyp_BTREE_SAMPLE: {
+    Index *pIdx;
+    Table *pTab = 0;
+    Pgno iRoot = 0;
+    Pgno iLock = 0;
+    int nCol = 0;
+    const char *zName = 0;
+    int iLimit = 10;
+    int i;
+    int regResult;
+    int regLimit;
+    int addrTop;
+    int addrJmp;
+    int addrSkip;
+    double r;
+    if( (pIdx = sqlite3FindIndex(db, zRight, zDb))!=0 ){
+      iRoot = pIdx->tnum;
+      iLock = pIdx->pTable->tnum;
+      zName = pIdx->zName;
+      nCol = pIdx->nColumn;
+    }else if( (pTab = sqlite3FindTable(db, zRight, zDb))!=0 ){
+      zName = pTab->zName;
+      if( HasRowid(pTab) ){
+        iLock = iRoot = pTab->tnum;
+        nCol = pTab->nCol;
+      }else{
+        pIdx = sqlite3PrimaryKeyIndex(pTab);
+        iLock = iRoot = pIdx->tnum;
+        nCol = pIdx->nColumn;
+      }
+    }else{
+      break;
+    }
+    sqlite3VdbeSetNumCols(v, nCol);
+    for(i=0; i<nCol; i++){
+      char zCol[30];
+      sqlite3_snprintf(sizeof(zCol),zCol,"c%06d",i);
+      sqlite3VdbeSetColName(v, i, COLNAME_NAME, zCol, SQLITE_TRANSIENT);
+    }
+    if( pValues->nId>=2 ){
+      const char *z = pValues->a[1].zName;
+      sqlite3AtoF(z, &r, sqlite3Strlen30(z), SQLITE_UTF8);
+    }else{
+      r = 0.5;
+    }
+    if( r<0.0 ) r = 0.0;
+    if( r>1.0 ) r = 1.0;
+    if( pValues->nId>=3 ){
+      iLimit = sqlite3Atoi(pValues->a[2].zName);
+    }
+    pParse->nTab++;
+    sqlite3TableLock(pParse, iDb, iLock, 0, zName);
+    sqlite3CodeVerifySchema(pParse, iDb);
+    sqlite3VdbeAddOp4Int(v, OP_OpenRead, 0, iRoot, iDb, nCol);
+    if( pIdx ) sqlite3VdbeSetP4KeyInfo(pParse, pIdx);
+    regLimit = ++pParse->nMem;
+    regResult = pParse->nMem+1;
+    pParse->nMem += nCol;
+    sqlite3VdbeAddOp2(v, OP_Integer, iLimit, regLimit);
+    addrSkip = sqlite3VdbeAddOp1(v, OP_Rewind, 0); VdbeCoverage(v);
+    sqlite3VdbeAddOp3(v, OP_EstRowCnt, 0, regResult, (int)(r*1000000000));
+    addrTop = sqlite3VdbeCurrentAddr(v);
+    for(i=0; i<nCol; i++){
+      sqlite3VdbeAddOp3(v, OP_Column, 0, i, regResult+i);
+    }
+    sqlite3VdbeAddOp2(v, OP_ResultRow, regResult, nCol);
+    addrJmp = sqlite3VdbeAddOp1(v, OP_DecrJumpZero, regLimit); VdbeCoverage(v);
+    sqlite3VdbeAddOp2(v, OP_Next, 0, addrTop); VdbeCoverage(v);
+    sqlite3VdbeJumpHere(v, addrJmp);
+    sqlite3VdbeJumpHere(v, addrSkip);
   }
   break;
 
@@ -1955,7 +2077,7 @@ void sqlite3Pragma(
 
 pragma_out:
   sqlite3DbFree(db, zLeft);
-  sqlite3DbFree(db, zRight);
+  sqlite3IdListDelete(db, pValues);
 }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 /*****************************************************************************

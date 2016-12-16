@@ -277,6 +277,12 @@ set pragma_def {
   FLAG: NeedSchema
   IF:   !defined(SQLITE_OMIT_INTEGRITY_CHECK)
 
+  NAME: est_count
+  FLAG: NeedSchema
+
+  NAME: btree_sample
+  FLAG: NeedSchema
+
   NAME: encoding
   FLAG: Result0
   IF:   !defined(SQLITE_OMIT_UTF16)

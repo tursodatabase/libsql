@@ -5036,6 +5036,73 @@ int sqlite3BtreeLast(BtCursor *pCur, int *pRes){
   return rc;
 }
 
+/*
+** Move the cursor pCur to a location within its b-tree that is
+** approximately the x/1e9*nRow entry in the table, assuming the
+** table contains nRow entries.  So, in other words, if x==0 move
+** to the first entry and if x=1e9 move to the last entry and if
+** x=5e8 move to the middle entry.  The final landing spot is
+** approximate.
+**
+** Write an estimate of the number of entries in the b-tree into
+** the *pnRowEst variable.
+**
+** This routine works by first moving the cursor to the root of the
+** b-tree, then following pointers down to a leaf, selecting a pointer
+** according to x.
+**
+** The estimated number of entries is found by multiplying the number of
+** entries on the leaf page by the number of pointers at each layer of
+** non-leaf pages.
+**
+** Return SQLITE_OK on success or an error code if problems are encountered.
+*/
+int sqlite3BtreeMovetoProportional(
+  BtCursor *pCur,            /* Cursor to reposition */
+  u32 x,                     /* approximate location to position the cursor */
+  sqlite3_uint64 *pnRowEst   /* Write estimated entry count here */
+){
+  sqlite3_uint64 n = 1;
+  int rc;
+  Pgno chldPg;
+  u32 mx = 1000000000;
+  u32 perChild;
+  u16 rx;
+  MemPage *pPage;
+  rc = moveToRoot(pCur);
+  if( rc ) return rc;
+  pPage = pCur->apPage[0];
+  while( !pPage->leaf ){
+    perChild = (mx+pPage->nCell)/(pPage->nCell+1);
+    if( perChild<1 ) perChild = 1;
+    rx = x/perChild;
+    x %= perChild;
+    mx = perChild;
+    if( rx>=pPage->nCell ){
+      chldPg = get4byte(&pPage->aData[pPage->hdrOffset+8]);
+    }else{
+      chldPg = get4byte(findCell(pPage,rx));
+    }
+    n *= pPage->nCell+1;
+    pCur->aiIdx[pCur->iPage] = rx;
+    rc = moveToChild(pCur, chldPg);
+    if( rc ) return rc;
+    pPage = pCur->apPage[pCur->iPage];
+  }
+  *pnRowEst = n*pPage->nCell;
+  if( pPage->nCell==0 ){
+    rx = 0;
+  }else{
+    perChild = mx/pPage->nCell;
+    if( perChild<1 ) perChild = 1;
+    rx = x/perChild;
+    if( rx>=pPage->nCell ) rx = pPage->nCell-1;
+  }
+  pCur->aiIdx[pCur->iPage] = rx;
+
+  return SQLITE_OK;
+}
+
 /* Move the cursor so that it points to an entry near the key 
 ** specified by pIdxKey or intKey.   Return a success code.
 **

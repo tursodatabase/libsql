@@ -3584,12 +3584,21 @@ void *sqlite3ArrayAllocate(
 ** need be.
 **
 ** A new IdList is returned, or NULL if malloc() fails.
+**
+** The zName must have been obtained from sqlite3DbMalloc().  This routine
+** accepts ownership of the zName string and will ensure that it is freed
+** when no longer in use.
 */
-IdList *sqlite3IdListAppend(sqlite3 *db, IdList *pList, Token *pToken){
+IdList *sqlite3IdListAppend(
+  Parse *pParse,       /* Parsing context */
+  IdList *pList,       /* ID list to append to */
+  char *zName          /* Token to append */
+){
   int i;
+  sqlite3 *db = pParse->db;
   if( pList==0 ){
     pList = sqlite3DbMallocZero(db, sizeof(IdList) );
-    if( pList==0 ) return 0;
+    if( pList==0 ) goto id_list_append_fail;
   }
   pList->a = sqlite3ArrayAllocate(
       db,
@@ -3600,10 +3609,14 @@ IdList *sqlite3IdListAppend(sqlite3 *db, IdList *pList, Token *pToken){
   );
   if( i<0 ){
     sqlite3IdListDelete(db, pList);
-    return 0;
+    goto id_list_append_fail;
   }
-  pList->a[i].zName = sqlite3NameFromToken(db, pToken);
+  pList->a[i].zName = zName;
   return pList;
+
+id_list_append_fail:
+  sqlite3DbFree(db, zName);
+  return 0;
 }
 
 /*

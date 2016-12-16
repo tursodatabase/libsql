@@ -3562,7 +3562,7 @@ void sqlite3ExprListDelete(sqlite3*, ExprList*);
 u32 sqlite3ExprListFlags(const ExprList*);
 int sqlite3Init(sqlite3*, char**);
 int sqlite3InitCallback(void*, int, char**, char**);
-void sqlite3Pragma(Parse*,Token*,Token*,Token*,int);
+void sqlite3Pragma(Parse*,Token*,Token*,IdList*);
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 Module *sqlite3PragmaVtabRegister(sqlite3*,const char *zName);
 #endif
@@ -3640,7 +3640,7 @@ void sqlite3DeleteTable(sqlite3*, Table*);
 #endif
 void sqlite3Insert(Parse*, SrcList*, Select*, IdList*, int);
 void *sqlite3ArrayAllocate(sqlite3*,void*,int,int*,int*);
-IdList *sqlite3IdListAppend(sqlite3*, IdList*, Token*);
+IdList *sqlite3IdListAppend(Parse*, IdList*, char*);
 int sqlite3IdListIndex(IdList*,const char*);
 SrcList *sqlite3SrcListEnlarge(sqlite3*, SrcList*, int, int);
 SrcList *sqlite3SrcListAppend(sqlite3*, SrcList*, Token*, Token*);
