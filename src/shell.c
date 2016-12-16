@@ -3258,285 +3258,12 @@ int shellDeleteFile(const char *zFilename){
 /**************************************************************************
 ** Beginning of implementation of .fkey_missing_indexes
 */
-typedef struct PragmaVtab PragmaVtab;
-typedef struct PragmaCursor PragmaCursor;
-typedef struct PragmaConfig PragmaConfig;
 
 /*
-** Table structure for "pragma" eponymous virtual tables.
-*/
-struct PragmaVtab {
-  sqlite3_vtab base;
-  PragmaConfig *pConfig;
-  sqlite3 *db;
-};
-
-/*
-** Cursor structure for "pragma" eponymous virtual tables.
-*/
-struct PragmaCursor {
-  sqlite3_vtab_cursor base;
-  sqlite3_stmt *pSelect;
-  sqlite3_stmt *pPragma;
-  sqlite_int64 iRowid;
-};
-
-struct PragmaConfig {
-  const char *zModule;
-  const char *zSchema;
-  const char *zPragma;
-};
-
-/* 
-** Pragma virtual table module xConnect method.
-*/
-static int shellPragmaConnect(
-  sqlite3 *db,
-  void *pAux,
-  int argc, const char *const*argv,
-  sqlite3_vtab **ppVtab,
-  char **pzErr
-){
-  PragmaConfig *pConfig = (PragmaConfig*)pAux;
-  PragmaVtab *pTab = 0;
-  int rc;
-
-  rc = sqlite3_declare_vtab(db, pConfig->zSchema);
-  if( rc==SQLITE_OK ){
-    pTab = (PragmaVtab*)sqlite3_malloc(sizeof(PragmaVtab));
-    if( pTab==0 ){
-      rc = SQLITE_NOMEM;
-    }else{
-      memset(pTab, 0, sizeof(PragmaVtab));
-      pTab->db = db;
-      pTab->pConfig = pConfig;
-    }
-  }else{
-    *pzErr = sqlite3_mprintf("%s", sqlite3_errmsg(db));
-  }
-
-  *ppVtab = (sqlite3_vtab*)pTab;
-  return rc;
-}
-
-/* 
-** Pragma virtual table module xDisconnect method.
-*/
-static int shellPragmaDisconnect(sqlite3_vtab *pVtab){
-  PragmaVtab *pTab = (PragmaVtab*)pVtab;
-  sqlite3_free(pTab);
-  return SQLITE_OK;
-}
-
-/* 
-** Pragma virtual table module xBestIndex method.
-*/
-static int shellPragmaBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
-  return SQLITE_OK;
-}
-
-/* 
-** Pragma virtual table module xOpen method.
-*/
-static int shellPragmaOpen(sqlite3_vtab *pVtab, sqlite3_vtab_cursor **ppCursor){
-  PragmaCursor *pCsr;
-
-  pCsr = (PragmaCursor*)sqlite3_malloc(sizeof(PragmaCursor));
-  if( pCsr==0 ) return SQLITE_NOMEM;
-  memset(pCsr, 0, sizeof(PragmaCursor));
-  pCsr->base.pVtab = pVtab;
-
-  *ppCursor = (sqlite3_vtab_cursor*)pCsr;
-  return SQLITE_OK;
-}
-
-/* 
-** Pragma virtual table module xClose method.
-*/
-static int shellPragmaClose(sqlite3_vtab_cursor *cur){
-  return SQLITE_OK;
-}
-
-/* 
-** Pragma virtual table module xNext method.
-*/
-static int shellPragmaNext(sqlite3_vtab_cursor *pVtabCursor){
-  PragmaCursor *pCsr = (PragmaCursor*)pVtabCursor;
-  PragmaVtab *pTab = (PragmaVtab*)(pVtabCursor->pVtab);
-  sqlite3 *db = pTab->db;
-  int rc = SQLITE_OK;
-
-  /* Increment the xRowid value */
-  pCsr->iRowid++;
-
-  while( 1 ){
-    assert( rc==SQLITE_OK );
-
-    if( pCsr->pPragma ){
-      if( SQLITE_ROW!=sqlite3_step(pCsr->pPragma) ){
-        rc = sqlite3_finalize(pCsr->pPragma);
-        pCsr->pPragma = 0;
-      }
-    }
-
-    if( rc==SQLITE_OK && pCsr->pPragma==0 ){
-      if( SQLITE_ROW!=sqlite3_step(pCsr->pSelect) ){
-        rc = sqlite3_finalize(pCsr->pSelect);
-        pCsr->pSelect = 0;
-      }else{
-        const char *zName = (const char*)sqlite3_column_text(pCsr->pSelect, 0);
-        char *zSql = sqlite3_mprintf(pTab->pConfig->zPragma, zName);
-        if( zSql==0 ){
-          rc = SQLITE_NOMEM;
-        }else{
-          rc = sqlite3_prepare_v2(db, zSql, -1, &pCsr->pPragma, 0);
-          if( rc!=SQLITE_OK ){
-            pTab->base.zErrMsg = sqlite3_mprintf("%s", sqlite3_errmsg(db));
-          }else{
-            continue;
-          }
-        }
-      }
-    }
-
-    break;
-  }
-
-  return rc;
-}
-
-/* 
-** Pragma virtual table module xFilter method.
-*/
-static int shellPragmaFilter(
-  sqlite3_vtab_cursor *pVtabCursor, 
-  int idxNum, const char *idxStr,
-  int argc, sqlite3_value **argv
-){
-  PragmaCursor *pCsr = (PragmaCursor*)pVtabCursor;
-  PragmaVtab *pTab = (PragmaVtab*)(pVtabCursor->pVtab);
-  int rc;
-
-  sqlite3_finalize(pCsr->pSelect);
-  sqlite3_finalize(pCsr->pPragma);
-  pCsr->pSelect = 0;
-  pCsr->pPragma = 0;
-  pCsr->iRowid = 0;
-
-  rc = sqlite3_prepare_v2(pTab->db, 
-      "SELECT name FROM sqlite_master WHERE type = 'table' AND rootpage>0",
-      -1, &pCsr->pSelect, 0
-  );
-  if( rc!=SQLITE_OK ){
-    pTab->base.zErrMsg = sqlite3_mprintf("%s", sqlite3_errmsg(pTab->db));
-    return rc;
-  }
-
-  return shellPragmaNext(pVtabCursor);
-}
-
-/*
-** Pragma virtual table module xEof method.
-*/
-static int shellPragmaEof(sqlite3_vtab_cursor *pVtabCursor){
-  PragmaCursor *pCsr = (PragmaCursor*)pVtabCursor;
-  return (pCsr->pSelect==0);
-}
-
-/* 
-** Pragma virtual table module xColumn method.
-*/
-static int shellPragmaColumn(
-  sqlite3_vtab_cursor *pVtabCursor, 
-  sqlite3_context *ctx, 
-  int i
-){
-  PragmaCursor *pCsr = (PragmaCursor*)pVtabCursor;
-  switch( i ){
-    case 0: /* "database" */
-      sqlite3_result_text(ctx, "main", -1, SQLITE_STATIC);
-      break;
-
-    case 1: /* "child"/"table" */
-      sqlite3_result_value(ctx, sqlite3_column_value(pCsr->pSelect, 0));
-      break;
-
-    default:
-      sqlite3_result_value(ctx, sqlite3_column_value(pCsr->pPragma, i-2));
-      break;
-  }
-
-  return SQLITE_OK;
-}
-
-/* 
-** Pragma virtual table module xRowid method.
-*/
-static int shellPragmaRowid(sqlite3_vtab_cursor *pVtabCursor, sqlite_int64 *p){
-  PragmaCursor *pCsr = (PragmaCursor*)pVtabCursor;
-  *p = pCsr->iRowid;
-  return SQLITE_OK;
-}
-
-/*
-** Register the virtual table module with the supplied database handle.
-*/
-static int shellPragmaRegister(sqlite3 *db){
-  static sqlite3_module shellPragmaModule = {
-    0,                            /* iVersion */
-    shellPragmaConnect,           /* xCreate - create a table */
-    shellPragmaConnect,           /* xConnect - connect to an existing table */
-    shellPragmaBestIndex,         /* xBestIndex - Determine search strategy */
-    shellPragmaDisconnect,        /* xDisconnect - Disconnect from a table */
-    shellPragmaDisconnect,        /* xDestroy - Drop a table */
-    shellPragmaOpen,              /* xOpen - open a cursor */
-    shellPragmaClose,             /* xClose - close a cursor */
-    shellPragmaFilter,            /* xFilter - configure scan constraints */
-    shellPragmaNext,              /* xNext - advance a cursor */
-    shellPragmaEof,               /* xEof */
-    shellPragmaColumn,            /* xColumn - read data */
-    shellPragmaRowid,             /* xRowid - read data */
-    0,                            /* xUpdate - write data */
-    0,                            /* xBegin - begin transaction */
-    0,                            /* xSync - sync transaction */
-    0,                            /* xCommit - commit transaction */
-    0,                            /* xRollback - rollback transaction */
-    0,                            /* xFindFunction - function overloading */
-    0,                            /* xRename - rename the table */
-    0,                            /* xSavepoint */
-    0,                            /* xRelease */
-    0                             /* xRollbackTo */
-  };
-  int rc = SQLITE_OK;
-  int i;
-
-  static PragmaConfig aConfig[] = {
-    { "pragma_foreign_key_list",
-      "CREATE TABLE x(database, child, "
-        "id, seq, parent, child_col, parent_col, on_update, on_delete, match)",
-      "PRAGMA foreign_key_list = %Q"
-    },
-    { "pragma_table_info",
-      "CREATE TABLE x(database, tbl, "
-        "cid, name, type, not_null, dflt_value, pk)",
-      "PRAGMA table_info = %Q"
-    }
-  };
-
-  for(i=0; rc==SQLITE_OK && i<sizeof(aConfig)/sizeof(aConfig[0]); i++){
-    rc = sqlite3_create_module_v2(
-        db, aConfig[i].zModule, &shellPragmaModule, (void*)&aConfig[i], 0
-    );
-  }
-
-  return rc;
-}
-
-/*
-** The implementation of SQL scalar function fkey_collate_clause(). This
-** scalar function is always called with four arguments - the parent
-** table name, the parent column name, the child table name and the child
-** column name.
+** The implementation of SQL scalar function fkey_collate_clause(), used
+** by the ".fkey_missing_indexes" command. This scalar function is always
+** called with four arguments - the parent table name, the parent column name,
+** the child table name and the child column name.
 **
 **   fkey_collate_clause('parent-tab', 'parent-col', 'child-tab', 'child-col')
 **
@@ -3593,40 +3320,76 @@ static int shellFkeyMissingIndexes(
   char **azArg,                   /* Array of arguments passed to dot command */
   int nArg                        /* Number of entries in azArg[] */
 ){
-  sqlite3 *db = pState->db;
-  FILE *out = pState->out;
+  sqlite3 *db = pState->db;       /* Database handle to query "main" db of */
+  FILE *out = pState->out;        /* Stream to write non-error output to */
   int bVerbose = 0;               /* If -verbose is present */
   int bGroupByParent = 0;         /* If -groupbyparent is present */
-  int i;
-  const char *zIndent = "";
+  int i;                          /* To iterate through azArg[] */
+  const char *zIndent = "";       /* How much to indent CREATE INDEX by */
+  int rc;                         /* Return code */
+  sqlite3_stmt *pSql = 0;         /* Compiled version of SQL statement below */
 
-  int rc;
-  sqlite3_stmt *pSql = 0;
+  /*
+  ** This SELECT statement returns one row for each foreign key constraint
+  ** in the schema of the main database. The column values are:
+  **
+  ** 0. The text of an SQL statement similar to:
+  **
+  **      "EXPLAIN QUERY PLAN SELECT rowid FROM child_table WHERE child_key=?"
+  **
+  **    This is the same SELECT that the foreign keys implementation needs
+  **    to run internally on child tables. If there is an index that can
+  **    be used to optimize this query, then it can also be used by the FK
+  **    implementation to optimize DELETE or UPDATE statements on the parent
+  **    table.
+  **
+  ** 1. A GLOB pattern suitable for sqlite3_strglob(). If the plan output by
+  **    the EXPLAIN QUERY PLAN command matches this pattern, then the schema
+  **    contains an index that can be used to optimize the query.
+  **
+  ** 2. Human readable text that describes the child table and columns. e.g.
+  **
+  **       "child_table(child_key1, child_key2)"
+  **
+  ** 3. Human readable text that describes the parent table and columns. e.g.
+  **
+  **       "parent_table(parent_key1, parent_key2)"
+  **
+  ** 4. A full CREATE INDEX statement for an index that could be used to
+  **    optimize DELETE or UPDATE statements on the parent table. e.g.
+  **
+  **       "CREATE INDEX child_table_child_key ON child_table(child_key)"
+  **
+  ** 5. The name of the parent table.
+  **
+  ** These six values are used by the C logic below to generate the report.
+  */
   const char *zSql =
-    "SELECT "
-    "     'EXPLAIN QUERY PLAN SELECT rowid FROM ' || quote(child) || ' WHERE ' "
-    "  || group_concat(quote(child) || '.' || quote(child_col) || '=?' || "
-    "        fkey_collate_clause(parent, parent_col, child, child_col),' AND ')"
+  "SELECT "
+    "     'EXPLAIN QUERY PLAN SELECT rowid FROM ' || quote(s.name) || ' WHERE '"
+    "  || group_concat(quote(s.name) || '.' || quote(f.[from]) || '=?' "
+    "  || fkey_collate_clause(f.[table], f.[to], s.name, f.[from]),' AND ')"
     ", "
-    "     'SEARCH TABLE ' || child || ' USING COVERING INDEX*('"
+    "     'SEARCH TABLE ' || s.name || ' USING COVERING INDEX*('"
     "  || group_concat('*=?', ' AND ') || ')'"
     ", "
-    "     child  || '(' || group_concat(child_col,  ', ') || ')'"
+    "     s.name  || '(' || group_concat(f.[from],  ', ') || ')'"
     ", "
-    "     parent || '(' || group_concat(COALESCE(parent_col, "
-    "       (SELECT name FROM pragma_table_info WHERE tbl=parent AND pk=seq+1)"
+    "     f.[table] || '(' || group_concat(COALESCE(f.[to], "
+    "       (SELECT name FROM pragma_table_info(f.[table]) WHERE pk=seq+1)"
     "     )) || ')'"
     ", "
-    "     'CREATE INDEX ' || quote(child ||'_'|| group_concat(child_col, '_'))"
-    "  || ' ON ' || quote(child) || '('"
-    "  || group_concat(quote(child_col) ||"
-    "        fkey_collate_clause(parent, parent_col, child, child_col), ', ')"
+    "     'CREATE INDEX ' || quote(s.name ||'_'|| group_concat(f.[from], '_'))"
+    "  || ' ON ' || quote(s.name) || '('"
+    "  || group_concat(quote(f.[from]) ||"
+    "        fkey_collate_clause(f.[table], f.[to], s.name, f.[from]), ', ')"
     "  || ');'"
     ", "
-    "     parent "
+    "     f.[table] "
 
-    "FROM pragma_foreign_key_list GROUP BY child, id "
-    "ORDER BY (CASE WHEN ? THEN parent ELSE CHILD END)"
+    "FROM sqlite_master AS s, pragma_foreign_key_list(s.name) AS f "
+    "GROUP BY s.name, f.id "
+    "ORDER BY (CASE WHEN ? THEN f.[table] ELSE s.name END)"
   ;
 
   for(i=1; i<nArg; i++){
@@ -3643,16 +3406,11 @@ static int shellFkeyMissingIndexes(
       return SQLITE_ERROR;
     }
   }
-
-  /* Register the pragma eponymous virtual tables */
-  rc = shellPragmaRegister(db);
   
   /* Register the fkey_collate_clause() SQL function */
-  if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "fkey_collate_clause", 4, SQLITE_UTF8,
-        0, shellFkeyCollateClause, 0, 0
-    );
-  }
+  rc = sqlite3_create_function(db, "fkey_collate_clause", 4, SQLITE_UTF8,
+      0, shellFkeyCollateClause, 0, 0
+  );
 
 
   if( rc==SQLITE_OK ){

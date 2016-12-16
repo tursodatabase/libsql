@@ -1,5 +1,5 @@
-C Merge\sthe\spragma-as-vtab\schange\sinto\sthis\sbranch.
-D 2016-12-16T16:13:45.218
+C Update\s.fkey_missing_indexes\sto\suse\sthe\sbuilt-in\spragma\svtabs.
+D 2016-12-16T16:44:27.209
 F Makefile.in c194b58fe00c370a48ac6ae6945e92a7781db1c8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -389,7 +389,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c bb070cf5f23611c44ab7e4788803684e385fc3fb
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 204491a5e09a66380a067943d8651af8bda1d358
-F src/shell.c 331be7c5d82477baff3ab584f1dc679e9676e0ef
+F src/shell.c 667382b94e1ba301960cbf34db96d25afe219892
 F src/sqlite.h.in e8e2d108d82647f0a812fdb74accf91c1ec08ddc
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
@@ -1537,7 +1537,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 976c51b4836dfba2ce9b246334a85bda08ac526f 546821e29edb0282a4b1d8f49512e36027a6bf6d
-R 30e9fb459cb16eb6392de3bdb60521ee
+P 4ba45e722371ca4343e3563e7e1c2896b48c9a87
+R 5944ad7aef550b0c7873733cf5d30c76
 U dan
-Z 8d92568d6acf97185670c4652b437304
+Z 1d6e2ebe082c25e976b4f2822f56282f
