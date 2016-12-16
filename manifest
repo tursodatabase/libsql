@@ -1,5 +1,5 @@
-C All\stemp.sqlite_master\sto\sbe\sused\sas\san\salias\sfor\ssqlite_temp_master.
-D 2016-12-16T01:00:21.326
+C Fix\sa\sproblem\scausing\sthe\splanner\sto\sgenerate\ssub-optimal\splans\sfor\ssome\squeries\nthat\suse\srecursive\sWITH\ssub-queries\swith\sLIMIT\sclauses.
+D 2016-12-16T15:05:40.539
 F Makefile.in c194b58fe00c370a48ac6ae6945e92a7781db1c8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -388,7 +388,7 @@ F src/printf.c f94da4935d1dd25420ac50c6745db1deb35e07c1
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c bb070cf5f23611c44ab7e4788803684e385fc3fb
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c 204491a5e09a66380a067943d8651af8bda1d358
+F src/select.c e4c687333c5fa33b1ce05c37bfbea6e09d3dbee9
 F src/shell.c f1c7fde7a83421e6ed620df41d200674a2327e65
 F src/sqlite.h.in e8e2d108d82647f0a812fdb74accf91c1ec08ddc
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1436,7 +1436,7 @@ F test/win32longpath.test 169c75a3b2e43481f4a62122510210c67b08f26d
 F test/win32nolock.test ac4f08811a562e45a5755e661f45ca85892bdbbc
 F test/with1.test cef099a491eac9874f2c28bd2dc86394fb3e47b3
 F test/with2.test 2b40da883658eb74ad8ad06afabe11a408e7fb87
-F test/with3.test 511bacdbe41c49cf34f9fd1bd3245fe1575bca98
+F test/with3.test e71604a0e53cba82bc04c703987cb1d6751ec0b6
 F test/withM.test 693b61765f2b387b5e3e24a4536e2e82de15ff64
 F test/without_rowid1.test 1a7b9bd51b899928d327052df9741d2fe8dbe701
 F test/without_rowid2.test af260339f79d13cb220288b67cd287fbcf81ad99
@@ -1536,7 +1536,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4e3749127e7249f46e17bfabc614b0876f60565a
-R 27200c6ed9ee619c25ffbd7fc5b77433
-U drh
-Z dbd7760e0bb1a8efbcd514dce9f9a0ad
+P 8d646905b830d5bb29092e103ac5cb499b3c7e5a
+R 147fd014e993bf990284d024622f7825
+U dan
+Z ececc9941f2e958f0280d3f055b0e66d
