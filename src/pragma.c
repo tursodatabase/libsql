@@ -2002,6 +2002,11 @@ static int pragmaVtabConnect(
     sqlite3XPrintf(&acc, "%c\"%s\"", cSep, pragCName[j]);
     cSep = ',';
   }
+  if( i==0 ){
+    sqlite3XPrintf(&acc, "(\"%s\"", pPragma->zName);
+    cSep = ',';
+    i++;
+  }
   j = 0;
   if( pPragma->mPragFlg & PragFlg_Result1 ){
     sqlite3StrAccumAppendAll(&acc, ",arg HIDDEN");
@@ -2067,7 +2072,6 @@ static int pragmaVtabBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
     if( pConstraint->iColumn < pTab->iHidden ) continue;
     j = pConstraint->iColumn - pTab->iHidden;
     assert( j < 2 );
-    if( seen[j] ) continue;
     seen[j] = i+1;
   }
   if( seen[0]==0 ){
@@ -2113,6 +2117,7 @@ static void pragmaVtabCursorClear(PragmaVtabCursor *pCsr){
 static int pragmaVtabClose(sqlite3_vtab_cursor *cur){
   PragmaVtabCursor *pCsr = (PragmaVtabCursor*)cur;
   pragmaVtabCursorClear(pCsr);
+  sqlite3_free(pCsr);
   return SQLITE_OK;
 }
 
@@ -2123,12 +2128,11 @@ static int pragmaVtabNext(sqlite3_vtab_cursor *pVtabCursor){
 
   /* Increment the xRowid value */
   pCsr->iRowid++;
-  if( pCsr->pPragma ){
-    if( SQLITE_ROW!=sqlite3_step(pCsr->pPragma) ){
-      rc = sqlite3_finalize(pCsr->pPragma);
-      pCsr->pPragma = 0;
-      pragmaVtabCursorClear(pCsr);
-    }
+  assert( pCsr->pPragma );
+  if( SQLITE_ROW!=sqlite3_step(pCsr->pPragma) ){
+    rc = sqlite3_finalize(pCsr->pPragma);
+    pCsr->pPragma = 0;
+    pragmaVtabCursorClear(pCsr);
   }
   return rc;
 }

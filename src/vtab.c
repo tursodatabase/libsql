@@ -57,6 +57,7 @@ Module *sqlite3VtabCreateModule(
     if( pDel ){
       sqlite3OomFault(db);
       sqlite3DbFree(db, pDel);
+      pMod = 0;
     }
   }
   return pMod;

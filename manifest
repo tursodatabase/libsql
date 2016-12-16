@@ -1,5 +1,5 @@
-C Merge\senhancements\sfrom\strunk,\sand\sespecially\sthe\sability\sto\suse\ntemp.sqlite_master\sas\san\salias\sfor\ssqlite_temp_master.
-D 2016-12-16T01:09:22.413
+C Minor\sbug\sfixes\sand\senhancements\sto\sthe\spragma\seponymous\svirtual\stables.
+D 2016-12-16T02:14:15.843
 F Makefile.in c194b58fe00c370a48ac6ae6945e92a7781db1c8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -381,7 +381,7 @@ F src/parse.y 29153738a7322054359320eb00b5a4cd44389f20
 F src/pcache.c 51070ec9b8251bbf9c6ea3d35fd96a458752929e
 F src/pcache.h 2cedcd8407eb23017d92790b112186886e179490
 F src/pcache1.c e3967219b2a92b9edcb9324a4ba75009090d3953
-F src/pragma.c 41f18267db44df49756c3c3cdc695e701e169a63
+F src/pragma.c 767a41128464e8dfb8a86449bdd0ce8ad57c7420
 F src/pragma.h f9b221b2c8949ea941dbee49934299e4ed5af41c
 F src/prepare.c b1140c3d0cf59bc85ace00ce363153041b424b7a
 F src/printf.c f94da4935d1dd25420ac50c6745db1deb35e07c1
@@ -464,7 +464,7 @@ F src/vdbeblob.c f4f98ea672b242f807c08c92c7faaa79e5091b65
 F src/vdbemem.c d3fd85b7b7ef3eb75de29c6d7e1d10d3ca78b4fd
 F src/vdbesort.c bb34eed4fb52e11ac037dccea4ee3190594c7f9e
 F src/vdbetrace.c 41963d5376f0349842b5fc4aaaaacd7d9cdc0834
-F src/vtab.c 104907646940e597f60debb42e7e0981b276dcaa
+F src/vtab.c c4bbe0f870f52036553f8098aee0703997f0577a
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 40c543f0a2195d1b0dc88ef12142bea690009344
 F src/wal.h 06b2a0b599cc0f53ea97f497cf8c6b758c999f71
@@ -1536,7 +1536,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7126807a186746a8663fbaa267d63214d06476e4 8d646905b830d5bb29092e103ac5cb499b3c7e5a
-R c03b90088a1e080799e09d2f075e1354
+P 994a4401f5c34fed17af420761291b03072a5ea1
+R afd4feda84f0d8c4e20e6eee8d9eee4f
 U drh
-Z 3b955bd6345f72aad83fc556ff64eb52
+Z 47dbd97e4f7c38d810ba53087789cc3e
