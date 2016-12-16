@@ -1806,7 +1806,7 @@ Table *sqlite3ResultSetOfSelect(Parse *pParse, Select *pSelect){
   /* The sqlite3ResultSetOfSelect() is only used n contexts where lookaside
   ** is disabled */
   assert( db->lookaside.bDisable );
-  pTab->nRef = 1;
+  pTab->nTabRef = 1;
   pTab->zName = 0;
   pTab->nRowLogEst = 200; assert( 200==sqlite3LogEst(1048576) );
   sqlite3ColumnsFromExprList(pParse, pSelect->pEList, &pTab->nCol, &pTab->aCol);
@@ -2037,6 +2037,7 @@ static void generateWithRecursiveQuery(
 
   /* Process the LIMIT and OFFSET clauses, if they exist */
   addrBreak = sqlite3VdbeMakeLabel(v);
+  p->nSelectRow = 320;  /* 4 billion rows */
   computeLimitRegisters(pParse, p, addrBreak);
   pLimit = p->pLimit;
   pOffset = p->pOffset;
@@ -3619,12 +3620,12 @@ static int flattenSubquery(
   */
   if( ALWAYS(pSubitem->pTab!=0) ){
     Table *pTabToDel = pSubitem->pTab;
-    if( pTabToDel->nRef==1 ){
+    if( pTabToDel->nTabRef==1 ){
       Parse *pToplevel = sqlite3ParseToplevel(pParse);
       pTabToDel->pNextZombie = pToplevel->pZombieTab;
       pToplevel->pZombieTab = pTabToDel;
     }else{
-      pTabToDel->nRef--;
+      pTabToDel->nTabRef--;
     }
     pSubitem->pTab = 0;
   }
@@ -4143,7 +4144,7 @@ static int withExpand(
     assert( pFrom->pTab==0 );
     pFrom->pTab = pTab = sqlite3DbMallocZero(db, sizeof(Table));
     if( pTab==0 ) return WRC_Abort;
-    pTab->nRef = 1;
+    pTab->nTabRef = 1;
     pTab->zName = sqlite3DbStrDup(db, pCte->zName);
     pTab->iPKey = -1;
     pTab->nRowLogEst = 200; assert( 200==sqlite3LogEst(1048576) );
@@ -4166,20 +4167,20 @@ static int withExpand(
           ){
           pItem->pTab = pTab;
           pItem->fg.isRecursive = 1;
-          pTab->nRef++;
+          pTab->nTabRef++;
           pSel->selFlags |= SF_Recursive;
         }
       }
     }
 
     /* Only one recursive reference is permitted. */ 
-    if( pTab->nRef>2 ){
+    if( pTab->nTabRef>2 ){
       sqlite3ErrorMsg(
           pParse, "multiple references to recursive table: %s", pCte->zName
       );
       return SQLITE_ERROR;
     }
-    assert( pTab->nRef==1 || ((pSel->selFlags&SF_Recursive) && pTab->nRef==2 ));
+    assert( pTab->nTabRef==1 || ((pSel->selFlags&SF_Recursive) && pTab->nTabRef==2 ));
 
     pCte->zCteErr = "circular reference: %s";
     pSavedWith = pParse->pWith;
@@ -4312,7 +4313,7 @@ static int selectExpander(Walker *pWalker, Select *p){
       if( sqlite3WalkSelect(pWalker, pSel) ) return WRC_Abort;
       pFrom->pTab = pTab = sqlite3DbMallocZero(db, sizeof(Table));
       if( pTab==0 ) return WRC_Abort;
-      pTab->nRef = 1;
+      pTab->nTabRef = 1;
       pTab->zName = sqlite3MPrintf(db, "sqlite_sq_%p", (void*)pTab);
       while( pSel->pPrior ){ pSel = pSel->pPrior; }
       sqlite3ColumnsFromExprList(pParse, pSel->pEList,&pTab->nCol,&pTab->aCol);
@@ -4325,13 +4326,13 @@ static int selectExpander(Walker *pWalker, Select *p){
       assert( pFrom->pTab==0 );
       pFrom->pTab = pTab = sqlite3LocateTableItem(pParse, 0, pFrom);
       if( pTab==0 ) return WRC_Abort;
-      if( pTab->nRef==0xffff ){
+      if( pTab->nTabRef>=0xffff ){
         sqlite3ErrorMsg(pParse, "too many references to \"%s\": max 65535",
            pTab->zName);
         pFrom->pTab = 0;
         return WRC_Abort;
       }
-      pTab->nRef++;
+      pTab->nTabRef++;
       if( !IsVirtual(pTab) && cannotBeFunction(pParse, pFrom) ){
         return WRC_Abort;
       }
@@ -5170,7 +5171,9 @@ int sqlite3Select(
   /* Set the limiter.
   */
   iEnd = sqlite3VdbeMakeLabel(v);
-  p->nSelectRow = 320;  /* 4 billion rows */
+  if( (p->selFlags & SF_FixedLimit)==0 ){
+    p->nSelectRow = 320;  /* 4 billion rows */
+  }
   computeLimitRegisters(pParse, p, iEnd);
   if( p->iLimit==0 && sSort.addrSortIndex>=0 ){
     sqlite3VdbeChangeOpcode(v, sSort.addrSortIndex, OP_SorterOpen);

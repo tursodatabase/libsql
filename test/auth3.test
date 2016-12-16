@@ -122,7 +122,7 @@ do_execsql_test auth3-3.0 {
       key TEXT NOT NULL ON CONFLICT FAIL UNIQUE ON CONFLICT REPLACE,
       value TEXT NOT NULL ON CONFLICT FAIL);
   ALTER TABLE TempTable RENAME TO DoNotRead;
-  SELECT name FROM sqlite_temp_master;
+  SELECT name FROM temp.sqlite_master;
 } {DoNotRead sqlite_autoindex_DoNotRead_1}
 
 finish_test

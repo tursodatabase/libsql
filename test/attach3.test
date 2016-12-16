@@ -207,7 +207,7 @@ ifcapable tempdb {
       CREATE TEMP TRIGGER tst_trigger BEFORE INSERT ON aux.t4 BEGIN 
         SELECT 'hello world';
       END;
-      SELECT count(*) FROM sqlite_temp_master;
+      SELECT count(*) FROM temp.sqlite_master;
     }
   } {1}
   do_test attach3-9.1 {
@@ -219,7 +219,7 @@ ifcapable tempdb {
   do_test attach3-9.2 {
     execsql {
       DROP TABLE aux.t4;
-      SELECT count(*) FROM sqlite_temp_master;
+      SELECT count(*) FROM temp.sqlite_master;
     }
   } {0}
 }

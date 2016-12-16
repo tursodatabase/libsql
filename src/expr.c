@@ -1365,7 +1365,7 @@ SrcList *sqlite3SrcListDup(sqlite3 *db, SrcList *p, int flags){
     }
     pTab = pNewItem->pTab = pOldItem->pTab;
     if( pTab ){
-      pTab->nRef++;
+      pTab->nTabRef++;
     }
     pNewItem->pSelect = sqlite3SelectDup(db, pOldItem->pSelect, flags);
     pNewItem->pOn = sqlite3ExprDup(db, pOldItem->pOn, flags);
