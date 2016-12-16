@@ -74,4 +74,3 @@ do_execsql_test 1.4 {
 } {1 1 1}
 
 finish_test
-

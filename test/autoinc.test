@@ -344,7 +344,7 @@ ifcapable tempdb {
   do_test autoinc-4.1 {
     execsql {
       SELECT 1, name FROM sqlite_master WHERE type='table';
-      SELECT 2, name FROM sqlite_temp_master WHERE type='table';
+      SELECT 2, name FROM temp.sqlite_master WHERE type='table';
     }
   } {1 sqlite_sequence}
   do_test autoinc-4.2 {

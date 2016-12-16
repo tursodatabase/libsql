@@ -23,7 +23,7 @@ source $testdir/tester.tcl
 do_test tkt3630-1 {
   db eval {
     CREATE TEMP TABLE temp1(a,b,c);
-    SELECT * FROM sqlite_temp_master WHERE sql GLOB '*TEMP*';
+    SELECT * FROM temp.sqlite_master WHERE sql GLOB '*TEMP*';
   }
 } {}
 do_test tkt3630-2 {
@@ -39,7 +39,7 @@ ifcapable altertable {
     db eval {
       ALTER TABLE temp2 ADD COLUMN d;
       ALTER TABLE temp2 RENAME TO temp2rn;
-      SELECT name FROM sqlite_temp_master WHERE name LIKE 'temp2%';
+      SELECT name FROM temp.sqlite_master WHERE name LIKE 'temp2%';
     }
   } {temp2rn}
 }

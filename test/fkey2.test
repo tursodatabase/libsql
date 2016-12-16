@@ -1062,7 +1062,7 @@ ifcapable altertable {
       PRAGMA foreign_keys = off;
       ALTER TABLE t2 ADD COLUMN h DEFAULT 'text' REFERENCES t1;
       PRAGMA foreign_keys = on;
-      SELECT sql FROM sqlite_temp_master WHERE name='t2';
+      SELECT sql FROM temp.sqlite_master WHERE name='t2';
     }
   } {{CREATE TABLE t2(a, b, c REFERENCES t1, d DEFAULT NULL REFERENCES t1, e REFERENCES t1 DEFAULT NULL, h DEFAULT 'text' REFERENCES t1)}}
 
@@ -1093,7 +1093,7 @@ ifcapable altertable {
   ]
   do_test fkey2-14.2tmp.2.2 {
     execsql { ALTER TABLE t1 RENAME TO t4 }
-    execsql { SELECT sql FROM sqlite_temp_master WHERE type = 'table'}
+    execsql { SELECT sql FROM temp.sqlite_master WHERE type = 'table'}
   } [list \
     {CREATE TABLE "t4"(a PRIMARY KEY, b REFERENCES "t4")}                    \
     {CREATE TABLE t2(a PRIMARY KEY, b REFERENCES "t4", c REFERENCES t2)}     \
