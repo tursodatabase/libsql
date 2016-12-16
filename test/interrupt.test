@@ -128,7 +128,7 @@ ifcapable tempdb {
     } {1 interrupted}
     do_test interrupt-3.$i.3 {
       execsql {
-        SELECT name FROM sqlite_temp_master;
+        SELECT name FROM temp.sqlite_master;
       }
     } {}
     do_test interrupt-3.$i.4 {
@@ -139,7 +139,7 @@ ifcapable tempdb {
     do_test interrupt-3.$i.5 {
       catchsql {SELECT name FROM sqlite_temp_master};
       execsql {
-        SELECT name FROM sqlite_temp_master;
+        SELECT name FROM temp.sqlite_master;
       }
     } {}
   }

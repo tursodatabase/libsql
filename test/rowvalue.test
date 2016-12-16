@@ -317,5 +317,3 @@ foreach {tn n sql} {
 
 
 finish_test
-
-

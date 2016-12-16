@@ -69,4 +69,3 @@ do_faultsim_test 6 -faults oom* -body {
 }
 
 finish_test
-
