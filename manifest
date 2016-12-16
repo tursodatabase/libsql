@@ -1,5 +1,5 @@
-C Minor\sbug\sfixes\sand\senhancements\sto\sthe\spragma\seponymous\svirtual\stables.
-D 2016-12-16T02:14:15.843
+C Simplifications\sto\sfacilitate\sfull\stest\scoverage.
+D 2016-12-16T02:31:50.286
 F Makefile.in c194b58fe00c370a48ac6ae6945e92a7781db1c8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -334,7 +334,7 @@ F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
 F src/btree.c b2055dff0b94e03eaad48a760984a2d8e39244e6
 F src/btree.h 2349a588abcd7e0c04f984e15c5c777b61637583
 F src/btreeInt.h 10c4b77c2fb399580babbcc7cf652ac10dba796e
-F src/build.c ec9e3595d74690af28595cfda996da0fc9dba27f
+F src/build.c 52970b6cf3cf3107551a5d6dd668b0b261b0b491
 F src/callback.c 2e76147783386374bf01b227f752c81ec872d730
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 9f2296a4e5d26ebf0e0d95a0af4628f1ea694e7a
@@ -1536,7 +1536,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 994a4401f5c34fed17af420761291b03072a5ea1
-R afd4feda84f0d8c4e20e6eee8d9eee4f
+P 3f8f461504139a4efea0e033e3a274cc4b2d3072
+R 691580f444d968a1280c44f14b7468b6
 U drh
-Z 47dbd97e4f7c38d810ba53087789cc3e
+Z fe17a4b90cecec95c309ae2fb5e6d93a

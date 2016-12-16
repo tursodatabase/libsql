@@ -320,8 +320,7 @@ Table *sqlite3FindTable(sqlite3 *db, const char *zName, const char *zDatabase){
     /* Not found.  If the name we were looking for was temp.sqlite_master
     ** then change the name to sqlite_temp_master and try again. */
     if( sqlite3StrICmp(zName, MASTER_NAME)!=0 ) break;
-    if( zDatabase==0 ) break;
-    if( sqlite3StrICmp(zDatabase, db->aDb[1].zDbSName)!=0 ) break;
+    if( sqlite3_stricmp(zDatabase, db->aDb[1].zDbSName)!=0 ) break;
     zName = TEMP_MASTER_NAME;
   }
   return 0;
