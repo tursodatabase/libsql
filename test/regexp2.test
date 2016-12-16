@@ -122,4 +122,3 @@ do_execsql_test 3.0 {
 
 
 finish_test
-

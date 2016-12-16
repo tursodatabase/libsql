@@ -5480,7 +5480,7 @@ case OP_ParseSchema: {
   assert( iDb>=0 && iDb<db->nDb );
   assert( DbHasProperty(db, iDb, DB_SchemaLoaded) );
   /* Used to be a conditional */ {
-    zMaster = SCHEMA_TABLE(iDb);
+    zMaster = MASTER_NAME;
     initData.db = db;
     initData.iDb = pOp->p1;
     initData.pzErrMsg = &p->zErrMsg;

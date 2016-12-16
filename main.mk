@@ -786,6 +786,11 @@ fastfuzztest:	fuzzcheck$(EXE) $(FUZZDATA)
 valgrindfuzz:	fuzzcheck$(EXE) $(FUZZDATA)
 	valgrind ./fuzzcheck$(EXE) --cell-size-check --limit-mem 10M --timeout 600 $(FUZZDATA)
 
+# The veryquick.test TCL tests.
+#
+tcltest:	./testfixture$(EXE)
+	./testfixture$(EXE) $(TOP)/test/veryquick.test $(TESTOPTS)
+
 # A very quick test using only testfixture and omitting all the slower
 # tests.  Designed to run in under 3 minutes on a workstation.
 #
@@ -794,9 +799,7 @@ quicktest:	./testfixture$(EXE)
 
 # The default test case.  Runs most of the faster standard TCL tests,
 # and fuzz tests, and sqlite3_analyzer and sqldiff tests.
-#
-test:	$(TESTPROGS) sourcetest fastfuzztest
-	./testfixture$(EXE) $(TOP)/test/veryquick.test $(TESTOPTS)
+test:	fastfuzztest sourcetest $(TESTPROGS) tcltest
 
 # Run a test using valgrind.  This can take a really long time
 # because valgrind is so much slower than a native machine.

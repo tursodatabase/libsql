@@ -1749,7 +1749,7 @@ static int btreeInitPage(MemPage *pPage){
   assert( pPage->aData == sqlite3PagerGetData(pPage->pDbPage) );
 
   if( !pPage->isInit ){
-    u32 pc;            /* Address of a freeblock within pPage->aData[] */
+    int pc;            /* Address of a freeblock within pPage->aData[] */
     u8 hdr;            /* Offset to beginning of page header */
     u8 *data;          /* Equal to pPage->aData */
     BtShared *pBt;        /* The main btree structure */
@@ -1850,7 +1850,7 @@ static int btreeInitPage(MemPage *pPage){
       if( next>0 ){
         return SQLITE_CORRUPT_BKPT;  /* Freeblock not in ascending order */
       }
-      if( pc+size>usableSize ){
+      if( pc+size>(unsigned int)usableSize ){
         return SQLITE_CORRUPT_BKPT;  /* Last freeblock extends past page end */
       }
     }
@@ -3302,14 +3302,11 @@ static int setChildPtrmaps(MemPage *pPage){
   int nCell;                         /* Number of cells in page pPage */
   int rc;                            /* Return code */
   BtShared *pBt = pPage->pBt;
-  u8 isInitOrig = pPage->isInit;
   Pgno pgno = pPage->pgno;
 
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
   rc = btreeInitPage(pPage);
-  if( rc!=SQLITE_OK ){
-    goto set_child_ptrmaps_out;
-  }
+  if( rc!=SQLITE_OK ) return rc;
   nCell = pPage->nCell;
 
   for(i=0; i<nCell; i++){
@@ -3328,8 +3325,6 @@ static int setChildPtrmaps(MemPage *pPage){
     ptrmapPut(pBt, childPgno, PTRMAP_BTREE, pgno, &rc);
   }
 
-set_child_ptrmaps_out:
-  pPage->isInit = isInitOrig;
   return rc;
 }
 
@@ -3357,7 +3352,6 @@ static int modifyPagePointer(MemPage *pPage, Pgno iFrom, Pgno iTo, u8 eType){
     }
     put4byte(pPage->aData, iTo);
   }else{
-    u8 isInitOrig = pPage->isInit;
     int i;
     int nCell;
     int rc;
@@ -3393,8 +3387,6 @@ static int modifyPagePointer(MemPage *pPage, Pgno iFrom, Pgno iTo, u8 eType){
       }
       put4byte(&pPage->aData[pPage->hdrOffset+8], iTo);
     }
-
-    pPage->isInit = isInitOrig;
   }
   return SQLITE_OK;
 }

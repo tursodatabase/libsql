@@ -62,7 +62,7 @@ do_test tkt3810-3 {
 # an orphan.
 #
 do_test tkt3810-4 {
-  execsql {SELECT name FROM sqlite_temp_master ORDER BY name}
+  execsql {SELECT name FROM temp.sqlite_master ORDER BY name}
 } {r1}
 
 # Because it is an orphan, it cannot be dropped.

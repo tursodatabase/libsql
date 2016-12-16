@@ -946,6 +946,25 @@ static int shellAuth(
 }
 #endif
 
+/*
+** Print a schema statement.  Part of MODE_Semi and MODE_Pretty output.
+**
+** This routine converts some CREATE TABLE statements for shadow tables
+** in FTS3/4/5 into CREATE TABLE IF NOT EXISTS statements.
+*/
+static void printSchemaLine(FILE *out, const char *z, const char *zTail){
+  if( sqlite3_strglob("CREATE TABLE ['\"]*", z)==0 ){
+    utf8_printf(out, "CREATE TABLE IF NOT EXISTS %s%s", z+13, zTail);
+  }else{
+    utf8_printf(out, "%s%s", z, zTail);
+  }
+}
+static void printSchemaLineN(FILE *out, char *z, int n, const char *zTail){
+  char c = z[n];
+  z[n] = 0;
+  printSchemaLine(out, z, zTail);
+  z[n] = c;
+}
 
 /*
 ** This is the callback routine that the shell
@@ -1064,7 +1083,7 @@ static int shell_callback(
       break;
     }
     case MODE_Semi: {   /* .schema and .fullschema output */
-      utf8_printf(p->out, "%s;\n", azArg[0]);
+      printSchemaLine(p->out, azArg[0], ";\n");
       break;
     }
     case MODE_Pretty: {  /* .schema and .fullschema with --indent */
@@ -1108,14 +1127,14 @@ static int shell_callback(
           }else if( c==')' ){
             nParen--;
             if( nLine>0 && nParen==0 && j>0 ){
-              utf8_printf(p->out, "%.*s\n", j, z);
+              printSchemaLineN(p->out, z, j, "\n");
               j = 0;
             }
           }
           z[j++] = c;
           if( nParen==1 && (c=='(' || c==',' || c=='\n') ){
             if( c=='\n' ) j--;
-            utf8_printf(p->out, "%.*s\n  ", j, z);
+            printSchemaLineN(p->out, z, j, "\n  ");
             j = 0;
             nLine++;
             while( IsSpace(z[i+1]) ){ i++; }
@@ -1123,7 +1142,7 @@ static int shell_callback(
         }
         z[j] = 0;
       }
-      utf8_printf(p->out, "%s;\n", z);
+      printSchemaLine(p->out, z, ";\n");
       sqlite3_free(z);
       break;
     }
@@ -2046,7 +2065,7 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
     sqlite3_free(zIns);
     return 0;
   }else{
-    utf8_printf(p->out, "%s;\n", zSql);
+    printSchemaLine(p->out, zSql, ";\n");
   }
 
   if( strcmp(zType, "table")==0 ){
@@ -2180,6 +2199,8 @@ static char zHelp[] =
   ".iotrace FILE          Enable I/O diagnostic logging to FILE\n"
 #endif
   ".limit ?LIMIT? ?VAL?   Display or change the value of an SQLITE_LIMIT\n"
+  ".lint OPTIONS          Report potential schema issues. Options:\n"
+  "                         fkey-indexes     Find missing foreign key indexes\n"
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
   ".load FILE ?ENTRY?     Load an extension library\n"
 #endif
@@ -3234,6 +3255,253 @@ int shellDeleteFile(const char *zFilename){
   return rc;
 }
 
+
+/*
+** The implementation of SQL scalar function fkey_collate_clause(), used
+** by the ".lint fkey-indexes" command. This scalar function is always
+** called with four arguments - the parent table name, the parent column name,
+** the child table name and the child column name.
+**
+**   fkey_collate_clause('parent-tab', 'parent-col', 'child-tab', 'child-col')
+**
+** If either of the named tables or columns do not exist, this function
+** returns an empty string. An empty string is also returned if both tables 
+** and columns exist but have the same default collation sequence. Or,
+** if both exist but the default collation sequences are different, this
+** function returns the string " COLLATE <parent-collation>", where
+** <parent-collation> is the default collation sequence of the parent column.
+*/
+static void shellFkeyCollateClause(
+  sqlite3_context *pCtx, 
+  int nVal, 
+  sqlite3_value **apVal
+){
+  sqlite3 *db = sqlite3_context_db_handle(pCtx);
+  const char *zParent;
+  const char *zParentCol;
+  const char *zParentSeq;
+  const char *zChild;
+  const char *zChildCol;
+  const char *zChildSeq;
+  int rc;
+  
+  assert( nVal==4 );
+  zParent = (const char*)sqlite3_value_text(apVal[0]);
+  zParentCol = (const char*)sqlite3_value_text(apVal[1]);
+  zChild = (const char*)sqlite3_value_text(apVal[2]);
+  zChildCol = (const char*)sqlite3_value_text(apVal[3]);
+
+  sqlite3_result_text(pCtx, "", -1, SQLITE_STATIC);
+  rc = sqlite3_table_column_metadata(
+      db, "main", zParent, zParentCol, 0, &zParentSeq, 0, 0, 0
+  );
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_table_column_metadata(
+        db, "main", zChild, zChildCol, 0, &zChildSeq, 0, 0, 0
+    );
+  }
+
+  if( rc==SQLITE_OK && sqlite3_stricmp(zParentSeq, zChildSeq) ){
+    char *z = sqlite3_mprintf(" COLLATE %s", zParentSeq);
+    sqlite3_result_text(pCtx, z, -1, SQLITE_TRANSIENT);
+    sqlite3_free(z);
+  }
+}
+
+
+/*
+** The implementation of dot-command ".lint fkey-indexes".
+*/
+static int lintFkeyIndexes(
+  ShellState *pState,             /* Current shell tool state */
+  char **azArg,                   /* Array of arguments passed to dot command */
+  int nArg                        /* Number of entries in azArg[] */
+){
+  sqlite3 *db = pState->db;       /* Database handle to query "main" db of */
+  FILE *out = pState->out;        /* Stream to write non-error output to */
+  int bVerbose = 0;               /* If -verbose is present */
+  int bGroupByParent = 0;         /* If -groupbyparent is present */
+  int i;                          /* To iterate through azArg[] */
+  const char *zIndent = "";       /* How much to indent CREATE INDEX by */
+  int rc;                         /* Return code */
+  sqlite3_stmt *pSql = 0;         /* Compiled version of SQL statement below */
+
+  /*
+  ** This SELECT statement returns one row for each foreign key constraint
+  ** in the schema of the main database. The column values are:
+  **
+  ** 0. The text of an SQL statement similar to:
+  **
+  **      "EXPLAIN QUERY PLAN SELECT rowid FROM child_table WHERE child_key=?"
+  **
+  **    This is the same SELECT that the foreign keys implementation needs
+  **    to run internally on child tables. If there is an index that can
+  **    be used to optimize this query, then it can also be used by the FK
+  **    implementation to optimize DELETE or UPDATE statements on the parent
+  **    table.
+  **
+  ** 1. A GLOB pattern suitable for sqlite3_strglob(). If the plan output by
+  **    the EXPLAIN QUERY PLAN command matches this pattern, then the schema
+  **    contains an index that can be used to optimize the query.
+  **
+  ** 2. Human readable text that describes the child table and columns. e.g.
+  **
+  **       "child_table(child_key1, child_key2)"
+  **
+  ** 3. Human readable text that describes the parent table and columns. e.g.
+  **
+  **       "parent_table(parent_key1, parent_key2)"
+  **
+  ** 4. A full CREATE INDEX statement for an index that could be used to
+  **    optimize DELETE or UPDATE statements on the parent table. e.g.
+  **
+  **       "CREATE INDEX child_table_child_key ON child_table(child_key)"
+  **
+  ** 5. The name of the parent table.
+  **
+  ** These six values are used by the C logic below to generate the report.
+  */
+  const char *zSql =
+  "SELECT "
+    "     'EXPLAIN QUERY PLAN SELECT rowid FROM ' || quote(s.name) || ' WHERE '"
+    "  || group_concat(quote(s.name) || '.' || quote(f.[from]) || '=?' "
+    "  || fkey_collate_clause(f.[table], f.[to], s.name, f.[from]),' AND ')"
+    ", "
+    "     'SEARCH TABLE ' || s.name || ' USING COVERING INDEX*('"
+    "  || group_concat('*=?', ' AND ') || ')'"
+    ", "
+    "     s.name  || '(' || group_concat(f.[from],  ', ') || ')'"
+    ", "
+    "     f.[table] || '(' || group_concat(COALESCE(f.[to], "
+    "       (SELECT name FROM pragma_table_info(f.[table]) WHERE pk=seq+1)"
+    "     )) || ')'"
+    ", "
+    "     'CREATE INDEX ' || quote(s.name ||'_'|| group_concat(f.[from], '_'))"
+    "  || ' ON ' || quote(s.name) || '('"
+    "  || group_concat(quote(f.[from]) ||"
+    "        fkey_collate_clause(f.[table], f.[to], s.name, f.[from]), ', ')"
+    "  || ');'"
+    ", "
+    "     f.[table] "
+
+    "FROM sqlite_master AS s, pragma_foreign_key_list(s.name) AS f "
+    "GROUP BY s.name, f.id "
+    "ORDER BY (CASE WHEN ? THEN f.[table] ELSE s.name END)"
+  ;
+
+  for(i=2; i<nArg; i++){
+    int n = strlen(azArg[i]);
+    if( n>1 && sqlite3_strnicmp("-verbose", azArg[i], n)==0 ){
+      bVerbose = 1;
+    }
+    else if( n>1 && sqlite3_strnicmp("-groupbyparent", azArg[i], n)==0 ){
+      bGroupByParent = 1;
+      zIndent = "    ";
+    }
+    else{
+      raw_printf(stderr, "Usage: %s %s ?-verbose? ?-groupbyparent?\n",
+          azArg[0], azArg[1]
+      );
+      return SQLITE_ERROR;
+    }
+  }
+  
+  /* Register the fkey_collate_clause() SQL function */
+  rc = sqlite3_create_function(db, "fkey_collate_clause", 4, SQLITE_UTF8,
+      0, shellFkeyCollateClause, 0, 0
+  );
+
+
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_prepare_v2(db, zSql, -1, &pSql, 0);
+  }
+  if( rc==SQLITE_OK ){
+    sqlite3_bind_int(pSql, 1, bGroupByParent);
+  }
+
+  if( rc==SQLITE_OK ){
+    int rc2;
+    char *zPrev = 0;
+    while( SQLITE_ROW==sqlite3_step(pSql) ){
+      int res = -1;
+      sqlite3_stmt *pExplain = 0;
+      const char *zEQP = (const char*)sqlite3_column_text(pSql, 0);
+      const char *zGlob = (const char*)sqlite3_column_text(pSql, 1);
+      const char *zFrom = (const char*)sqlite3_column_text(pSql, 2);
+      const char *zTarget = (const char*)sqlite3_column_text(pSql, 3);
+      const char *zCI = (const char*)sqlite3_column_text(pSql, 4);
+      const char *zParent = (const char*)sqlite3_column_text(pSql, 5);
+
+      rc = sqlite3_prepare_v2(db, zEQP, -1, &pExplain, 0);
+      if( rc!=SQLITE_OK ) break;
+      if( SQLITE_ROW==sqlite3_step(pExplain) ){
+        const char *zPlan = (const char*)sqlite3_column_text(pExplain, 3);
+        res = (0==sqlite3_strglob(zGlob, zPlan));
+      }
+      rc = sqlite3_finalize(pExplain);
+      if( rc!=SQLITE_OK ) break;
+
+      if( res<0 ){
+        raw_printf(stderr, "Error: internal error");
+        break;
+      }else{
+        if( bGroupByParent 
+        && (bVerbose || res==0)
+        && (zPrev==0 || sqlite3_stricmp(zParent, zPrev)) 
+        ){
+          raw_printf(out, "-- Parent table %s\n", zParent);
+          sqlite3_free(zPrev);
+          zPrev = sqlite3_mprintf("%s", zParent);
+        }
+
+        if( res==0 ){
+          raw_printf(out, "%s%s --> %s\n", zIndent, zCI, zTarget);
+        }else if( bVerbose ){
+          raw_printf(out, "%s/* no extra indexes required for %s -> %s */\n", 
+              zIndent, zFrom, zTarget
+          );
+        }
+      }
+    }
+    sqlite3_free(zPrev);
+
+    if( rc!=SQLITE_OK ){
+      raw_printf(stderr, "%s\n", sqlite3_errmsg(db));
+    }
+
+    rc2 = sqlite3_finalize(pSql);
+    if( rc==SQLITE_OK && rc2!=SQLITE_OK ){
+      rc = rc2;
+      raw_printf(stderr, "%s\n", sqlite3_errmsg(db));
+    }
+  }else{
+    raw_printf(stderr, "%s\n", sqlite3_errmsg(db));
+  }
+
+  return rc;
+}
+
+/*
+** Implementation of ".lint" dot command.
+*/
+static int lintDotCommand(
+  ShellState *pState,             /* Current shell tool state */
+  char **azArg,                   /* Array of arguments passed to dot command */
+  int nArg                        /* Number of entries in azArg[] */
+){
+  int n;
+  n = (nArg>=2 ? strlen(azArg[1]) : 0);
+  if( n<1 || sqlite3_strnicmp(azArg[1], "fkey-indexes", n) ) goto usage;
+  return lintFkeyIndexes(pState, azArg, nArg);
+
+ usage:
+  raw_printf(stderr, "Usage %s sub-command ?switches...?\n", azArg[0]);
+  raw_printf(stderr, "Where sub-commands are:\n");
+  raw_printf(stderr, "    fkey-indexes\n");
+  return SQLITE_ERROR;
+}
+
+
 /*
 ** If an input line begins with "." then invoke this routine to
 ** process that line.
@@ -4012,6 +4280,11 @@ static int do_meta_command(char *zLine, ShellState *p){
       printf("%20s %d\n", aLimit[iLimit].zLimitName,
              sqlite3_limit(p->db, aLimit[iLimit].limitCode, -1));
     }
+  }else
+
+  if( c=='l' && n>2 && strncmp(azArg[0], "lint", n)==0 ){
+    open_db(p, 0);
+    lintDotCommand(p, azArg, nArg);
   }else
 
 #ifndef SQLITE_OMIT_LOAD_EXTENSION

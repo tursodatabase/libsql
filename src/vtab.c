@@ -29,6 +29,41 @@ struct VtabCtx {
 };
 
 /*
+** Construct and install a Module object for a virtual table.  When this
+** routine is called, it is guaranteed that all appropriate locks are held
+** and the module is not already part of the connection.
+*/
+Module *sqlite3VtabCreateModule(
+  sqlite3 *db,                    /* Database in which module is registered */
+  const char *zName,              /* Name assigned to this module */
+  const sqlite3_module *pModule,  /* The definition of the module */
+  void *pAux,                     /* Context pointer for xCreate/xConnect */
+  void (*xDestroy)(void *)        /* Module destructor function */
+){
+  Module *pMod;
+  int nName = sqlite3Strlen30(zName);
+  pMod = (Module *)sqlite3DbMallocRawNN(db, sizeof(Module) + nName + 1);
+  if( pMod ){
+    Module *pDel;
+    char *zCopy = (char *)(&pMod[1]);
+    memcpy(zCopy, zName, nName+1);
+    pMod->zName = zCopy;
+    pMod->pModule = pModule;
+    pMod->pAux = pAux;
+    pMod->xDestroy = xDestroy;
+    pMod->pEpoTab = 0;
+    pDel = (Module *)sqlite3HashInsert(&db->aModule,zCopy,(void*)pMod);
+    assert( pDel==0 || pDel==pMod );
+    if( pDel ){
+      sqlite3OomFault(db);
+      sqlite3DbFree(db, pDel);
+      pMod = 0;
+    }
+  }
+  return pMod;
+}
+
+/*
 ** The actual function that does the work of creating a new module.
 ** This function implements the sqlite3_create_module() and
 ** sqlite3_create_module_v2() interfaces.
@@ -41,35 +76,15 @@ static int createModule(
   void (*xDestroy)(void *)        /* Module destructor function */
 ){
   int rc = SQLITE_OK;
-  int nName;
 
   sqlite3_mutex_enter(db->mutex);
-  nName = sqlite3Strlen30(zName);
   if( sqlite3HashFind(&db->aModule, zName) ){
     rc = SQLITE_MISUSE_BKPT;
   }else{
-    Module *pMod;
-    pMod = (Module *)sqlite3DbMallocRawNN(db, sizeof(Module) + nName + 1);
-    if( pMod ){
-      Module *pDel;
-      char *zCopy = (char *)(&pMod[1]);
-      memcpy(zCopy, zName, nName+1);
-      pMod->zName = zCopy;
-      pMod->pModule = pModule;
-      pMod->pAux = pAux;
-      pMod->xDestroy = xDestroy;
-      pMod->pEpoTab = 0;
-      pDel = (Module *)sqlite3HashInsert(&db->aModule,zCopy,(void*)pMod);
-      assert( pDel==0 || pDel==pMod );
-      if( pDel ){
-        sqlite3OomFault(db);
-        sqlite3DbFree(db, pDel);
-      }
-    }
+    (void)sqlite3VtabCreateModule(db, zName, pModule, pAux, xDestroy);
   }
   rc = sqlite3ApiExit(db, rc);
   if( rc!=SQLITE_OK && xDestroy ) xDestroy(pAux);
-
   sqlite3_mutex_leave(db->mutex);
   return rc;
 }
@@ -408,7 +423,7 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
       "UPDATE %Q.%s "
          "SET type='table', name=%Q, tbl_name=%Q, rootpage=0, sql=%Q "
        "WHERE rowid=#%d",
-      db->aDb[iDb].zDbSName, SCHEMA_TABLE(iDb),
+      db->aDb[iDb].zDbSName, MASTER_NAME,
       pTab->zName,
       pTab->zName,
       zStmt,
@@ -1133,7 +1148,7 @@ int sqlite3VtabEponymousTableInit(Parse *pParse, Module *pMod){
     return 0;
   }
   pMod->pEpoTab = pTab;
-  pTab->nRef = 1;
+  pTab->nTabRef = 1;
   pTab->pSchema = db->aDb[0].pSchema;
   pTab->tabFlags |= TF_Virtual;
   pTab->nModuleArg = 0;

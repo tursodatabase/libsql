@@ -236,7 +236,7 @@ do_test 5.1 {
 
 do_execsql_test 5.2 {
   SELECT * FROM sqlite_master;
-  SELECT * FROM sqlite_temp_master;
+  SELECT * FROM temp.sqlite_master;
 } {
   trigger tr1 t1 0 
   {CREATE TRIGGER tr1 BEFORE INSERT ON t1 BEGIN SELECT 1,2,3; END}

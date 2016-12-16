@@ -1801,9 +1801,9 @@ struct Table {
   ExprList *pCheck;    /* All CHECK constraints */
                        /*   ... also used as column name list in a VIEW */
   int tnum;            /* Root BTree page for this table */
+  u32 nTabRef;         /* Number of pointers to this Table */
   i16 iPKey;           /* If not negative, use aCol[iPKey] as the rowid */
   i16 nCol;            /* Number of columns in this table */
-  u16 nRef;            /* Number of pointers to this Table */
   LogEst nRowLogEst;   /* Estimated rows in table - from sqlite_stat1 table */
   LogEst szTabRow;     /* Estimated size of each table row in bytes */
 #ifdef SQLITE_ENABLE_COSTMULT
@@ -3563,6 +3563,9 @@ u32 sqlite3ExprListFlags(const ExprList*);
 int sqlite3Init(sqlite3*, char**);
 int sqlite3InitCallback(void*, int, char**, char**);
 void sqlite3Pragma(Parse*,Token*,Token*,Token*,int);
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+Module *sqlite3PragmaVtabRegister(sqlite3*,const char *zName);
+#endif
 void sqlite3ResetAllSchemasOfConnection(sqlite3*);
 void sqlite3ResetOneSchema(sqlite3*,int);
 void sqlite3CollapseDatabaseArray(sqlite3*);
@@ -4077,6 +4080,13 @@ void sqlite3AutoLoadExtensions(sqlite3*);
    int sqlite3VtabSavepoint(sqlite3 *, int, int);
    void sqlite3VtabImportErrmsg(Vdbe*, sqlite3_vtab*);
    VTable *sqlite3GetVTable(sqlite3*, Table*);
+   Module *sqlite3VtabCreateModule(
+     sqlite3*,
+     const char*,
+     const sqlite3_module*,
+     void*,
+     void(*)(void*)
+   );
 #  define sqlite3VtabInSync(db) ((db)->nVTrans>0 && (db)->aVTrans==0)
 #endif
 int sqlite3VtabEponymousTableInit(Parse*,Module*);

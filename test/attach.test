@@ -193,7 +193,7 @@ do_test attach-1.20.2 {
 } ;# ifcapable schema_pragmas
 integrity_check attach-1.20.3
 ifcapable tempdb {
-  execsql {select * from sqlite_temp_master}
+  execsql {select * from temp.sqlite_master}
 }
 do_test attach-1.21 {
   catchsql {
