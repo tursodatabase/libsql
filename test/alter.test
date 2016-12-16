@@ -77,7 +77,7 @@ do_test alter-1.2 {
   ifcapable tempdb {
     execsql {
       INSERT INTO objlist SELECT type, name, tbl_name 
-          FROM sqlite_temp_master WHERE NAME!='objlist';
+          FROM temp.sqlite_master WHERE NAME!='objlist';
     }
   }
 
@@ -153,7 +153,7 @@ ifcapable tempdb {
       CREATE TEMP TABLE objlist(type, name, tbl_name);
       INSERT INTO objlist SELECT type, name, tbl_name FROM sqlite_master;
       INSERT INTO objlist 
-          SELECT type, name, tbl_name FROM sqlite_temp_master 
+          SELECT type, name, tbl_name FROM temp.sqlite_master 
           WHERE NAME!='objlist';
       SELECT type, name, tbl_name FROM objlist 
           ORDER BY tbl_name, type desc, name;
@@ -524,7 +524,7 @@ do_test alter-3.3.7 {
 ifcapable tempdb {
   do_test alter-3.3.8 {
     execsql {
-      SELECT * FROM sqlite_temp_master WHERE type = 'trigger';
+      SELECT * FROM temp.sqlite_master WHERE type = 'trigger';
     }
   } {}
 }

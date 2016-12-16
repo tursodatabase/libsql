@@ -198,5 +198,3 @@ do_test 4.7 {
 } {1 SQLITE_ERROR}
 
 finish_test
-
-
