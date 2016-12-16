@@ -2185,7 +2185,6 @@ static char zHelp[] =
   ".eqp on|off|full       Enable or disable automatic EXPLAIN QUERY PLAN\n"
   ".exit                  Exit this program\n"
   ".explain ?on|off|auto? Turn EXPLAIN output mode on or off or to automatic\n"
-  ".fkey_missing_indexes  Find indexes to make FK processing more efficient\n"
   ".fullschema ?--indent? Show schema and the content of sqlite_stat tables\n"
   ".headers on|off        Turn display of headers on or off\n"
   ".help                  Show this message\n"
@@ -2200,6 +2199,8 @@ static char zHelp[] =
   ".iotrace FILE          Enable I/O diagnostic logging to FILE\n"
 #endif
   ".limit ?LIMIT? ?VAL?   Display or change the value of an SQLITE_LIMIT\n"
+  ".lint OPTIONS          Report potential schema issues. Options:\n"
+  "                         fkey-indexes     Find missing foreign key indexes\n"
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
   ".load FILE ?ENTRY?     Load an extension library\n"
 #endif
@@ -3489,7 +3490,7 @@ static int lintDotCommand(
   int nArg                        /* Number of entries in azArg[] */
 ){
   int n;
-  n = (nArg>=1 ? strlen(azArg[1]) : 0);
+  n = (nArg>=2 ? strlen(azArg[1]) : 0);
   if( n<1 || sqlite3_strnicmp(azArg[1], "fkey-indexes", n) ) goto usage;
   return lintFkeyIndexes(pState, azArg, nArg);
 
@@ -4282,6 +4283,7 @@ static int do_meta_command(char *zLine, ShellState *p){
   }else
 
   if( c=='l' && n>2 && strncmp(azArg[0], "lint", n)==0 ){
+    open_db(p, 0);
     lintDotCommand(p, azArg, nArg);
   }else
 
