@@ -2148,15 +2148,16 @@ static int pragmaVtabFilter(
   PragmaVtabCursor *pCsr = (PragmaVtabCursor*)pVtabCursor;
   PragmaVtab *pTab = (PragmaVtab*)(pVtabCursor->pVtab);
   int rc;
-  int i;
+  int i, j;
   StrAccum acc;
   char *zSql;
 
   pragmaVtabCursorClear(pCsr);
-  for(i=0; i<argc; i++){
-    assert( i<ArraySize(pCsr->azArg) );
-    pCsr->azArg[i] = sqlite3_mprintf("%s", sqlite3_value_text(argv[i]));
-    if( pCsr->azArg[i]==0 ){
+  j = (pTab->pName->mPragFlg & PragFlg_Result1)!=0 ? 0 : 1;
+  for(i=0; i<argc; i++, j++){
+    assert( j<ArraySize(pCsr->azArg) );
+    pCsr->azArg[j] = sqlite3_mprintf("%s", sqlite3_value_text(argv[i]));
+    if( pCsr->azArg[j]==0 ){
       return SQLITE_NOMEM;
     }
   }

@@ -1,5 +1,5 @@
-C Simplifications\sto\sfacilitate\sfull\stest\scoverage.
-D 2016-12-16T02:31:50.286
+C Fix\san\serror\sin\sthe\sway\sthe\s"schema"\sargument\sto\ssome\spragma\svirtual\stables\nis\shandled.
+D 2016-12-16T04:20:27.559
 F Makefile.in c194b58fe00c370a48ac6ae6945e92a7781db1c8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -381,7 +381,7 @@ F src/parse.y 29153738a7322054359320eb00b5a4cd44389f20
 F src/pcache.c 51070ec9b8251bbf9c6ea3d35fd96a458752929e
 F src/pcache.h 2cedcd8407eb23017d92790b112186886e179490
 F src/pcache1.c e3967219b2a92b9edcb9324a4ba75009090d3953
-F src/pragma.c 767a41128464e8dfb8a86449bdd0ce8ad57c7420
+F src/pragma.c d5adfe89ad7f3f45d4dbd25b96cbf3f6611aea2a
 F src/pragma.h f9b221b2c8949ea941dbee49934299e4ed5af41c
 F src/prepare.c b1140c3d0cf59bc85ace00ce363153041b424b7a
 F src/printf.c f94da4935d1dd25420ac50c6745db1deb35e07c1
@@ -1536,7 +1536,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3f8f461504139a4efea0e033e3a274cc4b2d3072
-R 691580f444d968a1280c44f14b7468b6
+P 01afc515970a868c6a36d9a598453d0fde9e39ca
+R a742a8093b3e07485d2949a360f59e06
 U drh
-Z fe17a4b90cecec95c309ae2fb5e6d93a
+Z b26c88cbc10f1352d564598308e683f5
