@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\scausing\sthe\splanner\sto\sgenerate\ssub-optimal\splans\sfor\ssome\squeries\nthat\suse\srecursive\sWITH\ssub-queries\swith\sLIMIT\sclauses.
-D 2016-12-16T15:05:40.539
+C Built-in\sPRAGMA\sstatements\swithout\sside-effects\scan\sbe\sinvoked\sas\ntable-valued\sfunctions\sby\sprefixing\stheir\sname\swith\s"pragma_".
+D 2016-12-16T18:14:19.741
 F Makefile.in c194b58fe00c370a48ac6ae6945e92a7781db1c8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -334,7 +334,7 @@ F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
 F src/btree.c b2055dff0b94e03eaad48a760984a2d8e39244e6
 F src/btree.h 2349a588abcd7e0c04f984e15c5c777b61637583
 F src/btreeInt.h 10c4b77c2fb399580babbcc7cf652ac10dba796e
-F src/build.c 854ec3a222d2872df5351339f7af4002e64fdd1a
+F src/build.c 52970b6cf3cf3107551a5d6dd668b0b261b0b491
 F src/callback.c 2e76147783386374bf01b227f752c81ec872d730
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 9f2296a4e5d26ebf0e0d95a0af4628f1ea694e7a
@@ -381,8 +381,8 @@ F src/parse.y 29153738a7322054359320eb00b5a4cd44389f20
 F src/pcache.c 51070ec9b8251bbf9c6ea3d35fd96a458752929e
 F src/pcache.h 2cedcd8407eb23017d92790b112186886e179490
 F src/pcache1.c e3967219b2a92b9edcb9324a4ba75009090d3953
-F src/pragma.c d932ba278654617cdd281f88a790a3185fca7c44
-F src/pragma.h 64c78a648751b9f4f297276c4eb7507b14b4628c
+F src/pragma.c d5adfe89ad7f3f45d4dbd25b96cbf3f6611aea2a
+F src/pragma.h f9b221b2c8949ea941dbee49934299e4ed5af41c
 F src/prepare.c b1140c3d0cf59bc85ace00ce363153041b424b7a
 F src/printf.c f94da4935d1dd25420ac50c6745db1deb35e07c1
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
@@ -393,7 +393,7 @@ F src/shell.c f1c7fde7a83421e6ed620df41d200674a2327e65
 F src/sqlite.h.in e8e2d108d82647f0a812fdb74accf91c1ec08ddc
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
-F src/sqliteInt.h 657a892d885253768c82f1e04e8053468b13cb6a
+F src/sqliteInt.h adbe80409c2926d91e5485789e5bf69313cd54b0
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
@@ -464,7 +464,7 @@ F src/vdbeblob.c f4f98ea672b242f807c08c92c7faaa79e5091b65
 F src/vdbemem.c d3fd85b7b7ef3eb75de29c6d7e1d10d3ca78b4fd
 F src/vdbesort.c bb34eed4fb52e11ac037dccea4ee3190594c7f9e
 F src/vdbetrace.c 41963d5376f0349842b5fc4aaaaacd7d9cdc0834
-F src/vtab.c fd64fd37aad1e47e3e887f0e171099ddddc7e3cb
+F src/vtab.c c4bbe0f870f52036553f8098aee0703997f0577a
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 40c543f0a2195d1b0dc88ef12142bea690009344
 F src/wal.h 06b2a0b599cc0f53ea97f497cf8c6b758c999f71
@@ -1474,7 +1474,7 @@ F tool/mkmsvcmin.tcl 2f12f7fa8858bbe61cf81820a2da96c79ed1ca8d
 F tool/mkopcodec.tcl d1b6362bd3aa80d5520d4d6f3765badf01f6c43c
 F tool/mkopcodeh.tcl a01d2c1d8a6205b03fc635adf3735b4c523befd3
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
-F tool/mkpragmatab.tcl f0d5bb266d1d388cf86fce5ba01a891e95d72d41
+F tool/mkpragmatab.tcl a30ee93515135466fc49ae881f75da07ebcafd19
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl fef88397668ae83166735c41af99d79f56afaabb
 F tool/mksqlite3c.tcl 06b2e6a0f21cc0a5d70fbbd136b3e0a96470645e
@@ -1536,7 +1536,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8d646905b830d5bb29092e103ac5cb499b3c7e5a
-R 147fd014e993bf990284d024622f7825
-U dan
-Z ececc9941f2e958f0280d3f055b0e66d
+P 053a149cc8244a7f85137129cfcb8622efe90306 546821e29edb0282a4b1d8f49512e36027a6bf6d
+R 902244b69c72f2e09bae5fc96acaaf29
+T +closed 546821e29edb0282a4b1d8f49512e36027a6bf6d
+U drh
+Z fa65eb61f6dc861fd37d32c60a04f1db

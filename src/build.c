@@ -320,8 +320,7 @@ Table *sqlite3FindTable(sqlite3 *db, const char *zName, const char *zDatabase){
     /* Not found.  If the name we were looking for was temp.sqlite_master
     ** then change the name to sqlite_temp_master and try again. */
     if( sqlite3StrICmp(zName, MASTER_NAME)!=0 ) break;
-    if( zDatabase==0 ) break;
-    if( sqlite3StrICmp(zDatabase, db->aDb[1].zDbSName)!=0 ) break;
+    if( sqlite3_stricmp(zDatabase, db->aDb[1].zDbSName)!=0 ) break;
     zName = TEMP_MASTER_NAME;
   }
   return 0;
@@ -360,6 +359,9 @@ Table *sqlite3LocateTable(
       ** CREATE, then check to see if it is the name of an virtual table that
       ** can be an eponymous virtual table. */
       Module *pMod = (Module*)sqlite3HashFind(&pParse->db->aModule, zName);
+      if( pMod==0 && sqlite3_strnicmp(zName, "pragma_", 7)==0 ){
+        pMod = sqlite3PragmaVtabRegister(pParse->db, zName);
+      }
       if( pMod && sqlite3VtabEponymousTableInit(pParse, pMod) ){
         return pMod->pEpoTab;
       }
