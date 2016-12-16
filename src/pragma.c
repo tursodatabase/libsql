@@ -321,7 +321,7 @@ void sqlite3Pragma(
   ** pragma, make sure it is open. 
   */
   if( iDb==1 && sqlite3OpenTempDatabase(pParse) ){
-    return;
+    goto pragma_out;
   }
 
   zLeft = sqlite3NameFromToken(db, pId);
