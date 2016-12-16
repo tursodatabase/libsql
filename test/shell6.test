@@ -84,12 +84,12 @@ foreach {tn schema output} {
   }
 
   do_test 1.$tn.1 {
-    set RES [catchcmd test.db .fkey_missing_indexes]
+    set RES [catchcmd test.db [list .lint fkey-indexes]]
   } [list 0 [string trim $expected]]
 
   do_test 1.$tn.2 {
     execsql [lindex $RES 1]
-    catchcmd test.db .fkey_missing_indexes
+    catchcmd test.db [list .lint fkey-indexes]
   } {0 {}}
 
   db close

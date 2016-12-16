@@ -3255,13 +3255,9 @@ int shellDeleteFile(const char *zFilename){
 }
 
 
-/**************************************************************************
-** Beginning of implementation of .fkey_missing_indexes
-*/
-
 /*
 ** The implementation of SQL scalar function fkey_collate_clause(), used
-** by the ".fkey_missing_indexes" command. This scalar function is always
+** by the ".lint fkey-indexes" command. This scalar function is always
 ** called with four arguments - the parent table name, the parent column name,
 ** the child table name and the child column name.
 **
@@ -3313,9 +3309,9 @@ static void shellFkeyCollateClause(
 
 
 /*
-** The implementation of dot-command ".fkey_missing_indexes".
+** The implementation of dot-command ".lint fkey-indexes".
 */
-static int shellFkeyMissingIndexes(
+static int lintFkeyIndexes(
   ShellState *pState,             /* Current shell tool state */
   char **azArg,                   /* Array of arguments passed to dot command */
   int nArg                        /* Number of entries in azArg[] */
@@ -3392,7 +3388,7 @@ static int shellFkeyMissingIndexes(
     "ORDER BY (CASE WHEN ? THEN f.[table] ELSE s.name END)"
   ;
 
-  for(i=1; i<nArg; i++){
+  for(i=2; i<nArg; i++){
     int n = strlen(azArg[i]);
     if( n>1 && sqlite3_strnicmp("-verbose", azArg[i], n)==0 ){
       bVerbose = 1;
@@ -3402,7 +3398,9 @@ static int shellFkeyMissingIndexes(
       zIndent = "    ";
     }
     else{
-      raw_printf(stderr, "Usage: .fkey_lint ?-verbose? ?-groupbyparent?\n");
+      raw_printf(stderr, "Usage: %s %s ?-verbose? ?-groupbyparent?\n",
+          azArg[0], azArg[1]
+      );
       return SQLITE_ERROR;
     }
   }
@@ -3481,9 +3479,27 @@ static int shellFkeyMissingIndexes(
 
   return rc;
 }
+
 /*
-** End of implementation of .fkey_missing_indexes
-**************************************************************************/
+** Implementation of ".lint" dot command.
+*/
+static int lintDotCommand(
+  ShellState *pState,             /* Current shell tool state */
+  char **azArg,                   /* Array of arguments passed to dot command */
+  int nArg                        /* Number of entries in azArg[] */
+){
+  int n;
+  n = (nArg>=1 ? strlen(azArg[1]) : 0);
+  if( n<1 || sqlite3_strnicmp(azArg[1], "fkey-indexes", n) ) goto usage;
+  return lintFkeyIndexes(pState, azArg, nArg);
+
+ usage:
+  raw_printf(stderr, "Usage %s sub-command ?switches...?\n", azArg[0]);
+  raw_printf(stderr, "Where sub-commands are:\n");
+  raw_printf(stderr, "    fkey-indexes\n");
+  return SQLITE_ERROR;
+}
+
 
 /*
 ** If an input line begins with "." then invoke this routine to
@@ -3796,10 +3812,6 @@ static int do_meta_command(char *zLine, ShellState *p){
       if( p->mode==MODE_Explain ) p->mode = p->normalMode;
       p->autoExplain = 1;
     }
-  }else
-
-  if( c=='f' && strncmp(azArg[0], "fkey_missing_indexes", n)==0 ){
-    shellFkeyMissingIndexes(p, azArg, nArg);
   }else
 
   if( c=='f' && strncmp(azArg[0], "fullschema", n)==0 ){
@@ -4267,6 +4279,10 @@ static int do_meta_command(char *zLine, ShellState *p){
       printf("%20s %d\n", aLimit[iLimit].zLimitName,
              sqlite3_limit(p->db, aLimit[iLimit].limitCode, -1));
     }
+  }else
+
+  if( c=='l' && n>2 && strncmp(azArg[0], "lint", n)==0 ){
+    lintDotCommand(p, azArg, nArg);
   }else
 
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
