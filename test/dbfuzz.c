@@ -20,6 +20,7 @@
 ** are run against the database to ensure that SQLite can safely handle
 ** the fuzzed database.
 */
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -542,30 +543,6 @@ static int integerValue(const char *zArg){
 }
 
 /*
-** This callback is invoked by sqlite3_exec() to return query results.
-*/
-static int execCallback(void *NotUsed, int argc, char **argv, char **colv){
-  int i;
-  static unsigned cnt = 0;
-  printf("ROW #%u:\n", ++cnt);
-  if( argv ){
-    for(i=0; i<argc; i++){
-      printf(" %s=", colv[i]);
-      if( argv[i] ){
-        printf("[%s]\n", argv[i]);
-      }else{
-        printf("NULL\n");
-      }
-    }
-  }
-  fflush(stdout);
-  return 0;
-}
-static int execNoop(void *NotUsed, int argc, char **argv, char **colv){
-  return 0;
-}
-
-/*
 ** This callback is invoked by sqlite3_log().
 */
 static void sqlLog(void *pNotUsed, int iErrCode, const char *zMsg){
@@ -588,14 +565,90 @@ static int progressHandler(void *pVdbeLimitFlag){
 }
 #endif
 
+/*
+** Allowed values for the runFlags parameter to runSql()
+*/
+#define SQL_TRACE  0x0001     /* Print each SQL statement as it is prepared */
+#define SQL_OUTPUT 0x0002     /* Show the SQL output */
 
+/*
+** Run multiple commands of SQL.  Similar to sqlite3_exec(), but does not
+** stop if an error is encountered.
+*/
+static void runSql(sqlite3 *db, const char *zSql, unsigned  runFlags){
+  const char *zMore;
+  const char *zEnd = &zSql[strlen(zSql)];
+  sqlite3_stmt *pStmt;
+
+  while( zSql && zSql[0] ){
+    zMore = 0;
+    pStmt = 0;
+    sqlite3_prepare_v2(db, zSql, -1, &pStmt, &zMore);
+    assert( zMore<=zEnd );
+    if( zMore==zSql ) break;
+    if( runFlags & SQL_TRACE ){
+      const char *z = zSql;
+      int n;
+      while( z<zMore && ISSPACE(z[0]) ) z++;
+      n = (int)(zMore - z);
+      while( n>0 && ISSPACE(z[n-1]) ) n--;
+      if( n==0 ) break;
+      if( pStmt==0 ){
+        printf("TRACE: %.*s (error: %s)\n", n, z, sqlite3_errmsg(db));
+      }else{
+        printf("TRACE: %.*s\n", n, z);
+      }
+    }
+    zSql = zMore;
+    if( pStmt ){
+      if( (runFlags & SQL_OUTPUT)==0 ){
+        while( SQLITE_ROW==sqlite3_step(pStmt) ){}
+      }else{
+        int nCol = -1;
+        int nRow;
+        for(nRow=0; SQLITE_ROW==sqlite3_step(pStmt); nRow++){
+          int i;
+          if( nCol<0 ){
+            nCol = sqlite3_column_count(pStmt);
+          }
+          for(i=0; i<nCol; i++){
+            int eType = sqlite3_column_type(pStmt,i);
+            printf("ROW[%d].%s = ", nRow, sqlite3_column_name(pStmt,i));
+            switch( eType ){
+              case SQLITE_NULL: {
+                printf("NULL\n");
+                break;
+              }
+              case SQLITE_INTEGER: {
+                printf("INT %s\n", sqlite3_column_text(pStmt,i));
+                break;
+              }
+              case SQLITE_FLOAT: {
+                printf("FLOAT %s\n", sqlite3_column_text(pStmt,i));
+                break;
+              }
+              case SQLITE_TEXT: {
+                printf("TEXT [%s]\n", sqlite3_column_text(pStmt,i));
+                break;
+              }
+              case SQLITE_BLOB: {
+                printf("BLOB (%d bytes)\n", sqlite3_column_bytes(pStmt,i));
+                break;
+              }
+            }
+          }
+        }
+      }         
+      sqlite3_finalize(pStmt);
+    }
+  }
+}
 
 int main(int argc, char **argv){
   int i;                 /* Loop counter */
-  int nDb;               /* Number of databases to fuzz */
+  int nDb = 0;           /* Number of databases to fuzz */
   const char **azDb = 0; /* Names of the databases (limit: 20) */
   int verboseFlag = 0;   /* True for extra output */
-  int traceFlag = 0;     /* True to trace results */
   int noLookaside = 0;   /* Disable lookaside if true */
   int vdbeLimitFlag = 0; /* Stop after 100,000 VDBE ops */
   int nHeap = 0;         /* True for fixed heap size */
@@ -604,6 +657,7 @@ int main(int argc, char **argv){
   sqlite3 *db;           /* The database connection */
   sqlite3_stmt *pStmt;   /* A single SQL statement */
   Str sql;               /* SQL to run */
+  unsigned runFlags = 0; /* Flags passed to runSql */
 
   for(i=1; i<argc; i++){
     const char *z = argv[i];
@@ -626,11 +680,12 @@ int main(int argc, char **argv){
       if( i==argc-1 ) fatalError("missing argument to %s", argv[i]);
       iTimeout = integerValue(argv[++i]);
     }else if( strcmp(z, "trace")==0 ){
-      traceFlag = 1;
+      runFlags |= SQL_OUTPUT|SQL_TRACE;
     }else if( strcmp(z, "limit-vdbe")==0 ){
       vdbeLimitFlag = 1;
     }else if( strcmp(z, "v")==0 || strcmp(z, "verbose")==0 ){
       verboseFlag = 1;
+      runFlags |= SQL_TRACE;
     }else{
       fatalError("unknown command-line option: \"%s\"\n", argv[i]);
     }
@@ -657,8 +712,6 @@ int main(int argc, char **argv){
   signal(SIGALRM, timeoutHandler);
 #endif
   for(i=0; i<nDb; i++){
-    StrFree(&sql);
-
     if( verboseFlag && nDb>1 ){
       printf("DATABASE-FILE: %s\n", azDb[i]);
       fflush(stdout);
@@ -685,16 +738,7 @@ int main(int argc, char **argv){
     }
     sqlite3_finalize(pStmt);
     StrAppend(&sql, "PRAGMA integrity_check;\n");
-    if( traceFlag ){
-      char *zErrMsg = 0;
-      rc = sqlite3_exec(db, StrStr(&sql), execCallback, 0, &zErrMsg);
-      if( zErrMsg ){
-        printf("ERRMSG: %s\n", zErrMsg);
-        sqlite3_free(zErrMsg);
-      }
-    }else {
-      rc = sqlite3_exec(db, StrStr(&sql), execNoop, 0, 0);
-    }
+    runSql(db, StrStr(&sql), runFlags);
     sqlite3_close(db);
     reformatVfs();
     StrFree(&sql);
