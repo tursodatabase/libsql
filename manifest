@@ -1,6 +1,6 @@
-C Fix\sa\sproblem\sin\sthe\sshell\stools\sreadfile()\scommand\scausing\sblobs\sto\sbe\s\ntruncated\sat\sthe\sfirst\sembedded\s0x00\sbyte\sin\srelease\sbuilds,\sor\san\sassert()\sto\nfail\sin\sa\sdebug\sbuild.
-D 2016-12-17T08:18:05.241
-F Makefile.in c194b58fe00c370a48ac6ae6945e92a7781db1c8
+C Enhance\sfuzzershell.c\sto\sread\sand\sexecute\sSQL\scommands\sin\sthe\sautoexec\stable\nof\sthe\sdatabase\sunder\stest.\s\sAdd\sthe\sdbfuzz.c\stest\sprogram\scombining\sselected\nfeatures\sof\sfuzzershell.c\sand\sfuzzcheck.c.
+D 2016-12-17T20:27:22.394
+F Makefile.in 41bd4cad981487345c4a84081074bcdb876e4b2e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
@@ -312,7 +312,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk bd1149fdb5543e432a8530a0ea7642613a655bc1
+F main.mk 2cf5f0362c5687fd8e912c3a327b49a2e8ba0f9b
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -628,6 +628,7 @@ F test/ctime.test ff6c38e822459d6ca743c34901caf57740b08b54
 F test/cursorhint.test 7bc346788390475e77a345da2b92270d04d35856
 F test/cursorhint2.test fa41f0d997e67db921d08c31e73111b32811201a
 F test/date.test a6a5a48b90907bca9fbcc79a30be5a715c1ab2fc
+F test/dbfuzz.c 2bf7858028c0c437ccffc5795f791c495800cd9b
 F test/dbstatus.test 73149851b3aff14fc6db478e58f9083a66422cf5
 F test/dbstatus2.test e93ab03bfae6d62d4d935f20de928c19ca0ed0ab
 F test/default.test 0cb49b1c315a0d81c81d775e407f66906a2a604d
@@ -1461,7 +1462,7 @@ F tool/dbhash.c a06228aa21ebc4e6ea8daa486601d938499238a5
 F tool/extract.c 054069d81b095fbdc189a6f5d4466e40380505e2
 F tool/fast_vacuum.c 5ba0d6f5963a0a63bdc42840f678bad75b2ebce1
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
-F tool/fuzzershell.c d5c870a07452caa5c70a8e49d6c64e403558686d
+F tool/fuzzershell.c dbf6c26eef936ec78cb0707570de3a4308b2507e
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
@@ -1538,7 +1539,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 94689e3bdac2eabbcf1a51d741c2604ed4bd8a40
-R b4ced5d015604f5a5058a9f967dfbb21
-U dan
-Z aab7365a5b426408e7c16bc3f1fbf9d3
+P 8dedd6ad44bd1d103dced9d1350188cb2327128d
+R 467cdb2635ae3db86cb6ad0c3fe29c15
+U drh
+Z 6af4ccd37cf6da1faf8a726dcd8a746b
