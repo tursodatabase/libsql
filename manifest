@@ -1,5 +1,5 @@
-C Add\sthe\s".lint\sfkey-indexes"\scommand\sto\sthe\scommand-line\sshell.
-D 2016-12-16T18:43:49.329
+C Fix\sa\sproblem\sin\sthe\sshell\stools\sreadfile()\scommand\scausing\sblobs\sto\sbe\s\ntruncated\sat\sthe\sfirst\sembedded\s0x00\sbyte\sin\srelease\sbuilds,\sor\san\sassert()\sto\nfail\sin\sa\sdebug\sbuild.
+D 2016-12-17T08:18:05.241
 F Makefile.in c194b58fe00c370a48ac6ae6945e92a7781db1c8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -389,7 +389,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c bb070cf5f23611c44ab7e4788803684e385fc3fb
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c e4c687333c5fa33b1ce05c37bfbea6e09d3dbee9
-F src/shell.c 9be556ad9c7cf429d0acc48e386960d290c4df75
+F src/shell.c 95fc9f4cbdfda44f3328ea23d69fb1905a974a90
 F src/sqlite.h.in e8e2d108d82647f0a812fdb74accf91c1ec08ddc
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
@@ -1094,7 +1094,8 @@ F test/shell2.test e242a9912f44f4c23c3d1d802a83e934e84c853b
 F test/shell3.test 9b95ba643eaa228376f06a898fb410ee9b6e57c1
 F test/shell4.test 89ad573879a745974ff2df20ff97c5d6ffffbd5d
 F test/shell5.test 50a732c1c2158b1cd62cf53975ce1ea7ce6b9dc9
-F test/shell6.test 806472f6ffdd31d632e27dbe8515c0c45f68f3ec
+F test/shell6.test 87b47bf2f5c47a4e44f07dd119ea88ae303a8247
+F test/shell7.test 07751911b294698e0c5df67bcbd29e7d2f0f2907
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/show_speedtest1_rtree.tcl 32e6c5f073d7426148a6936a0408f4b5b169aba5
 F test/shrink.test 1b4330b1fd9e818c04726d45cb28db73087535ce
@@ -1537,8 +1538,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d66ec5cfb67c6c8134fb642e0c2f72113fe1b7fd 1268dc77712d85de0b62332c88b22f7489f4e87f
-R 687c3d19b933c4e396bfa9c657e5c87e
-T +closed 1268dc77712d85de0b62332c88b22f7489f4e87f
-U drh
-Z fa4bf48b88eaf725bf36396e1a6dc597
+P 94689e3bdac2eabbcf1a51d741c2604ed4bd8a40
+R b4ced5d015604f5a5058a9f967dfbb21
+U dan
+Z aab7365a5b426408e7c16bc3f1fbf9d3

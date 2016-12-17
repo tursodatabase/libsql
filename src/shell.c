@@ -2280,14 +2280,22 @@ void session_help(ShellState *p){
 /* Forward reference */
 static int process_input(ShellState *p, FILE *in);
 
-
 /*
-** Read the content of a file into memory obtained from sqlite3_malloc64().
-** The caller is responsible for freeing the memory.
+** Read the content of file zName into memory obtained from sqlite3_malloc64()
+** and return a pointer to the buffer. The caller is responsible for freeing 
+** the memory. 
 **
-** NULL is returned if any error is encountered.
+** If parameter pnByte is not NULL, (*pnByte) is set to the number of bytes
+** read.
+**
+** For convenience, a nul-terminator byte is always appended to the data read
+** from the file before the buffer is returned. This byte is not included in
+** the final value of (*pnByte), if applicable.
+**
+** NULL is returned if any error is encountered. The final value of *pnByte
+** is undefined in this case.
 */
-static char *readFile(const char *zName){
+static char *readFile(const char *zName, int *pnByte){
   FILE *in = fopen(zName, "rb");
   long nIn;
   size_t nRead;
@@ -2305,6 +2313,7 @@ static char *readFile(const char *zName){
     return 0;
   }
   pBuf[nIn] = 0;
+  if( pnByte ) *pnByte = nIn;
   return pBuf;
 }
 
@@ -2320,12 +2329,13 @@ static void readfileFunc(
 ){
   const char *zName;
   void *pBuf;
+  int nBuf;
 
   UNUSED_PARAMETER(argc);
   zName = (const char*)sqlite3_value_text(argv[0]);
   if( zName==0 ) return;
-  pBuf = readFile(zName);
-  if( pBuf ) sqlite3_result_blob(context, pBuf, -1, sqlite3_free);
+  pBuf = readFile(zName, &nBuf);
+  if( pBuf ) sqlite3_result_blob(context, pBuf, nBuf, sqlite3_free);
 }
 
 /*
@@ -3665,7 +3675,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     if( nArg!=2 ){
       raw_printf(stderr, "Usage: .check GLOB-PATTERN\n");
       rc = 2;
-    }else if( (zRes = readFile("testcase-out.txt"))==0 ){
+    }else if( (zRes = readFile("testcase-out.txt", 0))==0 ){
       raw_printf(stderr, "Error: cannot read 'testcase-out.txt'\n");
       rc = 2;
     }else if( testcase_glob(azArg[1],zRes)==0 ){

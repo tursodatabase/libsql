@@ -9,6 +9,8 @@
 #
 #***********************************************************************
 #
+# Test the shell tool ".lint fkey-indexes" command.
+#
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
