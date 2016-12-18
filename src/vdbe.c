@@ -6012,20 +6012,20 @@ case OP_OffsetLimit: {    /* in1, out2, in3 */
   break;
 }
 
-/* Opcode: IfNotZero P1 P2 P3 * *
-** Synopsis: if r[P1]!=0 then r[P1]-=P3, goto P2
+/* Opcode: IfNotZero P1 P2 * * *
+** Synopsis: if r[P1]!=0 then r[P1]--, goto P2
 **
 ** Register P1 must contain an integer.  If the content of register P1 is
-** initially nonzero, then subtract P3 from the value in register P1 and
-** jump to P2.  If register P1 is initially zero, leave it unchanged
-** and fall through.
+** initially greater than zero, then decrement the value in register P1.
+** If it is non-zero (negative or positive) and then also jump to P2.  
+** If register P1 is initially zero, leave it unchanged and fall through.
 */
 case OP_IfNotZero: {        /* jump, in1 */
   pIn1 = &aMem[pOp->p1];
   assert( pIn1->flags&MEM_Int );
   VdbeBranchTaken(pIn1->u.i<0, 2);
   if( pIn1->u.i ){
-     pIn1->u.i -= pOp->p3;
+     if( pIn1->u.i>0 ) pIn1->u.i--;
      goto jump_to_p2;
   }
   break;
