@@ -763,26 +763,23 @@ static int btreeMoveto(
 ){
   int rc;                    /* Status code */
   UnpackedRecord *pIdxKey;   /* Unpacked index key */
-  char aSpace[384];          /* Temp space for pIdxKey - to avoid a malloc */
-  char *pFree = 0;
 
   if( pKey ){
     assert( nKey==(i64)(int)nKey );
-    pIdxKey = sqlite3VdbeAllocUnpackedRecord(
-        pCur->pKeyInfo, aSpace, sizeof(aSpace), &pFree
-    );
+    pIdxKey = sqlite3VdbeAllocUnpackedRecord(pCur->pKeyInfo);
     if( pIdxKey==0 ) return SQLITE_NOMEM_BKPT;
     sqlite3VdbeRecordUnpack(pCur->pKeyInfo, (int)nKey, pKey, pIdxKey);
     if( pIdxKey->nField==0 ){
-      sqlite3DbFree(pCur->pKeyInfo->db, pFree);
-      return SQLITE_CORRUPT_BKPT;
+      rc = SQLITE_CORRUPT_BKPT;
+      goto moveto_done;
     }
   }else{
     pIdxKey = 0;
   }
   rc = sqlite3BtreeMovetoUnpacked(pCur, pIdxKey, nKey, bias, pRes);
-  if( pFree ){
-    sqlite3DbFree(pCur->pKeyInfo->db, pFree);
+moveto_done:
+  if( pIdxKey ){
+    sqlite3DbFree(pCur->pKeyInfo->db, pIdxKey);
   }
   return rc;
 }

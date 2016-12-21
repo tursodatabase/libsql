@@ -3494,30 +3494,13 @@ u32 sqlite3VdbeSerialGet(
 ** If an OOM error occurs, NULL is returned.
 */
 UnpackedRecord *sqlite3VdbeAllocUnpackedRecord(
-  KeyInfo *pKeyInfo,              /* Description of the record */
-  char *pSpace,                   /* Unaligned space available */
-  int szSpace,                    /* Size of pSpace[] in bytes */
-  char **ppFree                   /* OUT: Caller should free this pointer */
+  KeyInfo *pKeyInfo               /* Description of the record */
 ){
   UnpackedRecord *p;              /* Unpacked record to return */
-  int nOff;                       /* Increment pSpace by nOff to align it */
   int nByte;                      /* Number of bytes required for *p */
-
-  /* We want to shift the pointer pSpace up such that it is 8-byte aligned.
-  ** Thus, we need to calculate a value, nOff, between 0 and 7, to shift 
-  ** it by.  If pSpace is already 8-byte aligned, nOff should be zero.
-  */
-  nOff = (8 - (SQLITE_PTR_TO_INT(pSpace) & 7)) & 7;
   nByte = ROUND8(sizeof(UnpackedRecord)) + sizeof(Mem)*(pKeyInfo->nField+1);
-  if( nByte>szSpace+nOff ){
-    p = (UnpackedRecord *)sqlite3DbMallocRaw(pKeyInfo->db, nByte);
-    *ppFree = (char *)p;
-    if( !p ) return 0;
-  }else{
-    p = (UnpackedRecord*)&pSpace[nOff];
-    *ppFree = 0;
-  }
-
+  p = (UnpackedRecord *)sqlite3DbMallocRaw(pKeyInfo->db, nByte);
+  if( !p ) return 0;
   p->aMem = (Mem*)&((char*)p)[ROUND8(sizeof(UnpackedRecord))];
   assert( pKeyInfo->aSortOrder!=0 );
   p->pKeyInfo = pKeyInfo;

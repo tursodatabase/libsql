@@ -3985,10 +3985,9 @@ case OP_Found: {        /* jump, in3 */
   int ii;
   VdbeCursor *pC;
   int res;
-  char *pFree;
+  UnpackedRecord *pFree;
   UnpackedRecord *pIdxKey;
   UnpackedRecord r;
-  char aTempRec[ROUND8(sizeof(UnpackedRecord)) + sizeof(Mem)*4 + 7];
 
 #ifdef SQLITE_TEST
   if( pOp->opcode!=OP_NoConflict ) sqlite3_found_count++;
@@ -4005,7 +4004,6 @@ case OP_Found: {        /* jump, in3 */
   assert( pC->eCurType==CURTYPE_BTREE );
   assert( pC->uc.pCursor!=0 );
   assert( pC->isTable==0 );
-  pFree = 0;
   if( pOp->p4.i>0 ){
     r.pKeyInfo = pC->pKeyInfo;
     r.nField = (u16)pOp->p4.i;
@@ -4018,10 +4016,9 @@ case OP_Found: {        /* jump, in3 */
     }
 #endif
     pIdxKey = &r;
+    pFree = 0;
   }else{
-    pIdxKey = sqlite3VdbeAllocUnpackedRecord(
-        pC->pKeyInfo, aTempRec, sizeof(aTempRec), &pFree
-    );
+    pFree = pIdxKey = sqlite3VdbeAllocUnpackedRecord(pC->pKeyInfo);
     if( pIdxKey==0 ) goto no_mem;
     assert( pIn3->flags & MEM_Blob );
     (void)ExpandBlob(pIn3);
@@ -4041,7 +4038,7 @@ case OP_Found: {        /* jump, in3 */
     }
   }
   rc = sqlite3BtreeMovetoUnpacked(pC->uc.pCursor, pIdxKey, 0, 0, &res);
-  sqlite3DbFree(db, pFree);
+  if( pFree ) sqlite3DbFree(db, pFree);
   if( rc!=SQLITE_OK ){
     goto abort_due_to_error;
   }

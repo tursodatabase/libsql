@@ -1,5 +1,5 @@
-C Change\sthe\sOP_IfNotZero\sopcode\sso\sthat\sit\sdecrements\sregister\sP1\sby\s1\srather\nthan\sthe\svalue\sin\sP3,\sand\sso\sthat\sit\sonly\sdecrements\sif\soriginally\spositive.\nThis\savoids\sdecrementing\sthe\ssmallest\s64-bit\ssigned\sinteger.
-D 2016-12-18T17:42:00.870
+C Simplifications\sto\sthe\sway\sUnpackedRecord\sobjects\sare\sallocated.\s\sSmaller\nand\sfaster\scode\sthat\salso\sfixes\sa\ssubtle\s(currently\sunreachable)\sbug.
+D 2016-12-21T19:45:54.698
 F Makefile.in 41bd4cad981487345c4a84081074bcdb876e4b2e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -331,7 +331,7 @@ F src/auth.c 930b376a9c56998557367e6f7f8aaeac82a2a792
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
-F src/btree.c b2055dff0b94e03eaad48a760984a2d8e39244e6
+F src/btree.c 2e07a5a6d705c1439392460f4044ea4179d9cd40
 F src/btree.h 2349a588abcd7e0c04f984e15c5c777b61637583
 F src/btreeInt.h 10c4b77c2fb399580babbcc7cf652ac10dba796e
 F src/build.c 52970b6cf3cf3107551a5d6dd668b0b261b0b491
@@ -455,14 +455,14 @@ F src/update.c 1da7c462110bffed442a42884cb0d528c1db46d8
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c e68e8ced7328f22d2cf7b4c898c394a0de34cdf1
 F src/vacuum.c 33c174b28886b2faf26e503b5a49a1c01a9b1c16
-F src/vdbe.c 4537452b85817772f159751d6b05799f3f4b09f5
-F src/vdbe.h 0c74f6305fb43b9b282dacaff102272370e327d4
+F src/vdbe.c 0106e0d4f0d39aced35c150a6919d2878df6b1e0
+F src/vdbe.h 50ee139f9c68fff91be1d717ed3a6abbd496919c
 F src/vdbeInt.h 42e498dbe96475dbb3fda3d85d8fd2a87eff60a2
-F src/vdbeapi.c ea4e2dc2213cc6bd7bee375a29a9b51c31b93ae0
-F src/vdbeaux.c f5edc89007f8a49e224089a4a4dddbc11bd38213
+F src/vdbeapi.c 129a2a1103e29fe839e137c641ff42b8066667b5
+F src/vdbeaux.c 7f67112cc57b2fa37b777fbf03eb32c96b337cfe
 F src/vdbeblob.c f4f98ea672b242f807c08c92c7faaa79e5091b65
 F src/vdbemem.c d3fd85b7b7ef3eb75de29c6d7e1d10d3ca78b4fd
-F src/vdbesort.c bb34eed4fb52e11ac037dccea4ee3190594c7f9e
+F src/vdbesort.c eda25cb2d1727efca6f7862fea32b8aa33c0face
 F src/vdbetrace.c 41963d5376f0349842b5fc4aaaaacd7d9cdc0834
 F src/vtab.c c4bbe0f870f52036553f8098aee0703997f0577a
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
@@ -1539,7 +1539,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 50325abe79b6a79b09ec6a1cee7d80ca02337428
-R e3435f7f9ecf849784b4c50691f0f18b
+P 165c044686212fbf7182dd560ad1e57eb4cc9838
+R 4dcc327309935c00dd451588970c060d
 U drh
-Z 8b4cd82f585875ac24b32af2b88bc83b
+Z 2858688c4db6360d8c3b1c8fd6aab8f2

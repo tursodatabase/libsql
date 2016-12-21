@@ -1657,10 +1657,9 @@ static UnpackedRecord *vdbeUnpackRecord(
   int nKey, 
   const void *pKey
 ){
-  char *dummy;                    /* Dummy argument for AllocUnpackedRecord() */
   UnpackedRecord *pRet;           /* Return value */
 
-  pRet = sqlite3VdbeAllocUnpackedRecord(pKeyInfo, 0, 0, &dummy);
+  pRet = sqlite3VdbeAllocUnpackedRecord(pKeyInfo);
   if( pRet ){
     memset(pRet->aMem, 0, sizeof(Mem)*(pKeyInfo->nField+1));
     sqlite3VdbeRecordUnpack(pKeyInfo, nKey, pKey, pRet);
