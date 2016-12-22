@@ -1996,6 +1996,8 @@ static int pragmaVtabConnect(
   StrAccum acc;
   char zBuf[200];
 
+  UNUSED_PARAMETER(argc);
+  UNUSED_PARAMETER(argv);
   sqlite3StrAccumInit(&acc, 0, zBuf, sizeof(zBuf), 0);
   sqlite3StrAccumAppendAll(&acc, "CREATE TABLE x");
   for(i=0, j=pPragma->iPragCName; i<pPragma->nPragCName; i++, j++){
@@ -2152,6 +2154,8 @@ static int pragmaVtabFilter(
   StrAccum acc;
   char *zSql;
 
+  UNUSED_PARAMETER(idxNum);
+  UNUSED_PARAMETER(idxStr);
   pragmaVtabCursorClear(pCsr);
   j = (pTab->pName->mPragFlg & PragFlg_Result1)!=0 ? 0 : 1;
   for(i=0; i<argc; i++, j++){

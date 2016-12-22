@@ -3400,7 +3400,7 @@ static int lintFkeyIndexes(
   ;
 
   for(i=2; i<nArg; i++){
-    int n = strlen(azArg[i]);
+    int n = (int)strlen(azArg[i]);
     if( n>1 && sqlite3_strnicmp("-verbose", azArg[i], n)==0 ){
       bVerbose = 1;
     }
