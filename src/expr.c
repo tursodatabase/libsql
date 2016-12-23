@@ -3422,6 +3422,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       if( pExpr->u.zToken[1]!=0 ){
         const char *z = sqlite3VListNumToName(pParse->pVList, pExpr->iColumn);
         assert( pExpr->u.zToken[0]=='?' || strcmp(pExpr->u.zToken, z)==0 );
+        pParse->pVList[0] = 0; /* Indicate VList may no longer be enlarged */
         sqlite3VdbeAppendP4(v, (char*)z, P4_STATIC);
       }
       return target;

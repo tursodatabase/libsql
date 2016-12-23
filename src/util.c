@@ -1457,7 +1457,7 @@ u64 sqlite3LogEstToInt(LogEst x){
 /*
 ** Add a new name/number pair to a VList.  This might require that the
 ** VList object be reallocated, so return the new VList.  If an OOM
-** error occurs, the original VList freed, NULL is returned, and the
+** error occurs, the original VList returned and the
 ** db->mallocFailed flag is set.
 **
 ** A VList is really just an array of integers.  To destroy a VList,
@@ -1468,11 +1468,27 @@ u64 sqlite3LogEstToInt(LogEst x){
 ** Each name/number pair is encoded by subsequent groups of 3 or more
 ** integers.
 **
-** Each name/number pair starts with two integers which are the number
+** Each name/number pair starts with two integers which are the numeric
 ** value for the pair and the size of the name/number pair, respectively.
 ** The text name overlays one or more following integers.  The text name
 ** is always zero-terminated.
-** 
+**
+** Conceptually:
+**
+**    struct VList {
+**      int nAlloc;   // Number of allocated slots 
+**      int nUsed;    // Number of used slots 
+**      struct VListEntry {
+**        int iValue;    // Value for this entry
+**        int nSlot;     // Slots used by this entry
+**        // ... variable name goes here
+**      } a[0];
+**    }
+**
+** During code generation, pointers to the variable names within the
+** VList are taken.  When that happens, nAlloc is set to zero as an 
+** indication that the VList may never again be enlarged, since the
+** accompanying realloc() would invalidate the pointers.
 */
 VList *sqlite3VListAdd(
   sqlite3 *db,           /* The database connection used for malloc() */
@@ -1482,18 +1498,16 @@ VList *sqlite3VListAdd(
   int iVal               /* Value to associate with zName */
 ){
   int nInt;              /* number of sizeof(int) objects needed for zName */
-  char *z;
-  int i;
+  char *z;               /* Pointer to where zName will be stored */
+  int i;                 /* Index in pIn[] where zName is stored */
 
   nInt = nName/4 + 3;
+  assert( pIn==0 || pIn[0]>=3 );  /* Verify ok to add new elements */
   if( pIn==0 || pIn[1]+nInt > pIn[0] ){
     /* Enlarge the allocation */
     int nAlloc = (pIn ? pIn[0]*2 : 10) + nInt;
     VList *pOut = sqlite3DbRealloc(db, pIn, nAlloc*sizeof(int));
-    if( pOut==0 ){
-      sqlite3DbFree(db, pIn);
-      return 0;
-    }
+    if( pOut==0 ) return pIn;
     if( pIn==0 ) pOut[1] = 2;
     pIn = pOut;
     pIn[0] = nAlloc;
