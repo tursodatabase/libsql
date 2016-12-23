@@ -1,5 +1,5 @@
-C Use\sthe\sVList\sobject\sto\scapture\sthe\smapping\sbetween\sSQL\sparameter\snames\sand\nvariable\snumbers\sin\sa\ssingle\smemory\sallocation.
-D 2016-12-23T13:54:22.985
+C Fill\sin\smissing\sopcode\sdocumentation\sentries\sfor\sOP_SorterNext\sand\nOP_SorterSort.
+D 2016-12-23T16:05:22.280
 F Makefile.in 41bd4cad981487345c4a84081074bcdb876e4b2e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -455,7 +455,7 @@ F src/update.c 1da7c462110bffed442a42884cb0d528c1db46d8
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c 1534060bc034cdc51381c040c8bd6252dbcb64c9
 F src/vacuum.c 33c174b28886b2faf26e503b5a49a1c01a9b1c16
-F src/vdbe.c 54b12d95dbf10533ab2584acbf31ae12b8bfe171
+F src/vdbe.c 73ded9a61658c82cf726cb7feb070836cb4f8a87
 F src/vdbe.h 50ee139f9c68fff91be1d717ed3a6abbd496919c
 F src/vdbeInt.h 281cb70332dc8b593b8c7afe776f3a2ba7d4255e
 F src/vdbeapi.c d6ebaa465f070eb1af8ba4e7b34583ece87bdd24
@@ -1539,8 +1539,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fa86db2f915c0a189c3be02b1aaa7f24d339d7d6 aa23d7eaf69f5ecbf9500b2353846094cae41e6c
-R 2f816100f2d74d42d3a1978c26f09af2
-T +closed aa23d7eaf69f5ecbf9500b2353846094cae41e6c
+P 99fddf2ecb7202bfdf5ddc4cc1c4e155c883f7ec
+R 56df15bb1ab261ae6795a2b612a0d655
 U drh
-Z bdddf7c19647dc703ac75fbc8ecd14da
+Z 214f09845ac7912624c689c7d0a93d7d

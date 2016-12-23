@@ -4820,6 +4820,15 @@ case OP_Last: {        /* jump */
 }
 
 
+/* Opcode: SorterSort P1 P2 * * *
+**
+** After all records have been inserted into the Sorter object
+** identified by P1, invoke this opcode to actually do the sorting.
+** Jump to P2 if there are no records to be sorted.
+**
+** This opcode is an alias for OP_Sort and OP_Rewind that is used
+** for Sorter objects.
+*/
 /* Opcode: Sort P1 P2 * * *
 **
 ** This opcode does exactly the same thing as OP_Rewind except that
@@ -4946,6 +4955,13 @@ case OP_Rewind: {        /* jump */
 **
 ** This opcode works just like Prev except that if cursor P1 is not
 ** open it behaves a no-op.
+*/
+/* Opcode: SorterNext P1 P2 * * P5
+**
+** This opcode works just like OP_Next except that P1 must be a
+** sorter object for which the OP_SorterSort opcode has been
+** invoked.  This opcode advances the cursor to the next sorted
+** record, or jumps to P2 if there are no more sorted records.
 */
 case OP_SorterNext: {  /* jump */
   VdbeCursor *pC;
