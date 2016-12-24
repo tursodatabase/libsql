@@ -3704,13 +3704,12 @@ static int do_meta_command(char *zLine, ShellState *p){
     char *zErrMsg = 0;
     open_db(p, 0);
     memcpy(&data, p, sizeof(data));
-    data.showHeader = 1;
-    data.cMode = data.mode = MODE_Column;
-    data.colWidth[0] = 3;
-    data.colWidth[1] = 0;
-    data.colWidth[2] = 0;
+    data.showHeader = 0;
+    data.cMode = data.mode = MODE_List;
+    sqlite3_snprintf(sizeof(data.colSeparator),data.colSeparator,": ");
     data.cnt = 0;
-    sqlite3_exec(p->db, "PRAGMA database_list; ", callback, &data, &zErrMsg);
+    sqlite3_exec(p->db, "SELECT name, file FROM pragma_database_list",
+                 callback, &data, &zErrMsg);
     if( zErrMsg ){
       utf8_printf(stderr,"Error: %s\n", zErrMsg);
       sqlite3_free(zErrMsg);
