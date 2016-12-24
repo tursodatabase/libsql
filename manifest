@@ -1,5 +1,5 @@
-C Change\sthe\soutput\sformat\sof\sthe\s".databases"\scommand\sin\sthe\scommand-line\sshell\nso\sthat\sit\sshows\sthe\sschema\sname,\sa\scolon,\sand\sthe\scorresponding\sfilename.
-D 2016-12-24T18:18:58.867
+C The\sschema\sname\s"main"\sis\salways\san\sacceptable\salias\sfor\sthe\sprimary\sdatabase\neven\sif\sthe\sprimary\sdatabase\sis\srenamed\susing\sSQLITE_DBCONFIG_MAINDBNAME.
+D 2016-12-24T19:37:16.675
 F Makefile.in 41bd4cad981487345c4a84081074bcdb876e4b2e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -334,7 +334,7 @@ F src/btmutex.c bc87dd3b062cc26edfe79918de2200ccb8d41e73
 F src/btree.c 2e07a5a6d705c1439392460f4044ea4179d9cd40
 F src/btree.h 2349a588abcd7e0c04f984e15c5c777b61637583
 F src/btreeInt.h 10c4b77c2fb399580babbcc7cf652ac10dba796e
-F src/build.c 52970b6cf3cf3107551a5d6dd668b0b261b0b491
+F src/build.c 9e799f1edd910dfa8a0bc29bd390d35d310596af
 F src/callback.c 2e76147783386374bf01b227f752c81ec872d730
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 9f2296a4e5d26ebf0e0d95a0af4628f1ea694e7a
@@ -353,7 +353,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 91ba5d0143e66479081536ebbaff1850ec9f57d9
 F src/legacy.c 75d3023be8f0d2b99d60f905090341a03358c58e
 F src/loadext.c 5d6642d141c07d366e43d359e94ec9de47add41d
-F src/main.c c0daeb1f716de3e93c573aeed6b164faeddee772
+F src/main.c ec789a410860bcdc5d8f7a82090043f482482aec
 F src/malloc.c 5ee7c2d3dcb1b0a902c9c6d0115deef54736bdfa
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 6919bcf12f221868ea066eec27e579fed95ce98b
@@ -1539,7 +1539,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c0d5626e274cbf8c2d2167183c4d6835d72dae57
-R 70d48e0060cab5ee6418aa941c5a0469
+P 8558512e9ca343300a767ef23810f2d7b50fd925
+R b30977e76e92562c072b2b96c5549420
 U drh
-Z 4cb56a28188b85f79aed3457527e657d
+Z d1e40bfcd22533ee4ef2e0ad49608c3a
