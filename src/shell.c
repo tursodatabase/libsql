@@ -3707,8 +3707,8 @@ static int do_meta_command(char *zLine, ShellState *p){
     data.showHeader = 1;
     data.cMode = data.mode = MODE_Column;
     data.colWidth[0] = 3;
-    data.colWidth[1] = 15;
-    data.colWidth[2] = 58;
+    data.colWidth[1] = 0;
+    data.colWidth[2] = 0;
     data.cnt = 0;
     sqlite3_exec(p->db, "PRAGMA database_list; ", callback, &data, &zErrMsg);
     if( zErrMsg ){
@@ -4978,9 +4978,9 @@ static int do_meta_command(char *zLine, ShellState *p){
         " WHERE type IN ('table','view')"
         "   AND name NOT LIKE 'sqlite_%%'"
         "   AND name LIKE ?1");
-    while( zSql && sqlite3_step(pStmt)==SQLITE_ROW ){
+    for(ii=0; zSql && sqlite3_step(pStmt)==SQLITE_ROW; ii++){
       const char *zDbName = (const char*)sqlite3_column_text(pStmt, 1);
-      if( zDbName==0 || strcmp(zDbName,"main")==0 ) continue;
+      if( zDbName==0 || ii==0 ) continue;
       if( strcmp(zDbName,"temp")==0 ){
         zSql = sqlite3_mprintf(
                  "%z UNION ALL "
