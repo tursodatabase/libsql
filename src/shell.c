@@ -4090,52 +4090,6 @@ static int do_meta_command(char *zLine, ShellState *p){
     if( needCommit ) sqlite3_exec(p->db, "COMMIT", 0, 0, 0);
   }else
 
-  if( c=='i' && (strncmp(azArg[0], "indices", n)==0
-                 || strncmp(azArg[0], "indexes", n)==0) ){
-    ShellState data;
-    char *zErrMsg = 0;
-    open_db(p, 0);
-    memcpy(&data, p, sizeof(data));
-    data.showHeader = 0;
-    data.cMode = data.mode = MODE_List;
-    if( nArg==1 ){
-      rc = sqlite3_exec(p->db,
-        "SELECT name FROM sqlite_master "
-        "WHERE type='index' AND name NOT LIKE 'sqlite_%' "
-        "UNION ALL "
-        "SELECT name FROM sqlite_temp_master "
-        "WHERE type='index' "
-        "ORDER BY 1",
-        callback, &data, &zErrMsg
-      );
-    }else if( nArg==2 ){
-      zShellStatic = azArg[1];
-      rc = sqlite3_exec(p->db,
-        "SELECT name FROM sqlite_master "
-        "WHERE type='index' AND tbl_name LIKE shellstatic() "
-        "UNION ALL "
-        "SELECT name FROM sqlite_temp_master "
-        "WHERE type='index' AND tbl_name LIKE shellstatic() "
-        "ORDER BY 1",
-        callback, &data, &zErrMsg
-      );
-      zShellStatic = 0;
-    }else{
-      raw_printf(stderr, "Usage: .indexes ?LIKE-PATTERN?\n");
-      rc = 1;
-      goto meta_command_exit;
-    }
-    if( zErrMsg ){
-      utf8_printf(stderr,"Error: %s\n", zErrMsg);
-      sqlite3_free(zErrMsg);
-      rc = 1;
-    }else if( rc != SQLITE_OK ){
-      raw_printf(stderr,
-                 "Error: querying sqlite_master and sqlite_temp_master\n");
-      rc = 1;
-    }
-  }else
-
 #ifndef SQLITE_UNTESTABLE
   if( c=='i' && strncmp(azArg[0], "imposter", n)==0 ){
     char *zSql;
@@ -4959,7 +4913,10 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
   }else
 
-  if( c=='t' && n>1 && strncmp(azArg[0], "tables", n)==0 ){
+  if( (c=='t' && n>1 && strncmp(azArg[0], "tables", n)==0)
+   || (c=='i' && (strncmp(azArg[0], "indices", n)==0
+                 || strncmp(azArg[0], "indexes", n)==0) )
+  ){
     sqlite3_stmt *pStmt;
     char **azResult;
     int nRow, nAlloc;
@@ -4972,28 +4929,41 @@ static int do_meta_command(char *zLine, ShellState *p){
     /* Create an SQL statement to query for the list of tables in the
     ** main and all attached databases where the table name matches the
     ** LIKE pattern bound to variable "?1". */
-    zSql = sqlite3_mprintf(
-        "SELECT name FROM sqlite_master"
-        " WHERE type IN ('table','view')"
-        "   AND name NOT LIKE 'sqlite_%%'"
-        "   AND name LIKE ?1");
+    if( c=='t' ){
+      zSql = sqlite3_mprintf(
+          "SELECT name FROM sqlite_master"
+          " WHERE type IN ('table','view')"
+          "   AND name NOT LIKE 'sqlite_%%'"
+          "   AND name LIKE ?1");
+    }else if( nArg>2 ){
+      /* It is an historical accident that the .indexes command shows an error
+      ** when called with the wrong number of arguments whereas the .tables
+      ** command does not. */
+      raw_printf(stderr, "Usage: .indexes ?LIKE-PATTERN?\n");
+      rc = 1;
+      goto meta_command_exit;
+    }else{
+      zSql = sqlite3_mprintf(
+          "SELECT name FROM sqlite_master"
+          " WHERE type='index'"
+          "   AND tbl_name LIKE ?1");
+    }
     for(ii=0; zSql && sqlite3_step(pStmt)==SQLITE_ROW; ii++){
       const char *zDbName = (const char*)sqlite3_column_text(pStmt, 1);
       if( zDbName==0 || ii==0 ) continue;
-      if( strcmp(zDbName,"temp")==0 ){
-        zSql = sqlite3_mprintf(
-                 "%z UNION ALL "
-                 "SELECT 'temp.' || name FROM sqlite_temp_master"
-                 " WHERE type IN ('table','view')"
-                 "   AND name NOT LIKE 'sqlite_%%'"
-                 "   AND name LIKE ?1", zSql);
-      }else{
+      if( c=='t' ){
         zSql = sqlite3_mprintf(
                  "%z UNION ALL "
                  "SELECT '%q.' || name FROM \"%w\".sqlite_master"
                  " WHERE type IN ('table','view')"
                  "   AND name NOT LIKE 'sqlite_%%'"
                  "   AND name LIKE ?1", zSql, zDbName, zDbName);
+      }else{
+        zSql = sqlite3_mprintf(
+                 "%z UNION ALL "
+                 "SELECT '%q.' || name FROM \"%w\".sqlite_master"
+                 " WHERE type='index'"
+                 "   AND tbl_name LIKE ?1", zSql, zDbName, zDbName);
       }
     }
     rc = sqlite3_finalize(pStmt);
