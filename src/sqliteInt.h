@@ -1561,6 +1561,7 @@ struct FuncDestructor {
 #define SQLITE_FUNC_MINMAX   0x1000 /* True for min() and max() aggregates */
 #define SQLITE_FUNC_SLOCHNG  0x2000 /* "Slow Change". Value constant during a
                                     ** single query - might change over time */
+#define SQLITE_FUNC_AFFINITY 0x4000 /* Built-in affinity() function */
 
 /*
 ** The following three macros, FUNCTION(), LIKEFUNC() and AGGREGATE() are
