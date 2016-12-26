@@ -1195,6 +1195,8 @@ int main(int argc, char **argv){
           }
           rc = sqlite3_open_v2("main.db", &db, openFlags, zVfs);
           if( rc ) fatalError("cannot open inmem database");
+          sqlite3_limit(db, SQLITE_LIMIT_LENGTH, 100000000);
+          sqlite3_limit(db, SQLITE_LIMIT_LIKE_PATTERN_LENGTH, 50);
           if( cellSzCkFlag ) runSql(db, "PRAGMA cell_size_check=ON", runFlags);
           setAlarm(iTimeout);
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
