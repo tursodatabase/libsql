@@ -1,5 +1,5 @@
-C Remove\san\sincorrect\sALWAYS()\smacro\sfrom\sbalance_nonroot(),\swhich\scould\sresult\nin\scorrupt\sdatabases\sif\sit\swere\soptimized\sout.\s\sThis\sALWAYS\swas\sadded\s\nonly\stwo\sweeks\sago\s(check-in\s[f9f2e23bbd68a])\sand\shas\snever\sappeared\sin\san\nofficial\srelease.
-D 2016-12-26T01:41:33.072
+C Enable\sossfuzz.c\sto\sbuild\seven\sif\sSQLITE_OMIT_PROGRESS_CALLBACK\sis\sdefined.
+D 2016-12-26T12:14:44.677
 F Makefile.in 41bd4cad981487345c4a84081074bcdb876e4b2e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -988,7 +988,7 @@ F test/orderby7.test 3d1383d52ade5b9eb3a173b3147fdd296f0202da
 F test/orderby8.test 23ef1a5d72bd3adcc2f65561c654295d1b8047bd
 F test/orderby9.test 87fb9548debcc2cd141c5299002dd94672fa76a3
 F test/oserror.test b32dc34f2363ef18532e3a0a7358e3e7e321974f
-F test/ossfuzz.c ad79e867fb504338d324b08e0696db65a0c44d68
+F test/ossfuzz.c e469138f4be3e92df6173b79b3b216ab6e17b407
 F test/ossshell.c d9f1a6f43e7bab45d6be857a5800f5d4a1861db3
 F test/ovfl.test 199c482696defceacee8c8e0e0ef36da62726b2f
 F test/pager1.test 841868017e9dd3cb459b8d78862091a7d9cff21d
@@ -1539,7 +1539,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8c5187f69d719b69aa6eaf2dc8f89243e5979222
-R 8f159ac0828ffa15fefdcbf0386259c4
+P e447b23cfd7bb31817e42adb3a98868d351c6b8a
+R 8841b84029dbf760ce265e8a468ac866
 U drh
-Z 7c774566c7c911446145658eecf4799d
+Z 2b73fc063411ed2f663f21e959442a2c
