@@ -133,6 +133,7 @@ static struct GlobalVars {
   Blob *pFirstDb;                  /* Content of first template database */
   int nSql;                        /* Number of SQL scripts */
   Blob *pFirstSql;                 /* First SQL script */
+  unsigned int uRandom;            /* Seed for the SQLite PRNG */
   char zTestName[100];             /* Name of current test */
 } g;
 
@@ -595,10 +596,18 @@ static int inmemFullPathname(
   return SQLITE_OK;
 }
 
+/* Always use the same random see, for repeatability.
+*/
+static int inmemRandomness(sqlite3_vfs *NotUsed, int nBuf, char *zBuf){
+  memset(zBuf, 0, nBuf);
+  memcpy(zBuf, &g.uRandom, nBuf<sizeof(g.uRandom) ? nBuf : sizeof(g.uRandom));
+  return nBuf;
+}
+
 /*
 ** Register the VFS that reads from the g.aFile[] set of files.
 */
-static void inmemVfsRegister(void){
+static void inmemVfsRegister(int makeDefault){
   static sqlite3_vfs inmemVfs;
   sqlite3_vfs *pDefault = sqlite3_vfs_find(0);
   inmemVfs.iVersion = 3;
@@ -609,10 +618,10 @@ static void inmemVfsRegister(void){
   inmemVfs.xDelete = inmemDelete;
   inmemVfs.xAccess = inmemAccess;
   inmemVfs.xFullPathname = inmemFullPathname;
-  inmemVfs.xRandomness = pDefault->xRandomness;
+  inmemVfs.xRandomness = inmemRandomness;
   inmemVfs.xSleep = pDefault->xSleep;
   inmemVfs.xCurrentTimeInt64 = pDefault->xCurrentTimeInt64;
-  sqlite3_vfs_register(&inmemVfs, 0);
+  sqlite3_vfs_register(&inmemVfs, makeDefault);
 };
 
 /*
@@ -800,6 +809,7 @@ static void showHelp(void){
 "  -m TEXT              Add a description to the database\n"
 "  --native-vfs         Use the native VFS for initially empty database files\n"
 "  --oss-fuzz           Enable OSS-FUZZ testing\n"
+"  --prng-seed N        Seed value for the PRGN inside of SQLite\n"
 "  --rebuild            Rebuild and vacuum the database file\n"
 "  --result-trace       Show the results of each SQL command\n"
 "  --sqlid N            Use only SQL where sqlid=N\n"
@@ -844,6 +854,7 @@ int main(int argc, char **argv){
   void *pHeap = 0;             /* Heap for use by SQLite */
   int ossFuzz = 0;             /* enable OSS-FUZZ testing */
   int ossFuzzThisDb = 0;       /* ossFuzz value for this particular database */
+  sqlite3_vfs *pDfltVfs;       /* The default VFS */
 
   iBegin = timeOfDay();
 #ifdef __unix__
@@ -851,6 +862,8 @@ int main(int argc, char **argv){
 #endif
   g.zArgv0 = argv[0];
   zFailCode = getenv("TEST_FAILURE");
+  pDfltVfs = sqlite3_vfs_find(0);
+  inmemVfsRegister(1);
   for(i=1; i<argc; i++){
     const char *z = argv[i];
     if( z[0]=='-' ){
@@ -907,6 +920,10 @@ int main(int argc, char **argv){
       if( strcmp(z,"oss-fuzz")==0 ){
         ossFuzz = 1;
       }else
+      if( strcmp(z,"prng-seed")==0 ){
+        if( i>=argc-1 ) fatalError("missing arguments on %s", argv[i]);
+        g.uRandom = atoi(argv[++i]);
+      }else
       if( strcmp(z,"quiet")==0 || strcmp(z,"q")==0 ){
         quietFlag = 1;
         verboseFlag = 0;
@@ -957,7 +974,8 @@ int main(int argc, char **argv){
 
   /* Process each source database separately */
   for(iSrcDb=0; iSrcDb<nSrcDb; iSrcDb++){
-    rc = sqlite3_open(azSrcDb[iSrcDb], &db);
+    rc = sqlite3_open_v2(azSrcDb[iSrcDb], &db,
+                         SQLITE_OPEN_READONLY, pDfltVfs->zName);
     if( rc ){
       fatalError("cannot open source database %s - %s",
       azSrcDb[iSrcDb], sqlite3_errmsg(db));
@@ -1135,10 +1153,8 @@ int main(int argc, char **argv){
       sqlite3_config(SQLITE_CONFIG_HEAP, pHeap, nMemThisDb, 128);
     }
   
-    /* Register the in-memory virtual filesystem
-    */
+    /* Reset the in-memory virtual filesystem */
     formatVfs();
-    inmemVfsRegister();
     
     /* Run a test using each SQL script against each database.
     */
@@ -1163,6 +1179,7 @@ int main(int argc, char **argv){
           }
         }
         createVFile("main.db", pDb->sz, pDb->a);
+        sqlite3_randomness(0,0);
         if( ossFuzzThisDb ){
 #ifndef SQLITE_OSS_FUZZ
           fatalError("--oss-fuzz not supported: recompile with -DSQLITE_OSS_FUZZ");
