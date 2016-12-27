@@ -19,6 +19,7 @@ source $testdir/lock_common.tcl
 source $testdir/malloc_common.tcl
 source $testdir/wal_common.tcl
 ifcapable !wal {finish_test ; return }
+if {[permutation]=="journaltest"} {finish_test; return}
 
 set testprefix nockpt
 

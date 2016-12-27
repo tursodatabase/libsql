@@ -3783,7 +3783,8 @@ case OP_SeekGT: {       /* jump, in3 */
 
   if( pC->isTable ){
     /* The BTREE_SEEK_EQ flag is only set on index cursors */
-    assert( sqlite3BtreeCursorHasHint(pC->uc.pCursor, BTREE_SEEK_EQ)==0 );
+    assert( sqlite3BtreeCursorHasHint(pC->uc.pCursor, BTREE_SEEK_EQ)==0
+              || CORRUPT_DB );
 
     /* The input value in P3 might be of any type: integer, real, string,
     ** blob, or NULL.  But it needs to be an integer before we can do
