@@ -1,5 +1,5 @@
-C Allow\ssqlite3_interrupt()\sto\sbe\sinvoked\son\sa\sdatabase\sconnection\sthat\sis\sin\nthe\sprocess\sof\sbeing\sclosed\seven\sif\sSQLITE_ENABLE_API_ARMOR\sis\sdefined.
-D 2016-12-27T13:33:52.277
+C Do\snot\sallow\sthe\snockpt.test\smodule\sto\srun\sunder\sthe\sinmemory_journal\npermutation.
+D 2016-12-27T15:59:15.338
 F Makefile.in 41bd4cad981487345c4a84081074bcdb876e4b2e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -967,7 +967,7 @@ F test/multiplex4.test e8ae4c4bd70606a5727743241f13b5701990abe4
 F test/mutex1.test ea2cc74d97f077b9e74c84cbd024f14d79a8126f
 F test/mutex2.test bfeaeac2e73095b2ac32285d2756e3a65e681660
 F test/nan.test dacc57f80859c06a433d30839336fe227d2038b3
-F test/nockpt.test 9f56a64b20fc78d278fa350a2271c1569d59cd7e
+F test/nockpt.test 9a436a7213ba5ef7a32304998d386d3ea3f76c9d
 F test/nolock.test f196cf8b8fbea4e2ca345140a2b3f3b0da45c76e
 F test/notify1.test 669b2b743618efdc18ca4b02f45423d5d2304abf
 F test/notify2.test 2ecabaa1305083856b7c39cf32816b612740c161
@@ -1539,7 +1539,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4cb0945f13f2040c8b67936b950da48fc951d55d
-R 810fdb7ff72cf3b249dfacd602111888
+P 7854bee260996087bdb7f8729ba8cfb4f467f93f
+R 0002370ca7e07ee4867da4a22905f821
 U drh
-Z 28bf17136c2b551052e6d48a50385817
+Z 948aac4cd107424288db7dcd7f723dea
