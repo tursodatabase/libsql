@@ -1,5 +1,5 @@
-C Adjust\sa\scorruption\stest\scase\sto\saccommodate\sthe\ssqlite3BtreeInsert()\noptimization\sof\scheck-in\s[0b86fbca66].
-D 2016-12-27T12:45:41.649
+C Allow\ssqlite3_interrupt()\sto\sbe\sinvoked\son\sa\sdatabase\sconnection\sthat\sis\sin\nthe\sprocess\sof\sbeing\sclosed\seven\sif\sSQLITE_ENABLE_API_ARMOR\sis\sdefined.
+D 2016-12-27T13:33:52.277
 F Makefile.in 41bd4cad981487345c4a84081074bcdb876e4b2e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -353,7 +353,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 91ba5d0143e66479081536ebbaff1850ec9f57d9
 F src/legacy.c 75d3023be8f0d2b99d60f905090341a03358c58e
 F src/loadext.c 5d6642d141c07d366e43d359e94ec9de47add41d
-F src/main.c ec789a410860bcdc5d8f7a82090043f482482aec
+F src/main.c f2d0e34457ba8c5cce6d78a32cacab388d33e967
 F src/malloc.c f3fad34cd570022abca558c573f1761fb09a8212
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 6919bcf12f221868ea066eec27e579fed95ce98b
@@ -1539,7 +1539,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a54e619e6f0266932c8873f9ac826fd042a0602f
-R eb35cd952180d5ebb2679925e01b66f1
+P 4cb0945f13f2040c8b67936b950da48fc951d55d
+R 810fdb7ff72cf3b249dfacd602111888
 U drh
-Z a0a0f1b4d334e304a9f18235642eec10
+Z 28bf17136c2b551052e6d48a50385817
