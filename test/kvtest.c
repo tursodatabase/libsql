@@ -51,10 +51,20 @@ static const char zHelp[] =
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
 #include <assert.h>
 #include <string.h>
 #include "sqlite3.h"
+
+#ifndef _WIN32
+# include <unistd.h>
+#else
+  /* Provide Windows equivalent for the needed parts of unistd.h */
+# include <io.h>
+# define R_OK 2
+# define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
+# define access _access
+#endif
+
 
 /*
 ** Show thqe help text and quit.
