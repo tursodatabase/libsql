@@ -3292,7 +3292,7 @@ static void shellFkeyCollateClause(
   const char *zParentSeq;
   const char *zChild;
   const char *zChildCol;
-  const char *zChildSeq;
+  const char *zChildSeq = 0;  /* Initialize to avoid false-positive warning */
   int rc;
   
   assert( nVal==4 );
@@ -3500,7 +3500,7 @@ static int lintDotCommand(
   int nArg                        /* Number of entries in azArg[] */
 ){
   int n;
-  n = (nArg>=2 ? strlen(azArg[1]) : 0);
+  n = (nArg>=2 ? (int)strlen(azArg[1]) : 0);
   if( n<1 || sqlite3_strnicmp(azArg[1], "fkey-indexes", n) ) goto usage;
   return lintFkeyIndexes(pState, azArg, nArg);
 
