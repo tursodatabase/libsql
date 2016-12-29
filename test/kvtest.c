@@ -205,6 +205,7 @@ static void writefileFunc(
     rc = fwrite(z, 1, sqlite3_value_bytes(argv[1]), out);
   }
   fclose(out);
+  printf("\r%s   ", zFile); fflush(stdout);
   sqlite3_result_int64(context, rc);
 }
 
@@ -241,6 +242,7 @@ static int exportMain(int argc, char **argv){
   if( rc ) fatalError("database create failed: %s", zErrMsg);
   sqlite3_free(zSql);
   sqlite3_close(db);
+  printf("\n");
   return 0;
 }
 
@@ -480,7 +482,10 @@ static int runMain(int argc, char **argv){
   if( eType==PATH_DB ){
     printf("SQLite version: %s\n", sqlite3_libversion());
   }
-  printf("--count %d --max-id %d --cache-size %d", nCount-nExtra, iMax, iCache);
+  printf("--count %d --max-id %d", nCount-nExtra, iMax);
+  if( eType==PATH_DB ){
+    printf(" --cache-size %d", iCache);
+  }
   switch( eOrder ){
     case ORDER_RANDOM:  printf(" --random\n");  break;
     case ORDER_DESC:    printf(" --desc\n");    break;
