@@ -15,7 +15,50 @@
 ** versus reading those same BLOB values out of individual files in the
 ** filesystem.
 **
-** Run "kvtest --help" for further information, or see comments below.
+** Run "kvtest" with no arguments for on-line help, or see comments below.
+**
+** HOW TO COMPILE:
+**
+** (1) Gather this source file and a recent SQLite3 amalgamation with its
+**     header into the working directory.  You should have:
+**
+**          kvtest.c       >--- this file
+**          sqlite3.c      \___ SQLite
+**          sqlite3.h      /    amlagamation & header
+**
+** (2) Run you compiler against the two C source code files.
+**
+**    (a) On linux or mac:
+**
+**        OPTS="-DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION"
+**        gcc -Os -I. $OPTS kvtest.c sqlite3.c -o kvtest
+**
+**             The $OPTS options can be omitted.  The $OPTS merely omit
+**             the need to link against -ldl and -lpthread, or whatever
+**             the equivalent libraries are called on your system.
+**
+**    (b) Windows with MSVC:
+**
+**        cl -I. kvtest.c sqlite3.c
+**
+** USAGE:
+**
+** (1) Create a test database by running "kvtest init" with appropriate
+**     options.  See the help message for available options.
+**
+** (2) Construct the corresponding pile-of-files database on disk using
+**     the "kvtest export" command.
+**
+** (3) Run tests using "kvtest run" against either the SQLite database or
+**     the pile-of-files database and with appropriate options.
+**
+** For example:
+**
+**       ./kvtest init x1.db --count 100000 --size 10000
+**       mkdir x1
+**       ./kvtest export x1.db x1
+**       ./kvtest run x1.db --count 10000 --max-id 1000000
+**       ./kvtest run x1 --count 10000 --max-id 1000000
 */
 static const char zHelp[] = 
 "Usage: kvhelp COMMAND ARGS...\n"

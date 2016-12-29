@@ -1,5 +1,5 @@
-C Fix\skvtest.c\sso\sthat\sit\scompiles\susing\sMSVC.
-D 2016-12-29T16:18:35.078
+C Add\smore\sdetail\sto\sthe\sheader\scommand\sto\sfurther\sexplain\show\sto\scompile\sand\nuse\sthe\skvtest.c\sutility.
+D 2016-12-29T16:49:22.977
 F Makefile.in 41bd4cad981487345c4a84081074bcdb876e4b2e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -894,7 +894,7 @@ F test/json101.test c0897616f32d95431f37fd291cb78742181980ac
 F test/json102.test bf3fe7a706d30936a76a0f7a0375e1e8e73aff5a
 F test/json103.test c5f6b85e69de05f6b3195f9f9d5ce9cd179099a0
 F test/keyword1.test 37ef6bba5d2ed5b07ecdd6810571de2956599dff
-F test/kvtest.c ae8d6b7def067c9a2587c7407c51cc3bc3265994
+F test/kvtest.c 05685d636f6c2985cfe00f88ba95e5c19cbd22bc
 F test/lastinsert.test 42e948fd6442f07d60acbd15d33fb86473e0ef63
 F test/laststmtchanges.test ae613f53819206b3222771828d024154d51db200
 F test/like.test 0603f4fa0dad50987f70032c05800cbfa8985302
@@ -1540,7 +1540,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b0f58d2470e08b9c217afd19fcfde3e6d1007d1d
-R 407e9e40cdfd5c1d4c79f070fab30b80
+P e2bbeae7e77cde531885ca492494a02e5322154d
+R 7016508fdc58bb08d2b99836c37fbfc4
 U drh
-Z e5c7d745e1b19fb63cf400140139de77
+Z 4f0078fee62bc1e424f0bd1372e59e1a
