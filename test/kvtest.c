@@ -36,11 +36,13 @@ static const char zHelp[] =
 "        Run a performance test.  DBFILE can be either the name of a\n"
 "        database or a directory containing sample files.  Options:\n"
 "\n"
-"             --count N            Read N blobs\n"
+"             --asc                Read blobs in ascending order\n"
 "             --blob-api           Use the BLOB API\n"
-"             --random             Read blobs in a random order\n"
+"             --cache-size N       Database cache size\n"
+"             --count N            Read N blobs\n"
 "             --desc               Read blobs in descending order\n"
 "             --max-id N           Maximum blob key to use\n"
+"             --random             Read blobs in a random order\n"
 "             --start N            Start reading with this blob key\n"
 ;
 
@@ -314,6 +316,8 @@ static int runMain(int argc, char **argv){
   int nExtra = 0;             /* Extra cycles */
   int iKey = 1;               /* Next blob key */
   int iMax = 1000;            /* Largest allowed key */
+  int iPagesize = 0;          /* Database page size */
+  int iCache = 1000;          /* Database cache size in kibibytes */
   int bBlobApi = 0;           /* Use the incremental blob I/O API */
   int eOrder = ORDER_ASC;     /* Access order */
   sqlite3 *db = 0;            /* Database connection */
@@ -354,6 +358,11 @@ static int runMain(int argc, char **argv){
       if( iKey<1 ) fatalError("the --start must be positive");
       continue;
     }
+    if( strcmp(z, "-cache-size")==0 ){
+      if( i==argc-1 ) fatalError("missing argument on \"%s\"", argv[i]);
+      iCache = atoi(argv[++i]);
+      continue;
+    }
     if( strcmp(z, "-random")==0 ){
       eOrder = ORDER_RANDOM;
       continue;
@@ -374,10 +383,28 @@ static int runMain(int argc, char **argv){
   }
   tmStart = timeOfDay();
   if( eType==PATH_DB ){
+    char *zSql;
     rc = sqlite3_open(zDb, &db);
     if( rc ){
       fatalError("cannot open database \"%s\": %s", zDb, sqlite3_errmsg(db));
     }
+    zSql = sqlite3_mprintf("PRAGMA cache_size=%d", iCache);
+    sqlite3_exec(db, zSql, 0, 0, 0);
+    sqlite3_free(zSql);
+    pStmt = 0;
+    sqlite3_prepare_v2(db, "PRAGMA page_size", -1, &pStmt, 0);
+    if( sqlite3_step(pStmt)==SQLITE_ROW ){
+      iPagesize = sqlite3_column_int(pStmt, 0);
+    }
+    sqlite3_finalize(pStmt);
+    sqlite3_prepare_v2(db, "PRAGMA cache_size", -1, &pStmt, 0);
+    if( sqlite3_step(pStmt)==SQLITE_ROW ){
+      iCache = sqlite3_column_int(pStmt, 0);
+    }else{
+      iCache = 0;
+    }
+    sqlite3_finalize(pStmt);
+    pStmt = 0;
     sqlite3_exec(db, "BEGIN", 0, 0, 0);
   }
   for(i=0; i<nCount; i++){
@@ -450,6 +477,16 @@ static int runMain(int argc, char **argv){
   if( nExtra ){
     printf("%d cycles due to %d misses\n", nCount, nExtra);
   }
+  if( eType==PATH_DB ){
+    printf("SQLite version: %s\n", sqlite3_libversion());
+  }
+  printf("--count %d --max-id %d --cache-size %d", nCount-nExtra, iMax, iCache);
+  switch( eOrder ){
+    case ORDER_RANDOM:  printf(" --random\n");  break;
+    case ORDER_DESC:    printf(" --desc\n");    break;
+    default:            printf(" --asc\n");     break;
+  }
+  if( iPagesize ) printf("Database page size: %d\n", iPagesize);
   printf("Total elapsed time: %.3f\n", tmElapsed/1000.0);
   printf("Microseconds per BLOB read: %.3f\n", tmElapsed*1000.0/nCount);
   printf("Content read rate: %.1f MB/s\n", nTotal/(1000.0*tmElapsed));
