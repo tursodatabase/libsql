@@ -1,5 +1,5 @@
-C Do\snot\sallow\sthe\snockpt.test\smodule\sto\srun\sunder\sthe\sinmemory_journal\npermutation.
-D 2016-12-27T15:59:15.338
+C Add\sthe\skvtest.c\stest\sprogram\sfor\smeasuring\skey/value\sread\sperformance\sunder\nvarious\sscenarios.
+D 2016-12-29T03:57:43.130
 F Makefile.in 41bd4cad981487345c4a84081074bcdb876e4b2e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -894,6 +894,7 @@ F test/json101.test c0897616f32d95431f37fd291cb78742181980ac
 F test/json102.test bf3fe7a706d30936a76a0f7a0375e1e8e73aff5a
 F test/json103.test c5f6b85e69de05f6b3195f9f9d5ce9cd179099a0
 F test/keyword1.test 37ef6bba5d2ed5b07ecdd6810571de2956599dff
+F test/kvtest.c 1f8e6f0352ebb0ef4179cd7968af594eee130d57
 F test/lastinsert.test 42e948fd6442f07d60acbd15d33fb86473e0ef63
 F test/laststmtchanges.test ae613f53819206b3222771828d024154d51db200
 F test/like.test 0603f4fa0dad50987f70032c05800cbfa8985302
@@ -1539,7 +1540,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7854bee260996087bdb7f8729ba8cfb4f467f93f
-R 0002370ca7e07ee4867da4a22905f821
+P a6af06f164b1f65779e2171ec4946119c66f9be8
+R a9bf163ca1249527027c884b8ea94c96
+T *branch * kvtest
+T *sym-kvtest *
+T -sym-trunk *
 U drh
-Z 948aac4cd107424288db7dcd7f723dea
+Z fb835c04c55072b05b31100f6eb7b616
