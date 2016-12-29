@@ -104,6 +104,7 @@ static const char zHelp[] =
   /* Provide Windows equivalent for the needed parts of unistd.h */
 # include <io.h>
 # define R_OK 2
+# define S_ISREG(m) (((m) & S_IFMT) == S_IFREG)
 # define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
 # define access _access
 #endif
@@ -152,6 +153,20 @@ static int pathType(const char *zPath){
   if( S_ISDIR(x.st_mode) ) return PATH_DIR;
   if( (x.st_size%512)==0 ) return PATH_DB;
   return PATH_OTHER;
+}
+
+/*
+** Return the size of a file in bytes.  Or return -1 if the
+** named object is not a regular file or does not exist.
+*/
+static sqlite3_int64 fileSize(const char *zPath){
+  struct stat x;
+  int rc;
+  memset(&x, 0, sizeof(x));
+  rc = stat(zPath, &x);
+  if( rc<0 ) return -1;
+  if( !S_ISREG(x.st_mode) ) return -1;
+  return x.st_size;
 }
 
 /*
@@ -315,15 +330,16 @@ static int exportMain(int argc, char **argv){
 ** is undefined in this case.
 */
 static unsigned char *readFile(const char *zName, int *pnByte){
-  FILE *in = fopen(zName, "rb");
-  long nIn;
-  size_t nRead;
-  unsigned char *pBuf;
+  FILE *in;               /* FILE from which to read content of zName */
+  sqlite3_int64 nIn;      /* Size of zName in bytes */
+  size_t nRead;           /* Number of bytes actually read */
+  unsigned char *pBuf;    /* Content read from disk */
+
+  nIn = fileSize(zName);
+  if( nIn<0 ) return 0;
+  in = fopen(zName, "rb");
   if( in==0 ) return 0;
-  fseek(in, 0, SEEK_END);
-  nIn = ftell(in);
-  rewind(in);
-  pBuf = sqlite3_malloc64( nIn+1 );
+  pBuf = sqlite3_malloc64( nIn );
   if( pBuf==0 ) return 0;
   nRead = fread(pBuf, nIn, 1, in);
   fclose(in);
@@ -331,7 +347,6 @@ static unsigned char *readFile(const char *zName, int *pnByte){
     sqlite3_free(pBuf);
     return 0;
   }
-  pBuf[nIn] = 0;
   if( pnByte ) *pnByte = nIn;
   return pBuf;
 }
