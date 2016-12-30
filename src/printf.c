@@ -841,7 +841,7 @@ void sqlite3StrAccumAppend(StrAccum *p, const char *z, int N){
   assert( p->accError==0 || p->nAlloc==0 );
   if( p->nChar+N >= p->nAlloc ){
     enlargeAndAppend(p,z,N);
-  }else{
+  }else if( N ){
     assert( p->zText );
     p->nChar += N;
     memcpy(&p->zText[p->nChar-N], z, N);

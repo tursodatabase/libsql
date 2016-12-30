@@ -200,25 +200,27 @@ static void instrFunc(
   if( typeHaystack==SQLITE_NULL || typeNeedle==SQLITE_NULL ) return;
   nHaystack = sqlite3_value_bytes(argv[0]);
   nNeedle = sqlite3_value_bytes(argv[1]);
-  if( typeHaystack==SQLITE_BLOB && typeNeedle==SQLITE_BLOB ){
-    zHaystack = sqlite3_value_blob(argv[0]);
-    zNeedle = sqlite3_value_blob(argv[1]);
-    isText = 0;
-  }else{
-    zHaystack = sqlite3_value_text(argv[0]);
-    zNeedle = sqlite3_value_text(argv[1]);
-    isText = 1;
-    if( zNeedle==0 ) return;
-    assert( zHaystack );
+  if( nNeedle>0 ){
+    if( typeHaystack==SQLITE_BLOB && typeNeedle==SQLITE_BLOB ){
+      zHaystack = sqlite3_value_blob(argv[0]);
+      zNeedle = sqlite3_value_blob(argv[1]);
+      isText = 0;
+    }else{
+      zHaystack = sqlite3_value_text(argv[0]);
+      zNeedle = sqlite3_value_text(argv[1]);
+      isText = 1;
+      if( zNeedle==0 ) return;
+      assert( zHaystack );
+    }
+    while( nNeedle<=nHaystack && memcmp(zHaystack, zNeedle, nNeedle)!=0 ){
+      N++;
+      do{
+        nHaystack--;
+        zHaystack++;
+      }while( isText && (zHaystack[0]&0xc0)==0x80 );
+    }
+    if( nNeedle>nHaystack ) N = 0;
   }
-  while( nNeedle<=nHaystack && memcmp(zHaystack, zNeedle, nNeedle)!=0 ){
-    N++;
-    do{
-      nHaystack--;
-      zHaystack++;
-    }while( isText && (zHaystack[0]&0xc0)==0x80 );
-  }
-  if( nNeedle>nHaystack ) N = 0;
   sqlite3_result_int(context, N);
 }
 
