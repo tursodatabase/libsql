@@ -5376,7 +5376,11 @@ static int getPageNormal(
   pBase = sqlite3PcacheFetch(pPager->pPCache, pgno, 3);
   if( pBase==0 ){
     pPg = 0;
-    rc = sqlite3PcacheFetchStress(pPager->pPCache, pgno, &pBase);
+    if( pgno==0 ){
+      rc = SQLITE_CORRUPT_BKPT;
+    }else{
+      rc = sqlite3PcacheFetchStress(pPager->pPCache, pgno, &pBase);
+    }
     if( rc!=SQLITE_OK ) goto pager_acquire_err;
     if( pBase==0 ){
       rc = SQLITE_NOMEM_BKPT;
@@ -5400,11 +5404,11 @@ static int getPageNormal(
     /* The pager cache has created a new page. Its content needs to 
     ** be initialized. But first some error checks:
     **
-    ** (1) Minimum page number is 1
-    ** (2) The maximum page number is 2^31
-    ** (3) Never try to fetch the locking page
+    ** (1) The maximum page number is 2^31
+    ** (2) Never try to fetch the locking page
     */
-    if( pgno==0 || pgno>PAGER_MAX_PGNO || pgno==PAGER_MJ_PGNO(pPager) ){
+    assert( pgno>0 );
+    if( pgno>PAGER_MAX_PGNO || pgno==PAGER_MJ_PGNO(pPager) ){
       rc = SQLITE_CORRUPT_BKPT;
       goto pager_acquire_err;
     }

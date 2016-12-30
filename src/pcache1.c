@@ -997,7 +997,7 @@ static PgHdr1 *pcache1FetchNoMutex(
     }else{
       return pPage;
     }
-  }else if( createFlag ){
+  }else if( createFlag && iKey ){
     /* Steps 3, 4, and 5 implemented by this subroutine */
     return pcache1FetchStage2(pCache, iKey, createFlag);
   }else{
