@@ -1634,7 +1634,7 @@ static void groupConcatStep(
         zSep = ",";
         nSep = 1;
       }
-      if( nSep ) sqlite3StrAccumAppend(pAccum, zSep, nSep);
+      if( zSep ) sqlite3StrAccumAppend(pAccum, zSep, nSep);
     }
     zVal = (char*)sqlite3_value_text(argv[0]);
     nVal = sqlite3_value_bytes(argv[0]);

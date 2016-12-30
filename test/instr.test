@@ -248,4 +248,13 @@ do_execsql_test instr-1.62 {
   SELECT coalesce(instr(NULL,NULL), 999);
 } {999}
 
+do_execsql_test instr-1.63 {
+  SELECT instr(X'', 'abc')
+} 0
+do_execsql_test instr-1.64 {
+  CREATE TABLE x1(a, b);
+  INSERT INTO x1 VALUES(X'', 'abc');
+  SELECT instr(a, b) FROM x1;
+} 0
+
 finish_test
