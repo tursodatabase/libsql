@@ -70,7 +70,6 @@
 #include <stdarg.h>
 #include <ctype.h>
 #include "sqlite3.h"
-#include <assert.h>
 #define ISSPACE(X) isspace((unsigned char)(X))
 #define ISDIGIT(X) isdigit((unsigned char)(X))
 
@@ -636,14 +635,12 @@ static void inmemVfsRegister(int makeDefault){
 */
 static void runSql(sqlite3 *db, const char *zSql, unsigned  runFlags){
   const char *zMore;
-  const char *zEnd = &zSql[strlen(zSql)];
   sqlite3_stmt *pStmt;
 
   while( zSql && zSql[0] ){
     zMore = 0;
     pStmt = 0;
     sqlite3_prepare_v2(db, zSql, -1, &pStmt, &zMore);
-    assert( zMore<=zEnd );
     if( zMore==zSql ) break;
     if( runFlags & SQL_TRACE ){
       const char *z = zSql;
