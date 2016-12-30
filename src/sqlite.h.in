@@ -7215,7 +7215,8 @@ struct sqlite3_pcache_page {
 ** for each entry in the page cache.
 **
 ** The page to be fetched is determined by the key. ^The minimum key value
-** is 1.  After it has been retrieved using xFetch, the page is considered
+** is 1.  The xFetch() method must return NULL if passed a key of 0.
+** After it has been retrieved using xFetch, the page is considered
 ** to be "pinned".
 **
 ** If the requested page is already in the page cache, then the page cache
@@ -7227,10 +7228,11 @@ struct sqlite3_pcache_page {
 ** <table border=1 width=85% align=center>
 ** <tr><th> createFlag <th> Behavior when page is not already in cache
 ** <tr><td> 0 <td> Do not allocate a new page.  Return NULL.
-** <tr><td> 1 <td> Allocate a new page if it easy and convenient to do so.
-**                 Otherwise return NULL.
+** <tr><td> 1 <td> Allocate a new page if it easy and convenient to do so
+**                 and the key is not zero.  Otherwise return NULL.
 ** <tr><td> 2 <td> Make every effort to allocate a new page.  Only return
-**                 NULL if allocating a new page is effectively impossible.
+**                 NULL if the key is zero or if allocating a new page is 
+**                 effectively impossible.
 ** </table>
 **
 ** ^(SQLite will normally invoke xFetch() with a createFlag of 0 or 1.  SQLite
