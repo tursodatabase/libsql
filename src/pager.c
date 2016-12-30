@@ -3964,6 +3964,7 @@ static int pagerSyncHotJournal(Pager *pPager){
   return rc;
 }
 
+#if SQLITE_MAX_MMAP_SIZE>0
 /*
 ** Obtain a reference to a memory mapped page object for page number pgno. 
 ** The new object will use the pointer pData, obtained from xFetch().
@@ -4012,6 +4013,7 @@ static int pagerAcquireMapPage(
 
   return SQLITE_OK;
 }
+#endif
 
 /*
 ** Release a reference to page pPg. pPg must have been returned by an 
