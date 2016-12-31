@@ -5,6 +5,10 @@
   methods.
 * BREAKING CHANGE: The `ToSql` trait has been redesigned. It can now be implemented without
   `unsafe`, and implementors can choose to return either borrowed or owned results.
+* BREAKING CHANGE: The closure passed to `query_row`, `query_row_and_then`, `query_row_safe`,
+  and `query_row_named` now expects a `&Row` instead of a `Row`. The vast majority of calls
+  to these functions will probably not need to change; see
+  https://github.com/jgallagher/rusqlite/pull/184.
 * Added `#[deprecated(since = "...", note = "...")]` flags (new in Rust 1.9 for libraries) to
   all deprecated APIs.
 
