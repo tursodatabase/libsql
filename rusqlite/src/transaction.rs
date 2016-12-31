@@ -44,8 +44,8 @@ pub type SqliteTransaction<'conn> = Transaction<'conn>;
 ///
 /// ```rust,no_run
 /// # use rusqlite::{Connection, Result};
-/// # fn do_queries_part_1(conn: &Connection) -> Result<()> { Ok(()) }
-/// # fn do_queries_part_2(conn: &Connection) -> Result<()> { Ok(()) }
+/// # fn do_queries_part_1(_conn: &Connection) -> Result<()> { Ok(()) }
+/// # fn do_queries_part_2(_conn: &Connection) -> Result<()> { Ok(()) }
 /// fn perform_queries(conn: &mut Connection) -> Result<()> {
 ///     let tx = try!(conn.transaction());
 ///
@@ -73,8 +73,8 @@ pub struct Transaction<'conn> {
 ///
 /// ```rust,no_run
 /// # use rusqlite::{Connection, Result};
-/// # fn do_queries_part_1(conn: &Connection) -> Result<()> { Ok(()) }
-/// # fn do_queries_part_2(conn: &Connection) -> Result<()> { Ok(()) }
+/// # fn do_queries_part_1(_conn: &Connection) -> Result<()> { Ok(()) }
+/// # fn do_queries_part_2(_conn: &Connection) -> Result<()> { Ok(()) }
 /// fn perform_queries(conn: &mut Connection) -> Result<()> {
 ///     let sp = try!(conn.savepoint());
 ///
@@ -120,7 +120,7 @@ impl<'conn> Transaction<'conn> {
     ///
     /// ```rust,no_run
     /// # use rusqlite::{Connection, Result};
-    /// # fn perform_queries_part_1_succeeds(conn: &Connection) -> bool { true }
+    /// # fn perform_queries_part_1_succeeds(_conn: &Connection) -> bool { true }
     /// fn perform_queries(conn: &mut Connection) -> Result<()> {
     ///     let mut tx = try!(conn.transaction());
     ///
@@ -328,8 +328,8 @@ impl Connection {
     ///
     /// ```rust,no_run
     /// # use rusqlite::{Connection, Result};
-    /// # fn do_queries_part_1(conn: &Connection) -> Result<()> { Ok(()) }
-    /// # fn do_queries_part_2(conn: &Connection) -> Result<()> { Ok(()) }
+    /// # fn do_queries_part_1(_conn: &Connection) -> Result<()> { Ok(()) }
+    /// # fn do_queries_part_2(_conn: &Connection) -> Result<()> { Ok(()) }
     /// fn perform_queries(conn: &mut Connection) -> Result<()> {
     ///     let tx = try!(conn.transaction());
     ///
@@ -369,8 +369,8 @@ impl Connection {
     ///
     /// ```rust,no_run
     /// # use rusqlite::{Connection, Result};
-    /// # fn do_queries_part_1(conn: &Connection) -> Result<()> { Ok(()) }
-    /// # fn do_queries_part_2(conn: &Connection) -> Result<()> { Ok(()) }
+    /// # fn do_queries_part_1(_conn: &Connection) -> Result<()> { Ok(()) }
+    /// # fn do_queries_part_2(_conn: &Connection) -> Result<()> { Ok(()) }
     /// fn perform_queries(conn: &mut Connection) -> Result<()> {
     ///     let sp = try!(conn.savepoint());
     ///
@@ -401,7 +401,6 @@ impl Connection {
 }
 
 #[cfg(test)]
-#[cfg_attr(feature="clippy", allow(similar_names))]
 mod test {
     use Connection;
     use super::DropBehavior;

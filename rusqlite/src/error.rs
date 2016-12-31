@@ -12,6 +12,7 @@ pub type SqliteError = Error;
 
 /// Enum listing possible errors from rusqlite.
 #[derive(Debug)]
+#[allow(enum_variant_names)]
 pub enum Error {
     /// An error from an underlying SQLite call.
     SqliteFailure(ffi::Error, Option<String>),
@@ -152,7 +153,6 @@ impl error::Error for Error {
         }
     }
 
-    #[cfg_attr(feature="clippy", allow(match_same_arms))]
     fn cause(&self) -> Option<&error::Error> {
         match *self {
             Error::SqliteFailure(ref err, _) => Some(err),

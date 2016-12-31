@@ -36,7 +36,7 @@
 //!                  &[&me.name, &me.time_created, &me.data]).unwrap();
 //!
 //!     let mut stmt = conn.prepare("SELECT id, name, time_created, data FROM person").unwrap();
-//!     let mut person_iter = stmt.query_map(&[], |row| {
+//!     let person_iter = stmt.query_map(&[], |row| {
 //!         Person {
 //!             id: row.get(0),
 //!             name: row.get(1),
@@ -50,6 +50,7 @@
 //!     }
 //! }
 //! ```
+#![allow(unknown_lints)]
 
 extern crate libc;
 extern crate libsqlite3_sys as ffi;
@@ -1019,6 +1020,7 @@ pub struct Rows<'stmt> {
     stmt: Option<&'stmt Statement<'stmt>>,
 }
 
+#[allow(should_implement_trait)]
 impl<'stmt> Rows<'stmt> {
     fn new(stmt: &'stmt Statement<'stmt>) -> Rows<'stmt> {
         Rows { stmt: Some(stmt) }
