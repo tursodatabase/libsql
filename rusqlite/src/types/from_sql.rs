@@ -33,7 +33,7 @@ impl Error for FromSqlError {
     fn cause(&self) -> Option<&Error> {
         match *self {
             FromSqlError::InvalidType => None,
-            FromSqlError::Other(ref err) => Some(&**err),
+            FromSqlError::Other(ref err) => err.cause(),
         }
     }
 }
