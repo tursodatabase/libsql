@@ -15,6 +15,8 @@
 * Added `#[deprecated(since = "...", note = "...")]` flags (new in Rust 1.9 for libraries) to
   all deprecated APIs.
 * Added `query_row` convenience function to `Statement`.
+* Added `bundled` feature which will build SQLite from source instead of attempting to link
+  against a SQLite that already exists on the system.
 * Fixed a bug where using cached prepared statements resulted in attempting to close a connection
   failing with `DatabaseBusy`; see https://github.com/jgallagher/rusqlite/issues/186.
 

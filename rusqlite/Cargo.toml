@@ -18,6 +18,7 @@ backup = []
 blob = []
 functions = []
 trace = []
+bundled = ["libsqlite3-sys/bundled"]
 
 [dependencies]
 time = "~0.1.0"
@@ -34,7 +35,7 @@ regex = "~0.1.41"
 
 [dependencies.libsqlite3-sys]
 path = "libsqlite3-sys"
-version = "0.5.0"
+version = "0.6.0"
 
 [[test]]
 name = "config_log"
