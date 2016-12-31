@@ -50,7 +50,11 @@ static const char zHelp[] =
 #include <stdarg.h>
 #include <string.h>
 #include <ctype.h>
-#include <unistd.h>
+#ifndef _WIN32
+# include <unistd.h>
+#else
+# include <io.h>
+#endif
 #define ISSPACE(X) isspace((unsigned char)(X))
 #define ISDIGIT(X) isdigit((unsigned char)(X))
 
