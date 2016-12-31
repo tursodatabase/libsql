@@ -1,5 +1,5 @@
-C Fix\sa\scrash\sthat\scould\soccur\sfollowing\san\sOOM\sin\sthe\sgroup_concat()\sfunction\nif\sthe\ssecond\sargument\sis\san\sSQLITE_BLOB\svalue.
-D 2016-12-30T17:40:14.373
+C Add\sthe\s--help\sand\s--all\soptions\sto\sthe\swordcount\stest\sutility.
+D 2016-12-31T21:55:23.877
 F Makefile.in 41bd4cad981487345c4a84081074bcdb876e4b2e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -1449,7 +1449,7 @@ F test/without_rowid3.test 2724c787a51a5dce09d078453a758117b4b728f1
 F test/without_rowid4.test 4e08bcbaee0399f35d58b5581881e7a6243d458a
 F test/without_rowid5.test 89b1c587bd92a0590e440da33e7666bf4891572a
 F test/without_rowid6.test 1f99644e6508447fb050f73697350c7ceca3392e
-F test/wordcount.c 97856eec21fd00d77da720007b1888c383f63dcf
+F test/wordcount.c 06efb84b7c48a4973c2c24ea06c93d00bce24389
 F test/zeroblob.test 3857870fe681b8185654414a9bccfde80b62a0fa
 F test/zerodamage.test e59a56443d6298ecf7435f618f0b27654f0c849e
 F tool/GetFile.cs a15e08acb5dd7539b75ba23501581d7c2b462cb5
@@ -1541,7 +1541,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a0971e713682a73d8c7c20511db256c20d2f6388
-R b2119513a85656f5ab1ba46bed3bca22
-U dan
-Z b8d94ab9819b45ed8f5f9b27f33e84f7
+P 14d855d2b2b5b3485e0673d11405db7266b34c6d
+R fe34c48679c60f27af86fde5a781f642
+T *branch * wordcount-enhancement
+T *sym-wordcount-enhancement *
+T -sym-trunk *
+U drh
+Z 8bab216aa01a50924e317f1b569b8185
