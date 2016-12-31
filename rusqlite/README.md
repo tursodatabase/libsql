@@ -78,7 +78,7 @@ features](http://doc.crates.io/manifest.html#the-features-section). They are:
 * `serde_json` implements [`FromSql`](http://jgallagher.github.io/rusqlite/rusqlite/types/trait.FromSql.html)
   and [`ToSql`](http://jgallagher.github.io/rusqlite/rusqlite/types/trait.ToSql.html) for the
   `Value` type from the [`serde_json` crate](https://crates.io/crates/serde_json).
-* `bundled` uses a bundled version of sqlite3.  This is a good option for cases where linking to sqlite3 is complicated, like for example Windows.
+* `bundled` uses a bundled version of sqlite3.  This is a good option for cases where linking to sqlite3 is complicated, such as Windows.
 
 ## Author
 
