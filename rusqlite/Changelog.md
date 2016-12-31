@@ -11,6 +11,7 @@
   https://github.com/jgallagher/rusqlite/pull/184.
 * Added `#[deprecated(since = "...", note = "...")]` flags (new in Rust 1.9 for libraries) to
   all deprecated APIs.
+* Added `query_row` convenience function to `Statement`.
 * Fixed a bug where using cached prepared statements resulted in attempting to close a connection
   failing with `DatabaseBusy`; see https://github.com/jgallagher/rusqlite/issues/186.
 
