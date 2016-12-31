@@ -44,6 +44,10 @@ impl Connection {
     pub fn set_prepared_statement_cache_capacity(&self, capacity: usize) {
         self.cache.set_capacity(capacity)
     }
+
+    pub fn flush_prepared_statement_cache(&self) {
+        self.cache.flush()
+    }
 }
 
 /// Prepared statements LRU cache.
@@ -132,6 +136,11 @@ impl StatementCache {
         stmt.clear_bindings();
         let sql = String::from_utf8_lossy(stmt.sql().to_bytes()).to_string();
         cache.insert(sql, stmt);
+    }
+
+    fn flush(&self) {
+        let mut cache = self.0.borrow_mut();
+        cache.clear()
     }
 }
 
@@ -267,5 +276,13 @@ mod test {
                            .unwrap()
                            .unwrap());
         }
+    }
+
+    #[test]
+    fn test_connection_close() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.prepare_cached("SELECT * FROM sqlite_master;").unwrap();
+
+        conn.close().expect("connection not closed");
     }
 }

@@ -405,6 +405,7 @@ impl Connection {
     ///
     /// Will return `Err` if the underlying SQLite call fails.
     pub fn close(self) -> Result<()> {
+        self.flush_prepared_statement_cache();
         let mut db = self.db.borrow_mut();
         db.close()
     }
