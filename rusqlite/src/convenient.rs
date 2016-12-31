@@ -1,4 +1,4 @@
-use {Error, Result, Statement};
+use {Error, Result, Row, Statement};
 use types::ToSql;
 
 impl<'conn> Statement<'conn> {
@@ -34,11 +34,26 @@ impl<'conn> Statement<'conn> {
         };
         Ok(exists)
     }
+
+    /// Convenience method to execute a query that is expected to return a single row.
+    ///
+    /// If the query returns more than one row, all rows except the first are ignored.
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if the underlying SQLite call fails.
+    pub fn query_row<T, F>(&mut self, params: &[&ToSql], f: F) -> Result<T>
+        where F: FnOnce(&Row) -> T
+    {
+        let mut rows = try!(self.query(params));
+
+        rows.get_expected_row().map(|r| f(&r))
+    }
 }
 
 #[cfg(test)]
 mod test {
-    use {Connection, Error};
+    use {Connection, Error, Result};
 
     #[test]
     fn test_insert() {
@@ -87,5 +102,19 @@ mod test {
         assert!(stmt.exists(&[&1i32]).unwrap());
         assert!(stmt.exists(&[&2i32]).unwrap());
         assert!(!stmt.exists(&[&0i32]).unwrap());
+    }
+
+    #[test]
+    fn test_query_row() {
+        let db = Connection::open_in_memory().unwrap();
+        let sql = "BEGIN;
+                   CREATE TABLE foo(x INTEGER, y INTEGER);
+                   INSERT INTO foo VALUES(1, 3);
+                   INSERT INTO foo VALUES(2, 4);
+                   END;";
+        db.execute_batch(sql).unwrap();
+        let mut stmt = db.prepare("SELECT y FROM foo WHERE x = ?").unwrap();
+        let y: Result<i64> = stmt.query_row(&[&1i32], |r| r.get(0));
+        assert_eq!(3i64, y.unwrap());
     }
 }

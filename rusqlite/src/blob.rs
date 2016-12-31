@@ -52,10 +52,9 @@ use std::io;
 use std::cmp::min;
 use std::mem;
 use std::ptr;
-use libc::c_int;
 
 use super::ffi;
-use super::types::ToSql;
+use super::types::{ToSql, ToSqlOutput};
 use {Result, Connection, DatabaseName};
 
 /// Handle to an open BLOB.
@@ -240,9 +239,9 @@ impl<'conn> Drop for Blob<'conn> {
 pub struct ZeroBlob(pub i32);
 
 impl ToSql for ZeroBlob {
-    unsafe fn bind_parameter(&self, stmt: *mut ffi::sqlite3_stmt, col: c_int) -> c_int {
+    fn to_sql(&self) -> Result<ToSqlOutput> {
         let ZeroBlob(length) = *self;
-        ffi::sqlite3_bind_zeroblob(stmt, col, length)
+        Ok(ToSqlOutput::ZeroBlob(length))
     }
 }
 

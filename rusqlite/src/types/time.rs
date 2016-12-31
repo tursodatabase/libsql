@@ -1,25 +1,22 @@
 extern crate time;
 
-use libc::c_int;
-use {Error, Result};
-use types::{FromSql, ToSql, ValueRef};
-
-use ffi::sqlite3_stmt;
+use Result;
+use types::{FromSql, FromSqlError, FromSqlResult, ToSql, ToSqlOutput, ValueRef};
 
 const SQLITE_DATETIME_FMT: &'static str = "%Y-%m-%d %H:%M:%S";
 
 impl ToSql for time::Timespec {
-    unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
-        let time_str = time::at_utc(*self).strftime(SQLITE_DATETIME_FMT).unwrap().to_string();
-        time_str.bind_parameter(stmt, col)
+    fn to_sql(&self) -> Result<ToSqlOutput> {
+        let time_string = time::at_utc(*self).strftime(SQLITE_DATETIME_FMT).unwrap().to_string();
+        Ok(ToSqlOutput::from(time_string))
     }
 }
 
 impl FromSql for time::Timespec {
-    fn column_result(value: ValueRef) -> Result<Self> {
+    fn column_result(value: ValueRef) -> FromSqlResult<Self> {
         value.as_str().and_then(|s| match time::strptime(s, SQLITE_DATETIME_FMT) {
             Ok(tm) => Ok(tm.to_timespec()),
-            Err(err) => Err(Error::FromSqlConversionFailure(Box::new(err))),
+            Err(err) => Err(FromSqlError::Other(Box::new(err))),
         })
     }
 }

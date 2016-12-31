@@ -18,7 +18,7 @@
 //! # use std::path::Path;
 //! # use std::time;
 //!
-//! fn backupDb<P: AsRef<Path>>(src: &Connection, dst: P, progress: fn(backup::Progress))
+//! fn backup_db<P: AsRef<Path>>(src: &Connection, dst: P, progress: fn(backup::Progress))
 //!     -> Result<()> {
 //!     let mut dst = try!(Connection::open(dst));
 //!     let backup = try!(backup::Backup::new(src, &mut dst));

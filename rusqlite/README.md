@@ -1,7 +1,7 @@
 # Rusqlite
 
 [![Travis Build Status](https://api.travis-ci.org/jgallagher/rusqlite.svg?branch=master)](https://travis-ci.org/jgallagher/rusqlite)
-[![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/jgallagher/rusqlite?branch=master&svg=true)](https://ci.appveyor.com/project/jgallagher/rusqlite)
+[![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/jgallagher/rusqlite?branch=master&svg=true)](https://ci.appveyor.com/project/jgallagher/rusqlite) [![Latest Version](https://img.shields.io/crates/v/rusqlite.svg)](https://crates.io/crates/rusqlite)
 
 Rusqlite is an ergonomic wrapper for using SQLite from Rust. It attempts to expose
 an interface similar to [rust-postgres](https://github.com/sfackler/rust-postgres). View the full
@@ -38,11 +38,11 @@ fn main() {
         data: None
     };
     conn.execute("INSERT INTO person (name, time_created, data)
-                  VALUES ($1, $2, $3)",
+                  VALUES (?1, ?2, ?3)",
                  &[&me.name, &me.time_created, &me.data]).unwrap();
 
     let mut stmt = conn.prepare("SELECT id, name, time_created, data FROM person").unwrap();
-    let mut person_iter = stmt.query_map(&[], |row| {
+    let person_iter = stmt.query_map(&[], |row| {
         Person {
             id: row.get(0),
             name: row.get(1),
@@ -78,6 +78,7 @@ features](http://doc.crates.io/manifest.html#the-features-section). They are:
 * `serde_json` implements [`FromSql`](http://jgallagher.github.io/rusqlite/rusqlite/types/trait.FromSql.html)
   and [`ToSql`](http://jgallagher.github.io/rusqlite/rusqlite/types/trait.ToSql.html) for the
   `Value` type from the [`serde_json` crate](https://crates.io/crates/serde_json).
+* `bundled` uses a bundled version of sqlite3.  This is a good option for cases where linking to sqlite3 is complicated, such as Windows.
 
 ## Author
 

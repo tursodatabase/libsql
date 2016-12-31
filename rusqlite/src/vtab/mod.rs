@@ -10,8 +10,8 @@ use libc;
 use {Connection, Error, Result, InnerConnection, str_to_cstring};
 use error::error_from_sqlite_code;
 use ffi;
-use functions::ToResult;
-use types::{FromSql, ValueRef};
+use functions::{set_result, report_error};
+use types::{FromSql, FromSqlError, ToSql, ValueRef};
 
 // let conn: Connection = ...;
 // let mod: Module = ...; // VTab builder
@@ -128,7 +128,7 @@ impl IndexInfo {
     }
 }
 pub struct IndexConstraintIter<'a> {
-    iter: slice::Iter<'a, ffi::Struct_sqlite3_index_constraint>,
+    iter: slice::Iter<'a, ffi::sqlite3_index_constraint>,
 }
 
 impl<'a> Iterator for IndexConstraintIter<'a> {
@@ -143,7 +143,7 @@ impl<'a> Iterator for IndexConstraintIter<'a> {
     }
 }
 
-pub struct IndexConstraint<'a>(&'a ffi::Struct_sqlite3_index_constraint);
+pub struct IndexConstraint<'a>(&'a ffi::sqlite3_index_constraint);
 
 impl<'a> IndexConstraint<'a> {
     /// Column constrained.  -1 for ROWID
@@ -160,7 +160,7 @@ impl<'a> IndexConstraint<'a> {
     }
 }
 
-pub struct IndexConstraintUsage<'a>(&'a mut ffi::Struct_sqlite3_index_constraint_usage);
+pub struct IndexConstraintUsage<'a>(&'a mut ffi::sqlite3_index_constraint_usage);
 
 impl<'a> IndexConstraintUsage<'a> {
     /// if `argv_index` > 0, constraint is part of argv to xFilter
@@ -196,9 +196,11 @@ pub trait VTabCursor<V: VTab<Self>>: Sized {
 pub struct Context(*mut ffi::sqlite3_context);
 
 impl Context {
-    pub fn set_result<T: ToResult>(&mut self, value: &T) {
-        unsafe {
-            value.set_result(self.0);
+    pub fn set_result<T: ToSql>(&mut self, value: &T) {
+        let t = value.to_sql();
+        match t {
+            Ok(ref value) => set_result(self.0, value),
+            Err(err) => unsafe { report_error(self.0, &err) },
         }
     }
 }
@@ -220,8 +222,12 @@ impl<'a> Values<'a> {
         let arg = self.args[idx];
         let value = unsafe { ValueRef::from_value(arg) };
         FromSql::column_result(value).map_err(|err| match err {
-            Error::InvalidColumnType => Error::InvalidFunctionParameterType,
-            _ => err,
+            FromSqlError::InvalidType => {
+                Error::InvalidFunctionParameterType(idx, value.data_type())
+            }
+            FromSqlError::Other(err) => {
+                Error::FromSqlConversionFailure(idx, value.data_type(), err)
+            }
         })
     }
 
