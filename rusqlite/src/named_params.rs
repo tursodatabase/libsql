@@ -204,9 +204,7 @@ impl<'conn> Statement<'conn> {
     fn bind_parameters_named(&mut self, params: &[(&str, &ToSql)]) -> Result<()> {
         for &(name, value) in params {
             if let Some(i) = try!(self.parameter_index(name)) {
-                try!(self.conn.decode_result(unsafe {
-                    value.bind_parameter(self.stmt.ptr(), i)
-                }));
+                try!(self.bind_parameter(value, i));
             } else {
                 return Err(Error::InvalidParameterName(name.into()));
             }

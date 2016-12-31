@@ -71,9 +71,9 @@ use std::cell::RefCell;
 use std::ffi::{CStr, CString};
 use std::result;
 use std::str;
-use libc::{c_int, c_char};
+use libc::{c_int, c_char, c_void};
 
-use types::{ToSql, FromSql, ValueRef};
+use types::{ToSql, ToSqlOutput, FromSql, ValueRef};
 use error::{error_from_sqlite_code, error_from_handle};
 use raw_statement::RawStatement;
 use cache::StatementCache;
@@ -877,6 +877,55 @@ impl<'conn> Statement<'conn> {
         self.finalize_()
     }
 
+    fn bind_parameter(&self, param: &ToSql, col: c_int) -> Result<()> {
+        let value = try!(param.to_sql());
+
+        let ptr = unsafe { self.stmt.ptr() };
+        let value = match value {
+            ToSqlOutput::Borrowed(v) => v,
+            ToSqlOutput::Owned(ref v) => ValueRef::from(v),
+
+            #[cfg(feature = "blob")]
+            ToSqlOutput::ZeroBlob(len) => {
+                return self.conn
+                    .decode_result(unsafe { ffi::sqlite3_bind_zeroblob(ptr, col, len) });
+            }
+        };
+        self.conn.decode_result(match value {
+            ValueRef::Null => unsafe { ffi::sqlite3_bind_null(ptr, col) },
+            ValueRef::Integer(i) => unsafe { ffi::sqlite3_bind_int64(ptr, col, i) },
+            ValueRef::Real(r) => unsafe { ffi::sqlite3_bind_double(ptr, col, r) },
+            ValueRef::Text(ref s) => unsafe {
+                let length = s.len();
+                if length > ::std::i32::MAX as usize {
+                    ffi::SQLITE_TOOBIG
+                } else {
+                    let c_str = try!(str_to_cstring(s));
+                    let destructor = if length > 0 {
+                        ffi::SQLITE_TRANSIENT()
+                    } else {
+                        ffi::SQLITE_STATIC()
+                    };
+                    ffi::sqlite3_bind_text(ptr, col, c_str.as_ptr(), length as c_int, destructor)
+                }
+            },
+            ValueRef::Blob(ref b) => unsafe {
+                let length = b.len();
+                if length > ::std::i32::MAX as usize {
+                    ffi::SQLITE_TOOBIG
+                } else if length == 0 {
+                    ffi::sqlite3_bind_zeroblob(ptr, col, 0)
+                } else {
+                    ffi::sqlite3_bind_blob(ptr,
+                                           col,
+                                           b.as_ptr() as *const c_void,
+                                           length as c_int,
+                                           ffi::SQLITE_TRANSIENT())
+                }
+            },
+        })
+    }
+
     fn bind_parameters(&mut self, params: &[&ToSql]) -> Result<()> {
         assert!(params.len() as c_int == self.stmt.bind_parameter_count(),
                 "incorrect number of parameters to query(): expected {}, got {}",
@@ -884,11 +933,7 @@ impl<'conn> Statement<'conn> {
                 params.len());
 
         for (i, p) in params.iter().enumerate() {
-            try!(unsafe {
-                self.conn.decode_result(
-                    p.bind_parameter(self.stmt.ptr(), (i + 1) as c_int)
-                )
-            });
+            try!(self.bind_parameter(*p, (i + 1) as c_int));
         }
 
         Ok(())
@@ -1114,7 +1159,8 @@ impl<'a> ValueRef<'a> {
             ffi::SQLITE_FLOAT => ValueRef::Real(ffi::sqlite3_column_double(raw, col)),
             ffi::SQLITE_TEXT => {
                 let text = ffi::sqlite3_column_text(raw, col);
-                assert!(!text.is_null(), "unexpected SQLITE_TEXT column type with NULL data");
+                assert!(!text.is_null(),
+                        "unexpected SQLITE_TEXT column type with NULL data");
                 let s = CStr::from_ptr(text as *const c_char);
 
                 // sqlite3_column_text returns UTF8 data, so our unwrap here should be fine.
@@ -1135,7 +1181,7 @@ impl<'a> ValueRef<'a> {
                 }
 
             }
-            _ => unreachable!("sqlite3_column_type returned invalid value")
+            _ => unreachable!("sqlite3_column_type returned invalid value"),
         }
     }
 }

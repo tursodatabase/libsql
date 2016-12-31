@@ -1,19 +1,15 @@
 //! `ToSql` and `FromSql` implementation for JSON `Value`.
 extern crate serde_json;
 
-use libc::c_int;
 use self::serde_json::Value;
 
 use {Error, Result};
-use types::{FromSql, ToSql, ValueRef};
-
-use ffi::sqlite3_stmt;
+use types::{FromSql, ToSql, ToSqlOutput, ValueRef};
 
 /// Serialize JSON `Value` to text.
 impl ToSql for Value {
-    unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
-        let s = serde_json::to_string(self).unwrap();
-        s.bind_parameter(stmt, col)
+    fn to_sql(&self) -> Result<ToSqlOutput> {
+        Ok(ToSqlOutput::from(serde_json::to_string(self).unwrap()))
     }
 }
 
@@ -21,10 +17,11 @@ impl ToSql for Value {
 impl FromSql for Value {
     fn column_result(value: ValueRef) -> Result<Self> {
         match value {
-            ValueRef::Text(ref s) => serde_json::from_str(s),
-            ValueRef::Blob(ref b) => serde_json::from_slice(b),
-            _ => return Err(Error::InvalidColumnType),
-        }.map_err(|err| Error::FromSqlConversionFailure(Box::new(err)))
+                ValueRef::Text(ref s) => serde_json::from_str(s),
+                ValueRef::Blob(ref b) => serde_json::from_slice(b),
+                _ => return Err(Error::InvalidColumnType),
+            }
+            .map_err(|err| Error::FromSqlConversionFailure(Box::new(err)))
     }
 }
 
