@@ -9,6 +9,9 @@
   and `query_row_named` now expects a `&Row` instead of a `Row`. The vast majority of calls
   to these functions will probably not need to change; see
   https://github.com/jgallagher/rusqlite/pull/184.
+* BREAKING CHANGE: A few cases of the `Error` enum have sprouted additional information
+  (e.g., `FromSqlConversionFailure` now also includes the column index and the type returned
+  by SQLite).
 * Added `#[deprecated(since = "...", note = "...")]` flags (new in Rust 1.9 for libraries) to
   all deprecated APIs.
 * Added `query_row` convenience function to `Statement`.
