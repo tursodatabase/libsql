@@ -1,4 +1,4 @@
-# Version UPCOMING (...)
+# Version 0.8.0 (2016-12-31)
 
 * BREAKING CHANGE: The `FromSql` trait has been redesigned. It now requires a single, safe
   method instead of the previous definition which required implementing one or two unsafe
