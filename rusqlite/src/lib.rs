@@ -878,11 +878,7 @@ impl<'conn> Statement<'conn> {
     }
 
     fn bind_parameter(&self, param: &ToSql, col: c_int) -> Result<()> {
-        // This should be
-        //   let value = try!(param.to_sql());
-        // but that hits a bug in the Rust compiler around re-exported
-        // trait visibility. It's fixed in 1.9.
-        let value = try!(ToSql::to_sql(param));
+        let value = try!(param.to_sql());
 
         let ptr = unsafe { self.stmt.ptr() };
         let value = match value {
