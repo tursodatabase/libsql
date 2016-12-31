@@ -3,8 +3,8 @@ extern crate serde_json;
 
 use self::serde_json::Value;
 
-use {Error, Result};
-use types::{FromSql, ToSql, ToSqlOutput, ValueRef};
+use ::Result;
+use types::{FromSql, FromSqlError, FromSqlResult, ToSql, ToSqlOutput, ValueRef};
 
 /// Serialize JSON `Value` to text.
 impl ToSql for Value {
@@ -15,13 +15,13 @@ impl ToSql for Value {
 
 /// Deserialize text/blob to JSON `Value`.
 impl FromSql for Value {
-    fn column_result(value: ValueRef) -> Result<Self> {
+    fn column_result(value: ValueRef) -> FromSqlResult<Self> {
         match value {
                 ValueRef::Text(ref s) => serde_json::from_str(s),
                 ValueRef::Blob(ref b) => serde_json::from_slice(b),
-                _ => return Err(Error::InvalidColumnType),
+                _ => return Err(FromSqlError::InvalidType),
             }
-            .map_err(|err| Error::FromSqlConversionFailure(Box::new(err)))
+            .map_err(|err| FromSqlError::Other(Box::new(err)))
     }
 }
 

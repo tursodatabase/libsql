@@ -50,10 +50,12 @@
 //! `FromSql` for the cases where you want to know if a value was NULL (which gets translated to
 //! `None`).
 
-pub use self::from_sql::FromSql;
+pub use self::from_sql::{FromSql, FromSqlError, FromSqlResult};
 pub use self::to_sql::{ToSql, ToSqlOutput};
 pub use self::value::Value;
 pub use self::value_ref::ValueRef;
+
+use std::fmt;
 
 mod value;
 mod value_ref;
@@ -83,6 +85,27 @@ mod serde_json;
 /// ```
 #[derive(Copy,Clone)]
 pub struct Null;
+
+#[derive(Clone,Debug,PartialEq)]
+pub enum Type {
+    Null,
+    Integer,
+    Real,
+    Text,
+    Blob,
+}
+
+impl fmt::Display for Type {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            Type::Null => write!(f, "Null"),
+            Type::Integer => write!(f, "Integer"),
+            Type::Real => write!(f, "Real"),
+            Type::Text => write!(f, "Text"),
+            Type::Blob => write!(f, "Blob"),
+        }
+    }
+}
 
 #[cfg(test)]
 #[cfg_attr(feature="clippy", allow(similar_names))]
@@ -190,7 +213,7 @@ mod test {
     fn test_mismatched_types() {
         fn is_invalid_column_type(err: Error) -> bool {
             match err {
-                Error::InvalidColumnType => true,
+                Error::InvalidColumnType(_, _) => true,
                 _ => false,
             }
         }

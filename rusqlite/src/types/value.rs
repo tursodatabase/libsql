@@ -1,4 +1,4 @@
-use super::Null;
+use super::{Null, Type};
 
 /// Owning [dynamic type value](http://sqlite.org/datatype3.html). Value's type is typically
 /// dictated by SQLite (not by the caller).
@@ -57,5 +57,17 @@ impl From<String> for Value {
 impl From<Vec<u8>> for Value {
     fn from(v: Vec<u8>) -> Value {
         Value::Blob(v)
+    }
+}
+
+impl Value {
+    pub fn data_type(&self) -> Type {
+        match *self {
+            Value::Null => Type::Null,
+            Value::Integer(_) => Type::Integer,
+            Value::Real(_) => Type::Real,
+            Value::Text(_) => Type::Text,
+            Value::Blob(_) => Type::Blob,
+        }
     }
 }

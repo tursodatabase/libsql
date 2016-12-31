@@ -60,7 +60,7 @@ use ffi;
 use ffi::sqlite3_context;
 use ffi::sqlite3_value;
 
-use types::{ToSql, ToSqlOutput, FromSql, ValueRef};
+use types::{ToSql, ToSqlOutput, FromSql, FromSqlError, ValueRef};
 
 use {Result, Error, Connection, str_to_cstring, InnerConnection};
 
@@ -195,8 +195,12 @@ impl<'a> Context<'a> {
         let arg = self.args[idx];
         let value = unsafe { ValueRef::from_value(arg) };
         FromSql::column_result(value).map_err(|err| match err {
-            Error::InvalidColumnType => Error::InvalidFunctionParameterType,
-            _ => err,
+            FromSqlError::InvalidType => {
+                Error::InvalidFunctionParameterType(idx, value.data_type())
+            }
+            FromSqlError::Other(err) => {
+                Error::FromSqlConversionFailure(idx, value.data_type(), err)
+            }
         })
     }
 
