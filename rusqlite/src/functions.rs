@@ -59,8 +59,6 @@ use libc::{c_int, c_char, c_void};
 use ffi;
 use ffi::sqlite3_context;
 use ffi::sqlite3_value;
-use ffi::sqlite3_value_type;
-use ffi::sqlite3_value_numeric_type;
 
 use types::{ToSql, ToSqlOutput, FromSql, ValueRef};
 
