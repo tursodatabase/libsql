@@ -50,14 +50,14 @@
 //! `FromSql` for the cases where you want to know if a value was NULL (which gets translated to
 //! `None`).
 
-pub use ffi::sqlite3_stmt;
-
-pub use self::from_sql::{FromSql, FromSqlError};
-pub use self::to_sql::ToSql;
+pub use self::from_sql::{FromSql, FromSqlError, FromSqlResult};
+pub use self::to_sql::{ToSql, ToSqlOutput};
+pub use self::value::Value;
 pub use self::value_ref::ValueRef;
 
 use std::fmt;
 
+mod value;
 mod value_ref;
 mod from_sql;
 mod to_sql;
@@ -85,36 +85,6 @@ mod serde_json;
 /// ```
 #[derive(Copy,Clone)]
 pub struct Null;
-
-/// Owning [dynamic type value](http://sqlite.org/datatype3.html). Value's type is typically
-/// dictated by SQLite (not by the caller).
-///
-/// See [`ValueRef`](enum.ValueRef.html) for a non-owning dynamic type value.
-#[derive(Clone,Debug,PartialEq)]
-pub enum Value {
-    /// The value is a `NULL` value.
-    Null,
-    /// The value is a signed integer.
-    Integer(i64),
-    /// The value is a floating point number.
-    Real(f64),
-    /// The value is a text string.
-    Text(String),
-    /// The value is a blob of data
-    Blob(Vec<u8>),
-}
-
-impl Value {
-    pub fn data_type(&self) -> Type {
-        match *self {
-            Value::Null => Type::Null,
-            Value::Integer(_) => Type::Integer,
-            Value::Real(_) => Type::Real,
-            Value::Text(_) => Type::Text,
-            Value::Blob(_) => Type::Blob,
-        }
-    }
-}
 
 #[derive(Clone,Debug,PartialEq)]
 pub enum Type {
@@ -146,6 +116,7 @@ mod test {
     use Error;
     use libc::{c_int, c_double};
     use std::f64::EPSILON;
+    use super::Value;
 
     fn checked_memory_handle() -> Connection {
         let db = Connection::open_in_memory().unwrap();
@@ -165,7 +136,29 @@ mod test {
     }
 
     #[test]
+    fn test_empty_blob() {
+        let db = checked_memory_handle();
+
+        let empty = vec![];
+        db.execute("INSERT INTO foo(b) VALUES (?)", &[&empty]).unwrap();
+
+        let v: Vec<u8> = db.query_row("SELECT b FROM foo", &[], |r| r.get(0)).unwrap();
+        assert_eq!(v, empty);
+    }
+
+    #[test]
     fn test_str() {
+        let db = checked_memory_handle();
+
+        let s = "hello, world!";
+        db.execute("INSERT INTO foo(t) VALUES (?)", &[&s]).unwrap();
+
+        let from: String = db.query_row("SELECT t FROM foo", &[], |r| r.get(0)).unwrap();
+        assert_eq!(from, s);
+    }
+
+    #[test]
+    fn test_string() {
         let db = checked_memory_handle();
 
         let s = "hello, world!";
@@ -173,6 +166,16 @@ mod test {
 
         let from: String = db.query_row("SELECT t FROM foo", &[], |r| r.get(0)).unwrap();
         assert_eq!(from, s);
+    }
+
+    #[test]
+    fn test_value() {
+        let db = checked_memory_handle();
+
+        db.execute("INSERT INTO foo(i) VALUES (?)", &[&Value::Integer(10)]).unwrap();
+
+        assert_eq!(10i64,
+                   db.query_row("SELECT i FROM foo", &[], |r| r.get(0)).unwrap());
     }
 
     #[test]

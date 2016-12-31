@@ -3,6 +3,23 @@
 * BREAKING CHANGE: The `FromSql` trait has been redesigned. It now requires a single, safe
   method instead of the previous definition which required implementing one or two unsafe
   methods.
+* BREAKING CHANGE: The `ToSql` trait has been redesigned. It can now be implemented without
+  `unsafe`, and implementors can choose to return either borrowed or owned results.
+* BREAKING CHANGE: The closure passed to `query_row`, `query_row_and_then`, `query_row_safe`,
+  and `query_row_named` now expects a `&Row` instead of a `Row`. The vast majority of calls
+  to these functions will probably not need to change; see
+  https://github.com/jgallagher/rusqlite/pull/184.
+* Added `#[deprecated(since = "...", note = "...")]` flags (new in Rust 1.9 for libraries) to
+  all deprecated APIs.
+* Added `query_row` convenience function to `Statement`.
+* Fixed a bug where using cached prepared statements resulted in attempting to close a connection
+  failing with `DatabaseBusy`; see https://github.com/jgallagher/rusqlite/issues/186.
+
+# Version 0.7.3 (2016-06-01)
+
+* Fixes an incorrect failure from the `insert()` convenience function when back-to-back inserts to
+  different tables both returned the same row ID
+  ([#171](https://github.com/jgallagher/rusqlite/issues/171)).
 
 # Version 0.7.2 (2016-05-19)
 

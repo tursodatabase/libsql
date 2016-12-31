@@ -38,12 +38,12 @@ impl Connection {
     /// Will return `Err` if `sql` cannot be converted to a C-compatible string or if the
     /// underlying SQLite call fails.
     pub fn query_row_named<T, F>(&self, sql: &str, params: &[(&str, &ToSql)], f: F) -> Result<T>
-        where F: FnOnce(Row) -> T
+        where F: FnOnce(&Row) -> T
     {
         let mut stmt = try!(self.prepare(sql));
         let mut rows = try!(stmt.query_named(params));
 
-        rows.get_expected_row().map(f)
+        rows.get_expected_row().map(|r| f(&r))
     }
 }
 
@@ -204,12 +204,7 @@ impl<'conn> Statement<'conn> {
     fn bind_parameters_named(&mut self, params: &[(&str, &ToSql)]) -> Result<()> {
         for &(name, value) in params {
             if let Some(i) = try!(self.parameter_index(name)) {
-                try!(self.conn.decode_result(unsafe {
-                    // This should be
-                    // `value.bind_parameter(self.stmt.ptr(), i)`
-                    // but that doesn't compile until Rust 1.9 due to a compiler bug.
-                    ToSql::bind_parameter(value, self.stmt.ptr(), i)
-                }));
+                try!(self.bind_parameter(value, i));
             } else {
                 return Err(Error::InvalidParameterName(name.into()));
             }

@@ -32,7 +32,7 @@
 //!         data: None
 //!     };
 //!     conn.execute("INSERT INTO person (name, time_created, data)
-//!                   VALUES ($1, $2, $3)",
+//!                   VALUES (?1, ?2, ?3)",
 //!                  &[&me.name, &me.time_created, &me.data]).unwrap();
 //!
 //!     let mut stmt = conn.prepare("SELECT id, name, time_created, data FROM person").unwrap();
@@ -50,8 +50,6 @@
 //!     }
 //! }
 //! ```
-#![cfg_attr(feature="clippy", feature(plugin))]
-#![cfg_attr(feature="clippy", plugin(clippy))]
 
 extern crate libc;
 extern crate libsqlite3_sys as ffi;
@@ -73,9 +71,9 @@ use std::cell::RefCell;
 use std::ffi::{CStr, CString};
 use std::result;
 use std::str;
-use libc::{c_int, c_char};
+use libc::{c_int, c_char, c_void};
 
-use types::{ToSql, FromSql, FromSqlError, ValueRef};
+use types::{ToSql, ToSqlOutput, FromSql, FromSqlError, ValueRef};
 use error::{error_from_sqlite_code, error_from_handle};
 use raw_statement::RawStatement;
 use cache::StatementCache;
@@ -105,6 +103,7 @@ mod raw_statement;
 const STATEMENT_CACHE_DEFAULT_CAPACITY: usize = 16;
 
 /// Old name for `Result`. `SqliteResult` is deprecated.
+#[deprecated(since = "0.6.0", note = "Use Result instead")]
 pub type SqliteResult<T> = Result<T>;
 
 /// A typedef of the result returned by many methods.
@@ -151,6 +150,7 @@ impl<'a> DatabaseName<'a> {
 }
 
 /// Old name for `Connection`. `SqliteConnection` is deprecated.
+#[deprecated(since = "0.6.0", note = "Use Connection instead")]
 pub type SqliteConnection = Connection;
 
 /// A connection to a SQLite database.
@@ -303,12 +303,10 @@ impl Connection {
     /// Will return `Err` if `sql` cannot be converted to a C-compatible string or if the
     /// underlying SQLite call fails.
     pub fn query_row<T, F>(&self, sql: &str, params: &[&ToSql], f: F) -> Result<T>
-        where F: FnOnce(Row) -> T
+        where F: FnOnce(&Row) -> T
     {
         let mut stmt = try!(self.prepare(sql));
-        let mut rows = try!(stmt.query(params));
-
-        rows.get_expected_row().map(f)
+        stmt.query_row(params, f)
     }
 
     /// Convenience method to execute a query that is expected to return a single row,
@@ -339,13 +337,13 @@ impl Connection {
                                        params: &[&ToSql],
                                        f: F)
                                        -> result::Result<T, E>
-        where F: FnOnce(Row) -> result::Result<T, E>,
+        where F: FnOnce(&Row) -> result::Result<T, E>,
               E: convert::From<Error>
     {
         let mut stmt = try!(self.prepare(sql));
         let mut rows = try!(stmt.query(params));
 
-        rows.get_expected_row().map_err(E::from).and_then(f)
+        rows.get_expected_row().map_err(E::from).and_then(|r| f(&r))
     }
 
     /// Convenience method to execute a query that is expected to return a single row.
@@ -367,8 +365,9 @@ impl Connection {
     ///
     /// This method should be considered deprecated. Use `query_row` instead, which now
     /// does exactly the same thing.
+    #[deprecated(since = "0.1.0", note = "Use query_row instead")]
     pub fn query_row_safe<T, F>(&self, sql: &str, params: &[&ToSql], f: F) -> Result<T>
-        where F: FnOnce(Row) -> T
+        where F: FnOnce(&Row) -> T
     {
         self.query_row(sql, params, f)
     }
@@ -404,6 +403,7 @@ impl Connection {
     ///
     /// Will return `Err` if the underlying SQLite call fails.
     pub fn close(self) -> Result<()> {
+        self.flush_prepared_statement_cache();
         let mut db = self.db.borrow_mut();
         db.close()
     }
@@ -507,6 +507,7 @@ struct InnerConnection {
 }
 
 /// Old name for `OpenFlags`. `SqliteOpenFlags` is deprecated.
+#[deprecated(since = "0.6.0", note = "Use OpenFlags instead")]
 pub type SqliteOpenFlags = OpenFlags;
 
 bitflags! {
@@ -678,6 +679,7 @@ impl Drop for InnerConnection {
 }
 
 /// Old name for `Statement`. `SqliteStatement` is deprecated.
+#[deprecated(since = "0.6.0", note = "Use Statement instead")]
 pub type SqliteStatement<'conn> = Statement<'conn>;
 
 /// A prepared statement.
@@ -874,6 +876,55 @@ impl<'conn> Statement<'conn> {
         self.finalize_()
     }
 
+    fn bind_parameter(&self, param: &ToSql, col: c_int) -> Result<()> {
+        let value = try!(param.to_sql());
+
+        let ptr = unsafe { self.stmt.ptr() };
+        let value = match value {
+            ToSqlOutput::Borrowed(v) => v,
+            ToSqlOutput::Owned(ref v) => ValueRef::from(v),
+
+            #[cfg(feature = "blob")]
+            ToSqlOutput::ZeroBlob(len) => {
+                return self.conn
+                    .decode_result(unsafe { ffi::sqlite3_bind_zeroblob(ptr, col, len) });
+            }
+        };
+        self.conn.decode_result(match value {
+            ValueRef::Null => unsafe { ffi::sqlite3_bind_null(ptr, col) },
+            ValueRef::Integer(i) => unsafe { ffi::sqlite3_bind_int64(ptr, col, i) },
+            ValueRef::Real(r) => unsafe { ffi::sqlite3_bind_double(ptr, col, r) },
+            ValueRef::Text(ref s) => unsafe {
+                let length = s.len();
+                if length > ::std::i32::MAX as usize {
+                    ffi::SQLITE_TOOBIG
+                } else {
+                    let c_str = try!(str_to_cstring(s));
+                    let destructor = if length > 0 {
+                        ffi::SQLITE_TRANSIENT()
+                    } else {
+                        ffi::SQLITE_STATIC()
+                    };
+                    ffi::sqlite3_bind_text(ptr, col, c_str.as_ptr(), length as c_int, destructor)
+                }
+            },
+            ValueRef::Blob(ref b) => unsafe {
+                let length = b.len();
+                if length > ::std::i32::MAX as usize {
+                    ffi::SQLITE_TOOBIG
+                } else if length == 0 {
+                    ffi::sqlite3_bind_zeroblob(ptr, col, 0)
+                } else {
+                    ffi::sqlite3_bind_blob(ptr,
+                                           col,
+                                           b.as_ptr() as *const c_void,
+                                           length as c_int,
+                                           ffi::SQLITE_TRANSIENT())
+                }
+            },
+        })
+    }
+
     fn bind_parameters(&mut self, params: &[&ToSql]) -> Result<()> {
         assert!(params.len() as c_int == self.stmt.bind_parameter_count(),
                 "incorrect number of parameters to query(): expected {}, got {}",
@@ -881,14 +932,7 @@ impl<'conn> Statement<'conn> {
                 params.len());
 
         for (i, p) in params.iter().enumerate() {
-            try!(unsafe {
-                self.conn.decode_result(
-                    // This should be
-                    // `p.bind_parameter(self.stmt.ptr(), (i + 1) as c_int)`
-                    // but that doesn't compile until Rust 1.9 due to a compiler bug.
-                    ToSql::bind_parameter(*p, self.stmt.ptr(), (i + 1) as c_int)
-                )
-            });
+            try!(self.bind_parameter(*p, (i + 1) as c_int));
         }
 
         Ok(())
@@ -967,6 +1011,7 @@ impl<'stmt, T, E, F> Iterator for AndThenRows<'stmt, F>
 }
 
 /// Old name for `Rows`. `SqliteRows` is deprecated.
+#[deprecated(since = "0.6.0", note = "Use Rows instead")]
 pub type SqliteRows<'stmt> = Rows<'stmt>;
 
 /// An handle for the resulting rows of a query.
@@ -1031,6 +1076,7 @@ impl<'stmt> Drop for Rows<'stmt> {
 }
 
 /// Old name for `Row`. `SqliteRow` is deprecated.
+#[deprecated(since = "0.6.0", note = "Use Row instead")]
 pub type SqliteRow<'a, 'stmt> = Row<'a, 'stmt>;
 
 /// A single result row of a query.
@@ -1127,14 +1173,16 @@ impl<'a> ValueRef<'a> {
             }
             ffi::SQLITE_BLOB => {
                 let blob = ffi::sqlite3_column_blob(raw, col);
-                assert!(!blob.is_null(),
-                        "unexpected SQLITE_BLOB column type with NULL data");
 
                 let len = ffi::sqlite3_column_bytes(raw, col);
-                assert!(len >= 0,
-                        "unexpected negative return from sqlite3_column_bytes");
-
-                ValueRef::Blob(from_raw_parts(blob as *const u8, len as usize))
+                assert!(len >= 0, "unexpected negative return from sqlite3_column_bytes");
+                if len > 0 {
+                    assert!(!blob.is_null(), "unexpected SQLITE_BLOB column type with NULL data");
+                    ValueRef::Blob(from_raw_parts(blob as *const u8, len as usize))
+                } else {
+                    // The return value from sqlite3_column_blob() for a zero-length BLOB is a NULL pointer.
+                    ValueRef::Blob(&[])
+                }
             }
             _ => unreachable!("sqlite3_column_type returned invalid value"),
         }

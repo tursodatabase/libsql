@@ -1,7 +1,7 @@
 # Rusqlite
 
 [![Travis Build Status](https://api.travis-ci.org/jgallagher/rusqlite.svg?branch=master)](https://travis-ci.org/jgallagher/rusqlite)
-[![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/jgallagher/rusqlite?branch=master&svg=true)](https://ci.appveyor.com/project/jgallagher/rusqlite)
+[![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/jgallagher/rusqlite?branch=master&svg=true)](https://ci.appveyor.com/project/jgallagher/rusqlite) [![Latest Version](https://img.shields.io/crates/v/rusqlite.svg)](https://crates.io/crates/rusqlite)
 
 Rusqlite is an ergonomic wrapper for using SQLite from Rust. It attempts to expose
 an interface similar to [rust-postgres](https://github.com/sfackler/rust-postgres). View the full
@@ -38,7 +38,7 @@ fn main() {
         data: None
     };
     conn.execute("INSERT INTO person (name, time_created, data)
-                  VALUES ($1, $2, $3)",
+                  VALUES (?1, ?2, ?3)",
                  &[&me.name, &me.time_created, &me.data]).unwrap();
 
     let mut stmt = conn.prepare("SELECT id, name, time_created, data FROM person").unwrap();

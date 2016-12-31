@@ -1,21 +1,23 @@
-use {Error, Result, Statement};
+use {Error, Result, Row, Statement};
 use types::ToSql;
 
 impl<'conn> Statement<'conn> {
     /// Execute an INSERT and return the ROWID.
     ///
+    /// # Note
+    ///
+    /// This function is a convenience wrapper around `execute()` intended for queries that
+    /// insert a single item. It is possible to misuse this function in a way that it cannot
+    /// detect, such as by calling it on a statement which _updates_ a single item rather than
+    /// inserting one. Please don't do that.
+    ///
     /// # Failure
+    ///
     /// Will return `Err` if no row is inserted or many rows are inserted.
     pub fn insert(&mut self, params: &[&ToSql]) -> Result<i64> {
-        // Some non-insertion queries could still return 1 change (an UPDATE, for example), so
-        // to guard against that we can check that the connection's last_insert_rowid() changes
-        // after we execute the statement.
-        let prev_rowid = self.conn.last_insert_rowid();
         let changes = try!(self.execute(params));
-        let new_rowid = self.conn.last_insert_rowid();
         match changes {
-            1 if prev_rowid != new_rowid => Ok(new_rowid),
-            1 if prev_rowid == new_rowid => Err(Error::StatementFailedToInsertRow),
+            1 => Ok(self.conn.last_insert_rowid()),
             _ => Err(Error::StatementChangedRows(changes)),
         }
     }
@@ -32,11 +34,26 @@ impl<'conn> Statement<'conn> {
         };
         Ok(exists)
     }
+
+    /// Convenience method to execute a query that is expected to return a single row.
+    ///
+    /// If the query returns more than one row, all rows except the first are ignored.
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if the underlying SQLite call fails.
+    pub fn query_row<T, F>(&mut self, params: &[&ToSql], f: F) -> Result<T>
+        where F: FnOnce(&Row) -> T
+    {
+        let mut rows = try!(self.query(params));
+
+        rows.get_expected_row().map(|r| f(&r))
+    }
 }
 
 #[cfg(test)]
 mod test {
-    use {Connection, Error};
+    use {Connection, Error, Result};
 
     #[test]
     fn test_insert() {
@@ -57,18 +74,19 @@ mod test {
     }
 
     #[test]
-    fn test_insert_failures() {
+    fn test_insert_different_tables() {
+        // Test for https://github.com/jgallagher/rusqlite/issues/171
         let db = Connection::open_in_memory().unwrap();
-        db.execute_batch("CREATE TABLE foo(x INTEGER UNIQUE)").unwrap();
-        let mut insert = db.prepare("INSERT INTO foo (x) VALUES (?)").unwrap();
-        let mut update = db.prepare("UPDATE foo SET x = ?").unwrap();
+        db.execute_batch(r"
+            CREATE TABLE foo(x INTEGER);
+            CREATE TABLE bar(x INTEGER);
+        ")
+            .unwrap();
 
-        assert_eq!(insert.insert(&[&1i32]).unwrap(), 1);
-
-        match update.insert(&[&2i32]) {
-            Err(Error::StatementFailedToInsertRow) => (),
-            r => panic!("Unexpected result {:?}", r),
-        }
+        assert_eq!(db.prepare("INSERT INTO foo VALUES (10)").unwrap().insert(&[]).unwrap(),
+                   1);
+        assert_eq!(db.prepare("INSERT INTO bar VALUES (10)").unwrap().insert(&[]).unwrap(),
+                   1);
     }
 
     #[test]
@@ -84,5 +102,19 @@ mod test {
         assert!(stmt.exists(&[&1i32]).unwrap());
         assert!(stmt.exists(&[&2i32]).unwrap());
         assert!(!stmt.exists(&[&0i32]).unwrap());
+    }
+
+    #[test]
+    fn test_query_row() {
+        let db = Connection::open_in_memory().unwrap();
+        let sql = "BEGIN;
+                   CREATE TABLE foo(x INTEGER, y INTEGER);
+                   INSERT INTO foo VALUES(1, 3);
+                   INSERT INTO foo VALUES(2, 4);
+                   END;";
+        db.execute_batch(sql).unwrap();
+        let mut stmt = db.prepare("SELECT y FROM foo WHERE x = ?").unwrap();
+        let y: Result<i64> = stmt.query_row(&[&1i32], |r| r.get(0));
+        assert_eq!(3i64, y.unwrap());
     }
 }
