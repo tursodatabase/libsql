@@ -315,5 +315,23 @@ foreach {tn n sql} {
   do_catchsql_test 14.2.$tn $sql [list 1 $err]
 }
 
+#--------------------------------------------------------------------------
+# Test for vector size mismatches concealed by unexpanded subqueries.
+#
+do_catchsql_test 15.1 {
+  DETACH (SELECT * FROM (SELECT 1,2))<3;
+} {1 {row value misused}}
+do_catchsql_test 15.2 {
+  UPDATE x1 SET a=(SELECT * FROM (SELECT b,2))<3;
+} {1 {row value misused}}
+do_catchsql_test 15.3 {
+  UPDATE x1 SET a=NULL WHERE  a<(SELECT * FROM (SELECT b,2));
+} {1 {sub-select returns 2 columns - expected 1}}
+do_catchsql_test 15.4 {
+  DELETE FROM x1 WHERE  a<(SELECT * FROM (SELECT b,2));
+} {1 {sub-select returns 2 columns - expected 1}}
+do_catchsql_test 15.5 {
+  INSERT INTO x1(a,b) VALUES(1,(SELECT * FROM (SELECT 1,2))<3);
+} {1 {row value misused}}
 
 finish_test
