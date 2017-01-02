@@ -1,5 +1,5 @@
-C Detect\srow-value\scomparison\ssize\smismatches\seven\swhen\sthe\ssize\sof\sone\noperand\sis\sobscured\sby\san\sunexpanded\ssubquery.
-D 2017-01-01T12:44:07.208
+C Version\s3.16.0
+D 2017-01-02T11:57:58.484
 F Makefile.in 41bd4cad981487345c4a84081074bcdb876e4b2e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -1541,7 +1541,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 14d855d2b2b5b3485e0673d11405db7266b34c6d
+P 2c4d167ccd4be591487f404de9ee629fd484c8bf
 R b92eb609c667e98735c96cb1ee09a168
+T +bgcolor * #d0c0ff
+T +sym-release *
+T +sym-version-3.16.0 *
 U drh
-Z 9505a22a16b780a1bca3bac5d386a771
+Z d8ea167822373183dd9b5b971ee1941f
