@@ -170,6 +170,19 @@ const unsigned char sqlite3CtypeMap[256] = {
 #endif
 
 /*
+** The default lookaside-configuration, the format "SZ,N".  SZ is the
+** number of bytes in each lookaside slot (should be a multiple of 8)
+** and N is the number of slots.  The lookaside-configuration can be
+** changed as start-time using sqlite3_config(SQLITE_CONFIG_LOOKASIDE)
+** or at run-time for an individual database connection using
+** sqlite3_db_config(db, SQLITE_DBCONFIG_LOOKASIDE);
+*/
+#ifndef SQLITE_DEFAULT_LOOKASIDE
+# define SQLITE_DEFAULT_LOOKASIDE 1200,100
+#endif
+
+
+/*
 ** The following singleton contains the global configuration for
 ** the SQLite library.
 */
@@ -181,8 +194,7 @@ SQLITE_WSD struct Sqlite3Config sqlite3Config = {
    SQLITE_ALLOW_COVERING_INDEX_SCAN,   /* bUseCis */
    0x7ffffffe,                /* mxStrlen */
    0,                         /* neverCorrupt */
-   512,                       /* szLookaside */
-   125,                       /* nLookaside */
+   SQLITE_DEFAULT_LOOKASIDE,  /* szLookaside, nLookaside */
    SQLITE_STMTJRNL_SPILL,     /* nStmtSpill */
    {0,0,0,0,0,0,0,0},         /* m */
    {0,0,0,0,0,0,0,0,0},       /* mutex */
