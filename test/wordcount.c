@@ -13,24 +13,6 @@
 **
 ** Option:
 **
-**     --without-rowid      Use a WITHOUT ROWID table to store the words.
-**     --insert             Use INSERT mode (the default)
-**     --replace            Use REPLACE mode
-**     --select             Use SELECT mode
-**     --update             Use UPDATE mode
-**     --delete             Use DELETE mode
-**     --query              Use QUERY mode
-**     --nocase             Add the NOCASE collating sequence to the words.
-**     --trace              Enable sqlite3_trace() output.
-**     --summary            Show summary information on the collected data.
-**     --stats              Show sqlite3_status() results at the end.
-**     --pagesize NNN       Use a page size of NNN
-**     --cachesize NNN      Use a cache size of NNN
-**     --commit NNN         Commit after every NNN operations
-**     --nosync             Use PRAGMA synchronous=OFF
-**     --journal MMMM       Use PRAGMA journal_mode=MMMM
-**     --timer              Time the operation of this program
-**     --tag NAME           Tag all output using NAME.  Use only stdout.
 **
 ** Modes:
 **
@@ -81,7 +63,35 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include "sqlite3.h"
+#ifndef _WIN32
+# include <unistd.h>
+#else
+# include <io.h>
+#endif
 #define ISALPHA(X) isalpha((unsigned char)(X))
+
+const char zHelp[] = 
+"Usage: wordcount [OPTIONS] DATABASE [INPUT]\n"
+" --all                Repeat the test for all test modes\n"
+" --cachesize NNN      Use a cache size of NNN\n"
+" --commit NNN         Commit after every NNN operations\n"
+" --delete             Use DELETE mode\n"
+" --insert             Use INSERT mode (the default)\n"
+" --journal MMMM       Use PRAGMA journal_mode=MMMM\n"
+" --nocase             Add the NOCASE collating sequence to the words.\n"
+" --nosync             Use PRAGMA synchronous=OFF\n"
+" --pagesize NNN       Use a page size of NNN\n"
+" --query              Use QUERY mode\n"
+" --replace            Use REPLACE mode\n"
+" --select             Use SELECT mode\n"
+" --stats              Show sqlite3_status() results at the end.\n"
+" --summary            Show summary information on the collected data.\n"
+" --tag NAME           Tag all output using NAME.  Use only stdout.\n"
+" --timer              Time the operation of this program\n"
+" --trace              Enable sqlite3_trace() output.\n"
+" --update             Use UPDATE mode\n"
+" --without-rowid      Use a WITHOUT ROWID table to store the words.\n"
+;
 
 /* Output tag */
 char *zTag = "--";
@@ -108,6 +118,12 @@ static void fatal_error(const char *zMsg, ...){
   vfprintf(stderr, zMsg, ap);
   va_end(ap);
   exit(1);
+}
+
+/* Print a usage message and quit */
+static void usage(void){
+  printf("%s",zHelp);
+  exit(0);
 }
 
 /* The sqlite3_trace() callback function */
@@ -189,7 +205,6 @@ static void checksumFinalize(sqlite3_context *context){
   }
 }
 
-
 /* Define operating modes */
 #define MODE_INSERT     0
 #define MODE_REPLACE    1
@@ -197,12 +212,50 @@ static void checksumFinalize(sqlite3_context *context){
 #define MODE_UPDATE     3
 #define MODE_DELETE     4
 #define MODE_QUERY      5
+#define MODE_COUNT      6
+#define MODE_ALL      (-1)
+
+/* Mode names */
+static const char *azMode[] = {
+  "--insert",
+  "--replace",
+  "--select",
+  "--update",
+  "--delete",
+  "--query"
+};
+
+/*
+** Determine if another iteration of the test is required.  Return true
+** if so.  Return zero if all iterations have finished.
+*/
+static int allLoop(
+  int iMode,                /* The selected test mode */
+  int *piLoopCnt,           /* Iteration loop counter */
+  int *piMode2,             /* The test mode to use on the next iteration */
+  int *pUseWithoutRowid     /* Whether or not to use --without-rowid */
+){
+  int i;
+  if( iMode!=MODE_ALL ){
+    if( *piLoopCnt ) return 0;
+    *piMode2 = iMode;
+    *piLoopCnt = 1;
+    return 1;
+  }
+  if( (*piLoopCnt)>=MODE_COUNT*2 ) return 0;
+  i = (*piLoopCnt)++;
+  *pUseWithoutRowid = i&1;
+  *piMode2 = i>>1;
+  return 1;
+}
 
 int main(int argc, char **argv){
   const char *zFileToRead = 0;  /* Input file.  NULL for stdin */
   const char *zDbName = 0;      /* Name of the database file to create */
   int useWithoutRowid = 0;      /* True for --without-rowid */
   int iMode = MODE_INSERT;      /* One of MODE_xxxxx */
+  int iMode2;                   /* Mode to use for current --all iteration */
+  int iLoopCnt = 0;             /* Which iteration when running --all */
   int useNocase = 0;            /* True for --nocase */
   int doTrace = 0;              /* True for --trace */
   int showStats = 0;            /* True for --stats */
@@ -226,7 +279,8 @@ int main(int argc, char **argv){
   int iCur, iHiwtr;             /* Statistics values, current and "highwater" */
   FILE *pTimer = stderr;        /* Output channel for the timer */
   sqlite3_int64 sumCnt = 0;     /* Sum in QUERY mode */
-  sqlite3_int64 startTime;
+  sqlite3_int64 startTime;      /* Time of start */
+  sqlite3_int64 totalTime = 0;  /* Total time */
   char zInput[2000];            /* A single line of input */
 
   /* Process command-line arguments */
@@ -248,6 +302,9 @@ int main(int argc, char **argv){
         iMode = MODE_DELETE;
       }else if( strcmp(z,"query")==0 ){
         iMode = MODE_QUERY;
+      }else if( strcmp(z,"all")==0 ){
+        iMode = MODE_ALL;
+        showTimer = -99;
       }else if( strcmp(z,"nocase")==0 ){
         useNocase = 1;
       }else if( strcmp(z,"trace")==0 ){
@@ -274,23 +331,30 @@ int main(int argc, char **argv){
       }else if( strcmp(z,"tag")==0 && i<argc-1 ){
         zTag = argv[++i];
         pTimer = stdout;
+      }else if( strcmp(z, "help")==0 || strcmp(z,"?")==0 ){
+        usage();
       }else{
-        fatal_error("unknown option: %s\n", argv[i]);
+        fatal_error("unknown option: \"%s\"\n"
+                    "Use --help for a list of options\n",
+                    argv[i]);
       }
     }else if( zDbName==0 ){
       zDbName = argv[i];
     }else if( zFileToRead==0 ){
       zFileToRead = argv[i];
     }else{
-      fatal_error("surplus argument: %s\n", argv[i]);
+      fatal_error("surplus argument: \"%s\"\n", argv[i]);
     }
   }
   if( zDbName==0 ){
-    fatal_error("Usage: %s [--options] DATABASE [INPUTFILE]\n", argv[0]);
+    usage();
   }
   startTime = realTime();
 
   /* Open the database and the input file */
+  if( zDbName[0] && strcmp(zDbName,":memory:")!=0 ){
+    unlink(zDbName);
+  }
   if( sqlite3_open(zDbName, &db) ){
     fatal_error("Cannot open database file: %s\n", zDbName);
   }
@@ -300,6 +364,9 @@ int main(int argc, char **argv){
       fatal_error("Could not open input file \"%s\"\n", zFileToRead);
     }
   }else{
+    if( iMode==MODE_ALL ){
+      fatal_error("The --all mode cannot be used with stdin\n");
+    }
     in = stdin;
   }
 
@@ -322,189 +389,214 @@ int main(int argc, char **argv){
     sqlite3_free(zSql);
   }
 
-
-  /* Construct the "wordcount" table into which to put the words */
-  if( sqlite3_exec(db, "BEGIN IMMEDIATE", 0, 0, 0) ){
-    fatal_error("Could not start a transaction\n");
-  }
-  zSql = sqlite3_mprintf(
-     "CREATE TABLE IF NOT EXISTS wordcount(\n"
-     "  word TEXT PRIMARY KEY COLLATE %s,\n"
-     "  cnt INTEGER\n"
-     ")%s",
-     useNocase ? "nocase" : "binary",
-     useWithoutRowid ? " WITHOUT ROWID" : ""
-  );
-  if( zSql==0 ) fatal_error("out of memory\n");
-  rc = sqlite3_exec(db, zSql, 0, 0, 0);
-  if( rc ) fatal_error("Could not create the wordcount table: %s.\n",
-                       sqlite3_errmsg(db));
-  sqlite3_free(zSql);
-
-  /* Prepare SQL statements that will be needed */
-  if( iMode==MODE_QUERY ){
-    rc = sqlite3_prepare_v2(db,
-          "SELECT cnt FROM wordcount WHERE word=?1",
-          -1, &pSelect, 0);
-    if( rc ) fatal_error("Could not prepare the SELECT statement: %s\n",
-                          sqlite3_errmsg(db));
-  }
-  if( iMode==MODE_SELECT ){
-    rc = sqlite3_prepare_v2(db,
-          "SELECT 1 FROM wordcount WHERE word=?1",
-          -1, &pSelect, 0);
-    if( rc ) fatal_error("Could not prepare the SELECT statement: %s\n",
-                          sqlite3_errmsg(db));
-    rc = sqlite3_prepare_v2(db,
-          "INSERT INTO wordcount(word,cnt) VALUES(?1,1)",
-          -1, &pInsert, 0);
-    if( rc ) fatal_error("Could not prepare the INSERT statement: %s\n",
+  iLoopCnt = 0;
+  while( allLoop(iMode, &iLoopCnt, &iMode2, &useWithoutRowid) ){
+    /* Delete prior content in --all mode */
+    if( iMode==MODE_ALL ){
+      if( sqlite3_exec(db, "DROP TABLE IF EXISTS wordcount; VACUUM;",0,0,0) ){
+        fatal_error("Could not clean up prior iteration\n");
+      }
+      startTime = realTime();
+      rewind(in);
+    }
+ 
+    /* Construct the "wordcount" table into which to put the words */
+    if( sqlite3_exec(db, "BEGIN IMMEDIATE", 0, 0, 0) ){
+      fatal_error("Could not start a transaction\n");
+    }
+    zSql = sqlite3_mprintf(
+       "CREATE TABLE IF NOT EXISTS wordcount(\n"
+       "  word TEXT PRIMARY KEY COLLATE %s,\n"
+       "  cnt INTEGER\n"
+       ")%s",
+       useNocase ? "nocase" : "binary",
+       useWithoutRowid ? " WITHOUT ROWID" : ""
+    );
+    if( zSql==0 ) fatal_error("out of memory\n");
+    rc = sqlite3_exec(db, zSql, 0, 0, 0);
+    if( rc ) fatal_error("Could not create the wordcount table: %s.\n",
                          sqlite3_errmsg(db));
-  }
-  if( iMode==MODE_SELECT || iMode==MODE_UPDATE || iMode==MODE_INSERT ){
-    rc = sqlite3_prepare_v2(db,
-          "UPDATE wordcount SET cnt=cnt+1 WHERE word=?1",
-          -1, &pUpdate, 0);
-    if( rc ) fatal_error("Could not prepare the UPDATE statement: %s\n",
-                         sqlite3_errmsg(db));
-  }
-  if( iMode==MODE_INSERT ){
-    rc = sqlite3_prepare_v2(db,
-          "INSERT OR IGNORE INTO wordcount(word,cnt) VALUES(?1,1)",
-          -1, &pInsert, 0);
-    if( rc ) fatal_error("Could not prepare the INSERT statement: %s\n",
-                         sqlite3_errmsg(db));
-  }
-  if( iMode==MODE_UPDATE ){
-    rc = sqlite3_prepare_v2(db,
-          "INSERT OR IGNORE INTO wordcount(word,cnt) VALUES(?1,0)",
-          -1, &pInsert, 0);
-    if( rc ) fatal_error("Could not prepare the INSERT statement: %s\n",
-                         sqlite3_errmsg(db));
-  }
-  if( iMode==MODE_REPLACE ){
-    rc = sqlite3_prepare_v2(db,
+    sqlite3_free(zSql);
+  
+    /* Prepare SQL statements that will be needed */
+    if( iMode2==MODE_QUERY ){
+      rc = sqlite3_prepare_v2(db,
+            "SELECT cnt FROM wordcount WHERE word=?1",
+            -1, &pSelect, 0);
+      if( rc ) fatal_error("Could not prepare the SELECT statement: %s\n",
+                            sqlite3_errmsg(db));
+    }
+    if( iMode2==MODE_SELECT ){
+      rc = sqlite3_prepare_v2(db,
+            "SELECT 1 FROM wordcount WHERE word=?1",
+            -1, &pSelect, 0);
+      if( rc ) fatal_error("Could not prepare the SELECT statement: %s\n",
+                            sqlite3_errmsg(db));
+      rc = sqlite3_prepare_v2(db,
+            "INSERT INTO wordcount(word,cnt) VALUES(?1,1)",
+            -1, &pInsert, 0);
+      if( rc ) fatal_error("Could not prepare the INSERT statement: %s\n",
+                           sqlite3_errmsg(db));
+    }
+    if( iMode2==MODE_SELECT || iMode2==MODE_UPDATE || iMode2==MODE_INSERT ){
+      rc = sqlite3_prepare_v2(db,
+            "UPDATE wordcount SET cnt=cnt+1 WHERE word=?1",
+            -1, &pUpdate, 0);
+      if( rc ) fatal_error("Could not prepare the UPDATE statement: %s\n",
+                           sqlite3_errmsg(db));
+    }
+    if( iMode2==MODE_INSERT ){
+      rc = sqlite3_prepare_v2(db,
+            "INSERT OR IGNORE INTO wordcount(word,cnt) VALUES(?1,1)",
+            -1, &pInsert, 0);
+      if( rc ) fatal_error("Could not prepare the INSERT statement: %s\n",
+                           sqlite3_errmsg(db));
+    }
+    if( iMode2==MODE_UPDATE ){
+      rc = sqlite3_prepare_v2(db,
+            "INSERT OR IGNORE INTO wordcount(word,cnt) VALUES(?1,0)",
+            -1, &pInsert, 0);
+      if( rc ) fatal_error("Could not prepare the INSERT statement: %s\n",
+                           sqlite3_errmsg(db));
+    }
+    if( iMode2==MODE_REPLACE ){
+      rc = sqlite3_prepare_v2(db,
           "REPLACE INTO wordcount(word,cnt)"
           "VALUES(?1,coalesce((SELECT cnt FROM wordcount WHERE word=?1),0)+1)",
           -1, &pInsert, 0);
-    if( rc ) fatal_error("Could not prepare the REPLACE statement: %s\n",
-                          sqlite3_errmsg(db));
-  }
-  if( iMode==MODE_DELETE ){
-    rc = sqlite3_prepare_v2(db,
-          "DELETE FROM wordcount WHERE word=?1",
-          -1, &pDelete, 0);
-    if( rc ) fatal_error("Could not prepare the DELETE statement: %s\n",
-                         sqlite3_errmsg(db));
-  }
-
-  /* Process the input file */
-  while( fgets(zInput, sizeof(zInput), in) ){
-    for(i=0; zInput[i]; i++){
-      if( !ISALPHA(zInput[i]) ) continue;
-      for(j=i+1; ISALPHA(zInput[j]); j++){}
-
-      /* Found a new word at zInput[i] that is j-i bytes long. 
-      ** Process it into the wordcount table.  */
-      if( iMode==MODE_DELETE ){
-        sqlite3_bind_text(pDelete, 1, zInput+i, j-i, SQLITE_STATIC);
-        if( sqlite3_step(pDelete)!=SQLITE_DONE ){
-          fatal_error("DELETE failed: %s\n", sqlite3_errmsg(db));
-        }
-        sqlite3_reset(pDelete);
-      }else if( iMode==MODE_SELECT ){
-        sqlite3_bind_text(pSelect, 1, zInput+i, j-i, SQLITE_STATIC);
-        rc = sqlite3_step(pSelect);
-        sqlite3_reset(pSelect);
-        if( rc==SQLITE_ROW ){
-          sqlite3_bind_text(pUpdate, 1, zInput+i, j-i, SQLITE_STATIC);
-          if( sqlite3_step(pUpdate)!=SQLITE_DONE ){
-            fatal_error("UPDATE failed: %s\n", sqlite3_errmsg(db));
+      if( rc ) fatal_error("Could not prepare the REPLACE statement: %s\n",
+                            sqlite3_errmsg(db));
+    }
+    if( iMode2==MODE_DELETE ){
+      rc = sqlite3_prepare_v2(db,
+            "DELETE FROM wordcount WHERE word=?1",
+            -1, &pDelete, 0);
+      if( rc ) fatal_error("Could not prepare the DELETE statement: %s\n",
+                           sqlite3_errmsg(db));
+    }
+  
+    /* Process the input file */
+    while( fgets(zInput, sizeof(zInput), in) ){
+      for(i=0; zInput[i]; i++){
+        if( !ISALPHA(zInput[i]) ) continue;
+        for(j=i+1; ISALPHA(zInput[j]); j++){}
+  
+        /* Found a new word at zInput[i] that is j-i bytes long. 
+        ** Process it into the wordcount table.  */
+        if( iMode2==MODE_DELETE ){
+          sqlite3_bind_text(pDelete, 1, zInput+i, j-i, SQLITE_STATIC);
+          if( sqlite3_step(pDelete)!=SQLITE_DONE ){
+            fatal_error("DELETE failed: %s\n", sqlite3_errmsg(db));
           }
-          sqlite3_reset(pUpdate);
-        }else if( rc==SQLITE_DONE ){
+          sqlite3_reset(pDelete);
+        }else if( iMode2==MODE_SELECT ){
+          sqlite3_bind_text(pSelect, 1, zInput+i, j-i, SQLITE_STATIC);
+          rc = sqlite3_step(pSelect);
+          sqlite3_reset(pSelect);
+          if( rc==SQLITE_ROW ){
+            sqlite3_bind_text(pUpdate, 1, zInput+i, j-i, SQLITE_STATIC);
+            if( sqlite3_step(pUpdate)!=SQLITE_DONE ){
+              fatal_error("UPDATE failed: %s\n", sqlite3_errmsg(db));
+            }
+            sqlite3_reset(pUpdate);
+          }else if( rc==SQLITE_DONE ){
+            sqlite3_bind_text(pInsert, 1, zInput+i, j-i, SQLITE_STATIC);
+            if( sqlite3_step(pInsert)!=SQLITE_DONE ){
+              fatal_error("Insert failed: %s\n", sqlite3_errmsg(db));
+            }
+            sqlite3_reset(pInsert);
+          }else{
+            fatal_error("SELECT failed: %s\n", sqlite3_errmsg(db));
+          }
+        }else if( iMode2==MODE_QUERY ){
+          sqlite3_bind_text(pSelect, 1, zInput+i, j-i, SQLITE_STATIC);
+          if( sqlite3_step(pSelect)==SQLITE_ROW ){
+            sumCnt += sqlite3_column_int64(pSelect, 0);
+          }
+          sqlite3_reset(pSelect);
+        }else{
           sqlite3_bind_text(pInsert, 1, zInput+i, j-i, SQLITE_STATIC);
           if( sqlite3_step(pInsert)!=SQLITE_DONE ){
-            fatal_error("Insert failed: %s\n", sqlite3_errmsg(db));
+            fatal_error("INSERT failed: %s\n", sqlite3_errmsg(db));
           }
           sqlite3_reset(pInsert);
-        }else{
-          fatal_error("SELECT failed: %s\n", sqlite3_errmsg(db));
-        }
-      }else if( iMode==MODE_QUERY ){
-        sqlite3_bind_text(pSelect, 1, zInput+i, j-i, SQLITE_STATIC);
-        if( sqlite3_step(pSelect)==SQLITE_ROW ){
-          sumCnt += sqlite3_column_int64(pSelect, 0);
-        }
-        sqlite3_reset(pSelect);
-      }else{
-        sqlite3_bind_text(pInsert, 1, zInput+i, j-i, SQLITE_STATIC);
-        if( sqlite3_step(pInsert)!=SQLITE_DONE ){
-          fatal_error("INSERT failed: %s\n", sqlite3_errmsg(db));
-        }
-        sqlite3_reset(pInsert);
-        if( iMode==MODE_UPDATE
-         || (iMode==MODE_INSERT && sqlite3_changes(db)==0)
-        ){
-          sqlite3_bind_text(pUpdate, 1, zInput+i, j-i, SQLITE_STATIC);
-          if( sqlite3_step(pUpdate)!=SQLITE_DONE ){
-            fatal_error("UPDATE failed: %s\n", sqlite3_errmsg(db));
+          if( iMode2==MODE_UPDATE
+           || (iMode2==MODE_INSERT && sqlite3_changes(db)==0)
+          ){
+            sqlite3_bind_text(pUpdate, 1, zInput+i, j-i, SQLITE_STATIC);
+            if( sqlite3_step(pUpdate)!=SQLITE_DONE ){
+              fatal_error("UPDATE failed: %s\n", sqlite3_errmsg(db));
+            }
+            sqlite3_reset(pUpdate);
           }
-          sqlite3_reset(pUpdate);
+        }
+        i = j-1;
+  
+        /* Increment the operation counter.  Do a COMMIT if it is time. */
+        nOp++;
+        if( commitInterval>0 && (nOp%commitInterval)==0 ){
+          sqlite3_exec(db, "COMMIT; BEGIN IMMEDIATE", 0, 0, 0);
         }
       }
-      i = j-1;
-
-      /* Increment the operation counter.  Do a COMMIT if it is time. */
-      nOp++;
-      if( commitInterval>0 && (nOp%commitInterval)==0 ){
-        sqlite3_exec(db, "COMMIT; BEGIN IMMEDIATE", 0, 0, 0);
+    }
+    sqlite3_exec(db, "COMMIT", 0, 0, 0);
+    sqlite3_finalize(pInsert);  pInsert = 0;
+    sqlite3_finalize(pUpdate);  pUpdate = 0;
+    sqlite3_finalize(pSelect);  pSelect = 0;
+    sqlite3_finalize(pDelete);  pDelete = 0;
+  
+    if( iMode2==MODE_QUERY && iMode!=MODE_ALL ){
+      printf("%s sum of cnt: %lld\n", zTag, sumCnt);
+      rc = sqlite3_prepare_v2(db,"SELECT sum(cnt*cnt) FROM wordcount", -1,
+                              &pSelect, 0);
+      if( rc==SQLITE_OK && sqlite3_step(pSelect)==SQLITE_ROW ){
+        printf("%s double-check: %lld\n", zTag,sqlite3_column_int64(pSelect,0));
+      }
+      sqlite3_finalize(pSelect);
+    }
+  
+  
+    if( showTimer ){
+      sqlite3_int64 elapseTime = realTime() - startTime;
+      totalTime += elapseTime;
+      fprintf(pTimer, "%3d.%03d wordcount", (int)(elapseTime/1000),
+                                   (int)(elapseTime%1000));
+      if( iMode==MODE_ALL ){
+        fprintf(pTimer, " %s%s\n", azMode[iMode2],
+                useWithoutRowid? " --without-rowid" : "");
+      }else{
+        for(i=1; i<argc; i++) if( i!=showTimer ) fprintf(pTimer," %s",argv[i]);
+        fprintf(pTimer, "\n");
       }
     }
-  }
-  sqlite3_exec(db, "COMMIT", 0, 0, 0);
-  if( zFileToRead ) fclose(in);
-  sqlite3_finalize(pInsert);
-  sqlite3_finalize(pUpdate);
-  sqlite3_finalize(pSelect);
-  sqlite3_finalize(pDelete);
-
-  if( iMode==MODE_QUERY ){
-    printf("%s sum of cnt: %lld\n", zTag, sumCnt);
-    rc = sqlite3_prepare_v2(db,"SELECT sum(cnt*cnt) FROM wordcount", -1,
-                            &pSelect, 0);
-    if( rc==SQLITE_OK && sqlite3_step(pSelect)==SQLITE_ROW ){
-      printf("%s double-check: %lld\n", zTag, sqlite3_column_int64(pSelect, 0));
+  
+    if( showSummary ){
+      sqlite3_create_function(db, "checksum", -1, SQLITE_UTF8, 0,
+                              0, checksumStep, checksumFinalize);
+      sqlite3_exec(db, 
+        "SELECT 'count(*):  ', count(*) FROM wordcount;\n"
+        "SELECT 'sum(cnt):  ', sum(cnt) FROM wordcount;\n"
+        "SELECT 'max(cnt):  ', max(cnt) FROM wordcount;\n"
+        "SELECT 'avg(cnt):  ', avg(cnt) FROM wordcount;\n"
+        "SELECT 'sum(cnt=1):', sum(cnt=1) FROM wordcount;\n"
+        "SELECT 'top 10:    ', group_concat(word, ', ') FROM "
+           "(SELECT word FROM wordcount ORDER BY cnt DESC, word LIMIT 10);\n"
+        "SELECT 'checksum:  ', checksum(word, cnt) FROM "
+           "(SELECT word, cnt FROM wordcount ORDER BY word);\n"
+        "PRAGMA integrity_check;\n",
+        printResult, 0, 0);
     }
-    sqlite3_finalize(pSelect);
+  } /* End the --all loop */
+
+  /* Close the input file after the last read */
+  if( zFileToRead ) fclose(in);
+
+  /* In --all mode, so the total time */
+  if( iMode==MODE_ALL && showTimer ){
+    fprintf(pTimer, "%3d.%03d wordcount --all\n", (int)(totalTime/1000),
+                                   (int)(totalTime%1000));
   }
-
-
-  if( showTimer ){
-    sqlite3_int64 elapseTime = realTime() - startTime;
-    fprintf(pTimer, "%3d.%03d wordcount", (int)(elapseTime/1000),
-                                   (int)(elapseTime%1000));
-    for(i=1; i<argc; i++) if( i!=showTimer ) fprintf(pTimer, " %s", argv[i]);
-    fprintf(pTimer, "\n");
-  }
-
-  if( showSummary ){
-    sqlite3_create_function(db, "checksum", -1, SQLITE_UTF8, 0,
-                            0, checksumStep, checksumFinalize);
-    sqlite3_exec(db, 
-      "SELECT 'count(*):  ', count(*) FROM wordcount;\n"
-      "SELECT 'sum(cnt):  ', sum(cnt) FROM wordcount;\n"
-      "SELECT 'max(cnt):  ', max(cnt) FROM wordcount;\n"
-      "SELECT 'avg(cnt):  ', avg(cnt) FROM wordcount;\n"
-      "SELECT 'sum(cnt=1):', sum(cnt=1) FROM wordcount;\n"
-      "SELECT 'top 10:    ', group_concat(word, ', ') FROM "
-         "(SELECT word FROM wordcount ORDER BY cnt DESC, word LIMIT 10);\n"
-      "SELECT 'checksum:  ', checksum(word, cnt) FROM "
-         "(SELECT word, cnt FROM wordcount ORDER BY word);\n"
-      "PRAGMA integrity_check;\n",
-      printResult, 0, 0);
-  }
-
+  
   /* Database connection statistics printed after both prepared statements
   ** have been finalized */
   if( showStats ){

@@ -50,7 +50,11 @@ static const char zHelp[] =
 #include <stdarg.h>
 #include <string.h>
 #include <ctype.h>
-#include <unistd.h>
+#ifndef _WIN32
+# include <unistd.h>
+#else
+# include <io.h>
+#endif
 #define ISSPACE(X) isspace((unsigned char)(X))
 #define ISDIGIT(X) isdigit((unsigned char)(X))
 
@@ -1374,7 +1378,7 @@ int main(int argc, char **argv){
   int doIncrvac = 0;            /* True for --incrvacuum */
   const char *zJMode = 0;       /* Journal mode */
   const char *zKey = 0;         /* Encryption key */
-  int nLook = 0, szLook = 0;    /* --lookaside configuration */
+  int nLook = -1, szLook = 0;   /* --lookaside configuration */
   int noSync = 0;               /* True for --nosync */
   int pageSize = 0;             /* Desired page size.  0 means default */
   int nPCache = 0, szPCache = 0;/* --pcache configuration */
@@ -1558,7 +1562,7 @@ int main(int argc, char **argv){
     rc = sqlite3_config(SQLITE_CONFIG_SCRATCH, pScratch, szScratch, nScratch);
     if( rc ) fatal_error("scratch configuration failed: %d\n", rc);
   }
-  if( nLook>0 ){
+  if( nLook>=0 ){
     sqlite3_config(SQLITE_CONFIG_LOOKASIDE, 0, 0);
   }
 #endif
