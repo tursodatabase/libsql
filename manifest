@@ -1,10 +1,10 @@
-C Provide\sthe\sSQLITE_DEFAULT_LOOKASIDE\scompile-time\soption\sand\smake\sit's\sdefault\nvalue\sbe\s1200,100\s(raised\sfrom\s512,125\sin\sthe\slatest\srelease).
-D 2017-01-02T19:02:20.627
+C Increase\sthe\sversion\snumber\sto\s3.17.0\sfor\sthe\snext\srelease\scycle.
+D 2017-01-02T19:10:14.396
 F Makefile.in 41bd4cad981487345c4a84081074bcdb876e4b2e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
-F VERSION 661b3e6a778cfbfd7bdce8bbb1545b22f4b6f09e
+F VERSION cddd8d88dc8202afa0ebc96da61fc4acbd1e96a5
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
@@ -30,7 +30,7 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 6376abec766e9a0785178b1823b5a587e9f1ccbc
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure adbf03e758431e886bba5ab04b5adfbd496d7b24 x
+F configure fcfa56d5d66668c9263dc007724f62acff06dc83 x
 F configure.ac 605173e829ab64514ed89f9b53d0da1739d7b0a0
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html b5a3c07d33ecb8e019ce8f7660fe2dbbad9d7977
@@ -1541,7 +1541,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 12d9493cb29307aec65ceccc68e802e4d0f18112
-R 787ccf579b7b160280cc3d40eebe4332
+P 584da48f9e818f25134e0a62fb7e84f07019511f
+R d97b559f497d0a265e23fba942228550
 U drh
-Z 23c3cb021f3ef702d9251ac032d5cda4
+Z 24a7fb491cd5a499becb9d53b759e62e
