@@ -1,5 +1,5 @@
-C Avoid\sunnecessary\scalls\sto\ssqlite3BtreeEnterAll()\sand\ssqlite3BtreeLeaveAll()\nwhen\sno\sbtree\sis\susing\sshared-cache.
-D 2017-01-02T18:19:29.939
+C Change\sSQLITE_DEFAULT_PCACHE_INITSZ\sfrom\s100\sto\s20,\swhich\sis\sexperimentally\ndetermined\sto\sbe\sslightly\sfaster.
+D 2017-01-02T18:40:03.649
 F Makefile.in 41bd4cad981487345c4a84081074bcdb876e4b2e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -393,7 +393,7 @@ F src/shell.c 6095531aa900decdaa765e0f3993fba7153c92c1
 F src/sqlite.h.in e8e2d108d82647f0a812fdb74accf91c1ec08ddc
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
-F src/sqliteInt.h 888327a4317e1964a4e5a25bbfc120dbac8c4233
+F src/sqliteInt.h 943ba94907e64b4325ff99583bdca166a8278331
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
@@ -1541,7 +1541,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cb338f367e5408861bd7c0fbf74cebdbd8e3c515
-R 798126287b9302c9bcee15ee1adce328
+P cfb3158204628eb2fd170090a7f212df0e4ce6c9
+R 3819f84452eff5f7c73531633215c7e7
 U drh
-Z 06f058ccdbc97bbfa12f1395c017e654
+Z 6e195a33776011226e5f03369118edd7
