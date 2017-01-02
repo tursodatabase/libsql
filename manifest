@@ -1,5 +1,5 @@
-C Put\san\sALWAYS()\son\san\sunreachable\sbranch\sin\sthe\ssqlite3ExprListDup()\sroutine.
-D 2017-01-02T23:18:35.959
+C Test\scases\sfor\sthe\srow-value\sUPDATE\sTRIGGER\sfix.
+D 2017-01-02T23:43:03.976
 F Makefile.in 41bd4cad981487345c4a84081074bcdb876e4b2e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -1035,7 +1035,7 @@ F test/rollbackfault.test 0e646aeab8840c399cfbfa43daab46fd609cf04a
 F test/rowallock.test 3f88ec6819489d0b2341c7a7528ae17c053ab7cc
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
 F test/rowid.test 5b7509f384f4f6fae1af3c8c104c8ca299fea18d
-F test/rowvalue.test 1701fb786188e9fb7934a7c155bd9cc587d9b677
+F test/rowvalue.test f4a60835c949ec4b8ddc15d78d8a9b412b805875
 F test/rowvalue2.test 060d238b7e5639a7c5630cb5e63e311b44efef2b
 F test/rowvalue3.test 3068f508753af69884b12125995f023da0dbb256
 F test/rowvalue4.test 4b556d7de161a0dd8cff095c336e913986398bea
@@ -1541,7 +1541,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 61a442ea2ceec2cbd327dae0ff5214e1f3c69ec0
-R 979198fba9d353741bbbde77f8690ab1
+P 2caaaab5e07f6b76d66fbe4e93a4b956937427d8
+R 1083f74702d2e1110eb1d37d8553d935
 U drh
-Z 3d9af2cb6ce914fdb21ee160bd6a1c90
+Z d43bfd5db806552d45260c4ffdcc3bd0
