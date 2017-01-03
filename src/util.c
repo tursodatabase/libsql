@@ -1453,3 +1453,106 @@ u64 sqlite3LogEstToInt(LogEst x){
   return x>=3 ? (n+8)<<(x-3) : (n+8)>>(3-x);
 }
 #endif /* defined SCANSTAT or STAT4 or ESTIMATED_ROWS */
+
+/*
+** Add a new name/number pair to a VList.  This might require that the
+** VList object be reallocated, so return the new VList.  If an OOM
+** error occurs, the original VList returned and the
+** db->mallocFailed flag is set.
+**
+** A VList is really just an array of integers.  To destroy a VList,
+** simply pass it to sqlite3DbFree().
+**
+** The first integer is the number of integers allocated for the whole
+** VList.  The second integer is the number of integers actually used.
+** Each name/number pair is encoded by subsequent groups of 3 or more
+** integers.
+**
+** Each name/number pair starts with two integers which are the numeric
+** value for the pair and the size of the name/number pair, respectively.
+** The text name overlays one or more following integers.  The text name
+** is always zero-terminated.
+**
+** Conceptually:
+**
+**    struct VList {
+**      int nAlloc;   // Number of allocated slots 
+**      int nUsed;    // Number of used slots 
+**      struct VListEntry {
+**        int iValue;    // Value for this entry
+**        int nSlot;     // Slots used by this entry
+**        // ... variable name goes here
+**      } a[0];
+**    }
+**
+** During code generation, pointers to the variable names within the
+** VList are taken.  When that happens, nAlloc is set to zero as an 
+** indication that the VList may never again be enlarged, since the
+** accompanying realloc() would invalidate the pointers.
+*/
+VList *sqlite3VListAdd(
+  sqlite3 *db,           /* The database connection used for malloc() */
+  VList *pIn,            /* The input VList.  Might be NULL */
+  const char *zName,     /* Name of symbol to add */
+  int nName,             /* Bytes of text in zName */
+  int iVal               /* Value to associate with zName */
+){
+  int nInt;              /* number of sizeof(int) objects needed for zName */
+  char *z;               /* Pointer to where zName will be stored */
+  int i;                 /* Index in pIn[] where zName is stored */
+
+  nInt = nName/4 + 3;
+  assert( pIn==0 || pIn[0]>=3 );  /* Verify ok to add new elements */
+  if( pIn==0 || pIn[1]+nInt > pIn[0] ){
+    /* Enlarge the allocation */
+    int nAlloc = (pIn ? pIn[0]*2 : 10) + nInt;
+    VList *pOut = sqlite3DbRealloc(db, pIn, nAlloc*sizeof(int));
+    if( pOut==0 ) return pIn;
+    if( pIn==0 ) pOut[1] = 2;
+    pIn = pOut;
+    pIn[0] = nAlloc;
+  }
+  i = pIn[1];
+  pIn[i] = iVal;
+  pIn[i+1] = nInt;
+  z = (char*)&pIn[i+2];
+  pIn[1] = i+nInt;
+  assert( pIn[1]<=pIn[0] );
+  memcpy(z, zName, nName);
+  z[nName] = 0;
+  return pIn;
+}
+
+/*
+** Return a pointer to the name of a variable in the given VList that
+** has the value iVal.  Or return a NULL if there is no such variable in
+** the list
+*/
+const char *sqlite3VListNumToName(VList *pIn, int iVal){
+  int i, mx;
+  if( pIn==0 ) return 0;
+  mx = pIn[1];
+  i = 2;
+  do{
+    if( pIn[i]==iVal ) return (char*)&pIn[i+2];
+    i += pIn[i+1];
+  }while( i<mx );
+  return 0;
+}
+
+/*
+** Return the number of the variable named zName, if it is in VList.
+** or return 0 if there is no such variable.
+*/
+int sqlite3VListNameToNum(VList *pIn, const char *zName, int nName){
+  int i, mx;
+  if( pIn==0 ) return 0;
+  mx = pIn[1];
+  i = 2;
+  do{
+    const char *z = (const char*)&pIn[i+2];
+    if( strncmp(z,zName,nName)==0 && z[nName]==0 ) return pIn[i];
+    i += pIn[i+1];
+  }while( i<mx );
+  return 0;
+}

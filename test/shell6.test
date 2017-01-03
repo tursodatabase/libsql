@@ -9,9 +9,12 @@
 #
 #***********************************************************************
 #
+# Test the shell tool ".lint fkey-indexes" command.
+#
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+ifcapable !vtab {finish_test; return}
 set testprefix shell6
 set CLI [test_find_cli]
 db close
@@ -96,5 +99,3 @@ foreach {tn schema output} {
 }
 
 finish_test
-
-

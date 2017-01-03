@@ -315,5 +315,44 @@ foreach {tn n sql} {
   do_catchsql_test 14.2.$tn $sql [list 1 $err]
 }
 
+#--------------------------------------------------------------------------
+# Test for vector size mismatches concealed by unexpanded subqueries.
+#
+do_catchsql_test 15.1 {
+  DETACH (SELECT * FROM (SELECT 1,2))<3;
+} {1 {row value misused}}
+do_catchsql_test 15.2 {
+  UPDATE x1 SET a=(SELECT * FROM (SELECT b,2))<3;
+} {1 {row value misused}}
+do_catchsql_test 15.3 {
+  UPDATE x1 SET a=NULL WHERE  a<(SELECT * FROM (SELECT b,2));
+} {1 {sub-select returns 2 columns - expected 1}}
+do_catchsql_test 15.4 {
+  DELETE FROM x1 WHERE  a<(SELECT * FROM (SELECT b,2));
+} {1 {sub-select returns 2 columns - expected 1}}
+do_catchsql_test 15.5 {
+  INSERT INTO x1(a,b) VALUES(1,(SELECT * FROM (SELECT 1,2))<3);
+} {1 {row value misused}}
+
+#-------------------------------------------------------------------------
+# Row-values used in UPDATE statements within TRIGGERs
+#
+# Ticket https://www.sqlite.org/src/info/8c9458e703666e1a
+#
+do_execsql_test 16.1 {
+  CREATE TABLE t16a(a,b,c);
+  INSERT INTO t16a VALUES(1,2,3);
+  CREATE TABLE t16b(x);
+  INSERT INTO t16b(x) VALUES(1);
+  CREATE TRIGGER t16r AFTER UPDATE ON t16b BEGIN
+     UPDATE t16a SET (a,b,c)=(SELECT new.x,new.x+1,new.x+2);
+  END;
+  UPDATE t16b SET x=7;
+  SELECT * FROM t16a;
+} {7 8 9}
+do_execsql_test 16.2 {
+  UPDATE t16b SET x=97;
+  SELECT * FROM t16a;
+} {97 98 99}
 
 finish_test

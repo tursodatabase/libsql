@@ -414,9 +414,10 @@ Expr *sqlite3ExprForVectorField(
     assert( pVector->flags & EP_xIsSelect );
     /* The TK_SELECT_COLUMN Expr node:
     **
-    ** pLeft:           pVector containing TK_SELECT
+    ** pLeft:           pVector containing TK_SELECT.  Not deleted.
     ** pRight:          not used.  But recursively deleted.
     ** iColumn:         Index of a column in pVector
+    ** iTable:          0 or the number of columns on the LHS of an assignment
     ** pLeft->iTable:   First in an array of register holding result, or 0
     **                  if the result is not yet computed.
     **
@@ -527,7 +528,10 @@ static void codeVectorCompare(
   u8 opx = op;
   int addrDone = sqlite3VdbeMakeLabel(v);
 
-  assert( nLeft==sqlite3ExprVectorSize(pRight) );
+  if( nLeft!=sqlite3ExprVectorSize(pRight) ){
+    sqlite3ErrorMsg(pParse, "row value misused");
+    return;
+  }
   assert( pExpr->op==TK_EQ || pExpr->op==TK_NE 
        || pExpr->op==TK_IS || pExpr->op==TK_ISNOT 
        || pExpr->op==TK_LT || pExpr->op==TK_GT 
@@ -934,7 +938,7 @@ Expr *sqlite3ExprFunction(Parse *pParse, ExprList *pList, Token *pToken){
 ** variable number.
 **
 ** Wildcards of the form "?nnn" are assigned the number "nnn".  We make
-** sure "nnn" is not too be to avoid a denial of service attack when
+** sure "nnn" is not too big to avoid a denial of service attack when
 ** the SQL statement comes from an external source.
 **
 ** Wildcards of the form ":aaa", "@aaa", or "$aaa" are assigned the same number
@@ -945,6 +949,7 @@ Expr *sqlite3ExprFunction(Parse *pParse, ExprList *pList, Token *pToken){
 void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr, u32 n){
   sqlite3 *db = pParse->db;
   const char *z;
+  ynVar x;
 
   if( pExpr==0 ) return;
   assert( !ExprHasProperty(pExpr, EP_IntValue|EP_Reduced|EP_TokenOnly) );
@@ -955,9 +960,9 @@ void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr, u32 n){
   if( z[1]==0 ){
     /* Wildcard of the form "?".  Assign the next variable number */
     assert( z[0]=='?' );
-    pExpr->iColumn = (ynVar)(++pParse->nVar);
+    x = (ynVar)(++pParse->nVar);
   }else{
-    ynVar x;
+    int doAdd = 0;
     if( z[0]=='?' ){
       /* Wildcard of the form "?nnn".  Convert "nnn" to an integer and
       ** use it as the variable number */
@@ -973,40 +978,29 @@ void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr, u32 n){
             db->aLimit[SQLITE_LIMIT_VARIABLE_NUMBER]);
         return;
       }
-      if( i>pParse->nVar ){
-        pParse->nVar = (int)i;
+      if( x>pParse->nVar ){
+        pParse->nVar = (int)x;
+        doAdd = 1;
+      }else if( sqlite3VListNumToName(pParse->pVList, x)==0 ){
+        doAdd = 1;
       }
     }else{
       /* Wildcards like ":aaa", "$aaa" or "@aaa".  Reuse the same variable
       ** number as the prior appearance of the same name, or if the name
       ** has never appeared before, reuse the same variable number
       */
-      ynVar i;
-      for(i=x=0; i<pParse->nzVar; i++){
-        if( pParse->azVar[i] && strcmp(pParse->azVar[i],z)==0 ){
-          x = (ynVar)i+1;
-          break;
-        }
+      x = (ynVar)sqlite3VListNameToNum(pParse->pVList, z, n);
+      if( x==0 ){
+        x = (ynVar)(++pParse->nVar);
+        doAdd = 1;
       }
-      if( x==0 ) x = (ynVar)(++pParse->nVar);
     }
-    pExpr->iColumn = x;
-    if( x>pParse->nzVar ){
-      char **a;
-      a = sqlite3DbRealloc(db, pParse->azVar, x*sizeof(a[0]));
-      if( a==0 ){
-        assert( db->mallocFailed ); /* Error reported through mallocFailed */
-        return;
-      }
-      pParse->azVar = a;
-      memset(&a[pParse->nzVar], 0, (x-pParse->nzVar)*sizeof(a[0]));
-      pParse->nzVar = x;
+    if( doAdd ){
+      pParse->pVList = sqlite3VListAdd(db, pParse->pVList, z, n, x);
     }
-    if( pParse->azVar[x-1]==0 ){
-      pParse->azVar[x-1] = sqlite3DbStrNDup(db, z, n);
-    }
-  } 
-  if( pParse->nVar>db->aLimit[SQLITE_LIMIT_VARIABLE_NUMBER] ){
+  }
+  pExpr->iColumn = x;
+  if( x>db->aLimit[SQLITE_LIMIT_VARIABLE_NUMBER] ){
     sqlite3ErrorMsg(pParse, "too many SQL variables");
   }
 }
@@ -1095,7 +1089,7 @@ static int dupedExprStructSize(Expr *p, int flags){
   assert( flags==EXPRDUP_REDUCE || flags==0 ); /* Only one flag value allowed */
   assert( EXPR_FULLSIZE<=0xfff );
   assert( (0xfff & (EP_Reduced|EP_TokenOnly))==0 );
-  if( 0==flags ){
+  if( 0==flags || p->op==TK_SELECT_COLUMN ){
     nSize = EXPR_FULLSIZE;
   }else{
     assert( !ExprHasProperty(p, EP_TokenOnly|EP_Reduced) );
@@ -1238,6 +1232,8 @@ static Expr *exprDup(sqlite3 *db, Expr *p, int dupFlags, u8 **pzBuffer){
       if( !ExprHasProperty(p, EP_TokenOnly|EP_Leaf) ){
         if( pNew->op==TK_SELECT_COLUMN ){
           pNew->pLeft = p->pLeft;
+          assert( p->iColumn==0 || p->pRight==0 );
+          assert( p->pRight==0  || p->pRight==p->pLeft );
         }else{
           pNew->pLeft = sqlite3ExprDup(db, p->pLeft, 0);
         }
@@ -1300,6 +1296,7 @@ ExprList *sqlite3ExprListDup(sqlite3 *db, ExprList *p, int flags){
   ExprList *pNew;
   struct ExprList_item *pItem, *pOldItem;
   int i;
+  Expr *pPriorSelectCol = 0;
   assert( db!=0 );
   if( p==0 ) return 0;
   pNew = sqlite3DbMallocRawNN(db, sizeof(*pNew) );
@@ -1314,7 +1311,24 @@ ExprList *sqlite3ExprListDup(sqlite3 *db, ExprList *p, int flags){
   pOldItem = p->a;
   for(i=0; i<p->nExpr; i++, pItem++, pOldItem++){
     Expr *pOldExpr = pOldItem->pExpr;
+    Expr *pNewExpr;
     pItem->pExpr = sqlite3ExprDup(db, pOldExpr, flags);
+    if( pOldExpr 
+     && pOldExpr->op==TK_SELECT_COLUMN
+     && (pNewExpr = pItem->pExpr)!=0 
+    ){
+      assert( pNewExpr->iColumn==0 || i>0 );
+      if( pNewExpr->iColumn==0 ){
+        assert( pOldExpr->pLeft==pOldExpr->pRight );
+        pPriorSelectCol = pNewExpr->pLeft = pNewExpr->pRight;
+      }else{
+        assert( i>0 );
+        assert( pItem[-1].pExpr!=0 );
+        assert( pNewExpr->iColumn==pItem[-1].pExpr->iColumn+1 );
+        assert( pPriorSelectCol==pItem[-1].pExpr->pLeft );
+        pNewExpr->pLeft = pPriorSelectCol;
+      }
+    }
     pItem->zName = sqlite3DbStrDup(db, pOldItem->zName);
     pItem->zSpan = sqlite3DbStrDup(db, pOldItem->zSpan);
     pItem->sortOrder = pOldItem->sortOrder;
@@ -1506,13 +1520,19 @@ ExprList *sqlite3ExprListAppendVector(
   ** exit prior to this routine being invoked */
   if( NEVER(pColumns==0) ) goto vector_append_error;
   if( pExpr==0 ) goto vector_append_error;
-  n = sqlite3ExprVectorSize(pExpr);
-  if( pColumns->nId!=n ){
+
+  /* If the RHS is a vector, then we can immediately check to see that 
+  ** the size of the RHS and LHS match.  But if the RHS is a SELECT, 
+  ** wildcards ("*") in the result set of the SELECT must be expanded before
+  ** we can do the size check, so defer the size check until code generation.
+  */
+  if( pExpr->op!=TK_SELECT && pColumns->nId!=(n=sqlite3ExprVectorSize(pExpr)) ){
     sqlite3ErrorMsg(pParse, "%d columns assigned %d values",
                     pColumns->nId, n);
     goto vector_append_error;
   }
-  for(i=0; i<n; i++){
+
+  for(i=0; i<pColumns->nId; i++){
     Expr *pSubExpr = sqlite3ExprForVectorField(pParse, pExpr, i);
     pList = sqlite3ExprListAppend(pParse, pList, pSubExpr);
     if( pList ){
@@ -1521,11 +1541,20 @@ ExprList *sqlite3ExprListAppendVector(
       pColumns->a[i].zName = 0;
     }
   }
+
   if( pExpr->op==TK_SELECT ){
     if( pList && pList->a[iFirst].pExpr ){
-      assert( pList->a[iFirst].pExpr->op==TK_SELECT_COLUMN );
-      pList->a[iFirst].pExpr->pRight = pExpr;
+      Expr *pFirst = pList->a[iFirst].pExpr;
+      assert( pFirst->op==TK_SELECT_COLUMN );
+     
+      /* Store the SELECT statement in pRight so it will be deleted when
+      ** sqlite3ExprListDelete() is called */
+      pFirst->pRight = pExpr;
       pExpr = 0;
+
+      /* Remember the size of the LHS in iTable so that we can check that
+      ** the RHS and LHS sizes match during code generation. */
+      pFirst->iTable = pColumns->nId;
     }
   }
 
@@ -3430,9 +3459,10 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       assert( pExpr->u.zToken[0]!=0 );
       sqlite3VdbeAddOp2(v, OP_Variable, pExpr->iColumn, target);
       if( pExpr->u.zToken[1]!=0 ){
-        assert( pExpr->u.zToken[0]=='?' 
-             || strcmp(pExpr->u.zToken, pParse->azVar[pExpr->iColumn-1])==0 );
-        sqlite3VdbeAppendP4(v, pParse->azVar[pExpr->iColumn-1], P4_STATIC);
+        const char *z = sqlite3VListNumToName(pParse->pVList, pExpr->iColumn);
+        assert( pExpr->u.zToken[0]=='?' || strcmp(pExpr->u.zToken, z)==0 );
+        pParse->pVList[0] = 0; /* Indicate VList may no longer be enlarged */
+        sqlite3VdbeAppendP4(v, (char*)z, P4_STATIC);
       }
       return target;
     }
@@ -3718,8 +3748,16 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       break;
     }
     case TK_SELECT_COLUMN: {
+      int n;
       if( pExpr->pLeft->iTable==0 ){
         pExpr->pLeft->iTable = sqlite3CodeSubselect(pParse, pExpr->pLeft, 0, 0);
+      }
+      assert( pExpr->iTable==0 || pExpr->pLeft->op==TK_SELECT );
+      if( pExpr->iTable
+       && pExpr->iTable!=(n = sqlite3ExprVectorSize(pExpr->pLeft)) 
+      ){
+        sqlite3ErrorMsg(pParse, "%d columns assigned %d values",
+                                pExpr->iTable, n);
       }
       return pExpr->pLeft->iTable + pExpr->iColumn;
     }

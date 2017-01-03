@@ -596,7 +596,7 @@ static void pushOntoSorter(
     ** register is initialized with value of LIMIT+OFFSET.)  After the sorter
     ** fills up, delete the least entry in the sorter after each insert.
     ** Thus we never hold more than the LIMIT+OFFSET rows in memory at once */
-    addr = sqlite3VdbeAddOp3(v, OP_IfNotZero, iLimit, 0, 1); VdbeCoverage(v);
+    addr = sqlite3VdbeAddOp1(v, OP_IfNotZero, iLimit); VdbeCoverage(v);
     sqlite3VdbeAddOp1(v, OP_Last, pSort->iECursor);
     if( pSort->bOrderedInnerLoop ){
       r1 = ++pParse->nMem;

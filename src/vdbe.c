@@ -978,7 +978,7 @@ case OP_Halt: {
   p->rc = pOp->p1;
   p->errorAction = (u8)pOp->p2;
   p->pc = pcx;
-  assert( pOp->p5>=0 && pOp->p5<=4 );
+  assert( pOp->p5<=4 );
   if( p->rc ){
     if( pOp->p5 ){
       static const char * const azType[] = { "NOT NULL", "UNIQUE", "CHECK",
@@ -1191,7 +1191,7 @@ case OP_Variable: {            /* out2 */
   Mem *pVar;       /* Value being transferred */
 
   assert( pOp->p1>0 && pOp->p1<=p->nVar );
-  assert( pOp->p4.z==0 || pOp->p4.z==p->azVar[pOp->p1-1] );
+  assert( pOp->p4.z==0 || pOp->p4.z==sqlite3VListNumToName(p->pVList,pOp->p1) );
   pVar = &p->aVar[pOp->p1 - 1];
   if( sqlite3VdbeMemTooBig(pVar) ){
     goto too_big;
@@ -3784,7 +3784,8 @@ case OP_SeekGT: {       /* jump, in3 */
 
   if( pC->isTable ){
     /* The BTREE_SEEK_EQ flag is only set on index cursors */
-    assert( sqlite3BtreeCursorHasHint(pC->uc.pCursor, BTREE_SEEK_EQ)==0 );
+    assert( sqlite3BtreeCursorHasHint(pC->uc.pCursor, BTREE_SEEK_EQ)==0
+              || CORRUPT_DB );
 
     /* The input value in P3 might be of any type: integer, real, string,
     ** blob, or NULL.  But it needs to be an integer before we can do
@@ -3986,10 +3987,9 @@ case OP_Found: {        /* jump, in3 */
   int ii;
   VdbeCursor *pC;
   int res;
-  char *pFree;
+  UnpackedRecord *pFree;
   UnpackedRecord *pIdxKey;
   UnpackedRecord r;
-  char aTempRec[ROUND8(sizeof(UnpackedRecord)) + sizeof(Mem)*4 + 7];
 
 #ifdef SQLITE_TEST
   if( pOp->opcode!=OP_NoConflict ) sqlite3_found_count++;
@@ -4006,7 +4006,6 @@ case OP_Found: {        /* jump, in3 */
   assert( pC->eCurType==CURTYPE_BTREE );
   assert( pC->uc.pCursor!=0 );
   assert( pC->isTable==0 );
-  pFree = 0;
   if( pOp->p4.i>0 ){
     r.pKeyInfo = pC->pKeyInfo;
     r.nField = (u16)pOp->p4.i;
@@ -4019,10 +4018,9 @@ case OP_Found: {        /* jump, in3 */
     }
 #endif
     pIdxKey = &r;
+    pFree = 0;
   }else{
-    pIdxKey = sqlite3VdbeAllocUnpackedRecord(
-        pC->pKeyInfo, aTempRec, sizeof(aTempRec), &pFree
-    );
+    pFree = pIdxKey = sqlite3VdbeAllocUnpackedRecord(pC->pKeyInfo);
     if( pIdxKey==0 ) goto no_mem;
     assert( pIn3->flags & MEM_Blob );
     (void)ExpandBlob(pIn3);
@@ -4042,7 +4040,7 @@ case OP_Found: {        /* jump, in3 */
     }
   }
   rc = sqlite3BtreeMovetoUnpacked(pC->uc.pCursor, pIdxKey, 0, 0, &res);
-  sqlite3DbFree(db, pFree);
+  if( pFree ) sqlite3DbFree(db, pFree);
   if( rc!=SQLITE_OK ){
     goto abort_due_to_error;
   }
@@ -4824,6 +4822,15 @@ case OP_Last: {        /* jump */
 }
 
 
+/* Opcode: SorterSort P1 P2 * * *
+**
+** After all records have been inserted into the Sorter object
+** identified by P1, invoke this opcode to actually do the sorting.
+** Jump to P2 if there are no records to be sorted.
+**
+** This opcode is an alias for OP_Sort and OP_Rewind that is used
+** for Sorter objects.
+*/
 /* Opcode: Sort P1 P2 * * *
 **
 ** This opcode does exactly the same thing as OP_Rewind except that
@@ -4950,6 +4957,13 @@ case OP_Rewind: {        /* jump */
 **
 ** This opcode works just like Prev except that if cursor P1 is not
 ** open it behaves a no-op.
+*/
+/* Opcode: SorterNext P1 P2 * * P5
+**
+** This opcode works just like OP_Next except that P1 must be a
+** sorter object for which the OP_SorterSort opcode has been
+** invoked.  This opcode advances the cursor to the next sorted
+** record, or jumps to P2 if there are no more sorted records.
 */
 case OP_SorterNext: {  /* jump */
   VdbeCursor *pC;
@@ -6013,20 +6027,20 @@ case OP_OffsetLimit: {    /* in1, out2, in3 */
   break;
 }
 
-/* Opcode: IfNotZero P1 P2 P3 * *
-** Synopsis: if r[P1]!=0 then r[P1]-=P3, goto P2
+/* Opcode: IfNotZero P1 P2 * * *
+** Synopsis: if r[P1]!=0 then r[P1]--, goto P2
 **
 ** Register P1 must contain an integer.  If the content of register P1 is
-** initially nonzero, then subtract P3 from the value in register P1 and
-** jump to P2.  If register P1 is initially zero, leave it unchanged
-** and fall through.
+** initially greater than zero, then decrement the value in register P1.
+** If it is non-zero (negative or positive) and then also jump to P2.  
+** If register P1 is initially zero, leave it unchanged and fall through.
 */
 case OP_IfNotZero: {        /* jump, in1 */
   pIn1 = &aMem[pOp->p1];
   assert( pIn1->flags&MEM_Int );
   VdbeBranchTaken(pIn1->u.i<0, 2);
   if( pIn1->u.i ){
-     pIn1->u.i -= pOp->p3;
+     if( pIn1->u.i>0 ) pIn1->u.i--;
      goto jump_to_p2;
   }
   break;

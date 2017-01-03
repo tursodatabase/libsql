@@ -1766,7 +1766,9 @@ static int loadStatTbl(
       sqlite3_finalize(pStmt);
       return SQLITE_NOMEM_BKPT;
     }
-    memcpy(pSample->p, sqlite3_column_blob(pStmt, 4), pSample->n);
+    if( pSample->n ){
+      memcpy(pSample->p, sqlite3_column_blob(pStmt, 4), pSample->n);
+    }
     pIdx->nSample++;
   }
   rc = sqlite3_finalize(pStmt);

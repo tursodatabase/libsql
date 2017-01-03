@@ -273,6 +273,7 @@ do_test shell1-3.2.4 {
   catchcmd "test.db" ".bail OFF BAD"
 } {1 {Usage: .bail on|off}}
 
+ifcapable vtab {
 # .databases             List names and files of attached databases
 do_test shell1-3.3.1 {
   catchcmd "-csv test.db" ".databases"
@@ -281,6 +282,7 @@ do_test shell1-3.3.2 {
   # extra arguments ignored
   catchcmd "test.db" ".databases BAD"
 } "/0.+main.+[string map {/ ".{1,2}"} [string range [get_pwd] 0 10]].*/"
+}
 
 # .dump ?TABLE? ...      Dump the database in an SQL text format
 #                          If TABLE specified, only dump tables matching
