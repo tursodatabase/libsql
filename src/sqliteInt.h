@@ -110,7 +110,7 @@
 # define GCC_VERSION 0
 #endif
 
-/* What version of CLANG is being used.  0 means GCC is not being used */
+/* What version of CLANG is being used.  0 means CLANG is not being used */
 #ifdef __clang__
 # define CLANG_VERSION \
             (__clang_major__*1000000+__clang_minor__*1000+__clang_patchlevel__)
