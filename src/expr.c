@@ -1295,6 +1295,7 @@ ExprList *sqlite3ExprListDup(sqlite3 *db, ExprList *p, int flags){
   ExprList *pNew;
   struct ExprList_item *pItem, *pOldItem;
   int i;
+  Expr *pPriorSelectCol = 0;
   assert( db!=0 );
   if( p==0 ) return 0;
   pNew = sqlite3DbMallocRawNN(db, sizeof(*pNew) );
@@ -1311,7 +1312,6 @@ ExprList *sqlite3ExprListDup(sqlite3 *db, ExprList *p, int flags){
     Expr *pOldExpr = pOldItem->pExpr;
     Expr *pNewExpr;
     pItem->pExpr = sqlite3ExprDup(db, pOldExpr, flags);
-    assert( pItem->pExpr==0 || db->mallocFailed==0 );
     if( pOldExpr 
      && pOldExpr->op==TK_SELECT_COLUMN
      && (pNewExpr = pItem->pExpr)!=0 
@@ -1319,9 +1319,13 @@ ExprList *sqlite3ExprListDup(sqlite3 *db, ExprList *p, int flags){
       assert( pNewExpr->iColumn==0 || i>0 );
       if( pNewExpr->iColumn==0 ){
         assert( pOldExpr->pLeft==pOldExpr->pRight );
-        pNewExpr->pLeft = pNewExpr->pRight;
-      }else if( ALWAYS(pItem[-1].pExpr!=0) ){
-        pNewExpr->pLeft = pItem[-1].pExpr->pLeft;
+        pPriorSelectCol = pNewExpr->pLeft = pNewExpr->pRight;
+      }else{
+        assert( i>0 );
+        assert( pItem[-1].pExpr!=0 );
+        assert( pNewExpr->iColumn==pItem[-1].pExpr->iColumn+1 );
+        assert( pPriorSelectCol==pItem[-1].pExpr->pLeft );
+        pNewExpr->pLeft = pPriorSelectCol;
       }
     }
     pItem->zName = sqlite3DbStrDup(db, pOldItem->zName);
