@@ -414,9 +414,10 @@ Expr *sqlite3ExprForVectorField(
     assert( pVector->flags & EP_xIsSelect );
     /* The TK_SELECT_COLUMN Expr node:
     **
-    ** pLeft:           pVector containing TK_SELECT
+    ** pLeft:           pVector containing TK_SELECT.  Not deleted.
     ** pRight:          not used.  But recursively deleted.
     ** iColumn:         Index of a column in pVector
+    ** iTable:          0 or the number of columns on the LHS of an assignment
     ** pLeft->iTable:   First in an array of register holding result, or 0
     **                  if the result is not yet computed.
     **
@@ -1519,13 +1520,19 @@ ExprList *sqlite3ExprListAppendVector(
   ** exit prior to this routine being invoked */
   if( NEVER(pColumns==0) ) goto vector_append_error;
   if( pExpr==0 ) goto vector_append_error;
-  n = sqlite3ExprVectorSize(pExpr);
-  if( pColumns->nId!=n ){
+
+  /* If the RHS is a vector, then we can immediately check to see that 
+  ** the size of the RHS and LHS match.  But if the RHS is a SELECT, 
+  ** wildcards ("*") in the result set of the SELECT must be expanded before
+  ** we can do the size check, so defer the size check until code generation.
+  */
+  if( pExpr->op!=TK_SELECT && pColumns->nId!=(n=sqlite3ExprVectorSize(pExpr)) ){
     sqlite3ErrorMsg(pParse, "%d columns assigned %d values",
                     pColumns->nId, n);
     goto vector_append_error;
   }
-  for(i=0; i<n; i++){
+
+  for(i=0; i<pColumns->nId; i++){
     Expr *pSubExpr = sqlite3ExprForVectorField(pParse, pExpr, i);
     pList = sqlite3ExprListAppend(pParse, pList, pSubExpr);
     if( pList ){
@@ -1534,11 +1541,20 @@ ExprList *sqlite3ExprListAppendVector(
       pColumns->a[i].zName = 0;
     }
   }
+
   if( pExpr->op==TK_SELECT ){
     if( pList && pList->a[iFirst].pExpr ){
-      assert( pList->a[iFirst].pExpr->op==TK_SELECT_COLUMN );
-      pList->a[iFirst].pExpr->pRight = pExpr;
+      Expr *pFirst = pList->a[iFirst].pExpr;
+      assert( pFirst->op==TK_SELECT_COLUMN );
+     
+      /* Store the SELECT statement in pRight so it will be deleted when
+      ** sqlite3ExprListDelete() is called */
+      pFirst->pRight = pExpr;
       pExpr = 0;
+
+      /* Remember the size of the LHS in iTable so that we can check that
+      ** the RHS and LHS sizes match during code generation. */
+      pFirst->iTable = pColumns->nId;
     }
   }
 
@@ -3732,8 +3748,16 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       break;
     }
     case TK_SELECT_COLUMN: {
+      int n;
       if( pExpr->pLeft->iTable==0 ){
         pExpr->pLeft->iTable = sqlite3CodeSubselect(pParse, pExpr->pLeft, 0, 0);
+      }
+      assert( pExpr->iTable==0 || pExpr->pLeft->op==TK_SELECT );
+      if( pExpr->iTable
+       && pExpr->iTable!=(n = sqlite3ExprVectorSize(pExpr->pLeft)) 
+      ){
+        sqlite3ErrorMsg(pParse, "%d columns assigned %d values",
+                                pExpr->iTable, n);
       }
       return pExpr->pLeft->iTable + pExpr->iColumn;
     }
