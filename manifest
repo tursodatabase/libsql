@@ -1,5 +1,5 @@
-C Fix\sthe\srow-values\sin\sUPDATE\sstatements\swithin\sTRIGGER\sproblem\sidentified\nby\sticket\s[8c9458e7].
-D 2017-01-03T01:24:10.074
+C Add\stest\scases\sfor\sthe\sfix\sin\s[f12ed3ce].\sNo\sproblems\sdiscovered.
+D 2017-01-03T08:11:24.174
 F Makefile.in 41bd4cad981487345c4a84081074bcdb876e4b2e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -1035,7 +1035,7 @@ F test/rollbackfault.test 0e646aeab8840c399cfbfa43daab46fd609cf04a
 F test/rowallock.test 3f88ec6819489d0b2341c7a7528ae17c053ab7cc
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
 F test/rowid.test 5b7509f384f4f6fae1af3c8c104c8ca299fea18d
-F test/rowvalue.test f4a60835c949ec4b8ddc15d78d8a9b412b805875
+F test/rowvalue.test 44f3492f415cc9f374e8388a5eb61503eaca5230
 F test/rowvalue2.test 060d238b7e5639a7c5630cb5e63e311b44efef2b
 F test/rowvalue3.test 3068f508753af69884b12125995f023da0dbb256
 F test/rowvalue4.test 4b556d7de161a0dd8cff095c336e913986398bea
@@ -1541,7 +1541,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 16415b5aad445c9e4e849018b48538d74eec8944 14da99d41f7968bf816203b4ae11c1f0d1ee0b5d
-R b890811ca8348b8ceda7efec0ae53743
-U drh
-Z 378863182d1610dbd664d17105221a9b
+P f12ed3ce0bfb2d94c9baad23fdcbd816c72439a1
+R 298b63c32ca2b85940ec74df8ee62812
+U dan
+Z 3afa5dd8c67c33d60fe04c75fb510b3b
