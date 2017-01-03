@@ -110,6 +110,14 @@
 # define GCC_VERSION 0
 #endif
 
+/* What version of CLANG is being used.  0 means CLANG is not being used */
+#ifdef __clang__
+# define CLANG_VERSION \
+            (__clang_major__*1000000+__clang_minor__*1000+__clang_patchlevel__)
+#else
+# define CLANG_VERSION 0
+#endif
+
 /* Needed for various definitions... */
 #if defined(__GNUC__) && !defined(_GNU_SOURCE)
 # define _GNU_SOURCE

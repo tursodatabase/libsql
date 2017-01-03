@@ -1,5 +1,5 @@
-C Add\sthe\sexperimental\saffinity()\sSQL\sfunction\swhen\sSQLITE_DEBUG\sis\sdefined.
-D 2017-01-03T14:45:35.313
+C Use\scompiler\sintrinsic\sfunctions\sfor\ssigned\sinteger\smath\swhen\soverflow\ndetection\sis\sneeded.
+D 2017-01-03T21:57:11.355
 F Makefile.in 41bd4cad981487345c4a84081074bcdb876e4b2e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -393,7 +393,7 @@ F src/shell.c 6095531aa900decdaa765e0f3993fba7153c92c1
 F src/sqlite.h.in e8e2d108d82647f0a812fdb74accf91c1ec08ddc
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
-F src/sqliteInt.h 2c22eae7a29f17e0dfee9737d4844d7c08cc38cd
+F src/sqliteInt.h f3450b70cfd99b434304225cf3b95de9cb4a9536
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
@@ -453,7 +453,7 @@ F src/treeview.c 4e44ade3bfe59d82005039f72e09333ce2b4162c
 F src/trigger.c c9f0810043b265724fdb1bdd466894f984dfc182
 F src/update.c 1da7c462110bffed442a42884cb0d528c1db46d8
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
-F src/util.c 1534060bc034cdc51381c040c8bd6252dbcb64c9
+F src/util.c a88b0466fddf445ce752226d4698ca3faada620a
 F src/vacuum.c 33c174b28886b2faf26e503b5a49a1c01a9b1c16
 F src/vdbe.c 88bd6c32b333580d2661ac3afe33369757fb1522
 F src/vdbe.h 50ee139f9c68fff91be1d717ed3a6abbd496919c
@@ -1541,8 +1541,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 36944be6be5c42096f5da84187ff203af26b08ae f778f58ae4ea3e16f51b94591a2c1e563dcb0cde
-R 4de702ec2e06c17a2db8893398d4255a
-T +closed f778f58ae4ea3e16f51b94591a2c1e563dcb0cde
+P bed0eaa5f50112e64fc97a2afdc9d56cf8f5026a 4c2efd4239bf07eb4b92d4af54edd68ee6312670
+R 4be5114c40ec1b8757eebb3b6a7e4284
+T +closed 4c2efd4239bf07eb4b92d4af54edd68ee6312670
 U drh
-Z ab80b4c4af6ffab14c74e7e3612d1ec8
+Z 6bd6e679c9840443d9b2f38c8bc4573f
