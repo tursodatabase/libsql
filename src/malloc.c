@@ -376,12 +376,16 @@ void sqlite3ScratchFree(void *p){
       sqlite3MemdebugSetType(p, MEMTYPE_HEAP);
       if( sqlite3GlobalConfig.bMemstat ){
         int iSize = sqlite3MallocSize(p);
+#ifndef SQLITE_ATOMIC_STATUS_DOWN
         sqlite3_mutex_enter(mem0.mutex);
+#endif
         sqlite3StatusDown(SQLITE_STATUS_SCRATCH_OVERFLOW, iSize);
         sqlite3StatusDown(SQLITE_STATUS_MEMORY_USED, iSize);
         sqlite3StatusDown(SQLITE_STATUS_MALLOC_COUNT, 1);
         sqlite3GlobalConfig.m.xFree(p);
+#ifndef SQLITE_ATOMIC_STATUS_DOWN
         sqlite3_mutex_leave(mem0.mutex);
+#endif
       }else{
         sqlite3GlobalConfig.m.xFree(p);
       }
@@ -440,11 +444,15 @@ void sqlite3_free(void *p){
   assert( sqlite3MemdebugHasType(p, MEMTYPE_HEAP) );
   assert( sqlite3MemdebugNoType(p, (u8)~MEMTYPE_HEAP) );
   if( sqlite3GlobalConfig.bMemstat ){
+#ifndef SQLITE_ATOMIC_STATUS_DOWN
     sqlite3_mutex_enter(mem0.mutex);
+#endif
     sqlite3StatusDown(SQLITE_STATUS_MEMORY_USED, sqlite3MallocSize(p));
     sqlite3StatusDown(SQLITE_STATUS_MALLOC_COUNT, 1);
     sqlite3GlobalConfig.m.xFree(p);
+#ifndef SQLITE_ATOMIC_STATUS_DOWN
     sqlite3_mutex_leave(mem0.mutex);
+#endif
   }else{
     sqlite3GlobalConfig.m.xFree(p);
   }

@@ -1,5 +1,5 @@
-C Make\suse\sof\sthe\s__buildin_OP_overflow()\sfunctions\sfrom\sGCC\swhen\sdoing\n64-bit\ssigned\sinteger\sarithmetic.
-D 2017-01-03T17:33:43.523
+C Use\sthe\sGCC\sbuilt-in\s__sync_fetch_and_sub()\sto\smake\sthe\ssqlite3StatusDown()\nroutine\satomic,\sand\sthereby\savoid\ssome\smutexing.
+D 2017-01-03T18:05:04.175
 F Makefile.in 41bd4cad981487345c4a84081074bcdb876e4b2e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -354,7 +354,7 @@ F src/insert.c 91ba5d0143e66479081536ebbaff1850ec9f57d9
 F src/legacy.c 75d3023be8f0d2b99d60f905090341a03358c58e
 F src/loadext.c 5d6642d141c07d366e43d359e94ec9de47add41d
 F src/main.c e207b81542d13b9f13d61e78ca441f9781f055b0
-F src/malloc.c f3fad34cd570022abca558c573f1761fb09a8212
+F src/malloc.c 254c1cf31c2f3783bfe49dc8e7adde3c850f2289
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 6919bcf12f221868ea066eec27e579fed95ce98b
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
@@ -393,9 +393,9 @@ F src/shell.c 6095531aa900decdaa765e0f3993fba7153c92c1
 F src/sqlite.h.in e8e2d108d82647f0a812fdb74accf91c1ec08ddc
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
-F src/sqliteInt.h 2c22eae7a29f17e0dfee9737d4844d7c08cc38cd
+F src/sqliteInt.h ae113e82230109e0964c3d93efed55700d8eec5e
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
-F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
+F src/status.c 56174fdb52d1e8a0e9f3976e82d06a5cd0a1c2c3
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
 F src/tclsqlite.c 205c66b9b81d97978a155caa3ef5be9c4de2b174
 F src/test1.c 8a98191a1da8e100f77cdb5cc716df67d405028d
@@ -1541,10 +1541,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bed0eaa5f50112e64fc97a2afdc9d56cf8f5026a
-R 082101997f3f378fcfea5fe538ad3ab9
-T *branch * gnu-safe-math
-T *sym-gnu-safe-math *
-T -sym-trunk *
+P 82cbebb8ee4484f13e5f48d305e20e73063f273e
+R 799d9858a7a6a1551985c372ac93d54d
 U drh
-Z 54548663084083c7fef96c176f102936
+Z efd83d8962e4e3c856ce381388686c40

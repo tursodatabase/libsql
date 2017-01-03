@@ -100,11 +100,16 @@ void sqlite3StatusUp(int op, int N){
 void sqlite3StatusDown(int op, int N){
   wsdStatInit;
   assert( N>=0 );
+  assert( op>=0 && op<ArraySize(wsdStat.nowValue) );
+#if !defined(SQLITE_DISABLE_INTRINSIC) \
+    && defined(__GNUC__) && GCC_VERSION>=4004000
+  (void)__sync_fetch_and_sub(&wsdStat.nowValue[op], N);
+#else
   assert( op>=0 && op<ArraySize(statMutex) );
   assert( sqlite3_mutex_held(statMutex[op] ? sqlite3Pcache1Mutex()
                                            : sqlite3MallocMutex()) );
-  assert( op>=0 && op<ArraySize(wsdStat.nowValue) );
   wsdStat.nowValue[op] -= N;
+#endif
 }
 
 /*
