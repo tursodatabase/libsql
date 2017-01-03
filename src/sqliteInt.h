@@ -237,15 +237,6 @@
 #endif
 
 /*
-** The SQLITE_ATOMIC_STATUS_DOWN macro is defined if and only if
-** the sqlite3StatusDown() function is threadsafe.
-*/
-#if !defined(SQLITE_DISABLE_INTRINSIC) \
-    && (GCC_VERSION>=4004000 || CLANG_VERSION>=3000000)
-# define SQLITE_ATOMIC_STATUS_DOWN 1
-#endif
-
-/*
 ** Make sure that the compiler intrinsics we desire are enabled when
 ** compiling with an appropriate version of MSVC unless prevented by
 ** the SQLITE_DISABLE_INTRINSIC define.
