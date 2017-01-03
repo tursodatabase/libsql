@@ -1141,7 +1141,7 @@ u32 sqlite3Get4byte(const u8 *p){
   memcpy(&x,p,4);
   return x;
 #elif SQLITE_BYTEORDER==1234 && !defined(SQLITE_DISABLE_INTRINSIC) \
-    && defined(__GNUC__) && GCC_VERSION>=4003000
+    && (GCC_VERSION>=4003000 || CLANG_VERSION>=3000000)
   u32 x;
   memcpy(&x,p,4);
   return __builtin_bswap32(x);
@@ -1159,7 +1159,7 @@ void sqlite3Put4byte(unsigned char *p, u32 v){
 #if SQLITE_BYTEORDER==4321
   memcpy(p,&v,4);
 #elif SQLITE_BYTEORDER==1234 && !defined(SQLITE_DISABLE_INTRINSIC) \
-    && defined(__GNUC__) && GCC_VERSION>=4003000
+    && (GCC_VERSION>=4003000 || CLANG_VERSION>=3000000)
   u32 x = __builtin_bswap32(v);
   memcpy(p,&x,4);
 #elif SQLITE_BYTEORDER==1234 && !defined(SQLITE_DISABLE_INTRINSIC) \
@@ -1280,7 +1280,7 @@ int sqlite3SafetyCheckSickOrOk(sqlite3 *db){
 */
 int sqlite3AddInt64(i64 *pA, i64 iB){
 #if !defined(SQLITE_DISABLE_INTRINSIC) \
-    && defined(__GNUC__) && GCC_VERSION>=5004000
+    && (GCC_VERSION>=5004000 || CLANG_VERSION>=4000000)
   return __builtin_add_overflow(*pA, iB, pA);
 #else
   i64 iA = *pA;
@@ -1301,7 +1301,7 @@ int sqlite3AddInt64(i64 *pA, i64 iB){
 }
 int sqlite3SubInt64(i64 *pA, i64 iB){
 #if !defined(SQLITE_DISABLE_INTRINSIC) \
-    && defined(__GNUC__) && GCC_VERSION>=5004000
+    && (GCC_VERSION>=5004000 || CLANG_VERSION>=4000000)
   return __builtin_sub_overflow(*pA, iB, pA);
 #else
   testcase( iB==SMALLEST_INT64+1 );
@@ -1317,7 +1317,7 @@ int sqlite3SubInt64(i64 *pA, i64 iB){
 }
 int sqlite3MulInt64(i64 *pA, i64 iB){
 #if !defined(SQLITE_DISABLE_INTRINSIC) \
-    && defined(__GNUC__) && GCC_VERSION>=5004000
+    && (GCC_VERSION>=5004000 || CLANG_VERSION>=4000000)
   return __builtin_mul_overflow(*pA, iB, pA);
 #else
   i64 iA = *pA;

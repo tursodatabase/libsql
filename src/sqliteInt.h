@@ -110,6 +110,14 @@
 # define GCC_VERSION 0
 #endif
 
+/* What version of CLANG is being used.  0 means GCC is not being used */
+#ifdef __clang__
+# define CLANG_VERSION \
+            (__clang_major__*1000000+__clang_minor__*1000+__clang_patchlevel__)
+#else
+# define CLANG_VERSION 0
+#endif
+
 /* Needed for various definitions... */
 #if defined(__GNUC__) && !defined(_GNU_SOURCE)
 # define _GNU_SOURCE
@@ -233,7 +241,7 @@
 ** the sqlite3StatusDown() function is threadsafe.
 */
 #if !defined(SQLITE_DISABLE_INTRINSIC) \
-    && defined(__GNUC__) && GCC_VERSION>=4004000
+    && (GCC_VERSION>=4004000 || CLANG_VERSION>=3000000)
 # define SQLITE_ATOMIC_STATUS_DOWN 1
 #endif
 
