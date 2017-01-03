@@ -395,13 +395,22 @@ static int parseDateOrTime(
   return 1;
 }
 
+/* The julian day number for 9999-12-31 23:59:59.999 is 5373484.4999999.
+** Multiplying this by 86400000 gives 464269060799999 as the maximum value
+** for DateTime.iJD.
+**
+** But some older compilers (ex: gcc 4.2.1 on older Macs) cannot deal with 
+** such a large integer literal, so we have to encode it.
+*/
+#define INT_464269060799999  ((((i64)0x1a640)<<32)|0x1072fdff)
+
 /*
 ** Return TRUE if the given julian day number is within range.
 **
 ** The input is the JulianDay times 86400000.
 */
 static int validJulianDay(sqlite3_int64 iJD){
-  return iJD>=0 && iJD<=464269060799999;
+  return iJD>=0 && iJD<=INT_464269060799999;
 }
 
 /*
