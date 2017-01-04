@@ -1,5 +1,5 @@
-C Factor\sconstant\sfunctions\sout\sof\sthe\sinner\sloop\ssince\sthey\sare\smore\sexpensive\nthan\sthe\sextra\sOP_Copy\sneeded\sto\smove\sthe\sresult\sinto\splace.
-D 2017-01-04T04:18:00.128
+C Performance\senhancements\sin\sthe\sprintf\simplementation.
+D 2017-01-04T13:09:05.205
 F Makefile.in 41bd4cad981487345c4a84081074bcdb876e4b2e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -384,7 +384,7 @@ F src/pcache1.c e3967219b2a92b9edcb9324a4ba75009090d3953
 F src/pragma.c 5a23557e490e7ac5afef097efc4b59dce5b482c2
 F src/pragma.h f9b221b2c8949ea941dbee49934299e4ed5af41c
 F src/prepare.c b1140c3d0cf59bc85ace00ce363153041b424b7a
-F src/printf.c 0c8579432f47948d9be5077eb590e8c4a01be667
+F src/printf.c ff10a9b9902cd2afe5f655f3013c6307d969b1fd
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c bb070cf5f23611c44ab7e4788803684e385fc3fb
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
@@ -1541,8 +1541,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d3ac32a6e7f1823450feb3d1089802542090d164 2ab997e47998d261bd6190bbce5c09f3fbd4cfd3
-R 2d314fb6a2447c90f8995bffa1ef5d9e
-T +closed 2ab997e47998d261bd6190bbce5c09f3fbd4cfd3
+P 80ad317f89c46db0d0d252aefdc036a34a61183d acdb8f6f10953ed4290aadc9e026edd57d1dd21a
+R 453bc3e8602c7bb439b629ea6b93f15d
+T +closed acdb8f6f10953ed4290aadc9e026edd57d1dd21a
 U drh
-Z 2f6b9afef8397c67d3717af984641685
+Z dbaca9d347b9ae9a5363e21ffbe64c98
