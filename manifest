@@ -1,5 +1,5 @@
-C Performance\senhancements\sin\sthe\sprintf\simplementation.
-D 2017-01-04T13:09:05.205
+C Adjust\sfilename\screation\sin\stest_sqllog.c\sso\sthat\sit\suses\sleading\szeros\son\ncounters,\sso\sthat\sfiles\sappear\sin\sorder\swhen\ssorted\slexicographically.
+D 2017-01-04T14:53:53.255
 F Makefile.in 41bd4cad981487345c4a84081074bcdb876e4b2e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -437,7 +437,7 @@ F src/test_quota.h 2a8ad1952d1d2ca9af0ce0465e56e6c023b5e15d
 F src/test_rtree.c 671f3fae50ff116ef2e32a3bf1fe21b5615b4b7b
 F src/test_schema.c f575932cb6274d12147a77e13ea4b49d52408513
 F src/test_server.c a2615049954cbb9cfb4a62e18e2f0616e4dc38fe
-F src/test_sqllog.c 0d138a8180a312bf996b37fa66da5c5799d4d57b
+F src/test_sqllog.c 11e6ce7575f489155c604ac4b439f2ac1d3d5aef
 F src/test_superlock.c 4839644b9201da822f181c5bc406c0b2385f672e
 F src/test_syscall.c 1073306ba2e9bfc886771871a13d3de281ed3939
 F src/test_tclvar.c df9fe1213c2634687a9ca0b0bec0d2119d359ae3
@@ -1541,8 +1541,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 80ad317f89c46db0d0d252aefdc036a34a61183d acdb8f6f10953ed4290aadc9e026edd57d1dd21a
-R 453bc3e8602c7bb439b629ea6b93f15d
-T +closed acdb8f6f10953ed4290aadc9e026edd57d1dd21a
+P 82e4001b8caef7b31967f3edcbc1a545c081bdbc
+R 3e81c0bc63e48e38a06c9f06294caaaf
 U drh
-Z dbaca9d347b9ae9a5363e21ffbe64c98
+Z 0ca8dd088b039fc660aef4a4ad2583af
