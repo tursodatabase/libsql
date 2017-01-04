@@ -1550,8 +1550,12 @@ void sqlite3GenerateConstraintChecks(
     }
 
     if( ix==0 && pPk==pIdx && onError==OE_Replace && pPk->pNext==0 ){
-      sqlite3VdbeResolveLabel(v, addrUniqueOk);
-      continue;
+      if( 0==(db->flags&SQLITE_RecTriggers)
+       || 0==sqlite3TriggersExist(pParse, pTab, TK_DELETE, 0, 0)
+      ){
+        sqlite3VdbeResolveLabel(v, addrUniqueOk);
+        continue;
+      }
     }
 
     
