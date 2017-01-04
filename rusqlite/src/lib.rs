@@ -398,15 +398,19 @@ impl Connection {
     /// Close the SQLite connection.
     ///
     /// This is functionally equivalent to the `Drop` implementation for `Connection` except
-    /// that it returns any error encountered to the caller.
+    /// that on failure, it returns an error and the connection itself (presumably so closing
+    /// can be attempted again).
     ///
     /// # Failure
     ///
     /// Will return `Err` if the underlying SQLite call fails.
-    pub fn close(self) -> Result<()> {
+    pub fn close(self) -> std::result::Result<(), (Connection, Error)> {
         self.flush_prepared_statement_cache();
-        let mut db = self.db.borrow_mut();
-        db.close()
+        {
+            let mut db = self.db.borrow_mut();
+            db.close()
+        }
+        .map_err(move |err| (self, err))
     }
 
     /// Enable loading of SQLite extensions. Strongly consider using `LoadExtensionGuard`
@@ -1240,6 +1244,42 @@ mod test {
 
         let db = checked_memory_handle();
         assert!(db.close().is_ok());
+    }
+
+    #[test]
+    fn test_close_retry() {
+        let db = checked_memory_handle();
+
+        // force the DB to be busy by preparing a statement; this must be done at the FFI
+        // level to allow us to call .close() without dropping the prepared statement first.
+        let raw_stmt = {
+            use std::mem;
+            use std::ptr;
+            use libc::c_int;
+            use super::str_to_cstring;
+
+            let raw_db = db.db.borrow_mut().db;
+            let sql = "SELECT 1";
+            let mut raw_stmt: *mut ffi::sqlite3_stmt = unsafe { mem::uninitialized() };
+            let rc = unsafe {
+                ffi::sqlite3_prepare_v2(raw_db,
+                                        str_to_cstring(sql).unwrap().as_ptr(),
+                                        (sql.len() + 1) as c_int,
+                                        &mut raw_stmt,
+                                        ptr::null_mut())
+            };
+            assert_eq!(rc, ffi::SQLITE_OK);
+            raw_stmt
+        };
+
+        let result = db.close();
+        assert!(result.is_err());
+
+        // finalize the open statement so a second close will succeed
+        assert_eq!(ffi::SQLITE_OK, unsafe { ffi::sqlite3_finalize(raw_stmt) });
+
+        let (db, _) = result.unwrap_err();
+        db.close().unwrap();
     }
 
     #[test]
