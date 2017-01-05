@@ -1,5 +1,5 @@
-C Improved\sthe\scomment\son\sthe\sblock\sof\scode\sthe\sprovides\sthe\sperformance\noptimization\soriginally\sadded\sby\scheck-in\s[925840cfdb].\s\sThe\soriginal\ncheck-in\somitted\scondition\s4,\swhich\swas\sthe\scause\sof\sbug\s[30027b613b].
-D 2017-01-04T22:02:56.715
+C Fix\ssome\sproblems\swith\sforeign\skey\sprocessing\swithin\sREPLACE\sops\son\sWITHOUT\nROWID\stables\swith\sno\striggers\sor\sauxiliary\sindexes.
+D 2017-01-05T06:57:42.773
 F Makefile.in 41bd4cad981487345c4a84081074bcdb876e4b2e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -350,7 +350,7 @@ F src/hash.c 63d0ee752a3b92d4695b2b1f5259c4621b2cfebd
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 895995aca4c6de8118d405c6c2d5fa7fd05bdb58
+F src/insert.c 7af46a3be2656f5e13791464625d93d6b07b8612
 F src/legacy.c 75d3023be8f0d2b99d60f905090341a03358c58e
 F src/loadext.c 5d6642d141c07d366e43d359e94ec9de47add41d
 F src/main.c e207b81542d13b9f13d61e78ca441f9781f055b0
@@ -692,7 +692,7 @@ F test/fkey4.test 86446017011273aad8f9a99c1a65019e7bd9ca9d
 F test/fkey5.test 5a373303f201ac03c22ba1ef17a733d3f56e611a
 F test/fkey6.test d078a1e323a740062bed38df32b8a736fd320dc0
 F test/fkey7.test 72e915890ee4a005daaf3002cb208e8fe973ac13
-F test/fkey8.test 7bd1dd0174a0e29a90c62c517b9e2a410a0b345d
+F test/fkey8.test e5372e32cdb4481f121ec3550703eeb7b4e0762c
 F test/fkey_malloc.test 594a7ea1fbab553c036c70813cd8bd9407d63749
 F test/fordelete.test eb93a2f34137bb87bdab88fcab06c0bd92719aff
 F test/format4.test 1f0cac8ff3895e9359ed87e41aaabee982a812eb
@@ -1542,7 +1542,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 71ccb1f4c490fdebc7008e884384e7809b849742
-R c29c3a3cb5ccbc5f6d29ccf66ed137b5
-U drh
-Z 68ffb3e06be0aa51c5e3b069bb78bd06
+P c6506b82aa6583ccde5f673c79526d5f3920b67a
+R ac4cdd0cd76febea0a8fc5828138512e
+U dan
+Z e2928fc07526fbb564fe7a7909e18ee6

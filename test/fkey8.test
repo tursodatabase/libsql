@@ -101,5 +101,67 @@ foreach {tn use_stmt sql schema} {
   } $use_stmt
 }
 
+#-------------------------------------------------------------------------
+# The following tests check that foreign key constaint counters are
+# correctly updated for any implicit DELETE operations that occur
+# when a REPLACE command is executed against a WITHOUT ROWID table
+# that has no triggers or auxiliary indexes.
+#
+reset_db
+do_execsql_test 2.1.0 {
+  PRAGMA foreign_keys = on;
+  CREATE TABLE p1(a PRIMARY KEY, b) WITHOUT ROWID;
+  CREATE TABLE c1(x REFERENCES p1 DEFERRABLE INITIALLY DEFERRED);
+
+  INSERT INTO p1 VALUES(1, 'one');
+  INSERT INTO p1 VALUES(2, 'two');
+  INSERT INTO c1 VALUES(1);
+  INSERT INTO c1 VALUES(2);
+}
+
+do_catchsql_test 2.1.2 {
+  BEGIN;
+    DELETE FROM p1 WHERE a=1;
+    INSERT OR REPLACE INTO p1 VALUES(2, 'two');
+  COMMIT;
+} {1 {FOREIGN KEY constraint failed}}
+
+reset_db
+do_execsql_test 2.2.0 {
+  PRAGMA foreign_keys = on;
+  CREATE TABLE p2(a PRIMARY KEY, b);
+  CREATE TABLE c2(
+    x PRIMARY KEY,
+    y REFERENCES p2 DEFERRABLE INITIALLY DEFERRED
+  ) WITHOUT ROWID;
+}
+
+do_catchsql_test 2.2.1 {
+  BEGIN;
+    INSERT INTO c2 VALUES(13, 13);
+    INSERT OR REPLACE INTO c2 VALUES(13, 13);
+    DELETE FROM c2;
+  COMMIT;
+} {0 {}}
+
+reset_db
+do_execsql_test 2.3.0 {
+  PRAGMA foreign_keys = on;
+  CREATE TABLE p3(a PRIMARY KEY, b) WITHOUT ROWID;
+  CREATE TABLE c3(x REFERENCES p3);
+
+  INSERT INTO p3 VALUES(1, 'one');
+  INSERT INTO p3 VALUES(2, 'two');
+  INSERT INTO c3 VALUES(1);
+  INSERT INTO c3 VALUES(2);
+
+  CREATE TRIGGER p3d AFTER DELETE ON p3 WHEN old.a=1 BEGIN
+    INSERT OR REPLACE INTO p3 VALUES(2, 'three');
+  END;
+}
+
+do_catchsql_test 2.3.1 {
+  DELETE FROM p3 WHERE a=1
+} {1 {FOREIGN KEY constraint failed}}
 
 finish_test
