@@ -1549,12 +1549,25 @@ void sqlite3GenerateConstraintChecks(
       onError = OE_Abort;
     }
 
-    if( ix==0 && pPk==pIdx && onError==OE_Replace && pPk->pNext==0 ){
+    /* Collision detection may be omitted if all of the following are true:
+    **   (1) The conflict resolution algorithm is REPLACE
+    **   (2) The table is a WITHOUT ROWID table
+    **   (3) There are no secondary indexes on the table
+    **   (4) No delete triggers need to be fired if there is a conflict
+    **   (5) No FK constraint counters need to be updated if a conflict occurs.
+    */ 
+    if( (ix==0 && pIdx->pNext==0)                   /* Condition 3 */
+     && pPk==pIdx                                   /* Condition 2 */
+     && onError==OE_Replace                         /* Condition 1 */
+     && ( 0==(db->flags&SQLITE_RecTriggers) ||      /* Condition 4 */
+          0==sqlite3TriggersExist(pParse, pTab, TK_DELETE, 0, 0))
+     && ( 0==(db->flags&SQLITE_ForeignKeys) ||      /* Condition 5 */
+         (0==pTab->pFKey && 0==sqlite3FkReferences(pTab)))
+    ){
       sqlite3VdbeResolveLabel(v, addrUniqueOk);
       continue;
     }
 
-    
     /* Check to see if the new index entry will be unique */
     sqlite3VdbeAddOp4Int(v, OP_NoConflict, iThisCur, addrUniqueOk,
                          regIdx, pIdx->nKeyCol); VdbeCoverage(v);

@@ -1,5 +1,5 @@
-C Ensure\sthat\sthe\ssqlite3_value_text()\sinterface\sreturns\sa\sbuffer\sthat\sis\slong\nenough\sto\shold\sthe\scomplete\sstring\splus\sthe\szero\sterminator\seven\swhen\sthe\ninput\sis\sa\szeroblob.\s\sFix\sfor\sa\sproblem\sdetected\sby\sOSS-Fuzz.
-D 2017-01-05T07:58:29.579
+C Fix\sproblems\sin\strigger\sand\sforeign\skey\shandling\swhen\sdoing\sREPLACE\son\sa\nWITHOUT\sROWID\stable\sthat\shas\sno\ssecondary\sindexes.
+D 2017-01-05T13:50:12.504
 F Makefile.in 41bd4cad981487345c4a84081074bcdb876e4b2e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -350,7 +350,7 @@ F src/hash.c 63d0ee752a3b92d4695b2b1f5259c4621b2cfebd
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 91ba5d0143e66479081536ebbaff1850ec9f57d9
+F src/insert.c 7af46a3be2656f5e13791464625d93d6b07b8612
 F src/legacy.c 75d3023be8f0d2b99d60f905090341a03358c58e
 F src/loadext.c 5d6642d141c07d366e43d359e94ec9de47add41d
 F src/main.c e207b81542d13b9f13d61e78ca441f9781f055b0
@@ -692,7 +692,7 @@ F test/fkey4.test 86446017011273aad8f9a99c1a65019e7bd9ca9d
 F test/fkey5.test 5a373303f201ac03c22ba1ef17a733d3f56e611a
 F test/fkey6.test d078a1e323a740062bed38df32b8a736fd320dc0
 F test/fkey7.test 72e915890ee4a005daaf3002cb208e8fe973ac13
-F test/fkey8.test 7bd1dd0174a0e29a90c62c517b9e2a410a0b345d
+F test/fkey8.test e5372e32cdb4481f121ec3550703eeb7b4e0762c
 F test/fkey_malloc.test 594a7ea1fbab553c036c70813cd8bd9407d63749
 F test/fordelete.test eb93a2f34137bb87bdab88fcab06c0bd92719aff
 F test/format4.test 1f0cac8ff3895e9359ed87e41aaabee982a812eb
@@ -1336,6 +1336,7 @@ F test/triggerB.test 56780c031b454abac2340dbb3b71ac5c56c3d7fe
 F test/triggerC.test 302d8995f5ffe63bbc15053abb3ef7a39cf5a092
 F test/triggerD.test 8e7f3921a92a5797d472732108109e44575fa650
 F test/triggerE.test 15fa63f1097db1f83dd62d121616006978063d1f
+F test/triggerF.test 55b1eb13433997faac3a4948c1d8252f6c8c636b
 F test/tt3_checkpoint.c 9e75cf7c1c364f52e1c47fd0f14c4340a9db0fe1
 F test/tt3_index.c 39eec10a35f57672225be4d182862152896dee4a
 F test/tt3_lookaside1.c 0377e202c3c2a50d688cb65ba203afeda6fafeb9
@@ -1541,7 +1542,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8d670973595bd01ffc9b2ab53b965e6d6d22c573
-R f2b908372cb97d182889cac8f27ffb0c
+P 2dc7eeb5b4d2eaf1d843eda56f339fd4cc80d78e c1220b1af62629d7fc2178512786d613cd7ea711
+R 0a003593029beee0fa918d480996f76b
+T +closed c1220b1af62629d7fc2178512786d613cd7ea711
 U drh
-Z d916bc14abfb5518aa5597948225eb7d
+Z e1a141b0e862b9e3c1acfc1860dde6a3
