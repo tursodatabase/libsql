@@ -742,8 +742,7 @@ static void selectInnerLoop(
     }else{
       ecelFlags = 0;
     }
-    assert( eDest!=SRT_Table || pSort==0 );
-    if( pSort && hasDistinct==0 && eDest!=SRT_EphemTab ){
+    if( pSort && hasDistinct==0 && eDest!=SRT_EphemTab && eDest!=SRT_Table ){
       /* For each expression in pEList that is a copy of an expression in
       ** the ORDER BY clause (pSort->pOrderBy), set the associated 
       ** iOrderByCol value to one more than the index of the ORDER BY 
@@ -1285,6 +1284,7 @@ static void generateSortTail(
     VdbeComment((v, "%s", aOutEx[i].zName ? aOutEx[i].zName : aOutEx[i].zSpan));
   }
   switch( eDest ){
+    case SRT_Table:
     case SRT_EphemTab: {
       sqlite3VdbeAddOp2(v, OP_NewRowid, iParm, regRowid);
       sqlite3VdbeAddOp3(v, OP_Insert, iParm, regRow, regRowid);
