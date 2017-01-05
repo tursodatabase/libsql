@@ -1,10 +1,10 @@
-C Fix\sproblems\sin\strigger\sand\sforeign\skey\shandling\swhen\sdoing\sREPLACE\son\sa\nWITHOUT\sROWID\stable\sthat\shas\sno\ssecondary\sindexes.\nFix\sfor\sticket\s[30027b613b4].
-D 2017-01-05T13:56:17.926
+C Increase\sthe\sversion\snumber\sto\s3.16.2
+D 2017-01-05T14:05:28.261
 F Makefile.in 41bd4cad981487345c4a84081074bcdb876e4b2e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
-F VERSION 571f747f178898e400d90570d3ca7898732170a6
+F VERSION 5c92800c89751cee56a70d8e1eab9b3c09b1df22
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
@@ -30,7 +30,7 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 6376abec766e9a0785178b1823b5a587e9f1ccbc
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure c12efc7bbef62c14d49c4363dfc95a76e9b310c7 x
+F configure d5a387246ad0270be5587f1047e50187cb876685 x
 F configure.ac 605173e829ab64514ed89f9b53d0da1739d7b0a0
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html b5a3c07d33ecb8e019ce8f7660fe2dbbad9d7977
@@ -1542,8 +1542,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ca185808ade195875918b5bad1762bcd8ec39457
-Q +571f166ea8721e2322965b6f23e758b78d13baca
-R 7fc60f59e29caa0a05fb66d57cf3b6aa
+P 8a788594e2097ab5f3fe32f1d6b58caef2887d20
+R 3f7c85ea5091e1d05567add9d05d28cb
 U drh
-Z 616ccd5e6ddd26ab90b66221b967a4f1
+Z 6a21b5b14a71e372063e6de7f480cf2f
