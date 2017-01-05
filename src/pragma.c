@@ -408,7 +408,9 @@ void sqlite3Pragma(
   }
 
   /* Register the result column names for pragmas that return results */
-  if( (pPragma->mPragFlg & PragFlg_NoColumns)==0 ){
+  if( (pPragma->mPragFlg & PragFlg_NoColumns)==0 
+   && ((pPragma->mPragFlg & PragFlg_NoColumns1)==0 || zRight==0)
+  ){
     setPragmaResultColumnNames(v, pPragma);
   }
 
@@ -1952,6 +1954,15 @@ void sqlite3Pragma(
 #endif
 
   } /* End of the PRAGMA switch */
+
+  /* The following block is a no-op unless SQLITE_DEBUG is defined. Its only
+  ** purpose is to execute assert() statements to verify that if the
+  ** PragFlg_NoColumns1 flag is set and the caller specified an argument
+  ** to the PRAGMA, the implementation has not added any OP_ResultRow 
+  ** instructions to the VM.  */
+  if( (pPragma->mPragFlg & PragFlg_NoColumns1) && zRight ){
+    sqlite3VdbeVerifyNoResultRow(v);
+  }
 
 pragma_out:
   sqlite3DbFree(db, zLeft);
