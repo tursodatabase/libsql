@@ -1,5 +1,5 @@
-C Adjust\sfilename\screation\sin\stest_sqllog.c\sso\sthat\sit\suses\sleading\szeros\son\ncounters,\sso\sthat\sfiles\sappear\sin\sorder\swhen\ssorted\slexicographically.
-D 2017-01-04T14:53:53.255
+C Ensure\sthat\sthe\ssqlite3_value_text()\sinterface\sreturns\sa\sbuffer\sthat\sis\slong\nenough\sto\shold\sthe\scomplete\sstring\splus\sthe\szero\sterminator\seven\swhen\sthe\ninput\sis\sa\szeroblob.\s\sFix\sfor\sa\sproblem\sdetected\sby\sOSS-Fuzz.
+D 2017-01-05T07:58:29.579
 F Makefile.in 41bd4cad981487345c4a84081074bcdb876e4b2e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -461,7 +461,7 @@ F src/vdbeInt.h 281cb70332dc8b593b8c7afe776f3a2ba7d4255e
 F src/vdbeapi.c d6ebaa465f070eb1af8ba4e7b34583ece87bdd24
 F src/vdbeaux.c 12919c5aa354296d6b9ba808bca3e9dda836858c
 F src/vdbeblob.c f4f98ea672b242f807c08c92c7faaa79e5091b65
-F src/vdbemem.c d3fd85b7b7ef3eb75de29c6d7e1d10d3ca78b4fd
+F src/vdbemem.c 3b5a9a5b375458d3e12a50ae1aaa41eeec2175fd
 F src/vdbesort.c eda25cb2d1727efca6f7862fea32b8aa33c0face
 F src/vdbetrace.c 41963d5376f0349842b5fc4aaaaacd7d9cdc0834
 F src/vtab.c c4bbe0f870f52036553f8098aee0703997f0577a
@@ -1541,7 +1541,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 82e4001b8caef7b31967f3edcbc1a545c081bdbc
-R 3e81c0bc63e48e38a06c9f06294caaaf
+P 8d670973595bd01ffc9b2ab53b965e6d6d22c573
+R f2b908372cb97d182889cac8f27ffb0c
 U drh
-Z 0ca8dd088b039fc660aef4a4ad2583af
+Z d916bc14abfb5518aa5597948225eb7d
