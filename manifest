@@ -1,5 +1,5 @@
-C Increase\sthe\sversion\snumber\sto\s3.16.2
-D 2017-01-05T14:05:28.261
+C Version\s3.16.2\srelease\scandidate
+D 2017-01-05T15:50:26.758
 F Makefile.in 41bd4cad981487345c4a84081074bcdb876e4b2e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -1542,7 +1542,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8a788594e2097ab5f3fe32f1d6b58caef2887d20
+P 9592cbcf351296613a340c6ff5a627ebf9e0abc0
 R 3f7c85ea5091e1d05567add9d05d28cb
 U drh
-Z 6a21b5b14a71e372063e6de7f480cf2f
+Z 371b671165d6dfb968572061f2630965
