@@ -1,0 +1,86 @@
+# 2017 Jan 4
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix pragma4
+
+proc do_pragma_ncol_test {tn sql nCol} {
+  set ::stmt 0
+  set ::stmt [sqlite3_prepare_v2 db $sql -1 dummy]
+  uplevel [list do_test $tn { sqlite3_column_count $::stmt } $nCol]
+  sqlite3_finalize $::stmt
+}
+
+# If there is no RHS argument, the following PRAGMA statements operate as
+# queries, returning a single row containing a single column. 
+#
+# Or, if there is RHS argument, they return zero rows of zero columns.
+#
+foreach {tn sql} {
+  1 "PRAGMA application_id = 10"
+  2 "PRAGMA automatic_index = 1"
+  3 "PRAGMA auto_vacuum = 1"
+  4 "PRAGMA cache_size = -100"
+  5 "PRAGMA cache_spill = 1"
+  6 "PRAGMA cell_size_check = 1"
+  7 "PRAGMA checkpoint_fullfsync = 1"
+  8 "PRAGMA count_changes = 1"
+  9 "PRAGMA default_cache_size = 100"
+ 10 "PRAGMA defer_foreign_keys = 1"
+ 11 "PRAGMA empty_result_callbacks = 1"
+ 12 "PRAGMA encoding = 'utf-8'"
+ 13 "PRAGMA foreign_keys = 1"
+ 14 "PRAGMA full_column_names = 1"
+ 15 "PRAGMA fullfsync = 1"
+ 16 "PRAGMA ignore_check_constraints = 1"
+ 17 "PRAGMA legacy_file_format = 1"
+ 18 "PRAGMA page_size = 511"
+ 19 "PRAGMA page_size = 512"
+ 20 "PRAGMA query_only = false"
+ 21 "PRAGMA read_uncommitted = true"
+ 22 "PRAGMA recursive_triggers = false"
+ 23 "PRAGMA reverse_unordered_selects = false"
+ 24 "PRAGMA schema_version = 211"
+ 25 "PRAGMA short_column_names = 1"
+ 26 "PRAGMA synchronous = full"
+ 27 "PRAGMA temp_store_directory = '/tmp'"
+ 28 "PRAGMA temp_store_directory = ''"
+ 29 "PRAGMA temp_store = memory"
+ 30 "PRAGMA user_version = 405"
+ 31 "PRAGMA writable_schema = 1"
+} {
+  reset_db
+
+  # Without RHS:
+  do_pragma_ncol_test 1.$tn.1 [lindex [split $sql =] 0] 1
+   
+  # With RHS:
+  do_pragma_ncol_test 1.$tn.2 $sql  0
+}
+
+# These pragmas should never return any values.
+#
+foreach {tn sql} {
+  1 "PRAGMA shrink_memory"
+  2 "PRAGMA shrink_memory = 10"
+  3 "PRAGMA case_sensitive_like = 0"
+  4 "PRAGMA case_sensitive_like = 1"
+  5 "PRAGMA case_sensitive_like"
+} {
+
+  do_pragma_ncol_test 2.$tn.1 $sql 0
+}
+
+
+finish_test

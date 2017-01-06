@@ -18,6 +18,7 @@ set flagMeaning(Result1)    {Acts as query when has one argument}
 set flagMeaning(SchemaReq)  {Schema required - "main" is default}
 set flagMeaning(SchemaOpt)  {Schema restricts name search if present}
 set flagMeaning(NoColumns)  {OP_ResultRow called with zero columns}
+set flagMeaning(NoColumns1) {zero columns if RHS argument is present}
 
 set pragma_def {
   NAME: full_column_names
@@ -56,7 +57,7 @@ set pragma_def {
   IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
 
   NAME: cache_spill
-  FLAG: Result0 SchemaReq
+  FLAG: Result0 SchemaReq NoColumns1
   IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
 
   NAME: reverse_unordered_selects
@@ -149,12 +150,12 @@ set pragma_def {
   ARG:  SQLITE_CellSizeCk
 
   NAME: default_cache_size
-  FLAG: NeedSchema Result0 SchemaReq
+  FLAG: NeedSchema Result0 SchemaReq NoColumns1
   COLS: cache_size
   IF:   !defined(SQLITE_OMIT_PAGER_PRAGMAS) && !defined(SQLITE_OMIT_DEPRECATED)
 
   NAME: page_size
-  FLAG: Result0 SchemaReq
+  FLAG: Result0 SchemaReq NoColumns1
   IF:   !defined(SQLITE_OMIT_PAGER_PRAGMAS)
 
   NAME: secure_delete
@@ -183,14 +184,14 @@ set pragma_def {
   IF:   !defined(SQLITE_OMIT_PAGER_PRAGMAS)
 
   NAME: cache_size
-  FLAG: NeedSchema Result0 SchemaReq
+  FLAG: NeedSchema Result0 SchemaReq NoColumns1
   IF:   !defined(SQLITE_OMIT_PAGER_PRAGMAS)
 
   NAME: mmap_size
   IF:   !defined(SQLITE_OMIT_PAGER_PRAGMAS)
 
   NAME: auto_vacuum
-  FLAG: NeedSchema Result0 SchemaReq
+  FLAG: NeedSchema Result0 SchemaReq NoColumns1
   IF:   !defined(SQLITE_OMIT_AUTOVACUUM)
 
   NAME: incremental_vacuum
@@ -198,20 +199,23 @@ set pragma_def {
   IF:   !defined(SQLITE_OMIT_AUTOVACUUM)
 
   NAME: temp_store
-  FLAG: Result0
+  FLAG: Result0 NoColumns1
   IF:   !defined(SQLITE_OMIT_PAGER_PRAGMAS)
 
   NAME: temp_store_directory
+  FLAG: NoColumns1
   IF:   !defined(SQLITE_OMIT_PAGER_PRAGMAS)
 
   NAME: data_store_directory
+  FLAG: NoColumns1
   IF:   !defined(SQLITE_OMIT_PAGER_PRAGMAS) && SQLITE_OS_WIN
 
   NAME: lock_proxy_file
+  FLAG: NoColumns1
   IF:   !defined(SQLITE_OMIT_PAGER_PRAGMAS) && SQLITE_ENABLE_LOCKING_STYLE
 
   NAME: synchronous
-  FLAG: NeedSchema Result0 SchemaReq
+  FLAG: NeedSchema Result0 SchemaReq NoColumns1
   IF:   !defined(SQLITE_OMIT_PAGER_PRAGMAS)
 
   NAME: table_info
@@ -267,6 +271,7 @@ set pragma_def {
   IF:   defined(SQLITE_DEBUG) && !defined(SQLITE_OMIT_PARSER_TRACE)
 
   NAME: case_sensitive_like
+  FLAG: NoColumns
 
   NAME: integrity_check
   FLAG: NeedSchema
@@ -278,34 +283,37 @@ set pragma_def {
   IF:   !defined(SQLITE_OMIT_INTEGRITY_CHECK)
 
   NAME: encoding
-  FLAG: Result0
+  FLAG: Result0 NoColumns1
   IF:   !defined(SQLITE_OMIT_UTF16)
 
   NAME: schema_version
   TYPE: HEADER_VALUE
   ARG:  BTREE_SCHEMA_VERSION
+  FLAG: NoColumns1 Result0
   IF:   !defined(SQLITE_OMIT_SCHEMA_VERSION_PRAGMAS)
 
   NAME: user_version
   TYPE: HEADER_VALUE
   ARG:  BTREE_USER_VERSION
+  FLAG: NoColumns1 Result0
   IF:   !defined(SQLITE_OMIT_SCHEMA_VERSION_PRAGMAS)
 
   NAME: data_version
   TYPE: HEADER_VALUE
   ARG:  BTREE_DATA_VERSION
-  FLAG: ReadOnly
+  FLAG: ReadOnly Result0
   IF:   !defined(SQLITE_OMIT_SCHEMA_VERSION_PRAGMAS)
 
   NAME: freelist_count
   TYPE: HEADER_VALUE
   ARG:  BTREE_FREE_PAGE_COUNT
-  FLAG: ReadOnly
+  FLAG: ReadOnly Result0
   IF:   !defined(SQLITE_OMIT_SCHEMA_VERSION_PRAGMAS)
 
   NAME: application_id
   TYPE: HEADER_VALUE
   ARG:  BTREE_APPLICATION_ID
+  FLAG: NoColumns1 Result0
   IF:   !defined(SQLITE_OMIT_SCHEMA_VERSION_PRAGMAS)
 
   NAME: compile_options
@@ -321,6 +329,7 @@ set pragma_def {
   IF:   !defined(SQLITE_OMIT_WAL)
 
   NAME: shrink_memory
+  FLAG: NoColumns
 
   NAME: busy_timeout
   FLAG: Result0
@@ -408,10 +417,7 @@ foreach line [split $pragma_def \n] {
   } elseif {$id=="TYPE"} {
     set type $val
     if {$type=="FLAG"} {
-      lappend flags Result0 NoColumns
-    }
-    if {$type=="HEADER_VALUE"} {
-      lappend flags Result0
+      lappend flags Result0 NoColumns1
     }
   } elseif {$id=="ARG"} {
     set arg $val

@@ -52,11 +52,12 @@
 /* Property flags associated with various pragma. */
 #define PragFlg_NeedSchema 0x01 /* Force schema load before running */
 #define PragFlg_NoColumns  0x02 /* OP_ResultRow called with zero columns */
-#define PragFlg_ReadOnly   0x04 /* Read-only HEADER_VALUE */
-#define PragFlg_Result0    0x08 /* Acts as query when no argument */
-#define PragFlg_Result1    0x10 /* Acts as query when has one argument */
-#define PragFlg_SchemaOpt  0x20 /* Schema restricts name search if present */
-#define PragFlg_SchemaReq  0x40 /* Schema required - "main" is default */
+#define PragFlg_NoColumns1 0x04 /* zero columns if RHS argument is present */
+#define PragFlg_ReadOnly   0x08 /* Read-only HEADER_VALUE */
+#define PragFlg_Result0    0x10 /* Acts as query when no argument */
+#define PragFlg_Result1    0x20 /* Acts as query when has one argument */
+#define PragFlg_SchemaOpt  0x40 /* Schema restricts name search if present */
+#define PragFlg_SchemaReq  0x80 /* Schema required - "main" is default */
 
 /* Names of columns for pragmas that return multi-column result
 ** or that return single-column results where the name of the
@@ -133,14 +134,14 @@ static const PragmaName aPragmaName[] = {
 #if !defined(SQLITE_OMIT_SCHEMA_VERSION_PRAGMAS)
  {/* zName:     */ "application_id",
   /* ePragTyp:  */ PragTyp_HEADER_VALUE,
-  /* ePragFlg:  */ PragFlg_Result0,
+  /* ePragFlg:  */ PragFlg_NoColumns1|PragFlg_Result0,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ BTREE_APPLICATION_ID },
 #endif
 #if !defined(SQLITE_OMIT_AUTOVACUUM)
  {/* zName:     */ "auto_vacuum",
   /* ePragTyp:  */ PragTyp_AUTO_VACUUM,
-  /* ePragFlg:  */ PragFlg_NeedSchema|PragFlg_Result0|PragFlg_SchemaReq,
+  /* ePragFlg:  */ PragFlg_NeedSchema|PragFlg_Result0|PragFlg_SchemaReq|PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ 0 },
 #endif
@@ -148,7 +149,7 @@ static const PragmaName aPragmaName[] = {
 #if !defined(SQLITE_OMIT_AUTOMATIC_INDEX)
  {/* zName:     */ "automatic_index",
   /* ePragTyp:  */ PragTyp_FLAG,
-  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns,
+  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ SQLITE_AutoIndex },
 #endif
@@ -161,31 +162,31 @@ static const PragmaName aPragmaName[] = {
 #if !defined(SQLITE_OMIT_PAGER_PRAGMAS)
  {/* zName:     */ "cache_size",
   /* ePragTyp:  */ PragTyp_CACHE_SIZE,
-  /* ePragFlg:  */ PragFlg_NeedSchema|PragFlg_Result0|PragFlg_SchemaReq,
+  /* ePragFlg:  */ PragFlg_NeedSchema|PragFlg_Result0|PragFlg_SchemaReq|PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ 0 },
 #endif
 #if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
  {/* zName:     */ "cache_spill",
   /* ePragTyp:  */ PragTyp_CACHE_SPILL,
-  /* ePragFlg:  */ PragFlg_Result0|PragFlg_SchemaReq,
+  /* ePragFlg:  */ PragFlg_Result0|PragFlg_SchemaReq|PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ 0 },
 #endif
  {/* zName:     */ "case_sensitive_like",
   /* ePragTyp:  */ PragTyp_CASE_SENSITIVE_LIKE,
-  /* ePragFlg:  */ 0,
+  /* ePragFlg:  */ PragFlg_NoColumns,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ 0 },
  {/* zName:     */ "cell_size_check",
   /* ePragTyp:  */ PragTyp_FLAG,
-  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns,
+  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ SQLITE_CellSizeCk },
 #if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
  {/* zName:     */ "checkpoint_fullfsync",
   /* ePragTyp:  */ PragTyp_FLAG,
-  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns,
+  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ SQLITE_CkptFullFSync },
 #endif
@@ -206,21 +207,21 @@ static const PragmaName aPragmaName[] = {
 #if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
  {/* zName:     */ "count_changes",
   /* ePragTyp:  */ PragTyp_FLAG,
-  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns,
+  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ SQLITE_CountRows },
 #endif
 #if !defined(SQLITE_OMIT_PAGER_PRAGMAS) && SQLITE_OS_WIN
  {/* zName:     */ "data_store_directory",
   /* ePragTyp:  */ PragTyp_DATA_STORE_DIRECTORY,
-  /* ePragFlg:  */ 0,
+  /* ePragFlg:  */ PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ 0 },
 #endif
 #if !defined(SQLITE_OMIT_SCHEMA_VERSION_PRAGMAS)
  {/* zName:     */ "data_version",
   /* ePragTyp:  */ PragTyp_HEADER_VALUE,
-  /* ePragFlg:  */ PragFlg_Result0|PragFlg_ReadOnly,
+  /* ePragFlg:  */ PragFlg_ReadOnly|PragFlg_Result0,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ BTREE_DATA_VERSION },
 #endif
@@ -234,7 +235,7 @@ static const PragmaName aPragmaName[] = {
 #if !defined(SQLITE_OMIT_PAGER_PRAGMAS) && !defined(SQLITE_OMIT_DEPRECATED)
  {/* zName:     */ "default_cache_size",
   /* ePragTyp:  */ PragTyp_DEFAULT_CACHE_SIZE,
-  /* ePragFlg:  */ PragFlg_NeedSchema|PragFlg_Result0|PragFlg_SchemaReq,
+  /* ePragFlg:  */ PragFlg_NeedSchema|PragFlg_Result0|PragFlg_SchemaReq|PragFlg_NoColumns1,
   /* ColNames:  */ 0, 1,
   /* iArg:      */ 0 },
 #endif
@@ -242,7 +243,7 @@ static const PragmaName aPragmaName[] = {
 #if !defined(SQLITE_OMIT_FOREIGN_KEY) && !defined(SQLITE_OMIT_TRIGGER)
  {/* zName:     */ "defer_foreign_keys",
   /* ePragTyp:  */ PragTyp_FLAG,
-  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns,
+  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ SQLITE_DeferFKs },
 #endif
@@ -250,14 +251,14 @@ static const PragmaName aPragmaName[] = {
 #if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
  {/* zName:     */ "empty_result_callbacks",
   /* ePragTyp:  */ PragTyp_FLAG,
-  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns,
+  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ SQLITE_NullCallback },
 #endif
 #if !defined(SQLITE_OMIT_UTF16)
  {/* zName:     */ "encoding",
   /* ePragTyp:  */ PragTyp_ENCODING,
-  /* ePragFlg:  */ PragFlg_Result0,
+  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ 0 },
 #endif
@@ -279,7 +280,7 @@ static const PragmaName aPragmaName[] = {
 #if !defined(SQLITE_OMIT_FOREIGN_KEY) && !defined(SQLITE_OMIT_TRIGGER)
  {/* zName:     */ "foreign_keys",
   /* ePragTyp:  */ PragTyp_FLAG,
-  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns,
+  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ SQLITE_ForeignKeys },
 #endif
@@ -287,19 +288,19 @@ static const PragmaName aPragmaName[] = {
 #if !defined(SQLITE_OMIT_SCHEMA_VERSION_PRAGMAS)
  {/* zName:     */ "freelist_count",
   /* ePragTyp:  */ PragTyp_HEADER_VALUE,
-  /* ePragFlg:  */ PragFlg_Result0|PragFlg_ReadOnly,
+  /* ePragFlg:  */ PragFlg_ReadOnly|PragFlg_Result0,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ BTREE_FREE_PAGE_COUNT },
 #endif
 #if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
  {/* zName:     */ "full_column_names",
   /* ePragTyp:  */ PragTyp_FLAG,
-  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns,
+  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ SQLITE_FullColNames },
  {/* zName:     */ "fullfsync",
   /* ePragTyp:  */ PragTyp_FLAG,
-  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns,
+  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ SQLITE_FullFSync },
 #endif
@@ -319,7 +320,7 @@ static const PragmaName aPragmaName[] = {
 #if !defined(SQLITE_OMIT_CHECK)
  {/* zName:     */ "ignore_check_constraints",
   /* ePragTyp:  */ PragTyp_FLAG,
-  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns,
+  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ SQLITE_IgnoreChecks },
 #endif
@@ -377,14 +378,14 @@ static const PragmaName aPragmaName[] = {
 #if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
  {/* zName:     */ "legacy_file_format",
   /* ePragTyp:  */ PragTyp_FLAG,
-  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns,
+  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ SQLITE_LegacyFileFmt },
 #endif
 #if !defined(SQLITE_OMIT_PAGER_PRAGMAS) && SQLITE_ENABLE_LOCKING_STYLE
  {/* zName:     */ "lock_proxy_file",
   /* ePragTyp:  */ PragTyp_LOCK_PROXY_FILE,
-  /* ePragFlg:  */ 0,
+  /* ePragFlg:  */ PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ 0 },
 #endif
@@ -418,7 +419,7 @@ static const PragmaName aPragmaName[] = {
   /* iArg:      */ 0 },
  {/* zName:     */ "page_size",
   /* ePragTyp:  */ PragTyp_PAGE_SIZE,
-  /* ePragFlg:  */ PragFlg_Result0|PragFlg_SchemaReq,
+  /* ePragFlg:  */ PragFlg_Result0|PragFlg_SchemaReq|PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ 0 },
 #endif
@@ -432,7 +433,7 @@ static const PragmaName aPragmaName[] = {
 #if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
  {/* zName:     */ "query_only",
   /* ePragTyp:  */ PragTyp_FLAG,
-  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns,
+  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ SQLITE_QueryOnly },
 #endif
@@ -446,12 +447,12 @@ static const PragmaName aPragmaName[] = {
 #if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
  {/* zName:     */ "read_uncommitted",
   /* ePragTyp:  */ PragTyp_FLAG,
-  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns,
+  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ SQLITE_ReadUncommitted },
  {/* zName:     */ "recursive_triggers",
   /* ePragTyp:  */ PragTyp_FLAG,
-  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns,
+  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ SQLITE_RecTriggers },
 #endif
@@ -465,14 +466,14 @@ static const PragmaName aPragmaName[] = {
 #if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
  {/* zName:     */ "reverse_unordered_selects",
   /* ePragTyp:  */ PragTyp_FLAG,
-  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns,
+  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ SQLITE_ReverseOrder },
 #endif
 #if !defined(SQLITE_OMIT_SCHEMA_VERSION_PRAGMAS)
  {/* zName:     */ "schema_version",
   /* ePragTyp:  */ PragTyp_HEADER_VALUE,
-  /* ePragFlg:  */ PragFlg_Result0,
+  /* ePragFlg:  */ PragFlg_NoColumns1|PragFlg_Result0,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ BTREE_SCHEMA_VERSION },
 #endif
@@ -486,13 +487,13 @@ static const PragmaName aPragmaName[] = {
 #if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
  {/* zName:     */ "short_column_names",
   /* ePragTyp:  */ PragTyp_FLAG,
-  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns,
+  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ SQLITE_ShortColNames },
 #endif
  {/* zName:     */ "shrink_memory",
   /* ePragTyp:  */ PragTyp_SHRINK_MEMORY,
-  /* ePragFlg:  */ 0,
+  /* ePragFlg:  */ PragFlg_NoColumns,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ 0 },
  {/* zName:     */ "soft_heap_limit",
@@ -504,7 +505,7 @@ static const PragmaName aPragmaName[] = {
 #if defined(SQLITE_DEBUG)
  {/* zName:     */ "sql_trace",
   /* ePragTyp:  */ PragTyp_FLAG,
-  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns,
+  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ SQLITE_SqlTrace },
 #endif
@@ -519,7 +520,7 @@ static const PragmaName aPragmaName[] = {
 #if !defined(SQLITE_OMIT_PAGER_PRAGMAS)
  {/* zName:     */ "synchronous",
   /* ePragTyp:  */ PragTyp_SYNCHRONOUS,
-  /* ePragFlg:  */ PragFlg_NeedSchema|PragFlg_Result0|PragFlg_SchemaReq,
+  /* ePragFlg:  */ PragFlg_NeedSchema|PragFlg_Result0|PragFlg_SchemaReq|PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ 0 },
 #endif
@@ -533,12 +534,12 @@ static const PragmaName aPragmaName[] = {
 #if !defined(SQLITE_OMIT_PAGER_PRAGMAS)
  {/* zName:     */ "temp_store",
   /* ePragTyp:  */ PragTyp_TEMP_STORE,
-  /* ePragFlg:  */ PragFlg_Result0,
+  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ 0 },
  {/* zName:     */ "temp_store_directory",
   /* ePragTyp:  */ PragTyp_TEMP_STORE_DIRECTORY,
-  /* ePragFlg:  */ 0,
+  /* ePragFlg:  */ PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ 0 },
 #endif
@@ -550,7 +551,7 @@ static const PragmaName aPragmaName[] = {
 #if !defined(SQLITE_OMIT_SCHEMA_VERSION_PRAGMAS)
  {/* zName:     */ "user_version",
   /* ePragTyp:  */ PragTyp_HEADER_VALUE,
-  /* ePragFlg:  */ PragFlg_Result0,
+  /* ePragFlg:  */ PragFlg_NoColumns1|PragFlg_Result0,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ BTREE_USER_VERSION },
 #endif
@@ -558,27 +559,27 @@ static const PragmaName aPragmaName[] = {
 #if defined(SQLITE_DEBUG)
  {/* zName:     */ "vdbe_addoptrace",
   /* ePragTyp:  */ PragTyp_FLAG,
-  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns,
+  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ SQLITE_VdbeAddopTrace },
  {/* zName:     */ "vdbe_debug",
   /* ePragTyp:  */ PragTyp_FLAG,
-  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns,
+  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ SQLITE_SqlTrace|SQLITE_VdbeListing|SQLITE_VdbeTrace },
  {/* zName:     */ "vdbe_eqp",
   /* ePragTyp:  */ PragTyp_FLAG,
-  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns,
+  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ SQLITE_VdbeEQP },
  {/* zName:     */ "vdbe_listing",
   /* ePragTyp:  */ PragTyp_FLAG,
-  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns,
+  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ SQLITE_VdbeListing },
  {/* zName:     */ "vdbe_trace",
   /* ePragTyp:  */ PragTyp_FLAG,
-  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns,
+  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ SQLITE_VdbeTrace },
 #endif
@@ -598,7 +599,7 @@ static const PragmaName aPragmaName[] = {
 #if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
  {/* zName:     */ "writable_schema",
   /* ePragTyp:  */ PragTyp_FLAG,
-  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns,
+  /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ SQLITE_WriteSchema|SQLITE_RecoveryMode },
 #endif
