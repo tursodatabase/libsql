@@ -79,9 +79,14 @@ use error::{error_from_sqlite_code, error_from_handle};
 use raw_statement::RawStatement;
 use cache::StatementCache;
 
-pub use transaction::{SqliteTransaction, SqliteTransactionBehavior, DropBehavior, Savepoint,
-                      Transaction, TransactionBehavior};
-pub use error::{SqliteError, Error};
+#[allow(deprecated)]
+pub use transaction::{SqliteTransaction, SqliteTransactionBehavior};
+pub use transaction::{DropBehavior, Savepoint, Transaction, TransactionBehavior};
+
+#[allow(deprecated)]
+pub use error::SqliteError;
+pub use error::Error;
+
 pub use cache::CachedStatement;
 
 #[cfg(feature = "load_extension")]
