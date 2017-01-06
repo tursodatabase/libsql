@@ -90,6 +90,7 @@ pub use error::Error;
 pub use cache::CachedStatement;
 
 #[cfg(feature = "load_extension")]
+#[allow(deprecated)]
 pub use load_extension_guard::{SqliteLoadExtensionGuard, LoadExtensionGuard};
 
 pub mod types;
