@@ -271,6 +271,7 @@ set pragma_def {
   IF:   defined(SQLITE_DEBUG) && !defined(SQLITE_OMIT_PARSER_TRACE)
 
   NAME: case_sensitive_like
+  FLAG: NoColumns
 
   NAME: integrity_check
   FLAG: NeedSchema
@@ -328,6 +329,7 @@ set pragma_def {
   IF:   !defined(SQLITE_OMIT_WAL)
 
   NAME: shrink_memory
+  FLAG: NoColumns
 
   NAME: busy_timeout
   FLAG: Result0

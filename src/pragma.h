@@ -175,7 +175,7 @@ static const PragmaName aPragmaName[] = {
 #endif
  {/* zName:     */ "case_sensitive_like",
   /* ePragTyp:  */ PragTyp_CASE_SENSITIVE_LIKE,
-  /* ePragFlg:  */ 0,
+  /* ePragFlg:  */ PragFlg_NoColumns,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ 0 },
  {/* zName:     */ "cell_size_check",
@@ -493,7 +493,7 @@ static const PragmaName aPragmaName[] = {
 #endif
  {/* zName:     */ "shrink_memory",
   /* ePragTyp:  */ PragTyp_SHRINK_MEMORY,
-  /* ePragFlg:  */ 0,
+  /* ePragFlg:  */ PragFlg_NoColumns,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ 0 },
  {/* zName:     */ "soft_heap_limit",
