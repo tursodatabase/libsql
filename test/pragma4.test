@@ -69,5 +69,18 @@ foreach {tn sql} {
   do_pragma_ncol_test 1.$tn.2 $sql  0
 }
 
+# These pragmas should never return any values.
+#
+foreach {tn sql} {
+  1 "PRAGMA shrink_memory"
+  2 "PRAGMA shrink_memory = 10"
+  3 "PRAGMA case_sensitive_like = 0"
+  4 "PRAGMA case_sensitive_like = 1"
+  5 "PRAGMA case_sensitive_like"
+} {
+
+  do_pragma_ncol_test 2.$tn.1 $sql 0
+}
+
 
 finish_test
