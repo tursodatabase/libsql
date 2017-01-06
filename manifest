@@ -1,5 +1,5 @@
-C Clarify\sthe\sdocumentation\son\ssqlite3_column_count().
-D 2017-01-06T01:09:43.612
+C Improve\shandling\sof\scorrupt\sdata\sin\sfts5.
+D 2017-01-06T11:55:03.576
 F Makefile.in 41bd4cad981487345c4a84081074bcdb876e4b2e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -104,7 +104,7 @@ F ext/fts5/fts5_buffer.c 4c1502d4c956cd092c89ce4480867f9d8bf325cd
 F ext/fts5/fts5_config.c 5af9c360e99669d29f06492c370892394aba0857
 F ext/fts5/fts5_expr.c dc2cee9f56b1818b85df59304b8104a5dfb8ab60
 F ext/fts5/fts5_hash.c 880998e596b60f078348d48732ca4ad9a90caad2
-F ext/fts5/fts5_index.c fdbe46da11e81c1817cd4cb2de25ffdb4dd83711
+F ext/fts5/fts5_index.c f67032a9a529ba52a545e6e3ab970764199c05d4
 F ext/fts5/fts5_main.c f85281445dcf8be32d18841c93a6f90fe27dbfe2
 F ext/fts5/fts5_storage.c de0ed8a06738bde433afe11e92295ceaffbc4e58
 F ext/fts5/fts5_tcl.c 4a901f00c8553740dba63511603f5527d741c26a
@@ -1543,7 +1543,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 28d87789141d816e0bce6d3965ce84c79b803218
-R e3a76d24c91b951960fc78f33b2e8a32
-U drh
-Z 1cf489d9fb6392442bdd62aaa6400c28
+P 9ea0baddd893e54ec79399ae83033ae139650535
+R 44d29edf796e0dea15e29c7ababbe2c4
+U dan
+Z 2fd88d4ddce12153e4aca3cee686cd44
