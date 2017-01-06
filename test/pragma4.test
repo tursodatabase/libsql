@@ -23,7 +23,7 @@ proc do_pragma_ncol_test {tn sql nCol} {
 }
 
 # If there is no RHS argument, the following PRAGMA statements operate as
-# queries, returning a single row containing a single column. 
+# queries, returning a single row containing a single column.
 #
 # Or, if there is RHS argument, they return zero rows of zero columns.
 #
@@ -54,8 +54,6 @@ foreach {tn sql} {
  24 "PRAGMA schema_version = 211"
  25 "PRAGMA short_column_names = 1"
  26 "PRAGMA synchronous = full"
- 27 "PRAGMA temp_store_directory = '/tmp'"
- 28 "PRAGMA temp_store_directory = ''"
  29 "PRAGMA temp_store = memory"
  30 "PRAGMA user_version = 405"
  31 "PRAGMA writable_schema = 1"
@@ -64,7 +62,7 @@ foreach {tn sql} {
 
   # Without RHS:
   do_pragma_ncol_test 1.$tn.1 [lindex [split $sql =] 0] 1
-   
+
   # With RHS:
   do_pragma_ncol_test 1.$tn.2 $sql  0
 }
