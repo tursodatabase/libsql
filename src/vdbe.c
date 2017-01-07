@@ -506,7 +506,8 @@ static void registerTrace(int iReg, Mem *p){
 ** hwtime.h contains inline assembler code for implementing 
 ** high-performance timing routines.
 */
-#include "hwtime.h"
+/*#include "hwtime.h"*/
+#define sqlite3Hwtime(x) sqlite3PerfCnt
 
 #endif
 

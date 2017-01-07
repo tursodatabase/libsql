@@ -4321,4 +4321,6 @@ Expr *sqlite3VectorFieldSubexpr(Expr*, int);
 Expr *sqlite3ExprForVectorField(Parse*,Expr*,int);
 void sqlite3VectorErrorMsg(Parse*, Expr*);
 
+sqlite3_uint64 sqlite3PerfCnt;
+
 #endif /* SQLITEINT_H */

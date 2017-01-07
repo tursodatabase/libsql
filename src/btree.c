@@ -5124,6 +5124,7 @@ int sqlite3BtreeMovetoUnpacked(
     Pgno chldPg;
     MemPage *pPage = pCur->apPage[pCur->iPage];
     u8 *pCell;                          /* Pointer to current cell in pPage */
+sqlite3PerfCnt++;
 
     /* pPage->nCell must be greater than zero. If this is the root-page
     ** the cursor would have been INVALID above and this for(;;) loop
