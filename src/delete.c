@@ -716,7 +716,7 @@ void sqlite3GenerateRowDelete(
     if( eMode!=ONEPASS_OFF ){
       sqlite3VdbeChangeP5(v, OPFLAG_AUXDELETE);
     }
-    if( iIdxNoSeek>=0 ){
+    if( iIdxNoSeek>=0 && iIdxNoSeek!=iDataCur ){
       sqlite3VdbeAddOp1(v, OP_Delete, iIdxNoSeek);
     }
     if( eMode==ONEPASS_MULTI ) p5 |= OPFLAG_SAVEPOSITION;
