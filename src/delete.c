@@ -519,9 +519,8 @@ void sqlite3DeleteFrom(
 #endif
     {
       int count = (pParse->nested==0);    /* True to count changes */
-      int iIdxNoSeek = bComplex ? -1 : aiCurOnePass[1];
       sqlite3GenerateRowDelete(pParse, pTab, pTrigger, iDataCur, iIdxCur,
-          iKey, nKey, count, OE_Default, eOnePass, iIdxNoSeek);
+          iKey, nKey, count, OE_Default, eOnePass, aiCurOnePass[1]);
     }
   
     /* End of the loop over all rowids/primary-keys. */
@@ -610,6 +609,8 @@ delete_from_cleanup:
 **   If iIdxNoSeek is a valid cursor number (>=0) not equal to iDataCur,
 **   then it identifies an index cursor (from within array of cursors
 **   starting at iIdxCur) that already points to the index entry to be deleted.
+**   Except, this optimization is disabled if there are BEFORE triggers since
+**   the trigger body might have moved the cursor.
 */
 void sqlite3GenerateRowDelete(
   Parse *pParse,     /* Parsing context */
@@ -682,11 +683,16 @@ void sqlite3GenerateRowDelete(
     ** row to be deleted again. It may be that the BEFORE triggers moved
     ** the cursor or already deleted the row that the cursor was
     ** pointing to.
+    **
+    ** Also disable the iIdxNoSeek optimization since the BEFORE trigger
+    ** may have moved that cursor.
     */
     if( addrStart<sqlite3VdbeCurrentAddr(v) ){
       sqlite3VdbeAddOp4Int(v, opSeek, iDataCur, iLabel, iPk, nPk);
       VdbeCoverageIf(v, opSeek==OP_NotExists);
       VdbeCoverageIf(v, opSeek==OP_NotFound);
+      testcase( iIdxNoSeek>=0 );
+      iIdxNoSeek = -1;
     }
 
     /* Do FK processing. This call checks that any FK constraints that
