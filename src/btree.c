@@ -5124,7 +5124,6 @@ int sqlite3BtreeMovetoUnpacked(
     Pgno chldPg;
     MemPage *pPage = pCur->apPage[pCur->iPage];
     u8 *pCell;                          /* Pointer to current cell in pPage */
-sqlite3PerfCnt++;
 
     /* pPage->nCell must be greater than zero. If this is the root-page
     ** the cursor would have been INVALID above and this for(;;) loop
@@ -5142,6 +5141,7 @@ sqlite3PerfCnt++;
     if( xRecordCompare==0 ){
       for(;;){
         i64 nCellKey;
+sqlite3PerfCnt++;
         pCell = findCellPastPtr(pPage, idx);
         if( pPage->intKeyLeaf ){
           while( 0x80 <= *(pCell++) ){
@@ -5175,6 +5175,7 @@ sqlite3PerfCnt++;
     }else{
       for(;;){
         int nCell;  /* Size of the pCell cell in bytes */
+sqlite3PerfCnt++;
         pCell = findCellPastPtr(pPage, idx);
 
         /* The maximum supported page-size is 65536 bytes. This means that
