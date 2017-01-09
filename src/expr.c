@@ -3514,6 +3514,12 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       }
       break;
     }
+    case TK_CONCAT: {
+      if( ConstFactorOk(pParse) && sqlite3ExprIsConstantNotJoin(pExpr) ){
+        /* Try to run CONCAT operations at outside the inner loop */
+        return sqlite3ExprCodeAtInit(pParse, pExpr, -1);
+      }
+    }
     case TK_AND:
     case TK_OR:
     case TK_PLUS:
@@ -3524,8 +3530,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
     case TK_BITOR:
     case TK_SLASH:
     case TK_LSHIFT:
-    case TK_RSHIFT: 
-    case TK_CONCAT: {
+    case TK_RSHIFT: {
       assert( TK_AND==OP_And );            testcase( op==TK_AND );
       assert( TK_OR==OP_Or );              testcase( op==TK_OR );
       assert( TK_PLUS==OP_Add );           testcase( op==TK_PLUS );
