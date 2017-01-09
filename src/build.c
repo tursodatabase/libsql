@@ -59,8 +59,10 @@ void sqlite3TableLock(
   TableLock *p;
   assert( iDb>=0 );
 
+#ifdef SQLITE_OMIT_CONCURRENT
   if( iDb==1 ) return;
   if( !sqlite3BtreeSharable(pParse->db->aDb[iDb].pBt) ) return;
+#endif
   for(i=0; i<pToplevel->nTableLock; i++){
     p = &pToplevel->aTableLock[i];
     if( p->iDb==iDb && p->iTab==iTab ){
