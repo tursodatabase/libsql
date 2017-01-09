@@ -1195,7 +1195,7 @@ case OP_Variable: {            /* out2 */
   if( sqlite3VdbeMemTooBig(pVar) ){
     goto too_big;
   }
-  pOut = out2Prerelease(p, pOp);
+  pOut = &aMem[pOp->p2];
   sqlite3VdbeMemShallowCopy(pOut, pVar, MEM_Static);
   UPDATE_MAX_BLOBSIZE(pOut);
   break;
