@@ -4657,7 +4657,7 @@ case OP_SorterData: {
 **
 ** If P3!=0 then the content of the P2 register is unsuitable for use
 ** in OP_Result and any OP_Result will invalidate the P2 register content.
-** The P2 register content is invalided by opcodes like OP_Function or
+** The P2 register content is invalidated by opcodes like OP_Function or
 ** by any use of another cursor pointing to the same table.
 */
 case OP_RowData: {
