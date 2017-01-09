@@ -69,7 +69,7 @@ void sqlite3ColumnDefault(Vdbe *v, Table *pTab, int i, int iReg){
     sqlite3ValueFromExpr(sqlite3VdbeDb(v), pCol->pDflt, enc, 
                          pCol->affinity, &pValue);
     if( pValue ){
-      sqlite3VdbeChangeP4(v, -1, (const char *)pValue, P4_MEM);
+      sqlite3VdbeAppendP4(v, pValue, P4_MEM);
     }
 #ifndef SQLITE_OMIT_FLOATING_POINT
     if( pTab->aCol[i].affinity==SQLITE_AFF_REAL ){
@@ -249,7 +249,7 @@ void sqlite3Update(
       int rc;
       rc = sqlite3AuthCheck(pParse, SQLITE_UPDATE, pTab->zName,
                             j<0 ? "ROWID" : pTab->aCol[j].zName,
-                            db->aDb[iDb].zName);
+                            db->aDb[iDb].zDbSName);
       if( rc==SQLITE_DENY ){
         goto update_cleanup;
       }else if( rc==SQLITE_IGNORE ){
@@ -282,12 +282,14 @@ void sqlite3Update(
     int reg;
     if( chngKey || hasFK || pIdx->pPartIdxWhere || pIdx==pPk ){
       reg = ++pParse->nMem;
+      pParse->nMem += pIdx->nColumn;
     }else{
       reg = 0;
       for(i=0; i<pIdx->nKeyCol; i++){
         i16 iIdxCol = pIdx->aiColumn[i];
         if( iIdxCol<0 || aXRef[iIdxCol]>=0 ){
           reg = ++pParse->nMem;
+          pParse->nMem += pIdx->nColumn;
           break;
         }
       }
@@ -398,7 +400,7 @@ void sqlite3Update(
     }else{
       sqlite3VdbeAddOp4(v, OP_MakeRecord, iPk, nPk, regKey,
                         sqlite3IndexAffinityStr(db, pPk), nPk);
-      sqlite3VdbeAddOp2(v, OP_IdxInsert, iEph, regKey);
+      sqlite3VdbeAddOp4Int(v, OP_IdxInsert, iEph, regKey, iPk, nPk);
     }
     sqlite3WhereEnd(pWInfo);
   }
@@ -450,7 +452,7 @@ void sqlite3Update(
   }else if( pPk ){
     labelContinue = sqlite3VdbeMakeLabel(v);
     sqlite3VdbeAddOp2(v, OP_Rewind, iEph, labelBreak); VdbeCoverage(v);
-    addrTop = sqlite3VdbeAddOp2(v, OP_RowKey, iEph, regKey);
+    addrTop = sqlite3VdbeAddOp2(v, OP_RowData, iEph, regKey);
     sqlite3VdbeAddOp4Int(v, OP_NotFound, iDataCur, labelContinue, regKey, 0);
     VdbeCoverage(v);
   }else{
@@ -608,7 +610,7 @@ void sqlite3Update(
         regNewRowid
     );
     if( !pParse->nested ){
-      sqlite3VdbeChangeP4(v, -1, (char*)pTab, P4_TABLE);
+      sqlite3VdbeAppendP4(v, pTab, P4_TABLE);
     }
 #else
     if( hasFK || chngKey || pPk!=0 ){
@@ -656,15 +658,6 @@ void sqlite3Update(
     sqlite3VdbeGoto(v, labelContinue);
   }
   sqlite3VdbeResolveLabel(v, labelBreak);
-
-  /* Close all tables */
-  for(i=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
-    assert( aRegIdx );
-    if( aToOpen[i+1] ){
-      sqlite3VdbeAddOp2(v, OP_Close, iIdxCur+i, 0);
-    }
-  }
-  if( iDataCur<iIdxCur ) sqlite3VdbeAddOp2(v, OP_Close, iDataCur, 0);
 
   /* Update the sqlite_sequence table by storing the content of the
   ** maximum rowid counter values recorded while inserting into

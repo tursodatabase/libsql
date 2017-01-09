@@ -66,6 +66,9 @@ static const char * const azCompileOpt[] = {
 #if defined(SQLITE_DEFAULT_MMAP_SIZE) && !defined(SQLITE_DEFAULT_MMAP_SIZE_xc)
   "DEFAULT_MMAP_SIZE=" CTIMEOPT_VAL(SQLITE_DEFAULT_MMAP_SIZE),
 #endif
+#if SQLITE_DIRECT_OVERFLOW_READ
+  "DIRECT_OVERFLOW_READ",
+#endif
 #if SQLITE_DISABLE_DIRSYNC
   "DISABLE_DIRSYNC",
 #endif
@@ -152,6 +155,9 @@ static const char * const azCompileOpt[] = {
 #if SQLITE_ENABLE_UPDATE_DELETE_LIMIT
   "ENABLE_UPDATE_DELETE_LIMIT",
 #endif
+#if defined(SQLITE_ENABLE_URI_00_ERROR)
+  "ENABLE_URI_00_ERROR",
+#endif
 #if SQLITE_HAS_CODEC
   "HAS_CODEC",
 #endif
@@ -226,9 +232,6 @@ static const char * const azCompileOpt[] = {
 #endif
 #if SQLITE_OMIT_BTREECOUNT
   "OMIT_BTREECOUNT",
-#endif
-#if SQLITE_OMIT_BUILTIN_TEST
-  "OMIT_BUILTIN_TEST",
 #endif
 #if SQLITE_OMIT_CAST
   "OMIT_CAST",
@@ -391,6 +394,9 @@ static const char * const azCompileOpt[] = {
 #endif
 #if defined(SQLITE_THREADSAFE)
   "THREADSAFE=" CTIMEOPT_VAL(SQLITE_THREADSAFE),
+#endif
+#if SQLITE_UNTESTABLE
+  "UNTESTABLE"
 #endif
 #if SQLITE_USE_ALLOCA
   "USE_ALLOCA",

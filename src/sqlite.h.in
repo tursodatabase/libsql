@@ -108,7 +108,8 @@ extern "C" {
 ** be held constant and Z will be incremented or else Y will be incremented
 ** and Z will be reset to zero.
 **
-** Since version 3.6.18, SQLite source code has been stored in the
+** Since [version 3.6.18] ([dateof:3.6.18]), 
+** SQLite source code has been stored in the
 ** <a href="http://www.fossil-scm.org/">Fossil configuration management
 ** system</a>.  ^The SQLITE_SOURCE_ID macro evaluates to
 ** a string which identifies a particular check-in of SQLite
@@ -126,7 +127,7 @@ extern "C" {
 
 /*
 ** CAPI3REF: Run-Time Library Version Numbers
-** KEYWORDS: sqlite3_version, sqlite3_sourceid
+** KEYWORDS: sqlite3_version sqlite3_sourceid
 **
 ** These interfaces provide the same information as the [SQLITE_VERSION],
 ** [SQLITE_VERSION_NUMBER], and [SQLITE_SOURCE_ID] C preprocessor macros
@@ -452,7 +453,8 @@ int sqlite3_exec(
 ** [result codes].  However, experience has shown that many of
 ** these result codes are too coarse-grained.  They do not provide as
 ** much information about problems as programmers might like.  In an effort to
-** address this, newer versions of SQLite (version 3.3.8 and later) include
+** address this, newer versions of SQLite (version 3.3.8 [dateof:3.3.8]
+** and later) include
 ** support for additional result codes that provide more detailed information
 ** about errors. These [extended result codes] are enabled or disabled
 ** on a per database connection basis using the
@@ -976,6 +978,12 @@ struct sqlite3_io_methods {
 ** on whether or not the file has been renamed, moved, or deleted since it
 ** was first opened.
 **
+** <li>[[SQLITE_FCNTL_WIN32_GET_HANDLE]]
+** The [SQLITE_FCNTL_WIN32_GET_HANDLE] opcode can be used to obtain the
+** underlying native file handle associated with a file handle.  This file
+** control interprets its argument as a pointer to a native file handle and
+** writes the resulting value there.
+**
 ** <li>[[SQLITE_FCNTL_WIN32_SET_HANDLE]]
 ** The [SQLITE_FCNTL_WIN32_SET_HANDLE] opcode is used for debugging.  This
 ** opcode causes the xFileControl method to swap the file handle with the one
@@ -1026,6 +1034,8 @@ struct sqlite3_io_methods {
 #define SQLITE_FCNTL_RBU                    26
 #define SQLITE_FCNTL_VFS_POINTER            27
 #define SQLITE_FCNTL_JOURNAL_POINTER        28
+#define SQLITE_FCNTL_WIN32_GET_HANDLE       29
+#define SQLITE_FCNTL_PDB                    30
 
 /* deprecated names */
 #define SQLITE_GET_LOCKPROXYFILE      SQLITE_FCNTL_GET_LOCKPROXYFILE
@@ -1969,13 +1979,36 @@ struct sqlite3_mem_methods {
 ** be a NULL pointer, in which case the new setting is not reported back.
 ** </dd>
 **
+** <dt>SQLITE_DBCONFIG_MAINDBNAME</dt>
+** <dd> ^This option is used to change the name of the "main" database
+** schema.  ^The sole argument is a pointer to a constant UTF8 string
+** which will become the new schema name in place of "main".  ^SQLite
+** does not make a copy of the new main schema name string, so the application
+** must ensure that the argument passed into this DBCONFIG option is unchanged
+** until after the database connection closes.
+** </dd>
+**
+** <dt>SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE</dt>
+** <dd> Usually, when a database in wal mode is closed or detached from a 
+** database handle, SQLite checks if this will mean that there are now no 
+** connections at all to the database. If so, it performs a checkpoint 
+** operation before closing the connection. This option may be used to
+** override this behaviour. The first parameter passed to this operation
+** is an integer - non-zero to disable checkpoints-on-close, or zero (the
+** default) to enable them. The second parameter is a pointer to an integer
+** into which is written 0 or 1 to indicate whether checkpoints-on-close
+** have been disabled - 0 if they are not disabled, 1 if they are.
+** </dd>
+**
 ** </dl>
 */
+#define SQLITE_DBCONFIG_MAINDBNAME            1000 /* const char* */
 #define SQLITE_DBCONFIG_LOOKASIDE             1001 /* void* int int */
 #define SQLITE_DBCONFIG_ENABLE_FKEY           1002 /* int int* */
 #define SQLITE_DBCONFIG_ENABLE_TRIGGER        1003 /* int int* */
 #define SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER 1004 /* int int* */
 #define SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION 1005 /* int int* */
+#define SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE      1006 /* int int* */
 
 
 /*
@@ -3577,6 +3610,10 @@ char *sqlite3_expanded_sql(sqlite3_stmt *pStmt);
 ** sqlite3_stmt_readonly() to return true since, while those statements
 ** change the configuration of a database connection, they do not make 
 ** changes to the content of the database files on disk.
+** ^The sqlite3_stmt_readonly() interface returns true for [BEGIN] since
+** [BEGIN] merely sets internal flags, but the [BEGIN|BEGIN IMMEDIATE] and
+** [BEGIN|BEGIN EXCLUSIVE] commands do touch the database and so
+** sqlite3_stmt_readonly() returns false for those commands.
 */
 int sqlite3_stmt_readonly(sqlite3_stmt *pStmt);
 
@@ -3859,8 +3896,12 @@ int sqlite3_clear_bindings(sqlite3_stmt*);
 ** METHOD: sqlite3_stmt
 **
 ** ^Return the number of columns in the result set returned by the
-** [prepared statement]. ^This routine returns 0 if pStmt is an SQL
-** statement that does not return data (for example an [UPDATE]).
+** [prepared statement]. ^If this routine returns 0, that means the 
+** [prepared statement] returns no data (for example an [UPDATE]).
+** ^However, just because this routine returns a positive number does not
+** mean that one or more rows of data will be returned.  ^A SELECT statement
+** will always have a positive sqlite3_column_count() but depending on the
+** WHERE clause constraints and the table content, it might return no rows.
 **
 ** See also: [sqlite3_data_count()]
 */
@@ -4041,7 +4082,8 @@ const void *sqlite3_column_decltype16(sqlite3_stmt*,int);
 ** other than [SQLITE_ROW] before any subsequent invocation of
 ** sqlite3_step().  Failure to reset the prepared statement using 
 ** [sqlite3_reset()] would result in an [SQLITE_MISUSE] return from
-** sqlite3_step().  But after version 3.6.23.1, sqlite3_step() began
+** sqlite3_step().  But after [version 3.6.23.1] ([dateof:3.6.23.1],
+** sqlite3_step() began
 ** calling [sqlite3_reset()] automatically in this circumstance rather
 ** than returning [SQLITE_MISUSE].  This is not considered a compatibility
 ** break because any application that ever receives an SQLITE_MISUSE error
@@ -5404,7 +5446,8 @@ void *sqlite3_update_hook(
 ** and disabled if the argument is false.)^
 **
 ** ^Cache sharing is enabled and disabled for an entire process.
-** This is a change as of SQLite version 3.5.0. In prior versions of SQLite,
+** This is a change as of SQLite [version 3.5.0] ([dateof:3.5.0]). 
+** In prior versions of SQLite,
 ** sharing was enabled or disabled for each thread separately.
 **
 ** ^(The cache sharing mode set by this interface effects all subsequent
@@ -5498,7 +5541,8 @@ int sqlite3_db_release_memory(sqlite3*);
 **      from the heap.
 ** </ul>)^
 **
-** Beginning with SQLite version 3.7.3, the soft heap limit is enforced
+** Beginning with SQLite [version 3.7.3] ([dateof:3.7.3]), 
+** the soft heap limit is enforced
 ** regardless of whether or not the [SQLITE_ENABLE_MEMORY_MANAGEMENT]
 ** compile-time option is invoked.  With [SQLITE_ENABLE_MEMORY_MANAGEMENT],
 ** the soft heap limit is enforced on every memory allocation.  Without
@@ -5892,13 +5936,15 @@ struct sqlite3_module {
 ** the xUpdate method are automatically rolled back by SQLite.
 **
 ** IMPORTANT: The estimatedRows field was added to the sqlite3_index_info
-** structure for SQLite version 3.8.2. If a virtual table extension is
+** structure for SQLite [version 3.8.2] ([dateof:3.8.2]). 
+** If a virtual table extension is
 ** used with an SQLite version earlier than 3.8.2, the results of attempting 
 ** to read or write the estimatedRows field are undefined (but are likely 
 ** to included crashing the application). The estimatedRows field should
 ** therefore only be used if [sqlite3_libversion_number()] returns a
 ** value greater than or equal to 3008002. Similarly, the idxFlags field
-** was added for version 3.9.0. It may therefore only be used if
+** was added for [version 3.9.0] ([dateof:3.9.0]). 
+** It may therefore only be used if
 ** sqlite3_libversion_number() returns a value greater than or equal to
 ** 3009000.
 */
@@ -6596,7 +6642,7 @@ int sqlite3_mutex_notheld(sqlite3_mutex*);
 #define SQLITE_MUTEX_STATIC_MEM       3  /* sqlite3_malloc() */
 #define SQLITE_MUTEX_STATIC_MEM2      4  /* NOT USED */
 #define SQLITE_MUTEX_STATIC_OPEN      4  /* sqlite3BtreeOpen() */
-#define SQLITE_MUTEX_STATIC_PRNG      5  /* sqlite3_random() */
+#define SQLITE_MUTEX_STATIC_PRNG      5  /* sqlite3_randomness() */
 #define SQLITE_MUTEX_STATIC_LRU       6  /* lru page list */
 #define SQLITE_MUTEX_STATIC_LRU2      7  /* NOT USED */
 #define SQLITE_MUTEX_STATIC_PMEM      7  /* sqlite3PageMalloc() */
@@ -6700,6 +6746,7 @@ int sqlite3_test_control(int op, ...);
 #define SQLITE_TESTCTRL_SCRATCHMALLOC           17
 #define SQLITE_TESTCTRL_LOCALTIME_FAULT         18
 #define SQLITE_TESTCTRL_EXPLAIN_STMT            19  /* NOT USED */
+#define SQLITE_TESTCTRL_ONCE_RESET_THRESHOLD    19
 #define SQLITE_TESTCTRL_NEVER_CORRUPT           20
 #define SQLITE_TESTCTRL_VDBE_COVERAGE           21
 #define SQLITE_TESTCTRL_BYTEORDER               22
@@ -8186,7 +8233,8 @@ int sqlite3_db_cacheflush(sqlite3*);
 **
 ** See also:  [sqlite3_update_hook()]
 */
-SQLITE_EXPERIMENTAL void *sqlite3_preupdate_hook(
+#if defined(SQLITE_ENABLE_PREUPDATE_HOOK)
+void *sqlite3_preupdate_hook(
   sqlite3 *db,
   void(*xPreUpdate)(
     void *pCtx,                   /* Copy of third arg to preupdate_hook() */
@@ -8199,10 +8247,11 @@ SQLITE_EXPERIMENTAL void *sqlite3_preupdate_hook(
   ),
   void*
 );
-SQLITE_EXPERIMENTAL int sqlite3_preupdate_old(sqlite3 *, int, sqlite3_value **);
-SQLITE_EXPERIMENTAL int sqlite3_preupdate_count(sqlite3 *);
-SQLITE_EXPERIMENTAL int sqlite3_preupdate_depth(sqlite3 *);
-SQLITE_EXPERIMENTAL int sqlite3_preupdate_new(sqlite3 *, int, sqlite3_value **);
+int sqlite3_preupdate_old(sqlite3 *, int, sqlite3_value **);
+int sqlite3_preupdate_count(sqlite3 *);
+int sqlite3_preupdate_depth(sqlite3 *);
+int sqlite3_preupdate_new(sqlite3 *, int, sqlite3_value **);
+#endif
 
 /*
 ** CAPI3REF: Low-level system error code
@@ -8218,7 +8267,7 @@ int sqlite3_system_errno(sqlite3*);
 
 /*
 ** CAPI3REF: Database Snapshot
-** KEYWORDS: {snapshot}
+** KEYWORDS: {snapshot} {sqlite3_snapshot}
 ** EXPERIMENTAL
 **
 ** An instance of the snapshot object records the state of a [WAL mode]
@@ -8242,7 +8291,9 @@ int sqlite3_system_errno(sqlite3*);
 ** to an historical snapshot (if possible).  The destructor for 
 ** sqlite3_snapshot objects is [sqlite3_snapshot_free()].
 */
-typedef struct sqlite3_snapshot sqlite3_snapshot;
+typedef struct sqlite3_snapshot {
+  unsigned char hidden[48];
+} sqlite3_snapshot;
 
 /*
 ** CAPI3REF: Record A Database Snapshot
@@ -8253,9 +8304,32 @@ typedef struct sqlite3_snapshot sqlite3_snapshot;
 ** schema S in database connection D.  ^On success, the
 ** [sqlite3_snapshot_get(D,S,P)] interface writes a pointer to the newly
 ** created [sqlite3_snapshot] object into *P and returns SQLITE_OK.
-** ^If schema S of [database connection] D is not a [WAL mode] database
-** that is in a read transaction, then [sqlite3_snapshot_get(D,S,P)]
-** leaves the *P value unchanged and returns an appropriate [error code].
+** If there is not already a read-transaction open on schema S when
+** this function is called, one is opened automatically. 
+**
+** The following must be true for this function to succeed. If any of
+** the following statements are false when sqlite3_snapshot_get() is
+** called, SQLITE_ERROR is returned. The final value of *P is undefined
+** in this case. 
+**
+** <ul>
+**   <li> The database handle must be in [autocommit mode].
+**
+**   <li> Schema S of [database connection] D must be a [WAL mode] database.
+**
+**   <li> There must not be a write transaction open on schema S of database
+**        connection D.
+**
+**   <li> One or more transactions must have been written to the current wal
+**        file since it was created on disk (by any connection). This means
+**        that a snapshot cannot be taken on a wal mode database with no wal 
+**        file immediately after it is first opened. At least one transaction
+**        must be written to it first.
+** </ul>
+**
+** This function may also return SQLITE_NOMEM.  If it is called with the
+** database handle in autocommit mode but fails for some other reason, 
+** whether or not a read transaction is opened on schema S is undefined.
 **
 ** The [sqlite3_snapshot] object returned from a successful call to
 ** [sqlite3_snapshot_get()] must be freed using [sqlite3_snapshot_free()]
@@ -8347,6 +8421,28 @@ SQLITE_EXPERIMENTAL int sqlite3_snapshot_cmp(
   sqlite3_snapshot *p1,
   sqlite3_snapshot *p2
 );
+
+/*
+** CAPI3REF: Recover snapshots from a wal file
+** EXPERIMENTAL
+**
+** If all connections disconnect from a database file but do not perform
+** a checkpoint, the existing wal file is opened along with the database
+** file the next time the database is opened. At this point it is only
+** possible to successfully call sqlite3_snapshot_open() to open the most
+** recent snapshot of the database (the one at the head of the wal file),
+** even though the wal file may contain other valid snapshots for which
+** clients have sqlite3_snapshot handles.
+**
+** This function attempts to scan the wal file associated with database zDb
+** of database handle db and make all valid snapshots available to
+** sqlite3_snapshot_open(). It is an error if there is already a read
+** transaction open on the database, or if the database is not a wal mode
+** database.
+**
+** SQLITE_OK is returned if successful, or an SQLite error code otherwise.
+*/
+SQLITE_EXPERIMENTAL int sqlite3_snapshot_recover(sqlite3 *db, const char *zDb);
 
 /*
 ** Undo the hack that converts floating point types to integer for

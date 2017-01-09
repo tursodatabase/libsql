@@ -52,11 +52,11 @@ ifcapable trigger&&foreignkey {
 #-------------------------------------------------------------------------
 # Test the effects of defining OMIT_TRIGGER but not OMIT_FOREIGN_KEY.
 #
-# EVIDENCE-OF: R-44697-61543 If SQLITE_OMIT_TRIGGER is defined but
+# EVIDENCE-OF: R-10109-20452 If SQLITE_OMIT_TRIGGER is defined but
 # SQLITE_OMIT_FOREIGN_KEY is not, then SQLite behaves as it did prior to
-# version 3.6.19 - foreign key definitions are parsed and may be queried
-# using PRAGMA foreign_key_list, but foreign key constraints are not
-# enforced.
+# version 3.6.19 (2009-10-14) - foreign key definitions are parsed and
+# may be queried using PRAGMA foreign_key_list, but foreign key
+# constraints are not enforced.
 #
 # Specifically, test that "PRAGMA foreign_keys" is a no-op in this case.
 # When using the pragma to query the current setting, 0 rows are returned.

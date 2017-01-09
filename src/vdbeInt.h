@@ -52,9 +52,6 @@ typedef unsigned Bool;
 /* Opaque type used by code in vdbesort.c */
 typedef struct VdbeSorter VdbeSorter;
 
-/* Opaque type used by the explainer */
-typedef struct Explain Explain;
-
 /* Elements of the linked list at Vdbe.pAuxData */
 typedef struct AuxData AuxData;
 
@@ -76,58 +73,67 @@ typedef struct AuxData AuxData;
 */
 typedef struct VdbeCursor VdbeCursor;
 struct VdbeCursor {
-  u8 eCurType;          /* One of the CURTYPE_* values above */
-  i8 iDb;               /* Index of cursor database in db->aDb[] (or -1) */
-  u8 nullRow;           /* True if pointing to a row with no data */
-  u8 deferredMoveto;    /* A call to sqlite3BtreeMoveto() is needed */
-  u8 isTable;           /* True for rowid tables.  False for indexes */
+  u8 eCurType;            /* One of the CURTYPE_* values above */
+  i8 iDb;                 /* Index of cursor database in db->aDb[] (or -1) */
+  u8 nullRow;             /* True if pointing to a row with no data */
+  u8 deferredMoveto;      /* A call to sqlite3BtreeMoveto() is needed */
+  u8 isTable;             /* True for rowid tables.  False for indexes */
 #ifdef SQLITE_DEBUG
-  u8 seekOp;            /* Most recent seek operation on this cursor */
-  u8 wrFlag;            /* The wrFlag argument to sqlite3BtreeCursor() */
+  u8 seekOp;              /* Most recent seek operation on this cursor */
+  u8 wrFlag;              /* The wrFlag argument to sqlite3BtreeCursor() */
 #endif
-  Bool isEphemeral:1;   /* True for an ephemeral table */
-  Bool useRandomRowid:1;/* Generate new record numbers semi-randomly */
-  Bool isOrdered:1;     /* True if the table is not BTREE_UNORDERED */
-  Pgno pgnoRoot;        /* Root page of the open btree cursor */
-  i16 nField;           /* Number of fields in the header */
-  u16 nHdrParsed;       /* Number of header fields parsed so far */
+  Bool isEphemeral:1;     /* True for an ephemeral table */
+  Bool useRandomRowid:1;  /* Generate new record numbers semi-randomly */
+  Bool isOrdered:1;       /* True if the table is not BTREE_UNORDERED */
+  Btree *pBtx;            /* Separate file holding temporary table */
+  i64 seqCount;           /* Sequence counter */
+  int *aAltMap;           /* Mapping from table to index column numbers */
+
+  /* Cached OP_Column parse information is only valid if cacheStatus matches
+  ** Vdbe.cacheCtr.  Vdbe.cacheCtr will never take on the value of
+  ** CACHE_STALE (0) and so setting cacheStatus=CACHE_STALE guarantees that
+  ** the cache is out of date. */
+  u32 cacheStatus;        /* Cache is valid if this matches Vdbe.cacheCtr */
+  int seekResult;         /* Result of previous sqlite3BtreeMoveto() or 0
+                          ** if there have been no prior seeks on the cursor. */
+  /* NB: seekResult does not distinguish between "no seeks have ever occurred
+  ** on this cursor" and "the most recent seek was an exact match". */
+
+  /* When a new VdbeCursor is allocated, only the fields above are zeroed.
+  ** The fields that follow are uninitialized, and must be individually
+  ** initialized prior to first use. */
+  VdbeCursor *pAltCursor; /* Associated index cursor from which to read */
   union {
     BtCursor *pCursor;          /* CURTYPE_BTREE.  Btree cursor */
     sqlite3_vtab_cursor *pVCur; /* CURTYPE_VTAB.   Vtab cursor */
     int pseudoTableReg;         /* CURTYPE_PSEUDO. Reg holding content. */
     VdbeSorter *pSorter;        /* CURTYPE_SORTER. Sorter object */
   } uc;
-  Btree *pBt;           /* Separate file holding temporary table */
-  KeyInfo *pKeyInfo;    /* Info about index keys needed by index cursors */
-  int seekResult;       /* Result of previous sqlite3BtreeMoveto() */
-  i64 seqCount;         /* Sequence counter */
-  i64 movetoTarget;     /* Argument to the deferred sqlite3BtreeMoveto() */
-  VdbeCursor *pAltCursor; /* Associated index cursor from which to read */
-  int *aAltMap;           /* Mapping from table to index column numbers */
+  KeyInfo *pKeyInfo;      /* Info about index keys needed by index cursors */
+  u32 iHdrOffset;         /* Offset to next unparsed byte of the header */
+  Pgno pgnoRoot;          /* Root page of the open btree cursor */
+  i16 nField;             /* Number of fields in the header */
+  u16 nHdrParsed;         /* Number of header fields parsed so far */
+  i64 movetoTarget;       /* Argument to the deferred sqlite3BtreeMoveto() */
+  u32 *aOffset;           /* Pointer to aType[nField] */
+  const u8 *aRow;         /* Data for the current row, if all on one page */
+  u32 payloadSize;        /* Total number of bytes in the record */
+  u32 szRow;              /* Byte available in aRow */
 #ifdef SQLITE_ENABLE_COLUMN_USED_MASK
-  u64 maskUsed;         /* Mask of columns used by this cursor */
+  u64 maskUsed;           /* Mask of columns used by this cursor */
 #endif
 
-  /* Cached information about the header for the data record that the
-  ** cursor is currently pointing to.  Only valid if cacheStatus matches
-  ** Vdbe.cacheCtr.  Vdbe.cacheCtr will never take on the value of
-  ** CACHE_STALE and so setting cacheStatus=CACHE_STALE guarantees that
-  ** the cache is out of date.
-  **
-  ** aRow might point to (ephemeral) data for the current row, or it might
-  ** be NULL.
-  */
-  u32 cacheStatus;      /* Cache is valid if this matches Vdbe.cacheCtr */
-  u32 payloadSize;      /* Total number of bytes in the record */
-  u32 szRow;            /* Byte available in aRow */
-  u32 iHdrOffset;       /* Offset to next unparsed byte of the header */
-  const u8 *aRow;       /* Data for the current row, if all on one page */
-  u32 *aOffset;         /* Pointer to aType[nField] */
-  u32 aType[1];         /* Type values for all entries in the record */
   /* 2*nField extra array elements allocated for aType[], beyond the one
   ** static element declared in the structure.  nField total array slots for
   ** aType[] and nField+1 array slots for aOffset[] */
+  u32 aType[1];           /* Type values record decode.  MUST BE LAST */
 };
+
+
+/*
+** A value for VdbeCursor.cacheStatus that means the cache is always invalid.
+*/
+#define CACHE_STALE 0
 
 /*
 ** When a sub-program is executed (OP_Program), a structure of this type
@@ -157,7 +163,6 @@ struct VdbeFrame {
   Op *aOp;                /* Program instructions for parent frame */
   i64 *anExec;            /* Event counters from parent frame */
   Mem *aMem;              /* Array of memory cells for parent frame */
-  u8 *aOnceFlag;          /* Array of OP_Once flags for parent frame */
   VdbeCursor **apCsr;     /* Array of Vdbe cursors for parent frame */
   void *token;            /* Copy of SubProgram.token */
   i64 lastRowid;          /* Last insert rowid (sqlite3.lastRowid) */
@@ -166,7 +171,6 @@ struct VdbeFrame {
   int pc;                 /* Program Counter in parent (calling) frame */
   int nOp;                /* Size of aOp array */
   int nMem;               /* Number of entries in aMem */
-  int nOnceFlag;          /* Number of entries in aOnceFlag */
   int nChildMem;          /* Number of memory cells for child frame */
   int nChildCsr;          /* Number of cursors for child frame */
   int nChange;            /* Statement changes (Vdbe.nChange)     */
@@ -174,11 +178,6 @@ struct VdbeFrame {
 };
 
 #define VdbeFrameMem(p) ((Mem *)&((u8 *)p)[ROUND8(sizeof(VdbeFrame))])
-
-/*
-** A value for VdbeCursor.cacheValid that means the cache is always invalid.
-*/
-#define CACHE_STALE 0
 
 /*
 ** Internally, the vdbe manipulates nearly all SQL values as Mem
@@ -320,18 +319,6 @@ struct sqlite3_context {
   sqlite3_value *argv[1]; /* Argument set */
 };
 
-/*
-** An Explain object accumulates indented output which is helpful
-** in describing recursive data structures.
-*/
-struct Explain {
-  Vdbe *pVdbe;       /* Attach the explanation to this Vdbe */
-  StrAccum str;      /* The string being accumulated */
-  int nIndent;       /* Number of elements in aIndent */
-  u16 aIndent[100];  /* Levels of indentation */
-  char zBase[100];   /* Initial space */
-};
-
 /* A bitfield type for use inside of structures.  Always follow with :N where
 ** N is the number of bits.
 */
@@ -356,34 +343,46 @@ struct ScanStatus {
 */
 struct Vdbe {
   sqlite3 *db;            /* The database connection that owns this statement */
+  Vdbe *pPrev,*pNext;     /* Linked list of VDBEs with the same Vdbe.db */
+  Parse *pParse;          /* Parsing context used to create this Vdbe */
+  ynVar nVar;             /* Number of entries in aVar[] */
+  u32 magic;              /* Magic number for sanity checking */
+  int nMem;               /* Number of memory locations currently allocated */
+  int nCursor;            /* Number of slots in apCsr[] */
+  u32 cacheCtr;           /* VdbeCursor row cache generation counter */
+  int pc;                 /* The program counter */
+  int rc;                 /* Value to return */
+  int nChange;            /* Number of db changes made since last reset */
+  int iStatement;         /* Statement number (or 0 if has not opened stmt) */
+  i64 iCurrentTime;       /* Value of julianday('now') for this statement */
+  i64 nFkConstraint;      /* Number of imm. FK constraints this VM */
+  i64 nStmtDefCons;       /* Number of def. constraints when stmt started */
+  i64 nStmtDefImmCons;    /* Number of def. imm constraints when stmt started */
+
+  /* When allocating a new Vdbe object, all of the fields below should be
+  ** initialized to zero or NULL */
+
   Op *aOp;                /* Space to hold the virtual machine's program */
   Mem *aMem;              /* The memory locations */
   Mem **apArg;            /* Arguments to currently executing user function */
   Mem *aColName;          /* Column names to return */
   Mem *pResultSet;        /* Pointer to an array of results */
-  Parse *pParse;          /* Parsing context used to create this Vdbe */
-  int nMem;               /* Number of memory locations currently allocated */
-  int nOp;                /* Number of instructions in the program */
-  int nCursor;            /* Number of slots in apCsr[] */
-  u32 magic;              /* Magic number for sanity checking */
   char *zErrMsg;          /* Error message written here */
-  Vdbe *pPrev,*pNext;     /* Linked list of VDBEs with the same Vdbe.db */
   VdbeCursor **apCsr;     /* One element of this array for each open cursor */
   Mem *aVar;              /* Values for the OP_Variable opcode. */
-  char **azVar;           /* Name of variables */
-  ynVar nVar;             /* Number of entries in aVar[] */
-  ynVar nzVar;            /* Number of entries in azVar[] */
-  u32 cacheCtr;           /* VdbeCursor row cache generation counter */
-  int pc;                 /* The program counter */
-  int rc;                 /* Value to return */
+  VList *pVList;          /* Name of variables */
+#ifndef SQLITE_OMIT_TRACE
+  i64 startTime;          /* Time when query started - used for profiling */
+#endif
+  int nOp;                /* Number of instructions in the program */
 #ifdef SQLITE_DEBUG
   int rcApp;              /* errcode set by sqlite3_result_error_code() */
 #endif
   u16 nResColumn;         /* Number of columns in one row of the result set */
   u8 errorAction;         /* Recovery action to do in case of an error */
+  u8 minWriteFileFormat;  /* Minimum file format for writable database files */
   bft expired:1;          /* True if the VM needs to be recompiled */
   bft doingRerun:1;       /* True if rerunning after an auto-reprepare */
-  u8 minWriteFileFormat;  /* Minimum file format for writable database files */
   bft explain:2;          /* True if EXPLAIN present on SQL command */
   bft changeCntOn:1;      /* True to update the change-counter */
   bft runOnlyOnce:1;      /* Automatically expire on reset */
@@ -391,18 +390,9 @@ struct Vdbe {
   bft readOnly:1;         /* True for statements that do not write */
   bft bIsReader:1;        /* True for statements that read */
   bft isPrepareV2:1;      /* True if prepared with prepare_v2() */
-  int nChange;            /* Number of db changes made since last reset */
   yDbMask btreeMask;      /* Bitmask of db->aDb[] entries referenced */
   yDbMask lockMask;       /* Subset of btreeMask that requires a lock */
-  int iStatement;         /* Statement number (or 0 if has not opened stmt) */
   u32 aCounter[5];        /* Counters used by sqlite3_stmt_status() */
-#ifndef SQLITE_OMIT_TRACE
-  i64 startTime;          /* Time when query started - used for profiling */
-#endif
-  i64 iCurrentTime;       /* Value of julianday('now') for this statement */
-  i64 nFkConstraint;      /* Number of imm. FK constraints this VM */
-  i64 nStmtDefCons;       /* Number of def. constraints when stmt started */
-  i64 nStmtDefImmCons;    /* Number of def. imm constraints when stmt started */
   char *zSql;             /* Text of the SQL statement that generated this */
   void *pFree;            /* Free this when deleting the vdbe */
   VdbeFrame *pFrame;      /* Parent frame */
@@ -410,8 +400,6 @@ struct Vdbe {
   int nFrame;             /* Number of frames in pFrame list */
   u32 expmask;            /* Binding to these vars invalidates VM */
   SubProgram *pProgram;   /* Linked list of all sub-programs used by VM */
-  int nOnceFlag;          /* Size of array aOnceFlag[] */
-  u8 *aOnceFlag;          /* Flags for OP_Once */
   AuxData *pAuxData;      /* Linked list of auxdata allocations */
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
   i64 *anExec;            /* Number of times each op has been executed */
@@ -423,10 +411,11 @@ struct Vdbe {
 /*
 ** The following are allowed values for Vdbe.magic
 */
-#define VDBE_MAGIC_INIT     0x26bceaa5    /* Building a VDBE program */
-#define VDBE_MAGIC_RUN      0xbdf20da3    /* VDBE is ready to execute */
-#define VDBE_MAGIC_HALT     0x519c2973    /* VDBE has completed execution */
-#define VDBE_MAGIC_DEAD     0xb606c3c8    /* The VDBE has been deallocated */
+#define VDBE_MAGIC_INIT     0x16bceaa5    /* Building a VDBE program */
+#define VDBE_MAGIC_RUN      0x2df20da3    /* VDBE is ready to execute */
+#define VDBE_MAGIC_HALT     0x319c2973    /* VDBE has completed execution */
+#define VDBE_MAGIC_RESET    0x48fa9f76    /* Reset and ready to run again */
+#define VDBE_MAGIC_DEAD     0x5606c3c8    /* The VDBE has been deallocated */
 
 /*
 ** Structure used to store the context required by the 
@@ -443,8 +432,8 @@ struct PreUpdate {
   int iNewReg;                    /* Register for new.* values */
   i64 iKey1;                      /* First key value passed to hook */
   i64 iKey2;                      /* Second key value passed to hook */
-  int iPKey;                      /* If not negative index of IPK column */
   Mem *aNew;                      /* Array of new.* values */
+  Table *pTab;                    /* Schema object being upated */          
 };
 
 /*
@@ -497,7 +486,7 @@ void sqlite3VdbeIntegerAffinity(Mem*);
 int sqlite3VdbeMemRealify(Mem*);
 int sqlite3VdbeMemNumerify(Mem*);
 void sqlite3VdbeMemCast(Mem*,u8,u8);
-int sqlite3VdbeMemFromBtree(BtCursor*,u32,u32,int,Mem*);
+int sqlite3VdbeMemFromBtree(BtCursor*,u32,u32,Mem*);
 void sqlite3VdbeMemRelease(Mem *p);
 int sqlite3VdbeMemFinalize(Mem*, FuncDef*);
 const char *sqlite3OpcodeName(int);

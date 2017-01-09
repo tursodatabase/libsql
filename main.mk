@@ -293,6 +293,7 @@ TESTSRC = \
   $(TOP)/src/test_blob.c \
   $(TOP)/src/test_btree.c \
   $(TOP)/src/test_config.c \
+  $(TOP)/src/test_delete.c \
   $(TOP)/src/test_demovfs.c \
   $(TOP)/src/test_devsym.c \
   $(TOP)/src/test_fs.c \
@@ -334,6 +335,7 @@ TESTSRC += \
   $(TOP)/ext/misc/nextchar.c \
   $(TOP)/ext/misc/percentile.c \
   $(TOP)/ext/misc/regexp.c \
+  $(TOP)/ext/misc/remember.c \
   $(TOP)/ext/misc/series.c \
   $(TOP)/ext/misc/spellfix.c \
   $(TOP)/ext/misc/totype.c \
@@ -461,7 +463,8 @@ FUZZDATA = \
   $(TOP)/test/fuzzdata1.db \
   $(TOP)/test/fuzzdata2.db \
   $(TOP)/test/fuzzdata3.db \
-  $(TOP)/test/fuzzdata4.db
+  $(TOP)/test/fuzzdata4.db \
+  $(TOP)/test/fuzzdata5.db
 
 # Standard options to testfixture
 #
@@ -474,6 +477,7 @@ SHELL_OPT += -DSQLITE_ENABLE_EXPLAIN_COMMENTS
 SHELL_OPT += -DSQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
 FUZZERSHELL_OPT = -DSQLITE_ENABLE_JSON1
 FUZZCHECK_OPT = -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_MEMSYS5
+DBFUZZ_OPT =
 
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
@@ -510,10 +514,20 @@ fuzzershell$(EXE):	$(TOP)/tool/fuzzershell.c sqlite3.c sqlite3.h
 	  $(FUZZERSHELL_OPT) $(TOP)/tool/fuzzershell.c sqlite3.c \
 	  $(TLIBS) $(THREADLIB)
 
-fuzzcheck$(EXE):	$(TOP)/test/fuzzcheck.c sqlite3.c sqlite3.h
+dbfuzz$(EXE):	$(TOP)/test/dbfuzz.c sqlite3.c sqlite3.h
+	$(TCCX) -o dbfuzz$(EXE) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
+	  $(DBFUZZ_OPT) $(TOP)/test/dbfuzz.c sqlite3.c \
+	  $(TLIBS) $(THREADLIB)
+
+fuzzcheck$(EXE):	$(TOP)/test/fuzzcheck.c sqlite3.c sqlite3.h $(TOP)/test/ossfuzz.c
 	$(TCCX) -o fuzzcheck$(EXE) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
+		-DSQLITE_ENABLE_MEMSYS5 $(FUZZCHECK_OPT) -DSQLITE_OSS_FUZZ \
+		$(TOP)/test/fuzzcheck.c $(TOP)/test/ossfuzz.c sqlite3.c $(TLIBS) $(THREADLIB)
+
+ossshell$(EXE):	$(TOP)/test/ossfuzz.c $(TOP)/test/ossshell.c sqlite3.c sqlite3.h
+	$(TCCX) -o ossshell$(EXE) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
 		-DSQLITE_ENABLE_MEMSYS5 $(FUZZCHECK_OPT) \
-		$(TOP)/test/fuzzcheck.c sqlite3.c $(TLIBS) $(THREADLIB)
+		$(TOP)/test/ossfuzz.c $(TOP)/test/ossshell.c sqlite3.c $(TLIBS) $(THREADLIB)
 
 mptester$(EXE):	sqlite3.c $(TOP)/mptest/mptest.c
 	$(TCCX) -o $@ -I. $(TOP)/mptest/mptest.c sqlite3.c \
@@ -790,6 +804,11 @@ fastfuzztest:	fuzzcheck$(EXE) $(FUZZDATA)
 valgrindfuzz:	fuzzcheck$(EXE) $(FUZZDATA)
 	valgrind ./fuzzcheck$(EXE) --cell-size-check --limit-mem 10M --timeout 600 $(FUZZDATA)
 
+# The veryquick.test TCL tests.
+#
+tcltest:	./testfixture$(EXE)
+	./testfixture$(EXE) $(TOP)/test/veryquick.test $(TESTOPTS)
+
 # A very quick test using only testfixture and omitting all the slower
 # tests.  Designed to run in under 3 minutes on a workstation.
 #
@@ -798,9 +817,7 @@ quicktest:	./testfixture$(EXE)
 
 # The default test case.  Runs most of the faster standard TCL tests,
 # and fuzz tests, and sqlite3_analyzer and sqldiff tests.
-#
-test:	$(TESTPROGS) sourcetest fastfuzztest
-	./testfixture$(EXE) $(TOP)/test/veryquick.test $(TESTOPTS)
+test:	fastfuzztest sourcetest $(TESTPROGS) tcltest
 
 # Run a test using valgrind.  This can take a really long time
 # because valgrind is so much slower than a native machine.

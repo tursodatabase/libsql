@@ -122,6 +122,8 @@ struct WhereLoop {
   union {
     struct {               /* Information for internal btree tables */
       u16 nEq;               /* Number of equality constraints */
+      u16 nBtm;              /* Size of BTM vector */
+      u16 nTop;              /* Size of TOP vector */
       Index *pIndex;         /* Index used, or NULL */
     } btree;
     struct {               /* Information for virtual tables */
@@ -244,19 +246,20 @@ struct WherePath {
 */
 struct WhereTerm {
   Expr *pExpr;            /* Pointer to the subexpression that is this term */
+  WhereClause *pWC;       /* The clause this term is part of */
+  LogEst truthProb;       /* Probability of truth for this expression */
+  u16 wtFlags;            /* TERM_xxx bit flags.  See below */
+  u16 eOperator;          /* A WO_xx value describing <op> */
+  u8 nChild;              /* Number of children that must disable us */
+  u8 eMatchOp;            /* Op for vtab MATCH/LIKE/GLOB/REGEXP terms */
   int iParent;            /* Disable pWC->a[iParent] when this term disabled */
   int leftCursor;         /* Cursor number of X in "X <op> <expr>" */
+  int iField;             /* Field in (?,?,?) IN (SELECT...) vector */
   union {
     int leftColumn;         /* Column number of X in "X <op> <expr>" */
     WhereOrInfo *pOrInfo;   /* Extra information if (eOperator & WO_OR)!=0 */
     WhereAndInfo *pAndInfo; /* Extra information if (eOperator& WO_AND)!=0 */
   } u;
-  LogEst truthProb;       /* Probability of truth for this expression */
-  u16 eOperator;          /* A WO_xx value describing <op> */
-  u16 wtFlags;            /* TERM_xxx bit flags.  See below */
-  u8 nChild;              /* Number of children that must disable us */
-  u8 eMatchOp;            /* Op for vtab MATCH/LIKE/GLOB/REGEXP terms */
-  WhereClause *pWC;       /* The clause this term is part of */
   Bitmask prereqRight;    /* Bitmask of tables used by pExpr->pRight */
   Bitmask prereqAll;      /* Bitmask of tables referenced by pExpr */
 };
@@ -409,25 +412,25 @@ struct WhereInfo {
   SrcList *pTabList;        /* List of tables in the join */
   ExprList *pOrderBy;       /* The ORDER BY clause or NULL */
   ExprList *pDistinctSet;   /* DISTINCT over all these values */
-  WhereLoop *pLoops;        /* List of all WhereLoop objects */
-  Bitmask revMask;          /* Mask of ORDER BY terms that need reversing */
-  LogEst nRowOut;           /* Estimated number of output rows */
   LogEst iLimit;            /* LIMIT if wctrlFlags has WHERE_USE_LIMIT */
+  int aiCurOnePass[2];      /* OP_OpenWrite cursors for the ONEPASS opt */
+  int iContinue;            /* Jump here to continue with next record */
+  int iBreak;               /* Jump here to break out of the loop */
+  int savedNQueryLoop;      /* pParse->nQueryLoop outside the WHERE loop */
   u16 wctrlFlags;           /* Flags originally passed to sqlite3WhereBegin() */
+  u8 nLevel;                /* Number of nested loop */
   i8 nOBSat;                /* Number of ORDER BY terms satisfied by indices */
   u8 sorted;                /* True if really sorted (not just grouped) */
   u8 eOnePass;              /* ONEPASS_OFF, or _SINGLE, or _MULTI */
   u8 untestedTerms;         /* Not all WHERE terms resolved by outer loop */
   u8 eDistinct;             /* One of the WHERE_DISTINCT_* values */
-  u8 nLevel;                /* Number of nested loop */
   u8 bOrderedInnerLoop;     /* True if only the inner-most loop is ordered */
   int iTop;                 /* The very beginning of the WHERE loop */
-  int iContinue;            /* Jump here to continue with next record */
-  int iBreak;               /* Jump here to break out of the loop */
-  int savedNQueryLoop;      /* pParse->nQueryLoop outside the WHERE loop */
-  int aiCurOnePass[2];      /* OP_OpenWrite cursors for the ONEPASS opt */
-  WhereMaskSet sMaskSet;    /* Map cursor numbers to bitmasks */
+  WhereLoop *pLoops;        /* List of all WhereLoop objects */
+  Bitmask revMask;          /* Mask of ORDER BY terms that need reversing */
+  LogEst nRowOut;           /* Estimated number of output rows */
   WhereClause sWC;          /* Decomposition of the WHERE clause */
+  WhereMaskSet sMaskSet;    /* Map cursor numbers to bitmasks */
   WhereLevel a[1];          /* Information about each nest loop in WHERE */
 };
 

@@ -42,7 +42,7 @@ do_test intarray-1.1 {
   set ia3 [sqlite3_intarray_create db ia3]
   set ia4 [sqlite3_intarray_create db ia4]
   db eval {
-    SELECT type, name FROM sqlite_temp_master
+    SELECT type, name FROM temp.sqlite_master
      ORDER BY name
   }
 } {table ia1 table ia2 table ia3 table ia4}

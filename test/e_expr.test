@@ -847,6 +847,9 @@ foreach {tn x expr res nEval} {
 
   3   5  "x() >= 5 AND x() <= 5"   1  2
   4   5  "x() BETWEEN 5 AND 5"     1  1
+
+  5   9  "(x(),8) >= (9,7) AND (x(),8)<=(9,10)"  1 2
+  6   9  "(x(),8) BETWEEN (9,7) AND (9,10)"      1 1
 } {
   do_test e_expr-13.1.$tn {
     set ::xcount 0
@@ -1434,6 +1437,13 @@ do_expr_test e_expr-27.2.2 { CAST(NULL AS text) }    null {}
 do_expr_test e_expr-27.2.3 { CAST(NULL AS blob) }    null {}
 do_expr_test e_expr-27.2.4 { CAST(NULL AS number) }  null {}
 
+# EVIDENCE-OF: R-29283-15561 Otherwise, the storage class of the result
+# is determined by applying the rules for determining column affinity to
+# the type-name.
+#
+# The R-29283-15561 requirement above is demonstrated by all of the 
+# subsequent e_expr-26 tests.
+#
 # EVIDENCE-OF: R-43522-35548 Casting a value to a type-name with no
 # affinity causes the value to be converted into a BLOB.
 #
@@ -1783,8 +1793,8 @@ do_test e_expr-35.0 {
   }
 } {}
 
-# EVIDENCE-OF: R-00980-39256 A SELECT statement enclosed in parentheses
-# may appear as a scalar quantity.
+# EVIDENCE-OF: R-43573-23448 A SELECT statement enclosed in parentheses
+# is a subquery.
 #
 # EVIDENCE-OF: R-56294-03966 All types of SELECT statement, including
 # aggregate and compound SELECT queries (queries with keywords like
@@ -1803,13 +1813,14 @@ do_expr_test e_expr-35.1.6 {
   (SELECT a FROM t2 UNION SELECT COALESCE(b, 55) FROM t2 ORDER BY 1)
 } integer 4
 
-# EVIDENCE-OF: R-46899-53765 A SELECT used as a scalar quantity must
-# return a result set with a single column.
+# EVIDENCE-OF: R-22239-33740 A subquery that returns two or more columns
+# is a row value subquery and can only be used as the operand of a
+# comparison operator.
 #
 # The following block tests that errors are returned in a bunch of cases
 # where a subquery returns more than one column.
 #
-set M {only a single result allowed for a SELECT that is part of an expression}
+set M {/1 {sub-select returns [23] columns - expected 1}/}
 foreach {tn sql} {
   1     { SELECT (SELECT * FROM t2 UNION SELECT a+1, b+1 FROM t2) }
   2     { SELECT (SELECT * FROM t2 UNION SELECT a+1, b+1 FROM t2 ORDER BY 1) }
@@ -1818,14 +1829,14 @@ foreach {tn sql} {
   5     { SELECT (SELECT * FROM t2) }
   6     { SELECT (SELECT * FROM (SELECT 1, 2, 3)) }
 } {
-  do_catchsql_test e_expr-35.2.$tn $sql [list 1 $M]
+  do_catchsql_test e_expr-35.2.$tn $sql $M
 }
 
-# EVIDENCE-OF: R-35764-28041 The result of the expression is the value
-# of the only column in the first row returned by the SELECT statement.
+# EVIDENCE-OF: R-18318-14995 The value of a subquery expression is the
+# first row of the result from the enclosed SELECT statement.
 #
-# EVIDENCE-OF: R-41898-06686 If the SELECT yields more than one result
-# row, all rows after the first are ignored.
+# EVIDENCE-OF: R-15900-52156 In other words, an implied "LIMIT 1" is
+# added to the subquery, overriding an explicitly coded LIMIT.
 #
 do_execsql_test e_expr-36.3.1 {
   CREATE TABLE t4(x, y);
@@ -1849,8 +1860,8 @@ foreach {tn expr restype resval} {
   do_expr_test e_expr-36.3.$tn $expr $restype $resval
 }
 
-# EVIDENCE-OF: R-25492-41572 If the SELECT yields no rows, then the
-# value of the expression is NULL.
+# EVIDENCE-OF: R-52325-25449 The value of a subquery expression is NULL
+# if the enclosed SELECT statement returns no rows.
 #
 foreach {tn expr} {
     1  { ( SELECT x FROM t4 WHERE x>3 ORDER BY x )      }

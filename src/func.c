@@ -200,23 +200,28 @@ static void instrFunc(
   if( typeHaystack==SQLITE_NULL || typeNeedle==SQLITE_NULL ) return;
   nHaystack = sqlite3_value_bytes(argv[0]);
   nNeedle = sqlite3_value_bytes(argv[1]);
-  if( typeHaystack==SQLITE_BLOB && typeNeedle==SQLITE_BLOB ){
-    zHaystack = sqlite3_value_blob(argv[0]);
-    zNeedle = sqlite3_value_blob(argv[1]);
-    isText = 0;
-  }else{
-    zHaystack = sqlite3_value_text(argv[0]);
-    zNeedle = sqlite3_value_text(argv[1]);
-    isText = 1;
+  if( nNeedle>0 ){
+    if( typeHaystack==SQLITE_BLOB && typeNeedle==SQLITE_BLOB ){
+      zHaystack = sqlite3_value_blob(argv[0]);
+      zNeedle = sqlite3_value_blob(argv[1]);
+      assert( zNeedle!=0 );
+      assert( zHaystack!=0 || nHaystack==0 );
+      isText = 0;
+    }else{
+      zHaystack = sqlite3_value_text(argv[0]);
+      zNeedle = sqlite3_value_text(argv[1]);
+      isText = 1;
+      if( zHaystack==0 || zNeedle==0 ) return;
+    }
+    while( nNeedle<=nHaystack && memcmp(zHaystack, zNeedle, nNeedle)!=0 ){
+      N++;
+      do{
+        nHaystack--;
+        zHaystack++;
+      }while( isText && (zHaystack[0]&0xc0)==0x80 );
+    }
+    if( nNeedle>nHaystack ) N = 0;
   }
-  while( nNeedle<=nHaystack && memcmp(zHaystack, zNeedle, nNeedle)!=0 ){
-    N++;
-    do{
-      nHaystack--;
-      zHaystack++;
-    }while( isText && (zHaystack[0]&0xc0)==0x80 );
-  }
-  if( nNeedle>nHaystack ) N = 0;
   sqlite3_result_int(context, N);
 }
 
@@ -596,9 +601,19 @@ static const struct compareInfo likeInfoNorm = { '%', '_',   0, 1 };
 static const struct compareInfo likeInfoAlt = { '%', '_',   0, 0 };
 
 /*
-** Compare two UTF-8 strings for equality where the first string can
-** potentially be a "glob" or "like" expression.  Return true (1) if they
-** are the same and false (0) if they are different.
+** Possible error returns from patternMatch()
+*/
+#define SQLITE_MATCH             0
+#define SQLITE_NOMATCH           1
+#define SQLITE_NOWILDCARDMATCH   2
+
+/*
+** Compare two UTF-8 strings for equality where the first string is
+** a GLOB or LIKE expression.  Return values:
+**
+**    SQLITE_MATCH:            Match
+**    SQLITE_NOMATCH:          No match
+**    SQLITE_NOWILDCARDMATCH:  No match in spite of having * or % wildcards.
 **
 ** Globbing rules:
 **
@@ -649,30 +664,31 @@ static int patternCompare(
       ** single character of the input string for each "?" skipped */
       while( (c=Utf8Read(zPattern)) == matchAll || c == matchOne ){
         if( c==matchOne && sqlite3Utf8Read(&zString)==0 ){
-          return 0;
+          return SQLITE_NOWILDCARDMATCH;
         }
       }
       if( c==0 ){
-        return 1;   /* "*" at the end of the pattern matches */
+        return SQLITE_MATCH;   /* "*" at the end of the pattern matches */
       }else if( c==matchOther ){
         if( pInfo->matchSet==0 ){
           c = sqlite3Utf8Read(&zPattern);
-          if( c==0 ) return 0;
+          if( c==0 ) return SQLITE_NOWILDCARDMATCH;
         }else{
           /* "[...]" immediately follows the "*".  We have to do a slow
           ** recursive search in this case, but it is an unusual case. */
           assert( matchOther<0x80 );  /* '[' is a single-byte character */
-          while( *zString
-                 && patternCompare(&zPattern[-1],zString,pInfo,matchOther)==0 ){
+          while( *zString ){
+            int bMatch = patternCompare(&zPattern[-1],zString,pInfo,matchOther);
+            if( bMatch!=SQLITE_NOMATCH ) return bMatch;
             SQLITE_SKIP_UTF8(zString);
           }
-          return *zString!=0;
+          return SQLITE_NOWILDCARDMATCH;
         }
       }
 
       /* At this point variable c contains the first character of the
       ** pattern string past the "*".  Search in the input string for the
-      ** first matching character and recursively contine the match from
+      ** first matching character and recursively continue the match from
       ** that point.
       **
       ** For a case-insensitive search, set variable cx to be the same as
@@ -681,6 +697,7 @@ static int patternCompare(
       */
       if( c<=0x80 ){
         u32 cx;
+        int bMatch;
         if( noCase ){
           cx = sqlite3Toupper(c);
           c = sqlite3Tolower(c);
@@ -689,27 +706,30 @@ static int patternCompare(
         }
         while( (c2 = *(zString++))!=0 ){
           if( c2!=c && c2!=cx ) continue;
-          if( patternCompare(zPattern,zString,pInfo,matchOther) ) return 1;
+          bMatch = patternCompare(zPattern,zString,pInfo,matchOther);
+          if( bMatch!=SQLITE_NOMATCH ) return bMatch;
         }
       }else{
+        int bMatch;
         while( (c2 = Utf8Read(zString))!=0 ){
           if( c2!=c ) continue;
-          if( patternCompare(zPattern,zString,pInfo,matchOther) ) return 1;
+          bMatch = patternCompare(zPattern,zString,pInfo,matchOther);
+          if( bMatch!=SQLITE_NOMATCH ) return bMatch;
         }
       }
-      return 0;
+      return SQLITE_NOWILDCARDMATCH;
     }
     if( c==matchOther ){
       if( pInfo->matchSet==0 ){
         c = sqlite3Utf8Read(&zPattern);
-        if( c==0 ) return 0;
+        if( c==0 ) return SQLITE_NOMATCH;
         zEscaped = zPattern;
       }else{
         u32 prior_c = 0;
         int seen = 0;
         int invert = 0;
         c = sqlite3Utf8Read(&zString);
-        if( c==0 ) return 0;
+        if( c==0 ) return SQLITE_NOMATCH;
         c2 = sqlite3Utf8Read(&zPattern);
         if( c2=='^' ){
           invert = 1;
@@ -733,7 +753,7 @@ static int patternCompare(
           c2 = sqlite3Utf8Read(&zPattern);
         }
         if( c2==0 || (seen ^ invert)==0 ){
-          return 0;
+          return SQLITE_NOMATCH;
         }
         continue;
       }
@@ -744,23 +764,25 @@ static int patternCompare(
       continue;
     }
     if( c==matchOne && zPattern!=zEscaped && c2!=0 ) continue;
-    return 0;
+    return SQLITE_NOMATCH;
   }
-  return *zString==0;
+  return *zString==0 ? SQLITE_MATCH : SQLITE_NOMATCH;
 }
 
 /*
-** The sqlite3_strglob() interface.
+** The sqlite3_strglob() interface.  Return 0 on a match (like strcmp()) and
+** non-zero if there is no match.
 */
 int sqlite3_strglob(const char *zGlobPattern, const char *zString){
-  return patternCompare((u8*)zGlobPattern, (u8*)zString, &globInfo, '[')==0;
+  return patternCompare((u8*)zGlobPattern, (u8*)zString, &globInfo, '[');
 }
 
 /*
-** The sqlite3_strlike() interface.
+** The sqlite3_strlike() interface.  Return 0 on a match and non-zero for
+** a miss - like strcmp().
 */
 int sqlite3_strlike(const char *zPattern, const char *zStr, unsigned int esc){
-  return patternCompare((u8*)zPattern, (u8*)zStr, &likeInfoNorm, esc)==0;
+  return patternCompare((u8*)zPattern, (u8*)zStr, &likeInfoNorm, esc);
 }
 
 /*
@@ -841,7 +863,7 @@ static void likeFunc(
 #ifdef SQLITE_TEST
     sqlite3_like_count++;
 #endif
-    sqlite3_result_int(context, patternCompare(zB, zA, pInfo, escape));
+    sqlite3_result_int(context, patternCompare(zB, zA, pInfo, escape)==SQLITE_MATCH);
   }
 }
 
@@ -1612,7 +1634,7 @@ static void groupConcatStep(
         zSep = ",";
         nSep = 1;
       }
-      if( nSep ) sqlite3StrAccumAppend(pAccum, zSep, nSep);
+      if( zSep ) sqlite3StrAccumAppend(pAccum, zSep, nSep);
     }
     zVal = (char*)sqlite3_value_text(argv[0]);
     nVal = sqlite3_value_bytes(argv[0]);
@@ -1753,6 +1775,9 @@ void sqlite3RegisterBuiltinFunctions(void){
     FUNCTION2(unlikely,          1, 0, 0, noopFunc,  SQLITE_FUNC_UNLIKELY),
     FUNCTION2(likelihood,        2, 0, 0, noopFunc,  SQLITE_FUNC_UNLIKELY),
     FUNCTION2(likely,            1, 0, 0, noopFunc,  SQLITE_FUNC_UNLIKELY),
+#ifdef SQLITE_DEBUG
+    FUNCTION2(affinity,          1, 0, 0, noopFunc,  SQLITE_FUNC_AFFINITY),
+#endif
     FUNCTION(ltrim,              1, 1, 0, trimFunc         ),
     FUNCTION(ltrim,              2, 1, 0, trimFunc         ),
     FUNCTION(rtrim,              1, 2, 0, trimFunc         ),

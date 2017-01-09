@@ -140,6 +140,24 @@ foreach {tn init mod} {
     );
   }
 
+  4 {
+    CREATE TABLE x1(a, b, c, PRIMARY KEY(a, b, c));
+    INSERT INTO x1 VALUES('u', 'v', NULL);
+    INSERT INTO x1 VALUES('x', 'y', 'z');
+    INSERT INTO x1 VALUES('a', NULL, 'b');
+  } {
+    INSERT INTO x1 VALUES('a', 'b', 'c');
+  }
+
+  5 {
+    CREATE TABLE t1(a PRIMARY KEY, b);
+    INSERT INTO t1 VALUES(1, NULL);
+    INSERT INTO t1 VALUES(2, X'');
+  } {
+    UPDATE t1 SET b = X'' WHERE a=1;
+    UPDATE t1 SET b = NULL WHERE a=2;
+  }
+
 } {
   catch { db close }
 
@@ -279,6 +297,7 @@ tablE t1 USING FTs5(c);
     db2 close
   }
 }
+
 
 finish_test
 

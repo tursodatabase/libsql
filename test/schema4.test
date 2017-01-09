@@ -149,7 +149,7 @@ ifcapable altertable {
   } {}
 
   do_execsql_test schema4-2.8 {
-    select sql from sqlite_temp_master WHERE type='table';
+    select sql from temp.sqlite_master WHERE type='table';
   } {{CREATE TABLE x1(x)}}
 
   do_execsql_test schema4-2.7 { ALTER TABLE tbl RENAME TO tbl2 } {}

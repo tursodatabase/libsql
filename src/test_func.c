@@ -155,7 +155,7 @@ static void test_destructor_count(
 ** arguments. It returns the text value returned by the sqlite3_errmsg16()
 ** API function.
 */
-#ifndef SQLITE_OMIT_BUILTIN_TEST
+#ifndef SQLITE_UNTESTABLE
 void sqlite3BeginBenignMalloc(void);
 void sqlite3EndBenignMalloc(void);
 #else

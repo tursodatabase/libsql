@@ -18,57 +18,52 @@
 #include "vdbeInt.h"
 
 #if !defined(SQLITE_OMIT_VACUUM) && !defined(SQLITE_OMIT_ATTACH)
-/*
-** Finalize a prepared statement.  If there was an error, store the
-** text of the error message in *pzErrMsg.  Return the result code.
-*/
-static int vacuumFinalize(sqlite3 *db, sqlite3_stmt *pStmt, char **pzErrMsg){
-  int rc;
-  rc = sqlite3VdbeFinalize((Vdbe*)pStmt);
-  if( rc ){
-    sqlite3SetString(pzErrMsg, db, sqlite3_errmsg(db));
-  }
-  return rc;
-}
 
 /*
-** Execute zSql on database db. Return an error code.
+** Execute zSql on database db.
+**
+** If zSql returns rows, then each row will have exactly one
+** column.  (This will only happen if zSql begins with "SELECT".)
+** Take each row of result and call execSql() again recursively.
+**
+** The execSqlF() routine does the same thing, except it accepts
+** a format string as its third argument
 */
 static int execSql(sqlite3 *db, char **pzErrMsg, const char *zSql){
   sqlite3_stmt *pStmt;
-  VVA_ONLY( int rc; )
-  if( !zSql ){
-    return SQLITE_NOMEM_BKPT;
-  }
-  if( SQLITE_OK!=sqlite3_prepare(db, zSql, -1, &pStmt, 0) ){
-    sqlite3SetString(pzErrMsg, db, sqlite3_errmsg(db));
-    return sqlite3_errcode(db);
-  }
-  VVA_ONLY( rc = ) sqlite3_step(pStmt);
-  assert( rc!=SQLITE_ROW || (db->flags&SQLITE_CountRows) );
-  return vacuumFinalize(db, pStmt, pzErrMsg);
-}
-
-/*
-** Execute zSql on database db. The statement returns exactly
-** one column. Execute this as SQL on the same database.
-*/
-static int execExecSql(sqlite3 *db, char **pzErrMsg, const char *zSql){
-  sqlite3_stmt *pStmt;
   int rc;
 
-  rc = sqlite3_prepare(db, zSql, -1, &pStmt, 0);
+  /* printf("SQL: [%s]\n", zSql); fflush(stdout); */
+  rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
   if( rc!=SQLITE_OK ) return rc;
-
-  while( SQLITE_ROW==sqlite3_step(pStmt) ){
-    rc = execSql(db, pzErrMsg, (char*)sqlite3_column_text(pStmt, 0));
-    if( rc!=SQLITE_OK ){
-      vacuumFinalize(db, pStmt, pzErrMsg);
-      return rc;
+  while( SQLITE_ROW==(rc = sqlite3_step(pStmt)) ){
+    const char *zSubSql = (const char*)sqlite3_column_text(pStmt,0);
+    assert( sqlite3_strnicmp(zSql,"SELECT",6)==0 );
+    if( zSubSql ){
+      assert( zSubSql[0]!='S' );
+      rc = execSql(db, pzErrMsg, zSubSql);
+      if( rc!=SQLITE_OK ) break;
     }
   }
-
-  return vacuumFinalize(db, pStmt, pzErrMsg);
+  assert( rc!=SQLITE_ROW );
+  if( rc==SQLITE_DONE ) rc = SQLITE_OK;
+  if( rc ){
+    sqlite3SetString(pzErrMsg, db, sqlite3_errmsg(db));
+  }
+  (void)sqlite3_finalize(pStmt);
+  return rc;
+}
+static int execSqlF(sqlite3 *db, char **pzErrMsg, const char *zSql, ...){
+  char *z;
+  va_list ap;
+  int rc;
+  va_start(ap, zSql);
+  z = sqlite3VMPrintf(db, zSql, ap);
+  va_end(ap);
+  if( z==0 ) return SQLITE_NOMEM;
+  rc = execSql(db, pzErrMsg, z);
+  sqlite3DbFree(db, z);
+  return rc;
 }
 
 /*
@@ -101,11 +96,12 @@ static int execExecSql(sqlite3 *db, char **pzErrMsg, const char *zSql){
 ** transient would cause the database file to appear to be deleted
 ** following reboot.
 */
-void sqlite3Vacuum(Parse *pParse){
+void sqlite3Vacuum(Parse *pParse, Token *pNm){
   Vdbe *v = sqlite3GetVdbe(pParse);
-  if( v ){
-    sqlite3VdbeAddOp2(v, OP_Vacuum, 0, 0);
-    sqlite3VdbeUsesBtree(v, 0);
+  int iDb = pNm ? sqlite3TwoPartName(pParse, pNm, pNm, &pNm) : 0;
+  if( v && (iDb>=2 || iDb==0) ){
+    sqlite3VdbeAddOp1(v, OP_Vacuum, iDb);
+    sqlite3VdbeUsesBtree(v, iDb);
   }
   return;
 }
@@ -113,11 +109,10 @@ void sqlite3Vacuum(Parse *pParse){
 /*
 ** This routine implements the OP_Vacuum opcode of the VDBE.
 */
-int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
+int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db, int iDb){
   int rc = SQLITE_OK;     /* Return code from service routines */
   Btree *pMain;           /* The database being vacuumed */
   Btree *pTemp;           /* The temporary database we vacuum into */
-  char *zSql = 0;         /* SQL statements */
   int saved_flags;        /* Saved value of the db->flags */
   int saved_nChange;      /* Saved value of db->nChange */
   int saved_nTotalChange; /* Saved value of db->nTotalChange */
@@ -126,6 +121,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   int isMemDb;            /* True if vacuuming a :memory: database */
   int nRes;               /* Bytes of reserved space at the end of each page */
   int nDb;                /* Number of attached databases */
+  const char *zDbMain;    /* Schema name of database to vacuum */
 
   if( !db->autoCommit ){
     sqlite3SetString(pzErrMsg, db, "cannot VACUUM from within a transaction");
@@ -143,11 +139,13 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   saved_nChange = db->nChange;
   saved_nTotalChange = db->nTotalChange;
   saved_mTrace = db->mTrace;
-  db->flags |= SQLITE_WriteSchema | SQLITE_IgnoreChecks | SQLITE_PreferBuiltin;
-  db->flags &= ~(SQLITE_ForeignKeys | SQLITE_ReverseOrder);
+  db->flags |= (SQLITE_WriteSchema | SQLITE_IgnoreChecks
+                 | SQLITE_PreferBuiltin | SQLITE_Vacuum);
+  db->flags &= ~(SQLITE_ForeignKeys | SQLITE_ReverseOrder | SQLITE_CountRows);
   db->mTrace = 0;
 
-  pMain = db->aDb[0].pBt;
+  zDbMain = db->aDb[iDb].zDbSName;
+  pMain = db->aDb[iDb].pBt;
   isMemDb = sqlite3PagerIsMemdb(sqlite3BtreePager(pMain));
 
   /* Attach the temporary database as 'vacuum_db'. The synchronous pragma
@@ -165,18 +163,12 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   ** to write the journal header file.
   */
   nDb = db->nDb;
-  if( sqlite3TempInMemory(db) ){
-    zSql = "ATTACH ':memory:' AS vacuum_db;";
-  }else{
-    zSql = "ATTACH '' AS vacuum_db;";
-  }
-  rc = execSql(db, pzErrMsg, zSql);
-  if( db->nDb>nDb ){
-    pDb = &db->aDb[db->nDb-1];
-    assert( strcmp(pDb->zName,"vacuum_db")==0 );
-  }
+  rc = execSql(db, pzErrMsg, "ATTACH''AS vacuum_db");
   if( rc!=SQLITE_OK ) goto end_of_vacuum;
-  pTemp = db->aDb[db->nDb-1].pBt;
+  assert( (db->nDb-1)==nDb );
+  pDb = &db->aDb[nDb];
+  assert( strcmp(pDb->zDbSName,"vacuum_db")==0 );
+  pTemp = pDb->pBt;
 
   /* The call to execSql() to attach the temp database has left the file
   ** locked (as there was more than one active statement when the transaction
@@ -197,16 +189,15 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   }
 #endif
 
-  sqlite3BtreeSetCacheSize(pTemp, db->aDb[0].pSchema->cache_size);
+  sqlite3BtreeSetCacheSize(pTemp, db->aDb[iDb].pSchema->cache_size);
   sqlite3BtreeSetSpillSize(pTemp, sqlite3BtreeSetSpillSize(pMain,0));
-  rc = execSql(db, pzErrMsg, "PRAGMA vacuum_db.synchronous=OFF");
-  if( rc!=SQLITE_OK ) goto end_of_vacuum;
+  sqlite3BtreeSetPagerFlags(pTemp, PAGER_SYNCHRONOUS_OFF|PAGER_CACHESPILL);
 
   /* Begin a transaction and take an exclusive lock on the main database
   ** file. This is done before the sqlite3BtreeGetPageSize(pMain) call below,
   ** to ensure that we do not try to change the page-size on a WAL database.
   */
-  rc = execSql(db, pzErrMsg, "BEGIN;");
+  rc = execSql(db, pzErrMsg, "BEGIN");
   if( rc!=SQLITE_OK ) goto end_of_vacuum;
   rc = sqlite3BtreeBeginTrans(pMain, 2);
   if( rc!=SQLITE_OK ) goto end_of_vacuum;
@@ -233,64 +224,48 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   /* Query the schema of the main database. Create a mirror schema
   ** in the temporary database.
   */
-  rc = execExecSql(db, pzErrMsg,
-      "SELECT 'CREATE TABLE vacuum_db.' || substr(sql,14) "
-      "  FROM sqlite_master WHERE type='table' AND name!='sqlite_sequence'"
-      "   AND coalesce(rootpage,1)>0"
+  db->init.iDb = nDb; /* force new CREATE statements into vacuum_db */
+  rc = execSqlF(db, pzErrMsg,
+      "SELECT sql FROM \"%w\".sqlite_master"
+      " WHERE type='table'AND name<>'sqlite_sequence'"
+      " AND coalesce(rootpage,1)>0",
+      zDbMain
   );
   if( rc!=SQLITE_OK ) goto end_of_vacuum;
-  rc = execExecSql(db, pzErrMsg,
-      "SELECT 'CREATE INDEX vacuum_db.' || substr(sql,14)"
-      "  FROM sqlite_master WHERE sql LIKE 'CREATE INDEX %' ");
+  rc = execSqlF(db, pzErrMsg,
+      "SELECT sql FROM \"%w\".sqlite_master"
+      " WHERE type='index' AND length(sql)>10",
+      zDbMain
+  );
   if( rc!=SQLITE_OK ) goto end_of_vacuum;
-  rc = execExecSql(db, pzErrMsg,
-      "SELECT 'CREATE UNIQUE INDEX vacuum_db.' || substr(sql,21) "
-      "  FROM sqlite_master WHERE sql LIKE 'CREATE UNIQUE INDEX %'");
-  if( rc!=SQLITE_OK ) goto end_of_vacuum;
+  db->init.iDb = 0;
 
   /* Loop through the tables in the main database. For each, do
   ** an "INSERT INTO vacuum_db.xxx SELECT * FROM main.xxx;" to copy
   ** the contents to the temporary database.
   */
-  assert( (db->flags & SQLITE_Vacuum)==0 );
-  db->flags |= SQLITE_Vacuum;
-  rc = execExecSql(db, pzErrMsg,
-      "SELECT 'INSERT INTO vacuum_db.' || quote(name) "
-      "|| ' SELECT * FROM main.' || quote(name) || ';'"
-      "FROM main.sqlite_master "
-      "WHERE type = 'table' AND name!='sqlite_sequence' "
-      "  AND coalesce(rootpage,1)>0"
+  rc = execSqlF(db, pzErrMsg,
+      "SELECT'INSERT INTO vacuum_db.'||quote(name)"
+      "||' SELECT*FROM\"%w\".'||quote(name)"
+      "FROM vacuum_db.sqlite_master "
+      "WHERE type='table'AND coalesce(rootpage,1)>0",
+      zDbMain
   );
   assert( (db->flags & SQLITE_Vacuum)!=0 );
   db->flags &= ~SQLITE_Vacuum;
   if( rc!=SQLITE_OK ) goto end_of_vacuum;
-
-  /* Copy over the sequence table
-  */
-  rc = execExecSql(db, pzErrMsg,
-      "SELECT 'DELETE FROM vacuum_db.' || quote(name) || ';' "
-      "FROM vacuum_db.sqlite_master WHERE name='sqlite_sequence' "
-  );
-  if( rc!=SQLITE_OK ) goto end_of_vacuum;
-  rc = execExecSql(db, pzErrMsg,
-      "SELECT 'INSERT INTO vacuum_db.' || quote(name) "
-      "|| ' SELECT * FROM main.' || quote(name) || ';' "
-      "FROM vacuum_db.sqlite_master WHERE name=='sqlite_sequence';"
-  );
-  if( rc!=SQLITE_OK ) goto end_of_vacuum;
-
 
   /* Copy the triggers, views, and virtual tables from the main database
   ** over to the temporary database.  None of these objects has any
   ** associated storage, so all we have to do is copy their entries
   ** from the SQLITE_MASTER table.
   */
-  rc = execSql(db, pzErrMsg,
-      "INSERT INTO vacuum_db.sqlite_master "
-      "  SELECT type, name, tbl_name, rootpage, sql"
-      "    FROM main.sqlite_master"
-      "   WHERE type='view' OR type='trigger'"
-      "      OR (type='table' AND rootpage=0)"
+  rc = execSqlF(db, pzErrMsg,
+      "INSERT INTO vacuum_db.sqlite_master"
+      " SELECT*FROM \"%w\".sqlite_master"
+      " WHERE type IN('view','trigger')"
+      " OR(type='table'AND rootpage=0)",
+      zDbMain
   );
   if( rc ) goto end_of_vacuum;
 
@@ -344,6 +319,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
 
 end_of_vacuum:
   /* Restore the original value of db->flags */
+  db->init.iDb = 0;
   db->flags = saved_flags;
   db->nChange = saved_nChange;
   db->nTotalChange = saved_nTotalChange;

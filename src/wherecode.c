@@ -21,6 +21,17 @@
 #include "whereInt.h"
 
 #ifndef SQLITE_OMIT_EXPLAIN
+
+/*
+** Return the name of the i-th column of the pIdx index.
+*/
+static const char *explainIndexColumnName(Index *pIdx, int i){
+  i = pIdx->aiColumn[i];
+  if( i==XN_EXPR ) return "<expr>";
+  if( i==XN_ROWID ) return "rowid";
+  return pIdx->pTable->aCol[i].zName;
+}
+
 /*
 ** This routine is a helper for explainIndexRange() below
 **
@@ -31,24 +42,32 @@
 */
 static void explainAppendTerm(
   StrAccum *pStr,             /* The text expression being built */
-  int iTerm,                  /* Index of this term.  First is zero */
-  const char *zColumn,        /* Name of the column */
+  Index *pIdx,                /* Index to read column names from */
+  int nTerm,                  /* Number of terms */
+  int iTerm,                  /* Zero-based index of first term. */
+  int bAnd,                   /* Non-zero to append " AND " */
   const char *zOp             /* Name of the operator */
 ){
-  if( iTerm ) sqlite3StrAccumAppend(pStr, " AND ", 5);
-  sqlite3StrAccumAppendAll(pStr, zColumn);
-  sqlite3StrAccumAppend(pStr, zOp, 1);
-  sqlite3StrAccumAppend(pStr, "?", 1);
-}
+  int i;
 
-/*
-** Return the name of the i-th column of the pIdx index.
-*/
-static const char *explainIndexColumnName(Index *pIdx, int i){
-  i = pIdx->aiColumn[i];
-  if( i==XN_EXPR ) return "<expr>";
-  if( i==XN_ROWID ) return "rowid";
-  return pIdx->pTable->aCol[i].zName;
+  assert( nTerm>=1 );
+  if( bAnd ) sqlite3StrAccumAppend(pStr, " AND ", 5);
+
+  if( nTerm>1 ) sqlite3StrAccumAppend(pStr, "(", 1);
+  for(i=0; i<nTerm; i++){
+    if( i ) sqlite3StrAccumAppend(pStr, ",", 1);
+    sqlite3StrAccumAppendAll(pStr, explainIndexColumnName(pIdx, iTerm+i));
+  }
+  if( nTerm>1 ) sqlite3StrAccumAppend(pStr, ")", 1);
+
+  sqlite3StrAccumAppend(pStr, zOp, 1);
+
+  if( nTerm>1 ) sqlite3StrAccumAppend(pStr, "(", 1);
+  for(i=0; i<nTerm; i++){
+    if( i ) sqlite3StrAccumAppend(pStr, ",", 1);
+    sqlite3StrAccumAppend(pStr, "?", 1);
+  }
+  if( nTerm>1 ) sqlite3StrAccumAppend(pStr, ")", 1);
 }
 
 /*
@@ -81,12 +100,11 @@ static void explainIndexRange(StrAccum *pStr, WhereLoop *pLoop){
 
   j = i;
   if( pLoop->wsFlags&WHERE_BTM_LIMIT ){
-    const char *z = explainIndexColumnName(pIndex, i);
-    explainAppendTerm(pStr, i++, z, ">");
+    explainAppendTerm(pStr, pIndex, pLoop->u.btree.nBtm, j, i, ">");
+    i = 1;
   }
   if( pLoop->wsFlags&WHERE_TOP_LIMIT ){
-    const char *z = explainIndexColumnName(pIndex, j);
-    explainAppendTerm(pStr, i, z, "<");
+    explainAppendTerm(pStr, pIndex, pLoop->u.btree.nTop, j, i, "<");
   }
   sqlite3StrAccumAppend(pStr, ")", 1);
 }
@@ -276,7 +294,7 @@ void sqlite3WhereAddScanStatus(
 */
 static void disableTerm(WhereLevel *pLevel, WhereTerm *pTerm){
   int nLoop = 0;
-  while( pTerm
+  while( ALWAYS(pTerm!=0)
       && (pTerm->wtFlags & TERM_CODED)==0
       && (pLevel->iLeftJoin==0 || ExprHasProperty(pTerm->pExpr, EP_FromJoin))
       && (pLevel->notReady & pTerm->prereqAll)==0
@@ -332,16 +350,45 @@ static void codeApplyAffinity(Parse *pParse, int base, int n, char *zAff){
   }
 }
 
+/*
+** Expression pRight, which is the RHS of a comparison operation, is 
+** either a vector of n elements or, if n==1, a scalar expression.
+** Before the comparison operation, affinity zAff is to be applied
+** to the pRight values. This function modifies characters within the
+** affinity string to SQLITE_AFF_BLOB if either:
+**
+**   * the comparison will be performed with no affinity, or
+**   * the affinity change in zAff is guaranteed not to change the value.
+*/
+static void updateRangeAffinityStr(
+  Expr *pRight,                   /* RHS of comparison */
+  int n,                          /* Number of vector elements in comparison */
+  char *zAff                      /* Affinity string to modify */
+){
+  int i;
+  for(i=0; i<n; i++){
+    Expr *p = sqlite3VectorFieldSubexpr(pRight, i);
+    if( sqlite3CompareAffinity(p, zAff[i])==SQLITE_AFF_BLOB
+     || sqlite3ExprNeedsNoAffinityChange(p, zAff[i])
+    ){
+      zAff[i] = SQLITE_AFF_BLOB;
+    }
+  }
+}
 
 /*
 ** Generate code for a single equality term of the WHERE clause.  An equality
 ** term can be either X=expr or X IN (...).   pTerm is the term to be 
 ** coded.
 **
-** The current value for the constraint is left in register iReg.
+** The current value for the constraint is left in a register, the index
+** of which is returned.  An attempt is made store the result in iTarget but
+** this is only guaranteed for TK_ISNULL and TK_IN constraints.  If the
+** constraint is a TK_EQ or TK_IS, then the current value might be left in
+** some other register and it is the caller's responsibility to compensate.
 **
-** For a constraint of the form X=expr, the expression is evaluated and its
-** result is left on the stack.  For constraints of the form X IN (...)
+** For a constraint of the form X=expr, the expression is evaluated in
+** straight-line code.  For constraints of the form X IN (...)
 ** this routine sets up a loop that will iterate over all values of X.
 */
 static int codeEqualityTerm(
@@ -356,6 +403,7 @@ static int codeEqualityTerm(
   Vdbe *v = pParse->pVdbe;
   int iReg;                  /* Register holding results */
 
+  assert( pLevel->pWLoop->aLTerm[iEq]==pTerm );
   assert( iTarget>0 );
   if( pX->op==TK_EQ || pX->op==TK_IS ){
     iReg = sqlite3ExprCodeTarget(pParse, pX->pRight, iTarget);
@@ -364,10 +412,13 @@ static int codeEqualityTerm(
     sqlite3VdbeAddOp2(v, OP_Null, 0, iReg);
 #ifndef SQLITE_OMIT_SUBQUERY
   }else{
-    int eType;
+    int eType = IN_INDEX_NOOP;
     int iTab;
     struct InLoop *pIn;
     WhereLoop *pLoop = pLevel->pWLoop;
+    int i;
+    int nEq = 0;
+    int *aiMap = 0;
 
     if( (pLoop->wsFlags & WHERE_VIRTUALTABLE)==0
       && pLoop->u.btree.pIndex!=0
@@ -379,7 +430,78 @@ static int codeEqualityTerm(
     }
     assert( pX->op==TK_IN );
     iReg = iTarget;
-    eType = sqlite3FindInIndex(pParse, pX, IN_INDEX_LOOP, 0);
+
+    for(i=0; i<iEq; i++){
+      if( pLoop->aLTerm[i] && pLoop->aLTerm[i]->pExpr==pX ){
+        disableTerm(pLevel, pTerm);
+        return iTarget;
+      }
+    }
+    for(i=iEq;i<pLoop->nLTerm; i++){
+      if( ALWAYS(pLoop->aLTerm[i]) && pLoop->aLTerm[i]->pExpr==pX ) nEq++;
+    }
+
+    if( (pX->flags & EP_xIsSelect)==0 || pX->x.pSelect->pEList->nExpr==1 ){
+      eType = sqlite3FindInIndex(pParse, pX, IN_INDEX_LOOP, 0, 0);
+    }else{
+      Select *pSelect = pX->x.pSelect;
+      sqlite3 *db = pParse->db;
+      u16 savedDbOptFlags = db->dbOptFlags;
+      ExprList *pOrigRhs = pSelect->pEList;
+      ExprList *pOrigLhs = pX->pLeft->x.pList;
+      ExprList *pRhs = 0;         /* New Select.pEList for RHS */
+      ExprList *pLhs = 0;         /* New pX->pLeft vector */
+
+      for(i=iEq;i<pLoop->nLTerm; i++){
+        if( pLoop->aLTerm[i]->pExpr==pX ){
+          int iField = pLoop->aLTerm[i]->iField - 1;
+          Expr *pNewRhs = sqlite3ExprDup(db, pOrigRhs->a[iField].pExpr, 0);
+          Expr *pNewLhs = sqlite3ExprDup(db, pOrigLhs->a[iField].pExpr, 0);
+
+          pRhs = sqlite3ExprListAppend(pParse, pRhs, pNewRhs);
+          pLhs = sqlite3ExprListAppend(pParse, pLhs, pNewLhs);
+        }
+      }
+      if( !db->mallocFailed ){
+        Expr *pLeft = pX->pLeft;
+
+        if( pSelect->pOrderBy ){
+          /* If the SELECT statement has an ORDER BY clause, zero the 
+          ** iOrderByCol variables. These are set to non-zero when an 
+          ** ORDER BY term exactly matches one of the terms of the 
+          ** result-set. Since the result-set of the SELECT statement may
+          ** have been modified or reordered, these variables are no longer 
+          ** set correctly.  Since setting them is just an optimization, 
+          ** it's easiest just to zero them here.  */
+          ExprList *pOrderBy = pSelect->pOrderBy;
+          for(i=0; i<pOrderBy->nExpr; i++){
+            pOrderBy->a[i].u.x.iOrderByCol = 0;
+          }
+        }
+
+        /* Take care here not to generate a TK_VECTOR containing only a
+        ** single value. Since the parser never creates such a vector, some
+        ** of the subroutines do not handle this case.  */
+        if( pLhs->nExpr==1 ){
+          pX->pLeft = pLhs->a[0].pExpr;
+        }else{
+          pLeft->x.pList = pLhs;
+          aiMap = (int*)sqlite3DbMallocZero(pParse->db, sizeof(int) * nEq);
+          testcase( aiMap==0 );
+        }
+        pSelect->pEList = pRhs;
+        db->dbOptFlags |= SQLITE_QueryFlattener;
+        eType = sqlite3FindInIndex(pParse, pX, IN_INDEX_LOOP, 0, aiMap);
+        db->dbOptFlags = savedDbOptFlags;
+        testcase( aiMap!=0 && aiMap[0]!=0 );
+        pSelect->pEList = pOrigRhs;
+        pLeft->x.pList = pOrigLhs;
+        pX->pLeft = pLeft;
+      }
+      sqlite3ExprListDelete(pParse->db, pLhs);
+      sqlite3ExprListDelete(pParse->db, pRhs);
+    }
+
     if( eType==IN_INDEX_INDEX_DESC ){
       testcase( bRev );
       bRev = !bRev;
@@ -389,28 +511,45 @@ static int codeEqualityTerm(
     VdbeCoverageIf(v, bRev);
     VdbeCoverageIf(v, !bRev);
     assert( (pLoop->wsFlags & WHERE_MULTI_OR)==0 );
+
     pLoop->wsFlags |= WHERE_IN_ABLE;
     if( pLevel->u.in.nIn==0 ){
       pLevel->addrNxt = sqlite3VdbeMakeLabel(v);
     }
-    pLevel->u.in.nIn++;
+
+    i = pLevel->u.in.nIn;
+    pLevel->u.in.nIn += nEq;
     pLevel->u.in.aInLoop =
        sqlite3DbReallocOrFree(pParse->db, pLevel->u.in.aInLoop,
                               sizeof(pLevel->u.in.aInLoop[0])*pLevel->u.in.nIn);
     pIn = pLevel->u.in.aInLoop;
     if( pIn ){
-      pIn += pLevel->u.in.nIn - 1;
-      pIn->iCur = iTab;
-      if( eType==IN_INDEX_ROWID ){
-        pIn->addrInTop = sqlite3VdbeAddOp2(v, OP_Rowid, iTab, iReg);
-      }else{
-        pIn->addrInTop = sqlite3VdbeAddOp3(v, OP_Column, iTab, 0, iReg);
+      int iMap = 0;               /* Index in aiMap[] */
+      pIn += i;
+      for(i=iEq;i<pLoop->nLTerm; i++){
+        if( pLoop->aLTerm[i]->pExpr==pX ){
+          int iOut = iReg + i - iEq;
+          if( eType==IN_INDEX_ROWID ){
+            testcase( nEq>1 );  /* Happens with a UNIQUE index on ROWID */
+            pIn->addrInTop = sqlite3VdbeAddOp2(v, OP_Rowid, iTab, iOut);
+          }else{
+            int iCol = aiMap ? aiMap[iMap++] : 0;
+            pIn->addrInTop = sqlite3VdbeAddOp3(v,OP_Column,iTab, iCol, iOut);
+          }
+          sqlite3VdbeAddOp1(v, OP_IsNull, iOut); VdbeCoverage(v);
+          if( i==iEq ){
+            pIn->iCur = iTab;
+            pIn->eEndLoopOp = bRev ? OP_PrevIfOpen : OP_NextIfOpen;
+          }else{
+            pIn->eEndLoopOp = OP_Noop;
+          }
+          pIn++;
+        }
       }
-      pIn->eEndLoopOp = bRev ? OP_PrevIfOpen : OP_NextIfOpen;
-      sqlite3VdbeAddOp1(v, OP_IsNull, iReg); VdbeCoverage(v);
     }else{
       pLevel->u.in.nIn = 0;
     }
+    sqlite3DbFree(pParse->db, aiMap);
 #endif
   }
   disableTerm(pLevel, pTerm);
@@ -536,9 +675,15 @@ static int codeAllEqualityTerms(
         sqlite3VdbeAddOp2(v, OP_SCopy, r1, regBase+j);
       }
     }
-    testcase( pTerm->eOperator & WO_ISNULL );
-    testcase( pTerm->eOperator & WO_IN );
-    if( (pTerm->eOperator & (WO_ISNULL|WO_IN))==0 ){
+    if( pTerm->eOperator & WO_IN ){
+      if( pTerm->pExpr->flags & EP_xIsSelect ){
+        /* No affinity ever needs to be (or should be) applied to a value
+        ** from the RHS of an "? IN (SELECT ...)" expression. The 
+        ** sqlite3FindInIndex() routine has already ensured that the 
+        ** affinity of the comparison has been applied to the value.  */
+        if( zAff ) zAff[j] = SQLITE_AFF_BLOB;
+      }
+    }else if( (pTerm->eOperator & WO_ISNULL)==0 ){
       Expr *pRight = pTerm->pExpr->pRight;
       if( (pTerm->wtFlags & TERM_IS)==0 && sqlite3ExprCanBeNull(pRight) ){
         sqlite3VdbeAddOp2(v, OP_IsNull, regBase+j, pLevel->addrBrk);
@@ -862,6 +1007,39 @@ static void codeDeferredSeek(
 }
 
 /*
+** If the expression passed as the second argument is a vector, generate
+** code to write the first nReg elements of the vector into an array
+** of registers starting with iReg.
+**
+** If the expression is not a vector, then nReg must be passed 1. In
+** this case, generate code to evaluate the expression and leave the
+** result in register iReg.
+*/
+static void codeExprOrVector(Parse *pParse, Expr *p, int iReg, int nReg){
+  assert( nReg>0 );
+  if( sqlite3ExprIsVector(p) ){
+#ifndef SQLITE_OMIT_SUBQUERY
+    if( (p->flags & EP_xIsSelect) ){
+      Vdbe *v = pParse->pVdbe;
+      int iSelect = sqlite3CodeSubselect(pParse, p, 0, 0);
+      sqlite3VdbeAddOp3(v, OP_Copy, iSelect, iReg, nReg-1);
+    }else
+#endif
+    {
+      int i;
+      ExprList *pList = p->x.pList;
+      assert( nReg<=pList->nExpr );
+      for(i=0; i<nReg; i++){
+        sqlite3ExprCode(pParse, pList->a[i].pExpr, iReg+i);
+      }
+    }
+  }else{
+    assert( nReg==1 );
+    sqlite3ExprCode(pParse, p, iReg);
+  }
+}
+
+/*
 ** Generate code for the start of the iLevel-th loop in the WHERE clause
 ** implementation described by pWInfo.
 */
@@ -956,14 +1134,15 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         codeEqualityTerm(pParse, pTerm, pLevel, j, bRev, iTarget);
         addrNotFound = pLevel->addrNxt;
       }else{
-        sqlite3ExprCode(pParse, pTerm->pExpr->pRight, iTarget);
+        Expr *pRight = pTerm->pExpr->pRight;
+        codeExprOrVector(pParse, pRight, iTarget, 1);
       }
     }
     sqlite3VdbeAddOp2(v, OP_Integer, pLoop->u.vtab.idxNum, iReg);
     sqlite3VdbeAddOp2(v, OP_Integer, nConstraint, iReg+1);
     sqlite3VdbeAddOp4(v, OP_VFilter, iCur, addrNotFound, iReg,
                       pLoop->u.vtab.idxStr,
-                      pLoop->u.vtab.needFree ? P4_MPRINTF : P4_STATIC);
+                      pLoop->u.vtab.needFree ? P4_DYNAMIC : P4_STATIC);
     VdbeCoverage(v);
     pLoop->u.vtab.needFree = 0;
     pLevel->p1 = iCur;
@@ -996,7 +1175,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
 
         /* Generate code that will continue to the next row if 
         ** the IN constraint is not satisfied */
-        pCompare = sqlite3PExpr(pParse, TK_EQ, 0, 0, 0);
+        pCompare = sqlite3PExpr(pParse, TK_EQ, 0, 0);
         assert( pCompare!=0 || db->mallocFailed );
         if( pCompare ){
           pCompare->pLeft = pTerm->pExpr->pLeft;
@@ -1070,6 +1249,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     if( pStart ){
       Expr *pX;             /* The expression that defines the start bound */
       int r1, rTemp;        /* Registers for holding the start boundary */
+      int op;               /* Cursor seek operation */
 
       /* The following constant maps TK_xx codes into corresponding 
       ** seek opcodes.  It depends on a particular ordering of TK_xx
@@ -1089,8 +1269,16 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       pX = pStart->pExpr;
       assert( pX!=0 );
       testcase( pStart->leftCursor!=iCur ); /* transitive constraints */
-      r1 = sqlite3ExprCodeTemp(pParse, pX->pRight, &rTemp);
-      sqlite3VdbeAddOp3(v, aMoveOp[pX->op-TK_GT], iCur, addrBrk, r1);
+      if( sqlite3ExprIsVector(pX->pRight) ){
+        r1 = rTemp = sqlite3GetTempReg(pParse);
+        codeExprOrVector(pParse, pX->pRight, r1, 1);
+        op = aMoveOp[(pX->op - TK_GT) | 0x0001];
+      }else{
+        r1 = sqlite3ExprCodeTemp(pParse, pX->pRight, &rTemp);
+        disableTerm(pLevel, pStart);
+        op = aMoveOp[(pX->op - TK_GT)];
+      }
+      sqlite3VdbeAddOp3(v, op, iCur, addrBrk, r1);
       VdbeComment((v, "pk"));
       VdbeCoverageIf(v, pX->op==TK_GT);
       VdbeCoverageIf(v, pX->op==TK_LE);
@@ -1098,7 +1286,6 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       VdbeCoverageIf(v, pX->op==TK_GE);
       sqlite3ExprCacheAffinityChange(pParse, r1, 1);
       sqlite3ReleaseTempReg(pParse, rTemp);
-      disableTerm(pLevel, pStart);
     }else{
       sqlite3VdbeAddOp2(v, bRev ? OP_Last : OP_Rewind, iCur, addrBrk);
       VdbeCoverageIf(v, bRev==0);
@@ -1112,13 +1299,17 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       testcase( pEnd->leftCursor!=iCur ); /* Transitive constraints */
       testcase( pEnd->wtFlags & TERM_VIRTUAL );
       memEndValue = ++pParse->nMem;
-      sqlite3ExprCode(pParse, pX->pRight, memEndValue);
-      if( pX->op==TK_LT || pX->op==TK_GT ){
+      codeExprOrVector(pParse, pX->pRight, memEndValue, 1);
+      if( 0==sqlite3ExprIsVector(pX->pRight) 
+       && (pX->op==TK_LT || pX->op==TK_GT) 
+      ){
         testOp = bRev ? OP_Le : OP_Ge;
       }else{
         testOp = bRev ? OP_Lt : OP_Gt;
       }
-      disableTerm(pLevel, pEnd);
+      if( 0==sqlite3ExprIsVector(pX->pRight) ){
+        disableTerm(pLevel, pEnd);
+      }
     }
     start = sqlite3VdbeCurrentAddr(v);
     pLevel->op = bRev ? OP_Prev : OP_Next;
@@ -1185,6 +1376,8 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       OP_IdxLT,            /* 3: (end_constraints &&  bRev &&  endEq) */
     };
     u16 nEq = pLoop->u.btree.nEq;     /* Number of == or IN terms */
+    u16 nBtm = pLoop->u.btree.nBtm;   /* Length of BTM vector */
+    u16 nTop = pLoop->u.btree.nTop;   /* Length of TOP vector */
     int regBase;                 /* Base register holding constraint values */
     WhereTerm *pRangeStart = 0;  /* Inequality constraint at range start */
     WhereTerm *pRangeEnd = 0;    /* Inequality constraint at range end */
@@ -1197,7 +1390,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     int nExtraReg = 0;           /* Number of extra registers needed */
     int op;                      /* Instruction opcode */
     char *zStartAff;             /* Affinity for start of range constraint */
-    char cEndAff = 0;            /* Affinity for end of range constraint */
+    char *zEndAff = 0;           /* Affinity for end of range constraint */
     u8 bSeekPastNull = 0;        /* True to seek past initial nulls */
     u8 bStopAtNull = 0;          /* Add condition to terminate at NULLs */
 
@@ -1231,14 +1424,14 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     j = nEq;
     if( pLoop->wsFlags & WHERE_BTM_LIMIT ){
       pRangeStart = pLoop->aLTerm[j++];
-      nExtraReg = 1;
+      nExtraReg = MAX(nExtraReg, pLoop->u.btree.nBtm);
       /* Like optimization range constraints always occur in pairs */
       assert( (pRangeStart->wtFlags & TERM_LIKEOPT)==0 || 
               (pLoop->wsFlags & WHERE_TOP_LIMIT)!=0 );
     }
     if( pLoop->wsFlags & WHERE_TOP_LIMIT ){
       pRangeEnd = pLoop->aLTerm[j++];
-      nExtraReg = 1;
+      nExtraReg = MAX(nExtraReg, pLoop->u.btree.nTop);
 #ifndef SQLITE_LIKE_DOESNT_MATCH_BLOBS
       if( (pRangeEnd->wtFlags & TERM_LIKEOPT)!=0 ){
         assert( pRangeStart!=0 );                     /* LIKE opt constraints */
@@ -1256,11 +1449,11 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         pLevel->iLikeRepCntr |= bRev ^ (pIdx->aSortOrder[nEq]==SQLITE_SO_DESC);
       }
 #endif
-      if( pRangeStart==0
-       && (j = pIdx->aiColumn[nEq])>=0 
-       && pIdx->pTable->aCol[j].notNull==0
-      ){
-        bSeekPastNull = 1;
+      if( pRangeStart==0 ){
+        j = pIdx->aiColumn[nEq];
+        if( (j>=0 && pIdx->pTable->aCol[j].notNull==0) || j==XN_EXPR ){
+          bSeekPastNull = 1;
+        }
       }
     }
     assert( pRangeEnd==0 || (pRangeEnd->wtFlags & TERM_VNULL)==0 );
@@ -1274,6 +1467,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     ){
       SWAP(WhereTerm *, pRangeEnd, pRangeStart);
       SWAP(u8, bSeekPastNull, bStopAtNull);
+      SWAP(u8, nBtm, nTop);
     }
 
     /* Generate code to evaluate all constraint terms using == or IN
@@ -1283,7 +1477,9 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     codeCursorHint(pTabItem, pWInfo, pLevel, pRangeEnd);
     regBase = codeAllEqualityTerms(pParse,pLevel,bRev,nExtraReg,&zStartAff);
     assert( zStartAff==0 || sqlite3Strlen30(zStartAff)>=nEq );
-    if( zStartAff ) cEndAff = zStartAff[nEq];
+    if( zStartAff && nTop ){
+      zEndAff = sqlite3DbStrDup(db, &zStartAff[nEq]);
+    }
     addrNxt = pLevel->addrNxt;
 
     testcase( pRangeStart && (pRangeStart->eOperator & WO_LE)!=0 );
@@ -1298,7 +1494,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     nConstraint = nEq;
     if( pRangeStart ){
       Expr *pRight = pRangeStart->pExpr->pRight;
-      sqlite3ExprCode(pParse, pRight, regBase+nEq);
+      codeExprOrVector(pParse, pRight, regBase+nEq, nBtm);
       whereLikeOptimizationStringFixup(v, pLevel, pRangeStart);
       if( (pRangeStart->wtFlags & TERM_VNULL)==0
        && sqlite3ExprCanBeNull(pRight)
@@ -1307,18 +1503,15 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         VdbeCoverage(v);
       }
       if( zStartAff ){
-        if( sqlite3CompareAffinity(pRight, zStartAff[nEq])==SQLITE_AFF_BLOB){
-          /* Since the comparison is to be performed with no conversions
-          ** applied to the operands, set the affinity to apply to pRight to 
-          ** SQLITE_AFF_BLOB.  */
-          zStartAff[nEq] = SQLITE_AFF_BLOB;
-        }
-        if( sqlite3ExprNeedsNoAffinityChange(pRight, zStartAff[nEq]) ){
-          zStartAff[nEq] = SQLITE_AFF_BLOB;
-        }
+        updateRangeAffinityStr(pRight, nBtm, &zStartAff[nEq]);
       }  
-      nConstraint++;
+      nConstraint += nBtm;
       testcase( pRangeStart->wtFlags & TERM_VIRTUAL );
+      if( sqlite3ExprIsVector(pRight)==0 ){
+        disableTerm(pLevel, pRangeStart);
+      }else{
+        startEq = 1;
+      }
       bSeekPastNull = 0;
     }else if( bSeekPastNull ){
       sqlite3VdbeAddOp2(v, OP_Null, 0, regBase+nEq);
@@ -1351,7 +1544,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     if( pRangeEnd ){
       Expr *pRight = pRangeEnd->pExpr->pRight;
       sqlite3ExprCacheRemove(pParse, regBase+nEq, 1);
-      sqlite3ExprCode(pParse, pRight, regBase+nEq);
+      codeExprOrVector(pParse, pRight, regBase+nEq, nTop);
       whereLikeOptimizationStringFixup(v, pLevel, pRangeEnd);
       if( (pRangeEnd->wtFlags & TERM_VNULL)==0
        && sqlite3ExprCanBeNull(pRight)
@@ -1359,19 +1552,27 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         sqlite3VdbeAddOp2(v, OP_IsNull, regBase+nEq, addrNxt);
         VdbeCoverage(v);
       }
-      if( sqlite3CompareAffinity(pRight, cEndAff)!=SQLITE_AFF_BLOB
-       && !sqlite3ExprNeedsNoAffinityChange(pRight, cEndAff)
-      ){
-        codeApplyAffinity(pParse, regBase+nEq, 1, &cEndAff);
+      if( zEndAff ){
+        updateRangeAffinityStr(pRight, nTop, zEndAff);
+        codeApplyAffinity(pParse, regBase+nEq, nTop, zEndAff);
+      }else{
+        assert( pParse->db->mallocFailed );
       }
-      nConstraint++;
+      nConstraint += nTop;
       testcase( pRangeEnd->wtFlags & TERM_VIRTUAL );
+
+      if( sqlite3ExprIsVector(pRight)==0 ){
+        disableTerm(pLevel, pRangeEnd);
+      }else{
+        endEq = 1;
+      }
     }else if( bStopAtNull ){
       sqlite3VdbeAddOp2(v, OP_Null, 0, regBase+nEq);
       endEq = 0;
       nConstraint++;
     }
     sqlite3DbFree(db, zStartAff);
+    sqlite3DbFree(db, zEndAff);
 
     /* Top of the loop body */
     pLevel->p2 = sqlite3VdbeCurrentAddr(v);
@@ -1387,8 +1588,6 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     }
 
     /* Seek the table cursor, if required */
-    disableTerm(pLevel, pRangeStart);
-    disableTerm(pLevel, pRangeEnd);
     if( omitTable ){
       /* pIdx is a covering index.  No need to access the main table. */
     }else if( HasRowid(pIdx->pTable) ){
@@ -1412,9 +1611,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
                            iRowidReg, pPk->nKeyCol); VdbeCoverage(v);
     }
 
-    /* Record the instruction used to terminate the loop. Disable 
-    ** WHERE clause terms made redundant by the index range scan.
-    */
+    /* Record the instruction used to terminate the loop. */
     if( pLoop->wsFlags & WHERE_ONEROW ){
       pLevel->op = OP_Noop;
     }else if( bRev ){
@@ -1491,7 +1688,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     u16 wctrlFlags;                    /* Flags for sub-WHERE clause */
     Expr *pAndExpr = 0;                /* An ".. AND (...)" expression */
     Table *pTab = pTabItem->pTab;
-   
+
     pTerm = pLoop->aLTerm[0];
     assert( pTerm!=0 );
     assert( pTerm->eOperator & WO_OR );
@@ -1577,7 +1774,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         pAndExpr = sqlite3ExprAnd(db, pAndExpr, pExpr);
       }
       if( pAndExpr ){
-        pAndExpr = sqlite3PExpr(pParse, TK_AND|TKFLG_DONTFOLD, 0, pAndExpr, 0);
+        pAndExpr = sqlite3PExpr(pParse, TK_AND|TKFLG_DONTFOLD, 0, pAndExpr);
       }
     }
 
@@ -1650,7 +1847,8 @@ Bitmask sqlite3WhereCodeOneLoopStart(
               }
               if( iSet>=0 ){
                 sqlite3VdbeAddOp3(v, OP_MakeRecord, r, nPk, regRowid);
-                sqlite3VdbeAddOp3(v, OP_IdxInsert, regRowset, regRowid, 0);
+                sqlite3VdbeAddOp4Int(v, OP_IdxInsert, regRowset, regRowid,
+                                     r, nPk);
                 if( iSet ) sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
               }
 
@@ -1792,7 +1990,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
   ** the implied "t1.a=123" constraint.
   */
   for(pTerm=pWC->a, j=pWC->nTerm; j>0; j--, pTerm++){
-    Expr *pE, *pEAlt;
+    Expr *pE, sEAlt;
     WhereTerm *pAlt;
     if( pTerm->wtFlags & (TERM_VIRTUAL|TERM_CODED) ) continue;
     if( (pTerm->eOperator & (WO_EQ|WO_IS))==0 ) continue;
@@ -1810,13 +2008,9 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     testcase( pAlt->eOperator & WO_IS );
     testcase( pAlt->eOperator & WO_IN );
     VdbeModuleComment((v, "begin transitive constraint"));
-    pEAlt = sqlite3StackAllocRaw(db, sizeof(*pEAlt));
-    if( pEAlt ){
-      *pEAlt = *pAlt->pExpr;
-      pEAlt->pLeft = pE->pLeft;
-      sqlite3ExprIfFalse(pParse, pEAlt, addrCont, SQLITE_JUMPIFNULL);
-      sqlite3StackFree(db, pEAlt);
-    }
+    sEAlt = *pAlt->pExpr;
+    sEAlt.pLeft = pE->pLeft;
+    sqlite3ExprIfFalse(pParse, &sEAlt, addrCont, SQLITE_JUMPIFNULL);
   }
 
   /* For a LEFT OUTER JOIN, generate code that will record the fact that

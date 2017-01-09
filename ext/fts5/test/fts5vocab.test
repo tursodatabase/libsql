@@ -442,8 +442,44 @@ if {[detail_is_none]} {
 }
 
 sqlite3_fts5_may_be_corrupt 0
-
 }
+
+#-------------------------------------------------------------------------
+# Test that both "ORDER BY term" and "ORDER BY term DESC" work.
+#
+reset_db
+do_execsql_test 9.1 {
+  CREATE VIRTUAL TABLE x1 USING fts5(x);
+  INSERT INTO x1 VALUES('def ABC ghi');
+  INSERT INTO x1 VALUES('DEF abc GHI');
+}
+
+do_execsql_test 9.2 {
+  CREATE VIRTUAL TABLE rrr USING fts5vocab(x1, row);
+  SELECT * FROM rrr
+} {
+  abc 2 2 def 2 2 ghi 2 2
+}
+do_execsql_test 9.3 {
+  SELECT * FROM rrr ORDER BY term ASC
+} {
+  abc 2 2 def 2 2 ghi 2 2
+}
+do_execsql_test 9.4 {
+  SELECT * FROM rrr ORDER BY term DESC
+} {
+  ghi 2 2 def 2 2 abc 2 2 
+}
+do_test 9.5 {
+  set e2 [db eval { EXPLAIN SELECT * FROM rrr ORDER BY term ASC }]
+  expr [lsearch $e2 SorterSort]<0
+} 1
+do_test 9.6 {
+  set e2 [db eval { EXPLAIN SELECT * FROM rrr ORDER BY term DESC }]
+  expr [lsearch $e2 SorterSort]<0
+} 0
+
+
 
 finish_test
 

@@ -169,7 +169,7 @@ int sqlite3_clear_bindings(sqlite3_stmt *pStmt){
 const void *sqlite3_value_blob(sqlite3_value *pVal){
   Mem *p = (Mem*)pVal;
   if( p->flags & (MEM_Blob|MEM_Str) ){
-    if( sqlite3VdbeMemExpandBlob(p)!=SQLITE_OK ){
+    if( ExpandBlob(p)!=SQLITE_OK ){
       assert( p->flags==MEM_Null && p->z==0 );
       return 0;
     }
@@ -499,7 +499,7 @@ static int doWalCallbacks(sqlite3 *db){
       nEntry = sqlite3PagerWalCallback(sqlite3BtreePager(pBt));
       sqlite3BtreeLeave(pBt);
       if( db->xWalCallback && nEntry>0 && rc==SQLITE_OK ){
-        rc = db->xWalCallback(db->pWalArg, db, db->aDb[i].zName, nEntry);
+        rc = db->xWalCallback(db->pWalArg, db, db->aDb[i].zDbSName, nEntry);
       }
     }
   }
@@ -952,14 +952,13 @@ static Mem *columnMem(sqlite3_stmt *pStmt, int i){
   Mem *pOut;
 
   pVm = (Vdbe *)pStmt;
-  if( pVm && pVm->pResultSet!=0 && i<pVm->nResColumn && i>=0 ){
-    sqlite3_mutex_enter(pVm->db->mutex);
+  if( pVm==0 ) return (Mem*)columnNullValue();
+  assert( pVm->db );
+  sqlite3_mutex_enter(pVm->db->mutex);
+  if( pVm->pResultSet!=0 && i<pVm->nResColumn && i>=0 ){
     pOut = &pVm->pResultSet[i];
   }else{
-    if( pVm && ALWAYS(pVm->db) ){
-      sqlite3_mutex_enter(pVm->db->mutex);
-      sqlite3Error(pVm->db, SQLITE_RANGE);
-    }
+    sqlite3Error(pVm->db, SQLITE_RANGE);
     pOut = (Mem*)columnNullValue();
   }
   return pOut;
@@ -992,6 +991,8 @@ static void columnMallocFailure(sqlite3_stmt *pStmt)
   */
   Vdbe *p = (Vdbe *)pStmt;
   if( p ){
+    assert( p->db!=0 );
+    assert( sqlite3_mutex_held(p->db->mutex) );
     p->rc = sqlite3ApiExit(p->db, p->rc);
     sqlite3_mutex_leave(p->db->mutex);
   }
@@ -1469,10 +1470,8 @@ int sqlite3_bind_parameter_count(sqlite3_stmt *pStmt){
 */
 const char *sqlite3_bind_parameter_name(sqlite3_stmt *pStmt, int i){
   Vdbe *p = (Vdbe*)pStmt;
-  if( p==0 || i<1 || i>p->nzVar ){
-    return 0;
-  }
-  return p->azVar[i-1];
+  if( p==0 ) return 0;
+  return sqlite3VListNumToName(p->pVList, i);
 }
 
 /*
@@ -1481,19 +1480,8 @@ const char *sqlite3_bind_parameter_name(sqlite3_stmt *pStmt, int i){
 ** return 0.
 */
 int sqlite3VdbeParameterIndex(Vdbe *p, const char *zName, int nName){
-  int i;
-  if( p==0 ){
-    return 0;
-  }
-  if( zName ){
-    for(i=0; i<p->nzVar; i++){
-      const char *z = p->azVar[i];
-      if( z && strncmp(z,zName,nName)==0 && z[nName]==0 ){
-        return i+1;
-      }
-    }
-  }
-  return 0;
+  if( p==0 || zName==0 ) return 0;
+  return sqlite3VListNameToNum(p->pVList, zName, nName);
 }
 int sqlite3_bind_parameter_index(sqlite3_stmt *pStmt, const char *zName){
   return sqlite3VdbeParameterIndex((Vdbe*)pStmt, zName, sqlite3Strlen30(zName));
@@ -1568,7 +1556,7 @@ int sqlite3_stmt_readonly(sqlite3_stmt *pStmt){
 */
 int sqlite3_stmt_busy(sqlite3_stmt *pStmt){
   Vdbe *v = (Vdbe*)pStmt;
-  return v!=0 && v->pc>=0 && v->magic==VDBE_MAGIC_RUN;
+  return v!=0 && v->magic==VDBE_MAGIC_RUN && v->pc>=0;
 }
 
 /*
@@ -1656,10 +1644,9 @@ static UnpackedRecord *vdbeUnpackRecord(
   int nKey, 
   const void *pKey
 ){
-  char *dummy;                    /* Dummy argument for AllocUnpackedRecord() */
   UnpackedRecord *pRet;           /* Return value */
 
-  pRet = sqlite3VdbeAllocUnpackedRecord(pKeyInfo, 0, 0, &dummy);
+  pRet = sqlite3VdbeAllocUnpackedRecord(pKeyInfo);
   if( pRet ){
     memset(pRet->aMem, 0, sizeof(Mem)*(pKeyInfo->nField+1));
     sqlite3VdbeRecordUnpack(pKeyInfo, nKey, pKey, pRet);
@@ -1694,7 +1681,7 @@ int sqlite3_preupdate_old(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
     nRec = sqlite3BtreePayloadSize(p->pCsr->uc.pCursor);
     aRec = sqlite3DbMallocRaw(db, nRec);
     if( !aRec ) goto preupdate_old_out;
-    rc = sqlite3BtreeData(p->pCsr->uc.pCursor, 0, nRec, aRec);
+    rc = sqlite3BtreePayload(p->pCsr->uc.pCursor, 0, nRec, aRec);
     if( rc==SQLITE_OK ){
       p->pUnpacked = vdbeUnpackRecord(&p->keyinfo, nRec, aRec);
       if( !p->pUnpacked ) rc = SQLITE_NOMEM;
@@ -1709,9 +1696,14 @@ int sqlite3_preupdate_old(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
   if( iIdx>=p->pUnpacked->nField ){
     *ppValue = (sqlite3_value *)columnNullValue();
   }else{
+    Mem *pMem = *ppValue = &p->pUnpacked->aMem[iIdx];
     *ppValue = &p->pUnpacked->aMem[iIdx];
-    if( iIdx==p->iPKey ){
-      sqlite3VdbeMemSetInt64(*ppValue, p->iKey1);
+    if( iIdx==p->pTab->iPKey ){
+      sqlite3VdbeMemSetInt64(pMem, p->iKey1);
+    }else if( p->pTab->aCol[iIdx].affinity==SQLITE_AFF_REAL ){
+      if( pMem->flags & MEM_Int ){
+        sqlite3VdbeMemRealify(pMem);
+      }
     }
   }
 
@@ -1775,7 +1767,7 @@ int sqlite3_preupdate_new(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
     UnpackedRecord *pUnpack = p->pNewUnpacked;
     if( !pUnpack ){
       Mem *pData = &p->v->aMem[p->iNewReg];
-      rc = sqlite3VdbeMemExpandBlob(pData);
+      rc = ExpandBlob(pData);
       if( rc!=SQLITE_OK ) goto preupdate_new_out;
       pUnpack = vdbeUnpackRecord(&p->keyinfo, pData->n, pData->z);
       if( !pUnpack ){
@@ -1788,7 +1780,7 @@ int sqlite3_preupdate_new(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
       pMem = (sqlite3_value *)columnNullValue();
     }else{
       pMem = &pUnpack->aMem[iIdx];
-      if( iIdx==p->iPKey ){
+      if( iIdx==p->pTab->iPKey ){
         sqlite3VdbeMemSetInt64(pMem, p->iKey2);
       }
     }
@@ -1809,7 +1801,7 @@ int sqlite3_preupdate_new(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
     assert( iIdx>=0 && iIdx<p->pCsr->nField );
     pMem = &p->aNew[iIdx];
     if( pMem->flags==0 ){
-      if( iIdx==p->iPKey ){
+      if( iIdx==p->pTab->iPKey ){
         sqlite3VdbeMemSetInt64(pMem, p->iKey2);
       }else{
         rc = sqlite3VdbeMemCopy(pMem, &p->v->aMem[p->iNewReg+1+iIdx]);

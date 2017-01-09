@@ -114,7 +114,7 @@ static int SQLITE_TCLAPI test_blob_open(
   const char *zVarname;
   int nVarname;
 
-  sqlite3_blob *pBlob = (sqlite3_blob*)0xFFFFFFFF;
+  sqlite3_blob *pBlob = (sqlite3_blob*)&flags;   /* Non-zero initialization */
   int rc;
 
   if( objc!=8 ){

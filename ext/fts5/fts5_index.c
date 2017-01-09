@@ -702,13 +702,24 @@ static Fts5Data *fts5DataRead(Fts5Index *p, i64 iRowid){
   return pRet;
 }
 
-
 /*
 ** Release a reference to data record returned by an earlier call to
 ** fts5DataRead().
 */
 static void fts5DataRelease(Fts5Data *pData){
   sqlite3_free(pData);
+}
+
+static Fts5Data *fts5LeafRead(Fts5Index *p, i64 iRowid){
+  Fts5Data *pRet = fts5DataRead(p, iRowid);
+  if( pRet ){
+    if( pRet->szLeaf>pRet->nn ){
+      p->rc = FTS5_CORRUPT;
+      fts5DataRelease(pRet);
+      pRet = 0;
+    }
+  }
+  return pRet;
 }
 
 static int fts5IndexPrepareStmt(
@@ -1519,7 +1530,7 @@ static void fts5SegIterNextPage(
     pIter->pLeaf = pIter->pNextLeaf;
     pIter->pNextLeaf = 0;
   }else if( pIter->iLeafPgno<=pSeg->pgnoLast ){
-    pIter->pLeaf = fts5DataRead(p, 
+    pIter->pLeaf = fts5LeafRead(p, 
         FTS5_SEGMENT_ROWID(pSeg->iSegid, pIter->iLeafPgno)
     );
   }else{
@@ -2022,14 +2033,13 @@ static void fts5SegIterNext(
         if( pLeaf->nn>pLeaf->szLeaf ){
           pIter->iPgidxOff = pLeaf->szLeaf + fts5GetVarint32(
               &pLeaf->p[pLeaf->szLeaf], pIter->iEndofDoclist
-              );
+          );
         }
-
       }
       else if( pLeaf->nn>pLeaf->szLeaf ){
         pIter->iPgidxOff = pLeaf->szLeaf + fts5GetVarint32(
             &pLeaf->p[pLeaf->szLeaf], iOff
-            );
+        );
         pIter->iLeafOffset = iOff;
         pIter->iEndofDoclist = iOff;
         bNewTerm = 1;
@@ -2063,6 +2073,7 @@ static void fts5SegIterNext(
       */
       int nSz;
       assert( p->rc==SQLITE_OK );
+      assert( pIter->iLeafOffset<=pIter->pLeaf->nn );
       fts5FastGetVarint32(pIter->pLeaf->p, pIter->iLeafOffset, nSz);
       pIter->bDel = (nSz & 0x0001);
       pIter->nPos = nSz>>1;
@@ -2268,6 +2279,11 @@ static void fts5LeafSeek(
     iPgidx += fts5GetVarint32(&a[iPgidx], nKeep);
     iTermOff += nKeep;
     iOff = iTermOff;
+
+    if( iOff>=n ){
+      p->rc = FTS5_CORRUPT;
+      return;
+    }
 
     /* Read the nKeep field of the next term. */
     fts5FastGetVarint32(a, iOff, nKeep);
@@ -2825,6 +2841,7 @@ static void fts5MultiIterNext(
   i64 iFrom                       /* Advance at least as far as this */
 ){
   int bUseFrom = bFrom;
+  assert( pIter->base.bEof==0 );
   while( p->rc==SQLITE_OK ){
     int iFirst = pIter->aFirst[1].iFirst;
     int bNewTerm = 0;
@@ -3051,7 +3068,7 @@ static void fts5ChunkIterate(
       break;
     }else{
       pgno++;
-      pData = fts5DataRead(p, FTS5_SEGMENT_ROWID(pSeg->pSeg->iSegid, pgno));
+      pData = fts5LeafRead(p, FTS5_SEGMENT_ROWID(pSeg->pSeg->iSegid, pgno));
       if( pData==0 ) break;
       pChunk = &pData->p[4];
       nChunk = MIN(nRem, pData->szLeaf - 4);
@@ -5813,7 +5830,7 @@ static void fts5IndexIntegrityCheckSegment(
     ** ignore this b-tree entry. Otherwise, load it into memory. */
     if( iIdxLeaf<pSeg->pgnoFirst ) continue;
     iRow = FTS5_SEGMENT_ROWID(pSeg->iSegid, iIdxLeaf);
-    pLeaf = fts5DataRead(p, iRow);
+    pLeaf = fts5LeafRead(p, iRow);
     if( pLeaf==0 ) break;
 
     /* Check that the leaf contains at least one term, and that it is equal

@@ -2312,6 +2312,38 @@ static int SQLITE_TCLAPI test_snapshot_get(
 
 #ifdef SQLITE_ENABLE_SNAPSHOT
 /*
+** Usage: sqlite3_snapshot_recover DB DBNAME
+*/
+static int SQLITE_TCLAPI test_snapshot_recover(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int rc;
+  sqlite3 *db;
+  char *zName;
+
+  if( objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB DBNAME");
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  zName = Tcl_GetString(objv[2]);
+
+  rc = sqlite3_snapshot_recover(db, zName);
+  if( rc!=SQLITE_OK ){
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
+    return TCL_ERROR;
+  }else{
+    Tcl_ResetResult(interp);
+  }
+  return TCL_OK;
+}
+#endif /* SQLITE_ENABLE_SNAPSHOT */
+
+#ifdef SQLITE_ENABLE_SNAPSHOT
+/*
 ** Usage: sqlite3_snapshot_open DB DBNAME SNAPSHOT
 */
 static int SQLITE_TCLAPI test_snapshot_open(
@@ -2387,6 +2419,136 @@ static int SQLITE_TCLAPI test_snapshot_cmp(
   return TCL_OK;
 }
 #endif /* SQLITE_ENABLE_SNAPSHOT */
+
+#ifdef SQLITE_ENABLE_SNAPSHOT
+/*
+** Usage: sqlite3_snapshot_get_blob DB DBNAME
+*/
+static int SQLITE_TCLAPI test_snapshot_get_blob(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int rc;
+  sqlite3 *db;
+  char *zName;
+  sqlite3_snapshot *pSnapshot = 0;
+
+  if( objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB DBNAME");
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  zName = Tcl_GetString(objv[2]);
+
+  rc = sqlite3_snapshot_get(db, zName, &pSnapshot);
+  if( rc!=SQLITE_OK ){
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
+    return TCL_ERROR;
+  }else{
+    Tcl_SetObjResult(interp, 
+        Tcl_NewByteArrayObj((unsigned char*)pSnapshot, sizeof(sqlite3_snapshot))
+    );
+    sqlite3_snapshot_free(pSnapshot);
+  }
+  return TCL_OK;
+}
+#endif /* SQLITE_ENABLE_SNAPSHOT */
+
+#ifdef SQLITE_ENABLE_SNAPSHOT
+  /*
+  ** Usage: sqlite3_snapshot_open_blob DB DBNAME SNAPSHOT
+*/
+static int SQLITE_TCLAPI test_snapshot_open_blob(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int rc;
+  sqlite3 *db;
+  char *zName;
+  unsigned char *pBlob;
+  int nBlob;
+
+  if( objc!=4 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB DBNAME SNAPSHOT");
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  zName = Tcl_GetString(objv[2]);
+  pBlob = Tcl_GetByteArrayFromObj(objv[3], &nBlob);
+  if( nBlob!=sizeof(sqlite3_snapshot) ){
+    Tcl_AppendResult(interp, "bad SNAPSHOT", 0);
+    return TCL_ERROR;
+  }
+  rc = sqlite3_snapshot_open(db, zName, (sqlite3_snapshot*)pBlob);
+  if( rc!=SQLITE_OK ){
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
+    return TCL_ERROR;
+  }
+  return TCL_OK;
+}
+#endif /* SQLITE_ENABLE_SNAPSHOT */
+
+#ifdef SQLITE_ENABLE_SNAPSHOT
+/*
+** Usage: sqlite3_snapshot_cmp_blob SNAPSHOT1 SNAPSHOT2
+*/
+static int SQLITE_TCLAPI test_snapshot_cmp_blob(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int res;
+  unsigned char *p1;
+  unsigned char *p2;
+  int n1;
+  int n2;
+
+  if( objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "SNAPSHOT1 SNAPSHOT2");
+    return TCL_ERROR;
+  }
+
+  p1 = Tcl_GetByteArrayFromObj(objv[1], &n1);
+  p2 = Tcl_GetByteArrayFromObj(objv[2], &n2);
+
+  if( n1!=sizeof(sqlite3_snapshot) || n1!=n2 ){
+    Tcl_AppendResult(interp, "bad SNAPSHOT", 0);
+    return TCL_ERROR;
+  }
+
+  res = sqlite3_snapshot_cmp((sqlite3_snapshot*)p1, (sqlite3_snapshot*)p2);
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(res));
+  return TCL_OK;
+}
+#endif /* SQLITE_ENABLE_SNAPSHOT */
+
+/*
+** Usage: sqlite3_delete_database FILENAME
+*/
+int sqlite3_delete_database(const char*);   /* in test_delete.c */
+static int SQLITE_TCLAPI test_delete_database(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int rc;
+  const char *zFile;
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "FILE");
+    return TCL_ERROR;
+  }
+  zFile = (const char*)Tcl_GetString(objv[1]);
+  rc = sqlite3_delete_database(zFile);
+
+  Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
+  return TCL_OK;
+}
 
 /*
 ** Usage:  sqlite3_next_stmt  DB  STMT
@@ -5655,6 +5817,38 @@ static int SQLITE_TCLAPI file_control_win32_av_retry(
 }
 
 /*
+** tclcmd:   file_control_win32_get_handle DB
+**
+** This TCL command runs the sqlite3_file_control interface with
+** the SQLITE_FCNTL_WIN32_GET_HANDLE opcode.
+*/
+static int file_control_win32_get_handle(
+  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  sqlite3 *db;
+  int rc;
+  HANDLE hFile = NULL;
+  char z[100];
+
+  if( objc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"",
+        Tcl_GetStringFromObj(objv[0], 0), " DB", 0);
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ){
+    return TCL_ERROR;
+  }
+  rc = sqlite3_file_control(db, NULL, SQLITE_FCNTL_WIN32_GET_HANDLE,
+                            (void*)&hFile);
+  sqlite3_snprintf(sizeof(z), z, "%d %p", rc, (void*)hFile);
+  Tcl_AppendResult(interp, z, (char*)0);
+  return TCL_OK;
+}
+
+/*
 ** tclcmd:   file_control_win32_set_handle DB HANDLE
 **
 ** This TCL command runs the sqlite3_file_control interface with
@@ -6764,6 +6958,7 @@ static int SQLITE_TCLAPI tclLoadStaticExtensionCmd(
   extern int sqlite3_nextchar_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_percentile_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_regexp_init(sqlite3*,char**,const sqlite3_api_routines*);
+  extern int sqlite3_remember_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_series_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_spellfix_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_totype_init(sqlite3*,char**,const sqlite3_api_routines*);
@@ -6783,6 +6978,7 @@ static int SQLITE_TCLAPI tclLoadStaticExtensionCmd(
     { "nextchar",              sqlite3_nextchar_init             },
     { "percentile",            sqlite3_percentile_init           },
     { "regexp",                sqlite3_regexp_init               },
+    { "remember",              sqlite3_remember_init             },
     { "series",                sqlite3_series_init               },
     { "spellfix",              sqlite3_spellfix_init             },
     { "totype",                sqlite3_totype_init               },
@@ -7166,6 +7362,7 @@ static int SQLITE_TCLAPI test_sqlite3_db_config(
     { "TRIGGER",         SQLITE_DBCONFIG_ENABLE_TRIGGER },
     { "FTS3_TOKENIZER",  SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER },
     { "LOAD_EXTENSION",  SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION },
+    { "NO_CKPT_ON_CLOSE",SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE },
   };
   int i;
   int v;
@@ -7193,6 +7390,29 @@ static int SQLITE_TCLAPI test_sqlite3_db_config(
   sqlite3_db_config(db, aSetting[i].eVal, v, &v);
   Tcl_SetObjResult(interp, Tcl_NewIntObj(v));
   return TCL_OK;
+}
+
+/*
+** Change the name of the main database schema from "main" to "icecube".
+*/
+static int SQLITE_TCLAPI test_dbconfig_maindbname_icecube(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int rc;
+  sqlite3 *db;
+  extern int getDbPointer(Tcl_Interp*, const char*, sqlite3**);
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB");
+    return TCL_ERROR;
+  }else{
+    if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+    rc = sqlite3_db_config(db, SQLITE_DBCONFIG_MAINDBNAME, "icecube");
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
+    return TCL_OK;
+  }
 }
 
 /*
@@ -7328,6 +7548,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_enable_load_extension", test_enable_load,        0},
      { "sqlite3_extended_result_codes", test_extended_result_codes, 0},
      { "sqlite3_limit",                 test_limit,                 0},
+     { "dbconfig_maindbname_icecube",   test_dbconfig_maindbname_icecube },
 
      { "save_prng_state",               save_prng_state,    0 },
      { "restore_prng_state",            restore_prng_state, 0 },
@@ -7394,6 +7615,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "file_control_sizehint_test",  file_control_sizehint_test,   0   },
 #if SQLITE_OS_WIN
      { "file_control_win32_av_retry", file_control_win32_av_retry,  0   },
+     { "file_control_win32_get_handle", file_control_win32_get_handle, 0  },
      { "file_control_win32_set_handle", file_control_win32_set_handle, 0  },
 #endif
      { "file_control_persist_wal",    file_control_persist_wal,     0   },
@@ -7458,7 +7680,12 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_snapshot_open", test_snapshot_open, 0 },
      { "sqlite3_snapshot_free", test_snapshot_free, 0 },
      { "sqlite3_snapshot_cmp", test_snapshot_cmp, 0 },
+     { "sqlite3_snapshot_recover", test_snapshot_recover, 0 },
+     { "sqlite3_snapshot_get_blob", test_snapshot_get_blob, 0 },
+     { "sqlite3_snapshot_open_blob", test_snapshot_open_blob, 0 },
+     { "sqlite3_snapshot_cmp_blob", test_snapshot_cmp_blob, 0 },
 #endif
+     { "sqlite3_delete_database", test_delete_database, 0 },
   };
   static int bitmask_size = sizeof(Bitmask)*8;
   static int longdouble_size = sizeof(LONGDOUBLE_TYPE);

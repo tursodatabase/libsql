@@ -108,7 +108,7 @@ struct PCache {
 int sqlite3PcachePageSanity(PgHdr *pPg){
   PCache *pCache;
   assert( pPg!=0 );
-  assert( pPg->pgno>0 );    /* Page number is 1 or more */
+  assert( pPg->pgno>0 || pPg->pPager==0 );    /* Page number is 1 or more */
   pCache = pPg->pCache;
   assert( pCache!=0 );      /* Every page has an associated PCache */
   if( pPg->flags & PGHDR_CLEAN ){
@@ -284,6 +284,12 @@ int sqlite3PcacheSize(void){ return sizeof(PCache); }
 ** has already been allocated and is passed in as the p pointer. 
 ** The caller discovers how much space needs to be allocated by 
 ** calling sqlite3PcacheSize().
+**
+** szExtra is some extra space allocated for each page.  The first
+** 8 bytes of the extra space will be zeroed as the page is allocated,
+** but remaining content will be uninitialized.  Though it is opaque
+** to this module, the extra space really ends up being the MemPage
+** structure in the pager.
 */
 int sqlite3PcacheOpen(
   int szPage,                  /* Size of every page */
@@ -296,6 +302,7 @@ int sqlite3PcacheOpen(
   memset(p, 0, sizeof(PCache));
   p->szPage = 1;
   p->szExtra = szExtra;
+  assert( szExtra>=8 );  /* First 8 bytes will be zeroed */
   p->bPurgeable = bPurgeable;
   p->eCreate = 2;
   p->xStress = xStress;
@@ -365,7 +372,6 @@ sqlite3_pcache_page *sqlite3PcacheFetch(
   assert( pCache!=0 );
   assert( pCache->pCache!=0 );
   assert( createFlag==3 || createFlag==0 );
-  assert( pgno>0 );
   assert( pCache->eCreate==((pCache->bPurgeable && pCache->pDirty) ? 1 : 2) );
 
   /* eCreate defines what to do if the page does not exist.
@@ -461,11 +467,11 @@ static SQLITE_NOINLINE PgHdr *pcacheFetchFinishWithInit(
   assert( pPage!=0 );
   pPgHdr = (PgHdr*)pPage->pExtra;
   assert( pPgHdr->pPage==0 );
-  memset(pPgHdr, 0, sizeof(PgHdr));
+  memset(&pPgHdr->pDirty, 0, sizeof(PgHdr) - offsetof(PgHdr,pDirty));
   pPgHdr->pPage = pPage;
   pPgHdr->pData = pPage->pBuf;
   pPgHdr->pExtra = (void *)&pPgHdr[1];
-  memset(pPgHdr->pExtra, 0, pCache->szExtra);
+  memset(pPgHdr->pExtra, 0, 8);
   pPgHdr->pCache = pCache;
   pPgHdr->pgno = pgno;
   pPgHdr->flags = PGHDR_CLEAN;

@@ -79,16 +79,13 @@ const unsigned char sqlite3UpperToLower[] = {
 **
 **   (x & ~(map[x]&0x20))
 **
-** Standard function tolower() is implemented using the sqlite3UpperToLower[]
+** The equivalent of tolower() is implemented using the sqlite3UpperToLower[]
 ** array. tolower() is used more often than toupper() by SQLite.
 **
-** Bit 0x40 is set if the character non-alphanumeric and can be used in an 
+** Bit 0x40 is set if the character is non-alphanumeric and can be used in an 
 ** SQLite identifier.  Identifiers are alphanumerics, "_", "$", and any
 ** non-ASCII UTF character. Hence the test for whether or not a character is
 ** part of an identifier is 0x46.
-**
-** SQLite's versions are identical to the standard versions assuming a
-** locale of "C". They are implemented as macros in sqliteInt.h.
 */
 #ifdef SQLITE_ASCII
 const unsigned char sqlite3CtypeMap[256] = {
@@ -161,7 +158,7 @@ const unsigned char sqlite3CtypeMap[256] = {
 #endif
 
 /* Statement journals spill to disk when their size exceeds the following
-** threashold (in bytes). 0 means that statement journals are created and
+** threshold (in bytes). 0 means that statement journals are created and
 ** written to disk immediately (the default behavior for SQLite versions
 ** before 3.12.0).  -1 means always keep the entire statement journal in
 ** memory.  (The statement journal is also always held entirely in memory
@@ -171,6 +168,19 @@ const unsigned char sqlite3CtypeMap[256] = {
 #ifndef SQLITE_STMTJRNL_SPILL 
 # define SQLITE_STMTJRNL_SPILL (64*1024)
 #endif
+
+/*
+** The default lookaside-configuration, the format "SZ,N".  SZ is the
+** number of bytes in each lookaside slot (should be a multiple of 8)
+** and N is the number of slots.  The lookaside-configuration can be
+** changed as start-time using sqlite3_config(SQLITE_CONFIG_LOOKASIDE)
+** or at run-time for an individual database connection using
+** sqlite3_db_config(db, SQLITE_DBCONFIG_LOOKASIDE);
+*/
+#ifndef SQLITE_DEFAULT_LOOKASIDE
+# define SQLITE_DEFAULT_LOOKASIDE 1200,100
+#endif
+
 
 /*
 ** The following singleton contains the global configuration for
@@ -184,8 +194,7 @@ SQLITE_WSD struct Sqlite3Config sqlite3Config = {
    SQLITE_ALLOW_COVERING_INDEX_SCAN,   /* bUseCis */
    0x7ffffffe,                /* mxStrlen */
    0,                         /* neverCorrupt */
-   128,                       /* szLookaside */
-   500,                       /* nLookaside */
+   SQLITE_DEFAULT_LOOKASIDE,  /* szLookaside, nLookaside */
    SQLITE_STMTJRNL_SPILL,     /* nStmtSpill */
    {0,0,0,0,0,0,0,0},         /* m */
    {0,0,0,0,0,0,0,0,0},       /* mutex */
@@ -222,10 +231,11 @@ SQLITE_WSD struct Sqlite3Config sqlite3Config = {
    0,                         /* xVdbeBranch */
    0,                         /* pVbeBranchArg */
 #endif
-#ifndef SQLITE_OMIT_BUILTIN_TEST
+#ifndef SQLITE_UNTESTABLE
    0,                         /* xTestCallback */
 #endif
-   0                          /* bLocaltimeFault */
+   0,                         /* bLocaltimeFault */
+   0x7ffffffe                 /* iOnceResetThreshold */
 };
 
 /*
@@ -248,7 +258,7 @@ const Token sqlite3IntTokens[] = {
 ** The value of the "pending" byte must be 0x40000000 (1 byte past the
 ** 1-gibabyte boundary) in a compatible database.  SQLite never uses
 ** the database page that contains the pending byte.  It never attempts
-** to read or write that page.  The pending byte page is set assign
+** to read or write that page.  The pending byte page is set aside
 ** for use by the VFS layers as space for managing file locks.
 **
 ** During testing, it is often desirable to move the pending byte to

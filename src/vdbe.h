@@ -88,7 +88,6 @@ struct SubProgram {
   int nOp;                      /* Elements in aOp[] */
   int nMem;                     /* Number of memory cells required */
   int nCsr;                     /* Number of cursors required */
-  int nOnce;                    /* Number of OP_Once instructions */
   void *token;                  /* id that may be used to recursive triggers */
   SubProgram *pNext;            /* Next sub-program already visited */
 };
@@ -111,22 +110,21 @@ typedef struct VdbeOpList VdbeOpList;
 #define P4_NOTUSED    0   /* The P4 parameter is not used */
 #define P4_DYNAMIC  (-1)  /* Pointer to a string obtained from sqliteMalloc() */
 #define P4_STATIC   (-2)  /* Pointer to a static string */
-#define P4_COLLSEQ  (-4)  /* P4 is a pointer to a CollSeq structure */
-#define P4_FUNCDEF  (-5)  /* P4 is a pointer to a FuncDef structure */
-#define P4_KEYINFO  (-6)  /* P4 is a pointer to a KeyInfo structure */
-#define P4_EXPR     (-7)  /* P4 is a pointer to an Expr tree */
-#define P4_MEM      (-8)  /* P4 is a pointer to a Mem*    structure */
+#define P4_COLLSEQ  (-3)  /* P4 is a pointer to a CollSeq structure */
+#define P4_FUNCDEF  (-4)  /* P4 is a pointer to a FuncDef structure */
+#define P4_KEYINFO  (-5)  /* P4 is a pointer to a KeyInfo structure */
+#define P4_EXPR     (-6)  /* P4 is a pointer to an Expr tree */
+#define P4_MEM      (-7)  /* P4 is a pointer to a Mem*    structure */
 #define P4_TRANSIENT  0   /* P4 is a pointer to a transient string */
-#define P4_VTAB     (-10) /* P4 is a pointer to an sqlite3_vtab structure */
-#define P4_MPRINTF  (-11) /* P4 is a string obtained from sqlite3_mprintf() */
-#define P4_REAL     (-12) /* P4 is a 64-bit floating point value */
-#define P4_INT64    (-13) /* P4 is a 64-bit signed integer */
-#define P4_INT32    (-14) /* P4 is a 32-bit signed integer */
-#define P4_INTARRAY (-15) /* P4 is a vector of 32-bit integers */
-#define P4_SUBPROGRAM  (-18) /* P4 is a pointer to a SubProgram structure */
-#define P4_ADVANCE  (-19) /* P4 is a pointer to BtreeNext() or BtreePrev() */
-#define P4_TABLE    (-20) /* P4 is a pointer to a Table structure */
-#define P4_FUNCCTX  (-21) /* P4 is a pointer to an sqlite3_context object */
+#define P4_VTAB     (-8) /* P4 is a pointer to an sqlite3_vtab structure */
+#define P4_REAL     (-9) /* P4 is a 64-bit floating point value */
+#define P4_INT64    (-10) /* P4 is a 64-bit signed integer */
+#define P4_INT32    (-11) /* P4 is a 32-bit signed integer */
+#define P4_INTARRAY (-12) /* P4 is a vector of 32-bit integers */
+#define P4_SUBPROGRAM  (-13) /* P4 is a pointer to a SubProgram structure */
+#define P4_ADVANCE  (-14) /* P4 is a pointer to BtreeNext() or BtreePrev() */
+#define P4_TABLE    (-15) /* P4 is a pointer to a Table structure */
+#define P4_FUNCCTX  (-16) /* P4 is a pointer to an sqlite3_context object */
 
 /* Error message codes for OP_Halt */
 #define P5_ConstraintNotNull 1
@@ -185,8 +183,10 @@ int sqlite3VdbeAddOp4Int(Vdbe*,int,int,int,int,int);
 void sqlite3VdbeEndCoroutine(Vdbe*,int);
 #if defined(SQLITE_DEBUG) && !defined(SQLITE_TEST_REALLOC_STRESS)
   void sqlite3VdbeVerifyNoMallocRequired(Vdbe *p, int N);
+  void sqlite3VdbeVerifyNoResultRow(Vdbe *p);
 #else
 # define sqlite3VdbeVerifyNoMallocRequired(A,B)
+# define sqlite3VdbeVerifyNoResultRow(A)
 #endif
 VdbeOp *sqlite3VdbeAddOpList(Vdbe*, int nOp, VdbeOpList const *aOp, int iLineno);
 void sqlite3VdbeAddParseSchemaOp(Vdbe*,int,char*);
@@ -199,6 +199,7 @@ void sqlite3VdbeJumpHere(Vdbe*, int addr);
 int sqlite3VdbeChangeToNoop(Vdbe*, int addr);
 int sqlite3VdbeDeletePriorOpcode(Vdbe*, u8 op);
 void sqlite3VdbeChangeP4(Vdbe*, int addr, const char *zP4, int N);
+void sqlite3VdbeAppendP4(Vdbe*, void *pP4, int p4type);
 void sqlite3VdbeSetP4KeyInfo(Parse*, Index*);
 void sqlite3VdbeUsesBtree(Vdbe*, int);
 VdbeOp *sqlite3VdbeGetOp(Vdbe*, int);
@@ -234,7 +235,7 @@ int sqlite3MemCompare(const Mem*, const Mem*, const CollSeq*);
 void sqlite3VdbeRecordUnpack(KeyInfo*,int,const void*,UnpackedRecord*);
 int sqlite3VdbeRecordCompare(int,const void*,UnpackedRecord*);
 int sqlite3VdbeRecordCompareWithSkip(int, const void *, UnpackedRecord *, int);
-UnpackedRecord *sqlite3VdbeAllocUnpackedRecord(KeyInfo *, char *, int, char **);
+UnpackedRecord *sqlite3VdbeAllocUnpackedRecord(KeyInfo*);
 
 typedef int (*RecordCompare)(int,const void*,UnpackedRecord*);
 RecordCompare sqlite3VdbeFindCompare(UnpackedRecord*);

@@ -253,7 +253,6 @@ static int SQLITE_TCLAPI btree_close_cursor(
   const char **argv      /* Text of each argument */
 ){
   BtCursor *pCur;
-  Btree *pBt;
   int rc;
 
   if( argc!=2 ){
@@ -262,12 +261,18 @@ static int SQLITE_TCLAPI btree_close_cursor(
     return TCL_ERROR;
   }
   pCur = sqlite3TestTextToPtr(argv[1]);
-  pBt = pCur->pBtree;
-  sqlite3_mutex_enter(pBt->db->mutex);
-  sqlite3BtreeEnter(pBt);
+#if SQLITE_THREADSAFE>0
+  {
+    Btree *pBt = pCur->pBtree;
+    sqlite3_mutex_enter(pBt->db->mutex);
+    sqlite3BtreeEnter(pBt);
+    rc = sqlite3BtreeCloseCursor(pCur);
+    sqlite3BtreeLeave(pBt);
+    sqlite3_mutex_leave(pBt->db->mutex);
+  }
+#else
   rc = sqlite3BtreeCloseCursor(pCur);
-  sqlite3BtreeLeave(pBt);
-  sqlite3_mutex_leave(pBt->db->mutex);
+#endif
   ckfree((char *)pCur);
   if( rc ){
     Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);

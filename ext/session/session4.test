@@ -30,7 +30,6 @@ do_test 1.0 {
     INSERT INTO x VALUES(19, 'domains', 'espouse', -94, 'throw');
   }
 
-  sqlite3session S db main
   set changeset [changeset_from_sql {
     DELETE FROM x WHERE e = -66;
     UPDATE x SET a = 'parameterizable', b = 31.8 WHERE c = 35;

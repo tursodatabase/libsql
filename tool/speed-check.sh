@@ -21,9 +21,20 @@ then
 fi
 NAME=$1
 shift
-CC_OPTS="-DSQLITE_ENABLE_RTREE -DSQLITE_ENABLE_MEMSYS5"
-SPEEDTEST_OPTS="--shrink-memory --reprepare --heap 10000000 64"
+#CC_OPTS="-DSQLITE_ENABLE_RTREE -DSQLITE_ENABLE_MEMSYS5"
+CC_OPTS="-DSQLITE_ENABLE_MEMSYS5"
+SPEEDTEST_OPTS="--shrink-memory --reprepare --stats --heap 10000000 64"
 SIZE=5
+LEAN_OPTS="-DSQLITE_THREADSAFE=0"
+LEAN_OPTS="$LEAN_OPTS -DSQLITE_DEFAULT_MEMSTATUS=0"
+LEAN_OPTS="$LEAN_OPTS -DSQLITE_DEFAULT_WAL_SYNCHRONOUS=1"
+LEAN_OPTS="$LEAN_OPTS -DSQLITE_LIKE_DOESNT_MATCH_BLOB"
+LEAN_OPTS="$LEAN_OPTS -DSQLITE_MAX_EXPR_DEPTH=0"
+LEAN_OPTS="$LEAN_OPTS -DSQLITE_OMIT_DECLTYPE"
+LEAN_OPTS="$LEAN_OPTS -DSQLITE_OMIT_DEPRECATED"
+LEAN_OPTS="$LEAN_OPTS -DSQLITE_OMIT_PROGRESS_CALLBACK"
+LEAN_OPTS="$LEAN_OPTS -DSQLITE_OMIT_SHARED_CACHE"
+LEAN_OPTS="$LEAN_OPTS -DSQLITE_USE_ALLOCA"
 doExplain=0
 doCachegrind=1
 while test "$1" != ""; do
@@ -55,6 +66,9 @@ while test "$1" != ""; do
     --size)
         shift; SIZE=$1
         ;;
+    --cachesize)
+        shift; SPEEDTEST_OPTS="$SPEEDTEST_OPTS --cachesize $1"
+        ;;
     --explain)
         doExplain=1
         ;;
@@ -63,10 +77,22 @@ while test "$1" != ""; do
         CC_OPTS="$CC_OPTS -DVDBE_PROFILE"
         doCachegrind=0
         ;;
+    --lean)
+        CC_OPTS="$CC_OPTS $LEAN_OPTS"
+        ;;
     --heap)
         CC_OPTS="$CC_OPTS -DSQLITE_ENABLE_MEMSYS5"
         shift;
         SPEEDTEST_OPTS="$SPEEDTEST_OPTS --heap $1 64"
+        ;;
+    --repeat)
+        CC_OPTS="$CC_OPTS -DSQLITE_ENABLE_RCACHE"
+        shift;
+        SPEEDTEST_OPTS="$SPEEDTEST_OPTS --repeat $1"
+        ;;
+    --mmap)
+        shift;
+        SPEEDTEST_OPTS="$SPEEDTEST_OPTS --mmap $1"
         ;;
     *)
         CC_OPTS="$CC_OPTS $1"

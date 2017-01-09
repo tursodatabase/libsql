@@ -263,7 +263,8 @@ struct symbol {
   int useCnt;              /* Number of times used */
   char *destructor;        /* Code which executes whenever this symbol is
                            ** popped from the stack during error processing */
-  int destLineno;          /* Line number for start of destructor */
+  int destLineno;          /* Line number for start of destructor.  Set to
+                           ** -1 for duplicate destructors. */
   char *datatype;          /* The data type of information held by this
                            ** object. Only used if type==NONTERMINAL */
   int dtnum;               /* The data type number.  In the parser, the value
@@ -4158,7 +4159,6 @@ void ReportTable(
   */
   for(rp=lemp->rule; rp; rp=rp->next) rp->doesReduce = LEMON_FALSE;
   for(i=0; i<lemp->nxstate; i++){
-    struct action *ap;
     for(ap=lemp->sorted[i]->ap; ap; ap=ap->next){
       if( ap->type==REDUCE || ap->type==SHIFTREDUCE ){
         ap->x.rp->doesReduce = i;
@@ -4385,6 +4385,7 @@ void ReportTable(
   for(i=0; i<lemp->nsymbol; i++){
     struct symbol *sp = lemp->symbols[i];
     if( sp==0 || sp->type==TERMINAL || sp->destructor==0 ) continue;
+    if( sp->destLineno<0 ) continue;  /* Already emitted */
     fprintf(out,"    case %d: /* %s */\n", sp->index, sp->name); lineno++;
 
     /* Combine duplicate destructors into a single case */
@@ -4395,7 +4396,7 @@ void ReportTable(
           && strcmp(sp->destructor,sp2->destructor)==0 ){
          fprintf(out,"    case %d: /* %s */\n",
                  sp2->index, sp2->name); lineno++;
-         sp2->destructor = 0;
+         sp2->destLineno = -1;  /* Avoid emitting this destructor again */
       }
     }
 

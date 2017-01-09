@@ -10,17 +10,19 @@
 #
 # Run this script by specifying the root directory of the source tree
 # on the command-line.
-# 
+#
 # This script performs processing on src/sqlite.h.in. It:
 #
 #   1) Adds SQLITE_EXTERN in front of the declaration of global variables,
 #   2) Adds SQLITE_API in front of the declaration of API functions,
-#   3) Replaces the string --VERS-- with the current library version, 
+#   3) Replaces the string --VERS-- with the current library version,
 #      formatted as a string (e.g. "3.6.17"), and
 #   4) Replaces the string --VERSION-NUMBER-- with current library version,
 #      formatted as an integer (e.g. "3006017").
-#   5) Replaces the string --SOURCE-ID-- with the date and time and sha1 
+#   5) Replaces the string --SOURCE-ID-- with the date and time and sha1
 #      hash of the fossil-scm manifest for the source tree.
+#   6) Adds the SQLITE_CALLBACK calling convention macro in front of all
+#      callback declarations.
 #
 # This script outputs to stdout.
 #
@@ -33,6 +35,14 @@
 # Get the source tree root directory from the command-line
 #
 set TOP [lindex $argv 0]
+
+# Enable use of SQLITE_APICALL macros at the right points?
+#
+set useapicall 0
+
+if {[lsearch -regexp [lrange $argv 1 end] {^-+useapicall}] != -1} {
+  set useapicall 1
+}
 
 # Get the SQLite version number (ex: 3.6.18) from the $TOP/VERSION file.
 #
@@ -96,14 +106,14 @@ foreach file $filelist {
     puts "/******** Begin file [file tail $file] *********/"
   }
   while {![eof $in]} {
-  
+
     set line [gets $in]
 
     # File sqlite3rtree.h contains a line "#include <sqlite3.h>". Omit this
     # line when copying sqlite3rtree.h into sqlite3.h.
     #
     if {[string match {*#include*[<"]sqlite3.h[>"]*} $line]} continue
-  
+
     regsub -- --VERS--           $line $zVersion line
     regsub -- --VERSION-NUMBER-- $line $nVersion line
     regsub -- --SOURCE-ID--      $line "$zDate $zUuid" line
@@ -117,13 +127,20 @@ foreach file $filelist {
         if {[string index $rettype end] ne "*"} {
           append line " "
         }
-        if {[lsearch -exact $cdecllist $funcname] >= 0} {
-          append line SQLITE_CDECL
-        } else {
-          append line SQLITE_STDCALL
+        if {$useapicall} {
+          if {[lsearch -exact $cdecllist $funcname] >= 0} {
+            append line SQLITE_CDECL " "
+          } else {
+            append line SQLITE_APICALL " "
+          }
         }
-        append line " " $funcname $rest
+        append line $funcname $rest
       }
+    }
+    if {$useapicall} {
+      set line [string map [list (*sqlite3_syscall_ptr) \
+          "(SQLITE_SYSAPI *sqlite3_syscall_ptr)"] $line]
+      regsub {\(\*} $line {(SQLITE_CALLBACK *} line
     }
     puts $line
   }
