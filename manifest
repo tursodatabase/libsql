@@ -1,5 +1,5 @@
-C Disable\sthe\soptimization\sfrom\s[8cb8516d]\s(omit\sTableLock\sinstructions\sfor\nnon-sharable\sdatabases)\son\sthis\sbranch.\sThis\sbranch\suses\sthe\sTableLock\ninstructions\sto\sensure\sthat\sthe\sdb\sschema\sis\snot\swritten\sfrom\swithin\sa\sBEGIN\nCONCURRENT\stransaction.
-D 2017-01-09T06:53:00.359
+C Merge\sthe\s"changebatch"\sfunctionality\sinto\sthis\sbranch.
+D 2017-01-09T07:00:41.373
 F Makefile.in 41bd4cad981487345c4a84081074bcdb876e4b2e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -284,6 +284,8 @@ F ext/rtree/rtree_util.tcl 06aab2ed5b826545bf215fff90ecb9255a8647ea
 F ext/rtree/sqlite3rtree.h 9c5777af3d2921c7b4ae4954e8e5697502289d28
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
+F ext/session/changebatch1.test 9ceaa8f7b2a505933e250fbe6cbc550e4ce1e59d
+F ext/session/changebatchfault.test be49c793219bf387ad692a60856b921f0854ad6d
 F ext/session/changeset.c 4ccbaa4531944c24584bf6a61ba3a39c62b6267a
 F ext/session/session1.test e5125b216d1e8c91e0984b361b0b68529e7c5dfb
 F ext/session/session2.test 284de45abae4cc1082bc52012ee81521d5ac58e0
@@ -303,16 +305,18 @@ F ext/session/sessionG.test 01ef705096a9d3984eebdcca79807a211dee1b60
 F ext/session/session_common.tcl 9b696a341cf1d3744823715ed92bb19749b6c3d4
 F ext/session/sessionfault.test da273f2712b6411e85e71465a1733b8501dbf6f7
 F ext/session/sessionfault2.test 04aa0bc9aa70ea43d8de82c4f648db4de1e990b0
-F ext/session/sqlite3session.c c61a43396368ec00dc127f7bc647e9bd6a4ee5fb
-F ext/session/sqlite3session.h 9345166bd8f80562145586cf817f707de5ecada2
-F ext/session/test_session.c eb0bd6c1ea791c1d66ee4ef94c16500dad936386
+F ext/session/sqlite3changebatch.c 96011bdf72ac12ebf707f4d0f0e719e333631605
+F ext/session/sqlite3changebatch.h e72016998c9a22d439ddfd547b69e1ebac810c24
+F ext/session/sqlite3session.c 143d2a1547e760cd2653d1c7bf30acfb668de04f
+F ext/session/sqlite3session.h 30b9ba3c5906d711b4e5b2e532d7a1f419942a29
+F ext/session/test_session.c badd5da3cb561564b093745f7d843430d1d76347
 F ext/userauth/sqlite3userauth.h 19cb6f0e31316d0ee4afdfb7a85ef9da3333a220
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk a85772b3c9f3ba0a0f85e9f1c4e1151c5779c860
+F main.mk 87ee1e20124ca5cae5a5aa08608a0d8f63063eb8
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -1548,7 +1552,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d0e212d08f82dfb5e42a156b3e2bb03dd8e21258
-R e3f8f4a25fa664daafdf2b1037a6c994
+P c8ca3e0a8d82dbb077551c2d952cb2043f78333b 391344d88a284f92c59b8d96a315b69292641de0
+R fb6607db49678e5588472158e22f722f
 U dan
-Z 5b5ce2ca54ddaa75cd9b42bf54bd493e
+Z 69d374dd90bc72d9adab6847f15400aa

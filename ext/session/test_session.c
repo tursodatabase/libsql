@@ -214,6 +214,7 @@ static int testStreamOutput(
 **          $session indirect INTEGER
 **          $session patchset
 **          $session table_filter SCRIPT
+**          $session fullchangeset
 */
 static int SQLITE_TCLAPI test_session_cmd(
   void *clientData,
@@ -227,17 +228,17 @@ static int SQLITE_TCLAPI test_session_cmd(
     const char *zSub;
     int nArg;
     const char *zMsg;
-    int iSub;
   } aSub[] = {
-    { "attach",       1, "TABLE",      }, /* 0 */
-    { "changeset",    0, "",           }, /* 1 */
-    { "delete",       0, "",           }, /* 2 */
-    { "enable",       1, "BOOL",       }, /* 3 */
-    { "indirect",     1, "BOOL",       }, /* 4 */
-    { "isempty",      0, "",           }, /* 5 */
-    { "table_filter", 1, "SCRIPT",     }, /* 6 */
+    { "attach",       1, "TABLE"       }, /* 0 */
+    { "changeset",    0, ""            }, /* 1 */
+    { "delete",       0, ""            }, /* 2 */
+    { "enable",       1, "BOOL"        }, /* 3 */
+    { "indirect",     1, "BOOL"        }, /* 4 */
+    { "isempty",      0, ""            }, /* 5 */
+    { "table_filter", 1, "SCRIPT"      }, /* 6 */
     { "patchset",     0, "",           }, /* 7 */
-    { "diff",         2, "FROMDB TBL", }, /* 8 */
+    { "diff",         2, "FROMDB TBL"  }, /* 8 */
+    { "fullchangeset",0, ""            }, /* 9 */
     { 0 }
   };
   int iSub;
@@ -267,10 +268,11 @@ static int SQLITE_TCLAPI test_session_cmd(
       break;
     }
 
+    case 9:        /* fullchangeset */
     case 7:        /* patchset */
     case 1: {      /* changeset */
       TestSessionsBlob o = {0, 0};
-      if( test_tcl_integer(interp, SESSION_STREAM_TCL_VAR) ){
+      if( iSub!=9 && test_tcl_integer(interp, SESSION_STREAM_TCL_VAR) ){
         void *pCtx = (void*)&o;
         if( iSub==7 ){
           rc = sqlite3session_patchset_strm(pSession, testStreamOutput, pCtx);
@@ -280,6 +282,8 @@ static int SQLITE_TCLAPI test_session_cmd(
       }else{
         if( iSub==7 ){
           rc = sqlite3session_patchset(pSession, &o.n, &o.p);
+        }else if( iSub==9 ){
+          rc = sqlite3session_fullchangeset(pSession, &o.n, &o.p);
         }else{
           rc = sqlite3session_changeset(pSession, &o.n, &o.p);
         }
@@ -293,6 +297,7 @@ static int SQLITE_TCLAPI test_session_cmd(
       }
       break;
     }
+
 
     case 2:        /* delete */
       Tcl_DeleteCommand(interp, Tcl_GetString(objv[0]));
@@ -474,7 +479,7 @@ static int test_filter_handler(
 
   Tcl_DecrRefCount(pEval);
   return res;
-}  
+}
 
 static int test_conflict_handler(
   void *pCtx,                     /* Pointer to TestConflictHandler structure */
@@ -1019,6 +1024,127 @@ static int SQLITE_TCLAPI test_sqlite3session_foreach(
   return TCL_OK;
 }
 
+#include "sqlite3changebatch.h"
+
+typedef struct TestChangebatch TestChangebatch;
+struct TestChangebatch {
+  sqlite3_changebatch *pChangebatch;
+};
+
+/*
+** Tclcmd:  $changebatch add BLOB
+**          $changebatch zero
+**          $changebatch delete
+*/
+static int SQLITE_TCLAPI test_changebatch_cmd(
+  void *clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  TestChangebatch *p = (TestChangebatch*)clientData;
+  sqlite3_changebatch *pChangebatch = p->pChangebatch;
+  struct SessionSubcmd {
+    const char *zSub;
+    int nArg;
+    const char *zMsg;
+    int iSub;
+  } aSub[] = {
+    { "add",          1, "CHANGESET",  }, /* 0 */
+    { "zero",         0, "",           }, /* 1 */
+    { "delete",       0, "",           }, /* 2 */
+    { 0 }
+  };
+  int iSub;
+  int rc;
+
+  if( objc<2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "SUBCOMMAND ...");
+    return TCL_ERROR;
+  }
+  rc = Tcl_GetIndexFromObjStruct(interp, 
+      objv[1], aSub, sizeof(aSub[0]), "sub-command", 0, &iSub
+  );
+  if( rc!=TCL_OK ) return rc;
+  if( objc!=2+aSub[iSub].nArg ){
+    Tcl_WrongNumArgs(interp, 2, objv, aSub[iSub].zMsg);
+    return TCL_ERROR;
+  }
+
+  switch( iSub ){
+    case 0: {      /* add */
+      int nArg;
+      unsigned char *pArg = Tcl_GetByteArrayFromObj(objv[2], &nArg);
+      rc = sqlite3changebatch_add(pChangebatch, pArg, nArg);
+      if( rc!=SQLITE_OK && rc!=SQLITE_CONSTRAINT ){
+        return test_session_error(interp, rc, 0);
+      }else{
+        extern const char *sqlite3ErrName(int);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
+      }
+      break;
+    }
+
+    case 1: {      /* zero */
+      sqlite3changebatch_zero(pChangebatch);
+      break;
+    }
+
+    case 2:        /* delete */
+      Tcl_DeleteCommand(interp, Tcl_GetString(objv[0]));
+      break;
+  }
+
+  return TCL_OK;
+}
+
+static void SQLITE_TCLAPI test_changebatch_del(void *clientData){
+  TestChangebatch *p = (TestChangebatch*)clientData;
+  sqlite3changebatch_delete(p->pChangebatch);
+  ckfree((char*)p);
+}
+
+/*
+** Tclcmd:  sqlite3changebatch CMD DB-HANDLE
+*/
+static int SQLITE_TCLAPI test_sqlite3changebatch(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3 *db;
+  Tcl_CmdInfo info;
+  int rc;                         /* sqlite3session_create() return code */
+  TestChangebatch *p;             /* New wrapper object */
+
+  if( objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "CMD DB-HANDLE");
+    return TCL_ERROR;
+  }
+
+  if( 0==Tcl_GetCommandInfo(interp, Tcl_GetString(objv[2]), &info) ){
+    Tcl_AppendResult(interp, "no such handle: ", Tcl_GetString(objv[2]), 0);
+    return TCL_ERROR;
+  }
+  db = *(sqlite3 **)info.objClientData;
+
+  p = (TestChangebatch*)ckalloc(sizeof(TestChangebatch));
+  memset(p, 0, sizeof(TestChangebatch));
+  rc = sqlite3changebatch_new(db, &p->pChangebatch);
+  if( rc!=SQLITE_OK ){
+    ckfree((char*)p);
+    return test_session_error(interp, rc, 0);
+  }
+
+  Tcl_CreateObjCommand(
+      interp, Tcl_GetString(objv[1]), test_changebatch_cmd, (ClientData)p,
+      test_changebatch_del
+  );
+  Tcl_SetObjResult(interp, objv[1]);
+  return TCL_OK;
+}
+
 int TestSession_Init(Tcl_Interp *interp){
   struct Cmd {
     const char *zCmd;
@@ -1040,6 +1166,10 @@ int TestSession_Init(Tcl_Interp *interp){
     Tcl_CreateObjCommand(interp, p->zCmd, p->xProc, 0, 0);
   }
 
+
+  Tcl_CreateObjCommand(
+      interp, "sqlite3changebatch", test_sqlite3changebatch, 0, 0
+  );
   return TCL_OK;
 }
 

@@ -1,0 +1,42 @@
+# 2011 Mar 21
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# The focus of this file is testing the session module.
+#
+
+if {![info exists testdir]} {
+  set testdir [file join [file dirname [info script]] .. .. test]
+} 
+source [file join [file dirname [info script]] session_common.tcl]
+source $testdir/tester.tcl
+ifcapable !session {finish_test; return}
+set testprefix changebatchfault
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(a, b, c PRIMARY KEY, UNIQUE(a, b));
+  INSERT INTO t1 VALUES('a', 'a', 'a');
+  INSERT INTO t1 VALUES('b', 'b', 'b');
+}
+
+set ::c1 [changeset_from_sql { delete from t1 where c='a' }]
+set ::c2 [changeset_from_sql { insert into t1 values('c', 'c', 'c') }]
+
+do_faultsim_test 1 -faults oom-* -body {
+  sqlite3changebatch cb db
+  cb add $::c1
+  cb add $::c2
+} -test {
+  faultsim_test_result {0 SQLITE_OK} {1 SQLITE_NOMEM}
+  catch { cb delete }
+}
+
+
+finish_test

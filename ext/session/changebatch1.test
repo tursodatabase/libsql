@@ -1,0 +1,222 @@
+# 2016 August 23
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.
+#
+
+if {![info exists testdir]} {
+  set testdir [file join [file dirname [info script]] .. .. test]
+} 
+source $testdir/tester.tcl
+ifcapable !session {finish_test; return}
+
+set testprefix changebatch1
+
+
+proc sql_to_changeset {method sql} {
+  sqlite3session S db main
+  S attach *
+  execsql $sql
+  set ret [S $method]
+  S delete
+  return $ret
+}
+
+proc do_changebatch_test {tn method args} {
+  set C [list]
+  foreach a $args {
+    lappend C [sql_to_changeset $method $a]
+  }
+
+  sqlite3changebatch cb db
+  set i 1
+  foreach ::cs [lrange $C 0 end-1] {
+    set rc [cb add $::cs]
+    if {$rc!="SQLITE_OK"} { error "expected SQLITE_OK, got $rc (i=$i)" }
+    incr i
+  }
+
+  set ::cs [lindex $C end]
+  do_test $tn { cb add [set ::cs] } SQLITE_CONSTRAINT
+  cb delete
+}
+
+proc do_changebatch_test1 {tn args} {
+  uplevel do_changebatch_test $tn changeset $args
+}
+proc do_changebatch_test2 {tn args} {
+  uplevel do_changebatch_test $tn fullchangeset $args
+}
+
+#-------------------------------------------------------------------------
+# The body of the following loop contains tests for database schemas
+# that do not feature multi-column UNIQUE constraints. In this case
+# it doesn't matter if the changesets are generated using
+# sqlite3session_changeset() or sqlite3session_fullchangeset().
+#
+foreach {tn testfunction} {
+  1 do_changebatch_test1
+  2 do_changebatch_test2
+} {
+  reset_db
+
+  #-------------------------------------------------------------------------
+  #
+  do_execsql_test $tn.1.0 {
+    CREATE TABLE t1(a PRIMARY KEY, b);
+  }
+  
+  $testfunction $tn.1.1 {
+    INSERT INTO t1 VALUES(1, 1);
+  } {
+    DELETE FROM t1 WHERE a=1;
+  }
+  
+  do_execsql_test $tn.1.2.0 {
+    INSERT INTO t1 VALUES(1, 1);
+    INSERT INTO t1 VALUES(2, 2);
+    INSERT INTO t1 VALUES(3, 3);
+  }
+  $testfunction $tn.1.2.1 {
+    DELETE FROM t1 WHERE a=2;
+  } {
+    INSERT INTO t1 VALUES(2, 2);
+  }
+  
+  #-------------------------------------------------------------------------
+  #
+  do_execsql_test $tn.2.0 {
+    CREATE TABLE x1(a, b PRIMARY KEY, c UNIQUE);
+    CREATE TABLE x2(a PRIMARY KEY, b UNIQUE, c UNIQUE);
+    CREATE INDEX x1a ON x1(a);
+  
+    INSERT INTO x1 VALUES(1, 1, 'a');
+    INSERT INTO x1 VALUES(1, 2, 'b');
+    INSERT INTO x1 VALUES(1, 3, 'c');
+  }
+  
+  $testfunction $tn.2.1 {
+    DELETE FROM x1 WHERE b=2;
+  } {
+    UPDATE x1 SET c='b' WHERE b=3;
+  }
+  
+  $testfunction $tn.2.2 {
+    DELETE FROM x1 WHERE b=1;
+  } {
+    INSERT INTO x1 VALUES(1, 5, 'a');
+  }
+
+  set L [list]
+  for {set i 1000} {$i < 10000} {incr i} {
+    lappend L "INSERT INTO x2 VALUES($i, $i, 'x' || $i)"
+  }
+  lappend L "DELETE FROM x2 WHERE b=1005"
+  $testfunction $tn.2.3 {*}$L
+
+  execsql { INSERT INTO x1 VALUES('f', 'f', 'f') }
+  $testfunction $tn.2.4 {
+    INSERT INTO x2 VALUES('f', 'f', 'f');
+  } {
+    INSERT INTO x1 VALUES('g', 'g', 'g');
+  } {
+    DELETE FROM x1 WHERE b='f';
+  } {
+    INSERT INTO x2 VALUES('g', 'g', 'g');
+  } {
+    INSERT INTO x1 VALUES('f', 'f', 'f');
+  }
+
+  execsql {
+    DELETE FROM x1;
+    INSERT INTO x1 VALUES(1.5, 1.5, 1.5);
+  }
+  $testfunction $tn.2.5 {
+    DELETE FROM x1 WHERE b BETWEEN 1 AND 2;
+  } {
+    INSERT INTO x1 VALUES(2.5, 2.5, 2.5);
+  } {
+    INSERT INTO x1 VALUES(1.5, 1.5, 1.5);
+  }
+
+  execsql {
+    DELETE FROM x2;
+    INSERT INTO x2 VALUES(X'abcd', X'1234', X'7890');
+    INSERT INTO x2 VALUES(X'0000', X'0000', X'0000');
+  }
+  breakpoint
+  $testfunction $tn.2.6 {
+    UPDATE x2 SET c = X'1234' WHERE a=X'abcd';
+    INSERT INTO x2 VALUES(X'1234', X'abcd', X'7890');
+  } {
+    DELETE FROM x2 WHERE b=X'0000';
+  } {
+    INSERT INTO x2 VALUES(1, X'0000', NULL);
+  }
+}
+
+#-------------------------------------------------------------------------
+# Test some multi-column UNIQUE constraints. First Using _changeset() to
+# demonstrate the problem, then using _fullchangeset() to show that it has
+# been fixed.
+#
+reset_db
+do_execsql_test 3.0 {
+  CREATE TABLE y1(a PRIMARY KEY, b, c, UNIQUE(b, c));
+  INSERT INTO y1 VALUES(1, 1, 1);
+  INSERT INTO y1 VALUES(2, 2, 2);
+  INSERT INTO y1 VALUES(3, 3, 3);
+  INSERT INTO y1 VALUES(4, 3, 4);
+  BEGIN;
+}
+
+do_test 3.1.1 {
+  set c1 [sql_to_changeset changeset { DELETE FROM y1 WHERE a=4    }]
+  set c2 [sql_to_changeset changeset { UPDATE y1 SET c=4 WHERE a=3 }]
+  sqlite3changebatch cb db
+  cb add $c1
+  cb add $c2
+} {SQLITE_OK}
+do_test 3.1.2 {
+  cb delete
+  execsql ROLLBACK
+} {}
+
+do_test 3.1.1 {
+  set c1 [sql_to_changeset fullchangeset { DELETE FROM y1 WHERE a=4    }]
+  set c2 [sql_to_changeset fullchangeset { UPDATE y1 SET c=4 WHERE a=3 }]
+  sqlite3changebatch cb db
+  cb add $c1
+  cb add $c2
+} {SQLITE_CONSTRAINT}
+do_test 3.1.2 {
+  cb delete
+} {}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 4.0 {
+  CREATE TABLE t1(x, y, z, PRIMARY KEY(x, y), UNIQUE(z));
+}
+
+do_test 4.1 {
+  set c1 [sql_to_changeset fullchangeset { INSERT INTO t1 VALUES(1, 2, 3) }]
+  execsql {
+    DROP TABLE t1;
+    CREATE TABLE t1(w, x, y, z, PRIMARY KEY(x, y), UNIQUE(z));
+  }
+  sqlite3changebatch cb db
+  list [catch { cb add $c1 } msg] $msg
+} {1 SQLITE_RANGE}
+
+
+
+finish_test
