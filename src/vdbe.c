@@ -5208,7 +5208,6 @@ case OP_IdxRowid: {              /* out2 */
     }else{
       pOut = out2Prerelease(p, pOp);
       pOut->u.i = rowid;
-      pOut->flags = MEM_Int;
     }
   }else{
     assert( pOp->opcode==OP_IdxRowid );
