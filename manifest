@@ -1,5 +1,5 @@
-C Throw\san\serror\sif\sthe\sON\sclause\sof\sa\sLEFT\sJOIN\sreferences\stables\sto\sthe\sright\nof\sthe\sON\sclause.\s\sFix\sfor\sticket\s[25e335f802dd].
-D 2017-01-10T17:33:43.685
+C Add\sa\stest\scase\sfor\sticket\s[25e335f802dd].
+D 2017-01-10T17:37:49.188
 F Makefile.in 41bd4cad981487345c4a84081074bcdb876e4b2e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -880,7 +880,7 @@ F test/ioerr4.test f130fe9e71008577b342b8874d52984bd04ede2c
 F test/ioerr5.test 2edfa4fb0f896f733071303b42224df8bedd9da4
 F test/ioerr6.test a395a6ab144b26a9e3e21059a1ab6a7149cca65b
 F test/join.test f9d4a28dec81c6e9dc21b73518e024d73b5ebf57
-F test/join2.test f2171c265e57ee298a27e57e7051d22962f9f324
+F test/join2.test a48f723c5692e2cbb23a9297ac2720cb77d51a70
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
 F test/join5.test bc98ea4b4e5003f5b1453701ebb8cd7d1c01a550
@@ -1543,7 +1543,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4209b89eab01814228a178963238e0dffffad2a4
-R f2db398370e2f9344a20853ca8cb314d
-U drh
-Z 014b9abce2c0eec156f7bce8e0868d39
+P c92ecff2ec5f178433d21f25c653d0fdd9128d7c
+R e5ba5e796b740bb6ab62d42fde094373
+U dan
+Z ef9b8c72a2a40eee5e78f0752f5e6ce0
