@@ -1,5 +1,5 @@
-C Avoid\sunnecessary\scalls\sto\sthe\sxRoundup()\smethod\sof\sthe\smemory\sallocator\swhen\nthe\ssoft\sheap\slimit\sis\snot\sset.
-D 2017-01-10T16:09:46.718
+C Throw\san\serror\sif\sthe\sON\sclause\sof\sa\sLEFT\sJOIN\sreferences\stables\sto\sthe\sright\nof\sthe\sON\sclause.\s\sFix\sfor\sticket\s[25e335f802dd].
+D 2017-01-10T17:33:43.685
 F Makefile.in 41bd4cad981487345c4a84081074bcdb876e4b2e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -472,7 +472,7 @@ F src/walker.c 91a6df7435827e41cff6bb7df50ea00934ee78b0
 F src/where.c 6bbf9284f4f15a6fa48663d033870cc0d7f5ee66
 F src/whereInt.h 2bcc3d176e6091cb8f50a30b65c006e88a73614d
 F src/wherecode.c e04ac8f24c3ac8621df6c3be3ac8c7d4fa893745
-F src/whereexpr.c 24e452bcc36ac19130706357bbec4c1419931222
+F src/whereexpr.c 35ad025389a632a3987a35617c878be3b3d70dc6
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1543,7 +1543,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 71c03b59b645884ebd6b9e18713cd2eb8c949870
-R 631021f153b5b713372ffbd6126c74cb
+P 4209b89eab01814228a178963238e0dffffad2a4
+R f2db398370e2f9344a20853ca8cb314d
 U drh
-Z 02d94bfa17296c03c0e8153386f8771f
+Z 014b9abce2c0eec156f7bce8e0868d39
