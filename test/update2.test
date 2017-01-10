@@ -1,0 +1,84 @@
+# 2017 January 9
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix update2
+
+db func repeat [list string repeat]
+
+#-------------------------------------------------------------------------
+# 1.1.* A one-pass UPDATE that does balance() operations on the IPK index
+#       that it is scanning.
+#
+# 1.2.* Same again, but with a WITHOUT ROWID table.
+#
+set nrow [expr 10]
+do_execsql_test 1.1.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+  CREATE TABLE t2(a INTEGER PRIMARY KEY, b);
+  WITH s(i) AS ( SELECT 0 UNION ALL SELECT i+1 FROM s WHERE i<$nrow )
+  INSERT INTO t1(b) SELECT char((i % 26) + 65) FROM s;
+  INSERT INTO t2 SELECT * FROM t1;
+}
+
+do_execsql_test 1.1.1 {
+  UPDATE t1 SET b = repeat(b, 100)
+}
+
+do_execsql_test 1.1.2 {
+  SELECT * FROM t1;
+} [db eval { SELECT a, repeat(b, 100) FROM t2 }]
+
+do_execsql_test 1.2.0 {
+  DROP TABLE t1;
+  CREATE TABLE t1(a INT PRIMARY KEY, b) WITHOUT ROWID;
+  WITH s(i) AS ( SELECT 0 UNION ALL SELECT i+1 FROM s WHERE i<$nrow )
+  INSERT INTO t1(a, b) SELECT i+1, char((i % 26) + 65) FROM s;
+}
+
+#explain_i { UPDATE t1 SET b = repeat(b, 100) }
+do_execsql_test 1.2.1 {
+  UPDATE t1 SET b = repeat(b, 100)
+}
+
+do_execsql_test 1.2.2 {
+  SELECT * FROM t1;
+} [db eval { SELECT a, repeat(b, 100) FROM t2 }]
+
+
+#-------------------------------------------------------------------------
+# A one-pass UPDATE that does balance() operations on the IPK index
+# that it is scanning.
+#
+do_execsql_test 2.1 {
+  CREATE TABLE t3(a PRIMARY KEY, b, c);
+  CREATE INDEX t3i ON t3(b);
+} {}
+do_execsql_test 2.2 { UPDATE t3 SET c=1 WHERE b=?      } {}
+do_execsql_test 2.3 { UPDATE t3 SET c=1 WHERE rowid=?  } {}
+
+#-------------------------------------------------------------------------
+#
+do_execsql_test 3.0 {
+  CREATE TABLE t4(a PRIMARY KEY, b, c) WITHOUT ROWID;
+  CREATE INDEX t4c ON t4(c);
+  INSERT INTO t4 VALUES(1, 2, 3);
+  INSERT INTO t4 VALUES(2, 3, 4);
+}
+
+do_execsql_test 3.1 {
+  UPDATE t4 SET c=c+2 WHERE c>2;
+  SELECT a, c FROM t4 ORDER BY a;
+} {1 5 2 6}
+
+finish_test

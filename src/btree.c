@@ -7948,7 +7948,7 @@ static int balance(BtCursor *pCur){
 int sqlite3BtreeInsert(
   BtCursor *pCur,                /* Insert data into the table of this cursor */
   const BtreePayload *pX,        /* Content of the row to be inserted */
-  int appendBias,                /* True if this is likely an append */
+  int flags,                     /* True if this is likely an append */
   int seekResult                 /* Result of prior MovetoUnpacked() call */
 ){
   int rc;
@@ -7960,6 +7960,8 @@ int sqlite3BtreeInsert(
   BtShared *pBt = p->pBt;
   unsigned char *oldCell;
   unsigned char *newCell = 0;
+
+  assert( (flags & (BTREE_SAVEPOSITION|BTREE_APPEND))==flags );
 
   if( pCur->eState==CURSOR_FAULT ){
     assert( pCur->skipNext!=SQLITE_OK );
@@ -8001,6 +8003,11 @@ int sqlite3BtreeInsert(
     ** cursors open on the row being replaced */
     invalidateIncrblobCursors(p, pX->nKey, 0);
 
+    /* If BTREE_SAVEPOSITION is set, the cursor must already be pointing 
+    ** to a row with the same key as the new entry being inserted.  */
+    assert( (flags & BTREE_SAVEPOSITION)==0 || 
+            ((pCur->curFlags&BTCF_ValidNKey)!=0 && pX->nKey==pCur->info.nKey) );
+
     /* If the cursor is currently on the last row and we are appending a
     ** new row onto the end, set the "loc" to avoid an unnecessary
     ** btreeMoveto() call */
@@ -8010,10 +8017,10 @@ int sqlite3BtreeInsert(
                && pCur->info.nKey==pX->nKey-1 ){
       loc = -1;
     }else if( loc==0 ){
-      rc = sqlite3BtreeMovetoUnpacked(pCur, 0, pX->nKey, appendBias, &loc);
+      rc = sqlite3BtreeMovetoUnpacked(pCur, 0, pX->nKey, flags!=0, &loc);
       if( rc ) return rc;
     }
-  }else if( loc==0 ){
+  }else if( loc==0 && (flags & BTREE_SAVEPOSITION)==0 ){
     if( pX->nMem ){
       UnpackedRecord r;
       r.pKeyInfo = pCur->pKeyInfo;
@@ -8024,9 +8031,9 @@ int sqlite3BtreeInsert(
       r.r1 = 0;
       r.r2 = 0;
       r.eqSeen = 0;
-      rc = sqlite3BtreeMovetoUnpacked(pCur, &r, 0, appendBias, &loc);
+      rc = sqlite3BtreeMovetoUnpacked(pCur, &r, 0, flags!=0, &loc);
     }else{
-      rc = btreeMoveto(pCur, pX->pKey, pX->nKey, appendBias, &loc);
+      rc = btreeMoveto(pCur, pX->pKey, pX->nKey, flags!=0, &loc);
     }
     if( rc ) return rc;
   }
@@ -8114,6 +8121,20 @@ int sqlite3BtreeInsert(
     ** from trying to save the current position of the cursor.  */
     pCur->apPage[pCur->iPage]->nOverflow = 0;
     pCur->eState = CURSOR_INVALID;
+    if( (flags & BTREE_SAVEPOSITION) && rc==SQLITE_OK ){
+      rc = moveToRoot(pCur);
+      if( pCur->pKeyInfo && rc==SQLITE_OK ){
+        assert( pCur->pKey==0 );
+        pCur->pKey = sqlite3Malloc( pX->nKey );
+        if( pCur->pKey==0 ){
+          rc = SQLITE_NOMEM;
+        }else{
+          memcpy(pCur->pKey, pX->pKey, pX->nKey);
+        }
+      }
+      pCur->eState = CURSOR_REQUIRESEEK;
+      pCur->nKey = pX->nKey;
+    }
   }
   assert( pCur->apPage[pCur->iPage]->nOverflow==0 );
 

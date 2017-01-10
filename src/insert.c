@@ -1684,7 +1684,7 @@ void sqlite3CompleteInsertion(
   int iIdxCur,        /* First index cursor */
   int regNewData,     /* Range of content */
   int *aRegIdx,       /* Register used by each index.  0 for unused indices */
-  int isUpdate,       /* True for UPDATE, False for INSERT */
+  int update_flags,   /* True for UPDATE, False for INSERT */
   int appendBias,     /* True if this is likely to be an append */
   int useSeekResult   /* True to set the USESEEKRESULT flag on OP_[Idx]Insert */
 ){
@@ -1695,6 +1695,11 @@ void sqlite3CompleteInsertion(
   int regRec;         /* Register holding assembled record for the table */
   int i;              /* Loop counter */
   u8 bAffinityDone = 0; /* True if OP_Affinity has been run already */
+
+  assert( update_flags==0
+       || update_flags==OPFLAG_ISUPDATE
+       || update_flags==(OPFLAG_ISUPDATE|OPFLAG_SAVEPOSITION)
+  );
 
   v = sqlite3GetVdbe(pParse);
   assert( v!=0 );
@@ -1714,6 +1719,7 @@ void sqlite3CompleteInsertion(
     if( IsPrimaryKeyIndex(pIdx) && !HasRowid(pTab) ){
       assert( pParse->nested==0 );
       pik_flags |= OPFLAG_NCHANGE;
+      pik_flags |= (update_flags & OPFLAG_SAVEPOSITION);
     }
     sqlite3VdbeChangeP5(v, pik_flags);
   }
@@ -1729,7 +1735,7 @@ void sqlite3CompleteInsertion(
     pik_flags = 0;
   }else{
     pik_flags = OPFLAG_NCHANGE;
-    pik_flags |= (isUpdate?OPFLAG_ISUPDATE:OPFLAG_LASTROWID);
+    pik_flags |= (update_flags?update_flags:OPFLAG_LASTROWID);
   }
   if( appendBias ){
     pik_flags |= OPFLAG_APPEND;

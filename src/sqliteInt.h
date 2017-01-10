@@ -3041,7 +3041,7 @@ struct AuthContext {
 #define OPFLAG_NCHANGE       0x01    /* OP_Insert: Set to update db->nChange */
                                      /* Also used in P2 (not P5) of OP_Delete */
 #define OPFLAG_EPHEM         0x01    /* OP_Column: Ephemeral output is ok */
-#define OPFLAG_LASTROWID     0x02    /* Set to update db->lastRowid */
+#define OPFLAG_LASTROWID     0x20    /* Set to update db->lastRowid */
 #define OPFLAG_ISUPDATE      0x04    /* This OP_Insert is an sql UPDATE */
 #define OPFLAG_APPEND        0x08    /* This is likely to be an append */
 #define OPFLAG_USESEEKRESULT 0x10    /* Try to avoid a seek in BtreeInsert() */
@@ -3055,7 +3055,7 @@ struct AuthContext {
 #define OPFLAG_FORDELETE     0x08    /* OP_Open should use BTREE_FORDELETE */
 #define OPFLAG_P2ISREG       0x10    /* P2 to OP_Open** is a register number */
 #define OPFLAG_PERMUTE       0x01    /* OP_Compare: use the permutation */
-#define OPFLAG_SAVEPOSITION  0x02    /* OP_Delete: keep cursor position */
+#define OPFLAG_SAVEPOSITION  0x02    /* OP_Delete/Insert: save cursor pos */
 #define OPFLAG_AUXDELETE     0x04    /* OP_Delete: index in a DELETE op */
 
 /*

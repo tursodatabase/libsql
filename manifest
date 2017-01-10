@@ -1,5 +1,5 @@
-C Add\sa\stest\scase\sfor\sticket\s[25e335f802dd].
-D 2017-01-10T17:37:49.188
+C Changes\sto\sallow\ssome\smulti-row\sUPDATE\sstatements\sto\savoid\sthe\stwo-pass\napproach.
+D 2017-01-10T20:04:38.186
 F Makefile.in 41bd4cad981487345c4a84081074bcdb876e4b2e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -331,8 +331,8 @@ F src/auth.c 930b376a9c56998557367e6f7f8aaeac82a2a792
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c d2c100618784bd89c089fcef03ff6e789768ecae
-F src/btree.h 2349a588abcd7e0c04f984e15c5c777b61637583
+F src/btree.c 44e9612965f63bef288673b81faa43e765bcac5f
+F src/btree.h e6d352808956ec163a17f832193a3e198b3fb0ac
 F src/btreeInt.h 10c4b77c2fb399580babbcc7cf652ac10dba796e
 F src/build.c 9e799f1edd910dfa8a0bc29bd390d35d310596af
 F src/callback.c 2e76147783386374bf01b227f752c81ec872d730
@@ -350,7 +350,7 @@ F src/hash.c 63d0ee752a3b92d4695b2b1f5259c4621b2cfebd
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 7761fd63136771d411f096f4d7a1af9c5057ddd4
+F src/insert.c 05e47e2de7b712a3a4148cd469e5f60873f5ef13
 F src/legacy.c 75d3023be8f0d2b99d60f905090341a03358c58e
 F src/loadext.c 5d6642d141c07d366e43d359e94ec9de47add41d
 F src/main.c e207b81542d13b9f13d61e78ca441f9781f055b0
@@ -388,12 +388,12 @@ F src/printf.c ff10a9b9902cd2afe5f655f3013c6307d969b1fd
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c bb070cf5f23611c44ab7e4788803684e385fc3fb
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c 533e55a4067278fef76eff951462383d4147880f
+F src/select.c 3856db523b942062bca8722ba03b61c324ff94d6
 F src/shell.c 6095531aa900decdaa765e0f3993fba7153c92c1
 F src/sqlite.h.in e71655293c9bde26939496f3aac9d1821d2c07a2
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
-F src/sqliteInt.h 9fdfb8789b27a621f3401468bc1705c32308f877
+F src/sqliteInt.h bec6274d8991528bc12d9a34d01fe84bdf6d00d9
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
@@ -451,11 +451,11 @@ F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 5c2f516876fc27fbd7753913f032f49eb89e83b5
 F src/treeview.c 4e44ade3bfe59d82005039f72e09333ce2b4162c
 F src/trigger.c c9f0810043b265724fdb1bdd466894f984dfc182
-F src/update.c 1da7c462110bffed442a42884cb0d528c1db46d8
+F src/update.c 77a02122e040b8c6e1f13db9ef203e2224dae8f8
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c a88b0466fddf445ce752226d4698ca3faada620a
 F src/vacuum.c 33c174b28886b2faf26e503b5a49a1c01a9b1c16
-F src/vdbe.c 4c239b73d8df6ccd82842e2de0a882be46f6152d
+F src/vdbe.c c7add5978cb84ae3a7bcb16f8b56cb3bbdf04b7e
 F src/vdbe.h b0866e4191f096f1c987a84b042c3599bdf5423b
 F src/vdbeInt.h 281cb70332dc8b593b8c7afe776f3a2ba7d4255e
 F src/vdbeapi.c d6ebaa465f070eb1af8ba4e7b34583ece87bdd24
@@ -469,7 +469,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 40c543f0a2195d1b0dc88ef12142bea690009344
 F src/wal.h 06b2a0b599cc0f53ea97f497cf8c6b758c999f71
 F src/walker.c 91a6df7435827e41cff6bb7df50ea00934ee78b0
-F src/where.c 6bbf9284f4f15a6fa48663d033870cc0d7f5ee66
+F src/where.c bc71775e23d23334e8f449aa31012d692dc09cb2
 F src/whereInt.h 2bcc3d176e6091cb8f50a30b65c006e88a73614d
 F src/wherecode.c e04ac8f24c3ac8621df6c3be3ac8c7d4fa893745
 F src/whereexpr.c 35ad025389a632a3987a35617c878be3b3d70dc6
@@ -1351,6 +1351,7 @@ F test/unique2.test 3674e9f2a3f1fbbfd4772ac74b7a97090d0f77d2
 F test/unixexcl.test d936ba2b06794018e136418addd59a2354eeae97
 F test/unordered.test ca7adce0419e4ca0c50f039885e76ed2c531eda8
 F test/update.test 6c68446b8a0a33d522a7c72b320934596a2d7d32
+F test/update2.test e7f23b8ed101b7113c198bbd6f78f508718725c1
 F test/uri.test 3481026f00ade6dfe8adb7acb6e1e47b04369568
 F test/uri2.test 9d3ba7a53ee167572d53a298ee4a5d38ec4a8fb7
 F test/userauth01.test e740a2697a7b40d7c5003a7d7edaee16acd349a9
@@ -1543,7 +1544,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c92ecff2ec5f178433d21f25c653d0fdd9128d7c
-R e5ba5e796b740bb6ab62d42fde094373
+P e500c15a9f55aed1601f7c14169dd56fd76f1fdd
+R 210f82ca33b63d0d25de1e8cfd9403fd
+T *branch * onepass-update
+T *sym-onepass-update *
+T -sym-trunk *
 U dan
-Z ef9b8c72a2a40eee5e78f0752f5e6ce0
+Z 00c5ac8bc1c536bfb67f723788417749
