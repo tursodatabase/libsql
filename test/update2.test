@@ -84,14 +84,20 @@ do_execsql_test 3.1 {
 #-------------------------------------------------------------------------
 #
 foreach {tn sql} {
-  1 { CREATE TABLE b1(a INTEGER PRIMARY KEY, b, c) }
-  2 { CREATE TABLE b1(a INT PRIMARY KEY, b, c) WITHOUT ROWID }
+  1 { 
+    CREATE TABLE b1(a INTEGER PRIMARY KEY, b, c);
+    CREATE TABLE c1(a INTEGER PRIMARY KEY, b, c, d)
+  }
+  2 { 
+    CREATE TABLE b1(a INT PRIMARY KEY, b, c) WITHOUT ROWID;
+    CREATE TABLE c1(a INT PRIMARY KEY, b, c, d) WITHOUT ROWID;
+  }
 } {
-  execsql { DROP TABLE IF EXISTS b1 }
+  execsql { DROP TABLE IF EXISTS b1; DROP TABLE IF EXISTS c1; }
   execsql $sql
+
   do_execsql_test 4.$tn.0 {
     CREATE UNIQUE INDEX b1c ON b1(c);
-
     INSERT INTO b1 VALUES(1, 'a', 1);
     INSERT INTO b1 VALUES(2, 'b', 15);
     INSERT INTO b1 VALUES(3, 'c', 3);
@@ -112,7 +118,63 @@ foreach {tn sql} {
     6 f 16
     7 g 17
   }
+
+  do_execsql_test 4.$tn.2 {
+    CREATE INDEX c1d ON c1(d, b);
+    CREATE UNIQUE INDEX c1c ON c1(c, b);
+
+    INSERT INTO c1 VALUES(1, 'a', 1,  1);
+    INSERT INTO c1 VALUES(2, 'a', 15, 2);
+    INSERT INTO c1 VALUES(3, 'a', 3,  3);
+    INSERT INTO c1 VALUES(4, 'a', 4,  4);
+    INSERT INTO c1 VALUES(5, 'a', 5,  5);
+    INSERT INTO c1 VALUES(6, 'a', 6,  6);
+    INSERT INTO c1 VALUES(7, 'a', 7,  7);
+  }
+
+  do_execsql_test 4.$tn.3 {
+    UPDATE OR REPLACE c1 SET c=c+10 WHERE d BETWEEN 4 AND 7;
+    SELECT * FROM c1 ORDER BY a;
+  } {
+    1 a 1 1
+    3 a 3 3
+    4 a 14 4
+    5 a 15 5
+    6 a 16 6
+    7 a 17 7
+  }
+
+  do_execsql_test 4.$tn.4 { PRAGMA integrity_check } ok
+
+  do_execsql_test 4.$tn.5 {
+    DROP INDEX c1d;
+    DROP INDEX c1c;
+    DELETE FROM c1;
+
+    INSERT INTO c1 VALUES(1, 'a', 1,  1);
+    INSERT INTO c1 VALUES(2, 'a', 15, 2);
+    INSERT INTO c1 VALUES(3, 'a', 3,  3);
+    INSERT INTO c1 VALUES(4, 'a', 4,  4);
+    INSERT INTO c1 VALUES(5, 'a', 5,  5);
+    INSERT INTO c1 VALUES(6, 'a', 6,  6);
+    INSERT INTO c1 VALUES(7, 'a', 7,  7);
+
+    CREATE INDEX c1d ON c1(d);
+    CREATE UNIQUE INDEX c1c ON c1(c);
+  }
+
+  do_execsql_test 4.$tn.6 {
+    UPDATE OR REPLACE c1 SET c=c+10 WHERE d BETWEEN 4 AND 7;
+    SELECT * FROM c1 ORDER BY a;
+  } {
+    1 a 1 1
+    3 a 3 3
+    4 a 14 4
+    5 a 15 5
+    6 a 16 6
+    7 a 17 7
+  }
 }
 
-
 finish_test
+

@@ -135,6 +135,7 @@ void sqlite3Update(
   int addrOpen;          /* Address of OP_OpenEphemeral */
   int iPk;               /* First of nPk cells holding PRIMARY KEY value */
   i16 nPk;               /* Number of components of the PRIMARY KEY */
+  int bReplace = 0;      /* True if REPLACE conflict resolution might happen */
 
   /* Register Allocations */
   int regRowCount = 0;   /* A count of rows changed */
@@ -294,12 +295,22 @@ void sqlite3Update(
         if( iIdxCol<0 || aXRef[iIdxCol]>=0 ){
           reg = ++pParse->nMem;
           pParse->nMem += pIdx->nColumn;
+          if( (onError==OE_Replace)
+           || (onError==OE_Default && pIdx->onError==OE_Replace) 
+          ){
+            bReplace = 1;
+          }
           break;
         }
       }
     }
     if( reg==0 ) aToOpen[j+1] = 0;
     aRegIdx[j] = reg;
+  }
+  if( bReplace ){
+    /* If REPLACE conflict resolution might be invoked, open cursors on all 
+    ** indexes in case they are needed to delete records.  */
+    memset(aToOpen, 1, nIdx+1);
   }
 
   /* Begin generating code. */
@@ -374,9 +385,15 @@ void sqlite3Update(
     sqlite3VdbeSetP4KeyInfo(pParse, pPk);
   }
 
-  /* Begin the database scan. */
+  /* Begin the database scan. 
+  **
+  ** Do not consider a single-pass strategy for a multi-row update if
+  ** there are any triggers or foreign keys to process, or rows may
+  ** be deleted as a result of REPLACE conflict handling. Any of these
+  ** things might disturb a cursor being used to scan through the table
+  ** or index, causing a single-pass approach to malfunction.  */
   flags = WHERE_ONEPASS_DESIRED | WHERE_SEEK_TABLE;
-  if( pParse->nested==0 && pTrigger==0 && hasFK==0 && chngKey==0 ){
+  if( !pParse->nested && !pTrigger && !hasFK && !chngKey && !bReplace ){
     flags |= WHERE_ONEPASS_MULTIROW;
   }
   pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, 0, 0, flags, iIdxCur);
@@ -436,34 +453,20 @@ void sqlite3Update(
 
   labelBreak = sqlite3VdbeMakeLabel(v);
   if( !isView ){
-    int iAddrOnce = 0;
-    /* 
-    ** Open every index that needs updating.  Note that if any
-    ** index could potentially invoke a REPLACE conflict resolution 
-    ** action, then we need to open all indices because we might need
-    ** to be deleting some records.
-    */
-    if( onError==OE_Replace ){
-      memset(aToOpen, 1, nIdx+1);
-    }else{
-      for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-        if( pIdx->onError==OE_Replace ){
-          memset(aToOpen, 1, nIdx+1);
-          break;
-        }
-      }
-    }
+    int addrOnce = 0;
+
+    /* Open every index that needs updating. */
     if( eOnePass!=ONEPASS_OFF ){
       if( aiCurOnePass[0]>=0 ) aToOpen[aiCurOnePass[0]-iBaseCur] = 0;
       if( aiCurOnePass[1]>=0 ) aToOpen[aiCurOnePass[1]-iBaseCur] = 0;
     }
 
     if( eOnePass==ONEPASS_MULTI && (nIdx-(aiCurOnePass[1]>=0))>0 ){
-      iAddrOnce = sqlite3VdbeAddOp0(v, OP_Once); VdbeCoverage(v);
+      addrOnce = sqlite3VdbeAddOp0(v, OP_Once); VdbeCoverage(v);
     }
     sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenWrite, 0, iBaseCur, aToOpen,
                                0, 0);
-    if( iAddrOnce ) sqlite3VdbeJumpHere(v, iAddrOnce);
+    if( addrOnce ) sqlite3VdbeJumpHere(v, addrOnce);
   }
 
   /* Top of the update loop */
@@ -602,7 +605,6 @@ void sqlite3Update(
 
   if( !isView ){
     int addr1 = 0;        /* Address of jump instruction */
-    int bReplace = 0;     /* True if REPLACE conflict resolution might happen */
 
     /* Do constraint checks. */
     assert( regOldRowid>0 );
