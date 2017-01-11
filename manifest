@@ -1,5 +1,5 @@
-C Add\sa\stest\scase\sfor\sticket\s[25e335f802dd].
-D 2017-01-10T17:37:49.188
+C In\sthe\sSTAT4\scomputations,\sensure\sthat\sthe\saAvgEq\svalues\sdo\snot\sgo\snegative.
+D 2017-01-11T14:15:29.635
 F Makefile.in 41bd4cad981487345c4a84081074bcdb876e4b2e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -325,7 +325,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c 3b23977620ce9662ac54443f65b87ba996e36121
-F src/analyze.c 3c4a63ff7a55faefecf6eb1589932fdbc06b2415
+F src/analyze.c 317dbaf31c16050582b09bf4f323b4e0f1813251
 F src/attach.c 8c476f8bd5d2afe11d925f890d30e527e5b0ce43
 F src/auth.c 930b376a9c56998557367e6f7f8aaeac82a2a792
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
@@ -1543,7 +1543,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c92ecff2ec5f178433d21f25c653d0fdd9128d7c
-R e5ba5e796b740bb6ab62d42fde094373
-U dan
-Z ef9b8c72a2a40eee5e78f0752f5e6ce0
+P e500c15a9f55aed1601f7c14169dd56fd76f1fdd
+R 5c2e2ea0b7d53513cb0d1e5b25773986
+U drh
+Z ed5473ac37dfd76118f46ef5f94f7fb6
