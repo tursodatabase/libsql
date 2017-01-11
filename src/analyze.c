@@ -1619,7 +1619,7 @@ static void initAvgEq(Index *pIdx){
         }
       }
 
-      if( nDist100>nSum100 ){
+      if( nDist100>nSum100 && sumEq<nRow ){
         avgEq = ((i64)100 * (nRow - sumEq))/(nDist100 - nSum100);
       }
       if( avgEq==0 ) avgEq = 1;
