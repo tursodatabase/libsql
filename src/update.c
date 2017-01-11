@@ -395,7 +395,10 @@ void sqlite3Update(
   eOnePass = sqlite3WhereOkOnePass(pWInfo, aiCurOnePass);
   if( eOnePass==ONEPASS_MULTI ){
     int iCur = aiCurOnePass[1];
-    if( iCur>=0 && aToOpen[iCur-iBaseCur] ) eOnePass = ONEPASS_OFF;
+    if( iCur>=0 && iCur!=iDataCur && aToOpen[iCur-iBaseCur] ){
+      eOnePass = ONEPASS_OFF;
+    }
+    assert( iCur!=iDataCur || !HasRowid(pTab) );
   }
   
   if( HasRowid(pTab) ){
