@@ -68,6 +68,10 @@
 ** Define the required Windows SDK version constants if they are not
 ** already available.
 */
+#ifndef _WIN32_WINNT_WIN8
+#  define _WIN32_WINNT_WIN8                 0x0602
+#endif
+
 #ifndef NTDDI_WIN8
 #  define NTDDI_WIN8                        0x06020000
 #endif
@@ -1010,7 +1014,8 @@ static struct win_syscall {
 #define osSetFilePointerEx ((BOOL(WINAPI*)(HANDLE,LARGE_INTEGER, \
         PLARGE_INTEGER,DWORD))aSyscall[65].pCurrent)
 
-#if SQLITE_OS_WINRT
+#if SQLITE_OS_WINRT || (defined(_WIN32_WINNT) && \
+        _WIN32_WINNT >= _WIN32_WINNT_WIN8)
   { "GetFileInformationByHandleEx", (SYSCALL)GetFileInformationByHandleEx, 0 },
 #else
   { "GetFileInformationByHandleEx", (SYSCALL)0,                  0 },
@@ -3549,7 +3554,24 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
 ** same for both.
 */
 static int winSectorSize(sqlite3_file *id){
+#if defined(_WIN32_WINNT) && _WIN32_WINNT >= _WIN32_WINNT_WIN8
+  winFile *pFile = (winFile*)id;
+  FILE_STORAGE_INFO info;
+  if( osGetFileInformationByHandleEx(pFile->h, FileStorageInfo,
+                                   &info, sizeof(info)) ){
+    ULONG size = info.FileSystemEffectivePhysicalBytesPerSectorForAtomicity;
+    OSTRACE(("SECTOR file=%p, size=%lu\n", pFile->h, size));
+    if( size>0 && size<=2147483647 ){
+      return (int)size;
+    }
+  }else{
+    pFile->lastErrno = osGetLastError();
+    winLogError(SQLITE_IOERR_FSTAT, pFile->lastErrno,
+                     "winSectorSize", pFile->zPath);
+  }
+#else
   (void)id;
+#endif
   return SQLITE_DEFAULT_SECTOR_SIZE;
 }
 
