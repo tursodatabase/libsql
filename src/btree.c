@@ -8124,7 +8124,7 @@ int sqlite3BtreeInsert(
     pCur->eState = CURSOR_INVALID;
     if( (flags & BTREE_SAVEPOSITION) && rc==SQLITE_OK ){
       rc = moveToRoot(pCur);
-      if( pCur->pKeyInfo && rc==SQLITE_OK ){
+      if( pCur->pKeyInfo ){
         assert( pCur->pKey==0 );
         pCur->pKey = sqlite3Malloc( pX->nKey );
         if( pCur->pKey==0 ){
