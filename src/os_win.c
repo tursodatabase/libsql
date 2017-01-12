@@ -68,6 +68,10 @@
 ** Define the required Windows SDK version constants if they are not
 ** already available.
 */
+#ifndef _WIN32_WINNT_VISTA
+#  define _WIN32_WINNT_VISTA                0x0600
+#endif
+
 #ifndef _WIN32_WINNT_WIN8
 #  define _WIN32_WINNT_WIN8                 0x0602
 #endif
@@ -1138,6 +1142,16 @@ static struct win_syscall {
 
 #define osFlushViewOfFile \
         ((BOOL(WINAPI*)(LPCVOID,SIZE_T))aSyscall[79].pCurrent)
+
+#if defined(_WIN32_WINNT) && _WIN32_WINNT >= _WIN32_WINNT_VISTA
+  { "DeviceIoControl",          (SYSCALL)DeviceIoControl,        0 },
+#else
+  { "DeviceIoControl",          (SYSCALL)0,                      0 },
+#endif
+
+#define osDeviceIoControl ((BOOL(WINAPI*)( \
+        HANDLE,DWORD,LPVOID,DWORD,LPVOID,DWORD,LPVOID, \
+        LPOVERLAPPED))aSyscall[80].pCurrent)
 
 }; /* End of the overrideable system calls */
 
@@ -3557,6 +3571,7 @@ static int winSectorSize(sqlite3_file *id){
 #if defined(_WIN32_WINNT) && _WIN32_WINNT >= _WIN32_WINNT_WIN8
   winFile *pFile = (winFile*)id;
   FILE_STORAGE_INFO info;
+  memset(&info, 0, sizeof(FILE_STORAGE_INFO));
   if( osGetFileInformationByHandleEx(pFile->h, FileStorageInfo,
                                    &info, sizeof(info)) ){
     ULONG size = info.FileSystemEffectivePhysicalBytesPerSectorForAtomicity;
@@ -3567,7 +3582,48 @@ static int winSectorSize(sqlite3_file *id){
   }else{
     pFile->lastErrno = osGetLastError();
     winLogError(SQLITE_IOERR_FSTAT, pFile->lastErrno,
-                     "winSectorSize", pFile->zPath);
+                     "winSectorSize1", pFile->zPath);
+  }
+#elif defined(_WIN32_WINNT) && _WIN32_WINNT >= _WIN32_WINNT_VISTA
+  winFile *pFile = (winFile*)id;
+  if( winIsDriveLetterAndColon(pFile->zPath) ){
+    WCHAR zDisk[] = L"\\\\.\\_:\0"; /* underscore will be drive letter */
+    HANDLE hDisk;
+    zDisk[4] = (WCHAR)pFile->zPath[0]; /* 'A' to 'Z' only, upper/lower case */
+    assert( (zDisk[4]>=L'A' && zDisk[4]<=L'Z')
+         || (zDisk[4]>=L'a' && zDisk[4]<=L'z')
+    );
+    hDisk = osCreateFileW(zDisk, STANDARD_RIGHTS_READ,
+                          FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
+                          OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    if( hDisk!=NULL ){
+      STORAGE_PROPERTY_QUERY query;
+      STORAGE_ACCESS_ALIGNMENT_DESCRIPTOR alignment;
+      DWORD bytes = 0;
+      memset(&query, 0, sizeof(STORAGE_PROPERTY_QUERY));
+      memset(&alignment, 0, sizeof(STORAGE_ACCESS_ALIGNMENT_DESCRIPTOR));
+      query.QueryType  = PropertyStandardQuery;
+      query.PropertyId = StorageAccessAlignmentProperty;
+      if( osDeviceIoControl(hDisk, IOCTL_STORAGE_QUERY_PROPERTY, &query,
+                            sizeof(STORAGE_PROPERTY_QUERY), &alignment,
+                            sizeof(STORAGE_ACCESS_ALIGNMENT_DESCRIPTOR),
+                            &bytes, NULL) ){
+        DWORD size = alignment.BytesPerPhysicalSector;
+        OSTRACE(("SECTOR file=%p, size=%lu\n", pFile->h, size));
+        if( size>0 && size<=2147483647 ){
+          return (int)size;
+        }
+      }else{
+        pFile->lastErrno = osGetLastError();
+        winLogError(SQLITE_IOERR_FSTAT, pFile->lastErrno,
+                    "winSectorSize2", pFile->zPath);
+      }
+      osCloseHandle(hDisk);
+    }else{
+      pFile->lastErrno = osGetLastError();
+      winLogError(SQLITE_IOERR_FSTAT, pFile->lastErrno,
+                  "winSectorSize3", pFile->zPath);
+    }
   }
 #else
   (void)id;
@@ -5945,7 +6001,7 @@ int sqlite3_os_init(void){
 
   /* Double-check that the aSyscall[] array has been constructed
   ** correctly.  See ticket [bb3a86e890c8e96ab] */
-  assert( ArraySize(aSyscall)==80 );
+  assert( ArraySize(aSyscall)==81 );
 
   /* get memory map allocation granularity */
   memset(&winSysInfo, 0, sizeof(SYSTEM_INFO));

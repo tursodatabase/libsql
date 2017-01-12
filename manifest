@@ -1,5 +1,5 @@
-C Attempt\sto\sdetect\sphysical\ssector\ssizes\son\sWindows\s8\sand\shigher.
-D 2017-01-11T16:52:42.051
+C Attempt\sto\sdetect\sphysical\ssector\ssizes\son\sWindows\sVista\sand\shigher.
+D 2017-01-12T23:37:52.534
 F Makefile.in 41bd4cad981487345c4a84081074bcdb876e4b2e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -373,7 +373,7 @@ F src/os.h 8e976e59eb4ca1c0fca6d35ee803e38951cb0343
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c 30e2c43e4955db990e5b5a81e901f8aa74cc8820
-F src/os_win.c 036b12e525724d3cbdd931a6e4439dea924b17bf
+F src/os_win.c 9fbb3876ef282302ef6df6471900f283f3e4b13b
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 9dc72d23eebbdf992bd69f2ab954d0d3a27c7340
 F src/pager.h d1e944291030351f362a0a7da9b5c3e34e603e39
@@ -1543,10 +1543,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f58f75b5a06f88ba97bd1a02bee621c64691c6f8
-R d576d3178105de663378d6b438b5e84a
-T *branch * winSectorSize
-T *sym-winSectorSize *
-T -sym-trunk *
+P 381fd34b97ffe14f4bb784a9aae74477af699a08
+R 38a73ae0f111c05298e6affd34726ac4
 U mistachkin
-Z dade53828d1ccfadec45e309319f8c1a
+Z 05bcbcf820c10856a01bad7c2d3d9e2a
