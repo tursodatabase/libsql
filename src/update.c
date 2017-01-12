@@ -132,9 +132,9 @@ void sqlite3Update(
   int iEph = 0;          /* Ephemeral table holding all primary key values */
   int nKey = 0;          /* Number of elements in regKey for WITHOUT ROWID */
   int aiCurOnePass[2];   /* The write cursors opened by WHERE_ONEPASS */
-  int addrOpen;          /* Address of OP_OpenEphemeral */
-  int iPk;               /* First of nPk cells holding PRIMARY KEY value */
-  i16 nPk;               /* Number of components of the PRIMARY KEY */
+  int addrOpen = 0;      /* Address of OP_OpenEphemeral */
+  int iPk = 0;           /* First of nPk cells holding PRIMARY KEY value */
+  i16 nPk = 0;           /* Number of components of the PRIMARY KEY */
   int bReplace = 0;      /* True if REPLACE conflict resolution might happen */
 
   /* Register Allocations */
