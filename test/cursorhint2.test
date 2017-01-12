@@ -91,10 +91,12 @@ do_extract_hints_test 1.6 {
   t2 {EQ(r[2],c0)} t3 {EQ(r[6],c1)}
 }
 
-do_extract_hints_test 1.7 {
-  SELECT * FROM t1 LEFT JOIN t2 ON (a=c AND d=e) LEFT JOIN t3 ON (d=f);
-} {
-  t2 {EQ(r[2],c0)} t3 {AND(EQ(r[6],c0),EQ(r[7],c1))}
+if 0 {
+  do_extract_hints_test 1.7 {
+    SELECT * FROM t1 LEFT JOIN t2 ON (a=c AND d=e) LEFT JOIN t3 ON (d=f);
+  } {
+    t2 {EQ(r[2],c0)} t3 {AND(EQ(r[6],c0),EQ(r[7],c1))}
+  }
 }
 
 #-------------------------------------------------------------------------

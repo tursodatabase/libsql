@@ -1,5 +1,5 @@
-C Make\ssure\sTcl_AppendResult()\salways\shas\sa\sNULL-pointer\sargument\sat\sthe\send.
-D 2017-01-12T11:50:08.746
+C Remove\sinvalid\stest\scase\sfrom\scursorhints2.test
+D 2017-01-12T11:52:47.951
 F Makefile.in 41bd4cad981487345c4a84081074bcdb876e4b2e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -626,7 +626,7 @@ F test/cse.test 277350a26264495e86b1785f34d2d0c8600e021c
 F test/csv01.test e0ba3caaa57e4c667a0b45977689fb8082f14348
 F test/ctime.test ff6c38e822459d6ca743c34901caf57740b08b54
 F test/cursorhint.test 7bc346788390475e77a345da2b92270d04d35856
-F test/cursorhint2.test fa41f0d997e67db921d08c31e73111b32811201a
+F test/cursorhint2.test 8457e93d97f665f23f97cdbc8477d16e3480331b
 F test/date.test a6a5a48b90907bca9fbcc79a30be5a715c1ab2fc
 F test/dbfuzz.c 8cc2bdb818b4483a052f9f80f96be74cbd9a6e1d
 F test/dbstatus.test 73149851b3aff14fc6db478e58f9083a66422cf5
@@ -1544,7 +1544,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7ae6104a3e0d1d2cacfe2be732f0220a53908132
-R c90de156797531d5a59462fa9fb70f0d
+P c07aef6f909fe35de110f0b180dbf5aa4c226af3
+R c1c1751767bcc81e2bffd9195a0f35dd
 U drh
-Z 140d8d1b5e4e9e613293d0d1ce895be9
+Z 744c5ff27f4cf888c7a2ae696c740d23
