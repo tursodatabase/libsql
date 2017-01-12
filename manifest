@@ -1,5 +1,5 @@
-C Improved\sdetection\sof\scells\sthat\sextend\sinto\sthe\sreserved\sspace\sat\sthe\send\nof\sthe\spage\swhile\sadjusting\soverflow\spage\spointers\sduring\sautovacuum.
-D 2017-01-12T15:11:03.724
+C Remove\san\sunnecessary\scorruption\stest\sfrom\sthe\sbtree\sbalancer.\s\sIf\scorruption\nis\spresent,\sit\swill\sbe\sfound\sharmlessly\sby\slater\stests.
+D 2017-01-12T16:14:33.708
 F Makefile.in 41bd4cad981487345c4a84081074bcdb876e4b2e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -331,7 +331,7 @@ F src/auth.c 930b376a9c56998557367e6f7f8aaeac82a2a792
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c 90f8b15ec9baf65d5bfff65bdaee773b928836c1
+F src/btree.c 5f8642134a2b56d0909f6196d7a1b0731cf4188a
 F src/btree.h e6d352808956ec163a17f832193a3e198b3fb0ac
 F src/btreeInt.h 10c4b77c2fb399580babbcc7cf652ac10dba796e
 F src/build.c 9e799f1edd910dfa8a0bc29bd390d35d310596af
@@ -1544,7 +1544,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 163cc1b2f7100827d5803b81dcd97a1417744f66
-R d095162836679cc779e9b3972f22e3ea
+P 8097712c9c1f4ea16bc5dd462da248ef98896061
+R c3fb4d0a8856fd8a9a7ac25a5dcf6c2d
 U drh
-Z e05f25d6fff0c473a188620363f2fa54
+Z 126b06a4044b551a39fa62a47a4fd8cf
