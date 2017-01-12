@@ -3357,6 +3357,8 @@ static int modifyPagePointer(MemPage *pPage, Pgno iFrom, Pgno iTo, u8 eType){
         CellInfo info;
         pPage->xParseCell(pPage, pCell, &info);
         if( info.nLocal<info.nPayload ){
+          testcase( pCell+info.nSize == pPage->aData+pPage->pBt->usableSize );
+          testcase( pCell+info.nSize == pPage->aData+pPage->pBt->usableSize+1 );
           if( pCell+info.nSize > pPage->aData+pPage->pBt->usableSize ){
             return SQLITE_CORRUPT_BKPT;
           }
