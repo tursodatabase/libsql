@@ -1,5 +1,5 @@
-C Remove\sa\sbranch\sthat\sis\sprobably\sunreachable,\sand\swhich\sadds\sno\svalue.
-D 2017-01-12T19:10:55.750
+C Fix\sthe\sbuild\sfor\sSQLITE_ENABLE_MEMORY_MANAGEMENT.
+D 2017-01-13T12:53:35.623
 F Makefile.in 41bd4cad981487345c4a84081074bcdb876e4b2e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -354,7 +354,7 @@ F src/insert.c 05e47e2de7b712a3a4148cd469e5f60873f5ef13
 F src/legacy.c 75d3023be8f0d2b99d60f905090341a03358c58e
 F src/loadext.c 5d6642d141c07d366e43d359e94ec9de47add41d
 F src/main.c e207b81542d13b9f13d61e78ca441f9781f055b0
-F src/malloc.c c36ef8fa6e4cc53ec258c5aa3ad86eb47350cc3d
+F src/malloc.c fc1b9f445290f2145da48fc08730c26e6082b640
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 6919bcf12f221868ea066eec27e579fed95ce98b
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
@@ -1544,7 +1544,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 385db266673abaf7013ffad09b28014c246547ef
-R fc07cbd5c2e564fa0b0693e0166fd1a4
+P 9acc72381ccd5e36f3ffdf7e7fbefc5a15701eb4
+R 538795cf3f379197890291f480545c18
 U drh
-Z 1662f62ac3b6c5068ca23b30e30b82dc
+Z 8d3190b0c41cbb057e375dc759a5947e

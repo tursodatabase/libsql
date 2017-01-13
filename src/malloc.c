@@ -219,11 +219,12 @@ static void sqlite3MallocAlarm(int nByte){
 */
 static void mallocWithAlarm(int n, void **pp){
   void *p;
+  int nFull = 0;
   assert( sqlite3_mutex_held(mem0.mutex) );
   sqlite3StatusHighwater(SQLITE_STATUS_MALLOC_SIZE, n);
   if( mem0.alarmThreshold>0 ){
     sqlite3_int64 nUsed = sqlite3StatusValue(SQLITE_STATUS_MEMORY_USED);
-    int nFull = sqlite3GlobalConfig.m.xRoundup(n);
+    nFull = sqlite3GlobalConfig.m.xRoundup(n);
     if( nUsed >= mem0.alarmThreshold - nFull ){
       mem0.nearlyFull = 1;
       sqlite3MallocAlarm(nFull);
@@ -239,7 +240,7 @@ static void mallocWithAlarm(int n, void **pp){
   }
 #endif
   if( p ){
-    int nFull = sqlite3MallocSize(p);
+    nFull = sqlite3MallocSize(p);
     sqlite3StatusUp(SQLITE_STATUS_MEMORY_USED, nFull);
     sqlite3StatusUp(SQLITE_STATUS_MALLOC_COUNT, 1);
   }
