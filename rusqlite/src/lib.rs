@@ -90,6 +90,7 @@ pub use error::Error;
 pub use cache::CachedStatement;
 
 #[cfg(feature = "load_extension")]
+#[allow(deprecated)]
 pub use load_extension_guard::{SqliteLoadExtensionGuard, LoadExtensionGuard};
 
 pub mod types;
@@ -615,8 +616,11 @@ impl InnerConnection {
     fn close(&mut self) -> Result<()> {
         unsafe {
             let r = ffi::sqlite3_close(self.db());
-            self.db = ptr::null_mut();
-            self.decode_result(r)
+            let r = self.decode_result(r);
+            if r.is_ok() {
+                self.db = ptr::null_mut();
+            }
+            r
         }
     }
 
@@ -1286,13 +1290,14 @@ mod test {
             raw_stmt
         };
 
-        let result = db.close();
-        assert!(result.is_err());
+        // now that we have an open statement, trying (and retrying) to close should fail.
+        let (db, _) = db.close().unwrap_err();
+        let (db, _) = db.close().unwrap_err();
+        let (db, _) = db.close().unwrap_err();
 
-        // finalize the open statement so a second close will succeed
+        // finalize the open statement so a final close will succeed
         assert_eq!(ffi::SQLITE_OK, unsafe { ffi::sqlite3_finalize(raw_stmt) });
 
-        let (db, _) = result.unwrap_err();
         db.close().unwrap();
     }
 
