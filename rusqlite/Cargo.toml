@@ -26,12 +26,12 @@ bitflags = "0.7"
 lru-cache = "0.1.0"
 libc = "~0.2"
 chrono = { version = "~0.2", optional = true }
-serde_json = { version = "0.6", optional = true }
+serde_json = { version = "0.8", optional = true }
 
 [dev-dependencies]
 tempdir = "~0.3.4"
-lazy_static = "~0.1"
-regex = "~0.1.41"
+lazy_static = "~0.2"
+regex = "~0.2"
 
 [dependencies.libsqlite3-sys]
 path = "libsqlite3-sys"
