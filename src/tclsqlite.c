@@ -2307,7 +2307,7 @@ static int SQLITE_TCLAPI DbObjCmd(
     }
     in = fopen(zFile, "rb");
     if( in==0 ){
-      Tcl_AppendResult(interp, "Error: cannot open file: ", zFile, NULL);
+      Tcl_AppendResult(interp, "Error: cannot open file: ", zFile, (char*)0);
       sqlite3_finalize(pStmt);
       return TCL_ERROR;
     }
@@ -2536,7 +2536,7 @@ static int SQLITE_TCLAPI DbObjCmd(
       int n = strlen30(z);
       if( n>2 && strncmp(z, "-argcount",n)==0 ){
         if( i==(objc-2) ){
-          Tcl_AppendResult(interp, "option requires an argument: ", z, 0);
+          Tcl_AppendResult(interp, "option requires an argument: ", z,(char*)0);
           return TCL_ERROR;
         }
         if( Tcl_GetIntFromObj(interp, objv[i+1], &nArg) ) return TCL_ERROR;
@@ -2551,7 +2551,7 @@ static int SQLITE_TCLAPI DbObjCmd(
         flags |= SQLITE_DETERMINISTIC;
       }else{
         Tcl_AppendResult(interp, "bad option \"", z,
-            "\": must be -argcount or -deterministic", 0
+            "\": must be -argcount or -deterministic", (char*)0
         );
         return TCL_ERROR;
       }
@@ -3208,7 +3208,7 @@ static int SQLITE_TCLAPI DbObjCmd(
           pObj = Tcl_NewStringObj((char*)sqlite3_value_text(pValue), -1);
           Tcl_SetObjResult(interp, pObj);
         }else{
-          Tcl_AppendResult(interp, sqlite3_errmsg(pDb->db), 0);
+          Tcl_AppendResult(interp, sqlite3_errmsg(pDb->db), (char*)0);
           return TCL_ERROR;
         }
       }
