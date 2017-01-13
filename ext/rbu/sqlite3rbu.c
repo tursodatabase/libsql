@@ -2408,7 +2408,7 @@ static void rbuOpenDatabase(sqlite3rbu *p){
     }else{
       RbuState *pState = rbuLoadState(p);
       if( pState ){
-        bOpen = (pState->eStage>RBU_STAGE_MOVE);
+        bOpen = (pState->eStage>=RBU_STAGE_MOVE);
         rbuFreeState(pState);
       }
     }

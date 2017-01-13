@@ -1,5 +1,5 @@
-C Fix\sthe\sbuild\sfor\sSQLITE_ENABLE_MEMORY_MANAGEMENT.
-D 2017-01-13T12:53:35.623
+C Fix\sa\sproblem\spreventing\sresumption\sof\sRBU\soperations\safter\srecovering\sfrom\sa\nprocess\sor\ssystem\sfailure\sthat\soccurs\sduring\sthe\sincremental-checkpoint\sphase.
+D 2017-01-13T18:24:37.297
 F Makefile.in 41bd4cad981487345c4a84081074bcdb876e4b2e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -254,10 +254,11 @@ F ext/rbu/rbufault2.test 9a7f19edd6ea35c4c9f807d8a3db0a03a5670c06
 F ext/rbu/rbufault3.test 54a399888ac4af44c68f9f58afbed23149428bca
 F ext/rbu/rbufts.test 828cd689da825f0a7b7c53ffc1f6f7fdb6fa5bda
 F ext/rbu/rbuprogress.test e3e25fb7622641b8f2df7c6b7a7eb6fddfc46a4b
+F ext/rbu/rburesume.test 8acb77f4a422ff55acfcfc9cc15a5cb210b1de83
 F ext/rbu/rbusave.test 0f43b6686084f426ddd040b878426452fd2c2f48
 F ext/rbu/rbuvacuum.test 4a977447c15c2581ab668781d9ef4294382530e0
 F ext/rbu/rbuvacuum2.test 2569205b74ff40fbf3bda2fce33a58eb40eebdcc
-F ext/rbu/sqlite3rbu.c e074c38798b90591f7f0cf0032d62f152ce5a95e
+F ext/rbu/sqlite3rbu.c 4ca89fbe9ca501da17f338d580d3f19d59fc6053
 F ext/rbu/sqlite3rbu.h 6fb6294c34a9ca93b5894a33bca530c6f08decba
 F ext/rbu/test_rbu.c 5aa22616afac6f71ebd3d9bc9bf1006cfabcca88
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
@@ -1544,7 +1545,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9acc72381ccd5e36f3ffdf7e7fbefc5a15701eb4
-R 538795cf3f379197890291f480545c18
-U drh
-Z 8d3190b0c41cbb057e375dc759a5947e
+P 8c85b8fdd7f0ba65fba83361d361a567b797a184
+R dc62936e86267740ae9736f88160b05f
+U dan
+Z f2366ce5ecd39574b5b5eb81b3b99a63
