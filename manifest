@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\spreventing\sresumption\sof\sRBU\soperations\safter\srecovering\sfrom\sa\nprocess\sor\ssystem\sfailure\sthat\soccurs\sduring\sthe\sincremental-checkpoint\sphase.
-D 2017-01-13T18:24:37.297
+C Add\stest\scases\sfor\stickets\s[91e2e8ba6ff2e2]\sand\s[7ffd1ca1d2ad4ec].
+D 2017-01-16T16:01:50.379
 F Makefile.in 41bd4cad981487345c4a84081074bcdb876e4b2e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -476,6 +476,7 @@ F src/wherecode.c e04ac8f24c3ac8621df6c3be3ac8c7d4fa893745
 F src/whereexpr.c 35ad025389a632a3987a35617c878be3b3d70dc6
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
+F test/affinity3.test 6a101af2fc945ce2912f6fe54dd646018551710d
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test b35b4cd69fc913f90d39a575e171e1116c3a4bb7
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
@@ -1545,7 +1546,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8c85b8fdd7f0ba65fba83361d361a567b797a184
-R dc62936e86267740ae9736f88160b05f
-U dan
-Z f2366ce5ecd39574b5b5eb81b3b99a63
+P 97914266cb4ec63b0c9185ab139673139bd2f0ed
+R b7007367e54a15c0816f3ba9a91a394f
+T *branch * automatic-index-affinity
+T *sym-automatic-index-affinity *
+T -sym-trunk *
+U drh
+Z 2b3d4a827097e1fdb9a913f5a46e57c3
