@@ -3321,26 +3321,8 @@ static u64 floatSwap(u64 in){
 */ 
 u32 sqlite3VdbeSerialPut(u8 *buf, Mem *pMem, u32 serial_type){
   u32 len;
-
-  /* Integer and Real */
-  if( serial_type<=7 && serial_type>0 ){
-    u64 v;
-    u32 i;
-    if( serial_type==7 ){
-      assert( sizeof(v)==sizeof(pMem->u.r) );
-      memcpy(&v, &pMem->u.r, sizeof(v));
-      swapMixedEndianFloat(v);
-    }else{
-      v = pMem->u.i;
-    }
-    len = i = sqlite3SmallTypeSizes[serial_type];
-    assert( i>0 );
-    do{
-      buf[--i] = (u8)(v&0xFF);
-      v >>= 8;
-    }while( i );
-    return len;
-  }
+  u64 v;
+  u32 i;
 
   /* String or blob */
   if( serial_type>=12 ){
@@ -3351,8 +3333,18 @@ u32 sqlite3VdbeSerialPut(u8 *buf, Mem *pMem, u32 serial_type){
     return len;
   }
 
-  /* NULL or constants 0 or 1 */
-  return 0;
+  /* Integer and Real */
+  if( serial_type==7 ){
+    assert( sizeof(v)==sizeof(pMem->u.r) );
+    memcpy(&v, &pMem->u.r, sizeof(v));
+    swapMixedEndianFloat(v);
+  }else{
+    v = pMem->u.i;
+  }
+  len = i = sqlite3SmallTypeSizes[serial_type];
+  v = __builtin_bswap64(v);
+  memcpy(buf, &((char*)&v)[8-i], i);
+  return len;
 }
 
 /* Input "x" is a sequence of unsigned characters that represent a
