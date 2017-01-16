@@ -1,5 +1,5 @@
-C Add\stest\scases\sfor\stickets\s[91e2e8ba6ff2e2]\sand\s[7ffd1ca1d2ad4ec].
-D 2017-01-16T16:01:50.379
+C Back\sout\scheck-in\s[0b3174e0b1364c]\sand\sreplace\sit\swith\sa\sbetter\sfix\nfor\sticket\s[91e2e8ba6ff2e2]\s-\sa\sfix\sthat\sdoes\snot\scause\sthe\sproblem\nidentified\sby\sticket\s[7ffd1ca1d2ad4ec].
+D 2017-01-16T16:43:02.076
 F Makefile.in 41bd4cad981487345c4a84081074bcdb876e4b2e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -341,7 +341,7 @@ F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 9f2296a4e5d26ebf0e0d95a0af4628f1ea694e7a
 F src/date.c dc3f1391d9297f8c748132813aaffcb117090d6e
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
-F src/delete.c a84f6229ccb9448460c287248024ceb70e10baab
+F src/delete.c 8a444fea8340989d6b1be2e122c55bfc61ce69be
 F src/expr.c f06f41e5e5daca10fb090e70a2502dcc0dbc992b
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 2e9aabe1aee76273aff8a84ee92c464e095400ae
@@ -452,7 +452,7 @@ F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 5c2f516876fc27fbd7753913f032f49eb89e83b5
 F src/treeview.c 4e44ade3bfe59d82005039f72e09333ce2b4162c
 F src/trigger.c c9f0810043b265724fdb1bdd466894f984dfc182
-F src/update.c 4e21634dde80a59b85f4d59eca75e3b5a5001fd4
+F src/update.c b356b29d04c71f33c779f2cb557cf953819bdd7a
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c a88b0466fddf445ce752226d4698ca3faada620a
 F src/vacuum.c 33c174b28886b2faf26e503b5a49a1c01a9b1c16
@@ -1546,10 +1546,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 97914266cb4ec63b0c9185ab139673139bd2f0ed
-R b7007367e54a15c0816f3ba9a91a394f
-T *branch * automatic-index-affinity
-T *sym-automatic-index-affinity *
-T -sym-trunk *
+P 9d0dfe0b088a5917afa06207ca3ac5618e3da82f
+R d9bec5fa752ad661e71dee0a4ee8e911
 U drh
-Z 2b3d4a827097e1fdb9a913f5a46e57c3
+Z 5e9d81347f66aedf2ffc7c8c671d9f61
