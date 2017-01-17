@@ -111,7 +111,7 @@
 #endif
 
 /* What version of CLANG is being used.  0 means CLANG is not being used */
-#ifdef __clang__
+#if defined(__clang__) && !defined(_WIN32)
 # define CLANG_VERSION \
             (__clang_major__*1000000+__clang_minor__*1000+__clang_patchlevel__)
 #else
