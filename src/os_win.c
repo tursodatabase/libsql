@@ -1028,8 +1028,8 @@ static struct win_syscall {
 #define osSetFilePointerEx ((BOOL(WINAPI*)(HANDLE,LARGE_INTEGER, \
         PLARGE_INTEGER,DWORD))aSyscall[65].pCurrent)
 
-#if SQLITE_OS_WINRT || (defined(_WIN32_WINNT) && \
-        _WIN32_WINNT >= _WIN32_WINNT_WIN8)
+#if SQLITE_OS_WINRT || (defined(SQLITE_WIN32_WIN8_SECTOR_SIZE) && \
+        defined(_WIN32_WINNT) && _WIN32_WINNT >= _WIN32_WINNT_WIN8)
   { "GetFileInformationByHandleEx", (SYSCALL)GetFileInformationByHandleEx, 0 },
 #else
   { "GetFileInformationByHandleEx", (SYSCALL)0,                  0 },
@@ -3684,7 +3684,8 @@ static BOOL winIsOnSameVolume(winFile *pFile){
 ** same for both.
 */
 static int winSectorSize(sqlite3_file *id){
-#if defined(_WIN32_WINNT) && _WIN32_WINNT >= _WIN32_WINNT_WIN8
+#if defined(SQLITE_WIN32_WIN8_SECTOR_SIZE) && \
+    defined(_WIN32_WINNT) && _WIN32_WINNT >= _WIN32_WINNT_WIN8
   if( osIsWin8Plus() ){
     winFile *pFile = (winFile*)id;
     FILE_STORAGE_INFO info;
