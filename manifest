@@ -1,5 +1,5 @@
-C Fix\shandling\sof\sinitial\shidden\sand/or\ssystem\sfiles\sin\sthe\sopendir()\simplementation\sfor\sWindows.\s\sNo\schanges\sto\snon-test\scode.
-D 2017-01-18T22:16:20.672
+C Make\sthe\svtabH-3.1\stest\smore\sportable\sand\srobust.
+D 2017-01-18T22:16:34.363
 F Makefile.in 41bd4cad981487345c4a84081074bcdb876e4b2e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -1383,7 +1383,7 @@ F test/vtabC.test 4528f459a13136f982e75614d120aef165f17292
 F test/vtabD.test 05b3f1d77117271671089e48719524b676842e96
 F test/vtabE.test d5024aa42754962f6bb0afd261681686488e7afe
 F test/vtabF.test 1918844c7c902f6a16c8dacf1ec8f84886d6e78b
-F test/vtabH.test 97f61b0253260831af6232163f7852e2653baed6
+F test/vtabH.test a99d22d77e7ad367ea95df7c7c953320980bf63f
 F test/vtabI.test 751b07636700dbdea328e4265b6077ccd6811a3f
 F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
@@ -1547,7 +1547,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 681d96eb822e606da53700867191d4738bda20c8
-R 728f11ac297b564a808bf2eb4a24c6c8
+P 26dd42b462dc621b8b0a2295fc91d3e61ac732b6
+R ea3d0fbdb25858ca04efea2603f3e30f
 U mistachkin
-Z 724393d72bdc7af5ff5eea47dd7cb77d
+Z 79e95e457c2d340f3ec156d2b8c6aa1c
