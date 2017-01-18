@@ -1153,6 +1153,26 @@ static struct win_syscall {
         HANDLE,DWORD,LPVOID,DWORD,LPVOID,DWORD,LPVOID, \
         LPOVERLAPPED))aSyscall[80].pCurrent)
 
+#if defined(_WIN32_WINNT) && _WIN32_WINNT >= _WIN32_WINNT_VISTA
+  { "GetVolumeInformationByHandleW", (SYSCALL)GetVolumeInformationByHandleW, 0 },
+#else
+  { "GetVolumeInformationByHandleW", (SYSCALL)0,                 0 },
+#endif
+
+#define osGetVolumeInformationByHandleW ((BOOL(WINAPI*)( \
+        HANDLE,LPWSTR,DWORD,LPDWORD,LPDWORD,LPDWORD,LPWSTR, \
+        DWORD))aSyscall[81].pCurrent)
+
+#if defined(_WIN32_WINNT) && _WIN32_WINNT >= _WIN32_WINNT_VISTA
+  { "GetVolumeInformationW",     (SYSCALL)GetVolumeInformationW, 0 },
+#else
+  { "GetVolumeInformationW",     (SYSCALL)0,                     0 },
+#endif
+
+#define osGetVolumeInformationW ((BOOL(WINAPI*)( \
+        LPCWSTR,LPWSTR,DWORD,LPDWORD,LPDWORD,LPDWORD,LPWSTR, \
+        DWORD))aSyscall[82].pCurrent)
+
 }; /* End of the overrideable system calls */
 
 /*
@@ -3557,6 +3577,37 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
   return SQLITE_NOTFOUND;
 }
 
+#if defined(_WIN32_WINNT) && _WIN32_WINNT >= _WIN32_WINNT_VISTA
+/*
+** This function attempts to determine if the specified file resides on the
+** same volume as the corresponding root directory.  If not, the specified
+** file may be impacted by a hard link, symbolic link, or reparse point (e.g.
+** junction).
+**
+** This function may return false even when the file is on the same volume
+** as the corresponding root directory.  This function may return true only
+** when there is no doubt that the specified file is on the same volume as
+** the corresponding root directory associated with the volume.
+*/
+static BOOL winIsOnSameVolume(winFile *pFile){
+  WCHAR zRoot[] = L"_:\\\0"; /* underscore will be drive letter */
+  DWORD dwFileVolumeSerialNumber = 0;
+  DWORD dwRootVolumeSerialNumber = 0;
+
+  if ( !osGetVolumeInformationByHandleW(pFile->h, NULL, 0,
+                                        &dwFileVolumeSerialNumber, NULL,
+                                        NULL, NULL, 0) ){
+    return FALSE;
+  }
+  zRoot[0] = (WCHAR)pFile->zPath[0]; /* 'A' to 'Z' only, upper/lower case */
+  if( !osGetVolumeInformationW(zRoot, NULL, 0, &dwRootVolumeSerialNumber,
+                               NULL, NULL, NULL, 0) ){
+    return FALSE;
+  }
+  return (dwFileVolumeSerialNumber == dwRootVolumeSerialNumber);
+}
+#endif
+
 /*
 ** Return the sector size in bytes of the underlying block device for
 ** the specified file. This is almost always 512 bytes, but may be
@@ -3586,7 +3637,7 @@ static int winSectorSize(sqlite3_file *id){
   }
 #elif defined(_WIN32_WINNT) && _WIN32_WINNT >= _WIN32_WINNT_VISTA
   winFile *pFile = (winFile*)id;
-  if( winIsDriveLetterAndColon(pFile->zPath) ){
+  if( winIsDriveLetterAndColon(pFile->zPath) && winIsOnSameVolume(pFile) ){
     WCHAR zDisk[] = L"\\\\.\\_:\0"; /* underscore will be drive letter */
     HANDLE hDisk;
     zDisk[4] = (WCHAR)pFile->zPath[0]; /* 'A' to 'Z' only, upper/lower case */
@@ -6001,7 +6052,7 @@ int sqlite3_os_init(void){
 
   /* Double-check that the aSyscall[] array has been constructed
   ** correctly.  See ticket [bb3a86e890c8e96ab] */
-  assert( ArraySize(aSyscall)==81 );
+  assert( ArraySize(aSyscall)==83 );
 
   /* get memory map allocation granularity */
   memset(&winSysInfo, 0, sizeof(SYSTEM_INFO));
