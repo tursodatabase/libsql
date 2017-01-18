@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sthat\scould\scause\sa\sspurious\sSQLITE_NOMEM\serror\swhen\sattempting\nto\sresume\san\sRBU\soperation\sif\sthe\sprevious\sclient\sfailed\sright\safter\ncompleting\sthe\sincremental\scheckpoint.\sAlso\sa\s"cannot\svacuum\swal\sdb"\serror\nthat\scould\soccur\swhen\sresuming\san\sRBU\svacuum\sif\san\serror\s(OOM\sor\sIO\serror)\noccurs\sduring\sthe\sincremental\scheckpoint.
-D 2017-01-17T10:41:42.780
+C Fix\shandling\sof\sinitial\shidden\sand/or\ssystem\sfiles\sin\sthe\sopendir()\simplementation\sfor\sWindows.\s\sNo\schanges\sto\snon-test\scode.
+D 2017-01-18T22:16:20.672
 F Makefile.in 41bd4cad981487345c4a84081074bcdb876e4b2e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -446,7 +446,7 @@ F src/test_tclvar.c df9fe1213c2634687a9ca0b0bec0d2119d359ae3
 F src/test_thread.c 911d15fb14e19c0c542bdc8aabf981c2f10a4858
 F src/test_vfs.c f0186261a24de2671d080bcd8050732f0cb64f6e
 F src/test_vfstrace.c bab9594adc976cbe696ff3970728830b4c5ed698
-F src/test_windirent.c 600398db0198ca1c77ca183831bf456746b6f5c4
+F src/test_windirent.c 5234b0c38bda5cb7dfc031db6a594af2cbcf7fb7
 F src/test_windirent.h 7edc57e2faa727026dbd5d010dd0e2e665d5aa01
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
@@ -1547,7 +1547,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7fd560c6d2ff470b755ad118287a0a8825b3009e
-R 3b5f909693e02732236a5ff9d24ebb43
-U dan
-Z 623656530433c4c90deab7fe9f3d0d79
+P 681d96eb822e606da53700867191d4738bda20c8
+R 728f11ac297b564a808bf2eb4a24c6c8
+U mistachkin
+Z 724393d72bdc7af5ff5eea47dd7cb77d
