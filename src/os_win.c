@@ -3701,8 +3701,7 @@ static int winSectorSize(sqlite3_file *id){
       assert( (zDisk[4]>=L'A' && zDisk[4]<=L'Z')
            || (zDisk[4]>=L'a' && zDisk[4]<=L'z')
       );
-      hDisk = osCreateFileW(zDisk, STANDARD_RIGHTS_READ,
-                            FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
+      hDisk = osCreateFileW(zDisk, 0, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
                             OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
       if( hDisk!=NULL ){
         STORAGE_PROPERTY_QUERY query;
