@@ -8476,7 +8476,7 @@ int sqlite3_kv_open(
   const char *zDb,
   const char *zTable,
   unsigned int flags,   /* Must be zero.  Reserved for future expansion. */
-  sqlite3_kv *pKvOut
+  sqlite3_kv **ppKvOut
 );
 
 /*
