@@ -454,15 +454,21 @@ const sqlite3_mem_methods *sqlite3MemGetWin32(void);
 #endif /* SQLITE_WIN32_MALLOC */
 
 /*
-** The following variable is (normally) set once and never changes
-** thereafter.  It records whether the operating system is Win9x
-** or WinNT.
+** The following variables are (normally) set once and never change
+** thereafter.  They record the major and minor OS version and whether
+** the operating system type is Win9x or WinNT.
 **
-** 0:   Operating system unknown.
-** 1:   Operating system is Win9x.
-** 2:   Operating system is WinNT.
+** sqlite3_os_type = 0:   Operating system type is unknown.
+** sqlite3_os_type = 1:   Operating system type is Win9x.
+** sqlite3_os_type = 2:   Operating system type is WinNT.
 **
-** In order to facilitate testing on a WinNT system, the test fixture
+** For the major and minor versions, the following are the "well-known"
+** operating system releases (i.e. the ones that are tested for):
+**
+** sqlite3_os_major.sqlite3_os_minor = 6.0 = Windows Vista
+** sqlite3_os_major.sqlite3_os_minor = 6.2 = Windows 8
+**
+** In order to facilitate testing on WinNT systems, the test fixture
 ** can manually set this value to 1 to emulate Win98 behavior.
 */
 #ifdef SQLITE_TEST
@@ -3627,6 +3633,14 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
   return SQLITE_NOTFOUND;
 }
 
+/*
+** Same-volume determination for versions of Windows prior to Windows 8
+** is untested, undocumented, and unsupported.  All such code is omitted
+** unless the SQLITE_WIN32_VISTA_SECTOR_SIZE define is set at compile-time,
+** and that compile-time option is off by default and undocumented.  The
+** following code is for reference only.
+*/
+
 #if defined(SQLITE_WIN32_VISTA_SECTOR_SIZE) && \
     defined(_WIN32_WINNT) && _WIN32_WINNT >= _WIN32_WINNT_VISTA
 /*
@@ -3689,6 +3703,14 @@ static int winSectorSize(sqlite3_file *id){
     }
   }
 #endif
+
+/*
+** Sector-size determination for versions of Windows prior to Windows 8
+** is untested, undocumented, and unsupported.  All such code is omitted
+** unless the SQLITE_WIN32_VISTA_SECTOR_SIZE define is set at compile-time,
+** and that compile-time option is off by default and undocumented.  The
+** following code is for reference only.
+*/
 
 #if defined(SQLITE_WIN32_VISTA_SECTOR_SIZE) && \
     defined(_WIN32_WINNT) && _WIN32_WINNT >= _WIN32_WINNT_VISTA
