@@ -123,7 +123,7 @@ if {$tcl_platform(platform)!="windows" || \
 
   proc sort_files { names {nocase false} } {
     if {$nocase && $::tcl_platform(platform) eq "windows"} {
-      return [lsort -dictionary -nocase $names]
+      return [lsort -nocase $names]
     } else {
       return [lsort $names]
     }
