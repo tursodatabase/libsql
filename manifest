@@ -1,5 +1,5 @@
-C Remove\ssuperfluous\soption\sto\sTcl\s'lsort'\sin\sthe\svtabH\stest\sfile.
-D 2017-01-18T22:19:01.508
+C In\sthe\s'windirent'\stest\smodule,\suse\sa\smacro\sfor\sthe\shidden/system\sattribute\schecking.
+D 2017-01-18T22:47:42.937
 F Makefile.in 41bd4cad981487345c4a84081074bcdb876e4b2e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -446,8 +446,8 @@ F src/test_tclvar.c df9fe1213c2634687a9ca0b0bec0d2119d359ae3
 F src/test_thread.c 911d15fb14e19c0c542bdc8aabf981c2f10a4858
 F src/test_vfs.c f0186261a24de2671d080bcd8050732f0cb64f6e
 F src/test_vfstrace.c bab9594adc976cbe696ff3970728830b4c5ed698
-F src/test_windirent.c 5234b0c38bda5cb7dfc031db6a594af2cbcf7fb7
-F src/test_windirent.h 7edc57e2faa727026dbd5d010dd0e2e665d5aa01
+F src/test_windirent.c 17f91f5f2aa1bb7328abb49414c363b5d2a9d3ff
+F src/test_windirent.h 5d67483a55442e31e1bde0f4a230e6e932ad5906
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 5c2f516876fc27fbd7753913f032f49eb89e83b5
@@ -1547,7 +1547,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d3c91c1fb345fbcbfc60a897bebf771c795430c9
-R 2cfcfd69ff656c8eb0c9b18b58b2f78e
+P b92cc6e58ae31cbe6600a522beb5485f7add04b2
+R 28b62fae1b56b071f03984b3c0c7d517
 U mistachkin
-Z e24ce1e7a409b1f16613abdf400a1354
+Z 8396ae361cfa963c7c2449732ae79bb0

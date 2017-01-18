@@ -73,7 +73,7 @@ LPDIR opendir(
   }
 
   /* TODO: Remove this block to allow hidden and/or system files. */
-  if( data.attrib&_A_HIDDEN || data.attrib&_A_SYSTEM ){
+  if( is_filtered(data) ){
 next:
 
     memset(&data, 0, sizeof(struct _finddata_t));
@@ -83,8 +83,7 @@ next:
     }
 
     /* TODO: Remove this block to allow hidden and/or system files. */
-    if( data.attrib&_A_HIDDEN ) goto next;
-    if( data.attrib&_A_SYSTEM ) goto next;
+    if( is_filtered(data) ) goto next;
   }
 
   dirp->d_first.d_attributes = data.attrib;
@@ -117,8 +116,7 @@ next:
   if( _findnext(dirp->d_handle, &data)==-1 ) return NULL;
 
   /* TODO: Remove this block to allow hidden and/or system files. */
-  if( data.attrib&_A_HIDDEN ) goto next;
-  if( data.attrib&_A_SYSTEM ) goto next;
+  if( is_filtered(data) ) goto next;
 
   dirp->d_next.d_ino++;
   dirp->d_next.d_attributes = data.attrib;
@@ -162,8 +160,7 @@ next:
   }
 
   /* TODO: Remove this block to allow hidden and/or system files. */
-  if( data.attrib&_A_HIDDEN ) goto next;
-  if( data.attrib&_A_SYSTEM ) goto next;
+  if( is_filtered(data) ) goto next;
 
   entry->d_ino = (ino_t)-1; /* not available */
   entry->d_attributes = data.attrib;
