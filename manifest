@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sthat\scould\scause\sa\sspurious\sSQLITE_NOMEM\serror\swhen\sattempting\nto\sresume\san\sRBU\soperation\sif\sthe\sprevious\sclient\sfailed\sright\safter\ncompleting\sthe\sincremental\scheckpoint.\sAlso\sa\s"cannot\svacuum\swal\sdb"\serror\nthat\scould\soccur\swhen\sresuming\san\sRBU\svacuum\sif\san\serror\s(OOM\sor\sIO\serror)\noccurs\sduring\sthe\sincremental\scheckpoint.
-D 2017-01-17T10:41:42.780
+C Add\stemporary\scode\sto\srecord\sand\sreport\son\sthe\sset\sof\sb-tree\spages\sread\sand\nwritten\sby\sthe\scurrent\stransaction.\sThis\sis\slikely\sstill\sbuggy.
+D 2017-01-18T20:14:50.383
 F Makefile.in 41bd4cad981487345c4a84081074bcdb876e4b2e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -331,11 +331,11 @@ F src/analyze.c 317dbaf31c16050582b09bf4f323b4e0f1813251
 F src/attach.c 8c476f8bd5d2afe11d925f890d30e527e5b0ce43
 F src/auth.c 930b376a9c56998557367e6f7f8aaeac82a2a792
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
-F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
+F src/bitvec.c 263395e75ac122a7138f0797172868be700cf22a
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c 69966fb2c574954cd3216f09407c9a02c52d3bd7
-F src/btree.h e6d352808956ec163a17f832193a3e198b3fb0ac
-F src/btreeInt.h 10c4b77c2fb399580babbcc7cf652ac10dba796e
+F src/btree.c b0b714e311138e5f543d167b48415bf4ab6f2529
+F src/btree.h a25d8121baf921ed56cdf5bb65a37233b4fa059a
+F src/btreeInt.h d528379e5da9aa33ef046e3c210a5d82acd2740b
 F src/build.c 9e799f1edd910dfa8a0bc29bd390d35d310596af
 F src/callback.c 2e76147783386374bf01b227f752c81ec872d730
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
@@ -355,7 +355,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 05e47e2de7b712a3a4148cd469e5f60873f5ef13
 F src/legacy.c 75d3023be8f0d2b99d60f905090341a03358c58e
 F src/loadext.c 5d6642d141c07d366e43d359e94ec9de47add41d
-F src/main.c e207b81542d13b9f13d61e78ca441f9781f055b0
+F src/main.c 504a2a6cbd4596584fa8a5489bb5fa1c8a8ee226
 F src/malloc.c fc1b9f445290f2145da48fc08730c26e6082b640
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 6919bcf12f221868ea066eec27e579fed95ce98b
@@ -377,8 +377,8 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c 30e2c43e4955db990e5b5a81e901f8aa74cc8820
 F src/os_win.c cf90abd4e50d9f56d2c20ce8e005aff55d7bd8e9
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 9dc72d23eebbdf992bd69f2ab954d0d3a27c7340
-F src/pager.h d1e944291030351f362a0a7da9b5c3e34e603e39
+F src/pager.c fcdfc9ef832281c49870ac703ecb317fbea93891
+F src/pager.h f15b4fe1c773ba428d9c983ddac342b30a99a8f4
 F src/parse.y 29153738a7322054359320eb00b5a4cd44389f20
 F src/pcache.c 51070ec9b8251bbf9c6ea3d35fd96a458752929e
 F src/pcache.h 2cedcd8407eb23017d92790b112186886e179490
@@ -392,15 +392,15 @@ F src/resolve.c bb070cf5f23611c44ab7e4788803684e385fc3fb
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 3856db523b942062bca8722ba03b61c324ff94d6
 F src/shell.c 6095531aa900decdaa765e0f3993fba7153c92c1
-F src/sqlite.h.in e71655293c9bde26939496f3aac9d1821d2c07a2
+F src/sqlite.h.in b0e0ef521c53afeff0c5fbdacc166dd92f7963bb
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
-F src/sqliteInt.h ce3e07c720b0cebc8887ea86b3b128da0913c5d3
+F src/sqliteInt.h 7a4cf01ef33c0df033104b4caaf97c59497624f9
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
 F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
 F src/tclsqlite.c 418f5e5e0840425a7e5b33f3600dccd378a57549
-F src/test1.c 8a98191a1da8e100f77cdb5cc716df67d405028d
+F src/test1.c ef72568ab6eebf1691706e9b29ea2ab7fd5481d8
 F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
 F src/test3.c d03f5b5da9a2410b7a91c64b0d3306ed28ab6fee
 F src/test4.c 18ec393bb4d0ad1de729f0b94da7267270f3d8e6
@@ -1318,6 +1318,7 @@ F test/tkt3992.test f3e7d548ac26f763b47bc0f750da3d03c81071da
 F test/tkt3997.test a335fa41ca3985660a139df7b734a26ef53284bd
 F test/tkt4018.test 18dbc6617f7a4b90e938d1bd6d26ad18daafaf08
 F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
+F test/tpages.test abcb738d7a61a62ee60b00ac37eeb987f4919062
 F test/tpch01.test 04adbf8d8300fa60a222f28d901abd76e7be6dd4
 F test/trace.test 6f676313e3ebd2a50585036d2f212a3319dd5836
 F test/trace2.test f5cb67ad3bc09e0c58e8cca78dfd0b5639259983
@@ -1547,7 +1548,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7fd560c6d2ff470b755ad118287a0a8825b3009e
-R 3b5f909693e02732236a5ff9d24ebb43
+P 681d96eb822e606da53700867191d4738bda20c8
+R d3876579ed9b8addfbb830510866c4e1
+T *branch * transaction-pages
+T *sym-transaction-pages *
+T -sym-trunk *
 U dan
-Z 623656530433c4c90deab7fe9f3d0d79
+Z 49b44b310f5c3b7319ea5dbf5a0bd059

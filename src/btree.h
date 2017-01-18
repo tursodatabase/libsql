@@ -366,5 +366,9 @@ void sqlite3BtreeCursorList(Btree*);
 # define sqlite3SchemaMutexHeld(X,Y,Z) 1
 #endif
 
+#ifdef SQLITE_ENABLE_TRANSACTION_PAGES
+  int sqlite3BtreeTransactionPages(Btree*, int*, u32**, int*, u32**);
+#endif
+
 
 #endif /* SQLITE_BTREE_H */

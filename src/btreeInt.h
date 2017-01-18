@@ -440,6 +440,16 @@ struct BtShared {
   Btree *pWriter;       /* Btree with currently open write transaction */
 #endif
   u8 *pTmpSpace;        /* Temp space sufficient to hold a single cell */
+
+#ifdef SQLITE_ENABLE_TRANSACTION_PAGES
+  Bitvec *pBtRead;      /* Btree pages read during current write transaction */
+  Bitvec *pBtWrite;     /* Btree pages written during current transaction */
+  Bitvec *pBtAlloc;     /* Btree pages allocated during current transaction */
+  int nRead;            /* Number of entries in aiRead[] array */
+  u32 *aiRead;          /* Array returned to sqlite3_transaction_pages() */
+  int nWrite;           /* Number of entries in aiWrite[] array */
+  u32 *aiWrite;         /* Array returned to sqlite3_transaction_pages() */
+#endif
 };
 
 /*

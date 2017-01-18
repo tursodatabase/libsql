@@ -4113,7 +4113,7 @@ int sqlite3PagerClose(Pager *pPager, sqlite3 *db){
   return SQLITE_OK;
 }
 
-#if !defined(NDEBUG) || defined(SQLITE_TEST)
+#if !defined(NDEBUG) || defined(SQLITE_TEST) || defined(SQLITE_ENABLE_TRANSACTION_PAGES)
 /*
 ** Return the page number for page pPg.
 */

@@ -3631,6 +3631,10 @@ u32 sqlite3BitvecSize(Bitvec*);
 int sqlite3BitvecBuiltinTest(int,int*);
 #endif
 
+#ifdef SQLITE_ENABLE_TRANSACTION_PAGES
+  int sqlite3BitvecToArray(Bitvec *p, int *pnElem, u32 **paElem);
+#endif
+
 RowSet *sqlite3RowSetInit(sqlite3*, void*, unsigned int);
 void sqlite3RowSetClear(RowSet*);
 void sqlite3RowSetInsert(RowSet*, i64);

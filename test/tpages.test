@@ -1,0 +1,85 @@
+# 2017-01-19
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set ::testprefix tpages
+
+sqlite3_test_control_pending_byte 0x1000000
+
+proc integers {iFirst n} {
+  set ret [list]
+  for {set i $iFirst} {$i<$iFirst+$n} {incr i} {
+    lappend ret $i
+  }
+  set ret
+}
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(a, b, c);
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<99
+  )
+  INSERT INTO t1 SELECT randomblob(10), randomblob(400), randomblob(400) FROM s;
+}
+
+foreach {n1 n2} {
+      0   10 
+     10   20
+   5000   20
+   5000 5000
+   5001 5001
+  60000 5001
+  60000    5
+   5000 1000
+   6000 1000
+   7000 1000
+} {
+
+  set n1 [expr $n1]
+  set n2 [expr $n2]
+
+  reset_db
+  do_execsql_test 1.$n1.1 {
+    CREATE TABLE t1(a, b, c);
+    WITH s(i) AS (
+        SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<$n1
+    )
+    INSERT INTO t1 
+    SELECT randomblob(10), randomblob(400), randomblob(400) FROM s;
+  }
+
+  set iFirst [expr [db one {PRAGMA page_count}] + 1]
+  do_execsql_test 1.$n1.2 {
+    CREATE TABLE t2(a, b, c);
+    WITH s(i) AS (
+        SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<$n2
+    )
+    INSERT INTO t2 
+    SELECT randomblob(10), randomblob(400), randomblob(400) FROM s;
+  }
+  set nInt [expr [db one {PRAGMA page_count}] - $iFirst + 1]
+
+  do_test 1.$n1.3 {
+    execsql {
+      BEGIN IMMEDIATE;
+      SELECT * FROM t2;
+    }
+    sqlite3_transaction_pages db main
+  } [list [integers $iFirst $nInt] {}]
+  execsql cOMMIT
+}
+
+
+
+
+finish_test

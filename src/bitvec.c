@@ -293,6 +293,63 @@ u32 sqlite3BitvecSize(Bitvec *p){
   return p->iSize;
 }
 
+int bitvecAppendArrayElem(int *pnAlloc, int *pnElem, u32 **paElem, u32 iNew){
+  if( *pnElem==*pnAlloc ){
+    int nNew = *pnAlloc ? (*pnAlloc)*2 : 128;
+    u32 *aNew;
+    aNew = sqlite3_realloc(*paElem, nNew*sizeof(u32));
+    if( aNew==0 ){
+      sqlite3_free(*paElem);
+      *paElem = 0;
+      return SQLITE_NOMEM;
+    }
+    *paElem = aNew;
+    *pnAlloc = nNew;
+  }
+
+  (*paElem)[(*pnElem)++] = iNew;
+  return SQLITE_OK;
+}
+
+#ifdef SQLITE_ENABLE_TRANSACTION_PAGES
+int bitvecToArray(Bitvec *p, int iOff, int *pnAlloc, int *pnElem, u32 **paElem){
+  int rc = SQLITE_OK;
+  int i;
+  if( p->iDivisor ){
+    for(i=0; rc==SQLITE_OK && i<BITVEC_NPTR; i++){
+      if( p->u.apSub[i] ){
+        int iOff2 = iOff + i*p->iDivisor;
+        rc = bitvecToArray(p->u.apSub[i], iOff2, pnAlloc, pnElem, paElem);
+      }
+    }
+  }else{
+    if( p->iSize<=BITVEC_NBIT ){
+      for(i=0; rc==SQLITE_OK && i<BITVEC_NBIT; i++){
+        if( p->u.aBitmap[i/BITVEC_SZELEM] & (1<<(i&(BITVEC_SZELEM-1))) ){
+          rc = bitvecAppendArrayElem(pnAlloc, pnElem, paElem, i+iOff);
+        }
+      }
+    }else{
+      for(i=0; rc==SQLITE_OK && i<BITVEC_NINT; i++){
+        u32 iVal = p->u.aHash[i];
+        if( iVal ){
+          rc = bitvecAppendArrayElem(pnAlloc, pnElem, paElem, iVal-1+iOff);
+        }
+      }
+    }
+  }
+
+  return rc;
+}
+
+int sqlite3BitvecToArray(Bitvec *p, int *pnElem, u32 **paElem){
+  int nAlloc = 0;
+  *pnElem = 0;
+  *paElem = 0;
+  return bitvecToArray(p, 1, &nAlloc, pnElem, paElem);
+}
+#endif
+
 #ifndef SQLITE_UNTESTABLE
 /*
 ** Let V[] be an array of unsigned characters sufficient to hold

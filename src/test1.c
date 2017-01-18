@@ -2551,6 +2551,55 @@ static int SQLITE_TCLAPI test_delete_database(
 }
 
 /*
+** Usage: sqlite3_transaction_pages DB FILENAME
+*/
+#ifdef SQLITE_ENABLE_TRANSACTION_PAGES
+static int SQLITE_TCLAPI test_transaction_pages(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  const char *zDb;
+  sqlite3 *db;
+  int rc;
+
+  int nRead;
+  int nWrite;
+  unsigned int *aiRead;
+  unsigned int *aiWrite;
+
+  if( objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB FILE");
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  zDb = (const char*)Tcl_GetString(objv[2]);
+
+  rc = sqlite3_transaction_pages(db, zDb, &nRead, &aiRead, &nWrite, &aiWrite);
+  if( rc==SQLITE_OK ){
+    Tcl_Obj *pList = Tcl_NewObj();
+    Tcl_Obj *p = Tcl_NewObj();
+    int i;
+    for(i=0; i<nRead; i++){
+      Tcl_ListObjAppendElement(interp, p, Tcl_NewIntObj((int)aiRead[i]));
+    }
+    Tcl_ListObjAppendElement(interp, pList, p);
+    p = Tcl_NewObj();
+    for(i=0; i<nWrite; i++){
+      Tcl_ListObjAppendElement(interp, p, Tcl_NewIntObj((int)aiWrite[i]));
+    }
+    Tcl_ListObjAppendElement(interp, pList, p);
+    Tcl_SetObjResult(interp, pList);
+  }else{
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
+    return TCL_ERROR;
+  }
+  return TCL_OK;
+}
+#endif
+
+/*
 ** Usage:  sqlite3_next_stmt  DB  STMT
 **
 ** Return the next statment in sequence after STMT.
@@ -7686,6 +7735,9 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_snapshot_cmp_blob", test_snapshot_cmp_blob, 0 },
 #endif
      { "sqlite3_delete_database", test_delete_database, 0 },
+#ifdef SQLITE_ENABLE_TRANSACTION_PAGES
+     { "sqlite3_transaction_pages", test_transaction_pages, 0 },
+#endif
   };
   static int bitmask_size = sizeof(Bitmask)*8;
   static int longdouble_size = sizeof(LONGDOUBLE_TYPE);

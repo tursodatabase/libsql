@@ -8448,6 +8448,53 @@ SQLITE_EXPERIMENTAL int sqlite3_snapshot_cmp(
 */
 SQLITE_EXPERIMENTAL int sqlite3_snapshot_recover(sqlite3 *db, const char *zDb);
 
+
+/*
+** THIS API IS A HACK ONLY. 
+**
+** Return the page numbers of all b-tree pages read from or written to
+** database zDb ("main", "temp" etc.) belonging to handle db since the 
+** current write transaction was started. A page is only reported on if:
+**
+**   + It is a b-tree page, not an overflow, free or pointer-map page, and
+**
+**   + it was a b-tree page when the transaction was started (i.e. is not a 
+**     b-tree page created by reusing free page or extending the database 
+**     file).
+**
+** If successful, this function returns SQLITE_OK and sets the four output
+** variables as follows:
+**
+**   + (*paRead) is set to point to an array containing the page numbers
+**     of all pages read since the current write transaction was opened.
+**     (*pnRead) is set to the number of elements in this array.
+**
+**   + (*paWrite) is set to point to an array containing the page numbers
+**     of all pages written since the current write transaction was opened.
+**     (*paRead) is set to the number of elements in this array.
+**
+** The array references are valid until the next call to this API function
+** on the same database or until the database is DETACHed from the database 
+** handle.
+**
+** If this function is called when there is no write transaction opened
+** on the specified database, all four output parameters are set to 0.
+**
+** If an error occurs, an SQLite error code is returned (e.g. SQLITE_NOMEM)
+** and the final values of the four output parameters are undefined.
+**
+** This function is only enabled if SQLITE_ENABLE_TRANSACTION_PAGES is
+** defined during compilation.
+*/
+SQLITE_EXPERIMENTAL int sqlite3_transaction_pages(
+    sqlite3 *db, const char *zDb, 
+    int *pnRead, unsigned int **paRead,
+    int *pnWrite, unsigned int **paWrite
+);
+
+
+
+
 /*
 ** Undo the hack that converts floating point types to integer for
 ** builds on processors without floating point support.

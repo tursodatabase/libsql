@@ -2026,6 +2026,19 @@ static int getAndInitPage(
     releasePage(*ppPage);
     goto getAndInitPage_error;
   }
+
+#ifdef SQLITE_ENABLE_TRANSACTION_PAGES
+  if( pBt->inTransaction==TRANS_WRITE 
+   && pgno<=sqlite3BitvecSize(pBt->pBtRead) 
+  ){
+    rc = sqlite3BitvecSet(pBt->pBtRead, pgno);
+    if( rc!=SQLITE_OK ){
+      releasePage(*ppPage);
+      goto getAndInitPage_error;
+    }
+  }
+#endif
+
   return SQLITE_OK;
 
 getAndInitPage_error:
@@ -3266,6 +3279,21 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag){
     }
   }
 
+#ifdef SQLITE_ENABLE_TRANSACTION_PAGES
+  if( rc==SQLITE_OK && wrflag ){
+    assert( pBt->pBtRead==0 && pBt->pBtWrite==0 );
+    pBt->pBtRead = sqlite3BitvecCreate(pBt->nPage);
+    pBt->pBtWrite = sqlite3BitvecCreate(pBt->nPage);
+    pBt->pBtAlloc = sqlite3BitvecCreate(pBt->nPage);
+    if( pBt->pBtRead==0 || pBt->pBtWrite==0 || pBt->pBtAlloc==0 ){
+      rc = SQLITE_NOMEM;
+      sqlite3BitvecDestroy(pBt->pBtRead);
+      sqlite3BitvecDestroy(pBt->pBtWrite);
+      sqlite3BitvecDestroy(pBt->pBtAlloc);
+      pBt->pBtAlloc = pBt->pBtRead = pBt->pBtWrite = 0;
+    }
+  }
+#endif
 
 trans_begun:
   if( rc==SQLITE_OK && wrflag ){
@@ -3789,6 +3817,19 @@ static void btreeEndTransaction(Btree *p){
     p->inTrans = TRANS_NONE;
     unlockBtreeIfUnused(pBt);
   }
+
+#ifdef SQLITE_ENABLE_TRANSACTION_PAGES
+  if( pBt->inTransaction!=TRANS_WRITE ){
+    sqlite3BitvecDestroy(pBt->pBtRead);
+    sqlite3BitvecDestroy(pBt->pBtWrite);
+    sqlite3BitvecDestroy(pBt->pBtAlloc);
+    pBt->pBtAlloc = pBt->pBtRead = pBt->pBtWrite = 0;
+    sqlite3_free(pBt->aiRead);
+    sqlite3_free(pBt->aiWrite);
+    pBt->aiRead = pBt->aiWrite = 0;
+    pBt->nRead = pBt->nWrite = 0;
+  }
+#endif
 
   btreeIntegrity(p);
 }
@@ -4418,6 +4459,24 @@ static int copyPayload(
 }
 
 /*
+** Call PagerWrite() on pager page pDbPage. And, if the page is currently
+** in the pBtRead bit vector, add it to pBtWrite as well.
+*/
+static int pagerWrite(BtShared *pBt, DbPage *pDbPage){
+  Pgno pgno = sqlite3PagerPagenumber(pDbPage);
+  int rc = SQLITE_OK;
+#ifdef SQLITE_ENABLE_TRANSACTION_PAGES
+  if( sqlite3BitvecTestNotNull(pBt->pBtRead, pgno) ){
+    rc = sqlite3BitvecSet(pBt->pBtWrite, pgno);
+  }
+#endif
+  if( rc==SQLITE_OK ){
+    rc = sqlite3PagerWrite(pDbPage);
+  }
+  return rc;
+}
+
+/*
 ** This function is used to read or overwrite payload information
 ** for the entry that the pCur cursor is pointing to. The eOp
 ** argument is interpreted as follows:
@@ -4493,7 +4552,14 @@ static int accessPayload(
     if( a+offset>pCur->info.nLocal ){
       a = pCur->info.nLocal - offset;
     }
-    rc = copyPayload(&aPayload[offset], pBuf, a, (eOp & 0x01), pPage->pDbPage);
+#ifdef SQLITE_ENABLE_TRANSACTION_PAGES
+    if( eOp & 0x01 ){
+      rc = pagerWrite(pBt, pPage->pDbPage);
+    }
+#endif
+    if( rc==SQLITE_OK ){
+      rc = copyPayload(&aPayload[offset], pBuf, a, (eOp&0x01), pPage->pDbPage);
+    }
     offset = 0;
     pBuf += a;
     amt -= a;
@@ -5830,6 +5896,16 @@ static int allocateBtreePage(
 
   assert( *pPgno!=PENDING_BYTE_PAGE(pBt) );
 
+#ifdef SQLITE_ENABLE_TRANSACTION_PAGES
+  if( rc==SQLITE_OK && *pPgno<sqlite3BitvecSize(pBt->pBtAlloc) ){
+    rc = sqlite3BitvecSet(pBt->pBtAlloc, *pPgno);
+    if( rc!=SQLITE_OK ){
+      releasePage(*ppPage);
+      *ppPage = 0;
+    }
+  }
+#endif
+
 end_allocate_page:
   releasePage(pTrunk);
   releasePage(pPrevTrunk);
@@ -6286,6 +6362,7 @@ static void dropCell(MemPage *pPage, int idx, int sz, int *pRC){
   }
 }
 
+
 /*
 ** Insert a new cell on pPage at cell index "i".  pCell points to the
 ** content of the cell.
@@ -6351,7 +6428,7 @@ static void insertCell(
     assert( j==0 || pPage->aiOvfl[j-1]<(u16)i ); /* Overflows in sorted order */
     assert( j==0 || i==pPage->aiOvfl[j-1]+1 );   /* Overflows are sequential */
   }else{
-    int rc = sqlite3PagerWrite(pPage->pDbPage);
+    int rc = pagerWrite(pPage->pBt, pPage->pDbPage);
     if( rc!=SQLITE_OK ){
       *pRC = rc;
       return;
@@ -7385,7 +7462,7 @@ static int balance_nonroot(
     if( i<nOld ){
       pNew = apNew[i] = apOld[i];
       apOld[i] = 0;
-      rc = sqlite3PagerWrite(pNew->pDbPage);
+      rc = pagerWrite(pBt, pNew->pDbPage);
       nNew++;
       if( rc ) goto balance_cleanup;
     }else{
@@ -7755,7 +7832,7 @@ static int balance_deeper(MemPage *pRoot, MemPage **ppChild){
   ** page that will become the new right-child of pPage. Copy the contents
   ** of the node stored on pRoot into the new child page.
   */
-  rc = sqlite3PagerWrite(pRoot->pDbPage);
+  rc = pagerWrite(pBt, pRoot->pDbPage);
   if( rc==SQLITE_OK ){
     rc = allocateBtreePage(pBt,&pChild,&pgnoChild,pRoot->pgno,0);
     copyNodeContent(pRoot, pChild, &rc);
@@ -7837,7 +7914,7 @@ static int balance(BtCursor *pCur){
       MemPage * const pParent = pCur->apPage[iPage-1];
       int const iIdx = pCur->aiIdx[iPage-1];
 
-      rc = sqlite3PagerWrite(pParent->pDbPage);
+      rc = pagerWrite(pParent->pBt, pParent->pDbPage);
       if( rc==SQLITE_OK ){
 #ifndef SQLITE_OMIT_QUICKBALANCE
         if( pPage->intKeyLeaf
@@ -8058,7 +8135,7 @@ int sqlite3BtreeInsert(
   if( loc==0 ){
     CellInfo info;
     assert( idx<pPage->nCell );
-    rc = sqlite3PagerWrite(pPage->pDbPage);
+    rc = pagerWrite(pBt, pPage->pDbPage);
     if( rc ){
       goto end_insert;
     }
@@ -8238,7 +8315,7 @@ int sqlite3BtreeDelete(BtCursor *pCur, u8 flags){
   /* Make the page containing the entry to be deleted writable. Then free any
   ** overflow pages associated with the entry and finally remove the cell
   ** itself from within the page.  */
-  rc = sqlite3PagerWrite(pPage->pDbPage);
+  rc = pagerWrite(pBt, pPage->pDbPage);
   if( rc ) return rc;
   rc = clearCell(pPage, pCell, &info);
   dropCell(pPage, iCellIdx, info.nSize, &rc);
@@ -8261,7 +8338,7 @@ int sqlite3BtreeDelete(BtCursor *pCur, u8 flags){
     assert( MX_CELL_SIZE(pBt) >= nCell );
     pTmp = pBt->pTmpSpace;
     assert( pTmp!=0 );
-    rc = sqlite3PagerWrite(pLeaf->pDbPage);
+    rc = pagerWrite(pBt, pLeaf->pDbPage);
     if( rc==SQLITE_OK ){
       insertCell(pPage, iCellIdx, pCell-4, nCell+4, pTmp, n, &rc);
     }
@@ -8524,7 +8601,7 @@ static int clearDatabasePage(
   }
   if( freePageFlag ){
     freePage(pPage, &rc);
-  }else if( (rc = sqlite3PagerWrite(pPage->pDbPage))==0 ){
+  }else if( (rc = pagerWrite(pBt, pPage->pDbPage))==0 ){
     zeroPage(pPage, pPage->aData[hdr] | PTF_LEAF);
   }
 
@@ -9725,6 +9802,35 @@ int sqlite3BtreeIsReadonly(Btree *p){
 ** Return the size of the header added to each page by this module.
 */
 int sqlite3HeaderSizeBtree(void){ return ROUND8(sizeof(MemPage)); }
+
+#ifdef SQLITE_ENABLE_TRANSACTION_PAGES
+int sqlite3BtreeTransactionPages(
+  Btree *pBtree,                  /* Btree handle */
+  int *pnRead, u32 **paiRead,     /* OUT: Pages read */
+  int *pnWrite, u32 **paiWrite    /* OUT: Pages written */
+){
+  int rc = SQLITE_OK;
+  BtShared *pBt = pBtree->pBt;
+  sqlite3BtreeEnter(pBtree);
+  sqlite3_free(pBt->aiRead);
+  sqlite3_free(pBt->aiWrite);
+  pBt->nRead = pBt->nWrite = 0;
+  pBt->aiRead = pBt->aiWrite = 0;
+  if( pBtree->inTrans==TRANS_WRITE ){
+    assert( pBt->inTransaction==TRANS_WRITE );
+    rc = sqlite3BitvecToArray(pBt->pBtRead, &pBt->nRead, &pBt->aiRead);
+    if( rc==SQLITE_OK ){
+      rc = sqlite3BitvecToArray(pBt->pBtWrite, &pBt->nWrite, &pBt->aiWrite);
+    }
+  }
+  *pnRead = pBt->nRead;
+  *paiRead = pBt->aiRead;
+  *pnWrite = pBt->nWrite;
+  *paiWrite = pBt->aiWrite;
+  sqlite3BtreeLeave(pBtree);
+  return rc;
+}
+#endif  /* SQLITE_ENABLE_TRANSACTION_PAGES */
 
 #if !defined(SQLITE_OMIT_SHARED_CACHE)
 /*

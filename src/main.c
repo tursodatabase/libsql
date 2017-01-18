@@ -4077,4 +4077,33 @@ int sqlite3_snapshot_recover(sqlite3 *db, const char *zDb){
 void sqlite3_snapshot_free(sqlite3_snapshot *pSnapshot){
   sqlite3_free(pSnapshot);
 }
+
+#ifdef SQLITE_ENABLE_TRANSACTION_PAGES
+/*
+** Return the pages read and written by the current write transaction.
+*/
+int sqlite3_transaction_pages(
+    sqlite3 *db, const char *zDbName, 
+    int *pnRead, unsigned int **paRead,
+    int *pnWrite, unsigned int **paWrite
+){
+  Btree *pBt;                     /* Btree to query */
+  int rc;                         /* Return code */
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( !sqlite3SafetyCheckOk(db) ){
+    (void)SQLITE_MISUSE_BKPT;
+    return 0;
+  }
+#endif
+
+  sqlite3_mutex_enter(db->mutex);
+  pBt = sqlite3DbNameToBtree(db, zDbName);
+  if( pBt==0 ) return SQLITE_ERROR;
+  rc = sqlite3BtreeTransactionPages(pBt, pnRead, paRead, pnWrite, paWrite);
+  sqlite3_mutex_leave(db->mutex);
+
+  return rc;
+}
+#endif  /* SQLITE_ENABLE_TRANSACTION_PAGES */
+
 #endif /* SQLITE_ENABLE_SNAPSHOT */
