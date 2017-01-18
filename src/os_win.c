@@ -467,8 +467,12 @@ const sqlite3_mem_methods *sqlite3MemGetWin32(void);
 */
 #ifdef SQLITE_TEST
 LONG SQLITE_WIN32_VOLATILE sqlite3_os_type = 0;
+LONG SQLITE_WIN32_VOLATILE sqlite3_os_major = 0;
+LONG SQLITE_WIN32_VOLATILE sqlite3_os_minor = 0;
 #else
 static LONG SQLITE_WIN32_VOLATILE sqlite3_os_type = 0;
+static LONG SQLITE_WIN32_VOLATILE sqlite3_os_major = 0;
+static LONG SQLITE_WIN32_VOLATILE sqlite3_os_minor = 0;
 #endif
 
 #ifndef SYSCALL
@@ -1143,7 +1147,8 @@ static struct win_syscall {
 #define osFlushViewOfFile \
         ((BOOL(WINAPI*)(LPCVOID,SIZE_T))aSyscall[79].pCurrent)
 
-#if defined(_WIN32_WINNT) && _WIN32_WINNT >= _WIN32_WINNT_VISTA
+#if defined(SQLITE_WIN32_VISTA_SECTOR_SIZE) && defined(_WIN32_WINNT) && \
+        _WIN32_WINNT >= _WIN32_WINNT_VISTA
   { "DeviceIoControl",          (SYSCALL)DeviceIoControl,        0 },
 #else
   { "DeviceIoControl",          (SYSCALL)0,                      0 },
@@ -1153,7 +1158,8 @@ static struct win_syscall {
         HANDLE,DWORD,LPVOID,DWORD,LPVOID,DWORD,LPVOID, \
         LPOVERLAPPED))aSyscall[80].pCurrent)
 
-#if defined(_WIN32_WINNT) && _WIN32_WINNT >= _WIN32_WINNT_VISTA
+#if defined(SQLITE_WIN32_VISTA_SECTOR_SIZE) && defined(_WIN32_WINNT) && \
+        _WIN32_WINNT >= _WIN32_WINNT_VISTA
   { "GetVolumeInformationByHandleW", (SYSCALL)GetVolumeInformationByHandleW, 0 },
 #else
   { "GetVolumeInformationByHandleW", (SYSCALL)0,                 0 },
@@ -1163,7 +1169,8 @@ static struct win_syscall {
         HANDLE,LPWSTR,DWORD,LPDWORD,LPDWORD,LPDWORD,LPWSTR, \
         DWORD))aSyscall[81].pCurrent)
 
-#if defined(_WIN32_WINNT) && _WIN32_WINNT >= _WIN32_WINNT_VISTA
+#if defined(SQLITE_WIN32_VISTA_SECTOR_SIZE) && defined(_WIN32_WINNT) && \
+        _WIN32_WINNT >= _WIN32_WINNT_VISTA
   { "GetVolumeInformationW",     (SYSCALL)GetVolumeInformationW, 0 },
 #else
   { "GetVolumeInformationW",     (SYSCALL)0,                     0 },
@@ -1443,6 +1450,63 @@ DWORD sqlite3Win32Wait(HANDLE hObject){
 #endif
 
 /*
+** This following version checking macros should evaluate to non-zero only
+** when running on Windows Vista (or higher) or Windows 8 (or higher).
+*/
+
+#if !SQLITE_WIN32_GETVERSIONEX
+# define osIsVistaPlus()  (1)
+# define osIsWin8Plus()   (1)
+#elif SQLITE_OS_WINCE
+# define osIsVistaPlus()  (0)
+# define osIsWin8Plus()   (0)
+#elif SQLITE_OS_WINRT
+# define osIsVistaPlus()  (1)
+# define osIsWin8Plus()   (1)
+#else
+# define osIsVistaPlus()  (winGetVersionEx() && ((sqlite3_os_major>6) || \
+    ((sqlite3_os_major==6) && (sqlite3_os_minor>=0))))
+# define osIsWin8Plus()   (winGetVersionEx() && ((sqlite3_os_major>6) || \
+    ((sqlite3_os_major==6) && (sqlite3_os_minor>=2))))
+#endif
+
+/*
+** This function populates the Windows version information needed by this
+** module.  Use of the GetVersionExA or GetVersionExW function is required.
+** The return value will be non-zero if version information was queried.
+*/
+#if SQLITE_WIN32_GETVERSIONEX
+static int winGetVersionEx(){
+  if( osInterlockedCompareExchange(&sqlite3_os_type, 0, 0)==0 ){
+#if defined(SQLITE_WIN32_HAS_ANSI)
+    OSVERSIONINFOA sInfo;
+    sInfo.dwOSVersionInfoSize = sizeof(sInfo);
+    osGetVersionExA(&sInfo);
+    osInterlockedCompareExchange(&sqlite3_os_type,
+        (sInfo.dwPlatformId == VER_PLATFORM_WIN32_NT) ? 2 : 1, 0);
+    osInterlockedCompareExchange(&sqlite3_os_major,
+        (LONG)sInfo.dwMajorVersion, 0);
+    osInterlockedCompareExchange(&sqlite3_os_minor,
+        (LONG)sInfo.dwMinorVersion, 0);
+    return 1;
+#elif defined(SQLITE_WIN32_HAS_WIDE)
+    OSVERSIONINFOW sInfo;
+    sInfo.dwOSVersionInfoSize = sizeof(sInfo);
+    osGetVersionExW(&sInfo);
+    osInterlockedCompareExchange(&sqlite3_os_type,
+        (sInfo.dwPlatformId == VER_PLATFORM_WIN32_NT) ? 2 : 1, 0);
+    osInterlockedCompareExchange(&sqlite3_os_major,
+        (LONG)sInfo.dwMajorVersion, 0);
+    osInterlockedCompareExchange(&sqlite3_os_minor,
+        (LONG)sInfo.dwMinorVersion, 0);
+    return 1;
+#endif
+  }
+  return 0;
+}
+#endif
+
+/*
 ** This function determines if the machine is running a version of Windows
 ** based on the NT kernel.
 */
@@ -1454,21 +1518,7 @@ int sqlite3_win32_is_nt(void){
   */
   return 1;
 #elif SQLITE_WIN32_GETVERSIONEX
-  if( osInterlockedCompareExchange(&sqlite3_os_type, 0, 0)==0 ){
-#if defined(SQLITE_WIN32_HAS_ANSI)
-    OSVERSIONINFOA sInfo;
-    sInfo.dwOSVersionInfoSize = sizeof(sInfo);
-    osGetVersionExA(&sInfo);
-    osInterlockedCompareExchange(&sqlite3_os_type,
-        (sInfo.dwPlatformId == VER_PLATFORM_WIN32_NT) ? 2 : 1, 0);
-#elif defined(SQLITE_WIN32_HAS_WIDE)
-    OSVERSIONINFOW sInfo;
-    sInfo.dwOSVersionInfoSize = sizeof(sInfo);
-    osGetVersionExW(&sInfo);
-    osInterlockedCompareExchange(&sqlite3_os_type,
-        (sInfo.dwPlatformId == VER_PLATFORM_WIN32_NT) ? 2 : 1, 0);
-#endif
-  }
+  winGetVersionEx();
   return osInterlockedCompareExchange(&sqlite3_os_type, 2, 2)==2;
 #elif SQLITE_TEST
   return osInterlockedCompareExchange(&sqlite3_os_type, 2, 2)==2;
@@ -3577,7 +3627,8 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
   return SQLITE_NOTFOUND;
 }
 
-#if defined(_WIN32_WINNT) && _WIN32_WINNT >= _WIN32_WINNT_VISTA
+#if defined(SQLITE_WIN32_VISTA_SECTOR_SIZE) && \
+    defined(_WIN32_WINNT) && _WIN32_WINNT >= _WIN32_WINNT_VISTA
 /*
 ** This function attempts to determine if the specified file resides on the
 ** same volume as the corresponding root directory.  If not, the specified
@@ -3620,65 +3671,72 @@ static BOOL winIsOnSameVolume(winFile *pFile){
 */
 static int winSectorSize(sqlite3_file *id){
 #if defined(_WIN32_WINNT) && _WIN32_WINNT >= _WIN32_WINNT_WIN8
-  winFile *pFile = (winFile*)id;
-  FILE_STORAGE_INFO info;
-  memset(&info, 0, sizeof(FILE_STORAGE_INFO));
-  if( osGetFileInformationByHandleEx(pFile->h, FileStorageInfo,
-                                   &info, sizeof(info)) ){
-    ULONG size = info.FileSystemEffectivePhysicalBytesPerSectorForAtomicity;
-    OSTRACE(("SECTOR file=%p, size=%lu\n", pFile->h, size));
-    if( size>0 && size<=2147483647 ){
-      return (int)size;
-    }
-  }else{
-    pFile->lastErrno = osGetLastError();
-    winLogError(SQLITE_IOERR_FSTAT, pFile->lastErrno,
-                     "winSectorSize1", pFile->zPath);
-  }
-#elif defined(_WIN32_WINNT) && _WIN32_WINNT >= _WIN32_WINNT_VISTA
-  winFile *pFile = (winFile*)id;
-  if( winIsDriveLetterAndColon(pFile->zPath) && winIsOnSameVolume(pFile) ){
-    WCHAR zDisk[] = L"\\\\.\\_:\0"; /* underscore will be drive letter */
-    HANDLE hDisk;
-    zDisk[4] = (WCHAR)pFile->zPath[0]; /* 'A' to 'Z' only, upper/lower case */
-    assert( (zDisk[4]>=L'A' && zDisk[4]<=L'Z')
-         || (zDisk[4]>=L'a' && zDisk[4]<=L'z')
-    );
-    hDisk = osCreateFileW(zDisk, STANDARD_RIGHTS_READ,
-                          FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
-                          OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-    if( hDisk!=NULL ){
-      STORAGE_PROPERTY_QUERY query;
-      STORAGE_ACCESS_ALIGNMENT_DESCRIPTOR alignment;
-      DWORD bytes = 0;
-      memset(&query, 0, sizeof(STORAGE_PROPERTY_QUERY));
-      memset(&alignment, 0, sizeof(STORAGE_ACCESS_ALIGNMENT_DESCRIPTOR));
-      query.QueryType  = PropertyStandardQuery;
-      query.PropertyId = StorageAccessAlignmentProperty;
-      if( osDeviceIoControl(hDisk, IOCTL_STORAGE_QUERY_PROPERTY, &query,
-                            sizeof(STORAGE_PROPERTY_QUERY), &alignment,
-                            sizeof(STORAGE_ACCESS_ALIGNMENT_DESCRIPTOR),
-                            &bytes, NULL) ){
-        DWORD size = alignment.BytesPerPhysicalSector;
-        OSTRACE(("SECTOR file=%p, size=%lu\n", pFile->h, size));
-        if( size>0 && size<=2147483647 ){
-          return (int)size;
-        }
-      }else{
-        pFile->lastErrno = osGetLastError();
-        winLogError(SQLITE_IOERR_FSTAT, pFile->lastErrno,
-                    "winSectorSize2", pFile->zPath);
+  if( osIsWin8Plus() ){
+    winFile *pFile = (winFile*)id;
+    FILE_STORAGE_INFO info;
+    memset(&info, 0, sizeof(FILE_STORAGE_INFO));
+    if( osGetFileInformationByHandleEx(pFile->h, FileStorageInfo,
+                                       &info, sizeof(info)) ){
+      ULONG size = info.FileSystemEffectivePhysicalBytesPerSectorForAtomicity;
+      OSTRACE(("SECTOR file=%p, size=%lu\n", pFile->h, size));
+      if( size>0 && size<=2147483647 ){
+        return (int)size;
       }
-      osCloseHandle(hDisk);
     }else{
       pFile->lastErrno = osGetLastError();
       winLogError(SQLITE_IOERR_FSTAT, pFile->lastErrno,
-                  "winSectorSize3", pFile->zPath);
+                  "winSectorSize1", pFile->zPath);
     }
   }
-#else
-  (void)id;
 #endif
+
+#if defined(SQLITE_WIN32_VISTA_SECTOR_SIZE) && \
+    defined(_WIN32_WINNT) && _WIN32_WINNT >= _WIN32_WINNT_VISTA
+  if( osIsVistaPlus() ){
+    winFile *pFile = (winFile*)id;
+    if( winIsDriveLetterAndColon(pFile->zPath) && winIsOnSameVolume(pFile) ){
+      WCHAR zDisk[] = L"\\\\.\\_:\0"; /* underscore will be drive letter */
+      HANDLE hDisk;
+      zDisk[4] = (WCHAR)pFile->zPath[0]; /* 'A' to 'Z' only, upper/lower case */
+      assert( (zDisk[4]>=L'A' && zDisk[4]<=L'Z')
+           || (zDisk[4]>=L'a' && zDisk[4]<=L'z')
+      );
+      hDisk = osCreateFileW(zDisk, STANDARD_RIGHTS_READ,
+                            FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
+                            OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+      if( hDisk!=NULL ){
+        STORAGE_PROPERTY_QUERY query;
+        STORAGE_ACCESS_ALIGNMENT_DESCRIPTOR alignment;
+        DWORD bytes = 0;
+        memset(&query, 0, sizeof(STORAGE_PROPERTY_QUERY));
+        memset(&alignment, 0, sizeof(STORAGE_ACCESS_ALIGNMENT_DESCRIPTOR));
+        query.QueryType  = PropertyStandardQuery;
+        query.PropertyId = StorageAccessAlignmentProperty;
+        if( osDeviceIoControl(hDisk, IOCTL_STORAGE_QUERY_PROPERTY, &query,
+                              sizeof(STORAGE_PROPERTY_QUERY), &alignment,
+                              sizeof(STORAGE_ACCESS_ALIGNMENT_DESCRIPTOR),
+                              &bytes, NULL) ){
+          DWORD size = alignment.BytesPerPhysicalSector;
+          OSTRACE(("SECTOR file=%p, size=%lu\n", pFile->h, size));
+          if( size>0 && size<=2147483647 ){
+            return (int)size;
+          }
+        }else{
+          pFile->lastErrno = osGetLastError();
+          winLogError(SQLITE_IOERR_FSTAT, pFile->lastErrno,
+                      "winSectorSize2", pFile->zPath);
+        }
+        osCloseHandle(hDisk);
+      }else{
+        pFile->lastErrno = osGetLastError();
+        winLogError(SQLITE_IOERR_FSTAT, pFile->lastErrno,
+                    "winSectorSize3", pFile->zPath);
+      }
+    }
+  }
+#endif
+
+  (void)id;
   return SQLITE_DEFAULT_SECTOR_SIZE;
 }
 
