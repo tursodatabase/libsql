@@ -338,6 +338,7 @@ foreach file {
    func.c
    fkey.c
    insert.c
+   kvapi.c
    legacy.c
    loadext.c
    pragma.c

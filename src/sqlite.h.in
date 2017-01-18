@@ -497,6 +497,8 @@ int sqlite3_exec(
 #define SQLITE_LOCKED_SHAREDCACHE      (SQLITE_LOCKED |  (1<<8))
 #define SQLITE_BUSY_RECOVERY           (SQLITE_BUSY   |  (1<<8))
 #define SQLITE_BUSY_SNAPSHOT           (SQLITE_BUSY   |  (2<<8))
+#define SQLITE_KV_BEFORE               (SQLITE_NOTFOUND | (1<<8))
+#define SQLITE_KV_AFTER                (SQLITE_NOTFOUND | (2<<8))
 #define SQLITE_CANTOPEN_NOTEMPDIR      (SQLITE_CANTOPEN | (1<<8))
 #define SQLITE_CANTOPEN_ISDIR          (SQLITE_CANTOPEN | (2<<8))
 #define SQLITE_CANTOPEN_FULLPATH       (SQLITE_CANTOPEN | (3<<8))
@@ -8447,6 +8449,102 @@ SQLITE_EXPERIMENTAL int sqlite3_snapshot_cmp(
 ** SQLITE_OK is returned if successful, or an SQLite error code otherwise.
 */
 SQLITE_EXPERIMENTAL int sqlite3_snapshot_recover(sqlite3 *db, const char *zDb);
+
+
+/*
+** CAPI3REF: Key/Value Access
+** EXPERIMENTAL
+**
+** The sqlite3_kv object is used to access database tables using
+** the key/value interface.
+*/
+typedef struct sqlite3_kv sqlite3_kv;
+
+
+/*
+** CAPI3REF: Open a key/value accessor object
+** CONSTRUCTOR: sqlite3_kv
+** EXPERIMENTAL
+**
+** This interface attempts create a new [sqlite3_kv] object and
+** return a pointer to that object in the 5th parameter.
+** SQLITE_OK is returned on success or an error code if something
+** goes wrong.
+*/
+int sqlite3_kv_open(
+  sqlite3 *db,
+  const char *zDb,
+  const char *zTable,
+  unsigned int flags,   /* Must be zero.  Reserved for future expansion. */
+  sqlite3_kv *pKvOut
+);
+
+/*
+** CAPI3REF: Close a key/value accessor object
+** DESTRUCTOR: sqlite3_kv
+** EXPERIMENTAL
+**
+** The sqlite3_kv_close(P) interface closes a key/value accessor P.
+** The argument to sqlite3_kv_close(P) may be NULL, resulting in a harmless
+** no-op.
+*/
+int sqlite3_kv_close(sqlite3_kv*);
+
+/*
+** CAPI3REF: Reposition a key/value accessor object
+** METHOD: sqlite3_kv
+** EXPERIMENTAL
+**
+** The sqlite3_kv_seek(P,I) interface attempts to reposition
+** the key/value accessor object P so that it is pointing to a table
+** entry with rowid I.  The sqlite3_kv_seek(P,I) interface returns
+** SQLITE_OK on success or an error code if it is unable to complete
+** the operation.  If no record exists with rowid I, then sqlite3_kv_seek(P,I)
+** attempts to position itself at another nearby record and returns
+** either SQLITE_KV_BEFORE or SQLITE_KV_AFTER depending on whether the
+** record the accessor is left pointing to is less than or greater than I,
+** respectively.  If the table is empty, sqlite3_kv_seek(P,I) returns
+** SQLITE_EMPTY.
+*/
+int sqlite3_kv_seek(sqlite3_kv*, sqlite3_int64 rowid);
+
+/*
+** CAPI3REF: Find the size of the value for a key/value pair
+** METHOD: sqlite3_kv
+** EXPERIMENTAL
+**
+** The sqlite3_kv_bytes(P) interface returns the size of the value
+** in the key/value pair that the key/value accessor object P is currently
+** pointing to.  The sqlite3_kv_bytes(P) interface returns a negative
+** number if the key/value accessor object P is not currently pointing
+** to a valid entry in the table.
+*/
+int sqlite3_kv_bytes(sqlite3_kv*);
+
+/*
+** CAPI3REF: Read the value for a key/value pair
+** METHOD: sqlite3_kv
+** EXPERIMENTAL
+**
+** The sqlite3_kv_read(P,B,A,O) interface attempts to read A bytes of
+** content beginning at offset O from the value that the key/value accessor P
+** is currently pointing at, storing the results in buffer B.
+** The caller must ensure that the buffer B is at least A bytes in length.
+*/
+int sqlite3_kv_read(sqlite3_kv*, void *pBuf, int amt, int offset);
+
+/*
+** CAPI3REF: Insert a new key/value pair
+** METHOD: sqlite3_kv
+** EXPERIMENTAL
+**
+** The sqlite3_kv_insert(P,I,N,B) interface inserts a key/value pair
+** having key I and a value that is an N-byte BLOB pointed to by B.
+** In a call to sqlite3_kv_insert(P,I,N,B), if a previous row with key I
+** already exists in the table, then that previous row is replaced by
+** the new row.
+*/
+int sqlite3_kv_insert(sqlite3_kv*, sqlite3_int64 rowid, int size, void *pBuf);
 
 /*
 ** Undo the hack that converts floating point types to integer for
