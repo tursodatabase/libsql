@@ -1,5 +1,5 @@
-C In\sthe\s'vtshim'\sextension,\savoid\saccessing\sfreed\smemory\swhen\shandling\serrors\sfrom\sxCreate/xConnect.
-D 2017-01-19T18:20:36.317
+C If\scompiled\swith\sSQLITE_INLINE_MEMCPY,\sall\smemcpy()\scalls\sare\sreplaced\swith\nin-line\scode.\s\sWith\sthat\schange,\scachegrind\sshows\swhich\smemcpy()\scalls\nare\staking\sthe\smost\stime.\s\sThis\sis\sa\sperformance-measurement\shack\sonly\sand\nis\snot\sfor\sproduction\suse.
+D 2017-01-19T21:20:11.204
 F Makefile.in 41bd4cad981487345c4a84081074bcdb876e4b2e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -354,7 +354,7 @@ F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 05e47e2de7b712a3a4148cd469e5f60873f5ef13
 F src/legacy.c 75d3023be8f0d2b99d60f905090341a03358c58e
-F src/loadext.c 5d6642d141c07d366e43d359e94ec9de47add41d
+F src/loadext.c a68d8d1d14cf7488bb29dc5311cb1ce9a4404258
 F src/main.c e207b81542d13b9f13d61e78ca441f9781f055b0
 F src/malloc.c fc1b9f445290f2145da48fc08730c26e6082b640
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
@@ -388,17 +388,17 @@ F src/pragma.h 61aa5389118594bebb28120a6720401aee34ce1a
 F src/prepare.c b1140c3d0cf59bc85ace00ce363153041b424b7a
 F src/printf.c ff10a9b9902cd2afe5f655f3013c6307d969b1fd
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
-F src/resolve.c bb070cf5f23611c44ab7e4788803684e385fc3fb
+F src/resolve.c f9bc0de45a30a450da47b3766de00be89bf9be79
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 3856db523b942062bca8722ba03b61c324ff94d6
 F src/shell.c 6095531aa900decdaa765e0f3993fba7153c92c1
 F src/sqlite.h.in e71655293c9bde26939496f3aac9d1821d2c07a2
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
-F src/sqliteInt.h ce3e07c720b0cebc8887ea86b3b128da0913c5d3
+F src/sqliteInt.h 525c061ae9aafc8d4720a018d82f0936d9eee5ab
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
-F src/table.c 5226df15ab9179b9ed558d89575ea0ce37b03fc9
+F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
 F src/tclsqlite.c 418f5e5e0840425a7e5b33f3600dccd378a57549
 F src/test1.c 8a98191a1da8e100f77cdb5cc716df67d405028d
 F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
@@ -1547,7 +1547,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a84a08d0716656dc0b26eafb1841c48d83c67ef2
-R 37615874230b85a181e9596f7f8a21ff
-U mistachkin
-Z 99974373edae111c658f7548f0073df4
+P ffd559afd32dcdce9c733ebccdee88fda9b689cf
+R fad09dad35bb606057a537179db15d76
+U drh
+Z 52e9f95dbec08dacc595dc3f0b2e0450
