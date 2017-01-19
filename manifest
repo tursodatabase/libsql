@@ -1,5 +1,5 @@
-C Add\stemporary\scode\sto\srecord\sand\sreport\son\sthe\sset\sof\sb-tree\spages\sread\sand\nwritten\sby\sthe\scurrent\stransaction.\sThis\sis\slikely\sstill\sbuggy.
-D 2017-01-18T20:14:50.383
+C Add\stest\scases\sfor\sthe\sinstrumentation\son\sthis\sbranch.\sFix\ssome\sOOM\shandling\nissues\sin\sthe\ssame.
+D 2017-01-19T11:52:13.715
 F Makefile.in 41bd4cad981487345c4a84081074bcdb876e4b2e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -333,7 +333,7 @@ F src/auth.c 930b376a9c56998557367e6f7f8aaeac82a2a792
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 263395e75ac122a7138f0797172868be700cf22a
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c b0b714e311138e5f543d167b48415bf4ab6f2529
+F src/btree.c 9e3d38d2d93384c6d8b765b39c0c80b6a8a6dacd
 F src/btree.h a25d8121baf921ed56cdf5bb65a37233b4fa059a
 F src/btreeInt.h d528379e5da9aa33ef046e3c210a5d82acd2740b
 F src/build.c 9e799f1edd910dfa8a0bc29bd390d35d310596af
@@ -1318,7 +1318,7 @@ F test/tkt3992.test f3e7d548ac26f763b47bc0f750da3d03c81071da
 F test/tkt3997.test a335fa41ca3985660a139df7b734a26ef53284bd
 F test/tkt4018.test 18dbc6617f7a4b90e938d1bd6d26ad18daafaf08
 F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
-F test/tpages.test abcb738d7a61a62ee60b00ac37eeb987f4919062
+F test/tpages.test 20b7cae49b46fae6aacdd14a44f531a5a1fab33f
 F test/tpch01.test 04adbf8d8300fa60a222f28d901abd76e7be6dd4
 F test/trace.test 6f676313e3ebd2a50585036d2f212a3319dd5836
 F test/trace2.test f5cb67ad3bc09e0c58e8cca78dfd0b5639259983
@@ -1548,10 +1548,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 681d96eb822e606da53700867191d4738bda20c8
-R d3876579ed9b8addfbb830510866c4e1
-T *branch * transaction-pages
-T *sym-transaction-pages *
-T -sym-trunk *
+P 2a8f6c890cfa5f61b491ddf8f560b6ba8c6cdc32
+R ae523458281bb3a9a28803814e720ed6
 U dan
-Z 49b44b310f5c3b7319ea5dbf5a0bd059
+Z 5b5cdeb9ebac248f4328063c950d744e

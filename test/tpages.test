@@ -44,7 +44,6 @@ foreach {n1 n2} {
    6000 1000
    7000 1000
 } {
-
   set n1 [expr $n1]
   set n2 [expr $n2]
 
@@ -79,7 +78,67 @@ foreach {n1 n2} {
   execsql cOMMIT
 }
 
+#-------------------------------------------------------------------------
+#
+proc do_transaction_pages_test {tn sql pages} {
+  uplevel [list execsql $sql]
+  uplevel [list \
+    do_test $tn {sqlite3_transaction_pages db main} [list {*}$pages]
+  ]
+}
+reset_db
+do_transaction_pages_test 2.0 {
+  PRAGMA auto_vacuum = 0;
+  PRAGMA page_size = 1024;
+  CREATE TABLE t1(x);
+  BEGIN;
+    INSERT INTO t1 VALUES(randomblob(1500));
+} {2 2}
 
+do_transaction_pages_test 2.1 {
+  COMMIT;
+  BEGIN;
+    DELETE FROM t1;
+} {2 2}
 
+reset_db
+do_execsql_test 2.2 {
+  PRAGMA auto_vacuum = 0;
+  PRAGMA page_size = 1024;
+  CREATE TABLE t1(x);
+  INSERT INTO t1 VALUES(randomblob(900));
+  INSERT INTO t1 VALUES(randomblob(900));
+  CREATE TABLE t2(y);
+}  
+
+do_transaction_pages_test 2.3 {
+  BEGIN;
+    UPDATE t1 SET x=randomblob(899);
+} {{2 3 4} {3 4}}
+
+do_transaction_pages_test 2.4 {
+    DELETE FROM t1;
+  COMMIT;
+} {{} {}}
+
+do_transaction_pages_test 2.5 {
+  BEGIN;
+    INSERT INTO t2 VALUES(randomblob(900));
+    INSERT INTO t2 VALUES(randomblob(900));
+} {5 5}
+
+do_transaction_pages_test 2.6 {
+  COMMIT;
+  BEGIN;
+    INSERT INTO t1 VALUES(randomblob(900));
+} {2 2}
+
+do_transaction_pages_test 2.7 {
+    INSERT INTO t1 VALUES(randomblob(900));
+    INSERT INTO t1 VALUES(randomblob(900));
+    INSERT INTO t1 VALUES(randomblob(900));
+    INSERT INTO t1 VALUES(randomblob(900));
+} {2 2}
 
 finish_test
+

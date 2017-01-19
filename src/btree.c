@@ -3119,6 +3119,27 @@ int sqlite3BtreeNewDb(Btree *p){
   return rc;
 }
 
+#ifdef SQLITE_ENABLE_TRANSACTION_PAGES
+/*
+** If the b-tree is not currently in a write transaction, free the various
+** resources allocated for the sqlite3_transaction_pages() functionality.
+*/
+static void freeTransactionPagesBitvec(BtShared *pBt){
+  if( pBt->inTransaction!=TRANS_WRITE ){
+    sqlite3BitvecDestroy(pBt->pBtRead);
+    sqlite3BitvecDestroy(pBt->pBtWrite);
+    sqlite3BitvecDestroy(pBt->pBtAlloc);
+    pBt->pBtAlloc = pBt->pBtRead = pBt->pBtWrite = 0;
+    sqlite3_free(pBt->aiRead);
+    sqlite3_free(pBt->aiWrite);
+    pBt->aiRead = pBt->aiWrite = 0;
+    pBt->nRead = pBt->nWrite = 0;
+  }
+}
+#else
+# define freeTransactionPagesBitvec(x) 
+#endif
+
 /*
 ** Attempt to start a new transaction. A write-transaction
 ** is started if the second argument is nonzero, otherwise a read-
@@ -3204,6 +3225,20 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag){
   }
 #endif
 
+#ifdef SQLITE_ENABLE_TRANSACTION_PAGES
+  if( wrflag ){
+    assert( pBt->pBtRead==0 && pBt->pBtWrite==0 && pBt->pBtAlloc==0 );
+    assert( rc==SQLITE_OK );
+    pBt->pBtRead = sqlite3BitvecCreate(pBt->nPage);
+    pBt->pBtWrite = sqlite3BitvecCreate(pBt->nPage);
+    pBt->pBtAlloc = sqlite3BitvecCreate(pBt->nPage);
+    if( pBt->pBtRead==0 || pBt->pBtWrite==0 || pBt->pBtAlloc==0 ){
+      rc = SQLITE_NOMEM;
+      goto trans_begun;
+    }
+  }
+#endif
+
   /* Any read-only or read-write transaction implies a read-lock on 
   ** page 1. So if some other shared-cache client already has a write-lock 
   ** on page 1, the transaction cannot be opened. */
@@ -3279,22 +3314,6 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag){
     }
   }
 
-#ifdef SQLITE_ENABLE_TRANSACTION_PAGES
-  if( rc==SQLITE_OK && wrflag ){
-    assert( pBt->pBtRead==0 && pBt->pBtWrite==0 );
-    pBt->pBtRead = sqlite3BitvecCreate(pBt->nPage);
-    pBt->pBtWrite = sqlite3BitvecCreate(pBt->nPage);
-    pBt->pBtAlloc = sqlite3BitvecCreate(pBt->nPage);
-    if( pBt->pBtRead==0 || pBt->pBtWrite==0 || pBt->pBtAlloc==0 ){
-      rc = SQLITE_NOMEM;
-      sqlite3BitvecDestroy(pBt->pBtRead);
-      sqlite3BitvecDestroy(pBt->pBtWrite);
-      sqlite3BitvecDestroy(pBt->pBtAlloc);
-      pBt->pBtAlloc = pBt->pBtRead = pBt->pBtWrite = 0;
-    }
-  }
-#endif
-
 trans_begun:
   if( rc==SQLITE_OK && wrflag ){
     /* This call makes sure that the pager has the correct number of
@@ -3304,6 +3323,7 @@ trans_begun:
     rc = sqlite3PagerOpenSavepoint(pBt->pPager, p->db->nSavepoint);
   }
 
+  freeTransactionPagesBitvec(pBt);
   btreeIntegrity(p);
   sqlite3BtreeLeave(p);
   return rc;
@@ -3818,19 +3838,7 @@ static void btreeEndTransaction(Btree *p){
     unlockBtreeIfUnused(pBt);
   }
 
-#ifdef SQLITE_ENABLE_TRANSACTION_PAGES
-  if( pBt->inTransaction!=TRANS_WRITE ){
-    sqlite3BitvecDestroy(pBt->pBtRead);
-    sqlite3BitvecDestroy(pBt->pBtWrite);
-    sqlite3BitvecDestroy(pBt->pBtAlloc);
-    pBt->pBtAlloc = pBt->pBtRead = pBt->pBtWrite = 0;
-    sqlite3_free(pBt->aiRead);
-    sqlite3_free(pBt->aiWrite);
-    pBt->aiRead = pBt->aiWrite = 0;
-    pBt->nRead = pBt->nWrite = 0;
-  }
-#endif
-
+  freeTransactionPagesBitvec(pBt);
   btreeIntegrity(p);
 }
 
