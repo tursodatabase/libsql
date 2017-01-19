@@ -27,8 +27,10 @@
 */
 struct sqlite3_kv {
   sqlite3 *db;            /* The database holding the table to be accessed */
-  u8 iDb;                 /* Database containing the table to access */
   u32 iRoot;              /* Root page of the table */
+  int iGen;               /* Schema generation number */
+  int iCookie;            /* Schema cookie number from the database file */
+  Schema *pSchema;        /* Schema holding the table */
   sqlite3_int64 iRowid;   /* Current rowid */
 };
 
@@ -88,6 +90,10 @@ int sqlite3_kv_open(
     goto kv_open_done;
   }
   pKv->db = db;
+  pKv->iGen = pTab->pSchema->iGeneration;
+  pKv->iCookie = pTab->pSchema->schema_cookie;
+  pKv->pSchema = pTab->pSchema;
+  pKv->iRoot = pTab->tnum;
   rc = SQLITE_OK;
 
 kv_open_done:
@@ -105,6 +111,9 @@ int sqlite3_kv_close(sqlite3_kv *pKv){
 }
 
 int sqlite3_kv_seek(sqlite3_kv *pKv, sqlite3_int64 rowid){
+  return SQLITE_MISUSE;
+}
+int sqlite3_kv_reset(sqlite3_kv *pKv){
   return SQLITE_MISUSE;
 }
 int sqlite3_kv_bytes(sqlite3_kv *pKv){

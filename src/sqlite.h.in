@@ -8505,8 +8505,22 @@ int sqlite3_kv_close(sqlite3_kv*);
 ** record the accessor is left pointing to is less than or greater than I,
 ** respectively.  If the table is empty, sqlite3_kv_seek(P,I) returns
 ** SQLITE_EMPTY.
+**
+** A successful sqlite3_kv_seek(P,I) call leave the key/value accessor
+** P holding a read transaction open on the database.  Use sqlite3_kv_reset(P)
+** or sqlite3_kv_close(P) to release this transaction.
 */
 int sqlite3_kv_seek(sqlite3_kv*, sqlite3_int64 rowid);
+
+/*
+** CAPI3REF: Reset a key/value accessor object
+** METHOD: sqlite3_kv
+** EXPERIMENTAL
+**
+** The sqlite3_kv_reset(P) interface restores the key/value accessor P
+** back to its original state, releasing any transactions held.
+*/
+int sqlite3_kv_reset(sqlite3_kv*);
 
 /*
 ** CAPI3REF: Find the size of the value for a key/value pair
