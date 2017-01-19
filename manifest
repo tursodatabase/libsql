@@ -1,5 +1,5 @@
-C In\sthe\s'windirent'\stest\smodule,\suse\sa\smacro\sfor\sthe\shidden/system\sattribute\schecking.
-D 2017-01-18T22:47:42.937
+C In\sthe\s'vtshim'\sextension,\savoid\saccessing\sfreed\smemory\swhen\shandling\serrors\sfrom\sxCreate/xConnect.
+D 2017-01-19T18:20:36.317
 F Makefile.in 41bd4cad981487345c4a84081074bcdb876e4b2e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -227,7 +227,7 @@ F ext/misc/spellfix.c a4723b6aff748a417b5091b68a46443265c40f0d
 F ext/misc/totype.c 4a167594e791abeed95e0a8db028822b5e8fe512
 F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vfsstat.c bf10ef0bc51e1ad6756629e1edb142f7a8db1178
-F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
+F ext/misc/vtshim.c 1976e6dd68dd0d64508c91a6dfab8e75f8aaf6cd
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
 F ext/rbu/rbu.c b2c0b5e6ae1a89affc0edfc127ebfa5f637a0ce4
 F ext/rbu/rbu1.test 43836fac8c7179a358eaf38a8a1ef3d6e6285842
@@ -1547,7 +1547,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b92cc6e58ae31cbe6600a522beb5485f7add04b2
-R 28b62fae1b56b071f03984b3c0c7d517
+P a84a08d0716656dc0b26eafb1841c48d83c67ef2
+R 37615874230b85a181e9596f7f8a21ff
 U mistachkin
-Z 8396ae361cfa963c7c2449732ae79bb0
+Z 99974373edae111c658f7548f0073df4

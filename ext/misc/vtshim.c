@@ -95,6 +95,7 @@ static int vtshimCreate(
   if( rc ){
     sqlite3_free(pNew);
     *ppVtab = 0;
+    return rc;
   }
   pNew->pAux = pAux;
   pNew->ppPrev = &pAux->pAllVtab;
@@ -133,6 +134,7 @@ static int vtshimConnect(
   if( rc ){
     sqlite3_free(pNew);
     *ppVtab = 0;
+    return rc;
   }
   pNew->pAux = pAux;
   pNew->ppPrev = &pAux->pAllVtab;
