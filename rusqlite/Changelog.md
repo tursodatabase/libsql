@@ -1,4 +1,4 @@
-# Version 0.9.0 (2017-01-20)
+# Version 0.9.1 (2017-01-20)
 
 * BREAKING CHANGE: `Connection::close()` now returns a `Result<(), (Connection, Error)>` instead
   of a `Result<(), Error>` so callers get the still-open connection back on failure.
