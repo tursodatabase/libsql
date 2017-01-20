@@ -87,6 +87,7 @@ static const char zHelp[] =
 "             --max-id N           Maximum blob key to use\n"
 "             --random             Read blobs in a random order\n"
 "             --start N            Start reading with this blob key\n"
+"             --stats              Output operating stats before exiting\n"
 ;
 
 /* Reference resources used */
@@ -369,6 +370,122 @@ static sqlite3_int64 timeOfDay(void){
   return t;
 }
 
+#ifdef __linux__
+/*
+** Attempt to display I/O stats on Linux using /proc/PID/io
+*/
+static void displayLinuxIoStats(FILE *out){
+  FILE *in;
+  char z[200];
+  sqlite3_snprintf(sizeof(z), z, "/proc/%d/io", getpid());
+  in = fopen(z, "rb");
+  if( in==0 ) return;
+  while( fgets(z, sizeof(z), in)!=0 ){
+    static const struct {
+      const char *zPattern;
+      const char *zDesc;
+    } aTrans[] = {
+      { "rchar: ",                  "Bytes received by read():" },
+      { "wchar: ",                  "Bytes sent to write():"    },
+      { "syscr: ",                  "Read() system calls:"      },
+      { "syscw: ",                  "Write() system calls:"     },
+      { "read_bytes: ",             "Bytes read from storage:"  },
+      { "write_bytes: ",            "Bytes written to storage:" },
+      { "cancelled_write_bytes: ",  "Cancelled write bytes:"    },
+    };
+    int i;
+    for(i=0; i<sizeof(aTrans)/sizeof(aTrans[0]); i++){
+      int n = (int)strlen(aTrans[i].zPattern);
+      if( strncmp(aTrans[i].zPattern, z, n)==0 ){
+        fprintf(out, "%-36s %s", aTrans[i].zDesc, &z[n]);
+        break;
+      }
+    }
+  }
+  fclose(in);
+}
+#endif
+
+/*
+** Display memory stats.
+*/
+static int display_stats(
+  sqlite3 *db,                    /* Database to query */
+  int bReset                      /* True to reset SQLite stats */
+){
+  int iCur;
+  int iHiwtr;
+  FILE *out = stdout;
+
+  fprintf(out, "\n");
+
+  iHiwtr = iCur = -1;
+  sqlite3_status(SQLITE_STATUS_MEMORY_USED, &iCur, &iHiwtr, bReset);
+  fprintf(out,
+          "Memory Used:                         %d (max %d) bytes\n",
+          iCur, iHiwtr);
+  iHiwtr = iCur = -1;
+  sqlite3_status(SQLITE_STATUS_MALLOC_COUNT, &iCur, &iHiwtr, bReset);
+  fprintf(out, "Number of Outstanding Allocations:   %d (max %d)\n",
+          iCur, iHiwtr);
+  iHiwtr = iCur = -1;
+  sqlite3_status(SQLITE_STATUS_PAGECACHE_USED, &iCur, &iHiwtr, bReset);
+  fprintf(out,
+      "Number of Pcache Pages Used:         %d (max %d) pages\n",
+      iCur, iHiwtr);
+  iHiwtr = iCur = -1;
+  sqlite3_status(SQLITE_STATUS_PAGECACHE_OVERFLOW, &iCur, &iHiwtr, bReset);
+  fprintf(out,
+          "Number of Pcache Overflow Bytes:     %d (max %d) bytes\n",
+          iCur, iHiwtr);
+  iHiwtr = iCur = -1;
+  sqlite3_status(SQLITE_STATUS_SCRATCH_USED, &iCur, &iHiwtr, bReset);
+  fprintf(out,
+      "Number of Scratch Allocations Used:  %d (max %d)\n",
+      iCur, iHiwtr);
+  iHiwtr = iCur = -1;
+  sqlite3_status(SQLITE_STATUS_SCRATCH_OVERFLOW, &iCur, &iHiwtr, bReset);
+  fprintf(out,
+          "Number of Scratch Overflow Bytes:    %d (max %d) bytes\n",
+          iCur, iHiwtr);
+  iHiwtr = iCur = -1;
+  sqlite3_status(SQLITE_STATUS_MALLOC_SIZE, &iCur, &iHiwtr, bReset);
+  fprintf(out, "Largest Allocation:                  %d bytes\n",
+          iHiwtr);
+  iHiwtr = iCur = -1;
+  sqlite3_status(SQLITE_STATUS_PAGECACHE_SIZE, &iCur, &iHiwtr, bReset);
+  fprintf(out, "Largest Pcache Allocation:           %d bytes\n",
+          iHiwtr);
+  iHiwtr = iCur = -1;
+  sqlite3_status(SQLITE_STATUS_SCRATCH_SIZE, &iCur, &iHiwtr, bReset);
+  fprintf(out, "Largest Scratch Allocation:          %d bytes\n",
+          iHiwtr);
+
+  iHiwtr = iCur = -1;
+  sqlite3_db_status(db, SQLITE_DBSTATUS_CACHE_USED, &iCur, &iHiwtr, bReset);
+  fprintf(out, "Pager Heap Usage:                    %d bytes\n",
+      iCur);
+  iHiwtr = iCur = -1;
+  sqlite3_db_status(db, SQLITE_DBSTATUS_CACHE_HIT, &iCur, &iHiwtr, 1);
+  fprintf(out, "Page cache hits:                     %d\n", iCur);
+  iHiwtr = iCur = -1;
+  sqlite3_db_status(db, SQLITE_DBSTATUS_CACHE_MISS, &iCur, &iHiwtr, 1);
+  fprintf(out, "Page cache misses:                   %d\n", iCur);
+  iHiwtr = iCur = -1;
+  sqlite3_db_status(db, SQLITE_DBSTATUS_CACHE_WRITE, &iCur, &iHiwtr, 1);
+  fprintf(out, "Page cache writes:                   %d\n", iCur);
+  iHiwtr = iCur = -1;
+
+#ifdef __linux__
+  displayLinuxIoStats(out);
+#endif
+
+  /* Do not remove this machine readable comment: extra-stats-output-here */
+
+  fprintf(out, "\n");
+  return 0;
+}
+
 /* Blob access order */
 #define ORDER_ASC     1
 #define ORDER_DESC    2
@@ -389,6 +506,7 @@ static int runMain(int argc, char **argv){
   int iPagesize = 0;          /* Database page size */
   int iCache = 1000;          /* Database cache size in kibibytes */
   int bBlobApi = 0;           /* Use the incremental blob I/O API */
+  int bStats = 0;             /* Print stats before exiting */
   int eOrder = ORDER_ASC;     /* Access order */
   sqlite3 *db = 0;            /* Database connection */
   sqlite3_stmt *pStmt = 0;    /* Prepared statement for SQL access */
@@ -447,6 +565,10 @@ static int runMain(int argc, char **argv){
     }
     if( strcmp(z, "-blob-api")==0 ){
       bBlobApi = 1;
+      continue;
+    }
+    if( strcmp(z, "-stats")==0 ){
+      bStats = 1;
       continue;
     }
     fatalError("unknown option: \"%s\"", argv[i]);
@@ -542,6 +664,9 @@ static int runMain(int argc, char **argv){
   }
   if( pStmt ) sqlite3_finalize(pStmt);
   if( pBlob ) sqlite3_blob_close(pBlob);
+  if( bStats ){
+    display_stats(db, 0);
+  }
   if( db ) sqlite3_close(db);
   tmElapsed = timeOfDay() - tmStart;
   if( nExtra ){
