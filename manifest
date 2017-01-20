@@ -1,5 +1,5 @@
-C If\scompiled\swith\sSQLITE_INLINE_MEMCPY,\sall\smemcpy()\scalls\sare\sreplaced\swith\nin-line\scode.\s\sWith\sthat\schange,\scachegrind\sshows\swhich\smemcpy()\scalls\nare\staking\sthe\smost\stime.\s\sThis\sis\sa\sperformance-measurement\shack\sonly\sand\nis\snot\sfor\sproduction\suse.
-D 2017-01-19T21:20:11.204
+C Minor\sperformance\soptimizations\sto\ssqlite3_blob_open()\sand\nsqlite3_blob_reopen().
+D 2017-01-20T00:40:26.827
 F Makefile.in 41bd4cad981487345c4a84081074bcdb876e4b2e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -462,7 +462,7 @@ F src/vdbe.h b0866e4191f096f1c987a84b042c3599bdf5423b
 F src/vdbeInt.h 281cb70332dc8b593b8c7afe776f3a2ba7d4255e
 F src/vdbeapi.c d6ebaa465f070eb1af8ba4e7b34583ece87bdd24
 F src/vdbeaux.c 35c9a9908174e5a26c96d15e1f98214814a39147
-F src/vdbeblob.c f4f98ea672b242f807c08c92c7faaa79e5091b65
+F src/vdbeblob.c fe3694fcc3cf2cad395416f5289bd0e935c2659d
 F src/vdbemem.c 3b5a9a5b375458d3e12a50ae1aaa41eeec2175fd
 F src/vdbesort.c eda25cb2d1727efca6f7862fea32b8aa33c0face
 F src/vdbetrace.c 41963d5376f0349842b5fc4aaaaacd7d9cdc0834
@@ -1547,7 +1547,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ffd559afd32dcdce9c733ebccdee88fda9b689cf
-R fad09dad35bb606057a537179db15d76
+P 9ed38521617136223a667988aed40e25797faf84
+R b4a609734c03fe3500908ef05ac99d6b
 U drh
-Z 52e9f95dbec08dacc595dc3f0b2e0450
+Z 622609d2384fcdd28fbe219ab3e3b191
