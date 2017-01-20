@@ -1,5 +1,5 @@
-C Minor\sperformance\soptimizations\sto\ssqlite3_blob_open()\sand\nsqlite3_blob_reopen().
-D 2017-01-20T00:40:26.827
+C Get\sthe\s"--testset\srtree"\soption\sworking\son\sspeedtest1.\s\sAdd\sthe\s--rtree,\n--lookaside,\sand\s--clang\soptions\sto\sthe\sspeed-check.sh\sscript.
+D 2017-01-20T16:09:12.221
 F Makefile.in 41bd4cad981487345c4a84081074bcdb876e4b2e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -314,7 +314,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 2cf5f0362c5687fd8e912c3a327b49a2e8ba0f9b
+F main.mk 8f620f3418d7252a3f428f5aacf674b5507807a8
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -1131,7 +1131,7 @@ F test/speed3.test 694affeb9100526007436334cf7d08f3d74b85ef
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
-F test/speedtest1.c 4e8ea6165046f02e1cfe0f4700256e91c981ec10
+F test/speedtest1.c 02fe15bb784c5276a083ffe9969cc51e0bce7644
 F test/spellfix.test f9c1f431e2c096c8775fec032952320c0e4700db
 F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
 F test/spellfix3.test 0f9efaaa502a0e0a09848028518a6fb096c8ad33
@@ -1507,7 +1507,7 @@ F tool/showstat4.c b14159aa062f661b394ba37b6b7b94bfb8012ab9
 F tool/showwal.c ec79959834f7b21f1e0a2aa52bb7c056d2203977
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
 F tool/spaceanal.tcl ab7d9bf68062907282a64b3e12ccbfad47193c5a
-F tool/speed-check.sh e6ca0695b047af64201ebe0ef452e423f55d78b1
+F tool/speed-check.sh 65ac2f5b00771b9dcefb95bebae1aab76c537ea3
 F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
 F tool/speedtest16.c ecb6542862151c3e6509bbc00509b234562ae81e
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
@@ -1547,7 +1547,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9ed38521617136223a667988aed40e25797faf84
-R b4a609734c03fe3500908ef05ac99d6b
+P 52a61967d920047ea0b4409b79793e05c0128964
+R 4e64e669335e5bcf79eed63ea8c1840b
 U drh
-Z 622609d2384fcdd28fbe219ab3e3b191
+Z 6f7214599f293ddc9e6d41b975d33fdf
