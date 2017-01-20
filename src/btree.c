@@ -4523,16 +4523,14 @@ static int accessPayload(
             pCur->aOverflow, nOvfl*2*sizeof(Pgno)
         );
         if( aNew==0 ){
-          rc = SQLITE_NOMEM_BKPT;
+          return SQLITE_NOMEM_BKPT;
         }else{
           pCur->nOvflAlloc = nOvfl*2;
           pCur->aOverflow = aNew;
         }
       }
-      if( rc==SQLITE_OK ){
-        memset(pCur->aOverflow, 0, nOvfl*sizeof(Pgno));
-        pCur->curFlags |= BTCF_ValidOvfl;
-      }
+      memset(pCur->aOverflow, 0, nOvfl*sizeof(Pgno));
+      pCur->curFlags |= BTCF_ValidOvfl;
     }
 
     /* If the overflow page-list cache has been allocated and the
@@ -4547,8 +4545,8 @@ static int accessPayload(
       offset = (offset%ovflSize);
     }
 
-    for( ; rc==SQLITE_OK && amt>0 && nextPage; iIdx++){
-
+    assert( rc==SQLITE_OK && amt>0 );
+    while( nextPage ){
       /* If required, populate the overflow page-list cache. */
       if( (pCur->curFlags & BTCF_ValidOvfl)!=0 ){
         assert( pCur->aOverflow[iIdx]==0
@@ -4637,6 +4635,9 @@ static int accessPayload(
         amt -= a;
         pBuf += a;
       }
+      if( amt==0 ) break;
+      if( rc ) break;
+      iIdx++;
     }
   }
 
