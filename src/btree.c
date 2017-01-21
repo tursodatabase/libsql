@@ -5091,9 +5091,21 @@ int sqlite3BtreeMovetoUnpacked(
       *pRes = 0;
       return SQLITE_OK;
     }
-    if( (pCur->curFlags & BTCF_AtLast)!=0 && pCur->info.nKey<intKey ){
-      *pRes = -1;
-      return SQLITE_OK;
+    if( pCur->info.nKey<intKey ){
+      if( (pCur->curFlags & BTCF_AtLast)!=0 ){
+        *pRes = -1;
+        return SQLITE_OK;
+      }
+      if( pCur->aiIdx[pCur->iPage]+1<pCur->apPage[pCur->iPage]->nCell ){
+        pCur->aiIdx[pCur->iPage]++;
+        pCur->info.nSize = 0;
+        pCur->curFlags &= ~(BTCF_ValidNKey|BTCF_ValidOvfl);
+        getCellInfo(pCur);
+        if( pCur->info.nKey==intKey ){
+          *pRes = 0;
+          return SQLITE_OK;
+        }
+      }
     }
   }
 
