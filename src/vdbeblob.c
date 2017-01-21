@@ -26,7 +26,6 @@ struct Incrblob {
   int nByte;              /* Size of open blob, in bytes */
   int iOffset;            /* Byte offset of blob in cursor data */
   u16 iCol;               /* Table column this handle is open on */
-  u8 isPureKV;            /* True if pTab is a pure key/value table */
   BtCursor *pCsr;         /* Cursor pointing at blob row */
   sqlite3_stmt *pStmt;    /* Statement holding cursor open */
   sqlite3 *db;            /* The associated database */
@@ -56,6 +55,7 @@ static int blobSeekToRow(Incrblob *p, sqlite3_int64 iRow, char **pzErr){
   int rc;                         /* Error code */
   char *zErr = 0;                 /* Error message */
   Vdbe *v = (Vdbe *)p->pStmt;
+  sqlite3 *db = v->db;
 
   /* Set the value of register r[1] in the SQL statement to integer iRow. 
   ** This is done directly as a performance optimization
@@ -67,9 +67,14 @@ static int blobSeekToRow(Incrblob *p, sqlite3_int64 iRow, char **pzErr){
   ** then back it up to the point where it does the OP_SeekRowid.  This could
   ** have been down with an extra OP_Goto, but simply setting the program
   ** counter is faster. */
-  if( v->pc>3 ) v->pc = 3;
-
-  rc = sqlite3_step(p->pStmt);
+  if( v->pc>3 ){
+    v->pc = 3;
+    db->nVdbeExec++;
+    rc = sqlite3VdbeExec((Vdbe*)p->pStmt);
+    db->nVdbeExec--;
+  }else{
+    rc = sqlite3_step(p->pStmt);
+  }
   if( rc==SQLITE_ROW ){
     VdbeCursor *pC = v->apCsr[0];
     u32 type = pC->aType[p->iCol];
@@ -318,7 +323,6 @@ int sqlite3_blob_open(
       }
     }
    
-    pBlob->isPureKV = (pTab->nCol==2 && pTab->iPKey==0);
     pBlob->iCol = iCol;
     pBlob->db = db;
     sqlite3BtreeLeaveAll(db);
