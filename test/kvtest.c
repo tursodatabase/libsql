@@ -516,6 +516,7 @@ static int runMain(int argc, char **argv){
   int nData = 0;              /* Bytes of data */
   sqlite3_int64 nTotal = 0;   /* Total data read */
   unsigned char *pData;       /* Content of the blob */
+  int nAlloc = 0;             /* Space allocated for pData[] */
   
 
   assert( strcmp(argv[1],"run")==0 );
@@ -621,14 +622,16 @@ static int runMain(int argc, char **argv){
       }
       if( rc==SQLITE_OK ){
         nData = sqlite3_blob_bytes(pBlob);
-        pData = sqlite3_malloc( nData+1 );
+        if( nAlloc<nData+1 ){
+          nAlloc = nData+100;
+          pData = sqlite3_realloc(pData, nAlloc);
+        }
         if( pData==0 ) fatalError("cannot allocate %d bytes", nData+1);
         rc = sqlite3_blob_read(pBlob, pData, nData, 0);
         if( rc!=SQLITE_OK ){
           fatalError("could not read the blob at %d: %s", iKey,
                      sqlite3_errmsg(db));
         }
-        sqlite3_free(pData);
       }
     }else{
       /* CASE 3: Reading from database using SQL */
@@ -662,6 +665,7 @@ static int runMain(int argc, char **argv){
     nTotal += nData;
     if( nData==0 ){ nCount++; nExtra++; }
   }
+  if( nAlloc ) sqlite3_free(pData);
   if( pStmt ) sqlite3_finalize(pStmt);
   if( pBlob ) sqlite3_blob_close(pBlob);
   if( bStats ){
