@@ -72,7 +72,22 @@ static int blobSeekToRow(Incrblob *p, sqlite3_int64 iRow, char **pzErr){
   rc = sqlite3_step(p->pStmt);
   if( rc==SQLITE_ROW ){
     VdbeCursor *pC = v->apCsr[0];
-    u32 type = pC->aType[p->iCol];
+    u32 type;
+    if( p->isPureKV ){
+      u32 avail;
+      const u8 *a;
+      BtCursor *pCrsr = pC->uc.pCursor;
+      sqlite3BtreeEnterCursor(pCrsr);
+      (void)sqlite3BtreePayloadSize(pCrsr);
+      a = (const u8*)sqlite3BtreePayloadFetch(pCrsr, &avail);
+      assert( p->iCol==1 );
+      getVarint32(a+2, type);
+      sqlite3BtreeLeaveCursor(pCrsr);
+      p->iOffset = a[0];
+    }else{
+      type = pC->aType[p->iCol];
+      p->iOffset = pC->aType[p->iCol + pC->nField];
+    }
     if( type<12 ){
       zErr = sqlite3MPrintf(p->db, "cannot open value of type %s",
           type==0?"null": type==7?"real": "integer"
@@ -81,7 +96,6 @@ static int blobSeekToRow(Incrblob *p, sqlite3_int64 iRow, char **pzErr){
       sqlite3_finalize(p->pStmt);
       p->pStmt = 0;
     }else{
-      p->iOffset = pC->aType[p->iCol + pC->nField];
       p->nByte = sqlite3VdbeSerialTypeLen(type);
       p->pCsr =  pC->uc.pCursor;
       sqlite3BtreeIncrblobCursor(p->pCsr);
@@ -311,14 +325,19 @@ int sqlite3_blob_open(
         aOp[1].p4.i = pTab->nCol+1;
         aOp[3].p2 = pTab->nCol;
 
+   
+        if( pTab->nCol==2 && pTab->iPKey==0 && iCol==1 ){
+          pBlob->isPureKV = 1;
+          aOp[3].opcode = OP_Noop;
+        }
+
         pParse->nVar = 0;
         pParse->nMem = 1;
         pParse->nTab = 1;
         sqlite3VdbeMakeReady(v, pParse);
       }
     }
-   
-    pBlob->isPureKV = (pTab->nCol==2 && pTab->iPKey==0);
+      
     pBlob->iCol = iCol;
     pBlob->db = db;
     sqlite3BtreeLeaveAll(db);
