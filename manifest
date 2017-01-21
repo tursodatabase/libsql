@@ -1,5 +1,5 @@
-C Add\sextra\s(somewhat\sinefficient)\strace\scallbacks\sfor\striggers\sif\sSQLITE_TRACE_TRIGGER\sis\sdefined.
-D 2017-01-21T15:58:42.695
+C Fix\sproblems\sin\sthe\sprevious\scommit.
+D 2017-01-21T16:21:24.115
 F Makefile.in 41bd4cad981487345c4a84081074bcdb876e4b2e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -457,7 +457,7 @@ F src/update.c b356b29d04c71f33c779f2cb557cf953819bdd7a
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c a88b0466fddf445ce752226d4698ca3faada620a
 F src/vacuum.c 33c174b28886b2faf26e503b5a49a1c01a9b1c16
-F src/vdbe.c a2e8ea847859c8bccdcfa775413f42b381df6c66
+F src/vdbe.c 132f552033f72820c27a100861fa83254358cbcd
 F src/vdbe.h b0866e4191f096f1c987a84b042c3599bdf5423b
 F src/vdbeInt.h 4cad10b68ed052104a997454540ea71ceb2888e1
 F src/vdbeapi.c d6ebaa465f070eb1af8ba4e7b34583ece87bdd24
@@ -1547,10 +1547,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0d1ad13a296b22d6fe36879b56f99bd6af1acd3a
-R 8060b839ccd84e4e1ab0cfce250c64af
-T *branch * trigger-trace
-T *sym-trigger-trace *
-T -sym-trunk *
+P ffda1d1e1c858abd02f0c07b906cfac5ad075498
+R c37bc6770e2789d7f8851d61fd232055
 U dan
-Z 33d7cd6899dfe41d4b1c6eef55037e2e
+Z a07b3b8a92ddc391359da9de406f8455

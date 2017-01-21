@@ -962,14 +962,12 @@ case OP_Halt: {
     pcx = sqlite3VdbeFrameRestore(pFrame);
 #ifdef SQLITE_TRACE_TRIGGER
     if( (db->mTrace & SQLITE_TRACE_STMT) && aOp[0].p4.z ){
-      int nNest = 0;
-      VdbeFrame *pF;
       int nTotal = nVmStep - pFrame->nVmStep;
       char *zTrace;
+      assert( nTotal>=0 );
       assert( db->xTrace );
-      for(pF=p->pFrame; pF; pF=pF->pParent) nNest++;
       zTrace = sqlite3_mprintf("%.*s%s completed (VM steps: total=%d self=%d)", 
-          nNest, "                                                    :",
+          p->nFrame, "                                                    :",
           aOp[0].p4.z, nTotal, nVmStep - pFrame->nVmStepAdj
       );
       if( zTrace ){
@@ -5854,10 +5852,6 @@ case OP_Program: {        /* jump */
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
     pFrame->anExec = p->anExec;
 #endif
-#ifdef SQLITE_TRACE_TRIGGER
-    pFrame->nVmStep = nVmStep;
-    pFrame->nVmStepAdj = nVmStep;
-#endif
 
     pEnd = &VdbeFrameMem(pFrame)[pFrame->nChildMem];
     for(pMem=VdbeFrameMem(pFrame); pMem!=pEnd; pMem++){
@@ -5879,6 +5873,10 @@ case OP_Program: {        /* jump */
   pFrame->nDbChange = p->db->nChange;
   assert( pFrame->pAuxData==0 );
   pFrame->pAuxData = p->pAuxData;
+#ifdef SQLITE_TRACE_TRIGGER
+  pFrame->nVmStep = nVmStep;
+  pFrame->nVmStepAdj = nVmStep;
+#endif
   p->pAuxData = 0;
   p->nChange = 0;
   p->pFrame = pFrame;
@@ -6917,11 +6915,8 @@ case OP_Init: {          /* jump */
 #endif
 #ifdef SQLITE_TRACE_TRIGGER
     if( p->pFrame ){
-      int nNest = -1;
-      VdbeFrame *pFrame;
-      for(pFrame=p->pFrame; pFrame; pFrame=pFrame->pParent) nNest++;
-      zTrace = sqlite3_mprintf("%.*s%s",
-          nNest, "                                                    :", zTrace
+      zTrace = sqlite3_mprintf("%.*s%s", p->nFrame-1, 
+          "                                                    :", zTrace
       );
       if( zTrace ){
         (void)db->xTrace(SQLITE_TRACE_STMT, db->pTraceArg, p, zTrace);
