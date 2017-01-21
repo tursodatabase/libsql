@@ -23,10 +23,10 @@
 */
 typedef struct Incrblob Incrblob;
 struct Incrblob {
-  int flags;              /* Copy of "flags" passed to sqlite3_blob_open() */
   int nByte;              /* Size of open blob, in bytes */
   int iOffset;            /* Byte offset of blob in cursor data */
-  int iCol;               /* Table column this handle is open on */
+  u16 iCol;               /* Table column this handle is open on */
+  u8 isPureKV;            /* True if pTab is a pure key/value table */
   BtCursor *pCsr;         /* Cursor pointing at blob row */
   sqlite3_stmt *pStmt;    /* Statement holding cursor open */
   sqlite3 *db;            /* The associated database */
@@ -117,7 +117,7 @@ int sqlite3_blob_open(
   const char *zTable,     /* The table containing the blob */
   const char *zColumn,    /* The column containing the blob */
   sqlite_int64 iRow,      /* The row containing the glob */
-  int flags,              /* True -> read/write access, false -> read-only */
+  int wrFlag,             /* True -> read/write access, false -> read-only */
   sqlite3_blob **ppBlob   /* Handle for accessing the blob returned here */
 ){
   int nAttempt = 0;
@@ -139,7 +139,7 @@ int sqlite3_blob_open(
     return SQLITE_MISUSE_BKPT;
   }
 #endif
-  flags = !!flags;                /* flags = (flags ? 1 : 0); */
+  wrFlag = !!wrFlag;                /* wrFlag = (wrFlag ? 1 : 0); */
 
   sqlite3_mutex_enter(db->mutex);
 
@@ -199,9 +199,8 @@ int sqlite3_blob_open(
 
     /* If the value is being opened for writing, check that the
     ** column is not indexed, and that it is not part of a foreign key. 
-    ** It is against the rules to open a column to which either of these
-    ** descriptions applies for writing.  */
-    if( flags ){
+    */
+    if( wrFlag ){
       const char *zFault = 0;
       Index *pIdx;
 #ifndef SQLITE_OMIT_FOREIGN_KEY
@@ -272,7 +271,7 @@ int sqlite3_blob_open(
       int iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
       VdbeOp *aOp;
 
-      sqlite3VdbeAddOp4Int(v, OP_Transaction, iDb, flags, 
+      sqlite3VdbeAddOp4Int(v, OP_Transaction, iDb, wrFlag, 
                            pTab->pSchema->schema_cookie,
                            pTab->pSchema->iGeneration);
       sqlite3VdbeChangeP5(v, 1);     
@@ -289,7 +288,7 @@ int sqlite3_blob_open(
 #else
         aOp[0].p1 = iDb;
         aOp[0].p2 = pTab->tnum;
-        aOp[0].p3 = flags;
+        aOp[0].p3 = wrFlag;
         sqlite3VdbeChangeP4(v, 1, pTab->zName, P4_TRANSIENT);
       }
       if( db->mallocFailed==0 ){
@@ -297,7 +296,7 @@ int sqlite3_blob_open(
 
         /* Remove either the OP_OpenWrite or OpenRead. Set the P2 
         ** parameter of the other to pTab->tnum.  */
-        if( flags ) aOp[1].opcode = OP_OpenWrite;
+        if( wrFlag ) aOp[1].opcode = OP_OpenWrite;
         aOp[1].p2 = pTab->tnum;
         aOp[1].p3 = iDb;   
 
@@ -319,14 +318,13 @@ int sqlite3_blob_open(
       }
     }
    
-    pBlob->flags = flags;
+    pBlob->isPureKV = (pTab->nCol==2 && pTab->iPKey==0);
     pBlob->iCol = iCol;
     pBlob->db = db;
     sqlite3BtreeLeaveAll(db);
     if( db->mallocFailed ){
       goto blob_open_out;
     }
-    sqlite3_bind_int64(pBlob->pStmt, 1, iRow);
     rc = blobSeekToRow(pBlob, iRow, &zErr);
   } while( (++nAttempt)<SQLITE_MAX_SCHEMA_RETRY && rc==SQLITE_SCHEMA );
 
