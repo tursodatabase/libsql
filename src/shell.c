@@ -614,6 +614,7 @@ struct ShellState {
   int autoExplain;       /* Automatically turn on .explain mode */
   int autoEQP;           /* Run EXPLAIN QUERY PLAN prior to seach SQL stmt */
   int statsOn;           /* True to display memory stats before each finalize */
+  int vmstepsOn;         /* Display VM steps before each finalize */
   int scanstatsOn;       /* True to display scan stats before each finalize */
   int countChanges;      /* True to display change counts */
   int backslashOn;       /* Resolve C-style \x escapes in SQL input text */
@@ -1995,6 +1996,12 @@ static int shell_exec(
       /* print usage stats if stats on */
       if( pArg && pArg->statsOn ){
         display_stats(db, pArg, 0);
+      }
+
+      if( pArg && pArg->vmstepsOn && pStmt ){
+        int iCur = sqlite3_stmt_status(pStmt, SQLITE_STMTSTATUS_VM_STEP, 0);
+        FILE *out = pArg->traceOut ? pArg->traceOut : pArg->out;
+        raw_printf(out, "VM steps: %d\n", iCur);
       }
 
       /* print loop-counters if required */
@@ -5338,6 +5345,16 @@ static int do_meta_command(char *zLine, ShellState *p){
       }
     }
   }else
+
+  if( c=='v' && strncmp(azArg[0], "vmsteps", n)==0 ){
+    if( nArg==2 ){
+      p->vmstepsOn = booleanValue(azArg[1]);
+    }else{
+      raw_printf(stderr, "Usage: .vmsteps ?on|off?\n");
+      rc = 1;
+    }
+  }else
+
 
 #if defined(SQLITE_DEBUG) && defined(SQLITE_ENABLE_WHERETRACE)
   if( c=='w' && strncmp(azArg[0], "wheretrace", n)==0 ){

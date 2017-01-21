@@ -175,6 +175,10 @@ struct VdbeFrame {
   int nChildCsr;          /* Number of cursors for child frame */
   int nChange;            /* Statement changes (Vdbe.nChange)     */
   int nDbChange;          /* Value of db->nChange */
+#ifdef SQLITE_TRACE_TRIGGER
+  int nVmStep;            /* Value of nVmStep at start of program */
+  int nVmStepAdj;         /* Adjusted for nested programs */
+#endif
 };
 
 #define VdbeFrameMem(p) ((Mem *)&((u8 *)p)[ROUND8(sizeof(VdbeFrame))])
