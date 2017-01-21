@@ -5096,14 +5096,19 @@ int sqlite3BtreeMovetoUnpacked(
         *pRes = -1;
         return SQLITE_OK;
       }
-      if( pCur->aiIdx[pCur->iPage]+1<pCur->apPage[pCur->iPage]->nCell ){
-        pCur->aiIdx[pCur->iPage]++;
-        pCur->info.nSize = 0;
-        pCur->curFlags &= ~(BTCF_ValidNKey|BTCF_ValidOvfl);
-        getCellInfo(pCur);
-        if( pCur->info.nKey==intKey ){
-          *pRes = 0;
-          return SQLITE_OK;
+      /* If the requested key is one more than the previous key, then
+      ** try to get there using sqlite3BtreeNext() rather than a full
+      ** binary search.  This is an optimization only.  The correct answer
+      ** is still obtained without this ase, only a little more slowely */
+      if( pCur->info.nKey+1==intKey && !pCur->skipNext ){
+        *pRes = 0;
+        rc = sqlite3BtreeNext(pCur, pRes);
+        if( rc ) return rc;
+        if( *pRes==0 ){
+          getCellInfo(pCur);
+          if( pCur->info.nKey==intKey ){
+            return SQLITE_OK;
+          }
         }
       }
     }
