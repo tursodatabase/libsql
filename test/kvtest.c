@@ -515,7 +515,7 @@ static int runMain(int argc, char **argv){
   sqlite3_int64 tmElapsed;    /* Elapsed time */
   int nData = 0;              /* Bytes of data */
   sqlite3_int64 nTotal = 0;   /* Total data read */
-  unsigned char *pData;       /* Content of the blob */
+  unsigned char *pData = 0;   /* Content of the blob */
   int nAlloc = 0;             /* Space allocated for pData[] */
   
 
