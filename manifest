@@ -1,5 +1,5 @@
-C Fix\san\sinitialized\svariable\sin\skvtest.
-D 2017-01-22T00:11:07.052
+C Fixes\sto\sdocumentation\scomments\sin\sthe\spublic\sheader\sfile.
+D 2017-01-22T02:04:05.790
 F Makefile.in 41bd4cad981487345c4a84081074bcdb876e4b2e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -392,7 +392,7 @@ F src/resolve.c f9bc0de45a30a450da47b3766de00be89bf9be79
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 3856db523b942062bca8722ba03b61c324ff94d6
 F src/shell.c 6095531aa900decdaa765e0f3993fba7153c92c1
-F src/sqlite.h.in e71655293c9bde26939496f3aac9d1821d2c07a2
+F src/sqlite.h.in 1971ab9709e010d52a02a1a6276d5a2f9b947476
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
 F src/sqliteInt.h 525c061ae9aafc8d4720a018d82f0936d9eee5ab
@@ -1547,7 +1547,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 347df3c1fd7322e7aacaf1e9f8be81830947c482
-R 47630561b257ab51d84219dbb1624512
-U drh
-Z d718277d52e4c47c008f4f640e1286d7
+P ed62c5a6562262709128099f757ae60807a930d7
+R 46519c248d38b7b1891c031deb62dd78
+U mistachkin
+Z c8163604b14219f9ecc118cfce9ce251
