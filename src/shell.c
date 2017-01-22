@@ -5297,7 +5297,7 @@ static int do_meta_command(char *zLine, ShellState *p){
 
   if( c=='v' && strncmp(azArg[0], "vfsinfo", n)==0 ){
     const char *zDbName = nArg==2 ? azArg[1] : "main";
-    sqlite3_vfs *pVfs;
+    sqlite3_vfs *pVfs = 0;
     if( p->db ){
       sqlite3_file_control(p->db, zDbName, SQLITE_FCNTL_VFS_POINTER, &pVfs);
       if( pVfs ){
