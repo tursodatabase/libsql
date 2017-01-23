@@ -4763,7 +4763,9 @@ int sqlite3PagerOpen(
       if( !readOnly ){
         setSectorSize(pPager);
         assert(SQLITE_DEFAULT_PAGE_SIZE<=SQLITE_MAX_DEFAULT_PAGE_SIZE);
-        if( szPageDflt<pPager->sectorSize ){
+        if( iDc&SQLITE_IOCAP_PAGE_PER_SECTOR ){
+          szPageDflt = (u32)pPager->sectorSize;
+        }else if( szPageDflt<pPager->sectorSize ){
           if( pPager->sectorSize>SQLITE_MAX_DEFAULT_PAGE_SIZE ){
             szPageDflt = SQLITE_MAX_DEFAULT_PAGE_SIZE;
           }else{

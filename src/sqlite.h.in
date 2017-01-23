@@ -579,7 +579,9 @@ int sqlite3_exec(
 ** flag indicates that a file cannot be deleted when open.  The
 ** SQLITE_IOCAP_IMMUTABLE flag indicates that the file is on
 ** read-only media and cannot be changed even by processes with
-** elevated privileges.
+** elevated privileges.  The SQLITE_IOCAP_PAGE_PER_SECTOR flag indicates
+** the initial page size for new databases should set to the sector size
+** reported by the VFS.
 */
 #define SQLITE_IOCAP_ATOMIC                 0x00000001
 #define SQLITE_IOCAP_ATOMIC512              0x00000002
@@ -595,6 +597,7 @@ int sqlite3_exec(
 #define SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN  0x00000800
 #define SQLITE_IOCAP_POWERSAFE_OVERWRITE    0x00001000
 #define SQLITE_IOCAP_IMMUTABLE              0x00002000
+#define SQLITE_IOCAP_PAGE_PER_SECTOR        0x00004000
 
 /*
 ** CAPI3REF: File Locking Levels
@@ -729,6 +732,7 @@ struct sqlite3_file {
 ** <li> [SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN]
 ** <li> [SQLITE_IOCAP_POWERSAFE_OVERWRITE]
 ** <li> [SQLITE_IOCAP_IMMUTABLE]
+** <li> [SQLITE_IOCAP_PAGE_PER_SECTOR]
 ** </ul>
 **
 ** The SQLITE_IOCAP_ATOMIC property means that all writes of
@@ -1012,6 +1016,15 @@ struct sqlite3_io_methods {
 ** The [SQLITE_FCNTL_RBU] opcode is implemented by the special VFS used by
 ** the RBU extension only.  All other VFS should return SQLITE_NOTFOUND for
 ** this opcode.  
+**
+** <li>[[SQLITE_FCNTL_PAGE_PER_SECTOR]]
+** ^The [SQLITE_FCNTL_PAGE_PER_SECTOR] opcode is used to set or query the
+** persistent "page-per-sector" or "PPS" setting. The PPS setting determines
+** the [SQLITE_IOCAP_PAGE_PER_SECTOR] bit of the xDeviceCharacteristics
+** methods. The fourth parameter to [sqlite3_file_control()] for this opcode
+** should be a pointer to an integer.  That integer is 0 to disable
+** page-per-sector mode or 1 to enable page-per-sector mode.  If the integer
+** is -1, then it is overwritten with the current page-per-sector mode setting.
 ** </ul>
 */
 #define SQLITE_FCNTL_LOCKSTATE               1
@@ -1043,6 +1056,7 @@ struct sqlite3_io_methods {
 #define SQLITE_FCNTL_JOURNAL_POINTER        28
 #define SQLITE_FCNTL_WIN32_GET_HANDLE       29
 #define SQLITE_FCNTL_PDB                    30
+#define SQLITE_FCNTL_PAGE_PER_SECTOR        31
 
 /* deprecated names */
 #define SQLITE_GET_LOCKPROXYFILE      SQLITE_FCNTL_GET_LOCKPROXYFILE

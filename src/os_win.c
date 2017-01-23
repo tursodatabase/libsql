@@ -307,6 +307,7 @@ struct winVfsAppData {
 #define WINFILE_RDONLY          0x02   /* Connection is read only */
 #define WINFILE_PERSIST_WAL     0x04   /* Persistent WAL mode */
 #define WINFILE_PSOW            0x10   /* SQLITE_IOCAP_POWERSAFE_OVERWRITE */
+#define WINFILE_PPS             0x20   /* SQLITE_IOCAP_PAGE_PER_SECTOR */
 
 /*
  * The size of the buffer used by sqlite3_win32_write_debug().
@@ -3468,6 +3469,11 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
       OSTRACE(("FCNTL file=%p, rc=SQLITE_OK\n", pFile->h));
       return SQLITE_OK;
     }
+    case SQLITE_FCNTL_PAGE_PER_SECTOR: {
+      winModeBit(pFile, WINFILE_PPS, (int*)pArg);
+      OSTRACE(("FCNTL file=%p, rc=SQLITE_OK\n", pFile->h));
+      return SQLITE_OK;
+    }
     case SQLITE_FCNTL_VFSNAME: {
       *(char**)pArg = sqlite3_mprintf("%s", pFile->pVfs->zName);
       OSTRACE(("FCNTL file=%p, rc=SQLITE_OK\n", pFile->h));
@@ -3559,6 +3565,7 @@ static int winSectorSize(sqlite3_file *id){
 static int winDeviceCharacteristics(sqlite3_file *id){
   winFile *p = (winFile*)id;
   return SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN |
+         ((p->ctrlFlags & WINFILE_PPS)?SQLITE_IOCAP_PAGE_PER_SECTOR:0) |
          ((p->ctrlFlags & WINFILE_PSOW)?SQLITE_IOCAP_POWERSAFE_OVERWRITE:0);
 }
 
@@ -5106,6 +5113,9 @@ static int winOpen(
   }
   if( sqlite3_uri_boolean(zName, "psow", SQLITE_POWERSAFE_OVERWRITE) ){
     pFile->ctrlFlags |= WINFILE_PSOW;
+  }
+  if( sqlite3_uri_boolean(zName, "pps", 0) ){
+    pFile->ctrlFlags |= WINFILE_PPS;
   }
   pFile->lastErrno = NO_ERROR;
   pFile->zPath = zName;

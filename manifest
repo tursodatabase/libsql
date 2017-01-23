@@ -1,5 +1,5 @@
-C Document\sthe\s--mmap\soption\sin\sthe\s--help\sscreen\sfor\skvtest.\s\sEnhance\skvtest\sso\nthat\snumeric\sarguments\scan\shave\ssuffixes\slike\s"K"\sor\s"M".\s\sAdd\skvtest\sto\sthe\nunix\smakefiles.
-D 2017-01-23T19:11:38.113
+C Experimental\schanges\sto\spermit\sa\sVFS\sto\sdirectly\soverride\sthe\sinitial\spage\ssize.
+D 2017-01-23T21:12:15.244
 F Makefile.in 5f415e7867296d678fed2e6779aea10c1318b4bc
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -375,9 +375,9 @@ F src/os.h 8e976e59eb4ca1c0fca6d35ee803e38951cb0343
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c 30e2c43e4955db990e5b5a81e901f8aa74cc8820
-F src/os_win.c cf90abd4e50d9f56d2c20ce8e005aff55d7bd8e9
+F src/os_win.c a55b09ae1cab1a221cea3461c202168587af110c
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 9dc72d23eebbdf992bd69f2ab954d0d3a27c7340
+F src/pager.c b0ab0c7e028a741140e4e6d6d8a52afa80b77c6f
 F src/pager.h d1e944291030351f362a0a7da9b5c3e34e603e39
 F src/parse.y 29153738a7322054359320eb00b5a4cd44389f20
 F src/pcache.c 51070ec9b8251bbf9c6ea3d35fd96a458752929e
@@ -392,7 +392,7 @@ F src/resolve.c f9bc0de45a30a450da47b3766de00be89bf9be79
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 3856db523b942062bca8722ba03b61c324ff94d6
 F src/shell.c 59de9acab4423a536277653f2a9dcdd1307989f3
-F src/sqlite.h.in 1971ab9709e010d52a02a1a6276d5a2f9b947476
+F src/sqlite.h.in 89b948cfa352cca946a5b20d9378df30d612f282
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
 F src/sqliteInt.h 525c061ae9aafc8d4720a018d82f0936d9eee5ab
@@ -1547,7 +1547,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4948f7e6d2a1cfce36a7aab2f5b65be07c285ac3
-R 9f530d22e2b0a16555eacd054431a10f
-U drh
-Z 4864426d37a32c6f04be82da7889e371
+P 175bda87288c7ce15b163316159f53a60822ccad
+R 05a49ef0621a4d438c613d21cd9494c5
+T *branch * pagePerSector
+T *sym-pagePerSector *
+T -sym-trunk *
+U mistachkin
+Z d580907a4e3e3f7a77c49fbb8487d254
