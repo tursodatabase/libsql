@@ -57,8 +57,13 @@ macro_rules! to_sql_self(
 
 to_sql_self!(Null);
 to_sql_self!(bool);
+to_sql_self!(i8);
+to_sql_self!(i16);
 to_sql_self!(i32);
 to_sql_self!(i64);
+to_sql_self!(u8);
+to_sql_self!(u16);
+to_sql_self!(u32);
 to_sql_self!(f64);
 
 impl<'a, T: ?Sized> ToSql for &'a T
@@ -93,5 +98,23 @@ impl<T: ToSql> ToSql for Option<T> {
             None => Ok(ToSqlOutput::from(Null)),
             Some(ref t) => t.to_sql(),
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::ToSql;
+
+    fn is_to_sql<T: ToSql>() {}
+
+    #[test]
+    fn test_integral_types() {
+        is_to_sql::<i8>();
+        is_to_sql::<i16>();
+        is_to_sql::<i32>();
+        is_to_sql::<i64>();
+        is_to_sql::<u8>();
+        is_to_sql::<u16>();
+        is_to_sql::<u32>();
     }
 }
