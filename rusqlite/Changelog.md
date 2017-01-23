@@ -1,3 +1,12 @@
+# Version 0.9.2 (2017-01-22)
+
+* Bugfix: The `FromSql` impl for `i32` now returns an error instead of
+  truncating if the underlying SQLite value is out of `i32`'s range.
+* Added `FromSql` and `ToSql` impls for `i8`, `i16`, `u8`, `u16`, and `u32`.
+  `i32` and `i64` already had impls. `u64` is omitted because their range
+  cannot be represented by `i64`, which is the type we use to communicate with
+  SQLite.
+
 # Version 0.9.1 (2017-01-20)
 
 * BREAKING CHANGE: `Connection::close()` now returns a `Result<(), (Connection, Error)>` instead

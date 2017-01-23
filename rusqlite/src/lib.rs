@@ -1105,9 +1105,11 @@ impl<'a, 'stmt> Row<'a, 'stmt> {
     ///
     /// ## Failure
     ///
-    /// Panics if the underlying SQLite column type is not a valid type as a source for `T`.
+    /// Panics if calling `row.get_checked(idx)` would return an error, including:
     ///
-    /// Panics if `idx` is outside the range of columns in the returned query.
+    ///    * If the underlying SQLite column type is not a valid type as a source for `T`
+    ///    * If the underlying SQLite integral value is outside the range representable by `T`
+    ///    * If `idx` is outside the range of columns in the returned query
     pub fn get<I: RowIndex, T: FromSql>(&self, idx: I) -> T {
         self.get_checked(idx).unwrap()
     }
@@ -1129,6 +1131,7 @@ impl<'a, 'stmt> Row<'a, 'stmt> {
         let value = unsafe { ValueRef::new(&self.stmt.stmt, idx) };
         FromSql::column_result(value).map_err(|err| match err {
             FromSqlError::InvalidType => Error::InvalidColumnType(idx, value.data_type()),
+            FromSqlError::OutOfRange(i) => Error::IntegralValueOutOfRange(idx, i),
             FromSqlError::Other(err) => {
                 Error::FromSqlConversionFailure(idx as usize, value.data_type(), err)
             }
