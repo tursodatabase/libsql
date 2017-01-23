@@ -1,5 +1,5 @@
-C Add\sthe\smissing\sSQLITE_API\ssymbol\sto\stest_delete.c\s(it\sis\snot\sadded\nautomatically\sas\sthis\sfile\sis\snot\spart\sof\sthe\samalgamation).
-D 2017-01-23T15:58:09.428
+C Optimization:\sTry\sto\savoid\sunnecessary\sbtree\ssearching\swhen\srepositioning\s\na\scursor\sto\sthe\snext\srow.
+D 2017-01-23T16:56:18.240
 F Makefile.in 41bd4cad981487345c4a84081074bcdb876e4b2e
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -333,7 +333,7 @@ F src/auth.c 930b376a9c56998557367e6f7f8aaeac82a2a792
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c e6b8f39d7dd1ad65f1747956de36f2595172a23d
+F src/btree.c f1b36bcfb1f9532ce64fe534153f11b8e2595d8b
 F src/btree.h e6d352808956ec163a17f832193a3e198b3fb0ac
 F src/btreeInt.h 10c4b77c2fb399580babbcc7cf652ac10dba796e
 F src/build.c 9e799f1edd910dfa8a0bc29bd390d35d310596af
@@ -1547,7 +1547,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 03c601344ed56b316bcc5fd02f6648b0009ba61b
-R 9417217ad349116acb540369984c5408
-U dan
-Z b2f31778ddace8b8427e4711f64f3edb
+P 7a4f512ddf9e7e718389c80930d6268ab598459c 2c4ecb85a475b9063aa8a3bb517ac181a7ded649
+R 29a4885c53e914cde79778fd2e323ab3
+T +closed 2c4ecb85a475b9063aa8a3bb517ac181a7ded649
+U drh
+Z 5710c3bf174cb3e3f9b43957024c6c5f
