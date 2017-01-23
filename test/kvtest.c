@@ -85,6 +85,7 @@ static const char zHelp[] =
 "             --count N            Read N blobs\n"
 "             --desc               Read blobs in descending order\n"
 "             --max-id N           Maximum blob key to use\n"
+"             --mmap N             Mmap as much as N bytes of DBFILE\n"
 "             --random             Read blobs in a random order\n"
 "             --start N            Start reading with this blob key\n"
 "             --stats              Output operating stats before exiting\n"
@@ -131,6 +132,64 @@ static void fatalError(const char *zFormat, ...){
   fprintf(stdout, "\n");
   exit(1);
 }
+
+/*
+** Return the value of a hexadecimal digit.  Return -1 if the input
+** is not a hex digit.
+*/
+static int hexDigitValue(char c){
+  if( c>='0' && c<='9' ) return c - '0';
+  if( c>='a' && c<='f' ) return c - 'a' + 10;
+  if( c>='A' && c<='F' ) return c - 'A' + 10;
+  return -1;
+}
+
+/*
+** Interpret zArg as an integer value, possibly with suffixes.
+*/
+static int integerValue(const char *zArg){
+  int v = 0;
+  static const struct { char *zSuffix; int iMult; } aMult[] = {
+    { "KiB", 1024 },
+    { "MiB", 1024*1024 },
+    { "GiB", 1024*1024*1024 },
+    { "KB",  1000 },
+    { "MB",  1000000 },
+    { "GB",  1000000000 },
+    { "K",   1000 },
+    { "M",   1000000 },
+    { "G",   1000000000 },
+  };
+  int i;
+  int isNeg = 0;
+  if( zArg[0]=='-' ){
+    isNeg = 1;
+    zArg++;
+  }else if( zArg[0]=='+' ){
+    zArg++;
+  }
+  if( zArg[0]=='0' && zArg[1]=='x' ){
+    int x;
+    zArg += 2;
+    while( (x = hexDigitValue(zArg[0]))>=0 ){
+      v = (v<<4) + x;
+      zArg++;
+    }
+  }else{
+    while( zArg[0]>='0' && zArg[0]<='9' ){
+      v = v*10 + zArg[0] - '0';
+      zArg++;
+    }
+  }
+  for(i=0; i<sizeof(aMult)/sizeof(aMult[0]); i++){
+    if( sqlite3_stricmp(aMult[i].zSuffix, zArg)==0 ){
+      v *= aMult[i].iMult;
+      break;
+    }
+  }
+  return isNeg? -v : v;
+}
+
 
 /*
 ** Check the filesystem object zPath.  Determine what it is:
@@ -205,19 +264,19 @@ static int initMain(int argc, char **argv){
     if( z[1]=='-' ) z++;
     if( strcmp(z, "-count")==0 ){
       if( i==argc-1 ) fatalError("missing argument on \"%s\"", argv[i]);
-      nCount = atoi(argv[++i]);
+      nCount = integerValue(argv[++i]);
       if( nCount<1 ) fatalError("the --count must be positive");
       continue;
     }
     if( strcmp(z, "-size")==0 ){
       if( i==argc-1 ) fatalError("missing argument on \"%s\"", argv[i]);
-      sz = atoi(argv[++i]);
+      sz = integerValue(argv[++i]);
       if( sz<1 ) fatalError("the --size must be positive");
       continue;
     }
     if( strcmp(z, "-pagesize")==0 ){
       if( i==argc-1 ) fatalError("missing argument on \"%s\"", argv[i]);
-      pgsz = atoi(argv[++i]);
+      pgsz = integerValue(argv[++i]);
       if( pgsz<512 || pgsz>65536 || ((pgsz-1)&pgsz)!=0 ){
         fatalError("the --pagesize must be power of 2 between 512 and 65536");
       }
@@ -491,6 +550,7 @@ static int display_stats(
 #define ORDER_DESC    2
 #define ORDER_RANDOM  3
 
+
 /*
 ** Run a performance test
 */
@@ -532,31 +592,31 @@ static int runMain(int argc, char **argv){
     if( z[1]=='-' ) z++;
     if( strcmp(z, "-count")==0 ){
       if( i==argc-1 ) fatalError("missing argument on \"%s\"", argv[i]);
-      nCount = atoi(argv[++i]);
+      nCount = integerValue(argv[++i]);
       if( nCount<1 ) fatalError("the --count must be positive");
       continue;
     }
     if( strcmp(z, "-mmap")==0 ){
       if( i==argc-1 ) fatalError("missing argument on \"%s\"", argv[i]);
-      mmapSize = atoi(argv[++i]);
+      mmapSize = integerValue(argv[++i]);
       if( nCount<0 ) fatalError("the --mmap must be non-negative");
       continue;
     }
     if( strcmp(z, "-max-id")==0 ){
       if( i==argc-1 ) fatalError("missing argument on \"%s\"", argv[i]);
-      iMax = atoi(argv[++i]);
+      iMax = integerValue(argv[++i]);
       if( iMax<1 ) fatalError("the --max-id must be positive");
       continue;
     }
     if( strcmp(z, "-start")==0 ){
       if( i==argc-1 ) fatalError("missing argument on \"%s\"", argv[i]);
-      iKey = atoi(argv[++i]);
+      iKey = integerValue(argv[++i]);
       if( iKey<1 ) fatalError("the --start must be positive");
       continue;
     }
     if( strcmp(z, "-cache-size")==0 ){
       if( i==argc-1 ) fatalError("missing argument on \"%s\"", argv[i]);
-      iCache = atoi(argv[++i]);
+      iCache = integerValue(argv[++i]);
       continue;
     }
     if( strcmp(z, "-random")==0 ){
