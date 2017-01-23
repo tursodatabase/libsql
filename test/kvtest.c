@@ -513,6 +513,7 @@ static int runMain(int argc, char **argv){
   sqlite3_blob *pBlob = 0;    /* Handle for incremental Blob I/O */
   sqlite3_int64 tmStart;      /* Start time */
   sqlite3_int64 tmElapsed;    /* Elapsed time */
+  int mmapSize = 0;           /* --mmap N argument */
   int nData = 0;              /* Bytes of data */
   sqlite3_int64 nTotal = 0;   /* Total data read */
   unsigned char *pData = 0;   /* Content of the blob */
@@ -533,6 +534,12 @@ static int runMain(int argc, char **argv){
       if( i==argc-1 ) fatalError("missing argument on \"%s\"", argv[i]);
       nCount = atoi(argv[++i]);
       if( nCount<1 ) fatalError("the --count must be positive");
+      continue;
+    }
+    if( strcmp(z, "-mmap")==0 ){
+      if( i==argc-1 ) fatalError("missing argument on \"%s\"", argv[i]);
+      mmapSize = atoi(argv[++i]);
+      if( nCount<0 ) fatalError("the --mmap must be non-negative");
       continue;
     }
     if( strcmp(z, "-max-id")==0 ){
@@ -581,6 +588,8 @@ static int runMain(int argc, char **argv){
     if( rc ){
       fatalError("cannot open database \"%s\": %s", zDb, sqlite3_errmsg(db));
     }
+    zSql = sqlite3_mprintf("PRAGMA mmap_size=%d", mmapSize);
+    sqlite3_exec(db, zSql, 0, 0, 0);
     zSql = sqlite3_mprintf("PRAGMA cache_size=%d", iCache);
     sqlite3_exec(db, zSql, 0, 0, 0);
     sqlite3_free(zSql);
