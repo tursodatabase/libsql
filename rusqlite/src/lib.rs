@@ -1105,9 +1105,11 @@ impl<'a, 'stmt> Row<'a, 'stmt> {
     ///
     /// ## Failure
     ///
-    /// Panics if the underlying SQLite column type is not a valid type as a source for `T`.
+    /// Panics if calling `row.get_checked(idx)` would return an error, including:
     ///
-    /// Panics if `idx` is outside the range of columns in the returned query.
+    ///    * If the underlying SQLite column type is not a valid type as a source for `T`
+    ///    * If the underlying SQLite integral value is outside the range representable by `T`
+    ///    * If `idx` is outside the range of columns in the returned query
     pub fn get<I: RowIndex, T: FromSql>(&self, idx: I) -> T {
         self.get_checked(idx).unwrap()
     }
