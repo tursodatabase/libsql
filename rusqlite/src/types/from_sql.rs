@@ -53,17 +53,28 @@ pub trait FromSql: Sized {
     fn column_result(value: ValueRef) -> FromSqlResult<Self>;
 }
 
-impl FromSql for i32 {
-    fn column_result(value: ValueRef) -> FromSqlResult<Self> {
-        i64::column_result(value).and_then(|i| {
-            if i < i32::min_value() as i64 || i > i32::max_value() as i64 {
-                Err(FromSqlError::OutOfRange(i))
-            } else {
-                Ok(i as i32)
+macro_rules! from_sql_integral(
+    ($t:ident) => (
+        impl FromSql for $t {
+            fn column_result(value: ValueRef) -> FromSqlResult<Self> {
+                i64::column_result(value).and_then(|i| {
+                    if i < $t::min_value() as i64 || i > $t::max_value() as i64 {
+                        Err(FromSqlError::OutOfRange(i))
+                    } else {
+                        Ok(i as $t)
+                    }
+                })
             }
-        })
-    }
-}
+        }
+    )
+);
+
+from_sql_integral!(i8);
+from_sql_integral!(i16);
+from_sql_integral!(i32);
+from_sql_integral!(u8);
+from_sql_integral!(u16);
+from_sql_integral!(u32);
 
 impl FromSql for i64 {
     fn column_result(value: ValueRef) -> FromSqlResult<Self> {
@@ -120,6 +131,7 @@ impl FromSql for Value {
 #[cfg(test)]
 mod test {
     use {Connection, Error};
+    use super::FromSql;
 
     fn checked_memory_handle() -> Connection {
         Connection::open_in_memory().unwrap()
@@ -129,23 +141,31 @@ mod test {
     fn test_integral_ranges() {
         let db = checked_memory_handle();
 
-        fn assert_out_of_range_error(err: Error, value: i64) {
-            match err {
-                Error::IntegralValueOutOfRange(_, bad) => assert_eq!(bad, value),
-                _ => panic!("unexpected error {}", err),
+        fn check_ranges<T>(db: &Connection, out_of_range: &[i64], in_range: &[i64])
+            where T: Into<i64> + FromSql + ::std::fmt::Debug
+        {
+            for n in out_of_range {
+                let err = db.query_row("SELECT ?", &[n], |r| r.get_checked::<_, T>(0))
+                    .unwrap()
+                    .unwrap_err();
+                match err {
+                    Error::IntegralValueOutOfRange(_, value) => assert_eq!(*n, value),
+                    _ => panic!("unexpected error: {}", err),
+                }
+            }
+            for n in in_range {
+                assert_eq!(*n,
+                           db.query_row("SELECT ?", &[n], |r| r.get::<_, T>(0)).unwrap().into());
             }
         }
 
-        // i32
-        for bad in &[-2147483649, 2147483648] {
-            let err = db.query_row("SELECT ?", &[bad], |r| r.get_checked::<_, i32>(0))
-                .unwrap()
-                .unwrap_err();
-            assert_out_of_range_error(err, *bad);
-        }
-        for good in &[-2147483648, 2147483647] {
-            assert_eq!(*good,
-                       db.query_row("SELECT ?", &[good], |r| r.get::<_, i32>(0)).unwrap());
-        }
+        check_ranges::<i8>(&db, &[-129, 128], &[-128, 0, 1, 127]);
+        check_ranges::<i16>(&db, &[-32769, 32768], &[-32768, -1, 0, 1, 32767]);
+        check_ranges::<i32>(&db,
+                            &[-2147483649, 2147483648],
+                            &[-2147483648, -1, 0, 1, 2147483647]);
+        check_ranges::<u8>(&db, &[-2, -1, 256], &[0, 1, 255]);
+        check_ranges::<u16>(&db, &[-2, -1, 65536], &[0, 1, 65535]);
+        check_ranges::<u32>(&db, &[-2, -1, 4294967296], &[0, 1, 4294967295]);
     }
 }
