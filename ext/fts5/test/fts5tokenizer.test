@@ -262,5 +262,44 @@ do_execsql_test 8.3 {
   brown dog fox jump lazi over quick the
 }
 
+#-------------------------------------------------------------------------
+# Check that the FTS5_TOKENIZE_PREFIX flag is passed to the tokenizer
+# implementation.
+#
+reset_db
+proc tcl_create {args} { return "tcl_tokenize" }
+sqlite3_fts5_create_tokenizer db tcl tcl_create
+set ::flags [list]
+proc tcl_tokenize {tflags text} {
+  lappend ::flags $tflags
+  foreach {w iStart iEnd} [fts5_tokenize_split $text] {
+    sqlite3_fts5_token $w $iStart $iEnd
+  }
+}
+
+do_execsql_test 9.1.1 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a, tokenize=tcl);
+  INSERT INTO t1 VALUES('abc');
+  INSERT INTO t1 VALUES('xyz');
+} {}
+do_test 9.1.2 { set ::flags } {document document}
+
+set ::flags [list]
+do_execsql_test 9.2.1 { SELECT * FROM t1('abc'); } {abc}
+do_test 9.2.2 { set ::flags } {query}
+
+set ::flags [list]
+do_execsql_test 9.3.1 { SELECT * FROM t1('ab*'); } {abc}
+do_test 9.3.2 { set ::flags } {prefixquery}
+
+set ::flags [list]
+do_execsql_test 9.4.1 { SELECT * FROM t1('"abc xyz" *'); } {}
+do_test 9.4.2 { set ::flags } {prefixquery}
+
+set ::flags [list]
+do_execsql_test 9.5.1 { SELECT * FROM t1('"abc xyz*"'); } {}
+do_test 9.5.2 { set ::flags } {query}
+
+
 finish_test
 
