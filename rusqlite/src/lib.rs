@@ -1129,6 +1129,7 @@ impl<'a, 'stmt> Row<'a, 'stmt> {
         let value = unsafe { ValueRef::new(&self.stmt.stmt, idx) };
         FromSql::column_result(value).map_err(|err| match err {
             FromSqlError::InvalidType => Error::InvalidColumnType(idx, value.data_type()),
+            FromSqlError::OutOfRange(i) => Error::IntegralValueOutOfRange(idx, i),
             FromSqlError::Other(err) => {
                 Error::FromSqlConversionFailure(idx as usize, value.data_type(), err)
             }

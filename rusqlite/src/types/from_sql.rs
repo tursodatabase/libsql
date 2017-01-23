@@ -5,9 +5,13 @@ use std::fmt;
 /// Enum listing possible errors from `FromSql` trait.
 #[derive(Debug)]
 pub enum FromSqlError {
-    /// Error when an SQLite value is requested, but the type of the result cannot be converted to the
-    /// requested Rust type.
+    /// Error when an SQLite value is requested, but the type of the result cannot be converted to
+    /// the requested Rust type.
     InvalidType,
+
+    /// Error when the i64 value returned by SQLite cannot be stored into the requested type.
+    OutOfRange(i64),
+
     /// An error case available for implementors of the `FromSql` trait.
     Other(Box<Error + Send + Sync>),
 }
@@ -16,6 +20,7 @@ impl fmt::Display for FromSqlError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             FromSqlError::InvalidType => write!(f, "Invalid type"),
+            FromSqlError::OutOfRange(i) => write!(f, "Value {} out of range", i),
             FromSqlError::Other(ref err) => err.fmt(f),
         }
     }
@@ -25,6 +30,7 @@ impl Error for FromSqlError {
     fn description(&self) -> &str {
         match *self {
             FromSqlError::InvalidType => "invalid type",
+            FromSqlError::OutOfRange(_) => "value out of range",
             FromSqlError::Other(ref err) => err.description(),
         }
     }
@@ -33,6 +39,7 @@ impl Error for FromSqlError {
     fn cause(&self) -> Option<&Error> {
         match *self {
             FromSqlError::InvalidType => None,
+            FromSqlError::OutOfRange(_) => None,
             FromSqlError::Other(ref err) => err.cause(),
         }
     }
@@ -48,7 +55,13 @@ pub trait FromSql: Sized {
 
 impl FromSql for i32 {
     fn column_result(value: ValueRef) -> FromSqlResult<Self> {
-        i64::column_result(value).map(|i| i as i32)
+        i64::column_result(value).and_then(|i| {
+            if i < i32::min_value() as i64 || i > i32::max_value() as i64 {
+                Err(FromSqlError::OutOfRange(i))
+            } else {
+                Ok(i as i32)
+            }
+        })
     }
 }
 
@@ -101,5 +114,38 @@ impl<T: FromSql> FromSql for Option<T> {
 impl FromSql for Value {
     fn column_result(value: ValueRef) -> FromSqlResult<Self> {
         Ok(value.into())
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use {Connection, Error};
+
+    fn checked_memory_handle() -> Connection {
+        Connection::open_in_memory().unwrap()
+    }
+
+    #[test]
+    fn test_integral_ranges() {
+        let db = checked_memory_handle();
+
+        fn assert_out_of_range_error(err: Error, value: i64) {
+            match err {
+                Error::IntegralValueOutOfRange(_, bad) => assert_eq!(bad, value),
+                _ => panic!("unexpected error {}", err),
+            }
+        }
+
+        // i32
+        for bad in &[-2147483649, 2147483648] {
+            let err = db.query_row("SELECT ?", &[bad], |r| r.get_checked::<_, i32>(0))
+                .unwrap()
+                .unwrap_err();
+            assert_out_of_range_error(err, *bad);
+        }
+        for good in &[-2147483648, 2147483647] {
+            assert_eq!(*good,
+                       db.query_row("SELECT ?", &[good], |r| r.get::<_, i32>(0)).unwrap());
+        }
     }
 }

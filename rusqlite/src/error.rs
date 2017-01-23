@@ -25,6 +25,11 @@ pub enum Error {
     /// the requested Rust type.
     FromSqlConversionFailure(usize, Type, Box<error::Error + Send + Sync>),
 
+    /// Error when SQLite gives us an integral value outside the range of the requested type (e.g.,
+    /// trying to get the value 1000 into a `u8`).  The associated `c_int` is the column index, and
+    /// the associated `i64` is the value returned by SQLite.
+    IntegralValueOutOfRange(c_int, i64),
+
     /// Error converting a string to UTF-8.
     Utf8Error(str::Utf8Error),
 
@@ -99,6 +104,9 @@ impl fmt::Display for Error {
                        i,
                        err)
             }
+            Error::IntegralValueOutOfRange(col, val) => {
+                write!(f, "Integer {} out of range at index {}", val, col)
+            }
             Error::Utf8Error(ref err) => err.fmt(f),
             Error::NulError(ref err) => err.fmt(f),
             Error::InvalidParameterName(ref name) => write!(f, "Invalid parameter name: {}", name),
@@ -133,6 +141,9 @@ impl error::Error for Error {
                 "SQLite was compiled or configured for single-threaded use only"
             }
             Error::FromSqlConversionFailure(_, _, ref err) => err.description(),
+            Error::IntegralValueOutOfRange(_, _) => {
+                "integral value out of range of requested type"
+            }
             Error::Utf8Error(ref err) => err.description(),
             Error::InvalidParameterName(_) => "invalid parameter name",
             Error::NulError(ref err) => err.description(),
@@ -160,6 +171,7 @@ impl error::Error for Error {
             Error::Utf8Error(ref err) => Some(err),
             Error::NulError(ref err) => Some(err),
 
+            Error::IntegralValueOutOfRange(_, _) |
             Error::SqliteSingleThreadedMode |
             Error::InvalidParameterName(_) |
             Error::ExecuteReturnedResults |
