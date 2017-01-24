@@ -1,3 +1,7 @@
+# Version 0.9.3 (2017-01-23)
+
+* Make `ToSqlOutput` itself implement `ToSql`.
+
 # Version 0.9.2 (2017-01-22)
 
 * Bugfix: The `FromSql` impl for `i32` now returns an error instead of

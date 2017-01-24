@@ -908,7 +908,7 @@ impl<'conn> Statement<'conn> {
             ValueRef::Null => unsafe { ffi::sqlite3_bind_null(ptr, col) },
             ValueRef::Integer(i) => unsafe { ffi::sqlite3_bind_int64(ptr, col, i) },
             ValueRef::Real(r) => unsafe { ffi::sqlite3_bind_double(ptr, col, r) },
-            ValueRef::Text(ref s) => unsafe {
+            ValueRef::Text(s) => unsafe {
                 let length = s.len();
                 if length > ::std::i32::MAX as usize {
                     ffi::SQLITE_TOOBIG
@@ -922,7 +922,7 @@ impl<'conn> Statement<'conn> {
                     ffi::sqlite3_bind_text(ptr, col, c_str.as_ptr(), length as c_int, destructor)
                 }
             },
-            ValueRef::Blob(ref b) => unsafe {
+            ValueRef::Blob(b) => unsafe {
                 let length = b.len();
                 if length > ::std::i32::MAX as usize {
                     ffi::SQLITE_TOOBIG

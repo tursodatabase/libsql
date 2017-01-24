@@ -38,9 +38,9 @@ impl Error for FromSqlError {
     #[cfg_attr(feature="clippy", allow(match_same_arms))]
     fn cause(&self) -> Option<&Error> {
         match *self {
-            FromSqlError::InvalidType => None,
-            FromSqlError::OutOfRange(_) => None,
             FromSqlError::Other(ref err) => err.cause(),
+            FromSqlError::InvalidType |
+            FromSqlError::OutOfRange(_) => None,
         }
     }
 }

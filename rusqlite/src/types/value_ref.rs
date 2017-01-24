@@ -54,7 +54,7 @@ impl<'a> ValueRef<'a> {
     /// `Err(Error::InvalidColumnType)`.
     pub fn as_str(&self) -> FromSqlResult<&str> {
         match *self {
-            ValueRef::Text(ref t) => Ok(t),
+            ValueRef::Text(t) => Ok(t),
             _ => Err(FromSqlError::InvalidType),
         }
     }
@@ -63,7 +63,7 @@ impl<'a> ValueRef<'a> {
     /// `Err(Error::InvalidColumnType)`.
     pub fn as_blob(&self) -> FromSqlResult<&[u8]> {
         match *self {
-            ValueRef::Blob(ref b) => Ok(b),
+            ValueRef::Blob(b) => Ok(b),
             _ => Err(FromSqlError::InvalidType),
         }
     }

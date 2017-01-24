@@ -28,6 +28,18 @@ impl<'a, T: Into<Value>> From<T> for ToSqlOutput<'a> {
     }
 }
 
+impl<'a> ToSql for ToSqlOutput<'a> {
+    fn to_sql(&self) -> Result<ToSqlOutput> {
+        Ok(match *self {
+            ToSqlOutput::Borrowed(v) => ToSqlOutput::Borrowed(v),
+            ToSqlOutput::Owned(ref v) => ToSqlOutput::Borrowed(ValueRef::from(v)),
+
+            #[cfg(feature = "blob")]
+            ToSqlOutput::ZeroBlob(i) => ToSqlOutput::ZeroBlob(i),
+        })
+    }
+}
+
 /// A trait for types that can be converted into SQLite values.
 pub trait ToSql {
     fn to_sql(&self) -> Result<ToSqlOutput>;
