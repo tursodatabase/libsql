@@ -40,7 +40,7 @@ regex = "~0.2"
 
 [dependencies.libsqlite3-sys]
 path = "libsqlite3-sys"
-version = "0.6.0"
+version = "0.6.1"
 
 [[test]]
 name = "config_log"
