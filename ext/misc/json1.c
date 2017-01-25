@@ -22,7 +22,7 @@
 ** how JSONB might improve on that.)
 */
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_JSON1)
-#if !defined(_SQLITEINT_H_)
+#if !defined(SQLITEINT_H)
 #include "sqlite3ext.h"
 #endif
 SQLITE_EXTENSION_INIT1
