@@ -13,7 +13,7 @@ fn main() {
         }
         Err(_) => {
             // See if pkg-config can do everything for us.
-            if !pkg_config::find_library("sqlite3").is_ok() {
+            if !pkg_config::Config::new().print_system_libs(false).probe("sqlite3").is_ok() {
                 // No env var set and pkg-config couldn't help; just output the link-lib
                 // request and hope that the library exists on the system paths. We used to
                 // output /usr/lib explicitly, but that can introduce other linking problems; see

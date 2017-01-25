@@ -1,6 +1,6 @@
 [package]
 name = "rusqlite"
-version = "0.9.3"
+version = "0.9.4"
 authors = ["John Gallagher <jgallagher@bignerdranch.com>"]
 description = "Ergonomic wrapper for SQLite"
 repository = "https://github.com/jgallagher/rusqlite"
@@ -26,17 +26,17 @@ trace = []
 bundled = ["libsqlite3-sys/bundled"]
 
 [dependencies]
-time = "~0.1.0"
+time = "0.1.0"
 bitflags = "0.7"
 lru-cache = "0.1.0"
-libc = "~0.2"
-chrono = { version = "~0.2", optional = true }
-serde_json = { version = "0.8", optional = true }
+libc = "0.2"
+chrono = { version = "0.2", optional = true }
+serde_json = { version = "0.9", optional = true }
 
 [dev-dependencies]
-tempdir = "~0.3.4"
-lazy_static = "~0.2"
-regex = "~0.2"
+tempdir = "0.3.4"
+lazy_static = "0.2"
+regex = "0.2"
 
 [dependencies.libsqlite3-sys]
 path = "libsqlite3-sys"
