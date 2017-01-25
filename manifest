@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sthe\spre-update\shook\son\sthis\sbranch.
-D 2017-01-25T17:44:13.969
+C Fix\sa\stest\sscript\sproblem\sin\sexclusive2.test\scausing\sit\sto\sfail\son\sthis\nbranch.
+D 2017-01-25T18:12:46.110
 F Makefile.in 5f415e7867296d678fed2e6779aea10c1318b4bc
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -679,7 +679,7 @@ F test/eqp.test 3fe051af50921284189d1970eb653f9fcf5117d2
 F test/errmsg.test f31592a594b44ee121371d25ddd5d63497bb3401
 F test/eval.test a64c9105d6ff163df7cf09d6ac29cdad5922078c
 F test/exclusive.test 9a57bd66e39144b888ca75c309914fcdefb4e3f9
-F test/exclusive2.test 32798111aae78a5deec980eee383213f189df308
+F test/exclusive2.test 984090e8e9d1b331d2e8111daf6e5d61dda0bef7
 F test/exec.test e949714dc127eaa5ecc7d723efec1ec27118fdd7
 F test/exists.test 79a75323c78f02bbe9c251ea502a092f9ef63dac
 F test/expr.test 66a2c9ac34f74f036faa4092f5402c7d3162fc93
@@ -1547,7 +1547,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 118ded403b95050b74ae2b03919c43d614094a32
-R b2da1f7f2be6fc581980d1f7d80d3a07
+P 6fc4fbfa29cfa795edf32e4a1f2d0eceb3007f68
+R c06506894b1f7b9de189bb73f3ac7abf
 U dan
-Z e5faacbef3e7f4e557b616df3270ec25
+Z 47f4a5e852dc6941a6a828eee1ba5cee
