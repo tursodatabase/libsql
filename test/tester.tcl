@@ -461,7 +461,7 @@ if {[info exists cmdlinearg]==0} {
       }
       {^-+backtrace=.+$} {
         foreach {dummy cmdlinearg(backtrace)} [split $a =] break
-        sqlite3_memdebug_backtrace $value
+        sqlite3_memdebug_backtrace $cmdlinearg(backtrace)
       }
       {^-+binarylog=.+$} {
         foreach {dummy cmdlinearg(binarylog)} [split $a =] break

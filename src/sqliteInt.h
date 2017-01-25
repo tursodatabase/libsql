@@ -3790,6 +3790,11 @@ int sqlite3GenerateIndexKey(Parse*, Index*, int, int, int, int*,Index*,int);
 void sqlite3ResolvePartIdxLabel(Parse*,int);
 void sqlite3GenerateConstraintChecks(Parse*,Table*,int*,int,int,int,int,
                                      u8,u8,int,int*,int*);
+#ifdef SQLITE_ENABLE_NULL_TRIM
+  void sqlite3SetMakeRecordP5(Vdbe*,Table*);
+#else
+# define sqlite3SetMakeRecordP5(A,B)
+#endif
 void sqlite3CompleteInsertion(Parse*,Table*,int,int,int,int*,int,int,int);
 int sqlite3OpenTableAndIndices(Parse*, Table*, int, u8, int, u8*, int*, int*);
 void sqlite3BeginWriteOperation(Parse*, int, int);

@@ -1668,6 +1668,25 @@ void sqlite3GenerateConstraintChecks(
   VdbeModuleComment((v, "END: GenCnstCks(%d)", seenReplace));
 }
 
+#ifdef SQLITE_ENABLE_NULL_TRIM
+/*
+** Change the P5 operand on the last opcode (which should be an OP_MakeRecord)
+** to be the number of columns in table pTab that must not be NULL-trimmed.
+**
+** Or if no columns of pTab may be NULL-trimmed, leave P5 at zero.
+*/
+void sqlite3SetMakeRecordP5(Vdbe *v, Table *pTab){
+  u16 i;
+
+  /* Records with omitted columns are only allowed for schema format
+  ** version 2 and later (SQLite version 3.1.4, 2005-02-20). */
+  if( pTab->pSchema->file_format<2 ) return;
+
+  for(i=pTab->nCol; i>1 && pTab->aCol[i-1].pDflt==0; i--){}
+  sqlite3VdbeChangeP5(v, i);
+}
+#endif
+
 /*
 ** This routine generates code to finish the INSERT or UPDATE operation
 ** that was started by a prior call to sqlite3GenerateConstraintChecks.
@@ -1727,6 +1746,7 @@ void sqlite3CompleteInsertion(
   regData = regNewData + 1;
   regRec = sqlite3GetTempReg(pParse);
   sqlite3VdbeAddOp3(v, OP_MakeRecord, regData, pTab->nCol, regRec);
+  sqlite3SetMakeRecordP5(v, pTab);
   if( !bAffinityDone ){
     sqlite3TableAffinity(v, pTab, 0);
     sqlite3ExprCacheAffinityChange(pParse, regData, pTab->nCol);
