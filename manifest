@@ -1,5 +1,5 @@
-C Ensure\sthat\ssqlite3_blob_reopen()\scorrectly\shandles\sshort\srows.\s\nFix\sfor\sticket\s[e6e962d6b0f06f46e].
-D 2017-01-25T14:38:19.847
+C Experimental\senhancement\sto\sautomatically\strim\sNULL\svalues\sfrom\sthe\send\sof\nrecords,\sfor\sa\sreduced\sdisk\sfootprint.\s\sThis\schange\salso\sinvolves\sincreasing\nthe\sP5\soperand\sfrom\s8\sto\s16\sbits.
+D 2017-01-25T14:58:27.321
 F Makefile.in 5f415e7867296d678fed2e6779aea10c1318b4bc
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -352,7 +352,7 @@ F src/hash.c 63d0ee752a3b92d4695b2b1f5259c4621b2cfebd
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 05e47e2de7b712a3a4148cd469e5f60873f5ef13
+F src/insert.c 07ccec2c1fb32dd2c5fbfd63426e98dc2a79a0fa
 F src/legacy.c 75d3023be8f0d2b99d60f905090341a03358c58e
 F src/loadext.c a68d8d1d14cf7488bb29dc5311cb1ce9a4404258
 F src/main.c e207b81542d13b9f13d61e78ca441f9781f055b0
@@ -395,7 +395,7 @@ F src/shell.c 59de9acab4423a536277653f2a9dcdd1307989f3
 F src/sqlite.h.in 1971ab9709e010d52a02a1a6276d5a2f9b947476
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
-F src/sqliteInt.h 525c061ae9aafc8d4720a018d82f0936d9eee5ab
+F src/sqliteInt.h dc587b0727c2bc888d78d200d891620080567691
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -457,11 +457,11 @@ F src/update.c b356b29d04c71f33c779f2cb557cf953819bdd7a
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c a88b0466fddf445ce752226d4698ca3faada620a
 F src/vacuum.c 33c174b28886b2faf26e503b5a49a1c01a9b1c16
-F src/vdbe.c c7add5978cb84ae3a7bcb16f8b56cb3bbdf04b7e
-F src/vdbe.h b0866e4191f096f1c987a84b042c3599bdf5423b
+F src/vdbe.c b1f2448184fa58c66fc94591004b1258964ef9da
+F src/vdbe.h 59998ffd71d7caa8886bc78dafaf8caeccd4c13c
 F src/vdbeInt.h 281cb70332dc8b593b8c7afe776f3a2ba7d4255e
 F src/vdbeapi.c d6ebaa465f070eb1af8ba4e7b34583ece87bdd24
-F src/vdbeaux.c 35c9a9908174e5a26c96d15e1f98214814a39147
+F src/vdbeaux.c 8a2446741a2ec1072e744bc50f69b8b9e6c36592
 F src/vdbeblob.c 2b3d1ad915dbe5dc92c48759dc18fa8c697e78e5
 F src/vdbemem.c 3b5a9a5b375458d3e12a50ae1aaa41eeec2175fd
 F src/vdbesort.c eda25cb2d1727efca6f7862fea32b8aa33c0face
@@ -1547,8 +1547,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0803390c152141c9ab4e7a28406b2a5d72a5c2fa 57d8dad35c2a9ab635e954dce7f3986ae1ca8ed2
-R d15a5cee6a51c7118a4d78b7d0cbd2de
-T +closed 57d8dad35c2a9ab635e954dce7f3986ae1ca8ed2
+P 8cd1a4451cce1fe28f462800e2be1dee1735c0d0
+R 8038c1c21360d07be65589e30167ecdf
+T *branch * trim-nulls
+T *sym-trim-nulls *
+T -sym-trunk *
 U drh
-Z f9af43b146da8d8246d0b97014ae0d3a
+Z d170ee380cb17c0b674fe48dc7bc03d5
