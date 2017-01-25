@@ -1,5 +1,5 @@
-C Experimental\senhancement\sto\sautomatically\strim\sNULL\svalues\sfrom\sthe\send\sof\nrecords,\sfor\sa\sreduced\sdisk\sfootprint.\s\sThis\schange\salso\sinvolves\sincreasing\nthe\sP5\soperand\sfrom\s8\sto\s16\sbits.
-D 2017-01-25T14:58:27.321
+C Fix\sa\sproblem\swith\sthe\spre-update\shook\son\sthis\sbranch.
+D 2017-01-25T17:44:13.969
 F Makefile.in 5f415e7867296d678fed2e6779aea10c1318b4bc
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -460,8 +460,8 @@ F src/vacuum.c 33c174b28886b2faf26e503b5a49a1c01a9b1c16
 F src/vdbe.c b1f2448184fa58c66fc94591004b1258964ef9da
 F src/vdbe.h 59998ffd71d7caa8886bc78dafaf8caeccd4c13c
 F src/vdbeInt.h 281cb70332dc8b593b8c7afe776f3a2ba7d4255e
-F src/vdbeapi.c d6ebaa465f070eb1af8ba4e7b34583ece87bdd24
-F src/vdbeaux.c 8a2446741a2ec1072e744bc50f69b8b9e6c36592
+F src/vdbeapi.c 9a44ed2f4fcb5a10dec9da5af95293d31830f268
+F src/vdbeaux.c 7c19b78999faae833e1be66dfa4e3deaf334d739
 F src/vdbeblob.c 2b3d1ad915dbe5dc92c48759dc18fa8c697e78e5
 F src/vdbemem.c 3b5a9a5b375458d3e12a50ae1aaa41eeec2175fd
 F src/vdbesort.c eda25cb2d1727efca6f7862fea32b8aa33c0face
@@ -832,7 +832,7 @@ F test/gcfault.test dd28c228a38976d6336a3fc42d7e5f1ad060cb8c
 F test/genesis.tcl 1e2e2e8e5cc4058549a154ff1892fe5c9de19f98
 F test/hexlit.test 4a6a5f46e3c65c4bf1fa06f5dd5a9507a5627751
 F test/hidden.test 23c1393a79e846d68fd902d72c85d5e5dcf98711
-F test/hook.test 3a01b876691f9151d3e44562354f7d663ff90fce
+F test/hook.test 09b8ce2226776b10bf74344e67d81291a49801f6
 F test/icu.test 73956798bace8982909c00476b216714a6d0559a
 F test/ieee754.test 806fc0ce7f305f57e3331eaceeddcfec9339e607
 F test/imposter1.test c3f1db2d3db2c24611a6596a3fc0ffc14f1466c8
@@ -1163,7 +1163,7 @@ F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptable2.test cd396beb41117a5302fff61767c35fa4270a0d5e
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
-F test/tester.tcl 4ce5afd5e192db4cae178e1a983b060e0f08c5d6
+F test/tester.tcl 2a49c1aff731f380ea640106377e19611a1443ae
 F test/thread001.test 9f22fd3525a307ff42a326b6bc7b0465be1745a5
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -1547,10 +1547,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8cd1a4451cce1fe28f462800e2be1dee1735c0d0
-R 8038c1c21360d07be65589e30167ecdf
-T *branch * trim-nulls
-T *sym-trim-nulls *
-T -sym-trunk *
-U drh
-Z d170ee380cb17c0b674fe48dc7bc03d5
+P 118ded403b95050b74ae2b03919c43d614094a32
+R b2da1f7f2be6fc581980d1f7d80d3a07
+U dan
+Z e5faacbef3e7f4e557b616df3270ec25
