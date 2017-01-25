@@ -890,4 +890,19 @@ do_preupdate_test 9.6 {
   INSERT main t1 458 458  0  458 {} {} {}
 } 
 
+
+do_execsql_test 10.0 {
+  CREATE TABLE t3(a, b INTEGER PRIMARY KEY);
+}
+do_preupdate_test 10.1 {
+  INSERT INTO t3 DEFAULT VALUES
+} {
+  INSERT main t3 1 1 0 {} 1
+}
+do_execsql_test 10.2 { SELECT * FROM t3 } {{} 1}
+do_preupdate_test 10.3 {
+  DELETE FROM t3 WHERE b=1
+} {DELETE main t3 1 1 0 {} 1}
+
+
 finish_test

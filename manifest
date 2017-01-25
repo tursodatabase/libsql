@@ -1,5 +1,5 @@
-C Fix\sa\stest\sscript\sproblem\sin\sexclusive2.test\scausing\sit\sto\sfail\son\sthis\nbranch.
-D 2017-01-25T18:12:46.110
+C Fix\sanother\spre-update\shook\sissue,\sthis\stime\sin\ssqlite3preupdate_old().
+D 2017-01-25T18:53:27.729
 F Makefile.in 5f415e7867296d678fed2e6779aea10c1318b4bc
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -460,7 +460,7 @@ F src/vacuum.c 33c174b28886b2faf26e503b5a49a1c01a9b1c16
 F src/vdbe.c b1f2448184fa58c66fc94591004b1258964ef9da
 F src/vdbe.h 59998ffd71d7caa8886bc78dafaf8caeccd4c13c
 F src/vdbeInt.h 281cb70332dc8b593b8c7afe776f3a2ba7d4255e
-F src/vdbeapi.c 9a44ed2f4fcb5a10dec9da5af95293d31830f268
+F src/vdbeapi.c 7a65f10684982daecfce50f557f2632b7f20b198
 F src/vdbeaux.c 7c19b78999faae833e1be66dfa4e3deaf334d739
 F src/vdbeblob.c 2b3d1ad915dbe5dc92c48759dc18fa8c697e78e5
 F src/vdbemem.c 3b5a9a5b375458d3e12a50ae1aaa41eeec2175fd
@@ -832,7 +832,7 @@ F test/gcfault.test dd28c228a38976d6336a3fc42d7e5f1ad060cb8c
 F test/genesis.tcl 1e2e2e8e5cc4058549a154ff1892fe5c9de19f98
 F test/hexlit.test 4a6a5f46e3c65c4bf1fa06f5dd5a9507a5627751
 F test/hidden.test 23c1393a79e846d68fd902d72c85d5e5dcf98711
-F test/hook.test 09b8ce2226776b10bf74344e67d81291a49801f6
+F test/hook.test f6a48d33817f0ca1a39a4d6605fe7e9da8077522
 F test/icu.test 73956798bace8982909c00476b216714a6d0559a
 F test/ieee754.test 806fc0ce7f305f57e3331eaceeddcfec9339e607
 F test/imposter1.test c3f1db2d3db2c24611a6596a3fc0ffc14f1466c8
@@ -1547,7 +1547,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6fc4fbfa29cfa795edf32e4a1f2d0eceb3007f68
-R c06506894b1f7b9de189bb73f3ac7abf
+P f66614dc78e32d2d369518200b3322cd97990ffe
+R b9395615953abce115528c9bb805cca4
 U dan
-Z 47f4a5e852dc6941a6a828eee1ba5cee
+Z c5b3bc3bd2550d6ddb6d6d5566bf3773
