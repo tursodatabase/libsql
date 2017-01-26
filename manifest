@@ -1,5 +1,5 @@
-C Remove\sthe\sobsolete\slastRowid\scache\sfrom\sthe\ssqlite3VdbeExec()\sfor\sa\ssize\nreduction\sand\sperformance\simprovement.
-D 2017-01-26T17:26:44.998
+C Improvement\sto\sthe\sOP_Permutation\sopcode\sto\sprevent\sit\sfrom\susing\sCPU\scycles\nfor\sinitialization\sin\sprepared\sstatements\sthat\sdo\snot\suse\sthat\sopcode.
+D 2017-01-26T18:00:00.328
 F Makefile.in 5f415e7867296d678fed2e6779aea10c1318b4bc
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -457,7 +457,7 @@ F src/update.c b356b29d04c71f33c779f2cb557cf953819bdd7a
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c a88b0466fddf445ce752226d4698ca3faada620a
 F src/vacuum.c 33c174b28886b2faf26e503b5a49a1c01a9b1c16
-F src/vdbe.c 96f1639399feb97500d927219b87183aad3ef94c
+F src/vdbe.c c27cc34be1d9169c1c191238025781684bdcd4ec
 F src/vdbe.h 59998ffd71d7caa8886bc78dafaf8caeccd4c13c
 F src/vdbeInt.h 281cb70332dc8b593b8c7afe776f3a2ba7d4255e
 F src/vdbeapi.c 7a65f10684982daecfce50f557f2632b7f20b198
@@ -1547,7 +1547,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1e96e5ec1ee617cb5b5cbdc5a2ee79c8cc35821d
-R f17134692e3127e9f97d9e12f2b91a46
+P b4803184652e5f4f823c1521412bc480baeb3dbf
+R 5d2cc4b6c4ee841c772ca9230a25766d
 U drh
-Z 7f3d9d2e9e1038bd56eb8c4623402887
+Z 39169c59805d0271c33a4d8ecd6430ca
