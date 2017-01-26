@@ -79,16 +79,17 @@ static const char zHelp[] =
 "        Run a performance test.  DBFILE can be either the name of a\n"
 "        database or a directory containing sample files.  Options:\n"
 "\n"
-"             --asc                Read blobs in ascending order\n"
-"             --blob-api           Use the BLOB API\n"
-"             --cache-size N       Database cache size\n"
-"             --count N            Read N blobs\n"
-"             --desc               Read blobs in descending order\n"
-"             --max-id N           Maximum blob key to use\n"
-"             --mmap N             Mmap as much as N bytes of DBFILE\n"
-"             --random             Read blobs in a random order\n"
-"             --start N            Start reading with this blob key\n"
-"             --stats              Output operating stats before exiting\n"
+"           --asc                  Read blobs in ascending order\n"
+"           --blob-api             Use the BLOB API\n"
+"           --cache-size N         Database cache size\n"
+"           --count N              Read N blobs\n"
+"           --desc                 Read blobs in descending order\n"
+"           --max-id N             Maximum blob key to use\n"
+"           --mmap N               Mmap as much as N bytes of DBFILE\n"
+"           --jmode MODE           Set MODE journal mode prior to starting\n"
+"           --random               Read blobs in a random order\n"
+"           --start N              Start reading with this blob key\n"
+"           --stats                Output operating stats before exiting\n"
 ;
 
 /* Reference resources used */
@@ -539,9 +540,6 @@ static int display_stats(
   displayLinuxIoStats(out);
 #endif
 
-  /* Do not remove this machine readable comment: extra-stats-output-here */
-
-  fprintf(out, "\n");
   return 0;
 }
 
@@ -562,7 +560,7 @@ static int runMain(int argc, char **argv){
   int nCount = 1000;          /* Number of blob fetch operations */
   int nExtra = 0;             /* Extra cycles */
   int iKey = 1;               /* Next blob key */
-  int iMax = 1000;            /* Largest allowed key */
+  int iMax = 0;               /* Largest allowed key */
   int iPagesize = 0;          /* Database page size */
   int iCache = 1000;          /* Database cache size in kibibytes */
   int bBlobApi = 0;           /* Use the incremental blob I/O API */
@@ -578,6 +576,7 @@ static int runMain(int argc, char **argv){
   sqlite3_int64 nTotal = 0;   /* Total data read */
   unsigned char *pData = 0;   /* Content of the blob */
   int nAlloc = 0;             /* Space allocated for pData[] */
+  const char *zJMode = 0;     /* Journal mode */
   
 
   assert( strcmp(argv[1],"run")==0 );
@@ -605,7 +604,6 @@ static int runMain(int argc, char **argv){
     if( strcmp(z, "-max-id")==0 ){
       if( i==argc-1 ) fatalError("missing argument on \"%s\"", argv[i]);
       iMax = integerValue(argv[++i]);
-      if( iMax<1 ) fatalError("the --max-id must be positive");
       continue;
     }
     if( strcmp(z, "-start")==0 ){
@@ -617,6 +615,11 @@ static int runMain(int argc, char **argv){
     if( strcmp(z, "-cache-size")==0 ){
       if( i==argc-1 ) fatalError("missing argument on \"%s\"", argv[i]);
       iCache = integerValue(argv[++i]);
+      continue;
+    }
+    if( strcmp(z, "-jmode")==0 ){
+      if( i==argc-1 ) fatalError("missing argument on \"%s\"", argv[i]);
+      zJMode = argv[++i];
       continue;
     }
     if( strcmp(z, "-random")==0 ){
@@ -667,8 +670,29 @@ static int runMain(int argc, char **argv){
     }
     sqlite3_finalize(pStmt);
     pStmt = 0;
+    if( zJMode ){
+      zSql = sqlite3_mprintf("PRAGMA journal_mode=%Q", zJMode);
+      sqlite3_exec(db, zSql, 0, 0, 0);
+      sqlite3_free(zSql);
+    }
+    sqlite3_prepare_v2(db, "PRAGMA journal_mode", -1, &pStmt, 0);
+    if( sqlite3_step(pStmt)==SQLITE_ROW ){
+      zJMode = sqlite3_mprintf("%s", sqlite3_column_text(pStmt, 0));
+    }else{
+      zJMode = "???";
+    }
+    sqlite3_finalize(pStmt);
+    if( iMax<=0 ){
+      sqlite3_prepare_v2(db, "SELECT max(k) FROM kv", -1, &pStmt, 0);
+      if( sqlite3_step(pStmt)==SQLITE_ROW ){
+        iMax = sqlite3_column_int(pStmt, 0);
+      }
+      sqlite3_finalize(pStmt);
+    }
+    pStmt = 0;
     sqlite3_exec(db, "BEGIN", 0, 0, 0);
   }
+  if( iMax<=0 ) iMax = 1000;
   for(i=0; i<nCount; i++){
     if( eType==PATH_DIR ){
       /* CASE 1: Reading blobs out of separate files */
@@ -749,13 +773,14 @@ static int runMain(int argc, char **argv){
     printf("SQLite version: %s\n", sqlite3_libversion());
   }
   printf("--count %d --max-id %d", nCount-nExtra, iMax);
-  if( eType==PATH_DB ){
-    printf(" --cache-size %d", iCache);
-  }
   switch( eOrder ){
     case ORDER_RANDOM:  printf(" --random\n");  break;
     case ORDER_DESC:    printf(" --desc\n");    break;
     default:            printf(" --asc\n");     break;
+  }
+  if( eType==PATH_DB ){
+    printf("--cache-size %d --jmode %s\n", iCache, zJMode);
+    printf("--mmap %d%s\n", mmapSize, bBlobApi ? " --blob-api" : "");
   }
   if( iPagesize ) printf("Database page size: %d\n", iPagesize);
   printf("Total elapsed time: %.3f\n", tmElapsed/1000.0);
