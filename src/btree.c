@@ -4593,7 +4593,7 @@ static int accessPayload(
         **   2) data is required from the start of this overflow page, and
         **   3) the database is file-backed, and
         **   4) there is no open write-transaction, and
-        **   5) the database is not a WAL database,
+        **   5) the page is not in the WAL file
         **   6) all data from the page is being read.
         **   7) at least 4 bytes have already been read into the output buffer 
         **
@@ -4606,7 +4606,7 @@ static int accessPayload(
          && (bEnd || a==ovflSize)                              /* (6) */
          && pBt->inTransaction==TRANS_READ                     /* (4) */
          && (fd = sqlite3PagerFile(pBt->pPager))->pMethods     /* (3) */
-         && 0==sqlite3PagerUseWal(pBt->pPager)                 /* (5) */
+         && 0==sqlite3PagerUseWal(pBt->pPager, nextPage)       /* (5) */
          && &pBuf[-4]>=pBufStart                               /* (7) */
         ){
           u8 aSave[4];
