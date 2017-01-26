@@ -4683,7 +4683,7 @@ static SQLITE_NOINLINE int accessPayloadChecked(
     return SQLITE_ABORT;
   }
   assert( cursorOwnsBtShared(pCur) );
-  rc = restoreCursorPosition(pCur);
+  rc = btreeRestoreCursorPosition(pCur);
   return rc ? rc : accessPayload(pCur, offset, amt, pBuf, 0);
 }
 int sqlite3BtreePayloadChecked(BtCursor *pCur, u32 offset, u32 amt, void *pBuf){
