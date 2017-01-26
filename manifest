@@ -1,5 +1,5 @@
-C Minor\ssimplification\sand\sperformance\soptimization\sfor\sDirect\sOverflow\sRead.
-D 2017-01-26T16:27:32.813
+C Performance\soptimization\sto\ssqlite3_blob_read().
+D 2017-01-26T16:54:47.281
 F Makefile.in 5f415e7867296d678fed2e6779aea10c1318b4bc
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -333,7 +333,7 @@ F src/auth.c 930b376a9c56998557367e6f7f8aaeac82a2a792
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c a168da7c4fff00dbd939c49ad4445d378eff1b11
+F src/btree.c 6fe6a5853148b623c4f5e288ae916180632ebbd3
 F src/btree.h e6d352808956ec163a17f832193a3e198b3fb0ac
 F src/btreeInt.h 10c4b77c2fb399580babbcc7cf652ac10dba796e
 F src/build.c 9e799f1edd910dfa8a0bc29bd390d35d310596af
@@ -1547,7 +1547,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9879be1899adf5634f551a2077b15ccb1133e4e3
-R d7cd9a6ab86d59aef41165d7cf109b11
+P 3e96d6efa867b765c8acf1454014b1e71b2e4f21
+R 252dcd60be80c6c5c6ba84d2de14b6df
 U drh
-Z 50b1b915cab08ae10917e730aa3424e6
+Z 39fbcc21c34e29a424df0af03b3f8d43
