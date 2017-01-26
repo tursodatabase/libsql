@@ -1,3 +1,7 @@
+# Version 0.9.4 (2017-01-25)
+
+* Update dependencies.
+
 # Version 0.9.3 (2017-01-23)
 
 * Make `ToSqlOutput` itself implement `ToSql`.
