@@ -2,6 +2,7 @@ use super::{Null, Value, ValueRef};
 use ::Result;
 
 /// `ToSqlOutput` represents the possible output types for implementors of the `ToSql` trait.
+#[derive(Clone,Debug,PartialEq)]
 pub enum ToSqlOutput<'a> {
     /// A borrowed SQLite-representable value.
     Borrowed(ValueRef<'a>),
