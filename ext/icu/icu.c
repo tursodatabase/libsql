@@ -500,7 +500,7 @@ int sqlite3IcuInit(sqlite3 *db){
     unsigned char iContext;                   /* sqlite3_user_data() context */
     void (*xFunc)(sqlite3_context*,int,sqlite3_value**);
   } scalars[] = {
-    {"icu_load_collation",  2, SQLITE_UTF8,              255, icuLoadCollation},
+    {"icu_load_collation",  2, SQLITE_UTF8,                1, icuLoadCollation},
     {"regexp", 2, SQLITE_ANY|SQLITE_DETERMINISTIC,         0, icuRegexpFunc},
     {"lower",  1, SQLITE_UTF16|SQLITE_DETERMINISTIC,       0, icuCaseFunc16},
     {"lower",  2, SQLITE_UTF16|SQLITE_DETERMINISTIC,       0, icuCaseFunc16},
@@ -521,7 +521,7 @@ int sqlite3IcuInit(sqlite3 *db){
     const struct IcuScalar *p = &scalars[i];
     rc = sqlite3_create_function(
         db, p->zName, p->nArg, p->enc, 
-        p->iContext==255 ? (void*)db : (void*)(((char*)0)+p->iContext),
+        p->iContext ? (void*)db : (void*)0,
         p->xFunc, 0, 0
     );
   }
