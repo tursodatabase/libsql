@@ -1,3 +1,7 @@
+# Version 0.9.5 (2017-01-26)
+
+* Add impls of `Clone`, `Debug`, and `PartialEq` to `ToSqlOutput`.
+
 # Version 0.9.4 (2017-01-25)
 
 * Update dependencies.
