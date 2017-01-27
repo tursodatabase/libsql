@@ -199,6 +199,37 @@ if {$::tcl_platform(platform)=="unix"} {
   }
 }
 
+#-------------------------------------------------------------------------
+# Test the outcome of some other connection running a checkpoint while
+# the incremental checkpoint is suspended.
+#
+reset_db
+do_execsql_test 6.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+  CREATE INDEX i1b ON t1(b);
+  CREATE INDEX i1c ON t1(c);
+  INSERT INTO t1 VALUES(1, 2, 3);
+  INSERT INTO t1 VALUES(4, 5, 6);
+}
+forcedelete test.db2
+
+do_test 6.1 {
+  sqlite3rbu_vacuum rbu test.db test.db2
+  while {[rbu state]!="checkpoint"} { rbu step }
+  rbu close
+} {SQLITE_OK}
+
+do_execsql_test 6.2 {
+  SELECT 1 FROM sqlite_master LIMIT 1;
+  PRAGMA wal_checkpoint;
+} {1 0 4 4}
+
+do_test 6.3 {
+  sqlite3rbu_vacuum rbu test.db test.db2
+  while {[rbu step]!="SQLITE_DONE"} { rbu step }
+  rbu close
+  execsql { PRAGMA integrity_check }
+} {ok}
 
 finish_test
 

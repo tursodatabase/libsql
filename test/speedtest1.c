@@ -50,15 +50,16 @@ static const char zHelp[] =
 #include <stdarg.h>
 #include <string.h>
 #include <ctype.h>
-#include <unistd.h>
+#ifndef _WIN32
+# include <unistd.h>
+#else
+# include <io.h>
+#endif
 #define ISSPACE(X) isspace((unsigned char)(X))
 #define ISDIGIT(X) isdigit((unsigned char)(X))
 
 #if SQLITE_VERSION_NUMBER<3005000
 # define sqlite3_int64 sqlite_int64
-#endif
-#ifdef SQLITE_ENABLE_RBU
-# include "sqlite3rbu.h"
 #endif
 
 /* All global state is held in this structure */
@@ -1177,10 +1178,10 @@ void testset_rtree(int p1, int p2){
   unsigned mxCoord;
   unsigned x0, x1, y0, y1, z0, z1;
   unsigned iStep;
-  int *aCheck = sqlite3_malloc( sizeof(int)*g.szTest*100 );
+  int *aCheck = sqlite3_malloc( sizeof(int)*g.szTest*500 );
 
   mxCoord = 15000;
-  n = g.szTest*100;
+  n = g.szTest*500;
   speedtest1_begin_test(100, "%d INSERTs into an r-tree", n);
   speedtest1_exec("BEGIN");
   speedtest1_exec("CREATE VIRTUAL TABLE rt1 USING rtree(id,x0,x1,y0,y1,z0,z1)");
@@ -1203,11 +1204,11 @@ void testset_rtree(int p1, int p2){
   speedtest1_end_test();
 
   speedtest1_begin_test(101, "Copy from rtree to a regular table");
-  speedtest1_exec(" TABLE t1(id INTEGER PRIMARY KEY,x0,x1,y0,y1,z0,z1)");
+  speedtest1_exec("CREATE TABLE t1(id INTEGER PRIMARY KEY,x0,x1,y0,y1,z0,z1)");
   speedtest1_exec("INSERT INTO t1 SELECT * FROM rt1");
   speedtest1_end_test();
 
-  n = g.szTest*20;
+  n = g.szTest*100;
   speedtest1_begin_test(110, "%d one-dimensional intersect slice queries", n);
   speedtest1_prepare("SELECT count(*) FROM rt1 WHERE x0>=?1 AND x1<=?2");
   iStep = mxCoord/n;
@@ -1220,7 +1221,7 @@ void testset_rtree(int p1, int p2){
   speedtest1_end_test();
 
   if( g.bVerify ){
-    n = g.szTest*20;
+    n = g.szTest*100;
     speedtest1_begin_test(111, "Verify result from 1-D intersect slice queries");
     speedtest1_prepare("SELECT count(*) FROM t1 WHERE x0>=?1 AND x1<=?2");
     iStep = mxCoord/n;
@@ -1236,7 +1237,7 @@ void testset_rtree(int p1, int p2){
     speedtest1_end_test();
   }
   
-  n = g.szTest*20;
+  n = g.szTest*100;
   speedtest1_begin_test(120, "%d one-dimensional overlap slice queries", n);
   speedtest1_prepare("SELECT count(*) FROM rt1 WHERE y1>=?1 AND y0<=?2");
   iStep = mxCoord/n;
@@ -1249,7 +1250,7 @@ void testset_rtree(int p1, int p2){
   speedtest1_end_test();
 
   if( g.bVerify ){
-    n = g.szTest*20;
+    n = g.szTest*100;
     speedtest1_begin_test(121, "Verify result from 1-D overlap slice queries");
     speedtest1_prepare("SELECT count(*) FROM t1 WHERE y1>=?1 AND y0<=?2");
     iStep = mxCoord/n;
@@ -1266,7 +1267,7 @@ void testset_rtree(int p1, int p2){
   }
   
 
-  n = g.szTest*20;
+  n = g.szTest*100;
   speedtest1_begin_test(125, "%d custom geometry callback queries", n);
   sqlite3_rtree_geometry_callback(g.db, "xslice", xsliceGeometryCallback, 0);
   speedtest1_prepare("SELECT count(*) FROM rt1 WHERE id MATCH xslice(?1,?2)");
@@ -1282,7 +1283,7 @@ void testset_rtree(int p1, int p2){
   }
   speedtest1_end_test();
 
-  n = g.szTest*80;
+  n = g.szTest*400;
   speedtest1_begin_test(130, "%d three-dimensional intersect box queries", n);
   speedtest1_prepare("SELECT count(*) FROM rt1 WHERE x1>=?1 AND x0<=?2"
                      " AND y1>=?1 AND y0<=?2 AND z1>=?1 AND z0<=?2");
@@ -1295,7 +1296,7 @@ void testset_rtree(int p1, int p2){
   }
   speedtest1_end_test();
 
-  n = g.szTest*100;
+  n = g.szTest*500;
   speedtest1_begin_test(140, "%d rowid queries", n);
   speedtest1_prepare("SELECT * FROM rt1 WHERE id=?1");
   for(i=1; i<=n; i++){
@@ -1374,7 +1375,7 @@ int main(int argc, char **argv){
   int doIncrvac = 0;            /* True for --incrvacuum */
   const char *zJMode = 0;       /* Journal mode */
   const char *zKey = 0;         /* Encryption key */
-  int nLook = 0, szLook = 0;    /* --lookaside configuration */
+  int nLook = -1, szLook = 0;   /* --lookaside configuration */
   int noSync = 0;               /* True for --nosync */
   int pageSize = 0;             /* Desired page size.  0 means default */
   int nPCache = 0, szPCache = 0;/* --pcache configuration */
@@ -1454,11 +1455,6 @@ int main(int argc, char **argv){
         noSync = 1;
       }else if( strcmp(z,"notnull")==0 ){
         g.zNN = "NOT NULL";
-#ifdef SQLITE_ENABLE_RBU
-      }else if( strcmp(z,"rbu")==0 ){
-        sqlite3ota_create_vfs("rbu", 0);
-        sqlite3_vfs_register(sqlite3_vfs_find("rbu"), 1);
-#endif
       }else if( strcmp(z,"pagesize")==0 ){
         if( i>=argc-1 ) fatal_error("missing argument on %s\n", argv[i]);
         pageSize = integerValue(argv[++i]);
@@ -1558,7 +1554,7 @@ int main(int argc, char **argv){
     rc = sqlite3_config(SQLITE_CONFIG_SCRATCH, pScratch, szScratch, nScratch);
     if( rc ) fatal_error("scratch configuration failed: %d\n", rc);
   }
-  if( nLook>0 ){
+  if( nLook>=0 ){
     sqlite3_config(SQLITE_CONFIG_LOOKASIDE, 0, 0);
   }
 #endif

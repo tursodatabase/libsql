@@ -15,8 +15,6 @@
 ** table and column.
 */
 #include "sqliteInt.h"
-#include <stdlib.h>
-#include <string.h>
 
 /*
 ** Walk the expression tree pExpr and increase the aggregate function

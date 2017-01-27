@@ -61,32 +61,35 @@
 **       ./kvtest run x1 --count 10000 --max-id 1000000
 */
 static const char zHelp[] = 
-"Usage: kvhelp COMMAND ARGS...\n"
+"Usage: kvtest COMMAND ARGS...\n"
 "\n"
-"   kvhelp init DBFILE --count N --size M --pagesize X\n"
+"   kvtest init DBFILE --count N --size M --pagesize X\n"
 "\n"
 "        Generate a new test database file named DBFILE containing N\n"
 "        BLOBs each of size M bytes.  The page size of the new database\n"
 "        file will be X\n"
 "\n"
-"   kvhelp export DBFILE DIRECTORY\n"
+"   kvtest export DBFILE DIRECTORY\n"
 "\n"
 "        Export all the blobs in the kv table of DBFILE into separate\n"
 "        files in DIRECTORY.\n"
 "\n"
-"   kvhelp run DBFILE [options]\n"
+"   kvtest run DBFILE [options]\n"
 "\n"
 "        Run a performance test.  DBFILE can be either the name of a\n"
 "        database or a directory containing sample files.  Options:\n"
 "\n"
-"             --asc                Read blobs in ascending order\n"
-"             --blob-api           Use the BLOB API\n"
-"             --cache-size N       Database cache size\n"
-"             --count N            Read N blobs\n"
-"             --desc               Read blobs in descending order\n"
-"             --max-id N           Maximum blob key to use\n"
-"             --random             Read blobs in a random order\n"
-"             --start N            Start reading with this blob key\n"
+"           --asc                  Read blobs in ascending order\n"
+"           --blob-api             Use the BLOB API\n"
+"           --cache-size N         Database cache size\n"
+"           --count N              Read N blobs\n"
+"           --desc                 Read blobs in descending order\n"
+"           --max-id N             Maximum blob key to use\n"
+"           --mmap N               Mmap as much as N bytes of DBFILE\n"
+"           --jmode MODE           Set MODE journal mode prior to starting\n"
+"           --random               Read blobs in a random order\n"
+"           --start N              Start reading with this blob key\n"
+"           --stats                Output operating stats before exiting\n"
 ;
 
 /* Reference resources used */
@@ -130,6 +133,64 @@ static void fatalError(const char *zFormat, ...){
   fprintf(stdout, "\n");
   exit(1);
 }
+
+/*
+** Return the value of a hexadecimal digit.  Return -1 if the input
+** is not a hex digit.
+*/
+static int hexDigitValue(char c){
+  if( c>='0' && c<='9' ) return c - '0';
+  if( c>='a' && c<='f' ) return c - 'a' + 10;
+  if( c>='A' && c<='F' ) return c - 'A' + 10;
+  return -1;
+}
+
+/*
+** Interpret zArg as an integer value, possibly with suffixes.
+*/
+static int integerValue(const char *zArg){
+  int v = 0;
+  static const struct { char *zSuffix; int iMult; } aMult[] = {
+    { "KiB", 1024 },
+    { "MiB", 1024*1024 },
+    { "GiB", 1024*1024*1024 },
+    { "KB",  1000 },
+    { "MB",  1000000 },
+    { "GB",  1000000000 },
+    { "K",   1000 },
+    { "M",   1000000 },
+    { "G",   1000000000 },
+  };
+  int i;
+  int isNeg = 0;
+  if( zArg[0]=='-' ){
+    isNeg = 1;
+    zArg++;
+  }else if( zArg[0]=='+' ){
+    zArg++;
+  }
+  if( zArg[0]=='0' && zArg[1]=='x' ){
+    int x;
+    zArg += 2;
+    while( (x = hexDigitValue(zArg[0]))>=0 ){
+      v = (v<<4) + x;
+      zArg++;
+    }
+  }else{
+    while( zArg[0]>='0' && zArg[0]<='9' ){
+      v = v*10 + zArg[0] - '0';
+      zArg++;
+    }
+  }
+  for(i=0; i<sizeof(aMult)/sizeof(aMult[0]); i++){
+    if( sqlite3_stricmp(aMult[i].zSuffix, zArg)==0 ){
+      v *= aMult[i].iMult;
+      break;
+    }
+  }
+  return isNeg? -v : v;
+}
+
 
 /*
 ** Check the filesystem object zPath.  Determine what it is:
@@ -204,19 +265,19 @@ static int initMain(int argc, char **argv){
     if( z[1]=='-' ) z++;
     if( strcmp(z, "-count")==0 ){
       if( i==argc-1 ) fatalError("missing argument on \"%s\"", argv[i]);
-      nCount = atoi(argv[++i]);
+      nCount = integerValue(argv[++i]);
       if( nCount<1 ) fatalError("the --count must be positive");
       continue;
     }
     if( strcmp(z, "-size")==0 ){
       if( i==argc-1 ) fatalError("missing argument on \"%s\"", argv[i]);
-      sz = atoi(argv[++i]);
+      sz = integerValue(argv[++i]);
       if( sz<1 ) fatalError("the --size must be positive");
       continue;
     }
     if( strcmp(z, "-pagesize")==0 ){
       if( i==argc-1 ) fatalError("missing argument on \"%s\"", argv[i]);
-      pgsz = atoi(argv[++i]);
+      pgsz = integerValue(argv[++i]);
       if( pgsz<512 || pgsz>65536 || ((pgsz-1)&pgsz)!=0 ){
         fatalError("the --pagesize must be power of 2 between 512 and 65536");
       }
@@ -369,10 +430,124 @@ static sqlite3_int64 timeOfDay(void){
   return t;
 }
 
+#ifdef __linux__
+/*
+** Attempt to display I/O stats on Linux using /proc/PID/io
+*/
+static void displayLinuxIoStats(FILE *out){
+  FILE *in;
+  char z[200];
+  sqlite3_snprintf(sizeof(z), z, "/proc/%d/io", getpid());
+  in = fopen(z, "rb");
+  if( in==0 ) return;
+  while( fgets(z, sizeof(z), in)!=0 ){
+    static const struct {
+      const char *zPattern;
+      const char *zDesc;
+    } aTrans[] = {
+      { "rchar: ",                  "Bytes received by read():" },
+      { "wchar: ",                  "Bytes sent to write():"    },
+      { "syscr: ",                  "Read() system calls:"      },
+      { "syscw: ",                  "Write() system calls:"     },
+      { "read_bytes: ",             "Bytes read from storage:"  },
+      { "write_bytes: ",            "Bytes written to storage:" },
+      { "cancelled_write_bytes: ",  "Cancelled write bytes:"    },
+    };
+    int i;
+    for(i=0; i<sizeof(aTrans)/sizeof(aTrans[0]); i++){
+      int n = (int)strlen(aTrans[i].zPattern);
+      if( strncmp(aTrans[i].zPattern, z, n)==0 ){
+        fprintf(out, "%-36s %s", aTrans[i].zDesc, &z[n]);
+        break;
+      }
+    }
+  }
+  fclose(in);
+}
+#endif
+
+/*
+** Display memory stats.
+*/
+static int display_stats(
+  sqlite3 *db,                    /* Database to query */
+  int bReset                      /* True to reset SQLite stats */
+){
+  int iCur;
+  int iHiwtr;
+  FILE *out = stdout;
+
+  fprintf(out, "\n");
+
+  iHiwtr = iCur = -1;
+  sqlite3_status(SQLITE_STATUS_MEMORY_USED, &iCur, &iHiwtr, bReset);
+  fprintf(out,
+          "Memory Used:                         %d (max %d) bytes\n",
+          iCur, iHiwtr);
+  iHiwtr = iCur = -1;
+  sqlite3_status(SQLITE_STATUS_MALLOC_COUNT, &iCur, &iHiwtr, bReset);
+  fprintf(out, "Number of Outstanding Allocations:   %d (max %d)\n",
+          iCur, iHiwtr);
+  iHiwtr = iCur = -1;
+  sqlite3_status(SQLITE_STATUS_PAGECACHE_USED, &iCur, &iHiwtr, bReset);
+  fprintf(out,
+      "Number of Pcache Pages Used:         %d (max %d) pages\n",
+      iCur, iHiwtr);
+  iHiwtr = iCur = -1;
+  sqlite3_status(SQLITE_STATUS_PAGECACHE_OVERFLOW, &iCur, &iHiwtr, bReset);
+  fprintf(out,
+          "Number of Pcache Overflow Bytes:     %d (max %d) bytes\n",
+          iCur, iHiwtr);
+  iHiwtr = iCur = -1;
+  sqlite3_status(SQLITE_STATUS_SCRATCH_USED, &iCur, &iHiwtr, bReset);
+  fprintf(out,
+      "Number of Scratch Allocations Used:  %d (max %d)\n",
+      iCur, iHiwtr);
+  iHiwtr = iCur = -1;
+  sqlite3_status(SQLITE_STATUS_SCRATCH_OVERFLOW, &iCur, &iHiwtr, bReset);
+  fprintf(out,
+          "Number of Scratch Overflow Bytes:    %d (max %d) bytes\n",
+          iCur, iHiwtr);
+  iHiwtr = iCur = -1;
+  sqlite3_status(SQLITE_STATUS_MALLOC_SIZE, &iCur, &iHiwtr, bReset);
+  fprintf(out, "Largest Allocation:                  %d bytes\n",
+          iHiwtr);
+  iHiwtr = iCur = -1;
+  sqlite3_status(SQLITE_STATUS_PAGECACHE_SIZE, &iCur, &iHiwtr, bReset);
+  fprintf(out, "Largest Pcache Allocation:           %d bytes\n",
+          iHiwtr);
+  iHiwtr = iCur = -1;
+  sqlite3_status(SQLITE_STATUS_SCRATCH_SIZE, &iCur, &iHiwtr, bReset);
+  fprintf(out, "Largest Scratch Allocation:          %d bytes\n",
+          iHiwtr);
+
+  iHiwtr = iCur = -1;
+  sqlite3_db_status(db, SQLITE_DBSTATUS_CACHE_USED, &iCur, &iHiwtr, bReset);
+  fprintf(out, "Pager Heap Usage:                    %d bytes\n",
+      iCur);
+  iHiwtr = iCur = -1;
+  sqlite3_db_status(db, SQLITE_DBSTATUS_CACHE_HIT, &iCur, &iHiwtr, 1);
+  fprintf(out, "Page cache hits:                     %d\n", iCur);
+  iHiwtr = iCur = -1;
+  sqlite3_db_status(db, SQLITE_DBSTATUS_CACHE_MISS, &iCur, &iHiwtr, 1);
+  fprintf(out, "Page cache misses:                   %d\n", iCur);
+  iHiwtr = iCur = -1;
+  sqlite3_db_status(db, SQLITE_DBSTATUS_CACHE_WRITE, &iCur, &iHiwtr, 1);
+  fprintf(out, "Page cache writes:                   %d\n", iCur);
+  iHiwtr = iCur = -1;
+
+#ifdef __linux__
+  displayLinuxIoStats(out);
+#endif
+
+  return 0;
+}
+
 /* Blob access order */
 #define ORDER_ASC     1
 #define ORDER_DESC    2
 #define ORDER_RANDOM  3
+
 
 /*
 ** Run a performance test
@@ -385,19 +560,23 @@ static int runMain(int argc, char **argv){
   int nCount = 1000;          /* Number of blob fetch operations */
   int nExtra = 0;             /* Extra cycles */
   int iKey = 1;               /* Next blob key */
-  int iMax = 1000;            /* Largest allowed key */
+  int iMax = 0;               /* Largest allowed key */
   int iPagesize = 0;          /* Database page size */
   int iCache = 1000;          /* Database cache size in kibibytes */
   int bBlobApi = 0;           /* Use the incremental blob I/O API */
+  int bStats = 0;             /* Print stats before exiting */
   int eOrder = ORDER_ASC;     /* Access order */
   sqlite3 *db = 0;            /* Database connection */
   sqlite3_stmt *pStmt = 0;    /* Prepared statement for SQL access */
   sqlite3_blob *pBlob = 0;    /* Handle for incremental Blob I/O */
   sqlite3_int64 tmStart;      /* Start time */
   sqlite3_int64 tmElapsed;    /* Elapsed time */
+  int mmapSize = 0;           /* --mmap N argument */
   int nData = 0;              /* Bytes of data */
   sqlite3_int64 nTotal = 0;   /* Total data read */
-  unsigned char *pData;       /* Content of the blob */
+  unsigned char *pData = 0;   /* Content of the blob */
+  int nAlloc = 0;             /* Space allocated for pData[] */
+  const char *zJMode = 0;     /* Journal mode */
   
 
   assert( strcmp(argv[1],"run")==0 );
@@ -412,25 +591,35 @@ static int runMain(int argc, char **argv){
     if( z[1]=='-' ) z++;
     if( strcmp(z, "-count")==0 ){
       if( i==argc-1 ) fatalError("missing argument on \"%s\"", argv[i]);
-      nCount = atoi(argv[++i]);
+      nCount = integerValue(argv[++i]);
       if( nCount<1 ) fatalError("the --count must be positive");
+      continue;
+    }
+    if( strcmp(z, "-mmap")==0 ){
+      if( i==argc-1 ) fatalError("missing argument on \"%s\"", argv[i]);
+      mmapSize = integerValue(argv[++i]);
+      if( nCount<0 ) fatalError("the --mmap must be non-negative");
       continue;
     }
     if( strcmp(z, "-max-id")==0 ){
       if( i==argc-1 ) fatalError("missing argument on \"%s\"", argv[i]);
-      iMax = atoi(argv[++i]);
-      if( iMax<1 ) fatalError("the --max-id must be positive");
+      iMax = integerValue(argv[++i]);
       continue;
     }
     if( strcmp(z, "-start")==0 ){
       if( i==argc-1 ) fatalError("missing argument on \"%s\"", argv[i]);
-      iKey = atoi(argv[++i]);
+      iKey = integerValue(argv[++i]);
       if( iKey<1 ) fatalError("the --start must be positive");
       continue;
     }
     if( strcmp(z, "-cache-size")==0 ){
       if( i==argc-1 ) fatalError("missing argument on \"%s\"", argv[i]);
-      iCache = atoi(argv[++i]);
+      iCache = integerValue(argv[++i]);
+      continue;
+    }
+    if( strcmp(z, "-jmode")==0 ){
+      if( i==argc-1 ) fatalError("missing argument on \"%s\"", argv[i]);
+      zJMode = argv[++i];
       continue;
     }
     if( strcmp(z, "-random")==0 ){
@@ -449,6 +638,10 @@ static int runMain(int argc, char **argv){
       bBlobApi = 1;
       continue;
     }
+    if( strcmp(z, "-stats")==0 ){
+      bStats = 1;
+      continue;
+    }
     fatalError("unknown option: \"%s\"", argv[i]);
   }
   tmStart = timeOfDay();
@@ -458,6 +651,8 @@ static int runMain(int argc, char **argv){
     if( rc ){
       fatalError("cannot open database \"%s\": %s", zDb, sqlite3_errmsg(db));
     }
+    zSql = sqlite3_mprintf("PRAGMA mmap_size=%d", mmapSize);
+    sqlite3_exec(db, zSql, 0, 0, 0);
     zSql = sqlite3_mprintf("PRAGMA cache_size=%d", iCache);
     sqlite3_exec(db, zSql, 0, 0, 0);
     sqlite3_free(zSql);
@@ -475,8 +670,29 @@ static int runMain(int argc, char **argv){
     }
     sqlite3_finalize(pStmt);
     pStmt = 0;
+    if( zJMode ){
+      zSql = sqlite3_mprintf("PRAGMA journal_mode=%Q", zJMode);
+      sqlite3_exec(db, zSql, 0, 0, 0);
+      sqlite3_free(zSql);
+    }
+    sqlite3_prepare_v2(db, "PRAGMA journal_mode", -1, &pStmt, 0);
+    if( sqlite3_step(pStmt)==SQLITE_ROW ){
+      zJMode = sqlite3_mprintf("%s", sqlite3_column_text(pStmt, 0));
+    }else{
+      zJMode = "???";
+    }
+    sqlite3_finalize(pStmt);
+    if( iMax<=0 ){
+      sqlite3_prepare_v2(db, "SELECT max(k) FROM kv", -1, &pStmt, 0);
+      if( sqlite3_step(pStmt)==SQLITE_ROW ){
+        iMax = sqlite3_column_int(pStmt, 0);
+      }
+      sqlite3_finalize(pStmt);
+    }
+    pStmt = 0;
     sqlite3_exec(db, "BEGIN", 0, 0, 0);
   }
+  if( iMax<=0 ) iMax = 1000;
   for(i=0; i<nCount; i++){
     if( eType==PATH_DIR ){
       /* CASE 1: Reading blobs out of separate files */
@@ -499,14 +715,16 @@ static int runMain(int argc, char **argv){
       }
       if( rc==SQLITE_OK ){
         nData = sqlite3_blob_bytes(pBlob);
-        pData = sqlite3_malloc( nData+1 );
+        if( nAlloc<nData+1 ){
+          nAlloc = nData+100;
+          pData = sqlite3_realloc(pData, nAlloc);
+        }
         if( pData==0 ) fatalError("cannot allocate %d bytes", nData+1);
         rc = sqlite3_blob_read(pBlob, pData, nData, 0);
         if( rc!=SQLITE_OK ){
           fatalError("could not read the blob at %d: %s", iKey,
                      sqlite3_errmsg(db));
         }
-        sqlite3_free(pData);
       }
     }else{
       /* CASE 3: Reading from database using SQL */
@@ -540,8 +758,12 @@ static int runMain(int argc, char **argv){
     nTotal += nData;
     if( nData==0 ){ nCount++; nExtra++; }
   }
+  if( nAlloc ) sqlite3_free(pData);
   if( pStmt ) sqlite3_finalize(pStmt);
   if( pBlob ) sqlite3_blob_close(pBlob);
+  if( bStats ){
+    display_stats(db, 0);
+  }
   if( db ) sqlite3_close(db);
   tmElapsed = timeOfDay() - tmStart;
   if( nExtra ){
@@ -551,13 +773,14 @@ static int runMain(int argc, char **argv){
     printf("SQLite version: %s\n", sqlite3_libversion());
   }
   printf("--count %d --max-id %d", nCount-nExtra, iMax);
-  if( eType==PATH_DB ){
-    printf(" --cache-size %d", iCache);
-  }
   switch( eOrder ){
     case ORDER_RANDOM:  printf(" --random\n");  break;
     case ORDER_DESC:    printf(" --desc\n");    break;
     default:            printf(" --asc\n");     break;
+  }
+  if( eType==PATH_DB ){
+    printf("--cache-size %d --jmode %s\n", iCache, zJMode);
+    printf("--mmap %d%s\n", mmapSize, bBlobApi ? " --blob-api" : "");
   }
   if( iPagesize ) printf("Database page size: %d\n", iPagesize);
   printf("Total elapsed time: %.3f\n", tmElapsed/1000.0);

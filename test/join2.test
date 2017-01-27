@@ -12,10 +12,10 @@
 #
 # This file implements tests for joins, including outer joins.
 #
-# $Id: join2.test,v 1.2 2005/01/21 03:12:16 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix join2
 
 do_test join2-1.1 {
   execsql {
@@ -71,5 +71,25 @@ ifcapable subquery {
     }
   } {1 11 111 1111 2 22 {} {} 3 33 {} {}}
 }
+
+#-------------------------------------------------------------------------
+# Check that ticket [25e335f802ddc] has been resolved. It should be an
+# error for the ON clause of a LEFT JOIN to refer to a table to its right.
+#
+do_execsql_test 2.0 {
+  CREATE TABLE aa(a);
+  CREATE TABLE bb(b);
+  CREATE TABLE cc(c);
+  INSERT INTO aa VALUES('one');
+  INSERT INTO bb VALUES('one');
+  INSERT INTO cc VALUES('one');
+}
+
+do_catchsql_test 2.1 {
+  SELECT * FROM aa LEFT JOIN cc ON (a=b) JOIN bb ON (b=c);
+} {1 {ON clause references tables to its right}}
+do_catchsql_test 2.2 {
+  SELECT * FROM aa JOIN cc ON (a=b) JOIN bb ON (b=c);
+} {0 {one one one}}
 
 finish_test

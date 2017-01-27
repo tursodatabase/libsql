@@ -59,7 +59,6 @@ typedef struct et_info {   /* Information about each format field */
 ** Allowed values for et_info.flags
 */
 #define FLAG_SIGNED  1     /* True if the value to convert is signed */
-#define FLAG_INTERN  2     /* True if for internal use only */
 #define FLAG_STRING  4     /* Allow infinity precision */
 
 
@@ -93,11 +92,10 @@ static const et_info fmtinfo[] = {
   {  '%',  0, 0, etPERCENT,    0,  0 },
   {  'p', 16, 0, etPOINTER,    0,  1 },
 
-/* All the rest have the FLAG_INTERN bit set and are thus for internal
-** use only */
-  {  'T',  0, 2, etTOKEN,      0,  0 },
-  {  'S',  0, 2, etSRCLIST,    0,  0 },
-  {  'r', 10, 3, etORDINAL,    0,  0 },
+  /* All the rest are undocumented and are for internal use only */
+  {  'T',  0, 0, etTOKEN,      0,  0 },
+  {  'S',  0, 0, etSRCLIST,    0,  0 },
+  {  'r', 10, 1, etORDINAL,    0,  0 },
 };
 
 /*
@@ -191,7 +189,6 @@ void sqlite3VXPrintf(
   etByte done;               /* Loop termination flag */
   etByte xtype = etINVALID;  /* Conversion paradigm */
   u8 bArgList;               /* True for SQLITE_PRINTF_SQLFUNC */
-  u8 useIntern;              /* Ok to use internal conversions (ex: %T) */
   char prefix;               /* Prefix character.  "+" or "-" or " " or '\0'. */
   sqlite_uint64 longvalue;   /* Value for integer types */
   LONGDOUBLE_TYPE realvalue; /* Value for real types */
@@ -210,13 +207,11 @@ void sqlite3VXPrintf(
   char buf[etBUFSIZE];       /* Conversion buffer */
 
   bufpt = 0;
-  if( pAccum->printfFlags ){
-    if( (bArgList = (pAccum->printfFlags & SQLITE_PRINTF_SQLFUNC))!=0 ){
-      pArgList = va_arg(ap, PrintfArguments*);
-    }
-    useIntern = pAccum->printfFlags & SQLITE_PRINTF_INTERNAL;
+  if( (pAccum->printfFlags & SQLITE_PRINTF_SQLFUNC)!=0 ){
+    pArgList = va_arg(ap, PrintfArguments*);
+    bArgList = 1;
   }else{
-    bArgList = useIntern = 0;
+    bArgList = 0;
   }
   for(; (c=(*fmt))!=0; ++fmt){
     if( c!='%' ){
@@ -328,11 +323,7 @@ void sqlite3VXPrintf(
     for(idx=0; idx<ArraySize(fmtinfo); idx++){
       if( c==fmtinfo[idx].fmttype ){
         infop = &fmtinfo[idx];
-        if( useIntern || (infop->flags & FLAG_INTERN)==0 ){
-          xtype = infop->type;
-        }else{
-          return;
-        }
+        xtype = infop->type;
         break;
       }
     }
@@ -701,7 +692,9 @@ void sqlite3VXPrintf(
         break;
       }
       case etTOKEN: {
-        Token *pToken = va_arg(ap, Token*);
+        Token *pToken;
+        if( (pAccum->printfFlags & SQLITE_PRINTF_INTERNAL)==0 ) return;
+        pToken = va_arg(ap, Token*);
         assert( bArgList==0 );
         if( pToken && pToken->n ){
           sqlite3StrAccumAppend(pAccum, (const char*)pToken->z, pToken->n);
@@ -710,9 +703,13 @@ void sqlite3VXPrintf(
         break;
       }
       case etSRCLIST: {
-        SrcList *pSrc = va_arg(ap, SrcList*);
-        int k = va_arg(ap, int);
-        struct SrcList_item *pItem = &pSrc->a[k];
+        SrcList *pSrc;
+        int k;
+        struct SrcList_item *pItem;
+        if( (pAccum->printfFlags & SQLITE_PRINTF_INTERNAL)==0 ) return;
+        pSrc = va_arg(ap, SrcList*);
+        k = va_arg(ap, int);
+        pItem = &pSrc->a[k];
         assert( bArgList==0 );
         assert( k>=0 && k<pSrc->nSrc );
         if( pItem->zDatabase ){
@@ -734,9 +731,13 @@ void sqlite3VXPrintf(
     ** the output.
     */
     width -= length;
-    if( width>0 && !flag_leftjustify ) sqlite3AppendChar(pAccum, width, ' ');
-    sqlite3StrAccumAppend(pAccum, bufpt, length);
-    if( width>0 && flag_leftjustify ) sqlite3AppendChar(pAccum, width, ' ');
+    if( width>0 ){
+      if( !flag_leftjustify ) sqlite3AppendChar(pAccum, width, ' ');
+      sqlite3StrAccumAppend(pAccum, bufpt, length);
+      if( flag_leftjustify ) sqlite3AppendChar(pAccum, width, ' ');
+    }else{
+      sqlite3StrAccumAppend(pAccum, bufpt, length);
+    }
 
     if( zExtra ){
       sqlite3DbFree(pAccum->db, zExtra);

@@ -1503,7 +1503,7 @@ no_mem:
 ** Or:    (a,b,c) = (SELECT x,y,z FROM ....)
 **
 ** For each term of the vector assignment, append new entries to the
-** expression list pList.  In the case of a subquery on the LHS, append
+** expression list pList.  In the case of a subquery on the RHS, append
 ** TK_SELECT_COLUMN expressions.
 */
 ExprList *sqlite3ExprListAppendVector(
@@ -3612,6 +3612,11 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       u8 enc = ENC(db);      /* The text encoding used by this database */
       CollSeq *pColl = 0;    /* A collating sequence */
 
+      if( ConstFactorOk(pParse) && sqlite3ExprIsConstantNotJoin(pExpr) ){
+        /* SQL functions can be expensive. So try to move constant functions
+        ** out of the inner loop, even if that means an extra OP_Copy. */
+        return sqlite3ExprCodeAtInit(pParse, pExpr, -1);
+      }
       assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
       if( ExprHasProperty(pExpr, EP_TokenOnly) ){
         pFarg = 0;
@@ -3659,6 +3664,22 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
         assert( nFarg>=1 );
         return sqlite3ExprCodeTarget(pParse, pFarg->a[0].pExpr, target);
       }
+
+#ifdef SQLITE_DEBUG
+      /* The AFFINITY() function evaluates to a string that describes
+      ** the type affinity of the argument.  This is used for testing of
+      ** the SQLite type logic.
+      */
+      if( pDef->funcFlags & SQLITE_FUNC_AFFINITY ){
+        const char *azAff[] = { "blob", "text", "numeric", "integer", "real" };
+        char aff;
+        assert( nFarg==1 );
+        aff = sqlite3ExprAffinity(pFarg->a[0].pExpr);
+        sqlite3VdbeLoadString(v, target, 
+                              aff ? azAff[aff-SQLITE_AFF_BLOB] : "none");
+        return target;
+      }
+#endif
 
       for(i=0; i<nFarg; i++){
         if( i<32 && sqlite3ExprIsConstant(pFarg->a[i].pExpr) ){
@@ -3976,24 +3997,40 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
 
 /*
 ** Factor out the code of the given expression to initialization time.
+**
+** If regDest>=0 then the result is always stored in that register and the
+** result is not reusable.  If regDest<0 then this routine is free to 
+** store the value whereever it wants.  The register where the expression 
+** is stored is returned.  When regDest<0, two identical expressions will
+** code to the same register.
 */
-void sqlite3ExprCodeAtInit(
+int sqlite3ExprCodeAtInit(
   Parse *pParse,    /* Parsing context */
   Expr *pExpr,      /* The expression to code when the VDBE initializes */
-  int regDest,      /* Store the value in this register */
-  u8 reusable       /* True if this expression is reusable */
+  int regDest       /* Store the value in this register */
 ){
   ExprList *p;
   assert( ConstFactorOk(pParse) );
   p = pParse->pConstExpr;
+  if( regDest<0 && p ){
+    struct ExprList_item *pItem;
+    int i;
+    for(pItem=p->a, i=p->nExpr; i>0; pItem++, i--){
+      if( pItem->reusable && sqlite3ExprCompare(pItem->pExpr,pExpr,-1)==0 ){
+        return pItem->u.iConstExprReg;
+      }
+    }
+  }
   pExpr = sqlite3ExprDup(pParse->db, pExpr, 0);
   p = sqlite3ExprListAppend(pParse, p, pExpr);
   if( p ){
      struct ExprList_item *pItem = &p->a[p->nExpr-1];
+     pItem->reusable = regDest<0;
+     if( regDest<0 ) regDest = ++pParse->nMem;
      pItem->u.iConstExprReg = regDest;
-     pItem->reusable = reusable;
   }
   pParse->pConstExpr = p;
+  return regDest;
 }
 
 /*
@@ -4016,19 +4053,8 @@ int sqlite3ExprCodeTemp(Parse *pParse, Expr *pExpr, int *pReg){
    && pExpr->op!=TK_REGISTER
    && sqlite3ExprIsConstantNotJoin(pExpr)
   ){
-    ExprList *p = pParse->pConstExpr;
-    int i;
     *pReg  = 0;
-    if( p ){
-      struct ExprList_item *pItem;
-      for(pItem=p->a, i=p->nExpr; i>0; pItem++, i--){
-        if( pItem->reusable && sqlite3ExprCompare(pItem->pExpr,pExpr,-1)==0 ){
-          return pItem->u.iConstExprReg;
-        }
-      }
-    }
-    r2 = ++pParse->nMem;
-    sqlite3ExprCodeAtInit(pParse, pExpr, r2, 1);
+    r2 = sqlite3ExprCodeAtInit(pParse, pExpr, -1);
   }else{
     int r1 = sqlite3GetTempReg(pParse);
     r2 = sqlite3ExprCodeTarget(pParse, pExpr, r1);
@@ -4082,7 +4108,7 @@ void sqlite3ExprCodeCopy(Parse *pParse, Expr *pExpr, int target){
 */
 void sqlite3ExprCodeFactorable(Parse *pParse, Expr *pExpr, int target){
   if( pParse->okConstFactor && sqlite3ExprIsConstant(pExpr) ){
-    sqlite3ExprCodeAtInit(pParse, pExpr, target, 0);
+    sqlite3ExprCodeAtInit(pParse, pExpr, target);
   }else{
     sqlite3ExprCode(pParse, pExpr, target);
   }
@@ -4154,7 +4180,7 @@ int sqlite3ExprCodeExprList(
         sqlite3VdbeAddOp2(v, copyOp, j+srcReg-1, target+i);
       }
     }else if( (flags & SQLITE_ECEL_FACTOR)!=0 && sqlite3ExprIsConstant(pExpr) ){
-      sqlite3ExprCodeAtInit(pParse, pExpr, target+i, 0);
+      sqlite3ExprCodeAtInit(pParse, pExpr, target+i);
     }else{
       int inReg = sqlite3ExprCodeTarget(pParse, pExpr, target+i);
       if( inReg!=target+i ){

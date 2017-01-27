@@ -913,6 +913,7 @@ static void exprAnalyze(
   Parse *pParse = pWInfo->pParse;  /* Parsing context */
   sqlite3 *db = pParse->db;        /* Database connection */
   unsigned char eOp2;              /* op2 value for LIKE/REGEXP/GLOB */
+  int nLeft;                       /* Number of elements on left side vector */
 
   if( db->mallocFailed ){
     return;
@@ -942,6 +943,10 @@ static void exprAnalyze(
     prereqAll |= x;
     extraRight = x-1;  /* ON clause terms may not be used with an index
                        ** on left table of a LEFT JOIN.  Ticket #3015 */
+    if( (prereqAll>>1)>=x ){
+      sqlite3ErrorMsg(pParse, "ON clause references tables to its right");
+      return;
+    }
   }
   pTerm->prereqAll = prereqAll;
   pTerm->leftCursor = -1;
@@ -1184,13 +1189,12 @@ static void exprAnalyze(
   ** is not a sub-select.  */
   if( pWC->op==TK_AND 
   && (pExpr->op==TK_EQ || pExpr->op==TK_IS)
-  && sqlite3ExprIsVector(pExpr->pLeft)
+  && (nLeft = sqlite3ExprVectorSize(pExpr->pLeft))>1
+  && sqlite3ExprVectorSize(pExpr->pRight)==nLeft
   && ( (pExpr->pLeft->flags & EP_xIsSelect)==0 
-    || (pExpr->pRight->flags & EP_xIsSelect)==0
-  )){
-    int nLeft = sqlite3ExprVectorSize(pExpr->pLeft);
+    || (pExpr->pRight->flags & EP_xIsSelect)==0)
+  ){
     int i;
-    assert( nLeft==sqlite3ExprVectorSize(pExpr->pRight) );
     for(i=0; i<nLeft; i++){
       int idxNew;
       Expr *pNew;

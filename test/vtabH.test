@@ -121,29 +121,43 @@ if {$tcl_platform(platform)!="windows" || \
     SELECT name FROM fsdir WHERE dir = '.' AND name = '.'
   } {test.db .}
 
+  proc sort_files { names {nocase false} } {
+    if {$nocase && $::tcl_platform(platform) eq "windows"} {
+      return [lsort -nocase $names]
+    } else {
+      return [lsort $names]
+    }
+  }
+
   proc list_root_files {} {
     if {$::tcl_platform(platform) eq "windows"} {
-      set res [list]
-      foreach name [glob -directory $::env(fstreeDrive)/ -- *] {
+      set res [list]; set dir $::env(fstreeDrive)/; set names [list]
+      eval lappend names [glob -nocomplain -directory $dir -- *]
+      foreach name $names {
         if {[string index [file tail $name] 0] eq "."} continue
+        if {[file attributes $name -hidden]} continue
+        if {[file attributes $name -system]} continue
         lappend res $name
       }
-      return $res
+      return [sort_files $res true]
     } else {
-      return [string map {/ {}} [glob /*]]
+      return [sort_files [string map {/ {}} [glob -nocomplain -- /*]]]
     }
   }
 
   proc list_files { pattern } {
     if {$::tcl_platform(platform) eq "windows"} {
-      set res [list]
-      foreach name [glob -nocomplain $pattern] {
+      set res [list]; set names [list]
+      eval lappend names [glob -nocomplain -- $pattern]
+      foreach name $names {
         if {[string index [file tail $name] 0] eq "."} continue
+        if {[file attributes $name -hidden]} continue
+        if {[file attributes $name -system]} continue
         lappend res $name
       }
-      return $res
+      return [sort_files $res]
     } else {
-      return [glob -nocomplain $pattern]
+      return [sort_files [glob -nocomplain -- $pattern]]
     }
   }
 
@@ -153,18 +167,19 @@ if {$tcl_platform(platform)!="windows" || \
   #
   set res [list]
   set root_files [list_root_files]
-  set num_root_files [llength $root_files]
-  set lim_root_files [expr {$num_root_files > 5 ? 5 : $num_root_files}]
-  foreach p [lrange $root_files 0 [expr {$lim_root_files - 1}]] {
+  foreach p $root_files {
     if {$::tcl_platform(platform) eq "windows"} {
-      if {[regexp {\$} $p]} {incr lim_root_files -1} else {lappend res $p}
+      if {![regexp {\$} $p]} {lappend res $p}
     } else {
       lappend res "/$p"
     }
   }
-  do_execsql_test 3.1 [subst {
-    SELECT path FROM fstree WHERE path NOT GLOB '*\$*' LIMIT $lim_root_files;
-  }] $res
+  set num_root_files [llength $root_files]
+  do_test 3.1 {
+    sort_files [execsql {
+      SELECT path FROM fstree WHERE path NOT GLOB '*\$*' LIMIT $num_root_files;
+    }] true
+  } [sort_files $res true]
 
   # Read all entries in the current directory.
   #
@@ -182,7 +197,7 @@ if {$tcl_platform(platform)!="windows" || \
   set res [contents $pwd]
   do_execsql_test 3.2 {
     SELECT path FROM fstree WHERE path GLOB $pwd ORDER BY 1
-  } [lsort $res]
+  } [sort_files $res]
 
   # Add some sub-directories and files to the current directory.
   #

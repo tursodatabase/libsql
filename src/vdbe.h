@@ -41,8 +41,7 @@ typedef struct SubProgram SubProgram;
 struct VdbeOp {
   u8 opcode;          /* What operation to perform */
   signed char p4type; /* One of the P4_xxx constants for p4 */
-  u8 notUsed1;
-  u8 p5;              /* Fifth parameter is an unsigned character */
+  u16 p5;             /* Fifth parameter is an unsigned 16-bit integer */
   int p1;             /* First operand */
   int p2;             /* Second parameter (often the jump destination) */
   int p3;             /* The third parameter */
@@ -194,7 +193,7 @@ void sqlite3VdbeChangeOpcode(Vdbe*, u32 addr, u8);
 void sqlite3VdbeChangeP1(Vdbe*, u32 addr, int P1);
 void sqlite3VdbeChangeP2(Vdbe*, u32 addr, int P2);
 void sqlite3VdbeChangeP3(Vdbe*, u32 addr, int P3);
-void sqlite3VdbeChangeP5(Vdbe*, u8 P5);
+void sqlite3VdbeChangeP5(Vdbe*, u16 P5);
 void sqlite3VdbeJumpHere(Vdbe*, int addr);
 int sqlite3VdbeChangeToNoop(Vdbe*, int addr);
 int sqlite3VdbeDeletePriorOpcode(Vdbe*, u8 op);

@@ -355,4 +355,43 @@ do_execsql_test 16.2 {
   SELECT * FROM t16a;
 } {97 98 99}
 
+do_execsql_test 16.3 {
+  CREATE TABLE t16c(a, b, c, d, e);
+  INSERT INTO t16c VALUES(1, 'a', 'b', 'c', 'd');
+  CREATE TRIGGER t16c1 AFTER INSERT ON t16c BEGIN
+    UPDATE t16c SET (c, d) = (SELECT 'A', 'B'), (e, b) = (SELECT 'C', 'D')
+      WHERE a = new.a-1;
+  END;
+
+  SELECT * FROM t16c;
+} {1 a b c d}
+
+do_execsql_test 16.4 {
+  INSERT INTO t16c VALUES(2, 'w', 'x', 'y', 'z');
+  SELECT * FROM t16c;
+} {
+  1 D A B C 
+  2 w x y z
+}
+
+do_execsql_test 16.5 {
+  DROP TRIGGER t16c1;
+  PRAGMA recursive_triggers = 1;
+  INSERT INTO t16c VALUES(3, 'i', 'ii', 'iii', 'iv');
+  CREATE TRIGGER t16c1 AFTER UPDATE ON t16c WHEN new.a>1 BEGIN
+    UPDATE t16c SET (e, d) = (
+      SELECT b, c FROM t16c WHERE a = new.a-1
+    ), (c, b) = (
+      SELECT d, e FROM t16c WHERE a = new.a-1
+    ) WHERE a = new.a-1;
+  END;
+
+  UPDATE t16c SET a=a WHERE a=3;
+  SELECT * FROM t16c;
+} {
+  1 C B A D
+  2 z y x w
+  3 i ii iii iv
+}
+
 finish_test

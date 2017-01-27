@@ -1190,8 +1190,13 @@ LogEst$(TEXE):	$(TOP)/tool/logest.c sqlite3.h
 wordcount$(TEXE):	$(TOP)/test/wordcount.c sqlite3.lo
 	$(LTLINK) -o $@ $(TOP)/test/wordcount.c sqlite3.lo $(TLIBS)
 
-speedtest1$(TEXE):	$(TOP)/test/speedtest1.c sqlite3.lo
-	$(LTLINK) -o $@ $(TOP)/test/speedtest1.c sqlite3.lo $(TLIBS)
+speedtest1$(TEXE):	$(TOP)/test/speedtest1.c sqlite3.c
+	$(LTLINK) $(ST_OPT) -o $@ $(TOP)/test/speedtest1.c sqlite3.c $(TLIBS)
+
+KV_OPT += -DSQLITE_DIRECT_OVERFLOW_READ
+
+kvtest$(TEXE):	$(TOP)/test/kvtest.c sqlite3.c
+	$(LTLINK) $(KV_OPT) -o $@ $(TOP)/test/kvtest.c sqlite3.c $(TLIBS)
 
 rbu$(EXE): $(TOP)/ext/rbu/rbu.c $(TOP)/ext/rbu/sqlite3rbu.c sqlite3.lo 
 	$(LTLINK) -I. -o $@ $(TOP)/ext/rbu/rbu.c sqlite3.lo $(TLIBS)
