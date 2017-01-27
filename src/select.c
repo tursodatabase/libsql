@@ -596,7 +596,7 @@ static void pushOntoSorter(
     ** register is initialized with value of LIMIT+OFFSET.)  After the sorter
     ** fills up, delete the least entry in the sorter after each insert.
     ** Thus we never hold more than the LIMIT+OFFSET rows in memory at once */
-    addr = sqlite3VdbeAddOp3(v, OP_IfNotZero, iLimit, 0, 1); VdbeCoverage(v);
+    addr = sqlite3VdbeAddOp1(v, OP_IfNotZero, iLimit); VdbeCoverage(v);
     sqlite3VdbeAddOp1(v, OP_Last, pSort->iECursor);
     if( pSort->bOrderedInnerLoop ){
       r1 = ++pParse->nMem;
@@ -657,6 +657,7 @@ static void codeDistinct(
   sqlite3VdbeAddOp4Int(v, OP_Found, iTab, addrRepeat, iMem, N); VdbeCoverage(v);
   sqlite3VdbeAddOp3(v, OP_MakeRecord, iMem, N, r1);
   sqlite3VdbeAddOp4Int(v, OP_IdxInsert, iTab, r1, iMem, N);
+  sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
   sqlite3ReleaseTempReg(pParse, r1);
 }
 
@@ -742,8 +743,7 @@ static void selectInnerLoop(
     }else{
       ecelFlags = 0;
     }
-    assert( eDest!=SRT_Table || pSort==0 );
-    if( pSort && hasDistinct==0 && eDest!=SRT_EphemTab ){
+    if( pSort && hasDistinct==0 && eDest!=SRT_EphemTab && eDest!=SRT_Table ){
       /* For each expression in pEList that is a copy of an expression in
       ** the ORDER BY clause (pSort->pOrderBy), set the associated 
       ** iOrderByCol value to one more than the index of the ORDER BY 
@@ -1285,6 +1285,7 @@ static void generateSortTail(
     VdbeComment((v, "%s", aOutEx[i].zName ? aOutEx[i].zName : aOutEx[i].zSpan));
   }
   switch( eDest ){
+    case SRT_Table:
     case SRT_EphemTab: {
       sqlite3VdbeAddOp2(v, OP_NewRowid, iParm, regRowid);
       sqlite3VdbeAddOp3(v, OP_Insert, iParm, regRow, regRowid);
@@ -5651,7 +5652,7 @@ int sqlite3Select(
         ** of output.
         */
         resetAccumulator(pParse, &sAggInfo);
-        pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, pMinMax,0,flag,0);
+        pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, pMinMax, 0,flag,0);
         if( pWInfo==0 ){
           sqlite3ExprListDelete(db, pDel);
           goto select_end;

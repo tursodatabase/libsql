@@ -6,12 +6,14 @@
 #include <stdint.h>
 #include "sqlite3.h"
 
+#ifndef SQLITE_OMIT_PROGRESS_CALLBACK
 /*
 ** Progress handler callback
 */
 static int progress_handler(void *pReturn) {
   return *(int*)pReturn;
 }
+#endif
 
 /*
 ** Callback for sqlite3_exec().
@@ -53,11 +55,13 @@ int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
            SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_MEMORY, 0);
   if( rc ) return 0;
 
+#ifndef SQLITE_OMIT_PROGRESS_CALLBACK
   /* Bit 0 of the selector enables progress callbacks.  Bit 1 is the
   ** return code from progress callbacks */
   if( uSelector & 1 ){
     sqlite3_progress_handler(db, 4, progress_handler, (void*)&progressArg);
   }
+#endif
   uSelector >>= 1;
   progressArg = uSelector & 1;  uSelector >>= 1;
 

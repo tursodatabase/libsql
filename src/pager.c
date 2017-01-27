@@ -814,14 +814,20 @@ static const unsigned char aJournalMagic[] = {
 #define isOpen(pFd) ((pFd)->pMethods!=0)
 
 /*
-** Return true if this pager uses a write-ahead log instead of the usual
-** rollback journal. Otherwise false.
+** Return true if this pager uses a write-ahead log to read page pgno.
+** Return false if the pager reads pgno directly from the database.
 */
-#ifndef SQLITE_OMIT_WAL
-int sqlite3PagerUseWal(Pager *pPager){
-  return (pPager->pWal!=0);
+#if !defined(SQLITE_OMIT_WAL) && defined(SQLITE_DIRECT_OVERFLOW_READ)
+int sqlite3PagerUseWal(Pager *pPager, Pgno pgno){
+  u32 iRead = 0;
+  int rc;
+  if( pPager->pWal==0 ) return 0;
+  rc = sqlite3WalFindFrame(pPager->pWal, pgno, &iRead);
+  return rc || iRead;
 }
-# define pagerUseWal(x) sqlite3PagerUseWal(x)
+#endif
+#ifndef SQLITE_OMIT_WAL
+# define pagerUseWal(x) ((x)->pWal!=0)
 #else
 # define pagerUseWal(x) 0
 # define pagerRollbackWal(x) 0
@@ -3964,6 +3970,7 @@ static int pagerSyncHotJournal(Pager *pPager){
   return rc;
 }
 
+#if SQLITE_MAX_MMAP_SIZE>0
 /*
 ** Obtain a reference to a memory mapped page object for page number pgno. 
 ** The new object will use the pointer pData, obtained from xFetch().
@@ -4012,6 +4019,7 @@ static int pagerAcquireMapPage(
 
   return SQLITE_OK;
 }
+#endif
 
 /*
 ** Release a reference to page pPg. pPg must have been returned by an 
@@ -5371,6 +5379,7 @@ static int getPageNormal(
   assert( assert_pager_state(pPager) );
   assert( pPager->hasHeldSharedLock==1 );
 
+  if( pgno==0 ) return SQLITE_CORRUPT_BKPT;
   pBase = sqlite3PcacheFetch(pPager->pPCache, pgno, 3);
   if( pBase==0 ){
     pPg = 0;
@@ -5398,11 +5407,10 @@ static int getPageNormal(
     /* The pager cache has created a new page. Its content needs to 
     ** be initialized. But first some error checks:
     **
-    ** (1) Minimum page number is 1
-    ** (2) The maximum page number is 2^31
-    ** (3) Never try to fetch the locking page
+    ** (1) The maximum page number is 2^31
+    ** (2) Never try to fetch the locking page
     */
-    if( pgno==0 || pgno>PAGER_MAX_PGNO || pgno==PAGER_MJ_PGNO(pPager) ){
+    if( pgno>PAGER_MAX_PGNO || pgno==PAGER_MJ_PGNO(pPager) ){
       rc = SQLITE_CORRUPT_BKPT;
       goto pager_acquire_err;
     }

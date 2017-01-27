@@ -313,7 +313,7 @@ static void sqllogCopydb(struct SLConn *p, const char *zSearch, int bLog){
 
       /* Generate a file-name to use for the copy of this database */
       iDb = sqllogglobal.iNextDb++;
-      zInit = sqlite3_mprintf("%s_%d.db", sqllogglobal.zPrefix, iDb);
+      zInit = sqlite3_mprintf("%s_%02d.db", sqllogglobal.zPrefix, iDb);
 
       /* Create the backup */
       assert( sqllogglobal.bRec==0 );
@@ -376,7 +376,7 @@ static void sqllogOpenlog(struct SLConn *p){
       char *zVar = getenv(ENVIRONMENT_VARIABLE1_NAME);
       if( zVar==0 || strlen(zVar)+10>=(sizeof(sqllogglobal.zPrefix)) ) return;
       sqlite3_snprintf(sizeof(sqllogglobal.zPrefix), sqllogglobal.zPrefix,
-                        "%s/sqllog_%d", zVar, getProcessId());
+                        "%s/sqllog_%05d", zVar, getProcessId());
       sqlite3_snprintf(sizeof(sqllogglobal.zIdx), sqllogglobal.zIdx,
                         "%s.idx", sqllogglobal.zPrefix);
       if( getenv(ENVIRONMENT_VARIABLE2_NAME) ){
@@ -387,7 +387,7 @@ static void sqllogOpenlog(struct SLConn *p){
     }
 
     /* Open the log file */
-    zLog = sqlite3_mprintf("%s_%d.sql", sqllogglobal.zPrefix, p->iLog);
+    zLog = sqlite3_mprintf("%s_%05d.sql", sqllogglobal.zPrefix, p->iLog);
     p->fd = fopen(zLog, "w");
     sqlite3_free(zLog);
     if( p->fd==0 ){

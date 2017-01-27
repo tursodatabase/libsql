@@ -1010,6 +1010,7 @@ static SQLITE_NOINLINE const void *valueToText(sqlite3_value* pVal, u8 enc){
   assert( (pVal->flags & MEM_RowSet)==0 );
   assert( (pVal->flags & (MEM_Null))==0 );
   if( pVal->flags & (MEM_Blob|MEM_Str) ){
+    if( ExpandBlob(pVal) ) return 0;
     pVal->flags |= MEM_Str;
     if( pVal->enc != (enc & ~SQLITE_UTF16_ALIGNED) ){
       sqlite3VdbeChangeEncoding(pVal, enc & ~SQLITE_UTF16_ALIGNED);

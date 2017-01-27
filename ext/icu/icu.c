@@ -493,38 +493,36 @@ static void icuLoadCollation(
 ** Register the ICU extension functions with database db.
 */
 int sqlite3IcuInit(sqlite3 *db){
-  struct IcuScalar {
+  static const struct IcuScalar {
     const char *zName;                        /* Function name */
-    int nArg;                                 /* Number of arguments */
-    int enc;                                  /* Optimal text encoding */
-    void *pContext;                           /* sqlite3_user_data() context */
+    unsigned char nArg;                       /* Number of arguments */
+    unsigned short enc;                       /* Optimal text encoding */
+    unsigned char iContext;                   /* sqlite3_user_data() context */
     void (*xFunc)(sqlite3_context*,int,sqlite3_value**);
   } scalars[] = {
-    {"regexp", 2, SQLITE_ANY|SQLITE_DETERMINISTIC,          0, icuRegexpFunc},
-
-    {"lower",  1, SQLITE_UTF16|SQLITE_DETERMINISTIC,        0, icuCaseFunc16},
-    {"lower",  2, SQLITE_UTF16|SQLITE_DETERMINISTIC,        0, icuCaseFunc16},
-    {"upper",  1, SQLITE_UTF16|SQLITE_DETERMINISTIC, (void*)1, icuCaseFunc16},
-    {"upper",  2, SQLITE_UTF16|SQLITE_DETERMINISTIC, (void*)1, icuCaseFunc16},
-
-    {"lower",  1, SQLITE_UTF8|SQLITE_DETERMINISTIC,         0, icuCaseFunc16},
-    {"lower",  2, SQLITE_UTF8|SQLITE_DETERMINISTIC,         0, icuCaseFunc16},
-    {"upper",  1, SQLITE_UTF8|SQLITE_DETERMINISTIC,  (void*)1, icuCaseFunc16},
-    {"upper",  2, SQLITE_UTF8|SQLITE_DETERMINISTIC,  (void*)1, icuCaseFunc16},
-
-    {"like",   2, SQLITE_UTF8|SQLITE_DETERMINISTIC,         0, icuLikeFunc},
-    {"like",   3, SQLITE_UTF8|SQLITE_DETERMINISTIC,         0, icuLikeFunc},
-
-    {"icu_load_collation",  2, SQLITE_UTF8, (void*)db, icuLoadCollation},
+    {"icu_load_collation",  2, SQLITE_UTF8,                1, icuLoadCollation},
+    {"regexp", 2, SQLITE_ANY|SQLITE_DETERMINISTIC,         0, icuRegexpFunc},
+    {"lower",  1, SQLITE_UTF16|SQLITE_DETERMINISTIC,       0, icuCaseFunc16},
+    {"lower",  2, SQLITE_UTF16|SQLITE_DETERMINISTIC,       0, icuCaseFunc16},
+    {"upper",  1, SQLITE_UTF16|SQLITE_DETERMINISTIC,       1, icuCaseFunc16},
+    {"upper",  2, SQLITE_UTF16|SQLITE_DETERMINISTIC,       1, icuCaseFunc16},
+    {"lower",  1, SQLITE_UTF8|SQLITE_DETERMINISTIC,        0, icuCaseFunc16},
+    {"lower",  2, SQLITE_UTF8|SQLITE_DETERMINISTIC,        0, icuCaseFunc16},
+    {"upper",  1, SQLITE_UTF8|SQLITE_DETERMINISTIC,        1, icuCaseFunc16},
+    {"upper",  2, SQLITE_UTF8|SQLITE_DETERMINISTIC,        1, icuCaseFunc16},
+    {"like",   2, SQLITE_UTF8|SQLITE_DETERMINISTIC,        0, icuLikeFunc},
+    {"like",   3, SQLITE_UTF8|SQLITE_DETERMINISTIC,        0, icuLikeFunc},
   };
-
   int rc = SQLITE_OK;
   int i;
 
+  
   for(i=0; rc==SQLITE_OK && i<(int)(sizeof(scalars)/sizeof(scalars[0])); i++){
-    struct IcuScalar *p = &scalars[i];
+    const struct IcuScalar *p = &scalars[i];
     rc = sqlite3_create_function(
-        db, p->zName, p->nArg, p->enc, p->pContext, p->xFunc, 0, 0
+        db, p->zName, p->nArg, p->enc, 
+        p->iContext ? (void*)db : (void*)0,
+        p->xFunc, 0, 0
     );
   }
 

@@ -227,6 +227,56 @@ static void traceNoop(void *NotUsed, const char *zMsg){
 #endif
 
 /***************************************************************************
+** String accumulator object
+*/
+typedef struct Str Str;
+struct Str {
+  char *z;                /* The string.  Memory from malloc() */
+  sqlite3_uint64 n;       /* Bytes of input used */
+  sqlite3_uint64 nAlloc;  /* Bytes allocated to z[] */
+  int oomErr;             /* OOM error has been seen */
+};
+
+/* Initialize a Str object */
+static void StrInit(Str *p){
+  memset(p, 0, sizeof(*p));
+}
+
+/* Append text to the end of a Str object */
+static void StrAppend(Str *p, const char *z){
+  sqlite3_uint64 n = strlen(z);
+  if( p->n + n >= p->nAlloc ){
+    char *zNew;
+    sqlite3_uint64 nNew;
+    if( p->oomErr ) return;
+    nNew = p->nAlloc*2 + 100 + n;
+    zNew = sqlite3_realloc(p->z, nNew);
+    if( zNew==0 ){
+      sqlite3_free(p->z);
+      memset(p, 0, sizeof(*p));
+      p->oomErr = 1;
+      return;
+    }
+    p->z = zNew;
+    p->nAlloc = nNew;
+  }
+  memcpy(p->z + p->n, z, n);
+  p->n += n;
+  p->z[p->n] = 0;
+}
+
+/* Return the current string content */
+static char *StrStr(Str *p){
+ return p->z;
+}
+
+/* Free the string */
+static void StrFree(Str *p){
+  sqlite3_free(p->z);
+  StrInit(p);
+}
+
+/***************************************************************************
 ** eval() implementation copied from ../ext/misc/eval.c
 */
 /*
@@ -1028,6 +1078,8 @@ int main(int argc, char **argv){
         oomCnt = 0;
       }
       do{
+        Str sql;
+        StrInit(&sql);
         if( zDbName ){
           rc = sqlite3_open_v2(zDbName, &db, SQLITE_OPEN_READWRITE, 0);
           if( rc!=SQLITE_OK ){
@@ -1057,6 +1109,25 @@ int main(int argc, char **argv){
         if( pageSize ) sqlexec(db, "PRAGMA pagesize=%d", pageSize);
         if( doAutovac ) sqlexec(db, "PRAGMA auto_vacuum=FULL");
         iStart = timeOfDay();
+
+        /* If using an input database file and that database contains a table
+        ** named "autoexec" with a column "sql", then replace the input SQL
+        ** with the concatenated text of the autoexec table.  In this way,
+        ** if the database file is the input being fuzzed, the SQL text is
+        ** fuzzed at the same time. */
+        if( sqlite3_table_column_metadata(db,0,"autoexec","sql",0,0,0,0,0)==0 ){
+          sqlite3_stmt *pStmt;
+          rc = sqlite3_prepare_v2(db, "SELECT sql FROM autoexec", -1, &pStmt, 0);
+          if( rc==SQLITE_OK ){
+            while( sqlite3_step(pStmt)==SQLITE_ROW ){
+              StrAppend(&sql, (const char*)sqlite3_column_text(pStmt, 0));
+              StrAppend(&sql, "\n");
+            }
+          }
+          sqlite3_finalize(pStmt);
+          zSql = StrStr(&sql);
+        }
+
         g.bOomEnable = 1;
         if( verboseFlag ){
           zErrMsg = 0;
@@ -1070,6 +1141,7 @@ int main(int argc, char **argv){
         }
         g.bOomEnable = 0;
         iEnd = timeOfDay();
+        StrFree(&sql);
         rc = sqlite3_close(db);
         if( rc ){
           abendError("sqlite3_close() failed with rc=%d", rc);

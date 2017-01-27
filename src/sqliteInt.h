@@ -110,6 +110,14 @@
 # define GCC_VERSION 0
 #endif
 
+/* What version of CLANG is being used.  0 means CLANG is not being used */
+#if defined(__clang__) && !defined(_WIN32)
+# define CLANG_VERSION \
+            (__clang_major__*1000000+__clang_minor__*1000+__clang_patchlevel__)
+#else
+# define CLANG_VERSION 0
+#endif
+
 /* Needed for various definitions... */
 #if defined(__GNUC__) && !defined(_GNU_SOURCE)
 # define _GNU_SOURCE
@@ -504,6 +512,18 @@
 #include <stddef.h>
 
 /*
+** Use a macro to replace memcpy() if compiled with SQLITE_INLINE_MEMCPY.
+** This allows better measurements of where memcpy() is used when running
+** cachegrind.  But this macro version of memcpy() is very slow so it
+** should not be used in production.  This is a performance measurement
+** hack only.
+*/
+#ifdef SQLITE_INLINE_MEMCPY
+# define memcpy(D,S,N) {char*xxd=(char*)(D);const char*xxs=(const char*)(S);\
+                        int xxn=(N);while(xxn-->0)*(xxd++)=*(xxs++);}
+#endif
+
+/*
 ** If compiling for a processor that lacks floating point support,
 ** substitute integer for floating-point
 */
@@ -587,9 +607,12 @@
 ** pagecaches for each database connection.  A positive number is the
 ** number of pages.  A negative number N translations means that a buffer
 ** of -1024*N bytes is allocated and used for as many pages as it will hold.
+**
+** The default value of "20" was choosen to minimize the run-time of the
+** speedtest1 test program with options: --shrink-memory --reprepare
 */
 #ifndef SQLITE_DEFAULT_PCACHE_INITSZ
-# define SQLITE_DEFAULT_PCACHE_INITSZ 100
+# define SQLITE_DEFAULT_PCACHE_INITSZ 20
 #endif
 
 /*
@@ -1046,6 +1069,14 @@ typedef struct Walker Walker;
 typedef struct WhereInfo WhereInfo;
 typedef struct With With;
 
+/* A VList object records a mapping between parameters/variables/wildcards
+** in the SQL statement (such as $abc, @pqr, or :xyz) and the integer
+** variable number associated with that parameter.  See the format description
+** on the sqlite3VListAdd() routine for more information.  A VList is really
+** just an array of integers.
+*/
+typedef int VList;
+
 /*
 ** Defer sourcing vdbe.h and btree.h until after the "u8" and
 ** "BusyHandler" typedefs. vdbe.h also requires a few of the opaque
@@ -1288,6 +1319,7 @@ struct sqlite3 {
   u8 vtabOnConflict;            /* Value to return for s3_vtab_on_conflict() */
   u8 isTransactionSavepoint;    /* True if the outermost savepoint is a TS */
   u8 mTrace;                    /* zero or more SQLITE_TRACE flags */
+  u8 skipBtreeMutex;            /* True if no shared-cache backends */
   int nextPagesize;             /* Pagesize after VACUUM if >0 */
   u32 magic;                    /* Magic number for detect library misuse */
   int nChange;                  /* Value returned by sqlite3_changes() */
@@ -1553,6 +1585,7 @@ struct FuncDestructor {
 #define SQLITE_FUNC_MINMAX   0x1000 /* True for min() and max() aggregates */
 #define SQLITE_FUNC_SLOCHNG  0x2000 /* "Slow Change". Value constant during a
                                     ** single query - might change over time */
+#define SQLITE_FUNC_AFFINITY 0x4000 /* Built-in affinity() function */
 
 /*
 ** The following three macros, FUNCTION(), LIKEFUNC() and AGGREGATE() are
@@ -2952,7 +2985,6 @@ struct Parse {
 
   Token sLastToken;       /* The last token parsed */
   ynVar nVar;               /* Number of '?' variables seen in the SQL so far */
-  int nzVar;                /* Number of available slots in azVar[] */
   u8 iPkSortOrder;          /* ASC or DESC for INTEGER PRIMARY KEY */
   u8 explain;               /* True if the EXPLAIN flag is found on the query */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
@@ -2964,7 +2996,7 @@ struct Parse {
   int iSelectId;            /* ID of current select for EXPLAIN output */
   int iNextSelectId;        /* Next available select ID for EXPLAIN output */
 #endif
-  char **azVar;             /* Pointers to names of parameters */
+  VList *pVList;            /* Mapping between variable names and numbers */
   Vdbe *pReprepare;         /* VM being reprepared (sqlite3Reprepare()) */
   const char *zTail;        /* All SQL text past the last semicolon parsed */
   Table *pNewTable;         /* A table being constructed by CREATE TABLE */
@@ -3021,7 +3053,7 @@ struct AuthContext {
 #define OPFLAG_NCHANGE       0x01    /* OP_Insert: Set to update db->nChange */
                                      /* Also used in P2 (not P5) of OP_Delete */
 #define OPFLAG_EPHEM         0x01    /* OP_Column: Ephemeral output is ok */
-#define OPFLAG_LASTROWID     0x02    /* Set to update db->lastRowid */
+#define OPFLAG_LASTROWID     0x20    /* Set to update db->lastRowid */
 #define OPFLAG_ISUPDATE      0x04    /* This OP_Insert is an sql UPDATE */
 #define OPFLAG_APPEND        0x08    /* This is likely to be an append */
 #define OPFLAG_USESEEKRESULT 0x10    /* Try to avoid a seek in BtreeInsert() */
@@ -3035,7 +3067,7 @@ struct AuthContext {
 #define OPFLAG_FORDELETE     0x08    /* OP_Open should use BTREE_FORDELETE */
 #define OPFLAG_P2ISREG       0x10    /* P2 to OP_Open** is a register number */
 #define OPFLAG_PERMUTE       0x01    /* OP_Compare: use the permutation */
-#define OPFLAG_SAVEPOSITION  0x02    /* OP_Delete: keep cursor position */
+#define OPFLAG_SAVEPOSITION  0x02    /* OP_Delete/Insert: save cursor pos */
 #define OPFLAG_AUXDELETE     0x04    /* OP_Delete: index in a DELETE op */
 
 /*
@@ -3696,7 +3728,7 @@ void sqlite3ExprCacheAffinityChange(Parse*, int, int);
 void sqlite3ExprCode(Parse*, Expr*, int);
 void sqlite3ExprCodeCopy(Parse*, Expr*, int);
 void sqlite3ExprCodeFactorable(Parse*, Expr*, int);
-void sqlite3ExprCodeAtInit(Parse*, Expr*, int, u8);
+int sqlite3ExprCodeAtInit(Parse*, Expr*, int);
 int sqlite3ExprCodeTemp(Parse*, Expr*, int*);
 int sqlite3ExprCodeTarget(Parse*, Expr*, int);
 void sqlite3ExprCodeAndCache(Parse*, Expr*, int);
@@ -3758,6 +3790,11 @@ int sqlite3GenerateIndexKey(Parse*, Index*, int, int, int, int*,Index*,int);
 void sqlite3ResolvePartIdxLabel(Parse*,int);
 void sqlite3GenerateConstraintChecks(Parse*,Table*,int*,int,int,int,int,
                                      u8,u8,int,int*,int*);
+#ifdef SQLITE_ENABLE_NULL_TRIM
+  void sqlite3SetMakeRecordP5(Vdbe*,Table*);
+#else
+# define sqlite3SetMakeRecordP5(A,B)
+#endif
 void sqlite3CompleteInsertion(Parse*,Table*,int,int,int,int*,int,int,int);
 int sqlite3OpenTableAndIndices(Parse*, Table*, int, u8, int, u8*, int*, int*);
 void sqlite3BeginWriteOperation(Parse*, int, int);
@@ -3864,6 +3901,9 @@ LogEst sqlite3LogEstFromDouble(double);
     defined(SQLITE_EXPLAIN_ESTIMATED_ROWS)
 u64 sqlite3LogEstToInt(LogEst);
 #endif
+VList *sqlite3VListAdd(sqlite3*,VList*,const char*,int,int);
+const char *sqlite3VListNumToName(VList*,int);
+int sqlite3VListNameToNum(VList*,const char*,int);
 
 /*
 ** Routines to read and write variable-length integers.  These used to

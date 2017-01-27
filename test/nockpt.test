@@ -19,10 +19,15 @@ source $testdir/lock_common.tcl
 source $testdir/malloc_common.tcl
 source $testdir/wal_common.tcl
 ifcapable !wal {finish_test ; return }
+if {[permutation]=="journaltest" || [permutation]=="inmemory_journal"} {
+  finish_test
+  return
+}
 
 set testprefix nockpt
 
 do_execsql_test 1.0 {
+  PRAGMA auto_vacuum=OFF;
   PRAGMA page_size = 1024;
   PRAGMA journal_mode = wal;
   CREATE TABLE c1(x, y, z);

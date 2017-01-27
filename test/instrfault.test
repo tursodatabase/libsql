@@ -29,6 +29,8 @@ foreach {enc} {
   utf16
 } {
   reset_db
+  sqlite3_db_config_lookaside db 0 0 0
+
   execsql "PRAGMA encoding = $enc"
   do_execsql_test 1.$enc.1 {
     CREATE TABLE t1(n, h);
@@ -63,6 +65,28 @@ foreach {enc} {
     faultsim_test_result {0 31}
     sqlite3_finalize $::stmt
   }
+
+  do_faultsim_test 1.$enc.4 -faults oom-t* -prep {
+    set ::stmt [sqlite3_prepare_v2 db "SELECT instr(?, ?)" -1 dummy]
+    sqlite3_bind_blob $::stmt 1 $::HAYSTACK [string length $::HAYSTACK]
+    sqlite3_bind_text $::stmt 2 $::NEEDLE [string length $::NEEDLE]
+  } -body {
+    set rc [sqlite3_step $::stmt]
+    if {$rc=="SQLITE_NOMEM"} { error "out of memory" }
+    sqlite3_column_int $::stmt 0
+  } -test {
+    faultsim_test_result {0 31}
+    sqlite3_finalize $::stmt
+  }
+
+  do_execsql_test 1.$enc.5.0 {
+    CREATE TABLE h1(a, b);
+    INSERT INTO h1 VALUES('abcdefg%200hijkl', randomblob(200));
+    INSERT INTO h1 SELECT b, a FROM h1;
+  }
+  do_faultsim_test 1.$enc.5 -faults oom-t* -body {
+    execsql { SELECT rowid FROM h1 WHERE instr(a,b) }
+  } -test {}
 }
 
 finish_test

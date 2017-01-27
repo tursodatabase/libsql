@@ -1615,7 +1615,7 @@ static void initAvgEq(Index *pIdx){
         }
       }
 
-      if( nDist100>nSum100 ){
+      if( nDist100>nSum100 && sumEq<nRow ){
         avgEq = ((i64)100 * (nRow - sumEq))/(nDist100 - nSum100);
       }
       if( avgEq==0 ) avgEq = 1;
@@ -1766,7 +1766,9 @@ static int loadStatTbl(
       sqlite3_finalize(pStmt);
       return SQLITE_NOMEM_BKPT;
     }
-    memcpy(pSample->p, sqlite3_column_blob(pStmt, 4), pSample->n);
+    if( pSample->n ){
+      memcpy(pSample->p, sqlite3_column_blob(pStmt, 4), pSample->n);
+    }
     pIdx->nSample++;
   }
   rc = sqlite3_finalize(pStmt);

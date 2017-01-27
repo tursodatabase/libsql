@@ -183,16 +183,24 @@ int sqlite3BtreeHoldsMutex(Btree *p){
 ** two or more btrees in common both try to lock all their btrees
 ** at the same instant.
 */
-void sqlite3BtreeEnterAll(sqlite3 *db){
+static void SQLITE_NOINLINE btreeEnterAll(sqlite3 *db){
   int i;
+  int skipOk = 1;
   Btree *p;
   assert( sqlite3_mutex_held(db->mutex) );
   for(i=0; i<db->nDb; i++){
     p = db->aDb[i].pBt;
-    if( p ) sqlite3BtreeEnter(p);
+    if( p && p->sharable ){
+      sqlite3BtreeEnter(p);
+      skipOk = 0;
+    }
   }
+  db->skipBtreeMutex = skipOk;
 }
-void sqlite3BtreeLeaveAll(sqlite3 *db){
+void sqlite3BtreeEnterAll(sqlite3 *db){
+  if( db->skipBtreeMutex==0 ) btreeEnterAll(db);
+}
+static void SQLITE_NOINLINE btreeLeaveAll(sqlite3 *db){
   int i;
   Btree *p;
   assert( sqlite3_mutex_held(db->mutex) );
@@ -200,6 +208,9 @@ void sqlite3BtreeLeaveAll(sqlite3 *db){
     p = db->aDb[i].pBt;
     if( p ) sqlite3BtreeLeave(p);
   }
+}
+void sqlite3BtreeLeaveAll(sqlite3 *db){
+  if( db->skipBtreeMutex==0 ) btreeLeaveAll(db);
 }
 
 #ifndef NDEBUG

@@ -477,6 +477,9 @@ SHELL_OPT += -DSQLITE_ENABLE_EXPLAIN_COMMENTS
 SHELL_OPT += -DSQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
 FUZZERSHELL_OPT = -DSQLITE_ENABLE_JSON1
 FUZZCHECK_OPT = -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_MEMSYS5
+DBFUZZ_OPT =
+KV_OPT = -DSQLITE_THREADSAFE=0 -DSQLITE_DIRECT_OVERFLOW_READ
+ST_OPT = -DSQLITE_THREADSAFE=0
 
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
@@ -515,6 +518,11 @@ sourcetest:	srcck1$(EXE) sqlite3.c
 fuzzershell$(EXE):	$(TOP)/tool/fuzzershell.c sqlite3.c sqlite3.h
 	$(TCCX) -o fuzzershell$(EXE) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
 	  $(FUZZERSHELL_OPT) $(TOP)/tool/fuzzershell.c sqlite3.c \
+	  $(TLIBS) $(THREADLIB)
+
+dbfuzz$(EXE):	$(TOP)/test/dbfuzz.c sqlite3.c sqlite3.h
+	$(TCCX) -o dbfuzz$(EXE) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
+	  $(DBFUZZ_OPT) $(TOP)/test/dbfuzz.c sqlite3.c \
 	  $(TLIBS) $(THREADLIB)
 
 fuzzcheck$(EXE):	$(TOP)/test/fuzzcheck.c sqlite3.c sqlite3.h $(TOP)/test/ossfuzz.c
@@ -890,8 +898,11 @@ wordcount$(EXE):	$(TOP)/test/wordcount.c sqlite3.c
 	$(TCC) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o wordcount$(EXE) \
 		$(TOP)/test/wordcount.c sqlite3.c
 
-speedtest1$(EXE):	$(TOP)/test/speedtest1.c sqlite3.o
-	$(TCC) -I. $(OTAFLAGS) -o speedtest1$(EXE) $(TOP)/test/speedtest1.c sqlite3.o $(THREADLIB) 
+speedtest1$(EXE):	$(TOP)/test/speedtest1.c sqlite3.c
+	$(TCCX) -I. $(ST_OPT) -o speedtest1$(EXE) $(TOP)/test/speedtest1.c sqlite3.c $(THREADLIB) 
+
+kvtest$(EXE):	$(TOP)/test/kvtest.c sqlite3.c
+	$(TCCX) -I. $(KV+OPT) -o kvtest$(EXE) $(TOP)/test/kvtest.c sqlite3.c $(THREADLIB) 
 
 rbu$(EXE): $(TOP)/ext/rbu/rbu.c $(TOP)/ext/rbu/sqlite3rbu.c sqlite3.o 
 	$(TCC) -I. -o rbu$(EXE) $(TOP)/ext/rbu/rbu.c sqlite3.o \

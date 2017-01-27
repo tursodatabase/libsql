@@ -374,9 +374,7 @@ static int sessionSerializeValue(
   
         if( aBuf ){
           sessionVarintPut(&aBuf[1], n);
-          memcpy(&aBuf[nVarint + 1], eType==SQLITE_TEXT ? 
-              sqlite3_value_text(pValue) : sqlite3_value_blob(pValue), n
-          );
+          if( n ) memcpy(&aBuf[nVarint + 1], z, n);
         }
   
         nByte = 1 + nVarint + n;
@@ -1792,7 +1790,7 @@ static void sessionAppendBlob(
   int nBlob, 
   int *pRc
 ){
-  if( 0==sessionBufferGrow(p, nBlob, pRc) ){
+  if( nBlob>0 && 0==sessionBufferGrow(p, nBlob, pRc) ){
     memcpy(&p->aBuf[p->nBuf], aBlob, nBlob);
     p->nBuf += nBlob;
   }
@@ -1978,13 +1976,13 @@ static int sessionAppendUpdate(
       }
 
       default: {
-        int nByte;
-        int nHdr = 1 + sessionVarintGet(&pCsr[1], &nByte);
+        int n;
+        int nHdr = 1 + sessionVarintGet(&pCsr[1], &n);
         assert( eType==SQLITE_TEXT || eType==SQLITE_BLOB );
-        nAdvance = nHdr + nByte;
+        nAdvance = nHdr + n;
         if( eType==sqlite3_column_type(pStmt, i) 
-         && nByte==sqlite3_column_bytes(pStmt, i) 
-         && 0==memcmp(&pCsr[nHdr], sqlite3_column_blob(pStmt, i), nByte)
+         && n==sqlite3_column_bytes(pStmt, i) 
+         && (n==0 || 0==memcmp(&pCsr[nHdr], sqlite3_column_blob(pStmt, i), n))
         ){
           break;
         }
