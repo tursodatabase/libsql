@@ -4617,16 +4617,16 @@ static int accessPayload(
           }
         }
         amt -= a;
+        if( amt==0 ) return rc;
         pBuf += a;
       }
-      if( amt==0 ) break;
       if( rc ) break;
       iIdx++;
     }
   }
 
   if( rc==SQLITE_OK && amt>0 ){
-    return SQLITE_CORRUPT_BKPT;
+    return SQLITE_CORRUPT_BKPT; /* Overflow chain ends prematurely */
   }
   return rc;
 }
