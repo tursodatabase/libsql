@@ -1,5 +1,5 @@
-C Remove\san\sunreachable\sbranch\sin\sthe\serror\shandling\slogic\sfor\nsqlite3BtreePayloadChecked().
-D 2017-01-26T21:30:00.788
+C Simplify\sthe\saccessPayload()\sroutine\sso\sthat\sit\salways\spopulates\sthe\soverflow\npage\scache.\s\sIn\sthe\sone\scase\swhere\spopulating\sthe\spage\scache\scan\slead\sto\s\nproblems,\ssimply\sinvalidate\sthe\scache\sas\ssoon\sas\saccessPayload()\sreturns.\s\s\nThis\ssimplification\sreduces\scode\ssize\sand\shelps\saccessPayload()\sto\srun\sa\s\nlittle\sfaster.\s\sThis\sbacks\sout\sthe\seOp==2\smode\sof\saccessPayload()\sadded\sby\s\ncheck-in\s[da59198505].
+D 2017-01-27T00:31:59.289
 F Makefile.in 5f415e7867296d678fed2e6779aea10c1318b4bc
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -333,7 +333,7 @@ F src/auth.c 930b376a9c56998557367e6f7f8aaeac82a2a792
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c bd72bb69abc7f3f3513308b9dd3749194b5d66d1
+F src/btree.c d42f290214e6615020b61866fe0747f02614964e
 F src/btree.h e6d352808956ec163a17f832193a3e198b3fb0ac
 F src/btreeInt.h 10c4b77c2fb399580babbcc7cf652ac10dba796e
 F src/build.c 9e799f1edd910dfa8a0bc29bd390d35d310596af
@@ -1547,7 +1547,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b4a98f65564a0d9fba2fef95ebd00a39b3e1e572
-R 9abdd03cd61c16f0272c0fd74c72cba7
+P 293bf3ed7e40745349c83b202b27ed1b48517e1a
+R ec063431f8eb3294f488a586b69214cb
 U drh
-Z 4b9455997c313589c1136c73cb07a07d
+Z 81eb07f579988e3e7128daaaea36d064
