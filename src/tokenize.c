@@ -481,6 +481,9 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   int lastTokenParsed = -1;       /* type of the previous token */
   sqlite3 *db = pParse->db;       /* The database connection */
   int mxSqlLen;                   /* Max length of an SQL string */
+#ifdef sqlite3Parser_ENGINEALWAYSONSTACK
+  unsigned char zSpace[sizeof(yyParser)];  /* Space for parser engine object */
+#endif
 
   assert( zSql!=0 );
   mxSqlLen = db->aLimit[SQLITE_LIMIT_SQL_LENGTH];
@@ -492,11 +495,16 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   i = 0;
   assert( pzErrMsg!=0 );
   /* sqlite3ParserTrace(stdout, "parser: "); */
+#ifdef sqlite3Parser_ENGINEALWAYSONSTACK
+  pEngine = zSpace;
+  sqlite3ParserInit(pEngine);
+#else
   pEngine = sqlite3ParserAlloc(sqlite3Malloc);
   if( pEngine==0 ){
     sqlite3OomFault(db);
     return SQLITE_NOMEM_BKPT;
   }
+#endif
   assert( pParse->pNewTable==0 );
   assert( pParse->pNewTrigger==0 );
   assert( pParse->nVar==0 );
@@ -548,7 +556,11 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   );
   sqlite3_mutex_leave(sqlite3MallocMutex());
 #endif /* YYDEBUG */
+#ifdef sqlite3Parser_ENGINEALWAYSONSTACK
+  sqlite3ParserFinalize(pEngine);
+#else
   sqlite3ParserFree(pEngine, sqlite3_free);
+#endif
   if( db->mallocFailed ){
     pParse->rc = SQLITE_NOMEM_BKPT;
   }

@@ -4073,8 +4073,10 @@ char sqlite3IndexColumnAffinity(sqlite3*, Index*, int);
 /*
 ** The interface to the LEMON-generated parser
 */
-void *sqlite3ParserAlloc(void*(*)(u64));
-void sqlite3ParserFree(void*, void(*)(void*));
+#ifndef SQLITE_AMALGAMATION
+  void *sqlite3ParserAlloc(void*(*)(u64));
+  void sqlite3ParserFree(void*, void(*)(void*));
+#endif
 void sqlite3Parser(void*, int, Token, Parse*);
 #ifdef YYTRACKMAXSTACKDEPTH
   int sqlite3ParserStackPeak(void*);
