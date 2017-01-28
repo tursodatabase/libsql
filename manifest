@@ -1,5 +1,5 @@
-C Updates\sto\sthe\ssqlite3_blob\sdocumentation.\s\sNo\schanges\sto\scode.
-D 2017-01-28T15:26:14.397
+C Avoid\sredundant\stable\sb-tree\scursor\sseeks\sin\sUPDATE\sstatements\sthat\suse\sthe\ntwo-pass\sstrategy.
+D 2017-01-28T19:45:34.617
 F Makefile.in 5f415e7867296d678fed2e6779aea10c1318b4bc
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -288,7 +288,7 @@ F ext/rtree/sqlite3rtree.h 9c5777af3d2921c7b4ae4954e8e5697502289d28
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F ext/session/changeset.c 4ccbaa4531944c24584bf6a61ba3a39c62b6267a
-F ext/session/session1.test e5125b216d1e8c91e0984b361b0b68529e7c5dfb
+F ext/session/session1.test 482e9b861169d0b7e283e1563a28c0fa32779fa5
 F ext/session/session2.test 284de45abae4cc1082bc52012ee81521d5ac58e0
 F ext/session/session3.test a7a9ce59b8d1e49e2cc23d81421ac485be0eea01
 F ext/session/session4.test 457b02bdc349eb01151e54de014df77abd3c08c8
@@ -396,7 +396,7 @@ F src/shell.c a84e453c213f3e0d6935a582024da4e242f85a19
 F src/sqlite.h.in a14cd1f946b9565c4d801c4adeeaa4543fbd6eb4
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
-F src/sqliteInt.h 341ce9e5b0397771fa6bd9dadb8ef4cbbd6224d0
+F src/sqliteInt.h c246370f9d8de3af36052d7860cd35c0e2daea6a
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -454,7 +454,7 @@ F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 5c2f516876fc27fbd7753913f032f49eb89e83b5
 F src/treeview.c 4e44ade3bfe59d82005039f72e09333ce2b4162c
 F src/trigger.c c9f0810043b265724fdb1bdd466894f984dfc182
-F src/update.c b356b29d04c71f33c779f2cb557cf953819bdd7a
+F src/update.c 456d4a4656f8a03c2abc88a51b19172197400e58
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c a88b0466fddf445ce752226d4698ca3faada620a
 F src/vacuum.c 33c174b28886b2faf26e503b5a49a1c01a9b1c16
@@ -474,7 +474,7 @@ F src/wal.h 06b2a0b599cc0f53ea97f497cf8c6b758c999f71
 F src/walker.c 91a6df7435827e41cff6bb7df50ea00934ee78b0
 F src/where.c bc71775e23d23334e8f449aa31012d692dc09cb2
 F src/whereInt.h 2bcc3d176e6091cb8f50a30b65c006e88a73614d
-F src/wherecode.c e04ac8f24c3ac8621df6c3be3ac8c7d4fa893745
+F src/wherecode.c 99a8ced164c75edf41b3a865a75381c9adb38b28
 F src/whereexpr.c 35ad025389a632a3987a35617c878be3b3d70dc6
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1355,7 +1355,7 @@ F test/unique2.test 3674e9f2a3f1fbbfd4772ac74b7a97090d0f77d2
 F test/unixexcl.test d936ba2b06794018e136418addd59a2354eeae97
 F test/unordered.test ca7adce0419e4ca0c50f039885e76ed2c531eda8
 F test/update.test 6c68446b8a0a33d522a7c72b320934596a2d7d32
-F test/update2.test 7f72ef307d58be09a8ef61db23a7ef60e5af019d
+F test/update2.test 81772e5c9b93d1006d66d65e9a1327281bdec4e8
 F test/uri.test 3481026f00ade6dfe8adb7acb6e1e47b04369568
 F test/uri2.test 9d3ba7a53ee167572d53a298ee4a5d38ec4a8fb7
 F test/userauth01.test e740a2697a7b40d7c5003a7d7edaee16acd349a9
@@ -1548,7 +1548,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P aa1ab37100a91ab4bb91d50a1267c26967efcb21
-R e94128da2458d76e1f9232d83fbb5c60
-U drh
-Z 85ea4b53c0f0f74a70744dcf483d3a5b
+P 426b440a5745f9c431c6a3d9ba542af61a6a83fb
+R cb9f34739a33405b5f0617b1ee3426fc
+U dan
+Z 2ac8b1778a518257277e1132fa6dad3a

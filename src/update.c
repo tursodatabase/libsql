@@ -392,7 +392,7 @@ void sqlite3Update(
   ** be deleted as a result of REPLACE conflict handling. Any of these
   ** things might disturb a cursor being used to scan through the table
   ** or index, causing a single-pass approach to malfunction.  */
-  flags = WHERE_ONEPASS_DESIRED | WHERE_SEEK_TABLE;
+  flags = WHERE_ONEPASS_DESIRED|WHERE_SEEK_UNIQ_TABLE;
   if( !pParse->nested && !pTrigger && !hasFK && !chngKey && !bReplace ){
     flags |= WHERE_ONEPASS_MULTIROW;
   }
