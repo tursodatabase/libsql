@@ -1,5 +1,5 @@
-C Add\sthe\ssha1.c\sloadable\sextension\sthat\simplements\sthe\ssha1()\sand\ssha1_query()\nSQL\sfunctions.
-D 2017-01-27T19:27:38.700
+C Fix\sa\stypo\sin\sthe\sdocs\sfor\ssqlite3_update_hook().
+D 2017-01-28T06:50:15.642
 F Makefile.in 5f415e7867296d678fed2e6779aea10c1318b4bc
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -393,7 +393,7 @@ F src/resolve.c f9bc0de45a30a450da47b3766de00be89bf9be79
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 3856db523b942062bca8722ba03b61c324ff94d6
 F src/shell.c a84e453c213f3e0d6935a582024da4e242f85a19
-F src/sqlite.h.in 1971ab9709e010d52a02a1a6276d5a2f9b947476
+F src/sqlite.h.in eefd49aa3aae3b4acd7d7e2f8f9b0db8ae0aff3b
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
 F src/sqliteInt.h 341ce9e5b0397771fa6bd9dadb8ef4cbbd6224d0
@@ -1548,7 +1548,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fbb6bf1b69cfd581b4ffd778c344e3fbd9c9406f
-R 389e8cfe151c91b893dde5f7934ffeac
-U drh
-Z 4597f51eb6c4ecdd76ade7480dc74dac
+P 24e77c1cef163a9822635570b3211789ff23d5c9
+R f1c881d122d9ce415eab840d4253340a
+U dan
+Z 83c68a9a3025b00f2574a4c70122bf9b
