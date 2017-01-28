@@ -6199,12 +6199,12 @@ typedef struct sqlite3_blob sqlite3_blob;
 ** [database connection] error code and message accessible via 
 ** [sqlite3_errcode()] and [sqlite3_errmsg()] and related functions. 
 **
-** A BLOB referenced by sqlite3_blob_open() and be read using the
+** A BLOB referenced by sqlite3_blob_open() may be read using the
 ** [sqlite3_blob_read()] interface and modified by using
 ** [sqlite3_blob_write()].  The [BLOB handle] can be moved to a
 ** different row of the same table using the [sqlite3_blob_reopen()]
 ** interface.  However, the column, table, or database of a [BLOB handle]
-** cannot be changed once after the [BLOB handle] is opened.
+** cannot be changed after the [BLOB handle] is opened.
 **
 ** ^(If the row that a BLOB handle points to is modified by an
 ** [UPDATE], [DELETE], or by [ON CONFLICT] side-effects
