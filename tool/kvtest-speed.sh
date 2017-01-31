@@ -21,11 +21,10 @@ gcc -g -Os -I. $OPTS $* kvtest.c sqlite3.c -o kvtest
 # First run using SQL
 rm cachegrind.out.[1-9][0-9]*
 valgrind --tool=cachegrind ./kvtest run kvtest.db $KVARGS 2>&1 | tee summary-kvtest-$NAME.txt
-mv cachegrind.out.[1-9][0-9]* cachegrind.out.$NAME
-cg_anno.tcl cachegrind.out.$NAME >cout-kvtest-sql-$NAME.txt
+mv cachegrind.out.[1-9][0-9]* cachegrind.out.sql-$NAME
+cg_anno.tcl cachegrind.out.sql-$NAME >cout-kvtest-sql-$NAME.txt
 
 # Second run using the sqlite3_blob object
-rm cachegrind.out.[1-9][0-9]*
 valgrind --tool=cachegrind ./kvtest run kvtest.db $KVARGS --blob-api 2>&1 | tee -a summary-kvtest-$NAME.txt
 mv cachegrind.out.[1-9][0-9]* cachegrind.out.$NAME
 cg_anno.tcl cachegrind.out.$NAME >cout-kvtest-$NAME.txt

@@ -1,5 +1,5 @@
-C Add\sthe\s"stat"\scommand\sto\skvtest.c.\s\sAlso\sadd\sthe\s--variance\soption\sto\sthe\n"init"\scommand.\s\sAdd\sthe\stool/kvtest-speed.sh\sscript\sused\sfor\sdoing\s\nperformance\stesting\son\skey/value\saccess\spatterns.
-D 2017-01-31T15:29:05.242
+C Very\ssmall\sperformance\simprovements\sand\ssize\sreductions\sin\s\nsqlite3VdbeExec()\sand\sblobSeekToRow().
+D 2017-01-31T19:10:42.671
 F Makefile.in 5f415e7867296d678fed2e6779aea10c1318b4bc
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -458,12 +458,12 @@ F src/update.c 456d4a4656f8a03c2abc88a51b19172197400e58
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c a88b0466fddf445ce752226d4698ca3faada620a
 F src/vacuum.c 33c174b28886b2faf26e503b5a49a1c01a9b1c16
-F src/vdbe.c a5bcdb61862cd995126ec4993121e04fe409c6e0
+F src/vdbe.c d3765f4d8f667b8d10232b2a1d0498497f3ac09f
 F src/vdbe.h 59998ffd71d7caa8886bc78dafaf8caeccd4c13c
 F src/vdbeInt.h 281cb70332dc8b593b8c7afe776f3a2ba7d4255e
 F src/vdbeapi.c 7a65f10684982daecfce50f557f2632b7f20b198
 F src/vdbeaux.c 6847b02aa2db536ed15d90f1fdc2923afef93c5b
-F src/vdbeblob.c 2b3d1ad915dbe5dc92c48759dc18fa8c697e78e5
+F src/vdbeblob.c 359891617358deefc85bef7bcf787fa6b77facb9
 F src/vdbemem.c 3b5a9a5b375458d3e12a50ae1aaa41eeec2175fd
 F src/vdbesort.c eda25cb2d1727efca6f7862fea32b8aa33c0face
 F src/vdbetrace.c 41963d5376f0349842b5fc4aaaaacd7d9cdc0834
@@ -1475,7 +1475,7 @@ F tool/fuzzershell.c dbf6c26eef936ec78cb0707570de3a4308b2507e
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
-F tool/kvtest-speed.sh d6c7c2b5787f44c3be2ed01c8463223032ee598b
+F tool/kvtest-speed.sh 4761a9c4b3530907562314d7757995787f7aef8f
 F tool/lemon.c 5ccba178a8e8a4b21e1c9232944d23973da38ad7
 F tool/lempar.c db1bdb4821f2d8fbd76e577cf3ab18642c8d08d1
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
@@ -1549,7 +1549,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bd22bf9cbe028e9811ca3afaadafd90312cb0fc9
-R 561f5ef3a58c98c17f69cad51ae91935
+P b63deed600b1a457a6960ebad5645f4de9c56e5d 495ea824093ff535734c22c3115384c08f855c02
+R 793d15c782afd1bb1c67c16147a858a7
+T +closed 495ea824093ff535734c22c3115384c08f855c02
 U drh
-Z 35fd92fc5491c4b603aa832f4a4ebf7a
+Z c7f2b5c04f4a8cad3ed5cf73468bb400
