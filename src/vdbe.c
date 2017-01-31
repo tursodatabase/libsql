@@ -4407,7 +4407,7 @@ case OP_InsertInt: {
     assert( HasRowid(pTab) );
     op = ((pOp->p5 & OPFLAG_ISUPDATE) ? SQLITE_UPDATE : SQLITE_INSERT);
   }else{
-    pTab = 0; /* Not needed.  Silence a comiler warning. */
+    pTab = 0; /* Not needed.  Silence a compiler warning. */
     zDb = 0;  /* Not needed.  Silence a compiler warning. */
   }
 
