@@ -966,10 +966,14 @@ static int rtreeCallbackConstraint(
   if( pConstraint->op==RTREE_QUERY && pSearch->iLevel==1 ){
     pInfo->iRowid = readInt64(pCellData);
   }
-  pCellData += 8;
-  for(i=0; i<nCoord; i++, pCellData += 4){
+  assert( nCoord>=2 && (nCoord&1)==0 );
+  i = 0;
+  do{
+    pCellData += 8;
     RTREE_DECODE_COORD(eInt, pCellData, aCoord[i]);
-  }
+    RTREE_DECODE_COORD(eInt, (pCellData+4), aCoord[i+1]);
+    i+= 2;
+  }while( i<nCoord );
   if( pConstraint->op==RTREE_MATCH ){
     rc = pConstraint->u.xGeom((sqlite3_rtree_geometry*)pInfo,
                               nCoord, aCoord, &i);
