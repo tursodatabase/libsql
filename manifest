@@ -1,5 +1,5 @@
-C Merge\slatest\strunk\swith\sthis\sbranch.
-D 2017-01-31T14:08:04.338
+C Add\sa\sspeed-test\sprogram\sfor\sthe\ssessions\smodule.
+D 2017-01-31T17:31:30.384
 F Makefile.in 5f415e7867296d678fed2e6779aea10c1318b4bc
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -304,6 +304,7 @@ F ext/session/sessionE.test e60a238c47f0feb3bb707e7f35e22be09c7e8f26
 F ext/session/sessionF.test c2f178d4dfd723a5fd94a730ea2ccb44c669e3ce
 F ext/session/sessionG.test 01ef705096a9d3984eebdcca79807a211dee1b60
 F ext/session/session_common.tcl 9b696a341cf1d3744823715ed92bb19749b6c3d4
+F ext/session/session_speed_test.c edc1f96fd5e0e4b16eb03e2a73041013d59e8723
 F ext/session/sessionfault.test da273f2712b6411e85e71465a1733b8501dbf6f7
 F ext/session/sessionfault2.test 04aa0bc9aa70ea43d8de82c4f648db4de1e990b0
 F ext/session/sessionwor.test 2f3744236dc8b170a695b7d8ddc8c743c7e79fdc
@@ -1550,7 +1551,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 856f8604c59c8fdd9bfb7d86fc0e212f091ab49a eacfdcf25796ea29b5e63499c3d7397498305ad9
-R 42635375f02810f3a6e52a94c33a118e
+P 4a592abbc555fd3b70979b551b00c2ba631253df
+R 26510e2a956656dcc1737b93ae2b12d3
 U dan
-Z 96d004df39a939a256587866759a6659
+Z cbd41882cd0513167229b7a965b152d9
