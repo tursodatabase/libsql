@@ -116,6 +116,7 @@ struct Rtree {
   sqlite3 *db;                /* Host database connection */
   int iNodeSize;              /* Size in bytes of each node in the node table */
   u8 nDim;                    /* Number of dimensions */
+  u8 nDim2;                   /* Twice the number of dimensions */
   u8 eCoordType;              /* RTREE_COORD_REAL32 or RTREE_COORD_INT32 */
   u8 nBytesPerCell;           /* Bytes consumed per cell */
   int iDepth;                 /* Current depth of the r-tree structure */
@@ -711,7 +712,7 @@ static void nodeOverwriteCell(
   int ii;
   u8 *p = &pNode->zData[4 + pRtree->nBytesPerCell*iCell];
   p += writeInt64(p, pCell->iRowid);
-  for(ii=0; ii<(pRtree->nDim*2); ii++){
+  for(ii=0; ii<pRtree->nDim2; ii++){
     p += writeCoord(p, &pCell->aCoord[ii]);
   }
   pNode->isDirty = 1;
@@ -854,7 +855,7 @@ static void nodeGetCell(
     readCoord(pData+4, &pCoord[ii+1]);
     pData += 8;
     ii += 2;
-  }while( ii<pRtree->nDim*2 );
+  }while( ii<pRtree->nDim2 );
 }
 
 
@@ -1712,7 +1713,7 @@ static int rtreeFilter(
             if( rc!=SQLITE_OK ){
               break;
             }
-            p->pInfo->nCoord = pRtree->nDim*2;
+            p->pInfo->nCoord = pRtree->nDim2;
             p->pInfo->anQueue = pCsr->anQueue;
             p->pInfo->mxLevel = pRtree->iDepth + 1;
           }else{
@@ -1878,10 +1879,11 @@ static int rtreeBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
 ** Return the N-dimensional volumn of the cell stored in *p.
 */
 static RtreeDValue cellArea(Rtree *pRtree, RtreeCell *p){
-  RtreeDValue area = (RtreeDValue)1;
+  RtreeDValue area;
   int ii;
-  for(ii=0; ii<(pRtree->nDim*2); ii+=2){
-    area = (area * (DCOORD(p->aCoord[ii+1]) - DCOORD(p->aCoord[ii])));
+  area = DCOORD(p->aCoord[1]) - DCOORD(p->aCoord[0]);
+  for(ii=2; ii<pRtree->nDim2; ii+=2){
+    area *= DCOORD(p->aCoord[ii+1]) - DCOORD(p->aCoord[ii]);
   }
   return area;
 }
@@ -1891,9 +1893,10 @@ static RtreeDValue cellArea(Rtree *pRtree, RtreeCell *p){
 ** of the objects size in each dimension.
 */
 static RtreeDValue cellMargin(Rtree *pRtree, RtreeCell *p){
-  RtreeDValue margin = (RtreeDValue)0;
+  RtreeDValue margin;
   int ii;
-  for(ii=0; ii<(pRtree->nDim*2); ii+=2){
+  margin = DCOORD(p->aCoord[1]) - DCOORD(p->aCoord[0]);
+  for(ii=2; ii<pRtree->nDim2; ii+=2){
     margin += (DCOORD(p->aCoord[ii+1]) - DCOORD(p->aCoord[ii]));
   }
   return margin;
@@ -1903,17 +1906,19 @@ static RtreeDValue cellMargin(Rtree *pRtree, RtreeCell *p){
 ** Store the union of cells p1 and p2 in p1.
 */
 static void cellUnion(Rtree *pRtree, RtreeCell *p1, RtreeCell *p2){
-  int ii;
+  int ii = 0;
   if( pRtree->eCoordType==RTREE_COORD_REAL32 ){
-    for(ii=0; ii<(pRtree->nDim*2); ii+=2){
+    do{
       p1->aCoord[ii].f = MIN(p1->aCoord[ii].f, p2->aCoord[ii].f);
       p1->aCoord[ii+1].f = MAX(p1->aCoord[ii+1].f, p2->aCoord[ii+1].f);
-    }
+      ii += 2;
+    }while( ii<pRtree->nDim2 );
   }else{
-    for(ii=0; ii<(pRtree->nDim*2); ii+=2){
+    do{
       p1->aCoord[ii].i = MIN(p1->aCoord[ii].i, p2->aCoord[ii].i);
       p1->aCoord[ii+1].i = MAX(p1->aCoord[ii+1].i, p2->aCoord[ii+1].i);
-    }
+      ii += 2;
+    }while( ii<pRtree->nDim2 );
   }
 }
 
@@ -1924,7 +1929,7 @@ static void cellUnion(Rtree *pRtree, RtreeCell *p1, RtreeCell *p2){
 static int cellContains(Rtree *pRtree, RtreeCell *p1, RtreeCell *p2){
   int ii;
   int isInt = (pRtree->eCoordType==RTREE_COORD_INT32);
-  for(ii=0; ii<(pRtree->nDim*2); ii+=2){
+  for(ii=0; ii<pRtree->nDim2; ii+=2){
     RtreeCoord *a1 = &p1->aCoord[ii];
     RtreeCoord *a2 = &p2->aCoord[ii];
     if( (!isInt && (a2[0].f<a1[0].f || a2[1].f>a1[1].f)) 
@@ -1959,7 +1964,7 @@ static RtreeDValue cellOverlap(
   for(ii=0; ii<nCell; ii++){
     int jj;
     RtreeDValue o = (RtreeDValue)1;
-    for(jj=0; jj<(pRtree->nDim*2); jj+=2){
+    for(jj=0; jj<pRtree->nDim2; jj+=2){
       RtreeDValue x1, x2;
       x1 = MAX(DCOORD(p->aCoord[jj]), DCOORD(aCell[ii].aCoord[jj]));
       x2 = MIN(DCOORD(p->aCoord[jj+1]), DCOORD(aCell[ii].aCoord[jj+1]));
@@ -3015,7 +3020,7 @@ static int rtreeUpdate(
     ** This problem was discovered after years of use, so we silently ignore
     ** these kinds of misdeclared tables to avoid breaking any legacy.
     */
-    assert( nData<=(pRtree->nDim*2 + 3) );
+    assert( nData<=(pRtree->nDim2 + 3) );
 
 #ifndef SQLITE_RTREE_INT_ONLY
     if( pRtree->eCoordType==RTREE_COORD_REAL32 ){
@@ -3393,7 +3398,8 @@ static int rtreeInit(
   pRtree->zDb = (char *)&pRtree[1];
   pRtree->zName = &pRtree->zDb[nDb+1];
   pRtree->nDim = (argc-4)/2;
-  pRtree->nBytesPerCell = 8 + pRtree->nDim*4*2;
+  pRtree->nDim2 = argc - 4;
+  pRtree->nBytesPerCell = 8 + pRtree->nDim2*4;
   pRtree->eCoordType = eCoordType;
   memcpy(pRtree->zDb, argv[1], nDb);
   memcpy(pRtree->zName, argv[2], nName);
@@ -3468,6 +3474,7 @@ static void rtreenode(sqlite3_context *ctx, int nArg, sqlite3_value **apArg){
   memset(&node, 0, sizeof(RtreeNode));
   memset(&tree, 0, sizeof(Rtree));
   tree.nDim = sqlite3_value_int(apArg[0]);
+  tree.nDim2 = tree.nDim*2;
   tree.nBytesPerCell = 8 + 8 * tree.nDim;
   node.zData = (u8 *)sqlite3_value_blob(apArg[1]);
 
@@ -3480,7 +3487,7 @@ static void rtreenode(sqlite3_context *ctx, int nArg, sqlite3_value **apArg){
     nodeGetCell(&tree, &node, ii, &cell);
     sqlite3_snprintf(512-nCell,&zCell[nCell],"%lld", cell.iRowid);
     nCell = (int)strlen(zCell);
-    for(jj=0; jj<tree.nDim*2; jj++){
+    for(jj=0; jj<tree.nDim2; jj++){
 #ifndef SQLITE_RTREE_INT_ONLY
       sqlite3_snprintf(512-nCell,&zCell[nCell], " %g",
                        (double)cell.aCoord[jj].f);
