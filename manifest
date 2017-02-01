@@ -1,5 +1,5 @@
-C Changes\sso\sthat\sthe\spre-update\shook\sand\sthe\ssessions\smodule\swork\swith\sWITHOUT\nROWID\stables.
-D 2017-02-01T14:10:24.369
+C Update\sthe\sdocumentation\scomment\sin\ssqlite.h.in\sfor\ssqlite3_preupdate_hook().
+D 2017-02-01T14:19:43.743
 F Makefile.in 5f415e7867296d678fed2e6779aea10c1318b4bc
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -395,7 +395,7 @@ F src/resolve.c f9bc0de45a30a450da47b3766de00be89bf9be79
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 3856db523b942062bca8722ba03b61c324ff94d6
 F src/shell.c a84e453c213f3e0d6935a582024da4e242f85a19
-F src/sqlite.h.in 8fd2b1a4e4aac023d4533313442528b81105fab3
+F src/sqlite.h.in 751ff125eb159c8f92c182b8df980a5e4f50e966
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
 F src/sqliteInt.h 6f29b23415ce207c2fda61054bf244b74f96359c
@@ -1552,7 +1552,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c5395e7496d0cd593f5e16ee5f6719d020dc0c66 25f1275fe3e940c1d9a7b013cb3744304b2eda1e
-R f7a2435ee7007416912dcdfda9016a2c
+P 964bdc27f8f1b1db2e5c0c2a65c8156614cbe087
+R c3a8e9059dd92e8c282633700ca50a30
 U dan
-Z 84db606ff358cb3acbf24f0cef50dec1
+Z fded3ef392ff672f8205c955a05c2af4
