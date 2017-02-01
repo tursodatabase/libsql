@@ -562,7 +562,7 @@ int sqlite3VdbeExec(
   Vdbe *p                    /* The VDBE */
 ){
   Op *aOp = p->aOp;          /* Copy of p->aOp */
-  Op *pOp;                   /* Current operation */
+  Op *pOp = aOp;             /* Current operation */
 #if defined(SQLITE_DEBUG) || defined(VDBE_PROFILE)
   Op *pOrigOp;               /* Value of pOp at the top of the loop */
 #endif
