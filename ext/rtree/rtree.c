@@ -370,12 +370,20 @@ static int readInt16(u8 *p){
   return (p[0]<<8) + p[1];
 }
 static void readCoord(u8 *p, RtreeCoord *pCoord){
+#if defined(SQLITE_BYTEORDER) && SQLITE_BYTEORDER==1234
+  memcpy(&pCoord->u, p, 4);
+  pCoord->u = ((pCoord->u>>24)&0xff)|((pCoord->u>>8)&0xff00)|
+              ((pCoord->u&0xff)<<24)|((pCoord->u&0xff00)<<8);
+#elif defined(SQLITE_BYTEORDER) && SQLITE_BYTEORDER==4321
+  memcpy(&pCoord->u, p, 4);
+#else
   pCoord->u = (
     (((u32)p[0]) << 24) + 
     (((u32)p[1]) << 16) + 
     (((u32)p[2]) <<  8) + 
     (((u32)p[3]) <<  0)
   );
+#endif
 }
 static i64 readInt64(u8 *p){
   return (
@@ -736,13 +744,21 @@ static void nodeGetCell(
 ){
   u8 *pData;
   RtreeCoord *pCoord;
-  int ii;
+  int ii = 0;
   pCell->iRowid = nodeGetRowid(pRtree, pNode, iCell);
   pData = pNode->zData + (12 + pRtree->nBytesPerCell*iCell);
   pCoord = pCell->aCoord;
+  do{
+    readCoord(pData, &pCoord[ii]);
+    readCoord(pData+4, &pCoord[ii+1]);
+    pData += 8;
+    ii += 2;
+  }while( ii<pRtree->nDim*2 );
+#if 0
   for(ii=0; ii<pRtree->nDim*2; ii++){
     readCoord(&pData[ii*4], &pCoord[ii]);
   }
+#endif
 }
 
 
