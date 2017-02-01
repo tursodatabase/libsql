@@ -1,5 +1,5 @@
-C Backout\sthe\schange\sin\s[02f6293f27]\sas\sit\scauses\sMSVC\sto\scomplain.
-D 2017-02-01T23:03:54.479
+C Fix\sharmless\scompiler\swarnings\sseen\swith\sMSVC.
+D 2017-02-01T23:06:17.747
 F Makefile.in 5f415e7867296d678fed2e6779aea10c1318b4bc
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc ba953c8921fc7e18333f61898007206de7e23964
@@ -70,7 +70,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c e028eb13432f108d2e22cded019fc980700e4e00
+F ext/fts3/fts3.c 5a8cafedffd101e9946f8909ecf8d34aaa383b4d
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 89d0bd4595a0de384dac78e94b803de12586e8dd
 F ext/fts3/fts3_aux.c 9edc3655fcb287f0467d0a4b886a01c6185fe9f1
@@ -264,7 +264,7 @@ F ext/rbu/sqlite3rbu.c bb0de6cdbdb14a7d55a097238a434b7e99caf318
 F ext/rbu/sqlite3rbu.h 6fb6294c34a9ca93b5894a33bca530c6f08decba
 F ext/rbu/test_rbu.c 5aa22616afac6f71ebd3d9bc9bf1006cfabcca88
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 58d3fa51e270b93e1d4ceb7ffb5c0f3b85cb4129
+F ext/rtree/rtree.c 70f2488eef5c04dccf15a52cbd4961492124f825
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test 42dadfc7b44a436cd74a1bebc0b9b689e4eaf7ec
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
@@ -386,7 +386,7 @@ F src/parse.y 591704fce84f814d9a3642774c1f011d38f4149c
 F src/pcache.c 51070ec9b8251bbf9c6ea3d35fd96a458752929e
 F src/pcache.h 2cedcd8407eb23017d92790b112186886e179490
 F src/pcache1.c e3967219b2a92b9edcb9324a4ba75009090d3953
-F src/pragma.c 0e7a7c6f1c6fd8ff50c0fff65b8bb80174bc49c5
+F src/pragma.c 7831956012f5d764761fbd023e59b0ffc08f5e8d
 F src/pragma.h 61aa5389118594bebb28120a6720401aee34ce1a
 F src/prepare.c b1140c3d0cf59bc85ace00ce363153041b424b7a
 F src/printf.c ff10a9b9902cd2afe5f655f3013c6307d969b1fd
@@ -1552,8 +1552,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 54d285464a222c59327eb6c917c1cc0125a55a27
-Q -02f6293f278f7b0a0f4876f5c6a0f4dc42620d79
-R c167920e65eb1311d91ae6d6e9361130
+P aaae74d06f4865818465cfdb440258ae8a5b985a 997f765bc6706769ae15f3e719354473e02bd78b
+R 939bce209d57b72db3d58f9894d61374
+T +closed 997f765bc6706769ae15f3e719354473e02bd78b
 U mistachkin
-Z 464bc0b25a9ceacfcf91d7e8480e3c64
+Z c2a7081e9858115a573bd4695718af54
