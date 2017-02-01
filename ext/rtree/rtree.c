@@ -1515,7 +1515,7 @@ static int rtreeStepToLeaf(RtreeCursor *pCur){
       if( rScore<RTREE_ZERO ) rScore = RTREE_ZERO;
       p = rtreeSearchPointNew(pCur, rScore, x.iLevel);
       if( p==0 ) return SQLITE_NOMEM;
-      p->eWithin = eWithin;
+      p->eWithin = (u8)eWithin;
       p->id = x.id;
       p->iCell = x.iCell;
       RTREE_QUEUE_TRACE(pCur, "PUSH-S:");
@@ -1703,7 +1703,7 @@ static int rtreeFilter(
       p->id = iNode;
       p->eWithin = PARTLY_WITHIN;
       rc = nodeRowidIndex(pRtree, pLeaf, iRowid, &iCell);
-      p->iCell = iCell;
+      p->iCell = (u8)iCell;
       RTREE_QUEUE_TRACE(pCsr, "PUSH-F1:");
     }else{
       pCsr->atEOF = 1;
@@ -1751,7 +1751,7 @@ static int rtreeFilter(
     }
     if( rc==SQLITE_OK ){
       RtreeSearchPoint *pNew;
-      pNew = rtreeSearchPointNew(pCsr, RTREE_ZERO, pRtree->iDepth+1);
+      pNew = rtreeSearchPointNew(pCsr, RTREE_ZERO, (u8)(pRtree->iDepth+1));
       if( pNew==0 ) return SQLITE_NOMEM;
       pNew->id = 1;
       pNew->iCell = 0;
@@ -1879,7 +1879,7 @@ static int rtreeBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
           break;
       }
       zIdxStr[iIdx++] = op;
-      zIdxStr[iIdx++] = p->iColumn - 1 + '0';
+      zIdxStr[iIdx++] = (char)(p->iColumn - 1 + '0');
       pIdxInfo->aConstraintUsage[ii].argvIndex = (iIdx/2);
       pIdxInfo->aConstraintUsage[ii].omit = 1;
     }
@@ -3436,10 +3436,10 @@ static int rtreeInit(
   pRtree->base.pModule = &rtreeModule;
   pRtree->zDb = (char *)&pRtree[1];
   pRtree->zName = &pRtree->zDb[nDb+1];
-  pRtree->nDim = (argc-4)/2;
+  pRtree->nDim = (u8)((argc-4)/2);
   pRtree->nDim2 = argc - 4;
   pRtree->nBytesPerCell = 8 + pRtree->nDim2*4;
-  pRtree->eCoordType = eCoordType;
+  pRtree->eCoordType = (u8)eCoordType;
   memcpy(pRtree->zDb, argv[1], nDb);
   memcpy(pRtree->zName, argv[2], nName);
 
@@ -3512,7 +3512,7 @@ static void rtreenode(sqlite3_context *ctx, int nArg, sqlite3_value **apArg){
   UNUSED_PARAMETER(nArg);
   memset(&node, 0, sizeof(RtreeNode));
   memset(&tree, 0, sizeof(Rtree));
-  tree.nDim = sqlite3_value_int(apArg[0]);
+  tree.nDim = (u8)sqlite3_value_int(apArg[0]);
   tree.nDim2 = tree.nDim*2;
   tree.nBytesPerCell = 8 + 8 * tree.nDim;
   node.zData = (u8 *)sqlite3_value_blob(apArg[1]);
