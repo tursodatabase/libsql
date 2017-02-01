@@ -3057,9 +3057,7 @@ struct AuthContext {
 #define OPFLAG_ISUPDATE      0x04    /* This OP_Insert is an sql UPDATE */
 #define OPFLAG_APPEND        0x08    /* This is likely to be an append */
 #define OPFLAG_USESEEKRESULT 0x10    /* Try to avoid a seek in BtreeInsert() */
-#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
 #define OPFLAG_ISNOOP        0x40    /* OP_Delete does pre-update-hook only */
-#endif
 #define OPFLAG_LENGTHARG     0x40    /* OP_Column only used for length() */
 #define OPFLAG_TYPEOFARG     0x80    /* OP_Column only used for typeof() */
 #define OPFLAG_BULKCSR       0x01    /* OP_Open** used to open bulk cursor */
