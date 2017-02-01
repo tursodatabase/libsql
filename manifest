@@ -1,8 +1,8 @@
-C Unwind\sthe\sRTREE\sdimension\sloop\sinside\sof\srtreeCallbackConstraint().
-D 2017-02-01T17:08:56.249
+C Add\san\soption\sto\sthe\sMSVC\smakefile\sto\senable\streating\swarnings\sas\serrors.
+D 2017-02-01T22:32:49.021
 F Makefile.in 5f415e7867296d678fed2e6779aea10c1318b4bc
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
+F Makefile.msc ba953c8921fc7e18333f61898007206de7e23964
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION cddd8d88dc8202afa0ebc96da61fc4acbd1e96a5
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -11,7 +11,7 @@ F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am 1a47d071e3d5435f8f7ebff7eb6703848bbd65d4
-F autoconf/Makefile.msc b6d27f735911fd09a589d3c966936c47a5850c17
+F autoconf/Makefile.msc 3f29e0fc2a78e113250d79a5da375c1d8d8c06b0
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/README.txt 4f04b0819303aabaa35fff5f7b257fb0c1ef95f1
 F autoconf/configure.ac cacf2616abf6e4a569bde2ef365c143caeec40bc
@@ -1552,7 +1552,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3c4c0126c287f844220b65e00fec17c059fbb7c8
-R f35bf88856ef1a64759d9b647928073d
-U drh
-Z 9add4b4d28dce63431ad3a0684bb5601
+P 4854ea9c18e7d8066c90b41568d0fae97b01ea6d
+R edeb8ee1db3973795f07ac14a992bc66
+U mistachkin
+Z 3bfb007e12a85d09e541803b4d02a604
