@@ -4383,7 +4383,7 @@ case OP_InsertInt: {
   assert( pC!=0 );
   assert( pC->eCurType==CURTYPE_BTREE );
   assert( pC->uc.pCursor!=0 );
-  assert( pC->isTable );
+  assert( (pOp->p5 & OPFLAG_ISNOOP) || pC->isTable );
   assert( pOp->p4type==P4_TABLE || pOp->p4type>=P4_STATIC );
   REGISTER_TRACE(pOp->p2, pData);
 
@@ -4399,11 +4399,10 @@ case OP_InsertInt: {
   }
 
   if( pOp->p4type==P4_TABLE && HAS_UPDATE_HOOK(db) ){
-    assert( pC->isTable );
     assert( pC->iDb>=0 );
     zDb = db->aDb[pC->iDb].zDbSName;
     pTab = pOp->p4.pTab;
-    assert( HasRowid(pTab) );
+    assert( (pOp->p5 & OPFLAG_ISNOOP) || HasRowid(pTab) );
     op = ((pOp->p5 & OPFLAG_ISUPDATE) ? SQLITE_UPDATE : SQLITE_INSERT);
   }else{
     pTab = 0; /* Not needed.  Silence a compiler warning. */
@@ -4418,6 +4417,7 @@ case OP_InsertInt: {
   ){
     sqlite3VdbePreUpdateHook(p, pC, SQLITE_INSERT, zDb, pTab, x.nKey, pOp->p2);
   }
+  if( pOp->p5 & OPFLAG_ISNOOP ) break;
 #endif
 
   if( pOp->p5 & OPFLAG_NCHANGE ) p->nChange++;
@@ -4530,8 +4530,11 @@ case OP_Delete: {
 
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
   /* Invoke the pre-update-hook if required. */
-  if( db->xPreUpdateCallback && pOp->p4.pTab && HasRowid(pTab) ){
-    assert( !(opflags & OPFLAG_ISUPDATE) || (aMem[pOp->p3].flags & MEM_Int) );
+  if( db->xPreUpdateCallback && pOp->p4.pTab ){
+    assert( !(opflags & OPFLAG_ISUPDATE) 
+         || HasRowid(pTab)==0 
+         || (aMem[pOp->p3].flags & MEM_Int) 
+    );
     sqlite3VdbePreUpdateHook(p, pC,
         (opflags & OPFLAG_ISUPDATE) ? SQLITE_UPDATE : SQLITE_DELETE, 
         zDb, pTab, pC->movetoTarget,

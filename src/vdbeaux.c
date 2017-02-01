@@ -4620,10 +4620,15 @@ void sqlite3VdbePreUpdateHook(
 
   assert( db->pPreUpdate==0 );
   memset(&preupdate, 0, sizeof(PreUpdate));
-  if( op==SQLITE_UPDATE ){
-    iKey2 = v->aMem[iReg].u.i;
+  if( HasRowid(pTab)==0 ){
+    iKey1 = iKey2 = 0;
+    preupdate.pPk = sqlite3PrimaryKeyIndex(pTab);
   }else{
-    iKey2 = iKey1;
+    if( op==SQLITE_UPDATE ){
+      iKey2 = v->aMem[iReg].u.i;
+    }else{
+      iKey2 = iKey1;
+    }
   }
 
   assert( pCsr->nField==pTab->nCol 

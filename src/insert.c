@@ -1730,16 +1730,23 @@ void sqlite3CompleteInsertion(
       sqlite3VdbeAddOp2(v, OP_IsNull, aRegIdx[i], sqlite3VdbeCurrentAddr(v)+2);
       VdbeCoverage(v);
     }
-    sqlite3VdbeAddOp4Int(v, OP_IdxInsert, iIdxCur+i, aRegIdx[i],
-                         aRegIdx[i]+1,
-                         pIdx->uniqNotNull ? pIdx->nKeyCol: pIdx->nColumn);
-    pik_flags = 0;
-    if( useSeekResult ) pik_flags = OPFLAG_USESEEKRESULT;
+    pik_flags = (useSeekResult ? OPFLAG_USESEEKRESULT : 0);
     if( IsPrimaryKeyIndex(pIdx) && !HasRowid(pTab) ){
       assert( pParse->nested==0 );
       pik_flags |= OPFLAG_NCHANGE;
       pik_flags |= (update_flags & OPFLAG_SAVEPOSITION);
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
+      if( update_flags==0 ){
+        sqlite3VdbeAddOp4(v, OP_InsertInt, 
+            iIdxCur+i, aRegIdx[i], 0, (char*)pTab, P4_TABLE
+        );
+        sqlite3VdbeChangeP5(v, OPFLAG_ISNOOP);
+      }
+#endif
     }
+    sqlite3VdbeAddOp4Int(v, OP_IdxInsert, iIdxCur+i, aRegIdx[i],
+                         aRegIdx[i]+1,
+                         pIdx->uniqNotNull ? pIdx->nKeyCol: pIdx->nColumn);
     sqlite3VdbeChangeP5(v, pik_flags);
   }
   if( !HasRowid(pTab) ) return;

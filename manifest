@@ -1,5 +1,5 @@
-C More\sRTREE\sperformance\soptimizations\srelated\sto\sdecoding\svalues.
-D 2017-02-01T02:25:28.535
+C Changes\sso\sthat\sthe\spre-update\shook\sand\sthe\ssessions\smodule\swork\swith\sWITHOUT\nROWID\stables.
+D 2017-02-01T14:10:24.369
 F Makefile.in 5f415e7867296d678fed2e6779aea10c1318b4bc
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -288,7 +288,7 @@ F ext/rtree/sqlite3rtree.h 9c5777af3d2921c7b4ae4954e8e5697502289d28
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F ext/session/changeset.c 4ccbaa4531944c24584bf6a61ba3a39c62b6267a
-F ext/session/session1.test 482e9b861169d0b7e283e1563a28c0fa32779fa5
+F ext/session/session1.test c8a50e0e8581dc1a00e832aa59bb61f180404d44
 F ext/session/session2.test 284de45abae4cc1082bc52012ee81521d5ac58e0
 F ext/session/session3.test a7a9ce59b8d1e49e2cc23d81421ac485be0eea01
 F ext/session/session4.test 457b02bdc349eb01151e54de014df77abd3c08c8
@@ -304,8 +304,10 @@ F ext/session/sessionE.test e60a238c47f0feb3bb707e7f35e22be09c7e8f26
 F ext/session/sessionF.test c2f178d4dfd723a5fd94a730ea2ccb44c669e3ce
 F ext/session/sessionG.test 01ef705096a9d3984eebdcca79807a211dee1b60
 F ext/session/session_common.tcl 9b696a341cf1d3744823715ed92bb19749b6c3d4
+F ext/session/session_speed_test.c edc1f96fd5e0e4b16eb03e2a73041013d59e8723
 F ext/session/sessionfault.test da273f2712b6411e85e71465a1733b8501dbf6f7
 F ext/session/sessionfault2.test 04aa0bc9aa70ea43d8de82c4f648db4de1e990b0
+F ext/session/sessionwor.test 2f3744236dc8b170a695b7d8ddc8c743c7e79fdc
 F ext/session/sqlite3session.c c61a43396368ec00dc127f7bc647e9bd6a4ee5fb
 F ext/session/sqlite3session.h 9345166bd8f80562145586cf817f707de5ecada2
 F ext/session/test_session.c eb0bd6c1ea791c1d66ee4ef94c16500dad936386
@@ -353,7 +355,7 @@ F src/hash.c 63d0ee752a3b92d4695b2b1f5259c4621b2cfebd
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 8183e1778ec42d26732bec8c98aeffa8af13038f
+F src/insert.c 444354c23d4d140a57d6eb46f34e376a7f8f62e8
 F src/legacy.c 75d3023be8f0d2b99d60f905090341a03358c58e
 F src/loadext.c a68d8d1d14cf7488bb29dc5311cb1ce9a4404258
 F src/main.c e207b81542d13b9f13d61e78ca441f9781f055b0
@@ -458,11 +460,11 @@ F src/update.c 456d4a4656f8a03c2abc88a51b19172197400e58
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c a88b0466fddf445ce752226d4698ca3faada620a
 F src/vacuum.c 33c174b28886b2faf26e503b5a49a1c01a9b1c16
-F src/vdbe.c d3765f4d8f667b8d10232b2a1d0498497f3ac09f
+F src/vdbe.c ec059d331da77cb2e3e8af3fb7e40443ed148fbd
 F src/vdbe.h 59998ffd71d7caa8886bc78dafaf8caeccd4c13c
-F src/vdbeInt.h 281cb70332dc8b593b8c7afe776f3a2ba7d4255e
-F src/vdbeapi.c 7a65f10684982daecfce50f557f2632b7f20b198
-F src/vdbeaux.c 6847b02aa2db536ed15d90f1fdc2923afef93c5b
+F src/vdbeInt.h 4e4b15b2e1330e1636e4e01974eab2b0b985092f
+F src/vdbeapi.c 3e4a8893feeb78620f4aac4ac5b85d92255b97e1
+F src/vdbeaux.c b9a36e530e6525ca9d9a685bc7b1d01fa77b5cf8
 F src/vdbeblob.c 359891617358deefc85bef7bcf787fa6b77facb9
 F src/vdbemem.c 3b5a9a5b375458d3e12a50ae1aaa41eeec2175fd
 F src/vdbesort.c eda25cb2d1727efca6f7862fea32b8aa33c0face
@@ -834,6 +836,7 @@ F test/genesis.tcl 1e2e2e8e5cc4058549a154ff1892fe5c9de19f98
 F test/hexlit.test 4a6a5f46e3c65c4bf1fa06f5dd5a9507a5627751
 F test/hidden.test 23c1393a79e846d68fd902d72c85d5e5dcf98711
 F test/hook.test dbc0b87756e1e20e7497b56889c9e9cd2f8cc2b5
+F test/hook2.test b9ff3b8c6519fb67f33192f1afe86e7782ee4ac8
 F test/icu.test 73956798bace8982909c00476b216714a6d0559a
 F test/ieee754.test 806fc0ce7f305f57e3331eaceeddcfec9339e607
 F test/imposter1.test c3f1db2d3db2c24611a6596a3fc0ffc14f1466c8
@@ -1549,7 +1552,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9663eea2a16bb4eec71476d307a3722a768308c3
-R 5d2055e5a67aa8455e161eeb4945e6a1
-U drh
-Z 3923bc85bfbb1c570a9230cd663fc66b
+P c5395e7496d0cd593f5e16ee5f6719d020dc0c66 25f1275fe3e940c1d9a7b013cb3744304b2eda1e
+R f7a2435ee7007416912dcdfda9016a2c
+U dan
+Z 84db606ff358cb3acbf24f0cef50dec1
