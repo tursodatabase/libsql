@@ -362,6 +362,65 @@ struct RtreeMatchArg {
 # define MIN(x,y) ((x) > (y) ? (y) : (x))
 #endif
 
+/* What version of GCC is being used.  0 means GCC is not being used */
+#ifndef GCC_VERSION
+#ifdef __GNUC__
+# define GCC_VERSION (__GNUC__*1000000+__GNUC_MINOR__*1000+__GNUC_PATCHLEVEL__)
+#else
+# define GCC_VERSION 0
+#endif
+#endif
+
+/* What version of CLANG is being used.  0 means CLANG is not being used */
+#ifndef CLANG_VERSION
+#if defined(__clang__) && !defined(_WIN32)
+# define CLANG_VERSION \
+            (__clang_major__*1000000+__clang_minor__*1000+__clang_patchlevel__)
+#else
+# define CLANG_VERSION 0
+#endif
+#endif
+
+/* The testcase() macro should already be defined in the amalgamation.  If
+** it is not, make it a no-op.
+*/
+#ifndef SQLITE_AMALGMATION
+# define testcase(X)
+#endif
+
+/*
+** Macros to determine whether the machine is big or little endian,
+** and whether or not that determination is run-time or compile-time.
+**
+** For best performance, an attempt is made to guess at the byte-order
+** using C-preprocessor macros.  If that is unsuccessful, or if
+** -DSQLITE_RUNTIME_BYTEORDER=1 is set, then byte-order is determined
+** at run-time.
+*/
+#ifndef SQLITE_BYTEORDER
+#if (defined(i386)     || defined(__i386__)   || defined(_M_IX86) ||    \
+     defined(__x86_64) || defined(__x86_64__) || defined(_M_X64)  ||    \
+     defined(_M_AMD64) || defined(_M_ARM)     || defined(__x86)   ||    \
+     defined(__arm__)) && !defined(SQLITE_RUNTIME_BYTEORDER)
+# define SQLITE_BYTEORDER    1234
+#endif
+#if (defined(sparc)    || defined(__ppc__))  \
+    && !defined(SQLITE_RUNTIME_BYTEORDER)
+# define SQLITE_BYTEORDER    4321
+#endif
+# define SQLITE_BYTEORDER    0     /* 0 means "unknown at compile-time" */
+#endif
+
+
+/* What version of MSVC is being used.  0 means MSVC is not being used */
+#ifndef MSVC_VERSION
+#if defined(_MSC_VER)
+# define MSVC_VERSION _MSC_VER
+#else
+# define MSVC_VERSION 0
+#endif
+#endif
+
 /*
 ** Functions to deserialize a 16 bit integer, 32 bit real number and
 ** 64 bit integer. The deserialized value is returned.
@@ -370,12 +429,16 @@ static int readInt16(u8 *p){
   return (p[0]<<8) + p[1];
 }
 static void readCoord(u8 *p, RtreeCoord *pCoord){
-#if defined(SQLITE_BYTEORDER) && SQLITE_BYTEORDER==1234
-  memcpy(&pCoord->u, p, 4);
+  assert( ((((char*)p) - (char*)0)&3)==0 );  /* p is always 4-byte aligned */
+#if SQLITE_BYTEORDER==1234 && MSVC_VERSION>=1300
+  pCoord->u = _byteswap_ulong(*(u32*)p);
+#elif SQLITE_BYTEORDER==1234 && (GCC_VERSION>=4003000 || CLANG_VERSION>=3000000)
+  pCoord->u = __builtin_bswap32(*(u32*)p);
+#elif SQLITE_BYTEORDER==1234
   pCoord->u = ((pCoord->u>>24)&0xff)|((pCoord->u>>8)&0xff00)|
               ((pCoord->u&0xff)<<24)|((pCoord->u&0xff00)<<8);
-#elif defined(SQLITE_BYTEORDER) && SQLITE_BYTEORDER==4321
-  memcpy(&pCoord->u, p, 4);
+#elif SQLITE_BYTEORDER==4321
+  pCoord->u = *(u32*)p;
 #else
   pCoord->u = (
     (((u32)p[0]) << 24) + 
@@ -386,6 +449,20 @@ static void readCoord(u8 *p, RtreeCoord *pCoord){
 #endif
 }
 static i64 readInt64(u8 *p){
+  testcase( ((((char*)p) - (char*)0)&7)!=0 );  /* not always 8-byte aligned */
+#if SQLITE_BYTEORDER==1234 && MSVC_VERSION>=1300
+  u64 x;
+  memcpy(&x, p, 8);
+  return (i64)_byteswap_uint64(x);
+#elif SQLITE_BYTEORDER==1234 && (GCC_VERSION>=4003000 || CLANG_VERSION>=3000000)
+  u64 x;
+  memcpy(&x, p, 8);
+  return (i64)__builtin_bswap64(x);
+#elif SQLITE_BYTEORDER==4321
+  i64 x;
+  memcpy(&x, p, 8);
+  return x;
+#else
   return (
     (((i64)p[0]) << 56) + 
     (((i64)p[1]) << 48) + 
@@ -396,6 +473,7 @@ static i64 readInt64(u8 *p){
     (((i64)p[6]) <<  8) + 
     (((i64)p[7]) <<  0)
   );
+#endif
 }
 
 /*
@@ -410,16 +488,38 @@ static int writeInt16(u8 *p, int i){
 }
 static int writeCoord(u8 *p, RtreeCoord *pCoord){
   u32 i;
+  assert( ((((char*)p) - (char*)0)&3)==0 );  /* p is always 4-byte aligned */
   assert( sizeof(RtreeCoord)==4 );
   assert( sizeof(u32)==4 );
+#if SQLITE_BYTEORDER==1234 && (GCC_VERSION>=4003000 || CLANG_VERSION>=3000000)
+  i = __builtin_bswap32(pCoord->u);
+  memcpy(p, &i, 4);
+#elif SQLITE_BYTEORDER==1234 && MSVC_VERSION>=1300
+  i = _byteswap_ulong(pCoord->u);
+  memcpy(p, &i, 4);
+#elif SQLITE_BYTEORDER==4321
+  i = pCoord->u;
+  memcpy(p, &i, 4);
+#else
   i = pCoord->u;
   p[0] = (i>>24)&0xFF;
   p[1] = (i>>16)&0xFF;
   p[2] = (i>> 8)&0xFF;
   p[3] = (i>> 0)&0xFF;
+#endif
   return 4;
 }
 static int writeInt64(u8 *p, i64 i){
+  testcase( ((((char*)p) - (char*)0)&7)!=0 );  /* Not always 8-byte aligned */
+#if SQLITE_BYTEORDER==1234 && (GCC_VERSION>=4003000 || CLANG_VERSION>=3000000)
+  i = (i64)__builtin_bswap64((u64)i);
+  memcpy(p, &i, 8);
+#elif SQLITE_BYTEORDER==1234 && MSVC_VERSION>=1300
+  i = (i64)_byteswap_uint64((u64)i);
+  memcpy(p, &i, 8);
+#elif SQLITE_BYTEORDER==4321
+  memcpy(p, &i, 8);
+#else
   p[0] = (i>>56)&0xFF;
   p[1] = (i>>48)&0xFF;
   p[2] = (i>>40)&0xFF;
@@ -428,6 +528,7 @@ static int writeInt64(u8 *p, i64 i){
   p[5] = (i>>16)&0xFF;
   p[6] = (i>> 8)&0xFF;
   p[7] = (i>> 0)&0xFF;
+#endif
   return 8;
 }
 
@@ -754,11 +855,6 @@ static void nodeGetCell(
     pData += 8;
     ii += 2;
   }while( ii<pRtree->nDim*2 );
-#if 0
-  for(ii=0; ii<pRtree->nDim*2; ii++){
-    readCoord(&pData[ii*4], &pCoord[ii]);
-  }
-#endif
 }
 
 
@@ -927,15 +1023,22 @@ static int rtreeEof(sqlite3_vtab_cursor *cur){
 ** false.  a[] is the four bytes of the on-disk record to be decoded.
 ** Store the results in "r".
 **
-** There are three versions of this macro, one each for little-endian and
-** big-endian processors and a third generic implementation.  The endian-
-** specific implementations are much faster and are preferred if the
-** processor endianness is known at compile-time.  The SQLITE_BYTEORDER
-** macro is part of sqliteInt.h and hence the endian-specific
-** implementation will only be used if this module is compiled as part
-** of the amalgamation.
+** There are five versions of this macro.  The last one is generic.  The
+** other four are various architectures-specific optimizations.
 */
-#if defined(SQLITE_BYTEORDER) && SQLITE_BYTEORDER==1234
+#if SQLITE_BYTEORDER==1234 && MSVC_VERSION>=1300
+#define RTREE_DECODE_COORD(eInt, a, r) {                        \
+    RtreeCoord c;    /* Coordinate decoded */                   \
+    c.u = _byteswap_ulong(*(u32*)a);                            \
+    r = eInt ? (sqlite3_rtree_dbl)c.i : (sqlite3_rtree_dbl)c.f; \
+}
+#elif SQLITE_BYTEORDER==1234 && (GCC_VERSION>=4003000 || CLANG_VERSION>=3000000)
+#define RTREE_DECODE_COORD(eInt, a, r) {                        \
+    RtreeCoord c;    /* Coordinate decoded */                   \
+    c.u = __builtin_bswap32(*(u32*)a);                          \
+    r = eInt ? (sqlite3_rtree_dbl)c.i : (sqlite3_rtree_dbl)c.f; \
+}
+#elif SQLITE_BYTEORDER==1234
 #define RTREE_DECODE_COORD(eInt, a, r) {                        \
     RtreeCoord c;    /* Coordinate decoded */                   \
     memcpy(&c.u,a,4);                                           \
@@ -943,7 +1046,7 @@ static int rtreeEof(sqlite3_vtab_cursor *cur){
           ((c.u&0xff)<<24)|((c.u&0xff00)<<8);                   \
     r = eInt ? (sqlite3_rtree_dbl)c.i : (sqlite3_rtree_dbl)c.f; \
 }
-#elif defined(SQLITE_BYTEORDER) && SQLITE_BYTEORDER==4321
+#elif SQLITE_BYTEORDER==4321
 #define RTREE_DECODE_COORD(eInt, a, r) {                        \
     RtreeCoord c;    /* Coordinate decoded */                   \
     memcpy(&c.u,a,4);                                           \
@@ -986,6 +1089,7 @@ static int rtreeCallbackConstraint(
   i = 0;
   do{
     pCellData += 8;
+    assert( ((((char*)pCellData) - (char*)0)&3)==0 );  /* 4-byte aligned */
     RTREE_DECODE_COORD(eInt, pCellData, aCoord[i]);
     RTREE_DECODE_COORD(eInt, (pCellData+4), aCoord[i+1]);
     i+= 2;
@@ -1029,6 +1133,7 @@ static void rtreeNonleafConstraint(
 
   assert(p->op==RTREE_LE || p->op==RTREE_LT || p->op==RTREE_GE 
       || p->op==RTREE_GT || p->op==RTREE_EQ );
+  assert( ((((char*)pCellData) - (char*)0)&3)==0 );  /* 4-byte aligned */
   switch( p->op ){
     case RTREE_LE:
     case RTREE_LT:
@@ -1069,6 +1174,7 @@ static void rtreeLeafConstraint(
   assert(p->op==RTREE_LE || p->op==RTREE_LT || p->op==RTREE_GE 
       || p->op==RTREE_GT || p->op==RTREE_EQ );
   pCellData += 8 + p->iCoord*4;
+  assert( ((((char*)pCellData) - (char*)0)&3)==0 );  /* 4-byte aligned */
   RTREE_DECODE_COORD(eInt, pCellData, xN);
   switch( p->op ){
     case RTREE_LE: if( xN <= p->u.rValue ) return;  break;

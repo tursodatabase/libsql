@@ -1,5 +1,5 @@
-C Fix\sthe\sbuild\sby\smaking\sthe\sOPFLAG_ISNOOP\smacro\savailable\sunconditionally.
-D 2017-02-01T15:19:29.202
+C Use\scompiler\sintrinsic\sfunctions\s(when\savailable)\sfor\sbyteswapping\sin\sRTREE.
+D 2017-02-01T15:24:32.835
 F Makefile.in 5f415e7867296d678fed2e6779aea10c1318b4bc
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc b8ca53350ae545e3562403d5da2a69cec79308da
@@ -264,7 +264,7 @@ F ext/rbu/sqlite3rbu.c bb0de6cdbdb14a7d55a097238a434b7e99caf318
 F ext/rbu/sqlite3rbu.h 6fb6294c34a9ca93b5894a33bca530c6f08decba
 F ext/rbu/test_rbu.c 5aa22616afac6f71ebd3d9bc9bf1006cfabcca88
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c f66b3d232ea98285548107caaac55f110a0b6709
+F ext/rtree/rtree.c d8ef14e964a9390197ba7e511aa47b89dc39416c
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test 42dadfc7b44a436cd74a1bebc0b9b689e4eaf7ec
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
@@ -1552,7 +1552,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7f8570208c06c056d426e9299d9930181a0464f8
-R bbb1f490f7311ec1c087c3ef4607e5e0
+P 510933cb24c5bf883265af3a6075e60a4b5ffa37
+R 13778722a0ec2443f74339612adbbcf9
 U drh
-Z 645035379b970696e5aed344f8a4be19
+Z b1e5b219635e474580d8132f194fff51
