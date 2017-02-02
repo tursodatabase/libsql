@@ -1,5 +1,5 @@
-C Ensure\sthat\sall\scursors\shave\stheir\spositions\ssaved\sprior\sto\srolling\sback\na\ssavepoint.
-D 2017-02-02T20:32:28.731
+C Add\sthe\ssqlite3_blob_reset()\sinterface.\s\sEnhance\sthe\sbehavior\sof\ssqlite3_blob\nobjects\sso\sthat\sthey\scan\sgo\sactive\sagain\safter\sencountering\san\serror\sby\nrerunning\ssqlite3_blob_reopen().\s\sMore\swork\sneeded\son\sthe\sdocumentation.
+D 2017-02-02T23:57:40.053
 F Makefile.in 5f415e7867296d678fed2e6779aea10c1318b4bc
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc ba953c8921fc7e18333f61898007206de7e23964
@@ -395,7 +395,7 @@ F src/resolve.c f9bc0de45a30a450da47b3766de00be89bf9be79
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 3856db523b942062bca8722ba03b61c324ff94d6
 F src/shell.c a84e453c213f3e0d6935a582024da4e242f85a19
-F src/sqlite.h.in 751ff125eb159c8f92c182b8df980a5e4f50e966
+F src/sqlite.h.in 878b0f81f3f59d1f24c002127dd18740a81ba32a
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
 F src/sqliteInt.h 3724c48e82605b471bbf7e41109b5850c6e89f31
@@ -465,7 +465,7 @@ F src/vdbe.h 59998ffd71d7caa8886bc78dafaf8caeccd4c13c
 F src/vdbeInt.h 4e4b15b2e1330e1636e4e01974eab2b0b985092f
 F src/vdbeapi.c 3e4a8893feeb78620f4aac4ac5b85d92255b97e1
 F src/vdbeaux.c b9a36e530e6525ca9d9a685bc7b1d01fa77b5cf8
-F src/vdbeblob.c 359891617358deefc85bef7bcf787fa6b77facb9
+F src/vdbeblob.c a0e2edbfff53935c5434e2bce031801decd0e6dd
 F src/vdbemem.c 3b5a9a5b375458d3e12a50ae1aaa41eeec2175fd
 F src/vdbesort.c eda25cb2d1727efca6f7862fea32b8aa33c0face
 F src/vdbetrace.c 41963d5376f0349842b5fc4aaaaacd7d9cdc0834
@@ -652,7 +652,7 @@ F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
 F test/e_blobbytes.test 439a945953b35cb6948a552edaec4dc31fd70a05
 F test/e_blobclose.test 4b3c8c60c2171164d472059c73e9f3c1844bb66d
 F test/e_blobopen.test e95e1d40f995056f6f322cd5e1a1b83a27e1a145
-F test/e_blobwrite.test 650ded42ee5e0c2dbf263583ce01adf280129599
+F test/e_blobwrite.test 98c2f532be5b4e5f7b4d653f716bec06835b7957
 F test/e_changes.test fd66105385153dbf21fdb35eb8ef6c3e1eade579
 F test/e_createtable.test d4c6059d44dcd4b636de9aae322766062b471844
 F test/e_delete.test ab39084f26ae1f033c940b70ebdbbd523dc4962e
@@ -847,7 +847,7 @@ F test/in4.test d2b38cba404bc4320f4fe1b595b3d163f212c068
 F test/in5.test 6c006e0bcd7351b69350ef566e65f244023489e9
 F test/incrblob.test c9b96afc292aeff43d6687bcb09b0280aa599822
 F test/incrblob2.test a5ce5ed1d0b01e2ed347245a21170372528af0a5
-F test/incrblob3.test d8d036fde015d4a159cd3cbae9d29003b37227a4
+F test/incrblob3.test f1b473c65d8bb43b5f4e2bdcc3f7fc3ac83fd19c
 F test/incrblob4.test 21a52a6843a56cdcce968c6a86b72a7066d0e6ba
 F test/incrblob_err.test 69f9247fed50278d48ea710d1a8f9cdb09e4c0b8
 F test/incrblobfault.test 280474078f6da9e732cd2a215d3d854969014b6e
@@ -1552,8 +1552,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5a0da77c22ebc7db5e63b1520d30f3ad97b9bb3b 01d97e5b6502b1811b52a681f445e1aaae6c0ee6
-R f67fbd165c607c8ab8b9fb8cff6e4d0d
-T +closed 01d97e5b6502b1811b52a681f445e1aaae6c0ee6
+P 8e03a8e95fada5c24d369672a71f6e02288051da
+R f941c08bfee140c0cc6872a3dcf84c2c
+T *branch * sqlite3_blob_reset
+T *sym-sqlite3_blob_reset *
+T -sym-trunk *
 U drh
-Z d16d6898d272ff11e9984476ae1d9ef3
+Z e33493eda3d7be90d201c2b56a3ef767

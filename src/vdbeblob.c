@@ -23,7 +23,7 @@
 */
 typedef struct Incrblob Incrblob;
 struct Incrblob {
-  int nByte;              /* Size of open blob, in bytes */
+  int nByte;              /* Size of open blob if ACTIVE. -1 if RESET */
   int iOffset;            /* Byte offset of blob in cursor data */
   u16 iCol;               /* Table column this handle is open on */
   BtCursor *pCsr;         /* Cursor pointing at blob row */
@@ -32,7 +32,6 @@ struct Incrblob {
   char *zDb;              /* Database name */
   Table *pTab;            /* Table object */
 };
-
 
 /*
 ** This function is used by both blob_open() and blob_reopen(). It seeks
@@ -82,8 +81,8 @@ static int blobSeekToRow(Incrblob *p, sqlite3_int64 iRow, char **pzErr){
           type==0?"null": type==7?"real": "integer"
       );
       rc = SQLITE_ERROR;
-      sqlite3_finalize(p->pStmt);
-      p->pStmt = 0;
+      sqlite3_reset(p->pStmt);
+      p->nByte = -1;
     }else{
       p->iOffset = pC->aType[p->iCol + pC->nField];
       p->nByte = sqlite3VdbeSerialTypeLen(type);
@@ -94,9 +93,9 @@ static int blobSeekToRow(Incrblob *p, sqlite3_int64 iRow, char **pzErr){
 
   if( rc==SQLITE_ROW ){
     rc = SQLITE_OK;
-  }else if( p->pStmt ){
-    rc = sqlite3_finalize(p->pStmt);
-    p->pStmt = 0;
+  }else if( p->nByte>=0 ){
+    rc = sqlite3_reset(p->pStmt);
+    p->nByte = -1;
     if( rc==SQLITE_OK ){
       zErr = sqlite3MPrintf(p->db, "no such rowid: %lld", iRow);
       rc = SQLITE_ERROR;
@@ -157,6 +156,7 @@ int sqlite3_blob_open(
     pParse->db = db;
     sqlite3DbFree(db, zErr);
     zErr = 0;
+    sqlite3_finalize(pBlob->pStmt);
 
     sqlite3BtreeEnterAll(db);
     pTab = sqlite3LocateTable(pParse, 0, zTable, zDb);
@@ -324,6 +324,7 @@ int sqlite3_blob_open(
    
     pBlob->iCol = iCol;
     pBlob->db = db;
+    pBlob->nByte = 0;
     sqlite3BtreeLeaveAll(db);
     if( db->mallocFailed ){
       goto blob_open_out;
@@ -359,7 +360,7 @@ int sqlite3_blob_close(sqlite3_blob *pBlob){
   if( p ){
     db = p->db;
     sqlite3_mutex_enter(db->mutex);
-    rc = sqlite3_finalize(p->pStmt);
+    rc = sqlite3VdbeFinalize((Vdbe*)p->pStmt);
     sqlite3DbFree(db, p);
     sqlite3_mutex_leave(db->mutex);
   }else{
@@ -384,6 +385,10 @@ static int blobReadWrite(
   sqlite3 *db;
 
   if( p==0 ) return SQLITE_MISUSE_BKPT;
+  if( p->nByte<0 ){
+    /* The blob handle is in the RESET state.  Always return SQLITE_ABORT. */
+    return SQLITE_ABORT;
+  }
   db = p->db;
   sqlite3_mutex_enter(db->mutex);
   v = (Vdbe*)p->pStmt;
@@ -391,11 +396,6 @@ static int blobReadWrite(
   if( n<0 || iOffset<0 || ((sqlite3_int64)iOffset+n)>p->nByte ){
     /* Request is out of range. Return a transient error. */
     rc = SQLITE_ERROR;
-  }else if( v==0 ){
-    /* If there is no statement handle, then the blob-handle has
-    ** already been invalidated. Return SQLITE_ABORT in this case.
-    */
-    rc = SQLITE_ABORT;
   }else{
     /* Call either BtreeData() or BtreePutData(). If SQLITE_ABORT is
     ** returned, clean-up the statement handle.
@@ -429,8 +429,8 @@ static int blobReadWrite(
     rc = xCall(p->pCsr, iOffset+p->iOffset, n, z);
     sqlite3BtreeLeaveCursor(p->pCsr);
     if( rc==SQLITE_ABORT ){
-      sqlite3VdbeFinalize(v);
-      p->pStmt = 0;
+      sqlite3_reset(p->pStmt);
+      p->nByte = -1;
     }else{
       v->rc = rc;
     }
@@ -458,13 +458,35 @@ int sqlite3_blob_write(sqlite3_blob *pBlob, const void *z, int n, int iOffset){
 /*
 ** Query a blob handle for the size of the data.
 **
-** The Incrblob.nByte field is fixed for the lifetime of the Incrblob
-** so no mutex is required for access.
+** The Incrblob.nByte field is fixed for as long as the sqlite3_blob
+** object is pointing to the same row, so no mutex is required for access.
+**
+** When the sqlite3_blob interface was first designed in 2007, we specified
+** that sqlite3_blob_bytes() returned 0 when in the RESET state.  It would
+** have been better to return -1 in order to distinguish a RESET blob handle
+** from an ACTIVE blob handle pointing to a zero-length string or blob.
+** But, sadly, we cannot change that now without breaking compatibility.
+** So 0 is returned for RESET blob handles and for ACTIVE blob handles
+** pointing to zero-length blobs.
 */
 int sqlite3_blob_bytes(sqlite3_blob *pBlob){
   Incrblob *p = (Incrblob *)pBlob;
-  return (p && p->pStmt) ? p->nByte : 0;
+  return (p && p->pStmt && p->nByte>0) ? p->nByte : 0;
 }
+
+/*
+** Move the sqlite3_blob object to the RESET state.  This releases
+** any locks and gets the object out of the way of commits and
+** rollbacks.
+*/
+int sqlite3_blob_reset(sqlite3_blob *pBlob){
+  Incrblob *p = (Incrblob *)pBlob;
+  if( p->nByte>=0 ){
+    sqlite3_reset(p->pStmt);
+    p->nByte = -1;
+  }
+  return SQLITE_OK;
+}  
 
 /*
 ** Move an existing blob handle to point to a different row of the same
@@ -480,28 +502,20 @@ int sqlite3_blob_reopen(sqlite3_blob *pBlob, sqlite3_int64 iRow){
   int rc;
   Incrblob *p = (Incrblob *)pBlob;
   sqlite3 *db;
+  char *zErr;
 
   if( p==0 ) return SQLITE_MISUSE_BKPT;
   db = p->db;
   sqlite3_mutex_enter(db->mutex);
 
-  if( p->pStmt==0 ){
-    /* If there is no statement handle, then the blob-handle has
-    ** already been invalidated. Return SQLITE_ABORT in this case.
-    */
-    rc = SQLITE_ABORT;
-  }else{
-    char *zErr;
-    rc = blobSeekToRow(p, iRow, &zErr);
-    if( rc!=SQLITE_OK ){
-      sqlite3ErrorWithMsg(db, rc, (zErr ? "%s" : 0), zErr);
-      sqlite3DbFree(db, zErr);
-    }
-    assert( rc!=SQLITE_SCHEMA );
+  rc = blobSeekToRow(p, iRow, &zErr);
+  if( rc!=SQLITE_OK ){
+    sqlite3ErrorWithMsg(db, rc, (zErr ? "%s" : 0), zErr);
+    sqlite3DbFree(db, zErr);
   }
 
   rc = sqlite3ApiExit(db, rc);
-  assert( rc==SQLITE_OK || p->pStmt==0 );
+  assert( rc==SQLITE_OK || p->nByte<0 );
   sqlite3_mutex_leave(db->mutex);
   return rc;
 }

@@ -6138,15 +6138,27 @@ int sqlite3_overload_function(sqlite3*, const char *zFuncName, int nArg);
 
 /*
 ** CAPI3REF: A Handle To An Open BLOB
-** KEYWORDS: {BLOB handle} {BLOB handles}
+** KEYWORDS: {BLOB handle} {BLOB handles} {sqlite3_blob object}
 **
-** An instance of this object represents an open BLOB on which
-** [sqlite3_blob_open | incremental BLOB I/O] can be performed.
+** An instance of this object represents a connection to a single
+** column in a single row of a table that holds either a BLOB or string
+** and on which [sqlite3_blob_open | incremental BLOB I/O] can be performed.
+**
 ** ^Objects of this type are created by [sqlite3_blob_open()]
 ** and destroyed by [sqlite3_blob_close()].
 ** ^The [sqlite3_blob_read()] and [sqlite3_blob_write()] interfaces
 ** can be used to read or write small subsections of the BLOB.
 ** ^The [sqlite3_blob_bytes()] interface returns the size of the BLOB in bytes.
+**
+** An sqlite3_blob object can be in two states: ACTIVE and RESET.  When in
+** the ACTIVE state, the object is pointing to a specific entry and is
+** ready to do I/O.  When RESET, the sqlite3_blob object is in standby mode,
+** is not associated with any particular row of its table, 
+** and is not available for I/O.
+**
+** The sqlite3_blob object does not contain a mutex and so a single
+** sqlite3_blob object may not be safely used by multiple threads
+** concurrently.
 */
 typedef struct sqlite3_blob sqlite3_blob;
 
@@ -6155,8 +6167,8 @@ typedef struct sqlite3_blob sqlite3_blob;
 ** METHOD: sqlite3
 ** CONSTRUCTOR: sqlite3_blob
 **
-** ^(This interfaces opens a [BLOB handle | handle] to the BLOB located
-** in row iRow, column zColumn, table zTable in database zDb;
+** ^(This interfaces creates an sqlite3_blob object pointing to the string
+** or BLOB located in row iRow, column zColumn, table zTable in database zDb;
 ** in other words, the same BLOB that would be selected by:
 **
 ** <pre>
@@ -6173,10 +6185,11 @@ typedef struct sqlite3_blob sqlite3_blob;
 ** and write access. ^If the flags parameter is zero, the BLOB is opened for
 ** read-only access.
 **
-** ^(On success, [SQLITE_OK] is returned and the new [BLOB handle] is stored
-** in *ppBlob. Otherwise an [error code] is returned and, unless the error
-** code is SQLITE_MISUSE, *ppBlob is set to NULL.)^ ^This means that, provided
-** the API is not misused, it is always safe to call [sqlite3_blob_close()] 
+** ^(On success, [SQLITE_OK] is returned and the new [sqlite3_blob object]
+** is stored in *ppBlob. Otherwise an [error code] is returned and
+** *ppBlob is set to NULL.)^ ^Because *ppBlob is always set to either a
+** valid sqlite3_blob object or NULL
+** it is always safe to call [sqlite3_blob_close()] 
 ** on *ppBlob after this function it returns.
 **
 ** This function fails with SQLITE_ERROR if any of the following are true:
@@ -6208,7 +6221,8 @@ typedef struct sqlite3_blob sqlite3_blob;
 **
 ** ^(If the row that a BLOB handle points to is modified by an
 ** [UPDATE], [DELETE], or by [ON CONFLICT] side-effects
-** then the BLOB handle is marked as "expired".
+** then the BLOB handle is marked as "expired" and cannot be used
+** successfully with first being [sqlite3_blob_reopen|reopened].
 ** This is true if any column of the row is changed, even a column
 ** other than the one the BLOB handle is open on.)^
 ** ^Calls to [sqlite3_blob_read()] and [sqlite3_blob_write()] for
@@ -6220,7 +6234,8 @@ typedef struct sqlite3_blob sqlite3_blob;
 ** ^Use the [sqlite3_blob_bytes()] interface to determine the size of
 ** the opened blob.  ^The size of a blob may not be changed by this
 ** interface.  Use the [UPDATE] SQL command to change the size of a
-** blob.
+** blob.  The [sqlite3_blob_bytes()] interface returns an arbitrary
+** number when used on an expired sqlite3_blob object.
 **
 ** ^The [sqlite3_bind_zeroblob()] and [sqlite3_result_zeroblob()] interfaces
 ** and the built-in [zeroblob] SQL function may be used to create a 
@@ -6231,7 +6246,8 @@ typedef struct sqlite3_blob sqlite3_blob;
 **
 ** See also: [sqlite3_blob_close()],
 ** [sqlite3_blob_reopen()], [sqlite3_blob_read()],
-** [sqlite3_blob_bytes()], [sqlite3_blob_write()].
+** [sqlite3_blob_bytes()], [sqlite3_blob_write()],
+** [sqlite3_blob_reset()].
 */
 int sqlite3_blob_open(
   sqlite3*,
@@ -6244,24 +6260,23 @@ int sqlite3_blob_open(
 );
 
 /*
-** CAPI3REF: Move a BLOB Handle to a New Row
+** CAPI3REF: Move an sqlite3_blob object to a New Row
 ** METHOD: sqlite3_blob
 **
-** ^This function is used to move an existing [BLOB handle] so that it points
+** ^This function updates an existing [sqlite3_blob object] so that it points
 ** to a different row of the same database table. ^The new row is identified
 ** by the rowid value passed as the second argument. Only the row can be
 ** changed. ^The database, table and column on which the blob handle is open
-** remain the same. Moving an existing [BLOB handle] to a new row is
+** remain the same. Moving an existing [sqlite3_blob object] to a new row is
 ** faster than closing the existing handle and opening a new one.
 **
 ** ^(The new row must meet the same criteria as for [sqlite3_blob_open()] -
 ** it must exist and there must be either a blob or text value stored in
 ** the nominated column.)^ ^If the new row is not present in the table, or if
 ** it does not contain a blob or text value, or if another error occurs, an
-** SQLite error code is returned and the blob handle is considered aborted.
-** ^All subsequent calls to [sqlite3_blob_read()], [sqlite3_blob_write()] or
-** [sqlite3_blob_reopen()] on an aborted blob handle immediately return
-** SQLITE_ABORT. ^Calling [sqlite3_blob_bytes()] on an aborted blob handle
+** SQLite error code is returned and the [sqlite3_blob object] is changed
+** to the RESET state.
+** ^Calling [sqlite3_blob_bytes()] on an aborted blob handle
 ** always returns zero.
 **
 ** ^This function sets the database handle error code and message.
@@ -6269,38 +6284,52 @@ int sqlite3_blob_open(
 int sqlite3_blob_reopen(sqlite3_blob *, sqlite3_int64);
 
 /*
-** CAPI3REF: Close A BLOB Handle
+** CAPI3REF: Close an sqlite3_blob object
 ** DESTRUCTOR: sqlite3_blob
 **
-** ^This function closes an open [BLOB handle]. ^(The BLOB handle is closed
+** ^This function is the destructor for an [sqlite3_blob object]. 
+** ^(The [sqlite3_blob object] is closed
 ** unconditionally.  Even if this routine returns an error code, the 
-** handle is still closed.)^
+** object is still closed.)^
 **
-** ^If the blob handle being closed was opened for read-write access, and if
-** the database is in auto-commit mode and there are no other open read-write
+** ^If the sqlite3_blob object being closed was opened for read-write access,
+** and is in the ACTIVE state,
+** and if the database is in auto-commit mode and there are no other open 
+** read-write
 ** blob handles or active write statements, the current transaction is
 ** committed. ^If an error occurs while committing the transaction, an error
 ** code is returned and the transaction rolled back.
 **
-** Calling this function with an argument that is not a NULL pointer or an
-** open blob handle results in undefined behaviour. ^Calling this routine 
+** Calling this function with an argument that is not a NULL pointer or a
+** valid sqlite3_blob object pointer results in undefined behaviour. 
+** ^Calling this routine 
 ** with a null pointer (such as would be returned by a failed call to 
 ** [sqlite3_blob_open()]) is a harmless no-op. ^Otherwise, if this function
-** is passed a valid open blob handle, the values returned by the 
+** is passed a valid sqlite3_blob objecct pointer, the values returned by the 
 ** sqlite3_errcode() and sqlite3_errmsg() functions are set before returning.
 */
 int sqlite3_blob_close(sqlite3_blob *);
 
 /*
-** CAPI3REF: Return The Size Of An Open BLOB
+** CAPI3REF: Reset an sqlite3_blob object
 ** METHOD: sqlite3_blob
 **
-** ^Returns the size in bytes of the BLOB accessible via the 
-** successfully opened [BLOB handle] in its only argument.  ^The
-** incremental blob I/O routines can only read or overwriting existing
-** blob content; they cannot change the size of a blob.
+** ^This function changes an [sqlite3_blob object] to the RESET state.
+** ^If the [sqlite3_blob object] was already in the RESET state, then this
+** routine is a harmless no-op.
+*/
+int sqlite3_blob_reset(sqlite3_blob *);
+
+/*
+** CAPI3REF: Return The Size Of A BLOB
+** METHOD: sqlite3_blob
 **
-** This routine only works on a [BLOB handle] which has been created
+** ^Returns the size in bytes of the BLOB or string accessible via the 
+** ACTIVE [sqlite3_blob object] in its only argument.  ^The
+** incremental blob I/O routines can only read or overwriting existing
+** content; they cannot change the size of a blob or string.
+**
+** This routine only works on an [sqlite3_blob object] that has been created
 ** by a prior successful call to [sqlite3_blob_open()] and which has not
 ** been closed by [sqlite3_blob_close()].  Passing any other pointer in
 ** to this routine results in undefined and probably undesirable behavior.
@@ -6311,9 +6340,9 @@ int sqlite3_blob_bytes(sqlite3_blob *);
 ** CAPI3REF: Read Data From A BLOB Incrementally
 ** METHOD: sqlite3_blob
 **
-** ^(This function is used to read data from an open [BLOB handle] into a
-** caller-supplied buffer. N bytes of data are copied into buffer Z
-** from the open BLOB, starting at offset iOffset.)^
+** ^(This function is used to read data from string or BLOB that an
+** [sqlite3_blob object] is pointing to into a caller-supplied buffer. 
+** N bytes of data are copied into buffer Z starting at offset iOffset.)^
 **
 ** ^If offset iOffset is less than N bytes from the end of the BLOB,
 ** [SQLITE_ERROR] is returned and no data is read.  ^If N or iOffset is
@@ -6321,16 +6350,13 @@ int sqlite3_blob_bytes(sqlite3_blob *);
 ** ^The size of the blob (and hence the maximum value of N+iOffset)
 ** can be determined using the [sqlite3_blob_bytes()] interface.
 **
-** ^An attempt to read from an expired [BLOB handle] fails with an
+** ^An attempt to read from an [sqlite3_blob object] that is in the RESET
+** state, or from a database row that has changed since the most recent
+** call to [sqlite3_blob_open()] or [sqlite3_blob_reopen()] fails with an
 ** error code of [SQLITE_ABORT].
 **
 ** ^(On success, sqlite3_blob_read() returns SQLITE_OK.
 ** Otherwise, an [error code] or an [extended error code] is returned.)^
-**
-** This routine only works on a [BLOB handle] which has been created
-** by a prior successful call to [sqlite3_blob_open()] and which has not
-** been closed by [sqlite3_blob_close()].  Passing any other pointer in
-** to this routine results in undefined and probably undesirable behavior.
 **
 ** See also: [sqlite3_blob_write()].
 */
@@ -6340,9 +6366,10 @@ int sqlite3_blob_read(sqlite3_blob *, void *Z, int N, int iOffset);
 ** CAPI3REF: Write Data Into A BLOB Incrementally
 ** METHOD: sqlite3_blob
 **
-** ^(This function is used to write data into an open [BLOB handle] from a
-** caller-supplied buffer. N bytes of data are copied from the buffer Z
-** into the open BLOB, starting at offset iOffset.)^
+** ^(This function is used to write data from a caller-supplied buffer
+** into a BLOB or string pointed to by an [sqlite3_blob object].
+** N bytes of data are copied from the buffer Z
+** into the BLOB or string, starting at offset iOffset.)^
 **
 ** ^(On success, sqlite3_blob_write() returns SQLITE_OK.
 ** Otherwise, an  [error code] or an [extended error code] is returned.)^
@@ -6362,17 +6389,10 @@ int sqlite3_blob_read(sqlite3_blob *, void *Z, int N, int iOffset);
 ** using the [sqlite3_blob_bytes()] interface. ^If N or iOffset are less 
 ** than zero [SQLITE_ERROR] is returned and no data is written.
 **
-** ^An attempt to write to an expired [BLOB handle] fails with an
-** error code of [SQLITE_ABORT].  ^Writes to the BLOB that occurred
-** before the [BLOB handle] expired are not rolled back by the
-** expiration of the handle, though of course those changes might
-** have been overwritten by the statement that expired the BLOB handle
-** or by other independent statements.
-**
-** This routine only works on a [BLOB handle] which has been created
-** by a prior successful call to [sqlite3_blob_open()] and which has not
-** been closed by [sqlite3_blob_close()].  Passing any other pointer in
-** to this routine results in undefined and probably undesirable behavior.
+** ^An attempt to write into an [sqlite3_blob object] that is in the RESET
+** state, or into a database row that has changed since the most recent
+** call to [sqlite3_blob_open()] or [sqlite3_blob_reopen()] fails with an
+** error code of [SQLITE_ABORT].
 **
 ** See also: [sqlite3_blob_read()].
 */

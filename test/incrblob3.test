@@ -62,7 +62,7 @@ do_test incrblob3-2.1.2 {
 } {SQLITE_ERROR {no such rowid: 3}}
 do_test incrblob3-2.1.3 {
   list [catch {sqlite3_blob_reopen $::blob 1} msg] $msg
-} {1 SQLITE_ABORT}
+} {0 {}}
 do_test incrblob3-2.1.4 { close $::blob } {}
 
 do_execsql_test incrblob3-2.2.1 {
@@ -85,18 +85,21 @@ foreach {tn rowid type} {
 
   do_test incrblob3-2.2.$tn.3 {
     list [catch {sqlite3_blob_reopen $::blob 1} msg] $msg
-  } {1 SQLITE_ABORT}
+  } {0 {}}
   do_test incrblob3-2.2.$tn.4 {
     list [catch {sqlite3_blob_read $::blob 0 10} msg] $msg
-  } {1 SQLITE_ABORT}
+  } {0 {hello worl}}
   do_test incrblob3-2.2.$tn.5 {
     list [catch {sqlite3_blob_write $::blob 0 "abcd"} msg] $msg
-  } {1 SQLITE_ABORT}
+  } {0 {}}
   do_test incrblob3-2.2.$tn.6 {
     sqlite3_blob_bytes $::blob
-  } {0}
+  } {100}
+  do_test incrblob3-2.2.$tn.7 {
+    list [catch {sqlite3_blob_write $::blob 0 "hello"} msg] $msg
+  } {0 {}}
 
-  do_test incrblob3-2.2.$tn.7 { close $::blob } {}
+  do_test incrblob3-2.2.$tn.8 { close $::blob } {}
 }
 
 # Test that passing NULL to sqlite3_blob_XXX() APIs returns SQLITE_MISUSE.
