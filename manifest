@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sseen\swith\sMSVC.
-D 2017-02-01T23:06:17.747
+C This\sis\san\sexperimental\spatch\sthat\sensures\sthat\sall\scursors\shave\stheir\sposition\nsaved\sprior\sto\sstarting\sa\sROLLBACK\sTO.
+D 2017-02-02T00:46:55.000
 F Makefile.in 5f415e7867296d678fed2e6779aea10c1318b4bc
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc ba953c8921fc7e18333f61898007206de7e23964
@@ -336,7 +336,7 @@ F src/auth.c 930b376a9c56998557367e6f7f8aaeac82a2a792
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c 6a63fa34e6fe86e87090e41963c0f2fcf9d3e16d
+F src/btree.c 9fe65ab418d99e80289f024016b5e5e74c3059dd
 F src/btree.h e6d352808956ec163a17f832193a3e198b3fb0ac
 F src/btreeInt.h 10c4b77c2fb399580babbcc7cf652ac10dba796e
 F src/build.c 9e799f1edd910dfa8a0bc29bd390d35d310596af
@@ -1552,8 +1552,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P aaae74d06f4865818465cfdb440258ae8a5b985a 997f765bc6706769ae15f3e719354473e02bd78b
-R 939bce209d57b72db3d58f9894d61374
-T +closed 997f765bc6706769ae15f3e719354473e02bd78b
-U mistachkin
-Z c2a7081e9858115a573bd4695718af54
+P 0c66cf0f0a9ada2ddcb8d61001ef791b86226416
+R 329580c21139f900f64001f6acfc9557
+T *branch * savepoint-rollback
+T *sym-savepoint-rollback *
+T -sym-trunk *
+U drh
+Z 5087946e64391fb6ac59f69d722efdd6
