@@ -1,5 +1,5 @@
-C This\sis\san\sexperimental\spatch\sthat\sensures\sthat\sall\scursors\shave\stheir\sposition\nsaved\sprior\sto\sstarting\sa\sROLLBACK\sTO.
-D 2017-02-02T00:46:55.000
+C Use\sthe\ssqlite3_blob\sinterface\sfor\sreading\svalues\sfrom\sthe\s%_node\sshadow\ntable\sin\sRTREE.\s\sThis\sis\sa\swork\sin\sprogress.\s\sThere\sare\sstill\ssome\sminor\nproblems.
+D 2017-02-02T02:28:45.543
 F Makefile.in 5f415e7867296d678fed2e6779aea10c1318b4bc
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc ba953c8921fc7e18333f61898007206de7e23964
@@ -264,7 +264,7 @@ F ext/rbu/sqlite3rbu.c bb0de6cdbdb14a7d55a097238a434b7e99caf318
 F ext/rbu/sqlite3rbu.h 6fb6294c34a9ca93b5894a33bca530c6f08decba
 F ext/rbu/test_rbu.c 5aa22616afac6f71ebd3d9bc9bf1006cfabcca88
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 70f2488eef5c04dccf15a52cbd4961492124f825
+F ext/rtree/rtree.c 73c4308585c47a7500b9e98617e45a62f8564ddb
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test 42dadfc7b44a436cd74a1bebc0b9b689e4eaf7ec
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
@@ -1552,10 +1552,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0c66cf0f0a9ada2ddcb8d61001ef791b86226416
-R 329580c21139f900f64001f6acfc9557
-T *branch * savepoint-rollback
-T *sym-savepoint-rollback *
-T -sym-trunk *
+P 01d97e5b6502b1811b52a681f445e1aaae6c0ee6
+R 79c2c34c9473af6d4e0161547969b398
+T *branch * rtree-sqlite3_blob
+T *sym-rtree-sqlite3_blob *
+T -sym-savepoint-rollback *
 U drh
-Z 5087946e64391fb6ac59f69d722efdd6
+Z fc394298cc4191cf41d9c752fa550c9c

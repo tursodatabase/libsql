@@ -133,6 +133,9 @@ struct Rtree {
   RtreeNode *pDeleted;
   int iReinsertHeight;        /* Height of sub-trees Reinsert() has run on */
 
+  /* Blob I/O on xxx_node */
+  sqlite3_blob *pNodeBlob;
+
   /* Statements to read/write/delete a record from xxx_node */
   sqlite3_stmt *pReadNode;
   sqlite3_stmt *pWriteNode;
@@ -616,6 +619,16 @@ static RtreeNode *nodeNew(Rtree *pRtree, RtreeNode *pParent){
 }
 
 /*
+** Clear the Rtree.pNodeBlob object
+*/
+static void nodeBlobReset(Rtree *pRtree){
+  if( pRtree->pNodeBlob ){
+    sqlite3_blob_close(pRtree->pNodeBlob);
+    pRtree->pNodeBlob = 0;
+  }
+}
+
+/*
 ** Obtain a reference to an r-tree node.
 */
 static int nodeAcquire(
@@ -624,9 +637,8 @@ static int nodeAcquire(
   RtreeNode *pParent,        /* Either the parent node or NULL */
   RtreeNode **ppNode         /* OUT: Acquired node */
 ){
-  int rc;
-  int rc2 = SQLITE_OK;
-  RtreeNode *pNode;
+  int rc = SQLITE_OK;
+  RtreeNode *pNode = 0;
 
   /* Check if the requested node is already in the hash table. If so,
   ** increase its reference count and return it.
@@ -642,28 +654,42 @@ static int nodeAcquire(
     return SQLITE_OK;
   }
 
-  sqlite3_bind_int64(pRtree->pReadNode, 1, iNode);
-  rc = sqlite3_step(pRtree->pReadNode);
-  if( rc==SQLITE_ROW ){
-    const u8 *zBlob = sqlite3_column_blob(pRtree->pReadNode, 0);
-    if( pRtree->iNodeSize==sqlite3_column_bytes(pRtree->pReadNode, 0) ){
-      pNode = (RtreeNode *)sqlite3_malloc(sizeof(RtreeNode)+pRtree->iNodeSize);
-      if( !pNode ){
-        rc2 = SQLITE_NOMEM;
-      }else{
-        pNode->pParent = pParent;
-        pNode->zData = (u8 *)&pNode[1];
-        pNode->nRef = 1;
-        pNode->iNode = iNode;
-        pNode->isDirty = 0;
-        pNode->pNext = 0;
-        memcpy(pNode->zData, zBlob, pRtree->iNodeSize);
-        nodeReference(pParent);
-      }
+  if( pRtree->pNodeBlob ){
+    sqlite3_blob *pBlob = pRtree->pNodeBlob;
+    pRtree->pNodeBlob = 0;
+    rc = sqlite3_blob_reopen(pBlob, iNode);
+    pRtree->pNodeBlob = pBlob;
+    if( rc ){
+      nodeBlobReset(pRtree);
+      if( rc==SQLITE_NOMEM ) return rc;
     }
   }
-  rc = sqlite3_reset(pRtree->pReadNode);
-  if( rc==SQLITE_OK ) rc = rc2;
+  if( pRtree->pNodeBlob==0 ){
+    char *zTab = sqlite3_mprintf("%s_node", pRtree->zName);
+    if( zTab==0 ) return SQLITE_NOMEM;
+    rc = sqlite3_blob_open(pRtree->db, pRtree->zDb, zTab, "data", iNode, 0,
+                           &pRtree->pNodeBlob);
+    sqlite3_free(zTab);
+  }
+  if( rc ){
+    nodeBlobReset(pRtree);
+    *ppNode = 0;
+  }else if( pRtree->iNodeSize==sqlite3_blob_bytes(pRtree->pNodeBlob) ){
+    pNode = (RtreeNode *)sqlite3_malloc(sizeof(RtreeNode)+pRtree->iNodeSize);
+    if( !pNode ){
+      rc = SQLITE_NOMEM;
+    }else{
+      pNode->pParent = pParent;
+      pNode->zData = (u8 *)&pNode[1];
+      pNode->nRef = 1;
+      pNode->iNode = iNode;
+      pNode->isDirty = 0;
+      pNode->pNext = 0;
+      rc = sqlite3_blob_read(pRtree->pNodeBlob, pNode->zData,
+                             pRtree->iNodeSize, 0);
+      nodeReference(pParent);
+    }
+  }
 
   /* If the root node was just loaded, set pRtree->iDepth to the height
   ** of the r-tree structure. A height of zero means all data is stored on
@@ -909,6 +935,7 @@ static void rtreeReference(Rtree *pRtree){
 static void rtreeRelease(Rtree *pRtree){
   pRtree->nBusy--;
   if( pRtree->nBusy==0 ){
+    nodeBlobReset(pRtree);
     sqlite3_finalize(pRtree->pReadNode);
     sqlite3_finalize(pRtree->pWriteNode);
     sqlite3_finalize(pRtree->pDeleteNode);
@@ -947,6 +974,7 @@ static int rtreeDestroy(sqlite3_vtab *pVtab){
   if( !zCreate ){
     rc = SQLITE_NOMEM;
   }else{
+    nodeBlobReset(pRtree);
     rc = sqlite3_exec(pRtree->db, zCreate, 0, 0, 0);
     sqlite3_free(zCreate);
   }
@@ -3153,6 +3181,27 @@ constraint:
 }
 
 /*
+** Called when a transaction starts.
+** This is a no-op.  But the Virtual Table mechanism needs a method
+** here or else it will never call the xRollback and xCommit methods,
+** and those methods are necessary for clearing the sqlite3_blob object.
+*/
+static int rtreeBeginTransaction(sqlite3_vtab *pVtab){
+  (void)pVtab;
+  return SQLITE_OK;
+}
+
+/*
+** Called when a transaction completes (either by COMMIT or ROLLBACK).
+** The sqlite3_blob object should be released at this point.
+*/
+static int rtreeEndTransaction(sqlite3_vtab *pVtab){
+  Rtree *pRtree = (Rtree *)pVtab;
+  nodeBlobReset(pRtree);
+  return SQLITE_OK;
+}
+
+/*
 ** The xRename method for rtree module virtual tables.
 */
 static int rtreeRename(sqlite3_vtab *pVtab, const char *zNewName){
@@ -3172,6 +3221,7 @@ static int rtreeRename(sqlite3_vtab *pVtab, const char *zNewName){
   }
   return rc;
 }
+
 
 /*
 ** This function populates the pRtree->nRowEst variable with an estimate
@@ -3232,15 +3282,15 @@ static sqlite3_module rtreeModule = {
   rtreeColumn,                /* xColumn - read data */
   rtreeRowid,                 /* xRowid - read data */
   rtreeUpdate,                /* xUpdate - write data */
-  0,                          /* xBegin - begin transaction */
+  rtreeBeginTransaction,      /* xBegin - begin transaction */
   0,                          /* xSync - sync transaction */
-  0,                          /* xCommit - commit transaction */
-  0,                          /* xRollback - rollback transaction */
+  rtreeEndTransaction,        /* xCommit - commit transaction */
+  rtreeEndTransaction,        /* xRollback - rollback transaction */
   0,                          /* xFindFunction - function overloading */
   rtreeRename,                /* xRename - rename the table */
   0,                          /* xSavepoint */
   0,                          /* xRelease */
-  0                           /* xRollbackTo */
+  0,                          /* xRollbackTo */
 };
 
 static int rtreeSqlInit(
@@ -3440,7 +3490,7 @@ static int rtreeInit(
   pRtree->zDb = (char *)&pRtree[1];
   pRtree->zName = &pRtree->zDb[nDb+1];
   pRtree->nDim = (u8)((argc-4)/2);
-  pRtree->nDim2 = argc - 4;
+  pRtree->nDim2 = pRtree->nDim*2;
   pRtree->nBytesPerCell = 8 + pRtree->nDim2*4;
   pRtree->eCoordType = (u8)eCoordType;
   memcpy(pRtree->zDb, argv[1], nDb);
