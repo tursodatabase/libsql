@@ -87,18 +87,18 @@ struct SHA1Context {
 /*
  * Hash a single 512-bit block. This is the core of the algorithm.
  */
-#define a qq[0]
-#define b qq[1]
-#define c qq[2]
-#define d qq[3]
-#define e qq[4]
-
 void SHA1Transform(unsigned int state[5], const unsigned char buffer[64]){
   unsigned int qq[5]; /* a, b, c, d, e; */
   static int one = 1;
   unsigned int block[16];
   memcpy(block, buffer, 64);
   memcpy(qq,state,5*sizeof(unsigned int));
+
+#define a qq[0]
+#define b qq[1]
+#define c qq[2]
+#define d qq[3]
+#define e qq[4]
 
   /* Copy p->state[] to working vars */
   /*
@@ -144,6 +144,12 @@ void SHA1Transform(unsigned int state[5], const unsigned char buffer[64]){
   state[2] += c;
   state[3] += d;
   state[4] += e;
+
+#undef a
+#undef b
+#undef c
+#undef d
+#undef e
 }
 
 
@@ -253,6 +259,7 @@ static void sha1Func(
   int nByte = sqlite3_value_bytes(argv[0]);
   char zOut[44];
 
+  assert( argc==1 );
   if( eType==SQLITE_NULL ) return;
   hash_init(&cx);
   if( eType==SQLITE_BLOB ){
@@ -292,6 +299,7 @@ static void sha1QueryFunc(
   SHA1Context cx;
   char zOut[44];
 
+  assert( argc==1 );
   if( zSql==0 ) return;
   hash_init(&cx);
   while( zSql[0] ){
@@ -343,7 +351,7 @@ static void sha1QueryFunc(
           case SQLITE_FLOAT: {
             sqlite3_uint64 u;
             int j;
-            unsigned char x[8];
+            unsigned char x[9];
             double r = sqlite3_column_double(pStmt,i);
             memcpy(&u, &r, 8);
             for(j=8; j>=1; j--){
@@ -355,17 +363,17 @@ static void sha1QueryFunc(
             break;
           }
           case SQLITE_TEXT: {
-            int n = sqlite3_column_bytes(pStmt, i);
-            const unsigned char *z = sqlite3_column_text(pStmt, i);
-            hash_step_vformat(&cx,"T%d:",n);
-            hash_step(&cx, z, n);
+            int n2 = sqlite3_column_bytes(pStmt, i);
+            const unsigned char *z2 = sqlite3_column_text(pStmt, i);
+            hash_step_vformat(&cx,"T%d:",n2);
+            hash_step(&cx, z2, n2);
             break;
           }
           case SQLITE_BLOB: {
-            int n = sqlite3_column_bytes(pStmt, i);
-            const unsigned char *z = sqlite3_column_blob(pStmt, i);
-            hash_step_vformat(&cx,"B%d:",n);
-            hash_step(&cx, z, n);
+            int n2 = sqlite3_column_bytes(pStmt, i);
+            const unsigned char *z2 = sqlite3_column_blob(pStmt, i);
+            hash_step_vformat(&cx,"B%d:",n2);
+            hash_step(&cx, z2, n2);
             break;
           }
         }
@@ -382,8 +390,8 @@ static void sha1QueryFunc(
 __declspec(dllexport)
 #endif
 int sqlite3_sha_init(
-  sqlite3 *db, 
-  char **pzErrMsg, 
+  sqlite3 *db,
+  char **pzErrMsg,
   const sqlite3_api_routines *pApi
 ){
   int rc = SQLITE_OK;
