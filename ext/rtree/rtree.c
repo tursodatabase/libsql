@@ -119,11 +119,13 @@ struct Rtree {
   u8 nDim2;                   /* Twice the number of dimensions */
   u8 eCoordType;              /* RTREE_COORD_REAL32 or RTREE_COORD_INT32 */
   u8 nBytesPerCell;           /* Bytes consumed per cell */
+  u8 inWrTrans;               /* True if inside write transaction */
   int iDepth;                 /* Current depth of the r-tree structure */
   char *zDb;                  /* Name of database containing r-tree table */
   char *zName;                /* Name of r-tree table */ 
-  int nBusy;                  /* Current number of users of this structure */
+  u32 nBusy;                  /* Current number of users of this structure */
   i64 nRowEst;                /* Estimated number of rows in this table */
+  u32 nCursor;                /* Number of open cursors */
 
   /* List of nodes removed during a CondenseTree operation. List is
   ** linked together via the pointer normally used for hash chains -
@@ -622,7 +624,7 @@ static RtreeNode *nodeNew(Rtree *pRtree, RtreeNode *pParent){
 ** Clear the Rtree.pNodeBlob object
 */
 static void nodeBlobReset(Rtree *pRtree){
-  if( pRtree->pNodeBlob ){
+  if( pRtree->pNodeBlob && pRtree->inWrTrans==0 && pRtree->nCursor==0 ){
     sqlite3_blob_close(pRtree->pNodeBlob);
     pRtree->pNodeBlob = 0;
   }
@@ -661,7 +663,7 @@ static int nodeAcquire(
     pRtree->pNodeBlob = pBlob;
     if( rc ){
       nodeBlobReset(pRtree);
-      if( rc==SQLITE_NOMEM ) return rc;
+      if( rc==SQLITE_NOMEM ) return SQLITE_NOMEM;
     }
   }
   if( pRtree->pNodeBlob==0 ){
@@ -674,6 +676,9 @@ static int nodeAcquire(
   if( rc ){
     nodeBlobReset(pRtree);
     *ppNode = 0;
+    /* If unable to open an sqlite3_blob on the desired row, that can only
+    ** be because the shadow tables hold erroneous data. */
+    if( rc==SQLITE_ERROR ) rc = SQLITE_CORRUPT_VTAB;
   }else if( pRtree->iNodeSize==sqlite3_blob_bytes(pRtree->pNodeBlob) ){
     pNode = (RtreeNode *)sqlite3_malloc(sizeof(RtreeNode)+pRtree->iNodeSize);
     if( !pNode ){
@@ -935,6 +940,8 @@ static void rtreeReference(Rtree *pRtree){
 static void rtreeRelease(Rtree *pRtree){
   pRtree->nBusy--;
   if( pRtree->nBusy==0 ){
+    pRtree->inWrTrans = 0;
+    pRtree->nCursor = 0;
     nodeBlobReset(pRtree);
     sqlite3_finalize(pRtree->pReadNode);
     sqlite3_finalize(pRtree->pWriteNode);
@@ -990,6 +997,7 @@ static int rtreeDestroy(sqlite3_vtab *pVtab){
 */
 static int rtreeOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
   int rc = SQLITE_NOMEM;
+  Rtree *pRtree = (Rtree *)pVTab;
   RtreeCursor *pCsr;
 
   pCsr = (RtreeCursor *)sqlite3_malloc(sizeof(RtreeCursor));
@@ -997,6 +1005,7 @@ static int rtreeOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
     memset(pCsr, 0, sizeof(RtreeCursor));
     pCsr->base.pVtab = pVTab;
     rc = SQLITE_OK;
+    pRtree->nCursor++;
   }
   *ppCursor = (sqlite3_vtab_cursor *)pCsr;
 
@@ -1029,10 +1038,13 @@ static int rtreeClose(sqlite3_vtab_cursor *cur){
   Rtree *pRtree = (Rtree *)(cur->pVtab);
   int ii;
   RtreeCursor *pCsr = (RtreeCursor *)cur;
+  assert( pRtree->nCursor>0 );
   freeCursorConstraints(pCsr);
   sqlite3_free(pCsr->aPoint);
   for(ii=0; ii<RTREE_CACHE_SZ; ii++) nodeRelease(pRtree, pCsr->aNode[ii]);
   sqlite3_free(pCsr);
+  pRtree->nCursor--;
+  nodeBlobReset(pRtree);
   return SQLITE_OK;
 }
 
@@ -3182,12 +3194,11 @@ constraint:
 
 /*
 ** Called when a transaction starts.
-** This is a no-op.  But the Virtual Table mechanism needs a method
-** here or else it will never call the xRollback and xCommit methods,
-** and those methods are necessary for clearing the sqlite3_blob object.
 */
 static int rtreeBeginTransaction(sqlite3_vtab *pVtab){
-  (void)pVtab;
+  Rtree *pRtree = (Rtree *)pVtab;
+  assert( pRtree->inWrTrans==0 );
+  pRtree->inWrTrans++;
   return SQLITE_OK;
 }
 
@@ -3197,6 +3208,7 @@ static int rtreeBeginTransaction(sqlite3_vtab *pVtab){
 */
 static int rtreeEndTransaction(sqlite3_vtab *pVtab){
   Rtree *pRtree = (Rtree *)pVtab;
+  pRtree->inWrTrans = 0;
   nodeBlobReset(pRtree);
   return SQLITE_OK;
 }
