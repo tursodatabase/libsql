@@ -1,5 +1,5 @@
-C Ensure\sthat\sall\scursors\shave\stheir\spositions\ssaved\sprior\sto\srolling\sback\na\ssavepoint.
-D 2017-02-02T20:32:28.731
+C Improved\stests\sfor\sthe\scarray()\stable-valued\sfunction.
+D 2017-02-03T15:16:25.769
 F Makefile.in 5f415e7867296d678fed2e6779aea10c1318b4bc
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc ba953c8921fc7e18333f61898007206de7e23964
@@ -1155,7 +1155,7 @@ F test/symlink.test c9ebe7330d228249e447038276bfc8a7b22f4849
 F test/sync.test 2f84bdbc2b2df1fcb0220575b4b9f8cea94b7529
 F test/syscall.test f59ba4e25f7ba4a4c031026cc2ef8b6e4b4c639c
 F test/sysfault.test c9f2b0d8d677558f74de750c75e12a5454719d04
-F test/tabfunc01.test 8b2ef53caa37854864c89e1e57e8a10efd4f5e43
+F test/tabfunc01.test 699251cb99651415218a891384510a685c7ab012
 F test/table.test b708f3e5fa2542fa51dfab21fc07b36ea445cb2f
 F test/tableapi.test 2674633fa95d80da917571ebdd759a14d9819126
 F test/tableopts.test dba698ba97251017b7c80d738c198d39ab747930
@@ -1552,8 +1552,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5a0da77c22ebc7db5e63b1520d30f3ad97b9bb3b 01d97e5b6502b1811b52a681f445e1aaae6c0ee6
-R f67fbd165c607c8ab8b9fb8cff6e4d0d
-T +closed 01d97e5b6502b1811b52a681f445e1aaae6c0ee6
+P 8e03a8e95fada5c24d369672a71f6e02288051da
+R 408679a2eb27f8712868946a0e8b1f65
 U drh
-Z d16d6898d272ff11e9984476ae1d9ef3
+Z 773cdc68fe82e971a45f4eb8ed248cd4
