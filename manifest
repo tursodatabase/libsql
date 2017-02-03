@@ -1,5 +1,5 @@
-C Ensure\sthat\sall\scursors\shave\stheir\spositions\ssaved\sprior\sto\srolling\sback\na\ssavepoint.
-D 2017-02-02T20:32:28.731
+C Modify\sthe\ssqlite3SelectDup()\sroutine\sto\savoid\srecursing\son\sSelect.pPrior.
+D 2017-02-03T14:44:52.406
 F Makefile.in 5f415e7867296d678fed2e6779aea10c1318b4bc
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc ba953c8921fc7e18333f61898007206de7e23964
@@ -346,7 +346,7 @@ F src/ctime.c 9f2296a4e5d26ebf0e0d95a0af4628f1ea694e7a
 F src/date.c dc3f1391d9297f8c748132813aaffcb117090d6e
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
 F src/delete.c 0d9d5549d42e79ce4d82ff1db1e6c81e36d2f67c
-F src/expr.c d7ef6fdb70bc18259d7d36b22aa0bc4845c5c5b9
+F src/expr.c d29114e9b709eaeaaa18553a5bbe60a19302aeef
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 2e9aabe1aee76273aff8a84ee92c464e095400ae
 F src/func.c c67273e1ec08abbdcc14c189892a3ff6eeece86b
@@ -1552,8 +1552,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5a0da77c22ebc7db5e63b1520d30f3ad97b9bb3b 01d97e5b6502b1811b52a681f445e1aaae6c0ee6
-R f67fbd165c607c8ab8b9fb8cff6e4d0d
-T +closed 01d97e5b6502b1811b52a681f445e1aaae6c0ee6
-U drh
-Z d16d6898d272ff11e9984476ae1d9ef3
+P 8e03a8e95fada5c24d369672a71f6e02288051da
+R c80f7dbbf5f0044354e4b463e716c13e
+T *branch * recursive-selectdup
+T *sym-recursive-selectdup *
+T -sym-trunk *
+U dan
+Z f43da81961eb4c39992192293f7e5a2c
