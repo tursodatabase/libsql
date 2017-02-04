@@ -105,6 +105,7 @@ mod raw_statement;
 #[cfg(feature = "backup")]pub mod backup;
 #[cfg(feature = "functions")]pub mod functions;
 #[cfg(feature = "blob")]pub mod blob;
+#[cfg(feature = "limits")]pub mod limits;
 
 // Number of cached prepared statements we'll hold on to.
 const STATEMENT_CACHE_DEFAULT_CAPACITY: usize = 16;
