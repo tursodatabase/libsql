@@ -4186,7 +4186,15 @@ static int withExpand(
     pCte->zCteErr = "circular reference: %s";
     pSavedWith = pParse->pWith;
     pParse->pWith = pWith;
-    sqlite3WalkSelect(pWalker, bMayRecursive ? pSel->pPrior : pSel);
+    if( bMayRecursive ){
+      Select *pPrior = pSel->pPrior;
+      assert( pPrior->pWith==0 );
+      pPrior->pWith = pSel->pWith;
+      sqlite3WalkSelect(pWalker, pPrior);
+      pPrior->pWith = 0;
+    }else{
+      sqlite3WalkSelect(pWalker, pSel);
+    }
     pParse->pWith = pWith;
 
     for(pLeft=pSel; pLeft->pPrior; pLeft=pLeft->pPrior);
@@ -4230,10 +4238,12 @@ static int withExpand(
 */
 static void selectPopWith(Walker *pWalker, Select *p){
   Parse *pParse = pWalker->pParse;
-  With *pWith = findRightmost(p)->pWith;
-  if( pWith!=0 ){
-    assert( pParse->pWith==pWith );
-    pParse->pWith = pWith->pOuter;
+  if( pParse->pWith && p->pPrior==0 ){
+    With *pWith = findRightmost(p)->pWith;
+    if( pWith!=0 ){
+      assert( pParse->pWith==pWith );
+      pParse->pWith = pWith->pOuter;
+    }
   }
 }
 #else
@@ -4283,8 +4293,8 @@ static int selectExpander(Walker *pWalker, Select *p){
   }
   pTabList = p->pSrc;
   pEList = p->pEList;
-  if( pWalker->xSelectCallback2==selectPopWith ){
-    sqlite3WithPush(pParse, findRightmost(p)->pWith, 0);
+  if( p->pWith ){
+    sqlite3WithPush(pParse, p->pWith, 0);
   }
 
   /* Make sure cursor numbers have been assigned to all entries in
@@ -4571,9 +4581,7 @@ static void sqlite3SelectExpand(Parse *pParse, Select *pSelect){
     sqlite3WalkSelect(&w, pSelect);
   }
   w.xSelectCallback = selectExpander;
-  if( (pSelect->selFlags & SF_MultiValue)==0 ){
-    w.xSelectCallback2 = selectPopWith;
-  }
+  w.xSelectCallback2 = selectPopWith;
   sqlite3WalkSelect(&w, pSelect);
 }
 

@@ -55,7 +55,6 @@ static int blobSeekToRow(Incrblob *p, sqlite3_int64 iRow, char **pzErr){
   int rc;                         /* Error code */
   char *zErr = 0;                 /* Error message */
   Vdbe *v = (Vdbe *)p->pStmt;
-  sqlite3 *db = v->db;
 
   /* Set the value of register r[1] in the SQL statement to integer iRow. 
   ** This is done directly as a performance optimization
@@ -69,9 +68,7 @@ static int blobSeekToRow(Incrblob *p, sqlite3_int64 iRow, char **pzErr){
   ** counter is faster. */
   if( v->pc>3 ){
     v->pc = 3;
-    db->nVdbeExec++;
-    rc = sqlite3VdbeExec((Vdbe*)p->pStmt);
-    db->nVdbeExec--;
+    rc = sqlite3VdbeExec(v);
   }else{
     rc = sqlite3_step(p->pStmt);
   }

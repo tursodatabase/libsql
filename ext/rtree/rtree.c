@@ -117,13 +117,16 @@ struct Rtree {
   sqlite3 *db;                /* Host database connection */
   int iNodeSize;              /* Size in bytes of each node in the node table */
   u8 nDim;                    /* Number of dimensions */
+  u8 nDim2;                   /* Twice the number of dimensions */
   u8 eCoordType;              /* RTREE_COORD_REAL32 or RTREE_COORD_INT32 */
   u8 nBytesPerCell;           /* Bytes consumed per cell */
+  u8 inWrTrans;               /* True if inside write transaction */
   int iDepth;                 /* Current depth of the r-tree structure */
   char *zDb;                  /* Name of database containing r-tree table */
   char *zName;                /* Name of r-tree table */ 
-  int nBusy;                  /* Current number of users of this structure */
+  u32 nBusy;                  /* Current number of users of this structure */
   i64 nRowEst;                /* Estimated number of rows in this table */
+  u32 nCursor;                /* Number of open cursors */
 
   /* List of nodes removed during a CondenseTree operation. List is
   ** linked together via the pointer normally used for hash chains -
@@ -133,8 +136,10 @@ struct Rtree {
   RtreeNode *pDeleted;
   int iReinsertHeight;        /* Height of sub-trees Reinsert() has run on */
 
+  /* Blob I/O on xxx_node */
+  sqlite3_blob *pNodeBlob;
+
   /* Statements to read/write/delete a record from xxx_node */
-  sqlite3_stmt *pReadNode;
   sqlite3_stmt *pWriteNode;
   sqlite3_stmt *pDeleteNode;
 
@@ -363,6 +368,65 @@ struct RtreeMatchArg {
 # define MIN(x,y) ((x) > (y) ? (y) : (x))
 #endif
 
+/* What version of GCC is being used.  0 means GCC is not being used */
+#ifndef GCC_VERSION
+#ifdef __GNUC__
+# define GCC_VERSION (__GNUC__*1000000+__GNUC_MINOR__*1000+__GNUC_PATCHLEVEL__)
+#else
+# define GCC_VERSION 0
+#endif
+#endif
+
+/* What version of CLANG is being used.  0 means CLANG is not being used */
+#ifndef CLANG_VERSION
+#if defined(__clang__) && !defined(_WIN32)
+# define CLANG_VERSION \
+            (__clang_major__*1000000+__clang_minor__*1000+__clang_patchlevel__)
+#else
+# define CLANG_VERSION 0
+#endif
+#endif
+
+/* The testcase() macro should already be defined in the amalgamation.  If
+** it is not, make it a no-op.
+*/
+#ifndef SQLITE_AMALGAMATION
+# define testcase(X)
+#endif
+
+/*
+** Macros to determine whether the machine is big or little endian,
+** and whether or not that determination is run-time or compile-time.
+**
+** For best performance, an attempt is made to guess at the byte-order
+** using C-preprocessor macros.  If that is unsuccessful, or if
+** -DSQLITE_RUNTIME_BYTEORDER=1 is set, then byte-order is determined
+** at run-time.
+*/
+#ifndef SQLITE_BYTEORDER
+#if (defined(i386)     || defined(__i386__)   || defined(_M_IX86) ||    \
+     defined(__x86_64) || defined(__x86_64__) || defined(_M_X64)  ||    \
+     defined(_M_AMD64) || defined(_M_ARM)     || defined(__x86)   ||    \
+     defined(__arm__)) && !defined(SQLITE_RUNTIME_BYTEORDER)
+# define SQLITE_BYTEORDER    1234
+#endif
+#if (defined(sparc)    || defined(__ppc__))  \
+    && !defined(SQLITE_RUNTIME_BYTEORDER)
+# define SQLITE_BYTEORDER    4321
+#endif
+# define SQLITE_BYTEORDER    0     /* 0 means "unknown at compile-time" */
+#endif
+
+
+/* What version of MSVC is being used.  0 means MSVC is not being used */
+#ifndef MSVC_VERSION
+#if defined(_MSC_VER)
+# define MSVC_VERSION _MSC_VER
+#else
+# define MSVC_VERSION 0
+#endif
+#endif
+
 /*
 ** Functions to deserialize a 16 bit integer, 32 bit real number and
 ** 64 bit integer. The deserialized value is returned.
@@ -371,14 +435,43 @@ static int readInt16(u8 *p){
   return (p[0]<<8) + p[1];
 }
 static void readCoord(u8 *p, RtreeCoord *pCoord){
+  assert( ((((char*)p) - (char*)0)&3)==0 );  /* p is always 4-byte aligned */
+#if SQLITE_BYTEORDER==1234 && MSVC_VERSION>=1300
+  pCoord->u = _byteswap_ulong(*(u32*)p);
+#elif SQLITE_BYTEORDER==1234 && (GCC_VERSION>=4003000 || CLANG_VERSION>=3000000)
+  pCoord->u = __builtin_bswap32(*(u32*)p);
+#elif SQLITE_BYTEORDER==1234
+  pCoord->u = ((pCoord->u>>24)&0xff)|((pCoord->u>>8)&0xff00)|
+              ((pCoord->u&0xff)<<24)|((pCoord->u&0xff00)<<8);
+#elif SQLITE_BYTEORDER==4321
+  pCoord->u = *(u32*)p;
+#else
   pCoord->u = (
     (((u32)p[0]) << 24) + 
     (((u32)p[1]) << 16) + 
     (((u32)p[2]) <<  8) + 
     (((u32)p[3]) <<  0)
   );
+#endif
 }
 static i64 readInt64(u8 *p){
+#if SQLITE_BYTEORDER==1234 && MSVC_VERSION>=1300
+  u64 x;
+  testcase( ((((char*)p) - (char*)0)&7)!=0 );  /* not always 8-byte aligned */
+  memcpy(&x, p, 8);
+  return (i64)_byteswap_uint64(x);
+#elif SQLITE_BYTEORDER==1234 && (GCC_VERSION>=4003000 || CLANG_VERSION>=3000000)
+  u64 x;
+  testcase( ((((char*)p) - (char*)0)&7)!=0 );  /* not always 8-byte aligned */
+  memcpy(&x, p, 8);
+  return (i64)__builtin_bswap64(x);
+#elif SQLITE_BYTEORDER==4321
+  i64 x;
+  testcase( ((((char*)p) - (char*)0)&7)!=0 );  /* not always 8-byte aligned */
+  memcpy(&x, p, 8);
+  return x;
+#else
+  testcase( ((((char*)p) - (char*)0)&7)!=0 );  /* not always 8-byte aligned */
   return (
     (((i64)p[0]) << 56) + 
     (((i64)p[1]) << 48) + 
@@ -389,6 +482,7 @@ static i64 readInt64(u8 *p){
     (((i64)p[6]) <<  8) + 
     (((i64)p[7]) <<  0)
   );
+#endif
 }
 
 /*
@@ -403,16 +497,38 @@ static int writeInt16(u8 *p, int i){
 }
 static int writeCoord(u8 *p, RtreeCoord *pCoord){
   u32 i;
+  assert( ((((char*)p) - (char*)0)&3)==0 );  /* p is always 4-byte aligned */
   assert( sizeof(RtreeCoord)==4 );
   assert( sizeof(u32)==4 );
+#if SQLITE_BYTEORDER==1234 && (GCC_VERSION>=4003000 || CLANG_VERSION>=3000000)
+  i = __builtin_bswap32(pCoord->u);
+  memcpy(p, &i, 4);
+#elif SQLITE_BYTEORDER==1234 && MSVC_VERSION>=1300
+  i = _byteswap_ulong(pCoord->u);
+  memcpy(p, &i, 4);
+#elif SQLITE_BYTEORDER==4321
+  i = pCoord->u;
+  memcpy(p, &i, 4);
+#else
   i = pCoord->u;
   p[0] = (i>>24)&0xFF;
   p[1] = (i>>16)&0xFF;
   p[2] = (i>> 8)&0xFF;
   p[3] = (i>> 0)&0xFF;
+#endif
   return 4;
 }
 static int writeInt64(u8 *p, i64 i){
+  testcase( ((((char*)p) - (char*)0)&7)!=0 );  /* Not always 8-byte aligned */
+#if SQLITE_BYTEORDER==1234 && (GCC_VERSION>=4003000 || CLANG_VERSION>=3000000)
+  i = (i64)__builtin_bswap64((u64)i);
+  memcpy(p, &i, 8);
+#elif SQLITE_BYTEORDER==1234 && MSVC_VERSION>=1300
+  i = (i64)_byteswap_uint64((u64)i);
+  memcpy(p, &i, 8);
+#elif SQLITE_BYTEORDER==4321
+  memcpy(p, &i, 8);
+#else
   p[0] = (i>>56)&0xFF;
   p[1] = (i>>48)&0xFF;
   p[2] = (i>>40)&0xFF;
@@ -421,6 +537,7 @@ static int writeInt64(u8 *p, i64 i){
   p[5] = (i>>16)&0xFF;
   p[6] = (i>> 8)&0xFF;
   p[7] = (i>> 0)&0xFF;
+#endif
   return 8;
 }
 
@@ -504,6 +621,17 @@ static RtreeNode *nodeNew(Rtree *pRtree, RtreeNode *pParent){
 }
 
 /*
+** Clear the Rtree.pNodeBlob object
+*/
+static void nodeBlobReset(Rtree *pRtree){
+  if( pRtree->pNodeBlob && pRtree->inWrTrans==0 && pRtree->nCursor==0 ){
+    sqlite3_blob *pBlob = pRtree->pNodeBlob;
+    pRtree->pNodeBlob = 0;
+    sqlite3_blob_close(pBlob);
+  }
+}
+
+/*
 ** Obtain a reference to an r-tree node.
 */
 static int nodeAcquire(
@@ -512,9 +640,8 @@ static int nodeAcquire(
   RtreeNode *pParent,        /* Either the parent node or NULL */
   RtreeNode **ppNode         /* OUT: Acquired node */
 ){
-  int rc;
-  int rc2 = SQLITE_OK;
-  RtreeNode *pNode;
+  int rc = SQLITE_OK;
+  RtreeNode *pNode = 0;
 
   /* Check if the requested node is already in the hash table. If so,
   ** increase its reference count and return it.
@@ -530,28 +657,45 @@ static int nodeAcquire(
     return SQLITE_OK;
   }
 
-  sqlite3_bind_int64(pRtree->pReadNode, 1, iNode);
-  rc = sqlite3_step(pRtree->pReadNode);
-  if( rc==SQLITE_ROW ){
-    const u8 *zBlob = sqlite3_column_blob(pRtree->pReadNode, 0);
-    if( pRtree->iNodeSize==sqlite3_column_bytes(pRtree->pReadNode, 0) ){
-      pNode = (RtreeNode *)sqlite3_malloc(sizeof(RtreeNode)+pRtree->iNodeSize);
-      if( !pNode ){
-        rc2 = SQLITE_NOMEM;
-      }else{
-        pNode->pParent = pParent;
-        pNode->zData = (u8 *)&pNode[1];
-        pNode->nRef = 1;
-        pNode->iNode = iNode;
-        pNode->isDirty = 0;
-        pNode->pNext = 0;
-        memcpy(pNode->zData, zBlob, pRtree->iNodeSize);
-        nodeReference(pParent);
-      }
+  if( pRtree->pNodeBlob ){
+    sqlite3_blob *pBlob = pRtree->pNodeBlob;
+    pRtree->pNodeBlob = 0;
+    rc = sqlite3_blob_reopen(pBlob, iNode);
+    pRtree->pNodeBlob = pBlob;
+    if( rc ){
+      nodeBlobReset(pRtree);
+      if( rc==SQLITE_NOMEM ) return SQLITE_NOMEM;
     }
   }
-  rc = sqlite3_reset(pRtree->pReadNode);
-  if( rc==SQLITE_OK ) rc = rc2;
+  if( pRtree->pNodeBlob==0 ){
+    char *zTab = sqlite3_mprintf("%s_node", pRtree->zName);
+    if( zTab==0 ) return SQLITE_NOMEM;
+    rc = sqlite3_blob_open(pRtree->db, pRtree->zDb, zTab, "data", iNode, 0,
+                           &pRtree->pNodeBlob);
+    sqlite3_free(zTab);
+  }
+  if( rc ){
+    nodeBlobReset(pRtree);
+    *ppNode = 0;
+    /* If unable to open an sqlite3_blob on the desired row, that can only
+    ** be because the shadow tables hold erroneous data. */
+    if( rc==SQLITE_ERROR ) rc = SQLITE_CORRUPT_VTAB;
+  }else if( pRtree->iNodeSize==sqlite3_blob_bytes(pRtree->pNodeBlob) ){
+    pNode = (RtreeNode *)sqlite3_malloc(sizeof(RtreeNode)+pRtree->iNodeSize);
+    if( !pNode ){
+      rc = SQLITE_NOMEM;
+    }else{
+      pNode->pParent = pParent;
+      pNode->zData = (u8 *)&pNode[1];
+      pNode->nRef = 1;
+      pNode->iNode = iNode;
+      pNode->isDirty = 0;
+      pNode->pNext = 0;
+      rc = sqlite3_blob_read(pRtree->pNodeBlob, pNode->zData,
+                             pRtree->iNodeSize, 0);
+      nodeReference(pParent);
+    }
+  }
 
   /* If the root node was just loaded, set pRtree->iDepth to the height
   ** of the r-tree structure. A height of zero means all data is stored on
@@ -603,7 +747,7 @@ static void nodeOverwriteCell(
   int ii;
   u8 *p = &pNode->zData[4 + pRtree->nBytesPerCell*iCell];
   p += writeInt64(p, pCell->iRowid);
-  for(ii=0; ii<(pRtree->nDim*2); ii++){
+  for(ii=0; ii<pRtree->nDim2; ii++){
     p += writeCoord(p, &pCell->aCoord[ii]);
   }
   pNode->isDirty = 1;
@@ -737,13 +881,16 @@ static void nodeGetCell(
 ){
   u8 *pData;
   RtreeCoord *pCoord;
-  int ii;
+  int ii = 0;
   pCell->iRowid = nodeGetRowid(pRtree, pNode, iCell);
   pData = pNode->zData + (12 + pRtree->nBytesPerCell*iCell);
   pCoord = pCell->aCoord;
-  for(ii=0; ii<pRtree->nDim*2; ii++){
-    readCoord(&pData[ii*4], &pCoord[ii]);
-  }
+  do{
+    readCoord(pData, &pCoord[ii]);
+    readCoord(pData+4, &pCoord[ii+1]);
+    pData += 8;
+    ii += 2;
+  }while( ii<pRtree->nDim2 );
 }
 
 
@@ -794,7 +941,9 @@ static void rtreeReference(Rtree *pRtree){
 static void rtreeRelease(Rtree *pRtree){
   pRtree->nBusy--;
   if( pRtree->nBusy==0 ){
-    sqlite3_finalize(pRtree->pReadNode);
+    pRtree->inWrTrans = 0;
+    pRtree->nCursor = 0;
+    nodeBlobReset(pRtree);
     sqlite3_finalize(pRtree->pWriteNode);
     sqlite3_finalize(pRtree->pDeleteNode);
     sqlite3_finalize(pRtree->pReadRowid);
@@ -832,6 +981,7 @@ static int rtreeDestroy(sqlite3_vtab *pVtab){
   if( !zCreate ){
     rc = SQLITE_NOMEM;
   }else{
+    nodeBlobReset(pRtree);
     rc = sqlite3_exec(pRtree->db, zCreate, 0, 0, 0);
     sqlite3_free(zCreate);
   }
@@ -847,6 +997,7 @@ static int rtreeDestroy(sqlite3_vtab *pVtab){
 */
 static int rtreeOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
   int rc = SQLITE_NOMEM;
+  Rtree *pRtree = (Rtree *)pVTab;
   RtreeCursor *pCsr;
 
   pCsr = (RtreeCursor *)sqlite3_malloc(sizeof(RtreeCursor));
@@ -854,6 +1005,7 @@ static int rtreeOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
     memset(pCsr, 0, sizeof(RtreeCursor));
     pCsr->base.pVtab = pVTab;
     rc = SQLITE_OK;
+    pRtree->nCursor++;
   }
   *ppCursor = (sqlite3_vtab_cursor *)pCsr;
 
@@ -886,10 +1038,13 @@ static int rtreeClose(sqlite3_vtab_cursor *cur){
   Rtree *pRtree = (Rtree *)(cur->pVtab);
   int ii;
   RtreeCursor *pCsr = (RtreeCursor *)cur;
+  assert( pRtree->nCursor>0 );
   freeCursorConstraints(pCsr);
   sqlite3_free(pCsr->aPoint);
   for(ii=0; ii<RTREE_CACHE_SZ; ii++) nodeRelease(pRtree, pCsr->aNode[ii]);
   sqlite3_free(pCsr);
+  pRtree->nCursor--;
+  nodeBlobReset(pRtree);
   return SQLITE_OK;
 }
 
@@ -912,15 +1067,22 @@ static int rtreeEof(sqlite3_vtab_cursor *cur){
 ** false.  a[] is the four bytes of the on-disk record to be decoded.
 ** Store the results in "r".
 **
-** There are three versions of this macro, one each for little-endian and
-** big-endian processors and a third generic implementation.  The endian-
-** specific implementations are much faster and are preferred if the
-** processor endianness is known at compile-time.  The SQLITE_BYTEORDER
-** macro is part of sqliteInt.h and hence the endian-specific
-** implementation will only be used if this module is compiled as part
-** of the amalgamation.
+** There are five versions of this macro.  The last one is generic.  The
+** other four are various architectures-specific optimizations.
 */
-#if defined(SQLITE_BYTEORDER) && SQLITE_BYTEORDER==1234
+#if SQLITE_BYTEORDER==1234 && MSVC_VERSION>=1300
+#define RTREE_DECODE_COORD(eInt, a, r) {                        \
+    RtreeCoord c;    /* Coordinate decoded */                   \
+    c.u = _byteswap_ulong(*(u32*)a);                            \
+    r = eInt ? (sqlite3_rtree_dbl)c.i : (sqlite3_rtree_dbl)c.f; \
+}
+#elif SQLITE_BYTEORDER==1234 && (GCC_VERSION>=4003000 || CLANG_VERSION>=3000000)
+#define RTREE_DECODE_COORD(eInt, a, r) {                        \
+    RtreeCoord c;    /* Coordinate decoded */                   \
+    c.u = __builtin_bswap32(*(u32*)a);                          \
+    r = eInt ? (sqlite3_rtree_dbl)c.i : (sqlite3_rtree_dbl)c.f; \
+}
+#elif SQLITE_BYTEORDER==1234
 #define RTREE_DECODE_COORD(eInt, a, r) {                        \
     RtreeCoord c;    /* Coordinate decoded */                   \
     memcpy(&c.u,a,4);                                           \
@@ -928,7 +1090,7 @@ static int rtreeEof(sqlite3_vtab_cursor *cur){
           ((c.u&0xff)<<24)|((c.u&0xff00)<<8);                   \
     r = eInt ? (sqlite3_rtree_dbl)c.i : (sqlite3_rtree_dbl)c.f; \
 }
-#elif defined(SQLITE_BYTEORDER) && SQLITE_BYTEORDER==4321
+#elif SQLITE_BYTEORDER==4321
 #define RTREE_DECODE_COORD(eInt, a, r) {                        \
     RtreeCoord c;    /* Coordinate decoded */                   \
     memcpy(&c.u,a,4);                                           \
@@ -955,10 +1117,10 @@ static int rtreeCallbackConstraint(
   sqlite3_rtree_dbl *prScore,    /* OUT: score for the cell */
   int *peWithin                  /* OUT: visibility of the cell */
 ){
-  int i;                                                /* Loop counter */
   sqlite3_rtree_query_info *pInfo = pConstraint->pInfo; /* Callback info */
   int nCoord = pInfo->nCoord;                           /* No. of coordinates */
   int rc;                                             /* Callback return code */
+  RtreeCoord c;                                       /* Translator union */
   sqlite3_rtree_dbl aCoord[RTREE_MAX_DIMENSIONS*2];   /* Decoded coordinates */
 
   assert( pConstraint->op==RTREE_MATCH || pConstraint->op==RTREE_QUERY );
@@ -968,13 +1130,41 @@ static int rtreeCallbackConstraint(
     pInfo->iRowid = readInt64(pCellData);
   }
   pCellData += 8;
-  for(i=0; i<nCoord; i++, pCellData += 4){
-    RTREE_DECODE_COORD(eInt, pCellData, aCoord[i]);
+#ifndef SQLITE_RTREE_INT_ONLY
+  if( eInt==0 ){
+    switch( nCoord ){
+      case 10:  readCoord(pCellData+36, &c); aCoord[9] = c.f;
+                readCoord(pCellData+32, &c); aCoord[8] = c.f;
+      case 8:   readCoord(pCellData+28, &c); aCoord[7] = c.f;
+                readCoord(pCellData+24, &c); aCoord[6] = c.f;
+      case 6:   readCoord(pCellData+20, &c); aCoord[5] = c.f;
+                readCoord(pCellData+16, &c); aCoord[4] = c.f;
+      case 4:   readCoord(pCellData+12, &c); aCoord[3] = c.f;
+                readCoord(pCellData+8,  &c); aCoord[2] = c.f;
+      default:  readCoord(pCellData+4,  &c); aCoord[1] = c.f;
+                readCoord(pCellData,    &c); aCoord[0] = c.f;
+    }
+  }else
+#endif
+  {
+    switch( nCoord ){
+      case 10:  readCoord(pCellData+36, &c); aCoord[9] = c.i;
+                readCoord(pCellData+32, &c); aCoord[8] = c.i;
+      case 8:   readCoord(pCellData+28, &c); aCoord[7] = c.i;
+                readCoord(pCellData+24, &c); aCoord[6] = c.i;
+      case 6:   readCoord(pCellData+20, &c); aCoord[5] = c.i;
+                readCoord(pCellData+16, &c); aCoord[4] = c.i;
+      case 4:   readCoord(pCellData+12, &c); aCoord[3] = c.i;
+                readCoord(pCellData+8,  &c); aCoord[2] = c.i;
+      default:  readCoord(pCellData+4,  &c); aCoord[1] = c.i;
+                readCoord(pCellData,    &c); aCoord[0] = c.i;
+    }
   }
   if( pConstraint->op==RTREE_MATCH ){
+    int eWithin = 0;
     rc = pConstraint->u.xGeom((sqlite3_rtree_geometry*)pInfo,
-                              nCoord, aCoord, &i);
-    if( i==0 ) *peWithin = NOT_WITHIN;
+                              nCoord, aCoord, &eWithin);
+    if( eWithin==0 ) *peWithin = NOT_WITHIN;
     *prScore = RTREE_ZERO;
   }else{
     pInfo->aCoord = aCoord;
@@ -1010,6 +1200,7 @@ static void rtreeNonleafConstraint(
 
   assert(p->op==RTREE_LE || p->op==RTREE_LT || p->op==RTREE_GE 
       || p->op==RTREE_GT || p->op==RTREE_EQ );
+  assert( ((((char*)pCellData) - (char*)0)&3)==0 );  /* 4-byte aligned */
   switch( p->op ){
     case RTREE_LE:
     case RTREE_LT:
@@ -1050,6 +1241,7 @@ static void rtreeLeafConstraint(
   assert(p->op==RTREE_LE || p->op==RTREE_LT || p->op==RTREE_GE 
       || p->op==RTREE_GT || p->op==RTREE_EQ );
   pCellData += 8 + p->iCoord*4;
+  assert( ((((char*)pCellData) - (char*)0)&3)==0 );  /* 4-byte aligned */
   RTREE_DECODE_COORD(eInt, pCellData, xN);
   switch( p->op ){
     case RTREE_LE: if( xN <= p->u.rValue ) return;  break;
@@ -1366,7 +1558,7 @@ static int rtreeStepToLeaf(RtreeCursor *pCur){
       if( rScore<RTREE_ZERO ) rScore = RTREE_ZERO;
       p = rtreeSearchPointNew(pCur, rScore, x.iLevel);
       if( p==0 ) return SQLITE_NOMEM;
-      p->eWithin = eWithin;
+      p->eWithin = (u8)eWithin;
       p->id = x.id;
       p->iCell = x.iCell;
       RTREE_QUEUE_TRACE(pCur, "PUSH-S:");
@@ -1554,7 +1746,7 @@ static int rtreeFilter(
       p->id = iNode;
       p->eWithin = PARTLY_WITHIN;
       rc = nodeRowidIndex(pRtree, pLeaf, iRowid, &iCell);
-      p->iCell = iCell;
+      p->iCell = (u8)iCell;
       RTREE_QUEUE_TRACE(pCsr, "PUSH-F1:");
     }else{
       pCsr->atEOF = 1;
@@ -1587,7 +1779,7 @@ static int rtreeFilter(
             if( rc!=SQLITE_OK ){
               break;
             }
-            p->pInfo->nCoord = pRtree->nDim*2;
+            p->pInfo->nCoord = pRtree->nDim2;
             p->pInfo->anQueue = pCsr->anQueue;
             p->pInfo->mxLevel = pRtree->iDepth + 1;
           }else{
@@ -1602,7 +1794,7 @@ static int rtreeFilter(
     }
     if( rc==SQLITE_OK ){
       RtreeSearchPoint *pNew;
-      pNew = rtreeSearchPointNew(pCsr, RTREE_ZERO, pRtree->iDepth+1);
+      pNew = rtreeSearchPointNew(pCsr, RTREE_ZERO, (u8)(pRtree->iDepth+1));
       if( pNew==0 ) return SQLITE_NOMEM;
       pNew->id = 1;
       pNew->iCell = 0;
@@ -1730,7 +1922,7 @@ static int rtreeBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
           break;
       }
       zIdxStr[iIdx++] = op;
-      zIdxStr[iIdx++] = p->iColumn - 1 + '0';
+      zIdxStr[iIdx++] = (char)(p->iColumn - 1 + '0');
       pIdxInfo->aConstraintUsage[ii].argvIndex = (iIdx/2);
       pIdxInfo->aConstraintUsage[ii].omit = 1;
     }
@@ -1754,9 +1946,26 @@ static int rtreeBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
 */
 static RtreeDValue cellArea(Rtree *pRtree, RtreeCell *p){
   RtreeDValue area = (RtreeDValue)1;
-  int ii;
-  for(ii=0; ii<(pRtree->nDim*2); ii+=2){
-    area = (area * (DCOORD(p->aCoord[ii+1]) - DCOORD(p->aCoord[ii])));
+  assert( pRtree->nDim>=1 && pRtree->nDim<=5 );
+#ifndef SQLITE_RTREE_INT_ONLY
+  if( pRtree->eCoordType==RTREE_COORD_REAL32 ){
+    switch( pRtree->nDim ){
+      case 5:  area  = p->aCoord[9].f - p->aCoord[8].f;
+      case 4:  area *= p->aCoord[7].f - p->aCoord[6].f;
+      case 3:  area *= p->aCoord[5].f - p->aCoord[4].f;
+      case 2:  area *= p->aCoord[3].f - p->aCoord[2].f;
+      default: area *= p->aCoord[1].f - p->aCoord[0].f;
+    }
+  }else
+#endif
+  {
+    switch( pRtree->nDim ){
+      case 5:  area  = p->aCoord[9].i - p->aCoord[8].i;
+      case 4:  area *= p->aCoord[7].i - p->aCoord[6].i;
+      case 3:  area *= p->aCoord[5].i - p->aCoord[4].i;
+      case 2:  area *= p->aCoord[3].i - p->aCoord[2].i;
+      default: area *= p->aCoord[1].i - p->aCoord[0].i;
+    }
   }
   return area;
 }
@@ -1766,9 +1975,10 @@ static RtreeDValue cellArea(Rtree *pRtree, RtreeCell *p){
 ** of the objects size in each dimension.
 */
 static RtreeDValue cellMargin(Rtree *pRtree, RtreeCell *p){
-  RtreeDValue margin = (RtreeDValue)0;
+  RtreeDValue margin;
   int ii;
-  for(ii=0; ii<(pRtree->nDim*2); ii+=2){
+  margin = DCOORD(p->aCoord[1]) - DCOORD(p->aCoord[0]);
+  for(ii=2; ii<pRtree->nDim2; ii+=2){
     margin += (DCOORD(p->aCoord[ii+1]) - DCOORD(p->aCoord[ii]));
   }
   return margin;
@@ -1778,17 +1988,19 @@ static RtreeDValue cellMargin(Rtree *pRtree, RtreeCell *p){
 ** Store the union of cells p1 and p2 in p1.
 */
 static void cellUnion(Rtree *pRtree, RtreeCell *p1, RtreeCell *p2){
-  int ii;
+  int ii = 0;
   if( pRtree->eCoordType==RTREE_COORD_REAL32 ){
-    for(ii=0; ii<(pRtree->nDim*2); ii+=2){
+    do{
       p1->aCoord[ii].f = MIN(p1->aCoord[ii].f, p2->aCoord[ii].f);
       p1->aCoord[ii+1].f = MAX(p1->aCoord[ii+1].f, p2->aCoord[ii+1].f);
-    }
+      ii += 2;
+    }while( ii<pRtree->nDim2 );
   }else{
-    for(ii=0; ii<(pRtree->nDim*2); ii+=2){
+    do{
       p1->aCoord[ii].i = MIN(p1->aCoord[ii].i, p2->aCoord[ii].i);
       p1->aCoord[ii+1].i = MAX(p1->aCoord[ii+1].i, p2->aCoord[ii+1].i);
-    }
+      ii += 2;
+    }while( ii<pRtree->nDim2 );
   }
 }
 
@@ -1799,7 +2011,7 @@ static void cellUnion(Rtree *pRtree, RtreeCell *p1, RtreeCell *p2){
 static int cellContains(Rtree *pRtree, RtreeCell *p1, RtreeCell *p2){
   int ii;
   int isInt = (pRtree->eCoordType==RTREE_COORD_INT32);
-  for(ii=0; ii<(pRtree->nDim*2); ii+=2){
+  for(ii=0; ii<pRtree->nDim2; ii+=2){
     RtreeCoord *a1 = &p1->aCoord[ii];
     RtreeCoord *a2 = &p2->aCoord[ii];
     if( (!isInt && (a2[0].f<a1[0].f || a2[1].f>a1[1].f)) 
@@ -1834,7 +2046,7 @@ static RtreeDValue cellOverlap(
   for(ii=0; ii<nCell; ii++){
     int jj;
     RtreeDValue o = (RtreeDValue)1;
-    for(jj=0; jj<(pRtree->nDim*2); jj+=2){
+    for(jj=0; jj<pRtree->nDim2; jj+=2){
       RtreeDValue x1, x2;
       x1 = MAX(DCOORD(p->aCoord[jj]), DCOORD(aCell[ii].aCoord[jj]));
       x2 = MIN(DCOORD(p->aCoord[jj+1]), DCOORD(aCell[ii].aCoord[jj+1]));
@@ -2890,7 +3102,7 @@ static int rtreeUpdate(
     ** This problem was discovered after years of use, so we silently ignore
     ** these kinds of misdeclared tables to avoid breaking any legacy.
     */
-    assert( nData<=(pRtree->nDim*2 + 3) );
+    assert( nData<=(pRtree->nDim2 + 3) );
 
 #ifndef SQLITE_RTREE_INT_ONLY
     if( pRtree->eCoordType==RTREE_COORD_REAL32 ){
@@ -2981,6 +3193,27 @@ constraint:
 }
 
 /*
+** Called when a transaction starts.
+*/
+static int rtreeBeginTransaction(sqlite3_vtab *pVtab){
+  Rtree *pRtree = (Rtree *)pVtab;
+  assert( pRtree->inWrTrans==0 );
+  pRtree->inWrTrans++;
+  return SQLITE_OK;
+}
+
+/*
+** Called when a transaction completes (either by COMMIT or ROLLBACK).
+** The sqlite3_blob object should be released at this point.
+*/
+static int rtreeEndTransaction(sqlite3_vtab *pVtab){
+  Rtree *pRtree = (Rtree *)pVtab;
+  pRtree->inWrTrans = 0;
+  nodeBlobReset(pRtree);
+  return SQLITE_OK;
+}
+
+/*
 ** The xRename method for rtree module virtual tables.
 */
 static int rtreeRename(sqlite3_vtab *pVtab, const char *zNewName){
@@ -3000,6 +3233,7 @@ static int rtreeRename(sqlite3_vtab *pVtab, const char *zNewName){
   }
   return rc;
 }
+
 
 /*
 ** This function populates the pRtree->nRowEst variable with an estimate
@@ -3060,15 +3294,15 @@ static sqlite3_module rtreeModule = {
   rtreeColumn,                /* xColumn - read data */
   rtreeRowid,                 /* xRowid - read data */
   rtreeUpdate,                /* xUpdate - write data */
-  0,                          /* xBegin - begin transaction */
-  0,                          /* xSync - sync transaction */
-  0,                          /* xCommit - commit transaction */
-  0,                          /* xRollback - rollback transaction */
+  rtreeBeginTransaction,      /* xBegin - begin transaction */
+  rtreeEndTransaction,        /* xSync - sync transaction */
+  rtreeEndTransaction,        /* xCommit - commit transaction */
+  rtreeEndTransaction,        /* xRollback - rollback transaction */
   0,                          /* xFindFunction - function overloading */
   rtreeRename,                /* xRename - rename the table */
   0,                          /* xSavepoint */
   0,                          /* xRelease */
-  0                           /* xRollbackTo */
+  0,                          /* xRollbackTo */
 };
 
 static int rtreeSqlInit(
@@ -3080,10 +3314,9 @@ static int rtreeSqlInit(
 ){
   int rc = SQLITE_OK;
 
-  #define N_STATEMENT 9
+  #define N_STATEMENT 8
   static const char *azSql[N_STATEMENT] = {
-    /* Read and write the xxx_node table */
-    "SELECT data FROM '%q'.'%q_node' WHERE nodeno = :1",
+    /* Write the xxx_node table */
     "INSERT OR REPLACE INTO '%q'.'%q_node' VALUES(:1, :2)",
     "DELETE FROM '%q'.'%q_node' WHERE nodeno = :1",
 
@@ -3121,15 +3354,14 @@ static int rtreeSqlInit(
     }
   }
 
-  appStmt[0] = &pRtree->pReadNode;
-  appStmt[1] = &pRtree->pWriteNode;
-  appStmt[2] = &pRtree->pDeleteNode;
-  appStmt[3] = &pRtree->pReadRowid;
-  appStmt[4] = &pRtree->pWriteRowid;
-  appStmt[5] = &pRtree->pDeleteRowid;
-  appStmt[6] = &pRtree->pReadParent;
-  appStmt[7] = &pRtree->pWriteParent;
-  appStmt[8] = &pRtree->pDeleteParent;
+  appStmt[0] = &pRtree->pWriteNode;
+  appStmt[1] = &pRtree->pDeleteNode;
+  appStmt[2] = &pRtree->pReadRowid;
+  appStmt[3] = &pRtree->pWriteRowid;
+  appStmt[4] = &pRtree->pDeleteRowid;
+  appStmt[5] = &pRtree->pReadParent;
+  appStmt[6] = &pRtree->pWriteParent;
+  appStmt[7] = &pRtree->pDeleteParent;
 
   rc = rtreeQueryStat1(db, pRtree);
   for(i=0; i<N_STATEMENT && rc==SQLITE_OK; i++){
@@ -3267,9 +3499,10 @@ static int rtreeInit(
   pRtree->base.pModule = &rtreeModule;
   pRtree->zDb = (char *)&pRtree[1];
   pRtree->zName = &pRtree->zDb[nDb+1];
-  pRtree->nDim = (argc-4)/2;
-  pRtree->nBytesPerCell = 8 + pRtree->nDim*4*2;
-  pRtree->eCoordType = eCoordType;
+  pRtree->nDim = (u8)((argc-4)/2);
+  pRtree->nDim2 = pRtree->nDim*2;
+  pRtree->nBytesPerCell = 8 + pRtree->nDim2*4;
+  pRtree->eCoordType = (u8)eCoordType;
   memcpy(pRtree->zDb, argv[1], nDb);
   memcpy(pRtree->zName, argv[2], nName);
 
@@ -3342,7 +3575,8 @@ static void rtreenode(sqlite3_context *ctx, int nArg, sqlite3_value **apArg){
   UNUSED_PARAMETER(nArg);
   memset(&node, 0, sizeof(RtreeNode));
   memset(&tree, 0, sizeof(Rtree));
-  tree.nDim = sqlite3_value_int(apArg[0]);
+  tree.nDim = (u8)sqlite3_value_int(apArg[0]);
+  tree.nDim2 = tree.nDim*2;
   tree.nBytesPerCell = 8 + 8 * tree.nDim;
   node.zData = (u8 *)sqlite3_value_blob(apArg[1]);
 
@@ -3355,7 +3589,7 @@ static void rtreenode(sqlite3_context *ctx, int nArg, sqlite3_value **apArg){
     nodeGetCell(&tree, &node, ii, &cell);
     sqlite3_snprintf(512-nCell,&zCell[nCell],"%lld", cell.iRowid);
     nCell = (int)strlen(zCell);
-    for(jj=0; jj<tree.nDim*2; jj++){
+    for(jj=0; jj<tree.nDim2; jj++){
 #ifndef SQLITE_RTREE_INT_ONLY
       sqlite3_snprintf(512-nCell,&zCell[nCell], " %g",
                        (double)cell.aCoord[jj].f);

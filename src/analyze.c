@@ -797,6 +797,12 @@ static const FuncDef statPushFuncdef = {
 ** The content to returned is determined by the parameter J
 ** which is one of the STAT_GET_xxxx values defined above.
 **
+** The stat_get(P,J) function is not available to generic SQL.  It is
+** inserted as part of a manually constructed bytecode program.  (See
+** the callStatGet() routine below.)  It is guaranteed that the P
+** parameter will always be a poiner to a Stat4Accum object, never a
+** NULL.
+**
 ** If neither STAT3 nor STAT4 are enabled, then J is always
 ** STAT_GET_STAT1 and is hence omitted and this routine becomes
 ** a one-parameter function, stat_get(P), that always returns the

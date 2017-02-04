@@ -279,7 +279,7 @@ const char *sqlite3JournalModename(int eMode){
 ** Locate a pragma in the aPragmaName[] array.
 */
 static const PragmaName *pragmaLocate(const char *zName){
-  int upr, lwr, mid, rc;
+  int upr, lwr, mid = 0, rc;
   lwr = 0;
   upr = ArraySize(aPragmaName)-1;
   while( lwr<=upr ){

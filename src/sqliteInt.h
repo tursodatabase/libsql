@@ -2592,7 +2592,7 @@ struct SrcList {
 #define WHERE_SORTBYGROUP      0x0200 /* Support sqlite3WhereIsSorted() */
 #define WHERE_SEEK_TABLE       0x0400 /* Do not defer seeks on main table */
 #define WHERE_ORDERBY_LIMIT    0x0800 /* ORDERBY+LIMIT on the inner loop */
-                        /*     0x1000    not currently used */
+#define WHERE_SEEK_UNIQ_TABLE  0x1000 /* Do not defer seeks if unique */
                         /*     0x2000    not currently used */
 #define WHERE_USE_LIMIT        0x4000 /* Use the LIMIT in cost estimates */
                         /*     0x8000    not currently used */
@@ -3057,9 +3057,7 @@ struct AuthContext {
 #define OPFLAG_ISUPDATE      0x04    /* This OP_Insert is an sql UPDATE */
 #define OPFLAG_APPEND        0x08    /* This is likely to be an append */
 #define OPFLAG_USESEEKRESULT 0x10    /* Try to avoid a seek in BtreeInsert() */
-#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
 #define OPFLAG_ISNOOP        0x40    /* OP_Delete does pre-update-hook only */
-#endif
 #define OPFLAG_LENGTHARG     0x40    /* OP_Column only used for length() */
 #define OPFLAG_TYPEOFARG     0x80    /* OP_Column only used for typeof() */
 #define OPFLAG_BULKCSR       0x01    /* OP_Open** used to open bulk cursor */
@@ -4073,8 +4071,10 @@ char sqlite3IndexColumnAffinity(sqlite3*, Index*, int);
 /*
 ** The interface to the LEMON-generated parser
 */
-void *sqlite3ParserAlloc(void*(*)(u64));
-void sqlite3ParserFree(void*, void(*)(void*));
+#ifndef SQLITE_AMALGAMATION
+  void *sqlite3ParserAlloc(void*(*)(u64));
+  void sqlite3ParserFree(void*, void(*)(void*));
+#endif
 void sqlite3Parser(void*, int, Token, Parse*);
 #ifdef YYTRACKMAXSTACKDEPTH
   int sqlite3ParserStackPeak(void*);
@@ -4184,6 +4184,7 @@ const char *sqlite3JournalModename(int);
   #define sqlite3FkDropTable(a,b,c)
   #define sqlite3FkOldmask(a,b)         0
   #define sqlite3FkRequired(a,b,c,d)    0
+  #define sqlite3FkReferences(a)        0
 #endif
 #ifndef SQLITE_OMIT_FOREIGN_KEY
   void sqlite3FkDelete(sqlite3 *, Table*);
