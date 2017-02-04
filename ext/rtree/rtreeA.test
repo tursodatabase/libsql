@@ -109,7 +109,7 @@ do_corruption_tests rtreeA-1.1 {
 }
 
 do_execsql_test  rtreeA-1.2.0 { DROP TABLE t1_node } {}
-do_corruption_tests rtreeA-1.2 -error "SQL logic error or missing database" {
+do_corruption_tests rtreeA-1.2 -error "database disk image is malformed" {
   1   "SELECT * FROM t1"
   2   "SELECT * FROM t1 WHERE rowid=5"
   3   "INSERT INTO t1 VALUES(1000, 1, 2, 3, 4)"
