@@ -86,6 +86,7 @@ pub use transaction::{DropBehavior, Savepoint, Transaction, TransactionBehavior}
 #[allow(deprecated)]
 pub use error::SqliteError;
 pub use error::Error;
+pub use ffi::ErrorCode;
 
 pub use cache::CachedStatement;
 
@@ -1506,7 +1507,7 @@ mod test {
 
         match result.unwrap_err() {
             Error::SqliteFailure(err, _) => {
-                assert_eq!(err.code, ffi::ErrorCode::ConstraintViolation);
+                assert_eq!(err.code, ErrorCode::ConstraintViolation);
 
                 // extended error codes for constraints were added in SQLite 3.7.16; if we're
                 // running on a version at least that new, check for the extended code
