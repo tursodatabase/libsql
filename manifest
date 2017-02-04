@@ -1,5 +1,5 @@
-C Remove\sthe\sunused\spReadNode\sprepared\sstatement\sfrom\seach\sRTREE\sobject.
-D 2017-02-02T16:30:25.555
+C Close\ssqlite3_blob\sobjects\son\sxSync\srather\sthan\swaiting\suntil\sxCommit.
+D 2017-02-04T13:12:12.865
 F Makefile.in 5f415e7867296d678fed2e6779aea10c1318b4bc
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc ba953c8921fc7e18333f61898007206de7e23964
@@ -264,7 +264,7 @@ F ext/rbu/sqlite3rbu.c bb0de6cdbdb14a7d55a097238a434b7e99caf318
 F ext/rbu/sqlite3rbu.h 6fb6294c34a9ca93b5894a33bca530c6f08decba
 F ext/rbu/test_rbu.c 5aa22616afac6f71ebd3d9bc9bf1006cfabcca88
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c be9d44f5707c5a73887d3ac3ad14a355e9b92b58
+F ext/rtree/rtree.c ed39c157eab89ce014675f07601f2813c9f54e9c
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test 42dadfc7b44a436cd74a1bebc0b9b689e4eaf7ec
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
@@ -1552,7 +1552,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a1c74e09d63aca630d022ed074866433eed6b493
-R b4b0a5df6a2ab40920c13363cd1d25e9
+P e51dc0ec60d45cd57564735b6b2bb254a588533e
+R a16debe67e7399020e94d725cd2d4af7
+T *branch * rtree-blob-agressive-release
+T *sym-rtree-blob-agressive-release *
+T -sym-rtree-sqlite3_blob *
 U drh
-Z 5406bbb7ccb82072da8c73ecd9c87865
+Z a61d538b0d9c1a9c54d88c1f71c254d7

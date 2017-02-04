@@ -3294,7 +3294,7 @@ static sqlite3_module rtreeModule = {
   rtreeRowid,                 /* xRowid - read data */
   rtreeUpdate,                /* xUpdate - write data */
   rtreeBeginTransaction,      /* xBegin - begin transaction */
-  0,                          /* xSync - sync transaction */
+  rtreeEndTransaction,        /* xSync - sync transaction */
   rtreeEndTransaction,        /* xCommit - commit transaction */
   rtreeEndTransaction,        /* xRollback - rollback transaction */
   0,                          /* xFindFunction - function overloading */
