@@ -919,10 +919,37 @@ proc normalize_list {L} {
   set L2
 }
 
-proc do_execsql_test {testname sql {result {}}} {
+# Either:
+#
+#   do_execsql_test TESTNAME SQL ?RES?
+#   do_execsql_test -db DB TESTNAME SQL ?RES?
+#
+proc do_execsql_test {args} {
+  set db db
+  if {[lindex $args 0]=="-db"} {
+    set db [lindex $args 1]
+    set args [lrange $args 2 end]
+  }
+
+  if {[llength $args]==2} {
+    foreach {testname sql} $args {}
+    set result ""
+  } elseif {[llength $args]==3} {
+    foreach {testname sql result} $args {}
+  } else {
+    error [string trim {
+      wrong # args: should be "do_execsql_test ?-db DB? testname sql ?result?"
+    }]
+  }
+
   fix_testname testname
-  uplevel do_test [list $testname] [list "execsql {$sql}"] [list [list {*}$result]]
+
+  uplevel do_test                 \
+      [list $testname]            \
+      [list "execsql {$sql} $db"] \
+      [list [list {*}$result]]
 }
+
 proc do_catchsql_test {testname sql result} {
   fix_testname testname
   uplevel do_test [list $testname] [list "catchsql {$sql}"] [list $result]
