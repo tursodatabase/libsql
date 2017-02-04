@@ -1,5 +1,5 @@
-C Improved\sperformance\sand\sstack\susage\swhen\sprocessing\sVALUES\sclauses\swith\na\svery\slarge\snumber\sof\srows.
-D 2017-02-03T20:54:57.815
+C In\sRTREE,\suse\san\ssqlite3_blob\sobject\srather\sthan\san\ssqlite3_stmt\sobject\nfor\sreading\scontent\sout\sof\sthe\s%_node\sshadow\stable.
+D 2017-02-04T14:24:05.401
 F Makefile.in 5f415e7867296d678fed2e6779aea10c1318b4bc
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc ba953c8921fc7e18333f61898007206de7e23964
@@ -264,7 +264,7 @@ F ext/rbu/sqlite3rbu.c bb0de6cdbdb14a7d55a097238a434b7e99caf318
 F ext/rbu/sqlite3rbu.h 6fb6294c34a9ca93b5894a33bca530c6f08decba
 F ext/rbu/test_rbu.c 5aa22616afac6f71ebd3d9bc9bf1006cfabcca88
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 70f2488eef5c04dccf15a52cbd4961492124f825
+F ext/rtree/rtree.c 0c229d23ce7b9bc69365281689065f3cbbe4561e
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test 42dadfc7b44a436cd74a1bebc0b9b689e4eaf7ec
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
@@ -275,7 +275,7 @@ F ext/rtree/rtree6.test 773a90db2dce6a8353dd0d5b64bca69b29761196
 F ext/rtree/rtree7.test 1fa710b9e6bf997a0c1a537b81be7bb6fded1971
 F ext/rtree/rtree8.test db79c812f9e4a11f9b1f3f9934007884610a713a
 F ext/rtree/rtree9.test b5eb13849545dfd271a54ff16784cb00d8792aea
-F ext/rtree/rtreeA.test ace05e729a36e342d40cf94e9efc7b4723d9dcdf
+F ext/rtree/rtreeA.test ac8b503931f2f397cc3c3303354e1e085dcadb86
 F ext/rtree/rtreeB.test c85f9ce78766c4e68b8b89fbf2979ee9cfa82b4e
 F ext/rtree/rtreeC.test c0a9c67f2efa98b6fae12acb8a28348d231a481d
 F ext/rtree/rtreeD.test bdfaaf26df8b4eea7364039aca9150bc1e1f8825
@@ -1552,8 +1552,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 83a099f139aba03edac19c890a0019e922032a25 f5306ad6816cc377036685cdae227e762885229c
-R 907fd4e78b73041fa2c16ebe05829550
-T +closed f5306ad6816cc377036685cdae227e762885229c
+P 5706d4708a30eb54da0ecbb6eb02f54746c390d9 95ee745fceb4a48c683f34c404c380fe5e7d684a
+R ad6ed02dcc60e4bca51c672c64ac9b20
+T +closed 95ee745fceb4a48c683f34c404c380fe5e7d684a
 U drh
-Z 822640b9e481bfb5464894fc5cf2cee4
+Z c59d505acee8b5f741c72c39e5c6cdac
