@@ -2989,13 +2989,13 @@ static int openDatabase(
   if( rc==SQLITE_OK ){
     sqlite3AutoLoadExtensions(db);
     rc = sqlite3_errcode(db);
-    if( rc!=SQLITE_OK ){
-      goto opendb_out;
-    }
   }
 
+  testcase( rc!=SQLITE_OK && rc!=SQLITE_NOMEM );
+  testcase( rc!=SQLITE_OK && !db->mallocFailed );
+
 #ifdef SQLITE_ENABLE_FTS1
-  if( !db->mallocFailed ){
+  if( !db->mallocFailed && rc==SQLITE_OK ){
     extern int sqlite3Fts1Init(sqlite3*);
     rc = sqlite3Fts1Init(db);
   }
@@ -3038,23 +3038,23 @@ static int openDatabase(
   }
 #endif
 
-  /* -DSQLITE_DEFAULT_LOCKING_MODE=1 makes EXCLUSIVE the default locking
-  ** mode.  -DSQLITE_DEFAULT_LOCKING_MODE=0 make NORMAL the default locking
-  ** mode.  Doing nothing at all also makes NORMAL the default.
-  */
+  if( rc==SQLITE_OK ){
+    /* -DSQLITE_DEFAULT_LOCKING_MODE=1 makes EXCLUSIVE the default locking
+    ** mode.  -DSQLITE_DEFAULT_LOCKING_MODE=0 make NORMAL the default locking
+    ** mode.  Doing nothing at all also makes NORMAL the default.
+    */
 #ifdef SQLITE_DEFAULT_LOCKING_MODE
-  db->dfltLockMode = SQLITE_DEFAULT_LOCKING_MODE;
-  sqlite3PagerLockingMode(sqlite3BtreePager(db->aDb[0].pBt),
-                          SQLITE_DEFAULT_LOCKING_MODE);
+    db->dfltLockMode = SQLITE_DEFAULT_LOCKING_MODE;
+    sqlite3PagerLockingMode(sqlite3BtreePager(db->aDb[0].pBt),
+                            SQLITE_DEFAULT_LOCKING_MODE);
 #endif
 
-  if( rc ) sqlite3Error(db, rc);
+    /* Enable the lookaside-malloc subsystem */
+    setupLookaside(db, 0, sqlite3GlobalConfig.szLookaside,
+                          sqlite3GlobalConfig.nLookaside);
 
-  /* Enable the lookaside-malloc subsystem */
-  setupLookaside(db, 0, sqlite3GlobalConfig.szLookaside,
-                        sqlite3GlobalConfig.nLookaside);
-
-  sqlite3_wal_autocheckpoint(db, SQLITE_DEFAULT_WAL_AUTOCHECKPOINT);
+    sqlite3_wal_autocheckpoint(db, SQLITE_DEFAULT_WAL_AUTOCHECKPOINT);
+  }
 
 opendb_out:
   if( db ){

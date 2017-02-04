@@ -1,5 +1,5 @@
-C Allow\ssqlite3session_apply()\sto\sapply\schangesets\sto\stables\sthat\shave\sbeen\nextended\susing\sALTER\sTABLE\sADD\sCOLUMN.
-D 2017-02-04T17:33:30.792
+C Simplification\sto\sthe\serror\shandling\sto\sextension\sloading\sin\s\nsqlite3_open().
+D 2017-02-04T20:15:51.171
 F Makefile.in 5f415e7867296d678fed2e6779aea10c1318b4bc
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc ba953c8921fc7e18333f61898007206de7e23964
@@ -359,7 +359,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 444354c23d4d140a57d6eb46f34e376a7f8f62e8
 F src/legacy.c 75d3023be8f0d2b99d60f905090341a03358c58e
 F src/loadext.c a68d8d1d14cf7488bb29dc5311cb1ce9a4404258
-F src/main.c e207b81542d13b9f13d61e78ca441f9781f055b0
+F src/main.c eb4f5034ede07e1777e3e31fb2059a0046f499af
 F src/malloc.c fc1b9f445290f2145da48fc08730c26e6082b640
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 6919bcf12f221868ea066eec27e579fed95ce98b
@@ -1553,7 +1553,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 97ccf3e4de11ffea46993cb7fb7ab559b9810705
-R cad52333a5be0dfe0e9c0b2fb42ed068
-U dan
-Z 4713f44978189d862833bfda87ecea6f
+P b20ff81ff9c8af500ea96e0ba9d34524220a89f1
+R 001e21c81e4051080c5d23cc6f975774
+U drh
+Z 5c4d22afe8177f7d6c2b43d525198743
