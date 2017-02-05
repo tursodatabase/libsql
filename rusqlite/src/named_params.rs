@@ -229,9 +229,9 @@ mod test {
                    1);
 
         assert_eq!(3i32,
-                   db.query_row_named("SELECT SUM(x) FROM foo WHERE x > :x",
-                                        &[(":x", &0i32)],
-                                        |r| r.get(0))
+                   db.query_row_named::<i32, _>("SELECT SUM(x) FROM foo WHERE x > :x",
+                                                  &[(":x", &0i32)],
+                                                  |r| r.get(0))
                        .unwrap());
     }
 
@@ -246,9 +246,9 @@ mod test {
         stmt.execute_named(&[(":name", &"one")]).unwrap();
 
         assert_eq!(1i32,
-                   db.query_row_named("SELECT COUNT(*) FROM test WHERE name = :name",
-                                        &[(":name", &"one")],
-                                        |r| r.get(0))
+                   db.query_row_named::<i32, _>("SELECT COUNT(*) FROM test WHERE name = :name",
+                                                  &[(":name", &"one")],
+                                                  |r| r.get(0))
                        .unwrap());
     }
 
