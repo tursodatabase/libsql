@@ -310,7 +310,7 @@ static int initMain(int argc, char **argv){
     "WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<%d)"
     " INSERT INTO kv(k,v) SELECT x, randomblob(%d+(random()%%(%d))) FROM c;\n"
     "COMMIT;\n",
-    pgsz, nCount, sz, iVariance
+    pgsz, nCount, sz, iVariance+1
   );
   rc = sqlite3_exec(db, zSql, 0, 0, &zErrMsg);
   if( rc ) fatalError("database create failed: %s", zErrMsg);

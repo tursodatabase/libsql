@@ -1,5 +1,5 @@
-C Remove\sincorrect\stestcase()\smacros\sfrom\sR-Tree.
-D 2017-02-06T01:19:07.230
+C Fix\sa\sbug\sin\skvtest\scausing\s"init\s--variance\s0"\sruns\sto\sgenerate\ssingle\sbyte\nblob\svalues\sonly.
+D 2017-02-06T07:37:50.092
 F Makefile.in 5f415e7867296d678fed2e6779aea10c1318b4bc
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc ba953c8921fc7e18333f61898007206de7e23964
@@ -903,7 +903,7 @@ F test/json101.test c0897616f32d95431f37fd291cb78742181980ac
 F test/json102.test bf3fe7a706d30936a76a0f7a0375e1e8e73aff5a
 F test/json103.test c5f6b85e69de05f6b3195f9f9d5ce9cd179099a0
 F test/keyword1.test 37ef6bba5d2ed5b07ecdd6810571de2956599dff
-F test/kvtest.c 7a3c38ee56b9cc45dc5a5edc50fd9bc9425659a9
+F test/kvtest.c 156281b4ed688e9aabf1fbcdc5dec0487b267026
 F test/lastinsert.test 42e948fd6442f07d60acbd15d33fb86473e0ef63
 F test/laststmtchanges.test ae613f53819206b3222771828d024154d51db200
 F test/like.test 0603f4fa0dad50987f70032c05800cbfa8985302
@@ -1553,7 +1553,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ec8ff892ac9c6a8f81bcf69f1933f4bb69faa743
-R b0af6ea2fd6b4dd25607ca94e5b23382
-U drh
-Z 0dd488b4639ebd89796370a35153554a
+P 853a58a75ecbd01ebbf7e07fbd8c4fc9bef54a99
+R 921673f8e8c6498440ee3e75a7e902ee
+U dan
+Z ce0aba82a1b0f2c7c9c23b4307d78840
