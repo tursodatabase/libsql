@@ -1611,7 +1611,6 @@ static int rtreeColumn(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int i){
   if( i==0 ){
     sqlite3_result_int64(ctx, nodeGetRowid(pRtree, pNode, p->iCell));
   }else{
-    if( rc ) return rc;
     nodeGetCoord(pRtree, pNode, p->iCell, i-1, &c);
 #ifndef SQLITE_RTREE_INT_ONLY
     if( pRtree->eCoordType==RTREE_COORD_REAL32 ){
@@ -1807,19 +1806,6 @@ static int rtreeFilter(
 }
 
 /*
-** Set the pIdxInfo->estimatedRows variable to nRow. Unless this
-** extension is currently being used by a version of SQLite too old to
-** support estimatedRows. In that case this function is a no-op.
-*/
-static void setEstimatedRows(sqlite3_index_info *pIdxInfo, i64 nRow){
-#if SQLITE_VERSION_NUMBER>=3008002
-  if( sqlite3_libversion_number()>=3008002 ){
-    pIdxInfo->estimatedRows = nRow;
-  }
-#endif
-}
-
-/*
 ** Rtree virtual table module xBestIndex method. There are three
 ** table scan strategies to choose from (in order from most to 
 ** least desirable):
@@ -1898,7 +1884,7 @@ static int rtreeBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
       ** a single row.
       */ 
       pIdxInfo->estimatedCost = 30.0;
-      setEstimatedRows(pIdxInfo, 1);
+      pIdxInfo->estimatedRows = 1;
       return SQLITE_OK;
     }
 
@@ -1930,7 +1916,7 @@ static int rtreeBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
 
   nRow = pRtree->nRowEst >> (iIdx/2);
   pIdxInfo->estimatedCost = (double)6.0 * (double)nRow;
-  setEstimatedRows(pIdxInfo, nRow);
+  pIdxInfo->estimatedRows = nRow;
 
   return rc;
 }

@@ -1,5 +1,5 @@
-C Add\sthe\s"max-limits"\sutility\sprogram\sto\sthe\stools/\ssubdirectory.
-D 2017-02-06T15:27:44.567
+C Remove\sa\ssmall\samount\sof\sunnecessary\scode\sfrom\sR-Tree.
+D 2017-02-06T16:52:32.895
 F Makefile.in 5f415e7867296d678fed2e6779aea10c1318b4bc
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc ba953c8921fc7e18333f61898007206de7e23964
@@ -264,7 +264,7 @@ F ext/rbu/sqlite3rbu.c bb0de6cdbdb14a7d55a097238a434b7e99caf318
 F ext/rbu/sqlite3rbu.h 6fb6294c34a9ca93b5894a33bca530c6f08decba
 F ext/rbu/test_rbu.c 5aa22616afac6f71ebd3d9bc9bf1006cfabcca88
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c d40feeeee43736bb96fce8a73385ca721c207d4a
+F ext/rtree/rtree.c 2f7785eec412bcf289d5088ed74abe9855e8a5d5
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test 42dadfc7b44a436cd74a1bebc0b9b689e4eaf7ec
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
@@ -1554,7 +1554,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6b0276f968d3c6430076c6e540907cf840d0f398
-R f80944376543a94e77dae99832d50174
+P c54173b6c1acbb41ed9c323099e94b8e02c6c895
+R 826a4ad10a5c86df22518befe7373210
 U drh
-Z ae78f6b03eb9477204e774bb8b71a31e
+Z 369aa1878a60b61dc52ce9554d8934f7
