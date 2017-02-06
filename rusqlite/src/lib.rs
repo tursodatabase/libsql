@@ -1333,7 +1333,7 @@ mod test {
                    db.execute("INSERT INTO foo(x) VALUES (?)", &[&2i32]).unwrap());
 
         assert_eq!(3i32,
-                   db.query_row("SELECT SUM(x) FROM foo", &[], |r| r.get(0)).unwrap());
+                   db.query_row::<i32, _>("SELECT SUM(x) FROM foo", &[], |r| r.get(0)).unwrap());
     }
 
     #[test]
@@ -1449,7 +1449,7 @@ mod test {
         db.execute_batch(sql).unwrap();
 
         assert_eq!(10i64,
-                   db.query_row("SELECT SUM(x) FROM foo", &[], |r| r.get(0))
+                   db.query_row::<i64, _>("SELECT SUM(x) FROM foo", &[], |r| r.get(0))
                    .unwrap());
 
         let result: Result<i64> = db.query_row("SELECT x FROM foo WHERE x > 5", &[], |r| r.get(0));
