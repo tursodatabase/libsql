@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\skvtest\scausing\s"init\s--variance\s0"\sruns\sto\sgenerate\ssingle\sbyte\nblob\svalues\sonly.
-D 2017-02-06T07:37:50.092
+C Add\sthe\s"max-limits"\sutility\sprogram\sto\sthe\stools/\ssubdirectory.
+D 2017-02-06T15:27:44.567
 F Makefile.in 5f415e7867296d678fed2e6779aea10c1318b4bc
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc ba953c8921fc7e18333f61898007206de7e23964
@@ -1485,6 +1485,7 @@ F tool/lempar.c db1bdb4821f2d8fbd76e577cf3ab18642c8d08d1
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
 F tool/logest.c 11346aa019e2e77a00902aa7d0cabd27bd2e8cca
+F tool/max-limits.c cbb635fbb37ae4d05f240bfb5b5270bb63c54439
 F tool/mkautoconfamal.sh e855df211ecbcc7131dee817110ff386cfb112f7
 F tool/mkkeywordhash.c f7f3b342211ac6a14258b9726d5b97cf4f548f22
 F tool/mkmsvcmin.tcl 2f12f7fa8858bbe61cf81820a2da96c79ed1ca8d
@@ -1553,7 +1554,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 853a58a75ecbd01ebbf7e07fbd8c4fc9bef54a99
-R 921673f8e8c6498440ee3e75a7e902ee
-U dan
-Z ce0aba82a1b0f2c7c9c23b4307d78840
+P 6b0276f968d3c6430076c6e540907cf840d0f398
+R f80944376543a94e77dae99832d50174
+U drh
+Z ae78f6b03eb9477204e774bb8b71a31e
