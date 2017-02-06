@@ -1,5 +1,5 @@
-C Simplification\sto\sthe\serror\shandling\sto\sextension\sloading\sin\s\nsqlite3_open().
-D 2017-02-04T20:15:51.171
+C Remove\sincorrect\stestcase()\smacros\sfrom\sR-Tree.
+D 2017-02-06T01:19:07.230
 F Makefile.in 5f415e7867296d678fed2e6779aea10c1318b4bc
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc ba953c8921fc7e18333f61898007206de7e23964
@@ -264,7 +264,7 @@ F ext/rbu/sqlite3rbu.c bb0de6cdbdb14a7d55a097238a434b7e99caf318
 F ext/rbu/sqlite3rbu.h 6fb6294c34a9ca93b5894a33bca530c6f08decba
 F ext/rbu/test_rbu.c 5aa22616afac6f71ebd3d9bc9bf1006cfabcca88
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 0c229d23ce7b9bc69365281689065f3cbbe4561e
+F ext/rtree/rtree.c d40feeeee43736bb96fce8a73385ca721c207d4a
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test 42dadfc7b44a436cd74a1bebc0b9b689e4eaf7ec
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
@@ -1553,7 +1553,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b20ff81ff9c8af500ea96e0ba9d34524220a89f1
-R 001e21c81e4051080c5d23cc6f975774
+P ec8ff892ac9c6a8f81bcf69f1933f4bb69faa743
+R b0af6ea2fd6b4dd25607ca94e5b23382
 U drh
-Z 5c4d22afe8177f7d6c2b43d525198743
+Z 0dd488b4639ebd89796370a35153554a

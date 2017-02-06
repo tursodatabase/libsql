@@ -456,21 +456,17 @@ static void readCoord(u8 *p, RtreeCoord *pCoord){
 static i64 readInt64(u8 *p){
 #if SQLITE_BYTEORDER==1234 && MSVC_VERSION>=1300
   u64 x;
-  testcase( ((((char*)p) - (char*)0)&7)!=0 );  /* not always 8-byte aligned */
   memcpy(&x, p, 8);
   return (i64)_byteswap_uint64(x);
 #elif SQLITE_BYTEORDER==1234 && (GCC_VERSION>=4003000 || CLANG_VERSION>=3000000)
   u64 x;
-  testcase( ((((char*)p) - (char*)0)&7)!=0 );  /* not always 8-byte aligned */
   memcpy(&x, p, 8);
   return (i64)__builtin_bswap64(x);
 #elif SQLITE_BYTEORDER==4321
   i64 x;
-  testcase( ((((char*)p) - (char*)0)&7)!=0 );  /* not always 8-byte aligned */
   memcpy(&x, p, 8);
   return x;
 #else
-  testcase( ((((char*)p) - (char*)0)&7)!=0 );  /* not always 8-byte aligned */
   return (
     (((i64)p[0]) << 56) + 
     (((i64)p[1]) << 48) + 
@@ -518,7 +514,6 @@ static int writeCoord(u8 *p, RtreeCoord *pCoord){
   return 4;
 }
 static int writeInt64(u8 *p, i64 i){
-  testcase( ((((char*)p) - (char*)0)&7)!=0 );  /* Not always 8-byte aligned */
 #if SQLITE_BYTEORDER==1234 && (GCC_VERSION>=4003000 || CLANG_VERSION>=3000000)
   i = (i64)__builtin_bswap64((u64)i);
   memcpy(p, &i, 8);
