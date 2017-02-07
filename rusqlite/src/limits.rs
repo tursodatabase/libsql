@@ -23,7 +23,7 @@ impl Connection {
 
 #[cfg(test)]
 mod test {
-    use ffi::Limit;
+    use ffi::{self, Limit};
     use Connection;
 
     #[test]
@@ -59,7 +59,8 @@ mod test {
         db.set_limit(Limit::SQLITE_LIMIT_TRIGGER_DEPTH, 32);
         assert_eq!(32, db.limit(Limit::SQLITE_LIMIT_TRIGGER_DEPTH));
 
-        if version_number() >= 3008007 {
+        let version = unsafe { ffi::sqlite3_libversion_number() };
+        if version >= 3008007 {
             db.set_limit(Limit::SQLITE_LIMIT_WORKER_THREADS, 2);
             assert_eq!(2, db.limit(Limit::SQLITE_LIMIT_WORKER_THREADS));
         }
