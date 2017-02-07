@@ -1,3 +1,7 @@
+# Version UPCOMING (TBD)
+
+* Re-export the `ErrorCode` enum from `libsqlite3-sys`.
+
 # Version 0.9.5 (2017-01-26)
 
 * Add impls of `Clone`, `Debug`, and `PartialEq` to `ToSqlOutput`.
