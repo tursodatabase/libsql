@@ -1,5 +1,5 @@
-C Back\sout\s[ec8ff892ac]\swhich\sis\scausing\smissed\sOOM\serrors\son\ssome\stests.
-D 2017-02-07T03:44:42.867
+C Make\sthe\scellMargin()\sroutine\sof\sR-Tree\sslightly\ssmaller\sand\sfaster\swhile\salso\nfixing\sa\sharmless\scompiler\swarning.
+D 2017-02-07T12:58:38.284
 F Makefile.in 5f415e7867296d678fed2e6779aea10c1318b4bc
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc ba953c8921fc7e18333f61898007206de7e23964
@@ -264,7 +264,7 @@ F ext/rbu/sqlite3rbu.c bb0de6cdbdb14a7d55a097238a434b7e99caf318
 F ext/rbu/sqlite3rbu.h 6fb6294c34a9ca93b5894a33bca530c6f08decba
 F ext/rbu/test_rbu.c 5aa22616afac6f71ebd3d9bc9bf1006cfabcca88
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 76311736628e87fd780dfbbbf5813bf1f9bf2329
+F ext/rtree/rtree.c 773fbf1217a12607a5898eeb5193974b6d2bdad4
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test 42dadfc7b44a436cd74a1bebc0b9b689e4eaf7ec
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
@@ -1554,8 +1554,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f77ee9e941f22b0b2e88871df4466fdde9cde131
-Q -ec8ff892ac9c6a8f81bcf69f1933f4bb69faa743
-R ebea043e9962974403d836188c02b08f
+P 0611770d6a2fcb9fa0bedee19df9916820ae8f3b
+R b3ac1d676d5ca604a8be68bb866fbceb
 U drh
-Z a87f51011f00704857e3612bb8043da6
+Z 3ad4f65e4d593a16597f73c400a250b4
