@@ -1,5 +1,5 @@
-C Fix\sa\stest\scase\sto\saccount\sfor\sthe\sfact\sthat\ssqlite3_blob_reopen()\snow\sreturns\nSQLITE_IOERR_NOMEM\sinstead\sof\sSQLITE_NOMEM\sif\san\sOOM\soccurs\sin\sthe\sVFS\slayer.
-D 2017-02-07T14:22:39.073
+C Fix\sa\sbuild\sproblem\saffecting\snon-amalgamation\srtree\sbuilds.
+D 2017-02-07T14:45:18.924
 F Makefile.in 5f415e7867296d678fed2e6779aea10c1318b4bc
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc ba953c8921fc7e18333f61898007206de7e23964
@@ -264,7 +264,7 @@ F ext/rbu/sqlite3rbu.c bb0de6cdbdb14a7d55a097238a434b7e99caf318
 F ext/rbu/sqlite3rbu.h 6fb6294c34a9ca93b5894a33bca530c6f08decba
 F ext/rbu/test_rbu.c 5aa22616afac6f71ebd3d9bc9bf1006cfabcca88
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 97b6560be68c20d27169ec14b805609f3ca4d90f
+F ext/rtree/rtree.c d92be99e3a662e1934658201f0fc7ad51b44325a
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test 42dadfc7b44a436cd74a1bebc0b9b689e4eaf7ec
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
@@ -1554,7 +1554,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a136609c98ed3cc673c5a3c2578d49db3f2518d1
-R b322167caccfbef7ed8b051ff68195b2
+P e11cc52389f61f6421179281877b119c02286121
+R ba6eaa451f165f44792dd902ec15651c
 U dan
-Z ce20f1c1fe7e20be76a40b05210db04c
+Z 82882b9c6c63f305c028e634c6349ae2

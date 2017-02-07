@@ -68,6 +68,7 @@
 #ifndef SQLITE_AMALGAMATION
 #include "sqlite3rtree.h"
 typedef sqlite3_int64 i64;
+typedef sqlite3_uint64 u64;
 typedef unsigned char u8;
 typedef unsigned short u16;
 typedef unsigned int u32;
