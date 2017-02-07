@@ -59,7 +59,9 @@ mod test {
         db.set_limit(Limit::SQLITE_LIMIT_TRIGGER_DEPTH, 32);
         assert_eq!(32, db.limit(Limit::SQLITE_LIMIT_TRIGGER_DEPTH));
 
-        db.set_limit(Limit::SQLITE_LIMIT_WORKER_THREADS, 2);
-        assert_eq!(2, db.limit(Limit::SQLITE_LIMIT_WORKER_THREADS));
+        if version_number() >= 3008007 {
+            db.set_limit(Limit::SQLITE_LIMIT_WORKER_THREADS, 2);
+            assert_eq!(2, db.limit(Limit::SQLITE_LIMIT_WORKER_THREADS));
+        }
     }
 }
