@@ -473,13 +473,13 @@ static unsigned char *readFile(const char *zName, int *pnByte){
   if( in==0 ) return 0;
   pBuf = sqlite3_malloc64( nIn );
   if( pBuf==0 ) return 0;
-  nRead = fread(pBuf, nIn, 1, in);
+  nRead = fread(pBuf, (size_t)nIn, 1, in);
   fclose(in);
   if( nRead!=1 ){
     sqlite3_free(pBuf);
     return 0;
   }
-  if( pnByte ) *pnByte = nIn;
+  if( pnByte ) *pnByte = (int)nIn;
   return pBuf;
 }
 
