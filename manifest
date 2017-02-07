@@ -1,5 +1,5 @@
-C Add\sthe\sinitial\sversion\sof\sthe\s"dbselftest"\sutility\sprogram.
-D 2017-02-07T17:36:12.948
+C Update\sa\stest\sparameter\sin\smalloc5.test\sto\saccount\sfor\sthe\sincrease\sin\sdefault\nlookaside\sbuffer\ssize.
+D 2017-02-07T19:23:51.831
 F Makefile.in edb6bcdd37748d2b1c3422ff727c748df7ffe918
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc ba953c8921fc7e18333f61898007206de7e23964
@@ -928,7 +928,7 @@ F test/make-where7.tcl 05c16b5d4f5d6512881dfec560cb793915932ef9
 F test/malloc.test 21c213365f2cca95ab2d7dc078dc8525f96065f8
 F test/malloc3.test e3b32c724b5a124b57cb0ed177f675249ad0c66a
 F test/malloc4.test 957337613002b7058a85116493a262f679f3a261
-F test/malloc5.test 02ed7c5313f0a68d95f2dfca8c8962132bd1f04b
+F test/malloc5.test 192d0b5ee1d023a07d5164c34cf47d010da73da1
 F test/malloc6.test 2f039d9821927eacae43e1831f815e157659a151
 F test/malloc7.test 7c68a32942858bc715284856c5507446bba88c3a
 F test/malloc8.test 9b7a3f8cb9cf0b12fff566e80a980b1767bd961d
@@ -1555,7 +1555,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 722e57fe61162a82b8001c7b1d3e06174caa90b9
-R 9f073837e9cdb1ff055e4a2a2994d017
-U drh
-Z f48b3d2fea77878a00660f4925462068
+P 1fcac8365e0f7bcfd55442d718da6626c864d45a
+R d6f712b168d87479bbb4e9d5c8c40830
+U dan
+Z 0f2ec469c3345d822f702c8d7a665aee
