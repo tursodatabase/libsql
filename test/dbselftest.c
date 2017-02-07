@@ -13,7 +13,7 @@
 ** This program implements an SQLite database self-verification utility.
 ** Usage:
 ** 
-**       dbselftest DATABASE
+**       dbselftest DATABASE ...
 **
 ** This program reads the "selftest" table in DATABASE, in rowid order,
 ** and runs each of the tests described there, reporting results at the
@@ -44,7 +44,7 @@
 #include "sqlite3.h"
 
 static const char zHelp[] =
-  "Usage: dbselftest [OPTIONS] DBFILE\n"
+  "Usage: dbselftest [OPTIONS] DBFILE ...\n"
   "\n"
   "    --init         Create the selftest table\n"
   "    -q             Suppress most output.  Errors only\n"
@@ -295,6 +295,101 @@ static void sha1Func(
 }
 
 /*
+** Run a prepared statement and compute the SHA1 hash on the
+** result rows.
+*/
+static void sha1RunStatement(SHA1Context *pCtx, sqlite3_stmt *pStmt){
+  int nCol = sqlite3_column_count(pStmt);
+  const char *z = sqlite3_sql(pStmt);
+  int n = (int)strlen(z);
+
+  hash_step_vformat(pCtx,"S%d:",n);
+  hash_step(pCtx,(unsigned char*)z,n);
+
+  /* Compute a hash over the result of the query */
+  while( SQLITE_ROW==sqlite3_step(pStmt) ){
+    int i;
+    hash_step(pCtx,(const unsigned char*)"R",1);
+    for(i=0; i<nCol; i++){
+      switch( sqlite3_column_type(pStmt,i) ){
+        case SQLITE_NULL: {
+          hash_step(pCtx, (const unsigned char*)"N",1);
+          break;
+        }
+        case SQLITE_INTEGER: {
+          sqlite3_uint64 u;
+          int j;
+          unsigned char x[9];
+          sqlite3_int64 v = sqlite3_column_int64(pStmt,i);
+          memcpy(&u, &v, 8);
+          for(j=8; j>=1; j--){
+            x[j] = u & 0xff;
+            u >>= 8;
+          }
+          x[0] = 'I';
+          hash_step(pCtx, x, 9);
+          break;
+        }
+        case SQLITE_FLOAT: {
+          sqlite3_uint64 u;
+          int j;
+          unsigned char x[9];
+          double r = sqlite3_column_double(pStmt,i);
+          memcpy(&u, &r, 8);
+          for(j=8; j>=1; j--){
+            x[j] = u & 0xff;
+            u >>= 8;
+          }
+          x[0] = 'F';
+          hash_step(pCtx,x,9);
+          break;
+        }
+        case SQLITE_TEXT: {
+          int n2 = sqlite3_column_bytes(pStmt, i);
+          const unsigned char *z2 = sqlite3_column_text(pStmt, i);
+          hash_step_vformat(pCtx,"T%d:",n2);
+          hash_step(pCtx, z2, n2);
+          break;
+        }
+        case SQLITE_BLOB: {
+          int n2 = sqlite3_column_bytes(pStmt, i);
+          const unsigned char *z2 = sqlite3_column_blob(pStmt, i);
+          hash_step_vformat(pCtx,"B%d:",n2);
+          hash_step(pCtx, z2, n2);
+          break;
+        }
+      }
+    }
+  }
+}
+
+/*
+** Run one or more statements of SQL.  Compute a SHA1 hash of the output.
+*/
+static int sha1Exec(
+  sqlite3 *db,          /* Run against this database connection */
+  const char *zSql,     /* The SQL to be run */
+  char *zOut            /* Store the SHA1 hash as hexadecimal in this buffer */
+){
+  sqlite3_stmt *pStmt = 0;    /* A prepared statement */
+  int rc;                     /* Result of an API call */
+  SHA1Context cx;             /* The SHA1 hash context */
+
+  hash_init(&cx);
+  while( zSql[0] ){
+    rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, &zSql);
+    if( rc ){
+      sqlite3_finalize(pStmt);
+      return rc;
+    }
+    sha1RunStatement(&cx, pStmt);
+    sqlite3_finalize(pStmt);
+  }
+  hash_finish(&cx, zOut);
+  return SQLITE_OK;
+}
+
+/*
 ** Implementation of the sha1_query(SQL) function.
 **
 ** This function compiles and runs the SQL statement(s) given in the
@@ -314,11 +409,7 @@ static void sha1QueryFunc(
   sqlite3 *db = sqlite3_context_db_handle(context);
   const char *zSql = (const char*)sqlite3_value_text(argv[0]);
   sqlite3_stmt *pStmt = 0;
-  int nCol;                   /* Number of columns in the result set */
-  int i;                      /* Loop counter */
   int rc;
-  int n;
-  const char *z;
   SHA1Context cx;
   char zOut[44];
 
@@ -342,66 +433,7 @@ static void sha1QueryFunc(
       sqlite3_free(zMsg);
       return;
     }
-    nCol = sqlite3_column_count(pStmt);
-    z = sqlite3_sql(pStmt);
-    n = (int)strlen(z);
-    hash_step_vformat(&cx,"S%d:",n);
-    hash_step(&cx,(unsigned char*)z,n);
-
-    /* Compute a hash over the result of the query */
-    while( SQLITE_ROW==sqlite3_step(pStmt) ){
-      hash_step(&cx,(const unsigned char*)"R",1);
-      for(i=0; i<nCol; i++){
-        switch( sqlite3_column_type(pStmt,i) ){
-          case SQLITE_NULL: {
-            hash_step(&cx, (const unsigned char*)"N",1);
-            break;
-          }
-          case SQLITE_INTEGER: {
-            sqlite3_uint64 u;
-            int j;
-            unsigned char x[9];
-            sqlite3_int64 v = sqlite3_column_int64(pStmt,i);
-            memcpy(&u, &v, 8);
-            for(j=8; j>=1; j--){
-              x[j] = u & 0xff;
-              u >>= 8;
-            }
-            x[0] = 'I';
-            hash_step(&cx, x, 9);
-            break;
-          }
-          case SQLITE_FLOAT: {
-            sqlite3_uint64 u;
-            int j;
-            unsigned char x[9];
-            double r = sqlite3_column_double(pStmt,i);
-            memcpy(&u, &r, 8);
-            for(j=8; j>=1; j--){
-              x[j] = u & 0xff;
-              u >>= 8;
-            }
-            x[0] = 'F';
-            hash_step(&cx,x,9);
-            break;
-          }
-          case SQLITE_TEXT: {
-            int n2 = sqlite3_column_bytes(pStmt, i);
-            const unsigned char *z2 = sqlite3_column_text(pStmt, i);
-            hash_step_vformat(&cx,"T%d:",n2);
-            hash_step(&cx, z2, n2);
-            break;
-          }
-          case SQLITE_BLOB: {
-            int n2 = sqlite3_column_bytes(pStmt, i);
-            const unsigned char *z2 = sqlite3_column_blob(pStmt, i);
-            hash_step_vformat(&cx,"B%d:",n2);
-            hash_step(&cx, z2, n2);
-            break;
-          }
-        }
-      }
-    }
+    sha1RunStatement(&cx, pStmt);
     sqlite3_finalize(pStmt);
   }
   hash_finish(&cx, zOut);
@@ -439,7 +471,7 @@ static void strAppend(Str *p, const char *z){
       exit(1);
     }
   }
-  memcpy(p->z+n, z, n+1);
+  memcpy(p->z+p->n, z, n+1);
   p->n += n;
 }
 
@@ -461,9 +493,138 @@ static int execCallback(void *pStr, int argc, char **argv, char **colv){
   return 0;
 }
 
+/*
+** Run an SQL statement constructing using sqlite3_vmprintf().
+** Return the number of errors.
+*/
+static int runSql(sqlite3 *db, const char *zFormat, ...){
+  char *zSql;
+  char *zErr = 0;
+  int rc;
+  int nErr = 0;
+  va_list ap;
+
+  va_start(ap, zFormat);
+  zSql = sqlite3_vmprintf(zFormat, ap);
+  va_end(ap);
+  if( zSql==0 ){
+    printf("Out of memory\n");
+    exit(1);
+  }
+  rc = sqlite3_exec(db, zSql, 0, 0, &zErr);
+  if( rc || zErr ){
+    printf("SQL error in [%s]: code=%d: %s\n", zSql, rc, zErr);
+    nErr++;
+  }
+  sqlite3_free(zSql);
+  return nErr;
+}
+
+/*
+** Generate a prepared statement using a formatted string.
+*/
+static sqlite3_stmt *prepareSql(sqlite3 *db, const char *zFormat, ...){
+  char *zSql;
+  int rc;
+  sqlite3_stmt *pStmt = 0;
+  va_list ap;
+
+  va_start(ap, zFormat);
+  zSql = sqlite3_vmprintf(zFormat, ap);
+  va_end(ap);
+  if( zSql==0 ){
+    printf("Out of memory\n");
+    exit(1);
+  }
+  rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
+  if( rc ){
+    printf("SQL error in [%s]: code=%d: %s\n", zSql, rc, sqlite3_errmsg(db));
+    sqlite3_finalize(pStmt);
+    pStmt = 0;
+  }
+  sqlite3_free(zSql);
+  return pStmt;
+}
+
+/*
+** Construct the standard selftest configuration for the database.
+*/
+static int buildSelftestTable(sqlite3 *db){
+  int rc;
+  sqlite3_stmt *pStmt;
+  int tno = 110;
+  char *zSql;
+  char zHash[50];
+
+  rc = runSql(db,
+     "CREATE TABLE IF NOT EXISTS selftest(\n"
+     "  tno INTEGER PRIMARY KEY,  -- test number\n"
+     "  op TEXT,                  -- what kind of test\n"
+     "  sql TEXT,                 -- SQL text for the test\n"
+     "  ans TEXT                  -- expected answer\n"
+     ");"
+     "INSERT INTO selftest"
+     " VALUES(100,'memo','Hashes generated using --init',NULL);"
+  );
+  if( rc ) return 1;
+  tno = 110;
+  zSql = "SELECT type,name,tbl_name,sql FROM sqlite_master";
+  sha1Exec(db, zSql, zHash);
+  rc = runSql(db, 
+      "INSERT INTO selftest(tno,op,sql,ans)"
+      " VALUES(%d,'sha1',%Q,%Q)", tno, zSql, zHash);
+  tno += 10;
+  pStmt = prepareSql(db,
+    "SELECT lower(name) FROM sqlite_master"
+    " WHERE type='table' AND sql NOT GLOB 'CREATE VIRTUAL*'"
+    "   AND name<>'selftest'"
+    " ORDER BY 1");
+  if( pStmt==0 ) return 1;
+  while( SQLITE_ROW==sqlite3_step(pStmt) ){
+    zSql = sqlite3_mprintf("SELECT * FROM \"%w\" NOT INDEXED",
+                            sqlite3_column_text(pStmt, 0));
+    if( zSql==0 ){
+      printf("Of of memory\n");
+      exit(1);
+    }
+    sha1Exec(db, zSql, zHash);
+    rc = runSql(db,
+      "INSERT INTO selftest(tno,op,sql,ans)"
+      " VALUES(%d,'sha1',%Q,%Q)", tno, zSql, zHash);
+    tno += 10;
+    sqlite3_free(zSql);
+    if( rc ) break;
+  }
+  sqlite3_finalize(pStmt);
+  if( rc ) return 1;
+  rc = runSql(db,
+     "INSERT INTO selftest(tno,op,sql,ans)"
+     " VALUES(%d,'run','PRAGMA integrity_check','ok');", tno);
+  if( rc ) return 1;
+  return rc;
+}
+
+/*
+** Return true if the named table exists
+*/
+static int tableExists(sqlite3 *db, const char *zTab){
+  return sqlite3_table_column_metadata(db, "main", zTab, 0, 0, 0, 0, 0, 0)
+            == SQLITE_OK;
+}
+
+/*
+** Default selftest table content, for use when there is no selftest table
+*/
+static char *azDefaultTest[] = {
+   0, 0, 0, 0,
+   "0", "memo", "Missing SELFTEST table - default checks only", "",
+   "1", "run", "PRAGMA integrity_check", "ok"
+};
+
 int main(int argc, char **argv){
   int eVolume = VOLUME_LOW;    /* How much output to display */
-  const char *zDb = 0;         /* Name of the database file */
+  const char **azDb = 0;       /* Name of the database file */
+  int nDb = 0;                 /* Number of database files to check */
   int doInit = 0;              /* True if --init is present */
   sqlite3 *db = 0;             /* Open database connection */
   int rc;                      /* Return code from API calls */
@@ -472,7 +633,9 @@ int main(int argc, char **argv){
   int nRow = 0, nCol = 0;      /* Rows and columns in azTest[] */
   int i;                       /* Loop counter */
   int nErr = 0;                /* Number of errors */
+  int iDb;                     /* Loop counter for databases */
   Str str;                     /* Result accumulator */
+  int nTest = 0;               /* Number of tests run */
 
   for(i=1; i<argc; i++){
     const char *z = argv[i];
@@ -496,56 +659,18 @@ int main(int argc, char **argv){
                argv[i]);
         return 1;
       }
-    }else if( zDb!=0 ){
-      printf("More than one database specified.  Use --help for more info.\n");
-      return 1;
     }else{
-      zDb = argv[i];
+      nDb++;
+      azDb = sqlite3_realloc(azDb, nDb*sizeof(azDb[0]));
+      if( azDb==0 ){
+        printf("out of memory\n");
+        exit(1);
+      }
+      azDb[nDb-1] = argv[i];
     }
   }
-  if( zDb==0 ){
-    printf("No database specified.  Use --help for more info\n");
-    return 1;
-  }
-  rc = sqlite3_open(zDb, &db);
-  if( rc ){
-    printf("Cannot open \"%s\": %s\n", zDb, sqlite3_errmsg(db));
-    return 1;
-  }
-  rc = sqlite3_create_function(db, "sha1", 1, SQLITE_UTF8, 0,
-                               sha1Func, 0, 0);
-  if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "sha1_query", 1, SQLITE_UTF8, 0,
-                                 sha1QueryFunc, 0, 0);
-  }
-  if( rc ){
-    printf("Initialization error: %s\n", sqlite3_errmsg(db));
-    sqlite3_close(db);
-    return 1;
-  }
-  if( doInit ){
-    rc = sqlite3_exec(db,
-      "CREATE TABLE IF NOT EXISTS selftest(\n"
-      "  tno INTEGER PRIMARY KEY,  -- test number\n"
-      "  op TEXT,                  -- what kind of test\n"
-      "  sql TEXT,                 -- SQL text for the test\n"
-      "  ans TEXT                  -- expected answer\n"
-      ");", 0, 0, &zErrMsg);
-    if( rc || zErrMsg ){
-      printf("CREATE TABLE selftest failed: %s\n", zErrMsg);
-      sqlite3_close(db);
-      return 1;
-    }
-  }
-  if( sqlite3_table_column_metadata(db,"main","selftest","sql",0,0,0,0,0) ){
-    printf("No such table: selftest\nSee the --init option.\n");
-    return 1;
-  }
-  rc = sqlite3_get_table(db, 
-      "SELECT tno,op,sql,ans FROM selftest ORDRE BY tno",
-      &azTest, &nRow, &nCol, &zErrMsg);
-  if( rc || zErrMsg ){
-    printf("Error querying selftest: %s\n", zErrMsg);
+  if( nDb==0 ){
+    printf("No databases specified.  Use --help for more info\n");
     return 1;
   }
   if( eVolume>=VOLUME_LOW ){
@@ -553,53 +678,109 @@ int main(int argc, char **argv){
   }
   memset(&str, 0, sizeof(str));
   strAppend(&str, "\n");
-  for(i=1; i<=nRow; i++){
-    int tno = atoi(azTest[i*nCol]);
-    const char *zOp = azTest[i*nCol+1];
-    const char *zSql = azTest[i*nCol+2];
-    const char *zAns = azTest[i*nCol+3];
-
-    if( eVolume>=VOLUME_ECHO ){
-      char *zQuote = sqlite3_mprintf("%q", zSql);
-      printf("%d: %s %s\n", tno, zOp, zSql);
-      sqlite3_free(zQuote);
-    }
-    if( strcmp(zOp,"memo")==0 ){
-      if( eVolume>=VOLUME_LOW ){
-        printf("%s\n", zSql);
-      }
-    }else
-    if( strcmp(zOp,"run")==0 ){
-      str.n = 0;
-      str.z[0] = 0;
-      zErrMsg = 0;
-      rc = sqlite3_exec(db, zSql, execCallback, &str, &zErrMsg);
-      if( eVolume>=VOLUME_VERBOSE ){
-        printf("Result: %s\n", str.z);
-      }
-      if( rc || zErrMsg ){
-        nErr++;
-        if( eVolume>=VOLUME_ERROR_ONLY ){
-          printf("%d: error-code-%d: %s\n", tno, rc, zErrMsg);
-        }
-        sqlite3_free(zErrMsg);
-      }else if( strcmp(zAns,str.z)!=0 ){
-        nErr++;
-        if( eVolume>=VOLUME_ERROR_ONLY ){
-          printf("%d: Expected: [%s]\n", tno, zAns);
-          printf("%d:      Got: [%s]\n", tno, str.z);
-        }
-      }
-    }else
-    {
-      printf("Unknown operation \"%s\" on selftest line %d\n", zOp, tno);
+  for(iDb=0; iDb<nDb; iDb++, sqlite3_close(db)){
+    rc = sqlite3_open_v2(azDb[iDb], &db, 
+          doInit ? SQLITE_OPEN_READWRITE : SQLITE_OPEN_READONLY, 0);
+    if( rc ){
+      printf("Cannot open \"%s\": %s\n", azDb[iDb], sqlite3_errmsg(db));
       return 1;
     }
+    rc = sqlite3_create_function(db, "sha1", 1, SQLITE_UTF8, 0,
+                                 sha1Func, 0, 0);
+    if( rc==SQLITE_OK ){
+      rc = sqlite3_create_function(db, "sha1_query", 1, SQLITE_UTF8, 0,
+                                   sha1QueryFunc, 0, 0);
+    }
+    if( rc ){
+      printf("Initialization error: %s\n", sqlite3_errmsg(db));
+      sqlite3_close(db);
+      return 1;
+    }
+    if( doInit && !tableExists(db, "selftest") ){
+       buildSelftestTable(db);
+    }
+    if( !tableExists(db, "selftest") ){
+      azTest = azDefaultTest;
+      nCol = 4;
+      nRow = 2;
+    }else{
+      rc = sqlite3_get_table(db, 
+          "SELECT tno,op,sql,ans FROM selftest ORDER BY tno",
+          &azTest, &nRow, &nCol, &zErrMsg);
+      if( rc || zErrMsg ){
+        printf("Error querying selftest: %s\n", zErrMsg);
+        sqlite3_free_table(azTest);
+        continue;
+      }
+    }
+    for(i=1; i<=nRow; i++){
+      int tno = atoi(azTest[i*nCol]);
+      const char *zOp = azTest[i*nCol+1];
+      const char *zSql = azTest[i*nCol+2];
+      const char *zAns = azTest[i*nCol+3];
+  
+      if( eVolume>=VOLUME_ECHO ){
+        char *zQuote = sqlite3_mprintf("%q", zSql);
+        printf("%d: %s %s\n", tno, zOp, zSql);
+        sqlite3_free(zQuote);
+      }
+      if( strcmp(zOp,"memo")==0 ){
+        if( eVolume>=VOLUME_LOW ){
+          printf("%s: %s\n", azDb[iDb], zSql);
+        }
+      }else
+      if( strcmp(zOp,"sha1")==0 ){
+        char zOut[44];
+        rc = sha1Exec(db, zSql, zOut);
+        nTest++;
+        if( eVolume>=VOLUME_VERBOSE ){
+          printf("Result: %s\n", zOut);
+        }
+        if( rc ){
+          nErr++;
+          if( eVolume>=VOLUME_ERROR_ONLY ){
+            printf("%d: error-code-%d: %s\n", tno, rc, sqlite3_errmsg(db));
+          }
+        }else if( strcmp(zAns,zOut)!=0 ){
+          nErr++;
+          if( eVolume>=VOLUME_ERROR_ONLY ){
+            printf("%d: Expected: [%s]\n", tno, zAns);
+            printf("%d:      Got: [%s]\n", tno, zOut);
+          }
+        }
+      }else
+      if( strcmp(zOp,"run")==0 ){
+        str.n = 0;
+        str.z[0] = 0;
+        zErrMsg = 0;
+        rc = sqlite3_exec(db, zSql, execCallback, &str, &zErrMsg);
+        nTest++;
+        if( eVolume>=VOLUME_VERBOSE ){
+          printf("Result: %s\n", str.z);
+        }
+        if( rc || zErrMsg ){
+          nErr++;
+          if( eVolume>=VOLUME_ERROR_ONLY ){
+            printf("%d: error-code-%d: %s\n", tno, rc, zErrMsg);
+          }
+          sqlite3_free(zErrMsg);
+        }else if( strcmp(zAns,str.z)!=0 ){
+          nErr++;
+          if( eVolume>=VOLUME_ERROR_ONLY ){
+            printf("%d: Expected: [%s]\n", tno, zAns);
+            printf("%d:      Got: [%s]\n", tno, str.z);
+          }
+        }
+      }else
+      {
+        printf("Unknown operation \"%s\" on selftest line %d\n", zOp, tno);
+        return 1;
+      }
+    }
+    if( azTest!=azDefaultTest ) sqlite3_free_table(azTest);
   }
-  sqlite3_free_table(azTest);
-  sqlite3_close(db);
   if( eVolume>=VOLUME_LOW || (nErr>0 && eVolume>=VOLUME_ERROR_ONLY) ){
-    printf("%d errors out of %d tests\n", nErr, nRow);
+    printf("%d errors out of %d tests on %d databases\n", nErr, nTest, nDb);
   }
   return nErr;
 }
