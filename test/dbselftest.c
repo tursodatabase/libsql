@@ -568,7 +568,7 @@ static int buildSelftestTable(sqlite3 *db){
   );
   if( rc ) return 1;
   tno = 110;
-  zSql = "SELECT type,name,tbl_name,sql FROM sqlite_master";
+  zSql = "SELECT type,name,tbl_name,sql FROM sqlite_master ORDER BY name";
   sha1Exec(db, zSql, zHash);
   rc = runSql(db, 
       "INSERT INTO selftest(tno,op,sql,ans)"
