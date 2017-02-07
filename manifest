@@ -1,5 +1,5 @@
-C Update\sa\stest\sparameter\sin\smalloc5.test\sto\saccount\sfor\sthe\sincrease\sin\sdefault\nlookaside\sbuffer\ssize.
-D 2017-02-07T19:23:51.831
+C Omit\sfts5fault1.test\sfrom\sthe\sinmemory_journal\spermutation.
+D 2017-02-07T19:36:14.794
 F Makefile.in edb6bcdd37748d2b1c3422ff727c748df7ffe918
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc ba953c8921fc7e18333f61898007206de7e23964
@@ -1015,7 +1015,7 @@ F test/parser1.test 391b9bf9a229547a129c61ac345ed1a6f5eb1854
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
-F test/permutations.test cd0b7bc04bf5e50d3a993d24c834d591f7d4f5fe
+F test/permutations.test 46ad98770d3c04ce2418cab2cc527647bfe961a7
 F test/pragma.test 1e94755164a3a3264cd39836de4bebcb7809e5f8
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
 F test/pragma3.test 14c12bc5352b1e100e0b6b44f371053a81ccf8ed
@@ -1555,7 +1555,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1fcac8365e0f7bcfd55442d718da6626c864d45a
-R d6f712b168d87479bbb4e9d5c8c40830
+P be82d5ae20ba62a165bdc28766a8dc8049abcac6
+R 4c6aa653d353c19152ed7b2aaba4bc83
 U dan
-Z 0f2ec469c3345d822f702c8d7a665aee
+Z 450aa5587fc5eb1e148efd8100bf109e
