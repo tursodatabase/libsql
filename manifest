@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sin\skvtest.c
-D 2017-02-07T20:57:00.794
+C Fix\sharmless\scompiler\swarnings\sin\sdbfuzz.
+D 2017-02-07T21:00:44.802
 F Makefile.in edb6bcdd37748d2b1c3422ff727c748df7ffe918
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc ba953c8921fc7e18333f61898007206de7e23964
@@ -635,7 +635,7 @@ F test/ctime.test ff6c38e822459d6ca743c34901caf57740b08b54
 F test/cursorhint.test 7bc346788390475e77a345da2b92270d04d35856
 F test/cursorhint2.test 8457e93d97f665f23f97cdbc8477d16e3480331b
 F test/date.test a6a5a48b90907bca9fbcc79a30be5a715c1ab2fc
-F test/dbfuzz.c 8cc2bdb818b4483a052f9f80f96be74cbd9a6e1d
+F test/dbfuzz.c 73047c920d6210e5912c87cdffd9a1c281d4252e
 F test/dbselftest.c 4bf86fe04dc2d0d58dabc5e6b7a06fa4ef7827ea
 F test/dbstatus.test 73149851b3aff14fc6db478e58f9083a66422cf5
 F test/dbstatus2.test e93ab03bfae6d62d4d935f20de928c19ca0ed0ab
@@ -1555,7 +1555,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e68829c9bbc69bf4a0dc057e0a6e977f2fac79be
-R e8e95a0beaf31ff9600f2388a71f8dcd
+P db6b39937dd9d6fcd5fcc582c8dd529caad755da
+R f5b20543ad5a9de57f328e5cb19dc17f
 U drh
-Z 62b1a410058a970df83f462c97cdf484
+Z 556fccfd2bf9ea9a682f73b7b4dda1ae
