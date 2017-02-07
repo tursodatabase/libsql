@@ -1304,7 +1304,7 @@ static int rtreeSearchPointCompare(
 }
 
 /*
-** Interchange to search points in a cursor.
+** Interchange two search points in a cursor.
 */
 static void rtreeSearchPointSwap(RtreeCursor *p, int i, int j){
   RtreeSearchPoint t = p->aPoint[i];
