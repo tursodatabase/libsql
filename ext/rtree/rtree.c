@@ -408,12 +408,12 @@ struct RtreeMatchArg {
      defined(_M_AMD64) || defined(_M_ARM)     || defined(__x86)   ||    \
      defined(__arm__)) && !defined(SQLITE_RUNTIME_BYTEORDER)
 # define SQLITE_BYTEORDER    1234
-#endif
-#if (defined(sparc)    || defined(__ppc__))  \
+#elif (defined(sparc)    || defined(__ppc__))  \
     && !defined(SQLITE_RUNTIME_BYTEORDER)
 # define SQLITE_BYTEORDER    4321
-#endif
+#else
 # define SQLITE_BYTEORDER    0     /* 0 means "unknown at compile-time" */
+#endif
 #endif
 
 
