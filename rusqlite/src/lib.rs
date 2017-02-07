@@ -89,12 +89,14 @@ pub use error::Error;
 pub use ffi::ErrorCode;
 
 pub use cache::CachedStatement;
+pub use version::*;
 
 #[cfg(feature = "load_extension")]
 #[allow(deprecated)]
 pub use load_extension_guard::{SqliteLoadExtensionGuard, LoadExtensionGuard};
 
 pub mod types;
+mod version;
 mod transaction;
 mod cache;
 mod named_params;
@@ -1511,13 +1513,22 @@ mod test {
 
                 // extended error codes for constraints were added in SQLite 3.7.16; if we're
                 // running on a version at least that new, check for the extended code
-                let version = unsafe { ffi::sqlite3_libversion_number() };
-                if version >= 3007016 {
+                if version_number() >= 3007016 {
                     assert_eq!(err.extended_code, ffi::SQLITE_CONSTRAINT_NOTNULL)
                 }
             }
             err => panic!("Unexpected error {}", err),
         }
+    }
+
+    #[test]
+    fn test_version_string() {
+        let n = version_number();
+        let major = n / 1_000_000;
+        let minor = (n % 1_000_000) / 1_000;
+        let patch = n % 1_000;
+
+        assert_eq!(version(), format!("{}.{}.{}", major, minor, patch));
     }
 
     mod query_and_then_tests {
