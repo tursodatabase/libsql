@@ -7,6 +7,7 @@ script:
     - cargo test
     - cargo test --features backup
     - cargo test --features blob
+    - cargo test --features limits
     - cargo test --features load_extension
     - cargo test --features trace
     - cargo test --features functions
@@ -14,4 +15,5 @@ script:
     - cargo test --features serde_json
     - cargo test --features bundled
     - cargo test --features "backup blob chrono functions load_extension serde_json trace"
-    - cargo test --features "backup blob chrono functions load_extension serde_json trace bundled"
+    - cargo test --features "backup blob chrono functions limits load_extension serde_json trace"
+    - cargo test --features "backup blob chrono functions limits load_extension serde_json trace bundled"

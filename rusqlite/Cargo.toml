@@ -24,6 +24,7 @@ blob = []
 functions = []
 trace = []
 bundled = ["libsqlite3-sys/bundled"]
+limits = []
 
 [dependencies]
 time = "0.1.0"
