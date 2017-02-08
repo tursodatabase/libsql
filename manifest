@@ -1,5 +1,5 @@
-C Typo\sfixes\sin\scomment.\s\sNo\schanges\sto\scode.
-D 2017-02-08T18:13:46.938
+C Avoid\spreparing\sa\sSELECT\sstatement\seach\stime\san\sUPDATE\sor\sDELETE\sby\sdocid\sis\nexecuted\sagainst\san\sfts3\stable.
+D 2017-02-08T19:12:36.968
 F Makefile.in edb6bcdd37748d2b1c3422ff727c748df7ffe918
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 067a6766f800cc8d72845ab61f8de4ffe8f3fc99
@@ -70,9 +70,9 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 5a8cafedffd101e9946f8909ecf8d34aaa383b4d
+F ext/fts3/fts3.c c4d7eecb12de9749851bcab6e5ca616a5803047a
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h 89d0bd4595a0de384dac78e94b803de12586e8dd
+F ext/fts3/fts3Int.h eb2502000148e80913b965db3e59f29251266d0a
 F ext/fts3/fts3_aux.c 9edc3655fcb287f0467d0a4b886a01c6185fe9f1
 F ext/fts3/fts3_expr.c dfd571a24412779ac01f25c01d888c6ef7b2d0ef
 F ext/fts3/fts3_hash.c 29b986e43f4e9dd40110eafa377dc0d63c422c60
@@ -1555,7 +1555,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 77b470b0df73dc5ae5ad2f0170ef7c50558c7c88
-R 52473535d67a86108597185ae6d56e08
-U mistachkin
-Z 77244f34774b49c249d3e5a9b6027fee
+P c09dd5c0befaf5028abfead8114bd74a30ffe5d4 9962c10a5c6672bd82b2bf640d878fcdac0b815a
+R fbd7643b7e0c4a3c885d2a6aeb5fecfa
+U dan
+Z a7e2195607498eebba62ce2716ddc0de
