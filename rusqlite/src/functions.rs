@@ -228,11 +228,7 @@ impl<'a> Context<'a> {
     /// types must be identical.
     pub unsafe fn get_aux<T>(&self, arg: c_int) -> Option<&T> {
         let p = ffi::sqlite3_get_auxdata(self.ctx, arg) as *mut T;
-        if p.is_null() {
-            None
-        } else {
-            Some(&*p)
-        }
+        if p.is_null() { None } else { Some(&*p) }
     }
 }
 
@@ -670,9 +666,10 @@ mod test {
             })
             .unwrap();
 
-        for &(expected, query) in &[("", "SELECT my_concat()"),
-                                    ("onetwo", "SELECT my_concat('one', 'two')"),
-                                    ("abc", "SELECT my_concat('a', 'b', 'c')")] {
+        for &(expected, query) in
+            &[("", "SELECT my_concat()"),
+              ("onetwo", "SELECT my_concat('one', 'two')"),
+              ("abc", "SELECT my_concat('a', 'b', 'c')")] {
             let result: String = db.query_row(query, &[], |r| r.get(0)).unwrap();
             assert_eq!(expected, result);
         }

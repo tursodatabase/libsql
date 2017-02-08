@@ -103,12 +103,18 @@ mod named_params;
 mod error;
 mod convenient;
 mod raw_statement;
-#[cfg(feature = "load_extension")]mod load_extension_guard;
-#[cfg(feature = "trace")]pub mod trace;
-#[cfg(feature = "backup")]pub mod backup;
-#[cfg(feature = "functions")]pub mod functions;
-#[cfg(feature = "blob")]pub mod blob;
-#[cfg(feature = "limits")]pub mod limits;
+#[cfg(feature = "load_extension")]
+mod load_extension_guard;
+#[cfg(feature = "trace")]
+pub mod trace;
+#[cfg(feature = "backup")]
+pub mod backup;
+#[cfg(feature = "functions")]
+pub mod functions;
+#[cfg(feature = "blob")]
+pub mod blob;
+#[cfg(feature = "limits")]
+pub mod limits;
 
 // Number of cached prepared statements we'll hold on to.
 const STATEMENT_CACHE_DEFAULT_CAPACITY: usize = 16;
@@ -417,10 +423,10 @@ impl Connection {
     pub fn close(self) -> std::result::Result<(), (Connection, Error)> {
         self.flush_prepared_statement_cache();
         {
-            let mut db = self.db.borrow_mut();
-            db.close()
-        }
-        .map_err(move |err| (self, err))
+                let mut db = self.db.borrow_mut();
+                db.close()
+            }
+            .map_err(move |err| (self, err))
     }
 
     /// Enable loading of SQLite extensions. Strongly consider using `LoadExtensionGuard`
@@ -1067,22 +1073,20 @@ impl<'stmt> Rows<'stmt> {
     /// "streaming iterator". For a more natural interface, consider using `query_map`
     /// or `query_and_then` instead, which return types that implement `Iterator`.
     pub fn next<'a>(&'a mut self) -> Option<Result<Row<'a, 'stmt>>> {
-        self.stmt.and_then(|stmt| {
-            match stmt.stmt.step() {
-                ffi::SQLITE_ROW => {
-                    Some(Ok(Row {
-                        stmt: stmt,
-                        phantom: PhantomData,
-                    }))
-                }
-                ffi::SQLITE_DONE => {
-                    self.reset();
-                    None
-                }
-                code => {
-                    self.reset();
-                    Some(Err(stmt.conn.decode_result(code).unwrap_err()))
-                }
+        self.stmt.and_then(|stmt| match stmt.stmt.step() {
+            ffi::SQLITE_ROW => {
+                Some(Ok(Row {
+                    stmt: stmt,
+                    phantom: PhantomData,
+                }))
+            }
+            ffi::SQLITE_DONE => {
+                self.reset();
+                None
+            }
+            code => {
+                self.reset();
+                Some(Err(stmt.conn.decode_result(code).unwrap_err()))
             }
         })
     }
@@ -1197,12 +1201,15 @@ impl<'a> ValueRef<'a> {
                 let blob = ffi::sqlite3_column_blob(raw, col);
 
                 let len = ffi::sqlite3_column_bytes(raw, col);
-                assert!(len >= 0, "unexpected negative return from sqlite3_column_bytes");
+                assert!(len >= 0,
+                        "unexpected negative return from sqlite3_column_bytes");
                 if len > 0 {
-                    assert!(!blob.is_null(), "unexpected SQLITE_BLOB column type with NULL data");
+                    assert!(!blob.is_null(),
+                            "unexpected SQLITE_BLOB column type with NULL data");
                     ValueRef::Blob(from_raw_parts(blob as *const u8, len as usize))
                 } else {
-                    // The return value from sqlite3_column_blob() for a zero-length BLOB is a NULL pointer.
+                    // The return value from sqlite3_column_blob() for a zero-length BLOB
+                    // is a NULL pointer.
                     ValueRef::Blob(&[])
                 }
             }
