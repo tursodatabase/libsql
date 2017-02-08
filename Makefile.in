@@ -1198,6 +1198,11 @@ KV_OPT += -DSQLITE_DIRECT_OVERFLOW_READ
 kvtest$(TEXE):	$(TOP)/test/kvtest.c sqlite3.c
 	$(LTLINK) $(KV_OPT) -o $@ $(TOP)/test/kvtest.c sqlite3.c $(TLIBS)
 
+DBSELFTEST_OPT += -DSQLITE_ENABLE_RTREE -DSQLITE_ENABLE_FTS4
+
+dbselftest$(TEXE):	$(TOP)/test/dbselftest.c sqlite3.c
+	$(LTLINK) $(DBSELFTEST_OPT) -o $@ $(TOP)/test/dbselftest.c sqlite3.c $(TLIBS)
+
 rbu$(EXE): $(TOP)/ext/rbu/rbu.c $(TOP)/ext/rbu/sqlite3rbu.c sqlite3.lo 
 	$(LTLINK) -I. -o $@ $(TOP)/ext/rbu/rbu.c sqlite3.lo $(TLIBS)
 

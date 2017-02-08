@@ -310,7 +310,7 @@ static int initMain(int argc, char **argv){
     "WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<%d)"
     " INSERT INTO kv(k,v) SELECT x, randomblob(%d+(random()%%(%d))) FROM c;\n"
     "COMMIT;\n",
-    pgsz, nCount, sz, iVariance
+    pgsz, nCount, sz, iVariance+1
   );
   rc = sqlite3_exec(db, zSql, 0, 0, &zErrMsg);
   if( rc ) fatalError("database create failed: %s", zErrMsg);
@@ -473,13 +473,13 @@ static unsigned char *readFile(const char *zName, int *pnByte){
   if( in==0 ) return 0;
   pBuf = sqlite3_malloc64( nIn );
   if( pBuf==0 ) return 0;
-  nRead = fread(pBuf, nIn, 1, in);
+  nRead = fread(pBuf, (size_t)nIn, 1, in);
   fclose(in);
   if( nRead!=1 ){
     sqlite3_free(pBuf);
     return 0;
   }
-  if( pnByte ) *pnByte = nIn;
+  if( pnByte ) *pnByte = (int)nIn;
   return pBuf;
 }
 

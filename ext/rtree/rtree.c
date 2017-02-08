@@ -69,6 +69,7 @@
 #ifndef SQLITE_AMALGAMATION
 #include "sqlite3rtree.h"
 typedef sqlite3_int64 i64;
+typedef sqlite3_uint64 u64;
 typedef unsigned char u8;
 typedef unsigned short u16;
 typedef unsigned int u32;
@@ -409,12 +410,12 @@ struct RtreeMatchArg {
      defined(_M_AMD64) || defined(_M_ARM)     || defined(__x86)   ||    \
      defined(__arm__)) && !defined(SQLITE_RUNTIME_BYTEORDER)
 # define SQLITE_BYTEORDER    1234
-#endif
-#if (defined(sparc)    || defined(__ppc__))  \
+#elif (defined(sparc)    || defined(__ppc__))  \
     && !defined(SQLITE_RUNTIME_BYTEORDER)
 # define SQLITE_BYTEORDER    4321
-#endif
+#else
 # define SQLITE_BYTEORDER    0     /* 0 means "unknown at compile-time" */
+#endif
 #endif
 
 
@@ -457,21 +458,17 @@ static void readCoord(u8 *p, RtreeCoord *pCoord){
 static i64 readInt64(u8 *p){
 #if SQLITE_BYTEORDER==1234 && MSVC_VERSION>=1300
   u64 x;
-  testcase( ((((char*)p) - (char*)0)&7)!=0 );  /* not always 8-byte aligned */
   memcpy(&x, p, 8);
   return (i64)_byteswap_uint64(x);
 #elif SQLITE_BYTEORDER==1234 && (GCC_VERSION>=4003000 || CLANG_VERSION>=3000000)
   u64 x;
-  testcase( ((((char*)p) - (char*)0)&7)!=0 );  /* not always 8-byte aligned */
   memcpy(&x, p, 8);
   return (i64)__builtin_bswap64(x);
 #elif SQLITE_BYTEORDER==4321
   i64 x;
-  testcase( ((((char*)p) - (char*)0)&7)!=0 );  /* not always 8-byte aligned */
   memcpy(&x, p, 8);
   return x;
 #else
-  testcase( ((((char*)p) - (char*)0)&7)!=0 );  /* not always 8-byte aligned */
   return (
     (((i64)p[0]) << 56) + 
     (((i64)p[1]) << 48) + 
@@ -519,7 +516,6 @@ static int writeCoord(u8 *p, RtreeCoord *pCoord){
   return 4;
 }
 static int writeInt64(u8 *p, i64 i){
-  testcase( ((((char*)p) - (char*)0)&7)!=0 );  /* Not always 8-byte aligned */
 #if SQLITE_BYTEORDER==1234 && (GCC_VERSION>=4003000 || CLANG_VERSION>=3000000)
   i = (i64)__builtin_bswap64((u64)i);
   memcpy(p, &i, 8);
@@ -1310,7 +1306,7 @@ static int rtreeSearchPointCompare(
 }
 
 /*
-** Interchange to search points in a cursor.
+** Interchange two search points in a cursor.
 */
 static void rtreeSearchPointSwap(RtreeCursor *p, int i, int j){
   RtreeSearchPoint t = p->aPoint[i];
@@ -1617,7 +1613,6 @@ static int rtreeColumn(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int i){
   if( i==0 ){
     sqlite3_result_int64(ctx, nodeGetRowid(pRtree, pNode, p->iCell));
   }else{
-    if( rc ) return rc;
     nodeGetCoord(pRtree, pNode, p->iCell, i-1, &c);
 #ifndef SQLITE_RTREE_INT_ONLY
     if( pRtree->eCoordType==RTREE_COORD_REAL32 ){
@@ -1813,19 +1808,6 @@ static int rtreeFilter(
 }
 
 /*
-** Set the pIdxInfo->estimatedRows variable to nRow. Unless this
-** extension is currently being used by a version of SQLite too old to
-** support estimatedRows. In that case this function is a no-op.
-*/
-static void setEstimatedRows(sqlite3_index_info *pIdxInfo, i64 nRow){
-#if SQLITE_VERSION_NUMBER>=3008002
-  if( sqlite3_libversion_number()>=3008002 ){
-    pIdxInfo->estimatedRows = nRow;
-  }
-#endif
-}
-
-/*
 ** Rtree virtual table module xBestIndex method. There are three
 ** table scan strategies to choose from (in order from most to 
 ** least desirable):
@@ -1904,7 +1886,7 @@ static int rtreeBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
       ** a single row.
       */ 
       pIdxInfo->estimatedCost = 30.0;
-      setEstimatedRows(pIdxInfo, 1);
+      pIdxInfo->estimatedRows = 1;
       return SQLITE_OK;
     }
 
@@ -1936,7 +1918,7 @@ static int rtreeBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
 
   nRow = pRtree->nRowEst >> (iIdx/2);
   pIdxInfo->estimatedCost = (double)6.0 * (double)nRow;
-  setEstimatedRows(pIdxInfo, nRow);
+  pIdxInfo->estimatedRows = nRow;
 
   return rc;
 }
@@ -1975,12 +1957,12 @@ static RtreeDValue cellArea(Rtree *pRtree, RtreeCell *p){
 ** of the objects size in each dimension.
 */
 static RtreeDValue cellMargin(Rtree *pRtree, RtreeCell *p){
-  RtreeDValue margin;
-  int ii;
-  margin = DCOORD(p->aCoord[1]) - DCOORD(p->aCoord[0]);
-  for(ii=2; ii<pRtree->nDim2; ii+=2){
+  RtreeDValue margin = 0;
+  int ii = pRtree->nDim2 - 2;
+  do{
     margin += (DCOORD(p->aCoord[ii+1]) - DCOORD(p->aCoord[ii]));
-  }
+    ii -= 2;
+  }while( ii>=0 );
   return margin;
 }
 

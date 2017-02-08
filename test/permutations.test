@@ -754,6 +754,10 @@ test_suite "inmemory_journal" -description {
   
   # This test assumes a journal file is created on disk.
   delete_db.test
+  
+  # This test depends on a successful recovery from the pager error 
+  # state. Which is not possible with an in-memory journal
+  fts5fault1.test
 }]
 
 ifcapable mem3 {
