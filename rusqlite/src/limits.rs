@@ -13,8 +13,8 @@ impl Connection {
         let c = self.db.borrow();
         unsafe { ffi::sqlite3_limit(c.db(), limit as c_int, -1) }
     }
-    /// Changes the limit to `new_val`.
-    /// And returns the prior value of the limit.
+
+    /// Changes the limit to `new_val`, returning the prior value of the limit.
     pub fn set_limit(&self, limit: Limit, new_val: i32) -> i32 {
         let c = self.db.borrow_mut();
         unsafe { ffi::sqlite3_limit(c.db(), limit as c_int, new_val) }
@@ -23,7 +23,7 @@ impl Connection {
 
 #[cfg(test)]
 mod test {
-    use ffi::{self, Limit};
+    use ffi::Limit;
     use Connection;
 
     #[test]
@@ -59,8 +59,8 @@ mod test {
         db.set_limit(Limit::SQLITE_LIMIT_TRIGGER_DEPTH, 32);
         assert_eq!(32, db.limit(Limit::SQLITE_LIMIT_TRIGGER_DEPTH));
 
-        let version = unsafe { ffi::sqlite3_libversion_number() };
-        if version >= 3008007 {
+        // SQLITE_LIMIT_WORKER_THREADS was added in SQLite 3.8.7.
+        if ::version_number() >= 3008007 {
             db.set_limit(Limit::SQLITE_LIMIT_WORKER_THREADS, 2);
             assert_eq!(2, db.limit(Limit::SQLITE_LIMIT_WORKER_THREADS));
         }
