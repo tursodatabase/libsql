@@ -1,5 +1,5 @@
-C Always\sinvoke\sthe\sxRoundup()\smethod\sof\sthe\smemory\sallocator\sbefore\scalling\nxMalloc().
-D 2017-02-08T16:01:57.242
+C Typo\sfixes\sin\scomment.\s\sNo\schanges\sto\scode.
+D 2017-02-08T18:13:46.938
 F Makefile.in edb6bcdd37748d2b1c3422ff727c748df7ffe918
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 067a6766f800cc8d72845ab61f8de4ffe8f3fc99
@@ -360,7 +360,7 @@ F src/insert.c 444354c23d4d140a57d6eb46f34e376a7f8f62e8
 F src/legacy.c 75d3023be8f0d2b99d60f905090341a03358c58e
 F src/loadext.c a68d8d1d14cf7488bb29dc5311cb1ce9a4404258
 F src/main.c e207b81542d13b9f13d61e78ca441f9781f055b0
-F src/malloc.c dc2b84cd320e0498ef4209772d66f353df6e4eb2
+F src/malloc.c f345c60d093d6c6cf451b99a7344a123b1a70fd9
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c fd7cd6fe21d46fe0a4186367dd8dc26d87b787eb
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
@@ -1555,7 +1555,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c46e06fab4465128ac3364bafef5fa3d016796d0
-R 4a0a823e254c393eb2ca1b8aee7648b4
-U drh
-Z f41f90df67587790eae7117dc459eaeb
+P 77b470b0df73dc5ae5ad2f0170ef7c50558c7c88
+R 52473535d67a86108597185ae6d56e08
+U mistachkin
+Z 77244f34774b49c249d3e5a9b6027fee
