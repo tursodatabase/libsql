@@ -1,19 +1,44 @@
-language: rust
 sudo: false
 
+language: rust
+
+rust:
+  - stable
+  - beta
+  - nightly
+
+matrix:
+  allow_failures:
+    - rust: nightly
+
+addons:
+  apt:
+    sources:
+      - llvm-toolchain-precise-3.9
+      - ubuntu-toolchain-r-test
+    packages:
+      - llvm-3.9-dev
+      - libclang-3.9-dev
+
+env:
+  - LIBCLANG_PATH=/usr/lib/llvm-3.9/lib
+
 script:
-    - cargo build
-    - cargo build --features bundled
-    - cargo test
-    - cargo test --features backup
-    - cargo test --features blob
-    - cargo test --features limits
-    - cargo test --features load_extension
-    - cargo test --features trace
-    - cargo test --features functions
-    - cargo test --features chrono
-    - cargo test --features serde_json
-    - cargo test --features bundled
-    - cargo test --features "backup blob chrono functions load_extension serde_json trace"
-    - cargo test --features "backup blob chrono functions limits load_extension serde_json trace"
-    - cargo test --features "backup blob chrono functions limits load_extension serde_json trace bundled"
+  - cargo build
+  - cargo build --features bundled
+  - cargo test
+  - cargo test --features backup
+  - cargo test --features blob
+  - cargo test --features limits
+  - cargo test --features load_extension
+  - cargo test --features trace
+  - cargo test --features chrono
+  - cargo test --features serde_json
+  - cargo test --features bundled
+  - cargo test --features "backup blob chrono functions limits load_extension serde_json trace bundled"
+
+# Travis CI runs on Ubuntu precise, which has SQLite 3.7.x. Our `functions` feature requires
+# 3.8.3, so omit tests for functions by itself and combined with other features. It is still
+# tested above when combined with the `bundled` feature.
+# - cargo test --features functions
+# - cargo test --features "backup blob chrono functions limits load_extension serde_json trace"
