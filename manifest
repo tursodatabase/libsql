@@ -1,5 +1,5 @@
-C When\sgenerating\sthe\shash\son\sthe\ssqlite_master\stable\sin\sdbselftest,\suse\san\nORDER\sBY\sclause,\ssince\sthe\ssqlite_master\stable\sis\sreordered\sby\sVACUUM.
-D 2017-02-07T21:44:40.303
+C Round\sup\sthe\ssize\sof\sall\smemory\sallocations\sto\sa\smultiple\sof\s8\sbytes\swhen\nusing\sthe\ssystem\smemory\sallocator.
+D 2017-02-08T12:18:05.716
 F Makefile.in edb6bcdd37748d2b1c3422ff727c748df7ffe918
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 067a6766f800cc8d72845ab61f8de4ffe8f3fc99
@@ -362,7 +362,7 @@ F src/loadext.c a68d8d1d14cf7488bb29dc5311cb1ce9a4404258
 F src/main.c e207b81542d13b9f13d61e78ca441f9781f055b0
 F src/malloc.c fc1b9f445290f2145da48fc08730c26e6082b640
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
-F src/mem1.c 6919bcf12f221868ea066eec27e579fed95ce98b
+F src/mem1.c d5214ba7ca6315702d4dc19c6a28c28374aabf0f
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
 F src/mem3.c 8768ac94694f31ffaf8b4d0ea5dc08af7010a35a
 F src/mem5.c 9bf955937b07f8c32541c8a9991f33ce3173d944
@@ -1555,7 +1555,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fc1dfe870279531d77ffb18a9ca4b4dcbc7aab8d
-R f274165d340f013add78e0f37722933a
+P c8bfd99b96608a08f934f46b4e1a4d0f1cc69ea7
+R 18730fab1d81ceb35863e5f55cd414cf
 U drh
-Z fc92264580c9fd0c7c0e56ba0825054f
+Z e4ad513632515387e7941b963a76aac0
