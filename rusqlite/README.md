@@ -72,6 +72,8 @@ features](http://doc.crates.io/manifest.html#the-features-section). They are:
   allows hooks into SQLite's tracing and profiling APIs.
 * [`blob`](http://jgallagher.github.io/rusqlite/rusqlite/blob/index.html)
   gives `std::io::{Read, Write, Seek}` access to SQL BLOBs.
+* [`limits`](http://jgallagher.github.io/rusqlite/rusqlite/struct.Connection.html#method.limit)
+  allows you to set and retrieve SQLite's per connection limits.
 * `chrono` implements [`FromSql`](http://jgallagher.github.io/rusqlite/rusqlite/types/trait.FromSql.html)
   and [`ToSql`](http://jgallagher.github.io/rusqlite/rusqlite/types/trait.ToSql.html) for various
   types from the [`chrono` crate](https://crates.io/crates/chrono).
