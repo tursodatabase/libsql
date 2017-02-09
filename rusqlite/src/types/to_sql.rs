@@ -1,5 +1,5 @@
 use super::{Null, Value, ValueRef};
-use ::Result;
+use Result;
 
 /// `ToSqlOutput` represents the possible output types for implementors of the `ToSql` trait.
 #[derive(Clone,Debug,PartialEq)]

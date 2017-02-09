@@ -141,9 +141,7 @@ impl error::Error for Error {
                 "SQLite was compiled or configured for single-threaded use only"
             }
             Error::FromSqlConversionFailure(_, _, ref err) => err.description(),
-            Error::IntegralValueOutOfRange(_, _) => {
-                "integral value out of range of requested type"
-            }
+            Error::IntegralValueOutOfRange(_, _) => "integral value out of range of requested type",
             Error::Utf8Error(ref err) => err.description(),
             Error::InvalidParameterName(_) => "invalid parameter name",
             Error::NulError(ref err) => err.description(),

@@ -5,7 +5,7 @@ use std::borrow::Cow;
 
 use self::chrono::{NaiveDate, NaiveTime, NaiveDateTime, DateTime, TimeZone, UTC, Local};
 
-use ::Result;
+use Result;
 use types::{FromSql, FromSqlError, FromSqlResult, ToSql, ToSqlOutput, ValueRef};
 
 /// ISO 8601 calendar date without timezone => "YYYY-MM-DD"

@@ -1,4 +1,4 @@
-use ::types::{FromSqlError, FromSqlResult};
+use types::{FromSqlError, FromSqlResult};
 use super::{Value, Type};
 
 /// A non-owning [dynamic type value](http://sqlite.org/datatype3.html). Typically the
