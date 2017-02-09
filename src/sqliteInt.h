@@ -103,19 +103,27 @@
 # define _LARGEFILE_SOURCE 1
 #endif
 
-/* What version of GCC is being used.  0 means GCC is not being used */
-#ifdef __GNUC__
+/* The GCC_VERSION, CLANG_VERSION, and MSVC_VERSION macros are used to
+** conditionally include optimizations for each of these compilers.  A
+** value of 0 means that compiler is not being used.  The
+** SQLITE_DISABLE_INTRINSIC macro means do not use any compiler-specific
+** optimizations, and hence set all compiler macros to 0
+*/
+#if defined(__GNUC__) && !defined(SQLITE_DISABLE_INTRINSIC)
 # define GCC_VERSION (__GNUC__*1000000+__GNUC_MINOR__*1000+__GNUC_PATCHLEVEL__)
 #else
 # define GCC_VERSION 0
 #endif
-
-/* What version of CLANG is being used.  0 means CLANG is not being used */
-#if defined(__clang__) && !defined(_WIN32)
+#if defined(__clang__) && !defined(_WIN32) && !defined(SQLITE_DISABLE_INTRINSIC)
 # define CLANG_VERSION \
             (__clang_major__*1000000+__clang_minor__*1000+__clang_patchlevel__)
 #else
 # define CLANG_VERSION 0
+#endif
+#if defined(_MSC_VER) && !defined(SQLITE_DISABLE_INTRINSIC)
+# define MSVC_VERSION _MSC_VER
+#else
+# define MSVC_VERSION 0
 #endif
 
 /* Needed for various definitions... */
@@ -247,6 +255,7 @@
 #      include <intrin.h>
 #      pragma intrinsic(_byteswap_ushort)
 #      pragma intrinsic(_byteswap_ulong)
+#      pragma intrinsic(_byteswap_uint64)
 #      pragma intrinsic(_ReadWriteBarrier)
 #    else
 #      include <cmnintrin.h>
@@ -787,32 +796,35 @@ typedef INT16_TYPE LogEst;
 **
 ** For best performance, an attempt is made to guess at the byte-order
 ** using C-preprocessor macros.  If that is unsuccessful, or if
-** -DSQLITE_RUNTIME_BYTEORDER=1 is set, then byte-order is determined
+** -DSQLITE_BYTEORDER=0 is set, then byte-order is determined
 ** at run-time.
 */
-#if (defined(i386)     || defined(__i386__)   || defined(_M_IX86) ||    \
+#ifndef SQLITE_BYTEORDER
+# if defined(i386)     || defined(__i386__)   || defined(_M_IX86) ||    \
      defined(__x86_64) || defined(__x86_64__) || defined(_M_X64)  ||    \
      defined(_M_AMD64) || defined(_M_ARM)     || defined(__x86)   ||    \
-     defined(__arm__)) && !defined(SQLITE_RUNTIME_BYTEORDER)
-# define SQLITE_BYTEORDER    1234
-# define SQLITE_BIGENDIAN    0
-# define SQLITE_LITTLEENDIAN 1
-# define SQLITE_UTF16NATIVE  SQLITE_UTF16LE
+     defined(__arm__)
+#   define SQLITE_BYTEORDER    1234
+# elif defined(sparc)    || defined(__ppc__)
+#   define SQLITE_BYTEORDER    4321
+# else
+#   define SQLITE_BYTEORDER 0
+# endif
 #endif
-#if (defined(sparc)    || defined(__ppc__))  \
-    && !defined(SQLITE_RUNTIME_BYTEORDER)
-# define SQLITE_BYTEORDER    4321
+#if SQLITE_BYTEORDER==4321
 # define SQLITE_BIGENDIAN    1
 # define SQLITE_LITTLEENDIAN 0
 # define SQLITE_UTF16NATIVE  SQLITE_UTF16BE
-#endif
-#if !defined(SQLITE_BYTEORDER)
+#elif SQLITE_BYTEORDER==1234
+# define SQLITE_BIGENDIAN    0
+# define SQLITE_LITTLEENDIAN 1
+# define SQLITE_UTF16NATIVE  SQLITE_UTF16LE
+#else
 # ifdef SQLITE_AMALGAMATION
   const int sqlite3one = 1;
 # else
   extern const int sqlite3one;
 # endif
-# define SQLITE_BYTEORDER    0     /* 0 means "unknown at compile-time" */
 # define SQLITE_BIGENDIAN    (*(char *)(&sqlite3one)==0)
 # define SQLITE_LITTLEENDIAN (*(char *)(&sqlite3one)==1)
 # define SQLITE_UTF16NATIVE  (SQLITE_BIGENDIAN?SQLITE_UTF16BE:SQLITE_UTF16LE)
