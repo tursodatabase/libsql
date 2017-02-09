@@ -1,5 +1,5 @@
 environment:
-  TARGET: 1.14.0-x86_64-pc-windows-gnu
+  TARGET: 1.15.0-x86_64-pc-windows-gnu
   MSYS2_BITS: 64
 install:
   - ps: Start-FileDownload "https://static.rust-lang.org/dist/rust-${env:TARGET}.exe"
@@ -8,9 +8,12 @@ install:
   - if defined MSYS2_BITS set PATH=%PATH%;C:\msys64\mingw%MSYS2_BITS%\bin
   - rustc -V
   - cargo -V
-  - ps: Start-FileDownload 'http://sqlite.org/2016/sqlite-dll-win64-x64-3100200.zip'
-  - cmd: 7z e sqlite-dll-win64-x64-3100200.zip -y > nul
+  - ps: Start-FileDownload 'https://sqlite.org/2017/sqlite-dll-win64-x64-3160200.zip'
+  - cmd: 7z e sqlite-dll-win64-x64-3160200.zip -y > nul
+  - ps: Start-FileDownload 'https://sqlite.org/2017/sqlite-amalgamation-3160200.zip'
+  - cmd: 7z e sqlite-amalgamation-3160200.zip -y > nul
   - SET SQLITE3_LIB_DIR=%APPVEYOR_BUILD_FOLDER%
+  - SET SQLITE3_INCLUDE_DIR=%APPVEYOR_BUILD_FOLDER%
 
 build: false
 
