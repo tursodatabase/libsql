@@ -422,11 +422,8 @@ impl Connection {
     /// Will return `Err` if the underlying SQLite call fails.
     pub fn close(self) -> std::result::Result<(), (Connection, Error)> {
         self.flush_prepared_statement_cache();
-        {
-                let mut db = self.db.borrow_mut();
-                db.close()
-            }
-            .map_err(move |err| (self, err))
+        let r = self.db.borrow_mut().close();
+        r.map_err(move |err| (self, err))
     }
 
     /// Enable loading of SQLite extensions. Strongly consider using `LoadExtensionGuard`
