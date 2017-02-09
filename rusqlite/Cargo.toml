@@ -31,7 +31,7 @@ time = "0.1.0"
 bitflags = "0.7"
 lru-cache = "0.1.0"
 libc = "0.2"
-chrono = { version = "0.2", optional = true }
+chrono = { version = "0.3", optional = true }
 serde_json = { version = "0.9", optional = true }
 
 [dev-dependencies]
