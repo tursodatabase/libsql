@@ -68,7 +68,7 @@ features](http://doc.crates.io/manifest.html#the-features-section). They are:
   allows use of SQLite's online backup API.
 * [`functions`](http://jgallagher.github.io/rusqlite/rusqlite/functions/index.html)
   allows you to load Rust closures into SQLite connections for use in queries.
-  Note: This feature requires SQLite 3.8.3 or later.
+  Note: This feature requires SQLite 3.7.3 or later.
 * [`trace`](http://jgallagher.github.io/rusqlite/rusqlite/trace/index.html)
   allows hooks into SQLite's tracing and profiling APIs.
 * [`blob`](http://jgallagher.github.io/rusqlite/rusqlite/blob/index.html)

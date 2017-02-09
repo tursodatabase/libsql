@@ -3,6 +3,8 @@ extern crate gcc;
 extern crate pkg_config;
 
 use std::env;
+use std::io::Write;
+use std::fs::OpenOptions;
 use bindgen::chooser::{TypeChooser, IntKind};
 use std::path::Path;
 
@@ -22,13 +24,35 @@ impl TypeChooser for SqliteTypeChooser {
 fn run_bindgen<T: Into<String>>(header: T) {
     let out_dir = env::var("OUT_DIR").unwrap();
     let header = header.into();
-    let _ = bindgen::builder()
+    let mut output = Vec::new();
+    bindgen::builder()
         .header(header.clone())
         .ctypes_prefix("::libc")
         .type_chooser(Box::new(SqliteTypeChooser))
         .generate()
         .expect(&format!("could not run bindgen on header {}", header))
-        .write_to_file(Path::new(&out_dir).join("bindgen.rs"));
+        .write(Box::new(&mut output))
+        .expect("could not write output of bindgen");
+    let mut output = String::from_utf8(output).expect("bindgen output was not UTF-8?!");
+
+    // rusqlite's functions feature ors in the SQLITE_DETERMINISTIC flag when it can. This flag
+    // was added in SQLite 3.8.3, but oring it in in prior versions of SQLite is harmless. We
+    // don't want to not build just because this flag is missing (e.g., if we're linking against
+    // SQLite 3.7.x), so append the flag manually if it isn't present in bindgen's output.
+    if !output.contains("pub const SQLITE_DETERMINISTIC:") {
+        output.push_str("\npub const SQLITE_DETERMINISTIC: i32 = 2048;\n");
+    }
+
+    let path = Path::new(&out_dir).join("bindgen.rs");
+
+    let mut file = OpenOptions::new()
+        .write(true)
+        .truncate(true)
+        .create(true)
+        .open(path.clone())
+        .expect(&format!("Could not write to {:?}", path));
+
+    file.write_all(output.as_bytes()).expect(&format!("Could not write to {:?}", path));
 }
 
 #[cfg(not(feature = "bundled"))]
