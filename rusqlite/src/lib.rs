@@ -72,6 +72,8 @@ use std::cell::RefCell;
 use std::ffi::{CStr, CString};
 use std::result;
 use std::str;
+use std::sync::{Once, ONCE_INIT};
+use std::sync::atomic::{AtomicBool, ATOMIC_BOOL_INIT, Ordering};
 use libc::{c_int, c_char, c_void};
 
 use types::{ToSql, ToSqlOutput, FromSql, FromSqlError, ValueRef};
@@ -551,29 +553,109 @@ impl Default for OpenFlags {
     }
 }
 
-impl InnerConnection {
-    fn open_with_flags(c_path: &CString, flags: OpenFlags) -> Result<InnerConnection> {
-        unsafe {
-            // Before opening the database, we need to check that SQLite hasn't been
-            // compiled or configured to be in single-threaded mode. If it has, we're
-            // exposing a very unsafe API to Rust, so refuse to open connections at all.
-            // Unfortunately, the check for this is quite gross. sqlite3_threadsafe() only
-            // returns how SQLite was _compiled_; there is no public API to check whether
-            // someone called sqlite3_config() to set single-threaded mode. We can cheat
-            // by trying to allocate a mutex, though; in single-threaded mode due to
-            // compilation settings, the magic value 8 is returned (see the definition of
-            // sqlite3_mutex_alloc at https://github.com/mackyle/sqlite/blob/master/src/mutex.h);
-            // in single-threaded mode due to sqlite3_config(), the magic value 8 is also
-            // returned (see the definition of noopMutexAlloc at
-            // https://github.com/mackyle/sqlite/blob/master/src/mutex_noop.c).
-            const SQLITE_SINGLETHREADED_MUTEX_MAGIC: usize = 8;
+static SQLITE_INIT: Once = ONCE_INIT;
+static SQLITE_VERSION_CHECK: Once = ONCE_INIT;
+static BYPASS_SQLITE_INIT: AtomicBool = ATOMIC_BOOL_INIT;
+
+/// rusqlite's check for a safe SQLite threading mode requires SQLite 3.7.0 or later. If you are
+/// running against a SQLite older than that, rusqlite attempts to ensure safety by performing
+/// configuration and initialization of SQLite itself the first time you attempt to open a
+/// connection. By default, rusqlite panics if that initialization fails, since that could mean
+/// SQLite has been initialized in single-thread mode.
+///
+/// If you are encountering that panic _and_ can ensure that SQLite has been initialized in either
+/// multi-thread or serialized mode, call this function prior to attempting to open a connection
+/// and rusqlite's initialization process will by skipped. This function is unsafe because if you
+/// call it and SQLite has actually been configured to run in single-thread mode, you may enounter
+/// memory errors or data corruption or any number of terrible things that should not be possible
+/// when you're using Rust.
+pub unsafe fn bypass_sqlite_initialization() {
+    BYPASS_SQLITE_INIT.store(true, Ordering::Relaxed);
+}
+
+fn ensure_valid_sqlite_version() {
+    SQLITE_VERSION_CHECK.call_once(|| {
+        if version_number() < 3006008 {
+            panic!("rusqlite requires SQLite 3.6.8 or newer");
+        }
+    });
+}
+
+fn ensure_safe_sqlite_threading_mode() -> Result<()> {
+    // Ensure SQLite was compiled in thredsafe mode.
+    if unsafe { ffi::sqlite3_threadsafe() == 0 } {
+        return Err(Error::SqliteSingleThreadedMode);
+    }
+
+    // Now we know SQLite is _capable_ of being in Multi-thread of Serialized mode, but it's
+    // possible someone configured it to be in Single-thread mode before calling into us. That
+    // would mean we're exposing an unsafe API via a safe one (in Rust terminology), which is
+    // no good. We have two options to protect against this, depending on the version of SQLite
+    // we're linked with:
+    //
+    // 1. If we're on 3.7.0 or later, we can ask SQLite for a mutex and check for the magic value
+    //    8. This isn't documented, but it's what SQLite returns for its mutex allocation function
+    //    in Single-thread mode.
+    // 2. If we're prior to SQLite 3.7.0, AFAIK there's no way to check the threading mode. The
+    //    check we perform for >= 3.7.0 will segfault. Instead, we insist on being able to call
+    //    sqlite3_config and sqlite3_initialize ourself, ensuring we know the threading mode. This
+    //    will fail if someone else has already initialized SQLite even if they initialized it
+    //    safely. That's not ideal either, which is why we expose bypass_sqlite_initialization
+    //    above.
+    if version_number() >= 3007000 {
+        const SQLITE_SINGLETHREADED_MUTEX_MAGIC: usize = 8;
+        let is_singlethreaded = unsafe {
             let mutex_ptr = ffi::sqlite3_mutex_alloc(0);
             let is_singlethreaded = mutex_ptr as usize == SQLITE_SINGLETHREADED_MUTEX_MAGIC;
             ffi::sqlite3_mutex_free(mutex_ptr);
-            if is_singlethreaded {
-                return Err(Error::SqliteSingleThreadedMode);
+            is_singlethreaded
+        };
+        if is_singlethreaded {
+            Err(Error::SqliteSingleThreadedMode)
+        } else {
+            Ok(())
+        }
+    } else {
+        SQLITE_INIT.call_once(|| {
+            if BYPASS_SQLITE_INIT.load(Ordering::Relaxed) {
+                return;
             }
 
+            unsafe {
+                let msg = "\
+Could not ensure safe initialization of SQLite.
+To fix this, either:
+* Upgrade SQLite to at least version 3.7.0
+* Ensure that SQLite has been initialized in Multi-thread or Serialized mode and call
+  rusqlite::bypass_sqlite_initialization() prior to your first connection attempt.";
+
+                if ffi::sqlite3_config(ffi::SQLITE_CONFIG_MULTITHREAD) != ffi::SQLITE_OK {
+                    panic!(msg);
+                }
+                if ffi::sqlite3_initialize() != ffi::SQLITE_OK {
+                    panic!(msg);
+                }
+            }
+        });
+        Ok(())
+    }
+}
+
+impl InnerConnection {
+    fn open_with_flags(c_path: &CString, flags: OpenFlags) -> Result<InnerConnection> {
+        ensure_valid_sqlite_version();
+        ensure_safe_sqlite_threading_mode()?;
+
+        // Replicate the check for sane open flags from SQLite, because the check in SQLite itself
+        // wasn't added until version 3.7.3.
+        debug_assert!(1 << SQLITE_OPEN_READ_ONLY.bits                       == 0x02);
+        debug_assert!(1 << SQLITE_OPEN_READ_WRITE.bits                      == 0x04);
+        debug_assert!(1 << (SQLITE_OPEN_READ_WRITE|SQLITE_OPEN_CREATE).bits == 0x40);
+        if (1 << (flags.bits & 0x7)) & 0x46 == 0 {
+            return Err(Error::SqliteFailure(ffi::Error::new(ffi::SQLITE_MISUSE), None));
+        }
+
+        unsafe {
             let mut db: *mut ffi::sqlite3 = mem::uninitialized();
             let r = ffi::sqlite3_open_v2(c_path.as_ptr(), &mut db, flags.bits(), ptr::null());
             if r != ffi::SQLITE_OK {
@@ -1533,7 +1615,7 @@ mod test {
         let minor = (n % 1_000_000) / 1_000;
         let patch = n % 1_000;
 
-        assert_eq!(version(), format!("{}.{}.{}", major, minor, patch));
+        assert!(version().contains(&format!("{}.{}.{}", major, minor, patch)));
     }
 
     mod query_and_then_tests {

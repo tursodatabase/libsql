@@ -56,8 +56,11 @@ mod test {
         db.set_limit(Limit::SQLITE_LIMIT_VARIABLE_NUMBER, 99);
         assert_eq!(99, db.limit(Limit::SQLITE_LIMIT_VARIABLE_NUMBER));
 
-        db.set_limit(Limit::SQLITE_LIMIT_TRIGGER_DEPTH, 32);
-        assert_eq!(32, db.limit(Limit::SQLITE_LIMIT_TRIGGER_DEPTH));
+        // SQLITE_LIMIT_TRIGGER_DEPTH was added in SQLite 3.6.18.
+        if ::version_number() >= 3006018 {
+            db.set_limit(Limit::SQLITE_LIMIT_TRIGGER_DEPTH, 32);
+            assert_eq!(32, db.limit(Limit::SQLITE_LIMIT_TRIGGER_DEPTH));
+        }
 
         // SQLITE_LIMIT_WORKER_THREADS was added in SQLite 3.8.7.
         if ::version_number() >= 3008007 {

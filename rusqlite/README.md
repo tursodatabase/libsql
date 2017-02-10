@@ -57,6 +57,12 @@ fn main() {
 }
 ```
 
+### Supported SQLite Versions
+
+The base `rusqlite` package supports SQLite version 3.6.8 or newer. If you need
+support for older versions, please file an issue. Some cargo features require a
+newer SQLite version; see details below.
+
 ### Optional Features
 
 Rusqlite provides several features that are behind [Cargo
@@ -65,12 +71,13 @@ features](http://doc.crates.io/manifest.html#the-features-section). They are:
 * [`load_extension`](http://jgallagher.github.io/rusqlite/rusqlite/struct.LoadExtensionGuard.html)
   allows loading dynamic library-based SQLite extensions.
 * [`backup`](http://jgallagher.github.io/rusqlite/rusqlite/backup/index.html)
-  allows use of SQLite's online backup API.
+  allows use of SQLite's online backup API. Note: This feature requires SQLite 3.6.11 or later.
 * [`functions`](http://jgallagher.github.io/rusqlite/rusqlite/functions/index.html)
   allows you to load Rust closures into SQLite connections for use in queries.
   Note: This feature requires SQLite 3.7.3 or later.
 * [`trace`](http://jgallagher.github.io/rusqlite/rusqlite/trace/index.html)
-  allows hooks into SQLite's tracing and profiling APIs.
+  allows hooks into SQLite's tracing and profiling APIs. Note: This feature
+  requires SQLite 3.6.23 or later.
 * [`blob`](http://jgallagher.github.io/rusqlite/rusqlite/blob/index.html)
   gives `std::io::{Read, Write, Seek}` access to SQL BLOBs. Note: This feature
   requires SQLite 3.7.4 or later.

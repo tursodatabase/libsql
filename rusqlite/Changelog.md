@@ -1,8 +1,13 @@
-# Version UPCOMING (TBD)
+# Version 0.10.0-UPCOMING (TBD)
 
 * Re-export the `ErrorCode` enum from `libsqlite3-sys`.
-* Adds `version()`, `version_number()`, and `source_id()` functions for querying the version of
-  SQLite in use.
+* Adds `version()` and `version_number()` functions for querying the version of SQLite in use.
+* Adds the `limits` feature, exposing `limit()` and `set_limit()` methods on `Connection`.
+* Updates to `libsqlite3-sys` 0.7.0, which runs rust-bindgen at build-time instead of assuming the
+  precense of all expected SQLite constants and functions.
+* Clarifies supported SQLite versions. Running with SQLite older than 3.6.8 now panics, and
+  some features will not compile unless a sufficiently-recent SQLite version is used. See
+  the README for requirements of particular features.
 
 # Version 0.9.5 (2017-01-26)
 
