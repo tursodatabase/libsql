@@ -1,5 +1,5 @@
-C Add\sthe\s","\sflag\sto\sprintf().
-D 2017-02-10T19:38:36.506
+C Enhance\sthe\sLIKE\soptimization\sso\sthat\sit\sworks\sfor\sarbitrary\sexpressions\son\nthe\sLHS\sas\slong\sas\sthe\spattern\son\sthe\sRHS\sdoes\snot\sbegin\swith\sa\sdigit\sor\na\sminus\ssign.
+D 2017-02-10T21:37:57.808
 F Makefile.in edb6bcdd37748d2b1c3422ff727c748df7ffe918
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 067a6766f800cc8d72845ab61f8de4ffe8f3fc99
@@ -478,7 +478,7 @@ F src/walker.c 91a6df7435827e41cff6bb7df50ea00934ee78b0
 F src/where.c bc71775e23d23334e8f449aa31012d692dc09cb2
 F src/whereInt.h 2bcc3d176e6091cb8f50a30b65c006e88a73614d
 F src/wherecode.c 99a8ced164c75edf41b3a865a75381c9adb38b28
-F src/whereexpr.c 35ad025389a632a3987a35617c878be3b3d70dc6
+F src/whereexpr.c 980109826ba02750421c3fa7ab0ecabbac0a639d
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/affinity3.test 6a101af2fc945ce2912f6fe54dd646018551710d
@@ -1374,7 +1374,7 @@ F test/vacuummem.test 7b42abb3208bd82dd23a7536588396f295a314f2
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/veryquick.test 57ab846bacf7b90cf4e9a672721ea5c5b669b661
 F test/view.test 765802c7a66d37fabd5ac8e2f2dbe572b43eb9ab
-F test/vtab1.test 7c4b81abd88361ada9cbe414c459efca26be6bda
+F test/vtab1.test ed4a576231d8a36e70fd18e2b79b621b31e7f22a
 F test/vtab2.test f8cd1bb9aba7143eba97812d9617880a36d247ad
 F test/vtab3.test b45f47d20f225ccc9c28dc915d92740c2dee311e
 F test/vtab4.test 8e73ed268f3d596bc3590f45fc948fb40f28e9c3
@@ -1389,7 +1389,7 @@ F test/vtabC.test 4528f459a13136f982e75614d120aef165f17292
 F test/vtabD.test 05b3f1d77117271671089e48719524b676842e96
 F test/vtabE.test d5024aa42754962f6bb0afd261681686488e7afe
 F test/vtabF.test 1918844c7c902f6a16c8dacf1ec8f84886d6e78b
-F test/vtabH.test a2912cd3ea3386aecc3cb74ebfdfcc4e6d4b7dd3
+F test/vtabH.test 5f9253eb9e41ba9fe94f4aa3e9230191893d7764
 F test/vtabI.test 751b07636700dbdea328e4265b6077ccd6811a3f
 F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
@@ -1555,7 +1555,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 798fb9d70d2e5f95e64237b04d6692360133381a
-R c3dc7f748658995c87bb25e10706fab3
+P 064445b12f99f76e9a12957be97edd520ab3ae27
+R db970521e4fc7396c9c380bbcef0e8ad
 U drh
-Z 3add84968b9ef1dfcf3d7b3eaefd30ad
+Z 2c915b2d7e6621ed4f4d2fbc11d0cc6c
