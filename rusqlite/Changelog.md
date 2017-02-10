@@ -8,6 +8,15 @@
 * Clarifies supported SQLite versions. Running with SQLite older than 3.6.8 now panics, and
   some features will not compile unless a sufficiently-recent SQLite version is used. See
   the README for requirements of particular features.
+* When running with SQLite 3.6.x, rusqlite attempts to perform SQLite initialization. If it fails,
+  rusqlite will panic since it cannot ensure the threading mode for SQLite. This check can by
+  skipped by calling the unsafe function `rusqlite::bypass_sqlite_initialization()`. This is
+  technically a breaking change but is unlikely to affect anyone in practice, since prior to this
+  version the check that rusqlite was using would cause a segfault if linked against a SQLite
+  older than 3.7.0.
+* rusqlite now performs a one-time check (prior to the first connection attempt) that the runtime
+  SQLite version is at least as new as the SQLite version found at buildtime. This check can by
+  skipped by calling the unsafe function `rusqlite::bypass_sqlite_version_check()`.
 
 # Version 0.9.5 (2017-01-26)
 
