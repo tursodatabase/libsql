@@ -499,7 +499,7 @@ impl Connection {
     /// on the rusqlite repository](https://github.com/jgallagher/rusqlite/issues) and describe
     /// your use case. This function is unsafe because it gives you raw access to the SQLite
     /// connection, and what you do with it could impact the safety of this `Connection`.
-    pub unsafe fn handle(&self) -> *mut ffi::Struct_sqlite3 {
+    pub unsafe fn handle(&self) -> *mut ffi::sqlite3 {
         self.db.borrow().db()
     }
 
@@ -521,7 +521,7 @@ impl fmt::Debug for Connection {
 }
 
 struct InnerConnection {
-    db: *mut ffi::Struct_sqlite3,
+    db: *mut ffi::sqlite3,
 }
 
 /// Old name for `OpenFlags`. `SqliteOpenFlags` is deprecated.
@@ -601,7 +601,7 @@ impl InnerConnection {
         }
     }
 
-    fn db(&self) -> *mut ffi::Struct_sqlite3 {
+    fn db(&self) -> *mut ffi::sqlite3 {
         self.db
     }
 
