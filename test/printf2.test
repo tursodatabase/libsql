@@ -116,6 +116,37 @@ do_execsql_test printf2-3.5 {
   SELECT printf('|%7.8c|%-7.8c|','*','*');
 } {|********|********|}
 
+# The "," separator
+do_execsql_test printf2-4.1 {
+  SELECT printf('|%,d|%,d|',0,-1);
+} {|0|-1|}
+do_execsql_test printf2-4.2 {
+  SELECT printf('|%,d|%,d|',12,-12);
+} {|12|-12|}
+do_execsql_test printf2-4.3 {
+  SELECT printf('|%,d|%,d|',123,-123);
+} {|123|-123|}
+do_execsql_test printf2-4.4 {
+  SELECT printf('|%,d|%,d|',1234,-1234);
+} {|1,234|-1,234|}
+do_execsql_test printf2-4.5 {
+  SELECT printf('|%,d|%,d|',12345,-12345);
+} {|12,345|-12,345|}
+do_execsql_test printf2-4.6 {
+  SELECT printf('|%,d|%,d|',123456,-123456);
+} {|123,456|-123,456|}
+do_execsql_test printf2-4.7 {
+  SELECT printf('|%,d|%,d|',1234567,-1234567);
+} {|1,234,567|-1,234,567|}
+do_execsql_test printf2-4.8 {
+  SELECT printf('|%,d|%,d|',12345678,-12345678);
+} {|12,345,678|-12,345,678|}
+do_execsql_test printf2-4.9 {
+  SELECT printf('|%,d|%,d|',123456789,-123456789);
+} {|123,456,789|-123,456,789|}
+do_execsql_test printf2-4.10 {
+  SELECT printf('|%,d|%,d|',1234567890,-1234567890);
+} {|1,234,567,890|-1,234,567,890|}
 
 
 

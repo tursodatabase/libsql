@@ -1,5 +1,5 @@
-C Cleanup\sthe\susage\sof\sthe\sSQLITE_DISABLE_INTRINSIC\scompile-time\soption.\nRemove\sthe\sSQLITE_RUNTIME_BYTEORDER\scompile-time\soption.\s\sUse\n-DSQLITE_BYTEORDER=0\sinstead.\s\sFix\sa\sbug\sin\sR-Tree\sthat\soccurs\swhen\scompiling\non\sa\sknown\slittle-endian\smachine\swithout\sthe\suse\sof\sintrinsic\sbyteswapping\nfunctions.
-D 2017-02-09T17:12:22.122
+C Add\sthe\s","\sflag\sto\sprintf().
+D 2017-02-10T19:38:36.506
 F Makefile.in edb6bcdd37748d2b1c3422ff727c748df7ffe918
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 067a6766f800cc8d72845ab61f8de4ffe8f3fc99
@@ -390,7 +390,7 @@ F src/pcache1.c e3967219b2a92b9edcb9324a4ba75009090d3953
 F src/pragma.c 7831956012f5d764761fbd023e59b0ffc08f5e8d
 F src/pragma.h 61aa5389118594bebb28120a6720401aee34ce1a
 F src/prepare.c b1140c3d0cf59bc85ace00ce363153041b424b7a
-F src/printf.c ff10a9b9902cd2afe5f655f3013c6307d969b1fd
+F src/printf.c 67427bbee66d891fc6f6f5aada857e9cdb368c1c
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c f9bc0de45a30a450da47b3766de00be89bf9be79
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
@@ -1021,7 +1021,7 @@ F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
 F test/pragma3.test 14c12bc5352b1e100e0b6b44f371053a81ccf8ed
 F test/pragma4.test 6e85b6eab8e61ffc9c7db59d842276674e8e3264
 F test/printf.test b3ff34e73d59124140eaf89f7672e21bc2ca5fcc
-F test/printf2.test 0b61566dd1c0f0b802f59dffa228c5dc5aa6b054
+F test/printf2.test 9e6db85f81c63f2367c34a9d7db384088bd374ad
 F test/progress.test ebab27f670bd0d4eb9d20d49cef96e68141d92fb
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
 F test/queryonly.test 5f653159e0f552f0552d43259890c1089391dcca
@@ -1555,7 +1555,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1afec5758b624e6a066d4e7ef50695095e9d7ff1
-R d99a1e96a3817ca7543fc882a1f70881
+P 798fb9d70d2e5f95e64237b04d6692360133381a
+R c3dc7f748658995c87bb25e10706fab3
 U drh
-Z 871c0b5ab0829dba2d37da91622734c8
+Z 3add84968b9ef1dfcf3d7b3eaefd30ad
