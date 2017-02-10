@@ -15,11 +15,3 @@ pub fn version() -> &'static str {
     let cstr = unsafe { CStr::from_ptr(ffi::sqlite3_libversion()) };
     cstr.to_str().expect("SQLite version string is not valid UTF8 ?!")
 }
-
-/// Returns the source ID of SQLite, identifying the commit of SQLite for the current version.
-///
-/// See [sqlite3_sourceid()](https://www.sqlite.org/c3ref/libversion.html).
-pub fn source_id() -> &'static str {
-    let cstr = unsafe { CStr::from_ptr(ffi::sqlite3_sourceid()) };
-    cstr.to_str().expect("SQLite source ID is not valid UTF8 ?!")
-}
