@@ -1,5 +1,5 @@
-C Cleanup\sthe\susage\sof\sthe\sSQLITE_DISABLE_INTRINSIC\scompile-time\soption.\nRemove\sthe\sSQLITE_RUNTIME_BYTEORDER\scompile-time\soption.\s\sUse\n-DSQLITE_BYTEORDER=0\sinstead.\s\sFix\sa\sbug\sin\sR-Tree\sthat\soccurs\swhen\scompiling\non\sa\sknown\slittle-endian\smachine\swithout\sthe\suse\sof\sintrinsic\sbyteswapping\nfunctions.
-D 2017-02-09T17:12:22.122
+C Version\s3.17.0\srelease\scandidate
+D 2017-02-10T17:38:00.621
 F Makefile.in edb6bcdd37748d2b1c3422ff727c748df7ffe918
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 067a6766f800cc8d72845ab61f8de4ffe8f3fc99
@@ -1555,7 +1555,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1afec5758b624e6a066d4e7ef50695095e9d7ff1
+P 798fb9d70d2e5f95e64237b04d6692360133381a
 R d99a1e96a3817ca7543fc882a1f70881
+T *branch * branch-3.17
+T *sym-branch-3.17 *
+T -sym-trunk *
 U drh
-Z 871c0b5ab0829dba2d37da91622734c8
+Z d576ee7bc9417fd1bc0379648fe5a070
