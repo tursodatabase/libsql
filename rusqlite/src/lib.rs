@@ -208,7 +208,7 @@ impl Connection {
 
     /// Open a new connection to a SQLite database.
     ///
-    /// Database Connection](http://www.sqlite.org/c3ref/open.html) for a description of valid
+    /// [Database Connection](http://www.sqlite.org/c3ref/open.html) for a description of valid
     /// flag combinations.
     ///
     /// # Failure
@@ -228,7 +228,7 @@ impl Connection {
 
     /// Open a new connection to an in-memory SQLite database.
     ///
-    /// Database Connection](http://www.sqlite.org/c3ref/open.html) for a description of valid
+    /// [Database Connection](http://www.sqlite.org/c3ref/open.html) for a description of valid
     /// flag combinations.
     ///
     /// # Failure
