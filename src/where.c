@@ -209,7 +209,8 @@ static WhereTerm *whereScanNext(WhereScan *pScan){
         if( pTerm->leftCursor==iCur
          && pTerm->u.leftColumn==iColumn
          && (iColumn!=XN_EXPR
-             || sqlite3ExprCompare(pTerm->pExpr->pLeft,pScan->pIdxExpr,iCur)==0)
+             || sqlite3ExprCompareSkip(pTerm->pExpr->pLeft,
+                                       pScan->pIdxExpr,iCur)==0)
          && (pScan->iEquiv<=1 || !ExprHasProperty(pTerm->pExpr, EP_FromJoin))
         ){
           if( (pTerm->eOperator & WO_EQUIV)!=0

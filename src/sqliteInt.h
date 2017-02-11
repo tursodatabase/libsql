@@ -3762,6 +3762,7 @@ void sqlite3Vacuum(Parse*,Token*);
 int sqlite3RunVacuum(char**, sqlite3*, int);
 char *sqlite3NameFromToken(sqlite3*, Token*);
 int sqlite3ExprCompare(Expr*, Expr*, int);
+int sqlite3ExprCompareSkip(Expr*, Expr*, int);
 int sqlite3ExprListCompare(ExprList*, ExprList*, int);
 int sqlite3ExprImpliesExpr(Expr*, Expr*, int);
 void sqlite3ExprAnalyzeAggregates(NameContext*, Expr*);

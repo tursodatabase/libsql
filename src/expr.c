@@ -4681,6 +4681,17 @@ int sqlite3ExprListCompare(ExprList *pA, ExprList *pB, int iTab){
 }
 
 /*
+** Like sqlite3ExprCompare() except COLLATE operators at the top-level
+** are ignored.
+*/
+int sqlite3ExprCompareSkip(Expr *pA, Expr *pB, int iTab){
+  return sqlite3ExprCompare(
+             sqlite3ExprSkipCollate(pA),
+             sqlite3ExprSkipCollate(pB),
+             iTab);
+}
+
+/*
 ** Return true if we can prove the pE2 will always be true if pE1 is
 ** true.  Return false if we cannot complete the proof or if pE2 might
 ** be false.  Examples:
