@@ -223,11 +223,11 @@ static void mallocWithAlarm(int n, void **pp){
   assert( sqlite3_mutex_held(mem0.mutex) );
   assert( n>0 );
 
-  /* In Firefox (circa 2017-02-08), xRoundup is remapped to an internal
+  /* In Firefox (circa 2017-02-08), xRoundup() is remapped to an internal
   ** implementation of malloc_good_size(), which must be called in debug
   ** mode and specifically when the DMD "Dark Matter Detector" is enabled
-  ** or else a crash results.  Hence, do not attempt to optimization out
-  ** the following xRoundup() call. */
+  ** or else a crash results.  Hence, do not attempt to optimize out the
+  ** following xRoundup() call. */
   nFull = sqlite3GlobalConfig.m.xRoundup(n);
 
   sqlite3StatusHighwater(SQLITE_STATUS_MALLOC_SIZE, n);

@@ -371,7 +371,7 @@ struct RtreeMatchArg {
 
 /* What version of GCC is being used.  0 means GCC is not being used */
 #ifndef GCC_VERSION
-#ifdef __GNUC__
+#if defined(__GNUC__) && !defined(SQLITE_DISABLE_INTRINSIC)
 # define GCC_VERSION (__GNUC__*1000000+__GNUC_MINOR__*1000+__GNUC_PATCHLEVEL__)
 #else
 # define GCC_VERSION 0
@@ -380,7 +380,7 @@ struct RtreeMatchArg {
 
 /* What version of CLANG is being used.  0 means CLANG is not being used */
 #ifndef CLANG_VERSION
-#if defined(__clang__) && !defined(_WIN32)
+#if defined(__clang__) && !defined(_WIN32) && !defined(SQLITE_DISABLE_INTRINSIC)
 # define CLANG_VERSION \
             (__clang_major__*1000000+__clang_minor__*1000+__clang_patchlevel__)
 #else
@@ -405,13 +405,12 @@ struct RtreeMatchArg {
 ** at run-time.
 */
 #ifndef SQLITE_BYTEORDER
-#if (defined(i386)     || defined(__i386__)   || defined(_M_IX86) ||    \
-     defined(__x86_64) || defined(__x86_64__) || defined(_M_X64)  ||    \
-     defined(_M_AMD64) || defined(_M_ARM)     || defined(__x86)   ||    \
-     defined(__arm__)) && !defined(SQLITE_RUNTIME_BYTEORDER)
+#if defined(i386)     || defined(__i386__)   || defined(_M_IX86) ||    \
+    defined(__x86_64) || defined(__x86_64__) || defined(_M_X64)  ||    \
+    defined(_M_AMD64) || defined(_M_ARM)     || defined(__x86)   ||    \
+    defined(__arm__)
 # define SQLITE_BYTEORDER    1234
-#elif (defined(sparc)    || defined(__ppc__))  \
-    && !defined(SQLITE_RUNTIME_BYTEORDER)
+#elif defined(sparc)    || defined(__ppc__)
 # define SQLITE_BYTEORDER    4321
 #else
 # define SQLITE_BYTEORDER    0     /* 0 means "unknown at compile-time" */
@@ -421,7 +420,7 @@ struct RtreeMatchArg {
 
 /* What version of MSVC is being used.  0 means MSVC is not being used */
 #ifndef MSVC_VERSION
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && !defined(SQLITE_DISABLE_INTRINSIC)
 # define MSVC_VERSION _MSC_VER
 #else
 # define MSVC_VERSION 0
@@ -441,9 +440,6 @@ static void readCoord(u8 *p, RtreeCoord *pCoord){
   pCoord->u = _byteswap_ulong(*(u32*)p);
 #elif SQLITE_BYTEORDER==1234 && (GCC_VERSION>=4003000 || CLANG_VERSION>=3000000)
   pCoord->u = __builtin_bswap32(*(u32*)p);
-#elif SQLITE_BYTEORDER==1234
-  pCoord->u = ((pCoord->u>>24)&0xff)|((pCoord->u>>8)&0xff00)|
-              ((pCoord->u&0xff)<<24)|((pCoord->u&0xff00)<<8);
 #elif SQLITE_BYTEORDER==4321
   pCoord->u = *(u32*)p;
 #else
@@ -487,10 +483,9 @@ static i64 readInt64(u8 *p){
 ** 64 bit integer. The value returned is the number of bytes written
 ** to the argument buffer (always 2, 4 and 8 respectively).
 */
-static int writeInt16(u8 *p, int i){
+static void writeInt16(u8 *p, int i){
   p[0] = (i>> 8)&0xFF;
   p[1] = (i>> 0)&0xFF;
-  return 2;
 }
 static int writeCoord(u8 *p, RtreeCoord *pCoord){
   u32 i;
