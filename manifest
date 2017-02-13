@@ -1,5 +1,5 @@
-C Fix\stypos\sin\susing\sthe\sMSVC_VERSION\smacro.
-D 2017-02-13T11:35:38.142
+C Version\s3.17.0
+D 2017-02-13T16:02:40.361
 F Makefile.in edb6bcdd37748d2b1c3422ff727c748df7ffe918
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 067a6766f800cc8d72845ab61f8de4ffe8f3fc99
@@ -1555,7 +1555,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b2e49ae36bfd00a1d0b70a9de9d23d2e16d1c7ca
+P 25ebadd096ce98fd0f9fab809969d34b958794f6
 R 26d6be3bef13897430f30b09b94a6365
+T +bgcolor * #d0c0ff
+T +sym-release *
+T +sym-version-3.17.0 *
 U drh
-Z b6a3ac459072f8c3c11689d869c15c09
+Z 05d3704e9807a2fa92650f94b28a08f4
