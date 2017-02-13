@@ -3562,7 +3562,7 @@ void sqlite3VdbeRecordUnpack(
   p->nField = u;
 }
 
-#if SQLITE_DEBUG
+#ifdef SQLITE_DEBUG
 /*
 ** This function compares two index or table record keys in the same way
 ** as the sqlite3VdbeRecordCompare() routine. Unlike VdbeRecordCompare(),
@@ -3667,7 +3667,7 @@ debugCompareEnd:
 }
 #endif
 
-#if SQLITE_DEBUG
+#ifdef SQLITE_DEBUG
 /*
 ** Count the number of fields (a.k.a. columns) in the record given by
 ** pKey,nKey.  The verify that this count is less than or equal to the
