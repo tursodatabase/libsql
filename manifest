@@ -1,5 +1,5 @@
-C Enable\sthe\sSQLITE_ENABLE_NULL_TRIM\soption\sfor\sWITHOUT\sROWID\stables.
-D 2017-02-14T20:00:16.259
+C Clarification\sof\sthe\shelp\stext\sfor\sthe\scommand-line\sshell.
+D 2017-02-14T21:47:46.389
 F Makefile.in edb6bcdd37748d2b1c3422ff727c748df7ffe918
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 067a6766f800cc8d72845ab61f8de4ffe8f3fc99
@@ -395,7 +395,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c f9bc0de45a30a450da47b3766de00be89bf9be79
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c d12f3539f80db38b09015561b569e0eb1c4b6c5f
-F src/shell.c a84e453c213f3e0d6935a582024da4e242f85a19
+F src/shell.c a661e7ccd202b16cb5321999354699e5ee018fb2
 F src/sqlite.h.in 751ff125eb159c8f92c182b8df980a5e4f50e966
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
@@ -1555,7 +1555,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e4731fd65f9698817690b741cc454f25e8e871e6
-R 239d7ae4b4c76fa68b6a3d5959c5ddbe
+P 54836270c9c0bfa5910f7ad74ec238b9d7ddee5f
+R 81ac83b9aa3d80dbb34372d0527e01bd
 U drh
-Z 558f1297c34d38d9f2c9884a0e7f3db0
+Z 42f594c3c0159a4f4af8ef6e693c76a8

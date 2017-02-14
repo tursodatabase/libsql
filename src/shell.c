@@ -2212,7 +2212,7 @@ static char zHelp[] =
   "                         html     HTML <table> code\n"
   "                         insert   SQL insert statements for TABLE\n"
   "                         line     One value per line\n"
-  "                         list     Values delimited by .separator strings\n"
+  "                         list     Values delimited by \"|\"\n"
   "                         quote    Escape answers as for SQL\n"
   "                         tabs     Tab-separated values\n"
   "                         tcl      TCL list elements\n"
