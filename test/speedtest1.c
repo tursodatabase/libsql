@@ -1499,14 +1499,14 @@ void testset_orm(void){
   );
   for(i=0; i<n; i++){
     x1 = speedtest1_random();
-    speedtest1_numbername(x1, zNum, sizeof(zNum));
+    speedtest1_numbername(x1%1000, zNum, sizeof(zNum));
     len = (int)strlen(zNum);
     sqlite3_bind_int(g.pStmt, 1, i^0xf);
     for(j=0; zType[j]; j++){
       switch( zType[j] ){
         case 'I':
         case 'T':
-          sqlite3_bind_int(g.pStmt, j+2, x1);
+          sqlite3_bind_int64(g.pStmt, j+2, x1);
           break;
         case 'F':
           sqlite3_bind_double(g.pStmt, j+2, (double)x1);
