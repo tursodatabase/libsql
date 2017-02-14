@@ -43,6 +43,9 @@ struct sqlite3_mutex {
 #if SQLITE_MUTEX_NREF || defined(SQLITE_ENABLE_API_ARMOR)
   int id;                    /* Mutex type */
 #endif
+#if SQLITE_MUTEX_ALERT_MILLISECONDS>0
+  i64 entered;               /* Time that mutex was entered */
+#endif
 #if SQLITE_MUTEX_NREF
   volatile int nRef;         /* Number of entrances */
   volatile pthread_t owner;  /* Thread that is within this mutex */
@@ -261,6 +264,9 @@ static void pthreadMutexEnter(sqlite3_mutex *p){
       p->nRef++;
     }else{
       pthread_mutex_lock(&p->mutex);
+#if SQLITE_MUTEX_ALERT_MILLISECONDS>0
+      p->entered = sqlite3MutexTimeOfDay();
+#endif
       assert( p->nRef==0 );
       p->owner = self;
       p->nRef = 1;
@@ -270,6 +276,9 @@ static void pthreadMutexEnter(sqlite3_mutex *p){
   /* Use the built-in recursive mutexes if they are available.
   */
   pthread_mutex_lock(&p->mutex);
+#if SQLITE_MUTEX_ALERT_MILLISECONDS>0
+  p->entered = sqlite3MutexTimeOfDay();
+#endif
 #if SQLITE_MUTEX_NREF
   assert( p->nRef>0 || p->owner==0 );
   p->owner = pthread_self();
@@ -304,6 +313,9 @@ static int pthreadMutexTry(sqlite3_mutex *p){
       p->nRef++;
       rc = SQLITE_OK;
     }else if( pthread_mutex_trylock(&p->mutex)==0 ){
+#if SQLITE_MUTEX_ALERT_MILLISECONDS>0
+      p->entered = sqlite3MutexTimeOfDay();
+#endif
       assert( p->nRef==0 );
       p->owner = self;
       p->nRef = 1;
@@ -316,6 +328,9 @@ static int pthreadMutexTry(sqlite3_mutex *p){
   /* Use the built-in recursive mutexes if they are available.
   */
   if( pthread_mutex_trylock(&p->mutex)==0 ){
+#if SQLITE_MUTEX_ALERT_MILLISECONDS>0
+    p->entered = sqlite3MutexTimeOfDay();
+#endif
 #if SQLITE_MUTEX_NREF
     p->owner = pthread_self();
     p->nRef++;
@@ -350,9 +365,15 @@ static void pthreadMutexLeave(sqlite3_mutex *p){
 
 #ifdef SQLITE_HOMEGROWN_RECURSIVE_MUTEX
   if( p->nRef==0 ){
+#if SQLITE_MUTEX_ALERT_MILLISECONDS>0
+    sqlite3MutexTimeAlert(p, p->entered);
+#endif
     pthread_mutex_unlock(&p->mutex);
   }
 #else
+#if SQLITE_MUTEX_ALERT_MILLISECONDS>0
+  sqlite3MutexTimeAlert(p, p->entered);
+#endif
   pthread_mutex_unlock(&p->mutex);
 #endif
 

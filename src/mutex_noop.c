@@ -80,6 +80,9 @@ sqlite3_mutex_methods const *sqlite3NoopMutex(void){
 typedef struct sqlite3_debug_mutex {
   int id;     /* The mutex type */
   int cnt;    /* Number of entries without a matching leave */
+#if SQLITE_MUTEX_ALERT_MILLISECONDS>0
+  i64 entered; /* Time that mutex was entered */
+#endif
 } sqlite3_debug_mutex;
 
 /*
@@ -164,11 +167,17 @@ static void debugMutexEnter(sqlite3_mutex *pX){
   sqlite3_debug_mutex *p = (sqlite3_debug_mutex*)pX;
   assert( p->id==SQLITE_MUTEX_RECURSIVE || debugMutexNotheld(pX) );
   p->cnt++;
+#if SQLITE_MUTEX_ALERT_MILLISECONDS>0
+  p->entered = sqlite3MutexTimeOfDay();
+#endif
 }
 static int debugMutexTry(sqlite3_mutex *pX){
   sqlite3_debug_mutex *p = (sqlite3_debug_mutex*)pX;
   assert( p->id==SQLITE_MUTEX_RECURSIVE || debugMutexNotheld(pX) );
   p->cnt++;
+#if SQLITE_MUTEX_ALERT_MILLISECONDS>0
+  p->entered = sqlite3MutexTimeOfDay();
+#endif
   return SQLITE_OK;
 }
 
@@ -181,6 +190,9 @@ static int debugMutexTry(sqlite3_mutex *pX){
 static void debugMutexLeave(sqlite3_mutex *pX){
   sqlite3_debug_mutex *p = (sqlite3_debug_mutex*)pX;
   assert( debugMutexHeld(pX) );
+#if SQLITE_MUTEX_ALERT_MILLISECONDS>0
+  sqlite3MutexTimeAlert((sqlite3_mutex*)p, p->entered);
+#endif
   p->cnt--;
   assert( p->id==SQLITE_MUTEX_RECURSIVE || debugMutexNotheld(pX) );
 }

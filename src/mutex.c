@@ -14,6 +14,11 @@
 ** This file contains code that is common across all mutex implementations.
 */
 #include "sqliteInt.h"
+#if SQLITE_OS_UNIX
+#  include <pthread.h>
+#elif SQLITE_OS_WIN
+#  include "os_win.h"
+#endif
 
 #if defined(SQLITE_DEBUG) && !defined(SQLITE_MUTEX_OMIT)
 /*
@@ -82,6 +87,47 @@ int sqlite3MutexEnd(void){
 
   return rc;
 }
+
+#if SQLITE_MUTEX_ALERT_MILLISECONDS>0
+/* Return a time value for use by the mutex subsystem. */
+i64 sqlite3MutexTimeOfDay(void){
+#ifdef SQLITE_GET_MUTEX_TIME
+  return SQLITE_GET_MUTEX_TIME();
+#else
+  return 0;
+#endif
+}
+
+/*
+** Calculates the elapsed time, in milliseconds, that a particular mutex
+** was held and issues a warning, via the sqlite3_log() interface, if it
+** was held for "too long".
+*/
+void sqlite3MutexTimeAlert(
+  sqlite3_mutex *p,
+  i64 entered
+){
+  i64 exited = sqlite3MutexTimeOfDay();
+  i64 elapsed;
+  assert( p!=0 );
+  assert( exited>=entered );
+  elapsed = exited - entered;
+  if( elapsed>SQLITE_MUTEX_ALERT_MILLISECONDS ){
+    void *tid = 0;
+    int mid = -1;
+#ifdef SQLITE_GET_THREAD_ID
+    tid = SQLITE_GET_THREAD_ID();
+#endif
+#ifdef SQLITE_GET_MUTEX_ID
+    mid = SQLITE_GET_MUTEX_ID(p);
+#endif
+    sqlite3_log(SQLITE_NOTICE,
+      "thread %p delayed %lldms for mutex %p (%d)",
+      tid, elapsed, p, mid
+    );
+  }
+}
+#endif
 
 /*
 ** Retrieve a pointer to a static mutex or allocate a new dynamic one.

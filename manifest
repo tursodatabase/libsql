@@ -1,5 +1,5 @@
-C Clarification\sof\sthe\shelp\stext\sfor\sthe\scommand-line\sshell.
-D 2017-02-14T21:47:46.389
+C Experimental\senhancements\sto\smutex\sdebugging.
+D 2017-02-14T23:58:30.321
 F Makefile.in edb6bcdd37748d2b1c3422ff727c748df7ffe918
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 067a6766f800cc8d72845ab61f8de4ffe8f3fc99
@@ -368,11 +368,11 @@ F src/mem3.c 8768ac94694f31ffaf8b4d0ea5dc08af7010a35a
 F src/mem5.c 9bf955937b07f8c32541c8a9991f33ce3173d944
 F src/memjournal.c 95752936c11dc6995672d1dd783cd633eea0cc95
 F src/msvc.h 4942752b6a253116baaa8de75256c51a459a5e81
-F src/mutex.c 8e45800ee78e0cd1f1f3fe8e398853307f4a085c
+F src/mutex.c 64604d2b9754f3698059e42316e9114823878793
 F src/mutex.h 779d588e3b7756ec3ecf7d78cde1d84aba414f85
-F src/mutex_noop.c 9d4309c075ba9cc7249e19412d3d62f7f94839c4
-F src/mutex_unix.c 27bb6cc49485ee46711a6580ab7b3f1402211d23
-F src/mutex_w32.c 3631e57d056062807ae2c92b79f3d1c05f04ecfe
+F src/mutex_noop.c 6a0ac0bd696bbc600ed94302ae10a4337791b9d0
+F src/mutex_unix.c 68ced9b5a25dda67346b45b0e0ee303e98f2f98f
+F src/mutex_w32.c 285c1f2c3eb68b7c604faadc9a8aee09c2d78a5f
 F src/notify.c 9711a7575036f0d3040ba61bc6e217f13a9888e7
 F src/os.c add02933b1dce7a39a005b00a2f5364b763e9a24
 F src/os.h 8e976e59eb4ca1c0fca6d35ee803e38951cb0343
@@ -399,7 +399,7 @@ F src/shell.c a661e7ccd202b16cb5321999354699e5ee018fb2
 F src/sqlite.h.in 751ff125eb159c8f92c182b8df980a5e4f50e966
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
-F src/sqliteInt.h c3f878dcbe947938f9e0984644f1902dd9051094
+F src/sqliteInt.h b8c2e9ea279edf9b544fa29cc1cea60e9f8f2145
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -1555,7 +1555,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 54836270c9c0bfa5910f7ad74ec238b9d7ddee5f
-R 81ac83b9aa3d80dbb34372d0527e01bd
-U drh
-Z 42f594c3c0159a4f4af8ef6e693c76a8
+P ca4f1e4962df64ae756c286f3795af7d6f692cdd
+R d6a0bafe616fe547ff07dfc42e463ec9
+T *branch * mutexDbg2
+T *sym-mutexDbg2 *
+T -sym-trunk *
+U mistachkin
+Z 92255d0c1926221a5bf48dc4677aec44

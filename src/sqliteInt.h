@@ -3526,6 +3526,75 @@ const sqlite3_mem_methods *sqlite3MemGetMemsys3(void);
 # define sqlite3MemoryBarrier()
 #endif
 
+/*
+** When SQLITE_MUTEX_ALERT_MILLISECONDS is greater than zero, extra code
+** will be included to issue warnings via the sqlite3_log() interface if
+** a mutex is held for longer than the number of milliseconds specified
+** by SQLITE_MUTEX_ALERT_MILLISECONDS.
+*/
+#ifndef SQLITE_MUTEX_ALERT_MILLISECONDS
+# define SQLITE_MUTEX_ALERT_MILLISECONDS (0)
+#endif
+
+#if !defined(SQLITE_MUTEX_OMIT) && SQLITE_MUTEX_ALERT_MILLISECONDS>0
+  i64 sqlite3MutexTimeOfDay(void);
+  void sqlite3MutexTimeAlert(sqlite3_mutex *, i64);
+
+/*
+** This macro returns a 64-bit integer time value, in milliseconds,
+** or zero if that information is not available.
+*/
+# ifndef SQLITE_GET_MUTEX_TIME
+#  if SQLITE_OS_UNIX
+#   define SQLITE_GET_MUTEX_TIME()   (((i64)time())*1000)
+#  elif SQLITE_OS_WIN
+#   define SQLITE_GET_MUTEX_TIME()   ((i64)GetTickCount())
+#  else
+#   define SQLITE_GET_MUTEX_TIME()   (0)
+#  endif
+# endif
+
+/*
+** This macro returns the integer type for the specified mutex or
+** negative one if that information is not available.
+*/
+# ifndef SQLITE_GET_MUTEX_ID
+#  if SQLITE_OS_UNIX
+#   if SQLITE_MUTEX_NREF || defined(SQLITE_ENABLE_API_ARMOR)
+#    define SQLITE_GET_MUTEX_ID(p)    \
+         *((int*)(((unsigned char*)(p))+sizeof(pthread_mutex_t)))
+#   else
+#    define SQLITE_GET_MUTEX_ID(p)    (-1)
+#   endif
+#  elif SQLITE_OS_WIN
+#   define SQLITE_GET_MUTEX_ID(p)     \
+         *((int*)(((unsigned char*)(p))+sizeof(CRITICAL_SECTION)))
+#  else
+#   define SQLITE_GET_MUTEX_ID(p)     (-1)
+#  endif
+# endif
+
+/*
+** This macro returns the integer identifier for the current thread
+** or zero if that information is not available.
+*/
+# ifndef SQLITE_GET_THREAD_ID
+#  if SQLITE_OS_UNIX
+#   define SQLITE_GET_THREAD_ID()     ((void *)pthread_self())
+#  elif SQLITE_OS_WIN
+#   define SQLITE_GET_THREAD_ID()     ((void *)GetCurrentThreadId())
+#  else
+#   define SQLITE_GET_THREAD_ID()     ((void *)0)
+#  endif
+# endif
+#else
+# define sqlite3MutexTimeOfDay()      (0)
+# define sqlite3MutexTimeAlert(X,Y)
+# define SQLITE_GET_MUTEX_TIME()      (0)
+# define SQLITE_GET_MUTEX_ID(p)       (-1)
+# define SQLITE_GET_THREAD_ID()       ((void *)0)
+#endif
+
 sqlite3_int64 sqlite3StatusValue(int);
 void sqlite3StatusUp(int, int);
 void sqlite3StatusDown(int, int);

@@ -37,6 +37,9 @@
 struct sqlite3_mutex {
   CRITICAL_SECTION mutex;    /* Mutex controlling the lock */
   int id;                    /* Mutex type */
+#if SQLITE_MUTEX_ALERT_MILLISECONDS>0
+  i64 entered;               /* Time that mutex was entered */
+#endif
 #ifdef SQLITE_DEBUG
   volatile int nRef;         /* Number of enterances */
   volatile DWORD owner;      /* Thread holding this mutex */
@@ -293,6 +296,9 @@ static void winMutexEnter(sqlite3_mutex *p){
 #endif
   assert( winMutex_isInit==1 );
   EnterCriticalSection(&p->mutex);
+#if SQLITE_MUTEX_ALERT_MILLISECONDS>0
+  p->entered = sqlite3MutexTimeOfDay();
+#endif
 #ifdef SQLITE_DEBUG
   assert( p->nRef>0 || p->owner==0 );
   p->owner = tid;
@@ -330,6 +336,9 @@ static int winMutexTry(sqlite3_mutex *p){
   }
   assert( winMutex_isNt==0 || winMutex_isNt==1 );
   if( winMutex_isNt && TryEnterCriticalSection(&p->mutex) ){
+#if SQLITE_MUTEX_ALERT_MILLISECONDS>0
+    p->entered = sqlite3MutexTimeOfDay();
+#endif
 #ifdef SQLITE_DEBUG
     p->owner = tid;
     p->nRef++;
@@ -367,6 +376,9 @@ static void winMutexLeave(sqlite3_mutex *p){
   assert( p->nRef==0 || p->id==SQLITE_MUTEX_RECURSIVE );
 #endif
   assert( winMutex_isInit==1 );
+#if SQLITE_MUTEX_ALERT_MILLISECONDS>0
+  sqlite3MutexTimeAlert(p, p->entered);
+#endif
   LeaveCriticalSection(&p->mutex);
 #ifdef SQLITE_DEBUG
   if( p->trace ){
