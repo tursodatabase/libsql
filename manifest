@@ -1,5 +1,5 @@
-C Add\sthe\snew\s"--testset\sorm"\sto\sthe\sspeedtest1\sutility.
-D 2017-02-14T15:57:11.586
+C Fix\sa\stestcase\snumber\son\sthe\sORM\stestset\sof\sspeedtest1.
+D 2017-02-14T15:58:58.551
 F Makefile.in edb6bcdd37748d2b1c3422ff727c748df7ffe918
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 067a6766f800cc8d72845ab61f8de4ffe8f3fc99
@@ -1137,7 +1137,7 @@ F test/speed3.test 694affeb9100526007436334cf7d08f3d74b85ef
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
-F test/speedtest1.c 89795b8e11f2e4d1e14882d5f03731f4bc49962a
+F test/speedtest1.c 4f7a10a3db37a5d9ab673244b8c87f77fa8ab913
 F test/spellfix.test f9c1f431e2c096c8775fec032952320c0e4700db
 F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
 F test/spellfix3.test 0f9efaaa502a0e0a09848028518a6fb096c8ad33
@@ -1555,7 +1555,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 670f10b24230863688270d12ac519609ade2302b
-R 2249f4f56d1658c4b20a6cc317c60c9d
+P 1836adc1d1f8e496ae0a07bf0fc933a19dc8fee5
+R db256bb9d4f2af476591a168e0c752ad
 U drh
-Z 47dad88b095b1c4793f875e17e9e4c4b
+Z 52eb4a5120830a27e32049ce6ccc32b2

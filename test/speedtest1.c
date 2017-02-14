@@ -1524,7 +1524,7 @@ void testset_orm(void){
   speedtest1_end_test();
 
   n = g.szTest*250;
-  speedtest1_begin_test(100, "Query %d rows by rowid", n);
+  speedtest1_begin_test(110, "Query %d rows by rowid", n);
   speedtest1_prepare(
     "SELECT ZCYANBASEFEEDADROIT,ZJUNIORSHOWPRESSNOVA,ZCAUSESALAMITERMCYAN,"
     "ZHOPEFULGATEHOLECHALK,ZHUMORSPICESANDKIDNEY,ZSWIMHEAVYMENTIONKIND,"
