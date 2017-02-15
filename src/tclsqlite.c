@@ -3405,10 +3405,6 @@ static int SQLITE_TCLAPI DbMain(
   }
   zErrMsg = 0;
   p = (SqliteDb*)Tcl_Alloc( sizeof(*p) );
-  if( p==0 ){
-    Tcl_SetResult(interp, (char *)"malloc failed", TCL_STATIC);
-    return TCL_ERROR;
-  }
   memset(p, 0, sizeof(*p));
   zFile = Tcl_GetStringFromObj(objv[2], 0);
   zFile = Tcl_TranslateFileName(interp, zFile, &translatedFilename);

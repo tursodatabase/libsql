@@ -161,13 +161,13 @@ static CrashGlobal g = {0, 0, SQLITE_DEFAULT_SECTOR_SIZE, 0, 0};
 static int sqlite3CrashTestEnable = 0;
 
 static void *crash_malloc(int nByte){
-  return (void *)Tcl_Alloc((size_t)nByte);
+  return (void *)Tcl_AttemptAlloc((size_t)nByte);
 }
 static void crash_free(void *p){
   Tcl_Free(p);
 }
 static void *crash_realloc(void *p, int n){
-  return (void *)Tcl_Realloc(p, (size_t)n);
+  return (void *)Tcl_AttemptRealloc(p, (size_t)n);
 }
 
 /*
