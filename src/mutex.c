@@ -15,6 +15,7 @@
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_UNIX
+#  include <sys/time.h>
 #  include <pthread.h>
 #elif SQLITE_OS_WIN
 #  include "os_win.h"
