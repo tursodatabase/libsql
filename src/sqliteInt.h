@@ -103,22 +103,23 @@
 # define _LARGEFILE_SOURCE 1
 #endif
 
-/* The GCC_VERSION, CLANG_VERSION, and MSVC_VERSION macros are used to
+/* The GCC_VERSION and MSVC_VERSION macros are used to
 ** conditionally include optimizations for each of these compilers.  A
 ** value of 0 means that compiler is not being used.  The
 ** SQLITE_DISABLE_INTRINSIC macro means do not use any compiler-specific
 ** optimizations, and hence set all compiler macros to 0
+**
+** There was once also a CLANG_VERSION macro.  However, we learn that the
+** version numbers in clang are for "marketing" only and are inconsistent
+** and unreliable.  Fortunately, all versions of clang also recognize the
+** gcc version numbers and have reasonable settings for gcc version numbers,
+** so the GCC_VERSION macro will be set to a correct non-zero value even
+** when compiling with clang.
 */
 #if defined(__GNUC__) && !defined(SQLITE_DISABLE_INTRINSIC)
 # define GCC_VERSION (__GNUC__*1000000+__GNUC_MINOR__*1000+__GNUC_PATCHLEVEL__)
 #else
 # define GCC_VERSION 0
-#endif
-#if defined(__clang__) && !defined(_WIN32) && !defined(SQLITE_DISABLE_INTRINSIC)
-# define CLANG_VERSION \
-            (__clang_major__*1000000+__clang_minor__*1000+__clang_patchlevel__)
-#else
-# define CLANG_VERSION 0
 #endif
 #if defined(_MSC_VER) && !defined(SQLITE_DISABLE_INTRINSIC)
 # define MSVC_VERSION _MSC_VER
