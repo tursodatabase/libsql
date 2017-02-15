@@ -26,6 +26,14 @@
 **
 **      SELECT * FROM carray($ptr,10,'char*');
 **
+** There is a second table-valued funnction named "carrray_asc" that works
+** exactly like carray except that it requires the values in the $ptr array
+** to be in ascending order.  Queries involving ORDER BY clauses can sometimes
+** be a little faster with carray_asc compared to plain carray.  However, if
+** the application provides carray_asc($ptr) with a $ptr array in which the
+** elements are not in ascending order, then incorrect query results might
+** result.
+**
 ** HOW IT WORKS
 **
 ** The carray "function" is really a virtual table with the
@@ -64,6 +72,20 @@ SQLITE_EXTENSION_INIT1
 */
 static const char *azType[] = { "int32", "int64", "double", "char*" };
 
+/* carray_vtab is a subclass of sqlite3_vtab containing carray-specific
+** extensions.
+*/
+typedef struct carray_vtab carray_vtab;
+struct carray_vtab {
+  sqlite3_vtab base;         /* Base class - must be first */
+  unsigned int mFlags;       /* Operational flags */
+};
+
+/*
+** Possible values for carray_vtab.mFlags
+*/
+#define CARRAY_ASC    0x0001    /* Values are always in ascending order */
+
 
 /* carray_cursor is a subclass of sqlite3_vtab_cursor which will
 ** serve as the underlying representation of a cursor that scans
@@ -98,7 +120,7 @@ static int carrayConnect(
   sqlite3_vtab **ppVtab,
   char **pzErr
 ){
-  sqlite3_vtab *pNew;
+  carray_vtab *pNew;
   int rc;
 
 /* Column numbers */
@@ -110,9 +132,11 @@ static int carrayConnect(
   rc = sqlite3_declare_vtab(db,
      "CREATE TABLE x(value,pointer hidden,count hidden,ctype hidden)");
   if( rc==SQLITE_OK ){
-    pNew = *ppVtab = sqlite3_malloc( sizeof(*pNew) );
+    pNew = sqlite3_malloc( sizeof(*pNew) );
+    *ppVtab = (sqlite3_vtab*)pNew;
     if( pNew==0 ) return SQLITE_NOMEM;
     memset(pNew, 0, sizeof(*pNew));
+    if( pAux ) pNew->mFlags = *(unsigned int*)pAux;
   }
   return rc;
 }
@@ -305,6 +329,13 @@ static int carrayBestIndex(
     pIdxInfo->estimatedCost = (double)1;
     pIdxInfo->estimatedRows = 100;
     pIdxInfo->idxNum = 2;
+    if( pIdxInfo->nOrderBy==1
+     && pIdxInfo->aOrderBy[0].iColumn==0
+     && pIdxInfo->aOrderBy[0].desc==0
+     && (((carray_vtab*)tab)->mFlags & CARRAY_ASC)!=0
+    ){
+      pIdxInfo->orderByConsumed = 1;
+    }
     if( ctypeIdx>=0 ){
       pIdxInfo->aConstraintUsage[ctypeIdx].argvIndex = 3;
       pIdxInfo->aConstraintUsage[ctypeIdx].omit = 1;
@@ -356,9 +387,14 @@ int sqlite3_carray_init(
   const sqlite3_api_routines *pApi
 ){
   int rc = SQLITE_OK;
+  static const unsigned int mAscFlags = CARRAY_ASC;
   SQLITE_EXTENSION_INIT2(pApi);
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   rc = sqlite3_create_module(db, "carray", &carrayModule, 0);
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_module(db, "carray_asc", &carrayModule,
+                               (void*)&mAscFlags);
+  }
 #endif
   return rc;
 }
