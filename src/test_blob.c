@@ -239,7 +239,11 @@ static int SQLITE_TCLAPI test_blob_read(
   }
 
   if( nByte>0 ){
-    zBuf = (unsigned char *)Tcl_Alloc(nByte);
+    zBuf = (unsigned char *)Tcl_AttemptAlloc(nByte);
+    if( zBuf==0 ){
+      Tcl_AppendResult(interp, "out of memory", 0);
+      return TCL_ERROR;
+    }
   }
   rc = sqlite3_blob_read(pBlob, zBuf, nByte, iOffset);
   if( rc==SQLITE_OK ){
