@@ -1,5 +1,5 @@
-C Another\scompilation\sfix\sfor\sPOSIX.
-D 2017-02-15T00:52:50.095
+C Make\sSQLITE_GET_MUTEX_TIME\sa\sproper\snoop\son\snon-Win32/non-POSIX.
+D 2017-02-15T01:02:10.133
 F Makefile.in edb6bcdd37748d2b1c3422ff727c748df7ffe918
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 067a6766f800cc8d72845ab61f8de4ffe8f3fc99
@@ -399,7 +399,7 @@ F src/shell.c a661e7ccd202b16cb5321999354699e5ee018fb2
 F src/sqlite.h.in 751ff125eb159c8f92c182b8df980a5e4f50e966
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
-F src/sqliteInt.h 09592c9e266f43bf55d63e5e7aa52e971d6f688c
+F src/sqliteInt.h 96b7be01cd64666a507e23bcbd42c0692fba7eae
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -1555,7 +1555,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 79057716d9ab9e05acdc1f204940ddd540a8f2ef
-R 43d28a66a7f1dae99e9914e8cedc51f2
+P 82ef47ea88d59e0e97492d61c16a3a36f87e1efd
+R 6c1637446e808b4781ed15a8d4f69473
 U mistachkin
-Z 10aece176365c6b4ef81e386b6a791b9
+Z 91f1902ac42deaf677e519dfc6e14578

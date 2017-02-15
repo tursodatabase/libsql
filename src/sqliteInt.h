@@ -3555,7 +3555,9 @@ const sqlite3_mem_methods *sqlite3MemGetMemsys3(void);
         return (i64)GetTickCount();     \
     }
 #  else
-#   define SQLITE_GET_MUTEX_TIME      (0)
+#   define SQLITE_GET_MUTEX_TIME      { \
+        return 0;                       \
+    }
 #  endif
 # endif
 
