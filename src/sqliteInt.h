@@ -3541,16 +3541,21 @@ const sqlite3_mem_methods *sqlite3MemGetMemsys3(void);
   void sqlite3MutexTimeAlert(sqlite3_mutex *, i64);
 
 /*
-** This macro returns a 64-bit integer time value, in milliseconds,
-** or zero if that information is not available.
+** This macro contains code that returns a 64-bit integer time value,
+** in milliseconds, or zero if that information is not available.
 */
 # ifndef SQLITE_GET_MUTEX_TIME
 #  if SQLITE_OS_UNIX
-#   define SQLITE_GET_MUTEX_TIME()   (((i64)time(0))*1000)
+#   define SQLITE_GET_MUTEX_TIME      {                    \
+        struct timeval sNow; (void)gettimeofday(&sNow, 0); \
+        return 1000*(i64)sNow.tv_sec + sNow.tv_usec/1000;  \
+    }
 #  elif SQLITE_OS_WIN
-#   define SQLITE_GET_MUTEX_TIME()   ((i64)GetTickCount())
+#   define SQLITE_GET_MUTEX_TIME      { \
+        return (i64)GetTickCount();     \
+    }
 #  else
-#   define SQLITE_GET_MUTEX_TIME()   (0)
+#   define SQLITE_GET_MUTEX_TIME      (0)
 #  endif
 # endif
 
@@ -3590,7 +3595,7 @@ const sqlite3_mem_methods *sqlite3MemGetMemsys3(void);
 #else
 # define sqlite3MutexTimeOfDay()      (0)
 # define sqlite3MutexTimeAlert(X,Y)
-# define SQLITE_GET_MUTEX_TIME()      (0)
+# define SQLITE_GET_MUTEX_TIME
 # define SQLITE_GET_MUTEX_ID(p)       (-1)
 # define SQLITE_GET_THREAD_ID()       ((void *)0)
 #endif

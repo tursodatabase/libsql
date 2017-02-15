@@ -92,7 +92,7 @@ int sqlite3MutexEnd(void){
 /* Return a time value for use by the mutex subsystem. */
 i64 sqlite3MutexTimeOfDay(void){
 #ifdef SQLITE_GET_MUTEX_TIME
-  return SQLITE_GET_MUTEX_TIME();
+  SQLITE_GET_MUTEX_TIME;
 #else
   return 0;
 #endif
