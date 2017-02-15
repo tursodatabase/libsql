@@ -3546,7 +3546,7 @@ const sqlite3_mem_methods *sqlite3MemGetMemsys3(void);
 */
 # ifndef SQLITE_GET_MUTEX_TIME
 #  if SQLITE_OS_UNIX
-#   define SQLITE_GET_MUTEX_TIME()   (((i64)time())*1000)
+#   define SQLITE_GET_MUTEX_TIME()   (((i64)time(0))*1000)
 #  elif SQLITE_OS_WIN
 #   define SQLITE_GET_MUTEX_TIME()   ((i64)GetTickCount())
 #  else
