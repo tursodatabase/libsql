@@ -163,6 +163,31 @@ do_test tabfunc01-702 {
     SELECT b FROM t600 WHERE a IN carray($PTR1,4,'int32');
   }
 } {(005) (007) (013) (017)}
+do_test tabfunc01-703 {
+  db eval {
+    SELECT value FROM carray($PTR1, 5) ORDER BY value;
+  }
+} {5 7 13 17 23}
+do_test tabfunc01-703x {db status sort} 1
+do_test tabfunc01-704 {
+  db eval {
+    SELECT value FROM carray_asc($PTR1, 5) ORDER BY value;
+  }
+} {5 7 13 17 23}
+do_test tabfunc01-704x {db status sort} 0
+do_test tabfunc01-705 {
+  db eval {
+    SELECT value FROM carray($PTR1, 5) ORDER BY value DESC;
+  }
+} {23 17 13 7 5}
+do_test tabfunc01-705x {db status sort} 1
+do_test tabfunc01-706 {
+  db eval {
+    SELECT value FROM carray_asc($PTR1, 5) ORDER BY value DESC;
+  }
+} {23 17 13 7 5}
+do_test tabfunc01-706x {db status sort} 1
+
 do_catchsql_test tabfunc01-710 {
   SELECT b FROM t600 WHERE a IN carray($PTR1,5,'int33');
 } {1 {unknown datatype: 'int33'}}
