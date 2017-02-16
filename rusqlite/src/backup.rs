@@ -30,7 +30,7 @@ use std::marker::PhantomData;
 use std::path::Path;
 use std::ptr;
 
-use libc::c_int;
+use std::os::raw::c_int;
 use std::thread;
 use std::time::Duration;
 

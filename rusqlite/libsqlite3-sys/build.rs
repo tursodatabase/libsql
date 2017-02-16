@@ -27,7 +27,6 @@ fn run_bindgen<T: Into<String>>(header: T) {
     let mut output = Vec::new();
     bindgen::builder()
         .header(header.clone())
-        .ctypes_prefix("::libc")
         .type_chooser(Box::new(SqliteTypeChooser))
         .generate()
         .expect(&format!("could not run bindgen on header {}", header))

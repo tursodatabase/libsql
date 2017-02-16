@@ -3,12 +3,11 @@
 
 #[macro_use]
 extern crate lazy_static;
-extern crate libc;
 extern crate rusqlite;
 
 #[cfg(feature = "trace")]
 fn main() {
-    use libc::c_int;
+    use std::os::raw::c_int;
     use std::sync::Mutex;
 
     lazy_static! {

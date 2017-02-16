@@ -2,7 +2,7 @@ use std::error;
 use std::fmt;
 use std::path::PathBuf;
 use std::str;
-use libc::c_int;
+use std::os::raw::c_int;
 use {ffi, errmsg_to_string};
 use types::Type;
 
