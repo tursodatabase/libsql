@@ -3793,6 +3793,16 @@ static LogEst whereSortingCost(
   rScale = sqlite3LogEst((nOrderBy-nSorted)*100/nOrderBy) - 66;
   rSortCost = nRow + rScale + 16;
 
+  /* For wide sorts (many payload columns) increase the sorting cost
+  ** to account for the additional I/O used by the external sorting
+  ** algorithm when it flushes PMAs to disk.
+  */
+  if( pWInfo->pResultSet
+   && pWInfo->pResultSet->nExpr>6
+  ){
+    rSortCost += sqlite3LogEst(pWInfo->pResultSet->nExpr) - 26;
+  }
+
   /* Multiple by log(M) where M is the number of output rows.
   ** Use the LIMIT for M if it is smaller */
   if( (pWInfo->wctrlFlags & WHERE_USE_LIMIT)!=0 && pWInfo->iLimit<nRow ){
