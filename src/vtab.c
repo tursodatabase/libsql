@@ -339,7 +339,7 @@ void sqlite3VtabBeginParse(
   iDb = sqlite3SchemaToIndex(db, pTable->pSchema);
   assert( iDb>=0 );
 
-  pTable->nModuleArg = 0;
+  assert( pTable->nModuleArg==0 );
   addModuleArgument(db, pTable, sqlite3NameFromToken(db, pModuleName));
   addModuleArgument(db, pTable, 0);
   addModuleArgument(db, pTable, sqlite3DbStrDup(db, pTable->zName));
@@ -1149,7 +1149,7 @@ int sqlite3VtabEponymousTableInit(Parse *pParse, Module *pMod){
   pMod->pEpoTab = pTab;
   pTab->nTabRef = 1;
   pTab->pSchema = db->aDb[0].pSchema;
-  pTab->nModuleArg = 0;
+  assert( pTab->nModuleArg==0 );
   pTab->iPKey = -1;
   addModuleArgument(db, pTab, sqlite3DbStrDup(db, pTab->zName));
   addModuleArgument(db, pTab, 0);

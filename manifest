@@ -1,5 +1,5 @@
-C Always\suse\sthe\sIsVirtual()\smacro\sto\sdetermine\sif\sa\sTable\sobject\sis\sa\svirtual\ntable.\s\sSlightly\ssmaller\sand\sfaster\scode.
-D 2017-02-16T14:48:08.387
+C Remove\stwo\sredundant\sinitializations\sfrom\sthe\svirtual\stable\slogic.
+D 2017-02-16T15:06:06.357
 F Makefile.in edb6bcdd37748d2b1c3422ff727c748df7ffe918
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 067a6766f800cc8d72845ab61f8de4ffe8f3fc99
@@ -470,7 +470,7 @@ F src/vdbeblob.c 359891617358deefc85bef7bcf787fa6b77facb9
 F src/vdbemem.c 3b5a9a5b375458d3e12a50ae1aaa41eeec2175fd
 F src/vdbesort.c eda25cb2d1727efca6f7862fea32b8aa33c0face
 F src/vdbetrace.c 41963d5376f0349842b5fc4aaaaacd7d9cdc0834
-F src/vtab.c f7f26f9db3c328824674d0ed4fd9a961a9919186
+F src/vtab.c 007513c2ef52472fcdea6a741683d50662e82790
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 40c543f0a2195d1b0dc88ef12142bea690009344
 F src/wal.h 06b2a0b599cc0f53ea97f497cf8c6b758c999f71
@@ -1556,7 +1556,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 58797e9bafa95709e0f706a15f42f93b409e2db5
-R db3fb8708d0cf4bffde97f5d6d76493c
+P 6affb1c89d87288cad87dde5a533832cdf06b8aa
+R a7d037042c5db23b2b7803c8953ffd29
 U drh
-Z 8764b23fc3772844f5b9c915005803c6
+Z 51668c807e51ffc5d9cef025e62b59da
