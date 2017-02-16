@@ -1883,7 +1883,7 @@ struct Table {
 #define TF_Ephemeral       0x02    /* An ephemeral table */
 #define TF_HasPrimaryKey   0x04    /* Table has a primary key */
 #define TF_Autoincrement   0x08    /* Integer primary key is autoincrement */
-#define TF_Virtual         0x10    /* Is a virtual table */
+/* available for reuse:    0x10    */
 #define TF_WithoutRowid    0x20    /* No rowid.  PRIMARY KEY is the key */
 #define TF_NoVisibleRowid  0x40    /* No user-visible "rowid" column */
 #define TF_OOOHidden       0x80    /* Out-of-Order hidden columns */
@@ -1895,7 +1895,7 @@ struct Table {
 ** table support is omitted from the build.
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-#  define IsVirtual(X)      (((X)->tabFlags & TF_Virtual)!=0)
+#  define IsVirtual(X)      ((X)->nModuleArg)
 #else
 #  define IsVirtual(X)      0
 #endif

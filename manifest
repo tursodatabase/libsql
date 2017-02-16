@@ -1,5 +1,5 @@
-C Query\splanner\soptimization\sto\sdetect\sempty\stables\sin\sa\sjoin\searly\sand\sbail\sout\nwithout\sdoing\sexcess\swork.
-D 2017-02-15T22:36:15.061
+C Always\suse\sthe\sIsVirtual()\smacro\sto\sdetermine\sif\sa\sTable\sobject\sis\sa\svirtual\ntable.\s\sSlightly\ssmaller\sand\sfaster\scode.
+D 2017-02-16T14:48:08.387
 F Makefile.in edb6bcdd37748d2b1c3422ff727c748df7ffe918
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 067a6766f800cc8d72845ab61f8de4ffe8f3fc99
@@ -356,7 +356,7 @@ F src/hash.c 63d0ee752a3b92d4695b2b1f5259c4621b2cfebd
 F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 891f6789bafca1f0a3b4f7cbb9c363229eaec828
+F src/insert.c 3ed64afc49c0a2221e397b9f65d231ffbef506fe
 F src/legacy.c 75d3023be8f0d2b99d60f905090341a03358c58e
 F src/loadext.c a68d8d1d14cf7488bb29dc5311cb1ce9a4404258
 F src/main.c e207b81542d13b9f13d61e78ca441f9781f055b0
@@ -399,7 +399,7 @@ F src/shell.c a661e7ccd202b16cb5321999354699e5ee018fb2
 F src/sqlite.h.in 751ff125eb159c8f92c182b8df980a5e4f50e966
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
-F src/sqliteInt.h 4f85005b109c1a7eab3110cb4568fe30a5389bda
+F src/sqliteInt.h b4a3871bda47ff79b4be612a2ab89775fa737583
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -470,7 +470,7 @@ F src/vdbeblob.c 359891617358deefc85bef7bcf787fa6b77facb9
 F src/vdbemem.c 3b5a9a5b375458d3e12a50ae1aaa41eeec2175fd
 F src/vdbesort.c eda25cb2d1727efca6f7862fea32b8aa33c0face
 F src/vdbetrace.c 41963d5376f0349842b5fc4aaaaacd7d9cdc0834
-F src/vtab.c c4bbe0f870f52036553f8098aee0703997f0577a
+F src/vtab.c f7f26f9db3c328824674d0ed4fd9a961a9919186
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 40c543f0a2195d1b0dc88ef12142bea690009344
 F src/wal.h 06b2a0b599cc0f53ea97f497cf8c6b758c999f71
@@ -1556,7 +1556,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 830b9235673be55f0c932fb157de03725e648c25
-R 32e948726be0c8ec843ec4b81e44685b
+P 58797e9bafa95709e0f706a15f42f93b409e2db5
+R db3fb8708d0cf4bffde97f5d6d76493c
 U drh
-Z 345aeb62ab5f52d0700dc3107ec5c535
+Z 8764b23fc3772844f5b9c915005803c6
