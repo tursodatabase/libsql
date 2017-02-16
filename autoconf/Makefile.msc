@@ -24,6 +24,13 @@ TOP = .
 USE_FULLWARN = 0
 !ENDIF
 
+# Set this non-0 to enable treating warnings as errors (-WX, etc) when
+# compiling.
+#
+!IFNDEF USE_FATAL_WARN
+USE_FATAL_WARN = 0
+!ENDIF
+
 # Set this non-0 to enable full runtime error checks (-RTC1, etc).  This
 # has no effect if (any) optimizations are enabled.
 #
@@ -452,6 +459,12 @@ NLTLIBPATHS = $(NLTLIBPATHS) "/LIBPATH:$(NUCRTLIBPATH)"
 TCC = $(CC) -nologo -W4 -DINCLUDE_MSVC_H=1 $(CCOPTS) $(TCCOPTS)
 !ELSE
 TCC = $(CC) -nologo -W3 $(CCOPTS) $(TCCOPTS)
+!ENDIF
+
+# Check if warnings should be treated as errors when compiling.
+#
+!IF $(USE_FATAL_WARN)!=0
+TCC = $(TCC) -WX
 !ENDIF
 
 TCC = $(TCC) -DSQLITE_OS_WIN=1 -I. -I$(TOP) -fp:precise
@@ -937,7 +950,7 @@ Replace.exe:
 sqlite3.def:	Replace.exe $(LIBOBJ)
 	echo EXPORTS > sqlite3.def
 	dumpbin /all $(LIBOBJ) \
-		| .\Replace.exe "^\s+/EXPORT:_?(sqlite3_[^@,]*)(?:@\d+|,DATA)?$$" $$1 true \
+		| .\Replace.exe "^\s+/EXPORT:_?(sqlite3(?:session|changeset)?_[^@,]*)(?:@\d+|,DATA)?$$" $$1 true \
 		| sort >> sqlite3.def
 
 $(SQLITE3EXE):	$(TOP)\shell.c $(SHELL_CORE_DEP) $(LIBRESOBJS) $(SHELL_CORE_SRC) $(SQLITE3H)

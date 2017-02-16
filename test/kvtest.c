@@ -67,12 +67,18 @@ static const char zHelp[] =
 "\n"
 "        Generate a new test database file named DBFILE containing N\n"
 "        BLOBs each of size M bytes.  The page size of the new database\n"
-"        file will be X\n"
+"        file will be X.  Additional options:\n"
+"\n"
+"           --variance V           Randomly vary M by plus or minus V\n"
 "\n"
 "   kvtest export DBFILE DIRECTORY\n"
 "\n"
 "        Export all the blobs in the kv table of DBFILE into separate\n"
 "        files in DIRECTORY.\n"
+"\n"
+"   kvtest stat DBFILE\n"
+"\n"
+"        Display summary information about DBFILE\n"
 "\n"
 "   kvtest run DBFILE [options]\n"
 "\n"
@@ -251,6 +257,7 @@ static int initMain(int argc, char **argv){
   int i, rc;
   int nCount = 1000;
   int sz = 10000;
+  int iVariance = 0;
   int pgsz = 4096;
   sqlite3 *db;
   char *zSql;
@@ -275,6 +282,11 @@ static int initMain(int argc, char **argv){
       if( sz<1 ) fatalError("the --size must be positive");
       continue;
     }
+    if( strcmp(z, "-variance")==0 ){
+      if( i==argc-1 ) fatalError("missing argument on \"%s\"", argv[i]);
+      iVariance = integerValue(argv[++i]);
+      continue;
+    }
     if( strcmp(z, "-pagesize")==0 ){
       if( i==argc-1 ) fatalError("missing argument on \"%s\"", argv[i]);
       pgsz = integerValue(argv[++i]);
@@ -296,13 +308,72 @@ static int initMain(int argc, char **argv){
     "BEGIN;\n"
     "CREATE TABLE kv(k INTEGER PRIMARY KEY, v BLOB);\n"
     "WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<%d)"
-    " INSERT INTO kv(k,v) SELECT x, randomblob(%d) FROM c;\n"
+    " INSERT INTO kv(k,v) SELECT x, randomblob(%d+(random()%%(%d))) FROM c;\n"
     "COMMIT;\n",
-    pgsz, nCount, sz
+    pgsz, nCount, sz, iVariance+1
   );
   rc = sqlite3_exec(db, zSql, 0, 0, &zErrMsg);
   if( rc ) fatalError("database create failed: %s", zErrMsg);
   sqlite3_free(zSql);
+  sqlite3_close(db);
+  return 0;
+}
+
+/*
+** Analyze an existing database file.  Report its content.
+*/
+static int statMain(int argc, char **argv){
+  char *zDb;
+  int i, rc;
+  sqlite3 *db;
+  char *zSql;
+  sqlite3_stmt *pStmt;
+
+  assert( strcmp(argv[1],"stat")==0 );
+  assert( argc>=3 );
+  zDb = argv[2];
+  for(i=3; i<argc; i++){
+    char *z = argv[i];
+    if( z[0]!='-' ) fatalError("unknown argument: \"%s\"", z);
+    if( z[1]=='-' ) z++;
+    fatalError("unknown option: \"%s\"", argv[i]);
+  }
+  rc = sqlite3_open(zDb, &db);
+  if( rc ){
+    fatalError("cannot open database \"%s\": %s", zDb, sqlite3_errmsg(db));
+  }
+  zSql = sqlite3_mprintf(
+    "SELECT count(*), min(length(v)), max(length(v)), avg(length(v))"
+    "  FROM kv"
+  );
+  rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
+  if( rc ) fatalError("cannot prepare SQL [%s]: %s", zSql, sqlite3_errmsg(db));
+  sqlite3_free(zSql);
+  if( sqlite3_step(pStmt)==SQLITE_ROW ){
+    printf("Number of entries:  %8d\n", sqlite3_column_int(pStmt, 0));
+    printf("Average value size: %8d\n", sqlite3_column_int(pStmt, 3));
+    printf("Minimum value size: %8d\n", sqlite3_column_int(pStmt, 1));
+    printf("Maximum value size: %8d\n", sqlite3_column_int(pStmt, 2));
+  }else{
+    printf("No rows\n");
+  }
+  sqlite3_finalize(pStmt);
+  zSql = sqlite3_mprintf("PRAGMA page_size");
+  rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
+  if( rc ) fatalError("cannot prepare SQL [%s]: %s", zSql, sqlite3_errmsg(db));
+  sqlite3_free(zSql);
+  if( sqlite3_step(pStmt)==SQLITE_ROW ){
+    printf("Page-size:          %8d\n", sqlite3_column_int(pStmt, 0));
+  }
+  sqlite3_finalize(pStmt);
+  zSql = sqlite3_mprintf("PRAGMA page_count");
+  rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
+  if( rc ) fatalError("cannot prepare SQL [%s]: %s", zSql, sqlite3_errmsg(db));
+  sqlite3_free(zSql);
+  if( sqlite3_step(pStmt)==SQLITE_ROW ){
+    printf("Page-count:         %8d\n", sqlite3_column_int(pStmt, 0));
+  }
+  sqlite3_finalize(pStmt);
   sqlite3_close(db);
   return 0;
 }
@@ -402,13 +473,13 @@ static unsigned char *readFile(const char *zName, int *pnByte){
   if( in==0 ) return 0;
   pBuf = sqlite3_malloc64( nIn );
   if( pBuf==0 ) return 0;
-  nRead = fread(pBuf, nIn, 1, in);
+  nRead = fread(pBuf, (size_t)nIn, 1, in);
   fclose(in);
   if( nRead!=1 ){
     sqlite3_free(pBuf);
     return 0;
   }
-  if( pnByte ) *pnByte = nIn;
+  if( pnByte ) *pnByte = (int)nIn;
   return pBuf;
 }
 
@@ -800,6 +871,9 @@ int main(int argc, char **argv){
   }
   if( strcmp(argv[1],"run")==0 ){
     return runMain(argc, argv);
+  }
+  if( strcmp(argv[1],"stat")==0 ){
+    return statMain(argc, argv);
   }
   showHelp();
   return 0;

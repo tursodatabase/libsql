@@ -33,22 +33,23 @@ proc do_changeset_invert_test {tn session res} {
 
 
 proc do_conflict_test {tn args} {
-  proc xConflict {args} { 
-    lappend ::xConflict $args
-    return "" 
-  }
-  proc bgerror {args} { set ::background_error $args }
-
 
   set O(-tables)    [list]
   set O(-sql)       [list]
   set O(-conflicts) [list]
+  set O(-policy)    "OMIT"
 
   array set V $args
   foreach key [array names V] {
     if {![info exists O($key)]} {error "no such option: $key"}
   }
   array set O $args
+
+  proc xConflict {args} [subst -nocommands { 
+    lappend ::xConflict [set args]
+    return $O(-policy) 
+  }]
+  proc bgerror {args} { set ::background_error $args }
 
   sqlite3session S db main
   foreach t $O(-tables) { S attach $t }

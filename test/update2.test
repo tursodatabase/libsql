@@ -176,5 +176,30 @@ foreach {tn sql} {
   }
 }
 
+#-------------------------------------------------------------------------
+#
+do_execsql_test 5.0 {
+  CREATE TABLE x1(a INTEGER PRIMARY KEY, b, c);
+  CREATE INDEX x1c ON x1(b, c);
+  INSERT INTO x1 VALUES(1, 'a', 1);
+  INSERT INTO x1 VALUES(2, 'a', 2);
+  INSERT INTO x1 VALUES(3, 'a', 3);
+}
+
+do_execsql_test 5.1.1 {
+  UPDATE x1 SET c=c+1 WHERE b='a';
+}
+
+do_execsql_test 5.1.2 {
+  SELECT * FROM x1;
+} {1 a 2 2 a 3 3 a 4}
+
+do_test 5.2 {
+  catch { array unset A }
+  db eval { EXPLAIN UPDATE x1 SET c=c+1 WHERE b='a' } { incr A($opcode) }
+  set A(NotExists)
+} {1}
+
+
 finish_test
 

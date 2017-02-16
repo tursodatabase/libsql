@@ -458,7 +458,7 @@ static void StrAppend(Str *p, const char *z){
     sqlite3_uint64 nNew;
     if( p->oomErr ) return;
     nNew = p->nAlloc*2 + 100 + n;
-    zNew = sqlite3_realloc(p->z, nNew);
+    zNew = sqlite3_realloc64(p->z, nNew);
     if( zNew==0 ){
       sqlite3_free(p->z);
       memset(p, 0, sizeof(*p));
@@ -468,7 +468,7 @@ static void StrAppend(Str *p, const char *z){
     p->z = zNew;
     p->nAlloc = nNew;
   }
-  memcpy(p->z + p->n, z, n);
+  memcpy(p->z + p->n, z, (int)n);
   p->n += n;
   p->z[p->n] = 0;
 }
@@ -647,7 +647,7 @@ static void runSql(sqlite3 *db, const char *zSql, unsigned  runFlags){
 int main(int argc, char **argv){
   int i;                 /* Loop counter */
   int nDb = 0;           /* Number of databases to fuzz */
-  const char **azDb = 0; /* Names of the databases (limit: 20) */
+  char **azDb = 0;       /* Names of the databases (limit: 20) */
   int verboseFlag = 0;   /* True for extra output */
   int noLookaside = 0;   /* Disable lookaside if true */
   int vdbeLimitFlag = 0; /* Stop after 100,000 VDBE ops */
@@ -660,7 +660,7 @@ int main(int argc, char **argv){
   unsigned runFlags = 0; /* Flags passed to runSql */
 
   for(i=1; i<argc; i++){
-    const char *z = argv[i];
+    char *z = argv[i];
     if( z[0]!='-' ){
       azDb = realloc(azDb, sizeof(azDb[0])*(nDb+1));
       if( azDb==0 ) fatalError("out of memory");

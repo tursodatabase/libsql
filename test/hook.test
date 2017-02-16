@@ -849,10 +849,12 @@ do_preupdate_test 7.6.4 {
 }
 
 # No preupdate callbacks for modifying sqlite_master.
-do_preupdate_test 8.1 {
-  CREATE TABLE x1(x, y);
-} {
-}
+do_preupdate_test 8.1 { CREATE TABLE x1(x, y); } { }
+do_preupdate_test 8.2 { ALTER TABLE x1 ADD COLUMN z } { }
+do_preupdate_test 8.3 { ALTER TABLE x1 RENAME TO y1 } { }
+do_preupdate_test 8.4 { CREATE INDEX y1x ON y1(x) } { }
+do_preupdate_test 8.5 { CREATE VIEW v1 AS SELECT * FROM y1 } { }
+do_preupdate_test 8.6 { DROP TABLE y1 } { }
 
 #-------------------------------------------------------------------------
 reset_db

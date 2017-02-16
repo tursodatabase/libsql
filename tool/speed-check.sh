@@ -142,3 +142,6 @@ fi
 if test $doExplain -eq 1; then
   ./speedtest1 --explain $SPEEDTEST_OPTS | ./sqlite3 >explain-$NAME.txt
 fi
+if test "$NAME" != "trunk"; then
+  fossil test-diff --tk cout-trunk.txt cout-$NAME.txt
+fi
