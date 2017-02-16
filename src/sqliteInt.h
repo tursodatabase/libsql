@@ -2440,7 +2440,7 @@ struct Expr {
 struct ExprList {
   int nExpr;             /* Number of expressions on the list */
   struct ExprList_item { /* For each expression in the list */
-    Expr *pExpr;            /* The list of expressions */
+    Expr *pExpr;            /* The parse tree for this expression */
     char *zName;            /* Token associated with this expression */
     char *zSpan;            /* Original text of the expression */
     u8 sortOrder;           /* 1 for DESC or 0 for ASC */

@@ -1,5 +1,5 @@
-C Increase\sTable.tabFlags\sfrom\s8\sto\s32\sbits.
-D 2017-02-16T15:57:30.827
+C Fix\sa\scomment\son\sa\sfield\sof\sthe\sExprList\sobject.\s\sNo\schanges\sto\scode.
+D 2017-02-16T16:26:53.932
 F Makefile.in edb6bcdd37748d2b1c3422ff727c748df7ffe918
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 067a6766f800cc8d72845ab61f8de4ffe8f3fc99
@@ -399,7 +399,7 @@ F src/shell.c a661e7ccd202b16cb5321999354699e5ee018fb2
 F src/sqlite.h.in 751ff125eb159c8f92c182b8df980a5e4f50e966
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
-F src/sqliteInt.h edd1ffa288c28d9aa316ad352a75ce1c12bcc005
+F src/sqliteInt.h 46fe8e5aee3825d77fa771216ef263dc947030e7
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -1556,7 +1556,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6bd82b95a6b78bb60569af4da58ef4b9f997fe7b
-R 5056d17e833da8353f5af9a38b309f26
+P 7e14044c65f64322769bcad4640a5896be0a1687
+R 1b3160298650a3391d35f7b330db72f9
 U drh
-Z 46bea1f1d9f6eb27acec6234891ad166
+Z 62831885c60053730e2b44cb5ef10954
