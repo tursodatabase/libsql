@@ -1,6 +1,6 @@
 use std::convert;
 use std::result;
-use libc::c_int;
+use std::os::raw::c_int;
 
 use {Result, Error, Connection, Statement, MappedRows, AndThenRows, Rows, Row, str_to_cstring};
 use types::ToSql;

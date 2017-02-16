@@ -54,7 +54,7 @@ use std::ffi::CStr;
 use std::mem;
 use std::ptr;
 use std::slice;
-use libc::{c_int, c_char, c_void};
+use std::os::raw::{c_int, c_char, c_void};
 
 use ffi;
 use ffi::sqlite3_context;
@@ -508,7 +508,7 @@ mod test {
     extern crate regex;
 
     use std::collections::HashMap;
-    use libc::c_double;
+    use std::os::raw::c_double;
     use self::regex::Regex;
     use std::f64::EPSILON;
 

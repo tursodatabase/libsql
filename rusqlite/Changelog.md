@@ -8,6 +8,7 @@
 * Clarifies supported SQLite versions. Running with SQLite older than 3.6.8 now panics, and
   some features will not compile unless a sufficiently-recent SQLite version is used. See
   the README for requirements of particular features.
+* Removes the `libc` dependency in favor of using `std::os::raw`
 
 # Version 0.9.5 (2017-01-26)
 

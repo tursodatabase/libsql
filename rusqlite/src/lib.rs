@@ -52,7 +52,6 @@
 //! ```
 #![allow(unknown_lints)]
 
-extern crate libc;
 extern crate libsqlite3_sys as ffi;
 extern crate lru_cache;
 #[macro_use]
@@ -74,7 +73,7 @@ use std::result;
 use std::str;
 use std::sync::{Once, ONCE_INIT};
 use std::sync::atomic::{AtomicBool, ATOMIC_BOOL_INIT, Ordering};
-use libc::{c_int, c_char, c_void};
+use std::os::raw::{c_int, c_char, c_void};
 
 use types::{ToSql, ToSqlOutput, FromSql, FromSqlError, ValueRef};
 use error::{error_from_sqlite_code, error_from_handle};
@@ -534,7 +533,7 @@ bitflags! {
     #[doc = "Flags for opening SQLite database connections."]
     #[doc = "See [sqlite3_open_v2](http://www.sqlite.org/c3ref/open.html) for details."]
     #[repr(C)]
-    pub flags OpenFlags: ::libc::c_int {
+    pub flags OpenFlags: ::std::os::raw::c_int {
         const SQLITE_OPEN_READ_ONLY     = 0x00000001,
         const SQLITE_OPEN_READ_WRITE    = 0x00000002,
         const SQLITE_OPEN_CREATE        = 0x00000004,
@@ -742,7 +741,7 @@ impl InnerConnection {
                 Ok(())
             } else {
                 let message = errmsg_to_string(&*errmsg);
-                ffi::sqlite3_free(errmsg as *mut libc::c_void);
+                ffi::sqlite3_free(errmsg as *mut ::std::os::raw::c_void);
                 Err(error_from_sqlite_code(r, Some(message)))
             }
         }
@@ -1357,7 +1356,7 @@ mod test {
         let raw_stmt = {
             use std::mem;
             use std::ptr;
-            use libc::c_int;
+            use std::os::raw::c_int;
             use super::str_to_cstring;
 
             let raw_db = db.db.borrow_mut().db;

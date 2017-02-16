@@ -15,6 +15,3 @@ bundled = []
 bindgen = "0.21"
 pkg-config = "0.3"
 gcc = "0.3"
-
-[dependencies]
-libc = "0.2"
