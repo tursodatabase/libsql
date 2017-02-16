@@ -1,5 +1,5 @@
-C Change\stwo\sMallocZero()\scalls\sinto\sMallocRaw()\sto\savoid\sunnecessary\smemset().
-D 2017-02-16T17:18:07.363
+C Change\sthe\sname\sof\sWhereInfo.pDistinctSet\sto\spResultSet,\ssince\sit\sis\snow\nused\sfor\smore\sthan\sjust\sDISTINCT\sprocessing.
+D 2017-02-16T20:52:52.517
 F Makefile.in edb6bcdd37748d2b1c3422ff727c748df7ffe918
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 067a6766f800cc8d72845ab61f8de4ffe8f3fc99
@@ -475,8 +475,8 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 40c543f0a2195d1b0dc88ef12142bea690009344
 F src/wal.h 06b2a0b599cc0f53ea97f497cf8c6b758c999f71
 F src/walker.c 91a6df7435827e41cff6bb7df50ea00934ee78b0
-F src/where.c 6397fab50fdbf9bde76c574ce07b3b776eb28b34
-F src/whereInt.h 2bcc3d176e6091cb8f50a30b65c006e88a73614d
+F src/where.c 01baf58b72f3ddb7793cdee2871f751e3e09b35e
+F src/whereInt.h c0b092180f04608d80c258174b0a14a1f9c8d02f
 F src/wherecode.c 677e95413c472c0b413023b6b69a47f40fce1b04
 F src/whereexpr.c 130cdd1a43af71b19755270fb1224874cf55158c
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1556,7 +1556,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bb8e264227175fc93f1c86a0083f8ad6c4ce2dc7
-R 99427a1cfe699c929367ef60ee07c16f
+P ff5e733cbffd73faa4046e0f1c7f24bb6e131738
+R 771ea12d7c4097594afa32049854d91e
 U drh
-Z 3888dc5073b69fac4d8570651367948c
+Z f13a633082a8173e1922e71dbb49e7e9
