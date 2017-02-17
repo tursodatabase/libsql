@@ -71,11 +71,11 @@ static const char *const pragCName[] = {
   /*   4 */ "notnull",    
   /*   5 */ "dflt_value", 
   /*   6 */ "pk",         
-  /*   7 */ "table",       /* Used by: stats */
-  /*   8 */ "index",      
-  /*   9 */ "width",      
-  /*  10 */ "height",     
-  /*  11 */ "flags",      
+  /*   7 */ "tbl",         /* Used by: stats */
+  /*   8 */ "idx",        
+  /*   9 */ "wdth",       
+  /*  10 */ "hght",       
+  /*  11 */ "flgs",       
   /*  12 */ "seqno",       /* Used by: index_info */
   /*  13 */ "cid",        
   /*  14 */ "name",       
