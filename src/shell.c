@@ -4614,7 +4614,7 @@ static int do_meta_command(char *zLine, ShellState *p){
 
 #if defined(SQLITE_DEBUG) && defined(SQLITE_ENABLE_SELECTTRACE)
   if( c=='s' && n==11 && strncmp(azArg[0], "selecttrace", n)==0 ){
-    sqlite3SelectTrace = integerValue(azArg[1]);
+    sqlite3SelectTrace = (int)integerValue(azArg[1]);
   }else
 #endif
 
