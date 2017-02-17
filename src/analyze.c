@@ -1532,7 +1532,11 @@ static int analysisLoader(void *pData, int argc, char **argv, char **NotUsed){
 #endif
     pIndex->bUnordered = 0;
     decodeIntArray((char*)z, nCol, aiRowEst, pIndex->aiRowLogEst, pIndex);
-    if( pIndex->pPartIdxWhere==0 ) pTable->nRowLogEst = pIndex->aiRowLogEst[0];
+    pIndex->hasStat1 = 1;
+    if( pIndex->pPartIdxWhere==0 ){
+      pTable->nRowLogEst = pIndex->aiRowLogEst[0];
+      pTable->tabFlags |= TF_HasStat1;
+    }
   }else{
     Index fakeIdx;
     fakeIdx.szIdxRow = pTable->szTabRow;
@@ -1541,6 +1545,7 @@ static int analysisLoader(void *pData, int argc, char **argv, char **NotUsed){
 #endif
     decodeIntArray((char*)z, 1, 0, &pTable->nRowLogEst, &fakeIdx);
     pTable->szTabRow = fakeIdx.szIdxRow;
+    pTable->tabFlags |= TF_HasStat1;
   }
 
   return 0;
@@ -1835,15 +1840,20 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
   HashElem *i;
   char *zSql;
   int rc = SQLITE_OK;
+  Schema *pSchema = db->aDb[iDb].pSchema;
 
   assert( iDb>=0 && iDb<db->nDb );
   assert( db->aDb[iDb].pBt!=0 );
 
   /* Clear any prior statistics */
   assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
-  for(i=sqliteHashFirst(&db->aDb[iDb].pSchema->idxHash);i;i=sqliteHashNext(i)){
+  for(i=sqliteHashFirst(&pSchema->tblHash); i; i=sqliteHashNext(i)){
+    Table *pTab = sqliteHashData(i);
+    pTab->tabFlags &= ~TF_HasStat1;
+  }
+  for(i=sqliteHashFirst(&pSchema->idxHash); i; i=sqliteHashNext(i)){
     Index *pIdx = sqliteHashData(i);
-    pIdx->aiRowLogEst[0] = 0;
+    pIdx->hasStat1 = 0;
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
     sqlite3DeleteIndexSamples(db, pIdx);
     pIdx->aSample = 0;
@@ -1866,9 +1876,9 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
 
   /* Set appropriate defaults on all indexes not in the sqlite_stat1 table */
   assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
-  for(i=sqliteHashFirst(&db->aDb[iDb].pSchema->idxHash);i;i=sqliteHashNext(i)){
+  for(i=sqliteHashFirst(&pSchema->idxHash); i; i=sqliteHashNext(i)){
     Index *pIdx = sqliteHashData(i);
-    if( pIdx->aiRowLogEst[0]==0 ) sqlite3DefaultRowEst(pIdx);
+    if( !pIdx->hasStat1 ) sqlite3DefaultRowEst(pIdx);
   }
 
   /* Load the statistics from the sqlite_stat4 table. */
@@ -1878,7 +1888,7 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
     rc = loadStat4(db, sInfo.zDatabase);
     db->lookaside.bDisable--;
   }
-  for(i=sqliteHashFirst(&db->aDb[iDb].pSchema->idxHash);i;i=sqliteHashNext(i)){
+  for(i=sqliteHashFirst(&pSchema->idxHash); i; i=sqliteHashNext(i)){
     Index *pIdx = sqliteHashData(i);
     sqlite3_free(pIdx->aiRowEst);
     pIdx->aiRowEst = 0;
