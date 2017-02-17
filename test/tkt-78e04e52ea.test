@@ -42,7 +42,7 @@ do_test tkt-78e04-1.3 {
 } {}
 do_test tkt-78e04-1.4 {
   execsql {
-    EXPLAIN QUERY PLAN SELECT "" FROM "" WHERE "" LIKE 'abc%';
+    EXPLAIN QUERY PLAN SELECT "" FROM "" WHERE "" LIKE '1abc%';
   }
 } {0 0 0 {SCAN TABLE  USING COVERING INDEX i1}}
 do_test tkt-78e04-1.5 {
