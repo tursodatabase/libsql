@@ -361,6 +361,9 @@ set pragma_def {
 
   NAME: threads
   FLAG: Result0
+
+  NAME: analyze_as_needed
+  FLAG: NoColumns
 }
 
 # Open the output file

@@ -1829,6 +1829,14 @@ void sqlite3Pragma(
   }
 
   /*
+  **  PRAGMA analyze_as_needed
+  */
+  case PragTyp_ANALYZE_AS_NEEDED: {
+    sqlite3Analyze(pParse, 0, 0, 1);
+    break;
+  }
+
+  /*
   **   PRAGMA busy_timeout
   **   PRAGMA busy_timeout = N
   **

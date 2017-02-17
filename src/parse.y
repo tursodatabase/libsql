@@ -1512,8 +1512,8 @@ cmd ::= REINDEX nm(X) dbnm(Y).  {sqlite3Reindex(pParse, &X, &Y);}
 
 /////////////////////////////////// ANALYZE ///////////////////////////////////
 %ifndef SQLITE_OMIT_ANALYZE
-cmd ::= ANALYZE.                {sqlite3Analyze(pParse, 0, 0);}
-cmd ::= ANALYZE nm(X) dbnm(Y).  {sqlite3Analyze(pParse, &X, &Y);}
+cmd ::= ANALYZE.                {sqlite3Analyze(pParse, 0, 0, 0);}
+cmd ::= ANALYZE nm(X) dbnm(Y).  {sqlite3Analyze(pParse, &X, &Y, 0);}
 %endif
 
 //////////////////////// ALTER TABLE table ... ////////////////////////////////

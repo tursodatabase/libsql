@@ -4028,7 +4028,7 @@ void sqlite3AlterFinishAddColumn(Parse *, Token *);
 void sqlite3AlterBeginAddColumn(Parse *, SrcList *);
 CollSeq *sqlite3GetCollSeq(Parse*, u8, CollSeq *, const char*);
 char sqlite3AffinityType(const char*, u8*);
-void sqlite3Analyze(Parse*, Token*, Token*);
+void sqlite3Analyze(Parse*, Token*, Token*, int);
 int sqlite3InvokeBusyHandler(BusyHandler*);
 int sqlite3FindDb(sqlite3*, Token*);
 int sqlite3FindDbName(sqlite3 *, const char *);
