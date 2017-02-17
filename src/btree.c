@@ -5320,6 +5320,25 @@ int sqlite3BtreeEof(BtCursor *pCur){
 }
 
 /*
+** Return an estimate for the number of rows in the table that pCur is
+** pointing to.  Return a negative number if no estimate is currently 
+** available.
+*/
+i64 sqlite3BtreeRowCountEst(BtCursor *pCur){
+  i64 n;
+  u8 i;
+
+  assert( cursorOwnsBtShared(pCur) );
+  assert( sqlite3_mutex_held(pCur->pBtree->db->mutex) );
+  if( pCur->eState!=CURSOR_VALID ) return -1;
+  if( pCur->apPage[pCur->iPage-1]->leaf==0 ) return -1;
+  for(n=1, i=0; i<pCur->iPage; i++){
+    n *= pCur->apPage[i]->nCell;
+  }
+  return n;
+}
+
+/*
 ** Advance the cursor to the next entry in the database.  If
 ** successful then set *pRes=0.  If the cursor
 ** was already pointing to the last entry in the database before

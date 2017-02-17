@@ -958,10 +958,12 @@ static void analyzeOneTable(
   Index *pOnlyIdx, /* If not NULL, only analyze this one index */
   int iStatCur,    /* Index of VdbeCursor that writes the sqlite_stat1 table */
   int iMem,        /* Available memory locations begin here */
-  int iTab         /* Next available cursor */
+  int iTab,        /* Next available cursor */
+  LogEst szOld     /* Run the analysis if table row count is larger than this */
 ){
   sqlite3 *db = pParse->db;    /* Database handle */
   Index *pIdx;                 /* An index to being analyzed */
+  int addrSizeCk = 0;          /* Address of the IfSmaller */
   int iIdxCur;                 /* Cursor open on index being analyzed */
   int iTabCur;                 /* Table cursor */
   Vdbe *v;                     /* The virtual machine being built up */
@@ -1014,6 +1016,9 @@ static void analyzeOneTable(
   iIdxCur = iTab++;
   pParse->nTab = MAX(pParse->nTab, iTab);
   sqlite3OpenTable(pParse, iTabCur, iDb, pTab, OP_OpenRead);
+  if( szOld>0 ){
+    addrSizeCk = sqlite3VdbeAddOp3(v, OP_IfSmaller, iTabCur, 0, szOld);
+   }
   sqlite3VdbeLoadString(v, regTabname, pTab->zName);
 
   for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
@@ -1271,6 +1276,7 @@ static void analyzeOneTable(
     sqlite3VdbeChangeP5(v, OPFLAG_APPEND);
     sqlite3VdbeJumpHere(v, jZeroRows);
   }
+  sqlite3VdbeJumpHere(v, addrSizeCk);
 }
 
 
@@ -1286,16 +1292,33 @@ static void loadAnalysis(Parse *pParse, int iDb){
 }
 
 /*
-** Return true if table pTab is in need of being reanalyzed.
+** Return true if table pTab might need to being reanalyzed.  Return
+** false if we know that pTab should not be reanalyzed.
+**
+** If returning true, also set *pThreshold to a size threshold that
+** will determine at run-time whether or not the reanalysis occurs.
+** The reanalysis will only occur if the size of the table is greater
+** than the threshold. Not that the threshold is a logarithmic LogEst
+** value.
 */
-static int analyzeNeeded(Table *pTab){
+static int analyzeNeeded(Table *pTab, LogEst *pThreshold){
   Index *pIdx;
   if( (pTab->tabFlags & TF_StatsUsed)==0 ) return 0;
-  if( (pTab->tabFlags & TF_SizeChng)!=0 ) return 1;
+
+  /* If TF_StatsUsed is true, then we might need to reanalyze.  But
+  ** only reanalyze if the table size has grown by a factor of 10 or more */
+  *pThreshold = pTab->nRowLogEst + 33;  assert( sqlite3LogEst(10)==33 );
+
+  /* Except, if any of the indexes of the table do not have valid
+  ** sqlite_stat1 entries, then set the size threshold to zero to
+  ** ensure the analysis will always occur. */
   for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-    if( !pIdx->hasStat1 ) return 1;
+    if( !pIdx->hasStat1 ){
+      *pThreshold = 0;
+      break;
+    }
   }
-  return 0;
+  return 1;
 }
 
 /*
@@ -1329,7 +1352,8 @@ static int analyzeDatabase(Parse *pParse, int iDbReq, int onlyIfNeeded){
     cnt = 0;
     for(k=sqliteHashFirst(&pSchema->tblHash); k; k=sqliteHashNext(k)){
       Table *pTab = (Table*)sqliteHashData(k);
-      if( !onlyIfNeeded || analyzeNeeded(pTab) ){
+      LogEst szThreshold = 0;
+      if( !onlyIfNeeded || analyzeNeeded(pTab, &szThreshold) ){
         if( cnt==0 ){
           sqlite3BeginWriteOperation(pParse, 0, iDb);
           iStatCur = pParse->nTab;
@@ -1338,7 +1362,7 @@ static int analyzeDatabase(Parse *pParse, int iDbReq, int onlyIfNeeded){
           iMem = pParse->nMem+1;
           iTab = pParse->nTab;
         }
-        analyzeOneTable(pParse, pTab, 0, iStatCur, iMem, iTab);
+        analyzeOneTable(pParse, pTab, 0, iStatCur, iMem, iTab, szThreshold);
         cnt++;
         allCnt++;
       }
@@ -1368,7 +1392,8 @@ static void analyzeTable(Parse *pParse, Table *pTab, Index *pOnlyIdx){
   }else{
     openStatTable(pParse, iDb, iStatCur, pTab->zName, "tbl");
   }
-  analyzeOneTable(pParse, pTab, pOnlyIdx, iStatCur,pParse->nMem+1,pParse->nTab);
+  analyzeOneTable(pParse, pTab, pOnlyIdx, iStatCur,pParse->nMem+1,
+                  pParse->nTab, 0);
   loadAnalysis(pParse, iDb);
 }
 

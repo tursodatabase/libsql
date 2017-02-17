@@ -1887,8 +1887,7 @@ struct Table {
 #define TF_WithoutRowid    0x0020    /* No rowid.  PRIMARY KEY is the key */
 #define TF_NoVisibleRowid  0x0040    /* No user-visible "rowid" column */
 #define TF_OOOHidden       0x0080    /* Out-of-Order hidden columns */
-#define TF_SizeChng        0x0100    /* nRowLogEst might be inaccurate */
-#define TF_StatsUsed       0x0200    /* Query planner decisions affected by
+#define TF_StatsUsed       0x0100    /* Query planner decisions affected by
                                      ** Index.aiRowLogEst[] values */
 
 /*

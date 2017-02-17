@@ -4847,6 +4847,33 @@ case OP_Last: {        /* jump */
   break;
 }
 
+/* Opcode: IfSmaller P1 P2 P3 * *
+**
+** Estimate the number of rows in the table P1.  Jump to P2 if that
+** estimate is less than approximately 2**(0.1*P3).
+*/
+case OP_IfSmaller: {        /* jump */
+  VdbeCursor *pC;
+  BtCursor *pCrsr;
+  int res;
+  i64 sz;
+
+  assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  pC = p->apCsr[pOp->p1];
+  assert( pC!=0 );
+  pCrsr = pC->uc.pCursor;
+  assert( pCrsr );
+  rc = sqlite3BtreeFirst(pCrsr, &res);
+  if( rc ) goto abort_due_to_error;
+  if( res==0 ){
+    sz = sqlite3BtreeRowCountEst(pCrsr);
+    if( ALWAYS(sz>=0) && sqlite3LogEst((u64)sz)<pOp->p3 ) res = 1;
+  }
+  VdbeBranchTaken(res!=0,2);
+  if( res ) goto jump_to_p2;
+  break;
+}
+
 
 /* Opcode: SorterSort P1 P2 * * *
 **
