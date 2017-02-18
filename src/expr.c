@@ -4153,6 +4153,104 @@ void sqlite3ExprCodeAndCache(Parse *pParse, Expr *pExpr, int target){
 }
 
 /*
+** Return the value of (*p1) - (*p2), as defined by the sort order described
+** in the comment above reorderColumnFetch(). 
+*/
+static int compareOpCode(VdbeOp *p1, VdbeOp *p2){
+  int res;
+
+  assert( p1->opcode==OP_Column || p1->opcode==OP_VColumn
+       || p1->opcode==OP_Copy   || p1->opcode==OP_SCopy
+       || p1->opcode==OP_Rowid  || p1->opcode==OP_RealAffinity
+  );
+  assert( p2->opcode==OP_Column || p2->opcode==OP_VColumn
+       || p2->opcode==OP_Copy   || p2->opcode==OP_SCopy
+       || p2->opcode==OP_Rowid  || p2->opcode==OP_RealAffinity
+  );
+
+  assert( OP_VColumn>OP_Column && OP_Rowid>OP_Column );
+  assert( OP_Column>OP_RealAffinity );
+  assert( OP_RealAffinity>OP_Copy && OP_RealAffinity>OP_SCopy );
+
+  res = (int)(p2->opcode) - (int)(p1->opcode);
+  if( res==0 ){
+    res = p1->p1 - p2->p1;
+    if( res==0 ){
+      res = p2->p2 - p1->p2;
+    }
+  }
+  return res;
+}
+
+/*
+** The VM instructions from iFirst to the current address were generated
+** in order to populate an array of registers with the results of a series
+** of TK_COLUMN expressions. This guarantees that the specified range 
+** contains opcodes of the following types only:
+**
+**   Rowid
+**   Column
+**   VColumn
+**   RealAffinity
+**   Copy
+**   SCopy
+**
+** This function sorts the opcodes so all of the OP_Column appear in a
+** contiguous block, sorted by (p1, p2 DESC). The VDBE layer processes
+** OP_Column instructions in this order more efficiently.
+**
+** In practice, the array is sorted so that all instructions of each type 
+** of opcode are arranged into a contiguous group. Given the following,
+** this is a safe re-ordering:
+**
+**   * All Rowid, VColumn and Column instructions appear before all 
+**     RealAffinity instructions (that might operate on the result of
+**     a VColumn or Column), and
+**
+**   * All RealAffinity instructions occur before all Copy and SCopy
+**     instructions (which might read a column-cache entry populated
+**     by a prior Column+RealAffinity).
+*/
+static void reorderColumnFetch(sqlite3 *db, Vdbe *v, int iFirst){
+  int iEnd = sqlite3VdbeCurrentAddr(v);
+  int nOp = iEnd-iFirst;
+  if( nOp>1 ){
+    VdbeOp *aSpace = (VdbeOp*)sqlite3StackAllocRaw(db, sizeof(VdbeOp) * nOp);
+    if( aSpace ){
+      int sz;
+      VdbeOp *aOp = sqlite3VdbeGetOp(v, iFirst);
+      VdbeOp *a1 = aOp;
+      VdbeOp *a2 = aSpace;
+      for(sz=1; sz<nOp; sz=sz*2){
+        int i;
+        for(i=0; i<nOp; i+=(sz*2)){
+          /* Merge the two lists of sz elements each starting at a1[i] and 
+          ** a1[i+sz] into a sz element list at a2[i].  */
+          int e1 = MIN(i+sz, nOp);
+          int e2 = MIN(i+sz*2, nOp);
+          int i2 = i+sz;
+          int i1 = i;
+          int iOut = i;
+
+          while( i1<e1 || i2<e2 ){
+            if( i1>=e1 || (i2<e2 && compareOpCode(&a1[i2], &a1[i1])<0) ){
+              a2[iOut++] = a1[i2++];
+            }else{
+              a2[iOut++] = a1[i1++];
+            }
+          }
+        }
+        SWAP(VdbeOp*, a1, a2);
+      }
+      if( a1!=aOp ){
+        memcpy(aOp, a1, sizeof(VdbeOp)*nOp);
+      }
+      sqlite3StackFree(db, aSpace);
+    }
+  }
+}
+
+/*
 ** Generate code that pushes the value of every element of the given
 ** expression list into a sequence of registers beginning at target.
 **
@@ -4177,6 +4275,7 @@ int sqlite3ExprCodeExprList(
 ){
   struct ExprList_item *pItem;
   int i, j, n;
+  int iFirst = -1;
   u8 copyOp = (flags & SQLITE_ECEL_DUP) ? OP_Copy : OP_SCopy;
   Vdbe *v = pParse->pVdbe;
   assert( pList!=0 );
@@ -4186,6 +4285,14 @@ int sqlite3ExprCodeExprList(
   if( !ConstFactorOk(pParse) ) flags &= ~SQLITE_ECEL_FACTOR;
   for(pItem=pList->a, i=0; i<n; i++, pItem++){
     Expr *pExpr = pItem->pExpr;
+    if( iFirst>0 ){
+      if( pExpr->op!=TK_COLUMN ){
+        reorderColumnFetch(pParse->db, v, iFirst);
+        iFirst = -1;
+      }
+    }else{
+      if( pExpr->op==TK_COLUMN ) iFirst = sqlite3VdbeCurrentAddr(v);
+    }
     if( (flags & SQLITE_ECEL_REF)!=0 && (j = pItem->u.x.iOrderByCol)>0 ){
       if( flags & SQLITE_ECEL_OMITREF ){
         i--;
@@ -4211,6 +4318,7 @@ int sqlite3ExprCodeExprList(
       }
     }
   }
+  if( iFirst>0 ) reorderColumnFetch(pParse->db, v, iFirst);
   return n;
 }
 

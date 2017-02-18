@@ -547,7 +547,11 @@ void sqlite3Update(
   newmask = sqlite3TriggerColmask(
       pParse, pTrigger, pChanges, 1, TRIGGER_BEFORE, pTab, onError
   );
+#if 1
+  for(i=pTab->nCol-1; i>=0; i--){
+#else
   for(i=0; i<pTab->nCol; i++){
+#endif
     if( i==pTab->iPKey ){
       sqlite3VdbeAddOp2(v, OP_Null, 0, regNew+i);
     }else{

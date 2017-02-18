@@ -618,6 +618,13 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
     }
     if( pOp==p->aOp ) break;
     pOp--;
+
+    if( p->usesAltMap==0 
+     && pOp[0].opcode==OP_Column && pOp[1].opcode==OP_Column
+     && pOp[0].p1==pOp[1].p1 && pOp[0].p2>=pOp[1].p2
+    ){
+      pOp->p5 |= OPFLAG_CONTINUE;
+    }
   }
   sqlite3DbFree(p->db, pParse->aLabel);
   pParse->aLabel = 0;
@@ -4557,6 +4564,12 @@ void sqlite3VdbeSetVarmask(Vdbe *v, int iVar){
   }
 }
 
+/*
+** Set the "uses-alt-map" flag.
+*/
+void sqlite3VdbeUsesAltMap(Vdbe *v){
+  v->usesAltMap = 1;
+}
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 /*
 ** Transfer error message text from an sqlite3_vtab.zErrMsg (text stored

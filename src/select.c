@@ -1274,15 +1274,22 @@ static void generateSortTail(
     iSortTab = iTab;
     bSeq = 1;
   }
-  for(i=0, iCol=nKey+bSeq; i<nSortData; i++){
-    int iRead;
-    if( aOutEx[i].u.x.iOrderByCol ){
-      iRead = aOutEx[i].u.x.iOrderByCol-1;
-    }else{
-      iRead = iCol++;
+  iCol = nKey+bSeq;
+  for(i=0; i<nSortData; i++){
+    if( aOutEx[i].u.x.iOrderByCol==0 ) iCol++;
+  }
+  for(i=nSortData-1; i>=0; i--){
+    if( aOutEx[i].u.x.iOrderByCol==0 ){
+      sqlite3VdbeAddOp3(v, OP_Column, iSortTab, --iCol, regRow+i);
+      VdbeComment((v, "%s", aOutEx[i].zName?aOutEx[i].zName:aOutEx[i].zSpan));
     }
-    sqlite3VdbeAddOp3(v, OP_Column, iSortTab, iRead, regRow+i);
-    VdbeComment((v, "%s", aOutEx[i].zName ? aOutEx[i].zName : aOutEx[i].zSpan));
+  }
+  for(i=nSortData-1; i>=0; i--){
+    if( aOutEx[i].u.x.iOrderByCol ){
+      int iRead = aOutEx[i].u.x.iOrderByCol-1;
+      sqlite3VdbeAddOp3(v, OP_Column, iSortTab, iRead, regRow+i);
+      VdbeComment((v, "%s", aOutEx[i].zName?aOutEx[i].zName:aOutEx[i].zSpan));
+    }
   }
   switch( eDest ){
     case SRT_Table:

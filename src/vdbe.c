@@ -553,7 +553,6 @@ static Mem *out2Prerelease(Vdbe *p, VdbeOp *pOp){
   }
 }
 
-
 /*
 ** Execute as much of a VDBE program as we can.
 ** This is the core of sqlite3_step().  
@@ -2627,27 +2626,42 @@ case OP_Column: {
   if( pC->szRow>=aOffset[p2+1] ){
     /* This is the common case where the desired content fits on the original
     ** page - where the content is not on an overflow page */
-    zData = pC->aRow + aOffset[p2];
-    if( t<12 ){
-      sqlite3VdbeSerialGet(zData, t, pDest);
-    }else{
-      /* If the column value is a string, we need a persistent value, not
-      ** a MEM_Ephem value.  This branch is a fast short-cut that is equivalent
-      ** to calling sqlite3VdbeSerialGet() and sqlite3VdbeDeephemeralize().
-      */
-      static const u16 aFlag[] = { MEM_Blob, MEM_Str|MEM_Term };
-      pDest->n = len = (t-12)/2;
-      pDest->enc = encoding;
-      if( pDest->szMalloc < len+2 ){
-        pDest->flags = MEM_Null;
-        if( sqlite3VdbeMemGrow(pDest, len+2, 0) ) goto no_mem;
+    while( 1 ){
+      zData = pC->aRow + aOffset[p2];
+      if( t<12 ){
+        sqlite3VdbeSerialGet(zData, t, pDest);
       }else{
-        pDest->z = pDest->zMalloc;
+        /* If the column value is a string, we need a persistent value, not
+        ** a MEM_Ephem value.  This branch is a fast short-cut that is
+        ** equivalent to calling sqlite3VdbeSerialGet() and
+        ** sqlite3VdbeDeephemeralize().
+        */
+        static const u16 aFlag[] = { MEM_Blob, MEM_Str|MEM_Term };
+        pDest->n = len = (t-12)/2;
+        pDest->enc = encoding;
+        if( pDest->szMalloc < len+2 ){
+          pDest->flags = MEM_Null;
+          if( sqlite3VdbeMemGrow(pDest, len+2, 0) ) goto no_mem;
+        }else{
+          pDest->z = pDest->zMalloc;
+        }
+        memcpy(pDest->z, zData, len);
+        pDest->z[len] = 0;
+        pDest->z[len+1] = 0;
+        pDest->flags = aFlag[t&1];
       }
-      memcpy(pDest->z, zData, len);
-      pDest->z[len] = 0;
-      pDest->z[len+1] = 0;
-      pDest->flags = aFlag[t&1];
+
+      if( (pOp->p5 & OPFLAG_CONTINUE)==0 ) break;
+      UPDATE_MAX_BLOBSIZE(pDest);
+      REGISTER_TRACE(pOp->p3, pDest);
+      pOp++;
+      p2 = pOp->p2;
+      t = pC->aType[p2];
+      pDest = &aMem[pOp->p3];
+      memAboutToChange(p, pDest);
+      if( VdbeMemDynamic(pDest) ){
+        sqlite3VdbeMemSetNull(pDest);
+      }
     }
   }else{
     pDest->enc = encoding;

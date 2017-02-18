@@ -1003,6 +1003,7 @@ static void codeDeferredSeek(
       }
       sqlite3VdbeChangeP4(v, -1, (char*)ai, P4_INTARRAY);
     }
+    sqlite3VdbeUsesAltMap(v);
   }
 }
 

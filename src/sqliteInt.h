@@ -3081,6 +3081,8 @@ struct AuthContext {
 #define OPFLAG_SAVEPOSITION  0x02    /* OP_Delete/Insert: save cursor pos */
 #define OPFLAG_AUXDELETE     0x04    /* OP_Delete: index in a DELETE op */
 
+#define OPFLAG_CONTINUE      0x01
+
 /*
  * Each trigger present in the database schema is stored as an instance of
  * struct Trigger.
