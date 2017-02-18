@@ -1832,7 +1832,7 @@ void sqlite3Pragma(
   **  PRAGMA analyze_as_needed
   */
   case PragTyp_ANALYZE_AS_NEEDED: {
-    sqlite3Analyze(pParse, 0, 0, 1);
+    sqlite3AnalyzeDatabase(pParse, zDb ? iDb : -1, 1);
     break;
   }
 
