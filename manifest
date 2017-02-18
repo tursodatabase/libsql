@@ -1,5 +1,5 @@
-C Add\sthe\sOP_SqlExec\sopcode\sand\suse\sit\sto\simplement\s"PRAGMA\sanalyze_as_needed",\ninvoking\sANALYZE\ssubcommands\sas\snecessary.\s\sThis\ssimplifies\sthe\simplementation.
-D 2017-02-18T15:58:52.451
+C Updated\scomments.\s\sNo\scode\schanges.
+D 2017-02-18T22:52:40.654
 F Makefile.in edb6bcdd37748d2b1c3422ff727c748df7ffe918
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a89ea37ab5928026001569f056973b9059492fe2
@@ -387,7 +387,7 @@ F src/parse.y 591704fce84f814d9a3642774c1f011d38f4149c
 F src/pcache.c 62835bed959e2914edd26afadfecce29ece0e870
 F src/pcache.h 2cedcd8407eb23017d92790b112186886e179490
 F src/pcache1.c e3967219b2a92b9edcb9324a4ba75009090d3953
-F src/pragma.c 1ed159f6fed5af7f5b095f55bdefcb0848956397
+F src/pragma.c 8a35509e8f60746fbdcde5312ddfd177c46c7e9c
 F src/pragma.h 065e184494f12e94111da1ab6984faa7b6142e68
 F src/prepare.c b1140c3d0cf59bc85ace00ce363153041b424b7a
 F src/printf.c 67427bbee66d891fc6f6f5aada857e9cdb368c1c
@@ -1557,7 +1557,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4229caec0b60a1617b9d5ff94b47271cbd7be1e0
-R 03be76497e56750b0101f816e3587990
+P d386015f5e7ecdd951d70db56b7bbd858be7ad90
+R bb5056af5425096e2e052e924ae83b2e
 U drh
-Z 8d178351b984357dd4d18d50fe476798
+Z a573182d78be17d037798d5840f110fc

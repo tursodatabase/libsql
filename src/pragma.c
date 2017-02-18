@@ -1830,16 +1830,33 @@ void sqlite3Pragma(
 
   /*
   **  PRAGMA analyze_as_needed
+  **  PRAGMA schema.analyze_as_needed
+  **
+  ** This pragma runs ANALYZE on any tables which would have benefitted
+  ** from having recent statistics at some point since the start of the
+  ** current connection.  Only tables in "schema" are analyzed in the 
+  ** second form.  In the first form, all tables except TEMP tables are
+  ** checked.
+  **
+  ** A table is analyzed only if both of the following are true:
+  **
+  ** (1) The query planner used sqlite_stat1-style statistics for one or
+  **     more indexes of the table at some point during the lifetime of
+  **     the current connection.
+  **
+  ** (2) One or more indexes of the table are currently unanalyzed OR
+  **     the number of rows in the table has increased by 25 times or more
+  **     since the last time ANALYZE was run.
   */
   case PragTyp_ANALYZE_AS_NEEDED: {
-    int iDbLast;
-    int iTabCur;
-    HashElem *k;
-    Schema *pSchema;
-    Table *pTab;
-    Index *pIdx;
-    LogEst szThreshold;
-    char *zSubSql;
+    int iDbLast;           /* Loop termination point for the schema loop */
+    int iTabCur;           /* Cursor for a table whose size needs checking */
+    HashElem *k;           /* Loop over tables of a schema */
+    Schema *pSchema;       /* The current schema */
+    Table *pTab;           /* A table in the schema */
+    Index *pIdx;           /* An index of the table */
+    LogEst szThreshold;    /* Size threshold above which reanalysis is needd */
+    char *zSubSql;         /* SQL statement for the OP_SqlExec opcode */
 
     iTabCur = pParse->nTab++;
     for(iDbLast = zDb?iDb:db->nDb-1; iDb<=iDbLast; iDb++){
@@ -1848,11 +1865,17 @@ void sqlite3Pragma(
       pSchema = db->aDb[iDb].pSchema;
       for(k=sqliteHashFirst(&pSchema->tblHash); k; k=sqliteHashNext(k)){
         pTab = (Table*)sqliteHashData(k);
+
+        /* If table pTab has not been used in a way that would benefit from
+        ** having analysis statistics during the current session, then skip it.
+        ** This also has the effect of skipping virtual tables and views */
         if( (pTab->tabFlags & TF_StatsUsed)==0 ) continue;
+
+        /* Reanalyze if the table is 25 times larger than the last analysis */
         szThreshold = pTab->nRowLogEst + 46; assert( sqlite3LogEst(25)==46 );
         for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
           if( !pIdx->hasStat1 ){
-            szThreshold = 0;
+            szThreshold = 0; /* Always analyze if any index lacks statistics */
             break;
           }
         }
