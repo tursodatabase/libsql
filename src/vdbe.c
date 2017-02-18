@@ -5518,6 +5518,16 @@ case OP_CreateTable: {          /* out2 */
   break;
 }
 
+/* Opcode: SqlExec * * * P4 *
+**
+** Run the SQL statement or statements specified in the P4 string.
+*/
+case OP_SqlExec: {
+  rc = sqlite3_exec(db, pOp->p4.z, 0, 0, 0);
+  if( rc ) goto abort_due_to_error;
+  break;
+}
+
 /* Opcode: ParseSchema P1 * * P4 *
 **
 ** Read and parse all entries from the SQLITE_MASTER table of database P1

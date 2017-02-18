@@ -958,12 +958,10 @@ static void analyzeOneTable(
   Index *pOnlyIdx, /* If not NULL, only analyze this one index */
   int iStatCur,    /* Index of VdbeCursor that writes the sqlite_stat1 table */
   int iMem,        /* Available memory locations begin here */
-  int iTab,        /* Next available cursor */
-  LogEst szOld     /* Run the analysis if table row count is larger than this */
+  int iTab         /* Next available cursor */
 ){
   sqlite3 *db = pParse->db;    /* Database handle */
   Index *pIdx;                 /* An index to being analyzed */
-  int addrSizeCk = 0;          /* Address of the IfSmaller */
   int iIdxCur;                 /* Cursor open on index being analyzed */
   int iTabCur;                 /* Table cursor */
   Vdbe *v;                     /* The virtual machine being built up */
@@ -971,7 +969,6 @@ static void analyzeOneTable(
   int jZeroRows = -1;          /* Jump from here if number of rows is zero */
   int iDb;                     /* Index of database containing pTab */
   u8 needTableCnt = 1;         /* True to count the table */
-  int regWorkDone = iMem++;    /* Set to 1 if any work is done */
   int regNewRowid = iMem++;    /* Rowid for the inserted record */
   int regStat4 = iMem++;       /* Register to hold Stat4Accum object */
   int regChng = iMem++;        /* Index of changed index field */
@@ -1017,10 +1014,6 @@ static void analyzeOneTable(
   iIdxCur = iTab++;
   pParse->nTab = MAX(pParse->nTab, iTab);
   sqlite3OpenTable(pParse, iTabCur, iDb, pTab, OP_OpenRead);
-  if( szOld>0 ){
-    addrSizeCk = sqlite3VdbeAddOp3(v, OP_IfSmaller, iTabCur, 0, szOld);
-    VdbeCoverage(v);
-  }
   sqlite3VdbeLoadString(v, regTabname, pTab->zName);
 
   for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
@@ -1278,107 +1271,43 @@ static void analyzeOneTable(
     sqlite3VdbeChangeP5(v, OPFLAG_APPEND);
     sqlite3VdbeJumpHere(v, jZeroRows);
   }
-  sqlite3VdbeAddOp2(v, OP_Integer, 1, regWorkDone);
-  VdbeComment((v, "work was done"));
-  sqlite3VdbeJumpHere(v, addrSizeCk);
 }
 
-/*
-** Return true if table pTab might need to being reanalyzed.  Return
-** false if we know that pTab should not be reanalyzed.
-**
-** If returning true, also set *pThreshold to a size threshold that
-** will determine at run-time whether or not the reanalysis occurs.
-** The reanalysis will only occur if the size of the table is greater
-** than the threshold. Not that the threshold is a logarithmic LogEst
-** value.
-*/
-static int analyzeNeeded(Table *pTab, LogEst *pThreshold){
-  Index *pIdx;
-  if( (pTab->tabFlags & TF_StatsUsed)==0 ) return 0;
-
-  /* If TF_StatsUsed is true, then we might need to reanalyze.
-  ** TUNING: Only reanalyze if the table size has grown by a factor
-  ** of 25 or more. */
-  *pThreshold = pTab->nRowLogEst + 46;  assert( sqlite3LogEst(25)==46 );
-
-  /* Except, if any of the indexes of the table do not have valid
-  ** sqlite_stat1 entries, then set the size threshold to zero to
-  ** ensure the analysis will always occur. */
-  for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-    if( !pIdx->hasStat1 ){
-      *pThreshold = 0;
-      break;
-    }
-  }
-  return 1;
-}
 
 /*
-** Generate code that will do an analysis of an entire database, or
-** all databases in the connection if iDbReq is negative.
-**
-** If onlyIfNeeded is true, then only run the analysis if SQLite thinks
-** it is actually needed.
+** Generate code that will cause the most recent index analysis to
+** be loaded into internal hash tables where is can be used.
 */
-void sqlite3AnalyzeDatabase(
-  Parse *pParse,       /* The parsing context */
-  int iDbReq,          /* Which schema to analyze. -1 for all (except TEMP) */
-  int onlyIfNeeded     /* Only do the analysis if needed, when true */
-){
-  sqlite3 *db = pParse->db;
-  Schema *pSchema;
-  HashElem *k;
-  int iStatCur = 0;
-  int iMem = 0;
-  int iTab = 0;
-  int iDb;                /* Database currently being analyzed */
-  int iDbFirst, iDbLast;  /* Range of databases to be analyzed */
-  int bStatTabs = 0;
+static void loadAnalysis(Parse *pParse, int iDb){
   Vdbe *v = sqlite3GetVdbe(pParse);
-  int nHit = 0;
-  unsigned char aHit[SQLITE_MAX_ATTACHED+2];
+  if( v ){
+    sqlite3VdbeAddOp1(v, OP_LoadAnalysis, iDb);
+  }
+}
 
-  if( v==0 ) return;
-  if( iDbReq>=0 ){
-    iDbFirst = iDbLast = iDbReq;
-  }else{
-    iDbFirst = 0;
-    iDbLast = db->nDb-1;
+/*
+** Generate code that will do an analysis of an entire database
+*/
+static void analyzeDatabase(Parse *pParse, int iDb){
+  sqlite3 *db = pParse->db;
+  Schema *pSchema = db->aDb[iDb].pSchema;    /* Schema of database iDb */
+  HashElem *k;
+  int iStatCur;
+  int iMem;
+  int iTab;
+
+  sqlite3BeginWriteOperation(pParse, 0, iDb);
+  iStatCur = pParse->nTab;
+  pParse->nTab += 3;
+  openStatTable(pParse, iDb, iStatCur, 0, 0);
+  iMem = pParse->nMem+1;
+  iTab = pParse->nTab;
+  assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
+  for(k=sqliteHashFirst(&pSchema->tblHash); k; k=sqliteHashNext(k)){
+    Table *pTab = (Table*)sqliteHashData(k);
+    analyzeOneTable(pParse, pTab, 0, iStatCur, iMem, iTab);
   }
-  for(iDb=iDbFirst; iDb<=iDbLast; iDb++, bStatTabs=0){
-    if( iDb==1 ) continue;  /* Do not analyze the TEMP database */
-    pSchema = db->aDb[iDb].pSchema;
-    assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
-    for(k=sqliteHashFirst(&pSchema->tblHash); k; k=sqliteHashNext(k)){
-      Table *pTab = (Table*)sqliteHashData(k);
-      LogEst szThreshold = 0;
-      if( !onlyIfNeeded || analyzeNeeded(pTab, &szThreshold) ){
-        if( iMem==0 ){
-          iStatCur = pParse->nTab;
-          pParse->nTab += 3;
-          iMem = pParse->nMem+1;
-          iTab = pParse->nTab;
-          sqlite3VdbeAddOp2(v, OP_Integer, 0, iMem);
-        }
-        if( !bStatTabs ){
-          aHit[nHit++] = iDb;
-          sqlite3BeginWriteOperation(pParse, 0, iDb);
-          openStatTable(pParse, iDb, iStatCur, 0, 0);
-          bStatTabs = 1;
-        }
-        analyzeOneTable(pParse, pTab, 0, iStatCur, iMem, iTab, szThreshold);
-      }
-    }
-  }
-  if( iMem ){
-    int addrTop = sqlite3VdbeAddOp1(v, OP_IfNot, iMem); VdbeCoverage(v);
-    for(iDb=0; iDb<nHit; iDb++){
-      sqlite3VdbeAddOp1(v, OP_LoadAnalysis, aHit[iDb]);
-    }
-    sqlite3VdbeAddOp0(v, OP_Expire);
-    sqlite3VdbeJumpHere(v, addrTop);
-  }
+  loadAnalysis(pParse, iDb);
 }
 
 /*
@@ -1389,7 +1318,6 @@ void sqlite3AnalyzeDatabase(
 static void analyzeTable(Parse *pParse, Table *pTab, Index *pOnlyIdx){
   int iDb;
   int iStatCur;
-  Vdbe *v;
 
   assert( pTab!=0 );
   assert( sqlite3BtreeHoldsAllMutexes(pParse->db) );
@@ -1402,13 +1330,8 @@ static void analyzeTable(Parse *pParse, Table *pTab, Index *pOnlyIdx){
   }else{
     openStatTable(pParse, iDb, iStatCur, pTab->zName, "tbl");
   }
-  analyzeOneTable(pParse, pTab, pOnlyIdx, iStatCur, pParse->nMem+1,
-                  pParse->nTab, 0);
-  v = sqlite3GetVdbe(pParse);
-  if( v ){
-    sqlite3VdbeAddOp1(v, OP_LoadAnalysis, iDb);
-    sqlite3VdbeAddOp0(v, OP_Expire);
-  }
+  analyzeOneTable(pParse, pTab, pOnlyIdx, iStatCur,pParse->nMem+1,pParse->nTab);
+  loadAnalysis(pParse, iDb);
 }
 
 /*
@@ -1422,19 +1345,16 @@ static void analyzeTable(Parse *pParse, Table *pTab, Index *pOnlyIdx){
 ** Form 1 causes all indices in all attached databases to be analyzed.
 ** Form 2 analyzes all indices the single database named.
 ** Form 3 analyzes all indices associated with the named table.
-**
-** If pName1 and pName2 are both NULL and if the ifNeeded flag is true,
-** this routine computes an conditional ANALYZE on only those tables
-** are believed to be in need of analysis.  The conditional analysis
-** might well be a no-op.
 */
 void sqlite3Analyze(Parse *pParse, Token *pName1, Token *pName2){
   sqlite3 *db = pParse->db;
   int iDb;
+  int i;
   char *z, *zDb;
   Table *pTab;
   Index *pIdx;
   Token *pTableName;
+  Vdbe *v;
 
   /* Read the database schema. If an error occurs, leave an error message
   ** and code in pParse and return NULL. */
@@ -1446,12 +1366,15 @@ void sqlite3Analyze(Parse *pParse, Token *pName1, Token *pName2){
   assert( pName2!=0 || pName1==0 );
   if( pName1==0 ){
     /* Form 1:  Analyze everything */
-    sqlite3AnalyzeDatabase(pParse, -1, 0);
+    for(i=0; i<db->nDb; i++){
+      if( i==1 ) continue;  /* Do not analyze the TEMP database */
+      analyzeDatabase(pParse, i);
+    }
   }else if( pName2->n==0 ){
     /* Form 2:  Analyze the database or table named */
     iDb = sqlite3FindDb(db, pName1);
     if( iDb>=0 ){
-      sqlite3AnalyzeDatabase(pParse, iDb, 0);
+      analyzeDatabase(pParse, iDb);
     }else{
       z = sqlite3NameFromToken(db, pName1);
       if( z ){
@@ -1479,6 +1402,8 @@ void sqlite3Analyze(Parse *pParse, Token *pName1, Token *pName2){
       }
     }   
   }
+  v = sqlite3GetVdbe(pParse);
+  if( v ) sqlite3VdbeAddOp0(v, OP_Expire);
 }
 
 /*

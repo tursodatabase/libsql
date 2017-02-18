@@ -1832,7 +1832,41 @@ void sqlite3Pragma(
   **  PRAGMA analyze_as_needed
   */
   case PragTyp_ANALYZE_AS_NEEDED: {
-    sqlite3AnalyzeDatabase(pParse, zDb ? iDb : -1, 1);
+    int iDbLast;
+    int iTabCur;
+    HashElem *k;
+    Schema *pSchema;
+    Table *pTab;
+    Index *pIdx;
+    LogEst szThreshold;
+    char *zSubSql;
+
+    iTabCur = pParse->nTab++;
+    for(iDbLast = zDb?iDb:db->nDb-1; iDb<=iDbLast; iDb++){
+      if( iDb==1 ) continue;
+      sqlite3CodeVerifySchema(pParse, iDb);
+      pSchema = db->aDb[iDb].pSchema;
+      for(k=sqliteHashFirst(&pSchema->tblHash); k; k=sqliteHashNext(k)){
+        pTab = (Table*)sqliteHashData(k);
+        if( (pTab->tabFlags & TF_StatsUsed)==0 ) continue;
+        szThreshold = pTab->nRowLogEst + 46; assert( sqlite3LogEst(25)==46 );
+        for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+          if( !pIdx->hasStat1 ){
+            szThreshold = 0;
+            break;
+          }
+        }
+        if( szThreshold ){
+          sqlite3OpenTable(pParse, iTabCur, iDb, pTab, OP_OpenRead);
+          sqlite3VdbeAddOp3(v, OP_IfSmaller, iTabCur, 
+                            sqlite3VdbeCurrentAddr(v)+2, szThreshold);
+          VdbeCoverage(v);
+        }
+        zSubSql = sqlite3MPrintf(db, "ANALYZE \"%w\".\"%w\"",
+                                 db->aDb[iDb].zDbSName, pTab->zName);
+        sqlite3VdbeAddOp4(v, OP_SqlExec, 0, 0, 0, zSubSql, P4_DYNAMIC);
+      }
+    }
     break;
   }
 

@@ -1,5 +1,5 @@
-C Fix\serrors\sin\sthe\stable\sresize\sdetection.
-D 2017-02-18T02:42:54.892
+C Add\sthe\sOP_SqlExec\sopcode\sand\suse\sit\sto\simplement\s"PRAGMA\sanalyze_as_needed",\ninvoking\sANALYZE\ssubcommands\sas\snecessary.\s\sThis\ssimplifies\sthe\simplementation.
+D 2017-02-18T15:58:52.451
 F Makefile.in edb6bcdd37748d2b1c3422ff727c748df7ffe918
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a89ea37ab5928026001569f056973b9059492fe2
@@ -331,7 +331,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c 3b23977620ce9662ac54443f65b87ba996e36121
-F src/analyze.c e01e5362ba2ac8430ab7833022afb6081ade8315
+F src/analyze.c 1b7197d619788353437d390de42a9bccbb4aa2ac
 F src/attach.c 8c476f8bd5d2afe11d925f890d30e527e5b0ce43
 F src/auth.c 930b376a9c56998557367e6f7f8aaeac82a2a792
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
@@ -387,7 +387,7 @@ F src/parse.y 591704fce84f814d9a3642774c1f011d38f4149c
 F src/pcache.c 62835bed959e2914edd26afadfecce29ece0e870
 F src/pcache.h 2cedcd8407eb23017d92790b112186886e179490
 F src/pcache1.c e3967219b2a92b9edcb9324a4ba75009090d3953
-F src/pragma.c cf0f101d2986d258699cbbd249392858ec9a6b7e
+F src/pragma.c 1ed159f6fed5af7f5b095f55bdefcb0848956397
 F src/pragma.h 065e184494f12e94111da1ab6984faa7b6142e68
 F src/prepare.c b1140c3d0cf59bc85ace00ce363153041b424b7a
 F src/printf.c 67427bbee66d891fc6f6f5aada857e9cdb368c1c
@@ -399,7 +399,7 @@ F src/shell.c bb8e20789499aec921a01d8744c616b81b8214f1
 F src/sqlite.h.in 751ff125eb159c8f92c182b8df980a5e4f50e966
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
-F src/sqliteInt.h 70abfa92e02688f1d189bf63fd25d309ca8d8d1e
+F src/sqliteInt.h 87857c2b8d8825e22970ce3f466b8618ee55b44e
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -461,7 +461,7 @@ F src/update.c 456d4a4656f8a03c2abc88a51b19172197400e58
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c ca8440ede81e155d15cff7c101654f60b55a9ae6
 F src/vacuum.c 33c174b28886b2faf26e503b5a49a1c01a9b1c16
-F src/vdbe.c ac8538b96af5c63d6f18484ffd981d4f44db0073
+F src/vdbe.c 02f9db522c73ba4e1743585e9fd6f8ac6c71515b
 F src/vdbe.h 59998ffd71d7caa8886bc78dafaf8caeccd4c13c
 F src/vdbeInt.h 4e4b15b2e1330e1636e4e01974eab2b0b985092f
 F src/vdbeapi.c 3e4a8893feeb78620f4aac4ac5b85d92255b97e1
@@ -1557,7 +1557,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 882599a4a7ea92c9e7752e0745475508e58a11c3
-R cf9f80fd407d6e9e7cfac9c2957017b5
+P 4229caec0b60a1617b9d5ff94b47271cbd7be1e0
+R 03be76497e56750b0101f816e3587990
 U drh
-Z 225df65ba1e601aba9cbc975df68b3a8
+Z 8d178351b984357dd4d18d50fe476798
