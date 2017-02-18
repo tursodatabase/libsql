@@ -1019,6 +1019,7 @@ static void analyzeOneTable(
   sqlite3OpenTable(pParse, iTabCur, iDb, pTab, OP_OpenRead);
   if( szOld>0 ){
     addrSizeCk = sqlite3VdbeAddOp3(v, OP_IfSmaller, iTabCur, 0, szOld);
+    VdbeCoverage(v);
   }
   sqlite3VdbeLoadString(v, regTabname, pTab->zName);
 
@@ -1296,9 +1297,10 @@ static int analyzeNeeded(Table *pTab, LogEst *pThreshold){
   Index *pIdx;
   if( (pTab->tabFlags & TF_StatsUsed)==0 ) return 0;
 
-  /* If TF_StatsUsed is true, then we might need to reanalyze.  But
-  ** only reanalyze if the table size has grown by a factor of 10 or more */
-  *pThreshold = pTab->nRowLogEst + 33;  assert( sqlite3LogEst(10)==33 );
+  /* If TF_StatsUsed is true, then we might need to reanalyze.
+  ** TUNING: Only reanalyze if the table size has grown by a factor
+  ** of 25 or more. */
+  *pThreshold = pTab->nRowLogEst + 46;  assert( sqlite3LogEst(25)==46 );
 
   /* Except, if any of the indexes of the table do not have valid
   ** sqlite_stat1 entries, then set the size threshold to zero to

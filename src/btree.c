@@ -5331,8 +5331,8 @@ i64 sqlite3BtreeRowCountEst(BtCursor *pCur){
   assert( cursorOwnsBtShared(pCur) );
   assert( sqlite3_mutex_held(pCur->pBtree->db->mutex) );
   if( pCur->eState!=CURSOR_VALID ) return -1;
-  if( pCur->apPage[pCur->iPage-1]->leaf==0 ) return -1;
-  for(n=1, i=0; i<pCur->iPage; i++){
+  if( pCur->apPage[pCur->iPage]->leaf==0 ) return -1;
+  for(n=1, i=0; i<=pCur->iPage; i++){
     n *= pCur->apPage[i]->nCell;
   }
   return n;
