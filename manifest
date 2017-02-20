@@ -1,5 +1,5 @@
-C Small\sgrammar\ssimplification.
-D 2017-02-20T14:30:17.816
+C Avoid\sunsigned\sinteger\soverflows\sfor\sSQLITE_WIN32_HEAP_INIT_SIZE\swhen\sthe\sWin32\sheap\ssubsystem\sis\sused\swith\svery\slarge\svalues\sof\sSQLITE_DEFAULT_CACHE_SIZE\sand/or\sSQLITE_DEFAULT_PAGE_SIZE.
+D 2017-02-20T19:13:37.359
 F Makefile.in edb6bcdd37748d2b1c3422ff727c748df7ffe918
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a89ea37ab5928026001569f056973b9059492fe2
@@ -379,7 +379,7 @@ F src/os.h 8e976e59eb4ca1c0fca6d35ee803e38951cb0343
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c 30e2c43e4955db990e5b5a81e901f8aa74cc8820
-F src/os_win.c cf90abd4e50d9f56d2c20ce8e005aff55d7bd8e9
+F src/os_win.c c97c79fe19dfb0a14c89b78280beabd9ac28acb1
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c ff1232b3088a39806035ecfac4fffeb22717d80b
 F src/pager.h f2a99646c5533ffe11afa43e9e0bea74054e4efa
@@ -1556,7 +1556,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 491814272dce7e937b4734fcbc2ad69e12377b56
-R b4cf79fa4c0fd30460236bc8c090e993
-U drh
-Z 32b02aa6638f1e40c7df4614e1f90d4a
+P 0d8a868acd74fb1d076f23fda58b841bb7e6900b
+R 42e490f947871a7f92e95baf4bc40d36
+U mistachkin
+Z 144582bee7eff0d5ee39c945bf2670f2
