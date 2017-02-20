@@ -5192,6 +5192,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       }
     }
   }else
+#endif /* !defined(SQLITE_UNTESTABLE) */
 
   if( c=='t' && n>4 && strncmp(azArg[0], "timeout", n)==0 ){
     open_db(p, 0);
@@ -5228,7 +5229,6 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
 #endif
   }else
-#endif /* !defined(SQLITE_UNTESTABLE) */
 
 #if SQLITE_USER_AUTHENTICATION
   if( c=='u' && strncmp(azArg[0], "user", n)==0 ){

@@ -98,8 +98,25 @@ static int execSqlF(sqlite3 *db, char **pzErrMsg, const char *zSql, ...){
 */
 void sqlite3Vacuum(Parse *pParse, Token *pNm){
   Vdbe *v = sqlite3GetVdbe(pParse);
-  int iDb = pNm ? sqlite3TwoPartName(pParse, pNm, pNm, &pNm) : 0;
-  if( v && (iDb>=2 || iDb==0) ){
+  int iDb = 0;
+  if( v==0 ) return;
+  if( pNm ){
+#ifndef SQLITE_BUG_COMPATIBLE_20160819
+    /* Default behavior:  Report an error if the argument to VACUUM is
+    ** not recognized */
+    iDb = sqlite3TwoPartName(pParse, pNm, pNm, &pNm);
+    if( iDb<0 ) return;
+#else
+    /* When SQLITE_BUG_COMPATIBLE_20160819 is defined, unrecognized arguments
+    ** to VACUUM are silently ignored.  This is a back-out of a bug fix that
+    ** occurred on 2016-08-19 (https://www.sqlite.org/src/info/083f9e6270).
+    ** The buggy behavior is required for binary compatibility with some
+    ** legacy applications. */
+    iDb = sqlite3FindDb(pParse->db, pNm);
+    if( iDb<0 ) iDb = 0;
+#endif
+  }
+  if( iDb!=1 ){
     sqlite3VdbeAddOp1(v, OP_Vacuum, iDb);
     sqlite3VdbeUsesBtree(v, iDb);
   }
