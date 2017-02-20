@@ -399,7 +399,7 @@ struct winVfsAppData {
  * initial size of the Win32-specific heap to exceed the maximum amount
  * of memory that can be specified in the call to HeapCreate.
  */
-#if SQLITE_WIN32_CACHE_SIZE>=SQLITE_WIN32_MAX_CACHE_SIZE
+#if SQLITE_WIN32_CACHE_SIZE>SQLITE_WIN32_MAX_CACHE_SIZE
 #  undef SQLITE_WIN32_CACHE_SIZE
 #  define SQLITE_WIN32_CACHE_SIZE       (2000)
 #endif
