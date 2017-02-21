@@ -605,7 +605,9 @@ int sqlite3VdbeExec(
   sqlite3VdbeIOTraceSql(p);
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
   if( db->xProgress ){
-    u32 iPrior = p->aCounter[SQLITE_STMTSTATUS_VM_STEP];
+    u32 iPrior;
+    if( p->pc==0 && db->nVdbeActive==1 ) db->iProgressCnt = 0;
+    iPrior = db->iProgressCnt;
     assert( 0 < db->nProgressOps );
     nProgressLimit = db->nProgressOps - (iPrior % db->nProgressOps);
   }
@@ -7048,6 +7050,9 @@ abort_due_to_error:
 vdbe_return:
   testcase( nVmStep>0 );
   p->aCounter[SQLITE_STMTSTATUS_VM_STEP] += (int)nVmStep;
+#ifndef SQLITE_OMIT_PROGRESS_CALLBACK
+  db->iProgressCnt += (int)nVmStep;
+#endif
   sqlite3VdbeLeave(p);
   assert( rc!=SQLITE_OK || nExtraDelete==0 
        || sqlite3_strlike("DELETE%",p->zSql,0)!=0 

@@ -1391,6 +1391,7 @@ struct sqlite3 {
   int (*xProgress)(void *);     /* The progress callback */
   void *pProgressArg;           /* Argument to the progress callback */
   unsigned nProgressOps;        /* Number of opcodes for progress callback */
+  unsigned iProgressCnt;        /* Current progress counter value */
 #endif
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   int nVTrans;                  /* Allocated size of aVTrans */
