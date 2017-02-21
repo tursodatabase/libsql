@@ -1110,7 +1110,10 @@ static int fts5ExprNodeNext_OR(
        || (bFromValid && fts5RowidCmp(pExpr, p1->iRowid, iFrom)<0)
       ){
         int rc = fts5ExprNodeNext(pExpr, p1, bFromValid, iFrom);
-        if( rc!=SQLITE_OK ) return rc;
+        if( rc!=SQLITE_OK ){
+          pNode->bNomatch = 0;
+          return rc;
+        }
       }
     }
   }
@@ -1141,7 +1144,10 @@ static int fts5ExprNodeTest_AND(
       if( cmp>0 ){
         /* Advance pChild until it points to iLast or laster */
         rc = fts5ExprNodeNext(pExpr, pChild, 1, iLast);
-        if( rc!=SQLITE_OK ) return rc;
+        if( rc!=SQLITE_OK ){
+          pAnd->bNomatch = 0;
+          return rc;
+        }
       }
 
       /* If the child node is now at EOF, so is the parent AND node. Otherwise,
@@ -1180,6 +1186,8 @@ static int fts5ExprNodeNext_AND(
   int rc = fts5ExprNodeNext(pExpr, pNode->apChild[0], bFromValid, iFrom);
   if( rc==SQLITE_OK ){
     rc = fts5ExprNodeTest_AND(pExpr, pNode);
+  }else{
+    pNode->bNomatch = 0;
   }
   return rc;
 }
@@ -1221,6 +1229,9 @@ static int fts5ExprNodeNext_NOT(
   int rc = fts5ExprNodeNext(pExpr, pNode->apChild[0], bFromValid, iFrom);
   if( rc==SQLITE_OK ){
     rc = fts5ExprNodeTest_NOT(pExpr, pNode);
+  }
+  if( rc!=SQLITE_OK ){
+    pNode->bNomatch = 0;
   }
   return rc;
 }
