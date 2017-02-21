@@ -40,14 +40,15 @@
 #define PragTyp_TEMP_STORE                    32
 #define PragTyp_TEMP_STORE_DIRECTORY          33
 #define PragTyp_THREADS                       34
-#define PragTyp_WAL_AUTOCHECKPOINT            35
-#define PragTyp_WAL_CHECKPOINT                36
-#define PragTyp_ACTIVATE_EXTENSIONS           37
-#define PragTyp_HEXKEY                        38
-#define PragTyp_KEY                           39
-#define PragTyp_REKEY                         40
-#define PragTyp_LOCK_STATUS                   41
-#define PragTyp_PARSER_TRACE                  42
+#define PragTyp_VDBE_CYCLE_LIMIT              35
+#define PragTyp_WAL_AUTOCHECKPOINT            36
+#define PragTyp_WAL_CHECKPOINT                37
+#define PragTyp_ACTIVATE_EXTENSIONS           38
+#define PragTyp_HEXKEY                        39
+#define PragTyp_KEY                           40
+#define PragTyp_REKEY                         41
+#define PragTyp_LOCK_STATUS                   42
+#define PragTyp_PARSER_TRACE                  43
 
 /* Property flags associated with various pragma. */
 #define PragFlg_NeedSchema 0x01 /* Force schema load before running */
@@ -562,6 +563,15 @@ static const PragmaName aPragmaName[] = {
   /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ SQLITE_VdbeAddopTrace },
+#endif
+#endif
+ {/* zName:     */ "vdbe_cycle_limit",
+  /* ePragTyp:  */ PragTyp_VDBE_CYCLE_LIMIT,
+  /* ePragFlg:  */ PragFlg_NoColumns,
+  /* ColNames:  */ 0, 0,
+  /* iArg:      */ 0 },
+#if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
+#if defined(SQLITE_DEBUG)
  {/* zName:     */ "vdbe_debug",
   /* ePragTyp:  */ PragTyp_FLAG,
   /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns1,
@@ -604,4 +614,4 @@ static const PragmaName aPragmaName[] = {
   /* iArg:      */ SQLITE_WriteSchema|SQLITE_RecoveryMode },
 #endif
 };
-/* Number of pragmas: 60 on by default, 73 total. */
+/* Number of pragmas: 61 on by default, 74 total. */

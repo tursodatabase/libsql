@@ -331,6 +331,9 @@ set pragma_def {
   NAME: shrink_memory
   FLAG: NoColumns
 
+  NAME: vdbe_cycle_limit
+  FLAG: NoColumns
+
   NAME: busy_timeout
   FLAG: Result0
   COLS: timeout

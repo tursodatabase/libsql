@@ -296,6 +296,14 @@ static const PragmaName *pragmaLocate(const char *zName){
 }
 
 /*
+** A progress handler callback that interrupts.
+*/
+static int interruptProgressHandler(void *pDb){
+  sqlite3_interrupt((sqlite3*)pDb);
+  return 1;
+}
+
+/*
 ** Process a pragma statement.  
 **
 ** Pragmas are of this form:
@@ -735,6 +743,23 @@ void sqlite3Pragma(
     break;
   }
 #endif
+
+  /*
+  **  PRAGMA vdbe_cycle_limit=N
+  **
+  ** Arrange to interrupt any SQL statement that runs for more than N
+  ** virtual machine instructions.  If N is zero, allow virtual machines
+  ** to run indefinitely.
+  */
+  case PragTyp_VDBE_CYCLE_LIMIT: {
+    assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
+    if( zRight ){
+      int N = sqlite3Atoi(zRight);
+      sqlite3_progress_handler(db, N, N>0 ? interruptProgressHandler : 0, db);
+    }
+    break;
+  }
+
 
 #ifndef SQLITE_OMIT_PAGER_PRAGMAS
   /*
