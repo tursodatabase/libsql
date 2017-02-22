@@ -1481,7 +1481,7 @@ void sqlite3Pragma(
         int iDataCur, iIdxCur;
         int r1 = -1;
 
-        if( pTab->pIndex==0 ) continue;
+        if( pTab->pIndex==0 && pTab->pCheck==0 ) continue;
         pPk = HasRowid(pTab) ? 0 : sqlite3PrimaryKeyIndex(pTab);
         addr = sqlite3VdbeAddOp1(v, OP_IfPos, 1);  /* Stop if out of errors */
         VdbeCoverage(v);
@@ -1516,6 +1516,31 @@ void sqlite3Pragma(
           sqlite3VdbeAddOp0(v, OP_Halt);
           sqlite3VdbeJumpHere(v, jmp2);
           sqlite3VdbeJumpHere(v, jmp3);
+        }
+        /* Verify CHECK constraints */
+        if( pTab->pCheck && (db->flags & SQLITE_IgnoreChecks)==0 ){
+          int addrCkFault = sqlite3VdbeMakeLabel(v);
+          int addrCkOk = sqlite3VdbeMakeLabel(v);
+          ExprList *pCheck = pTab->pCheck;
+          char *zErr;
+          int k;
+          pParse->iSelfTab = iDataCur;
+          sqlite3ExprCachePush(pParse);
+          for(k=pCheck->nExpr-1; k>0; k--){
+            sqlite3ExprIfFalse(pParse, pCheck->a[k].pExpr, addrCkFault, 0);
+          }
+          sqlite3ExprIfTrue(pParse, pCheck->a[0].pExpr, addrCkOk, 
+                            SQLITE_JUMPIFNULL);
+          sqlite3VdbeResolveLabel(v, addrCkFault);
+          sqlite3VdbeAddOp2(v, OP_AddImm, 1, -1); /* Decrement error limit */
+          zErr = sqlite3MPrintf(db, "CHECK constraint failed in %s",
+                                pTab->zName);
+          sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0, zErr, P4_DYNAMIC);
+          sqlite3VdbeAddOp2(v, OP_ResultRow, 3, 1);
+          sqlite3VdbeAddOp2(v, OP_IfPos, 1, addrCkOk); VdbeCoverage(v);
+          sqlite3VdbeAddOp0(v, OP_Halt);
+          sqlite3VdbeResolveLabel(v, addrCkOk);
+          sqlite3ExprCachePop(pParse);
         }
         /* Validate index entries for the current row */
         for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
