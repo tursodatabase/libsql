@@ -1,5 +1,5 @@
-C In\ssqlite3VdbeHalt(),\sreturn\sas\ssoon\sas\spossible\sif\nVdbe.magic!=VDBE_MAGIC_RUN.\sThis\smakes\ssqlite3_reset()\sslightly\sfaster\sin\ssome\ncases.
-D 2017-02-21T21:24:05.029
+C Improvements\sto\sPRAGMA\sintegrity_check.\nVerify\sCHECK\sconstraints.\nVerify\sNOT\sNULL\sconstraints\seven\son\stable\sthat\slack\sindexes.\nVerify\sCHECK\sand\sNOT\sNULL\sconstraints\swith\sPRAGMA\squick_check.
+D 2017-02-22T18:53:13.913
 F Makefile.in edb6bcdd37748d2b1c3422ff727c748df7ffe918
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a89ea37ab5928026001569f056973b9059492fe2
@@ -341,7 +341,7 @@ F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
 F src/btree.c 3ae66974881e74df9909093818b4c3428f8d7982
 F src/btree.h e6d352808956ec163a17f832193a3e198b3fb0ac
 F src/btreeInt.h cd55d39d9916270837a88c12e701047cba0729b0
-F src/build.c 9e799f1edd910dfa8a0bc29bd390d35d310596af
+F src/build.c 51b473eec465f471d607b54e8dbc00751c3f8a1f
 F src/callback.c 2e76147783386374bf01b227f752c81ec872d730
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c a9984df73898c042a5cfc8f9d8e7723d02bc35c9
@@ -388,7 +388,7 @@ F src/parse.y af8830094f4aecb91cb69721f3601ad10c36abc4
 F src/pcache.c 62835bed959e2914edd26afadfecce29ece0e870
 F src/pcache.h 2cedcd8407eb23017d92790b112186886e179490
 F src/pcache1.c e3967219b2a92b9edcb9324a4ba75009090d3953
-F src/pragma.c 7831956012f5d764761fbd023e59b0ffc08f5e8d
+F src/pragma.c b127edeb54c744a101b371cfa2e221fd741bcd72
 F src/pragma.h 61aa5389118594bebb28120a6720401aee34ce1a
 F src/prepare.c b1140c3d0cf59bc85ace00ce363153041b424b7a
 F src/printf.c 67427bbee66d891fc6f6f5aada857e9cdb368c1c
@@ -400,7 +400,7 @@ F src/shell.c bf976d5301be9d8a4c52852c97909cc9a41ee20d
 F src/sqlite.h.in 751ff125eb159c8f92c182b8df980a5e4f50e966
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
-F src/sqliteInt.h 46fe8e5aee3825d77fa771216ef263dc947030e7
+F src/sqliteInt.h a23e18aebdd0d851c2956a74a3a4f12ff202b472
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -462,7 +462,7 @@ F src/update.c 456d4a4656f8a03c2abc88a51b19172197400e58
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c ca8440ede81e155d15cff7c101654f60b55a9ae6
 F src/vacuum.c 1fe4555cd8c9b263afb85b5b4ee3a4a4181ad569
-F src/vdbe.c 16542e327eb38763490473dc0e9e9396924f30b2
+F src/vdbe.c 83f387d9e6842b1dc99f6e85bb577c5bbc4e397d
 F src/vdbe.h 59998ffd71d7caa8886bc78dafaf8caeccd4c13c
 F src/vdbeInt.h 4e4b15b2e1330e1636e4e01974eab2b0b985092f
 F src/vdbeapi.c 3e4a8893feeb78620f4aac4ac5b85d92255b97e1
@@ -576,7 +576,7 @@ F test/capi3d.test 485048dc5cd07bc68011e4917ad035ad6047ab82
 F test/capi3e.test 3d49c01ef2a1a55f41d73cba2b23b5059ec460fe
 F test/cast.test 4c275cbdc8202d6f9c54a3596701719868ac7dc3
 F test/cffault.test 9d6b20606afe712374952eec4f8fd74b1a8097ef
-F test/check.test 85a84bfc4be0e83f668747211c7cd45a6721d485
+F test/check.test 92b23a91fb7be12fba7ee9ce518217e2919a21da
 F test/close.test 83947daf3b700631f90f4850ddaab455be4af73d
 F test/closure01.test b1703ba40639cfc9b295cf478d70739415eec6a4
 F test/coalesce.test cee0dccb9fbd2d494b77234bccf9dc6c6786eb91
@@ -1557,7 +1557,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e400909f313c317b7b67be6eb867ed61df7383dc
-R 5434ea5a08220297aa4d56dd68f46447
-U dan
-Z 68cf5c57f26344b5e30f88013a5c9e52
+P 80adc0cb4ed7bacc54b15ac8b5b205403939c8c4 5af7d72ed9ec758283d78ceb46627d72021c1c60
+R 46f90a15a015e3c65c6378dae6f8ff19
+U drh
+Z 9fac49478b578adef606b235c8c223db

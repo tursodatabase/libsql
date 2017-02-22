@@ -1115,6 +1115,7 @@ void sqlite3AddNotNull(Parse *pParse, int onError){
   p = pParse->pNewTable;
   if( p==0 || NEVER(p->nCol<1) ) return;
   p->aCol[p->nCol-1].notNull = (u8)onError;
+  p->tabFlags |= TF_HasNotNull;
 }
 
 /*

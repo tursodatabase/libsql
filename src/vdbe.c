@@ -5611,7 +5611,7 @@ case OP_DropTrigger: {
 ** register P1 the text of an error message describing any problems.
 ** If no problems are found, store a NULL in register P1.
 **
-** The register P3 contains the maximum number of allowed errors.
+** The register P3 contains one less than the maximum number of allowed errors.
 ** At most reg(P3) errors will be reported.
 ** In other words, the analysis stops as soon as reg(P1) errors are 
 ** seen.  Reg(P1) is updated with the number of errors remaining.
@@ -5644,14 +5644,14 @@ case OP_IntegrityCk: {
   assert( pOp->p5<db->nDb );
   assert( DbMaskTest(p->btreeMask, pOp->p5) );
   z = sqlite3BtreeIntegrityCheck(db->aDb[pOp->p5].pBt, aRoot, nRoot,
-                                 (int)pnErr->u.i, &nErr);
-  pnErr->u.i -= nErr;
+                                 (int)pnErr->u.i+1, &nErr);
   sqlite3VdbeMemSetNull(pIn1);
   if( nErr==0 ){
     assert( z==0 );
   }else if( z==0 ){
     goto no_mem;
   }else{
+    pnErr->u.i -= nErr-1;
     sqlite3VdbeMemSetStr(pIn1, z, -1, SQLITE_UTF8, sqlite3_free);
   }
   UPDATE_MAX_BLOBSIZE(pIn1);
