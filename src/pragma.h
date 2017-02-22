@@ -5,32 +5,32 @@
 */
 
 /* The various pragma types */
-#define PragTyp_ANALYZE_AS_NEEDED              0
-#define PragTyp_HEADER_VALUE                   1
-#define PragTyp_AUTO_VACUUM                    2
-#define PragTyp_FLAG                           3
-#define PragTyp_BUSY_TIMEOUT                   4
-#define PragTyp_CACHE_SIZE                     5
-#define PragTyp_CACHE_SPILL                    6
-#define PragTyp_CASE_SENSITIVE_LIKE            7
-#define PragTyp_COLLATION_LIST                 8
-#define PragTyp_COMPILE_OPTIONS                9
-#define PragTyp_DATA_STORE_DIRECTORY          10
-#define PragTyp_DATABASE_LIST                 11
-#define PragTyp_DEFAULT_CACHE_SIZE            12
-#define PragTyp_ENCODING                      13
-#define PragTyp_FOREIGN_KEY_CHECK             14
-#define PragTyp_FOREIGN_KEY_LIST              15
-#define PragTyp_INCREMENTAL_VACUUM            16
-#define PragTyp_INDEX_INFO                    17
-#define PragTyp_INDEX_LIST                    18
-#define PragTyp_INTEGRITY_CHECK               19
-#define PragTyp_JOURNAL_MODE                  20
-#define PragTyp_JOURNAL_SIZE_LIMIT            21
-#define PragTyp_LOCK_PROXY_FILE               22
-#define PragTyp_LOCKING_MODE                  23
-#define PragTyp_PAGE_COUNT                    24
-#define PragTyp_MMAP_SIZE                     25
+#define PragTyp_HEADER_VALUE                   0
+#define PragTyp_AUTO_VACUUM                    1
+#define PragTyp_FLAG                           2
+#define PragTyp_BUSY_TIMEOUT                   3
+#define PragTyp_CACHE_SIZE                     4
+#define PragTyp_CACHE_SPILL                    5
+#define PragTyp_CASE_SENSITIVE_LIKE            6
+#define PragTyp_COLLATION_LIST                 7
+#define PragTyp_COMPILE_OPTIONS                8
+#define PragTyp_DATA_STORE_DIRECTORY           9
+#define PragTyp_DATABASE_LIST                 10
+#define PragTyp_DEFAULT_CACHE_SIZE            11
+#define PragTyp_ENCODING                      12
+#define PragTyp_FOREIGN_KEY_CHECK             13
+#define PragTyp_FOREIGN_KEY_LIST              14
+#define PragTyp_INCREMENTAL_VACUUM            15
+#define PragTyp_INDEX_INFO                    16
+#define PragTyp_INDEX_LIST                    17
+#define PragTyp_INTEGRITY_CHECK               18
+#define PragTyp_JOURNAL_MODE                  19
+#define PragTyp_JOURNAL_SIZE_LIMIT            20
+#define PragTyp_LOCK_PROXY_FILE               21
+#define PragTyp_LOCKING_MODE                  22
+#define PragTyp_PAGE_COUNT                    23
+#define PragTyp_MMAP_SIZE                     24
+#define PragTyp_OPTIMIZE                      25
 #define PragTyp_PAGE_SIZE                     26
 #define PragTyp_SECURE_DELETE                 27
 #define PragTyp_SHRINK_MEMORY                 28
@@ -133,11 +133,6 @@ static const PragmaName aPragmaName[] = {
   /* ColNames:  */ 0, 0,
   /* iArg:      */ 0 },
 #endif
- {/* zName:     */ "analyze_as_needed",
-  /* ePragTyp:  */ PragTyp_ANALYZE_AS_NEEDED,
-  /* ePragFlg:  */ PragFlg_NoColumns,
-  /* ColNames:  */ 0, 0,
-  /* iArg:      */ 0 },
 #if !defined(SQLITE_OMIT_SCHEMA_VERSION_PRAGMAS)
  {/* zName:     */ "application_id",
   /* ePragTyp:  */ PragTyp_HEADER_VALUE,
@@ -419,6 +414,13 @@ static const PragmaName aPragmaName[] = {
   /* ePragFlg:  */ 0,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ 0 },
+#endif
+ {/* zName:     */ "optimize",
+  /* ePragTyp:  */ PragTyp_OPTIMIZE,
+  /* ePragFlg:  */ PragFlg_NoColumns,
+  /* ColNames:  */ 0, 0,
+  /* iArg:      */ 0 },
+#if !defined(SQLITE_OMIT_PAGER_PRAGMAS)
  {/* zName:     */ "page_count",
   /* ePragTyp:  */ PragTyp_PAGE_COUNT,
   /* ePragFlg:  */ PragFlg_NeedSchema|PragFlg_Result0|PragFlg_SchemaReq,

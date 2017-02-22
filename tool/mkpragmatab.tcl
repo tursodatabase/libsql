@@ -362,7 +362,7 @@ set pragma_def {
   NAME: threads
   FLAG: Result0
 
-  NAME: analyze_as_needed
+  NAME: optimize
   FLAG: NoColumns
 }
 

@@ -1863,16 +1863,29 @@ void sqlite3Pragma(
   }
 
   /*
-  **  PRAGMA analyze_as_needed
-  **  PRAGMA schema.analyze_as_needed
+  **  PRAGMA optimize
+  **  PRAGMA schema.optimize
   **
-  ** This pragma runs ANALYZE on any tables which would have benefitted
-  ** from having recent statistics at some point since the start of the
-  ** current connection.  Only tables in "schema" are analyzed in the 
+  ** Attempt to optimize the database.  All schemas are optimized in the first
+  ** form, and only the specified schema is optimized in the second form.
+  **
+  ** The details of optimizations performed by this pragma does are expected
+  ** to change and improve over time.  Applications should anticipate that
+  ** this pragma will perform new optimizations in future releases.
+  **
+  ** Argments to this pragma are currently ignored, but future enhancements
+  ** might make use of arguments to control which optimizations are allowed
+  ** or to suggest limits on how much CPU time and I/O should be expended
+  ** in the optimization effort.
+  **
+  ** The current implementation runs ANALYZE on any tables which might have 
+  ** benefitted from having recent statistics at some point since the start
+  ** of the current connection.  Only tables in "schema" are analyzed in the 
   ** second form.  In the first form, all tables except TEMP tables are
   ** checked.
   **
-  ** A table is analyzed only if both of the following are true:
+  ** In the current implementation, a table is analyzed only if both of
+  ** the following are true:
   **
   ** (1) The query planner used sqlite_stat1-style statistics for one or
   **     more indexes of the table at some point during the lifetime of
@@ -1881,8 +1894,11 @@ void sqlite3Pragma(
   ** (2) One or more indexes of the table are currently unanalyzed OR
   **     the number of rows in the table has increased by 25 times or more
   **     since the last time ANALYZE was run.
+  **
+  ** The rules for when tables are analyzed are likely to change in
+  ** future releases.
   */
-  case PragTyp_ANALYZE_AS_NEEDED: {
+  case PragTyp_OPTIMIZE: {
     int iDbLast;           /* Loop termination point for the schema loop */
     int iTabCur;           /* Cursor for a table whose size needs checking */
     HashElem *k;           /* Loop over tables of a schema */
