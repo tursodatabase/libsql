@@ -1,5 +1,5 @@
-C Enhance\s"PRAGMA\sintegrity_check"\sso\sthat\sit\sverifies\sCHECK\sconstraints.
-D 2017-02-22T14:15:37.561
+C Fix\sintegrity_check\sso\sthat\sit\sverifies\sNOT\sNULL\sconstraints\seven\sfor\stables\nthat\shave\sno\sindexes.\s\sEnhance\squick_check\sso\sthat\sit\sverifies\sNOT\sNULL\sand\nCHECK\sconstraints.
+D 2017-02-22T15:11:36.862
 F Makefile.in edb6bcdd37748d2b1c3422ff727c748df7ffe918
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a89ea37ab5928026001569f056973b9059492fe2
@@ -341,7 +341,7 @@ F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
 F src/btree.c 3ae66974881e74df9909093818b4c3428f8d7982
 F src/btree.h e6d352808956ec163a17f832193a3e198b3fb0ac
 F src/btreeInt.h cd55d39d9916270837a88c12e701047cba0729b0
-F src/build.c 9e799f1edd910dfa8a0bc29bd390d35d310596af
+F src/build.c 51b473eec465f471d607b54e8dbc00751c3f8a1f
 F src/callback.c 2e76147783386374bf01b227f752c81ec872d730
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c a9984df73898c042a5cfc8f9d8e7723d02bc35c9
@@ -388,7 +388,7 @@ F src/parse.y af8830094f4aecb91cb69721f3601ad10c36abc4
 F src/pcache.c 62835bed959e2914edd26afadfecce29ece0e870
 F src/pcache.h 2cedcd8407eb23017d92790b112186886e179490
 F src/pcache1.c e3967219b2a92b9edcb9324a4ba75009090d3953
-F src/pragma.c aa4af3d8c4d9086cbceeafcbb8a5e75605a1207d
+F src/pragma.c ec83a3cb496d6d6d24f9de78ccbb24369dcedf48
 F src/pragma.h 61aa5389118594bebb28120a6720401aee34ce1a
 F src/prepare.c b1140c3d0cf59bc85ace00ce363153041b424b7a
 F src/printf.c 67427bbee66d891fc6f6f5aada857e9cdb368c1c
@@ -400,7 +400,7 @@ F src/shell.c bf976d5301be9d8a4c52852c97909cc9a41ee20d
 F src/sqlite.h.in 751ff125eb159c8f92c182b8df980a5e4f50e966
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
-F src/sqliteInt.h 46fe8e5aee3825d77fa771216ef263dc947030e7
+F src/sqliteInt.h a23e18aebdd0d851c2956a74a3a4f12ff202b472
 F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -1557,10 +1557,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 80adc0cb4ed7bacc54b15ac8b5b205403939c8c4
-R b17279d0fcfdb924feca449c6ae8dc40
-T *branch * integrity-check-improvements
-T *sym-integrity-check-improvements *
-T -sym-trunk *
+P 549bae0856004ff65b505175460abd598b30fe57
+R ca36fe65b7e723d2451bfac8ac59f0b7
 U drh
-Z 83b8ae4f812a6d4117d2cc9c8ae430b2
+Z 40e14a5b2e43e016c602364a556c9a0b
