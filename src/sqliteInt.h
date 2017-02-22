@@ -1889,6 +1889,7 @@ struct Table {
 #define TF_OOOHidden       0x0080    /* Out-of-Order hidden columns */
 #define TF_StatsUsed       0x0100    /* Query planner decisions affected by
                                      ** Index.aiRowLogEst[] values */
+#define TF_HasNotNull      0x0200    /* Contains NOT NULL constraints */
 
 /*
 ** Test to see whether or not a table is a virtual table.  This is
