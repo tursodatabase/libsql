@@ -290,6 +290,7 @@ struct Stat4Accum {
   Stat4Sample *aBest;       /* Array of nCol best samples */
   int iMin;                 /* Index in a[] of entry with minimum score */
   int nSample;              /* Current number of samples */
+  int nMaxEqZero;           /* Max leading 0 in anEq[] for any a[] entry */
   int iGet;                 /* Index of current sample accessed by stat_get() */
   Stat4Sample *a;           /* Array of mxSample Stat4Sample objects */
   sqlite3 *db;              /* Database connection, for malloc() */
@@ -551,7 +552,14 @@ static void sampleInsert(Stat4Accum *p, Stat4Sample *pNew, int nEqZero){
   Stat4Sample *pSample = 0;
   int i;
 
+  /* Stat4Accum.nMaxEqZero is set to the maximum number of leading 0
+  ** values in the anEq[] array of any sample in Stat4Accum.a[]. In
+  ** other words, if nMaxEqZero is n, then it is guaranteed that there
+  ** are no samples with Stat4Sample.anEq[m]==0 for (m>=n). */
   assert( IsStat4 || nEqZero==0 );
+  if( nEqZero>p->nMaxEqZero ){
+    p->nMaxEqZero = nEqZero;
+  }
 
 #ifdef SQLITE_ENABLE_STAT4
   if( pNew->isPSample==0 ){
@@ -651,12 +659,22 @@ static void samplePushPrevious(Stat4Accum *p, int iChng){
     }
   }
 
-  /* Update the anEq[] fields of any samples already collected. */
+  /* Check that no sample contains an anEq[] entry with an index of
+  ** p->nMaxEqZero or greater set to zero. */
   for(i=p->nSample-1; i>=0; i--){
     int j;
-    for(j=iChng; j<p->nCol; j++){
-      if( p->a[i].anEq[j]==0 ) p->a[i].anEq[j] = p->current.anEq[j];
+    for(j=p->nMaxEqZero; j<p->nCol; j++) assert( p->a[i].anEq[j]>0 );
+  }
+
+  /* Update the anEq[] fields of any samples already collected. */
+  if( iChng<p->nMaxEqZero ){
+    for(i=p->nSample-1; i>=0; i--){
+      int j;
+      for(j=iChng; j<p->nCol; j++){
+        if( p->a[i].anEq[j]==0 ) p->a[i].anEq[j] = p->current.anEq[j];
+      }
     }
+    p->nMaxEqZero = iChng;
   }
 #endif
 
