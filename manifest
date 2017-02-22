@@ -1,5 +1,5 @@
-C Improve\sthe\sperformance\sof\sANALYZE\swhen\sSQLITE_ENABLE_STAT4\sis\sdefined.
-D 2017-02-22T19:27:51.768
+C Move\sa\sbranch\scondition\sin\sanalyze.c\sinside\san\s#ifdef\sSQLITE_ENABLE_STAT4\sblock.
+D 2017-02-22T19:41:16.947
 F Makefile.in edb6bcdd37748d2b1c3422ff727c748df7ffe918
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a89ea37ab5928026001569f056973b9059492fe2
@@ -332,7 +332,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c 3b23977620ce9662ac54443f65b87ba996e36121
-F src/analyze.c 844359e720d1116592234f2f7938432bdc5b6238
+F src/analyze.c 8a2af8a16e4d95ec2327d3f180cb0bab4b2074c1
 F src/attach.c 8c476f8bd5d2afe11d925f890d30e527e5b0ce43
 F src/auth.c 930b376a9c56998557367e6f7f8aaeac82a2a792
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
@@ -1557,7 +1557,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P aa02bd3c95e374008b930d296c88dfafaf11c65a
-R 767bcf2e23bb391de45c0ed55772662f
+P 737a82444065752785c643b1d29ca097c828effb
+R 36d1036d6c004868a4b3899253e892b2
 U dan
-Z 11a6abc8e262f46553fa08a6e318d405
+Z b9298378d570f055da46d519ad41197c

@@ -552,16 +552,16 @@ static void sampleInsert(Stat4Accum *p, Stat4Sample *pNew, int nEqZero){
   Stat4Sample *pSample = 0;
   int i;
 
+  assert( IsStat4 || nEqZero==0 );
+
+#ifdef SQLITE_ENABLE_STAT4
   /* Stat4Accum.nMaxEqZero is set to the maximum number of leading 0
   ** values in the anEq[] array of any sample in Stat4Accum.a[]. In
   ** other words, if nMaxEqZero is n, then it is guaranteed that there
   ** are no samples with Stat4Sample.anEq[m]==0 for (m>=n). */
-  assert( IsStat4 || nEqZero==0 );
   if( nEqZero>p->nMaxEqZero ){
     p->nMaxEqZero = nEqZero;
   }
-
-#ifdef SQLITE_ENABLE_STAT4
   if( pNew->isPSample==0 ){
     Stat4Sample *pUpgrade = 0;
     assert( pNew->anEq[pNew->iCol]>0 );
