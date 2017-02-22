@@ -296,6 +296,22 @@ static const PragmaName *pragmaLocate(const char *zName){
 }
 
 /*
+** Helper subroutine for PRAGMA integrity_check:
+**
+** Generate code to output a single-column result row with the result
+** held in register regResult.  Decrement the result count and halt if
+** the maximum number of result rows have been issued.
+*/
+static int integrityCheckResultRow(Vdbe *v, int regResult){
+  int addr;
+  sqlite3VdbeAddOp2(v, OP_ResultRow, regResult, 1);
+  addr = sqlite3VdbeAddOp3(v, OP_IfPos, 1, sqlite3VdbeCurrentAddr(v)+2, 1);
+  VdbeCoverage(v);
+  sqlite3VdbeAddOp2(v, OP_Halt, 0, 0);
+  return addr;
+}
+
+/*
 ** Process a pragma statement.  
 **
 ** Pragmas are of this form:
@@ -1418,7 +1434,7 @@ void sqlite3Pragma(
         mxErr = SQLITE_INTEGRITY_CHECK_ERROR_MAX;
       }
     }
-    sqlite3VdbeAddOp2(v, OP_Integer, mxErr, 1);  /* reg[1] holds errors left */
+    sqlite3VdbeAddOp2(v, OP_Integer, mxErr-1, 1); /* reg[1] holds errors left */
 
     /* Do an integrity check on each database file */
     for(i=0; i<db->nDb; i++){
@@ -1433,10 +1449,6 @@ void sqlite3Pragma(
       if( iDb>=0 && i!=iDb ) continue;
 
       sqlite3CodeVerifySchema(pParse, i);
-      addr = sqlite3VdbeAddOp1(v, OP_IfPos, 1); /* Halt if out of errors */
-      VdbeCoverage(v);
-      sqlite3VdbeAddOp2(v, OP_Halt, 0, 0);
-      sqlite3VdbeJumpHere(v, addr);
 
       /* Do an integrity check of the B-Tree
       **
@@ -1476,7 +1488,7 @@ void sqlite3Pragma(
          P4_DYNAMIC);
       sqlite3VdbeAddOp3(v, OP_Move, 2, 4, 1);
       sqlite3VdbeAddOp3(v, OP_Concat, 4, 3, 2);
-      sqlite3VdbeAddOp2(v, OP_ResultRow, 2, 1);
+      integrityCheckResultRow(v, 2);
       sqlite3VdbeJumpHere(v, addr);
 
       /* Make sure all the indices are constructed correctly.
@@ -1496,10 +1508,6 @@ void sqlite3Pragma(
           continue;  /* No additional checks needed for this table */
         }
         pPk = HasRowid(pTab) ? 0 : sqlite3PrimaryKeyIndex(pTab);
-        addr = sqlite3VdbeAddOp1(v, OP_IfPos, 1);  /* Stop if out of errors */
-        VdbeCoverage(v);
-        sqlite3VdbeAddOp2(v, OP_Halt, 0, 0);
-        sqlite3VdbeJumpHere(v, addr);
         sqlite3ExprCacheClear(pParse);
         sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenRead, 0,
                                    1, 0, &iDataCur, &iIdxCur);
@@ -1514,21 +1522,17 @@ void sqlite3Pragma(
         /* Verify that all NOT NULL columns really are NOT NULL */
         for(j=0; j<pTab->nCol; j++){
           char *zErr;
-          int jmp2, jmp3;
+          int jmp2;
           if( j==pTab->iPKey ) continue;
           if( pTab->aCol[j].notNull==0 ) continue;
           sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur, j, 3);
           sqlite3VdbeChangeP5(v, OPFLAG_TYPEOFARG);
           jmp2 = sqlite3VdbeAddOp1(v, OP_NotNull, 3); VdbeCoverage(v);
-          sqlite3VdbeAddOp2(v, OP_AddImm, 1, -1); /* Decrement error limit */
           zErr = sqlite3MPrintf(db, "NULL value in %s.%s", pTab->zName,
                               pTab->aCol[j].zName);
           sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0, zErr, P4_DYNAMIC);
-          sqlite3VdbeAddOp2(v, OP_ResultRow, 3, 1);
-          jmp3 = sqlite3VdbeAddOp1(v, OP_IfPos, 1); VdbeCoverage(v);
-          sqlite3VdbeAddOp0(v, OP_Halt);
+          integrityCheckResultRow(v, 3);
           sqlite3VdbeJumpHere(v, jmp2);
-          sqlite3VdbeJumpHere(v, jmp3);
         }
         /* Verify CHECK constraints */
         if( pTab->pCheck && (db->flags & SQLITE_IgnoreChecks)==0 ){
@@ -1545,13 +1549,10 @@ void sqlite3Pragma(
           sqlite3ExprIfTrue(pParse, pCheck->a[0].pExpr, addrCkOk, 
                             SQLITE_JUMPIFNULL);
           sqlite3VdbeResolveLabel(v, addrCkFault);
-          sqlite3VdbeAddOp2(v, OP_AddImm, 1, -1); /* Decrement error limit */
           zErr = sqlite3MPrintf(db, "CHECK constraint failed in %s",
                                 pTab->zName);
           sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0, zErr, P4_DYNAMIC);
-          sqlite3VdbeAddOp2(v, OP_ResultRow, 3, 1);
-          sqlite3VdbeAddOp2(v, OP_IfPos, 1, addrCkOk); VdbeCoverage(v);
-          sqlite3VdbeAddOp0(v, OP_Halt);
+          integrityCheckResultRow(v, 3);
           sqlite3VdbeResolveLabel(v, addrCkOk);
           sqlite3ExprCachePop(pParse);
         }
@@ -1567,16 +1568,13 @@ void sqlite3Pragma(
           /* Verify that an index entry exists for the current table row */
           jmp2 = sqlite3VdbeAddOp4Int(v, OP_Found, iIdxCur+j, ckUniq, r1,
                                       pIdx->nColumn); VdbeCoverage(v);
-          sqlite3VdbeAddOp2(v, OP_AddImm, 1, -1); /* Decrement error limit */
           sqlite3VdbeLoadString(v, 3, "row ");
           sqlite3VdbeAddOp3(v, OP_Concat, 7, 3, 3);
           sqlite3VdbeLoadString(v, 4, " missing from index ");
           sqlite3VdbeAddOp3(v, OP_Concat, 4, 3, 3);
           jmp5 = sqlite3VdbeLoadString(v, 4, pIdx->zName);
           sqlite3VdbeAddOp3(v, OP_Concat, 4, 3, 3);
-          sqlite3VdbeAddOp2(v, OP_ResultRow, 3, 1);
-          jmp4 = sqlite3VdbeAddOp1(v, OP_IfPos, 1); VdbeCoverage(v);
-          sqlite3VdbeAddOp0(v, OP_Halt);
+          jmp4 = integrityCheckResultRow(v, 3);
           sqlite3VdbeJumpHere(v, jmp2);
           /* For UNIQUE indexes, verify that only one entry exists with the
           ** current key.  The entry is unique if (1) any column is NULL
@@ -1597,7 +1595,6 @@ void sqlite3Pragma(
             sqlite3VdbeJumpHere(v, jmp6);
             sqlite3VdbeAddOp4Int(v, OP_IdxGT, iIdxCur+j, uniqOk, r1,
                                  pIdx->nKeyCol); VdbeCoverage(v);
-            sqlite3VdbeAddOp2(v, OP_AddImm, 1, -1); /* Decrement error limit */
             sqlite3VdbeLoadString(v, 3, "non-unique entry in index ");
             sqlite3VdbeGoto(v, jmp5);
             sqlite3VdbeResolveLabel(v, uniqOk);
@@ -1612,16 +1609,13 @@ void sqlite3Pragma(
           sqlite3VdbeLoadString(v, 2, "wrong # of entries in index ");
           for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
             if( pPk==pIdx ) continue;
-            addr = sqlite3VdbeCurrentAddr(v);
-            sqlite3VdbeAddOp2(v, OP_IfPos, 1, addr+2); VdbeCoverage(v);
-            sqlite3VdbeAddOp2(v, OP_Halt, 0, 0);
             sqlite3VdbeAddOp2(v, OP_Count, iIdxCur+j, 3);
-            sqlite3VdbeAddOp3(v, OP_Eq, 8+j, addr+8, 3); VdbeCoverage(v);
+            addr = sqlite3VdbeAddOp3(v, OP_Eq, 8+j, 0, 3); VdbeCoverage(v);
             sqlite3VdbeChangeP5(v, SQLITE_NOTNULL);
-            sqlite3VdbeAddOp2(v, OP_AddImm, 1, -1);
             sqlite3VdbeLoadString(v, 3, pIdx->zName);
             sqlite3VdbeAddOp3(v, OP_Concat, 3, 2, 7);
-            sqlite3VdbeAddOp2(v, OP_ResultRow, 7, 1);
+            integrityCheckResultRow(v, 7);
+            sqlite3VdbeJumpHere(v, addr);
           }
         }
 #endif /* SQLITE_OMIT_BTREECOUNT */
@@ -1631,7 +1625,7 @@ void sqlite3Pragma(
       static const int iLn = VDBE_OFFSET_LINENO(2);
       static const VdbeOpList endCode[] = {
         { OP_AddImm,      1, 0,        0},    /* 0 */
-        { OP_If,          1, 4,        0},    /* 1 */
+        { OP_IfNotZero,   1, 4,        0},    /* 1 */
         { OP_String8,     0, 3,        0},    /* 2 */
         { OP_ResultRow,   3, 1,        0},    /* 3 */
       };
@@ -1639,7 +1633,7 @@ void sqlite3Pragma(
 
       aOp = sqlite3VdbeAddOpList(v, ArraySize(endCode), endCode, iLn);
       if( aOp ){
-        aOp[0].p2 = -mxErr;
+        aOp[0].p2 = 1-mxErr;
         aOp[2].p4type = P4_STATIC;
         aOp[2].p4.z = "ok";
       }
