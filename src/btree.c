@@ -5330,8 +5330,13 @@ i64 sqlite3BtreeRowCountEst(BtCursor *pCur){
 
   assert( cursorOwnsBtShared(pCur) );
   assert( sqlite3_mutex_held(pCur->pBtree->db->mutex) );
-  if( pCur->eState!=CURSOR_VALID ) return -1;
-  if( pCur->apPage[pCur->iPage]->leaf==0 ) return -1;
+
+  /* Currently this interface is only called by the OP_IfSmaller
+  ** opcode, and it that case the cursor will always be valid and
+  ** will always point to a leaf node. */
+  if( NEVER(pCur->eState!=CURSOR_VALID) ) return -1;
+  if( NEVER(pCur->apPage[pCur->iPage]->leaf==0) ) return -1;
+
   for(n=1, i=0; i<=pCur->iPage; i++){
     n *= pCur->apPage[i]->nCell;
   }
