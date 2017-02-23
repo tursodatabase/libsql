@@ -1,5 +1,5 @@
-C Move\sa\sbranch\scondition\sin\sanalyze.c\sinside\san\s#ifdef\sSQLITE_ENABLE_STAT4\sblock.
-D 2017-02-22T19:41:16.947
+C Save\sa\sfew\sbytes\sand\sa\sfew\scycles\sby\ssetting\sVdbe.expmask\sto\szero\sfor\nstatements\sprepared\susing\slegacy\sinterface\ssqlite3_prepare().
+D 2017-02-23T16:30:16.521
 F Makefile.in edb6bcdd37748d2b1c3422ff727c748df7ffe918
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a89ea37ab5928026001569f056973b9059492fe2
@@ -465,8 +465,8 @@ F src/vacuum.c 1fe4555cd8c9b263afb85b5b4ee3a4a4181ad569
 F src/vdbe.c 83f387d9e6842b1dc99f6e85bb577c5bbc4e397d
 F src/vdbe.h 59998ffd71d7caa8886bc78dafaf8caeccd4c13c
 F src/vdbeInt.h 4e4b15b2e1330e1636e4e01974eab2b0b985092f
-F src/vdbeapi.c 3e4a8893feeb78620f4aac4ac5b85d92255b97e1
-F src/vdbeaux.c 2f48204a0f2875b098ee046bba9265907297b0b5
+F src/vdbeapi.c 70aabe108c411e529a59d8800445513965334062
+F src/vdbeaux.c 031422c66e272c7f1027070e7f0858f4c418dfbc
 F src/vdbeblob.c 359891617358deefc85bef7bcf787fa6b77facb9
 F src/vdbemem.c 3b5a9a5b375458d3e12a50ae1aaa41eeec2175fd
 F src/vdbesort.c eda25cb2d1727efca6f7862fea32b8aa33c0face
@@ -1557,7 +1557,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 737a82444065752785c643b1d29ca097c828effb
-R 36d1036d6c004868a4b3899253e892b2
+P d6afd98de3ee8b714dfd6477ead955096f623972
+R d82d78a185c578681c4bad1233af7bd3
 U dan
-Z b9298378d570f055da46d519ad41197c
+Z 013ae364526d4d7cd1569b7a9709f5c0
