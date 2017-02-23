@@ -5523,7 +5523,9 @@ case OP_CreateTable: {          /* out2 */
 ** Run the SQL statement or statements specified in the P4 string.
 */
 case OP_SqlExec: {
+  db->nSqlExec++;
   rc = sqlite3_exec(db, pOp->p4.z, 0, 0, 0);
+  db->nSqlExec--;
   if( rc ) goto abort_due_to_error;
   break;
 }

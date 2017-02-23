@@ -1333,6 +1333,7 @@ struct sqlite3 {
   u8 isTransactionSavepoint;    /* True if the outermost savepoint is a TS */
   u8 mTrace;                    /* zero or more SQLITE_TRACE flags */
   u8 skipBtreeMutex;            /* True if no shared-cache backends */
+  u8 nSqlExec;                  /* Number of pending OP_SqlExec opcodes */
   int nextPagesize;             /* Pagesize after VACUUM if >0 */
   u32 magic;                    /* Magic number for detect library misuse */
   int nChange;                  /* Value returned by sqlite3_changes() */

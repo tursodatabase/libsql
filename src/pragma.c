@@ -1940,6 +1940,7 @@ void sqlite3Pragma(
         sqlite3VdbeAddOp4(v, OP_SqlExec, 0, 0, 0, zSubSql, P4_DYNAMIC);
       }
     }
+    sqlite3VdbeAddOp0(v, OP_Expire);
     break;
   }
 
