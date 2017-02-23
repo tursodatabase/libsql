@@ -17,6 +17,7 @@
 * rusqlite now performs a one-time check (prior to the first connection attempt) that the runtime
   SQLite version is at least as new as the SQLite version found at buildtime. This check can by
   skipped by calling the unsafe function `rusqlite::bypass_sqlite_version_check()`.
+* Removes the `libc` dependency in favor of using `std::os::raw`
 
 # Version 0.9.5 (2017-01-26)
 

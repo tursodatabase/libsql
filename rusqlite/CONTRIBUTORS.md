@@ -17,3 +17,4 @@ rusqlite contributors
 * [Chip Collier](https://github.com/photex)
 * [Omar Ferrer](https://github.com/chamakits)
 * [Lee Jenkins](https://github.com/reddraggone9)
+* [miedzinski](https://github.com/miedzinski)

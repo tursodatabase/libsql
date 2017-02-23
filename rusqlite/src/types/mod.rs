@@ -73,11 +73,10 @@ mod serde_json;
 /// ## Example
 ///
 /// ```rust,no_run
-/// # extern crate libc;
 /// # extern crate rusqlite;
 /// # use rusqlite::{Connection, Result};
 /// # use rusqlite::types::{Null};
-/// # use libc::{c_int};
+/// # use std::os::raw::{c_int};
 /// fn main() {
 /// }
 /// fn insert_null(conn: &Connection) -> Result<c_int> {
@@ -114,7 +113,7 @@ mod test {
 
     use Connection;
     use Error;
-    use libc::{c_int, c_double};
+    use std::os::raw::{c_int, c_double};
     use std::f64::EPSILON;
     use super::Value;
 
