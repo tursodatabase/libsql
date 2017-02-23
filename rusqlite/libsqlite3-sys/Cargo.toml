@@ -7,6 +7,8 @@ description = "Native bindings to the libsqlite3 library"
 license = "MIT"
 links = "sqlite3"
 build = "build.rs"
+keywords = ["sqlite", "database", "ffi"]
+categories = ["database", "external-ffi-bindings"]
 
 [features]
 bundled = []
