@@ -1,5 +1,5 @@
-C Save\sa\sfew\sbytes\sand\sa\sfew\scycles\sby\ssetting\sVdbe.expmask\sto\szero\sfor\nstatements\sprepared\susing\slegacy\sinterface\ssqlite3_prepare().
-D 2017-02-23T16:30:16.521
+C Optimize\sdefragmentPage()\sin\sthe\scase\swhere\sthe\spage\scontains\seither\sone\sor\ntwo\sfree-blocks\sand\sa\ssmall\snumber\sof\sfragmented\sbytes.
+D 2017-02-24T19:58:22.394
 F Makefile.in edb6bcdd37748d2b1c3422ff727c748df7ffe918
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a89ea37ab5928026001569f056973b9059492fe2
@@ -338,7 +338,7 @@ F src/auth.c 930b376a9c56998557367e6f7f8aaeac82a2a792
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c 3ae66974881e74df9909093818b4c3428f8d7982
+F src/btree.c 1763e0ec3a6cbda48d3a5cb5a7451e46fbc8784d
 F src/btree.h e6d352808956ec163a17f832193a3e198b3fb0ac
 F src/btreeInt.h cd55d39d9916270837a88c12e701047cba0729b0
 F src/build.c 51b473eec465f471d607b54e8dbc00751c3f8a1f
@@ -1557,7 +1557,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d6afd98de3ee8b714dfd6477ead955096f623972
-R d82d78a185c578681c4bad1233af7bd3
+P a8fd705258643863493476f8b42ee981608a339f
+R c55510e117c3384aa955b9dc66959921
+T *branch * defragmentpage-opt
+T *sym-defragmentpage-opt *
+T -sym-trunk *
 U dan
-Z 013ae364526d4d7cd1569b7a9709f5c0
+Z a194b2944e8972170f1e898920de81d2
