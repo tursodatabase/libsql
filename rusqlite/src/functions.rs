@@ -79,7 +79,7 @@ fn set_result<'a>(ctx: *mut sqlite3_context, result: &ToSqlOutput<'a>) {
         ValueRef::Null => unsafe { ffi::sqlite3_result_null(ctx) },
         ValueRef::Integer(i) => unsafe { ffi::sqlite3_result_int64(ctx, i) },
         ValueRef::Real(r) => unsafe { ffi::sqlite3_result_double(ctx, r) },
-        ValueRef::Text(ref s) => unsafe {
+        ValueRef::Text(s) => unsafe {
             let length = s.len();
             if length > ::std::i32::MAX as usize {
                 ffi::sqlite3_result_error_toobig(ctx);
@@ -97,7 +97,7 @@ fn set_result<'a>(ctx: *mut sqlite3_context, result: &ToSqlOutput<'a>) {
                 ffi::sqlite3_result_text(ctx, c_str.as_ptr(), length as c_int, destructor);
             }
         },
-        ValueRef::Blob(ref b) => unsafe {
+        ValueRef::Blob(b) => unsafe {
             let length = b.len();
             if length > ::std::i32::MAX as usize {
                 ffi::sqlite3_result_error_toobig(ctx);
@@ -114,8 +114,8 @@ fn set_result<'a>(ctx: *mut sqlite3_context, result: &ToSqlOutput<'a>) {
 }
 
 unsafe fn report_error(ctx: *mut sqlite3_context, err: &Error) {
-    match err {
-        &Error::SqliteFailure(ref err, ref s) => {
+    match *err {
+        Error::SqliteFailure(ref err, ref s) => {
             ffi::sqlite3_result_error_code(ctx, err.extended_code);
             if let Some(Ok(cstr)) = s.as_ref().map(|s| str_to_cstring(s)) {
                 ffi::sqlite3_result_error(ctx, cstr.as_ptr(), -1);
