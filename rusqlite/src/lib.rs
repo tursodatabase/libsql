@@ -555,6 +555,7 @@ impl Default for OpenFlags {
 static SQLITE_INIT: Once = ONCE_INIT;
 static SQLITE_VERSION_CHECK: Once = ONCE_INIT;
 static BYPASS_SQLITE_INIT: AtomicBool = ATOMIC_BOOL_INIT;
+static BYPASS_VERSION_CHECK: AtomicBool = ATOMIC_BOOL_INIT;
 
 /// rusqlite's check for a safe SQLite threading mode requires SQLite 3.7.0 or later. If you are
 /// running against a SQLite older than that, rusqlite attempts to ensure safety by performing
@@ -572,10 +573,45 @@ pub unsafe fn bypass_sqlite_initialization() {
     BYPASS_SQLITE_INIT.store(true, Ordering::Relaxed);
 }
 
+/// rusqlite performs a one-time check that the runtime SQLite version is at least as new as
+/// the version of SQLite found when rusqlite was built. Bypassing this check may be dangerous;
+/// e.g., if you use features of SQLite that are not present in the runtime version. If you are
+/// sure the runtime version is compatible with the build-time version for your usage, you can
+/// bypass the version check by calling this function before your first connection attempt.
+pub unsafe fn bypass_sqlite_version_check() {
+    BYPASS_VERSION_CHECK.store(true, Ordering::Relaxed);
+}
+
 fn ensure_valid_sqlite_version() {
     SQLITE_VERSION_CHECK.call_once(|| {
-        if version_number() < 3006008 {
+        let version_number = version_number();
+
+        // Check our hard floor.
+        if version_number < 3006008 {
             panic!("rusqlite requires SQLite 3.6.8 or newer");
+        }
+
+        // Check that the major version number for runtime and buildtime match.
+        let buildtime_major = ffi::SQLITE_VERSION_NUMBER / 1_000_000;
+        let runtime_major = version_number / 1_000_000;
+        if buildtime_major != runtime_major {
+            panic!("rusqlite was built against SQLite {} but is running with SQLite {}",
+                   str::from_utf8(ffi::SQLITE_VERSION).unwrap(), version());
+        }
+
+        if BYPASS_VERSION_CHECK.load(Ordering::Relaxed) {
+            return;
+        }
+
+        // Check that the runtime version number is compatible with the version number we found at
+        // build-time.
+        if version_number < ffi::SQLITE_VERSION_NUMBER {
+            panic!("\
+rusqlite was built against SQLite {} but the runtime SQLite version is {}. To fix this, either:
+* Recompile rusqlite and link against the SQLite version you are using at runtime, or
+* Call rusqlite::bypass_sqlite_version_check() prior to your first connection attempt. Doing this
+  means you're sure everything will work correctly even though the runtime version is older than
+  the version we found at build time.", str::from_utf8(ffi::SQLITE_VERSION).unwrap(), version());
         }
     });
 }
