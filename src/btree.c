@@ -1317,17 +1317,18 @@ static void ptrmapPutOvflPtr(MemPage *pPage, u8 *pCell, int *pRC){
 
 
 /*
-** Defragment the page given.  All Cells are moved to the
-** end of the page and all free space is collected into one
-** big FreeBlk that occurs in between the header and cell
-** pointer array and the cell content area.
+** Defragment the page given. This routine reorganizes cells within the
+** page so that there are no free-blocks on the free-block list.
+**
+** Parameter nMaxFrag is the maximum amount of fragmented space that may be
+** present in the page after this routine returns.
 **
 ** EVIDENCE-OF: R-44582-60138 SQLite may from time to time reorganize a
 ** b-tree page so that there are no freeblocks or fragment bytes, all
 ** unused bytes are contained in the unallocated space region, and all
 ** cells are packed tightly at the end of the page.
 */
-static int defragmentPage(MemPage *pPage){
+static int defragmentPage(MemPage *pPage, int nMaxFrag){
   int i;                     /* Loop counter */
   int pc;                    /* Address of the i-th cell */
   int hdr;                   /* Offset to the page header */
@@ -1342,7 +1343,6 @@ static int defragmentPage(MemPage *pPage){
   int iCellFirst;            /* First allowable cell index */
   int iCellLast;             /* Last possible cell index */
 
-
   assert( sqlite3PagerIswriteable(pPage->pDbPage) );
   assert( pPage->pBt!=0 );
   assert( pPage->pBt->usableSize <= SQLITE_MAX_PAGE_SIZE );
@@ -1354,10 +1354,44 @@ static int defragmentPage(MemPage *pPage){
   cellOffset = pPage->cellOffset;
   nCell = pPage->nCell;
   assert( nCell==get2byte(&data[hdr+3]) );
+  iCellFirst = cellOffset + 2*nCell;
+
+  /* This block handles pages with two or fewer free blocks and nMaxFrag
+  ** or fewer fragmented bytes. In this case it is faster to move the
+  ** two (or one) blocks of cells using memmove() and add the required
+  ** offsets to each pointer in the cell-pointer array than it is to 
+  ** reconstruct the entire page.  */
+  if( (int)data[hdr+7]<=nMaxFrag ){
+    int iFree = get2byte(&data[hdr+1]);
+    if( iFree ){
+      int iFree2 = get2byte(&data[iFree]);
+      if( 0==iFree2 || (data[iFree2]==0 && data[iFree2+1]==0) ){
+        u8 *pEnd = &data[cellOffset + nCell*2];
+        u8 *pAddr;
+        int sz2 = 0;
+        int sz = get2byte(&data[iFree+2]);
+        int top = get2byte(&data[hdr+5]);
+        if( iFree2 ){
+          sz2 = get2byte(&data[iFree2+2]);
+          memmove(&data[iFree+sz+sz2], &data[iFree+sz], iFree2-(iFree+sz));
+          sz += sz2;
+        }
+        cbrk = top+sz;
+        memmove(&data[cbrk], &data[top], iFree-top);
+        for(pAddr=&data[cellOffset]; pAddr<pEnd; pAddr+=2){
+          pc = get2byte(pAddr);
+          if( pc<iFree ){ put2byte(pAddr, pc+sz); }
+          else if( pc<iFree2 ){ put2byte(pAddr, pc+sz2); }
+        }
+        goto defragment_out;
+      }
+    }
+  }
+
   usableSize = pPage->pBt->usableSize;
   cbrk = usableSize;
-  iCellFirst = cellOffset + 2*nCell;
   iCellLast = usableSize - 4;
+
   for(i=0; i<nCell; i++){
     u8 *pAddr;     /* The i-th cell pointer */
     pAddr = &data[cellOffset + i*2];
@@ -1390,16 +1424,18 @@ static int defragmentPage(MemPage *pPage){
     }
     memcpy(&data[cbrk], &src[pc], size);
   }
+  data[hdr+7] = 0;
+
+ defragment_out:
+  if( data[hdr+7]+cbrk-iCellFirst!=pPage->nFree ){
+    return SQLITE_CORRUPT_BKPT;
+  }
   assert( cbrk>=iCellFirst );
   put2byte(&data[hdr+5], cbrk);
   data[hdr+1] = 0;
   data[hdr+2] = 0;
-  data[hdr+7] = 0;
   memset(&data[iCellFirst], 0, cbrk-iCellFirst);
   assert( sqlite3PagerIswriteable(pPage->pDbPage) );
-  if( cbrk-iCellFirst!=pPage->nFree ){
-    return SQLITE_CORRUPT_BKPT;
-  }
   return SQLITE_OK;
 }
 
@@ -1537,10 +1573,10 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
   testcase( gap+2+nByte==top );
   if( gap+2+nByte>top ){
     assert( pPage->nCell>0 || CORRUPT_DB );
-    rc = defragmentPage(pPage);
+    rc = defragmentPage(pPage, MIN(4, pPage->nFree - (2+nByte)));
     if( rc ) return rc;
     top = get2byteNotZero(&data[hdr+5]);
-    assert( gap+nByte<=top );
+    assert( gap+2+nByte<=top );
   }
 
 
@@ -7689,7 +7725,7 @@ static int balance_nonroot(
     ** free space needs to be up front.
     */
     assert( nNew==1 || CORRUPT_DB );
-    rc = defragmentPage(apNew[0]);
+    rc = defragmentPage(apNew[0], -1);
     testcase( rc!=SQLITE_OK );
     assert( apNew[0]->nFree == 
         (get2byte(&apNew[0]->aData[5])-apNew[0]->cellOffset-apNew[0]->nCell*2)
