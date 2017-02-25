@@ -1,5 +1,5 @@
-C Optimize\sdefragmentPage()\sin\sthe\scase\swhere\sthe\spage\scontains\seither\sone\sor\ntwo\sfree-blocks\sand\sa\ssmall\snumber\sof\sfragmented\sbytes.
-D 2017-02-25T17:47:31.387
+C Add\san\s'extern\s"C"'\sblock\sto\sheader\sfile\ssqlite3userauth.h.
+D 2017-02-25T20:57:46.730
 F Makefile.in edb6bcdd37748d2b1c3422ff727c748df7ffe918
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a89ea37ab5928026001569f056973b9059492fe2
@@ -313,7 +313,7 @@ F ext/session/sessionwor.test 2f3744236dc8b170a695b7d8ddc8c743c7e79fdc
 F ext/session/sqlite3session.c 13642d9c754cc18f17e141f82860d269e2adf920
 F ext/session/sqlite3session.h d4db650adfcc7a4360e9f12a09c2d117b1db6b53
 F ext/session/test_session.c eb0bd6c1ea791c1d66ee4ef94c16500dad936386
-F ext/userauth/sqlite3userauth.h 19cb6f0e31316d0ee4afdfb7a85ef9da3333a220
+F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
@@ -1557,7 +1557,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a8fd705258643863493476f8b42ee981608a339f f9863b39d96dce6cb5e49a5f3a445ff3d897a951
-R 7a56121f7b6bd4c4a315ae4d10cd07e6
+P 4cd2a9672c59ea4b3b4cf3d2f139af3c18a8e833
+R 16a6968419b5f6c02a1445afca8164e1
 U dan
-Z 1f9c94a7513412f3add97a95f1a8ec80
+Z e669ffb28fd5f6d2e359df5fca2d3400
