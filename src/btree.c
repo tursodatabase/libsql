@@ -1425,11 +1425,11 @@ static int defragmentPage(MemPage *pPage, int nMaxFrag){
     memcpy(&data[cbrk], &src[pc], size);
   }
   data[hdr+7] = 0;
-  if( cbrk-iCellFirst!=pPage->nFree ){
-    return SQLITE_CORRUPT_BKPT;
-  }
 
  defragment_out:
+  if( data[hdr+7]+cbrk-iCellFirst!=pPage->nFree ){
+    return SQLITE_CORRUPT_BKPT;
+  }
   assert( cbrk>=iCellFirst );
   put2byte(&data[hdr+5], cbrk);
   data[hdr+1] = 0;
@@ -1576,7 +1576,7 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
     rc = defragmentPage(pPage, MIN(4, pPage->nFree - (2+nByte)));
     if( rc ) return rc;
     top = get2byteNotZero(&data[hdr+5]);
-    assert( gap+nByte<=top );
+    assert( gap+2+nByte<=top );
   }
 
 
@@ -7725,7 +7725,7 @@ static int balance_nonroot(
     ** free space needs to be up front.
     */
     assert( nNew==1 || CORRUPT_DB );
-    rc = defragmentPage(apNew[0], 0);
+    rc = defragmentPage(apNew[0], -1);
     testcase( rc!=SQLITE_OK );
     assert( apNew[0]->nFree == 
         (get2byte(&apNew[0]->aData[5])-apNew[0]->cellOffset-apNew[0]->nCell*2)

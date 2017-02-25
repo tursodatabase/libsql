@@ -1,5 +1,5 @@
-C Optimize\sdefragmentPage()\sin\sthe\scase\swhere\sthe\spage\scontains\seither\sone\sor\ntwo\sfree-blocks\sand\sa\ssmall\snumber\sof\sfragmented\sbytes.
-D 2017-02-24T19:58:22.394
+C Tweak\sthe\scode\son\sthis\sbranch\sto\sdetect\sb-tree\spage\scorruption\sin\sthe\ssame\scases\sas\sthe\strunk.
+D 2017-02-25T16:24:02.032
 F Makefile.in edb6bcdd37748d2b1c3422ff727c748df7ffe918
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a89ea37ab5928026001569f056973b9059492fe2
@@ -338,7 +338,7 @@ F src/auth.c 930b376a9c56998557367e6f7f8aaeac82a2a792
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c 1763e0ec3a6cbda48d3a5cb5a7451e46fbc8784d
+F src/btree.c 03149b0f3fec3c1aa3c50a17e997bb442b867632
 F src/btree.h e6d352808956ec163a17f832193a3e198b3fb0ac
 F src/btreeInt.h cd55d39d9916270837a88c12e701047cba0729b0
 F src/build.c 51b473eec465f471d607b54e8dbc00751c3f8a1f
@@ -1557,10 +1557,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a8fd705258643863493476f8b42ee981608a339f
-R c55510e117c3384aa955b9dc66959921
-T *branch * defragmentpage-opt
-T *sym-defragmentpage-opt *
-T -sym-trunk *
+P 202b1c0276aec6b8da64d3277de1ad91c9d62d80
+R 7a56121f7b6bd4c4a315ae4d10cd07e6
 U dan
-Z a194b2944e8972170f1e898920de81d2
+Z 0eab51f3ee55bc511deac00d1a02232c
