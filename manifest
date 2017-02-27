@@ -1,5 +1,5 @@
-C Improve\sperformance\sof\sfts5\swrites\sby\swriting\sthe\s"averages"\srecord\sonce\sat\nthe\send\sof\seach\stransaction\sinstead\sof\severy\stime\sthe\stable\sis\supdated.
-D 2017-02-27T17:06:56.850
+C Make\sPATH\shandling\smore\srobust\sin\sthe\sbatch\stools\sfor\sMSVC.
+D 2017-02-27T17:16:27.906
 F Makefile.in edb6bcdd37748d2b1c3422ff727c748df7ffe918
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a89ea37ab5928026001569f056973b9059492fe2
@@ -1469,10 +1469,10 @@ F test/wordcount.c 06efb84b7c48a4973c2c24ea06c93d00bce24389
 F test/zeroblob.test 3857870fe681b8185654414a9bccfde80b62a0fa
 F test/zerodamage.test e59a56443d6298ecf7435f618f0b27654f0c849e
 F tool/GetFile.cs a15e08acb5dd7539b75ba23501581d7c2b462cb5
-F tool/GetTclKit.bat f94784e3bdc2f50c539266f5467cbf1f27612cb3
+F tool/GetTclKit.bat 6afa640edc7810725aec61c3076ac617c4aaf0b7
 F tool/Replace.cs 02c67258801c2fb5f63231e0ac0f220b4b36ba91
 F tool/addopcodes.tcl 10c889c4a65ec6c5604e4a47306fa77ff57ae189
-F tool/build-all-msvc.bat 018c1b273458a90c8ba633c6f0c5654cfcb138bf x
+F tool/build-all-msvc.bat c12328d06c45fec8baada5949e3d5af54bf8c887 x
 F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
 F tool/cg_anno.tcl f95b0006c52cf7f0496b506343415b6ee3cdcdd3 x
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
@@ -1559,7 +1559,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 952a3906b30a818e4574bb85f57150577d04f74e
-R 84bac8b8e25067f97464b8201fd688d3
-U dan
-Z 50f45fcec707e33cc33fa8432e53c9b6
+P 2b210d691462b463796e7948399133c296e89ebf
+R 2fadaa28e86ebe3a08aafa06769bc23f
+U mistachkin
+Z 6b968b4fe877e63444beda0443031271
