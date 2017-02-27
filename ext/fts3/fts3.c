@@ -3408,8 +3408,10 @@ static int fts3SyncMethod(sqlite3_vtab *pVtab){
   const u32 nMinMerge = 64;       /* Minimum amount of incr-merge work to do */
 
   Fts3Table *p = (Fts3Table*)pVtab;
-  int rc = sqlite3Fts3PendingTermsFlush(p);
+  int rc;
+  i64 iLastRowid = sqlite3_last_insert_rowid(p->db);
 
+  rc = sqlite3Fts3PendingTermsFlush(p);
   if( rc==SQLITE_OK 
    && p->nLeafAdd>(nMinMerge/16) 
    && p->nAutoincrmerge && p->nAutoincrmerge!=0xff
@@ -3424,6 +3426,7 @@ static int fts3SyncMethod(sqlite3_vtab *pVtab){
     if( A>(int)nMinMerge ) rc = sqlite3Fts3Incrmerge(p, A, p->nAutoincrmerge);
   }
   sqlite3Fts3SegmentsClose(p);
+  sqlite3_set_last_insert_rowid(p->db, iLastRowid);
   return rc;
 }
 

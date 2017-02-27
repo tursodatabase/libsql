@@ -922,6 +922,21 @@ sqlite_int64 sqlite3_last_insert_rowid(sqlite3 *db){
 }
 
 /*
+** Set the value returned by the sqlite3_last_insert_rowid() API function.
+*/
+void sqlite3_set_last_insert_rowid(sqlite3 *db, sqlite3_int64 iRowid){
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( !sqlite3SafetyCheckOk(db) ){
+    (void)SQLITE_MISUSE_BKPT;
+    return;
+  }
+#endif
+  sqlite3_mutex_enter(db->mutex);
+  db->lastRowid = iRowid;
+  sqlite3_mutex_leave(db->mutex);
+}
+
+/*
 ** Return the number of changes in the most recent call to sqlite3_exec().
 */
 int sqlite3_changes(sqlite3 *db){
