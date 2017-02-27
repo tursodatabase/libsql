@@ -1,5 +1,5 @@
-C Add\san\s'extern\s"C"'\sblock\sto\sheader\sfile\ssqlite3userauth.h.
-D 2017-02-25T20:57:46.730
+C Remove\sreferences\sto\sspecial\shandling\sin\svirtual\stable\smethods\sfrom\sthe\ndocumentation\sfor\ssqlite3_last_insert_rowid().
+D 2017-02-27T12:23:52.119
 F Makefile.in edb6bcdd37748d2b1c3422ff727c748df7ffe918
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a89ea37ab5928026001569f056973b9059492fe2
@@ -397,7 +397,7 @@ F src/resolve.c f9bc0de45a30a450da47b3766de00be89bf9be79
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c d12f3539f80db38b09015561b569e0eb1c4b6c5f
 F src/shell.c bf976d5301be9d8a4c52852c97909cc9a41ee20d
-F src/sqlite.h.in 751ff125eb159c8f92c182b8df980a5e4f50e966
+F src/sqlite.h.in 154b80d215289fb9b845a6f4f9b67ea4fcf049f8
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
 F src/sqliteInt.h a23e18aebdd0d851c2956a74a3a4f12ff202b472
@@ -1557,7 +1557,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4cd2a9672c59ea4b3b4cf3d2f139af3c18a8e833
-R 16a6968419b5f6c02a1445afca8164e1
+P ffd61fb449a510b2fc90caf86b266733051cc365
+R 8aa5e89f1f59df441ed610ff04b07915
 U dan
-Z e669ffb28fd5f6d2e359df5fca2d3400
+Z e6ccfdfcae6209cec3abae13f87bf4f8
