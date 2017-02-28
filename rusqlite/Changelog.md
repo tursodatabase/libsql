@@ -1,4 +1,4 @@
-# Version 0.10.0-UPCOMING (TBD)
+# Version 0.10.0 (2017-02-28)
 
 * Re-export the `ErrorCode` enum from `libsqlite3-sys`.
 * Adds `version()` and `version_number()` functions for querying the version of SQLite in use.
