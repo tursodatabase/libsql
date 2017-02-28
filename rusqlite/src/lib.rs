@@ -596,7 +596,8 @@ fn ensure_valid_sqlite_version() {
         let runtime_major = version_number / 1_000_000;
         if buildtime_major != runtime_major {
             panic!("rusqlite was built against SQLite {} but is running with SQLite {}",
-                   str::from_utf8(ffi::SQLITE_VERSION).unwrap(), version());
+                   str::from_utf8(ffi::SQLITE_VERSION).unwrap(),
+                   version());
         }
 
         if BYPASS_VERSION_CHECK.load(Ordering::Relaxed) {
@@ -611,7 +612,9 @@ rusqlite was built against SQLite {} but the runtime SQLite version is {}. To fi
 * Recompile rusqlite and link against the SQLite version you are using at runtime, or
 * Call rusqlite::bypass_sqlite_version_check() prior to your first connection attempt. Doing this
   means you're sure everything will work correctly even though the runtime version is older than
-  the version we found at build time.", str::from_utf8(ffi::SQLITE_VERSION).unwrap(), version());
+  the version we found at build time.",
+                   str::from_utf8(ffi::SQLITE_VERSION).unwrap(),
+                   version());
         }
     });
 }
@@ -683,9 +686,9 @@ impl InnerConnection {
 
         // Replicate the check for sane open flags from SQLite, because the check in SQLite itself
         // wasn't added until version 3.7.3.
-        debug_assert!(1 << SQLITE_OPEN_READ_ONLY.bits                       == 0x02);
-        debug_assert!(1 << SQLITE_OPEN_READ_WRITE.bits                      == 0x04);
-        debug_assert!(1 << (SQLITE_OPEN_READ_WRITE|SQLITE_OPEN_CREATE).bits == 0x40);
+        debug_assert!(1 << SQLITE_OPEN_READ_ONLY.bits == 0x02);
+        debug_assert!(1 << SQLITE_OPEN_READ_WRITE.bits == 0x04);
+        debug_assert!(1 << (SQLITE_OPEN_READ_WRITE | SQLITE_OPEN_CREATE).bits == 0x40);
         if (1 << (flags.bits & 0x7)) & 0x46 == 0 {
             return Err(Error::SqliteFailure(ffi::Error::new(ffi::SQLITE_MISUSE), None));
         }

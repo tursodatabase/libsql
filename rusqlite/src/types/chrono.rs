@@ -104,9 +104,8 @@ impl FromSql for DateTime<UTC> {
                 Cow::Borrowed(s)
             };
 
-            match DateTime::parse_from_rfc3339(&s) {
-                Ok(dt) => return Ok(dt.with_timezone(&UTC)),
-                Err(_) => (),
+            if let Ok(dt) = DateTime::parse_from_rfc3339(&s) {
+                return Ok(dt.with_timezone(&UTC));
             }
         }
 
