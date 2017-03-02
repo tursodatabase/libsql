@@ -748,6 +748,7 @@ static int parseModifier(
       p->validHMS = 1;
       p->h = p->m = 0;
       p->s = 0.0;
+      p->rawS = 0;
       p->validTZ = 0;
       p->validJD = 0;
       if( sqlite3_stricmp(z,"month")==0 ){

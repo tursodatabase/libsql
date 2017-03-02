@@ -1,5 +1,5 @@
-C Fix\sanother\sRBU\scase\ssimilar\sto\sthe\sprevious.\sThis\sone\sfor\ssystems\swhere\sthe\nsector-size\sis\slarger\sthan\sthe\spage-size.
-D 2017-03-02T16:56:48.085
+C Fix\sa\sbug\sin\sthe\s'start\sof\s...'\sdate/time\smodifiers\swhen\sthey\sfollow\sa\njulian\sday\snumber.\s\sFix\sfor\sticket\s[6097cb92745327a1].
+D 2017-03-02T23:40:21.740
 F Makefile.in edb6bcdd37748d2b1c3422ff727c748df7ffe918
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a89ea37ab5928026001569f056973b9059492fe2
@@ -347,7 +347,7 @@ F src/build.c 51b473eec465f471d607b54e8dbc00751c3f8a1f
 F src/callback.c 2e76147783386374bf01b227f752c81ec872d730
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c a9984df73898c042a5cfc8f9d8e7723d02bc35c9
-F src/date.c dc3f1391d9297f8c748132813aaffcb117090d6e
+F src/date.c bb4db348be17903f4bbf2ef3cb208add874deab9
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
 F src/delete.c 0d9d5549d42e79ce4d82ff1db1e6c81e36d2f67c
 F src/expr.c 8a29e9b72d4b642189999c41782cd6c5bc43512f
@@ -637,7 +637,7 @@ F test/csv01.test e0ba3caaa57e4c667a0b45977689fb8082f14348
 F test/ctime.test ff6c38e822459d6ca743c34901caf57740b08b54
 F test/cursorhint.test 7bc346788390475e77a345da2b92270d04d35856
 F test/cursorhint2.test 8457e93d97f665f23f97cdbc8477d16e3480331b
-F test/date.test a6a5a48b90907bca9fbcc79a30be5a715c1ab2fc
+F test/date.test e6da60d8ec399de43c076425fbe2eecbc90a31a4
 F test/dbfuzz.c 73047c920d6210e5912c87cdffd9a1c281d4252e
 F test/dbselftest.c b2e6cfac59066dbcb7334b66304bb15a5508dd42
 F test/dbstatus.test 73149851b3aff14fc6db478e58f9083a66422cf5
@@ -1560,7 +1560,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P edee6a80e1cc7e6a2b8c3c7f76dd794fc8ab9a72
-R f72d0ed562c179232e2d4d139b6c6946
-U dan
-Z a85a6fd6f15328765626feb0d9a72fd7
+P 4012bb3aa91927156ba149caa4e5c622b0729d79
+R 106d75876c31ad808988639b89376fd6
+U drh
+Z d7eafab06f2b8ece511ab9317c8fe2f8
