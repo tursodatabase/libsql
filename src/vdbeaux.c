@@ -57,6 +57,7 @@ void sqlite3VdbeError(Vdbe *p, const char *zFormat, ...){
 void sqlite3VdbeSetSql(Vdbe *p, const char *z, int n, int isPrepareV2){
   assert( isPrepareV2==1 || isPrepareV2==0 );
   if( p==0 ) return;
+  if( !isPrepareV2 ) p->expmask = 0;
 #if defined(SQLITE_OMIT_TRACE) && !defined(SQLITE_ENABLE_SQLLOG)
   if( !isPrepareV2 ) return;
 #endif
@@ -85,6 +86,7 @@ void sqlite3VdbeSwap(Vdbe *pA, Vdbe *pB){
   pA->zSql = pB->zSql;
   pB->zSql = zTmp;
   pB->isPrepareV2 = pA->isPrepareV2;
+  pB->expmask = pA->expmask;
 }
 
 /*

@@ -4344,6 +4344,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     session_close_all(p);
     sqlite3_close(p->db);
     p->db = 0;
+    p->zDbFilename = 0;
     sqlite3_free(p->zFreeOnClose);
     p->zFreeOnClose = 0;
     /* Check for command-line arguments */
