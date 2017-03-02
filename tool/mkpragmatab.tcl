@@ -363,7 +363,7 @@ set pragma_def {
   FLAG: Result0
 
   NAME: optimize
-  FLAG: NoColumns
+  FLAG: Result1
 }
 
 # Open the output file

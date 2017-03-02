@@ -1864,34 +1864,51 @@ void sqlite3Pragma(
 
   /*
   **  PRAGMA optimize
+  **  PRAGMA optimize(MASK)
   **  PRAGMA schema.optimize
+  **  PRAGMA schema.optimize(MASK)
   **
   ** Attempt to optimize the database.  All schemas are optimized in the first
-  ** form, and only the specified schema is optimized in the second form.
+  ** two forms, and only the specified schema is optimized in the latter two.
   **
   ** The details of optimizations performed by this pragma does are expected
   ** to change and improve over time.  Applications should anticipate that
   ** this pragma will perform new optimizations in future releases.
   **
-  ** Argments to this pragma are currently ignored, but future enhancements
-  ** might make use of arguments to control which optimizations are allowed
-  ** or to suggest limits on how much CPU time and I/O should be expended
-  ** in the optimization effort.
+  ** The optional argument is a bitmask of optimizations to perform:
   **
-  ** The current implementation runs ANALYZE on any tables which might have 
-  ** benefitted from having recent statistics at some point since the start
-  ** of the current connection.  Only tables in "schema" are analyzed in the 
-  ** second form.  In the first form, all tables except TEMP tables are
-  ** checked.
+  **    0x0001    Debugging mode.  Do not actually perform any optimizations
+  **              but instead return one line of text for each optimization
+  **              that would have been done.  Off by default.
   **
-  ** In the current implementation, a table is analyzed only if both of
+  **    0x0002    Run ANALYZE on tables that might benefit.  On by default.
+  **              See below for additional information.
+  **
+  **    0x0004    (Not yet implemented) Record usage and performance 
+  **              information from the current session in the
+  **              database file so that it will be available to "optimize"
+  **              pragmas run by future database connections.
+  **
+  **    0x0008    (Not yet implemented) Create indexes that might have
+  **              been helpful to recent queries
+  **
+  ** The default MASK is 0x000e, which means perform all of the optimizations
+  ** listed above except do not set Debug Mode.  New optimizations may be
+  ** added in future releases but they will be turned off by default.  The
+  ** default MASK will always be 0x0e.
+  **
+  ** DETERMINATION OF WHEN TO RUN ANALYZE
+  **
+  ** In the current implementation, a table is analyzed if only if all of
   ** the following are true:
   **
-  ** (1) The query planner used sqlite_stat1-style statistics for one or
+  ** (1) MASK bit 0x02 is set.
+  **
+  ** (2) The query planner used sqlite_stat1-style statistics for one or
   **     more indexes of the table at some point during the lifetime of
   **     the current connection.
   **
-  ** (2) One or more indexes of the table are currently unanalyzed OR
+  ** (3) One or more indexes of the table are currently unanalyzed OR
   **     the number of rows in the table has increased by 25 times or more
   **     since the last time ANALYZE was run.
   **
@@ -1907,7 +1924,14 @@ void sqlite3Pragma(
     Index *pIdx;           /* An index of the table */
     LogEst szThreshold;    /* Size threshold above which reanalysis is needd */
     char *zSubSql;         /* SQL statement for the OP_SqlExec opcode */
+    u32 opMask;            /* Mask of operations to perform */
 
+    if( zRight ){
+      opMask = (u32)sqlite3Atoi(zRight);
+      if( (opMask & 0x02)==0 ) break;
+    }else{
+      opMask = 0xe;
+    }
     iTabCur = pParse->nTab++;
     for(iDbLast = zDb?iDb:db->nDb-1; iDb<=iDbLast; iDb++){
       if( iDb==1 ) continue;
@@ -1932,12 +1956,18 @@ void sqlite3Pragma(
         if( szThreshold ){
           sqlite3OpenTable(pParse, iTabCur, iDb, pTab, OP_OpenRead);
           sqlite3VdbeAddOp3(v, OP_IfSmaller, iTabCur, 
-                            sqlite3VdbeCurrentAddr(v)+2, szThreshold);
+                         sqlite3VdbeCurrentAddr(v)+2+(opMask&1), szThreshold);
           VdbeCoverage(v);
         }
         zSubSql = sqlite3MPrintf(db, "ANALYZE \"%w\".\"%w\"",
                                  db->aDb[iDb].zDbSName, pTab->zName);
-        sqlite3VdbeAddOp4(v, OP_SqlExec, 0, 0, 0, zSubSql, P4_DYNAMIC);
+        if( opMask & 0x01 ){
+          int r1 = sqlite3GetTempReg(pParse);
+          sqlite3VdbeAddOp4(v, OP_String8, 0, r1, 0, zSubSql, P4_DYNAMIC);
+          sqlite3VdbeAddOp2(v, OP_ResultRow, r1, 1);
+        }else{
+          sqlite3VdbeAddOp4(v, OP_SqlExec, 0, 0, 0, zSubSql, P4_DYNAMIC);
+        }
       }
     }
     sqlite3VdbeAddOp0(v, OP_Expire);

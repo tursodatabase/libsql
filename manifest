@@ -1,5 +1,5 @@
-C Merge\srecent\strunk\senhancements.
-D 2017-03-02T13:22:04.261
+C Add\san\soptional\sbitmask\sof\sallowed\soptimizations\son\sthe\s"PRAGMA\soptimize"\ncommand.\s\sThe\s0x01\sbit\sis\sDebug\sMode.
+D 2017-03-02T14:17:21.291
 F Makefile.in edb6bcdd37748d2b1c3422ff727c748df7ffe918
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a89ea37ab5928026001569f056973b9059492fe2
@@ -389,8 +389,8 @@ F src/parse.y af8830094f4aecb91cb69721f3601ad10c36abc4
 F src/pcache.c 62835bed959e2914edd26afadfecce29ece0e870
 F src/pcache.h 2cedcd8407eb23017d92790b112186886e179490
 F src/pcache1.c e3967219b2a92b9edcb9324a4ba75009090d3953
-F src/pragma.c 4b32b014bb4b460bbf0103e4631809428c1ce16b
-F src/pragma.h d97dd835c7f4dfb6857487707313385d44fa76c0
+F src/pragma.c 75fdb05838c303cf0ce5846ca011b8103531c42c
+F src/pragma.h c9c763958fec92b04125571472c9500b351c5f7f
 F src/prepare.c b1140c3d0cf59bc85ace00ce363153041b424b7a
 F src/printf.c 67427bbee66d891fc6f6f5aada857e9cdb368c1c
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
@@ -1498,7 +1498,7 @@ F tool/mkmsvcmin.tcl 95b37e202cbed873aa8ffdbb493b9db45927be2b
 F tool/mkopcodec.tcl d1b6362bd3aa80d5520d4d6f3765badf01f6c43c
 F tool/mkopcodeh.tcl a01d2c1d8a6205b03fc635adf3735b4c523befd3
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
-F tool/mkpragmatab.tcl 9b499f7301fadeddeae52b95f962ef7e5a718f50
+F tool/mkpragmatab.tcl 2ffe6d5fdc2d3381621d6c77978ba054466e757f
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl fef88397668ae83166735c41af99d79f56afaabb
 F tool/mksqlite3c.tcl 06b2e6a0f21cc0a5d70fbbd136b3e0a96470645e
@@ -1560,7 +1560,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7a959f6d1ea038988cdb4c02d6f37abaec2580a0 29f54b899e5cf22ece98ab41c39c41d75a4b228d
-R 6bb37f552ece3665cee38d0fc37ff06c
+P c60cdb47612c05c252613e50a8ac10635469fdfe
+R dbee345c7724a1e9049a9032bbb0a60b
 U drh
-Z 8ce562b5567814952b66c349d10ab9fa
+Z f9893159b19aa2a55c1ddc2fbced30b3

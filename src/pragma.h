@@ -417,7 +417,7 @@ static const PragmaName aPragmaName[] = {
 #endif
  {/* zName:     */ "optimize",
   /* ePragTyp:  */ PragTyp_OPTIMIZE,
-  /* ePragFlg:  */ PragFlg_NoColumns,
+  /* ePragFlg:  */ PragFlg_Result1,
   /* ColNames:  */ 0, 0,
   /* iArg:      */ 0 },
 #if !defined(SQLITE_OMIT_PAGER_PRAGMAS)
