@@ -1,5 +1,5 @@
-C Make\ssure\sthe\sVdbe.expmask\svalue\sis\sset\scorrectly\sin\ssqlite3VdbeSwap().\nThis\sfixes\sa\sproblem\sintroduced\sby\s[a8fd7052].
-D 2017-03-02T13:13:30.327
+C When\ssaving\sthe\sstate\sof\san\sRBU\supdate\sin\sthe\sincremental-checkpoint\sphase,\nsync\sthe\sdatabase\sfile.\sOtherwise,\sif\sa\spower\sfailure\soccurs\sand\sthe\sRBU\nupdate\sresumed\sfollowing\ssystem\srecovery,\sthe\sdatabase\smay\sbecome\scorrupt.
+D 2017-03-02T14:51:47.379
 F Makefile.in edb6bcdd37748d2b1c3422ff727c748df7ffe918
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a89ea37ab5928026001569f056973b9059492fe2
@@ -250,6 +250,7 @@ F ext/rbu/rbuB.test c25bc325b8072a766e56bb76c001866b405925c2
 F ext/rbu/rbuC.test efe47db508a0269b683cb2a1913a425ffd39a831
 F ext/rbu/rbu_common.tcl a38e8e2d4a50fd6aaf151633714c1b1d2fae3ead
 F ext/rbu/rbucrash.test 8d2ed5d4b05fef6c00c2a6b5f7ead71fa172a695
+F ext/rbu/rbucrash2.test 7f3fe5d6d930be0965f27b49bdcdc8d4a078b73c
 F ext/rbu/rbudiff.test 3e605cf624d00d04d0fb1316a3acec4fbe3b3ac5
 F ext/rbu/rbudor.test 99b05cc0df613e962c2c8085cfb05686a09cf315
 F ext/rbu/rbufault.test cc0be8d5d392d98b0c2d6a51be377ea989250a89
@@ -262,7 +263,7 @@ F ext/rbu/rburesume.test 8acb77f4a422ff55acfcfc9cc15a5cb210b1de83
 F ext/rbu/rbusave.test 0f43b6686084f426ddd040b878426452fd2c2f48
 F ext/rbu/rbuvacuum.test 4a977447c15c2581ab668781d9ef4294382530e0
 F ext/rbu/rbuvacuum2.test 2074ab14fe66e1c7e7210c62562650dcd215bbaa
-F ext/rbu/sqlite3rbu.c bb0de6cdbdb14a7d55a097238a434b7e99caf318
+F ext/rbu/sqlite3rbu.c 3c2dfd3f27a3ecc5f017ecf82d563b522bbc341a
 F ext/rbu/sqlite3rbu.h 6fb6294c34a9ca93b5894a33bca530c6f08decba
 F ext/rbu/test_rbu.c 5aa22616afac6f71ebd3d9bc9bf1006cfabcca88
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
@@ -411,7 +412,7 @@ F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
 F src/test3.c d03f5b5da9a2410b7a91c64b0d3306ed28ab6fee
 F src/test4.c 18ec393bb4d0ad1de729f0b94da7267270f3d8e6
 F src/test5.c 328aae2c010c57a9829d255dc099d6899311672d
-F src/test6.c 121060d2e79a4f5047eb12b5135b23a6a7a5af01
+F src/test6.c 004ad42f121f693b8cbe060d1a330678abc61620
 F src/test7.c 5612e9aecf934d6df7bba6ce861fdf5ba5456010
 F src/test8.c 4f4904721167b32f7a4fa8c7b32a07a673d6cc86
 F src/test9.c 12e5ba554d2d1cbe0158f6ab3f7ffcd7a86ee4e5
@@ -1173,7 +1174,7 @@ F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptable2.test cd396beb41117a5302fff61767c35fa4270a0d5e
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
-F test/tester.tcl 67835ac17e90055f24a9cf52e5c5bce0dd511c74
+F test/tester.tcl 581f0185434daf7026ccede4c07e8d1479186ec5
 F test/thread001.test 9f22fd3525a307ff42a326b6bc7b0465be1745a5
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -1559,7 +1560,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ac760db0727209db0a816e112ea5f47e54d54dac
-R be25bb329cc9311f7d92b42176424b6a
-U drh
-Z eb983447910676b385a2c6496a637326
+P 29f54b899e5cf22ece98ab41c39c41d75a4b228d
+R fd6b0917cff6359266006d6c00dd0a12
+U dan
+Z 1a59570e49a3b7cf84dd8025330375c8
