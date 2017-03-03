@@ -19,11 +19,12 @@ name = "rusqlite"
 
 [features]
 load_extension = []
-backup = []
-blob = []
-functions = []
-trace = []
+backup = ["libsqlite3-sys/min_sqlite_version_3_6_11"]
+blob = ["libsqlite3-sys/min_sqlite_version_3_7_4"]
+functions = ["libsqlite3-sys/min_sqlite_version_3_7_3"]
+trace = ["libsqlite3-sys/min_sqlite_version_3_6_23"]
 bundled = ["libsqlite3-sys/bundled"]
+buildtime_bindgen = ["libsqlite3-sys/buildtime_bindgen"]
 limits = []
 
 [dependencies]
