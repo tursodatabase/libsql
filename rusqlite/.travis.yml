@@ -16,11 +16,11 @@ addons:
     sources:
       - llvm-toolchain-precise-3.9
       - ubuntu-toolchain-r-test
-    packages:
+    packages: # recommanded versions for rust-bindgen
       - llvm-3.9-dev
       - libclang-3.9-dev
 
-env:
+env: # specify the clang path for rust-bindgen
   - LIBCLANG_PATH=/usr/lib/llvm-3.9/lib
 
 script:
