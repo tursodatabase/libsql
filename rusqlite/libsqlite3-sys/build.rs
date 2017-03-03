@@ -44,22 +44,39 @@ mod build {
 
     use std::env;
 
+    pub enum HeaderLocation {
+        FromEnvironment,
+        Wrapper,
+        FromPath(String),
+    }
+
+    impl From<HeaderLocation> for String {
+        fn from(header: HeaderLocation) -> String {
+            match header {
+                HeaderLocation::FromEnvironment => {
+                    let mut header = env::var("SQLITE3_INCLUDE_DIR")
+                        .expect("SQLITE3_INCLUDE_DIR must be set if SQLITE3_LIB_DIR is set");
+                    header.push_str("/sqlite3.h");
+                    header
+                }
+                HeaderLocation::Wrapper => "wrapper.h".into(),
+                HeaderLocation::FromPath(path) => path,
+            }
+        }
+    }
+
     pub fn main() {
         let header = find_sqlite();
         bindings::write_to_out_dir(header);
     }
 
     // Prints the necessary cargo link commands and returns the path to the header.
-    fn find_sqlite() -> String {
+    fn find_sqlite() -> HeaderLocation {
         // Allow users to specify where to find SQLite.
         if let Ok(dir) = env::var("SQLITE3_LIB_DIR") {
-            let mut header = env::var("SQLITE3_INCLUDE_DIR")
-                .expect("SQLITE3_INCLUDE_DIR must be set if SQLITE3_LIB_DIR is set");
-            header.push_str("/sqlite3.h");
-            //run_bindgen(header);
             println!("cargo:rustc-link-lib=sqlite3");
             println!("cargo:rustc-link-search={}", dir);
-            return header;
+            return HeaderLocation::FromEnvironment;
         }
 
         // See if pkg-config can do everything for us.
@@ -67,9 +84,9 @@ mod build {
             Ok(mut lib) => {
                 if let Some(mut header) = lib.include_paths.pop() {
                     header.push("sqlite3.h");
-                    header.to_string_lossy().into()
+                    HeaderLocation::FromPath(header.to_string_lossy().into())
                 } else {
-                    "wrapper.h".into()
+                    HeaderLocation::Wrapper
                 }
             }
             Err(_) => {
@@ -78,13 +95,15 @@ mod build {
                 // output /usr/lib explicitly, but that can introduce other linking problems; see
                 // https://github.com/jgallagher/rusqlite/issues/207.
                 println!("cargo:rustc-link-lib=sqlite3");
-                "wrapper.h".into()
+                HeaderLocation::Wrapper
             }
         }
     }
 
     #[cfg(not(feature = "buildtime_bindgen"))]
     mod bindings {
+        use super::HeaderLocation;
+
         use std::{env, fs};
         use std::path::Path;
 
@@ -105,7 +124,7 @@ mod build {
             "bindgen-bindings/bindgen_3.7.4.rs",
         ];
 
-        pub fn write_to_out_dir(_header: String) {
+        pub fn write_to_out_dir(_header: HeaderLocation) {
             let out_dir = env::var("OUT_DIR").unwrap();
             let out_path = Path::new(&out_dir).join("bindgen.rs");
             let in_path = PREBUILT_BINDGEN_PATHS[PREBUILT_BINDGEN_PATHS.len() - 1];
@@ -118,6 +137,7 @@ mod build {
         extern crate bindgen;
 
         use self::bindgen::chooser::{TypeChooser, IntKind};
+        use super::HeaderLocation;
 
         use std::env;
         use std::io::Write;
@@ -137,7 +157,8 @@ mod build {
             }
         }
 
-        pub fn write_to_out_dir(header: String) {
+        pub fn write_to_out_dir(header: HeaderLocation) {
+            let header: String = header.into();
             let out_dir = env::var("OUT_DIR").unwrap();
             let mut output = Vec::new();
             bindgen::builder()
