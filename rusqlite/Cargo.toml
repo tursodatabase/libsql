@@ -1,6 +1,6 @@
 [package]
 name = "rusqlite"
-version = "0.10.0"
+version = "0.10.1"
 authors = ["John Gallagher <jgallagher@bignerdranch.com>"]
 description = "Ergonomic wrapper for SQLite"
 repository = "https://github.com/jgallagher/rusqlite"
@@ -40,7 +40,7 @@ regex = "0.2"
 
 [dependencies.libsqlite3-sys]
 path = "libsqlite3-sys"
-version = "0.7.0"
+version = "0.7"
 
 [[test]]
 name = "config_log"

@@ -1,3 +1,7 @@
+# Version 0.10.1 (UPCOMING)
+
+* Updates the `bundled` SQLite version to 3.17.0.
+
 # Version 0.10.0 (2017-02-28)
 
 * Re-export the `ErrorCode` enum from `libsqlite3-sys`.
