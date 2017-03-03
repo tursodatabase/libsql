@@ -1,5 +1,5 @@
-C Before\sbeginning\san\sincremental\scheckpoint\sin\sRBU,\ssync\sthe\sdirectory\ncontaining\sthe\starget\sdatabase\sfile.\sThis\sensures\sthat\sthe\snew\sdirectory\sentry\ncreated\sby\srenaming\sthe\s*-oal\sfile\sto\s*-wal\sis\ssynced\sto\sdisk.
-D 2017-03-03T16:51:46.903
+C Fix\sa\scase\sintroduced\sby\s[4cd2a967]\swhere\sa\scorrupt\sdatabase\scould\scause\sa\sbuffer\soverwrite.
+D 2017-03-03T20:02:53.439
 F Makefile.in edb6bcdd37748d2b1c3422ff727c748df7ffe918
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a89ea37ab5928026001569f056973b9059492fe2
@@ -340,7 +340,7 @@ F src/auth.c 930b376a9c56998557367e6f7f8aaeac82a2a792
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c 03149b0f3fec3c1aa3c50a17e997bb442b867632
+F src/btree.c 91baade79832becb44d85cd7c39b5ebe170666d8
 F src/btree.h e6d352808956ec163a17f832193a3e198b3fb0ac
 F src/btreeInt.h cd55d39d9916270837a88c12e701047cba0729b0
 F src/build.c 51b473eec465f471d607b54e8dbc00751c3f8a1f
@@ -618,6 +618,7 @@ F test/corruptG.test adf79b669cbfd19e28c8191a610d083ae53a6d51
 F test/corruptH.test 79801d97ec5c2f9f3c87739aa1ec2eb786f96454
 F test/corruptI.test 075fe1d75aa1d84e2949be56b6264376c41502e4
 F test/corruptJ.test 4d5ccc4bf959464229a836d60142831ef76a5aa4
+F test/corruptK.test 814a59ec699d8546b4e29005fba3d16e933ef2fe
 F test/cost.test 1eedbfd868f806f3fa08ff072b04cf270dcf61c8
 F test/count.test cb2e0f934c6eb33670044520748d2ecccd46259c
 F test/coveridxscan.test b629e896b14df2f000a99b8d170d80589c46562c
@@ -1560,7 +1561,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 081dbcfb6d82528cefecb36c4491fa6e1a790b17
-R c49d10bdecee819ceb83b85a5e3f8244
+P 915a9a28783fbb2f4c0794eb4264ce8c0b9d42f7
+R 87fee79fc77f11db6d08a83e962c36d1
 U dan
-Z 0d48f0e17be43a572b386c16c35f7b42
+Z d96b298a9dab6e01e07206495b42117b
