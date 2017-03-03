@@ -743,6 +743,7 @@ static int parseModifier(
       ** or month or year.
       */
       if( sqlite3_strnicmp(z, "start of ", 9)!=0 ) break;
+      if( !p->validJD && !p->validYMD && !p->validHMS ) break;
       z += 9;
       computeYMD(p);
       p->validHMS = 1;

@@ -604,6 +604,8 @@ datetest 17.2 {datetime(2457828)} {2017-03-15 12:00:00}
 datetest 17.3 {datetime(2457828,'start of day')} {2017-03-15 00:00:00}
 datetest 17.4 {datetime(2457828,'start of month')} {2017-03-01 00:00:00}
 datetest 17.5 {datetime(2457828,'start of year')} {2017-01-01 00:00:00}
+datetest 17.6 {datetime(37,'start of year')} NULL
+datetest 17.7 {datetime(38,'start of year')} {-4712-01-01 00:00:00}
 
 
 
