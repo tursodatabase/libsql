@@ -2624,6 +2624,7 @@ static void rbuSetupCheckpoint(sqlite3rbu *p, RbuState *pState){
     }else{
       int nSectorSize;
       sqlite3_file *pDb = p->pTargetFd->pReal;
+      sqlite3_file *pWal = p->pTargetFd->pWalFd->pReal;
       assert( p->nPagePerSector==0 );
       nSectorSize = pDb->pMethods->xSectorSize(pDb);
       if( nSectorSize>p->pgsz ){
@@ -2631,6 +2632,12 @@ static void rbuSetupCheckpoint(sqlite3rbu *p, RbuState *pState){
       }else{
         p->nPagePerSector = 1;
       }
+
+      /* Call xSync() on the wal file. This causes SQLite to sync the 
+      ** directory in which the target database and the wal file reside, in 
+      ** case it has not been synced since the rename() call in 
+      ** rbuMoveOalFile(). */
+      p->rc = pWal->pMethods->xSync(pWal, SQLITE_SYNC_NORMAL);
     }
   }
 }
