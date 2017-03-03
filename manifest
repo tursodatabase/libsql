@@ -1,5 +1,5 @@
-C Fix\sanother\scorner-case\sfor\sthe\s'start\sof\s...'\smodifier\sin\sthe\sdate/time\nfunctions.\s\sRelated\sto\sticket\s[6097cb92745327a1].
-D 2017-03-03T20:43:43.649
+C Remove\san\sredundant\sfunction\scall\sfrom\sthe\sdate/time\sfunction\simplementation.
+D 2017-03-03T21:36:26.906
 F Makefile.in edb6bcdd37748d2b1c3422ff727c748df7ffe918
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a89ea37ab5928026001569f056973b9059492fe2
@@ -347,7 +347,7 @@ F src/build.c 51b473eec465f471d607b54e8dbc00751c3f8a1f
 F src/callback.c 2e76147783386374bf01b227f752c81ec872d730
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c a9984df73898c042a5cfc8f9d8e7723d02bc35c9
-F src/date.c 499343d9cd97fb0c13ec299dbd1ff3d787b1cdac
+F src/date.c ee676e7694dfadbdd2fde1a258a71be8360ba5ae
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
 F src/delete.c 0d9d5549d42e79ce4d82ff1db1e6c81e36d2f67c
 F src/expr.c 8a29e9b72d4b642189999c41782cd6c5bc43512f
@@ -1561,7 +1561,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5d0455fece514552ad7f283d56526f53d7c688bd
-R 7ede60c220c81f4f24b446e38f3b85e3
+P 8831f4393dda42b3434e7767968caea84bbca2af
+R d8b3a18d4fd999381a3209784f6b834e
 U drh
-Z 2f7d593b5303445a6b7dc1a2027118f1
+Z 55613e922149954b91d38c0de9685f66
