@@ -1892,10 +1892,10 @@ void sqlite3Pragma(
   **    0x0008    (Not yet implemented) Create indexes that might have
   **              been helpful to recent queries
   **
-  ** The default MASK is 0x000e, which means perform all of the optimizations
-  ** listed above except do not set Debug Mode.  New optimizations may be
-  ** added in future releases but they will be turned off by default.  The
-  ** default MASK will always be 0x0e.
+  ** The default MASK is and always shall be 0xfffe.  0xfffe means perform all    ** of the optimizations listed above except Debug Mode, including new
+  ** optimizations that have not yet been invented.  If new optimizations are
+  ** ever added that should be off by default, those off-by-default 
+  ** optimizations will have bitmasks of 0x10000 or larger.
   **
   ** DETERMINATION OF WHEN TO RUN ANALYZE
   **
@@ -1930,7 +1930,7 @@ void sqlite3Pragma(
       opMask = (u32)sqlite3Atoi(zRight);
       if( (opMask & 0x02)==0 ) break;
     }else{
-      opMask = 0xe;
+      opMask = 0xfffe;
     }
     iTabCur = pParse->nTab++;
     for(iDbLast = zDb?iDb:db->nDb-1; iDb<=iDbLast; iDb++){
