@@ -1871,7 +1871,7 @@ void sqlite3Pragma(
   ** Attempt to optimize the database.  All schemas are optimized in the first
   ** two forms, and only the specified schema is optimized in the latter two.
   **
-  ** The details of optimizations performed by this pragma does are expected
+  ** The details of optimizations performed by this pragma are expected
   ** to change and improve over time.  Applications should anticipate that
   ** this pragma will perform new optimizations in future releases.
   **
