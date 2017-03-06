@@ -1333,6 +1333,7 @@ struct sqlite3 {
   u8 isTransactionSavepoint;    /* True if the outermost savepoint is a TS */
   u8 mTrace;                    /* zero or more SQLITE_TRACE flags */
   u8 skipBtreeMutex;            /* True if no shared-cache backends */
+  u8 nSqlExec;                  /* Number of pending OP_SqlExec opcodes */
   int nextPagesize;             /* Pagesize after VACUUM if >0 */
   u32 magic;                    /* Magic number for detect library misuse */
   int nChange;                  /* Value returned by sqlite3_changes() */
@@ -1883,12 +1884,13 @@ struct Table {
 #define TF_Ephemeral       0x0002    /* An ephemeral table */
 #define TF_HasPrimaryKey   0x0004    /* Table has a primary key */
 #define TF_Autoincrement   0x0008    /* Integer primary key is autoincrement */
-/* available for reuse:    0x0010    */
+#define TF_HasStat1        0x0010    /* nRowLogEst set from sqlite_stat1 */
 #define TF_WithoutRowid    0x0020    /* No rowid.  PRIMARY KEY is the key */
 #define TF_NoVisibleRowid  0x0040    /* No user-visible "rowid" column */
 #define TF_OOOHidden       0x0080    /* Out-of-Order hidden columns */
-#define TF_HasNotNull      0x0100    /* Contains NOT NULL constraints */
-
+#define TF_StatsUsed       0x0100    /* Query planner decisions affected by
+                                     ** Index.aiRowLogEst[] values */
+#define TF_HasNotNull      0x0200    /* Contains NOT NULL constraints */
 
 /*
 ** Test to see whether or not a table is a virtual table.  This is
@@ -2131,6 +2133,7 @@ struct Index {
   unsigned isResized:1;    /* True if resizeIndexObject() has been called */
   unsigned isCovering:1;   /* True if this is a covering index */
   unsigned noSkipScan:1;   /* Do not try to use skip-scan if true */
+  unsigned hasStat1:1;     /* aiRowLogEst values come from sqlite_stat1 */
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
   int nSample;             /* Number of elements in aSample[] */
   int nSampleCol;          /* Size of IndexSample.anEq[] and so on */

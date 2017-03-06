@@ -225,8 +225,8 @@ set pragma_def {
 
   NAME: stats
   FLAG: NeedSchema Result0 SchemaReq
-  COLS: table index width height
-  IF:   !defined(SQLITE_OMIT_SCHEMA_PRAGMAS)
+  COLS: tbl idx wdth hght flgs
+  IF:   !defined(SQLITE_OMIT_SCHEMA_PRAGMAS) && defined(SQLITE_DEBUG)
 
   NAME: index_info
   TYPE: INDEX_INFO
@@ -361,6 +361,9 @@ set pragma_def {
 
   NAME: threads
   FLAG: Result0
+
+  NAME: optimize
+  FLAG: Result1
 }
 
 # Open the output file

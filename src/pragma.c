@@ -1114,29 +1114,33 @@ void sqlite3Pragma(
   }
   break;
 
+#ifdef SQLITE_DEBUG
   case PragTyp_STATS: {
     Index *pIdx;
     HashElem *i;
-    pParse->nMem = 4;
+    pParse->nMem = 5;
     sqlite3CodeVerifySchema(pParse, iDb);
     for(i=sqliteHashFirst(&pDb->pSchema->tblHash); i; i=sqliteHashNext(i)){
       Table *pTab = sqliteHashData(i);
-      sqlite3VdbeMultiLoad(v, 1, "ssii",
+      sqlite3VdbeMultiLoad(v, 1, "ssiii",
            pTab->zName,
            0,
            pTab->szTabRow,
-           pTab->nRowLogEst);
-      sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 4);
+           pTab->nRowLogEst,
+           pTab->tabFlags);
+      sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 5);
       for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-        sqlite3VdbeMultiLoad(v, 2, "sii",
+        sqlite3VdbeMultiLoad(v, 2, "siii",
            pIdx->zName,
            pIdx->szIdxRow,
-           pIdx->aiRowLogEst[0]);
-        sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 4);
+           pIdx->aiRowLogEst[0],
+           pIdx->hasStat1);
+        sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 5);
       }
     }
   }
   break;
+#endif
 
   case PragTyp_INDEX_INFO: if( zRight ){
     Index *pIdx;
@@ -1855,6 +1859,118 @@ void sqlite3Pragma(
   */
   case PragTyp_SHRINK_MEMORY: {
     sqlite3_db_release_memory(db);
+    break;
+  }
+
+  /*
+  **  PRAGMA optimize
+  **  PRAGMA optimize(MASK)
+  **  PRAGMA schema.optimize
+  **  PRAGMA schema.optimize(MASK)
+  **
+  ** Attempt to optimize the database.  All schemas are optimized in the first
+  ** two forms, and only the specified schema is optimized in the latter two.
+  **
+  ** The details of optimizations performed by this pragma does are expected
+  ** to change and improve over time.  Applications should anticipate that
+  ** this pragma will perform new optimizations in future releases.
+  **
+  ** The optional argument is a bitmask of optimizations to perform:
+  **
+  **    0x0001    Debugging mode.  Do not actually perform any optimizations
+  **              but instead return one line of text for each optimization
+  **              that would have been done.  Off by default.
+  **
+  **    0x0002    Run ANALYZE on tables that might benefit.  On by default.
+  **              See below for additional information.
+  **
+  **    0x0004    (Not yet implemented) Record usage and performance 
+  **              information from the current session in the
+  **              database file so that it will be available to "optimize"
+  **              pragmas run by future database connections.
+  **
+  **    0x0008    (Not yet implemented) Create indexes that might have
+  **              been helpful to recent queries
+  **
+  ** The default MASK is 0x000e, which means perform all of the optimizations
+  ** listed above except do not set Debug Mode.  New optimizations may be
+  ** added in future releases but they will be turned off by default.  The
+  ** default MASK will always be 0x0e.
+  **
+  ** DETERMINATION OF WHEN TO RUN ANALYZE
+  **
+  ** In the current implementation, a table is analyzed if only if all of
+  ** the following are true:
+  **
+  ** (1) MASK bit 0x02 is set.
+  **
+  ** (2) The query planner used sqlite_stat1-style statistics for one or
+  **     more indexes of the table at some point during the lifetime of
+  **     the current connection.
+  **
+  ** (3) One or more indexes of the table are currently unanalyzed OR
+  **     the number of rows in the table has increased by 25 times or more
+  **     since the last time ANALYZE was run.
+  **
+  ** The rules for when tables are analyzed are likely to change in
+  ** future releases.
+  */
+  case PragTyp_OPTIMIZE: {
+    int iDbLast;           /* Loop termination point for the schema loop */
+    int iTabCur;           /* Cursor for a table whose size needs checking */
+    HashElem *k;           /* Loop over tables of a schema */
+    Schema *pSchema;       /* The current schema */
+    Table *pTab;           /* A table in the schema */
+    Index *pIdx;           /* An index of the table */
+    LogEst szThreshold;    /* Size threshold above which reanalysis is needd */
+    char *zSubSql;         /* SQL statement for the OP_SqlExec opcode */
+    u32 opMask;            /* Mask of operations to perform */
+
+    if( zRight ){
+      opMask = (u32)sqlite3Atoi(zRight);
+      if( (opMask & 0x02)==0 ) break;
+    }else{
+      opMask = 0xe;
+    }
+    iTabCur = pParse->nTab++;
+    for(iDbLast = zDb?iDb:db->nDb-1; iDb<=iDbLast; iDb++){
+      if( iDb==1 ) continue;
+      sqlite3CodeVerifySchema(pParse, iDb);
+      pSchema = db->aDb[iDb].pSchema;
+      for(k=sqliteHashFirst(&pSchema->tblHash); k; k=sqliteHashNext(k)){
+        pTab = (Table*)sqliteHashData(k);
+
+        /* If table pTab has not been used in a way that would benefit from
+        ** having analysis statistics during the current session, then skip it.
+        ** This also has the effect of skipping virtual tables and views */
+        if( (pTab->tabFlags & TF_StatsUsed)==0 ) continue;
+
+        /* Reanalyze if the table is 25 times larger than the last analysis */
+        szThreshold = pTab->nRowLogEst + 46; assert( sqlite3LogEst(25)==46 );
+        for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+          if( !pIdx->hasStat1 ){
+            szThreshold = 0; /* Always analyze if any index lacks statistics */
+            break;
+          }
+        }
+        if( szThreshold ){
+          sqlite3OpenTable(pParse, iTabCur, iDb, pTab, OP_OpenRead);
+          sqlite3VdbeAddOp3(v, OP_IfSmaller, iTabCur, 
+                         sqlite3VdbeCurrentAddr(v)+2+(opMask&1), szThreshold);
+          VdbeCoverage(v);
+        }
+        zSubSql = sqlite3MPrintf(db, "ANALYZE \"%w\".\"%w\"",
+                                 db->aDb[iDb].zDbSName, pTab->zName);
+        if( opMask & 0x01 ){
+          int r1 = sqlite3GetTempReg(pParse);
+          sqlite3VdbeAddOp4(v, OP_String8, 0, r1, 0, zSubSql, P4_DYNAMIC);
+          sqlite3VdbeAddOp2(v, OP_ResultRow, r1, 1);
+        }else{
+          sqlite3VdbeAddOp4(v, OP_SqlExec, 0, 0, 0, zSubSql, P4_DYNAMIC);
+        }
+      }
+    }
+    sqlite3VdbeAddOp0(v, OP_Expire);
     break;
   }
 

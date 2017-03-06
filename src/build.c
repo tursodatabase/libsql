@@ -3455,6 +3455,9 @@ void sqlite3DefaultRowEst(Index *pIdx){
   int nCopy = MIN(ArraySize(aVal), pIdx->nKeyCol);
   int i;
 
+  /* Indexes with default row estimates should not have stat1 data */
+  assert( !pIdx->hasStat1 );
+
   /* Set the first entry (number of rows in the index) to the estimated 
   ** number of rows in the table, or half the number of rows in the table
   ** for a partial index.   But do not let the estimate drop below 10. */

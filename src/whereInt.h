@@ -395,7 +395,12 @@ struct WhereLoopBuilder {
   UnpackedRecord *pRec;     /* Probe for stat4 (if required) */
   int nRecValid;            /* Number of valid fields currently in pRec */
 #endif
+  unsigned int bldFlags;    /* SQLITE_BLDF_* flags */
 };
+
+/* Allowed values for WhereLoopBuider.bldFlags */
+#define SQLITE_BLDF_INDEXED  0x0001   /* An index is used */
+#define SQLITE_BLDF_UNIQUE   0x0002   /* All keys of a UNIQUE index used */
 
 /*
 ** The WHERE clause processing routine has two halves.  The
