@@ -2212,7 +2212,7 @@ static char zHelp[] =
   "                         html     HTML <table> code\n"
   "                         insert   SQL insert statements for TABLE\n"
   "                         line     One value per line\n"
-  "                         list     Values delimited by .separator strings\n"
+  "                         list     Values delimited by \"|\"\n"
   "                         quote    Escape answers as for SQL\n"
   "                         tabs     Tab-separated values\n"
   "                         tcl      TCL list elements\n"
@@ -4344,6 +4344,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     session_close_all(p);
     sqlite3_close(p->db);
     p->db = 0;
+    p->zDbFilename = 0;
     sqlite3_free(p->zFreeOnClose);
     p->zFreeOnClose = 0;
     /* Check for command-line arguments */
@@ -4614,7 +4615,7 @@ static int do_meta_command(char *zLine, ShellState *p){
 
 #if defined(SQLITE_DEBUG) && defined(SQLITE_ENABLE_SELECTTRACE)
   if( c=='s' && n==11 && strncmp(azArg[0], "selecttrace", n)==0 ){
-    sqlite3SelectTrace = integerValue(azArg[1]);
+    sqlite3SelectTrace = (int)integerValue(azArg[1]);
   }else
 #endif
 
@@ -5192,6 +5193,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       }
     }
   }else
+#endif /* !defined(SQLITE_UNTESTABLE) */
 
   if( c=='t' && n>4 && strncmp(azArg[0], "timeout", n)==0 ){
     open_db(p, 0);
@@ -5228,7 +5230,6 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
 #endif
   }else
-#endif /* !defined(SQLITE_UNTESTABLE) */
 
 #if SQLITE_USER_AUTHENTICATION
   if( c=='u' && strncmp(azArg[0], "user", n)==0 ){

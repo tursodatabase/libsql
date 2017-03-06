@@ -209,7 +209,8 @@ static WhereTerm *whereScanNext(WhereScan *pScan){
         if( pTerm->leftCursor==iCur
          && pTerm->u.leftColumn==iColumn
          && (iColumn!=XN_EXPR
-             || sqlite3ExprCompare(pTerm->pExpr->pLeft,pScan->pIdxExpr,iCur)==0)
+             || sqlite3ExprCompareSkip(pTerm->pExpr->pLeft,
+                                       pScan->pIdxExpr,iCur)==0)
          && (pScan->iEquiv<=1 || !ExprHasProperty(pTerm->pExpr, EP_FromJoin))
         ){
           if( (pTerm->eOperator & WO_EQUIV)!=0
@@ -2386,6 +2387,11 @@ static int whereLoopAddBtreeIndex(
       continue;
     }
 
+    if( IsUniqueIndex(pProbe) && saved_nEq==pProbe->nKeyCol-1 ){
+      pBuilder->bldFlags |= SQLITE_BLDF_UNIQUE;
+    }else{
+      pBuilder->bldFlags |= SQLITE_BLDF_INDEXED;
+    }
     pNew->wsFlags = saved_wsFlags;
     pNew->u.btree.nEq = saved_nEq;
     pNew->u.btree.nBtm = saved_nBtm;
@@ -2933,7 +2939,15 @@ static int whereLoopAddBtree(
       }
     }
 
+    pBuilder->bldFlags = 0;
     rc = whereLoopAddBtreeIndex(pBuilder, pSrc, pProbe, 0);
+    if( pBuilder->bldFlags==SQLITE_BLDF_INDEXED ){
+      /* If a non-unique index is used, or if a prefix of the key for
+      ** unique index is used (making the index functionally non-unique)
+      ** then the sqlite_stat1 data becomes important for scoring the
+      ** plan */
+      pTab->tabFlags |= TF_StatsUsed;
+    }
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
     sqlite3Stat4ProbeFree(pBuilder->pRec);
     pBuilder->nRecValid = 0;
@@ -4113,9 +4127,9 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
    && nRowEst
   ){
     Bitmask notUsed;
-    int rc = wherePathSatisfiesOrderBy(pWInfo, pWInfo->pDistinctSet, pFrom,
+    int rc = wherePathSatisfiesOrderBy(pWInfo, pWInfo->pResultSet, pFrom,
                  WHERE_DISTINCTBY, nLoop-1, pFrom->aLoop[nLoop-1], &notUsed);
-    if( rc==pWInfo->pDistinctSet->nExpr ){
+    if( rc==pWInfo->pResultSet->nExpr ){
       pWInfo->eDistinct = WHERE_DISTINCT_ORDERED;
     }
   }
@@ -4352,7 +4366,7 @@ WhereInfo *sqlite3WhereBegin(
   SrcList *pTabList,      /* FROM clause: A list of all tables to be scanned */
   Expr *pWhere,           /* The WHERE clause */
   ExprList *pOrderBy,     /* An ORDER BY (or GROUP BY) clause, or NULL */
-  ExprList *pDistinctSet, /* Try not to output two rows that duplicate these */
+  ExprList *pResultSet,   /* Query result set.  Req'd for DISTINCT */
   u16 wctrlFlags,         /* The WHERE_* flags defined in sqliteInt.h */
   int iAuxArg             /* If WHERE_OR_SUBCLAUSE is set, index cursor number
                           ** If WHERE_USE_LIMIT, then the limit amount */
@@ -4428,7 +4442,7 @@ WhereInfo *sqlite3WhereBegin(
   pWInfo->pParse = pParse;
   pWInfo->pTabList = pTabList;
   pWInfo->pOrderBy = pOrderBy;
-  pWInfo->pDistinctSet = pDistinctSet;
+  pWInfo->pResultSet = pResultSet;
   pWInfo->aiCurOnePass[0] = pWInfo->aiCurOnePass[1] = -1;
   pWInfo->nLevel = nTabList;
   pWInfo->iBreak = pWInfo->iContinue = sqlite3VdbeMakeLabel(v);
@@ -4506,13 +4520,13 @@ WhereInfo *sqlite3WhereBegin(
   if( db->mallocFailed ) goto whereBeginError;
 
   if( wctrlFlags & WHERE_WANT_DISTINCT ){
-    if( isDistinctRedundant(pParse, pTabList, &pWInfo->sWC, pDistinctSet) ){
+    if( isDistinctRedundant(pParse, pTabList, &pWInfo->sWC, pResultSet) ){
       /* The DISTINCT marking is pointless.  Ignore it. */
       pWInfo->eDistinct = WHERE_DISTINCT_UNIQUE;
     }else if( pOrderBy==0 ){
       /* Try to ORDER BY the result set to make distinct processing easier */
       pWInfo->wctrlFlags |= WHERE_DISTINCTBY;
-      pWInfo->pOrderBy = pDistinctSet;
+      pWInfo->pOrderBy = pResultSet;
     }
   }
 
@@ -4588,10 +4602,10 @@ WhereInfo *sqlite3WhereBegin(
 #endif
   /* Attempt to omit tables from the join that do not effect the result */
   if( pWInfo->nLevel>=2
-   && pDistinctSet!=0
+   && pResultSet!=0
    && OptimizationEnabled(db, SQLITE_OmitNoopJoin)
   ){
-    Bitmask tabUsed = sqlite3WhereExprListUsage(pMaskSet, pDistinctSet);
+    Bitmask tabUsed = sqlite3WhereExprListUsage(pMaskSet, pResultSet);
     if( sWLB.pOrderBy ){
       tabUsed |= sqlite3WhereExprListUsage(pMaskSet, sWLB.pOrderBy);
     }

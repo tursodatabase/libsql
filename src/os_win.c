@@ -352,7 +352,34 @@ struct winVfsAppData {
  ******************************************************************************
  */
 #ifndef SQLITE_WIN32_HEAP_CREATE
-#  define SQLITE_WIN32_HEAP_CREATE    (TRUE)
+#  define SQLITE_WIN32_HEAP_CREATE        (TRUE)
+#endif
+
+/*
+ * This is the maximum possible initial size of the Win32-specific heap, in
+ * bytes.
+ */
+#ifndef SQLITE_WIN32_HEAP_MAX_INIT_SIZE
+#  define SQLITE_WIN32_HEAP_MAX_INIT_SIZE (4294967295U)
+#endif
+
+/*
+ * This is the extra space for the initial size of the Win32-specific heap,
+ * in bytes.  This value may be zero.
+ */
+#ifndef SQLITE_WIN32_HEAP_INIT_EXTRA
+#  define SQLITE_WIN32_HEAP_INIT_EXTRA  (4194304)
+#endif
+
+/*
+ * Calculate the maximum legal cache size, in pages, based on the maximum
+ * possible initial heap size and the default page size, setting aside the
+ * needed extra space.
+ */
+#ifndef SQLITE_WIN32_MAX_CACHE_SIZE
+#  define SQLITE_WIN32_MAX_CACHE_SIZE   (((SQLITE_WIN32_HEAP_MAX_INIT_SIZE) - \
+                                          (SQLITE_WIN32_HEAP_INIT_EXTRA)) / \
+                                         (SQLITE_DEFAULT_PAGE_SIZE))
 #endif
 
 /*
@@ -361,25 +388,36 @@ struct winVfsAppData {
  */
 #ifndef SQLITE_WIN32_CACHE_SIZE
 #  if SQLITE_DEFAULT_CACHE_SIZE>=0
-#    define SQLITE_WIN32_CACHE_SIZE (SQLITE_DEFAULT_CACHE_SIZE)
+#    define SQLITE_WIN32_CACHE_SIZE     (SQLITE_DEFAULT_CACHE_SIZE)
 #  else
-#    define SQLITE_WIN32_CACHE_SIZE (-(SQLITE_DEFAULT_CACHE_SIZE))
+#    define SQLITE_WIN32_CACHE_SIZE     (-(SQLITE_DEFAULT_CACHE_SIZE))
 #  endif
+#endif
+
+/*
+ * Make sure that the calculated cache size, in pages, cannot cause the
+ * initial size of the Win32-specific heap to exceed the maximum amount
+ * of memory that can be specified in the call to HeapCreate.
+ */
+#if SQLITE_WIN32_CACHE_SIZE>SQLITE_WIN32_MAX_CACHE_SIZE
+#  undef SQLITE_WIN32_CACHE_SIZE
+#  define SQLITE_WIN32_CACHE_SIZE       (2000)
 #endif
 
 /*
  * The initial size of the Win32-specific heap.  This value may be zero.
  */
 #ifndef SQLITE_WIN32_HEAP_INIT_SIZE
-#  define SQLITE_WIN32_HEAP_INIT_SIZE ((SQLITE_WIN32_CACHE_SIZE) * \
-                                       (SQLITE_DEFAULT_PAGE_SIZE) + 4194304)
+#  define SQLITE_WIN32_HEAP_INIT_SIZE   ((SQLITE_WIN32_CACHE_SIZE) * \
+                                         (SQLITE_DEFAULT_PAGE_SIZE) + \
+                                         (SQLITE_WIN32_HEAP_INIT_EXTRA))
 #endif
 
 /*
  * The maximum size of the Win32-specific heap.  This value may be zero.
  */
 #ifndef SQLITE_WIN32_HEAP_MAX_SIZE
-#  define SQLITE_WIN32_HEAP_MAX_SIZE  (0)
+#  define SQLITE_WIN32_HEAP_MAX_SIZE    (0)
 #endif
 
 /*
@@ -387,7 +425,7 @@ struct winVfsAppData {
  * zero for the default behavior.
  */
 #ifndef SQLITE_WIN32_HEAP_FLAGS
-#  define SQLITE_WIN32_HEAP_FLAGS     (0)
+#  define SQLITE_WIN32_HEAP_FLAGS       (0)
 #endif
 
 

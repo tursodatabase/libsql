@@ -1000,7 +1000,7 @@ expr(A) ::= expr(A) STAR|SLASH|REM(OP) expr(Y).
                                         {spanBinaryExpr(pParse,@OP,&A,&Y);}
 expr(A) ::= expr(A) CONCAT(OP) expr(Y). {spanBinaryExpr(pParse,@OP,&A,&Y);}
 %type likeop {Token}
-likeop(A) ::= LIKE_KW|MATCH(X).     {A=X;/*A-overwrites-X*/}
+likeop(A) ::= LIKE_KW|MATCH(A).
 likeop(A) ::= NOT LIKE_KW|MATCH(X). {A=X; A.n|=0x80000000; /*A-overwrite-X*/}
 expr(A) ::= expr(A) likeop(OP) expr(Y).  [LIKE_KW]  {
   ExprList *pList;

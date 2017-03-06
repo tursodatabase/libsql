@@ -418,7 +418,7 @@ int sqlite3MallocSize(void *p){
 int sqlite3DbMallocSize(sqlite3 *db, void *p){
   assert( p!=0 );
   if( db==0 || !isLookaside(db,p) ){
-#if SQLITE_DEBUG
+#ifdef SQLITE_DEBUG
     if( db==0 ){
       assert( sqlite3MemdebugNoType(p, (u8)~MEMTYPE_HEAP) );
       assert( sqlite3MemdebugHasType(p, MEMTYPE_HEAP) );
@@ -479,7 +479,7 @@ void sqlite3DbFree(sqlite3 *db, void *p){
     }
     if( isLookaside(db, p) ){
       LookasideSlot *pBuf = (LookasideSlot*)p;
-#if SQLITE_DEBUG
+#ifdef SQLITE_DEBUG
       /* Trash all content in the buffer being freed */
       memset(p, 0xaa, db->lookaside.sz);
 #endif

@@ -1323,17 +1323,18 @@ static void ptrmapPutOvflPtr(MemPage *pPage, u8 *pCell, int *pRC){
 
 
 /*
-** Defragment the page given.  All Cells are moved to the
-** end of the page and all free space is collected into one
-** big FreeBlk that occurs in between the header and cell
-** pointer array and the cell content area.
+** Defragment the page given. This routine reorganizes cells within the
+** page so that there are no free-blocks on the free-block list.
+**
+** Parameter nMaxFrag is the maximum amount of fragmented space that may be
+** present in the page after this routine returns.
 **
 ** EVIDENCE-OF: R-44582-60138 SQLite may from time to time reorganize a
 ** b-tree page so that there are no freeblocks or fragment bytes, all
 ** unused bytes are contained in the unallocated space region, and all
 ** cells are packed tightly at the end of the page.
 */
-static int defragmentPage(MemPage *pPage){
+static int defragmentPage(MemPage *pPage, int nMaxFrag){
   int i;                     /* Loop counter */
   int pc;                    /* Address of the i-th cell */
   int hdr;                   /* Offset to the page header */
@@ -1348,7 +1349,6 @@ static int defragmentPage(MemPage *pPage){
   int iCellFirst;            /* First allowable cell index */
   int iCellLast;             /* Last possible cell index */
 
-
   assert( sqlite3PagerIswriteable(pPage->pDbPage) );
   assert( pPage->pBt!=0 );
   assert( pPage->pBt->usableSize <= SQLITE_MAX_PAGE_SIZE );
@@ -1360,9 +1360,56 @@ static int defragmentPage(MemPage *pPage){
   cellOffset = pPage->cellOffset;
   nCell = pPage->nCell;
   assert( nCell==get2byte(&data[hdr+3]) );
-  usableSize = pPage->pBt->usableSize;
-  cbrk = usableSize;
   iCellFirst = cellOffset + 2*nCell;
+  usableSize = pPage->pBt->usableSize;
+
+  /* This block handles pages with two or fewer free blocks and nMaxFrag
+  ** or fewer fragmented bytes. In this case it is faster to move the
+  ** two (or one) blocks of cells using memmove() and add the required
+  ** offsets to each pointer in the cell-pointer array than it is to 
+  ** reconstruct the entire page.  */
+  if( (int)data[hdr+7]<=nMaxFrag ){
+    int iFree = get2byte(&data[hdr+1]);
+    if( iFree ){
+      int iFree2 = get2byte(&data[iFree]);
+
+      /* pageFindSlot() has already verified that free blocks are sorted
+      ** in order of offset within the page, and that no block extends
+      ** past the end of the page. Provided the two free slots do not 
+      ** overlap, this guarantees that the memmove() calls below will not
+      ** overwrite the usableSize byte buffer, even if the database page
+      ** is corrupt.  */
+      assert( iFree2==0 || iFree2>iFree );
+      assert( iFree+get2byte(&data[iFree+2]) <= usableSize );
+      assert( iFree2==0 || iFree2+get2byte(&data[iFree2+2]) <= usableSize );
+
+      if( 0==iFree2 || (data[iFree2]==0 && data[iFree2+1]==0) ){
+        u8 *pEnd = &data[cellOffset + nCell*2];
+        u8 *pAddr;
+        int sz2 = 0;
+        int sz = get2byte(&data[iFree+2]);
+        int top = get2byte(&data[hdr+5]);
+        if( iFree2 ){
+          if( iFree+sz>iFree2 ) return SQLITE_CORRUPT_BKPT;
+          sz2 = get2byte(&data[iFree2+2]);
+          assert( iFree+sz+sz2+iFree2-(iFree+sz) <= usableSize );
+          memmove(&data[iFree+sz+sz2], &data[iFree+sz], iFree2-(iFree+sz));
+          sz += sz2;
+        }
+        cbrk = top+sz;
+        assert( cbrk+(iFree-top) <= usableSize );
+        memmove(&data[cbrk], &data[top], iFree-top);
+        for(pAddr=&data[cellOffset]; pAddr<pEnd; pAddr+=2){
+          pc = get2byte(pAddr);
+          if( pc<iFree ){ put2byte(pAddr, pc+sz); }
+          else if( pc<iFree2 ){ put2byte(pAddr, pc+sz2); }
+        }
+        goto defragment_out;
+      }
+    }
+  }
+
+  cbrk = usableSize;
   iCellLast = usableSize - 4;
   for(i=0; i<nCell; i++){
     u8 *pAddr;     /* The i-th cell pointer */
@@ -1396,16 +1443,18 @@ static int defragmentPage(MemPage *pPage){
     }
     memcpy(&data[cbrk], &src[pc], size);
   }
+  data[hdr+7] = 0;
+
+ defragment_out:
+  if( data[hdr+7]+cbrk-iCellFirst!=pPage->nFree ){
+    return SQLITE_CORRUPT_BKPT;
+  }
   assert( cbrk>=iCellFirst );
   put2byte(&data[hdr+5], cbrk);
   data[hdr+1] = 0;
   data[hdr+2] = 0;
-  data[hdr+7] = 0;
   memset(&data[iCellFirst], 0, cbrk-iCellFirst);
   assert( sqlite3PagerIswriteable(pPage->pDbPage) );
-  if( cbrk-iCellFirst!=pPage->nFree ){
-    return SQLITE_CORRUPT_BKPT;
-  }
   return SQLITE_OK;
 }
 
@@ -1543,10 +1592,10 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
   testcase( gap+2+nByte==top );
   if( gap+2+nByte>top ){
     assert( pPage->nCell>0 || CORRUPT_DB );
-    rc = defragmentPage(pPage);
+    rc = defragmentPage(pPage, MIN(4, pPage->nFree - (2+nByte)));
     if( rc ) return rc;
     top = get2byteNotZero(&data[hdr+5]);
-    assert( gap+nByte<=top );
+    assert( gap+2+nByte<=top );
   }
 
 
@@ -4782,7 +4831,7 @@ static int moveToChild(BtCursor *pCur, u32 newPgno){
                         pCur, pCur->curPagerFlags);
 }
 
-#if SQLITE_DEBUG
+#ifdef SQLITE_DEBUG
 /*
 ** Page pParent is an internal (non-leaf) tree page. This function 
 ** asserts that page number iChild is the left-child if the iIdx'th
@@ -5323,6 +5372,30 @@ int sqlite3BtreeEof(BtCursor *pCur){
   ** as well as the boolean result value.
   */
   return (CURSOR_VALID!=pCur->eState);
+}
+
+/*
+** Return an estimate for the number of rows in the table that pCur is
+** pointing to.  Return a negative number if no estimate is currently 
+** available.
+*/
+i64 sqlite3BtreeRowCountEst(BtCursor *pCur){
+  i64 n;
+  u8 i;
+
+  assert( cursorOwnsBtShared(pCur) );
+  assert( sqlite3_mutex_held(pCur->pBtree->db->mutex) );
+
+  /* Currently this interface is only called by the OP_IfSmaller
+  ** opcode, and it that case the cursor will always be valid and
+  ** will always point to a leaf node. */
+  if( NEVER(pCur->eState!=CURSOR_VALID) ) return -1;
+  if( NEVER(pCur->apPage[pCur->iPage]->leaf==0) ) return -1;
+
+  for(n=1, i=0; i<=pCur->iPage; i++){
+    n *= pCur->apPage[i]->nCell;
+  }
+  return n;
 }
 
 /*
@@ -6169,7 +6242,7 @@ static int fillInCell(
   ** Use a call to btreeParseCellPtr() to verify that the values above
   ** were computed correctly.
   */
-#if SQLITE_DEBUG
+#ifdef SQLITE_DEBUG
   {
     CellInfo info;
     pPage->xParseCell(pPage, pCell, &info);
@@ -7695,7 +7768,7 @@ static int balance_nonroot(
     ** free space needs to be up front.
     */
     assert( nNew==1 || CORRUPT_DB );
-    rc = defragmentPage(apNew[0]);
+    rc = defragmentPage(apNew[0], -1);
     testcase( rc!=SQLITE_OK );
     assert( apNew[0]->nFree == 
         (get2byte(&apNew[0]->aData[5])-apNew[0]->cellOffset-apNew[0]->nCell*2)

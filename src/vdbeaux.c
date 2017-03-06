@@ -57,6 +57,7 @@ void sqlite3VdbeError(Vdbe *p, const char *zFormat, ...){
 void sqlite3VdbeSetSql(Vdbe *p, const char *z, int n, int isPrepareV2){
   assert( isPrepareV2==1 || isPrepareV2==0 );
   if( p==0 ) return;
+  if( !isPrepareV2 ) p->expmask = 0;
 #if defined(SQLITE_OMIT_TRACE) && !defined(SQLITE_ENABLE_SQLLOG)
   if( !isPrepareV2 ) return;
 #endif
@@ -85,6 +86,7 @@ void sqlite3VdbeSwap(Vdbe *pA, Vdbe *pB){
   pA->zSql = pB->zSql;
   pB->zSql = zTmp;
   pB->isPrepareV2 = pA->isPrepareV2;
+  pB->expmask = pA->expmask;
 }
 
 /*
@@ -2609,13 +2611,13 @@ int sqlite3VdbeHalt(Vdbe *p){
   ** one, or the complete transaction if there is no statement transaction.
   */
 
+  if( p->magic!=VDBE_MAGIC_RUN ){
+    return SQLITE_OK;
+  }
   if( db->mallocFailed ){
     p->rc = SQLITE_NOMEM_BKPT;
   }
   closeAllCursors(p);
-  if( p->magic!=VDBE_MAGIC_RUN ){
-    return SQLITE_OK;
-  }
   checkActiveVdbeCnt(db);
 
   /* No commit or rollback needed if the program never started or if the
@@ -3562,7 +3564,7 @@ void sqlite3VdbeRecordUnpack(
   p->nField = u;
 }
 
-#if SQLITE_DEBUG
+#ifdef SQLITE_DEBUG
 /*
 ** This function compares two index or table record keys in the same way
 ** as the sqlite3VdbeRecordCompare() routine. Unlike VdbeRecordCompare(),
@@ -3667,7 +3669,7 @@ debugCompareEnd:
 }
 #endif
 
-#if SQLITE_DEBUG
+#ifdef SQLITE_DEBUG
 /*
 ** Count the number of fields (a.k.a. columns) in the record given by
 ** pKey,nKey.  The verify that this count is less than or equal to the
@@ -4550,8 +4552,8 @@ sqlite3_value *sqlite3VdbeGetBoundValue(Vdbe *v, int iVar, u8 aff){
 */
 void sqlite3VdbeSetVarmask(Vdbe *v, int iVar){
   assert( iVar>0 );
-  if( iVar>32 ){
-    v->expmask = 0xffffffff;
+  if( iVar>=32 ){
+    v->expmask |= 0x80000000;
   }else{
     v->expmask |= ((u32)1 << (iVar-1));
   }

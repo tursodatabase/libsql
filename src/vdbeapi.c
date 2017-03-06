@@ -170,7 +170,8 @@ int sqlite3_clear_bindings(sqlite3_stmt *pStmt){
     sqlite3VdbeMemRelease(&p->aVar[i]);
     p->aVar[i].flags = MEM_Null;
   }
-  if( p->isPrepareV2 && p->expmask ){
+  assert( p->isPrepareV2 || p->expmask==0 );
+  if( p->expmask ){
     p->expired = 1;
   }
   sqlite3_mutex_leave(mutex);
@@ -1274,9 +1275,8 @@ static int vdbeUnbind(Vdbe *p, int i){
   ** as if there had been a schema change, on the first sqlite3_step() call
   ** following any change to the bindings of that parameter.
   */
-  if( p->isPrepareV2 &&
-     ((i<32 && p->expmask & ((u32)1 << i)) || p->expmask==0xffffffff)
-  ){
+  assert( p->isPrepareV2 || p->expmask==0 );
+  if( p->expmask!=0 && (p->expmask & (i>=31 ? 0x80000000 : (u32)1<<i))!=0 ){
     p->expired = 1;
   }
   return SQLITE_OK;
@@ -1566,10 +1566,12 @@ int sqlite3_transfer_bindings(sqlite3_stmt *pFromStmt, sqlite3_stmt *pToStmt){
   if( pFrom->nVar!=pTo->nVar ){
     return SQLITE_ERROR;
   }
-  if( pTo->isPrepareV2 && pTo->expmask ){
+  assert( pTo->isPrepareV2 || pTo->expmask==0 );
+  if( pTo->expmask ){
     pTo->expired = 1;
   }
-  if( pFrom->isPrepareV2 && pFrom->expmask ){
+  assert( pFrom->isPrepareV2 || pFrom->expmask==0 );
+  if( pFrom->expmask ){
     pFrom->expired = 1;
   }
   return sqlite3TransferBindings(pFromStmt, pToStmt);

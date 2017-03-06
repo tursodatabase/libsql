@@ -103,22 +103,23 @@
 # define _LARGEFILE_SOURCE 1
 #endif
 
-/* The GCC_VERSION, CLANG_VERSION, and MSVC_VERSION macros are used to
+/* The GCC_VERSION and MSVC_VERSION macros are used to
 ** conditionally include optimizations for each of these compilers.  A
 ** value of 0 means that compiler is not being used.  The
 ** SQLITE_DISABLE_INTRINSIC macro means do not use any compiler-specific
 ** optimizations, and hence set all compiler macros to 0
+**
+** There was once also a CLANG_VERSION macro.  However, we learn that the
+** version numbers in clang are for "marketing" only and are inconsistent
+** and unreliable.  Fortunately, all versions of clang also recognize the
+** gcc version numbers and have reasonable settings for gcc version numbers,
+** so the GCC_VERSION macro will be set to a correct non-zero value even
+** when compiling with clang.
 */
 #if defined(__GNUC__) && !defined(SQLITE_DISABLE_INTRINSIC)
 # define GCC_VERSION (__GNUC__*1000000+__GNUC_MINOR__*1000+__GNUC_PATCHLEVEL__)
 #else
 # define GCC_VERSION 0
-#endif
-#if defined(__clang__) && !defined(_WIN32) && !defined(SQLITE_DISABLE_INTRINSIC)
-# define CLANG_VERSION \
-            (__clang_major__*1000000+__clang_minor__*1000+__clang_patchlevel__)
-#else
-# define CLANG_VERSION 0
 #endif
 #if defined(_MSC_VER) && !defined(SQLITE_DISABLE_INTRINSIC)
 # define MSVC_VERSION _MSC_VER
@@ -1332,6 +1333,7 @@ struct sqlite3 {
   u8 isTransactionSavepoint;    /* True if the outermost savepoint is a TS */
   u8 mTrace;                    /* zero or more SQLITE_TRACE flags */
   u8 skipBtreeMutex;            /* True if no shared-cache backends */
+  u8 nSqlExec;                  /* Number of pending OP_SqlExec opcodes */
   int nextPagesize;             /* Pagesize after VACUUM if >0 */
   u32 magic;                    /* Magic number for detect library misuse */
   int nChange;                  /* Value returned by sqlite3_changes() */
@@ -1847,6 +1849,7 @@ struct Table {
                        /*   ... also used as column name list in a VIEW */
   int tnum;            /* Root BTree page for this table */
   u32 nTabRef;         /* Number of pointers to this Table */
+  u32 tabFlags;        /* Mask of TF_* values */
   i16 iPKey;           /* If not negative, use aCol[iPKey] as the rowid */
   i16 nCol;            /* Number of columns in this table */
   LogEst nRowLogEst;   /* Estimated rows in table - from sqlite_stat1 table */
@@ -1854,7 +1857,6 @@ struct Table {
 #ifdef SQLITE_ENABLE_COSTMULT
   LogEst costMult;     /* Cost multiplier for using this table */
 #endif
-  u8 tabFlags;         /* Mask of TF_* values */
   u8 keyConf;          /* What to do in case of uniqueness conflict on iPKey */
 #ifndef SQLITE_OMIT_ALTERTABLE
   int addColOffset;    /* Offset in CREATE TABLE stmt to add a new column */
@@ -1878,15 +1880,17 @@ struct Table {
 ** the TF_OOOHidden attribute would apply in this case.  Such tables require
 ** special handling during INSERT processing.
 */
-#define TF_Readonly        0x01    /* Read-only system table */
-#define TF_Ephemeral       0x02    /* An ephemeral table */
-#define TF_HasPrimaryKey   0x04    /* Table has a primary key */
-#define TF_Autoincrement   0x08    /* Integer primary key is autoincrement */
-#define TF_Virtual         0x10    /* Is a virtual table */
-#define TF_WithoutRowid    0x20    /* No rowid.  PRIMARY KEY is the key */
-#define TF_NoVisibleRowid  0x40    /* No user-visible "rowid" column */
-#define TF_OOOHidden       0x80    /* Out-of-Order hidden columns */
-
+#define TF_Readonly        0x0001    /* Read-only system table */
+#define TF_Ephemeral       0x0002    /* An ephemeral table */
+#define TF_HasPrimaryKey   0x0004    /* Table has a primary key */
+#define TF_Autoincrement   0x0008    /* Integer primary key is autoincrement */
+#define TF_HasStat1        0x0010    /* nRowLogEst set from sqlite_stat1 */
+#define TF_WithoutRowid    0x0020    /* No rowid.  PRIMARY KEY is the key */
+#define TF_NoVisibleRowid  0x0040    /* No user-visible "rowid" column */
+#define TF_OOOHidden       0x0080    /* Out-of-Order hidden columns */
+#define TF_StatsUsed       0x0100    /* Query planner decisions affected by
+                                     ** Index.aiRowLogEst[] values */
+#define TF_HasNotNull      0x0200    /* Contains NOT NULL constraints */
 
 /*
 ** Test to see whether or not a table is a virtual table.  This is
@@ -1894,7 +1898,7 @@ struct Table {
 ** table support is omitted from the build.
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-#  define IsVirtual(X)      (((X)->tabFlags & TF_Virtual)!=0)
+#  define IsVirtual(X)      ((X)->nModuleArg)
 #else
 #  define IsVirtual(X)      0
 #endif
@@ -2129,6 +2133,7 @@ struct Index {
   unsigned isResized:1;    /* True if resizeIndexObject() has been called */
   unsigned isCovering:1;   /* True if this is a covering index */
   unsigned noSkipScan:1;   /* Do not try to use skip-scan if true */
+  unsigned hasStat1:1;     /* aiRowLogEst values come from sqlite_stat1 */
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
   int nSample;             /* Number of elements in aSample[] */
   int nSampleCol;          /* Size of IndexSample.anEq[] and so on */
@@ -2439,7 +2444,7 @@ struct Expr {
 struct ExprList {
   int nExpr;             /* Number of expressions on the list */
   struct ExprList_item { /* For each expression in the list */
-    Expr *pExpr;            /* The list of expressions */
+    Expr *pExpr;            /* The parse tree for this expression */
     char *zName;            /* Token associated with this expression */
     char *zSpan;            /* Original text of the expression */
     u8 sortOrder;           /* 1 for DESC or 0 for ASC */
@@ -3762,6 +3767,7 @@ void sqlite3Vacuum(Parse*,Token*);
 int sqlite3RunVacuum(char**, sqlite3*, int);
 char *sqlite3NameFromToken(sqlite3*, Token*);
 int sqlite3ExprCompare(Expr*, Expr*, int);
+int sqlite3ExprCompareSkip(Expr*, Expr*, int);
 int sqlite3ExprListCompare(ExprList*, ExprList*, int);
 int sqlite3ExprImpliesExpr(Expr*, Expr*, int);
 void sqlite3ExprAnalyzeAggregates(NameContext*, Expr*);

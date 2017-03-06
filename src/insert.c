@@ -1527,6 +1527,9 @@ void sqlite3GenerateConstraintChecks(
     }
     sqlite3VdbeAddOp3(v, OP_MakeRecord, regIdx, pIdx->nColumn, aRegIdx[ix]);
     VdbeComment((v, "for %s", pIdx->zName));
+#ifdef SQLITE_ENABLE_NULL_TRIM
+    if( pIdx->idxType==2 ) sqlite3SetMakeRecordP5(v, pIdx->pTable);
+#endif
 
     /* In an UPDATE operation, if this index is the PRIMARY KEY index 
     ** of a WITHOUT ROWID table and there has been no change the
@@ -1682,8 +1685,11 @@ void sqlite3SetMakeRecordP5(Vdbe *v, Table *pTab){
   ** version 2 and later (SQLite version 3.1.4, 2005-02-20). */
   if( pTab->pSchema->file_format<2 ) return;
 
-  for(i=pTab->nCol; i>1 && pTab->aCol[i-1].pDflt==0; i--){}
-  sqlite3VdbeChangeP5(v, i);
+  for(i=pTab->nCol-1; i>0; i--){
+    if( pTab->aCol[i].pDflt!=0 ) break;
+    if( pTab->aCol[i].colFlags & COLFLAG_PRIMKEY ) break;
+  }
+  sqlite3VdbeChangeP5(v, i+1);
 }
 #endif
 
@@ -1973,7 +1979,7 @@ static int xferOptimization(
     return 0;   /* tab1 must not have triggers */
   }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-  if( pDest->tabFlags & TF_Virtual ){
+  if( IsVirtual(pDest) ){
     return 0;   /* tab1 must not be a virtual table */
   }
 #endif
@@ -2035,7 +2041,7 @@ static int xferOptimization(
     return 0;   /* source and destination must both be WITHOUT ROWID or not */
   }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-  if( pSrc->tabFlags & TF_Virtual ){
+  if( IsVirtual(pSrc) ){
     return 0;   /* tab2 must not be a virtual table */
   }
 #endif

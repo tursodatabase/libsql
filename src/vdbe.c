@@ -1670,21 +1670,21 @@ case OP_Function: {
     for(i=pCtx->argc-1; i>=0; i--) pCtx->argv[i] = &aMem[pOp->p2+i];
   }
 
-  memAboutToChange(p, pCtx->pOut);
+  memAboutToChange(p, pOut);
 #ifdef SQLITE_DEBUG
   for(i=0; i<pCtx->argc; i++){
     assert( memIsValid(pCtx->argv[i]) );
     REGISTER_TRACE(pOp->p2+i, pCtx->argv[i]);
   }
 #endif
-  MemSetTypeFlag(pCtx->pOut, MEM_Null);
+  MemSetTypeFlag(pOut, MEM_Null);
   pCtx->fErrorOrAux = 0;
   (*pCtx->pFunc->xSFunc)(pCtx, pCtx->argc, pCtx->argv);/* IMP: R-24505-23230 */
 
   /* If the function returned an error, throw an exception */
   if( pCtx->fErrorOrAux ){
     if( pCtx->isError ){
-      sqlite3VdbeError(p, "%s", sqlite3_value_text(pCtx->pOut));
+      sqlite3VdbeError(p, "%s", sqlite3_value_text(pOut));
       rc = pCtx->isError;
     }
     sqlite3VdbeDeleteAuxData(db, &p->pAuxData, pCtx->iOp, pOp->p1);
@@ -1693,12 +1693,12 @@ case OP_Function: {
 
   /* Copy the result of the function into register P3 */
   if( pOut->flags & (MEM_Str|MEM_Blob) ){
-    sqlite3VdbeChangeEncoding(pCtx->pOut, encoding);
-    if( sqlite3VdbeMemTooBig(pCtx->pOut) ) goto too_big;
+    sqlite3VdbeChangeEncoding(pOut, encoding);
+    if( sqlite3VdbeMemTooBig(pOut) ) goto too_big;
   }
 
-  REGISTER_TRACE(pOp->p3, pCtx->pOut);
-  UPDATE_MAX_BLOBSIZE(pCtx->pOut);
+  REGISTER_TRACE(pOp->p3, pOut);
+  UPDATE_MAX_BLOBSIZE(pOut);
   break;
 }
 
@@ -2199,7 +2199,7 @@ case OP_Compare: {
   assert( pKeyInfo!=0 );
   p1 = pOp->p1;
   p2 = pOp->p2;
-#if SQLITE_DEBUG
+#ifdef SQLITE_DEBUG
   if( aPermute ){
     int k, mx = 0;
     for(k=0; k<n; k++) if( aPermute[k]>mx ) mx = aPermute[k];
@@ -4848,6 +4848,33 @@ case OP_Last: {        /* jump */
   break;
 }
 
+/* Opcode: IfSmaller P1 P2 P3 * *
+**
+** Estimate the number of rows in the table P1.  Jump to P2 if that
+** estimate is less than approximately 2**(0.1*P3).
+*/
+case OP_IfSmaller: {        /* jump */
+  VdbeCursor *pC;
+  BtCursor *pCrsr;
+  int res;
+  i64 sz;
+
+  assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  pC = p->apCsr[pOp->p1];
+  assert( pC!=0 );
+  pCrsr = pC->uc.pCursor;
+  assert( pCrsr );
+  rc = sqlite3BtreeFirst(pCrsr, &res);
+  if( rc ) goto abort_due_to_error;
+  if( res==0 ){
+    sz = sqlite3BtreeRowCountEst(pCrsr);
+    if( ALWAYS(sz>=0) && sqlite3LogEst((u64)sz)<pOp->p3 ) res = 1;
+  }
+  VdbeBranchTaken(res!=0,2);
+  if( res ) goto jump_to_p2;
+  break;
+}
+
 
 /* Opcode: SorterSort P1 P2 * * *
 **
@@ -5492,6 +5519,18 @@ case OP_CreateTable: {          /* out2 */
   break;
 }
 
+/* Opcode: SqlExec * * * P4 *
+**
+** Run the SQL statement or statements specified in the P4 string.
+*/
+case OP_SqlExec: {
+  db->nSqlExec++;
+  rc = sqlite3_exec(db, pOp->p4.z, 0, 0, 0);
+  db->nSqlExec--;
+  if( rc ) goto abort_due_to_error;
+  break;
+}
+
 /* Opcode: ParseSchema P1 * * P4 *
 **
 ** Read and parse all entries from the SQLITE_MASTER table of database P1
@@ -5612,7 +5651,7 @@ case OP_DropTrigger: {
 ** register P1 the text of an error message describing any problems.
 ** If no problems are found, store a NULL in register P1.
 **
-** The register P3 contains the maximum number of allowed errors.
+** The register P3 contains one less than the maximum number of allowed errors.
 ** At most reg(P3) errors will be reported.
 ** In other words, the analysis stops as soon as reg(P1) errors are 
 ** seen.  Reg(P1) is updated with the number of errors remaining.
@@ -5645,14 +5684,14 @@ case OP_IntegrityCk: {
   assert( pOp->p5<db->nDb );
   assert( DbMaskTest(p->btreeMask, pOp->p5) );
   z = sqlite3BtreeIntegrityCheck(db->aDb[pOp->p5].pBt, aRoot, nRoot,
-                                 (int)pnErr->u.i, &nErr);
-  pnErr->u.i -= nErr;
+                                 (int)pnErr->u.i+1, &nErr);
   sqlite3VdbeMemSetNull(pIn1);
   if( nErr==0 ){
     assert( z==0 );
   }else if( z==0 ){
     goto no_mem;
   }else{
+    pnErr->u.i -= nErr-1;
     sqlite3VdbeMemSetStr(pIn1, z, -1, SQLITE_UTF8, sqlite3_free);
   }
   UPDATE_MAX_BLOBSIZE(pIn1);
