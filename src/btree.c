@@ -1355,6 +1355,7 @@ static int defragmentPage(MemPage *pPage, int nMaxFrag){
   nCell = pPage->nCell;
   assert( nCell==get2byte(&data[hdr+3]) );
   iCellFirst = cellOffset + 2*nCell;
+  usableSize = pPage->pBt->usableSize;
 
   /* This block handles pages with two or fewer free blocks and nMaxFrag
   ** or fewer fragmented bytes. In this case it is faster to move the
@@ -1365,6 +1366,17 @@ static int defragmentPage(MemPage *pPage, int nMaxFrag){
     int iFree = get2byte(&data[hdr+1]);
     if( iFree ){
       int iFree2 = get2byte(&data[iFree]);
+
+      /* pageFindSlot() has already verified that free blocks are sorted
+      ** in order of offset within the page, and that no block extends
+      ** past the end of the page. Provided the two free slots do not 
+      ** overlap, this guarantees that the memmove() calls below will not
+      ** overwrite the usableSize byte buffer, even if the database page
+      ** is corrupt.  */
+      assert( iFree2==0 || iFree2>iFree );
+      assert( iFree+get2byte(&data[iFree+2]) <= usableSize );
+      assert( iFree2==0 || iFree2+get2byte(&data[iFree2+2]) <= usableSize );
+
       if( 0==iFree2 || (data[iFree2]==0 && data[iFree2+1]==0) ){
         u8 *pEnd = &data[cellOffset + nCell*2];
         u8 *pAddr;
@@ -1372,11 +1384,14 @@ static int defragmentPage(MemPage *pPage, int nMaxFrag){
         int sz = get2byte(&data[iFree+2]);
         int top = get2byte(&data[hdr+5]);
         if( iFree2 ){
+          if( iFree+sz>iFree2 ) return SQLITE_CORRUPT_BKPT;
           sz2 = get2byte(&data[iFree2+2]);
+          assert( iFree+sz+sz2+iFree2-(iFree+sz) <= usableSize );
           memmove(&data[iFree+sz+sz2], &data[iFree+sz], iFree2-(iFree+sz));
           sz += sz2;
         }
         cbrk = top+sz;
+        assert( cbrk+(iFree-top) <= usableSize );
         memmove(&data[cbrk], &data[top], iFree-top);
         for(pAddr=&data[cellOffset]; pAddr<pEnd; pAddr+=2){
           pc = get2byte(pAddr);
@@ -1388,10 +1403,8 @@ static int defragmentPage(MemPage *pPage, int nMaxFrag){
     }
   }
 
-  usableSize = pPage->pBt->usableSize;
   cbrk = usableSize;
   iCellLast = usableSize - 4;
-
   for(i=0; i<nCell; i++){
     u8 *pAddr;     /* The i-th cell pointer */
     pAddr = &data[cellOffset + i*2];

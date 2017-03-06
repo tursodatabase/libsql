@@ -596,5 +596,17 @@ datetest 16.29 {datetime(5373484,'-176546 months')} NULL
 datetest 16.30 {datetime(5373484,'-14712 years')} {-4713-12-31 12:00:00}
 datetest 16.31 {datetime(5373484,'-14713 years')} NULL
 
+# 2017-03-02: Wrong 'start of day' computation.
+# https://www.sqlite.org/src/info/6097cb92745327a1
+#
+datetest 17.1 {datetime(2457754, 'start of day')} {2016-12-31 00:00:00}
+datetest 17.2 {datetime(2457828)} {2017-03-15 12:00:00}
+datetest 17.3 {datetime(2457828,'start of day')} {2017-03-15 00:00:00}
+datetest 17.4 {datetime(2457828,'start of month')} {2017-03-01 00:00:00}
+datetest 17.5 {datetime(2457828,'start of year')} {2017-01-01 00:00:00}
+datetest 17.6 {datetime(37,'start of year')} NULL
+datetest 17.7 {datetime(38,'start of year')} {-4712-01-01 00:00:00}
+
+
 
 finish_test

@@ -1260,7 +1260,7 @@ static int vdbeUnbind(Vdbe *p, int i){
   ** following any change to the bindings of that parameter.
   */
   assert( p->isPrepareV2 || p->expmask==0 );
-  if( p->expmask & ((u32)1 << (i&0x001F)) && (i<32 || p->expmask==0xffffffff) ){
+  if( p->expmask!=0 && (p->expmask & (i>=31 ? 0x80000000 : (u32)1<<i))!=0 ){
     p->expired = 1;
   }
   return SQLITE_OK;
