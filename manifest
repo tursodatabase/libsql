@@ -1,5 +1,5 @@
-C More\ssize\sand\sspeed\simprovements\sin\sthe\sexpression\sname\sresolver.
-D 2017-03-07T03:40:48.199
+C Minor\scomment\stypo\sfixes.\s\sNo\schanges\sto\scode.
+D 2017-03-07T12:18:23.791
 F Makefile.in edb6bcdd37748d2b1c3422ff727c748df7ffe918
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a89ea37ab5928026001569f056973b9059492fe2
@@ -477,7 +477,7 @@ F src/vtab.c 007513c2ef52472fcdea6a741683d50662e82790
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 40c543f0a2195d1b0dc88ef12142bea690009344
 F src/wal.h 06b2a0b599cc0f53ea97f497cf8c6b758c999f71
-F src/walker.c 91a6df7435827e41cff6bb7df50ea00934ee78b0
+F src/walker.c b71a992b413b3a022572eccf29ef4b4890223791
 F src/where.c 1a3a8adb717a20f17c186f3baa22b0b5f3a5ab13
 F src/whereInt.h 2d50c2b74a33be44cb68fdecee30b4d93552f1f4
 F src/wherecode.c 677e95413c472c0b413023b6b69a47f40fce1b04
@@ -1562,7 +1562,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1a3554e1d71b666325ff377fae5329d79ce5c05f
-R 5deac8a39ddd88b8493847a75a8da44a
+P e0a3d39f51a50420bae97e2bc9a8c01a5b0d3db8
+R 3a57497a1a3fd47f649c0fa2a10dc005
 U drh
-Z bf228925fa0c3d0f27c143e7173a6889
+Z 8979ee765002edd7cbb3fe90b0cd803b
