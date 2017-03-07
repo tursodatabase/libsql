@@ -3718,6 +3718,12 @@ int sqlite3rbu_close(sqlite3rbu *p, char **pzErrmsg){
       p->rc = sqlite3_exec(p->dbMain, "COMMIT", 0, 0, &p->zErrmsg);
     }
 
+    /* Sync the db file if currently doing an incremental checkpoint */
+    if( p->rc==SQLITE_OK && p->eStage==RBU_STAGE_CKPT ){
+      sqlite3_file *pDb = p->pTargetFd->pReal;
+      p->rc = pDb->pMethods->xSync(pDb, SQLITE_SYNC_NORMAL);
+    }
+
     rbuSaveState(p, p->eStage);
 
     if( p->rc==SQLITE_OK && p->eStage==RBU_STAGE_OAL ){
@@ -3840,6 +3846,12 @@ int sqlite3rbu_savestate(sqlite3rbu *p){
   if( p->eStage==RBU_STAGE_OAL ){
     assert( rc!=SQLITE_DONE );
     if( rc==SQLITE_OK ) rc = sqlite3_exec(p->dbMain, "COMMIT", 0, 0, 0);
+  }
+
+  /* Sync the db file */
+  if( rc==SQLITE_OK && p->eStage==RBU_STAGE_CKPT ){
+    sqlite3_file *pDb = p->pTargetFd->pReal;
+    rc = pDb->pMethods->xSync(pDb, SQLITE_SYNC_NORMAL);
   }
 
   p->rc = rc;

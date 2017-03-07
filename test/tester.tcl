@@ -1533,6 +1533,7 @@ proc crashsql {args} {
   set tclbody {}
   set crashfile ""
   set dc ""
+  set dfltvfs 0
   set sql [lindex $args end]
 
   for {set ii 0} {$ii < [llength $args]-1} {incr ii 2} {
@@ -1546,7 +1547,8 @@ proc crashsql {args} {
     elseif {$n>1 && [string first $z -file]==0}      {set crashfile $z2}  \
     elseif {$n>1 && [string first $z -tclbody]==0}   {set tclbody $z2}  \
     elseif {$n>1 && [string first $z -blocksize]==0} {set blocksize "-s $z2" } \
-    elseif {$n>1 && [string first $z -characteristics]==0} {set dc "-c {$z2}" } \
+    elseif {$n>1 && [string first $z -characteristics]==0} {set dc "-c {$z2}" }\
+    elseif {$n>1 && [string first $z -dfltvfs]==0} {set dfltvfs $z2 }\
     else   { error "Unrecognized option: $z" }
   }
 
@@ -1560,7 +1562,7 @@ proc crashsql {args} {
   set cfile [string map {\\ \\\\} [file nativename [file join [get_pwd] $crashfile]]]
 
   set f [open crash.tcl w]
-  puts $f "sqlite3_crash_enable 1"
+  puts $f "sqlite3_crash_enable 1 $dfltvfs"
   puts $f "sqlite3_crashparams $blocksize $dc $crashdelay $cfile"
   puts $f "sqlite3_test_control_pending_byte $::sqlite_pending_byte"
 

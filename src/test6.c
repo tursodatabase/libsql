@@ -315,8 +315,9 @@ static int writeListSync(CrashFile *pFile, int isCrash){
         assert(pWrite->zBuf);
 
 #ifdef TRACE_CRASHTEST
-        printf("Trashing %d sectors @ %lld (sector %d) (%s)\n", 
-            1+iLast-iFirst, pWrite->iOffset, iFirst, pWrite->pFile->zName
+        printf("Trashing %d sectors (%d bytes) @ %lld (sector %d) (%s)\n", 
+            1+iLast-iFirst, (1+iLast-iFirst)*g.iSectorSize,
+            pWrite->iOffset, iFirst, pWrite->pFile->zName
         );
 #endif
 
@@ -827,7 +828,7 @@ static int SQLITE_TCLAPI crashNowCmd(
 }
 
 /*
-** tclcmd:   sqlite_crash_enable ENABLE
+** tclcmd:   sqlite_crash_enable ENABLE ?DEFAULT?
 **
 ** Parameter ENABLE must be a boolean value. If true, then the "crash"
 ** vfs is added to the system. If false, it is removed.
@@ -839,6 +840,7 @@ static int SQLITE_TCLAPI crashEnableCmd(
   Tcl_Obj *CONST objv[]
 ){
   int isEnable;
+  int isDefault = 0;
   static sqlite3_vfs crashVfs = {
     2,                  /* iVersion */
     0,                  /* szOsFile */
@@ -862,12 +864,15 @@ static int SQLITE_TCLAPI crashEnableCmd(
     0,                    /* xCurrentTimeInt64 */
   };
 
-  if( objc!=2 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "ENABLE");
+  if( objc!=2 && objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "ENABLE ?DEFAULT?");
     return TCL_ERROR;
   }
 
   if( Tcl_GetBooleanFromObj(interp, objv[1], &isEnable) ){
+    return TCL_ERROR;
+  }
+  if( objc==3 && Tcl_GetBooleanFromObj(interp, objv[2], &isDefault) ){
     return TCL_ERROR;
   }
 
@@ -880,7 +885,7 @@ static int SQLITE_TCLAPI crashEnableCmd(
     crashVfs.mxPathname = pOriginalVfs->mxPathname;
     crashVfs.pAppData = (void *)pOriginalVfs;
     crashVfs.szOsFile = sizeof(CrashFile) + pOriginalVfs->szOsFile;
-    sqlite3_vfs_register(&crashVfs, 0);
+    sqlite3_vfs_register(&crashVfs, isDefault);
   }else{
     crashVfs.pAppData = 0;
     sqlite3_vfs_unregister(&crashVfs);
