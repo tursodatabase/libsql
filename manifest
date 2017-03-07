@@ -1,5 +1,5 @@
-C Minor\scomment\stypo\sfixes.\s\sNo\schanges\sto\scode.
-D 2017-03-07T12:18:23.791
+C Performance\soptimization\sin\sthe\stokenizer/parser\sloop.
+D 2017-03-07T14:38:52.463
 F Makefile.in edb6bcdd37748d2b1c3422ff727c748df7ffe918
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a89ea37ab5928026001569f056973b9059492fe2
@@ -457,7 +457,7 @@ F src/test_windirent.c 17f91f5f2aa1bb7328abb49414c363b5d2a9d3ff
 F src/test_windirent.h 5d67483a55442e31e1bde0f4a230e6e932ad5906
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
-F src/tokenize.c 25ccc63ae2c4163933221f3181c9982b47cd08d2
+F src/tokenize.c dc748c5afcb9e5beb3ef5651bc99a4622e30f6a1
 F src/treeview.c 4e44ade3bfe59d82005039f72e09333ce2b4162c
 F src/trigger.c c9f0810043b265724fdb1bdd466894f984dfc182
 F src/update.c 456d4a4656f8a03c2abc88a51b19172197400e58
@@ -1562,7 +1562,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e0a3d39f51a50420bae97e2bc9a8c01a5b0d3db8
-R 3a57497a1a3fd47f649c0fa2a10dc005
+P 01cd9fb176cde30658233e36aad44e4a5519612e
+R 71cd7c04663535bedf446cdfbe42cd2c
 U drh
-Z 8979ee765002edd7cbb3fe90b0cd803b
+Z ad71d7ac120da8173e9f5ee4d75c7bc4
