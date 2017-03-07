@@ -1,5 +1,5 @@
-C Performance\soptimization\sin\sthe\stokenizer/parser\sloop.
-D 2017-03-07T14:38:52.463
+C Add\stest\sscript\sext/rbu/rbu_round_trip.tcl.\sUses\s"dbselftest"\sto\stest\sthat\n"rbu"\sand\s"sqldiff"\swork\stogether.
+D 2017-03-07T20:03:25.030
 F Makefile.in edb6bcdd37748d2b1c3422ff727c748df7ffe918
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a89ea37ab5928026001569f056973b9059492fe2
@@ -249,6 +249,7 @@ F ext/rbu/rbuA.test c1a7b3e2d926b8f8448bb3b4ae787e314ee4b2b3
 F ext/rbu/rbuB.test c25bc325b8072a766e56bb76c001866b405925c2
 F ext/rbu/rbuC.test efe47db508a0269b683cb2a1913a425ffd39a831
 F ext/rbu/rbu_common.tcl a38e8e2d4a50fd6aaf151633714c1b1d2fae3ead
+F ext/rbu/rbu_round_trip.tcl f3216836bbaeb10d76a2c70b89c13f59eabbd117
 F ext/rbu/rbucrash.test 8d2ed5d4b05fef6c00c2a6b5f7ead71fa172a695
 F ext/rbu/rbucrash2.test b2ecbdd7bb72c88bd217c65bd00dafa07f7f2d4d
 F ext/rbu/rbudiff.test 3e605cf624d00d04d0fb1316a3acec4fbe3b3ac5
@@ -1562,7 +1563,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 01cd9fb176cde30658233e36aad44e4a5519612e
-R 71cd7c04663535bedf446cdfbe42cd2c
-U drh
-Z ad71d7ac120da8173e9f5ee4d75c7bc4
+P 2cb71583d631cd417acbeebbb4ee950573a9deef
+R ee3baff0fd57ede16b35b4777ef32cf9
+U dan
+Z 9c10ed94bada1b1224e7c4aff135f1d6
