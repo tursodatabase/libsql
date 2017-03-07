@@ -229,7 +229,8 @@ static int lookupName(
   }
 
   /* Start at the inner-most context and move outward until a match is found */
-  while( pNC && cnt==0 ){
+  assert( pNC && cnt==0 );
+  do{
     ExprList *pEList;
     SrcList *pSrcList = pNC->pSrcList;
 
@@ -414,11 +415,11 @@ static int lookupName(
     /* Advance to the next name context.  The loop will exit when either
     ** we have a match (cnt>0) or when we run out of name contexts.
     */
-    if( cnt==0 ){
-      pNC = pNC->pNext;
-      nSubquery++;
-    }
-  }
+    if( cnt ) break;
+    pNC = pNC->pNext;
+    nSubquery++;
+  }while( pNC );
+
 
   /*
   ** If X and Y are NULL (in other words if only the column name Z is
