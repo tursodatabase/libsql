@@ -555,6 +555,123 @@ static char *one_input_line(FILE *in, char *zPrior, int isContinuation){
   }
   return zResult;
 }
+/*
+** A variable length string to which one can append text.
+*/
+typedef struct ShellText ShellText;
+struct ShellText {
+  char *z;
+  int n;
+  int nAlloc;
+};
+
+/*
+** Initialize and destroy a ShellText object
+*/
+static void initText(ShellText *p){
+  memset(p, 0, sizeof(*p));
+}
+static void freeText(ShellText *p){
+  free(p->z);
+  initText(p);
+}
+
+/* zIn is either a pointer to a NULL-terminated string in memory obtained
+** from malloc(), or a NULL pointer. The string pointed to by zAppend is
+** added to zIn, and the result returned in memory obtained from malloc().
+** zIn, if it was not NULL, is freed.
+**
+** If the third argument, quote, is not '\0', then it is used as a
+** quote character for zAppend.
+*/
+static void appendText(ShellText *p, char const *zAppend, char quote){
+  int len;
+  int i;
+  int nAppend = strlen30(zAppend);
+
+  len = nAppend+p->n+1;
+  if( quote ){
+    len += 2;
+    for(i=0; i<nAppend; i++){
+      if( zAppend[i]==quote ) len++;
+    }
+  }
+
+  if( p->n+len>=p->nAlloc ){
+    p->nAlloc = p->nAlloc*2 + len + 20;
+    p->z = realloc(p->z, p->nAlloc);
+    if( p->z==0 ){
+      memset(p, 0, sizeof(*p));
+      return;
+    }
+  }
+
+  if( quote ){
+    char *zCsr = p->z+p->n;
+    *zCsr++ = quote;
+    for(i=0; i<nAppend; i++){
+      *zCsr++ = zAppend[i];
+      if( zAppend[i]==quote ) *zCsr++ = quote;
+    }
+    *zCsr++ = quote;
+    p->n = (int)(zCsr - p->z);
+    *zCsr = '\0';
+  }else{
+    memcpy(p->z+p->n, zAppend, nAppend);
+    p->n += nAppend;
+    p->z[p->n] = '\0';
+  }
+}
+
+/*
+** Attempt to determine if identifier zName needs to be quoted, either
+** because it contains non-alphanumeric characters, or because it is an
+** SQLite keyword.  Be conservative in this estimate:  When in doubt assume
+** that quoting is required.
+**
+** Return '"' if quoting is required.  Return 0 if no quoting is required.
+*/
+static char quoteChar(const char *zName){
+  /* All SQLite keywords, in alphabetical order */
+  static const char *azKeywords[] = {
+    "ABORT", "ACTION", "ADD", "AFTER", "ALL", "ALTER", "ANALYZE", "AND", "AS",
+    "ASC", "ATTACH", "AUTOINCREMENT", "BEFORE", "BEGIN", "BETWEEN", "BY",
+    "CASCADE", "CASE", "CAST", "CHECK", "COLLATE", "COLUMN", "COMMIT",
+    "CONFLICT", "CONSTRAINT", "CREATE", "CROSS", "CURRENT_DATE",
+    "CURRENT_TIME", "CURRENT_TIMESTAMP", "DATABASE", "DEFAULT", "DEFERRABLE",
+    "DEFERRED", "DELETE", "DESC", "DETACH", "DISTINCT", "DROP", "EACH",
+    "ELSE", "END", "ESCAPE", "EXCEPT", "EXCLUSIVE", "EXISTS", "EXPLAIN",
+    "FAIL", "FOR", "FOREIGN", "FROM", "FULL", "GLOB", "GROUP", "HAVING", "IF",
+    "IGNORE", "IMMEDIATE", "IN", "INDEX", "INDEXED", "INITIALLY", "INNER",
+    "INSERT", "INSTEAD", "INTERSECT", "INTO", "IS", "ISNULL", "JOIN", "KEY",
+    "LEFT", "LIKE", "LIMIT", "MATCH", "NATURAL", "NO", "NOT", "NOTNULL",
+    "NULL", "OF", "OFFSET", "ON", "OR", "ORDER", "OUTER", "PLAN", "PRAGMA",
+    "PRIMARY", "QUERY", "RAISE", "RECURSIVE", "REFERENCES", "REGEXP",
+    "REINDEX", "RELEASE", "RENAME", "REPLACE", "RESTRICT", "RIGHT",
+    "ROLLBACK", "ROW", "SAVEPOINT", "SELECT", "SET", "TABLE", "TEMP",
+    "TEMPORARY", "THEN", "TO", "TRANSACTION", "TRIGGER", "UNION", "UNIQUE",
+    "UPDATE", "USING", "VACUUM", "VALUES", "VIEW", "VIRTUAL", "WHEN", "WHERE",
+    "WITH", "WITHOUT",
+  };
+  int i, lwr, upr, mid, c;
+  if( !isalpha((unsigned char)zName[0]) && zName[0]!='_' ) return '"';
+  for(i=0; zName[i]; i++){
+    if( !isalnum((unsigned char)zName[i]) && zName[i]!='_' ) return '"';
+  }
+  lwr = 0;
+  upr = sizeof(azKeywords)/sizeof(azKeywords[0]) - 1;
+  while( lwr<=upr ){
+    mid = (lwr+upr)/2;
+    c = sqlite3_stricmp(azKeywords[mid], zName);
+    if( c==0 ) return '"';
+    if( c<0 ){
+      lwr = mid+1;
+    }else{
+      upr = mid-1;
+    }
+  }
+  return 0;
+}
 
 #if defined(SQLITE_ENABLE_SESSION)
 /*
@@ -1274,6 +1391,7 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
   return shell_callback(pArg, nArg, azArg, azCol, NULL);
 }
 
+
 /*
 ** Set the destination table field of the ShellState structure to
 ** the name of the table given.  Escape any quote characters in the
@@ -1281,7 +1399,7 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
 */
 static void set_table_name(ShellState *p, const char *zName){
   int i, n;
-  int needQuote;
+  int cQuote;
   char *z;
 
   if( p->zDestTable ){
@@ -1289,84 +1407,22 @@ static void set_table_name(ShellState *p, const char *zName){
     p->zDestTable = 0;
   }
   if( zName==0 ) return;
-  needQuote = !isalpha((unsigned char)*zName) && *zName!='_';
-  for(i=n=0; zName[i]; i++, n++){
-    if( !isalnum((unsigned char)zName[i]) && zName[i]!='_' ){
-      needQuote = 1;
-      if( zName[i]=='\'' ) n++;
-    }
-  }
-  if( needQuote ) n += 2;
+  cQuote = quoteChar(zName);
+  n = strlen30(zName);
+  if( cQuote ) n += 2;
   z = p->zDestTable = malloc( n+1 );
   if( z==0 ){
     raw_printf(stderr,"Error: out of memory\n");
     exit(1);
   }
   n = 0;
-  if( needQuote ) z[n++] = '\'';
+  if( cQuote ) z[n++] = cQuote;
   for(i=0; zName[i]; i++){
     z[n++] = zName[i];
-    if( zName[i]=='\'' ) z[n++] = '\'';
+    if( zName[i]==cQuote ) z[n++] = cQuote;
   }
-  if( needQuote ) z[n++] = '\'';
+  if( cQuote ) z[n++] = cQuote;
   z[n] = 0;
-}
-
-/*
-** A variable length string to which one can append text.
-*/
-typedef struct ShellString ShellString;
-struct ShellString {
-  char *z;
-  int n;
-  int nAlloc;
-};
-
-/* zIn is either a pointer to a NULL-terminated string in memory obtained
-** from malloc(), or a NULL pointer. The string pointed to by zAppend is
-** added to zIn, and the result returned in memory obtained from malloc().
-** zIn, if it was not NULL, is freed.
-**
-** If the third argument, quote, is not '\0', then it is used as a
-** quote character for zAppend.
-*/
-static void appendText(ShellString *p, char const *zAppend, char quote){
-  int len;
-  int i;
-  int nAppend = strlen30(zAppend);
-
-  len = nAppend+p->n+1;
-  if( quote ){
-    len += 2;
-    for(i=0; i<nAppend; i++){
-      if( zAppend[i]==quote ) len++;
-    }
-  }
-
-  if( p->n+len>=p->nAlloc ){
-    p->nAlloc = p->nAlloc*2 + len + 20;
-    p->z = realloc(p->z, p->nAlloc);
-    if( p->z==0 ){
-      memset(p, 0, sizeof(*p));
-      return;
-    }
-  }
-
-  if( quote ){
-    char *zCsr = p->z+p->n;
-    *zCsr++ = quote;
-    for(i=0; i<nAppend; i++){
-      *zCsr++ = zAppend[i];
-      if( zAppend[i]==quote ) *zCsr++ = quote;
-    }
-    *zCsr++ = quote;
-    p->n = (int)(zCsr - p->z);
-    *zCsr = '\0';
-  }else{
-    memcpy(p->z+p->n, zAppend, nAppend);
-    p->n += nAppend;
-    p->z[p->n] = '\0';
-  }
 }
 
 
@@ -2131,9 +2187,6 @@ static char **tableColumnList(ShellState *p, const char *zTab){
   return azCol;
 }
 
-
-
-
 /*
 ** This is a different callback routine used for dumping the database.
 ** Each row received by this callback consists of a table name,
@@ -2177,8 +2230,8 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
   }
 
   if( strcmp(zType, "table")==0 ){
-    ShellString sSelect;
-    ShellString sTable;
+    ShellText sSelect;
+    ShellText sTable;
     char **azCol;
     int i;
     char *savedDestTable;
@@ -2192,8 +2245,8 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
 
     /* Always quote the table name, even if it appears to be pure ascii,
     ** in case it is a keyword. Ex:  INSERT INTO "table" ... */
-    memset(&sTable, 0, sizeof(sTable));
-    appendText(&sTable, zTable, '"');
+    initText(&sTable);
+    appendText(&sTable, zTable, quoteChar(zTable));
     /* If preserving the rowid, add a column list after the table name.
     ** In other words:  "INSERT INTO tab(rowid,a,b,c,...) VALUES(...)"
     ** instead of the usual "INSERT INTO tab VALUES(...)".
@@ -2203,27 +2256,27 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
       appendText(&sTable, azCol[0], 0);
       for(i=1; azCol[i]; i++){
         appendText(&sTable, ",", 0);
-        appendText(&sTable, azCol[i], '"');
+        appendText(&sTable, azCol[i], quoteChar(azCol[i]));
       }
       appendText(&sTable, ")", 0);
     }
 
     /* Build an appropriate SELECT statement */
-    memset(&sSelect, 0, sizeof(sSelect));
+    initText(&sSelect);
     appendText(&sSelect, "SELECT ", 0);
     if( azCol[0] ){
       appendText(&sSelect, azCol[0], 0);
       appendText(&sSelect, ",", 0);
     }
     for(i=1; azCol[i]; i++){
-      appendText(&sSelect, azCol[i], 0);
+      appendText(&sSelect, azCol[i], quoteChar(azCol[i]));
       if( azCol[i+1] ){
         appendText(&sSelect, ",", 0);
       }
     }
     freeColumnList(azCol);
     appendText(&sSelect, " FROM ", 0);
-    appendText(&sSelect, zTable, '"');
+    appendText(&sSelect, zTable, quoteChar(zTable));
 
     savedDestTable = p->zDestTable;
     savedMode = p->mode;
@@ -2232,8 +2285,8 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
     rc = shell_exec(p->db, sSelect.z, shell_callback, p, 0);
     p->zDestTable = savedDestTable;
     p->mode = savedMode;
-    free(sTable.z);
-    free(sSelect.z);
+    freeText(&sTable);
+    freeText(&sSelect);
     if( rc ) p->nErr++;
   }
   return 0;
