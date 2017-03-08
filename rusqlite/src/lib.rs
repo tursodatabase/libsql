@@ -103,7 +103,6 @@ pub mod types;
 mod version;
 mod transaction;
 mod cache;
-mod named_params;
 mod error;
 mod convenient;
 mod raw_statement;
@@ -297,6 +296,28 @@ impl Connection {
         self.prepare(sql).and_then(|mut stmt| stmt.execute(params))
     }
 
+    /// Convenience method to prepare and execute a single SQL statement with named parameter(s).
+    ///
+    /// On success, returns the number of rows that were changed or inserted or deleted (via
+    /// `sqlite3_changes`).
+    ///
+    /// ## Example
+    ///
+    /// ```rust,no_run
+    /// # use rusqlite::{Connection, Result};
+    /// fn insert(conn: &Connection) -> Result<i32> {
+    ///     conn.execute_named("INSERT INTO test (name) VALUES (:name)", &[(":name", &"one")])
+    /// }
+    /// ```
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if `sql` cannot be converted to a C-compatible string or if the
+    /// underlying SQLite call fails.
+    pub fn execute_named(&self, sql: &str, params: &[(&str, &ToSql)]) -> Result<c_int> {
+        self.prepare(sql).and_then(|mut stmt| stmt.execute_named(params))
+    }
+
     /// Get the SQLite rowid of the most recent successful INSERT.
     ///
     /// Uses [sqlite3_last_insert_rowid](https://www.sqlite.org/c3ref/last_insert_rowid.html) under
@@ -329,6 +350,24 @@ impl Connection {
     {
         let mut stmt = try!(self.prepare(sql));
         stmt.query_row(params, f)
+    }
+
+    /// Convenience method to execute a query with named parameter(s) that is expected to return
+    /// a single row.
+    ///
+    /// If the query returns more than one row, all rows except the first are ignored.
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if `sql` cannot be converted to a C-compatible string or if the
+    /// underlying SQLite call fails.
+    pub fn query_row_named<T, F>(&self, sql: &str, params: &[(&str, &ToSql)], f: F) -> Result<T>
+        where F: FnOnce(&Row) -> T
+    {
+        let mut stmt = try!(self.prepare(sql));
+        let mut rows = try!(stmt.query_named(params));
+
+        rows.get_expected_row().map(|r| f(&r))
     }
 
     /// Convenience method to execute a query that is expected to return a single row,
