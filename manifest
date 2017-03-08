@@ -1,5 +1,5 @@
-C Add\stest\sscript\sext/rbu/rbu_round_trip.tcl.\sUses\s"dbselftest"\sto\stest\sthat\n"rbu"\sand\s"sqldiff"\swork\stogether.
-D 2017-03-07T20:03:25.030
+C Add\sthe\s--preserve-rowids\soption\sto\sthe\s".dump"\scommand\sin\sthe\sCLI.
+D 2017-03-08T11:44:00.069
 F Makefile.in edb6bcdd37748d2b1c3422ff727c748df7ffe918
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a89ea37ab5928026001569f056973b9059492fe2
@@ -399,7 +399,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 3e518b962d932a997fae373366880fc028c75706
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c d12f3539f80db38b09015561b569e0eb1c4b6c5f
-F src/shell.c 27d2b31099fd2cd749e44d025ef9b54ca26692cb
+F src/shell.c c42c3031f715712a0cd47d8f08bd2d1dfec8baa0
 F src/sqlite.h.in 4d0c08f8640c586564a7032b259c5f69bf397850
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
@@ -1110,7 +1110,7 @@ F test/sharedA.test 0cdf1a76dfa00e6beee66af5b534b1e8df2720f5
 F test/sharedB.test 16cc7178e20965d75278f410943109b77b2e645e
 F test/shared_err.test 2f2aee20db294b9924e81f6ccbe60f19e21e8506
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test 52ac23a345772ab0d6d3241a21a633fdaa3ed581
+F test/shell1.test 5df739ee2fe5c9dbbb2f9a0158b9723bda0910b8
 F test/shell2.test e242a9912f44f4c23c3d1d802a83e934e84c853b
 F test/shell3.test 9b95ba643eaa228376f06a898fb410ee9b6e57c1
 F test/shell4.test 89ad573879a745974ff2df20ff97c5d6ffffbd5d
@@ -1563,7 +1563,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2cb71583d631cd417acbeebbb4ee950573a9deef
-R ee3baff0fd57ede16b35b4777ef32cf9
-U dan
-Z 9c10ed94bada1b1224e7c4aff135f1d6
+P 961e79da73b4550b3e5b0f9a617133a76485db67
+R c754df2de2ef21ae6643ebeaf45e8d82
+U drh
+Z bce538a1e35be638681ea14d388ad037

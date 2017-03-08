@@ -456,28 +456,6 @@ static int isNumber(const char *z, int *realnum){
 }
 
 /*
-** A global char* and an SQL function to access its current value
-** from within an SQL statement. This program used to use the
-** sqlite_exec_printf() API to substitue a string into an SQL statement.
-** The correct way to do this with sqlite3 is to use the bind API, but
-** since the shell is built around the callback paradigm it would be a lot
-** of work. Instead just use this hack, which is quite harmless.
-*/
-static const char *zShellStatic = 0;
-static void shellstaticFunc(
-  sqlite3_context *context,
-  int argc,
-  sqlite3_value **argv
-){
-  assert( 0==argc );
-  assert( zShellStatic );
-  UNUSED_PARAMETER(argc);
-  UNUSED_PARAMETER(argv);
-  sqlite3_result_text(context, zShellStatic, -1, SQLITE_STATIC);
-}
-
-
-/*
 ** Compute a string length that is limited to what can be stored in
 ** lower 30 bits of a 32-bit signed integer.
 */
@@ -618,6 +596,7 @@ struct ShellState {
   int countChanges;      /* True to display change counts */
   int backslashOn;       /* Resolve C-style \x escapes in SQL input text */
   int outCount;          /* Revert to stdout when reaching zero */
+  int preserveRowid;     /* Preserver ROWID values on a ".dump" command */
   int cnt;               /* Number of records displayed so far */
   FILE *out;             /* Write results here */
   FILE *traceOut;        /* Output for sqlite3_trace() */
@@ -1333,6 +1312,16 @@ static void set_table_name(ShellState *p, const char *zName){
   z[n] = 0;
 }
 
+/*
+** A variable length string to which one can append text.
+*/
+typedef struct ShellString ShellString;
+struct ShellString {
+  char *z;
+  int n;
+  int nAlloc;
+};
+
 /* zIn is either a pointer to a NULL-terminated string in memory obtained
 ** from malloc(), or a NULL pointer. The string pointed to by zAppend is
 ** added to zIn, and the result returned in memory obtained from malloc().
@@ -1341,13 +1330,12 @@ static void set_table_name(ShellState *p, const char *zName){
 ** If the third argument, quote, is not '\0', then it is used as a
 ** quote character for zAppend.
 */
-static char *appendText(char *zIn, char const *zAppend, char quote){
+static void appendText(ShellString *p, char const *zAppend, char quote){
   int len;
   int i;
   int nAppend = strlen30(zAppend);
-  int nIn = (zIn?strlen30(zIn):0);
 
-  len = nAppend+nIn+1;
+  len = nAppend+p->n+1;
   if( quote ){
     len += 2;
     for(i=0; i<nAppend; i++){
@@ -1355,27 +1343,30 @@ static char *appendText(char *zIn, char const *zAppend, char quote){
     }
   }
 
-  zIn = (char *)realloc(zIn, len);
-  if( !zIn ){
-    return 0;
+  if( p->n+len>=p->nAlloc ){
+    p->nAlloc = p->nAlloc*2 + len + 20;
+    p->z = realloc(p->z, p->nAlloc);
+    if( p->z==0 ){
+      memset(p, 0, sizeof(*p));
+      return;
+    }
   }
 
   if( quote ){
-    char *zCsr = &zIn[nIn];
+    char *zCsr = p->z+p->n;
     *zCsr++ = quote;
     for(i=0; i<nAppend; i++){
       *zCsr++ = zAppend[i];
       if( zAppend[i]==quote ) *zCsr++ = quote;
     }
     *zCsr++ = quote;
-    *zCsr++ = '\0';
-    assert( (zCsr-zIn)==len );
+    p->n = (int)(zCsr - p->z);
+    *zCsr = '\0';
   }else{
-    memcpy(&zIn[nIn], zAppend, nAppend);
-    zIn[len-1] = '\0';
+    memcpy(p->z+p->n, zAppend, nAppend);
+    p->n += nAppend;
+    p->z[p->n] = '\0';
   }
-
-  return zIn;
 }
 
 
@@ -2024,6 +2015,124 @@ static int shell_exec(
   return rc;
 }
 
+/*
+** Release memory previously allocated by tableColumnList().
+*/
+static void freeColumnList(char **azCol){
+  int i;
+  for(i=1; azCol[i]; i++){
+    sqlite3_free(azCol[i]);
+  }
+  /* azCol[0] is a static string */
+  sqlite3_free(azCol);
+}
+
+/*
+** Return a list of pointers to strings which are the names of all
+** columns in table zTab.   The memory to hold the names is dynamically
+** allocated and must be released by the caller using a subsequent call
+** to freeColumnList().
+**
+** The azCol[0] entry is usually NULL.  However, if zTab contains a rowid
+** value that needs to be preserved, then azCol[0] is filled in with the
+** name of the rowid column.
+**
+** The first regular column in the table is azCol[1].  The list is terminated
+** by an entry with azCol[i]==0.
+*/
+static char **tableColumnList(ShellState *p, const char *zTab){
+  char **azCol = 0;
+  sqlite3_stmt *pStmt;
+  char *zSql;
+  int nCol = 0;
+  int nAlloc = 0;
+  int nPK = 0;       /* Number of PRIMARY KEY columns seen */
+  int isIPK = 0;     /* True if one PRIMARY KEY column of type INTEGER */
+  int preserveRowid = p->preserveRowid;
+  int rc;
+
+  zSql = sqlite3_mprintf("PRAGMA table_info=%Q", zTab);
+  rc = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
+  sqlite3_free(zSql);
+  if( rc ) return 0;
+  while( sqlite3_step(pStmt)==SQLITE_ROW ){
+    if( nCol>=nAlloc-2 ){
+      nAlloc = nAlloc*2 + nCol + 10;
+      azCol = sqlite3_realloc(azCol, nAlloc*sizeof(azCol[0]));
+      if( azCol==0 ){
+        raw_printf(stderr, "Error: out of memory\n");
+        exit(1);
+      }
+    }
+    azCol[++nCol] = sqlite3_mprintf("%s", sqlite3_column_text(pStmt, 1));
+    if( sqlite3_column_int(pStmt, 5) ){
+      nPK++;
+      if( nPK==1
+       && sqlite3_stricmp((const char*)sqlite3_column_text(pStmt,2),
+                          "INTEGER")==0 
+      ){
+        isIPK = 1;
+      }else{
+        isIPK = 0;
+      }
+    }
+  }
+  sqlite3_finalize(pStmt);
+  azCol[0] = 0;
+  azCol[nCol+1] = 0;
+
+  /* The decision of whether or not a rowid really needs to be preserved
+  ** is tricky.  We never need to preserve a rowid for a WITHOUT ROWID table
+  ** or a table with an INTEGER PRIMARY KEY.  We are unable to preserve
+  ** rowids on tables where the rowid is inaccessible because there are other
+  ** columns in the table named "rowid", "_rowid_", and "oid".
+  */
+  if( preserveRowid && isIPK ){
+    /* If a single PRIMARY KEY column with type INTEGER was seen, then it
+    ** might be an alise for the ROWID.  But it might also be a WITHOUT ROWID
+    ** table or a INTEGER PRIMARY KEY DESC column, neither of which are
+    ** ROWID aliases.  To distinguish these cases, check to see if
+    ** there is a "pk" entry in "PRAGMA index_list".  There will be
+    ** no "pk" index if the PRIMARY KEY really is an alias for the ROWID.
+    */
+    zSql = sqlite3_mprintf("SELECT 1 FROM pragma_index_list(%Q)"
+                           " WHERE origin='pk'", zTab);
+    rc = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
+    sqlite3_free(zSql);
+    if( rc ){
+      freeColumnList(azCol);
+      return 0;
+    }
+    rc = sqlite3_step(pStmt);
+    sqlite3_finalize(pStmt);
+    preserveRowid = rc==SQLITE_ROW;
+  }
+  if( preserveRowid ){
+    /* Only preserve the rowid if we can find a name to use for the
+    ** rowid */
+    static char *azRowid[] = { "rowid", "_rowid_", "oid" };
+    int i, j;
+    for(j=0; j<3; j++){
+      for(i=1; i<=nCol; i++){
+        if( sqlite3_stricmp(azRowid[j],azCol[i])==0 ) break;
+      }
+      if( i>nCol ){
+        /* At this point, we know that azRowid[j] is not the name of any
+        ** ordinary column in the table.  Verify that azRowid[j] is a valid
+        ** name for the rowid before adding it to azCol[0].  WITHOUT ROWID
+        ** tables will fail this last check */
+        int rc;
+        rc = sqlite3_table_column_metadata(p->db,0,zTab,azRowid[j],0,0,0,0,0);
+        if( rc==SQLITE_OK ) azCol[0] = azRowid[j];
+        break;
+      }
+    }
+  }
+  return azCol;
+}
+
+
+
 
 /*
 ** This is a different callback routine used for dumping the database.
@@ -2036,7 +2145,6 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
   const char *zTable;
   const char *zType;
   const char *zSql;
-  const char *zPrepStmt = 0;
   ShellState *p = (ShellState *)pArg;
 
   UNUSED_PARAMETER(azCol);
@@ -2046,7 +2154,7 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
   zSql = azArg[2];
 
   if( strcmp(zTable, "sqlite_sequence")==0 ){
-    zPrepStmt = "DELETE FROM sqlite_sequence;\n";
+    raw_printf(p->out, "DELETE FROM sqlite_sequence;\n");
   }else if( sqlite3_strglob("sqlite_stat?", zTable)==0 ){
     raw_printf(p->out, "ANALYZE sqlite_master;\n");
   }else if( strncmp(zTable, "sqlite_", 7)==0 ){
@@ -2069,58 +2177,64 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
   }
 
   if( strcmp(zType, "table")==0 ){
-    sqlite3_stmt *pTableInfo = 0;
-    char *zSelect = 0;
-    char *zTableInfo = 0;
-    char *zTmp = 0;
-    int nRow = 0;
+    ShellString sSelect;
+    ShellString sTable;
+    char **azCol;
+    int i;
+    char *savedDestTable;
+    int savedMode;
 
-    zTableInfo = appendText(zTableInfo, "PRAGMA table_info(", 0);
-    zTableInfo = appendText(zTableInfo, zTable, '"');
-    zTableInfo = appendText(zTableInfo, ");", 0);
-
-    rc = sqlite3_prepare_v2(p->db, zTableInfo, -1, &pTableInfo, 0);
-    free(zTableInfo);
-    if( rc!=SQLITE_OK || !pTableInfo ){
-      return 1;
+    azCol = tableColumnList(p, zTable);
+    if( azCol==0 ){
+      p->nErr++;
+      return 0;
     }
 
-    zSelect = appendText(zSelect, "SELECT 'INSERT INTO ' || ", 0);
     /* Always quote the table name, even if it appears to be pure ascii,
     ** in case it is a keyword. Ex:  INSERT INTO "table" ... */
-    zTmp = appendText(zTmp, zTable, '"');
-    if( zTmp ){
-      zSelect = appendText(zSelect, zTmp, '\'');
-      free(zTmp);
-    }
-    zSelect = appendText(zSelect, " || ' VALUES(' || ", 0);
-    rc = sqlite3_step(pTableInfo);
-    while( rc==SQLITE_ROW ){
-      const char *zText = (const char *)sqlite3_column_text(pTableInfo, 1);
-      zSelect = appendText(zSelect, "quote(", 0);
-      zSelect = appendText(zSelect, zText, '"');
-      rc = sqlite3_step(pTableInfo);
-      if( rc==SQLITE_ROW ){
-        zSelect = appendText(zSelect, "), ", 0);
-      }else{
-        zSelect = appendText(zSelect, ") ", 0);
+    memset(&sTable, 0, sizeof(sTable));
+    appendText(&sTable, zTable, '"');
+    /* If preserving the rowid, add a column list after the table name.
+    ** In other words:  "INSERT INTO tab(rowid,a,b,c,...) VALUES(...)"
+    ** instead of the usual "INSERT INTO tab VALUES(...)".
+    */
+    if( azCol[0] ){
+      appendText(&sTable, "(", 0);
+      appendText(&sTable, azCol[0], 0);
+      for(i=1; azCol[i]; i++){
+        appendText(&sTable, ",", 0);
+        appendText(&sTable, azCol[i], '"');
       }
-      nRow++;
+      appendText(&sTable, ")", 0);
     }
-    rc = sqlite3_finalize(pTableInfo);
-    if( rc!=SQLITE_OK || nRow==0 ){
-      free(zSelect);
-      return 1;
-    }
-    zSelect = appendText(zSelect, "|| ')' FROM  ", 0);
-    zSelect = appendText(zSelect, zTable, '"');
 
-    rc = run_table_dump_query(p, zSelect, zPrepStmt);
-    if( rc==SQLITE_CORRUPT ){
-      zSelect = appendText(zSelect, " ORDER BY rowid DESC", 0);
-      run_table_dump_query(p, zSelect, 0);
+    /* Build an appropriate SELECT statement */
+    memset(&sSelect, 0, sizeof(sSelect));
+    appendText(&sSelect, "SELECT ", 0);
+    if( azCol[0] ){
+      appendText(&sSelect, azCol[0], 0);
+      appendText(&sSelect, ",", 0);
     }
-    free(zSelect);
+    for(i=1; azCol[i]; i++){
+      appendText(&sSelect, azCol[i], 0);
+      if( azCol[i+1] ){
+        appendText(&sSelect, ",", 0);
+      }
+    }
+    freeColumnList(azCol);
+    appendText(&sSelect, " FROM ", 0);
+    appendText(&sSelect, zTable, '"');
+
+    savedDestTable = p->zDestTable;
+    savedMode = p->mode;
+    p->zDestTable = sTable.z;
+    p->mode = p->cMode = MODE_Insert;
+    rc = shell_exec(p->db, sSelect.z, shell_callback, p, 0);
+    p->zDestTable = savedDestTable;
+    p->mode = savedMode;
+    free(sTable.z);
+    free(sSelect.z);
+    if( rc ) p->nErr++;
   }
   return 0;
 }
@@ -2425,10 +2539,6 @@ static void open_db(ShellState *p, int keepAlive){
     sqlite3_initialize();
     sqlite3_open(p->zDbFilename, &p->db);
     globalDb = p->db;
-    if( p->db && sqlite3_errcode(p->db)==SQLITE_OK ){
-      sqlite3_create_function(p->db, "shellstatic", 0, SQLITE_UTF8, 0,
-          shellstaticFunc, 0, 0);
-    }
     if( p->db==0 || SQLITE_OK!=sqlite3_errcode(p->db) ){
       utf8_printf(stderr,"Error: unable to open database \"%s\": %s\n",
           p->zDbFilename, sqlite3_errmsg(p->db));
@@ -3722,21 +3832,42 @@ static int do_meta_command(char *zLine, ShellState *p){
   }else
 
   if( c=='d' && strncmp(azArg[0], "dump", n)==0 ){
+    const char *zLike = 0;
+    int i;
+    p->preserveRowid = 0;
+    for(i=1; i<nArg; i++){
+      if( azArg[i][0]=='-' ){
+        const char *z = azArg[i]+1;
+        if( z[0]=='-' ) z++;
+        if( strcmp(z,"preserve-rowids")==0 ){
+          p->preserveRowid = 1;
+        }else
+        {
+          raw_printf(stderr, "Unknown option \"%s\" on \".dump\"\n", azArg[i]);
+          rc = 1;
+          goto meta_command_exit;
+        }
+      }else if( zLike ){
+        raw_printf(stderr, "Usage: .dump ?--preserve-rowids? ?LIKE-PATTERN?\n");
+        rc = 1;
+        goto meta_command_exit;
+      }else{
+        zLike = azArg[i];
+      }
+    }
     open_db(p, 0);
     /* When playing back a "dump", the content might appear in an order
     ** which causes immediate foreign key constraints to be violated.
     ** So disable foreign-key constraint enforcement to prevent problems. */
-    if( nArg!=1 && nArg!=2 ){
-      raw_printf(stderr, "Usage: .dump ?LIKE-PATTERN?\n");
-      rc = 1;
-      goto meta_command_exit;
-    }
     raw_printf(p->out, "PRAGMA foreign_keys=OFF;\n");
     raw_printf(p->out, "BEGIN TRANSACTION;\n");
     p->writableSchema = 0;
+    /* Set writable_schema=ON since doing so forces SQLite to initialize
+    ** as much of the schema as it can even if the sqlite_master table is
+    ** corrupt. */
     sqlite3_exec(p->db, "SAVEPOINT dump; PRAGMA writable_schema=ON", 0, 0, 0);
     p->nErr = 0;
-    if( nArg==1 ){
+    if( zLike==0 ){
       run_schema_dump_query(p,
         "SELECT name, type, sql FROM sqlite_master "
         "WHERE sql NOT NULL AND type=='table' AND name!='sqlite_sequence'"
@@ -3750,21 +3881,20 @@ static int do_meta_command(char *zLine, ShellState *p){
         "WHERE sql NOT NULL AND type IN ('index','trigger','view')", 0
       );
     }else{
-      int i;
-      for(i=1; i<nArg; i++){
-        zShellStatic = azArg[i];
-        run_schema_dump_query(p,
-          "SELECT name, type, sql FROM sqlite_master "
-          "WHERE tbl_name LIKE shellstatic() AND type=='table'"
-          "  AND sql NOT NULL");
-        run_table_dump_query(p,
-          "SELECT sql FROM sqlite_master "
-          "WHERE sql NOT NULL"
-          "  AND type IN ('index','trigger','view')"
-          "  AND tbl_name LIKE shellstatic()", 0
-        );
-        zShellStatic = 0;
-      }
+      char *zSql;
+      zSql = sqlite3_mprintf(
+        "SELECT name, type, sql FROM sqlite_master "
+        "WHERE tbl_name LIKE %Q AND type=='table'"
+        "  AND sql NOT NULL", zLike);
+      run_schema_dump_query(p,zSql);
+      sqlite3_free(zSql);
+      zSql = sqlite3_mprintf(
+        "SELECT sql FROM sqlite_master "
+        "WHERE sql NOT NULL"
+        "  AND type IN ('index','trigger','view')"
+        "  AND tbl_name LIKE %Q", zLike);
+      run_table_dump_query(p, zSql, 0);
+      sqlite3_free(zSql);
     }
     if( p->writableSchema ){
       raw_printf(p->out, "PRAGMA writable_schema=OFF;\n");
@@ -4574,17 +4704,17 @@ static int do_meta_command(char *zLine, ShellState *p){
         callback(&data, 1, new_argv, new_colv);
         rc = SQLITE_OK;
       }else{
-        zShellStatic = azArg[1];
-        rc = sqlite3_exec(p->db,
+        char *zSql;
+        zSql = sqlite3_mprintf(
           "SELECT sql FROM "
           "  (SELECT sql sql, type type, tbl_name tbl_name, name name, rowid x"
           "     FROM sqlite_master UNION ALL"
           "   SELECT sql, type, tbl_name, name, rowid FROM sqlite_temp_master) "
-          "WHERE lower(tbl_name) LIKE shellstatic()"
+          "WHERE lower(tbl_name) LIKE %Q"
           "  AND type!='meta' AND sql NOTNULL "
-          "ORDER BY rowid",
-          callback, &data, &zErrMsg);
-        zShellStatic = 0;
+          "ORDER BY rowid", azArg[1]);
+        rc = sqlite3_exec(p->db, zSql, callback, &data, &zErrMsg);
+        sqlite3_free(zSql);
       }
     }else if( nArg==1 ){
       rc = sqlite3_exec(p->db,

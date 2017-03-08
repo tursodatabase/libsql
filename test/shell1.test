@@ -300,7 +300,7 @@ do_test shell1-3.4.2 {
 do_test shell1-3.4.3 {
   # too many arguments
   catchcmd "test.db" ".dump FOO BAD"
-} {1 {Usage: .dump ?LIKE-PATTERN?}}
+} {1 {Usage: .dump ?--preserve-rowids? ?LIKE-PATTERN?}}
 
 # .echo ON|OFF           Turn command echo on or off
 do_test shell1-3.5.1 {
@@ -745,15 +745,57 @@ INSERT INTO "t1" VALUES('');
 INSERT INTO "t1" VALUES(1);
 INSERT INTO "t1" VALUES(2.25);
 INSERT INTO "t1" VALUES('hello');
-INSERT INTO "t1" VALUES(X'807F');
+INSERT INTO "t1" VALUES(X'807f');
 CREATE TABLE t3(x,y);
 INSERT INTO "t3" VALUES(1,NULL);
 INSERT INTO "t3" VALUES(2,'');
 INSERT INTO "t3" VALUES(3,1);
 INSERT INTO "t3" VALUES(4,2.25);
 INSERT INTO "t3" VALUES(5,'hello');
-INSERT INTO "t3" VALUES(6,X'807F');
+INSERT INTO "t3" VALUES(6,X'807f');
 COMMIT;}}
+
+do_test shell1-4.1.1 {
+  catchcmd test.db {.dump --preserve-rowids}
+} {0 {PRAGMA foreign_keys=OFF;
+BEGIN TRANSACTION;
+CREATE TABLE t1(x);
+INSERT INTO "t1"(rowid,"x") VALUES(1,NULL);
+INSERT INTO "t1"(rowid,"x") VALUES(2,'');
+INSERT INTO "t1"(rowid,"x") VALUES(3,1);
+INSERT INTO "t1"(rowid,"x") VALUES(4,2.25);
+INSERT INTO "t1"(rowid,"x") VALUES(5,'hello');
+INSERT INTO "t1"(rowid,"x") VALUES(6,X'807f');
+CREATE TABLE t3(x,y);
+INSERT INTO "t3"(rowid,"x","y") VALUES(1,1,NULL);
+INSERT INTO "t3"(rowid,"x","y") VALUES(2,2,'');
+INSERT INTO "t3"(rowid,"x","y") VALUES(3,3,1);
+INSERT INTO "t3"(rowid,"x","y") VALUES(4,4,2.25);
+INSERT INTO "t3"(rowid,"x","y") VALUES(5,5,'hello');
+INSERT INTO "t3"(rowid,"x","y") VALUES(6,6,X'807f');
+COMMIT;}}
+
+do_test shell1-4.1.2 {
+  db close
+  forcedelete test2.db
+  sqlite3 db test2.db
+  db eval {
+    CREATE TABLE t1(x INTEGER PRIMARY KEY, y);
+    INSERT INTO t1 VALUES(1,null), (2,''), (3,1),
+                         (4,2.25), (5,'hello'), (6,x'807f');
+  }
+  catchcmd test2.db {.dump --preserve-rowids}
+} {0 {PRAGMA foreign_keys=OFF;
+BEGIN TRANSACTION;
+CREATE TABLE t1(x INTEGER PRIMARY KEY, y);
+INSERT INTO "t1" VALUES(1,NULL);
+INSERT INTO "t1" VALUES(2,'');
+INSERT INTO "t1" VALUES(3,1);
+INSERT INTO "t1" VALUES(4,2.25);
+INSERT INTO "t1" VALUES(5,'hello');
+INSERT INTO "t1" VALUES(6,X'807f');
+COMMIT;}}
+
 
 # Test the output of ".mode insert"
 #
