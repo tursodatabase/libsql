@@ -17,19 +17,17 @@
 //! truncates timespecs to the nearest second. If you want different storage for timespecs, you can
 //! use a newtype. For example, to store timespecs as `f64`s:
 //!
-//! ```rust,ignore
+//! ```rust
 //! extern crate rusqlite;
-//! extern crate libc;
+//! extern crate time;
 //!
-//! use rusqlite::types::{FromSql, ToSql, sqlite3_stmt};
+//! use rusqlite::types::{FromSql, FromSqlResult, ValueRef, ToSql, ToSqlOutput};
 //! use rusqlite::{Result};
-//! use libc::c_int;
-//! use time;
 //!
 //! pub struct TimespecSql(pub time::Timespec);
 //!
 //! impl FromSql for TimespecSql {
-//!     fn column_result(value: ValueRef) -> Result<Self> {
+//!     fn column_result(value: ValueRef) -> FromSqlResult<Self> {
 //!         f64::column_result(value).map(|as_f64| {
 //!             TimespecSql(time::Timespec{ sec: as_f64.trunc() as i64,
 //!                                         nsec: (as_f64.fract() * 1.0e9) as i32 })
@@ -38,12 +36,15 @@
 //! }
 //!
 //! impl ToSql for TimespecSql {
-//!     unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
+//!     fn to_sql(&self) -> Result<ToSqlOutput> {
 //!         let TimespecSql(ts) = *self;
 //!         let as_f64 = ts.sec as f64 + (ts.nsec as f64) / 1.0e9;
-//!         as_f64.bind_parameter(stmt, col)
+//!         Ok(as_f64.into())
 //!     }
 //! }
+//!
+//! # // Prevent this doc test from being wrapped in a `fn main()` so that it will compile.
+//! # fn main() {}
 //! ```
 //!
 //! `ToSql` and `FromSql` are also implemented for `Option<T>` where `T` implements `ToSql` or
@@ -72,11 +73,10 @@ mod serde_json;
 /// ## Example
 ///
 /// ```rust,no_run
-/// # extern crate libc;
 /// # extern crate rusqlite;
 /// # use rusqlite::{Connection, Result};
 /// # use rusqlite::types::{Null};
-/// # use libc::{c_int};
+/// # use std::os::raw::{c_int};
 /// fn main() {
 /// }
 /// fn insert_null(conn: &Connection) -> Result<c_int> {
@@ -113,7 +113,7 @@ mod test {
 
     use Connection;
     use Error;
-    use libc::{c_int, c_double};
+    use std::os::raw::{c_int, c_double};
     use std::f64::EPSILON;
     use super::Value;
 
@@ -174,7 +174,7 @@ mod test {
         db.execute("INSERT INTO foo(i) VALUES (?)", &[&Value::Integer(10)]).unwrap();
 
         assert_eq!(10i64,
-                   db.query_row("SELECT i FROM foo", &[], |r| r.get(0)).unwrap());
+                   db.query_row::<i64, _>("SELECT i FROM foo", &[], |r| r.get(0)).unwrap());
     }
 
     #[test]

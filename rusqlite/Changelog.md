@@ -1,4 +1,53 @@
-# Version UPCOMING (TBD)
+# Version 0.10.1 (2017-03-03)
+
+* Updates the `bundled` SQLite version to 3.17.0.
+* Changes the build process to no longer require `bindgen`. This should improve
+  build times and no longer require a new-ish Clang. See the README for more
+  details.
+
+# Version 0.10.0 (2017-02-28)
+
+* Re-export the `ErrorCode` enum from `libsqlite3-sys`.
+* Adds `version()` and `version_number()` functions for querying the version of SQLite in use.
+* Adds the `limits` feature, exposing `limit()` and `set_limit()` methods on `Connection`.
+* Updates to `libsqlite3-sys` 0.7.0, which runs rust-bindgen at build-time instead of assuming the
+  precense of all expected SQLite constants and functions.
+* Clarifies supported SQLite versions. Running with SQLite older than 3.6.8 now panics, and
+  some features will not compile unless a sufficiently-recent SQLite version is used. See
+  the README for requirements of particular features.
+* When running with SQLite 3.6.x, rusqlite attempts to perform SQLite initialization. If it fails,
+  rusqlite will panic since it cannot ensure the threading mode for SQLite. This check can by
+  skipped by calling the unsafe function `rusqlite::bypass_sqlite_initialization()`. This is
+  technically a breaking change but is unlikely to affect anyone in practice, since prior to this
+  version the check that rusqlite was using would cause a segfault if linked against a SQLite
+  older than 3.7.0.
+* rusqlite now performs a one-time check (prior to the first connection attempt) that the runtime
+  SQLite version is at least as new as the SQLite version found at buildtime. This check can by
+  skipped by calling the unsafe function `rusqlite::bypass_sqlite_version_check()`.
+* Removes the `libc` dependency in favor of using `std::os::raw`
+
+# Version 0.9.5 (2017-01-26)
+
+* Add impls of `Clone`, `Debug`, and `PartialEq` to `ToSqlOutput`.
+
+# Version 0.9.4 (2017-01-25)
+
+* Update dependencies.
+
+# Version 0.9.3 (2017-01-23)
+
+* Make `ToSqlOutput` itself implement `ToSql`.
+
+# Version 0.9.2 (2017-01-22)
+
+* Bugfix: The `FromSql` impl for `i32` now returns an error instead of
+  truncating if the underlying SQLite value is out of `i32`'s range.
+* Added `FromSql` and `ToSql` impls for `i8`, `i16`, `u8`, `u16`, and `u32`.
+  `i32` and `i64` already had impls. `u64` is omitted because their range
+  cannot be represented by `i64`, which is the type we use to communicate with
+  SQLite.
+
+# Version 0.9.1 (2017-01-20)
 
 * BREAKING CHANGE: `Connection::close()` now returns a `Result<(), (Connection, Error)>` instead
   of a `Result<(), Error>` so callers get the still-open connection back on failure.

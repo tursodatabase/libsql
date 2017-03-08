@@ -30,11 +30,22 @@ impl From<bool> for Value {
     }
 }
 
-impl From<i32> for Value {
-    fn from(i: i32) -> Value {
-        Value::Integer(i as i64)
-    }
-}
+macro_rules! from_i64(
+    ($t:ty) => (
+        impl From<$t> for Value {
+            fn from(i: $t) -> Value {
+                Value::Integer(i as i64)
+            }
+        }
+    )
+);
+
+from_i64!(i8);
+from_i64!(i16);
+from_i64!(i32);
+from_i64!(u8);
+from_i64!(u16);
+from_i64!(u32);
 
 impl From<i64> for Value {
     fn from(i: i64) -> Value {

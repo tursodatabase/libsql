@@ -52,7 +52,6 @@
 //! ```
 #![allow(unknown_lints)]
 
-extern crate libc;
 extern crate libsqlite3_sys as ffi;
 extern crate lru_cache;
 #[macro_use]
@@ -72,12 +71,17 @@ use std::cell::RefCell;
 use std::ffi::{CStr, CString};
 use std::result;
 use std::str;
-use libc::{c_int, c_char, c_void};
+use std::sync::{Once, ONCE_INIT};
+use std::sync::atomic::{AtomicBool, ATOMIC_BOOL_INIT, Ordering};
+use std::os::raw::{c_int, c_char};
 
-use types::{ToSql, ToSqlOutput, FromSql, FromSqlError, ValueRef};
+use types::{ToSql, FromSql, FromSqlError, ValueRef};
 use error::{error_from_sqlite_code, error_from_handle};
 use raw_statement::RawStatement;
 use cache::StatementCache;
+
+pub use statement::Statement;
+use statement::StatementCrateImpl;
 
 #[allow(deprecated)]
 pub use transaction::{SqliteTransaction, SqliteTransactionBehavior};
@@ -86,20 +90,22 @@ pub use transaction::{DropBehavior, Savepoint, Transaction, TransactionBehavior}
 #[allow(deprecated)]
 pub use error::SqliteError;
 pub use error::Error;
+pub use ffi::ErrorCode;
 
 pub use cache::CachedStatement;
+pub use version::*;
 
 #[cfg(feature = "load_extension")]
 #[allow(deprecated)]
 pub use load_extension_guard::{SqliteLoadExtensionGuard, LoadExtensionGuard};
 
 pub mod types;
+mod version;
 mod transaction;
 mod cache;
-mod named_params;
 mod error;
-mod convenient;
 mod raw_statement;
+mod statement;
 #[cfg(feature = "load_extension")]
 mod load_extension_guard;
 #[cfg(feature = "trace")]
@@ -110,6 +116,8 @@ pub mod backup;
 pub mod functions;
 #[cfg(feature = "blob")]
 pub mod blob;
+#[cfg(feature = "limits")]
+pub mod limits;
 #[cfg(all(feature = "vtab", feature = "functions"))]
 pub mod vtab;
 
@@ -203,7 +211,7 @@ impl Connection {
 
     /// Open a new connection to a SQLite database.
     ///
-    /// Database Connection](http://www.sqlite.org/c3ref/open.html) for a description of valid
+    /// [Database Connection](http://www.sqlite.org/c3ref/open.html) for a description of valid
     /// flag combinations.
     ///
     /// # Failure
@@ -223,7 +231,7 @@ impl Connection {
 
     /// Open a new connection to an in-memory SQLite database.
     ///
-    /// Database Connection](http://www.sqlite.org/c3ref/open.html) for a description of valid
+    /// [Database Connection](http://www.sqlite.org/c3ref/open.html) for a description of valid
     /// flag combinations.
     ///
     /// # Failure
@@ -289,6 +297,28 @@ impl Connection {
         self.prepare(sql).and_then(|mut stmt| stmt.execute(params))
     }
 
+    /// Convenience method to prepare and execute a single SQL statement with named parameter(s).
+    ///
+    /// On success, returns the number of rows that were changed or inserted or deleted (via
+    /// `sqlite3_changes`).
+    ///
+    /// ## Example
+    ///
+    /// ```rust,no_run
+    /// # use rusqlite::{Connection, Result};
+    /// fn insert(conn: &Connection) -> Result<i32> {
+    ///     conn.execute_named("INSERT INTO test (name) VALUES (:name)", &[(":name", &"one")])
+    /// }
+    /// ```
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if `sql` cannot be converted to a C-compatible string or if the
+    /// underlying SQLite call fails.
+    pub fn execute_named(&self, sql: &str, params: &[(&str, &ToSql)]) -> Result<c_int> {
+        self.prepare(sql).and_then(|mut stmt| stmt.execute_named(params))
+    }
+
     /// Get the SQLite rowid of the most recent successful INSERT.
     ///
     /// Uses [sqlite3_last_insert_rowid](https://www.sqlite.org/c3ref/last_insert_rowid.html) under
@@ -321,6 +351,24 @@ impl Connection {
     {
         let mut stmt = try!(self.prepare(sql));
         stmt.query_row(params, f)
+    }
+
+    /// Convenience method to execute a query with named parameter(s) that is expected to return
+    /// a single row.
+    ///
+    /// If the query returns more than one row, all rows except the first are ignored.
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if `sql` cannot be converted to a C-compatible string or if the
+    /// underlying SQLite call fails.
+    pub fn query_row_named<T, F>(&self, sql: &str, params: &[(&str, &ToSql)], f: F) -> Result<T>
+        where F: FnOnce(&Row) -> T
+    {
+        let mut stmt = try!(self.prepare(sql));
+        let mut rows = try!(stmt.query_named(params));
+
+        rows.get_expected_row().map(|r| f(&r))
     }
 
     /// Convenience method to execute a query that is expected to return a single row,
@@ -419,11 +467,8 @@ impl Connection {
     /// Will return `Err` if the underlying SQLite call fails.
     pub fn close(self) -> std::result::Result<(), (Connection, Error)> {
         self.flush_prepared_statement_cache();
-        {
-            let mut db = self.db.borrow_mut();
-            db.close()
-        }
-        .map_err(move |err| (self, err))
+        let r = self.db.borrow_mut().close();
+        r.map_err(move |err| (self, err))
     }
 
     /// Enable loading of SQLite extensions. Strongly consider using `LoadExtensionGuard`
@@ -499,7 +544,7 @@ impl Connection {
     /// on the rusqlite repository](https://github.com/jgallagher/rusqlite/issues) and describe
     /// your use case. This function is unsafe because it gives you raw access to the SQLite
     /// connection, and what you do with it could impact the safety of this `Connection`.
-    pub unsafe fn handle(&self) -> *mut ffi::Struct_sqlite3 {
+    pub unsafe fn handle(&self) -> *mut ffi::sqlite3 {
         self.db.borrow().db()
     }
 
@@ -521,7 +566,7 @@ impl fmt::Debug for Connection {
 }
 
 struct InnerConnection {
-    db: *mut ffi::Struct_sqlite3,
+    db: *mut ffi::sqlite3,
 }
 
 /// Old name for `OpenFlags`. `SqliteOpenFlags` is deprecated.
@@ -532,7 +577,7 @@ bitflags! {
     #[doc = "Flags for opening SQLite database connections."]
     #[doc = "See [sqlite3_open_v2](http://www.sqlite.org/c3ref/open.html) for details."]
     #[repr(C)]
-    pub flags OpenFlags: ::libc::c_int {
+    pub flags OpenFlags: ::std::os::raw::c_int {
         const SQLITE_OPEN_READ_ONLY     = 0x00000001,
         const SQLITE_OPEN_READ_WRITE    = 0x00000002,
         const SQLITE_OPEN_CREATE        = 0x00000004,
@@ -551,29 +596,148 @@ impl Default for OpenFlags {
     }
 }
 
-impl InnerConnection {
-    fn open_with_flags(c_path: &CString, flags: OpenFlags) -> Result<InnerConnection> {
-        unsafe {
-            // Before opening the database, we need to check that SQLite hasn't been
-            // compiled or configured to be in single-threaded mode. If it has, we're
-            // exposing a very unsafe API to Rust, so refuse to open connections at all.
-            // Unfortunately, the check for this is quite gross. sqlite3_threadsafe() only
-            // returns how SQLite was _compiled_; there is no public API to check whether
-            // someone called sqlite3_config() to set single-threaded mode. We can cheat
-            // by trying to allocate a mutex, though; in single-threaded mode due to
-            // compilation settings, the magic value 8 is returned (see the definition of
-            // sqlite3_mutex_alloc at https://github.com/mackyle/sqlite/blob/master/src/mutex.h);
-            // in single-threaded mode due to sqlite3_config(), the magic value 8 is also
-            // returned (see the definition of noopMutexAlloc at
-            // https://github.com/mackyle/sqlite/blob/master/src/mutex_noop.c).
-            const SQLITE_SINGLETHREADED_MUTEX_MAGIC: usize = 8;
+static SQLITE_INIT: Once = ONCE_INIT;
+static SQLITE_VERSION_CHECK: Once = ONCE_INIT;
+static BYPASS_SQLITE_INIT: AtomicBool = ATOMIC_BOOL_INIT;
+static BYPASS_VERSION_CHECK: AtomicBool = ATOMIC_BOOL_INIT;
+
+/// rusqlite's check for a safe SQLite threading mode requires SQLite 3.7.0 or later. If you are
+/// running against a SQLite older than that, rusqlite attempts to ensure safety by performing
+/// configuration and initialization of SQLite itself the first time you attempt to open a
+/// connection. By default, rusqlite panics if that initialization fails, since that could mean
+/// SQLite has been initialized in single-thread mode.
+///
+/// If you are encountering that panic _and_ can ensure that SQLite has been initialized in either
+/// multi-thread or serialized mode, call this function prior to attempting to open a connection
+/// and rusqlite's initialization process will by skipped. This function is unsafe because if you
+/// call it and SQLite has actually been configured to run in single-thread mode, you may enounter
+/// memory errors or data corruption or any number of terrible things that should not be possible
+/// when you're using Rust.
+pub unsafe fn bypass_sqlite_initialization() {
+    BYPASS_SQLITE_INIT.store(true, Ordering::Relaxed);
+}
+
+/// rusqlite performs a one-time check that the runtime SQLite version is at least as new as
+/// the version of SQLite found when rusqlite was built. Bypassing this check may be dangerous;
+/// e.g., if you use features of SQLite that are not present in the runtime version. If you are
+/// sure the runtime version is compatible with the build-time version for your usage, you can
+/// bypass the version check by calling this function before your first connection attempt.
+pub unsafe fn bypass_sqlite_version_check() {
+    BYPASS_VERSION_CHECK.store(true, Ordering::Relaxed);
+}
+
+fn ensure_valid_sqlite_version() {
+    SQLITE_VERSION_CHECK.call_once(|| {
+        let version_number = version_number();
+
+        // Check our hard floor.
+        if version_number < 3006008 {
+            panic!("rusqlite requires SQLite 3.6.8 or newer");
+        }
+
+        // Check that the major version number for runtime and buildtime match.
+        let buildtime_major = ffi::SQLITE_VERSION_NUMBER / 1_000_000;
+        let runtime_major = version_number / 1_000_000;
+        if buildtime_major != runtime_major {
+            panic!("rusqlite was built against SQLite {} but is running with SQLite {}",
+                   str::from_utf8(ffi::SQLITE_VERSION).unwrap(),
+                   version());
+        }
+
+        if BYPASS_VERSION_CHECK.load(Ordering::Relaxed) {
+            return;
+        }
+
+        // Check that the runtime version number is compatible with the version number we found at
+        // build-time.
+        if version_number < ffi::SQLITE_VERSION_NUMBER {
+            panic!("\
+rusqlite was built against SQLite {} but the runtime SQLite version is {}. To fix this, either:
+* Recompile rusqlite and link against the SQLite version you are using at runtime, or
+* Call rusqlite::bypass_sqlite_version_check() prior to your first connection attempt. Doing this
+  means you're sure everything will work correctly even though the runtime version is older than
+  the version we found at build time.",
+                   str::from_utf8(ffi::SQLITE_VERSION).unwrap(),
+                   version());
+        }
+    });
+}
+
+fn ensure_safe_sqlite_threading_mode() -> Result<()> {
+    // Ensure SQLite was compiled in thredsafe mode.
+    if unsafe { ffi::sqlite3_threadsafe() == 0 } {
+        return Err(Error::SqliteSingleThreadedMode);
+    }
+
+    // Now we know SQLite is _capable_ of being in Multi-thread of Serialized mode, but it's
+    // possible someone configured it to be in Single-thread mode before calling into us. That
+    // would mean we're exposing an unsafe API via a safe one (in Rust terminology), which is
+    // no good. We have two options to protect against this, depending on the version of SQLite
+    // we're linked with:
+    //
+    // 1. If we're on 3.7.0 or later, we can ask SQLite for a mutex and check for the magic value
+    //    8. This isn't documented, but it's what SQLite returns for its mutex allocation function
+    //    in Single-thread mode.
+    // 2. If we're prior to SQLite 3.7.0, AFAIK there's no way to check the threading mode. The
+    //    check we perform for >= 3.7.0 will segfault. Instead, we insist on being able to call
+    //    sqlite3_config and sqlite3_initialize ourself, ensuring we know the threading mode. This
+    //    will fail if someone else has already initialized SQLite even if they initialized it
+    //    safely. That's not ideal either, which is why we expose bypass_sqlite_initialization
+    //    above.
+    if version_number() >= 3007000 {
+        const SQLITE_SINGLETHREADED_MUTEX_MAGIC: usize = 8;
+        let is_singlethreaded = unsafe {
             let mutex_ptr = ffi::sqlite3_mutex_alloc(0);
             let is_singlethreaded = mutex_ptr as usize == SQLITE_SINGLETHREADED_MUTEX_MAGIC;
             ffi::sqlite3_mutex_free(mutex_ptr);
-            if is_singlethreaded {
-                return Err(Error::SqliteSingleThreadedMode);
+            is_singlethreaded
+        };
+        if is_singlethreaded {
+            Err(Error::SqliteSingleThreadedMode)
+        } else {
+            Ok(())
+        }
+    } else {
+        SQLITE_INIT.call_once(|| {
+            if BYPASS_SQLITE_INIT.load(Ordering::Relaxed) {
+                return;
             }
 
+            unsafe {
+                let msg = "\
+Could not ensure safe initialization of SQLite.
+To fix this, either:
+* Upgrade SQLite to at least version 3.7.0
+* Ensure that SQLite has been initialized in Multi-thread or Serialized mode and call
+  rusqlite::bypass_sqlite_initialization() prior to your first connection attempt.";
+
+                if ffi::sqlite3_config(ffi::SQLITE_CONFIG_MULTITHREAD) != ffi::SQLITE_OK {
+                    panic!(msg);
+                }
+                if ffi::sqlite3_initialize() != ffi::SQLITE_OK {
+                    panic!(msg);
+                }
+            }
+        });
+        Ok(())
+    }
+}
+
+impl InnerConnection {
+    fn open_with_flags(c_path: &CString, flags: OpenFlags) -> Result<InnerConnection> {
+        ensure_valid_sqlite_version();
+        ensure_safe_sqlite_threading_mode()?;
+
+        // Replicate the check for sane open flags from SQLite, because the check in SQLite itself
+        // wasn't added until version 3.7.3.
+        debug_assert!(1 << SQLITE_OPEN_READ_ONLY.bits == 0x02);
+        debug_assert!(1 << SQLITE_OPEN_READ_WRITE.bits == 0x04);
+        debug_assert!(1 << (SQLITE_OPEN_READ_WRITE | SQLITE_OPEN_CREATE).bits == 0x40);
+        if (1 << (flags.bits & 0x7)) & 0x46 == 0 {
+            return Err(Error::SqliteFailure(ffi::Error::new(ffi::SQLITE_MISUSE), None));
+        }
+
+        unsafe {
             let mut db: *mut ffi::sqlite3 = mem::uninitialized();
             let r = ffi::sqlite3_open_v2(c_path.as_ptr(), &mut db, flags.bits(), ptr::null());
             if r != ffi::SQLITE_OK {
@@ -601,7 +765,7 @@ impl InnerConnection {
         }
     }
 
-    fn db(&self) -> *mut ffi::Struct_sqlite3 {
+    fn db(&self) -> *mut ffi::sqlite3 {
         self.db
     }
 
@@ -660,7 +824,7 @@ impl InnerConnection {
                 Ok(())
             } else {
                 let message = errmsg_to_string(&*errmsg);
-                ffi::sqlite3_free(errmsg as *mut libc::c_void);
+                ffi::sqlite3_free(errmsg as *mut ::std::os::raw::c_void);
                 Err(error_from_sqlite_code(r, Some(message)))
             }
         }
@@ -702,295 +866,6 @@ impl Drop for InnerConnection {
 /// Old name for `Statement`. `SqliteStatement` is deprecated.
 #[deprecated(since = "0.6.0", note = "Use Statement instead")]
 pub type SqliteStatement<'conn> = Statement<'conn>;
-
-/// A prepared statement.
-pub struct Statement<'conn> {
-    conn: &'conn Connection,
-    stmt: RawStatement,
-}
-
-impl<'conn> Statement<'conn> {
-    fn new(conn: &Connection, stmt: RawStatement) -> Statement {
-        Statement {
-            conn: conn,
-            stmt: stmt,
-        }
-    }
-
-    /// Get all the column names in the result set of the prepared statement.
-    pub fn column_names(&self) -> Vec<&str> {
-        let n = self.column_count();
-        let mut cols = Vec::with_capacity(n as usize);
-        for i in 0..n {
-            let slice = self.stmt.column_name(i);
-            let s = str::from_utf8(slice.to_bytes()).unwrap();
-            cols.push(s);
-        }
-        cols
-    }
-
-    /// Return the number of columns in the result set returned by the prepared statement.
-    pub fn column_count(&self) -> i32 {
-        self.stmt.column_count()
-    }
-
-    /// Returns the column index in the result set for a given column name.
-    ///
-    /// If there is no AS clause then the name of the column is unspecified and may change from one
-    /// release of SQLite to the next.
-    ///
-    /// # Failure
-    ///
-    /// Will return an `Error::InvalidColumnName` when there is no column with the specified `name`.
-    pub fn column_index(&self, name: &str) -> Result<i32> {
-        let bytes = name.as_bytes();
-        let n = self.column_count();
-        for i in 0..n {
-            if bytes == self.stmt.column_name(i).to_bytes() {
-                return Ok(i);
-            }
-        }
-        Err(Error::InvalidColumnName(String::from(name)))
-    }
-
-    /// Execute the prepared statement.
-    ///
-    /// On success, returns the number of rows that were changed or inserted or deleted (via
-    /// `sqlite3_changes`).
-    ///
-    /// ## Example
-    ///
-    /// ```rust,no_run
-    /// # use rusqlite::{Connection, Result};
-    /// fn update_rows(conn: &Connection) -> Result<()> {
-    ///     let mut stmt = try!(conn.prepare("UPDATE foo SET bar = 'baz' WHERE qux = ?"));
-    ///
-    ///     try!(stmt.execute(&[&1i32]));
-    ///     try!(stmt.execute(&[&2i32]));
-    ///
-    ///     Ok(())
-    /// }
-    /// ```
-    ///
-    /// # Failure
-    ///
-    /// Will return `Err` if binding parameters fails, the executed statement returns rows (in
-    /// which case `query` should be used instead), or the underling SQLite call fails.
-    pub fn execute(&mut self, params: &[&ToSql]) -> Result<c_int> {
-        try!(self.bind_parameters(params));
-        self.execute_()
-    }
-
-    fn execute_(&mut self) -> Result<c_int> {
-        let r = self.stmt.step();
-        self.stmt.reset();
-        match r {
-            ffi::SQLITE_DONE => {
-                if self.column_count() == 0 {
-                    Ok(self.conn.changes())
-                } else {
-                    Err(Error::ExecuteReturnedResults)
-                }
-            }
-            ffi::SQLITE_ROW => Err(Error::ExecuteReturnedResults),
-            _ => Err(self.conn.decode_result(r).unwrap_err()),
-        }
-    }
-
-    /// Execute the prepared statement, returning a handle to the resulting rows.
-    ///
-    /// Due to lifetime restricts, the rows handle returned by `query` does not
-    /// implement the `Iterator` trait. Consider using `query_map` or `query_and_then`
-    /// instead, which do.
-    ///
-    /// ## Example
-    ///
-    /// ```rust,no_run
-    /// # use rusqlite::{Connection, Result};
-    /// fn get_names(conn: &Connection) -> Result<Vec<String>> {
-    ///     let mut stmt = try!(conn.prepare("SELECT name FROM people"));
-    ///     let mut rows = try!(stmt.query(&[]));
-    ///
-    ///     let mut names = Vec::new();
-    ///     while let Some(result_row) = rows.next() {
-    ///         let row = try!(result_row);
-    ///         names.push(row.get(0));
-    ///     }
-    ///
-    ///     Ok(names)
-    /// }
-    /// ```
-    ///
-    /// ## Failure
-    ///
-    /// Will return `Err` if binding parameters fails.
-    pub fn query<'a>(&'a mut self, params: &[&ToSql]) -> Result<Rows<'a>> {
-        try!(self.bind_parameters(params));
-        Ok(Rows::new(self))
-    }
-
-    /// Executes the prepared statement and maps a function over the resulting rows, returning
-    /// an iterator over the mapped function results.
-    ///
-    /// ## Example
-    ///
-    /// ```rust,no_run
-    /// # use rusqlite::{Connection, Result};
-    /// fn get_names(conn: &Connection) -> Result<Vec<String>> {
-    ///     let mut stmt = try!(conn.prepare("SELECT name FROM people"));
-    ///     let rows = try!(stmt.query_map(&[], |row| row.get(0)));
-    ///
-    ///     let mut names = Vec::new();
-    ///     for name_result in rows {
-    ///         names.push(try!(name_result));
-    ///     }
-    ///
-    ///     Ok(names)
-    /// }
-    /// ```
-    ///
-    /// ## Failure
-    ///
-    /// Will return `Err` if binding parameters fails.
-    pub fn query_map<'a, T, F>(&'a mut self, params: &[&ToSql], f: F) -> Result<MappedRows<'a, F>>
-        where F: FnMut(&Row) -> T
-    {
-        let row_iter = try!(self.query(params));
-
-        Ok(MappedRows {
-            rows: row_iter,
-            map: f,
-        })
-    }
-
-    /// Executes the prepared statement and maps a function over the resulting
-    /// rows, where the function returns a `Result` with `Error` type implementing
-    /// `std::convert::From<Error>` (so errors can be unified).
-    ///
-    /// # Failure
-    ///
-    /// Will return `Err` if binding parameters fails.
-    pub fn query_and_then<'a, T, E, F>(&'a mut self,
-                                       params: &[&ToSql],
-                                       f: F)
-                                       -> Result<AndThenRows<'a, F>>
-        where E: convert::From<Error>,
-              F: FnMut(&Row) -> result::Result<T, E>
-    {
-        let row_iter = try!(self.query(params));
-
-        Ok(AndThenRows {
-            rows: row_iter,
-            map: f,
-        })
-    }
-
-    /// Consumes the statement.
-    ///
-    /// Functionally equivalent to the `Drop` implementation, but allows callers to see any errors
-    /// that occur.
-    ///
-    /// # Failure
-    ///
-    /// Will return `Err` if the underlying SQLite call fails.
-    pub fn finalize(mut self) -> Result<()> {
-        self.finalize_()
-    }
-
-    fn bind_parameter(&self, param: &ToSql, col: c_int) -> Result<()> {
-        let value = try!(param.to_sql());
-
-        let ptr = unsafe { self.stmt.ptr() };
-        let value = match value {
-            ToSqlOutput::Borrowed(v) => v,
-            ToSqlOutput::Owned(ref v) => ValueRef::from(v),
-
-            #[cfg(feature = "blob")]
-            ToSqlOutput::ZeroBlob(len) => {
-                return self.conn
-                    .decode_result(unsafe { ffi::sqlite3_bind_zeroblob(ptr, col, len) });
-            }
-        };
-        self.conn.decode_result(match value {
-            ValueRef::Null => unsafe { ffi::sqlite3_bind_null(ptr, col) },
-            ValueRef::Integer(i) => unsafe { ffi::sqlite3_bind_int64(ptr, col, i) },
-            ValueRef::Real(r) => unsafe { ffi::sqlite3_bind_double(ptr, col, r) },
-            ValueRef::Text(ref s) => unsafe {
-                let length = s.len();
-                if length > ::std::i32::MAX as usize {
-                    ffi::SQLITE_TOOBIG
-                } else {
-                    let c_str = try!(str_to_cstring(s));
-                    let destructor = if length > 0 {
-                        ffi::SQLITE_TRANSIENT()
-                    } else {
-                        ffi::SQLITE_STATIC()
-                    };
-                    ffi::sqlite3_bind_text(ptr, col, c_str.as_ptr(), length as c_int, destructor)
-                }
-            },
-            ValueRef::Blob(ref b) => unsafe {
-                let length = b.len();
-                if length > ::std::i32::MAX as usize {
-                    ffi::SQLITE_TOOBIG
-                } else if length == 0 {
-                    ffi::sqlite3_bind_zeroblob(ptr, col, 0)
-                } else {
-                    ffi::sqlite3_bind_blob(ptr,
-                                           col,
-                                           b.as_ptr() as *const c_void,
-                                           length as c_int,
-                                           ffi::SQLITE_TRANSIENT())
-                }
-            },
-        })
-    }
-
-    fn bind_parameters(&mut self, params: &[&ToSql]) -> Result<()> {
-        assert!(params.len() as c_int == self.stmt.bind_parameter_count(),
-                "incorrect number of parameters to query(): expected {}, got {}",
-                self.stmt.bind_parameter_count(),
-                params.len());
-
-        for (i, p) in params.iter().enumerate() {
-            try!(self.bind_parameter(*p, (i + 1) as c_int));
-        }
-
-        Ok(())
-    }
-
-    fn finalize_(&mut self) -> Result<()> {
-        let mut stmt = RawStatement::new(ptr::null_mut());
-        mem::swap(&mut stmt, &mut self.stmt);
-        self.conn.decode_result(stmt.finalize())
-    }
-}
-
-impl<'conn> Into<RawStatement> for Statement<'conn> {
-    fn into(mut self) -> RawStatement {
-        let mut stmt = RawStatement::new(ptr::null_mut());
-        mem::swap(&mut stmt, &mut self.stmt);
-        stmt
-    }
-}
-
-impl<'conn> fmt::Debug for Statement<'conn> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let sql = str::from_utf8(self.stmt.sql().to_bytes());
-        f.debug_struct("Statement")
-            .field("conn", self.conn)
-            .field("stmt", &self.stmt)
-            .field("sql", &sql)
-            .finish()
-    }
-}
-
-impl<'conn> Drop for Statement<'conn> {
-    #[allow(unused_must_use)]
-    fn drop(&mut self) {
-        self.finalize_();
-    }
-}
 
 /// An iterator over the mapped resulting rows of a query.
 pub struct MappedRows<'stmt, F> {
@@ -1055,7 +930,7 @@ impl<'stmt> Rows<'stmt> {
 
     fn reset(&mut self) {
         if let Some(stmt) = self.stmt.take() {
-            stmt.stmt.reset();
+            stmt.reset();
         }
     }
 
@@ -1070,22 +945,18 @@ impl<'stmt> Rows<'stmt> {
     /// "streaming iterator". For a more natural interface, consider using `query_map`
     /// or `query_and_then` instead, which return types that implement `Iterator`.
     pub fn next<'a>(&'a mut self) -> Option<Result<Row<'a, 'stmt>>> {
-        self.stmt.and_then(|stmt| {
-            match stmt.stmt.step() {
-                ffi::SQLITE_ROW => {
-                    Some(Ok(Row {
-                        stmt: stmt,
-                        phantom: PhantomData,
-                    }))
-                }
-                ffi::SQLITE_DONE => {
-                    self.reset();
-                    None
-                }
-                code => {
-                    self.reset();
-                    Some(Err(stmt.conn.decode_result(code).unwrap_err()))
-                }
+        self.stmt.and_then(|stmt| match stmt.step() {
+            Ok(true) => Some(Ok(Row {
+                stmt: stmt,
+                phantom: PhantomData,
+            })),
+            Ok(false) => {
+                self.reset();
+                None
+            }
+            Err(err) => {
+                self.reset();
+                Some(Err(err))
             }
         })
     }
@@ -1112,9 +983,11 @@ impl<'a, 'stmt> Row<'a, 'stmt> {
     ///
     /// ## Failure
     ///
-    /// Panics if the underlying SQLite column type is not a valid type as a source for `T`.
+    /// Panics if calling `row.get_checked(idx)` would return an error, including:
     ///
-    /// Panics if `idx` is outside the range of columns in the returned query.
+    ///    * If the underlying SQLite column type is not a valid type as a source for `T`
+    ///    * If the underlying SQLite integral value is outside the range representable by `T`
+    ///    * If `idx` is outside the range of columns in the returned query
     pub fn get<I: RowIndex, T: FromSql>(&self, idx: I) -> T {
         self.get_checked(idx).unwrap()
     }
@@ -1133,9 +1006,10 @@ impl<'a, 'stmt> Row<'a, 'stmt> {
     /// for this row.
     pub fn get_checked<I: RowIndex, T: FromSql>(&self, idx: I) -> Result<T> {
         let idx = try!(idx.idx(self.stmt));
-        let value = unsafe { ValueRef::new(&self.stmt.stmt, idx) };
+        let value = self.stmt.value_ref(idx);
         FromSql::column_result(value).map_err(|err| match err {
             FromSqlError::InvalidType => Error::InvalidColumnType(idx, value.data_type()),
+            FromSqlError::OutOfRange(i) => Error::IntegralValueOutOfRange(idx, i),
             FromSqlError::Other(err) => {
                 Error::FromSqlConversionFailure(idx as usize, value.data_type(), err)
             }
@@ -1170,46 +1044,6 @@ impl<'a> RowIndex for &'a str {
     #[inline]
     fn idx(&self, stmt: &Statement) -> Result<i32> {
         stmt.column_index(*self)
-    }
-}
-
-impl<'a> ValueRef<'a> {
-    unsafe fn new(stmt: &RawStatement, col: c_int) -> ValueRef {
-        use std::slice::from_raw_parts;
-
-        let raw = stmt.ptr();
-
-        match stmt.column_type(col) {
-            ffi::SQLITE_NULL => ValueRef::Null,
-            ffi::SQLITE_INTEGER => ValueRef::Integer(ffi::sqlite3_column_int64(raw, col)),
-            ffi::SQLITE_FLOAT => ValueRef::Real(ffi::sqlite3_column_double(raw, col)),
-            ffi::SQLITE_TEXT => {
-                let text = ffi::sqlite3_column_text(raw, col);
-                assert!(!text.is_null(),
-                        "unexpected SQLITE_TEXT column type with NULL data");
-                let s = CStr::from_ptr(text as *const c_char);
-
-                // sqlite3_column_text returns UTF8 data, so our unwrap here should be fine.
-                let s = s.to_str().expect("sqlite3_column_text returned invalid UTF-8");
-                ValueRef::Text(s)
-            }
-            ffi::SQLITE_BLOB => {
-                let blob = ffi::sqlite3_column_blob(raw, col);
-
-                let len = ffi::sqlite3_column_bytes(raw, col);
-                assert!(len >= 0,
-                        "unexpected negative return from sqlite3_column_bytes");
-                if len > 0 {
-                    assert!(!blob.is_null(),
-                            "unexpected SQLITE_BLOB column type with NULL data");
-                    ValueRef::Blob(from_raw_parts(blob as *const u8, len as usize))
-                } else {
-                    // The return value from sqlite3_column_blob() for a zero-length BLOB is a NULL pointer.
-                    ValueRef::Blob(&[])
-                }
-            }
-            _ => unreachable!("sqlite3_column_type returned invalid value"),
-        }
     }
 }
 
@@ -1273,7 +1107,7 @@ mod test {
         let raw_stmt = {
             use std::mem;
             use std::ptr;
-            use libc::c_int;
+            use std::os::raw::c_int;
             use super::str_to_cstring;
 
             let raw_db = db.db.borrow_mut().db;
@@ -1339,7 +1173,7 @@ mod test {
                    db.execute("INSERT INTO foo(x) VALUES (?)", &[&2i32]).unwrap());
 
         assert_eq!(3i32,
-                   db.query_row("SELECT SUM(x) FROM foo", &[], |r| r.get(0)).unwrap());
+                   db.query_row::<i32, _>("SELECT SUM(x) FROM foo", &[], |r| r.get(0)).unwrap());
     }
 
     #[test]
@@ -1455,7 +1289,7 @@ mod test {
         db.execute_batch(sql).unwrap();
 
         assert_eq!(10i64,
-                   db.query_row("SELECT SUM(x) FROM foo", &[], |r| r.get(0))
+                   db.query_row::<i64, _>("SELECT SUM(x) FROM foo", &[], |r| r.get(0))
                    .unwrap());
 
         let result: Result<i64> = db.query_row("SELECT x FROM foo WHERE x > 5", &[], |r| r.get(0));
@@ -1512,17 +1346,26 @@ mod test {
 
         match result.unwrap_err() {
             Error::SqliteFailure(err, _) => {
-                assert_eq!(err.code, ffi::ErrorCode::ConstraintViolation);
+                assert_eq!(err.code, ErrorCode::ConstraintViolation);
 
                 // extended error codes for constraints were added in SQLite 3.7.16; if we're
                 // running on a version at least that new, check for the extended code
-                let version = unsafe { ffi::sqlite3_libversion_number() };
-                if version >= 3007016 {
+                if version_number() >= 3007016 {
                     assert_eq!(err.extended_code, ffi::SQLITE_CONSTRAINT_NOTNULL)
                 }
             }
             err => panic!("Unexpected error {}", err),
         }
+    }
+
+    #[test]
+    fn test_version_string() {
+        let n = version_number();
+        let major = n / 1_000_000;
+        let minor = (n % 1_000_000) / 1_000;
+        let patch = n % 1_000;
+
+        assert!(version().contains(&format!("{}.{}.{}", major, minor, patch)));
     }
 
     mod query_and_then_tests {

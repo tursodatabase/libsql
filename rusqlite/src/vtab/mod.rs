@@ -3,9 +3,9 @@
 use std::borrow::Cow::{self, Borrowed, Owned};
 use std::ffi::CString;
 use std::mem;
+use std::os::raw::{c_char, c_int, c_void};
 use std::ptr;
 use std::slice;
-use libc;
 
 use {Connection, Error, Result, InnerConnection, str_to_cstring};
 use error::error_from_sqlite_code;
@@ -46,7 +46,7 @@ pub trait VTab<C: VTabCursor<Self>>: Sized {
     /// Create a new instance of a virtual table in response to a CREATE VIRTUAL TABLE statement.
     /// The `db` parameter is a pointer to the SQLite database connection that is executing
     /// the CREATE VIRTUAL TABLE statement.
-    fn connect(db: *mut ffi::sqlite3, aux: *mut libc::c_void, args: &[&[u8]]) -> Result<Self>;
+    fn connect(db: *mut ffi::sqlite3, aux: *mut c_void, args: &[&[u8]]) -> Result<Self>;
     /// Determine the best way to access the virtual table.
     fn best_index(&self, info: &mut IndexInfo) -> Result<()>;
     /// Create a new cursor used for accessing a virtual table.
@@ -56,7 +56,7 @@ pub trait VTab<C: VTabCursor<Self>>: Sized {
 bitflags! {
     #[doc = "Index constraint operator."]
     #[repr(C)]
-    pub flags IndexConstraintOp: ::libc::c_uchar {
+    pub flags IndexConstraintOp: ::std::os::raw::c_uchar {
         const SQLITE_INDEX_CONSTRAINT_EQ    = 2,
         const SQLITE_INDEX_CONSTRAINT_GT    = 4,
         const SQLITE_INDEX_CONSTRAINT_LE    = 8,
@@ -80,7 +80,7 @@ impl IndexInfo {
         unsafe { (*self.0).nOrderBy as usize }
     }
     /// Column number
-    pub fn order_by_column(&self, order_by_idx: usize) -> libc::c_int {
+    pub fn order_by_column(&self, order_by_idx: usize) -> c_int {
         unsafe {
             let order_bys = slice::from_raw_parts((*self.0).aOrderBy, (*self.0).nOrderBy as usize);
             order_bys[order_by_idx].iColumn
@@ -103,7 +103,7 @@ impl IndexInfo {
     }
 
     /// Number used to identify the index
-    pub fn set_idx_num(&mut self, idx_num: libc::c_int) {
+    pub fn set_idx_num(&mut self, idx_num: c_int) {
         unsafe {
             (*self.0).idxNum = idx_num;
         }
@@ -147,7 +147,7 @@ pub struct IndexConstraint<'a>(&'a ffi::sqlite3_index_constraint);
 
 impl<'a> IndexConstraint<'a> {
     /// Column constrained.  -1 for ROWID
-    pub fn column(&self) -> libc::c_int {
+    pub fn column(&self) -> c_int {
         self.0.iColumn
     }
     /// Constraint operator
@@ -164,7 +164,7 @@ pub struct IndexConstraintUsage<'a>(&'a mut ffi::sqlite3_index_constraint_usage)
 
 impl<'a> IndexConstraintUsage<'a> {
     /// if `argv_index` > 0, constraint is part of argv to xFilter
-    pub fn set_argv_index(&mut self, argv_index: libc::c_int) {
+    pub fn set_argv_index(&mut self, argv_index: c_int) {
         self.0.argvIndex = argv_index;
     }
     /// if `omit`, do not code a test for this constraint
@@ -178,7 +178,7 @@ pub trait VTabCursor<V: VTab<Self>>: Sized {
     /// Accessor to the associated virtual table.
     fn vtab(&self) -> &mut V;
     /// Begin a search of a virtual table.
-    fn filter(&mut self, idx_num: libc::c_int, idx_str: Option<&str>, args: &Values) -> Result<()>;
+    fn filter(&mut self, idx_num: c_int, idx_str: Option<&str>, args: &Values) -> Result<()>;
     /// Advance cursor to the next row of a result set initiated by `filter`.
     fn next(&mut self) -> Result<()>;
     /// Must return `false` if the cursor currently points to a valid row of data,
@@ -187,7 +187,7 @@ pub trait VTabCursor<V: VTab<Self>>: Sized {
     /// Find the value for the `i`-th column of the current row.
     /// `i` is zero-based so the first column is numbered 0.
     /// May return its result back to SQLite using one of the specified `ctx`.
-    fn column(&self, ctx: &mut Context, i: libc::c_int) -> Result<()>;
+    fn column(&self, ctx: &mut Context, i: c_int) -> Result<()>;
     /// Return the rowid of row that the cursor is currently pointing at.
     fn rowid(&self) -> Result<i64>;
 }
@@ -228,6 +228,7 @@ impl<'a> Values<'a> {
             FromSqlError::Other(err) => {
                 Error::FromSqlConversionFailure(idx, value.data_type(), err)
             }
+            FromSqlError::OutOfRange(i) => Error::IntegralValueOutOfRange(idx as c_int, i),
         })
     }
 
@@ -326,7 +327,7 @@ pub fn escape_double_quote(identifier: &str) -> Cow<str> {
 }
 
 // FIXME copy/paste from function.rs
-unsafe extern "C" fn free_boxed_value<T>(p: *mut libc::c_void) {
+unsafe extern "C" fn free_boxed_value<T>(p: *mut c_void) {
     let _: Box<T> = Box::from_raw(mem::transmute(p));
 }
 
@@ -367,12 +368,12 @@ static $module_name: ffi::sqlite3_module = ffi::sqlite3_module {
 };
 
 unsafe extern "C" fn $connect(db: *mut ffi::sqlite3,
-                              aux: *mut libc::c_void,
-                              argc: libc::c_int,
-                              argv: *const *const libc::c_char,
+                              aux: *mut c_void,
+                              argc: c_int,
+                              argv: *const *const c_char,
                               pp_vtab: *mut *mut ffi::sqlite3_vtab,
-                              err_msg: *mut *mut libc::c_char)
-                              -> libc::c_int {
+                              err_msg: *mut *mut c_char)
+                              -> c_int {
     use std::error::Error as StdError;
     use std::ffi::CStr;
     use std::slice;
@@ -401,7 +402,7 @@ unsafe extern "C" fn $connect(db: *mut ffi::sqlite3,
 }
 unsafe extern "C" fn $best_index(vtab: *mut ffi::sqlite3_vtab,
                                   info: *mut ffi::sqlite3_index_info)
-                                  -> libc::c_int {
+                                  -> c_int {
     use std::error::Error as StdError;
     use vtab::set_err_msg;
     let vt = vtab as *mut $vtab;
@@ -422,7 +423,7 @@ unsafe extern "C" fn $best_index(vtab: *mut ffi::sqlite3_vtab,
     }
 
 }
-unsafe extern "C" fn $disconnect(vtab: *mut ffi::sqlite3_vtab) -> libc::c_int {
+unsafe extern "C" fn $disconnect(vtab: *mut ffi::sqlite3_vtab) -> c_int {
     let vtab = vtab as *mut $vtab;
     let _: Box<$vtab> = Box::from_raw(vtab);
     ffi::SQLITE_OK
@@ -430,7 +431,7 @@ unsafe extern "C" fn $disconnect(vtab: *mut ffi::sqlite3_vtab) -> libc::c_int {
 
 unsafe extern "C" fn $open(vtab: *mut ffi::sqlite3_vtab,
                             pp_cursor: *mut *mut ffi::sqlite3_vtab_cursor)
-                            -> libc::c_int {
+                            -> c_int {
     use std::error::Error as StdError;
     use vtab::set_err_msg;
     let vt = vtab as *mut $vtab;
@@ -452,18 +453,18 @@ unsafe extern "C" fn $open(vtab: *mut ffi::sqlite3_vtab,
         }
     }
 }
-unsafe extern "C" fn $close(cursor: *mut ffi::sqlite3_vtab_cursor) -> libc::c_int {
+unsafe extern "C" fn $close(cursor: *mut ffi::sqlite3_vtab_cursor) -> c_int {
     let cr = cursor as *mut $cursor;
     let _: Box<$cursor> = Box::from_raw(cr);
     ffi::SQLITE_OK
 }
 
 unsafe extern "C" fn $filter(cursor: *mut ffi::sqlite3_vtab_cursor,
-                              idx_num: libc::c_int,
-                              idx_str: *const libc::c_char,
-                              argc: libc::c_int,
+                              idx_num: c_int,
+                              idx_str: *const c_char,
+                              argc: c_int,
                               argv: *mut *mut ffi::sqlite3_value)
-                              -> libc::c_int {
+                              -> c_int {
     use std::ffi::CStr;
     use std::slice;
     use std::str;
@@ -479,19 +480,19 @@ unsafe extern "C" fn $filter(cursor: *mut ffi::sqlite3_vtab_cursor,
     let cr = cursor as *mut $cursor;
     cursor_error(cursor, (*cr).filter(idx_num, idx_name, &values))
 }
-unsafe extern "C" fn $next(cursor: *mut ffi::sqlite3_vtab_cursor) -> libc::c_int {
+unsafe extern "C" fn $next(cursor: *mut ffi::sqlite3_vtab_cursor) -> c_int {
     use vtab::cursor_error;
     let cr = cursor as *mut $cursor;
     cursor_error(cursor, (*cr).next())
 }
-unsafe extern "C" fn $eof(cursor: *mut ffi::sqlite3_vtab_cursor) -> libc::c_int {
+unsafe extern "C" fn $eof(cursor: *mut ffi::sqlite3_vtab_cursor) -> c_int {
     let cr = cursor as *mut $cursor;
-    (*cr).eof() as libc::c_int
+    (*cr).eof() as c_int
 }
 unsafe extern "C" fn $column(cursor: *mut ffi::sqlite3_vtab_cursor,
                               ctx: *mut ffi::sqlite3_context,
-                              i: libc::c_int)
-                              -> libc::c_int {
+                              i: c_int)
+                              -> c_int {
     use vtab::{result_error, Context};
     let cr = cursor as *mut $cursor;
     let mut ctxt = Context(ctx);
@@ -499,7 +500,7 @@ unsafe extern "C" fn $column(cursor: *mut ffi::sqlite3_vtab_cursor,
 }
 unsafe extern "C" fn $rowid(cursor: *mut ffi::sqlite3_vtab_cursor,
                              p_rowid: *mut ffi::sqlite3_int64)
-                             -> libc::c_int {
+                             -> c_int {
     use vtab::cursor_error;
     let cr = cursor as *mut $cursor;
     match (*cr).rowid() {
@@ -516,7 +517,7 @@ unsafe extern "C" fn $rowid(cursor: *mut ffi::sqlite3_vtab_cursor,
 /// Virtual table cursors can set an error message by assigning a string to `zErrMsg`.
 pub unsafe fn cursor_error<T>(cursor: *mut ffi::sqlite3_vtab_cursor,
                               result: Result<T>)
-                              -> libc::c_int {
+                              -> c_int {
     use std::error::Error as StdError;
     match result {
         Ok(_) => ffi::SQLITE_OK,
@@ -536,14 +537,14 @@ pub unsafe fn cursor_error<T>(cursor: *mut ffi::sqlite3_vtab_cursor,
 /// Virtual tables methods can set an error message by assigning a string to `zErrMsg`.
 pub unsafe fn set_err_msg(vtab: *mut ffi::sqlite3_vtab, err_msg: &str) {
     if !(*vtab).zErrMsg.is_null() {
-        ffi::sqlite3_free((*vtab).zErrMsg as *mut libc::c_void);
+        ffi::sqlite3_free((*vtab).zErrMsg as *mut c_void);
     }
     (*vtab).zErrMsg = mprintf(err_msg);
 }
 
 /// To raise an error, the `column` method should use this method to set the error message
 /// and return the error code.
-unsafe fn result_error<T>(ctx: *mut ffi::sqlite3_context, result: Result<T>) -> libc::c_int {
+unsafe fn result_error<T>(ctx: *mut ffi::sqlite3_context, result: Result<T>) -> c_int {
     use std::error::Error as StdError;
     match result {
         Ok(_) => ffi::SQLITE_OK,
@@ -576,7 +577,7 @@ unsafe fn result_error<T>(ctx: *mut ffi::sqlite3_context, result: Result<T>) -> 
 
 // Space to hold this error message string must be obtained
 // from an SQLite memory allocation function.
-pub fn mprintf(err_msg: &str) -> *mut ::libc::c_char {
+pub fn mprintf(err_msg: &str) -> *mut c_char {
     let c_format = CString::new("%s").unwrap();
     let c_err = CString::new(err_msg).unwrap();
     unsafe { ffi::sqlite3_mprintf(c_format.as_ptr(), c_err.as_ptr()) }

@@ -5,6 +5,7 @@ use std::ops::{Deref, DerefMut};
 use lru_cache::LruCache;
 use {Result, Connection, Statement};
 use raw_statement::RawStatement;
+use statement::StatementCrateImpl;
 
 impl Connection {
     /// Prepare a SQL statement for execution, returning a previously prepared (but
@@ -258,7 +259,11 @@ mod test {
         {
             let mut stmt = db.prepare_cached(sql).unwrap();
             assert_eq!(1i32,
-                       stmt.query_map(&[], |r| r.get(0)).unwrap().next().unwrap().unwrap());
+                       stmt.query_map::<i32, _>(&[], |r| r.get(0))
+                           .unwrap()
+                           .next()
+                           .unwrap()
+                           .unwrap());
         }
 
         db.execute_batch(r#"

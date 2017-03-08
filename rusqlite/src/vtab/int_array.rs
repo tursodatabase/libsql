@@ -3,8 +3,8 @@
 use std::cell::RefCell;
 use std::default::Default;
 use std::mem;
+use std::os::raw::{c_char, c_int, c_void};
 use std::rc::Rc;
-use libc;
 
 use {Connection, Error, Result};
 use ffi;
@@ -62,7 +62,7 @@ struct IntArrayVTab {
 
 impl VTab<IntArrayVTabCursor> for IntArrayVTab {
     fn connect(db: *mut ffi::sqlite3,
-               aux: *mut libc::c_void,
+               aux: *mut c_void,
                _args: &[&[u8]])
                -> Result<IntArrayVTab> {
         let array = unsafe { mem::transmute(aux) };
@@ -106,7 +106,7 @@ impl VTabCursor<IntArrayVTab> for IntArrayVTabCursor {
         unsafe { &mut *(self.base.pVtab as *mut IntArrayVTab) }
     }
     fn filter(&mut self,
-              _idx_num: libc::c_int,
+              _idx_num: c_int,
               _idx_str: Option<&str>,
               _args: &Values)
               -> Result<()> {
@@ -124,7 +124,7 @@ impl VTabCursor<IntArrayVTab> for IntArrayVTabCursor {
             self.i >= array.len()
         }
     }
-    fn column(&self, ctx: &mut Context, _i: libc::c_int) -> Result<()> {
+    fn column(&self, ctx: &mut Context, _i: c_int) -> Result<()> {
         let vtab = self.vtab();
         unsafe {
             let array = (*vtab.array).borrow();
@@ -170,8 +170,8 @@ mod test {
             s.query_map(&[], |row| {
                 let i1: i64 = row.get(0);
                 assert!(i1 == 1 || i1 == 3);
-                assert_eq!(11, row.get(1));
-                assert_eq!(-5, row.get(2));
+                assert_eq!(11, row.get::<i32, i32>(1));
+                assert_eq!(-5, row.get::<i32, i32>(2));
             }).unwrap();
         }
 
@@ -185,9 +185,9 @@ mod test {
         {
             let mut rows = s.query(&[]).unwrap();
             let row = rows.next().unwrap().unwrap();
-            assert_eq!(1, row.get(0));
-            assert_eq!(11, row.get(1));
-            assert_eq!(-5, row.get(2));
+            assert_eq!(1, row.get::<i32, i32>(0));
+            assert_eq!(11, row.get::<i32, i32>(1));
+            assert_eq!(-5, row.get::<i32, i32>(2));
         }
 
         p2.borrow_mut().clear();

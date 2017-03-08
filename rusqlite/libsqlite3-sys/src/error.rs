@@ -1,32 +1,57 @@
-use libc::c_int;
+use std::os::raw::c_int;
 use std::error;
 use std::fmt;
 
+/// Error Codes
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ErrorCode {
+    /// Internal logic error in SQLite
     InternalMalfunction,
+    /// Access permission denied
     PermissionDenied,
+    /// Callback routine requested an abort
     OperationAborted,
+    /// The database file is locked
     DatabaseBusy,
+    /// A table in the database is locked
     DatabaseLocked,
+    /// A malloc() failed
     OutOfMemory,
+    /// Attempt to write a readonly database
     ReadOnly,
+    /// Operation terminated by sqlite3_interrupt()
     OperationInterrupted,
+    /// Some kind of disk I/O error occurred
     SystemIOFailure,
+    /// The database disk image is malformed
     DatabaseCorrupt,
+    /// Unknown opcode in sqlite3_file_control()
     NotFound,
+    /// Insertion failed because database is full
     DiskFull,
+    /// Unable to open the database file
     CannotOpen,
+    /// Database lock protocol error
     FileLockingProtocolFailed,
+    /// The database schema changed
     SchemaChanged,
+    /// String or BLOB exceeds size limit
     TooBig,
+    /// Abort due to constraint violation
     ConstraintViolation,
+    /// Data type mismatch
     TypeMismatch,
+    /// Library used incorrectly
     APIMisuse,
+    /// Uses OS features not supported on host
     NoLargeFileSupport,
+    /// Authorization denied
     AuthorizationForStatementDenied,
+    /// 2nd parameter to sqlite3_bind out of range
     ParameterOutOfRange,
+    /// File opened that is not a database file
     NotADatabase,
+    /// SQL error or missing database
     Unknown,
 }
 

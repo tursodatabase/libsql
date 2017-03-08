@@ -5,7 +5,7 @@ use std::borrow::Cow;
 
 use self::chrono::{NaiveDate, NaiveTime, NaiveDateTime, DateTime, TimeZone, UTC, Local};
 
-use ::Result;
+use Result;
 use types::{FromSql, FromSqlError, FromSqlResult, ToSql, ToSqlOutput, ValueRef};
 
 /// ISO 8601 calendar date without timezone => "YYYY-MM-DD"
@@ -104,9 +104,8 @@ impl FromSql for DateTime<UTC> {
                 Cow::Borrowed(s)
             };
 
-            match DateTime::parse_from_rfc3339(&s) {
-                Ok(dt) => return Ok(dt.with_timezone(&UTC)),
-                Err(_) => (),
+            if let Ok(dt) = DateTime::parse_from_rfc3339(&s) {
+                return Ok(dt.with_timezone(&UTC));
             }
         }
 

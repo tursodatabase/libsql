@@ -1,10 +1,10 @@
 //! CSV Virtual Table
 extern crate csv;
 use std::fs::File;
+use std::os::raw::{c_char, c_int, c_void};
 use std::path::Path;
 use std::result;
 use std::str;
-use libc;
 
 use {Connection, Error, Result};
 use ffi;
@@ -58,7 +58,7 @@ impl CSVTab {
 }
 
 impl VTab<CSVTabCursor> for CSVTab {
-    fn connect(db: *mut ffi::sqlite3, _aux: *mut libc::c_void, args: &[&[u8]]) -> Result<CSVTab> {
+    fn connect(db: *mut ffi::sqlite3, _aux: *mut c_void, args: &[&[u8]]) -> Result<CSVTab> {
         if args.len() < 4 {
             return Err(Error::ModuleError("no CSV file specified".to_owned()));
         }
@@ -173,7 +173,7 @@ impl VTabCursor<CSVTab> for CSVTabCursor {
     }
 
     fn filter(&mut self,
-              _idx_num: libc::c_int,
+              _idx_num: c_int,
               _idx_str: Option<&str>,
               _args: &Values)
               -> Result<()> {
@@ -203,7 +203,7 @@ impl VTabCursor<CSVTab> for CSVTabCursor {
     fn eof(&self) -> bool {
         self.eof
     }
-    fn column(&self, ctx: &mut Context, col: libc::c_int) -> Result<()> {
+    fn column(&self, ctx: &mut Context, col: c_int) -> Result<()> {
         if col < 0 || col as usize >= self.cols.len() {
             return Err(Error::ModuleError(format!("column index out of bounds: {}", col)));
         }

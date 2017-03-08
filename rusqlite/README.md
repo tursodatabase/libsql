@@ -57,6 +57,12 @@ fn main() {
 }
 ```
 
+### Supported SQLite Versions
+
+The base `rusqlite` package supports SQLite version 3.6.8 or newer. If you need
+support for older versions, please file an issue. Some cargo features require a
+newer SQLite version; see details below.
+
 ### Optional Features
 
 Rusqlite provides several features that are behind [Cargo
@@ -65,13 +71,18 @@ features](http://doc.crates.io/manifest.html#the-features-section). They are:
 * [`load_extension`](http://jgallagher.github.io/rusqlite/rusqlite/struct.LoadExtensionGuard.html)
   allows loading dynamic library-based SQLite extensions.
 * [`backup`](http://jgallagher.github.io/rusqlite/rusqlite/backup/index.html)
-  allows use of SQLite's online backup API.
+  allows use of SQLite's online backup API. Note: This feature requires SQLite 3.6.11 or later.
 * [`functions`](http://jgallagher.github.io/rusqlite/rusqlite/functions/index.html)
   allows you to load Rust closures into SQLite connections for use in queries.
+  Note: This feature requires SQLite 3.7.3 or later.
 * [`trace`](http://jgallagher.github.io/rusqlite/rusqlite/trace/index.html)
-  allows hooks into SQLite's tracing and profiling APIs.
+  allows hooks into SQLite's tracing and profiling APIs. Note: This feature
+  requires SQLite 3.6.23 or later.
 * [`blob`](http://jgallagher.github.io/rusqlite/rusqlite/blob/index.html)
-  gives `std::io::{Read, Write, Seek}` access to SQL BLOBs.
+  gives `std::io::{Read, Write, Seek}` access to SQL BLOBs. Note: This feature
+  requires SQLite 3.7.4 or later.
+* [`limits`](http://jgallagher.github.io/rusqlite/rusqlite/struct.Connection.html#method.limit)
+  allows you to set and retrieve SQLite's per connection limits.
 * `chrono` implements [`FromSql`](http://jgallagher.github.io/rusqlite/rusqlite/types/trait.FromSql.html)
   and [`ToSql`](http://jgallagher.github.io/rusqlite/rusqlite/types/trait.ToSql.html) for various
   types from the [`chrono` crate](https://crates.io/crates/chrono).
@@ -79,6 +90,53 @@ features](http://doc.crates.io/manifest.html#the-features-section). They are:
   and [`ToSql`](http://jgallagher.github.io/rusqlite/rusqlite/types/trait.ToSql.html) for the
   `Value` type from the [`serde_json` crate](https://crates.io/crates/serde_json).
 * `bundled` uses a bundled version of sqlite3.  This is a good option for cases where linking to sqlite3 is complicated, such as Windows.
+
+## Notes on building rusqlite and libsqlite3-sys
+
+`libsqlite3-sys` is a separate crate from `rusqlite` that provides the Rust
+declarations for SQLite's C API. By default, `libsqlite3-sys` attempts to use
+pkg-config to find a SQLite library that already exists on your system. You can
+adjust this behavior in a couple of ways:
+
+* If you use the `bundled` feature, `libsqlite3-sys` will use the
+  [gcc](https://crates.io/crates/gcc) crate to compile SQLite from source and
+  link against that. This source is embedded in the `libsqlite3-sys` crate and
+  is currently SQLite 3.17.0 (as of `rusqlite` 0.10.1 / `libsqlite3-sys`
+  0.7.1).  This is probably the simplest solution to any build problems.
+* You can set the `SQLITE3_LIB_DIR` to point to directory containing the SQLite
+  library.
+
+### Binding generation
+
+We use [bindgen](https://crates.io/crates/bindgen) to generate the Rust
+declarations from SQLite's C header file. `bindgen`
+[recommends](https://github.com/servo/rust-bindgen#library-usage-with-buildrs)
+running this as part of the build process of libraries that used this. We tried
+this briefly (`rusqlite` 0.10.0, specifically), but it had some annoyances:
+
+* The build time for `libsqlite3-sys` (and therefore `rusqlite`) increased
+  dramatically.
+* Running `bindgen` requires a relatively-recent version of Clang, which many
+  systems do not have installed by default.
+* Running `bindgen` also requires the SQLite header file to be present.
+
+As of `rusqlite` 0.10.1, we avoid running `bindgen` at build-time by shipping
+pregenerated bindings for several versions of SQLite. When compiling
+`rusqlite`, we use your selected Cargo features to pick the bindings for the
+minimum SQLite version that supports your chosen features. If you are using
+`libsqlite3-sys` directly, you can use the same features to choose which
+pregenerated bindings are chosen:
+
+* `min_sqlite_version_3_6_8` - SQLite 3.6.8 bindings (this is the default)
+* `min_sqlite_version_3_6_11` - SQLite 3.6.11 bindings
+* `min_sqlite_version_3_6_23` - SQLite 3.6.23 bindings
+* `min_sqlite_version_3_7_3` - SQLite 3.7.3 bindings
+* `min_sqlite_version_3_7_4` - SQLite 3.7.4 bindings
+
+If you use the `bundled` feature, you will get pregenerated bindings for the
+bundled version of SQLite. If you need other specific pregenerated binding
+versions, please file an issue. If you want to run `bindgen` at buildtime to
+produce your own bindings, use the `buildtime_bindgen` Cargo feature.
 
 ## Author
 

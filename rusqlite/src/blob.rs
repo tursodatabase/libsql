@@ -269,7 +269,7 @@ mod test {
         let mut blob = db.blob_open(DatabaseName::Main, "test", "content", rowid, false).unwrap();
         assert_eq!(4, blob.write(b"Clob").unwrap());
         assert_eq!(6, blob.write(b"567890xxxxxx").unwrap()); // cannot write past 10
-        assert_eq!(0, blob.write(b"5678").unwrap());         // still cannot write past 10
+        assert_eq!(0, blob.write(b"5678").unwrap()); // still cannot write past 10
 
         blob.reopen(rowid).unwrap();
         blob.close().unwrap();

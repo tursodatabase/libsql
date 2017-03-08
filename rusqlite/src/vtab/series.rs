@@ -1,7 +1,7 @@
 //! generate series virtual table.
 //! Port of C [generate series "function"](http://www.sqlite.org/cgi/src/finfo?name=ext/misc/series.c).
 use std::default::Default;
-use libc;
+use std::os::raw::{c_char, c_int, c_void};
 
 use {Connection, Error, Result};
 use ffi;
@@ -30,14 +30,14 @@ init_module!(SERIES_MODULE,
              series_rowid);
 
 // Column numbers
-// const SERIES_COLUMN_VALUE : libc::c_int = 0;
-const SERIES_COLUMN_START: libc::c_int = 1;
-const SERIES_COLUMN_STOP: libc::c_int = 2;
-const SERIES_COLUMN_STEP: libc::c_int = 3;
+// const SERIES_COLUMN_VALUE : c_int = 0;
+const SERIES_COLUMN_START: c_int = 1;
+const SERIES_COLUMN_STOP: c_int = 2;
+const SERIES_COLUMN_STEP: c_int = 3;
 
 bitflags! {
     #[repr(C)]
-    flags QueryPlanFlags: ::libc::c_int {
+    flags QueryPlanFlags: ::std::os::raw::c_int {
         // start = $value  -- constraint exists
         const START = 1,
         // stop = $value   -- constraint exists
@@ -62,7 +62,7 @@ struct SeriesTab {
 
 impl VTab<SeriesTabCursor> for SeriesTab {
     fn connect(db: *mut ffi::sqlite3,
-               _aux: *mut libc::c_void,
+               _aux: *mut c_void,
                _args: &[&[u8]])
                -> Result<SeriesTab> {
         let vtab = SeriesTab { base: Default::default() };
@@ -176,7 +176,7 @@ impl VTabCursor<SeriesTab> for SeriesTabCursor {
         unsafe { &mut *(self.base.pVtab as *mut SeriesTab) }
     }
     fn filter(&mut self,
-              idx_num: libc::c_int,
+              idx_num: c_int,
               _idx_str: Option<&str>,
               args: &Values)
               -> Result<()> {
@@ -230,7 +230,7 @@ impl VTabCursor<SeriesTab> for SeriesTabCursor {
             self.value > self.max_value
         }
     }
-    fn column(&self, ctx: &mut Context, i: libc::c_int) -> Result<()> {
+    fn column(&self, ctx: &mut Context, i: c_int) -> Result<()> {
         let x = match i {
             SERIES_COLUMN_START => self.min_value,
             SERIES_COLUMN_STOP => self.max_value,
@@ -264,7 +264,7 @@ mod test {
         let mut s = db.prepare("SELECT * FROM generate_series(0,20,5)").unwrap();
 
 
-        let series = s.query_map(&[], |row| row.get(0))
+        let series = s.query_map(&[], |row| row.get::<i32, i32>(0))
             .unwrap();
 
         let mut expected = 0;
