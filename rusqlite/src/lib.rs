@@ -906,19 +906,17 @@ impl<'stmt> Rows<'stmt> {
     /// or `query_and_then` instead, which return types that implement `Iterator`.
     pub fn next<'a>(&'a mut self) -> Option<Result<Row<'a, 'stmt>>> {
         self.stmt.and_then(|stmt| match stmt.step() {
-            ffi::SQLITE_ROW => {
-                Some(Ok(Row {
-                    stmt: stmt,
-                    phantom: PhantomData,
-                }))
-            }
-            ffi::SQLITE_DONE => {
+            Ok(true) => Some(Ok(Row {
+                stmt: stmt,
+                phantom: PhantomData,
+            })),
+            Ok(false) => {
                 self.reset();
                 None
             }
-            code => {
+            Err(err) => {
                 self.reset();
-                Some(Err(stmt.decode_result(code).unwrap_err()))
+                Some(Err(err))
             }
         })
     }

@@ -234,9 +234,8 @@ pub trait StatementCrateImpl<'conn> {
     fn bind_parameter_index(&self, name: &CStr) -> Option<c_int>;
     fn last_insert_rowid(&self) -> i64;
     fn value_ref(&self, col: c_int) -> ValueRef;
-    fn step(&self) -> c_int;
+    fn step(&self) -> Result<bool>;
     fn reset(&self) -> c_int;
-    fn decode_result(&self, code: c_int) -> Result<()>;
 }
 
 impl<'conn> StatementCrateImpl<'conn> for Statement<'conn> {
@@ -362,15 +361,15 @@ impl<'conn> StatementCrateImpl<'conn> for Statement<'conn> {
         }
     }
 
-    fn step(&self) -> i32 {
-        self.stmt.step()
+    fn step(&self) -> Result<bool> {
+        match self.stmt.step() {
+            ffi::SQLITE_ROW => Ok(true),
+            ffi::SQLITE_DONE => Ok(false),
+            code => Err(self.conn.decode_result(code).unwrap_err()),
+        }
     }
 
     fn reset(&self) -> c_int {
         self.stmt.reset()
-    }
-
-    fn decode_result(&self, code: c_int) -> Result<()> {
-        self.conn.decode_result(code)
     }
 }
