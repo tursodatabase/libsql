@@ -76,7 +76,7 @@ impl<'conn> Statement<'conn> {
     /// which case `query` should be used instead), or the underling SQLite call fails.
     pub fn execute(&mut self, params: &[&ToSql]) -> Result<c_int> {
         try!(self.bind_parameters(params));
-        self.execute_()
+        self.execute_with_bound_parameters()
     }
 
     /// Execute the prepared statement, returning a handle to the resulting rows.
@@ -229,7 +229,7 @@ impl<'conn> Drop for Statement<'conn> {
 // once pub(crate) is stable.
 pub trait StatementCrateImpl<'conn> {
     fn new(conn: &'conn Connection, stmt: RawStatement) -> Self;
-    fn execute_(&mut self) -> Result<c_int>;
+    fn execute_with_bound_parameters(&mut self) -> Result<c_int>;
     fn bind_parameter(&self, param: &ToSql, col: c_int) -> Result<()>;
     fn bind_parameter_index(&self, name: &CStr) -> Option<c_int>;
     fn last_insert_rowid(&self) -> i64;
@@ -246,7 +246,7 @@ impl<'conn> StatementCrateImpl<'conn> for Statement<'conn> {
         }
     }
 
-    fn execute_(&mut self) -> Result<c_int> {
+    fn execute_with_bound_parameters(&mut self) -> Result<c_int> {
         let r = self.stmt.step();
         self.stmt.reset();
         match r {

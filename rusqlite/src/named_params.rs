@@ -84,7 +84,7 @@ impl<'conn> Statement<'conn> {
     /// which case `query` should be used instead), or the underling SQLite call fails.
     pub fn execute_named(&mut self, params: &[(&str, &ToSql)]) -> Result<c_int> {
         try!(self.bind_parameters_named(params));
-        self.execute_()
+        self.execute_with_bound_parameters()
     }
 
     /// Execute the prepared statement with named parameter(s), returning a handle for the
