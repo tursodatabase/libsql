@@ -442,7 +442,7 @@ static void SHA3Update(
   }
 #endif
   for(; i<nData; i++){
-#if SHA1_BYTEORDER==1234
+#if SHA3_BYTEORDER==1234
     p->u.x[p->nLoaded] ^= aData[i];
 #elif SHA3_BYTEORDER==4321
     p->u.x[p->nLoaded^0x07] ^= aData[i];
@@ -556,12 +556,19 @@ static void hash_step_vformat(
 **       T<size>:<text>
 **
 ** <sql> is the original SQL text for each statement run and <n> is
-** the size of that text.  A single R character occurs before the
-** start of each row.  N means a NULL value.  I mean an 8-byte
-** little-endian integer <int>.  F is a floating point number with
-** an 8-byte little-endian IEEE floating point value <ieee-float>.
+** the size of that text.  The SQL text is UTF-8.  A single R character
+** occurs before the start of each row.  N means a NULL value.
+** I mean an 8-byte little-endian integer <int>.  F is a floating point
+** number with an 8-byte little-endian IEEE floating point value <ieee-float>.
 ** B means blobs of <size> bytes.  T means text rendered as <size>
-** bytes of UTF-8.
+** bytes of UTF-8.  The <n> and <size> values are expressed as an ASCII
+** text integers.
+**
+** For each SQL statement in the X input, there is one S segment.  Each
+** S segment is followed by zero or more R segments, one for each row in the
+** result set.  After each R, there are one or more N, I, F, B, or T segments,
+** one for each column in the result set.  Segments are concatentated directly
+** with no delimiters of any kind.
 */
 static void sha3QueryFunc(
   sqlite3_context *context,

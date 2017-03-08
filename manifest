@@ -1,5 +1,5 @@
-C Add\sthe\sshathree.c\sextension\sfor\simplementing\sSHA3()\sand\sSHA3_QUERY()\sSQL\nfunctions.
-D 2017-03-08T13:50:40.092
+C Improved\scomments\sexplaining\sthe\ssha3_query()\sformat.\s\sFix\sa\sperformance\s#ifdef\nerror\sin\sthe\ssha3\simplementation.
+D 2017-03-08T15:03:12.217
 F Makefile.in edb6bcdd37748d2b1c3422ff727c748df7ffe918
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a89ea37ab5928026001569f056973b9059492fe2
@@ -225,7 +225,7 @@ F ext/misc/rot13.c 1ac6f95f99b575907b9b09c81a349114cf9be45a
 F ext/misc/scrub.c 1c5bfb8b0cd18b602fcb55755e84abf0023ac2fb
 F ext/misc/series.c e11e534ada797d5b816d7e7a93c022306563ca35
 F ext/misc/sha1.c 0b9e9b855354910d3ca467bf39099d570e73db56
-F ext/misc/shathree.c 465f508eb588e6389a8403fc9cf1e9924dcbc581 w ext/misc/sha3b.c
+F ext/misc/shathree.c 38aa4c3c3d3c3fc34b8ea367bed299d8d8a224b2
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c a4723b6aff748a417b5091b68a46443265c40f0d
 F ext/misc/totype.c 4a167594e791abeed95e0a8db028822b5e8fe512
@@ -1564,7 +1564,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P de65f907610a59e64cbf2214789c11f7117a86a6
-R 23823589b279aa36324ed0cbad2b7a8d
+P f7ca9193ddafd3676406bdfeb1b7d21182c2a3c1
+R 702b29708c528596102031b1a9ef3803
 U drh
-Z 7be543a90293390e2947c08c40f4663a
+Z d26e763b8a8a90fd62d33b05211ec0e3
