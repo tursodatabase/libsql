@@ -456,28 +456,6 @@ static int isNumber(const char *z, int *realnum){
 }
 
 /*
-** A global char* and an SQL function to access its current value
-** from within an SQL statement. This program used to use the
-** sqlite_exec_printf() API to substitue a string into an SQL statement.
-** The correct way to do this with sqlite3 is to use the bind API, but
-** since the shell is built around the callback paradigm it would be a lot
-** of work. Instead just use this hack, which is quite harmless.
-*/
-static const char *zShellStatic = 0;
-static void shellstaticFunc(
-  sqlite3_context *context,
-  int argc,
-  sqlite3_value **argv
-){
-  assert( 0==argc );
-  assert( zShellStatic );
-  UNUSED_PARAMETER(argc);
-  UNUSED_PARAMETER(argv);
-  sqlite3_result_text(context, zShellStatic, -1, SQLITE_STATIC);
-}
-
-
-/*
 ** Compute a string length that is limited to what can be stored in
 ** lower 30 bits of a 32-bit signed integer.
 */
@@ -577,6 +555,779 @@ static char *one_input_line(FILE *in, char *zPrior, int isContinuation){
   }
   return zResult;
 }
+/*
+** A variable length string to which one can append text.
+*/
+typedef struct ShellText ShellText;
+struct ShellText {
+  char *z;
+  int n;
+  int nAlloc;
+};
+
+/*
+** Initialize and destroy a ShellText object
+*/
+static void initText(ShellText *p){
+  memset(p, 0, sizeof(*p));
+}
+static void freeText(ShellText *p){
+  free(p->z);
+  initText(p);
+}
+
+/* zIn is either a pointer to a NULL-terminated string in memory obtained
+** from malloc(), or a NULL pointer. The string pointed to by zAppend is
+** added to zIn, and the result returned in memory obtained from malloc().
+** zIn, if it was not NULL, is freed.
+**
+** If the third argument, quote, is not '\0', then it is used as a
+** quote character for zAppend.
+*/
+static void appendText(ShellText *p, char const *zAppend, char quote){
+  int len;
+  int i;
+  int nAppend = strlen30(zAppend);
+
+  len = nAppend+p->n+1;
+  if( quote ){
+    len += 2;
+    for(i=0; i<nAppend; i++){
+      if( zAppend[i]==quote ) len++;
+    }
+  }
+
+  if( p->n+len>=p->nAlloc ){
+    p->nAlloc = p->nAlloc*2 + len + 20;
+    p->z = realloc(p->z, p->nAlloc);
+    if( p->z==0 ){
+      memset(p, 0, sizeof(*p));
+      return;
+    }
+  }
+
+  if( quote ){
+    char *zCsr = p->z+p->n;
+    *zCsr++ = quote;
+    for(i=0; i<nAppend; i++){
+      *zCsr++ = zAppend[i];
+      if( zAppend[i]==quote ) *zCsr++ = quote;
+    }
+    *zCsr++ = quote;
+    p->n = (int)(zCsr - p->z);
+    *zCsr = '\0';
+  }else{
+    memcpy(p->z+p->n, zAppend, nAppend);
+    p->n += nAppend;
+    p->z[p->n] = '\0';
+  }
+}
+
+/*
+** Attempt to determine if identifier zName needs to be quoted, either
+** because it contains non-alphanumeric characters, or because it is an
+** SQLite keyword.  Be conservative in this estimate:  When in doubt assume
+** that quoting is required.
+**
+** Return '"' if quoting is required.  Return 0 if no quoting is required.
+*/
+static char quoteChar(const char *zName){
+  /* All SQLite keywords, in alphabetical order */
+  static const char *azKeywords[] = {
+    "ABORT", "ACTION", "ADD", "AFTER", "ALL", "ALTER", "ANALYZE", "AND", "AS",
+    "ASC", "ATTACH", "AUTOINCREMENT", "BEFORE", "BEGIN", "BETWEEN", "BY",
+    "CASCADE", "CASE", "CAST", "CHECK", "COLLATE", "COLUMN", "COMMIT",
+    "CONFLICT", "CONSTRAINT", "CREATE", "CROSS", "CURRENT_DATE",
+    "CURRENT_TIME", "CURRENT_TIMESTAMP", "DATABASE", "DEFAULT", "DEFERRABLE",
+    "DEFERRED", "DELETE", "DESC", "DETACH", "DISTINCT", "DROP", "EACH",
+    "ELSE", "END", "ESCAPE", "EXCEPT", "EXCLUSIVE", "EXISTS", "EXPLAIN",
+    "FAIL", "FOR", "FOREIGN", "FROM", "FULL", "GLOB", "GROUP", "HAVING", "IF",
+    "IGNORE", "IMMEDIATE", "IN", "INDEX", "INDEXED", "INITIALLY", "INNER",
+    "INSERT", "INSTEAD", "INTERSECT", "INTO", "IS", "ISNULL", "JOIN", "KEY",
+    "LEFT", "LIKE", "LIMIT", "MATCH", "NATURAL", "NO", "NOT", "NOTNULL",
+    "NULL", "OF", "OFFSET", "ON", "OR", "ORDER", "OUTER", "PLAN", "PRAGMA",
+    "PRIMARY", "QUERY", "RAISE", "RECURSIVE", "REFERENCES", "REGEXP",
+    "REINDEX", "RELEASE", "RENAME", "REPLACE", "RESTRICT", "RIGHT",
+    "ROLLBACK", "ROW", "SAVEPOINT", "SELECT", "SET", "TABLE", "TEMP",
+    "TEMPORARY", "THEN", "TO", "TRANSACTION", "TRIGGER", "UNION", "UNIQUE",
+    "UPDATE", "USING", "VACUUM", "VALUES", "VIEW", "VIRTUAL", "WHEN", "WHERE",
+    "WITH", "WITHOUT",
+  };
+  int i, lwr, upr, mid, c;
+  if( !isalpha((unsigned char)zName[0]) && zName[0]!='_' ) return '"';
+  for(i=0; zName[i]; i++){
+    if( !isalnum((unsigned char)zName[i]) && zName[i]!='_' ) return '"';
+  }
+  lwr = 0;
+  upr = sizeof(azKeywords)/sizeof(azKeywords[0]) - 1;
+  while( lwr<=upr ){
+    mid = (lwr+upr)/2;
+    c = sqlite3_stricmp(azKeywords[mid], zName);
+    if( c==0 ) return '"';
+    if( c<0 ){
+      lwr = mid+1;
+    }else{
+      upr = mid-1;
+    }
+  }
+  return 0;
+}
+
+/******************************************************************************
+** SHA3 hash implementation copied from ../ext/misc/shathree.c
+*/
+typedef sqlite3_uint64 u64;
+/*
+** Macros to determine whether the machine is big or little endian,
+** and whether or not that determination is run-time or compile-time.
+**
+** For best performance, an attempt is made to guess at the byte-order
+** using C-preprocessor macros.  If that is unsuccessful, or if
+** -DSHA3_BYTEORDER=0 is set, then byte-order is determined
+** at run-time.
+*/
+#ifndef SHA3_BYTEORDER
+# if defined(i386)     || defined(__i386__)   || defined(_M_IX86) ||    \
+     defined(__x86_64) || defined(__x86_64__) || defined(_M_X64)  ||    \
+     defined(_M_AMD64) || defined(_M_ARM)     || defined(__x86)   ||    \
+     defined(__arm__)
+#   define SHA3_BYTEORDER    1234
+# elif defined(sparc)    || defined(__ppc__)
+#   define SHA3_BYTEORDER    4321
+# else
+#   define SHA3_BYTEORDER 0
+# endif
+#endif
+
+
+/*
+** State structure for a SHA3 hash in progress
+*/
+typedef struct SHA3Context SHA3Context;
+struct SHA3Context {
+  union {
+    u64 s[25];                /* Keccak state. 5x5 lines of 64 bits each */
+    unsigned char x[1600];    /* ... or 1600 bytes */
+  } u;
+  unsigned nRate;        /* Bytes of input accepted per Keccak iteration */
+  unsigned nLoaded;      /* Input bytes loaded into u.x[] so far this cycle */
+  unsigned ixMask;       /* Insert next input into u.x[nLoaded^ixMask]. */
+};
+
+/*
+** A single step of the Keccak mixing function for a 1600-bit state
+*/
+static void KeccakF1600Step(SHA3Context *p){
+  int i;
+  u64 B0, B1, B2, B3, B4;
+  u64 C0, C1, C2, C3, C4;
+  u64 D0, D1, D2, D3, D4;
+  static const u64 RC[] = {
+    0x0000000000000001ULL,  0x0000000000008082ULL,
+    0x800000000000808aULL,  0x8000000080008000ULL,
+    0x000000000000808bULL,  0x0000000080000001ULL,
+    0x8000000080008081ULL,  0x8000000000008009ULL,
+    0x000000000000008aULL,  0x0000000000000088ULL,
+    0x0000000080008009ULL,  0x000000008000000aULL,
+    0x000000008000808bULL,  0x800000000000008bULL,
+    0x8000000000008089ULL,  0x8000000000008003ULL,
+    0x8000000000008002ULL,  0x8000000000000080ULL,
+    0x000000000000800aULL,  0x800000008000000aULL,
+    0x8000000080008081ULL,  0x8000000000008080ULL,
+    0x0000000080000001ULL,  0x8000000080008008ULL
+  };
+# define A00 (p->u.s[0])
+# define A01 (p->u.s[1])
+# define A02 (p->u.s[2])
+# define A03 (p->u.s[3])
+# define A04 (p->u.s[4])
+# define A10 (p->u.s[5])
+# define A11 (p->u.s[6])
+# define A12 (p->u.s[7])
+# define A13 (p->u.s[8])
+# define A14 (p->u.s[9])
+# define A20 (p->u.s[10])
+# define A21 (p->u.s[11])
+# define A22 (p->u.s[12])
+# define A23 (p->u.s[13])
+# define A24 (p->u.s[14])
+# define A30 (p->u.s[15])
+# define A31 (p->u.s[16])
+# define A32 (p->u.s[17])
+# define A33 (p->u.s[18])
+# define A34 (p->u.s[19])
+# define A40 (p->u.s[20])
+# define A41 (p->u.s[21])
+# define A42 (p->u.s[22])
+# define A43 (p->u.s[23])
+# define A44 (p->u.s[24])
+# define ROL64(a,x) ((a<<x)|(a>>(64-x)))
+
+  for(i=0; i<24; i+=4){
+    C0 = A00^A10^A20^A30^A40;
+    C1 = A01^A11^A21^A31^A41;
+    C2 = A02^A12^A22^A32^A42;
+    C3 = A03^A13^A23^A33^A43;
+    C4 = A04^A14^A24^A34^A44;
+    D0 = C4^ROL64(C1, 1);
+    D1 = C0^ROL64(C2, 1);
+    D2 = C1^ROL64(C3, 1);
+    D3 = C2^ROL64(C4, 1);
+    D4 = C3^ROL64(C0, 1);
+
+    B0 = (A00^D0);
+    B1 = ROL64((A11^D1), 44);
+    B2 = ROL64((A22^D2), 43);
+    B3 = ROL64((A33^D3), 21);
+    B4 = ROL64((A44^D4), 14);
+    A00 =   B0 ^((~B1)&  B2 );
+    A00 ^= RC[i];
+    A11 =   B1 ^((~B2)&  B3 );
+    A22 =   B2 ^((~B3)&  B4 );
+    A33 =   B3 ^((~B4)&  B0 );
+    A44 =   B4 ^((~B0)&  B1 );
+
+    B2 = ROL64((A20^D0), 3);
+    B3 = ROL64((A31^D1), 45);
+    B4 = ROL64((A42^D2), 61);
+    B0 = ROL64((A03^D3), 28);
+    B1 = ROL64((A14^D4), 20);
+    A20 =   B0 ^((~B1)&  B2 );
+    A31 =   B1 ^((~B2)&  B3 );
+    A42 =   B2 ^((~B3)&  B4 );
+    A03 =   B3 ^((~B4)&  B0 );
+    A14 =   B4 ^((~B0)&  B1 );
+
+    B4 = ROL64((A40^D0), 18);
+    B0 = ROL64((A01^D1), 1);
+    B1 = ROL64((A12^D2), 6);
+    B2 = ROL64((A23^D3), 25);
+    B3 = ROL64((A34^D4), 8);
+    A40 =   B0 ^((~B1)&  B2 );
+    A01 =   B1 ^((~B2)&  B3 );
+    A12 =   B2 ^((~B3)&  B4 );
+    A23 =   B3 ^((~B4)&  B0 );
+    A34 =   B4 ^((~B0)&  B1 );
+
+    B1 = ROL64((A10^D0), 36);
+    B2 = ROL64((A21^D1), 10);
+    B3 = ROL64((A32^D2), 15);
+    B4 = ROL64((A43^D3), 56);
+    B0 = ROL64((A04^D4), 27);
+    A10 =   B0 ^((~B1)&  B2 );
+    A21 =   B1 ^((~B2)&  B3 );
+    A32 =   B2 ^((~B3)&  B4 );
+    A43 =   B3 ^((~B4)&  B0 );
+    A04 =   B4 ^((~B0)&  B1 );
+
+    B3 = ROL64((A30^D0), 41);
+    B4 = ROL64((A41^D1), 2);
+    B0 = ROL64((A02^D2), 62);
+    B1 = ROL64((A13^D3), 55);
+    B2 = ROL64((A24^D4), 39);
+    A30 =   B0 ^((~B1)&  B2 );
+    A41 =   B1 ^((~B2)&  B3 );
+    A02 =   B2 ^((~B3)&  B4 );
+    A13 =   B3 ^((~B4)&  B0 );
+    A24 =   B4 ^((~B0)&  B1 );
+
+    C0 = A00^A20^A40^A10^A30;
+    C1 = A11^A31^A01^A21^A41;
+    C2 = A22^A42^A12^A32^A02;
+    C3 = A33^A03^A23^A43^A13;
+    C4 = A44^A14^A34^A04^A24;
+    D0 = C4^ROL64(C1, 1);
+    D1 = C0^ROL64(C2, 1);
+    D2 = C1^ROL64(C3, 1);
+    D3 = C2^ROL64(C4, 1);
+    D4 = C3^ROL64(C0, 1);
+
+    B0 = (A00^D0);
+    B1 = ROL64((A31^D1), 44);
+    B2 = ROL64((A12^D2), 43);
+    B3 = ROL64((A43^D3), 21);
+    B4 = ROL64((A24^D4), 14);
+    A00 =   B0 ^((~B1)&  B2 );
+    A00 ^= RC[i+1];
+    A31 =   B1 ^((~B2)&  B3 );
+    A12 =   B2 ^((~B3)&  B4 );
+    A43 =   B3 ^((~B4)&  B0 );
+    A24 =   B4 ^((~B0)&  B1 );
+
+    B2 = ROL64((A40^D0), 3);
+    B3 = ROL64((A21^D1), 45);
+    B4 = ROL64((A02^D2), 61);
+    B0 = ROL64((A33^D3), 28);
+    B1 = ROL64((A14^D4), 20);
+    A40 =   B0 ^((~B1)&  B2 );
+    A21 =   B1 ^((~B2)&  B3 );
+    A02 =   B2 ^((~B3)&  B4 );
+    A33 =   B3 ^((~B4)&  B0 );
+    A14 =   B4 ^((~B0)&  B1 );
+
+    B4 = ROL64((A30^D0), 18);
+    B0 = ROL64((A11^D1), 1);
+    B1 = ROL64((A42^D2), 6);
+    B2 = ROL64((A23^D3), 25);
+    B3 = ROL64((A04^D4), 8);
+    A30 =   B0 ^((~B1)&  B2 );
+    A11 =   B1 ^((~B2)&  B3 );
+    A42 =   B2 ^((~B3)&  B4 );
+    A23 =   B3 ^((~B4)&  B0 );
+    A04 =   B4 ^((~B0)&  B1 );
+
+    B1 = ROL64((A20^D0), 36);
+    B2 = ROL64((A01^D1), 10);
+    B3 = ROL64((A32^D2), 15);
+    B4 = ROL64((A13^D3), 56);
+    B0 = ROL64((A44^D4), 27);
+    A20 =   B0 ^((~B1)&  B2 );
+    A01 =   B1 ^((~B2)&  B3 );
+    A32 =   B2 ^((~B3)&  B4 );
+    A13 =   B3 ^((~B4)&  B0 );
+    A44 =   B4 ^((~B0)&  B1 );
+
+    B3 = ROL64((A10^D0), 41);
+    B4 = ROL64((A41^D1), 2);
+    B0 = ROL64((A22^D2), 62);
+    B1 = ROL64((A03^D3), 55);
+    B2 = ROL64((A34^D4), 39);
+    A10 =   B0 ^((~B1)&  B2 );
+    A41 =   B1 ^((~B2)&  B3 );
+    A22 =   B2 ^((~B3)&  B4 );
+    A03 =   B3 ^((~B4)&  B0 );
+    A34 =   B4 ^((~B0)&  B1 );
+
+    C0 = A00^A40^A30^A20^A10;
+    C1 = A31^A21^A11^A01^A41;
+    C2 = A12^A02^A42^A32^A22;
+    C3 = A43^A33^A23^A13^A03;
+    C4 = A24^A14^A04^A44^A34;
+    D0 = C4^ROL64(C1, 1);
+    D1 = C0^ROL64(C2, 1);
+    D2 = C1^ROL64(C3, 1);
+    D3 = C2^ROL64(C4, 1);
+    D4 = C3^ROL64(C0, 1);
+
+    B0 = (A00^D0);
+    B1 = ROL64((A21^D1), 44);
+    B2 = ROL64((A42^D2), 43);
+    B3 = ROL64((A13^D3), 21);
+    B4 = ROL64((A34^D4), 14);
+    A00 =   B0 ^((~B1)&  B2 );
+    A00 ^= RC[i+2];
+    A21 =   B1 ^((~B2)&  B3 );
+    A42 =   B2 ^((~B3)&  B4 );
+    A13 =   B3 ^((~B4)&  B0 );
+    A34 =   B4 ^((~B0)&  B1 );
+
+    B2 = ROL64((A30^D0), 3);
+    B3 = ROL64((A01^D1), 45);
+    B4 = ROL64((A22^D2), 61);
+    B0 = ROL64((A43^D3), 28);
+    B1 = ROL64((A14^D4), 20);
+    A30 =   B0 ^((~B1)&  B2 );
+    A01 =   B1 ^((~B2)&  B3 );
+    A22 =   B2 ^((~B3)&  B4 );
+    A43 =   B3 ^((~B4)&  B0 );
+    A14 =   B4 ^((~B0)&  B1 );
+
+    B4 = ROL64((A10^D0), 18);
+    B0 = ROL64((A31^D1), 1);
+    B1 = ROL64((A02^D2), 6);
+    B2 = ROL64((A23^D3), 25);
+    B3 = ROL64((A44^D4), 8);
+    A10 =   B0 ^((~B1)&  B2 );
+    A31 =   B1 ^((~B2)&  B3 );
+    A02 =   B2 ^((~B3)&  B4 );
+    A23 =   B3 ^((~B4)&  B0 );
+    A44 =   B4 ^((~B0)&  B1 );
+
+    B1 = ROL64((A40^D0), 36);
+    B2 = ROL64((A11^D1), 10);
+    B3 = ROL64((A32^D2), 15);
+    B4 = ROL64((A03^D3), 56);
+    B0 = ROL64((A24^D4), 27);
+    A40 =   B0 ^((~B1)&  B2 );
+    A11 =   B1 ^((~B2)&  B3 );
+    A32 =   B2 ^((~B3)&  B4 );
+    A03 =   B3 ^((~B4)&  B0 );
+    A24 =   B4 ^((~B0)&  B1 );
+
+    B3 = ROL64((A20^D0), 41);
+    B4 = ROL64((A41^D1), 2);
+    B0 = ROL64((A12^D2), 62);
+    B1 = ROL64((A33^D3), 55);
+    B2 = ROL64((A04^D4), 39);
+    A20 =   B0 ^((~B1)&  B2 );
+    A41 =   B1 ^((~B2)&  B3 );
+    A12 =   B2 ^((~B3)&  B4 );
+    A33 =   B3 ^((~B4)&  B0 );
+    A04 =   B4 ^((~B0)&  B1 );
+
+    C0 = A00^A30^A10^A40^A20;
+    C1 = A21^A01^A31^A11^A41;
+    C2 = A42^A22^A02^A32^A12;
+    C3 = A13^A43^A23^A03^A33;
+    C4 = A34^A14^A44^A24^A04;
+    D0 = C4^ROL64(C1, 1);
+    D1 = C0^ROL64(C2, 1);
+    D2 = C1^ROL64(C3, 1);
+    D3 = C2^ROL64(C4, 1);
+    D4 = C3^ROL64(C0, 1);
+
+    B0 = (A00^D0);
+    B1 = ROL64((A01^D1), 44);
+    B2 = ROL64((A02^D2), 43);
+    B3 = ROL64((A03^D3), 21);
+    B4 = ROL64((A04^D4), 14);
+    A00 =   B0 ^((~B1)&  B2 );
+    A00 ^= RC[i+3];
+    A01 =   B1 ^((~B2)&  B3 );
+    A02 =   B2 ^((~B3)&  B4 );
+    A03 =   B3 ^((~B4)&  B0 );
+    A04 =   B4 ^((~B0)&  B1 );
+
+    B2 = ROL64((A10^D0), 3);
+    B3 = ROL64((A11^D1), 45);
+    B4 = ROL64((A12^D2), 61);
+    B0 = ROL64((A13^D3), 28);
+    B1 = ROL64((A14^D4), 20);
+    A10 =   B0 ^((~B1)&  B2 );
+    A11 =   B1 ^((~B2)&  B3 );
+    A12 =   B2 ^((~B3)&  B4 );
+    A13 =   B3 ^((~B4)&  B0 );
+    A14 =   B4 ^((~B0)&  B1 );
+
+    B4 = ROL64((A20^D0), 18);
+    B0 = ROL64((A21^D1), 1);
+    B1 = ROL64((A22^D2), 6);
+    B2 = ROL64((A23^D3), 25);
+    B3 = ROL64((A24^D4), 8);
+    A20 =   B0 ^((~B1)&  B2 );
+    A21 =   B1 ^((~B2)&  B3 );
+    A22 =   B2 ^((~B3)&  B4 );
+    A23 =   B3 ^((~B4)&  B0 );
+    A24 =   B4 ^((~B0)&  B1 );
+
+    B1 = ROL64((A30^D0), 36);
+    B2 = ROL64((A31^D1), 10);
+    B3 = ROL64((A32^D2), 15);
+    B4 = ROL64((A33^D3), 56);
+    B0 = ROL64((A34^D4), 27);
+    A30 =   B0 ^((~B1)&  B2 );
+    A31 =   B1 ^((~B2)&  B3 );
+    A32 =   B2 ^((~B3)&  B4 );
+    A33 =   B3 ^((~B4)&  B0 );
+    A34 =   B4 ^((~B0)&  B1 );
+
+    B3 = ROL64((A40^D0), 41);
+    B4 = ROL64((A41^D1), 2);
+    B0 = ROL64((A42^D2), 62);
+    B1 = ROL64((A43^D3), 55);
+    B2 = ROL64((A44^D4), 39);
+    A40 =   B0 ^((~B1)&  B2 );
+    A41 =   B1 ^((~B2)&  B3 );
+    A42 =   B2 ^((~B3)&  B4 );
+    A43 =   B3 ^((~B4)&  B0 );
+    A44 =   B4 ^((~B0)&  B1 );
+  }
+}
+
+/*
+** Initialize a new hash.  iSize determines the size of the hash
+** in bits and should be one of 224, 256, 384, or 512.  Or iSize
+** can be zero to use the default hash size of 256 bits.
+*/
+static void SHA3Init(SHA3Context *p, int iSize){
+  memset(p, 0, sizeof(*p));
+  if( iSize>=128 && iSize<=512 ){
+    p->nRate = (1600 - ((iSize + 31)&~31)*2)/8;
+  }else{
+    p->nRate = (1600 - 2*256)/8;
+  }
+#if SHA3_BYTEORDER==1234
+  /* Known to be little-endian at compile-time. No-op */
+#elif SHA3_BYTEORDER==4321
+  p->ixMask = 7;  /* Big-endian */
+#else
+  {
+    static unsigned int one = 1;
+    if( 1==*(unsigned char*)&one ){
+      /* Little endian.  No byte swapping. */
+      p->ixMask = 0;
+    }else{
+      /* Big endian.  Byte swap. */
+      p->ixMask = 7;
+    }
+  }
+#endif
+}
+
+/*
+** Make consecutive calls to the SHA3Update function to add new content
+** to the hash
+*/
+static void SHA3Update(
+  SHA3Context *p,
+  const unsigned char *aData,
+  unsigned int nData
+){
+  unsigned int i = 0;
+#if SHA3_BYTEORDER==1234
+  if( (p->nLoaded % 8)==0 && ((aData - (const unsigned char*)0)&7)==0 ){
+    for(; i+7<nData; i+=8){
+      p->u.s[p->nLoaded/8] ^= *(u64*)&aData[i];
+      p->nLoaded += 8;
+      if( p->nLoaded>=p->nRate ){
+        KeccakF1600Step(p);
+        p->nLoaded = 0;
+      }
+    }
+  }
+#endif
+  for(; i<nData; i++){
+#if SHA3_BYTEORDER==1234
+    p->u.x[p->nLoaded] ^= aData[i];
+#elif SHA3_BYTEORDER==4321
+    p->u.x[p->nLoaded^0x07] ^= aData[i];
+#else
+    p->u.x[p->nLoaded^p->ixMask] ^= aData[i];
+#endif
+    p->nLoaded++;
+    if( p->nLoaded==p->nRate ){
+      KeccakF1600Step(p);
+      p->nLoaded = 0;
+    }
+  }
+}
+
+/*
+** After all content has been added, invoke SHA3Final() to compute
+** the final hash.  The function returns a pointer to the binary
+** hash value.
+*/
+static unsigned char *SHA3Final(SHA3Context *p){
+  unsigned int i;
+  if( p->nLoaded==p->nRate-1 ){
+    const unsigned char c1 = 0x86;
+    SHA3Update(p, &c1, 1);
+  }else{
+    const unsigned char c2 = 0x06;
+    const unsigned char c3 = 0x80;
+    SHA3Update(p, &c2, 1);
+    p->nLoaded = p->nRate - 1;
+    SHA3Update(p, &c3, 1);
+  }
+  for(i=0; i<p->nRate; i++){
+    p->u.x[i+p->nRate] = p->u.x[i^p->ixMask];
+  }
+  return &p->u.x[p->nRate];
+}
+
+/*
+** Implementation of the sha3(X,SIZE) function.
+**
+** Return a BLOB which is the SIZE-bit SHA3 hash of X.  The default
+** size is 256.  If X is a BLOB, it is hashed as is.  
+** For all other non-NULL types of input, X is converted into a UTF-8 string
+** and the string is hashed without the trailing 0x00 terminator.  The hash
+** of a NULL value is NULL.
+*/
+static void sha3Func(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  SHA3Context cx;
+  int eType = sqlite3_value_type(argv[0]);
+  int nByte = sqlite3_value_bytes(argv[0]);
+  int iSize;
+  if( argc==1 ){
+    iSize = 256;
+  }else{
+    iSize = sqlite3_value_int(argv[1]);
+    if( iSize!=224 && iSize!=256 && iSize!=384 && iSize!=512 ){
+      sqlite3_result_error(context, "SHA3 size should be one of: 224 256 "
+                                    "384 512", -1);
+      return;
+    }
+  }
+  if( eType==SQLITE_NULL ) return;
+  SHA3Init(&cx, iSize);
+  if( eType==SQLITE_BLOB ){
+    SHA3Update(&cx, sqlite3_value_blob(argv[0]), nByte);
+  }else{
+    SHA3Update(&cx, sqlite3_value_text(argv[0]), nByte);
+  }
+  sqlite3_result_blob(context, SHA3Final(&cx), iSize/8, SQLITE_TRANSIENT);
+}
+
+/* Compute a string using sqlite3_vsnprintf() with a maximum length
+** of 50 bytes and add it to the hash.
+*/
+static void hash_step_vformat(
+  SHA3Context *p,                 /* Add content to this context */
+  const char *zFormat,
+  ...
+){
+  va_list ap;
+  int n;
+  char zBuf[50];
+  va_start(ap, zFormat);
+  sqlite3_vsnprintf(sizeof(zBuf),zBuf,zFormat,ap);
+  va_end(ap);
+  n = (int)strlen(zBuf);
+  SHA3Update(p, (unsigned char*)zBuf, n);
+}
+
+/*
+** Implementation of the sha3_query(SQL,SIZE) function.
+**
+** This function compiles and runs the SQL statement(s) given in the
+** argument. The results are hashed using a SIZE-bit SHA3.  The default
+** size is 256.
+**
+** The format of the byte stream that is hashed is summarized as follows:
+**
+**       S<n>:<sql>
+**       R
+**       N
+**       I<int>
+**       F<ieee-float>
+**       B<size>:<bytes>
+**       T<size>:<text>
+**
+** <sql> is the original SQL text for each statement run and <n> is
+** the size of that text.  The SQL text is UTF-8.  A single R character
+** occurs before the start of each row.  N means a NULL value.
+** I mean an 8-byte little-endian integer <int>.  F is a floating point
+** number with an 8-byte little-endian IEEE floating point value <ieee-float>.
+** B means blobs of <size> bytes.  T means text rendered as <size>
+** bytes of UTF-8.  The <n> and <size> values are expressed as an ASCII
+** text integers.
+**
+** For each SQL statement in the X input, there is one S segment.  Each
+** S segment is followed by zero or more R segments, one for each row in the
+** result set.  After each R, there are one or more N, I, F, B, or T segments,
+** one for each column in the result set.  Segments are concatentated directly
+** with no delimiters of any kind.
+*/
+static void sha3QueryFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  sqlite3 *db = sqlite3_context_db_handle(context);
+  const char *zSql = (const char*)sqlite3_value_text(argv[0]);
+  sqlite3_stmt *pStmt = 0;
+  int nCol;                   /* Number of columns in the result set */
+  int i;                      /* Loop counter */
+  int rc;
+  int n;
+  const char *z;
+  SHA3Context cx;
+  int iSize;
+
+  if( argc==1 ){
+    iSize = 256;
+  }else{
+    iSize = sqlite3_value_int(argv[1]);
+    if( iSize!=224 && iSize!=256 && iSize!=384 && iSize!=512 ){
+      sqlite3_result_error(context, "SHA3 size should be one of: 224 256 "
+                                    "384 512", -1);
+      return;
+    }
+  }
+  if( zSql==0 ) return;
+  SHA3Init(&cx, iSize);
+  while( zSql[0] ){
+    rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, &zSql);
+    if( rc ){
+      char *zMsg = sqlite3_mprintf("error SQL statement [%s]: %s",
+                                   zSql, sqlite3_errmsg(db));
+      sqlite3_finalize(pStmt);
+      sqlite3_result_error(context, zMsg, -1);
+      sqlite3_free(zMsg);
+      return;
+    }
+    if( !sqlite3_stmt_readonly(pStmt) ){
+      char *zMsg = sqlite3_mprintf("non-query: [%s]", sqlite3_sql(pStmt));
+      sqlite3_finalize(pStmt);
+      sqlite3_result_error(context, zMsg, -1);
+      sqlite3_free(zMsg);
+      return;
+    }
+    nCol = sqlite3_column_count(pStmt);
+    z = sqlite3_sql(pStmt);
+    if( z==0 ){
+      sqlite3_finalize(pStmt);
+      continue;
+    }
+    n = (int)strlen(z);
+    hash_step_vformat(&cx,"S%d:",n);
+    SHA3Update(&cx,(unsigned char*)z,n);
+
+    /* Compute a hash over the result of the query */
+    while( SQLITE_ROW==sqlite3_step(pStmt) ){
+      SHA3Update(&cx,(const unsigned char*)"R",1);
+      for(i=0; i<nCol; i++){
+        switch( sqlite3_column_type(pStmt,i) ){
+          case SQLITE_NULL: {
+            SHA3Update(&cx, (const unsigned char*)"N",1);
+            break;
+          }
+          case SQLITE_INTEGER: {
+            sqlite3_uint64 u;
+            int j;
+            unsigned char x[9];
+            sqlite3_int64 v = sqlite3_column_int64(pStmt,i);
+            memcpy(&u, &v, 8);
+            for(j=8; j>=1; j--){
+              x[j] = u & 0xff;
+              u >>= 8;
+            }
+            x[0] = 'I';
+            SHA3Update(&cx, x, 9);
+            break;
+          }
+          case SQLITE_FLOAT: {
+            sqlite3_uint64 u;
+            int j;
+            unsigned char x[9];
+            double r = sqlite3_column_double(pStmt,i);
+            memcpy(&u, &r, 8);
+            for(j=8; j>=1; j--){
+              x[j] = u & 0xff;
+              u >>= 8;
+            }
+            x[0] = 'F';
+            SHA3Update(&cx,x,9);
+            break;
+          }
+          case SQLITE_TEXT: {
+            int n2 = sqlite3_column_bytes(pStmt, i);
+            const unsigned char *z2 = sqlite3_column_text(pStmt, i);
+            hash_step_vformat(&cx,"T%d:",n2);
+            SHA3Update(&cx, z2, n2);
+            break;
+          }
+          case SQLITE_BLOB: {
+            int n2 = sqlite3_column_bytes(pStmt, i);
+            const unsigned char *z2 = sqlite3_column_blob(pStmt, i);
+            hash_step_vformat(&cx,"B%d:",n2);
+            SHA3Update(&cx, z2, n2);
+            break;
+          }
+        }
+      }
+    }
+    sqlite3_finalize(pStmt);
+  }
+  sqlite3_result_blob(context, SHA3Final(&cx), iSize/8, SQLITE_TRANSIENT);
+}
+/* End of SHA3 hashing logic copy/pasted from ../ext/misc/shathree.c
+********************************************************************************/
 
 #if defined(SQLITE_ENABLE_SESSION)
 /*
@@ -618,6 +1369,7 @@ struct ShellState {
   int countChanges;      /* True to display change counts */
   int backslashOn;       /* Resolve C-style \x escapes in SQL input text */
   int outCount;          /* Revert to stdout when reaching zero */
+  int preserveRowid;     /* Preserver ROWID values on a ".dump" command */
   int cnt;               /* Number of records displayed so far */
   FILE *out;             /* Write results here */
   FILE *traceOut;        /* Output for sqlite3_trace() */
@@ -1295,6 +2047,7 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
   return shell_callback(pArg, nArg, azArg, azCol, NULL);
 }
 
+
 /*
 ** Set the destination table field of the ShellState structure to
 ** the name of the table given.  Escape any quote characters in the
@@ -1302,7 +2055,7 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
 */
 static void set_table_name(ShellState *p, const char *zName){
   int i, n;
-  int needQuote;
+  int cQuote;
   char *z;
 
   if( p->zDestTable ){
@@ -1310,72 +2063,22 @@ static void set_table_name(ShellState *p, const char *zName){
     p->zDestTable = 0;
   }
   if( zName==0 ) return;
-  needQuote = !isalpha((unsigned char)*zName) && *zName!='_';
-  for(i=n=0; zName[i]; i++, n++){
-    if( !isalnum((unsigned char)zName[i]) && zName[i]!='_' ){
-      needQuote = 1;
-      if( zName[i]=='\'' ) n++;
-    }
-  }
-  if( needQuote ) n += 2;
+  cQuote = quoteChar(zName);
+  n = strlen30(zName);
+  if( cQuote ) n += 2;
   z = p->zDestTable = malloc( n+1 );
   if( z==0 ){
     raw_printf(stderr,"Error: out of memory\n");
     exit(1);
   }
   n = 0;
-  if( needQuote ) z[n++] = '\'';
+  if( cQuote ) z[n++] = cQuote;
   for(i=0; zName[i]; i++){
     z[n++] = zName[i];
-    if( zName[i]=='\'' ) z[n++] = '\'';
+    if( zName[i]==cQuote ) z[n++] = cQuote;
   }
-  if( needQuote ) z[n++] = '\'';
+  if( cQuote ) z[n++] = cQuote;
   z[n] = 0;
-}
-
-/* zIn is either a pointer to a NULL-terminated string in memory obtained
-** from malloc(), or a NULL pointer. The string pointed to by zAppend is
-** added to zIn, and the result returned in memory obtained from malloc().
-** zIn, if it was not NULL, is freed.
-**
-** If the third argument, quote, is not '\0', then it is used as a
-** quote character for zAppend.
-*/
-static char *appendText(char *zIn, char const *zAppend, char quote){
-  int len;
-  int i;
-  int nAppend = strlen30(zAppend);
-  int nIn = (zIn?strlen30(zIn):0);
-
-  len = nAppend+nIn+1;
-  if( quote ){
-    len += 2;
-    for(i=0; i<nAppend; i++){
-      if( zAppend[i]==quote ) len++;
-    }
-  }
-
-  zIn = (char *)realloc(zIn, len);
-  if( !zIn ){
-    return 0;
-  }
-
-  if( quote ){
-    char *zCsr = &zIn[nIn];
-    *zCsr++ = quote;
-    for(i=0; i<nAppend; i++){
-      *zCsr++ = zAppend[i];
-      if( zAppend[i]==quote ) *zCsr++ = quote;
-    }
-    *zCsr++ = quote;
-    *zCsr++ = '\0';
-    assert( (zCsr-zIn)==len );
-  }else{
-    memcpy(&zIn[nIn], zAppend, nAppend);
-    zIn[len-1] = '\0';
-  }
-
-  return zIn;
 }
 
 
@@ -2024,6 +2727,121 @@ static int shell_exec(
   return rc;
 }
 
+/*
+** Release memory previously allocated by tableColumnList().
+*/
+static void freeColumnList(char **azCol){
+  int i;
+  for(i=1; azCol[i]; i++){
+    sqlite3_free(azCol[i]);
+  }
+  /* azCol[0] is a static string */
+  sqlite3_free(azCol);
+}
+
+/*
+** Return a list of pointers to strings which are the names of all
+** columns in table zTab.   The memory to hold the names is dynamically
+** allocated and must be released by the caller using a subsequent call
+** to freeColumnList().
+**
+** The azCol[0] entry is usually NULL.  However, if zTab contains a rowid
+** value that needs to be preserved, then azCol[0] is filled in with the
+** name of the rowid column.
+**
+** The first regular column in the table is azCol[1].  The list is terminated
+** by an entry with azCol[i]==0.
+*/
+static char **tableColumnList(ShellState *p, const char *zTab){
+  char **azCol = 0;
+  sqlite3_stmt *pStmt;
+  char *zSql;
+  int nCol = 0;
+  int nAlloc = 0;
+  int nPK = 0;       /* Number of PRIMARY KEY columns seen */
+  int isIPK = 0;     /* True if one PRIMARY KEY column of type INTEGER */
+  int preserveRowid = p->preserveRowid;
+  int rc;
+
+  zSql = sqlite3_mprintf("PRAGMA table_info=%Q", zTab);
+  rc = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
+  sqlite3_free(zSql);
+  if( rc ) return 0;
+  while( sqlite3_step(pStmt)==SQLITE_ROW ){
+    if( nCol>=nAlloc-2 ){
+      nAlloc = nAlloc*2 + nCol + 10;
+      azCol = sqlite3_realloc(azCol, nAlloc*sizeof(azCol[0]));
+      if( azCol==0 ){
+        raw_printf(stderr, "Error: out of memory\n");
+        exit(1);
+      }
+    }
+    azCol[++nCol] = sqlite3_mprintf("%s", sqlite3_column_text(pStmt, 1));
+    if( sqlite3_column_int(pStmt, 5) ){
+      nPK++;
+      if( nPK==1
+       && sqlite3_stricmp((const char*)sqlite3_column_text(pStmt,2),
+                          "INTEGER")==0 
+      ){
+        isIPK = 1;
+      }else{
+        isIPK = 0;
+      }
+    }
+  }
+  sqlite3_finalize(pStmt);
+  azCol[0] = 0;
+  azCol[nCol+1] = 0;
+
+  /* The decision of whether or not a rowid really needs to be preserved
+  ** is tricky.  We never need to preserve a rowid for a WITHOUT ROWID table
+  ** or a table with an INTEGER PRIMARY KEY.  We are unable to preserve
+  ** rowids on tables where the rowid is inaccessible because there are other
+  ** columns in the table named "rowid", "_rowid_", and "oid".
+  */
+  if( preserveRowid && isIPK ){
+    /* If a single PRIMARY KEY column with type INTEGER was seen, then it
+    ** might be an alise for the ROWID.  But it might also be a WITHOUT ROWID
+    ** table or a INTEGER PRIMARY KEY DESC column, neither of which are
+    ** ROWID aliases.  To distinguish these cases, check to see if
+    ** there is a "pk" entry in "PRAGMA index_list".  There will be
+    ** no "pk" index if the PRIMARY KEY really is an alias for the ROWID.
+    */
+    zSql = sqlite3_mprintf("SELECT 1 FROM pragma_index_list(%Q)"
+                           " WHERE origin='pk'", zTab);
+    rc = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
+    sqlite3_free(zSql);
+    if( rc ){
+      freeColumnList(azCol);
+      return 0;
+    }
+    rc = sqlite3_step(pStmt);
+    sqlite3_finalize(pStmt);
+    preserveRowid = rc==SQLITE_ROW;
+  }
+  if( preserveRowid ){
+    /* Only preserve the rowid if we can find a name to use for the
+    ** rowid */
+    static char *azRowid[] = { "rowid", "_rowid_", "oid" };
+    int i, j;
+    for(j=0; j<3; j++){
+      for(i=1; i<=nCol; i++){
+        if( sqlite3_stricmp(azRowid[j],azCol[i])==0 ) break;
+      }
+      if( i>nCol ){
+        /* At this point, we know that azRowid[j] is not the name of any
+        ** ordinary column in the table.  Verify that azRowid[j] is a valid
+        ** name for the rowid before adding it to azCol[0].  WITHOUT ROWID
+        ** tables will fail this last check */
+        int rc;
+        rc = sqlite3_table_column_metadata(p->db,0,zTab,azRowid[j],0,0,0,0,0);
+        if( rc==SQLITE_OK ) azCol[0] = azRowid[j];
+        break;
+      }
+    }
+  }
+  return azCol;
+}
 
 /*
 ** This is a different callback routine used for dumping the database.
@@ -2036,7 +2854,6 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
   const char *zTable;
   const char *zType;
   const char *zSql;
-  const char *zPrepStmt = 0;
   ShellState *p = (ShellState *)pArg;
 
   UNUSED_PARAMETER(azCol);
@@ -2046,7 +2863,7 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
   zSql = azArg[2];
 
   if( strcmp(zTable, "sqlite_sequence")==0 ){
-    zPrepStmt = "DELETE FROM sqlite_sequence;\n";
+    raw_printf(p->out, "DELETE FROM sqlite_sequence;\n");
   }else if( sqlite3_strglob("sqlite_stat?", zTable)==0 ){
     raw_printf(p->out, "ANALYZE sqlite_master;\n");
   }else if( strncmp(zTable, "sqlite_", 7)==0 ){
@@ -2069,58 +2886,64 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
   }
 
   if( strcmp(zType, "table")==0 ){
-    sqlite3_stmt *pTableInfo = 0;
-    char *zSelect = 0;
-    char *zTableInfo = 0;
-    char *zTmp = 0;
-    int nRow = 0;
+    ShellText sSelect;
+    ShellText sTable;
+    char **azCol;
+    int i;
+    char *savedDestTable;
+    int savedMode;
 
-    zTableInfo = appendText(zTableInfo, "PRAGMA table_info(", 0);
-    zTableInfo = appendText(zTableInfo, zTable, '"');
-    zTableInfo = appendText(zTableInfo, ");", 0);
-
-    rc = sqlite3_prepare_v2(p->db, zTableInfo, -1, &pTableInfo, 0);
-    free(zTableInfo);
-    if( rc!=SQLITE_OK || !pTableInfo ){
-      return 1;
+    azCol = tableColumnList(p, zTable);
+    if( azCol==0 ){
+      p->nErr++;
+      return 0;
     }
 
-    zSelect = appendText(zSelect, "SELECT 'INSERT INTO ' || ", 0);
     /* Always quote the table name, even if it appears to be pure ascii,
     ** in case it is a keyword. Ex:  INSERT INTO "table" ... */
-    zTmp = appendText(zTmp, zTable, '"');
-    if( zTmp ){
-      zSelect = appendText(zSelect, zTmp, '\'');
-      free(zTmp);
-    }
-    zSelect = appendText(zSelect, " || ' VALUES(' || ", 0);
-    rc = sqlite3_step(pTableInfo);
-    while( rc==SQLITE_ROW ){
-      const char *zText = (const char *)sqlite3_column_text(pTableInfo, 1);
-      zSelect = appendText(zSelect, "quote(", 0);
-      zSelect = appendText(zSelect, zText, '"');
-      rc = sqlite3_step(pTableInfo);
-      if( rc==SQLITE_ROW ){
-        zSelect = appendText(zSelect, "), ", 0);
-      }else{
-        zSelect = appendText(zSelect, ") ", 0);
+    initText(&sTable);
+    appendText(&sTable, zTable, quoteChar(zTable));
+    /* If preserving the rowid, add a column list after the table name.
+    ** In other words:  "INSERT INTO tab(rowid,a,b,c,...) VALUES(...)"
+    ** instead of the usual "INSERT INTO tab VALUES(...)".
+    */
+    if( azCol[0] ){
+      appendText(&sTable, "(", 0);
+      appendText(&sTable, azCol[0], 0);
+      for(i=1; azCol[i]; i++){
+        appendText(&sTable, ",", 0);
+        appendText(&sTable, azCol[i], quoteChar(azCol[i]));
       }
-      nRow++;
+      appendText(&sTable, ")", 0);
     }
-    rc = sqlite3_finalize(pTableInfo);
-    if( rc!=SQLITE_OK || nRow==0 ){
-      free(zSelect);
-      return 1;
-    }
-    zSelect = appendText(zSelect, "|| ')' FROM  ", 0);
-    zSelect = appendText(zSelect, zTable, '"');
 
-    rc = run_table_dump_query(p, zSelect, zPrepStmt);
-    if( rc==SQLITE_CORRUPT ){
-      zSelect = appendText(zSelect, " ORDER BY rowid DESC", 0);
-      run_table_dump_query(p, zSelect, 0);
+    /* Build an appropriate SELECT statement */
+    initText(&sSelect);
+    appendText(&sSelect, "SELECT ", 0);
+    if( azCol[0] ){
+      appendText(&sSelect, azCol[0], 0);
+      appendText(&sSelect, ",", 0);
     }
-    free(zSelect);
+    for(i=1; azCol[i]; i++){
+      appendText(&sSelect, azCol[i], quoteChar(azCol[i]));
+      if( azCol[i+1] ){
+        appendText(&sSelect, ",", 0);
+      }
+    }
+    freeColumnList(azCol);
+    appendText(&sSelect, " FROM ", 0);
+    appendText(&sSelect, zTable, quoteChar(zTable));
+
+    savedDestTable = p->zDestTable;
+    savedMode = p->mode;
+    p->zDestTable = sTable.z;
+    p->mode = p->cMode = MODE_Insert;
+    rc = shell_exec(p->db, sSelect.z, shell_callback, p, 0);
+    p->zDestTable = savedDestTable;
+    p->mode = savedMode;
+    freeText(&sTable);
+    freeText(&sSelect);
+    if( rc ) p->nErr++;
   }
   return 0;
 }
@@ -2235,6 +3058,7 @@ static char zHelp[] =
 #if defined(SQLITE_ENABLE_SESSION)
   ".session CMD ...       Create or control sessions\n"
 #endif
+  ".sha3sum ?OPTIONS...?  Compute a SHA3 hash of database content\n"
   ".shell CMD ARGS...     Run CMD ARGS... in a system shell\n"
   ".show                  Show the current values for various settings\n"
   ".stats ?on|off?        Show stats or turn stats on or off\n"
@@ -2425,10 +3249,6 @@ static void open_db(ShellState *p, int keepAlive){
     sqlite3_initialize();
     sqlite3_open(p->zDbFilename, &p->db);
     globalDb = p->db;
-    if( p->db && sqlite3_errcode(p->db)==SQLITE_OK ){
-      sqlite3_create_function(p->db, "shellstatic", 0, SQLITE_UTF8, 0,
-          shellstaticFunc, 0, 0);
-    }
     if( p->db==0 || SQLITE_OK!=sqlite3_errcode(p->db) ){
       utf8_printf(stderr,"Error: unable to open database \"%s\": %s\n",
           p->zDbFilename, sqlite3_errmsg(p->db));
@@ -2442,6 +3262,14 @@ static void open_db(ShellState *p, int keepAlive){
                             readfileFunc, 0, 0);
     sqlite3_create_function(p->db, "writefile", 2, SQLITE_UTF8, 0,
                             writefileFunc, 0, 0);
+    sqlite3_create_function(p->db, "sha3", 1, SQLITE_UTF8, 0,
+                            sha3Func, 0, 0);
+    sqlite3_create_function(p->db, "sha3", 2, SQLITE_UTF8, 0,
+                            sha3Func, 0, 0);
+    sqlite3_create_function(p->db, "sha3_query", 1, SQLITE_UTF8, 0,
+                            sha3QueryFunc, 0, 0);
+    sqlite3_create_function(p->db, "sha3_query", 2, SQLITE_UTF8, 0,
+                            sha3QueryFunc, 0, 0);
   }
 }
 
@@ -3722,21 +4550,42 @@ static int do_meta_command(char *zLine, ShellState *p){
   }else
 
   if( c=='d' && strncmp(azArg[0], "dump", n)==0 ){
+    const char *zLike = 0;
+    int i;
+    p->preserveRowid = 0;
+    for(i=1; i<nArg; i++){
+      if( azArg[i][0]=='-' ){
+        const char *z = azArg[i]+1;
+        if( z[0]=='-' ) z++;
+        if( strcmp(z,"preserve-rowids")==0 ){
+          p->preserveRowid = 1;
+        }else
+        {
+          raw_printf(stderr, "Unknown option \"%s\" on \".dump\"\n", azArg[i]);
+          rc = 1;
+          goto meta_command_exit;
+        }
+      }else if( zLike ){
+        raw_printf(stderr, "Usage: .dump ?--preserve-rowids? ?LIKE-PATTERN?\n");
+        rc = 1;
+        goto meta_command_exit;
+      }else{
+        zLike = azArg[i];
+      }
+    }
     open_db(p, 0);
     /* When playing back a "dump", the content might appear in an order
     ** which causes immediate foreign key constraints to be violated.
     ** So disable foreign-key constraint enforcement to prevent problems. */
-    if( nArg!=1 && nArg!=2 ){
-      raw_printf(stderr, "Usage: .dump ?LIKE-PATTERN?\n");
-      rc = 1;
-      goto meta_command_exit;
-    }
     raw_printf(p->out, "PRAGMA foreign_keys=OFF;\n");
     raw_printf(p->out, "BEGIN TRANSACTION;\n");
     p->writableSchema = 0;
+    /* Set writable_schema=ON since doing so forces SQLite to initialize
+    ** as much of the schema as it can even if the sqlite_master table is
+    ** corrupt. */
     sqlite3_exec(p->db, "SAVEPOINT dump; PRAGMA writable_schema=ON", 0, 0, 0);
     p->nErr = 0;
-    if( nArg==1 ){
+    if( zLike==0 ){
       run_schema_dump_query(p,
         "SELECT name, type, sql FROM sqlite_master "
         "WHERE sql NOT NULL AND type=='table' AND name!='sqlite_sequence'"
@@ -3750,21 +4599,20 @@ static int do_meta_command(char *zLine, ShellState *p){
         "WHERE sql NOT NULL AND type IN ('index','trigger','view')", 0
       );
     }else{
-      int i;
-      for(i=1; i<nArg; i++){
-        zShellStatic = azArg[i];
-        run_schema_dump_query(p,
-          "SELECT name, type, sql FROM sqlite_master "
-          "WHERE tbl_name LIKE shellstatic() AND type=='table'"
-          "  AND sql NOT NULL");
-        run_table_dump_query(p,
-          "SELECT sql FROM sqlite_master "
-          "WHERE sql NOT NULL"
-          "  AND type IN ('index','trigger','view')"
-          "  AND tbl_name LIKE shellstatic()", 0
-        );
-        zShellStatic = 0;
-      }
+      char *zSql;
+      zSql = sqlite3_mprintf(
+        "SELECT name, type, sql FROM sqlite_master "
+        "WHERE tbl_name LIKE %Q AND type=='table'"
+        "  AND sql NOT NULL", zLike);
+      run_schema_dump_query(p,zSql);
+      sqlite3_free(zSql);
+      zSql = sqlite3_mprintf(
+        "SELECT sql FROM sqlite_master "
+        "WHERE sql NOT NULL"
+        "  AND type IN ('index','trigger','view')"
+        "  AND tbl_name LIKE %Q", zLike);
+      run_table_dump_query(p, zSql, 0);
+      sqlite3_free(zSql);
     }
     if( p->writableSchema ){
       raw_printf(p->out, "PRAGMA writable_schema=OFF;\n");
@@ -4574,17 +5422,17 @@ static int do_meta_command(char *zLine, ShellState *p){
         callback(&data, 1, new_argv, new_colv);
         rc = SQLITE_OK;
       }else{
-        zShellStatic = azArg[1];
-        rc = sqlite3_exec(p->db,
+        char *zSql;
+        zSql = sqlite3_mprintf(
           "SELECT sql FROM "
           "  (SELECT sql sql, type type, tbl_name tbl_name, name name, rowid x"
           "     FROM sqlite_master UNION ALL"
           "   SELECT sql, type, tbl_name, name, rowid FROM sqlite_temp_master) "
-          "WHERE lower(tbl_name) LIKE shellstatic()"
+          "WHERE lower(tbl_name) LIKE %Q"
           "  AND type!='meta' AND sql NOTNULL "
-          "ORDER BY rowid",
-          callback, &data, &zErrMsg);
-        zShellStatic = 0;
+          "ORDER BY rowid", azArg[1]);
+        rc = sqlite3_exec(p->db, zSql, callback, &data, &zErrMsg);
+        sqlite3_free(zSql);
       }
     }else if( nArg==1 ){
       rc = sqlite3_exec(p->db,
@@ -4851,6 +5699,122 @@ static int do_meta_command(char *zLine, ShellState *p){
       sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator,
                        "%.*s", (int)ArraySize(p->rowSeparator)-1, azArg[2]);
     }
+  }else
+
+  if( c=='s' && n>=4 && strncmp(azArg[0],"sha3sum",n)==0 ){
+    const char *zLike = 0;   /* Which table to checksum. 0 means everything */
+    int i;                   /* Loop counter */
+    int bSchema = 0;         /* Also hash the schema */
+    int bSeparate = 0;       /* Hash each table separately */
+    int iSize = 224;         /* Hash algorithm to use */
+    int bDebug = 0;          /* Only show the query that would have run */
+    sqlite3_stmt *pStmt;     /* For querying tables names */
+    char *zSql;              /* SQL to be run */
+    char *zSep;              /* Separator */
+    ShellText sSql;          /* Complete SQL for the query to run the hash */
+    ShellText sQuery;        /* Set of queries used to read all content */
+    open_db(p, 0);
+    for(i=1; i<nArg; i++){
+      const char *z = azArg[i];
+      if( z[0]=='-' ){
+        z++;
+        if( z[0]=='-' ) z++;
+        if( strcmp(z,"schema")==0 ){
+          bSchema = 1;
+        }else
+        if( strcmp(z,"sha3-224")==0 || strcmp(z,"sha3-256")==0 
+         || strcmp(z,"sha3-384")==0 || strcmp(z,"sha3-512")==0 
+        ){
+          iSize = atoi(&z[5]);
+        }else
+        if( strcmp(z,"debug")==0 ){
+          bDebug = 1;
+        }else
+        {
+          utf8_printf(stderr, "Unknown option \"%s\" on \"%s\"\n",
+                      azArg[i], azArg[0]);
+          raw_printf(stderr, "Should be one of: --schema"
+                             " --sha3-224 --sha3-255 --sha3-384 --sha3-512\n");
+          rc = 1;
+          goto meta_command_exit;
+        }
+      }else if( zLike ){
+        raw_printf(stderr, "Usage: .sha3sum ?OPTIONS? ?LIKE-PATTERN?\n");
+        rc = 1;
+        goto meta_command_exit;
+      }else{
+        zLike = z;
+        bSeparate = 1;
+        if( sqlite3_strlike("sqlite_%", zLike, 0)==0 ) bSchema = 1;
+      }
+    }
+    if( bSchema ){
+      zSql = "SELECT lower(name) FROM sqlite_master"
+             " WHERE type='table' AND coalesce(rootpage,0)>1"
+             " UNION ALL SELECT 'sqlite_master'"
+             " ORDER BY 1 collate nocase";
+    }else{
+      zSql = "SELECT lower(name) FROM sqlite_master"
+             " WHERE type='table' AND coalesce(rootpage,0)>1"
+             " AND name NOT LIKE 'sqlite_%'"
+             " ORDER BY 1 collate nocase";
+    }
+    sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
+    initText(&sQuery);
+    initText(&sSql);
+    appendText(&sSql, "WITH [sha3sum$query](a,b) AS(",0);
+    zSep = "VALUES(";
+    while( SQLITE_ROW==sqlite3_step(pStmt) ){
+      const char *zTab = (const char*)sqlite3_column_text(pStmt,0);
+      if( zLike && sqlite3_strlike(zLike, zTab, 0)!=0 ) continue;
+      if( strncmp(zTab, "sqlite_",7)!=0 ){
+        appendText(&sQuery,"SELECT * FROM ", 0);
+        appendText(&sQuery,zTab,'"');
+        appendText(&sQuery," NOT INDEXED;", 0);
+      }else if( strcmp(zTab, "sqlite_master")==0 ){
+        appendText(&sQuery,"SELECT type,name,tbl_name,sql FROM sqlite_master"
+                           " ORDER BY name;", 0);
+      }else if( strcmp(zTab, "sqlite_sequence")==0 ){
+        appendText(&sQuery,"SELECT name,seq FROM sqlite_sequence"
+                           " ORDER BY name;", 0);
+      }else if( strcmp(zTab, "sqlite_stat1")==0 ){
+        appendText(&sQuery,"SELECT tbl,idx,stat FROM sqlite_stat1"
+                           " ORDER BY tbl,idx;", 0);
+      }else if( strcmp(zTab, "sqlite_stat3")==0
+             || strcmp(zTab, "sqlite_stat4")==0 ){
+        appendText(&sQuery, "SELECT * FROM ", 0);
+        appendText(&sQuery, zTab, 0);
+        appendText(&sQuery, " ORDER BY tbl, idx, rowid;\n", 0);
+      }
+      appendText(&sSql, zSep, 0);
+      appendText(&sSql, sQuery.z, '\'');
+      sQuery.n = 0;
+      appendText(&sSql, ",", 0);
+      appendText(&sSql, zTab, '\'');
+      zSep = "),(";
+    }
+    sqlite3_finalize(pStmt);
+    if( bSeparate ){
+      zSql = sqlite3_mprintf(
+          "%s))"
+          " SELECT lower(hex(sha3_query(a,%d))) AS hash, b AS label"
+          "   FROM [sha3sum$query]",
+          sSql.z, iSize);
+    }else{
+      zSql = sqlite3_mprintf(
+          "%s))"
+          " SELECT lower(hex(sha3_query(group_concat(a,''),%d))) AS hash"
+          "   FROM [sha3sum$query]",
+          sSql.z, iSize);
+    }
+    freeText(&sQuery);
+    freeText(&sSql);
+    if( bDebug ){
+      utf8_printf(p->out, "%s\n", zSql);
+    }else{
+      shell_exec(p->db, zSql, shell_callback, p, 0);
+    }
+    sqlite3_free(zSql);
   }else
 
   if( c=='s'
