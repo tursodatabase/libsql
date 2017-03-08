@@ -1260,6 +1260,10 @@ static void sha3QueryFunc(
     }
     nCol = sqlite3_column_count(pStmt);
     z = sqlite3_sql(pStmt);
+    if( z==0 ){
+      sqlite3_finalize(pStmt);
+      continue;
+    }
     n = (int)strlen(z);
     hash_step_vformat(&cx,"S%d:",n);
     SHA3Update(&cx,(unsigned char*)z,n);
@@ -5701,10 +5705,13 @@ static int do_meta_command(char *zLine, ShellState *p){
     const char *zLike = 0;   /* Which table to checksum. 0 means everything */
     int i;                   /* Loop counter */
     int bSchema = 0;         /* Also hash the schema */
+    int bSeparate = 0;       /* Hash each table separately */
     int iSize = 224;         /* Hash algorithm to use */
     int bDebug = 0;          /* Only show the query that would have run */
     sqlite3_stmt *pStmt;     /* For querying tables names */
     char *zSql;              /* SQL to be run */
+    char *zSep;              /* Separator */
+    ShellText sSql;          /* Complete SQL for the query to run the hash */
     ShellText sQuery;        /* Set of queries used to read all content */
     for(i=1; i<nArg; i++){
       const char *z = azArg[i];
@@ -5724,7 +5731,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         }else
         {
           utf8_printf(stderr, "Unknown option \"%s\" on \"%s\"\n",
-                      azArg[0], azArg[i]);
+                      azArg[i], azArg[0]);
           raw_printf(stderr, "Should be one of: --schema"
                              " --sha3-224 --sha3-255 --sha3-384 --sha3-512\n");
           rc = 1;
@@ -5736,7 +5743,8 @@ static int do_meta_command(char *zLine, ShellState *p){
         goto meta_command_exit;
       }else{
         zLike = z;
-        if( sqlite3_strlike("sqlite3_%", zLike, 0)==0 ) bSchema = 1;
+        bSeparate = 1;
+        if( sqlite3_strlike("sqlite_%", zLike, 0)==0 ) bSchema = 1;
       }
     }
     if( bSchema ){
@@ -5752,6 +5760,9 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
     sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
     initText(&sQuery);
+    initText(&sSql);
+    appendText(&sSql, "WITH [sha3sum$query](a,b) AS(",0);
+    zSep = "VALUES(";
     while( SQLITE_ROW==sqlite3_step(pStmt) ){
       const char *zTab = (const char*)sqlite3_column_text(pStmt,0);
       if( zLike && sqlite3_strlike(zLike, zTab, 0)!=0 ) continue;
@@ -5774,11 +5785,29 @@ static int do_meta_command(char *zLine, ShellState *p){
         appendText(&sQuery, zTab, 0);
         appendText(&sQuery, " ORDER BY tbl, idx, rowid;\n", 0);
       }
+      appendText(&sSql, zSep, 0);
+      appendText(&sSql, sQuery.z, '\'');
+      sQuery.n = 0;
+      appendText(&sSql, ",", 0);
+      appendText(&sSql, zTab, '\'');
+      zSep = "),(";
     }
     sqlite3_finalize(pStmt);
-    zSql = sqlite3_mprintf("SELECT lower(hex(sha3_query(%Q,%d))) AS hash;",
-                           sQuery.z, iSize);
+    if( bSeparate ){
+      zSql = sqlite3_mprintf(
+          "%s))"
+          " SELECT lower(hex(sha3_query(a,%d))) AS hash, b AS label"
+          "   FROM [sha3sum$query]",
+          sSql.z, iSize);
+    }else{
+      zSql = sqlite3_mprintf(
+          "%s))"
+          " SELECT lower(hex(sha3_query(group_concat(a,''),%d))) AS hash"
+          "   FROM [sha3sum$query]",
+          sSql.z, iSize);
+    }
     freeText(&sQuery);
+    freeText(&sSql);
     if( bDebug ){
       utf8_printf(p->out, "%s\n", zSql);
     }else{
