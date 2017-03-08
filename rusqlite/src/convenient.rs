@@ -1,5 +1,6 @@
 use {Error, Result, Row, Statement};
 use types::ToSql;
+use statement::StatementCrateImpl;
 
 impl<'conn> Statement<'conn> {
     /// Execute an INSERT and return the ROWID.
@@ -17,7 +18,7 @@ impl<'conn> Statement<'conn> {
     pub fn insert(&mut self, params: &[&ToSql]) -> Result<i64> {
         let changes = try!(self.execute(params));
         match changes {
-            1 => Ok(self.conn.last_insert_rowid()),
+            1 => Ok(self.last_insert_rowid()),
             _ => Err(Error::StatementChangedRows(changes)),
         }
     }

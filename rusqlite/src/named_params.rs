@@ -1,6 +1,7 @@
 use std::convert;
 use std::result;
 use std::os::raw::c_int;
+use statement::StatementCrateImpl;
 
 use {Result, Error, Connection, Statement, MappedRows, AndThenRows, Rows, Row, str_to_cstring};
 use types::ToSql;
@@ -56,7 +57,7 @@ impl<'conn> Statement<'conn> {
     /// is valid but not a bound parameter of this statement.
     pub fn parameter_index(&self, name: &str) -> Result<Option<i32>> {
         let c_name = try!(str_to_cstring(name));
-        Ok(self.stmt.bind_parameter_index(&c_name))
+        Ok(self.bind_parameter_index(&c_name))
     }
 
     /// Execute the prepared statement with named parameter(s). If any parameters
