@@ -5713,6 +5713,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     char *zSep;              /* Separator */
     ShellText sSql;          /* Complete SQL for the query to run the hash */
     ShellText sQuery;        /* Set of queries used to read all content */
+    open_db(p, 0);
     for(i=1; i<nArg; i++){
       const char *z = azArg[i];
       if( z[0]=='-' ){
