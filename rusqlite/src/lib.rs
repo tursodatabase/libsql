@@ -104,7 +104,6 @@ mod version;
 mod transaction;
 mod cache;
 mod error;
-mod convenient;
 mod raw_statement;
 mod statement;
 #[cfg(feature = "load_extension")]
