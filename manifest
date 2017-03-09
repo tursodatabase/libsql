@@ -1,6 +1,6 @@
-C Fix\sthe\s".dump"\scommand\sto\scorrectly\sextract\stail\sdata\sfrom\scorrupt\nWITHOUT\sROWID\stables.
-D 2017-03-09T18:13:52.322
-F Makefile.in edb6bcdd37748d2b1c3422ff727c748df7ffe918
+C Remove\sthe\stest/dbselftest.c\sprogram.\s\sIn\sits\splace,\sadd\sthe\s".selftest"\ncommand\sto\sthe\sCLI.\s\sThe\snew\sCLI\sversion\sis\s.selftest\sis\sslightly\sdifferent\nin\sthat\sit\suses\sSHA3\shashing\sinstead\sof\sSHA1,\sso\sthe\snew\sis\ssubtly\s\nincompatible\swith\sthe\sold.
+D 2017-03-09T22:00:33.842
+F Makefile.in 5f415e7867296d678fed2e6779aea10c1318b4bc
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a89ea37ab5928026001569f056973b9059492fe2
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
@@ -323,7 +323,7 @@ F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 08e0b151abb46353c677ac4974b50c6077f85eee
+F main.mk 98f9e673437e28b17f86d07d0749021bb140c152
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -400,7 +400,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 3e518b962d932a997fae373366880fc028c75706
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c d12f3539f80db38b09015561b569e0eb1c4b6c5f
-F src/shell.c f4a7169ddfff73ba1ab2f06a4e97bd6d569cb984
+F src/shell.c 2009654e24924b51a54afb925b49034f1c5460d4
 F src/sqlite.h.in 4d0c08f8640c586564a7032b259c5f69bf397850
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
@@ -643,7 +643,6 @@ F test/cursorhint.test 7bc346788390475e77a345da2b92270d04d35856
 F test/cursorhint2.test 8457e93d97f665f23f97cdbc8477d16e3480331b
 F test/date.test 9b73bbeb1b82d9c1f44dec5cf563bf7da58d2373
 F test/dbfuzz.c 73047c920d6210e5912c87cdffd9a1c281d4252e
-F test/dbselftest.c b2e6cfac59066dbcb7334b66304bb15a5508dd42
 F test/dbstatus.test 73149851b3aff14fc6db478e58f9083a66422cf5
 F test/dbstatus2.test e93ab03bfae6d62d4d935f20de928c19ca0ed0ab
 F test/default.test 0cb49b1c315a0d81c81d775e407f66906a2a604d
@@ -1564,7 +1563,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 50eec5d9aa38fab1a85d788356ffdaf6c35d9ece
-R a2e2297f06f9d9483ad6626d70cfa2bc
+P 6c627e50622d8bcd25ec7d5503f3fafd725673a8
+R de6856f188fdc076241cbc67ee174b05
 U drh
-Z 704977d7ee0085e38c9f718cc949a370
+Z 85b6274077eac0b5500dd53648c9e848

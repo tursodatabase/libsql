@@ -2054,6 +2054,49 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
   return shell_callback(pArg, nArg, azArg, azCol, NULL);
 }
 
+/*
+** This is the callback routine from sqlite3_exec() that appends all
+** output onto the end of a ShellText object.
+*/
+static int captureOutputCallback(void *pArg, int nArg, char **azArg, char **az){
+  ShellText *p = (ShellText*)pArg;
+  int i;
+  if( p->n ) appendText(p, "|", 0);
+  for(i=0; i<nArg; i++){
+    if( i ) appendText(p, ",", 0);
+    if( azArg[i] ) appendText(p, azArg[i], 0);
+  }
+  return 0;
+}
+
+/*
+** Generate an appropriate SELFTEST table in the main database.
+*/
+static void createSelftestTable(ShellState *p){
+  sqlite3_exec(p->db,
+    "CREATE TABLE selftest(\n"
+    "  tno INTEGER PRIMARY KEY,\n"   /* Test number */
+    "  op TEXT,\n"                   /* Operator:  memo run */
+    "  cmd TEXT,\n"                  /* Command text */
+    "  ans TEXT\n"                   /* Desired answer */
+    ");"
+    "INSERT INTO selftest(op,cmd,ans)\n"
+    "  SELECT 'run',"
+    "    'SELECT hex(sha3_query(''SELECT * FROM \"' ||"
+    "        printf('%w',name) || '\" NOT INDEXED'',224))',\n"
+    "    hex(sha3_query(printf('SELECT * FROM \"%w\" NOT INDEXED',name),224))\n"
+    "  FROM (\n"
+    "    SELECT name FROM sqlite_master\n"
+    "     WHERE type='table'\n"
+    "       AND name<>'selftest'\n"
+    "       AND coalesce(rootpage,0)>0\n"
+    "  )\n"
+    " ORDER BY name;\n"
+    "INSERT INTO selftest(op,cmd,ans)\n"
+    "  VALUES('run','PRAGMA integrity_check','ok');\n"
+    ,0,0,0);
+}
+
 
 /*
 ** Set the destination table field of the ShellState structure to
@@ -5726,6 +5769,124 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
   }else
 #endif
+
+  if( c=='s' && n>=4 && strncmp(azArg[0],"selftest",n)==0 ){
+    int bIsInit = 0;         /* True to initialize the SELFTEST table */
+    int bVerbose = 0;        /* Verbose output */
+    int bSelftestExists;     /* True if SELFTEST already exists */
+    char **azTest = 0;       /* Content of the SELFTEST table */
+    int nRow = 0;            /* Number of rows in the SELFTEST table */
+    int nCol = 4;            /* Number of columns in the SELFTEST table */
+    int i;                   /* Loop counter */
+    int nTest = 0;           /* Number of tests runs */
+    int nErr = 0;            /* Number of errors seen */
+    ShellText str;           /* Answer for a query */
+    static char *azDefaultTest[] = {
+       0, 0, 0, 0,
+       "0", "memo", "Missing SELFTEST table - default checks only", "",
+       "1", "run", "PRAGMA integrity_check", "ok"
+    };
+    static const int nDefaultRow = 2;
+
+    open_db(p,0);
+    for(i=1; i<nArg; i++){
+      const char *z = azArg[i];
+      if( z[0]=='-' && z[1]=='-' ) z++;
+      if( strcmp(z,"-init")==0 ){
+        bIsInit = 1;
+      }else
+      if( strcmp(z,"-v")==0 ){
+        bVerbose++;
+      }else
+      {
+        utf8_printf(stderr, "Unknown option \"%s\" on \"%s\"\n",
+                    azArg[i], azArg[0]);
+        raw_printf(stderr, "Should be one of: --init -v\n");
+        rc = 1;
+        goto meta_command_exit;
+      }
+    }
+    if( sqlite3_table_column_metadata(p->db,"main","selftest",0,0,0,0,0,0)
+           != SQLITE_OK ){
+      bSelftestExists = 0;
+    }else{
+      bSelftestExists = 1;
+    }
+    if( bIsInit ){
+      if( bSelftestExists ){
+        raw_printf(stderr, "The selftest table already exists\n");
+        rc = 1;
+        goto meta_command_exit;
+      }
+      createSelftestTable(p);
+      bSelftestExists = 1;
+    }
+    if( bSelftestExists ){
+      rc = sqlite3_get_table(p->db, 
+          "SELECT tno,op,cmd,ans FROM selftest ORDER BY tno",
+          &azTest, &nRow, &nCol, 0);
+      if( rc ){
+        raw_printf(stderr, "Error querying the selftest table\n");
+        rc = 1;
+        sqlite3_free_table(azTest);
+        goto meta_command_exit;
+      }else if( nRow==0 ){
+        sqlite3_free_table(azTest);
+        azTest = azDefaultTest;
+        nRow = nDefaultRow;
+      }
+    }else{
+      azTest = azDefaultTest;
+      nRow = nDefaultRow;
+    }
+    initText(&str);
+    appendText(&str, "x", 0);
+    for(i=1; i<=nRow; i++){
+      int tno = atoi(azTest[i*nCol]);
+      const char *zOp = azTest[i*nCol+1];
+      const char *zSql = azTest[i*nCol+2];
+      const char *zAns = azTest[i*nCol+3];
+  
+      if( bVerbose>0 ){
+        char *zQuote = sqlite3_mprintf("%q", zSql);
+        printf("%d: %s %s\n", tno, zOp, zSql);
+        sqlite3_free(zQuote);
+      }
+      if( strcmp(zOp,"memo")==0 ){
+        utf8_printf(p->out, "%s\n", zSql);
+      }else
+      if( strcmp(zOp,"run")==0 ){
+        char *zErrMsg = 0;
+        str.n = 0;
+        str.z[0] = 0;
+        rc = sqlite3_exec(p->db, zSql, captureOutputCallback, &str, &zErrMsg);
+        nTest++;
+        if( bVerbose ){
+          utf8_printf(p->out, "Result: %s\n", str.z);
+        }
+        if( rc || zErrMsg ){
+          nErr++;
+          rc = 1;
+          utf8_printf(p->out, "%d: error-code-%d: %s\n", tno, rc, zErrMsg);
+          sqlite3_free(zErrMsg);
+        }else if( strcmp(zAns,str.z)!=0 ){
+          nErr++;
+          rc = 1;
+          utf8_printf(p->out, "%d: Expected: [%s]\n", tno, zAns);
+          utf8_printf(p->out, "%d:      Got: [%s]\n", tno, str.z);
+        }
+      }else
+      {
+        utf8_printf(stderr,
+          "Unknown operation \"%s\" on selftest line %d\n", zOp, tno);
+        rc = 1;
+        break;
+      }
+    }
+    freeText(&str);
+    if( azTest!=azDefaultTest ) sqlite3_free_table(azTest);
+    utf8_printf(p->out, "%d errors out of %d tests\n", nErr, nTest);
+  }else
 
   if( c=='s' && strncmp(azArg[0], "separator", n)==0 ){
     if( nArg<2 || nArg>3 ){
