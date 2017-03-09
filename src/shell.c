@@ -1361,15 +1361,11 @@ struct SavedModeInfo {
 typedef struct ShellState ShellState;
 struct ShellState {
   sqlite3 *db;           /* The database */
-  int echoOn;            /* True to echo input commands */
   int autoExplain;       /* Automatically turn on .explain mode */
   int autoEQP;           /* Run EXPLAIN QUERY PLAN prior to seach SQL stmt */
   int statsOn;           /* True to display memory stats before each finalize */
   int scanstatsOn;       /* True to display scan stats before each finalize */
-  int countChanges;      /* True to display change counts */
-  int backslashOn;       /* Resolve C-style \x escapes in SQL input text */
   int outCount;          /* Revert to stdout when reaching zero */
-  int preserveRowid;     /* Preserver ROWID values on a ".dump" command */
   int cnt;               /* Number of records displayed so far */
   FILE *out;             /* Write results here */
   FILE *traceOut;        /* Output for sqlite3_trace() */
@@ -1407,9 +1403,20 @@ struct ShellState {
 /*
 ** These are the allowed shellFlgs values
 */
-#define SHFLG_Scratch     0x00001     /* The --scratch option is used */
-#define SHFLG_Pagecache   0x00002     /* The --pagecache option is used */
-#define SHFLG_Lookaside   0x00004     /* Lookaside memory is used */
+#define SHFLG_Scratch        0x00000001 /* The --scratch option is used */
+#define SHFLG_Pagecache      0x00000002 /* The --pagecache option is used */
+#define SHFLG_Lookaside      0x00000004 /* Lookaside memory is used */
+#define SHFLG_Backslash      0x00000008 /* The --backslash option is used */
+#define SHFLG_PreserveRowid  0x00000010 /* .dump preserves rowid values */
+#define SHFLG_CountChanges   0x00000020 /* .changes setting */
+#define SHFLG_Echo           0x00000040 /* .echo or --echo setting */
+
+/*
+** Macros for testing and setting shellFlgs
+*/
+#define ShellHasFlag(P,X)    (((P)->shellFlgs & (X))!=0)
+#define ShellSetFlag(P,X)    ((P)->shellFlgs|=(X))
+#define ShellClearFlag(P,X)  ((P)->shellFlgs&=(~(X)))
 
 /*
 ** These are the allowed modes.
@@ -2639,7 +2646,7 @@ static int shell_exec(
       }
 
       /* echo the sql statement if echo on */
-      if( pArg && pArg->echoOn ){
+      if( pArg && ShellHasFlag(pArg, SHFLG_Echo) ){
         utf8_printf(pArg->out, "%s\n", zStmtSql ? zStmtSql : zSql);
       }
 
@@ -2760,7 +2767,7 @@ static char **tableColumnList(ShellState *p, const char *zTab){
   int nAlloc = 0;
   int nPK = 0;       /* Number of PRIMARY KEY columns seen */
   int isIPK = 0;     /* True if one PRIMARY KEY column of type INTEGER */
-  int preserveRowid = p->preserveRowid;
+  int preserveRowid = ShellHasFlag(p, SHFLG_PreserveRowid);
   int rc;
 
   zSql = sqlite3_mprintf("PRAGMA table_info=%Q", zTab);
@@ -3394,7 +3401,7 @@ static sqlite3_int64 integerValue(const char *zArg){
 ** Interpret zArg as either an integer or a boolean value.  Return 1 or 0
 ** for TRUE and FALSE.  Return the integer value if appropriate.
 */
-static int booleanValue(char *zArg){
+static int booleanValue(const char *zArg){
   int i;
   if( zArg[0]=='0' && zArg[1]=='x' ){
     for(i=2; hexDigitValue(zArg[i])>=0; i++){}
@@ -3411,6 +3418,17 @@ static int booleanValue(char *zArg){
   utf8_printf(stderr, "ERROR: Not a boolean value: \"%s\". Assuming \"no\".\n",
           zArg);
   return 0;
+}
+
+/*
+** Set or clear a shell flag according to a boolean value.
+*/
+static void setOrClearFlag(ShellState *p, unsigned mFlag, const char *zArg){
+  if( booleanValue(zArg) ){
+    ShellSetFlag(p, mFlag);
+  }else{
+    ShellClearFlag(p, mFlag);
+  }
 }
 
 /*
@@ -4486,7 +4504,7 @@ static int do_meta_command(char *zLine, ShellState *p){
 
   if( c=='c' && n>=3 && strncmp(azArg[0], "changes", n)==0 ){
     if( nArg==2 ){
-      p->countChanges = booleanValue(azArg[1]);
+      setOrClearFlag(p, SHFLG_CountChanges, azArg[1]);
     }else{
       raw_printf(stderr, "Usage: .changes on|off\n");
       rc = 1;
@@ -4552,13 +4570,13 @@ static int do_meta_command(char *zLine, ShellState *p){
   if( c=='d' && strncmp(azArg[0], "dump", n)==0 ){
     const char *zLike = 0;
     int i;
-    p->preserveRowid = 0;
+    ShellClearFlag(p, SHFLG_PreserveRowid);
     for(i=1; i<nArg; i++){
       if( azArg[i][0]=='-' ){
         const char *z = azArg[i]+1;
         if( z[0]=='-' ) z++;
         if( strcmp(z,"preserve-rowids")==0 ){
-          p->preserveRowid = 1;
+          ShellSetFlag(p, SHFLG_PreserveRowid);
         }else
         {
           raw_printf(stderr, "Unknown option \"%s\" on \".dump\"\n", azArg[i]);
@@ -4625,7 +4643,7 @@ static int do_meta_command(char *zLine, ShellState *p){
 
   if( c=='e' && strncmp(azArg[0], "echo", n)==0 ){
     if( nArg==2 ){
-      p->echoOn = booleanValue(azArg[1]);
+      setOrClearFlag(p, SHFLG_Echo, azArg[1]);
     }else{
       raw_printf(stderr, "Usage: .echo on|off\n");
       rc = 1;
@@ -5845,7 +5863,8 @@ static int do_meta_command(char *zLine, ShellState *p){
       rc = 1;
       goto meta_command_exit;
     }
-    utf8_printf(p->out, "%12.12s: %s\n","echo", azBool[p->echoOn!=0]);
+    utf8_printf(p->out, "%12.12s: %s\n","echo",
+                                  azBool[ShellHasFlag(p, SHFLG_Echo)]);
     utf8_printf(p->out, "%12.12s: %s\n","eqp", azBool[p->autoEQP&3]);
     utf8_printf(p->out, "%12.12s: %s\n","explain",
          p->mode==MODE_Explain ? "on" : p->autoExplain ? "auto" : "off");
@@ -6410,7 +6429,7 @@ static int runOneSqlLine(ShellState *p, char *zSql, FILE *in, int startline){
   char *zErrMsg = 0;
 
   open_db(p, 0);
-  if( p->backslashOn ) resolve_backslashes(zSql);
+  if( ShellHasFlag(p,SHFLG_Backslash) ) resolve_backslashes(zSql);
   BEGIN_TIMER;
   rc = shell_exec(p->db, zSql, shell_callback, p, &zErrMsg);
   END_TIMER;
@@ -6430,7 +6449,7 @@ static int runOneSqlLine(ShellState *p, char *zSql, FILE *in, int startline){
       utf8_printf(stderr, "%s %s\n", zPrefix, sqlite3_errmsg(p->db));
     }
     return 1;
-  }else if( p->countChanges ){
+  }else if( ShellHasFlag(p, SHFLG_CountChanges) ){
     raw_printf(p->out, "changes: %3d   total_changes: %d\n",
             sqlite3_changes(p->db), sqlite3_total_changes(p->db));
   }
@@ -6473,11 +6492,11 @@ static int process_input(ShellState *p, FILE *in){
     }
     lineno++;
     if( nSql==0 && _all_whitespace(zLine) ){
-      if( p->echoOn ) printf("%s\n", zLine);
+      if( ShellHasFlag(p, SHFLG_Echo) ) printf("%s\n", zLine);
       continue;
     }
     if( zLine && zLine[0]=='.' && nSql==0 ){
-      if( p->echoOn ) printf("%s\n", zLine);
+      if( ShellHasFlag(p, SHFLG_Echo) ) printf("%s\n", zLine);
       rc = do_meta_command(zLine, p);
       if( rc==2 ){ /* exit requested */
         break;
@@ -6520,7 +6539,7 @@ static int process_input(ShellState *p, FILE *in){
         p->outCount = 0;
       }
     }else if( nSql && _all_whitespace(zSql) ){
-      if( p->echoOn ) printf("%s\n", zSql);
+      if( ShellHasFlag(p, SHFLG_Echo) ) printf("%s\n", zSql);
       nSql = 0;
     }
   }
@@ -6989,7 +7008,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
     }else if( strcmp(z,"-noheader")==0 ){
       data.showHeader = 0;
     }else if( strcmp(z,"-echo")==0 ){
-      data.echoOn = 1;
+      ShellSetFlag(&data, SHFLG_Echo);
     }else if( strcmp(z,"-eqp")==0 ){
       data.autoEQP = 1;
     }else if( strcmp(z,"-eqpfull")==0 ){
@@ -7004,7 +7023,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       ** prior to sending the SQL into SQLite.  Useful for injecting
       ** crazy bytes in the middle of SQL statements for testing and debugging.
       */
-      data.backslashOn = 1;
+      ShellSetFlag(&data, SHFLG_Backslash);
     }else if( strcmp(z,"-bail")==0 ){
       bail_on_error = 1;
     }else if( strcmp(z,"-version")==0 ){
