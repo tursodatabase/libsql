@@ -1410,6 +1410,7 @@ struct ShellState {
 #define SHFLG_PreserveRowid  0x00000010 /* .dump preserves rowid values */
 #define SHFLG_CountChanges   0x00000020 /* .changes setting */
 #define SHFLG_Echo           0x00000040 /* .echo or --echo setting */
+#define SHFLG_RecoveryMode   0x00000080 /* The --recovery-mode flag for .dump */
 
 /*
 ** Macros for testing and setting shellFlgs
@@ -2219,7 +2220,7 @@ static int display_stats(
     sqlite3_status(SQLITE_STATUS_MALLOC_COUNT, &iCur, &iHiwtr, bReset);
     raw_printf(pArg->out, "Number of Outstanding Allocations:   %d (max %d)\n",
             iCur, iHiwtr);
-    if( pArg->shellFlgs & SHFLG_Pagecache ){
+    if( ShellHasFlag(pArg, SHFLG_Pagecache) ){
       iHiwtr = iCur = -1;
       sqlite3_status(SQLITE_STATUS_PAGECACHE_USED, &iCur, &iHiwtr, bReset);
       raw_printf(pArg->out,
@@ -2231,7 +2232,7 @@ static int display_stats(
     raw_printf(pArg->out,
             "Number of Pcache Overflow Bytes:     %d (max %d) bytes\n",
             iCur, iHiwtr);
-    if( pArg->shellFlgs & SHFLG_Scratch ){
+    if( ShellHasFlag(pArg, SHFLG_Scratch) ){
       iHiwtr = iCur = -1;
       sqlite3_status(SQLITE_STATUS_SCRATCH_USED, &iCur, &iHiwtr, bReset);
       raw_printf(pArg->out,
@@ -2264,7 +2265,7 @@ static int display_stats(
   }
 
   if( pArg && pArg->out && db ){
-    if( pArg->shellFlgs & SHFLG_Lookaside ){
+    if( ShellHasFlag(pArg, SHFLG_Lookaside) ){
       iHiwtr = iCur = -1;
       sqlite3_db_status(db, SQLITE_DBSTATUS_LOOKASIDE_USED,
                         &iCur, &iHiwtr, bReset);
@@ -2946,6 +2947,14 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
     p->zDestTable = sTable.z;
     p->mode = p->cMode = MODE_Insert;
     rc = shell_exec(p->db, sSelect.z, shell_callback, p, 0);
+    if( (rc&0xff)==SQLITE_CORRUPT ){
+      raw_printf(p->out, "/****** CORRUPTION ERROR *******/\n");
+      if( ShellHasFlag(p, SHFLG_RecoveryMode) ){
+        sqlite3_exec(p->db, "PRAGMA reverse_unordered_selects=TOGGLE",0,0,0);
+        shell_exec(p->db, sSelect.z, shell_callback, p, 0);
+        sqlite3_exec(p->db, "PRAGMA reverse_unordered_selects=TOGGLE",0,0,0);
+      }
+    }
     p->zDestTable = savedDestTable;
     p->mode = savedMode;
     freeText(&sTable);
@@ -2959,8 +2968,9 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
 ** Run zQuery.  Use dump_callback() as the callback routine so that
 ** the contents of the query are output as SQL statements.
 **
-** If we get a SQLITE_CORRUPT error, rerun the query after appending
-** "ORDER BY rowid DESC" to the end.
+** If we get a SQLITE_CORRUPT error and the --recovery-mode flag is
+** set, then rerun the query in reverse order to try to get more
+** data.
 */
 static int run_schema_dump_query(
   ShellState *p,
@@ -2969,7 +2979,7 @@ static int run_schema_dump_query(
   int rc;
   char *zErr = 0;
   rc = sqlite3_exec(p->db, zQuery, dump_callback, p, &zErr);
-  if( rc==SQLITE_CORRUPT ){
+  if( rc==SQLITE_CORRUPT && ShellHasFlag(p, SHFLG_RecoveryMode) ){
     char *zQ2;
     int len = strlen30(zQuery);
     raw_printf(p->out, "/****** CORRUPTION ERROR *******/\n");
@@ -4570,7 +4580,7 @@ static int do_meta_command(char *zLine, ShellState *p){
   if( c=='d' && strncmp(azArg[0], "dump", n)==0 ){
     const char *zLike = 0;
     int i;
-    ShellClearFlag(p, SHFLG_PreserveRowid);
+    ShellClearFlag(p, SHFLG_PreserveRowid|SHFLG_RecoveryMode);
     for(i=1; i<nArg; i++){
       if( azArg[i][0]=='-' ){
         const char *z = azArg[i]+1;
@@ -4578,8 +4588,13 @@ static int do_meta_command(char *zLine, ShellState *p){
         if( strcmp(z,"preserve-rowids")==0 ){
           ShellSetFlag(p, SHFLG_PreserveRowid);
         }else
+        if( strcmp(z,"recovery-mode")==0 ){
+          ShellSetFlag(p, SHFLG_RecoveryMode);
+        }else
         {
-          raw_printf(stderr, "Unknown option \"%s\" on \".dump\"\n", azArg[i]);
+          raw_printf(stderr, "Unknown option \"%s\" on \".dump\"\n"
+                  "Should be one of: --preserve-rowids --recovery-mode\n",
+                  azArg[i]);
           rc = 1;
           goto meta_command_exit;
         }
@@ -4598,10 +4613,12 @@ static int do_meta_command(char *zLine, ShellState *p){
     raw_printf(p->out, "PRAGMA foreign_keys=OFF;\n");
     raw_printf(p->out, "BEGIN TRANSACTION;\n");
     p->writableSchema = 0;
-    /* Set writable_schema=ON since doing so forces SQLite to initialize
-    ** as much of the schema as it can even if the sqlite_master table is
-    ** corrupt. */
-    sqlite3_exec(p->db, "SAVEPOINT dump; PRAGMA writable_schema=ON", 0, 0, 0);
+    if( ShellHasFlag(p, SHFLG_RecoveryMode) ){
+      /* Set writable_schema=ON since doing so forces SQLite to initialize
+      ** as much of the schema as it can even if the sqlite_master table is
+      ** corrupt. */
+      sqlite3_exec(p->db, "SAVEPOINT dump; PRAGMA writable_schema=ON", 0, 0, 0);
+    }
     p->nErr = 0;
     if( zLike==0 ){
       run_schema_dump_query(p,
@@ -4636,8 +4653,10 @@ static int do_meta_command(char *zLine, ShellState *p){
       raw_printf(p->out, "PRAGMA writable_schema=OFF;\n");
       p->writableSchema = 0;
     }
-    sqlite3_exec(p->db, "PRAGMA writable_schema=OFF;", 0, 0, 0);
-    sqlite3_exec(p->db, "RELEASE dump;", 0, 0, 0);
+    if( ShellHasFlag(p, SHFLG_RecoveryMode) ){
+      sqlite3_exec(p->db, "PRAGMA writable_schema=OFF;", 0, 0, 0);
+      sqlite3_exec(p->db, "RELEASE dump;", 0, 0, 0);
+    }
     raw_printf(p->out, p->nErr ? "ROLLBACK; -- due to errors\n" : "COMMIT;\n");
   }else
 
