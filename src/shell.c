@@ -2851,6 +2851,23 @@ static char **tableColumnList(ShellState *p, const char *zTab){
 }
 
 /*
+** Toggle the reverse_unordered_selects setting.
+*/
+static void toggleSelectOrder(sqlite3 *db){
+  sqlite3_stmt *pStmt = 0;
+  int iSetting = 0;
+  char zStmt[100];
+  sqlite3_prepare_v2(db, "PRAGMA reverse_unordered_selects", -1, &pStmt, 0);
+  if( sqlite3_step(pStmt)==SQLITE_ROW ){
+    iSetting = sqlite3_column_int(pStmt, 0);
+  }
+  sqlite3_finalize(pStmt);
+  sqlite3_snprintf(sizeof(zStmt), zStmt,
+       "PRAGMA reverse_unordered_selects(%d)", !iSetting);
+  sqlite3_exec(db, zStmt, 0, 0, 0);
+}
+
+/*
 ** This is a different callback routine used for dumping the database.
 ** Each row received by this callback consists of a table name,
 ** the table type ("index" or "table") and SQL to create the table.
@@ -2946,6 +2963,12 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
     p->zDestTable = sTable.z;
     p->mode = p->cMode = MODE_Insert;
     rc = shell_exec(p->db, sSelect.z, shell_callback, p, 0);
+    if( (rc&0xff)==SQLITE_CORRUPT ){
+      raw_printf(p->out, "/****** CORRUPTION ERROR *******/\n");
+      toggleSelectOrder(p->db);
+      shell_exec(p->db, sSelect.z, shell_callback, p, 0);
+      toggleSelectOrder(p->db);
+    }
     p->zDestTable = savedDestTable;
     p->mode = savedMode;
     freeText(&sTable);

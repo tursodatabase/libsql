@@ -1,5 +1,5 @@
-C Begin\smoving\sseparate\sboolean\svariables\sin\sthe\sShellState\sobject\sof\sthe\sCLI\ninto\sthe\sshellFlgs\sbitmask.
-D 2017-03-09T13:50:49.349
+C Fix\sthe\s".dump"\scommand\sto\scorrectly\sextract\stail\sdata\sfrom\scorrupt\nWITHOUT\sROWID\stables.
+D 2017-03-09T18:13:52.322
 F Makefile.in edb6bcdd37748d2b1c3422ff727c748df7ffe918
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a89ea37ab5928026001569f056973b9059492fe2
@@ -400,7 +400,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 3e518b962d932a997fae373366880fc028c75706
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c d12f3539f80db38b09015561b569e0eb1c4b6c5f
-F src/shell.c 397e51c3eeb3a9dc21667a0a384eb14403cc5eea
+F src/shell.c f4a7169ddfff73ba1ab2f06a4e97bd6d569cb984
 F src/sqlite.h.in 4d0c08f8640c586564a7032b259c5f69bf397850
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
@@ -1564,7 +1564,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2ea300fb8f7c497f3f092dc91f4305d8431c27d9
-R 193fb708e3eeb9be14d6692d9fad8ed4
+P 50eec5d9aa38fab1a85d788356ffdaf6c35d9ece
+R a2e2297f06f9d9483ad6626d70cfa2bc
 U drh
-Z 6ea8a21fbd5a369fc4273386c415b1f4
+Z 704977d7ee0085e38c9f718cc949a370
