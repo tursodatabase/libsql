@@ -7,6 +7,7 @@ use super::ffi;
 use super::{Connection, RawStatement, Result, Error, ValueRef, Row, Rows, AndThenRows, MappedRows};
 use super::str_to_cstring;
 use types::{ToSql, ToSqlOutput};
+use row::{RowsCrateImpl, MappedRowsCrateImpl, AndThenRowsCrateImpl};
 
 /// A prepared statement.
 pub struct Statement<'conn> {
@@ -211,12 +212,8 @@ impl<'conn> Statement<'conn> {
     pub fn query_map<'a, T, F>(&'a mut self, params: &[&ToSql], f: F) -> Result<MappedRows<'a, F>>
         where F: FnMut(&Row) -> T
     {
-        let row_iter = try!(self.query(params));
-
-        Ok(MappedRows {
-            rows: row_iter,
-            map: f,
-        })
+        let rows = self.query(params)?;
+        Ok(MappedRows::new(rows, f))
     }
 
     /// Execute the prepared statement with named parameter(s), returning an iterator over the
@@ -251,11 +248,8 @@ impl<'conn> Statement<'conn> {
                                      -> Result<MappedRows<'a, F>>
         where F: FnMut(&Row) -> T
     {
-        let rows = try!(self.query_named(params));
-        Ok(MappedRows {
-            rows: rows,
-            map: f,
-        })
+        let rows = self.query_named(params)?;
+        Ok(MappedRows::new(rows, f))
     }
 
     /// Executes the prepared statement and maps a function over the resulting
@@ -272,12 +266,8 @@ impl<'conn> Statement<'conn> {
         where E: convert::From<Error>,
               F: FnMut(&Row) -> result::Result<T, E>
     {
-        let row_iter = try!(self.query(params));
-
-        Ok(AndThenRows {
-            rows: row_iter,
-            map: f,
-        })
+        let rows = self.query(params)?;
+        Ok(AndThenRows::new(rows, f))
     }
 
     /// Execute the prepared statement with named parameter(s), returning an iterator over the
@@ -322,11 +312,8 @@ impl<'conn> Statement<'conn> {
         where E: convert::From<Error>,
               F: FnMut(&Row) -> result::Result<T, E>
     {
-        let rows = try!(self.query_named(params));
-        Ok(AndThenRows {
-            rows: rows,
-            map: f,
-        })
+        let rows = self.query_named(params)?;
+        Ok(AndThenRows::new(rows, f))
     }
 
     /// Return `true` if a query in the SQL statement it executes returns one or more rows
