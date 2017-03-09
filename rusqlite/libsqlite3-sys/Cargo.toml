@@ -19,6 +19,7 @@ min_sqlite_version_3_6_11 = ["pkg-config"]
 min_sqlite_version_3_6_23 = ["pkg-config"]
 min_sqlite_version_3_7_3 = ["pkg-config"]
 min_sqlite_version_3_7_4 = ["pkg-config"]
+min_sqlite_version_3_7_7 = ["pkg-config"]
 
 [build-dependencies]
 bindgen = { version = "0.21", optional = true }
