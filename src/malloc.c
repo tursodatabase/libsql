@@ -232,7 +232,8 @@ static void mallocWithAlarm(int n, void **pp){
 
 #ifdef SQLITE_MAX_MEMORY
   if( sqlite3StatusValue(SQLITE_STATUS_MEMORY_USED)+nFull>SQLITE_MAX_MEMORY ){
-    return 0;
+    *pp = 0;
+    return;
   }
 #endif
 

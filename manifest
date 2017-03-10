@@ -1,8 +1,8 @@
-C Add\sthe\s-DSQLITE_MAX_MEMORY=N\scompile-time\soption.\s\sThe\sdefault\sis\sno\slimit.
-D 2017-03-10T16:22:40.639
-F Makefile.in 5f415e7867296d678fed2e6779aea10c1318b4bc
+C Fix\san\serror\sin\sthe\sSQLITE_MAX_MEMORY\simplementation\sresulting\sfrom\sa\sbad\nmerge.\s\sUpdate\sthe\sOSSFuzz\sinterface\sso\sthat\sit\stimes\sout\safter\srunning\nthe\sbyte-code\sengine\sfor\s10\sseconds.
+D 2017-03-10T17:03:11.362
+F Makefile.in 2dae2a56457c2885425a480e1053de8096aff924
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc a89ea37ab5928026001569f056973b9059492fe2
+F Makefile.msc 9020fa41eb91f657ae0cc44145d0a2f3af520860
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION 3605fa447e4623f5ff4a6adc97b1fde9a257b8f2
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -323,7 +323,7 @@ F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 98f9e673437e28b17f86d07d0749021bb140c152
+F main.mk 0ec10b604f4668f7e85a358954babe75c94dc0d5
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -365,7 +365,7 @@ F src/insert.c 3ed64afc49c0a2221e397b9f65d231ffbef506fe
 F src/legacy.c e88ed13c2d531decde75d42c2e35623fb9ce3cb0
 F src/loadext.c a68d8d1d14cf7488bb29dc5311cb1ce9a4404258
 F src/main.c 158326243c5ddc8b98a1e983fa488650cf76d760
-F src/malloc.c e2b75576ba5587555fa7146cedca437c3d947b9e
+F src/malloc.c 89c98e3619d362dcffa5c1c639b364b65b474751
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c fd7cd6fe21d46fe0a4186367dd8dc26d87b787eb
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
@@ -1007,7 +1007,7 @@ F test/orderby7.test 3d1383d52ade5b9eb3a173b3147fdd296f0202da
 F test/orderby8.test 23ef1a5d72bd3adcc2f65561c654295d1b8047bd
 F test/orderby9.test 87fb9548debcc2cd141c5299002dd94672fa76a3
 F test/oserror.test b32dc34f2363ef18532e3a0a7358e3e7e321974f
-F test/ossfuzz.c e469138f4be3e92df6173b79b3b216ab6e17b407
+F test/ossfuzz.c f04b9f236e51d4db701bdebe8ac01318c83102a8
 F test/ossshell.c d9f1a6f43e7bab45d6be857a5800f5d4a1861db3
 F test/ovfl.test 199c482696defceacee8c8e0e0ef36da62726b2f
 F test/pager1.test 841868017e9dd3cb459b8d78862091a7d9cff21d
@@ -1563,8 +1563,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 118f5c0564fef70cbd06fc0d9dbb2baec162cc39 77dfe2abdae88dea81217f352d87e5ba2c822715
-R 3b74d97e8af57ebd024f8ef03af4d96f
-T +closed 77dfe2abdae88dea81217f352d87e5ba2c822715
+P eabd4ef498a0f0d97d65e321c4d06ab90523ed61
+R 69fed97a3de499803e89b1ea5d13a87c
 U drh
-Z 08daf633daf073490979515612458ee1
+Z 0ae96bef0d12b3fb7ff36d9387e9c8a8

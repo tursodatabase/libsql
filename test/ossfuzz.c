@@ -6,12 +6,33 @@
 #include <stdint.h>
 #include "sqlite3.h"
 
+/* Return the current real-world time in milliseconds since the
+** Julian epoch (-4714-11-24).
+*/
+static sqlite3_int64 timeOfDay(void){
+  static sqlite3_vfs *clockVfs = 0;
+  sqlite3_int64 t;
+  if( clockVfs==0 ) clockVfs = sqlite3_vfs_find(0);
+  if( clockVfs->iVersion>=2 && clockVfs->xCurrentTimeInt64!=0 ){
+    clockVfs->xCurrentTimeInt64(clockVfs, &t);
+  }else{
+    double r;
+    clockVfs->xCurrentTime(clockVfs, &r);
+    t = (sqlite3_int64)(r*86400000.0);
+  }
+  return t;
+}
+
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
 /*
-** Progress handler callback
+** Progress handler callback.
+**
+** The argument is the cutoff-time after which all processing should
+** stop.  So return non-zero if the cut-off time is exceeded.
 */
 static int progress_handler(void *pReturn) {
-  return *(int*)pReturn;
+  sqlite3_int64 iCutoffTime = *(sqlite3_int64*)pReturn;
+  return timeOfDay()>=iCutoffTime;
 }
 #endif
 
@@ -31,13 +52,13 @@ static int exec_handler(void *pCnt, int argc, char **argv, char **namev){
 ** fuzzed input.
 */
 int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
-  int progressArg = 0;     /* 1 causes progress handler abort */
   int execCnt = 0;         /* Abort row callback when count reaches zero */
   char *zErrMsg = 0;       /* Error message returned by sqlite_exec() */
   sqlite3 *db;             /* The database connection */
   uint8_t uSelector;       /* First byte of input data[] */
   int rc;                  /* Return code from various interfaces */
   char *zSql;              /* Zero-terminated copy of data[] */
+  sqlite3_int64 iCutoff;   /* Cutoff timer */
 
   if( size<3 ) return 0;   /* Early out if unsufficient data */
 
@@ -56,16 +77,14 @@ int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   if( rc ) return 0;
 
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
-  /* Bit 0 of the selector enables progress callbacks.  Bit 1 is the
-  ** return code from progress callbacks */
-  if( uSelector & 1 ){
-    sqlite3_progress_handler(db, 4, progress_handler, (void*)&progressArg);
-  }
+  /* Invoke the progress handler every 500 thousand instructions (approximately
+  ** 20 to 40 times per second) to check to see if we are taking too long.
+  */
+  iCutoff = timeOfDay() + 10000;  /* Now + 10 seconds */
+  sqlite3_progress_handler(db, 500000, progress_handler, (void*)&iCutoff);
 #endif
-  uSelector >>= 1;
-  progressArg = uSelector & 1;  uSelector >>= 1;
 
-  /* Bit 2 of the selector enables foreign key constraints */
+  /* Bit 1 of the selector enables foreign key constraints */
   sqlite3_db_config(db, SQLITE_DBCONFIG_ENABLE_FKEY, uSelector&1, &rc);
   uSelector >>= 1;
 
