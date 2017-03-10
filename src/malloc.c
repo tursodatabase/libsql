@@ -217,7 +217,7 @@ static void sqlite3MallocAlarm(int nByte){
 ** Do a memory allocation with statistics and alarms.  Assume the
 ** lock is already held.
 */
-static void mallocWithAlarm(int n, void **pp){
+static void *mallocWithAlarm(int n){
   void *p;
   int nFull;
   assert( sqlite3_mutex_held(mem0.mutex) );
@@ -229,6 +229,12 @@ static void mallocWithAlarm(int n, void **pp){
   ** or else a crash results.  Hence, do not attempt to optimize out the
   ** following xRoundup() call. */
   nFull = sqlite3GlobalConfig.m.xRoundup(n);
+
+#ifdef SQLITE_MAX_MEMORY
+  if( sqlite3StatusValue(SQLITE_STATUS_MEMORY_USED)+nFull>SQLITE_MAX_MEMORY ){
+    return 0;
+  }
+#endif
 
   sqlite3StatusHighwater(SQLITE_STATUS_MALLOC_SIZE, n);
   if( mem0.alarmThreshold>0 ){
@@ -252,7 +258,7 @@ static void mallocWithAlarm(int n, void **pp){
     sqlite3StatusUp(SQLITE_STATUS_MEMORY_USED, nFull);
     sqlite3StatusUp(SQLITE_STATUS_MALLOC_COUNT, 1);
   }
-  *pp = p;
+  return p;
 }
 
 /*
@@ -270,7 +276,7 @@ void *sqlite3Malloc(u64 n){
     p = 0;
   }else if( sqlite3GlobalConfig.bMemstat ){
     sqlite3_mutex_enter(mem0.mutex);
-    mallocWithAlarm((int)n, &p);
+    p = mallocWithAlarm((int)n);
     sqlite3_mutex_leave(mem0.mutex);
   }else{
     p = sqlite3GlobalConfig.m.xMalloc((int)n);
