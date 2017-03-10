@@ -1,5 +1,5 @@
-C Enhance\sthe\s".stats"\sdot-command\sin\sthe\sCLI\sto\suse\ssqlite3_status64()\sinstead\nof\ssqlite3_status().
-D 2017-03-10T14:36:10.584
+C Add\sthe\s-DSQLITE_MAX_MEMORY=N\scompile-time\soption.\s\sThe\sdefault\sis\sno\slimit.
+D 2017-03-10T16:22:40.639
 F Makefile.in 5f415e7867296d678fed2e6779aea10c1318b4bc
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a89ea37ab5928026001569f056973b9059492fe2
@@ -365,7 +365,7 @@ F src/insert.c 3ed64afc49c0a2221e397b9f65d231ffbef506fe
 F src/legacy.c e88ed13c2d531decde75d42c2e35623fb9ce3cb0
 F src/loadext.c a68d8d1d14cf7488bb29dc5311cb1ce9a4404258
 F src/main.c 158326243c5ddc8b98a1e983fa488650cf76d760
-F src/malloc.c d0a1474236486165bcb349af82e2a6560178bf7b
+F src/malloc.c e2b75576ba5587555fa7146cedca437c3d947b9e
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c fd7cd6fe21d46fe0a4186367dd8dc26d87b787eb
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
@@ -1563,7 +1563,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b044b152aac2ec606750940ea816ad4a4aef8eb6
-R da300103282ee8980f2e41cc2466def0
+P 118f5c0564fef70cbd06fc0d9dbb2baec162cc39 77dfe2abdae88dea81217f352d87e5ba2c822715
+R 3b74d97e8af57ebd024f8ef03af4d96f
+T +closed 77dfe2abdae88dea81217f352d87e5ba2c822715
 U drh
-Z 6dbad136ee05d7b8bc7f34310ddbaf47
+Z 08daf633daf073490979515612458ee1
