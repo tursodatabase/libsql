@@ -2259,6 +2259,31 @@ static void displayLinuxIoStats(FILE *out){
 }
 #endif
 
+/*
+** Display a single line of status using 64-bit values.
+*/
+static void displayStatLine(
+  ShellState *p,            /* The shell context */
+  char *zLabel,             /* Label for this one line */
+  char *zFormat,            /* Format for the result */
+  int iStatusCtrl,          /* Which status to display */
+  int bReset                /* True to reset the stats */
+){
+  sqlite3_int64 iCur = -1;
+  sqlite3_int64 iHiwtr = -1;
+  int i, nPercent;
+  char zLine[200];
+  sqlite3_status64(iStatusCtrl, &iCur, &iHiwtr, bReset);
+  for(i=0, nPercent=0; zFormat[i]; i++){
+    if( zFormat[i]=='%' ) nPercent++;
+  }
+  if( nPercent>1 ){
+    sqlite3_snprintf(sizeof(zLine), zLine, zFormat, iCur, iHiwtr);
+  }else{
+    sqlite3_snprintf(sizeof(zLine), zLine, zFormat, iHiwtr);
+  }
+  raw_printf(p->out, "%-36s %s\n", zLabel, zLine);
+}
 
 /*
 ** Display memory stats.
@@ -2272,57 +2297,31 @@ static int display_stats(
   int iHiwtr;
 
   if( pArg && pArg->out ){
-
-    iHiwtr = iCur = -1;
-    sqlite3_status(SQLITE_STATUS_MEMORY_USED, &iCur, &iHiwtr, bReset);
-    raw_printf(pArg->out,
-            "Memory Used:                         %d (max %d) bytes\n",
-            iCur, iHiwtr);
-    iHiwtr = iCur = -1;
-    sqlite3_status(SQLITE_STATUS_MALLOC_COUNT, &iCur, &iHiwtr, bReset);
-    raw_printf(pArg->out, "Number of Outstanding Allocations:   %d (max %d)\n",
-            iCur, iHiwtr);
+    displayStatLine(pArg, "Memory Used:",
+       "%lld (max %lld) bytes", SQLITE_STATUS_MEMORY_USED, bReset);
+    displayStatLine(pArg, "Number of Outstanding Allocations:",
+       "%lld (max %lld)", SQLITE_STATUS_MALLOC_COUNT, bReset);
     if( pArg->shellFlgs & SHFLG_Pagecache ){
-      iHiwtr = iCur = -1;
-      sqlite3_status(SQLITE_STATUS_PAGECACHE_USED, &iCur, &iHiwtr, bReset);
-      raw_printf(pArg->out,
-              "Number of Pcache Pages Used:         %d (max %d) pages\n",
-              iCur, iHiwtr);
+      displayStatLine(pArg, "Number of Pcache Pages Used:",
+         "%lld (max %lld) pages", SQLITE_STATUS_PAGECACHE_USED, bReset);
     }
-    iHiwtr = iCur = -1;
-    sqlite3_status(SQLITE_STATUS_PAGECACHE_OVERFLOW, &iCur, &iHiwtr, bReset);
-    raw_printf(pArg->out,
-            "Number of Pcache Overflow Bytes:     %d (max %d) bytes\n",
-            iCur, iHiwtr);
+    displayStatLine(pArg, "Number of Pcache Overflow Bytes:",
+       "%lld (max %lld) bytes", SQLITE_STATUS_PAGECACHE_OVERFLOW, bReset);
     if( pArg->shellFlgs & SHFLG_Scratch ){
-      iHiwtr = iCur = -1;
-      sqlite3_status(SQLITE_STATUS_SCRATCH_USED, &iCur, &iHiwtr, bReset);
-      raw_printf(pArg->out,
-              "Number of Scratch Allocations Used:  %d (max %d)\n",
-              iCur, iHiwtr);
+      displayStatLine(pArg, "Number of Scratch Allocations Used:",
+         "%lld (max %lld)", SQLITE_STATUS_SCRATCH_USED, bReset);
     }
-    iHiwtr = iCur = -1;
-    sqlite3_status(SQLITE_STATUS_SCRATCH_OVERFLOW, &iCur, &iHiwtr, bReset);
-    raw_printf(pArg->out,
-            "Number of Scratch Overflow Bytes:    %d (max %d) bytes\n",
-            iCur, iHiwtr);
-    iHiwtr = iCur = -1;
-    sqlite3_status(SQLITE_STATUS_MALLOC_SIZE, &iCur, &iHiwtr, bReset);
-    raw_printf(pArg->out, "Largest Allocation:                  %d bytes\n",
-            iHiwtr);
-    iHiwtr = iCur = -1;
-    sqlite3_status(SQLITE_STATUS_PAGECACHE_SIZE, &iCur, &iHiwtr, bReset);
-    raw_printf(pArg->out, "Largest Pcache Allocation:           %d bytes\n",
-            iHiwtr);
-    iHiwtr = iCur = -1;
-    sqlite3_status(SQLITE_STATUS_SCRATCH_SIZE, &iCur, &iHiwtr, bReset);
-    raw_printf(pArg->out, "Largest Scratch Allocation:          %d bytes\n",
-            iHiwtr);
+    displayStatLine(pArg, "Number of Scratch Overflow Bytes:",
+       "%lld (max %lld) bytes", SQLITE_STATUS_SCRATCH_OVERFLOW, bReset);
+    displayStatLine(pArg, "Largest Allocation:",
+       "%lld bytes", SQLITE_STATUS_MALLOC_SIZE, bReset);
+    displayStatLine(pArg, "Largest Pcache Allocation:",
+       "%lld bytes", SQLITE_STATUS_PAGECACHE_SIZE, bReset);
+    displayStatLine(pArg, "Largest Scratch Allocation:",
+       "%lld bytes", SQLITE_STATUS_SCRATCH_SIZE, bReset);
 #ifdef YYTRACKMAXSTACKDEPTH
-    iHiwtr = iCur = -1;
-    sqlite3_status(SQLITE_STATUS_PARSER_STACK, &iCur, &iHiwtr, bReset);
-    raw_printf(pArg->out, "Deepest Parser Stack:                %d (max %d)\n",
-            iCur, iHiwtr);
+    displayStatLine(pArg, "Deepest Parser Stack:",
+       "%lld (max %lld)", SQLITE_STATUS_PARSER_STACK, bReset);
 #endif
   }
 
