@@ -1,5 +1,5 @@
-C Fix\san\serror\sin\sthe\sSQLITE_MAX_MEMORY\simplementation\sresulting\sfrom\sa\sbad\nmerge.\s\sUpdate\sthe\sOSSFuzz\sinterface\sso\sthat\sit\stimes\sout\safter\srunning\nthe\sbyte-code\sengine\sfor\s10\sseconds.
-D 2017-03-10T17:03:11.362
+C Remove\sthe\srbu_round_trip.tcl\sscript.\sIt\sis\snow\spart\sof\sproject\s"test-dbs".
+D 2017-03-10T18:36:34.515
 F Makefile.in 2dae2a56457c2885425a480e1053de8096aff924
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 9020fa41eb91f657ae0cc44145d0a2f3af520860
@@ -250,7 +250,6 @@ F ext/rbu/rbuA.test c1a7b3e2d926b8f8448bb3b4ae787e314ee4b2b3
 F ext/rbu/rbuB.test c25bc325b8072a766e56bb76c001866b405925c2
 F ext/rbu/rbuC.test efe47db508a0269b683cb2a1913a425ffd39a831
 F ext/rbu/rbu_common.tcl a38e8e2d4a50fd6aaf151633714c1b1d2fae3ead
-F ext/rbu/rbu_round_trip.tcl f3216836bbaeb10d76a2c70b89c13f59eabbd117
 F ext/rbu/rbucrash.test 8d2ed5d4b05fef6c00c2a6b5f7ead71fa172a695
 F ext/rbu/rbucrash2.test b2ecbdd7bb72c88bd217c65bd00dafa07f7f2d4d
 F ext/rbu/rbudiff.test 3e605cf624d00d04d0fb1316a3acec4fbe3b3ac5
@@ -1563,7 +1562,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P eabd4ef498a0f0d97d65e321c4d06ab90523ed61
-R 69fed97a3de499803e89b1ea5d13a87c
-U drh
-Z 0ae96bef0d12b3fb7ff36d9387e9c8a8
+P f8560c60d10c0365b33342ab05b5a953987b0471
+R 01deb9b1ef259df8dc49773e784400ec
+U dan
+Z 416d02cdb56bde7d758b337f12e18e66
