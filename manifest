@@ -1,5 +1,5 @@
-C Increase\sthe\snumber\sof\ssignificant\sdigits\sin\sfloating\spoint\sliterals\son\n".dump"\soutput\sfrom\sthe\sshell.
-D 2017-03-11T00:46:57.350
+C Make\ssure\sthe\stranslateColumnToCopy()\sroutine\sin\sthe\squery\splanner\sdoes\snot\ntry\sto\saccess\san\sarray\sthat\sfailed\sto\sbe\sfully\sallocated\sdue\sto\sa\sprior\sOOM.\nThis\sfixes\san\sissue\sdiscovered\sby\sOSSFuzz.
+D 2017-03-11T13:02:59.691
 F Makefile.in 2dae2a56457c2885425a480e1053de8096aff924
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 9020fa41eb91f657ae0cc44145d0a2f3af520860
@@ -479,7 +479,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 40c543f0a2195d1b0dc88ef12142bea690009344
 F src/wal.h 06b2a0b599cc0f53ea97f497cf8c6b758c999f71
 F src/walker.c b71a992b413b3a022572eccf29ef4b4890223791
-F src/where.c 1a3a8adb717a20f17c186f3baa22b0b5f3a5ab13
+F src/where.c e815093e5ee039b6b4eb19b646d22deb1a3a523f
 F src/whereInt.h 2d50c2b74a33be44cb68fdecee30b4d93552f1f4
 F src/wherecode.c 677e95413c472c0b413023b6b69a47f40fce1b04
 F src/whereexpr.c 130cdd1a43af71b19755270fb1224874cf55158c
@@ -1562,7 +1562,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b5bf2957677e8f2acd7426b302229a966de08fd9
-R a3ca39ff602fd356af0fc62171a8021d
+P 7359fcacaadc349f520536311dcd1d0b5cea7673
+R b1f6c3d400d5c1eb17e51e0171dc7cb1
 U drh
-Z 21429fdf284b465374d1bf63bafb22c0
+Z 84001c734b11825e7e05194bb46aad97
