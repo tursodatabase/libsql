@@ -1490,32 +1490,52 @@ static void output_hex_blob(FILE *out, const void *pBlob, int nBlob){
 
 /*
 ** Output the given string as a quoted string using SQL quoting conventions.
+**
+** The "\n" and "\r" characters are converted to char(10) and char(13)
+** to prevent them from being transformed by end-of-line translators.
 */
 static void output_quoted_string(FILE *out, const char *z){
   int i;
-  int nSingle = 0;
+  char c;
   setBinaryMode(out, 1);
-  for(i=0; z[i]; i++){
-    if( z[i]=='\'' ) nSingle++;
-  }
-  if( nSingle==0 ){
+  for(i=0; (c = z[i])!=0 && c!='\'' && c!='\n' && c!='\r'; i++){}
+  if( c==0 ){
     utf8_printf(out,"'%s'",z);
   }else{
-    raw_printf(out,"'");
+    int inQuote = 0;
+    int bStarted = 0;
     while( *z ){
-      for(i=0; z[i] && z[i]!='\''; i++){}
-      if( i==0 ){
-        raw_printf(out,"''");
-        z++;
-      }else if( z[i]=='\'' ){
-        utf8_printf(out,"%.*s''",i,z);
-        z += i+1;
-      }else{
-        utf8_printf(out,"%s",z);
+      for(i=0; (c = z[i])!=0 && c!='\n' && c!='\r' && c!='\''; i++){}
+      if( c=='\'' ) i++;
+      if( i ){
+        if( !inQuote ){
+          if( bStarted ) raw_printf(out, "||");
+          raw_printf(out, "'");
+          inQuote = 1;
+        }
+        utf8_printf(out, "%.*s", i, z);
+        z += i;
+        bStarted = 1;
+      }
+      if( c=='\'' ){
+        raw_printf(out, "'");
+        continue;
+      }
+      if( inQuote ){
+        raw_printf(out, "'");
+        inQuote = 0;
+      }
+      if( c==0 ){
         break;
       }
+      for(i=0; (c = z[i])=='\r' || c=='\n'; i++){
+        if( bStarted ) raw_printf(out, "||");
+        raw_printf(out, "char(%d)", c);
+        bStarted = 1;
+      }
+      z += i;
     }
-    raw_printf(out,"'");
+    if( inQuote ) raw_printf(out, "'");
   }
   setTextMode(out, 1);
 }
