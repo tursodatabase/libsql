@@ -1,5 +1,5 @@
-C Remove\sthe\srbu_round_trip.tcl\sscript.\sIt\sis\snow\spart\sof\sproject\s"test-dbs".
-D 2017-03-10T18:36:34.515
+C Increase\sthe\snumber\sof\ssignificant\sdigits\sin\sfloating\spoint\sliterals\son\n".dump"\soutput\sfrom\sthe\sshell.
+D 2017-03-11T00:46:57.350
 F Makefile.in 2dae2a56457c2885425a480e1053de8096aff924
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 9020fa41eb91f657ae0cc44145d0a2f3af520860
@@ -399,7 +399,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 3e518b962d932a997fae373366880fc028c75706
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c d12f3539f80db38b09015561b569e0eb1c4b6c5f
-F src/shell.c 4d9be7f0622365029a1f2e0f9628b8e363700ff5
+F src/shell.c df29706f8b19e3b6f695b4f64d6c6963348ca8a4
 F src/sqlite.h.in 4d0c08f8640c586564a7032b259c5f69bf397850
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
@@ -1562,7 +1562,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f8560c60d10c0365b33342ab05b5a953987b0471
-R 01deb9b1ef259df8dc49773e784400ec
-U dan
-Z 416d02cdb56bde7d758b337f12e18e66
+P b5bf2957677e8f2acd7426b302229a966de08fd9
+R a3ca39ff602fd356af0fc62171a8021d
+U drh
+Z 21429fdf284b465374d1bf63bafb22c0

@@ -2007,9 +2007,13 @@ static int shell_callback(
         }else if( aiType && aiType[i]==SQLITE_TEXT ){
           if( zSep[0] ) utf8_printf(p->out,"%s",zSep);
           output_quoted_string(p->out, azArg[i]);
-        }else if( aiType && (aiType[i]==SQLITE_INTEGER
-                             || aiType[i]==SQLITE_FLOAT) ){
+        }else if( aiType && aiType[i]==SQLITE_INTEGER ){
           utf8_printf(p->out,"%s%s",zSep, azArg[i]);
+        }else if( aiType && aiType[i]==SQLITE_FLOAT ){
+          char z[50];
+          double r = sqlite3_column_double(p->pStmt, i);
+          sqlite3_snprintf(50,z,"%!.20g", r);
+          raw_printf(p->out, "%s%s", zSep, z);
         }else if( aiType && aiType[i]==SQLITE_BLOB && p->pStmt ){
           const void *pBlob = sqlite3_column_blob(p->pStmt, i);
           int nBlob = sqlite3_column_bytes(p->pStmt, i);
