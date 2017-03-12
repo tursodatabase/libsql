@@ -1,5 +1,5 @@
-C Make\ssure\sthe\stranslateColumnToCopy()\sroutine\sin\sthe\squery\splanner\sdoes\snot\ntry\sto\saccess\san\sarray\sthat\sfailed\sto\sbe\sfully\sallocated\sdue\sto\sa\sprior\sOOM.\nThis\sfixes\san\sissue\sdiscovered\sby\sOSSFuzz.
-D 2017-03-11T13:02:59.691
+C Remove\san\sobsolete\sassert()\sin\sthe\sIN\soperator\scode\sgeneration.
+D 2017-03-12T19:39:00.634
 F Makefile.in 2dae2a56457c2885425a480e1053de8096aff924
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 9020fa41eb91f657ae0cc44145d0a2f3af520860
@@ -351,7 +351,7 @@ F src/ctime.c a9984df73898c042a5cfc8f9d8e7723d02bc35c9
 F src/date.c ee676e7694dfadbdd2fde1a258a71be8360ba5ae
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
 F src/delete.c 0d9d5549d42e79ce4d82ff1db1e6c81e36d2f67c
-F src/expr.c 8a29e9b72d4b642189999c41782cd6c5bc43512f
+F src/expr.c 7eac40b592672a1f3e0565ac1e66fbb87218436c134d8b2460f989b550e2eb73
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 2e9aabe1aee76273aff8a84ee92c464e095400ae
 F src/func.c c67273e1ec08abbdcc14c189892a3ff6eeece86b
@@ -1562,7 +1562,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7359fcacaadc349f520536311dcd1d0b5cea7673
-R b1f6c3d400d5c1eb17e51e0171dc7cb1
+P 3299a26160c239255608d1e2b15a221e28b18a3d
+R 0614fda50e45b1c812e74d7f5befdd87
 U drh
-Z 84001c734b11825e7e05194bb46aad97
+Z 926534de7c008338fc48290e21b48744
