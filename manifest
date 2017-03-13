@@ -1,5 +1,5 @@
-C In\sthe\sOSSFuzz\stest\smodule,\sinvoke\sthe\sprogress\shandler\smuch\smore\sfrequently\nso\sthat\stimeouts\sare\sdetected\spunctually\seven\sif\sthe\stest\sscript\sis\srunning\nopcodes\sthat\sindividually\stake\sa\slong\stime\s(for\sexample,\san\sOP_Function\sopcode\nthat\sinvokes\s"randomblob(1.5e6)").
-D 2017-03-13T13:45:29.519
+C Fix\sa\ssegfault\sthat\scould\soccur\sfollowing\san\sOOM\serror\sin\sthe\nflattenSubquery()\sroutine.
+D 2017-03-13T14:30:40.789
 F Makefile.in 2dae2a56457c2885425a480e1053de8096aff924
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 9020fa41eb91f657ae0cc44145d0a2f3af520860
@@ -398,7 +398,7 @@ F src/printf.c 67427bbee66d891fc6f6f5aada857e9cdb368c1c
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 3e518b962d932a997fae373366880fc028c75706
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c d12f3539f80db38b09015561b569e0eb1c4b6c5f
+F src/select.c 2496d0cc6368dabe7ad2e4c7f5ed3ad9aa3b4d11cd90f33fa1d1ef72493f43aa
 F src/shell.c df29706f8b19e3b6f695b4f64d6c6963348ca8a4
 F src/sqlite.h.in 4d0c08f8640c586564a7032b259c5f69bf397850
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -953,6 +953,7 @@ F test/mallocI.test 6c23a71df077fa5d387be90e7e669c5b368ca38a
 F test/mallocJ.test b5d1839da331d96223e5f458856f8ffe1366f62e
 F test/mallocK.test 27cb5566a6e5f2d76f9d4aa2eca45524401fd61e
 F test/mallocL.test fb311ff80afddf3b1a75e52289081f4754d901dc
+F test/mallocM.test 491001d1e273233048d265ec6d38fdd23745b0284f0c93bc98c94b64451c9c28
 F test/malloc_common.tcl aac62499b76be719fac31e7a3e54a7fd53272e7f
 F test/manydb.test 28385ae2087967aa05c38624cec7d96ec74feb3e
 F test/mem5.test c6460fba403c5703141348cd90de1c294188c68f
@@ -1562,7 +1563,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5ec655e8e817c1ed3bfb2e576745a7cef441494ad7baf1bf9f8895e98ac19c5a
-R 5ec7c17c414d77e4ccd9fef1ac3d681c
-U drh
-Z 5b49012ad9ab98ef47d2e1e6f7e9b1e7
+P f3b6959c04c4ef7b8ff03582b867012a869d52b4a90a0d7ab079ee4c21be5464
+R 5476ff08c9b02210dda4864e54df5ab0
+U dan
+Z 237b4d523d894c49cc7807017d798a94
