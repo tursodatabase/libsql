@@ -77,11 +77,13 @@ int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   if( rc ) return 0;
 
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
-  /* Invoke the progress handler every 500 thousand instructions (approximately
-  ** 20 to 40 times per second) to check to see if we are taking too long.
+  /* Invoke the progress handler frequently to check to see if we
+  ** are taking too long.  The progress handler will return true
+  ** (which will block further processing) if more than 10 seconds have
+  ** elapsed since the start of the test.
   */
   iCutoff = timeOfDay() + 10000;  /* Now + 10 seconds */
-  sqlite3_progress_handler(db, 500000, progress_handler, (void*)&iCutoff);
+  sqlite3_progress_handler(db, 10, progress_handler, (void*)&iCutoff);
 #endif
 
   /* Bit 1 of the selector enables foreign key constraints */
