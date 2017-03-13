@@ -1,8 +1,8 @@
-C In\sthe\soutput\sof\sthe\s".dump"\scommand\sin\sthe\sCLI,\squote\snewline\sand\ncarriage-return\scharacters\susing\sthe\schar()\sfunction,\sso\sthat\sthey\sdo\snot\nget\seaten\sby\send-of-line\sprocessing\slogic\sin\sthe\sOS\sor\sin\sother\scommand-line\nutilities\sand/or\slibraries.
-D 2017-03-13T18:24:06.748
-F Makefile.in 2dae2a56457c2885425a480e1053de8096aff924
+C Add\sthe\sdbdump.c\sextension\sthat\simplements\sfunctionality\ssimilar\sto\sthe\n".dump"\scommand\sof\sthe\sCLI,\sthough\sin\sa\sseparate\slibrary.
+D 2017-03-13T22:10:05.684
+F Makefile.in 9605f4c49eace601d5c12c85dd6e037cc613a6d823e857614ba26b42f1285db0
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 9020fa41eb91f657ae0cc44145d0a2f3af520860
+F Makefile.msc 5f1194a315c341c14870534652afd34bfa701219e5994fa0ee0bac91389fb740
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION 3605fa447e4623f5ff4a6adc97b1fde9a257b8f2
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -211,6 +211,7 @@ F ext/misc/carray.c 40c27641010a4dc67e3690bdb7c9d36ca58b3c2d
 F ext/misc/closure.c 0d2a038df8fbae7f19de42e7c7d71f2e4dc88704
 F ext/misc/compress.c 122faa92d25033d6c3f07c39231de074ab3d2e83
 F ext/misc/csv.c 531a46cbad789fca0aa9db69a0e6c8ac9e68767d
+F ext/misc/dbdump.c 34174d537318027b159e3341105866c05a4149376ede59988c82280bed144e6d
 F ext/misc/eval.c f971962e92ebb8b0a4e6b62949463ee454d88fa2
 F ext/misc/fileio.c d4171c815d6543a9edef8308aab2951413cd8d0f
 F ext/misc/fuzzer.c 7c64b8197bb77b7d64eff7cac7848870235d4c25
@@ -322,7 +323,7 @@ F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 0ec10b604f4668f7e85a358954babe75c94dc0d5
+F main.mk 9abb506e717887d57f754bae139b85c1a06d6f2ac25b589f3e792e310567f278
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -1563,8 +1564,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9034cf7efc603864f51e931c7dc4fbbc2d01904e951e78c88d4d80f9936250e8 8b2954dd8376e2de985cf5dedeb6eec32c430505
-R 73c5fbe608fb0e20ee39173a6198ea04
-T +closed 8b2954dd8376e2de985cf5dedeb6eec32c430505
+P 68f6dc7af1013f296a11db14c007cc13cc3fe56832848bfed835ed8f74dcc676 59241a50ad1d6fe9f5804b73b3467dcd407d359ccbdcb9d72f2f6d94c90c1f40
+R 6996c48c318cda176124bead4ce6093a
+T +closed 59241a50ad1d6fe9f5804b73b3467dcd407d359ccbdcb9d72f2f6d94c90c1f40
 U drh
-Z 5e4a79f0eabba6013ee57f9716ad3797
+Z 2f55f00bb27f982c54090f39d62e41f0
