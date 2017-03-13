@@ -761,6 +761,10 @@ sqlite3_analyzer.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl
 sqlite3_analyzer$(EXE): sqlite3_analyzer.c
 	$(TCCX) $(TCL_FLAGS) sqlite3_analyzer.c -o $@ $(LIBTCL) $(THREADLIB) 
 
+dbdump$(EXE):	$(TOP)/ext/misc/dbdump.c sqlite3.o
+	$(TCCX) -DDBDUMP_STANDALONE -o dbdump$(EXE) \
+            $(TOP)/ext/misc/dbdump.c sqlite3.o $(THREADLIB)
+
 # Rules to build the 'testfixture' application.
 #
 TESTFIXTURE_FLAGS  = -DSQLITE_TEST=1 -DSQLITE_CRASH_TEST=1
