@@ -1,5 +1,5 @@
-C Fix\sa\ssegfault\sthat\scould\soccur\sfollowing\san\sOOM\serror\sin\sthe\nflattenSubquery()\sroutine.
-D 2017-03-13T14:30:40.789
+C Fix\sthe\ssqlite3TreeViewSelect()\sroutine\sso\sthat\sit\sworks\swith\sa\snull\spointer\nto\sthe\sSelect\sobject.
+D 2017-03-13T17:37:13.752
 F Makefile.in 2dae2a56457c2885425a480e1053de8096aff924
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 9020fa41eb91f657ae0cc44145d0a2f3af520860
@@ -459,7 +459,7 @@ F src/test_windirent.h 5d67483a55442e31e1bde0f4a230e6e932ad5906
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c dc748c5afcb9e5beb3ef5651bc99a4622e30f6a1
-F src/treeview.c 4e44ade3bfe59d82005039f72e09333ce2b4162c
+F src/treeview.c 84d0ac737e1231702679f0289180021e19c5cc186ec413e8dcb704a887c76ec8
 F src/trigger.c c9f0810043b265724fdb1bdd466894f984dfc182
 F src/update.c 456d4a4656f8a03c2abc88a51b19172197400e58
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
@@ -1563,7 +1563,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f3b6959c04c4ef7b8ff03582b867012a869d52b4a90a0d7ab079ee4c21be5464
-R 5476ff08c9b02210dda4864e54df5ab0
-U dan
-Z 237b4d523d894c49cc7807017d798a94
+P c6dda3f752c184f441624c9993e77d5031063d79a0e177b6e25a9886514a742e
+R 21d5fb07d70376e4a3754546b17385a3
+U drh
+Z aeef669a336ea6338a3e27ef9df24400
