@@ -1,5 +1,5 @@
-C First\sdraft\sof\sthe\scomplete\sdbdump.c\slibrary.
-D 2017-03-13T21:26:41.643
+C Fixes\sto\sthe\sdump\slogic.\s\sAll\sappears\sto\sbe\sworking\sin\spreliminary\stests.
+D 2017-03-13T21:49:48.351
 F Makefile.in 9605f4c49eace601d5c12c85dd6e037cc613a6d823e857614ba26b42f1285db0
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 9020fa41eb91f657ae0cc44145d0a2f3af520860
@@ -211,7 +211,7 @@ F ext/misc/carray.c 40c27641010a4dc67e3690bdb7c9d36ca58b3c2d
 F ext/misc/closure.c 0d2a038df8fbae7f19de42e7c7d71f2e4dc88704
 F ext/misc/compress.c 122faa92d25033d6c3f07c39231de074ab3d2e83
 F ext/misc/csv.c 531a46cbad789fca0aa9db69a0e6c8ac9e68767d
-F ext/misc/dbdump.c 819eb33f6ff788a466525557f7ea3742078853cc794b2eb0799a254dd6da81e2
+F ext/misc/dbdump.c 34174d537318027b159e3341105866c05a4149376ede59988c82280bed144e6d
 F ext/misc/eval.c f971962e92ebb8b0a4e6b62949463ee454d88fa2
 F ext/misc/fileio.c d4171c815d6543a9edef8308aab2951413cd8d0f
 F ext/misc/fuzzer.c 7c64b8197bb77b7d64eff7cac7848870235d4c25
@@ -1564,7 +1564,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 74c5ace498f72d7f5495203678bedd0bc540211131a4e4db7b62115d5322a288
-R dcbc2252d3d150af6e3faa70158994bd
+P 84ea4fcc52d0af02648c52989c2e69f4961071e1620382555ec59a39161a7a7d
+R de364a9f85fa4899d644a897efb72e80
 U drh
-Z 9a73382dae2ea2eb6bda6a3d74fd54dd
+Z 55e9f45d2725daddcac9a1569ce24da7

@@ -224,7 +224,6 @@ static char **tableColumnList(DState *p, const char *zTab){
   rc = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
   sqlite3_free(zSql);
   if( rc ) return 0;
-  azCol[0] = 0;
   while( sqlite3_step(pStmt)==SQLITE_ROW ){
     if( nCol>=nAlloc-2 ){
       char **azNew;
@@ -232,6 +231,7 @@ static char **tableColumnList(DState *p, const char *zTab){
       azNew = sqlite3_realloc(azCol, nAlloc*sizeof(azCol[0]));
       if( azNew==0 ) goto col_oom;
       azCol = azNew;
+      azCol[0] = 0;
     }
     azCol[++nCol] = sqlite3_mprintf("%s", sqlite3_column_text(pStmt, 1));
     if( azCol[nCol]==0 ) goto col_oom;
@@ -317,7 +317,7 @@ static void output_formatted(DState *p, const char *zFormat, ...){
   va_list ap;
   char *z;
   va_start(ap, zFormat);
-  z = sqlite3_mprintf(zFormat, ap);
+  z = sqlite3_vmprintf(zFormat, ap);
   va_end(ap);
   p->xCallback(z, p->pArg);
   sqlite3_free(z);
@@ -430,10 +430,13 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
     azCol = tableColumnList(p, zTable);
     if( azCol==0 ) return 0;
 
+    initText(&sTable);
+    appendText(&sTable, "INSERT INTO ", 0);
+
     /* Always quote the table name, even if it appears to be pure ascii,
     ** in case it is a keyword. Ex:  INSERT INTO "table" ... */
-    initText(&sTable);
     appendText(&sTable, zTable, quoteChar(zTable));
+
     /* If preserving the rowid, add a column list after the table name.
     ** In other words:  "INSERT INTO tab(rowid,a,b,c,...) VALUES(...)"
     ** instead of the usual "INSERT INTO tab VALUES(...)".
@@ -462,7 +465,8 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
         appendText(&sSelect, ",", 0);
       }
     }
-    nCol = i-1;
+    nCol = i;
+    if( azCol[0]==0 ) nCol--;
     freeColumnList(azCol);
     appendText(&sSelect, " FROM ", 0);
     appendText(&sSelect, zTable, quoteChar(zTable));
@@ -545,7 +549,7 @@ static void output_sql_from_query(
   char *zSql;
   va_list ap;
   va_start(ap, zSelect);
-  zSql = sqlite3_mprintf(zSelect, ap);
+  zSql = sqlite3_vmprintf(zSelect, ap);
   va_end(ap);
   if( zSql==0 ){
     p->rc = SQLITE_NOMEM;
@@ -602,7 +606,7 @@ static void run_schema_dump_query(
   char *z;
   va_list ap;
   va_start(ap, zQuery);
-  z = sqlite3_mprintf(zQuery, ap);
+  z = sqlite3_vmprintf(zQuery, ap);
   va_end(ap); 
   sqlite3_exec(p->db, z, dump_callback, p, &zErr);
   sqlite3_free(z);
