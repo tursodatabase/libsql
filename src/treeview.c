@@ -126,6 +126,10 @@ void sqlite3TreeViewWith(TreeView *pView, const With *pWith, u8 moreToFollow){
 void sqlite3TreeViewSelect(TreeView *pView, const Select *p, u8 moreToFollow){
   int n = 0;
   int cnt = 0;
+  if( p==0 ){
+    sqlite3TreeViewLine(pView, "nil-SELECT");
+    return;
+  } 
   pView = sqlite3TreeViewPush(pView, moreToFollow);
   if( p->pWith ){
     sqlite3TreeViewWith(pView, p->pWith, 1);

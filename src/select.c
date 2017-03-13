@@ -3749,7 +3749,9 @@ static int flattenSubquery(
     }else{
       pParent->pWhere = sqlite3ExprAnd(db, pWhere, pParent->pWhere);
     }
-    substSelect(pParse, pParent, iParent, pSub->pEList, 0);
+    if( db->mallocFailed==0 ){
+      substSelect(pParse, pParent, iParent, pSub->pEList, 0);
+    }
   
     /* The flattened query is distinct if either the inner or the
     ** outer query is distinct. 

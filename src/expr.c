@@ -1860,6 +1860,7 @@ int sqlite3ExprContainsSubquery(Expr *p){
 */
 int sqlite3ExprIsInteger(Expr *p, int *pValue){
   int rc = 0;
+  if( p==0 ) return 0;  /* Can only happen following on OOM */
 
   /* If an expression is an integer literal that fits in a signed 32-bit
   ** integer, then the EP_IntValue flag will have already been set */
@@ -2532,7 +2533,6 @@ int sqlite3CodeSubselect(
           int i;
           sqlite3SelectDestInit(&dest, SRT_Set, pExpr->iTable);
           dest.zAffSdst = exprINAffinity(pParse, pExpr);
-          assert( (pExpr->iTable&0x0000FFFF)==pExpr->iTable );
           pSelect->iLimit = 0;
           testcase( pSelect->selFlags & SF_Distinct );
           testcase( pKeyInfo==0 ); /* Caused by OOM in sqlite3KeyInfoAlloc() */
