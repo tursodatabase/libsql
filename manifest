@@ -1,8 +1,8 @@
-C Fixes\sto\sthe\sdump\slogic.\s\sAll\sappears\sto\sbe\sworking\sin\spreliminary\stests.
-D 2017-03-13T21:49:48.351
+C Add\sdbdump.exe\sto\sthe\sMSVC\smakefile.
+D 2017-03-13T22:02:01.034
 F Makefile.in 9605f4c49eace601d5c12c85dd6e037cc613a6d823e857614ba26b42f1285db0
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 9020fa41eb91f657ae0cc44145d0a2f3af520860
+F Makefile.msc 5f1194a315c341c14870534652afd34bfa701219e5994fa0ee0bac91389fb740
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION 3605fa447e4623f5ff4a6adc97b1fde9a257b8f2
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -1564,7 +1564,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 84ea4fcc52d0af02648c52989c2e69f4961071e1620382555ec59a39161a7a7d
-R de364a9f85fa4899d644a897efb72e80
+P 007b11e301d444361c8eff8734dc2fb968a64343c177ff30cec74a0cf76099e8
+R 6996c48c318cda176124bead4ce6093a
 U drh
-Z 55e9f45d2725daddcac9a1569ce24da7
+Z a94f031011fffd33ab6cd5678ecde717
