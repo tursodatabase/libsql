@@ -3169,6 +3169,7 @@ static char zHelp[] =
   ".scanstats on|off      Turn sqlite3_stmt_scanstatus() metrics on or off\n"
   ".schema ?PATTERN?      Show the CREATE statements matching PATTERN\n"
   "                          Add --indent for pretty-printing\n"
+  ".selftest ?--init?     Run tests defined in the SELFTEST table\n"
   ".separator COL ?ROW?   Change the column separator and optionally the row\n"
   "                         separator for both the output mode and .import\n"
 #if defined(SQLITE_ENABLE_SESSION)

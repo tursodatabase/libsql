@@ -1,5 +1,5 @@
-C Make\s"PRAGMA\stemp.synchronous=N"\sa\sno-op\sto\sensure\sthat\sthe\sTEMP\sschema\nalways\shas\ssynchronous=OFF.\s\sThis\sfixes\san\sissue\sdiscovered\sby\sOSS-Fuzz.
-D 2017-03-15T14:04:03.559
+C Mention\sthe\s".selftest"\scommand\sin\sthe\s".help"\soutput\sof\sthe\sCLI.
+D 2017-03-15T14:20:34.151
 F Makefile.in 9605f4c49eace601d5c12c85dd6e037cc613a6d823e857614ba26b42f1285db0
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1faf9f06aadc9284c212dea7bbc7c0dea7e8337f0287c81001eff500912c790a
@@ -400,7 +400,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 3e518b962d932a997fae373366880fc028c75706
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 2496d0cc6368dabe7ad2e4c7f5ed3ad9aa3b4d11cd90f33fa1d1ef72493f43aa
-F src/shell.c 353f3cebb938099577494326e2853010512e0625
+F src/shell.c 77054c021069ec0b65d3d620aab031f97c59b4e42ac7c31544ea68933b581104
 F src/sqlite.h.in 4d0c08f8640c586564a7032b259c5f69bf397850
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
@@ -1564,7 +1564,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 84f2e3d5f611b35de16684956d842df6c93d858e8187f17eb27452758a752c57
-R 6e100ddef7b1acc3bf828911d35ed937
+P bcf6bb08d8b07d3c4567bcd367f8d4011ce8baad28c25d4e8870bdf347dd48bd
+R 3a48c86458783a20973121829bd123da
 U drh
-Z 66f9c74ac924ecc8772889a54467a4f5
+Z 148bc384ce73e7778d1614d5fa3b82a8
