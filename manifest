@@ -1,5 +1,5 @@
-C Add\sthe\s"Obtaining\sThe\sCode"\ssubsection\sin\sthe\stop-level\sREADME.md\sfile.\nNo\schanges\sto\scode.
-D 2017-03-15T19:11:29.617
+C Updates\sto\sREADME\sfiles\sunder\sthe\sext/\shierarchy.\s\sNo\schanges\sto\scode.
+D 2017-03-15T20:27:46.132
 F Makefile.in 9605f4c49eace601d5c12c85dd6e037cc613a6d823e857614ba26b42f1285db0
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1faf9f06aadc9284c212dea7bbc7c0dea7e8337f0287c81001eff500912c790a
@@ -36,7 +36,7 @@ F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html b5a3c07d33ecb8e019ce8f7660fe2dbbad9d7977
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
 F doc/vfs-shm.txt e101f27ea02a8387ce46a05be2b1a902a021d37a
-F ext/README.txt 913a7bd3f4837ab14d7e063304181787658b14e1
+F ext/README.md fd5f78013b0a2bc6f0067afb19e6ad040e89a10179b4f6f03eee58fac5f169bd w ext/README.txt
 F ext/async/README.txt e12275968f6fde133a80e04387d0e839b0c51f91
 F ext/async/sqlite3async.c 0f3070cc3f5ede78f2b9361fb3b629ce200d7d74
 F ext/async/sqlite3async.h f489b080af7e72aec0e1ee6f1d98ab6cf2e4dcef
@@ -206,6 +206,7 @@ F ext/fts5/tool/showfts5.tcl d54da0e067306663e2d5d523965ca487698e722c
 F ext/icu/README.txt d9fbbad0c2f647c3fdf715fc9fd64af53aedfc43
 F ext/icu/icu.c 84900472a088a3a172c6c079f58a1d3a1952c332
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
+F ext/misc/README.md 8e008c8d2b02e09096b31dfba033253ac27c6c06a18aa5826e299fa7601d90b2
 F ext/misc/amatch.c 211108e201105e4bb0c076527b8cfd34330fc234
 F ext/misc/carray.c 40c27641010a4dc67e3690bdb7c9d36ca58b3c2d
 F ext/misc/closure.c 0d2a038df8fbae7f19de42e7c7d71f2e4dc88704
@@ -1564,7 +1565,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 37f766dbad1f99ff86dd1b771bf443036e928e5b4d8abe55bbe4acf3362c7be2
-R 2482a0aa4c5093969a8d8859e4856dc3
+P b1b1aa8b69aa80c83aec3380565f0b4ec0b6a6e033537becee098872da362e9a
+R ed52dc66e6f47f5c1fac043513c8c66c
 U drh
-Z 10bbbdac78940d7fca566277c18da714
+Z 7b77c481896e5fef2abe165dd1f4d320
