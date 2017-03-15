@@ -1,5 +1,5 @@
-C Improved\sheader\scomment\son\sthe\sshathree.c\sextension.\s\sNo\schanges\sto\scode.
-D 2017-03-15T13:47:39.337
+C Make\s"PRAGMA\stemp.synchronous=N"\sa\sno-op\sto\sensure\sthat\sthe\sTEMP\sschema\nalways\shas\ssynchronous=OFF.\s\sThis\sfixes\san\sissue\sdiscovered\sby\sOSS-Fuzz.
+D 2017-03-15T14:04:03.559
 F Makefile.in 9605f4c49eace601d5c12c85dd6e037cc613a6d823e857614ba26b42f1285db0
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1faf9f06aadc9284c212dea7bbc7c0dea7e8337f0287c81001eff500912c790a
@@ -392,7 +392,7 @@ F src/parse.y 48b03113704ee8bd78ee6996d81de7fbee22e105
 F src/pcache.c 62835bed959e2914edd26afadfecce29ece0e870
 F src/pcache.h 2cedcd8407eb23017d92790b112186886e179490
 F src/pcache1.c e3967219b2a92b9edcb9324a4ba75009090d3953
-F src/pragma.c b7bf4f1dd9cdcdd3f72f0bdbce3502d69d0f48ba
+F src/pragma.c bfaa7e5cbfc8eacaa0f3611d5ec2dca1339d6d301f1e9b429b49ca460d794a60
 F src/pragma.h c9c763958fec92b04125571472c9500b351c5f7f
 F src/prepare.c b1140c3d0cf59bc85ace00ce363153041b424b7a
 F src/printf.c 67427bbee66d891fc6f6f5aada857e9cdb368c1c
@@ -1564,7 +1564,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1e4b9e7c9ee32b985c440bf3eb65bbdf28055566e66b6feba438143a3ad8dd07
-R 54add779c916bea2d103fd3d0493702d
+P 84f2e3d5f611b35de16684956d842df6c93d858e8187f17eb27452758a752c57
+R 6e100ddef7b1acc3bf828911d35ed937
 U drh
-Z 250a0bd95a8a1e19df805d19a289213d
+Z 66f9c74ac924ecc8772889a54467a4f5
