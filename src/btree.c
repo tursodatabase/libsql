@@ -2861,6 +2861,31 @@ int sqlite3BtreeGetAutoVacuum(Btree *p){
 #endif
 }
 
+/*
+** If the user has not set the safety-level for this database connection
+** using "PRAGMA synchronous", and if the safety-level is not already
+** set to the value passed to this function as the second parameter,
+** set it so.
+*/
+#if SQLITE_DEFAULT_SYNCHRONOUS!=SQLITE_DEFAULT_WAL_SYNCHRONOUS
+static void setDefaultSyncFlag(BtShared *pBt, u8 safety_level){
+  sqlite3 *db;
+  Db *pDb;
+  if( (db=pBt->db)!=0 && (pDb=db->aDb)!=0 ){
+    while( pDb->pBt==0 || pDb->pBt->pBt!=pBt ){ pDb++; }
+    if( pDb->bSyncSet==0 
+     && pDb->safety_level!=safety_level 
+     && pDb!=&db->aDb[1] 
+    ){
+      pDb->safety_level = safety_level;
+      sqlite3PagerSetFlags(pBt->pPager,
+          pDb->safety_level | (db->flags & PAGER_FLAGS_MASK));
+    }
+  }
+}
+#else
+# define setDefaultSyncFlag(pBt,safety_level)
+#endif
 
 /*
 ** Get a reference to pPage1 of the database file.  This will
@@ -2934,26 +2959,15 @@ static int lockBtree(BtShared *pBt){
       if( rc!=SQLITE_OK ){
         goto page1_init_failed;
       }else{
-#if SQLITE_DEFAULT_SYNCHRONOUS!=SQLITE_DEFAULT_WAL_SYNCHRONOUS
-        sqlite3 *db;
-        Db *pDb;
-        if( (db=pBt->db)!=0 && (pDb=db->aDb)!=0 ){
-          while( pDb->pBt==0 || pDb->pBt->pBt!=pBt ){ pDb++; }
-          if( pDb->bSyncSet==0
-           && pDb->safety_level==SQLITE_DEFAULT_SYNCHRONOUS+1
-          ){
-            pDb->safety_level = SQLITE_DEFAULT_WAL_SYNCHRONOUS+1;
-            sqlite3PagerSetFlags(pBt->pPager,
-               pDb->safety_level | (db->flags & PAGER_FLAGS_MASK));
-          }
-        }
-#endif
+        setDefaultSyncFlag(pBt, SQLITE_DEFAULT_WAL_SYNCHRONOUS+1);
         if( isOpen==0 ){
           releasePage(pPage1);
           return SQLITE_OK;
         }
       }
       rc = SQLITE_NOTADB;
+    }else{
+      setDefaultSyncFlag(pBt, SQLITE_DEFAULT_SYNCHRONOUS+1);
     }
 #endif
 
