@@ -204,9 +204,11 @@ static void instrFunc(
     if( typeHaystack==SQLITE_BLOB && typeNeedle==SQLITE_BLOB ){
       zHaystack = sqlite3_value_blob(argv[0]);
       zNeedle = sqlite3_value_blob(argv[1]);
-      assert( zNeedle!=0 );
-      assert( zHaystack!=0 || nHaystack==0 );
       isText = 0;
+      /* The following condition may be true if the arguments passed to this
+      ** function are values returned by zeroblob() or similar and an OOM
+      ** occurs while expanding the blob value.  */
+      if( zNeedle==0 || (nHaystack && zHaystack==0) ) return;
     }else{
       zHaystack = sqlite3_value_text(argv[0]);
       zNeedle = sqlite3_value_text(argv[1]);
