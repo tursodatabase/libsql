@@ -1,5 +1,5 @@
-C Simplified\sOOM\sdetection\sin\sthe\sinstr()\sSQL\sfunction.
-D 2017-03-16T14:28:52.423
+C If\sthe\suser\shas\snot\sset\sit\sexplicitly,\sset\sthe\s"PRAGMA\ssynchronous"\ssetting\sto\nSQLITE_DEFAULT_SYNCHRONOUS\swhen\sa\sdatabase\sconnection\schanges\sfrom\swal\sto\nrollback\sjournal\smode.
+D 2017-03-16T18:14:39.798
 F Makefile.in 9605f4c49eace601d5c12c85dd6e037cc613a6d823e857614ba26b42f1285db0
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1faf9f06aadc9284c212dea7bbc7c0dea7e8337f0287c81001eff500912c790a
@@ -343,13 +343,13 @@ F src/auth.c 930b376a9c56998557367e6f7f8aaeac82a2a792
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c e2bae0a03f73d119910fb35c9550987564065137
+F src/btree.c ace24955d01800acec28c79b038e1c291370f48a8955e8347cbd5339e39935de
 F src/btree.h bf64dfeeddeebdb775a5eba0098bbc00d073290d
 F src/btreeInt.h cd55d39d9916270837a88c12e701047cba0729b0
 F src/build.c 43f903c9082040ced2b421543cb0300c2973647d
 F src/callback.c 2e76147783386374bf01b227f752c81ec872d730
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
-F src/ctime.c a9984df73898c042a5cfc8f9d8e7723d02bc35c9
+F src/ctime.c 47d91a25ad8f199a71a5b1b7b169d6dd0d6e98c5719eca801568798743d1161c
 F src/date.c ee676e7694dfadbdd2fde1a258a71be8360ba5ae
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
 F src/delete.c 0d9d5549d42e79ce4d82ff1db1e6c81e36d2f67c
@@ -425,7 +425,7 @@ F src/test_backup.c bf5da90c9926df0a4b941f2d92825a01bbe090a0
 F src/test_bestindex.c d23f80d334c59662af69191854c76b8d3d0c8c96
 F src/test_blob.c f65ac717da2618691cf9dad094e6da0219dcd208
 F src/test_btree.c 8b2dc8b8848cf3a4db93f11578f075e82252a274
-F src/test_config.c 83179ea845479b5be9a651d014649e3f2722a1fe
+F src/test_config.c edcba290248dc18736dd814c9b95863c6762e0b35753048d8cbe5bf65f7abfbb
 F src/test_delete.c af7eab5702f853fb1c62a5f7665e2234cf1ae17b
 F src/test_demovfs.c a0c3bdd45ed044115c2c9f7779e56eafff18741e
 F src/test_devsym.c 4e58dec2602d8e139ca08659f62a62450587cb58
@@ -1165,6 +1165,7 @@ F test/subtype1.test 7fe09496352f97053af1437150751be2d0a0cae8
 F test/superlock.test ec94f0556b6488d97f71c79f9061ae08d9ab8f12
 F test/symlink.test c9ebe7330d228249e447038276bfc8a7b22f4849
 F test/sync.test 2f84bdbc2b2df1fcb0220575b4b9f8cea94b7529
+F test/sync2.test 5ecf56be4c187a191253a1ec0786fe2df975dbf3dc0f0140cdf5d3690c90651c
 F test/syscall.test f59ba4e25f7ba4a4c031026cc2ef8b6e4b4c639c
 F test/sysfault.test c9f2b0d8d677558f74de750c75e12a5454719d04
 F test/tabfunc01.test 699251cb99651415218a891384510a685c7ab012
@@ -1565,7 +1566,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e3d487162d1596ce125644f754ed9531ef4412f31f6837c3e31b7542b90602fe
-R 6130240157d02268edef1462c36002d9
-U drh
-Z 5ff31e1a870d72447c943f18c5a0c832
+P 6d85eb5736781b43aa674d9544c7523b849b4e634f371702f8764b33e22e1e9f
+R 549202c1b901efe7d78e47bd0d1adc7f
+U dan
+Z 959d77178fc349b2ba7589eca45f1aa2
