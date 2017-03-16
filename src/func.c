@@ -205,16 +205,12 @@ static void instrFunc(
       zHaystack = sqlite3_value_blob(argv[0]);
       zNeedle = sqlite3_value_blob(argv[1]);
       isText = 0;
-      /* The following condition may be true if the arguments passed to this
-      ** function are values returned by zeroblob() or similar and an OOM
-      ** occurs while expanding the blob value.  */
-      if( zNeedle==0 || (nHaystack && zHaystack==0) ) return;
     }else{
       zHaystack = sqlite3_value_text(argv[0]);
       zNeedle = sqlite3_value_text(argv[1]);
       isText = 1;
-      if( zHaystack==0 || zNeedle==0 ) return;
     }
+    if( zNeedle==0 || (nHaystack && zHaystack==0) ) return;
     while( nNeedle<=nHaystack && memcmp(zHaystack, zNeedle, nNeedle)!=0 ){
       N++;
       do{
