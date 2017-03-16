@@ -403,9 +403,7 @@ void sqlite3VdbeMemPrettyPrint(Mem *pMem, char *zBuf){
     }else{
       c = 's';
     }
-
-    sqlite3_snprintf(100, zCsr, "%c", c);
-    zCsr += sqlite3Strlen30(zCsr);
+    *(zCsr++) = c;
     sqlite3_snprintf(100, zCsr, "%d[", pMem->n);
     zCsr += sqlite3Strlen30(zCsr);
     for(i=0; i<16 && i<pMem->n; i++){
@@ -417,9 +415,7 @@ void sqlite3VdbeMemPrettyPrint(Mem *pMem, char *zBuf){
       if( z<32 || z>126 ) *zCsr++ = '.';
       else *zCsr++ = z;
     }
-
-    sqlite3_snprintf(100, zCsr, "]%s", encnames[pMem->enc]);
-    zCsr += sqlite3Strlen30(zCsr);
+    *(zCsr++) = ']';
     if( f & MEM_Zero ){
       sqlite3_snprintf(100, zCsr,"+%dz",pMem->u.nZero);
       zCsr += sqlite3Strlen30(zCsr);
