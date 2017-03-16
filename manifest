@@ -1,5 +1,5 @@
-C If\sthe\suser\shas\snot\sset\sit\sexplicitly,\sset\sthe\s"PRAGMA\ssynchronous"\ssetting\sto\nSQLITE_DEFAULT_SYNCHRONOUS\swhen\sa\sdatabase\sconnection\schanges\sfrom\swal\sto\nrollback\sjournal\smode.
-D 2017-03-16T18:14:39.798
+C Fix\sa\stypo\scausing\sthe\sbuild\sto\sfail\sif\sSQLITE_DEFAULT_SYNCHRONOUS==SQLITE_DEFAULT_WAL_SYNCHRONOUS.
+D 2017-03-16T18:54:42.504
 F Makefile.in 9605f4c49eace601d5c12c85dd6e037cc613a6d823e857614ba26b42f1285db0
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1faf9f06aadc9284c212dea7bbc7c0dea7e8337f0287c81001eff500912c790a
@@ -343,7 +343,7 @@ F src/auth.c 930b376a9c56998557367e6f7f8aaeac82a2a792
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c ace24955d01800acec28c79b038e1c291370f48a8955e8347cbd5339e39935de
+F src/btree.c ae0e0397e6ad58465bbf932239ee7539ca22f257c97b16c9d0960a1f5de743a3
 F src/btree.h bf64dfeeddeebdb775a5eba0098bbc00d073290d
 F src/btreeInt.h cd55d39d9916270837a88c12e701047cba0729b0
 F src/build.c 43f903c9082040ced2b421543cb0300c2973647d
@@ -1566,7 +1566,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6d85eb5736781b43aa674d9544c7523b849b4e634f371702f8764b33e22e1e9f
-R 549202c1b901efe7d78e47bd0d1adc7f
+P 78030c0f52aa39fb2ab32c75c56e6bcefe6382b8df28b1909e3c911e42dbeca3
+R ce97b08e421fd719736eea9dd091c75c
 U dan
-Z 959d77178fc349b2ba7589eca45f1aa2
+Z dc5f7c52928823522e8c3e89a1ed9d18

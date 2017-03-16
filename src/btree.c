@@ -2884,7 +2884,7 @@ static void setDefaultSyncFlag(BtShared *pBt, u8 safety_level){
   }
 }
 #else
-# define setDefaultSyncFlag(pBt)
+# define setDefaultSyncFlag(pBt,safety_level)
 #endif
 
 /*
