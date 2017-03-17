@@ -1,5 +1,5 @@
-C Fix\sthe\sMakefile.in\sso\sthat\sit\sbuilds\sthe\sossshell\stest\sprogram\scorrectly.
-D 2017-03-17T14:15:06.628
+C Add\sthe\s--show-errors\sand\s--show-max-delay\scommand-line\soptions\sto\sthe\nossshell\stest\sprogram.
+D 2017-03-17T14:59:40.532
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1faf9f06aadc9284c212dea7bbc7c0dea7e8337f0287c81001eff500912c790a
@@ -1009,8 +1009,8 @@ F test/orderby7.test 3d1383d52ade5b9eb3a173b3147fdd296f0202da
 F test/orderby8.test 23ef1a5d72bd3adcc2f65561c654295d1b8047bd
 F test/orderby9.test 87fb9548debcc2cd141c5299002dd94672fa76a3
 F test/oserror.test b32dc34f2363ef18532e3a0a7358e3e7e321974f
-F test/ossfuzz.c 6dc75478809cfbd4609409a87179ddc2ffaa092e8adb27c1982c5a944a7dd81f
-F test/ossshell.c d9f1a6f43e7bab45d6be857a5800f5d4a1861db3
+F test/ossfuzz.c 756ca4bede67ec22e3a700b1168bad767dc6fc69ede414c4ab87cfcfcceb4075
+F test/ossshell.c 296ab63067841bd1b1e97b46a0b2af48ee7f69d50d1a723008bee12dd7122622
 F test/ovfl.test 199c482696defceacee8c8e0e0ef36da62726b2f
 F test/pager1.test 841868017e9dd3cb459b8d78862091a7d9cff21d
 F test/pager2.test 67b8f40ae98112bcdba1f2b2d03ea83266418c71
@@ -1566,7 +1566,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f336fba7d7d41b91a5000d01dddf785821fa79ea31dbd8d1f769d55f7e871896
-R a0acb13b6691b2f29cdfa3d14a75a6b3
+P 36f5602ec9fb8e404c5250e18b1db877ac7bee643918b94afd51808134ea7900
+R 78dfbe98cc4f1c1387677674bd1f6a34
 U drh
-Z a464f97090f56a22de007bae0707b7f9
+Z 8d96b967fb72fb140eaa51fb70892dfa
