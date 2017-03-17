@@ -621,7 +621,8 @@ fuzzcheck$(TEXE):	$(FUZZCHECK_SRC) sqlite3.c sqlite3.h
 	$(LTLINK) -o $@ $(FUZZCHECK_OPT) $(FUZZCHECK_SRC) sqlite3.c $(TLIBS)
 
 ossshell$(TEXE):	$(TOP)/test/ossfuzz.c $(TOP)/test/ossshell.c sqlite3.c sqlite3.h
-	$(LTLINK) -o $@ $(FUZZCHECK_OPT) $(TOP)/test/ossshell.c sqlite3.c sqlite3.h $(TLIBS)
+	$(LTLINK) -o $@ $(FUZZCHECK_OPT) $(TOP)/test/ossshell.c \
+             $(TOP)/test/ossfuzz.c sqlite3.c $(TLIBS)
 
 dbfuzz$(TEXE):	$(TOP)/test/dbfuzz.c sqlite3.c sqlite3.h
 	$(LTLINK) -o $@ $(DBFUZZ_OPT) $(TOP)/test/dbfuzz.c sqlite3.c $(TLIBS)
