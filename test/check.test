@@ -481,6 +481,15 @@ do_catchsql_test 9.3 {
   UPDATE t1 SET c=a*2 WHERE a=1;
 } {1 {CHECK constraint failed: c-check}}
 
-
+# Integrity check on a VIEW with columns.
+#
+db close
+forcedelete test.db
+sqlite3 db test.db
+do_execsql_test 10.1 {
+  CREATE TABLE t1(x);
+  CREATE VIEW v1(y) AS SELECT x FROM t1;
+  PRAGMA integrity_check;
+} {ok}
 
 finish_test

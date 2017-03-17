@@ -1505,6 +1505,7 @@ void sqlite3Pragma(
         int iDataCur, iIdxCur;
         int r1 = -1;
 
+        if( pTab->tnum<1 ) continue;  /* Skip VIEWs or VIRTUAL TABLEs */
         if( pTab->pCheck==0
          && (pTab->tabFlags & TF_HasNotNull)==0
          && (pTab->pIndex==0 || isQuick)
