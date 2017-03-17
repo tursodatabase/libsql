@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\sthe\senhanced\sPRAGMA\sintegrity_check\swhere\sit\sverifies\nCHECK\sconstraints:\sDo\snot\sbe\sconfused\sby\sthe\sreuse\sof\sthe\sTable.pCheck\sfield\nby\sVIEWs\swith\snamed\scolumns.\s\sProblem\sdiscovered\sby\sOSS-Fuzz.
-D 2017-03-17T03:21:14.865
+C Fix\sa\sbuffer\soverread\sin\sdebugging\sroutine\ssqlite3VdbeMemPrettyPrint().\nProblem\sdiscovered\sby\sOSS-Fuzz.
+D 2017-03-17T13:59:06.018
 F Makefile.in 9605f4c49eace601d5c12c85dd6e037cc613a6d823e857614ba26b42f1285db0
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1faf9f06aadc9284c212dea7bbc7c0dea7e8337f0287c81001eff500912c790a
@@ -467,7 +467,7 @@ F src/update.c 456d4a4656f8a03c2abc88a51b19172197400e58
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c ca8440ede81e155d15cff7c101654f60b55a9ae6
 F src/vacuum.c 1fe4555cd8c9b263afb85b5b4ee3a4a4181ad569
-F src/vdbe.c 0e6e5e01aaa57f6d1784b7d6b6a352153e9d2c2ff395c67ca59aef54b8268cf6
+F src/vdbe.c 3b4221473438a047d85839129c5e71eab80d8d19487c71e0ac6802fb330ae834
 F src/vdbe.h 59998ffd71d7caa8886bc78dafaf8caeccd4c13c
 F src/vdbeInt.h 4e4b15b2e1330e1636e4e01974eab2b0b985092f
 F src/vdbeapi.c 5b08d82592bcff4470601fe78aaabebd50837860
@@ -1566,7 +1566,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5c604479fda06714500959e121c719d1b6c8e54d1658eb9f560a4af95b7c5829
-R 5046d28129e3bd81658af4ffa15e3f46
-U drh
-Z bf308f7cb4f4a256732c0018ceafc10b
+P 019dd3d5ba4a596c4ec3b5f0de8402c72196af0faca9138edbc0f1f4957cae60
+R 6b67c5433a6804d9ab2b5f747ce1957d
+U dan
+Z cc6693cd745156921be8476a07d72767
