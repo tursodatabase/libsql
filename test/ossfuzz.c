@@ -121,6 +121,9 @@ int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   sqlite3_progress_handler(cx.db, 10, progress_handler, (void*)&cx);
 #endif
 
+  /* Set a limit on the maximum size of a prepared statement */
+  sqlite3_limit(cx.db, SQLITE_LIMIT_VDBE_OP, 25000);
+
   /* Bit 1 of the selector enables foreign key constraints */
   sqlite3_db_config(cx.db, SQLITE_DBCONFIG_ENABLE_FKEY, uSelector&1, &rc);
   uSelector >>= 1;

@@ -1,5 +1,5 @@
-C Begin\senforcing\sthe\sSQLITE_LIMIT_VDBE_OP.\s\sThe\sdocumentation\swarned\sthat\sthis\nday\smight\scome.
-D 2017-03-17T22:50:16.704
+C Set\sa\sreasonable\slimit\son\sthe\snumber\sof\sopcodes\sin\sa\sprepared\sstatement\nfor\sossfuzz.c.\s\sThis\sshould\sprevent\stimeouts\sin\sOSS-Fuzz\swhen\sit\sgenerates\ntotally\sunreasonable\squeries.
+D 2017-03-17T22:51:28.665
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1faf9f06aadc9284c212dea7bbc7c0dea7e8337f0287c81001eff500912c790a
@@ -1009,7 +1009,7 @@ F test/orderby7.test 3d1383d52ade5b9eb3a173b3147fdd296f0202da
 F test/orderby8.test 23ef1a5d72bd3adcc2f65561c654295d1b8047bd
 F test/orderby9.test 87fb9548debcc2cd141c5299002dd94672fa76a3
 F test/oserror.test b32dc34f2363ef18532e3a0a7358e3e7e321974f
-F test/ossfuzz.c 756ca4bede67ec22e3a700b1168bad767dc6fc69ede414c4ab87cfcfcceb4075
+F test/ossfuzz.c 8c4d62e156352ecb97eb868fcff20d828a279af67a1c1310779f63464d6f009f
 F test/ossshell.c 296ab63067841bd1b1e97b46a0b2af48ee7f69d50d1a723008bee12dd7122622
 F test/ovfl.test 199c482696defceacee8c8e0e0ef36da62726b2f
 F test/pager1.test 841868017e9dd3cb459b8d78862091a7d9cff21d
@@ -1566,7 +1566,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 626bdca98e0cd78ae873d97e75bb7d544ca18759c9f1e67f4adf03daca7fe5bf
-R 577cbf1218e05c6f890fd56d3bd8c3f1
+P ef5914617088cbf89bfae88f63ea959a07f02dff387ddc2b43948ad99c6a97b8
+R 3a60b2fbebe94ced9367e16b751bb1ee
 U drh
-Z db7430243d899e77772ca775a4ab8f59
+Z bc390a309335be50f7a4bf79ab7f90df
