@@ -1,5 +1,5 @@
-C Add\sthe\s--show-errors\sand\s--show-max-delay\scommand-line\soptions\sto\sthe\nossshell\stest\sprogram.
-D 2017-03-17T14:59:40.532
+C Begin\senforcing\sthe\sSQLITE_LIMIT_VDBE_OP.\s\sThe\sdocumentation\swarned\sthat\sthis\nday\smight\scome.
+D 2017-03-17T22:50:16.704
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1faf9f06aadc9284c212dea7bbc7c0dea7e8337f0287c81001eff500912c790a
@@ -402,11 +402,11 @@ F src/resolve.c 3e518b962d932a997fae373366880fc028c75706
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 2496d0cc6368dabe7ad2e4c7f5ed3ad9aa3b4d11cd90f33fa1d1ef72493f43aa
 F src/shell.c 77054c021069ec0b65d3d620aab031f97c59b4e42ac7c31544ea68933b581104
-F src/sqlite.h.in 4d0c08f8640c586564a7032b259c5f69bf397850
+F src/sqlite.h.in 5f72af637ba0f35c2b25f8f97ea63bac6f4ea133eb904ee0b6d61450401507d3
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
 F src/sqliteInt.h df268ce1d04df042cf43b557d2309eb0b71e86c4
-F src/sqliteLimit.h c0373387c287c8d0932510b5547ecde31b5da247
+F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
 F src/tclsqlite.c 6c2151b6d8d98e183a04466d40df8889c0574d79
@@ -471,7 +471,7 @@ F src/vdbe.c 3b4221473438a047d85839129c5e71eab80d8d19487c71e0ac6802fb330ae834
 F src/vdbe.h 59998ffd71d7caa8886bc78dafaf8caeccd4c13c
 F src/vdbeInt.h 4e4b15b2e1330e1636e4e01974eab2b0b985092f
 F src/vdbeapi.c 5b08d82592bcff4470601fe78aaabebd50837860
-F src/vdbeaux.c 57361f2e761d92a254638bdbfc03fc68ae6aebc6
+F src/vdbeaux.c ecd0468611925d218e1eb4b3f538907904b136f0e15e333291a232b521bfcef1
 F src/vdbeblob.c 359891617358deefc85bef7bcf787fa6b77facb9
 F src/vdbemem.c 3b5a9a5b375458d3e12a50ae1aaa41eeec2175fd
 F src/vdbesort.c eda25cb2d1727efca6f7862fea32b8aa33c0face
@@ -1566,7 +1566,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 36f5602ec9fb8e404c5250e18b1db877ac7bee643918b94afd51808134ea7900
-R 78dfbe98cc4f1c1387677674bd1f6a34
+P 626bdca98e0cd78ae873d97e75bb7d544ca18759c9f1e67f4adf03daca7fe5bf
+R 577cbf1218e05c6f890fd56d3bd8c3f1
 U drh
-Z 8d96b967fb72fb140eaa51fb70892dfa
+Z db7430243d899e77772ca775a4ab8f59

@@ -3424,9 +3424,10 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 **
 ** [[SQLITE_LIMIT_VDBE_OP]] ^(<dt>SQLITE_LIMIT_VDBE_OP</dt>
 ** <dd>The maximum number of instructions in a virtual machine program
-** used to implement an SQL statement.  This limit is not currently
-** enforced, though that might be added in some future release of
-** SQLite.</dd>)^
+** used to implement an SQL statement.  If [sqlite3_prepare_v2()] or
+** the equivalent tries to allocate space for more than this many opcodes
+** in a single prepared statement, an SQLITE_NOMEM error is returned.
+** A value of 0 means "unlimited".</dd>)^
 **
 ** [[SQLITE_LIMIT_FUNCTION_ARG]] ^(<dt>SQLITE_LIMIT_FUNCTION_ARG</dt>
 ** <dd>The maximum number of arguments on a function.</dd>)^
@@ -3463,6 +3464,7 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 #define SQLITE_LIMIT_VARIABLE_NUMBER           9
 #define SQLITE_LIMIT_TRIGGER_DEPTH            10
 #define SQLITE_LIMIT_WORKER_THREADS           11
+
 
 /*
 ** CAPI3REF: Compiling An SQL Statement
