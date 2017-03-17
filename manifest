@@ -1,5 +1,5 @@
-C Set\sa\sreasonable\slimit\son\sthe\snumber\sof\sopcodes\sin\sa\sprepared\sstatement\nfor\sossfuzz.c.\s\sThis\sshould\sprevent\stimeouts\sin\sOSS-Fuzz\swhen\sit\sgenerates\ntotally\sunreasonable\squeries.
-D 2017-03-17T22:51:28.665
+C Fix\san\serror\sin\sthe\snewly\srevised\sdocumentation\sfor\sSQLITE_LIMIT_VDBE_OP.\nNo\schanges\sto\scode.
+D 2017-03-17T23:08:11.772
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1faf9f06aadc9284c212dea7bbc7c0dea7e8337f0287c81001eff500912c790a
@@ -402,7 +402,7 @@ F src/resolve.c 3e518b962d932a997fae373366880fc028c75706
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 2496d0cc6368dabe7ad2e4c7f5ed3ad9aa3b4d11cd90f33fa1d1ef72493f43aa
 F src/shell.c 77054c021069ec0b65d3d620aab031f97c59b4e42ac7c31544ea68933b581104
-F src/sqlite.h.in 5f72af637ba0f35c2b25f8f97ea63bac6f4ea133eb904ee0b6d61450401507d3
+F src/sqlite.h.in e992605a306ee4f58d2ecbbc665f71c0404a3c815fe90dd8e0c0e8f7b9b11166
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
 F src/sqliteInt.h df268ce1d04df042cf43b557d2309eb0b71e86c4
@@ -1566,7 +1566,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ef5914617088cbf89bfae88f63ea959a07f02dff387ddc2b43948ad99c6a97b8
-R 3a60b2fbebe94ced9367e16b751bb1ee
+P f74899ed2c78019abb406432a74dcd42a0ff8d9add005f8544dc4a8905f232eb
+R 2c6af10e620c43369539bc210339bdfc
 U drh
-Z bc390a309335be50f7a4bf79ab7f90df
+Z 53bb8f51c26aa8f2582ebee07b281f74

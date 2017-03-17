@@ -3426,8 +3426,7 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 ** <dd>The maximum number of instructions in a virtual machine program
 ** used to implement an SQL statement.  If [sqlite3_prepare_v2()] or
 ** the equivalent tries to allocate space for more than this many opcodes
-** in a single prepared statement, an SQLITE_NOMEM error is returned.
-** A value of 0 means "unlimited".</dd>)^
+** in a single prepared statement, an SQLITE_NOMEM error is returned.</dd>)^
 **
 ** [[SQLITE_LIMIT_FUNCTION_ARG]] ^(<dt>SQLITE_LIMIT_FUNCTION_ARG</dt>
 ** <dd>The maximum number of arguments on a function.</dd>)^
