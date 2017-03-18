@@ -57,7 +57,9 @@
 */
 #include <sys/sysctl.h>
 #include <malloc/malloc.h>
+#ifdef SQLITE_MIGHT_BE_SINGLE_CORE
 #include <libkern/OSAtomic.h>
+#endif /* SQLITE_MIGHT_BE_SINGLE_CORE */
 static malloc_zone_t* _sqliteZone_;
 #define SQLITE_MALLOC(x) malloc_zone_malloc(_sqliteZone_, (x))
 #define SQLITE_FREE(x) malloc_zone_free(_sqliteZone_, (x));
@@ -236,33 +238,46 @@ static int sqlite3MemRoundup(int n){
 */
 static int sqlite3MemInit(void *NotUsed){
 #if defined(__APPLE__) && !defined(SQLITE_WITHOUT_ZONEMALLOC)
-  int cpuCount;
-  size_t len;
   if( _sqliteZone_ ){
     return SQLITE_OK;
   }
-  len = sizeof(cpuCount);
-  /* One usually wants to use hw.acctivecpu for MT decisions, but not here */
-  sysctlbyname("hw.ncpu", &cpuCount, &len, NULL, 0);
-  if( cpuCount>1 ){
-    /* defer MT decisions to system malloc */
-    _sqliteZone_ = malloc_default_zone();
-  }else{
-    /* only 1 core, use our own zone to contention over global locks, 
-    ** e.g. we have our own dedicated locks */
-    bool success;
-    malloc_zone_t* newzone = malloc_create_zone(4096, 0);
-    malloc_set_zone_name(newzone, "Sqlite_Heap");
-    do{
-      success = OSAtomicCompareAndSwapPtrBarrier(NULL, newzone, 
-                                 (void * volatile *)&_sqliteZone_);
-    }while(!_sqliteZone_);
-    if( !success ){
-      /* somebody registered a zone first */
-      malloc_destroy_zone(newzone);
+#ifndef SQLITE_MIGHT_BE_SINGLE_CORE
+  /* If not compiled with the SQLITE_MIGHT_BE_SINGLE_CORE flag, assume
+  ** that multiple cores are always available.  This is the default case.
+  */
+  _sqliteZone_ = malloc_default_zone();
+#else
+  /* With the SQLITE_MIGHT_BE_SINGLE_CORE compile-time option, check the
+  ** number of cores.  Different malloc() strategies are used for single-core and
+  ** multi-core machines.
+  */
+  {
+    int cpuCount;
+    size_t len;
+    len = sizeof(cpuCount);
+    /* One usually wants to use hw.acctivecpu for MT decisions, but not here */
+    sysctlbyname("hw.ncpu", &cpuCount, &len, NULL, 0);
+    if( cpuCount>1 ){
+      /* defer MT decisions to system malloc */
+      _sqliteZone_ = malloc_default_zone();
+    }else{
+      /* only 1 core, use our own zone to contention over global locks, 
+      ** e.g. we have our own dedicated locks */
+      bool success;
+      malloc_zone_t* newzone = malloc_create_zone(4096, 0);
+      malloc_set_zone_name(newzone, "Sqlite_Heap");
+      do{
+        success = OSAtomicCompareAndSwapPtrBarrier(NULL, newzone, 
+                                   (void * volatile *)&_sqliteZone_);
+      }while(!_sqliteZone_);
+      if( !success ){
+        /* somebody registered a zone first */
+        malloc_destroy_zone(newzone);
+      }
     }
   }
-#endif
+#endif /* SQLITE_MIGHT_BE_SINGLE_CORE */
+#endif /*  defined(__APPLE__) && !defined(SQLITE_WITHOUT_ZONEMALLOC) */
   UNUSED_PARAMETER(NotUsed);
   return SQLITE_OK;
 }
