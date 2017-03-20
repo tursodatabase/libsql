@@ -484,6 +484,7 @@ do_catchsql_test 9.3 {
 # Integrity check on a VIEW with columns.
 #
 db close
+db2 close
 forcedelete test.db
 sqlite3 db test.db
 do_execsql_test 10.1 {

@@ -1,5 +1,5 @@
-C Documentation\sfix:\s\sSQLITE_SOURCE_ID\sis\sa\snow\sa\sSHA3-256\shash.
-D 2017-03-20T13:03:39.888
+C Fix\sthe\scheck.test\sscript\sso\sthat\sit\sworks\son\sWindows.
+D 2017-03-20T14:44:07.253
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1faf9f06aadc9284c212dea7bbc7c0dea7e8337f0287c81001eff500912c790a
@@ -582,7 +582,7 @@ F test/capi3d.test 485048dc5cd07bc68011e4917ad035ad6047ab82
 F test/capi3e.test 3d49c01ef2a1a55f41d73cba2b23b5059ec460fe
 F test/cast.test 4c275cbdc8202d6f9c54a3596701719868ac7dc3
 F test/cffault.test 9d6b20606afe712374952eec4f8fd74b1a8097ef
-F test/check.test fb823c1aee9d5187b4a474f1728bb65f2a77303255e294e250a2328ab7e72832
+F test/check.test 33a698e8c63613449d85d624a38ef669bf20331daabebe3891c9405dd6df463a
 F test/close.test 83947daf3b700631f90f4850ddaab455be4af73d
 F test/closure01.test b1703ba40639cfc9b295cf478d70739415eec6a4
 F test/coalesce.test cee0dccb9fbd2d494b77234bccf9dc6c6786eb91
@@ -1566,7 +1566,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4e6a03d9e12b120d15946b025f97a97697cb8e8af543c238ffda220c9e3f28f4
-R 3e310c01c37c6ac62b74a767e914605e
+P 2aa22509e7c8a1f09b16e4544c95d0b77503daed1f83106ccc18dee8bd9487a4
+R 2a38f53db76a379174ef41cee348ccde
 U drh
-Z 061c837491d90260f4d8f777c55b50b5
+Z 993304dc90b274b690e8ef820df2c963
