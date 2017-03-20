@@ -400,12 +400,13 @@ void sqlite3VXPrintf(
           nOut = etBUFSIZE;
           zOut = buf;
         }else{
-          nOut = precision + 10 + precision/3;
-          zOut = zExtra = sqlite3Malloc( nOut );
+          u64 n = (u64)precision + 10 + precision/3;
+          zOut = zExtra = sqlite3Malloc( n );
           if( zOut==0 ){
             setStrAccumError(pAccum, STRACCUM_NOMEM);
             return;
           }
+          nOut = (int)n;
         }
         bufpt = &zOut[nOut-1];
         if( xtype==etORDINAL ){
