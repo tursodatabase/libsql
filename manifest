@@ -1,5 +1,5 @@
-C Avoid\sa\stechnically\sundefined\sright-shift\sof\sa\ssigned\svalue\sin\srtree.c.
-D 2017-03-20T19:26:27.669
+C Avoid\spassing\sNULL\sas\sthe\ssecond\sargument\sto\smemcpy()\sin\sfts3.
+D 2017-03-20T19:35:30.725
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1faf9f06aadc9284c212dea7bbc7c0dea7e8337f0287c81001eff500912c790a
@@ -70,7 +70,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c df964dbcc7bb97b8871c53866eb6c4e9c05c0d8af42038fa6439fb411260dd2e
+F ext/fts3/fts3.c f0d5de1bc2155ba7cd7c0c1a751779a3a8857fa34d5c12f3b233a23fa2e79ea2
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h eb2502000148e80913b965db3e59f29251266d0a
 F ext/fts3/fts3_aux.c 9edc3655fcb287f0467d0a4b886a01c6185fe9f1
@@ -1566,7 +1566,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 16a8e84fa7f67a467f824bdd7f72cbd6a6e95dab8cc7aa1e0e751720b98f3e31
-R 3866887b2e2a6895d2c139049fd577ac
+P a144875fe44ff3a30bab299d50b7dbec2ee21f8c73e692a71ee1f7c54b5f0c76
+R bd3c42588251ebb6d9905386e3af9ca1
 U dan
-Z 940954dc69a4e0a1139a0110a41a8583
+Z a06ad4d721634b829ae52c87102c1626
