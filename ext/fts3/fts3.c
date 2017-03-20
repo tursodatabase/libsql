@@ -349,8 +349,9 @@ int sqlite3Fts3PutVarint(char *p, sqlite_int64 v){
 ** Return the number of bytes read, or 0 on error.
 ** The value is stored in *v.
 */
-int sqlite3Fts3GetVarint(const char *p, sqlite_int64 *v){
-  const char *pStart = p;
+int sqlite3Fts3GetVarint(const char *pBuf, sqlite_int64 *v){
+  const unsigned char *p = (const unsigned char*)pBuf;
+  const unsigned char *pStart = p;
   u32 a;
   u64 b;
   int shift;

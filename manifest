@@ -1,5 +1,5 @@
-C Avoid\sthe\spossibility\sof\ssigned\sinteger\soverflow\swith\soversized\sprecisions\nin\s%d\sconversions\sin\sthe\sprintf()\simplementation.
-D 2017-03-20T16:34:18.983
+C Fix\ssome\sproblems\sin\sfts3\sfound\sby\saddress-sanitizer.
+D 2017-03-20T18:53:32.346
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1faf9f06aadc9284c212dea7bbc7c0dea7e8337f0287c81001eff500912c790a
@@ -70,7 +70,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 95c7041ea75d82d2d9a4cd058904ba889751f5b8
+F ext/fts3/fts3.c df964dbcc7bb97b8871c53866eb6c4e9c05c0d8af42038fa6439fb411260dd2e
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h eb2502000148e80913b965db3e59f29251266d0a
 F ext/fts3/fts3_aux.c 9edc3655fcb287f0467d0a4b886a01c6185fe9f1
@@ -86,15 +86,15 @@ F ext/fts3/fts3_tokenize_vtab.c a27593ab19657166f6fa5ec073b678cc29a75860
 F ext/fts3/fts3_tokenizer.c a22bf311a71f3efa9d7012d8cc48fc9b0f3dace7
 F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
-F ext/fts3/fts3_unicode.c a93f5edc0aff44ef8b06d7cb55b52026541ca145
-F ext/fts3/fts3_unicode2.c c3d01968d497bd7001e7dc774ba75b372738c057
-F ext/fts3/fts3_write.c c3863f23b6b4623c8b9d5cf31c12ce4469f78ca9
+F ext/fts3/fts3_unicode.c 525a3bd9a7564603c5c061b7de55403a565307758a94600e8a2f6b00d1c40d9d
+F ext/fts3/fts3_unicode2.c cc04fc672bfd42b1e650398cb0bf71f64f9aae032cfe75bbcfe75b9cf966029c
+F ext/fts3/fts3_write.c a51d48d646974ee2fb4b17fcd5da0416a5759a32dcacc2cce2ba00d5a767848e
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3view.c 202801a2056995b763864d60c2dee744d46f1677
 F ext/fts3/unicode/CaseFolding.txt 8c678ca52ecc95e16bc7afc2dbf6fc9ffa05db8c
 F ext/fts3/unicode/UnicodeData.txt cd07314edb62d49fde34debdaf92fa2aa69011e7
-F ext/fts3/unicode/mkunicode.tcl 2debed3f582d77b3fdd0b8830880250021571fd8
+F ext/fts3/unicode/mkunicode.tcl ab0543a3b2399092ea2dd75df1bef333405b0d7f6b8c4951a0fbb60e780cb69f
 F ext/fts3/unicode/parseunicode.tcl da577d1384810fb4e2b209bf3313074353193e95
 F ext/fts5/extract_api_docs.tcl a36e54ec777172ddd3f9a88daf593b00848368e0
 F ext/fts5/fts5.h 62f3e33ceeb9a428db139f9c012186b371da1cc7
@@ -1566,7 +1566,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 285005a9bcb210bb2a9aa9fed6a19d4b78641a6e7622d469bd0d2a365b2c0735
-R d28630b090e29d249202016ad6a6d827
-U drh
-Z dd88d1a97157edc79245fb3d73eca0b6
+P ef3a7c877a7549b351aafd983cfa96c863eb2641b6218bdd5cb563f659f879d8
+R 646761e50bb7679c40f23d2ddea8c902
+U dan
+Z f4376c790f10e78888f80aca2d0f09f6
