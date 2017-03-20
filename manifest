@@ -1,5 +1,5 @@
-C Ensure\sthat\sa\s"--"\sprefix\sis\sadded\sto\ssqlite3_trace_v2()\soutput\sfor\snested\nSQL\sstatements.
-D 2017-03-20T15:29:28.021
+C Do\snot\srun\ssync2.test\sas\spart\sof\sthe\s"journaltest"\spermutation,\sas\sit\suses\n"PRAGMA\ssynchronous\s=\soff".
+D 2017-03-20T16:06:48.281
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1faf9f06aadc9284c212dea7bbc7c0dea7e8337f0287c81001eff500912c790a
@@ -435,7 +435,7 @@ F src/test_hexio.c 1d4469ca61ab202a1fcec6543f584d2407205e8d
 F src/test_init.c 4413c211a94b62157ca4c145b3f27c497f03c664
 F src/test_intarray.c 988fc61cb0ff539f4172c0d95f15287c92516f64
 F src/test_intarray.h f3b7672f5d1056eac563c0d6ea8480a660b1475c
-F src/test_journal.c d3b83f2bcb7792c709e57abddc456a2b1818643a
+F src/test_journal.c 619f2aa10e0d7a5f87c0f06825bc61dfce1c6b9c7f3ad990fb13de6c3b8874a3
 F src/test_loadext.c 337056bae59f80b9eb00ba82088b39d0f4fe6dfd
 F src/test_malloc.c c05f6c40bd6c8bfe5f1718212f81fd5687f91766
 F src/test_multiplex.c e054459f7633f3ff8ce1245da724f9a8be189e4e
@@ -1165,7 +1165,7 @@ F test/subtype1.test 7fe09496352f97053af1437150751be2d0a0cae8
 F test/superlock.test ec94f0556b6488d97f71c79f9061ae08d9ab8f12
 F test/symlink.test c9ebe7330d228249e447038276bfc8a7b22f4849
 F test/sync.test 2f84bdbc2b2df1fcb0220575b4b9f8cea94b7529
-F test/sync2.test c59ffd63e69854bf41ac407a9762ab5c128894b754253bf94db8a85d15de5444
+F test/sync2.test b028aa9ca0bb4793e86140f777c6b88dcc6741f7a918381662e53bc5f2b97c74
 F test/syscall.test f59ba4e25f7ba4a4c031026cc2ef8b6e4b4c639c
 F test/sysfault.test c9f2b0d8d677558f74de750c75e12a5454719d04
 F test/tabfunc01.test 699251cb99651415218a891384510a685c7ab012
@@ -1566,7 +1566,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ecb9321e18dd72ea18d197c61c4d69500e9c4282c0eac67822cb40b2710a2815
-R 5262e66ba51f0f0c41b35ecdd4289055
-U drh
-Z 6393fe64153a32f9de418b09796f1e18
+P 673a7b67c4828acaea3baebea500ef1f8ae763588b0d9c9f2ad6ed5ceb3cfee2
+R 547057b8e0709a92c08d29e340a54617
+U dan
+Z c38b0bcff9e9a77e6d2ca931cd7486d0
