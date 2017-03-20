@@ -1,5 +1,5 @@
-C Only\sdo\sthe\sspecialized\sMacOS\ssingle-core\szone_malloc\sinitialization\sif\ncompiled\swith\sthe\sSQLITE_MIGHT_BE_SINGLE_CORE\sflag.\s\sThis\savoids\sa\s(harmless)\nwarning\sabout\sOSAtomicCompareAndSwapPtrBarrier()\sbeing\sdeprecated.
-D 2017-03-18T13:59:46.558
+C Documentation\sfix:\s\sSQLITE_SOURCE_ID\sis\sa\snow\sa\sSHA3-256\shash.
+D 2017-03-20T13:03:39.888
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1faf9f06aadc9284c212dea7bbc7c0dea7e8337f0287c81001eff500912c790a
@@ -402,7 +402,7 @@ F src/resolve.c 3e518b962d932a997fae373366880fc028c75706
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 2496d0cc6368dabe7ad2e4c7f5ed3ad9aa3b4d11cd90f33fa1d1ef72493f43aa
 F src/shell.c 77054c021069ec0b65d3d620aab031f97c59b4e42ac7c31544ea68933b581104
-F src/sqlite.h.in e992605a306ee4f58d2ecbbc665f71c0404a3c815fe90dd8e0c0e8f7b9b11166
+F src/sqlite.h.in 723107d97f2345a7c103632169dc61366121c4ab65d75a7d83c6dc0e5bbe5ca4
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 8648034aa702469afb553231677306cc6492a1ae
 F src/sqliteInt.h df268ce1d04df042cf43b557d2309eb0b71e86c4
@@ -1566,7 +1566,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f4cf8635e6fec6f04075cc067aaa71abc4f71739068e0ad2c44609dcb8691009
-R 07e88bce7a34b04a1e3a36ad2d4b6f58
+P 4e6a03d9e12b120d15946b025f97a97697cb8e8af543c238ffda220c9e3f28f4
+R 3e310c01c37c6ac62b74a767e914605e
 U drh
-Z 906adb059f738e34206863c58e96feb3
+Z 061c837491d90260f4d8f777c55b50b5

@@ -114,8 +114,8 @@ extern "C" {
 ** system</a>.  ^The SQLITE_SOURCE_ID macro evaluates to
 ** a string which identifies a particular check-in of SQLite
 ** within its configuration management system.  ^The SQLITE_SOURCE_ID
-** string contains the date and time of the check-in (UTC) and an SHA1
-** hash of the entire source tree.
+** string contains the date and time of the check-in (UTC) and a SHA1
+** or SHA3-256 hash of the entire source tree.
 **
 ** See also: [sqlite3_libversion()],
 ** [sqlite3_libversion_number()], [sqlite3_sourceid()],
