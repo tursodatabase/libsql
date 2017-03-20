@@ -1,5 +1,5 @@
-C Only\srun\ssync2.test\son\sunix,\sas\sit\sdepends\son\sinstrumentation\sin\sos_unix.c.
-D 2017-03-20T15:11:40.222
+C Ensure\sthat\sa\s"--"\sprefix\sis\sadded\sto\ssqlite3_trace_v2()\soutput\sfor\snested\nSQL\sstatements.
+D 2017-03-20T15:29:28.021
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1faf9f06aadc9284c212dea7bbc7c0dea7e8337f0287c81001eff500912c790a
@@ -467,7 +467,7 @@ F src/update.c 456d4a4656f8a03c2abc88a51b19172197400e58
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c ca8440ede81e155d15cff7c101654f60b55a9ae6
 F src/vacuum.c 1fe4555cd8c9b263afb85b5b4ee3a4a4181ad569
-F src/vdbe.c 3b4221473438a047d85839129c5e71eab80d8d19487c71e0ac6802fb330ae834
+F src/vdbe.c 89a12451405a17c6e8d39b5826acb6999f1283e4e43d2e83a7ac7c9a7094a86a
 F src/vdbe.h 59998ffd71d7caa8886bc78dafaf8caeccd4c13c
 F src/vdbeInt.h 4e4b15b2e1330e1636e4e01974eab2b0b985092f
 F src/vdbeapi.c 5b08d82592bcff4470601fe78aaabebd50837860
@@ -1566,7 +1566,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8822eb5d790bf8d4302c3f2dc05ab672193b309fb11771c4b3eea8a77f37e299
-R 9d22d8b55292860d95cad32e3b689bec
-U dan
-Z 532b84081e4fb29bc1e9b05f7d75c0ea
+P ecb9321e18dd72ea18d197c61c4d69500e9c4282c0eac67822cb40b2710a2815
+R 5262e66ba51f0f0c41b35ecdd4289055
+U drh
+Z 6393fe64153a32f9de418b09796f1e18

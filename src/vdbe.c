@@ -6950,7 +6950,11 @@ case OP_Init: {          /* jump */
       sqlite3_free(z);
     }else
 #endif
-    {
+    if( db->nVdbeExec>1 ){
+      char *z = sqlite3MPrintf(db, "-- %s", zTrace);
+      (void)db->xTrace(SQLITE_TRACE_STMT, db->pTraceArg, p, z);
+      sqlite3DbFree(db, z);
+    }else{
       (void)db->xTrace(SQLITE_TRACE_STMT, db->pTraceArg, p, zTrace);
     }
   }
