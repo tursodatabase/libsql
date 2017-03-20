@@ -972,7 +972,7 @@ int main(int argc, char **argv){
   /* Process each source database separately */
   for(iSrcDb=0; iSrcDb<nSrcDb; iSrcDb++){
     rc = sqlite3_open_v2(azSrcDb[iSrcDb], &db,
-                         SQLITE_OPEN_READONLY, pDfltVfs->zName);
+                         SQLITE_OPEN_READWRITE, pDfltVfs->zName);
     if( rc ){
       fatalError("cannot open source database %s - %s",
       azSrcDb[iSrcDb], sqlite3_errmsg(db));
@@ -1047,6 +1047,8 @@ int main(int argc, char **argv){
       sqlite3_close(db);
       return 0;
     }
+    rc = sqlite3_exec(db, "PRAGMA query_only=1;", 0, 0, 0);
+    if( rc ) fatalError("cannot set database to query-only");
     if( zExpDb!=0 || zExpSql!=0 ){
       sqlite3_create_function(db, "writefile", 2, SQLITE_UTF8, 0,
                               writefileFunc, 0, 0);

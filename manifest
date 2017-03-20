@@ -1,5 +1,5 @@
-C Avoid\spassing\sNULL\sas\sthe\ssecond\sargument\sto\smemcpy()\sin\sfts3.
-D 2017-03-20T19:35:30.725
+C Fix\sthe\sfuzzcheck\sprogram\sso\sthat\sit\scan\screate\snew\sdatabases\sagain.
+D 2017-03-20T20:42:21.876
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1faf9f06aadc9284c212dea7bbc7c0dea7e8337f0287c81001eff500912c790a
@@ -833,7 +833,7 @@ F test/fuzz2.test 76dc35b32b6d6f965259508508abce75a6c4d7e1
 F test/fuzz3.test b47377143f0c80f91ed29d722861077ff34415d5
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
 F test/fuzz_malloc.test 328f70aaca63adf29b4c6f06505ed0cf57ca7c26
-F test/fuzzcheck.c a87e6067a8d19844bade916841cb76150ecf24a2
+F test/fuzzcheck.c 0cfce51bd5b0b7ab5d2d2ecaf9a82d5962f90852348be6bf5f05a1fb2aaf40e0
 F test/fuzzdata1.db 7ee3227bad0e7ccdeb08a9e6822916777073c664
 F test/fuzzdata2.db f03a420d3b822cc82e4f894ca957618fbe9c4973
 F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
@@ -1566,7 +1566,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a144875fe44ff3a30bab299d50b7dbec2ee21f8c73e692a71ee1f7c54b5f0c76
-R bd3c42588251ebb6d9905386e3af9ca1
-U dan
-Z a06ad4d721634b829ae52c87102c1626
+P 49b93d972de9649abfd6235b65dda1c9d468956671e50704afde6181ffa56dea
+R 26d368e43476d2b80e7af8c6d59964fd
+U drh
+Z 95628c590b2b14daadfe6003e34f6d94
