@@ -26,6 +26,10 @@ ifcapable !pager_pragmas||!attach {
   finish_test
   return
 }
+if {$::tcl_platform(platform)!="unix"} {
+  finish_test
+  return
+}
 
 proc execsql_sync {sql} {
   set s $::sqlite_sync_count

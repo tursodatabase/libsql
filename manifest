@@ -1,5 +1,5 @@
-C Fix\sthe\scheck.test\sscript\sso\sthat\sit\sworks\son\sWindows.
-D 2017-03-20T14:44:07.253
+C Only\srun\ssync2.test\son\sunix,\sas\sit\sdepends\son\sinstrumentation\sin\sos_unix.c.
+D 2017-03-20T15:11:40.222
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1faf9f06aadc9284c212dea7bbc7c0dea7e8337f0287c81001eff500912c790a
@@ -1165,7 +1165,7 @@ F test/subtype1.test 7fe09496352f97053af1437150751be2d0a0cae8
 F test/superlock.test ec94f0556b6488d97f71c79f9061ae08d9ab8f12
 F test/symlink.test c9ebe7330d228249e447038276bfc8a7b22f4849
 F test/sync.test 2f84bdbc2b2df1fcb0220575b4b9f8cea94b7529
-F test/sync2.test 5ecf56be4c187a191253a1ec0786fe2df975dbf3dc0f0140cdf5d3690c90651c
+F test/sync2.test c59ffd63e69854bf41ac407a9762ab5c128894b754253bf94db8a85d15de5444
 F test/syscall.test f59ba4e25f7ba4a4c031026cc2ef8b6e4b4c639c
 F test/sysfault.test c9f2b0d8d677558f74de750c75e12a5454719d04
 F test/tabfunc01.test 699251cb99651415218a891384510a685c7ab012
@@ -1566,7 +1566,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2aa22509e7c8a1f09b16e4544c95d0b77503daed1f83106ccc18dee8bd9487a4
-R 2a38f53db76a379174ef41cee348ccde
-U drh
-Z 993304dc90b274b690e8ef820df2c963
+P 8822eb5d790bf8d4302c3f2dc05ab672193b309fb11771c4b3eea8a77f37e299
+R 9d22d8b55292860d95cad32e3b689bec
+U dan
+Z 532b84081e4fb29bc1e9b05f7d75c0ea
