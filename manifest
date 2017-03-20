@@ -1,5 +1,5 @@
-C Fix\sthe\sfuzzcheck\sprogram\sso\sthat\sit\scan\screate\snew\sdatabases\sagain.
-D 2017-03-20T20:42:21.876
+C Add\sthe\s--native-malloc\soption\sto\sfuzzcheck.\s\sFix\sossfuzz.c\sand\sfuzzcheck.c\nso\sthat\sthey\sboth\sdeallocate\sthe\stemp_store_directory\sbefore\sclosing.
+D 2017-03-20T22:58:27.453
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1faf9f06aadc9284c212dea7bbc7c0dea7e8337f0287c81001eff500912c790a
@@ -833,7 +833,7 @@ F test/fuzz2.test 76dc35b32b6d6f965259508508abce75a6c4d7e1
 F test/fuzz3.test b47377143f0c80f91ed29d722861077ff34415d5
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
 F test/fuzz_malloc.test 328f70aaca63adf29b4c6f06505ed0cf57ca7c26
-F test/fuzzcheck.c 0cfce51bd5b0b7ab5d2d2ecaf9a82d5962f90852348be6bf5f05a1fb2aaf40e0
+F test/fuzzcheck.c 2152602232c96d9c790eff3013e1369ce59de3203fa0b75bc613531448454e61
 F test/fuzzdata1.db 7ee3227bad0e7ccdeb08a9e6822916777073c664
 F test/fuzzdata2.db f03a420d3b822cc82e4f894ca957618fbe9c4973
 F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
@@ -1009,7 +1009,7 @@ F test/orderby7.test 3d1383d52ade5b9eb3a173b3147fdd296f0202da
 F test/orderby8.test 23ef1a5d72bd3adcc2f65561c654295d1b8047bd
 F test/orderby9.test 87fb9548debcc2cd141c5299002dd94672fa76a3
 F test/oserror.test b32dc34f2363ef18532e3a0a7358e3e7e321974f
-F test/ossfuzz.c 8c4d62e156352ecb97eb868fcff20d828a279af67a1c1310779f63464d6f009f
+F test/ossfuzz.c f5abed3177f719df3c3109901fcdd26b9fb7f581c8da50fc26f3a81ddfb2c2ae
 F test/ossshell.c 296ab63067841bd1b1e97b46a0b2af48ee7f69d50d1a723008bee12dd7122622
 F test/ovfl.test 199c482696defceacee8c8e0e0ef36da62726b2f
 F test/pager1.test 841868017e9dd3cb459b8d78862091a7d9cff21d
@@ -1566,7 +1566,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 49b93d972de9649abfd6235b65dda1c9d468956671e50704afde6181ffa56dea
-R 26d368e43476d2b80e7af8c6d59964fd
+P 021e8874a7d1bb94debae3ae04f83056a8573148ffc872cd76a186a2d22d0296
+R 694ec38d9cd79a3b1927a92dd170b999
 U drh
-Z 95628c590b2b14daadfe6003e34f6d94
+Z 6cb1e54838f3a51f8b4c2a137da28ce9

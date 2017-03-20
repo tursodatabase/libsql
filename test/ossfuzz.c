@@ -145,6 +145,7 @@ int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   /* Cleanup and return */
   sqlite3_free(zErrMsg);
   sqlite3_free(zSql);
+  sqlite3_exec(cx.db, "PRAGMA temp_store_directory=''", 0, 0, 0);
   sqlite3_close(cx.db);
 
   if( mDebug & FUZZ_SHOW_MAX_DELAY ){
