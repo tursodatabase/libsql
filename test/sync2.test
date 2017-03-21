@@ -26,7 +26,10 @@ ifcapable !pager_pragmas||!attach {
   finish_test
   return
 }
-if {$::tcl_platform(platform)!="unix" || [permutation] == "journaltest"} {
+if {$::tcl_platform(platform)!="unix" 
+  || [permutation] == "journaltest"
+  || [permutation] == "inmemory_journal"
+} {
   finish_test
   return
 }
