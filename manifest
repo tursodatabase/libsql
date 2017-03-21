@@ -1,5 +1,5 @@
-C Fix\san\sincorrect\sassert\sin\sthe\sANALYZE\slogic\sfor\sSTAT4\son\sWITHOUT\sROWID\ntables.
-D 2017-03-21T18:56:52.218
+C New\ssimplified\smemory\sinitialization\sfor\sMacOS.
+D 2017-03-21T20:17:24.121
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1faf9f06aadc9284c212dea7bbc7c0dea7e8337f0287c81001eff500912c790a
@@ -369,7 +369,7 @@ F src/loadext.c a68d8d1d14cf7488bb29dc5311cb1ce9a4404258
 F src/main.c 158326243c5ddc8b98a1e983fa488650cf76d760
 F src/malloc.c 89c98e3619d362dcffa5c1c639b364b65b474751
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
-F src/mem1.c 79bf195f445bf7e66cadd121849837c3152fbd2f542326bbed3073b6902450c2
+F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
 F src/mem3.c 8768ac94694f31ffaf8b4d0ea5dc08af7010a35a
 F src/mem5.c 9bf955937b07f8c32541c8a9991f33ce3173d944
@@ -1567,7 +1567,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ee9588e873ffebcaa177957950cbb14924e154c391ed7f687116065064ff11b0
-R 5a75fd33dd28f00ec2c9a64301b362e9
+P ad741976c8c29bcc94f9ea9ed7deb580bb00c8a81d1a7fba1a4e03849728433d
+R c272fa429602630b64ee19437bd8d503
 U drh
-Z a2519e8e7a444d8c646c2457bd4b758f
+Z a3a73b80a262fb4daeb6a94d5a29c210
