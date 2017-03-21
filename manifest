@@ -1,5 +1,5 @@
-C Add\sshort\sscript\sext/fts3/tool/fts3cov.sh.\sTo\shelp\smeasure\stest-coverage\sof\nfts3\ssource\scode.
-D 2017-03-21T17:19:31.218
+C Fix\san\sincorrect\sassert\sin\sthe\sANALYZE\slogic\sfor\sSTAT4\son\sWITHOUT\sROWID\ntables.
+D 2017-03-21T18:56:52.218
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1faf9f06aadc9284c212dea7bbc7c0dea7e8337f0287c81001eff500912c790a
@@ -338,7 +338,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c 3b23977620ce9662ac54443f65b87ba996e36121
-F src/analyze.c 6d8234916c29be943e6ea28b5bef67dff98d9905
+F src/analyze.c 0d0ccf7520a201d8747ea2f02c92c26e26f801bc161f714f27b9f7630dde0421
 F src/attach.c 8c476f8bd5d2afe11d925f890d30e527e5b0ce43
 F src/auth.c 930b376a9c56998557367e6f7f8aaeac82a2a792
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
@@ -1567,7 +1567,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9f680bc7c47f8391adba6ea2b4b2cb6a5a041e22753543d5224da6656c3762fe
-R 6048d4479132e9b80b95aca588407d4c
-U dan
-Z d545083811aa9af855b84bbadd9a61dc
+P ee9588e873ffebcaa177957950cbb14924e154c391ed7f687116065064ff11b0
+R 5a75fd33dd28f00ec2c9a64301b362e9
+U drh
+Z a2519e8e7a444d8c646c2457bd4b758f
