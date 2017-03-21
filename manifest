@@ -1,5 +1,5 @@
-C Do\snot\srun\ssync2.test\sas\spart\sof\sthe\s"inmemory_journal"\spermutation.
-D 2017-03-21T10:45:38.479
+C Add\sshort\sscript\sext/fts3/tool/fts3cov.sh.\sTo\shelp\smeasure\stest-coverage\sof\nfts3\ssource\scode.
+D 2017-03-21T17:19:31.218
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1faf9f06aadc9284c212dea7bbc7c0dea7e8337f0287c81001eff500912c790a
@@ -91,6 +91,7 @@ F ext/fts3/fts3_unicode2.c cc04fc672bfd42b1e650398cb0bf71f64f9aae032cfe75bbcfe75
 F ext/fts3/fts3_write.c a51d48d646974ee2fb4b17fcd5da0416a5759a32dcacc2cce2ba00d5a767848e
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
+F ext/fts3/tool/fts3cov.sh c331d006359456cf6f8f953e37f2b9c7d568f3863f00bb5f7eb87fea4ac01b73
 F ext/fts3/tool/fts3view.c 202801a2056995b763864d60c2dee744d46f1677
 F ext/fts3/unicode/CaseFolding.txt 8c678ca52ecc95e16bc7afc2dbf6fc9ffa05db8c
 F ext/fts3/unicode/UnicodeData.txt cd07314edb62d49fde34debdaf92fa2aa69011e7
@@ -1025,7 +1026,7 @@ F test/parser1.test 391b9bf9a229547a129c61ac345ed1a6f5eb1854
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
-F test/permutations.test 46ad98770d3c04ce2418cab2cc527647bfe961a7
+F test/permutations.test af720e7d139e7e5417341d0f0eef2b911c0b067852138dc2f5b6a451b5725118
 F test/pragma.test 1e94755164a3a3264cd39836de4bebcb7809e5f8
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
 F test/pragma3.test 14c12bc5352b1e100e0b6b44f371053a81ccf8ed
@@ -1566,7 +1567,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0dd18ec882bb28a87629d6d8dfeb5ea5d82833634b3781a7d14b917272c4dfa0
-R 8db91ad0b42e6ccb8a27a4c262ebc723
+P 9f680bc7c47f8391adba6ea2b4b2cb6a5a041e22753543d5224da6656c3762fe
+R 6048d4479132e9b80b95aca588407d4c
 U dan
-Z 688065de24febc90cf37734d50aa7e01
+Z d545083811aa9af855b84bbadd9a61dc
