@@ -2926,7 +2926,6 @@ static char **tableColumnList(ShellState *p, const char *zTab){
         ** ordinary column in the table.  Verify that azRowid[j] is a valid
         ** name for the rowid before adding it to azCol[0].  WITHOUT ROWID
         ** tables will fail this last check */
-        int rc;
         rc = sqlite3_table_column_metadata(p->db,0,zTab,azRowid[j],0,0,0,0,0);
         if( rc==SQLITE_OK ) azCol[0] = azRowid[j];
         break;
@@ -2959,14 +2958,14 @@ static void toggleSelectOrder(sqlite3 *db){
 ** the table type ("index" or "table") and SQL to create the table.
 ** This routine should print text sufficient to recreate the table.
 */
-static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
+static int dump_callback(void *pArg, int nArg, char **azArg, char **azNotUsed){
   int rc;
   const char *zTable;
   const char *zType;
   const char *zSql;
   ShellState *p = (ShellState *)pArg;
 
-  UNUSED_PARAMETER(azCol);
+  UNUSED_PARAMETER(azNotUsed);
   if( nArg!=3 ) return 1;
   zTable = azArg[0];
   zType = azArg[1];
