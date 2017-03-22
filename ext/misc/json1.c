@@ -138,9 +138,10 @@ static const char * const jsonType[] = {
 #define JNODE_RAW     0x01         /* Content is raw, not JSON encoded */
 #define JNODE_ESCAPE  0x02         /* Content is text with \ escapes */
 #define JNODE_REMOVE  0x04         /* Do not output */
-#define JNODE_REPLACE 0x08         /* Replace with JsonNode.iVal */
-#define JNODE_APPEND  0x10         /* More ARRAY/OBJECT entries at u.iAppend */
-#define JNODE_LABEL   0x20         /* Is a label of an object */
+#define JNODE_REPLACE 0x08         /* Replace with JsonNode.u.iReplace */
+#define JNODE_PATCH   0x10         /* Patch with JsonNode.u.pPatch */
+#define JNODE_APPEND  0x20         /* More ARRAY/OBJECT entries at u.iAppend */
+#define JNODE_LABEL   0x40         /* Is a label of an object */
 
 
 /* A single node of parsed JSON
@@ -148,12 +149,13 @@ static const char * const jsonType[] = {
 struct JsonNode {
   u8 eType;              /* One of the JSON_ type values */
   u8 jnFlags;            /* JNODE flags */
-  u8 iVal;               /* Replacement value when JNODE_REPLACE */
   u32 n;                 /* Bytes of content, or number of sub-nodes */
   union {
     const char *zJContent; /* Content for INT, REAL, and STRING */
     u32 iAppend;           /* More terms for ARRAY and OBJECT */
     u32 iKey;              /* Key for ARRAY objects in json_tree() */
+    u32 iReplace;          /* Replacement content for JNODE_REPLACE */
+    JsonNode *pPatch;      /* Node chain of patch for JNODE_PATCH */
   } u;
 };
 
@@ -410,6 +412,13 @@ static void jsonRenderNode(
   JsonString *pOut,              /* Write JSON here */
   sqlite3_value **aReplace       /* Replacement values */
 ){
+  if( pNode->jnFlags & (JNODE_REPLACE|JNODE_PATCH) ){
+    if( pNode->jnFlags & JNODE_REPLACE ){
+      jsonAppendValue(pOut, aReplace[pNode->u.iReplace]);
+      return;
+    }
+    pNode = pNode->u.pPatch;
+  }
   switch( pNode->eType ){
     default: {
       assert( pNode->eType==JSON_NULL );
@@ -441,12 +450,7 @@ static void jsonRenderNode(
       jsonAppendChar(pOut, '[');
       for(;;){
         while( j<=pNode->n ){
-          if( pNode[j].jnFlags & (JNODE_REMOVE|JNODE_REPLACE) ){
-            if( pNode[j].jnFlags & JNODE_REPLACE ){
-              jsonAppendSeparator(pOut);
-              jsonAppendValue(pOut, aReplace[pNode[j].iVal]);
-            }
-          }else{
+          if( (pNode[j].jnFlags & JNODE_REMOVE)==0 ){
             jsonAppendSeparator(pOut);
             jsonRenderNode(&pNode[j], pOut, aReplace);
           }
@@ -468,11 +472,7 @@ static void jsonRenderNode(
             jsonAppendSeparator(pOut);
             jsonRenderNode(&pNode[j], pOut, aReplace);
             jsonAppendChar(pOut, ':');
-            if( pNode[j+1].jnFlags & JNODE_REPLACE ){
-              jsonAppendValue(pOut, aReplace[pNode[j+1].iVal]);
-            }else{
-              jsonRenderNode(&pNode[j+1], pOut, aReplace);
-            }
+            jsonRenderNode(&pNode[j+1], pOut, aReplace);
           }
           j += 1 + jsonNodeSize(&pNode[j+1]);
         }
@@ -699,7 +699,6 @@ static int jsonParseAddNode(
   p = &pParse->aNode[pParse->nNode];
   p->eType = (u8)eType;
   p->jnFlags = 0;
-  p->iVal = 0;
   p->n = n;
   p->u.zJContent = zContent;
   return pParse->nNode++;
@@ -1357,6 +1356,104 @@ static void jsonExtractFunc(
   jsonParseReset(&x);
 }
 
+/* This is the RFC 7396 MergePatch algorithm.
+*/
+static JsonNode *jsonMergePatch(
+  JsonParse *pParse,   /* The JSON parser that contains the TARGET */
+  int iTarget,         /* Node of the TARGET in pParse */
+  JsonNode *pPatch     /* The PATCH */
+){
+  int i, j;
+  int iApnd;
+  JsonNode *pTarget;
+  if( pPatch->eType!=JSON_OBJECT ){
+    return pPatch;
+  }
+  assert( iTarget>=0 && iTarget<pParse->nNode );
+  pTarget = &pParse->aNode[iTarget];
+  assert( (pPatch->jnFlags & JNODE_APPEND)==0 );
+  if( pTarget->eType!=JSON_OBJECT ){
+    for(i=2; i<pPatch->n; i += jsonNodeSize(&pPatch[i])+1){
+      if( pPatch[i].eType==JSON_NULL ){
+        pPatch[i-1].jnFlags |= JNODE_REMOVE;
+      }
+    }
+    return pPatch;
+  }
+  iApnd = iTarget;
+  for(i=1; i<pPatch->n; i += jsonNodeSize(&pPatch[i+1])+1){
+    int nKey;
+    const char *zKey;
+    assert( pPatch[i].eType==JSON_STRING );
+    assert( pPatch[i].jnFlags & JNODE_LABEL );
+    nKey = pPatch[i].n;
+    zKey = pPatch[i].u.zJContent;
+    if( (pPatch[i].jnFlags & JNODE_RAW)==0 ){
+      assert( nKey>=2 && zKey[0]=='"' && zKey[nKey-1]=='"' );
+      nKey -= 2;
+      zKey ++;
+    }
+    for(j=1; j<pTarget->n; j += jsonNodeSize(&pTarget[j+1])+1 ){
+      assert( pTarget[j].eType==JSON_STRING );
+      assert( pTarget[j].jnFlags & JNODE_LABEL );
+      if( jsonLabelCompare(&pTarget[j], zKey, nKey)
+       && (pTarget[j+1].jnFlags & (JNODE_REMOVE|JNODE_PATCH))==0
+      ){
+        if( pPatch[i+1].eType==JSON_NULL ){
+          pTarget[j+1].jnFlags |= JNODE_REMOVE;
+        }else{
+          JsonNode *pNew = jsonMergePatch(pParse, j+1, &pPatch[i+1]);
+          if( pNew==0 ) return 0;
+          pTarget = &pParse->aNode[iTarget];
+          if( pNew!=&pTarget[j+1] ){
+            pTarget[j+1].u.pPatch = pNew;
+            pTarget[j+1].jnFlags |= JNODE_PATCH;
+          }
+        }
+        break;
+      }
+    }
+    if( j>=pTarget->n ){
+      int iStart, iPatch;
+      iStart = jsonParseAddNode(pParse, JSON_OBJECT, 2, 0);
+      jsonParseAddNode(pParse, JSON_STRING, nKey, zKey);
+      iPatch = jsonParseAddNode(pParse, JSON_TRUE, 0, 0);
+      if( pParse->oom ) return 0;
+      pTarget = &pParse->aNode[iTarget];
+      pParse->aNode[iApnd].jnFlags |= JNODE_APPEND;
+      pParse->aNode[iApnd].u.iAppend = iStart;
+      iApnd = iStart;
+      pParse->aNode[iPatch].jnFlags |= JNODE_PATCH;
+      pParse->aNode[iPatch].u.pPatch = &pPatch[i+1];
+    }
+  }
+  return pTarget;
+}
+
+/*
+** Implementation of the json_mergepatch(JSON1,JSON2) function.  Return a JSON
+** object that is the result of running the RFC 7396 MergePatch() algorithm
+** on the two arguments.
+*/
+static void jsonMergePatchFunc(
+  sqlite3_context *ctx,
+  int argc,
+  sqlite3_value **argv
+){
+  JsonParse x;     /* The JSON that is being patched */
+  JsonParse y;     /* The patch */
+
+  if( jsonParse(&x, ctx, (const char*)sqlite3_value_text(argv[0])) ) return;
+  if( jsonParse(&y, ctx, (const char*)sqlite3_value_text(argv[1])) ){
+    jsonParseReset(&x);
+    return;
+  }
+  jsonReturnJson(jsonMergePatch(&x, 0, y.aNode), ctx, 0);
+  jsonParseReset(&x);
+  jsonParseReset(&y);
+}
+
+
 /*
 ** Implementation of the json_object(NAME,VALUE,...) function.  Return a JSON
 ** object that contains all name/value given in arguments.  Or if any name
@@ -1460,11 +1557,11 @@ static void jsonReplaceFunc(
     if( x.nErr ) goto replace_err;
     if( pNode ){
       pNode->jnFlags |= (u8)JNODE_REPLACE;
-      pNode->iVal = (u8)(i+1);
+      pNode->u.iReplace = i + 1;
     }
   }
   if( x.aNode[0].jnFlags & JNODE_REPLACE ){
-    sqlite3_result_value(ctx, argv[x.aNode[0].iVal]);
+    sqlite3_result_value(ctx, argv[x.aNode[0].u.iReplace]);
   }else{
     jsonReturnJson(x.aNode, ctx, argv);
   }
@@ -1514,11 +1611,11 @@ static void jsonSetFunc(
       goto jsonSetDone;
     }else if( pNode && (bApnd || bIsSet) ){
       pNode->jnFlags |= (u8)JNODE_REPLACE;
-      pNode->iVal = (u8)(i+1);
+      pNode->u.iReplace = i + 1;
     }
   }
   if( x.aNode[0].jnFlags & JNODE_REPLACE ){
-    sqlite3_result_value(ctx, argv[x.aNode[0].iVal]);
+    sqlite3_result_value(ctx, argv[x.aNode[0].u.iReplace]);
   }else{
     jsonReturnJson(x.aNode, ctx, argv);
   }
@@ -2160,6 +2257,7 @@ int sqlite3Json1Init(sqlite3 *db){
     { "json_array_length",    2, 0,   jsonArrayLengthFunc   },
     { "json_extract",        -1, 0,   jsonExtractFunc       },
     { "json_insert",         -1, 0,   jsonSetFunc           },
+    { "json_mergepatch",      2, 0,   jsonMergePatchFunc    },
     { "json_object",         -1, 0,   jsonObjectFunc        },
     { "json_quote",           1, 0,   jsonQuoteFunc         },
     { "json_remove",         -1, 0,   jsonRemoveFunc        },
