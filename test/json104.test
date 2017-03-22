@@ -21,27 +21,24 @@ ifcapable !json1 {
 
 # This is the example from pages 2 and 3 of RFC-7396
 do_execsql_test json104-100 {
-  SELECT json_mergepatch(
-    json('{
+  SELECT json_merge_patch('{
        "a": "b",
        "c": {
          "d": "e",
          "f": "g"
        }
-     }'),
-    json('{
+     }','{
        "a":"z",
        "c": {
          "f": null
        }
-     }'));
+     }');
 } {{{"a":"z","c":{"d":"e"}}}}
 
 
 # This is the example from pages 4 and 5 of RFC-7396 
 do_execsql_test json104-110 {
-  SELECT json_mergepatch(
-    json('{
+  SELECT json_merge_patch('{
        "title": "Goodbye!",
        "author" : {
          "givenName" : "John",
@@ -49,15 +46,14 @@ do_execsql_test json104-110 {
        },
        "tags":[ "example", "sample" ],
        "content": "This will be unchanged"
-     }'),
-    json('{
+     }','{
        "title": "Hello!",
        "phoneNumber": "+01-123-456-7890",
        "author": {
          "familyName": null
        },
        "tags": [ "example" ]
-     }'));
+     }');
 } {{{"title":"Hello!","author":{"givenName":"John"},"tags":["example"],"content":"This will be unchanged",phoneNumber:"+01-123-456-7890"}}}
 
 finish_test
