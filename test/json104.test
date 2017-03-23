@@ -8,7 +8,7 @@
 #    May you share freely, never taking more than you give.
 #
 #***********************************************************************
-# This file implements tests for json_mergepatch(A,B) SQL function.
+# This file implements tests for json_patch(A,B) SQL function.
 #
 
 set testdir [file dirname $argv0]
@@ -21,7 +21,7 @@ ifcapable !json1 {
 
 # This is the example from pages 2 and 3 of RFC-7396
 do_execsql_test json104-100 {
-  SELECT json_merge_patch('{
+  SELECT json_patch('{
        "a": "b",
        "c": {
          "d": "e",
@@ -38,7 +38,7 @@ do_execsql_test json104-100 {
 
 # This is the example from pages 4 and 5 of RFC-7396 
 do_execsql_test json104-110 {
-  SELECT json_merge_patch('{
+  SELECT json_patch('{
        "title": "Goodbye!",
        "author" : {
          "givenName" : "John",
@@ -57,10 +57,10 @@ do_execsql_test json104-110 {
 } {{{"title":"Hello!","author":{"givenName":"John"},"tags":["example"],"content":"This will be unchanged","phoneNumber":"+01-123-456-7890"}}}
 
 do_execsql_test json104-200 {
-  SELECT json_merge_patch('[1,2,3]','{"x":null}');
+  SELECT json_patch('[1,2,3]','{"x":null}');
 } {{{}}}
 do_execsql_test json104-210 {
-  SELECT json_merge_patch('[1,2,3]','{"x":null,"y":1,"z":null}');
+  SELECT json_patch('[1,2,3]','{"x":null,"y":1,"z":null}');
 } {{{"y":1}}}
 
 finish_test

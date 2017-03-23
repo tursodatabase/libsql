@@ -1431,7 +1431,7 @@ static JsonNode *jsonMergePatch(
 ** object that is the result of running the RFC 7396 MergePatch() algorithm
 ** on the two arguments.
 */
-static void jsonMergePatchFunc(
+static void jsonPatchFunc(
   sqlite3_context *ctx,
   int argc,
   sqlite3_value **argv
@@ -2260,8 +2260,8 @@ int sqlite3Json1Init(sqlite3 *db){
     { "json_array_length",    2, 0,   jsonArrayLengthFunc   },
     { "json_extract",        -1, 0,   jsonExtractFunc       },
     { "json_insert",         -1, 0,   jsonSetFunc           },
-    { "json_merge_patch",     2, 0,   jsonMergePatchFunc    },
     { "json_object",         -1, 0,   jsonObjectFunc        },
+    { "json_patch",           2, 0,   jsonPatchFunc         },
     { "json_quote",           1, 0,   jsonQuoteFunc         },
     { "json_remove",         -1, 0,   jsonRemoveFunc        },
     { "json_replace",        -1, 0,   jsonReplaceFunc       },
