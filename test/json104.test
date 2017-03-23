@@ -1,0 +1,66 @@
+# 2017-03-22
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements tests for json_patch(A,B) SQL function.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+ifcapable !json1 {
+  finish_test
+  return
+}
+
+# This is the example from pages 2 and 3 of RFC-7396
+do_execsql_test json104-100 {
+  SELECT json_patch('{
+       "a": "b",
+       "c": {
+         "d": "e",
+         "f": "g"
+       }
+     }','{
+       "a":"z",
+       "c": {
+         "f": null
+       }
+     }');
+} {{{"a":"z","c":{"d":"e"}}}}
+
+
+# This is the example from pages 4 and 5 of RFC-7396 
+do_execsql_test json104-110 {
+  SELECT json_patch('{
+       "title": "Goodbye!",
+       "author" : {
+         "givenName" : "John",
+         "familyName" : "Doe"
+       },
+       "tags":[ "example", "sample" ],
+       "content": "This will be unchanged"
+     }','{
+       "title": "Hello!",
+       "phoneNumber": "+01-123-456-7890",
+       "author": {
+         "familyName": null
+       },
+       "tags": [ "example" ]
+     }');
+} {{{"title":"Hello!","author":{"givenName":"John"},"tags":["example"],"content":"This will be unchanged","phoneNumber":"+01-123-456-7890"}}}
+
+do_execsql_test json104-200 {
+  SELECT json_patch('[1,2,3]','{"x":null}');
+} {{{}}}
+do_execsql_test json104-210 {
+  SELECT json_patch('[1,2,3]','{"x":null,"y":1,"z":null}');
+} {{{"y":1}}}
+
+finish_test
