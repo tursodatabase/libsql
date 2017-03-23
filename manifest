@@ -1,5 +1,5 @@
-C Change\sthe\sname\sof\sthe\snew\sfunction\sto\s"json_merge_patch()".
-D 2017-03-22T21:45:20.759
+C Various\sfixes\sto\sthe\sjson_merge_patch()\sfunction.
+D 2017-03-23T00:13:52.903
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1faf9f06aadc9284c212dea7bbc7c0dea7e8337f0287c81001eff500912c790a
@@ -218,7 +218,7 @@ F ext/misc/eval.c f971962e92ebb8b0a4e6b62949463ee454d88fa2
 F ext/misc/fileio.c d4171c815d6543a9edef8308aab2951413cd8d0f
 F ext/misc/fuzzer.c 7c64b8197bb77b7d64eff7cac7848870235d4c25
 F ext/misc/ieee754.c f190d0cc5182529acb15babd177781be1ac1718c
-F ext/misc/json1.c be1032c54498ae8d884b7c430da876a0f895dfc734ac3255336014ce79e3f219
+F ext/misc/json1.c 8a8ba23a0715858ff393aa890e379912759712518afa4d28de6308a79287cb61
 F ext/misc/memvfs.c e5225bc22e79dde6b28380f3a068ddf600683a33
 F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
 F ext/misc/percentile.c 92699c8cd7d517ff610e6037e56506f8904dae2e
@@ -913,7 +913,7 @@ F test/jrnlmode3.test 556b447a05be0e0963f4311e95ab1632b11c9eaa
 F test/json101.test c0897616f32d95431f37fd291cb78742181980ac
 F test/json102.test bf3fe7a706d30936a76a0f7a0375e1e8e73aff5a
 F test/json103.test c5f6b85e69de05f6b3195f9f9d5ce9cd179099a0
-F test/json104.test 66d3dfc9f76e413c7c957d897325b17b9d1bbdf471225310dbf47279e36f1937
+F test/json104.test 9f8358fd4ec94eca27b31d4ad7f75482edf24c865df378e5129c0b3107c9664e
 F test/keyword1.test 37ef6bba5d2ed5b07ecdd6810571de2956599dff
 F test/kvtest.c b9a9822dda05a1aa481215a52e2fc93cd8b22ee5
 F test/lastinsert.test 42e948fd6442f07d60acbd15d33fb86473e0ef63
@@ -1568,7 +1568,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a267444039af519f088dd8f8ee33f686cc3071c087677075af2364ebc2587514
-R f0982f12ae9e098efe5bc17c4edc8338
+P 53bf70f37bbca319ea35f70849e2a34ae628a504486158fdad5c4bb7431c68e0
+R 7c38ec8ac02c81967ed35b7b062ffaf6
 U drh
-Z 17fdf70c56513cf2488f301085ed16e1
+Z e95ab9d86e57fcad88a27a5fb020f800

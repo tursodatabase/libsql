@@ -54,6 +54,13 @@ do_execsql_test json104-110 {
        },
        "tags": [ "example" ]
      }');
-} {{{"title":"Hello!","author":{"givenName":"John"},"tags":["example"],"content":"This will be unchanged",phoneNumber:"+01-123-456-7890"}}}
+} {{{"title":"Hello!","author":{"givenName":"John"},"tags":["example"],"content":"This will be unchanged","phoneNumber":"+01-123-456-7890"}}}
+
+do_execsql_test json104-200 {
+  SELECT json_merge_patch('[1,2,3]','{"x":null}');
+} {{{}}}
+do_execsql_test json104-210 {
+  SELECT json_merge_patch('[1,2,3]','{"x":null,"y":1,"z":null}');
+} {{{"y":1}}}
 
 finish_test

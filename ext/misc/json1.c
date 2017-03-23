@@ -1364,7 +1364,7 @@ static JsonNode *jsonMergePatch(
   JsonNode *pPatch     /* The PATCH */
 ){
   int i, j;
-  int iApnd;
+  int iRoot;
   JsonNode *pTarget;
   if( pPatch->eType!=JSON_OBJECT ){
     return pPatch;
@@ -1373,14 +1373,14 @@ static JsonNode *jsonMergePatch(
   pTarget = &pParse->aNode[iTarget];
   assert( (pPatch->jnFlags & JNODE_APPEND)==0 );
   if( pTarget->eType!=JSON_OBJECT ){
-    for(i=2; i<pPatch->n; i += jsonNodeSize(&pPatch[i])+1){
+    for(i=2; i<=pPatch->n; i += jsonNodeSize(&pPatch[i])+1){
       if( pPatch[i].eType==JSON_NULL ){
-        pPatch[i-1].jnFlags |= JNODE_REMOVE;
+        pPatch[i].jnFlags |= JNODE_REMOVE;
       }
     }
     return pPatch;
   }
-  iApnd = iTarget;
+  iRoot = iTarget;
   for(i=1; i<pPatch->n; i += jsonNodeSize(&pPatch[i+1])+1){
     int nKey;
     const char *zKey;
@@ -1388,21 +1388,19 @@ static JsonNode *jsonMergePatch(
     assert( pPatch[i].jnFlags & JNODE_LABEL );
     nKey = pPatch[i].n;
     zKey = pPatch[i].u.zJContent;
-    if( (pPatch[i].jnFlags & JNODE_RAW)==0 ){
-      assert( nKey>=2 && zKey[0]=='"' && zKey[nKey-1]=='"' );
-      nKey -= 2;
-      zKey ++;
-    }
+    assert( (pPatch[i].jnFlags & JNODE_RAW)==0 );
     for(j=1; j<pTarget->n; j += jsonNodeSize(&pTarget[j+1])+1 ){
       assert( pTarget[j].eType==JSON_STRING );
       assert( pTarget[j].jnFlags & JNODE_LABEL );
-      if( jsonLabelCompare(&pTarget[j], zKey, nKey)
-       && (pTarget[j+1].jnFlags & (JNODE_REMOVE|JNODE_PATCH))==0
+      assert( (pPatch[i].jnFlags & JNODE_RAW)==0 );
+      if( (pTarget[j+1].jnFlags & (JNODE_REMOVE|JNODE_PATCH))==0
+       && pTarget[j].n==nKey 
+       && strncmp(pTarget[j].u.zJContent, zKey, nKey)==0
       ){
         if( pPatch[i+1].eType==JSON_NULL ){
           pTarget[j+1].jnFlags |= JNODE_REMOVE;
         }else{
-          JsonNode *pNew = jsonMergePatch(pParse, j+1, &pPatch[i+1]);
+          JsonNode *pNew = jsonMergePatch(pParse, iTarget+j+1, &pPatch[i+1]);
           if( pNew==0 ) return 0;
           pTarget = &pParse->aNode[iTarget];
           if( pNew!=&pTarget[j+1] ){
@@ -1413,16 +1411,16 @@ static JsonNode *jsonMergePatch(
         break;
       }
     }
-    if( j>=pTarget->n ){
+    if( j>=pTarget->n && pPatch[i+1].eType!=JSON_NULL ){
       int iStart, iPatch;
       iStart = jsonParseAddNode(pParse, JSON_OBJECT, 2, 0);
       jsonParseAddNode(pParse, JSON_STRING, nKey, zKey);
       iPatch = jsonParseAddNode(pParse, JSON_TRUE, 0, 0);
       if( pParse->oom ) return 0;
       pTarget = &pParse->aNode[iTarget];
-      pParse->aNode[iApnd].jnFlags |= JNODE_APPEND;
-      pParse->aNode[iApnd].u.iAppend = iStart;
-      iApnd = iStart;
+      pParse->aNode[iRoot].jnFlags |= JNODE_APPEND;
+      pParse->aNode[iRoot].u.iAppend = iStart - iRoot;
+      iRoot = iStart;
       pParse->aNode[iPatch].jnFlags |= JNODE_PATCH;
       pParse->aNode[iPatch].u.pPatch = &pPatch[i+1];
     }
@@ -1442,13 +1440,20 @@ static void jsonMergePatchFunc(
 ){
   JsonParse x;     /* The JSON that is being patched */
   JsonParse y;     /* The patch */
+  JsonNode *pResult;   /* The result of the merge */
 
   if( jsonParse(&x, ctx, (const char*)sqlite3_value_text(argv[0])) ) return;
   if( jsonParse(&y, ctx, (const char*)sqlite3_value_text(argv[1])) ){
     jsonParseReset(&x);
     return;
   }
-  jsonReturnJson(jsonMergePatch(&x, 0, y.aNode), ctx, 0);
+  pResult = jsonMergePatch(&x, 0, y.aNode);
+  assert( pResult!=0 || x.oom );
+  if( pResult ){
+    jsonReturnJson(pResult, ctx, 0);
+  }else{
+    sqlite3_result_error_nomem(ctx);
+  }
   jsonParseReset(&x);
   jsonParseReset(&y);
 }
