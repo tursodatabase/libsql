@@ -2227,8 +2227,6 @@ static int xferOptimization(
       ** sorted order.  */
       for(i=0; i<pSrcIdx->nColumn; i++){
         const char *zColl = pSrcIdx->azColl[i];
-        assert( sqlite3_stricmp(sqlite3StrBINARY, zColl)!=0
-                    || sqlite3StrBINARY==zColl );
         if( sqlite3_stricmp(sqlite3StrBINARY, zColl) ) break;
       }
       if( i==pSrcIdx->nColumn ){
