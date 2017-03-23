@@ -1363,8 +1363,8 @@ static JsonNode *jsonMergePatch(
   int iTarget,         /* Node of the TARGET in pParse */
   JsonNode *pPatch     /* The PATCH */
 ){
-  int i, j;
-  int iRoot;
+  u32 i, j;
+  u32 iRoot;
   JsonNode *pTarget;
   if( pPatch->eType!=JSON_OBJECT ){
     return pPatch;
