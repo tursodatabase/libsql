@@ -1393,10 +1393,8 @@ static JsonNode *jsonMergePatch(
       assert( pTarget[j].eType==JSON_STRING );
       assert( pTarget[j].jnFlags & JNODE_LABEL );
       assert( (pPatch[i].jnFlags & JNODE_RAW)==0 );
-      if( (pTarget[j+1].jnFlags & (JNODE_REMOVE|JNODE_PATCH))==0
-       && pTarget[j].n==nKey 
-       && strncmp(pTarget[j].u.zJContent, zKey, nKey)==0
-      ){
+      if( pTarget[j].n==nKey && strncmp(pTarget[j].u.zJContent,zKey,nKey)==0 ){
+        if( pTarget[j+1].jnFlags & (JNODE_REMOVE|JNODE_PATCH) ) break;
         if( pPatch[i+1].eType==JSON_NULL ){
           pTarget[j+1].jnFlags |= JNODE_REMOVE;
         }else{
