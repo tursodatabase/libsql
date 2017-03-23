@@ -1,5 +1,5 @@
-C Do\snot\srun\stest\sfile\sautoanalyze1.test\sif\sOMIT_VIRTUALTABLE\sis\sdefined.
-D 2017-03-23T17:22:09.188
+C Improvement\sto\sthe\samalgamation\sconfigure.ac\sfile\scontributed\sby\nBob\sFriesenhahn.
+D 2017-03-23T19:51:38.579
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1faf9f06aadc9284c212dea7bbc7c0dea7e8337f0287c81001eff500912c790a
@@ -14,7 +14,7 @@ F autoconf/Makefile.am 1a47d071e3d5435f8f7ebff7eb6703848bbd65d4
 F autoconf/Makefile.msc 92e3d7fd64dc5c23a23d33824ee4709aaea00a6331c4bb41a1aadcf6600a49f7
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/README.txt 4f04b0819303aabaa35fff5f7b257fb0c1ef95f1
-F autoconf/configure.ac cacf2616abf6e4a569bde2ef365c143caeec40bc
+F autoconf/configure.ac 2893b823ecc86cea13739f6c8109a41392254d1db08235c5615e0af5722c8578
 F autoconf/tea/Makefile.in b438a7020446c8a8156e8d97c8914a04833da6fd
 F autoconf/tea/README 3e9a3c060f29a44344ab50aec506f4db903fb873
 F autoconf/tea/aclocal.m4 52c47aac44ce0ddb1f918b6993e8beb8eee88f43
@@ -1567,7 +1567,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9f2e04d3c3526b5ff60d941aa6d5446f602cab37cb93972937f39eefabd6868d
-R c389878b6e059490204890f1ea916f73
-U dan
-Z b2d2e5c74dc6093684311a4bed08a5d2
+P e1d06a573ee56bf6a14e4dc8086d6a4df1464f2914834cf4596a0a406688f608
+R 05b216864be03a3eba3ef1e51323e9ca
+U drh
+Z 5c18c26b109b1904b072f9a45f7157f5
