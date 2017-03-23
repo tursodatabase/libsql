@@ -1,5 +1,5 @@
-C Remove\san\sinvalid\sassert()\sstatement\sfailing\swhen\sVACUUMing\sa\sdatabase\sthat\ncontains\san\sindex\son\sa\scolumn\sexplicitly\sdeclared\s"COLLATE\sBINARY".
-D 2017-03-23T17:03:35.684
+C Do\snot\srun\stest\sfile\sautoanalyze1.test\sif\sOMIT_VIRTUALTABLE\sis\sdefined.
+D 2017-03-23T17:22:09.188
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1faf9f06aadc9284c212dea7bbc7c0dea7e8337f0287c81001eff500912c790a
@@ -528,7 +528,7 @@ F test/attachmalloc.test 3a4bfca9545bfe906a8d2e622de10fbac5b711b0
 F test/auth.test c6ede04bee65637ff354b43fc1235aa560c0863e
 F test/auth2.test 9eb7fce9f34bf1f50d3f366fb3e606be5a2000a1
 F test/auth3.test 0d48b901cf111c14b4b1b5205c7d28f1a278190f
-F test/autoanalyze1.test 1ba80d5e1412d46503566b70741a5eea060da929
+F test/autoanalyze1.test b9cc3f32a990fa56669b668d237c6d53e983554ae80c0604992e18869a0b2dec
 F test/autoinc.test 6ae8fb69c9f656962464ae4e6667045d0dfc3b46
 F test/autoindex1.test 14b63a9f1e405fe6d5bfc8c8d00249c2ebaf13ea
 F test/autoindex2.test 12ef578928102baaa0dc23ad397601a2f4ecb0df
@@ -1567,7 +1567,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a786829783ef65ef270ca360712364cbd47a540d31ed1547d50808aad698bea7
-R 85624f613e7e3af447c83f8947d69a8d
+P 9f2e04d3c3526b5ff60d941aa6d5446f602cab37cb93972937f39eefabd6868d
+R c389878b6e059490204890f1ea916f73
 U dan
-Z 3c9d547950272a881cd381bfe4f2d9b9
+Z b2d2e5c74dc6093684311a4bed08a5d2

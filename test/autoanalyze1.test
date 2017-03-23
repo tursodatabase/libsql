@@ -29,7 +29,7 @@ source $testdir/tester.tcl
 # These tests also use "PRAGMA stats" which are only enabled for
 # debugging builds.
 #
-ifcapable {!debug || !analyze} {
+ifcapable {!debug || !analyze || !vtab} {
   finish_test
   return
 }
