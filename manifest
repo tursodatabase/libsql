@@ -1,5 +1,5 @@
-C Add\sthe\sjson_patch()\sSQL\sfunction\sto\sthe\sJSON1\sextension.
-D 2017-03-23T23:44:55.894
+C Fix\san\serror\sin\sthe\snew\sjson_patch()\sroutine\sdiscovered\sby\sRalf\sJunker.
+D 2017-03-24T12:35:17.534
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1faf9f06aadc9284c212dea7bbc7c0dea7e8337f0287c81001eff500912c790a
@@ -218,7 +218,7 @@ F ext/misc/eval.c f971962e92ebb8b0a4e6b62949463ee454d88fa2
 F ext/misc/fileio.c d4171c815d6543a9edef8308aab2951413cd8d0f
 F ext/misc/fuzzer.c 7c64b8197bb77b7d64eff7cac7848870235d4c25
 F ext/misc/ieee754.c f190d0cc5182529acb15babd177781be1ac1718c
-F ext/misc/json1.c c065914b126b5f4696b824286fca153da8035bb8c660a15193ea2711668f1d14
+F ext/misc/json1.c 52f93b91b8bbbfcd84dca34be383974137e83a1673c71d5f728b16b68bb57d9c
 F ext/misc/memvfs.c e5225bc22e79dde6b28380f3a068ddf600683a33
 F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
 F ext/misc/percentile.c 92699c8cd7d517ff610e6037e56506f8904dae2e
@@ -913,7 +913,7 @@ F test/jrnlmode3.test 556b447a05be0e0963f4311e95ab1632b11c9eaa
 F test/json101.test c0897616f32d95431f37fd291cb78742181980ac
 F test/json102.test bf3fe7a706d30936a76a0f7a0375e1e8e73aff5a
 F test/json103.test c5f6b85e69de05f6b3195f9f9d5ce9cd179099a0
-F test/json104.test b6808a3efb973235331c274ebe251bfbf75c6fff0ff12956fb9719cc227a9f5b
+F test/json104.test 2966101e14463655546eb8f639db25382957e9b7136de717e17db945a6f539fb
 F test/keyword1.test 37ef6bba5d2ed5b07ecdd6810571de2956599dff
 F test/kvtest.c b9a9822dda05a1aa481215a52e2fc93cd8b22ee5
 F test/lastinsert.test 42e948fd6442f07d60acbd15d33fb86473e0ef63
@@ -1568,8 +1568,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bf28a55d8185e370fea39de297c37387f852f43fac0a316e5900e633f99b367f 04d4100445a3373986ee962618bc03ec304f6ba2f867c8e9eee415daffb593fc
-R 114c4ffb4ff05c31b0d61e7341b119eb
-T +closed 04d4100445a3373986ee962618bc03ec304f6ba2f867c8e9eee415daffb593fc
+P 476088482024e411e2549b1697cdaf0124294c79d43f508c71c4eb66906a56fc
+R 08d6f399deb89f284d166c511d46a6ea
 U drh
-Z 015dcf3dd857377b8513b610e324274e
+Z 437a93d0f27334776c018af18840b42a

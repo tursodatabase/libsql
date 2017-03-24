@@ -1164,6 +1164,25 @@ static void jsonWrongNumArgs(
   sqlite3_free(zMsg);     
 }
 
+/*
+** Mark all NULL entries in the Object passed in as JNODE_REMOVE.
+*/
+static void jsonRemoveAllNulls(JsonNode *pNode){
+  int i, n;
+  assert( pNode->eType==JSON_OBJECT );
+  n = pNode->n;
+  for(i=2; i<=n; i += jsonNodeSize(&pNode[i])+1){
+    switch( pNode[i].eType ){
+      case JSON_NULL:
+        pNode[i].jnFlags |= JNODE_REMOVE;
+        break;
+      case JSON_OBJECT:
+        jsonRemoveAllNulls(&pNode[i]);
+        break;
+    }
+  }
+}
+
 
 /****************************************************************************
 ** SQL functions used for testing and debugging
@@ -1373,11 +1392,7 @@ static JsonNode *jsonMergePatch(
   pTarget = &pParse->aNode[iTarget];
   assert( (pPatch->jnFlags & JNODE_APPEND)==0 );
   if( pTarget->eType!=JSON_OBJECT ){
-    for(i=2; i<=pPatch->n; i += jsonNodeSize(&pPatch[i])+1){
-      if( pPatch[i].eType==JSON_NULL ){
-        pPatch[i].jnFlags |= JNODE_REMOVE;
-      }
-    }
+    jsonRemoveAllNulls(pPatch);
     return pPatch;
   }
   iRoot = iTarget;
@@ -1415,6 +1430,7 @@ static JsonNode *jsonMergePatch(
       jsonParseAddNode(pParse, JSON_STRING, nKey, zKey);
       iPatch = jsonParseAddNode(pParse, JSON_TRUE, 0, 0);
       if( pParse->oom ) return 0;
+      jsonRemoveAllNulls(pPatch);
       pTarget = &pParse->aNode[iTarget];
       pParse->aNode[iRoot].jnFlags |= JNODE_APPEND;
       pParse->aNode[iRoot].u.iAppend = iStart - iRoot;
