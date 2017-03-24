@@ -2354,9 +2354,9 @@ case OP_Once: {             /* jump */
     iAddr = (int)(pOp - p->aOp);
     if( (p->pFrame->aOnce[iAddr/8] & (1<<(iAddr & 7)))!=0 ){
       VdbeBranchTaken(1, 2);
-      p->pFrame->aOnce[iAddr/8] |= 1<<(iAddr & 7);
       goto jump_to_p2;
     }
+    p->pFrame->aOnce[iAddr/8] |= 1<<(iAddr & 7);
   }else{
     if( p->aOp[0].p1==pOp->p1 ){
       VdbeBranchTaken(1, 2);
@@ -5943,6 +5943,7 @@ case OP_Program: {        /* jump */
   p->nCursor = (u16)pFrame->nChildCsr;
   p->apCsr = (VdbeCursor **)&aMem[p->nMem];
   pFrame->aOnce = (u8*)&p->apCsr[pProgram->nCsr];
+  memset(pFrame->aOnce, 0, (pProgram->nOp + 7)/8);
   p->aOp = aOp = pProgram->aOp;
   p->nOp = pProgram->nOp;
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
