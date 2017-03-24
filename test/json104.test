@@ -72,5 +72,59 @@ do_execsql_test json104-222 {
   SELECT json_patch('{}','{"a":{"bb":{"ccc":[1,{"dddd":null},3]}}}');
 } {{{"a":{"bb":{"ccc":[1,{"dddd":null},3]}}}}}
 
+# Example test cases at the end of the RFC-7396 document
+do_execsql_test json104-300 {
+  SELECT json_patch('{"a":"b"}','{"a":"c"}');
+} {{{"a":"c"}}}
+do_execsql_test json104-300a {
+  SELECT coalesce(json_patch(null,'{"a":"c"}'), 'real-null');
+} {{real-null}}
+do_execsql_test json104-301 {
+  SELECT json_patch('{"a":"b"}','{"b":"c"}');
+} {{{"a":"b","b":"c"}}}
+do_execsql_test json104-302 {
+  SELECT json_patch('{"a":"b"}','{"a":null}');
+} {{{}}}
+do_execsql_test json104-303 {
+  SELECT json_patch('{"a":"b","b":"c"}','{"a":null}');
+} {{{"b":"c"}}}
+do_execsql_test json104-304 {
+  SELECT json_patch('{"a":["b"]}','{"a":"c"}');
+} {{{"a":"c"}}}
+do_execsql_test json104-305 {
+  SELECT json_patch('{"a":"c"}','{"a":["b"]}');
+} {{{"a":["b"]}}}
+do_execsql_test json104-306 {
+  SELECT json_patch('{"a":{"b":"c"}}','{"a":{"b":"d","c":null}}');
+} {{{"a":{"b":"d"}}}}
+do_execsql_test json104-307 {
+  SELECT json_patch('{"a":[{"b":"c"}]}','{"a":[1]}');
+} {{{"a":[1]}}}
+do_execsql_test json104-308 {
+  SELECT json_patch('["a","b"]','["c","d"]');
+} {{["c","d"]}}
+do_execsql_test json104-309 {
+  SELECT json_patch('{"a":"b"}','["c"]');
+} {{["c"]}}
+do_execsql_test json104-310 {
+  SELECT json_patch('{"a":"foo"}','null');
+} {{null}}
+do_execsql_test json104-310a {
+  SELECT coalesce(json_patch('{"a":"foo"}',null), 'real-null');
+} {{real-null}}
+do_execsql_test json104-311 {
+  SELECT json_patch('{"a":"foo"}','"bar"');
+} {{"bar"}}
+do_execsql_test json104-312 {
+  SELECT json_patch('{"e":null}','{"a":1}');
+} {{{"e":null,"a":1}}}
+do_execsql_test json104-313 {
+  SELECT json_patch('[1,2]','{"a":"b","c":null}');
+} {{{"a":"b"}}}
+do_execsql_test json104-314 {
+  SELECT json_patch('{}','{"a":{"bb":{"ccc":null}}}');
+} {{{"a":{"bb":{}}}}}
+
+
 
 finish_test
