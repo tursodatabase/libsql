@@ -1397,7 +1397,7 @@ static JsonNode *jsonMergePatch(
   }
   iRoot = iTarget;
   for(i=1; i<pPatch->n; i += jsonNodeSize(&pPatch[i+1])+1){
-    int nKey;
+    u32 nKey;
     const char *zKey;
     assert( pPatch[i].eType==JSON_STRING );
     assert( pPatch[i].jnFlags & JNODE_LABEL );
