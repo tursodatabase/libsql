@@ -657,6 +657,7 @@ static void codeDistinct(
   sqlite3VdbeAddOp4Int(v, OP_Found, iTab, addrRepeat, iMem, N); VdbeCoverage(v);
   sqlite3VdbeAddOp3(v, OP_MakeRecord, iMem, N, r1);
   sqlite3VdbeAddOp4Int(v, OP_IdxInsert, iTab, r1, iMem, N);
+  sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
   sqlite3ReleaseTempReg(pParse, r1);
 }
 
@@ -3748,7 +3749,9 @@ static int flattenSubquery(
     }else{
       pParent->pWhere = sqlite3ExprAnd(db, pWhere, pParent->pWhere);
     }
-    substSelect(pParse, pParent, iParent, pSub->pEList, 0);
+    if( db->mallocFailed==0 ){
+      substSelect(pParse, pParent, iParent, pSub->pEList, 0);
+    }
   
     /* The flattened query is distinct if either the inner or the
     ** outer query is distinct. 
@@ -4185,7 +4188,15 @@ static int withExpand(
     pCte->zCteErr = "circular reference: %s";
     pSavedWith = pParse->pWith;
     pParse->pWith = pWith;
-    sqlite3WalkSelect(pWalker, bMayRecursive ? pSel->pPrior : pSel);
+    if( bMayRecursive ){
+      Select *pPrior = pSel->pPrior;
+      assert( pPrior->pWith==0 );
+      pPrior->pWith = pSel->pWith;
+      sqlite3WalkSelect(pWalker, pPrior);
+      pPrior->pWith = 0;
+    }else{
+      sqlite3WalkSelect(pWalker, pSel);
+    }
     pParse->pWith = pWith;
 
     for(pLeft=pSel; pLeft->pPrior; pLeft=pLeft->pPrior);
@@ -4229,10 +4240,12 @@ static int withExpand(
 */
 static void selectPopWith(Walker *pWalker, Select *p){
   Parse *pParse = pWalker->pParse;
-  With *pWith = findRightmost(p)->pWith;
-  if( pWith!=0 ){
-    assert( pParse->pWith==pWith );
-    pParse->pWith = pWith->pOuter;
+  if( pParse->pWith && p->pPrior==0 ){
+    With *pWith = findRightmost(p)->pWith;
+    if( pWith!=0 ){
+      assert( pParse->pWith==pWith );
+      pParse->pWith = pWith->pOuter;
+    }
   }
 }
 #else
@@ -4282,8 +4295,8 @@ static int selectExpander(Walker *pWalker, Select *p){
   }
   pTabList = p->pSrc;
   pEList = p->pEList;
-  if( pWalker->xSelectCallback2==selectPopWith ){
-    sqlite3WithPush(pParse, findRightmost(p)->pWith, 0);
+  if( p->pWith ){
+    sqlite3WithPush(pParse, p->pWith, 0);
   }
 
   /* Make sure cursor numbers have been assigned to all entries in
@@ -4570,9 +4583,7 @@ static void sqlite3SelectExpand(Parse *pParse, Select *pSelect){
     sqlite3WalkSelect(&w, pSelect);
   }
   w.xSelectCallback = selectExpander;
-  if( (pSelect->selFlags & SF_MultiValue)==0 ){
-    w.xSelectCallback2 = selectPopWith;
-  }
+  w.xSelectCallback2 = selectPopWith;
   sqlite3WalkSelect(&w, pSelect);
 }
 
@@ -5651,7 +5662,7 @@ int sqlite3Select(
         ** of output.
         */
         resetAccumulator(pParse, &sAggInfo);
-        pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, pMinMax,0,flag,0);
+        pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, pMinMax, 0,flag,0);
         if( pWInfo==0 ){
           sqlite3ExprListDelete(db, pDel);
           goto select_end;

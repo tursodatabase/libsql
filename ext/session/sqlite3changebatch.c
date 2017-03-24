@@ -160,7 +160,6 @@ static int cbAddIndex(
 
   pNew = (BatchIndex*)cbMalloc(&rc, sizeof(BatchIndex) + sizeof(int) * nCol);
   if( rc==SQLITE_OK ){
-    int rc2;
     pNew->nCol = nCol;
     pNew->bPk = bPk;
     pNew->aiCol = (int*)&pNew[1];

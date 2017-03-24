@@ -356,6 +356,7 @@ struct sqlite3rbu {
   RbuObjIter objiter;             /* Iterator for skipping through tbl/idx */
   const char *zVfsName;           /* Name of automatically created rbu vfs */
   rbu_file *pTargetFd;            /* File handle open on target db */
+  int nPagePerSector;             /* Pages per sector for pTargetFd */
   i64 iOalSz;
   i64 nPhaseOneStep;
 
@@ -2333,7 +2334,7 @@ static RbuState *rbuLoadState(sqlite3rbu *p){
 ** Open the database handle and attach the RBU database as "rbu". If an
 ** error occurs, leave an error code and message in the RBU handle.
 */
-static void rbuOpenDatabase(sqlite3rbu *p){
+static void rbuOpenDatabase(sqlite3rbu *p, int *pbRetry){
   assert( p->rc || (p->dbMain==0 && p->dbRbu==0) );
   assert( p->rc || rbuIsVacuum(p) || p->zTarget!=0 );
 
@@ -2408,7 +2409,7 @@ static void rbuOpenDatabase(sqlite3rbu *p){
     }else{
       RbuState *pState = rbuLoadState(p);
       if( pState ){
-        bOpen = (pState->eStage>RBU_STAGE_MOVE);
+        bOpen = (pState->eStage>=RBU_STAGE_MOVE);
         rbuFreeState(pState);
       }
     }
@@ -2420,6 +2421,15 @@ static void rbuOpenDatabase(sqlite3rbu *p){
     if( !rbuIsVacuum(p) ){
       p->dbMain = rbuOpenDbhandle(p, p->zTarget, 1);
     }else if( p->pRbuFd->pWalFd ){
+      if( pbRetry ){
+        p->pRbuFd->bNolock = 0;
+        sqlite3_close(p->dbRbu);
+        sqlite3_close(p->dbMain);
+        p->dbMain = 0;
+        p->dbRbu = 0;
+        *pbRetry = 1;
+        return;
+      }
       p->rc = SQLITE_ERROR;
       p->zErrmsg = sqlite3_mprintf("cannot vacuum wal mode database");
     }else{
@@ -2600,16 +2610,35 @@ static void rbuSetupCheckpoint(sqlite3rbu *p, RbuState *pState){
     if( rc2!=SQLITE_INTERNAL ) p->rc = rc2;
   }
 
-  if( p->rc==SQLITE_OK ){
+  if( p->rc==SQLITE_OK && p->nFrame>0 ){
     p->eStage = RBU_STAGE_CKPT;
     p->nStep = (pState ? pState->nRow : 0);
     p->aBuf = rbuMalloc(p, p->pgsz);
     p->iWalCksum = rbuShmChecksum(p);
   }
 
-  if( p->rc==SQLITE_OK && pState && pState->iWalCksum!=p->iWalCksum ){
-    p->rc = SQLITE_DONE;
-    p->eStage = RBU_STAGE_DONE;
+  if( p->rc==SQLITE_OK ){
+    if( p->nFrame==0 || (pState && pState->iWalCksum!=p->iWalCksum) ){
+      p->rc = SQLITE_DONE;
+      p->eStage = RBU_STAGE_DONE;
+    }else{
+      int nSectorSize;
+      sqlite3_file *pDb = p->pTargetFd->pReal;
+      sqlite3_file *pWal = p->pTargetFd->pWalFd->pReal;
+      assert( p->nPagePerSector==0 );
+      nSectorSize = pDb->pMethods->xSectorSize(pDb);
+      if( nSectorSize>p->pgsz ){
+        p->nPagePerSector = nSectorSize / p->pgsz;
+      }else{
+        p->nPagePerSector = 1;
+      }
+
+      /* Call xSync() on the wal file. This causes SQLite to sync the 
+      ** directory in which the target database and the wal file reside, in 
+      ** case it has not been synced since the rename() call in 
+      ** rbuMoveOalFile(). */
+      p->rc = pWal->pMethods->xSync(pWal, SQLITE_SYNC_NORMAL);
+    }
   }
 }
 
@@ -2782,7 +2811,7 @@ static void rbuMoveOalFile(sqlite3rbu *p){
 #endif
 
       if( p->rc==SQLITE_OK ){
-        rbuOpenDatabase(p);
+        rbuOpenDatabase(p, 0);
         rbuSetupCheckpoint(p, 0);
       }
     }
@@ -3264,9 +3293,26 @@ int sqlite3rbu_step(sqlite3rbu *p){
               p->rc = SQLITE_DONE;
             }
           }else{
-            RbuFrame *pFrame = &p->aFrame[p->nStep];
-            rbuCheckpointFrame(p, pFrame);
-            p->nStep++;
+            /* At one point the following block copied a single frame from the
+            ** wal file to the database file. So that one call to sqlite3rbu_step()
+            ** checkpointed a single frame. 
+            **
+            ** However, if the sector-size is larger than the page-size, and the
+            ** application calls sqlite3rbu_savestate() or close() immediately
+            ** after this step, then rbu_step() again, then a power failure occurs,
+            ** then the database page written here may be damaged. Work around
+            ** this by checkpointing frames until the next page in the aFrame[]
+            ** lies on a different disk sector to the current one. */
+            u32 iSector;
+            do{
+              RbuFrame *pFrame = &p->aFrame[p->nStep];
+              iSector = (pFrame->iDbPage-1) / p->nPagePerSector;
+              rbuCheckpointFrame(p, pFrame);
+              p->nStep++;
+            }while( p->nStep<p->nFrame 
+                 && iSector==((p->aFrame[p->nStep].iDbPage-1) / p->nPagePerSector)
+                 && p->rc==SQLITE_OK
+            );
           }
           p->nProgress++;
         }
@@ -3493,6 +3539,7 @@ static sqlite3rbu *openRbuHandle(
     /* Open the target, RBU and state databases */
     if( p->rc==SQLITE_OK ){
       char *pCsr = (char*)&p[1];
+      int bRetry = 0;
       if( zTarget ){
         p->zTarget = pCsr;
         memcpy(p->zTarget, zTarget, nTarget+1);
@@ -3504,7 +3551,18 @@ static sqlite3rbu *openRbuHandle(
       if( zState ){
         p->zState = rbuMPrintf(p, "%s", zState);
       }
-      rbuOpenDatabase(p);
+
+      /* If the first attempt to open the database file fails and the bRetry
+      ** flag it set, this means that the db was not opened because it seemed
+      ** to be a wal-mode db. But, this may have happened due to an earlier
+      ** RBU vacuum operation leaving an old wal file in the directory.
+      ** If this is the case, it will have been checkpointed and deleted
+      ** when the handle was closed and a second attempt to open the 
+      ** database may succeed.  */
+      rbuOpenDatabase(p, &bRetry);
+      if( bRetry ){
+        rbuOpenDatabase(p, 0);
+      }
     }
 
     if( p->rc==SQLITE_OK ){
@@ -3695,6 +3753,12 @@ int sqlite3rbu_close(sqlite3rbu *p, char **pzErrmsg){
       p->rc = sqlite3_exec(p->dbMain, "COMMIT", 0, 0, &p->zErrmsg);
     }
 
+    /* Sync the db file if currently doing an incremental checkpoint */
+    if( p->rc==SQLITE_OK && p->eStage==RBU_STAGE_CKPT ){
+      sqlite3_file *pDb = p->pTargetFd->pReal;
+      p->rc = pDb->pMethods->xSync(pDb, SQLITE_SYNC_NORMAL);
+    }
+
     rbuSaveState(p, p->eStage);
 
     if( p->rc==SQLITE_OK && p->eStage==RBU_STAGE_OAL ){
@@ -3817,6 +3881,12 @@ int sqlite3rbu_savestate(sqlite3rbu *p){
   if( p->eStage==RBU_STAGE_OAL ){
     assert( rc!=SQLITE_DONE );
     if( rc==SQLITE_OK ) rc = sqlite3_exec(p->dbMain, "COMMIT", 0, 0, 0);
+  }
+
+  /* Sync the db file */
+  if( rc==SQLITE_OK && p->eStage==RBU_STAGE_CKPT ){
+    sqlite3_file *pDb = p->pTargetFd->pReal;
+    rc = pDb->pMethods->xSync(pDb, SQLITE_SYNC_NORMAL);
   }
 
   p->rc = rc;

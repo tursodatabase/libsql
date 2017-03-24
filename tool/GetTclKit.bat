@@ -124,7 +124,7 @@ IF NOT EXIST "%FRAMEWORKDIR%\csc.exe" (
   GOTO errors
 )
 
-SET PATH=%FRAMEWORKDIR%;%PATH%
+CALL :fn_PrependToPath FRAMEWORKDIR
 
 :skip_addToPath
 
@@ -244,6 +244,18 @@ GOTO no_errors
   SET VALUE=%VALUE:"=%
   REM "
   ENDLOCAL && SET %1=%VALUE%
+  GOTO :EOF
+
+:fn_PrependToPath
+  IF NOT DEFINED %1 GOTO :EOF
+  SETLOCAL
+  SET __ECHO_CMD=ECHO %%%1%%
+  FOR /F "delims=" %%V IN ('%__ECHO_CMD%') DO (
+    SET VALUE=%%V
+  )
+  SET VALUE=%VALUE:"=%
+  REM "
+  ENDLOCAL && SET PATH=%VALUE%;%PATH%
   GOTO :EOF
 
 :fn_ResetErrorLevel

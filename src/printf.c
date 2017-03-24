@@ -15,7 +15,7 @@
 ** Conversion types fall into various categories as defined by the
 ** following enumeration.
 */
-#define etRADIX       0 /* Integer types.  %d, %x, %o, and so forth */
+#define etRADIX       0 /* non-decimal integer types.  %x %o */
 #define etFLOAT       1 /* Floating point.  %f */
 #define etEXP         2 /* Exponentional notation. %e and %E */
 #define etGENERIC     3 /* Floating or exponential, depending on exponent. %g */
@@ -33,8 +33,9 @@
 #define etPOINTER    13 /* The %p conversion */
 #define etSQLESCAPE3 14 /* %w -> Strings with '\"' doubled */
 #define etORDINAL    15 /* %r -> 1st, 2nd, 3rd, 4th, etc.  English only */
+#define etDECIMAL    16 /* %d or %u, but not %x, %o */
 
-#define etINVALID    16 /* Any unrecognized conversion type */
+#define etINVALID    17 /* Any unrecognized conversion type */
 
 
 /*
@@ -58,8 +59,8 @@ typedef struct et_info {   /* Information about each format field */
 /*
 ** Allowed values for et_info.flags
 */
-#define FLAG_SIGNED  1     /* True if the value to convert is signed */
-#define FLAG_STRING  4     /* Allow infinity precision */
+#define FLAG_SIGNED    1     /* True if the value to convert is signed */
+#define FLAG_STRING    4     /* Allow infinite precision */
 
 
 /*
@@ -69,7 +70,7 @@ typedef struct et_info {   /* Information about each format field */
 static const char aDigits[] = "0123456789ABCDEF0123456789abcdef";
 static const char aPrefix[] = "-x0\000X0";
 static const et_info fmtinfo[] = {
-  {  'd', 10, 1, etRADIX,      0,  0 },
+  {  'd', 10, 1, etDECIMAL,    0,  0 },
   {  's',  0, 4, etSTRING,     0,  0 },
   {  'g',  0, 1, etGENERIC,    30, 0 },
   {  'z',  0, 4, etDYNSTRING,  0,  0 },
@@ -78,7 +79,7 @@ static const et_info fmtinfo[] = {
   {  'w',  0, 4, etSQLESCAPE3, 0,  0 },
   {  'c',  0, 0, etCHARX,      0,  0 },
   {  'o',  8, 0, etRADIX,      0,  2 },
-  {  'u', 10, 0, etRADIX,      0,  0 },
+  {  'u', 10, 0, etDECIMAL,    0,  0 },
   {  'x', 16, 0, etRADIX,      16, 1 },
   {  'X', 16, 0, etRADIX,      0,  4 },
 #ifndef SQLITE_OMIT_FLOATING_POINT
@@ -87,7 +88,7 @@ static const et_info fmtinfo[] = {
   {  'E',  0, 1, etEXP,        14, 0 },
   {  'G',  0, 1, etGENERIC,    14, 0 },
 #endif
-  {  'i', 10, 1, etRADIX,      0,  0 },
+  {  'i', 10, 1, etDECIMAL,    0,  0 },
   {  'n',  0, 0, etSIZE,       0,  0 },
   {  '%',  0, 0, etPERCENT,    0,  0 },
   {  'p', 16, 0, etPOINTER,    0,  1 },
@@ -179,14 +180,13 @@ void sqlite3VXPrintf(
   int idx;                   /* A general purpose loop counter */
   int width;                 /* Width of the current field */
   etByte flag_leftjustify;   /* True if "-" flag is present */
-  etByte flag_plussign;      /* True if "+" flag is present */
-  etByte flag_blanksign;     /* True if " " flag is present */
+  etByte flag_prefix;        /* '+' or ' ' or 0 for prefix */
   etByte flag_alternateform; /* True if "#" flag is present */
   etByte flag_altform2;      /* True if "!" flag is present */
   etByte flag_zeropad;       /* True if field width constant starts with zero */
-  etByte flag_long;          /* True if "l" flag is present */
-  etByte flag_longlong;      /* True if the "ll" flag is present */
+  etByte flag_long;          /* 1 for the "l" flag, 2 for "ll", 0 by default */
   etByte done;               /* Loop termination flag */
+  etByte cThousand;          /* Thousands separator for %d and %u */
   etByte xtype = etINVALID;  /* Conversion paradigm */
   u8 bArgList;               /* True for SQLITE_PRINTF_SQLFUNC */
   char prefix;               /* Prefix character.  "+" or "-" or " " or '\0'. */
@@ -229,17 +229,18 @@ void sqlite3VXPrintf(
       break;
     }
     /* Find out what flags are present */
-    flag_leftjustify = flag_plussign = flag_blanksign = 
+    flag_leftjustify = flag_prefix = cThousand =
      flag_alternateform = flag_altform2 = flag_zeropad = 0;
     done = 0;
     do{
       switch( c ){
         case '-':   flag_leftjustify = 1;     break;
-        case '+':   flag_plussign = 1;        break;
-        case ' ':   flag_blanksign = 1;       break;
+        case '+':   flag_prefix = '+';        break;
+        case ' ':   flag_prefix = ' ';        break;
         case '#':   flag_alternateform = 1;   break;
         case '!':   flag_altform2 = 1;        break;
         case '0':   flag_zeropad = 1;         break;
+        case ',':   cThousand = ',';          break;
         default:    done = 1;                 break;
       }
     }while( !done && (c=(*++fmt))!=0 );
@@ -309,13 +310,11 @@ void sqlite3VXPrintf(
       flag_long = 1;
       c = *++fmt;
       if( c=='l' ){
-        flag_longlong = 1;
+        flag_long = 2;
         c = *++fmt;
-      }else{
-        flag_longlong = 0;
       }
     }else{
-      flag_long = flag_longlong = 0;
+      flag_long = 0;
     }
     /* Fetch the info entry for the field */
     infop = &fmtinfo[0];
@@ -333,15 +332,11 @@ void sqlite3VXPrintf(
     **
     **   flag_alternateform          TRUE if a '#' is present.
     **   flag_altform2               TRUE if a '!' is present.
-    **   flag_plussign               TRUE if a '+' is present.
+    **   flag_prefix                 '+' or ' ' or zero
     **   flag_leftjustify            TRUE if a '-' is present or if the
     **                               field width was negative.
     **   flag_zeropad                TRUE if the width began with 0.
-    **   flag_long                   TRUE if the letter 'l' (ell) prefixed
-    **                               the conversion character.
-    **   flag_longlong               TRUE if the letter 'll' (ell ell) prefixed
-    **                               the conversion character.
-    **   flag_blanksign              TRUE if a ' ' is present.
+    **   flag_long                   1 for "l", 2 for "ll"
     **   width                       The specified field width.  This is
     **                               always non-negative.  Zero is the default.
     **   precision                   The specified precision.  The default
@@ -351,19 +346,24 @@ void sqlite3VXPrintf(
     */
     switch( xtype ){
       case etPOINTER:
-        flag_longlong = sizeof(char*)==sizeof(i64);
-        flag_long = sizeof(char*)==sizeof(long int);
+        flag_long = sizeof(char*)==sizeof(i64) ? 2 :
+                     sizeof(char*)==sizeof(long int) ? 1 : 0;
         /* Fall through into the next case */
       case etORDINAL:
-      case etRADIX:
+      case etRADIX:      
+        cThousand = 0;
+        /* Fall through into the next case */
+      case etDECIMAL:
         if( infop->flags & FLAG_SIGNED ){
           i64 v;
           if( bArgList ){
             v = getIntArg(pArgList);
-          }else if( flag_longlong ){
-            v = va_arg(ap,i64);
           }else if( flag_long ){
-            v = va_arg(ap,long int);
+            if( flag_long==2 ){
+              v = va_arg(ap,i64) ;
+            }else{
+              v = va_arg(ap,long int);
+            }
           }else{
             v = va_arg(ap,int);
           }
@@ -376,17 +376,17 @@ void sqlite3VXPrintf(
             prefix = '-';
           }else{
             longvalue = v;
-            if( flag_plussign )        prefix = '+';
-            else if( flag_blanksign )  prefix = ' ';
-            else                       prefix = 0;
+            prefix = flag_prefix;
           }
         }else{
           if( bArgList ){
             longvalue = (u64)getIntArg(pArgList);
-          }else if( flag_longlong ){
-            longvalue = va_arg(ap,u64);
           }else if( flag_long ){
-            longvalue = va_arg(ap,unsigned long int);
+            if( flag_long==2 ){
+              longvalue = va_arg(ap,u64);
+            }else{
+              longvalue = va_arg(ap,unsigned long int);
+            }
           }else{
             longvalue = va_arg(ap,unsigned int);
           }
@@ -396,16 +396,17 @@ void sqlite3VXPrintf(
         if( flag_zeropad && precision<width-(prefix!=0) ){
           precision = width-(prefix!=0);
         }
-        if( precision<etBUFSIZE-10 ){
+        if( precision<etBUFSIZE-10-etBUFSIZE/3 ){
           nOut = etBUFSIZE;
           zOut = buf;
         }else{
-          nOut = precision + 10;
-          zOut = zExtra = sqlite3Malloc( nOut );
+          u64 n = (u64)precision + 10 + precision/3;
+          zOut = zExtra = sqlite3Malloc( n );
           if( zOut==0 ){
             setStrAccumError(pAccum, STRACCUM_NOMEM);
             return;
           }
+          nOut = (int)n;
         }
         bufpt = &zOut[nOut-1];
         if( xtype==etORDINAL ){
@@ -426,8 +427,23 @@ void sqlite3VXPrintf(
           }while( longvalue>0 );
         }
         length = (int)(&zOut[nOut-1]-bufpt);
-        for(idx=precision-length; idx>0; idx--){
+        while( precision>length ){
           *(--bufpt) = '0';                             /* Zero pad */
+          length++;
+        }
+        if( cThousand ){
+          int nn = (length - 1)/3;  /* Number of "," to insert */
+          int ix = (length - 1)%3 + 1;
+          bufpt -= nn;
+          for(idx=0; nn>0; idx++){
+            bufpt[idx] = bufpt[idx+nn];
+            ix--;
+            if( ix==0 ){
+              bufpt[++idx] = cThousand;
+              nn--;
+              ix = 3;
+            }
+          }
         }
         if( prefix ) *(--bufpt) = prefix;               /* Add sign */
         if( flag_alternateform && infop->prefix ){      /* Add "0" or "0x" */
@@ -454,9 +470,7 @@ void sqlite3VXPrintf(
           realvalue = -realvalue;
           prefix = '-';
         }else{
-          if( flag_plussign )          prefix = '+';
-          else if( flag_blanksign )    prefix = ' ';
-          else                         prefix = 0;
+          prefix = flag_prefix;
         }
         if( xtype==etGENERIC && precision>0 ) precision--;
         testcase( precision>0xfff );

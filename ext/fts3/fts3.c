@@ -349,8 +349,9 @@ int sqlite3Fts3PutVarint(char *p, sqlite_int64 v){
 ** Return the number of bytes read, or 0 on error.
 ** The value is stored in *v.
 */
-int sqlite3Fts3GetVarint(const char *p, sqlite_int64 *v){
-  const char *pStart = p;
+int sqlite3Fts3GetVarint(const char *pBuf, sqlite_int64 *v){
+  const unsigned char *p = (const unsigned char*)pBuf;
+  const unsigned char *pStart = p;
   u32 a;
   u64 b;
   int shift;
@@ -492,6 +493,7 @@ static int fts3DisconnectMethod(sqlite3_vtab *pVtab){
   assert( p->pSegments==0 );
 
   /* Free any prepared statements held */
+  sqlite3_finalize(p->pSeekStmt);
   for(i=0; i<SizeofArray(p->aStmt); i++){
     sqlite3_finalize(p->aStmt[i]);
   }
@@ -1363,9 +1365,9 @@ static int fts3InitVtab(
   p->pTokenizer = pTokenizer;
   p->nMaxPendingData = FTS3_MAX_PENDING_DATA;
   p->bHasDocsize = (isFts4 && bNoDocsize==0);
-  p->bHasStat = isFts4;
-  p->bFts4 = isFts4;
-  p->bDescIdx = bDescIdx;
+  p->bHasStat = (u8)isFts4;
+  p->bFts4 = (u8)isFts4;
+  p->bDescIdx = (u8)bDescIdx;
   p->nAutoincrmerge = 0xff;   /* 0xff means setting unknown */
   p->zContentTbl = zContent;
   p->zLanguageid = zLanguageid;
@@ -1396,7 +1398,9 @@ static int fts3InitVtab(
     char *z; 
     int n = 0;
     z = (char *)sqlite3Fts3NextToken(aCol[iCol], &n);
-    memcpy(zCsr, z, n);
+    if( n>0 ){
+      memcpy(zCsr, z, n);
+    }
     zCsr[n] = '\0';
     sqlite3Fts3Dequote(zCsr);
     p->azColumn[iCol] = zCsr;
@@ -1681,13 +1685,33 @@ static int fts3OpenMethod(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCsr){
 }
 
 /*
+** Finalize the statement handle at pCsr->pStmt.
+**
+** Or, if that statement handle is one created by fts3CursorSeekStmt(),
+** and the Fts3Table.pSeekStmt slot is currently NULL, save the statement
+** pointer there instead of finalizing it.
+*/
+static void fts3CursorFinalizeStmt(Fts3Cursor *pCsr){
+  if( pCsr->bSeekStmt ){
+    Fts3Table *p = (Fts3Table *)pCsr->base.pVtab;
+    if( p->pSeekStmt==0 ){
+      p->pSeekStmt = pCsr->pStmt;
+      sqlite3_reset(pCsr->pStmt);
+      pCsr->pStmt = 0;
+    }
+    pCsr->bSeekStmt = 0;
+  }
+  sqlite3_finalize(pCsr->pStmt);
+}
+
+/*
 ** Close the cursor.  For additional information see the documentation
 ** on the xClose method of the virtual table interface.
 */
 static int fts3CloseMethod(sqlite3_vtab_cursor *pCursor){
   Fts3Cursor *pCsr = (Fts3Cursor *)pCursor;
   assert( ((Fts3Table *)pCsr->base.pVtab)->pSegments==0 );
-  sqlite3_finalize(pCsr->pStmt);
+  fts3CursorFinalizeStmt(pCsr);
   sqlite3Fts3ExprFree(pCsr->pExpr);
   sqlite3Fts3FreeDeferredTokens(pCsr);
   sqlite3_free(pCsr->aDoclist);
@@ -1705,20 +1729,23 @@ static int fts3CloseMethod(sqlite3_vtab_cursor *pCursor){
 **
 ** (or the equivalent for a content=xxx table) and set pCsr->pStmt to
 ** it. If an error occurs, return an SQLite error code.
-**
-** Otherwise, set *ppStmt to point to pCsr->pStmt and return SQLITE_OK.
 */
-static int fts3CursorSeekStmt(Fts3Cursor *pCsr, sqlite3_stmt **ppStmt){
+static int fts3CursorSeekStmt(Fts3Cursor *pCsr){
   int rc = SQLITE_OK;
   if( pCsr->pStmt==0 ){
     Fts3Table *p = (Fts3Table *)pCsr->base.pVtab;
     char *zSql;
-    zSql = sqlite3_mprintf("SELECT %s WHERE rowid = ?", p->zReadExprlist);
-    if( !zSql ) return SQLITE_NOMEM;
-    rc = sqlite3_prepare_v2(p->db, zSql, -1, &pCsr->pStmt, 0);
-    sqlite3_free(zSql);
+    if( p->pSeekStmt ){
+      pCsr->pStmt = p->pSeekStmt;
+      p->pSeekStmt = 0;
+    }else{
+      zSql = sqlite3_mprintf("SELECT %s WHERE rowid = ?", p->zReadExprlist);
+      if( !zSql ) return SQLITE_NOMEM;
+      rc = sqlite3_prepare_v2(p->db, zSql, -1, &pCsr->pStmt, 0);
+      sqlite3_free(zSql);
+    }
+    if( rc==SQLITE_OK ) pCsr->bSeekStmt = 1;
   }
-  *ppStmt = pCsr->pStmt;
   return rc;
 }
 
@@ -1730,9 +1757,7 @@ static int fts3CursorSeekStmt(Fts3Cursor *pCsr, sqlite3_stmt **ppStmt){
 static int fts3CursorSeek(sqlite3_context *pContext, Fts3Cursor *pCsr){
   int rc = SQLITE_OK;
   if( pCsr->isRequireSeek ){
-    sqlite3_stmt *pStmt = 0;
-
-    rc = fts3CursorSeekStmt(pCsr, &pStmt);
+    rc = fts3CursorSeekStmt(pCsr);
     if( rc==SQLITE_OK ){
       sqlite3_bind_int64(pCsr->pStmt, 1, pCsr->iPrevId);
       pCsr->isRequireSeek = 0;
@@ -3190,7 +3215,7 @@ static int fts3FilterMethod(
   assert( iIdx==nVal );
 
   /* In case the cursor has been used before, clear it now. */
-  sqlite3_finalize(pCsr->pStmt);
+  fts3CursorFinalizeStmt(pCsr);
   sqlite3_free(pCsr->aDoclist);
   sqlite3Fts3MIBufferFree(pCsr->pMIBuffer);
   sqlite3Fts3ExprFree(pCsr->pExpr);
@@ -3258,7 +3283,7 @@ static int fts3FilterMethod(
       rc = SQLITE_NOMEM;
     }
   }else if( eSearch==FTS3_DOCID_SEARCH ){
-    rc = fts3CursorSeekStmt(pCsr, &pCsr->pStmt);
+    rc = fts3CursorSeekStmt(pCsr);
     if( rc==SQLITE_OK ){
       rc = sqlite3_bind_value(pCsr->pStmt, 1, pCons);
     }
@@ -3386,8 +3411,10 @@ static int fts3SyncMethod(sqlite3_vtab *pVtab){
   const u32 nMinMerge = 64;       /* Minimum amount of incr-merge work to do */
 
   Fts3Table *p = (Fts3Table*)pVtab;
-  int rc = sqlite3Fts3PendingTermsFlush(p);
+  int rc;
+  i64 iLastRowid = sqlite3_last_insert_rowid(p->db);
 
+  rc = sqlite3Fts3PendingTermsFlush(p);
   if( rc==SQLITE_OK 
    && p->nLeafAdd>(nMinMerge/16) 
    && p->nAutoincrmerge && p->nAutoincrmerge!=0xff
@@ -3402,6 +3429,7 @@ static int fts3SyncMethod(sqlite3_vtab *pVtab){
     if( A>(int)nMinMerge ) rc = sqlite3Fts3Incrmerge(p, A, p->nAutoincrmerge);
   }
   sqlite3Fts3SegmentsClose(p);
+  sqlite3_set_last_insert_rowid(p->db, iLastRowid);
   return rc;
 }
 
@@ -3422,7 +3450,7 @@ static int fts3SetHasStat(Fts3Table *p){
       if( rc==SQLITE_OK ){
         int bHasStat = (sqlite3_step(pStmt)==SQLITE_ROW);
         rc = sqlite3_finalize(pStmt);
-        if( rc==SQLITE_OK ) p->bHasStat = bHasStat;
+        if( rc==SQLITE_OK ) p->bHasStat = (u8)bHasStat;
       }
       sqlite3_free(zSql);
     }else{

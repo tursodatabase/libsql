@@ -18,7 +18,6 @@
 #endif
 #include "sqlite3ext.h"
 #include "sqliteInt.h"
-#include <string.h>
 
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
 /*

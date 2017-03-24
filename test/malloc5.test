@@ -236,12 +236,12 @@ do_test malloc5-4.2 {
   db eval {PRAGMA cache_size=1}
   db cache flush
   sqlite3_release_memory
-  sqlite3_soft_heap_limit 100000
+  sqlite3_soft_heap_limit 200000
   sqlite3_memory_highwater 1
   execsql {SELECT * FROM abc}
   set nMaxBytes [sqlite3_memory_highwater 1]
   puts -nonewline " (Highwater mark: $nMaxBytes) "
-  expr $nMaxBytes <= 110000
+  expr $nMaxBytes <= 210000
 } {1}
 do_test malloc5-4.3 {
   # Check that the content of table abc is at least roughly as expected.

@@ -24,6 +24,13 @@ USE_AMALGAMATION = 1
 USE_FULLWARN = 0
 !ENDIF
 
+# Set this non-0 to enable treating warnings as errors (-WX, etc) when
+# compiling.
+#
+!IFNDEF USE_FATAL_WARN
+USE_FATAL_WARN = 0
+!ENDIF
+
 # Set this non-0 to enable full runtime error checks (-RTC1, etc).  This
 # has no effect if (any) optimizations are enabled.
 #
@@ -493,6 +500,12 @@ TCC = $(CC) -nologo -W4 -DINCLUDE_MSVC_H=1 $(CCOPTS) $(TCCOPTS)
 TCC = $(CC) -nologo -W3 $(CCOPTS) $(TCCOPTS)
 !ENDIF
 
+# Check if warnings should be treated as errors when compiling.
+#
+!IF $(USE_FATAL_WARN)!=0
+TCC = $(TCC) -WX
+!ENDIF
+
 TCC = $(TCC) -DSQLITE_OS_WIN=1 -I. -I$(TOP) -I$(TOP)\src -fp:precise
 RCC = $(RC) -DSQLITE_OS_WIN=1 -I. -I$(TOP) -I$(TOP)\src $(RCOPTS) $(RCCOPTS)
 
@@ -732,6 +745,7 @@ RCC = $(RCC) -DSQLITE_ENABLE_API_ARMOR=1
 
 !IF $(DEBUG)>2
 TCC = $(TCC) -DSQLITE_DEBUG=1
+TCC = $(TCC) -DSQLITE_ENABLE_WHERETRACE -DSQLITE_ENABLE_SELECTTRACE
 RCC = $(RCC) -DSQLITE_DEBUG=1
 !ENDIF
 
@@ -1496,9 +1510,13 @@ SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_SHELL_JSON1 -DSQLITE_ENABLE_
 #
 MPTESTER_COMPILE_OPTS = -DSQLITE_SHELL_JSON1 -DSQLITE_ENABLE_FTS5
 FUZZERSHELL_COMPILE_OPTS = -DSQLITE_ENABLE_JSON1
-FUZZCHECK_COMPILE_OPTS = -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_MEMSYS5 -DSQLITE_OSS_FUZZ
+FUZZCHECK_COMPILE_OPTS = -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_MEMSYS5 -DSQLITE_OSS_FUZZ -DSQLITE_MAX_MEMORY=50000000
 FUZZCHECK_SRC = $(TOP)\test\fuzzcheck.c $(TOP)\test\ossfuzz.c
 OSSSHELL_SRC = $(TOP)\test\ossshell.c $(TOP)\test\ossfuzz.c
+DBFUZZ_COMPILE_OPTS = -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION
+KV_COMPILE_OPTS = -DSQLITE_THREADSAFE=0 -DSQLITE_DIRECT_OVERFLOW_READ
+DBSELFTEST_COMPILE_OPTS = -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -DSQLITE_ENABLE_RTREE -DSQLITE_ENABLE_FTS4 -DSQLITE_ENABLE_FTS5
+ST_COMPILE_OPTS = -DSQLITE_THREADSAFE=0
 
 # Standard options to testfixture.
 #
@@ -1541,7 +1559,7 @@ $(SQLITE3DLL):	$(LIBOBJ) $(LIBRESOBJS) $(CORE_LINK_DEP)
 sqlite3.def:	libsqlite3.lib
 	echo EXPORTS > sqlite3.def
 	dumpbin /all libsqlite3.lib \
-		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl include "^\s+1 _?(sqlite3_[^@]*)(?:@\d+)?$$" \1 \
+		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl include "^\s+1 _?(sqlite3(?:session|changeset)?_[^@]*)(?:@\d+)?$$" \1 \
 		| sort >> sqlite3.def
 # <</block2>>
 
@@ -1567,6 +1585,9 @@ sourcetest:	srcck1.exe sqlite3.c
 
 fuzzershell.exe:	$(TOP)\tool\fuzzershell.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(FUZZERSHELL_COMPILE_OPTS) $(TOP)\tool\fuzzershell.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
+
+dbfuzz.exe:	$(TOP)\test\dbfuzz.c $(SQLITE3C) $(SQLITE3H)
+	$(LTLINK) $(NO_WARN) $(DBFUZZ_COMPILE_OPTS) $(TOP)\test\dbfuzz.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
 fuzzcheck.exe:	$(FUZZCHECK_SRC) $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(FUZZCHECK_COMPILE_OPTS) $(FUZZCHECK_SRC) $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
@@ -2157,6 +2178,10 @@ sqlite3_analyzer.exe:	sqlite3_analyzer.c $(LIBRESOBJS)
 	$(LTLINK) $(NO_WARN) -DBUILD_sqlite -I$(TCLINCDIR) sqlite3_analyzer.c \
 		/link $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LTLIBS) $(TLIBS)
 
+dbdump.exe:	$(TOP)\ext\misc\dbdump.c $(SQLITE3C) $(SQLITE3H)
+	$(LTLINK) $(NO_WARN) -DDBDUMP_STANDALONE $(TOP)\ext\misc\dbdump.c $(SQLITE3C) \
+		/link $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LTLIBS)
+
 testloadext.lo:	$(TOP)\src\test_loadext.c
 	$(LTCOMPILE) $(NO_WARN) -c $(TOP)\src\test_loadext.c
 
@@ -2164,46 +2189,54 @@ testloadext.dll:	testloadext.lo
 	$(LD) $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) /DLL /OUT:$@ testloadext.lo
 
 showdb.exe:	$(TOP)\tool\showdb.c $(SQLITE3C) $(SQLITE3H)
-	$(LTLINK) $(NO_WARN) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \
+	$(LTLINK) $(NO_WARN) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
 		$(TOP)\tool\showdb.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
 showstat4.exe:	$(TOP)\tool\showstat4.c $(SQLITE3C) $(SQLITE3H)
-	$(LTLINK) $(NO_WARN) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \
+	$(LTLINK) $(NO_WARN) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
 		$(TOP)\tool\showstat4.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
 showjournal.exe:	$(TOP)\tool\showjournal.c $(SQLITE3C) $(SQLITE3H)
-	$(LTLINK) $(NO_WARN) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \
+	$(LTLINK) $(NO_WARN) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
 		$(TOP)\tool\showjournal.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
 showwal.exe:	$(TOP)\tool\showwal.c $(SQLITE3C) $(SQLITE3H)
-	$(LTLINK) $(NO_WARN) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \
+	$(LTLINK) $(NO_WARN) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
 		$(TOP)\tool\showwal.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
-changeset.exe:	$(TOP)\ext\session\changeset.c $(SQLITE3C)
-	$(LTLINK) $(NO_WARN) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \
+changeset.exe:	$(TOP)\ext\session\changeset.c $(SQLITE3C) $(SQLITE3H)
+	$(LTLINK) $(NO_WARN) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
+		-DSQLITE_ENABLE_SESSION=1 -DSQLITE_ENABLE_PREUPDATE_HOOK=1 \
 		$(TOP)\ext\session\changeset.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
 fts3view.exe:	$(TOP)\ext\fts3\tool\fts3view.c $(SQLITE3C) $(SQLITE3H)
-	$(LTLINK) $(NO_WARN) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \
+	$(LTLINK) $(NO_WARN) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
 		$(TOP)\ext\fts3\tool\fts3view.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
 rollback-test.exe:	$(TOP)\tool\rollback-test.c $(SQLITE3C) $(SQLITE3H)
-	$(LTLINK) $(NO_WARN) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \
+	$(LTLINK) $(NO_WARN) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
 		$(TOP)\tool\rollback-test.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
 LogEst.exe:	$(TOP)\tool\logest.c $(SQLITE3H)
-	$(LTLINK) $(NO_WARN) -Fe$@ $(TOP)\tool\LogEst.c /link $(LDFLAGS) $(LTLINKOPTS)
+	$(LTLINK) $(NO_WARN) $(TOP)\tool\LogEst.c /link $(LDFLAGS) $(LTLINKOPTS)
 
 wordcount.exe:	$(TOP)\test\wordcount.c $(SQLITE3C) $(SQLITE3H)
-	$(LTLINK) $(NO_WARN) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \
+	$(LTLINK) $(NO_WARN) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
 		$(TOP)\test\wordcount.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
 speedtest1.exe:	$(TOP)\test\speedtest1.c $(SQLITE3C) $(SQLITE3H)
-	$(LTLINK) $(NO_WARN) -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \
+	$(LTLINK) $(NO_WARN) $(ST_COMPILE_OPTS) -DSQLITE_OMIT_LOAD_EXTENSION \
 		$(TOP)\test\speedtest1.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
+kvtest.exe:	$(TOP)\test\kvtest.c $(SQLITE3C) $(SQLITE3H)
+	$(LTLINK) $(NO_WARN) $(KV_COMPILE_OPTS) \
+		$(TOP)\test\kvtest.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
+
+dbselftest.exe:	$(TOP)\test\dbselftest.c $(SQLITE3C) $(SQLITE3H)
+	$(LTLINK) $(NO_WARN) $(DBSELFTEST_COMPILE_OPTS) $(TOP)\test\dbselftest.c $(SQLITE3C)
+
 rbu.exe:	$(TOP)\ext\rbu\rbu.c $(TOP)\ext\rbu\sqlite3rbu.c $(SQLITE3C) $(SQLITE3H)
-	$(LTLINK) $(NO_WARN) -DSQLITE_ENABLE_RBU -Fe$@ \
+	$(LTLINK) $(NO_WARN) -DSQLITE_ENABLE_RBU \
 		$(TOP)\ext\rbu\rbu.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
 moreclean:	clean
@@ -2227,7 +2260,7 @@ clean:
 	del /Q tclsqlite3.exe $(SQLITETCLH) $(SQLITETCLDECLSH) 2>NUL
 	del /Q testloadext.dll 2>NUL
 	del /Q testfixture.exe test.db 2>NUL
-	del /Q LogEst.exe fts3view.exe rollback-test.exe showdb.exe 2>NUL
+	del /Q LogEst.exe fts3view.exe rollback-test.exe showdb.exe dbdump.exe 2>NUL
 	del /Q changeset.exe 2>NUL
 	del /Q showjournal.exe showstat4.exe showwal.exe speedtest1.exe 2>NUL
 	del /Q mptester.exe wordcount.exe rbu.exe srcck1.exe 2>NUL

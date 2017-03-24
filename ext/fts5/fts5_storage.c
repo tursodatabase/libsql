@@ -545,11 +545,6 @@ int sqlite3Fts5StorageDelete(Fts5Storage *p, i64 iDel, sqlite3_value **apVal){
     }
   }
 
-  /* Write the averages record */
-  if( rc==SQLITE_OK ){
-    rc = fts5StorageSaveTotals(p);
-  }
-
   return rc;
 }
 
@@ -752,11 +747,6 @@ int sqlite3Fts5StorageIndexInsert(
     rc = fts5StorageInsertDocsize(p, iRowid, &buf);
   }
   sqlite3_free(buf.p);
-
-  /* Write the averages record */
-  if( rc==SQLITE_OK ){
-    rc = fts5StorageSaveTotals(p);
-  }
 
   return rc;
 }
@@ -1092,12 +1082,17 @@ int sqlite3Fts5StorageRowCount(Fts5Storage *p, i64 *pnRow){
 ** Flush any data currently held in-memory to disk.
 */
 int sqlite3Fts5StorageSync(Fts5Storage *p, int bCommit){
-  if( bCommit && p->bTotalsValid ){
-    int rc = fts5StorageSaveTotals(p);
-    p->bTotalsValid = 0;
-    if( rc!=SQLITE_OK ) return rc;
+  int rc = SQLITE_OK;
+  i64 iLastRowid = sqlite3_last_insert_rowid(p->pConfig->db);
+  if( p->bTotalsValid ){
+    rc = fts5StorageSaveTotals(p);
+    if( bCommit ) p->bTotalsValid = 0;
   }
-  return sqlite3Fts5IndexSync(p->pIndex, bCommit);
+  if( rc==SQLITE_OK ){
+    rc = sqlite3Fts5IndexSync(p->pIndex, bCommit);
+  }
+  sqlite3_set_last_insert_rowid(p->pConfig->db, iLastRowid);
+  return rc;
 }
 
 int sqlite3Fts5StorageRollback(Fts5Storage *p){

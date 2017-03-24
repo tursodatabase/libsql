@@ -395,7 +395,12 @@ struct WhereLoopBuilder {
   UnpackedRecord *pRec;     /* Probe for stat4 (if required) */
   int nRecValid;            /* Number of valid fields currently in pRec */
 #endif
+  unsigned int bldFlags;    /* SQLITE_BLDF_* flags */
 };
+
+/* Allowed values for WhereLoopBuider.bldFlags */
+#define SQLITE_BLDF_INDEXED  0x0001   /* An index is used */
+#define SQLITE_BLDF_UNIQUE   0x0002   /* All keys of a UNIQUE index used */
 
 /*
 ** The WHERE clause processing routine has two halves.  The
@@ -411,7 +416,7 @@ struct WhereInfo {
   Parse *pParse;            /* Parsing and code generating context */
   SrcList *pTabList;        /* List of tables in the join */
   ExprList *pOrderBy;       /* The ORDER BY clause or NULL */
-  ExprList *pDistinctSet;   /* DISTINCT over all these values */
+  ExprList *pResultSet;     /* Result set of the query */
   LogEst iLimit;            /* LIMIT if wctrlFlags has WHERE_USE_LIMIT */
   int aiCurOnePass[2];      /* OP_OpenWrite cursors for the ONEPASS opt */
   int iContinue;            /* Jump here to continue with next record */

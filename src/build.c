@@ -1117,6 +1117,7 @@ void sqlite3AddNotNull(Parse *pParse, int onError){
   p = pParse->pNewTable;
   if( p==0 || NEVER(p->nCol<1) ) return;
   p->aCol[p->nCol-1].notNull = (u8)onError;
+  p->tabFlags |= TF_HasNotNull;
 }
 
 /*
@@ -3455,6 +3456,9 @@ void sqlite3DefaultRowEst(Index *pIdx){
   LogEst *a = pIdx->aiRowLogEst;
   int nCopy = MIN(ArraySize(aVal), pIdx->nKeyCol);
   int i;
+
+  /* Indexes with default row estimates should not have stat1 data */
+  assert( !pIdx->hasStat1 );
 
   /* Set the first entry (number of rows in the index) to the estimated 
   ** number of rows in the table, or half the number of rows in the table

@@ -370,4 +370,14 @@ do_execsql_test indexexpr1-1200.4 {
   0 0 0 2 0 4 2 0 2 2 4 0
 }
 
+# Ticket https://www.sqlite.org/src/tktview/eb703ba7b50c1a
+# Incorrect result using an index on an expression with a collating function
+#
+do_execsql_test indexexpr1-1300.1 {
+  CREATE TABLE t1300(a INTEGER PRIMARY KEY, b);
+  INSERT INTO t1300 VALUES(1,'coffee'),(2,'COFFEE'),(3,'stress'),(4,'STRESS');
+  CREATE INDEX t1300bexpr ON t1300( substr(b,4) );
+  SELECT a FROM t1300 WHERE substr(b,4)='ess' COLLATE nocase ORDER BY +a;
+} {3 4}
+
 finish_test

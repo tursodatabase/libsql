@@ -475,12 +475,15 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
 */
 int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   int nErr = 0;                   /* Number of errors encountered */
-  int i;                          /* Loop counter */
   void *pEngine;                  /* The LEMON-generated LALR(1) parser */
+  int n = 0;                      /* Length of the next token token */
   int tokenType;                  /* type of the next token */
   int lastTokenParsed = -1;       /* type of the previous token */
   sqlite3 *db = pParse->db;       /* The database connection */
   int mxSqlLen;                   /* Max length of an SQL string */
+#ifdef sqlite3Parser_ENGINEALWAYSONSTACK
+  unsigned char zSpace[sizeof(yyParser)];  /* Space for parser engine object */
+#endif
 
   assert( zSql!=0 );
   mxSqlLen = db->aLimit[SQLITE_LIMIT_SQL_LENGTH];
@@ -489,25 +492,27 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   }
   pParse->rc = SQLITE_OK;
   pParse->zTail = zSql;
-  i = 0;
   assert( pzErrMsg!=0 );
   /* sqlite3ParserTrace(stdout, "parser: "); */
+#ifdef sqlite3Parser_ENGINEALWAYSONSTACK
+  pEngine = zSpace;
+  sqlite3ParserInit(pEngine);
+#else
   pEngine = sqlite3ParserAlloc(sqlite3Malloc);
   if( pEngine==0 ){
     sqlite3OomFault(db);
     return SQLITE_NOMEM_BKPT;
   }
+#endif
   assert( pParse->pNewTable==0 );
   assert( pParse->pNewTrigger==0 );
   assert( pParse->nVar==0 );
   assert( pParse->pVList==0 );
   while( 1 ){
-    assert( i>=0 );
-    if( zSql[i]!=0 ){
-      pParse->sLastToken.z = &zSql[i];
-      pParse->sLastToken.n = sqlite3GetToken((u8*)&zSql[i],&tokenType);
-      i += pParse->sLastToken.n;
-      if( i>mxSqlLen ){
+    if( zSql[0]!=0 ){
+      n = sqlite3GetToken((u8*)zSql, &tokenType);
+      mxSqlLen -= n;
+      if( mxSqlLen<0 ){
         pParse->rc = SQLITE_TOOBIG;
         break;
       }
@@ -521,6 +526,7 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
       }else{
         tokenType = TK_SEMI;
       }
+      zSql -= n;
     }
     if( tokenType>=TK_SPACE ){
       assert( tokenType==TK_SPACE || tokenType==TK_ILLEGAL );
@@ -529,18 +535,21 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
         break;
       }
       if( tokenType==TK_ILLEGAL ){
-        sqlite3ErrorMsg(pParse, "unrecognized token: \"%T\"",
-                        &pParse->sLastToken);
+        sqlite3ErrorMsg(pParse, "unrecognized token: \"%.*s\"", n, zSql);
         break;
       }
+      zSql += n;
     }else{
+      pParse->sLastToken.z = zSql;
+      pParse->sLastToken.n = n;
       sqlite3Parser(pEngine, tokenType, pParse->sLastToken, pParse);
       lastTokenParsed = tokenType;
+      zSql += n;
       if( pParse->rc!=SQLITE_OK || db->mallocFailed ) break;
     }
   }
   assert( nErr==0 );
-  pParse->zTail = &zSql[i];
+  pParse->zTail = zSql;
 #ifdef YYTRACKMAXSTACKDEPTH
   sqlite3_mutex_enter(sqlite3MallocMutex());
   sqlite3StatusHighwater(SQLITE_STATUS_PARSER_STACK,
@@ -548,7 +557,11 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   );
   sqlite3_mutex_leave(sqlite3MallocMutex());
 #endif /* YYDEBUG */
+#ifdef sqlite3Parser_ENGINEALWAYSONSTACK
+  sqlite3ParserFinalize(pEngine);
+#else
   sqlite3ParserFree(pEngine, sqlite3_free);
+#endif
   if( db->mallocFailed ){
     pParse->rc = SQLITE_NOMEM_BKPT;
   }

@@ -566,6 +566,7 @@ SHELL_OPT += -DSQLITE_ENABLE_EXPLAIN_COMMENTS
 SHELL_OPT += -DSQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
 FUZZERSHELL_OPT = -DSQLITE_ENABLE_JSON1
 FUZZCHECK_OPT = -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_MEMSYS5 -DSQLITE_OSS_FUZZ
+FUZZCHECK_OPT += -DSQLITE_MAX_MEMORY=50000000
 FUZZCHECK_SRC = $(TOP)/test/fuzzcheck.c $(TOP)/test/ossfuzz.c
 DBFUZZ_OPT = 
 
@@ -620,7 +621,8 @@ fuzzcheck$(TEXE):	$(FUZZCHECK_SRC) sqlite3.c sqlite3.h
 	$(LTLINK) -o $@ $(FUZZCHECK_OPT) $(FUZZCHECK_SRC) sqlite3.c $(TLIBS)
 
 ossshell$(TEXE):	$(TOP)/test/ossfuzz.c $(TOP)/test/ossshell.c sqlite3.c sqlite3.h
-	$(LTLINK) -o $@ $(FUZZCHECK_OPT) $(TOP)/test/ossshell.c sqlite3.c sqlite3.h $(TLIBS)
+	$(LTLINK) -o $@ $(FUZZCHECK_OPT) $(TOP)/test/ossshell.c \
+             $(TOP)/test/ossfuzz.c sqlite3.c $(TLIBS)
 
 dbfuzz$(TEXE):	$(TOP)/test/dbfuzz.c sqlite3.c sqlite3.h
 	$(LTLINK) -o $@ $(DBFUZZ_OPT) $(TOP)/test/dbfuzz.c sqlite3.c $(TLIBS)
@@ -1153,6 +1155,10 @@ sqlite3_analyzer.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl
 sqlite3_analyzer$(TEXE): sqlite3_analyzer.c
 	$(LTLINK) sqlite3_analyzer.c -o $@ $(LIBTCL) $(TLIBS)
 
+dbdump$(TEXE): $(TOP)/ext/misc/dbdump.c sqlite3.lo
+	$(LTLINK) -DDBDUMP_STANDALONE -o $@ \
+           $(TOP)/ext/misc/dbdump.c sqlite3.lo $(TLIBS)
+
 showdb$(TEXE):	$(TOP)/tool/showdb.c sqlite3.lo
 	$(LTLINK) -o $@ $(TOP)/tool/showdb.c sqlite3.lo $(TLIBS)
 
@@ -1177,8 +1183,13 @@ LogEst$(TEXE):	$(TOP)/tool/logest.c sqlite3.h
 wordcount$(TEXE):	$(TOP)/test/wordcount.c sqlite3.lo
 	$(LTLINK) -o $@ $(TOP)/test/wordcount.c sqlite3.lo $(TLIBS)
 
-speedtest1$(TEXE):	$(TOP)/test/speedtest1.c sqlite3.lo
-	$(LTLINK) -o $@ $(TOP)/test/speedtest1.c sqlite3.lo $(TLIBS)
+speedtest1$(TEXE):	$(TOP)/test/speedtest1.c sqlite3.c
+	$(LTLINK) $(ST_OPT) -o $@ $(TOP)/test/speedtest1.c sqlite3.c $(TLIBS)
+
+KV_OPT += -DSQLITE_DIRECT_OVERFLOW_READ
+
+kvtest$(TEXE):	$(TOP)/test/kvtest.c sqlite3.c
+	$(LTLINK) $(KV_OPT) -o $@ $(TOP)/test/kvtest.c sqlite3.c $(TLIBS)
 
 rbu$(EXE): $(TOP)/ext/rbu/rbu.c $(TOP)/ext/rbu/sqlite3rbu.c sqlite3.lo 
 	$(LTLINK) -I. -o $@ $(TOP)/ext/rbu/rbu.c sqlite3.lo $(TLIBS)

@@ -249,9 +249,10 @@ int sqlite3BtreeCursorHasMoved(BtCursor*);
 int sqlite3BtreeCursorRestore(BtCursor*, int*);
 int sqlite3BtreeDelete(BtCursor*, u8 flags);
 
-/* Allowed flags for the 2nd argument to sqlite3BtreeDelete() */
+/* Allowed flags for sqlite3BtreeDelete() and sqlite3BtreeInsert() */
 #define BTREE_SAVEPOSITION 0x02  /* Leave cursor pointing at NEXT or PREV */
 #define BTREE_AUXDELETE    0x04  /* not the primary delete operation */
+#define BTREE_APPEND       0x08  /* Insert is likely an append */
 
 /* An instance of the BtreePayload object describes the content of a single
 ** entry in either an index or table btree.
@@ -282,7 +283,7 @@ struct BtreePayload {
 };
 
 int sqlite3BtreeInsert(BtCursor*, const BtreePayload *pPayload,
-                       int bias, int seekResult);
+                       int flags, int seekResult);
 int sqlite3BtreeFirst(BtCursor*, int *pRes);
 int sqlite3BtreeLast(BtCursor*, int *pRes);
 int sqlite3BtreeNext(BtCursor*, int *pRes);
@@ -295,6 +296,7 @@ u32 sqlite3BtreePayloadSize(BtCursor*);
 
 char *sqlite3BtreeIntegrityCheck(Btree*, int *aRoot, int nRoot, int, int*);
 struct Pager *sqlite3BtreePager(Btree*);
+i64 sqlite3BtreeRowCountEst(BtCursor*);
 
 #ifndef SQLITE_OMIT_INCRBLOB
 int sqlite3BtreePayloadChecked(BtCursor*, u32 offset, u32 amt, void*);

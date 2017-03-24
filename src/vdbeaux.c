@@ -57,6 +57,7 @@ void sqlite3VdbeError(Vdbe *p, const char *zFormat, ...){
 void sqlite3VdbeSetSql(Vdbe *p, const char *z, int n, int isPrepareV2){
   assert( isPrepareV2==1 || isPrepareV2==0 );
   if( p==0 ) return;
+  if( !isPrepareV2 ) p->expmask = 0;
 #if defined(SQLITE_OMIT_TRACE) && !defined(SQLITE_ENABLE_SQLLOG)
   if( !isPrepareV2 ) return;
 #endif
@@ -85,6 +86,7 @@ void sqlite3VdbeSwap(Vdbe *pA, Vdbe *pB){
   pA->zSql = pB->zSql;
   pB->zSql = zTmp;
   pB->isPrepareV2 = pA->isPrepareV2;
+  pB->expmask = pA->expmask;
 }
 
 /*
@@ -114,6 +116,12 @@ static int growOpArray(Vdbe *v, int nOp){
   int nNew = (p->nOpAlloc ? p->nOpAlloc*2 : (int)(1024/sizeof(Op)));
   UNUSED_PARAMETER(nOp);
 #endif
+
+  /* Ensure that the size of a VDBE does not grow too large */
+  if( nNew > p->db->aLimit[SQLITE_LIMIT_VDBE_OP] ){
+    sqlite3OomFault(p->db);
+    return SQLITE_NOMEM;
+  }
 
   assert( nOp<=(1024/sizeof(Op)) );
   assert( nNew>=(p->nOpAlloc+nOp) );
@@ -783,7 +791,7 @@ void sqlite3VdbeChangeP2(Vdbe *p, u32 addr, int val){
 void sqlite3VdbeChangeP3(Vdbe *p, u32 addr, int val){
   sqlite3VdbeGetOp(p,addr)->p3 = val;
 }
-void sqlite3VdbeChangeP5(Vdbe *p, u8 p5){
+void sqlite3VdbeChangeP5(Vdbe *p, u16 p5){
   assert( p->nOp>0 || p->db->mallocFailed );
   if( p->nOp>0 ) p->aOp[p->nOp-1].p5 = p5;
 }
@@ -2514,60 +2522,59 @@ static void checkActiveVdbeCnt(sqlite3 *db){
 ** If an IO error occurs, an SQLITE_IOERR_XXX error code is returned. 
 ** Otherwise SQLITE_OK.
 */
-int sqlite3VdbeCloseStatement(Vdbe *p, int eOp){
+static SQLITE_NOINLINE int vdbeCloseStatement(Vdbe *p, int eOp){
   sqlite3 *const db = p->db;
   int rc = SQLITE_OK;
+  int i;
+  const int iSavepoint = p->iStatement-1;
 
-  /* If p->iStatement is greater than zero, then this Vdbe opened a 
-  ** statement transaction that should be closed here. The only exception
-  ** is that an IO error may have occurred, causing an emergency rollback.
-  ** In this case (db->nStatement==0), and there is nothing to do.
-  */
-  if( db->nStatement && p->iStatement ){
-    int i;
-    const int iSavepoint = p->iStatement-1;
+  assert( eOp==SAVEPOINT_ROLLBACK || eOp==SAVEPOINT_RELEASE);
+  assert( db->nStatement>0 );
+  assert( p->iStatement==(db->nStatement+db->nSavepoint) );
 
-    assert( eOp==SAVEPOINT_ROLLBACK || eOp==SAVEPOINT_RELEASE);
-    assert( db->nStatement>0 );
-    assert( p->iStatement==(db->nStatement+db->nSavepoint) );
-
-    for(i=0; i<db->nDb; i++){ 
-      int rc2 = SQLITE_OK;
-      Btree *pBt = db->aDb[i].pBt;
-      if( pBt ){
-        if( eOp==SAVEPOINT_ROLLBACK ){
-          rc2 = sqlite3BtreeSavepoint(pBt, SAVEPOINT_ROLLBACK, iSavepoint);
-        }
-        if( rc2==SQLITE_OK ){
-          rc2 = sqlite3BtreeSavepoint(pBt, SAVEPOINT_RELEASE, iSavepoint);
-        }
-        if( rc==SQLITE_OK ){
-          rc = rc2;
-        }
-      }
-    }
-    db->nStatement--;
-    p->iStatement = 0;
-
-    if( rc==SQLITE_OK ){
+  for(i=0; i<db->nDb; i++){ 
+    int rc2 = SQLITE_OK;
+    Btree *pBt = db->aDb[i].pBt;
+    if( pBt ){
       if( eOp==SAVEPOINT_ROLLBACK ){
-        rc = sqlite3VtabSavepoint(db, SAVEPOINT_ROLLBACK, iSavepoint);
+        rc2 = sqlite3BtreeSavepoint(pBt, SAVEPOINT_ROLLBACK, iSavepoint);
+      }
+      if( rc2==SQLITE_OK ){
+        rc2 = sqlite3BtreeSavepoint(pBt, SAVEPOINT_RELEASE, iSavepoint);
       }
       if( rc==SQLITE_OK ){
-        rc = sqlite3VtabSavepoint(db, SAVEPOINT_RELEASE, iSavepoint);
+        rc = rc2;
       }
     }
+  }
+  db->nStatement--;
+  p->iStatement = 0;
 
-    /* If the statement transaction is being rolled back, also restore the 
-    ** database handles deferred constraint counter to the value it had when 
-    ** the statement transaction was opened.  */
+  if( rc==SQLITE_OK ){
     if( eOp==SAVEPOINT_ROLLBACK ){
-      db->nDeferredCons = p->nStmtDefCons;
-      db->nDeferredImmCons = p->nStmtDefImmCons;
+      rc = sqlite3VtabSavepoint(db, SAVEPOINT_ROLLBACK, iSavepoint);
     }
+    if( rc==SQLITE_OK ){
+      rc = sqlite3VtabSavepoint(db, SAVEPOINT_RELEASE, iSavepoint);
+    }
+  }
+
+  /* If the statement transaction is being rolled back, also restore the 
+  ** database handles deferred constraint counter to the value it had when 
+  ** the statement transaction was opened.  */
+  if( eOp==SAVEPOINT_ROLLBACK ){
+    db->nDeferredCons = p->nStmtDefCons;
+    db->nDeferredImmCons = p->nStmtDefImmCons;
   }
   return rc;
 }
+int sqlite3VdbeCloseStatement(Vdbe *p, int eOp){
+  if( p->db->nStatement && p->iStatement ){
+    return vdbeCloseStatement(p, eOp);
+  }
+  return SQLITE_OK;
+}
+
 
 /*
 ** This function is called when a transaction opened by the database 
@@ -2627,13 +2634,13 @@ int sqlite3VdbeHalt(Vdbe *p){
   ** one, or the complete transaction if there is no statement transaction.
   */
 
+  if( p->magic!=VDBE_MAGIC_RUN ){
+    return SQLITE_OK;
+  }
   if( db->mallocFailed ){
     p->rc = SQLITE_NOMEM_BKPT;
   }
   closeAllCursors(p);
-  if( p->magic!=VDBE_MAGIC_RUN ){
-    return SQLITE_OK;
-  }
   checkActiveVdbeCnt(db);
 
   /* No commit or rollback needed if the program never started or if the
@@ -3583,7 +3590,7 @@ void sqlite3VdbeRecordUnpack(
   p->nField = u;
 }
 
-#if SQLITE_DEBUG
+#ifdef SQLITE_DEBUG
 /*
 ** This function compares two index or table record keys in the same way
 ** as the sqlite3VdbeRecordCompare() routine. Unlike VdbeRecordCompare(),
@@ -3688,7 +3695,7 @@ debugCompareEnd:
 }
 #endif
 
-#if SQLITE_DEBUG
+#ifdef SQLITE_DEBUG
 /*
 ** Count the number of fields (a.k.a. columns) in the record given by
 ** pKey,nKey.  The verify that this count is less than or equal to the
@@ -4571,8 +4578,8 @@ sqlite3_value *sqlite3VdbeGetBoundValue(Vdbe *v, int iVar, u8 aff){
 */
 void sqlite3VdbeSetVarmask(Vdbe *v, int iVar){
   assert( iVar>0 );
-  if( iVar>32 ){
-    v->expmask = 0xffffffff;
+  if( iVar>=32 ){
+    v->expmask |= 0x80000000;
   }else{
     v->expmask |= ((u32)1 << (iVar-1));
   }
@@ -4605,10 +4612,10 @@ void sqlite3VtabImportErrmsg(Vdbe *p, sqlite3_vtab *pVtab){
 ** This function is used to free UnpackedRecord structures allocated by
 ** the vdbeUnpackRecord() function found in vdbeapi.c.
 */
-static void vdbeFreeUnpacked(sqlite3 *db, UnpackedRecord *p){
+static void vdbeFreeUnpacked(sqlite3 *db, int nField, UnpackedRecord *p){
   if( p ){
     int i;
-    for(i=0; i<p->nField; i++){
+    for(i=0; i<nField; i++){
       Mem *pMem = &p->aMem[i];
       if( pMem->zMalloc ) sqlite3VdbeMemRelease(pMem);
     }
@@ -4641,10 +4648,15 @@ void sqlite3VdbePreUpdateHook(
 
   assert( db->pPreUpdate==0 );
   memset(&preupdate, 0, sizeof(PreUpdate));
-  if( op==SQLITE_UPDATE ){
-    iKey2 = v->aMem[iReg].u.i;
+  if( HasRowid(pTab)==0 ){
+    iKey1 = iKey2 = 0;
+    preupdate.pPk = sqlite3PrimaryKeyIndex(pTab);
   }else{
-    iKey2 = iKey1;
+    if( op==SQLITE_UPDATE ){
+      iKey2 = v->aMem[iReg].u.i;
+    }else{
+      iKey2 = iKey1;
+    }
   }
 
   assert( pCsr->nField==pTab->nCol 
@@ -4667,8 +4679,8 @@ void sqlite3VdbePreUpdateHook(
   db->xPreUpdateCallback(db->pPreUpdateArg, db, op, zDb, zTbl, iKey1, iKey2);
   db->pPreUpdate = 0;
   sqlite3DbFree(db, preupdate.aRecord);
-  vdbeFreeUnpacked(db, preupdate.pUnpacked);
-  vdbeFreeUnpacked(db, preupdate.pNewUnpacked);
+  vdbeFreeUnpacked(db, preupdate.keyinfo.nField+1, preupdate.pUnpacked);
+  vdbeFreeUnpacked(db, preupdate.keyinfo.nField+1, preupdate.pNewUnpacked);
   if( preupdate.aNew ){
     int i;
     for(i=0; i<pCsr->nField; i++){

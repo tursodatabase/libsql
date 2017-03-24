@@ -104,7 +104,7 @@ struct PCache {
 **
 **          assert( sqlite3PcachePageSanity(pPg) );
 */
-#if SQLITE_DEBUG
+#ifdef SQLITE_DEBUG
 int sqlite3PcachePageSanity(PgHdr *pPg){
   PCache *pCache;
   assert( pPg!=0 );

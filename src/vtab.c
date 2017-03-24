@@ -339,8 +339,7 @@ void sqlite3VtabBeginParse(
   iDb = sqlite3SchemaToIndex(db, pTable->pSchema);
   assert( iDb>=0 );
 
-  pTable->tabFlags |= TF_Virtual;
-  pTable->nModuleArg = 0;
+  assert( pTable->nModuleArg==0 );
   addModuleArgument(db, pTable, sqlite3NameFromToken(db, pModuleName));
   addModuleArgument(db, pTable, 0);
   addModuleArgument(db, pTable, sqlite3DbStrDup(db, pTable->zName));
@@ -628,7 +627,7 @@ int sqlite3VtabCallConnect(Parse *pParse, Table *pTab){
   int rc;
 
   assert( pTab );
-  if( (pTab->tabFlags & TF_Virtual)==0 || sqlite3GetVTable(db, pTab) ){
+  if( !IsVirtual(pTab) || sqlite3GetVTable(db, pTab) ){
     return SQLITE_OK;
   }
 
@@ -698,7 +697,7 @@ int sqlite3VtabCallCreate(sqlite3 *db, int iDb, const char *zTab, char **pzErr){
   const char *zMod;
 
   pTab = sqlite3FindTable(db, zTab, db->aDb[iDb].zDbSName);
-  assert( pTab && (pTab->tabFlags & TF_Virtual)!=0 && !pTab->pVTable );
+  assert( pTab && IsVirtual(pTab) && !pTab->pVTable );
 
   /* Locate the required virtual table module */
   zMod = pTab->azModuleArg[0];
@@ -752,7 +751,7 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
     return SQLITE_MISUSE_BKPT;
   }
   pTab = pCtx->pTab;
-  assert( (pTab->tabFlags & TF_Virtual)!=0 );
+  assert( IsVirtual(pTab) );
 
   pParse = sqlite3StackAllocZero(db, sizeof(*pParse));
   if( pParse==0 ){
@@ -766,7 +765,7 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
      && pParse->pNewTable
      && !db->mallocFailed
      && !pParse->pNewTable->pSelect
-     && (pParse->pNewTable->tabFlags & TF_Virtual)==0
+     && !IsVirtual(pParse->pNewTable)
     ){
       if( !pTab->aCol ){
         Table *pNew = pParse->pNewTable;
@@ -1055,7 +1054,7 @@ FuncDef *sqlite3VtabOverloadFunction(
   if( pExpr->op!=TK_COLUMN ) return pDef;
   pTab = pExpr->pTab;
   if( NEVER(pTab==0) ) return pDef;
-  if( (pTab->tabFlags & TF_Virtual)==0 ) return pDef;
+  if( !IsVirtual(pTab) ) return pDef;
   pVtab = sqlite3GetVTable(db, pTab)->pVtab;
   assert( pVtab!=0 );
   assert( pVtab->pModule!=0 );
@@ -1150,8 +1149,7 @@ int sqlite3VtabEponymousTableInit(Parse *pParse, Module *pMod){
   pMod->pEpoTab = pTab;
   pTab->nTabRef = 1;
   pTab->pSchema = db->aDb[0].pSchema;
-  pTab->tabFlags |= TF_Virtual;
-  pTab->nModuleArg = 0;
+  assert( pTab->nModuleArg==0 );
   pTab->iPKey = -1;
   addModuleArgument(db, pTab, sqlite3DbStrDup(db, pTab->zName));
   addModuleArgument(db, pTab, 0);
@@ -1222,7 +1220,7 @@ int sqlite3_vtab_config(sqlite3 *db, int op, ...){
       if( !p ){
         rc = SQLITE_MISUSE_BKPT;
       }else{
-        assert( p->pTab==0 || (p->pTab->tabFlags & TF_Virtual)!=0 );
+        assert( p->pTab==0 || IsVirtual(p->pTab) );
         p->pVTable->bConstraint = (u8)va_arg(ap, int);
       }
       break;

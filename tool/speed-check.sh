@@ -23,6 +23,7 @@ NAME=$1
 shift
 #CC_OPTS="-DSQLITE_ENABLE_RTREE -DSQLITE_ENABLE_MEMSYS5"
 CC_OPTS="-DSQLITE_ENABLE_MEMSYS5"
+CC=gcc
 SPEEDTEST_OPTS="--shrink-memory --reprepare --stats --heap 10000000 64"
 SIZE=5
 LEAN_OPTS="-DSQLITE_THREADSAFE=0"
@@ -80,10 +81,18 @@ while test "$1" != ""; do
     --lean)
         CC_OPTS="$CC_OPTS $LEAN_OPTS"
         ;;
+    --clang)
+        CC=clang
+        ;;
     --heap)
         CC_OPTS="$CC_OPTS -DSQLITE_ENABLE_MEMSYS5"
         shift;
         SPEEDTEST_OPTS="$SPEEDTEST_OPTS --heap $1 64"
+        ;;
+    --lookaside)
+        shift;
+        SPEEDTEST_OPTS="$SPEEDTEST_OPTS --lookaside $1 $2"
+        shift;
         ;;
     --repeat)
         CC_OPTS="$CC_OPTS -DSQLITE_ENABLE_RCACHE"
@@ -93,6 +102,10 @@ while test "$1" != ""; do
     --mmap)
         shift;
         SPEEDTEST_OPTS="$SPEEDTEST_OPTS --mmap $1"
+        ;;
+    --rtree)
+        SPEEDTEST_OPTS="$SPEEDTEST_OPTS --testset rtree"
+        CC_OPTS="$CC_OPTS -DSQLITE_ENABLE_RTREE"
         ;;
     *)
         CC_OPTS="$CC_OPTS $1"
@@ -105,15 +118,15 @@ echo "NAME           = $NAME" | tee summary-$NAME.txt
 echo "SPEEDTEST_OPTS = $SPEEDTEST_OPTS" | tee -a summary-$NAME.txt
 echo "CC_OPTS        = $CC_OPTS" | tee -a summary-$NAME.txt
 rm -f cachegrind.out.* speedtest1 speedtest1.db sqlite3.o
-gcc -g -Os -Wall -I. $CC_OPTS -c sqlite3.c
+$CC -g -Os -Wall -I. $CC_OPTS -c sqlite3.c
 size sqlite3.o | tee -a summary-$NAME.txt
 if test $doExplain -eq 1; then
-  gcc -g -Os -Wall -I. $CC_OPTS \
+  $CC -g -Os -Wall -I. $CC_OPTS \
      -DSQLITE_ENABLE_EXPLAIN_COMMENTS \
     ./shell.c ./sqlite3.c -o sqlite3 -ldl -lpthread
 fi
 SRC=./speedtest1.c
-gcc -g -Os -Wall -I. $CC_OPTS $SRC ./sqlite3.o -o speedtest1 -ldl -lpthread
+$CC -g -Os -Wall -I. $CC_OPTS $SRC ./sqlite3.o -o speedtest1 -ldl -lpthread
 ls -l speedtest1 | tee -a summary-$NAME.txt
 if test $doCachegrind -eq 1; then
   valgrind --tool=cachegrind ./speedtest1 speedtest1.db \
@@ -128,4 +141,7 @@ if test $doCachegrind -eq 1; then
 fi
 if test $doExplain -eq 1; then
   ./speedtest1 --explain $SPEEDTEST_OPTS | ./sqlite3 >explain-$NAME.txt
+fi
+if test "$NAME" != "trunk"; then
+  fossil test-diff --tk cout-trunk.txt cout-$NAME.txt
 fi

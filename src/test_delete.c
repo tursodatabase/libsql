@@ -80,7 +80,7 @@ static int sqlite3DeleteUnlinkIfExists(const char *zFile, int *pbExists){
 ** Delete the database file identified by the string argument passed to this
 ** function. The string must contain a filename, not an SQLite URI.
 */
-int sqlite3_delete_database(
+SQLITE_API int sqlite3_delete_database(
   const char *zFile               /* File to delete */
 ){
   char *zBuf;                     /* Buffer to sprintf() filenames to */

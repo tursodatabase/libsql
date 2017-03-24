@@ -535,7 +535,7 @@ static void decodeCell(
     j = i;
     nCol = 0;
     k = nHdr;
-    while( x+j<end && j<nHdr ){
+    while( x+j<=end && j<nHdr ){
        const char *zTypeName;
        int sz = 0;
        char zNm[30];

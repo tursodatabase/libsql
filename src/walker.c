@@ -27,11 +27,11 @@
 **
 **    WRC_Continue      Continue descending down the tree.
 **
-**    WRC_Prune         Do not descend into child nodes.  But allow
+**    WRC_Prune         Do not descend into child nodes, but allow
 **                      the walk to continue with sibling nodes.
 **
 **    WRC_Abort         Do no more callbacks.  Unwind the stack and
-**                      return the top-level walk call.
+**                      return from the top-level walk call.
 **
 ** The return value from this routine is WRC_Abort to abandon the tree walk
 ** and WRC_Continue to continue.

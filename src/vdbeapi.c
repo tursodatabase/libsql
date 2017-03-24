@@ -154,7 +154,8 @@ int sqlite3_clear_bindings(sqlite3_stmt *pStmt){
     sqlite3VdbeMemRelease(&p->aVar[i]);
     p->aVar[i].flags = MEM_Null;
   }
-  if( p->isPrepareV2 && p->expmask ){
+  assert( p->isPrepareV2 || p->expmask==0 );
+  if( p->expmask ){
     p->expired = 1;
   }
   sqlite3_mutex_leave(mutex);
@@ -1258,9 +1259,8 @@ static int vdbeUnbind(Vdbe *p, int i){
   ** as if there had been a schema change, on the first sqlite3_step() call
   ** following any change to the bindings of that parameter.
   */
-  if( p->isPrepareV2 &&
-     ((i<32 && p->expmask & ((u32)1 << i)) || p->expmask==0xffffffff)
-  ){
+  assert( p->isPrepareV2 || p->expmask==0 );
+  if( p->expmask!=0 && (p->expmask & (i>=31 ? 0x80000000 : (u32)1<<i))!=0 ){
     p->expired = 1;
   }
   return SQLITE_OK;
@@ -1523,10 +1523,12 @@ int sqlite3_transfer_bindings(sqlite3_stmt *pFromStmt, sqlite3_stmt *pToStmt){
   if( pFrom->nVar!=pTo->nVar ){
     return SQLITE_ERROR;
   }
-  if( pTo->isPrepareV2 && pTo->expmask ){
+  assert( pTo->isPrepareV2 || pTo->expmask==0 );
+  if( pTo->expmask ){
     pTo->expired = 1;
   }
-  if( pFrom->isPrepareV2 && pFrom->expmask ){
+  assert( pFrom->isPrepareV2 || pFrom->expmask==0 );
+  if( pFrom->expmask ){
     pFrom->expired = 1;
   }
   return sqlite3TransferBindings(pFromStmt, pToStmt);
@@ -1660,6 +1662,7 @@ static UnpackedRecord *vdbeUnpackRecord(
 */
 int sqlite3_preupdate_old(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
   PreUpdate *p = db->pPreUpdate;
+  Mem *pMem;
   int rc = SQLITE_OK;
 
   /* Test that this call is being made from within an SQLITE_DELETE or
@@ -1667,6 +1670,9 @@ int sqlite3_preupdate_old(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
   if( !p || p->op==SQLITE_INSERT ){
     rc = SQLITE_MISUSE_BKPT;
     goto preupdate_old_out;
+  }
+  if( p->pPk ){
+    iIdx = sqlite3ColumnOfIndex(p->pPk, iIdx);
   }
   if( iIdx>=p->pCsr->nField || iIdx<0 ){
     rc = SQLITE_RANGE;
@@ -1693,17 +1699,14 @@ int sqlite3_preupdate_old(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
     p->aRecord = aRec;
   }
 
-  if( iIdx>=p->pUnpacked->nField ){
+  pMem = *ppValue = &p->pUnpacked->aMem[iIdx];
+  if( iIdx==p->pTab->iPKey ){
+    sqlite3VdbeMemSetInt64(pMem, p->iKey1);
+  }else if( iIdx>=p->pUnpacked->nField ){
     *ppValue = (sqlite3_value *)columnNullValue();
-  }else{
-    Mem *pMem = *ppValue = &p->pUnpacked->aMem[iIdx];
-    *ppValue = &p->pUnpacked->aMem[iIdx];
-    if( iIdx==p->pTab->iPKey ){
-      sqlite3VdbeMemSetInt64(pMem, p->iKey1);
-    }else if( p->pTab->aCol[iIdx].affinity==SQLITE_AFF_REAL ){
-      if( pMem->flags & MEM_Int ){
-        sqlite3VdbeMemRealify(pMem);
-      }
+  }else if( p->pTab->aCol[iIdx].affinity==SQLITE_AFF_REAL ){
+    if( pMem->flags & MEM_Int ){
+      sqlite3VdbeMemRealify(pMem);
     }
   }
 
@@ -1756,6 +1759,9 @@ int sqlite3_preupdate_new(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
     rc = SQLITE_MISUSE_BKPT;
     goto preupdate_new_out;
   }
+  if( p->pPk && p->op!=SQLITE_UPDATE ){
+    iIdx = sqlite3ColumnOfIndex(p->pPk, iIdx);
+  }
   if( iIdx>=p->pCsr->nField || iIdx<0 ){
     rc = SQLITE_RANGE;
     goto preupdate_new_out;
@@ -1776,13 +1782,11 @@ int sqlite3_preupdate_new(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
       }
       p->pNewUnpacked = pUnpack;
     }
-    if( iIdx>=pUnpack->nField ){
+    pMem = &pUnpack->aMem[iIdx];
+    if( iIdx==p->pTab->iPKey ){
+      sqlite3VdbeMemSetInt64(pMem, p->iKey2);
+    }else if( iIdx>=pUnpack->nField ){
       pMem = (sqlite3_value *)columnNullValue();
-    }else{
-      pMem = &pUnpack->aMem[iIdx];
-      if( iIdx==p->pTab->iPKey ){
-        sqlite3VdbeMemSetInt64(pMem, p->iKey2);
-      }
     }
   }else{
     /* For an UPDATE, memory cell (p->iNewReg+1+iIdx) contains the required

@@ -461,7 +461,7 @@ if {[info exists cmdlinearg]==0} {
       }
       {^-+backtrace=.+$} {
         foreach {dummy cmdlinearg(backtrace)} [split $a =] break
-        sqlite3_memdebug_backtrace $value
+        sqlite3_memdebug_backtrace $cmdlinearg(backtrace)
       }
       {^-+binarylog=.+$} {
         foreach {dummy cmdlinearg(binarylog)} [split $a =] break
@@ -919,10 +919,37 @@ proc normalize_list {L} {
   set L2
 }
 
-proc do_execsql_test {testname sql {result {}}} {
+# Either:
+#
+#   do_execsql_test TESTNAME SQL ?RES?
+#   do_execsql_test -db DB TESTNAME SQL ?RES?
+#
+proc do_execsql_test {args} {
+  set db db
+  if {[lindex $args 0]=="-db"} {
+    set db [lindex $args 1]
+    set args [lrange $args 2 end]
+  }
+
+  if {[llength $args]==2} {
+    foreach {testname sql} $args {}
+    set result ""
+  } elseif {[llength $args]==3} {
+    foreach {testname sql result} $args {}
+  } else {
+    error [string trim {
+      wrong # args: should be "do_execsql_test ?-db DB? testname sql ?result?"
+    }]
+  }
+
   fix_testname testname
-  uplevel do_test [list $testname] [list "execsql {$sql}"] [list [list {*}$result]]
+
+  uplevel do_test                 \
+      [list $testname]            \
+      [list "execsql {$sql} $db"] \
+      [list [list {*}$result]]
 }
+
 proc do_catchsql_test {testname sql result} {
   fix_testname testname
   uplevel do_test [list $testname] [list "catchsql {$sql}"] [list $result]
@@ -1506,6 +1533,7 @@ proc crashsql {args} {
   set tclbody {}
   set crashfile ""
   set dc ""
+  set dfltvfs 0
   set sql [lindex $args end]
 
   for {set ii 0} {$ii < [llength $args]-1} {incr ii 2} {
@@ -1519,7 +1547,8 @@ proc crashsql {args} {
     elseif {$n>1 && [string first $z -file]==0}      {set crashfile $z2}  \
     elseif {$n>1 && [string first $z -tclbody]==0}   {set tclbody $z2}  \
     elseif {$n>1 && [string first $z -blocksize]==0} {set blocksize "-s $z2" } \
-    elseif {$n>1 && [string first $z -characteristics]==0} {set dc "-c {$z2}" } \
+    elseif {$n>1 && [string first $z -characteristics]==0} {set dc "-c {$z2}" }\
+    elseif {$n>1 && [string first $z -dfltvfs]==0} {set dfltvfs $z2 }\
     else   { error "Unrecognized option: $z" }
   }
 
@@ -1533,7 +1562,7 @@ proc crashsql {args} {
   set cfile [string map {\\ \\\\} [file nativename [file join [get_pwd] $crashfile]]]
 
   set f [open crash.tcl w]
-  puts $f "sqlite3_crash_enable 1"
+  puts $f "sqlite3_crash_enable 1 $dfltvfs"
   puts $f "sqlite3_crashparams $blocksize $dc $crashdelay $cfile"
   puts $f "sqlite3_test_control_pending_byte $::sqlite_pending_byte"
 

@@ -316,6 +316,31 @@ static int yyGrowStack(yyParser *p){
 # define YYMALLOCARGTYPE size_t
 #endif
 
+/* Initialize a new parser that has already been allocated.
+*/
+void ParseInit(void *yypParser){
+  yyParser *pParser = (yyParser*)yypParser;
+#ifdef YYTRACKMAXSTACKDEPTH
+  pParser->yyhwm = 0;
+#endif
+#if YYSTACKDEPTH<=0
+  pParser->yytos = NULL;
+  pParser->yystack = NULL;
+  pParser->yystksz = 0;
+  if( yyGrowStack(pParser) ){
+    pParser->yystack = &pParser->yystk0;
+    pParser->yystksz = 1;
+  }
+#endif
+#ifndef YYNOERRORRECOVERY
+  pParser->yyerrcnt = -1;
+#endif
+  pParser->yytos = pParser->yystack;
+  pParser->yystack[0].stateno = 0;
+  pParser->yystack[0].major = 0;
+}
+
+#ifndef Parse_ENGINEALWAYSONSTACK
 /* 
 ** This function allocates a new parser.
 ** The only argument is a pointer to a function which works like
@@ -331,28 +356,11 @@ static int yyGrowStack(yyParser *p){
 void *ParseAlloc(void *(*mallocProc)(YYMALLOCARGTYPE)){
   yyParser *pParser;
   pParser = (yyParser*)(*mallocProc)( (YYMALLOCARGTYPE)sizeof(yyParser) );
-  if( pParser ){
-#ifdef YYTRACKMAXSTACKDEPTH
-    pParser->yyhwm = 0;
-#endif
-#if YYSTACKDEPTH<=0
-    pParser->yytos = NULL;
-    pParser->yystack = NULL;
-    pParser->yystksz = 0;
-    if( yyGrowStack(pParser) ){
-      pParser->yystack = &pParser->yystk0;
-      pParser->yystksz = 1;
-    }
-#endif
-#ifndef YYNOERRORRECOVERY
-    pParser->yyerrcnt = -1;
-#endif
-    pParser->yytos = pParser->yystack;
-    pParser->yystack[0].stateno = 0;
-    pParser->yystack[0].major = 0;
-  }
+  if( pParser ) ParseInit(pParser);
   return pParser;
 }
+#endif /* Parse_ENGINEALWAYSONSTACK */
+
 
 /* The following function deletes the "minor type" or semantic value
 ** associated with a symbol.  The symbol can be either a terminal
@@ -406,6 +414,18 @@ static void yy_pop_parser_stack(yyParser *pParser){
   yy_destructor(pParser, yytos->major, &yytos->minor);
 }
 
+/*
+** Clear all secondary memory allocations from the parser
+*/
+void ParseFinalize(void *p){
+  yyParser *pParser = (yyParser*)p;
+  while( pParser->yytos>pParser->yystack ) yy_pop_parser_stack(pParser);
+#if YYSTACKDEPTH<=0
+  if( pParser->yystack!=&pParser->yystk0 ) free(pParser->yystack);
+#endif
+}
+
+#ifndef Parse_ENGINEALWAYSONSTACK
 /* 
 ** Deallocate and destroy a parser.  Destructors are called for
 ** all stack elements before shutting the parser down.
@@ -418,16 +438,13 @@ void ParseFree(
   void *p,                    /* The parser to be deleted */
   void (*freeProc)(void*)     /* Function used to reclaim memory */
 ){
-  yyParser *pParser = (yyParser*)p;
 #ifndef YYPARSEFREENEVERNULL
-  if( pParser==0 ) return;
+  if( p==0 ) return;
 #endif
-  while( pParser->yytos>pParser->yystack ) yy_pop_parser_stack(pParser);
-#if YYSTACKDEPTH<=0
-  if( pParser->yystack!=&pParser->yystk0 ) free(pParser->yystack);
-#endif
-  (*freeProc)((void*)pParser);
+  ParseFinalize(p);
+  (*freeProc)(p);
 }
+#endif /* Parse_ENGINEALWAYSONSTACK */
 
 /*
 ** Return the peak depth of the stack for a parser.

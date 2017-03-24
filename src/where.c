@@ -209,7 +209,8 @@ static WhereTerm *whereScanNext(WhereScan *pScan){
         if( pTerm->leftCursor==iCur
          && pTerm->u.leftColumn==iColumn
          && (iColumn!=XN_EXPR
-             || sqlite3ExprCompare(pTerm->pExpr->pLeft,pScan->pIdxExpr,iCur)==0)
+             || sqlite3ExprCompareSkip(pTerm->pExpr->pLeft,
+                                       pScan->pIdxExpr,iCur)==0)
          && (pScan->iEquiv<=1 || !ExprHasProperty(pTerm->pExpr, EP_FromJoin))
         ){
           if( (pTerm->eOperator & WO_EQUIV)!=0
@@ -308,6 +309,7 @@ static WhereTerm *whereScanInit(
     iColumn = pIdx->aiColumn[j];
     if( iColumn==XN_EXPR ){
       pScan->pIdxExpr = pIdx->aColExpr->a[j].pExpr;
+      pScan->zCollName = pIdx->azColl[j];
     }else if( iColumn==pIdx->pTable->iPKey ){
       iColumn = XN_ROWID;
     }else if( iColumn>=0 ){
@@ -515,14 +517,16 @@ static LogEst estLog(LogEst N){
 ** value stored in its output register.
 */
 static void translateColumnToCopy(
-  Vdbe *v,            /* The VDBE containing code to translate */
+  Parse *pParse,      /* Parsing context */
   int iStart,         /* Translate from this opcode to the end */
   int iTabCur,        /* OP_Column/OP_Rowid references to this table */
   int iRegister,      /* The first column is in this register */
   int bIncrRowid      /* If non-zero, transform OP_rowid to OP_AddImm(1) */
 ){
+  Vdbe *v = pParse->pVdbe;
   VdbeOp *pOp = sqlite3VdbeGetOp(v, iStart);
   int iEnd = sqlite3VdbeCurrentAddr(v);
+  if( pParse->db->mallocFailed ) return;
   for(; iStart<iEnd; iStart++, pOp++){
     if( pOp->p1!=iTabCur ) continue;
     if( pOp->opcode==OP_Column ){
@@ -800,7 +804,9 @@ static void constructAutomaticIndex(
   if( pPartial ) sqlite3VdbeResolveLabel(v, iContinue);
   if( pTabItem->fg.viaCoroutine ){
     sqlite3VdbeChangeP2(v, addrCounter, regBase+n);
-    translateColumnToCopy(v, addrTop, pLevel->iTabCur, pTabItem->regResult, 1);
+    testcase( pParse->db->mallocFailed );
+    translateColumnToCopy(pParse, addrTop, pLevel->iTabCur,
+                          pTabItem->regResult, 1);
     sqlite3VdbeGoto(v, addrTop);
     pTabItem->fg.viaCoroutine = 0;
   }else{
@@ -2385,6 +2391,11 @@ static int whereLoopAddBtreeIndex(
       continue;
     }
 
+    if( IsUniqueIndex(pProbe) && saved_nEq==pProbe->nKeyCol-1 ){
+      pBuilder->bldFlags |= SQLITE_BLDF_UNIQUE;
+    }else{
+      pBuilder->bldFlags |= SQLITE_BLDF_INDEXED;
+    }
     pNew->wsFlags = saved_wsFlags;
     pNew->u.btree.nEq = saved_nEq;
     pNew->u.btree.nBtm = saved_nBtm;
@@ -2932,7 +2943,15 @@ static int whereLoopAddBtree(
       }
     }
 
+    pBuilder->bldFlags = 0;
     rc = whereLoopAddBtreeIndex(pBuilder, pSrc, pProbe, 0);
+    if( pBuilder->bldFlags==SQLITE_BLDF_INDEXED ){
+      /* If a non-unique index is used, or if a prefix of the key for
+      ** unique index is used (making the index functionally non-unique)
+      ** then the sqlite_stat1 data becomes important for scoring the
+      ** plan */
+      pTab->tabFlags |= TF_StatsUsed;
+    }
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
     sqlite3Stat4ProbeFree(pBuilder->pRec);
     pBuilder->nRecValid = 0;
@@ -4112,9 +4131,9 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
    && nRowEst
   ){
     Bitmask notUsed;
-    int rc = wherePathSatisfiesOrderBy(pWInfo, pWInfo->pDistinctSet, pFrom,
+    int rc = wherePathSatisfiesOrderBy(pWInfo, pWInfo->pResultSet, pFrom,
                  WHERE_DISTINCTBY, nLoop-1, pFrom->aLoop[nLoop-1], &notUsed);
-    if( rc==pWInfo->pDistinctSet->nExpr ){
+    if( rc==pWInfo->pResultSet->nExpr ){
       pWInfo->eDistinct = WHERE_DISTINCT_ORDERED;
     }
   }
@@ -4351,7 +4370,7 @@ WhereInfo *sqlite3WhereBegin(
   SrcList *pTabList,      /* FROM clause: A list of all tables to be scanned */
   Expr *pWhere,           /* The WHERE clause */
   ExprList *pOrderBy,     /* An ORDER BY (or GROUP BY) clause, or NULL */
-  ExprList *pDistinctSet, /* Try not to output two rows that duplicate these */
+  ExprList *pResultSet,   /* Query result set.  Req'd for DISTINCT */
   u16 wctrlFlags,         /* The WHERE_* flags defined in sqliteInt.h */
   int iAuxArg             /* If WHERE_OR_SUBCLAUSE is set, index cursor number
                           ** If WHERE_USE_LIMIT, then the limit amount */
@@ -4427,7 +4446,7 @@ WhereInfo *sqlite3WhereBegin(
   pWInfo->pParse = pParse;
   pWInfo->pTabList = pTabList;
   pWInfo->pOrderBy = pOrderBy;
-  pWInfo->pDistinctSet = pDistinctSet;
+  pWInfo->pResultSet = pResultSet;
   pWInfo->aiCurOnePass[0] = pWInfo->aiCurOnePass[1] = -1;
   pWInfo->nLevel = nTabList;
   pWInfo->iBreak = pWInfo->iContinue = sqlite3VdbeMakeLabel(v);
@@ -4505,13 +4524,13 @@ WhereInfo *sqlite3WhereBegin(
   if( db->mallocFailed ) goto whereBeginError;
 
   if( wctrlFlags & WHERE_WANT_DISTINCT ){
-    if( isDistinctRedundant(pParse, pTabList, &pWInfo->sWC, pDistinctSet) ){
+    if( isDistinctRedundant(pParse, pTabList, &pWInfo->sWC, pResultSet) ){
       /* The DISTINCT marking is pointless.  Ignore it. */
       pWInfo->eDistinct = WHERE_DISTINCT_UNIQUE;
     }else if( pOrderBy==0 ){
       /* Try to ORDER BY the result set to make distinct processing easier */
       pWInfo->wctrlFlags |= WHERE_DISTINCTBY;
-      pWInfo->pOrderBy = pDistinctSet;
+      pWInfo->pOrderBy = pResultSet;
     }
   }
 
@@ -4587,10 +4606,10 @@ WhereInfo *sqlite3WhereBegin(
 #endif
   /* Attempt to omit tables from the join that do not effect the result */
   if( pWInfo->nLevel>=2
-   && pDistinctSet!=0
+   && pResultSet!=0
    && OptimizationEnabled(db, SQLITE_OmitNoopJoin)
   ){
-    Bitmask tabUsed = sqlite3WhereExprListUsage(pMaskSet, pDistinctSet);
+    Bitmask tabUsed = sqlite3WhereExprListUsage(pMaskSet, pResultSet);
     if( sWLB.pOrderBy ){
       tabUsed |= sqlite3WhereExprListUsage(pMaskSet, sWLB.pOrderBy);
     }
@@ -4905,8 +4924,9 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     ** the co-routine into OP_Copy of result contained in a register.
     ** OP_Rowid becomes OP_Null.
     */
-    if( pTabItem->fg.viaCoroutine && !db->mallocFailed ){
-      translateColumnToCopy(v, pLevel->addrBody, pLevel->iTabCur,
+    if( pTabItem->fg.viaCoroutine ){
+      testcase( pParse->db->mallocFailed );
+      translateColumnToCopy(pParse, pLevel->addrBody, pLevel->iTabCur,
                             pTabItem->regResult, 0);
       continue;
     }
@@ -4949,7 +4969,8 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
             pOp->p2 = x;
             pOp->p1 = pLevel->iIdxCur;
           }
-          assert( (pLoop->wsFlags & WHERE_IDX_ONLY)==0 || x>=0 );
+          assert( (pLoop->wsFlags & WHERE_IDX_ONLY)==0 || x>=0 
+              || pWInfo->eOnePass );
         }else if( pOp->opcode==OP_Rowid ){
           pOp->p1 = pLevel->iIdxCur;
           pOp->opcode = OP_IdxRowid;

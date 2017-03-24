@@ -30,7 +30,9 @@ typedef short i16;
 typedef sqlite3_int64 i64;
 typedef sqlite3_uint64 u64;
 
-#define ArraySize(x) ((int)(sizeof(x) / sizeof(x[0])))
+#ifndef ArraySize
+# define ArraySize(x) ((int)(sizeof(x) / sizeof(x[0])))
+#endif
 
 #define testcase(x)
 #define ALWAYS(x) 1
