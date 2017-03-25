@@ -1456,6 +1456,7 @@ static void jsonPatchFunc(
   JsonParse y;     /* The patch */
   JsonNode *pResult;   /* The result of the merge */
 
+  UNUSED_PARAM(argc);
   if( jsonParse(&x, ctx, (const char*)sqlite3_value_text(argv[0])) ) return;
   if( jsonParse(&y, ctx, (const char*)sqlite3_value_text(argv[1])) ){
     jsonParseReset(&x);

@@ -2085,6 +2085,7 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
 static int captureOutputCallback(void *pArg, int nArg, char **azArg, char **az){
   ShellText *p = (ShellText*)pArg;
   int i;
+  UNUSED_PARAMETER(az);
   if( p->n ) appendText(p, "|", 0);
   for(i=0; i<nArg; i++){
     if( i ) appendText(p, ",", 0);
