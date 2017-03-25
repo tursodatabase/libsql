@@ -755,6 +755,9 @@ INSERT INTO t3 VALUES(5,'hello');
 INSERT INTO t3 VALUES(6,X'807f');
 COMMIT;}}
 
+
+ifcapable vtab {
+
 # The --preserve-rowids option to .dump
 #
 do_test shell1-4.1.1 {
@@ -867,6 +870,23 @@ INSERT INTO t1 VALUES(1,NULL,'alpha');
 INSERT INTO t1 VALUES(12,'',99);
 INSERT INTO t1 VALUES(23,1,X'b0b1b2');
 COMMIT;}}
+
+} else {
+
+do_test shell1-4.1.6 {
+  db close
+  forcedelete test2.db
+  sqlite3 db test2.db
+  db eval {
+    CREATE TABLE t1(x INTEGER PRIMARY KEY, y);
+    INSERT INTO t1 VALUES(1,null), (2,''), (3,1),
+                         (4,2.25), (5,'hello'), (6,x'807f');
+  }
+  catchcmd test2.db {.dump --preserve-rowids}
+} {1 {The --preserve-rowids option is not compatible with SQLITE_OMIT_VIRTUALTABLE}}
+
+}
+
 
 # Test the output of ".mode insert"
 #

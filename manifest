@@ -1,5 +1,5 @@
-C Disable\sthe\snew\s--preserve-rowids\soption\son\sthe\sCLI\s".dump"\scommand\sif\ncompiled\swith\sSQLITE_OMIT_VIRTUALTABLE.
-D 2017-03-25T18:15:05.701
+C Do\snot\srun\stests\sfor\s".dump\s--preserve-rowids"\swhen\stesting\nSQLITE_OMIT_VIRTUALTABLE\sbuilds.
+D 2017-03-25T18:31:42.178
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1faf9f06aadc9284c212dea7bbc7c0dea7e8337f0287c81001eff500912c790a
@@ -1114,7 +1114,7 @@ F test/sharedA.test 0cdf1a76dfa00e6beee66af5b534b1e8df2720f5
 F test/sharedB.test 16cc7178e20965d75278f410943109b77b2e645e
 F test/shared_err.test 2f2aee20db294b9924e81f6ccbe60f19e21e8506
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test bc1ca4161e1f459c9cd412d3f21f4ee635cf2322
+F test/shell1.test 50226a3a66bbd42a902e9f7698f768927eb33a56e9cfc55b7c157c38eb3e80ac
 F test/shell2.test e242a9912f44f4c23c3d1d802a83e934e84c853b
 F test/shell3.test 9b95ba643eaa228376f06a898fb410ee9b6e57c1
 F test/shell4.test 89ad573879a745974ff2df20ff97c5d6ffffbd5d
@@ -1569,7 +1569,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 833ab3212addc340ca8004e8d6a06cc5e51bf256f43dc73d87fbe67518a4891b
-R 5b5c15828c2f2dcb9cc85dadb80ff440
-U drh
-Z add0f65c09d0d29a2f7424a8d8e55df8
+P bd5bbe4eece9051cc8c27d834d22fb243d34f261641984555d02a27b7038d4f6
+R 3c7487a050e499b6e6904332fc259f35
+U dan
+Z 8bd1e4f61c15057f31029e76e86683dd
