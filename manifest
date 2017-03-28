@@ -1,5 +1,5 @@
-C Add\sthe\snew\ssqlite3_set_last_insert_rowid()\sinterface\sto\sthe\sextension\nloader\sthunk.
-D 2017-03-25T19:16:41.259
+C Version\s3.18.0\sRelease\sCandidate
+D 2017-03-28T18:48:43.315
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1faf9f06aadc9284c212dea7bbc7c0dea7e8337f0287c81001eff500912c790a
@@ -1569,7 +1569,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 55df410b2cd27dc4c7670bcc1196fa3a0e9e601fc24c42e53d6b0a26ee3e4b45
+P 8469fc0d48d6af0accef9b8a84e08ad2ca32351907510d177b4ca4815c1ea7cb
 R e1b145e92e118b2bc2de7100fb7561b5
+T *branch * version-3.18
+T *sym-version-3.18 *
+T -sym-trunk *
 U drh
-Z e401f4d2ca1590406e5405bb5cd2850e
+Z 2998f3cf8a15fbd1f3dc49f1b039f0d5
