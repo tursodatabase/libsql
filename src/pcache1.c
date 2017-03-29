@@ -1211,7 +1211,7 @@ int sqlite3PcacheReleaseMemory(int nReq){
   int nFree = 0;
   assert( sqlite3_mutex_notheld(pcache1.grp.mutex) );
   assert( sqlite3_mutex_notheld(pcache1.mutex) );
-  if( sqlite3GlobalConfig.nPage==0 ){
+  if( sqlite3GlobalConfig.pPage==0 ){
     PgHdr1 *p;
     pcache1EnterMutex(&pcache1.grp);
     while( (nReq<0 || nFree<nReq)
