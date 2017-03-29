@@ -285,8 +285,7 @@ static int pcache1InitBulk(PCache1 *pCache){
   sqlite3EndBenignMalloc();
   if( zBulk ){
     int nBulk = sqlite3MallocSize(zBulk)/pCache->szAlloc;
-    int i;
-    for(i=0; i<nBulk; i++){
+    do{
       PgHdr1 *pX = (PgHdr1*)&zBulk[pCache->szPage];
       pX->page.pBuf = zBulk;
       pX->page.pExtra = &pX[1];
@@ -295,7 +294,7 @@ static int pcache1InitBulk(PCache1 *pCache){
       pX->pNext = pCache->pFree;
       pCache->pFree = pX;
       zBulk += pCache->szAlloc;
-    }
+    }while( --nBulk );
   }
   return pCache->pFree!=0;
 }
