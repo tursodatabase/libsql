@@ -1,5 +1,5 @@
-C Slightly\ssmaller\sand\sfaster\simplementation\sof\spcache1InitBulk().
-D 2017-03-29T17:06:14.960
+C Avoid\sunnecessary\sblob\shandle\sinvalidation\swhen\schanges\sare\smade\sto\san\nunrelated\stable.
+D 2017-03-29T18:03:50.123
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1faf9f06aadc9284c212dea7bbc7c0dea7e8337f0287c81001eff500912c790a
@@ -344,7 +344,7 @@ F src/auth.c 930b376a9c56998557367e6f7f8aaeac82a2a792
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c ae0e0397e6ad58465bbf932239ee7539ca22f257c97b16c9d0960a1f5de743a3
+F src/btree.c 64ff65a01851a34c8145e5bc767df9e57d2f3c1acdc6aba334794b7c40c684e6
 F src/btree.h bf64dfeeddeebdb775a5eba0098bbc00d073290d
 F src/btreeInt.h cd55d39d9916270837a88c12e701047cba0729b0
 F src/build.c 43f903c9082040ced2b421543cb0300c2973647d
@@ -1569,7 +1569,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d336858dfcfb9539c43582b1443911df825f9af7146957734bc6f01c8f4d98e3
-R 21af04338e0846af1da53b948e484a63
+P 06c2b685e15b3ee045a3e7ea018701392771c7664e59a51c9aba87cdefeb37af
+R 00d70d109b5d75b80d2e30f02fdc5c97
 U drh
-Z 526769a24dc035fa5d0eca71a01d1d0b
+Z db6af2895adafefdbb1e0ee439bd7656
