@@ -482,8 +482,7 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   sqlite3 *db = pParse->db;       /* The database connection */
   int mxSqlLen;                   /* Max length of an SQL string */
 #ifdef sqlite3Parser_ENGINEALWAYSONSTACK
-  /* Space to hold the Lemon-generated Parser object */
-  sqlite3_uint64 zSpace[(sizeof(yyParser)+7)/sizeof(sqlite_uint64)];
+  yyParser sEngine;    /* Space to hold the Lemon-generated Parser object */
 #endif
 
   assert( zSql!=0 );
@@ -496,7 +495,7 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   assert( pzErrMsg!=0 );
   /* sqlite3ParserTrace(stdout, "parser: "); */
 #ifdef sqlite3Parser_ENGINEALWAYSONSTACK
-  pEngine = zSpace;
+  pEngine = &sEngine;
   sqlite3ParserInit(pEngine);
 #else
   pEngine = sqlite3ParserAlloc(sqlite3Malloc);
