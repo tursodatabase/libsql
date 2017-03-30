@@ -21,6 +21,10 @@
 **
 ** The sha3_query(Y) function evalutes all queries in the SQL statements of Y
 ** and returns a hash of their results.
+**
+** The SIZE argument is optional.  If omitted, the SHA3-256 hash algorithm
+** is used.  If SIZE is included it must be one of the integers 224, 256,
+** 384, or 512, to determine SHA3 hash variant that is computed.
 */
 #include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT1

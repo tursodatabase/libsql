@@ -117,6 +117,12 @@ static int growOpArray(Vdbe *v, int nOp){
   UNUSED_PARAMETER(nOp);
 #endif
 
+  /* Ensure that the size of a VDBE does not grow too large */
+  if( nNew > p->db->aLimit[SQLITE_LIMIT_VDBE_OP] ){
+    sqlite3OomFault(p->db);
+    return SQLITE_NOMEM;
+  }
+
   assert( nOp<=(1024/sizeof(Op)) );
   assert( nNew>=(p->nOpAlloc+nOp) );
   pNew = sqlite3DbRealloc(p->db, v->aOp, nNew*sizeof(Op));

@@ -164,6 +164,7 @@ struct VdbeFrame {
   i64 *anExec;            /* Event counters from parent frame */
   Mem *aMem;              /* Array of memory cells for parent frame */
   VdbeCursor **apCsr;     /* Array of Vdbe cursors for parent frame */
+  u8 *aOnce;              /* Bitmask used by OP_Once */
   void *token;            /* Copy of SubProgram.token */
   i64 lastRowid;          /* Last insert rowid (sqlite3.lastRowid) */
   AuxData *pAuxData;      /* Linked list of auxdata allocations */

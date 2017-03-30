@@ -2085,6 +2085,7 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
 static int captureOutputCallback(void *pArg, int nArg, char **azArg, char **az){
   ShellText *p = (ShellText*)pArg;
   int i;
+  UNUSED_PARAMETER(az);
   if( p->n ) appendText(p, "|", 0);
   for(i=0; i<nArg; i++){
     if( i ) appendText(p, ",", 0);
@@ -2926,7 +2927,6 @@ static char **tableColumnList(ShellState *p, const char *zTab){
         ** ordinary column in the table.  Verify that azRowid[j] is a valid
         ** name for the rowid before adding it to azCol[0].  WITHOUT ROWID
         ** tables will fail this last check */
-        int rc;
         rc = sqlite3_table_column_metadata(p->db,0,zTab,azRowid[j],0,0,0,0,0);
         if( rc==SQLITE_OK ) azCol[0] = azRowid[j];
         break;
@@ -2959,14 +2959,14 @@ static void toggleSelectOrder(sqlite3 *db){
 ** the table type ("index" or "table") and SQL to create the table.
 ** This routine should print text sufficient to recreate the table.
 */
-static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
+static int dump_callback(void *pArg, int nArg, char **azArg, char **azNotUsed){
   int rc;
   const char *zTable;
   const char *zType;
   const char *zSql;
   ShellState *p = (ShellState *)pArg;
 
-  UNUSED_PARAMETER(azCol);
+  UNUSED_PARAMETER(azNotUsed);
   if( nArg!=3 ) return 1;
   zTable = azArg[0];
   zType = azArg[1];
@@ -3169,6 +3169,7 @@ static char zHelp[] =
   ".scanstats on|off      Turn sqlite3_stmt_scanstatus() metrics on or off\n"
   ".schema ?PATTERN?      Show the CREATE statements matching PATTERN\n"
   "                          Add --indent for pretty-printing\n"
+  ".selftest ?--init?     Run tests defined in the SELFTEST table\n"
   ".separator COL ?ROW?   Change the column separator and optionally the row\n"
   "                         separator for both the output mode and .import\n"
 #if defined(SQLITE_ENABLE_SESSION)
@@ -4685,7 +4686,14 @@ static int do_meta_command(char *zLine, ShellState *p){
         const char *z = azArg[i]+1;
         if( z[0]=='-' ) z++;
         if( strcmp(z,"preserve-rowids")==0 ){
+#ifdef SQLITE_OMIT_VIRTUALTABLE
+          raw_printf(stderr, "The --preserve-rowids option is not compatible"
+                             " with SQLITE_OMIT_VIRTUALTABLE\n");
+          rc = 1;
+          goto meta_command_exit;
+#else
           ShellSetFlag(p, SHFLG_PreserveRowid);
+#endif
         }else
         {
           raw_printf(stderr, "Unknown option \"%s\" on \".dump\"\n", azArg[i]);

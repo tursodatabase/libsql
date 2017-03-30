@@ -421,7 +421,9 @@ static const sqlite3_api_routines sqlite3Apis = {
   sqlite3_system_errno,
   /* Version 3.14.0 and later */
   sqlite3_trace_v2,
-  sqlite3_expanded_sql
+  sqlite3_expanded_sql,
+  /* Version 3.18.0 and later */
+  sqlite3_set_last_insert_rowid
 };
 
 /*

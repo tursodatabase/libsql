@@ -349,8 +349,9 @@ int sqlite3Fts3PutVarint(char *p, sqlite_int64 v){
 ** Return the number of bytes read, or 0 on error.
 ** The value is stored in *v.
 */
-int sqlite3Fts3GetVarint(const char *p, sqlite_int64 *v){
-  const char *pStart = p;
+int sqlite3Fts3GetVarint(const char *pBuf, sqlite_int64 *v){
+  const unsigned char *p = (const unsigned char*)pBuf;
+  const unsigned char *pStart = p;
   u32 a;
   u64 b;
   int shift;
@@ -1397,7 +1398,9 @@ static int fts3InitVtab(
     char *z; 
     int n = 0;
     z = (char *)sqlite3Fts3NextToken(aCol[iCol], &n);
-    memcpy(zCsr, z, n);
+    if( n>0 ){
+      memcpy(zCsr, z, n);
+    }
     zCsr[n] = '\0';
     sqlite3Fts3Dequote(zCsr);
     p->azColumn[iCol] = zCsr;
