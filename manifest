@@ -1,10 +1,10 @@
-C Ensure\sthat\sthe\sstack\sspace\sused\sto\shold\sthe\sLemon-generated\sparser\sobject\nis\salways\s8-byte\saligned.
-D 2017-03-30T16:37:05.021
+C Increase\sthe\sversion\snumber\sfor\sthe\snext\sdevelopment\scycle.
+D 2017-03-30T16:51:35.655
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a4c0613a18663bda56d8cf76079ab6590a7c3602e54befb4bbdef76bcaa38b6a
 F README.md 2b15fae33852f2f53996774c21fb41e1d94181c4401a0e43ac93e11f2cc901b9
-F VERSION 3605fa447e4623f5ff4a6adc97b1fde9a257b8f2
+F VERSION 0a0e02e16b44ea735b40118fc844311b2ab0d35b25fbeda5120aee62f973f663
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
@@ -30,7 +30,7 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 6376abec766e9a0785178b1823b5a587e9f1ccbc
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure b15d030a8ae2e672d76c97b6667dacb98934a467 x
+F configure cea63449647267beb335e899fd8a79778912ffa55d6b179730267b8ef84aa1aa x
 F configure.ac 605173e829ab64514ed89f9b53d0da1739d7b0a0
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html b5a3c07d33ecb8e019ce8f7660fe2dbbad9d7977
@@ -1569,7 +1569,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a68919425c528b887e66b588a73a619f0506cb06855350e0ec8f844acf64d8f7
-R 82cf7572a7c54f3566dc03bfc0762992
+P 1279de0b70cabf39899d92ece8852a780fd800bf3154971537b3427e5bd3ca50
+R 8c59842ddd3a3383c068f53bcfd4477a
 U drh
-Z a2cdaa19784e815fd6dc9c68b48174fe
+Z 6ac757072538aac0ef24b8822be39d2a
