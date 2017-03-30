@@ -2085,6 +2085,7 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
 static int captureOutputCallback(void *pArg, int nArg, char **azArg, char **az){
   ShellText *p = (ShellText*)pArg;
   int i;
+  UNUSED_PARAMETER(az);
   if( p->n ) appendText(p, "|", 0);
   for(i=0; i<nArg; i++){
     if( i ) appendText(p, ",", 0);
@@ -4685,7 +4686,14 @@ static int do_meta_command(char *zLine, ShellState *p){
         const char *z = azArg[i]+1;
         if( z[0]=='-' ) z++;
         if( strcmp(z,"preserve-rowids")==0 ){
+#ifdef SQLITE_OMIT_VIRTUALTABLE
+          raw_printf(stderr, "The --preserve-rowids option is not compatible"
+                             " with SQLITE_OMIT_VIRTUALTABLE\n");
+          rc = 1;
+          goto meta_command_exit;
+#else
           ShellSetFlag(p, SHFLG_PreserveRowid);
+#endif
         }else
         {
           raw_printf(stderr, "Unknown option \"%s\" on \".dump\"\n", azArg[i]);

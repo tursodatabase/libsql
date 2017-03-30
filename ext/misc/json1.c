@@ -1397,7 +1397,7 @@ static JsonNode *jsonMergePatch(
   }
   iRoot = iTarget;
   for(i=1; i<pPatch->n; i += jsonNodeSize(&pPatch[i+1])+1){
-    int nKey;
+    u32 nKey;
     const char *zKey;
     assert( pPatch[i].eType==JSON_STRING );
     assert( pPatch[i].jnFlags & JNODE_LABEL );
@@ -1456,6 +1456,7 @@ static void jsonPatchFunc(
   JsonParse y;     /* The patch */
   JsonNode *pResult;   /* The result of the merge */
 
+  UNUSED_PARAM(argc);
   if( jsonParse(&x, ctx, (const char*)sqlite3_value_text(argv[0])) ) return;
   if( jsonParse(&y, ctx, (const char*)sqlite3_value_text(argv[1])) ){
     jsonParseReset(&x);
