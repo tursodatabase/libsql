@@ -1,5 +1,5 @@
-C Update\sthis\sbranch\swith\slatest\strunk\schanges.
-D 2016-03-15T09:42:39.387
+C Update\sshell6.test\sto\saccount\sfor\sthe\sfact\sthat\stests\sare\snow\srun\sin\sa\nseparate\sdirectory.
+D 2017-03-31T08:00:03.133
 F Makefile.in f53429fb2f313c099283659d0df6f20f932c861f
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc df0bf9ff7f8b3f4dd9fb4cc43f92fe58f6ec5c66
@@ -1031,7 +1031,7 @@ F test/shell2.test 12b8bf901b0e3a8ac58cf5c0c63a0a388d4d1862
 F test/shell3.test 5e8545ec72c4413a0e8d4c6be56496e3c257ca29
 F test/shell4.test f43e250139dc5dc5f0f2ec1752c50284a1ede102
 F test/shell5.test c04e9f9f948305706b88377c464c7f08ce7479f9
-F test/shell6.test 4ce53ce53e1206742e003b5ae609b6c2be438df1
+F test/shell6.test 05c2488ff2bb11ac300b9170e8f5b6e03d58982c77035cdca5dbf036f0d3c5b7
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/show_speedtest1_rtree.tcl 32e6c5f073d7426148a6936a0408f4b5b169aba5
 F test/shrink.test 1b4330b1fd9e818c04726d45cb28db73087535ce
@@ -1459,7 +1459,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 59caca4387e97231834a3bffdbed8636be4e8e19 9f194f90c07d5415b1d6bb10ec049f74999d6885
-R 5b90dca0c628375a48db229132bb19b2
+P 249cd361b840913794b7cd2f2d42777dcd547a60
+R b5c9ea0357d4d69dec4a40a72a5670a9
 U dan
-Z dd17403945ec5cf2087723aff15fb7cd
+Z 84e2a466cf9b475b6898bdfe1581ffe0

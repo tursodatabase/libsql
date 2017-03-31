@@ -27,7 +27,7 @@ set testprefix shell6
 if {$tcl_platform(platform)=="windows"} {
   set CLI "sqlite3.exe"
 } else {
-  set CLI "./sqlite3"
+  set CLI ".././sqlite3"
 }
 if {![file executable $CLI]} {
   finish_test
