@@ -152,7 +152,7 @@ foreach {tn expr res} {
   1  {abc}                           {"abc"}
   2  {one}                           {"one"|"i"|"1"}
   3  {3}                             {"3"|"iii"|"three"}
-  4  {3*}                            {"3"|"iii"|"three" *}
+  4  {3*}                            {"3" *}
 } {
   do_execsql_test 4.1.$tn {
     SELECT fts5_expr($expr, 'tokenize=tclnum')

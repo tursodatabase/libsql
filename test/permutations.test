@@ -92,6 +92,9 @@ foreach f [glob -nocomplain       \
 ] { 
   lappend alltests $f 
 }
+foreach f [glob -nocomplain $testdir/../ext/session/*.test] { 
+  lappend alltests $f 
+}
 
 if {$::tcl_platform(platform)!="unix"} {
   set alltests [test_set $alltests -exclude crash.test crash2.test]
@@ -100,6 +103,7 @@ set alltests [test_set $alltests -exclude {
   all.test        async.test         quick.test  veryquick.test
   memleak.test    permutations.test  soak.test   fts3.test
   mallocAll.test  rtree.test         full.test   extraquick.test
+  session.test
 }]
 
 set allquicktests [test_set $alltests -exclude {
@@ -243,22 +247,24 @@ test_suite "threads" -prefix "" -description {
 test_suite "fts3" -prefix "" -description {
   All FTS3 tests except fts3rnd.test.
 } -files {
-  fts3aa.test fts3ab.test fts3ac.test fts3ad.test fts3ae.test
-  fts3af.test fts3ag.test fts3ah.test fts3ai.test fts3aj.test
-  fts3ak.test fts3al.test fts3am.test fts3an.test fts3ao.test
-  fts3atoken.test fts3b.test fts3c.test fts3cov.test fts3d.test
-  fts3defer.test fts3defer2.test fts3e.test fts3expr.test fts3expr2.test 
-  fts3expr3.test
-  fts3near.test fts3query.test fts3shared.test fts3snippet.test 
-  fts3sort.test
-  fts3fault.test fts3malloc.test fts3matchinfo.test
-  fts3aux1.test fts3comp1.test fts3auto.test
-  fts4aa.test fts4content.test
-  fts3conf.test fts3prefix.test fts3fault2.test fts3corrupt.test
-  fts3corrupt2.test fts3first.test fts4langid.test fts4merge.test
-  fts4check.test fts4unicode.test fts4noti.test
-  fts3varint.test
-  fts4growth.test fts4growth2.test
+  fts3aa.test fts3ab.test fts3ac.test fts3ad.test
+  fts3ae.test fts3af.test fts3ag.test fts3ah.test
+  fts3ai.test fts3aj.test fts3ak.test fts3al.test
+  fts3am.test fts3an.test fts3ao.test fts3atoken.test
+  fts3auto.test fts3aux1.test fts3aux2.test fts3b.test
+  fts3comp1.test fts3conf.test fts3corrupt2.test fts3corrupt.test
+  fts3cov.test fts3c.test fts3defer2.test fts3defer3.test
+  fts3defer.test fts3drop.test fts3d.test fts3e.test
+  fts3expr2.test fts3expr3.test fts3expr4.test fts3expr5.test
+  fts3expr.test fts3fault2.test fts3fault.test fts3first.test
+  fts3join.test fts3malloc.test fts3matchinfo.test fts3near.test
+  fts3offsets.test fts3prefix2.test fts3prefix.test fts3query.test
+  fts3shared.test fts3snippet.test fts3sort.test fts3tok1.test
+  fts3tok_err.test fts3varint.test fts4aa.test fts4check.test
+  fts4content.test fts4docid.test fts4growth2.test fts4growth.test
+  fts4incr.test fts4langid.test fts4lastrowid.test fts4merge2.test
+  fts4merge4.test fts4merge.test fts4noti.test fts4onepass.test 
+  fts4opt.test fts4unicode.test
 }
 
 test_suite "fts5" -prefix "" -description {
@@ -724,7 +730,7 @@ test_suite "inmemory_journal" -description {
   ioerr.test ioerr2.test ioerr3.test ioerr4.test ioerr5.test
   vacuum3.test incrblob_err.test diskfull.test backup_ioerr.test
   e_fts3.test fts3cov.test fts3malloc.test fts3rnd.test
-  fts3snippet.test mmapfault.test
+  fts3snippet.test mmapfault.test sessionfault.test sessionfault2.test
 
   # Exclude test scripts that use tcl IO to access journal files or count
   # the number of fsync() calls.
@@ -742,6 +748,18 @@ test_suite "inmemory_journal" -description {
 
   # WAL mode is different.
   wal* tkt-2d1a5c67d.test backcompat.test e_wal* rowallock.test
+
+  # This test does not work as the "PRAGMA journal_mode = memory"
+  # statement switches the database out of wal mode at inopportune
+  # times.
+  snapshot_fault.test
+  
+  # This test assumes a journal file is created on disk.
+  delete_db.test
+  
+  # This test depends on a successful recovery from the pager error 
+  # state. Which is not possible with an in-memory journal
+  fts5fault1.test
 }]
 
 ifcapable mem3 {
@@ -938,7 +956,10 @@ test_suite "journaltest" -description {
   unregister_jt_vfs
 } -files [test_set $::allquicktests -exclude {
   wal* incrvacuum.test ioerr.test corrupt4.test io.test crash8.test 
-  async4.test bigfile.test backcompat.test
+  async4.test bigfile.test backcompat.test e_wal* fstat.test mmap2.test
+  pager1.test syscall.test tkt3457.test *malloc* mmap* multiplex* nolock*
+  pager2.test *fault* rowal* snapshot* superlock* symlink.test
+  delete_db.test
 }]
 
 if {[info commands register_demovfs] != ""} {
@@ -974,6 +995,26 @@ test_suite "wal" -description {
 test_suite "rtree" -description {
   All R-tree related tests. Provides coverage of source file rtree.c.
 } -files [glob -nocomplain $::testdir/../ext/rtree/*.test]
+
+test_suite "session" -description {
+  All session module related tests. 
+} -files [glob -nocomplain $::testdir/../ext/session/*.test]
+
+test_suite "session_eec" -description {
+  All session module related tests with sqlite3_extended_result_codes() set. 
+} -files [
+  glob -nocomplain $::testdir/../ext/session/*.test
+] -dbconfig {
+  sqlite3_extended_result_codes $::dbhandle 1
+}
+
+test_suite "session_strm" -description {
+  All session module related tests using the streaming APIs.
+} -files [
+  glob -nocomplain $::testdir/../ext/session/*.test
+] -dbconfig {
+  set ::sqlite3session_streams 1
+}
 
 test_suite "rbu" -description {
   RBU tests.
@@ -1026,14 +1067,12 @@ proc run_tests {name args} {
   set ::G(isquick)           1
   set ::G(perm:dbconfig)     $options(-dbconfig)
 
-  uplevel $options(-initialize)
-
   foreach file [lsort $options(-files)] {
+    uplevel $options(-initialize)
     if {[file tail $file] == $file} { set file [file join $::testdir $file] }
     slave_test_file $file
+    uplevel $options(-shutdown)
   }
-
-  uplevel $options(-shutdown)
 
   unset ::G(perm:name)
   unset ::G(perm:prefix)

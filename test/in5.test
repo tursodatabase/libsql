@@ -214,8 +214,27 @@ do_execsql_test 7.3.2 {
   SELECT a FROM y1 WHERE b IN (SELECT a FROM y2);
 } {two}
 
-finish_test
+#-------------------------------------------------------------------------
+# Tests to confirm that indexes on the rowid column do not confuse
+# the query planner. See ticket [0eab1ac7591f511d].
+#
+do_execsql_test 8.0 {
+  CREATE TABLE n1(a INTEGER PRIMARY KEY, b VARCHAR(500));
+  CREATE UNIQUE INDEX n1a ON n1(a);
+}
 
-
+do_execsql_test 8.1 {
+  SELECT count(*) FROM n1 WHERE a IN (1, 2, 3)
+} 0
+do_execsql_test 8.2 {
+  SELECT count(*) FROM n1 WHERE a IN (SELECT +a FROM n1)
+} 0
+do_execsql_test 8.3 {
+  INSERT INTO n1 VALUES(1, NULL), (2, NULL), (3, NULL);
+  SELECT count(*) FROM n1 WHERE a IN (1, 2, 3)
+} 3
+do_execsql_test 8.4 {
+  SELECT count(*) FROM n1 WHERE a IN (SELECT +a FROM n1)
+} 3
 
 finish_test

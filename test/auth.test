@@ -91,7 +91,7 @@ ifcapable tempdb {
     catchsql {CREATE TEMP TABLE t1(a,b,c)}
   } {1 {not authorized}}
   do_test auth-1.6 {
-    execsql {SELECT name FROM sqlite_temp_master}
+    execsql {SELECT name FROM temp.sqlite_master}
   } {}
   do_test auth-1.7.1 {
     proc auth {code arg1 arg2 arg3 arg4 args} {
@@ -148,7 +148,7 @@ ifcapable tempdb {
     catchsql {CREATE TEMP TABLE t1(a,b,c)}
   } {0 {}}
   do_test auth-1.14 {
-    execsql {SELECT name FROM sqlite_temp_master}
+    execsql {SELECT name FROM temp.sqlite_master}
   } {}
   do_test auth-1.15 {
     proc auth {code arg1 arg2 arg3 arg4 args} {
@@ -561,7 +561,7 @@ ifcapable tempdb {
     catchsql {DROP TABLE t1}
   } {0 {}}
   do_test auth-1.78 {
-    execsql {SELECT name FROM sqlite_temp_master}
+    execsql {SELECT name FROM temp.sqlite_master}
   } {t1}
 }
 
@@ -632,7 +632,7 @@ ifcapable tempdb {
     set ::authargs
   } {v1 {} temp {}}
   do_test auth-1.90 {
-    execsql {SELECT name FROM sqlite_temp_master}
+    execsql {SELECT name FROM temp.sqlite_master}
   } {t1}
 }
 
@@ -779,7 +779,7 @@ ifcapable tempdb {
     }
   } {1 {not authorized}}
   do_test auth-1.113 {
-    execsql {SELECT name FROM sqlite_temp_master}
+    execsql {SELECT name FROM temp.sqlite_master}
   } {t1 v1}
   do_test auth-1.114 {
     proc auth {code arg1 arg2 arg3 arg4 args} {
@@ -823,7 +823,7 @@ ifcapable tempdb {
     set ::authargs
   } {v1 {} temp {}}
   do_test auth-1.121 {
-    execsql {SELECT name FROM sqlite_temp_master}
+    execsql {SELECT name FROM temp.sqlite_master}
   } {t1 v1}
   do_test auth-1.122 {
     proc auth {code arg1 arg2 arg3 arg4 args} {
@@ -980,7 +980,7 @@ do_test auth-1.139 {
   set ::authargs
 } {r1 t1 temp {}}
 do_test auth-1.140 {
-  execsql {SELECT name FROM sqlite_temp_master}
+  execsql {SELECT name FROM temp.sqlite_master}
 } {t1}
 do_test auth-1.141 {
   proc auth {code arg1 arg2 arg3 arg4 args} {
@@ -1016,7 +1016,7 @@ do_test auth-1.144 {
   set ::authargs
 } {r1 t1 temp {}}
 do_test auth-1.145 {
-  execsql {SELECT name FROM sqlite_temp_master}
+  execsql {SELECT name FROM temp.sqlite_master}
 } {t1}
 do_test auth-1.146 {
   proc auth {code arg1 arg2 arg3 arg4 args} {
@@ -1052,7 +1052,7 @@ do_test auth-1.149 {
   set ::authargs
 } {r1 t1 temp {}}
 do_test auth-1.150 {
-  execsql {SELECT name FROM sqlite_temp_master}
+  execsql {SELECT name FROM temp.sqlite_master}
 } {t1 r1}
 
 do_test auth-1.151 {
@@ -1142,7 +1142,7 @@ do_test auth-1.164 {
   catchsql {DROP TRIGGER r1}
 } {1 {not authorized}}
 do_test auth-1.165 {
-  execsql {SELECT name FROM sqlite_temp_master}
+  execsql {SELECT name FROM temp.sqlite_master}
 } {t1 r1}
 do_test auth-1.166 {
   proc auth {code arg1 arg2 arg3 arg4 args} {
@@ -1170,7 +1170,7 @@ do_test auth-1.169 {
   catchsql {DROP TRIGGER r1}
 } {0 {}}
 do_test auth-1.170 {
-  execsql {SELECT name FROM sqlite_temp_master}
+  execsql {SELECT name FROM temp.sqlite_master}
 } {t1 r1}
 do_test auth-1.171 {
   proc auth {code arg1 arg2 arg3 arg4 args} {
@@ -1202,7 +1202,7 @@ do_test auth-1.175 {
   set ::authargs
 } {r1 t1 temp {}}
 do_test auth-1.176 {
-  execsql {SELECT name FROM sqlite_temp_master}
+  execsql {SELECT name FROM temp.sqlite_master}
 } {t1}
 } ;# ifcapable trigger
 
@@ -1306,7 +1306,7 @@ ifcapable tempdb {
     catchsql {CREATE INDEX i1 ON t1(b)}
   } {1 {not authorized}}
   do_test auth-1.194 {
-    execsql {SELECT name FROM sqlite_temp_master}
+    execsql {SELECT name FROM temp.sqlite_master}
   } {t1}
   do_test auth-1.195 {
     proc auth {code arg1 arg2 arg3 arg4 args} {
@@ -1350,7 +1350,7 @@ ifcapable tempdb {
     set ::authargs
   } {i1 t1 temp {}}
   do_test auth-1.202 {
-    execsql {SELECT name FROM sqlite_temp_master}
+    execsql {SELECT name FROM temp.sqlite_master}
   } {t1 i1}
 }
 
@@ -1466,7 +1466,7 @@ ifcapable tempdb {
     catchsql {DROP INDEX i1}
   } {0 {}}
   do_test auth-1.222 {
-    execsql {SELECT name FROM sqlite_temp_master}
+    execsql {SELECT name FROM temp.sqlite_master}
   } {t1 i1}
   do_test auth-1.223 {
     proc auth {code arg1 arg2 arg3 arg4 args} {
@@ -1482,7 +1482,7 @@ ifcapable tempdb {
     set ::authargs
   } {i1 t1 temp {}}
   do_test auth-1.225 {
-    execsql {SELECT name FROM sqlite_temp_master}
+    execsql {SELECT name FROM temp.sqlite_master}
   } {t1 i1}
   do_test auth-1.226 {
     proc auth {code arg1 arg2 arg3 arg4 args} {
@@ -1498,7 +1498,7 @@ ifcapable tempdb {
     set ::authargs
   } {i1 t1 temp {}}
   do_test auth-1.228 {
-    execsql {SELECT name FROM sqlite_temp_master}
+    execsql {SELECT name FROM temp.sqlite_master}
   } {t1}
 }
 
@@ -1765,7 +1765,7 @@ ifcapable attach {
         }
       } {0 {}}
       do_test auth-1.267 {
-        execsql {SELECT name FROM sqlite_temp_master WHERE type='table'}
+        execsql {SELECT name FROM temp.sqlite_master WHERE type='table'}
       } {t1x}
       do_test auth-1.268 {
         set authargs
@@ -2070,7 +2070,7 @@ ifcapable {altertable} {
     }
   } {1 {not authorized}}
   do_test auth-1.307 {
-    set x [execsql {SELECT sql FROM sqlite_temp_master WHERE type='t5'}]
+    set x [execsql {SELECT sql FROM temp.sqlite_master WHERE type='t5'}]
     regexp new_col_3 $x
   } {0}
 
@@ -2373,7 +2373,7 @@ ifcapable compound&&subquery {
   do_test auth-5.2 {
     execsql {
       SELECT name FROM (
-        SELECT * FROM sqlite_master UNION ALL SELECT * FROM sqlite_temp_master)
+        SELECT * FROM sqlite_master UNION ALL SELECT * FROM temp.sqlite_master)
       WHERE type='table'
       ORDER BY name
     }
@@ -2432,8 +2432,53 @@ do_test auth-6.3 {
   execsql {SELECT rowid, * FROM t6}
 } {101 1 2 3 4 5 6 7 8}
 
+#-------------------------------------------------------------------------
+# Test that view names are included as zArg4.
+#
+do_execsql_test auth-7.1 {
+  CREATE TABLE t7(a, b, c);
+  CREATE VIEW v7 AS SELECT * FROM t7;
+} {}
+set ::authargs [list]
+proc auth {args} {
+  eval lappend ::authargs [lrange $args 0 4]
+  return SQLITE_OK
+}
+
+do_test auth-7.2 {
+  execsql {SELECT a, c FROM v7}
+  set ::authargs
+} [list                          \
+  SQLITE_SELECT {} {} {} {}      \
+  SQLITE_READ t7 a main v7       \
+  SQLITE_READ t7 b main v7       \
+  SQLITE_READ t7 c main v7       \
+  SQLITE_READ v7 a main {}       \
+  SQLITE_READ v7 c main {}       \
+  SQLITE_SELECT {} {} {} v7      \
+]
+
+set ::authargs [list]
+do_test auth-7.3 {
+  execsql {SELECT a, c FROM t7}
+  set ::authargs
+} [list                          \
+  SQLITE_SELECT {} {} {} {}      \
+  SQLITE_READ t7 a main {}       \
+  SQLITE_READ t7 c main {}       \
+]
+
+set ::authargs [list]
+do_test auth-7.4 {
+  execsql {SELECT a, c FROM t7 AS v7}
+  set ::authargs
+} [list                          \
+  SQLITE_SELECT {} {} {} {}      \
+  SQLITE_READ t7 a main {}       \
+  SQLITE_READ t7 c main {}       \
+]
+
+
 rename proc {}
 rename proc_real proc
-
-
 finish_test

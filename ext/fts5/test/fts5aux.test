@@ -246,5 +246,37 @@ foreach {tn lRow res} {
   } $res
 }
 
+#-------------------------------------------------------------------------
+# Test the built-in bm25() demo.
+#
+reset_db
+do_execsql_test 9.1 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a, b);
+  INSERT INTO t1 VALUES('a',   NULL);           -- 1
+  INSERT INTO t1 VALUES('a',   NULL);           -- 2
+  INSERT INTO t1 VALUES('a',   NULL);           -- 3
+  INSERT INTO t1 VALUES('a',   NULL);           -- 4
+  INSERT INTO t1 VALUES('a',   NULL);           -- 5
+  INSERT INTO t1 VALUES('a',   NULL);           -- 6
+  INSERT INTO t1 VALUES('a',   NULL);           -- 7
+  INSERT INTO t1 VALUES('a',   NULL);           -- 8
+  INSERT INTO t1 VALUES(NULL,  'a a b');        -- 9
+  INSERT INTO t1 VALUES(NULL,  'b b a');        -- 10
+}
+
+do_execsql_test 9.2 {
+  SELECT rowid FROM t1('a AND b') ORDER BY rank;
+} {
+  10 9
+}
+
+do_execsql_test 9.3 {
+  SELECT rowid FROM t1('b:a AND b:b') ORDER BY rank;
+} {
+  9 10
+}
+
+
+
 finish_test
 

@@ -87,7 +87,7 @@
 ** Not currently enforced.
 */
 #ifndef SQLITE_MAX_VDBE_OP
-# define SQLITE_MAX_VDBE_OP 25000
+# define SQLITE_MAX_VDBE_OP 250000000
 #endif
 
 /*
@@ -101,8 +101,8 @@
 ** The suggested maximum number of in-memory pages to use for
 ** the main database table and for temporary tables.
 **
-** IMPLEMENTATION-OF: R-31093-59126 The default suggested cache size
-** is 2000*1024 bytes.
+** IMPLEMENTATION-OF: R-30185-15359 The default suggested cache size is -2000,
+** which means the cache size is limited to 2048000 bytes of memory.
 ** IMPLEMENTATION-OF: R-48205-43578 The default suggested cache size can be
 ** altered using the SQLITE_DEFAULT_CACHE_SIZE compile-time options.
 */

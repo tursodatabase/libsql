@@ -139,7 +139,49 @@ do_execsql_test 4.12 {
   PRAGMA integrity_check;
 } {ok}
 
+# 2016-04-09
+# Ticket https://sqlite.org/src/info/a306e56ff68b8fa5
+# Failure to completely delete when reverse_unordered_selects is
+# engaged.
+#
+db close
+forcedelete test.db
+sqlite3 db test.db
+do_execsql_test 5.0 {
+  PRAGMA page_size=1024;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+  CREATE INDEX x1 ON t1(b, c);
+  INSERT INTO t1(a,b,c) VALUES(1, 1, zeroblob(80));
+  INSERT INTO t1(a,b,c) SELECT a+1, 1, c FROM t1;
+  INSERT INTO t1(a,b,c) SELECT a+2, 1, c FROM t1;
+  INSERT INTO t1(a,b,c) SELECT a+10, 2, c FROM t1 WHERE b=1;
+  INSERT INTO t1(a,b,c) SELECT a+20, 3, c FROM t1 WHERE b=1;
+  PRAGMA reverse_unordered_selects = ON;
+  DELETE FROM t1 WHERE b=2;
+  SELECT a FROM t1 WHERE b=2;
+} {}
 
+# 2016-05-02
+# Ticket https://www.sqlite.org/src/tktview/dc6ebeda93960877
+# A subquery in the WHERE clause of a one-pass DELETE can cause an
+# incorrect answer.
+#
+db close
+forcedelete test.db
+sqlite3 db test.db
+do_execsql_test 6.0 {
+  CREATE TABLE t2(x INT);
+  INSERT INTO t2(x) VALUES(1),(2),(3),(4),(5);
+  DELETE FROM t2 WHERE EXISTS(SELECT 1 FROM t2 AS v WHERE v.x=t2.x-1);
+  SELECT x FROM t2;
+} {1}
+do_execsql_test 6.1 {
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t2(x INT);
+  INSERT INTO t2(x) VALUES(1),(2),(3),(4),(5);
+  DELETE FROM t2 WHERE EXISTS(SELECT 1 FROM t2 AS v WHERE v.x=t2.x+1);
+  SELECT x FROM t2;
+} {5}
 
 
 finish_test

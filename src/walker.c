@@ -27,11 +27,11 @@
 **
 **    WRC_Continue      Continue descending down the tree.
 **
-**    WRC_Prune         Do not descend into child nodes.  But allow
+**    WRC_Prune         Do not descend into child nodes, but allow
 **                      the walk to continue with sibling nodes.
 **
 **    WRC_Abort         Do no more callbacks.  Unwind the stack and
-**                      return the top-level walk call.
+**                      return from the top-level walk call.
 **
 ** The return value from this routine is WRC_Abort to abandon the tree walk
 ** and WRC_Continue to continue.
@@ -41,17 +41,17 @@ static SQLITE_NOINLINE int walkExpr(Walker *pWalker, Expr *pExpr){
   testcase( ExprHasProperty(pExpr, EP_TokenOnly) );
   testcase( ExprHasProperty(pExpr, EP_Reduced) );
   rc = pWalker->xExprCallback(pWalker, pExpr);
-  if( rc==WRC_Continue
-              && !ExprHasProperty(pExpr,EP_TokenOnly) ){
-    if( sqlite3WalkExpr(pWalker, pExpr->pLeft) ) return WRC_Abort;
-    if( sqlite3WalkExpr(pWalker, pExpr->pRight) ) return WRC_Abort;
-    if( ExprHasProperty(pExpr, EP_xIsSelect) ){
-      if( sqlite3WalkSelect(pWalker, pExpr->x.pSelect) ) return WRC_Abort;
-    }else{
-      if( sqlite3WalkExprList(pWalker, pExpr->x.pList) ) return WRC_Abort;
-    }
+  if( rc || ExprHasProperty(pExpr,(EP_TokenOnly|EP_Leaf)) ){
+    return rc & WRC_Abort;
   }
-  return rc & WRC_Abort;
+  if( pExpr->pLeft && walkExpr(pWalker, pExpr->pLeft) ) return WRC_Abort;
+  if( pExpr->pRight && walkExpr(pWalker, pExpr->pRight) ) return WRC_Abort;
+  if( ExprHasProperty(pExpr, EP_xIsSelect) ){
+    if( sqlite3WalkSelect(pWalker, pExpr->x.pSelect) ) return WRC_Abort;
+  }else if( pExpr->x.pList ){
+    if( sqlite3WalkExprList(pWalker, pExpr->x.pList) ) return WRC_Abort;
+  }
+  return WRC_Continue;
 }
 int sqlite3WalkExpr(Walker *pWalker, Expr *pExpr){
   return pExpr ? walkExpr(pWalker,pExpr) : WRC_Continue;

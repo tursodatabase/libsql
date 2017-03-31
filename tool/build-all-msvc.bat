@@ -268,7 +268,7 @@ REM
 IF DEFINED TCLSH_CMD (
   SET TCLSH_FILE=%TCLSH_CMD%
 ) ELSE (
-  SET TCLSH_FILE=tclsh85.exe
+  SET TCLSH_FILE=tclsh.exe
 )
 
 FOR %%T IN (%TCLSH_FILE%) DO (
@@ -460,7 +460,7 @@ FOR %%P IN (%PLATFORMS%) DO (
     REM
     REM NOTE: Reset the PATH here to the absolute bare minimum required.
     REM
-    SET PATH=%TOOLPATH%;%SystemRoot%\System32;%SystemRoot%
+    CALL :fn_ResetPath
 
     REM
     REM NOTE: This is the inner loop.  There are normally two iterations, one
@@ -816,6 +816,10 @@ GOTO no_errors
     ENDLOCAL
   )
   CALL :fn_ResetErrorLevel
+  GOTO :EOF
+
+:fn_ResetPath
+  SET PATH=%TOOLPATH%;%SystemRoot%\System32;%SystemRoot%
   GOTO :EOF
 
 :fn_AppendVariable

@@ -1252,8 +1252,8 @@ do_select_tests e_select-5.5 {
   1  "SELECT DISTINCT d FROM h3" {{} 2 2,3 2,4 3}
 }
 
-# EVIDENCE-OF: R-58359-52112 The normal rules for selecting a collation
-# sequence to compare text values with apply.
+# EVIDENCE-OF: R-47709-27231 The usual rules apply for selecting a
+# collation sequence to compare text values.
 #
 do_select_tests e_select-5.6 {
   1  "SELECT DISTINCT b FROM h1"                  {one I i four IV iv}

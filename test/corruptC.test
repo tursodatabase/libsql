@@ -100,6 +100,12 @@ do_test corruptC-2.1 {
 } {1 {database disk image is malformed}}
 
 # test that a corrupt content offset size is handled (seed 5649)
+#
+# Update 2016-12-27:  As of check-in [0b86fbca66] "In sqlite3BtreeInsert() when
+# replacing a re-existing row, try to overwrite the cell directly rather than
+# deallocate and reallocate the cell" on 2016-12-09, this test case no longer
+# detects the offset size problem during the UPDATE.  We have to run a subsequent
+# integrity_check to see it.
 do_test corruptC-2.2 {
   db close
   forcecopy test.bu test.db
@@ -117,8 +123,9 @@ do_test corruptC-2.2 {
   hexio_write test.db 3746 [format %02x 0x9a]
 
   sqlite3 db test.db
-  catchsql {UPDATE t1 SET y=1}
-} {1 {database disk image is malformed}}
+  db eval {UPDATE t1 SET y=1}
+  db eval {PRAGMA integrity_check}
+} {/Offset .* out of range/}
 
 # test that a corrupt free cell size is handled (seed 13329)
 do_test corruptC-2.3 {
@@ -157,7 +164,7 @@ do_test corruptC-2.5 {
   catchsql {BEGIN; UPDATE t2 SET y='abcdef-uvwxyz'; ROLLBACK;}
   catchsql {PRAGMA integrity_check}
 } {0 {{*** in database main ***
-Page 4: btreeInitPage() returns error code 11}}}
+On tree page 4 cell 19: Extends off end of page}}}
 
 # {0 {{*** in database main ***
 # Corruption detected in cell 710 on page 4

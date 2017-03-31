@@ -21,15 +21,7 @@
 #
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-if {$tcl_platform(platform)=="windows"} {
-  set CLI "sqlite3.exe"
-} else {
-  set CLI "./sqlite3"
-}
-if {![file executable $CLI]} {
-  finish_test
-  return
-}
+set CLI [test_find_cli]
 db close
 forcedelete test.db test.db-journal test.db-wal
 

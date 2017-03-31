@@ -114,26 +114,22 @@ ifcapable {subquery && compound} {
       CREATE TABLE t2(a,b);
       SELECT 5 IN (SELECT a,b FROM t2);
     }
-  } [list 1 \
-     {only a single result allowed for a SELECT that is part of an expression}]
+  } {1 {sub-select returns 2 columns - expected 1}}
   do_test select7-5.2 {
     catchsql {
       SELECT 5 IN (SELECT * FROM t2);
     }
-  } [list 1 \
-     {only a single result allowed for a SELECT that is part of an expression}]
+  } {1 {sub-select returns 2 columns - expected 1}}
   do_test select7-5.3 {
     catchsql {
       SELECT 5 IN (SELECT a,b FROM t2 UNION SELECT b,a FROM t2);
     }
-  } [list 1 \
-     {only a single result allowed for a SELECT that is part of an expression}]
+  } {1 {sub-select returns 2 columns - expected 1}}
   do_test select7-5.4 {
     catchsql {
       SELECT 5 IN (SELECT * FROM t2 UNION SELECT * FROM t2);
     }
-  } [list 1 \
-     {only a single result allowed for a SELECT that is part of an expression}]
+  } {1 {sub-select returns 2 columns - expected 1}}
 }
 
 # Verify that an error occurs if you have too many terms on a

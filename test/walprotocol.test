@@ -69,7 +69,7 @@ proc lock_callback {method filename handle lock} {
   if {$lock == "1 7 lock exclusive"} { return SQLITE_BUSY }
   return SQLITE_OK
 }
-puts "# Warning: This next test case causes SQLite to call xSlee(1) 100 times."
+puts "# Warning: This next test case causes SQLite to call xSleep(1) 100 times."
 puts "# Normally this equates to a delay of roughly 10 seconds, but if SQLite"
 puts "# is built on unix without HAVE_USLEEP defined, it may be much longer."
 do_test 1.3 {

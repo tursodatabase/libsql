@@ -184,7 +184,7 @@ do_test alter3-3.2 {
 if {!$has_codec} {
   do_test alter3-3.3 {
     get_file_format
-  } {4}
+  } {3}
 }
 ifcapable schema_version {
   do_test alter3-3.4 {
@@ -220,7 +220,7 @@ do_test alter3-4.2 {
 if {!$has_codec} {
   do_test alter3-4.3 {
     get_file_format
-  } {4}
+  } {3}
 }
 ifcapable schema_version {
   do_test alter3-4.4 {
@@ -270,7 +270,7 @@ ifcapable attach {
   if {!$has_codec} {
     do_test alter3-5.5 {
       list [get_file_format test2.db] [get_file_format]
-    } {4 4}
+    } {3 3}
   }
   do_test alter3-5.6 {
     execsql {
@@ -347,19 +347,19 @@ if {!$has_codec} {
         ALTER TABLE abc ADD d DEFAULT NULL;
       }
       get_file_format
-    } {4}
+    } {3}
     do_test alter3-7.3 {
       execsql {
         ALTER TABLE abc ADD e DEFAULT 10;
       }
       get_file_format
-    } {4}
+    } {3}
     do_test alter3-7.4 {
       execsql {
         ALTER TABLE abc ADD f DEFAULT NULL;
       }
       get_file_format
-    } {4}
+    } {3}
     do_test alter3-7.5 {
       execsql {
         VACUUM;

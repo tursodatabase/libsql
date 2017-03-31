@@ -344,7 +344,7 @@ ifcapable tempdb {
   do_test autoinc-4.1 {
     execsql {
       SELECT 1, name FROM sqlite_master WHERE type='table';
-      SELECT 2, name FROM sqlite_temp_master WHERE type='table';
+      SELECT 2, name FROM temp.sqlite_master WHERE type='table';
     }
   } {1 sqlite_sequence}
   do_test autoinc-4.2 {
@@ -662,6 +662,18 @@ ifcapable trigger {
     }
   } {1 124 2 10123}
 }
+
+# 2016-10-03 ticket https://www.sqlite.org/src/tktview/7b3328086a5c1
+# Make sure autoincrement plays nicely with the xfer optimization
+#
+do_execsql_test autoinc-10.1 {
+  DELETE FROM sqlite_sequence;
+  CREATE TABLE t10a(a INTEGER PRIMARY KEY AUTOINCREMENT, b UNIQUE);
+  INSERT INTO t10a VALUES(888,9999);
+  CREATE TABLE t10b(x INTEGER PRIMARY KEY AUTOINCREMENT, y UNIQUE);
+  INSERT INTO t10b SELECT * FROM t10a;
+  SELECT * FROM sqlite_sequence;
+} {t10a 888 t10b 888}
 
 
 

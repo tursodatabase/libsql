@@ -1,0 +1,107 @@
+# 2016 March 31
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# The focus of this file is testing the session module.
+#
+
+if {![info exists testdir]} {
+  set testdir [file join [file dirname [info script]] .. .. test]
+} 
+source [file join [file dirname [info script]] session_common.tcl]
+source $testdir/tester.tcl
+ifcapable !session {finish_test; return}
+set testprefix sessionfault2
+
+do_execsql_test 1.0.0 {
+  CREATE TABLE t1(a PRIMARY KEY, b UNIQUE);
+  INSERT INTO t1 VALUES(1, 1);
+  INSERT INTO t1 VALUES(2, 2);
+  INSERT INTO t1 VALUES(3, 3);
+
+  CREATE TABLE t2(a PRIMARY KEY, b UNIQUE);
+  INSERT INTO t2 VALUES(1, 1);
+  INSERT INTO t2 VALUES(2, 2);
+  INSERT INTO t2 VALUES(3, 3);
+}
+faultsim_save_and_close
+
+faultsim_restore_and_reopen
+do_test 1.0.1 {
+  set ::C [changeset_from_sql {
+    UPDATE t1 SET b=4 WHERE a=3;
+    UPDATE t1 SET b=3 WHERE a=2;
+    UPDATE t1 SET b=2 WHERE a=1;
+    UPDATE t2 SET b=0 WHERE a=1;
+    UPDATE t2 SET b=1 WHERE a=2;
+    UPDATE t2 SET b=2 WHERE a=3;
+  }]
+  set {} {}
+} {}
+
+proc xConflict args { return "OMIT" }
+
+do_faultsim_test 1 -faults oom-p* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  sqlite3changeset_apply db $::C xConflict
+} -test {
+  faultsim_test_result {0 {}} {1 SQLITE_NOMEM}
+  faultsim_integrity_check
+
+  catch { db eval ROLLBACK }
+  set res [db eval {
+    SELECT * FROM t1;
+    SELECT * FROM t2;
+  }]
+
+  if {$testrc==0} {
+    if {$res != "1 2 2 3 3 4 1 0 2 1 3 2"} { error "data error" }
+  } else {
+    if {
+         $res != "1 2 2 3 3 4 1 0 2 1 3 2"
+      && $res != "1 1 2 2 3 3 1 1 2 2 3 3"
+    } { error "data error!! $res" }
+  }
+}
+
+#-------------------------------------------------------------------------
+# OOM when applying a changeset for which one of the tables has a name
+# 99 bytes in size. This happens to cause an extra malloc in within the
+# sessions_strm permutation.
+#
+reset_db
+set nm [string repeat t 99]
+do_execsql_test 2.0.0 [string map "%TBL% $nm" {
+  CREATE TABLE %TBL%(a PRIMARY KEY, b UNIQUE);
+}]
+faultsim_save_and_close
+
+faultsim_restore_and_reopen
+do_test 1.0.1 {
+  set ::C [changeset_from_sql [string map "%TBL% $nm" {
+    INSERT INTO %TBL% VALUES(1, 2);
+    INSERT INTO %TBL% VALUES(3, 4);
+  }]]
+  set {} {}
+} {}
+
+proc xConflict args { return "OMIT" }
+do_faultsim_test 2 -faults oom-p* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  sqlite3changeset_apply db $::C xConflict
+} -test {
+  faultsim_test_result {0 {}} {1 SQLITE_NOMEM}
+  faultsim_integrity_check
+}
+
+finish_test
+

@@ -279,8 +279,19 @@ static int fts5VocabBestIndexMethod(
     }
   }
 
-  pInfo->idxNum = idxNum;
+  /* This virtual table always delivers results in ascending order of
+  ** the "term" column (column 0). So if the user has requested this
+  ** specifically - "ORDER BY term" or "ORDER BY term ASC" - set the
+  ** sqlite3_index_info.orderByConsumed flag to tell the core the results
+  ** are already in sorted order.  */
+  if( pInfo->nOrderBy==1 
+   && pInfo->aOrderBy[0].iColumn==0 
+   && pInfo->aOrderBy[0].desc==0
+  ){
+    pInfo->orderByConsumed = 1;
+  }
 
+  pInfo->idxNum = idxNum;
   return SQLITE_OK;
 }
 

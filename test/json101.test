@@ -356,5 +356,337 @@ do_execsql_test json-8.2 {
   SELECT a=json_extract(b,'$[0]') FROM t8;
 } {1}
 
+# The json_quote() function transforms an SQL value into a JSON value.
+# String values are quoted and interior quotes are escaped.  NULL values
+# are rendered as the unquoted string "null".
+#
+do_execsql_test json-9.1 {
+  SELECT json_quote('abc"xyz');
+} {{"abc\"xyz"}}
+do_execsql_test json-9.2 {
+  SELECT json_quote(3.14159);
+} {3.14159}
+do_execsql_test json-9.3 {
+  SELECT json_quote(12345);
+} {12345}
+do_execsql_test json-9.4 {
+  SELECT json_quote(null);
+} {"null"}
+do_catchsql_test json-9.5 {
+  SELECT json_quote(x'30313233');
+} {1 {JSON cannot hold BLOB values}}
+do_catchsql_test json-9.6 {
+  SELECT json_quote(123,456)
+} {1 {wrong number of arguments to function json_quote()}}
+do_catchsql_test json-9.7 {
+  SELECT json_quote()
+} {1 {wrong number of arguments to function json_quote()}}
+
+# Make sure only valid backslash-escapes are accepted.
+#
+do_execsql_test json-10.1 {
+  SELECT json_valid('" \  "');
+} {0}
+do_execsql_test json-10.2 {
+  SELECT json_valid('" \! "');
+} {0}
+do_execsql_test json-10.3 {
+  SELECT json_valid('" \" "');
+} {1}
+do_execsql_test json-10.4 {
+  SELECT json_valid('" \# "');
+} {0}
+do_execsql_test json-10.5 {
+  SELECT json_valid('" \$ "');
+} {0}
+do_execsql_test json-10.6 {
+  SELECT json_valid('" \% "');
+} {0}
+do_execsql_test json-10.7 {
+  SELECT json_valid('" \& "');
+} {0}
+do_execsql_test json-10.8 {
+  SELECT json_valid('" \'' "');
+} {0}
+do_execsql_test json-10.9 {
+  SELECT json_valid('" \( "');
+} {0}
+do_execsql_test json-10.10 {
+  SELECT json_valid('" \) "');
+} {0}
+do_execsql_test json-10.11 {
+  SELECT json_valid('" \* "');
+} {0}
+do_execsql_test json-10.12 {
+  SELECT json_valid('" \+ "');
+} {0}
+do_execsql_test json-10.13 {
+  SELECT json_valid('" \, "');
+} {0}
+do_execsql_test json-10.14 {
+  SELECT json_valid('" \- "');
+} {0}
+do_execsql_test json-10.15 {
+  SELECT json_valid('" \. "');
+} {0}
+do_execsql_test json-10.16 {
+  SELECT json_valid('" \/ "');
+} {1}
+do_execsql_test json-10.17 {
+  SELECT json_valid('" \0 "');
+} {0}
+do_execsql_test json-10.18 {
+  SELECT json_valid('" \1 "');
+} {0}
+do_execsql_test json-10.19 {
+  SELECT json_valid('" \2 "');
+} {0}
+do_execsql_test json-10.20 {
+  SELECT json_valid('" \3 "');
+} {0}
+do_execsql_test json-10.21 {
+  SELECT json_valid('" \4 "');
+} {0}
+do_execsql_test json-10.22 {
+  SELECT json_valid('" \5 "');
+} {0}
+do_execsql_test json-10.23 {
+  SELECT json_valid('" \6 "');
+} {0}
+do_execsql_test json-10.24 {
+  SELECT json_valid('" \7 "');
+} {0}
+do_execsql_test json-10.25 {
+  SELECT json_valid('" \8 "');
+} {0}
+do_execsql_test json-10.26 {
+  SELECT json_valid('" \9 "');
+} {0}
+do_execsql_test json-10.27 {
+  SELECT json_valid('" \: "');
+} {0}
+do_execsql_test json-10.28 {
+  SELECT json_valid('" \; "');
+} {0}
+do_execsql_test json-10.29 {
+  SELECT json_valid('" \< "');
+} {0}
+do_execsql_test json-10.30 {
+  SELECT json_valid('" \= "');
+} {0}
+do_execsql_test json-10.31 {
+  SELECT json_valid('" \> "');
+} {0}
+do_execsql_test json-10.32 {
+  SELECT json_valid('" \? "');
+} {0}
+do_execsql_test json-10.33 {
+  SELECT json_valid('" \@ "');
+} {0}
+do_execsql_test json-10.34 {
+  SELECT json_valid('" \A "');
+} {0}
+do_execsql_test json-10.35 {
+  SELECT json_valid('" \B "');
+} {0}
+do_execsql_test json-10.36 {
+  SELECT json_valid('" \C "');
+} {0}
+do_execsql_test json-10.37 {
+  SELECT json_valid('" \D "');
+} {0}
+do_execsql_test json-10.38 {
+  SELECT json_valid('" \E "');
+} {0}
+do_execsql_test json-10.39 {
+  SELECT json_valid('" \F "');
+} {0}
+do_execsql_test json-10.40 {
+  SELECT json_valid('" \G "');
+} {0}
+do_execsql_test json-10.41 {
+  SELECT json_valid('" \H "');
+} {0}
+do_execsql_test json-10.42 {
+  SELECT json_valid('" \I "');
+} {0}
+do_execsql_test json-10.43 {
+  SELECT json_valid('" \J "');
+} {0}
+do_execsql_test json-10.44 {
+  SELECT json_valid('" \K "');
+} {0}
+do_execsql_test json-10.45 {
+  SELECT json_valid('" \L "');
+} {0}
+do_execsql_test json-10.46 {
+  SELECT json_valid('" \M "');
+} {0}
+do_execsql_test json-10.47 {
+  SELECT json_valid('" \N "');
+} {0}
+do_execsql_test json-10.48 {
+  SELECT json_valid('" \O "');
+} {0}
+do_execsql_test json-10.49 {
+  SELECT json_valid('" \P "');
+} {0}
+do_execsql_test json-10.50 {
+  SELECT json_valid('" \Q "');
+} {0}
+do_execsql_test json-10.51 {
+  SELECT json_valid('" \R "');
+} {0}
+do_execsql_test json-10.52 {
+  SELECT json_valid('" \S "');
+} {0}
+do_execsql_test json-10.53 {
+  SELECT json_valid('" \T "');
+} {0}
+do_execsql_test json-10.54 {
+  SELECT json_valid('" \U "');
+} {0}
+do_execsql_test json-10.55 {
+  SELECT json_valid('" \V "');
+} {0}
+do_execsql_test json-10.56 {
+  SELECT json_valid('" \W "');
+} {0}
+do_execsql_test json-10.57 {
+  SELECT json_valid('" \X "');
+} {0}
+do_execsql_test json-10.58 {
+  SELECT json_valid('" \Y "');
+} {0}
+do_execsql_test json-10.59 {
+  SELECT json_valid('" \Z "');
+} {0}
+do_execsql_test json-10.60 {
+  SELECT json_valid('" \[ "');
+} {0}
+do_execsql_test json-10.61 {
+  SELECT json_valid('" \\ "');
+} {1}
+do_execsql_test json-10.62 {
+  SELECT json_valid('" \] "');
+} {0}
+do_execsql_test json-10.63 {
+  SELECT json_valid('" \^ "');
+} {0}
+do_execsql_test json-10.64 {
+  SELECT json_valid('" \_ "');
+} {0}
+do_execsql_test json-10.65 {
+  SELECT json_valid('" \` "');
+} {0}
+do_execsql_test json-10.66 {
+  SELECT json_valid('" \a "');
+} {0}
+do_execsql_test json-10.67 {
+  SELECT json_valid('" \b "');
+} {1}
+do_execsql_test json-10.68 {
+  SELECT json_valid('" \c "');
+} {0}
+do_execsql_test json-10.69 {
+  SELECT json_valid('" \d "');
+} {0}
+do_execsql_test json-10.70 {
+  SELECT json_valid('" \e "');
+} {0}
+do_execsql_test json-10.71 {
+  SELECT json_valid('" \f "');
+} {1}
+do_execsql_test json-10.72 {
+  SELECT json_valid('" \g "');
+} {0}
+do_execsql_test json-10.73 {
+  SELECT json_valid('" \h "');
+} {0}
+do_execsql_test json-10.74 {
+  SELECT json_valid('" \i "');
+} {0}
+do_execsql_test json-10.75 {
+  SELECT json_valid('" \j "');
+} {0}
+do_execsql_test json-10.76 {
+  SELECT json_valid('" \k "');
+} {0}
+do_execsql_test json-10.77 {
+  SELECT json_valid('" \l "');
+} {0}
+do_execsql_test json-10.78 {
+  SELECT json_valid('" \m "');
+} {0}
+do_execsql_test json-10.79 {
+  SELECT json_valid('" \n "');
+} {1}
+do_execsql_test json-10.80 {
+  SELECT json_valid('" \o "');
+} {0}
+do_execsql_test json-10.81 {
+  SELECT json_valid('" \p "');
+} {0}
+do_execsql_test json-10.82 {
+  SELECT json_valid('" \q "');
+} {0}
+do_execsql_test json-10.83 {
+  SELECT json_valid('" \r "');
+} {1}
+do_execsql_test json-10.84 {
+  SELECT json_valid('" \s "');
+} {0}
+do_execsql_test json-10.85 {
+  SELECT json_valid('" \t "');
+} {1}
+do_execsql_test json-10.86.0 {
+  SELECT json_valid('" \u "');
+} {0}
+do_execsql_test json-10.86.1 {
+  SELECT json_valid('" \ua "');
+} {0}
+do_execsql_test json-10.86.2 {
+  SELECT json_valid('" \uab "');
+} {0}
+do_execsql_test json-10.86.3 {
+  SELECT json_valid('" \uabc "');
+} {0}
+do_execsql_test json-10.86.4 {
+  SELECT json_valid('" \uabcd "');
+} {1}
+do_execsql_test json-10.86.5 {
+  SELECT json_valid('" \uFEDC "');
+} {1}
+do_execsql_test json-10.86.6 {
+  SELECT json_valid('" \u1234 "');
+} {1}
+do_execsql_test json-10.87 {
+  SELECT json_valid('" \v "');
+} {0}
+do_execsql_test json-10.88 {
+  SELECT json_valid('" \w "');
+} {0}
+do_execsql_test json-10.89 {
+  SELECT json_valid('" \x "');
+} {0}
+do_execsql_test json-10.90 {
+  SELECT json_valid('" \y "');
+} {0}
+do_execsql_test json-10.91 {
+  SELECT json_valid('" \z "');
+} {0}
+do_execsql_test json-10.92 {
+  SELECT json_valid('" \{ "');
+} {0}
+do_execsql_test json-10.93 {
+  SELECT json_valid('" \| "');
+} {0}
+do_execsql_test json-10.94 {
+  SELECT json_valid('" \} "');
+} {0}
+do_execsql_test json-10.95 {
+  SELECT json_valid('" \~ "');
+} {0}
+
 
 finish_test

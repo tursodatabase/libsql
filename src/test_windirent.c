@@ -18,6 +18,34 @@
 #include "test_windirent.h"
 
 /*
+** Implementation of the POSIX getenv() function using the Win32 API.
+** This function is not thread-safe.
+*/
+const char *windirent_getenv(
+  const char *name
+){
+  static char value[32768]; /* Maximum length, per MSDN */
+  DWORD dwSize = sizeof(value) / sizeof(char); /* Size in chars */
+  DWORD dwRet; /* Value returned by GetEnvironmentVariableA() */
+
+  memset(value, 0, sizeof(value));
+  dwRet = GetEnvironmentVariableA(name, value, dwSize);
+  if( dwRet==0 || dwRet>dwSize ){
+    /*
+    ** The function call to GetEnvironmentVariableA() failed -OR-
+    ** the buffer is not large enough.  Either way, return NULL.
+    */
+    return 0;
+  }else{
+    /*
+    ** The function call to GetEnvironmentVariableA() succeeded
+    ** -AND- the buffer contains the entire value.
+    */
+    return value;
+  }
+}
+
+/*
 ** Implementation of the POSIX opendir() function using the MSVCRT.
 */
 LPDIR opendir(
@@ -32,9 +60,10 @@ LPDIR opendir(
 
   /* TODO: Remove this if Unix-style root paths are not used. */
   if( sqlite3_stricmp(dirname, "/")==0 ){
-    dirname = getenv("SystemDrive");
+    dirname = windirent_getenv("SystemDrive");
   }
 
+  memset(&data, 0, sizeof(struct _finddata_t));
   _snprintf(data.name, namesize, "%s\\*", dirname);
   dirp->d_handle = _findfirst(data.name, &data);
 
@@ -43,12 +72,18 @@ LPDIR opendir(
     return NULL;
   }
 
-  /* TODO: Remove this block to allow hidden and system files. */
-  if( data.attrib&_A_HIDDEN || data.attrib&_A_SYSTEM ){
+  /* TODO: Remove this block to allow hidden and/or system files. */
+  if( is_filtered(data) ){
+next:
+
+    memset(&data, 0, sizeof(struct _finddata_t));
     if( _findnext(dirp->d_handle, &data)==-1 ){
       closedir(dirp);
       return NULL;
     }
+
+    /* TODO: Remove this block to allow hidden and/or system files. */
+    if( is_filtered(data) ) goto next;
   }
 
   dirp->d_first.d_attributes = data.attrib;
@@ -77,11 +112,11 @@ LPDIRENT readdir(
 
 next:
 
+  memset(&data, 0, sizeof(struct _finddata_t));
   if( _findnext(dirp->d_handle, &data)==-1 ) return NULL;
 
-  /* TODO: Remove this block to allow hidden and system files. */
-  if( data.attrib&_A_HIDDEN ) goto next;
-  if( data.attrib&_A_SYSTEM ) goto next;
+  /* TODO: Remove this block to allow hidden and/or system files. */
+  if( is_filtered(data) ) goto next;
 
   dirp->d_next.d_ino++;
   dirp->d_next.d_attributes = data.attrib;
@@ -118,14 +153,14 @@ INT readdir_r(
 
 next:
 
+  memset(&data, 0, sizeof(struct _finddata_t));
   if( _findnext(dirp->d_handle, &data)==-1 ){
     *result = NULL;
     return ENOENT;
   }
 
-  /* TODO: Remove this block to allow hidden and system files. */
-  if( data.attrib&_A_HIDDEN ) goto next;
-  if( data.attrib&_A_SYSTEM ) goto next;
+  /* TODO: Remove this block to allow hidden and/or system files. */
+  if( is_filtered(data) ) goto next;
 
   entry->d_ino = (ino_t)-1; /* not available */
   entry->d_attributes = data.attrib;

@@ -63,6 +63,23 @@ do_catchsql_test 2.1 {
   SELECT fts5_expr_tcl()
 } {1 {wrong number of arguments to function fts5_expr_tcl}}
 
+
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE e1 USING fts5(text, tokenize = 'porter unicode61');
+  INSERT INTO e1 VALUES ("just a few words with a / inside");
+}
+do_execsql_test 3.1 {
+  SELECT rowid, bm25(e1) FROM e1 WHERE e1 MATCH '"just"' ORDER BY rank;
+} {1 -1e-06}
+do_execsql_test 3.2 {
+  SELECT rowid FROM e1 WHERE e1 MATCH '"/" OR "just"'
+} 1
+do_execsql_test 3.3 {
+  SELECT rowid, bm25(e1) FROM e1 WHERE e1 MATCH '"/" OR "just"' ORDER BY rank;
+} {1 -1e-06}
+
+
+
 finish_test
 
 

@@ -147,7 +147,7 @@ int main(int argc, char **argv){
     }else if( strcmp(z,"inv")==0 ){
       if( n>0 ) a[n-1] = -a[n-1];
     }else if( z[0]=='^' ){
-      a[n++] = atoi(z+1);
+      a[n++] = (LogEst)atoi(z+1);
     }else if( isInteger(z) ){
       a[n++] = logEstFromInteger(atoi(z));
     }else if( isFloat(z) && z[0]!='-' ){

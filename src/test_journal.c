@@ -160,6 +160,7 @@ static int jtRandomness(sqlite3_vfs*, int nByte, char *zOut);
 static int jtSleep(sqlite3_vfs*, int microseconds);
 static int jtCurrentTime(sqlite3_vfs*, double*);
 static int jtCurrentTimeInt64(sqlite3_vfs*, sqlite3_int64*);
+static int jtGetLastError(sqlite3_vfs*, int, char*);
 
 static sqlite3_vfs jt_vfs = {
   2,                             /* iVersion */
@@ -179,7 +180,7 @@ static sqlite3_vfs jt_vfs = {
   jtRandomness,                  /* xRandomness */
   jtSleep,                       /* xSleep */
   jtCurrentTime,                 /* xCurrentTime */
-  0,                             /* xGetLastError */
+  jtGetLastError,                /* xGetLastError */
   jtCurrentTimeInt64             /* xCurrentTimeInt64 */
 };
 
@@ -256,7 +257,8 @@ static int jtClose(sqlite3_file *pFile){
     *pp = p->pNext;
   }
   leaveJtMutex();
-  return sqlite3OsClose(p->pReal);
+  sqlite3OsClose(p->pReal);
+  return SQLITE_OK;
 }
 
 /*
@@ -284,9 +286,10 @@ static int jtRead(
 **   b) The file-name specified when the file was opened matches
 **      all but the final 8 characters of the journal file name.
 **
-**   c) There is currently a reserved lock on the file.
+**   c) There is currently a reserved lock on the file. This 
+**      condition is waived if the noLock argument is non-zero.
 **/
-static jt_file *locateDatabaseHandle(const char *zJournal){
+static jt_file *locateDatabaseHandle(const char *zJournal, int noLock){
   jt_file *pMain = 0;
   enterJtMutex();
   for(pMain=g.pList; pMain; pMain=pMain->pNext){
@@ -294,7 +297,7 @@ static jt_file *locateDatabaseHandle(const char *zJournal){
     if( (pMain->flags&SQLITE_OPEN_MAIN_DB)
      && ((int)strlen(pMain->zName)==nName)
      && 0==memcmp(pMain->zName, zJournal, nName)
-     && (pMain->eLock>=SQLITE_LOCK_RESERVED)
+     && ((pMain->eLock>=SQLITE_LOCK_RESERVED) || noLock)
     ){
       break;
     }
@@ -516,7 +519,7 @@ static int jtWrite(
   jt_file *p = (jt_file *)pFile;
   if( p->flags&SQLITE_OPEN_MAIN_JOURNAL ){
     if( iOfst==0 ){
-      jt_file *pMain = locateDatabaseHandle(p->zName);
+      jt_file *pMain = locateDatabaseHandle(p->zName, 0);
       assert( pMain );
   
       if( iAmt==28 ){
@@ -554,6 +557,9 @@ static int jtWrite(
       u32 pgno = (u32)(iOfst/p->nPagesize + 1);
       assert( (iAmt==1||iAmt==(int)p->nPagesize) &&
               ((iOfst+iAmt)%p->nPagesize)==0 );
+      /* The following assert() statements may fail if this layer is used
+      ** with a connection in "PRAGMA synchronous=off" mode. If they
+      ** fail with sync=normal or sync=full, this may indicate problem.  */
       assert( pgno<=p->nPage || p->nSync>0 );
       assert( pgno>p->nPage || sqlite3BitvecTest(p->pWritable, pgno) );
     }
@@ -561,7 +567,7 @@ static int jtWrite(
 
   rc = sqlite3OsWrite(p->pReal, zBuf, iAmt, iOfst);
   if( (p->flags&SQLITE_OPEN_MAIN_JOURNAL) && iAmt==12 ){
-    jt_file *pMain = locateDatabaseHandle(p->zName);
+    jt_file *pMain = locateDatabaseHandle(p->zName, 0);
     int rc2 = readJournalFile(p, pMain);
     if( rc==SQLITE_OK ) rc = rc2;
   }
@@ -575,7 +581,7 @@ static int jtTruncate(sqlite3_file *pFile, sqlite_int64 size){
   jt_file *p = (jt_file *)pFile;
   if( p->flags&SQLITE_OPEN_MAIN_JOURNAL && size==0 ){
     /* Truncating a journal file. This is the end of a transaction. */
-    jt_file *pMain = locateDatabaseHandle(p->zName);
+    jt_file *pMain = locateDatabaseHandle(p->zName, 0);
     closeTransaction(pMain);
   }
   if( p->flags&SQLITE_OPEN_MAIN_DB && p->pWritable ){
@@ -603,11 +609,10 @@ static int jtSync(sqlite3_file *pFile, int flags){
     ** jt_file.pWritable bitvec of the main database file associated with
     ** this journal file.
     */
-    pMain = locateDatabaseHandle(p->zName);
-    assert(pMain);
+    pMain = locateDatabaseHandle(p->zName, 0);
 
     /* Set the bitvec values */
-    if( pMain->pWritable ){
+    if( pMain && pMain->pWritable ){
       pMain->nSync++;
       rc = readJournalFile(p, pMain);
       if( rc!=SQLITE_OK ){
@@ -729,7 +734,7 @@ static int jtDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
   int nPath = (int)strlen(zPath);
   if( nPath>8 && 0==strcmp("-journal", &zPath[nPath-8]) ){
     /* Deleting a journal file. The end of a transaction. */
-    jt_file *pMain = locateDatabaseHandle(zPath);
+    jt_file *pMain = locateDatabaseHandle(zPath, 0);
     if( pMain ){
       closeTransaction(pMain);
     }
@@ -822,6 +827,10 @@ static int jtCurrentTime(sqlite3_vfs *pVfs, double *pTimeOut){
 */
 static int jtCurrentTimeInt64(sqlite3_vfs *pVfs, sqlite3_int64 *pTimeOut){
   return g.pVfs->xCurrentTimeInt64(g.pVfs, pTimeOut);
+}
+
+static int jtGetLastError(sqlite3_vfs *pVfs, int n, char *z){
+  return g.pVfs->xGetLastError(g.pVfs, n, z);
 }
 
 /**************************************************************************

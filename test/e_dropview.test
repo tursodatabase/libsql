@@ -45,7 +45,7 @@ proc list_all_views {{db db}} {
   set res [list]
   $db eval { PRAGMA database_list } {
     set tbl "$name.sqlite_master"
-    if {$name == "temp"} { set tbl sqlite_temp_master }
+    if {$name == "temp"} { set tbl temp.sqlite_master }
 
     set sql "SELECT '$name.' || name FROM $tbl WHERE type = 'view'"
     lappend res {*}[$db eval $sql]

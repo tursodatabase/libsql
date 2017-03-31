@@ -597,27 +597,38 @@ static int fts5BestIndexMethod(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
   return SQLITE_OK;
 }
 
+static int fts5NewTransaction(Fts5Table *pTab){
+  Fts5Cursor *pCsr;
+  for(pCsr=pTab->pGlobal->pCsr; pCsr; pCsr=pCsr->pNext){
+    if( pCsr->base.pVtab==(sqlite3_vtab*)pTab ) return SQLITE_OK;
+  }
+  return sqlite3Fts5StorageReset(pTab->pStorage);
+}
+
 /*
 ** Implementation of xOpen method.
 */
 static int fts5OpenMethod(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCsr){
   Fts5Table *pTab = (Fts5Table*)pVTab;
   Fts5Config *pConfig = pTab->pConfig;
-  Fts5Cursor *pCsr;               /* New cursor object */
+  Fts5Cursor *pCsr = 0;           /* New cursor object */
   int nByte;                      /* Bytes of space to allocate */
-  int rc = SQLITE_OK;             /* Return code */
+  int rc;                         /* Return code */
 
-  nByte = sizeof(Fts5Cursor) + pConfig->nCol * sizeof(int);
-  pCsr = (Fts5Cursor*)sqlite3_malloc(nByte);
-  if( pCsr ){
-    Fts5Global *pGlobal = pTab->pGlobal;
-    memset(pCsr, 0, nByte);
-    pCsr->aColumnSize = (int*)&pCsr[1];
-    pCsr->pNext = pGlobal->pCsr;
-    pGlobal->pCsr = pCsr;
-    pCsr->iCsrId = ++pGlobal->iNextId;
-  }else{
-    rc = SQLITE_NOMEM;
+  rc = fts5NewTransaction(pTab);
+  if( rc==SQLITE_OK ){
+    nByte = sizeof(Fts5Cursor) + pConfig->nCol * sizeof(int);
+    pCsr = (Fts5Cursor*)sqlite3_malloc(nByte);
+    if( pCsr ){
+      Fts5Global *pGlobal = pTab->pGlobal;
+      memset(pCsr, 0, nByte);
+      pCsr->aColumnSize = (int*)&pCsr[1];
+      pCsr->pNext = pGlobal->pCsr;
+      pGlobal->pCsr = pCsr;
+      pCsr->iCsrId = ++pGlobal->iNextId;
+    }else{
+      rc = SQLITE_NOMEM;
+    }
   }
   *ppCsr = (sqlite3_vtab_cursor*)pCsr;
   return rc;
@@ -1175,7 +1186,6 @@ static int fts5FilterMethod(
     pCsr->ePlan = FTS5_PLAN_SOURCE;
     pCsr->pExpr = pTab->pSortCsr->pExpr;
     rc = fts5CursorFirst(pTab, pCsr, bDesc);
-    sqlite3Fts5ExprClearEof(pCsr->pExpr);
   }else if( pMatch ){
     const char *zExpr = (const char*)sqlite3_value_text(apVal[0]);
     if( zExpr==0 ) zExpr = "";
@@ -1578,8 +1588,8 @@ static int fts5SyncMethod(sqlite3_vtab *pVtab){
 ** Implementation of xBegin() method. 
 */
 static int fts5BeginMethod(sqlite3_vtab *pVtab){
-  UNUSED_PARAM(pVtab);  /* Call below is a no-op for NDEBUG builds */
   fts5CheckTransactionState((Fts5Table*)pVtab, FTS5_BEGIN, 0);
+  fts5NewTransaction((Fts5Table*)pVtab);
   return SQLITE_OK;
 }
 

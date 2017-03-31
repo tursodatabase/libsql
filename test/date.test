@@ -62,7 +62,7 @@ datetest 1.20 {julianday('2000-01-01 12:00:00.01')}  2451545.00000012
 datetest 1.21 {julianday('2000-01-01 12:00:00.001')} 2451545.00000001
 datetest 1.22 {julianday('2000-01-01 12:00:00.')} NULL
 datetest 1.23 julianday(12345.6) 12345.6
-datetest 1.23b julianday('12345.6') 12345.6
+datetest 1.23b julianday(1721059.5) 1721059.5
 datetest 1.24 {julianday('2001-01-01 12:00:00 bogus')} NULL
 datetest 1.25 {julianday('2001-01-01 bogus')} NULL
 datetest 1.26 {julianday('2001-01-01 12:60:00')} NULL
@@ -559,5 +559,54 @@ do_test date-15.2 {
                                sleeper(), current_timestamp AS b);
   }
 } {1}
+
+# Tests of extreme values in date/time functions.  Run with UBSan or the
+# equivalent to verify no signed interger overflow warnings.
+#
+datetest 16.1 {date(147483649)} NULL
+datetest 16.2 {datetime(0)} {-4713-11-24 12:00:00}
+datetest 16.3 {datetime(5373484.49999999)} {9999-12-31 23:59:59}
+datetest 16.4 {julianday('-4713-11-24 12:00:00')} 0.0
+datetest 16.5 {julianday('9999-12-31 23:59:59.999')} 5373484.49999999
+datetest 16.6 {datetime(0,'+464269060799 seconds')} {9999-12-31 23:59:59}
+datetest 16.7 {datetime(0,'+464269060800 seconds')} NULL
+datetest 16.8 {datetime(0,'+7737817679 minutes')} {9999-12-31 23:59:00}
+datetest 16.9 {datetime(0,'+7737817680 minutes')} NULL
+datetest 16.10 {datetime(0,'+128963627 hours')} {9999-12-31 23:00:00}
+datetest 16.11 {datetime(0,'+128963628 hours')} NULL
+datetest 16.12 {datetime(0,'+5373484 days')} {9999-12-31 12:00:00}
+datetest 16.13 {datetime(0,'+5373485 days')} NULL
+datetest 16.14 {datetime(0,'+176545 months')} {9999-12-24 12:00:00}
+datetest 16.15 {datetime(0,'+176546 months')} NULL
+datetest 16.16 {datetime(0,'+14712 years')} {9999-11-24 12:00:00}
+datetest 16.17 {datetime(0,'+14713 years')} NULL
+datetest 16.20 {datetime(5373484.4999999,'-464269060799 seconds')} \
+                {-4713-11-24 12:00:00}
+datetest 16.21 {datetime(5373484,'-464269060800 seconds')} NULL
+datetest 16.22 {datetime(5373484.4999999,'-7737817679 minutes')} \
+               {-4713-11-24 12:00:59}
+datetest 16.23 {datetime(5373484,'-7737817680 minutes')} NULL
+datetest 16.24 {datetime(5373484.4999999,'-128963627 hours')} \
+               {-4713-11-24 12:59:59}
+datetest 16.25 {datetime(5373484,'-128963628 hours')} NULL
+datetest 16.26 {datetime(5373484,'-5373484 days')} {-4713-11-24 12:00:00}
+datetest 16.27 {datetime(5373484,'-5373485 days')} NULL
+datetest 16.28 {datetime(5373484,'-176545 months')} {-4713-12-01 12:00:00}
+datetest 16.29 {datetime(5373484,'-176546 months')} NULL
+datetest 16.30 {datetime(5373484,'-14712 years')} {-4713-12-31 12:00:00}
+datetest 16.31 {datetime(5373484,'-14713 years')} NULL
+
+# 2017-03-02: Wrong 'start of day' computation.
+# https://www.sqlite.org/src/info/6097cb92745327a1
+#
+datetest 17.1 {datetime(2457754, 'start of day')} {2016-12-31 00:00:00}
+datetest 17.2 {datetime(2457828)} {2017-03-15 12:00:00}
+datetest 17.3 {datetime(2457828,'start of day')} {2017-03-15 00:00:00}
+datetest 17.4 {datetime(2457828,'start of month')} {2017-03-01 00:00:00}
+datetest 17.5 {datetime(2457828,'start of year')} {2017-01-01 00:00:00}
+datetest 17.6 {datetime(37,'start of year')} NULL
+datetest 17.7 {datetime(38,'start of year')} {-4712-01-01 00:00:00}
+
+
 
 finish_test

@@ -1,0 +1,67 @@
+# 2011 March 25
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for the session module. 
+# 
+
+if {![info exists testdir]} {
+  set testdir [file join [file dirname [info script]] .. .. test]
+} 
+source [file join [file dirname [info script]] session_common.tcl]
+source $testdir/tester.tcl
+ifcapable !session {finish_test; return}
+
+set testprefix session4
+
+do_test 1.0 {
+  execsql {
+    CREATE TABLE x(a, b, c, d, e, PRIMARY KEY(c, e));
+    INSERT INTO x VALUES(65.21, X'28B0', 16.35, NULL, 'doers');
+    INSERT INTO x VALUES(NULL, 78.49, 2, X'60', -66);
+    INSERT INTO x VALUES('cathedral', NULL, 35, NULL, X'B220937E80A2D8');
+    INSERT INTO x VALUES(NULL, 'masking', -91.37, NULL, X'596D');
+    INSERT INTO x VALUES(19, 'domains', 'espouse', -94, 'throw');
+  }
+
+  set changeset [changeset_from_sql {
+    DELETE FROM x WHERE e = -66;
+    UPDATE x SET a = 'parameterizable', b = 31.8 WHERE c = 35;
+    INSERT INTO x VALUES(-75.61, -17, 16.85, NULL, X'D73DB02678');
+  }]
+  set {} {}
+} {}
+
+
+# This currently causes crashes. sqlite3changeset_invert() does not handle
+# corrupt changesets well.
+if 0 {
+  do_test 1.1 {
+    for {set i 0} {$i < [string length $changeset]} {incr i} {
+      set before [string range $changeset 0 [expr $i-1]]
+      set after  [string range $changeset [expr $i+1] end]
+      for {set j 10} {$j < 260} {incr j} {
+        set x [binary format "a*ca*" $before $j $after]
+        catch { sqlite3changeset_invert $x }
+      }
+    }
+  } {}
+}
+
+do_test 1.2 {
+  set x [binary format "ca*" 0 [string range $changeset 1 end]]
+  list [catch { sqlite3changeset_invert $x } msg] $msg
+} {1 SQLITE_CORRUPT}
+
+do_test 1.3 {
+  set x [binary format "ca*" 0 [string range $changeset 1 end]]
+  list [catch { sqlite3changeset_apply db $x xConflict } msg] $msg
+} {1 SQLITE_CORRUPT}
+
+finish_test

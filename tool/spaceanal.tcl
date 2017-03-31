@@ -22,6 +22,33 @@ proc is_without_rowid {tname} {
   return 0
 }
 
+# Read and run TCL commands from standard input.  Used to implement
+# the --tclsh option.
+#
+proc tclsh {} {
+  set line {}
+  while {![eof stdin]} {
+    if {$line!=""} {
+      puts -nonewline "> "
+    } else {
+      puts -nonewline "% "
+    }
+    flush stdout
+    append line [gets stdin]
+    if {[info complete $line]} {
+      if {[catch {uplevel #0 $line} result]} {
+        puts stderr "Error: $result"
+      } elseif {$result!=""} {
+        puts $result
+      }
+      set line {}
+    } else {
+      append line \n
+    }
+  }
+}
+
+
 # Get the name of the database to analyze
 #
 proc usage {} {
@@ -34,22 +61,37 @@ information for the database and its constituent tables and indexes.
 
 Options:
 
-   --stats        Output SQL text that creates a new database containing
-                  statistics about the database that was analyzed
+   --pageinfo   Show how each page of the database-file is used
 
-   --pageinfo     Show how each page of the database-file is used
+   --stats      Output SQL text that creates a new database containing
+                statistics about the database that was analyzed
+
+   --tclsh      Run the built-in TCL interpreter interactively (for debugging)
+
+   --version    Show the version number of SQLite
 }
   exit 1
 }
 set file_to_analyze {}
 set flags(-pageinfo) 0
 set flags(-stats) 0
+set flags(-debug) 0
 append argv {}
 foreach arg $argv {
   if {[regexp {^-+pageinfo$} $arg]} {
     set flags(-pageinfo) 1
   } elseif {[regexp {^-+stats$} $arg]} {
     set flags(-stats) 1
+  } elseif {[regexp {^-+debug$} $arg]} {
+    set flags(-debug) 1
+  } elseif {[regexp {^-+tclsh$} $arg]} {
+    tclsh
+    exit 0
+  } elseif {[regexp {^-+version$} $arg]} {
+    sqlite3 mem :memory:
+    puts [mem one {SELECT sqlite_version()||' '||sqlite_source_id()}]
+    mem close
+    exit 0
   } elseif {[regexp {^-} $arg]} {
     puts stderr "Unknown option: $arg"
     usage
@@ -100,6 +142,10 @@ if {[catch {sqlite3 db $file_to_analyze -uri 1} msg]} {
   puts stderr "error trying to open $file_to_analyze: $msg"
   exit 1
 }
+if {$flags(-debug)} {
+  proc dbtrace {txt} {puts $txt; flush stdout;}
+  db trace ::dbtrace
+}
 
 db eval {SELECT count(*) FROM sqlite_master}
 set pageSize [expr {wide([db one {PRAGMA page_size}])}]
@@ -142,16 +188,22 @@ if {$flags(-stats)} {
   exit 0
 }
 
+
 # In-memory database for collecting statistics. This script loops through
 # the tables and indices in the database being analyzed, adding a row for each
 # to an in-memory database (for which the schema is shown below). It then
 # queries the in-memory db to produce the space-analysis report.
 #
 sqlite3 mem :memory:
+if {$flags(-debug)} {
+  proc dbtrace {txt} {puts $txt; flush stdout;}
+  mem trace ::dbtrace
+}
 set tabledef {CREATE TABLE space_used(
    name clob,        -- Name of a table or index in the database file
    tblname clob,     -- Name of associated table
    is_index boolean, -- TRUE if it is an index, false for a table
+   is_without_rowid boolean, -- TRUE if WITHOUT ROWID table  
    nentry int,       -- Number of entries in the BTree
    leaf_entries int, -- Number of leaf entries
    depth int,        -- Depth of the b-tree
@@ -184,7 +236,7 @@ set sql { SELECT name, tbl_name FROM sqlite_master WHERE rootpage>0 }
 foreach {name tblname} [concat sqlite_master sqlite_master [db eval $sql]] {
 
   set is_index [expr {$name!=$tblname}]
-  set idx_btree [expr {$is_index || [is_without_rowid $name]}]
+  set is_without_rowid [is_without_rowid $name]
   db eval {
     SELECT 
       sum(ncell) AS nentry,
@@ -235,6 +287,7 @@ foreach {name tblname} [concat sqlite_master sqlite_master [db eval $sql]] {
       $name,
       $tblname,
       $is_index,
+      $is_without_rowid,
       $nentry,
       $leaf_entries,
       $depth,
@@ -330,12 +383,15 @@ proc subreport {title where showFrag} {
   # following query returns exactly one row (because it is an aggregate).
   #
   # The results of the query are stored directly by SQLite into local 
-  # variables (i.e. $nentry, $nleaf etc.).
+  # variables (i.e. $nentry, $payload etc.).
   #
   mem eval "
     SELECT
-      int(sum(nentry)) AS nentry,
-      int(sum(leaf_entries)) AS nleaf,
+      int(sum(
+        CASE WHEN (is_without_rowid OR is_index) THEN nentry 
+             ELSE leaf_entries 
+        END
+      )) AS nentry,
       int(sum(payload)) AS payload,
       int(sum(ovfl_payload)) AS ovfl_payload,
       max(mx_payload) AS mx_payload,
@@ -375,8 +431,8 @@ proc subreport {title where showFrag} {
   set storage [expr {$total_pages*$pageSize}]
   set payload_percent [percent $payload $storage {of storage consumed}]
   set total_unused [expr {$ovfl_unused+$int_unused+$leaf_unused}]
-  set avg_payload [divide $payload $nleaf]
-  set avg_unused [divide $total_unused $nleaf]
+  set avg_payload [divide $payload $nentry]
+  set avg_unused [divide $total_unused $nentry]
   if {$int_pages>0} {
     # TODO: Is this formula correct?
     set nTab [mem eval "
@@ -390,12 +446,12 @@ proc subreport {title where showFrag} {
     "]
     set avg_fanout [format %.2f $avg_fanout]
   }
-  set ovfl_cnt_percent [percent $ovfl_cnt $nleaf {of all entries}]
+  set ovfl_cnt_percent [percent $ovfl_cnt $nentry {of all entries}]
 
   # Print out the sub-report statistics.
   #
   statline {Percentage of total database} $total_pages_percent
-  statline {Number of entries} $nleaf
+  statline {Number of entries} $nentry
   statline {Bytes of storage consumed} $storage
   if {$compressed_size!=$storage} {
     set compressed_size [expr {$compressed_size+$compressOverhead*$total_pages}]

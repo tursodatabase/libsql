@@ -21,15 +21,7 @@
 #
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-if {$tcl_platform(platform)=="windows"} {
-  set CLI "sqlite3.exe"
-} else {
-  set CLI "./sqlite3"
-}
-if {![file executable $CLI]} {
-  finish_test
-  return
-}
+set CLI [test_find_cli]
 db close
 forcedelete test.db test.db-journal test.db-wal
 sqlite3 db test.db
@@ -53,7 +45,7 @@ do_test shell1-1.1.1b {
 } {1 1}
 # error on extra options
 do_test shell1-1.1.2 {
-  catchcmd "test.db \"select 3\" \"select 4\"" ""
+  catchcmd "test.db \"select+3\" \"select+4\"" ""
 } {0 {3
 4}}
 # error on extra options
@@ -84,20 +76,20 @@ do_test shell1-1.3.3 {
 
 # -echo                print commands before execution
 do_test shell1-1.4.1 {
-  catchcmd "-echo test.db" "" 
+  catchcmd "-echo test.db" ""
 } {0 {}}
 
 # -[no]header          turn headers on or off
 do_test shell1-1.5.1 {
-  catchcmd "-header test.db" "" 
+  catchcmd "-header test.db" ""
 } {0 {}}
 do_test shell1-1.5.2 {
-  catchcmd "-noheader test.db" "" 
+  catchcmd "-noheader test.db" ""
 } {0 {}}
 
 # -bail                stop after hitting an error
 do_test shell1-1.6.1 {
-  catchcmd "-bail test.db" "" 
+  catchcmd "-bail test.db" ""
 } {0 {}}
 
 # -interactive         force interactive I/O
@@ -111,40 +103,40 @@ do_test shell1-1.7.1 {
 
 # -batch               force batch I/O
 do_test shell1-1.8.1 {
-  catchcmd "-batch test.db" "" 
+  catchcmd "-batch test.db" ""
 } {0 {}}
 
 # -column              set output mode to 'column'
 do_test shell1-1.9.1 {
-  catchcmd "-column test.db" "" 
+  catchcmd "-column test.db" ""
 } {0 {}}
 
 # -csv                 set output mode to 'csv'
 do_test shell1-1.10.1 {
-  catchcmd "-csv test.db" "" 
+  catchcmd "-csv test.db" ""
 } {0 {}}
 
 # -html                set output mode to HTML
 do_test shell1-1.11.1 {
-  catchcmd "-html test.db" "" 
+  catchcmd "-html test.db" ""
 } {0 {}}
 
 # -line                set output mode to 'line'
 do_test shell1-1.12.1 {
-  catchcmd "-line test.db" "" 
+  catchcmd "-line test.db" ""
 } {0 {}}
 
 # -list                set output mode to 'list'
 do_test shell1-1.13.1 {
-  catchcmd "-list test.db" "" 
+  catchcmd "-list test.db" ""
 } {0 {}}
 
 # -separator 'x'       set output field separator (|)
 do_test shell1-1.14.1 {
-  catchcmd "-separator 'x' test.db" "" 
+  catchcmd "-separator 'x' test.db" ""
 } {0 {}}
 do_test shell1-1.14.2 {
-  catchcmd "-separator x test.db" "" 
+  catchcmd "-separator x test.db" ""
 } {0 {}}
 do_test shell1-1.14.3 {
   set res [catchcmd "-separator" ""]
@@ -155,7 +147,7 @@ do_test shell1-1.14.3 {
 
 # -stats               print memory stats before each finalize
 do_test shell1-1.14b.1 {
-  catchcmd "-stats test.db" "" 
+  catchcmd "-stats test.db" ""
 } {0 {}}
 
 # -nullvalue 'text'    set text string for NULL values
@@ -183,7 +175,7 @@ do_test shell1-1.16.1 {
 
 # check first token handling
 do_test shell1-2.1.1 {
-  catchcmd "test.db" ".foo" 
+  catchcmd "test.db" ".foo"
 } {1 {Error: unknown command or invalid arguments:  "foo". Enter ".help" for help}}
 do_test shell1-2.1.2 {
   catchcmd "test.db" ".\"foo OFF\""
@@ -207,10 +199,10 @@ do_test shell1-2.2.4 {
 } {0 {}}
 do_test shell1-2.2.5 {
   catchcmd "test.db" ".mode \"insert FOO"
-} {1 {Error: mode should be one of: ascii column csv html insert line list tabs tcl}}
+} {1 {Error: mode should be one of: ascii column csv html insert line list quote tabs tcl}}
 do_test shell1-2.2.6 {
   catchcmd "test.db" ".mode \'insert FOO"
-} {1 {Error: mode should be one of: ascii column csv html insert line list tabs tcl}}
+} {1 {Error: mode should be one of: ascii column csv html insert line list quote tabs tcl}}
 
 # check multiple tokens, and quoted tokens
 do_test shell1-2.3.1 {
@@ -238,7 +230,7 @@ do_test shell1-2.3.7 {
 # check quoted args are unquoted
 do_test shell1-2.4.1 {
   catchcmd "test.db" ".mode FOO"
-} {1 {Error: mode should be one of: ascii column csv html insert line list tabs tcl}}
+} {1 {Error: mode should be one of: ascii column csv html insert line list quote tabs tcl}}
 do_test shell1-2.4.2 {
   catchcmd "test.db" ".mode csv"
 } {0 {}}
@@ -281,14 +273,16 @@ do_test shell1-3.2.4 {
   catchcmd "test.db" ".bail OFF BAD"
 } {1 {Usage: .bail on|off}}
 
+ifcapable vtab {
 # .databases             List names and files of attached databases
 do_test shell1-3.3.1 {
   catchcmd "-csv test.db" ".databases"
-} "/0 +.*main +[string map {/ .} [string range [get_pwd] 0 10]].*/"
+} "/0.+main.+[string map {/ ".{1,2}"} [string range [get_pwd] 0 10]].*/"
 do_test shell1-3.3.2 {
   # extra arguments ignored
   catchcmd "test.db" ".databases BAD"
-} "/0 +.*main +[string map {/ .} [string range [get_pwd] 0 10]].*/"
+} "/0.+main.+[string map {/ ".{1,2}"} [string range [get_pwd] 0 10]].*/"
+}
 
 # .dump ?TABLE? ...      Dump the database in an SQL text format
 #                          If TABLE specified, only dump tables matching
@@ -306,7 +300,7 @@ do_test shell1-3.4.2 {
 do_test shell1-3.4.3 {
   # too many arguments
   catchcmd "test.db" ".dump FOO BAD"
-} {1 {Usage: .dump ?LIKE-PATTERN?}}
+} {1 {Usage: .dump ?--preserve-rowids? ?LIKE-PATTERN?}}
 
 # .echo ON|OFF           Turn command echo on or off
 do_test shell1-3.5.1 {
@@ -435,10 +429,10 @@ do_test shell1-3.12.3 {
 #                          tcl      TCL list elements
 do_test shell1-3.13.1 {
   catchcmd "test.db" ".mode"
-} {1 {Error: mode should be one of: ascii column csv html insert line list tabs tcl}}
+} {1 {Error: mode should be one of: ascii column csv html insert line list quote tabs tcl}}
 do_test shell1-3.13.2 {
   catchcmd "test.db" ".mode FOO"
-} {1 {Error: mode should be one of: ascii column csv html insert line list tabs tcl}}
+} {1 {Error: mode should be one of: ascii column csv html insert line list quote tabs tcl}}
 do_test shell1-3.13.3 {
   catchcmd "test.db" ".mode csv"
 } {0 {}}
@@ -471,10 +465,10 @@ do_test shell1-3.13.11 {
 # don't allow partial mode type matches
 do_test shell1-3.13.12 {
   catchcmd "test.db" ".mode l"
-} {1 {Error: mode should be one of: ascii column csv html insert line list tabs tcl}}
+} {1 {Error: mode should be one of: ascii column csv html insert line list quote tabs tcl}}
 do_test shell1-3.13.13 {
   catchcmd "test.db" ".mode li"
-} {1 {Error: mode should be one of: ascii column csv html insert line list tabs tcl}}
+} {1 {Error: mode should be one of: ascii column csv html insert line list quote tabs tcl}}
 do_test shell1-3.13.14 {
   catchcmd "test.db" ".mode lin"
 } {0 {}}
@@ -576,7 +570,7 @@ do_test shell1-3.21.2 {
 do_test shell1-3.21.3 {
   # too many arguments
   catchcmd "test.db" ".schema FOO BAD"
-} {1 {Usage: .schema ?LIKE-PATTERN?}}
+} {1 {Usage: .schema ?--indent? ?LIKE-PATTERN?}}
 
 do_test shell1-3.21.4 {
   catchcmd "test.db" {
@@ -746,20 +740,153 @@ do_test shell1-4.1 {
 } {0 {PRAGMA foreign_keys=OFF;
 BEGIN TRANSACTION;
 CREATE TABLE t1(x);
-INSERT INTO "t1" VALUES(NULL);
-INSERT INTO "t1" VALUES('');
-INSERT INTO "t1" VALUES(1);
-INSERT INTO "t1" VALUES(2.25);
-INSERT INTO "t1" VALUES('hello');
-INSERT INTO "t1" VALUES(X'807F');
+INSERT INTO t1 VALUES(NULL);
+INSERT INTO t1 VALUES('');
+INSERT INTO t1 VALUES(1);
+INSERT INTO t1 VALUES(2.25);
+INSERT INTO t1 VALUES('hello');
+INSERT INTO t1 VALUES(X'807f');
 CREATE TABLE t3(x,y);
-INSERT INTO "t3" VALUES(1,NULL);
-INSERT INTO "t3" VALUES(2,'');
-INSERT INTO "t3" VALUES(3,1);
-INSERT INTO "t3" VALUES(4,2.25);
-INSERT INTO "t3" VALUES(5,'hello');
-INSERT INTO "t3" VALUES(6,X'807F');
+INSERT INTO t3 VALUES(1,NULL);
+INSERT INTO t3 VALUES(2,'');
+INSERT INTO t3 VALUES(3,1);
+INSERT INTO t3 VALUES(4,2.25);
+INSERT INTO t3 VALUES(5,'hello');
+INSERT INTO t3 VALUES(6,X'807f');
 COMMIT;}}
+
+
+ifcapable vtab {
+
+# The --preserve-rowids option to .dump
+#
+do_test shell1-4.1.1 {
+  catchcmd test.db {.dump --preserve-rowids}
+} {0 {PRAGMA foreign_keys=OFF;
+BEGIN TRANSACTION;
+CREATE TABLE t1(x);
+INSERT INTO t1(rowid,x) VALUES(1,NULL);
+INSERT INTO t1(rowid,x) VALUES(2,'');
+INSERT INTO t1(rowid,x) VALUES(3,1);
+INSERT INTO t1(rowid,x) VALUES(4,2.25);
+INSERT INTO t1(rowid,x) VALUES(5,'hello');
+INSERT INTO t1(rowid,x) VALUES(6,X'807f');
+CREATE TABLE t3(x,y);
+INSERT INTO t3(rowid,x,y) VALUES(1,1,NULL);
+INSERT INTO t3(rowid,x,y) VALUES(2,2,'');
+INSERT INTO t3(rowid,x,y) VALUES(3,3,1);
+INSERT INTO t3(rowid,x,y) VALUES(4,4,2.25);
+INSERT INTO t3(rowid,x,y) VALUES(5,5,'hello');
+INSERT INTO t3(rowid,x,y) VALUES(6,6,X'807f');
+COMMIT;}}
+
+# If the table contains an INTEGER PRIMARY KEY, do not record a separate
+# rowid column in the output.
+#
+do_test shell1-4.1.2 {
+  db close
+  forcedelete test2.db
+  sqlite3 db test2.db
+  db eval {
+    CREATE TABLE t1(x INTEGER PRIMARY KEY, y);
+    INSERT INTO t1 VALUES(1,null), (2,''), (3,1),
+                         (4,2.25), (5,'hello'), (6,x'807f');
+  }
+  catchcmd test2.db {.dump --preserve-rowids}
+} {0 {PRAGMA foreign_keys=OFF;
+BEGIN TRANSACTION;
+CREATE TABLE t1(x INTEGER PRIMARY KEY, y);
+INSERT INTO t1 VALUES(1,NULL);
+INSERT INTO t1 VALUES(2,'');
+INSERT INTO t1 VALUES(3,1);
+INSERT INTO t1 VALUES(4,2.25);
+INSERT INTO t1 VALUES(5,'hello');
+INSERT INTO t1 VALUES(6,X'807f');
+COMMIT;}}
+
+# Verify that the table named [table] is correctly quoted and that
+# an INTEGER PRIMARY KEY DESC is not an alias for the rowid.
+#
+do_test shell1-4.1.3 {
+  db close
+  forcedelete test2.db
+  sqlite3 db test2.db
+  db eval {
+    CREATE TABLE [table](x INTEGER PRIMARY KEY DESC, y);
+    INSERT INTO [table] VALUES(1,null), (12,''), (23,1),
+                         (34,2.25), (45,'hello'), (56,x'807f');
+  }
+  catchcmd test2.db {.dump --preserve-rowids}
+} {0 {PRAGMA foreign_keys=OFF;
+BEGIN TRANSACTION;
+CREATE TABLE [table](x INTEGER PRIMARY KEY DESC, y);
+INSERT INTO "table"(rowid,x,y) VALUES(1,1,NULL);
+INSERT INTO "table"(rowid,x,y) VALUES(2,12,'');
+INSERT INTO "table"(rowid,x,y) VALUES(3,23,1);
+INSERT INTO "table"(rowid,x,y) VALUES(4,34,2.25);
+INSERT INTO "table"(rowid,x,y) VALUES(5,45,'hello');
+INSERT INTO "table"(rowid,x,y) VALUES(6,56,X'807f');
+COMMIT;}}
+
+# Do not record rowids for a WITHOUT ROWID table.  Also check correct quoting
+# of table names that contain odd characters.
+#
+do_test shell1-4.1.4 {
+  db close
+  forcedelete test2.db
+  sqlite3 db test2.db
+  db eval {
+    CREATE TABLE [ta<>ble](x INTEGER PRIMARY KEY, y) WITHOUT ROWID;
+    INSERT INTO [ta<>ble] VALUES(1,null), (12,''), (23,1),
+                         (34,2.25), (45,'hello'), (56,x'807f');
+  }
+  catchcmd test2.db {.dump --preserve-rowids}
+} {0 {PRAGMA foreign_keys=OFF;
+BEGIN TRANSACTION;
+CREATE TABLE [ta<>ble](x INTEGER PRIMARY KEY, y) WITHOUT ROWID;
+INSERT INTO "ta<>ble" VALUES(1,NULL);
+INSERT INTO "ta<>ble" VALUES(12,'');
+INSERT INTO "ta<>ble" VALUES(23,1);
+INSERT INTO "ta<>ble" VALUES(34,2.25);
+INSERT INTO "ta<>ble" VALUES(45,'hello');
+INSERT INTO "ta<>ble" VALUES(56,X'807f');
+COMMIT;}}
+
+# Do not record rowids if the rowid is inaccessible
+#
+do_test shell1-4.1.5 {
+  db close
+  forcedelete test2.db
+  sqlite3 db test2.db
+  db eval {
+    CREATE TABLE t1(_ROWID_,rowid,oid);
+    INSERT INTO t1 VALUES(1,null,'alpha'), (12,'',99), (23,1,x'b0b1b2');
+  }
+  catchcmd test2.db {.dump --preserve-rowids}
+} {0 {PRAGMA foreign_keys=OFF;
+BEGIN TRANSACTION;
+CREATE TABLE t1(_ROWID_,rowid,oid);
+INSERT INTO t1 VALUES(1,NULL,'alpha');
+INSERT INTO t1 VALUES(12,'',99);
+INSERT INTO t1 VALUES(23,1,X'b0b1b2');
+COMMIT;}}
+
+} else {
+
+do_test shell1-4.1.6 {
+  db close
+  forcedelete test2.db
+  sqlite3 db test2.db
+  db eval {
+    CREATE TABLE t1(x INTEGER PRIMARY KEY, y);
+    INSERT INTO t1 VALUES(1,null), (2,''), (3,1),
+                         (4,2.25), (5,'hello'), (6,x'807f');
+  }
+  catchcmd test2.db {.dump --preserve-rowids}
+} {1 {The --preserve-rowids option is not compatible with SQLITE_OMIT_VIRTUALTABLE}}
+
+}
+
 
 # Test the output of ".mode insert"
 #
@@ -878,6 +1005,8 @@ do_test shell1-5.0 {
     if {$i==0x0D || ($tcl_platform(platform)=="windows" && $i==0x1A)} {
       continue
     }
+    if {$i>=0xE0 && $tcl_platform(os)=="OpenBSD"}  continue
+    if {$i>=0xE0 && $i<=0xEF && $tcl_platform(os)=="Linux"}  continue
     set hex [format %02X $i]
     set char [subst \\x$hex]; set oldChar $char
     set escapes [list]
@@ -913,9 +1042,55 @@ do_test shell1-5.0 {
       error "failed with error: $res"
     }
     if {$res ne "$oldChar\n"} {
-      error "failed with byte $hex mismatch"
+      if {[llength $res] > 0} {
+        set got [format %02X [scan $res %c]]
+      } else {
+        set got <empty>
+      }
+      error "failed with byte $hex mismatch, got $got"
     }
   }
 } {}
+
+# These test cases do not work on MinGW
+if 0 {
+
+# The string used here is the word "test" in Chinese.
+# In UTF-8, it is encoded as: \xE6\xB5\x8B\xE8\xAF\x95
+set test \u6D4B\u8BD5
+
+do_test shell1-6.0 {
+  set fileName $test; append fileName .db
+  catch {forcedelete $fileName}
+  set x [catchcmdex $fileName "CREATE TABLE t1(x);\n.schema\n"]
+  set code [lindex $x 0]
+  set res [string trim [lindex $x 1]]
+  if {$code ne "0"} {
+    error "failed with error: $res"
+  }
+  if {$res ne "CREATE TABLE t1(x);"} {
+    error "failed with mismatch: $res"
+  }
+  if {![file exists $fileName]} {
+    error "file \"$fileName\" (Unicode) does not exist"
+  }
+  forcedelete $fileName
+} {}
+
+do_test shell1-6.1 {
+  catch {forcedelete test3.db}
+  set x [catchcmdex test3.db \
+      "CREATE TABLE [encoding convertto utf-8 $test](x);\n.schema\n"]
+  set code [lindex $x 0]
+  set res [string trim [lindex $x 1]]
+  if {$code ne "0"} {
+    error "failed with error: $res"
+  }
+  if {$res ne "CREATE TABLE ${test}(x);"} {
+    error "failed with mismatch: $res"
+  }
+  forcedelete test3.db
+} {}
+}
 
 finish_test

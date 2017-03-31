@@ -86,4 +86,24 @@ do_test 3.3 {
   execsql { INSERT INTO t1(v) VALUES($new) }
 } {}
 
+#-------------------------------------------------------------------------
+# Test that it is not possible to DROP a table with an incremental blob
+# cursor open on it.
+#
+do_execsql_test 4.1 {
+  CREATE TABLE t2(a INTEGER PRIMARY KEY, b);
+  INSERT INTO t2 VALUES(456, '0123456789');
+}
+do_test 4.2 {
+  set blob [db incrblob -readonly t2 b 456]
+  read $blob 5
+} {01234}
+do_catchsql_test 4.3 {
+  DROP TABLE t2
+} {1 {database table is locked}}
+do_test 4.4 {
+  sqlite3_extended_errcode db
+} {SQLITE_LOCKED}
+close $blob
+
 finish_test
