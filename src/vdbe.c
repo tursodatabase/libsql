@@ -2710,18 +2710,18 @@ op_column_out:
 */
 case OP_Affinity: {
   const char *zAffinity;   /* The affinity to be applied */
-  char cAff;               /* A single character of affinity */
 
   zAffinity = pOp->p4.z;
   assert( zAffinity!=0 );
+  assert( pOp->p2>0 );
   assert( zAffinity[pOp->p2]==0 );
   pIn1 = &aMem[pOp->p1];
-  while( (cAff = *(zAffinity++))!=0 ){
+  do{
     assert( pIn1 <= &p->aMem[(p->nMem+1 - p->nCursor)] );
     assert( memIsValid(pIn1) );
-    applyAffinity(pIn1, cAff, encoding);
+    applyAffinity(pIn1, *(zAffinity++), encoding);
     pIn1++;
-  }
+  }while( zAffinity[0] );
   break;
 }
 
