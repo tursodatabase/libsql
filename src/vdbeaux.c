@@ -2930,7 +2930,6 @@ int sqlite3VdbeReset(Vdbe *p){
     }
   }
 #endif
-  p->iCurrentTime = 0;
   p->magic = VDBE_MAGIC_RESET;
   return p->rc & db->errMask;
 }
