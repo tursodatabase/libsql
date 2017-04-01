@@ -2892,7 +2892,6 @@ case OP_MakeRecord: {
     pOut->u.nZero = nZero;
     pOut->flags |= MEM_Zero;
   }
-  pOut->enc = SQLITE_UTF8;  /* In case the blob is ever converted to text */
   REGISTER_TRACE(pOp->p3, pOut);
   UPDATE_MAX_BLOBSIZE(pOut);
   break;
