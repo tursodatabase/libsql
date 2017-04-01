@@ -420,7 +420,7 @@ void sqlite3VdbeMemRelease(Mem *p){
 ** If the double is out of range of a 64-bit signed integer then
 ** return the closest available 64-bit signed integer.
 */
-static i64 doubleToInt64(double r){
+static SQLITE_NOINLINE i64 doubleToInt64(double r){
 #ifdef SQLITE_OMIT_FLOATING_POINT
   /* When floating-point is omitted, double and int64 are the same thing */
   return r;
@@ -456,6 +456,11 @@ static i64 doubleToInt64(double r){
 **
 ** If pMem represents a string value, its encoding might be changed.
 */
+static SQLITE_NOINLINE i64 memIntValue(Mem *pMem){
+  i64 value = 0;
+  sqlite3Atoi64(pMem->z, &value, pMem->n, pMem->enc);
+  return value;
+}
 i64 sqlite3VdbeIntValue(Mem *pMem){
   int flags;
   assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
@@ -466,10 +471,8 @@ i64 sqlite3VdbeIntValue(Mem *pMem){
   }else if( flags & MEM_Real ){
     return doubleToInt64(pMem->u.r);
   }else if( flags & (MEM_Str|MEM_Blob) ){
-    i64 value = 0;
     assert( pMem->z || pMem->n==0 );
-    sqlite3Atoi64(pMem->z, &value, pMem->n, pMem->enc);
-    return value;
+    return memIntValue(pMem);
   }else{
     return 0;
   }
@@ -481,6 +484,12 @@ i64 sqlite3VdbeIntValue(Mem *pMem){
 ** value.  If it is a string or blob, try to convert it to a double.
 ** If it is a NULL, return 0.0.
 */
+static SQLITE_NOINLINE double memRealValue(Mem *pMem){
+  /* (double)0 In case of SQLITE_OMIT_FLOATING_POINT... */
+  double val = (double)0;
+  sqlite3AtoF(pMem->z, &val, pMem->n, pMem->enc);
+  return val;
+}
 double sqlite3VdbeRealValue(Mem *pMem){
   assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
   assert( EIGHT_BYTE_ALIGNMENT(pMem) );
@@ -489,10 +498,7 @@ double sqlite3VdbeRealValue(Mem *pMem){
   }else if( pMem->flags & MEM_Int ){
     return (double)pMem->u.i;
   }else if( pMem->flags & (MEM_Str|MEM_Blob) ){
-    /* (double)0 In case of SQLITE_OMIT_FLOATING_POINT... */
-    double val = (double)0;
-    sqlite3AtoF(pMem->z, &val, pMem->n, pMem->enc);
-    return val;
+    return memRealValue(pMem);
   }else{
     /* (double)0 In case of SQLITE_OMIT_FLOATING_POINT... */
     return (double)0;

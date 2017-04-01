@@ -1,5 +1,5 @@
-C Remove\sunused\sfields\sfrom\sthe\sBtCursor\sobject.
-D 2017-04-01T11:40:05.090
+C Faster\simplementation\sfor\ssqlite3VdbeIntValue()\sand\ssqlite3VdbeRealValue().
+D 2017-04-01T11:59:36.584
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a4c0613a18663bda56d8cf76079ab6590a7c3602e54befb4bbdef76bcaa38b6a
@@ -474,7 +474,7 @@ F src/vdbeInt.h 5db089ce18c4feff8820ec6e4cac2d2c82e03d4b1d96f10a6e43832147b8dffe
 F src/vdbeapi.c 5b08d82592bcff4470601fe78aaabebd50837860
 F src/vdbeaux.c ecd0468611925d218e1eb4b3f538907904b136f0e15e333291a232b521bfcef1
 F src/vdbeblob.c 359891617358deefc85bef7bcf787fa6b77facb9
-F src/vdbemem.c 3b5a9a5b375458d3e12a50ae1aaa41eeec2175fd
+F src/vdbemem.c bbd8f5fdb7f11e02d9a6201f18a52325f1d2361a2850ff03a38f8efa5188f2dc
 F src/vdbesort.c eda25cb2d1727efca6f7862fea32b8aa33c0face
 F src/vdbetrace.c 41963d5376f0349842b5fc4aaaaacd7d9cdc0834
 F src/vtab.c 007513c2ef52472fcdea6a741683d50662e82790
@@ -1569,7 +1569,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2452f0617d1085689264b5f66681788cfe9e3b1a7b318307c93942b702a443df
-R a9b36ce777e90549c853b64c225197a6
+P 1c0d82e0786ed22d07d774b8b166340fad97bcaab6016e395c469bcfcb7c77a3
+R e7e1f4a4fa7fe0c6a0bd77f428c6873c
 U drh
-Z 4b939d3dd6a7f0c2f29593c397a2c2a8
+Z b92e301c12dc9a925621c9624fd5cc90
