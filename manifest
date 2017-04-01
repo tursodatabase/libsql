@@ -1,5 +1,5 @@
-C Declare\sthe\sLemon-generated\sparser\sobject\sas\sitself.\s\s(Duh)
-D 2017-03-30T17:13:37.978
+C Save\sa\s78\sbytes\sof\scode\sspace\sand\sa\smillion\sCPU\scycles\sin\sspeedtest1\sby\nstoring\sthe\scell\sindex\sfor\sthe\sleaf\spage\sin\sthe\sBtCursor\sobject\sin\sits\sown\nfield\s(BtCursor.ix),\srather\sthan\sas\san\sentry\sin\sthe\sBtCursor.aiIdx\sarray.
+D 2017-04-01T00:20:06.305
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a4c0613a18663bda56d8cf76079ab6590a7c3602e54befb4bbdef76bcaa38b6a
@@ -344,9 +344,9 @@ F src/auth.c 930b376a9c56998557367e6f7f8aaeac82a2a792
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c 64ff65a01851a34c8145e5bc767df9e57d2f3c1acdc6aba334794b7c40c684e6
+F src/btree.c 24ae5472bd0b53b4130ecdda389deb621af721d1fcb50890b878102b00bd10fa
 F src/btree.h bf64dfeeddeebdb775a5eba0098bbc00d073290d
-F src/btreeInt.h cd55d39d9916270837a88c12e701047cba0729b0
+F src/btreeInt.h 874e49bdfab514285dda1cb01880e4c82b7a428a0de7d9b2978d8d8849fbb210
 F src/build.c 43f903c9082040ced2b421543cb0300c2973647d
 F src/callback.c 2e76147783386374bf01b227f752c81ec872d730
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
@@ -1569,7 +1569,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9e550ccc29f317422dae3a4bb89a78b839330825fecd40a01d1a2acc719cef79
-R 288166ae6bc74f6b9a15fa169ea78182
+P c8000e94cca59dabf83d6cb75b40441aaf793d29880582dc4baa17246449b5fe
+R a50a3e5b98174af9f9e2e47aca996e63
 U drh
-Z 81f3770fca5082b63e34ff795f3d141f
+Z 14f3c01fb36e600191848f3a558eb584

@@ -517,6 +517,7 @@ struct BtCursor {
   ** initialized. */
   i8 iPage;                 /* Index of current page in apPage */
   u8 curIntKey;             /* Value of apPage[0]->intKey */
+  u16 ix;                   /* Current index for apPage[iPage] */
   struct KeyInfo *pKeyInfo; /* Argument passed to comparison function */
   void *padding1;           /* Make object size a multiple of 16 */
   u16 aiIdx[BTCURSOR_MAX_DEPTH];        /* Current index in apPage[i] */
