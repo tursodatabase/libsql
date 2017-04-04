@@ -1,5 +1,5 @@
-C Avoid\san\sunnecessary\scall\sto\ssqlite3WhereGetMask()\sinside\sof\swhereShortCut().
-D 2017-04-03T14:07:08.340
+C Fix\sa\sproblem\scausing\s"PRAGMA\sintegrity_check"\sto\sdisable\sthe\sxfer\noptimization\sfor\ssubsequent\sVACUUM\soperations\son\stables\swith\sone\sor\smore\sCHECK\nconstraints.\sThis\scould\sresult\sin\sVACUUM\sproducing\sslightly\slarger\sdatabase\nfiles.
+D 2017-04-04T19:58:54.565
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a4c0613a18663bda56d8cf76079ab6590a7c3602e54befb4bbdef76bcaa38b6a
@@ -394,7 +394,7 @@ F src/parse.y 48b03113704ee8bd78ee6996d81de7fbee22e105
 F src/pcache.c 62835bed959e2914edd26afadfecce29ece0e870
 F src/pcache.h 2cedcd8407eb23017d92790b112186886e179490
 F src/pcache1.c 1195a21fe28e223e024f900b2011e80df53793f0356a24caace4188b098540dc
-F src/pragma.c 2b244434e76c7075edbcfd9e4d634899af0944ff01183b126d4671f7407c2368
+F src/pragma.c 220474f113cade6a6b5bacd3e3a65eca339acbee804128bc5db13a9cad55fba5
 F src/pragma.h 37a1311d0388db480388d7ec09054f7103045eff20d4971f8a433b77f40b9921
 F src/prepare.c b1140c3d0cf59bc85ace00ce363153041b424b7a
 F src/printf.c 8757834f1b54dae512fb25eb1acc8e94a0d15dd2290b58f2563f65973265adb2
@@ -883,7 +883,7 @@ F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
 F test/insert.test 38742b5e9601c8f8d76e9b7555f7270288c2d371
 F test/insert2.test 4d14b8f1b810a41995f6286b64a6943215d52208
 F test/insert3.test 1b7db95a03ad9c5013fdf7d6722b6cd66ee55e30
-F test/insert4.test a20432f1c0fbbcff8f11d0e6ab4acb8c9db58023
+F test/insert4.test 46bead5f39e181850ee56adcf49d3a3157c460c52249211714612ac89fe34835
 F test/insert5.test 394f96728d1258f406fe5f5aeb0aaf29487c39a6
 F test/instr.test 9a8802f28437d8ade53fedfc47b2ca599b4e48ba
 F test/instrfault.test 0f870b218ea17cd477bb19ed330eecdb460dd53a
@@ -1032,6 +1032,7 @@ F test/pragma.test 1e94755164a3a3264cd39836de4bebcb7809e5f8
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
 F test/pragma3.test 14c12bc5352b1e100e0b6b44f371053a81ccf8ed
 F test/pragma4.test 6e85b6eab8e61ffc9c7db59d842276674e8e3264
+F test/pragmafault.test 275edaf3161771d37de60e5c2b412627ac94cef11739236bec12ed1258b240f8
 F test/printf.test b3ff34e73d59124140eaf89f7672e21bc2ca5fcc
 F test/printf2.test 9e6db85f81c63f2367c34a9d7db384088bd374ad
 F test/progress.test ebab27f670bd0d4eb9d20d49cef96e68141d92fb
@@ -1569,7 +1570,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 658f08ce84b45f057843263961f6c47a322f841764134ec38f35719f0f2042d7
-R e39c693ad3e0951889c32471c5e8f7c7
-U drh
-Z c6c3b56859c36a08dcbd07df15c30b8c
+P 5c11f4303f6a33d6358f451244551be63baf9afe5630332e60b349215e20a3af
+R 160204ba2e30552a39ad215784116585
+U dan
+Z c1b366616d6f296d38ff56ec0865eee0
