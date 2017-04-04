@@ -2017,17 +2017,6 @@ struct sqlite3_mem_methods {
 #define SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION 1005 /* int int* */
 #define SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE      1006 /* int int* */
 
-#define SQLITE_DBCONFIG_WHEREINFO             1007  /* xWhereInfo void* */
-
-#define SQLITE_WHEREINFO_TABLE   1
-#define SQLITE_WHEREINFO_EQUALS  2
-#define SQLITE_WHEREINFO_RANGE   3
-#define SQLITE_WHEREINFO_ORDERBY 4
-#define SQLITE_WHEREINFO_BEGINOR 5
-#define SQLITE_WHEREINFO_ENDOR   6
-#define SQLITE_WHEREINFO_NEXTOR  7
-
-
 /*
 ** CAPI3REF: Enable Or Disable Extended Result Codes
 ** METHOD: sqlite3
@@ -8495,6 +8484,147 @@ SQLITE_EXPERIMENTAL int sqlite3_snapshot_cmp(
 ** SQLITE_OK is returned if successful, or an SQLite error code otherwise.
 */
 SQLITE_EXPERIMENTAL int sqlite3_snapshot_recover(sqlite3 *db, const char *zDb);
+
+/*
+** This function is used to register a whereinfo hook with the database
+** handle passed as the first argument. Once registered, the whereinfo hook
+** is invoked zero or more times while preparing a query to provide
+** information to the application. It is intended to be used by expert 
+** systems to recommend indexes that could be added to the database in order
+** to improve query response time.
+**
+** An SQLite query plan describes the way data is read from zero or more
+** database tables. For each table read, the data required may be
+** constrained by equality or range constraints on one or more columns, 
+** and it may or may not be required in order sorted by one or more 
+** columns. For example, the following query:
+**
+** <pre>
+**     SELECT * FROM t1 WHERE t1.a = ? ORDER BY t1.b;
+** </pre>
+**
+** reads data from table t1. It requires only those rows for which t1.a
+** is set to a specific value, and requires them sorted in order of
+** column t1.b. Internally, SQLite determines this and attempts to locate
+** an index that can be used to efficiently find the required subset of
+** rows and/or allows the rows to be read from the database in the 
+** required order. In this case, ideally an index of the form:
+**
+** <pre>
+**     CREATE INDEX i1 ON t1(a, b);
+** </pre>
+**
+** The data passed to the whereinfo hook during query preparation do
+** not describe the actual query plan to the application. Instead, it
+** describes the parts of the query that SQLite could use an index to
+** optimize if a suitable index existed. In this case, that only
+** rows with t1.a=? are required, and that they are required sorted
+** in order by t1.b.
+**
+** Each time the whereinfo hook is invoked, the first argument is a
+** copy of the (void*) pointer passed as the second argument to this
+** API function. The second is always one of the SQLITE_WHEREINFO_XXX
+** constants defined below.
+**
+** For each table read by a query, the whereinfo hook is invoked as follows:
+**
+** <ul>
+**   <li> Once with SQLITE_WHEREINFO_TABLE as the second argument. This
+**        indicates the table that subsequent callbacks (until the next
+**        SQLITE_WHEREINFO_TABLE) apply to.
+**
+**   <li> If SQLite requires rows in a specific order, once with
+**        SQLITE_WHEREINFO_ORDERBY for each column of the table that is
+**        one of the sort keys.
+**
+**   <li> If there are any "<col> = ?" constraints that restrict the rows
+**        required by SQLite, once with SQLITE_WHEREINFO_EQUALS for each
+**        such constraint.
+**
+**   <li> If there are any "<col> > ?" constraints (or any other range
+**        constraint) that restrict the rows required by SQLite, once with 
+**        SQLITE_WHEREINFO_RANGE for each such constraint.
+** </ul>
+**
+** The third, fourth and fifth arguments passed to the whereinfo callback
+** are interpreted differently, depending on the SQLITE_WHEREINFO_XXX value
+** as follows:
+**
+** <dl>
+**   <dt> SQLITE_WHEREINFO_TABLE
+**   <dd> The third argument passed in this case is the name of the table.
+**        The fourth is the index of the database in which the table is
+**        located (0 for "main", 1 for "temp" or higher for an attached
+**        database). The fifth argument is a bitmask that indicates which
+**        of the tables columns may be required by the query. If the leftmost
+**        column of the table is used in some way, bit 0 of the bitmask is
+**        set. If the next-to-leftmost is used, bit 1 etc. Bit 63 is used to
+**        represent all columns with an index of 63 or higher. If bit 63
+**        is set, the application should assume that the query requires all
+**        columns from the table with an index of 63 or greater.
+**
+**   <dt> SQLITE_WHEREINFO_ORDERBY
+**   <dd> The third argument passed in this case is the name of the collation
+**        sequence to sort by. The fourth is the index of the table column to
+**        sort by (0 for the leftmost column, 1 for the next-to-leftmost
+**        etc.). The fifth argument is a boolean flag - true for a DESC sort
+**        or false for ASC.
+**
+**   <dt> SQLITE_WHEREINFO_EQUALS
+**   <dd> The third argument passed in this case is the name of the collation
+**        sequence used by the constraint. The fourth is the index of the 
+**        table column in the constraint. If the current table is not part
+**        of a join, then the value passed as the fifth argument is always
+**        zero. Or, if it is part of a join, then the fifth parameter passed
+**        to this callback is a mask of other tables that the current
+**        constraint depends on. For example, in the query:
+**
+**   <pre>
+**      SELECT * FROM t1, t2 WHERE t1.a = (t2.b+1);
+**   </pre>
+**
+**        the fifth parameter passed to the the SQLITE_WHEREINFO_EQUALS
+**        whereinfo callback would have the bit assigned to table "t2"
+**        set to true. There is no way for the application to determine 
+**        the specific bit in the mask assigned to any table, but the bit
+**        assignments are consistent while parsing a single query.
+**
+**   <dt> SQLITE_WHEREINFO_RANGE
+**   <dd> As for SQLITE_WHEREINFO_EQUALS.
+** </dl>
+**
+** Note that if a WHERE clause includes an OR expression, then there may be
+** more than one set of callbacks for a single table. For example, the
+** following SQL:
+**
+** <pre>
+**    SELECT * FROM t1 WHERE t1.a=? OR t1.b=?
+** </pre>
+**
+** Provokes the same callbacks as the following two queries executed in
+** series.
+**
+** <pre>
+**    SELECT * FROM t1 WHERE t1.a=?;
+**    SELECT * FROM t1 WHERE t1.b=?;
+** </pre>
+*/
+SQLITE_EXPERIMENTAL void *sqlite3_whereinfo_hook(
+  sqlite3 *db,                    /* Register callback with this db handle */
+  void (*xWhereInfo)(
+    void*,                        /* Copy of pCtx */
+    int,                          /* SQLITE_WHEREINFO_XXX constant */
+    const char*,
+    int,
+    sqlite3_uint64
+  ),
+  void *pCtx                      /* User pointer passed to callback */
+);
+
+#define SQLITE_WHEREINFO_TABLE   1
+#define SQLITE_WHEREINFO_EQUALS  2
+#define SQLITE_WHEREINFO_RANGE   3
+#define SQLITE_WHEREINFO_ORDERBY 4
 
 /*
 ** Undo the hack that converts floating point types to integer for

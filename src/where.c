@@ -3277,7 +3277,7 @@ static int whereLoopAddOr(
   WhereLoopBuilder sSubBuild;
   WhereOrSet sSum, sCur;
   struct SrcList_item *pItem;
-  
+
   pWC = pBuilder->pWC;
   pWCEnd = pWC->a + pWC->nTerm;
   pNew = pBuilder->pNew;
@@ -3294,7 +3294,7 @@ static int whereLoopAddOr(
       WhereTerm *pOrTerm;
       int once = 1;
       int i, j;
-    
+
       sSubBuild = *pBuilder;
       sSubBuild.pOrderBy = 0;
       sSubBuild.pOrSet = &sCur;
@@ -4277,18 +4277,16 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
   return 0;
 }
 
-#ifdef SQLITE_SCHEMA_LINT
+#ifdef SQLITE_ENABLE_WHEREINFO_HOOK
 static void whereTraceWC(
   Parse *pParse, 
   struct SrcList_item *pItem,
-  WhereClause *pWC,
-  int bOr
+  WhereClause *pWC
 ){
   sqlite3 *db = pParse->db;
   Table *pTab = pItem->pTab;
   void (*x)(void*, int, const char*, int, i64) = db->xWhereInfo;
   void *pCtx = db->pWhereInfoCtx;
-  int bFirst = 1;                 /* True until first callback is made */
   int ii;
 
   /* Issue callbacks for WO_SINGLE constraints */
@@ -4308,30 +4306,15 @@ static void whereTraceWC(
       }else{
         eOp = SQLITE_WHEREINFO_RANGE;
       }
-      if( bOr && !bFirst ) x(pCtx, SQLITE_WHEREINFO_NEXTOR, 0, 0, 0);
       x(pCtx, eOp, (pC ? pC->zName : "BINARY"), ii, pTerm->prereqRight);
-      bFirst = 0;
-    }
-  }
-
-  /* Callbacks for composite - (WO_OR|WO_AND) - constraints */
-  for(ii=0; ii<pWC->nTerm; ii++){
-    WhereTerm *pTerm = &pWC->a[ii];
-    if( pTerm->eOperator & WO_OR ){
-      assert( bOr==0 );
-      x(pCtx, SQLITE_WHEREINFO_BEGINOR, 0, 0, 0);
-      whereTraceWC(pParse, pItem, &pTerm->u.pOrInfo->wc, 1);
-      x(pCtx, SQLITE_WHEREINFO_ENDOR, 0, 0, 0);
-    }
-    if( pTerm->eOperator & WO_AND ){
-      if( bOr && !bFirst ) x(pCtx, SQLITE_WHEREINFO_NEXTOR, 0, 0, 0);
-      whereTraceWC(pParse, pItem, &pTerm->u.pAndInfo->wc, 0);
-      bFirst = 0;
     }
   }
 }
 
-
+/*
+** If there is a where-info hook attached to the database handle, issue all
+** required callbacks for the current sqlite3WhereBegin() call.
+*/
 static void whereTraceBuilder(
   Parse *pParse,
   WhereLoopBuilder *p
@@ -4358,7 +4341,6 @@ static void whereTraceBuilder(
         /* ORDER BY callbacks */
         if( p->pOrderBy ){
           int i;
-          int bFirst = 1;
           for(i=0; i<p->pOrderBy->nExpr; i++){
             Expr *pExpr = p->pOrderBy->a[i].pExpr; 
             CollSeq *pColl = sqlite3ExprCollSeq(pParse, pExpr);
@@ -4374,7 +4356,7 @@ static void whereTraceBuilder(
         }
 
         /* WHERE callbacks */
-        whereTraceWC(pParse, pItem, p->pWC, 0);
+        whereTraceWC(pParse, pItem, p->pWC);
       }
     }
   }
@@ -4654,7 +4636,7 @@ WhereInfo *sqlite3WhereBegin(
   }
 #endif
 
-  /* Schema-lint xTrace callback */
+  /* Invoke the where-info hook, if one has been registered. */
   whereTraceBuilder(pParse, &sWLB);
 
   if( nTabList!=1 || whereShortCut(&sWLB)==0 ){

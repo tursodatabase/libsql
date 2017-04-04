@@ -12,6 +12,7 @@
 */
 
 typedef sqlite3_int64 i64;
+typedef sqlite3_uint64 u64;
 
 typedef struct IdxConstraint IdxConstraint;
 typedef struct IdxContext IdxContext;
@@ -164,7 +165,7 @@ static void idxWhereInfo(
   int eOp, 
   const char *zVal, 
   int iVal, 
-  i64 mask
+  u64 mask
 ){
   IdxContext *p = (IdxContext*)pCtx;
 
@@ -231,32 +232,6 @@ static void idxWhereInfo(
         sqlite3_bind_int64(p->pInsertMask, 1, mask);
         sqlite3_step(p->pInsertMask);
         p->rc = sqlite3_reset(p->pInsertMask);
-        break;
-      }
-
-      case SQLITE_WHEREINFO_BEGINOR: {
-        IdxWhere *pNew = (IdxWhere*)idxMalloc(&p->rc, sizeof(IdxWhere));
-        if( pNew==0 ) return;
-        pNew->pParent = p->pCurrent;
-        pNew->pNextOr = p->pCurrent->pOr;
-        p->pCurrent->pOr = pNew;
-        p->pCurrent = pNew;
-        break;
-      }
-
-      case SQLITE_WHEREINFO_NEXTOR: {
-        IdxWhere *pNew = (IdxWhere*)idxMalloc(&p->rc, sizeof(IdxWhere));
-        if( pNew==0 ) return;
-        pNew->pParent = p->pCurrent->pParent;
-        assert( p->pCurrent->pSibling==0 );
-        p->pCurrent->pSibling = pNew;
-        p->pCurrent = pNew;
-        break;
-      }
-
-      case SQLITE_WHEREINFO_ENDOR: {
-        assert( p->pCurrent->pParent );
-        p->pCurrent = p->pCurrent->pParent;
         break;
       }
     }
@@ -954,9 +929,9 @@ int shellIndexesCommand(
   /* Analyze the SELECT statement in zSql. */
   if( rc==SQLITE_OK ){
     ctx.dbm = dbm;
-    sqlite3_db_config(db, SQLITE_DBCONFIG_WHEREINFO, idxWhereInfo, (void*)&ctx);
+    sqlite3_whereinfo_hook(db, idxWhereInfo, (void*)&ctx);
     rc = idxPrepareStmt(db, &pStmt, pzErrmsg, zSql);
-    sqlite3_db_config(db, SQLITE_DBCONFIG_WHEREINFO, (void*)0, (void*)0);
+    sqlite3_whereinfo_hook(db, 0, 0);
     sqlite3_finalize(pStmt);
   }
 

@@ -801,13 +801,6 @@ int sqlite3_db_config(sqlite3 *db, int op, ...){
       rc = setupLookaside(db, pBuf, sz, cnt);
       break;
     }
-#ifdef SQLITE_SCHEMA_LINT
-    case SQLITE_DBCONFIG_WHEREINFO: {
-      db->xWhereInfo = va_arg(ap, void(*)(void*, int, const char*, int, i64));
-      db->pWhereInfoCtx = va_arg(ap, void*);
-      break;
-    }
-#endif
     default: {
       static const struct {
         int op;      /* The opcode */
@@ -2003,6 +1996,26 @@ void *sqlite3_preupdate_hook(
   return pRet;
 }
 #endif /* SQLITE_ENABLE_PREUPDATE_HOOK */
+
+#ifdef SQLITE_ENABLE_WHEREINFO_HOOK
+/*
+** Register a where-info hook.
+*/
+void *sqlite3_whereinfo_hook(
+  sqlite3 *db,                    /* Register callback with this db handle */
+  void (*xWhereInfo)(void*, int, const char*, int, sqlite3_uint64),
+  void *pCtx                      /* User pointer passed to callback */
+){
+  void *pRet;
+  sqlite3_mutex_enter(db->mutex);
+  pRet = db->pWhereInfoCtx;
+  db->xWhereInfo = xWhereInfo;
+  db->pWhereInfoCtx = pCtx;
+  sqlite3_mutex_leave(db->mutex);
+  return pRet;
+}
+#endif /* SQLITE_ENABLE_WHEREINFO_HOOK */
+
 
 #ifndef SQLITE_OMIT_WAL
 /*
