@@ -4278,6 +4278,7 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
 }
 
 #ifdef SQLITE_ENABLE_WHEREINFO_HOOK
+
 static void whereTraceWC(
   Parse *pParse, 
   struct SrcList_item *pItem,
@@ -4285,7 +4286,7 @@ static void whereTraceWC(
 ){
   sqlite3 *db = pParse->db;
   Table *pTab = pItem->pTab;
-  void (*x)(void*, int, const char*, int, i64) = db->xWhereInfo;
+  void (*x)(void*, int, const char*, int, u64) = db->xWhereInfo;
   void *pCtx = db->pWhereInfoCtx;
   int ii;
 
@@ -4312,6 +4313,109 @@ static void whereTraceWC(
 }
 
 /*
+** If there are any OR terms in WHERE clause pWC, make the associated
+** where-info hook callbacks.
+*/
+static void whereTraceOR(
+  Parse *pParse, 
+  struct SrcList_item *pItem,
+  WhereClause *pWC
+){
+  sqlite3 *db = pParse->db;
+  WhereClause tempWC;
+  struct TermAndIdx {
+    WhereTerm *pTerm;
+    int iIdx;
+  } aOr[4];
+  int nOr = 0;
+  Table *pTab = pItem->pTab;
+  int iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
+  int ii;
+
+  memset(aOr, 0, sizeof(aOr));
+
+  /* Iterate through OR nodes */
+  for(ii=0; ii<pWC->nTerm; ii++){
+    WhereTerm *pTerm = &pWC->a[ii];
+    if( pTerm->eOperator & WO_OR ){
+      /* Check that each branch of this OR term contains at least
+      ** one reference to the table currently being processed. If that
+      ** is not the case, this term can be ignored.  */
+      WhereClause * const pOrWC = &pTerm->u.pOrInfo->wc;
+      WhereTerm * const pOrWCEnd = &pOrWC->a[pOrWC->nTerm];
+      WhereTerm *pOrTerm;
+      WhereClause *pTermWC;
+      WhereScan scan;
+
+      for(pOrTerm=pOrWC->a; pOrTerm<pOrWCEnd; pOrTerm++){
+        int iCol;
+        if( (pOrTerm->eOperator & WO_AND)!=0 ){
+          pTermWC = &pOrTerm->u.pAndInfo->wc;
+        }else{
+          tempWC.pWInfo = pWC->pWInfo;
+          tempWC.pOuter = pWC;
+          tempWC.op = TK_AND;
+          tempWC.nTerm = 1;
+          tempWC.a = pOrTerm;
+          pTermWC = &tempWC;
+        }
+
+        for(iCol=0; iCol<pTab->nCol; iCol++){
+          int iCsr = pItem->iCursor;
+          if( !whereScanInit(&scan, pTermWC, iCsr, iCol, WO_SINGLE, 0) ){
+            break;
+          }
+        }
+        if( iCol==pTab->nCol ) break;
+      }
+
+      if( pOrTerm==pOrWCEnd ){
+        aOr[nOr].pTerm = pTerm;
+        aOr[nOr].iIdx = pOrWC->nTerm;
+        nOr++;
+        if( nOr==ArraySize(aOr) ) break;
+      }
+    }
+  }
+
+  while( 1 ){
+    for(ii=0; ii<nOr; ii++){
+      if( aOr[ii].iIdx==0 ){
+        aOr[ii].iIdx = aOr[ii].pTerm->u.pOrInfo->wc.nTerm;
+      }else{
+        aOr[ii].iIdx--;
+        break;
+      }
+    }
+    if( ii==nOr ) break;
+
+    /* Table name callback */
+    db->xWhereInfo(db->pWhereInfoCtx, 
+        SQLITE_WHEREINFO_TABLE, pTab->zName, iDb, pItem->colUsed
+    );
+    /* whereTraceWC(pParse, pItem, pWC); */
+    for(ii=0; ii<nOr; ii++){
+      WhereClause * const pOrWC = &aOr[ii].pTerm->u.pOrInfo->wc;
+      if( aOr[ii].iIdx<pOrWC->nTerm ){
+        WhereClause *pTermWC;
+        WhereTerm *pOrTerm = &pOrWC->a[aOr[ii].iIdx];
+        if( (pOrTerm->eOperator & WO_AND)!=0 ){
+          pTermWC = &pOrTerm->u.pAndInfo->wc;
+        }else{
+          tempWC.pWInfo = pWC->pWInfo;
+          tempWC.pOuter = pWC;
+          tempWC.op = TK_AND;
+          tempWC.nTerm = 1;
+          tempWC.a = pOrTerm;
+          pTermWC = &tempWC;
+        }
+        whereTraceWC(pParse, pItem, pTermWC);
+      }
+    }
+  }
+}
+
+/*
 ** If there is a where-info hook attached to the database handle, issue all
 ** required callbacks for the current sqlite3WhereBegin() call.
 */
@@ -4321,16 +4425,16 @@ static void whereTraceBuilder(
 ){
   sqlite3 *db = pParse->db;
   if( db->xWhereInfo && db->init.busy==0 ){
-    void (*x)(void*, int, const char*, int, i64) = db->xWhereInfo;
+    void (*x)(void*, int, const char*, int, u64) = db->xWhereInfo;
     void *pCtx = db->pWhereInfoCtx;
     int ii;
-    int nTab = p->pWInfo->pTabList->nSrc;
+    SrcList *pTabList = p->pWInfo->pTabList;
 
     /* Loop through each element of the FROM clause. Ignore any sub-selects
     ** or views. Invoke the xWhereInfo() callback multiple times for each
     ** real table.  */
-    for(ii=0; ii<p->pWInfo->pTabList->nSrc; ii++){
-      struct SrcList_item *pItem = &p->pWInfo->pTabList->a[ii];
+    for(ii=0; ii<pTabList->nSrc; ii++){
+      struct SrcList_item *pItem = &pTabList->a[ii];
       if( pItem->pSelect==0 ){
         Table *pTab = pItem->pTab;
         int iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
@@ -4357,6 +4461,9 @@ static void whereTraceBuilder(
 
         /* WHERE callbacks */
         whereTraceWC(pParse, pItem, p->pWC);
+
+        /* OR-clause processing */
+        whereTraceOR(pParse, pItem, p->pWC);
       }
     }
   }

@@ -1,5 +1,5 @@
-C Add\sthe\ssqlite3_whereinfo_hook()\sAPI\s-\san\sexperimental\sAPI\sreplacing\sthe\nDBCONFIG_WHEREINFO\shack\son\sthis\sbranch.
-D 2017-04-04T04:23:06.108
+C Add\ssome\ssupport\sfor\sOR\sterms\sto\ssqlite3_whereinfo_hook().
+D 2017-04-04T17:50:31.913
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a4c0613a18663bda56d8cf76079ab6590a7c3602e54befb4bbdef76bcaa38b6a
@@ -403,7 +403,7 @@ F src/resolve.c 3e518b962d932a997fae373366880fc028c75706
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 2496d0cc6368dabe7ad2e4c7f5ed3ad9aa3b4d11cd90f33fa1d1ef72493f43aa
 F src/shell.c e524688c2544167f835ba43e24309f8707ca60c8ab6eb5c263a12c8618a233b8
-F src/shell_indexes.c 12cc58b62492bddc88f879086b4cd1045dbfd4e52040ecb6c39b971a6aac80ba
+F src/shell_indexes.c d40ea0a81112df7bdccd7232238bee0bbb39699085ea78cc08fd863bf052a63b
 F src/sqlite.h.in ae5c9cbf2e77492c319fca08769575d9695e64718a16d32324944d24e291bcf7
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 58fd0676d3111d02e62e5a35992a7d3da5d3f88753acc174f2d37b774fbbdd28
@@ -483,7 +483,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 40c543f0a2195d1b0dc88ef12142bea690009344
 F src/wal.h 06b2a0b599cc0f53ea97f497cf8c6b758c999f71
 F src/walker.c b71a992b413b3a022572eccf29ef4b4890223791
-F src/where.c cbd1e8562fa37de359963749e1dc3d0dd1a42a894d10a62928bffc709490fde6
+F src/where.c be352441558b55e21964ff53f0483776594789d0ede12dd9c58b022873c858f8
 F src/whereInt.h 2d50c2b74a33be44cb68fdecee30b4d93552f1f4
 F src/wherecode.c 677e95413c472c0b413023b6b69a47f40fce1b04
 F src/whereexpr.c 130cdd1a43af71b19755270fb1224874cf55158c
@@ -1120,7 +1120,7 @@ F test/shell2.test e242a9912f44f4c23c3d1d802a83e934e84c853b
 F test/shell3.test 9b95ba643eaa228376f06a898fb410ee9b6e57c1
 F test/shell4.test 89ad573879a745974ff2df20ff97c5d6ffffbd5d
 F test/shell5.test 50a732c1c2158b1cd62cf53975ce1ea7ce6b9dc9
-F test/shell6.test 05c2488ff2bb11ac300b9170e8f5b6e03d58982c77035cdca5dbf036f0d3c5b7
+F test/shell6.test 081067c1afcb38da50134ffd5ccc0a59ede14f41959486f733ffbba689c0ccfa
 F test/shell7.test 07751911b294698e0c5df67bcbd29e7d2f0f2907
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/show_speedtest1_rtree.tcl 32e6c5f073d7426148a6936a0408f4b5b169aba5
@@ -1571,7 +1571,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cb721d0b36268a7b0ef493fa4d7f6bcbaa9ead8b1990e3c3fae015fa1d545226
-R 061e66f6528edc67cfbe5cb82be7b02d
+P a54aef35da11f7508a8888a159372036a362fc52afa1df752dc835db334c4330
+R 51e547bc1c25ea79dd375d8f020224f3
 U dan
-Z d08fd2524fbe07ca7104a150ba1edcbe
+Z fe378068686ea107c39185021a17b4ae

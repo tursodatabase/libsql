@@ -175,9 +175,6 @@ static void idxWhereInfo(
     eOp==SQLITE_WHEREINFO_EQUALS ? "EQUALS" :
     eOp==SQLITE_WHEREINFO_RANGE ? "RANGE" :
     eOp==SQLITE_WHEREINFO_ORDERBY ? "ORDERBY" :
-    eOp==SQLITE_WHEREINFO_NEXTOR ? "NEXTOR" :
-    eOp==SQLITE_WHEREINFO_ENDOR ? "ENDOR" :
-    eOp==SQLITE_WHEREINFO_BEGINOR ? "BEGINOR" :
     "!error!";
   printf("op=%s zVal=%s iVal=%d mask=%llx\n", zOp, zVal, iVal, mask);
 #endif
@@ -630,7 +627,9 @@ static int idxCreateFromCons(
         rc = SQLITE_NOMEM;
       }else{
         rc = sqlite3_exec(dbm, zIdx, 0, 0, pCtx->pzErrmsg);
-        /* printf("%s\n", zIdx); */
+#if 0
+        printf("CANDIDATE: %s\n", zIdx);
+#endif
       }
     }
     if( rc==SQLITE_OK && pCtx->iIdxRowid==0 ){

@@ -188,4 +188,18 @@ do_setup_rec_test 10.1 {
   0|1|0|SEARCH TABLE t5 USING COVERING INDEX t5_idx_000123a7 (a=? AND b=?)
 }
 
+# OR terms.
+#
+do_setup_rec_test 11.1 {
+  CREATE TABLE t7(a, b);
+} {
+  SELECT * FROM t7 WHERE a=? OR b=?
+} {
+  CREATE INDEX t7_idx_00000061 ON t7(a) 
+  CREATE INDEX t7_idx_00000062 ON t7(b)
+  0|0|0|SEARCH TABLE t7 USING INDEX t7_idx_00000061 (a=?) 
+  0|0|0|SEARCH TABLE t7 USING INDEX t7_idx_00000062 (b=?)
+}
+
 finish_test
+
