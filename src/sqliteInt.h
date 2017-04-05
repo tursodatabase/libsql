@@ -2443,6 +2443,7 @@ struct Expr {
 */
 struct ExprList {
   int nExpr;             /* Number of expressions on the list */
+  int nAlloc;            /* Number of a[] slots allocated */
   struct ExprList_item { /* For each expression in the list */
     Expr *pExpr;            /* The parse tree for this expression */
     char *zName;            /* Token associated with this expression */
@@ -2458,7 +2459,7 @@ struct ExprList {
       } x;
       int iConstExprReg;      /* Register in which Expr value is cached */
     } u;
-  } *a;                  /* Alloc a power of two greater or equal to nExpr */
+  } a[1];                  /* One slot for each expression in the list */
 };
 
 /*

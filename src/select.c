@@ -2900,7 +2900,7 @@ static int multiSelectOrderBy(
         if( pNew==0 ) return SQLITE_NOMEM_BKPT;
         pNew->flags |= EP_IntValue;
         pNew->u.iValue = i;
-        pOrderBy = sqlite3ExprListAppend(pParse, pOrderBy, pNew);
+        p->pOrderBy = pOrderBy = sqlite3ExprListAppend(pParse, pOrderBy, pNew);
         if( pOrderBy ) pOrderBy->a[nOrderBy++].u.x.iOrderByCol = (u16)i;
       }
     }
