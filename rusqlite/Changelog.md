@@ -1,3 +1,7 @@
+# Version 0.10.2 (UPCOMING)
+
+* Avoid publicly exporting SQLite constants multiple times from libsqlite3-sys.
+
 # Version 0.10.1 (2017-03-03)
 
 * Updates the `bundled` SQLite version to 3.17.0.
