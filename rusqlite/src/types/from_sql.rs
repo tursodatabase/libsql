@@ -49,6 +49,14 @@ impl Error for FromSqlError {
 pub type FromSqlResult<T> = Result<T, FromSqlError>;
 
 /// A trait for types that can be created from a SQLite value.
+///
+/// Note that `FromSql` and `ToSql` are defined for most integral types, but not `u64` or `usize`.
+/// This is intentional; SQLite returns integers as signed 64-bit values, which cannot fully
+/// represent the range of these types. Rusqlite would have to decide how to handle negative
+/// values: return an error or reinterpret as a very large postive numbers, neither of which is
+/// guaranteed to be correct for everyone. Callers can work around this by fetching values as i64
+/// and then doing the interpretation themselves or by defining a newtype and implementing
+/// `FromSql`/`ToSql` for it.
 pub trait FromSql: Sized {
     fn column_result(value: ValueRef) -> FromSqlResult<Self>;
 }
@@ -72,6 +80,7 @@ macro_rules! from_sql_integral(
 from_sql_integral!(i8);
 from_sql_integral!(i16);
 from_sql_integral!(i32);
+from_sql_integral!(isize);
 from_sql_integral!(u8);
 from_sql_integral!(u16);
 from_sql_integral!(u32);

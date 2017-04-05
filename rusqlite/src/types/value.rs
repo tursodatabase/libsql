@@ -43,6 +43,7 @@ macro_rules! from_i64(
 from_i64!(i8);
 from_i64!(i16);
 from_i64!(i32);
+from_i64!(isize);
 from_i64!(u8);
 from_i64!(u16);
 from_i64!(u32);

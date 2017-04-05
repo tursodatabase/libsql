@@ -74,6 +74,7 @@ to_sql_self!(i8);
 to_sql_self!(i16);
 to_sql_self!(i32);
 to_sql_self!(i64);
+to_sql_self!(isize);
 to_sql_self!(u8);
 to_sql_self!(u16);
 to_sql_self!(u32);
