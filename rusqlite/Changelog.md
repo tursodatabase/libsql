@@ -1,4 +1,4 @@
-# Version 0.10.2 (UPCOMING)
+# Version 0.10.2 (2017-04-05)
 
 * Avoid publicly exporting SQLite constants multiple times from libsqlite3-sys.
 * Adds `FromSql` and `ToSql` impls for `isize`. Documents why `usize` and `u64` are not included.
