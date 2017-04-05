@@ -1,3 +1,7 @@
+# Version 0.10.2 (UPCOMING)
+
+* Adds `FromSql` and `ToSql` impls for `isize`. Documents why `usize` and `u64` are not included.
+
 # Version 0.10.1 (2017-03-03)
 
 * Updates the `bundled` SQLite version to 3.17.0.
