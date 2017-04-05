@@ -1,5 +1,5 @@
-C Split\soff\ssqlite3DbFreeNN()\sfrom\ssqlite3DbFree()\sand\suse\sit\sin\scases\swhere\nwe\sknow\sthat\sthe\sargument\sto\sbe\sfreed\sis\snever\sNULL.
-D 2017-04-05T12:39:49.042
+C Remove\sa\sconfusing\sand\spointless\ssentence\sfrom\sthe\sdocumentation\sfor\sthe\nsqlite3_interrupt()\sinterface.
+D 2017-04-05T13:44:40.495
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a4c0613a18663bda56d8cf76079ab6590a7c3602e54befb4bbdef76bcaa38b6a
@@ -403,7 +403,7 @@ F src/resolve.c 3e518b962d932a997fae373366880fc028c75706
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c afcf31d8ed7c890328a31d3f350467ccd273af345b24562382b398d6d9cd0664
 F src/shell.c ceb2b2f1f958ea2c47a7f37972d0f715fbf9dcf6a34a5e98c886b85e3ce6a238
-F src/sqlite.h.in 723107d97f2345a7c103632169dc61366121c4ab65d75a7d83c6dc0e5bbe5ca4
+F src/sqlite.h.in ab77e511620eebbd4ed7e4f52fae697b6870dda66c945acd2d3066f99c98e17e
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 58fd0676d3111d02e62e5a35992a7d3da5d3f88753acc174f2d37b774fbbdd28
 F src/sqliteInt.h 6cf244eb06119b44e155717708e54f0638c35e9bd8ef59ea570eb1f093f0da44
@@ -1570,7 +1570,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9e6c939144a129b36bb119120442a4a021e00187783da211315d4bb13acd7c3a
-R 17c5231ecc5d3d35525c3418d3d62ff7
+P ad90e8bb5e47945607c8fb47b6ade8cfc52a9b684805cc40132629be0ecc14cc
+R 0da0d3fa99b145cb80d7d7b7e70ff343
 U drh
-Z d994bdccf4db8bedaee3d7cb7c3b925e
+Z 6dd2cf9dfbc2819a60bcde96dd9394fa
