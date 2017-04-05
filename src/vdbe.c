@@ -4076,7 +4076,7 @@ case OP_Found: {        /* jump, in3 */
     }
   }
   rc = sqlite3BtreeMovetoUnpacked(pC->uc.pCursor, pIdxKey, 0, 0, &res);
-  if( pFree ) sqlite3DbFree(db, pFree);
+  if( pFree ) sqlite3DbFreeNN(db, pFree);
   if( rc!=SQLITE_OK ){
     goto abort_due_to_error;
   }
@@ -5594,7 +5594,7 @@ case OP_ParseSchema: {
       assert( !db->mallocFailed );
       rc = sqlite3_exec(db, zSql, sqlite3InitCallback, &initData, 0);
       if( rc==SQLITE_OK ) rc = initData.rc;
-      sqlite3DbFree(db, zSql);
+      sqlite3DbFreeNN(db, zSql);
       db->init.busy = 0;
     }
   }

@@ -604,7 +604,7 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   while( pParse->pAinc ){
     AutoincInfo *p = pParse->pAinc;
     pParse->pAinc = p->pNext;
-    sqlite3DbFree(db, p);
+    sqlite3DbFreeNN(db, p);
   }
   while( pParse->pZombieTab ){
     Table *p = pParse->pZombieTab;

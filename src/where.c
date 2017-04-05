@@ -1786,7 +1786,7 @@ static void whereLoopClearUnion(sqlite3 *db, WhereLoop *p){
       p->u.vtab.idxStr = 0;
     }else if( (p->wsFlags & WHERE_AUTO_INDEX)!=0 && p->u.btree.pIndex!=0 ){
       sqlite3DbFree(db, p->u.btree.pIndex->zColAff);
-      sqlite3DbFree(db, p->u.btree.pIndex);
+      sqlite3DbFreeNN(db, p->u.btree.pIndex);
       p->u.btree.pIndex = 0;
     }
   }
@@ -1796,7 +1796,7 @@ static void whereLoopClearUnion(sqlite3 *db, WhereLoop *p){
 ** Deallocate internal memory used by a WhereLoop object
 */
 static void whereLoopClear(sqlite3 *db, WhereLoop *p){
-  if( p->aLTerm!=p->aLTermSpace ) sqlite3DbFree(db, p->aLTerm);
+  if( p->aLTerm!=p->aLTermSpace ) sqlite3DbFreeNN(db, p->aLTerm);
   whereLoopClearUnion(db, p);
   whereLoopInit(p);
 }
@@ -1811,7 +1811,7 @@ static int whereLoopResize(sqlite3 *db, WhereLoop *p, int n){
   paNew = sqlite3DbMallocRawNN(db, sizeof(p->aLTerm[0])*n);
   if( paNew==0 ) return SQLITE_NOMEM_BKPT;
   memcpy(paNew, p->aLTerm, sizeof(p->aLTerm[0])*p->nLSlot);
-  if( p->aLTerm!=p->aLTermSpace ) sqlite3DbFree(db, p->aLTerm);
+  if( p->aLTerm!=p->aLTermSpace ) sqlite3DbFreeNN(db, p->aLTerm);
   p->aLTerm = paNew;
   p->nLSlot = n;
   return SQLITE_OK;
@@ -1841,7 +1841,7 @@ static int whereLoopXfer(sqlite3 *db, WhereLoop *pTo, WhereLoop *pFrom){
 */
 static void whereLoopDelete(sqlite3 *db, WhereLoop *p){
   whereLoopClear(db, p);
-  sqlite3DbFree(db, p);
+  sqlite3DbFreeNN(db, p);
 }
 
 /*
@@ -1862,7 +1862,7 @@ static void whereInfoFree(sqlite3 *db, WhereInfo *pWInfo){
       pWInfo->pLoops = p->pNextLoop;
       whereLoopDelete(db, p);
     }
-    sqlite3DbFree(db, pWInfo);
+    sqlite3DbFreeNN(db, pWInfo);
   }
 }
 
@@ -3253,7 +3253,7 @@ static int whereLoopAddVirtual(
   }
 
   if( p->needToFreeIdxStr ) sqlite3_free(p->idxStr);
-  sqlite3DbFree(pParse->db, p);
+  sqlite3DbFreeNN(pParse->db, p);
   return rc;
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
@@ -4108,7 +4108,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
 
   if( nFrom==0 ){
     sqlite3ErrorMsg(pParse, "no query solution");
-    sqlite3DbFree(db, pSpace);
+    sqlite3DbFreeNN(db, pSpace);
     return SQLITE_ERROR;
   }
   
@@ -4184,7 +4184,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
   pWInfo->nRowOut = pFrom->nRow;
 
   /* Free temporary memory and return success */
-  sqlite3DbFree(db, pSpace);
+  sqlite3DbFreeNN(db, pSpace);
   return SQLITE_OK;
 }
 

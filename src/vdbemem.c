@@ -131,7 +131,7 @@ SQLITE_NOINLINE int sqlite3VdbeMemGrow(Mem *pMem, int n, int bPreserve){
       pMem->z = pMem->zMalloc = sqlite3DbReallocOrFree(pMem->db, pMem->z, n);
       bPreserve = 0;
     }else{
-      if( pMem->szMalloc>0 ) sqlite3DbFree(pMem->db, pMem->zMalloc);
+      if( pMem->szMalloc>0 ) sqlite3DbFreeNN(pMem->db, pMem->zMalloc);
       pMem->zMalloc = sqlite3DbMallocRaw(pMem->db, n);
     }
     if( pMem->zMalloc==0 ){
@@ -341,7 +341,7 @@ int sqlite3VdbeMemFinalize(Mem *pMem, FuncDef *pFunc){
     ctx.pFunc = pFunc;
     pFunc->xFinalize(&ctx); /* IMP: R-24505-23230 */
     assert( (pMem->flags & MEM_Dyn)==0 );
-    if( pMem->szMalloc>0 ) sqlite3DbFree(pMem->db, pMem->zMalloc);
+    if( pMem->szMalloc>0 ) sqlite3DbFreeNN(pMem->db, pMem->zMalloc);
     memcpy(pMem, &t, sizeof(t));
     rc = ctx.isError;
   }
@@ -392,7 +392,7 @@ static SQLITE_NOINLINE void vdbeMemClear(Mem *p){
     vdbeMemClearExternAndSetNull(p);
   }
   if( p->szMalloc ){
-    sqlite3DbFree(p->db, p->zMalloc);
+    sqlite3DbFreeNN(p->db, p->zMalloc);
     p->szMalloc = 0;
   }
   p->z = 0;
@@ -1123,7 +1123,7 @@ static sqlite3_value *valueNew(sqlite3 *db, struct ValueNewStat4Ctx *p){
             pRec->aMem[i].db = db;
           }
         }else{
-          sqlite3DbFree(db, pRec);
+          sqlite3DbFreeNN(db, pRec);
           pRec = 0;
         }
       }
@@ -1235,7 +1235,7 @@ static int valueFromFunction(
     for(i=0; i<nVal; i++){
       sqlite3ValueFree(apVal[i]);
     }
-    sqlite3DbFree(db, apVal);
+    sqlite3DbFreeNN(db, apVal);
   }
 
   *ppVal = pVal;
@@ -1434,7 +1434,7 @@ static void recordFunc(
     putVarint32(&aRet[1], iSerial);
     sqlite3VdbeSerialPut(&aRet[1+nSerial], argv[0], iSerial);
     sqlite3_result_blob(context, aRet, nRet, SQLITE_TRANSIENT);
-    sqlite3DbFree(db, aRet);
+    sqlite3DbFreeNN(db, aRet);
   }
 }
 
@@ -1661,7 +1661,7 @@ void sqlite3Stat4ProbeFree(UnpackedRecord *pRec){
       sqlite3VdbeMemRelease(&aMem[i]);
     }
     sqlite3KeyInfoUnref(pRec->pKeyInfo);
-    sqlite3DbFree(db, pRec);
+    sqlite3DbFreeNN(db, pRec);
   }
 }
 #endif /* ifdef SQLITE_ENABLE_STAT4 */
@@ -1685,7 +1685,7 @@ void sqlite3ValueSetStr(
 void sqlite3ValueFree(sqlite3_value *v){
   if( !v ) return;
   sqlite3VdbeMemRelease((Mem *)v);
-  sqlite3DbFree(((Mem*)v)->db, v);
+  sqlite3DbFreeNN(((Mem*)v)->db, v);
 }
 
 /*

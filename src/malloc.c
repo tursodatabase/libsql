@@ -474,11 +474,12 @@ static SQLITE_NOINLINE void measureAllocationSize(sqlite3 *db, void *p){
 
 /*
 ** Free memory that might be associated with a particular database
-** connection.
+** connection.  Calling sqlite3DbFree(D,X) for X==0 is a harmless no-op.
+** The sqlite3DbFreeNN(D,X) version requires that X be non-NULL.
 */
-void sqlite3DbFree(sqlite3 *db, void *p){
+void sqlite3DbFreeNN(sqlite3 *db, void *p){
   assert( db==0 || sqlite3_mutex_held(db->mutex) );
-  if( p==0 ) return;
+  assert( p!=0 );
   if( db ){
     if( db->pnBytesFreed ){
       measureAllocationSize(db, p);
@@ -501,6 +502,10 @@ void sqlite3DbFree(sqlite3 *db, void *p){
   assert( db!=0 || sqlite3MemdebugNoType(p, MEMTYPE_LOOKASIDE) );
   sqlite3MemdebugSetType(p, MEMTYPE_HEAP);
   sqlite3_free(p);
+}
+void sqlite3DbFree(sqlite3 *db, void *p){
+  assert( db==0 || sqlite3_mutex_held(db->mutex) );
+  if( p ) sqlite3DbFreeNN(db, p);
 }
 
 /*
