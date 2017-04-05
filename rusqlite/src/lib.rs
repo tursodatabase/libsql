@@ -1169,6 +1169,15 @@ mod test {
 
     #[test]
     fn test_notnull_constraint_error() {
+        // extended error codes for constraints were added in SQLite 3.7.16; if we're
+        // running on our bundled version, we know the extended error code exists.
+        #[cfg(feature = "bundled")]
+        fn check_extended_code(extended_code: c_int) {
+            assert_eq!(extended_code, ffi::SQLITE_CONSTRAINT_NOTNULL);
+        }
+        #[cfg(not(feature = "bundled"))]
+        fn check_extended_code(_extended_code: c_int) {}
+
         let db = checked_memory_handle();
         db.execute_batch("CREATE TABLE foo(x NOT NULL)").unwrap();
 
@@ -1178,12 +1187,7 @@ mod test {
         match result.unwrap_err() {
             Error::SqliteFailure(err, _) => {
                 assert_eq!(err.code, ErrorCode::ConstraintViolation);
-
-                // extended error codes for constraints were added in SQLite 3.7.16; if we're
-                // running on a version at least that new, check for the extended code
-                if version_number() >= 3007016 {
-                    assert_eq!(err.extended_code, ffi::SQLITE_CONSTRAINT_NOTNULL)
-                }
+                check_extended_code(err.extended_code);
             }
             err => panic!("Unexpected error {}", err),
         }
