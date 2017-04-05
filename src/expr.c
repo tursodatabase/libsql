@@ -1550,20 +1550,19 @@ ExprList *sqlite3ExprListAppendVector(
     }
   }
 
-  if( pExpr->op==TK_SELECT ){
-    if( pList && pList->a[iFirst].pExpr ){
-      Expr *pFirst = pList->a[iFirst].pExpr;
-      assert( pFirst->op==TK_SELECT_COLUMN );
+  if( pExpr->op==TK_SELECT && pList ){
+    Expr *pFirst = pList->a[iFirst].pExpr;
+    assert( pFirst!=0 );
+    assert( pFirst->op==TK_SELECT_COLUMN );
      
-      /* Store the SELECT statement in pRight so it will be deleted when
-      ** sqlite3ExprListDelete() is called */
-      pFirst->pRight = pExpr;
-      pExpr = 0;
+    /* Store the SELECT statement in pRight so it will be deleted when
+    ** sqlite3ExprListDelete() is called */
+    pFirst->pRight = pExpr;
+    pExpr = 0;
 
-      /* Remember the size of the LHS in iTable so that we can check that
-      ** the RHS and LHS sizes match during code generation. */
-      pFirst->iTable = pColumns->nId;
-    }
+    /* Remember the size of the LHS in iTable so that we can check that
+    ** the RHS and LHS sizes match during code generation. */
+    pFirst->iTable = pColumns->nId;
   }
 
 vector_append_error:
