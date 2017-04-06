@@ -122,6 +122,9 @@ mod build {
 
             #[cfg(feature = "min_sqlite_version_3_7_4")]
             "bindgen-bindings/bindgen_3.7.4.rs",
+
+            #[cfg(feature = "min_sqlite_version_3_7_16")]
+            "bindgen-bindings/bindgen_3.7.16.rs",
         ];
 
         pub fn write_to_out_dir(_header: HeaderLocation) {

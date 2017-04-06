@@ -1,3 +1,7 @@
+# Version 0.10.3 (2017-04-06)
+
+* Update to libsqlite3-sys 0.8.0 to fix a backwards-compatibility snafu in 0.7.2.
+
 # Version 0.10.2 (2017-04-05)
 
 * Avoid publicly exporting SQLite constants multiple times from libsqlite3-sys.
