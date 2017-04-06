@@ -4354,6 +4354,7 @@ static int lintFkeyIndexes(
     "GROUP BY s.name, f.id "
     "ORDER BY (CASE WHEN ? THEN f.[table] ELSE s.name END)"
   ;
+  const char *zGlobIPK = "SEARCH TABLE * USING INTEGER PRIMARY KEY (rowid=?)";
 
   for(i=2; i<nArg; i++){
     int n = (int)strlen(azArg[i]);
@@ -4402,7 +4403,10 @@ static int lintFkeyIndexes(
       if( rc!=SQLITE_OK ) break;
       if( SQLITE_ROW==sqlite3_step(pExplain) ){
         const char *zPlan = (const char*)sqlite3_column_text(pExplain, 3);
-        res = (0==sqlite3_strglob(zGlob, zPlan));
+        res = (
+              0==sqlite3_strglob(zGlob, zPlan)
+           || 0==sqlite3_strglob(zGlobIPK, zPlan)
+        );
       }
       rc = sqlite3_finalize(pExplain);
       if( rc!=SQLITE_OK ) break;

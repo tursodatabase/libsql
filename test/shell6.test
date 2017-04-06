@@ -87,6 +87,12 @@ foreach {tn schema output} {
     CREATE INDEX 'y1_d_e_f' ON 'y1'('d' COLLATE rtrim, 'e' COLLATE nocase, 'f'); --> x1(c,b,a)
   }
 
+  9 {
+    CREATE TABLE p1(a, b UNIQUE);
+    CREATE TABLE c1(x INTEGER PRIMARY KEY REFERENCES p1(b));
+  } {
+  }
+
 } {
   forcedelete test.db
   sqlite3 db test.db
