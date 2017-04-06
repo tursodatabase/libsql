@@ -43,44 +43,18 @@ struct IdxConstraint {
 /*
 ** A WHERE clause. Made up of IdxConstraint objects. Example WHERE clause:
 **
-**   a=? AND b=? AND ((c=? AND d=?) OR e=?) AND (f=? OR g=?) AND h>?
+**   a=? AND b=? AND c=? AND d=? AND e>? AND f<?
 **
-** The above is decomposed into 5 AND connected clauses. The first two are
+** The above is decomposed into 6 AND connected clauses. The first four are
 ** added to the IdxWhere.pEq linked list, the following two into 
-** IdxWhere.pOr and the last into IdxWhere.pRange.
+** IdxWhere.pRange.
 **
 ** IdxWhere.pEq and IdxWhere.pRange are simple linked lists of IdxConstraint
 ** objects linked by the IdxConstraint.pNext field.
-**
-** The list headed at IdxWhere.pOr and linked by IdxWhere.pNextOr contains
-** all "OR" terms that belong to the current WHERE clause. In the example
-** above, there are two OR terms:
-**
-**   ((c=? AND d=?) OR e=?)
-**   (f=? OR g=?)
-**
-** Within an OR term, the OR connected sub-expressions are termed siblings.
-** These are connected into a linked list by the pSibling pointers. Each OR
-** term above consists of two siblings.
-**
-**   pOr -> (c=? AND d=?) -> pNextOr -> (f=?)
-**               |                        |
-**            pSibling                 pSibling
-**               |                        |
-**               V                        V
-**             (e=?)                    (g=?)
-**
-** IdxWhere.pParent is only used while constructing a tree of IdxWhere 
-** structures. It is NULL for the root IdxWhere. For all others, the parent
-** WHERE clause.
 */
 struct IdxWhere {
   IdxConstraint *pEq;             /* List of == constraints */
   IdxConstraint *pRange;          /* List of < constraints */
-  IdxWhere *pOr;                  /* List of OR constraints */
-  IdxWhere *pNextOr;              /* Next in OR constraints of same IdxWhere */
-  IdxWhere *pSibling;             /* Next branch in single OR constraint */
-  IdxWhere *pParent;              /* Parent object (or NULL) */
 };
 
 /*
@@ -246,40 +220,6 @@ static void idxDatabaseError(
   *pzErrmsg = sqlite3_mprintf("%s", sqlite3_errmsg(db));
 }
 
-static char *idxQueryToList(
-  sqlite3 *db, 
-  const char *zBind,
-  int *pRc,
-  char **pzErrmsg,
-  const char *zSql
-){
-  char *zRet = 0;
-  if( *pRc==SQLITE_OK ){
-    sqlite3_stmt *pStmt = 0;
-    int rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
-    if( rc==SQLITE_OK ){
-      sqlite3_bind_text(pStmt, 1, zBind, -1, SQLITE_TRANSIENT);
-      while( rc==SQLITE_OK && sqlite3_step(pStmt)==SQLITE_ROW ){
-        const char *z = (const char*)sqlite3_column_text(pStmt, 0);
-        zRet = sqlite3_mprintf("%z%s%Q", zRet, zRet?", ":"", z);
-        if( zRet==0 ){
-          rc = SQLITE_NOMEM;
-        }
-      }
-      rc = sqlite3_finalize(pStmt);
-    }
-
-    if( rc ){
-      idxDatabaseError(db, pzErrmsg);
-      sqlite3_free(zRet);
-      zRet = 0;
-    }
-    *pRc = rc;
-  }
-
-  return zRet;
-}
-
 static int idxPrepareStmt(
   sqlite3 *db,                    /* Database handle to compile against */
   sqlite3_stmt **ppStmt,          /* OUT: Compiled SQL statement */
@@ -331,7 +271,7 @@ static int idxGetTableInfo(
 
   rc = idxPrintfPrepareStmt(db, &p1, pzErrmsg, "PRAGMA table_info=%Q", zTbl);
   while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(p1) ){
-    const char *zCol = sqlite3_column_text(p1, 1);
+    const char *zCol = (const char*)sqlite3_column_text(p1, 1);
     nByte += 1 + strlen(zCol);
     rc = sqlite3_table_column_metadata(
         db, "main", zTbl, zCol, 0, &zCol, 0, 0, 0
@@ -354,7 +294,7 @@ static int idxGetTableInfo(
 
   nCol = 0;
   while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(p1) ){
-    const char *zCol = sqlite3_column_text(p1, 1);
+    const char *zCol = (const char*)sqlite3_column_text(p1, 1);
     int nCopy = strlen(zCol) + 1;
     pNew->aCol[nCol].zName = pCsr;
     pNew->aCol[nCol].iPk = sqlite3_column_int(p1, 5);
@@ -392,38 +332,24 @@ static int idxCreateTables(
   char **pzErrmsg                 /* OUT: Error message */
 ){
   int rc = SQLITE_OK;
+  int rc2;
   IdxScan *pIter;
+  sqlite3_stmt *pSql = 0;
+
+  /* Copy the entire schema of database [db] into [dbm]. */
+  rc = idxPrintfPrepareStmt(db, &pSql, pzErrmsg, 
+      "SELECT sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%%'"
+  );
+  while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pSql) ){
+    const char *zSql = (const char*)sqlite3_column_text(pSql, 0);
+    rc = sqlite3_exec(dbm, zSql, 0, 0, pzErrmsg);
+  }
+  rc2 = sqlite3_finalize(pSql);
+  if( rc==SQLITE_OK ) rc = rc2;
+
+  /* Load IdxTable objects */
   for(pIter=pScan; pIter && rc==SQLITE_OK; pIter=pIter->pNextScan){
     rc = idxGetTableInfo(db, pIter, pzErrmsg);
-
-    /* Test if table has already been created. If so, jump to the next
-    ** iteration of the loop.  */
-    if( rc==SQLITE_OK ){
-      sqlite3_stmt *pSql = 0;
-      rc = idxPrintfPrepareStmt(dbm, &pSql, pzErrmsg, 
-          "SELECT 1 FROM sqlite_master WHERE tbl_name = %Q", pIter->zTable
-      );
-      if( rc==SQLITE_OK ){
-        int bSkip = 0;
-        if( sqlite3_step(pSql)==SQLITE_ROW ) bSkip = 1;
-        rc = sqlite3_finalize(pSql);
-        if( bSkip ) continue;
-      }
-    }
-
-    if( rc==SQLITE_OK ){
-      int rc2;
-      sqlite3_stmt *pSql = 0;
-      rc = idxPrintfPrepareStmt(db, &pSql, pzErrmsg, 
-          "SELECT sql FROM sqlite_master WHERE tbl_name = %Q", pIter->zTable
-      );
-      while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pSql) ){
-        const char *zSql = (const char*)sqlite3_column_text(pSql, 0);
-        rc = sqlite3_exec(dbm, zSql, 0, 0, pzErrmsg);
-      }
-      rc2 = sqlite3_finalize(pSql);
-      if( rc==SQLITE_OK ) rc = rc2;
-    }
   }
   return rc;
 }
@@ -655,26 +581,6 @@ static int idxCreateFromWhere(
     IdxContext*, i64, IdxScan*, IdxWhere*, IdxConstraint*, IdxConstraint*
 );
 
-static int idxCreateForeachOr(
-  IdxContext *pCtx, 
-  i64 mask,                       /* Consider only these constraints */
-  IdxScan *pScan,                 /* Create indexes for this scan */
-  IdxWhere *pWhere,               /* Read constraints from here */
-  IdxConstraint *pEq,             /* == constraints for inclusion */
-  IdxConstraint *pTail            /* range/ORDER BY constraints for inclusion */
-){
-  int rc = SQLITE_OK;
-  IdxWhere *p1;
-  IdxWhere *p2;
-  for(p1=pWhere->pOr; p1 && rc==SQLITE_OK; p1=p1->pNextOr){
-    rc = idxCreateFromWhere(pCtx, mask, pScan, p1, pEq, pTail);
-    for(p2=p1->pSibling; p2 && rc==SQLITE_OK; p2=p2->pSibling){
-      rc = idxCreateFromWhere(pCtx, mask, pScan, p2, pEq, pTail);
-    }
-  }
-  return rc;
-}
-
 /*
 ** Return true if list pList (linked by IdxConstraint.pLink) contains
 ** a constraint compatible with *p. Otherwise return false.
@@ -695,7 +601,6 @@ static int idxCreateFromWhere(
   IdxConstraint *pEq,             /* == constraints for inclusion */
   IdxConstraint *pTail            /* range/ORDER BY constraints for inclusion */
 ){
-  sqlite3 *dbm = pCtx->dbm;
   IdxConstraint *p1 = pEq;
   IdxConstraint *pCon;
   int rc;
@@ -714,9 +619,6 @@ static int idxCreateFromWhere(
   /* Create an index using the == constraints collected above. And the
   ** range constraint/ORDER BY terms passed in by the caller, if any. */
   rc = idxCreateFromCons(pCtx, pScan, p1, pTail);
-  if( rc==SQLITE_OK ){
-    rc = idxCreateForeachOr(pCtx, mask, pScan, pWhere, p1, pTail);
-  }
 
   /* If no range/ORDER BY passed by the caller, create a version of the
   ** index for each range constraint that matches the mask. */
@@ -728,9 +630,6 @@ static int idxCreateFromWhere(
         && idxFindConstraint(pTail, pCon)==0
       ){
         rc = idxCreateFromCons(pCtx, pScan, p1, pCon);
-        if( rc==SQLITE_OK ){
-          rc = idxCreateForeachOr(pCtx, mask, pScan, pWhere, p1, pCon);
-        }
       }
     }
   }
@@ -749,7 +648,7 @@ static int idxCreateCandidates(IdxContext *pCtx){
   sqlite3_stmt *pDepmask;         /* Foreach depmask */
   IdxScan *pIter;
 
-  rc = idxPrepareStmt(pCtx->dbm, &pDepmask, pCtx->pzErrmsg, 
+  rc = idxPrepareStmt(dbm, &pDepmask, pCtx->pzErrmsg, 
       "SELECT mask FROM depmask"
   );
 
@@ -774,7 +673,6 @@ static void idxScanFree(IdxScan *pScan){
   IdxScan *pNext;
   for(pIter=pScan; pIter; pIter=pNext){
     pNext = pIter->pNextScan;
-
   }
 }
 
@@ -841,11 +739,11 @@ int idxFindIndexes(
   if( rc==SQLITE_OK ) rc = rc2;
   if( rc==SQLITE_OK ){
     sqlite3_stmt *pLoop = 0;
-    rc = idxPrepareStmt(dbm, &pLoop, pzErr, "SELECT name FROM aux.indexes");
+    rc = idxPrepareStmt(dbm, &pLoop, pzErr,"SELECT name||';' FROM aux.indexes");
     if( rc==SQLITE_OK ){
       while( SQLITE_ROW==sqlite3_step(pLoop) ){
         bFound = 1;
-        xOut(pOutCtx, sqlite3_column_text(pLoop, 0));
+        xOut(pOutCtx, (const char*)sqlite3_column_text(pLoop, 0));
       }
       rc = sqlite3_finalize(pLoop);
     }
