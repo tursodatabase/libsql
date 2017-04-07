@@ -1039,6 +1039,61 @@ static void codeExprOrVector(Parse *pParse, Expr *p, int iReg, int nReg){
   }
 }
 
+#if 1 /* INDEXEXPRTRANS */
+typedef struct IdxExprTrans {
+  Expr *pIdxExpr;    /* The index expression */
+  int iTabCur;       /* The cursor of the corresponding table */
+  int iIdxCur;       /* The cursor for the index */
+  int iIdxCol;       /* The column for the index */
+} IdxExprTrans;
+
+static int whereIndexExprTransNode(Walker *p, Expr *pExpr){
+  IdxExprTrans *pX = p->u.pIdxTrans;
+  if( sqlite3ExprCompare(pExpr, pX->pIdxExpr, pX->iTabCur)==0 ){
+    pExpr->op = TK_COLUMN;
+    pExpr->iTable = pX->iIdxCur;
+    pExpr->iColumn = pX->iIdxCol;
+    pExpr->pTab = 0;
+    return WRC_Prune;
+  }else{
+    return WRC_Continue;
+  }
+}
+
+/*
+** For an indexes on expression X, locate every instance of expression X in pExpr
+** and change that subexpression into a reference to the appropriate column of
+** the index.
+*/
+static void whereIndexExprTrans(
+  Index *pIdx,      /* The Index */
+  int iTabCur,      /* Cursor of the table that is being indexed */
+  int iIdxCur,      /* Cursor of the index itself */
+  WhereInfo *pWInfo /* Transform expressions in this WHERE clause */
+){
+  int iIdxCol;               /* Column number of the index */
+  ExprList *aColExpr;        /* Expressions that are indexed */
+  Walker w;
+  IdxExprTrans x;
+  aColExpr = pIdx->aColExpr;
+  if( aColExpr==0 ) return;  /* Not an index on expressions */
+  memset(&w, 0, sizeof(w));
+  w.xExprCallback = whereIndexExprTransNode;
+  w.u.pIdxTrans = &x;
+  x.iTabCur = iTabCur;
+  x.iIdxCur = iIdxCur;
+  for(iIdxCol=0; iIdxCol<aColExpr->nExpr; iIdxCol++){
+    if( pIdx->aiColumn[iIdxCol]!=XN_EXPR ) continue;
+    assert( aColExpr->a[iIdxCol].pExpr!=0 );
+    x.iIdxCol = iIdxCol;
+    x.pIdxExpr = aColExpr->a[iIdxCol].pExpr;
+    sqlite3WalkExpr(&w, pWInfo->pWhere);
+    sqlite3WalkExprList(&w, pWInfo->pOrderBy);
+    sqlite3WalkExprList(&w, pWInfo->pResultSet);
+  }
+}
+#endif
+
 /*
 ** Generate code for the start of the iLevel-th loop in the WHERE clause
 ** implementation described by pWInfo.
@@ -1619,6 +1674,10 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       sqlite3VdbeAddOp4Int(v, OP_NotFound, iCur, addrCont,
                            iRowidReg, pPk->nKeyCol); VdbeCoverage(v);
     }
+
+#if 1  /* INDEXEXPRTANS */
+    whereIndexExprTrans(pIdx, iCur, iIdxCur, pWInfo);
+#endif
 
     /* Record the instruction used to terminate the loop. */
     if( pLoop->wsFlags & WHERE_ONEROW ){

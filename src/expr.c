@@ -3192,6 +3192,10 @@ void sqlite3ExprCodeGetColumnOfTable(
   int iCol,       /* Index of the column to extract */
   int regOut      /* Extract the value into this register */
 ){
+  if( pTab==0 ){
+    sqlite3VdbeAddOp3(v, OP_Column, iTabCur, iCol, regOut);
+    return;
+  }
   if( iCol<0 || iCol==pTab->iPKey ){
     sqlite3VdbeAddOp2(v, OP_Rowid, iTabCur, regOut);
   }else{
