@@ -13,5 +13,6 @@ pub fn version_number() -> i32 {
 /// See [sqlite3_libversion()](https://www.sqlite.org/c3ref/libversion.html).
 pub fn version() -> &'static str {
     let cstr = unsafe { CStr::from_ptr(ffi::sqlite3_libversion()) };
-    cstr.to_str().expect("SQLite version string is not valid UTF8 ?!")
+    cstr.to_str()
+        .expect("SQLite version string is not valid UTF8 ?!")
 }
