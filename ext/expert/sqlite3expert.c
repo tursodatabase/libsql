@@ -11,12 +11,18 @@
 *************************************************************************
 */
 
+#include "sqlite3expert.h"
+#include <assert.h>
+#include <string.h>
+#include <stdio.h>
+
 typedef sqlite3_int64 i64;
 typedef sqlite3_uint64 u64;
 
 typedef struct IdxConstraint IdxConstraint;
 typedef struct IdxContext IdxContext;
 typedef struct IdxScan IdxScan;
+typedef struct IdxStatement IdxStatement;
 typedef struct IdxWhere IdxWhere;
 
 typedef struct IdxColumn IdxColumn;
@@ -71,6 +77,19 @@ struct IdxScan {
 };
 
 /*
+** Data regarding a database table. Extracted from "PRAGMA table_info"
+*/
+struct IdxColumn {
+  char *zName;
+  char *zColl;
+  int iPk;
+};
+struct IdxTable {
+  int nCol;
+  IdxColumn *aCol;
+};
+
+/*
 ** Context object passed to idxWhereInfo() and other functions.
 */
 struct IdxContext {
@@ -84,18 +103,30 @@ struct IdxContext {
   i64 iIdxRowid;                  /* Rowid of first index created */
 };
 
+struct IdxStatement {
+  int iId;                        /* Statement number */
+  char *zSql;                     /* SQL statement */
+  char *zIdx;                     /* Indexes */
+  char *zEQP;                     /* Plan */
+  IdxStatement *pNext;
+};
+
 /*
-** Data regarding a database table. Extracted from "PRAGMA table_info"
+** sqlite3expert object.
 */
-struct IdxColumn {
-  char *zName;
-  char *zColl;
-  int iPk;
+struct sqlite3expert {
+  sqlite3 *db;                    /* Users database */
+  sqlite3 *dbm;                   /* In-memory db for this analysis */
+
+  int bRun;                       /* True once analysis has run */
+  char **pzErrmsg;
+
+  IdxScan *pScan;                 /* List of scan objects */
+  IdxStatement *pStatement;       /* List of IdxStatement objects */
+  int rc;                         /* Error code from whereinfo hook */
+  i64 iIdxRowid;                  /* Rowid of first index created */
 };
-struct IdxTable {
-  int nCol;
-  IdxColumn *aCol;
-};
+
 
 /*
 ** Allocate and return nByte bytes of zeroed memory using sqlite3_malloc(). 
@@ -132,7 +163,7 @@ static IdxConstraint *idxNewConstraint(int *pRc, const char *zColl){
 }
 
 /*
-** SQLITE_DBCONFIG_WHEREINFO callback.
+** sqlite3_whereinfo_hook() callback.
 */
 static void idxWhereInfo(
   void *pCtx,                     /* Pointer to IdxContext structure */
@@ -141,7 +172,7 @@ static void idxWhereInfo(
   int iVal, 
   u64 mask
 ){
-  IdxContext *p = (IdxContext*)pCtx;
+  sqlite3expert *p = (sqlite3expert*)pCtx;
 
 #if 0
   const char *zOp = 
@@ -165,7 +196,6 @@ static void idxWhereInfo(
         pNew->pNextScan = p->pScan;
         pNew->covering = mask;
         p->pScan = pNew;
-        p->pCurrent = &pNew->where;
         break;
       }
 
@@ -193,16 +223,17 @@ static void idxWhereInfo(
         pNew->depmask = mask;
 
         if( eOp==SQLITE_WHEREINFO_RANGE ){
-          pNew->pNext = p->pCurrent->pRange;
-          p->pCurrent->pRange = pNew;
+          pNew->pNext = p->pScan->where.pRange;
+          p->pScan->where.pRange = pNew;
         }else{
-          pNew->pNext = p->pCurrent->pEq;
-          p->pCurrent->pEq = pNew;
+          pNew->pNext = p->pScan->where.pEq;
+          p->pScan->where.pEq = pNew;
         }
-
+#if 0
         sqlite3_bind_int64(p->pInsertMask, 1, mask);
         sqlite3_step(p->pInsertMask);
         p->rc = sqlite3_reset(p->pInsertMask);
+#endif
         break;
       }
     }
@@ -325,35 +356,6 @@ static int idxGetTableInfo(
   return rc;
 }
 
-static int idxCreateTables(
-  sqlite3 *db,                    /* User database */
-  sqlite3 *dbm,                   /* In-memory database to create tables in */
-  IdxScan *pScan,                 /* List of scans */
-  char **pzErrmsg                 /* OUT: Error message */
-){
-  int rc = SQLITE_OK;
-  int rc2;
-  IdxScan *pIter;
-  sqlite3_stmt *pSql = 0;
-
-  /* Copy the entire schema of database [db] into [dbm]. */
-  rc = idxPrintfPrepareStmt(db, &pSql, pzErrmsg, 
-      "SELECT sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%%'"
-  );
-  while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pSql) ){
-    const char *zSql = (const char*)sqlite3_column_text(pSql, 0);
-    rc = sqlite3_exec(dbm, zSql, 0, 0, pzErrmsg);
-  }
-  rc2 = sqlite3_finalize(pSql);
-  if( rc==SQLITE_OK ) rc = rc2;
-
-  /* Load IdxTable objects */
-  for(pIter=pScan; pIter && rc==SQLITE_OK; pIter=pIter->pNextScan){
-    rc = idxGetTableInfo(db, pIter, pzErrmsg);
-  }
-  return rc;
-}
-
 /*
 ** This function is a no-op if *pRc is set to anything other than 
 ** SQLITE_OK when it is called.
@@ -456,7 +458,6 @@ static int idxFindCompatible(
   int nEq = 0;                    /* Number of elements in pEq */
   int rc, rc2;
 
-
   /* Count the elements in list pEq */
   for(pIter=pEq; pIter; pIter=pIter->pLink) nEq++;
 
@@ -514,12 +515,12 @@ static int idxFindCompatible(
 }
 
 static int idxCreateFromCons(
-  IdxContext *pCtx,
+  sqlite3expert *p,
   IdxScan *pScan,
   IdxConstraint *pEq, 
   IdxConstraint *pTail
 ){
-  sqlite3 *dbm = pCtx->dbm;
+  sqlite3 *dbm = p->dbm;
   int rc = SQLITE_OK;
   if( (pEq || pTail) && 0==idxFindCompatible(&rc, dbm, pScan, pEq, pTail) ){
     IdxTable *pTab = pScan->pTable;
@@ -552,20 +553,20 @@ static int idxCreateFromCons(
       if( !zIdx ){
         rc = SQLITE_NOMEM;
       }else{
-        rc = sqlite3_exec(dbm, zIdx, 0, 0, pCtx->pzErrmsg);
-#if 0
+        rc = sqlite3_exec(dbm, zIdx, 0, 0, p->pzErrmsg);
+#if 1
         printf("CANDIDATE: %s\n", zIdx);
 #endif
       }
     }
-    if( rc==SQLITE_OK && pCtx->iIdxRowid==0 ){
+    if( rc==SQLITE_OK && p->iIdxRowid==0 ){
       int rc2;
       sqlite3_stmt *pLast = 0;
-      rc = idxPrepareStmt(dbm, &pLast, pCtx->pzErrmsg, 
+      rc = idxPrepareStmt(dbm, &pLast, p->pzErrmsg, 
           "SELECT max(rowid) FROM sqlite_master"
       );
       if( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pLast) ){
-        pCtx->iIdxRowid = sqlite3_column_int64(pLast, 0);
+        p->iIdxRowid = sqlite3_column_int64(pLast, 0);
       }
       rc2 = sqlite3_finalize(pLast);
       if( rc==SQLITE_OK ) rc = rc2;
@@ -578,7 +579,7 @@ static int idxCreateFromCons(
 }
 
 static int idxCreateFromWhere(
-    IdxContext*, i64, IdxScan*, IdxWhere*, IdxConstraint*, IdxConstraint*
+    sqlite3expert*, i64, IdxScan*, IdxWhere*, IdxConstraint*, IdxConstraint*
 );
 
 /*
@@ -594,7 +595,7 @@ static int idxFindConstraint(IdxConstraint *pList, IdxConstraint *p){
 }
 
 static int idxCreateFromWhere(
-  IdxContext *pCtx, 
+  sqlite3expert *p, 
   i64 mask,                       /* Consider only these constraints */
   IdxScan *pScan,                 /* Create indexes for this scan */
   IdxWhere *pWhere,               /* Read constraints from here */
@@ -618,7 +619,7 @@ static int idxCreateFromWhere(
 
   /* Create an index using the == constraints collected above. And the
   ** range constraint/ORDER BY terms passed in by the caller, if any. */
-  rc = idxCreateFromCons(pCtx, pScan, p1, pTail);
+  rc = idxCreateFromCons(p, pScan, p1, pTail);
 
   /* If no range/ORDER BY passed by the caller, create a version of the
   ** index for each range constraint that matches the mask. */
@@ -629,7 +630,7 @@ static int idxCreateFromWhere(
         && idxFindConstraint(pEq, pCon)==0
         && idxFindConstraint(pTail, pCon)==0
       ){
-        rc = idxCreateFromCons(pCtx, pScan, p1, pCon);
+        rc = idxCreateFromCons(p, pScan, p1, pCon);
       }
     }
   }
@@ -641,56 +642,90 @@ static int idxCreateFromWhere(
 ** Create candidate indexes in database [dbm] based on the data in 
 ** linked-list pScan.
 */
-static int idxCreateCandidates(IdxContext *pCtx){
-  sqlite3 *dbm = pCtx->dbm;
+static int idxCreateCandidates(sqlite3expert *p, char **pzErr){
+  sqlite3 *dbm = p->dbm;
   int rc2;
   int rc = SQLITE_OK;
-  sqlite3_stmt *pDepmask;         /* Foreach depmask */
+  sqlite3_stmt *pDepmask = 0;     /* Foreach depmask */
+  sqlite3_stmt *pInsert = 0;      /* insert */
   IdxScan *pIter;
 
-  rc = idxPrepareStmt(dbm, &pDepmask, pCtx->pzErrmsg, 
-      "SELECT mask FROM depmask"
+  rc = idxPrepareStmt(dbm, &pInsert, pzErr, 
+      "INSERT OR IGNORE INTO aux.depmask SELECT mask | ?1 FROM aux.depmask;"
   );
+  if( rc==SQLITE_OK ){
+    rc = idxPrepareStmt(dbm, &pDepmask, pzErr, "SELECT mask FROM depmask");
+  }
 
-  for(pIter=pCtx->pScan; pIter && rc==SQLITE_OK; pIter=pIter->pNextScan){
+  for(pIter=p->pScan; pIter && rc==SQLITE_OK; pIter=pIter->pNextScan){
     IdxWhere *pWhere = &pIter->where;
+    IdxConstraint *pCons;
+    rc = sqlite3_exec(dbm, 
+        "DELETE FROM aux.depmask;"
+        "INSERT INTO aux.depmask VALUES(0);"
+        , 0, 0, pzErr
+    );
+    for(pCons=pIter->where.pEq; pCons; pCons=pCons->pNext){
+      sqlite3_bind_int64(pInsert, 1, pCons->depmask);
+      sqlite3_step(pInsert);
+      rc = sqlite3_reset(pInsert);
+    }
+
     while( SQLITE_ROW==sqlite3_step(pDepmask) && rc==SQLITE_OK ){
       i64 mask = sqlite3_column_int64(pDepmask, 0);
-      rc = idxCreateFromWhere(pCtx, mask, pIter, pWhere, 0, 0);
+      rc = idxCreateFromWhere(p, mask, pIter, pWhere, 0, 0);
       if( rc==SQLITE_OK && pIter->pOrder ){
-        rc = idxCreateFromWhere(pCtx, mask, pIter, pWhere, 0, pIter->pOrder);
+        rc = idxCreateFromWhere(p, mask, pIter, pWhere, 0, pIter->pOrder);
       }
     }
+    rc2 = sqlite3_reset(pDepmask);
+    if( rc==SQLITE_OK ) rc = rc2;
   }
 
   rc2 = sqlite3_finalize(pDepmask);
   if( rc==SQLITE_OK ) rc = rc2;
+  rc2 = sqlite3_finalize(pInsert);
+  if( rc==SQLITE_OK ) rc = rc2;
   return rc;
 }
 
-static void idxScanFree(IdxScan *pScan){
-  IdxScan *pIter;
-  IdxScan *pNext;
-  for(pIter=pScan; pIter; pIter=pNext){
-    pNext = pIter->pNextScan;
-  }
+/*
+** Free all elements of the linked list starting from pScan up until pLast
+** (pLast is not freed).
+*/
+static void idxScanFree(IdxScan *pScan, IdxScan *pLast){
+  /* TODO! */
 }
 
+/*
+** Free all elements of the linked list starting from pStatement up 
+** until pLast (pLast is not freed).
+*/
+static void idxStatementFree(IdxStatement *pStatement, IdxStatement *pLast){
+  /* TODO! */
+}
+
+static void idxFinalize(int *pRc, sqlite3_stmt *pStmt){
+  int rc = sqlite3_finalize(pStmt);
+  if( *pRc==SQLITE_OK ) *pRc = rc;
+}
+static void idxReset(int *pRc, sqlite3_stmt *pStmt){
+  int rc = sqlite3_reset(pStmt);
+  if( *pRc==SQLITE_OK ) *pRc = rc;
+}
+
+
 int idxFindIndexes(
-  IdxContext *pCtx,
-  const char *zSql,                    /* SQL to find indexes for */
-  void (*xOut)(void*, const char*),    /* Output callback */
-  void *pOutCtx,                       /* Context for xOut() */
+  sqlite3expert *p,
   char **pzErr                         /* OUT: Error message (sqlite3_malloc) */
 ){
-  sqlite3 *dbm = pCtx->dbm;
-  sqlite3_stmt *pExplain = 0;
+  IdxStatement *pStmt;
+  sqlite3 *dbm = p->dbm;
   sqlite3_stmt *pSelect = 0;
   sqlite3_stmt *pInsert = 0;
   int rc, rc2;
   int bFound = 0;
 
-  rc = idxPrintfPrepareStmt(dbm, &pExplain, pzErr,"EXPLAIN QUERY PLAN %s",zSql);
   if( rc==SQLITE_OK ){
     rc = idxPrepareStmt(dbm, &pSelect, pzErr, 
         "SELECT rowid, sql FROM sqlite_master WHERE name = ?"
@@ -702,76 +737,81 @@ int idxFindIndexes(
     );
   }
 
-  while( rc==SQLITE_OK && sqlite3_step(pExplain)==SQLITE_ROW ){
-    int i;
-    const char *zDetail = (const char*)sqlite3_column_text(pExplain, 3);
-    int nDetail = strlen(zDetail);
+  for(pStmt=p->pStatement; rc==SQLITE_OK && pStmt; pStmt=pStmt->pNext){
+    sqlite3_stmt *pExplain = 0;
+    rc = sqlite3_exec(dbm, "DELETE FROM aux.indexes", 0, 0, 0);
+    if( rc==SQLITE_OK ){
+      rc = idxPrintfPrepareStmt(dbm, &pExplain, pzErr,
+          "EXPLAIN QUERY PLAN %s", pStmt->zSql
+      );
+    }
+    while( rc==SQLITE_OK && sqlite3_step(pExplain)==SQLITE_ROW ){
+      int i;
+      const char *zDetail = (const char*)sqlite3_column_text(pExplain, 3);
+      int nDetail = strlen(zDetail);
 
-    for(i=0; i<nDetail; i++){
-      const char *zIdx = 0;
-      if( memcmp(&zDetail[i], " USING INDEX ", 13)==0 ){
-        zIdx = &zDetail[i+13];
-      }else if( memcmp(&zDetail[i], " USING COVERING INDEX ", 22)==0 ){
-        zIdx = &zDetail[i+22];
-      }
-      if( zIdx ){
-        int nIdx = 0;
-        while( zIdx[nIdx]!='\0' && (zIdx[nIdx]!=' ' || zIdx[nIdx+1]!='(') ){
-          nIdx++;
+      for(i=0; i<nDetail; i++){
+        const char *zIdx = 0;
+        if( memcmp(&zDetail[i], " USING INDEX ", 13)==0 ){
+          zIdx = &zDetail[i+13];
+        }else if( memcmp(&zDetail[i], " USING COVERING INDEX ", 22)==0 ){
+          zIdx = &zDetail[i+22];
         }
-        sqlite3_bind_text(pSelect, 1, zIdx, nIdx, SQLITE_STATIC);
-        if( SQLITE_ROW==sqlite3_step(pSelect) ){
-          i64 iRowid = sqlite3_column_int64(pSelect, 0);
-          const char *zSql = (const char*)sqlite3_column_text(pSelect, 1);
-          if( iRowid>=pCtx->iIdxRowid ){
-            sqlite3_bind_text(pInsert, 1, zSql, -1, SQLITE_STATIC);
-            sqlite3_step(pInsert);
-            rc = sqlite3_reset(pInsert);
-            if( rc ) goto find_indexes_out;
+        if( zIdx ){
+          int nIdx = 0;
+          while( zIdx[nIdx]!='\0' && (zIdx[nIdx]!=' ' || zIdx[nIdx+1]!='(') ){
+            nIdx++;
           }
+          sqlite3_bind_text(pSelect, 1, zIdx, nIdx, SQLITE_STATIC);
+          if( SQLITE_ROW==sqlite3_step(pSelect) ){
+            i64 iRowid = sqlite3_column_int64(pSelect, 0);
+            const char *zSql = (const char*)sqlite3_column_text(pSelect, 1);
+            if( iRowid>=p->iIdxRowid ){
+              sqlite3_bind_text(pInsert, 1, zSql, -1, SQLITE_STATIC);
+              sqlite3_step(pInsert);
+              rc = sqlite3_reset(pInsert);
+              if( rc ) goto find_indexes_out;
+            }
+          }
+          rc = sqlite3_reset(pSelect);
+          break;
         }
-        rc = sqlite3_reset(pSelect);
-        break;
       }
     }
-  }
-  rc2 = sqlite3_reset(pExplain);
-  if( rc==SQLITE_OK ) rc = rc2;
-  if( rc==SQLITE_OK ){
-    sqlite3_stmt *pLoop = 0;
-    rc = idxPrepareStmt(dbm, &pLoop, pzErr,"SELECT name||';' FROM aux.indexes");
+    idxReset(&rc, pExplain);
     if( rc==SQLITE_OK ){
-      while( SQLITE_ROW==sqlite3_step(pLoop) ){
-        bFound = 1;
-        xOut(pOutCtx, (const char*)sqlite3_column_text(pLoop, 0));
+      sqlite3_stmt *pLoop = 0;
+      rc = idxPrepareStmt(dbm,&pLoop,pzErr,"SELECT name||';' FROM aux.indexes");
+      if( rc==SQLITE_OK ){
+        while( SQLITE_ROW==sqlite3_step(pLoop) ){
+          bFound = 1;
+          pStmt->zIdx = idxAppendText(&rc, pStmt->zIdx, "%s\n",
+              (const char*)sqlite3_column_text(pLoop, 0)
+          );
+        }
+        idxFinalize(&rc, pLoop);
       }
-      rc = sqlite3_finalize(pLoop);
+      if( bFound==0 ){
+        pStmt->zIdx = idxAppendText(&rc, pStmt->zIdx, "(no new indexes)\n");
+      }
     }
-    if( rc==SQLITE_OK ){
-      if( bFound==0 ) xOut(pOutCtx, "(no new indexes)");
-      xOut(pOutCtx, "");
-    }
-  }
 
-  while( rc==SQLITE_OK && sqlite3_step(pExplain)==SQLITE_ROW ){
-    int iSelectid = sqlite3_column_int(pExplain, 0);
-    int iOrder = sqlite3_column_int(pExplain, 1);
-    int iFrom = sqlite3_column_int(pExplain, 2);
-    const char *zDetail = (const char*)sqlite3_column_text(pExplain, 3);
-    char *zOut;
+    while( rc==SQLITE_OK && sqlite3_step(pExplain)==SQLITE_ROW ){
+      int iSelectid = sqlite3_column_int(pExplain, 0);
+      int iOrder = sqlite3_column_int(pExplain, 1);
+      int iFrom = sqlite3_column_int(pExplain, 2);
+      const char *zDetail = (const char*)sqlite3_column_text(pExplain, 3);
 
-    zOut = sqlite3_mprintf("%d|%d|%d|%s", iSelectid, iOrder, iFrom, zDetail);
-    if( zOut==0 ){
-      rc = SQLITE_NOMEM;
-    }else{
-      xOut(pOutCtx, zOut);
-      sqlite3_free(zOut);
+      pStmt->zEQP = idxAppendText(&rc, pStmt->zEQP, "%d|%d|%d|%s\n", 
+          iSelectid, iOrder, iFrom, zDetail
+      );
     }
+
+    rc2 = sqlite3_finalize(pExplain);
+    if( rc==SQLITE_OK ) rc = rc2;
   }
 
  find_indexes_out:
-  rc2 = sqlite3_finalize(pExplain);
-  if( rc==SQLITE_OK ) rc = rc2;
   rc2 = sqlite3_finalize(pSelect);
   if( rc==SQLITE_OK ) rc = rc2;
   rc2 = sqlite3_finalize(pInsert);
@@ -794,6 +834,7 @@ int shellIndexesCommand(
   char **pzErrmsg                      /* OUT: Error message (sqlite3_malloc) */
 ){
   int rc = SQLITE_OK;
+#if 0
   sqlite3 *dbm = 0;
   IdxContext ctx;
   sqlite3_stmt *pStmt = 0;        /* Statement compiled from zSql */
@@ -851,10 +892,175 @@ int shellIndexesCommand(
     rc = idxFindIndexes(&ctx, zSql, xOut, pOutCtx, pzErrmsg);
   }
 
-  idxScanFree(ctx.pScan);
+  idxScanFree(ctx.pScan, 0);
   sqlite3_finalize(ctx.pInsertMask);
   sqlite3_close(dbm);
+#endif
   return rc;
 }
 
+/*************************************************************************/
+
+/*
+** Allocate a new sqlite3expert object.
+*/
+sqlite3expert *sqlite3_expert_new(sqlite3 *db, char **pzErrmsg){
+  int rc = SQLITE_OK;
+  sqlite3expert *pNew;
+
+  pNew = (sqlite3expert*)idxMalloc(&rc, sizeof(sqlite3expert));
+  pNew->db = db;
+
+  /* Open an in-memory database to work with. The main in-memory 
+  ** database schema contains tables similar to those in the users 
+  ** database (handle db). The attached in-memory db (aux) contains
+  ** application tables used by the code in this file.  */
+  rc = sqlite3_open(":memory:", &pNew->dbm);
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_exec(pNew->dbm,
+        "ATTACH ':memory:' AS aux;"
+        "CREATE TABLE aux.depmask(mask PRIMARY KEY) WITHOUT ROWID;"
+        "CREATE TABLE aux.indexes(name PRIMARY KEY) WITHOUT ROWID;"
+        , 0, 0, pzErrmsg
+    );
+  }
+
+  /* Copy the entire schema of database [db] into [dbm]. */
+  if( rc==SQLITE_OK ){
+    sqlite3_stmt *pSql;
+    int rc2;
+    rc = idxPrintfPrepareStmt(pNew->db, &pSql, pzErrmsg, 
+        "SELECT sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%%'"
+    );
+    while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pSql) ){
+      const char *zSql = (const char*)sqlite3_column_text(pSql, 0);
+      rc = sqlite3_exec(pNew->dbm, zSql, 0, 0, pzErrmsg);
+    }
+    rc2 = sqlite3_finalize(pSql);
+    if( rc==SQLITE_OK ) rc = rc2;
+  }
+
+  /* If an error has occurred, free the new object and reutrn NULL. Otherwise,
+  ** return the new sqlite3expert handle.  */
+  if( rc!=SQLITE_OK ){
+    sqlite3_expert_destroy(pNew);
+    pNew = 0;
+  }
+  return pNew;
+}
+
+/*
+** Add an SQL statement to the analysis.
+*/
+int sqlite3_expert_sql(
+  sqlite3expert *p,               /* From sqlite3_expert_new() */
+  const char *zSql,               /* SQL statement to add */
+  char **pzErr                    /* OUT: Error message (if any) */
+){
+  IdxScan *pScanOrig = p->pScan;
+  IdxStatement *pStmtOrig = p->pStatement;
+  int rc = SQLITE_OK;
+  const char *zStmt = zSql;
+
+  if( p->bRun ) return SQLITE_MISUSE;
+
+  sqlite3_whereinfo_hook(p->db, idxWhereInfo, p);
+  while( rc==SQLITE_OK && zStmt && zStmt[0] ){
+    sqlite3_stmt *pStmt = 0;
+    rc = sqlite3_prepare_v2(p->db, zStmt, -1, &pStmt, &zStmt);
+    if( rc==SQLITE_OK ){
+      if( pStmt ){
+        IdxStatement *pNew;
+        const char *z = sqlite3_sql(pStmt);
+        int n = strlen(z);
+        pNew = (IdxStatement*)idxMalloc(&rc, sizeof(IdxStatement) + n+1);
+        if( rc==SQLITE_OK ){
+          pNew->zSql = (char*)&pNew[1];
+          memcpy(pNew->zSql, z, n+1);
+          pNew->pNext = p->pStatement;
+          if( p->pStatement ) pNew->iId = p->pStatement->iId+1;
+          p->pStatement = pNew;
+        }
+        sqlite3_finalize(pStmt);
+      }
+    }else{
+      idxDatabaseError(p->db, pzErr);
+    }
+  }
+  sqlite3_whereinfo_hook(p->db, 0, 0);
+
+  if( rc!=SQLITE_OK ){
+    idxScanFree(p->pScan, pScanOrig);
+    idxStatementFree(p->pStatement, pStmtOrig);
+    p->pScan = pScanOrig;
+    p->pStatement = pStmtOrig;
+  }
+
+  return rc;
+}
+
+int sqlite3_expert_analyze(sqlite3expert *p, char **pzErr){
+  int rc = SQLITE_OK;
+  IdxScan *pIter;
+
+  /* Load IdxTable objects */
+  for(pIter=p->pScan; pIter && rc==SQLITE_OK; pIter=pIter->pNextScan){
+    rc = idxGetTableInfo(p->dbm, pIter, pzErr);
+  }
+
+
+  /* Create candidate indexes within the in-memory database file */
+  if( rc==SQLITE_OK ){
+    rc = idxCreateCandidates(p, pzErr);
+  }
+
+  /* Figure out which of the candidate indexes are preferred by the query
+  ** planner and report the results to the user.  */
+  if( rc==SQLITE_OK ){
+    rc = idxFindIndexes(p, pzErr);
+  }
+
+  if( rc==SQLITE_OK ){
+    p->bRun = 1;
+  }
+  return rc;
+}
+
+int sqlite3_expert_count(sqlite3expert *p){
+  int nRet = 0;
+  if( p->pStatement ) nRet = p->pStatement->iId+1;
+  return nRet;
+}
+
+const char *sqlite3_expert_report(sqlite3expert *p, int iStmt, int eReport){
+  const char *zRet = 0;
+  IdxStatement *pStmt;
+
+  if( p->bRun==0 ) return 0;
+  for(pStmt=p->pStatement; pStmt && pStmt->iId!=iStmt; pStmt=pStmt->pNext);
+  if( pStmt ){
+    switch( eReport ){
+      case EXPERT_REPORT_SQL:
+        zRet = pStmt->zSql;
+        break;
+      case EXPERT_REPORT_INDEXES:
+        zRet = pStmt->zIdx;
+        break;
+      case EXPERT_REPORT_PLAN:
+        zRet = pStmt->zEQP;
+        break;
+    }
+  }
+  return zRet;
+}
+
+/*
+** Free an sqlite3expert object.
+*/
+void sqlite3_expert_destroy(sqlite3expert *p){
+  sqlite3_close(p->dbm);
+  idxScanFree(p->pScan, 0);
+  idxStatementFree(p->pStatement, 0);
+  sqlite3_free(p);
+}
 

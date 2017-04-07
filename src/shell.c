@@ -166,7 +166,6 @@ static void setTextMode(FILE *file, int isOutput){
 # define setTextMode(X,Y)
 #endif
 
-#include "shell_indexes.c"
 
 /* True if the timer is enabled */
 static int enableTimer = 0;
@@ -1364,7 +1363,6 @@ struct ShellState {
   sqlite3 *db;           /* The database */
   int autoExplain;       /* Automatically turn on .explain mode */
   int autoEQP;           /* Run EXPLAIN QUERY PLAN prior to seach SQL stmt */
-  int bRecommend;        /* Instead of sqlite3_exec(), recommend indexes */
   int statsOn;           /* True to display memory stats before each finalize */
   int scanstatsOn;       /* True to display scan stats before each finalize */
   int outCount;          /* Revert to stdout when reaching zero */
@@ -2586,19 +2584,6 @@ static void explain_data_delete(ShellState *p){
   p->iIndent = 0;
 }
 
-typedef struct RecCommandCtx RecCommandCtx;
-struct RecCommandCtx {
-  int (*xCallback)(void*,int,char**,char**,int*);
-  ShellState *pArg;
-};
-
-static void recCommandOut(void *pCtx, const char *zLine){
-  const char *zCol = "output";
-  RecCommandCtx *p = (RecCommandCtx*)pCtx;
-  int t = SQLITE_TEXT;
-  p->xCallback(p->pArg, 1, (char**)&zLine, (char**)&zCol, &t);
-}
-
 /*
 ** Disable and restore .wheretrace and .selecttrace settings.
 */
@@ -2722,13 +2707,6 @@ static int shell_exec(
   if( pzErrMsg ){
     *pzErrMsg = NULL;
   }
-
-  if( pArg->bRecommend ){
-    RecCommandCtx ctx;
-    ctx.xCallback = xCallback;
-    ctx.pArg = pArg;
-    rc = shellIndexesCommand(db, zSql, recCommandOut, &ctx, pzErrMsg);
-  }else
 
   while( zSql[0] && (SQLITE_OK == rc) ){
     static const char *zStmtSql;
@@ -5522,15 +5500,6 @@ static int do_meta_command(char *zLine, ShellState *p){
     sqlite3_close(pSrc);
   }else
 
-  if( c=='r' && n>=2 && strncmp(azArg[0], "recommend", n)==0 ){
-    if( nArg==2 ){
-      p->bRecommend = booleanValue(azArg[1]);
-    }else{
-      raw_printf(stderr, "Usage: .recommend on|off\n");
-      rc = 1;
-    }
-  }else
-
 
   if( c=='s' && strncmp(azArg[0], "scanstats", n)==0 ){
     if( nArg==2 ){
@@ -7337,9 +7306,6 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
           if( bail_on_error ) return rc;
         }
       }
-
-    }else if( strcmp(z, "-recommend") ){
-      data.bRecommend = 1;
     }else{
       utf8_printf(stderr,"%s: Error: unknown option: %s\n", Argv0, z);
       raw_printf(stderr,"Use -help for a list of options.\n");

@@ -1,5 +1,5 @@
-C Changes\sto\sallow\sindexes\sto\sbe\srecommended\sfor\squeries\son\sSQL\sviews.
-D 2017-04-06T18:44:18.391
+C Refactor\scode\sto\ssuggest\sindexes\sfrom\sthe\sshell\stool\sinto\san\sextension\sin\next/expert.\sUnfinished.
+D 2017-04-07T20:14:22.417
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a4c0613a18663bda56d8cf76079ab6590a7c3602e54befb4bbdef76bcaa38b6a
@@ -40,6 +40,9 @@ F ext/README.md fd5f78013b0a2bc6f0067afb19e6ad040e89a10179b4f6f03eee58fac5f169bd
 F ext/async/README.txt e12275968f6fde133a80e04387d0e839b0c51f91
 F ext/async/sqlite3async.c 0f3070cc3f5ede78f2b9361fb3b629ce200d7d74
 F ext/async/sqlite3async.h f489b080af7e72aec0e1ee6f1d98ab6cf2e4dcef
+F ext/expert/expert.c c73a0da702a2e9f5fd48046ab182683a73ee0318cefa3f45826536d015f39021
+F ext/expert/sqlite3expert.c 75ee320cf38b50df331232cbb60ec3b7703dd2770cc8df4ebbb445f664f6827d
+F ext/expert/sqlite3expert.h feeaee4ab73ba52426329781bbb28032ce18cf5abd2bf6221bac2df4c32b3013
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
 F ext/fts1/ft_hash.c 3927bd880e65329bdc6f506555b228b28924921b
 F ext/fts1/ft_hash.h 06df7bba40dadd19597aa400a875dbc2fed705ea
@@ -325,7 +328,7 @@ F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk e6f8f6895b75e4615a284b546933ca88fd56f3b85b560f4fb0da731abaa14f80
+F main.mk 6d4f1f1f78a6ac453d35f18c4e696fdefbe65dfec9530a41c5579ef8ec076072
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -402,8 +405,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 3e518b962d932a997fae373366880fc028c75706
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 2496d0cc6368dabe7ad2e4c7f5ed3ad9aa3b4d11cd90f33fa1d1ef72493f43aa
-F src/shell.c e524688c2544167f835ba43e24309f8707ca60c8ab6eb5c263a12c8618a233b8
-F src/shell_indexes.c 1f5ab036ec189411aeea27e6e74ab0009d831764d5d8517455dcb6b6a734beb7
+F src/shell.c ceb2b2f1f958ea2c47a7f37972d0f715fbf9dcf6a34a5e98c886b85e3ce6a238
 F src/sqlite.h.in ae5c9cbf2e77492c319fca08769575d9695e64718a16d32324944d24e291bcf7
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 58fd0676d3111d02e62e5a35992a7d3da5d3f88753acc174f2d37b774fbbdd28
@@ -1571,7 +1573,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5cd070000da1d9e399090677b4db75dc5639c33211385d6eb84f14a4d0b617cd
-R aa13547c61fd31f43629472eaf9b4008
+P 0884ff1da2e27b146c764b73cf299a1f2cfe213c4a79bde34dec02d1fc946e70
+R 2f1dd4cb0b48a4b54a46f30181a94d12
 U dan
-Z 2f3b5e2a515dd18e4123d763066c9a33
+Z bc46ca2174a3c856c4daa1344a9d88d3
