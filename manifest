@@ -1,5 +1,5 @@
-C Fix\sthe\s".lint\sfkey"\sshell\scommand\sfor\scases\swhere\sthe\schild\skey\sis\salso\san\nINTEGER\sPRIMARY\sKEY.
-D 2017-04-06T14:56:26.887
+C Use\sreplace()\sinstead\sof\schar()\sto\squote\snewline\sand\sreturn\scharacters\sin\nstrings\sin\sthe\soutput\sof\s.dump,\sto\savoid\sexcess\sexpression\scomplexity.
+D 2017-04-07T20:20:08.441
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a4c0613a18663bda56d8cf76079ab6590a7c3602e54befb4bbdef76bcaa38b6a
@@ -402,7 +402,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 3e518b962d932a997fae373366880fc028c75706
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c afcf31d8ed7c890328a31d3f350467ccd273af345b24562382b398d6d9cd0664
-F src/shell.c e9fede684f847402c0373fe5e270918e6ef47f51e57ba5aebff121d8c2bc1ea8
+F src/shell.c 3680725485ce5022dc683d593e8a4b95f973597d843ddb8be788d7dc24d16de9
 F src/sqlite.h.in ab77e511620eebbd4ed7e4f52fae697b6870dda66c945acd2d3066f99c98e17e
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 58fd0676d3111d02e62e5a35992a7d3da5d3f88753acc174f2d37b774fbbdd28
@@ -1570,7 +1570,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 327eff25ba2420267cc8dc49dd3c3aab45f4bf9e060d1ad480e25d016d21f3ba
-R 260410c30d599e0993c58e23cef69640
-U dan
-Z 25db1dc906fb1b522f7b655980ddd579
+P 48826b222c110a90996a84605318ea6b1e502b8c5129f4d561f8350dbdbcd264 4c2b572969ea2ed2a925444ecfa356aa877018cbb9c4f57d081ab4b535cd1dd0
+R 33164644836f84aff2e4df2bff5189e1
+T +closed 4c2b572969ea2ed2a925444ecfa356aa877018cbb9c4f57d081ab4b535cd1dd0
+U drh
+Z b74a0247eea28681dd3f2667b402dd90
