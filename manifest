@@ -1,5 +1,5 @@
-C Proof\sof\sconcept\sfor\sthe\sability\sto\suse\sthe\sexpression\scolumns\sin\san\sindex\non\sexpressions\sin\splace\sof\sequivalent\sexpressions\sin\sthe\sresult\sset\sor\sin\nthe\sWHERE\sclause.\s\sThis\scheck-in\scompiles\sbut\sis\smostly\suntested.
-D 2017-04-07T19:41:31.032
+C Remove\san\sunused\stoken\stype.
+D 2017-04-07T19:52:13.781
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a4c0613a18663bda56d8cf76079ab6590a7c3602e54befb4bbdef76bcaa38b6a
@@ -1482,7 +1482,7 @@ F test/zerodamage.test e59a56443d6298ecf7435f618f0b27654f0c849e
 F tool/GetFile.cs a15e08acb5dd7539b75ba23501581d7c2b462cb5
 F tool/GetTclKit.bat 6afa640edc7810725aec61c3076ac617c4aaf0b7
 F tool/Replace.cs 02c67258801c2fb5f63231e0ac0f220b4b36ba91
-F tool/addopcodes.tcl ffa614f3eac5bd6672a5ca7c936500645e01d3a9f8329ab7cbf86582dd17f936
+F tool/addopcodes.tcl 10c889c4a65ec6c5604e4a47306fa77ff57ae189
 F tool/build-all-msvc.bat c12328d06c45fec8baada5949e3d5af54bf8c887 x
 F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
 F tool/cg_anno.tcl f95b0006c52cf7f0496b506343415b6ee3cdcdd3 x
@@ -1570,10 +1570,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 48826b222c110a90996a84605318ea6b1e502b8c5129f4d561f8350dbdbcd264
-R c609ef75ab8f5bb5565771cdc08e2586
-T *branch * covering-index-on-expr
-T *sym-covering-index-on-expr *
-T -sym-trunk *
+P a52ef2ad7c0e14b78b801f16a1f6ea8d8fa9ae5d7d810e18dd24c600b662a312
+R ffc8fa52d9e0cf4a5ba4590fbfff02cc
 U drh
-Z 9d990a9e03df0f0f8f16d32c22292949
+Z e6d170fd55537b8013050239f469d07c
