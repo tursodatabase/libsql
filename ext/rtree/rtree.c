@@ -3205,6 +3205,28 @@ static int rtreeRename(sqlite3_vtab *pVtab, const char *zNewName){
   return rc;
 }
 
+/*
+** The xSavepoint method.
+**
+** This module does not need to do anything to support savepoints. However,
+** it uses this hook to close any open blob handle. This is done because a 
+** DROP TABLE command - which fortunately always opens a savepoint - cannot 
+** succeed if there are any open blob handles. i.e. if the blob handle were
+** not closed here, the following would fail:
+**
+**   BEGIN;
+**     INSERT INTO rtree...
+**     DROP TABLE <tablename>;    -- Would fail with SQLITE_LOCKED
+**   COMMIT;
+*/
+static int rtreeSavepoint(sqlite3_vtab *pVtab, int iSavepoint){
+  Rtree *pRtree = (Rtree *)pVtab;
+  int iwt = pRtree->inWrTrans;
+  pRtree->inWrTrans = 0;
+  nodeBlobReset(pRtree);
+  pRtree->inWrTrans = iwt;
+  return SQLITE_OK;
+}
 
 /*
 ** This function populates the pRtree->nRowEst variable with an estimate
@@ -3251,7 +3273,7 @@ static int rtreeQueryStat1(sqlite3 *db, Rtree *pRtree){
 }
 
 static sqlite3_module rtreeModule = {
-  0,                          /* iVersion */
+  2,                          /* iVersion */
   rtreeCreate,                /* xCreate - create a table */
   rtreeConnect,               /* xConnect - connect to an existing table */
   rtreeBestIndex,             /* xBestIndex - Determine search strategy */
@@ -3271,7 +3293,7 @@ static sqlite3_module rtreeModule = {
   rtreeEndTransaction,        /* xRollback - rollback transaction */
   0,                          /* xFindFunction - function overloading */
   rtreeRename,                /* xRename - rename the table */
-  0,                          /* xSavepoint */
+  rtreeSavepoint,             /* xSavepoint */
   0,                          /* xRelease */
   0,                          /* xRollbackTo */
 };
