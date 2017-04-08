@@ -1,5 +1,5 @@
-C Refactor\scode\sto\ssuggest\sindexes\sfrom\sthe\sshell\stool\sinto\san\sextension\sin\next/expert.\sUnfinished.
-D 2017-04-07T20:14:22.417
+C Use\shash\stables\sinstead\sof\sin-memory\sdatabase\stables\sfor\sa\sfew\spurposes\sin\nsqlite3expert.c.
+D 2017-04-08T17:41:24.364
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a4c0613a18663bda56d8cf76079ab6590a7c3602e54befb4bbdef76bcaa38b6a
@@ -41,7 +41,7 @@ F ext/async/README.txt e12275968f6fde133a80e04387d0e839b0c51f91
 F ext/async/sqlite3async.c 0f3070cc3f5ede78f2b9361fb3b629ce200d7d74
 F ext/async/sqlite3async.h f489b080af7e72aec0e1ee6f1d98ab6cf2e4dcef
 F ext/expert/expert.c c73a0da702a2e9f5fd48046ab182683a73ee0318cefa3f45826536d015f39021
-F ext/expert/sqlite3expert.c 75ee320cf38b50df331232cbb60ec3b7703dd2770cc8df4ebbb445f664f6827d
+F ext/expert/sqlite3expert.c c0e3ee75550fe73c3f6a536801071b97536e0907e898993086ab478853139327
 F ext/expert/sqlite3expert.h feeaee4ab73ba52426329781bbb28032ce18cf5abd2bf6221bac2df4c32b3013
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
 F ext/fts1/ft_hash.c 3927bd880e65329bdc6f506555b228b28924921b
@@ -1573,7 +1573,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0884ff1da2e27b146c764b73cf299a1f2cfe213c4a79bde34dec02d1fc946e70
-R 2f1dd4cb0b48a4b54a46f30181a94d12
+P 305e19f976ca064638a294e0817bf547ea745e1eb74746c5855514e6ced9c5fa
+R 628a1adb0870c895045a02cfe74a8f4c
 U dan
-Z bc46ca2174a3c856c4daa1344a9d88d3
+Z c1b7449477bbba31dce4f7f111235b67
