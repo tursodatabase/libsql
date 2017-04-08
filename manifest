@@ -1,5 +1,5 @@
-C Use\shash\stables\sinstead\sof\sin-memory\sdatabase\stables\sfor\sa\sfew\spurposes\sin\nsqlite3expert.c.
-D 2017-04-08T17:41:24.364
+C Rename\sshell6.test\sto\sexpert1.test.\sHave\sit\sinvoke\sthe\ssqlite3_expert\sbinary\nif\sit\sis\spresent.
+D 2017-04-08T18:56:32.081
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a4c0613a18663bda56d8cf76079ab6590a7c3602e54befb4bbdef76bcaa38b6a
@@ -40,8 +40,8 @@ F ext/README.md fd5f78013b0a2bc6f0067afb19e6ad040e89a10179b4f6f03eee58fac5f169bd
 F ext/async/README.txt e12275968f6fde133a80e04387d0e839b0c51f91
 F ext/async/sqlite3async.c 0f3070cc3f5ede78f2b9361fb3b629ce200d7d74
 F ext/async/sqlite3async.h f489b080af7e72aec0e1ee6f1d98ab6cf2e4dcef
-F ext/expert/expert.c c73a0da702a2e9f5fd48046ab182683a73ee0318cefa3f45826536d015f39021
-F ext/expert/sqlite3expert.c c0e3ee75550fe73c3f6a536801071b97536e0907e898993086ab478853139327
+F ext/expert/expert.c 861735e296c68cd442c20d5f6e75d07c957227009b79b31581a0971481e35d97
+F ext/expert/sqlite3expert.c 864ebebab5fd12cad8fb5debd26ff083dffe87ade15c1b6dcc7a7c3ae0afdd1b
 F ext/expert/sqlite3expert.h feeaee4ab73ba52426329781bbb28032ce18cf5abd2bf6221bac2df4c32b3013
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
 F ext/fts1/ft_hash.c 3927bd880e65329bdc6f506555b228b28924921b
@@ -699,6 +699,7 @@ F test/exclusive.test 9a57bd66e39144b888ca75c309914fcdefb4e3f9
 F test/exclusive2.test 984090e8e9d1b331d2e8111daf6e5d61dda0bef7
 F test/exec.test e949714dc127eaa5ecc7d723efec1ec27118fdd7
 F test/exists.test 79a75323c78f02bbe9c251ea502a092f9ef63dac
+F test/expert1.test 4108ab79ee454679e3d46e3703943ac49676b6174703a13ed81f9ee8cd794e68
 F test/expr.test 66a2c9ac34f74f036faa4092f5402c7d3162fc93
 F test/extension01.test 00d13cec817f331a687a243e0e5a2d87b0e358c9
 F test/extraquick.test cb254400bd42bfb777ff675356aabf3287978f79
@@ -1122,7 +1123,6 @@ F test/shell2.test e242a9912f44f4c23c3d1d802a83e934e84c853b
 F test/shell3.test 9b95ba643eaa228376f06a898fb410ee9b6e57c1
 F test/shell4.test 89ad573879a745974ff2df20ff97c5d6ffffbd5d
 F test/shell5.test 50a732c1c2158b1cd62cf53975ce1ea7ce6b9dc9
-F test/shell6.test f37998b26dfde19beaaf06a4cb60c476f66a7b54affff3870a2a011402c13efc
 F test/shell7.test 07751911b294698e0c5df67bcbd29e7d2f0f2907
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/show_speedtest1_rtree.tcl 32e6c5f073d7426148a6936a0408f4b5b169aba5
@@ -1573,7 +1573,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 305e19f976ca064638a294e0817bf547ea745e1eb74746c5855514e6ced9c5fa
-R 628a1adb0870c895045a02cfe74a8f4c
+P bf10e68d9e4d5eae7ae6148a7ad64c9596f2ed8ccd36065adb09a1f9e7dae50b
+R e14200231c0812aa1e853be6a898ba2f
 U dan
-Z c1b7449477bbba31dce4f7f111235b67
+Z b04d01a3056a5795f1f1bb4407f0bf9d

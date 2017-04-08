@@ -865,7 +865,7 @@ int idxFindIndexes(
     }
 
     for(pEntry=hIdx.pFirst; pEntry; pEntry=pEntry->pNext){
-      pStmt->zIdx = idxAppendText(&rc, pStmt->zIdx, "%s\n", pEntry->zKey);
+      pStmt->zIdx = idxAppendText(&rc, pStmt->zIdx, "%s;\n", pEntry->zKey);
     }
     if( pStmt->zIdx==0 ){
       pStmt->zIdx = idxAppendText(&rc, 0, "(no new indexes)\n");
