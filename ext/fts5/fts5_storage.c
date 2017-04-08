@@ -218,7 +218,7 @@ static void fts5StorageRenameOne(
 
 int sqlite3Fts5StorageRename(Fts5Storage *pStorage, const char *zName){
   Fts5Config *pConfig = pStorage->pConfig;
-  int rc = sqlite3Fts5StorageSync(pStorage, 1);
+  int rc = sqlite3Fts5StorageSync(pStorage);
 
   fts5StorageRenameOne(pConfig, &rc, "data", zName);
   fts5StorageRenameOne(pConfig, &rc, "idx", zName);
@@ -1081,15 +1081,15 @@ int sqlite3Fts5StorageRowCount(Fts5Storage *p, i64 *pnRow){
 /*
 ** Flush any data currently held in-memory to disk.
 */
-int sqlite3Fts5StorageSync(Fts5Storage *p, int bCommit){
+int sqlite3Fts5StorageSync(Fts5Storage *p){
   int rc = SQLITE_OK;
   i64 iLastRowid = sqlite3_last_insert_rowid(p->pConfig->db);
   if( p->bTotalsValid ){
     rc = fts5StorageSaveTotals(p);
-    if( bCommit ) p->bTotalsValid = 0;
+    p->bTotalsValid = 0;
   }
   if( rc==SQLITE_OK ){
-    rc = sqlite3Fts5IndexSync(p->pIndex, bCommit);
+    rc = sqlite3Fts5IndexSync(p->pIndex);
   }
   sqlite3_set_last_insert_rowid(p->pConfig->db, iLastRowid);
   return rc;
