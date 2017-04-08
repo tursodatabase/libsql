@@ -446,9 +446,9 @@ int sqlite3Fts5IndexBeginWrite(
 
 /*
 ** Flush any data stored in the in-memory hash tables to the database.
-** If the bCommit flag is true, also close any open blob handles.
+** Also close any open blob handles.
 */
-int sqlite3Fts5IndexSync(Fts5Index *p, int bCommit);
+int sqlite3Fts5IndexSync(Fts5Index *p);
 
 /*
 ** Discard any data stored in the in-memory hash tables. Do not write it
@@ -618,7 +618,7 @@ int sqlite3Fts5StorageDocsize(Fts5Storage *p, i64 iRowid, int *aCol);
 int sqlite3Fts5StorageSize(Fts5Storage *p, int iCol, i64 *pnAvg);
 int sqlite3Fts5StorageRowCount(Fts5Storage *p, i64 *pnRow);
 
-int sqlite3Fts5StorageSync(Fts5Storage *p, int bCommit);
+int sqlite3Fts5StorageSync(Fts5Storage *p);
 int sqlite3Fts5StorageRollback(Fts5Storage *p);
 
 int sqlite3Fts5StorageConfigValue(

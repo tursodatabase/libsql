@@ -628,7 +628,6 @@ static void fts5CloseReader(Fts5Index *p){
   }
 }
 
-
 /*
 ** Retrieve a record from the %_data table.
 **
@@ -5131,10 +5130,10 @@ int sqlite3Fts5IndexBeginWrite(Fts5Index *p, int bDelete, i64 iRowid){
 /*
 ** Commit data to disk.
 */
-int sqlite3Fts5IndexSync(Fts5Index *p, int bCommit){
+int sqlite3Fts5IndexSync(Fts5Index *p){
   assert( p->rc==SQLITE_OK );
   fts5IndexFlush(p);
-  if( bCommit ) fts5CloseReader(p);
+  fts5CloseReader(p);
   return fts5IndexReturn(p);
 }
 

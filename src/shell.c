@@ -1512,10 +1512,48 @@ static const char *unused_string(
 /*
 ** Output the given string as a quoted string using SQL quoting conventions.
 **
-** The "\n" and "\r" characters are converted to char(10) and char(13)
-** to prevent them from being transformed by end-of-line translators.
+** See also: output_quoted_escaped_string()
 */
 static void output_quoted_string(FILE *out, const char *z){
+  int i;
+  char c;
+  setBinaryMode(out, 1);
+  for(i=0; (c = z[i])!=0 && c!='\''; i++){}
+  if( c==0 ){
+    utf8_printf(out,"'%s'",z);
+  }else{
+    raw_printf(out, "'");
+    while( *z ){
+      for(i=0; (c = z[i])!=0 && c!='\''; i++){}
+      if( c=='\'' ) i++;
+      if( i ){
+        utf8_printf(out, "%.*s", i, z);
+        z += i;
+      }
+      if( c=='\'' ){
+        raw_printf(out, "'");
+        continue;
+      }
+      if( c==0 ){
+        break;
+      }
+      z++;
+    }
+    raw_printf(out, "'");
+  }
+  setTextMode(out, 1);
+}
+
+/*
+** Output the given string as a quoted string using SQL quoting conventions.
+** Additionallly , escape the "\n" and "\r" characters so that they do not
+** get corrupted by end-of-line translation facilities in some operating
+** systems.
+**
+** This is like output_quoted_string() but with the addition of the \r\n
+** escape mechanism.
+*/
+static void output_quoted_escaped_string(FILE *out, const char *z){
   int i;
   char c;
   setBinaryMode(out, 1);
@@ -2031,21 +2069,53 @@ static int shell_callback(
       setTextMode(p->out, 1);
       break;
     }
-    case MODE_Quote:
     case MODE_Insert: {
       if( azArg==0 ) break;
-      if( p->cMode==MODE_Insert ){
-        utf8_printf(p->out,"INSERT INTO %s",p->zDestTable);
-        if( p->showHeader ){
-          raw_printf(p->out,"(");
-          for(i=0; i<nArg; i++){
-            char *zSep = i>0 ? ",": "";
-            utf8_printf(p->out, "%s%s", zSep, azCol[i]);
+      utf8_printf(p->out,"INSERT INTO %s",p->zDestTable);
+      if( p->showHeader ){
+        raw_printf(p->out,"(");
+        for(i=0; i<nArg; i++){
+          if( i>0 ) raw_printf(p->out, ",");
+          if( quoteChar(azCol[i]) ){
+            char *z = sqlite3_mprintf("\"%w\"", azCol[i]);
+            utf8_printf(p->out, "%s", z);
+            sqlite3_free(z);
+          }else{
+            raw_printf(p->out, "%s", azCol[i]);
           }
-          raw_printf(p->out,")");
         }
-        raw_printf(p->out," VALUES(");
-      }else if( p->cnt==0 && p->showHeader ){
+        raw_printf(p->out,")");
+      }
+      p->cnt++;
+      for(i=0; i<nArg; i++){
+        raw_printf(p->out, i>0 ? "," : " VALUES(");
+        if( (azArg[i]==0) || (aiType && aiType[i]==SQLITE_NULL) ){
+          utf8_printf(p->out,"NULL");
+        }else if( aiType && aiType[i]==SQLITE_TEXT ){
+          output_quoted_escaped_string(p->out, azArg[i]);
+        }else if( aiType && aiType[i]==SQLITE_INTEGER ){
+          utf8_printf(p->out,"%s", azArg[i]);
+        }else if( aiType && aiType[i]==SQLITE_FLOAT ){
+          char z[50];
+          double r = sqlite3_column_double(p->pStmt, i);
+          sqlite3_snprintf(50,z,"%!.20g", r);
+          raw_printf(p->out, "%s", z);
+        }else if( aiType && aiType[i]==SQLITE_BLOB && p->pStmt ){
+          const void *pBlob = sqlite3_column_blob(p->pStmt, i);
+          int nBlob = sqlite3_column_bytes(p->pStmt, i);
+          output_hex_blob(p->out, pBlob, nBlob);
+        }else if( isNumber(azArg[i], 0) ){
+          utf8_printf(p->out,"%s", azArg[i]);
+        }else{
+          output_quoted_escaped_string(p->out, azArg[i]);
+        }
+      }
+      raw_printf(p->out,");\n");
+      break;
+    }
+    case MODE_Quote: {
+      if( azArg==0 ) break;
+      if( p->cnt==0 && p->showHeader ){
         for(i=0; i<nArg; i++){
           if( i>0 ) raw_printf(p->out, ",");
           output_quoted_string(p->out, azCol[i]);
@@ -2054,32 +2124,29 @@ static int shell_callback(
       }
       p->cnt++;
       for(i=0; i<nArg; i++){
-        char *zSep = i>0 ? ",": "";
+        if( i>0 ) raw_printf(p->out, ",");
         if( (azArg[i]==0) || (aiType && aiType[i]==SQLITE_NULL) ){
-          utf8_printf(p->out,"%sNULL",zSep);
+          utf8_printf(p->out,"NULL");
         }else if( aiType && aiType[i]==SQLITE_TEXT ){
-          if( zSep[0] ) utf8_printf(p->out,"%s",zSep);
           output_quoted_string(p->out, azArg[i]);
         }else if( aiType && aiType[i]==SQLITE_INTEGER ){
-          utf8_printf(p->out,"%s%s",zSep, azArg[i]);
+          utf8_printf(p->out,"%s", azArg[i]);
         }else if( aiType && aiType[i]==SQLITE_FLOAT ){
           char z[50];
           double r = sqlite3_column_double(p->pStmt, i);
           sqlite3_snprintf(50,z,"%!.20g", r);
-          raw_printf(p->out, "%s%s", zSep, z);
+          raw_printf(p->out, "%s", z);
         }else if( aiType && aiType[i]==SQLITE_BLOB && p->pStmt ){
           const void *pBlob = sqlite3_column_blob(p->pStmt, i);
           int nBlob = sqlite3_column_bytes(p->pStmt, i);
-          if( zSep[0] ) utf8_printf(p->out,"%s",zSep);
           output_hex_blob(p->out, pBlob, nBlob);
         }else if( isNumber(azArg[i], 0) ){
-          utf8_printf(p->out,"%s%s",zSep, azArg[i]);
+          utf8_printf(p->out,"%s", azArg[i]);
         }else{
-          if( zSep[0] ) utf8_printf(p->out,"%s",zSep);
           output_quoted_string(p->out, azArg[i]);
         }
       }
-      raw_printf(p->out,p->cMode==MODE_Quote?"\n":");\n");
+      raw_printf(p->out,"\n");
       break;
     }
     case MODE_Ascii: {
@@ -4717,6 +4784,7 @@ static int do_meta_command(char *zLine, ShellState *p){
   if( c=='d' && strncmp(azArg[0], "dump", n)==0 ){
     const char *zLike = 0;
     int i;
+    int savedShowHeader = p->showHeader;
     ShellClearFlag(p, SHFLG_PreserveRowid);
     for(i=1; i<nArg; i++){
       if( azArg[i][0]=='-' ){
@@ -4752,6 +4820,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     raw_printf(p->out, "PRAGMA foreign_keys=OFF;\n");
     raw_printf(p->out, "BEGIN TRANSACTION;\n");
     p->writableSchema = 0;
+    p->showHeader = 0;
     /* Set writable_schema=ON since doing so forces SQLite to initialize
     ** as much of the schema as it can even if the sqlite_master table is
     ** corrupt. */
@@ -4793,6 +4862,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     sqlite3_exec(p->db, "PRAGMA writable_schema=OFF;", 0, 0, 0);
     sqlite3_exec(p->db, "RELEASE dump;", 0, 0, 0);
     raw_printf(p->out, p->nErr ? "ROLLBACK; -- due to errors\n" : "COMMIT;\n");
+    p->showHeader = savedShowHeader;
   }else
 
   if( c=='e' && strncmp(azArg[0], "echo", n)==0 ){
