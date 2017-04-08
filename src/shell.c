@@ -2039,8 +2039,14 @@ static int shell_callback(
         if( p->showHeader ){
           raw_printf(p->out,"(");
           for(i=0; i<nArg; i++){
-            char *zSep = i>0 ? ",": "";
-            utf8_printf(p->out, "%s%s", zSep, azCol[i]);
+            if( i>0 ) raw_printf(p->out, ",");
+            if( quoteChar(azCol[i]) ){
+              char *z = sqlite3_mprintf("\"%w\"", azCol[i]);
+              utf8_printf(p->out, "%s", z);
+              sqlite3_free(z);
+            }else{
+              raw_printf(p->out, "%s", azCol[i]);
+            }
           }
           raw_printf(p->out,")");
         }
@@ -4717,6 +4723,7 @@ static int do_meta_command(char *zLine, ShellState *p){
   if( c=='d' && strncmp(azArg[0], "dump", n)==0 ){
     const char *zLike = 0;
     int i;
+    int savedShowHeader = p->showHeader;
     ShellClearFlag(p, SHFLG_PreserveRowid);
     for(i=1; i<nArg; i++){
       if( azArg[i][0]=='-' ){
@@ -4752,6 +4759,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     raw_printf(p->out, "PRAGMA foreign_keys=OFF;\n");
     raw_printf(p->out, "BEGIN TRANSACTION;\n");
     p->writableSchema = 0;
+    p->showHeader = 0;
     /* Set writable_schema=ON since doing so forces SQLite to initialize
     ** as much of the schema as it can even if the sqlite_master table is
     ** corrupt. */
@@ -4793,6 +4801,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     sqlite3_exec(p->db, "PRAGMA writable_schema=OFF;", 0, 0, 0);
     sqlite3_exec(p->db, "RELEASE dump;", 0, 0, 0);
     raw_printf(p->out, p->nErr ? "ROLLBACK; -- due to errors\n" : "COMMIT;\n");
+    p->showHeader = savedShowHeader;
   }else
 
   if( c=='e' && strncmp(azArg[0], "echo", n)==0 ){
