@@ -1038,7 +1038,7 @@ static SQLITE_NOINLINE void sqlite3ExprDeleteNN(sqlite3 *db, Expr *p){
   }
   if( ExprHasProperty(p, EP_MemToken) ) sqlite3DbFree(db, p->u.zToken);
   if( !ExprHasProperty(p, EP_Static) ){
-    sqlite3DbFree(db, p);
+    sqlite3DbFreeNN(db, p);
   }
 }
 void sqlite3ExprDelete(sqlite3 *db, Expr *p){
@@ -1305,15 +1305,11 @@ ExprList *sqlite3ExprListDup(sqlite3 *db, ExprList *p, int flags){
   Expr *pPriorSelectCol = 0;
   assert( db!=0 );
   if( p==0 ) return 0;
-  pNew = sqlite3DbMallocRawNN(db, sizeof(*pNew) );
+  pNew = sqlite3DbMallocRawNN(db, 
+             sizeof(*pNew)+sizeof(pNew->a[0])*(p->nExpr-1) );
   if( pNew==0 ) return 0;
-  pNew->nExpr = i = p->nExpr;
-  if( (flags & EXPRDUP_REDUCE)==0 ) for(i=1; i<p->nExpr; i+=i){}
-  pNew->a = pItem = sqlite3DbMallocRawNN(db,  i*sizeof(p->a[0]) );
-  if( pItem==0 ){
-    sqlite3DbFree(db, pNew);
-    return 0;
-  } 
+  pNew->nAlloc = pNew->nExpr = p->nExpr;
+  pItem = pNew->a;
   pOldItem = p->a;
   for(i=0; i<p->nExpr; i++, pItem++, pOldItem++){
     Expr *pOldExpr = pOldItem->pExpr;
@@ -1404,7 +1400,7 @@ IdList *sqlite3IdListDup(sqlite3 *db, IdList *p){
   pNew->nId = p->nId;
   pNew->a = sqlite3DbMallocRawNN(db, p->nId*sizeof(p->a[0]) );
   if( pNew->a==0 ){
-    sqlite3DbFree(db, pNew);
+    sqlite3DbFreeNN(db, pNew);
     return 0;
   }
   /* Note that because the size of the allocation for p->a[] is not
@@ -1475,6 +1471,7 @@ ExprList *sqlite3ExprListAppend(
   ExprList *pList,        /* List to which to append. Might be NULL */
   Expr *pExpr             /* Expression to be appended. Might be NULL */
 ){
+  struct ExprList_item *pItem;
   sqlite3 *db = pParse->db;
   assert( db!=0 );
   if( pList==0 ){
@@ -1483,23 +1480,20 @@ ExprList *sqlite3ExprListAppend(
       goto no_mem;
     }
     pList->nExpr = 0;
-    pList->a = sqlite3DbMallocRawNN(db, sizeof(pList->a[0]));
-    if( pList->a==0 ) goto no_mem;
-  }else if( (pList->nExpr & (pList->nExpr-1))==0 ){
-    struct ExprList_item *a;
-    assert( pList->nExpr>0 );
-    a = sqlite3DbRealloc(db, pList->a, pList->nExpr*2*sizeof(pList->a[0]));
-    if( a==0 ){
+    pList->nAlloc = 1;
+  }else if( pList->nExpr==pList->nAlloc ){
+    ExprList *pNew;
+    pNew = sqlite3DbRealloc(db, pList, 
+             sizeof(*pList)+(2*pList->nAlloc - 1)*sizeof(pList->a[0]));
+    if( pNew==0 ){
       goto no_mem;
     }
-    pList->a = a;
+    pList = pNew;
+    pList->nAlloc *= 2;
   }
-  assert( pList->a!=0 );
-  if( 1 ){
-    struct ExprList_item *pItem = &pList->a[pList->nExpr++];
-    memset(pItem, 0, sizeof(*pItem));
-    pItem->pExpr = pExpr;
-  }
+  pItem = &pList->a[pList->nExpr++];
+  memset(pItem, 0, sizeof(*pItem));
+  pItem->pExpr = pExpr;
   return pList;
 
 no_mem:     
@@ -1556,20 +1550,19 @@ ExprList *sqlite3ExprListAppendVector(
     }
   }
 
-  if( pExpr->op==TK_SELECT ){
-    if( pList && pList->a[iFirst].pExpr ){
-      Expr *pFirst = pList->a[iFirst].pExpr;
-      assert( pFirst->op==TK_SELECT_COLUMN );
+  if( pExpr->op==TK_SELECT && pList ){
+    Expr *pFirst = pList->a[iFirst].pExpr;
+    assert( pFirst!=0 );
+    assert( pFirst->op==TK_SELECT_COLUMN );
      
-      /* Store the SELECT statement in pRight so it will be deleted when
-      ** sqlite3ExprListDelete() is called */
-      pFirst->pRight = pExpr;
-      pExpr = 0;
+    /* Store the SELECT statement in pRight so it will be deleted when
+    ** sqlite3ExprListDelete() is called */
+    pFirst->pRight = pExpr;
+    pExpr = 0;
 
-      /* Remember the size of the LHS in iTable so that we can check that
-      ** the RHS and LHS sizes match during code generation. */
-      pFirst->iTable = pColumns->nId;
-    }
+    /* Remember the size of the LHS in iTable so that we can check that
+    ** the RHS and LHS sizes match during code generation. */
+    pFirst->iTable = pColumns->nId;
   }
 
 vector_append_error:
@@ -1663,16 +1656,16 @@ void sqlite3ExprListCheckLength(
 ** Delete an entire expression list.
 */
 static SQLITE_NOINLINE void exprListDeleteNN(sqlite3 *db, ExprList *pList){
-  int i;
-  struct ExprList_item *pItem;
-  assert( pList->a!=0 || pList->nExpr==0 );
-  for(pItem=pList->a, i=0; i<pList->nExpr; i++, pItem++){
+  int i = pList->nExpr;
+  struct ExprList_item *pItem =  pList->a;
+  assert( pList->nExpr>0 );
+  do{
     sqlite3ExprDelete(db, pItem->pExpr);
     sqlite3DbFree(db, pItem->zName);
     sqlite3DbFree(db, pItem->zSpan);
-  }
-  sqlite3DbFree(db, pList->a);
-  sqlite3DbFree(db, pList);
+    pItem++;
+  }while( --i>0 );
+  sqlite3DbFreeNN(db, pList);
 }
 void sqlite3ExprListDelete(sqlite3 *db, ExprList *pList){
   if( pList ) exprListDeleteNN(db, pList);

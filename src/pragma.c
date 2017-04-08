@@ -1542,25 +1542,28 @@ void sqlite3Pragma(
         }
         /* Verify CHECK constraints */
         if( pTab->pCheck && (db->flags & SQLITE_IgnoreChecks)==0 ){
-          int addrCkFault = sqlite3VdbeMakeLabel(v);
-          int addrCkOk = sqlite3VdbeMakeLabel(v);
-          ExprList *pCheck = pTab->pCheck;
-          char *zErr;
-          int k;
-          pParse->iSelfTab = iDataCur;
-          sqlite3ExprCachePush(pParse);
-          for(k=pCheck->nExpr-1; k>0; k--){
-            sqlite3ExprIfFalse(pParse, pCheck->a[k].pExpr, addrCkFault, 0);
+          ExprList *pCheck = sqlite3ExprListDup(db, pTab->pCheck, 0);
+          if( db->mallocFailed==0 ){
+            int addrCkFault = sqlite3VdbeMakeLabel(v);
+            int addrCkOk = sqlite3VdbeMakeLabel(v);
+            char *zErr;
+            int k;
+            pParse->iSelfTab = iDataCur;
+            sqlite3ExprCachePush(pParse);
+            for(k=pCheck->nExpr-1; k>0; k--){
+              sqlite3ExprIfFalse(pParse, pCheck->a[k].pExpr, addrCkFault, 0);
+            }
+            sqlite3ExprIfTrue(pParse, pCheck->a[0].pExpr, addrCkOk, 
+                SQLITE_JUMPIFNULL);
+            sqlite3VdbeResolveLabel(v, addrCkFault);
+            zErr = sqlite3MPrintf(db, "CHECK constraint failed in %s",
+                pTab->zName);
+            sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0, zErr, P4_DYNAMIC);
+            integrityCheckResultRow(v, 3);
+            sqlite3VdbeResolveLabel(v, addrCkOk);
+            sqlite3ExprCachePop(pParse);
           }
-          sqlite3ExprIfTrue(pParse, pCheck->a[0].pExpr, addrCkOk, 
-                            SQLITE_JUMPIFNULL);
-          sqlite3VdbeResolveLabel(v, addrCkFault);
-          zErr = sqlite3MPrintf(db, "CHECK constraint failed in %s",
-                                pTab->zName);
-          sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0, zErr, P4_DYNAMIC);
-          integrityCheckResultRow(v, 3);
-          sqlite3VdbeResolveLabel(v, addrCkOk);
-          sqlite3ExprCachePop(pParse);
+          sqlite3ExprListDelete(db, pCheck);
         }
         /* Validate index entries for the current row */
         for(j=0, pIdx=pTab->pIndex; pIdx && !isQuick; pIdx=pIdx->pNext, j++){

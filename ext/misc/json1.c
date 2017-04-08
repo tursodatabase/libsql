@@ -727,13 +727,14 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
   int iThis;
   int x;
   JsonNode *pNode;
-  while( safe_isspace(pParse->zJson[i]) ){ i++; }
-  if( (c = pParse->zJson[i])=='{' ){
+  const char *z = pParse->zJson;
+  while( safe_isspace(z[i]) ){ i++; }
+  if( (c = z[i])=='{' ){
     /* Parse object */
     iThis = jsonParseAddNode(pParse, JSON_OBJECT, 0, 0);
     if( iThis<0 ) return -1;
     for(j=i+1;;j++){
-      while( safe_isspace(pParse->zJson[j]) ){ j++; }
+      while( safe_isspace(z[j]) ){ j++; }
       x = jsonParseValue(pParse, j);
       if( x<0 ){
         if( x==(-2) && pParse->nNode==(u32)iThis+1 ) return j+1;
@@ -744,14 +745,14 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
       if( pNode->eType!=JSON_STRING ) return -1;
       pNode->jnFlags |= JNODE_LABEL;
       j = x;
-      while( safe_isspace(pParse->zJson[j]) ){ j++; }
-      if( pParse->zJson[j]!=':' ) return -1;
+      while( safe_isspace(z[j]) ){ j++; }
+      if( z[j]!=':' ) return -1;
       j++;
       x = jsonParseValue(pParse, j);
       if( x<0 ) return -1;
       j = x;
-      while( safe_isspace(pParse->zJson[j]) ){ j++; }
-      c = pParse->zJson[j];
+      while( safe_isspace(z[j]) ){ j++; }
+      c = z[j];
       if( c==',' ) continue;
       if( c!='}' ) return -1;
       break;
@@ -763,15 +764,15 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
     iThis = jsonParseAddNode(pParse, JSON_ARRAY, 0, 0);
     if( iThis<0 ) return -1;
     for(j=i+1;;j++){
-      while( safe_isspace(pParse->zJson[j]) ){ j++; }
+      while( safe_isspace(z[j]) ){ j++; }
       x = jsonParseValue(pParse, j);
       if( x<0 ){
         if( x==(-3) && pParse->nNode==(u32)iThis+1 ) return j+1;
         return -1;
       }
       j = x;
-      while( safe_isspace(pParse->zJson[j]) ){ j++; }
-      c = pParse->zJson[j];
+      while( safe_isspace(z[j]) ){ j++; }
+      c = z[j];
       if( c==',' ) continue;
       if( c!=']' ) return -1;
       break;
@@ -783,13 +784,13 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
     u8 jnFlags = 0;
     j = i+1;
     for(;;){
-      c = pParse->zJson[j];
+      c = z[j];
       if( c==0 ) return -1;
       if( c=='\\' ){
-        c = pParse->zJson[++j];
+        c = z[++j];
         if( c=='"' || c=='\\' || c=='/' || c=='b' || c=='f'
            || c=='n' || c=='r' || c=='t'
-           || (c=='u' && jsonIs4Hex(pParse->zJson+j+1)) ){
+           || (c=='u' && jsonIs4Hex(z+j+1)) ){
           jnFlags = JNODE_ESCAPE;
         }else{
           return -1;
@@ -799,55 +800,60 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
       }
       j++;
     }
-    jsonParseAddNode(pParse, JSON_STRING, j+1-i, &pParse->zJson[i]);
+    jsonParseAddNode(pParse, JSON_STRING, j+1-i, &z[i]);
     if( !pParse->oom ) pParse->aNode[pParse->nNode-1].jnFlags = jnFlags;
     return j+1;
   }else if( c=='n'
-         && strncmp(pParse->zJson+i,"null",4)==0
-         && !safe_isalnum(pParse->zJson[i+4]) ){
+         && strncmp(z+i,"null",4)==0
+         && !safe_isalnum(z[i+4]) ){
     jsonParseAddNode(pParse, JSON_NULL, 0, 0);
     return i+4;
   }else if( c=='t'
-         && strncmp(pParse->zJson+i,"true",4)==0
-         && !safe_isalnum(pParse->zJson[i+4]) ){
+         && strncmp(z+i,"true",4)==0
+         && !safe_isalnum(z[i+4]) ){
     jsonParseAddNode(pParse, JSON_TRUE, 0, 0);
     return i+4;
   }else if( c=='f'
-         && strncmp(pParse->zJson+i,"false",5)==0
-         && !safe_isalnum(pParse->zJson[i+5]) ){
+         && strncmp(z+i,"false",5)==0
+         && !safe_isalnum(z[i+5]) ){
     jsonParseAddNode(pParse, JSON_FALSE, 0, 0);
     return i+5;
   }else if( c=='-' || (c>='0' && c<='9') ){
     /* Parse number */
     u8 seenDP = 0;
     u8 seenE = 0;
+    assert( '-' < '0' );
+    if( c<='0' ){
+      j = c=='-' ? i+1 : i;
+      if( z[j]=='0' && z[j+1]>='0' && z[j+1]<='9' ) return -1;
+    }
     j = i+1;
     for(;; j++){
-      c = pParse->zJson[j];
+      c = z[j];
       if( c>='0' && c<='9' ) continue;
       if( c=='.' ){
-        if( pParse->zJson[j-1]=='-' ) return -1;
+        if( z[j-1]=='-' ) return -1;
         if( seenDP ) return -1;
         seenDP = 1;
         continue;
       }
       if( c=='e' || c=='E' ){
-        if( pParse->zJson[j-1]<'0' ) return -1;
+        if( z[j-1]<'0' ) return -1;
         if( seenE ) return -1;
         seenDP = seenE = 1;
-        c = pParse->zJson[j+1];
+        c = z[j+1];
         if( c=='+' || c=='-' ){
           j++;
-          c = pParse->zJson[j+1];
+          c = z[j+1];
         }
         if( c<'0' || c>'9' ) return -1;
         continue;
       }
       break;
     }
-    if( pParse->zJson[j-1]<'0' ) return -1;
+    if( z[j-1]<'0' ) return -1;
     jsonParseAddNode(pParse, seenDP ? JSON_REAL : JSON_INT,
-                        j - i, &pParse->zJson[i]);
+                        j - i, &z[i]);
     return j;
   }else if( c=='}' ){
     return -2;  /* End of {...} */

@@ -517,10 +517,10 @@ struct BtCursor {
   ** initialized. */
   i8 iPage;                 /* Index of current page in apPage */
   u8 curIntKey;             /* Value of apPage[0]->intKey */
-  struct KeyInfo *pKeyInfo; /* Argument passed to comparison function */
-  void *padding1;           /* Make object size a multiple of 16 */
-  u16 aiIdx[BTCURSOR_MAX_DEPTH];        /* Current index in apPage[i] */
-  MemPage *apPage[BTCURSOR_MAX_DEPTH];  /* Pages from root to current page */
+  u16 ix;                   /* Current index for apPage[iPage] */
+  u16 aiIdx[BTCURSOR_MAX_DEPTH-1];     /* Current index in apPage[i] */
+  struct KeyInfo *pKeyInfo;            /* Arg passed to comparison function */
+  MemPage *apPage[BTCURSOR_MAX_DEPTH]; /* Pages from root to current page */
 };
 
 /*

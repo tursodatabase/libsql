@@ -22,7 +22,7 @@ set testprefix sync2
 # enabled. Also, since every test uses an ATTACHed database, they
 # are only run when ATTACH is enabled.
 #
-ifcapable !pager_pragmas||!attach {
+ifcapable !pager_pragmas||!attach||!dirsync {
   finish_test
   return
 }

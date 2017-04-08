@@ -858,37 +858,36 @@ static int vdbeSorterCompareInt(
   assert( (s1>0 && s1<7) || s1==8 || s1==9 );
   assert( (s2>0 && s2<7) || s2==8 || s2==9 );
 
-  if( s1>7 && s2>7 ){
+  if( s1==s2 ){
+    /* The two values have the same sign. Compare using memcmp(). */
+    static const u8 aLen[] = {0, 1, 2, 3, 4, 6, 8, 0, 0, 0 };
+    const u8 n = aLen[s1];
+    int i;
+    res = 0;
+    for(i=0; i<n; i++){
+      if( (res = v1[i] - v2[i])!=0 ){
+        if( ((v1[0] ^ v2[0]) & 0x80)!=0 ){
+          res = v1[0] & 0x80 ? -1 : +1;
+        }
+        break;
+      }
+    }
+  }else if( s1>7 && s2>7 ){
     res = s1 - s2;
   }else{
-    if( s1==s2 ){
-      if( (*v1 ^ *v2) & 0x80 ){
-        /* The two values have different signs */
-        res = (*v1 & 0x80) ? -1 : +1;
-      }else{
-        /* The two values have the same sign. Compare using memcmp(). */
-        static const u8 aLen[] = {0, 1, 2, 3, 4, 6, 8 };
-        int i;
-        res = 0;
-        for(i=0; i<aLen[s1]; i++){
-          if( (res = v1[i] - v2[i]) ) break;
-        }
-      }
+    if( s2>7 ){
+      res = +1;
+    }else if( s1>7 ){
+      res = -1;
     }else{
-      if( s2>7 ){
-        res = +1;
-      }else if( s1>7 ){
-        res = -1;
-      }else{
-        res = s1 - s2;
-      }
-      assert( res!=0 );
+      res = s1 - s2;
+    }
+    assert( res!=0 );
 
-      if( res>0 ){
-        if( *v1 & 0x80 ) res = -1;
-      }else{
-        if( *v2 & 0x80 ) res = +1;
-      }
+    if( res>0 ){
+      if( *v1 & 0x80 ) res = -1;
+    }else{
+      if( *v2 & 0x80 ) res = +1;
     }
   }
 
