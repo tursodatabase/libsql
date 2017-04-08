@@ -482,7 +482,7 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   sqlite3 *db = pParse->db;       /* The database connection */
   int mxSqlLen;                   /* Max length of an SQL string */
 #ifdef sqlite3Parser_ENGINEALWAYSONSTACK
-  unsigned char zSpace[sizeof(yyParser)];  /* Space for parser engine object */
+  yyParser sEngine;    /* Space to hold the Lemon-generated Parser object */
 #endif
 
   assert( zSql!=0 );
@@ -495,7 +495,7 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   assert( pzErrMsg!=0 );
   /* sqlite3ParserTrace(stdout, "parser: "); */
 #ifdef sqlite3Parser_ENGINEALWAYSONSTACK
-  pEngine = zSpace;
+  pEngine = &sEngine;
   sqlite3ParserInit(pEngine);
 #else
   pEngine = sqlite3ParserAlloc(sqlite3Malloc);
@@ -604,7 +604,7 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   while( pParse->pAinc ){
     AutoincInfo *p = pParse->pAinc;
     pParse->pAinc = p->pNext;
-    sqlite3DbFree(db, p);
+    sqlite3DbFreeNN(db, p);
   }
   while( pParse->pZombieTab ){
     Table *p = pParse->pZombieTab;

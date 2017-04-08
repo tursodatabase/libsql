@@ -1489,6 +1489,27 @@ static void output_hex_blob(FILE *out, const void *pBlob, int nBlob){
 }
 
 /*
+** Find a string that is not found anywhere in z[].  Return a pointer
+** to that string.
+**
+** Try to use zA and zB first.  If both of those are already found in z[]
+** then make up some string and store it in the buffer zBuf.
+*/
+static const char *unused_string(
+  const char *z,                    /* Result must not appear anywhere in z */
+  const char *zA, const char *zB,   /* Try these first */
+  char *zBuf                        /* Space to store a generated string */
+){
+  unsigned i = 0;
+  if( strstr(z, zA)==0 ) return zA;
+  if( strstr(z, zB)==0 ) return zB;
+  do{
+    sqlite3_snprintf(20,zBuf,"(%s%u)", zA, i++);
+  }while( strstr(z,zBuf)!=0 );
+  return zBuf;
+}
+
+/*
 ** Output the given string as a quoted string using SQL quoting conventions.
 **
 ** The "\n" and "\r" characters are converted to char(10) and char(13)
@@ -1502,40 +1523,52 @@ static void output_quoted_string(FILE *out, const char *z){
   if( c==0 ){
     utf8_printf(out,"'%s'",z);
   }else{
-    int inQuote = 0;
-    int bStarted = 0;
+    const char *zNL = 0;
+    const char *zCR = 0;
+    int nNL = 0;
+    int nCR = 0;
+    char zBuf1[20], zBuf2[20];
+    for(i=0; z[i]; i++){
+      if( z[i]=='\n' ) nNL++;
+      if( z[i]=='\r' ) nCR++;
+    }
+    if( nNL ){
+      raw_printf(out, "replace(");
+      zNL = unused_string(z, "\\n", "\\012", zBuf1);
+    }
+    if( nCR ){
+      raw_printf(out, "replace(");
+      zCR = unused_string(z, "\\r", "\\015", zBuf2);
+    }
+    raw_printf(out, "'");
     while( *z ){
       for(i=0; (c = z[i])!=0 && c!='\n' && c!='\r' && c!='\''; i++){}
       if( c=='\'' ) i++;
       if( i ){
-        if( !inQuote ){
-          if( bStarted ) raw_printf(out, "||");
-          raw_printf(out, "'");
-          inQuote = 1;
-        }
         utf8_printf(out, "%.*s", i, z);
         z += i;
-        bStarted = 1;
       }
       if( c=='\'' ){
         raw_printf(out, "'");
         continue;
       }
-      if( inQuote ){
-        raw_printf(out, "'");
-        inQuote = 0;
-      }
       if( c==0 ){
         break;
       }
-      for(i=0; (c = z[i])=='\r' || c=='\n'; i++){
-        if( bStarted ) raw_printf(out, "||");
-        raw_printf(out, "char(%d)", c);
-        bStarted = 1;
+      z++;
+      if( c=='\n' ){
+        raw_printf(out, "%s", zNL);
+        continue;
       }
-      z += i;
+      raw_printf(out, "%s", zCR);
     }
-    if( inQuote ) raw_printf(out, "'");
+    raw_printf(out, "'");
+    if( nCR ){
+      raw_printf(out, ",'%s',char(13))", zCR);
+    }
+    if( nNL ){
+      raw_printf(out, ",'%s',char(10))", zNL);
+    }
   }
   setTextMode(out, 1);
 }
@@ -4331,29 +4364,30 @@ static int lintFkeyIndexes(
   "SELECT "
     "     'EXPLAIN QUERY PLAN SELECT rowid FROM ' || quote(s.name) || ' WHERE '"
     "  || group_concat(quote(s.name) || '.' || quote(f.[from]) || '=?' "
-    "  || fkey_collate_clause(f.[table], f.[to], s.name, f.[from]),' AND ')"
+    "  || fkey_collate_clause("
+    "       f.[table], COALESCE(f.[to], p.[name]), s.name, f.[from]),' AND ')"
     ", "
     "     'SEARCH TABLE ' || s.name || ' USING COVERING INDEX*('"
     "  || group_concat('*=?', ' AND ') || ')'"
     ", "
     "     s.name  || '(' || group_concat(f.[from],  ', ') || ')'"
     ", "
-    "     f.[table] || '(' || group_concat(COALESCE(f.[to], "
-    "       (SELECT name FROM pragma_table_info(f.[table]) WHERE pk=seq+1)"
-    "     )) || ')'"
+    "     f.[table] || '(' || group_concat(COALESCE(f.[to], p.[name])) || ')'"
     ", "
     "     'CREATE INDEX ' || quote(s.name ||'_'|| group_concat(f.[from], '_'))"
     "  || ' ON ' || quote(s.name) || '('"
     "  || group_concat(quote(f.[from]) ||"
-    "        fkey_collate_clause(f.[table], f.[to], s.name, f.[from]), ', ')"
+    "        fkey_collate_clause("
+    "          f.[table], COALESCE(f.[to], p.[name]), s.name, f.[from]), ', ')"
     "  || ');'"
     ", "
     "     f.[table] "
-
     "FROM sqlite_master AS s, pragma_foreign_key_list(s.name) AS f "
+    "LEFT JOIN pragma_table_info AS p ON (pk-1=seq AND p.arg=f.[table]) "
     "GROUP BY s.name, f.id "
     "ORDER BY (CASE WHEN ? THEN f.[table] ELSE s.name END)"
   ;
+  const char *zGlobIPK = "SEARCH TABLE * USING INTEGER PRIMARY KEY (rowid=?)";
 
   for(i=2; i<nArg; i++){
     int n = (int)strlen(azArg[i]);
@@ -4402,7 +4436,10 @@ static int lintFkeyIndexes(
       if( rc!=SQLITE_OK ) break;
       if( SQLITE_ROW==sqlite3_step(pExplain) ){
         const char *zPlan = (const char*)sqlite3_column_text(pExplain, 3);
-        res = (0==sqlite3_strglob(zGlob, zPlan));
+        res = (
+              0==sqlite3_strglob(zGlob, zPlan)
+           || 0==sqlite3_strglob(zGlobIPK, zPlan)
+        );
       }
       rc = sqlite3_finalize(pExplain);
       if( rc!=SQLITE_OK ) break;
