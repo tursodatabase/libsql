@@ -1,5 +1,5 @@
-C Merge\slatest\strunk\swith\sthis\sbranch.
-D 2017-04-08T19:00:37.586
+C Fix\sthe\s-file\soption\son\sthe\ssqlite3_expert\sprogram.
+D 2017-04-09T08:38:37.326
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a4c0613a18663bda56d8cf76079ab6590a7c3602e54befb4bbdef76bcaa38b6a
@@ -40,7 +40,7 @@ F ext/README.md fd5f78013b0a2bc6f0067afb19e6ad040e89a10179b4f6f03eee58fac5f169bd
 F ext/async/README.txt e12275968f6fde133a80e04387d0e839b0c51f91
 F ext/async/sqlite3async.c 0f3070cc3f5ede78f2b9361fb3b629ce200d7d74
 F ext/async/sqlite3async.h f489b080af7e72aec0e1ee6f1d98ab6cf2e4dcef
-F ext/expert/expert.c 861735e296c68cd442c20d5f6e75d07c957227009b79b31581a0971481e35d97
+F ext/expert/expert.c bf0fd71921cb7b807cda9a76fb380e3d6e6b980d6167093b2952b41ec9ad8f46
 F ext/expert/sqlite3expert.c 864ebebab5fd12cad8fb5debd26ff083dffe87ade15c1b6dcc7a7c3ae0afdd1b
 F ext/expert/sqlite3expert.h feeaee4ab73ba52426329781bbb28032ce18cf5abd2bf6221bac2df4c32b3013
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
@@ -1575,7 +1575,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P be0deff940bea4f653d644113f42529a32ff7039d1d168119233aaf000a22f40 204e72f0080e8f08f99978870bd3cb9d59b068ecffee82192d707c650548b43b
-R 6e0d9b80ca81b8d3b8a7b8f8dc2a80a0
+P e051e8f21b909c5e89a7203eef6501fecd64f82a634c4e10398b5ef7d716eb37
+R c2522cb6c6416b4473f74ba522229374
 U dan
-Z 4063bdd74acb02b7df335075f419d3f7
+Z 7f4db390eaebfa3a6aedc09b4bf9a775

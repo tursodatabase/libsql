@@ -40,7 +40,30 @@ static void usage(char **argv){
 }
 
 static int readSqlFromFile(sqlite3expert *p, const char *zFile, char **pzErr){
-  return SQLITE_OK;
+  FILE *in = fopen(zFile, "rb");
+  long nIn;
+  size_t nRead;
+  char *pBuf;
+  int rc;
+  if( in==0 ){
+    *pzErr = sqlite3_mprintf("failed to open file %s\n", zFile);
+    return SQLITE_ERROR;
+  }
+  fseek(in, 0, SEEK_END);
+  nIn = ftell(in);
+  rewind(in);
+  pBuf = sqlite3_malloc64( nIn+1 );
+  nRead = fread(pBuf, nIn, 1, in);
+  fclose(in);
+  if( nRead!=1 ){
+    sqlite3_free(pBuf);
+    *pzErr = sqlite3_mprintf("failed to read file %s\n", zFile);
+    return SQLITE_ERROR;
+  }
+  pBuf[nIn] = 0;
+  rc = sqlite3_expert_sql(p, pBuf, pzErr);
+  sqlite3_free(pBuf);
+  return rc;
 }
 
 int main(int argc, char **argv){
