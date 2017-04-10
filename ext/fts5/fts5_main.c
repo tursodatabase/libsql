@@ -1579,7 +1579,7 @@ static int fts5SyncMethod(sqlite3_vtab *pVtab){
   fts5CheckTransactionState(pTab, FTS5_SYNC, 0);
   pTab->pConfig->pzErrmsg = &pTab->base.zErrMsg;
   fts5TripCursors(pTab);
-  rc = sqlite3Fts5StorageSync(pTab->pStorage, 1);
+  rc = sqlite3Fts5StorageSync(pTab->pStorage);
   pTab->pConfig->pzErrmsg = 0;
   return rc;
 }
@@ -2390,7 +2390,7 @@ static int fts5SavepointMethod(sqlite3_vtab *pVtab, int iSavepoint){
   UNUSED_PARAM(iSavepoint);  /* Call below is a no-op for NDEBUG builds */
   fts5CheckTransactionState(pTab, FTS5_SAVEPOINT, iSavepoint);
   fts5TripCursors(pTab);
-  return sqlite3Fts5StorageSync(pTab->pStorage, 0);
+  return sqlite3Fts5StorageSync(pTab->pStorage);
 }
 
 /*
@@ -2403,7 +2403,7 @@ static int fts5ReleaseMethod(sqlite3_vtab *pVtab, int iSavepoint){
   UNUSED_PARAM(iSavepoint);  /* Call below is a no-op for NDEBUG builds */
   fts5CheckTransactionState(pTab, FTS5_RELEASE, iSavepoint);
   fts5TripCursors(pTab);
-  return sqlite3Fts5StorageSync(pTab->pStorage, 0);
+  return sqlite3Fts5StorageSync(pTab->pStorage);
 }
 
 /*

@@ -298,4 +298,43 @@ for {set i 0} {$i<100} {incr i} {
   } {1}
 }
 
+#-------------------------------------------------------------------------
+# 2017-04-08 ticket b93be8729a895a528e2849fca99f7
+# JSON extension accepts invalid numeric values
+#
+# JSON does not allow leading zeros.  But the JSON extension was
+# allowing them.  The following tests verify that the problem is now
+# fixed.
+#
+do_execsql_test json102-1401 { SELECT json_valid('{"x":01}') } 0
+do_execsql_test json102-1402 { SELECT json_valid('{"x":-01}') } 0
+do_execsql_test json102-1403 { SELECT json_valid('{"x":0}') } 1
+do_execsql_test json102-1404 { SELECT json_valid('{"x":-0}') } 1
+do_execsql_test json102-1405 { SELECT json_valid('{"x":0.1}') } 1
+do_execsql_test json102-1406 { SELECT json_valid('{"x":-0.1}') } 1
+do_execsql_test json102-1407 { SELECT json_valid('{"x":0.0000}') } 1
+do_execsql_test json102-1408 { SELECT json_valid('{"x":-0.0000}') } 1
+do_execsql_test json102-1409 { SELECT json_valid('{"x":01.5}') } 0
+do_execsql_test json102-1410 { SELECT json_valid('{"x":-01.5}') } 0
+do_execsql_test json102-1411 { SELECT json_valid('{"x":00}') } 0
+do_execsql_test json102-1412 { SELECT json_valid('{"x":-00}') } 0
+
+#------------------------------------------------------------------------
+# 2017-04-10 ticket 6c9b5514077fed34551f98e64c09a10dc2fc8e16
+# JSON extension accepts strings containing control characters.
+#
+# The JSON spec requires that all control characters be escaped.
+#
+do_execsql_test json102-1500 {
+  WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<0x20)
+  SELECT x FROM c WHERE json_valid(printf('{"a":"x%sz"}', char(x))) ORDER BY x;
+} {32}
+
+# All control characters are escaped
+#
+do_execsql_test json102-1501 {
+  WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<0x1f)
+  SELECT sum(json_valid(json_quote('a'||char(x)||'z'))) FROM c ORDER BY x;
+} {31}
+
 finish_test

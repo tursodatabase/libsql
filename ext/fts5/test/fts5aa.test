@@ -561,6 +561,22 @@ do_test 20.1 {
   execsql { SELECT rowid FROM tmp WHERE tmp MATCH 'y' }
 } $::ids
 
+#--------------------------------------------------------------------
+# Test that a DROP TABLE may be executed within a transaction that
+# writes to an FTS5 table.
+#
+do_execsql_test 21.0 {
+  CREATE TEMP TABLE t8(a, b);
+  CREATE VIRTUAL TABLE ft USING fts5(x, detail=%DETAIL%);
+}
+
+do_execsql_test 21.1 {
+  BEGIN;
+    INSERT INTO ft VALUES('a b c');
+    DROP TABLE t8;
+  COMMIT;
+}
+
 }
 
 

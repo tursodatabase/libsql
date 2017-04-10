@@ -5386,10 +5386,17 @@ case OP_IdxGE:  {       /* jump */
 ** might be moved into the newly deleted root page in order to keep all
 ** root pages contiguous at the beginning of the database.  The former
 ** value of the root page that moved - its value before the move occurred -
-** is stored in register P2.  If no page 
-** movement was required (because the table being dropped was already 
-** the last one in the database) then a zero is stored in register P2.
-** If AUTOVACUUM is disabled then a zero is stored in register P2.
+** is stored in register P2. If no page movement was required (because the
+** table being dropped was already the last one in the database) then a 
+** zero is stored in register P2.  If AUTOVACUUM is disabled then a zero 
+** is stored in register P2.
+**
+** This opcode throws an error if there are any active reader VMs when
+** it is invoked. This is done to avoid the difficulty associated with 
+** updating existing cursors when a root page is moved in an AUTOVACUUM 
+** database. This error is thrown even if the database is not an AUTOVACUUM 
+** db in order to avoid introducing an incompatibility between autovacuum 
+** and non-autovacuum modes.
 **
 ** See also: Clear
 */

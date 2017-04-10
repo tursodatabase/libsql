@@ -125,23 +125,21 @@ SQLITE_NOINLINE int sqlite3VdbeMemGrow(Mem *pMem, int n, int bPreserve){
 
   assert( pMem->szMalloc==0
        || pMem->szMalloc==sqlite3DbMallocSize(pMem->db, pMem->zMalloc) );
-  if( pMem->szMalloc<n ){
-    if( n<32 ) n = 32;
-    if( bPreserve && pMem->szMalloc>0 && pMem->z==pMem->zMalloc ){
-      pMem->z = pMem->zMalloc = sqlite3DbReallocOrFree(pMem->db, pMem->z, n);
-      bPreserve = 0;
-    }else{
-      if( pMem->szMalloc>0 ) sqlite3DbFreeNN(pMem->db, pMem->zMalloc);
-      pMem->zMalloc = sqlite3DbMallocRaw(pMem->db, n);
-    }
-    if( pMem->zMalloc==0 ){
-      sqlite3VdbeMemSetNull(pMem);
-      pMem->z = 0;
-      pMem->szMalloc = 0;
-      return SQLITE_NOMEM_BKPT;
-    }else{
-      pMem->szMalloc = sqlite3DbMallocSize(pMem->db, pMem->zMalloc);
-    }
+  if( n<32 ) n = 32;
+  if( bPreserve && pMem->szMalloc>0 && pMem->z==pMem->zMalloc ){
+    pMem->z = pMem->zMalloc = sqlite3DbReallocOrFree(pMem->db, pMem->z, n);
+    bPreserve = 0;
+  }else{
+    if( pMem->szMalloc>0 ) sqlite3DbFreeNN(pMem->db, pMem->zMalloc);
+    pMem->zMalloc = sqlite3DbMallocRaw(pMem->db, n);
+  }
+  if( pMem->zMalloc==0 ){
+    sqlite3VdbeMemSetNull(pMem);
+    pMem->z = 0;
+    pMem->szMalloc = 0;
+    return SQLITE_NOMEM_BKPT;
+  }else{
+    pMem->szMalloc = sqlite3DbMallocSize(pMem->db, pMem->zMalloc);
   }
 
   if( bPreserve && pMem->z && pMem->z!=pMem->zMalloc ){
