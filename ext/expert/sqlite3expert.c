@@ -1,5 +1,5 @@
 /*
-** 2016 February 10
+** 2017 April 09
 **
 ** The author disclaims copyright to this source code.  In place of
 ** a legal notice, here is a blessing:
@@ -21,16 +21,15 @@
 typedef sqlite3_int64 i64;
 typedef sqlite3_uint64 u64;
 
+typedef struct IdxColumn IdxColumn;
 typedef struct IdxConstraint IdxConstraint;
 typedef struct IdxScan IdxScan;
 typedef struct IdxStatement IdxStatement;
-typedef struct IdxWhere IdxWhere;
-
-typedef struct IdxColumn IdxColumn;
 typedef struct IdxTable IdxTable;
 
 /*
-** A single constraint. Equivalent to either "col = ?" or "col < ?".
+** A single constraint. Equivalent to either "col = ?" or "col < ?" (or
+** any other type of single-ended range constraint on a column).
 **
 ** pLink:
 **   Used to temporarily link IdxConstraint objects into lists while
@@ -48,37 +47,21 @@ struct IdxConstraint {
 };
 
 /*
-** A WHERE clause. Made up of IdxConstraint objects. Example WHERE clause:
-**
-**   a=? AND b=? AND c=? AND d=? AND e>? AND f<?
-**
-** The above is decomposed into 6 AND connected clauses. The first four are
-** added to the IdxWhere.pEq linked list, the following two into 
-** IdxWhere.pRange.
-**
-** IdxWhere.pEq and IdxWhere.pRange are simple linked lists of IdxConstraint
-** objects linked by the IdxConstraint.pNext field.
-*/
-struct IdxWhere {
-  IdxConstraint *pEq;             /* List of == constraints */
-  IdxConstraint *pRange;          /* List of < constraints */
-};
-
-/*
 ** A single scan of a single table.
 */
 struct IdxScan {
-  IdxTable *pTable;               /* Table-info */
   char *zTable;                   /* Name of table to scan */
   int iDb;                        /* Database containing table zTable */
   i64 covering;                   /* Mask of columns required for cov. index */
   IdxConstraint *pOrder;          /* ORDER BY columns */
-  IdxWhere where;                 /* WHERE Constraints */
-  IdxScan *pNextScan;             /* Next IdxScan object for same query */
+  IdxConstraint *pEq;             /* List of == constraints */
+  IdxConstraint *pRange;          /* List of < constraints */
+  IdxScan *pNextScan;             /* Next IdxScan object for same analysis */
 };
 
 /*
-** Data regarding a database table. Extracted from "PRAGMA table_info"
+** Information regarding a single database table. Extracted from 
+** "PRAGMA table_info" by function idxGetTableInfo().
 */
 struct IdxColumn {
   char *zName;
@@ -90,6 +73,10 @@ struct IdxTable {
   IdxColumn *aCol;
 };
 
+/*
+** Each statement being analyzed is represented by an instance of this
+** structure.
+*/
 struct IdxStatement {
   int iId;                        /* Statement number */
   char *zSql;                     /* SQL statement */
@@ -99,6 +86,15 @@ struct IdxStatement {
 };
 
 
+/*
+** A hash table for storing strings. With space for a payload string
+** with each entry. Methods are:
+**
+**   idxHashInit()
+**   idxHashClear()
+**   idxHashAdd()
+**   idxHashSearch()
+*/
 #define IDX_HASH_SIZE 1023
 typedef struct IdxHashEntry IdxHashEntry;
 typedef struct IdxHash IdxHash;
@@ -114,19 +110,35 @@ struct IdxHash {
 };
 
 /*
+** A hash table for storing a set of 64-bit values. Methods are:
+**
+**   idxHash64Init()
+**   idxHash64Clear()
+**   idxHash64Add()
+*/
+typedef struct IdxHash64Entry IdxHash64Entry;
+typedef struct IdxHash64 IdxHash64;
+struct IdxHash64Entry {
+  u64 iVal;
+  IdxHash64Entry *pNext;          /* Next entry in hash table */
+  IdxHash64Entry *pHashNext;      /* Next entry in same hash bucket */
+};
+struct IdxHash64 {
+  IdxHash64Entry *pFirst;         /* Most recently added entry in hash table */
+  IdxHash64Entry *aHash[IDX_HASH_SIZE];
+};
+
+/*
 ** sqlite3expert object.
 */
 struct sqlite3expert {
-  sqlite3 *db;                    /* Users database */
+  sqlite3 *db;                    /* User database */
   sqlite3 *dbm;                   /* In-memory db for this analysis */
-
   int bRun;                       /* True once analysis has run */
   char **pzErrmsg;
-
   IdxScan *pScan;                 /* List of scan objects */
   IdxStatement *pStatement;       /* List of IdxStatement objects */
   int rc;                         /* Error code from whereinfo hook */
-
   IdxHash hIdx;                   /* Hash containing all candidate indexes */
 };
 
@@ -148,24 +160,16 @@ static void *idxMalloc(int *pRc, int nByte){
   return pRet;
 }
 
-/*************************************************************************
-** Start of hash table implementations.
+/*
+** Initialize an IdxHash64 hash table.
 */
-typedef struct IdxHash64Entry IdxHash64Entry;
-typedef struct IdxHash64 IdxHash64;
-struct IdxHash64Entry {
-  u64 iVal;
-  IdxHash64Entry *pNext;          /* Next entry in hash table */
-  IdxHash64Entry *pHashNext;      /* Next entry in same hash bucket */
-};
-struct IdxHash64 {
-  IdxHash64Entry *pFirst;         /* Most recently added entry in hash table */
-  IdxHash64Entry *aHash[IDX_HASH_SIZE];
-};
-
 static void idxHash64Init(IdxHash64 *pHash){
   memset(pHash, 0, sizeof(IdxHash64));
 }
+
+/*
+** Reset an IdxHash64 hash table.
+*/
 static void idxHash64Clear(IdxHash64 *pHash){
   IdxHash64Entry *pEntry;
   IdxHash64Entry *pNext;
@@ -175,6 +179,11 @@ static void idxHash64Clear(IdxHash64 *pHash){
   }
   memset(pHash, 0, sizeof(IdxHash64));
 }
+
+/*
+** Add iVal to the IdxHash64 hash table passed as the second argument. This
+** function is a no-op if iVal is already present in the hash table.
+*/
 static void idxHash64Add(int *pRc, IdxHash64 *pHash, u64 iVal){
   int iHash = (int)((iVal*7) % IDX_HASH_SIZE);
   IdxHash64Entry *pEntry;
@@ -193,9 +202,16 @@ static void idxHash64Add(int *pRc, IdxHash64 *pHash, u64 iVal){
   }
 }
 
+/*
+** Initialize an IdxHash hash table.
+*/
 static void idxHashInit(IdxHash *pHash){
   memset(pHash, 0, sizeof(IdxHash));
 }
+
+/*
+** Reset an IdxHash hash table.
+*/
 static void idxHashClear(IdxHash *pHash){
   int i;
   for(i=0; i<IDX_HASH_SIZE; i++){
@@ -208,6 +224,11 @@ static void idxHashClear(IdxHash *pHash){
   }
   memset(pHash, 0, sizeof(IdxHash));
 }
+
+/*
+** Return the index of the hash bucket that the string specified by the
+** arguments to this function belongs.
+*/
 static int idxHashString(const char *z, int n){
   unsigned int ret = 0;
   int i;
@@ -217,6 +238,11 @@ static int idxHashString(const char *z, int n){
   return (int)(ret % IDX_HASH_SIZE);
 }
 
+/*
+** If zKey is already present in the hash table, return non-zero and do
+** nothing. Otherwise, add an entry with key zKey and payload string zVal to
+** the hash table passed as the second argument. 
+*/
 static int idxHashAdd(
   int *pRc, 
   IdxHash *pHash, 
@@ -250,6 +276,12 @@ static int idxHashAdd(
   return 0;
 }
 
+/*
+** If the hash table contains an entry with a key equal to the string
+** passed as the final two arguments to this function, return a pointer
+** to the payload string. Otherwise, if zKey/nKey is not present in the
+** hash table, return NULL.
+*/
 static const char *idxHashSearch(IdxHash *pHash, const char *zKey, int nKey){
   int iHash;
   IdxHashEntry *pEntry;
@@ -263,10 +295,6 @@ static const char *idxHashSearch(IdxHash *pHash, const char *zKey, int nKey){
   }
   return 0;
 }
-
-/*
-** End of hash table implementations.
-**************************************************************************/
 
 /*
 ** Allocate and return a new IdxConstraint object. Set the IdxConstraint.zColl
@@ -346,11 +374,11 @@ static void idxWhereInfo(
         pNew->depmask = mask;
 
         if( eOp==SQLITE_WHEREINFO_RANGE ){
-          pNew->pNext = p->pScan->where.pRange;
-          p->pScan->where.pRange = pNew;
+          pNew->pNext = p->pScan->pRange;
+          p->pScan->pRange = pNew;
         }else{
-          pNew->pNext = p->pScan->where.pEq;
-          p->pScan->where.pEq = pNew;
+          pNew->pNext = p->pScan->pEq;
+          p->pScan->pEq = pNew;
         }
         break;
       }
@@ -369,6 +397,9 @@ static void idxDatabaseError(
   *pzErrmsg = sqlite3_mprintf("%s", sqlite3_errmsg(db));
 }
 
+/*
+** Prepare an SQL statement.
+*/
 static int idxPrepareStmt(
   sqlite3 *db,                    /* Database handle to compile against */
   sqlite3_stmt **ppStmt,          /* OUT: Compiled SQL statement */
@@ -383,6 +414,9 @@ static int idxPrepareStmt(
   return rc;
 }
 
+/*
+** Prepare an SQL statement using the results of a printf() formatting.
+*/
 static int idxPrintfPrepareStmt(
   sqlite3 *db,                    /* Database handle to compile against */
   sqlite3_stmt **ppStmt,          /* OUT: Compiled SQL statement */
@@ -405,17 +439,32 @@ static int idxPrintfPrepareStmt(
   return rc;
 }
 
+/*
+** Finalize SQL statement pStmt. If (*pRc) is SQLITE_OK when this function
+** is called, set it to the return value of sqlite3_finalize() before
+** returning. Otherwise, discard the sqlite3_finalize() return value.
+*/
 static void idxFinalize(int *pRc, sqlite3_stmt *pStmt){
   int rc = sqlite3_finalize(pStmt);
   if( *pRc==SQLITE_OK ) *pRc = rc;
 }
 
+/*
+** Attempt to allocate an IdxTable structure corresponding to table zTab
+** in the main database of connection db. If successful, set (*ppOut) to
+** point to the new object and return SQLITE_OK. Otherwise, return an
+** SQLite error code and set (*ppOut) to NULL. In this case *pzErrmsg may be
+** set to point to an error string.
+**
+** It is the responsibility of the caller to eventually free either the
+** IdxTable object or error message using sqlite3_free().
+*/
 static int idxGetTableInfo(
-  sqlite3 *db,
-  IdxScan *pScan,
-  char **pzErrmsg
+  sqlite3 *db,                    /* Database connection to read details from */
+  const char *zTab,               /* Table name */
+  IdxTable **ppOut,               /* OUT: New object (if successful) */
+  char **pzErrmsg                 /* OUT: Error message (if not) */
 ){
-  const char *zTbl = pScan->zTable;
   sqlite3_stmt *p1 = 0;
   int nCol = 0;
   int nByte = sizeof(IdxTable);
@@ -423,12 +472,12 @@ static int idxGetTableInfo(
   int rc, rc2;
   char *pCsr;
 
-  rc = idxPrintfPrepareStmt(db, &p1, pzErrmsg, "PRAGMA table_info=%Q", zTbl);
+  rc = idxPrintfPrepareStmt(db, &p1, pzErrmsg, "PRAGMA table_info=%Q", zTab);
   while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(p1) ){
     const char *zCol = (const char*)sqlite3_column_text(p1, 1);
     nByte += 1 + strlen(zCol);
     rc = sqlite3_table_column_metadata(
-        db, "main", zTbl, zCol, 0, &zCol, 0, 0, 0
+        db, "main", zTab, zCol, 0, &zCol, 0, 0, 0
     );
     nByte += 1 + strlen(zCol);
     nCol++;
@@ -456,7 +505,7 @@ static int idxGetTableInfo(
     pCsr += nCopy;
 
     rc = sqlite3_table_column_metadata(
-        db, "main", zTbl, zCol, 0, &zCol, 0, 0, 0
+        db, "main", zTab, zCol, 0, &zCol, 0, 0, 0
     );
     if( rc==SQLITE_OK ){
       nCopy = strlen(zCol) + 1;
@@ -469,12 +518,12 @@ static int idxGetTableInfo(
   }
   idxFinalize(&rc, p1);
 
-  if( rc==SQLITE_OK ){
-    pScan->pTable = pNew;
-  }else{
+  if( rc!=SQLITE_OK ){
     sqlite3_free(pNew);
+    pNew = 0;
   }
 
+  *ppOut = pNew;
   return rc;
 }
 
@@ -515,6 +564,10 @@ static char *idxAppendText(int *pRc, char *zIn, const char *zFmt, ...){
   return zRet;
 }
 
+/*
+** Return true if zId must be quoted in order to use it as an SQL
+** identifier, or false otherwise.
+*/
 static int idxIdentifierRequiresQuotes(const char *zId){
   int i;
   for(i=0; zId[i]; i++){
@@ -529,10 +582,14 @@ static int idxIdentifierRequiresQuotes(const char *zId){
   return 0;
 }
 
+/*
+** This function appends an index column definition suitable for constraint
+** pCons to the string passed as zIn and returns the result.
+*/
 static char *idxAppendColDefn(
-  int *pRc, 
-  char *zIn, 
-  IdxTable *pTab, 
+  int *pRc,                       /* IN/OUT: Error code */
+  char *zIn,                      /* Column defn accumulated so far */
+  IdxTable *pTab,                 /* Table index will be created on */
   IdxConstraint *pCons
 ){
   char *zRet = zIn;
@@ -636,6 +693,7 @@ static int idxFindCompatible(
 
 static int idxCreateFromCons(
   sqlite3expert *p,
+  IdxTable *pTab,
   IdxScan *pScan,
   IdxConstraint *pEq, 
   IdxConstraint *pTail
@@ -643,7 +701,6 @@ static int idxCreateFromCons(
   sqlite3 *dbm = p->dbm;
   int rc = SQLITE_OK;
   if( (pEq || pTail) && 0==idxFindCompatible(&rc, dbm, pScan, pEq, pTail) ){
-    IdxTable *pTab = pScan->pTable;
     char *zCols = 0;
     char *zIdx = 0;
     IdxConstraint *pCons;
@@ -704,9 +761,9 @@ static int idxFindConstraint(IdxConstraint *pList, IdxConstraint *p){
 
 static int idxCreateFromWhere(
   sqlite3expert *p, 
+  IdxTable *pTab,
   i64 mask,                       /* Consider only these constraints */
   IdxScan *pScan,                 /* Create indexes for this scan */
-  IdxWhere *pWhere,               /* Read constraints from here */
   IdxConstraint *pEq,             /* == constraints for inclusion */
   IdxConstraint *pTail            /* range/ORDER BY constraints for inclusion */
 ){
@@ -715,7 +772,7 @@ static int idxCreateFromWhere(
   int rc;
 
   /* Gather up all the == constraints that match the mask. */
-  for(pCon=pWhere->pEq; pCon; pCon=pCon->pNext){
+  for(pCon=pScan->pEq; pCon; pCon=pCon->pNext){
     if( (mask & pCon->depmask)==pCon->depmask 
      && idxFindConstraint(p1, pCon)==0
      && idxFindConstraint(pTail, pCon)==0
@@ -727,18 +784,18 @@ static int idxCreateFromWhere(
 
   /* Create an index using the == constraints collected above. And the
   ** range constraint/ORDER BY terms passed in by the caller, if any. */
-  rc = idxCreateFromCons(p, pScan, p1, pTail);
+  rc = idxCreateFromCons(p, pTab, pScan, p1, pTail);
 
   /* If no range/ORDER BY passed by the caller, create a version of the
   ** index for each range constraint that matches the mask. */
   if( pTail==0 ){
-    for(pCon=pWhere->pRange; rc==SQLITE_OK && pCon; pCon=pCon->pNext){
+    for(pCon=pScan->pRange; rc==SQLITE_OK && pCon; pCon=pCon->pNext){
       assert( pCon->pLink==0 );
       if( (mask & pCon->depmask)==pCon->depmask
         && idxFindConstraint(pEq, pCon)==0
         && idxFindConstraint(pTail, pCon)==0
       ){
-        rc = idxCreateFromCons(p, pScan, p1, pCon);
+        rc = idxCreateFromCons(p, pTab, pScan, p1, pCon);
       }
     }
   }
@@ -758,30 +815,36 @@ static int idxCreateCandidates(sqlite3expert *p, char **pzErr){
 
   for(pIter=p->pScan; pIter && rc==SQLITE_OK; pIter=pIter->pNextScan){
     IdxHash64Entry *pEntry;
-    IdxWhere *pWhere = &pIter->where;
     IdxConstraint *pCons;
+    IdxTable *pTab = 0;
+
+    rc = idxGetTableInfo(p->dbm, pIter->zTable, &pTab, pzErr);
 
     idxHash64Add(&rc, &hMask, 0);
-    for(pCons=pIter->where.pEq; pCons; pCons=pCons->pNext){
+    for(pCons=pIter->pEq; pCons; pCons=pCons->pNext){
       for(pEntry=hMask.pFirst; pEntry; pEntry=pEntry->pNext){
         idxHash64Add(&rc, &hMask, pEntry->iVal | (u64)pCons->depmask);
       }
     }
 
-    for(pEntry=hMask.pFirst; pEntry; pEntry=pEntry->pNext){
+    for(pEntry=hMask.pFirst; rc==SQLITE_OK && pEntry; pEntry=pEntry->pNext){
       i64 mask = (i64)pEntry->iVal;
-      rc = idxCreateFromWhere(p, mask, pIter, pWhere, 0, 0);
+      rc = idxCreateFromWhere(p, pTab, mask, pIter, 0, 0);
       if( rc==SQLITE_OK && pIter->pOrder ){
-        rc = idxCreateFromWhere(p, mask, pIter, pWhere, 0, pIter->pOrder);
+        rc = idxCreateFromWhere(p, pTab, mask, pIter, 0, pIter->pOrder);
       }
     }
 
+    sqlite3_free(pTab);
     idxHash64Clear(&hMask);
   }
 
   return rc;
 }
 
+/*
+** Free all elements of the linked list starting at pConstraint.
+*/
 static void idxConstraintFree(IdxConstraint *pConstraint){
   IdxConstraint *pNext;
   IdxConstraint *p;
@@ -802,9 +865,8 @@ static void idxScanFree(IdxScan *pScan, IdxScan *pLast){
   for(p=pScan; p!=pLast; p=pNext){
     pNext = p->pNextScan;
     idxConstraintFree(p->pOrder);
-    idxConstraintFree(p->where.pEq);
-    idxConstraintFree(p->where.pRange);
-    sqlite3_free(p->pTable);
+    idxConstraintFree(p->pEq);
+    idxConstraintFree(p->pRange);
     sqlite3_free(p);
   }
 }
@@ -825,6 +887,11 @@ static void idxStatementFree(IdxStatement *pStatement, IdxStatement *pLast){
 }
 
 
+/*
+** This function is called after candidate indexes have been created. It
+** runs all the queries to see which indexes they prefer, and populates
+** IdxStatement.zIdx and IdxStatement.zEQP with the results.
+*/
 int idxFindIndexes(
   sqlite3expert *p,
   char **pzErr                         /* OUT: Error message (sqlite3_malloc) */
@@ -981,18 +1048,10 @@ int sqlite3_expert_sql(
 }
 
 int sqlite3_expert_analyze(sqlite3expert *p, char **pzErr){
-  int rc = SQLITE_OK;
-  IdxScan *pIter;
-
-  /* Load IdxTable objects */
-  for(pIter=p->pScan; pIter && rc==SQLITE_OK; pIter=pIter->pNextScan){
-    rc = idxGetTableInfo(p->dbm, pIter, pzErr);
-  }
+  int rc;
 
   /* Create candidate indexes within the in-memory database file */
-  if( rc==SQLITE_OK ){
-    rc = idxCreateCandidates(p, pzErr);
-  }
+  rc = idxCreateCandidates(p, pzErr);
 
   /* Figure out which of the candidate indexes are preferred by the query
   ** planner and report the results to the user.  */
