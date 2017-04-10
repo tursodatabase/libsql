@@ -11,6 +11,8 @@
 *************************************************************************
 */
 
+#if !defined(SQLITE_TEST) || defined(SQLITE_ENABLE_WHEREINFO_HOOK)
+
 #include "sqlite3expert.h"
 #include <assert.h>
 #include <string.h>
@@ -20,7 +22,6 @@ typedef sqlite3_int64 i64;
 typedef sqlite3_uint64 u64;
 
 typedef struct IdxConstraint IdxConstraint;
-typedef struct IdxContext IdxContext;
 typedef struct IdxScan IdxScan;
 typedef struct IdxStatement IdxStatement;
 typedef struct IdxWhere IdxWhere;
@@ -87,19 +88,6 @@ struct IdxColumn {
 struct IdxTable {
   int nCol;
   IdxColumn *aCol;
-};
-
-/*
-** Context object passed to idxWhereInfo() and other functions.
-*/
-struct IdxContext {
-  char **pzErrmsg;
-  IdxWhere *pCurrent;             /* Current where clause */
-  int rc;                         /* Error code (if error has occurred) */
-  IdxScan *pScan;                 /* List of scan objects */
-  sqlite3 *dbm;                   /* In-memory db for this analysis */
-  sqlite3 *db;                    /* User database under analysis */
-  sqlite3_stmt *pInsertMask;      /* To write to aux.depmask */
 };
 
 struct IdxStatement {
@@ -301,7 +289,7 @@ static IdxConstraint *idxNewConstraint(int *pRc, const char *zColl){
 ** sqlite3_whereinfo_hook() callback.
 */
 static void idxWhereInfo(
-  void *pCtx,                     /* Pointer to IdxContext structure */
+  void *pCtx,                     /* Pointer to sqlite3expert structure */
   int eOp, 
   const char *zVal, 
   int iVal, 
@@ -794,12 +782,31 @@ static int idxCreateCandidates(sqlite3expert *p, char **pzErr){
   return rc;
 }
 
+static void idxConstraintFree(IdxConstraint *pConstraint){
+  IdxConstraint *pNext;
+  IdxConstraint *p;
+
+  for(p=pConstraint; p; p=pNext){
+    pNext = p->pNext;
+    sqlite3_free(p);
+  }
+}
+
 /*
 ** Free all elements of the linked list starting from pScan up until pLast
 ** (pLast is not freed).
 */
 static void idxScanFree(IdxScan *pScan, IdxScan *pLast){
-  /* TODO! */
+  IdxScan *p;
+  IdxScan *pNext;
+  for(p=pScan; p!=pLast; p=pNext){
+    pNext = p->pNextScan;
+    idxConstraintFree(p->pOrder);
+    idxConstraintFree(p->where.pEq);
+    idxConstraintFree(p->where.pRange);
+    sqlite3_free(p->pTable);
+    sqlite3_free(p);
+  }
 }
 
 /*
@@ -807,7 +814,14 @@ static void idxScanFree(IdxScan *pScan, IdxScan *pLast){
 ** until pLast (pLast is not freed).
 */
 static void idxStatementFree(IdxStatement *pStatement, IdxStatement *pLast){
-  /* TODO! */
+  IdxStatement *p;
+  IdxStatement *pNext;
+  for(p=pStatement; p!=pLast; p=pNext){
+    pNext = p->pNext;
+    sqlite3_free(p->zEQP);
+    sqlite3_free(p->zIdx);
+    sqlite3_free(p);
+  }
 }
 
 
@@ -875,6 +889,7 @@ int idxFindIndexes(
   }
 
  find_indexes_out:
+  idxHashClear(&hIdx);
   return rc;
 }
 
@@ -974,7 +989,6 @@ int sqlite3_expert_analyze(sqlite3expert *p, char **pzErr){
     rc = idxGetTableInfo(p->dbm, pIter, pzErr);
   }
 
-
   /* Create candidate indexes within the in-memory database file */
   if( rc==SQLITE_OK ){
     rc = idxCreateCandidates(p, pzErr);
@@ -992,12 +1006,19 @@ int sqlite3_expert_analyze(sqlite3expert *p, char **pzErr){
   return rc;
 }
 
+/*
+** Return the total number of statements that have been added to this
+** sqlite3expert using sqlite3_expert_sql().
+*/
 int sqlite3_expert_count(sqlite3expert *p){
   int nRet = 0;
   if( p->pStatement ) nRet = p->pStatement->iId+1;
   return nRet;
 }
 
+/*
+** Return a component of the report.
+*/
 const char *sqlite3_expert_report(sqlite3expert *p, int iStmt, int eReport){
   const char *zRet = 0;
   IdxStatement *pStmt;
@@ -1027,6 +1048,9 @@ void sqlite3_expert_destroy(sqlite3expert *p){
   sqlite3_close(p->dbm);
   idxScanFree(p->pScan, 0);
   idxStatementFree(p->pStatement, 0);
+  idxHashClear(&p->hIdx);
   sqlite3_free(p);
 }
+
+#endif /* !defined(SQLITE_TEST) || defined(SQLITE_ENABLE_WHEREINFO_HOOK) */
 

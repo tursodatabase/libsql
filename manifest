@@ -1,5 +1,5 @@
-C Fix\sthe\s-file\soption\son\sthe\ssqlite3_expert\sprogram.
-D 2017-04-09T08:38:37.326
+C Changes\sto\sallow\sthe\scode\sin\ssqlite3expert.c\sto\sbe\stested\sdirectly\s(via\sthe\nAPI\sin\ssqlite3expert.h)\sinstead\sof\sby\sinvoking\sthe\ssqlite3_expert\sapplication.\nFix\smemory\sleaks\sand\sother\sproblems.
+D 2017-04-10T16:13:20.707
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a4c0613a18663bda56d8cf76079ab6590a7c3602e54befb4bbdef76bcaa38b6a
@@ -41,8 +41,10 @@ F ext/async/README.txt e12275968f6fde133a80e04387d0e839b0c51f91
 F ext/async/sqlite3async.c 0f3070cc3f5ede78f2b9361fb3b629ce200d7d74
 F ext/async/sqlite3async.h f489b080af7e72aec0e1ee6f1d98ab6cf2e4dcef
 F ext/expert/expert.c bf0fd71921cb7b807cda9a76fb380e3d6e6b980d6167093b2952b41ec9ad8f46
-F ext/expert/sqlite3expert.c 864ebebab5fd12cad8fb5debd26ff083dffe87ade15c1b6dcc7a7c3ae0afdd1b
+F ext/expert/expert1.test c1b1405f3ac20e9f71dacdf7bd68ff22e273b249a419260b123ebe385daf2db5 w test/expert1.test
+F ext/expert/sqlite3expert.c b87f13e90b999b5b10c4ec004b6a935150c00d3af1a16944e262172b9b831b8c
 F ext/expert/sqlite3expert.h feeaee4ab73ba52426329781bbb28032ce18cf5abd2bf6221bac2df4c32b3013
+F ext/expert/test_expert.c bad0611732d07180d586bd589cbb7713dc3ab0338c52bff29680eb2007678c05
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
 F ext/fts1/ft_hash.c 3927bd880e65329bdc6f506555b228b28924921b
 F ext/fts1/ft_hash.h 06df7bba40dadd19597aa400a875dbc2fed705ea
@@ -328,7 +330,7 @@ F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 6d4f1f1f78a6ac453d35f18c4e696fdefbe65dfec9530a41c5579ef8ec076072
+F main.mk ef818c7b1bb21f657e3bfb363cc7167264d688ca404a666e6ddda6029e94c43b
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -413,7 +415,7 @@ F src/sqliteInt.h 36eec0868d25b50e64a05bc7355557a0aa9bd14330c16b7d7568520b2bf2bb
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
-F src/tclsqlite.c 6c2151b6d8d98e183a04466d40df8889c0574d79
+F src/tclsqlite.c 2e0f7f63de8329526fbcb14fa5261d3574b2a06dd330f4df680120a3e6156133
 F src/test1.c 8a98191a1da8e100f77cdb5cc716df67d405028d
 F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
 F src/test3.c d03f5b5da9a2410b7a91c64b0d3306ed28ab6fee
@@ -699,7 +701,6 @@ F test/exclusive.test 9a57bd66e39144b888ca75c309914fcdefb4e3f9
 F test/exclusive2.test 984090e8e9d1b331d2e8111daf6e5d61dda0bef7
 F test/exec.test e949714dc127eaa5ecc7d723efec1ec27118fdd7
 F test/exists.test 79a75323c78f02bbe9c251ea502a092f9ef63dac
-F test/expert1.test 4108ab79ee454679e3d46e3703943ac49676b6174703a13ed81f9ee8cd794e68
 F test/expr.test 66a2c9ac34f74f036faa4092f5402c7d3162fc93
 F test/extension01.test 00d13cec817f331a687a243e0e5a2d87b0e358c9
 F test/extraquick.test cb254400bd42bfb777ff675356aabf3287978f79
@@ -1031,7 +1032,7 @@ F test/parser1.test 391b9bf9a229547a129c61ac345ed1a6f5eb1854
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
-F test/permutations.test af720e7d139e7e5417341d0f0eef2b911c0b067852138dc2f5b6a451b5725118
+F test/permutations.test 9c0da2079fa37e7509957c9efbbdc282dea4ed0e732d19e6f216d53ae431a67d
 F test/pragma.test 1e94755164a3a3264cd39836de4bebcb7809e5f8
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
 F test/pragma3.test 14c12bc5352b1e100e0b6b44f371053a81ccf8ed
@@ -1575,7 +1576,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e051e8f21b909c5e89a7203eef6501fecd64f82a634c4e10398b5ef7d716eb37
-R c2522cb6c6416b4473f74ba522229374
+P 0857c48e02a76490fc623364f77363165dea94ec254f93d8f0fd0bac2968c572
+R edcb3d0fdfbb918bffbc8d72b5429335
 U dan
-Z 7f4db390eaebfa3a6aedc09b4bf9a775
+Z 0d7d47356215948792ad81449f48b82b

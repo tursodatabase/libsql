@@ -274,6 +274,8 @@ SRC += \
 # Source code to the test files.
 #
 TESTSRC = \
+  $(TOP)/ext/expert/sqlite3expert.c \
+  $(TOP)/ext/expert/test_expert.c \
   $(TOP)/ext/fts3/fts3_term.c \
   $(TOP)/ext/fts3/fts3_test.c \
   $(TOP)/ext/rbu/test_rbu.c \
