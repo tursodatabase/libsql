@@ -119,12 +119,18 @@ int main(int argc, char **argv){
 
   if( rc==SQLITE_OK ){
     int nQuery = sqlite3_expert_count(p);
+    if( iVerbose>0 ){
+      const char *zCand = sqlite3_expert_report(p,0,EXPERT_REPORT_CANDIDATES);
+      fprintf(stdout, "-- Candidates -------------------------------\n");
+      fprintf(stdout, "%s\n", zCand);
+    }
     for(i=0; i<nQuery; i++){
       const char *zSql = sqlite3_expert_report(p, i, EXPERT_REPORT_SQL);
       const char *zIdx = sqlite3_expert_report(p, i, EXPERT_REPORT_INDEXES);
       const char *zEQP = sqlite3_expert_report(p, i, EXPERT_REPORT_PLAN);
+      if( zIdx==0 ) zIdx = "(no new indexes)";
       if( iVerbose>0 ){
-        fprintf(stdout, "-- query %d ----------------------------------\n",i+1);
+        fprintf(stdout, "-- Query %d ----------------------------------\n",i+1);
         fprintf(stdout, "%s\n\n", zSql);
       }
       fprintf(stdout, "%s\n%s\n", zIdx, zEQP);

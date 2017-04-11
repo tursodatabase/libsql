@@ -61,7 +61,9 @@ foreach {tn setup} {
 
       set result [list]
       for {set i 0} {$i < [$expert count]} {incr i} {
-        lappend result [string trim [$expert report $i indexes]]
+        set idx [string trim [$expert report $i indexes]]
+        if {$idx==""} {set idx "(no new indexes)"}
+        lappend result $idx
         lappend result [string trim [$expert report $i plan]]
       }
 

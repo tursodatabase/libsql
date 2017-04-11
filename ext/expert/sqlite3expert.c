@@ -134,12 +134,13 @@ struct IdxHash64 {
 struct sqlite3expert {
   sqlite3 *db;                    /* User database */
   sqlite3 *dbm;                   /* In-memory db for this analysis */
-  int bRun;                       /* True once analysis has run */
-  char **pzErrmsg;
   IdxScan *pScan;                 /* List of scan objects */
   IdxStatement *pStatement;       /* List of IdxStatement objects */
+  int bRun;                       /* True once analysis has run */
+  char **pzErrmsg;
   int rc;                         /* Error code from whereinfo hook */
   IdxHash hIdx;                   /* Hash containing all candidate indexes */
+  char *zCandidates;              /* For EXPERT_REPORT_CANDIDATES */
 };
 
 
@@ -948,9 +949,6 @@ int idxFindIndexes(
     for(pEntry=hIdx.pFirst; pEntry; pEntry=pEntry->pNext){
       pStmt->zIdx = idxAppendText(&rc, pStmt->zIdx, "%s;\n", pEntry->zKey);
     }
-    if( pStmt->zIdx==0 ){
-      pStmt->zIdx = idxAppendText(&rc, 0, "(no new indexes)\n");
-    }
 
     idxFinalize(&rc, pExplain);
   }
@@ -1049,9 +1047,14 @@ int sqlite3_expert_sql(
 
 int sqlite3_expert_analyze(sqlite3expert *p, char **pzErr){
   int rc;
+  IdxHashEntry *pEntry;
 
   /* Create candidate indexes within the in-memory database file */
   rc = idxCreateCandidates(p, pzErr);
+
+  for(pEntry=p->hIdx.pFirst; pEntry; pEntry=pEntry->pNext){
+    p->zCandidates = idxAppendText(&rc, p->zCandidates, "%s;\n", pEntry->zVal);
+  }
 
   /* Figure out which of the candidate indexes are preferred by the query
   ** planner and report the results to the user.  */
@@ -1084,18 +1087,19 @@ const char *sqlite3_expert_report(sqlite3expert *p, int iStmt, int eReport){
 
   if( p->bRun==0 ) return 0;
   for(pStmt=p->pStatement; pStmt && pStmt->iId!=iStmt; pStmt=pStmt->pNext);
-  if( pStmt ){
-    switch( eReport ){
-      case EXPERT_REPORT_SQL:
-        zRet = pStmt->zSql;
-        break;
-      case EXPERT_REPORT_INDEXES:
-        zRet = pStmt->zIdx;
-        break;
-      case EXPERT_REPORT_PLAN:
-        zRet = pStmt->zEQP;
-        break;
-    }
+  switch( eReport ){
+    case EXPERT_REPORT_SQL:
+      if( pStmt ) zRet = pStmt->zSql;
+      break;
+    case EXPERT_REPORT_INDEXES:
+      if( pStmt ) zRet = pStmt->zIdx;
+      break;
+    case EXPERT_REPORT_PLAN:
+      if( pStmt ) zRet = pStmt->zEQP;
+      break;
+    case EXPERT_REPORT_CANDIDATES:
+      zRet = p->zCandidates;
+      break;
   }
   return zRet;
 }
