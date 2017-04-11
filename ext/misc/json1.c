@@ -785,7 +785,7 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
     j = i+1;
     for(;;){
       c = z[j];
-      if( c==0 ) return -1;
+      if( c<=0x1f ) return -1;  /* Control characters not allowed in strings */
       if( c=='\\' ){
         c = z[++j];
         if( c=='"' || c=='\\' || c=='/' || c=='b' || c=='f'
