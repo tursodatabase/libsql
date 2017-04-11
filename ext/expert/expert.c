@@ -128,7 +128,7 @@ int main(int argc, char **argv){
       const char *zSql = sqlite3_expert_report(p, i, EXPERT_REPORT_SQL);
       const char *zIdx = sqlite3_expert_report(p, i, EXPERT_REPORT_INDEXES);
       const char *zEQP = sqlite3_expert_report(p, i, EXPERT_REPORT_PLAN);
-      if( zIdx==0 ) zIdx = "(no new indexes)";
+      if( zIdx==0 ) zIdx = "(no new indexes)\n";
       if( iVerbose>0 ){
         fprintf(stdout, "-- Query %d ----------------------------------\n",i+1);
         fprintf(stdout, "%s\n\n", zSql);
