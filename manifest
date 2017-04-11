@@ -1,5 +1,5 @@
-C Very\sslight\ssmaller\sand\sfaster\ssqlite3SelectNew()
-D 2017-04-11T16:44:39.910
+C Smaller\sand\sfaster\simplementation\sof\sexprMightBeIndexed().
+D 2017-04-11T18:06:48.387
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a4c0613a18663bda56d8cf76079ab6590a7c3602e54befb4bbdef76bcaa38b6a
@@ -485,7 +485,7 @@ F src/walker.c b71a992b413b3a022572eccf29ef4b4890223791
 F src/where.c 1d14e18f32231fa7969e718e7b60ef749b0065e2a7e1b6b00883b20732d280f1
 F src/whereInt.h 7a21ef633e26acbf46df04add2eba6e0a2100c78dc5879049e93f981fc3344df
 F src/wherecode.c 943e32e9dccd0af802e0683ae11071c8bd808364e5908a5fb66758bd404c8681
-F src/whereexpr.c 130cdd1a43af71b19755270fb1224874cf55158c
+F src/whereexpr.c e913aaa7b73ffcce66abcea5f197e2c538d48b5df78d0b7bba8ff4d73cc2e745
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/affinity3.test 6a101af2fc945ce2912f6fe54dd646018551710d
@@ -1571,7 +1571,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0f3eb61f44c94234ffc14c3a493a27ec62c0d1e2bb62798f36eafa98ddcdc58e
-R 5f2f74eb29544d7d3c639e823e92116e
+P 4143650c4ce32289d2301cdfc69bb10877246420f656bed122886f6803fc956a
+R 1aa45dcbe6873a793fc57d44af855002
 U drh
-Z 7231f0f16860dcf4ac8b22d5fa5d18a1
+Z c24847878c6bf2e9fe8bedbea41e582e
