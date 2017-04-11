@@ -1039,7 +1039,10 @@ static void codeExprOrVector(Parse *pParse, Expr *p, int iReg, int nReg){
   }
 }
 
-#if 1 /* INDEXEXPRTRANS */
+/* An instance of the IdxExprTrans object carries information about a
+** mapping from an expression on table columns into a column in an index
+** down through the Walker.
+*/
 typedef struct IdxExprTrans {
   Expr *pIdxExpr;    /* The index expression */
   int iTabCur;       /* The cursor of the corresponding table */
@@ -1047,6 +1050,12 @@ typedef struct IdxExprTrans {
   int iIdxCol;       /* The column for the index */
 } IdxExprTrans;
 
+/* The walker node callback used to transform matching expressions into
+** a reference to an index column for an index on an expression.
+**
+** If pExpr matches, then transform it into a reference to the index column
+** that contains the value of pExpr.
+*/
 static int whereIndexExprTransNode(Walker *p, Expr *pExpr){
   IdxExprTrans *pX = p->u.pIdxTrans;
   if( sqlite3ExprCompare(pExpr, pX->pIdxExpr, pX->iTabCur)==0 ){
@@ -1092,7 +1101,6 @@ static void whereIndexExprTrans(
     sqlite3WalkExprList(&w, pWInfo->pResultSet);
   }
 }
-#endif
 
 /*
 ** Generate code for the start of the iLevel-th loop in the WHERE clause
@@ -1675,9 +1683,12 @@ Bitmask sqlite3WhereCodeOneLoopStart(
                            iRowidReg, pPk->nKeyCol); VdbeCoverage(v);
     }
 
-#if 1  /* INDEXEXPRTANS */
+    /* If pIdx is an index on one or more expressions, then look through
+    ** all the expressions in pWInfo and try to transform matching expressions
+    ** into reference to index columns.
+    */
     whereIndexExprTrans(pIdx, iCur, iIdxCur, pWInfo);
-#endif
+
 
     /* Record the instruction used to terminate the loop. */
     if( pLoop->wsFlags & WHERE_ONEROW ){
