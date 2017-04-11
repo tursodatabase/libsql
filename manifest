@@ -1,5 +1,5 @@
-C Add\san\sALWAYS()\saround\san\sunreachable\scondition\sin\ssqlite3VdbeMemGrow().
-D 2017-04-11T12:20:54.451
+C Very\sslight\ssmaller\sand\sfaster\ssqlite3SelectNew()
+D 2017-04-11T16:44:39.910
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a4c0613a18663bda56d8cf76079ab6590a7c3602e54befb4bbdef76bcaa38b6a
@@ -401,7 +401,7 @@ F src/printf.c 8757834f1b54dae512fb25eb1acc8e94a0d15dd2290b58f2563f65973265adb2
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 3e518b962d932a997fae373366880fc028c75706
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c 9228235fdefe6de138ac01c4c68d07fd95d78780ef85112a76e63e260a6f5897
+F src/select.c e6f9afd8a5ef35bd186e51a6bea6d3d46bc93a530f26a21fe8a0a43dbeca9415
 F src/shell.c 70f4957b988572315e97c56941fdc81fd35907fee36b7b2e7be5ec4c7e9d065d
 F src/sqlite.h.in 40233103e3e4e10f8a63523498d0259d232e42aba478e2d3fb914799185aced6
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1571,7 +1571,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d6bb7c42ff6309ce168ccdcf03b4cdabfccfc9e2a911d254ac7dc4fea4aa2bc1
-R 3ed33f6a8cc3dac4cc6e300fdc5f3bb6
+P 0f3eb61f44c94234ffc14c3a493a27ec62c0d1e2bb62798f36eafa98ddcdc58e
+R 5f2f74eb29544d7d3c639e823e92116e
 U drh
-Z 9f3e0bc1025e624bd24df215db691169
+Z 7231f0f16860dcf4ac8b22d5fa5d18a1
