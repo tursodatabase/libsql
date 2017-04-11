@@ -1,5 +1,5 @@
-C Fix\sa\ssegfault\sthat\scould\soccur\sif\san\sindexed\sexpression\swas\sused\sin\sa\ncomparison\soperation\swithin\sthe\sresult-set\sof\sa\sSELECT\sstatement.
-D 2017-04-11T11:52:25.960
+C Add\san\sALWAYS()\saround\san\sunreachable\scondition\sin\ssqlite3VdbeMemGrow().
+D 2017-04-11T12:20:54.451
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a4c0613a18663bda56d8cf76079ab6590a7c3602e54befb4bbdef76bcaa38b6a
@@ -474,7 +474,7 @@ F src/vdbeInt.h c070bc5c8b913bda0ceaa995cd4d939ded5e4fc96cf7c3c1c602d41b871f8ade
 F src/vdbeapi.c 5b08d82592bcff4470601fe78aaabebd50837860
 F src/vdbeaux.c 6b3f6ce909e206d4c918988b13b7fa687e92b4471d137e0f2a37edac80ec60be
 F src/vdbeblob.c 359891617358deefc85bef7bcf787fa6b77facb9
-F src/vdbemem.c 934f9bce97228df9d2ae7f094e1ffcd5ada8fe9c0b13cf5c3978c4b7e64f1087
+F src/vdbemem.c 3122f5a21064198c10ee1b4686937aab27d5395712d9af905b7fa1affc47a453
 F src/vdbesort.c e72fe02a2121386ba767ede8942e9450878b8fc873abf3d1b6824485f092570c
 F src/vdbetrace.c 41963d5376f0349842b5fc4aaaaacd7d9cdc0834
 F src/vtab.c 007513c2ef52472fcdea6a741683d50662e82790
@@ -1571,7 +1571,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a47efb7c8520a01110ce3b3531ebe1bab6720780d67fba001992c44c5807d332
-R 23a3a6c1f1b033d4a8710b18c262d91a
-U dan
-Z ab01f2cb6410fac9d35417473ab077a6
+P d6bb7c42ff6309ce168ccdcf03b4cdabfccfc9e2a911d254ac7dc4fea4aa2bc1
+R 3ed33f6a8cc3dac4cc6e300fdc5f3bb6
+U drh
+Z 9f3e0bc1025e624bd24df215db691169
