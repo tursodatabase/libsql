@@ -1886,25 +1886,110 @@ Fts5Colset *sqlite3Fts5ParseColset(
   return pRet;
 }
 
+/*
+** If argument pOrig is NULL, or if (*pRc) is set to anything other than
+** SQLITE_OK when this function is called, NULL is returned. 
+**
+** Otherwise, a copy of (*pOrig) is made into memory obtained from
+** sqlite3Fts5MallocZero() and a pointer to it returned. If the allocation
+** fails, (*pRc) is set to SQLITE_NOMEM and NULL is returned.
+*/
+static Fts5Colset *fts5CloneColset(int *pRc, Fts5Colset *pOrig){
+  Fts5Colset *pRet;
+  if( pOrig ){
+    int nByte = sizeof(Fts5Colset) + (pOrig->nCol-1) * sizeof(int);
+    pRet = (Fts5Colset*)sqlite3Fts5MallocZero(pRc, nByte);
+    if( pRet ){ 
+      memcpy(pRet, pOrig, nByte);
+    }
+  }else{
+    pRet = 0;
+  }
+  return pRet;
+}
+
+/*
+** Remove from colset pColset any columns that are not also in colset pMerge.
+*/
+static void fts5MergeColset(Fts5Colset *pColset, Fts5Colset *pMerge){
+  int iIn = 0;          /* Next input in pColset */
+  int iMerge = 0;       /* Next input in pMerge */
+  int iOut = 0;         /* Next output slot in pColset */
+
+  while( iIn<pColset->nCol && iMerge<pMerge->nCol ){
+    int iDiff = pColset->aiCol[iIn] - pMerge->aiCol[iMerge];
+    if( iDiff==0 ){
+      pColset->aiCol[iOut++] = pMerge->aiCol[iMerge];
+      iMerge++;
+      iIn++;
+    }else if( iDiff>0 ){
+      iMerge++;
+    }else{
+      iIn++;
+    }
+  }
+  pColset->nCol = iOut;
+}
+
+/*
+** Recursively apply colset pColset to expression node pNode and all of
+** its decendents. If (*ppFree) is not NULL, it contains a spare copy
+** of pColset. This function may use the spare copy and set (*ppFree) to
+** zero, or it may create copies of pColset using fts5CloneColset().
+*/
+static void fts5ParseSetColset(
+  Fts5Parse *pParse, 
+  Fts5ExprNode *pNode, 
+  Fts5Colset *pColset,
+  Fts5Colset **ppFree
+){
+  if( pParse->rc==SQLITE_OK ){
+    assert( pNode->eType==FTS5_TERM || pNode->eType==FTS5_STRING 
+         || pNode->eType==FTS5_AND  || pNode->eType==FTS5_OR
+         || pNode->eType==FTS5_NOT  || pNode->eType==FTS5_EOF
+    );
+    if( pNode->eType==FTS5_STRING || pNode->eType==FTS5_TERM ){
+      Fts5ExprNearset *pNear = pNode->pNear;
+      if( pNear->pColset ){
+        fts5MergeColset(pNear->pColset, pColset);
+        if( pNear->pColset->nCol==0 ){
+          pNode->eType = FTS5_EOF;
+          pNode->xNext = 0;
+        }
+      }else if( *ppFree ){
+        pNear->pColset = pColset;
+        *ppFree = 0;
+      }else{
+        pNear->pColset = fts5CloneColset(&pParse->rc, pColset);
+      }
+    }else{
+      int i;
+      assert( pNode->eType!=FTS5_EOF || pNode->nChild==0 );
+      for(i=0; i<pNode->nChild; i++){
+        fts5ParseSetColset(pParse, pNode->apChild[i], pColset, ppFree);
+      }
+    }
+  }
+}
+
+/*
+** Apply colset pColset to expression node pExpr and all of its descendents.
+*/
 void sqlite3Fts5ParseSetColset(
   Fts5Parse *pParse, 
-  Fts5ExprNearset *pNear, 
+  Fts5ExprNode *pExpr, 
   Fts5Colset *pColset 
 ){
+  Fts5Colset *pFree = pColset;
   if( pParse->pConfig->eDetail==FTS5_DETAIL_NONE ){
     pParse->rc = SQLITE_ERROR;
     pParse->zErr = sqlite3_mprintf(
       "fts5: column queries are not supported (detail=none)"
     );
-    sqlite3_free(pColset);
-    return;
-  }
-
-  if( pNear ){
-    pNear->pColset = pColset;
   }else{
-    sqlite3_free(pColset);
+    fts5ParseSetColset(pParse, pExpr, pColset, &pFree);
   }
+  sqlite3_free(pFree);
 }
 
 static void fts5ExprAssignXNext(Fts5ExprNode *pNode){
