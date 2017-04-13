@@ -3158,23 +3158,23 @@ static int fts5IndexExtractCol(
   return p - (*pa);
 }
 
-static int fts5IndexExtractColset (
+static void fts5IndexExtractColset(
+  int *pRc,
   Fts5Colset *pColset,            /* Colset to filter on */
   const u8 *pPos, int nPos,       /* Position list */
   Fts5Buffer *pBuf                /* Output buffer */
 ){
-  int rc = SQLITE_OK;
-  int i;
-
-  fts5BufferZero(pBuf);
-  for(i=0; i<pColset->nCol; i++){
-    const u8 *pSub = pPos;
-    int nSub = fts5IndexExtractCol(&pSub, nPos, pColset->aiCol[i]);
-    if( nSub ){
-      fts5BufferAppendBlob(&rc, pBuf, nSub, pSub);
+  if( *pRc==SQLITE_OK ){
+    int i;
+    fts5BufferZero(pBuf);
+    for(i=0; i<pColset->nCol; i++){
+      const u8 *pSub = pPos;
+      int nSub = fts5IndexExtractCol(&pSub, nPos, pColset->aiCol[i]);
+      if( nSub ){
+        fts5BufferAppendBlob(pRc, pBuf, nSub, pSub);
+      }
     }
   }
-  return rc;
 }
 
 /*
@@ -3298,8 +3298,9 @@ static void fts5IterSetOutputs_Full(Fts5Iter *pIter, Fts5SegIter *pSeg){
       pIter->base.nData = fts5IndexExtractCol(&a, pSeg->nPos,pColset->aiCol[0]);
       pIter->base.pData = a;
     }else{
+      int *pRc = &pIter->pIndex->rc;
       fts5BufferZero(&pIter->poslist);
-      fts5IndexExtractColset(pColset, a, pSeg->nPos, &pIter->poslist);
+      fts5IndexExtractColset(pRc, pColset, a, pSeg->nPos, &pIter->poslist);
       pIter->base.pData = pIter->poslist.p;
       pIter->base.nData = pIter->poslist.n;
     }
