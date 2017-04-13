@@ -356,6 +356,15 @@ do_execsql_test json-8.2 {
   SELECT a=json_extract(b,'$[0]') FROM t8;
 } {1}
 
+# 2017-04-12.  Regression reported on the mailing list by Rolf Ade
+#
+do_execsql_test json-8.3 {
+  SELECT json_valid(char(0x22,0xe4,0x22));
+} {1}
+do_execsql_test json-8.4 {
+  SELECT unicode(json_extract(char(0x22,228,0x22),'$'));
+} {228}
+
 # The json_quote() function transforms an SQL value into a JSON value.
 # String values are quoted and interior quotes are escaped.  NULL values
 # are rendered as the unquoted string "null".
