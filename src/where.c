@@ -4847,7 +4847,6 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     int addr;
     pLevel = &pWInfo->a[i];
     pLoop = pLevel->pWLoop;
-    sqlite3VdbeResolveLabel(v, pLevel->addrCont);
     if( pLevel->op!=OP_Noop ){
 #ifndef SQLITE_DISABLE_SKIPAHEAD_DISTINCT
       int n = -1;
@@ -4867,18 +4866,25 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
         for(j=0; j<pX->nExpr; j++){
           Expr *pE = sqlite3ExprSkipCollate(pX->a[j].pExpr);
           if( pE->op==TK_COLUMN ){
-            if( pE->iTable!=pLevel->iTabCur ) continue;
-            k = 1+sqlite3ColumnOfIndex(pIdx, pE->iColumn);
+            if( pE->iTable==pLevel->iIdxCur ){
+              k = pE->iColumn+1;
+            }else{
+              if( pE->iTable!=pLevel->iTabCur ) continue;
+              k = 1+sqlite3ColumnOfIndex(pIdx, pE->iColumn);
+            }
             if( k>n ) n = k;
-          }else if( pIdx->aColExpr ){
-            for(k=n+1; k<pIdx->nKeyCol; k++){
+          }
+#ifdef SQLITE_DEBUG
+          /* Any expressions in the result-set that match columns of the
+          ** index should have already been transformed to TK_COLUMN 
+          ** operations by whereIndexExprTrans().  */
+          else if( pIdx->aColExpr ){
+            for(k=0; k<pIdx->nKeyCol; k++){
               Expr *pI = pIdx->aColExpr->a[k].pExpr;
-              if( pI && sqlite3ExprCompare(pE,pI,0)<2 ){
-                n = k+1;
-                break;
-              }
+              assert( pI==0 || sqlite3ExprCompare(pE, pI, pE->iTable)!=0 );
             }
           }
+#endif
         }
       }
       /* TUNING: Only try to skip ahead using OP_Seek if we expect to
@@ -4895,11 +4901,14 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
         VdbeCoverageIf(v, op==OP_SeekLT);
         VdbeCoverageIf(v, op==OP_SeekGT);
         sqlite3VdbeAddOp2(v, OP_Goto, 1, pLevel->p2);
+        sqlite3VdbeResolveLabel(v, pLevel->addrCont);
+        sqlite3VdbeAddOp3(v, pLevel->op, pLevel->p1, pLevel->p2, pLevel->p3);
         sqlite3VdbeJumpHere(v, k);
       }else
 #endif /* SQLITE_DISABLE_SKIPAHEAD_DISTINCT */
       {
         /* The common case: Advance to the next row */
+        sqlite3VdbeResolveLabel(v, pLevel->addrCont);
         sqlite3VdbeAddOp3(v, pLevel->op, pLevel->p1, pLevel->p2, pLevel->p3);
         sqlite3VdbeChangeP5(v, pLevel->p5);
         VdbeCoverage(v);
@@ -4907,6 +4916,8 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
         VdbeCoverageIf(v, pLevel->op==OP_Prev);
         VdbeCoverageIf(v, pLevel->op==OP_VNext);
       }
+    }else{
+      sqlite3VdbeResolveLabel(v, pLevel->addrCont);
     }
     if( pLoop->wsFlags & WHERE_IN_ABLE && pLevel->u.in.nIn>0 ){
       struct InLoop *pIn;

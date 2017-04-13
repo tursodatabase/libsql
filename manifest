@@ -1,5 +1,5 @@
-C Only\suse\sthe\sskip-ahead-distinct\soptimization\sif\sthe\sindex\shas\sbeen\sanalyzed\nand\swe\sknow\sthat\sa\sskip-head\sis\slikely\sto\sskip\sover\sat\sleast\s11\srows.\s\sThe\nmagic\snumber\s11\swas\sdetermined\sby\sexperimentation.
-D 2017-04-13T13:01:59.793
+C New\stest\scases\sand\sminor\sfixes\sfor\sthe\soptimization\son\sthis\sbranch.
+D 2017-04-13T18:33:33.610
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a4c0613a18663bda56d8cf76079ab6590a7c3602e54befb4bbdef76bcaa38b6a
@@ -482,7 +482,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 40c543f0a2195d1b0dc88ef12142bea690009344
 F src/wal.h 06b2a0b599cc0f53ea97f497cf8c6b758c999f71
 F src/walker.c b71a992b413b3a022572eccf29ef4b4890223791
-F src/where.c 56111492a24dac936a4e5af7da18bdec6a8e0650a69bf0a8654a2a1b3241b247
+F src/where.c b08b998bea4474754bbb54a4d22e9689e4372672f9cd8ccc4d41640ef5efecbf
 F src/whereInt.h 7a21ef633e26acbf46df04add2eba6e0a2100c78dc5879049e93f981fc3344df
 F src/wherecode.c 943e32e9dccd0af802e0683ae11071c8bd808364e5908a5fb66758bd404c8681
 F src/whereexpr.c e913aaa7b73ffcce66abcea5f197e2c538d48b5df78d0b7bba8ff4d73cc2e745
@@ -658,7 +658,7 @@ F test/descidx2.test 9f1a0c83fd57f8667c82310ca21b30a350888b5d
 F test/descidx3.test 09ddbe3f5295f482d2f8b687cf6db8bad7acd9a2
 F test/diskfull.test 106391384780753ea6896b7b4f005d10e9866b6e
 F test/distinct.test a1783b960ad8c15a77cd9f207be072898db1026c
-F test/distinct2.test 2d5245672d259c28a8b706cdc764c4cfa663e2ba
+F test/distinct2.test 5bf7cb4233222cf275b72bcde9149107d300297dd88711aa7f7902d4884b6730
 F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
 F test/e_blobbytes.test 439a945953b35cb6948a552edaec4dc31fd70a05
 F test/e_blobclose.test 4b3c8c60c2171164d472059c73e9f3c1844bb66d
@@ -1572,7 +1572,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 132339a1fb0b9664df4d3eefbed6e77ef100ba95a91dcc622da7bd3fcdfcd6af
-R 5c1ba5f3c1c29d44b68025e1a39bfee8
-U drh
-Z 06d9008ebfc7601c93a90ebae38b456d
+P 0cf16decd534bf2d66620c293f8c8987f356305f2d97f8fd12d260bda1571385
+R 576a06d609b733a5644f1c6a0bebf58e
+U dan
+Z e29dec34fd75469b8282367092cf6782
