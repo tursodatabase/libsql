@@ -1,5 +1,5 @@
-C New\stest\scases\sand\sminor\sfixes\sfor\sthe\soptimization\son\sthis\sbranch.
-D 2017-04-13T18:33:33.610
+C Simplification\sof\sthe\sskip-ahead-distinct\slogic.\s\sThere\sis\sstill\san\sissue\nwith\shandling\sCOLLATE.
+D 2017-04-13T19:48:29.675
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a4c0613a18663bda56d8cf76079ab6590a7c3602e54befb4bbdef76bcaa38b6a
@@ -482,7 +482,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 40c543f0a2195d1b0dc88ef12142bea690009344
 F src/wal.h 06b2a0b599cc0f53ea97f497cf8c6b758c999f71
 F src/walker.c b71a992b413b3a022572eccf29ef4b4890223791
-F src/where.c b08b998bea4474754bbb54a4d22e9689e4372672f9cd8ccc4d41640ef5efecbf
+F src/where.c 2b88a9abe28584178a395f286479dda0b103a758c3bf3c70e52a0560f40b467d
 F src/whereInt.h 7a21ef633e26acbf46df04add2eba6e0a2100c78dc5879049e93f981fc3344df
 F src/wherecode.c 943e32e9dccd0af802e0683ae11071c8bd808364e5908a5fb66758bd404c8681
 F src/whereexpr.c e913aaa7b73ffcce66abcea5f197e2c538d48b5df78d0b7bba8ff4d73cc2e745
@@ -1572,7 +1572,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0cf16decd534bf2d66620c293f8c8987f356305f2d97f8fd12d260bda1571385
-R 576a06d609b733a5644f1c6a0bebf58e
-U dan
-Z e29dec34fd75469b8282367092cf6782
+P 70ac9ea1a6cb2f4906f00f1a04f668e5ba5eeed8d4d0fa4be57a9c9eb0683697
+R a148756c1ff7d66b58143c3257e91f62
+U drh
+Z 90de4c6922e024a076aa3621c058524e
