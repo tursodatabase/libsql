@@ -213,6 +213,7 @@ static void fts5ParseFree(void *p){ sqlite3_free(p); }
 
 int sqlite3Fts5ExprNew(
   Fts5Config *pConfig,            /* FTS5 Configuration */
+  int iCol,
   const char *zExpr,              /* Expression text */
   Fts5Expr **ppNew, 
   char **pzErr
@@ -236,6 +237,18 @@ int sqlite3Fts5ExprNew(
     sqlite3Fts5Parser(pEngine, t, token, &sParse);
   }while( sParse.rc==SQLITE_OK && t!=FTS5_EOF );
   sqlite3Fts5ParserFree(pEngine, fts5ParseFree);
+
+  /* If the LHS of the MATCH expression was a user column, apply the
+  ** implicit column-filter.  */
+  if( iCol<pConfig->nCol && sParse.pExpr && sParse.rc==SQLITE_OK ){
+    int n = sizeof(Fts5Colset);
+    Fts5Colset *pColset = (Fts5Colset*)sqlite3Fts5MallocZero(&sParse.rc, n);
+    if( pColset ){
+      pColset->nCol = 1;
+      pColset->aiCol[0] = iCol;
+      sqlite3Fts5ParseSetColset(&sParse, sParse.pExpr, pColset);
+    }
+  }
 
   assert( sParse.rc!=SQLITE_OK || sParse.zErr==0 );
   if( sParse.rc==SQLITE_OK ){
@@ -2443,7 +2456,7 @@ static void fts5ExprFunction(
 
   rc = sqlite3Fts5ConfigParse(pGlobal, db, nConfig, azConfig, &pConfig, &zErr);
   if( rc==SQLITE_OK ){
-    rc = sqlite3Fts5ExprNew(pConfig, zExpr, &pExpr, &zErr);
+    rc = sqlite3Fts5ExprNew(pConfig, pConfig->nCol, zExpr, &pExpr, &zErr);
   }
   if( rc==SQLITE_OK ){
     char *zText;
