@@ -1,5 +1,5 @@
-C Update\sthe\scode\sin\stest_delete.c\sto\suse\sthe\s"win32"\sVFS\sif\sSQLITE_OS_WIN\sis\ndefined.
-D 2017-04-13T15:36:47.128
+C Reinstate\sthe\sSQLITE_API\squalifier\son\sthe\ssqlite3_delete_database()\smethod\sin\ntest_delete.c.\sAccidentally\sremoved\sby\sthe\sprevious\scommit.
+D 2017-04-13T15:51:27.697
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a4c0613a18663bda56d8cf76079ab6590a7c3602e54befb4bbdef76bcaa38b6a
@@ -427,7 +427,7 @@ F src/test_bestindex.c d23f80d334c59662af69191854c76b8d3d0c8c96
 F src/test_blob.c f65ac717da2618691cf9dad094e6da0219dcd208
 F src/test_btree.c 8b2dc8b8848cf3a4db93f11578f075e82252a274
 F src/test_config.c edcba290248dc18736dd814c9b95863c6762e0b35753048d8cbe5bf65f7abfbb
-F src/test_delete.c e9c5a8556970f320ec7d5c10adbe33361c565553896ad443d0d5219146fe7308
+F src/test_delete.c e2fe07646dff6300b48d49b2fee2fe192ed389e834dd635e3b3bac0ce0bf9f8f
 F src/test_demovfs.c a0c3bdd45ed044115c2c9f7779e56eafff18741e
 F src/test_devsym.c 4e58dec2602d8e139ca08659f62a62450587cb58
 F src/test_fs.c e16cbe68d3b107e00a907c20a9a02629870eb69b
@@ -1571,7 +1571,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6f54ffd151b0eca6f9ef57ac54802584a839cfc7373f10c100fc18c855edcc0a
-R 059cacbdb1a4697b56b848d2127e6b17
+P fa9bb7b768027677f7e7d5a196ba5b245dfc8d8986ccd101c8dab671bd15719d
+R a3ef8c76f5c2f7b3a154992d233a97da
 U dan
-Z 0315456a90ada783d6692c926030f70c
+Z d716c1706cce68fcc2a1217c8e02d65a
