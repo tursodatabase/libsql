@@ -1,5 +1,5 @@
-C Simplification\sof\sthe\sskip-ahead-distinct\slogic.\s\sThere\sis\sstill\san\sissue\nwith\shandling\sCOLLATE.
-D 2017-04-13T19:48:29.675
+C Fix\sthe\sskip-ahead-distinct\soptimization\sso\sthat\sit\sworks\swith\sindexes\sthat\nhave\srepeated\scolumns\swith\sdifferent\scollating\ssequences.
+D 2017-04-13T21:29:02.792
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a4c0613a18663bda56d8cf76079ab6590a7c3602e54befb4bbdef76bcaa38b6a
@@ -482,8 +482,8 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 40c543f0a2195d1b0dc88ef12142bea690009344
 F src/wal.h 06b2a0b599cc0f53ea97f497cf8c6b758c999f71
 F src/walker.c b71a992b413b3a022572eccf29ef4b4890223791
-F src/where.c 2b88a9abe28584178a395f286479dda0b103a758c3bf3c70e52a0560f40b467d
-F src/whereInt.h 7a21ef633e26acbf46df04add2eba6e0a2100c78dc5879049e93f981fc3344df
+F src/where.c 911bf344a45e63528933d92ba2574a8382ed2dcd980960888ad809e1b76a1068
+F src/whereInt.h 2a4b634d63ce488b46d4b0da8f2eaa8f9aeab202bc25ef76f007de5e3fba1f20
 F src/wherecode.c 943e32e9dccd0af802e0683ae11071c8bd808364e5908a5fb66758bd404c8681
 F src/whereexpr.c e913aaa7b73ffcce66abcea5f197e2c538d48b5df78d0b7bba8ff4d73cc2e745
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -658,7 +658,7 @@ F test/descidx2.test 9f1a0c83fd57f8667c82310ca21b30a350888b5d
 F test/descidx3.test 09ddbe3f5295f482d2f8b687cf6db8bad7acd9a2
 F test/diskfull.test 106391384780753ea6896b7b4f005d10e9866b6e
 F test/distinct.test a1783b960ad8c15a77cd9f207be072898db1026c
-F test/distinct2.test 5bf7cb4233222cf275b72bcde9149107d300297dd88711aa7f7902d4884b6730
+F test/distinct2.test faef8a3f27424e2cfbe19b2a40752294de3b5d957e049e3336be53ec0476cb58
 F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
 F test/e_blobbytes.test 439a945953b35cb6948a552edaec4dc31fd70a05
 F test/e_blobclose.test 4b3c8c60c2171164d472059c73e9f3c1844bb66d
@@ -1572,7 +1572,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 70ac9ea1a6cb2f4906f00f1a04f668e5ba5eeed8d4d0fa4be57a9c9eb0683697
-R a148756c1ff7d66b58143c3257e91f62
+P 57c5173b6376a76013b0611ce9770100bd8c04e80402e35d821d8614709f4795
+R 74434244bfed2daca1fdf1468b8ad643
 U drh
-Z 90de4c6922e024a076aa3621c058524e
+Z 9e01ec1a39b84d7c7feff809a6e0c2eb

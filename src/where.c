@@ -3532,6 +3532,8 @@ static i8 wherePathSatisfiesOrderBy(
     if( pLoop->wsFlags & WHERE_VIRTUALTABLE ){
       if( pLoop->u.vtab.isOrdered ) obSat = obDone;
       break;
+    }else{
+      pLoop->u.btree.nIdxCol = 0;
     }
     iCur = pWInfo->pTabList->a[pLoop->iTab].iCursor;
 
@@ -3677,6 +3679,7 @@ static i8 wherePathSatisfiesOrderBy(
             if( !pColl ) pColl = db->pDfltColl;
             if( sqlite3StrICmp(pColl->zName, pIndex->azColl[j])!=0 ) continue;
           }
+          if( pLoop->u.btree.nIdxCol<=j ) pLoop->u.btree.nIdxCol = j+1;
           isMatch = 1;
           break;
         }
@@ -4850,53 +4853,20 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     if( pLevel->op!=OP_Noop ){
 #ifndef SQLITE_DISABLE_SKIPAHEAD_DISTINCT
       int addrSeek = 0;
-      int n = -1;
-      int j, k, op;
-      int r1 = pParse->nMem+1;
       Index *pIdx;
+      int n;
       if( pWInfo->eDistinct==WHERE_DISTINCT_ORDERED
        && (pLoop->wsFlags & WHERE_INDEXED)!=0
        && OptimizationEnabled(db, SQLITE_SkipAhead)
        && (pIdx = pLoop->u.btree.pIndex)->hasStat1
+       && pIdx->aiRowLogEst[(n = pLoop->u.btree.nIdxCol)-1]>=36
       ){
-        /* This is the Skip-ahead optimization.  When doing a DISTINCT query
-        ** that has WHERE_DISTINCT_ORDERED, use OP_SkipGT/OP_SkipLT to skip
-        ** over all duplicate entries, rather than visiting all duplicates
-        ** using OP_Next/OP_Prev. */
-        ExprList *pX = pWInfo->pResultSet;
-        for(j=0; j<pX->nExpr; j++){
-          Expr *pE = sqlite3ExprSkipCollate(pX->a[j].pExpr);
-          if( pE->op==TK_COLUMN ){
-            if( pE->iTable==pLevel->iIdxCur ){
-              k = pE->iColumn+1;
-            }else{
-              if( pE->iTable!=pLevel->iTabCur ) continue;
-              k = 1+sqlite3ColumnOfIndex(pIdx, pE->iColumn);
-            }
-            if( k>n ) n = k;
-          }
-#ifdef SQLITE_DEBUG
-          /* Any expressions in the result-set that match columns of the
-          ** index should have already been transformed to TK_COLUMN 
-          ** operations by whereIndexExprTrans().  */
-          else if( pIdx->aColExpr ){
-            for(k=0; k<pIdx->nKeyCol; k++){
-              Expr *pI = pIdx->aColExpr->a[k].pExpr;
-              assert( pI==0 || sqlite3ExprCompare(pE, pI, pE->iTable)!=0 );
-            }
-          }
-#endif
-        }
-      }
-      /* TUNING: Only try to skip ahead using OP_Seek if we expect to
-      ** skip over 11 or more rows.  Otherwise, OP_Next is just as fast.
-      */
-      assert( 36==sqlite3LogEst(12) );
-      if( n>0 && pIdx->aiRowLogEst[n]>=36 ){
+        int r1 = pParse->nMem+1;
+        int j, op;
         for(j=0; j<n; j++){
           sqlite3VdbeAddOp3(v, OP_Column, pLevel->iIdxCur, j, r1+j);
         }
-        pParse->nMem += n;
+        pParse->nMem += n+1;
         op = pLevel->op==OP_Prev ? OP_SeekLT : OP_SeekGT;
         addrSeek = sqlite3VdbeAddOp4Int(v, op, pLevel->iIdxCur, 0, r1, n);
         VdbeCoverageIf(v, op==OP_SeekLT);
