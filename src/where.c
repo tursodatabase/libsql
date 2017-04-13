@@ -4853,16 +4853,17 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       int n = -1;
       int j, k, op;
       int r1 = pParse->nMem+1;
+      Index *pIdx;
       if( pWInfo->eDistinct==WHERE_DISTINCT_ORDERED
        && (pLoop->wsFlags & WHERE_INDEXED)!=0
        && OptimizationEnabled(db, SQLITE_SkipAhead)
+       && (pIdx = pLoop->u.btree.pIndex)->hasStat1
       ){
         /* This is the Skip-ahead optimization.  When doing a DISTINCT query
         ** that has WHERE_DISTINCT_ORDERED, use OP_SkipGT/OP_SkipLT to skip
         ** over all duplicate entries, rather than visiting all duplicates
         ** using OP_Next/OP_Prev. */
         ExprList *pX = pWInfo->pResultSet;
-        Index *pIdx = pLoop->u.btree.pIndex;
         for(j=0; j<pX->nExpr; j++){
           Expr *pE = sqlite3ExprSkipCollate(pX->a[j].pExpr);
           if( pE->op==TK_COLUMN ){
@@ -4880,7 +4881,11 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
           }
         }
       }
-      if( n>0 ){
+      /* TUNING: Only try to skip ahead using OP_Seek if we expect to
+      ** skip over 11 or more rows.  Otherwise, OP_Next is just as fast.
+      */
+      assert( 36==sqlite3LogEst(12) );
+      if( n>0 && pIdx->aiRowLogEst[n]>=36 ){
         for(j=0; j<n; j++){
           sqlite3VdbeAddOp3(v, OP_Column, pLevel->iIdxCur, j, r1+j);
         }
