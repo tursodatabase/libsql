@@ -4758,6 +4758,7 @@ WhereInfo *sqlite3WhereBegin(
         if( (pLoop->wsFlags & WHERE_CONSTRAINT)!=0
          && (pLoop->wsFlags & (WHERE_COLUMN_RANGE|WHERE_SKIPSCAN))==0
          && (pWInfo->wctrlFlags&WHERE_ORDERBY_MIN)==0
+         && pWInfo->eDistinct!=WHERE_DISTINCT_ORDERED
         ){
           sqlite3VdbeChangeP5(v, OPFLAG_SEEKEQ); /* Hint to COMDB2 */
         }
@@ -4848,12 +4849,59 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     pLoop = pLevel->pWLoop;
     sqlite3VdbeResolveLabel(v, pLevel->addrCont);
     if( pLevel->op!=OP_Noop ){
-      sqlite3VdbeAddOp3(v, pLevel->op, pLevel->p1, pLevel->p2, pLevel->p3);
-      sqlite3VdbeChangeP5(v, pLevel->p5);
-      VdbeCoverage(v);
-      VdbeCoverageIf(v, pLevel->op==OP_Next);
-      VdbeCoverageIf(v, pLevel->op==OP_Prev);
-      VdbeCoverageIf(v, pLevel->op==OP_VNext);
+#ifndef SQLITE_DISABLE_SKIPAHEAD_DISTINCT
+      int n = -1;
+      int j, k, op;
+      int r1 = pParse->nMem+1;
+      if( pWInfo->eDistinct==WHERE_DISTINCT_ORDERED
+       && (pLoop->wsFlags & WHERE_INDEXED)!=0
+       && OptimizationEnabled(db, SQLITE_SkipAhead)
+      ){
+        /* This is the Skip-ahead optimization.  When doing a DISTINCT query
+        ** that has WHERE_DISTINCT_ORDERED, use OP_SkipGT/OP_SkipLT to skip
+        ** over all duplicate entries, rather than visiting all duplicates
+        ** using OP_Next/OP_Prev. */
+        ExprList *pX = pWInfo->pResultSet;
+        Index *pIdx = pLoop->u.btree.pIndex;
+        for(j=0; j<pX->nExpr; j++){
+          Expr *pE = sqlite3ExprSkipCollate(pX->a[j].pExpr);
+          if( pE->op==TK_COLUMN ){
+            if( pE->iTable!=pLevel->iTabCur ) continue;
+            k = 1+sqlite3ColumnOfIndex(pIdx, pE->iColumn);
+            if( k>n ) n = k;
+          }else if( pIdx->aColExpr ){
+            for(k=n+1; k<pIdx->nKeyCol; k++){
+              Expr *pI = pIdx->aColExpr->a[k].pExpr;
+              if( pI && sqlite3ExprCompare(pE,pI,0)<2 ){
+                n = k+1;
+                break;
+              }
+            }
+          }
+        }
+      }
+      if( n>0 ){
+        for(j=0; j<n; j++){
+          sqlite3VdbeAddOp3(v, OP_Column, pLevel->iIdxCur, j, r1+j);
+        }
+        pParse->nMem += n;
+        op = pLevel->op==OP_Prev ? OP_SeekLT : OP_SeekGT;
+        k = sqlite3VdbeAddOp4Int(v, op, pLevel->iIdxCur, 0, r1, n);
+        VdbeCoverageIf(v, op==OP_SeekLT);
+        VdbeCoverageIf(v, op==OP_SeekGT);
+        sqlite3VdbeAddOp2(v, OP_Goto, 1, pLevel->p2);
+        sqlite3VdbeJumpHere(v, k);
+      }else
+#endif /* SQLITE_DISABLE_SKIPAHEAD_DISTINCT */
+      {
+        /* The common case: Advance to the next row */
+        sqlite3VdbeAddOp3(v, pLevel->op, pLevel->p1, pLevel->p2, pLevel->p3);
+        sqlite3VdbeChangeP5(v, pLevel->p5);
+        VdbeCoverage(v);
+        VdbeCoverageIf(v, pLevel->op==OP_Next);
+        VdbeCoverageIf(v, pLevel->op==OP_Prev);
+        VdbeCoverageIf(v, pLevel->op==OP_VNext);
+      }
     }
     if( pLoop->wsFlags & WHERE_IN_ABLE && pLevel->u.in.nIn>0 ){
       struct InLoop *pIn;
