@@ -3154,7 +3154,8 @@ static int multiSelectOrderBy(
 typedef struct SubstContext {
   Parse *pParse;            /* The parsing context */
   int iTable;               /* Replace references to this table */
-  int iNewTable;            /* New table number, or -1 */
+  int iNewTable;            /* New table number */
+  int isLeftJoin;           /* Add TK_IF_NULL_ROW opcodes on each replacement */
   ExprList *pEList;         /* Replacement expressions */
 } SubstContext;
 
@@ -3189,12 +3190,20 @@ static Expr *substExpr(
     }else{
       Expr *pNew;
       Expr *pCopy = pSubst->pEList->a[pExpr->iColumn].pExpr;
+      Expr ifNullRow;
       assert( pSubst->pEList!=0 && pExpr->iColumn<pSubst->pEList->nExpr );
       assert( pExpr->pLeft==0 && pExpr->pRight==0 );
       if( sqlite3ExprIsVector(pCopy) ){
         sqlite3VectorErrorMsg(pSubst->pParse, pCopy);
       }else{
         sqlite3 *db = pSubst->pParse->db;
+        if( pSubst->isLeftJoin && pCopy->op!=TK_COLUMN ){
+          memset(&ifNullRow, 0, sizeof(ifNullRow));
+          ifNullRow.op = TK_IF_NULL_ROW;
+          ifNullRow.pLeft = pCopy;
+          ifNullRow.iTable = pSubst->iNewTable;
+          pCopy = &ifNullRow;
+        }
         pNew = sqlite3ExprDup(db, pCopy, 0);
         if( pNew && (pExpr->flags & EP_FromJoin) ){
           pNew->iRightJoinTable = pExpr->iRightJoinTable;
@@ -3288,14 +3297,8 @@ static void substSelect(
 **        FROM-clause subquery that is a candidate for flattening.  (2b is
 **        due to ticket [2f7170d73bf9abf80] from 2015-02-09.)
 **
-**   (3)  The subquery is not the right operand of a left outer join
-**        or (3b) the subquery is not a join and (3c) does not contain any
-**        result-set columns that could be non-NULL even if columns of the
-**        subquery table are NULL.
-**        to be more restrictive - disallowing subquery if it was the
-**        right operand of a left join.  See tickets #306 and #3300. Relaxed
-**        to allow simple subqueries as the right operand of a left join
-**        on 2017-04-14.)
+**   (3)  The subquery is not the right operand of a LEFT JOIN
+**        or the subquery is not itself a join.
 **
 **   (4)  The subquery is not DISTINCT.
 **
@@ -3307,7 +3310,7 @@ static void substSelect(
 **        DISTINCT.
 **
 **   (7)  The subquery has a FROM clause.  TODO:  For subqueries without
-**        A FROM clause, consider adding a FROM close with the special
+**        A FROM clause, consider adding a FROM clause with the special
 **        table sqlite_once that consists of a single row containing a
 **        single NULL.
 **
@@ -3491,15 +3494,13 @@ static int flattenSubquery(
   **
   ** which is not at all the same thing.
   **
-  ** See also tickets #306 and #3300.
+  ** See also tickets #306, #350, and #3300.
   */
   if( (pSubitem->fg.jointype & JT_OUTER)!=0 ){
     isLeftJoin = 1;
     if( pSubSrc->nSrc>1 ){
-      return 0; /* Restriction (3b) */
+      return 0; /* Restriction (3) */
     }
-    /* TBD: Deal with the case of result-set expressions that are non-NULL even
-    ** when the RHS table of a LEFT JOIN is NULL. */
   }
 
   /* Restriction 17: If the sub-query is a compound SELECT, then it must
@@ -3774,6 +3775,7 @@ static int flattenSubquery(
       x.pParse = pParse;
       x.iTable = iParent;
       x.iNewTable = iNewParent;
+      x.isLeftJoin = isLeftJoin;
       x.pEList = pSub->pEList;
       substSelect(&x, pParent, 0);
     }
@@ -3883,6 +3885,7 @@ static int pushDownWhereTerms(
       x.pParse = pParse;
       x.iTable = iCursor;
       x.iNewTable = iCursor;
+      x.isLeftJoin = 0;
       x.pEList = pSubq->pEList;
       pNew = substExpr(&x, pNew);
       pSubq->pWhere = sqlite3ExprAnd(pParse->db, pSubq->pWhere, pNew);

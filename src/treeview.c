@@ -470,6 +470,11 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
       sqlite3TreeViewSelect(pView, pExpr->pLeft->x.pSelect, 0);
       break;
     }
+    case TK_IF_NULL_ROW: {
+      sqlite3TreeViewLine(pView, "IF-NULL-ROW %d", pExpr->iTable);
+      sqlite3TreeViewExpr(pView, pExpr->pLeft, 0);
+      break;
+    }
     default: {
       sqlite3TreeViewLine(pView, "op=%d", pExpr->op);
       break;
