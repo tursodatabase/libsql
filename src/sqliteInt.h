@@ -1501,7 +1501,6 @@ struct sqlite3 {
 #define SQLITE_Transitive     0x0200   /* Transitive constraints */
 #define SQLITE_OmitNoopJoin   0x0400   /* Omit unused tables in joins */
 #define SQLITE_Stat34         0x0800   /* Use STAT3 or STAT4 data */
-#define SQLITE_SkipAhead      0x1000   /* Skip ahead on DISTINCT */
 #define SQLITE_CursorHints    0x2000   /* Add OP_CursorHint opcodes */
 #define SQLITE_AllOpts        0xffff   /* All optimizations */
 

@@ -3679,7 +3679,7 @@ static i8 wherePathSatisfiesOrderBy(
             if( !pColl ) pColl = db->pDfltColl;
             if( sqlite3StrICmp(pColl->zName, pIndex->azColl[j])!=0 ) continue;
           }
-          if( pLoop->u.btree.nIdxCol<=j ) pLoop->u.btree.nIdxCol = j+1;
+          pLoop->u.btree.nIdxCol = j+1;
           isMatch = 1;
           break;
         }
@@ -4857,7 +4857,6 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       int n;
       if( pWInfo->eDistinct==WHERE_DISTINCT_ORDERED
        && (pLoop->wsFlags & WHERE_INDEXED)!=0
-       && OptimizationEnabled(db, SQLITE_SkipAhead)
        && (pIdx = pLoop->u.btree.pIndex)->hasStat1
        && pIdx->aiRowLogEst[(n = pLoop->u.btree.nIdxCol)-1]>=36
       ){
