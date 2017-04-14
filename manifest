@@ -1,5 +1,5 @@
-C Make\sUSE_FULLWARN=1\sthe\sdefault\sfor\sMSVC\sand\sfix\sharmless\scompiler\swarnings.
-D 2017-04-14T14:50:34.600
+C An\sinitial\sattempt\sto\soptimize\sVIEWs\sthat\soccur\sas\sthe\sright\soperand\sof\sa\nLEFT\sJOIN.\s\sThis\sparticular\scheck-in\sdoes\snot\swork\scorrectly\sbecause\sit\sdoes\nnot\sdeal\swith\sthe\scase\sof\scolumns\sin\sthe\sVIEW\sthat\sreturn\snon-NULL\seven\swhen\nall\scolumns\sin\sthe\stable\sof\sthe\sVIEW\sare\sNULL\sbecause\sof\sthe\sLEFT\sJOIN.
+D 2017-04-14T17:18:45.647
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a8c838220f7c00820e1fc0ac1bccaaa8e5676067e1dbfa1bafa7a4ffecf8ae6
@@ -401,7 +401,7 @@ F src/printf.c 8757834f1b54dae512fb25eb1acc8e94a0d15dd2290b58f2563f65973265adb2
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 3e518b962d932a997fae373366880fc028c75706
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c 4588dcfb0fa430012247a209ba08e17904dd32ec7690e9cb6c85e0ef012b0518
+F src/select.c 52b29bdeaa4cf317a981b6e8d0a15ec9c16372a738ede51c2a285c03fc69d036
 F src/shell.c 70f4957b988572315e97c56941fdc81fd35907fee36b7b2e7be5ec4c7e9d065d
 F src/sqlite.h.in 40233103e3e4e10f8a63523498d0259d232e42aba478e2d3fb914799185aced6
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1571,7 +1571,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5159cb8f2bcfb1f7114786ba23082d2b91a26e3a7ddfae75f8bd362792949d5e
-R 3270eeed59983be191492d424a0b906b
-U mistachkin
-Z edc8ddb73a9c8e57e014e4878b2c6186
+P 6bf673767b8e5cedef1acff795cbe524fab8db2525c06424db4e038934a33936
+R 8dfa3ca7454fc6936bedb04ccf47ee12
+T *branch * left-join-view
+T *sym-left-join-view *
+T -sym-trunk *
+U drh
+Z 5ef873863ca7134987a034a627c04882
