@@ -1997,26 +1997,6 @@ void *sqlite3_preupdate_hook(
 }
 #endif /* SQLITE_ENABLE_PREUPDATE_HOOK */
 
-#ifdef SQLITE_ENABLE_WHEREINFO_HOOK
-/*
-** Register a where-info hook.
-*/
-void *sqlite3_whereinfo_hook(
-  sqlite3 *db,                    /* Register callback with this db handle */
-  void (*xWhereInfo)(void*, int, const char*, int, sqlite3_uint64),
-  void *pCtx                      /* User pointer passed to callback */
-){
-  void *pRet;
-  sqlite3_mutex_enter(db->mutex);
-  pRet = db->pWhereInfoCtx;
-  db->xWhereInfo = xWhereInfo;
-  db->pWhereInfoCtx = pCtx;
-  sqlite3_mutex_leave(db->mutex);
-  return pRet;
-}
-#endif /* SQLITE_ENABLE_WHEREINFO_HOOK */
-
-
 #ifndef SQLITE_OMIT_WAL
 /*
 ** The sqlite3_wal_hook() callback registered by sqlite3_wal_autocheckpoint().

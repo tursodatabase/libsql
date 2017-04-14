@@ -50,7 +50,7 @@ struct IdxConstraint {
 ** A single scan of a single table.
 */
 struct IdxScan {
-  char *zTable;                   /* Name of table to scan */
+  IdxTable *pTab;                 /* Associated table object */
   int iDb;                        /* Database containing table zTable */
   i64 covering;                   /* Mask of columns required for cov. index */
   IdxConstraint *pOrder;          /* ORDER BY columns */
@@ -70,7 +70,9 @@ struct IdxColumn {
 };
 struct IdxTable {
   int nCol;
+  char *zName;                    /* Table name */
   IdxColumn *aCol;
+  IdxTable *pNext;                /* Next table in linked list of all tables */
 };
 
 /*
@@ -134,6 +136,9 @@ struct IdxHash64 {
 struct sqlite3expert {
   sqlite3 *db;                    /* User database */
   sqlite3 *dbm;                   /* In-memory db for this analysis */
+  sqlite3 *dbv;                   /* Vtab schema for this analysis */
+  IdxTable *pTable;               /* List of all IdxTable objects */
+
   IdxScan *pScan;                 /* List of scan objects */
   IdxStatement *pStatement;       /* List of IdxStatement objects */
   int bRun;                       /* True once analysis has run */
@@ -314,78 +319,188 @@ static IdxConstraint *idxNewConstraint(int *pRc, const char *zColl){
   return pNew;
 }
 
-/*
-** sqlite3_whereinfo_hook() callback.
+
+/*************************************************************************
+** Beginning of virtual table implementation.
 */
-static void idxWhereInfo(
-  void *pCtx,                     /* Pointer to sqlite3expert structure */
-  int eOp, 
-  const char *zVal, 
-  int iVal, 
-  u64 mask
+typedef struct ExpertVtab ExpertVtab;
+struct ExpertVtab {
+  sqlite3_vtab base;
+  IdxTable *pTab;
+  sqlite3expert *pExpert;
+};
+
+static char *expertDequote(const char *zIn){
+  int n = strlen(zIn);
+  char *zRet = sqlite3_malloc(n);
+
+  assert( zIn[0]=='\'' );
+  assert( zIn[n-1]=='\'' );
+
+  if( zRet ){
+    int iOut = 0;
+    int iIn = 0;
+    for(iIn=1; iIn<(n-1); iIn++){
+      if( zIn[iIn]=='\'' ){
+        assert( zIn[iIn+1]=='\'' );
+        iIn++;
+      }
+      zRet[iOut++] = zIn[iIn];
+    }
+    zRet[iOut] = '\0';
+  }
+
+  return zRet;
+}
+
+/* 
+** This function is the implementation of both the xConnect and xCreate
+** methods of the r-tree virtual table.
+**
+**   argv[0]   -> module name
+**   argv[1]   -> database name
+**   argv[2]   -> table name
+**   argv[...] -> column names...
+*/
+static int expertConnect(
+  sqlite3 *db,
+  void *pAux,
+  int argc, const char *const*argv,
+  sqlite3_vtab **ppVtab,
+  char **pzErr
 ){
-  sqlite3expert *p = (sqlite3expert*)pCtx;
+  sqlite3expert *pExpert = (sqlite3expert*)pAux;
+  ExpertVtab *p = 0;
+  int rc;
 
-#if 0
-  const char *zOp = 
-    eOp==SQLITE_WHEREINFO_TABLE ? "TABLE" :
-    eOp==SQLITE_WHEREINFO_EQUALS ? "EQUALS" :
-    eOp==SQLITE_WHEREINFO_RANGE ? "RANGE" :
-    eOp==SQLITE_WHEREINFO_ORDERBY ? "ORDERBY" :
-    "!error!";
-  printf("op=%s zVal=%s iVal=%d mask=%llx\n", zOp, zVal, iVal, mask);
-#endif
-
-  if( p->rc==SQLITE_OK ){
-    assert( eOp==SQLITE_WHEREINFO_TABLE || p->pScan!=0 );
-    switch( eOp ){
-      case SQLITE_WHEREINFO_TABLE: {
-        int nVal = strlen(zVal);
-        IdxScan *pNew = (IdxScan*)idxMalloc(&p->rc, sizeof(IdxScan) + nVal + 1);
-        if( !pNew ) return;
-        pNew->zTable = (char*)&pNew[1];
-        memcpy(pNew->zTable, zVal, nVal+1);
-        pNew->pNextScan = p->pScan;
-        pNew->covering = mask;
-        p->pScan = pNew;
-        break;
+  if( argc!=4 ){
+    *pzErr = sqlite3_mprintf("internal error!");
+    rc = SQLITE_ERROR;
+  }else{
+    char *zCreateTable = expertDequote(argv[3]);
+    if( zCreateTable ){
+      rc = sqlite3_declare_vtab(db, zCreateTable);
+      if( rc==SQLITE_OK ){
+        p = idxMalloc(&rc, sizeof(ExpertVtab));
       }
-
-      case SQLITE_WHEREINFO_ORDERBY: {
-        IdxConstraint *pNew = idxNewConstraint(&p->rc, zVal);
-        if( pNew==0 ) return;
-        pNew->iCol = iVal;
-        pNew->bDesc = (int)mask;
-        if( p->pScan->pOrder==0 ){
-          p->pScan->pOrder = pNew;
-        }else{
-          IdxConstraint *pIter;
-          for(pIter=p->pScan->pOrder; pIter->pNext; pIter=pIter->pNext);
-          pIter->pNext = pNew;
-          pIter->pLink = pNew;
-        }
-        break;
+      if( rc==SQLITE_OK ){
+        p->pExpert = pExpert;
+        p->pTab = pExpert->pTable;
+        assert( sqlite3_stricmp(p->pTab->zName, argv[2])==0 );
       }
+      sqlite3_free(zCreateTable);
+    }else{
+      rc = SQLITE_NOMEM;
+    }
+  }
 
-      case SQLITE_WHEREINFO_EQUALS:
-      case SQLITE_WHEREINFO_RANGE: {
-        IdxConstraint *pNew = idxNewConstraint(&p->rc, zVal);
-        if( pNew==0 ) return;
-        pNew->iCol = iVal;
-        pNew->depmask = mask;
+  *ppVtab = (sqlite3_vtab*)p;
+  return rc;
+}
 
-        if( eOp==SQLITE_WHEREINFO_RANGE ){
-          pNew->pNext = p->pScan->pRange;
-          p->pScan->pRange = pNew;
-        }else{
-          pNew->pNext = p->pScan->pEq;
-          p->pScan->pEq = pNew;
+static int expertDisconnect(sqlite3_vtab *pVtab){
+  ExpertVtab *p = (ExpertVtab*)pVtab;
+  sqlite3_free(p);
+  return SQLITE_OK;
+}
+
+static int expertBestIndex(sqlite3_vtab *pVtab, sqlite3_index_info *pIdxInfo){
+  ExpertVtab *p = (ExpertVtab*)pVtab;
+  sqlite3 *dbv = p->pExpert->dbv;
+  int rc = SQLITE_OK;
+  int n = 0;
+  IdxScan *pScan;
+  const int opmask = 
+    SQLITE_INDEX_CONSTRAINT_EQ | SQLITE_INDEX_CONSTRAINT_GT |
+    SQLITE_INDEX_CONSTRAINT_LT | SQLITE_INDEX_CONSTRAINT_GE |
+    SQLITE_INDEX_CONSTRAINT_LE;
+
+  pScan = idxMalloc(&rc, sizeof(IdxScan));
+  if( pScan ){
+    int i;
+
+    /* Link the new scan object into the list */
+    pScan->pTab = p->pTab;
+    pScan->pNextScan = p->pExpert->pScan;
+    p->pExpert->pScan = pScan;
+
+    /* Add the constraints to the IdxScan object */
+    for(i=0; i<pIdxInfo->nConstraint; i++){
+      int op = pIdxInfo->aConstraint[i].op;
+      if( op&opmask ){
+        IdxConstraint *pNew;
+        const char *zColl = sqlite3_vtab_collation(dbv, i);
+        pNew = idxNewConstraint(&rc, zColl);
+        if( pNew ){
+          pNew->iCol = pIdxInfo->aConstraint[i].iColumn;
+          if( op==SQLITE_INDEX_CONSTRAINT_EQ ){
+            pNew->pNext = pScan->pEq;
+            pScan->pEq = pNew;
+          }else{
+            pNew->bRange = 1;
+            pNew->pNext = pScan->pRange;
+            pScan->pRange = pNew;
+          }
         }
-        break;
+        if( pIdxInfo->aConstraint[i].usable ){
+          n++;
+          pIdxInfo->aConstraintUsage[i].argvIndex = n;
+        }
+      }
+    }
+
+    /* Add the ORDER BY to the IdxScan object */
+    for(i=pIdxInfo->nOrderBy-1; i>=0; i--){
+      IdxConstraint *pNew;
+      const char *zColl = sqlite3_vtab_collation(dbv, i+pIdxInfo->nConstraint);
+      pNew = idxNewConstraint(&rc, zColl);
+      if( pNew ){
+        pNew->iCol = pIdxInfo->aOrderBy[i].iColumn;
+        pNew->bDesc = pIdxInfo->aOrderBy[i].desc;
+        pNew->pNext = pScan->pOrder;
+        pNew->pLink = pScan->pOrder;
+        pScan->pOrder = pNew;
+        n++;
       }
     }
   }
+
+  pIdxInfo->estimatedCost = 1000000.0 / n;
+  return rc;
 }
+
+static int idxRegisterVtab(sqlite3expert *p){
+  static sqlite3_module expertModule = {
+    2,                            /* iVersion */
+    expertConnect,                /* xCreate - create a table */
+    expertConnect,                /* xConnect - connect to an existing table */
+    expertBestIndex,              /* xBestIndex - Determine search strategy */
+    expertDisconnect,             /* xDisconnect - Disconnect from a table */
+    expertDisconnect,             /* xDestroy - Drop a table */
+    0,                            /* xOpen - open a cursor */
+    0,                            /* xClose - close a cursor */
+    0,                            /* xFilter - configure scan constraints */
+    0,                            /* xNext - advance a cursor */
+    0,                            /* xEof */
+    0,                            /* xColumn - read data */
+    0,                            /* xRowid - read data */
+    0,                            /* xUpdate - write data */
+    0,                            /* xBegin - begin transaction */
+    0,                            /* xSync - sync transaction */
+    0,                            /* xCommit - commit transaction */
+    0,                            /* xRollback - rollback transaction */
+    0,                            /* xFindFunction - function overloading */
+    0,                            /* xRename - rename the table */
+    0,                            /* xSavepoint */
+    0,                            /* xRelease */
+    0,                            /* xRollbackTo */
+  };
+
+  return sqlite3_create_module(p->dbv, "expert", &expertModule, (void*)p);
+}
+/*
+** End of virtual table implementation.
+*************************************************************************/
 
 /*
 ** An error associated with database handle db has just occurred. Pass
@@ -468,7 +583,8 @@ static int idxGetTableInfo(
 ){
   sqlite3_stmt *p1 = 0;
   int nCol = 0;
-  int nByte = sizeof(IdxTable);
+  int nTab = strlen(zTab);
+  int nByte = sizeof(IdxTable) + nTab + 1;
   IdxTable *pNew = 0;
   int rc, rc2;
   char *pCsr;
@@ -522,6 +638,9 @@ static int idxGetTableInfo(
   if( rc!=SQLITE_OK ){
     sqlite3_free(pNew);
     pNew = 0;
+  }else{
+    pNew->zName = pCsr;
+    memcpy(pNew->zName, zTab, nTab+1);
   }
 
   *ppOut = pNew;
@@ -632,7 +751,7 @@ static int idxFindCompatible(
   IdxConstraint *pEq,             /* List of == constraints */
   IdxConstraint *pTail            /* List of range constraints */
 ){
-  const char *zTbl = pScan->zTable;
+  const char *zTbl = pScan->pTab->zName;
   sqlite3_stmt *pIdxList = 0;
   IdxConstraint *pIter;
   int nEq = 0;                    /* Number of elements in pEq */
@@ -717,21 +836,22 @@ static int idxCreateFromCons(
 
     if( rc==SQLITE_OK ){
       /* Hash the list of columns to come up with a name for the index */
+      const char *zTable = pScan->pTab->zName;
       char *zName;                /* Index name */
       int i;
       for(i=0; zCols[i]; i++){
         h += ((h<<3) + zCols[i]);
       }
-      zName = sqlite3_mprintf("%s_idx_%08x", pScan->zTable, h);
+      zName = sqlite3_mprintf("%s_idx_%08x", zTable, h);
       if( zName==0 ){ 
         rc = SQLITE_NOMEM;
       }else{
-        if( idxIdentifierRequiresQuotes(pScan->zTable) ){
+        if( idxIdentifierRequiresQuotes(zTable) ){
           zFmt = "CREATE INDEX '%q' ON %Q(%s)";
         }else{
           zFmt = "CREATE INDEX %s ON %s(%s)";
         }
-        zIdx = sqlite3_mprintf(zFmt, zName, pScan->zTable, zCols);
+        zIdx = sqlite3_mprintf(zFmt, zName, zTable, zCols);
         if( !zIdx ){
           rc = SQLITE_NOMEM;
         }else{
@@ -817,9 +937,7 @@ static int idxCreateCandidates(sqlite3expert *p, char **pzErr){
   for(pIter=p->pScan; pIter && rc==SQLITE_OK; pIter=pIter->pNextScan){
     IdxHash64Entry *pEntry;
     IdxConstraint *pCons;
-    IdxTable *pTab = 0;
-
-    rc = idxGetTableInfo(p->dbm, pIter->zTable, &pTab, pzErr);
+    IdxTable *pTab = pIter->pTab;
 
     idxHash64Add(&rc, &hMask, 0);
     for(pCons=pIter->pEq; pCons; pCons=pCons->pNext){
@@ -836,7 +954,6 @@ static int idxCreateCandidates(sqlite3expert *p, char **pzErr){
       }
     }
 
-    sqlite3_free(pTab);
     idxHash64Clear(&hMask);
   }
 
@@ -958,6 +1075,60 @@ int idxFindIndexes(
   return rc;
 }
 
+static int idxCreateVtabSchema(sqlite3expert *p, char **pzErrmsg){
+  int rc = idxRegisterVtab(p);
+  sqlite3_stmt *pSchema = 0;
+
+  /* For each table in the main db schema:
+  **
+  **   1) Add an entry to the p->pTable list, and
+  **   2) Create the equivalent virtual table in dbv.
+  */
+  rc = idxPrepareStmt(p->db, &pSchema, pzErrmsg,
+      "SELECT type, name, sql FROM sqlite_master "
+      "WHERE type IN ('table','view') ORDER BY 1"
+  );
+  while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pSchema) ){
+    const char *zType = (const char*)sqlite3_column_text(pSchema, 0);
+    const char *zName = (const char*)sqlite3_column_text(pSchema, 1);
+    const char *zSql = (const char*)sqlite3_column_text(pSchema, 2);
+
+    if( zType[0]=='v' ){
+      rc = sqlite3_exec(p->dbv, zSql, 0, 0, pzErrmsg);
+    }else{
+      IdxTable *pTab;
+      rc = idxGetTableInfo(p->db, zName, &pTab, pzErrmsg);
+      if( rc==SQLITE_OK ){
+        int i;
+        char *zInner = 0;
+        char *zOuter = 0;
+        pTab->pNext = p->pTable;
+        p->pTable = pTab;
+
+        /* The statement the vtab will pass to sqlite3_declare_vtab() */
+        zInner = idxAppendText(&rc, 0, "CREATE TABLE x(");
+        for(i=0; i<pTab->nCol; i++){
+          zInner = idxAppendText(&rc, zInner, "%s%Q COLLATE %s", 
+              (i==0 ? "" : ", "), pTab->aCol[i].zName, pTab->aCol[i].zColl
+          );
+        }
+        zInner = idxAppendText(&rc, zInner, ")");
+
+        /* The CVT statement to create the vtab */
+        zOuter = idxAppendText(&rc, 0, 
+            "CREATE VIRTUAL TABLE %Q USING expert(%Q)", zName, zInner
+        );
+        if( rc==SQLITE_OK ){
+          rc = sqlite3_exec(p->dbv, zOuter, 0, 0, pzErrmsg);
+        }
+        sqlite3_free(zInner);
+        sqlite3_free(zOuter);
+      }
+    }
+  }
+  return rc;
+}
+
 /*
 ** Allocate a new sqlite3expert object.
 */
@@ -966,12 +1137,20 @@ sqlite3expert *sqlite3_expert_new(sqlite3 *db, char **pzErrmsg){
   sqlite3expert *pNew;
 
   pNew = (sqlite3expert*)idxMalloc(&rc, sizeof(sqlite3expert));
-  pNew->db = db;
 
-  /* Open an in-memory database to work with. The main in-memory 
-  ** database schema contains tables similar to those in the users 
-  ** database (handle db).  */
-  rc = sqlite3_open(":memory:", &pNew->dbm);
+  /* Open two in-memory databases to work with. The "vtab database" (dbv)
+  ** will contain a virtual table corresponding to each real table in
+  ** the user database schema, and a copy of each view. It is used to
+  ** collect information regarding the WHERE, ORDER BY and other clauses
+  ** of the user's query.
+  */
+  if( rc==SQLITE_OK ){
+    pNew->db = db;
+    rc = sqlite3_open(":memory:", &pNew->dbv);
+  }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_open(":memory:", &pNew->dbm);
+  }
 
   /* Copy the entire schema of database [db] into [dbm]. */
   if( rc==SQLITE_OK ){
@@ -984,6 +1163,11 @@ sqlite3expert *sqlite3_expert_new(sqlite3 *db, char **pzErrmsg){
       rc = sqlite3_exec(pNew->dbm, zSql, 0, 0, pzErrmsg);
     }
     idxFinalize(&rc, pSql);
+  }
+
+  /* Create the vtab schema */
+  if( rc==SQLITE_OK ){
+    rc = idxCreateVtabSchema(pNew, pzErrmsg);
   }
 
   /* If an error has occurred, free the new object and reutrn NULL. Otherwise,
@@ -1010,10 +1194,9 @@ int sqlite3_expert_sql(
 
   if( p->bRun ) return SQLITE_MISUSE;
 
-  sqlite3_whereinfo_hook(p->db, idxWhereInfo, p);
   while( rc==SQLITE_OK && zStmt && zStmt[0] ){
     sqlite3_stmt *pStmt = 0;
-    rc = sqlite3_prepare_v2(p->db, zStmt, -1, &pStmt, &zStmt);
+    rc = sqlite3_prepare_v2(p->dbv, zStmt, -1, &pStmt, &zStmt);
     if( rc==SQLITE_OK ){
       if( pStmt ){
         IdxStatement *pNew;
@@ -1033,7 +1216,6 @@ int sqlite3_expert_sql(
       idxDatabaseError(p->db, pzErr);
     }
   }
-  sqlite3_whereinfo_hook(p->db, 0, 0);
 
   if( rc!=SQLITE_OK ){
     idxScanFree(p->pScan, pScanOrig);
@@ -1052,6 +1234,7 @@ int sqlite3_expert_analyze(sqlite3expert *p, char **pzErr){
   /* Create candidate indexes within the in-memory database file */
   rc = idxCreateCandidates(p, pzErr);
 
+  /* Formulate the EXPERT_REPORT_CANDIDATES text */
   for(pEntry=p->hIdx.pFirst; pEntry; pEntry=pEntry->pNext){
     p->zCandidates = idxAppendText(&rc, p->zCandidates, "%s;\n", pEntry->zVal);
   }
@@ -1108,11 +1291,14 @@ const char *sqlite3_expert_report(sqlite3expert *p, int iStmt, int eReport){
 ** Free an sqlite3expert object.
 */
 void sqlite3_expert_destroy(sqlite3expert *p){
-  sqlite3_close(p->dbm);
-  idxScanFree(p->pScan, 0);
-  idxStatementFree(p->pStatement, 0);
-  idxHashClear(&p->hIdx);
-  sqlite3_free(p);
+  if( p ){
+    sqlite3_close(p->dbm);
+    sqlite3_close(p->dbv);
+    idxScanFree(p->pScan, 0);
+    idxStatementFree(p->pStatement, 0);
+    idxHashClear(&p->hIdx);
+    sqlite3_free(p);
+  }
 }
 
 #endif /* !defined(SQLITE_TEST) || defined(SQLITE_ENABLE_WHEREINFO_HOOK) */

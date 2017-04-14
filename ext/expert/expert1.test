@@ -139,14 +139,14 @@ do_setup_rec_test $tn.1.7 {
   0|0|0|SCAN TABLE t1 USING COVERING INDEX t1_idx_033e95fe
 }
 
-do_setup_rec_test $tn.1.8 {
-  CREATE TABLE t1(a, b, c);
-} {
-  SELECT * FROM t1 ORDER BY a ASC, b COLLATE nocase DESC, c ASC;
-} {
-  CREATE INDEX t1_idx_5be6e222 ON t1(a, b COLLATE NOCASE DESC, c);
-  0|0|0|SCAN TABLE t1 USING COVERING INDEX t1_idx_5be6e222
-}
+#do_setup_rec_test $tn.1.8 {
+#  CREATE TABLE t1(a, b, c);
+#} {
+#  SELECT * FROM t1 ORDER BY a ASC, b COLLATE nocase DESC, c ASC;
+#} {
+#  CREATE INDEX t1_idx_5be6e222 ON t1(a, b COLLATE NOCASE DESC, c);
+#  0|0|0|SCAN TABLE t1 USING COVERING INDEX t1_idx_5be6e222
+#}
 
 do_setup_rec_test $tn.1.9 {
   CREATE TABLE t1(a COLLATE NOCase, b, c);
@@ -155,6 +155,15 @@ do_setup_rec_test $tn.1.9 {
 } {
   CREATE INDEX t1_idx_00000061 ON t1(a);
   0|0|0|SEARCH TABLE t1 USING INDEX t1_idx_00000061 (a=?)
+}
+
+do_setup_rec_test $tn.1.10 {
+  CREATE TABLE t1(a, b COLLATE nocase, c);
+} {
+  SELECT * FROM t1 ORDER BY a ASC, b DESC, c ASC;
+} {
+  CREATE INDEX t1_idx_5cb97285 ON t1(a, b DESC, c);
+  0|0|0|SCAN TABLE t1 USING COVERING INDEX t1_idx_5cb97285
 }
 
 

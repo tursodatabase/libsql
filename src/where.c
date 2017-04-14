@@ -885,7 +885,8 @@ static sqlite3_index_info *allocateIndexInfo(
   */
   pIdxInfo = sqlite3DbMallocZero(pParse->db, sizeof(*pIdxInfo)
                            + (sizeof(*pIdxCons) + sizeof(*pUsage))*nTerm
-                           + sizeof(*pIdxOrderBy)*nOrderBy );
+                           + sizeof(*pIdxOrderBy)*nOrderBy 
+                           );
   if( pIdxInfo==0 ){
     sqlite3ErrorMsg(pParse, "out of memory");
     return 0;
@@ -3116,6 +3117,34 @@ static int whereLoopAddVirtualOne(
 }
 
 
+struct BestIndexCtx {
+  WhereClause *pWC;
+  sqlite3_index_info *pIdxInfo;
+  ExprList *pOrderBy;
+  Parse *pParse;
+};
+
+const char *sqlite3_vtab_collation(sqlite3 *db, int iCons){
+  struct BestIndexCtx *p = (struct BestIndexCtx*)db->pVtabWC;
+  const char *zRet = 0;
+  if( p && iCons>=0 ){
+    if( iCons<p->pIdxInfo->nConstraint ){
+      int iTerm = p->pIdxInfo->aConstraint[iCons].iTermOffset;
+      Expr *pX = p->pWC->a[iTerm].pExpr;
+      CollSeq *pC = sqlite3BinaryCompareCollSeq(p->pParse,pX->pLeft,pX->pRight);
+      zRet = (pC ? pC->zName : "BINARY");
+    }else{
+      iCons -= p->pIdxInfo->nConstraint;
+      if( iCons<p->pIdxInfo->nOrderBy ){
+        Expr *pX = p->pOrderBy->a[iCons].pExpr;
+        CollSeq *pC = sqlite3ExprCollSeq(p->pParse, pX);
+        zRet = (pC ? pC->zName : "BINARY");
+      }
+    }
+  }
+  return zRet;
+}
+
 /*
 ** Add all WhereLoop objects for a table of the join identified by
 ** pBuilder->pNew->iTab.  That table is guaranteed to be a virtual table.
@@ -3157,6 +3186,8 @@ static int whereLoopAddVirtual(
   WhereLoop *pNew;
   Bitmask mBest;               /* Tables used by best possible plan */
   u16 mNoOmit;
+  struct BestIndexCtx bic;
+  void *pSaved;
 
   assert( (mPrereq & mUnusable)==0 );
   pWInfo = pBuilder->pWInfo;
@@ -3177,6 +3208,13 @@ static int whereLoopAddVirtual(
     sqlite3DbFree(pParse->db, p);
     return SQLITE_NOMEM_BKPT;
   }
+
+  bic.pWC = pWC;
+  bic.pIdxInfo = p;
+  bic.pParse = pParse;
+  bic.pOrderBy = pBuilder->pOrderBy;
+  pSaved = pParse->db->pVtabWC;
+  pParse->db->pVtabWC = (void*)&bic;
 
   /* First call xBestIndex() with all constraints usable. */
   WHERETRACE(0x40, ("  VirtualOne: all usable\n"));
@@ -3254,6 +3292,7 @@ static int whereLoopAddVirtual(
 
   if( p->needToFreeIdxStr ) sqlite3_free(p->idxStr);
   sqlite3DbFreeNN(pParse->db, p);
+  pParse->db->pVtabWC = pSaved;
   return rc;
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
@@ -3277,7 +3316,7 @@ static int whereLoopAddOr(
   WhereLoopBuilder sSubBuild;
   WhereOrSet sSum, sCur;
   struct SrcList_item *pItem;
-
+  
   pWC = pBuilder->pWC;
   pWCEnd = pWC->a + pWC->nTerm;
   pNew = pBuilder->pNew;
@@ -3294,7 +3333,7 @@ static int whereLoopAddOr(
       WhereTerm *pOrTerm;
       int once = 1;
       int i, j;
-
+    
       sSubBuild = *pBuilder;
       sSubBuild.pOrderBy = 0;
       sSubBuild.pOrSet = &sCur;
@@ -4278,201 +4317,6 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
   return 0;
 }
 
-#ifdef SQLITE_ENABLE_WHEREINFO_HOOK
-
-static void whereTraceWC(
-  Parse *pParse, 
-  struct SrcList_item *pItem,
-  WhereClause *pWC
-){
-  sqlite3 *db = pParse->db;
-  Table *pTab = pItem->pTab;
-  void (*x)(void*, int, const char*, int, u64) = db->xWhereInfo;
-  void *pCtx = db->pWhereInfoCtx;
-  int ii;
-
-  /* Issue callbacks for WO_SINGLE constraints */
-  for(ii=0; ii<pTab->nCol; ii++){
-    int opMask = WO_SINGLE; 
-    WhereScan scan;
-    WhereTerm *pTerm;
-    for(pTerm=whereScanInit(&scan, pWC, pItem->iCursor, ii, opMask, 0);
-        pTerm;
-        pTerm=whereScanNext(&scan)
-    ){
-      int eOp;
-      Expr *pX = pTerm->pExpr;
-      CollSeq *pC = sqlite3BinaryCompareCollSeq(pParse, pX->pLeft, pX->pRight);
-      if( pTerm->eOperator & (WO_IS|WO_EQ|WO_IN) ){
-        eOp = SQLITE_WHEREINFO_EQUALS;
-      }else{
-        eOp = SQLITE_WHEREINFO_RANGE;
-      }
-      x(pCtx, eOp, (pC ? pC->zName : "BINARY"), ii, pTerm->prereqRight);
-    }
-  }
-}
-
-/*
-** If there are any OR terms in WHERE clause pWC, make the associated
-** where-info hook callbacks.
-*/
-static void whereTraceOR(
-  Parse *pParse, 
-  struct SrcList_item *pItem,
-  WhereClause *pWC
-){
-  sqlite3 *db = pParse->db;
-  WhereClause tempWC;
-  struct TermAndIdx {
-    WhereTerm *pTerm;
-    int iIdx;
-  } aOr[4];
-  int nOr = 0;
-  Table *pTab = pItem->pTab;
-  int iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
-  int ii;
-
-  memset(aOr, 0, sizeof(aOr));
-
-  /* Iterate through OR nodes */
-  for(ii=0; ii<pWC->nTerm; ii++){
-    WhereTerm *pTerm = &pWC->a[ii];
-    if( pTerm->eOperator & WO_OR ){
-      /* Check that each branch of this OR term contains at least
-      ** one reference to the table currently being processed. If that
-      ** is not the case, this term can be ignored.  */
-      WhereClause * const pOrWC = &pTerm->u.pOrInfo->wc;
-      WhereTerm * const pOrWCEnd = &pOrWC->a[pOrWC->nTerm];
-      WhereTerm *pOrTerm;
-      WhereClause *pTermWC;
-      WhereScan scan;
-
-      for(pOrTerm=pOrWC->a; pOrTerm<pOrWCEnd; pOrTerm++){
-        int iCol;
-        if( (pOrTerm->eOperator & WO_AND)!=0 ){
-          pTermWC = &pOrTerm->u.pAndInfo->wc;
-        }else{
-          tempWC.pWInfo = pWC->pWInfo;
-          tempWC.pOuter = pWC;
-          tempWC.op = TK_AND;
-          tempWC.nTerm = 1;
-          tempWC.a = pOrTerm;
-          pTermWC = &tempWC;
-        }
-
-        for(iCol=0; iCol<pTab->nCol; iCol++){
-          int iCsr = pItem->iCursor;
-          if( !whereScanInit(&scan, pTermWC, iCsr, iCol, WO_SINGLE, 0) ){
-            break;
-          }
-        }
-        if( iCol==pTab->nCol ) break;
-      }
-
-      if( pOrTerm==pOrWCEnd ){
-        aOr[nOr].pTerm = pTerm;
-        aOr[nOr].iIdx = pOrWC->nTerm;
-        nOr++;
-        if( nOr==ArraySize(aOr) ) break;
-      }
-    }
-  }
-
-  while( 1 ){
-    for(ii=0; ii<nOr; ii++){
-      if( aOr[ii].iIdx==0 ){
-        aOr[ii].iIdx = aOr[ii].pTerm->u.pOrInfo->wc.nTerm;
-      }else{
-        aOr[ii].iIdx--;
-        break;
-      }
-    }
-    if( ii==nOr ) break;
-
-    /* Table name callback */
-    db->xWhereInfo(db->pWhereInfoCtx, 
-        SQLITE_WHEREINFO_TABLE, pTab->zName, iDb, pItem->colUsed
-    );
-    /* whereTraceWC(pParse, pItem, pWC); */
-    for(ii=0; ii<nOr; ii++){
-      WhereClause * const pOrWC = &aOr[ii].pTerm->u.pOrInfo->wc;
-      if( aOr[ii].iIdx<pOrWC->nTerm ){
-        WhereClause *pTermWC;
-        WhereTerm *pOrTerm = &pOrWC->a[aOr[ii].iIdx];
-        if( (pOrTerm->eOperator & WO_AND)!=0 ){
-          pTermWC = &pOrTerm->u.pAndInfo->wc;
-        }else{
-          tempWC.pWInfo = pWC->pWInfo;
-          tempWC.pOuter = pWC;
-          tempWC.op = TK_AND;
-          tempWC.nTerm = 1;
-          tempWC.a = pOrTerm;
-          pTermWC = &tempWC;
-        }
-        whereTraceWC(pParse, pItem, pTermWC);
-      }
-    }
-  }
-}
-
-/*
-** If there is a where-info hook attached to the database handle, issue all
-** required callbacks for the current sqlite3WhereBegin() call.
-*/
-static void whereTraceBuilder(
-  Parse *pParse,
-  WhereLoopBuilder *p
-){
-  sqlite3 *db = pParse->db;
-  if( db->xWhereInfo && db->init.busy==0 ){
-    void (*x)(void*, int, const char*, int, u64) = db->xWhereInfo;
-    void *pCtx = db->pWhereInfoCtx;
-    int ii;
-    SrcList *pTabList = p->pWInfo->pTabList;
-
-    /* Loop through each element of the FROM clause. Ignore any sub-selects
-    ** or views. Invoke the xWhereInfo() callback multiple times for each
-    ** real table.  */
-    for(ii=0; ii<pTabList->nSrc; ii++){
-      struct SrcList_item *pItem = &pTabList->a[ii];
-      if( pItem->pSelect==0 ){
-        Table *pTab = pItem->pTab;
-        int iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
-
-        /* Table name callback */
-        x(pCtx, SQLITE_WHEREINFO_TABLE, pTab->zName, iDb, pItem->colUsed);
-
-        /* ORDER BY callbacks */
-        if( p->pOrderBy ){
-          int i;
-          for(i=0; i<p->pOrderBy->nExpr; i++){
-            Expr *pExpr = p->pOrderBy->a[i].pExpr; 
-            CollSeq *pColl = sqlite3ExprCollSeq(pParse, pExpr);
-            pExpr = sqlite3ExprSkipCollate(pExpr);
-            if( pExpr->op==TK_COLUMN && pExpr->iTable==pItem->iCursor ){
-              int iCol = pExpr->iColumn;
-              if( pColl && iCol>=0 ){
-                int bDesc = p->pOrderBy->a[i].sortOrder;
-                x(pCtx, SQLITE_WHEREINFO_ORDERBY, pColl->zName, iCol, bDesc); 
-              }
-            }
-          }
-        }
-
-        /* WHERE callbacks */
-        whereTraceWC(pParse, pItem, p->pWC);
-
-        /* OR-clause processing */
-        whereTraceOR(pParse, pItem, p->pWC);
-      }
-    }
-  }
-}
-#else
-# define whereTraceBuilder(x,y)
-#endif
-
 /*
 ** Generate the beginning of the loop used for WHERE clause processing.
 ** The return value is a pointer to an opaque structure that contains
@@ -4744,9 +4588,6 @@ WhereInfo *sqlite3WhereBegin(
     sqlite3WhereClausePrint(sWLB.pWC);
   }
 #endif
-
-  /* Invoke the where-info hook, if one has been registered. */
-  whereTraceBuilder(pParse, &sWLB);
 
   if( nTabList!=1 || whereShortCut(&sWLB)==0 ){
     rc = whereLoopAddAll(&sWLB);

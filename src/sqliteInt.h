@@ -1399,6 +1399,7 @@ struct sqlite3 {
   VtabCtx *pVtabCtx;            /* Context for active vtab connect/create */
   VTable **aVTrans;             /* Virtual tables with open transactions */
   VTable *pDisconnect;    /* Disconnect these in next sqlite3_prepare() */
+  void *pVtabWC;                /* For sqlite3_vtab_collation() */
 #endif
   Hash aFunc;                   /* Hash table of connection functions */
   Hash aCollSeq;                /* All collating sequences */
@@ -1430,10 +1431,6 @@ struct sqlite3 {
 #endif
 #ifdef SQLITE_USER_AUTHENTICATION
   sqlite3_userauth auth;        /* User authentication information */
-#endif
-#ifdef SQLITE_ENABLE_WHEREINFO_HOOK
-  void (*xWhereInfo)(void*, int, const char*, int, u64);
-  void *pWhereInfoCtx;
 #endif
 };
 
