@@ -238,7 +238,7 @@ void sqlite3TreeViewSelect(TreeView *pView, const Select *p, u8 moreToFollow){
 void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
   const char *zBinOp = 0;   /* Binary operator */
   const char *zUniOp = 0;   /* Unary operator */
-  char zFlgs[30];
+  char zFlgs[60];
   pView = sqlite3TreeViewPush(pView, moreToFollow);
   if( pExpr==0 ){
     sqlite3TreeViewLine(pView, "nil");
@@ -246,7 +246,12 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
     return;
   }
   if( pExpr->flags ){
-    sqlite3_snprintf(sizeof(zFlgs),zFlgs,"  flags=0x%x",pExpr->flags);
+    if( ExprHasProperty(pExpr, EP_FromJoin) ){
+      sqlite3_snprintf(sizeof(zFlgs),zFlgs,"  flags=0x%x iRJT=%d",
+                       pExpr->flags, pExpr->iRightJoinTable);
+    }else{
+      sqlite3_snprintf(sizeof(zFlgs),zFlgs,"  flags=0x%x",pExpr->flags);
+    }
   }else{
     zFlgs[0] = 0;
   }

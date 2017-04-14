@@ -1,5 +1,5 @@
-C Simplify\sthe\sinterface\sto\sthe\ssubst()\sroutines\sthat\sare\spart\sof\sthe\nquery\sflattener\sby\scollecting\scommon\sparameters\sinto\sthe\sSubstContext\sobject\nand\spassing\saround\sa\spointer\sto\sthat\sobject.
-D 2017-04-14T12:39:37.290
+C Enhance\sthe\ssqlite3TreeView()\sdisplay\sfor\sExpr\sobjects\sso\sthat\sit\sshows\nthe\siRightJoinTable\svalue\sfor\sExpr\snodes\sthat\shave\sthe\sEP_FromJoin\sproperty.
+D 2017-04-14T14:02:14.076
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a4c0613a18663bda56d8cf76079ab6590a7c3602e54befb4bbdef76bcaa38b6a
@@ -462,7 +462,7 @@ F src/test_windirent.h 5d67483a55442e31e1bde0f4a230e6e932ad5906
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 1003d6d90c6783206c711f0a9397656fa5b055209f4d092caa43bb3bf5215db5
-F src/treeview.c 84d0ac737e1231702679f0289180021e19c5cc186ec413e8dcb704a887c76ec8
+F src/treeview.c b92d57c1ac59f4a3f6b189506921a2b48098f6f4d6afd0b715bc2815ef6af092
 F src/trigger.c c9f0810043b265724fdb1bdd466894f984dfc182
 F src/update.c c443935c652af9365e033f756550b5032d02e1b06eb2cb890ed7511ae0c051dc
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
@@ -1571,7 +1571,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f956f6ae6b0863c70c4a2b227338d5c332e87f2ec6f3fcdf2233c14c5b78ca2b
-R 2c7a884b60bf790d155a528d4c22c0f3
+P e651074be28b2077b8a298f513e2e699ceca99164ace9869ea50873c0637fd2e
+R b317d763d703a7ce3fe46603da67e2ba
 U drh
-Z a742bed33077887f6256b75655f887d2
+Z 5521cfc7e88c8cee0fe5499eb1de1049
