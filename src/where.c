@@ -4858,7 +4858,8 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       if( pWInfo->eDistinct==WHERE_DISTINCT_ORDERED
        && (pLoop->wsFlags & WHERE_INDEXED)!=0
        && (pIdx = pLoop->u.btree.pIndex)->hasStat1
-       && pIdx->aiRowLogEst[(n = pLoop->u.btree.nIdxCol)-1]>=36
+       && (n = pLoop->u.btree.nIdxCol)>0
+       && pIdx->aiRowLogEst[n]>=36
       ){
         int r1 = pParse->nMem+1;
         int j, op;
