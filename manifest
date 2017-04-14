@@ -1,5 +1,5 @@
-C Make\sUSE_FULLWARN=1\sthe\sdefault\sfor\sMSVC\sand\sfix\sharmless\scompiler\swarnings.
-D 2017-04-14T14:50:34.600
+C When\sdoing\sa\sDISTINCT\squery\susing\san\sindex,\stry\sto\suse\sthe\sindex\sto\sskip\sahead\nto\sthe\snext\sdistinct\selement,\srather\sthan\sdoing\sa\sfull\sscan\sof\sthe\sindex.\n(This\sis\sthe\s"skip-ahead-distinct"\soptimization.)
+D 2017-04-14T17:30:43.741
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a8c838220f7c00820e1fc0ac1bccaaa8e5676067e1dbfa1bafa7a4ffecf8ae6
@@ -482,8 +482,8 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 40c543f0a2195d1b0dc88ef12142bea690009344
 F src/wal.h 06b2a0b599cc0f53ea97f497cf8c6b758c999f71
 F src/walker.c b71a992b413b3a022572eccf29ef4b4890223791
-F src/where.c 1d14e18f32231fa7969e718e7b60ef749b0065e2a7e1b6b00883b20732d280f1
-F src/whereInt.h 7a21ef633e26acbf46df04add2eba6e0a2100c78dc5879049e93f981fc3344df
+F src/where.c 98388bf42ca2d23f4c227bd5cf24f15b43a83d2caac32ca8a75a4d04018a1f9b
+F src/whereInt.h 2a4b634d63ce488b46d4b0da8f2eaa8f9aeab202bc25ef76f007de5e3fba1f20
 F src/wherecode.c 943e32e9dccd0af802e0683ae11071c8bd808364e5908a5fb66758bd404c8681
 F src/whereexpr.c e913aaa7b73ffcce66abcea5f197e2c538d48b5df78d0b7bba8ff4d73cc2e745
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -658,6 +658,7 @@ F test/descidx2.test 9f1a0c83fd57f8667c82310ca21b30a350888b5d
 F test/descidx3.test 09ddbe3f5295f482d2f8b687cf6db8bad7acd9a2
 F test/diskfull.test 106391384780753ea6896b7b4f005d10e9866b6e
 F test/distinct.test a1783b960ad8c15a77cd9f207be072898db1026c
+F test/distinct2.test faef8a3f27424e2cfbe19b2a40752294de3b5d957e049e3336be53ec0476cb58
 F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
 F test/e_blobbytes.test 439a945953b35cb6948a552edaec4dc31fd70a05
 F test/e_blobclose.test 4b3c8c60c2171164d472059c73e9f3c1844bb66d
@@ -1571,7 +1572,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5159cb8f2bcfb1f7114786ba23082d2b91a26e3a7ddfae75f8bd362792949d5e
-R 3270eeed59983be191492d424a0b906b
-U mistachkin
-Z edc8ddb73a9c8e57e014e4878b2c6186
+P 6bf673767b8e5cedef1acff795cbe524fab8db2525c06424db4e038934a33936 1aa0ea8db7580aff8bed2f78117ed50019e5545cef48cab782f512a2599fd0c5
+R 23e98d199cf27acff0cc1d4208755e74
+T +closed 1aa0ea8db7580aff8bed2f78117ed50019e5545cef48cab782f512a2599fd0c5
+U drh
+Z 6edb0fabfc88ce2a863c335cf5598131
