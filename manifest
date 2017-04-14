@@ -1,8 +1,8 @@
-C Enhance\sthe\ssqlite3TreeView()\sdisplay\sfor\sExpr\sobjects\sso\sthat\sit\sshows\nthe\siRightJoinTable\svalue\sfor\sExpr\snodes\sthat\shave\sthe\sEP_FromJoin\sproperty.
-D 2017-04-14T14:02:14.076
+C Make\sUSE_FULLWARN=1\sthe\sdefault\sfor\sMSVC\sand\sfix\sharmless\scompiler\swarnings.
+D 2017-04-14T14:50:34.600
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc a4c0613a18663bda56d8cf76079ab6590a7c3602e54befb4bbdef76bcaa38b6a
+F Makefile.msc 6a8c838220f7c00820e1fc0ac1bccaaa8e5676067e1dbfa1bafa7a4ffecf8ae6
 F README.md 2b15fae33852f2f53996774c21fb41e1d94181c4401a0e43ac93e11f2cc901b9
 F VERSION 0a0e02e16b44ea735b40118fc844311b2ab0d35b25fbeda5120aee62f973f663
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -218,7 +218,7 @@ F ext/misc/eval.c f971962e92ebb8b0a4e6b62949463ee454d88fa2
 F ext/misc/fileio.c d4171c815d6543a9edef8308aab2951413cd8d0f
 F ext/misc/fuzzer.c 7c64b8197bb77b7d64eff7cac7848870235d4c25
 F ext/misc/ieee754.c f190d0cc5182529acb15babd177781be1ac1718c
-F ext/misc/json1.c e54799e85461fc7d5456194f110bb967775949a4813d007f94c121284304cb1d
+F ext/misc/json1.c bd3bbdefb6024c5e40287d61cdf876587c18a6e60fbe8cd6bcdde10eefd14bb1
 F ext/misc/memvfs.c e5225bc22e79dde6b28380f3a068ddf600683a33
 F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
 F ext/misc/percentile.c 92699c8cd7d517ff610e6037e56506f8904dae2e
@@ -236,7 +236,7 @@ F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vfsstat.c bf10ef0bc51e1ad6756629e1edb142f7a8db1178
 F ext/misc/vtshim.c 1976e6dd68dd0d64508c91a6dfab8e75f8aaf6cd
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
-F ext/rbu/rbu.c b2c0b5e6ae1a89affc0edfc127ebfa5f637a0ce4
+F ext/rbu/rbu.c ea7d1b7eb44c123a2a619332e19fe5313500705c4a58aaa1887905c0d83ffc2e
 F ext/rbu/rbu1.test 43836fac8c7179a358eaf38a8a1ef3d6e6285842
 F ext/rbu/rbu10.test 046b0980041d30700464a800bbf6733ed2df515d
 F ext/rbu/rbu11.test 9bc68c2d3dbeb1720153626e3bd0466dcc017702
@@ -354,7 +354,7 @@ F src/ctime.c 47d91a25ad8f199a71a5b1b7b169d6dd0d6e98c5719eca801568798743d1161c
 F src/date.c ee676e7694dfadbdd2fde1a258a71be8360ba5ae
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
 F src/delete.c 0d9d5549d42e79ce4d82ff1db1e6c81e36d2f67c
-F src/expr.c f6572c7690fa619e85b1192b683ccc30cd123363415963c061ada3770b18f6a7
+F src/expr.c f6914d6d06c9a1e488f49cd51a0ef12d8073231e9c1a25c4c821262686cadcbf
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c db65492ae549c3b548c9ef1f279ce1684f1c473b116e1c56a90878cd5dcf968d
 F src/func.c 9d52522cc8ae7f5cdadfe14594262f1618bc1f86083c4cd6da861b4cf5af6174
@@ -1492,7 +1492,7 @@ F tool/dbhash.c a06228aa21ebc4e6ea8daa486601d938499238a5
 F tool/extract.c 054069d81b095fbdc189a6f5d4466e40380505e2
 F tool/fast_vacuum.c 5ba0d6f5963a0a63bdc42840f678bad75b2ebce1
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
-F tool/fuzzershell.c dbf6c26eef936ec78cb0707570de3a4308b2507e
+F tool/fuzzershell.c e1d90a03ca790d7c331c2aae08ca46ff435f1ae1faa6cb9cc48f4687c18fdc6e
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
@@ -1571,7 +1571,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e651074be28b2077b8a298f513e2e699ceca99164ace9869ea50873c0637fd2e
-R b317d763d703a7ce3fe46603da67e2ba
-U drh
-Z 5521cfc7e88c8cee0fe5499eb1de1049
+P 5159cb8f2bcfb1f7114786ba23082d2b91a26e3a7ddfae75f8bd362792949d5e
+R 3270eeed59983be191492d424a0b906b
+U mistachkin
+Z edc8ddb73a9c8e57e014e4878b2c6186
