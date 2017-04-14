@@ -1,5 +1,5 @@
-C Fix\ssome\sleft-over\sK&amp;R-C\sconstructs\sin\slemon.c.\s\sNo\schanges\sto\sthe\score.
-D 2017-04-14T19:44:15.729
+C Remove\send-of-line\swhitespace\sfrom\slemon.c.
+D 2017-04-14T19:46:12.138
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a8c838220f7c00820e1fc0ac1bccaaa8e5676067e1dbfa1bafa7a4ffecf8ae6
@@ -1498,7 +1498,7 @@ F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/kvtest-speed.sh 4761a9c4b3530907562314d7757995787f7aef8f
-F tool/lemon.c c02a8dffa053950c460cc27e524e24a06cbd1c06125ae9d619be0811528cb9bb
+F tool/lemon.c 6b0cdffb377e79c6295c40300677688f3d35c21c0154da635642ef82dc3a5836
 F tool/lempar.c db1bdb4821f2d8fbd76e577cf3ab18642c8d08d1
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
@@ -1572,7 +1572,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f489b5bb6b35665befdd411c2c55df5258e83cba265d8c4427ba22529cf882a4
-R 09cedb0a1e3f12dd43403c176a722752
+P a53799059d4ece246610b6c877ab7088ded3548cbca7149a03deea8ac0e27e68
+R e8b4051079bcc56bd29a4fddab0de3fd
 U drh
-Z 8d14d0c30102a27bc4df09a1b38d16b8
+Z a46eec356673a6ddd2be83fdca8b716d
