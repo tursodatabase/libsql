@@ -78,14 +78,14 @@ foreach {tn setup} {
   eval $setup
 
 
-do_setup_rec_test $tn.1.1 { CREATE TABLE t1(a, b, c) } {
+do_setup_rec_test $tn.1 { CREATE TABLE t1(a, b, c) } {
   SELECT * FROM t1
 } {
   (no new indexes)
   0|0|0|SCAN TABLE t1
 }
 
-do_setup_rec_test $tn.1.2 {
+do_setup_rec_test $tn.2 {
   CREATE TABLE t1(a, b, c);
 } {
   SELECT * FROM t1 WHERE b>?;
@@ -94,7 +94,7 @@ do_setup_rec_test $tn.1.2 {
   0|0|0|SEARCH TABLE t1 USING INDEX t1_idx_00000062 (b>?)
 }
 
-do_setup_rec_test $tn.1.3 {
+do_setup_rec_test $tn.3 {
   CREATE TABLE t1(a, b, c);
 } {
   SELECT * FROM t1 WHERE b COLLATE nocase BETWEEN ? AND ?
@@ -103,7 +103,7 @@ do_setup_rec_test $tn.1.3 {
   0|0|0|SEARCH TABLE t1 USING INDEX t1_idx_3e094c27 (b>? AND b<?)
 }
 
-do_setup_rec_test $tn.1.4 {
+do_setup_rec_test $tn.4 {
   CREATE TABLE t1(a, b, c);
 } {
   SELECT a FROM t1 ORDER BY b;
@@ -112,7 +112,7 @@ do_setup_rec_test $tn.1.4 {
   0|0|0|SCAN TABLE t1 USING INDEX t1_idx_00000062
 }
 
-do_setup_rec_test $tn.1.5 {
+do_setup_rec_test $tn.5 {
   CREATE TABLE t1(a, b, c);
 } {
   SELECT a FROM t1 WHERE a=? ORDER BY b;
@@ -121,7 +121,7 @@ do_setup_rec_test $tn.1.5 {
   0|0|0|SEARCH TABLE t1 USING COVERING INDEX t1_idx_000123a7 (a=?)
 }
 
-do_setup_rec_test $tn.1.6 {
+do_setup_rec_test $tn.6 {
   CREATE TABLE t1(a, b, c);
 } {
   SELECT min(a) FROM t1
@@ -130,7 +130,7 @@ do_setup_rec_test $tn.1.6 {
   0|0|0|SEARCH TABLE t1 USING COVERING INDEX t1_idx_00000061
 }
 
-do_setup_rec_test $tn.1.7 {
+do_setup_rec_test $tn.7 {
   CREATE TABLE t1(a, b, c);
 } {
   SELECT * FROM t1 ORDER BY a, b, c;
@@ -148,7 +148,7 @@ do_setup_rec_test $tn.1.7 {
 #  0|0|0|SCAN TABLE t1 USING COVERING INDEX t1_idx_5be6e222
 #}
 
-do_setup_rec_test $tn.1.9 {
+do_setup_rec_test $tn.8.1 {
   CREATE TABLE t1(a COLLATE NOCase, b, c);
 } {
   SELECT * FROM t1 WHERE a=?
@@ -156,8 +156,7 @@ do_setup_rec_test $tn.1.9 {
   CREATE INDEX t1_idx_00000061 ON t1(a);
   0|0|0|SEARCH TABLE t1 USING INDEX t1_idx_00000061 (a=?)
 }
-
-do_setup_rec_test $tn.1.10 {
+do_setup_rec_test $tn.8.2 {
   CREATE TABLE t1(a, b COLLATE nocase, c);
 } {
   SELECT * FROM t1 ORDER BY a ASC, b DESC, c ASC;
@@ -169,7 +168,7 @@ do_setup_rec_test $tn.1.10 {
 
 # Tables with names that require quotes.
 #
-do_setup_rec_test $tn.8.1 {
+do_setup_rec_test $tn.9.1 {
   CREATE TABLE "t t"(a, b, c);
 } {
   SELECT * FROM "t t" WHERE a=?
@@ -178,7 +177,7 @@ do_setup_rec_test $tn.8.1 {
   0|0|0|SEARCH TABLE t t USING INDEX t t_idx_00000061 (a=?) 
 }
 
-do_setup_rec_test $tn.8.2 {
+do_setup_rec_test $tn.9.2 {
   CREATE TABLE "t t"(a, b, c);
 } {
   SELECT * FROM "t t" WHERE b BETWEEN ? AND ?
@@ -189,7 +188,7 @@ do_setup_rec_test $tn.8.2 {
 
 # Columns with names that require quotes.
 #
-do_setup_rec_test $tn.9.1 {
+do_setup_rec_test $tn.10.1 {
   CREATE TABLE t3(a, "b b", c);
 } {
   SELECT * FROM t3 WHERE "b b" = ?
@@ -198,7 +197,7 @@ do_setup_rec_test $tn.9.1 {
   0|0|0|SEARCH TABLE t3 USING INDEX t3_idx_00050c52 (b b=?)
 }
 
-do_setup_rec_test $tn.9.2 {
+do_setup_rec_test $tn.10.2 {
   CREATE TABLE t3(a, "b b", c);
 } {
   SELECT * FROM t3 ORDER BY "b b"
@@ -209,7 +208,7 @@ do_setup_rec_test $tn.9.2 {
 
 # Transitive constraints
 #
-do_setup_rec_test $tn.10.1 {
+do_setup_rec_test $tn.11.1 {
   CREATE TABLE t5(a, b);
   CREATE TABLE t6(c, d);
 } {
@@ -223,7 +222,7 @@ do_setup_rec_test $tn.10.1 {
 
 # OR terms.
 #
-do_setup_rec_test $tn.11.1 {
+do_setup_rec_test $tn.12.1 {
   CREATE TABLE t7(a, b);
 } {
   SELECT * FROM t7 WHERE a=? OR b=?
@@ -232,6 +231,33 @@ do_setup_rec_test $tn.11.1 {
   CREATE INDEX t7_idx_00000061 ON t7(a);
   0|0|0|SEARCH TABLE t7 USING INDEX t7_idx_00000061 (a=?) 
   0|0|0|SEARCH TABLE t7 USING INDEX t7_idx_00000062 (b=?)
+}
+
+# rowid terms.
+#
+do_setup_rec_test $tn.13.1 {
+  CREATE TABLE t8(a, b);
+} {
+  SELECT * FROM t8 WHERE rowid=?
+} {
+  (no new indexes)
+  0|0|0|SEARCH TABLE t8 USING INTEGER PRIMARY KEY (rowid=?)
+}
+do_setup_rec_test $tn.13.2 {
+  CREATE TABLE t8(a, b);
+} {
+  SELECT * FROM t8 ORDER BY rowid
+} {
+  (no new indexes)
+  0|0|0|SCAN TABLE t8
+}
+do_setup_rec_test $tn.13.3 {
+  CREATE TABLE t8(a, b);
+} {
+  SELECT * FROM t8 WHERE a=? ORDER BY rowid
+} {
+  CREATE INDEX t8_idx_00000061 ON t8(a); 
+  0|0|0|SEARCH TABLE t8 USING INDEX t8_idx_00000061 (a=?)
 }
 
 }

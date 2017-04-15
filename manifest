@@ -1,5 +1,5 @@
-C Merge\slatest\strunk\schanges\sinto\sthis\sbranch.
-D 2017-04-15T15:47:19.800
+C Fix\sproblems\swith\shandling\sconstraints\son\sthe\srowid\scolumn\sin\ssqlite3expert.c.
+D 2017-04-15T16:52:12.782
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a8c838220f7c00820e1fc0ac1bccaaa8e5676067e1dbfa1bafa7a4ffecf8ae6
@@ -42,8 +42,8 @@ F ext/async/sqlite3async.c 0f3070cc3f5ede78f2b9361fb3b629ce200d7d74
 F ext/async/sqlite3async.h f489b080af7e72aec0e1ee6f1d98ab6cf2e4dcef
 F ext/expert/README.md 9f15075ec5ad772808eff55ef044c31140fd1146aa0a3c47eafd155e71851b01
 F ext/expert/expert.c 6349cf8d26c847f5f0fa7e25772b614c67f60f3c850dca0d75d55eb27cf3f69b
-F ext/expert/expert1.test cd630eda18a2508eade4c39a1eafe32e7437a33973391e5dddfc7fd0f3163684
-F ext/expert/sqlite3expert.c d4a0a45be58874b4cf54316e5d776726489967140399b1e77a17dbb66558cb38
+F ext/expert/expert1.test c08c95fd81e80073def8bdbf30b67934a9c20193b3632e5f27565ef88f964809
+F ext/expert/sqlite3expert.c d73a4813af4c8097bb574113c91abf9c0ec06a7af47c80227a160a7c413265b5
 F ext/expert/sqlite3expert.h b1c9eedeb647fd734c4206ae6851635284cfbfa5fb688eff74c3265c9f949b4d
 F ext/expert/test_expert.c bad0611732d07180d586bd589cbb7713dc3ab0338c52bff29680eb2007678c05
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
@@ -1579,7 +1579,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d238694ca445ccb4eeb3e3269a5f872f998f795945d0f9dd95c11d0e42d4d538 89f9e4363aa19f306e55f749c442eae2f8994f6a47c65e645a79b308b450d5e5
-R ee849516fe355a9533f6086faf663944
+P 2d0c458e013cb2d02fbeabed8dabd66f55141aac194611f0e599b3c95af1964f
+R d323d2b5ffa5632b2c495cb6bacbb016
 U dan
-Z 67dd241955788961a5e3c1b5613b9072
+Z 2344908fdbfea0ffd0d694cf678615cc

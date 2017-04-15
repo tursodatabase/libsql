@@ -365,7 +365,7 @@ static int expertBestIndex(sqlite3_vtab *pVtab, sqlite3_index_info *pIdxInfo){
     /* Add the constraints to the IdxScan object */
     for(i=0; i<pIdxInfo->nConstraint; i++){
       struct sqlite3_index_constraint *pCons = &pIdxInfo->aConstraint[i];
-      if( pCons->usable && (pCons->op & opmask) ){
+      if( pCons->usable && pCons->iColumn>=0 && (pCons->op & opmask) ){
         IdxConstraint *pNew;
         const char *zColl = sqlite3_vtab_collation(dbv, i);
         pNew = idxNewConstraint(&rc, zColl);
@@ -388,14 +388,16 @@ static int expertBestIndex(sqlite3_vtab *pVtab, sqlite3_index_info *pIdxInfo){
     /* Add the ORDER BY to the IdxScan object */
     for(i=pIdxInfo->nOrderBy-1; i>=0; i--){
       int iCol = pIdxInfo->aOrderBy[i].iColumn;
-      IdxConstraint *pNew = idxNewConstraint(&rc, p->pTab->aCol[iCol].zColl);
-      if( pNew ){
-        pNew->iCol = iCol;
-        pNew->bDesc = pIdxInfo->aOrderBy[i].desc;
-        pNew->pNext = pScan->pOrder;
-        pNew->pLink = pScan->pOrder;
-        pScan->pOrder = pNew;
-        n++;
+      if( iCol>=0 ){
+        IdxConstraint *pNew = idxNewConstraint(&rc, p->pTab->aCol[iCol].zColl);
+        if( pNew ){
+          pNew->iCol = iCol;
+          pNew->bDesc = pIdxInfo->aOrderBy[i].desc;
+          pNew->pNext = pScan->pOrder;
+          pNew->pLink = pScan->pOrder;
+          pScan->pOrder = pNew;
+          n++;
+        }
       }
     }
   }
