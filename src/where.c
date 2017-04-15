@@ -3117,14 +3117,25 @@ static int whereLoopAddVirtualOne(
 }
 
 
+/*
+** Context object used to pass information from whereLoopAddVirtual()
+** to sqlite3_vtab_collation().
+*/
 struct BestIndexCtx {
   WhereClause *pWC;
   sqlite3_index_info *pIdxInfo;
   Parse *pParse;
 };
 
+/*
+** If this function is invoked from within an xBestIndex() callback, it
+** returns a pointer to a buffer containing the name of the collation
+** sequence associated with element iCons of the sqlite3_index_info.aConstraint
+** array. Or, if iCons is out of range or there is no active xBestIndex
+** call, return NULL.
+*/
 const char *sqlite3_vtab_collation(sqlite3 *db, int iCons){
-  struct BestIndexCtx *p = (struct BestIndexCtx*)db->pVtabWC;
+  struct BestIndexCtx *p = (struct BestIndexCtx*)db->pBestIndexCtx;
   const char *zRet = 0;
   if( p && iCons>=0 && iCons<p->pIdxInfo->nConstraint ){
     int iTerm = p->pIdxInfo->aConstraint[iCons].iTermOffset;
@@ -3202,8 +3213,8 @@ static int whereLoopAddVirtual(
   bic.pWC = pWC;
   bic.pIdxInfo = p;
   bic.pParse = pParse;
-  pSaved = pParse->db->pVtabWC;
-  pParse->db->pVtabWC = (void*)&bic;
+  pSaved = pParse->db->pBestIndexCtx;
+  pParse->db->pBestIndexCtx = (void*)&bic;
 
   /* First call xBestIndex() with all constraints usable. */
   WHERETRACE(0x40, ("  VirtualOne: all usable\n"));
@@ -3281,7 +3292,7 @@ static int whereLoopAddVirtual(
 
   if( p->needToFreeIdxStr ) sqlite3_free(p->idxStr);
   sqlite3DbFreeNN(pParse->db, p);
-  pParse->db->pVtabWC = pSaved;
+  pParse->db->pBestIndexCtx = pSaved;
   return rc;
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */

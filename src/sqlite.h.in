@@ -8037,6 +8037,20 @@ int sqlite3_vtab_config(sqlite3*, int op, ...);
 */
 int sqlite3_vtab_on_conflict(sqlite3 *);
 
+/*
+** CAPI3REF: Determine The Collation For a Virtual Table Constraint
+**
+** This function may only be called from within a call to the [xBestIndex]
+** method of a [virtual table implementation]. 
+**
+** The first argument must be the database handle with which the virtual 
+** table is associated (the one passed to the [xConnect] or [xCreate] method 
+** to create the sqlite3_vtab object. The second argument must be an index
+** into the aConstraint[] array belonging to the sqlite3_index_info structure
+** passed to xBestIndex. This function returns a pointer to a buffer 
+** containing the name of the collation sequence for the corresponding
+** constraint.
+*/
 SQLITE_EXPERIMENTAL const char *sqlite3_vtab_collation(sqlite3*, int);
 
 /*

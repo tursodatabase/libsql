@@ -1,5 +1,5 @@
-C Fix\smemory\sleaks\sin\sthe\scode\son\sthis\sbranch.\sMake\suse\sof\sthe\nsqlite3_index_constraint.usage\sfield.\sDo\snot\stry\sto\shandle\sORDER\sBY\sterms\swith\nexplicit\sCOLLATE\sclauses\s-\sthey\sdon't\sget\spassed\sto\sthe\svtab\slayer\sanyway.
-D 2017-04-15T14:16:04.093
+C Add\sheader\scomment\sfor\ssqlite3_vtab_collation().
+D 2017-04-15T14:30:01.495
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc a4c0613a18663bda56d8cf76079ab6590a7c3602e54befb4bbdef76bcaa38b6a
@@ -409,10 +409,10 @@ F src/resolve.c 3e518b962d932a997fae373366880fc028c75706
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c e6f9afd8a5ef35bd186e51a6bea6d3d46bc93a530f26a21fe8a0a43dbeca9415
 F src/shell.c 70f4957b988572315e97c56941fdc81fd35907fee36b7b2e7be5ec4c7e9d065d
-F src/sqlite.h.in fa0a24af458b49de8d5654fd1f3b61422ef513cee9b17f39ce3f5e5731ce4f6a
+F src/sqlite.h.in 18b4f1367bb80c07a6883c75c18267de2b977960adf1f30c783a731691eae3b0
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 58fd0676d3111d02e62e5a35992a7d3da5d3f88753acc174f2d37b774fbbdd28
-F src/sqliteInt.h 8ac5d9b92084de271b913387968720f4dfe17302eb48a51c6ae161b6149057ad
+F src/sqliteInt.h bd00872a45aa8eaa262301436bb63dc0afa685ceab7361790b065d5802269650
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -488,7 +488,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 40c543f0a2195d1b0dc88ef12142bea690009344
 F src/wal.h 06b2a0b599cc0f53ea97f497cf8c6b758c999f71
 F src/walker.c b71a992b413b3a022572eccf29ef4b4890223791
-F src/where.c 7b4d39ffdb82a6c5abd8678c66a4cd16d8bdba3bbe158a9e2f181a78e05b07ef
+F src/where.c 4b0d7b6696f2de64b3bdd2bc600f51ef6cd832fe269f2c0ad330974885c30652
 F src/whereInt.h 7a21ef633e26acbf46df04add2eba6e0a2100c78dc5879049e93f981fc3344df
 F src/wherecode.c 943e32e9dccd0af802e0683ae11071c8bd808364e5908a5fb66758bd404c8681
 F src/whereexpr.c e913aaa7b73ffcce66abcea5f197e2c538d48b5df78d0b7bba8ff4d73cc2e745
@@ -1578,7 +1578,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3bb6585004090dbf92dd5e9abdf0fd2c921e64b5b3121c4fb7446db764ab59e5
-R 039cfbfa3ee0c0fcda94663d31b151d9
+P 0cd75a872c89958a7f418720a0e8c6f638f8284c488f666015c19136feae6be8
+R c9114bbd4adb78d55a86a8431d68fb8b
 U dan
-Z 80d209b7df04543ba8ed8a1a58dd2c4a
+Z d3545883deff75eff19284d6064a11b5
