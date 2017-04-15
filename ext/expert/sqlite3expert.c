@@ -39,7 +39,6 @@ struct IdxConstraint {
   char *zColl;                    /* Collation sequence */
   int bRange;                     /* True for range, false for eq */
   int iCol;                       /* Constrained table column */
-  i64 depmask;                    /* Dependency mask */
   int bFlag;                      /* Used by idxFindCompatible() */
   int bDesc;                      /* True if ORDER BY <expr> DESC */
   IdxConstraint *pNext;           /* Next constraint in pEq or pRange list */
@@ -112,25 +111,6 @@ struct IdxHash {
 };
 
 /*
-** A hash table for storing a set of 64-bit values. Methods are:
-**
-**   idxHash64Init()
-**   idxHash64Clear()
-**   idxHash64Add()
-*/
-typedef struct IdxHash64Entry IdxHash64Entry;
-typedef struct IdxHash64 IdxHash64;
-struct IdxHash64Entry {
-  u64 iVal;
-  IdxHash64Entry *pNext;          /* Next entry in hash table */
-  IdxHash64Entry *pHashNext;      /* Next entry in same hash bucket */
-};
-struct IdxHash64 {
-  IdxHash64Entry *pFirst;         /* Most recently added entry in hash table */
-  IdxHash64Entry *aHash[IDX_HASH_SIZE];
-};
-
-/*
 ** sqlite3expert object.
 */
 struct sqlite3expert {
@@ -164,48 +144,6 @@ static void *idxMalloc(int *pRc, int nByte){
     *pRc = SQLITE_NOMEM;
   }
   return pRet;
-}
-
-/*
-** Initialize an IdxHash64 hash table.
-*/
-static void idxHash64Init(IdxHash64 *pHash){
-  memset(pHash, 0, sizeof(IdxHash64));
-}
-
-/*
-** Reset an IdxHash64 hash table.
-*/
-static void idxHash64Clear(IdxHash64 *pHash){
-  IdxHash64Entry *pEntry;
-  IdxHash64Entry *pNext;
-  for(pEntry=pHash->pFirst; pEntry; pEntry=pNext){
-    pNext = pEntry->pNext;
-    sqlite3_free(pEntry);
-  }
-  memset(pHash, 0, sizeof(IdxHash64));
-}
-
-/*
-** Add iVal to the IdxHash64 hash table passed as the second argument. This
-** function is a no-op if iVal is already present in the hash table.
-*/
-static void idxHash64Add(int *pRc, IdxHash64 *pHash, u64 iVal){
-  int iHash = (int)((iVal*7) % IDX_HASH_SIZE);
-  IdxHash64Entry *pEntry;
-  assert( iHash>=0 );
-
-  for(pEntry=pHash->aHash[iHash]; pEntry; pEntry=pEntry->pHashNext){
-    if( pEntry->iVal==iVal ) return;
-  }
-  pEntry = idxMalloc(pRc, sizeof(IdxHash64Entry));
-  if( pEntry ){
-    pEntry->iVal = iVal;
-    pEntry->pHashNext = pHash->aHash[iHash];
-    pHash->aHash[iHash] = pEntry;
-    pEntry->pNext = pHash->pFirst;
-    pHash->pFirst = pEntry;
-  }
 }
 
 /*
@@ -426,14 +364,14 @@ static int expertBestIndex(sqlite3_vtab *pVtab, sqlite3_index_info *pIdxInfo){
 
     /* Add the constraints to the IdxScan object */
     for(i=0; i<pIdxInfo->nConstraint; i++){
-      int op = pIdxInfo->aConstraint[i].op;
-      if( op&opmask ){
+      struct sqlite3_index_constraint *pCons = &pIdxInfo->aConstraint[i];
+      if( pCons->usable && (pCons->op & opmask) ){
         IdxConstraint *pNew;
         const char *zColl = sqlite3_vtab_collation(dbv, i);
         pNew = idxNewConstraint(&rc, zColl);
         if( pNew ){
-          pNew->iCol = pIdxInfo->aConstraint[i].iColumn;
-          if( op==SQLITE_INDEX_CONSTRAINT_EQ ){
+          pNew->iCol = pCons->iColumn;
+          if( pCons->op==SQLITE_INDEX_CONSTRAINT_EQ ){
             pNew->pNext = pScan->pEq;
             pScan->pEq = pNew;
           }else{
@@ -442,20 +380,17 @@ static int expertBestIndex(sqlite3_vtab *pVtab, sqlite3_index_info *pIdxInfo){
             pScan->pRange = pNew;
           }
         }
-        if( pIdxInfo->aConstraint[i].usable ){
-          n++;
-          pIdxInfo->aConstraintUsage[i].argvIndex = n;
-        }
+        n++;
+        pIdxInfo->aConstraintUsage[i].argvIndex = n;
       }
     }
 
     /* Add the ORDER BY to the IdxScan object */
     for(i=pIdxInfo->nOrderBy-1; i>=0; i--){
-      IdxConstraint *pNew;
-      const char *zColl = sqlite3_vtab_collation(dbv, i+pIdxInfo->nConstraint);
-      pNew = idxNewConstraint(&rc, zColl);
+      int iCol = pIdxInfo->aOrderBy[i].iColumn;
+      IdxConstraint *pNew = idxNewConstraint(&rc, p->pTab->aCol[iCol].zColl);
       if( pNew ){
-        pNew->iCol = pIdxInfo->aOrderBy[i].iColumn;
+        pNew->iCol = iCol;
         pNew->bDesc = pIdxInfo->aOrderBy[i].desc;
         pNew->pNext = pScan->pOrder;
         pNew->pLink = pScan->pOrder;
@@ -813,7 +748,6 @@ static int idxFindCompatible(
 
 static int idxCreateFromCons(
   sqlite3expert *p,
-  IdxTable *pTab,
   IdxScan *pScan,
   IdxConstraint *pEq, 
   IdxConstraint *pTail
@@ -821,6 +755,7 @@ static int idxCreateFromCons(
   sqlite3 *dbm = p->dbm;
   int rc = SQLITE_OK;
   if( (pEq || pTail) && 0==idxFindCompatible(&rc, dbm, pScan, pEq, pTail) ){
+    IdxTable *pTab = pScan->pTab;
     char *zCols = 0;
     char *zIdx = 0;
     IdxConstraint *pCons;
@@ -882,22 +817,16 @@ static int idxFindConstraint(IdxConstraint *pList, IdxConstraint *p){
 
 static int idxCreateFromWhere(
   sqlite3expert *p, 
-  IdxTable *pTab,
-  i64 mask,                       /* Consider only these constraints */
   IdxScan *pScan,                 /* Create indexes for this scan */
-  IdxConstraint *pEq,             /* == constraints for inclusion */
   IdxConstraint *pTail            /* range/ORDER BY constraints for inclusion */
 ){
-  IdxConstraint *p1 = pEq;
+  IdxConstraint *p1 = 0;
   IdxConstraint *pCon;
   int rc;
 
-  /* Gather up all the == constraints that match the mask. */
+  /* Gather up all the == constraints. */
   for(pCon=pScan->pEq; pCon; pCon=pCon->pNext){
-    if( (mask & pCon->depmask)==pCon->depmask 
-     && idxFindConstraint(p1, pCon)==0
-     && idxFindConstraint(pTail, pCon)==0
-    ){
+    if( !idxFindConstraint(p1, pCon) && !idxFindConstraint(pTail, pCon) ){
       pCon->pLink = p1;
       p1 = pCon;
     }
@@ -905,18 +834,15 @@ static int idxCreateFromWhere(
 
   /* Create an index using the == constraints collected above. And the
   ** range constraint/ORDER BY terms passed in by the caller, if any. */
-  rc = idxCreateFromCons(p, pTab, pScan, p1, pTail);
+  rc = idxCreateFromCons(p, pScan, p1, pTail);
 
   /* If no range/ORDER BY passed by the caller, create a version of the
-  ** index for each range constraint that matches the mask. */
+  ** index for each range constraint.  */
   if( pTail==0 ){
     for(pCon=pScan->pRange; rc==SQLITE_OK && pCon; pCon=pCon->pNext){
       assert( pCon->pLink==0 );
-      if( (mask & pCon->depmask)==pCon->depmask
-        && idxFindConstraint(pEq, pCon)==0
-        && idxFindConstraint(pTail, pCon)==0
-      ){
-        rc = idxCreateFromCons(p, pTab, pScan, p1, pCon);
+      if( !idxFindConstraint(p1, pCon) && !idxFindConstraint(pTail, pCon) ){
+        rc = idxCreateFromCons(p, pScan, p1, pCon);
       }
     }
   }
@@ -931,30 +857,12 @@ static int idxCreateFromWhere(
 static int idxCreateCandidates(sqlite3expert *p, char **pzErr){
   int rc = SQLITE_OK;
   IdxScan *pIter;
-  IdxHash64 hMask;
-  idxHash64Init(&hMask);
 
   for(pIter=p->pScan; pIter && rc==SQLITE_OK; pIter=pIter->pNextScan){
-    IdxHash64Entry *pEntry;
-    IdxConstraint *pCons;
-    IdxTable *pTab = pIter->pTab;
-
-    idxHash64Add(&rc, &hMask, 0);
-    for(pCons=pIter->pEq; pCons; pCons=pCons->pNext){
-      for(pEntry=hMask.pFirst; pEntry; pEntry=pEntry->pNext){
-        idxHash64Add(&rc, &hMask, pEntry->iVal | (u64)pCons->depmask);
-      }
+    rc = idxCreateFromWhere(p, pIter, 0);
+    if( rc==SQLITE_OK && pIter->pOrder ){
+      rc = idxCreateFromWhere(p, pIter, pIter->pOrder);
     }
-
-    for(pEntry=hMask.pFirst; rc==SQLITE_OK && pEntry; pEntry=pEntry->pNext){
-      i64 mask = (i64)pEntry->iVal;
-      rc = idxCreateFromWhere(p, pTab, mask, pIter, 0, 0);
-      if( rc==SQLITE_OK && pIter->pOrder ){
-        rc = idxCreateFromWhere(p, pTab, mask, pIter, 0, pIter->pOrder);
-      }
-    }
-
-    idxHash64Clear(&hMask);
   }
 
   return rc;
@@ -1001,6 +909,18 @@ static void idxStatementFree(IdxStatement *pStatement, IdxStatement *pLast){
     sqlite3_free(p->zEQP);
     sqlite3_free(p->zIdx);
     sqlite3_free(p);
+  }
+}
+
+/*
+** Free the linked list of IdxTable objects starting at pTab.
+*/
+static void idxTableFree(IdxTable *pTab){
+  IdxTable *pIter;
+  IdxTable *pNext;
+  for(pIter=pTab; pIter; pIter=pNext){
+    pNext = pIter->pNext;
+    sqlite3_free(pIter);
   }
 }
 
@@ -1126,6 +1046,7 @@ static int idxCreateVtabSchema(sqlite3expert *p, char **pzErrmsg){
       }
     }
   }
+  idxFinalize(&rc, pSchema);
   return rc;
 }
 
@@ -1296,7 +1217,9 @@ void sqlite3_expert_destroy(sqlite3expert *p){
     sqlite3_close(p->dbv);
     idxScanFree(p->pScan, 0);
     idxStatementFree(p->pStatement, 0);
+    idxTableFree(p->pTable);
     idxHashClear(&p->hIdx);
+    sqlite3_free(p->zCandidates);
     sqlite3_free(p);
   }
 }

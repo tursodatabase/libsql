@@ -3120,27 +3120,17 @@ static int whereLoopAddVirtualOne(
 struct BestIndexCtx {
   WhereClause *pWC;
   sqlite3_index_info *pIdxInfo;
-  ExprList *pOrderBy;
   Parse *pParse;
 };
 
 const char *sqlite3_vtab_collation(sqlite3 *db, int iCons){
   struct BestIndexCtx *p = (struct BestIndexCtx*)db->pVtabWC;
   const char *zRet = 0;
-  if( p && iCons>=0 ){
-    if( iCons<p->pIdxInfo->nConstraint ){
-      int iTerm = p->pIdxInfo->aConstraint[iCons].iTermOffset;
-      Expr *pX = p->pWC->a[iTerm].pExpr;
-      CollSeq *pC = sqlite3BinaryCompareCollSeq(p->pParse,pX->pLeft,pX->pRight);
-      zRet = (pC ? pC->zName : "BINARY");
-    }else{
-      iCons -= p->pIdxInfo->nConstraint;
-      if( iCons<p->pIdxInfo->nOrderBy ){
-        Expr *pX = p->pOrderBy->a[iCons].pExpr;
-        CollSeq *pC = sqlite3ExprCollSeq(p->pParse, pX);
-        zRet = (pC ? pC->zName : "BINARY");
-      }
-    }
+  if( p && iCons>=0 && iCons<p->pIdxInfo->nConstraint ){
+    int iTerm = p->pIdxInfo->aConstraint[iCons].iTermOffset;
+    Expr *pX = p->pWC->a[iTerm].pExpr;
+    CollSeq *pC = sqlite3BinaryCompareCollSeq(p->pParse,pX->pLeft,pX->pRight);
+    zRet = (pC ? pC->zName : "BINARY");
   }
   return zRet;
 }
@@ -3212,7 +3202,6 @@ static int whereLoopAddVirtual(
   bic.pWC = pWC;
   bic.pIdxInfo = p;
   bic.pParse = pParse;
-  bic.pOrderBy = pBuilder->pOrderBy;
   pSaved = pParse->db->pVtabWC;
   pParse->db->pVtabWC = (void*)&bic;
 
