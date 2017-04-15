@@ -1405,7 +1405,7 @@ static void jsonExtractFunc(
 */
 static JsonNode *jsonMergePatch(
   JsonParse *pParse,   /* The JSON parser that contains the TARGET */
-  int iTarget,         /* Node of the TARGET in pParse */
+  u32 iTarget,         /* Node of the TARGET in pParse */
   JsonNode *pPatch     /* The PATCH */
 ){
   u32 i, j;

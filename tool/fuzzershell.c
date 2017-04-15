@@ -250,7 +250,7 @@ static void StrAppend(Str *p, const char *z){
     sqlite3_uint64 nNew;
     if( p->oomErr ) return;
     nNew = p->nAlloc*2 + 100 + n;
-    zNew = sqlite3_realloc(p->z, nNew);
+    zNew = sqlite3_realloc(p->z, (int)nNew);
     if( zNew==0 ){
       sqlite3_free(p->z);
       memset(p, 0, sizeof(*p));
@@ -260,7 +260,7 @@ static void StrAppend(Str *p, const char *z){
     p->z = zNew;
     p->nAlloc = nNew;
   }
-  memcpy(p->z + p->n, z, n);
+  memcpy(p->z + p->n, z, (size_t)n);
   p->n += n;
   p->z[p->n] = 0;
 }
@@ -1116,15 +1116,15 @@ int main(int argc, char **argv){
         ** if the database file is the input being fuzzed, the SQL text is
         ** fuzzed at the same time. */
         if( sqlite3_table_column_metadata(db,0,"autoexec","sql",0,0,0,0,0)==0 ){
-          sqlite3_stmt *pStmt;
-          rc = sqlite3_prepare_v2(db, "SELECT sql FROM autoexec", -1, &pStmt, 0);
+          sqlite3_stmt *pStmt2;
+          rc = sqlite3_prepare_v2(db,"SELECT sql FROM autoexec",-1,&pStmt2,0);
           if( rc==SQLITE_OK ){
-            while( sqlite3_step(pStmt)==SQLITE_ROW ){
-              StrAppend(&sql, (const char*)sqlite3_column_text(pStmt, 0));
+            while( sqlite3_step(pStmt2)==SQLITE_ROW ){
+              StrAppend(&sql, (const char*)sqlite3_column_text(pStmt2, 0));
               StrAppend(&sql, "\n");
             }
           }
-          sqlite3_finalize(pStmt);
+          sqlite3_finalize(pStmt2);
           zSql = StrStr(&sql);
         }
 

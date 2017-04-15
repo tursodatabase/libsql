@@ -82,10 +82,10 @@ int main(int argc, char **argv){
   int bVacuum = 0;
   int rc;
   sqlite3_int64 nProgress = 0;
-  int nArg = argc-2;
+  int nArgc = argc-2;
 
   if( argc<3 ) usage(argv[0]);
-  for(i=1; i<nArg; i++){
+  for(i=1; i<nArgc; i++){
     const char *zArg = argv[i];
     int nArg = strlen(zArg);
     if( nArg>1 && nArg<=8 && 0==memcmp(zArg, "-vacuum", nArg) ){
