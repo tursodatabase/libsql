@@ -1,5 +1,5 @@
-C Further\simprovements\sto\stest\scoverage\sin\sfts3.
-D 2017-04-17T16:07:25.320
+C Fix\sa\sproblem\sin\s"PRAGMA\sforeign_key_check"\sin\shandling\sa\sWITHOUT\sROWID\schild\ntable\swith\san\sINTEGER\sPRIMARY\sKEY\sparent\skey.\sAlso,\sif\san\sFK\sviolation\sis\ndetected\sin\sa\sWITHOUT\sROWID\schild\stable,\sdo\snot\stry\sto\sread\sand\sreturn\sthe\nrowid.\sThe\sthird\scolumn\sreturned\sby\s"PRAGMA\sforeign_key_check"\sin\sthis\scase\n(WITHOUT\sROWID\schild\stable)\sis\snow\salways\sset\sto\sNULL.
+D 2017-04-17T18:02:41.447
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a8c838220f7c00820e1fc0ac1bccaaa8e5676067e1dbfa1bafa7a4ffecf8ae6
@@ -395,7 +395,7 @@ F src/parse.y 48b03113704ee8bd78ee6996d81de7fbee22e105
 F src/pcache.c 62835bed959e2914edd26afadfecce29ece0e870
 F src/pcache.h 2cedcd8407eb23017d92790b112186886e179490
 F src/pcache1.c 1195a21fe28e223e024f900b2011e80df53793f0356a24caace4188b098540dc
-F src/pragma.c 220474f113cade6a6b5bacd3e3a65eca339acbee804128bc5db13a9cad55fba5
+F src/pragma.c 943f71f762d8c7ab5a7b00641308cb9cd5effeddc3c709f0303e394ca8c21228
 F src/pragma.h 37a1311d0388db480388d7ec09054f7103045eff20d4971f8a433b77f40b9921
 F src/prepare.c b1140c3d0cf59bc85ace00ce363153041b424b7a
 F src/printf.c 8757834f1b54dae512fb25eb1acc8e94a0d15dd2290b58f2563f65973265adb2
@@ -708,7 +708,7 @@ F test/fkey1.test ba64806ff9a04eecab2679caad377ae99a5e94e4
 F test/fkey2.test 155809016fad6b2a1491facf2ac53a551bc57c2c
 F test/fkey3.test 76d475c80b84ee7a5d062e56ccb6ea68882e2b49
 F test/fkey4.test 86446017011273aad8f9a99c1a65019e7bd9ca9d
-F test/fkey5.test 5a373303f201ac03c22ba1ef17a733d3f56e611a
+F test/fkey5.test 67eac5be27ab6c80b1131ed7a060d0df5df748a0cb51600db495221a0e70b732
 F test/fkey6.test d078a1e323a740062bed38df32b8a736fd320dc0
 F test/fkey7.test 72e915890ee4a005daaf3002cb208e8fe973ac13
 F test/fkey8.test e5372e32cdb4481f121ec3550703eeb7b4e0762c
@@ -1575,8 +1575,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1a08a836fa919524216a16faf5212eebc9ad788c9e15463b68b0576dfccd4387
-Q +e00aa665903d2328bab3f192ad364e43d5d8483509671626d8ef5384b305557f
-R e503b12d92602617090d73924f6d0603
+P 352413eed469802665e7d2c17b7fe6e3a0b0b2209ce45bdc85fd4243cec50ea6
+R 46f0a9ecba377acfe7b4e03c3b9e97dc
 U dan
-Z 3da6b7e6b10076610ce2d669ba020b22
+Z a6a806ccfe0a8fddda7afe6e73d07801

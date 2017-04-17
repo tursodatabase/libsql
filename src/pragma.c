@@ -1333,8 +1333,8 @@ void sqlite3Pragma(
           int iKey = pFK->aCol[0].iFrom;
           assert( iKey>=0 && iKey<pTab->nCol );
           if( iKey!=pTab->iPKey ){
-            sqlite3VdbeAddOp3(v, OP_Column, 0, iKey, regRow);
-            sqlite3ColumnDefault(v, pTab, iKey, regRow);
+            sqlite3ExprCodeGetColumnOfTable(
+                v, pTab, 0, pFK->aCol[0].iFrom, regRow);
             sqlite3VdbeAddOp2(v, OP_IsNull, regRow, addrOk); VdbeCoverage(v);
           }else{
             sqlite3VdbeAddOp2(v, OP_Rowid, 0, regRow);
@@ -1355,7 +1355,11 @@ void sqlite3Pragma(
             VdbeCoverage(v);
           }
         }
-        sqlite3VdbeAddOp2(v, OP_Rowid, 0, regResult+1);
+        if( HasRowid(pTab) ){
+          sqlite3VdbeAddOp2(v, OP_Rowid, 0, regResult+1);
+        }else{
+          sqlite3VdbeAddOp2(v, OP_Null, 0, regResult+1);
+        }
         sqlite3VdbeMultiLoad(v, regResult+2, "si", pFK->zTo, i-1);
         sqlite3VdbeAddOp2(v, OP_ResultRow, regResult, 4);
         sqlite3VdbeResolveLabel(v, addrOk);
