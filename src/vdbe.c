@@ -486,6 +486,7 @@ static void registerTrace(int iReg, Mem *p){
   printf("REG[%d] = ", iReg);
   memTracePrint(p);
   printf("\n");
+  sqlite3VdbeCheckMemInvariants(p);
 }
 #endif
 
@@ -1151,7 +1152,7 @@ case OP_Null: {           /* out2 */
 case OP_SoftNull: {
   assert( pOp->p1>0 && pOp->p1<=(p->nMem+1 - p->nCursor) );
   pOut = &aMem[pOp->p1];
-  pOut->flags = (pOut->flags|MEM_Null)&~MEM_Undefined;
+  pOut->flags = (pOut->flags&~(MEM_Undefined|MEM_AffMask))|MEM_Null;
   break;
 }
 
