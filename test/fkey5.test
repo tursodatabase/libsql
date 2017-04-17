@@ -412,4 +412,16 @@ do_execsql_test 10.3 {
   PRAGMA foreign_key_check;
 } {c30 {} p30 0}
 
+#-------------------------------------------------------------------------
+# Test "foreign key mismatch" errors.
+#
+reset_db
+do_execsql_test 11.0 {
+  CREATE TABLE tt(y);
+  CREATE TABLE c11(x REFERENCES tt(y));
+}
+do_catchsql_test 11.1 {
+  PRAGMA foreign_key_check;
+} {1 {foreign key mismatch - "c11" referencing "tt"}}
+
 finish_test
