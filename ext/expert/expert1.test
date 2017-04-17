@@ -260,6 +260,21 @@ do_setup_rec_test $tn.13.3 {
   0|0|0|SEARCH TABLE t8 USING INDEX t8_idx_00000061 (a=?)
 }
 
+# Triggers
+#
+do_setup_rec_test $tn.14 {
+  CREATE TABLE t9(a, b, c);
+  CREATE TABLE t10(a, b, c);
+  CREATE TRIGGER t9t AFTER INSERT ON t9 BEGIN
+    UPDATE t10 SET a=new.a WHERE b = new.b;
+  END;
+} {
+  INSERT INTO t9 VALUES(?, ?, ?);
+} {
+  CREATE INDEX t10_idx_00000062 ON t10(b); 
+  0|0|0|SEARCH TABLE t10 USING INDEX t10_idx_00000062 (b=?)
+}
+
 }
 
 finish_test

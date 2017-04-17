@@ -584,7 +584,7 @@ void sqlite3UnlinkAndDeleteTrigger(sqlite3 *db, int iDb, const char *zName){
       *pp = (*pp)->pNext;
     }
     sqlite3DeleteTrigger(db, pTrigger);
-    db->flags |= SQLITE_InternChanges;
+    db->bInternChanges = 1;
   }
 }
 

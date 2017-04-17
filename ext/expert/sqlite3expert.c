@@ -26,6 +26,7 @@ typedef struct IdxConstraint IdxConstraint;
 typedef struct IdxScan IdxScan;
 typedef struct IdxStatement IdxStatement;
 typedef struct IdxTable IdxTable;
+typedef struct IdxWrite IdxWrite;
 
 /*
 ** A single constraint. Equivalent to either "col = ?" or "col < ?" (or
@@ -75,6 +76,17 @@ struct IdxTable {
 };
 
 /*
+** An object of the following type is created for each unique table/write-op
+** seen. The objects are stored in a singly-linked list beginning at
+** sqlite3expert.pWrite.
+*/
+struct IdxWrite {
+  IdxTable *pTab;
+  int eOp;                        /* SQLITE_UPDATE, DELETE or INSERT */
+  IdxWrite *pNext;
+};
+
+/*
 ** Each statement being analyzed is represented by an instance of this
 ** structure.
 */
@@ -118,8 +130,8 @@ struct sqlite3expert {
   sqlite3 *dbm;                   /* In-memory db for this analysis */
   sqlite3 *dbv;                   /* Vtab schema for this analysis */
   IdxTable *pTable;               /* List of all IdxTable objects */
-
   IdxScan *pScan;                 /* List of scan objects */
+  IdxWrite *pWrite;               /* List of write objects */
   IdxStatement *pStatement;       /* List of IdxStatement objects */
   int bRun;                       /* True once analysis has run */
   char **pzErrmsg;
@@ -406,6 +418,15 @@ static int expertBestIndex(sqlite3_vtab *pVtab, sqlite3_index_info *pIdxInfo){
   return rc;
 }
 
+static int expertUpdate(
+  sqlite3_vtab *pVtab, 
+  int nData, 
+  sqlite3_value **azData, 
+  sqlite_int64 *pRowid
+){
+  return SQLITE_OK;
+}
+
 static int idxRegisterVtab(sqlite3expert *p){
   static sqlite3_module expertModule = {
     2,                            /* iVersion */
@@ -421,7 +442,7 @@ static int idxRegisterVtab(sqlite3expert *p){
     0,                            /* xEof */
     0,                            /* xColumn - read data */
     0,                            /* xRowid - read data */
-    0,                            /* xUpdate - write data */
+    expertUpdate,                 /* xUpdate - write data */
     0,                            /* xBegin - begin transaction */
     0,                            /* xSync - sync transaction */
     0,                            /* xCommit - commit transaction */
@@ -926,6 +947,19 @@ static void idxTableFree(IdxTable *pTab){
   }
 }
 
+/*
+** Free the linked list of IdxWrite objects starting at pTab.
+*/
+static void idxWriteFree(IdxWrite *pTab){
+  IdxWrite *pIter;
+  IdxWrite *pNext;
+  for(pIter=pTab; pIter; pIter=pNext){
+    pNext = pIter->pNext;
+    sqlite3_free(pIter);
+  }
+}
+
+
 
 /*
 ** This function is called after candidate indexes have been created. It
@@ -996,6 +1030,139 @@ int idxFindIndexes(
   idxHashClear(&hIdx);
   return rc;
 }
+
+static int idxAuthCallback(
+  void *pCtx,
+  int eOp,
+  const char *z3,
+  const char *z4,
+  const char *zDb,
+  const char *zTrigger
+){
+  int rc = SQLITE_OK;
+  if( eOp==SQLITE_INSERT || eOp==SQLITE_UPDATE || eOp==SQLITE_DELETE ){
+    if( sqlite3_stricmp(zDb, "main")==0 ){
+      sqlite3expert *p = (sqlite3expert*)pCtx;
+      IdxTable *pTab;
+      for(pTab=p->pTable; pTab; pTab=pTab->pNext){
+        if( 0==sqlite3_stricmp(z3, pTab->zName) ) break;
+      }
+      if( pTab ){
+        IdxWrite *pWrite;
+        for(pWrite=p->pWrite; pWrite; pWrite=pWrite->pNext){
+          if( pWrite->pTab==pTab && pWrite->eOp==eOp ) break;
+        }
+        if( pWrite==0 ){
+          pWrite = idxMalloc(&rc, sizeof(IdxWrite));
+          if( rc==SQLITE_OK ){
+            pWrite->pTab = pTab;
+            pWrite->eOp = eOp;
+            pWrite->pNext = p->pWrite;
+            p->pWrite = pWrite;
+          }
+        }
+      }
+    }
+  }
+  return rc;
+}
+
+static int idxProcessOneTrigger(
+  sqlite3expert *p, 
+  IdxWrite *pWrite, 
+  char **pzErr
+){
+  static const char *zInt = "t592690916721053953805701627921227776";
+  static const char *zDrop = "DROP TABLE t592690916721053953805701627921227776";
+  IdxTable *pTab = pWrite->pTab;
+  const char *zTab = pTab->zName;
+  const char *zSql = 
+    "SELECT 'CREATE TEMP' || substr(sql, 7) FROM sqlite_master "
+    "WHERE tbl_name = %Q AND type IN ('table', 'trigger') "
+    "ORDER BY type;";
+  sqlite3_stmt *pSelect = 0;
+  int rc = SQLITE_OK;
+  char *zWrite = 0;
+
+  /* Create the table and its triggers in the temp schema */
+  rc = idxPrintfPrepareStmt(p->db, &pSelect, pzErr, zSql, zTab, zTab);
+  while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pSelect) ){
+    const char *zCreate = (const char*)sqlite3_column_text(pSelect, 0);
+    rc = sqlite3_exec(p->dbv, zCreate, 0, 0, pzErr);
+  }
+  idxFinalize(&rc, pSelect);
+
+  /* Rename the table in the temp schema to zInt */
+  if( rc==SQLITE_OK ){
+    char *z = sqlite3_mprintf("ALTER TABLE temp.%Q RENAME TO %Q", zTab, zInt);
+    if( z==0 ){
+      rc = SQLITE_NOMEM;
+    }else{
+      rc = sqlite3_exec(p->dbv, z, 0, 0, pzErr);
+      sqlite3_free(z);
+    }
+  }
+
+  switch( pWrite->eOp ){
+    case SQLITE_INSERT: {
+      int i;
+      zWrite = idxAppendText(&rc, zWrite, "INSERT INTO %Q VALUES(", zInt);
+      for(i=0; i<pTab->nCol; i++){
+        zWrite = idxAppendText(&rc, zWrite, "%s?", i==0 ? "" : ", ");
+      }
+      zWrite = idxAppendText(&rc, zWrite, ")");
+      break;
+    }
+    case SQLITE_UPDATE: {
+      int i;
+      zWrite = idxAppendText(&rc, zWrite, "UPDATE %Q SET ", zInt);
+      for(i=0; i<pTab->nCol; i++){
+        zWrite = idxAppendText(&rc, zWrite, "%s%Q=?", i==0 ? "" : ", ", 
+            pTab->aCol[i].zName
+        );
+      }
+      break;
+    }
+    default: {
+      assert( pWrite->eOp==SQLITE_DELETE );
+      if( rc==SQLITE_OK ){
+        zWrite = sqlite3_mprintf("DELETE FROM %Q", zInt);
+        if( zWrite==0 ) rc = SQLITE_NOMEM;
+      }
+    }
+  }
+
+  if( rc==SQLITE_OK ){
+    sqlite3_stmt *pX = 0;
+    rc = sqlite3_prepare_v2(p->dbv, zWrite, -1, &pX, 0);
+    idxFinalize(&rc, pX);
+  }
+  sqlite3_free(zWrite);
+
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_exec(p->dbv, zDrop, 0, 0, pzErr);
+  }
+
+  return rc;
+}
+
+static int idxProcessTriggers(sqlite3expert *p, char **pzErr){
+  int rc = SQLITE_OK;
+  IdxWrite *pEnd = 0;
+  IdxWrite *pFirst = p->pWrite;
+
+  while( rc==SQLITE_OK && pFirst!=pEnd ){
+    IdxWrite *pIter;
+    for(pIter=pFirst; rc==SQLITE_OK && pIter!=pEnd; pIter=pIter->pNext){
+      rc = idxProcessOneTrigger(p, pIter, pzErr);
+    }
+    pEnd = pFirst;
+    pFirst = p->pWrite;
+  }
+
+  return rc;
+}
+
 
 static int idxCreateVtabSchema(sqlite3expert *p, char **pzErrmsg){
   int rc = idxRegisterVtab(p);
@@ -1073,7 +1240,11 @@ sqlite3expert *sqlite3_expert_new(sqlite3 *db, char **pzErrmsg){
   }
   if( rc==SQLITE_OK ){
     rc = sqlite3_open(":memory:", &pNew->dbm);
+    if( rc==SQLITE_OK ){
+      sqlite3_db_config(pNew->dbm, SQLITE_DBCONFIG_FULL_EQP, 1, (int*)0);
+    }
   }
+  
 
   /* Copy the entire schema of database [db] into [dbm]. */
   if( rc==SQLITE_OK ){
@@ -1091,6 +1262,11 @@ sqlite3expert *sqlite3_expert_new(sqlite3 *db, char **pzErrmsg){
   /* Create the vtab schema */
   if( rc==SQLITE_OK ){
     rc = idxCreateVtabSchema(pNew, pzErrmsg);
+  }
+
+  /* Register the auth callback with dbv */
+  if( rc==SQLITE_OK ){
+    sqlite3_set_authorizer(pNew->dbv, idxAuthCallback, (void*)pNew);
   }
 
   /* If an error has occurred, free the new object and reutrn NULL. Otherwise,
@@ -1136,7 +1312,7 @@ int sqlite3_expert_sql(
         sqlite3_finalize(pStmt);
       }
     }else{
-      idxDatabaseError(p->db, pzErr);
+      idxDatabaseError(p->dbv, pzErr);
     }
   }
 
@@ -1154,8 +1330,12 @@ int sqlite3_expert_analyze(sqlite3expert *p, char **pzErr){
   int rc;
   IdxHashEntry *pEntry;
 
+  rc = idxProcessTriggers(p, pzErr);
+
   /* Create candidate indexes within the in-memory database file */
-  rc = idxCreateCandidates(p, pzErr);
+  if( rc==SQLITE_OK ){
+    rc = idxCreateCandidates(p, pzErr);
+  }
 
   /* Formulate the EXPERT_REPORT_CANDIDATES text */
   for(pEntry=p->hIdx.pFirst; pEntry; pEntry=pEntry->pNext){
@@ -1220,6 +1400,7 @@ void sqlite3_expert_destroy(sqlite3expert *p){
     idxScanFree(p->pScan, 0);
     idxStatementFree(p->pStatement, 0);
     idxTableFree(p->pTable);
+    idxWriteFree(p->pWrite);
     idxHashClear(&p->hIdx);
     sqlite3_free(p->zCandidates);
     sqlite3_free(p);
