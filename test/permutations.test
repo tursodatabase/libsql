@@ -266,6 +266,7 @@ test_suite "fts3" -prefix "" -description {
   fts4merge4.test fts4merge.test fts4noti.test fts4onepass.test 
   fts4opt.test fts4unicode.test
   fts3corrupt3.test
+  fts3misc.test
 }
 
 test_suite "fts5" -prefix "" -description {
