@@ -1,5 +1,5 @@
-C Defer\schecking\sfor\snull\sin\sthe\scomparison\soperators,\ssince\sthat\sis\san\nuncommon\scase.
-D 2017-04-17T23:23:17.393
+C Refactor\sthe\sfts3ColumnMethod()\sfunction\sso\sthat\sall\sbranches\scan\sbe\scovered.
+D 2017-04-18T05:49:23.863
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a8c838220f7c00820e1fc0ac1bccaaa8e5676067e1dbfa1bafa7a4ffecf8ae6
@@ -70,7 +70,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 1db0b7086d187a0d10d2a5a7fd5c05336216d2f0dba4af76aca38e5d806bb0d0
+F ext/fts3/fts3.c 1f7f2b23b187177fb059d6e0ea4a2e55866babd5241a2774d13cf3d6d76e2168
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h eb2502000148e80913b965db3e59f29251266d0a
 F ext/fts3/fts3_aux.c 9edc3655fcb287f0467d0a4b886a01c6185fe9f1
@@ -1575,7 +1575,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e698db1956bb3aba32cd3ec633ec20f5d19b1a10bc68d3772903bca3c87ee158
-R d9474093122e32538bb559c220a1d671
-U drh
-Z 5309f4dbe4f5abfd0a4417ec6708da32
+P 5684525613961fed9db6a4d10dbe25521201b24f08e011df3a20ac895316957d
+Q +dd3217c38b507211d5102d00e3775e50e828762f6bcc97b1b087af11fd780f46
+R b7de56fa30910635d209a73e85c14a35
+U dan
+Z cc71176235299a67f61f3d9016204954

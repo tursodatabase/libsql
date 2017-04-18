@@ -3340,33 +3340,38 @@ static int fts3ColumnMethod(
   /* The column value supplied by SQLite must be in range. */
   assert( iCol>=0 && iCol<=p->nColumn+2 );
 
-  if( iCol==p->nColumn+1 ){
-    /* This call is a request for the "docid" column. Since "docid" is an 
-    ** alias for "rowid", use the xRowid() method to obtain the value.
-    */
-    sqlite3_result_int64(pCtx, pCsr->iPrevId);
-  }else if( iCol==p->nColumn ){
-    /* The extra column whose name is the same as the table.
-    ** Return a blob which is a pointer to the cursor.  */
-    sqlite3_result_blob(pCtx, &pCsr, sizeof(pCsr), SQLITE_TRANSIENT);
-  }else if( iCol==p->nColumn+2 && pCsr->pExpr ){
-    sqlite3_result_int64(pCtx, pCsr->iLangid);
-  }else{
-    /* The requested column is either a user column (one that contains 
-    ** indexed data), or the language-id column.  */
-    rc = fts3CursorSeek(0, pCsr);
+  switch( iCol-p->nColumn ){
+    case 0:
+      /* The special 'table-name' column */
+      sqlite3_result_blob(pCtx, &pCsr, sizeof(Fts3Cursor*), SQLITE_TRANSIENT);
+      sqlite3_result_subtype(pCtx, SQLITE_BLOB);
+      break;
 
-    if( rc==SQLITE_OK ){
-      if( iCol==p->nColumn+2 ){
-        int iLangid = 0;
-        if( p->zLanguageid ){
-          iLangid = sqlite3_column_int(pCsr->pStmt, p->nColumn+1);
-        }
-        sqlite3_result_int(pCtx, iLangid);
-      }else if( sqlite3_data_count(pCsr->pStmt)>(iCol+1) ){
+    case 1:
+      /* The docid column */
+      sqlite3_result_int64(pCtx, pCsr->iPrevId);
+      break;
+
+    case 2:
+      if( pCsr->pExpr ){
+        sqlite3_result_int64(pCtx, pCsr->iLangid);
+        break;
+      }else if( p->zLanguageid==0 ){
+        sqlite3_result_int(pCtx, 0);
+        break;
+      }else{
+        iCol = p->nColumn;
+        /* fall-through */
+      }
+
+    default:
+      /* A user column. Or, if this is a full-table scan, possibly the
+      ** language-id column. Seek the cursor. */
+      rc = fts3CursorSeek(0, pCsr);
+      if( rc==SQLITE_OK && sqlite3_data_count(pCsr->pStmt)-1>iCol ){
         sqlite3_result_value(pCtx, sqlite3_column_value(pCsr->pStmt, iCol+1));
       }
-    }
+      break;
   }
 
   assert( ((Fts3Table *)pCsr->base.pVtab)->pSegments==0 );
