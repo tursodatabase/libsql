@@ -114,6 +114,7 @@ typedef struct IdxHash IdxHash;
 struct IdxHashEntry {
   char *zKey;                     /* nul-terminated key */
   char *zVal;                     /* nul-terminated value string */
+  char *zVal2;                    /* nul-terminated value string 2 */
   IdxHashEntry *pHashNext;        /* Next entry in same hash bucket */
   IdxHashEntry *pNext;            /* Next entry in hash */
 };
@@ -175,6 +176,7 @@ static void idxHashClear(IdxHash *pHash){
     IdxHashEntry *pNext;
     for(pEntry=pHash->aHash[i]; pEntry; pEntry=pNext){
       pNext = pEntry->pHashNext;
+      sqlite3_free(pEntry->zVal2);
       sqlite3_free(pEntry);
     }
   }
@@ -232,13 +234,7 @@ static int idxHashAdd(
   return 0;
 }
 
-/*
-** If the hash table contains an entry with a key equal to the string
-** passed as the final two arguments to this function, return a pointer
-** to the payload string. Otherwise, if zKey/nKey is not present in the
-** hash table, return NULL.
-*/
-static const char *idxHashSearch(IdxHash *pHash, const char *zKey, int nKey){
+static IdxHashEntry *idxHashFind(IdxHash *pHash, const char *zKey, int nKey){
   int iHash;
   IdxHashEntry *pEntry;
   if( nKey<0 ) nKey = strlen(zKey);
@@ -246,9 +242,21 @@ static const char *idxHashSearch(IdxHash *pHash, const char *zKey, int nKey){
   assert( iHash>=0 );
   for(pEntry=pHash->aHash[iHash]; pEntry; pEntry=pEntry->pHashNext){
     if( strlen(pEntry->zKey)==nKey && 0==memcmp(pEntry->zKey, zKey, nKey) ){
-      return pEntry->zVal;
+      return pEntry;
     }
   }
+  return 0;
+}
+
+/*
+** If the hash table contains an entry with a key equal to the string
+** passed as the final two arguments to this function, return a pointer
+** to the payload string. Otherwise, if zKey/nKey is not present in the
+** hash table, return NULL.
+*/
+static const char *idxHashSearch(IdxHash *pHash, const char *zKey, int nKey){
+  IdxHashEntry *pEntry = idxHashFind(pHash, zKey, nKey);
+  if( pEntry ) return pEntry->zVal;
   return 0;
 }
 
@@ -1227,6 +1235,277 @@ static int idxCreateVtabSchema(sqlite3expert *p, char **pzErrmsg){
   return rc;
 }
 
+struct IdxRemCtx {
+  int nSlot;
+  struct IdxRemSlot {
+    int eType;                    /* SQLITE_NULL, INTEGER, REAL, TEXT, BLOB */
+    i64 iVal;                     /* SQLITE_INTEGER value */
+    double rVal;                  /* SQLITE_FLOAT value */
+    int nByte;                    /* Bytes of space allocated at z */
+    int n;                        /* Size of buffer z */
+    char *z;                      /* SQLITE_TEXT/BLOB value */
+  } aSlot[1];
+};
+
+/*
+** Implementation of scalar function rem().
+*/
+static void idxRemFunc(
+  sqlite3_context *pCtx,
+  int argc,
+  sqlite3_value **argv
+){
+  struct IdxRemCtx *p = (struct IdxRemCtx*)sqlite3_user_data(pCtx);
+  struct IdxRemSlot *pSlot;
+  int iSlot;
+  assert( argc==2 );
+
+  iSlot = sqlite3_value_int(argv[0]);
+  assert( iSlot<=p->nSlot );
+  pSlot = &p->aSlot[iSlot];
+
+  switch( pSlot->eType ){
+    case SQLITE_NULL:
+      /* no-op */
+      break;
+
+    case SQLITE_INTEGER:
+      sqlite3_result_int64(pCtx, pSlot->iVal);
+      break;
+
+    case SQLITE_FLOAT:
+      sqlite3_result_double(pCtx, pSlot->rVal);
+      break;
+
+    case SQLITE_BLOB:
+      sqlite3_result_blob(pCtx, pSlot->z, pSlot->n, SQLITE_TRANSIENT);
+      break;
+
+    case SQLITE_TEXT:
+      sqlite3_result_text(pCtx, pSlot->z, pSlot->n, SQLITE_TRANSIENT);
+      break;
+  }
+
+  pSlot->eType = sqlite3_value_type(argv[1]);
+  switch( pSlot->eType ){
+    case SQLITE_NULL:
+      /* no-op */
+      break;
+
+    case SQLITE_INTEGER:
+      pSlot->iVal = sqlite3_value_int64(argv[1]);
+      break;
+
+    case SQLITE_FLOAT:
+      pSlot->rVal = sqlite3_value_double(argv[1]);
+      break;
+
+    case SQLITE_BLOB:
+    case SQLITE_TEXT: {
+      int nByte = sqlite3_value_bytes(argv[1]);
+      if( nByte>pSlot->nByte ){
+        char *zNew = (char*)sqlite3_realloc(pSlot->z, nByte*2);
+        if( zNew==0 ){
+          sqlite3_result_error_nomem(pCtx);
+          return;
+        }
+        pSlot->nByte = nByte*2;
+        pSlot->z = zNew;
+      }
+      pSlot->n = nByte;
+      if( pSlot->eType==SQLITE_BLOB ){
+        memcpy(pSlot->z, sqlite3_value_blob(argv[1]), nByte);
+      }else{
+        memcpy(pSlot->z, sqlite3_value_text(argv[1]), nByte);
+      }
+      break;
+    }
+  }
+}
+
+static int idxLargestIndex(sqlite3 *db, int *pnMax, char **pzErr){
+  int rc = SQLITE_OK;
+  const char *zMax = 
+    "SELECT max(i.seqno) FROM "
+    "  sqlite_master AS s, "
+    "  pragma_index_list(s.name) AS l, "
+    "  pragma_index_info(l.name) AS i "
+    "WHERE s.type = 'table'";
+  sqlite3_stmt *pMax = 0;
+
+  *pnMax = 0;
+  rc = idxPrepareStmt(db, &pMax, pzErr, zMax);
+  if( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pMax) ){
+    *pnMax = sqlite3_column_int(pMax, 0) + 1;
+  }
+  idxFinalize(&rc, pMax);
+
+  return rc;
+}
+
+static int idxPopulateOneStat1(
+  sqlite3expert *p,
+  sqlite3_stmt *pIndexXInfo,
+  sqlite3_stmt *pWriteStat,
+  const char *zTab,
+  const char *zIdx,
+  char **pzErr
+){
+  char *zCols = 0;
+  char *zOrder = 0;
+  char *zQuery = 0;
+  int nCol = 0;
+  int i;
+  sqlite3_stmt *pQuery = 0;
+  int *aStat = 0;
+  int rc = SQLITE_OK;
+
+  /* Formulate the query text */
+  sqlite3_bind_text(pIndexXInfo, 1, zIdx, -1, SQLITE_STATIC);
+  while( SQLITE_OK==rc && SQLITE_ROW==sqlite3_step(pIndexXInfo) ){
+    const char *zComma = zCols==0 ? "" : ", ";
+    const char *zName = (const char*)sqlite3_column_text(pIndexXInfo, 0);
+    const char *zColl = (const char*)sqlite3_column_text(pIndexXInfo, 1);
+    zCols = idxAppendText(&rc, zCols, 
+        "%sx.%Q IS rem(%d, x.%Q) COLLATE %s", zComma, zName, nCol, zName, zColl
+    );
+    zOrder = idxAppendText(&rc, zOrder, "%s%d", zComma, ++nCol);
+  }
+  if( rc==SQLITE_OK ){
+    zQuery = sqlite3_mprintf(
+        "SELECT %s FROM %Q x ORDER BY %s", zCols, zTab, zOrder
+    );
+  }
+  sqlite3_free(zCols);
+  sqlite3_free(zOrder);
+
+  /* Formulate the query text */
+  if( rc==SQLITE_OK ){
+    rc = idxPrepareStmt(p->db, &pQuery, pzErr, zQuery);
+  }
+  sqlite3_free(zQuery);
+
+  if( rc==SQLITE_OK ){
+    aStat = (int*)idxMalloc(&rc, sizeof(int)*(nCol+1));
+  }
+  if( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pQuery) ){
+    IdxHashEntry *pEntry;
+    char *zStat = 0;
+    for(i=0; i<=nCol; i++) aStat[i] = 1;
+    while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pQuery) ){
+      aStat[0]++;
+      for(i=0; i<nCol; i++){
+        if( sqlite3_column_int(pQuery, i)==0 ) break;
+      }
+      for(/*no-op*/; i<nCol; i++){
+        aStat[i+1]++;
+      }
+    }
+
+    if( rc==SQLITE_OK ){
+      int s0 = aStat[0];
+      zStat = sqlite3_mprintf("%d", s0);
+      if( zStat==0 ) rc = SQLITE_NOMEM;
+      for(i=1; rc==SQLITE_OK && i<=nCol; i++){
+        zStat = idxAppendText(&rc, zStat, " %d", (s0+aStat[i]/2) / aStat[i]);
+      }
+    }
+
+    if( rc==SQLITE_OK ){
+      sqlite3_bind_text(pWriteStat, 1, zTab, -1, SQLITE_STATIC);
+      sqlite3_bind_text(pWriteStat, 2, zIdx, -1, SQLITE_STATIC);
+      sqlite3_bind_text(pWriteStat, 3, zStat, -1, SQLITE_STATIC);
+      sqlite3_step(pWriteStat);
+      rc = sqlite3_reset(pWriteStat);
+    }
+
+    pEntry = idxHashFind(&p->hIdx, zIdx, strlen(zIdx));
+    if( pEntry ){
+      assert( pEntry->zVal2==0 );
+      pEntry->zVal2 = zStat;
+    }else{
+      sqlite3_free(zStat);
+    }
+  }
+  sqlite3_free(aStat);
+  idxFinalize(&rc, pQuery);
+
+  return rc;
+}
+
+/*
+** This function is called as part of sqlite3_expert_analyze(). Candidate
+** indexes have already been created in database sqlite3expert.dbm, this
+** function populates sqlite_stat1 table in the same database.
+**
+** The stat1 data is generated by querying the 
+*/
+static int idxPopulateStat1(sqlite3expert *p, char **pzErr){
+  int rc = SQLITE_OK;
+  int nMax =0;
+  struct IdxRemCtx *pCtx = 0;
+  int i;
+  sqlite3_stmt *pAllIndex = 0;
+  sqlite3_stmt *pIndexXInfo = 0;
+  sqlite3_stmt *pWrite = 0;
+
+  const char *zAllIndex = 
+    "SELECT s.name, l.name FROM "
+    "  sqlite_master AS s, "
+    "  pragma_index_list(s.name) AS l "
+    "WHERE s.type = 'table'";
+  const char *zIndexXInfo = 
+    "SELECT name, coll FROM pragma_index_xinfo(?) WHERE key";
+  const char *zWrite = "INSERT INTO sqlite_stat1 VALUES(?, ?, ?)";
+
+  rc = idxLargestIndex(p->dbm, &nMax, pzErr);
+  if( nMax<=0 || rc!=SQLITE_OK ) return rc;
+
+  rc = sqlite3_exec(p->dbm, "ANALYZE; PRAGMA writable_schema=1", 0, 0, 0);
+
+  if( rc==SQLITE_OK ){
+    int nByte = sizeof(struct IdxRemCtx) + (sizeof(struct IdxRemSlot) * nMax);
+    pCtx = (struct IdxRemCtx*)idxMalloc(&rc, nByte);
+  }
+
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_function(
+        p->db, "rem", 2, SQLITE_UTF8, (void*)pCtx, idxRemFunc, 0, 0
+    );
+  }
+
+  if( rc==SQLITE_OK ){
+    pCtx->nSlot = nMax+1;
+    rc = idxPrepareStmt(p->dbm, &pAllIndex, pzErr, zAllIndex);
+  }
+  if( rc==SQLITE_OK ){
+    rc = idxPrepareStmt(p->dbm, &pIndexXInfo, pzErr, zIndexXInfo);
+  }
+  if( rc==SQLITE_OK ){
+    rc = idxPrepareStmt(p->dbm, &pWrite, pzErr, zWrite);
+  }
+
+  while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pAllIndex) ){
+    const char *zTab = (const char*)sqlite3_column_text(pAllIndex, 0);
+    const char *zIdx = (const char*)sqlite3_column_text(pAllIndex, 1);
+    rc = idxPopulateOneStat1(p, pIndexXInfo, pWrite, zTab, zIdx, pzErr);
+  }
+
+  idxFinalize(&rc, pAllIndex);
+  idxFinalize(&rc, pIndexXInfo);
+  idxFinalize(&rc, pWrite);
+
+  for(i=0; i<pCtx->nSlot; i++){
+    sqlite3_free(pCtx->aSlot[i].z);
+  }
+  sqlite3_free(pCtx);
+
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_exec(p->dbm, "ANALYZE sqlite_master", 0, 0, 0);
+  }
+  return rc;
+}
+
 /*
 ** Allocate a new sqlite3expert object.
 */
@@ -1338,6 +1617,7 @@ int sqlite3_expert_analyze(sqlite3expert *p, char **pzErr){
   int rc;
   IdxHashEntry *pEntry;
 
+  /* Do trigger processing to collect any extra IdxScan structures */
   rc = idxProcessTriggers(p, pzErr);
 
   /* Create candidate indexes within the in-memory database file */
@@ -1345,9 +1625,17 @@ int sqlite3_expert_analyze(sqlite3expert *p, char **pzErr){
     rc = idxCreateCandidates(p, pzErr);
   }
 
+  /* Generate the stat1 data */
+  if( rc==SQLITE_OK ){
+    rc = idxPopulateStat1(p, pzErr);
+  }
+
   /* Formulate the EXPERT_REPORT_CANDIDATES text */
   for(pEntry=p->hIdx.pFirst; pEntry; pEntry=pEntry->pNext){
-    p->zCandidates = idxAppendText(&rc, p->zCandidates, "%s;\n", pEntry->zVal);
+    p->zCandidates = idxAppendText(&rc, p->zCandidates, 
+        "%s;%s%s\n", pEntry->zVal, 
+        pEntry->zVal2 ? " -- stat1: " : "", pEntry->zVal2
+    );
   }
 
   /* Figure out which of the candidate indexes are preferred by the query

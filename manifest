@@ -1,5 +1,5 @@
-C Fix\ssqlite3_expert\shandling\sof\striggers\son\sviews.
-D 2017-04-18T09:04:48.670
+C Have\ssqlite3_expert_analyze()\spopulate\sthe\ssqlite_stat1\stable\sbefore\srunning\nqueries\sthrough\sthe\splanner\sfor\sthe\ssecond\stime.
+D 2017-04-18T20:10:16.786
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a8c838220f7c00820e1fc0ac1bccaaa8e5676067e1dbfa1bafa7a4ffecf8ae6
@@ -42,10 +42,10 @@ F ext/async/sqlite3async.c 0f3070cc3f5ede78f2b9361fb3b629ce200d7d74
 F ext/async/sqlite3async.h f489b080af7e72aec0e1ee6f1d98ab6cf2e4dcef
 F ext/expert/README.md 9f15075ec5ad772808eff55ef044c31140fd1146aa0a3c47eafd155e71851b01
 F ext/expert/expert.c 22d2dd096d479049bc332506fc8c0294bf53b7ebfe60af99635d8c87839bb40b
-F ext/expert/expert1.test 6a50a1538dc9e4ff360fb117298aa3b085beed030cbe15dd36803da1a9f70702
-F ext/expert/sqlite3expert.c 8befe20906cf8f4928c754763cbf0a81f42fc1ee242fe8e5869c3bb4adba7300
+F ext/expert/expert1.test 1033e43071b69dc2f4e88fbf03fc7f18846c9865cac14f28c80f581437f09acb
+F ext/expert/sqlite3expert.c 713388c6c440c6759a1e0898c7936a014dc9791237e62780412229e4a79b0035
 F ext/expert/sqlite3expert.h b1c9eedeb647fd734c4206ae6851635284cfbfa5fb688eff74c3265c9f949b4d
-F ext/expert/test_expert.c bad0611732d07180d586bd589cbb7713dc3ab0338c52bff29680eb2007678c05
+F ext/expert/test_expert.c b01a5115f9444a9b416582c985138f5dfdb279848ce8b7452be383530be27f01
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
 F ext/fts1/ft_hash.c 3927bd880e65329bdc6f506555b228b28924921b
 F ext/fts1/ft_hash.h 06df7bba40dadd19597aa400a875dbc2fed705ea
@@ -1579,7 +1579,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 159e8022a9d6701532b8b60e0c41154bc434c1bbdb107c8c97a78fb1140fa745
-R 52d2320865ff7653f66201ecd375f3d6
+P ff4976da667872614331d88e68fb67d347874f164a1c7950dd738c7c2320b954
+R d621eb0093377628a3811751fb5daa84
 U dan
-Z e02fbf739534a0fe797908906bbc0c24
+Z 02b917b4563ed84ab0581f0a345c83b3

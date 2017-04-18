@@ -106,7 +106,7 @@ static int SQLITE_TCLAPI testExpertCmd(
 
     case 3: {      /* report */
       const char *aEnum[] = {
-        "sql", "indexes", "plan", 0
+        "sql", "indexes", "plan", "candidates", 0
       };
       int iEnum;
       int iStmt;
@@ -121,6 +121,7 @@ static int SQLITE_TCLAPI testExpertCmd(
       assert( EXPERT_REPORT_SQL==1 );
       assert( EXPERT_REPORT_INDEXES==2 );
       assert( EXPERT_REPORT_PLAN==3 );
+      assert( EXPERT_REPORT_CANDIDATES==4 );
       zReport = sqlite3_expert_report(pExpert, iStmt, 1+iEnum);
       Tcl_SetObjResult(interp, Tcl_NewStringObj(zReport, -1));
       break;

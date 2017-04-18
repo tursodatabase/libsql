@@ -275,7 +275,86 @@ do_setup_rec_test $tn.14 {
   0|0|0|SEARCH TABLE t10 USING INDEX t10_idx_00000062 (b=?)
 }
 
+do_setup_rec_test $tn.15 {
+  CREATE TABLE t1(a, b);
+  CREATE TABLE t2(c, d);
+
+  WITH s(i) AS ( VALUES(1) UNION ALL SELECT i+1 FROM s WHERE i<100)
+  INSERT INTO t1 SELECT (i-1)/50, (i-1)/20 FROM s;
+
+  WITH s(i) AS ( VALUES(1) UNION ALL SELECT i+1 FROM s WHERE i<100)
+  INSERT INTO t2 SELECT (i-1)/20, (i-1)/5 FROM s;
+} {
+  SELECT * FROM t2, t1 WHERE b=? AND d=? AND t2.rowid=t1.rowid
+} {
+  CREATE INDEX t2_idx_00000064 ON t2(d);
+  0|0|0|SEARCH TABLE t2 USING INDEX t2_idx_00000064 (d=?) 
+  0|1|1|SEARCH TABLE t1 USING INTEGER PRIMARY KEY (rowid=?)
 }
+
+}
+
+proc do_candidates_test {tn sql res} {
+  set res [squish [string trim $res]]
+
+  set expert [sqlite3_expert_new db]
+  $expert sql $sql
+  $expert analyze
+
+  set candidates [squish [string trim [$expert report 0 candidates]]]
+  $expert destroy
+
+  uplevel [list do_test $tn [list set {} $candidates] $res]
+}
+
+
+reset_db
+do_execsql_test 3.0 {
+  CREATE TABLE t1(a, b);
+  CREATE TABLE t2(c, d);
+
+  WITH s(i) AS ( VALUES(1) UNION ALL SELECT i+1 FROM s WHERE i<100)
+  INSERT INTO t1 SELECT (i-1)/50, (i-1)/20 FROM s;
+
+  WITH s(i) AS ( VALUES(1) UNION ALL SELECT i+1 FROM s WHERE i<100)
+  INSERT INTO t2 SELECT (i-1)/20, (i-1)/5 FROM s;
+}
+do_candidates_test 3.1 {
+  SELECT * FROM t1,t2 WHERE (b=? OR a=?) AND (c=? OR d=?)
+} {
+  CREATE INDEX t1_idx_00000062 ON t1(b); -- stat1: 100 20 
+  CREATE INDEX t1_idx_00000061 ON t1(a); -- stat1: 100 50 
+  CREATE INDEX t2_idx_00000063 ON t2(c); -- stat1: 100 20 
+  CREATE INDEX t2_idx_00000064 ON t2(d); -- stat1: 100 5
+}
+
+do_candidates_test 3.2 {
+  SELECT * FROM t1,t2 WHERE a=? AND b=? AND c=? AND d=?
+} {
+  CREATE INDEX t1_idx_000123a7 ON t1(a, b); -- stat1: 100 50 17
+  CREATE INDEX t2_idx_0001295b ON t2(c, d); -- stat1: 100 20 5
+}
+
+do_execsql_test 3.2 {
+  CREATE INDEX t1_idx_00000061 ON t1(a); -- stat1: 100 50 
+  CREATE INDEX t1_idx_00000062 ON t1(b); -- stat1: 100 20 
+  CREATE INDEX t1_idx_000123a7 ON t1(a, b); -- stat1: 100 50 16
+
+  CREATE INDEX t2_idx_00000063 ON t2(c); -- stat1: 100 20 
+  CREATE INDEX t2_idx_00000064 ON t2(d); -- stat1: 100 5
+  CREATE INDEX t2_idx_0001295b ON t2(c, d); -- stat1: 100 20 5
+
+  ANALYZE;
+  SELECT * FROM sqlite_stat1 ORDER BY 1, 2;
+} {
+  t1 t1_idx_00000061 {100 50} 
+  t1 t1_idx_00000062 {100 20}
+  t1 t1_idx_000123a7 {100 50 17}
+  t2 t2_idx_00000063 {100 20} 
+  t2 t2_idx_00000064 {100 5} 
+  t2 t2_idx_0001295b {100 20 5}
+}
+
 
 finish_test
 
