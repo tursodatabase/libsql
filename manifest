@@ -1,5 +1,5 @@
-C Improved\soptimizations\sof\sviews\sas\sthe\sright\soperand\sof\sa\sLEFT\sJOIN.
-D 2017-04-18T11:20:19.836
+C Use\ssqlite3_table_column_metadata()\sinstead\sof\sa\sSELECT\sstatement\sto\scheck\sfor\nthe\sexistence\sof\sa\s%_stat\stable\sin\sfts3.\sThis\sleads\sto\ssmaller\sand\seasier\sto\ntest\scode.
+D 2017-04-18T13:50:00.349
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a8c838220f7c00820e1fc0ac1bccaaa8e5676067e1dbfa1bafa7a4ffecf8ae6
@@ -70,7 +70,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 1f7f2b23b187177fb059d6e0ea4a2e55866babd5241a2774d13cf3d6d76e2168
+F ext/fts3/fts3.c 43dbd764899650e6ee32336fdca2646e2157df7eaf5767693338e30bbfdb0220
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h eb2502000148e80913b965db3e59f29251266d0a
 F ext/fts3/fts3_aux.c 9edc3655fcb287f0467d0a4b886a01c6185fe9f1
@@ -1575,8 +1575,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e47fdb493bd76d85f6f05771ee7a0b3ee31b1eb05839a60d2bdb47149ac692d8 3a5860d86fadcf924316707918bf283d26c53b1473e5e67f5cff59d18c2a7742
-R 78f4667b0ada8932854ad0b3e309cd92
-T +closed 3a5860d86fadcf924316707918bf283d26c53b1473e5e67f5cff59d18c2a7742
-U drh
-Z 119f88583d52d19e6e97c926524fc3c2
+P 41c27bc0ff1d3135cdb6273ede4595f5bb0c0e1e1d470ea1633cb525674cf431
+Q +86e7aa7bf18345d7b441e5531fedb9d6cd1d73a886058c08b8ef4d9bcdce59d5
+R 4fb545dcbfffcc885ec5f2ba82a6abb0
+U dan
+Z 7fd413bdcf275f7c0ed7ce06ea528b64
