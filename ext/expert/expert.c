@@ -135,8 +135,8 @@ int main(int argc, char **argv){
       }
       fprintf(stdout, "%s\n%s\n", zIdx, zEQP);
     }
-  }else if( zErr ){
-    fprintf(stderr, "Error: %s\n", zErr);
+  }else{
+    fprintf(stderr, "Error: %s\n", zErr ? zErr : "?");
   }
 
   sqlite3_expert_destroy(p);

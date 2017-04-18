@@ -1136,6 +1136,9 @@ static int idxProcessOneTrigger(
     sqlite3_stmt *pX = 0;
     rc = sqlite3_prepare_v2(p->dbv, zWrite, -1, &pX, 0);
     idxFinalize(&rc, pX);
+    if( rc!=SQLITE_OK ){
+      idxDatabaseError(p->dbv, pzErr);
+    }
   }
   sqlite3_free(zWrite);
 
@@ -1174,15 +1177,20 @@ static int idxCreateVtabSchema(sqlite3expert *p, char **pzErrmsg){
   **   2) Create the equivalent virtual table in dbv.
   */
   rc = idxPrepareStmt(p->db, &pSchema, pzErrmsg,
-      "SELECT type, name, sql FROM sqlite_master "
-      "WHERE type IN ('table','view') ORDER BY 1"
+      "SELECT type, name, sql, 1 FROM sqlite_master "
+      "WHERE type IN ('table','view') AND name NOT LIKE 'sqlite_%%' "
+      " UNION ALL "
+      "SELECT type, name, sql, 2 FROM sqlite_master "
+      "WHERE type = 'trigger'"
+      "  AND tbl_name IN(SELECT name FROM sqlite_master WHERE type = 'view') "
+      "ORDER BY 4, 1"
   );
   while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pSchema) ){
     const char *zType = (const char*)sqlite3_column_text(pSchema, 0);
     const char *zName = (const char*)sqlite3_column_text(pSchema, 1);
     const char *zSql = (const char*)sqlite3_column_text(pSchema, 2);
 
-    if( zType[0]=='v' ){
+    if( zType[0]=='v' || zType[1]=='r' ){
       rc = sqlite3_exec(p->dbv, zSql, 0, 0, pzErrmsg);
     }else{
       IdxTable *pTab;
