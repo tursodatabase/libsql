@@ -3562,18 +3562,16 @@ static int fts3FunctionArg(
   sqlite3_value *pVal,            /* argv[0] passed to function */
   Fts3Cursor **ppCsr              /* OUT: Store cursor handle here */
 ){
-  Fts3Cursor *pRet;
-  if( sqlite3_value_type(pVal)!=SQLITE_BLOB 
-   || sqlite3_value_bytes(pVal)!=sizeof(Fts3Cursor *)
-  ){
+  int rc = SQLITE_OK;
+  if( sqlite3_value_subtype(pVal)==SQLITE_BLOB ){
+    *ppCsr = *(Fts3Cursor**)sqlite3_value_blob(pVal);
+  }else{
     char *zErr = sqlite3_mprintf("illegal first argument to %s", zFunc);
     sqlite3_result_error(pContext, zErr, -1);
     sqlite3_free(zErr);
-    return SQLITE_ERROR;
+    rc = SQLITE_ERROR;
   }
-  memcpy(&pRet, sqlite3_value_blob(pVal), sizeof(Fts3Cursor *));
-  *ppCsr = pRet;
-  return SQLITE_OK;
+  return rc;
 }
 
 /*
@@ -5291,7 +5289,6 @@ static int fts3EvalNearTest(Fts3Expr *pExpr, int *pRc){
   */
   if( *pRc==SQLITE_OK 
    && pExpr->eType==FTSQUERY_NEAR 
-   && pExpr->bEof==0
    && (pExpr->pParent==0 || pExpr->pParent->eType!=FTSQUERY_NEAR)
   ){
     Fts3Expr *p; 
@@ -5300,42 +5297,39 @@ static int fts3EvalNearTest(Fts3Expr *pExpr, int *pRc){
 
     /* Allocate temporary working space. */
     for(p=pExpr; p->pLeft; p=p->pLeft){
+      assert( p->pRight->pPhrase->doclist.nList>0 );
       nTmp += p->pRight->pPhrase->doclist.nList;
     }
     nTmp += p->pPhrase->doclist.nList;
-    if( nTmp==0 ){
+    aTmp = sqlite3_malloc(nTmp*2);
+    if( !aTmp ){
+      *pRc = SQLITE_NOMEM;
       res = 0;
     }else{
-      aTmp = sqlite3_malloc(nTmp*2);
-      if( !aTmp ){
-        *pRc = SQLITE_NOMEM;
-        res = 0;
-      }else{
-        char *aPoslist = p->pPhrase->doclist.pList;
-        int nToken = p->pPhrase->nToken;
+      char *aPoslist = p->pPhrase->doclist.pList;
+      int nToken = p->pPhrase->nToken;
 
-        for(p=p->pParent;res && p && p->eType==FTSQUERY_NEAR; p=p->pParent){
-          Fts3Phrase *pPhrase = p->pRight->pPhrase;
-          int nNear = p->nNear;
-          res = fts3EvalNearTrim(nNear, aTmp, &aPoslist, &nToken, pPhrase);
-        }
-
-        aPoslist = pExpr->pRight->pPhrase->doclist.pList;
-        nToken = pExpr->pRight->pPhrase->nToken;
-        for(p=pExpr->pLeft; p && res; p=p->pLeft){
-          int nNear;
-          Fts3Phrase *pPhrase;
-          assert( p->pParent && p->pParent->pLeft==p );
-          nNear = p->pParent->nNear;
-          pPhrase = (
-              p->eType==FTSQUERY_NEAR ? p->pRight->pPhrase : p->pPhrase
-              );
-          res = fts3EvalNearTrim(nNear, aTmp, &aPoslist, &nToken, pPhrase);
-        }
+      for(p=p->pParent;res && p && p->eType==FTSQUERY_NEAR; p=p->pParent){
+        Fts3Phrase *pPhrase = p->pRight->pPhrase;
+        int nNear = p->nNear;
+        res = fts3EvalNearTrim(nNear, aTmp, &aPoslist, &nToken, pPhrase);
       }
 
-      sqlite3_free(aTmp);
+      aPoslist = pExpr->pRight->pPhrase->doclist.pList;
+      nToken = pExpr->pRight->pPhrase->nToken;
+      for(p=pExpr->pLeft; p && res; p=p->pLeft){
+        int nNear;
+        Fts3Phrase *pPhrase;
+        assert( p->pParent && p->pParent->pLeft==p );
+        nNear = p->pParent->nNear;
+        pPhrase = (
+            p->eType==FTSQUERY_NEAR ? p->pRight->pPhrase : p->pPhrase
+        );
+        res = fts3EvalNearTrim(nNear, aTmp, &aPoslist, &nToken, pPhrase);
+      }
     }
+
+    sqlite3_free(aTmp);
   }
 
   return res;

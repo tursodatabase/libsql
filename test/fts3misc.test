@@ -172,5 +172,57 @@ do_catchsql_test 4.6 {
   SELECT count(*) FROM t4 WHERE t4 MATCH '"a b c" OR "c a b"'
 } {1 {database disk image is malformed}}
 
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 5.0 {
+  CREATE VIRTUAL TABLE t5 USING fts4;
+  INSERT INTO t5 VALUES('a x x x x b x x x x c');
+  INSERT INTO t5 VALUES('a x x x x b x x x x c');
+  INSERT INTO t5 VALUES('a x x x x b x x x x c');
+}
+do_execsql_test 5.1 {
+  SELECT rowid FROM t5 WHERE t5 MATCH 'a NEAR/4 b NEAR/4 c'
+} {1 2 3}
+do_execsql_test 5.2 {
+  SELECT rowid FROM t5 WHERE t5 MATCH 'a NEAR/3 b NEAR/4 c'
+} {}
+do_execsql_test 5.3 {
+  SELECT rowid FROM t5 WHERE t5 MATCH 'a NEAR/4 b NEAR/3 c'
+} {}
+do_execsql_test 5.4 {
+  SELECT rowid FROM t5 WHERE t5 MATCH 'y NEAR/4 b NEAR/4 c'
+} {}
+do_execsql_test 5.5 {
+  SELECT rowid FROM t5 WHERE t5 MATCH 'x OR a NEAR/3 b NEAR/3 c'
+} {1 2 3}
+do_execsql_test 5.5 {
+  SELECT rowid FROM t5 WHERE t5 MATCH 'x OR y NEAR/3 b NEAR/3 c'
+} {1 2 3}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 6.0 {
+  CREATE VIRTUAL TABLE t6 USING fts4;
+
+  BEGIN;
+  WITH s(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<50000)
+    INSERT INTO t6 SELECT 'x x x x x x x x x x x' FROM s;
+
+  INSERT INTO t6 VALUES('x x x x x x x x x x x A');
+  INSERT INTO t6 VALUES('x x x x x x x x x x x B');
+  INSERT INTO t6 VALUES('x x x x x x x x x x x A');
+  INSERT INTO t6 VALUES('x x x x x x x x x x x B');
+
+  WITH s(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<50000)
+    INSERT INTO t6 SELECT 'x x x x x x x x x x x' FROM s;
+  COMMIT;
+}
+breakpoint
+do_execsql_test 6.1 {
+  SELECT rowid FROM t6 WHERE t6 MATCH 'b OR "x a"'
+} {50001 50002 50003 50004}
+
 
 finish_test
