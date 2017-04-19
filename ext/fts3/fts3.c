@@ -3960,7 +3960,7 @@ int sqlite3Fts3Init(sqlite3 *db){
 #endif
 
   /* Create the virtual table wrapper around the hash-table and overload 
-  ** the two scalar functions. If this is successful, register the
+  ** the four scalar functions. If this is successful, register the
   ** module with sqlite.
   */
   if( SQLITE_OK==rc 
@@ -4543,7 +4543,7 @@ static int fts3EvalIncrPhraseNext(
   ** one incremental token. In which case the bIncr flag is set. */
   assert( p->bIncr==1 );
 
-  if( p->nToken==1 && p->bIncr ){
+  if( p->nToken==1 ){
     rc = sqlite3Fts3MsrIncrNext(pTab, p->aToken[0].pSegcsr, 
         &pDL->iDocid, &pDL->pList, &pDL->nList
     );
@@ -4776,6 +4776,7 @@ static void fts3EvalTokenCosts(
 ** the number of overflow pages consumed by a record B bytes in size.
 */
 static int fts3EvalAverageDocsize(Fts3Cursor *pCsr, int *pnPage){
+  int rc = SQLITE_OK;
   if( pCsr->nRowAvg==0 ){
     /* The average document size, which is required to calculate the cost
     ** of each doclist, has not yet been determined. Read the required 
@@ -4815,11 +4816,10 @@ static int fts3EvalAverageDocsize(Fts3Cursor *pCsr, int *pnPage){
     pCsr->nRowAvg = (int)(((nByte / nDoc) + p->nPgsz) / p->nPgsz);
     assert( pCsr->nRowAvg>0 ); 
     rc = sqlite3_reset(pStmt);
-    if( rc!=SQLITE_OK ) return rc;
   }
 
   *pnPage = pCsr->nRowAvg;
-  return SQLITE_OK;
+  return rc;
 }
 
 /*
@@ -5169,7 +5169,8 @@ static void fts3EvalNextRow(
           pExpr->iDocid = pLeft->iDocid;
           pExpr->bEof = (pLeft->bEof || pRight->bEof);
           if( pExpr->eType==FTSQUERY_NEAR && pExpr->bEof ){
-            if( pRight->pPhrase && pRight->pPhrase->doclist.aAll ){
+            assert( pRight->eType==FTSQUERY_PHRASE );
+            if( pRight->pPhrase->doclist.aAll ){
               Fts3Doclist *pDl = &pRight->pPhrase->doclist;
               while( *pRc==SQLITE_OK && pRight->bEof==0 ){
                 memset(pDl->pList, 0, pDl->nList);
@@ -5198,7 +5199,7 @@ static void fts3EvalNextRow(
 
         if( pRight->bEof || (pLeft->bEof==0 && iCmp<0) ){
           fts3EvalNextRow(pCsr, pLeft, pRc);
-        }else if( pLeft->bEof || (pRight->bEof==0 && iCmp>0) ){
+        }else if( pLeft->bEof || iCmp>0 ){
           fts3EvalNextRow(pCsr, pRight, pRc);
         }else{
           fts3EvalNextRow(pCsr, pLeft, pRc);
