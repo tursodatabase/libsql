@@ -349,11 +349,6 @@ typedef struct ExpertCsr ExpertCsr;
 struct ExpertCsr {
   sqlite3_vtab_cursor base;
   sqlite3_stmt *pData;
-
-  int iTarget;                    /* Target as a percentage */
-  double target;                  /* Target nRet/nRow value */
-  double nRow;                    /* Rows seen */
-  double nRet;                    /* Rows returned */
 };
 
 static char *expertDequote(const char *zIn){
@@ -545,28 +540,16 @@ static int expertEof(sqlite3_vtab_cursor *cur){
 static int expertNext(sqlite3_vtab_cursor *cur){
   ExpertCsr *pCsr = (ExpertCsr*)cur;
   int rc = SQLITE_OK;
-  int bRet;
+
   assert( pCsr->pData );
+  rc = sqlite3_step(pCsr->pData);
+  if( rc!=SQLITE_ROW ){
+    rc = sqlite3_finalize(pCsr->pData);
+    pCsr->pData = 0;
+  }else{
+    rc = SQLITE_OK;
+  }
 
-  do {
-    rc = sqlite3_step(pCsr->pData);
-    if( rc!=SQLITE_ROW ){
-      rc = sqlite3_finalize(pCsr->pData);
-      pCsr->pData = 0;
-      bRet = 1;
-    }else{
-      rc = SQLITE_OK;
-      bRet = (pCsr->nRow==0.0 || pCsr->nRow/pCsr->nRet < pCsr->target);
-      if( bRet==0 ){
-        unsigned short rnd;
-        sqlite3_randomness(2, (void*)&rnd);
-        bRet = ((int)rnd % 100) <= pCsr->iTarget;
-      }
-    }
-    pCsr->nRow += 1.0;
-  }while( bRet==0 );
-
-  pCsr->nRet += 1.0;
   return rc;
 }
 
@@ -606,14 +589,9 @@ static int expertFilter(
 
   rc = sqlite3_finalize(pCsr->pData);
   pCsr->pData = 0;
-  pCsr->nRow = 0.0;
-  pCsr->nRet = 0.0;
-  pCsr->iTarget = pExpert->iSample;
-  pCsr->target = (double)pExpert->iSample / 100.0;
-
   if( rc==SQLITE_OK ){
     rc = idxPrintfPrepareStmt(pExpert->db, &pCsr->pData, &pVtab->base.zErrMsg,
-        "SELECT * FROM main.%Q", pVtab->pTab->zName
+        "SELECT * FROM main.%Q WHERE sample()", pVtab->pTab->zName
     );
   }
 
@@ -1703,9 +1681,9 @@ static int idxPopulateStat1(sqlite3expert *p, char **pzErr){
     rc = idxPopulateOneStat1(p, pIndexXInfo, pWrite, zTab, zIdx, pzErr);
     iPrev = iRowid;
   }
-  if( p->iSample<100 ){
-    rc = sqlite3_exec(p->db, "DROP TABLE IF EXISTS temp." UNIQUE_TABLE_NAME,
-        0,0,0
+  if( rc==SQLITE_OK && p->iSample<100 ){
+    rc = sqlite3_exec(p->dbv, 
+        "DROP TABLE IF EXISTS temp." UNIQUE_TABLE_NAME, 0,0,0
     );
   }
 
