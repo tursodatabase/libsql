@@ -28,6 +28,38 @@ typedef struct sqlite3expert sqlite3expert;
 sqlite3expert *sqlite3_expert_new(sqlite3 *db, char **pzErr);
 
 /*
+** Configure an sqlite3expert object.
+**
+** EXPERT_CONFIG_SAMPLE:
+**   By default, sqlite3_expert_analyze() generates sqlite_stat1 data for
+**   each candidate index. This involves scanning and sorting the entire
+**   contents of each user database table once for each candidate index
+**   associated with the table. For large databases, this can be 
+**   prohibitively slow. This option allows the sqlite3expert object to
+**   be configured so that sqlite_stat1 data is instead generated based on a
+**   subset of each table, or so that no sqlite_stat1 data is used at all.
+**
+**   A single integer argument is passed to this option. If the value is less
+**   than or equal to zero, then no sqlite_stat1 data is generated or used by
+**   the analysis - indexes are recommended based on the database schema only.
+**   Or, if the value is 100 or greater, complete sqlite_stat1 data is
+**   generated for each candidate index (this is the default). Finally, if the
+**   value falls between 0 and 100, then it represents the percentage of user
+**   table rows that should be considered when generating sqlite_stat1 data.
+**
+**   Examples:
+**
+**     // Do not generate any sqlite_stat1 data
+**     sqlite3_expert_config(pExpert, EXPERT_CONFIG_SAMPLE, 0);
+**
+**     // Generate sqlite_stat1 data based on 10% of the rows in each table.
+**     sqlite3_expert_config(pExpert, EXPERT_CONFIG_SAMPLE, 10);
+*/
+int sqlite3_expert_config(sqlite3expert *p, int op, ...);
+
+#define EXPERT_CONFIG_SAMPLE 1    /* int */
+
+/*
 ** Specify zero or more SQL statements to be included in the analysis.
 **
 ** Buffer zSql must contain zero or more complete SQL statements. This
@@ -53,6 +85,7 @@ int sqlite3_expert_sql(
   const char *zSql,               /* SQL statement(s) to add */
   char **pzErr                    /* OUT: Error message (if any) */
 );
+
 
 /*
 ** This function is called after the sqlite3expert object has been configured

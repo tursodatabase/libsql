@@ -28,6 +28,9 @@ typedef struct IdxStatement IdxStatement;
 typedef struct IdxTable IdxTable;
 typedef struct IdxWrite IdxWrite;
 
+#define UNIQUE_TABLE_NAME "t592690916721053953805701627921227776"
+
+
 /*
 ** A single constraint. Equivalent to either "col = ?" or "col < ?" (or
 ** any other type of single-ended range constraint on a column).
@@ -127,6 +130,7 @@ struct IdxHash {
 ** sqlite3expert object.
 */
 struct sqlite3expert {
+  int iSample;                    /* Percentage of tables to sample for stat1 */
   sqlite3 *db;                    /* User database */
   sqlite3 *dbm;                   /* In-memory db for this analysis */
   sqlite3 *dbv;                   /* Vtab schema for this analysis */
@@ -1080,8 +1084,8 @@ static int idxProcessOneTrigger(
   IdxWrite *pWrite, 
   char **pzErr
 ){
-  static const char *zInt = "t592690916721053953805701627921227776";
-  static const char *zDrop = "DROP TABLE t592690916721053953805701627921227776";
+  static const char *zInt = UNIQUE_TABLE_NAME;
+  static const char *zDrop = "DROP TABLE " UNIQUE_TABLE_NAME;
   IdxTable *pTab = pWrite->pTab;
   const char *zTab = pTab->zName;
   const char *zSql = 
@@ -1235,6 +1239,38 @@ static int idxCreateVtabSchema(sqlite3expert *p, char **pzErrmsg){
   return rc;
 }
 
+struct IdxSampleCtx {
+  int iTarget;
+  double target;                  /* Target nRet/nRow value */
+  double nRow;                    /* Number of rows seen */
+  double nRet;                    /* Number of rows returned */
+};
+
+static void idxSampleFunc(
+  sqlite3_context *pCtx,
+  int argc,
+  sqlite3_value **argv
+){
+  struct IdxSampleCtx *p = (struct IdxSampleCtx*)sqlite3_user_data(pCtx);
+  int bRet;
+
+  assert( argc==0 );
+  if( p->nRow==0.0 ){
+    bRet = 1;
+  }else{
+    bRet = (p->nRet / p->nRow) <= p->target;
+    if( bRet==0 ){
+      unsigned short rnd;
+      sqlite3_randomness(2, (void*)&rnd);
+      bRet = ((int)rnd % 100) <= p->iTarget;
+    }
+  }
+
+  sqlite3_result_int(pCtx, bRet);
+  p->nRow += 1.0;
+  p->nRet += (double)bRet;
+}
+
 struct IdxRemCtx {
   int nSlot;
   struct IdxRemSlot {
@@ -1360,6 +1396,8 @@ static int idxPopulateOneStat1(
   int *aStat = 0;
   int rc = SQLITE_OK;
 
+  assert( p->iSample>0 );
+
   /* Formulate the query text */
   sqlite3_bind_text(pIndexXInfo, 1, zIdx, -1, SQLITE_STATIC);
   while( SQLITE_OK==rc && SQLITE_ROW==sqlite3_step(pIndexXInfo) ){
@@ -1372,9 +1410,15 @@ static int idxPopulateOneStat1(
     zOrder = idxAppendText(&rc, zOrder, "%s%d", zComma, ++nCol);
   }
   if( rc==SQLITE_OK ){
-    zQuery = sqlite3_mprintf(
-        "SELECT %s FROM %Q x ORDER BY %s", zCols, zTab, zOrder
-    );
+    if( p->iSample==100 ){
+      zQuery = sqlite3_mprintf(
+          "SELECT %s FROM %Q x ORDER BY %s", zCols, zTab, zOrder
+      );
+    }else{
+      zQuery = sqlite3_mprintf(
+          "SELECT %s FROM temp."UNIQUE_TABLE_NAME" x ORDER BY %s", zCols, zOrder
+      );
+    }
   }
   sqlite3_free(zCols);
   sqlite3_free(zOrder);
@@ -1433,6 +1477,25 @@ static int idxPopulateOneStat1(
   return rc;
 }
 
+static int idxBuildSampleTable(sqlite3expert *p, const char *zTab){
+  int rc;
+  char *zSql;
+
+  rc = sqlite3_exec(p->db, "DROP TABLE IF EXISTS temp."UNIQUE_TABLE_NAME,0,0,0);
+  if( rc!=SQLITE_OK ) return rc;
+
+  zSql = sqlite3_mprintf(
+      "CREATE TABLE temp." UNIQUE_TABLE_NAME 
+      "  AS SELECT * FROM %Q WHERE sample()"
+      , zTab
+  );
+  if( zSql==0 ) return SQLITE_NOMEM;
+  rc = sqlite3_exec(p->db, zSql, 0, 0, 0);
+  sqlite3_free(zSql);
+
+  return rc;
+}
+
 /*
 ** This function is called as part of sqlite3_expert_analyze(). Candidate
 ** indexes have already been created in database sqlite3expert.dbm, this
@@ -1444,19 +1507,24 @@ static int idxPopulateStat1(sqlite3expert *p, char **pzErr){
   int rc = SQLITE_OK;
   int nMax =0;
   struct IdxRemCtx *pCtx = 0;
+  struct IdxSampleCtx samplectx; 
   int i;
+  i64 iPrev = -100000;
   sqlite3_stmt *pAllIndex = 0;
   sqlite3_stmt *pIndexXInfo = 0;
   sqlite3_stmt *pWrite = 0;
 
-  const char *zAllIndex = 
-    "SELECT s.name, l.name FROM "
+  const char *zAllIndex =
+    "SELECT s.rowid, s.name, l.name FROM "
     "  sqlite_master AS s, "
     "  pragma_index_list(s.name) AS l "
     "WHERE s.type = 'table'";
   const char *zIndexXInfo = 
     "SELECT name, coll FROM pragma_index_xinfo(?) WHERE key";
   const char *zWrite = "INSERT INTO sqlite_stat1 VALUES(?, ?, ?)";
+
+  /* If iSample==0, no sqlite_stat1 data is required. */
+  if( p->iSample==0 ) return SQLITE_OK;
 
   rc = idxLargestIndex(p->dbm, &nMax, pzErr);
   if( nMax<=0 || rc!=SQLITE_OK ) return rc;
@@ -1473,6 +1541,11 @@ static int idxPopulateStat1(sqlite3expert *p, char **pzErr){
         p->db, "rem", 2, SQLITE_UTF8, (void*)pCtx, idxRemFunc, 0, 0
     );
   }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_function(
+        p->db, "sample", 0, SQLITE_UTF8, (void*)&samplectx, idxSampleFunc, 0, 0
+    );
+  }
 
   if( rc==SQLITE_OK ){
     pCtx->nSlot = nMax+1;
@@ -1486,9 +1559,24 @@ static int idxPopulateStat1(sqlite3expert *p, char **pzErr){
   }
 
   while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pAllIndex) ){
-    const char *zTab = (const char*)sqlite3_column_text(pAllIndex, 0);
-    const char *zIdx = (const char*)sqlite3_column_text(pAllIndex, 1);
+    i64 iRowid = sqlite3_column_int64(pAllIndex, 0);
+    const char *zTab = (const char*)sqlite3_column_text(pAllIndex, 1);
+    const char *zIdx = (const char*)sqlite3_column_text(pAllIndex, 2);
+    if( p->iSample<100 && iPrev!=iRowid ){
+      samplectx.target = (double)p->iSample / 100.0;
+      samplectx.iTarget = p->iSample;
+      samplectx.nRow = 0.0;
+      samplectx.nRet = 0.0;
+      rc = idxBuildSampleTable(p, zTab);
+      if( rc!=SQLITE_OK ) break;
+    }
     rc = idxPopulateOneStat1(p, pIndexXInfo, pWrite, zTab, zIdx, pzErr);
+    iPrev = iRowid;
+  }
+  if( p->iSample<100 ){
+    rc = sqlite3_exec(p->db, "DROP TABLE IF EXISTS temp." UNIQUE_TABLE_NAME,
+        0,0,0
+    );
   }
 
   idxFinalize(&rc, pAllIndex);
@@ -1503,6 +1591,8 @@ static int idxPopulateStat1(sqlite3expert *p, char **pzErr){
   if( rc==SQLITE_OK ){
     rc = sqlite3_exec(p->dbm, "ANALYZE sqlite_master", 0, 0, 0);
   }
+
+  sqlite3_exec(p->db, "DROP TABLE IF EXISTS temp."UNIQUE_TABLE_NAME,0,0,0);
   return rc;
 }
 
@@ -1523,6 +1613,7 @@ sqlite3expert *sqlite3_expert_new(sqlite3 *db, char **pzErrmsg){
   */
   if( rc==SQLITE_OK ){
     pNew->db = db;
+    pNew->iSample = 100;
     rc = sqlite3_open(":memory:", &pNew->dbv);
   }
   if( rc==SQLITE_OK ){
@@ -1563,6 +1654,30 @@ sqlite3expert *sqlite3_expert_new(sqlite3 *db, char **pzErrmsg){
     pNew = 0;
   }
   return pNew;
+}
+
+/*
+** Configure an sqlite3expert object.
+*/
+int sqlite3_expert_config(sqlite3expert *p, int op, ...){
+  int rc = SQLITE_OK;
+  va_list ap;
+  va_start(ap, op);
+  switch( op ){
+    case EXPERT_CONFIG_SAMPLE: {
+      int iVal = va_arg(ap, int);
+      if( iVal<0 ) iVal = 0;
+      if( iVal>100 ) iVal = 100;
+      p->iSample = iVal;
+      break;
+    }
+    default:
+      rc = SQLITE_NOTFOUND;
+      break;
+  }
+
+  va_end(ap);
+  return rc;
 }
 
 /*

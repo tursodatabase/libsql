@@ -36,6 +36,7 @@ static void usage(char **argv){
   fprintf(stderr, "  -sql SQL   (analyze SQL statements passed as argument)\n");
   fprintf(stderr, "  -file FILE (read SQL statements from file FILE)\n");
   fprintf(stderr, "  -verbose LEVEL (integer verbosity level. default 1)\n");
+  fprintf(stderr, "  -sample PERCENT (percent of db to sample. default 100)\n");
   exit(-1);
 }
 
@@ -97,9 +98,16 @@ int main(int argc, char **argv){
         rc = readSqlFromFile(p, argv[i], &zErr);
       }
 
-      else if( nArg>=2 && 0==sqlite3_strnicmp(zArg, "-sql", nArg) ){
+      else if( nArg>=3 && 0==sqlite3_strnicmp(zArg, "-sql", nArg) ){
         if( ++i==(argc-1) ) option_requires_argument("-sql");
         rc = sqlite3_expert_sql(p, argv[i], &zErr);
+      }
+
+      else if( nArg>=3 && 0==sqlite3_strnicmp(zArg, "-sample", nArg) ){
+        int iSample;
+        if( ++i==(argc-1) ) option_requires_argument("-sample");
+        iSample = option_integer_arg(argv[i]);
+        sqlite3_expert_config(p, EXPERT_CONFIG_SAMPLE, iSample);
       }
 
       else if( nArg>=2 && 0==sqlite3_strnicmp(zArg, "-verbose", nArg) ){
