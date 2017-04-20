@@ -1,5 +1,5 @@
-C Avoid\sadding\sINTEGER\sPRIMARY\sKEY\scolumns\sto\scandidate\sindexes.
-D 2017-04-20T16:18:43.967
+C Avoid\screating\sa\stemp\stable\sin\sthe\suser\sdatabase\sin\sthe\ssqlite3_expert\scode.
+D 2017-04-20T17:03:32.652
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a8c838220f7c00820e1fc0ac1bccaaa8e5676067e1dbfa1bafa7a4ffecf8ae6
@@ -43,7 +43,7 @@ F ext/async/sqlite3async.h f489b080af7e72aec0e1ee6f1d98ab6cf2e4dcef
 F ext/expert/README.md 9f15075ec5ad772808eff55ef044c31140fd1146aa0a3c47eafd155e71851b01
 F ext/expert/expert.c 33842ef151d84c5f8000f9c7b938998c6b999eaef7ce1f4eeb0df8ffe6739496
 F ext/expert/expert1.test 1033e43071b69dc2f4e88fbf03fc7f18846c9865cac14f28c80f581437f09acb
-F ext/expert/sqlite3expert.c 403b261dbea217f1b221dd4ab19774d1acfc4eba44c1ed35ab38060168f81b6d
+F ext/expert/sqlite3expert.c fde366d8c1b1970b2c18196ca2e64d01c2106bd9431c371a26e8d5b79f37f90b
 F ext/expert/sqlite3expert.h af6354f8ee5c9e025024e63fec3bd640a802afcc3099a44d804752cf0791d811
 F ext/expert/test_expert.c b01a5115f9444a9b416582c985138f5dfdb279848ce8b7452be383530be27f01
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
@@ -1579,7 +1579,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c69c3e21db6e141f7e24226c6432f2ed31fe5f177bd23781915871f8600ee56a
-R 755161800d19d245e3f0050f91b54ff6
+P 4577fea5cd9d91ea241e9be82797ca1a4447f536e1e4b78a4a569aeb52e78fcb 8e57c31340dd9ffc457da63c5996fb1b573f8154f864ec2b52c15f399906ac8b
+R 73307a63b82b2606f65f28fc989fd3ae
 U dan
-Z c9b10ac09e4b6010a00208af302face2
+Z a6caf6a2d1f5541a0691d13e2a47ea26
