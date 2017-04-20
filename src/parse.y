@@ -193,6 +193,23 @@ columnlist ::= columnlist COMMA columnname carglist.
 columnlist ::= columnname carglist.
 columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,&A,&Y);}
 
+// The following directive causes tokens ABORT, AFTER, ASC, etc. to
+// fallback to ID if they will not parse as their original value.
+// This obviates the need for the "id" nonterminal.
+//
+%fallback ID
+  ABORT ACTION AFTER ANALYZE ASC ATTACH BEFORE BEGIN BY CASCADE CAST COLUMNKW
+  CONFLICT DATABASE DEFERRED DESC DETACH EACH END EXCLUSIVE EXPLAIN FAIL FOR
+  IGNORE IMMEDIATE INITIALLY INSTEAD LIKE_KW MATCH NO PLAN
+  QUERY KEY OF OFFSET PRAGMA RAISE RECURSIVE RELEASE REPLACE RESTRICT ROW
+  ROLLBACK SAVEPOINT TEMP TRIGGER VACUUM VIEW VIRTUAL WITH WITHOUT
+%ifdef SQLITE_OMIT_COMPOUND_SELECT
+  EXCEPT INTERSECT UNION
+%endif SQLITE_OMIT_COMPOUND_SELECT
+  REINDEX RENAME CTIME_KW IF
+  .
+%wildcard ANY.
+
 // Define operator precedence early so that this is the first occurrence
 // of the operator tokens in the grammer.  Keeping the operators together
 // causes them to be assigned integer values that are close together,
@@ -221,23 +238,6 @@ columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,&A,&Y);}
 // keywords.  Any non-standard keyword can also be an identifier.
 //
 %token_class id  ID|INDEXED.
-
-// The following directive causes tokens ABORT, AFTER, ASC, etc. to
-// fallback to ID if they will not parse as their original value.
-// This obviates the need for the "id" nonterminal.
-//
-%fallback ID
-  ABORT ACTION AFTER ANALYZE ASC ATTACH BEFORE BEGIN BY CASCADE CAST COLUMNKW
-  CONFLICT DATABASE DEFERRED DESC DETACH EACH END EXCLUSIVE EXPLAIN FAIL FOR
-  IGNORE IMMEDIATE INITIALLY INSTEAD LIKE_KW MATCH NO PLAN
-  QUERY KEY OF OFFSET PRAGMA RAISE RECURSIVE RELEASE REPLACE RESTRICT ROW
-  ROLLBACK SAVEPOINT TEMP TRIGGER VACUUM VIEW VIRTUAL WITH WITHOUT
-%ifdef SQLITE_OMIT_COMPOUND_SELECT
-  EXCEPT INTERSECT UNION
-%endif SQLITE_OMIT_COMPOUND_SELECT
-  REINDEX RENAME CTIME_KW IF
-  .
-%wildcard ANY.
 
 
 // And "ids" is an identifer-or-string.

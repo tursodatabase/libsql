@@ -427,6 +427,36 @@ static void SQLITE_CDECL iotracePrintf(const char *zFormat, ...){
 }
 #endif
 
+/*
+** Output string zUtf to stream pOut as w characters.  If w is negative,
+** then right-justify the text.  W is the width in UTF-8 characters, not
+** in bytes.  This is different from the %*.*s specification in printf
+** since with %*.*s the width is measured in bytes, not characters.
+*/
+static void utf8_width_print(FILE *pOut, int w, const char *zUtf){
+  int i;
+  int n;
+  int aw = w<0 ? -w : w;
+  char zBuf[1000];
+  if( aw>sizeof(zBuf)/3 ) aw = sizeof(zBuf)/3;
+  for(i=n=0; zUtf[i]; i++){
+    if( (zUtf[i]&0xc0)!=0x80 ){
+      n++;
+      if( n==aw ){
+        do{ i++; }while( (zUtf[i]&0xc0)==0x80 );
+        break;
+      }
+    }
+  }
+  if( n>=aw ){
+    utf8_printf(pOut, "%.*s", i, zUtf);
+  }else if( w<0 ){
+    utf8_printf(pOut, "%*s%s", aw-n, "", zUtf);
+  }else{
+    utf8_printf(pOut, "%s%*s", zUtf, aw-n, "");
+  }
+}
+
 
 /*
 ** Determines if a string is a number of not.
@@ -1878,13 +1908,8 @@ static int shell_callback(
             p->actualWidth[i] = w;
           }
           if( showHdr ){
-            if( w<0 ){
-              utf8_printf(p->out,"%*.*s%s",-w,-w,azCol[i],
-                      i==nArg-1 ? rowSep : "  ");
-            }else{
-              utf8_printf(p->out,"%-*.*s%s",w,w,azCol[i],
-                      i==nArg-1 ? rowSep : "  ");
-            }
+            utf8_width_print(p->out, w, azCol[i]);
+            utf8_printf(p->out, "%s", i==nArg-1 ? rowSep : "  ");
           }
         }
         if( showHdr ){
@@ -1920,15 +1945,8 @@ static int shell_callback(
           }
           p->iIndent++;
         }
-        if( w<0 ){
-          utf8_printf(p->out,"%*.*s%s",-w,-w,
-              azArg[i] ? azArg[i] : p->nullValue,
-              i==nArg-1 ? rowSep : "  ");
-        }else{
-          utf8_printf(p->out,"%-*.*s%s",w,w,
-              azArg[i] ? azArg[i] : p->nullValue,
-              i==nArg-1 ? rowSep : "  ");
-        }
+        utf8_width_print(p->out, w, azArg[i] ? azArg[i] : p->nullValue);
+        utf8_printf(p->out, "%s", i==nArg-1 ? rowSep : "  ");
       }
       break;
     }

@@ -40,6 +40,10 @@ int sqlite3VdbeCheckMemInvariants(Mem *p){
   /* Cannot be both MEM_Int and MEM_Real at the same time */
   assert( (p->flags & (MEM_Int|MEM_Real))!=(MEM_Int|MEM_Real) );
 
+  /* Cannot be both MEM_Null and some other type */
+  assert( (p->flags & MEM_Null)==0 ||
+          (p->flags & (MEM_Int|MEM_Real|MEM_Str|MEM_Blob))==0 );
+
   /* The szMalloc field holds the correct memory allocation size */
   assert( p->szMalloc==0
        || p->szMalloc==sqlite3DbMallocSize(p->db,p->zMalloc) );

@@ -28,8 +28,12 @@ typedef struct IdxStatement IdxStatement;
 typedef struct IdxTable IdxTable;
 typedef struct IdxWrite IdxWrite;
 
+/*
+** A temp table name that we assume no user database will actually use.
+** If this assumption proves incorrect triggers on the table with the
+** conflicting name will be ignored.
+*/
 #define UNIQUE_TABLE_NAME "t592690916721053953805701627921227776"
-
 
 /*
 ** A single constraint. Equivalent to either "col = ?" or "col < ?" (or
@@ -238,6 +242,10 @@ static int idxHashAdd(
   return 0;
 }
 
+/*
+** If zKey/nKey is present in the hash table, return a pointer to the 
+** hash-entry object.
+*/
 static IdxHashEntry *idxHashFind(IdxHash *pHash, const char *zKey, int nKey){
   int iHash;
   IdxHashEntry *pEntry;

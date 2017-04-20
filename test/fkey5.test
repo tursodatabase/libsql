@@ -388,5 +388,40 @@ do_execsql_test 9.4 {
   PRAGMA foreign_key_check(k2);
 } {k2 3 s1 0}
 
+#-------------------------------------------------------------------------
+# Test using a WITHOUT ROWID table as the child table with an INTEGER 
+# PRIMARY KEY as the parent key.
+#
+reset_db
+do_execsql_test 10.1 {
+  CREATE TABLE p30 (id INTEGER PRIMARY KEY);
+  CREATE TABLE IF NOT EXISTS c30 (
+      line INTEGER, 
+      master REFERENCES p30(id), 
+      PRIMARY KEY(master)
+  ) WITHOUT ROWID;
+
+  INSERT INTO p30 (id) VALUES (1);
+  INSERT INTO c30 (master, line)  VALUES (1, 999);
+}
+do_execsql_test 10.2 {
+  PRAGMA foreign_key_check;
+}
+do_execsql_test 10.3 {
+  INSERT INTO c30 VALUES(45, 45);
+  PRAGMA foreign_key_check;
+} {c30 {} p30 0}
+
+#-------------------------------------------------------------------------
+# Test "foreign key mismatch" errors.
+#
+reset_db
+do_execsql_test 11.0 {
+  CREATE TABLE tt(y);
+  CREATE TABLE c11(x REFERENCES tt(y));
+}
+do_catchsql_test 11.1 {
+  PRAGMA foreign_key_check;
+} {1 {foreign key mismatch - "c11" referencing "tt"}}
 
 finish_test
