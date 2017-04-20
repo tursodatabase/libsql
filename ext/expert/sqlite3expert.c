@@ -281,6 +281,59 @@ static IdxConstraint *idxNewConstraint(int *pRc, const char *zColl){
   return pNew;
 }
 
+/*
+** An error associated with database handle db has just occurred. Pass
+** the error message to callback function xOut.
+*/
+static void idxDatabaseError(
+  sqlite3 *db,                    /* Database handle */
+  char **pzErrmsg                 /* Write error here */
+){
+  *pzErrmsg = sqlite3_mprintf("%s", sqlite3_errmsg(db));
+}
+
+/*
+** Prepare an SQL statement.
+*/
+static int idxPrepareStmt(
+  sqlite3 *db,                    /* Database handle to compile against */
+  sqlite3_stmt **ppStmt,          /* OUT: Compiled SQL statement */
+  char **pzErrmsg,                /* OUT: sqlite3_malloc()ed error message */
+  const char *zSql                /* SQL statement to compile */
+){
+  int rc = sqlite3_prepare_v2(db, zSql, -1, ppStmt, 0);
+  if( rc!=SQLITE_OK ){
+    *ppStmt = 0;
+    idxDatabaseError(db, pzErrmsg);
+  }
+  return rc;
+}
+
+/*
+** Prepare an SQL statement using the results of a printf() formatting.
+*/
+static int idxPrintfPrepareStmt(
+  sqlite3 *db,                    /* Database handle to compile against */
+  sqlite3_stmt **ppStmt,          /* OUT: Compiled SQL statement */
+  char **pzErrmsg,                /* OUT: sqlite3_malloc()ed error message */
+  const char *zFmt,               /* printf() format of SQL statement */
+  ...                             /* Trailing printf() arguments */
+){
+  va_list ap;
+  int rc;
+  char *zSql;
+  va_start(ap, zFmt);
+  zSql = sqlite3_vmprintf(zFmt, ap);
+  if( zSql==0 ){
+    rc = SQLITE_NOMEM;
+  }else{
+    rc = idxPrepareStmt(db, ppStmt, pzErrmsg, zSql);
+    sqlite3_free(zSql);
+  }
+  va_end(ap);
+  return rc;
+}
+
 
 /*************************************************************************
 ** Beginning of virtual table implementation.
@@ -290,6 +343,17 @@ struct ExpertVtab {
   sqlite3_vtab base;
   IdxTable *pTab;
   sqlite3expert *pExpert;
+};
+
+typedef struct ExpertCsr ExpertCsr;
+struct ExpertCsr {
+  sqlite3_vtab_cursor base;
+  sqlite3_stmt *pData;
+
+  int iTarget;                    /* Target as a percentage */
+  double target;                  /* Target nRet/nRow value */
+  double nRow;                    /* Rows seen */
+  double nRet;                    /* Rows returned */
 };
 
 static char *expertDequote(const char *zIn){
@@ -389,7 +453,11 @@ static int expertBestIndex(sqlite3_vtab *pVtab, sqlite3_index_info *pIdxInfo){
     /* Add the constraints to the IdxScan object */
     for(i=0; i<pIdxInfo->nConstraint; i++){
       struct sqlite3_index_constraint *pCons = &pIdxInfo->aConstraint[i];
-      if( pCons->usable && pCons->iColumn>=0 && (pCons->op & opmask) ){
+      if( pCons->usable 
+       && pCons->iColumn>=0 
+       && p->pTab->aCol[pCons->iColumn].iPk==0
+       && (pCons->op & opmask) 
+      ){
         IdxConstraint *pNew;
         const char *zColl = sqlite3_vtab_collation(dbv, i);
         pNew = idxNewConstraint(&rc, zColl);
@@ -439,6 +507,122 @@ static int expertUpdate(
   return SQLITE_OK;
 }
 
+/* 
+** Virtual table module xOpen method.
+*/
+static int expertOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
+  int rc = SQLITE_OK;
+  ExpertCsr *pCsr;
+  pCsr = idxMalloc(&rc, sizeof(ExpertCsr));
+  *ppCursor = (sqlite3_vtab_cursor*)pCsr;
+  return rc;
+}
+
+/* 
+** Virtual table module xClose method.
+*/
+static int expertClose(sqlite3_vtab_cursor *cur){
+  ExpertCsr *pCsr = (ExpertCsr*)cur;
+  sqlite3_finalize(pCsr->pData);
+  sqlite3_free(pCsr);
+  return SQLITE_OK;
+}
+
+/*
+** Virtual table module xEof method.
+**
+** Return non-zero if the cursor does not currently point to a valid 
+** record (i.e if the scan has finished), or zero otherwise.
+*/
+static int expertEof(sqlite3_vtab_cursor *cur){
+  ExpertCsr *pCsr = (ExpertCsr*)cur;
+  return pCsr->pData==0;
+}
+
+/* 
+** Virtual table module xNext method.
+*/
+static int expertNext(sqlite3_vtab_cursor *cur){
+  ExpertCsr *pCsr = (ExpertCsr*)cur;
+  int rc = SQLITE_OK;
+  int bRet;
+  assert( pCsr->pData );
+
+  do {
+    rc = sqlite3_step(pCsr->pData);
+    if( rc!=SQLITE_ROW ){
+      rc = sqlite3_finalize(pCsr->pData);
+      pCsr->pData = 0;
+      bRet = 1;
+    }else{
+      rc = SQLITE_OK;
+      bRet = (pCsr->nRow==0.0 || pCsr->nRow/pCsr->nRet < pCsr->target);
+      if( bRet==0 ){
+        unsigned short rnd;
+        sqlite3_randomness(2, (void*)&rnd);
+        bRet = ((int)rnd % 100) <= pCsr->iTarget;
+      }
+    }
+    pCsr->nRow += 1.0;
+  }while( bRet==0 );
+
+  pCsr->nRet += 1.0;
+  return rc;
+}
+
+/* 
+** Virtual table module xRowid method.
+*/
+static int expertRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
+  *pRowid = 0;
+  return SQLITE_OK;
+}
+
+/* 
+** Virtual table module xColumn method.
+*/
+static int expertColumn(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int i){
+  ExpertCsr *pCsr = (ExpertCsr*)cur;
+  sqlite3_value *pVal;
+  pVal = sqlite3_column_value(pCsr->pData, i);
+  if( pVal ){
+    sqlite3_result_value(ctx, pVal);
+  }
+  return SQLITE_OK;
+}
+
+/* 
+** Virtual table module xFilter method.
+*/
+static int expertFilter(
+  sqlite3_vtab_cursor *cur, 
+  int idxNum, const char *idxStr,
+  int argc, sqlite3_value **argv
+){
+  ExpertCsr *pCsr = (ExpertCsr*)cur;
+  ExpertVtab *pVtab = (ExpertVtab*)(cur->pVtab);
+  sqlite3expert *pExpert = pVtab->pExpert;
+  int rc;
+
+  rc = sqlite3_finalize(pCsr->pData);
+  pCsr->pData = 0;
+  pCsr->nRow = 0.0;
+  pCsr->nRet = 0.0;
+  pCsr->iTarget = pExpert->iSample;
+  pCsr->target = (double)pExpert->iSample / 100.0;
+
+  if( rc==SQLITE_OK ){
+    rc = idxPrintfPrepareStmt(pExpert->db, &pCsr->pData, &pVtab->base.zErrMsg,
+        "SELECT * FROM main.%Q", pVtab->pTab->zName
+    );
+  }
+
+  if( rc==SQLITE_OK ){
+    rc = expertNext(cur);
+  }
+  return rc;
+}
+
 static int idxRegisterVtab(sqlite3expert *p){
   static sqlite3_module expertModule = {
     2,                            /* iVersion */
@@ -447,13 +631,13 @@ static int idxRegisterVtab(sqlite3expert *p){
     expertBestIndex,              /* xBestIndex - Determine search strategy */
     expertDisconnect,             /* xDisconnect - Disconnect from a table */
     expertDisconnect,             /* xDestroy - Drop a table */
-    0,                            /* xOpen - open a cursor */
-    0,                            /* xClose - close a cursor */
-    0,                            /* xFilter - configure scan constraints */
-    0,                            /* xNext - advance a cursor */
-    0,                            /* xEof */
-    0,                            /* xColumn - read data */
-    0,                            /* xRowid - read data */
+    expertOpen,                   /* xOpen - open a cursor */
+    expertClose,                  /* xClose - close a cursor */
+    expertFilter,                 /* xFilter - configure scan constraints */
+    expertNext,                   /* xNext - advance a cursor */
+    expertEof,                    /* xEof */
+    expertColumn,                 /* xColumn - read data */
+    expertRowid,                  /* xRowid - read data */
     expertUpdate,                 /* xUpdate - write data */
     0,                            /* xBegin - begin transaction */
     0,                            /* xSync - sync transaction */
@@ -471,60 +655,6 @@ static int idxRegisterVtab(sqlite3expert *p){
 /*
 ** End of virtual table implementation.
 *************************************************************************/
-
-/*
-** An error associated with database handle db has just occurred. Pass
-** the error message to callback function xOut.
-*/
-static void idxDatabaseError(
-  sqlite3 *db,                    /* Database handle */
-  char **pzErrmsg                 /* Write error here */
-){
-  *pzErrmsg = sqlite3_mprintf("%s", sqlite3_errmsg(db));
-}
-
-/*
-** Prepare an SQL statement.
-*/
-static int idxPrepareStmt(
-  sqlite3 *db,                    /* Database handle to compile against */
-  sqlite3_stmt **ppStmt,          /* OUT: Compiled SQL statement */
-  char **pzErrmsg,                /* OUT: sqlite3_malloc()ed error message */
-  const char *zSql                /* SQL statement to compile */
-){
-  int rc = sqlite3_prepare_v2(db, zSql, -1, ppStmt, 0);
-  if( rc!=SQLITE_OK ){
-    *ppStmt = 0;
-    idxDatabaseError(db, pzErrmsg);
-  }
-  return rc;
-}
-
-/*
-** Prepare an SQL statement using the results of a printf() formatting.
-*/
-static int idxPrintfPrepareStmt(
-  sqlite3 *db,                    /* Database handle to compile against */
-  sqlite3_stmt **ppStmt,          /* OUT: Compiled SQL statement */
-  char **pzErrmsg,                /* OUT: sqlite3_malloc()ed error message */
-  const char *zFmt,               /* printf() format of SQL statement */
-  ...                             /* Trailing printf() arguments */
-){
-  va_list ap;
-  int rc;
-  char *zSql;
-  va_start(ap, zFmt);
-  zSql = sqlite3_vmprintf(zFmt, ap);
-  if( zSql==0 ){
-    rc = SQLITE_NOMEM;
-  }else{
-    rc = idxPrepareStmt(db, ppStmt, pzErrmsg, zSql);
-    sqlite3_free(zSql);
-  }
-  va_end(ap);
-  return rc;
-}
-
 /*
 ** Finalize SQL statement pStmt. If (*pRc) is SQLITE_OK when this function
 ** is called, set it to the return value of sqlite3_finalize() before
@@ -557,7 +687,7 @@ static int idxGetTableInfo(
   int nByte = sizeof(IdxTable) + nTab + 1;
   IdxTable *pNew = 0;
   int rc, rc2;
-  char *pCsr;
+  char *pCsr = 0;
 
   rc = idxPrintfPrepareStmt(db, &p1, pzErrmsg, "PRAGMA table_info=%Q", zTab);
   while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(p1) ){
@@ -1425,7 +1555,8 @@ static int idxPopulateOneStat1(
 
   /* Formulate the query text */
   if( rc==SQLITE_OK ){
-    rc = idxPrepareStmt(p->db, &pQuery, pzErr, zQuery);
+    sqlite3 *dbrem = (p->iSample==100 ? p->db : p->dbv);
+    rc = idxPrepareStmt(dbrem, &pQuery, pzErr, zQuery);
   }
   sqlite3_free(zQuery);
 
@@ -1481,16 +1612,14 @@ static int idxBuildSampleTable(sqlite3expert *p, const char *zTab){
   int rc;
   char *zSql;
 
-  rc = sqlite3_exec(p->db, "DROP TABLE IF EXISTS temp."UNIQUE_TABLE_NAME,0,0,0);
+  rc = sqlite3_exec(p->dbv,"DROP TABLE IF EXISTS temp."UNIQUE_TABLE_NAME,0,0,0);
   if( rc!=SQLITE_OK ) return rc;
 
   zSql = sqlite3_mprintf(
-      "CREATE TABLE temp." UNIQUE_TABLE_NAME 
-      "  AS SELECT * FROM %Q WHERE sample()"
-      , zTab
+      "CREATE TABLE temp." UNIQUE_TABLE_NAME " AS SELECT * FROM %Q", zTab
   );
   if( zSql==0 ) return SQLITE_NOMEM;
-  rc = sqlite3_exec(p->db, zSql, 0, 0, 0);
+  rc = sqlite3_exec(p->dbv, zSql, 0, 0, 0);
   sqlite3_free(zSql);
 
   return rc;
@@ -1537,8 +1666,9 @@ static int idxPopulateStat1(sqlite3expert *p, char **pzErr){
   }
 
   if( rc==SQLITE_OK ){
+    sqlite3 *dbrem = (p->iSample==100 ? p->db : p->dbv);
     rc = sqlite3_create_function(
-        p->db, "rem", 2, SQLITE_UTF8, (void*)pCtx, idxRemFunc, 0, 0
+        dbrem, "rem", 2, SQLITE_UTF8, (void*)pCtx, idxRemFunc, 0, 0
     );
   }
   if( rc==SQLITE_OK ){
