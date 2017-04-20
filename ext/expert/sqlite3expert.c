@@ -389,7 +389,11 @@ static int expertBestIndex(sqlite3_vtab *pVtab, sqlite3_index_info *pIdxInfo){
     /* Add the constraints to the IdxScan object */
     for(i=0; i<pIdxInfo->nConstraint; i++){
       struct sqlite3_index_constraint *pCons = &pIdxInfo->aConstraint[i];
-      if( pCons->usable && pCons->iColumn>=0 && (pCons->op & opmask) ){
+      if( pCons->usable 
+       && pCons->iColumn>=0 
+       && p->pTab->aCol[pCons->iColumn].iPk==0
+       && (pCons->op & opmask) 
+      ){
         IdxConstraint *pNew;
         const char *zColl = sqlite3_vtab_collation(dbv, i);
         pNew = idxNewConstraint(&rc, zColl);
@@ -557,7 +561,7 @@ static int idxGetTableInfo(
   int nByte = sizeof(IdxTable) + nTab + 1;
   IdxTable *pNew = 0;
   int rc, rc2;
-  char *pCsr;
+  char *pCsr = 0;
 
   rc = idxPrintfPrepareStmt(db, &p1, pzErrmsg, "PRAGMA table_info=%Q", zTab);
   while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(p1) ){
