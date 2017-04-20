@@ -39,9 +39,9 @@ pub enum Limit {
     /// The maximum index number of any parameter in an SQL statement.
     SQLITE_LIMIT_VARIABLE_NUMBER = SQLITE_LIMIT_VARIABLE_NUMBER as isize,
     /// The maximum depth of recursion for triggers.
-    SQLITE_LIMIT_TRIGGER_DEPTH = SQLITE_LIMIT_TRIGGER_DEPTH as isize,
+    SQLITE_LIMIT_TRIGGER_DEPTH = 10,
     /// The maximum number of auxiliary worker threads that a single prepared statement may start.
-    SQLITE_LIMIT_WORKER_THREADS = SQLITE_LIMIT_WORKER_THREADS as isize,
+    SQLITE_LIMIT_WORKER_THREADS = 11,
 }
 
 include!(concat!(env!("OUT_DIR"), "/bindgen.rs"));
