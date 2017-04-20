@@ -588,12 +588,12 @@ bitflags! {
         const SQLITE_OPEN_READ_ONLY     = ffi::SQLITE_OPEN_READONLY,
         const SQLITE_OPEN_READ_WRITE    = ffi::SQLITE_OPEN_READWRITE,
         const SQLITE_OPEN_CREATE        = ffi::SQLITE_OPEN_CREATE,
-        const SQLITE_OPEN_URI           = ffi::SQLITE_OPEN_URI,
-        const SQLITE_OPEN_MEMORY        = ffi::SQLITE_OPEN_MEMORY,
+        const SQLITE_OPEN_URI           = 0x00000040,
+        const SQLITE_OPEN_MEMORY        = 0x00000080,
         const SQLITE_OPEN_NO_MUTEX      = ffi::SQLITE_OPEN_NOMUTEX,
         const SQLITE_OPEN_FULL_MUTEX    = ffi::SQLITE_OPEN_FULLMUTEX,
-        const SQLITE_OPEN_SHARED_CACHE  = ffi::SQLITE_OPEN_SHAREDCACHE,
-        const SQLITE_OPEN_PRIVATE_CACHE = ffi::SQLITE_OPEN_PRIVATECACHE,
+        const SQLITE_OPEN_SHARED_CACHE  = 0x00020000,
+        const SQLITE_OPEN_PRIVATE_CACHE = 0x00040000,
     }
 }
 
