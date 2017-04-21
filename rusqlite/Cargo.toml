@@ -1,6 +1,6 @@
 [package]
 name = "rusqlite"
-version = "0.10.1"
+version = "0.11.0"
 authors = ["John Gallagher <jgallagher@bignerdranch.com>"]
 description = "Ergonomic wrapper for SQLite"
 repository = "https://github.com/jgallagher/rusqlite"
@@ -43,7 +43,7 @@ regex = "0.2"
 
 [dependencies.libsqlite3-sys]
 path = "libsqlite3-sys"
-version = "0.7"
+version = "0.8"
 
 [dependencies.csv]
 version = "0.14"
