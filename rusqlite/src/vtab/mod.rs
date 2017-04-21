@@ -120,7 +120,9 @@ impl IndexInfo {
             (*self.0).estimatedCost = estimated_ost;
         }
     }
+
     /// Estimated number of rows returned
+    #[cfg(feature = "bundled")]
     pub fn set_estimated_rows(&mut self, estimated_rows: i64) {
         unsafe {
             (*self.0).estimatedRows = estimated_rows;
@@ -586,4 +588,5 @@ pub fn mprintf(err_msg: &str) -> *mut c_char {
 pub mod int_array;
 #[cfg(feature = "csvtab")]
 pub mod csvtab;
+#[cfg(feature = "bundled")]
 pub mod series;
