@@ -5,12 +5,13 @@ given a database and a set of SQL queries. It works as follows:
 
   1. The user database schema is copied to a temporary database.
 
-  1. All SQL queries are prepared against the temporary database. I
+  1. All SQL queries are prepared against the temporary database.
      Information regarding the WHERE and ORDER BY clauses, and other query
-     features that affect index selection, are recorded.
+     features that affect index selection are recorded.
 
-  1. The information gathered in step 2 is used to create (possibly a large
-     number of) candidate indexes.
+  1. The information gathered in step 2 is used to create candidate indexes
+     - indexes that the planner might have made use of in the previous step,
+     had they been available.
 
   1. A subset of the data in the user database is used to generate statistics
      for all existing indexes and the candidate indexes generated in step 3
@@ -67,9 +68,9 @@ Or an entire text file worth of queries with:
   ./sqlite3_expert -file &lt;text-file&gt; test.db
 </pre>
 
-By default, sqlite3_expert generates index statistics using all the data in
+By default, sqlite3\_expert generates index statistics using all the data in
 the user database. For a large database, this may be prohibitively time
-consuming. The "-sample" option may be used to configure sqlite3_expert to
+consuming. The "-sample" option may be used to configure sqlite3\_expert to
 generate statistics based on an integer percentage of the user database as
 follows:
 
