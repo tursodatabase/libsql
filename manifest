@@ -1,5 +1,5 @@
-C Fix\san\sFTS5\sbug\sthat\scould\scause\sa\sprefix-query\swithout\sa\sprefix-index\son\sa\ndatabase\sthat\scontains\sdelete-markers\sto\sreturn\sextra,\snon-matching,\srows.
-D 2017-04-21T16:04:18.457
+C Remove\sa\sNEVER\smacro\sfor\sa\scondition\sthat\smay\sbe\strue\sas\sof\s[a47efb7c].\nProblem\sreported\sby\sOSSFuzz.
+D 2017-04-21T17:03:32.804
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a8c838220f7c00820e1fc0ac1bccaaa8e5676067e1dbfa1bafa7a4ffecf8ae6
@@ -478,7 +478,7 @@ F src/vdbeblob.c 359891617358deefc85bef7bcf787fa6b77facb9
 F src/vdbemem.c 2c70f8f5de6c71fb99a22c5b83be9fab5c47cdd8e279fa44a8c00cfed06d7e89
 F src/vdbesort.c e72fe02a2121386ba767ede8942e9450878b8fc873abf3d1b6824485f092570c
 F src/vdbetrace.c 41963d5376f0349842b5fc4aaaaacd7d9cdc0834
-F src/vtab.c 007513c2ef52472fcdea6a741683d50662e82790
+F src/vtab.c 35b9bdc2b41de32a417141d12097bcc4e29a77ed7cdb8f836d1d2305d946b61b
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 40c543f0a2195d1b0dc88ef12142bea690009344
 F src/wal.h 06b2a0b599cc0f53ea97f497cf8c6b758c999f71
@@ -882,7 +882,7 @@ F test/index7.test 7feababe16f2091b229c22aff2bcc1d4d6b9d2bb
 F test/index8.test bc2e3db70e8e62459aaa1bd7e4a9b39664f8f9d7
 F test/indexedby.test 9c4cd331224e57f79fbf411ae245e6272d415985
 F test/indexexpr1.test 038b3befa74e5a75126b6e9dd2ae5df61c1c7cf7
-F test/indexexpr2.test bcf694ae72efaaeb97691b990b61e39bf233884e27b9cc6b845a1f0c6bc9f0bb
+F test/indexexpr2.test 68ee9dbe83fcf85e50f4d0bd1f742a082496f2ee5153f4be2a1861db84462bf7
 F test/indexfault.test 31d4ab9a7d2f6e9616933eb079722362a883eb1d
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
 F test/insert.test 38742b5e9601c8f8d76e9b7555f7270288c2d371
@@ -1575,7 +1575,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6b21d0fdebdccfaf63590d9ca9a279c22b8baec07c1a669b9f617f25bd857384
-R cdbe5adc9cdc11c6c21e2042b3458b4a
+P 840042cb2bed2924e2263f21887317f661e5a585c4466c3af25b91ed57a6b49b
+R deaae08958bfb25b170ee17b0f3a96e7
 U dan
-Z 85a5569935df66b83446b4c819d590d0
+Z 7063af02b35d7fd8e05a5f53a195e6a5
