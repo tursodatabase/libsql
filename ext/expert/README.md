@@ -9,9 +9,9 @@ given a database and a set of SQL queries. It works as follows:
      Information regarding the WHERE and ORDER BY clauses, and other query
      features that affect index selection are recorded.
 
-  1. The information gathered in step 2 is used to create candidate indexes
-     - indexes that the planner might have made use of in the previous step,
-     had they been available.
+  1. The information gathered in step 2 is used to create candidate 
+     indexes - indexes that the planner might have made use of in the previous
+     step, had they been available.
 
   1. A subset of the data in the user database is used to generate statistics
      for all existing indexes and the candidate indexes generated in step 3
