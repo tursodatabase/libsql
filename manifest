@@ -1,5 +1,5 @@
-C Merge\slatest\strunk\schanges\sinto\sthis\sbranch.
-D 2017-04-20T17:35:46.403
+C Update\sthe\sREADME.md\sfile\sin\sthe\sext/expert/\sdirectory.
+D 2017-04-21T19:53:39.781
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a8c838220f7c00820e1fc0ac1bccaaa8e5676067e1dbfa1bafa7a4ffecf8ae6
@@ -40,7 +40,7 @@ F ext/README.md fd5f78013b0a2bc6f0067afb19e6ad040e89a10179b4f6f03eee58fac5f169bd
 F ext/async/README.txt e12275968f6fde133a80e04387d0e839b0c51f91
 F ext/async/sqlite3async.c 0f3070cc3f5ede78f2b9361fb3b629ce200d7d74
 F ext/async/sqlite3async.h f489b080af7e72aec0e1ee6f1d98ab6cf2e4dcef
-F ext/expert/README.md 9f15075ec5ad772808eff55ef044c31140fd1146aa0a3c47eafd155e71851b01
+F ext/expert/README.md 58a5af07981d6946464eb4b069f36a18dff1d594bcf331a02b4485dac5cd5207
 F ext/expert/expert.c 33842ef151d84c5f8000f9c7b938998c6b999eaef7ce1f4eeb0df8ffe6739496
 F ext/expert/expert1.test 1033e43071b69dc2f4e88fbf03fc7f18846c9865cac14f28c80f581437f09acb
 F ext/expert/sqlite3expert.c 4bc1820a70d68b478884a26a2215df8c1f2d44fb40d9cd8c47d2046c8ce0c8bc
@@ -1582,7 +1582,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4e366996434e63f06cc451d2011f1f1464360f03430b8260e48f78a612b4e9d6 6b21d0fdebdccfaf63590d9ca9a279c22b8baec07c1a669b9f617f25bd857384
-R 3ff876810132a5a27eb9c4a943446c06
+P b1533bc455f52f570c0f4b8aaa0da802757dc89b0e45b9a9b31aa591a44bf7bd
+R 1bfa4bacff37532498e779dfe65e0523
 U dan
-Z 9bcc0d98d05bcef127f4de36c5b9d364
+Z 425c38161b659ffbe58ff987543a301c
