@@ -1,5 +1,5 @@
-C Further\simprovements\sto\scoverage\sof\sfts3\smodule.
-D 2017-04-19T13:25:45.345
+C Fix\san\sFTS5\sbug\sthat\scould\scause\sa\sprefix-query\swithout\sa\sprefix-index\son\sa\ndatabase\sthat\scontains\sdelete-markers\sto\sreturn\sextra,\snon-matching,\srows.
+D 2017-04-21T16:04:18.457
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a8c838220f7c00820e1fc0ac1bccaaa8e5676067e1dbfa1bafa7a4ffecf8ae6
@@ -105,7 +105,7 @@ F ext/fts5/fts5_buffer.c 4c1502d4c956cd092c89ce4480867f9d8bf325cd
 F ext/fts5/fts5_config.c 5af9c360e99669d29f06492c370892394aba0857
 F ext/fts5/fts5_expr.c f2825f714d91bbe62ab5820aee9ad12e0c94205b2a01725eaa9072415ae9ff1c
 F ext/fts5/fts5_hash.c 880998e596b60f078348d48732ca4ad9a90caad2
-F ext/fts5/fts5_index.c 551add2b7762a2857336747def3b9d4fa304df476e188fb323492e2fd851772b
+F ext/fts5/fts5_index.c dc25123df20c60492857de491a194dab4b46ace217b8483bda305d357bf6431d
 F ext/fts5/fts5_main.c 1ba0e7806886c1bc16e20d0dde1c2b535d1aeb98cbbb937c4c3e064af5ac6f03
 F ext/fts5/fts5_storage.c 7750986004f3f0c94619a85ecb5dd6cbef53e5e3853488e8a906c269d4d11db6
 F ext/fts5/fts5_tcl.c 4a901f00c8553740dba63511603f5527d741c26a
@@ -118,7 +118,7 @@ F ext/fts5/fts5_vocab.c e44fefa7f0c1db252998af071daf06a7147e17e7
 F ext/fts5/fts5parse.y a070b538e08ae9e2177d15c337ed2a3464408f0f886e746307098f746efd94ca
 F ext/fts5/mkportersteps.tcl 5acf962d2e0074f701620bb5308155fa1e4a63ba
 F ext/fts5/test/fts5_common.tcl b01c584144b5064f30e6c648145a2dd6bc440841
-F ext/fts5/test/fts5aa.test b3cb080db4851580705c5e261c9d4308edf030d5cbbc24b5d6668403b73f023b
+F ext/fts5/test/fts5aa.test 6dd1bfa4426a8d77e8c8d447aad02515c85118b082f24053ac89802300077ff1
 F ext/fts5/test/fts5ab.test 30325a89453280160106be411bba3acf138e6d1b
 F ext/fts5/test/fts5ac.test 55cad4275a1f5acabfe14d8442a8046b47e49e5f
 F ext/fts5/test/fts5ad.test 36995f0586f30f5602074e012b9224c71ec5171c
@@ -1575,8 +1575,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ea8a0d2ce0cb1ca3f4f18c72fb780d1c26792799acc87e6726f9eaccf2f178bf
-Q +6417c1bbeceaea88ec1972149a1afc74fc40a677c1447160e53dbf4ba0930c42
-R 14e4aea31c2fb4851be140b478cd2183
+P 6b21d0fdebdccfaf63590d9ca9a279c22b8baec07c1a669b9f617f25bd857384
+R cdbe5adc9cdc11c6c21e2042b3458b4a
 U dan
-Z e5cfee329765f9813d3e00bb36cba8b5
+Z 85a5569935df66b83446b4c819d590d0
