@@ -1,5 +1,5 @@
-C Remove\sa\sNEVER\smacro\sfor\sa\scondition\sthat\smay\sbe\strue\sas\sof\s[a47efb7c].\nProblem\sreported\sby\sOSSFuzz.
-D 2017-04-21T17:03:32.804
+C Fix\san\sassertion\sfault\sfound\sby\sOSSFuzz.
+D 2017-04-22T00:20:49.403
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a8c838220f7c00820e1fc0ac1bccaaa8e5676067e1dbfa1bafa7a4ffecf8ae6
@@ -352,7 +352,7 @@ F src/build.c 4026a9c554b233e50c5e9ad46963e676cf54dd2306d952aa1eaa07a1bc9ce14f
 F src/callback.c 2e76147783386374bf01b227f752c81ec872d730
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 47d91a25ad8f199a71a5b1b7b169d6dd0d6e98c5719eca801568798743d1161c
-F src/date.c ee676e7694dfadbdd2fde1a258a71be8360ba5ae
+F src/date.c cc42a41c7422389860d40419a5e3bce5eaf6e7835c3ba2677751dc653550a5c7
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
 F src/delete.c 0d9d5549d42e79ce4d82ff1db1e6c81e36d2f67c
 F src/expr.c f10e35dc50be4c8f82eb99bf5d8530229d1d60957cc3c9473ffe584d0444087c
@@ -1575,7 +1575,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 840042cb2bed2924e2263f21887317f661e5a585c4466c3af25b91ed57a6b49b
-R deaae08958bfb25b170ee17b0f3a96e7
-U dan
-Z 7063af02b35d7fd8e05a5f53a195e6a5
+P bdc50d8d127266d02b291f6bfcd4e35eb07994ce23987d6e3921124cd881929a
+R 1b30a3da1c7e16f4c6839737edbe387b
+U drh
+Z 8bf87a9edded8e3e15721afc254bc71f
