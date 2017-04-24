@@ -3703,7 +3703,7 @@ int sqlite3_stmt_busy(sqlite3_stmt*);
 ** The [sqlite3_value_blob | sqlite3_value_type()] family of
 ** interfaces require protected sqlite3_value objects.
 */
-typedef struct Mem sqlite3_value;
+typedef struct sqlite3_value sqlite3_value;
 
 /*
 ** CAPI3REF: SQL Function Context Object

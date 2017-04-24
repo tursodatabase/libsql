@@ -486,6 +486,7 @@ static void registerTrace(int iReg, Mem *p){
   printf("REG[%d] = ", iReg);
   memTracePrint(p);
   printf("\n");
+  sqlite3VdbeCheckMemInvariants(p);
 }
 #endif
 
@@ -1152,7 +1153,7 @@ case OP_Null: {           /* out2 */
 case OP_SoftNull: {
   assert( pOp->p1>0 && pOp->p1<=(p->nMem+1 - p->nCursor) );
   pOut = &aMem[pOp->p1];
-  pOut->flags = (pOut->flags|MEM_Null)&~MEM_Undefined;
+  pOut->flags = (pOut->flags&~(MEM_Undefined|MEM_AffMask))|MEM_Null;
   break;
 }
 
@@ -1495,7 +1496,6 @@ case OP_Remainder: {           /* same as TK_REM, in1, in2, out3 */
   type2 = numericType(pIn2);
   pOut = &aMem[pOp->p3];
   flags = pIn1->flags | pIn2->flags;
-  if( (flags & MEM_Null)!=0 ) goto arithmetic_result_is_null;
   if( (type1 & type2 & MEM_Int)!=0 ){
     iA = pIn1->u.i;
     iB = pIn2->u.i;
@@ -1519,6 +1519,8 @@ case OP_Remainder: {           /* same as TK_REM, in1, in2, out3 */
     }
     pOut->u.i = iB;
     MemSetTypeFlag(pOut, MEM_Int);
+  }else if( (flags & MEM_Null)!=0 ){
+    goto arithmetic_result_is_null;
   }else{
     bIntint = 0;
 fp_math:
@@ -2425,6 +2427,23 @@ case OP_NotNull: {            /* same as TK_NOTNULL, jump, in1 */
   pIn1 = &aMem[pOp->p1];
   VdbeBranchTaken( (pIn1->flags & MEM_Null)==0, 2);
   if( (pIn1->flags & MEM_Null)==0 ){
+    goto jump_to_p2;
+  }
+  break;
+}
+
+/* Opcode: IfNullRow P1 P2 P3 * *
+** Synopsis: if P1.nullRow then r[P3]=NULL, goto P2
+**
+** Check the cursor P1 to see if it is currently pointing at a NULL row.
+** If it is, then set register P3 to NULL and jump immediately to P2.
+** If P1 is not on a NULL row, then fall through without making any
+** changes.
+*/
+case OP_IfNullRow: {         /* jump */
+  assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  if( p->apCsr[pOp->p1]->nullRow ){
+    sqlite3VdbeMemSetNull(aMem + pOp->p3);
     goto jump_to_p2;
   }
   break;

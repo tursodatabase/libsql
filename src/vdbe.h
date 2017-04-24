@@ -30,7 +30,7 @@ typedef struct Vdbe Vdbe;
 ** The names of the following types declared in vdbeInt.h are required
 ** for the VdbeOp definition.
 */
-typedef struct Mem Mem;
+typedef struct sqlite3_value Mem;
 typedef struct SubProgram SubProgram;
 
 /*

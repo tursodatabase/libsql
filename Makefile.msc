@@ -21,7 +21,7 @@ USE_AMALGAMATION = 1
 # Set this non-0 to enable full warnings (-W4, etc) when compiling.
 #
 !IFNDEF USE_FULLWARN
-USE_FULLWARN = 0
+USE_FULLWARN = 1
 !ENDIF
 
 # Set this non-0 to enable treating warnings as errors (-WX, etc) when

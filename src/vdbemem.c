@@ -40,6 +40,10 @@ int sqlite3VdbeCheckMemInvariants(Mem *p){
   /* Cannot be both MEM_Int and MEM_Real at the same time */
   assert( (p->flags & (MEM_Int|MEM_Real))!=(MEM_Int|MEM_Real) );
 
+  /* Cannot be both MEM_Null and some other type */
+  assert( (p->flags & MEM_Null)==0 ||
+          (p->flags & (MEM_Int|MEM_Real|MEM_Str|MEM_Blob))==0 );
+
   /* The szMalloc field holds the correct memory allocation size */
   assert( p->szMalloc==0
        || p->szMalloc==sqlite3DbMallocSize(p->db,p->zMalloc) );
@@ -125,26 +129,24 @@ SQLITE_NOINLINE int sqlite3VdbeMemGrow(Mem *pMem, int n, int bPreserve){
 
   assert( pMem->szMalloc==0
        || pMem->szMalloc==sqlite3DbMallocSize(pMem->db, pMem->zMalloc) );
-  if( pMem->szMalloc<n ){
-    if( n<32 ) n = 32;
-    if( bPreserve && pMem->szMalloc>0 && pMem->z==pMem->zMalloc ){
-      pMem->z = pMem->zMalloc = sqlite3DbReallocOrFree(pMem->db, pMem->z, n);
-      bPreserve = 0;
-    }else{
-      if( pMem->szMalloc>0 ) sqlite3DbFreeNN(pMem->db, pMem->zMalloc);
-      pMem->zMalloc = sqlite3DbMallocRaw(pMem->db, n);
-    }
-    if( pMem->zMalloc==0 ){
-      sqlite3VdbeMemSetNull(pMem);
-      pMem->z = 0;
-      pMem->szMalloc = 0;
-      return SQLITE_NOMEM_BKPT;
-    }else{
-      pMem->szMalloc = sqlite3DbMallocSize(pMem->db, pMem->zMalloc);
-    }
+  if( n<32 ) n = 32;
+  if( bPreserve && pMem->szMalloc>0 && pMem->z==pMem->zMalloc ){
+    pMem->z = pMem->zMalloc = sqlite3DbReallocOrFree(pMem->db, pMem->z, n);
+    bPreserve = 0;
+  }else{
+    if( pMem->szMalloc>0 ) sqlite3DbFreeNN(pMem->db, pMem->zMalloc);
+    pMem->zMalloc = sqlite3DbMallocRaw(pMem->db, n);
+  }
+  if( pMem->zMalloc==0 ){
+    sqlite3VdbeMemSetNull(pMem);
+    pMem->z = 0;
+    pMem->szMalloc = 0;
+    return SQLITE_NOMEM_BKPT;
+  }else{
+    pMem->szMalloc = sqlite3DbMallocSize(pMem->db, pMem->zMalloc);
   }
 
-  if( bPreserve && pMem->z && pMem->z!=pMem->zMalloc ){
+  if( bPreserve && pMem->z && ALWAYS(pMem->z!=pMem->zMalloc) ){
     memcpy(pMem->zMalloc, pMem->z, pMem->n);
   }
   if( (pMem->flags&MEM_Dyn)!=0 ){

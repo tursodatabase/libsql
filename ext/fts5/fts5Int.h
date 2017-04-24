@@ -654,6 +654,7 @@ struct Fts5Token {
 /* Parse a MATCH expression. */
 int sqlite3Fts5ExprNew(
   Fts5Config *pConfig, 
+  int iCol,                       /* Column on LHS of MATCH operator */
   const char *zExpr,
   Fts5Expr **ppNew, 
   char **pzErr
@@ -738,7 +739,7 @@ void sqlite3Fts5ParseNearsetFree(Fts5ExprNearset*);
 void sqlite3Fts5ParseNodeFree(Fts5ExprNode*);
 
 void sqlite3Fts5ParseSetDistance(Fts5Parse*, Fts5ExprNearset*, Fts5Token*);
-void sqlite3Fts5ParseSetColset(Fts5Parse*, Fts5ExprNearset*, Fts5Colset*);
+void sqlite3Fts5ParseSetColset(Fts5Parse*, Fts5ExprNode*, Fts5Colset*);
 Fts5Colset *sqlite3Fts5ParseColsetInvert(Fts5Parse*, Fts5Colset*);
 void sqlite3Fts5ParseFinished(Fts5Parse *pParse, Fts5ExprNode *p);
 void sqlite3Fts5ParseNear(Fts5Parse *pParse, Fts5Token*);

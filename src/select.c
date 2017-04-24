@@ -112,14 +112,13 @@ Select *sqlite3SelectNew(
 ){
   Select *pNew;
   Select standin;
-  sqlite3 *db = pParse->db;
-  pNew = sqlite3DbMallocRawNN(db, sizeof(*pNew) );
+  pNew = sqlite3DbMallocRawNN(pParse->db, sizeof(*pNew) );
   if( pNew==0 ){
-    assert( db->mallocFailed );
+    assert( pParse->db->mallocFailed );
     pNew = &standin;
   }
   if( pEList==0 ){
-    pEList = sqlite3ExprListAppend(pParse, 0, sqlite3Expr(db,TK_ASTERISK,0));
+    pEList = sqlite3ExprListAppend(pParse, 0, sqlite3Expr(pParse->db,TK_ASTERISK,0));
   }
   pNew->pEList = pEList;
   pNew->op = TK_SELECT;
@@ -132,7 +131,7 @@ Select *sqlite3SelectNew(
   pNew->addrOpenEphm[0] = -1;
   pNew->addrOpenEphm[1] = -1;
   pNew->nSelectRow = 0;
-  if( pSrc==0 ) pSrc = sqlite3DbMallocZero(db, sizeof(*pSrc));
+  if( pSrc==0 ) pSrc = sqlite3DbMallocZero(pParse->db, sizeof(*pSrc));
   pNew->pSrc = pSrc;
   pNew->pWhere = pWhere;
   pNew->pGroupBy = pGroupBy;
@@ -143,9 +142,9 @@ Select *sqlite3SelectNew(
   pNew->pLimit = pLimit;
   pNew->pOffset = pOffset;
   pNew->pWith = 0;
-  assert( pOffset==0 || pLimit!=0 || pParse->nErr>0 || db->mallocFailed!=0 );
-  if( db->mallocFailed ) {
-    clearSelect(db, pNew, pNew!=&standin);
+  assert( pOffset==0 || pLimit!=0 || pParse->nErr>0 || pParse->db->mallocFailed!=0 );
+  if( pParse->db->mallocFailed ) {
+    clearSelect(pParse->db, pNew, pNew!=&standin);
     pNew = 0;
   }else{
     assert( pNew->pSrc!=0 || pParse->nErr>0 );
@@ -1530,6 +1529,7 @@ static void generateColumnTypes(
   NameContext sNC;
   sNC.pSrcList = pTabList;
   sNC.pParse = pParse;
+  sNC.pNext = 0;
   for(i=0; i<pEList->nExpr; i++){
     Expr *p = pEList->a[i].pExpr;
     const char *zType;
@@ -1555,6 +1555,19 @@ static void generateColumnTypes(
 }
 
 /*
+** Return the Table objecct in the SrcList that has cursor iCursor.
+** Or return NULL if no such Table object exists in the SrcList.
+*/
+static Table *tableWithCursor(SrcList *pList, int iCursor){
+  int j;
+  for(j=0; j<pList->nSrc; j++){
+    if( pList->a[j].iCursor==iCursor ) return pList->a[j].pTab;
+  }
+  return 0;
+}
+
+
+/*
 ** Generate code that will tell the VDBE the names of columns
 ** in the result set.  This information is used to provide the
 ** azCol[] values in the callback.
@@ -1565,7 +1578,8 @@ static void generateColumnNames(
   ExprList *pEList    /* Expressions defining the result set */
 ){
   Vdbe *v = pParse->pVdbe;
-  int i, j;
+  int i;
+  Table *pTab;
   sqlite3 *db = pParse->db;
   int fullNames, shortNames;
 
@@ -1590,15 +1604,11 @@ static void generateColumnNames(
     if( pEList->a[i].zName ){
       char *zName = pEList->a[i].zName;
       sqlite3VdbeSetColName(v, i, COLNAME_NAME, zName, SQLITE_TRANSIENT);
-    }else if( p->op==TK_COLUMN || p->op==TK_AGG_COLUMN ){
-      Table *pTab;
+    }else if( (p->op==TK_COLUMN || p->op==TK_AGG_COLUMN)
+           && (pTab = tableWithCursor(pTabList, p->iTable))!=0
+    ){
       char *zCol;
       int iCol = p->iColumn;
-      for(j=0; ALWAYS(j<pTabList->nSrc); j++){
-        if( pTabList->a[j].iCursor==p->iTable ) break;
-      }
-      assert( j<pTabList->nSrc );
-      pTab = pTabList->a[j].pTab;
       if( iCol<0 ) iCol = pTab->iPKey;
       assert( iCol==-1 || (iCol>=0 && iCol<pTab->nCol) );
       if( iCol<0 ){
@@ -1680,7 +1690,7 @@ int sqlite3ColumnsFromExprList(
         pColExpr = pColExpr->pRight;
         assert( pColExpr!=0 );
       }
-      if( pColExpr->op==TK_COLUMN && ALWAYS(pColExpr->pTab!=0) ){
+      if( pColExpr->op==TK_COLUMN && pColExpr->pTab!=0 ){
         /* For columns use the column name name */
         int iCol = pColExpr->iColumn;
         pTab = pColExpr->pTab;
@@ -3134,9 +3144,24 @@ static int multiSelectOrderBy(
 #endif
 
 #if !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW)
+
+/* An instance of the SubstContext object describes an substitution edit
+** to be performed on a parse tree.
+**
+** All references to columns in table iTable are to be replaced by corresponding
+** expressions in pEList.
+*/
+typedef struct SubstContext {
+  Parse *pParse;            /* The parsing context */
+  int iTable;               /* Replace references to this table */
+  int iNewTable;            /* New table number */
+  int isLeftJoin;           /* Add TK_IF_NULL_ROW opcodes on each replacement */
+  ExprList *pEList;         /* Replacement expressions */
+} SubstContext;
+
 /* Forward Declarations */
-static void substExprList(Parse*, ExprList*, int, ExprList*);
-static void substSelect(Parse*, Select *, int, ExprList*, int);
+static void substExprList(SubstContext*, ExprList*);
+static void substSelect(SubstContext*, Select*, int);
 
 /*
 ** Scan through the expression pExpr.  Replace every reference to
@@ -3147,29 +3172,38 @@ static void substSelect(Parse*, Select *, int, ExprList*, int);
 ** This routine is part of the flattening procedure.  A subquery
 ** whose result set is defined by pEList appears as entry in the
 ** FROM clause of a SELECT such that the VDBE cursor assigned to that
-** FORM clause entry is iTable.  This routine make the necessary 
+** FORM clause entry is iTable.  This routine makes the necessary 
 ** changes to pExpr so that it refers directly to the source table
 ** of the subquery rather the result set of the subquery.
 */
 static Expr *substExpr(
-  Parse *pParse,      /* Report errors here */
-  Expr *pExpr,        /* Expr in which substitution occurs */
-  int iTable,         /* Table to be substituted */
-  ExprList *pEList    /* Substitute expressions */
+  SubstContext *pSubst,  /* Description of the substitution */
+  Expr *pExpr            /* Expr in which substitution occurs */
 ){
-  sqlite3 *db = pParse->db;
   if( pExpr==0 ) return 0;
-  if( pExpr->op==TK_COLUMN && pExpr->iTable==iTable ){
+  if( ExprHasProperty(pExpr, EP_FromJoin) && pExpr->iRightJoinTable==pSubst->iTable ){
+    pExpr->iRightJoinTable = pSubst->iNewTable;
+  }
+  if( pExpr->op==TK_COLUMN && pExpr->iTable==pSubst->iTable ){
     if( pExpr->iColumn<0 ){
       pExpr->op = TK_NULL;
     }else{
       Expr *pNew;
-      Expr *pCopy = pEList->a[pExpr->iColumn].pExpr;
-      assert( pEList!=0 && pExpr->iColumn<pEList->nExpr );
+      Expr *pCopy = pSubst->pEList->a[pExpr->iColumn].pExpr;
+      Expr ifNullRow;
+      assert( pSubst->pEList!=0 && pExpr->iColumn<pSubst->pEList->nExpr );
       assert( pExpr->pLeft==0 && pExpr->pRight==0 );
       if( sqlite3ExprIsVector(pCopy) ){
-        sqlite3VectorErrorMsg(pParse, pCopy);
+        sqlite3VectorErrorMsg(pSubst->pParse, pCopy);
       }else{
+        sqlite3 *db = pSubst->pParse->db;
+        if( pSubst->isLeftJoin && pCopy->op!=TK_COLUMN ){
+          memset(&ifNullRow, 0, sizeof(ifNullRow));
+          ifNullRow.op = TK_IF_NULL_ROW;
+          ifNullRow.pLeft = pCopy;
+          ifNullRow.iTable = pSubst->iNewTable;
+          pCopy = &ifNullRow;
+        }
         pNew = sqlite3ExprDup(db, pCopy, 0);
         if( pNew && (pExpr->flags & EP_FromJoin) ){
           pNew->iRightJoinTable = pExpr->iRightJoinTable;
@@ -3180,51 +3214,47 @@ static Expr *substExpr(
       }
     }
   }else{
-    pExpr->pLeft = substExpr(pParse, pExpr->pLeft, iTable, pEList);
-    pExpr->pRight = substExpr(pParse, pExpr->pRight, iTable, pEList);
+    pExpr->pLeft = substExpr(pSubst, pExpr->pLeft);
+    pExpr->pRight = substExpr(pSubst, pExpr->pRight);
     if( ExprHasProperty(pExpr, EP_xIsSelect) ){
-      substSelect(pParse, pExpr->x.pSelect, iTable, pEList, 1);
+      substSelect(pSubst, pExpr->x.pSelect, 1);
     }else{
-      substExprList(pParse, pExpr->x.pList, iTable, pEList);
+      substExprList(pSubst, pExpr->x.pList);
     }
   }
   return pExpr;
 }
 static void substExprList(
-  Parse *pParse,       /* Report errors here */
-  ExprList *pList,     /* List to scan and in which to make substitutes */
-  int iTable,          /* Table to be substituted */
-  ExprList *pEList     /* Substitute values */
+  SubstContext *pSubst, /* Description of the substitution */
+  ExprList *pList       /* List to scan and in which to make substitutes */
 ){
   int i;
   if( pList==0 ) return;
   for(i=0; i<pList->nExpr; i++){
-    pList->a[i].pExpr = substExpr(pParse, pList->a[i].pExpr, iTable, pEList);
+    pList->a[i].pExpr = substExpr(pSubst, pList->a[i].pExpr);
   }
 }
 static void substSelect(
-  Parse *pParse,       /* Report errors here */
-  Select *p,           /* SELECT statement in which to make substitutions */
-  int iTable,          /* Table to be replaced */
-  ExprList *pEList,    /* Substitute values */
-  int doPrior          /* Do substitutes on p->pPrior too */
+  SubstContext *pSubst, /* Description of the substitution */
+  Select *p,            /* SELECT statement in which to make substitutions */
+  int doPrior           /* Do substitutes on p->pPrior too */
 ){
   SrcList *pSrc;
   struct SrcList_item *pItem;
   int i;
   if( !p ) return;
   do{
-    substExprList(pParse, p->pEList, iTable, pEList);
-    substExprList(pParse, p->pGroupBy, iTable, pEList);
-    substExprList(pParse, p->pOrderBy, iTable, pEList);
-    p->pHaving = substExpr(pParse, p->pHaving, iTable, pEList);
-    p->pWhere = substExpr(pParse, p->pWhere, iTable, pEList);
+    substExprList(pSubst, p->pEList);
+    substExprList(pSubst, p->pGroupBy);
+    substExprList(pSubst, p->pOrderBy);
+    p->pHaving = substExpr(pSubst, p->pHaving);
+    p->pWhere = substExpr(pSubst, p->pWhere);
     pSrc = p->pSrc;
     assert( pSrc!=0 );
     for(i=pSrc->nSrc, pItem=pSrc->a; i>0; i--, pItem++){
-      substSelect(pParse, pItem->pSelect, iTable, pEList, 1);
+      substSelect(pSubst, pItem->pSelect, 1);
       if( pItem->fg.isTabFunc ){
-        substExprList(pParse, pItem->u1.pFuncArg, iTable, pEList);
+        substExprList(pSubst, pItem->u1.pFuncArg);
       }
     }
   }while( doPrior && (p = p->pPrior)!=0 );
@@ -3267,8 +3297,8 @@ static void substSelect(
 **        FROM-clause subquery that is a candidate for flattening.  (2b is
 **        due to ticket [2f7170d73bf9abf80] from 2015-02-09.)
 **
-**   (3)  The subquery is not the right operand of a left outer join
-**        (Originally ticket #306.  Strengthened by ticket #3300)
+**   (3)  The subquery is not the right operand of a LEFT JOIN
+**        or the subquery is not itself a join.
 **
 **   (4)  The subquery is not DISTINCT.
 **
@@ -3280,7 +3310,7 @@ static void substSelect(
 **        DISTINCT.
 **
 **   (7)  The subquery has a FROM clause.  TODO:  For subqueries without
-**        A FROM clause, consider adding a FROM close with the special
+**        A FROM clause, consider adding a FROM clause with the special
 **        table sqlite_once that consists of a single row containing a
 **        single NULL.
 **
@@ -3386,6 +3416,8 @@ static int flattenSubquery(
   SrcList *pSubSrc;   /* The FROM clause of the subquery */
   ExprList *pList;    /* The result set of the outer query */
   int iParent;        /* VDBE cursor number of the pSub result set temp table */
+  int iNewParent = -1;/* Replacement table for iParent */
+  int isLeftJoin = 0; /* True if pSub is the right side of a LEFT JOIN */    
   int i;              /* Loop counter */
   Expr *pWhere;                    /* The WHERE clause */
   struct SrcList_item *pSubitem;   /* The subquery */
@@ -3412,7 +3444,7 @@ static int flattenSubquery(
       return 0;                                          /* Restriction (2b)  */
     }
   }
-    
+
   pSubSrc = pSub->pSrc;
   assert( pSubSrc );
   /* Prior to version 3.1.2, when LIMIT and OFFSET had to be simple constants,
@@ -3450,10 +3482,9 @@ static int flattenSubquery(
     return 0; /* Restriction (23) */
   }
 
-  /* OBSOLETE COMMENT 1:
-  ** Restriction 3:  If the subquery is a join, make sure the subquery is 
-  ** not used as the right operand of an outer join.  Examples of why this
-  ** is not allowed:
+  /*
+  ** If the subquery is the right operand of a LEFT JOIN, then the
+  ** subquery may not be a join itself.  Example of why this is not allowed:
   **
   **         t1 LEFT OUTER JOIN (t2 JOIN t3)
   **
@@ -3463,27 +3494,13 @@ static int flattenSubquery(
   **
   ** which is not at all the same thing.
   **
-  ** OBSOLETE COMMENT 2:
-  ** Restriction 12:  If the subquery is the right operand of a left outer
-  ** join, make sure the subquery has no WHERE clause.
-  ** An examples of why this is not allowed:
-  **
-  **         t1 LEFT OUTER JOIN (SELECT * FROM t2 WHERE t2.x>0)
-  **
-  ** If we flatten the above, we would get
-  **
-  **         (t1 LEFT OUTER JOIN t2) WHERE t2.x>0
-  **
-  ** But the t2.x>0 test will always fail on a NULL row of t2, which
-  ** effectively converts the OUTER JOIN into an INNER JOIN.
-  **
-  ** THIS OVERRIDES OBSOLETE COMMENTS 1 AND 2 ABOVE:
-  ** Ticket #3300 shows that flattening the right term of a LEFT JOIN
-  ** is fraught with danger.  Best to avoid the whole thing.  If the
-  ** subquery is the right term of a LEFT JOIN, then do not flatten.
+  ** See also tickets #306, #350, and #3300.
   */
   if( (pSubitem->fg.jointype & JT_OUTER)!=0 ){
-    return 0;
+    isLeftJoin = 1;
+    if( pSubSrc->nSrc>1 ){
+      return 0; /* Restriction (3) */
+    }
   }
 
   /* Restriction 17: If the sub-query is a compound SELECT, then it must
@@ -3692,6 +3709,7 @@ static int flattenSubquery(
       sqlite3IdListDelete(db, pSrc->a[i+iFrom].pUsing);
       assert( pSrc->a[i+iFrom].fg.isTabFunc==0 );
       pSrc->a[i+iFrom] = pSubSrc->a[i];
+      iNewParent = pSubSrc->a[i].iCursor;
       memset(&pSubSrc->a[i], 0, sizeof(pSubSrc->a[i]));
     }
     pSrc->a[iFrom].fg.jointype = jointype;
@@ -3737,6 +3755,9 @@ static int flattenSubquery(
       pSub->pOrderBy = 0;
     }
     pWhere = sqlite3ExprDup(db, pSub->pWhere, 0);
+    if( isLeftJoin ){
+      setJoinExpr(pWhere, iNewParent);
+    }
     if( subqueryIsAgg ){
       assert( pParent->pHaving==0 );
       pParent->pHaving = pParent->pWhere;
@@ -3750,7 +3771,13 @@ static int flattenSubquery(
       pParent->pWhere = sqlite3ExprAnd(db, pWhere, pParent->pWhere);
     }
     if( db->mallocFailed==0 ){
-      substSelect(pParse, pParent, iParent, pSub->pEList, 0);
+      SubstContext x;
+      x.pParse = pParse;
+      x.iTable = iParent;
+      x.iNewTable = iNewParent;
+      x.isLeftJoin = isLeftJoin;
+      x.pEList = pSub->pEList;
+      substSelect(&x, pParent, 0);
     }
   
     /* The flattened query is distinct if either the inner or the
@@ -3853,8 +3880,14 @@ static int pushDownWhereTerms(
   if( sqlite3ExprIsTableConstant(pWhere, iCursor) ){
     nChng++;
     while( pSubq ){
+      SubstContext x;
       pNew = sqlite3ExprDup(pParse->db, pWhere, 0);
-      pNew = substExpr(pParse, pNew, iCursor, pSubq->pEList);
+      x.pParse = pParse;
+      x.iTable = iCursor;
+      x.iNewTable = iCursor;
+      x.isLeftJoin = 0;
+      x.pEList = pSubq->pEList;
+      pNew = substExpr(&x, pNew);
       pSubq->pWhere = sqlite3ExprAnd(pParse->db, pSubq->pWhere, pNew);
       pSubq = pSubq->pPrior;
     }

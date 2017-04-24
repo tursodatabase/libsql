@@ -58,7 +58,7 @@ char sqlite3ExprAffinity(Expr *pExpr){
     return sqlite3AffinityType(pExpr->u.zToken, 0);
   }
 #endif
-  if( op==TK_AGG_COLUMN || op==TK_COLUMN ){
+  if( (op==TK_AGG_COLUMN || op==TK_COLUMN) && pExpr->pTab ){
     return sqlite3TableColumnAffinity(pExpr->pTab, pExpr->iColumn);
   }
   if( op==TK_SELECT_COLUMN ){
@@ -956,7 +956,7 @@ void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr, u32 n){
   z = pExpr->u.zToken;
   assert( z!=0 );
   assert( z[0]!=0 );
-  assert( n==sqlite3Strlen30(z) );
+  assert( n==(u32)sqlite3Strlen30(z) );
   if( z[1]==0 ){
     /* Wildcard of the form "?".  Assign the next variable number */
     assert( z[0]=='?' );
@@ -3192,6 +3192,10 @@ void sqlite3ExprCodeGetColumnOfTable(
   int iCol,       /* Index of the column to extract */
   int regOut      /* Extract the value into this register */
 ){
+  if( pTab==0 ){
+    sqlite3VdbeAddOp3(v, OP_Column, iTabCur, iCol, regOut);
+    return;
+  }
   if( iCol<0 || iCol==pTab->iPKey ){
     sqlite3VdbeAddOp2(v, OP_Rowid, iTabCur, regOut);
   }else{
@@ -3882,6 +3886,17 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
 
     case TK_VECTOR: {
       sqlite3ErrorMsg(pParse, "row value misused");
+      break;
+    }
+
+    case TK_IF_NULL_ROW: {
+      int addrINR;
+      addrINR = sqlite3VdbeAddOp1(v, OP_IfNullRow, pExpr->iTable);
+      sqlite3ExprCachePush(pParse);
+      inReg = sqlite3ExprCodeTarget(pParse, pExpr->pLeft, target);
+      sqlite3ExprCachePop(pParse);
+      sqlite3VdbeJumpHere(v, addrINR);
+      sqlite3VdbeChangeP3(v, addrINR, inReg);
       break;
     }
 

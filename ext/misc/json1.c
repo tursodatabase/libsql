@@ -90,6 +90,7 @@ static const char jsonIsSpace[] = {
   ** but the definitions need to be repeated for separate compilation. */
   typedef sqlite3_uint64 u64;
   typedef unsigned int u32;
+  typedef unsigned short int u16;
   typedef unsigned char u8;
 #endif
 
@@ -169,7 +170,17 @@ struct JsonParse {
   u32 *aUp;          /* Index of parent of each node */
   u8 oom;            /* Set to true if out of memory */
   u8 nErr;           /* Number of errors seen */
+  u16 iDepth;        /* Nesting depth */
 };
+
+/*
+** Maximum nesting depth of JSON for this implementation.
+**
+** This limit is needed to avoid a stack overflow in the recursive
+** descent parser.  A depth of 2000 is far deeper than any sane JSON
+** should go.
+*/
+#define JSON_MAX_DEPTH  2000
 
 /**************************************************************************
 ** Utility routines for dealing with JsonString objects
@@ -735,8 +746,10 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
     if( iThis<0 ) return -1;
     for(j=i+1;;j++){
       while( safe_isspace(z[j]) ){ j++; }
+      if( ++pParse->iDepth > JSON_MAX_DEPTH ) return -1;
       x = jsonParseValue(pParse, j);
       if( x<0 ){
+        pParse->iDepth--;
         if( x==(-2) && pParse->nNode==(u32)iThis+1 ) return j+1;
         return -1;
       }
@@ -749,6 +762,7 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
       if( z[j]!=':' ) return -1;
       j++;
       x = jsonParseValue(pParse, j);
+      pParse->iDepth--;
       if( x<0 ) return -1;
       j = x;
       while( safe_isspace(z[j]) ){ j++; }
@@ -765,7 +779,9 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
     if( iThis<0 ) return -1;
     for(j=i+1;;j++){
       while( safe_isspace(z[j]) ){ j++; }
+      if( ++pParse->iDepth > JSON_MAX_DEPTH ) return -1;
       x = jsonParseValue(pParse, j);
+      pParse->iDepth--;
       if( x<0 ){
         if( x==(-3) && pParse->nNode==(u32)iThis+1 ) return j+1;
         return -1;
@@ -785,7 +801,10 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
     j = i+1;
     for(;;){
       c = z[j];
-      if( c==0 ) return -1;
+      if( (c & ~0x1f)==0 ){
+        /* Control characters are not allowed in strings */
+        return -1;
+      }
       if( c=='\\' ){
         c = z[++j];
         if( c=='"' || c=='\\' || c=='/' || c=='b' || c=='f'
@@ -885,6 +904,7 @@ static int jsonParse(
   i = jsonParseValue(pParse, 0);
   if( pParse->oom ) i = -1;
   if( i>0 ){
+    assert( pParse->iDepth==0 );
     while( safe_isspace(zJson[i]) ) i++;
     if( zJson[i] ) i = -1;
   }
@@ -1385,7 +1405,7 @@ static void jsonExtractFunc(
 */
 static JsonNode *jsonMergePatch(
   JsonParse *pParse,   /* The JSON parser that contains the TARGET */
-  int iTarget,         /* Node of the TARGET in pParse */
+  u32 iTarget,         /* Node of the TARGET in pParse */
   JsonNode *pPatch     /* The PATCH */
 ){
   u32 i, j;

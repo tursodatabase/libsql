@@ -830,8 +830,8 @@ static Bitmask exprSelectUsage(WhereMaskSet *pMaskSet, Select *pS){
 ** Expression pExpr is one operand of a comparison operator that might
 ** be useful for indexing.  This routine checks to see if pExpr appears
 ** in any index.  Return TRUE (1) if pExpr is an indexed term and return
-** FALSE (0) if not.  If TRUE is returned, also set *piCur to the cursor
-** number of the table that is indexed and *piColumn to the column number
+** FALSE (0) if not.  If TRUE is returned, also set aiCurCol[0] to the cursor
+** number of the table that is indexed and aiCurCol[1] to the column number
 ** of the column that is indexed, or XN_EXPR (-2) if an expression is being
 ** indexed.
 **
@@ -839,18 +839,37 @@ static Bitmask exprSelectUsage(WhereMaskSet *pMaskSet, Select *pS){
 ** true even if that particular column is not indexed, because the column
 ** might be added to an automatic index later.
 */
-static int exprMightBeIndexed(
+static SQLITE_NOINLINE int exprMightBeIndexed2(
   SrcList *pFrom,        /* The FROM clause */
-  int op,                /* The specific comparison operator */
   Bitmask mPrereq,       /* Bitmask of FROM clause terms referenced by pExpr */
-  Expr *pExpr,           /* An operand of a comparison operator */
-  int *piCur,            /* Write the referenced table cursor number here */
-  int *piColumn          /* Write the referenced table column number here */
+  int *aiCurCol,         /* Write the referenced table cursor and column here */
+  Expr *pExpr            /* An operand of a comparison operator */
 ){
   Index *pIdx;
   int i;
   int iCur;
-
+  for(i=0; mPrereq>1; i++, mPrereq>>=1){}
+  iCur = pFrom->a[i].iCursor;
+  for(pIdx=pFrom->a[i].pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+    if( pIdx->aColExpr==0 ) continue;
+    for(i=0; i<pIdx->nKeyCol; i++){
+      if( pIdx->aiColumn[i]!=XN_EXPR ) continue;
+      if( sqlite3ExprCompareSkip(pExpr, pIdx->aColExpr->a[i].pExpr, iCur)==0 ){
+        aiCurCol[0] = iCur;
+        aiCurCol[1] = XN_EXPR;
+        return 1;
+      }
+    }
+  }
+  return 0;
+}
+static int exprMightBeIndexed(
+  SrcList *pFrom,        /* The FROM clause */
+  Bitmask mPrereq,       /* Bitmask of FROM clause terms referenced by pExpr */
+  int *aiCurCol,         /* Write the referenced table cursor & column here */
+  Expr *pExpr,           /* An operand of a comparison operator */
+  int op                 /* The specific comparison operator */
+){
   /* If this expression is a vector to the left or right of a 
   ** inequality constraint (>, <, >= or <=), perform the processing 
   ** on the first element of the vector.  */
@@ -862,26 +881,13 @@ static int exprMightBeIndexed(
   }
 
   if( pExpr->op==TK_COLUMN ){
-    *piCur = pExpr->iTable;
-    *piColumn = pExpr->iColumn;
+    aiCurCol[0] = pExpr->iTable;
+    aiCurCol[1] = pExpr->iColumn;
     return 1;
   }
   if( mPrereq==0 ) return 0;                 /* No table references */
   if( (mPrereq&(mPrereq-1))!=0 ) return 0;   /* Refs more than one table */
-  for(i=0; mPrereq>1; i++, mPrereq>>=1){}
-  iCur = pFrom->a[i].iCursor;
-  for(pIdx=pFrom->a[i].pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-    if( pIdx->aColExpr==0 ) continue;
-    for(i=0; i<pIdx->nKeyCol; i++){
-      if( pIdx->aiColumn[i]!=XN_EXPR ) continue;
-      if( sqlite3ExprCompareSkip(pExpr, pIdx->aColExpr->a[i].pExpr, iCur)==0 ){
-        *piCur = iCur;
-        *piColumn = XN_EXPR;
-        return 1;
-      }
-    }
-  }
-  return 0;
+  return exprMightBeIndexed2(pFrom,mPrereq,aiCurCol,pExpr);
 }
 
 /*
@@ -961,7 +967,7 @@ static void exprAnalyze(
   pTerm->iParent = -1;
   pTerm->eOperator = 0;
   if( allowedOp(op) ){
-    int iCur, iColumn;
+    int aiCurCol[2];
     Expr *pLeft = sqlite3ExprSkipCollate(pExpr->pLeft);
     Expr *pRight = sqlite3ExprSkipCollate(pExpr->pRight);
     u16 opMask = (pTerm->prereqRight & prereqLeft)==0 ? WO_ALL : WO_EQUIV;
@@ -972,14 +978,14 @@ static void exprAnalyze(
       pLeft = pLeft->x.pList->a[pTerm->iField-1].pExpr;
     }
 
-    if( exprMightBeIndexed(pSrc, op, prereqLeft, pLeft, &iCur, &iColumn) ){
-      pTerm->leftCursor = iCur;
-      pTerm->u.leftColumn = iColumn;
+    if( exprMightBeIndexed(pSrc, prereqLeft, aiCurCol, pLeft, op) ){
+      pTerm->leftCursor = aiCurCol[0];
+      pTerm->u.leftColumn = aiCurCol[1];
       pTerm->eOperator = operatorMask(op) & opMask;
     }
     if( op==TK_IS ) pTerm->wtFlags |= TERM_IS;
     if( pRight 
-     && exprMightBeIndexed(pSrc, op, pTerm->prereqRight, pRight, &iCur,&iColumn)
+     && exprMightBeIndexed(pSrc, pTerm->prereqRight, aiCurCol, pRight, op)
     ){
       WhereTerm *pNew;
       Expr *pDup;
@@ -1009,8 +1015,8 @@ static void exprAnalyze(
         pNew = pTerm;
       }
       exprCommute(pParse, pDup);
-      pNew->leftCursor = iCur;
-      pNew->u.leftColumn = iColumn;
+      pNew->leftCursor = aiCurCol[0];
+      pNew->u.leftColumn = aiCurCol[1];
       testcase( (prereqLeft | extraRight) != prereqLeft );
       pNew->prereqRight = prereqLeft | extraRight;
       pNew->prereqAll = prereqAll;

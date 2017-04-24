@@ -1053,7 +1053,7 @@ FuncDef *sqlite3VtabOverloadFunction(
   if( NEVER(pExpr==0) ) return pDef;
   if( pExpr->op!=TK_COLUMN ) return pDef;
   pTab = pExpr->pTab;
-  if( NEVER(pTab==0) ) return pDef;
+  if( pTab==0 ) return pDef;
   if( !IsVirtual(pTab) ) return pDef;
   pVtab = sqlite3GetVTable(db, pTab)->pVtab;
   assert( pVtab!=0 );

@@ -124,6 +124,7 @@ struct WhereLoop {
       u16 nEq;               /* Number of equality constraints */
       u16 nBtm;              /* Size of BTM vector */
       u16 nTop;              /* Size of TOP vector */
+      u16 nIdxCol;           /* Index column used for ORDER BY */
       Index *pIndex;         /* Index used, or NULL */
     } btree;
     struct {               /* Information for virtual tables */
@@ -417,6 +418,7 @@ struct WhereInfo {
   SrcList *pTabList;        /* List of tables in the join */
   ExprList *pOrderBy;       /* The ORDER BY clause or NULL */
   ExprList *pResultSet;     /* Result set of the query */
+  Expr *pWhere;             /* The complete WHERE clause */
   LogEst iLimit;            /* LIMIT if wctrlFlags has WHERE_USE_LIMIT */
   int aiCurOnePass[2];      /* OP_OpenWrite cursors for the ONEPASS opt */
   int iContinue;            /* Jump here to continue with next record */
