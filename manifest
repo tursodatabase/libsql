@@ -1,5 +1,5 @@
-C Fix\san\sassertion\sfault\sfound\sby\sOSSFuzz.
-D 2017-04-22T00:20:49.403
+C When\sbuilding\san\sephemeral\stable\sof\sintegers,\sdo\snot\sassume\sthat\sthe\stable\ndoes\snot\salready\scontain\sN\sif\sthe\sinsert\scursor\spoints\sto\sN-1.\sFix\sfor\sticket\n[61fe9745].
+D 2017-04-24T14:16:55.419
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a8c838220f7c00820e1fc0ac1bccaaa8e5676067e1dbfa1bafa7a4ffecf8ae6
@@ -345,7 +345,7 @@ F src/auth.c 930b376a9c56998557367e6f7f8aaeac82a2a792
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c 24ae5472bd0b53b4130ecdda389deb621af721d1fcb50890b878102b00bd10fa
+F src/btree.c a0d9a1c782ff3d22df5d217a4fa7125dd69ad5849caa51c4442c10246ca8ae27
 F src/btree.h 80f518c0788be6cec8d9f8e13bd8e380df299d2b5e4ac340dc887b0642647cfc
 F src/btreeInt.h a392d353104b4add58b4a59cb185f5d5693dde832c565b77d8d4c343ed98f610
 F src/build.c 4026a9c554b233e50c5e9ad46963e676cf54dd2306d952aa1eaa07a1bc9ce14f
@@ -860,7 +860,7 @@ F test/in.test 20c5529986998949908f889c8208b2cd894b2cc9
 F test/in2.test 5d4c61d17493c832f7d2d32bef785119e87bde75
 F test/in3.test 3cbf58c87f4052cee3a58b37b6389777505aa0c0
 F test/in4.test d2b38cba404bc4320f4fe1b595b3d163f212c068
-F test/in5.test 6c006e0bcd7351b69350ef566e65f244023489e9
+F test/in5.test 7ae37fcd4a5e198291c6ab5f31a5bb3d15397efe8b75a6736d7a95a7b8dd9e08
 F test/incrblob.test c9b96afc292aeff43d6687bcb09b0280aa599822
 F test/incrblob2.test a5ce5ed1d0b01e2ed347245a21170372528af0a5
 F test/incrblob3.test d8d036fde015d4a159cd3cbae9d29003b37227a4
@@ -1575,7 +1575,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bdc50d8d127266d02b291f6bfcd4e35eb07994ce23987d6e3921124cd881929a
-R 1b30a3da1c7e16f4c6839737edbe387b
-U drh
-Z 8bf87a9edded8e3e15721afc254bc71f
+P e39769f442ea86273f8fb7bd2f249b7d760b2fe4bf9ec191ff91def8231f3f35
+R e0d07d9fe79e0700cdeeda8796e623bf
+U dan
+Z 6adee9578f00e93307a285e5276adbb5
