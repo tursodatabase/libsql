@@ -121,6 +121,8 @@ pub mod functions;
 pub mod blob;
 #[cfg(feature = "limits")]
 pub mod limits;
+#[cfg(feature = "hooks")]
+pub mod hooks;
 
 // Number of cached prepared statements we'll hold on to.
 const STATEMENT_CACHE_DEFAULT_CAPACITY: usize = 16;

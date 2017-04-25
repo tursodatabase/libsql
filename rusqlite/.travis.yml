@@ -30,13 +30,14 @@ script:
   - cargo test --features backup
   - cargo test --features blob
   - cargo test --features functions
+  - cargo test --features hooks
   - cargo test --features limits
   - cargo test --features load_extension
   - cargo test --features trace
   - cargo test --features chrono
   - cargo test --features serde_json
   - cargo test --features bundled
-  - cargo test --features "backup blob chrono functions limits load_extension serde_json trace"
-  - cargo test --features "backup blob chrono functions limits load_extension serde_json trace buildtime_bindgen"
-  - cargo test --features "backup blob chrono functions limits load_extension serde_json trace bundled"
-  - cargo test --features "backup blob chrono functions limits load_extension serde_json trace bundled buildtime_bindgen"
+  - cargo test --features "backup blob chrono functions hooks limits load_extension serde_json trace"
+  - cargo test --features "backup blob chrono functions hooks limits load_extension serde_json trace buildtime_bindgen"
+  - cargo test --features "backup blob chrono functions hooks limits load_extension serde_json trace bundled"
+  - cargo test --features "backup blob chrono functions hooks limits load_extension serde_json trace bundled buildtime_bindgen"
