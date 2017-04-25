@@ -52,7 +52,7 @@ pub enum Action {
     SQLITE_FUNCTION = ffi::SQLITE_FUNCTION as isize,
     SQLITE_SAVEPOINT = ffi::SQLITE_SAVEPOINT as isize,
     SQLITE_COPY = ffi::SQLITE_COPY as isize,
-    SQLITE_RECURSIVE = ffi::SQLITE_RECURSIVE as isize,
+    SQLITE_RECURSIVE = 33,
 }
 
 impl From<i32> for Action {
