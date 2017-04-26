@@ -16,7 +16,9 @@ void *sqlite3_commit_hook(sqlite3*, int(*)(void*), void*);
 void *sqlite3_rollback_hook(sqlite3*, void(*)(void *), void*);
 */
 
+
 /// Authorizer Action Codes
+#[derive(Debug, PartialEq)]
 pub enum Action {
     UNKNOWN = -1,
     SQLITE_CREATE_INDEX = ffi::SQLITE_CREATE_INDEX as isize,
@@ -91,23 +93,31 @@ impl From<i32> for Action {
             ffi::SQLITE_FUNCTION => Action::SQLITE_FUNCTION,
             ffi::SQLITE_SAVEPOINT => Action::SQLITE_SAVEPOINT,
             ffi::SQLITE_COPY => Action::SQLITE_COPY,
-            ffi::SQLITE_RECURSIVE => Action::SQLITE_RECURSIVE,
+            33 => Action::SQLITE_RECURSIVE,
             _ => Action::UNKNOWN,
         }
     }
 }
 
 impl Connection {
-    pub fn update_hook<F>(&self, hook: Option<F>)
+    /// Register a callback function to be invoked whenever a row is updated, inserted or deleted in a rowid table.
+    pub fn update_hook<F>(&self, hook: F)
         where F: FnMut(Action, &str, &str, i64)
     {
         self.db.borrow_mut().update_hook(hook);
     }
+
+    pub fn remove_update_hook(&self) {
+        self.db.borrow_mut().remove_update_hook();
+    }
 }
 
 impl InnerConnection {
-    // TODO self.update_hook(None) must be called in InnerConnection#close to free any hook
-    fn update_hook<F>(&mut self, hook: Option<F>)
+    pub fn remove_hooks(&mut self) {
+        self.remove_update_hook();
+    }
+
+    fn update_hook<F>(&mut self, hook: F)
         where F: FnMut(Action, &str, &str, i64)
     {
         unsafe extern "C" fn call_boxed_closure<F>(p_arg: *mut c_void,
@@ -120,9 +130,7 @@ impl InnerConnection {
             use std::ffi::CStr;
             use std::str;
 
-            let boxed_hook: *mut F = mem::transmute(p_arg);
-            assert!(!boxed_hook.is_null(),
-                    "Internal error - null function pointer");
+            let boxed_hook: &mut Box<F> = mem::transmute(p_arg);
 
             let action = Action::from(action_code);
             let db_name = {
@@ -134,25 +142,59 @@ impl InnerConnection {
                 str::from_utf8_unchecked(c_slice)
             };
 
-            (*boxed_hook)(action, db_name, tbl_name, row_id);
+            boxed_hook(action, db_name, tbl_name, row_id);
         }
 
-        let previous_hook = if let Some(hook) = hook {
-            let boxed_hook: *mut F = Box::into_raw(Box::new(hook));
+        let previous_hook = {
+            let boxed_hook: Box<Box<FnMut(Action, &str, &str, i64)>> = Box::new(Box::new(hook));
             unsafe {
                 ffi::sqlite3_update_hook(self.db(),
                                          Some(call_boxed_closure::<F>),
-                                         mem::transmute(boxed_hook))
+                                         Box::into_raw(boxed_hook) as *mut _)
             }
-        } else {
-            unsafe { ffi::sqlite3_update_hook(self.db(), None, ptr::null_mut()) }
         };
-        // TODO Validate: what happens if the previous hook has been set from C ?
-        if !previous_hook.is_null() {
-            // free_boxed_value
-            unsafe {
-                let _: Box<F> = Box::from_raw(mem::transmute(previous_hook));
-            }
-        }
+        free_boxed_update_hook(previous_hook);
+    }
+
+    fn remove_update_hook(&mut self) {
+        let previous_hook = unsafe { ffi::sqlite3_update_hook(self.db(), None, ptr::null_mut()) };
+        free_boxed_update_hook(previous_hook);
+    }
+
+}
+
+fn free_boxed_update_hook(hook: *mut c_void) {
+    /*
+    http://stackoverflow.com/questions/32270030/how-do-i-convert-a-rust-closure-to-a-c-style-callback
+    Double indirection (i.e. Box<Box<...>>) is necessary
+    because Box<Fn(..) -> ..> is a trait object and therefore a fat pointer,
+    incompatible with *mut c_void because of different size.
+    */
+    if !hook.is_null() {
+        let _: Box<Box<FnMut(Action, &str, &str, i64)>> = unsafe { Box::from_raw(hook as *mut _) };
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::Action;
+    use Connection;
+
+    #[test]
+    fn test_update_hook() {
+        let db = Connection::open_in_memory().unwrap();
+
+        let mut called = false;
+        db.update_hook(|action, db, tbl, row_id| {
+                           assert_eq!(Action::SQLITE_INSERT, action);
+                           assert_eq!("main", db);
+                           assert_eq!("foo", tbl);
+                           assert_eq!(1, row_id);
+                           called = true;
+                       });
+        db.execute_batch("CREATE TABLE foo (t TEXT)").unwrap();
+        db.execute_batch("INSERT INTO foo VALUES ('lisa')")
+            .unwrap();
+        assert!(called);
     }
 }

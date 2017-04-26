@@ -781,6 +781,7 @@ impl InnerConnection {
     }
 
     fn close(&mut self) -> Result<()> {
+        self.remove_hooks();
         unsafe {
             let r = ffi::sqlite3_close(self.db());
             let r = self.decode_result(r);
@@ -856,6 +857,10 @@ impl InnerConnection {
 
     fn changes(&mut self) -> c_int {
         unsafe { ffi::sqlite3_changes(self.db()) }
+    }
+
+    #[cfg(not(feature = "hooks"))]
+    fn remove_hooks(&mut self) {
     }
 }
 
