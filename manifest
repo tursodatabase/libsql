@@ -1,5 +1,5 @@
-C Fix\sa\ssubtle\sbug\sin\sLemon\sdiscovered\sand\sreported\son\sthe\smailing\slist\nby\sKelvin\sSherlock,\swho\salso\ssuggested\sthe\scorrect\sfix.
-D 2017-04-26T04:32:17.931
+C Replace\s<fts5.h>\swith\s"fts5.h"\sin\stest\sfile\sfts5_test_tok.c.
+D 2017-04-26T14:34:04.050
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a8c838220f7c00820e1fc0ac1bccaaa8e5676067e1dbfa1bafa7a4ffecf8ae6
@@ -110,7 +110,7 @@ F ext/fts5/fts5_main.c 1ba0e7806886c1bc16e20d0dde1c2b535d1aeb98cbbb937c4c3e064af
 F ext/fts5/fts5_storage.c 7750986004f3f0c94619a85ecb5dd6cbef53e5e3853488e8a906c269d4d11db6
 F ext/fts5/fts5_tcl.c 4a901f00c8553740dba63511603f5527d741c26a
 F ext/fts5/fts5_test_mi.c 783b86697ebf773c18fc109992426c0173a055bc
-F ext/fts5/fts5_test_tok.c db08af63673c3a7d39f053b36fd6e065017706be
+F ext/fts5/fts5_test_tok.c f4c27f2e3200653a458f5316f6aaa863f7532d98fff7534ece3670fb7f2c196b
 F ext/fts5/fts5_tokenize.c 2ce7b44183538ec46b7907726262ee43ffdd39a8
 F ext/fts5/fts5_unicode2.c b450b209b157d598f7b9df9f837afb75a14c24bf
 F ext/fts5/fts5_varint.c a5aceacda04dafcbae725413d7a16818ecd65738
@@ -1575,7 +1575,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1c1b0862236f564283be08338790d6494e705f1198547a59499e3f8c07f2cd99
-R f4ca2f4306b5e6dd872a5563d102577a
-U drh
-Z 2b3a1c4223ca97fbac851b16ecf78a54
+P 304689f8acb53d68e1afed6e6c4332e78132e3d57071b8f94df0d13515b3b3d8
+R 61b00e8c1460788b4584df3d61fb38a7
+U dan
+Z 4318fdde372a0dfeeb363247529017d5

@@ -40,7 +40,7 @@
 */
 #if defined(SQLITE_TEST) && defined(SQLITE_ENABLE_FTS5)
 
-#include <fts5.h>
+#include "fts5.h"
 #include <string.h>
 #include <assert.h>
 
