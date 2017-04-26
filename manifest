@@ -1,5 +1,5 @@
-C Replace\s<fts5.h>\swith\s"fts5.h"\sin\stest\sfile\sfts5_test_tok.c.
-D 2017-04-26T14:34:04.050
+C Add\snew\stest\sfile\scachespill.test.
+D 2017-04-26T17:21:33.779
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a8c838220f7c00820e1fc0ac1bccaaa8e5676067e1dbfa1bafa7a4ffecf8ae6
@@ -576,6 +576,7 @@ F test/btreefault.test c2bcb542685eea44621275cfedbd8a13f65201e3
 F test/busy.test 76b4887f8b9160ba903c1ac22e8ff406ad6ae2f0
 F test/cache.test 13bc046b26210471ca6f2889aceb1ea52dc717de
 F test/cacheflush.test af25bb1509df04c1da10e38d8f322d66eceedf61
+F test/cachespill.test 895997f84a25b323b166aecb69baab2d6380ea98f9e0bcc688c4493c535cfab9
 F test/capi2.test 011c16da245fdc0106a2785035de6b242c05e738
 F test/capi3.test f0c66919e43d42e1572a69be039e4527a931b00f
 F test/capi3b.test efb2b9cfd127efa84433cd7a2d72ce0454ae0dc4
@@ -1575,7 +1576,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 304689f8acb53d68e1afed6e6c4332e78132e3d57071b8f94df0d13515b3b3d8
-R 61b00e8c1460788b4584df3d61fb38a7
+P 63d9ca5c7392e1efe3330689fe750310a952287e843b3242178724e8561fae0e
+R c4490df1c59aee5f8635e7285ee6a7e5
 U dan
-Z 4318fdde372a0dfeeb363247529017d5
+Z 2b0ae6051b3e0017c3cacc8dc5ffb6e4
