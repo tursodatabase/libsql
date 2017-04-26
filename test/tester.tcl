@@ -586,6 +586,10 @@ proc reset_db {} {
   forcedelete test.db
   forcedelete test.db-journal
   forcedelete test.db-wal
+  for {set i 0} {$i < 16} {incr i} {
+    forcedelete test.db-journal$i
+  }
+
   sqlite3 db ./test.db
   set ::DB [sqlite3_connection_pointer db]
   if {[info exists ::SETUP_SQL]} {

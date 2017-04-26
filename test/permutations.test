@@ -273,6 +273,14 @@ test_suite "fts5" -prefix "" -description {
   All FTS5 tests.
 } -files [glob -nocomplain $::testdir/../ext/fts5/test/*.test]
 
+test_suite "server" -prefix "" -description {
+  All server-edition tests.
+} -files [
+  test_set \
+      [glob -nocomplain $::testdir/server*.test] \
+      -exclude *server1.test
+]
+
 test_suite "fts5-light" -prefix "" -description {
   All FTS5 tests.
 } -files [

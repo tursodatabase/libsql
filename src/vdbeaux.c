@@ -2639,12 +2639,13 @@ int sqlite3VdbeHalt(Vdbe *p){
     /* Check for one of the special errors */
     mrc = p->rc & 0xff;
     isSpecialError = mrc==SQLITE_NOMEM || mrc==SQLITE_IOERR
-                     || mrc==SQLITE_INTERRUPT || mrc==SQLITE_FULL;
+                     || mrc==SQLITE_INTERRUPT || mrc==SQLITE_FULL
+                     || p->rc==SQLITE_BUSY_DEADLOCK;
     if( isSpecialError ){
-      /* If the query was read-only and the error code is SQLITE_INTERRUPT, 
-      ** no rollback is necessary. Otherwise, at least a savepoint 
-      ** transaction must be rolled back to restore the database to a 
-      ** consistent state.
+      /* If the query was read-only and the error code is SQLITE_INTERRUPT
+      ** or SQLITE_BUSY_SERVER, no rollback is necessary. Otherwise, at 
+      ** least a savepoint transaction must be rolled back to restore the
+      ** database to a consistent state.
       **
       ** Even if the statement is read-only, it is important to perform
       ** a statement or transaction rollback operation. If the error 
@@ -2653,7 +2654,7 @@ int sqlite3VdbeHalt(Vdbe *p){
       ** pagerStress() in pager.c), the rollback is required to restore 
       ** the pager to a consistent state.
       */
-      if( !p->readOnly || mrc!=SQLITE_INTERRUPT ){
+      if( !p->readOnly || (mrc!=SQLITE_INTERRUPT && mrc!=SQLITE_BUSY) ){
         if( (mrc==SQLITE_NOMEM || mrc==SQLITE_FULL) && p->usesStmtJournal ){
           eStatementOp = SAVEPOINT_ROLLBACK;
         }else{

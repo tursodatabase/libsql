@@ -114,6 +114,7 @@ foreach hdr {
    pcache.h
    pragma.h
    rtree.h
+   server.h
    sqlite3session.h
    sqlite3.h
    sqlite3ext.h
@@ -319,6 +320,7 @@ foreach file {
    rowset.c
    pager.c
    wal.c
+   server.c
 
    btmutex.c
    btree.c

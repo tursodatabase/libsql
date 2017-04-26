@@ -1,0 +1,68 @@
+# 2017 April 27
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix servercrash
+
+ifcapable !crashtest {
+  finish_test
+  return
+}
+do_not_use_codec
+
+do_execsql_test 1.0 {
+  PRAGMA page_siBlockze = 4096;
+  PRAGMA auto_vacuum = OFF;
+  CREATE TABLE t1(a, b);
+  CREATE TABLE t2(c, d);
+
+  INSERT INTO t1 VALUES(1, 2), (3, 4);
+  INSERT INTO t2 VALUES(1, 2), (3, 4);
+}
+
+for {set i 0} {$i < 10} {incr i} {
+  do_test 1.$i.1 {
+    crashsql -delay 1 -file test.db { INSERT INTO t1 VALUES(5, 6) }
+  } {1 {child process exited abnormally}}
+
+  do_execsql_test 1.$i.2 {
+    SELECT * FROM t1
+  } {1 2 3 4}
+}
+
+for {set i 0} {$i < 10} {incr i} {
+  do_test 2.$i.1 {
+    crashsql -delay 1 -file test.db { INSERT INTO t1 VALUES(5, 6) }
+  } {1 {child process exited abnormally}}
+
+  do_test 2.$i.2 {
+    sqlite3 dbX test.db
+    execsql { SELECT * FROM t1 } dbX
+  } {1 2 3 4}
+  dbX close
+}
+
+db close
+for {set i 0} {$i < 10} {incr i} {
+  do_test 3.$i.1 {
+    crashsql -delay 1 -file test.db { INSERT INTO t1 VALUES(5, 6) }
+  } {1 {child process exited abnormally}}
+
+  sqlite3 db test.db
+  do_execsql_test 3.$i.2 { SELECT * FROM t1 } {1 2 3 4}
+  db close
+}
+
+finish_test
+

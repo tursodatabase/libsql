@@ -706,6 +706,9 @@ struct Pager {
   Wal *pWal;                  /* Write-ahead log used by "journal_mode=wal" */
   char *zWal;                 /* File name for write-ahead log */
 #endif
+#ifdef SQLITE_SERVER_EDITION
+  Server *pServer;
+#endif
 };
 
 /*
@@ -834,6 +837,12 @@ int sqlite3PagerUseWal(Pager *pPager, Pgno pgno){
 # define pagerWalFrames(v,w,x,y) 0
 # define pagerOpenWalIfPresent(z) SQLITE_OK
 # define pagerBeginReadTransaction(z) SQLITE_OK
+#endif
+
+#ifdef SQLITE_SERVER_EDITION
+# define pagerIsServer(x) ((x)->pServer!=0)
+#else
+# define pagerIsServer(x) 0
 #endif
 
 #ifndef NDEBUG 
@@ -1132,6 +1141,7 @@ static int pagerUnlockDb(Pager *pPager, int eLock){
   assert( !pPager->exclusiveMode || pPager->eLock==eLock );
   assert( eLock==NO_LOCK || eLock==SHARED_LOCK );
   assert( eLock!=NO_LOCK || pagerUseWal(pPager)==0 );
+  assert( eLock!=NO_LOCK || pagerIsServer(pPager)==0 );
   if( isOpen(pPager->fd) ){
     assert( pPager->eLock>=eLock );
     rc = pPager->noLock ? SQLITE_OK : sqlite3OsUnlock(pPager->fd, eLock);
@@ -1807,6 +1817,12 @@ static void pager_unlock(Pager *pPager){
   pPager->pInJournal = 0;
   releaseAllSavepoints(pPager);
 
+#ifdef SQLITE_SERVER_EDITION
+  if( pagerIsServer(pPager) ){
+    sqlite3ServerEnd(pPager->pServer);
+    pPager->eState = PAGER_OPEN;
+  }else 
+#endif
   if( pagerUseWal(pPager) ){
     assert( !isOpen(pPager->jfd) );
     sqlite3WalEndReadTransaction(pPager->pWal);
@@ -2105,6 +2121,11 @@ static int pager_end_transaction(Pager *pPager, int hasMaster, int bCommit){
     if( rc==SQLITE_NOTFOUND ) rc = SQLITE_OK;
   }
 
+#ifdef SQLITE_SERVER_EDITION
+  if( pagerIsServer(pPager) ){
+    rc2 = sqlite3ServerReleaseWriteLocks(pPager->pServer);
+  }else
+#endif
   if( !pPager->exclusiveMode 
    && (!pagerUseWal(pPager) || sqlite3WalExclusiveMode(pPager->pWal, 0))
   ){
@@ -4079,6 +4100,13 @@ int sqlite3PagerClose(Pager *pPager, sqlite3 *db){
   );
   pPager->pWal = 0;
 #endif
+#ifdef SQLITE_SERVER_EDITION
+  if( pPager->pServer ){
+    sqlite3ServerDisconnect(pPager->pServer, pPager->fd);
+    pPager->pServer = 0;
+    sqlite3_free(pPager->zJournal);
+  }
+#endif
   pager_reset(pPager);
   if( MEMDB ){
     pager_unlock(pPager);
@@ -5051,6 +5079,78 @@ static int hasHotJournal(Pager *pPager, int *pExists){
   return rc;
 }
 
+#ifdef SQLITE_SERVER_EDITION
+static int pagerServerConnect(Pager *pPager){
+  int rc = SQLITE_OK;
+  if( pPager->tempFile==0 ){
+    int iClient = 0;
+    pPager->noLock = 1;
+    pPager->journalMode = PAGER_JOURNALMODE_PERSIST;
+    rc = sqlite3ServerConnect(pPager, &pPager->pServer, &iClient);
+    if( rc==SQLITE_OK ){
+      pPager->zJournal = sqlite3_mprintf(
+          "%s-journal%d", pPager->zFilename, iClient
+      );
+      if( pPager->zJournal==0 ){
+        rc = SQLITE_NOMEM_BKPT;
+      }
+    }
+  }
+  return rc;
+}
+
+int sqlite3PagerRollbackJournal(Pager *pPager, int iClient){
+  int rc;
+  char *zJrnl = sqlite3_mprintf("%s-journal%d", pPager->zFilename, iClient);
+
+  if( zJrnl ){
+    int bExists = 0;
+    sqlite3_file *jfd = 0;
+    sqlite3_vfs * const pVfs = pPager->pVfs;
+
+    rc = sqlite3OsAccess(pVfs, zJrnl, SQLITE_ACCESS_EXISTS, &bExists);
+    if( rc==SQLITE_OK && bExists ){
+      int flags = SQLITE_OPEN_READWRITE|SQLITE_OPEN_MAIN_JOURNAL;
+      rc = sqlite3OsOpenMalloc(pVfs, zJrnl, &jfd, flags, &flags);
+    }
+    assert( rc==SQLITE_OK || jfd==0 );
+    if( jfd ){
+      sqlite3_file *saved_jfd = pPager->jfd;
+      u8 saved_eState = pPager->eState;
+      u8 saved_eLock = pPager->eLock;
+      i64 saved_journalOff = pPager->journalOff;
+      i64 saved_journalHdr = pPager->journalHdr;
+
+      pPager->eLock = EXCLUSIVE_LOCK;
+      pPager->eState = PAGER_WRITER_DBMOD;
+      pPager->jfd = jfd;
+      rc = pagerSyncHotJournal(pPager);
+      if( rc==SQLITE_OK ) rc = pager_playback(pPager, 1);
+
+      pPager->jfd = saved_jfd;
+      pPager->eState = saved_eState;
+      pPager->eLock = saved_eLock;
+      pPager->journalOff = saved_journalOff;
+      pPager->journalHdr = saved_journalHdr;
+
+      sqlite3OsCloseFree(jfd);
+      if( rc==SQLITE_OK ){
+        rc = sqlite3OsDelete(pVfs, zJrnl, 0);
+      }
+    }
+    sqlite3_free(zJrnl);
+  }else{
+    rc = SQLITE_NOMEM_BKPT;
+  }
+
+  return rc;
+}
+
+#else
+# define pagerServerConnect(pPager) SQLITE_OK
+#endif
+
+
 /*
 ** This function is called to obtain a shared lock on the database file.
 ** It is illegal to call sqlite3PagerGet() until after this function
@@ -5090,7 +5190,9 @@ int sqlite3PagerSharedLock(Pager *pPager){
   assert( pPager->eState==PAGER_OPEN || pPager->eState==PAGER_READER );
   assert( pPager->errCode==SQLITE_OK );
 
-  if( !pagerUseWal(pPager) && pPager->eState==PAGER_OPEN ){
+  if( !pagerUseWal(pPager) 
+   && !pagerIsServer(pPager) 
+   && pPager->eState==PAGER_OPEN ){
     int bHotJournal = 1;          /* True if there exists a hot journal-file */
 
     assert( !MEMDB );
@@ -5269,8 +5371,19 @@ int sqlite3PagerSharedLock(Pager *pPager){
 #ifndef SQLITE_OMIT_WAL
     assert( pPager->pWal==0 || rc==SQLITE_OK );
 #endif
+
+    if( rc==SQLITE_OK && pagerUseWal(pPager)==0 ){
+      rc = pagerServerConnect(pPager);
+    }
   }
 
+#ifdef SQLITE_SERVER_EDITION
+  if( pagerIsServer(pPager) ){
+    assert( rc==SQLITE_OK );
+    pager_reset(pPager);
+    rc = sqlite3ServerBegin(pPager->pServer);
+  }else
+#endif
   if( pagerUseWal(pPager) ){
     assert( rc==SQLITE_OK );
     rc = pagerBeginReadTransaction(pPager);
@@ -5564,6 +5677,12 @@ int sqlite3PagerGet(
   DbPage **ppPage,    /* Write a pointer to the page here */
   int flags           /* PAGER_GET_XXX flags */
 ){
+#ifdef SQLITE_SERVER_EDITION
+  if( pagerIsServer(pPager) ){
+    int rc = sqlite3ServerLock(pPager->pServer, pgno, 0);
+    if( rc!=SQLITE_OK ) return rc;
+  }
+#endif
   return pPager->xGet(pPager, pgno, ppPage, flags);
 }
 
@@ -5866,6 +5985,13 @@ static int pager_write(PgHdr *pPg){
   assert( pPager->readOnly==0 );
   CHECK_PAGE(pPg);
 
+#ifdef SQLITE_SERVER_EDITION
+  if( pagerIsServer(pPager) ){
+    rc = sqlite3ServerLock(pPager->pServer, pPg->pgno, 1);
+    if( rc!=SQLITE_OK ) return rc;
+  }
+#endif
+
   /* The journal file needs to be opened. Higher level routines have already
   ** obtained the necessary locks to begin the write-transaction, but the
   ** rollback journal might not yet be open. Open it now if this is the case.
@@ -6144,7 +6270,10 @@ static int pager_incr_changecounter(Pager *pPager, int isDirectMode){
 # define DIRECT_MODE isDirectMode
 #endif
 
-  if( !pPager->changeCountDone && ALWAYS(pPager->dbSize>0) ){
+  if( 0==pagerIsServer(pPager) 
+   && !pPager->changeCountDone 
+   && ALWAYS(pPager->dbSize>0) 
+  ){
     PgHdr *pPgHdr;                /* Reference to page 1 */
 
     assert( !pPager->tempFile && isOpen(pPager->fd) );

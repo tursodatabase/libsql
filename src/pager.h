@@ -236,4 +236,8 @@ void *sqlite3PagerCodec(DbPage *);
 # define enable_simulated_io_errors()
 #endif
 
+#ifdef SQLITE_SERVER_EDITION
+  int sqlite3PagerRollbackJournal(Pager*, int);
+#endif
+
 #endif /* SQLITE_PAGER_H */
