@@ -1,5 +1,5 @@
-C When\sbuilding\san\sephemeral\stable\sof\sintegers,\sdo\snot\sassume\sthat\sthe\stable\ndoes\snot\salready\scontain\sN\sif\sthe\sinsert\scursor\spoints\sto\sN-1.\sFix\sfor\sticket\n[61fe9745].
-D 2017-04-24T14:16:55.419
+C Fix\sa\ssubtle\sbug\sin\sLemon\sdiscovered\sand\sreported\son\sthe\smailing\slist\nby\sKelvin\sSherlock,\swho\salso\ssuggested\sthe\scorrect\sfix.
+D 2017-04-26T04:32:17.931
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a8c838220f7c00820e1fc0ac1bccaaa8e5676067e1dbfa1bafa7a4ffecf8ae6
@@ -1501,7 +1501,7 @@ F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/kvtest-speed.sh 4761a9c4b3530907562314d7757995787f7aef8f
-F tool/lemon.c 6b0cdffb377e79c6295c40300677688f3d35c21c0154da635642ef82dc3a5836
+F tool/lemon.c f4f1045743e12f86b132253a3192ef92c94bfceb7f41ac41b8e3b373aa78474e
 F tool/lempar.c db1bdb4821f2d8fbd76e577cf3ab18642c8d08d1
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
@@ -1575,7 +1575,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e39769f442ea86273f8fb7bd2f249b7d760b2fe4bf9ec191ff91def8231f3f35
-R e0d07d9fe79e0700cdeeda8796e623bf
-U dan
-Z 6adee9578f00e93307a285e5276adbb5
+P 1c1b0862236f564283be08338790d6494e705f1198547a59499e3f8c07f2cd99
+R f4ca2f4306b5e6dd872a5563d102577a
+U drh
+Z 2b3a1c4223ca97fbac851b16ecf78a54

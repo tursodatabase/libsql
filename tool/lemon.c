@@ -4161,7 +4161,7 @@ void ReportTable(
   for(i=0; i<lemp->nxstate; i++){
     for(ap=lemp->sorted[i]->ap; ap; ap=ap->next){
       if( ap->type==REDUCE || ap->type==SHIFTREDUCE ){
-        ap->x.rp->doesReduce = i;
+        ap->x.rp->doesReduce = 1;
       }
     }
   }
