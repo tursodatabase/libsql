@@ -6439,6 +6439,10 @@ int sqlite3PagerCommitPhaseOne(
     ** backup in progress needs to be restarted.  */
     sqlite3BackupRestart(pPager->pBackup);
   }else{
+    /* If this connection is in server mode, ignore any master journal. */
+    if( pagerIsServer(pPager) ){
+      zMaster = 0;
+    }
     if( pagerUseWal(pPager) ){
       PgHdr *pList = sqlite3PcacheDirtyList(pPager->pPCache);
       PgHdr *pPageOne = 0;

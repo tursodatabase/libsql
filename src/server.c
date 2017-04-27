@@ -50,8 +50,7 @@
 typedef struct ServerHMA ServerHMA;
 
 struct ServerGlobal {
-  sqlite3_mutex *mutex;
-  ServerHMA *pHma;
+  ServerHMA *pHma;                /* Linked list of all ServerHMA objects */
 };
 static struct ServerGlobal g_server;
 
@@ -84,6 +83,19 @@ struct Server {
 #define SERVER_WRITE_LOCK 3
 #define SERVER_READ_LOCK  2
 #define SERVER_NO_LOCK    1
+
+/*
+** Global mutex functions used by code in this file.
+*/
+static void serverEnterMutex(void){
+  sqlite3_mutex_enter(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_APP1));
+}
+static void serverLeaveMutex(void){
+  sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_APP1));
+}
+static void serverAssertMutexHeld(void){
+  assert( sqlite3_mutex_held(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_APP1)) );
+}
 
 static int posixLock(int fd, int iSlot, int eLock, int bBlock){
   int res;
@@ -134,7 +146,7 @@ static int serverOpenHma(Pager *pPager, const char *zPath, ServerHMA **ppHma){
   int rc = SQLITE_OK;             /* Return code */
   ServerHMA *pHma = 0;
 
-  assert( sqlite3_mutex_held(g_server.mutex) );
+  serverAssertMutexHeld();
 
   res = stat(zPath, &sStat);
   if( res!=0 ){
@@ -229,7 +241,7 @@ static u32 *serverClientSlot(Server *p, int iClient){
 void sqlite3ServerDisconnect(Server *p, sqlite3_file *dbfd){
   if( p->pHma ){
     ServerHMA *pHma = p->pHma;
-    sqlite3_mutex_enter(g_server.mutex);
+    serverEnterMutex();
     if( p->iClient>=0 ){
       u32 *pSlot = serverClientSlot(p, p->iClient);
       *pSlot = 0;
@@ -244,7 +256,7 @@ void sqlite3ServerDisconnect(Server *p, sqlite3_file *dbfd){
       unlink(pHma->zName);
     }
     serverDecrHmaRefcount(pHma);
-    sqlite3_mutex_leave(g_server.mutex);
+    serverLeaveMutex();
   }
   sqlite3_free(p->aLock);
   sqlite3_free(p);
@@ -299,7 +311,7 @@ int sqlite3ServerConnect(
     p->iClient = -1;
     p->pPager = pPager;
 
-    sqlite3_mutex_enter(g_server.mutex);
+    serverEnterMutex();
     rc = serverOpenHma(pPager, zPath, &p->pHma);
 
     /* File is now mapped. Find a free client slot. */
@@ -333,7 +345,7 @@ int sqlite3ServerConnect(
       }
     }
 
-    sqlite3_mutex_leave(g_server.mutex);
+    serverLeaveMutex();
   }
 
   if( rc!=SQLITE_OK ){
@@ -356,7 +368,7 @@ static int serverOvercomeLock(Server *p, int bWrite, u32 v, int *pbRetry){
   }
   assert( iBlock<HMA_CLIENT_SLOTS );
 
-  sqlite3_mutex_enter(g_server.mutex);
+  serverEnterMutex();
   if( p->pHma->aClient[iBlock] ){
     bLocal = 1;
   }else{
@@ -375,7 +387,7 @@ static int serverOvercomeLock(Server *p, int bWrite, u32 v, int *pbRetry){
     assert( rc==SQLITE_OK || rc==SQLITE_BUSY );
     rc = SQLITE_OK;
   }
-  sqlite3_mutex_leave(g_server.mutex);
+  serverLeaveMutex();
 
   return rc;
 }
