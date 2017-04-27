@@ -50,7 +50,6 @@
 //! ```
 use std::io;
 use std::cmp::min;
-use std::mem;
 use std::ptr;
 
 use super::ffi;
@@ -155,7 +154,7 @@ impl<'conn> io::Read for Blob<'conn> {
             return Ok(0);
         }
         let rc =
-            unsafe { ffi::sqlite3_blob_read(self.blob, mem::transmute(buf.as_ptr()), n, self.pos) };
+            unsafe { ffi::sqlite3_blob_read(self.blob, buf.as_ptr() as *mut _, n, self.pos) };
         self.conn
             .decode_result(rc)
             .map(|_| {
@@ -184,7 +183,7 @@ impl<'conn> io::Write for Blob<'conn> {
             return Ok(0);
         }
         let rc = unsafe {
-            ffi::sqlite3_blob_write(self.blob, mem::transmute(buf.as_ptr()), n, self.pos)
+            ffi::sqlite3_blob_write(self.blob, buf.as_ptr() as *mut _, n, self.pos)
         };
         self.conn
             .decode_result(rc)

@@ -130,7 +130,8 @@ impl InnerConnection {
             use std::ffi::CStr;
             use std::str;
 
-            let boxed_hook: &mut Box<F> = mem::transmute(p_arg);
+            let boxed_hook: *mut F = mem::transmute(p_arg);
+            assert!(!boxed_hook.is_null(), "Internal error - null function pointer");
 
             let action = Action::from(action_code);
             let db_name = {
@@ -142,15 +143,15 @@ impl InnerConnection {
                 str::from_utf8_unchecked(c_slice)
             };
 
-            boxed_hook(action, db_name, tbl_name, row_id);
+            (*boxed_hook)(action, db_name, tbl_name, row_id);
         }
 
         let previous_hook = {
-            let boxed_hook: Box<Box<FnMut(Action, &str, &str, i64)>> = Box::new(Box::new(hook));
+            let boxed_hook: *mut F = Box::into_raw(Box::new(hook));
             unsafe {
                 ffi::sqlite3_update_hook(self.db(),
                                          Some(call_boxed_closure::<F>),
-                                         Box::into_raw(boxed_hook) as *mut _)
+                                         boxed_hook as *mut _)
             }
         };
         free_boxed_update_hook(previous_hook);
@@ -164,14 +165,9 @@ impl InnerConnection {
 }
 
 fn free_boxed_update_hook(hook: *mut c_void) {
-    /*
-    http://stackoverflow.com/questions/32270030/how-do-i-convert-a-rust-closure-to-a-c-style-callback
-    Double indirection (i.e. Box<Box<...>>) is necessary
-    because Box<Fn(..) -> ..> is a trait object and therefore a fat pointer,
-    incompatible with *mut c_void because of different size.
-    */
     if !hook.is_null() {
-        let _: Box<Box<FnMut(Action, &str, &str, i64)>> = unsafe { Box::from_raw(hook as *mut _) };
+        // TODO make sure that size_of::<*mut F>() is always equal to size_of::<*mut c_void>()
+        let _: Box<*mut c_void> = unsafe { Box::from_raw(hook as *mut _) };
     }
 }
 

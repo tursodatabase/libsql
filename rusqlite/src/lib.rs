@@ -781,6 +781,9 @@ impl InnerConnection {
     }
 
     fn close(&mut self) -> Result<()> {
+        if self.db.is_null() {
+            return Ok(());
+        }
         self.remove_hooks();
         unsafe {
             let r = ffi::sqlite3_close(self.db());
