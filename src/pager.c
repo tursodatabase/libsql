@@ -4100,13 +4100,6 @@ int sqlite3PagerClose(Pager *pPager, sqlite3 *db){
   );
   pPager->pWal = 0;
 #endif
-#ifdef SQLITE_SERVER_EDITION
-  if( pPager->pServer ){
-    sqlite3ServerDisconnect(pPager->pServer, pPager->fd);
-    pPager->pServer = 0;
-    sqlite3_free(pPager->zJournal);
-  }
-#endif
   pager_reset(pPager);
   if( MEMDB ){
     pager_unlock(pPager);
@@ -4123,10 +4116,24 @@ int sqlite3PagerClose(Pager *pPager, sqlite3 *db){
     ** rollback before accessing the database file.
     */
     if( isOpen(pPager->jfd) ){
+      if( pagerIsServer(pPager) ){
+        assert( pPager->journalMode==PAGER_JOURNALMODE_PERSIST );
+        pPager->journalMode = PAGER_JOURNALMODE_DELETE;
+        /* If necessary, change the pager state so that the journal file 
+        ** is deleted by the call to pagerUnlockAndRollback() below.  */
+        if( pPager->eState==PAGER_OPEN ) pPager->eState = PAGER_READER;
+      }
       pager_error(pPager, pagerSyncHotJournal(pPager));
     }
     pagerUnlockAndRollback(pPager);
   }
+#ifdef SQLITE_SERVER_EDITION
+  if( pagerIsServer(pPager) ){
+    sqlite3ServerDisconnect(pPager->pServer, pPager->fd);
+    pPager->pServer = 0;
+    sqlite3_free(pPager->zJournal);
+  }
+#endif
   sqlite3EndBenignMalloc();
   enable_simulated_io_errors();
   PAGERTRACE(("CLOSE %d\n", PAGERID(pPager)));

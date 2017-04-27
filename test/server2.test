@@ -94,8 +94,23 @@ do_test 2.8 {
   execsql COMMIT
   execsql { SELECT * FROM t1 } db2
 } {1 2 5 6}
+db2 close
 
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 3.0 {
+  CREATE TABLE t1(a, b);
+}
 
+do_test 3.1 {
+  glob test.db*
+} {test.db-journal0 test.db test.db-hma}
+
+do_test 3.2 {
+  db close
+  glob test.db*
+} {test.db}
 
 finish_test
 
