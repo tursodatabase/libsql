@@ -5839,6 +5839,7 @@ static int freeServerPage2(BtShared *pBt, MemPage *pPage, Pgno iPage){
       put4byte(&pTrunk->aData[8+nFree*4], iPage);
       put4byte(&pTrunk->aData[4], (u32)nFree+1);
     }
+    releasePage(pTrunk);
   }
 
   return rc;

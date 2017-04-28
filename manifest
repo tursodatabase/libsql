@@ -1,5 +1,5 @@
-C Use\sa\sdifferent\sfree-list\sformat\sfor\sserver-mode\sdatabases\sin\sorder\sto\sreduce\ncontention.
-D 2017-04-28T10:20:03.891
+C Add\sa\smissing\sreleasePage()\scall\sto\sthe\sserver-mode\sfree-list\smanagement\scode.
+D 2017-04-28T14:09:55.552
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a8c838220f7c00820e1fc0ac1bccaaa8e5676067e1dbfa1bafa7a4ffecf8ae6
@@ -345,7 +345,7 @@ F src/auth.c 930b376a9c56998557367e6f7f8aaeac82a2a792
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c c721037ad34eb8a0544fb6a00594ab8ff52dabcdc38d12646ca093d1f2bed521
+F src/btree.c 16a5f4fd303cad1112cfb5d08389687212e7d6f32f31fcd89986e8af688029ee
 F src/btree.h 80f518c0788be6cec8d9f8e13bd8e380df299d2b5e4ac340dc887b0642647cfc
 F src/btreeInt.h a392d353104b4add58b4a59cb185f5d5693dde832c565b77d8d4c343ed98f610
 F src/build.c 4026a9c554b233e50c5e9ad46963e676cf54dd2306d952aa1eaa07a1bc9ce14f
@@ -403,7 +403,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 3e518b962d932a997fae373366880fc028c75706
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c bf8ab605e49717c222136380453cfb7eda564f8e500d5ff6a01341ea59fefe80
-F src/server.c 350729b7a6d2975a0d8fd4a2493bf4a4554893485882f17a3cdbe1df51a5f111
+F src/server.c 88d8e543e545c5ea1d534a846bd09a3b120c7505d88cbc696d5042badbbd3652
 F src/shell.c 21b79c0e1b93f8e35fd7b4087d6ba438326c3d7e285d0dd51dfd741475f858a1
 F src/sqlite.h.in f6e3734fee6d334a896cff8f43446ca2e47dcf7e39135b3e3a596bf23cdbbc97
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1034,7 +1034,7 @@ F test/parser1.test 391b9bf9a229547a129c61ac345ed1a6f5eb1854
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
-F test/permutations.test d037d2a4d00087dc8e8446e6d392357dc5b739d1b6d08c3c1cdb7a1f072f5db7
+F test/permutations.test ca1840b39571fc87f432c104e6df00279ab67edeec0f75d8015dcfea648fee2e
 F test/pragma.test 1e94755164a3a3264cd39836de4bebcb7809e5f8
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
 F test/pragma3.test 14c12bc5352b1e100e0b6b44f371053a81ccf8ed
@@ -1580,7 +1580,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3144ae40d2eb63dfd5587579a49163ea1add5947d624daa478ada13339495af4
-R b065c920a1928240f3f2f2172780f454
+P 778e8a102d8dc7b0fa006c2d90b0a8cd36ebc1e16bd17477f2d536fc0cef4bf3
+R bc31a9e5c74073e71939ba36ad6cec43
 U dan
-Z 9c7cf36faff07e17279e8854885ab036
+Z dbcc0c7bcb7be9848e1d33747bab4d2f

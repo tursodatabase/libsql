@@ -396,7 +396,10 @@ static int serverOvercomeLock(Server *p, int bWrite, u32 v, int *pbRetry){
 ** Begin a transaction.
 */
 int sqlite3ServerBegin(Server *p){
+#if 0
   return posixLock(p->pHma->fd, p->iClient+1, SERVER_WRITE_LOCK, 0);
+#endif
+  return SQLITE_OK;
 }
 
 /*
@@ -417,7 +420,10 @@ int sqlite3ServerEnd(Server *p){
     }
   }
   p->nLock = 0;
+#if 0
   return posixLock(p->pHma->fd, p->iClient+1, SERVER_READ_LOCK, 0);
+#endif
+  return SQLITE_OK;
 }
 
 /*
