@@ -1,5 +1,5 @@
-C Add\snew\stest\sfile\scachespill.test.
-D 2017-04-26T17:21:33.779
+C Within\sa\sloop\sthat\suses\sa\snon-covering\sindex\stest,\stest\snon-indexed\sterms\sthat\ncan\sbe\stested\swithout\sseeking\sthe\smain\stable\scursor\sbefore\sthose\sthat\scannot.
+D 2017-04-28T19:59:55.785
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a8c838220f7c00820e1fc0ac1bccaaa8e5676067e1dbfa1bafa7a4ffecf8ae6
@@ -485,7 +485,7 @@ F src/wal.h 06b2a0b599cc0f53ea97f497cf8c6b758c999f71
 F src/walker.c b71a992b413b3a022572eccf29ef4b4890223791
 F src/where.c c6352f15be5031907c68bcbde96cad1a6da20e9f4051d10168a59235de9a8566
 F src/whereInt.h 2a4b634d63ce488b46d4b0da8f2eaa8f9aeab202bc25ef76f007de5e3fba1f20
-F src/wherecode.c 943e32e9dccd0af802e0683ae11071c8bd808364e5908a5fb66758bd404c8681
+F src/wherecode.c 878a8c75af2bf6103ed4d1df639ee64ddb66f11b3a388f9caf7598c159a2c9af
 F src/whereexpr.c e913aaa7b73ffcce66abcea5f197e2c538d48b5df78d0b7bba8ff4d73cc2e745
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1043,6 +1043,7 @@ F test/printf.test b3ff34e73d59124140eaf89f7672e21bc2ca5fcc
 F test/printf2.test 9e6db85f81c63f2367c34a9d7db384088bd374ad
 F test/progress.test ebab27f670bd0d4eb9d20d49cef96e68141d92fb
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
+F test/pushdown.test a5d2e5e66cc94cfb0989a5dd23e77427dd6c4313019155ba9051f52dfc5326aa
 F test/queryonly.test 5f653159e0f552f0552d43259890c1089391dcca
 F test/quick.test 1681febc928d686362d50057c642f77a02c62e57
 F test/quota-glob.test 32901e9eed6705d68ca3faee2a06b73b57cb3c26
@@ -1576,7 +1577,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 63d9ca5c7392e1efe3330689fe750310a952287e843b3242178724e8561fae0e
-R c4490df1c59aee5f8635e7285ee6a7e5
+P 2d0b64316d66a362f5891ceb71a1fd8e4607732274b09b0a8472b97eef68ebc2
+R 8c650dff0f0f10ff63f37c52f3854c68
+T *branch * pushdown-optimization
+T *sym-pushdown-optimization *
+T -sym-trunk *
 U dan
-Z 2b0ae6051b3e0017c3cacc8dc5ffb6e4
+Z 464ba506caa7cc6d49be35980d40d709

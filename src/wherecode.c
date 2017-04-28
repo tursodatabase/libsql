@@ -1129,6 +1129,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
   int addrCont;                   /* Jump here to continue with next cycle */
   int iRowidReg = 0;        /* Rowid is stored in this register, if not zero */
   int iReleaseReg = 0;      /* Temp register to free before returning */
+  Index *pIdx = 0;          /* Index used by loop (if any) */
 
   pParse = pWInfo->pParse;
   v = pParse->pVdbe;
@@ -1454,7 +1455,6 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     int endEq;                   /* True if range end uses ==, >= or <= */
     int start_constraints;       /* Start of range is constrained */
     int nConstraint;             /* Number of constraint terms */
-    Index *pIdx;                 /* The index we will be using */
     int iIdxCur;                 /* The VDBE cursor for the index */
     int nExtraReg = 0;           /* Number of extra registers needed */
     int op;                      /* Instruction opcode */
@@ -1705,6 +1705,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     }else{
       assert( pLevel->p5==0 );
     }
+    if( omitTable ) pIdx = 0;
   }else
 
 #ifndef SQLITE_OMIT_OR_OPTIMIZATION
@@ -2022,42 +2023,53 @@ Bitmask sqlite3WhereCodeOneLoopStart(
 
   /* Insert code to test every subexpression that can be completely
   ** computed using the current set of tables.
-  */
-  for(pTerm=pWC->a, j=pWC->nTerm; j>0; j--, pTerm++){
-    Expr *pE;
-    int skipLikeAddr = 0;
-    testcase( pTerm->wtFlags & TERM_VIRTUAL );
-    testcase( pTerm->wtFlags & TERM_CODED );
-    if( pTerm->wtFlags & (TERM_VIRTUAL|TERM_CODED) ) continue;
-    if( (pTerm->prereqAll & pLevel->notReady)!=0 ){
-      testcase( pWInfo->untestedTerms==0
-               && (pWInfo->wctrlFlags & WHERE_OR_SUBCLAUSE)!=0 );
-      pWInfo->untestedTerms = 1;
-      continue;
-    }
-    pE = pTerm->pExpr;
-    assert( pE!=0 );
-    if( pLevel->iLeftJoin && !ExprHasProperty(pE, EP_FromJoin) ){
-      continue;
-    }
-    if( pTerm->wtFlags & TERM_LIKECOND ){
-      /* If the TERM_LIKECOND flag is set, that means that the range search
-      ** is sufficient to guarantee that the LIKE operator is true, so we
-      ** can skip the call to the like(A,B) function.  But this only works
-      ** for strings.  So do not skip the call to the function on the pass
-      ** that compares BLOBs. */
+  **
+  ** This loop may run either once (pIdx==0) or twice (pIdx!=0). If
+  ** it is run twice, then the first iteration codes those sub-expressions
+  ** that can be computed using columns from pIdx only (without seeking
+  ** the main table cursor).  */
+  while( 1 ){
+    for(pTerm=pWC->a, j=pWC->nTerm; j>0; j--, pTerm++){
+      Expr *pE;
+      int skipLikeAddr = 0;
+      testcase( pTerm->wtFlags & TERM_VIRTUAL );
+      testcase( pTerm->wtFlags & TERM_CODED );
+      if( pTerm->wtFlags & (TERM_VIRTUAL|TERM_CODED) ) continue;
+      if( (pTerm->prereqAll & pLevel->notReady)!=0 ){
+        testcase( pWInfo->untestedTerms==0
+            && (pWInfo->wctrlFlags & WHERE_OR_SUBCLAUSE)!=0 );
+        pWInfo->untestedTerms = 1;
+        continue;
+      }
+      pE = pTerm->pExpr;
+      assert( pE!=0 );
+      if( pIdx && !sqlite3ExprCoveredByIndex(pE, pLevel->iTabCur, pIdx) ){
+        continue;
+      }
+      if( pLevel->iLeftJoin && !ExprHasProperty(pE, EP_FromJoin) ){
+        continue;
+      }
+      if( pTerm->wtFlags & TERM_LIKECOND ){
+        /* If the TERM_LIKECOND flag is set, that means that the range search
+        ** is sufficient to guarantee that the LIKE operator is true, so we
+        ** can skip the call to the like(A,B) function.  But this only works
+        ** for strings.  So do not skip the call to the function on the pass
+        ** that compares BLOBs. */
 #ifdef SQLITE_LIKE_DOESNT_MATCH_BLOBS
-      continue;
+        continue;
 #else
-      u32 x = pLevel->iLikeRepCntr;
-      assert( x>0 );
-      skipLikeAddr = sqlite3VdbeAddOp1(v, (x&1)? OP_IfNot : OP_If, (int)(x>>1));
-      VdbeCoverage(v);
+        u32 x = pLevel->iLikeRepCntr;
+        assert( x>0 );
+        skipLikeAddr = sqlite3VdbeAddOp1(v, (x&1)?OP_IfNot:OP_If, (int)(x>>1));
+        VdbeCoverage(v);
 #endif
+      }
+      sqlite3ExprIfFalse(pParse, pE, addrCont, SQLITE_JUMPIFNULL);
+      if( skipLikeAddr ) sqlite3VdbeJumpHere(v, skipLikeAddr);
+      pTerm->wtFlags |= TERM_CODED;
     }
-    sqlite3ExprIfFalse(pParse, pE, addrCont, SQLITE_JUMPIFNULL);
-    if( skipLikeAddr ) sqlite3VdbeJumpHere(v, skipLikeAddr);
-    pTerm->wtFlags |= TERM_CODED;
+    if( pIdx==0 ) break;
+    pIdx = 0;
   }
 
   /* Insert code to test for implied constraints based on transitivity
