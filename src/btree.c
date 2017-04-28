@@ -2916,6 +2916,12 @@ static int lockBtree(BtShared *pBt){
   */
   nPage = nPageHeader = get4byte(28+(u8*)pPage1->aData);
   sqlite3PagerPagecount(pBt->pPager, &nPageFile);
+#ifdef SQLITE_SERVER_EDITION
+  if( sqlite3PagerIsServer(pBt->pPager) ){
+    sqlite3PagerSetPagecount(pBt->pPager, nPage);
+    nPageFile = nPage;
+  }
+#endif
   if( nPage==0 || memcmp(24+(u8*)pPage1->aData, 92+(u8*)pPage1->aData,4)!=0 ){
     nPage = nPageFile;
   }
@@ -5776,9 +5782,14 @@ static int allocateServerPage(
   MemPage *pTrunk = 0;            /* The node page */
   Pgno pgnoNew = 0;
 
+#ifdef SQLITE_DEBUG
+  int nRef = sqlite3PagerRefcount(pBt->pPager);
+#endif
+
   assert( eMode==BTALLOC_ANY );
   assert( sqlite3_mutex_held(pBt->mutex) );
 
+  *ppPage = 0;
   rc = findServerTrunk(pBt, 1, &pTrunk);
   if( rc==SQLITE_OK ){
     int nFree;              /* Number of free pages on this trunk page */
@@ -5797,9 +5808,14 @@ static int allocateServerPage(
 
   if( rc==SQLITE_OK ){
     MemPage *pNew = 0;
-    rc = btreeGetUnusedPage(pBt, pgnoNew, &pNew, pTrunk?0:PAGER_GET_NOCONTENT);
+    int flags = pTrunk ? 0 : PAGER_GET_NOCONTENT;
+    rc = btreeGetUnusedPage(pBt, pgnoNew, &pNew, flags);
     if( rc==SQLITE_OK ){
       rc = sqlite3PagerWrite(pNew->pDbPage);
+      if( rc!=SQLITE_OK ){
+        releasePage(pNew);
+        pNew = 0;
+      }
     }
     if( rc==SQLITE_OK && pTrunk ){
       memcpy(pTrunk->aData, pNew->aData, pBt->usableSize);
@@ -5809,15 +5825,19 @@ static int allocateServerPage(
   }
 
   releasePage(pTrunk);
+  assert( (rc==SQLITE_OK)==(*ppPage!=0) );
+  assert( sqlite3PagerRefcount(pBt->pPager)==(nRef+(*ppPage!=0)) );
   return rc;
 }
 
 static int freeServerPage2(BtShared *pBt, MemPage *pPage, Pgno iPage){
   int rc;                         /* Return code */
   MemPage *pTrunk = 0;            /* The node page */
+#ifdef SQLITE_DEBUG
+  int nRef = sqlite3PagerRefcount(pBt->pPager);
+#endif
 
   assert( sqlite3_mutex_held(pBt->mutex) );
-
   rc = findServerTrunk(pBt, 0, &pTrunk);
   if( rc==SQLITE_OK ){
     int nFree;              /* Number of free pages on this trunk page */
@@ -5842,6 +5862,7 @@ static int freeServerPage2(BtShared *pBt, MemPage *pPage, Pgno iPage){
     releasePage(pTrunk);
   }
 
+  assert( nRef==sqlite3PagerRefcount(pBt->pPager) );
   return rc;
 }
 

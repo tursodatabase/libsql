@@ -5127,6 +5127,7 @@ int sqlite3PagerRollbackJournal(Pager *pPager, int iClient){
       u8 saved_eLock = pPager->eLock;
       i64 saved_journalOff = pPager->journalOff;
       i64 saved_journalHdr = pPager->journalHdr;
+      char *saved_zJournal = pPager->zJournal;
 
       pPager->eLock = EXCLUSIVE_LOCK;
       pPager->eState = PAGER_WRITER_DBMOD;
@@ -5139,6 +5140,7 @@ int sqlite3PagerRollbackJournal(Pager *pPager, int iClient){
       pPager->eLock = saved_eLock;
       pPager->journalOff = saved_journalOff;
       pPager->journalHdr = saved_journalHdr;
+      pPager->zJournal = saved_zJournal;
 
       sqlite3OsCloseFree(jfd);
       if( rc==SQLITE_OK ){
@@ -7667,6 +7669,10 @@ int sqlite3PagerIsServer(Pager *pPager){
 }
 int sqlite3PagerWritelock(Pager *pPager, Pgno pgno){
   return sqlite3ServerLock(pPager->pServer, pgno, 1);
+}
+void sqlite3PagerSetPagecount(Pager *pPager, u32 nPage){
+  assert( pPager->eState==PAGER_READER );
+  pPager->dbSize = nPage;
 }
 #endif
 

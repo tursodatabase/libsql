@@ -201,11 +201,11 @@ static int serverOpenHma(Pager *pPager, const char *zPath, ServerHMA **ppHma){
             }else{
               rc = SQLITE_ERROR;
             }
+            for(i=0; rc==SQLITE_OK && i<HMA_CLIENT_SLOTS; i++){
+              rc = sqlite3PagerRollbackJournal(pPager, i);
+            }
           }else{
             rc = serverMapFile(pHma);
-          }
-          for(i=0; rc==SQLITE_OK && i<HMA_CLIENT_SLOTS; i++){
-            rc = sqlite3PagerRollbackJournal(pPager, i);
           }
           if( rc==SQLITE_OK ){
             rc = posixLock(pHma->fd, 0, SERVER_READ_LOCK, 1);

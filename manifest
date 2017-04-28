@@ -1,5 +1,5 @@
-C Add\sa\smissing\sreleasePage()\scall\sto\sthe\sserver-mode\sfree-list\smanagement\scode.
-D 2017-04-28T14:09:55.552
+C Fix\svarious\sbugs\srevealed\sby\srunning\sperformance\stests.
+D 2017-04-28T17:32:57.316
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a8c838220f7c00820e1fc0ac1bccaaa8e5676067e1dbfa1bafa7a4ffecf8ae6
@@ -345,7 +345,7 @@ F src/auth.c 930b376a9c56998557367e6f7f8aaeac82a2a792
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c 16a5f4fd303cad1112cfb5d08389687212e7d6f32f31fcd89986e8af688029ee
+F src/btree.c defa7525774e74977aaed98242160002fbeecaf96e4f8da7911a1f43c3a16754
 F src/btree.h 80f518c0788be6cec8d9f8e13bd8e380df299d2b5e4ac340dc887b0642647cfc
 F src/btreeInt.h a392d353104b4add58b4a59cb185f5d5693dde832c565b77d8d4c343ed98f610
 F src/build.c 4026a9c554b233e50c5e9ad46963e676cf54dd2306d952aa1eaa07a1bc9ce14f
@@ -389,8 +389,8 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c 30e2c43e4955db990e5b5a81e901f8aa74cc8820
 F src/os_win.c 2a6c73eef01c51a048cc4ddccd57f981afbec18a
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 2bea7ef08f65fbc2419925870dd4fb0736951623759a0cb5cb664956d1ce53c1
-F src/pager.h 4ef462a008f9c44f201298aefaa2fa9ace9657eba1aec623211893dd7f83290d
+F src/pager.c b9ae00a1daf843c0eee6b1aff427453990f4e56e99bbeaf0322bbce807980b3d
+F src/pager.h c14a05a9c0ff7face5c3cfec285f29dc297b308e9584a8e6bae134a2a3dd57a1
 F src/parse.y 0513387ce02fea97897d8caef82d45f347818593f24f1bdc48e0c530a8af122d
 F src/pcache.c 62835bed959e2914edd26afadfecce29ece0e870
 F src/pcache.h 2cedcd8407eb23017d92790b112186886e179490
@@ -403,7 +403,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 3e518b962d932a997fae373366880fc028c75706
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c bf8ab605e49717c222136380453cfb7eda564f8e500d5ff6a01341ea59fefe80
-F src/server.c 88d8e543e545c5ea1d534a846bd09a3b120c7505d88cbc696d5042badbbd3652
+F src/server.c 143a16259e3b6786e2fcc0c3321b1c495e5d4a9ac57761581a99b20d6565a619
 F src/shell.c 21b79c0e1b93f8e35fd7b4087d6ba438326c3d7e285d0dd51dfd741475f858a1
 F src/sqlite.h.in f6e3734fee6d334a896cff8f43446ca2e47dcf7e39135b3e3a596bf23cdbbc97
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1580,7 +1580,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 778e8a102d8dc7b0fa006c2d90b0a8cd36ebc1e16bd17477f2d536fc0cef4bf3
-R bc31a9e5c74073e71939ba36ad6cec43
+P a5a085483c66b17727cf4d2a15165621016031ab78990cb5977ccdbd231d13ac
+R c6c0a835b38330053a58b1b4289c39cf
 U dan
-Z dbcc0c7bcb7be9848e1d33747bab4d2f
+Z 12d4c81995414ce72af03f0392a0e5ee
