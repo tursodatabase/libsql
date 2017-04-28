@@ -41,7 +41,8 @@ do_test 1.4 {
   db2 close
   file exists test.db-hma
 } {1}
-do_test 1.5 {
+integrity_check 1.5
+do_test 1.6 {
   db close
   file exists test.db-hma
 } {0}

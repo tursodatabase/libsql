@@ -7661,4 +7661,13 @@ int sqlite3PagerWalFramesize(Pager *pPager){
 }
 #endif
 
+#ifdef SQLITE_SERVER_EDITION
+int sqlite3PagerIsServer(Pager *pPager){
+  return pagerIsServer(pPager);
+}
+int sqlite3PagerWritelock(Pager *pPager, Pgno pgno){
+  return sqlite3ServerLock(pPager->pServer, pgno, 1);
+}
+#endif
+
 #endif /* SQLITE_OMIT_DISKIO */

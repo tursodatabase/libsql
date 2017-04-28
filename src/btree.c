@@ -5616,6 +5616,239 @@ int sqlite3BtreePrevious(BtCursor *pCur, int *pRes){
   return SQLITE_OK;
 }
 
+#ifdef SQLITE_SERVER_EDITION
+
+#define SERVER_DEFAULT_FREELISTS      16
+#define SERVER_DEFAULT_FREELIST_SIZE 128
+
+/*
+** Allocate the free-node and the first SERVER_DEFAULT_FREELISTS 
+** trunk pages.
+*/
+static int allocateServerFreenode(BtShared *pBt){
+  int rc;
+  MemPage *pPage1 = pBt->pPage1;
+
+  rc = sqlite3PagerWrite(pPage1->pDbPage);
+  if( rc==SQLITE_OK ){
+    Pgno pgnoNode = (++pBt->nPage);
+    MemPage *pNode = 0;
+    int i;
+
+    put4byte(&pPage1->aData[32], pgnoNode);
+    rc = btreeGetUnusedPage(pBt, pgnoNode, &pNode, PAGER_GET_NOCONTENT);
+    if( rc==SQLITE_OK ){
+      rc = sqlite3PagerWrite(pNode->pDbPage);
+    }
+    if( rc==SQLITE_OK ){
+      put4byte(&pNode->aData[0], 0);
+      put4byte(&pNode->aData[4], SERVER_DEFAULT_FREELISTS);
+    }
+    for(i=0; rc==SQLITE_OK && i<SERVER_DEFAULT_FREELISTS; i++){
+      MemPage *pTrunk = 0;
+      Pgno pgnoTrunk;
+      if( ++pBt->nPage==PENDING_BYTE_PAGE(pBt) ) pBt->nPage++;
+      pgnoTrunk = pBt->nPage;
+
+      rc = btreeGetUnusedPage(pBt, pgnoTrunk, &pTrunk, PAGER_GET_NOCONTENT);
+      if( rc==SQLITE_OK ){
+        rc = sqlite3PagerWrite(pTrunk->pDbPage);
+      }
+      if( rc==SQLITE_OK ){
+        memset(pTrunk->aData, 0, 8);
+        put4byte(&pNode->aData[8+i*4], pgnoTrunk);
+      }
+      releasePage(pTrunk);
+    }
+    releasePage(pNode);
+  }
+
+  return rc;
+}
+
+/*
+** Return a reference to the first trunk page in one of the database free-lists.
+** Allocate the database free-lists if required.
+*/
+static int findServerTrunk(BtShared *pBt, int bAlloc, MemPage **ppTrunk){
+  MemPage *pPage1 = pBt->pPage1;
+  MemPage *pNode = 0;             /* The node page */
+  MemPage *pTrunk = 0;            /* The returned page */
+  Pgno iNode;                     /* Page number of node page */
+  int rc = SQLITE_OK;
+
+  /* If the node page and free-list trunks have not yet been allocated, allocate
+  ** them now.  */
+  pPage1 = pBt->pPage1;
+  iNode = get4byte(&pPage1->aData[32]);
+  if( iNode==0 ){
+    rc = allocateServerFreenode(pBt);
+    iNode = get4byte(&pPage1->aData[32]);
+  }
+
+  /* Grab the node page */
+  if( rc==SQLITE_OK ){
+    rc = btreeGetUnusedPage(pBt, iNode, &pNode, 0);
+  }
+  if( rc==SQLITE_OK ){
+    int nList;                    /* Number of free-lists in this db */
+    int i;
+
+    /* Try to lock a free-list trunk. If bAlloc is true, it has to be a
+    ** free-list trunk with at least one entry in the free-list. */
+    nList = (int)get4byte(&pNode->aData[4]);
+    for(i=0; i<nList; i++){
+      Pgno iTrunk = get4byte(&pNode->aData[8+i*4]);
+      if( SQLITE_OK==sqlite3PagerWritelock(pBt->pPager, iTrunk) ){
+        rc = btreeGetUnusedPage(pBt, iTrunk, &pTrunk, 0);
+        if( rc==SQLITE_OK && bAlloc ){
+          if( !get4byte(&pTrunk->aData[0]) && !get4byte(&pTrunk->aData[4]) ){
+            releasePage(pTrunk);
+            pTrunk = 0;
+          }
+        }
+        if( rc!=SQLITE_OK || pTrunk ) break;
+      }
+    }
+
+    /* No free pages in any free-list. Or perhaps we were locked out. In 
+    ** either case, try to allocate more from the end of the file now.  */
+    if( i==nList ){
+      assert( rc==SQLITE_OK && pTrunk==0 );
+      rc = sqlite3PagerWrite(pPage1->pDbPage);
+      for(i=0; rc==SQLITE_OK && i<nList; i++){
+        /* Add some free pages to each free-list. No server-locks are required
+        ** to do this as we have a write-lock on page 1 - guaranteeing
+        ** exclusive access to the db file.  */
+        MemPage *pT = 0;
+        Pgno iTrunk = get4byte(&pNode->aData[8+i*4]);
+        rc = btreeGetUnusedPage(pBt, iTrunk, &pT, 0);
+        if( rc==SQLITE_OK ){
+          rc = sqlite3PagerWrite(pT->pDbPage);
+        }
+        if( rc==SQLITE_OK ){
+          int iPg = get4byte(&pT->aData[4]);
+          for(/*no-op*/; iPg<SERVER_DEFAULT_FREELIST_SIZE; iPg++){
+            if( ++pBt->nPage==PENDING_BYTE_PAGE(pBt) ) pBt->nPage++;
+            put4byte(&pT->aData[8+iPg*4], pBt->nPage);
+          }
+          put4byte(&pT->aData[4], iPg);
+          if( pTrunk==0 ){
+            pTrunk = pT;
+            pT = 0;
+          }
+        }
+        releasePage(pT);
+      }
+      if( rc==SQLITE_OK ){
+        MemPage *pLast = 0;
+        rc = btreeGetUnusedPage(pBt, pBt->nPage, &pLast, 0);
+        if( rc==SQLITE_OK ){
+          rc = sqlite3PagerWrite(pLast->pDbPage);
+          releasePage(pLast);
+          put4byte(28 + (u8*)pPage1->aData, pBt->nPage);
+        }
+      }
+    }
+  }
+
+  releasePage(pNode);
+  if( rc==SQLITE_OK ){
+    assert( pTrunk );
+    rc = sqlite3PagerWrite(pTrunk->pDbPage);
+  }
+  if( rc!=SQLITE_OK ){
+    releasePage(pTrunk);
+    pTrunk = 0;
+  }
+  *ppTrunk = pTrunk;
+  return rc;
+}
+
+static int allocateServerPage(
+  BtShared *pBt,         /* The btree */
+  MemPage **ppPage,      /* Store pointer to the allocated page here */
+  Pgno *pPgno,           /* Store the page number here */
+  Pgno nearby,           /* Search for a page near this one */
+  u8 eMode               /* BTALLOC_EXACT, BTALLOC_LT, or BTALLOC_ANY */
+){
+  int rc;                         /* Return code */
+  MemPage *pTrunk = 0;            /* The node page */
+  Pgno pgnoNew = 0;
+
+  assert( eMode==BTALLOC_ANY );
+  assert( sqlite3_mutex_held(pBt->mutex) );
+
+  rc = findServerTrunk(pBt, 1, &pTrunk);
+  if( rc==SQLITE_OK ){
+    int nFree;              /* Number of free pages on this trunk page */
+    nFree = (int)get4byte(&pTrunk->aData[4]);
+    if( nFree==0 ){
+      pgnoNew = get4byte(&pTrunk->aData[0]);
+      assert( pgnoNew );
+    }else{
+      nFree--;
+      pgnoNew = get4byte(&pTrunk->aData[8+4*nFree]);
+      put4byte(&pTrunk->aData[4], (u32)nFree);
+      releasePage(pTrunk);
+      pTrunk = 0;
+    }
+  }
+
+  if( rc==SQLITE_OK ){
+    MemPage *pNew = 0;
+    rc = btreeGetUnusedPage(pBt, pgnoNew, &pNew, pTrunk?0:PAGER_GET_NOCONTENT);
+    if( rc==SQLITE_OK ){
+      rc = sqlite3PagerWrite(pNew->pDbPage);
+    }
+    if( rc==SQLITE_OK && pTrunk ){
+      memcpy(pTrunk->aData, pNew->aData, pBt->usableSize);
+    }
+    *ppPage = pNew;
+    *pPgno = pgnoNew;
+  }
+
+  releasePage(pTrunk);
+  return rc;
+}
+
+static int freeServerPage2(BtShared *pBt, MemPage *pPage, Pgno iPage){
+  int rc;                         /* Return code */
+  MemPage *pTrunk = 0;            /* The node page */
+
+  assert( sqlite3_mutex_held(pBt->mutex) );
+
+  rc = findServerTrunk(pBt, 0, &pTrunk);
+  if( rc==SQLITE_OK ){
+    int nFree;              /* Number of free pages on this trunk page */
+    nFree = (int)get4byte(&pTrunk->aData[4]);
+    if( nFree>=((pBt->usableSize / 4) - 2) ){
+      if( pPage==0 ){
+        rc = btreeGetUnusedPage(pBt, iPage, &pPage, 0);
+      }else{
+        sqlite3PagerRef(pPage->pDbPage);
+      }
+      rc = sqlite3PagerWrite(pPage->pDbPage);
+      if( rc==SQLITE_OK ){
+        memcpy(pPage->aData, pTrunk->aData, pBt->usableSize);
+        put4byte(&pTrunk->aData[0], iPage);
+        put4byte(&pTrunk->aData[4], 0);
+      }
+      releasePage(pPage);
+    }else{
+      put4byte(&pTrunk->aData[8+nFree*4], iPage);
+      put4byte(&pTrunk->aData[4], (u32)nFree+1);
+    }
+  }
+
+  return rc;
+}
+
+#else
+# define allocateServerPage(v, w, x, y, z) SQLITE_OK
+# define freeServerPage2(x, y, z) SQLITE_OK
+#endif /* SQLITE_SERVER_EDITION */
+
 /*
 ** Allocate a new page from the database file.
 **
@@ -5652,6 +5885,10 @@ static int allocateBtreePage(
   MemPage *pTrunk = 0;
   MemPage *pPrevTrunk = 0;
   Pgno mxPage;     /* Total size of the database file */
+
+  if( sqlite3PagerIsServer(pBt->pPager) ){
+    return allocateServerPage(pBt, ppPage, pPgno, nearby, eMode); 
+  }
 
   assert( sqlite3_mutex_held(pBt->mutex) );
   assert( eMode==BTALLOC_ANY || (nearby>0 && IfNotOmitAV(pBt->autoVacuum)) );
@@ -5980,12 +6217,6 @@ static int freePage2(BtShared *pBt, MemPage *pMemPage, Pgno iPage){
     pPage = btreePageLookup(pBt, iPage);
   }
 
-  /* Increment the free page count on pPage1 */
-  rc = sqlite3PagerWrite(pPage1->pDbPage);
-  if( rc ) goto freepage_out;
-  nFree = get4byte(&pPage1->aData[36]);
-  put4byte(&pPage1->aData[36], nFree+1);
-
   if( pBt->btsFlags & BTS_SECURE_DELETE ){
     /* If the secure_delete option is enabled, then
     ** always fully overwrite deleted information with zeros.
@@ -5997,6 +6228,17 @@ static int freePage2(BtShared *pBt, MemPage *pMemPage, Pgno iPage){
     }
     memset(pPage->aData, 0, pPage->pBt->pageSize);
   }
+  
+  if( sqlite3PagerIsServer(pBt->pPager) ){
+    rc = freeServerPage2(pBt, pPage, iPage);
+    goto freepage_out;
+  }
+
+  /* Increment the free page count on pPage1 */
+  rc = sqlite3PagerWrite(pPage1->pDbPage);
+  if( rc ) goto freepage_out;
+  nFree = get4byte(&pPage1->aData[36]);
+  put4byte(&pPage1->aData[36], nFree+1);
 
   /* If the database supports auto-vacuum, write an entry in the pointer-map
   ** to indicate that the page is free.
@@ -9442,6 +9684,49 @@ end_of_check:
 #endif /* SQLITE_OMIT_INTEGRITY_CHECK */
 
 #ifndef SQLITE_OMIT_INTEGRITY_CHECK
+
+#if !defined(SQLITE_OMIT_INTEGRITY_CHECK) && defined(SQLITE_SERVER_EDITION)
+static void checkServerList(IntegrityCk *pCheck){
+  u32 pgnoNode = get4byte(&pCheck->pBt->pPage1->aData[32]);
+  if( pgnoNode ){
+    DbPage *pNode = 0;
+    u8 *aNodeData;
+    u32 nList;                    /* Number of free-lists */
+    int i;
+
+    checkRef(pCheck, pgnoNode);
+    if( sqlite3PagerGet(pCheck->pPager, (Pgno)pgnoNode, &pNode, 0) ){
+      checkAppendMsg(pCheck, "failed to get node page %d", pgnoNode);
+      return;
+    }
+    aNodeData = sqlite3PagerGetData(pNode);
+    nList = get4byte(&aNodeData[4]);
+    for(i=0; i<nList; i++){
+      u32 pgnoTrunk = get4byte(&aNodeData[8+4*i]);
+      while( pgnoTrunk ){
+        DbPage *pTrunk = 0;
+        checkRef(pCheck, pgnoTrunk);
+        if( sqlite3PagerGet(pCheck->pPager, (Pgno)pgnoTrunk, &pTrunk, 0) ){
+          checkAppendMsg(pCheck, "failed to get page %d", pgnoTrunk);
+          pgnoTrunk = 0;
+        }else{
+          u8 *aTrunkData = sqlite3PagerGetData(pTrunk);
+          int nLeaf = (int)get4byte(&aTrunkData[4]);
+          int iLeaf;
+          for(iLeaf=0; iLeaf<nLeaf; iLeaf++){
+            u32 pgnoLeaf = get4byte(&aTrunkData[8+iLeaf*4]);
+            checkRef(pCheck, pgnoLeaf);
+          }
+          pgnoTrunk = get4byte(&aTrunkData[0]);
+          sqlite3PagerUnref(pTrunk);
+        }
+      }
+    }
+
+    sqlite3PagerUnref(pNode);
+  }
+}
+#endif
 /*
 ** This routine does a complete check of the given BTree file.  aRoot[] is
 ** an array of pages numbers were each page number is the root page of
@@ -9507,8 +9792,15 @@ char *sqlite3BtreeIntegrityCheck(
   /* Check the integrity of the freelist
   */
   sCheck.zPfx = "Main freelist: ";
-  checkList(&sCheck, 1, get4byte(&pBt->pPage1->aData[32]),
-            get4byte(&pBt->pPage1->aData[36]));
+#ifdef SQLITE_SERVER_EDITION
+  if( sqlite3PagerIsServer(pBt->pPager) ){
+    checkServerList(&sCheck);
+  }else
+#endif
+  {
+    checkList(&sCheck, 1, get4byte(&pBt->pPage1->aData[32]),
+        get4byte(&pBt->pPage1->aData[36]));
+  }
   sCheck.zPfx = 0;
 
   /* Check all the tables.

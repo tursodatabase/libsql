@@ -480,10 +480,9 @@ int sqlite3ServerLock(Server *p, Pgno pgno, int bWrite){
         v = *pSlot;
       }
 
+      n = v | (1 << p->iClient);
       if( bWrite ){
-        n = v | ((p->iClient+1) << HMA_CLIENT_SLOTS);
-      }else{
-        n = v | (1 << p->iClient);
+        n = n | ((p->iClient+1) << HMA_CLIENT_SLOTS);
       }
       if( __sync_val_compare_and_swap(pSlot, v, n)==v ) break;
       v = *pSlot;
