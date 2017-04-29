@@ -764,7 +764,7 @@ jump_to_p2_and_check_for_interrupt:
   pOp = &aOp[pOp->p2 - 1];
 
   /* Opcodes that are used as the bottom of a loop (OP_Next, OP_Prev,
-  ** OP_VNext, OP_RowSetNext, or OP_SorterNext) all jump here upon
+  ** OP_VNext, or OP_SorterNext) all jump here upon
   ** completion.  Check to see if sqlite3_interrupt() has been called
   ** or if the progress callback needs to be invoked. 
   **
@@ -1567,7 +1567,7 @@ arithmetic_result_is_null:
 
 /* Opcode: CollSeq P1 * * P4
 **
-** P4 is a pointer to a CollSeq struct. If the next call to a user function
+** P4 is a pointer to a CollSeq object. If the next call to a user function
 ** or aggregate calls sqlite3GetFuncCollSeq(), this collation sequence will
 ** be returned. This is used by the built-in min(), max() and nullif()
 ** functions.
@@ -1848,11 +1848,11 @@ case OP_RealAffinity: {                  /* in1 */
 ** Force the value in register P1 to be the type defined by P2.
 ** 
 ** <ul>
-** <li value="97"> TEXT
-** <li value="98"> BLOB
-** <li value="99"> NUMERIC
-** <li value="100"> INTEGER
-** <li value="101"> REAL
+** <li> P2=='A' &rarr; BLOB
+** <li> P2=='B' &rarr; TEXT
+** <li> P2=='C' &rarr; NUMERIC
+** <li> P2=='D' &rarr; INTEGER
+** <li> P2=='E' &rarr; REAL
 ** </ul>
 **
 ** A NULL value is not changed by this routine.  It remains NULL.
@@ -2723,8 +2723,8 @@ op_column_out:
 **
 ** Apply affinities to a range of P2 registers starting with P1.
 **
-** P4 is a string that is P2 characters long. The nth character of the
-** string indicates the column affinity that should be used for the nth
+** P4 is a string that is P2 characters long. The N-th character of the
+** string indicates the column affinity that should be used for the N-th
 ** memory cell in the range.
 */
 case OP_Affinity: {
@@ -2751,8 +2751,8 @@ case OP_Affinity: {
 ** use as a data record in a database table or as a key
 ** in an index.  The OP_Column opcode can decode the record later.
 **
-** P4 may be a string that is P2 characters long.  The nth character of the
-** string indicates the column affinity that should be used for the nth
+** P4 may be a string that is P2 characters long.  The N-th character of the
+** string indicates the column affinity that should be used for the N-th
 ** field of the index key.
 **
 ** The mapping from character to affinity is given by the SQLITE_AFF_
@@ -5748,7 +5748,7 @@ case OP_IntegrityCk: {
 /* Opcode: RowSetAdd P1 P2 * * *
 ** Synopsis: rowset(P1)=r[P2]
 **
-** Insert the integer value held by register P2 into a boolean index
+** Insert the integer value held by register P2 into a RowSet object
 ** held in register P1.
 **
 ** An assertion fails if P2 is not an integer.
@@ -5768,8 +5768,9 @@ case OP_RowSetAdd: {       /* in1, in2 */
 /* Opcode: RowSetRead P1 P2 P3 * *
 ** Synopsis: r[P3]=rowset(P1)
 **
-** Extract the smallest value from boolean index P1 and put that value into
-** register P3.  Or, if boolean index P1 is initially empty, leave P3
+** Extract the smallest value from the RowSet object in P1
+** and put that value into register P3.
+** Or, if RowSet object P1 is initially empty, leave P3
 ** unchanged and jump to instruction P2.
 */
 case OP_RowSetRead: {       /* jump, in1, out3 */
@@ -5800,15 +5801,14 @@ case OP_RowSetRead: {       /* jump, in1, out3 */
 ** integer in P3 into the RowSet and continue on to the
 ** next opcode.
 **
-** The RowSet object is optimized for the case where successive sets
-** of integers, where each set contains no duplicates. Each set
-** of values is identified by a unique P4 value. The first set
-** must have P4==0, the final set P4=-1.  P4 must be either -1 or
-** non-negative.  For non-negative values of P4 only the lower 4
-** bits are significant.
+** The RowSet object is optimized for the case where sets of integers
+** are inserted in distinct phases, which each set contains no duplicates.
+** Each set is identified by a unique P4 value. The first set
+** must have P4==0, the final set must have P4==-1, and for all other sets
+** must have P4>0.
 **
 ** This allows optimizations: (a) when P4==0 there is no need to test
-** the rowset object for P3, as it is guaranteed not to contain it,
+** the RowSet object for P3, as it is guaranteed not to contain it,
 ** (b) when P4==-1 there is no need to insert the value, as it will
 ** never be tested for, and (c) when a value that is part of set X is
 ** inserted, there is no need to search to see if the same value was
