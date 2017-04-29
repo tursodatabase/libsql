@@ -4880,6 +4880,79 @@ static void explainSimpleCount(
 #endif
 
 /*
+** Context object for havingToWhereExprCb().
+*/
+struct HavingToWhereCtx {
+  Expr **ppWhere;
+  ExprList *pGroupBy;
+};
+
+/*
+** sqlite3WalkExpr() callback used by havingToWhere().
+**
+** If the node passed to the callback is a TK_AND node, return 
+** WRC_Continue to tell sqlite3WalkExpr() to iterate through child nodes.
+**
+** Otherwise, return WRC_Prune. In this case, also check if the 
+** sub-expression matches the criteria for being moved to the WHERE
+** clause. If so, add it to the WHERE clause and replace the sub-expression
+** within the HAVING expression with a constant "1".
+*/
+static int havingToWhereExprCb(Walker *pWalker, Expr *pExpr){
+  if( pExpr->op!=TK_AND ){
+    struct HavingToWhereCtx *p = pWalker->u.pHavingCtx;
+    if( sqlite3ExprIsConstantOrGroupBy(pWalker->pParse, pExpr, p->pGroupBy) ){
+      sqlite3 *db = pWalker->pParse->db;
+      Expr *pNew = sqlite3ExprAlloc(db, TK_INTEGER, &sqlite3IntTokens[1], 0);
+      if( pNew ){
+        Expr *pWhere = *(p->ppWhere);
+        SWAP(Expr, *pNew, *pExpr);
+        if( pWhere ){
+          pNew = sqlite3ExprAnd(db, pWhere, pNew);
+        }
+        *(p->ppWhere) = pNew;
+      }
+    }
+    return WRC_Prune;
+  }
+  return WRC_Continue;
+}
+
+/*
+** Transfer eligible terms from the HAVING clause of a query, which is
+** processed after grouping, to the WHERE clause, which is processed before
+** grouping. For example, the query:
+**
+**   SELECT * FROM <tables> WHERE a=? GROUP BY b HAVING b=? AND c=?
+**
+** can be rewritten as:
+**
+**   SELECT * FROM <tables> WHERE a=? AND b=? GROUP BY b HAVING c=?
+**
+** A term of the HAVING expression is eligible for transfer if it consists
+** entirely of constants and expressions that are also GROUP BY terms that
+** use the "BINARY" collation sequence.
+*/
+static void havingToWhere(
+  Parse *pParse,
+  ExprList *pGroupBy,
+  Expr *pHaving, 
+  Expr **ppWhere
+){
+  struct HavingToWhereCtx sCtx;
+  Walker sWalker;
+
+  sCtx.ppWhere = ppWhere;
+  sCtx.pGroupBy = pGroupBy;
+
+  memset(&sWalker, 0, sizeof(sWalker));
+  sWalker.pParse = pParse;
+  sWalker.xExprCallback = havingToWhereExprCb;
+  sWalker.u.pHavingCtx = &sCtx;
+  sqlite3WalkExpr(&sWalker, pHaving);
+}
+
+/*
 ** Generate code for the SELECT statement given in the p argument.  
 **
 ** The results are returned according to the SelectDest structure.
@@ -5343,6 +5416,11 @@ int sqlite3Select(
     sqlite3ExprAnalyzeAggList(&sNC, pEList);
     sqlite3ExprAnalyzeAggList(&sNC, sSort.pOrderBy);
     if( pHaving ){
+      if( pGroupBy ){
+        assert( pWhere==p->pWhere );
+        havingToWhere(pParse, pGroupBy, pHaving, &p->pWhere);
+        pWhere = p->pWhere;
+      }
       sqlite3ExprAnalyzeAggregates(&sNC, pHaving);
     }
     sAggInfo.nAccumulator = sAggInfo.nColumn;

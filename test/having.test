@@ -1,0 +1,94 @@
+# 2017 April 30
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# Test the HAVING->WHERE optimization.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix having
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(a, b);
+  INSERT INTO t1 VALUES(1, 1);
+  INSERT INTO t1 VALUES(2, 2);
+  INSERT INTO t1 VALUES(1, 3);
+  INSERT INTO t1 VALUES(2, 4);
+  INSERT INTO t1 VALUES(1, 5);
+  INSERT INTO t1 VALUES(2, 6);
+} {}
+
+foreach {tn sql res} {
+  1 "SELECT a, sum(b) FROM t1 GROUP BY a HAVING a=2" {2 12}
+  2 "SELECT a, sum(b) FROM t1 GROUP BY a HAVING a=2 AND sum(b)>10" {2 12}
+  3 "SELECT a, sum(b) FROM t1 GROUP BY a HAVING sum(b)>12" {}
+} {
+  do_execsql_test 1.$tn $sql $res
+}
+
+proc compare_vdbe {sql1 sql2} {
+  set r1 [list]
+  set r2 [list]
+  db eval "explain $sql1" { lappend r1 $opcode $p1 $p2 $p3}
+  db eval "explain $sql2" { lappend r2 $opcode $p1 $p2 $p3}
+  return [expr {$r1==$r2}]
+}
+
+proc do_compare_vdbe_test {tn sql1 sql2 res} {
+  uplevel [list do_test $tn [list compare_vdbe $sql1 $sql2] $res]
+}
+
+do_compare_vdbe_test 2.1 {
+  SELECT a, sum(b) FROM t1 GROUP BY a HAVING a=2
+} {
+  SELECT a, sum(b) FROM t1 WHERE a=2 GROUP BY a
+} 1
+do_compare_vdbe_test 2.2 {
+  SELECT a, sum(b) FROM t1 GROUP BY a+1 HAVING a=2
+} {
+  SELECT a, sum(b) FROM t1 GROUP BY a+1 HAVING a=2
+} 1
+
+foreach {tn sql1 sql2} {
+  1 "SELECT a, sum(b) FROM t1 GROUP BY a HAVING a=2"
+    "SELECT a, sum(b) FROM t1 WHERE a=2 GROUP BY a"
+
+  2 "SELECT a, sum(b) FROM t1 GROUP BY a HAVING sum(b)>5 AND a=2"
+    "SELECT a, sum(b) FROM t1 WHERE a=2 GROUP BY a HAVING sum(b)>5"
+
+  3 "SELECT a, sum(b) FROM t1 GROUP BY a COLLATE binary HAVING a=2"
+    "SELECT a, sum(b) FROM t1 WHERE a=2 GROUP BY a COLLATE binary"
+
+  4 {
+      SELECT x,y FROM (
+        SELECT a AS x, sum(b) AS y FROM t1 
+        GROUP BY a
+      ) WHERE x BETWEEN 8888 AND 9999
+    } {
+      SELECT x,y FROM (
+        SELECT a AS x, sum(b) AS y FROM t1 
+        WHERE x BETWEEN 8888 AND 9999 
+        GROUP BY a
+      )
+    }
+} {
+  do_compare_vdbe_test 3.$tn $sql1 $sql2 1
+}
+
+foreach {tn sql1 sql2} {
+  1 "SELECT a, sum(b) FROM t1 GROUP BY a COLLATE nocase HAVING a=2"
+    "SELECT a, sum(b) FROM t1 WHERE a=2 GROUP BY a COLLATE nocase"
+} {
+  do_compare_vdbe_test 4.$tn $sql1 $sql2 0
+}
+
+finish_test
+

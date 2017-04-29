@@ -1815,6 +1815,51 @@ int sqlite3ExprIsTableConstant(Expr *p, int iCur){
   return exprIsConst(p, 3, iCur);
 }
 
+
+/*
+** sqlite3WalkExpr() callback used by sqlite3ExprIsConstantOrGroupBy().
+*/
+static int exprNodeIsConstantOrGroupBy(Walker *pWalker, Expr *pExpr){
+  ExprList *pGroupBy = pWalker->u.pGroupBy;
+  int i;
+
+  /* Check if pExpr is identical to any GROUP BY term. If so, consider
+  ** it constant.  */
+  for(i=0; i<pGroupBy->nExpr; i++){
+    Expr *p = pGroupBy->a[i].pExpr;
+    if( sqlite3ExprCompare(pExpr, p, -1)<2 ){
+      CollSeq *pColl = sqlite3ExprCollSeq(pWalker->pParse, p);
+      if( pColl==0 || sqlite3_stricmp("BINARY", pColl->zName)==0 ){
+        return WRC_Prune;
+      }
+    }
+  }
+
+  /* Check if pExpr is a sub-select. If so, consider it variable. */
+  if( ExprHasProperty(pExpr, EP_xIsSelect) ){
+    pWalker->eCode = 0;
+    return WRC_Abort;
+  }
+
+  return exprNodeIsConstant(pWalker, pExpr);
+}
+
+/*
+** Walk the expression tree passed as the first argument. Return non-zero
+** if the expression consists entirely of constants or copies of terms 
+** in pGroupBy that sort with the BINARY collation sequence.
+*/
+int sqlite3ExprIsConstantOrGroupBy(Parse *pParse, Expr *p, ExprList *pGroupBy){
+  Walker w;
+  memset(&w, 0, sizeof(w));
+  w.eCode = 1;
+  w.xExprCallback = exprNodeIsConstantOrGroupBy;
+  w.u.pGroupBy = pGroupBy;
+  w.pParse = pParse;
+  sqlite3WalkExpr(&w, p);
+  return w.eCode;
+}
+
 /*
 ** Walk an expression tree.  Return non-zero if the expression is constant
 ** or a function call with constant arguments.  Return and 0 if there
