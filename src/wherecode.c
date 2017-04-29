@@ -1130,6 +1130,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
   int iRowidReg = 0;        /* Rowid is stored in this register, if not zero */
   int iReleaseReg = 0;      /* Temp register to free before returning */
   Index *pIdx = 0;          /* Index used by loop (if any) */
+  int loopAgain;            /* True if constraint generator loop should repeat */
 
   pParse = pWInfo->pParse;
   v = pParse->pVdbe;
@@ -2027,8 +2028,10 @@ Bitmask sqlite3WhereCodeOneLoopStart(
   ** This loop may run either once (pIdx==0) or twice (pIdx!=0). If
   ** it is run twice, then the first iteration codes those sub-expressions
   ** that can be computed using columns from pIdx only (without seeking
-  ** the main table cursor).  */
-  while( 1 ){
+  ** the main table cursor). 
+  */
+  do{
+    loopAgain = 0;
     for(pTerm=pWC->a, j=pWC->nTerm; j>0; j--, pTerm++){
       Expr *pE;
       int skipLikeAddr = 0;
@@ -2043,10 +2046,11 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       }
       pE = pTerm->pExpr;
       assert( pE!=0 );
-      if( pIdx && !sqlite3ExprCoveredByIndex(pE, pLevel->iTabCur, pIdx) ){
+      if( pLevel->iLeftJoin && !ExprHasProperty(pE, EP_FromJoin) ){
         continue;
       }
-      if( pLevel->iLeftJoin && !ExprHasProperty(pE, EP_FromJoin) ){
+      if( pIdx && !sqlite3ExprCoveredByIndex(pE, pLevel->iTabCur, pIdx) ){
+        loopAgain = 1;
         continue;
       }
       if( pTerm->wtFlags & TERM_LIKECOND ){
@@ -2068,9 +2072,8 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       if( skipLikeAddr ) sqlite3VdbeJumpHere(v, skipLikeAddr);
       pTerm->wtFlags |= TERM_CODED;
     }
-    if( pIdx==0 ) break;
     pIdx = 0;
-  }
+  }while( loopAgain );
 
   /* Insert code to test for implied constraints based on transitivity
   ** of the "==" operator.

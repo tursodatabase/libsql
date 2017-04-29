@@ -1,5 +1,5 @@
-C Within\sa\sloop\sthat\suses\sa\snon-covering\sindex\stest,\stest\snon-indexed\sterms\sthat\ncan\sbe\stested\swithout\sseeking\sthe\smain\stable\scursor\sbefore\sthose\sthat\scannot.
-D 2017-04-28T19:59:55.785
+C Minor\ssize\sand\sperformance\simprovements\sto\sthe\spush-down\soptimization.
+D 2017-04-29T14:56:55.202
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a8c838220f7c00820e1fc0ac1bccaaa8e5676067e1dbfa1bafa7a4ffecf8ae6
@@ -485,7 +485,7 @@ F src/wal.h 06b2a0b599cc0f53ea97f497cf8c6b758c999f71
 F src/walker.c b71a992b413b3a022572eccf29ef4b4890223791
 F src/where.c c6352f15be5031907c68bcbde96cad1a6da20e9f4051d10168a59235de9a8566
 F src/whereInt.h 2a4b634d63ce488b46d4b0da8f2eaa8f9aeab202bc25ef76f007de5e3fba1f20
-F src/wherecode.c 878a8c75af2bf6103ed4d1df639ee64ddb66f11b3a388f9caf7598c159a2c9af
+F src/wherecode.c 8ad48867660519e262a401720845dc76934f86f558ec9606335fafcd7a2554f8
 F src/whereexpr.c e913aaa7b73ffcce66abcea5f197e2c538d48b5df78d0b7bba8ff4d73cc2e745
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1577,10 +1577,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2d0b64316d66a362f5891ceb71a1fd8e4607732274b09b0a8472b97eef68ebc2
-R 8c650dff0f0f10ff63f37c52f3854c68
-T *branch * pushdown-optimization
-T *sym-pushdown-optimization *
-T -sym-trunk *
-U dan
-Z 464ba506caa7cc6d49be35980d40d709
+P afe68f0a8060dc5c92cb1fb32a9f22bd36140cd2c0bb5b6cea853e169c5ed444
+R d3fbd82e46a4092d676255e41f20df5b
+U drh
+Z bf8e798698af6ed2b80cadbc03ebd2b9
