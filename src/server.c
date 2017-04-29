@@ -399,7 +399,7 @@ int sqlite3ServerBegin(Server *p){
 #if 0
   return posixLock(p->pHma->fd, p->iClient+1, SERVER_WRITE_LOCK, 0);
 #endif
-  return SQLITE_OK;
+  return sqlite3ServerLock(p, 1, 0);
 }
 
 /*

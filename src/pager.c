@@ -7667,12 +7667,8 @@ int sqlite3PagerWalFramesize(Pager *pPager){
 int sqlite3PagerIsServer(Pager *pPager){
   return pagerIsServer(pPager);
 }
-int sqlite3PagerWritelock(Pager *pPager, Pgno pgno){
-  return sqlite3ServerLock(pPager->pServer, pgno, 1);
-}
-void sqlite3PagerSetPagecount(Pager *pPager, u32 nPage){
-  assert( pPager->eState==PAGER_READER );
-  pPager->dbSize = nPage;
+int sqlite3PagerPagelock(Pager *pPager, Pgno pgno, int bWrite){
+  return sqlite3ServerLock(pPager->pServer, pgno, bWrite);
 }
 #endif
 

@@ -2916,12 +2916,6 @@ static int lockBtree(BtShared *pBt){
   */
   nPage = nPageHeader = get4byte(28+(u8*)pPage1->aData);
   sqlite3PagerPagecount(pBt->pPager, &nPageFile);
-#ifdef SQLITE_SERVER_EDITION
-  if( sqlite3PagerIsServer(pBt->pPager) ){
-    sqlite3PagerSetPagecount(pBt->pPager, nPage);
-    nPageFile = nPage;
-  }
-#endif
   if( nPage==0 || memcmp(24+(u8*)pPage1->aData, 92+(u8*)pPage1->aData,4)!=0 ){
     nPage = nPageFile;
   }
@@ -5705,7 +5699,7 @@ static int findServerTrunk(BtShared *pBt, int bAlloc, MemPage **ppTrunk){
     nList = (int)get4byte(&pNode->aData[4]);
     for(i=0; i<nList; i++){
       Pgno iTrunk = get4byte(&pNode->aData[8+i*4]);
-      if( SQLITE_OK==sqlite3PagerWritelock(pBt->pPager, iTrunk) ){
+      if( SQLITE_OK==sqlite3PagerPagelock(pBt->pPager, iTrunk, 1) ){
         rc = btreeGetUnusedPage(pBt, iTrunk, &pTrunk, 0);
         if( rc==SQLITE_OK && bAlloc ){
           if( !get4byte(&pTrunk->aData[0]) && !get4byte(&pTrunk->aData[4]) ){
