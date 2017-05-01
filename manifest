@@ -1,5 +1,5 @@
-C Initial\simplementation\sof\san\soptimization\sthat\sattempts\sto\sreuse\sthe\ssame\nmaterialization\sof\sa\sview\son\sa\sself-join\sof\sthe\sview.
-D 2017-05-01T15:15:41.259
+C Minor\sbug\sfixes\sand\sperformance\senhancement.
+D 2017-05-01T16:37:20.261
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a8c838220f7c00820e1fc0ac1bccaaa8e5676067e1dbfa1bafa7a4ffecf8ae6
@@ -402,7 +402,7 @@ F src/printf.c 8757834f1b54dae512fb25eb1acc8e94a0d15dd2290b58f2563f65973265adb2
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 3e518b962d932a997fae373366880fc028c75706
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c 1fba56aa7d6530a37e173e5144df92ad6140c472f9807c168a2ebff096b590c7
+F src/select.c c9aa9575ccdb85e92167e00cd7b955221533df47679828c4fa6765f11f5dcd12
 F src/shell.c 21b79c0e1b93f8e35fd7b4087d6ba438326c3d7e285d0dd51dfd741475f858a1
 F src/sqlite.h.in 40233103e3e4e10f8a63523498d0259d232e42aba478e2d3fb914799185aced6
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -473,7 +473,7 @@ F src/vdbe.c 7c37c36f3d528b10e5a5df76267ca42ed604fb3f15ff1d656afe1f33ff5d1f76
 F src/vdbe.h f7d1456e28875c2dcb964056589b5b7149ab7edf39edeca801596a39bb3d3848
 F src/vdbeInt.h c070bc5c8b913bda0ceaa995cd4d939ded5e4fc96cf7c3c1c602d41b871f8ade
 F src/vdbeapi.c 5b08d82592bcff4470601fe78aaabebd50837860
-F src/vdbeaux.c bb99698cfee2d2fd9fa2870f8a24153475793b9c85cb626b412d6bad8c3a73a8
+F src/vdbeaux.c b4999c744e59deba7ab8733640219ecbc771721b362d7e26ce4c57db575ad80b
 F src/vdbeblob.c 359891617358deefc85bef7bcf787fa6b77facb9
 F src/vdbemem.c 2c70f8f5de6c71fb99a22c5b83be9fab5c47cdd8e279fa44a8c00cfed06d7e89
 F src/vdbesort.c e72fe02a2121386ba767ede8942e9450878b8fc873abf3d1b6824485f092570c
@@ -1577,10 +1577,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4e1df76e3d85922648e0e1cce73a266c3b1ed4511ace259ec0a01d7693af9e6f
-R 9a92f7b5439fceb732be32bb3fe5b30d
-T *branch * materialized-view-reuse
-T *sym-materialized-view-reuse *
-T -sym-trunk *
+P 478c34b9a8b5127d13024e10307aa832f160b89720c46424dd17555bd36f590d
+R 2a2ab9e2643c70c79e0d330bc99dce06
 U drh
-Z 0a08980cdb3c200bc98cb9ecc97a5f40
+Z cc122146d9fb91e0d9a08125d9d2cc46

@@ -4892,7 +4892,9 @@ static struct SrcList_item *isSelfJoinView(
   for(pItem = pTabList->a; pItem<pThis; pItem++){
     if( pItem->pSelect==0 ) continue;
     if( pItem->fg.viaCoroutine ) continue;
-    if( sqlite3StrICmp(pItem->zName, pThis->zName)==0 ) return pItem;
+    if( pItem->zName==0 ) continue;
+    if( sqlite3_stricmp(pItem->zDatabase, pThis->zDatabase)!=0 ) continue;
+    if( sqlite3_stricmp(pItem->zName, pThis->zName)==0 ) return pItem;
   }
   return 0;
 }
