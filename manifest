@@ -1,5 +1,5 @@
-C Add\sa\ssingle\stestcase()\smacro\sto\sthe\ssubquery\sprocessing\slogic.
-D 2017-04-29T19:29:49.700
+C Clear\sthe\sBTCF_ValidNKey\sflag\sset\sif\sa\scursor\sis\smoved\sby\nsqlite3BtreeInsert().\sFix\sfor\s[f68dc596c4].
+D 2017-05-01T18:12:56.867
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a8c838220f7c00820e1fc0ac1bccaaa8e5676067e1dbfa1bafa7a4ffecf8ae6
@@ -345,7 +345,7 @@ F src/auth.c 930b376a9c56998557367e6f7f8aaeac82a2a792
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c a0d9a1c782ff3d22df5d217a4fa7125dd69ad5849caa51c4442c10246ca8ae27
+F src/btree.c ef42df0cd8fa80ab174c83deb13a216465c49555eb01d57abdfd814a8546fa77
 F src/btree.h 80f518c0788be6cec8d9f8e13bd8e380df299d2b5e4ac340dc887b0642647cfc
 F src/btreeInt.h a392d353104b4add58b4a59cb185f5d5693dde832c565b77d8d4c343ed98f610
 F src/build.c 4026a9c554b233e50c5e9ad46963e676cf54dd2306d952aa1eaa07a1bc9ce14f
@@ -604,7 +604,7 @@ F test/colmeta.test 2c765ea61ee37bc43bbe6d6047f89004e6508eb1
 F test/colname.test 08948a4809d22817e0e5de89c7c0a8bd90cb551b
 F test/conflict.test 029faa2d81a0d1cafb5f88614beb663d972c01db
 F test/conflict2.test bb0b94cf7196c64a3cbd815c66d3ee98c2fecd9c
-F test/conflict3.test dec0634c0f31dec9a4b01c63063e939f0cd21b6b
+F test/conflict3.test a83db76a6c3503b2fa057c7bfb08c318d8a422202d8bc5b86226e078e5b49ff9
 F test/contrib01.test 2a1cbc0f2f48955d7d073f725765da6fbceda6b4
 F test/corrupt.test 141c39ea650c1365e85a49e402fa05cb9617fb97
 F test/corrupt2.test e4964cee73dda57a90958e0087a6b388b1d9cb58
@@ -1577,7 +1577,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e54c9f8db5b2fa8ea82c6eab7482255431af16901f7992c9667b56a0e50a9f4f
-R 6f21ea13ed166571d20351d2145d6640
-U drh
-Z 4a7e86f7be3de966a53a14c1a17e31d5
+P 4e1df76e3d85922648e0e1cce73a266c3b1ed4511ace259ec0a01d7693af9e6f
+R 2f44609e52881f5575acf3fe925fc9aa
+U dan
+Z 5b866fdf8c8937d7431fdae30fbd42bc
