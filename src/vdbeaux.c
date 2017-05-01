@@ -2039,7 +2039,7 @@ void sqlite3VdbeFreeCursor(Vdbe *p, VdbeCursor *pCx){
         sqlite3BtreeClose(pCx->pBtx);
         /* The pCx->pCursor will be close automatically, if it exists, by
         ** the call above. */
-      }else{
+      }else if( !pCx->isEphemeral ){
         assert( pCx->uc.pCursor!=0 );
         sqlite3BtreeCloseCursor(pCx->uc.pCursor);
       }
