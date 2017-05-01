@@ -1,5 +1,5 @@
-C Avoid\sreading\sthe\sfile-size\sbefore\spage\s1\sis\sread-locked.
-D 2017-04-29T15:48:32.290
+C Update\sthis\sbranch\swith\slatest\strunk\schanges.
+D 2017-05-01T20:07:59.204
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a8c838220f7c00820e1fc0ac1bccaaa8e5676067e1dbfa1bafa7a4ffecf8ae6
@@ -345,7 +345,7 @@ F src/auth.c 930b376a9c56998557367e6f7f8aaeac82a2a792
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c 5bd5e1f17a74836e6d6273c1d04d406bb481a6c517f18f96db0a5de266797f4a
+F src/btree.c ca26f48d5c9f2f1e930b062bb1e550ea8d26c9b64522eb2003e10c226ecfc884
 F src/btree.h 80f518c0788be6cec8d9f8e13bd8e380df299d2b5e4ac340dc887b0642647cfc
 F src/btreeInt.h a392d353104b4add58b4a59cb185f5d5693dde832c565b77d8d4c343ed98f610
 F src/build.c 4026a9c554b233e50c5e9ad46963e676cf54dd2306d952aa1eaa07a1bc9ce14f
@@ -402,7 +402,7 @@ F src/printf.c 8757834f1b54dae512fb25eb1acc8e94a0d15dd2290b58f2563f65973265adb2
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 3e518b962d932a997fae373366880fc028c75706
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c bf8ab605e49717c222136380453cfb7eda564f8e500d5ff6a01341ea59fefe80
+F src/select.c 478e95d424bb86d34c7c95d20872cbd78df97af5f83c3fd7de55d5b2413f927d
 F src/server.c ffeab1087cdae36f1454065b1feb49c61ce48db0088c6130e28197d6bfbc7545
 F src/shell.c 21b79c0e1b93f8e35fd7b4087d6ba438326c3d7e285d0dd51dfd741475f858a1
 F src/sqlite.h.in f6e3734fee6d334a896cff8f43446ca2e47dcf7e39135b3e3a596bf23cdbbc97
@@ -470,7 +470,7 @@ F src/update.c c443935c652af9365e033f756550b5032d02e1b06eb2cb890ed7511ae0c051dc
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c ca8440ede81e155d15cff7c101654f60b55a9ae6
 F src/vacuum.c 1fe4555cd8c9b263afb85b5b4ee3a4a4181ad569
-F src/vdbe.c 1eba07ffa0e4ff5e14ceca17e366c26f58c11d12cc56e55a9a13157a93533b7e
+F src/vdbe.c 349eb6789cf8b03ef1aa42271aa9a17a6a7794c07448d27c5405904ba1b21715
 F src/vdbe.h f7d1456e28875c2dcb964056589b5b7149ab7edf39edeca801596a39bb3d3848
 F src/vdbeInt.h c070bc5c8b913bda0ceaa995cd4d939ded5e4fc96cf7c3c1c602d41b871f8ade
 F src/vdbeapi.c 5b08d82592bcff4470601fe78aaabebd50837860
@@ -486,7 +486,7 @@ F src/wal.h 06b2a0b599cc0f53ea97f497cf8c6b758c999f71
 F src/walker.c b71a992b413b3a022572eccf29ef4b4890223791
 F src/where.c c6352f15be5031907c68bcbde96cad1a6da20e9f4051d10168a59235de9a8566
 F src/whereInt.h 2a4b634d63ce488b46d4b0da8f2eaa8f9aeab202bc25ef76f007de5e3fba1f20
-F src/wherecode.c 943e32e9dccd0af802e0683ae11071c8bd808364e5908a5fb66758bd404c8681
+F src/wherecode.c 8ad48867660519e262a401720845dc76934f86f558ec9606335fafcd7a2554f8
 F src/whereexpr.c e913aaa7b73ffcce66abcea5f197e2c538d48b5df78d0b7bba8ff4d73cc2e745
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -605,7 +605,7 @@ F test/colmeta.test 2c765ea61ee37bc43bbe6d6047f89004e6508eb1
 F test/colname.test 08948a4809d22817e0e5de89c7c0a8bd90cb551b
 F test/conflict.test 029faa2d81a0d1cafb5f88614beb663d972c01db
 F test/conflict2.test bb0b94cf7196c64a3cbd815c66d3ee98c2fecd9c
-F test/conflict3.test dec0634c0f31dec9a4b01c63063e939f0cd21b6b
+F test/conflict3.test a83db76a6c3503b2fa057c7bfb08c318d8a422202d8bc5b86226e078e5b49ff9
 F test/contrib01.test 2a1cbc0f2f48955d7d073f725765da6fbceda6b4
 F test/corrupt.test 141c39ea650c1365e85a49e402fa05cb9617fb97
 F test/corrupt2.test e4964cee73dda57a90958e0087a6b388b1d9cb58
@@ -1044,6 +1044,7 @@ F test/printf.test b3ff34e73d59124140eaf89f7672e21bc2ca5fcc
 F test/printf2.test 9e6db85f81c63f2367c34a9d7db384088bd374ad
 F test/progress.test ebab27f670bd0d4eb9d20d49cef96e68141d92fb
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
+F test/pushdown.test a5d2e5e66cc94cfb0989a5dd23e77427dd6c4313019155ba9051f52dfc5326aa
 F test/queryonly.test 5f653159e0f552f0552d43259890c1089391dcca
 F test/quick.test 1681febc928d686362d50057c642f77a02c62e57
 F test/quota-glob.test 32901e9eed6705d68ca3faee2a06b73b57cb3c26
@@ -1580,7 +1581,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a40b42c422a53aa99280eca7ba419a3937699e273efa3377e0fefe52582cbbd4
-R 9a85e5e4940ba5e8bd67cc7c6dfd6715
+P f6b025bf632501f51e691a05d309225671fd78bc62c9a43dd916d35ba4cf6d0e adcad37b001d255299be716b16003b56ec1fba349ef73261ee0e543186c4f311
+R 1bed61f4e58db79868a35dfe4c038832
 U dan
-Z 5b549d7ff43521bff2f6a6a67d4b45a8
+Z 7c8b7b8a56c86eedcffe381967e739a0
