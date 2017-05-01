@@ -4894,7 +4894,13 @@ static struct SrcList_item *isSelfJoinView(
     if( pItem->fg.viaCoroutine ) continue;
     if( pItem->zName==0 ) continue;
     if( sqlite3_stricmp(pItem->zDatabase, pThis->zDatabase)!=0 ) continue;
-    if( sqlite3_stricmp(pItem->zName, pThis->zName)==0 ) return pItem;
+    if( sqlite3_stricmp(pItem->zName, pThis->zName)!=0 ) continue;
+    if( sqlite3ExprCompare(pThis->pSelect->pWhere, pItem->pSelect->pWhere, -1) ){
+      /* The view was modified by some other optimization such as
+      ** pushDownWhereTerms() */
+      continue;
+    }
+    return pItem;
   }
   return 0;
 }
