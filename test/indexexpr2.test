@@ -32,5 +32,13 @@ do_execsql_test 1.2 {
   SELECT 'TWOX' == (b || 'x') COLLATE nocase  FROM t1 WHERE (b || 'x')>'onex'
 } {0 1}
 
+do_execsql_test 2.0 {
+  CREATE INDEX i2 ON t1(a+1);
+}
+
+do_execsql_test 2.1 {
+  SELECT a+1, quote(a+1) FROM t1 ORDER BY 1;
+} {2 2 3 3 4 4}
+
 finish_test
 

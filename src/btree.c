@@ -8124,9 +8124,6 @@ int sqlite3BtreeInsert(
     ** btreeMoveto() call */
     if( (pCur->curFlags&BTCF_ValidNKey)!=0 && pX->nKey==pCur->info.nKey ){
       loc = 0;
-    }else if( (pCur->curFlags&BTCF_ValidNKey)!=0 && pX->nKey>0
-               && pCur->info.nKey==pX->nKey-1 ){
-      loc = -1;
     }else if( loc==0 ){
       rc = sqlite3BtreeMovetoUnpacked(pCur, 0, pX->nKey, flags!=0, &loc);
       if( rc ) return rc;

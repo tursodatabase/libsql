@@ -577,6 +577,20 @@ do_execsql_test 21.1 {
   COMMIT;
 }
 
+do_execsql_test 22.0 {
+  CREATE VIRTUAL TABLE t9 USING fts5(x, detail=%DETAIL%);
+  INSERT INTO t9(rowid, x) VALUES(2, 'bbb');
+  BEGIN;
+    INSERT INTO t9(rowid, x) VALUES(1, 'aaa');
+    DELETE FROM t9 WHERE rowid = 2;
+    INSERT INTO t9(rowid, x) VALUES(3, 'bbb');
+  COMMIT;
+}
+
+do_execsql_test 22.1 {
+  SELECT rowid FROM t9('a*')
+} {1}
+
 }
 
 

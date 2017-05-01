@@ -2878,7 +2878,8 @@ static void fts5MultiIterNext2(
 ){
   assert( pIter->bSkipEmpty );
   if( p->rc==SQLITE_OK ){
-    do {
+    *pbNewTerm = 0;
+    do{
       int iFirst = pIter->aFirst[1].iFirst;
       Fts5SegIter *pSeg = &pIter->aSeg[iFirst];
       int bNewTerm = 0;
@@ -2891,8 +2892,6 @@ static void fts5MultiIterNext2(
         fts5MultiIterAdvanced(p, pIter, iFirst, 1);
         fts5MultiIterSetEof(pIter);
         *pbNewTerm = 1;
-      }else{
-        *pbNewTerm = 0;
       }
       fts5AssertMultiIterSetup(p, pIter);
 
@@ -3844,9 +3843,6 @@ static void fts5WriteFlushLeaf(Fts5Index *p, Fts5SegWriter *pWriter){
   static const u8 zero[] = { 0x00, 0x00, 0x00, 0x00 };
   Fts5PageWriter *pPage = &pWriter->writer;
   i64 iRowid;
-
-static int nCall = 0;
-nCall++;
 
   assert( (pPage->pgidx.n==0)==(pWriter->bFirstTermInPage) );
 

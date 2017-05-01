@@ -5035,6 +5035,10 @@ int sqlite3Select(
     ** to be invoked again. */
     if( pItem->addrFillSub ){
       if( pItem->fg.viaCoroutine==0 ){
+        /* The subroutine that manifests the view might be a one-time routine,
+        ** or it might need to be rerun on each iteration because it
+        ** encodes a correlated subquery. */
+        testcase( sqlite3VdbeGetOp(v, pItem->addrFillSub)->opcode==OP_Once );
         sqlite3VdbeAddOp2(v, OP_Gosub, pItem->regReturn, pItem->addrFillSub);
       }
       continue;
