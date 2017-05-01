@@ -1,5 +1,5 @@
-C Clear\sthe\sBTCF_ValidNKey\sflag\sset\sif\sa\scursor\sis\smoved\sby\nsqlite3BtreeInsert().\sFix\sfor\s[f68dc596c4].
-D 2017-05-01T18:12:56.867
+C Enhance\s"PRAGMA\sintegrity_check"\sto\sdetect\sduplicate\srowids\swithin\sa\sleaf\npage.
+D 2017-05-01T18:24:01.052
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a8c838220f7c00820e1fc0ac1bccaaa8e5676067e1dbfa1bafa7a4ffecf8ae6
@@ -345,7 +345,7 @@ F src/auth.c 930b376a9c56998557367e6f7f8aaeac82a2a792
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c ef42df0cd8fa80ab174c83deb13a216465c49555eb01d57abdfd814a8546fa77
+F src/btree.c 8c1fd4cfa2b0bf021386e0a1f4e30b64eea7a2c1bc2e0c3e5901a626b1ab6aa9
 F src/btree.h 80f518c0788be6cec8d9f8e13bd8e380df299d2b5e4ac340dc887b0642647cfc
 F src/btreeInt.h a392d353104b4add58b4a59cb185f5d5693dde832c565b77d8d4c343ed98f610
 F src/build.c 4026a9c554b233e50c5e9ad46963e676cf54dd2306d952aa1eaa07a1bc9ce14f
@@ -1577,7 +1577,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4e1df76e3d85922648e0e1cce73a266c3b1ed4511ace259ec0a01d7693af9e6f
-R 2f44609e52881f5575acf3fe925fc9aa
+P a6727eef6d757a39ad23e5c8cbe960f5d909e5d37cb4e90bc3bdbb8bf58cd6f8
+R 90aeb34d2a97f39322f1438c3090df25
 U dan
-Z 5b866fdf8c8937d7431fdae30fbd42bc
+Z f3a1c9f94034eac95802b81d94d576ee

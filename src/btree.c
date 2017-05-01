@@ -9315,6 +9315,7 @@ static int checkTreePage(
         checkAppendMsg(pCheck, "Rowid %lld out of order", info.nKey);
       }
       maxKey = info.nKey;
+      keyCanBeEqual = 0;     /* Only the first key on the page may ==maxKey */
     }
 
     /* Check the content overflow list */
