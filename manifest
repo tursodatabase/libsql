@@ -1,5 +1,5 @@
-C Automatically\stransfer\sterms\sfrom\sthe\sHAVING\sclause\sto\sthe\sWHERE\sclause\sof\san\naggregate\squery\sin\scases\swhere\sthe\sresult\sof\sevaluating\sthe\sterm\sdepends\sonly\none\sone\sor\smore\sof\sthe\sGROUP\sBY\sexpressions\s(and\son\sno\sother\sinputs).
-D 2017-04-29T20:53:09.360
+C Add\sextra\stests\sfor\sthe\soptimization\son\sthis\sbranch.
+D 2017-05-01T14:09:32.423
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a8c838220f7c00820e1fc0ac1bccaaa8e5676067e1dbfa1bafa7a4ffecf8ae6
@@ -850,7 +850,7 @@ F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
 F test/gcfault.test dd28c228a38976d6336a3fc42d7e5f1ad060cb8c
 F test/genesis.tcl 1e2e2e8e5cc4058549a154ff1892fe5c9de19f98
-F test/having.test a03676a754815628a08d3b96d506dd9eda8ffbdd356cd8ea9c2e5368286fbe6a
+F test/having.test 30a02b8a9a47cba7bdb5281999c5cbff407c2ac296511ee64dd0b418fe38eb0f
 F test/hexlit.test 4a6a5f46e3c65c4bf1fa06f5dd5a9507a5627751
 F test/hidden.test 23c1393a79e846d68fd902d72c85d5e5dcf98711
 F test/hook.test dbc0b87756e1e20e7497b56889c9e9cd2f8cc2b5
@@ -1578,10 +1578,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d7bb79ed3a40419d143fbe35c310e51fe7b384a22f082a61ad788671d2d33ee0
-R bd50b7d1e9edcc2d5d20fca02c02c5c7
-T *branch * having-where-optimization
-T *sym-having-where-optimization *
-T -sym-trunk *
+P 5375a3ce56f1d993b13b469fe33ec7679948f53940f62a15ddbaeb8aaa26a22c
+R 123e296789286f2ee6ee6640a2471eff
 U dan
-Z 94cbfc69ef14a78710cd01b746487e79
+Z 8431f2088d761010cb187c22f8f8d978
