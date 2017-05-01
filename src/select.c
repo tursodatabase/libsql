@@ -4907,9 +4907,7 @@ static int havingToWhereExprCb(Walker *pWalker, Expr *pExpr){
       if( pNew ){
         Expr *pWhere = *(p->ppWhere);
         SWAP(Expr, *pNew, *pExpr);
-        if( pWhere ){
-          pNew = sqlite3ExprAnd(db, pWhere, pNew);
-        }
+        pNew = sqlite3ExprAnd(db, pWhere, pNew);
         *(p->ppWhere) = pNew;
       }
     }
