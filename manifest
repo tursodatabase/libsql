@@ -1,5 +1,5 @@
-C Reuse\sthe\ssame\smaterialization\sof\sa\sview\swhen\sthat\sview\sappears\sin\sa\squery\nmore\sthan\sonce,\ssuch\sas\sin\sa\sself-join.
-D 2017-05-02T17:54:19.760
+C Fix\sthe\sfts3EvalAverageDocsize()\sroutine\sso\sthat\sit\sreturns\serrors\sfrom\nsqlite3_reset()\srather\sthan\salways\sreturning\sSQLITE_OK.
+D 2017-05-02T18:00:31.645
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a8c838220f7c00820e1fc0ac1bccaaa8e5676067e1dbfa1bafa7a4ffecf8ae6
@@ -70,7 +70,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 10fc22119e3d91997eb5820d96ff709ca7c61b6f767e09b360b986b897ad74c6
+F ext/fts3/fts3.c 88ea5c444fdf262b4eb7b5872b9a3192b8b8d0df8cc9735c5aed159ec5dae02a
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h eb2502000148e80913b965db3e59f29251266d0a
 F ext/fts3/fts3_aux.c 9edc3655fcb287f0467d0a4b886a01c6185fe9f1
@@ -1578,8 +1578,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 47cbb471d056c8e1834a5ca72491404a3bfb273b5ff7bdd84b98d263938ea874 c64fe3a1695925693385d313e9ad2a1d8cb37ddaa8cc19920ae0978c91bc4c2c
-R 250cb39f933147d7683c248b1fcd12aa
-T +closed c64fe3a1695925693385d313e9ad2a1d8cb37ddaa8cc19920ae0978c91bc4c2c
+P 9e35c89dbe744312f612e507b51ff9a5bb656def75392d25bc19fc638548cd1e
+R ff82b9e0856a749852e0a40a30515627
 U drh
-Z d1eca8aa444c2ea7562fa3a6e3e0ab31
+Z a7183f9c248f45ecd3f1461fb3e694c7
