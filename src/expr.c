@@ -1848,6 +1848,20 @@ static int exprNodeIsConstantOrGroupBy(Walker *pWalker, Expr *pExpr){
 ** Walk the expression tree passed as the first argument. Return non-zero
 ** if the expression consists entirely of constants or copies of terms 
 ** in pGroupBy that sort with the BINARY collation sequence.
+**
+** This routine is used to determine if a term of the HAVING clause can
+** be promoted into the WHERE clause.  In order for such a promotion to work,
+** the value of the HAVING clause term must be the same for all members of
+** a "group".  The requirement that the GROUP BY term must be BINARY
+** assumes that no other collating sequence will have a finer-grained
+** grouping than binary.  In other words (A=B COLLATE binary) implies
+** A=B in every other collating sequence.  The requirement that the
+** GROUP BY be BINARY is stricter than necessary.  It would also work
+** to promote HAVING clauses that use the same alternative collating
+** sequence as the GROUP BY term, but that is much harder to check,
+** alternative collating sequences are uncommon, and this is only an
+** optimization, so we take the easy way out and simply require the
+** GROUP BY to use the BINARY collating sequence.
 */
 int sqlite3ExprIsConstantOrGroupBy(Parse *pParse, Expr *p, ExprList *pGroupBy){
   Walker w;
