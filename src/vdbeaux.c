@@ -2044,8 +2044,8 @@ void sqlite3VdbeFreeCursor(Vdbe *p, VdbeCursor *pCx){
       break;
     }
     case CURTYPE_BTREE: {
-      if( pCx->pBtx ){
-        sqlite3BtreeClose(pCx->pBtx);
+      if( pCx->isEphemeral ){
+        if( pCx->pBtx ) sqlite3BtreeClose(pCx->pBtx);
         /* The pCx->pCursor will be close automatically, if it exists, by
         ** the call above. */
       }else{

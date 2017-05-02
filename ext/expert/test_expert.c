@@ -11,7 +11,7 @@
 *************************************************************************
 */
 
-#if defined(SQLITE_TEST) && defined(SQLITE_ENABLE_WHEREINFO_HOOK)
+#if defined(SQLITE_TEST)
 
 #include "sqlite3expert.h"
 #include <assert.h>
@@ -212,8 +212,4 @@ int TestExpert_Init(Tcl_Interp *interp){
   return TCL_OK;
 }
 
-#else /* defined(SQLITE_TEST) && defined(SQLITE_ENABLE_WHEREINFO_HOOK) */
-int TestExpert_Init(Tcl_Interp *interp){
-  return TCL_OK;
-}
 #endif
