@@ -79,6 +79,7 @@ int main(int argc, char **argv){
 
   if( argc<2 ) usage(argv);
   zDb = argv[argc-1];
+  if( zDb[0]=='-' ) usage(argv);
   rc = sqlite3_open(zDb, &db);
   if( rc!=SQLITE_OK ){
     fprintf(stderr, "Cannot open db file: %s - %s\n", zDb, sqlite3_errmsg(db));
@@ -92,6 +93,7 @@ int main(int argc, char **argv){
   }else{
     for(i=1; i<(argc-1); i++){
       char *zArg = argv[i];
+      if( zArg[0]=='-' && zArg[1]=='-' && zArg[2]!=0 ) zArg++;
       int nArg = strlen(zArg);
       if( nArg>=2 && 0==sqlite3_strnicmp(zArg, "-file", nArg) ){
         if( ++i==(argc-1) ) option_requires_argument("-file");
@@ -151,5 +153,3 @@ int main(int argc, char **argv){
   sqlite3_free(zErr);
   return rc;
 }
-
-

@@ -1,5 +1,5 @@
-C Merge\sthe\slatest\senhancements\sfrom\strunk.
-D 2017-05-02T19:45:14.234
+C In\sthe\ssqlite3_expert\scommand-line\stool,\sallow\stwo-dash\soptions.\s\sDo\snot\naccept\sthe\sdatabase\sname\sif\sit\sbegins\swith\s"-".
+D 2017-05-02T20:42:30.619
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a8c838220f7c00820e1fc0ac1bccaaa8e5676067e1dbfa1bafa7a4ffecf8ae6
@@ -41,7 +41,7 @@ F ext/async/README.txt e12275968f6fde133a80e04387d0e839b0c51f91
 F ext/async/sqlite3async.c 0f3070cc3f5ede78f2b9361fb3b629ce200d7d74
 F ext/async/sqlite3async.h f489b080af7e72aec0e1ee6f1d98ab6cf2e4dcef
 F ext/expert/README.md b321c2762bb93c18ea102d5a5f7753a4b8bac646cb392b3b437f633caf2020c3
-F ext/expert/expert.c 33842ef151d84c5f8000f9c7b938998c6b999eaef7ce1f4eeb0df8ffe6739496
+F ext/expert/expert.c dc88a3e73fdeb0d21e7d60b791120961853af931f3c509b508f4ac4a0233438e
 F ext/expert/expert1.test 1033e43071b69dc2f4e88fbf03fc7f18846c9865cac14f28c80f581437f09acb
 F ext/expert/sqlite3expert.c 4bc1820a70d68b478884a26a2215df8c1f2d44fb40d9cd8c47d2046c8ce0c8bc
 F ext/expert/sqlite3expert.h af6354f8ee5c9e025024e63fec3bd640a802afcc3099a44d804752cf0791d811
@@ -1585,7 +1585,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 11f4761c3a84e2cc9df62f117a003af8c57f3d226eec5a40d6241b121e78d002 430f539cbb3f806fb89191e0b759a5f8b49d9e5b6c95fe9a4b55a1aa0875762a
-R c37204de6c890801155672b7d23b8abd
+P a7dcf6a79f7e1c5884baee2909a4bf3174ae06d561dae87b390856e573f81b49
+R 84109358bc8c579f4172a289a09c559d
 U drh
-Z 640e08616c5ac7ee4ced91411da47a09
+Z 3bebc4378f2040a907bd12dcd9347c44
