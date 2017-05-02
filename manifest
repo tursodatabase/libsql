@@ -1,5 +1,5 @@
-C Enhance\s"PRAGMA\sintegrity_check"\sto\sdetect\sduplicate\srowids\swithin\sa\sleaf\npage.
-D 2017-05-01T18:24:01.052
+C Fix\stypo\sin\scomment.\s\sNo\schanges\sto\scode.
+D 2017-05-02T01:30:44.805
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a8c838220f7c00820e1fc0ac1bccaaa8e5676067e1dbfa1bafa7a4ffecf8ae6
@@ -404,7 +404,7 @@ F src/resolve.c 3e518b962d932a997fae373366880fc028c75706
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 478e95d424bb86d34c7c95d20872cbd78df97af5f83c3fd7de55d5b2413f927d
 F src/shell.c 21b79c0e1b93f8e35fd7b4087d6ba438326c3d7e285d0dd51dfd741475f858a1
-F src/sqlite.h.in 40233103e3e4e10f8a63523498d0259d232e42aba478e2d3fb914799185aced6
+F src/sqlite.h.in eeb1da70a61d52e1d58e5b55446b85bbac571699421d3cf857421c56214013ce
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 58fd0676d3111d02e62e5a35992a7d3da5d3f88753acc174f2d37b774fbbdd28
 F src/sqliteInt.h 9affb53bb405dcea1d86e85198ebaf6232a684cc2b2af6b3c181869f1c8f3e93
@@ -1577,7 +1577,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a6727eef6d757a39ad23e5c8cbe960f5d909e5d37cb4e90bc3bdbb8bf58cd6f8
-R 90aeb34d2a97f39322f1438c3090df25
-U dan
-Z f3a1c9f94034eac95802b81d94d576ee
+P adcad37b001d255299be716b16003b56ec1fba349ef73261ee0e543186c4f311
+R 333e64e1a0afdbe4625860741bf47c15
+U mistachkin
+Z b65b5e3a6f4ab6d1f0aa8214a9325839
