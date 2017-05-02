@@ -1,5 +1,5 @@
-C Move\sterms\sof\sthe\sHAVING\sclause\sthat\sreference\sonly\scolumns\sin\sthe\sGROUP\sBY\nclause\sover\sto\sthe\sWHERE\sclause,\sresulting\sin\sa\sfaster\squery\splan.
-D 2017-05-02T16:55:07.827
+C Reuse\sthe\ssame\smaterialization\sof\sa\sview\swhen\sthat\sview\sappears\sin\sa\squery\nmore\sthan\sonce,\ssuch\sas\sin\sa\sself-join.
+D 2017-05-02T17:54:19.760
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a8c838220f7c00820e1fc0ac1bccaaa8e5676067e1dbfa1bafa7a4ffecf8ae6
@@ -402,7 +402,7 @@ F src/printf.c 8757834f1b54dae512fb25eb1acc8e94a0d15dd2290b58f2563f65973265adb2
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 3e518b962d932a997fae373366880fc028c75706
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c 4bbdacd119f22b3b7712b1c1f54bb52fdc7d97d24e131440cc5f235b9df42b0c
+F src/select.c 4f0adefaa5e9417459b07757e0f6060cac97930a86f0fba9797bab233ced66c0
 F src/shell.c 21b79c0e1b93f8e35fd7b4087d6ba438326c3d7e285d0dd51dfd741475f858a1
 F src/sqlite.h.in eeb1da70a61d52e1d58e5b55446b85bbac571699421d3cf857421c56214013ce
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -469,11 +469,11 @@ F src/update.c c443935c652af9365e033f756550b5032d02e1b06eb2cb890ed7511ae0c051dc
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c ca8440ede81e155d15cff7c101654f60b55a9ae6
 F src/vacuum.c 1fe4555cd8c9b263afb85b5b4ee3a4a4181ad569
-F src/vdbe.c 349eb6789cf8b03ef1aa42271aa9a17a6a7794c07448d27c5405904ba1b21715
+F src/vdbe.c 9bac2bc2313ed682e6f48ccff6644d3263341885bfcbb3cdea7b720c722be2d5
 F src/vdbe.h f7d1456e28875c2dcb964056589b5b7149ab7edf39edeca801596a39bb3d3848
 F src/vdbeInt.h c070bc5c8b913bda0ceaa995cd4d939ded5e4fc96cf7c3c1c602d41b871f8ade
 F src/vdbeapi.c 5b08d82592bcff4470601fe78aaabebd50837860
-F src/vdbeaux.c 6b3f6ce909e206d4c918988b13b7fa687e92b4471d137e0f2a37edac80ec60be
+F src/vdbeaux.c b4999c744e59deba7ab8733640219ecbc771721b362d7e26ce4c57db575ad80b
 F src/vdbeblob.c 359891617358deefc85bef7bcf787fa6b77facb9
 F src/vdbemem.c 2c70f8f5de6c71fb99a22c5b83be9fab5c47cdd8e279fa44a8c00cfed06d7e89
 F src/vdbesort.c e72fe02a2121386ba767ede8942e9450878b8fc873abf3d1b6824485f092570c
@@ -1578,8 +1578,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6674814afb9e763e7f7060776586e26da28040b3208ce06c8a285dd647e5a53d 8424492eac506866d2918e5fe03c8f65fef960215d56012a3b52ed42789ed35a
-R 645ee5368137c061c8ff554b7c3cb973
-T +closed 8424492eac506866d2918e5fe03c8f65fef960215d56012a3b52ed42789ed35a
+P 47cbb471d056c8e1834a5ca72491404a3bfb273b5ff7bdd84b98d263938ea874 c64fe3a1695925693385d313e9ad2a1d8cb37ddaa8cc19920ae0978c91bc4c2c
+R 250cb39f933147d7683c248b1fcd12aa
+T +closed c64fe3a1695925693385d313e9ad2a1d8cb37ddaa8cc19920ae0978c91bc4c2c
 U drh
-Z f125bc7c2e400862ed032d286e9e90a2
+Z d1eca8aa444c2ea7562fa3a6e3e0ab31

@@ -3540,6 +3540,37 @@ open_cursor_set_hints:
   break;
 }
 
+/* Opcode: OpenDup P1 P2 * * *
+**
+** Open a new cursor P1 that points to the same ephemeral table as
+** cursor P2.  The P2 cursor must have been opened by a prior OP_OpenEphemeral
+** opcode.  Only ephemeral cursors may be duplicated.
+**
+** Duplicate ephemeral cursors are used for self-joins of materialized views.
+*/
+case OP_OpenDup: {
+  VdbeCursor *pOrig;    /* The original cursor to be duplicated */
+  VdbeCursor *pCx;      /* The new cursor */
+
+  pOrig = p->apCsr[pOp->p2];
+  assert( pOrig->pBtx!=0 );  /* Only ephemeral cursors can be duplicated */
+
+  pCx = allocateCursor(p, pOp->p1, pOrig->nField, -1, CURTYPE_BTREE);
+  if( pCx==0 ) goto no_mem;
+  pCx->nullRow = 1;
+  pCx->isEphemeral = 1;
+  pCx->pKeyInfo = pOrig->pKeyInfo;
+  pCx->isTable = pOrig->isTable;
+  rc = sqlite3BtreeCursor(pOrig->pBtx, MASTER_ROOT, BTREE_WRCSR,
+                          pCx->pKeyInfo, pCx->uc.pCursor);
+  /* The sqlite3BtreeCursor() routine can only fail for the first cursor
+  ** opened for a database.  Since there is already an open cursor when this
+  ** opcode is run, the sqlite3BtreeCursor() cannot fail */
+  assert( rc==SQLITE_OK );
+  break;
+}
+
+
 /* Opcode: OpenEphemeral P1 P2 * P4 P5
 ** Synopsis: nColumn=P2
 **
