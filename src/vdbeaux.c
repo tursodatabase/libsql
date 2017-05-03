@@ -1612,7 +1612,7 @@ int sqlite3VdbeList(
   int rc = SQLITE_OK;                  /* Return code */
   Mem *pMem = &p->aMem[1];             /* First Mem of result set */
   int bFull = (p->explain==1 || (db->flags & SQLITE_FullEQP));
-  Op *pOp;
+  Op *pOp = 0;
 
   assert( p->explain );
   assert( p->magic==VDBE_MAGIC_RUN );

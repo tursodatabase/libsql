@@ -1,5 +1,5 @@
-C Get\ssqlite3_expert\sbuilding\son\sWindows.
-D 2017-05-03T12:50:46.615
+C Fix\sa\sharmless\scompiler\swarning\son\sWindows.
+D 2017-05-03T13:05:08.456
 F Makefile.in 2c991e7b1a2bb23c147406c3630b54d99c4931ae1fa0e8c6b6bf40a7a2fd02a3
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 2b4876693e76420704bd2defe9f957b902ccb35ebe1fd071b80f70e862b7d444
@@ -479,7 +479,7 @@ F src/vdbe.c 356042d11e05064c43242020e8de97acef9fc8931cfc39ae7cf4cf91d6e42c19
 F src/vdbe.h f7d1456e28875c2dcb964056589b5b7149ab7edf39edeca801596a39bb3d3848
 F src/vdbeInt.h c070bc5c8b913bda0ceaa995cd4d939ded5e4fc96cf7c3c1c602d41b871f8ade
 F src/vdbeapi.c 5b08d82592bcff4470601fe78aaabebd50837860
-F src/vdbeaux.c 98ced78bb4d8f1c66a4519591804cbf34530f19c295a8589833aaa6004ea8731
+F src/vdbeaux.c dd4106907d8a52f80876c7cec030511220146056d0bb5d274f8528e251ffaed9
 F src/vdbeblob.c 359891617358deefc85bef7bcf787fa6b77facb9
 F src/vdbemem.c 2c70f8f5de6c71fb99a22c5b83be9fab5c47cdd8e279fa44a8c00cfed06d7e89
 F src/vdbesort.c e72fe02a2121386ba767ede8942e9450878b8fc873abf3d1b6824485f092570c
@@ -1585,7 +1585,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P da15752dccf6090e40ec825db89048eca2b30185882225bf81f1891e914c2e7f
-R d4fb7977c87e361df2272c02e0401fc7
+P d8254047b30f7c1be486bf39d4420678604573b951b5cc83c19ebf74aba0864c
+R efc1806e3149882e34f308cbcfce19a8
 U drh
-Z 1174ddb23c34b04fd900b7d4a8068d04
+Z 5eec4984a758352eb665dd5f89e1a5b7
