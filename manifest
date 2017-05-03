@@ -1,8 +1,8 @@
-C In\ssqlite3expert.c,\sdo\snot\scopy\sthe\sschema\sfor\svirtual\stables.\s\sUpdates\sto\nmakefiles\sto\smake\sbuilding\seasier.
-D 2017-05-03T12:15:20.951
+C Get\ssqlite3_expert\sbuilding\son\sWindows.
+D 2017-05-03T12:50:46.615
 F Makefile.in 2c991e7b1a2bb23c147406c3630b54d99c4931ae1fa0e8c6b6bf40a7a2fd02a3
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 6a8c838220f7c00820e1fc0ac1bccaaa8e5676067e1dbfa1bafa7a4ffecf8ae6
+F Makefile.msc 2b4876693e76420704bd2defe9f957b902ccb35ebe1fd071b80f70e862b7d444
 F README.md 2b15fae33852f2f53996774c21fb41e1d94181c4401a0e43ac93e11f2cc901b9
 F VERSION 0a0e02e16b44ea735b40118fc844311b2ab0d35b25fbeda5120aee62f973f663
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -41,9 +41,9 @@ F ext/async/README.txt e12275968f6fde133a80e04387d0e839b0c51f91
 F ext/async/sqlite3async.c 0f3070cc3f5ede78f2b9361fb3b629ce200d7d74
 F ext/async/sqlite3async.h f489b080af7e72aec0e1ee6f1d98ab6cf2e4dcef
 F ext/expert/README.md b321c2762bb93c18ea102d5a5f7753a4b8bac646cb392b3b437f633caf2020c3
-F ext/expert/expert.c dc88a3e73fdeb0d21e7d60b791120961853af931f3c509b508f4ac4a0233438e
+F ext/expert/expert.c 4791c5e064aea81b2b829fa95228b22283380ee370ea88a1e580103b75516ebf
 F ext/expert/expert1.test 1033e43071b69dc2f4e88fbf03fc7f18846c9865cac14f28c80f581437f09acb
-F ext/expert/sqlite3expert.c 87bac32f90492adfd99d3dc142d5c9af38a3bd961637202285077968051bc6e8
+F ext/expert/sqlite3expert.c 6ed4e84a06d1a29b2cf3009c0266573b88602d098055caa46c467154a64e0959
 F ext/expert/sqlite3expert.h af6354f8ee5c9e025024e63fec3bd640a802afcc3099a44d804752cf0791d811
 F ext/expert/test_expert.c 85f5c743a899063fa48296d21de2f32c26d09a21c8582b2a0bc482e8de183e7a
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
@@ -1585,7 +1585,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P af7d1596044980e0a18baa3ab6674779724dffbf18a152c72e53f11a08999e68
-R 446fb26db86c2ead652773ba0b926ac7
+P da15752dccf6090e40ec825db89048eca2b30185882225bf81f1891e914c2e7f
+R d4fb7977c87e361df2272c02e0401fc7
 U drh
-Z 183bc096a41586435af9a58068b8a076
+Z 1174ddb23c34b04fd900b7d4a8068d04

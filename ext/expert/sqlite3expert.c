@@ -25,6 +25,8 @@ typedef struct IdxStatement IdxStatement;
 typedef struct IdxTable IdxTable;
 typedef struct IdxWrite IdxWrite;
 
+#define STRLEN  (int)strlen
+
 /*
 ** A temp table name that we assume no user database will actually use.
 ** If this assumption proves incorrect triggers on the table with the
@@ -212,13 +214,13 @@ static int idxHashAdd(
   const char *zKey,
   const char *zVal
 ){
-  int nKey = strlen(zKey);
+  int nKey = STRLEN(zKey);
   int iHash = idxHashString(zKey, nKey);
-  int nVal = (zVal ? strlen(zVal) : 0);
+  int nVal = (zVal ? STRLEN(zVal) : 0);
   IdxHashEntry *pEntry;
   assert( iHash>=0 );
   for(pEntry=pHash->aHash[iHash]; pEntry; pEntry=pEntry->pHashNext){
-    if( strlen(pEntry->zKey)==nKey && 0==memcmp(pEntry->zKey, zKey, nKey) ){
+    if( STRLEN(pEntry->zKey)==nKey && 0==memcmp(pEntry->zKey, zKey, nKey) ){
       return 1;
     }
   }
@@ -246,11 +248,11 @@ static int idxHashAdd(
 static IdxHashEntry *idxHashFind(IdxHash *pHash, const char *zKey, int nKey){
   int iHash;
   IdxHashEntry *pEntry;
-  if( nKey<0 ) nKey = strlen(zKey);
+  if( nKey<0 ) nKey = STRLEN(zKey);
   iHash = idxHashString(zKey, nKey);
   assert( iHash>=0 );
   for(pEntry=pHash->aHash[iHash]; pEntry; pEntry=pEntry->pHashNext){
-    if( strlen(pEntry->zKey)==nKey && 0==memcmp(pEntry->zKey, zKey, nKey) ){
+    if( STRLEN(pEntry->zKey)==nKey && 0==memcmp(pEntry->zKey, zKey, nKey) ){
       return pEntry;
     }
   }
@@ -275,7 +277,7 @@ static const char *idxHashSearch(IdxHash *pHash, const char *zKey, int nKey){
 */
 static IdxConstraint *idxNewConstraint(int *pRc, const char *zColl){
   IdxConstraint *pNew;
-  int nColl = strlen(zColl);
+  int nColl = STRLEN(zColl);
 
   assert( *pRc==SQLITE_OK );
   pNew = (IdxConstraint*)idxMalloc(pRc, sizeof(IdxConstraint) * nColl + 1);
@@ -357,7 +359,7 @@ struct ExpertCsr {
 };
 
 static char *expertDequote(const char *zIn){
-  int n = strlen(zIn);
+  int n = STRLEN(zIn);
   char *zRet = sqlite3_malloc(n);
 
   assert( zIn[0]=='\'' );
@@ -666,7 +668,7 @@ static int idxGetTableInfo(
 ){
   sqlite3_stmt *p1 = 0;
   int nCol = 0;
-  int nTab = strlen(zTab);
+  int nTab = STRLEN(zTab);
   int nByte = sizeof(IdxTable) + nTab + 1;
   IdxTable *pNew = 0;
   int rc, rc2;
@@ -675,11 +677,11 @@ static int idxGetTableInfo(
   rc = idxPrintfPrepareStmt(db, &p1, pzErrmsg, "PRAGMA table_info=%Q", zTab);
   while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(p1) ){
     const char *zCol = (const char*)sqlite3_column_text(p1, 1);
-    nByte += 1 + strlen(zCol);
+    nByte += 1 + STRLEN(zCol);
     rc = sqlite3_table_column_metadata(
         db, "main", zTab, zCol, 0, &zCol, 0, 0, 0
     );
-    nByte += 1 + strlen(zCol);
+    nByte += 1 + STRLEN(zCol);
     nCol++;
   }
   rc2 = sqlite3_reset(p1);
@@ -698,7 +700,7 @@ static int idxGetTableInfo(
   nCol = 0;
   while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(p1) ){
     const char *zCol = (const char*)sqlite3_column_text(p1, 1);
-    int nCopy = strlen(zCol) + 1;
+    int nCopy = STRLEN(zCol) + 1;
     pNew->aCol[nCol].zName = pCsr;
     pNew->aCol[nCol].iPk = sqlite3_column_int(p1, 5);
     memcpy(pCsr, zCol, nCopy);
@@ -708,7 +710,7 @@ static int idxGetTableInfo(
         db, "main", zTab, zCol, 0, &zCol, 0, 0, 0
     );
     if( rc==SQLITE_OK ){
-      nCopy = strlen(zCol) + 1;
+      nCopy = STRLEN(zCol) + 1;
       pNew->aCol[nCol].zColl = pCsr;
       memcpy(pCsr, zCol, nCopy);
       pCsr += nCopy;
@@ -743,13 +745,13 @@ static char *idxAppendText(int *pRc, char *zIn, const char *zFmt, ...){
   va_list ap;
   char *zAppend = 0;
   char *zRet = 0;
-  int nIn = zIn ? strlen(zIn) : 0;
+  int nIn = zIn ? STRLEN(zIn) : 0;
   int nAppend = 0;
   va_start(ap, zFmt);
   if( *pRc==SQLITE_OK ){
     zAppend = sqlite3_vmprintf(zFmt, ap);
     if( zAppend ){
-      nAppend = strlen(zAppend);
+      nAppend = STRLEN(zAppend);
       zRet = (char*)sqlite3_malloc(nIn + nAppend + 1);
     }
     if( zAppend && zRet ){
@@ -1114,7 +1116,7 @@ int idxFindIndexes(
       int iOrder = sqlite3_column_int(pExplain, 1);
       int iFrom = sqlite3_column_int(pExplain, 2);
       const char *zDetail = (const char*)sqlite3_column_text(pExplain, 3);
-      int nDetail = strlen(zDetail);
+      int nDetail = STRLEN(zDetail);
       int i;
 
       for(i=0; i<nDetail; i++){
@@ -1577,7 +1579,7 @@ static int idxPopulateOneStat1(
       rc = sqlite3_reset(pWriteStat);
     }
 
-    pEntry = idxHashFind(&p->hIdx, zIdx, strlen(zIdx));
+    pEntry = idxHashFind(&p->hIdx, zIdx, STRLEN(zIdx));
     if( pEntry ){
       assert( pEntry->zVal2==0 );
       pEntry->zVal2 = zStat;
@@ -1816,7 +1818,7 @@ int sqlite3_expert_sql(
       if( pStmt ){
         IdxStatement *pNew;
         const char *z = sqlite3_sql(pStmt);
-        int n = strlen(z);
+        int n = STRLEN(z);
         pNew = (IdxStatement*)idxMalloc(&rc, sizeof(IdxStatement) + n+1);
         if( rc==SQLITE_OK ){
           pNew->zSql = (char*)&pNew[1];
