@@ -10,9 +10,6 @@
 **
 *************************************************************************
 */
-
-#if !defined(SQLITE_TEST) || defined(SQLITE_ENABLE_WHEREINFO_HOOK)
-
 #include "sqlite3expert.h"
 #include <assert.h>
 #include <string.h>
@@ -1745,6 +1742,7 @@ sqlite3expert *sqlite3_expert_new(sqlite3 *db, char **pzErrmsg){
     sqlite3_stmt *pSql;
     rc = idxPrintfPrepareStmt(pNew->db, &pSql, pzErrmsg, 
         "SELECT sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%%'"
+        " AND sql NOT LIKE 'CREATE VIRTUAL %%'"
     );
     while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pSql) ){
       const char *zSql = (const char*)sqlite3_column_text(pSql, 0);
@@ -1933,6 +1931,3 @@ void sqlite3_expert_destroy(sqlite3expert *p){
     sqlite3_free(p);
   }
 }
-
-#endif /* !defined(SQLITE_TEST) || defined(SQLITE_ENABLE_WHEREINFO_HOOK) */
-

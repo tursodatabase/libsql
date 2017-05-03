@@ -1,6 +1,6 @@
-C In\sthe\ssqlite3_expert\scommand-line\stool,\sallow\stwo-dash\soptions.\s\sDo\snot\naccept\sthe\sdatabase\sname\sif\sit\sbegins\swith\s"-".
-D 2017-05-02T20:42:30.619
-F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
+C In\ssqlite3expert.c,\sdo\snot\scopy\sthe\sschema\sfor\svirtual\stables.\s\sUpdates\sto\nmakefiles\sto\smake\sbuilding\seasier.
+D 2017-05-03T12:15:20.951
+F Makefile.in 2c991e7b1a2bb23c147406c3630b54d99c4931ae1fa0e8c6b6bf40a7a2fd02a3
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a8c838220f7c00820e1fc0ac1bccaaa8e5676067e1dbfa1bafa7a4ffecf8ae6
 F README.md 2b15fae33852f2f53996774c21fb41e1d94181c4401a0e43ac93e11f2cc901b9
@@ -43,7 +43,7 @@ F ext/async/sqlite3async.h f489b080af7e72aec0e1ee6f1d98ab6cf2e4dcef
 F ext/expert/README.md b321c2762bb93c18ea102d5a5f7753a4b8bac646cb392b3b437f633caf2020c3
 F ext/expert/expert.c dc88a3e73fdeb0d21e7d60b791120961853af931f3c509b508f4ac4a0233438e
 F ext/expert/expert1.test 1033e43071b69dc2f4e88fbf03fc7f18846c9865cac14f28c80f581437f09acb
-F ext/expert/sqlite3expert.c 4bc1820a70d68b478884a26a2215df8c1f2d44fb40d9cd8c47d2046c8ce0c8bc
+F ext/expert/sqlite3expert.c 87bac32f90492adfd99d3dc142d5c9af38a3bd961637202285077968051bc6e8
 F ext/expert/sqlite3expert.h af6354f8ee5c9e025024e63fec3bd640a802afcc3099a44d804752cf0791d811
 F ext/expert/test_expert.c 85f5c743a899063fa48296d21de2f32c26d09a21c8582b2a0bc482e8de183e7a
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
@@ -332,7 +332,7 @@ F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk ef818c7b1bb21f657e3bfb363cc7167264d688ca404a666e6ddda6029e94c43b
+F main.mk 7fcb8db53d07ea8124c2c43dac5fcee8095e4abeab1acdf114833b8805aa72c9
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -1585,7 +1585,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a7dcf6a79f7e1c5884baee2909a4bf3174ae06d561dae87b390856e573f81b49
-R 84109358bc8c579f4172a289a09c559d
+P af7d1596044980e0a18baa3ab6674779724dffbf18a152c72e53f11a08999e68
+R 446fb26db86c2ead652773ba0b926ac7
 U drh
-Z 3bebc4378f2040a907bd12dcd9347c44
+Z 183bc096a41586435af9a58068b8a076
