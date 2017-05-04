@@ -2186,19 +2186,6 @@ sqlite3_analyzer.exe:	sqlite3_analyzer.c $(LIBRESOBJS)
 sqlite3_expert.exe: $(SQLITE3C) $(TOP)\ext\expert\sqlite3expert.h $(TOP)\ext\expert\sqlite3expert.c $(TOP)\ext\expert\expert.c
 	$(LTLINK) $(NO_WARN)	$(TOP)\ext\expert\sqlite3expert.c $(TOP)\ext\expert\expert.c $(SQLITE3C) $(TLIBS)
 
-sqlite3_schemalint.c: $(SQLITE3C) $(SQLITE3H) $(TOP)\src\tclsqlite.c $(TOP)\tool\schemalint.tcl $(SQLITE_TCL_DEP)
-	echo "#define TCLSH 2" > $@
-	echo "#define SQLITE_ENABLE_DBSTAT_VTAB 1" >> $@
-	copy $@ + $(SQLITE3C) + $(TOP)\src\tclsqlite.c >> $@
-	echo "static const char *tclsh_main_loop(void){" >> $@
-	echo "static const char *zMainloop = " >> $@
-	$(TCLSH_CMD) $(TOP)\tool\tostr.tcl $(TOP)\tool\schemalint.tcl >> $@
-	echo "; return zMainloop; }" >> $@
-
-sqlite3_schemalint.exe: $(TESTSRC) sqlite3_schemalint.c
-	$(LTLINK) $(NO_WARN) -DBUILD_sqlite -I$(TCLINCDIR) sqlite3_schemalint.c \
-		/link $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LTLIBS) $(TLIBS)
-
 dbdump.exe:	$(TOP)\ext\misc\dbdump.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) -DDBDUMP_STANDALONE $(TOP)\ext\misc\dbdump.c $(SQLITE3C) \
 		/link $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LTLIBS)

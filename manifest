@@ -1,8 +1,8 @@
-C Fix\sa\sharmless\scompiler\swarning\son\sWindows.
-D 2017-05-03T13:05:08.456
-F Makefile.in 2c991e7b1a2bb23c147406c3630b54d99c4931ae1fa0e8c6b6bf40a7a2fd02a3
+C Remove\sthe\stool/schemalint.tcl\sscript.\sAnd\srelated\sMakefile\sentries.\sIt\sis\nsuperseded\sby\ssqlite3_expert.
+D 2017-05-04T14:02:05.547
+F Makefile.in 2594c46dc86cb8cf0bd397c89c16b946ba45cd8c3459471a8634a9a9412a4724
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 2b4876693e76420704bd2defe9f957b902ccb35ebe1fd071b80f70e862b7d444
+F Makefile.msc 35879b76bc9136af684cc54b4178ebc6ab231ac0f24990bef703ad80a9330641
 F README.md 2b15fae33852f2f53996774c21fb41e1d94181c4401a0e43ac93e11f2cc901b9
 F VERSION 0a0e02e16b44ea735b40118fc844311b2ab0d35b25fbeda5120aee62f973f663
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -332,7 +332,7 @@ F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 7fcb8db53d07ea8124c2c43dac5fcee8095e4abeab1acdf114833b8805aa72c9
+F main.mk e916822e73ef2cf567d9fb079735d0bd1fb7afc89f75252a62c72d50730a49f3
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -1537,7 +1537,6 @@ F tool/replace.tcl 60f91e8dd06ab81f74d213ecbd9c9945f32ac048
 F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
 F tool/run-speed-test.sh f95d19fd669b68c4c38b6b475242841d47c66076
-F tool/schemalint.tcl 49690356702d6cac07e2bb1790eac73862e92926
 F tool/showdb.c e6bc9dba233bf1b57ca0a525a2bba762db4e223de84990739db3f09c46151b1e
 F tool/showjournal.c 5bad7ae8784a43d2b270d953060423b8bd480818
 F tool/showlocks.c 9920bcc64f58378ff1118caead34147201f48c68
@@ -1585,7 +1584,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d8254047b30f7c1be486bf39d4420678604573b951b5cc83c19ebf74aba0864c
-R efc1806e3149882e34f308cbcfce19a8
-U drh
-Z 5eec4984a758352eb665dd5f89e1a5b7
+P 593e5dd00cdf8fbc680951d68b53b38262c61c467703f6a8eb477226cf6beedd
+R bd679d9017e39a4713f5824e1924f07c
+U dan
+Z f03ecb4affa26d84072c6437b5574775

@@ -766,20 +766,6 @@ sqlite3_analyzer$(EXE): sqlite3_analyzer.c
 sqlite3_expert$(EXE): $(TOP)/ext/expert/sqlite3expert.h $(TOP)/ext/expert/sqlite3expert.c $(TOP)/ext/expert/expert.c sqlite3.c
 	$(TCCX) $(TOP)/ext/expert/sqlite3expert.h $(TOP)/ext/expert/sqlite3expert.c $(TOP)/ext/expert/expert.c sqlite3.c -o sqlite3_expert $(THREADLIB)
 
-sqlite3_schemalint.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/schemalint.tcl
-	echo "#define TCLSH 2" > $@
-	echo "#define SQLITE_ENABLE_DBSTAT_VTAB 1" >> $@
-	cat sqlite3.c $(TOP)/src/tclsqlite.c >> $@
-	echo "static const char *tclsh_main_loop(void){" >> $@
-	echo "static const char *zMainloop = " >> $@
-	tclsh $(TOP)/tool/tostr.tcl $(TOP)/tool/schemalint.tcl >> $@
-	echo "; return zMainloop; }" >> $@
-
-sqlite3_schemalint$(EXE): $(TESTSRC) sqlite3_schemalint.c $(TOP)/ext/session/test_session.c
-	$(TCCX) $(TCL_FLAGS) $(TESTFIXTURE_FLAGS)                  \
-		sqlite3_schemalint.c $(TESTSRC) $(TOP)/ext/session/test_session.c  \
-		-o sqlite3_schemalint$(EXE) $(LIBTCL) $(THREADLIB)
-
 dbdump$(EXE):	$(TOP)/ext/misc/dbdump.c sqlite3.o
 	$(TCCX) -DDBDUMP_STANDALONE -o dbdump$(EXE) \
             $(TOP)/ext/misc/dbdump.c sqlite3.o $(THREADLIB)
