@@ -744,6 +744,10 @@ struct SHA3Context {
   unsigned ixMask;       /* Insert next input into u.x[nLoaded^ixMask]. */
 };
 
+/* Allow the following routine to use the B0 variable, which is also
+** a macro in the termios.h header file */
+#undef B0
+
 /*
 ** A single step of the Keccak mixing function for a 1600-bit state
 */
