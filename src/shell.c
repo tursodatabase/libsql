@@ -438,7 +438,7 @@ static void utf8_width_print(FILE *pOut, int w, const char *zUtf){
   int n;
   int aw = w<0 ? -w : w;
   char zBuf[1000];
-  if( aw>sizeof(zBuf)/3 ) aw = sizeof(zBuf)/3;
+  if( aw>(int)sizeof(zBuf)/3 ) aw = (int)sizeof(zBuf)/3;
   for(i=n=0; zUtf[i]; i++){
     if( (zUtf[i]&0xc0)!=0x80 ){
       n++;
