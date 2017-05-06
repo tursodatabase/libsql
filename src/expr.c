@@ -1550,7 +1550,7 @@ ExprList *sqlite3ExprListAppendVector(
     }
   }
 
-  if( pExpr->op==TK_SELECT && pList ){
+  if( !db->mallocFailed && pExpr->op==TK_SELECT && ALWAYS(pList!=0) ){
     Expr *pFirst = pList->a[iFirst].pExpr;
     assert( pFirst!=0 );
     assert( pFirst->op==TK_SELECT_COLUMN );

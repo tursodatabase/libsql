@@ -1,5 +1,5 @@
-C Fix\srequirements\smarks\sand\sharmless\scompiler\swarnings.
-D 2017-05-06T17:12:52.313
+C Fix\san\sobscure\sassertion\sfault\sthat\scan\sfollow\san\sOOM.\s\s\sThe\sproblem\nwas\sintroduced\sby\scheck-in\s[a1cf44763277b6c7].
+D 2017-05-06T18:09:36.744
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a8c838220f7c00820e1fc0ac1bccaaa8e5676067e1dbfa1bafa7a4ffecf8ae6
@@ -355,7 +355,7 @@ F src/ctime.c 47d91a25ad8f199a71a5b1b7b169d6dd0d6e98c5719eca801568798743d1161c
 F src/date.c cc42a41c7422389860d40419a5e3bce5eaf6e7835c3ba2677751dc653550a5c7
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
 F src/delete.c 0d9d5549d42e79ce4d82ff1db1e6c81e36d2f67c
-F src/expr.c 965f5e6074ee61cf933be079c6a443c88414490c13ec270b5baaacaa920280fa
+F src/expr.c c980b2c9291a12a0f1de1e1e1aaa72c4579ded716e1e3a3ac1c3d898ba0df0a1
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c db65492ae549c3b548c9ef1f279ce1684f1c473b116e1c56a90878cd5dcf968d
 F src/func.c 9d52522cc8ae7f5cdadfe14594262f1618bc1f86083c4cd6da861b4cf5af6174
@@ -1578,7 +1578,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b9a58daca80a815e87e541cb5fff9bc8b93f131d223f322c5b83dd5a5f0c0312
-R 7439e7b02aa88b692e04c05c6e92f9d2
+P 198ff4c01d86d193a54745764d69376cab8e94747a4daa444690f7e1ec87800b
+R 32100f2588ee0aaab5e52c8f56365f52
 U drh
-Z 9b526b1df399cb1577efc1cd64d02ba1
+Z 5b7285d0420627775594602075610fb9
