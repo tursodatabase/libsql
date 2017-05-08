@@ -1,5 +1,5 @@
-C Update\sthis\sbranch\swith\slatest\strunk\schanges.
-D 2017-05-06T16:04:58.355
+C Add\ssome\ssupport\sfor\swal\smode\sto\sthe\shack\son\sthis\sbranch.
+D 2017-05-08T20:15:23.906
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a8c838220f7c00820e1fc0ac1bccaaa8e5676067e1dbfa1bafa7a4ffecf8ae6
@@ -389,7 +389,7 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c 30e2c43e4955db990e5b5a81e901f8aa74cc8820
 F src/os_win.c 2a6c73eef01c51a048cc4ddccd57f981afbec18a
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 67e97956c302cf81acf0f3f56e1853b32c88cda5ae09ecba3bcd35272d2ab739
+F src/pager.c aec4a28d8aace83424bc9ec1f85867f2defd0e2173caba11628ff5daee2c4d5c
 F src/pager.h ea05992c581c3366279fb1d436944604b4be17208ebb41fa407306e5e4b34205
 F src/parse.y 0513387ce02fea97897d8caef82d45f347818593f24f1bdc48e0c530a8af122d
 F src/pcache.c 62835bed959e2914edd26afadfecce29ece0e870
@@ -481,8 +481,8 @@ F src/vdbesort.c e72fe02a2121386ba767ede8942e9450878b8fc873abf3d1b6824485f092570
 F src/vdbetrace.c 41963d5376f0349842b5fc4aaaaacd7d9cdc0834
 F src/vtab.c 35b9bdc2b41de32a417141d12097bcc4e29a77ed7cdb8f836d1d2305d946b61b
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 40c543f0a2195d1b0dc88ef12142bea690009344
-F src/wal.h 06b2a0b599cc0f53ea97f497cf8c6b758c999f71
+F src/wal.c 126aadd32eddde857e7f495e8887fa9dc6847fb287994ec5a5a25d29e00026ef
+F src/wal.h 739d92494eb18b6d8f3e353e66c10eb8f94534bafd336ece9f3f60235317ea08
 F src/walker.c b71a992b413b3a022572eccf29ef4b4890223791
 F src/where.c c6352f15be5031907c68bcbde96cad1a6da20e9f4051d10168a59235de9a8566
 F src/whereInt.h 2a4b634d63ce488b46d4b0da8f2eaa8f9aeab202bc25ef76f007de5e3fba1f20
@@ -1114,6 +1114,7 @@ F test/server1.test 46803bd3fe8b99b30dbc5ff38ffc756f5c13a118
 F test/server2.test 11dda300ebef43b4abe0fdc086b6f51b964beddb529fb65bc1f026db5895c36e
 F test/server3.test c33343f2f6bc23f2b4e2f047c3d083579f0cfac2795e0f1eb226ab34758967c0
 F test/servercrash.test 816c132b26af008067cab2913783f67006d4003e3988f3f3ee1075742f6e0a6c
+F test/serverwal.test 92b8bf8e298f1998abbbdd7be3d7a8998da3ce0752e6145e8b5dc3e1bafaa248
 F test/session.test 78fa2365e93d3663a6e933f86e7afc395adf18be
 F test/shared.test 1da9dbad400cee0d93f252ccf76e1ae007a63746
 F test/shared2.test 03eb4a8d372e290107d34b6ce1809919a698e879
@@ -1582,7 +1583,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 83b1e163ef6ac01d252268415f26a2a999670de583491becc091d294075980bc b9a58daca80a815e87e541cb5fff9bc8b93f131d223f322c5b83dd5a5f0c0312
-R 952da0dcda6531ec91ee10aec90184f4
+P ed6bad67f530afa2fba1bce339a9772f281bd108666ca6c23642efcefa2d98e5
+R 2a0e7ce8f8804eb6e9ded68b549dbd29
 U dan
-Z 3f846c10a713919860c0f77bb78b97b0
+Z 1f1788eecdf4834ab0b218624657be1d

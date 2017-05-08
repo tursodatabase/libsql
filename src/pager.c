@@ -5373,17 +5373,17 @@ int sqlite3PagerSharedLock(Pager *pPager){
       }
     }
 
+    rc = pagerServerConnect(pPager);
+
     /* If there is a WAL file in the file-system, open this database in WAL
     ** mode. Otherwise, the following function call is a no-op.
     */
-    rc = pagerOpenWalIfPresent(pPager);
+    if( rc==SQLITE_OK ){
+      rc = pagerOpenWalIfPresent(pPager);
+    }
 #ifndef SQLITE_OMIT_WAL
     assert( pPager->pWal==0 || rc==SQLITE_OK );
 #endif
-
-    if( rc==SQLITE_OK && pagerUseWal(pPager)==0 ){
-      rc = pagerServerConnect(pPager);
-    }
   }
 
 #ifdef SQLITE_SERVER_EDITION
@@ -5391,7 +5391,7 @@ int sqlite3PagerSharedLock(Pager *pPager){
     assert( rc==SQLITE_OK );
     pager_reset(pPager);
     rc = sqlite3ServerBegin(pPager->pServer);
-  }else
+  }
 #endif
   if( pagerUseWal(pPager) ){
     assert( rc==SQLITE_OK );
@@ -7455,7 +7455,7 @@ int sqlite3PagerWalCallback(Pager *pPager){
 */
 int sqlite3PagerWalSupported(Pager *pPager){
   const sqlite3_io_methods *pMethods = pPager->fd->pMethods;
-  if( pPager->noLock ) return 0;
+  if( pPager->noLock && !pagerIsServer(pPager) ) return 0;
   return pPager->exclusiveMode || (pMethods->iVersion>=2 && pMethods->xShmMap);
 }
 
@@ -7550,6 +7550,7 @@ int sqlite3PagerOpenWal(
     if( rc==SQLITE_OK ){
       pPager->journalMode = PAGER_JOURNALMODE_WAL;
       pPager->eState = PAGER_OPEN;
+      sqlite3WalServer(pPager->pWal, pPager->pServer);
     }
   }else{
     *pbOpen = 1;
