@@ -2258,6 +2258,7 @@ static int pager_playback_one_page(
   char *aData;                  /* Temporary storage for the page */
   sqlite3_file *jfd;            /* The file descriptor for the journal file */
   int isSynced;                 /* True if journal page is synced */
+  const int jrnlEnc = (isMainJrnl || pPager->subjInMemory==0);
 
   assert( (isMainJrnl&~1)==0 );      /* isMainJrnl is 0 or 1 */
   assert( (isSavepnt&~1)==0 );       /* isSavepnt is 0 or 1 */
@@ -2381,14 +2382,24 @@ static int pager_playback_one_page(
     i64 ofst = (pgno-1)*(i64)pPager->pageSize;
     testcase( !isSavepnt && pPg!=0 && (pPg->flags&PGHDR_NEED_SYNC)!=0 );
     assert( !pagerUseWal(pPager) );
+
+    /* Write the data read from the journal back into the database file.
+    ** This is usually safe even for an encrypted database - as the data
+    ** was encrypted before it was written to the journal file. The exception
+    ** is if the data was just read from an in-memory sub-journal. In that
+    ** case it must be encrypted here before it is copied into the database
+    ** file.  */
+    if( !jrnlEnc ){CODEC2(pPager, aData, pgno, 7, rc=SQLITE_NOMEM_BKPT, aData);}
     rc = sqlite3OsWrite(pPager->fd, (u8 *)aData, pPager->pageSize, ofst);
+    if( !jrnlEnc ){CODEC1(pPager, aData, pgno, 3, rc=SQLITE_NOMEM_BKPT);}
+
     if( pgno>pPager->dbFileSize ){
       pPager->dbFileSize = pgno;
     }
     if( pPager->pBackup ){
-      CODEC1(pPager, aData, pgno, 3, rc=SQLITE_NOMEM_BKPT);
+      if( jrnlEnc ){CODEC1(pPager, aData, pgno, 3, rc=SQLITE_NOMEM_BKPT);}
       sqlite3BackupUpdate(pPager->pBackup, pgno, (u8*)aData);
-      CODEC2(pPager, aData, pgno, 7, rc=SQLITE_NOMEM_BKPT, aData);
+      if( jrnlEnc ){CODEC2(pPager, aData, pgno, 7, rc=SQLITE_NOMEM_BKPT,aData);}
     }
   }else if( !isMainJrnl && pPg==0 ){
     /* If this is a rollback of a savepoint and data was not written to
@@ -2440,7 +2451,7 @@ static int pager_playback_one_page(
     }
 
     /* Decode the page just read from disk */
-    CODEC1(pPager, pData, pPg->pgno, 3, rc=SQLITE_NOMEM_BKPT);
+    if( jrnlEnc ) CODEC1(pPager, pData, pPg->pgno, 3, rc=SQLITE_NOMEM_BKPT);
     sqlite3PcacheRelease(pPg);
   }
   return rc;
@@ -4453,7 +4464,11 @@ static int subjournalPage(PgHdr *pPg){
       i64 offset = (i64)pPager->nSubRec*(4+pPager->pageSize);
       char *pData2;
   
-      CODEC2(pPager, pData, pPg->pgno, 7, return SQLITE_NOMEM_BKPT, pData2);
+      if( pPager->subjInMemory ){
+        pData2 = pData;
+      }else{
+        CODEC2(pPager, pData, pPg->pgno, 7, return SQLITE_NOMEM_BKPT, pData2);
+      }
       PAGERTRACE(("STMT-JOURNAL %d page %d\n", PAGERID(pPager), pPg->pgno));
       rc = write32bits(pPager->sjfd, offset, pPg->pgno);
       if( rc==SQLITE_OK ){
