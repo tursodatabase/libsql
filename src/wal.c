@@ -2902,11 +2902,13 @@ int sqlite3WalSavepointUndo(Wal *pWal, u32 *aWalData){
 ** if an error occurs.
 */
 static int walRestartLog(Wal *pWal){
+  volatile WalCkptInfo *pInfo = walCkptInfo(pWal);
   int rc = SQLITE_OK;
   int cnt;
 
-  if( pWal->readLock==0 ){
-    volatile WalCkptInfo *pInfo = walCkptInfo(pWal);
+  if( pWal->readLock==0 
+   || (walIsServer(pWal) && pInfo->nBackfill==pWal->hdr.mxFrame)
+  ){
     assert( pInfo->nBackfill==pWal->hdr.mxFrame );
     if( pInfo->nBackfill>0 ){
       u32 salt1;
@@ -2928,6 +2930,7 @@ static int walRestartLog(Wal *pWal){
         return rc;
       }
     }
+    if( walIsServer(pWal) ) return rc;
     walUnlockShared(pWal, WAL_READ_LOCK(0));
     pWal->readLock = -1;
     cnt = 0;

@@ -1,5 +1,5 @@
-C Add\ssome\ssupport\sfor\swal\smode\sto\sthe\shack\son\sthis\sbranch.
-D 2017-05-08T20:15:23.906
+C Fix\sa\sproblem\swith\swrapping\sthe\slog\sfile\sin\sserver\smode.
+D 2017-05-09T16:32:19.219
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a8c838220f7c00820e1fc0ac1bccaaa8e5676067e1dbfa1bafa7a4ffecf8ae6
@@ -481,7 +481,7 @@ F src/vdbesort.c e72fe02a2121386ba767ede8942e9450878b8fc873abf3d1b6824485f092570
 F src/vdbetrace.c 41963d5376f0349842b5fc4aaaaacd7d9cdc0834
 F src/vtab.c 35b9bdc2b41de32a417141d12097bcc4e29a77ed7cdb8f836d1d2305d946b61b
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 126aadd32eddde857e7f495e8887fa9dc6847fb287994ec5a5a25d29e00026ef
+F src/wal.c 85d564ebecc9c6642b256df77859559606c3009afc78b8cb9a85aa7851af7cf3
 F src/wal.h 739d92494eb18b6d8f3e353e66c10eb8f94534bafd336ece9f3f60235317ea08
 F src/walker.c b71a992b413b3a022572eccf29ef4b4890223791
 F src/where.c c6352f15be5031907c68bcbde96cad1a6da20e9f4051d10168a59235de9a8566
@@ -1114,7 +1114,7 @@ F test/server1.test 46803bd3fe8b99b30dbc5ff38ffc756f5c13a118
 F test/server2.test 11dda300ebef43b4abe0fdc086b6f51b964beddb529fb65bc1f026db5895c36e
 F test/server3.test c33343f2f6bc23f2b4e2f047c3d083579f0cfac2795e0f1eb226ab34758967c0
 F test/servercrash.test 816c132b26af008067cab2913783f67006d4003e3988f3f3ee1075742f6e0a6c
-F test/serverwal.test 92b8bf8e298f1998abbbdd7be3d7a8998da3ce0752e6145e8b5dc3e1bafaa248
+F test/serverwal.test 968154cee9a7719fa3e6b9b648e7e4d691a8e8ea4f797e13354a6e84fd159d8a
 F test/session.test 78fa2365e93d3663a6e933f86e7afc395adf18be
 F test/shared.test 1da9dbad400cee0d93f252ccf76e1ae007a63746
 F test/shared2.test 03eb4a8d372e290107d34b6ce1809919a698e879
@@ -1583,7 +1583,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ed6bad67f530afa2fba1bce339a9772f281bd108666ca6c23642efcefa2d98e5
-R 2a0e7ce8f8804eb6e9ded68b549dbd29
+P b733afc1d0abc09861903ce8e27a8f2462ec871967f5d3dc2847b31bb28b55f3
+R a0c4295002e104ba7ee36216fd337c0e
 U dan
-Z 1f1788eecdf4834ab0b218624657be1d
+Z 37eef1e78eb4ad8d709fcbedf553cadf

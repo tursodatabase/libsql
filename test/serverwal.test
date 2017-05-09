@@ -36,6 +36,7 @@ do_test 1.4 {
   glob test.db*
 } {test.db}
 
+#-------------------------------------------------------------------------
 # Two concurrent transactions.
 #
 do_test 2.0 {
@@ -59,6 +60,31 @@ do_test 2.2 {
   execsql COMMIT db
   execsql COMMIT db2
 } {}
+db close
 
+#-------------------------------------------------------------------------
+# That the wal file can be wrapped around.
+#
+reset_db
+do_execsql_test 3.0 {
+  PRAGMA journal_mode = wal;
+  CREATE TABLE ttt(a, b);
+  INSERT INTO ttt VALUES(1, 2);
+  INSERT INTO ttt VALUES(3, 4);
+  INSERT INTO ttt VALUES(5, 6);
+  INSERT INTO ttt VALUES(7, 8);
+  INSERT INTO ttt VALUES(9, 10);
+} {wal}
+
+do_test 3.1 {
+  set N [file size test.db-wal]
+  execsql {
+    PRAGMA wal_checkpoint;
+    INSERT INTO ttt VALUES(11, 12);
+    INSERT INTO ttt VALUES(13, 14);
+  }
+  expr {$N == [file size test.db-wal]}
+} {1}
 
 finish_test
+
