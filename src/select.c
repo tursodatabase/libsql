@@ -5115,13 +5115,30 @@ int sqlite3Select(
   }
 #endif
 
-  /* Generate code for all sub-queries in the FROM clause
+  /* For each term in the FROM clause, do two things:
+  ** (1) Authorized unreferenced tables
+  ** (2) Generate code for all sub-queries
   */
-#if !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW)
   for(i=0; i<pTabList->nSrc; i++){
     struct SrcList_item *pItem = &pTabList->a[i];
     SelectDest dest;
-    Select *pSub = pItem->pSelect;
+    Select *pSub;
+
+    /* Issue SQLITE_READ authorizations with a NULL column name for any tables that
+    ** are referenced but from which no values are extracted. Examples of where these
+    ** kinds of null SQLITE_READ authorizations would occur:
+    **
+    **     SELECT count(*) FROM t1;   -- SQLITE_READ t1 null
+    **     SELECT t1.* FROM t1, t2;   -- SQLITE_READ t2 null
+    */
+    if( pItem->colUsed==0 ){
+      sqlite3AuthCheck(pParse, SQLITE_READ, pItem->zName, pItem->zDatabase, 0);
+    }
+
+#if !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW)
+    /* Generate code for all sub-queries in the FROM clause
+    */
+    pSub = pItem->pSelect;
     if( pSub==0 ) continue;
 
     /* Sometimes the code for a subquery will be generated more than
@@ -5242,8 +5259,8 @@ int sqlite3Select(
     }
     if( db->mallocFailed ) goto select_end;
     pParse->nHeight -= sqlite3SelectExprHeight(p);
-  }
 #endif
+  }
 
   /* Various elements of the SELECT copied into local variables for
   ** convenience */

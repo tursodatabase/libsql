@@ -2478,6 +2478,29 @@ do_test auth-7.4 {
   SQLITE_READ t7 c main {}       \
 ]
 
+# If a table is referenced but no columns are read from the table,
+# that causes a single SQLITE_READ authorization with a NULL column
+# name.
+#
+set ::authargs [list]
+do_test auth-8.1 {
+  execsql {SELECT count(*) FROM t7}
+  set ::authargs
+} [list \
+  SQLITE_SELECT {} {} {} {}          \
+  SQLITE_FUNCTION {} count {} {}     \
+  SQLITE_READ t7 {} {} {}            \
+  ]
+set ::authargs [list]
+
+do_test auth-8.2 {
+  execsql {SELECT t6.a FROM t6, t7}
+  set ::authargs
+} [list \
+  SQLITE_SELECT {} {} {} {}          \
+  SQLITE_READ t6 a main {}           \
+  SQLITE_READ t7 {} {} {}            \
+  ]
 
 rename proc {}
 rename proc_real proc
