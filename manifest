@@ -1,5 +1,5 @@
-C Use\sa\sblocking\scall\sto\sobtain\sthe\swal-mode\sWRITER\slock\sin\ssome\scases.
-D 2017-05-10T13:46:29.059
+C Fix\sa\sproblem\scausing\sa\slock\sto\sbe\sheld\spast\sthe\send\sof\sa\stransaction.\sUse\sa\nblocking\slock\sto\stake\sthe\sread-lock\son\spage\s1\staken\sby\sall\stransactions.
+D 2017-05-10T16:18:05.140
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a8c838220f7c00820e1fc0ac1bccaaa8e5676067e1dbfa1bafa7a4ffecf8ae6
@@ -389,7 +389,7 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c 30e2c43e4955db990e5b5a81e901f8aa74cc8820
 F src/os_win.c 2a6c73eef01c51a048cc4ddccd57f981afbec18a
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 5326f380451332c254690c577c56a668e18207fb505014d2238bb43cca941148
+F src/pager.c da0832b763a947f0f30d1ac449a6a6eccce5f819929b2256a3a289f1281b1ac8
 F src/pager.h ea05992c581c3366279fb1d436944604b4be17208ebb41fa407306e5e4b34205
 F src/parse.y 0513387ce02fea97897d8caef82d45f347818593f24f1bdc48e0c530a8af122d
 F src/pcache.c 62835bed959e2914edd26afadfecce29ece0e870
@@ -403,7 +403,8 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 3e518b962d932a997fae373366880fc028c75706
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 4f0adefaa5e9417459b07757e0f6060cac97930a86f0fba9797bab233ced66c0
-F src/server.c 0dc1e45a211636dacc1dff6f8c94e2fcb8a171258797638ef8b8afa803190b66
+F src/server.c e6c06532b238941c317cb406d5d67637774003d50c5b1f03634b5e3b2a6acbbc
+F src/server.h 7b8fec0d6671ac5f0c0f9b42647fa37c0cb87c3165651d0c1cacad0bb02432d2
 F src/shell.c e5950029da103c5d378e71d548759459b9a7fc76177a71562c22082c705745ab
 F src/sqlite.h.in 8d126e4cfbd1f4bc6f4043aacd77f78b45613e7d630185d49a5d099394247483
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -481,7 +482,7 @@ F src/vdbesort.c e72fe02a2121386ba767ede8942e9450878b8fc873abf3d1b6824485f092570
 F src/vdbetrace.c 41963d5376f0349842b5fc4aaaaacd7d9cdc0834
 F src/vtab.c 35b9bdc2b41de32a417141d12097bcc4e29a77ed7cdb8f836d1d2305d946b61b
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 8db0fb216f08c20da136b521dc294ae28c7ae6658c37460c97ba661735d186f5
+F src/wal.c b78eab7bb45f6c5b59ad90b7825adb2fe10cb3bc73295d2fcdaa61859f078301
 F src/wal.h 739d92494eb18b6d8f3e353e66c10eb8f94534bafd336ece9f3f60235317ea08
 F src/walker.c b71a992b413b3a022572eccf29ef4b4890223791
 F src/where.c c6352f15be5031907c68bcbde96cad1a6da20e9f4051d10168a59235de9a8566
@@ -1114,7 +1115,7 @@ F test/server1.test 46803bd3fe8b99b30dbc5ff38ffc756f5c13a118
 F test/server2.test 11dda300ebef43b4abe0fdc086b6f51b964beddb529fb65bc1f026db5895c36e
 F test/server3.test c33343f2f6bc23f2b4e2f047c3d083579f0cfac2795e0f1eb226ab34758967c0
 F test/servercrash.test 816c132b26af008067cab2913783f67006d4003e3988f3f3ee1075742f6e0a6c
-F test/serverwal.test 968154cee9a7719fa3e6b9b648e7e4d691a8e8ea4f797e13354a6e84fd159d8a
+F test/serverwal.test a162dd5105b0c1d6d68a12224aae06aba06812503396711fdc70f967b9f00f8d
 F test/session.test 78fa2365e93d3663a6e933f86e7afc395adf18be
 F test/shared.test 1da9dbad400cee0d93f252ccf76e1ae007a63746
 F test/shared2.test 03eb4a8d372e290107d34b6ce1809919a698e879
@@ -1583,7 +1584,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 270b7d1eacb57827465946262b31c5c890d7fc5b5618ccd9e220bc2f9546de54
-R 093b295a1ab0adce73d443998b14bdc9
+P 4464ca1d686b5c457995cc885d4a8704e402ad387aa4cc37de199276b28cc08e
+R 8af7c0b56c931c6427bbb46d22a2354a
 U dan
-Z 579dd9e65d85708090977566fef93a28
+Z 9c853b21d10daf349150cf7187819c31

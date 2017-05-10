@@ -5393,7 +5393,7 @@ int sqlite3PagerSharedLock(Pager *pPager){
     rc = sqlite3ServerBegin(pPager->pServer);
   }
 #endif
-  if( pagerUseWal(pPager) ){
+  if( rc==SQLITE_OK && pagerUseWal(pPager) ){
     assert( rc==SQLITE_OK );
     rc = pagerBeginReadTransaction(pPager);
   }

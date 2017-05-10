@@ -413,7 +413,7 @@ int sqlite3ServerBegin(Server *p){
   int rc = posixLock(p->pHma->fd, p->iClient+1, SERVER_WRITE_LOCK, 1);
   if( rc ) return rc;
 #endif
-  return sqlite3ServerLock(p, 1, 0, 0);
+  return sqlite3ServerLock(p, 1, 0, 1);
 }
 
 /*
@@ -479,14 +479,11 @@ int sqlite3ServerLock(Server *p, Pgno pgno, int bWrite, int bBlock){
     if( bWrite ){
       int iLock = ((int)(v>>HMA_CLIENT_SLOTS)) - 1;
       if( iLock==p->iClient ) goto server_lock_out;
-      if( iLock<0 ){
-        p->aLock[p->nLock++] = pgno;
-      }
     }else{
       if( v & (1<<p->iClient) ) goto server_lock_out;
-      p->aLock[p->nLock++] = pgno;
     }
 
+    p->aLock[p->nLock++] = pgno;
     while( 1 ){
       u32 n;
 

@@ -2610,7 +2610,7 @@ int sqlite3WalFindFrame(
   /* This routine is only be called from within a read transaction. */
   assert( walIsServer(pWal) || pWal->readLock>=0 || pWal->lockError );
 
-  if( walIsServer(pWal) ){
+  if( walIsServer(pWal) && pWal->writeLock==0 ){
     /* A server mode connection must read from the most recent snapshot. */
     iLast = walIndexHdr(pWal)->mxFrame;
   }
@@ -2812,7 +2812,7 @@ int sqlite3WalEndWriteTransaction(Wal *pWal){
 */
 int sqlite3WalUndo(Wal *pWal, int (*xUndo)(void *, Pgno), void *pUndoCtx){
   int rc = SQLITE_OK;
-  if( ALWAYS(pWal->writeLock) ){
+  if( pWal->writeLock ){
     Pgno iMax = pWal->hdr.mxFrame;
     Pgno iFrame;
   
