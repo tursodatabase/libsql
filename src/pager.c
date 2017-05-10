@@ -5688,7 +5688,7 @@ int sqlite3PagerGet(
 ){
 #ifdef SQLITE_SERVER_EDITION
   if( pagerIsServer(pPager) ){
-    int rc = sqlite3ServerLock(pPager->pServer, pgno, 0);
+    int rc = sqlite3ServerLock(pPager->pServer, pgno, 0, 0);
     if( rc!=SQLITE_OK ) return rc;
   }
 #endif
@@ -5996,7 +5996,7 @@ static int pager_write(PgHdr *pPg){
 
 #ifdef SQLITE_SERVER_EDITION
   if( pagerIsServer(pPager) ){
-    rc = sqlite3ServerLock(pPager->pServer, pPg->pgno, 1);
+    rc = sqlite3ServerLock(pPager->pServer, pPg->pgno, 1, 0);
     if( rc!=SQLITE_OK ) return rc;
   }
 #endif
@@ -7669,7 +7669,7 @@ int sqlite3PagerIsServer(Pager *pPager){
   return pagerIsServer(pPager);
 }
 int sqlite3PagerPagelock(Pager *pPager, Pgno pgno, int bWrite){
-  return sqlite3ServerLock(pPager->pServer, pgno, bWrite);
+  return sqlite3ServerLock(pPager->pServer, pgno, bWrite, 0);
 }
 #endif
 

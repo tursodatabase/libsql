@@ -356,9 +356,14 @@ int sqlite3ServerConnect(
   return rc;
 }
 
-static int serverOvercomeLock(Server *p, int bWrite, u32 v, int *pbRetry){
+static int serverOvercomeLock(
+  Server *p,                      /* Server connection */
+  int bWrite,                     /* True for a write-lock */
+  int bBlock,                     /* If true, block for this lock */
+  u32 v,                          /* Value of blocking page locking slot */
+  int *pbRetry                    /* OUT: True if caller should retry lock */
+){
   int rc = SQLITE_OK;
-  int bLocal = 0;
   int iBlock = ((int)(v>>HMA_CLIENT_SLOTS))-1;
 
   if( iBlock<0 ){
@@ -369,24 +374,32 @@ static int serverOvercomeLock(Server *p, int bWrite, u32 v, int *pbRetry){
   assert( iBlock<HMA_CLIENT_SLOTS );
 
   serverEnterMutex();
-  if( p->pHma->aClient[iBlock] ){
-    bLocal = 1;
-  }else{
+
+  if( 0==p->pHma->aClient[iBlock] ){
     rc = posixLock(p->pHma->fd, iBlock+1, SERVER_WRITE_LOCK, 0);
-  }
-
-  if( bLocal==0 && rc==SQLITE_OK ){
-    rc = serverRollbackClient(p, iBlock);
-
-    /* Release the lock on slot iBlock */
-    posixLock(p->pHma->fd, iBlock+1, SERVER_NO_LOCK, 0);
     if( rc==SQLITE_OK ){
-      *pbRetry = 1;
+      rc = serverRollbackClient(p, iBlock);
+
+      /* Release the lock on slot iBlock */
+      posixLock(p->pHma->fd, iBlock+1, SERVER_NO_LOCK, 0);
+      if( rc==SQLITE_OK ){
+        *pbRetry = 1;
+      }
+    }else if( rc==SQLITE_BUSY ){
+      if( bBlock ){
+        rc = posixLock(p->pHma->fd, iBlock+1, SERVER_READ_LOCK, 1);
+        if( rc==SQLITE_OK ){
+          posixLock(p->pHma->fd, iBlock+1, SERVER_NO_LOCK, 0);
+          *pbRetry = 1;
+        }
+      }
+
+      if( rc==SQLITE_BUSY ){
+        rc = SQLITE_OK;
+      }
     }
-  }else{
-    assert( rc==SQLITE_OK || rc==SQLITE_BUSY );
-    rc = SQLITE_OK;
   }
+
   serverLeaveMutex();
 
   return rc;
@@ -396,10 +409,11 @@ static int serverOvercomeLock(Server *p, int bWrite, u32 v, int *pbRetry){
 ** Begin a transaction.
 */
 int sqlite3ServerBegin(Server *p){
-#if 0
-  return posixLock(p->pHma->fd, p->iClient+1, SERVER_WRITE_LOCK, 0);
+#if 1
+  int rc = posixLock(p->pHma->fd, p->iClient+1, SERVER_WRITE_LOCK, 1);
+  if( rc ) return rc;
 #endif
-  return sqlite3ServerLock(p, 1, 0);
+  return sqlite3ServerLock(p, 1, 0, 0);
 }
 
 /*
@@ -420,7 +434,7 @@ int sqlite3ServerEnd(Server *p){
     }
   }
   p->nLock = 0;
-#if 0
+#if 1
   return posixLock(p->pHma->fd, p->iClient+1, SERVER_READ_LOCK, 0);
 #endif
   return SQLITE_OK;
@@ -436,8 +450,11 @@ int sqlite3ServerReleaseWriteLocks(Server *p){
 
 /*
 ** Lock page pgno for reading (bWrite==0) or writing (bWrite==1).
+**
+** If parameter bBlock is non-zero, then make this a blocking lock if
+** possible.
 */
-int sqlite3ServerLock(Server *p, Pgno pgno, int bWrite){
+int sqlite3ServerLock(Server *p, Pgno pgno, int bWrite, int bBlock){
   int rc = SQLITE_OK;
 
   /* Grow the aLock[] array, if required */
@@ -475,7 +492,7 @@ int sqlite3ServerLock(Server *p, Pgno pgno, int bWrite){
 
       while( (bWrite && (v & ~(1 << p->iClient))) || (v >> HMA_CLIENT_SLOTS) ){
         int bRetry = 0;
-        rc = serverOvercomeLock(p, bWrite, v, &bRetry);
+        rc = serverOvercomeLock(p, bWrite, bBlock, v, &bRetry);
         if( rc!=SQLITE_OK ) goto server_lock_out;
         if( bRetry==0 ){
           /* There is a conflicting lock. Cannot obtain this lock. */

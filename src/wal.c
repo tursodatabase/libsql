@@ -3094,7 +3094,10 @@ int sqlite3WalFrames(
   assert( pWal->writeLock || walIsServer(pWal) );
   if( pWal->writeLock==0 ){
     int bDummy = 0;
+#if 0
     rc = walLockExclusive(pWal, WAL_WRITE_LOCK, 1);
+#endif
+    rc = sqlite3ServerLock(pWal->pServer, 0, 1, 1);
     if( rc==SQLITE_OK ){
       pWal->writeLock = 1;
       rc = walIndexTryHdr(pWal, &bDummy);
@@ -3375,7 +3378,11 @@ int sqlite3WalCheckpoint(
   ** lock is successfully obtained.
   */
   if( eMode!=SQLITE_CHECKPOINT_PASSIVE ){
-    rc = walBusyLock(pWal, xBusy, pBusyArg, WAL_WRITE_LOCK, 1);
+    if( walIsServer(pWal) ){
+      rc = sqlite3ServerLock(pWal->pServer, 0, 1, 1);
+    }else{
+      rc = walBusyLock(pWal, xBusy, pBusyArg, WAL_WRITE_LOCK, 1);
+    }
     if( rc==SQLITE_OK ){
       pWal->writeLock = 1;
     }else if( rc==SQLITE_BUSY ){
