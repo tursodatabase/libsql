@@ -1,5 +1,5 @@
-C Invoke\sthe\sSQLITE_READ\sauthorizer\scallback\swith\sa\sNULL\scolumn\sname\sfor\sany\ntable\sreferenced\sby\sa\squery\sbut\sfrom\swhen\sno\scolumns\sare\sextracted.
-D 2017-05-10T16:12:00.855
+C Improved\sdocumentation\sfor\sthe\sSQLITE_READ\sauthorizer\scallback.\sNo\scode\schanges.
+D 2017-05-10T16:33:48.398
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a8c838220f7c00820e1fc0ac1bccaaa8e5676067e1dbfa1bafa7a4ffecf8ae6
@@ -404,7 +404,7 @@ F src/resolve.c 3e518b962d932a997fae373366880fc028c75706
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 275ad2697c50392f5b198bd1e79fc3559573e00ec504d46741f02b158b151e4d
 F src/shell.c a37d96b20b3644d0eb905df5aa7a0fcf9f6e73c15898337230c760a24a8df794
-F src/sqlite.h.in eeb1da70a61d52e1d58e5b55446b85bbac571699421d3cf857421c56214013ce
+F src/sqlite.h.in a13eae90f740278018605ae30e561f9789c227dc3b87a684054e07022d721719
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 58fd0676d3111d02e62e5a35992a7d3da5d3f88753acc174f2d37b774fbbdd28
 F src/sqliteInt.h aea3aa1b81e0d07d5b1c39b8c5a54a1dc5e4f10136cb63da392aef9eb2a5108b
@@ -1579,7 +1579,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 30018d31068f3182d713a6cf09753b27b16a6f912d39a5e6c1363da83bec3125
-R 71bda7ed75ab8a12c29ef59bf658a73c
+P 92ab1f7257d2866c69eaaf4cf85990677b911ef425e9c5a36a96978cccfb551c
+R 27c465138f2b6ced9e3bfb0a0cffcf42
 U drh
-Z c7a714534fd3aa3ba10b343e69f7143d
+Z 9935b613ce03d191d190a39d6894fd05

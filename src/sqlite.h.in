@@ -2673,6 +2673,7 @@ void sqlite3_randomness(int N, void *P);
 /*
 ** CAPI3REF: Compile-Time Authorization Callbacks
 ** METHOD: sqlite3
+** KEYWORDS: {authorizer callback}
 **
 ** ^This routine registers an authorizer callback with a particular
 ** [database connection], supplied in the first argument.
@@ -2710,6 +2711,10 @@ void sqlite3_randomness(int N, void *P);
 ** been read if [SQLITE_OK] had been returned.  The [SQLITE_IGNORE]
 ** return can be used to deny an untrusted user access to individual
 ** columns of a table.
+** ^When a table is referenced by a [SELECT] but no column values are
+** extracted from that table (for example in a query like
+** "SELECT count(*) FROM tab") then the [SQLITE_READ] authorizer callback
+** is invoked once for that table with a NULL column name.
 ** ^If the action code is [SQLITE_DELETE] and the callback returns
 ** [SQLITE_IGNORE] then the [DELETE] operation proceeds but the
 ** [truncate optimization] is disabled and all rows are deleted individually.
