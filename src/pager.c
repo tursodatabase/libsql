@@ -2258,7 +2258,11 @@ static int pager_playback_one_page(
   char *aData;                  /* Temporary storage for the page */
   sqlite3_file *jfd;            /* The file descriptor for the journal file */
   int isSynced;                 /* True if journal page is synced */
+#ifdef SQLITE_HAS_CODEC
+  /* The jrnlEnc flag is true if Journal pages should be passed through
+  ** the codec.  It is false for pure in-memory journals. */
   const int jrnlEnc = (isMainJrnl || pPager->subjInMemory==0);
+#endif
 
   assert( (isMainJrnl&~1)==0 );      /* isMainJrnl is 0 or 1 */
   assert( (isSavepnt&~1)==0 );       /* isSavepnt is 0 or 1 */
@@ -2389,17 +2393,27 @@ static int pager_playback_one_page(
     ** is if the data was just read from an in-memory sub-journal. In that
     ** case it must be encrypted here before it is copied into the database
     ** file.  */
-    if( !jrnlEnc ){CODEC2(pPager, aData, pgno, 7, rc=SQLITE_NOMEM_BKPT, aData);}
+#ifdef SQLITE_HAS_CODEC
+    if( !jrnlEnc ){
+      CODEC2(pPager, aData, pgno, 7, rc=SQLITE_NOMEM_BKPT, aData);
+      rc = sqlite3OsWrite(pPager->fd, (u8 *)aData, pPager->pageSize, ofst);
+      CODEC1(pPager, aData, pgno, 3, rc=SQLITE_NOMEM_BKPT);
+    }else
+#endif
     rc = sqlite3OsWrite(pPager->fd, (u8 *)aData, pPager->pageSize, ofst);
-    if( !jrnlEnc ){CODEC1(pPager, aData, pgno, 3, rc=SQLITE_NOMEM_BKPT);}
 
     if( pgno>pPager->dbFileSize ){
       pPager->dbFileSize = pgno;
     }
     if( pPager->pBackup ){
-      if( jrnlEnc ){CODEC1(pPager, aData, pgno, 3, rc=SQLITE_NOMEM_BKPT);}
+#ifdef SQLITE_HAS_CODEC
+      if( jrnlEnc ){
+        CODEC1(pPager, aData, pgno, 3, rc=SQLITE_NOMEM_BKPT);
+        sqlite3BackupUpdate(pPager->pBackup, pgno, (u8*)aData);
+        CODEC2(pPager, aData, pgno, 7, rc=SQLITE_NOMEM_BKPT,aData);
+      }else
+#endif
       sqlite3BackupUpdate(pPager->pBackup, pgno, (u8*)aData);
-      if( jrnlEnc ){CODEC2(pPager, aData, pgno, 7, rc=SQLITE_NOMEM_BKPT,aData);}
     }
   }else if( !isMainJrnl && pPg==0 ){
     /* If this is a rollback of a savepoint and data was not written to
@@ -2451,7 +2465,9 @@ static int pager_playback_one_page(
     }
 
     /* Decode the page just read from disk */
-    if( jrnlEnc ) CODEC1(pPager, pData, pPg->pgno, 3, rc=SQLITE_NOMEM_BKPT);
+#if SQLITE_HAS_CODEC
+    if( jrnlEnc ){ CODEC1(pPager, pData, pPg->pgno, 3, rc=SQLITE_NOMEM_BKPT); }
+#endif
     sqlite3PcacheRelease(pPg);
   }
   return rc;
@@ -4463,12 +4479,13 @@ static int subjournalPage(PgHdr *pPg){
       void *pData = pPg->pData;
       i64 offset = (i64)pPager->nSubRec*(4+pPager->pageSize);
       char *pData2;
-  
-      if( pPager->subjInMemory ){
-        pData2 = pData;
-      }else{
+
+#if SQLITE_HAS_CODEC   
+      if( !pPager->subjInMemory ){
         CODEC2(pPager, pData, pPg->pgno, 7, return SQLITE_NOMEM_BKPT, pData2);
-      }
+      }else
+#endif
+      pData2 = pData;
       PAGERTRACE(("STMT-JOURNAL %d page %d\n", PAGERID(pPager), pPg->pgno));
       rc = write32bits(pPager->sjfd, offset, pPg->pgno);
       if( rc==SQLITE_OK ){
