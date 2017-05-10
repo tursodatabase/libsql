@@ -814,11 +814,12 @@ void *sqlite3_get_auxdata(sqlite3_context *pCtx, int iArg){
 #else
   assert( pCtx->pVdbe!=0 );
 #endif
-  for(pAuxData=pCtx->pVdbe->pAuxData; pAuxData; pAuxData=pAuxData->pNext){
-    if( pAuxData->iOp==pCtx->iOp && pAuxData->iArg==iArg ) break;
+  for(pAuxData=pCtx->pVdbe->pAuxData; pAuxData; pAuxData=pAuxData->pNextAux){
+    if( pAuxData->iAuxOp==pCtx->iOp && pAuxData->iAuxArg==iArg ){
+      return pAuxData->pAux;
+    }
   }
-
-  return (pAuxData ? pAuxData->pAux : 0);
+  return 0;
 }
 
 /*
@@ -843,26 +844,26 @@ void sqlite3_set_auxdata(
   assert( pVdbe!=0 );
 #endif
 
-  for(pAuxData=pVdbe->pAuxData; pAuxData; pAuxData=pAuxData->pNext){
-    if( pAuxData->iOp==pCtx->iOp && pAuxData->iArg==iArg ) break;
+  for(pAuxData=pVdbe->pAuxData; pAuxData; pAuxData=pAuxData->pNextAux){
+    if( pAuxData->iAuxOp==pCtx->iOp && pAuxData->iAuxArg==iArg ) break;
   }
   if( pAuxData==0 ){
     pAuxData = sqlite3DbMallocZero(pVdbe->db, sizeof(AuxData));
     if( !pAuxData ) goto failed;
-    pAuxData->iOp = pCtx->iOp;
-    pAuxData->iArg = iArg;
-    pAuxData->pNext = pVdbe->pAuxData;
+    pAuxData->iAuxOp = pCtx->iOp;
+    pAuxData->iAuxArg = iArg;
+    pAuxData->pNextAux = pVdbe->pAuxData;
     pVdbe->pAuxData = pAuxData;
     if( pCtx->fErrorOrAux==0 ){
       pCtx->isError = 0;
       pCtx->fErrorOrAux = 1;
     }
-  }else if( pAuxData->xDelete ){
-    pAuxData->xDelete(pAuxData->pAux);
+  }else if( pAuxData->xDeleteAux ){
+    pAuxData->xDeleteAux(pAuxData->pAux);
   }
 
   pAuxData->pAux = pAux;
-  pAuxData->xDelete = xDelete;
+  pAuxData->xDeleteAux = xDelete;
   return;
 
 failed:
