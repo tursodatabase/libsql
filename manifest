@@ -1,5 +1,5 @@
-C Negative\sN\svalues\sin\ssqlite3_get_auxdata()\sand\ssqlite3_set_auxdata()\scan\sbe\nused\sto\saccess\san\sauxiliary\sdata\scache\sover\sall\sfunctions\sin\sa\ssingle\sprepared\s\nstatement.
-D 2017-05-11T15:20:18.112
+C Cache\sthe\sJSON\sparse\sused\sby\sjson_extract().
+D 2017-05-11T16:49:59.245
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a8c838220f7c00820e1fc0ac1bccaaa8e5676067e1dbfa1bafa7a4ffecf8ae6
@@ -219,7 +219,7 @@ F ext/misc/eval.c f971962e92ebb8b0a4e6b62949463ee454d88fa2
 F ext/misc/fileio.c d4171c815d6543a9edef8308aab2951413cd8d0f
 F ext/misc/fuzzer.c 7c64b8197bb77b7d64eff7cac7848870235d4c25
 F ext/misc/ieee754.c f190d0cc5182529acb15babd177781be1ac1718c
-F ext/misc/json1.c bd3bbdefb6024c5e40287d61cdf876587c18a6e60fbe8cd6bcdde10eefd14bb1
+F ext/misc/json1.c dbe086615b9546c156bf32b9378fc09383b58bd17513b866cfd24c1e15281984
 F ext/misc/memvfs.c e5225bc22e79dde6b28380f3a068ddf600683a33
 F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
 F ext/misc/percentile.c 92699c8cd7d517ff610e6037e56506f8904dae2e
@@ -1579,10 +1579,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3980ea0911b3ad3f86d7a7bdc6503f233315c274f473e18831e13eda2c238eeb
-R dd46ebd5214a15a152d68d903a52e3e5
-T *branch * auxdata-cache
-T *sym-auxdata-cache *
-T -sym-trunk *
+P ff5306752e83e760255a10f20168c0f090929a4fee2a5f720dfab36f0ee72fae
+R cae1848a63e8e13e207beadd6dc14b62
 U drh
-Z 41e6a797cec545b1cb4bc140fa542902
+Z e9ec1c79d7987d6b2eda6f4466e2dc4b
