@@ -4787,7 +4787,6 @@ static int fts3EvalAverageDocsize(Fts3Cursor *pCsr, int *pnPage){
     ** data stored in all rows of each column of the table, from left
     ** to right.
     */
-    int rc;
     Fts3Table *p = (Fts3Table*)pCsr->base.pVtab;
     sqlite3_stmt *pStmt;
     sqlite3_int64 nDoc = 0;

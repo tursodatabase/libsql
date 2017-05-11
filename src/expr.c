@@ -1550,7 +1550,7 @@ ExprList *sqlite3ExprListAppendVector(
     }
   }
 
-  if( pExpr->op==TK_SELECT && pList ){
+  if( !db->mallocFailed && pExpr->op==TK_SELECT && ALWAYS(pList!=0) ){
     Expr *pFirst = pList->a[iFirst].pExpr;
     assert( pFirst!=0 );
     assert( pFirst->op==TK_SELECT_COLUMN );
@@ -1813,6 +1813,65 @@ int sqlite3ExprIsConstantNotJoin(Expr *p){
 */
 int sqlite3ExprIsTableConstant(Expr *p, int iCur){
   return exprIsConst(p, 3, iCur);
+}
+
+
+/*
+** sqlite3WalkExpr() callback used by sqlite3ExprIsConstantOrGroupBy().
+*/
+static int exprNodeIsConstantOrGroupBy(Walker *pWalker, Expr *pExpr){
+  ExprList *pGroupBy = pWalker->u.pGroupBy;
+  int i;
+
+  /* Check if pExpr is identical to any GROUP BY term. If so, consider
+  ** it constant.  */
+  for(i=0; i<pGroupBy->nExpr; i++){
+    Expr *p = pGroupBy->a[i].pExpr;
+    if( sqlite3ExprCompare(pExpr, p, -1)<2 ){
+      CollSeq *pColl = sqlite3ExprCollSeq(pWalker->pParse, p);
+      if( pColl==0 || sqlite3_stricmp("BINARY", pColl->zName)==0 ){
+        return WRC_Prune;
+      }
+    }
+  }
+
+  /* Check if pExpr is a sub-select. If so, consider it variable. */
+  if( ExprHasProperty(pExpr, EP_xIsSelect) ){
+    pWalker->eCode = 0;
+    return WRC_Abort;
+  }
+
+  return exprNodeIsConstant(pWalker, pExpr);
+}
+
+/*
+** Walk the expression tree passed as the first argument. Return non-zero
+** if the expression consists entirely of constants or copies of terms 
+** in pGroupBy that sort with the BINARY collation sequence.
+**
+** This routine is used to determine if a term of the HAVING clause can
+** be promoted into the WHERE clause.  In order for such a promotion to work,
+** the value of the HAVING clause term must be the same for all members of
+** a "group".  The requirement that the GROUP BY term must be BINARY
+** assumes that no other collating sequence will have a finer-grained
+** grouping than binary.  In other words (A=B COLLATE binary) implies
+** A=B in every other collating sequence.  The requirement that the
+** GROUP BY be BINARY is stricter than necessary.  It would also work
+** to promote HAVING clauses that use the same alternative collating
+** sequence as the GROUP BY term, but that is much harder to check,
+** alternative collating sequences are uncommon, and this is only an
+** optimization, so we take the easy way out and simply require the
+** GROUP BY to use the BINARY collating sequence.
+*/
+int sqlite3ExprIsConstantOrGroupBy(Parse *pParse, Expr *p, ExprList *pGroupBy){
+  Walker w;
+  memset(&w, 0, sizeof(w));
+  w.eCode = 1;
+  w.xExprCallback = exprNodeIsConstantOrGroupBy;
+  w.u.pGroupBy = pGroupBy;
+  w.pParse = pParse;
+  sqlite3WalkExpr(&w, p);
+  return w.eCode;
 }
 
 /*

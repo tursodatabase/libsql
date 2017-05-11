@@ -4880,6 +4880,103 @@ static void explainSimpleCount(
 #endif
 
 /*
+** Context object for havingToWhereExprCb().
+*/
+struct HavingToWhereCtx {
+  Expr **ppWhere;
+  ExprList *pGroupBy;
+};
+
+/*
+** sqlite3WalkExpr() callback used by havingToWhere().
+**
+** If the node passed to the callback is a TK_AND node, return 
+** WRC_Continue to tell sqlite3WalkExpr() to iterate through child nodes.
+**
+** Otherwise, return WRC_Prune. In this case, also check if the 
+** sub-expression matches the criteria for being moved to the WHERE
+** clause. If so, add it to the WHERE clause and replace the sub-expression
+** within the HAVING expression with a constant "1".
+*/
+static int havingToWhereExprCb(Walker *pWalker, Expr *pExpr){
+  if( pExpr->op!=TK_AND ){
+    struct HavingToWhereCtx *p = pWalker->u.pHavingCtx;
+    if( sqlite3ExprIsConstantOrGroupBy(pWalker->pParse, pExpr, p->pGroupBy) ){
+      sqlite3 *db = pWalker->pParse->db;
+      Expr *pNew = sqlite3ExprAlloc(db, TK_INTEGER, &sqlite3IntTokens[1], 0);
+      if( pNew ){
+        Expr *pWhere = *(p->ppWhere);
+        SWAP(Expr, *pNew, *pExpr);
+        pNew = sqlite3ExprAnd(db, pWhere, pNew);
+        *(p->ppWhere) = pNew;
+      }
+    }
+    return WRC_Prune;
+  }
+  return WRC_Continue;
+}
+
+/*
+** Transfer eligible terms from the HAVING clause of a query, which is
+** processed after grouping, to the WHERE clause, which is processed before
+** grouping. For example, the query:
+**
+**   SELECT * FROM <tables> WHERE a=? GROUP BY b HAVING b=? AND c=?
+**
+** can be rewritten as:
+**
+**   SELECT * FROM <tables> WHERE a=? AND b=? GROUP BY b HAVING c=?
+**
+** A term of the HAVING expression is eligible for transfer if it consists
+** entirely of constants and expressions that are also GROUP BY terms that
+** use the "BINARY" collation sequence.
+*/
+static void havingToWhere(
+  Parse *pParse,
+  ExprList *pGroupBy,
+  Expr *pHaving, 
+  Expr **ppWhere
+){
+  struct HavingToWhereCtx sCtx;
+  Walker sWalker;
+
+  sCtx.ppWhere = ppWhere;
+  sCtx.pGroupBy = pGroupBy;
+
+  memset(&sWalker, 0, sizeof(sWalker));
+  sWalker.pParse = pParse;
+  sWalker.xExprCallback = havingToWhereExprCb;
+  sWalker.u.pHavingCtx = &sCtx;
+  sqlite3WalkExpr(&sWalker, pHaving);
+}
+
+/*
+** Check to see if the pThis entry of pTabList is a self-join of a prior view.
+** If it is, then return the SrcList_item for the prior view.  If it is not,
+** then return 0.
+*/
+static struct SrcList_item *isSelfJoinView(
+  SrcList *pTabList,           /* Search for self-joins in this FROM clause */
+  struct SrcList_item *pThis   /* Search for prior reference to this subquery */
+){
+  struct SrcList_item *pItem;
+  for(pItem = pTabList->a; pItem<pThis; pItem++){
+    if( pItem->pSelect==0 ) continue;
+    if( pItem->fg.viaCoroutine ) continue;
+    if( pItem->zName==0 ) continue;
+    if( sqlite3_stricmp(pItem->zDatabase, pThis->zDatabase)!=0 ) continue;
+    if( sqlite3_stricmp(pItem->zName, pThis->zName)!=0 ) continue;
+    if( sqlite3ExprCompare(pThis->pSelect->pWhere, pItem->pSelect->pWhere, -1) ){
+      /* The view was modified by some other optimization such as
+      ** pushDownWhereTerms() */
+      continue;
+    }
+    return pItem;
+  }
+  return 0;
+}
+
+/*
 ** Generate code for the SELECT statement given in the p argument.  
 **
 ** The results are returned according to the SelectDest structure.
@@ -5018,13 +5115,38 @@ int sqlite3Select(
   }
 #endif
 
-  /* Generate code for all sub-queries in the FROM clause
+  /* For each term in the FROM clause, do two things:
+  ** (1) Authorized unreferenced tables
+  ** (2) Generate code for all sub-queries
   */
-#if !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW)
   for(i=0; i<pTabList->nSrc; i++){
     struct SrcList_item *pItem = &pTabList->a[i];
     SelectDest dest;
-    Select *pSub = pItem->pSelect;
+    Select *pSub;
+
+    /* Issue SQLITE_READ authorizations with a fake column name for any tables that
+    ** are referenced but from which no values are extracted. Examples of where these
+    ** kinds of null SQLITE_READ authorizations would occur:
+    **
+    **     SELECT count(*) FROM t1;   -- SQLITE_READ t1.""
+    **     SELECT t1.* FROM t1, t2;   -- SQLITE_READ t2.""
+    **
+    ** The fake column name is an empty string.  It is possible for a table to
+    ** have a column named by the empty string, in which case there is no way to
+    ** distinguish between an unreferenced table and an actual reference to the
+    ** "" column.  The original design was for the fake column name to be a NULL,
+    ** which would be unambiguous.  But legacy authorization callbacks might
+    ** assume the column name is non-NULL and segfault.  The use of an empty string
+    ** for the fake column name seems safer.
+    */
+    if( pItem->colUsed==0 ){
+      sqlite3AuthCheck(pParse, SQLITE_READ, pItem->zName, "", pItem->zDatabase);
+    }
+
+#if !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW)
+    /* Generate code for all sub-queries in the FROM clause
+    */
+    pSub = pItem->pSelect;
     if( pSub==0 ) continue;
 
     /* Sometimes the code for a subquery will be generated more than
@@ -5035,6 +5157,10 @@ int sqlite3Select(
     ** to be invoked again. */
     if( pItem->addrFillSub ){
       if( pItem->fg.viaCoroutine==0 ){
+        /* The subroutine that manifests the view might be a one-time routine,
+        ** or it might need to be rerun on each iteration because it
+        ** encodes a correlated subquery. */
+        testcase( sqlite3VdbeGetOp(v, pItem->addrFillSub)->opcode==OP_Once );
         sqlite3VdbeAddOp2(v, OP_Gosub, pItem->regReturn, pItem->addrFillSub);
       }
       continue;
@@ -5109,6 +5235,8 @@ int sqlite3Select(
       int topAddr;
       int onceAddr = 0;
       int retAddr;
+      struct SrcList_item *pPrior;
+
       assert( pItem->addrFillSub==0 );
       pItem->regReturn = ++pParse->nMem;
       topAddr = sqlite3VdbeAddOp2(v, OP_Integer, 0, pItem->regReturn);
@@ -5122,9 +5250,14 @@ int sqlite3Select(
       }else{
         VdbeNoopComment((v, "materialize \"%s\"", pItem->pTab->zName));
       }
-      sqlite3SelectDestInit(&dest, SRT_EphemTab, pItem->iCursor);
-      explainSetInteger(pItem->iSelectId, (u8)pParse->iNextSelectId);
-      sqlite3Select(pParse, pSub, &dest);
+      pPrior = isSelfJoinView(pTabList, pItem);
+      if( pPrior ){
+        sqlite3VdbeAddOp2(v, OP_OpenDup, pItem->iCursor, pPrior->iCursor);
+      }else{
+        sqlite3SelectDestInit(&dest, SRT_EphemTab, pItem->iCursor);
+        explainSetInteger(pItem->iSelectId, (u8)pParse->iNextSelectId);
+        sqlite3Select(pParse, pSub, &dest);
+      }
       pItem->pTab->nRowLogEst = pSub->nSelectRow;
       if( onceAddr ) sqlite3VdbeJumpHere(v, onceAddr);
       retAddr = sqlite3VdbeAddOp1(v, OP_Return, pItem->regReturn);
@@ -5134,8 +5267,8 @@ int sqlite3Select(
     }
     if( db->mallocFailed ) goto select_end;
     pParse->nHeight -= sqlite3SelectExprHeight(p);
-  }
 #endif
+  }
 
   /* Various elements of the SELECT copied into local variables for
   ** convenience */
@@ -5343,6 +5476,11 @@ int sqlite3Select(
     sqlite3ExprAnalyzeAggList(&sNC, pEList);
     sqlite3ExprAnalyzeAggList(&sNC, sSort.pOrderBy);
     if( pHaving ){
+      if( pGroupBy ){
+        assert( pWhere==p->pWhere );
+        havingToWhere(pParse, pGroupBy, pHaving, &p->pWhere);
+        pWhere = p->pWhere;
+      }
       sqlite3ExprAnalyzeAggregates(&sNC, pHaving);
     }
     sAggInfo.nAccumulator = sAggInfo.nColumn;

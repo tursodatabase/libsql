@@ -171,6 +171,7 @@ struct JsonParse {
   u8 oom;            /* Set to true if out of memory */
   u8 nErr;           /* Number of errors seen */
   u16 iDepth;        /* Nesting depth */
+  int nJson;         /* Length of the zJson string in bytes */
 };
 
 /*
@@ -411,6 +412,14 @@ static void jsonParseReset(JsonParse *pParse){
   pParse->nAlloc = 0;
   sqlite3_free(pParse->aUp);
   pParse->aUp = 0;
+}
+
+/*
+** Free a JsonParse object that was obtained from sqlite3_malloc().
+*/
+static void jsonParseFree(JsonParse *pParse){
+  jsonParseReset(pParse);
+  sqlite3_free(pParse);
 }
 
 /*
@@ -965,6 +974,49 @@ static int jsonParseFindParents(JsonParse *pParse){
 }
 
 /*
+** Magic number used for the JSON parse cache in sqlite3_get_auxdata()
+*/
+#define JSON_CACHE_ID  (-429938)
+
+/*
+** Obtain a complete parse of the JSON found in the first argument
+** of the argv array.  Use the sqlite3_get_auxdata() cache for this
+** parse if it is available.  If the cache is not available or if it
+** is no longer valid, parse the JSON again and return the new parse,
+** and also register the new parse so that it will be available for
+** future sqlite3_get_auxdata() calls.
+*/
+static JsonParse *jsonParseCached(
+  sqlite3_context *pCtx,
+  sqlite3_value **argv
+){
+  const char *zJson = (const char*)sqlite3_value_text(argv[0]);
+  int nJson = sqlite3_value_bytes(argv[0]);
+  JsonParse *p;
+  if( zJson==0 ) return 0;
+  p = (JsonParse*)sqlite3_get_auxdata(pCtx, JSON_CACHE_ID);
+  if( p && p->nJson==nJson && memcmp(p->zJson,zJson,nJson)==0 ){
+    p->nErr = 0;
+    return p; /* The cached entry matches, so return it */
+  }
+  p = sqlite3_malloc( sizeof(*p) + nJson + 1 );
+  if( p==0 ){
+    sqlite3_result_error_nomem(pCtx);
+    return 0;
+  }
+  memset(p, 0, sizeof(*p));
+  p->zJson = (char*)&p[1];
+  memcpy((char*)p->zJson, zJson, nJson+1);
+  if( jsonParse(p, pCtx, p->zJson) ){
+    sqlite3_free(p);
+    return 0;
+  }
+  p->nJson = nJson;
+  sqlite3_set_auxdata(pCtx, JSON_CACHE_ID, p, (void(*)(void*))jsonParseFree);
+  return (JsonParse*)sqlite3_get_auxdata(pCtx, JSON_CACHE_ID);
+}
+
+/*
 ** Compare the OBJECT label at pNode against zKey,nKey.  Return true on
 ** a match.
 */
@@ -1329,29 +1381,30 @@ static void jsonArrayLengthFunc(
   int argc,
   sqlite3_value **argv
 ){
-  JsonParse x;          /* The parse */
+  JsonParse *p;          /* The parse */
   sqlite3_int64 n = 0;
   u32 i;
   JsonNode *pNode;
 
-  if( jsonParse(&x, ctx, (const char*)sqlite3_value_text(argv[0])) ) return;
-  assert( x.nNode );
+  p = jsonParseCached(ctx, argv);
+  if( p==0 ) return;
+  assert( p->nNode );
   if( argc==2 ){
     const char *zPath = (const char*)sqlite3_value_text(argv[1]);
-    pNode = jsonLookup(&x, zPath, 0, ctx);
+    pNode = jsonLookup(p, zPath, 0, ctx);
   }else{
-    pNode = x.aNode;
+    pNode = p->aNode;
   }
   if( pNode==0 ){
-    x.nErr = 1;
-  }else if( pNode->eType==JSON_ARRAY ){
+    return;
+  }
+  if( pNode->eType==JSON_ARRAY ){
     assert( (pNode->jnFlags & JNODE_APPEND)==0 );
     for(i=1; i<=pNode->n; n++){
       i += jsonNodeSize(&pNode[i]);
     }
   }
-  if( x.nErr==0 ) sqlite3_result_int64(ctx, n);
-  jsonParseReset(&x);
+  sqlite3_result_int64(ctx, n);
 }
 
 /*
@@ -1367,20 +1420,21 @@ static void jsonExtractFunc(
   int argc,
   sqlite3_value **argv
 ){
-  JsonParse x;          /* The parse */
+  JsonParse *p;          /* The parse */
   JsonNode *pNode;
   const char *zPath;
   JsonString jx;
   int i;
 
   if( argc<2 ) return;
-  if( jsonParse(&x, ctx, (const char*)sqlite3_value_text(argv[0])) ) return;
+  p = jsonParseCached(ctx, argv);
+  if( p==0 ) return;
   jsonInit(&jx, ctx);
   jsonAppendChar(&jx, '[');
   for(i=1; i<argc; i++){
     zPath = (const char*)sqlite3_value_text(argv[i]);
-    pNode = jsonLookup(&x, zPath, 0, ctx);
-    if( x.nErr ) break;
+    pNode = jsonLookup(p, zPath, 0, ctx);
+    if( p->nErr ) break;
     if( argc>2 ){
       jsonAppendSeparator(&jx);
       if( pNode ){
@@ -1398,7 +1452,6 @@ static void jsonExtractFunc(
     sqlite3_result_subtype(ctx, JSON_SUBTYPE);
   }
   jsonReset(&jx);
-  jsonParseReset(&x);
 }
 
 /* This is the RFC 7396 MergePatch algorithm.
