@@ -350,7 +350,14 @@ void sqlite3DeleteFrom(
   /* Special case: A DELETE without a WHERE clause deletes everything.
   ** It is easier just to erase the whole table. Prior to version 3.6.5,
   ** this optimization caused the row change count (the value returned by 
-  ** API function sqlite3_count_changes) to be set incorrectly.  */
+  ** API function sqlite3_count_changes) to be set incorrectly.
+  **
+  ** The "rcauth==SQLITE_OK" terms is the
+  ** IMPLEMENATION-OF: R-17228-37124 If the action code is SQLITE_DELETE and
+  ** the callback returns SQLITE_IGNORE then the DELETE operation proceeds but
+  ** the truncate optimization is disabled and all rows are deleted
+  ** individually.
+  */
   if( rcauth==SQLITE_OK
    && pWhere==0
    && !bComplex
