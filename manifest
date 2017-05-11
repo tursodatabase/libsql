@@ -1,5 +1,5 @@
-C New\srequirements\smarks\sand\sdocumentation\sfor\sthe\sauthorizer.
-D 2017-05-11T13:43:57.931
+C Do\snot\ssave\sthe\sstate\sof\san\sfts5\smerge\soperation\smid-way\sthrough\san\sinput\nterm,\seven\sif\sno\sprevious\sentry\sfor\sthat\sterm\shas\scaused\sany\soutput.\sDoing\sso\nmay\scorrupt\sthe\sFTS\sindex.
+D 2017-05-11T18:14:06.985
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a8c838220f7c00820e1fc0ac1bccaaa8e5676067e1dbfa1bafa7a4ffecf8ae6
@@ -105,7 +105,7 @@ F ext/fts5/fts5_buffer.c 4c1502d4c956cd092c89ce4480867f9d8bf325cd
 F ext/fts5/fts5_config.c 5af9c360e99669d29f06492c370892394aba0857
 F ext/fts5/fts5_expr.c f2825f714d91bbe62ab5820aee9ad12e0c94205b2a01725eaa9072415ae9ff1c
 F ext/fts5/fts5_hash.c 880998e596b60f078348d48732ca4ad9a90caad2
-F ext/fts5/fts5_index.c dc25123df20c60492857de491a194dab4b46ace217b8483bda305d357bf6431d
+F ext/fts5/fts5_index.c 9ce10106f42f8b84278a8ea859940224e2af5f0cc882f909364469f6f52769cb
 F ext/fts5/fts5_main.c 1ba0e7806886c1bc16e20d0dde1c2b535d1aeb98cbbb937c4c3e064af5ac6f03
 F ext/fts5/fts5_storage.c 7750986004f3f0c94619a85ecb5dd6cbef53e5e3853488e8a906c269d4d11db6
 F ext/fts5/fts5_tcl.c 4a901f00c8553740dba63511603f5527d741c26a
@@ -144,6 +144,7 @@ F ext/fts5/test/fts5content.test 9a952c95518a14182dc3b59e3c8fa71cda82a4e1
 F ext/fts5/test/fts5corrupt.test c2ad090192708150d50d961278df10ae7a4b8b62
 F ext/fts5/test/fts5corrupt2.test 128eb6e2d26b09f4da339e581f424b3321e0fdaa
 F ext/fts5/test/fts5corrupt3.test f77f65e386231daf62902466b40ff998b2c8ce4f
+F ext/fts5/test/fts5delete.test 0585395660889090a6a04b0cac0e70b16801da44ee321534d6169da49af8167f
 F ext/fts5/test/fts5detail.test ef5c690535a797413acaf5ad9b8ab5d49972df69
 F ext/fts5/test/fts5determin.test 10648edb75ef1e196b10978fd21a9be0c31e09c3
 F ext/fts5/test/fts5dlidx.test 007e9390c94638760797dbec2990c97c3fa08dfe
@@ -1579,7 +1580,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 47629b1911e52445aad8ea969137bddf0019c55b4a4f0de8e77decb6a434c8a2
-R 0c6451e367b2cefc9e69fa0621b4d931
-U drh
-Z 18c2f8082a296f2f15ab41c2498f7cb3
+P 3980ea0911b3ad3f86d7a7bdc6503f233315c274f473e18831e13eda2c238eeb
+R e8ce1902ba436a257e96b01caa3cadb9
+U dan
+Z c1b8197d958a390da1753ec3ab7dee72
