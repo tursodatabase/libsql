@@ -1,5 +1,5 @@
-C New\srequirements\smarks\sand\sdocumentation\sfor\sthe\sauthorizer.
-D 2017-05-11T13:43:57.931
+C Negative\sN\svalues\sin\ssqlite3_get_auxdata()\sand\ssqlite3_set_auxdata()\scan\sbe\nused\sto\saccess\san\sauxiliary\sdata\scache\sover\sall\sfunctions\sin\sa\ssingle\sprepared\s\nstatement.
+D 2017-05-11T15:20:18.112
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a8c838220f7c00820e1fc0ac1bccaaa8e5676067e1dbfa1bafa7a4ffecf8ae6
@@ -404,7 +404,7 @@ F src/resolve.c 3e518b962d932a997fae373366880fc028c75706
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c d74b1cde1d9ca6d08bec50b60a5be19440273646bc8ae16648d748c38161d5b7
 F src/shell.c a37d96b20b3644d0eb905df5aa7a0fcf9f6e73c15898337230c760a24a8df794
-F src/sqlite.h.in f70c07c37d5ad7fc2dbe6f6be57253ed77b7aecf9adfe01a8490e26f7bdd8d3f
+F src/sqlite.h.in 8dd468837a4f6d76713e3a4cc65bea48095009038593d41040ab46c1b351197f
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 58fd0676d3111d02e62e5a35992a7d3da5d3f88753acc174f2d37b774fbbdd28
 F src/sqliteInt.h aea3aa1b81e0d07d5b1c39b8c5a54a1dc5e4f10136cb63da392aef9eb2a5108b
@@ -472,8 +472,8 @@ F src/vacuum.c 1fe4555cd8c9b263afb85b5b4ee3a4a4181ad569
 F src/vdbe.c 9bac2bc2313ed682e6f48ccff6644d3263341885bfcbb3cdea7b720c722be2d5
 F src/vdbe.h f7d1456e28875c2dcb964056589b5b7149ab7edf39edeca801596a39bb3d3848
 F src/vdbeInt.h 1ecdacc1322fdd3241ec30c32a480e328a6f864e532dc53fae8e0ab68121aebf
-F src/vdbeapi.c 736dce6a84d67ff7d8ebc5667048c5938fb2e5b2c6eff4a770e177a3f2797cb0
-F src/vdbeaux.c 436a903111fcc184bae36f9016100da0d294da294d526bf4702328da1ddcde4b
+F src/vdbeapi.c dc904b3c5e459727993c2421e653e29d63223846d129fae98adc782b0a996481
+F src/vdbeaux.c 01dcf59b2a96bd3cc9db8c0d7f266518d113587459a2b3316279c4f9c90f28a9
 F src/vdbeblob.c 359891617358deefc85bef7bcf787fa6b77facb9
 F src/vdbemem.c 2c70f8f5de6c71fb99a22c5b83be9fab5c47cdd8e279fa44a8c00cfed06d7e89
 F src/vdbesort.c e72fe02a2121386ba767ede8942e9450878b8fc873abf3d1b6824485f092570c
@@ -1579,7 +1579,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 47629b1911e52445aad8ea969137bddf0019c55b4a4f0de8e77decb6a434c8a2
-R 0c6451e367b2cefc9e69fa0621b4d931
+P 3980ea0911b3ad3f86d7a7bdc6503f233315c274f473e18831e13eda2c238eeb
+R dd46ebd5214a15a152d68d903a52e3e5
+T *branch * auxdata-cache
+T *sym-auxdata-cache *
+T -sym-trunk *
 U drh
-Z 18c2f8082a296f2f15ab41c2498f7cb3
+Z 41e6a797cec545b1cb4bc140fa542902

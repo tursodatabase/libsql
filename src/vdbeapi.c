@@ -804,6 +804,12 @@ void *sqlite3_aggregate_context(sqlite3_context *p, int nByte){
 /*
 ** Return the auxiliary data pointer, if any, for the iArg'th argument to
 ** the user-function defined by pCtx.
+**
+** The left-most argument is 0.
+**
+** Undocumented behavior:  If iArg is negative then access a cache of
+** auxiliary data pointers that is available to all functions within a
+** single prepared statement.  The iArg values must match.
 */
 void *sqlite3_get_auxdata(sqlite3_context *pCtx, int iArg){
   AuxData *pAuxData;
@@ -815,7 +821,7 @@ void *sqlite3_get_auxdata(sqlite3_context *pCtx, int iArg){
   assert( pCtx->pVdbe!=0 );
 #endif
   for(pAuxData=pCtx->pVdbe->pAuxData; pAuxData; pAuxData=pAuxData->pNextAux){
-    if( pAuxData->iAuxOp==pCtx->iOp && pAuxData->iAuxArg==iArg ){
+    if(  pAuxData->iAuxArg==iArg && (pAuxData->iAuxOp==pCtx->iOp || iArg<0) ){
       return pAuxData->pAux;
     }
   }
@@ -826,6 +832,12 @@ void *sqlite3_get_auxdata(sqlite3_context *pCtx, int iArg){
 ** Set the auxiliary data pointer and delete function, for the iArg'th
 ** argument to the user-function defined by pCtx. Any previous value is
 ** deleted by calling the delete function specified when it was set.
+**
+** The left-most argument is 0.
+**
+** Undocumented behavior:  If iArg is negative then make the data available
+** to all functions within the current prepared statement using iArg as an
+** access code.
 */
 void sqlite3_set_auxdata(
   sqlite3_context *pCtx, 
@@ -837,7 +849,6 @@ void sqlite3_set_auxdata(
   Vdbe *pVdbe = pCtx->pVdbe;
 
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
-  if( iArg<0 ) goto failed;
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
   if( pVdbe==0 ) goto failed;
 #else
@@ -845,7 +856,9 @@ void sqlite3_set_auxdata(
 #endif
 
   for(pAuxData=pVdbe->pAuxData; pAuxData; pAuxData=pAuxData->pNextAux){
-    if( pAuxData->iAuxOp==pCtx->iOp && pAuxData->iAuxArg==iArg ) break;
+    if( pAuxData->iAuxArg==iArg && (pAuxData->iAuxOp==pCtx->iOp || iArg<0) ){
+      break;
+    }
   }
   if( pAuxData==0 ){
     pAuxData = sqlite3DbMallocZero(pVdbe->db, sizeof(AuxData));
