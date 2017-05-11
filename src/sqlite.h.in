@@ -2701,8 +2701,10 @@ void sqlite3_randomness(int N, void *P);
 ** parameter to the sqlite3_set_authorizer() interface. ^The second parameter
 ** to the callback is an integer [SQLITE_COPY | action code] that specifies
 ** the particular action to be authorized. ^The third through sixth parameters
-** to the callback are zero-terminated strings that contain additional
-** details about the action to be authorized.
+** to the callback are either NULL pointers or zero-terminated strings
+** that contain additional details about the action to be authorized.
+** Applications must always be prepared to encounter a NULL pointer in any
+** of the third through the sixth parameters of the authorization callback.
 **
 ** ^If the action code is [SQLITE_READ]
 ** and the callback returns [SQLITE_IGNORE] then the
