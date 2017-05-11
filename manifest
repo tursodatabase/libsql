@@ -1,5 +1,5 @@
-C Enhance\sthe\sjson_extract()\sfunction\sto\sreuse\sparses\sof\sthe\ssame\sJSON\swhen\nthe\sfunction\sappears\smultiple\stimes\sin\sthe\ssame\squery.
-D 2017-05-11T18:42:19.585
+C Add\sanother\stest\scase\sfor\sthe\snew\sauthorizer\sfunctionality.
+D 2017-05-11T19:09:19.861
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a8c838220f7c00820e1fc0ac1bccaaa8e5676067e1dbfa1bafa7a4ffecf8ae6
@@ -527,7 +527,7 @@ F test/attach2.test 0ec5defa340363de6cd50fd595046465e9aaba2d
 F test/attach3.test c59d92791070c59272e00183b7353eeb94915976
 F test/attach4.test 53bf502f17647c6d6c5add46dda6bac8b6f4665c
 F test/attachmalloc.test 3a4bfca9545bfe906a8d2e622de10fbac5b711b0
-F test/auth.test 32ee0e98593c9ea73870d9b0c8e50c2f43371d9fede388c09e9477c6bf5f8aab
+F test/auth.test 3d6cd8f3978ba55b1202574e6ecd79c6e00914ca44b9bfd6c1fe6fb873fcac88
 F test/auth2.test 9eb7fce9f34bf1f50d3f366fb3e606be5a2000a1
 F test/auth3.test db21405b95257c24d29273b6b31d0efc59e1d337e3d5804ba2d1fd4897b1ae49
 F test/autoanalyze1.test b9cc3f32a990fa56669b668d237c6d53e983554ae80c0604992e18869a0b2dec
@@ -1580,8 +1580,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9a2de4f05fabf7e725666fb8824ae1adad56834d7ae4f2e118375bb6f9c0ae77 44ca6c2c4639f3c50ae9233ee299ff0fc4566462c31f28d8676f8de7ffdcd7f0
-R 206babf55062a938db66e913be51f858
-T +closed 44ca6c2c4639f3c50ae9233ee299ff0fc4566462c31f28d8676f8de7ffdcd7f0
-U drh
-Z 601ecb610822b99db3531b28190b1d48
+P 3ba9e7ab79e32090a71c7aa152da9bd5951940ae5e2cf433bceadeb6bfca193f
+R c23ba6742d143bcb8e56ef743f752f47
+U dan
+Z 8927c159ee024c66492c5adfd8a38c92

@@ -2525,6 +2525,28 @@ do_test auth-8.2 {
   SQLITE_READ t7 {} {} {}            \
   ]
 
+# Test also that if SQLITE_DENY is returned from an SQLITE_READ authorizer 
+# invocation with no column name specified, compilation fails.
+#
+set ::authargs [list]
+proc auth {op a b c d} {
+  lappend ::authargs $op $a $b $c $d
+  if {$op == "SQLITE_READ"} { return "SQLITE_DENY" }
+  return "SQLITE_OK"
+}
+set ::authargs [list]
+do_catchsql_test auth-8.3 {
+  SELECT count(*) FROM t7
+} {1 {not authorized}}
+do_test auth-8.4 {
+  set ::authargs
+} [list \
+  SQLITE_SELECT {} {} {} {}          \
+  SQLITE_FUNCTION {} count {} {}     \
+  SQLITE_READ t7 {} {} {}            \
+]
+
+
 rename proc {}
 rename proc_real proc
 finish_test
