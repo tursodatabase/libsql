@@ -4763,10 +4763,11 @@ sqlite3 *sqlite3_context_db_handle(sqlite3_context*);
 ** the compiled regular expression can be reused on multiple
 ** invocations of the same function.
 **
-** ^The sqlite3_get_auxdata() interface returns a pointer to the metadata
-** associated by the sqlite3_set_auxdata() function with the Nth argument
-** value to the application-defined function. ^If there is no metadata
-** associated with the function argument, this sqlite3_get_auxdata() interface
+** ^The sqlite3_get_auxdata(C,N) interface returns a pointer to the metadata
+** associated by the sqlite3_set_auxdata(C,N,P,X) function with the Nth argument
+** value to the application-defined function.  ^N is zero for the left-most
+** function argument.  ^If there is no metadata
+** associated with the function argument, the sqlite3_get_auxdata(C,N) interface
 ** returns a NULL pointer.
 **
 ** ^The sqlite3_set_auxdata(C,N,P,X) interface saves P as metadata for the N-th
@@ -4796,6 +4797,10 @@ sqlite3 *sqlite3_context_db_handle(sqlite3_context*);
 ** ^(In practice, metadata is preserved between function calls for
 ** function parameters that are compile-time constants, including literal
 ** values and [parameters] and expressions composed from the same.)^
+**
+** The value of the N parameter to these interfaces should be non-negative.
+** Future enhancements may make use of negative N values to define new
+** kinds of function caching behavior.
 **
 ** These routines must be called from the same thread in which
 ** the SQL function is running.
