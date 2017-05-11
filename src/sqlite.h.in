@@ -2714,7 +2714,7 @@ void sqlite3_randomness(int N, void *P);
 ** ^When a table is referenced by a [SELECT] but no column values are
 ** extracted from that table (for example in a query like
 ** "SELECT count(*) FROM tab") then the [SQLITE_READ] authorizer callback
-** is invoked once for that table with a NULL column name.
+** is invoked once for that table with a column name that is an empty string.
 ** ^If the action code is [SQLITE_DELETE] and the callback returns
 ** [SQLITE_IGNORE] then the [DELETE] operation proceeds but the
 ** [truncate optimization] is disabled and all rows are deleted individually.

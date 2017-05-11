@@ -1,5 +1,5 @@
-C Rename\sfields\sof\sthe\sinternal\sAuxData\sobject\sto\smake\sthem\sunique\sand\seasier\nto\ssearch\sfor.
-D 2017-05-10T19:42:52.377
+C Change\sthe\sSQLITE_READ\sauthorization\scall\sfor\sunreferenced\stables\sto\suse\nan\sempty\sstring\sfor\sthe\scolumn\sname,\sas\sthis\sis\sless\slikely\sto\simpact\slegacy\nauthorization\scallbacks\sthat\sassume\scolumn\snames\sare\salways\snon-NULL.
+D 2017-05-11T12:05:23.185
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a8c838220f7c00820e1fc0ac1bccaaa8e5676067e1dbfa1bafa7a4ffecf8ae6
@@ -402,9 +402,9 @@ F src/printf.c 8757834f1b54dae512fb25eb1acc8e94a0d15dd2290b58f2563f65973265adb2
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 3e518b962d932a997fae373366880fc028c75706
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c 275ad2697c50392f5b198bd1e79fc3559573e00ec504d46741f02b158b151e4d
+F src/select.c d74b1cde1d9ca6d08bec50b60a5be19440273646bc8ae16648d748c38161d5b7
 F src/shell.c a37d96b20b3644d0eb905df5aa7a0fcf9f6e73c15898337230c760a24a8df794
-F src/sqlite.h.in a13eae90f740278018605ae30e561f9789c227dc3b87a684054e07022d721719
+F src/sqlite.h.in a0b959830616ab1849f340285014610eed39562127ec847d9d00c6d75ce2dc2c
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 58fd0676d3111d02e62e5a35992a7d3da5d3f88753acc174f2d37b774fbbdd28
 F src/sqliteInt.h aea3aa1b81e0d07d5b1c39b8c5a54a1dc5e4f10136cb63da392aef9eb2a5108b
@@ -1579,7 +1579,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 92c5ea7047323d10f762877c5f56d20a3e609e8b55efcfe4880ef3048821ac1f
-R a1dfb8ab33a614a9584dd808f82aa7c9
+P 2be9850cef6492e168243807c34af72119ffbe414027a12c4eda6c421b5b950d
+R cc2897f8815fc5891c267021967cf110
 U drh
-Z b1e990c3c0d70850169897a6b280d967
+Z 1c34db1a72aa8aee36e8a2e6fd670e70
