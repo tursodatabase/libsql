@@ -110,7 +110,8 @@ impl Connection {
         self.db.borrow_mut().rollback_hook(hook);
     }
 
-    /// Register a callback function to be invoked whenever a row is updated, inserted or deleted in a rowid table.
+    /// Register a callback function to be invoked whenever a row is updated,
+    /// inserted or deleted in a rowid table.
     ///
     /// The callback parameters are:
     ///
@@ -154,7 +155,8 @@ impl InnerConnection {
             where F: FnMut() -> bool
         {
             let boxed_hook: *mut F = mem::transmute(p_arg);
-            assert!(!boxed_hook.is_null(), "Internal error - null function pointer");
+            assert!(!boxed_hook.is_null(),
+                    "Internal error - null function pointer");
 
             if (*boxed_hook)() { 1 } else { 0 }
         }
@@ -177,7 +179,8 @@ impl InnerConnection {
             where F: FnMut()
         {
             let boxed_hook: *mut F = mem::transmute(p_arg);
-            assert!(!boxed_hook.is_null(), "Internal error - null function pointer");
+            assert!(!boxed_hook.is_null(),
+                    "Internal error - null function pointer");
 
             (*boxed_hook)();
         }
@@ -186,8 +189,8 @@ impl InnerConnection {
             let boxed_hook: *mut F = Box::into_raw(Box::new(hook));
             unsafe {
                 ffi::sqlite3_rollback_hook(self.db(),
-                                         Some(call_boxed_closure::<F>),
-                                         boxed_hook as *mut _)
+                                           Some(call_boxed_closure::<F>),
+                                           boxed_hook as *mut _)
             }
         };
         free_boxed_hook(previous_hook);
@@ -207,7 +210,8 @@ impl InnerConnection {
             use std::str;
 
             let boxed_hook: *mut F = mem::transmute(p_arg);
-            assert!(!boxed_hook.is_null(), "Internal error - null function pointer");
+            assert!(!boxed_hook.is_null(),
+                    "Internal error - null function pointer");
 
             let action = Action::from(action_code);
             let db_name = {
@@ -270,7 +274,8 @@ mod test {
                            called = true;
                            false
                        });
-        db.execute_batch("BEGIN; CREATE TABLE foo (t TEXT); COMMIT;").unwrap();
+        db.execute_batch("BEGIN; CREATE TABLE foo (t TEXT); COMMIT;")
+            .unwrap();
         assert!(called);
     }
 
@@ -279,10 +284,9 @@ mod test {
         let db = Connection::open_in_memory().unwrap();
 
         let mut called = false;
-        db.rollback_hook(|| {
-                           called = true;
-                       });
-        db.execute_batch("BEGIN; CREATE TABLE foo (t TEXT); ROLLBACK;").unwrap();
+        db.rollback_hook(|| { called = true; });
+        db.execute_batch("BEGIN; CREATE TABLE foo (t TEXT); ROLLBACK;")
+            .unwrap();
         assert!(called);
     }
 
@@ -299,8 +303,7 @@ mod test {
                            called = true;
                        });
         db.execute_batch("CREATE TABLE foo (t TEXT)").unwrap();
-        db.execute_batch("INSERT INTO foo VALUES ('lisa')")
-            .unwrap();
+        db.execute_batch("INSERT INTO foo VALUES ('lisa')").unwrap();
         assert!(called);
     }
 }
