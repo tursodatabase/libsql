@@ -1,4 +1,4 @@
-//! Data Change Notification Callbacks
+//! Commit, Data Change and Rollback Notification Callbacks
 #![allow(non_camel_case_types)]
 
 use std::mem;
@@ -8,14 +8,6 @@ use std::os::raw::{c_int, c_char, c_void};
 use ffi;
 
 use {Connection, InnerConnection};
-
-// Commit And Rollback Notification Callbacks
-// http://sqlite.org/c3ref/commit_hook.html
-/*
-void *sqlite3_commit_hook(sqlite3*, int(*)(void*), void*);
-void *sqlite3_rollback_hook(sqlite3*, void(*)(void *), void*);
-*/
-
 
 /// Authorizer Action Codes
 #[derive(Debug, PartialEq)]
@@ -100,21 +92,105 @@ impl From<i32> for Action {
 }
 
 impl Connection {
+    /// Register a callback function to be invoked whenever a transaction is committed.
+    ///
+    /// The callback returns `true` to rollback.
+    pub fn commit_hook<F>(&self, hook: F)
+        where F: FnMut() -> bool
+    {
+        self.db.borrow_mut().commit_hook(hook);
+    }
+
+    /// Register a callback function to be invoked whenever a transaction is committed.
+    ///
+    /// The callback returns `true` to rollback.
+    pub fn rollback_hook<F>(&self, hook: F)
+        where F: FnMut()
+    {
+        self.db.borrow_mut().rollback_hook(hook);
+    }
+
     /// Register a callback function to be invoked whenever a row is updated, inserted or deleted in a rowid table.
+    ///
+    /// The callback parameters are:
+    ///
+    ///   - the type of database update (SQLITE_INSERT, SQLITE_UPDATE or SQLITE_DELETE),
+    ///   - the name of the database ("main", "temp", ...),
+    ///   - the name of the table that is updated,
+    ///   - the ROWID of the row that is updated.
     pub fn update_hook<F>(&self, hook: F)
         where F: FnMut(Action, &str, &str, i64)
     {
         self.db.borrow_mut().update_hook(hook);
     }
 
+    /// Remove hook installed by `update_hook`.
     pub fn remove_update_hook(&self) {
         self.db.borrow_mut().remove_update_hook();
+    }
+
+    /// Remove hook installed by `commit_hook`.
+    pub fn remove_commit_hook(&self) {
+        self.db.borrow_mut().remove_commit_hook();
+    }
+
+    /// Remove hook installed by `rollback_hook`.
+    pub fn remove_rollback_hook(&self) {
+        self.db.borrow_mut().remove_rollback_hook();
     }
 }
 
 impl InnerConnection {
     pub fn remove_hooks(&mut self) {
         self.remove_update_hook();
+        self.remove_commit_hook();
+        self.remove_rollback_hook();
+    }
+
+    fn commit_hook<F>(&self, hook: F)
+        where F: FnMut() -> bool
+    {
+        unsafe extern "C" fn call_boxed_closure<F>(p_arg: *mut c_void) -> c_int
+            where F: FnMut() -> bool
+        {
+            let boxed_hook: *mut F = mem::transmute(p_arg);
+            assert!(!boxed_hook.is_null(), "Internal error - null function pointer");
+
+            if (*boxed_hook)() { 1 } else { 0 }
+        }
+
+        let previous_hook = {
+            let boxed_hook: *mut F = Box::into_raw(Box::new(hook));
+            unsafe {
+                ffi::sqlite3_commit_hook(self.db(),
+                                         Some(call_boxed_closure::<F>),
+                                         boxed_hook as *mut _)
+            }
+        };
+        free_boxed_hook(previous_hook);
+    }
+
+    fn rollback_hook<F>(&self, hook: F)
+        where F: FnMut()
+    {
+        unsafe extern "C" fn call_boxed_closure<F>(p_arg: *mut c_void)
+            where F: FnMut()
+        {
+            let boxed_hook: *mut F = mem::transmute(p_arg);
+            assert!(!boxed_hook.is_null(), "Internal error - null function pointer");
+
+            (*boxed_hook)();
+        }
+
+        let previous_hook = {
+            let boxed_hook: *mut F = Box::into_raw(Box::new(hook));
+            unsafe {
+                ffi::sqlite3_rollback_hook(self.db(),
+                                         Some(call_boxed_closure::<F>),
+                                         boxed_hook as *mut _)
+            }
+        };
+        free_boxed_hook(previous_hook);
     }
 
     fn update_hook<F>(&mut self, hook: F)
@@ -154,17 +230,26 @@ impl InnerConnection {
                                          boxed_hook as *mut _)
             }
         };
-        free_boxed_update_hook(previous_hook);
+        free_boxed_hook(previous_hook);
     }
 
     fn remove_update_hook(&mut self) {
         let previous_hook = unsafe { ffi::sqlite3_update_hook(self.db(), None, ptr::null_mut()) };
-        free_boxed_update_hook(previous_hook);
+        free_boxed_hook(previous_hook);
     }
 
+    fn remove_commit_hook(&mut self) {
+        let previous_hook = unsafe { ffi::sqlite3_commit_hook(self.db(), None, ptr::null_mut()) };
+        free_boxed_hook(previous_hook);
+    }
+
+    fn remove_rollback_hook(&mut self) {
+        let previous_hook = unsafe { ffi::sqlite3_rollback_hook(self.db(), None, ptr::null_mut()) };
+        free_boxed_hook(previous_hook);
+    }
 }
 
-fn free_boxed_update_hook(hook: *mut c_void) {
+fn free_boxed_hook(hook: *mut c_void) {
     if !hook.is_null() {
         // TODO make sure that size_of::<*mut F>() is always equal to size_of::<*mut c_void>()
         let _: Box<*mut c_void> = unsafe { Box::from_raw(hook as *mut _) };
@@ -175,6 +260,31 @@ fn free_boxed_update_hook(hook: *mut c_void) {
 mod test {
     use super::Action;
     use Connection;
+
+    #[test]
+    fn test_commit_hook() {
+        let db = Connection::open_in_memory().unwrap();
+
+        let mut called = false;
+        db.commit_hook(|| {
+                           called = true;
+                           false
+                       });
+        db.execute_batch("BEGIN; CREATE TABLE foo (t TEXT); COMMIT;").unwrap();
+        assert!(called);
+    }
+
+    #[test]
+    fn test_rollback_hook() {
+        let db = Connection::open_in_memory().unwrap();
+
+        let mut called = false;
+        db.rollback_hook(|| {
+                           called = true;
+                       });
+        db.execute_batch("BEGIN; CREATE TABLE foo (t TEXT); ROLLBACK;").unwrap();
+        assert!(called);
+    }
 
     #[test]
     fn test_update_hook() {
