@@ -64,7 +64,7 @@ pub struct Blob<'conn> {
 }
 
 impl Connection {
-    /// Open a handle to the BLOB located in `row`, `column`, `table` in database `db`.
+    /// Open a handle to the BLOB located in `row_id`, `column`, `table` in database `db`.
     ///
     /// # Failure
     ///
@@ -74,7 +74,7 @@ impl Connection {
                          db: DatabaseName,
                          table: &str,
                          column: &str,
-                         row: i64,
+                         row_id: i64,
                          read_only: bool)
                          -> Result<Blob<'a>> {
         let mut c = self.db.borrow_mut();
@@ -87,7 +87,7 @@ impl Connection {
                                    db.as_ptr(),
                                    table.as_ptr(),
                                    column.as_ptr(),
-                                   row,
+                                   row_id,
                                    if read_only { 0 } else { 1 },
                                    &mut blob)
         };
