@@ -1909,6 +1909,9 @@ static int walCheckpoint(
           ** indicate that the log file contains zero valid frames.  */
           walRestartHdr(pWal, salt1);
           rc = sqlite3OsTruncate(pWal->pWalFd, 0);
+        }else if( walIsServer(pWal) ){
+          assert( eMode==SQLITE_CHECKPOINT_RESTART );
+          walRestartHdr(pWal, salt1);
         }
         walUnlockExclusive(pWal, WAL_READ_LOCK(1), WAL_NREADER-1);
       }
@@ -3126,7 +3129,7 @@ int sqlite3WalFrames(
   /* See if it is possible to write these frames into the start of the
   ** log file, instead of appending to it at pWal->hdr.mxFrame.
   */
-  if( SQLITE_OK!=(rc = walRestartLog(pWal)) ){
+  if( walIsServer(pWal)==0 && SQLITE_OK!=(rc = walRestartLog(pWal)) ){
     return rc;
   }
 
@@ -3379,7 +3382,13 @@ int sqlite3WalCheckpoint(
   */
   if( eMode!=SQLITE_CHECKPOINT_PASSIVE ){
     if( walIsServer(pWal) ){
-      rc = sqlite3ServerLock(pWal->pServer, 0, 1, 1);
+      if( eMode>=SQLITE_CHECKPOINT_RESTART ){
+        /* Exclusive lock on page 1. This is exclusive access to the db. */
+        rc = sqlite3ServerLock(pWal->pServer, 1, 1, 1);
+      }else{
+        /* Take the server write-lock ("page" 0) */
+        rc = sqlite3ServerLock(pWal->pServer, 0, 1, 1);
+      }
     }else{
       rc = walBusyLock(pWal, xBusy, pBusyArg, WAL_WRITE_LOCK, 1);
     }
@@ -3431,6 +3440,7 @@ int sqlite3WalCheckpoint(
   walUnlockExclusive(pWal, WAL_CKPT_LOCK, 1);
   pWal->ckptLock = 0;
   WALTRACE(("WAL%p: checkpoint %s\n", pWal, rc ? "failed" : "ok"));
+  if( walIsServer(pWal) ) sqlite3ServerEnd(pWal->pServer);
   return (rc==SQLITE_OK && eMode!=eMode2 ? SQLITE_BUSY : rc);
 }
 

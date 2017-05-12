@@ -61,6 +61,7 @@ do_test 2.2 {
   execsql COMMIT db2
 } {}
 db close
+db2 close
 
 #-------------------------------------------------------------------------
 # That the wal file can be wrapped around.
@@ -79,7 +80,7 @@ do_execsql_test 3.0 {
 do_test 3.1 {
   set N [file size test.db-wal]
   execsql {
-    PRAGMA wal_checkpoint;
+    PRAGMA wal_checkpoint = restart;
     INSERT INTO ttt VALUES(11, 12);
     INSERT INTO ttt VALUES(13, 14);
   }
@@ -108,6 +109,30 @@ do_execsql_test 4.1 {
   ROLLBACK;
   PRAGMA integrity_check;
 } {ok ok}
+
+reset_db
+do_execsql_test 5.1 {
+  CREATE TABLE xyz(a);
+  PRAGMA journal_mode = wal;
+  INSERT INTO xyz VALUES(1);
+  INSERT INTO xyz VALUES(2);
+  INSERT INTO xyz VALUES(3);
+} {wal}
+
+breakpoint
+
+do_test 5.2 {
+  sqlite3 db2 test.db
+  execsql { SELECT * FROM xyz } db2
+} {1 2 3}
+
+do_execsql_test 5.3 {
+  PRAGMA wal_checkpoint = restart 
+} {0 0 0}
+
+do_test 5.4 {
+  execsql { SELECT * FROM xyz } db2
+} {1 2 3}
 
 finish_test
 
