@@ -29,6 +29,8 @@ int sqlite3ServerReleaseWriteLocks(Server *p);
 
 int sqlite3ServerLock(Server *p, Pgno pgno, int bWrite, int bBlock);
 
+int sqlite3ServerHasLock(Server *p, Pgno pgno, int bWrite);
+
 #endif /* SQLITE_SERVER_H */
 
 #endif /* SQLITE_SERVER_EDITION */

@@ -513,4 +513,12 @@ server_lock_out:
   return rc;
 }
 
+int sqlite3ServerHasLock(Server *p, Pgno pgno, int bWrite){
+  u32 v = *serverPageLockSlot(p, pgno);
+  if( bWrite ){
+    return (v>>HMA_CLIENT_SLOTS)==(p->iClient+1);
+  }
+  return (v & (1 << p->iClient))!=0;
+}
+
 #endif /* ifdef SQLITE_SERVER_EDITION */

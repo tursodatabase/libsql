@@ -2071,6 +2071,14 @@ static int walIndexTryHdr(Wal *pWal, int *pChanged){
   return 0;
 }
 
+static int walIndexWriteLock(Wal *pWal){
+  if( walIsServer(pWal) ){
+    return sqlite3ServerLock(pWal->pServer, 0, 1, 0);
+  }else{
+    return walLockExclusive(pWal, WAL_WRITE_LOCK, 1);
+  }
+}
+
 /*
 ** Read the wal-index header from the wal-index and into pWal->hdr.
 ** If the wal-header appears to be corrupt, try to reconstruct the
@@ -2111,11 +2119,12 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
   assert( badHdr==0 || pWal->writeLock==0 );
   if( badHdr ){
     if( pWal->readOnly & WAL_SHM_RDONLY ){
+      assert( walIsServer(pWal)==0 );
       if( SQLITE_OK==(rc = walLockShared(pWal, WAL_WRITE_LOCK)) ){
         walUnlockShared(pWal, WAL_WRITE_LOCK);
         rc = SQLITE_READONLY_RECOVERY;
       }
-    }else if( SQLITE_OK==(rc = walLockExclusive(pWal, WAL_WRITE_LOCK, 1)) ){
+    }else if( SQLITE_OK==(rc = walIndexWriteLock(pWal)) ){
       pWal->writeLock = 1;
       if( SQLITE_OK==(rc = walIndexPage(pWal, 0, &page0)) ){
         badHdr = walIndexTryHdr(pWal, pChanged);
@@ -2129,7 +2138,9 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
         }
       }
       pWal->writeLock = 0;
-      walUnlockExclusive(pWal, WAL_WRITE_LOCK, 1);
+      if( walIsServer(pWal)==0 ){
+        walUnlockExclusive(pWal, WAL_WRITE_LOCK, 1);
+      }
     }
   }
 
@@ -2613,6 +2624,9 @@ int sqlite3WalFindFrame(
   /* This routine is only be called from within a read transaction. */
   assert( walIsServer(pWal) || pWal->readLock>=0 || pWal->lockError );
 
+  assert( walIsServer(pWal)==0 || pWal->writeLock==0 
+       || sqlite3ServerHasLock(pWal->pServer, 0, 1) 
+  );
   if( walIsServer(pWal) && pWal->writeLock==0 ){
     /* A server mode connection must read from the most recent snapshot. */
     iLast = walIndexHdr(pWal)->mxFrame;
@@ -3109,6 +3123,7 @@ int sqlite3WalFrames(
       return rc;
     }
   }
+  assert( walIsServer(pWal)==0 || sqlite3ServerHasLock(pWal->pServer, 0, 1) );
 
   /* If this frame set completes a transaction, then nTruncate>0.  If
   ** nTruncate==0 then this frame set does not complete the transaction. */
