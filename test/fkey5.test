@@ -115,8 +115,11 @@ do_test fkey5-1.6 {
 # EVIDENCE-OF: R-55672-01620 The first column is the name of the table
 # that contains the REFERENCES clause.
 #
-# EVIDENCE-OF: R-25219-25618 The second column is the rowid of the row
-# that contains the invalid REFERENCES clause.
+# EVIDENCE-OF: R-00471-55166 The second column is the rowid of the row
+# that contains the invalid REFERENCES clause, or NULL if the child
+# table is a WITHOUT ROWID table.
+#
+# The second clause in the previous is tested by fkey5-10.3.
 #
 # EVIDENCE-OF: R-40482-20265 The third column is the name of the table
 # that is referred to.
@@ -407,6 +410,9 @@ do_execsql_test 10.1 {
 do_execsql_test 10.2 {
   PRAGMA foreign_key_check;
 }
+# EVIDENCE-OF: R-00471-55166 The second column is the rowid of the row
+# that contains the invalid REFERENCES clause, or NULL if the child
+# table is a WITHOUT ROWID table.
 do_execsql_test 10.3 {
   INSERT INTO c30 VALUES(45, 45);
   PRAGMA foreign_key_check;

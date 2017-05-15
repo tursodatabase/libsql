@@ -438,7 +438,7 @@ static void utf8_width_print(FILE *pOut, int w, const char *zUtf){
   int n;
   int aw = w<0 ? -w : w;
   char zBuf[1000];
-  if( aw>sizeof(zBuf)/3 ) aw = sizeof(zBuf)/3;
+  if( aw>(int)sizeof(zBuf)/3 ) aw = (int)sizeof(zBuf)/3;
   for(i=n=0; zUtf[i]; i++){
     if( (zUtf[i]&0xc0)!=0x80 ){
       n++;
@@ -743,6 +743,10 @@ struct SHA3Context {
   unsigned nLoaded;      /* Input bytes loaded into u.x[] so far this cycle */
   unsigned ixMask;       /* Insert next input into u.x[nLoaded^ixMask]. */
 };
+
+/* Allow the following routine to use the B0 variable, which is also
+** a macro in the termios.h header file */
+#undef B0
 
 /*
 ** A single step of the Keccak mixing function for a 1600-bit state

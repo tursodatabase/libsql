@@ -2977,16 +2977,18 @@ void sqlite3VdbeDeleteAuxData(sqlite3 *db, AuxData **pp, int iOp, int mask){
   while( *pp ){
     AuxData *pAux = *pp;
     if( (iOp<0)
-     || (pAux->iOp==iOp && (pAux->iArg>31 || !(mask & MASKBIT32(pAux->iArg))))
+     || (pAux->iAuxOp==iOp
+          && pAux->iAuxArg>=0
+          && (pAux->iAuxArg>31 || !(mask & MASKBIT32(pAux->iAuxArg))))
     ){
-      testcase( pAux->iArg==31 );
-      if( pAux->xDelete ){
-        pAux->xDelete(pAux->pAux);
+      testcase( pAux->iAuxArg==31 );
+      if( pAux->xDeleteAux ){
+        pAux->xDeleteAux(pAux->pAux);
       }
-      *pp = pAux->pNext;
+      *pp = pAux->pNextAux;
       sqlite3DbFree(db, pAux);
     }else{
-      pp= &pAux->pNext;
+      pp= &pAux->pNextAux;
     }
   }
 }

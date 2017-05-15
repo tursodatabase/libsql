@@ -4192,6 +4192,7 @@ static void fts5IndexMergeLevel(
   int bOldest;                    /* True if the output segment is the oldest */
   int eDetail = p->pConfig->eDetail;
   const int flags = FTS5INDEX_QUERY_NOOUTPUT;
+  int bTermWritten = 0;           /* True if current term already output */
 
   assert( iLvl<pStruct->nLevel );
   assert( pLvl->nMerge<=pLvl->nSeg );
@@ -4245,18 +4246,22 @@ static void fts5IndexMergeLevel(
     int nTerm;
     const u8 *pTerm;
 
-    /* Check for key annihilation. */
-    if( pSegIter->nPos==0 && (bOldest || pSegIter->bDel==0) ) continue;
-
     pTerm = fts5MultiIterTerm(pIter, &nTerm);
     if( nTerm!=term.n || memcmp(pTerm, term.p, nTerm) ){
       if( pnRem && writer.nLeafWritten>nRem ){
         break;
       }
+      fts5BufferSet(&p->rc, &term, nTerm, pTerm);
+      bTermWritten =0;
+    }
 
+    /* Check for key annihilation. */
+    if( pSegIter->nPos==0 && (bOldest || pSegIter->bDel==0) ) continue;
+
+    if( p->rc==SQLITE_OK && bTermWritten==0 ){
       /* This is a new term. Append a term to the output segment. */
       fts5WriteAppendTerm(p, &writer, nTerm, pTerm);
-      fts5BufferSet(&p->rc, &term, nTerm, pTerm);
+      bTermWritten = 1;
     }
 
     /* Append the rowid to the output */

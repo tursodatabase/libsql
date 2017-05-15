@@ -147,30 +147,32 @@ do_execsql_test 3.1.5 {
 #-------------------------------------------------------------------------
 #
 reset_db
-do_execsql_test 4.0 {
-  PRAGMA page_size = 512;
-  CREATE VIRTUAL TABLE t4 USING fts4;
-  WITH s(i) AS ( SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<8000 )
-  INSERT INTO t4 SELECT 'a b c a b c a b c' FROM s;
+ifcapable fts4_deferred {
+  do_execsql_test 4.0 {
+    PRAGMA page_size = 512;
+    CREATE VIRTUAL TABLE t4 USING fts4;
+    WITH s(i) AS ( SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<8000 )
+    INSERT INTO t4 SELECT 'a b c a b c a b c' FROM s;
+  }
+  do_execsql_test 4.1 {
+    SELECT count(*) FROM t4 WHERE t4 MATCH '"a b c" OR "c a b"'
+  } {8000}
+  do_execsql_test 4.2 {
+    SELECT quote(value) from t4_stat where id=0
+  } {X'C03EC0B204C0A608'}
+  do_execsql_test 4.3 {
+    UPDATE t4_stat SET value = X'C03EC0B204C0A60800' WHERE id=0;
+  }
+  do_catchsql_test 4.4 {
+    SELECT count(*) FROM t4 WHERE t4 MATCH '"a b c" OR "c a b"'
+  } {1 {database disk image is malformed}}
+  do_execsql_test 4.5 {
+    UPDATE t4_stat SET value = X'00C03EC0B204C0A608' WHERE id=0;
+  }
+  do_catchsql_test 4.6 {
+    SELECT count(*) FROM t4 WHERE t4 MATCH '"a b c" OR "c a b"'
+  } {1 {database disk image is malformed}}
 }
-do_execsql_test 4.1 {
-  SELECT count(*) FROM t4 WHERE t4 MATCH '"a b c" OR "c a b"'
-} {8000}
-do_execsql_test 4.2 {
-  SELECT quote(value) from t4_stat where id=0
-} {X'C03EC0B204C0A608'}
-do_execsql_test 4.3 {
-  UPDATE t4_stat SET value = X'C03EC0B204C0A60800' WHERE id=0;
-}
-do_catchsql_test 4.4 {
-  SELECT count(*) FROM t4 WHERE t4 MATCH '"a b c" OR "c a b"'
-} {1 {database disk image is malformed}}
-do_execsql_test 4.5 {
-  UPDATE t4_stat SET value = X'00C03EC0B204C0A608' WHERE id=0;
-}
-do_catchsql_test 4.6 {
-  SELECT count(*) FROM t4 WHERE t4 MATCH '"a b c" OR "c a b"'
-} {1 {database disk image is malformed}}
 
 #-------------------------------------------------------------------------
 #
