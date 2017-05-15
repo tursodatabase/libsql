@@ -265,6 +265,8 @@ test_suite "fts3" -prefix "" -description {
   fts4incr.test fts4langid.test fts4lastrowid.test fts4merge2.test
   fts4merge4.test fts4merge.test fts4noti.test fts4onepass.test 
   fts4opt.test fts4unicode.test
+  fts3corrupt3.test
+  fts3misc.test
 }
 
 test_suite "fts5" -prefix "" -description {

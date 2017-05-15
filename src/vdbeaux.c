@@ -811,7 +811,7 @@ void sqlite3VdbeJumpHere(Vdbe *p, int addr){
 */
 static void freeEphemeralFunction(sqlite3 *db, FuncDef *pDef){
   if( (pDef->funcFlags & SQLITE_FUNC_EPHEM)!=0 ){
-    sqlite3DbFree(db, pDef);
+    sqlite3DbFreeNN(db, pDef);
   }
 }
 
@@ -822,11 +822,11 @@ static void vdbeFreeOpArray(sqlite3 *, Op *, int);
 */
 static SQLITE_NOINLINE void freeP4Mem(sqlite3 *db, Mem *p){
   if( p->szMalloc ) sqlite3DbFree(db, p->zMalloc);
-  sqlite3DbFree(db, p);
+  sqlite3DbFreeNN(db, p);
 }
 static SQLITE_NOINLINE void freeP4FuncCtx(sqlite3 *db, sqlite3_context *p){
   freeEphemeralFunction(db, p->pFunc);
-  sqlite3DbFree(db, p);
+ sqlite3DbFreeNN(db, p);
 }
 static void freeP4(sqlite3 *db, int p4type, void *p4){
   assert( db );
@@ -879,14 +879,14 @@ static void freeP4(sqlite3 *db, int p4type, void *p4){
 static void vdbeFreeOpArray(sqlite3 *db, Op *aOp, int nOp){
   if( aOp ){
     Op *pOp;
-    for(pOp=aOp; pOp<&aOp[nOp]; pOp++){
+    for(pOp=&aOp[nOp-1]; pOp>=aOp; pOp--){
       if( pOp->p4type ) freeP4(db, pOp->p4type, pOp->p4.p);
 #ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
       sqlite3DbFree(db, pOp->zComment);
 #endif     
     }
+    sqlite3DbFreeNN(db, aOp);
   }
-  sqlite3DbFree(db, aOp);
 }
 
 /*
@@ -1559,7 +1559,7 @@ static void releaseMemArray(Mem *p, int N){
       if( p->flags&(MEM_Agg|MEM_Dyn|MEM_Frame|MEM_RowSet) ){
         sqlite3VdbeMemRelease(p);
       }else if( p->szMalloc ){
-        sqlite3DbFree(db, p->zMalloc);
+        sqlite3DbFreeNN(db, p->zMalloc);
         p->szMalloc = 0;
       }
 
@@ -2035,8 +2035,8 @@ void sqlite3VdbeFreeCursor(Vdbe *p, VdbeCursor *pCx){
       break;
     }
     case CURTYPE_BTREE: {
-      if( pCx->pBtx ){
-        sqlite3BtreeClose(pCx->pBtx);
+      if( pCx->isEphemeral ){
+        if( pCx->pBtx ) sqlite3BtreeClose(pCx->pBtx);
         /* The pCx->pCursor will be close automatically, if it exists, by
         ** the call above. */
       }else{
@@ -2950,7 +2950,6 @@ int sqlite3VdbeReset(Vdbe *p){
     }
   }
 #endif
-  p->iCurrentTime = 0;
   p->magic = VDBE_MAGIC_RESET;
   return p->rc & db->errMask;
 }
@@ -2989,16 +2988,18 @@ void sqlite3VdbeDeleteAuxData(sqlite3 *db, AuxData **pp, int iOp, int mask){
   while( *pp ){
     AuxData *pAux = *pp;
     if( (iOp<0)
-     || (pAux->iOp==iOp && (pAux->iArg>31 || !(mask & MASKBIT32(pAux->iArg))))
+     || (pAux->iAuxOp==iOp
+          && pAux->iAuxArg>=0
+          && (pAux->iAuxArg>31 || !(mask & MASKBIT32(pAux->iAuxArg))))
     ){
-      testcase( pAux->iArg==31 );
-      if( pAux->xDelete ){
-        pAux->xDelete(pAux->pAux);
+      testcase( pAux->iAuxArg==31 );
+      if( pAux->xDeleteAux ){
+        pAux->xDeleteAux(pAux->pAux);
       }
-      *pp = pAux->pNext;
+      *pp = pAux->pNextAux;
       sqlite3DbFree(db, pAux);
     }else{
-      pp= &pAux->pNext;
+      pp= &pAux->pNextAux;
     }
   }
 }
@@ -3060,7 +3061,7 @@ void sqlite3VdbeDelete(Vdbe *p){
   }
   p->magic = VDBE_MAGIC_DEAD;
   p->db = 0;
-  sqlite3DbFree(db, p);
+  sqlite3DbFreeNN(db, p);
 }
 
 /*
@@ -4619,7 +4620,7 @@ static void vdbeFreeUnpacked(sqlite3 *db, int nField, UnpackedRecord *p){
       Mem *pMem = &p->aMem[i];
       if( pMem->zMalloc ) sqlite3VdbeMemRelease(pMem);
     }
-    sqlite3DbFree(db, p);
+    sqlite3DbFreeNN(db, p);
   }
 }
 #endif /* SQLITE_ENABLE_PREUPDATE_HOOK */
@@ -4686,7 +4687,7 @@ void sqlite3VdbePreUpdateHook(
     for(i=0; i<pCsr->nField; i++){
       sqlite3VdbeMemRelease(&preupdate.aNew[i]);
     }
-    sqlite3DbFree(db, preupdate.aNew);
+    sqlite3DbFreeNN(db, preupdate.aNew);
   }
 }
 #endif /* SQLITE_ENABLE_PREUPDATE_HOOK */

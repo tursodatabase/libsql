@@ -1033,9 +1033,16 @@ static int auth_callback(
   Tcl_DString str;
   int rc;
   const char *zReply;
+  /* EVIDENCE-OF: R-38590-62769 The first parameter to the authorizer
+  ** callback is a copy of the third parameter to the
+  ** sqlite3_set_authorizer() interface.
+  */
   SqliteDb *pDb = (SqliteDb*)pArg;
   if( pDb->disableAuth ) return SQLITE_OK;
 
+  /* EVIDENCE-OF: R-56518-44310 The second parameter to the callback is an
+  ** integer action code that specifies the particular action to be
+  ** authorized. */
   switch( code ){
     case SQLITE_COPY              : zCode="SQLITE_COPY"; break;
     case SQLITE_CREATE_INDEX      : zCode="SQLITE_CREATE_INDEX"; break;

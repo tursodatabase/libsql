@@ -1329,33 +1329,37 @@ void sqlite3Pragma(
           assert( x==0 );
         }
         addrOk = sqlite3VdbeMakeLabel(v);
-        if( pParent && pIdx==0 ){
-          int iKey = pFK->aCol[0].iFrom;
-          assert( iKey>=0 && iKey<pTab->nCol );
-          if( iKey!=pTab->iPKey ){
-            sqlite3VdbeAddOp3(v, OP_Column, 0, iKey, regRow);
-            sqlite3ColumnDefault(v, pTab, iKey, regRow);
-            sqlite3VdbeAddOp2(v, OP_IsNull, regRow, addrOk); VdbeCoverage(v);
-          }else{
-            sqlite3VdbeAddOp2(v, OP_Rowid, 0, regRow);
-          }
-          sqlite3VdbeAddOp3(v, OP_SeekRowid, i, 0, regRow); VdbeCoverage(v);
-          sqlite3VdbeGoto(v, addrOk);
-          sqlite3VdbeJumpHere(v, sqlite3VdbeCurrentAddr(v)-2);
-        }else{
-          for(j=0; j<pFK->nCol; j++){
-            sqlite3ExprCodeGetColumnOfTable(v, pTab, 0,
-                            aiCols ? aiCols[j] : pFK->aCol[j].iFrom, regRow+j);
-            sqlite3VdbeAddOp2(v, OP_IsNull, regRow+j, addrOk); VdbeCoverage(v);
-          }
-          if( pParent ){
-            sqlite3VdbeAddOp4(v, OP_MakeRecord, regRow, pFK->nCol, regKey,
-                              sqlite3IndexAffinityStr(db,pIdx), pFK->nCol);
-            sqlite3VdbeAddOp4Int(v, OP_Found, i, addrOk, regKey, 0);
-            VdbeCoverage(v);
-          }
+
+        /* Generate code to read the child key values into registers
+        ** regRow..regRow+n. If any of the child key values are NULL, this 
+        ** row cannot cause an FK violation. Jump directly to addrOk in 
+        ** this case. */
+        for(j=0; j<pFK->nCol; j++){
+          int iCol = aiCols ? aiCols[j] : pFK->aCol[j].iFrom;
+          sqlite3ExprCodeGetColumnOfTable(v, pTab, 0, iCol, regRow+j);
+          sqlite3VdbeAddOp2(v, OP_IsNull, regRow+j, addrOk); VdbeCoverage(v);
         }
-        sqlite3VdbeAddOp2(v, OP_Rowid, 0, regResult+1);
+
+        /* Generate code to query the parent index for a matching parent
+        ** key. If a match is found, jump to addrOk. */
+        if( pIdx ){
+          sqlite3VdbeAddOp4(v, OP_MakeRecord, regRow, pFK->nCol, regKey,
+              sqlite3IndexAffinityStr(db,pIdx), pFK->nCol);
+          sqlite3VdbeAddOp4Int(v, OP_Found, i, addrOk, regKey, 0);
+          VdbeCoverage(v);
+        }else if( pParent ){
+          int jmp = sqlite3VdbeCurrentAddr(v)+2;
+          sqlite3VdbeAddOp3(v, OP_SeekRowid, i, jmp, regRow); VdbeCoverage(v);
+          sqlite3VdbeGoto(v, addrOk);
+          assert( pFK->nCol==1 );
+        }
+
+        /* Generate code to report an FK violation to the caller. */
+        if( HasRowid(pTab) ){
+          sqlite3VdbeAddOp2(v, OP_Rowid, 0, regResult+1);
+        }else{
+          sqlite3VdbeAddOp2(v, OP_Null, 0, regResult+1);
+        }
         sqlite3VdbeMultiLoad(v, regResult+2, "si", pFK->zTo, i-1);
         sqlite3VdbeAddOp2(v, OP_ResultRow, regResult, 4);
         sqlite3VdbeResolveLabel(v, addrOk);
@@ -1541,25 +1545,28 @@ void sqlite3Pragma(
         }
         /* Verify CHECK constraints */
         if( pTab->pCheck && (db->flags & SQLITE_IgnoreChecks)==0 ){
-          int addrCkFault = sqlite3VdbeMakeLabel(v);
-          int addrCkOk = sqlite3VdbeMakeLabel(v);
-          ExprList *pCheck = pTab->pCheck;
-          char *zErr;
-          int k;
-          pParse->iSelfTab = iDataCur;
-          sqlite3ExprCachePush(pParse);
-          for(k=pCheck->nExpr-1; k>0; k--){
-            sqlite3ExprIfFalse(pParse, pCheck->a[k].pExpr, addrCkFault, 0);
+          ExprList *pCheck = sqlite3ExprListDup(db, pTab->pCheck, 0);
+          if( db->mallocFailed==0 ){
+            int addrCkFault = sqlite3VdbeMakeLabel(v);
+            int addrCkOk = sqlite3VdbeMakeLabel(v);
+            char *zErr;
+            int k;
+            pParse->iSelfTab = iDataCur;
+            sqlite3ExprCachePush(pParse);
+            for(k=pCheck->nExpr-1; k>0; k--){
+              sqlite3ExprIfFalse(pParse, pCheck->a[k].pExpr, addrCkFault, 0);
+            }
+            sqlite3ExprIfTrue(pParse, pCheck->a[0].pExpr, addrCkOk, 
+                SQLITE_JUMPIFNULL);
+            sqlite3VdbeResolveLabel(v, addrCkFault);
+            zErr = sqlite3MPrintf(db, "CHECK constraint failed in %s",
+                pTab->zName);
+            sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0, zErr, P4_DYNAMIC);
+            integrityCheckResultRow(v, 3);
+            sqlite3VdbeResolveLabel(v, addrCkOk);
+            sqlite3ExprCachePop(pParse);
           }
-          sqlite3ExprIfTrue(pParse, pCheck->a[0].pExpr, addrCkOk, 
-                            SQLITE_JUMPIFNULL);
-          sqlite3VdbeResolveLabel(v, addrCkFault);
-          zErr = sqlite3MPrintf(db, "CHECK constraint failed in %s",
-                                pTab->zName);
-          sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0, zErr, P4_DYNAMIC);
-          integrityCheckResultRow(v, 3);
-          sqlite3VdbeResolveLabel(v, addrCkOk);
-          sqlite3ExprCachePop(pParse);
+          sqlite3ExprListDelete(db, pCheck);
         }
         /* Validate index entries for the current row */
         for(j=0, pIdx=pTab->pIndex; pIdx && !isQuick; pIdx=pIdx->pNext, j++){

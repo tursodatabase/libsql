@@ -324,54 +324,86 @@ static void output_formatted(DState *p, const char *zFormat, ...){
 }
 
 /*
-** Output the given string as a quoted string using SQL quoting conventions.
+** Find a string that is not found anywhere in z[].  Return a pointer
+** to that string.
 **
-** The "\n" and "\r" characters are converted to char(10) and char(13)
-** to prevent them from being transformed by end-of-line translators.
+** Try to use zA and zB first.  If both of those are already found in z[]
+** then make up some string and store it in the buffer zBuf.
 */
-static void output_quoted_string(DState *p, const unsigned char *z){
+static const char *unused_string(
+  const char *z,                    /* Result must not appear anywhere in z */
+  const char *zA, const char *zB,   /* Try these first */
+  char *zBuf                        /* Space to store a generated string */
+){
+  unsigned i = 0;
+  if( strstr(z, zA)==0 ) return zA;
+  if( strstr(z, zB)==0 ) return zB;
+  do{
+    sqlite3_snprintf(20,zBuf,"(%s%u)", zA, i++);
+  }while( strstr(z,zBuf)!=0 );
+  return zBuf;
+}
+
+/*
+** Output the given string as a quoted string using SQL quoting conventions.
+** Additionallly , escape the "\n" and "\r" characters so that they do not
+** get corrupted by end-of-line translation facilities in some operating
+** systems.
+*/
+static void output_quoted_escaped_string(DState *p, const char *z){
   int i;
   char c;
-  int inQuote = 0;
-  int bStarted = 0;
-
   for(i=0; (c = z[i])!=0 && c!='\'' && c!='\n' && c!='\r'; i++){}
   if( c==0 ){
-    output_formatted(p, "'%s'", z);
-    return;
-  }
-  while( *z ){
-    for(i=0; (c = z[i])!=0 && c!='\n' && c!='\r' && c!='\''; i++){}
-    if( c=='\'' ) i++;
-    if( i ){
-      if( !inQuote ){
-        if( bStarted ) p->xCallback("||", p->pArg);
-        p->xCallback("'", p->pArg);
-        inQuote = 1;
+    output_formatted(p,"'%s'",z);
+  }else{
+    const char *zNL = 0;
+    const char *zCR = 0;
+    int nNL = 0;
+    int nCR = 0;
+    char zBuf1[20], zBuf2[20];
+    for(i=0; z[i]; i++){
+      if( z[i]=='\n' ) nNL++;
+      if( z[i]=='\r' ) nCR++;
+    }
+    if( nNL ){
+      p->xCallback("replace(", p->pArg);
+      zNL = unused_string(z, "\\n", "\\012", zBuf1);
+    }
+    if( nCR ){
+      p->xCallback("replace(", p->pArg);
+      zCR = unused_string(z, "\\r", "\\015", zBuf2);
+    }
+    p->xCallback("'", p->pArg);
+    while( *z ){
+      for(i=0; (c = z[i])!=0 && c!='\n' && c!='\r' && c!='\''; i++){}
+      if( c=='\'' ) i++;
+      if( i ){
+        output_formatted(p, "%.*s", i, z);
+        z += i;
       }
-      output_formatted(p, "%.*s", i, z);
-      z += i;
-      bStarted = 1;
+      if( c=='\'' ){
+        p->xCallback("'", p->pArg);
+        continue;
+      }
+      if( c==0 ){
+        break;
+      }
+      z++;
+      if( c=='\n' ){
+        p->xCallback(zNL, p->pArg);
+        continue;
+      }
+      p->xCallback(zCR, p->pArg);
     }
-    if( c=='\'' ){
-      p->xCallback("'", p->pArg);
-      continue;
+    p->xCallback("'", p->pArg);
+    if( nCR ){
+      output_formatted(p, ",'%s',char(13))", zCR);
     }
-    if( inQuote ){
-      p->xCallback("'", p->pArg);
-      inQuote = 0;
+    if( nNL ){
+      output_formatted(p, ",'%s',char(10))", zNL);
     }
-    if( c==0 ){
-      break;
-    }
-    for(i=0; (c = z[i])=='\r' || c=='\n'; i++){
-      if( bStarted ) p->xCallback("||", p->pArg);
-      output_formatted(p, "char(%d)", c);
-      bStarted = 1;
-    }
-    z += i;
   }
-  if( inQuote ) p->xCallback("'", p->pArg);
 }
 
 /*
@@ -495,7 +527,8 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
               break;
             }
             case SQLITE_TEXT: {
-              output_quoted_string(p, sqlite3_column_text(pStmt,i));
+              output_quoted_escaped_string(p, 
+                   (const char*)sqlite3_column_text(pStmt,i));
               break;
             }
             case SQLITE_BLOB: {

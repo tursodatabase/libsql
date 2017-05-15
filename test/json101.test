@@ -356,6 +356,15 @@ do_execsql_test json-8.2 {
   SELECT a=json_extract(b,'$[0]') FROM t8;
 } {1}
 
+# 2017-04-12.  Regression reported on the mailing list by Rolf Ade
+#
+do_execsql_test json-8.3 {
+  SELECT json_valid(char(0x22,0xe4,0x22));
+} {1}
+do_execsql_test json-8.4 {
+  SELECT unicode(json_extract(char(0x22,228,0x22),'$'));
+} {228}
+
 # The json_quote() function transforms an SQL value into a JSON value.
 # String values are quoted and interior quotes are escaped.  NULL values
 # are rendered as the unquoted string "null".
@@ -688,5 +697,29 @@ do_execsql_test json-10.95 {
   SELECT json_valid('" \~ "');
 } {0}
 
+#--------------------------------------------------------------------------
+# 2017-04-11.  https://www.sqlite.org/src/info/981329adeef51011
+# Stack overflow on deeply nested JSON.
+#
+# The following tests confirm that deeply nested JSON is considered invalid.
+#
+do_execsql_test json-11.0 {
+  /* Shallow enough to be parsed */
+  SELECT json_valid(printf('%.2000c0%.2000c','[',']'));
+} {1}
+do_execsql_test json-11.1 {
+  /* Too deep by one */
+  SELECT json_valid(printf('%.2001c0%.2001c','[',']'));
+} {0}
+do_execsql_test json-11.2 {
+  /* Shallow enough to be parsed { */
+  SELECT json_valid(replace(printf('%.2000c0%.2000c','[','}'),'[','{"a":'));
+  /* } */
+} {1}
+do_execsql_test json-11.3 {
+  /* Too deep by one { */
+  SELECT json_valid(replace(printf('%.2001c0%.2001c','[','}'),'[','{"a":'));
+  /* } */
+} {0}
 
 finish_test

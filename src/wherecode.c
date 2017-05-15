@@ -1039,6 +1039,69 @@ static void codeExprOrVector(Parse *pParse, Expr *p, int iReg, int nReg){
   }
 }
 
+/* An instance of the IdxExprTrans object carries information about a
+** mapping from an expression on table columns into a column in an index
+** down through the Walker.
+*/
+typedef struct IdxExprTrans {
+  Expr *pIdxExpr;    /* The index expression */
+  int iTabCur;       /* The cursor of the corresponding table */
+  int iIdxCur;       /* The cursor for the index */
+  int iIdxCol;       /* The column for the index */
+} IdxExprTrans;
+
+/* The walker node callback used to transform matching expressions into
+** a reference to an index column for an index on an expression.
+**
+** If pExpr matches, then transform it into a reference to the index column
+** that contains the value of pExpr.
+*/
+static int whereIndexExprTransNode(Walker *p, Expr *pExpr){
+  IdxExprTrans *pX = p->u.pIdxTrans;
+  if( sqlite3ExprCompare(pExpr, pX->pIdxExpr, pX->iTabCur)==0 ){
+    pExpr->op = TK_COLUMN;
+    pExpr->iTable = pX->iIdxCur;
+    pExpr->iColumn = pX->iIdxCol;
+    pExpr->pTab = 0;
+    return WRC_Prune;
+  }else{
+    return WRC_Continue;
+  }
+}
+
+/*
+** For an indexes on expression X, locate every instance of expression X in pExpr
+** and change that subexpression into a reference to the appropriate column of
+** the index.
+*/
+static void whereIndexExprTrans(
+  Index *pIdx,      /* The Index */
+  int iTabCur,      /* Cursor of the table that is being indexed */
+  int iIdxCur,      /* Cursor of the index itself */
+  WhereInfo *pWInfo /* Transform expressions in this WHERE clause */
+){
+  int iIdxCol;               /* Column number of the index */
+  ExprList *aColExpr;        /* Expressions that are indexed */
+  Walker w;
+  IdxExprTrans x;
+  aColExpr = pIdx->aColExpr;
+  if( aColExpr==0 ) return;  /* Not an index on expressions */
+  memset(&w, 0, sizeof(w));
+  w.xExprCallback = whereIndexExprTransNode;
+  w.u.pIdxTrans = &x;
+  x.iTabCur = iTabCur;
+  x.iIdxCur = iIdxCur;
+  for(iIdxCol=0; iIdxCol<aColExpr->nExpr; iIdxCol++){
+    if( pIdx->aiColumn[iIdxCol]!=XN_EXPR ) continue;
+    assert( aColExpr->a[iIdxCol].pExpr!=0 );
+    x.iIdxCol = iIdxCol;
+    x.pIdxExpr = aColExpr->a[iIdxCol].pExpr;
+    sqlite3WalkExpr(&w, pWInfo->pWhere);
+    sqlite3WalkExprList(&w, pWInfo->pOrderBy);
+    sqlite3WalkExprList(&w, pWInfo->pResultSet);
+  }
+}
+
 /*
 ** Generate code for the start of the iLevel-th loop in the WHERE clause
 ** implementation described by pWInfo.
@@ -1066,6 +1129,8 @@ Bitmask sqlite3WhereCodeOneLoopStart(
   int addrCont;                   /* Jump here to continue with next cycle */
   int iRowidReg = 0;        /* Rowid is stored in this register, if not zero */
   int iReleaseReg = 0;      /* Temp register to free before returning */
+  Index *pIdx = 0;          /* Index used by loop (if any) */
+  int loopAgain;            /* True if constraint generator loop should repeat */
 
   pParse = pWInfo->pParse;
   v = pParse->pVdbe;
@@ -1391,7 +1456,6 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     int endEq;                   /* True if range end uses ==, >= or <= */
     int start_constraints;       /* Start of range is constrained */
     int nConstraint;             /* Number of constraint terms */
-    Index *pIdx;                 /* The index we will be using */
     int iIdxCur;                 /* The VDBE cursor for the index */
     int nExtraReg = 0;           /* Number of extra registers needed */
     int op;                      /* Instruction opcode */
@@ -1620,6 +1684,13 @@ Bitmask sqlite3WhereCodeOneLoopStart(
                            iRowidReg, pPk->nKeyCol); VdbeCoverage(v);
     }
 
+    /* If pIdx is an index on one or more expressions, then look through
+    ** all the expressions in pWInfo and try to transform matching expressions
+    ** into reference to index columns.
+    */
+    whereIndexExprTrans(pIdx, iCur, iIdxCur, pWInfo);
+
+
     /* Record the instruction used to terminate the loop. */
     if( pLoop->wsFlags & WHERE_ONEROW ){
       pLevel->op = OP_Noop;
@@ -1635,6 +1706,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     }else{
       assert( pLevel->p5==0 );
     }
+    if( omitTable ) pIdx = 0;
   }else
 
 #ifndef SQLITE_OMIT_OR_OPTIMIZATION
@@ -1952,43 +2024,56 @@ Bitmask sqlite3WhereCodeOneLoopStart(
 
   /* Insert code to test every subexpression that can be completely
   ** computed using the current set of tables.
+  **
+  ** This loop may run either once (pIdx==0) or twice (pIdx!=0). If
+  ** it is run twice, then the first iteration codes those sub-expressions
+  ** that can be computed using columns from pIdx only (without seeking
+  ** the main table cursor). 
   */
-  for(pTerm=pWC->a, j=pWC->nTerm; j>0; j--, pTerm++){
-    Expr *pE;
-    int skipLikeAddr = 0;
-    testcase( pTerm->wtFlags & TERM_VIRTUAL );
-    testcase( pTerm->wtFlags & TERM_CODED );
-    if( pTerm->wtFlags & (TERM_VIRTUAL|TERM_CODED) ) continue;
-    if( (pTerm->prereqAll & pLevel->notReady)!=0 ){
-      testcase( pWInfo->untestedTerms==0
-               && (pWInfo->wctrlFlags & WHERE_OR_SUBCLAUSE)!=0 );
-      pWInfo->untestedTerms = 1;
-      continue;
-    }
-    pE = pTerm->pExpr;
-    assert( pE!=0 );
-    if( pLevel->iLeftJoin && !ExprHasProperty(pE, EP_FromJoin) ){
-      continue;
-    }
-    if( pTerm->wtFlags & TERM_LIKECOND ){
-      /* If the TERM_LIKECOND flag is set, that means that the range search
-      ** is sufficient to guarantee that the LIKE operator is true, so we
-      ** can skip the call to the like(A,B) function.  But this only works
-      ** for strings.  So do not skip the call to the function on the pass
-      ** that compares BLOBs. */
+  do{
+    loopAgain = 0;
+    for(pTerm=pWC->a, j=pWC->nTerm; j>0; j--, pTerm++){
+      Expr *pE;
+      int skipLikeAddr = 0;
+      testcase( pTerm->wtFlags & TERM_VIRTUAL );
+      testcase( pTerm->wtFlags & TERM_CODED );
+      if( pTerm->wtFlags & (TERM_VIRTUAL|TERM_CODED) ) continue;
+      if( (pTerm->prereqAll & pLevel->notReady)!=0 ){
+        testcase( pWInfo->untestedTerms==0
+            && (pWInfo->wctrlFlags & WHERE_OR_SUBCLAUSE)!=0 );
+        pWInfo->untestedTerms = 1;
+        continue;
+      }
+      pE = pTerm->pExpr;
+      assert( pE!=0 );
+      if( pLevel->iLeftJoin && !ExprHasProperty(pE, EP_FromJoin) ){
+        continue;
+      }
+      if( pIdx && !sqlite3ExprCoveredByIndex(pE, pLevel->iTabCur, pIdx) ){
+        loopAgain = 1;
+        continue;
+      }
+      if( pTerm->wtFlags & TERM_LIKECOND ){
+        /* If the TERM_LIKECOND flag is set, that means that the range search
+        ** is sufficient to guarantee that the LIKE operator is true, so we
+        ** can skip the call to the like(A,B) function.  But this only works
+        ** for strings.  So do not skip the call to the function on the pass
+        ** that compares BLOBs. */
 #ifdef SQLITE_LIKE_DOESNT_MATCH_BLOBS
-      continue;
+        continue;
 #else
-      u32 x = pLevel->iLikeRepCntr;
-      assert( x>0 );
-      skipLikeAddr = sqlite3VdbeAddOp1(v, (x&1)? OP_IfNot : OP_If, (int)(x>>1));
-      VdbeCoverage(v);
+        u32 x = pLevel->iLikeRepCntr;
+        assert( x>0 );
+        skipLikeAddr = sqlite3VdbeAddOp1(v, (x&1)?OP_IfNot:OP_If, (int)(x>>1));
+        VdbeCoverage(v);
 #endif
+      }
+      sqlite3ExprIfFalse(pParse, pE, addrCont, SQLITE_JUMPIFNULL);
+      if( skipLikeAddr ) sqlite3VdbeJumpHere(v, skipLikeAddr);
+      pTerm->wtFlags |= TERM_CODED;
     }
-    sqlite3ExprIfFalse(pParse, pE, addrCont, SQLITE_JUMPIFNULL);
-    if( skipLikeAddr ) sqlite3VdbeJumpHere(v, skipLikeAddr);
-    pTerm->wtFlags |= TERM_CODED;
-  }
+    pIdx = 0;
+  }while( loopAgain );
 
   /* Insert code to test for implied constraints based on transitivity
   ** of the "==" operator.

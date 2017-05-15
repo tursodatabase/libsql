@@ -21,7 +21,7 @@ USE_AMALGAMATION = 1
 # Set this non-0 to enable full warnings (-W4, etc) when compiling.
 #
 !IFNDEF USE_FULLWARN
-USE_FULLWARN = 0
+USE_FULLWARN = 1
 !ENDIF
 
 # Set this non-0 to enable treating warnings as errors (-WX, etc) when
@@ -745,8 +745,11 @@ RCC = $(RCC) -DSQLITE_ENABLE_API_ARMOR=1
 
 !IF $(DEBUG)>2
 TCC = $(TCC) -DSQLITE_DEBUG=1
-TCC = $(TCC) -DSQLITE_ENABLE_WHERETRACE -DSQLITE_ENABLE_SELECTTRACE
 RCC = $(RCC) -DSQLITE_DEBUG=1
+!IF $(DYNAMIC_SHELL)==0
+TCC = $(TCC) -DSQLITE_ENABLE_WHERETRACE -DSQLITE_ENABLE_SELECTTRACE
+RCC = $(RCC) -DSQLITE_ENABLE_WHERETRACE -DSQLITE_ENABLE_SELECTTRACE
+!ENDIF
 !ENDIF
 
 !IF $(DEBUG)>4 || $(OSTRACE)!=0
@@ -1559,7 +1562,7 @@ $(SQLITE3DLL):	$(LIBOBJ) $(LIBRESOBJS) $(CORE_LINK_DEP)
 sqlite3.def:	libsqlite3.lib
 	echo EXPORTS > sqlite3.def
 	dumpbin /all libsqlite3.lib \
-		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl include "^\s+1 _?(sqlite3(?:session|changeset)?_[^@]*)(?:@\d+)?$$" \1 \
+		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl include "^\s+1 _?(sqlite3(?:session|changeset|changegroup)?_[^@]*)(?:@\d+)?$$" \1 \
 		| sort >> sqlite3.def
 # <</block2>>
 

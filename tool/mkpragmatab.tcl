@@ -363,7 +363,7 @@ set pragma_def {
   FLAG: Result0
 
   NAME: optimize
-  FLAG: Result1
+  FLAG: Result1 NeedSchema
 }
 
 # Open the output file

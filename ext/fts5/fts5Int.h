@@ -446,9 +446,9 @@ int sqlite3Fts5IndexBeginWrite(
 
 /*
 ** Flush any data stored in the in-memory hash tables to the database.
-** If the bCommit flag is true, also close any open blob handles.
+** Also close any open blob handles.
 */
-int sqlite3Fts5IndexSync(Fts5Index *p, int bCommit);
+int sqlite3Fts5IndexSync(Fts5Index *p);
 
 /*
 ** Discard any data stored in the in-memory hash tables. Do not write it
@@ -618,7 +618,7 @@ int sqlite3Fts5StorageDocsize(Fts5Storage *p, i64 iRowid, int *aCol);
 int sqlite3Fts5StorageSize(Fts5Storage *p, int iCol, i64 *pnAvg);
 int sqlite3Fts5StorageRowCount(Fts5Storage *p, i64 *pnRow);
 
-int sqlite3Fts5StorageSync(Fts5Storage *p, int bCommit);
+int sqlite3Fts5StorageSync(Fts5Storage *p);
 int sqlite3Fts5StorageRollback(Fts5Storage *p);
 
 int sqlite3Fts5StorageConfigValue(
@@ -654,6 +654,7 @@ struct Fts5Token {
 /* Parse a MATCH expression. */
 int sqlite3Fts5ExprNew(
   Fts5Config *pConfig, 
+  int iCol,                       /* Column on LHS of MATCH operator */
   const char *zExpr,
   Fts5Expr **ppNew, 
   char **pzErr
@@ -738,7 +739,7 @@ void sqlite3Fts5ParseNearsetFree(Fts5ExprNearset*);
 void sqlite3Fts5ParseNodeFree(Fts5ExprNode*);
 
 void sqlite3Fts5ParseSetDistance(Fts5Parse*, Fts5ExprNearset*, Fts5Token*);
-void sqlite3Fts5ParseSetColset(Fts5Parse*, Fts5ExprNearset*, Fts5Colset*);
+void sqlite3Fts5ParseSetColset(Fts5Parse*, Fts5ExprNode*, Fts5Colset*);
 Fts5Colset *sqlite3Fts5ParseColsetInvert(Fts5Parse*, Fts5Colset*);
 void sqlite3Fts5ParseFinished(Fts5Parse *pParse, Fts5ExprNode *p);
 void sqlite3Fts5ParseNear(Fts5Parse *pParse, Fts5Token*);

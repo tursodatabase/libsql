@@ -486,6 +486,7 @@ static void registerTrace(int iReg, Mem *p){
   printf("REG[%d] = ", iReg);
   memTracePrint(p);
   printf("\n");
+  sqlite3VdbeCheckMemInvariants(p);
 }
 #endif
 
@@ -763,7 +764,7 @@ jump_to_p2_and_check_for_interrupt:
   pOp = &aOp[pOp->p2 - 1];
 
   /* Opcodes that are used as the bottom of a loop (OP_Next, OP_Prev,
-  ** OP_VNext, OP_RowSetNext, or OP_SorterNext) all jump here upon
+  ** OP_VNext, or OP_SorterNext) all jump here upon
   ** completion.  Check to see if sqlite3_interrupt() has been called
   ** or if the progress callback needs to be invoked. 
   **
@@ -1151,7 +1152,7 @@ case OP_Null: {           /* out2 */
 case OP_SoftNull: {
   assert( pOp->p1>0 && pOp->p1<=(p->nMem+1 - p->nCursor) );
   pOut = &aMem[pOp->p1];
-  pOut->flags = (pOut->flags|MEM_Null)&~MEM_Undefined;
+  pOut->flags = (pOut->flags&~(MEM_Undefined|MEM_AffMask))|MEM_Null;
   break;
 }
 
@@ -1494,7 +1495,6 @@ case OP_Remainder: {           /* same as TK_REM, in1, in2, out3 */
   type2 = numericType(pIn2);
   pOut = &aMem[pOp->p3];
   flags = pIn1->flags | pIn2->flags;
-  if( (flags & MEM_Null)!=0 ) goto arithmetic_result_is_null;
   if( (type1 & type2 & MEM_Int)!=0 ){
     iA = pIn1->u.i;
     iB = pIn2->u.i;
@@ -1518,6 +1518,8 @@ case OP_Remainder: {           /* same as TK_REM, in1, in2, out3 */
     }
     pOut->u.i = iB;
     MemSetTypeFlag(pOut, MEM_Int);
+  }else if( (flags & MEM_Null)!=0 ){
+    goto arithmetic_result_is_null;
   }else{
     bIntint = 0;
 fp_math:
@@ -1565,7 +1567,7 @@ arithmetic_result_is_null:
 
 /* Opcode: CollSeq P1 * * P4
 **
-** P4 is a pointer to a CollSeq struct. If the next call to a user function
+** P4 is a pointer to a CollSeq object. If the next call to a user function
 ** or aggregate calls sqlite3GetFuncCollSeq(), this collation sequence will
 ** be returned. This is used by the built-in min(), max() and nullif()
 ** functions.
@@ -1846,11 +1848,11 @@ case OP_RealAffinity: {                  /* in1 */
 ** Force the value in register P1 to be the type defined by P2.
 ** 
 ** <ul>
-** <li value="97"> TEXT
-** <li value="98"> BLOB
-** <li value="99"> NUMERIC
-** <li value="100"> INTEGER
-** <li value="101"> REAL
+** <li> P2=='A' &rarr; BLOB
+** <li> P2=='B' &rarr; TEXT
+** <li> P2=='C' &rarr; NUMERIC
+** <li> P2=='D' &rarr; INTEGER
+** <li> P2=='E' &rarr; REAL
 ** </ul>
 **
 ** A NULL value is not changed by this routine.  It remains NULL.
@@ -2429,6 +2431,23 @@ case OP_NotNull: {            /* same as TK_NOTNULL, jump, in1 */
   break;
 }
 
+/* Opcode: IfNullRow P1 P2 P3 * *
+** Synopsis: if P1.nullRow then r[P3]=NULL, goto P2
+**
+** Check the cursor P1 to see if it is currently pointing at a NULL row.
+** If it is, then set register P3 to NULL and jump immediately to P2.
+** If P1 is not on a NULL row, then fall through without making any
+** changes.
+*/
+case OP_IfNullRow: {         /* jump */
+  assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  if( p->apCsr[pOp->p1]->nullRow ){
+    sqlite3VdbeMemSetNull(aMem + pOp->p3);
+    goto jump_to_p2;
+  }
+  break;
+}
+
 /* Opcode: Column P1 P2 P3 P4 P5
 ** Synopsis: r[P3]=PX
 **
@@ -2440,7 +2459,7 @@ case OP_NotNull: {            /* same as TK_NOTNULL, jump, in1 */
 **
 ** The value extracted is stored in register P3.
 **
-** If the column contains fewer than P2 fields, then extract a NULL.  Or,
+** If the record contains fewer than P2 fields, then extract a NULL.  Or,
 ** if the P4 argument is a P4_MEM use the value of the P4 argument as
 ** the result.
 **
@@ -2449,7 +2468,7 @@ case OP_NotNull: {            /* same as TK_NOTNULL, jump, in1 */
 ** The first OP_Column against a pseudo-table after the value of the content
 ** register has changed should have this bit set.
 **
-** If the OPFLAG_LENGTHARG and OPFLAG_TYPEOFARG bits are set on P5 when
+** If the OPFLAG_LENGTHARG and OPFLAG_TYPEOFARG bits are set on P5 then
 ** the result is guaranteed to only be used as the argument of a length()
 ** or typeof() function, respectively.  The loading of large blobs can be
 ** skipped for length() and all content loading can be skipped for typeof().
@@ -2704,24 +2723,24 @@ op_column_out:
 **
 ** Apply affinities to a range of P2 registers starting with P1.
 **
-** P4 is a string that is P2 characters long. The nth character of the
-** string indicates the column affinity that should be used for the nth
+** P4 is a string that is P2 characters long. The N-th character of the
+** string indicates the column affinity that should be used for the N-th
 ** memory cell in the range.
 */
 case OP_Affinity: {
   const char *zAffinity;   /* The affinity to be applied */
-  char cAff;               /* A single character of affinity */
 
   zAffinity = pOp->p4.z;
   assert( zAffinity!=0 );
+  assert( pOp->p2>0 );
   assert( zAffinity[pOp->p2]==0 );
   pIn1 = &aMem[pOp->p1];
-  while( (cAff = *(zAffinity++))!=0 ){
+  do{
     assert( pIn1 <= &p->aMem[(p->nMem+1 - p->nCursor)] );
     assert( memIsValid(pIn1) );
-    applyAffinity(pIn1, cAff, encoding);
+    applyAffinity(pIn1, *(zAffinity++), encoding);
     pIn1++;
-  }
+  }while( zAffinity[0] );
   break;
 }
 
@@ -2732,8 +2751,8 @@ case OP_Affinity: {
 ** use as a data record in a database table or as a key
 ** in an index.  The OP_Column opcode can decode the record later.
 **
-** P4 may be a string that is P2 characters long.  The nth character of the
-** string indicates the column affinity that should be used for the nth
+** P4 may be a string that is P2 characters long.  The N-th character of the
+** string indicates the column affinity that should be used for the N-th
 ** field of the index key.
 **
 ** The mapping from character to affinity is given by the SQLITE_AFF_
@@ -2892,7 +2911,6 @@ case OP_MakeRecord: {
     pOut->u.nZero = nZero;
     pOut->flags |= MEM_Zero;
   }
-  pOut->enc = SQLITE_UTF8;  /* In case the blob is ever converted to text */
   REGISTER_TRACE(pOp->p3, pOut);
   UPDATE_MAX_BLOBSIZE(pOut);
   break;
@@ -3553,6 +3571,37 @@ open_cursor_set_hints:
   break;
 }
 
+/* Opcode: OpenDup P1 P2 * * *
+**
+** Open a new cursor P1 that points to the same ephemeral table as
+** cursor P2.  The P2 cursor must have been opened by a prior OP_OpenEphemeral
+** opcode.  Only ephemeral cursors may be duplicated.
+**
+** Duplicate ephemeral cursors are used for self-joins of materialized views.
+*/
+case OP_OpenDup: {
+  VdbeCursor *pOrig;    /* The original cursor to be duplicated */
+  VdbeCursor *pCx;      /* The new cursor */
+
+  pOrig = p->apCsr[pOp->p2];
+  assert( pOrig->pBtx!=0 );  /* Only ephemeral cursors can be duplicated */
+
+  pCx = allocateCursor(p, pOp->p1, pOrig->nField, -1, CURTYPE_BTREE);
+  if( pCx==0 ) goto no_mem;
+  pCx->nullRow = 1;
+  pCx->isEphemeral = 1;
+  pCx->pKeyInfo = pOrig->pKeyInfo;
+  pCx->isTable = pOrig->isTable;
+  rc = sqlite3BtreeCursor(pOrig->pBtx, MASTER_ROOT, BTREE_WRCSR,
+                          pCx->pKeyInfo, pCx->uc.pCursor);
+  /* The sqlite3BtreeCursor() routine can only fail for the first cursor
+  ** opened for a database.  Since there is already an open cursor when this
+  ** opcode is run, the sqlite3BtreeCursor() cannot fail */
+  assert( rc==SQLITE_OK );
+  break;
+}
+
+
 /* Opcode: OpenEphemeral P1 P2 * P4 P5
 ** Synopsis: nColumn=P2
 **
@@ -4108,7 +4157,7 @@ case OP_Found: {        /* jump, in3 */
     }
   }
   rc = sqlite3BtreeMovetoUnpacked(pC->uc.pCursor, pIdxKey, 0, 0, &res);
-  if( pFree ) sqlite3DbFree(db, pFree);
+  if( pFree ) sqlite3DbFreeNN(db, pFree);
   if( rc!=SQLITE_OK ){
     goto abort_due_to_error;
   }
@@ -5418,10 +5467,17 @@ case OP_IdxGE:  {       /* jump */
 ** might be moved into the newly deleted root page in order to keep all
 ** root pages contiguous at the beginning of the database.  The former
 ** value of the root page that moved - its value before the move occurred -
-** is stored in register P2.  If no page 
-** movement was required (because the table being dropped was already 
-** the last one in the database) then a zero is stored in register P2.
-** If AUTOVACUUM is disabled then a zero is stored in register P2.
+** is stored in register P2. If no page movement was required (because the
+** table being dropped was already the last one in the database) then a 
+** zero is stored in register P2.  If AUTOVACUUM is disabled then a zero 
+** is stored in register P2.
+**
+** This opcode throws an error if there are any active reader VMs when
+** it is invoked. This is done to avoid the difficulty associated with 
+** updating existing cursors when a root page is moved in an AUTOVACUUM 
+** database. This error is thrown even if the database is not an AUTOVACUUM 
+** db in order to avoid introducing an incompatibility between autovacuum 
+** and non-autovacuum modes.
 **
 ** See also: Clear
 */
@@ -5626,7 +5682,7 @@ case OP_ParseSchema: {
       assert( !db->mallocFailed );
       rc = sqlite3_exec(db, zSql, sqlite3InitCallback, &initData, 0);
       if( rc==SQLITE_OK ) rc = initData.rc;
-      sqlite3DbFree(db, zSql);
+      sqlite3DbFreeNN(db, zSql);
       db->init.busy = 0;
     }
   }
@@ -5754,7 +5810,7 @@ case OP_IntegrityCk: {
 /* Opcode: RowSetAdd P1 P2 * * *
 ** Synopsis: rowset(P1)=r[P2]
 **
-** Insert the integer value held by register P2 into a boolean index
+** Insert the integer value held by register P2 into a RowSet object
 ** held in register P1.
 **
 ** An assertion fails if P2 is not an integer.
@@ -5774,8 +5830,9 @@ case OP_RowSetAdd: {       /* in1, in2 */
 /* Opcode: RowSetRead P1 P2 P3 * *
 ** Synopsis: r[P3]=rowset(P1)
 **
-** Extract the smallest value from boolean index P1 and put that value into
-** register P3.  Or, if boolean index P1 is initially empty, leave P3
+** Extract the smallest value from the RowSet object in P1
+** and put that value into register P3.
+** Or, if RowSet object P1 is initially empty, leave P3
 ** unchanged and jump to instruction P2.
 */
 case OP_RowSetRead: {       /* jump, in1, out3 */
@@ -5806,15 +5863,14 @@ case OP_RowSetRead: {       /* jump, in1, out3 */
 ** integer in P3 into the RowSet and continue on to the
 ** next opcode.
 **
-** The RowSet object is optimized for the case where successive sets
-** of integers, where each set contains no duplicates. Each set
-** of values is identified by a unique P4 value. The first set
-** must have P4==0, the final set P4=-1.  P4 must be either -1 or
-** non-negative.  For non-negative values of P4 only the lower 4
-** bits are significant.
+** The RowSet object is optimized for the case where sets of integers
+** are inserted in distinct phases, which each set contains no duplicates.
+** Each set is identified by a unique P4 value. The first set
+** must have P4==0, the final set must have P4==-1, and for all other sets
+** must have P4>0.
 **
 ** This allows optimizations: (a) when P4==0 there is no need to test
-** the rowset object for P3, as it is guaranteed not to contain it,
+** the RowSet object for P3, as it is guaranteed not to contain it,
 ** (b) when P4==-1 there is no need to insert the value, as it will
 ** never be tested for, and (c) when a value that is part of set X is
 ** inserted, there is no need to search to see if the same value was

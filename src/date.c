@@ -423,8 +423,10 @@ static void computeYMD(DateTime *p){
     p->Y = 2000;
     p->M = 1;
     p->D = 1;
+  }else if( !validJulianDay(p->iJD) ){
+    datetimeError(p);
+    return;
   }else{
-    assert( validJulianDay(p->iJD) );
     Z = (int)((p->iJD + 43200000)/86400000);
     A = (int)((Z - 1867216.25)/36524.25);
     A = Z + 1 + A - (A/4);

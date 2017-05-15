@@ -137,9 +137,16 @@ const unsigned char sqlite3CtypeMap[256] = {
 ** EVIDENCE-OF: R-43642-56306 By default, URI handling is globally
 ** disabled. The default value may be changed by compiling with the
 ** SQLITE_USE_URI symbol defined.
+**
+** URI filenames are enabled by default if SQLITE_HAS_CODEC is
+** enabled.
 */
 #ifndef SQLITE_USE_URI
-# define  SQLITE_USE_URI 0
+# ifdef SQLITE_HAS_CODEC
+#  define SQLITE_USE_URI 1
+# else
+#  define SQLITE_USE_URI 0
+# endif
 #endif
 
 /* EVIDENCE-OF: R-38720-18127 The default setting is determined by the

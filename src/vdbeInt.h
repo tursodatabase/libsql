@@ -185,7 +185,7 @@ struct VdbeFrame {
 ** structures. Each Mem struct may cache multiple representations (string,
 ** integer etc.) of the same value.
 */
-struct Mem {
+struct sqlite3_value {
   union MemValue {
     double r;           /* Real value used when MEM_Real is set in flags */
     i64 i;              /* Integer value used when MEM_Int is set in flags */
@@ -287,11 +287,11 @@ struct Mem {
 ** when the VM is halted (if not before).
 */
 struct AuxData {
-  int iOp;                        /* Instruction number of OP_Function opcode */
-  int iArg;                       /* Index of function argument. */
+  int iAuxOp;                     /* Instruction number of OP_Function opcode */
+  int iAuxArg;                    /* Index of function argument. */
   void *pAux;                     /* Aux data pointer */
-  void (*xDelete)(void *);        /* Destructor for the aux data */
-  AuxData *pNext;                 /* Next element in list */
+  void (*xDeleteAux)(void*);      /* Destructor for the aux data */
+  AuxData *pNextAux;              /* Next element in list */
 };
 
 /*

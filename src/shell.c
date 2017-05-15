@@ -427,6 +427,36 @@ static void SQLITE_CDECL iotracePrintf(const char *zFormat, ...){
 }
 #endif
 
+/*
+** Output string zUtf to stream pOut as w characters.  If w is negative,
+** then right-justify the text.  W is the width in UTF-8 characters, not
+** in bytes.  This is different from the %*.*s specification in printf
+** since with %*.*s the width is measured in bytes, not characters.
+*/
+static void utf8_width_print(FILE *pOut, int w, const char *zUtf){
+  int i;
+  int n;
+  int aw = w<0 ? -w : w;
+  char zBuf[1000];
+  if( aw>(int)sizeof(zBuf)/3 ) aw = (int)sizeof(zBuf)/3;
+  for(i=n=0; zUtf[i]; i++){
+    if( (zUtf[i]&0xc0)!=0x80 ){
+      n++;
+      if( n==aw ){
+        do{ i++; }while( (zUtf[i]&0xc0)==0x80 );
+        break;
+      }
+    }
+  }
+  if( n>=aw ){
+    utf8_printf(pOut, "%.*s", i, zUtf);
+  }else if( w<0 ){
+    utf8_printf(pOut, "%*s%s", aw-n, "", zUtf);
+  }else{
+    utf8_printf(pOut, "%s%*s", zUtf, aw-n, "");
+  }
+}
+
 
 /*
 ** Determines if a string is a number of not.
@@ -713,6 +743,10 @@ struct SHA3Context {
   unsigned nLoaded;      /* Input bytes loaded into u.x[] so far this cycle */
   unsigned ixMask;       /* Insert next input into u.x[nLoaded^ixMask]. */
 };
+
+/* Allow the following routine to use the B0 variable, which is also
+** a macro in the termios.h header file */
+#undef B0
 
 /*
 ** A single step of the Keccak mixing function for a 1600-bit state
@@ -1489,12 +1523,71 @@ static void output_hex_blob(FILE *out, const void *pBlob, int nBlob){
 }
 
 /*
+** Find a string that is not found anywhere in z[].  Return a pointer
+** to that string.
+**
+** Try to use zA and zB first.  If both of those are already found in z[]
+** then make up some string and store it in the buffer zBuf.
+*/
+static const char *unused_string(
+  const char *z,                    /* Result must not appear anywhere in z */
+  const char *zA, const char *zB,   /* Try these first */
+  char *zBuf                        /* Space to store a generated string */
+){
+  unsigned i = 0;
+  if( strstr(z, zA)==0 ) return zA;
+  if( strstr(z, zB)==0 ) return zB;
+  do{
+    sqlite3_snprintf(20,zBuf,"(%s%u)", zA, i++);
+  }while( strstr(z,zBuf)!=0 );
+  return zBuf;
+}
+
+/*
 ** Output the given string as a quoted string using SQL quoting conventions.
 **
-** The "\n" and "\r" characters are converted to char(10) and char(13)
-** to prevent them from being transformed by end-of-line translators.
+** See also: output_quoted_escaped_string()
 */
 static void output_quoted_string(FILE *out, const char *z){
+  int i;
+  char c;
+  setBinaryMode(out, 1);
+  for(i=0; (c = z[i])!=0 && c!='\''; i++){}
+  if( c==0 ){
+    utf8_printf(out,"'%s'",z);
+  }else{
+    raw_printf(out, "'");
+    while( *z ){
+      for(i=0; (c = z[i])!=0 && c!='\''; i++){}
+      if( c=='\'' ) i++;
+      if( i ){
+        utf8_printf(out, "%.*s", i, z);
+        z += i;
+      }
+      if( c=='\'' ){
+        raw_printf(out, "'");
+        continue;
+      }
+      if( c==0 ){
+        break;
+      }
+      z++;
+    }
+    raw_printf(out, "'");
+  }
+  setTextMode(out, 1);
+}
+
+/*
+** Output the given string as a quoted string using SQL quoting conventions.
+** Additionallly , escape the "\n" and "\r" characters so that they do not
+** get corrupted by end-of-line translation facilities in some operating
+** systems.
+**
+** This is like output_quoted_string() but with the addition of the \r\n
+** escape mechanism.
+*/
+static void output_quoted_escaped_string(FILE *out, const char *z){
   int i;
   char c;
   setBinaryMode(out, 1);
@@ -1502,40 +1595,52 @@ static void output_quoted_string(FILE *out, const char *z){
   if( c==0 ){
     utf8_printf(out,"'%s'",z);
   }else{
-    int inQuote = 0;
-    int bStarted = 0;
+    const char *zNL = 0;
+    const char *zCR = 0;
+    int nNL = 0;
+    int nCR = 0;
+    char zBuf1[20], zBuf2[20];
+    for(i=0; z[i]; i++){
+      if( z[i]=='\n' ) nNL++;
+      if( z[i]=='\r' ) nCR++;
+    }
+    if( nNL ){
+      raw_printf(out, "replace(");
+      zNL = unused_string(z, "\\n", "\\012", zBuf1);
+    }
+    if( nCR ){
+      raw_printf(out, "replace(");
+      zCR = unused_string(z, "\\r", "\\015", zBuf2);
+    }
+    raw_printf(out, "'");
     while( *z ){
       for(i=0; (c = z[i])!=0 && c!='\n' && c!='\r' && c!='\''; i++){}
       if( c=='\'' ) i++;
       if( i ){
-        if( !inQuote ){
-          if( bStarted ) raw_printf(out, "||");
-          raw_printf(out, "'");
-          inQuote = 1;
-        }
         utf8_printf(out, "%.*s", i, z);
         z += i;
-        bStarted = 1;
       }
       if( c=='\'' ){
         raw_printf(out, "'");
         continue;
       }
-      if( inQuote ){
-        raw_printf(out, "'");
-        inQuote = 0;
-      }
       if( c==0 ){
         break;
       }
-      for(i=0; (c = z[i])=='\r' || c=='\n'; i++){
-        if( bStarted ) raw_printf(out, "||");
-        raw_printf(out, "char(%d)", c);
-        bStarted = 1;
+      z++;
+      if( c=='\n' ){
+        raw_printf(out, "%s", zNL);
+        continue;
       }
-      z += i;
+      raw_printf(out, "%s", zCR);
     }
-    if( inQuote ) raw_printf(out, "'");
+    raw_printf(out, "'");
+    if( nCR ){
+      raw_printf(out, ",'%s',char(13))", zCR);
+    }
+    if( nNL ){
+      raw_printf(out, ",'%s',char(10))", zNL);
+    }
   }
   setTextMode(out, 1);
 }
@@ -1807,13 +1912,8 @@ static int shell_callback(
             p->actualWidth[i] = w;
           }
           if( showHdr ){
-            if( w<0 ){
-              utf8_printf(p->out,"%*.*s%s",-w,-w,azCol[i],
-                      i==nArg-1 ? rowSep : "  ");
-            }else{
-              utf8_printf(p->out,"%-*.*s%s",w,w,azCol[i],
-                      i==nArg-1 ? rowSep : "  ");
-            }
+            utf8_width_print(p->out, w, azCol[i]);
+            utf8_printf(p->out, "%s", i==nArg-1 ? rowSep : "  ");
           }
         }
         if( showHdr ){
@@ -1849,15 +1949,8 @@ static int shell_callback(
           }
           p->iIndent++;
         }
-        if( w<0 ){
-          utf8_printf(p->out,"%*.*s%s",-w,-w,
-              azArg[i] ? azArg[i] : p->nullValue,
-              i==nArg-1 ? rowSep : "  ");
-        }else{
-          utf8_printf(p->out,"%-*.*s%s",w,w,
-              azArg[i] ? azArg[i] : p->nullValue,
-              i==nArg-1 ? rowSep : "  ");
-        }
+        utf8_width_print(p->out, w, azArg[i] ? azArg[i] : p->nullValue);
+        utf8_printf(p->out, "%s", i==nArg-1 ? rowSep : "  ");
       }
       break;
     }
@@ -1998,21 +2091,53 @@ static int shell_callback(
       setTextMode(p->out, 1);
       break;
     }
-    case MODE_Quote:
     case MODE_Insert: {
       if( azArg==0 ) break;
-      if( p->cMode==MODE_Insert ){
-        utf8_printf(p->out,"INSERT INTO %s",p->zDestTable);
-        if( p->showHeader ){
-          raw_printf(p->out,"(");
-          for(i=0; i<nArg; i++){
-            char *zSep = i>0 ? ",": "";
-            utf8_printf(p->out, "%s%s", zSep, azCol[i]);
+      utf8_printf(p->out,"INSERT INTO %s",p->zDestTable);
+      if( p->showHeader ){
+        raw_printf(p->out,"(");
+        for(i=0; i<nArg; i++){
+          if( i>0 ) raw_printf(p->out, ",");
+          if( quoteChar(azCol[i]) ){
+            char *z = sqlite3_mprintf("\"%w\"", azCol[i]);
+            utf8_printf(p->out, "%s", z);
+            sqlite3_free(z);
+          }else{
+            raw_printf(p->out, "%s", azCol[i]);
           }
-          raw_printf(p->out,")");
         }
-        raw_printf(p->out," VALUES(");
-      }else if( p->cnt==0 && p->showHeader ){
+        raw_printf(p->out,")");
+      }
+      p->cnt++;
+      for(i=0; i<nArg; i++){
+        raw_printf(p->out, i>0 ? "," : " VALUES(");
+        if( (azArg[i]==0) || (aiType && aiType[i]==SQLITE_NULL) ){
+          utf8_printf(p->out,"NULL");
+        }else if( aiType && aiType[i]==SQLITE_TEXT ){
+          output_quoted_escaped_string(p->out, azArg[i]);
+        }else if( aiType && aiType[i]==SQLITE_INTEGER ){
+          utf8_printf(p->out,"%s", azArg[i]);
+        }else if( aiType && aiType[i]==SQLITE_FLOAT ){
+          char z[50];
+          double r = sqlite3_column_double(p->pStmt, i);
+          sqlite3_snprintf(50,z,"%!.20g", r);
+          raw_printf(p->out, "%s", z);
+        }else if( aiType && aiType[i]==SQLITE_BLOB && p->pStmt ){
+          const void *pBlob = sqlite3_column_blob(p->pStmt, i);
+          int nBlob = sqlite3_column_bytes(p->pStmt, i);
+          output_hex_blob(p->out, pBlob, nBlob);
+        }else if( isNumber(azArg[i], 0) ){
+          utf8_printf(p->out,"%s", azArg[i]);
+        }else{
+          output_quoted_escaped_string(p->out, azArg[i]);
+        }
+      }
+      raw_printf(p->out,");\n");
+      break;
+    }
+    case MODE_Quote: {
+      if( azArg==0 ) break;
+      if( p->cnt==0 && p->showHeader ){
         for(i=0; i<nArg; i++){
           if( i>0 ) raw_printf(p->out, ",");
           output_quoted_string(p->out, azCol[i]);
@@ -2021,32 +2146,29 @@ static int shell_callback(
       }
       p->cnt++;
       for(i=0; i<nArg; i++){
-        char *zSep = i>0 ? ",": "";
+        if( i>0 ) raw_printf(p->out, ",");
         if( (azArg[i]==0) || (aiType && aiType[i]==SQLITE_NULL) ){
-          utf8_printf(p->out,"%sNULL",zSep);
+          utf8_printf(p->out,"NULL");
         }else if( aiType && aiType[i]==SQLITE_TEXT ){
-          if( zSep[0] ) utf8_printf(p->out,"%s",zSep);
           output_quoted_string(p->out, azArg[i]);
         }else if( aiType && aiType[i]==SQLITE_INTEGER ){
-          utf8_printf(p->out,"%s%s",zSep, azArg[i]);
+          utf8_printf(p->out,"%s", azArg[i]);
         }else if( aiType && aiType[i]==SQLITE_FLOAT ){
           char z[50];
           double r = sqlite3_column_double(p->pStmt, i);
           sqlite3_snprintf(50,z,"%!.20g", r);
-          raw_printf(p->out, "%s%s", zSep, z);
+          raw_printf(p->out, "%s", z);
         }else if( aiType && aiType[i]==SQLITE_BLOB && p->pStmt ){
           const void *pBlob = sqlite3_column_blob(p->pStmt, i);
           int nBlob = sqlite3_column_bytes(p->pStmt, i);
-          if( zSep[0] ) utf8_printf(p->out,"%s",zSep);
           output_hex_blob(p->out, pBlob, nBlob);
         }else if( isNumber(azArg[i], 0) ){
-          utf8_printf(p->out,"%s%s",zSep, azArg[i]);
+          utf8_printf(p->out,"%s", azArg[i]);
         }else{
-          if( zSep[0] ) utf8_printf(p->out,"%s",zSep);
           output_quoted_string(p->out, azArg[i]);
         }
       }
-      raw_printf(p->out,p->cMode==MODE_Quote?"\n":");\n");
+      raw_printf(p->out,"\n");
       break;
     }
     case MODE_Ascii: {
@@ -4331,29 +4453,30 @@ static int lintFkeyIndexes(
   "SELECT "
     "     'EXPLAIN QUERY PLAN SELECT rowid FROM ' || quote(s.name) || ' WHERE '"
     "  || group_concat(quote(s.name) || '.' || quote(f.[from]) || '=?' "
-    "  || fkey_collate_clause(f.[table], f.[to], s.name, f.[from]),' AND ')"
+    "  || fkey_collate_clause("
+    "       f.[table], COALESCE(f.[to], p.[name]), s.name, f.[from]),' AND ')"
     ", "
     "     'SEARCH TABLE ' || s.name || ' USING COVERING INDEX*('"
     "  || group_concat('*=?', ' AND ') || ')'"
     ", "
     "     s.name  || '(' || group_concat(f.[from],  ', ') || ')'"
     ", "
-    "     f.[table] || '(' || group_concat(COALESCE(f.[to], "
-    "       (SELECT name FROM pragma_table_info(f.[table]) WHERE pk=seq+1)"
-    "     )) || ')'"
+    "     f.[table] || '(' || group_concat(COALESCE(f.[to], p.[name])) || ')'"
     ", "
     "     'CREATE INDEX ' || quote(s.name ||'_'|| group_concat(f.[from], '_'))"
     "  || ' ON ' || quote(s.name) || '('"
     "  || group_concat(quote(f.[from]) ||"
-    "        fkey_collate_clause(f.[table], f.[to], s.name, f.[from]), ', ')"
+    "        fkey_collate_clause("
+    "          f.[table], COALESCE(f.[to], p.[name]), s.name, f.[from]), ', ')"
     "  || ');'"
     ", "
     "     f.[table] "
-
     "FROM sqlite_master AS s, pragma_foreign_key_list(s.name) AS f "
+    "LEFT JOIN pragma_table_info AS p ON (pk-1=seq AND p.arg=f.[table]) "
     "GROUP BY s.name, f.id "
     "ORDER BY (CASE WHEN ? THEN f.[table] ELSE s.name END)"
   ;
+  const char *zGlobIPK = "SEARCH TABLE * USING INTEGER PRIMARY KEY (rowid=?)";
 
   for(i=2; i<nArg; i++){
     int n = (int)strlen(azArg[i]);
@@ -4402,7 +4525,10 @@ static int lintFkeyIndexes(
       if( rc!=SQLITE_OK ) break;
       if( SQLITE_ROW==sqlite3_step(pExplain) ){
         const char *zPlan = (const char*)sqlite3_column_text(pExplain, 3);
-        res = (0==sqlite3_strglob(zGlob, zPlan));
+        res = (
+              0==sqlite3_strglob(zGlob, zPlan)
+           || 0==sqlite3_strglob(zGlobIPK, zPlan)
+        );
       }
       rc = sqlite3_finalize(pExplain);
       if( rc!=SQLITE_OK ) break;
@@ -4680,6 +4806,7 @@ static int do_meta_command(char *zLine, ShellState *p){
   if( c=='d' && strncmp(azArg[0], "dump", n)==0 ){
     const char *zLike = 0;
     int i;
+    int savedShowHeader = p->showHeader;
     ShellClearFlag(p, SHFLG_PreserveRowid);
     for(i=1; i<nArg; i++){
       if( azArg[i][0]=='-' ){
@@ -4715,6 +4842,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     raw_printf(p->out, "PRAGMA foreign_keys=OFF;\n");
     raw_printf(p->out, "BEGIN TRANSACTION;\n");
     p->writableSchema = 0;
+    p->showHeader = 0;
     /* Set writable_schema=ON since doing so forces SQLite to initialize
     ** as much of the schema as it can even if the sqlite_master table is
     ** corrupt. */
@@ -4756,6 +4884,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     sqlite3_exec(p->db, "PRAGMA writable_schema=OFF;", 0, 0, 0);
     sqlite3_exec(p->db, "RELEASE dump;", 0, 0, 0);
     raw_printf(p->out, p->nErr ? "ROLLBACK; -- due to errors\n" : "COMMIT;\n");
+    p->showHeader = savedShowHeader;
   }else
 
   if( c=='e' && strncmp(azArg[0], "echo", n)==0 ){
