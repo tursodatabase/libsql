@@ -3122,6 +3122,7 @@ int sqlite3WalFrames(
     if( rc!=SQLITE_OK ){
       return rc;
     }
+    assert( sqlite3ServerHasLock(pWal->pServer, 0, 1) );
   }
   assert( walIsServer(pWal)==0 || sqlite3ServerHasLock(pWal->pServer, 0, 1) );
 
@@ -3397,6 +3398,8 @@ int sqlite3WalCheckpoint(
   */
   if( eMode!=SQLITE_CHECKPOINT_PASSIVE ){
     if( walIsServer(pWal) ){
+      rc = sqlite3ServerBegin(pWal->pServer);
+      if( rc!=SQLITE_OK ) goto ckpt_out;
       if( eMode>=SQLITE_CHECKPOINT_RESTART ){
         /* Exclusive lock on page 1. This is exclusive access to the db. */
         rc = sqlite3ServerLock(pWal->pServer, 1, 1, 1);
@@ -3451,6 +3454,7 @@ int sqlite3WalCheckpoint(
   }
 
   /* Release the locks. */
+ ckpt_out:
   sqlite3WalEndWriteTransaction(pWal);
   walUnlockExclusive(pWal, WAL_CKPT_LOCK, 1);
   pWal->ckptLock = 0;

@@ -24,14 +24,32 @@
 **
 **    N*4 bytes - Page locking slots. N is HMA_PAGELOCK_SLOTS.
 **
-** Page lock slot format:
+** Page-locking slot format:
 **
-**    Least significant HMA_CLIENT_SLOTS used for read-locks. If bit 0 is set,
-**    client 0 holds a read-lock.
+**   Each page-locking slot provides SHARED/RESERVED/EXCLUSIVE locks on a
+**   single page. A RESERVED lock is similar to a RESERVED in SQLite's
+**   rollback mode - existing SHARED locks may continue but new SHARED locks
+**   may not be established. As in rollback mode, EXCLUSIVE and RESERVED 
+**   locks are mutually exclusive.
 **
-**    If (v) is the value of the locking slot and (v>>HMA_CLIENT_SLOTS) is
-**    not zero, then the write-lock holder is client ((v>>HMA_CLIENT_SLOTS)-1).
+**   Each 32-bit locking slot is divided into two sections - a bitmask for
+**   read-locks and a single integer field for the write lock. The bitmask
+**   occupies the least-significant 27 bits of the slot. The integer field
+**   occupies the remaining 5 bits (so that it can store values from 0-31).
 **
+**   Each client has a unique integer client id. Currently these range from
+**   0-15 (maximum of 16 concurrent connections). The page-locking slot format
+**   allows this to be increased to 0-26 (maximum of 26 connections). To
+**   take a SHARED lock, the corresponding bit is set in the locking slot
+**   bitmask:
+**
+**     slot = slot | (1 << iClient);
+**
+**   To take an EXCLUSIVE or RESERVED lock, the integer part of the locking
+**   slot is set to the client-id of the locker plus one (a value of zero 
+**   indicates that no connection holds a RESERVED or EXCLUSIVE lock):
+**
+**     slot = slot | ((iClient+1) << 27)
 */
 
 #ifdef SQLITE_SERVER_EDITION
@@ -46,6 +64,7 @@
 #include "sys/mman.h"
 #include "sys/types.h"
 #include "sys/stat.h"
+#include "errno.h"
 
 typedef struct ServerHMA ServerHMA;
 
@@ -112,6 +131,9 @@ static int posixLock(int fd, int iSlot, int eLock, int bBlock){
   l.l_len = 1;
 
   res = fcntl(fd, (bBlock ? F_SETLKW : F_SETLK), &l);
+  if( res && bBlock && errno==EDEADLK ){
+    return SQLITE_BUSY_DEADLOCK;
+  }
   return (res==0 ? SQLITE_OK : SQLITE_BUSY);
 }
 
@@ -366,7 +388,7 @@ static int serverOvercomeLock(
   int rc = SQLITE_OK;
   int iBlock = ((int)(v>>HMA_CLIENT_SLOTS))-1;
 
-  if( iBlock<0 ){
+  if( iBlock<0 || iBlock==p->iClient ){
     for(iBlock=0; iBlock<HMA_CLIENT_SLOTS; iBlock++){
       if( iBlock!=p->iClient && (v & (1<<iBlock)) ) break;
     }
@@ -449,6 +471,15 @@ int sqlite3ServerReleaseWriteLocks(Server *p){
 }
 
 /*
+** Return the client id of the client that currently holds the EXCLUSIVE
+** or RESERVED lock according to page-locking slot value v. Or -1 if no
+** client holds such a lock.
+*/
+int serverWriteLocker(u32 v){
+  return ((int)(v >> HMA_CLIENT_SLOTS)) - 1;
+}
+
+/*
 ** Lock page pgno for reading (bWrite==0) or writing (bWrite==1).
 **
 ** If parameter bBlock is non-zero, then make this a blocking lock if
@@ -456,6 +487,8 @@ int sqlite3ServerReleaseWriteLocks(Server *p){
 */
 int sqlite3ServerLock(Server *p, Pgno pgno, int bWrite, int bBlock){
   int rc = SQLITE_OK;
+  int bReserved = 0;
+  u32 *pSlot = serverPageLockSlot(p, pgno);
 
   /* Grow the aLock[] array, if required */
   if( p->nLock==p->nAlloc ){
@@ -470,7 +503,6 @@ int sqlite3ServerLock(Server *p, Pgno pgno, int bWrite, int bBlock){
     }
   }
   if( rc==SQLITE_OK ){
-    u32 *pSlot = serverPageLockSlot(p, pgno);
     u32 v = *pSlot;
 
     /* Check if the required lock is already held. If so, exit this function
@@ -482,13 +514,28 @@ int sqlite3ServerLock(Server *p, Pgno pgno, int bWrite, int bBlock){
     }else{
       if( v & (1<<p->iClient) ) goto server_lock_out;
     }
-
     p->aLock[p->nLock++] = pgno;
+
     while( 1 ){
       u32 n;
+      int w;
+      u32 mask = (bWrite ? (((1<<HMA_CLIENT_SLOTS)-1) & ~(1<<p->iClient)) : 0);
 
-      while( (bWrite && (v & ~(1 << p->iClient))) || (v >> HMA_CLIENT_SLOTS) ){
+      while( ((w = serverWriteLocker(v))>=0 && w!=p->iClient) || (v & mask) ){
         int bRetry = 0;
+
+        if( w<0 && bWrite && bBlock ){
+          /* Attempt a RESERVED lock before anything else */
+          n = v | ((p->iClient+1) << HMA_CLIENT_SLOTS);
+          assert( serverWriteLocker(n)==p->iClient );
+          if( __sync_val_compare_and_swap(pSlot, v, n)!=v ){
+            v = *pSlot;
+            continue;
+          }
+          v = n;
+          bReserved = 1;
+        }
+
         rc = serverOvercomeLock(p, bWrite, bBlock, v, &bRetry);
         if( rc!=SQLITE_OK ) goto server_lock_out;
         if( bRetry==0 ){
@@ -497,6 +544,7 @@ int sqlite3ServerLock(Server *p, Pgno pgno, int bWrite, int bBlock){
           rc = SQLITE_BUSY_DEADLOCK;
           goto server_lock_out;
         }
+
         v = *pSlot;
       }
 
@@ -510,6 +558,17 @@ int sqlite3ServerLock(Server *p, Pgno pgno, int bWrite, int bBlock){
   }
 
 server_lock_out:
+  if( rc!=SQLITE_OK && bReserved ){
+    u32 n;
+    u32 v;
+    do{
+      v = *pSlot;
+      assert( serverWriteLocker(v)==p->iClient );
+      n = v & ((1<<HMA_CLIENT_SLOTS)-1);
+    }while( __sync_val_compare_and_swap(pSlot, v, n)!=v );
+  }
+
+  assert( rc!=SQLITE_OK || sqlite3ServerHasLock(p, pgno, bWrite) );
   return rc;
 }
 
