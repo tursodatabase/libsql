@@ -352,7 +352,6 @@ int sqlite3ExprVectorSize(Expr *pExpr){
   }
 }
 
-#ifndef SQLITE_OMIT_SUBQUERY
 /*
 ** Return a pointer to a subexpression of pVector that is the i-th
 ** column of the vector (numbered starting with 0).  The caller must
@@ -380,9 +379,7 @@ Expr *sqlite3VectorFieldSubexpr(Expr *pVector, int i){
   }
   return pVector;
 }
-#endif /* !defined(SQLITE_OMIT_SUBQUERY) */
 
-#ifndef SQLITE_OMIT_SUBQUERY
 /*
 ** Compute and return a new Expr object which when passed to
 ** sqlite3ExprCode() will generate all necessary code to compute
@@ -440,7 +437,6 @@ Expr *sqlite3ExprForVectorField(
   }
   return pRet;
 }
-#endif /* !define(SQLITE_OMIT_SUBQUERY) */
 
 /*
 ** If expression pExpr is of type TK_SELECT, generate code to evaluate
@@ -3411,7 +3407,11 @@ static int exprCodeVector(Parse *pParse, Expr *p, int *piFreeable){
   }else{
     *piFreeable = 0;
     if( p->op==TK_SELECT ){
+#if SQLITE_OMIT_SUBQUERY
+      iResult = 0;
+#else
       iResult = sqlite3CodeSubselect(pParse, p, 0, 0);
+#endif
     }else{
       int i;
       iResult = pParse->nMem+1;
