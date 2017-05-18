@@ -526,5 +526,35 @@ do_multiclient_test tn {
   } {}
 }
 
+do_multiclient_test tn {
+  do_test 6.$tn.1 {
+    sql1 {
+      PRAGMA journal_mode = wal;
+      CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+      CREATE TABLE t2(a INTEGER PRIMARY KEY, b);
+      INSERT INTO t1 VALUES(1, 'one');
+      INSERT INTO t2 VALUES(2, 'two');
+    }
+  } {wal}
+
+  do_test 6.$tn.2 {
+    sql2 {
+      BEGIN CONCURRENT;
+        SELECT * FROM t2;
+        INSERT INTO t1 VALUES(3, 'three');
+    }
+  } {2 two}
+
+  do_test 6.$tn.3 {
+    sql1 {
+      INSERT INTO t2 VALUES(3, 'three');
+    }
+  } {}
+
+  do_test 6.$tn.2 {
+    list [catch { sql2 { COMMIT } } msg] $msg
+  } {1 {database is locked}}
+}
+
 finish_test
 

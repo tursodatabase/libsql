@@ -1795,6 +1795,7 @@ int sqlite3PagerBeginConcurrent(Pager *pPager){
   int rc = SQLITE_OK;
   if( pPager->pAllRead==0 ){
     pPager->pAllRead = sqlite3BitvecCreate(pPager->dbSize);
+    pPager->dbOrigSize = pPager->dbSize;
     if( pPager->pAllRead==0 ){
       rc = SQLITE_NOMEM;
     }

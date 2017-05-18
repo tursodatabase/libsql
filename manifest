@@ -1,5 +1,5 @@
-C Merge\sthe\slatest\schanges\sfrom\strunk.
-D 2017-05-15T17:34:23.124
+C Fix\sa\sproblem\son\sthis\sbranch\scausing\ssome\spage-level\sread-locks\sto\sbe\somitted.
+D 2017-05-18T20:47:31.273
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -394,7 +394,7 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c 30e2c43e4955db990e5b5a81e901f8aa74cc8820
 F src/os_win.c 2a6c73eef01c51a048cc4ddccd57f981afbec18a
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c d82c877615ead80deccac6c7c59f7a875d7e3d7f1ff5652bbc74503d0e05f6d0
+F src/pager.c a26fa53c831f1f679352a0f1038933443f5ea36428bebb5e37e651fd98ad46a1
 F src/pager.h 5e7b4e5afdcbdf558c211f27786672b3d2536003d0fb6c4888addb500c826e15
 F src/parse.y 21660e5224d1e1635a4ad45ad4365c8f67153b8081b7a11e35629844ecb48ab0
 F src/pcache.c 62835bed959e2914edd26afadfecce29ece0e870
@@ -609,7 +609,7 @@ F test/collateB.test 1e68906951b846570f29f20102ed91d29e634854ee47454d725f2151eca
 F test/colmeta.test 2c765ea61ee37bc43bbe6d6047f89004e6508eb1
 F test/colname.test 08948a4809d22817e0e5de89c7c0a8bd90cb551b
 F test/concfault.test 500f17c3fcfe7705114422bcc6ddd3c740001a43
-F test/concurrent.test 634b6a88f1942f5d68cc89d4d5efa2b11ba7913c
+F test/concurrent.test 3eb5e6a911dc6ff72e3a679f563e683b436f6c701e6e1d6050173df2b8448d6b
 F test/concurrent2.test 77d655c6af93e77803b5c926555a838bb21f922f
 F test/concurrent3.test 0a5f7e3036d1eccf0782d7153ac21f5f222e9468
 F test/conflict.test 029faa2d81a0d1cafb5f88614beb663d972c01db
@@ -1589,7 +1589,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 785c37d9dbdba9f3deedecbdd72f6761428ebfb58e9b9393b9ca4feab3f66f02 bb0d9281588b8cc24bf2f1f10d0c56277004226adaa2ce5037782503b283b45d
-R 2209c7d58b85878752589360dcc54b3d
-U drh
-Z c0810d00013569d18eac37214e4c8809
+P 14ea84003600ada6f4605e47028cb72fe621a14bcce3637ad48b1512dcce41cd
+R e81b507f65d4df5c681c42ea29f80e7d
+U dan
+Z 6bc66160d6824ab3a8c6e57fa6120412
