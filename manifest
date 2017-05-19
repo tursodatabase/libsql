@@ -1,5 +1,5 @@
-C Fix\ssome\sproblems\sin\sfts5\scode\sdetected\sby\s-fsanitize=undefined.
-D 2017-05-19T12:32:32.722
+C Branch\sfor\sthe\s3.19\srelease.
+D 2017-05-19T20:46:27.662
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -1580,7 +1580,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7940bff32aa6ea868a53680822d148b7ec7a075c01ae9e0d5ad9859bcc339054
+P 35f721045dfe3f82e016938ab1a668bfc37b6b57b8813cc963ef640ec82de58d
 R 43b2f6640d15533e1a63dfe250cd3268
-U dan
-Z f9fce9521e2a47d8f39c7a8284ffa988
+T *branch * branch-3.19
+T *sym-branch-3.19 *
+T -sym-trunk *
+U drh
+Z a733288d67c031dc7d9d7d304f469f22
