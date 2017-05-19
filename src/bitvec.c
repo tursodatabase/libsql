@@ -170,7 +170,12 @@ int sqlite3BitvecSet(Bitvec *p, u32 i){
   u32 h;
   if( p==0 ) return SQLITE_OK;
   assert( i>0 );
-  assert( i<=p->iSize );
+  /* assert( i<=p->iSize ); */
+  if( i>p->iSize ){
+    sqlite3_log(SQLITE_ERROR, 
+        "Bitvec: setting bit %d of bitvec size %d\n", (int)i, (int)p->iSize
+    );
+  }
   i--;
   while((p->iSize > BITVEC_NBIT) && p->iDivisor) {
     u32 bin = i/p->iDivisor;

@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\son\sthis\sbranch\scausing\ssome\spage-level\sread-locks\sto\sbe\somitted.
-D 2017-05-18T20:47:31.273
+C Invoke\ssqlite3_log()\sin\sresponse\sto\sirregularities\ssurrounding\sthe\nPager.pAllRead\sbit-vector.
+D 2017-05-19T19:57:15.749
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -348,7 +348,7 @@ F src/analyze.c 0d0ccf7520a201d8747ea2f02c92c26e26f801bc161f714f27b9f7630dde0421
 F src/attach.c 8c476f8bd5d2afe11d925f890d30e527e5b0ce43
 F src/auth.c 79f96c6f33bf0e5da8d1c282cee5ebb1852bb8a6ccca3e485d7c459b035d9c3c
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
-F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
+F src/bitvec.c fc0edcc2000f7d6faea86adcf9c2b8516882eb5aa2fc821fd2fd264e2cefde95
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
 F src/btree.c b8ffd067e78704a8bf81b83c60a23987a46dac9aca0c08c3959482dfae02d197
 F src/btree.h 14e99cc2b666beb60322173c761d16b668ec2e07c18bbb74e8a49fe85946f8a0
@@ -394,7 +394,7 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c 30e2c43e4955db990e5b5a81e901f8aa74cc8820
 F src/os_win.c 2a6c73eef01c51a048cc4ddccd57f981afbec18a
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c a26fa53c831f1f679352a0f1038933443f5ea36428bebb5e37e651fd98ad46a1
+F src/pager.c ba57b91a11790725f53238c6e3f38734a296219f2cab26e0df764b7fb43c952e
 F src/pager.h 5e7b4e5afdcbdf558c211f27786672b3d2536003d0fb6c4888addb500c826e15
 F src/parse.y 21660e5224d1e1635a4ad45ad4365c8f67153b8081b7a11e35629844ecb48ab0
 F src/pcache.c 62835bed959e2914edd26afadfecce29ece0e870
@@ -1589,7 +1589,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 14ea84003600ada6f4605e47028cb72fe621a14bcce3637ad48b1512dcce41cd
-R e81b507f65d4df5c681c42ea29f80e7d
+P 0eed152162b4721f7aaba8b480426476978a869e9578f100fca7b1d32942fe1a
+R dfb5691b0d7dbb9b1f618a1ddfa439f1
 U dan
-Z 6bc66160d6824ab3a8c6e57fa6120412
+Z 2e92764e6404f57fc047755474f473c5
