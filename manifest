@@ -1,5 +1,5 @@
-C Fix\sa\sdocumentation\stypo.\s\sNo\schanges\sto\scode.
-D 2017-05-19T20:47:54.462
+C Improved\scomments\son\sone\sroutine\sin\sthe\squery\splanner.\s\sImproved\sdiagnostic\noutput\sfor\s".wheretrace".\s\sNo\sproduction\scode\schanges.
+D 2017-05-19T20:55:04.375
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -484,7 +484,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 40c543f0a2195d1b0dc88ef12142bea690009344
 F src/wal.h 06b2a0b599cc0f53ea97f497cf8c6b758c999f71
 F src/walker.c b71a992b413b3a022572eccf29ef4b4890223791
-F src/where.c c6352f15be5031907c68bcbde96cad1a6da20e9f4051d10168a59235de9a8566
+F src/where.c a354396efcd326340ce17ac0c8af52ca8188ce65e26fda30e5af286dfc2d59f8
 F src/whereInt.h 2a4b634d63ce488b46d4b0da8f2eaa8f9aeab202bc25ef76f007de5e3fba1f20
 F src/wherecode.c 8ad48867660519e262a401720845dc76934f86f558ec9606335fafcd7a2554f8
 F src/whereexpr.c e913aaa7b73ffcce66abcea5f197e2c538d48b5df78d0b7bba8ff4d73cc2e745
@@ -1580,8 +1580,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 35f721045dfe3f82e016938ab1a668bfc37b6b57b8813cc963ef640ec82de58d cfa4aa203646f44b303138c25672293bb87d97126fe2030d4709e8ad7814a807
-R 2aaab827666982f95d02af1689019e61
-T +closed cfa4aa203646f44b303138c25672293bb87d97126fe2030d4709e8ad7814a807
+P 68942a4feeb83e6e1a32d9bd724ae1d72669949adcfad07fb05b0ac48daf5151
+R 92a17794ca7b1da2ddd5cbdf94ffe383
 U drh
-Z b8578d4288ad04fb5a2a53e4b5955d3b
+Z 37728e9efe7cfb0ff28d1dfb10b5e51e
