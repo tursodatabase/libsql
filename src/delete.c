@@ -353,7 +353,7 @@ void sqlite3DeleteFrom(
   ** API function sqlite3_count_changes) to be set incorrectly.
   **
   ** The "rcauth==SQLITE_OK" terms is the
-  ** IMPLEMENATION-OF: R-17228-37124 If the action code is SQLITE_DELETE and
+  ** IMPLEMENTATION-OF: R-17228-37124 If the action code is SQLITE_DELETE and
   ** the callback returns SQLITE_IGNORE then the DELETE operation proceeds but
   ** the truncate optimization is disabled and all rows are deleted
   ** individually.
