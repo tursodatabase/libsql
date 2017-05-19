@@ -1,5 +1,5 @@
-C Update\sthe\stool/warnings.sh\sscript\sto\sautomatically\suse\sthe\sright\soptions\son\sOpenBSD..
-D 2017-05-16T09:49:42.023
+C Fix\ssome\sproblems\sin\sfts5\scode\sdetected\sby\s-fsanitize=undefined.
+D 2017-05-19T12:32:32.722
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -101,11 +101,11 @@ F ext/fts5/extract_api_docs.tcl a36e54ec777172ddd3f9a88daf593b00848368e0
 F ext/fts5/fts5.h 62f3e33ceeb9a428db139f9c012186b371da1cc7
 F ext/fts5/fts5Int.h 15e7514b46a845937d7c62e5c69e935091f0dbb72eb61aa4c8bcfbd39fdea158
 F ext/fts5/fts5_aux.c 67acf8d51723cf28ffc3828210ba662df4b8d267
-F ext/fts5/fts5_buffer.c 4c1502d4c956cd092c89ce4480867f9d8bf325cd
+F ext/fts5/fts5_buffer.c 1dd1ec0446b3acfc2d7d407eb894762a461613e2695273f48e449bfd13e973ff
 F ext/fts5/fts5_config.c 5af9c360e99669d29f06492c370892394aba0857
 F ext/fts5/fts5_expr.c f2825f714d91bbe62ab5820aee9ad12e0c94205b2a01725eaa9072415ae9ff1c
-F ext/fts5/fts5_hash.c 880998e596b60f078348d48732ca4ad9a90caad2
-F ext/fts5/fts5_index.c 9ce10106f42f8b84278a8ea859940224e2af5f0cc882f909364469f6f52769cb
+F ext/fts5/fts5_hash.c 534d5591f479c0999543689122ad6952823bc7c85273a0ff4f7f91d9f914a54b
+F ext/fts5/fts5_index.c cdceac47287c66500214ee946ca871ac48027a82a0ca82177c1c6af19f181ca0
 F ext/fts5/fts5_main.c 1ba0e7806886c1bc16e20d0dde1c2b535d1aeb98cbbb937c4c3e064af5ac6f03
 F ext/fts5/fts5_storage.c 7750986004f3f0c94619a85ecb5dd6cbef53e5e3853488e8a906c269d4d11db6
 F ext/fts5/fts5_tcl.c 4a901f00c8553740dba63511603f5527d741c26a
@@ -1580,7 +1580,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bb0d9281588b8cc24bf2f1f10d0c56277004226adaa2ce5037782503b283b45d
-R 0af7da97ec99dfdc47acd61562c849dd
+P 7940bff32aa6ea868a53680822d148b7ec7a075c01ae9e0d5ad9859bcc339054
+R 43b2f6640d15533e1a63dfe250cd3268
 U dan
-Z 1c514bbb65da185a2b54f96dcba53c59
+Z f9fce9521e2a47d8f39c7a8284ffa988
