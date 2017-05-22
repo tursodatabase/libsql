@@ -1,5 +1,5 @@
-C Increase\sthe\sversion\snumber\sto\s3.20\sfor\sthe\snext\srelease\scycle.
-D 2017-05-22T17:39:37.473
+C Add\sthe\s".cd"\scommand\sto\sthe\scommand-line\sshell.
+D 2017-05-22T18:00:34.366
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -404,7 +404,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 3e518b962d932a997fae373366880fc028c75706
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c d74b1cde1d9ca6d08bec50b60a5be19440273646bc8ae16648d748c38161d5b7
-F src/shell.c a37d96b20b3644d0eb905df5aa7a0fcf9f6e73c15898337230c760a24a8df794
+F src/shell.c 9235003e7269ca95e6357393cee03450e7e89ba74470e5ee698d3a8cb1a7deea
 F src/sqlite.h.in 8dd468837a4f6d76713e3a4cc65bea48095009038593d41040ab46c1b351197f
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 58fd0676d3111d02e62e5a35992a7d3da5d3f88753acc174f2d37b774fbbdd28
@@ -1580,7 +1580,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e6ba2a93a8d28074ff134dd43c142315de291b7c0a38ecc692863c33975c71c7
-R b87e78030e97fb428f8ad5e879fef2db
+P ab471f61ef7d9ed1bf937d5e458f720d12209712a015786434edc818a98168c9
+R cac670b792c55b8eecc1a284a755f203
 U drh
-Z 92879950245201965bacd6d4a4abcb0c
+Z c2c82ac037c73e1a656500d3e1322e3f

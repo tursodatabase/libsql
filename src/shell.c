@@ -3234,6 +3234,7 @@ static char zHelp[] =
   ".backup ?DB? FILE      Backup DB (default \"main\") to FILE\n"
   ".bail on|off           Stop after hitting an error.  Default OFF\n"
   ".binary on|off         Turn binary output on or off.  Default OFF\n"
+  ".cd DIRECTORY          Change the working directory to DIRECTORY\n"
   ".changes on|off        Show number of rows changed by SQL\n"
   ".check GLOB            Fail if output since .testcase does not match\n"
   ".clone NEWDB           Clone data into NEWDB from the existing database\n"
@@ -4727,6 +4728,25 @@ static int do_meta_command(char *zLine, ShellState *p){
       }
     }else{
       raw_printf(stderr, "Usage: .binary on|off\n");
+      rc = 1;
+    }
+  }else
+
+  if( c=='c' && strcmp(azArg[0],"cd")==0 ){
+    if( nArg==2 ){
+#if defined(_WIN32) || defined(WIN32)
+      wchar_t *z = sqlite3_win32_utf8_to_unicode(azArg[1]);
+      rc = !SetCurrentDirectoryW(z);
+      sqlite3_free(z);
+#else
+      rc = chdir(azArg[1]);
+#endif
+      if( rc ){
+        utf8_printf(stderr, "Cannot change to directory \"%s\"\n", azArg[1]);
+        rc = 1;
+      }
+    }else{
+      raw_printf(stderr, "Usage: .cd DIRECTORY\n");
       rc = 1;
     }
   }else
