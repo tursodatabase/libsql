@@ -1,5 +1,5 @@
-C When\splanning\sa\squery\susing\ssorting,\sresolve\sties\sin\sthe\ssolver\sby\sselecting\nloop\splans\swith\sthe\ssmaller\sunsorted\scost.
-D 2017-05-22T00:45:15.475
+C Fix\sa\scase\swhere\sNULL\swas\sbeing\spassed\sto\smemcmp()\sfollowing\san\sOOM.\sThis\sis\nprobably\snot\sa\sreal\sproblem,\sas\sthe\snumber-of-bytes\sparameter\swas\spassed\s0\sin\nthis\scase,\sbut\sit\swas\scausing\sa\ssantizer\scomplaint.
+D 2017-05-22T08:04:09.852
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -368,7 +368,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c d4bb3a135948553d18cf992f76f7ed7b18aa0327f250607b5a6671e55d9947d5
 F src/legacy.c e88ed13c2d531decde75d42c2e35623fb9ce3cb0
 F src/loadext.c a72909474dadce771d3669bf84bf689424f6f87d471fee898589c3ef9b2acfd9
-F src/main.c 1e448d204045c1dcd604853639d9d8fe253aa9ec302a2f1ffd2e22752fd6b708
+F src/main.c 55d0f1cc3dfc3608bc4b446d7f083e337a70615f1eeafac91399230cd7fff04f
 F src/malloc.c e20bb2b48abec52d3faf01cce12e8b4f95973755fafec98d45162dfdab111978
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -474,7 +474,7 @@ F src/vdbe.c b24b9806db72ad02ca82263b4705150fe9a547508948ee9906b7e120d3710211
 F src/vdbe.h f7d1456e28875c2dcb964056589b5b7149ab7edf39edeca801596a39bb3d3848
 F src/vdbeInt.h 1ecdacc1322fdd3241ec30c32a480e328a6f864e532dc53fae8e0ab68121aebf
 F src/vdbeapi.c dc904b3c5e459727993c2421e653e29d63223846d129fae98adc782b0a996481
-F src/vdbeaux.c 01dcf59b2a96bd3cc9db8c0d7f266518d113587459a2b3316279c4f9c90f28a9
+F src/vdbeaux.c 8416e4e5cf7b32cc3898cf3a28d05d5a3270c620513b46197f22bd24ca922539
 F src/vdbeblob.c 359891617358deefc85bef7bcf787fa6b77facb9
 F src/vdbemem.c 2c70f8f5de6c71fb99a22c5b83be9fab5c47cdd8e279fa44a8c00cfed06d7e89
 F src/vdbesort.c e72fe02a2121386ba767ede8942e9450878b8fc873abf3d1b6824485f092570c
@@ -1580,8 +1580,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c2de178fe7e2e4e0d764e7e6ac637cfc8c053580c43f7246318dafad2974de3c
-Q +962531e7c1f3ff604271ddf9f47b6234dfd47702ccf24849f55b80814e7be267
-R 0174bb863aa0f92aa80b928036d9451c
-U drh
-Z 7c43670f11f196aa8059f227597167dc
+P f261678c90297f9767040c577796cc1d4db598aa44b0de6906cb73eaef377dee
+R 9c5cd56496494be910f3f7b6c2685d76
+U dan
+Z a536e53cbd4c63e2c43903846b97b2ce

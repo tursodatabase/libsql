@@ -3731,7 +3731,6 @@ static int vdbeCompareMemString(
   }else{
     int rc;
     const void *v1, *v2;
-    int n1, n2;
     Mem c1;
     Mem c2;
     sqlite3VdbeMemInit(&c1, pMem1->db, MEM_Null);
@@ -3739,11 +3738,13 @@ static int vdbeCompareMemString(
     sqlite3VdbeMemShallowCopy(&c1, pMem1, MEM_Ephem);
     sqlite3VdbeMemShallowCopy(&c2, pMem2, MEM_Ephem);
     v1 = sqlite3ValueText((sqlite3_value*)&c1, pColl->enc);
-    n1 = v1==0 ? 0 : c1.n;
     v2 = sqlite3ValueText((sqlite3_value*)&c2, pColl->enc);
-    n2 = v2==0 ? 0 : c2.n;
-    rc = pColl->xCmp(pColl->pUser, n1, v1, n2, v2);
-    if( (v1==0 || v2==0) && prcErr ) *prcErr = SQLITE_NOMEM_BKPT;
+    if( (v1==0 || v2==0) ){
+      if( prcErr ) *prcErr = SQLITE_NOMEM_BKPT;
+      rc = 0;
+    }else{
+      rc = pColl->xCmp(pColl->pUser, c1.n, v1, c2.n, v2);
+    }
     sqlite3VdbeMemRelease(&c1);
     sqlite3VdbeMemRelease(&c2);
     return rc;
