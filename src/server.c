@@ -93,7 +93,8 @@ struct Server {
   ServerHMA *pHma;                /* Hma file object */
   int iClient;                    /* Client id */
   Pager *pPager;                  /* Associated pager object */
-
+  i64 nUsWrite;                   /* Cumulative us holding WRITER lock */
+  i64 iUsWrite;                   /* Time WRITER lock was taken */
   int nAlloc;                     /* Allocated size of aLock[] array */
   int nLock;                      /* Number of entries in aLock[] */
   u32 *aLock;                     /* Mapped lock file */
@@ -454,6 +455,18 @@ int sqlite3ServerEnd(Server *p){
       n = n & ~(1 << p->iClient);
       if( __sync_val_compare_and_swap(pSlot, v, n)==v ) break;
     }
+    if( p->aLock[i]==0 ){
+      struct timeval t2;
+      i64 nUs;
+      gettimeofday(&t2, 0);
+      nUs = (i64)t2.tv_sec * 1000000 + t2.tv_usec - p->iUsWrite; 
+      p->nUsWrite += nUs;
+      if( (p->nUsWrite / 1000000)!=((p->nUsWrite + nUs)/1000000) ){
+        sqlite3_log(SQLITE_WARNING, 
+            "Cumulative WRITER time: %lldms\n", p->nUsWrite/1000
+        );
+      }
+    }
   }
   p->nLock = 0;
 #if 1
@@ -568,6 +581,11 @@ server_lock_out:
     }while( __sync_val_compare_and_swap(pSlot, v, n)!=v );
   }
 
+  if( pgno==0 ){
+    struct timeval t1;
+    gettimeofday(&t1, 0);
+    p->iUsWrite = ((i64)t1.tv_sec * 1000000) + (i64)t1.tv_usec;
+  }
   assert( rc!=SQLITE_OK || sqlite3ServerHasLock(p, pgno, bWrite) );
   return rc;
 }

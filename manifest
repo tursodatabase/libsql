@@ -1,5 +1,5 @@
-C Avoid\swriter\sstarvation\sby\sadding\sa\sRESERVED\sstate\sto\spage\slocks.
-D 2017-05-15T19:32:58.633
+C Add\scode\sto\sthis\sbranch\sto\semit\sa\slog\smessage\safter\seach\scumulative\ssecond\nthat\sthe\sWRITER\slock\shas\sbeen\sheld.
+D 2017-05-22T08:01:58.394
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a8c838220f7c00820e1fc0ac1bccaaa8e5676067e1dbfa1bafa7a4ffecf8ae6
@@ -389,7 +389,7 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c 30e2c43e4955db990e5b5a81e901f8aa74cc8820
 F src/os_win.c 2a6c73eef01c51a048cc4ddccd57f981afbec18a
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c da0832b763a947f0f30d1ac449a6a6eccce5f819929b2256a3a289f1281b1ac8
+F src/pager.c f957574dc2f8a66d8ee2b5fd978ecd98760d6669182a023a3901e98ab5e4df33
 F src/pager.h ea05992c581c3366279fb1d436944604b4be17208ebb41fa407306e5e4b34205
 F src/parse.y 0513387ce02fea97897d8caef82d45f347818593f24f1bdc48e0c530a8af122d
 F src/pcache.c 62835bed959e2914edd26afadfecce29ece0e870
@@ -403,7 +403,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 3e518b962d932a997fae373366880fc028c75706
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 4f0adefaa5e9417459b07757e0f6060cac97930a86f0fba9797bab233ced66c0
-F src/server.c c7ba48720cd7520cc409dc926fb85d79fd70183ca5b6424c891d4e47cd184e3f
+F src/server.c 63c3799a184cba3d3b9f102f10e815104ba8d1d4a01c70b0e709e8173b5f9ae7
 F src/server.h e1ce2da1e4d21f335904539e3f98a7c24e015e1201b4bb16d61f0044b8bd2884
 F src/shell.c e5950029da103c5d378e71d548759459b9a7fc76177a71562c22082c705745ab
 F src/sqlite.h.in 8d126e4cfbd1f4bc6f4043aacd77f78b45613e7d630185d49a5d099394247483
@@ -1584,7 +1584,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a38858a24c6edaa05966b7e158e603bcbde8b05c6233e3bb005cfb32bc91ea06
-R b8e235bc4c011a85aed7a341ea53efc6
+P 9b7f80246f2b9921483ab23457865e783ee70b93f67bcecc0c16516447a05875
+R 9e4884a58e7a99008cd2855aaa793d84
 U dan
-Z 6c36f74987eb2c83b0e8e4c18223c9e3
+Z 7ef13cf9ec812325a52c181aa1146b6a
