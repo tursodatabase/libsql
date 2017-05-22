@@ -1,5 +1,5 @@
-C Add\sthe\s".cd"\scommand\sto\sthe\scommand-line\sshell.
-D 2017-05-22T18:00:34.366
+C Fix\sincompatibilities\sbetween\sthe\s"sqldiff\s--changeset"\scommand\sand\sthe\nsessions\smodule.\sSpecifically,\sallow\ssessions\sto\sprocess\schangesets\scontaining\ntables\swith\szero\soperations\son\sthem\sand\shave\ssqldiff\soutput\sthe\sexpected\noutput\sfor\stables\swith\smulti-column\sprimary\skeys.
+D 2017-05-22T18:09:00.314
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -315,10 +315,11 @@ F ext/session/sessionG.test 01ef705096a9d3984eebdcca79807a211dee1b60
 F ext/session/session_common.tcl 7776eda579773113b30c7abfd4545c445228cb73
 F ext/session/session_speed_test.c edc1f96fd5e0e4b16eb03e2a73041013d59e8723
 F ext/session/sessionat.test b25d61d663ebc795506bf74079dc4ba0092fad25
+F ext/session/sessiondiff.test 7889d8e84cd130fe3712ed7c511f883e0b2a398ed2905d54e48a24edce49bfab
 F ext/session/sessionfault.test da273f2712b6411e85e71465a1733b8501dbf6f7
 F ext/session/sessionfault2.test 04aa0bc9aa70ea43d8de82c4f648db4de1e990b0
 F ext/session/sessionwor.test 2f3744236dc8b170a695b7d8ddc8c743c7e79fdc
-F ext/session/sqlite3session.c 13642d9c754cc18f17e141f82860d269e2adf920
+F ext/session/sqlite3session.c cc127222a9ea6f4eaa31281aa9da924f5244f6099be0ee526c950684fb3513a6
 F ext/session/sqlite3session.h d4db650adfcc7a4360e9f12a09c2d117b1db6b53
 F ext/session/test_session.c eb0bd6c1ea791c1d66ee4ef94c16500dad936386
 F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
@@ -1547,7 +1548,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 7ce07da76b5e745783e703a834417d725b7d45fd
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
-F tool/sqldiff.c 3fb48a6c6669d2d2c59a7f072a410dd2583579b4
+F tool/sqldiff.c 30879bbc8de686df4624e86adce2d8981f500904c1cfb55b5d1eea2ffd9341eb
 F tool/srcck1.c 371de5363b70154012955544f86fdee8f6e5326f
 F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
@@ -1580,7 +1581,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ab471f61ef7d9ed1bf937d5e458f720d12209712a015786434edc818a98168c9
-R cac670b792c55b8eecc1a284a755f203
-U drh
-Z c2c82ac037c73e1a656500d3e1322e3f
+P 5fe28e15b1d6d8a588fcaf93c6035c0e0ab7bcad1067c7933cd430d2e04bbbd8
+R 2d56bb57c0e0c8bd5e55aee1a5f807c8
+U dan
+Z 7418f4c983b5d3f6cb32f89acb7a72f6

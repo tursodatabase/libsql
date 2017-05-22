@@ -2836,11 +2836,12 @@ static int sessionChangesetNext(
   p->in.iCurrent = p->in.iNext;
 
   op = p->in.aData[p->in.iNext++];
-  if( op=='T' || op=='P' ){
+  while( op=='T' || op=='P' ){
     p->bPatchset = (op=='P');
     if( sessionChangesetReadTblhdr(p) ) return p->rc;
     if( (p->rc = sessionInputBuffer(&p->in, 2)) ) return p->rc;
     p->in.iCurrent = p->in.iNext;
+    if( p->in.iNext>=p->in.nData ) return SQLITE_DONE;
     op = p->in.aData[p->in.iNext++];
   }
 
