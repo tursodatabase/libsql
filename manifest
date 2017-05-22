@@ -1,5 +1,5 @@
-C Prevent\sa\spossible\sNULL\spointer\sdereference\sin\sthe\sOP_Found\sopcode\sthat\ncan\sfollow\san\sOOM\serror.\s\sProblem\sfound\sby\sOSS-Fuzz.
-D 2017-05-19T22:51:00.217
+C When\splanning\sa\squery\susing\ssorting,\sresolve\sties\sin\sthe\ssolver\sby\sselecting\nloop\splans\swith\sthe\ssmaller\sunsorted\scost.
+D 2017-05-22T00:45:15.475
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -484,7 +484,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 40c543f0a2195d1b0dc88ef12142bea690009344
 F src/wal.h 06b2a0b599cc0f53ea97f497cf8c6b758c999f71
 F src/walker.c b71a992b413b3a022572eccf29ef4b4890223791
-F src/where.c a354396efcd326340ce17ac0c8af52ca8188ce65e26fda30e5af286dfc2d59f8
+F src/where.c ba36d01178f5957523cc600b95173057ae9a13ab378b4fc6ab5e14776767057b
 F src/whereInt.h 2a4b634d63ce488b46d4b0da8f2eaa8f9aeab202bc25ef76f007de5e3fba1f20
 F src/wherecode.c 8ad48867660519e262a401720845dc76934f86f558ec9606335fafcd7a2554f8
 F src/whereexpr.c e913aaa7b73ffcce66abcea5f197e2c538d48b5df78d0b7bba8ff4d73cc2e745
@@ -1580,7 +1580,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 946b87a5282f00d8c532a51f4390e6de781b9a0d6626cb3c077c5622895dc540
-R 892c6abfc58a4043f0c864668f2509c6
+P c2de178fe7e2e4e0d764e7e6ac637cfc8c053580c43f7246318dafad2974de3c
+Q +962531e7c1f3ff604271ddf9f47b6234dfd47702ccf24849f55b80814e7be267
+R 0174bb863aa0f92aa80b928036d9451c
 U drh
-Z fe52b75d8efb4b802f93708f3666bfdc
+Z 7c43670f11f196aa8059f227597167dc

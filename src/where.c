@@ -4003,8 +4003,8 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
             ** this candidate as not viable. */
 #ifdef WHERETRACE_ENABLED /* 0x4 */
             if( sqlite3WhereTrace&0x4 ){
-              sqlite3DebugPrintf("Skip   %s cost=%-3d,%3d order=%c\n",
-                  wherePathName(pFrom, iLoop, pWLoop), rCost, nOut,
+              sqlite3DebugPrintf("Skip   %s cost=%-3d,%3d,%3d order=%c\n",
+                  wherePathName(pFrom, iLoop, pWLoop), rCost, nOut, rUnsorted,
                   isOrdered>=0 ? isOrdered+'0' : '?');
             }
 #endif
@@ -4022,26 +4022,36 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
           pTo = &aTo[jj];
 #ifdef WHERETRACE_ENABLED /* 0x4 */
           if( sqlite3WhereTrace&0x4 ){
-            sqlite3DebugPrintf("New    %s cost=%-3d,%3d order=%c\n",
-                wherePathName(pFrom, iLoop, pWLoop), rCost, nOut,
+            sqlite3DebugPrintf("New    %s cost=%-3d,%3d,%3d order=%c\n",
+                wherePathName(pFrom, iLoop, pWLoop), rCost, nOut, rUnsorted,
                 isOrdered>=0 ? isOrdered+'0' : '?');
           }
 #endif
         }else{
           /* Control reaches here if best-so-far path pTo=aTo[jj] covers the
-          ** same set of loops and has the sam isOrdered setting as the
+          ** same set of loops and has the same isOrdered setting as the
           ** candidate path.  Check to see if the candidate should replace
-          ** pTo or if the candidate should be skipped */
-          if( pTo->rCost<rCost || (pTo->rCost==rCost && pTo->nRow<=nOut) ){
+          ** pTo or if the candidate should be skipped.
+          ** 
+          ** The conditional is an expanded vector comparison equivalent to:
+          **   (pTo->rCost,pTo->nRow,pTo->rUnsorted) <= (rCost,nOut,rUnsorted)
+          */
+          if( pTo->rCost<rCost 
+           || (pTo->rCost==rCost
+               && (pTo->nRow<nOut
+                   || (pTo->nRow==nOut && pTo->rUnsorted<=rUnsorted)
+                  )
+              )
+          ){
 #ifdef WHERETRACE_ENABLED /* 0x4 */
             if( sqlite3WhereTrace&0x4 ){
               sqlite3DebugPrintf(
-                  "Skip   %s cost=%-3d,%3d order=%c",
-                  wherePathName(pFrom, iLoop, pWLoop), rCost, nOut,
+                  "Skip   %s cost=%-3d,%3d,%3d order=%c",
+                  wherePathName(pFrom, iLoop, pWLoop), rCost, nOut, rUnsorted,
                   isOrdered>=0 ? isOrdered+'0' : '?');
-              sqlite3DebugPrintf("   vs %s cost=%-3d,%d order=%c\n",
+              sqlite3DebugPrintf("   vs %s cost=%-3d,%3d,%3d order=%c\n",
                   wherePathName(pTo, iLoop+1, 0), pTo->rCost, pTo->nRow,
-                  pTo->isOrdered>=0 ? pTo->isOrdered+'0' : '?');
+                  pTo->rUnsorted, pTo->isOrdered>=0 ? pTo->isOrdered+'0' : '?');
             }
 #endif
             /* Discard the candidate path from further consideration */
@@ -4054,12 +4064,12 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
 #ifdef WHERETRACE_ENABLED /* 0x4 */
           if( sqlite3WhereTrace&0x4 ){
             sqlite3DebugPrintf(
-                "Update %s cost=%-3d,%3d order=%c",
-                wherePathName(pFrom, iLoop, pWLoop), rCost, nOut,
+                "Update %s cost=%-3d,%3d,%3d order=%c",
+                wherePathName(pFrom, iLoop, pWLoop), rCost, nOut, rUnsorted,
                 isOrdered>=0 ? isOrdered+'0' : '?');
-            sqlite3DebugPrintf("  was %s cost=%-3d,%3d order=%c\n",
+            sqlite3DebugPrintf("  was %s cost=%-3d,%3d,%3d order=%c\n",
                 wherePathName(pTo, iLoop+1, 0), pTo->rCost, pTo->nRow,
-                pTo->isOrdered>=0 ? pTo->isOrdered+'0' : '?');
+                pTo->rUnsorted, pTo->isOrdered>=0 ? pTo->isOrdered+'0' : '?');
           }
 #endif
         }
