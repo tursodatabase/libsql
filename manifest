@@ -1,10 +1,10 @@
-C Merge\sthe\slast-minute\s3.19.0\schanges\sinto\strunk.
-D 2017-05-22T14:04:46.558
+C Increase\sthe\sversion\snumber\sto\s3.20\sfor\sthe\snext\srelease\scycle.
+D 2017-05-22T17:39:37.473
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
 F README.md 2b15fae33852f2f53996774c21fb41e1d94181c4401a0e43ac93e11f2cc901b9
-F VERSION 0a0e02e16b44ea735b40118fc844311b2ab0d35b25fbeda5120aee62f973f663
+F VERSION 87f1498f27e398bce3da2fa8125c9879a38ed9d87e4b5fb922b351de1e25cadb
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
@@ -30,7 +30,7 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 6376abec766e9a0785178b1823b5a587e9f1ccbc
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure bddf7d1d945894b724e2b16a1266359a40abec2c798c95b4409a7ebf771c38ef x
+F configure 9b883e13b5e4df8d203315a7fb5a47e3c3e6ffa4a2c1a34be8e785fdd8085a99 x
 F configure.ac 901e8db2c211e8b655e51ee24f2b8faa33407acde87effc47f70380f3b04e452
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html b5a3c07d33ecb8e019ce8f7660fe2dbbad9d7977
@@ -1580,7 +1580,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3ea2bad27e516d5dbfa4a9cb0c767d6a8387280a7e4bbf2ae80cd318da670d66 28a94eb282822cad1d1420f2dad6bf65e4b8b9062eda4a0b9ee8270b2c608e40
-R 90ec8646e73ec3e9ecc2455d88e4e989
+P e6ba2a93a8d28074ff134dd43c142315de291b7c0a38ecc692863c33975c71c7
+R b87e78030e97fb428f8ad5e879fef2db
 U drh
-Z 3ef537308bdc2960e22b64d20abff8ad
+Z 92879950245201965bacd6d4a4abcb0c
