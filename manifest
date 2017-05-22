@@ -1,5 +1,5 @@
-C Include\sthe\s"msvc.h"\sheader\sfile\sin\sthe\samalgamation\starball.
-D 2017-05-22T13:06:45.288
+C Version\s3.19.0
+D 2017-05-22T13:58:13.592
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -1580,7 +1580,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 50ad60ded54aa22dfdf519ed5da6451de790e22a972ff299f7976fbdce7a0579
+P 3dd6fe53c7ae6ebe2393e956d040e00b8cd0589674d20aafe1585aaa61325bbe
 R 70185df2307fdc4359181caa65daa887
+T +bgcolor * #d0c0ff
+T +sym-release *
+T +sym-version-3.19.0 *
 U drh
-Z 0303a77637cd34b7c34820a37ec20c26
+Z b6ab1af5186519250316abf46ab3c207
