@@ -726,5 +726,10 @@ do_execsql_test join-14.2 {
     LEFT JOIN (SELECT 1, * FROM (SELECT * FROM (SELECT * FROM (SELECT 1)))) AS y
     JOIN (SELECT * FROM (SELECT 9)) AS z;
 } {1 1 1 9}
+do_execsql_test join-14.3 {
+  SELECT *
+  FROM (SELECT 111)
+  LEFT JOIN (SELECT cc+222, * FROM (SELECT * FROM (SELECT 333 cc)));
+} {111 555 333}
 
 finish_test

@@ -1,5 +1,5 @@
-C When\sflattening\sa\squery,\smake\ssure\siTable\sattribute\sof\sTK_IF_NULL_ROW\noperators\s(that\sresult\sfrom\sa\sprior\sflattening\sof\sa\sLEFT\sJOIN)\sare\supdated\ncorrectly.\s\sFix\sfor\sticket\s[cad1ab4cb7b0fc344].
-D 2017-05-23T01:21:07.094
+C Ensure\sthat\sthe\sexpression\srewriter\sinside\sthe\squery\sflattener\sdecends\sinto\nthe\ssubstructure\sof\sthe\sTK_IF_NULL_ROW\soperator.\s\sThis\sis\sa\scontinuation\nof\sthe\sfix\sfor\sticket\s[cad1ab4cb7b0fc344].
+D 2017-05-23T12:36:13.432
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -404,7 +404,7 @@ F src/printf.c 8757834f1b54dae512fb25eb1acc8e94a0d15dd2290b58f2563f65973265adb2
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 3e518b962d932a997fae373366880fc028c75706
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c c23168278b7d4bb63846e26c5298b8056e86bfbf0c78d964447ff1340fbc2893
+F src/select.c 30805a1bc0236ba70a9a1592af4a7c522f906c6bfeba44c165046e592a3a36ec
 F src/shell.c 9235003e7269ca95e6357393cee03450e7e89ba74470e5ee698d3a8cb1a7deea
 F src/sqlite.h.in 8dd468837a4f6d76713e3a4cc65bea48095009038593d41040ab46c1b351197f
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -907,7 +907,7 @@ F test/ioerr3.test d3cec5e1a11ad6d27527d0d38573fbff14c71bdd
 F test/ioerr4.test f130fe9e71008577b342b8874d52984bd04ede2c
 F test/ioerr5.test 2edfa4fb0f896f733071303b42224df8bedd9da4
 F test/ioerr6.test a395a6ab144b26a9e3e21059a1ab6a7149cca65b
-F test/join.test 5cab75bb781a69f7d554fb2c522246a51c2f1b5f235ccda779b84ceb80868e1f
+F test/join.test 89087a3285ce7c317ac811f8cea1be226410f34b9cd9056b550390b591966b38
 F test/join2.test a48f723c5692e2cbb23a9297ac2720cb77d51a70
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
@@ -1581,7 +1581,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 987a2b5537254b1fe843eb798d7eb7f04dbe1e32fb827cfb9e1e1ef6c2096759
-R 100b66a7a1130ad079ea91c9272ffbdb
+P 92c178507df553e4f1110342c8f9b11b3ee37989e1d634fcaccabf657befa22f
+R 2239a710791ec9b87e0ae90a011fc293
 U drh
-Z 25b29392e51a9df57e7d515b67380f72
+Z 322e7f1069223cac48868922c1f54e26
