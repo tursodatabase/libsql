@@ -1001,7 +1001,6 @@ static void amatchWriteCost(amatch_word *pWord){
 /* Circumvent compiler warnings about the use of strcpy() by supplying
 ** our own implementation.
 */
-#if defined(__OpenBSD__)
 static void amatchStrcpy(char *dest, const char *src){
   while( (*(dest++) = *(src++))!=0 ){}
 }
@@ -1009,11 +1008,6 @@ static void amatchStrcat(char *dest, const char *src){
   while( *dest ) dest++;
   amatchStrcpy(dest, src);
 }
-#else
-# define amatchStrcpy strcpy
-# define amatchStrcat strcat
-#endif
-
 
 /*
 ** Add a new amatch_word object to the queue.
