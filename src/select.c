@@ -3213,6 +3213,8 @@ static Expr *substExpr(
         pExpr = pNew;
       }
     }
+  }else if( pExpr->op==TK_IF_NULL_ROW && pExpr->iTable==pSubst->iTable ){
+    pExpr->iTable = pSubst->iNewTable;
   }else{
     pExpr->pLeft = substExpr(pSubst, pExpr->pLeft);
     pExpr->pRight = substExpr(pSubst, pExpr->pRight);

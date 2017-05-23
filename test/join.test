@@ -1,4 +1,4 @@
-# 2002 May 24
+# 2002-05-24
 #
 # The author disclaims copyright to this source code.  In place of
 # a legal notice, here is a blessing:
@@ -12,7 +12,6 @@
 #
 # This file implements tests for joins, including outer joins.
 #
-# $Id: join.test,v 1.27 2009/07/01 16:12:08 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -712,5 +711,20 @@ do_execsql_test join-13.2 {
   SELECT * FROM aa LEFT JOIN bb, cc WHERE cc.c=aa.a;
 } {45 {} 45 45 {} 45}
 
+# Verify that that iTable attributes the TK_IF_NULL_ROW operators in the
+# expression tree are correctly updated by the query flattener.  This was
+# a bug discovered on 2017-05-22 by Mark Brand.
+#
+do_execsql_test join-14.1 {
+  SELECT *
+    FROM (SELECT 1 a) AS x 
+         LEFT JOIN (SELECT 1, * FROM (SELECT * FROM (SELECT 1)));
+} {1 1 1}
+do_execsql_test join-14.2 {
+  SELECT *
+  FROM (SELECT 1 a) AS x
+    LEFT JOIN (SELECT 1, * FROM (SELECT * FROM (SELECT * FROM (SELECT 1)))) AS y
+    JOIN (SELECT * FROM (SELECT 9)) AS z;
+} {1 1 1 9}
 
 finish_test
