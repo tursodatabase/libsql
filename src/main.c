@@ -3096,7 +3096,7 @@ opendb_out:
 #if defined(SQLITE_HAS_CODEC)
   if( rc==SQLITE_OK ){
     const char *zKey;
-    if( (zKey = sqlite3_uri_parameter(zOpen, "hexkey"))!=0 && zKey[0] ){;
+    if( (zKey = sqlite3_uri_parameter(zOpen, "hexkey"))!=0 && zKey[0] ){
       u8 iByte;
       int i;
       char zDecoded[40];
