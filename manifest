@@ -1,5 +1,5 @@
-C Fix\sincompatibilities\sbetween\sthe\s"sqldiff\s--changeset"\scommand\sand\sthe\nsessions\smodule.\sSpecifically,\sallow\ssessions\sto\sprocess\schangesets\scontaining\ntables\swith\szero\soperations\son\sthem\sand\shave\ssqldiff\soutput\sthe\sexpected\noutput\sfor\stables\swith\smulti-column\sprimary\skeys.
-D 2017-05-22T18:09:00.314
+C Remove\sa\ssurplus\ssemicolon,\swhich\swas\sharmless\son\sgcc\sand\sclang\sbut\scaused\ncompile-time\serrors\son\smsvc.\s\sThis\sonly\scomes\sup\susing\sthe\sencryption\sextension.
+D 2017-05-23T00:32:56.371
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -369,7 +369,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c d4bb3a135948553d18cf992f76f7ed7b18aa0327f250607b5a6671e55d9947d5
 F src/legacy.c e88ed13c2d531decde75d42c2e35623fb9ce3cb0
 F src/loadext.c a72909474dadce771d3669bf84bf689424f6f87d471fee898589c3ef9b2acfd9
-F src/main.c 55d0f1cc3dfc3608bc4b446d7f083e337a70615f1eeafac91399230cd7fff04f
+F src/main.c 1054e4dbb4fcca84246ed48b35164a996f5a52daa56c275157a5d583c0e2cd00
 F src/malloc.c e20bb2b48abec52d3faf01cce12e8b4f95973755fafec98d45162dfdab111978
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -1581,7 +1581,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5fe28e15b1d6d8a588fcaf93c6035c0e0ab7bcad1067c7933cd430d2e04bbbd8
-R 2d56bb57c0e0c8bd5e55aee1a5f807c8
-U dan
-Z 7418f4c983b5d3f6cb32f89acb7a72f6
+P 0bb23c48064cc64134697469f3f4d2d3610b9e6c7a0dc54a3c47a00bd6c2a860
+R ba2f3447a7885f738e0bf5d05a7100b4
+U drh
+Z b06ab39e7cb6adcc1c5e9519f3ada80a
