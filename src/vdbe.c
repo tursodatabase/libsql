@@ -2441,6 +2441,7 @@ case OP_NotNull: {            /* same as TK_NOTNULL, jump, in1 */
 */
 case OP_IfNullRow: {         /* jump */
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  assert( p->apCsr[pOp->p1]!=0 );
   if( p->apCsr[pOp->p1]->nullRow ){
     sqlite3VdbeMemSetNull(aMem + pOp->p3);
     goto jump_to_p2;
