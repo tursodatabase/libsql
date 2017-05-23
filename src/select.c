@@ -3301,7 +3301,8 @@ static void substSelect(
 **        due to ticket [2f7170d73bf9abf80] from 2015-02-09.)
 **
 **   (3)  The subquery is not the right operand of a LEFT JOIN
-**        or the subquery is not itself a join.
+**        or the subquery is not itself a join and the outer query is not
+**        an aggregate.
 **
 **   (4)  The subquery is not DISTINCT.
 **
@@ -3497,11 +3498,16 @@ static int flattenSubquery(
   **
   ** which is not at all the same thing.
   **
+  ** If the subquery is the right operand of a LEFT JOIN, then the outer
+  ** query cannot be an aggregate.  This is an artifact of the way aggregates
+  ** are processed - there is not mechanism to determine if the LEFT JOIN
+  ** table should be all-NULL.
+  **
   ** See also tickets #306, #350, and #3300.
   */
   if( (pSubitem->fg.jointype & JT_OUTER)!=0 ){
     isLeftJoin = 1;
-    if( pSubSrc->nSrc>1 ){
+    if( pSubSrc->nSrc>1 || isAgg ){
       return 0; /* Restriction (3) */
     }
   }
