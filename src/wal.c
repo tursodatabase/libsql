@@ -446,6 +446,7 @@ struct Wal {
   WalIndexHdr hdr;           /* Wal-index header for current transaction */
   u32 minFrame;              /* Ignore wal frames before this one */
   u32 iReCksum;              /* On commit, recalculate checksums from here */
+  u32 nPriorFrame;           /* For sqlite3WalInfo() */
   const char *zWalName;      /* Name of WAL file */
   u32 nCkpt;                 /* Checkpoint sequence counter in the wal-header */
 #ifdef SQLITE_DEBUG
@@ -2507,6 +2508,7 @@ int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
   testcase( rc==SQLITE_PROTOCOL );
   testcase( rc==SQLITE_OK );
 
+  pWal->nPriorFrame = pWal->hdr.mxFrame;
 #ifdef SQLITE_ENABLE_SNAPSHOT
   if( rc==SQLITE_OK ){
     if( pSnapshot && memcmp(pSnapshot, &pWal->hdr, sizeof(WalIndexHdr))!=0 ){
@@ -2948,6 +2950,7 @@ int sqlite3WalLockForCommit(Wal *pWal, PgHdr *pPage1, Bitvec *pAllRead){
     }
   }
 
+  pWal->nPriorFrame = pWal->hdr.mxFrame;
   return rc;
 }
 
@@ -3118,6 +3121,7 @@ static int walRestartLog(Wal *pWal){
         ** to handle if this transaction is rolled back.  */
         walRestartHdr(pWal, salt1);
         walUnlockExclusive(pWal, WAL_READ_LOCK(1), WAL_NREADER-1);
+        pWal->nPriorFrame = 0;
       }else if( rc!=SQLITE_BUSY ){
         return rc;
       }
@@ -3757,6 +3761,18 @@ int sqlite3WalFramesize(Wal *pWal){
 */
 sqlite3_file *sqlite3WalFile(Wal *pWal){
   return pWal->pWalFd;
+}
+
+/* 
+** Return the values required by sqlite3_wal_info().
+*/
+int sqlite3WalInfo(Wal *pWal, u32 *pnPrior, u32 *pnFrame){
+  int rc = SQLITE_OK;
+  if( pWal ){
+    *pnFrame = pWal->hdr.mxFrame;
+    *pnPrior = pWal->nPriorFrame;
+  }
+  return rc;
 }
 
 #endif /* #ifndef SQLITE_OMIT_WAL */

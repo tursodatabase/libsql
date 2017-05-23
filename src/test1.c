@@ -7370,6 +7370,41 @@ static int SQLITE_TCLAPI test_dbconfig_maindbname_icecube(
 }
 
 /*
+** Usage: sqlite3_wal_info DB DBNAME
+*/
+static int SQLITE_TCLAPI test_wal_info(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int rc;
+  sqlite3 *db;
+  char *zName;
+  unsigned int nPrior;
+  unsigned int nFrame;
+
+  if( objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB DBNAME");
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  zName = Tcl_GetString(objv[2]);
+
+  rc = sqlite3_wal_info(db, zName, &nPrior, &nFrame);
+  if( rc!=SQLITE_OK ){
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
+    return TCL_ERROR;
+  }else{
+    Tcl_Obj *pNew = Tcl_NewObj();
+    Tcl_ListObjAppendElement(interp, pNew, Tcl_NewWideIntObj((i64)nPrior));
+    Tcl_ListObjAppendElement(interp, pNew, Tcl_NewWideIntObj((i64)nFrame));
+    Tcl_SetObjResult(interp, pNew);
+  }
+  return TCL_OK;
+}
+
+/*
 ** Register commands with the TCL interpreter.
 */
 int Sqlitetest1_Init(Tcl_Interp *interp){
@@ -7639,6 +7674,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_snapshot_cmp_blob", test_snapshot_cmp_blob, 0 },
 #endif
      { "sqlite3_delete_database", test_delete_database, 0 },
+     { "sqlite3_wal_info", test_wal_info, 0 },
   };
   static int bitmask_size = sizeof(Bitmask)*8;
   static int longdouble_size = sizeof(LONGDOUBLE_TYPE);

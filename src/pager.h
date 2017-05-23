@@ -231,6 +231,8 @@ int sqlite3PagerIsWal(Pager*);
 
 int sqlite3PagerIswriteable(DbPage*);
 
+int sqlite3PagerWalInfo(Pager*, u32 *pnPrior, u32 *pnFrame);
+
 #if defined(SQLITE_HAS_CODEC) && !defined(SQLITE_OMIT_WAL)
 void *sqlite3PagerCodec(DbPage *);
 #endif

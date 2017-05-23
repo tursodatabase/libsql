@@ -7707,6 +7707,11 @@ int sqlite3PagerSnapshotRecover(Pager *pPager){
   return rc;
 }
 #endif /* SQLITE_ENABLE_SNAPSHOT */
+
+int sqlite3PagerWalInfo(Pager *pPager, u32 *pnPrior, u32 *pnFrame){
+  return sqlite3WalInfo(pPager->pWal, pnPrior, pnFrame);
+}
+
 #endif /* !SQLITE_OMIT_WAL */
 
 #ifdef SQLITE_ENABLE_ZIPVFS

@@ -153,5 +153,8 @@ int sqlite3WalFramesize(Wal *pWal);
 /* Return the sqlite3_file object for the WAL file */
 sqlite3_file *sqlite3WalFile(Wal *pWal);
 
+/* sqlite3_wal_info() data */
+int sqlite3WalInfo(Wal *pWal, u32 *pnPrior, u32 *pnFrame);
+
 #endif /* ifndef SQLITE_OMIT_WAL */
 #endif /* SQLITE_WAL_H */
