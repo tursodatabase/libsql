@@ -1,10 +1,10 @@
-C Remove\sa\ssurplus\ssemicolon,\swhich\swas\sharmless\son\sgcc\sand\sclang\sbut\scaused\ncompile-time\serrors\son\smsvc.\s\sThis\sonly\scomes\sup\susing\sthe\sencryption\sextension.
-D 2017-05-23T01:30:26.912
+C Change\sthe\sversion\snumber\sto\s3.19.1.
+D 2017-05-23T01:35:22.840
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
 F README.md 2b15fae33852f2f53996774c21fb41e1d94181c4401a0e43ac93e11f2cc901b9
-F VERSION 0a0e02e16b44ea735b40118fc844311b2ab0d35b25fbeda5120aee62f973f663
+F VERSION 1699c6ade55970f0e2ab64ef0aa90ff406db479796172c8676e0899704f5dbe8
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
@@ -30,7 +30,7 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 6376abec766e9a0785178b1823b5a587e9f1ccbc
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure bddf7d1d945894b724e2b16a1266359a40abec2c798c95b4409a7ebf771c38ef x
+F configure a02beb39087ff63175fa1da1172c90db8c27b9cecf24639cd7438c1f3596163f x
 F configure.ac 901e8db2c211e8b655e51ee24f2b8faa33407acde87effc47f70380f3b04e452
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html b5a3c07d33ecb8e019ce8f7660fe2dbbad9d7977
@@ -1580,8 +1580,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 919d36e6ea112c8c94f01e02611c48e78c441657e6898a466cfc39f1e0001403
-Q +987a2b5537254b1fe843eb798d7eb7f04dbe1e32fb827cfb9e1e1ef6c2096759
-R 77d7f81f7246ff3e88d2e4ea51671fac
+P 4510d55d1e2e23d4a4470dbd414161beec2ceefb7537fd66ea3c347e11624dfc
+R 27cae287d4ad96e127ad85d207e456b6
 U drh
-Z 937e7fff130b6fed55f87a69fd472b55
+Z 84b0f0f59397b335bb45fe51ff7631bb
