@@ -18,11 +18,25 @@
 #endif
 
 /*
-** If requested, include the SQLite compiler options file for MSVC.
+** Warning pragmas copied from msvc.h in the core.
 */
-#if defined(INCLUDE_MSVC_H)
-#include "msvc.h"
-#endif
+#if defined(_MSC_VER)
+#pragma warning(disable : 4054)
+#pragma warning(disable : 4055)
+#pragma warning(disable : 4100)
+#pragma warning(disable : 4127)
+#pragma warning(disable : 4130)
+#pragma warning(disable : 4152)
+#pragma warning(disable : 4189)
+#pragma warning(disable : 4206)
+#pragma warning(disable : 4210)
+#pragma warning(disable : 4232)
+#pragma warning(disable : 4244)
+#pragma warning(disable : 4305)
+#pragma warning(disable : 4306)
+#pragma warning(disable : 4702)
+#pragma warning(disable : 4706)
+#endif /* defined(_MSC_VER) */
 
 /*
 ** No support for loadable extensions in VxWorks.
