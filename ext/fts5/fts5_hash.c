@@ -171,10 +171,11 @@ static int fts5HashResize(Fts5Hash *pHash){
 
   for(i=0; i<pHash->nSlot; i++){
     while( apOld[i] ){
-      int iHash;
+      unsigned int iHash;
       Fts5HashEntry *p = apOld[i];
       apOld[i] = p->pHashNext;
-      iHash = fts5HashKey(nNew, (u8*)fts5EntryKey(p), strlen(fts5EntryKey(p)));
+      iHash = fts5HashKey(nNew, (u8*)fts5EntryKey(p),
+                          (int)strlen(fts5EntryKey(p)));
       p->pHashNext = apNew[iHash];
       apNew[iHash] = p;
     }
@@ -477,7 +478,7 @@ int sqlite3Fts5HashQuery(
   int *pnDoclist                  /* OUT: Size of doclist in bytes */
 ){
   unsigned int iHash = fts5HashKey(pHash->nSlot, (const u8*)pTerm, nTerm);
-  char *zKey;
+  char *zKey = 0;
   Fts5HashEntry *p;
 
   for(p=pHash->aSlot[iHash]; p; p=p->pHashNext){
