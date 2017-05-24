@@ -1192,7 +1192,7 @@ static int whereKeyStats(
       iGap = iGap/3;
     }
     aStat[0] = iLower + iGap;
-    aStat[1] = pIdx->aAvgEq[iCol];
+    aStat[1] = pIdx->aAvgEq[nField-1];
   }
 
   /* Restore the pRec->nField value before returning.  */
