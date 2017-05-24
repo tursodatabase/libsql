@@ -1,5 +1,5 @@
-C Disable\sthe\sLEFT\sJOIN\sflattening\soptimization\sfor\saggregate\squeries,\sas\sit\ndoes\snot\scurrently\swork.\s\sFurther\sfix\sfor\sticket\s[cad1ab4cb7b0fc344].
-D 2017-05-23T15:33:41.141
+C Version\s3.19.1
+D 2017-05-24T13:08:33.856
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -1580,8 +1580,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 28d2902d8f4dfbbfc610f271e00d353b0baae386b56b482f96b88836410be129
-Q +44b21e35c92137cc519d0cc87c627cc531d0bd442a7b9a7356fa2c6bc5f70fb6
+P 05ada741554b9fd00befcf7b4083637f53de68699ae5210ac18e0773ad1a9910
 R 7de9199234b8233f96ae8f86cad0d9b4
+T +bgcolor * #d0c0ff
+T +sym-release *
+T +sym-version-3.19.1 *
 U drh
-Z 5038ccf49cccdd8c3bebdd6501c9aad0
+Z 01699a882c84539aef9719d24b44a477
