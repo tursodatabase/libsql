@@ -1,5 +1,5 @@
-C The\sSQLITE_EXTRA_IFNULLROW\scompile-time\soption\scauses\sOP_IfNullRow\sopcodes\nto\sbe\sissued\sfor\sreferences\sto\sthe\sright-hand\sside\stable\sof\s*any*\sflattened\njoin,\snot\sjust\sLEFT\sJOINs.\s\sThis\sputs\sextra\sstress\son\sthe\sOP_IfNUllRow\sopcodes\nfor\stesting\spurposes.
-D 2017-05-25T11:39:50.950
+C Version\s3.19.2
+D 2017-05-25T16:50:27.649
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -1580,7 +1580,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b30a364a12d9865242b1444984cd25ee126dc69108d5c6a2d4b35df184437fe9
+P 1a074c8a2bc0b28918ef905339d11a21d30101b4ea8c06c8b3faca7d17237538
 R f4b3c258ec4a8c30fd1362752bfd9b5c
+T +bgcolor * #d0c0ff
+T +sym-release *
+T +sym-version-3.19.2 *
 U drh
-Z 0644901a5729c4edb6bb6d1c8a01dc5c
+Z 1c4850e8eeff11c8d32e6493160f83cd
