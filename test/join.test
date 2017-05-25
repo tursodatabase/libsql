@@ -743,4 +743,24 @@ do_execsql_test join-14.5 {
   SELECT * FROM (SELECT 111) LEFT JOIN (SELECT c+222 FROM t1) GROUP BY 1;
 } {111 {}}
 
+# Verify the fix to ticket 
+# https://www.sqlite.org/src/tktview/7fde638e94287d2c948cd9389
+#
+db close
+sqlite3 db :memory:
+do_execsql_test join-14.10 {
+  CREATE TABLE t1(a);
+  INSERT INTO t1 VALUES(1),(2),(3);
+  CREATE VIEW v2 AS SELECT a, 1 AS b FROM t1;
+  CREATE TABLE t3(x);
+  INSERT INTO t3 VALUES(2),(4);
+  SELECT *, '|' FROM t3 LEFT JOIN v2 ON a=x WHERE b=1;
+} {2 2 1 |}
+do_execsql_test join-14.11 {
+  SELECT *, '|' FROM t3 LEFT JOIN v2 ON a=x WHERE b+1=x;
+} {2 2 1 |}
+do_execsql_test join-14.12 {
+  SELECT *, '|' FROM t3 LEFT JOIN v2 ON a=x ORDER BY b;
+} {4 {} {} | 2 2 1 |}
+
 finish_test
