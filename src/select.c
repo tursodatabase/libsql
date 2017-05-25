@@ -3214,6 +3214,9 @@ static Expr *substExpr(
       }
     }
   }else{
+    if( pExpr->op==TK_IF_NULL_ROW && pExpr->iTable==pSubst->iTable ){
+      pExpr->iTable = pSubst->iNewTable;
+    }
     pExpr->pLeft = substExpr(pSubst, pExpr->pLeft);
     pExpr->pRight = substExpr(pSubst, pExpr->pRight);
     if( ExprHasProperty(pExpr, EP_xIsSelect) ){
@@ -3298,7 +3301,8 @@ static void substSelect(
 **        due to ticket [2f7170d73bf9abf80] from 2015-02-09.)
 **
 **   (3)  The subquery is not the right operand of a LEFT JOIN
-**        or the subquery is not itself a join.
+**        or the subquery is not itself a join and the outer query is not
+**        an aggregate.
 **
 **   (4)  The subquery is not DISTINCT.
 **
@@ -3494,14 +3498,27 @@ static int flattenSubquery(
   **
   ** which is not at all the same thing.
   **
+  ** If the subquery is the right operand of a LEFT JOIN, then the outer
+  ** query cannot be an aggregate.  This is an artifact of the way aggregates
+  ** are processed - there is not mechanism to determine if the LEFT JOIN
+  ** table should be all-NULL.
+  **
   ** See also tickets #306, #350, and #3300.
   */
   if( (pSubitem->fg.jointype & JT_OUTER)!=0 ){
     isLeftJoin = 1;
-    if( pSubSrc->nSrc>1 ){
+    if( pSubSrc->nSrc>1 || isAgg ){
       return 0; /* Restriction (3) */
     }
   }
+#ifdef SQLITE_EXTRA_IFNULLROW
+  else if( iFrom>0 && !isAgg ){
+    /* Setting isLeftJoin to -1 causes OP_IfNullRow opcodes to be generated for
+    ** every reference to any result column from subquery in a join, even though
+    ** they are not necessary.  This will stress-test the OP_IfNullRow opcode. */
+    isLeftJoin = -1;
+  }
+#endif
 
   /* Restriction 17: If the sub-query is a compound SELECT, then it must
   ** use only the UNION ALL operator. And none of the simple select queries
@@ -3755,7 +3772,7 @@ static int flattenSubquery(
       pSub->pOrderBy = 0;
     }
     pWhere = sqlite3ExprDup(db, pSub->pWhere, 0);
-    if( isLeftJoin ){
+    if( isLeftJoin>0 ){
       setJoinExpr(pWhere, iNewParent);
     }
     if( subqueryIsAgg ){

@@ -1036,7 +1036,7 @@ proc main {argv} {
       regsub -all {fuzzoomtest} $xtarget fuzztest xtarget
       if {$debug_idx < 0} {
         incr NTEST
-        append config_options " -DSQLITE_DEBUG=1"
+        append config_options " -DSQLITE_DEBUG=1 -DSQLITE_EXTRA_IFNULLROW=1"
         add_test_suite all "${zConfig}_debug" $xtarget $config_options
       } else {
         incr NTEST
