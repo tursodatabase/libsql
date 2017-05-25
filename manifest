@@ -1,5 +1,5 @@
-C The\sTK_IF_NULL_ROW\sexpression\snode\smust\sbe\streated\sas\sa\svariable\sthat\nreferences\sthe\stable\sExpr.iTable.\nProposed\sfix\sfor\sticket\s[7fde638e94287d2c].
-D 2017-05-25T00:28:36.835
+C The\sSQLITE_EXTRA_IFNULLROW\scompile-time\soption\scauses\sOP_IfNullRow\sopcodes\nto\sbe\sissued\sfor\sreferences\sto\sthe\sright-hand\sside\stable\sof\s*any*\sflattened\njoin,\snot\sjust\sLEFT\sJOINs.\s\sThis\sputs\sextra\sstress\son\sthe\sOP_IfNUllRow\sopcodes\nfor\stesting\spurposes.
+D 2017-05-25T11:39:50.950
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -403,7 +403,7 @@ F src/printf.c 8757834f1b54dae512fb25eb1acc8e94a0d15dd2290b58f2563f65973265adb2
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 3e518b962d932a997fae373366880fc028c75706
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c 9db6887514a663ef4eb117f12cbae613bece9267f180d0fcdfa49402b013483e
+F src/select.c c444ca057d48cf1a4eb8f6a58fbc13418a7f83ae94a6bd6f29f7ad6c704a9e4c
 F src/shell.c a37d96b20b3644d0eb905df5aa7a0fcf9f6e73c15898337230c760a24a8df794
 F src/sqlite.h.in 8dd468837a4f6d76713e3a4cc65bea48095009038593d41040ab46c1b351197f
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1059,7 +1059,7 @@ F test/rdonly.test 64e2696c322e3538df0b1ed624e21f9a23ed9ff8
 F test/regexp1.test 497ea812f264d12b6198d6e50a76be4a1973a9d8
 F test/regexp2.test 40e894223b3d6672655481493f1be12012f2b33c
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
-F test/releasetest.tcl cb06c4df0de4872e65b178316f8a87ccf7624d59 x
+F test/releasetest.tcl 936c8b9c72d46a86d0f9d65c536e883c2d79a8f53a5324283757bfc9d8b5a656 x
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
 F test/rollback.test 458fe73eb3ffdfdf9f6ba3e9b7350a6220414dea
 F test/rollback2.test 8435d6ff0f13f51d2a4181c232e706005fa90fc5
@@ -1580,8 +1580,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c315727acd5fffe6e83ad9a5e84360d5cfa9aa8faa10d4970ea9823c7e8126ee
-Q +77fc23013cebc7797985864b91d78db5d0e2469511732044ebfaf02b891c979a
-R 50fcc5200cd2c3a182c0518337e9a940
+P b30a364a12d9865242b1444984cd25ee126dc69108d5c6a2d4b35df184437fe9
+R f4b3c258ec4a8c30fd1362752bfd9b5c
 U drh
-Z 6effe9b9d20277cb431b2d7d2acbdf71
+Z 0644901a5729c4edb6bb6d1c8a01dc5c

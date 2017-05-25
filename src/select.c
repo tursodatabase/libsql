@@ -3511,6 +3511,14 @@ static int flattenSubquery(
       return 0; /* Restriction (3) */
     }
   }
+#ifdef SQLITE_EXTRA_IFNULLROW
+  else if( iFrom>0 && !isAgg ){
+    /* Setting isLeftJoin to -1 causes OP_IfNullRow opcodes to be generated for
+    ** every reference to any result column from subquery in a join, even though
+    ** they are not necessary.  This will stress-test the OP_IfNullRow opcode. */
+    isLeftJoin = -1;
+  }
+#endif
 
   /* Restriction 17: If the sub-query is a compound SELECT, then it must
   ** use only the UNION ALL operator. And none of the simple select queries
@@ -3764,7 +3772,7 @@ static int flattenSubquery(
       pSub->pOrderBy = 0;
     }
     pWhere = sqlite3ExprDup(db, pSub->pWhere, 0);
-    if( isLeftJoin ){
+    if( isLeftJoin>0 ){
       setJoinExpr(pWhere, iNewParent);
     }
     if( subqueryIsAgg ){
