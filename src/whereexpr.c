@@ -1375,11 +1375,11 @@ Bitmask sqlite3WhereExprUsage(WhereMaskSet *pMaskSet, Expr *p){
   Bitmask mask;
   if( p==0 ) return 0;
   if( p->op==TK_COLUMN ){
-    mask = sqlite3WhereGetMask(pMaskSet, p->iTable);
-    return mask;
+    return sqlite3WhereGetMask(pMaskSet, p->iTable);
   }
+  mask = (p->op==TK_IF_NULL_ROW) ? sqlite3WhereGetMask(pMaskSet, p->iTable) : 0;
   assert( !ExprHasProperty(p, EP_TokenOnly) );
-  mask = p->pRight ? sqlite3WhereExprUsage(pMaskSet, p->pRight) : 0;
+  if( p->pRight ) mask |= sqlite3WhereExprUsage(pMaskSet, p->pRight);
   if( p->pLeft ) mask |= sqlite3WhereExprUsage(pMaskSet, p->pLeft);
   if( ExprHasProperty(p, EP_xIsSelect) ){
     mask |= exprSelectUsage(pMaskSet, p->x.pSelect);

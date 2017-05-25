@@ -1740,10 +1740,12 @@ static int exprNodeIsConstant(Walker *pWalker, Expr *pExpr){
       testcase( pExpr->op==TK_AGG_COLUMN );
       if( pWalker->eCode==3 && pExpr->iTable==pWalker->u.iCur ){
         return WRC_Continue;
-      }else{
-        pWalker->eCode = 0;
-        return WRC_Abort;
       }
+      /* Fall through */
+    case TK_IF_NULL_ROW:
+      testcase( pExpr->op==TK_IF_NULL_ROW );
+      pWalker->eCode = 0;
+      return WRC_Abort;
     case TK_VARIABLE:
       if( pWalker->eCode==5 ){
         /* Silently convert bound parameters that appear inside of CREATE
