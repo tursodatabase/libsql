@@ -4129,10 +4129,11 @@ static int btreeFixUnlocked(Btree *p){
           assert( nCurrent!=PENDING_BYTE_PAGE(pBt) );
           sqlite3PagerSetDbsize(pBt->pPager, nCurrent);
           nFree = get4byte(&p1[36]);
-          nFin = MAX(nCurrent-nFree, nHPage);
+          nFin = nCurrent-nFree;
           if( nCurrent>PENDING_BYTE_PAGE(pBt) && nFin<=PENDING_BYTE_PAGE(pBt) ){
             nFin--;
           }
+          nFin = MAX(nFin, nHPage);
           rc = btreeRelocateRange(pBt, nFin+1, nCurrent, 0);
         }
 

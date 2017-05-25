@@ -1,5 +1,5 @@
-C Add\sexperimental\snew\sAPI\ssqlite3_wal_info().
-D 2017-05-23T19:23:45.315
+C Fix\sa\sproblem\swith\sthe\sdeferred\spage\sallocation\son\sthis\sbranch\sthat\scould\noccur\swhen\sthe\sdatabase\sfile\sis\sjust\sslightly\ssmaller\sthan\sthe\sPENDING_BYTE\npage\soffset.
+D 2017-05-25T21:02:00.680
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -348,9 +348,9 @@ F src/analyze.c 0d0ccf7520a201d8747ea2f02c92c26e26f801bc161f714f27b9f7630dde0421
 F src/attach.c 8c476f8bd5d2afe11d925f890d30e527e5b0ce43
 F src/auth.c 79f96c6f33bf0e5da8d1c282cee5ebb1852bb8a6ccca3e485d7c459b035d9c3c
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
-F src/bitvec.c fc0edcc2000f7d6faea86adcf9c2b8516882eb5aa2fc821fd2fd264e2cefde95
+F src/bitvec.c e65c3d8ce932b4a38795574b549db6607b6140a22b82e783fa1ab57d0e42a49c
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c b8ffd067e78704a8bf81b83c60a23987a46dac9aca0c08c3959482dfae02d197
+F src/btree.c ffb001f02b4c65984068e50cbb308bb833c3d4d6280bf606e43d3eebf8d740df
 F src/btree.h 14e99cc2b666beb60322173c761d16b668ec2e07c18bbb74e8a49fe85946f8a0
 F src/btreeInt.h 42c3e3d9534aed0b99ee68678b0311c33134c7c015037a319900eddd148584d6
 F src/build.c ba3f389668754c407805bbc5f8ab140f063ba6b04a6a86f63006b63b3c7319a8
@@ -610,7 +610,7 @@ F test/colmeta.test 2c765ea61ee37bc43bbe6d6047f89004e6508eb1
 F test/colname.test 08948a4809d22817e0e5de89c7c0a8bd90cb551b
 F test/concfault.test 500f17c3fcfe7705114422bcc6ddd3c740001a43
 F test/concurrent.test 3eb5e6a911dc6ff72e3a679f563e683b436f6c701e6e1d6050173df2b8448d6b
-F test/concurrent2.test ba7e166187289ee23089fff4f9527bc36f7cc324196cc8e84d31eae2769e678f
+F test/concurrent2.test 9dfbeb0a323733fe1d13443371734bb94a674dbf777f464365475903873111f8
 F test/concurrent3.test 0a5f7e3036d1eccf0782d7153ac21f5f222e9468
 F test/conflict.test 029faa2d81a0d1cafb5f88614beb663d972c01db
 F test/conflict2.test bb0b94cf7196c64a3cbd815c66d3ee98c2fecd9c
@@ -1589,7 +1589,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9527089b7aa3695cd577f31b263b4777e9bd62dbbc1bd3af892c570e52e8c3a1
-R 37ee232af322d70fdc5a9c9d4ab6870b
+P 5b9d498f6e9de6ee2ab86370c02c28a2a8b83d717b96d23b1fc52107677e45a2
+R 707b1529cc7d8b55115b4608864612c4
 U dan
-Z 786d45f8ca40d966271275a2c1f1d5ca
+Z fe29adbc1160b9b71ae2cc3a046207ff
