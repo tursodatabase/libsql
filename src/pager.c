@@ -5386,13 +5386,6 @@ int sqlite3PagerSharedLock(Pager *pPager){
   }else{
     pPager->eState = PAGER_READER;
     pPager->hasHeldSharedLock = 1;
-#ifndef SQLITE_OMIT_CONCURRENT
-    if( pPager->pAllRead ){
-      sqlite3_log(SQLITE_ERROR, 
-          "Bitvec: pAllRead already allocated in PagerSharedLock()"
-      );
-    }
-#endif
   }
   return rc;
 }
@@ -5891,16 +5884,6 @@ int sqlite3PagerBegin(Pager *pPager, int exFlag, int subjInMemory){
       ** file as well as into the page cache. Which would be incorrect in 
       ** WAL mode.
       */
-#ifndef SQLITE_OMIT_CONCURRENT
-      if( pPager->pAllRead 
-       && pPager->dbSize!=sqlite3BitvecSize(pPager->pAllRead) 
-      ){
-        sqlite3_log(SQLITE_ERROR, 
-            "Bitvec: pAllRead size is %d, dbOrigSize set to %d", 
-            (int)sqlite3BitvecSize(pPager->pAllRead), pPager->dbSize
-        );
-      }
-#endif
       pPager->eState = PAGER_WRITER_LOCKED;
       pPager->dbHintSize = pPager->dbSize;
       pPager->dbFileSize = pPager->dbSize;

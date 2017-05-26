@@ -1,5 +1,5 @@
-C Add\sextra\stest\scases\sfor\sdeferred\spage\sallocation.
-D 2017-05-26T16:51:15.019
+C Adjust\sthe\sbitvec\srelated\ssqlite3_log\smessages\sadded\sby\s[9527089b].
+D 2017-05-26T18:18:51.758
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -348,7 +348,7 @@ F src/analyze.c 0d0ccf7520a201d8747ea2f02c92c26e26f801bc161f714f27b9f7630dde0421
 F src/attach.c 8c476f8bd5d2afe11d925f890d30e527e5b0ce43
 F src/auth.c 79f96c6f33bf0e5da8d1c282cee5ebb1852bb8a6ccca3e485d7c459b035d9c3c
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
-F src/bitvec.c e65c3d8ce932b4a38795574b549db6607b6140a22b82e783fa1ab57d0e42a49c
+F src/bitvec.c c77b7f5759e413c1c8b53267d633c952e66db79c1171964c7e24c0f92f5019cf
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
 F src/btree.c ca942fd75c1b791bd3fdf647e283473acf63e97d2252077216cdc1d56cb3a25e
 F src/btree.h 14e99cc2b666beb60322173c761d16b668ec2e07c18bbb74e8a49fe85946f8a0
@@ -394,7 +394,7 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c 30e2c43e4955db990e5b5a81e901f8aa74cc8820
 F src/os_win.c 2a6c73eef01c51a048cc4ddccd57f981afbec18a
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c babddba9a8aa02feae4544175d4eeaee65321c263d78cf3ff3e0670df41bc837
+F src/pager.c 079884c8486596240e200f1e37e867b1ed56eff399e4bbbcabcc145dc5679cd5
 F src/pager.h 1afb4b777b3a297d56dc6cafc4f17d47d92522e9d2cb106839ea0fa0d6d489c7
 F src/parse.y 21660e5224d1e1635a4ad45ad4365c8f67153b8081b7a11e35629844ecb48ab0
 F src/pcache.c 62835bed959e2914edd26afadfecce29ece0e870
@@ -1590,7 +1590,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a4a3bbe64690856403642352f36e664a5a7fba686463a63446c6ada99df4e89f
-R 69e13a62db6a845ec0ea0e91eabb688e
+P 9df0195780306a26709e87daabf9d426856aebf2082060b98818f2d48c7472ec
+R ef448b68266e15a0b11a8140036a504f
 U dan
-Z 97d78c704135d26c80fab0abc59ae894
+Z e753798d60e27266ad4ce7eb0092b295
