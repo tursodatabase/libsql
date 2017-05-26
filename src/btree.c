@@ -522,6 +522,7 @@ static int btreePtrmapStore(
       pMap->aRollback[pMap->nRollback].pgno = pgno;
       pMap->aRollback[pMap->nRollback].parent = pMap->aPtr[iEntry].parent;
       pMap->aRollback[pMap->nRollback].eType = pMap->aPtr[iEntry].eType;
+      pMap->nRollback++;
     }
 
     /* Update the aPtr[] array */
@@ -538,7 +539,7 @@ static int btreePtrmapStore(
 */
 static int btreePtrmapBegin(BtShared *pBt, int nSvpt){
   BtreePtrmap *pMap = pBt->pMap;
-  if( pMap && nSvpt<pMap->nSvpt ){
+  if( pMap && nSvpt>pMap->nSvpt ){
     int i;
     if( nSvpt>=pMap->nSvptAlloc ){
       int nNew = pMap->nSvptAlloc ? pMap->nSvptAlloc*2 : 16;

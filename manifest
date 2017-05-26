@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sthe\sdeferred\spage\sallocation\son\sthis\sbranch\sthat\scould\noccur\swhen\sthe\sdatabase\sfile\sis\sjust\sslightly\ssmaller\sthan\sthe\sPENDING_BYTE\npage\soffset.
-D 2017-05-25T21:02:00.680
+C Fix\sa\sproblem\swith\sdeferred\spage\sallocation\sin\stransactions\sthat\srevert\spage\nallocations\sby\ssavepoint\srollbacks.
+D 2017-05-26T16:15:05.191
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -350,7 +350,7 @@ F src/auth.c 79f96c6f33bf0e5da8d1c282cee5ebb1852bb8a6ccca3e485d7c459b035d9c3c
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c e65c3d8ce932b4a38795574b549db6607b6140a22b82e783fa1ab57d0e42a49c
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c ffb001f02b4c65984068e50cbb308bb833c3d4d6280bf606e43d3eebf8d740df
+F src/btree.c ca942fd75c1b791bd3fdf647e283473acf63e97d2252077216cdc1d56cb3a25e
 F src/btree.h 14e99cc2b666beb60322173c761d16b668ec2e07c18bbb74e8a49fe85946f8a0
 F src/btreeInt.h 42c3e3d9534aed0b99ee68678b0311c33134c7c015037a319900eddd148584d6
 F src/build.c ba3f389668754c407805bbc5f8ab140f063ba6b04a6a86f63006b63b3c7319a8
@@ -612,6 +612,7 @@ F test/concfault.test 500f17c3fcfe7705114422bcc6ddd3c740001a43
 F test/concurrent.test 3eb5e6a911dc6ff72e3a679f563e683b436f6c701e6e1d6050173df2b8448d6b
 F test/concurrent2.test 9dfbeb0a323733fe1d13443371734bb94a674dbf777f464365475903873111f8
 F test/concurrent3.test 0a5f7e3036d1eccf0782d7153ac21f5f222e9468
+F test/concurrent4.test d1b808b0c65f8a6368da1ca30bab9e25b0851f9dc529ffab761ba8c9a42d2943
 F test/conflict.test 029faa2d81a0d1cafb5f88614beb663d972c01db
 F test/conflict2.test bb0b94cf7196c64a3cbd815c66d3ee98c2fecd9c
 F test/conflict3.test a83db76a6c3503b2fa057c7bfb08c318d8a422202d8bc5b86226e078e5b49ff9
@@ -1589,7 +1590,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5b9d498f6e9de6ee2ab86370c02c28a2a8b83d717b96d23b1fc52107677e45a2
-R 707b1529cc7d8b55115b4608864612c4
+P 47a7dd92355ffd74645cf8da8186d5799c05a95907877a09c28de41135deeede
+R 09d4e4c80f127f9ecf740a4309c9fec3
 U dan
-Z fe29adbc1160b9b71ae2cc3a046207ff
+Z bd7d66ea928950ff2ef1b7b7ec07e968
