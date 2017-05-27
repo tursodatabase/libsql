@@ -7602,4 +7602,31 @@ int sqlite3PagerWalFramesize(Pager *pPager){
 }
 #endif
 
+/*
+** Return the name of the file (wal file or database file) that page
+** pPg would be read from if it were reread at this point. Also set
+** output parameter (*piOffset) to the offset within said file.
+*/
+const char *sqlite3PagerOrigin(DbPage *pPg, i64 *piOffset){
+  Pager *pPager = pPg->pPager;
+  Pgno pgno = pPg->pgno;
+
+  assert( pPager->eState>=PAGER_READER );
+  assert( assert_pager_state(pPager) );
+  assert( pPager->hasHeldSharedLock==1 );
+
+  if( pagerUseWal(pPager) ){
+    u32 iFrame = 0;
+    int rc = sqlite3WalFindFrame(pPager->pWal, pgno, &iFrame);
+    if( rc!=SQLITE_OK ) return 0;
+    if( iFrame ){
+      if( piOffset ) *piOffset = (i64)(iFrame-1) * (pPager->pageSize + 24) + 32;
+      return (const char*)pPager->zWal;
+    }
+  }
+
+  if( piOffset ) *piOffset = (i64)pPager->pageSize * (i64)(pgno-1);
+  return (const char*)pPager->zFilename;
+}
+
 #endif /* SQLITE_OMIT_DISKIO */

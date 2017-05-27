@@ -1,5 +1,5 @@
-C Merge\sall\sfixes\sfrom\sthe\s3.19.2\srelease.
-D 2017-05-25T17:36:33.543
+C Add\sdebugging\sfunctions\sbtreePageOriginFile()\sand\sbtreePageOriginOffset().
+D 2017-05-27T18:05:32.812
 F Makefile.in 227347646e289e3b016ebb7a391ad6ed4ab56525834d56d47d1a83b8d97d6989
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc fb28c0304f8a14c5ce7d4bde9fea1c903f644b49e78ebd9976ab2a1f0eb8afb5
@@ -349,7 +349,7 @@ F src/auth.c 79f96c6f33bf0e5da8d1c282cee5ebb1852bb8a6ccca3e485d7c459b035d9c3c
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c 9d5f1346945b4d94715fb990e7243f583a3f174606d812fa179b14cdc72d0e86
+F src/btree.c babb72f4fda4577b8ccd12bc63330fc57e92272678c51b425de5a8268f08a433
 F src/btree.h 80f518c0788be6cec8d9f8e13bd8e380df299d2b5e4ac340dc887b0642647cfc
 F src/btreeInt.h a392d353104b4add58b4a59cb185f5d5693dde832c565b77d8d4c343ed98f610
 F src/build.c 4026a9c554b233e50c5e9ad46963e676cf54dd2306d952aa1eaa07a1bc9ce14f
@@ -393,8 +393,8 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c 4a58dfdfda7e72aab0e393953890a9b6d40a7ff4
 F src/os_win.c 85b19486054c8cd5c4117dea882d983ea065d16e
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 1ca1c8157485d474695d8fc82af7a403c50370fa379b23e4f61ea1c17364e5ea
-F src/pager.h 32adb801774046224e87829fa74ce16ce31a9087
+F src/pager.c fcca412103fb548dfb209ba652893e4ca879036b779fd8c1f95eea9a442c074f
+F src/pager.h e430a536b3eb5ec053992afd3d561185a33de546d2905c47413403b9899698c4
 F src/parse.y 0513387ce02fea97897d8caef82d45f347818593f24f1bdc48e0c530a8af122d
 F src/pcache.c 62835bed959e2914edd26afadfecce29ece0e870
 F src/pcache.h 2cedcd8407eb23017d92790b112186886e179490
@@ -1585,7 +1585,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bbd2d0e1400984c9fabb4df015981c09ad172139ffa33db5132951d4f1f6fc96 edb4e819b0c058c7d74d27ebd14cc5ceb2bad6a6144a486a970182b7afe3f8b9
-R 8f7f4a2a67f7b616427682df9786aa3e
-U drh
-Z e4355aaf22b79f91f5965efabd280186
+P 12964240f1e497e6f02e4a87bf3eff75c807020108c3de83977264cc66188b8d
+R 2bfdab9d552d306c18a7beebf16cb9a1
+U dan
+Z e78eb8e2881553fe9b3c98c2aeb63057

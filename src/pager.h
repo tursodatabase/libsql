@@ -237,4 +237,6 @@ void *sqlite3PagerCodec(DbPage *);
 # define enable_simulated_io_errors()
 #endif
 
+const char *sqlite3PagerOrigin(DbPage *pPg, i64 *piOffset);
+
 #endif /* SQLITE_PAGER_H */
