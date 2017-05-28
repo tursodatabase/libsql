@@ -13,15 +13,16 @@ categories = ["database", "external-ffi-bindings"]
 [features]
 default = ["min_sqlite_version_3_6_8"]
 bundled = ["gcc"]
-buildtime_bindgen = ["bindgen", "pkg-config"]
-min_sqlite_version_3_6_8 = ["pkg-config"]
-min_sqlite_version_3_6_11 = ["pkg-config"]
-min_sqlite_version_3_6_23 = ["pkg-config"]
-min_sqlite_version_3_7_3 = ["pkg-config"]
-min_sqlite_version_3_7_4 = ["pkg-config"]
-min_sqlite_version_3_7_16 = ["pkg-config"]
+buildtime_bindgen = ["bindgen", "pkg-config", "vcpkg"]
+min_sqlite_version_3_6_8 = ["pkg-config", "vcpkg"]
+min_sqlite_version_3_6_11 = ["pkg-config", "vcpkg"]
+min_sqlite_version_3_6_23 = ["pkg-config", "vcpkg"]
+min_sqlite_version_3_7_3 = ["pkg-config", "vcpkg"]
+min_sqlite_version_3_7_4 = ["pkg-config", "vcpkg"]
+min_sqlite_version_3_7_16 = ["pkg-config", "vcpkg"]
 
 [build-dependencies]
 bindgen = { version = "0.21", optional = true }
 pkg-config = { version = "0.3", optional = true }
 gcc = { version = "0.3", optional = true }
+vcpkg = { version = "0.2", optional = true }
