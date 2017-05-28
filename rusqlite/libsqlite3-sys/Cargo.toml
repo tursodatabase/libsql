@@ -25,4 +25,6 @@ min_sqlite_version_3_7_16 = ["pkg-config", "vcpkg"]
 bindgen = { version = "0.21", optional = true }
 pkg-config = { version = "0.3", optional = true }
 gcc = { version = "0.3", optional = true }
+
+[target.'cfg(target_env = "msvc")'.build-dependencies]
 vcpkg = { version = "0.2", optional = true }

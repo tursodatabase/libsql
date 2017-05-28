@@ -42,7 +42,7 @@ mod build {
 mod build {
     extern crate pkg_config;
 
-    #[cfg(feature = "vcpkg")]
+    #[cfg(all(feature = "vcpkg", target_env = "msvc"))]
     extern crate vcpkg;
 
     use std::env;
@@ -107,7 +107,7 @@ mod build {
         }
     }
 
-    #[cfg(feature = "vcpkg")]
+    #[cfg(all(feature = "vcpkg", target_env = "msvc"))]
     fn try_vcpkg() -> Option<HeaderLocation> {
         // See if vcpkg can find it.
         if let Ok(mut lib) = vcpkg::Config::new().probe("sqlite3") {
@@ -119,7 +119,7 @@ mod build {
         None
     }
 
-    #[cfg(not(feature = "vcpkg"))]
+    #[cfg(not(all(feature = "vcpkg", target_env = "msvc")))]
     fn try_vcpkg() -> Option<HeaderLocation> {
         None
     }
