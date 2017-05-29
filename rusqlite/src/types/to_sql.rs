@@ -94,9 +94,21 @@ impl ToSql for String {
     }
 }
 
+impl ToSql for str {
+    fn to_sql(&self) -> Result<ToSqlOutput> {
+        Ok(ToSqlOutput::from(self))
+    }
+}
+
 impl ToSql for Vec<u8> {
     fn to_sql(&self) -> Result<ToSqlOutput> {
         Ok(ToSqlOutput::from(self.as_slice()))
+    }
+}
+
+impl ToSql for [u8] {
+    fn to_sql(&self) -> Result<ToSqlOutput> {
+        Ok(ToSqlOutput::from(self))
     }
 }
 
