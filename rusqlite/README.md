@@ -94,9 +94,10 @@ features](http://doc.crates.io/manifest.html#the-features-section). They are:
 ## Notes on building rusqlite and libsqlite3-sys
 
 `libsqlite3-sys` is a separate crate from `rusqlite` that provides the Rust
-declarations for SQLite's C API. By default, `libsqlite3-sys` attempts to use
-pkg-config to find a SQLite library that already exists on your system. You can
-adjust this behavior in a couple of ways:
+declarations for SQLite's C API. By default, `libsqlite3-sys` attempts to find a SQLite library that already exists on your system using pkg-config, or a
+[Vcpkg](https://github.com/Microsoft/vcpkg) installation for MSVC ABI builds. 
+
+You can adjust this behavior in a number of ways:
 
 * If you use the `bundled` feature, `libsqlite3-sys` will use the
   [gcc](https://crates.io/crates/gcc) crate to compile SQLite from source and
@@ -105,6 +106,10 @@ adjust this behavior in a couple of ways:
   0.7.1).  This is probably the simplest solution to any build problems.
 * You can set the `SQLITE3_LIB_DIR` to point to directory containing the SQLite
   library.
+* Installing the sqlite3 development packages will usually be all that is required, but
+  the build helpers for [pkg-config](https://github.com/alexcrichton/pkg-config-rs)
+  and [vcpkg](https://github.com/mcgoo/vcpkg-rs) have some additional configuration
+  options. The default when using vcpkg is to dynamically link. `vcpkg install sqlite3:x64-windows` will install the required library.
 
 ### Binding generation
 
