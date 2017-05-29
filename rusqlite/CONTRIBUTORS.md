@@ -21,3 +21,4 @@ rusqlite contributors
 * [aidanhs](https://github.com/aidanhs)
 * [Steven Fackler](https://github.com/sfackler)
 * [Davide Aversa](https://github.com/THeK3nger)
+* [mcgoo](https://github.com/mcgoo)
