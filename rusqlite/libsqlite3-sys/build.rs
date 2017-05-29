@@ -140,7 +140,7 @@ mod build {
     mod bindings {
         extern crate bindgen;
 
-        use self::bindgen::chooser::{TypeChooser, IntKind};
+        use self::bindgen::callbacks::{ParseCallbacks, IntKind};
         use super::HeaderLocation;
 
         use std::env;
@@ -151,7 +151,7 @@ mod build {
         #[derive(Debug)]
         struct SqliteTypeChooser;
 
-        impl TypeChooser for SqliteTypeChooser {
+        impl ParseCallbacks for SqliteTypeChooser {
             fn int_macro(&self, _name: &str, value: i64) -> Option<IntKind> {
                 if value >= i32::min_value() as i64 && value <= i32::max_value() as i64 {
                     Some(IntKind::I32)
@@ -167,7 +167,7 @@ mod build {
             let mut output = Vec::new();
             bindgen::builder()
                 .header(header.clone())
-                .type_chooser(Box::new(SqliteTypeChooser))
+                .parse_callbacks(Box::new(SqliteTypeChooser))
                 .generate()
                 .expect(&format!("could not run bindgen on header {}", header))
                 .write(Box::new(&mut output))
