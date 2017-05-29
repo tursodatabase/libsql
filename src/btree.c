@@ -2289,6 +2289,17 @@ getAndInitPage_error:
   return rc;
 }
 
+#ifndef SQLITE_OMIT_CONCURRENT
+/* 
+** Set the value of the MemPage.pgnoRoot variable, if it exists.
+*/
+static void setMempageRoot(MemPage *pPg, u32 pgnoRoot){
+  pPg->pgnoRoot = pgnoRoot;
+}
+#else
+# define setMempageRoot(x,y)
+#endif
+
 /*
 ** Release a MemPage.  This should be called once for each prior
 ** call to btreeGetPage.
@@ -5222,6 +5233,7 @@ const void *sqlite3BtreePayloadFetch(BtCursor *pCur, u32 *pAmt){
 */
 static int moveToChild(BtCursor *pCur, u32 newPgno){
   BtShared *pBt = pCur->pBt;
+  int rc;
 
   assert( cursorOwnsBtShared(pCur) );
   assert( pCur->eState==CURSOR_VALID );
@@ -5234,8 +5246,12 @@ static int moveToChild(BtCursor *pCur, u32 newPgno){
   pCur->curFlags &= ~(BTCF_ValidNKey|BTCF_ValidOvfl);
   pCur->aiIdx[pCur->iPage++] = pCur->ix;
   pCur->ix = 0;
-  return getAndInitPage(pBt, newPgno, &pCur->apPage[pCur->iPage],
+  rc = getAndInitPage(pBt, newPgno, &pCur->apPage[pCur->iPage],
                         pCur, pCur->curPagerFlags);
+  if( rc==SQLITE_OK ){
+    setMempageRoot(pCur->apPage[pCur->iPage], pCur->pgnoRoot);
+  }
+  return rc;
 }
 
 #ifdef SQLITE_DEBUG
@@ -5341,6 +5357,7 @@ static int moveToRoot(BtCursor *pCur){
       pCur->eState = CURSOR_INVALID;
        return rc;
     }
+    setMempageRoot(pCur->apPage[0], pCur->pgnoRoot);
     pCur->iPage = 0;
     pCur->curIntKey = pCur->apPage[0]->intKey;
   }
@@ -7500,7 +7517,8 @@ static int balance_nonroot(
   int iParentIdx,                 /* Index of "the page" in pParent */
   u8 *aOvflSpace,                 /* page-size bytes of space for parent ovfl */
   int isRoot,                     /* True if pParent is a root-page */
-  int bBulk                       /* True if this call is part of a bulk load */
+  int bBulk,                      /* True if this call is part of a bulk load */
+  Pgno pgnoRoot                   /* Root page of b-tree being balanced */
 ){
   BtShared *pBt;               /* The whole database */
   int nMaxCells = 0;           /* Allocated size of apCell, szCell, aFrom. */
@@ -7592,6 +7610,8 @@ static int balance_nonroot(
       memset(apOld, 0, (i+1)*sizeof(MemPage*));
       goto balance_cleanup;
     }
+    setMempageRoot(apOld[i], pgnoRoot);
+
     nMaxCells += 1+apOld[i]->nCell+apOld[i]->nOverflow;
     if( (i--)==0 ) break;
 
@@ -8400,7 +8420,7 @@ static int balance(BtCursor *pCur){
           */
           u8 *pSpace = sqlite3PageMalloc(pCur->pBt->pageSize);
           rc = balance_nonroot(pParent, iIdx, pSpace, iPage==1,
-                               pCur->hints&BTREE_BULKLOAD);
+                               pCur->hints&BTREE_BULKLOAD, pCur->pgnoRoot);
           if( pFree ){
             /* If pFree is not NULL, it points to the pSpace buffer used 
             ** by a previous call to balance_nonroot(). Its contents are
@@ -8998,7 +9018,8 @@ static int clearDatabasePage(
   BtShared *pBt,           /* The BTree that contains the table */
   Pgno pgno,               /* Page number to clear */
   int freePageFlag,        /* Deallocate page if true */
-  int *pnChange            /* Add number of Cells freed to this counter */
+  int *pnChange,           /* Add number of Cells freed to this counter */
+  Pgno pgnoRoot
 ){
   MemPage *pPage;
   int rc;
@@ -9013,6 +9034,7 @@ static int clearDatabasePage(
   }
   rc = getAndInitPage(pBt, pgno, &pPage, 0, 0);
   if( rc ) return rc;
+  setMempageRoot(pPage, pgnoRoot);
   if( pPage->bBusy ){
     rc = SQLITE_CORRUPT_BKPT;
     goto cleardatabasepage_out;
@@ -9022,14 +9044,16 @@ static int clearDatabasePage(
   for(i=0; i<pPage->nCell; i++){
     pCell = findCell(pPage, i);
     if( !pPage->leaf ){
-      rc = clearDatabasePage(pBt, get4byte(pCell), 1, pnChange);
+      rc = clearDatabasePage(pBt, get4byte(pCell), 1, pnChange, pgnoRoot);
       if( rc ) goto cleardatabasepage_out;
     }
     rc = clearCell(pPage, pCell, &info);
     if( rc ) goto cleardatabasepage_out;
   }
   if( !pPage->leaf ){
-    rc = clearDatabasePage(pBt, get4byte(&pPage->aData[hdr+8]), 1, pnChange);
+    rc = clearDatabasePage(
+        pBt, get4byte(&pPage->aData[hdr+8]), 1, pnChange, pgnoRoot
+    );
     if( rc ) goto cleardatabasepage_out;
   }else if( pnChange ){
     assert( pPage->intKey || CORRUPT_DB );
@@ -9074,7 +9098,7 @@ int sqlite3BtreeClearTable(Btree *p, int iTable, int *pnChange){
     ** is the root of a table b-tree - if it is not, the following call is
     ** a no-op).  */
     invalidateIncrblobCursors(p, (Pgno)iTable, 0, 1);
-    rc = clearDatabasePage(pBt, (Pgno)iTable, 0, pnChange);
+    rc = clearDatabasePage(pBt, (Pgno)iTable, 0, pnChange, (Pgno)iTable);
   }
   sqlite3BtreeLeave(p);
   return rc;

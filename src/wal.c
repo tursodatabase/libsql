@@ -243,6 +243,7 @@
 #ifndef SQLITE_OMIT_WAL
 
 #include "wal.h"
+#include "btreeInt.h"
 
 /*
 ** Trace output macros
@@ -2916,11 +2917,26 @@ int sqlite3WalLockForCommit(Wal *pWal, PgHdr *pPage1, Bitvec *pAllRead){
                 rc = SQLITE_BUSY_SNAPSHOT;
               }
             }else if( sqlite3BitvecTestNotNull(pAllRead, aPgno[i]) ){
-              sqlite3_log(SQLITE_OK,
-                  "cannot commit CONCURRENT transaction (conflict at page %d)",
-                  (int)aPgno[i]
-              );
-              rc = SQLITE_BUSY_SNAPSHOT;
+              PgHdr *pPg = 0;
+              rc = sqlite3PagerGet(pPage1->pPager, aPgno[i], &pPg, 0);
+              if( rc==SQLITE_OK ){
+                Pgno pgnoRoot = 0;
+                int bWrite = -1;
+                if( pPg ){
+                  pgnoRoot = ((MemPage*)sqlite3PagerGetExtra(pPg))->pgnoRoot;
+                  bWrite = sqlite3PagerIswriteable(pPg);
+                  sqlite3PagerUnref(pPg);
+                }
+                sqlite3_log(SQLITE_OK,
+                  "cannot commit CONCURRENT transaction "
+                  "- conflict at page %d "
+                  "(%s page; part of b-tree with root page %d)",
+                  (int)aPgno[i], 
+                  (bWrite==0?"read-only":(bWrite>0?"read/write":"unknown")),
+                  (int)pgnoRoot
+                );
+                rc = SQLITE_BUSY_SNAPSHOT;
+              }
             }else if( (pPg = sqlite3PagerLookup(pPager, aPgno[i])) ){
               /* Page aPgno[i], which is present in the pager cache, has been
               ** modified since the current CONCURRENT transaction was started.

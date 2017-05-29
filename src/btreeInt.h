@@ -301,6 +301,9 @@ struct MemPage {
   DbPage *pDbPage;     /* Pager page handle */
   u16 (*xCellSize)(MemPage*,u8*);             /* cellSizePtr method */
   void (*xParseCell)(MemPage*,u8*,CellInfo*); /* btreeParseCell method */
+#ifndef SQLITE_OMIT_CONCURRENT
+  u32 pgnoRoot;        /* Root page of b-tree that this page belongs to */
+#endif
 };
 
 /*

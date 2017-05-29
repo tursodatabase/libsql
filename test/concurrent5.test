@@ -1,0 +1,109 @@
+# 2017 May 26
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+source $testdir/lock_common.tcl
+source $testdir/wal_common.tcl
+set ::testprefix concurrent5
+
+ifcapable !concurrent {
+  finish_test
+  return
+}
+
+db close
+sqlite3_shutdown
+test_sqlite3_log [list lappend ::log]
+set ::log [list]
+
+sqlite3 db test.db
+
+proc do_test_conflict_msg {tn msg} {
+  set msg "cannot commit CONCURRENT transaction - [string trim $msg]"
+  uplevel [list do_test $tn {lindex $::log end} $msg]
+}
+
+do_execsql_test 1.0 {
+  PRAGMA journal_mode = wal;
+  CREATE TABLE t1(x, y);
+  CREATE TABLE t2(c);
+  WITH s(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<100)
+  INSERT INTO t1 SELECT randomblob(400), randomblob(400) FROM s;
+} {wal}
+
+sqlite3 db2 test.db
+
+do_test 1.1.1 {
+  set ::log [list]
+  db2 eval {
+    BEGIN CONCURRENT;
+      SELECT count(*) FROM t1;
+      INSERT INTO t2 VALUES(10);
+  }
+
+  db eval {
+    INSERT INTO t1 VALUES(randomblob(200), randomblob(200));
+  }
+
+  catchsql COMMIT db2
+} {1 {database is locked}}
+do_test_conflict_msg 1.1.2 {
+  conflict at page 2 (read-only page; part of b-tree with root page 2)
+}
+
+do_test 1.2.1 {
+  set ::log [list]
+  db2 eval {
+    ROLLBACK;
+    BEGIN CONCURRENT;
+      INSERT INTO t1 VALUES(11, 12);
+  }
+
+  db eval {
+    INSERT INTO t1 VALUES(12, 11);
+  }
+
+  catchsql COMMIT db2
+} {1 {database is locked}}
+
+do_test_conflict_msg 1.2.2 {
+  conflict at page 105 (read/write page; part of b-tree with root page 2)
+}
+
+do_test 1.3.1 {
+  set ::log [list]
+  db2 eval {
+    ROLLBACK;
+    BEGIN CONCURRENT;
+      INSERT INTO t2 VALUES('x');
+  }
+
+  db eval {
+    INSERT INTO t2 VALUES('y');
+  }
+
+  catchsql COMMIT db2
+} {1 {database is locked}}
+
+do_test_conflict_msg 1.3.2 {
+  conflict at page 3 (read/write page; part of b-tree with root page 3)
+}
+
+db close
+db2 close
+sqlite3_shutdown
+test_sqlite3_log 
+sqlite3_initialize
+finish_test
+
