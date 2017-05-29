@@ -18,3 +18,7 @@ rusqlite contributors
 * [Omar Ferrer](https://github.com/chamakits)
 * [Lee Jenkins](https://github.com/reddraggone9)
 * [miedzinski](https://github.com/miedzinski)
+* [aidanhs](https://github.com/aidanhs)
+* [Steven Fackler](https://github.com/sfackler)
+* [Davide Aversa](https://github.com/THeK3nger)
+* [mcgoo](https://github.com/mcgoo)
