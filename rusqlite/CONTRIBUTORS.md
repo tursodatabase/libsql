@@ -20,3 +20,4 @@ rusqlite contributors
 * [miedzinski](https://github.com/miedzinski)
 * [aidanhs](https://github.com/aidanhs)
 * [Steven Fackler](https://github.com/sfackler)
+* [Davide Aversa](https://github.com/THeK3nger)
