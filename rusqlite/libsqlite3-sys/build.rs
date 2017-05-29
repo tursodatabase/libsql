@@ -43,6 +43,9 @@ mod build {
 mod build {
     extern crate pkg_config;
 
+    #[cfg(all(feature = "vcpkg", target_env = "msvc"))]
+    extern crate vcpkg;
+
     use std::env;
 
     pub enum HeaderLocation {
@@ -80,6 +83,10 @@ mod build {
             return HeaderLocation::FromEnvironment;
         }
 
+        if let Some(header) = try_vcpkg() {
+            return header;
+        }
+
         // See if pkg-config can do everything for us.
         match pkg_config::Config::new().print_system_libs(false).probe("sqlite3") {
             Ok(mut lib) => {
@@ -99,6 +106,23 @@ mod build {
                 HeaderLocation::Wrapper
             }
         }
+    }
+
+    #[cfg(all(feature = "vcpkg", target_env = "msvc"))]
+    fn try_vcpkg() -> Option<HeaderLocation> {
+        // See if vcpkg can find it.
+        if let Ok(mut lib) = vcpkg::Config::new().probe("sqlite3") {
+            if let Some(mut header) = lib.include_paths.pop() {
+                header.push("sqlite3.h");
+                return Some(HeaderLocation::FromPath(header.to_string_lossy().into()));
+            }
+        }
+        None
+    }
+
+    #[cfg(not(all(feature = "vcpkg", target_env = "msvc")))]
+    fn try_vcpkg() -> Option<HeaderLocation> {
+        None
     }
 
     #[cfg(not(feature = "buildtime_bindgen"))]
