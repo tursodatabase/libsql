@@ -1303,8 +1303,10 @@ static int bindText(
       if( rc==SQLITE_OK && encoding!=0 ){
         rc = sqlite3VdbeChangeEncoding(pVar, ENC(p->db));
       }
-      sqlite3Error(p->db, rc);
-      rc = sqlite3ApiExit(p->db, rc);
+      if( rc ){
+        sqlite3Error(p->db, rc);
+        rc = sqlite3ApiExit(p->db, rc);
+      }
     }
     sqlite3_mutex_leave(p->db->mutex);
   }else if( xDel!=SQLITE_STATIC && xDel!=SQLITE_TRANSIENT ){

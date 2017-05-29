@@ -2820,10 +2820,10 @@ int sqlite3VdbeTransferError(Vdbe *p){
     sqlite3ValueSetStr(db->pErr, -1, p->zErrMsg, SQLITE_UTF8, SQLITE_TRANSIENT);
     sqlite3EndBenignMalloc();
     db->bBenignMalloc--;
-    db->errCode = rc;
-  }else{
-    sqlite3Error(db, rc);
+  }else if( db->pErr ){
+    sqlite3ValueSetNull(db->pErr);
   }
+  db->errCode = rc;
   return rc;
 }
 
