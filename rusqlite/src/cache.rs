@@ -280,7 +280,8 @@ mod test {
     #[test]
     fn test_connection_close() {
         let conn = Connection::open_in_memory().unwrap();
-        conn.prepare_cached("SELECT * FROM sqlite_master;").unwrap();
+        conn.prepare_cached("SELECT * FROM sqlite_master;")
+            .unwrap();
 
         conn.close().expect("connection not closed");
     }

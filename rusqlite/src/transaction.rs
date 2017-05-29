@@ -100,13 +100,14 @@ impl<'conn> Transaction<'conn> {
             TransactionBehavior::Immediate => "BEGIN IMMEDIATE",
             TransactionBehavior::Exclusive => "BEGIN EXCLUSIVE",
         };
-        conn.execute_batch(query).map(move |_| {
-            Transaction {
-                conn: conn,
-                drop_behavior: DropBehavior::Rollback,
-                committed: false,
-            }
-        })
+        conn.execute_batch(query)
+            .map(move |_| {
+                     Transaction {
+                         conn: conn,
+                         drop_behavior: DropBehavior::Rollback,
+                         committed: false,
+                     }
+                 })
     }
 
     /// Starts a new [savepoint](http://www.sqlite.org/lang_savepoint.html), allowing nested
@@ -216,15 +217,16 @@ impl<'conn> Savepoint<'conn> {
                                             name: T)
                                             -> Result<Savepoint> {
         let name = name.into();
-        conn.execute_batch(&format!("SAVEPOINT {}", name)).map(|_| {
-            Savepoint {
-                conn: conn,
-                name: name,
-                depth: depth,
-                drop_behavior: DropBehavior::Rollback,
-                committed: false,
-            }
-        })
+        conn.execute_batch(&format!("SAVEPOINT {}", name))
+            .map(|_| {
+                Savepoint {
+                    conn: conn,
+                    name: name,
+                    depth: depth,
+                    drop_behavior: DropBehavior::Rollback,
+                    committed: false,
+                }
+            })
     }
 
     fn with_depth(conn: &Connection, depth: u32) -> Result<Savepoint> {
@@ -269,7 +271,8 @@ impl<'conn> Savepoint<'conn> {
 
     fn commit_(&mut self) -> Result<()> {
         self.committed = true;
-        self.conn.execute_batch(&format!("RELEASE {}", self.name))
+        self.conn
+            .execute_batch(&format!("RELEASE {}", self.name))
     }
 
     /// A convenience method which rolls back a savepoint.
@@ -279,7 +282,8 @@ impl<'conn> Savepoint<'conn> {
     /// Unlike `Transaction`s, savepoints remain active after they have been rolled back,
     /// and can be rolled back again or committed.
     pub fn rollback(&mut self) -> Result<()> {
-        self.conn.execute_batch(&format!("ROLLBACK TO {}", self.name))
+        self.conn
+            .execute_batch(&format!("ROLLBACK TO {}", self.name))
     }
 
     /// Consumes the savepoint, committing or rolling back according to the current setting
@@ -549,7 +553,8 @@ mod test {
     }
 
     fn assert_current_sum(x: i32, conn: &Connection) {
-        let i = conn.query_row::<i32, _>("SELECT SUM(x) FROM foo", &[], |r| r.get(0)).unwrap();
+        let i = conn.query_row::<i32, _>("SELECT SUM(x) FROM foo", &[], |r| r.get(0))
+            .unwrap();
         assert_eq!(x, i);
     }
 }

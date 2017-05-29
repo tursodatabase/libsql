@@ -206,10 +206,10 @@ impl<'a, 'b> Backup<'a, 'b> {
         };
 
         Ok(Backup {
-            phantom_from: PhantomData,
-            phantom_to: PhantomData,
-            b: b,
-        })
+               phantom_from: PhantomData,
+               phantom_to: PhantomData,
+               b: b,
+           })
     }
 
     /// Gets the progress of the backup as of the last call to `step`.
