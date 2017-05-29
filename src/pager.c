@@ -3253,7 +3253,7 @@ static int pagerPagecount(Pager *pPager, Pgno *pnPage){
   nPage = sqlite3WalDbsize(pPager->pWal);
 
   /* If the number of pages in the database is not available from the
-  ** WAL sub-system, determine the page counte based on the size of
+  ** WAL sub-system, determine the page count based on the size of
   ** the database file.  If the size of the database file is not an
   ** integer multiple of the page-size, round up the result.
   */

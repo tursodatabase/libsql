@@ -1,5 +1,5 @@
-C Optimizations\sto\sthe\sWalker\sobject\sand\sits\smethods\sto\smake\sthe\scode\sa\slittle\nsmaller\sand\sto\shelp\sit\srun\sa\slittle\sfaster.
-D 2017-05-29T14:26:07.045
+C Fix\sa\stypo\sin\sa\scomment.\s\sNo\scode\schanges.
+D 2017-05-29T14:30:46.634
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -391,7 +391,7 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c 30e2c43e4955db990e5b5a81e901f8aa74cc8820
 F src/os_win.c 2a6c73eef01c51a048cc4ddccd57f981afbec18a
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 80893c0860199aebc6efa4f102ab11eebde338b7fdbb0c04d4b04647c2fd62d1
+F src/pager.c b9e2eac73c63ecb208ed56ce4db30d3ac70d367814a1d55108c1d15805a3e59d
 F src/pager.h f2a99646c5533ffe11afa43e9e0bea74054e4efa
 F src/parse.y 0513387ce02fea97897d8caef82d45f347818593f24f1bdc48e0c530a8af122d
 F src/pcache.c 62835bed959e2914edd26afadfecce29ece0e870
@@ -1581,7 +1581,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 43c9ae371f6250fee98a7c4011726eff8ad37f5a97add4f490ac3a2dd501a0d2
-R 453c4ffd0fd2d3ef84551e2d5c6aff9e
+P 6854a34ed708259f2280f7ee56cec09f7fc99810dc739dc2814ddeae286aa2c4
+R 51f95c83705d5e49164e8a8e656ed857
 U drh
-Z 17a17047de4968bc6d150d2777390a09
+Z ba73033214a9ed109f3bb3430dcbffef
