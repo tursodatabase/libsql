@@ -19,3 +19,4 @@ rusqlite contributors
 * [Lee Jenkins](https://github.com/reddraggone9)
 * [miedzinski](https://github.com/miedzinski)
 * [aidanhs](https://github.com/aidanhs)
+* [Steven Fackler](https://github.com/sfackler)
