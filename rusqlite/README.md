@@ -102,7 +102,12 @@ adjust this behavior in a couple of ways:
   [gcc](https://crates.io/crates/gcc) crate to compile SQLite from source and
   link against that. This source is embedded in the `libsqlite3-sys` crate and
   is currently SQLite 3.17.0 (as of `rusqlite` 0.10.1 / `libsqlite3-sys`
-  0.7.1).  This is probably the simplest solution to any build problems.
+  0.7.1).  This is probably the simplest solution to any build problems. You can enable this by adding the following in your `Cargo.toml` file:
+  ```
+  [dependencies.rusqlite]
+  version = "0.11.0"
+  features = ["bundled"]
+  ```
 * You can set the `SQLITE3_LIB_DIR` to point to directory containing the SQLite
   library.
 
