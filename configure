@@ -11356,7 +11356,7 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to support MEMSYS5" >&5
 $as_echo_n "checking whether to support MEMSYS5... " >&6; }
 if test "${enable_memsys5}" = "yes"; then
-  OPT_FEATURE_FLAGS="$(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_MEMSYS5"
+  OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_MEMSYS5"
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 else
@@ -11373,7 +11373,7 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to support MEMSYS3" >&5
 $as_echo_n "checking whether to support MEMSYS3... " >&6; }
 if test "${enable_memsys3}" = "yes" -a "${enable_memsys5}" = "no"; then
-  OPT_FEATURE_FLAGS="$(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_MEMSYS3"
+  OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_MEMSYS3"
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 else
@@ -11391,7 +11391,7 @@ else
 fi
 
 if test "${enable_fts3}" = "yes" ; then
-  OPT_FEATURE_FLAGS="$(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_FTS3"
+  OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_FTS3"
 fi
 # Check whether --enable-fts4 was given.
 if test "${enable_fts4+set}" = set; then :
@@ -11401,7 +11401,7 @@ else
 fi
 
 if test "${enable_fts4}" = "yes" ; then
-  OPT_FEATURE_FLAGS="$(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_FTS4"
+  OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_FTS4"
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing log" >&5
 $as_echo_n "checking for library containing log... " >&6; }
 if ${ac_cv_search_log+:} false; then :
@@ -11467,7 +11467,7 @@ else
 fi
 
 if test "${enable_fts5}" = "yes" ; then
-  OPT_FEATURE_FLAGS="$(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_FTS5"
+  OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_FTS5"
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing log" >&5
 $as_echo_n "checking for library containing log... " >&6; }
 if ${ac_cv_search_log+:} false; then :
@@ -11536,7 +11536,7 @@ else
 fi
 
 if test "${enable_json1}" = "yes" ; then
-  OPT_FEATURE_FLAGS="$(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_JSON1"
+  OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_JSON1"
 fi
 
 #########
@@ -11549,7 +11549,7 @@ else
 fi
 
 if test "${enable_rtree}" = "yes" ; then
-  OPT_FEATURE_FLAGS="$(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_RTREE"
+  OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_RTREE"
 fi
 
 #########
@@ -11562,12 +11562,12 @@ else
 fi
 
 if test "${enable_session}" = "yes" ; then
-  OPT_FEATURE_FLAGS="$(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_SESSION"
-  OPT_FEATURE_FLAGS="$(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_PREUPDATE_HOOK"
+  OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_SESSION"
+  OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_PREUPDATE_HOOK"
 fi
 
 #########
-# attempt to duplicate any OMITS and ENABLES into the $(OPT_FEATURE_FLAGS) parameter
+# attempt to duplicate any OMITS and ENABLES into the ${OPT_FEATURE_FLAGS} parameter
 for option in $CFLAGS $CPPFLAGS
 do
   case $option in
