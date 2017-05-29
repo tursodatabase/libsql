@@ -4266,7 +4266,7 @@ static int syncJournal(Pager *pPager, int newHdr){
   assert( assert_pager_state(pPager) );
   assert( !pagerUseWal(pPager) );
 
-  rc = sqlite3PagerExclusiveLock(pPager, 0);
+  rc = sqlite3PagerExclusiveLock(pPager, 0, 0);
   if( rc!=SQLITE_OK ) return rc;
 
   if( !pPager->noSync ){
@@ -6347,7 +6347,7 @@ int sqlite3PagerSync(Pager *pPager, const char *zMaster){
 ** is returned. Otherwise, if some other error occurs (IO error, OOM etc.),
 ** and SQLite error code is returned.
 */
-int sqlite3PagerExclusiveLock(Pager *pPager, PgHdr *pPage1){
+int sqlite3PagerExclusiveLock(Pager *pPager, PgHdr *pPage1, Pgno *piConflict){
   int rc = pPager->errCode;
   assert( assert_pager_state(pPager) );
   if( rc==SQLITE_OK ){
@@ -6367,7 +6367,9 @@ int sqlite3PagerExclusiveLock(Pager *pPager, PgHdr *pPage1){
         ** invoke the busy-handler and try again for as long as it returns
         ** non-zero.  */
         do {
-          rc = sqlite3WalLockForCommit(pPager->pWal, pPage1, pPager->pAllRead);
+          rc = sqlite3WalLockForCommit(
+              pPager->pWal, pPage1, pPager->pAllRead, piConflict
+          );
         }while( rc==SQLITE_BUSY 
              && pPager->xBusyHandler(pPager->pBusyHandlerArg) 
         );

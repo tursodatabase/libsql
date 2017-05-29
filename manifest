@@ -1,5 +1,5 @@
-C Enhance\sthe\slog\smessages\semitted\swhen\sa\spage\sconflict\sis\sdetected.
-D 2017-05-29T14:27:37.696
+C Instead\sof\sa\sroot\spage\snumber,\slog\sthe\sobject\s(table\sor\sindex)\sname\sif\sa\spage\nlevel\slocking\sconflict\sis\sdetected.
+D 2017-05-29T19:23:56.135
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -350,7 +350,7 @@ F src/auth.c 79f96c6f33bf0e5da8d1c282cee5ebb1852bb8a6ccca3e485d7c459b035d9c3c
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c c77b7f5759e413c1c8b53267d633c952e66db79c1171964c7e24c0f92f5019cf
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c 3c5409453a17294ed8fe7b44dc87c0434b2418f447ad768f4624ead69d5dfa18
+F src/btree.c 8be55b3e9ed1346b5cfd3f749e6c338ced1cade9242a3c5404696bc4aed26652
 F src/btree.h 14e99cc2b666beb60322173c761d16b668ec2e07c18bbb74e8a49fe85946f8a0
 F src/btreeInt.h 7429915fc8f51bbd78b7ac023aa4afbe5b9660fc1e6970f144b07540a34a4623
 F src/build.c ba3f389668754c407805bbc5f8ab140f063ba6b04a6a86f63006b63b3c7319a8
@@ -394,8 +394,8 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c 30e2c43e4955db990e5b5a81e901f8aa74cc8820
 F src/os_win.c 2a6c73eef01c51a048cc4ddccd57f981afbec18a
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 079884c8486596240e200f1e37e867b1ed56eff399e4bbbcabcc145dc5679cd5
-F src/pager.h 1afb4b777b3a297d56dc6cafc4f17d47d92522e9d2cb106839ea0fa0d6d489c7
+F src/pager.c 817afaac17f7c4b1282d9aa283f10fc4b58d5d1e4afb12f84c46038904311650
+F src/pager.h ba7b3fbb18f78835a7368d66530bf21d6782e3e640d79c9550d218742c0b07ce
 F src/parse.y 21660e5224d1e1635a4ad45ad4365c8f67153b8081b7a11e35629844ecb48ab0
 F src/pcache.c 62835bed959e2914edd26afadfecce29ece0e870
 F src/pcache.h 2cedcd8407eb23017d92790b112186886e179490
@@ -485,8 +485,8 @@ F src/vdbesort.c e72fe02a2121386ba767ede8942e9450878b8fc873abf3d1b6824485f092570
 F src/vdbetrace.c 41963d5376f0349842b5fc4aaaaacd7d9cdc0834
 F src/vtab.c 35b9bdc2b41de32a417141d12097bcc4e29a77ed7cdb8f836d1d2305d946b61b
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 4b857e74548bb0f9bc0c7f56517327421f925b1263ac65a6e58e9c176194857e
-F src/wal.h 79378c5cd2127f32060d4952d827a7abdd490f8f9e5cbb14a4c39657ed99ad15
+F src/wal.c e006353c3578071a457888aedd5eec9c8f1ba31ba11ddac4084c91c80478ca16
+F src/wal.h 1ea51dc499d6451529b822a8aaac053eafeef10b7fd9e5a4c9cc413182be429f
 F src/walker.c b71a992b413b3a022572eccf29ef4b4890223791
 F src/where.c c6352f15be5031907c68bcbde96cad1a6da20e9f4051d10168a59235de9a8566
 F src/whereInt.h 2a4b634d63ce488b46d4b0da8f2eaa8f9aeab202bc25ef76f007de5e3fba1f20
@@ -613,7 +613,7 @@ F test/concurrent.test 3eb5e6a911dc6ff72e3a679f563e683b436f6c701e6e1d6050173df2b
 F test/concurrent2.test 9dfbeb0a323733fe1d13443371734bb94a674dbf777f464365475903873111f8
 F test/concurrent3.test 0a5f7e3036d1eccf0782d7153ac21f5f222e9468
 F test/concurrent4.test 989c6575225f9c4ef5d2392a9b9d0405665567c7501a3e44129598794d9b1b5f
-F test/concurrent5.test 06fd0b5294586d170a3b12d68153394fbfe642c8346e249a6240bc6ababc5f4b
+F test/concurrent5.test d5d7d9d404a9b4502464fc097c1fc5c3012bb4f1b063fae7ad707ca983fc86c5
 F test/conflict.test 029faa2d81a0d1cafb5f88614beb663d972c01db
 F test/conflict2.test bb0b94cf7196c64a3cbd815c66d3ee98c2fecd9c
 F test/conflict3.test a83db76a6c3503b2fa057c7bfb08c318d8a422202d8bc5b86226e078e5b49ff9
@@ -1591,7 +1591,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a7e0e7a4835314a04e065839a7f88b074eda795da2b2da5741b2afc096421a32
-R beb58ff81a99fbcff0806ad7e4f3b8ee
+P 92618492b048867af38922825f3d094eaaa2dd919b1ed2f7372483cc53f892bf
+R 9903c08299ff258c04c9dfdcdc90aac6
 U dan
-Z a8b4d17828fb801d4b09ca76008d7042
+Z 4393c020077681d651727b37beafcbae

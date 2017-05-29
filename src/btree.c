@@ -10286,10 +10286,60 @@ int sqlite3HeaderSizeBtree(void){ return ROUND8(sizeof(MemPage)); }
 */
 int sqlite3BtreeExclusiveLock(Btree *p){
   int rc;
+  Pgno pgno = 0;
   BtShared *pBt = p->pBt;
   assert( p->inTrans==TRANS_WRITE && pBt->pPage1 );
   sqlite3BtreeEnter(p);
-  rc = sqlite3PagerExclusiveLock(pBt->pPager, pBt->pPage1->pDbPage);
+  rc = sqlite3PagerExclusiveLock(pBt->pPager, pBt->pPage1->pDbPage, &pgno);
+  if( rc==SQLITE_BUSY_SNAPSHOT && pgno ){
+    PgHdr *pPg = 0;
+    int rc2 = sqlite3PagerGet(pBt->pPager, pgno, &pPg, 0);
+    if( rc2==SQLITE_OK ){
+      int bWrite = -1;
+      const char *zObj = 0;
+      const char *zTab = 0;
+
+      if( pPg ){
+        Pgno pgnoRoot = 0;
+        HashElem *pE;
+        Schema *pSchema;
+
+        pgnoRoot = ((MemPage*)sqlite3PagerGetExtra(pPg))->pgnoRoot;
+        bWrite = sqlite3PagerIswriteable(pPg);
+        sqlite3PagerUnref(pPg);
+
+        pSchema = sqlite3SchemaGet(p->db, p);
+        if( pSchema ){
+          for(pE=sqliteHashFirst(&pSchema->tblHash); pE; pE=sqliteHashNext(pE)){
+            Table *pTab = (Table *)sqliteHashData(pE);
+            if( pTab->tnum==(int)pgnoRoot ){
+              zObj = pTab->zName;
+              zTab = 0;
+            }else{
+              Index *pIdx;
+              for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+                if( pIdx->tnum==(int)pgnoRoot ){
+                  zObj = pIdx->zName;
+                  zTab = pTab->zName;
+                }
+              }
+            }
+          }
+        }
+      }
+
+      sqlite3_log(SQLITE_OK,
+          "cannot commit CONCURRENT transaction "
+          "- conflict at page %d "
+          "(%s page; part of db %s %s%s%s)",
+          (int)pgno,
+          (bWrite==0?"read-only":(bWrite>0?"read/write":"unknown")),
+          (zTab ? "index" : "table"),
+          (zTab ? zTab : ""), (zTab ? "." : ""), (zObj ? zObj : "UNKNOWN")
+      );
+    }
+  }
+
   sqlite3BtreeLeave(p);
   return rc;
 }
