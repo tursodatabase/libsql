@@ -1177,7 +1177,7 @@ static unsigned char *SHA3Final(SHA3Context *p){
 ** Implementation of the sha3(X,SIZE) function.
 **
 ** Return a BLOB which is the SIZE-bit SHA3 hash of X.  The default
-** size is 256.  If X is a BLOB, it is hashed as is.  
+** size is 256.  If X is a BLOB, it is hashed as is.
 ** For all other non-NULL types of input, X is converted into a UTF-8 string
 ** and the string is hashed without the trailing 0x00 terminator.  The hash
 ** of a NULL value is NULL.
@@ -3011,7 +3011,7 @@ static char **tableColumnList(ShellState *p, const char *zTab){
       nPK++;
       if( nPK==1
        && sqlite3_stricmp((const char*)sqlite3_column_text(pStmt,2),
-                          "INTEGER")==0 
+                          "INTEGER")==0
       ){
         isIPK = 1;
       }else{
@@ -3294,8 +3294,8 @@ static char zHelp[] =
   "                         tcl      TCL list elements\n"
   ".nullvalue STRING      Use STRING in place of NULL values\n"
   ".once FILENAME         Output for the next SQL command only to FILENAME\n"
-  ".open ?--new? ?FILE?   Close existing database and reopen FILE\n"
-  "                         The --new starts with an empty file\n"
+  ".open ?OPTIONS? ?FILE? Close existing database and reopen FILE\n"
+  "                         The --new option starts with an empty file\n"
   ".output ?FILENAME?     Send output to FILENAME or stdout\n"
   ".print STRING...       Print literal STRING\n"
   ".prompt MAIN CONTINUE  Replace the standard prompts\n"
@@ -3360,8 +3360,8 @@ static int process_input(ShellState *p, FILE *in);
 
 /*
 ** Read the content of file zName into memory obtained from sqlite3_malloc64()
-** and return a pointer to the buffer. The caller is responsible for freeing 
-** the memory. 
+** and return a pointer to the buffer. The caller is responsible for freeing
+** the memory.
 **
 ** If parameter pnByte is not NULL, (*pnByte) is set to the number of bytes
 ** read.
@@ -4368,15 +4368,15 @@ int shellDeleteFile(const char *zFilename){
 **   fkey_collate_clause('parent-tab', 'parent-col', 'child-tab', 'child-col')
 **
 ** If either of the named tables or columns do not exist, this function
-** returns an empty string. An empty string is also returned if both tables 
+** returns an empty string. An empty string is also returned if both tables
 ** and columns exist but have the same default collation sequence. Or,
 ** if both exist but the default collation sequences are different, this
 ** function returns the string " COLLATE <parent-collation>", where
 ** <parent-collation> is the default collation sequence of the parent column.
 */
 static void shellFkeyCollateClause(
-  sqlite3_context *pCtx, 
-  int nVal, 
+  sqlite3_context *pCtx,
+  int nVal,
   sqlite3_value **apVal
 ){
   sqlite3 *db = sqlite3_context_db_handle(pCtx);
@@ -4387,7 +4387,7 @@ static void shellFkeyCollateClause(
   const char *zChildCol;
   const char *zChildSeq = 0;  /* Initialize to avoid false-positive warning */
   int rc;
-  
+
   assert( nVal==4 );
   zParent = (const char*)sqlite3_value_text(apVal[0]);
   zParentCol = (const char*)sqlite3_value_text(apVal[1]);
@@ -4509,7 +4509,7 @@ static int lintFkeyIndexes(
       return SQLITE_ERROR;
     }
   }
-  
+
   /* Register the fkey_collate_clause() SQL function */
   rc = sqlite3_create_function(db, "fkey_collate_clause", 4, SQLITE_UTF8,
       0, shellFkeyCollateClause, 0, 0
@@ -4552,9 +4552,9 @@ static int lintFkeyIndexes(
         raw_printf(stderr, "Error: internal error");
         break;
       }else{
-        if( bGroupByParent 
+        if( bGroupByParent
         && (bVerbose || res==0)
-        && (zPrev==0 || sqlite3_stricmp(zParent, zPrev)) 
+        && (zPrev==0 || sqlite3_stricmp(zParent, zPrev))
         ){
           raw_printf(out, "-- Parent table %s\n", zParent);
           sqlite3_free(zPrev);
@@ -4564,7 +4564,7 @@ static int lintFkeyIndexes(
         if( res==0 ){
           raw_printf(out, "%s%s --> %s\n", zIndent, zCI, zTarget);
         }else if( bVerbose ){
-          raw_printf(out, "%s/* no extra indexes required for %s -> %s */\n", 
+          raw_printf(out, "%s/* no extra indexes required for %s -> %s */\n",
               zIndent, zFrom, zTarget
           );
         }
@@ -6031,7 +6031,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       bSelftestExists = 1;
     }
     if( bSelftestExists ){
-      rc = sqlite3_get_table(p->db, 
+      rc = sqlite3_get_table(p->db,
           "SELECT tno,op,cmd,ans FROM selftest ORDER BY tno",
           &azTest, &nRow, &nCol, 0);
       if( rc ){
@@ -6055,7 +6055,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       const char *zOp = azTest[i*nCol+1];
       const char *zSql = azTest[i*nCol+2];
       const char *zAns = azTest[i*nCol+3];
-  
+
       if( bVerbose>0 ){
         char *zQuote = sqlite3_mprintf("%q", zSql);
         printf("%d: %s %s\n", tno, zOp, zSql);
@@ -6133,8 +6133,8 @@ static int do_meta_command(char *zLine, ShellState *p){
         if( strcmp(z,"schema")==0 ){
           bSchema = 1;
         }else
-        if( strcmp(z,"sha3-224")==0 || strcmp(z,"sha3-256")==0 
-         || strcmp(z,"sha3-384")==0 || strcmp(z,"sha3-512")==0 
+        if( strcmp(z,"sha3-224")==0 || strcmp(z,"sha3-256")==0
+         || strcmp(z,"sha3-384")==0 || strcmp(z,"sha3-512")==0
         ){
           iSize = atoi(&z[5]);
         }else
