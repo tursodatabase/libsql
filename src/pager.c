@@ -3304,23 +3304,21 @@ static int pagerOpenWalIfPresent(Pager *pPager){
 
   if( !pPager->tempFile ){
     int isWal;                    /* True if WAL file exists */
-    Pgno nPage;                   /* Size of the database file */
-
-    rc = pagerPagecount(pPager, &nPage);
-    if( rc ) return rc;
-    if( nPage==0 ){
-      rc = sqlite3OsDelete(pPager->pVfs, pPager->zWal, 0);
-      if( rc==SQLITE_IOERR_DELETE_NOENT ) rc = SQLITE_OK;
-      isWal = 0;
-    }else{
-      rc = sqlite3OsAccess(
-          pPager->pVfs, pPager->zWal, SQLITE_ACCESS_EXISTS, &isWal
-      );
-    }
+    rc = sqlite3OsAccess(
+        pPager->pVfs, pPager->zWal, SQLITE_ACCESS_EXISTS, &isWal
+    );
     if( rc==SQLITE_OK ){
       if( isWal ){
-        testcase( sqlite3PcachePagecount(pPager->pPCache)==0 );
-        rc = sqlite3PagerOpenWal(pPager, 0);
+        Pgno nPage;                   /* Size of the database file */
+
+        rc = pagerPagecount(pPager, &nPage);
+        if( rc ) return rc;
+        if( nPage==0 ){
+          rc = sqlite3OsDelete(pPager->pVfs, pPager->zWal, 0);
+        }else{
+          testcase( sqlite3PcachePagecount(pPager->pPCache)==0 );
+          rc = sqlite3PagerOpenWal(pPager, 0);
+        }
       }else if( pPager->journalMode==PAGER_JOURNALMODE_WAL ){
         pPager->journalMode = PAGER_JOURNALMODE_DELETE;
       }
@@ -5263,19 +5261,14 @@ int sqlite3PagerSharedLock(Pager *pPager){
       ** detected.  The chance of an undetected change is so small that
       ** it can be neglected.
       */
-      Pgno nPage = 0;
       char dbFileVers[sizeof(pPager->dbFileVers)];
 
-      rc = pagerPagecount(pPager, &nPage);
-      if( rc ) goto failed;
-
-      if( nPage>0 ){
-        IOTRACE(("CKVERS %p %d\n", pPager, sizeof(dbFileVers)));
-        rc = sqlite3OsRead(pPager->fd, &dbFileVers, sizeof(dbFileVers), 24);
-        if( rc!=SQLITE_OK && rc!=SQLITE_IOERR_SHORT_READ ){
+      IOTRACE(("CKVERS %p %d\n", pPager, sizeof(dbFileVers)));
+      rc = sqlite3OsRead(pPager->fd, &dbFileVers, sizeof(dbFileVers), 24);
+      if( rc!=SQLITE_OK ){
+        if( rc!=SQLITE_IOERR_SHORT_READ ){
           goto failed;
         }
-      }else{
         memset(dbFileVers, 0, sizeof(dbFileVers));
       }
 
