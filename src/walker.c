@@ -124,8 +124,9 @@ int sqlite3WalkSelectFrom(Walker *pWalker, Select *p){
 **
 ** If it is not NULL, the xSelectCallback() callback is invoked before
 ** the walk of the expressions and FROM clause. The xSelectCallback2()
-** method, if it is not NULL, is invoked following the walk of the 
-** expressions and FROM clause.
+** method is invoked following the walk of the expressions and FROM clause,
+** but only if both xSelectCallback and xSelectCallback2 are both non-NULL
+** and if the expressions and FROM clause both return WRC_Continue;
 **
 ** Return WRC_Continue under normal conditions.  Return WRC_Abort if
 ** there is an abort request.
@@ -135,27 +136,19 @@ int sqlite3WalkSelectFrom(Walker *pWalker, Select *p){
 */
 int sqlite3WalkSelect(Walker *pWalker, Select *p){
   int rc;
-  if( p==0 || (pWalker->xSelectCallback==0 && pWalker->xSelectCallback2==0) ){
-    return WRC_Continue;
-  }
-  rc = WRC_Continue;
-  pWalker->walkerDepth++;
-  while( p ){
-    if( pWalker->xSelectCallback ){
-       rc = pWalker->xSelectCallback(pWalker, p);
-       if( rc ) break;
-    }
+  if( p==0 || pWalker->xSelectCallback==0 ) return WRC_Continue;
+  do{
+    rc = pWalker->xSelectCallback(pWalker, p);
+    if( rc ) return rc & WRC_Abort;
     if( sqlite3WalkSelectExpr(pWalker, p)
      || sqlite3WalkSelectFrom(pWalker, p)
     ){
-      pWalker->walkerDepth--;
       return WRC_Abort;
     }
     if( pWalker->xSelectCallback2 ){
       pWalker->xSelectCallback2(pWalker, p);
     }
     p = p->pPrior;
-  }
-  pWalker->walkerDepth--;
-  return rc & WRC_Abort;
+  }while( p!=0 );
+  return WRC_Continue;
 }
