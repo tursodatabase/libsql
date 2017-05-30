@@ -2612,9 +2612,13 @@ int sqlite3VdbeSorterRewind(const VdbeCursor *pCsr, int *pbEof){
 }
 
 /*
-** Advance to the next element in the sorter.
+** Advance to the next element in the sorter.  Return value:
+**
+**    SQLITE_OK     success
+**    SQLITE_DONE   end of data
+**    otherwise     some kind of error.
 */
-int sqlite3VdbeSorterNext(sqlite3 *db, const VdbeCursor *pCsr, int *pbEof){
+int sqlite3VdbeSorterNext(sqlite3 *db, const VdbeCursor *pCsr){
   VdbeSorter *pSorter;
   int rc;                         /* Return code */
 
@@ -2628,21 +2632,22 @@ int sqlite3VdbeSorterNext(sqlite3 *db, const VdbeCursor *pCsr, int *pbEof){
 #if SQLITE_MAX_WORKER_THREADS>0
     if( pSorter->bUseThreads ){
       rc = vdbePmaReaderNext(pSorter->pReader);
-      *pbEof = (pSorter->pReader->pFd==0);
+      if( rc==SQLITE_OK && pSorter->pReader->pFd==0 ) rc = SQLITE_DONE;
     }else
 #endif
     /*if( !pSorter->bUseThreads )*/ {
+      int res = 0;
       assert( pSorter->pMerger!=0 );
       assert( pSorter->pMerger->pTask==(&pSorter->aTask[0]) );
-      rc = vdbeMergeEngineStep(pSorter->pMerger, pbEof);
+      rc = vdbeMergeEngineStep(pSorter->pMerger, &res);
+      if( rc==SQLITE_OK && res ) rc = SQLITE_DONE;
     }
   }else{
     SorterRecord *pFree = pSorter->list.pList;
     pSorter->list.pList = pFree->u.pNext;
     pFree->u.pNext = 0;
     if( pSorter->list.aMemory==0 ) vdbeSorterRecordFree(db, pFree);
-    *pbEof = !pSorter->list.pList;
-    rc = SQLITE_OK;
+    rc = pSorter->list.pList ? SQLITE_OK : SQLITE_DONE;
   }
   return rc;
 }

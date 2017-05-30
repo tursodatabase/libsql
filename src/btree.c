@@ -5163,16 +5163,19 @@ int sqlite3BtreeMovetoUnpacked(
       /* If the requested key is one more than the previous key, then
       ** try to get there using sqlite3BtreeNext() rather than a full
       ** binary search.  This is an optimization only.  The correct answer
-      ** is still obtained without this ase, only a little more slowely */
+      ** is still obtained without this case, only a little more slowely */
       if( pCur->info.nKey+1==intKey && !pCur->skipNext ){
         *pRes = 0;
-        rc = sqlite3BtreeNext(pCur, pRes);
-        if( rc ) return rc;
-        if( *pRes==0 ){
+        rc = sqlite3BtreeNext(pCur, 0);
+        if( rc==SQLITE_OK ){
           getCellInfo(pCur);
           if( pCur->info.nKey==intKey ){
             return SQLITE_OK;
           }
+        }else if( rc==SQLITE_DONE ){
+          rc = SQLITE_OK;
+        }else{
+          return rc;
         }
       }
     }
@@ -5406,10 +5409,12 @@ i64 sqlite3BtreeRowCountEst(BtCursor *pCur){
 }
 
 /*
-** Advance the cursor to the next entry in the database.  If
-** successful then set *pRes=0.  If the cursor
-** was already pointing to the last entry in the database before
-** this routine was called, then set *pRes=1.
+** Advance the cursor to the next entry in the database. 
+** Return value:
+**
+**    SQLITE_OK        success
+**    SQLITE_DONE      cursor is already pointing at the last element
+**    otherwise        some kind of error occurred
 **
 ** The main entry point is sqlite3BtreeNext().  That routine is optimized
 ** for the common case of merely incrementing the cell counter BtCursor.aiIdx
@@ -5417,23 +5422,19 @@ i64 sqlite3BtreeRowCountEst(BtCursor *pCur){
 ** routine is called when it is necessary to move to a different page or
 ** to restore the cursor.
 **
-** The calling function will set *pRes to 0 or 1.  The initial *pRes value
-** will be 1 if the cursor being stepped corresponds to an SQL index and
-** if this routine could have been skipped if that SQL index had been
-** a unique index.  Otherwise the caller will have set *pRes to zero.
-** Zero is the common case. The btree implementation is free to use the
-** initial *pRes value as a hint to improve performance, but the current
-** SQLite btree implementation does not. (Note that the comdb2 btree
-** implementation does use this hint, however.)
+** If bit 0x01 of the flags argument is 1, then the cursor corresponds to
+** an SQL index and this routine could have been skipped if the SQL index
+** had been a unique index.  The flags argument is a hint to the implement.
+** SQLite btree implementation does not use this hint, but COMDB2 does.
 */
-static SQLITE_NOINLINE int btreeNext(BtCursor *pCur, int *pRes){
+static SQLITE_NOINLINE int btreeNext(BtCursor *pCur, int flags){
   int rc;
   int idx;
   MemPage *pPage;
 
   assert( cursorOwnsBtShared(pCur) );
   assert( pCur->skipNext==0 || pCur->eState!=CURSOR_VALID );
-  assert( *pRes==0 );
+  assert( flags==0 );
   if( pCur->eState!=CURSOR_VALID ){
     assert( (pCur->curFlags & BTCF_ValidOvfl)==0 );
     rc = restoreCursorPosition(pCur);
@@ -5441,8 +5442,7 @@ static SQLITE_NOINLINE int btreeNext(BtCursor *pCur, int *pRes){
       return rc;
     }
     if( CURSOR_INVALID==pCur->eState ){
-      *pRes = 1;
-      return SQLITE_OK;
+      return SQLITE_DONE;
     }
     if( pCur->skipNext ){
       assert( pCur->eState==CURSOR_VALID || pCur->eState==CURSOR_SKIPNEXT );
@@ -5474,15 +5474,14 @@ static SQLITE_NOINLINE int btreeNext(BtCursor *pCur, int *pRes){
     }
     do{
       if( pCur->iPage==0 ){
-        *pRes = 1;
         pCur->eState = CURSOR_INVALID;
-        return SQLITE_OK;
+        return SQLITE_DONE;
       }
       moveToParent(pCur);
       pPage = pCur->apPage[pCur->iPage];
     }while( pCur->ix>=pPage->nCell );
     if( pPage->intKey ){
-      return sqlite3BtreeNext(pCur, pRes);
+      return sqlite3BtreeNext(pCur, flags);
     }else{
       return SQLITE_OK;
     }
@@ -5493,20 +5492,18 @@ static SQLITE_NOINLINE int btreeNext(BtCursor *pCur, int *pRes){
     return moveToLeftmost(pCur);
   }
 }
-int sqlite3BtreeNext(BtCursor *pCur, int *pRes){
+int sqlite3BtreeNext(BtCursor *pCur, int flags){
   MemPage *pPage;
   assert( cursorOwnsBtShared(pCur) );
-  assert( pRes!=0 );
-  assert( *pRes==0 || *pRes==1 );
+  assert( flags==0 || flags==1 );
   assert( pCur->skipNext==0 || pCur->eState!=CURSOR_VALID );
   pCur->info.nSize = 0;
   pCur->curFlags &= ~(BTCF_ValidNKey|BTCF_ValidOvfl);
-  *pRes = 0;
-  if( pCur->eState!=CURSOR_VALID ) return btreeNext(pCur, pRes);
+  if( pCur->eState!=CURSOR_VALID ) return btreeNext(pCur, 0);
   pPage = pCur->apPage[pCur->iPage];
   if( (++pCur->ix)>=pPage->nCell ){
     pCur->ix--;
-    return btreeNext(pCur, pRes);
+    return btreeNext(pCur, 0);
   }
   if( pPage->leaf ){
     return SQLITE_OK;
@@ -5516,10 +5513,12 @@ int sqlite3BtreeNext(BtCursor *pCur, int *pRes){
 }
 
 /*
-** Step the cursor to the back to the previous entry in the database.  If
-** successful then set *pRes=0.  If the cursor
-** was already pointing to the first entry in the database before
-** this routine was called, then set *pRes=1.
+** Step the cursor to the back to the previous entry in the database.
+** Return values:
+**
+**     SQLITE_OK     success
+**     SQLITE_DONE   the cursor is already on the first element of the table
+**     otherwise     some kind of error occurred
 **
 ** The main entry point is sqlite3BtreePrevious().  That routine is optimized
 ** for the common case of merely decrementing the cell counter BtCursor.aiIdx
@@ -5527,22 +5526,18 @@ int sqlite3BtreeNext(BtCursor *pCur, int *pRes){
 ** helper routine is called when it is necessary to move to a different page
 ** or to restore the cursor.
 **
-** The calling function will set *pRes to 0 or 1.  The initial *pRes value
-** will be 1 if the cursor being stepped corresponds to an SQL index and
-** if this routine could have been skipped if that SQL index had been
-** a unique index.  Otherwise the caller will have set *pRes to zero.
-** Zero is the common case. The btree implementation is free to use the
-** initial *pRes value as a hint to improve performance, but the current
-** SQLite btree implementation does not. (Note that the comdb2 btree
-** implementation does use this hint, however.)
+**
+** If bit 0x01 of the flags argument is 1, then the cursor corresponds to
+** an SQL index and this routine could have been skipped if the SQL index
+** had been a unique index.  The flags argument is a hint to the implement.
+** SQLite btree implementation does not use this hint, but COMDB2 does.
 */
-static SQLITE_NOINLINE int btreePrevious(BtCursor *pCur, int *pRes){
+static SQLITE_NOINLINE int btreePrevious(BtCursor *pCur, int flags){
   int rc;
   MemPage *pPage;
 
   assert( cursorOwnsBtShared(pCur) );
-  assert( pRes!=0 );
-  assert( *pRes==0 );
+  assert( flags==0 );
   assert( pCur->skipNext==0 || pCur->eState!=CURSOR_VALID );
   assert( (pCur->curFlags & (BTCF_AtLast|BTCF_ValidOvfl|BTCF_ValidNKey))==0 );
   assert( pCur->info.nSize==0 );
@@ -5552,8 +5547,7 @@ static SQLITE_NOINLINE int btreePrevious(BtCursor *pCur, int *pRes){
       return rc;
     }
     if( CURSOR_INVALID==pCur->eState ){
-      *pRes = 1;
-      return SQLITE_OK;
+      return SQLITE_DONE;
     }
     if( pCur->skipNext ){
       assert( pCur->eState==CURSOR_VALID || pCur->eState==CURSOR_SKIPNEXT );
@@ -5577,8 +5571,7 @@ static SQLITE_NOINLINE int btreePrevious(BtCursor *pCur, int *pRes){
     while( pCur->ix==0 ){
       if( pCur->iPage==0 ){
         pCur->eState = CURSOR_INVALID;
-        *pRes = 1;
-        return SQLITE_OK;
+        return SQLITE_DONE;
       }
       moveToParent(pCur);
     }
@@ -5588,26 +5581,24 @@ static SQLITE_NOINLINE int btreePrevious(BtCursor *pCur, int *pRes){
     pCur->ix--;
     pPage = pCur->apPage[pCur->iPage];
     if( pPage->intKey && !pPage->leaf ){
-      rc = sqlite3BtreePrevious(pCur, pRes);
+      rc = sqlite3BtreePrevious(pCur, flags);
     }else{
       rc = SQLITE_OK;
     }
   }
   return rc;
 }
-int sqlite3BtreePrevious(BtCursor *pCur, int *pRes){
+int sqlite3BtreePrevious(BtCursor *pCur, int flags){
   assert( cursorOwnsBtShared(pCur) );
-  assert( pRes!=0 );
-  assert( *pRes==0 || *pRes==1 );
+  assert( flags==0 || flags==1 );
   assert( pCur->skipNext==0 || pCur->eState!=CURSOR_VALID );
-  *pRes = 0;
   pCur->curFlags &= ~(BTCF_AtLast|BTCF_ValidOvfl|BTCF_ValidNKey);
   pCur->info.nSize = 0;
   if( pCur->eState!=CURSOR_VALID
    || pCur->ix==0
    || pCur->apPage[pCur->iPage]->leaf==0
   ){
-    return btreePrevious(pCur, pRes);
+    return btreePrevious(pCur, 0);
   }
   pCur->ix--;
   return SQLITE_OK;
@@ -8322,8 +8313,8 @@ int sqlite3BtreeDelete(BtCursor *pCur, u8 flags){
   ** sub-tree headed by the child page of the cell being deleted. This makes
   ** balancing the tree following the delete operation easier.  */
   if( !pPage->leaf ){
-    int notUsed = 0;
-    rc = sqlite3BtreePrevious(pCur, &notUsed);
+    rc = sqlite3BtreePrevious(pCur, 0);
+    assert( rc!=SQLITE_DONE );
     if( rc ) return rc;
   }
 
