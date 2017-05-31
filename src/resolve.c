@@ -1430,16 +1430,7 @@ int sqlite3ResolveExprNames(
   u16 savedHasAgg;
   Walker w;
 
-  if( pExpr==0 ) return 0;
-#if SQLITE_MAX_EXPR_DEPTH>0
-  {
-    Parse *pParse = pNC->pParse;
-    if( sqlite3ExprCheckHeight(pParse, pExpr->nHeight+pNC->pParse->nHeight) ){
-      return 1;
-    }
-    pParse->nHeight += pExpr->nHeight;
-  }
-#endif
+  if( pExpr==0 ) return SQLITE_OK;
   savedHasAgg = pNC->ncFlags & (NC_HasAgg|NC_MinMaxAgg);
   pNC->ncFlags &= ~(NC_HasAgg|NC_MinMaxAgg);
   w.pParse = pNC->pParse;
@@ -1447,18 +1438,21 @@ int sqlite3ResolveExprNames(
   w.xSelectCallback = resolveSelectStep;
   w.xSelectCallback2 = 0;
   w.u.pNC = pNC;
+#if SQLITE_MAX_EXPR_DEPTH>0
+  w.pParse->nHeight += pExpr->nHeight;
+  if( sqlite3ExprCheckHeight(w.pParse, w.pParse->nHeight) ){
+    return SQLITE_ERROR;
+  }
+#endif
   sqlite3WalkExpr(&w, pExpr);
 #if SQLITE_MAX_EXPR_DEPTH>0
-  pNC->pParse->nHeight -= pExpr->nHeight;
+  w.pParse->nHeight -= pExpr->nHeight;
 #endif
-  if( pNC->nErr>0 || w.pParse->nErr>0 ){
-    ExprSetProperty(pExpr, EP_Error);
-  }
   if( pNC->ncFlags & NC_HasAgg ){
     ExprSetProperty(pExpr, EP_Agg);
   }
   pNC->ncFlags |= savedHasAgg;
-  return ExprHasProperty(pExpr, EP_Error);
+  return pNC->nErr>0 || w.pParse->nErr>0;
 }
 
 /*
