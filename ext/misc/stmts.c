@@ -98,10 +98,11 @@ static int stmtsConnect(
 #define STMTS_COLUMN_NSORT 6    /* SQLITE_STMTSTATUS_SORT */
 #define STMTS_COLUMN_NAIDX 7    /* SQLITE_STMTSTATUS_AUTOINDEX */
 #define STMTS_COLUMN_NSTEP 8    /* SQLITE_STMTSTATUS_VM_STEP */
+#define STMTS_COLUMN_MEM   9    /* SQLITE_STMTSTATUS_MEMUSED */
 
 
   rc = sqlite3_declare_vtab(db,
-     "CREATE TABLE x(ptr,sql,ncol,ro,busy,nscan,nsort,naidx,nstep)");
+     "CREATE TABLE x(ptr,sql,ncol,ro,busy,nscan,nsort,naidx,nstep,mem)");
   if( rc==SQLITE_OK ){
     pNew = sqlite3_malloc( sizeof(*pNew) );
     *ppVtab = (sqlite3_vtab*)pNew;
@@ -186,7 +187,8 @@ static int stmtsColumn(
     case STMTS_COLUMN_NSCAN:
     case STMTS_COLUMN_NSORT:
     case STMTS_COLUMN_NAIDX:
-    case STMTS_COLUMN_NSTEP: {
+    case STMTS_COLUMN_NSTEP:
+    case STMTS_COLUMN_MEM: {
       sqlite3_result_int(ctx, sqlite3_stmt_status(pCur->pStmt,
                       i-STMTS_COLUMN_NSCAN+SQLITE_STMTSTATUS_FULLSCAN_STEP, 0));
       break;
