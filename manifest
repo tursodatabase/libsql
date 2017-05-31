@@ -1,5 +1,5 @@
-C Avoid\sunnecessary\smemory\szeroing\sduring\sexpression\slist\sallocation.
-D 2017-05-31T02:58:30.131
+C Reorder\sfields\sin\sthe\sPgHdr\sobject\sfor\sa\sperformance\sincrease.
+D 2017-05-31T03:20:39.040
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -395,7 +395,7 @@ F src/pager.c 14f6982c470c05b8e85575c69e9c1712010602e20400f8670d8699e21283e0e4
 F src/pager.h f2a99646c5533ffe11afa43e9e0bea74054e4efa
 F src/parse.y 0513387ce02fea97897d8caef82d45f347818593f24f1bdc48e0c530a8af122d
 F src/pcache.c 62835bed959e2914edd26afadfecce29ece0e870
-F src/pcache.h 2cedcd8407eb23017d92790b112186886e179490
+F src/pcache.h 521bb9610d38ef17a3cc9b5ddafd4546c2ea67fa3d0e464823d73c2a28d50e11
 F src/pcache1.c 1195a21fe28e223e024f900b2011e80df53793f0356a24caace4188b098540dc
 F src/pragma.c 2362670a9d28b71708aecb2b9b10b3f7be71f4c950961c07e81dc400e3ce6371
 F src/pragma.h 37a1311d0388db480388d7ec09054f7103045eff20d4971f8a433b77f40b9921
@@ -1581,7 +1581,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P af8c0fed93c830c50641d95691bb507c31947a15529aba2a88bfaa66b3a3287a
-R 01bf3eaa562713fce9de46b8681a7f8f
+P de28e6514a42438411e2c9d833ba660108128ca86d0b90f32925fb73195f4862
+R 4744950bcddf7fda61b1808765626de4
 U drh
-Z 430fbbd11694ab4293403e0492d5010e
+Z 00c7d7a31f2ef8dbc696269ba0fee834
