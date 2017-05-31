@@ -1,5 +1,5 @@
-C Add\sthe\sexperimental\s"stmts"\svirtual\stable\sfor\sintrospection\sof\sprepared\nstatements.
-D 2017-05-31T16:09:04.321
+C Add\sthe\sSQLITE_STMTSTATUS_MEMUSED\soption\sfor\ssqlite3_stmt_status()\sthat\sreports\nthe\samount\sof\sheap\smemory\sused\sfor\sa\ssingle\sprepared\sstatement.
+D 2017-05-31T16:21:54.984
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -233,7 +233,7 @@ F ext/misc/sha1.c 0b9e9b855354910d3ca467bf39099d570e73db56
 F ext/misc/shathree.c fa185d7aee0ad0aca5e091b4a2db7baff11796170e5793b5de99e511a13af448
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c a4723b6aff748a417b5091b68a46443265c40f0d
-F ext/misc/stmts.c dbdfa86d0867d23c4cafbf0c3976c0d043e4e9d031818ee76f35176c1b6e4748
+F ext/misc/stmts.c 4aa554f671f6a55a52060437a0215a93d2e9f10f2fa66b0f7f65aa0576fc90bb
 F ext/misc/totype.c 4a167594e791abeed95e0a8db028822b5e8fe512
 F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vfsstat.c bf10ef0bc51e1ad6756629e1edb142f7a8db1178
@@ -407,7 +407,7 @@ F src/resolve.c adf3ef9843135b1383321ad751f16f5a40c3f37925154555a3e61653d2a954e8
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c d93205e43af302d9eb147fddecc956509ee9d0dde6297ee3f93c591f60f0e295
 F src/shell.c 3f761fe604174b31aacd2ea2eacef5e6fe550111d60c0d71532cc008c68cf3f3
-F src/sqlite.h.in 8dd468837a4f6d76713e3a4cc65bea48095009038593d41040ab46c1b351197f
+F src/sqlite.h.in 4ceb982f55be38dcfef3940cbd7976905711d632288b57fe3077e101b8ab097c
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 58fd0676d3111d02e62e5a35992a7d3da5d3f88753acc174f2d37b774fbbdd28
 F src/sqliteInt.h 82800fc19fbdeb35a0773c5d727da717652f4c421d191d2460219c7aab953462
@@ -475,7 +475,7 @@ F src/vacuum.c 1fe4555cd8c9b263afb85b5b4ee3a4a4181ad569
 F src/vdbe.c cce462ad3cf1cad1944e105f773712a979e23fbe302328dc2885b0f4a612e1f6
 F src/vdbe.h 70a409d171d4e51b962f0d53abf15c33c404c6aa4c9d62fb3a931b5a62ba9615
 F src/vdbeInt.h cdcdabad4f5d6bf7a3beb826a7f33ee6f8f1cb220042bedd5b7d4bf2ea1d179f
-F src/vdbeapi.c 6009dbf02b70aa0dc461e98ebad98b88e4b22588341818891a2ea5c3c6533411
+F src/vdbeapi.c c961d8d9e0f52e2df60a6ddbbccd7d99dc4d00103db7e53f77fcef44fbd23178
 F src/vdbeaux.c bc9b3228f6d99bef0d0ecaf3a0e0e8358b3873242d0d2fe944226de3fdf9521e
 F src/vdbeblob.c 359891617358deefc85bef7bcf787fa6b77facb9
 F src/vdbemem.c 2c70f8f5de6c71fb99a22c5b83be9fab5c47cdd8e279fa44a8c00cfed06d7e89
@@ -1582,7 +1582,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P df7859435161f3ecf36635ce574bf73573516a1f2c6e75be320619364e7067d1
-R e83d21ac8a8cb0ecc374faa5c17a8e33
+P cb4c5c66aba757356da3b8ec3c66a5c8c40e180b3360638ac634f7787404a5b1
+R 422cbd6dab932a7244e93cdc9b25a6fb
+T *branch * stmtstatus-memused
+T *sym-stmtstatus-memused *
+T -sym-trunk *
 U drh
-Z 198046099cee06ee47c4b60aa1796f36
+Z 6715074df5b9df0e13de539e4627d91a
