@@ -26,8 +26,8 @@ ifcapable !concurrent {
 
 db close
 sqlite3_shutdown
-#test_sqlite3_log xLog
-#proc xLog {error_code msg} { puts "$error_code: $msg" }
+test_sqlite3_log xLog
+proc xLog {error_code msg} { puts "$error_code: $msg" }
 reset_db
 
 proc create_schema {} {

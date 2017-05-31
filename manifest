@@ -1,5 +1,5 @@
-C Instead\sof\sa\sroot\spage\snumber,\slog\sthe\sobject\s(table\sor\sindex)\sname\sif\sa\spage\nlevel\slocking\sconflict\sis\sdetected.
-D 2017-05-29T19:23:56.135
+C Generate\sextra\slog\smessages\sin\sresponse\sto\sirregularites\sin\sthe\spointer-map\nused\sby\s"BEGIN\sCONCURRENT"\stransactions.
+D 2017-05-31T17:06:13.603
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -350,7 +350,7 @@ F src/auth.c 79f96c6f33bf0e5da8d1c282cee5ebb1852bb8a6ccca3e485d7c459b035d9c3c
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c c77b7f5759e413c1c8b53267d633c952e66db79c1171964c7e24c0f92f5019cf
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c 8be55b3e9ed1346b5cfd3f749e6c338ced1cade9242a3c5404696bc4aed26652
+F src/btree.c 322cd2e8aa98c5e44fb9fc756e15fe86c093bdba2e8c4465541098a56b1dd0a7
 F src/btree.h 14e99cc2b666beb60322173c761d16b668ec2e07c18bbb74e8a49fe85946f8a0
 F src/btreeInt.h 7429915fc8f51bbd78b7ac023aa4afbe5b9660fc1e6970f144b07540a34a4623
 F src/build.c ba3f389668754c407805bbc5f8ab140f063ba6b04a6a86f63006b63b3c7319a8
@@ -611,7 +611,7 @@ F test/colname.test 08948a4809d22817e0e5de89c7c0a8bd90cb551b
 F test/concfault.test 500f17c3fcfe7705114422bcc6ddd3c740001a43
 F test/concurrent.test 3eb5e6a911dc6ff72e3a679f563e683b436f6c701e6e1d6050173df2b8448d6b
 F test/concurrent2.test 9dfbeb0a323733fe1d13443371734bb94a674dbf777f464365475903873111f8
-F test/concurrent3.test 0a5f7e3036d1eccf0782d7153ac21f5f222e9468
+F test/concurrent3.test f4af1cf1220908c6dd5694923621c19e999b78cd997e2646285f08a52bcb4170
 F test/concurrent4.test 989c6575225f9c4ef5d2392a9b9d0405665567c7501a3e44129598794d9b1b5f
 F test/concurrent5.test d5d7d9d404a9b4502464fc097c1fc5c3012bb4f1b063fae7ad707ca983fc86c5
 F test/conflict.test 029faa2d81a0d1cafb5f88614beb663d972c01db
@@ -1591,7 +1591,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 92618492b048867af38922825f3d094eaaa2dd919b1ed2f7372483cc53f892bf
-R 9903c08299ff258c04c9dfdcdc90aac6
+P 9ad846e57bd427adc7c29768cabca18905f7f978168e0642a5917d894fda8bfd
+R 524ad4cfe044e13975f9c2307068a2ae
 U dan
-Z 4393c020077681d651727b37beafcbae
+Z b8c7e688cb5faa52956d652176272c93
