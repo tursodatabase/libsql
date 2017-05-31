@@ -1488,7 +1488,9 @@ ExprList *sqlite3ExprListAppend(
     pList->nAlloc *= 2;
   }
   pItem = &pList->a[pList->nExpr++];
-  memset(pItem, 0, sizeof(*pItem));
+  assert( offsetof(struct ExprList_item,zName)==sizeof(pItem->pExpr) );
+  assert( offsetof(struct ExprList_item,pExpr)==0 );
+  memset(&pItem->zName,0,sizeof(*pItem)-offsetof(struct ExprList_item,zName));
   pItem->pExpr = pExpr;
   return pList;
 
