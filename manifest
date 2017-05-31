@@ -1,5 +1,5 @@
-C Reorder\sfields\sin\sthe\sPgHdr\sobject\sfor\sa\sperformance\sincrease.
-D 2017-05-31T03:20:39.040
+C Very\ssmall\sperformance\sincrease\sin\ssqlite3VdbeSetNumCols().
+D 2017-05-31T11:24:13.659
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -475,7 +475,7 @@ F src/vdbe.c cce462ad3cf1cad1944e105f773712a979e23fbe302328dc2885b0f4a612e1f6
 F src/vdbe.h 70a409d171d4e51b962f0d53abf15c33c404c6aa4c9d62fb3a931b5a62ba9615
 F src/vdbeInt.h cdcdabad4f5d6bf7a3beb826a7f33ee6f8f1cb220042bedd5b7d4bf2ea1d179f
 F src/vdbeapi.c 6009dbf02b70aa0dc461e98ebad98b88e4b22588341818891a2ea5c3c6533411
-F src/vdbeaux.c 4ff778d12873ec6e3c222634dd17afeddfcee3ffa5dc51c173b306a2677cfa22
+F src/vdbeaux.c bc9b3228f6d99bef0d0ecaf3a0e0e8358b3873242d0d2fe944226de3fdf9521e
 F src/vdbeblob.c 359891617358deefc85bef7bcf787fa6b77facb9
 F src/vdbemem.c 2c70f8f5de6c71fb99a22c5b83be9fab5c47cdd8e279fa44a8c00cfed06d7e89
 F src/vdbesort.c f512c68d0bf7e0105316a5594c4329358c8ee9cae3b25138df041d97516c0372
@@ -1581,7 +1581,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P de28e6514a42438411e2c9d833ba660108128ca86d0b90f32925fb73195f4862
-R 4744950bcddf7fda61b1808765626de4
+P 326e63d71e0e164c5bcd1f74772cb4071b82daf6f04a5d440b985bace5a4c941
+R 7046283035661560edab9492c510bae7
 U drh
-Z 00c7d7a31f2ef8dbc696269ba0fee834
+Z a2792650408b6d55b08b5a41a2e34334
