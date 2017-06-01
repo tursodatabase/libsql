@@ -918,7 +918,7 @@ mod test {
                    CREATE TABLE foo(x INTEGER);
                    INSERT INTO foo VALUES(42);
                    END;";
-                   db.execute_batch(sql).unwrap();
+            db.execute_batch(sql).unwrap();
         }
 
         let path_string = path.to_str().unwrap();
