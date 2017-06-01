@@ -1,10 +1,12 @@
-#!/usr/bin/make
 #
-# This is a temporary makefile for use during experimental development.
-# Replace with something more portable, if the experiments actually work out.
+# This Makefile is designed for use with main.mk in the root directory of
+# this project. After including main.mk, the users makefile should contain:
 #
-CC     = gcc
-CFLAGS =-g -fPIC -Wall -I. -I../..
+#    LSMDIR=$(TOP)/ext/lsm1/
+#    include $(LSMDIR)/Makefile
+#
+# The most useful targets are [lsmtest] and [lsm.so].
+#
 
 LSMOBJ    = \
   lsm_ckpt.o \
@@ -18,17 +20,35 @@ LSMOBJ    = \
   lsm_str.o \
   lsm_tree.o \
   lsm_unix.o \
+  lsm_win32.o \
   lsm_varint.o \
   lsm_vtab.o
 
 LSMHDR   = \
-  lsm.h \
-  lsmInt.h
+  $(LSMDIR)/lsm.h \
+  $(LSMDIR)/lsmInt.h
 
-all: lsm.so
+LSMTESTSRC = $(LSMDIR)/lsm-test/lsmtest1.c $(LSMDIR)/lsm-test/lsmtest2.c     \
+             $(LSMDIR)/lsm-test/lsmtest3.c $(LSMDIR)/lsm-test/lsmtest4.c     \
+             $(LSMDIR)/lsm-test/lsmtest5.c $(LSMDIR)/lsm-test/lsmtest6.c     \
+             $(LSMDIR)/lsm-test/lsmtest7.c $(LSMDIR)/lsm-test/lsmtest8.c     \
+             $(LSMDIR)/lsm-test/lsmtest9.c                                   \
+             $(LSMDIR)/lsm-test/lsmtest_datasource.c \
+             $(LSMDIR)/lsm-test/lsmtest_func.c $(LSMDIR)/lsm-test/lsmtest_io.c  \
+             $(LSMDIR)/lsm-test/lsmtest_main.c $(LSMDIR)/lsm-test/lsmtest_mem.c \
+             $(LSMDIR)/lsm-test/lsmtest_tdb.c $(LSMDIR)/lsm-test/lsmtest_tdb3.c \
+             $(LSMDIR)/lsm-test/lsmtest_util.c
+
+
+# all: lsm.so
 
 lsm.so:	$(LSMOBJ)
-	$(CC) $(CFLAGS) -shared -o lsm.so $(LSMOBJ)
+	$(TCCX) $(CFLAGS) -shared -o lsm.so $(LSMOBJ)
 
-%.o:	%.c $(LSMHDR)
-	$(CC) $(CFLAGS) -c $<
+%.o:	$(LSMDIR)/%.c $(LSMHDR)
+	$(TCCX) -I$(LSMDIR) $(CFLAGS) -c $<
+	
+lsmtest$(EXE): $(LSMOBJ) $(LSMTESTSRC) $(LSMTESTHDR)
+	# $(TCPPX) -c $(TOP)/lsm-test/lsmtest_tdb2.cc
+	$(TCCX) -I$(LSMDIR) $(LSMTESTSRC) $(LSMOBJ) -o lsmtest$(EXE) $(THREADLIB) -lsqlite3 
+

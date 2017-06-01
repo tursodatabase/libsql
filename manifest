@@ -1,5 +1,5 @@
-C LSM1:\sFix\sthe\sinteger\skey\sencoding\sso\sthat\snegative\skeys\sare\sin\snumeric\sorder.
-D 2016-02-24T13:35:22.043
+C Add\stest\scode\sfor\sLSM\sto\sthe\sext/lsm1/lsm-test\sdirectory.
+D 2017-06-01T16:13:57.519
 F Makefile.in 4e90dc1521879022aa9479268a4cd141d1771142
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 28fc4ee02333996d31b3602b39eeb8e609a89ce4
@@ -200,7 +200,30 @@ F ext/fts5/tool/showfts5.tcl d54da0e067306663e2d5d523965ca487698e722c
 F ext/icu/README.txt d9fbbad0c2f647c3fdf715fc9fd64af53aedfc43
 F ext/icu/icu.c b2732aef0b076e4276d9b39b5a33cec7a05e1413
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
-F ext/lsm1/Makefile 9eed37365e0df2fe58a3011c6aacc4646f22a4ef
+F ext/lsm1/Makefile e10dbcffacc9288704c270b1f74c0811c3ef1b9b526036797d13aadddc9caa59
+F ext/lsm1/lsm-test/README 87ea529d2abe615e856d4714bfe8bb185e6c2771b8612aa6298588b7b43e6f86
+F ext/lsm1/lsm-test/lsmtest.h e7057a3f9db71938496fc8ef081c9f45623b25bfd8499b3550d1ea7123143e90
+F ext/lsm1/lsm-test/lsmtest1.c 27c3cf6512514b25a145154ae4e54d053d883b2f7f52ed214747b5ebaceedd3e
+F ext/lsm1/lsm-test/lsmtest2.c 02bd747ead150c6b0cdfeeb1637cabe21f977ab21265762036b04e76202f4fc0
+F ext/lsm1/lsm-test/lsmtest3.c 9ab87528a36dbf4a61d7c8ad954f5ee368c0878c127b84b942b2e2abe522de26
+F ext/lsm1/lsm-test/lsmtest4.c d258d6a245db5d8eaede096e2368d23f859c5e92c80ab9122463f708514fe10c
+F ext/lsm1/lsm-test/lsmtest5.c 8d5242a0f870d65eeada191c8945781fed9cb8ece3886573790ebd373b62dac5
+F ext/lsm1/lsm-test/lsmtest6.c 9d5db9ff638152c8c3948dc1077dd302deff4fcb3d30cc71ac769915797bbb1d
+F ext/lsm1/lsm-test/lsmtest7.c aece33086e531898ecbf218d51c0be7a0d6c461219268f1a8e89ab0e8bf64654
+F ext/lsm1/lsm-test/lsmtest8.c b87a1279b0cfbb39df1fff50074696fbf5d83822349f65706fab6d618a7a52fa
+F ext/lsm1/lsm-test/lsmtest9.c 88245ce0fdd01678be548100e584cacdacab90208624223aac9029e4f90535fe
+F ext/lsm1/lsm-test/lsmtest_bt.c d70d9a9be5eef9360af1251dd083948d74fd30137a08f61bef995f7ac04e037f
+F ext/lsm1/lsm-test/lsmtest_datasource.c 5d770be191d0ca51315926723009b2c25c0b4b8136840494ef710ac324aa916c
+F ext/lsm1/lsm-test/lsmtest_func.c 159aa401bc8032bfa3d8cf2977bd687abebab880255895a5eb45770d626fa38d
+F ext/lsm1/lsm-test/lsmtest_io.c 2b71d1208a5671b3836fb95cdb4c0263ae7eb51542d16ef7f6bb9b651b15f194
+F ext/lsm1/lsm-test/lsmtest_main.c db1d641afd8ba4ca8c6f37b388054ac981f8ba934411e754fe175058f417d372
+F ext/lsm1/lsm-test/lsmtest_mem.c 996b1e76cc876e8d765182a2f14159b1acbf56cbf86d286173e13e970b79a945
+F ext/lsm1/lsm-test/lsmtest_tdb.c f40971180a55013e75760995b0716ac4540450466bf329201767aba04f5467c1
+F ext/lsm1/lsm-test/lsmtest_tdb.h de1ee8c71a7ef61d964e40e057cffea387d7b58a51d95905ab909937d24e4a91
+F ext/lsm1/lsm-test/lsmtest_tdb2.cc 99ea7f2dd9c7536c8fb9bdd329e4cfeb76899f3ddf6f48bdd3926e016922b715
+F ext/lsm1/lsm-test/lsmtest_tdb3.c c55afd81231094ee0fd5b83dca6cff5540ba044e571b5f34bf25cedb26ff8d0e
+F ext/lsm1/lsm-test/lsmtest_tdb4.c 47e8bb5eba266472d690fb8264f1855ebdba0ae5a0e541e35fcda61ebf1d277f
+F ext/lsm1/lsm-test/lsmtest_util.c 0c2b7c1d109fbd6b7b9a2780f1315e2438a973d18afea5c4eccf94e8827c8260
 F ext/lsm1/lsm.h 0f6f64ff071471cb87bf98beb8386566f30ea001
 F ext/lsm1/lsmInt.h bc270dd81b3355c7410b06a6d54dd3eb9493a3e8
 F ext/lsm1/lsm_ckpt.c e7907e782fe2e95de0833675e35e726e487cc4cd
@@ -213,9 +236,10 @@ F ext/lsm1/lsm_shared.c 54cc3a5157c6abd77f7d3ae60708b9f7bf022b3c
 F ext/lsm1/lsm_sorted.c 4a9e3ffecda87b379ed757b59c9cbcd84a80b55c
 F ext/lsm1/lsm_str.c 77ebdd5040ddf267a6f724d4c83132d2dce8a226
 F ext/lsm1/lsm_tree.c 5d9fb2bc58a1a70c75126bd8d7198f7b627e165b
-F ext/lsm1/lsm_unix.c fcaf5b6738713f1229dc0e1a90393ecf24f787f2
+F ext/lsm1/lsm_unix.c ff6d0a89861c90193f21e35ea5dfea389b480e46085c1d7ff931833b77c3ff30
 F ext/lsm1/lsm_varint.c b19ae9bd26b5a1e8402fb8a564b25d9542338a41
 F ext/lsm1/lsm_vtab.c fff303ce03168eca9e333add3c1429b3471674b0
+F ext/lsm1/lsm_win32.c de84068b4df2999a9cefcf67aae19b0733203f772ca58f7e0c2b0bc87136d2e3
 F ext/misc/amatch.c a1a8f66c29d40bd71b075546ddeddb477b17a2bb
 F ext/misc/closure.c 0d2a038df8fbae7f19de42e7c7d71f2e4dc88704
 F ext/misc/compress.c 122faa92d25033d6c3f07c39231de074ab3d2e83
@@ -1445,7 +1469,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh a98af506df552f3b3c0d904f94e4cdc4e1a6d598
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fac4f4ecee21a460e527a0e2ffa24094b74e17dd
-R 9f78396a287b58b8dc55076320f7b772
-U drh
-Z 4d07009afed81bdff10146a4248806a2
+P f92dc4187f6046fcb3ab63449efd7f3738594adc
+R 74f8632bb5f7bfdb807bffd1f01db75d
+U dan
+Z 765d188223533ed5b1d4be9ec2f35903

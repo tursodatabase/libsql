@@ -13,7 +13,7 @@
 ** Unix-specific run-time environment implementation for LSM.
 */
 
-#ifndef WIN32
+#ifdef WIN32
 
 #if defined(__GNUC__) || defined(__TINYC__)
 /* workaround for ftruncate() visibility on gcc. */
@@ -38,30 +38,26 @@
 #include <unistd.h>
 #include <errno.h>
 
-#include <sys/mman.h>
 #include "lsmInt.h"
-
-/* There is no fdatasync() call on Android */
-#ifdef __ANDROID__
-# define fdatasync(x) fsync(x)
-#endif
 
 /*
 ** An open file is an instance of the following object
 */
-typedef struct PosixFile PosixFile;
-struct PosixFile {
+typedef struct Win32File Win32File;
+struct Win32File {
   lsm_env *pEnv;                  /* The run-time environment */
   const char *zName;              /* Full path to file */
-  int fd;                         /* The open file descriptor */
-  int shmfd;                      /* Shared memory file-descriptor */
+
+  HANDLE h;                       /* Open file descriptor */
+  HANDLE shmh;                    /* File descriptor for *-shm file */
+
   void *pMap;                     /* Pointer to mapping of file fd */
   off_t nMap;                     /* Size of mapping at pMap in bytes */
   int nShm;                       /* Number of entries in array apShm[] */
   void **apShm;                   /* Array of 32K shared memory segments */
 };
 
-static char *posixShmFile(PosixFile *p){
+static char *win32ShmFile(Win32File *p){
   char *zShm;
   int nName = strlen(p->zName);
   zShm = (char *)lsmMalloc(p->pEnv, nName+4+1);
@@ -72,24 +68,34 @@ static char *posixShmFile(PosixFile *p){
   return zShm;
 }
 
-static int lsmPosixOsOpen(
+static int lsmWin32OsOpen(
   lsm_env *pEnv,
   const char *zFile,
   int flags,
   lsm_file **ppFile
 ){
   int rc = LSM_OK;
-  PosixFile *p;
+  Win32File *p;
 
-  p = lsm_malloc(pEnv, sizeof(PosixFile));
+  p = lsm_malloc(pEnv, sizeof(Win32File));
   if( p==0 ){
     rc = LSM_NOMEM;
   }else{
     int bReadonly = (flags & LSM_OPEN_READONLY);
     int oflags = (bReadonly ? O_RDONLY : (O_RDWR|O_CREAT));
-    memset(p, 0, sizeof(PosixFile));
+    memset(p, 0, sizeof(Win32File));
     p->zName = zFile;
     p->pEnv = pEnv;
+
+    CreateFile((LPCWSTR)zConverted,
+                              dwDesiredAccess,
+                              dwShareMode, NULL,
+                              dwCreationDisposition,
+                              dwFlagsAndAttributes,
+                              NULL))==INVALID_HANDLE_VALUE &&
+                              winRetryIoerr(&cnt, &lastErrno) ){
+
+
     p->fd = open(zFile, oflags, 0644);
     if( p->fd<0 ){
       lsm_free(pEnv, p);
@@ -106,14 +112,14 @@ static int lsmPosixOsOpen(
   return rc;
 }
 
-static int lsmPosixOsWrite(
+static int lsmWin32OsWrite(
   lsm_file *pFile,                /* File to write to */
   lsm_i64 iOff,                   /* Offset to write to */
   void *pData,                    /* Write data from this buffer */
   int nData                       /* Bytes of data to write */
 ){
   int rc = LSM_OK;
-  PosixFile *p = (PosixFile *)pFile;
+  Win32File *p = (Win32File *)pFile;
   off_t offset;
 
   offset = lseek(p->fd, (off_t)iOff, SEEK_SET);
@@ -127,11 +133,11 @@ static int lsmPosixOsWrite(
   return rc;
 }
 
-static int lsmPosixOsTruncate(
+static int lsmWin32OsTruncate(
   lsm_file *pFile,                /* File to write to */
   lsm_i64 nSize                   /* Size to truncate file to */
 ){
-  PosixFile *p = (PosixFile *)pFile;
+  Win32File *p = (Win32File *)pFile;
   int rc = LSM_OK;                /* Return code */
   int prc;                        /* Posix Return Code */
   struct stat sStat;              /* Result of fstat() invocation */
@@ -145,14 +151,14 @@ static int lsmPosixOsTruncate(
   return rc;
 }
 
-static int lsmPosixOsRead(
+static int lsmWin32OsRead(
   lsm_file *pFile,                /* File to read from */
   lsm_i64 iOff,                   /* Offset to read from */
   void *pData,                    /* Read data into this buffer */
   int nData                       /* Bytes of data to read */
 ){
   int rc = LSM_OK;
-  PosixFile *p = (PosixFile *)pFile;
+  Win32File *p = (Win32File *)pFile;
   off_t offset;
 
   offset = lseek(p->fd, (off_t)iOff, SEEK_SET);
@@ -171,11 +177,11 @@ static int lsmPosixOsRead(
   return rc;
 }
 
-static int lsmPosixOsSync(lsm_file *pFile){
+static int lsmWin32OsSync(lsm_file *pFile){
   int rc = LSM_OK;
 
 #ifndef LSM_NO_SYNC
-  PosixFile *p = (PosixFile *)pFile;
+  Win32File *p = (Win32File *)pFile;
   int prc = 0;
 
   if( p->pMap ){
@@ -190,11 +196,11 @@ static int lsmPosixOsSync(lsm_file *pFile){
   return rc;
 }
 
-static int lsmPosixOsSectorSize(lsm_file *pFile){
+static int lsmWin32OsSectorSize(lsm_file *pFile){
   return 512;
 }
 
-static int lsmPosixOsRemap(
+static int lsmWin32OsRemap(
   lsm_file *pFile, 
   lsm_i64 iMin, 
   void **ppOut,
@@ -202,7 +208,7 @@ static int lsmPosixOsRemap(
 ){
   off_t iSz;
   int prc;
-  PosixFile *p = (PosixFile *)pFile;
+  Win32File *p = (Win32File *)pFile;
   struct stat buf;
 
   /* If the file is between 0 and 2MB in size, extend it in chunks of 256K.
@@ -236,7 +242,7 @@ static int lsmPosixOsRemap(
   return LSM_OK;
 }
 
-static int lsmPosixOsFullpath(
+static int lsmWin32OsFullpath(
   lsm_env *pEnv,
   const char *zName,
   char *zOut,
@@ -279,7 +285,7 @@ static int lsmPosixOsFullpath(
   return LSM_OK;
 }
 
-static int lsmPosixOsFileid(
+static int lsmWin32OsFileid(
   lsm_file *pFile, 
   void *pBuf,
   int *pnBuf
@@ -287,7 +293,7 @@ static int lsmPosixOsFileid(
   int prc;
   int nBuf;
   int nReq;
-  PosixFile *p = (PosixFile *)pFile;
+  Win32File *p = (Win32File *)pFile;
   struct stat buf;
 
   nBuf = *pnBuf;
@@ -304,14 +310,14 @@ static int lsmPosixOsFileid(
   return LSM_OK;
 }
 
-static int lsmPosixOsUnlink(lsm_env *pEnv, const char *zFile){
+static int lsmWin32OsUnlink(lsm_env *pEnv, const char *zFile){
   int prc = unlink(zFile);
   return prc ? LSM_IOERR_BKPT : LSM_OK;
 }
 
-int lsmPosixOsLock(lsm_file *pFile, int iLock, int eType){
+int lsmWin32OsLock(lsm_file *pFile, int iLock, int eType){
   int rc = LSM_OK;
-  PosixFile *p = (PosixFile *)pFile;
+  Win32File *p = (Win32File *)pFile;
   static const short aType[3] = { F_UNLCK, F_RDLCK, F_WRLCK };
   struct flock lock;
 
@@ -339,9 +345,9 @@ int lsmPosixOsLock(lsm_file *pFile, int iLock, int eType){
   return rc;
 }
 
-int lsmPosixOsTestLock(lsm_file *pFile, int iLock, int nLock, int eType){
+int lsmWin32OsTestLock(lsm_file *pFile, int iLock, int nLock, int eType){
   int rc = LSM_OK;
-  PosixFile *p = (PosixFile *)pFile;
+  Win32File *p = (Win32File *)pFile;
   static const short aType[3] = { 0, F_RDLCK, F_WRLCK };
   struct flock lock;
 
@@ -366,8 +372,8 @@ int lsmPosixOsTestLock(lsm_file *pFile, int iLock, int nLock, int eType){
   return rc;
 }
 
-int lsmPosixOsShmMap(lsm_file *pFile, int iChunk, int sz, void **ppShm){
-  PosixFile *p = (PosixFile *)pFile;
+int lsmWin32OsShmMap(lsm_file *pFile, int iChunk, int sz, void **ppShm){
+  Win32File *p = (Win32File *)pFile;
 
   *ppShm = 0;
   assert( sz==LSM_SHM_CHUNK_SIZE );
@@ -380,7 +386,7 @@ int lsmPosixOsShmMap(lsm_file *pFile, int iChunk, int sz, void **ppShm){
 
     /* If the shared-memory file has not been opened, open it now. */
     if( p->shmfd<=0 ){
-      char *zShm = posixShmFile(p);
+      char *zShm = win32ShmFile(p);
       if( !zShm ) return LSM_NOMEM_BKPT;
       p->shmfd = open(zShm, O_RDWR|O_CREAT, 0644);
       lsmFree(p->pEnv, zShm);
@@ -420,11 +426,11 @@ int lsmPosixOsShmMap(lsm_file *pFile, int iChunk, int sz, void **ppShm){
   return LSM_OK;
 }
 
-void lsmPosixOsShmBarrier(void){
+void lsmWin32OsShmBarrier(void){
 }
 
-int lsmPosixOsShmUnmap(lsm_file *pFile, int bDelete){
-  PosixFile *p = (PosixFile *)pFile;
+int lsmWin32OsShmUnmap(lsm_file *pFile, int bDelete){
+  Win32File *p = (Win32File *)pFile;
   if( p->shmfd>0 ){
     int i;
     for(i=0; i<p->nShm; i++){
@@ -436,7 +442,7 @@ int lsmPosixOsShmUnmap(lsm_file *pFile, int bDelete){
     close(p->shmfd);
     p->shmfd = 0;
     if( bDelete ){
-      char *zShm = posixShmFile(p);
+      char *zShm = win32ShmFile(p);
       if( zShm ) unlink(zShm);
       lsmFree(p->pEnv, zShm);
     }
@@ -445,21 +451,17 @@ int lsmPosixOsShmUnmap(lsm_file *pFile, int bDelete){
 }
 
 
-static int lsmPosixOsClose(lsm_file *pFile){
-   PosixFile *p = (PosixFile *)pFile;
-   lsmPosixOsShmUnmap(pFile, 0);
-   if( p->pMap ) munmap(p->pMap, p->nMap);
-   close(p->fd);
-   lsm_free(p->pEnv, p->apShm);
-   lsm_free(p->pEnv, p);
-   return LSM_OK;
+static int lsmWin32OsClose(lsm_file *pFile){
+  Win32File *p = (Win32File *)pFile;
+  lsmWin32OsShmUnmap(pFile, 0);
+  if( p->pMap ) munmap(p->pMap, p->nMap);
+  close(p->fd);
+  lsm_free(p->pEnv, p->apShm);
+  lsm_free(p->pEnv, p);
+  return LSM_OK;
 }
 
-static int lsmPosixOsSleep(lsm_env *pEnv, int us){
-#if 0
-  /* Apparently on Android usleep() returns void */
-  if( usleep(us) ) return LSM_IOERR;
-#endif
+static int lsmWin32OsSleep(lsm_env *pEnv, int us){
   usleep(us);
   return LSM_OK;
 }
@@ -469,7 +471,7 @@ static int lsmPosixOsSleep(lsm_env *pEnv, int us){
 */
 #define BLOCK_HDR_SIZE ROUND8( sizeof(size_t) )
 
-static void *lsmPosixOsMalloc(lsm_env *pEnv, size_t N){
+static void *lsmWin32OsMalloc(lsm_env *pEnv, size_t N){
   unsigned char * m;
   N += BLOCK_HDR_SIZE;
   m = (unsigned char *)malloc(N);
@@ -477,19 +479,19 @@ static void *lsmPosixOsMalloc(lsm_env *pEnv, size_t N){
   return m + BLOCK_HDR_SIZE;
 }
 
-static void lsmPosixOsFree(lsm_env *pEnv, void *p){
+static void lsmWin32OsFree(lsm_env *pEnv, void *p){
   if(p){
     free( ((unsigned char *)p) - BLOCK_HDR_SIZE );
   }
 }
 
-static void *lsmPosixOsRealloc(lsm_env *pEnv, void *p, size_t N){
+static void *lsmWin32OsRealloc(lsm_env *pEnv, void *p, size_t N){
   unsigned char * m = (unsigned char *)p;
   if(1>N){
-    lsmPosixOsFree( pEnv, p );
+    lsmWin32OsFree( pEnv, p );
     return NULL;
   }else if(NULL==p){
-    return lsmPosixOsMalloc(pEnv, N);
+    return lsmWin32OsMalloc(pEnv, N);
   }else{
     void * re = NULL;
     m -= BLOCK_HDR_SIZE;
@@ -510,18 +512,18 @@ static void *lsmPosixOsRealloc(lsm_env *pEnv, void *p, size_t N){
   }
 }
 
-static size_t lsmPosixOsMSize(lsm_env *pEnv, void *p){
+static size_t lsmWin32OsMSize(lsm_env *pEnv, void *p){
   unsigned char * m = (unsigned char *)p;
   return *((size_t*)(m-BLOCK_HDR_SIZE));
 }
 #undef BLOCK_HDR_SIZE
 
 
-#ifdef LSM_MUTEX_PTHREADS 
+#ifdef LSM_MUTEX_WIN32 
 /*************************************************************************
-** Mutex methods for pthreads based systems.  If LSM_MUTEX_PTHREADS is
-** missing then a no-op implementation of mutexes found in lsm_mutex.c
-** will be used instead.
+** Mutex methods for pthreads based systems.  If LSM_MUTEX_WIN32 is
+** missing then a no-op implementation of mutexes found below will be 
+** used instead.
 */
 #include <pthread.h>
 
@@ -540,7 +542,7 @@ struct PthreadMutex {
 # define LSM_PTHREAD_STATIC_MUTEX { 0, PTHREAD_MUTEX_INITIALIZER }
 #endif
 
-static int lsmPosixOsMutexStatic(
+static int lsmWin32OsMutexStatic(
   lsm_env *pEnv,
   int iMutex,
   lsm_mutex **ppStatic
@@ -557,7 +559,7 @@ static int lsmPosixOsMutexStatic(
   return LSM_OK;
 }
 
-static int lsmPosixOsMutexNew(lsm_env *pEnv, lsm_mutex **ppNew){
+static int lsmWin32OsMutexNew(lsm_env *pEnv, lsm_mutex **ppNew){
   PthreadMutex *pMutex;           /* Pointer to new mutex */
   pthread_mutexattr_t attr;       /* Attributes object */
 
@@ -574,13 +576,13 @@ static int lsmPosixOsMutexNew(lsm_env *pEnv, lsm_mutex **ppNew){
   return LSM_OK;
 }
 
-static void lsmPosixOsMutexDel(lsm_mutex *p){
+static void lsmWin32OsMutexDel(lsm_mutex *p){
   PthreadMutex *pMutex = (PthreadMutex *)p;
   pthread_mutex_destroy(&pMutex->mutex);
   lsmFree(pMutex->pEnv, pMutex);
 }
 
-static void lsmPosixOsMutexEnter(lsm_mutex *p){
+static void lsmWin32OsMutexEnter(lsm_mutex *p){
   PthreadMutex *pMutex = (PthreadMutex *)p;
   pthread_mutex_lock(&pMutex->mutex);
 
@@ -591,7 +593,7 @@ static void lsmPosixOsMutexEnter(lsm_mutex *p){
 #endif
 }
 
-static int lsmPosixOsMutexTry(lsm_mutex *p){
+static int lsmWin32OsMutexTry(lsm_mutex *p){
   int ret;
   PthreadMutex *pMutex = (PthreadMutex *)p;
   ret = pthread_mutex_trylock(&pMutex->mutex);
@@ -605,7 +607,7 @@ static int lsmPosixOsMutexTry(lsm_mutex *p){
   return ret;
 }
 
-static void lsmPosixOsMutexLeave(lsm_mutex *p){
+static void lsmWin32OsMutexLeave(lsm_mutex *p){
   PthreadMutex *pMutex = (PthreadMutex *)p;
 #ifdef LSM_DEBUG
   assert( pthread_equal(pMutex->owner, pthread_self()) );
@@ -616,11 +618,11 @@ static void lsmPosixOsMutexLeave(lsm_mutex *p){
 }
 
 #ifdef LSM_DEBUG
-static int lsmPosixOsMutexHeld(lsm_mutex *p){
+static int lsmWin32OsMutexHeld(lsm_mutex *p){
   PthreadMutex *pMutex = (PthreadMutex *)p;
   return pMutex ? pthread_equal(pMutex->owner, pthread_self()) : 1;
 }
-static int lsmPosixOsMutexNotHeld(lsm_mutex *p){
+static int lsmWin32OsMutexNotHeld(lsm_mutex *p){
   PthreadMutex *pMutex = (PthreadMutex *)p;
   return pMutex ? !pthread_equal(pMutex->owner, pthread_self()) : 1;
 }
@@ -643,7 +645,7 @@ static NoopMutex aStaticNoopMutex[2] = {
   {0, 0, 1},
 };
 
-static int lsmPosixOsMutexStatic(
+static int lsmWin32OsMutexStatic(
   lsm_env *pEnv,
   int iMutex,
   lsm_mutex **ppStatic
@@ -652,40 +654,40 @@ static int lsmPosixOsMutexStatic(
   *ppStatic = (lsm_mutex *)&aStaticNoopMutex[iMutex-1];
   return LSM_OK;
 }
-static int lsmPosixOsMutexNew(lsm_env *pEnv, lsm_mutex **ppNew){
+static int lsmWin32OsMutexNew(lsm_env *pEnv, lsm_mutex **ppNew){
   NoopMutex *p;
   p = (NoopMutex *)lsmMallocZero(pEnv, sizeof(NoopMutex));
   if( p ) p->pEnv = pEnv;
   *ppNew = (lsm_mutex *)p;
   return (p ? LSM_OK : LSM_NOMEM_BKPT);
 }
-static void lsmPosixOsMutexDel(lsm_mutex *pMutex)  { 
+static void lsmWin32OsMutexDel(lsm_mutex *pMutex)  { 
   NoopMutex *p = (NoopMutex *)pMutex;
   assert( p->bStatic==0 && p->pEnv );
   lsmFree(p->pEnv, p);
 }
-static void lsmPosixOsMutexEnter(lsm_mutex *pMutex){ 
+static void lsmWin32OsMutexEnter(lsm_mutex *pMutex){ 
   NoopMutex *p = (NoopMutex *)pMutex;
   assert( p->bHeld==0 );
   p->bHeld = 1;
 }
-static int lsmPosixOsMutexTry(lsm_mutex *pMutex){
+static int lsmWin32OsMutexTry(lsm_mutex *pMutex){
   NoopMutex *p = (NoopMutex *)pMutex;
   assert( p->bHeld==0 );
   p->bHeld = 1;
   return 0;
 }
-static void lsmPosixOsMutexLeave(lsm_mutex *pMutex){ 
+static void lsmWin32OsMutexLeave(lsm_mutex *pMutex){ 
   NoopMutex *p = (NoopMutex *)pMutex;
   assert( p->bHeld==1 );
   p->bHeld = 0;
 }
 #ifdef LSM_DEBUG
-static int lsmPosixOsMutexHeld(lsm_mutex *pMutex){ 
+static int lsmWin32OsMutexHeld(lsm_mutex *pMutex){ 
   NoopMutex *p = (NoopMutex *)pMutex;
   return p ? p->bHeld : 1;
 }
-static int lsmPosixOsMutexNotHeld(lsm_mutex *pMutex){ 
+static int lsmWin32OsMutexNotHeld(lsm_mutex *pMutex){ 
   NoopMutex *p = (NoopMutex *)pMutex;
   return p ? !p->bHeld : 1;
 }
@@ -695,52 +697,52 @@ static int lsmPosixOsMutexNotHeld(lsm_mutex *pMutex){
 
 /* Without LSM_DEBUG, the MutexHeld tests are never called */
 #ifndef LSM_DEBUG
-# define lsmPosixOsMutexHeld    0
-# define lsmPosixOsMutexNotHeld 0
+# define lsmWin32OsMutexHeld    0
+# define lsmWin32OsMutexNotHeld 0
 #endif
 
 lsm_env *lsm_default_env(void){
-  static lsm_env posix_env = {
+  static lsm_env win32_env = {
     sizeof(lsm_env),         /* nByte */
     1,                       /* iVersion */
     /***** file i/o ******************/
     0,                       /* pVfsCtx */
-    lsmPosixOsFullpath,      /* xFullpath */
-    lsmPosixOsOpen,          /* xOpen */
-    lsmPosixOsRead,          /* xRead */
-    lsmPosixOsWrite,         /* xWrite */
-    lsmPosixOsTruncate,      /* xTruncate */
-    lsmPosixOsSync,          /* xSync */
-    lsmPosixOsSectorSize,    /* xSectorSize */
-    lsmPosixOsRemap,         /* xRemap */
-    lsmPosixOsFileid,        /* xFileid */
-    lsmPosixOsClose,         /* xClose */
-    lsmPosixOsUnlink,        /* xUnlink */
-    lsmPosixOsLock,          /* xLock */
-    lsmPosixOsTestLock,      /* xTestLock */
-    lsmPosixOsShmMap,        /* xShmMap */
-    lsmPosixOsShmBarrier,    /* xShmBarrier */
-    lsmPosixOsShmUnmap,      /* xShmUnmap */
+    lsmWin32OsFullpath,      /* xFullpath */
+    lsmWin32OsOpen,          /* xOpen */
+    lsmWin32OsRead,          /* xRead */
+    lsmWin32OsWrite,         /* xWrite */
+    lsmWin32OsTruncate,      /* xTruncate */
+    lsmWin32OsSync,          /* xSync */
+    lsmWin32OsSectorSize,    /* xSectorSize */
+    lsmWin32OsRemap,         /* xRemap */
+    lsmWin32OsFileid,        /* xFileid */
+    lsmWin32OsClose,         /* xClose */
+    lsmWin32OsUnlink,        /* xUnlink */
+    lsmWin32OsLock,          /* xLock */
+    lsmWin32OsTestLock,      /* xTestLock */
+    lsmWin32OsShmMap,        /* xShmMap */
+    lsmWin32OsShmBarrier,    /* xShmBarrier */
+    lsmWin32OsShmUnmap,      /* xShmUnmap */
     /***** memory allocation *********/
     0,                       /* pMemCtx */
-    lsmPosixOsMalloc,        /* xMalloc */
-    lsmPosixOsRealloc,       /* xRealloc */
-    lsmPosixOsFree,          /* xFree */
-    lsmPosixOsMSize,         /* xSize */
+    lsmWin32OsMalloc,        /* xMalloc */
+    lsmWin32OsRealloc,       /* xRealloc */
+    lsmWin32OsFree,          /* xFree */
+    lsmWin32OsMSize,         /* xSize */
     /***** mutexes *********************/
     0,                       /* pMutexCtx */
-    lsmPosixOsMutexStatic,   /* xMutexStatic */
-    lsmPosixOsMutexNew,      /* xMutexNew */
-    lsmPosixOsMutexDel,      /* xMutexDel */
-    lsmPosixOsMutexEnter,    /* xMutexEnter */
-    lsmPosixOsMutexTry,      /* xMutexTry */
-    lsmPosixOsMutexLeave,    /* xMutexLeave */
-    lsmPosixOsMutexHeld,     /* xMutexHeld */
-    lsmPosixOsMutexNotHeld,  /* xMutexNotHeld */
+    lsmWin32OsMutexStatic,   /* xMutexStatic */
+    lsmWin32OsMutexNew,      /* xMutexNew */
+    lsmWin32OsMutexDel,      /* xMutexDel */
+    lsmWin32OsMutexEnter,    /* xMutexEnter */
+    lsmWin32OsMutexTry,      /* xMutexTry */
+    lsmWin32OsMutexLeave,    /* xMutexLeave */
+    lsmWin32OsMutexHeld,     /* xMutexHeld */
+    lsmWin32OsMutexNotHeld,  /* xMutexNotHeld */
     /***** other *********************/
-    lsmPosixOsSleep,         /* xSleep */
+    lsmWin32OsSleep,         /* xSleep */
   };
-  return &posix_env;
+  return &win32_env;
 }
 
 #endif
