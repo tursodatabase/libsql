@@ -382,6 +382,7 @@ struct Vdbe {
   u16 nResColumn;         /* Number of columns in one row of the result set */
   u8 errorAction;         /* Recovery action to do in case of an error */
   u8 minWriteFileFormat;  /* Minimum file format for writable database files */
+  u8 prepFlags;           /* SQLITE_PREPARE_* flags */
   bft expired:1;          /* True if the VM needs to be recompiled */
   bft doingRerun:1;       /* True if rerunning after an auto-reprepare */
   bft explain:2;          /* True if EXPLAIN present on SQL command */
@@ -390,7 +391,6 @@ struct Vdbe {
   bft usesStmtJournal:1;  /* True if uses a statement journal */
   bft readOnly:1;         /* True for statements that do not write */
   bft bIsReader:1;        /* True for statements that read */
-  bft isPrepareV2:1;      /* True if prepared with prepare_v2() */
   yDbMask btreeMask;      /* Bitmask of db->aDb[] entries referenced */
   yDbMask lockMask;       /* Subset of btreeMask that requires a lock */
   u32 aCounter[5];        /* Counters used by sqlite3_stmt_status() */

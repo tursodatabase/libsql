@@ -407,7 +407,8 @@ static int fts3SqlStmt(
     if( !zSql ){
       rc = SQLITE_NOMEM;
     }else{
-      rc = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, NULL);
+      rc = sqlite3_prepare_v3(p->db, zSql, -1, SQLITE_PREPARE_PERSISTENT,
+                              &pStmt, NULL);
       sqlite3_free(zSql);
       assert( rc==SQLITE_OK || pStmt==0 );
       p->aStmt[eStmt] = pStmt;
