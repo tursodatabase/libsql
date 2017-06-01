@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_STMTSTATUS_MEMUSED\sopcode\sto\ssqlite3_stmt_status()\nfor\sfinding\sthe\sheap\smemory\susage\sby\sa\ssingle\sprepared\sstatement.
-D 2017-05-31T17:30:08.999
+C Add\sa\scomment\sto\sthe\sLemon\sdocumentation\sregarding\sthe\ssecurity\sof\sthe\nlemon.exe\scommand-line\stool.
+D 2017-06-01T01:53:19.186
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -33,7 +33,7 @@ F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
 F configure 1bcc61cdd063171d8945551c265e5701a770deeff77e0ad634f8d22e4e91c831 x
 F configure.ac 13f45f02e6c51dd0e347315b5401c3f047712b7f79b7f35619115c23755afcff
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
-F doc/lemon.html b5a3c07d33ecb8e019ce8f7660fe2dbbad9d7977
+F doc/lemon.html 1f8b8d4c9f5cfe40e679fee279cc9eb2da8e6eb74ad406028538d7864cc4b6cb
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
 F doc/vfs-shm.txt e101f27ea02a8387ce46a05be2b1a902a021d37a
 F ext/README.md fd5f78013b0a2bc6f0067afb19e6ad040e89a10179b4f6f03eee58fac5f169bd
@@ -1582,8 +1582,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cb4c5c66aba757356da3b8ec3c66a5c8c40e180b3360638ac634f7787404a5b1 b57d510465458dec5b5fc778fd6e8833392964201f9febebf526e60a543da0c2
-R 2d6db2eacee6f2353b072863dae9aea8
-T +closed b57d510465458dec5b5fc778fd6e8833392964201f9febebf526e60a543da0c2
+P c26cf978eead1c9d265eddabaa421e7735b472fcf2792cd2bdeb0901bcf3fb44
+R cafa109de895e23957551421428db7eb
 U drh
-Z d7c45be9493883b447fc11b2ac5a3511
+Z 5b71419504ef4f3662f264e629f94e21
