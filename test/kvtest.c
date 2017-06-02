@@ -90,12 +90,14 @@ static const char zHelp[] =
 "           --cache-size N         Database cache size\n"
 "           --count N              Read N blobs\n"
 "           --desc                 Read blobs in descending order\n"
+"           --integrity-check      Run 'PRAGMA integrity_check' after test\n"
 "           --max-id N             Maximum blob key to use\n"
 "           --mmap N               Mmap as much as N bytes of DBFILE\n"
 "           --jmode MODE           Set MODE journal mode prior to starting\n"
 "           --random               Read blobs in a random order\n"
 "           --start N              Start reading with this blob key\n"
 "           --stats                Output operating stats before exiting\n"
+"           --update               To an overwrite test\n"
 ;
 
 /* Reference resources used */
@@ -118,6 +120,38 @@ static const char zHelp[] =
 # define access _access
 #endif
 
+#include <stdint.h>
+#include <inttypes.h>
+
+/*
+** The following macros are used to cast pointers to integers and
+** integers to pointers.  The way you do this varies from one compiler
+** to the next, so we have developed the following set of #if statements
+** to generate appropriate macros for a wide range of compilers.
+**
+** The correct "ANSI" way to do this is to use the intptr_t type.
+** Unfortunately, that typedef is not available on all compilers, or
+** if it is available, it requires an #include of specific headers
+** that vary from one machine to the next.
+**
+** Ticket #3860:  The llvm-gcc-4.2 compiler from Apple chokes on
+** the ((void*)&((char*)0)[X]) construct.  But MSVC chokes on ((void*)(X)).
+** So we have to define the macros in different ways depending on the
+** compiler.
+*/
+#if defined(__PTRDIFF_TYPE__)  /* This case should work for GCC */
+# define SQLITE_INT_TO_PTR(X)  ((void*)(__PTRDIFF_TYPE__)(X))
+# define SQLITE_PTR_TO_INT(X)  ((sqlite3_int64)(__PTRDIFF_TYPE__)(X))
+#elif !defined(__GNUC__)       /* Works for compilers other than LLVM */
+# define SQLITE_INT_TO_PTR(X)  ((void*)&((char*)0)[X])
+# define SQLITE_PTR_TO_INT(X)  ((sqlite3_int64)(((char*)X)-(char*)0))
+#elif defined(HAVE_STDINT_H)   /* Use this case if we have ANSI headers */
+# define SQLITE_INT_TO_PTR(X)  ((void*)(intptr_t)(X))
+# define SQLITE_PTR_TO_INT(X)  ((sqlite3_int64)(intptr_t)(X))
+#else                          /* Generates a warning - but it always works */
+# define SQLITE_INT_TO_PTR(X)  ((void*)(X))
+# define SQLITE_PTR_TO_INT(X)  ((sqlite3_int64)(X))
+#endif
 
 /*
 ** Show thqe help text and quit.
@@ -410,6 +444,26 @@ static void writefileFunc(
 }
 
 /*
+**      remember(V,PTR)
+**
+** Return the integer value V.  Also save the value of V in a
+** C-language variable whose address is PTR.
+*/
+static void rememberFunc(
+  sqlite3_context *pCtx,
+  int argc,
+  sqlite3_value **argv
+){
+  sqlite3_int64 v;
+  sqlite3_int64 ptr;
+  assert( argc==2 );
+  v = sqlite3_value_int64(argv[0]);
+  ptr = sqlite3_value_int64(argv[1]);
+  *(sqlite3_int64*)SQLITE_INT_TO_PTR(ptr) = v;
+  sqlite3_result_int64(pCtx, v);
+}
+
+/*
 ** Export the kv table to individual files in the filesystem
 */
 static int exportMain(int argc, char **argv){
@@ -481,6 +535,40 @@ static unsigned char *readFile(const char *zName, int *pnByte){
   }
   if( pnByte ) *pnByte = (int)nIn;
   return pBuf;
+}
+
+/*
+** Overwrite a file with randomness.  Do not change the size of the
+** file.
+*/
+static void updateFile(const char *zName, int *pnByte){
+  FILE *out;              /* FILE from which to read content of zName */
+  sqlite3_int64 sz;       /* Size of zName in bytes */
+  size_t nWritten;        /* Number of bytes actually read */
+  unsigned char *pBuf;    /* Content to store on disk */
+
+  sz = fileSize(zName);
+  if( sz<0 ){
+    fatalError("No such file: \"%s\"", zName);
+  }
+  *pnByte = (int)sz;
+  if( sz==0 ) return;
+  pBuf = sqlite3_malloc64( sz );
+  if( pBuf==0 ){
+    fatalError("Cannot allocate %lld bytes\n", sz);
+  }
+  sqlite3_randomness((int)sz, pBuf); 
+  out = fopen(zName, "wb");
+  if( out==0 ){
+    fatalError("Cannot open \"%s\" for writing\n", zName);
+  }
+  nWritten = fwrite(pBuf, 1, (size_t)sz, out);
+  fclose(out);
+  if( nWritten!=(size_t)sz ){
+    fatalError("Wrote only %d of %d bytes to \"%s\"\n",
+               (int)nWritten, (int)sz, zName);
+  }
+  sqlite3_free(pBuf);
 }
 
 /*
@@ -637,6 +725,9 @@ static int runMain(int argc, char **argv){
   int bBlobApi = 0;           /* Use the incremental blob I/O API */
   int bStats = 0;             /* Print stats before exiting */
   int eOrder = ORDER_ASC;     /* Access order */
+  int isUpdateTest = 0;       /* Do in-place updates rather than reads */
+  int doIntegrityCk = 0;      /* Run PRAGMA integrity_check after the test */
+  int noSync = 0;             /* Disable synchronous mode */
   sqlite3 *db = 0;            /* Database connection */
   sqlite3_stmt *pStmt = 0;    /* Prepared statement for SQL access */
   sqlite3_blob *pBlob = 0;    /* Handle for incremental Blob I/O */
@@ -713,7 +804,25 @@ static int runMain(int argc, char **argv){
       bStats = 1;
       continue;
     }
+    if( strcmp(z, "-update")==0 ){
+      isUpdateTest = 1;
+      continue;
+    }
+    if( strcmp(z, "-integrity-check")==0 ){
+      doIntegrityCk = 1;
+      continue;
+    }
+    if( strcmp(z, "-nosync")==0 ){
+      noSync = 1;
+      continue;
+    }
     fatalError("unknown option: \"%s\"", argv[i]);
+  }
+  if( eType==PATH_DB ){
+    /* Recover any prior crashes prior to starting the timer */
+    sqlite3_open(zDb, &db);
+    sqlite3_exec(db, "SELECT rowid FROM sqlite_master LIMIT 1", 0, 0, 0);
+    sqlite3_close(db);
   }
   tmStart = timeOfDay();
   if( eType==PATH_DB ){
@@ -724,9 +833,13 @@ static int runMain(int argc, char **argv){
     }
     zSql = sqlite3_mprintf("PRAGMA mmap_size=%d", mmapSize);
     sqlite3_exec(db, zSql, 0, 0, 0);
+    sqlite3_free(zSql);
     zSql = sqlite3_mprintf("PRAGMA cache_size=%d", iCache);
     sqlite3_exec(db, zSql, 0, 0, 0);
     sqlite3_free(zSql);
+    if( noSync ){
+      sqlite3_exec(db, "PRAGMA synchronous=OFF", 0, 0, 0);
+    }
     pStmt = 0;
     sqlite3_prepare_v2(db, "PRAGMA page_size", -1, &pStmt, 0);
     if( sqlite3_step(pStmt)==SQLITE_ROW ){
@@ -770,13 +883,18 @@ static int runMain(int argc, char **argv){
       char *zKey;
       zKey = sqlite3_mprintf("%s/%06d", zDb, iKey);
       nData = 0;
-      pData = readFile(zKey, &nData);
+      if( isUpdateTest ){
+        updateFile(zKey, &nData);
+      }else{
+        pData = readFile(zKey, &nData);
+        sqlite3_free(pData);
+      }
       sqlite3_free(zKey);
-      sqlite3_free(pData);
     }else if( bBlobApi ){
       /* CASE 2: Reading from database using the incremental BLOB I/O API */
       if( pBlob==0 ){
-        rc = sqlite3_blob_open(db, "main", "kv", "v", iKey, 0, &pBlob);
+        rc = sqlite3_blob_open(db, "main", "kv", "v", iKey,
+                               isUpdateTest, &pBlob);
         if( rc ){
           fatalError("could not open sqlite3_blob handle: %s",
                      sqlite3_errmsg(db));
@@ -791,17 +909,36 @@ static int runMain(int argc, char **argv){
           pData = sqlite3_realloc(pData, nAlloc);
         }
         if( pData==0 ) fatalError("cannot allocate %d bytes", nData+1);
-        rc = sqlite3_blob_read(pBlob, pData, nData, 0);
-        if( rc!=SQLITE_OK ){
-          fatalError("could not read the blob at %d: %s", iKey,
-                     sqlite3_errmsg(db));
+        if( isUpdateTest ){
+          sqlite3_randomness((int)nData, pData);
+          rc = sqlite3_blob_write(pBlob, pData, nData, 0);
+          if( rc!=SQLITE_OK ){
+            fatalError("could not write the blob at %d: %s", iKey,
+                      sqlite3_errmsg(db));
+          }
+        }else{
+          rc = sqlite3_blob_read(pBlob, pData, nData, 0);
+          if( rc!=SQLITE_OK ){
+            fatalError("could not read the blob at %d: %s", iKey,
+                      sqlite3_errmsg(db));
+          }
         }
       }
     }else{
       /* CASE 3: Reading from database using SQL */
       if( pStmt==0 ){
-        rc = sqlite3_prepare_v2(db, 
-               "SELECT v FROM kv WHERE k=?1", -1, &pStmt, 0);
+        if( isUpdateTest ){
+          sqlite3_create_function(db, "remember", 2, SQLITE_UTF8, 0,
+                                  rememberFunc, 0, 0);
+
+          rc = sqlite3_prepare_v2(db, 
+            "UPDATE kv SET v=randomblob(remember(length(v),?2))"
+            " WHERE k=?1", -1, &pStmt, 0);
+          sqlite3_bind_int64(pStmt, 2, SQLITE_PTR_TO_INT(&nData));
+        }else{
+          rc = sqlite3_prepare_v2(db, 
+                 "SELECT v FROM kv WHERE k=?1", -1, &pStmt, 0);
+        }
         if( rc ){
           fatalError("cannot prepare query: %s", sqlite3_errmsg(db));
         }
@@ -809,12 +946,11 @@ static int runMain(int argc, char **argv){
         sqlite3_reset(pStmt);
       }
       sqlite3_bind_int(pStmt, 1, iKey);
+      nData = 0;
       rc = sqlite3_step(pStmt);
       if( rc==SQLITE_ROW ){
         nData = sqlite3_column_bytes(pStmt, 0);
         pData = (unsigned char*)sqlite3_column_blob(pStmt, 0);
-      }else{
-        nData = 0;
       }
     }
     if( eOrder==ORDER_ASC ){
@@ -835,13 +971,25 @@ static int runMain(int argc, char **argv){
   if( bStats ){
     display_stats(db, 0);
   }
-  if( db ) sqlite3_close(db);
+  if( db ){
+    sqlite3_exec(db, "COMMIT", 0, 0, 0);
+    sqlite3_close(db);
+  }
   tmElapsed = timeOfDay() - tmStart;
   if( nExtra ){
     printf("%d cycles due to %d misses\n", nCount, nExtra);
   }
   if( eType==PATH_DB ){
     printf("SQLite version: %s\n", sqlite3_libversion());
+    if( doIntegrityCk ){
+      sqlite3_open(zDb, &db);
+      sqlite3_prepare_v2(db, "PRAGMA integrity_check", -1, &pStmt, 0);
+      while( sqlite3_step(pStmt)==SQLITE_ROW ){
+        printf("integrity-check: %s\n", sqlite3_column_text(pStmt, 0));
+      }
+      sqlite3_finalize(pStmt);
+      sqlite3_close(db);
+    }
   }
   printf("--count %d --max-id %d", nCount-nExtra, iMax);
   switch( eOrder ){
@@ -852,11 +1000,17 @@ static int runMain(int argc, char **argv){
   if( eType==PATH_DB ){
     printf("--cache-size %d --jmode %s\n", iCache, zJMode);
     printf("--mmap %d%s\n", mmapSize, bBlobApi ? " --blob-api" : "");
+    if( noSync ) printf("--nosync\n");
   }
   if( iPagesize ) printf("Database page size: %d\n", iPagesize);
   printf("Total elapsed time: %.3f\n", tmElapsed/1000.0);
-  printf("Microseconds per BLOB read: %.3f\n", tmElapsed*1000.0/nCount);
-  printf("Content read rate: %.1f MB/s\n", nTotal/(1000.0*tmElapsed));
+  if( isUpdateTest ){
+    printf("Microseconds per BLOB write: %.3f\n", tmElapsed*1000.0/nCount);
+    printf("Content write rate: %.1f MB/s\n", nTotal/(1000.0*tmElapsed));
+  }else{
+    printf("Microseconds per BLOB read: %.3f\n", tmElapsed*1000.0/nCount);
+    printf("Content read rate: %.1f MB/s\n", nTotal/(1000.0*tmElapsed));
+  }
   return 0;
 }
 

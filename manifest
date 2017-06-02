@@ -1,5 +1,5 @@
-C Change\sthe\sname\sof\sthe\sOP_Seek\sopcode\sinto\sOP_DeferredSeek\sfor\sbetter\nclarity\sof\sfunction.\s\sNo\sfunctional\scode\schanges.
-D 2017-06-02T15:44:22.919
+C Work\stoward\senhancing\skvtest\sto\smeasure\swrite\sperformance.
+D 2017-06-02T19:31:46.986
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -925,7 +925,7 @@ F test/json102.test eeb54efa221e50b74a2d6fb9259963b48d7414dca3ce2fdfdeed45cb2848
 F test/json103.test c5f6b85e69de05f6b3195f9f9d5ce9cd179099a0
 F test/json104.test 877d5845f6303899b7889ea5dd1bea99076e3100574d5c536082245c5805dcaa
 F test/keyword1.test 37ef6bba5d2ed5b07ecdd6810571de2956599dff
-F test/kvtest.c b9a9822dda05a1aa481215a52e2fc93cd8b22ee5
+F test/kvtest.c 63f9a1c31391f304e87d4854aea54c01afa9e4f6d05e11124598c7415b893a85
 F test/lastinsert.test 42e948fd6442f07d60acbd15d33fb86473e0ef63
 F test/laststmtchanges.test ae613f53819206b3222771828d024154d51db200
 F test/like.test 0603f4fa0dad50987f70032c05800cbfa8985302
@@ -1582,7 +1582,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d637feb4e3032ee0067c204b56d2af5f7eab228e645f2e77b0b043c2b299724d
-R 16a899dc6b5945a11289cea26923fb73
+P ab33d299c7dab52703d06f3441c8a98c6c809b2612ec65d71aab2919bd2b1540
+R b213b6f467b3c9502658fd4e2800b6d6
 U drh
-Z 08866295af3c1947bc08b06ca4b13f90
+Z 24f39ffaffd16b2467372fb4bd435c2b
