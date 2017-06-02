@@ -657,6 +657,7 @@ static void btreeCheckPtrmap(BtShared *p, int nPage, const char *zLog){
             (n>4 ? (int)pMap->aPtr[4].eType : -1),
             (n>4 ? (int)pMap->aPtr[4].parent : -1)
             );
+        abort();
         break;
       }
     }
@@ -8806,6 +8807,8 @@ int sqlite3BtreeDelete(BtCursor *pCur, u8 flags){
     invalidateIncrblobCursors(p, pCur->pgnoRoot, pCur->info.nKey, 0);
   }
 
+  btreeCheckPtrmap(pBt, pBt->nPage, "sqlite3BtreeDelete(0)");
+
   /* Make the page containing the entry to be deleted writable. Then free any
   ** overflow pages associated with the entry and finally remove the cell
   ** itself from within the page.  */
@@ -8814,6 +8817,8 @@ int sqlite3BtreeDelete(BtCursor *pCur, u8 flags){
   rc = clearCell(pPage, pCell, &info);
   dropCell(pPage, iCellIdx, info.nSize, &rc);
   if( rc ) return rc;
+
+  btreeCheckPtrmap(pBt, pBt->nPage, "sqlite3BtreeDelete(1)");
 
   /* If the cell deleted was not located on a leaf page, then the cursor
   ** is currently pointing to the largest entry in the sub-tree headed
@@ -8840,6 +8845,8 @@ int sqlite3BtreeDelete(BtCursor *pCur, u8 flags){
     if( rc ) return rc;
   }
 
+  btreeCheckPtrmap(pBt, pBt->nPage, "sqlite3BtreeDelete(2)");
+
   /* Balance the tree. If the entry deleted was located on a leaf page,
   ** then the cursor still points to that page. In this case the first
   ** call to balance() repairs the tree, and the if(...) condition is
@@ -8863,6 +8870,8 @@ int sqlite3BtreeDelete(BtCursor *pCur, u8 flags){
     rc = balance(pCur);
   }
 
+  btreeCheckPtrmap(pBt, pBt->nPage, "sqlite3BtreeDelete(3)");
+
   if( rc==SQLITE_OK ){
     if( bSkipnext ){
       assert( bPreserve && (pCur->iPage==iCellDepth || CORRUPT_DB) );
@@ -8882,7 +8891,6 @@ int sqlite3BtreeDelete(BtCursor *pCur, u8 flags){
       }
     }
   }
-  btreeCheckPtrmap(pBt, pBt->nPage, "sqlite3BtreeInsert()");
   return rc;
 }
 
