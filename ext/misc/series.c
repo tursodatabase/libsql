@@ -33,7 +33,7 @@
 ** The generate_series "function" is really a virtual table with the
 ** following schema:
 **
-**     CREATE FUNCTION generate_series(
+**     CREATE TABLE generate_series(
 **       value,
 **       start HIDDEN,
 **       stop HIDDEN,
