@@ -84,4 +84,36 @@ do_malloc_test backup_malloc-2 -tclprep {
   db2 close
 }
 
+reset_db
+do_execsql_test 3.0 {
+  PRAGMA page_size = 16384;
+  BEGIN;
+  CREATE TABLE t1(a, b);
+  INSERT INTO t1 VALUES(1, 2);
+  COMMIT;
+}
+
+do_faultsim_test 3 -faults oom* -prep {
+  catch { db close }
+  catch { db2 close }
+
+  forcedelete test2.db
+  sqlite3 db2 test2.db
+  sqlite3 db test.db
+  sqlite3_backup B db2 main db main
+} -body {
+
+  set rc [B step 50]
+  if {$rc == "SQLITE_NOMEM" || $rc == "SQLITE_IOERR_NOMEM"} {
+    error "out of memory"
+  }
+
+} -test {
+  faultsim_test_result {0 {}} 
+  faultsim_integrity_check
+  
+  # Finalize the backup.
+  catch { B finish }
+}
+
 finish_test

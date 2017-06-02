@@ -99,12 +99,25 @@ do_test index7-1.5 {
   catchsql {
     CREATE INDEX bad1 ON t1(a,b) WHERE a!=random();
   }
-} {1 {functions prohibited in partial index WHERE clauses}}
+} {1 {non-deterministic functions prohibited in partial index WHERE clauses}}
 do_test index7-1.6 {
   catchsql {
     CREATE INDEX bad1 ON t1(a,b) WHERE a NOT LIKE 'abc%';
   }
-} {1 {functions prohibited in partial index WHERE clauses}}
+} {0 {}}
+do_execsql_test index7-1.7 {
+  INSERT INTO t1(a,b,c)
+     VALUES('abcde',1,101),('abdef',2,102),('xyz',3,103),('abcz',4,104);
+  SELECT c FROM t1 WHERE a NOT LIKE 'abc%' AND a=7 ORDER BY +b;
+} {7}
+do_execsql_test index7-1.7eqp {
+  EXPLAIN QUERY PLAN
+  SELECT b FROM t1 WHERE a NOT LIKE 'abc%' AND a=7 ORDER BY +b;
+} {/SEARCH TABLE t1 USING COVERING INDEX bad1 /}
+do_execsql_test index7-1.8 {
+  DELETE FROM t1 WHERE c>=101;
+  DROP INDEX IF EXISTS bad1;
+} {}
 
 do_test index7-1.10 {
   execsql {

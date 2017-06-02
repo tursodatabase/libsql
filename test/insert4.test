@@ -15,6 +15,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix insert4
 
 ifcapable !view||!subquery {
   finish_test
@@ -565,5 +566,37 @@ do_catchsql_test insert4-9.1 {
   CREATE TABLE t1(x);
   INSERT INTO t1(x) VALUES(5 COLLATE xyzzy) UNION SELECT 0;
 } {1 {no such collation sequence: xyzzy}}
+
+#-------------------------------------------------------------------------
+# Check that running an integrity-check does not disable the xfer 
+# optimization for tables with CHECK constraints.
+#
+do_execsql_test 10.1 {
+  CREATE TABLE t8(
+    rid INTEGER,
+    pid INTEGER,
+    mid INTEGER,
+    px INTEGER DEFAULT(0) CHECK(px IN(0, 1))
+  );
+  CREATE TEMP TABLE x(
+    rid INTEGER,
+    pid INTEGER,
+    mid INTEGER,
+    px INTEGER DEFAULT(0) CHECK(px IN(0, 1))
+  );
+}
+do_test 10.2 {
+  set sqlite3_xferopt_count 0
+  execsql { INSERT INTO x SELECT * FROM t8 }
+  set sqlite3_xferopt_count
+} {1}
+
+do_test 10.3 {
+  execsql { PRAGMA integrity_check }
+  set sqlite3_xferopt_count 0
+  execsql { INSERT INTO x     SELECT * FROM t8 }
+  set sqlite3_xferopt_count
+} {1}
+
 
 finish_test

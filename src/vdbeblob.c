@@ -23,13 +23,14 @@
 */
 typedef struct Incrblob Incrblob;
 struct Incrblob {
-  int flags;              /* Copy of "flags" passed to sqlite3_blob_open() */
   int nByte;              /* Size of open blob, in bytes */
   int iOffset;            /* Byte offset of blob in cursor data */
-  int iCol;               /* Table column this handle is open on */
+  u16 iCol;               /* Table column this handle is open on */
   BtCursor *pCsr;         /* Cursor pointing at blob row */
   sqlite3_stmt *pStmt;    /* Statement holding cursor open */
   sqlite3 *db;            /* The associated database */
+  char *zDb;              /* Database name */
+  Table *pTab;            /* Table object */
 };
 
 
@@ -55,17 +56,27 @@ static int blobSeekToRow(Incrblob *p, sqlite3_int64 iRow, char **pzErr){
   char *zErr = 0;                 /* Error message */
   Vdbe *v = (Vdbe *)p->pStmt;
 
-  /* Set the value of the SQL statements only variable to integer iRow. 
-  ** This is done directly instead of using sqlite3_bind_int64() to avoid 
-  ** triggering asserts related to mutexes.
+  /* Set the value of register r[1] in the SQL statement to integer iRow. 
+  ** This is done directly as a performance optimization
   */
-  assert( v->aVar[0].flags&MEM_Int );
-  v->aVar[0].u.i = iRow;
+  v->aMem[1].flags = MEM_Int;
+  v->aMem[1].u.i = iRow;
 
-  rc = sqlite3_step(p->pStmt);
+  /* If the statement has been run before (and is paused at the OP_ResultRow)
+  ** then back it up to the point where it does the OP_SeekRowid.  This could
+  ** have been down with an extra OP_Goto, but simply setting the program
+  ** counter is faster. */
+  if( v->pc>3 ){
+    v->pc = 3;
+    rc = sqlite3VdbeExec(v);
+  }else{
+    rc = sqlite3_step(p->pStmt);
+  }
   if( rc==SQLITE_ROW ){
     VdbeCursor *pC = v->apCsr[0];
-    u32 type = pC->aType[p->iCol];
+    u32 type = pC->nHdrParsed>p->iCol ? pC->aType[p->iCol] : 0;
+    testcase( pC->nHdrParsed==p->iCol );
+    testcase( pC->nHdrParsed==p->iCol+1 );
     if( type<12 ){
       zErr = sqlite3MPrintf(p->db, "cannot open value of type %s",
           type==0?"null": type==7?"real": "integer"
@@ -110,7 +121,7 @@ int sqlite3_blob_open(
   const char *zTable,     /* The table containing the blob */
   const char *zColumn,    /* The column containing the blob */
   sqlite_int64 iRow,      /* The row containing the glob */
-  int flags,              /* True -> read/write access, false -> read-only */
+  int wrFlag,             /* True -> read/write access, false -> read-only */
   sqlite3_blob **ppBlob   /* Handle for accessing the blob returned here */
 ){
   int nAttempt = 0;
@@ -132,7 +143,7 @@ int sqlite3_blob_open(
     return SQLITE_MISUSE_BKPT;
   }
 #endif
-  flags = !!flags;                /* flags = (flags ? 1 : 0); */
+  wrFlag = !!wrFlag;                /* wrFlag = (wrFlag ? 1 : 0); */
 
   sqlite3_mutex_enter(db->mutex);
 
@@ -173,6 +184,8 @@ int sqlite3_blob_open(
       sqlite3BtreeLeaveAll(db);
       goto blob_open_out;
     }
+    pBlob->pTab = pTab;
+    pBlob->zDb = db->aDb[sqlite3SchemaToIndex(db, pTab->pSchema)].zDbSName;
 
     /* Now search pTab for the exact column. */
     for(iCol=0; iCol<pTab->nCol; iCol++) {
@@ -190,9 +203,8 @@ int sqlite3_blob_open(
 
     /* If the value is being opened for writing, check that the
     ** column is not indexed, and that it is not part of a foreign key. 
-    ** It is against the rules to open a column to which either of these
-    ** descriptions applies for writing.  */
-    if( flags ){
+    */
+    if( wrFlag ){
       const char *zFault = 0;
       Index *pIdx;
 #ifndef SQLITE_OMIT_FOREIGN_KEY
@@ -253,19 +265,17 @@ int sqlite3_blob_open(
       static const VdbeOpList openBlob[] = {
         {OP_TableLock,      0, 0, 0},  /* 0: Acquire a read or write lock */
         {OP_OpenRead,       0, 0, 0},  /* 1: Open a cursor */
-        {OP_Variable,       1, 1, 0},  /* 2: Move ?1 into reg[1] */
-        {OP_NotExists,      0, 7, 1},  /* 3: Seek the cursor */
-        {OP_Column,         0, 0, 1},  /* 4  */
-        {OP_ResultRow,      1, 0, 0},  /* 5  */
-        {OP_Goto,           0, 2, 0},  /* 6  */
-        {OP_Close,          0, 0, 0},  /* 7  */
-        {OP_Halt,           0, 0, 0},  /* 8  */
+        /* blobSeekToRow() will initialize r[1] to the desired rowid */
+        {OP_NotExists,      0, 5, 1},  /* 2: Seek the cursor to rowid=r[1] */
+        {OP_Column,         0, 0, 1},  /* 3  */
+        {OP_ResultRow,      1, 0, 0},  /* 4  */
+        {OP_Halt,           0, 0, 0},  /* 5  */
       };
       Vdbe *v = (Vdbe *)pBlob->pStmt;
       int iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
       VdbeOp *aOp;
 
-      sqlite3VdbeAddOp4Int(v, OP_Transaction, iDb, flags, 
+      sqlite3VdbeAddOp4Int(v, OP_Transaction, iDb, wrFlag, 
                            pTab->pSchema->schema_cookie,
                            pTab->pSchema->iGeneration);
       sqlite3VdbeChangeP5(v, 1);     
@@ -282,7 +292,7 @@ int sqlite3_blob_open(
 #else
         aOp[0].p1 = iDb;
         aOp[0].p2 = pTab->tnum;
-        aOp[0].p3 = flags;
+        aOp[0].p3 = wrFlag;
         sqlite3VdbeChangeP4(v, 1, pTab->zName, P4_TRANSIENT);
       }
       if( db->mallocFailed==0 ){
@@ -290,7 +300,7 @@ int sqlite3_blob_open(
 
         /* Remove either the OP_OpenWrite or OpenRead. Set the P2 
         ** parameter of the other to pTab->tnum.  */
-        if( flags ) aOp[1].opcode = OP_OpenWrite;
+        if( wrFlag ) aOp[1].opcode = OP_OpenWrite;
         aOp[1].p2 = pTab->tnum;
         aOp[1].p3 = iDb;   
 
@@ -303,23 +313,21 @@ int sqlite3_blob_open(
         */
         aOp[1].p4type = P4_INT32;
         aOp[1].p4.i = pTab->nCol+1;
-        aOp[4].p2 = pTab->nCol;
+        aOp[3].p2 = pTab->nCol;
 
-        pParse->nVar = 1;
+        pParse->nVar = 0;
         pParse->nMem = 1;
         pParse->nTab = 1;
         sqlite3VdbeMakeReady(v, pParse);
       }
     }
    
-    pBlob->flags = flags;
     pBlob->iCol = iCol;
     pBlob->db = db;
     sqlite3BtreeLeaveAll(db);
     if( db->mallocFailed ){
       goto blob_open_out;
     }
-    sqlite3_bind_int64(pBlob->pStmt, 1, iRow);
     rc = blobSeekToRow(pBlob, iRow, &zErr);
   } while( (++nAttempt)<SQLITE_MAX_SCHEMA_RETRY && rc==SQLITE_SCHEMA );
 
@@ -394,6 +402,30 @@ static int blobReadWrite(
     */
     assert( db == v->db );
     sqlite3BtreeEnterCursor(p->pCsr);
+
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
+    if( xCall==sqlite3BtreePutData && db->xPreUpdateCallback ){
+      /* If a pre-update hook is registered and this is a write cursor, 
+      ** invoke it here. 
+      ** 
+      ** TODO: The preupdate-hook is passed SQLITE_DELETE, even though this
+      ** operation should really be an SQLITE_UPDATE. This is probably
+      ** incorrect, but is convenient because at this point the new.* values 
+      ** are not easily obtainable. And for the sessions module, an 
+      ** SQLITE_UPDATE where the PK columns do not change is handled in the 
+      ** same way as an SQLITE_DELETE (the SQLITE_DELETE code is actually
+      ** slightly more efficient). Since you cannot write to a PK column
+      ** using the incremental-blob API, this works. For the sessions module
+      ** anyhow.
+      */
+      sqlite3_int64 iKey;
+      iKey = sqlite3BtreeIntegerKey(p->pCsr);
+      sqlite3VdbePreUpdateHook(
+          v, v->apCsr[0], SQLITE_DELETE, p->zDb, p->pTab, iKey, -1
+      );
+    }
+#endif
+
     rc = xCall(p->pCsr, iOffset+p->iOffset, n, z);
     sqlite3BtreeLeaveCursor(p->pCsr);
     if( rc==SQLITE_ABORT ){
@@ -413,7 +445,7 @@ static int blobReadWrite(
 ** Read data from a blob handle.
 */
 int sqlite3_blob_read(sqlite3_blob *pBlob, void *z, int n, int iOffset){
-  return blobReadWrite(pBlob, z, n, iOffset, sqlite3BtreeData);
+  return blobReadWrite(pBlob, z, n, iOffset, sqlite3BtreePayloadChecked);
 }
 
 /*

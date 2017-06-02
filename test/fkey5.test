@@ -115,8 +115,11 @@ do_test fkey5-1.6 {
 # EVIDENCE-OF: R-55672-01620 The first column is the name of the table
 # that contains the REFERENCES clause.
 #
-# EVIDENCE-OF: R-25219-25618 The second column is the rowid of the row
-# that contains the invalid REFERENCES clause.
+# EVIDENCE-OF: R-00471-55166 The second column is the rowid of the row
+# that contains the invalid REFERENCES clause, or NULL if the child
+# table is a WITHOUT ROWID table.
+#
+# The second clause in the previous is tested by fkey5-10.3.
 #
 # EVIDENCE-OF: R-40482-20265 The third column is the name of the table
 # that is referred to.
@@ -388,5 +391,43 @@ do_execsql_test 9.4 {
   PRAGMA foreign_key_check(k2);
 } {k2 3 s1 0}
 
+#-------------------------------------------------------------------------
+# Test using a WITHOUT ROWID table as the child table with an INTEGER 
+# PRIMARY KEY as the parent key.
+#
+reset_db
+do_execsql_test 10.1 {
+  CREATE TABLE p30 (id INTEGER PRIMARY KEY);
+  CREATE TABLE IF NOT EXISTS c30 (
+      line INTEGER, 
+      master REFERENCES p30(id), 
+      PRIMARY KEY(master)
+  ) WITHOUT ROWID;
+
+  INSERT INTO p30 (id) VALUES (1);
+  INSERT INTO c30 (master, line)  VALUES (1, 999);
+}
+do_execsql_test 10.2 {
+  PRAGMA foreign_key_check;
+}
+# EVIDENCE-OF: R-00471-55166 The second column is the rowid of the row
+# that contains the invalid REFERENCES clause, or NULL if the child
+# table is a WITHOUT ROWID table.
+do_execsql_test 10.3 {
+  INSERT INTO c30 VALUES(45, 45);
+  PRAGMA foreign_key_check;
+} {c30 {} p30 0}
+
+#-------------------------------------------------------------------------
+# Test "foreign key mismatch" errors.
+#
+reset_db
+do_execsql_test 11.0 {
+  CREATE TABLE tt(y);
+  CREATE TABLE c11(x REFERENCES tt(y));
+}
+do_catchsql_test 11.1 {
+  PRAGMA foreign_key_check;
+} {1 {foreign key mismatch - "c11" referencing "tt"}}
 
 finish_test

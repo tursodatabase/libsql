@@ -1378,6 +1378,7 @@ do_test wal-21.3 {
 #-------------------------------------------------------------------------
 # Test reading and writing of databases with different page-sizes.
 #
+incr ::do_not_use_codec
 foreach pgsz {512 1024 2048 4096 8192 16384 32768 65536} {
   do_multiclient_test tn [string map [list %PGSZ% $pgsz] {
     do_test wal-22.%PGSZ%.$tn.1 {
@@ -1398,6 +1399,7 @@ foreach pgsz {512 1024 2048 4096 8192 16384 32768 65536} {
     } {0}
   }]
 }
+incr ::do_not_use_codec -1
 
 #-------------------------------------------------------------------------
 # Test that when 1 or more pages are recovered from a WAL file, 

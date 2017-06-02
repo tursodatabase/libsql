@@ -108,7 +108,7 @@ AC_CHECK_HEADERS([sys/types.h stdlib.h stdint.h inttypes.h malloc.h])
 #########
 # Figure out whether or not we have these functions
 #
-AC_CHECK_FUNCS([fdatasync gmtime_r isnan localtime_r localtime_s malloc_usable_size strchrnul usleep utime])
+AC_CHECK_FUNCS([fdatasync gmtime_r isnan localtime_r localtime_s malloc_usable_size strchrnul usleep utime pread pread64 pwrite pwrite64])
 
 #########
 # By default, we use the amalgamation (this may be changed below...)
@@ -334,6 +334,20 @@ if test "${use_tcl}" = "yes" ; then
       fi
     fi
 
+    # Recent versions of Xcode on Macs hid the tclConfig.sh file
+    # in a strange place.
+    if test x"${ac_cv_c_tclconfig}" = x ; then
+      if test x"$cross_compiling" = xno; then
+        for i in /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX*.sdk/usr/lib
+        do
+          if test -f "$i/tclConfig.sh" ; then
+            ac_cv_c_tclconfig="$i"
+            break
+          fi
+        done
+      fi
+    fi
+
     # then check for a private Tcl installation
     if test x"${ac_cv_c_tclconfig}" = x ; then
       for i in \
@@ -546,7 +560,7 @@ AC_SEARCH_LIBS(fdatasync, [rt])
 AC_ARG_ENABLE(debug, AC_HELP_STRING([--enable-debug],[enable debugging & verbose explain]),
       [use_debug=$enableval],[use_debug=no])
 if test "${use_debug}" = "yes" ; then
-  TARGET_DEBUG="-DSQLITE_DEBUG=1"
+  TARGET_DEBUG="-DSQLITE_DEBUG=1 -DSQLITE_ENABLE_SELECTTRACE -DSQLITE_ENABLE_WHERETRACE -O0"
 else
   TARGET_DEBUG="-DNDEBUG"
 fi
@@ -574,26 +588,50 @@ else
   OPT_FEATURE_FLAGS="-DSQLITE_OMIT_LOAD_EXTENSION=1"
 fi
 
+##########
+# Do we want to support memsys3 and/or memsys5
+#
+AC_ARG_ENABLE(memsys5, 
+  AC_HELP_STRING([--enable-memsys5],[Enable MEMSYS5]),
+  [enable_memsys5=yes],[enable_memsys5=no])
+AC_MSG_CHECKING([whether to support MEMSYS5])
+if test "${enable_memsys5}" = "yes"; then
+  OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_MEMSYS5"
+  AC_MSG_RESULT([yes])
+else
+  AC_MSG_RESULT([no])
+fi
+AC_ARG_ENABLE(memsys3, 
+  AC_HELP_STRING([--enable-memsys3],[Enable MEMSYS3]),
+  [enable_memsys3=yes],[enable_memsys3=no])
+AC_MSG_CHECKING([whether to support MEMSYS3])
+if test "${enable_memsys3}" = "yes" -a "${enable_memsys5}" = "no"; then
+  OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_MEMSYS3"
+  AC_MSG_RESULT([yes])
+else
+  AC_MSG_RESULT([no])
+fi
+
 #########
 # See whether we should enable Full Text Search extensions
 AC_ARG_ENABLE(fts3, AC_HELP_STRING([--enable-fts3],
       [Enable the FTS3 extension]),
       [enable_fts3=yes],[enable_fts3=no])
 if test "${enable_fts3}" = "yes" ; then
-  OPT_FEATURE_FLAGS+=" -DSQLITE_ENABLE_FTS3"
+  OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_FTS3"
 fi
 AC_ARG_ENABLE(fts4, AC_HELP_STRING([--enable-fts4],
       [Enable the FTS4 extension]),
       [enable_fts4=yes],[enable_fts4=no])
 if test "${enable_fts4}" = "yes" ; then
-  OPT_FEATURE_FLAGS+=" -DSQLITE_ENABLE_FTS4"
+  OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_FTS4"
   AC_SEARCH_LIBS([log],[m])
 fi
 AC_ARG_ENABLE(fts5, AC_HELP_STRING([--enable-fts5],
       [Enable the FTS5 extension]),
       [enable_fts5=yes],[enable_fts5=no])
 if test "${enable_fts5}" = "yes" ; then
-  OPT_FEATURE_FLAGS+=" -DSQLITE_ENABLE_FTS5"
+  OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_FTS5"
   AC_SEARCH_LIBS([log],[m])
 fi
 
@@ -603,7 +641,7 @@ AC_ARG_ENABLE(json1, AC_HELP_STRING([--enable-json1],
       [Enable the JSON1 extension]),
       [enable_json1=yes],[enable_json1=no])
 if test "${enable_json1}" = "yes" ; then
-  OPT_FEATURE_FLAGS+=" -DSQLITE_ENABLE_JSON1"
+  OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_JSON1"
 fi
 
 #########
@@ -612,11 +650,21 @@ AC_ARG_ENABLE(rtree, AC_HELP_STRING([--enable-rtree],
       [Enable the RTREE extension]),
       [enable_rtree=yes],[enable_rtree=no])
 if test "${enable_rtree}" = "yes" ; then
-  OPT_FEATURE_FLAGS+=" -DSQLITE_ENABLE_RTREE"
+  OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_RTREE"
 fi
 
 #########
-# attempt to duplicate any OMITS and ENABLES into the $(OPT_FEATURE_FLAGS) parameter
+# See whether we should enable the SESSION extension
+AC_ARG_ENABLE(session, AC_HELP_STRING([--enable-session],
+      [Enable the SESSION extension]),
+      [enable_session=yes],[enable_session=no])
+if test "${enable_session}" = "yes" ; then
+  OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_SESSION"
+  OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_PREUPDATE_HOOK"
+fi
+
+#########
+# attempt to duplicate any OMITS and ENABLES into the ${OPT_FEATURE_FLAGS} parameter
 for option in $CFLAGS $CPPFLAGS
 do
   case $option in

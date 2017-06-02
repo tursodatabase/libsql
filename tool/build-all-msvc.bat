@@ -268,7 +268,7 @@ REM
 IF DEFINED TCLSH_CMD (
   SET TCLSH_FILE=%TCLSH_CMD%
 ) ELSE (
-  SET TCLSH_FILE=tclsh85.exe
+  SET TCLSH_FILE=tclsh.exe
 )
 
 FOR %%T IN (%TCLSH_FILE%) DO (
@@ -460,7 +460,7 @@ FOR %%P IN (%PLATFORMS%) DO (
     REM
     REM NOTE: Reset the PATH here to the absolute bare minimum required.
     REM
-    SET PATH=%TOOLPATH%;%SystemRoot%\System32;%SystemRoot%
+    CALL :fn_ResetPath
 
     REM
     REM NOTE: This is the inner loop.  There are normally two iterations, one
@@ -665,11 +665,13 @@ FOR %%P IN (%PLATFORMS%) DO (
         REM       are prevented from doing so.
         REM
         IF NOT DEFINED NOSYMBOLS (
-          %__ECHO% XCOPY "%DLL_PDB_FILE_NAME%" "%BINARYDIRECTORY%\%%B\%%D\" %FFLAGS% %DFLAGS%
+          IF EXIST "%DLL_PDB_FILE_NAME%" (
+            %__ECHO% XCOPY "%DLL_PDB_FILE_NAME%" "%BINARYDIRECTORY%\%%B\%%D\" %FFLAGS% %DFLAGS%
 
-          IF ERRORLEVEL 1 (
-            ECHO Failed to copy "%DLL_PDB_FILE_NAME%" to "%BINARYDIRECTORY%\%%B\%%D\".
-            GOTO errors
+            IF ERRORLEVEL 1 (
+              ECHO Failed to copy "%DLL_PDB_FILE_NAME%" to "%BINARYDIRECTORY%\%%B\%%D\".
+              GOTO errors
+            )
           )
         )
 
@@ -722,11 +724,13 @@ FOR %%P IN (%PLATFORMS%) DO (
           REM       unless we are prevented from doing so.
           REM
           IF NOT DEFINED NOSYMBOLS (
-            %__ECHO% XCOPY "%EXE_PDB_FILE_NAME%" "%BINARYDIRECTORY%\%%B\%%D\" %FFLAGS% %DFLAGS%
+            IF EXIST "%EXE_PDB_FILE_NAME%" (
+              %__ECHO% XCOPY "%EXE_PDB_FILE_NAME%" "%BINARYDIRECTORY%\%%B\%%D\" %FFLAGS% %DFLAGS%
 
-            IF ERRORLEVEL 1 (
-              ECHO Failed to copy "%EXE_PDB_FILE_NAME%" to "%BINARYDIRECTORY%\%%B\%%D\".
-              GOTO errors
+              IF ERRORLEVEL 1 (
+                ECHO Failed to copy "%EXE_PDB_FILE_NAME%" to "%BINARYDIRECTORY%\%%B\%%D\".
+                GOTO errors
+              )
             )
           )
         )
@@ -812,6 +816,10 @@ GOTO no_errors
     ENDLOCAL
   )
   CALL :fn_ResetErrorLevel
+  GOTO :EOF
+
+:fn_ResetPath
+  SET PATH=%TOOLPATH%;%SystemRoot%\System32;%SystemRoot%
   GOTO :EOF
 
 :fn_AppendVariable

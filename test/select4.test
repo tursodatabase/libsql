@@ -12,7 +12,6 @@
 # focus of this file is testing UNION, INTERSECT and EXCEPT operators
 # in SELECT statements.
 #
-# $Id: select4.test,v 1.30 2009/04/16 00:24:24 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -935,5 +934,77 @@ do_execsql_test select4-15.1 {
    WHERE t0.a=t1.a AND t1.a=33 AND t0.b=789
    ORDER BY 1;
 } {1 33 456 2 33 789}
+
+# Enhancement (2016-03-15):  Use a co-routine for subqueries if the
+# subquery is guaranteed to be the outer-most query
+#
+do_execsql_test select4-16.1 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z,
+  PRIMARY KEY(a,b DESC)) WITHOUT ROWID;
+
+  WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<100)
+  INSERT INTO t1(a,b,c,d)
+    SELECT x%10, x/10, x, printf('xyz%dabc',x) FROM c;
+
+  SELECT t3.c FROM 
+    (SELECT a,max(b) AS m FROM t1 WHERE a>=5 GROUP BY a) AS t2
+    JOIN t1 AS t3
+  WHERE t2.a=t3.a AND t2.m=t3.b
+  ORDER BY t3.a;
+} {95 96 97 98 99}
+do_execsql_test select4-16.2 {
+  SELECT t3.c FROM 
+    (SELECT a,max(b) AS m FROM t1 WHERE a>=5 GROUP BY a) AS t2
+    CROSS JOIN t1 AS t3
+  WHERE t2.a=t3.a AND t2.m=t3.b
+  ORDER BY t3.a;
+} {95 96 97 98 99}
+do_execsql_test select4-16.3 {
+  SELECT t3.c FROM 
+    (SELECT a,max(b) AS m FROM t1 WHERE a>=5 GROUP BY a) AS t2
+    LEFT JOIN t1 AS t3
+  WHERE t2.a=t3.a AND t2.m=t3.b
+  ORDER BY t3.a;
+} {95 96 97 98 99}
+
+# Ticket https://www.sqlite.org/src/tktview/f7f8c97e975978d45  on 2016-04-25
+#
+# The where push-down optimization from 2015-06-02 is suppose to disable
+# on aggregate subqueries.  But if the subquery is a compound where the
+# last SELECT is non-aggregate but some other SELECT is an aggregate, the
+# test is incomplete and the optimization is not properly disabled.
+# 
+# The following test cases verify that the fix works.
+#
+do_execsql_test select4-17.1 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a int, b int);
+  INSERT INTO t1 VALUES(1,2),(1,18),(2,19);
+  SELECT x, y FROM (
+    SELECT 98 AS x, 99 AS y
+    UNION
+    SELECT a AS x, sum(b) AS y FROM t1 GROUP BY a
+  ) AS w WHERE y>=20
+  ORDER BY +x;
+} {1 20 98 99}
+do_execsql_test select4-17.2 {
+  SELECT x, y FROM (
+    SELECT a AS x, sum(b) AS y FROM t1 GROUP BY a
+    UNION
+    SELECT 98 AS x, 99 AS y
+  ) AS w WHERE y>=20
+  ORDER BY +x;
+} {1 20 98 99}
+do_catchsql_test select4-17.3 {
+  SELECT x, y FROM (
+    SELECT a AS x, sum(b) AS y FROM t1 GROUP BY a LIMIT 3
+    UNION
+    SELECT 98 AS x, 99 AS y
+  ) AS w WHERE y>=20
+  ORDER BY +x;
+} {1 {LIMIT clause should come after UNION not before}}
+
+
 
 finish_test

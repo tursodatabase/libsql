@@ -81,7 +81,7 @@ if {![file exists $testextension]} {
   set testextsrc $srcdir/test_loadext.c
 
   set cmdline [concat exec gcc $gcc_shared]
-  lappend cmdline -Wall -I$srcdir -I. -g $testextsrc -o $testextension
+  lappend cmdline -Wall -I$srcdir -I. -I.. -g $testextsrc -o $testextension
   
   if {[catch $cmdline msg]} {
     puts "Skipping loadext tests: Test extension not built..."
@@ -111,7 +111,7 @@ do_test loadext-1.2 {
 #
 do_test loadext-1.3 {
   sqlite3 db2 test.db
-  sqlite3_enable_load_extension db2 1
+  sqlite3_db_config db2 SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION 1
   catchsql {
     SELECT half(1.0);
   } db2
@@ -256,8 +256,18 @@ do_test loadext-4.2 {
   }
 } {0 {{}}}
 
+# disable all extension loading
 do_test loadext-4.3 {
   sqlite3_enable_load_extension db 0
+  catchsql {
+    SELECT load_extension($::testextension,'testloadext_init')
+  }
+} {1 {not authorized}}
+
+# enable C-api extension loading only.  Show that the SQL function
+# still does not work.
+do_test loadext-4.4 {
+  sqlite3_db_config db SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION 1
   catchsql {
     SELECT load_extension($::testextension,'testloadext_init')
   }

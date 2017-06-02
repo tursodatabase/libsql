@@ -12,7 +12,11 @@
 ** Code for testing the SQLite library in a multithreaded environment.
 */
 #include "sqliteInt.h"
-#include "tcl.h"
+#if defined(INCLUDE_SQLITE_TCL_H)
+#  include "sqlite_tcl.h"
+#else
+#  include "tcl.h"
+#endif
 #if SQLITE_OS_UNIX && SQLITE_THREADSAFE
 #include <stdlib.h>
 #include <string.h>
@@ -121,7 +125,7 @@ static int parse_thread_id(Tcl_Interp *interp, const char *zArg){
 ** NAME should be an upper case letter.  Start the thread running with
 ** an open connection to the given database.
 */
-static int tcl_thread_create(
+static int SQLITE_TCLAPI tcl_thread_create(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
@@ -170,7 +174,7 @@ static void thread_wait(Thread *p){
 **
 ** Wait on thread ID to reach its idle state.
 */
-static int tcl_thread_wait(
+static int SQLITE_TCLAPI tcl_thread_wait(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
@@ -214,7 +218,7 @@ static void stop_thread(Thread *p){
 ** Cause a thread to shut itself down.  Wait for the shutdown to be
 ** completed.  If ID is "*" then stop all threads.
 */
-static int tcl_thread_halt(
+static int SQLITE_TCLAPI tcl_thread_halt(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
@@ -249,7 +253,7 @@ static int tcl_thread_halt(
 ** Wait on the most recent thread_step to complete, then return the
 ** number of columns in the result set.
 */
-static int tcl_thread_argc(
+static int SQLITE_TCLAPI tcl_thread_argc(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
@@ -281,7 +285,7 @@ static int tcl_thread_argc(
 ** Wait on the most recent thread_step to complete, then return the
 ** value of the N-th columns in the result set.
 */
-static int tcl_thread_argv(
+static int SQLITE_TCLAPI tcl_thread_argv(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
@@ -317,7 +321,7 @@ static int tcl_thread_argv(
 ** Wait on the most recent thread_step to complete, then return the
 ** name of the N-th columns in the result set.
 */
-static int tcl_thread_colname(
+static int SQLITE_TCLAPI tcl_thread_colname(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
@@ -353,7 +357,7 @@ static int tcl_thread_colname(
 ** Wait on the most recent operation to complete, then return the
 ** result code from that operation.
 */
-static int tcl_thread_result(
+static int SQLITE_TCLAPI tcl_thread_result(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
@@ -385,7 +389,7 @@ static int tcl_thread_result(
 ** Wait on the most recent operation to complete, then return the
 ** error string.
 */
-static int tcl_thread_error(
+static int SQLITE_TCLAPI tcl_thread_error(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
@@ -430,7 +434,7 @@ static void do_compile(Thread *p){
 **
 ** Compile a new virtual machine.
 */
-static int tcl_thread_compile(
+static int SQLITE_TCLAPI tcl_thread_compile(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
@@ -483,7 +487,7 @@ static void do_step(Thread *p){
 **
 ** Advance the virtual machine by one step
 */
-static int tcl_thread_step(
+static int SQLITE_TCLAPI tcl_thread_step(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
@@ -525,7 +529,7 @@ static void do_finalize(Thread *p){
 **
 ** Finalize the virtual machine.
 */
-static int tcl_thread_finalize(
+static int SQLITE_TCLAPI tcl_thread_finalize(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
@@ -556,7 +560,7 @@ static int tcl_thread_finalize(
 **
 ** Interchange the sqlite* pointer between two threads.
 */
-static int tcl_thread_swap(
+static int SQLITE_TCLAPI tcl_thread_swap(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
@@ -596,7 +600,7 @@ static int tcl_thread_swap(
 ** remove the pointer from the thread itself.  Afterwards, the thread
 ** can be stopped and the connection can be used by the main thread.
 */
-static int tcl_thread_db_get(
+static int SQLITE_TCLAPI tcl_thread_db_get(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
@@ -627,7 +631,7 @@ static int tcl_thread_db_get(
 ** Usage: thread_db_put ID DB
 **
 */
-static int tcl_thread_db_put(
+static int SQLITE_TCLAPI tcl_thread_db_put(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
@@ -659,7 +663,7 @@ static int tcl_thread_db_put(
 ** Return the database stmt pointer for the given thread.  Then
 ** remove the pointer from the thread itself. 
 */
-static int tcl_thread_stmt_get(
+static int SQLITE_TCLAPI tcl_thread_stmt_get(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */

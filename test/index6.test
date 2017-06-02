@@ -65,12 +65,15 @@ do_test index6-1.5 {
   catchsql {
     CREATE INDEX bad1 ON t1(a,b) WHERE a!=random();
   }
-} {1 {functions prohibited in partial index WHERE clauses}}
+} {1 {non-deterministic functions prohibited in partial index WHERE clauses}}
 do_test index6-1.6 {
   catchsql {
     CREATE INDEX bad1 ON t1(a,b) WHERE a NOT LIKE 'abc%';
   }
-} {1 {functions prohibited in partial index WHERE clauses}}
+} {0 {}}
+do_execsql_test index6-1.7 {
+  DROP INDEX IF EXISTS bad1;
+}
 
 do_test index6-1.10 {
   execsql {
@@ -375,5 +378,16 @@ do_execsql_test index6-10.3eqp {
   EXPLAIN QUERY PLAN
   SELECT e FROM t10 WHERE a=1 AND b=2 ORDER BY d DESC;
 } {~/USING INDEX t10x/}
+
+# A partial index will be used for a full table scan, where possible
+do_execsql_test index6-11.1 {
+  CREATE TABLE t11(a,b,c);
+  CREATE INDEX t11x ON t11(a) WHERE b<>99;
+  EXPLAIN QUERY PLAN SELECT a FROM t11 WHERE b<>99;
+} {/USING INDEX t11x/}
+do_execsql_test index6-11.2 {
+  EXPLAIN QUERY PLAN SELECT a FROM t11 WHERE b<>99 AND c<>98;
+} {/USING INDEX t11x/}
+  
 
 finish_test

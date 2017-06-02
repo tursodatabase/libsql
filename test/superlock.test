@@ -15,6 +15,7 @@ source $testdir/tester.tcl
 source $testdir/lock_common.tcl
 
 set testprefix superlock
+do_not_use_codec
 
 # Test organization:
 #
@@ -238,13 +239,23 @@ db_swap test.db2 test.db
 do_catchsql_test 6.9 { SELECT * FROM t1 } {0 {1 2 3 4}}
 do_catchsql_test 6.10 { SELECT * FROM t2 } {1 {no such table: t2}}
 
-do_execsql_test  6.11 { 
-  PRAGMA journal_mode = delete;
-  PRAGMA page_size = 512;
-  VACUUM;
-  PRAGMA journal_mode = wal;
-  INSERT INTO t1 VALUES(5, 6);
-} {delete wal}
+if {[nonzero_reserved_bytes]} {
+  # Vacuum with a size change is not allowed with the codec
+  do_execsql_test  6.11codec { 
+    PRAGMA journal_mode = delete;
+    VACUUM;
+    PRAGMA journal_mode = wal;
+    INSERT INTO t1 VALUES(5, 6);
+  } {delete wal}
+} else {
+  do_execsql_test  6.11 { 
+    PRAGMA journal_mode = delete;
+    PRAGMA page_size = 512;
+    VACUUM;
+    PRAGMA journal_mode = wal;
+    INSERT INTO t1 VALUES(5, 6);
+  } {delete wal}
+}
 
 db_swap test.db2 test.db
 do_catchsql_test 6.12 { SELECT * FROM t1 } {1 {no such table: t1}}

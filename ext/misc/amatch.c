@@ -625,10 +625,10 @@ static int amatchLoadOneRule(
     }else{
       memset(pRule, 0, sizeof(*pRule));
       pRule->zFrom = &pRule->zTo[nTo+1];
-      pRule->nFrom = nFrom;
+      pRule->nFrom = (amatch_len)nFrom;
       memcpy(pRule->zFrom, zFrom, nFrom+1);
       memcpy(pRule->zTo, zTo, nTo+1);
-      pRule->nTo = nTo;
+      pRule->nTo = (amatch_len)nTo;
       pRule->rCost = rCost;
       pRule->iLang = (int)iLang;
     }
@@ -1001,7 +1001,6 @@ static void amatchWriteCost(amatch_word *pWord){
 /* Circumvent compiler warnings about the use of strcpy() by supplying
 ** our own implementation.
 */
-#if defined(__OpenBSD__)
 static void amatchStrcpy(char *dest, const char *src){
   while( (*(dest++) = *(src++))!=0 ){}
 }
@@ -1009,11 +1008,6 @@ static void amatchStrcat(char *dest, const char *src){
   while( *dest ) dest++;
   amatchStrcpy(dest, src);
 }
-#else
-# define amatchStrcpy strcpy
-# define amatchStrcat strcat
-#endif
-
 
 /*
 ** Add a new amatch_word object to the queue.
@@ -1081,7 +1075,7 @@ static void amatchAddWord(
   pWord->rCost = rCost;
   pWord->iSeq = pCur->nWord++;
   amatchWriteCost(pWord);
-  pWord->nMatch = nMatch;
+  pWord->nMatch = (short)nMatch;
   pWord->pNext = pCur->pAllWords;
   pCur->pAllWords = pWord;
   pWord->sCost.zKey = pWord->zCost;
@@ -1162,7 +1156,7 @@ static int amatchNext(sqlite3_vtab_cursor *cur){
 #endif
     nWord = (int)strlen(pWord->zWord+2);
     if( nWord+20>nBuf ){
-      nBuf = nWord+100;
+      nBuf = (char)(nWord+100);
       zBuf = sqlite3_realloc(zBuf, nBuf);
       if( zBuf==0 ) return SQLITE_NOMEM;
     }

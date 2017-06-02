@@ -15,6 +15,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+do_not_use_codec
 
 do_execsql_test pragma3-100 {
   PRAGMA data_version;
@@ -220,7 +221,7 @@ ifcapable shared_cache {
 # This will not work with the in-memory journal permutation, as opening
 # [db2] switches the journal mode back to "memory"
 #
-ifcapable wal {
+if {[wal_is_capable]} {
 if {[permutation]!="inmemory_journal"} {
 
   sqlite3 db test.db

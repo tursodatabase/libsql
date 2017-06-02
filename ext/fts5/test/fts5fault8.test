@@ -54,7 +54,32 @@ foreach_detail_mode $testprefix {
       faultsim_test_result {0 {1 3}} {1 SQLITE_NOMEM}
     }
   }
+
 } ;# foreach_detail_mode...
+
+
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE x2 USING fts5(a);
+  INSERT INTO x2(x2, rank) VALUES('crisismerge', 2);
+  INSERT INTO x2(x2, rank) VALUES('pgsz', 32);
+  INSERT INTO x2 VALUES('a b c d');
+  INSERT INTO x2 VALUES('e f g h');
+  INSERT INTO x2 VALUES('i j k l');
+  INSERT INTO x2 VALUES('m n o p');
+  INSERT INTO x2 VALUES('q r s t');
+  INSERT INTO x2 VALUES('u v w x');
+  INSERT INTO x2 VALUES('y z a b');
+}
+faultsim_save_and_close
+
+do_faultsim_test 4 -faults oom-* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql { INSERT INTO x2(x2) VALUES('optimize') }
+} -test {
+  faultsim_test_result {0 {}} {1 SQLITE_NOMEM}
+}
+
 
 finish_test
 

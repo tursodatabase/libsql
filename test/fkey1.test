@@ -15,6 +15,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix fkey1
 
 ifcapable {!foreignkey} {
   finish_test
@@ -184,5 +185,26 @@ do_execsql_test fkey1-5.3 {
 do_catchsql_test fkey1-5.4 {
   INSERT OR REPLACE INTO Foo(Id, ParentId, C1) VALUES (2, 3, 'A-2-3');
 } {1 {FOREIGN KEY constraint failed}}
+
+#-------------------------------------------------------------------------
+# Check that foreign key processing is not fooled by partial indexes
+# on the parent table.
+#
+do_execsql_test 6.0 {
+  CREATE TABLE p1(x, y);
+  CREATE UNIQUE INDEX p1x ON p1(x) WHERE y<2;
+  INSERT INTO p1 VALUES(1, 1);
+  CREATE TABLE c1(a REFERENCES p1(x));
+}
+
+do_catchsql_test 6.1 {
+  INSERT INTO c1 VALUES(1);
+} {1 {foreign key mismatch - "c1" referencing "p1"}}
+
+do_execsql_test 6.2 {
+  CREATE UNIQUE INDEX p1x2 ON p1(x);
+  INSERT INTO c1 VALUES(1);
+} {}
+
 
 finish_test

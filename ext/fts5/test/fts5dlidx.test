@@ -178,7 +178,7 @@ do_execsql_test 3.2 {
   ORDER BY rowid DESC;
 } {16 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1}
 
-do_execsql_test 3.2 {
+do_execsql_test 3.3 {
   INSERT INTO abc(abc) VALUES('integrity-check');
   INSERT INTO abc(abc) VALUES('optimize');
   INSERT INTO abc(abc) VALUES('integrity-check');
@@ -187,7 +187,7 @@ do_execsql_test 3.2 {
 set v [lindex $vocab 0]
 set i 0
 foreach v $vocab {
-  do_execsql_test 3.3.[incr i] {
+  do_execsql_test 3.4.[incr i] {
     SELECT rowid FROM abc WHERE abc MATCH $v
   } {1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16}
 }

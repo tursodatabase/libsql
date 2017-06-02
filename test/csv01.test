@@ -1,0 +1,112 @@
+# 2016-06-02
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# 
+# Test cases for CSV virtual table.
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix csv01
+
+ifcapable !vtab||!cte { finish_test ; return }
+
+load_static_extension db csv
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE temp.t1 USING csv(
+    data=
+'1,2,3,4
+5,6,7,8
+9,10,11,12
+13,14,15,16
+',
+    columns=4
+  );
+  SELECT * FROM t1 WHERE c1=10;
+} {9 10 11 12}
+do_execsql_test 1.1 {
+  SELECT * FROM t1 WHERE c1='10';
+} {9 10 11 12}
+do_execsql_test 1.2 {
+  SELECT rowid FROM t1;
+} {1 2 3 4}
+
+do_execsql_test 2.0 {
+  DROP TABLE t1;
+  CREATE VIRTUAL TABLE temp.t2 USING csv(
+    data=
+'1,2,3,4
+5,6,7,8
+9,10,11,12
+13,14,15,16
+',
+    columns=4,
+    schema='CREATE TABLE t2(a INT, b TEXT, c REAL, d BLOB)'
+  );
+  SELECT * FROM t2 WHERE a=9;
+} {9 10 11 12}
+do_execsql_test 2.1 {
+  SELECT * FROM t2 WHERE b=10;
+} {9 10 11 12}
+do_execsql_test 2.2 {
+  SELECT * FROM t2 WHERE c=11;
+} {9 10 11 12}
+do_execsql_test 2.3 {
+  SELECT * FROM t2 WHERE d=12;
+} {}
+do_execsql_test 2.4 {
+  SELECT * FROM t2 WHERE d='12';
+} {9 10 11 12}
+do_execsql_test 2.5 {
+  SELECT * FROM t2 WHERE a='9';
+} {9 10 11 12}
+
+do_execsql_test 3.0 {
+  DROP TABLE t2;
+  CREATE VIRTUAL TABLE temp.t3 USING csv(
+    data=
+'1,2,3,4
+5,6,7,8
+9,10,11,12
+13,14,15,16
+',
+    columns=4,
+    schema=
+      'CREATE TABLE t3(a PRIMARY KEY,b TEXT,c TEXT,d TEXT) WITHOUT ROWID',
+    testflags=1
+  );
+  SELECT a FROM t3 WHERE b=6 OR c=7 OR d=12 ORDER BY +a;
+} {5 9}
+do_execsql_test 3.1 {
+  SELECT a FROM t3 WHERE +b=6 OR c=7 OR d=12 ORDER BY +a;
+} {5 9}
+
+# The rowid column is not visible on a WITHOUT ROWID virtual table
+do_catchsql_test 3.2 {
+  SELECT rowid, a FROM t3;
+} {1 {no such column: rowid}}
+
+do_catchsql_test 4.0 {
+  DROP TABLE t3;
+  CREATE VIRTUAL TABLE temp.t4 USING csv_wr(
+    data=
+'1,2,3,4
+5,6,7,8
+9,10,11,12
+13,14,15,16
+',
+    columns=4,
+    schema=
+      'CREATE TABLE t3(a PRIMARY KEY,b TEXT,c TEXT,d TEXT) WITHOUT ROWID',
+    testflags=1
+  );
+} {1 {vtable constructor failed: t4}}
+
+finish_test

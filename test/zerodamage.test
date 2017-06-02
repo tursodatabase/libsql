@@ -89,7 +89,7 @@ do_test zerodamage-2.1 {
   concat [file_control_powersafe_overwrite db -1] [set ::max_journal_size]
 } {0 0 24704}
 
-ifcapable wal {
+if {[wal_is_capable]} {
   # Run a WAL-mode transaction with POWERSAFE_OVERWRITE on to verify that the
   # WAL file does not get too big.
   #
@@ -112,6 +112,7 @@ ifcapable wal {
     db close
     sqlite3 db file:test.db?psow=FALSE -uri 1
     db eval {
+       PRAGMA synchronous=FULL;
        UPDATE t1 SET y=randomblob(50) WHERE x=124;
     }
     file size test.db-wal

@@ -45,10 +45,19 @@ static const char * const azCompileOpt[] = {
 #if SQLITE_CHECK_PAGES
   "CHECK_PAGES",
 #endif
+#if defined(__clang__) && defined(__clang_major__)
+  "COMPILER=clang-" CTIMEOPT_VAL(__clang_major__) "."
+                    CTIMEOPT_VAL(__clang_minor__) "."
+                    CTIMEOPT_VAL(__clang_patchlevel__),
+#elif defined(_MSC_VER)
+  "COMPILER=msvc-" CTIMEOPT_VAL(_MSC_VER),
+#elif defined(__GNUC__) && defined(__VERSION__)
+  "COMPILER=gcc-" __VERSION__,
+#endif
 #if SQLITE_COVERAGE_TEST
   "COVERAGE_TEST",
 #endif
-#if SQLITE_DEBUG
+#ifdef SQLITE_DEBUG
   "DEBUG",
 #endif
 #if SQLITE_DEFAULT_LOCKING_MODE
@@ -57,6 +66,15 @@ static const char * const azCompileOpt[] = {
 #if defined(SQLITE_DEFAULT_MMAP_SIZE) && !defined(SQLITE_DEFAULT_MMAP_SIZE_xc)
   "DEFAULT_MMAP_SIZE=" CTIMEOPT_VAL(SQLITE_DEFAULT_MMAP_SIZE),
 #endif
+#if SQLITE_DEFAULT_SYNCHRONOUS
+  "DEFAULT_SYNCHRONOUS=" CTIMEOPT_VAL(SQLITE_DEFAULT_SYNCHRONOUS),
+#endif
+#if SQLITE_DEFAULT_WAL_SYNCHRONOUS
+  "DEFAULT_WAL_SYNCHRONOUS=" CTIMEOPT_VAL(SQLITE_DEFAULT_WAL_SYNCHRONOUS),
+#endif
+#if SQLITE_DIRECT_OVERFLOW_READ
+  "DIRECT_OVERFLOW_READ",
+#endif
 #if SQLITE_DISABLE_DIRSYNC
   "DISABLE_DIRSYNC",
 #endif
@@ -64,7 +82,7 @@ static const char * const azCompileOpt[] = {
   "DISABLE_LFS",
 #endif
 #if SQLITE_ENABLE_8_3_NAMES
-  "ENABLE_8_3_NAMES",
+  "ENABLE_8_3_NAMES=" CTIMEOPT_VAL(SQLITE_ENABLE_8_3_NAMES),
 #endif
 #if SQLITE_ENABLE_API_ARMOR
   "ENABLE_API_ARMOR",
@@ -143,6 +161,9 @@ static const char * const azCompileOpt[] = {
 #if SQLITE_ENABLE_UPDATE_DELETE_LIMIT
   "ENABLE_UPDATE_DELETE_LIMIT",
 #endif
+#if defined(SQLITE_ENABLE_URI_00_ERROR)
+  "ENABLE_URI_00_ERROR",
+#endif
 #if SQLITE_HAS_CODEC
   "HAS_CODEC",
 #endif
@@ -217,9 +238,6 @@ static const char * const azCompileOpt[] = {
 #endif
 #if SQLITE_OMIT_BTREECOUNT
   "OMIT_BTREECOUNT",
-#endif
-#if SQLITE_OMIT_BUILTIN_TEST
-  "OMIT_BUILTIN_TEST",
 #endif
 #if SQLITE_OMIT_CAST
   "OMIT_CAST",
@@ -382,6 +400,9 @@ static const char * const azCompileOpt[] = {
 #endif
 #if defined(SQLITE_THREADSAFE)
   "THREADSAFE=" CTIMEOPT_VAL(SQLITE_THREADSAFE),
+#endif
+#if SQLITE_UNTESTABLE
+  "UNTESTABLE"
 #endif
 #if SQLITE_USE_ALLOCA
   "USE_ALLOCA",

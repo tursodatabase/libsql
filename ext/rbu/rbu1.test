@@ -10,10 +10,7 @@
 #***********************************************************************
 #
 
-if {![info exists testdir]} {
-  set testdir [file join [file dirname [info script]] .. .. test]
-}
-source $testdir/tester.tcl
+source [file join [file dirname [info script]] rbu_common.tcl]
 set ::testprefix rbu1
 
 db close
@@ -96,26 +93,6 @@ proc create_rbu5 {filename} {
   return $filename
 }
 
-# Run the RBU in file $rbu on target database $target until completion.
-#
-proc run_rbu {target rbu} {
-  sqlite3rbu rbu $target $rbu
-  while 1 {
-    set rc [rbu step]
-    if {$rc!="SQLITE_OK"} break
-  }
-  rbu close
-}
-
-proc step_rbu {target rbu} {
-  while 1 {
-    sqlite3rbu rbu $target $rbu
-    set rc [rbu step]
-    rbu close
-    if {$rc != "SQLITE_OK"} break
-  }
-  set rc
-}
 
 # Same as [step_rbu], except using a URI to open the target db.
 #
@@ -611,7 +588,7 @@ foreach {tn3 create_vfs destroy_vfs} {
        9 {
          CREATE TABLE t1(a, b PRIMARY KEY) WITHOUT ROWID;
          CREATE TABLE rbu.data_t1(a, b, rbu_control);
-         INSERT INTO rbu.data_t1 VALUES(1, 2, 2);
+         INSERT INTO rbu.data_t1 VALUES(1, 2, 3);
        } {SQLITE_ERROR - invalid rbu_control value}
 
        10 {
@@ -641,10 +618,25 @@ foreach {tn3 create_vfs destroy_vfs} {
   # correctly.
   reset_db
   forcedelete rbu.db
-  do_test $tn3.8 {
+  do_test $tn3.8.1 {
     list [catch { run_rbu test.db rbu.db } msg] $msg
   } {0 SQLITE_DONE}
-  
+
+  # Test that an RBU database containing only empty data_xxx tables is
+  # also handled correctly.
+  reset_db
+  forcedelete rbu.db
+  do_execsql_test $tn3.8.2.1 {
+    CREATE TABLE t1(a PRIMARY KEY, b);
+    INSERT INTO t1 VALUES(1, 2);
+    ATTACH 'rbu.db' AS rbu;
+    CREATE TABLE data_t1(a, b, rbu_control);
+    DETACH rbu;
+  }
+  do_test $tn3.8.2.1 {
+    list [catch { run_rbu test.db rbu.db } msg] $msg
+  } {0 SQLITE_DONE}
+
   # Test that RBU can update indexes containing NULL values.
   #
   reset_db

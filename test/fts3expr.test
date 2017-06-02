@@ -514,4 +514,8 @@ do_test fts3expr-9.1 {
   test_fts3expr "f (e NEAR/2 a)"
 } {AND {PHRASE 3 0 f} {NEAR/2 {PHRASE 3 0 e} {PHRASE 3 0 a}}}
 
+do_test fts3expr-10.1 { test_fts3expr "abc *" } {PHRASE 3 0 abc}
+do_test fts3expr-10.2 { test_fts3expr "*" } {}
+do_test fts3expr-10.3 { test_fts3expr "abc*" } {PHRASE 3 0 abc+}
+
 finish_test

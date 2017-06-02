@@ -107,10 +107,11 @@ int sqlite3AuthReadCol(
   const char *zCol,               /* Column name */
   int iDb                         /* Index of containing database. */
 ){
-  sqlite3 *db = pParse->db;       /* Database handle */
-  char *zDb = db->aDb[iDb].zName; /* Name of attached database */
-  int rc;                         /* Auth callback return code */
+  sqlite3 *db = pParse->db;          /* Database handle */
+  char *zDb = db->aDb[iDb].zDbSName; /* Schema name of attached database */
+  int rc;                            /* Auth callback return code */
 
+  if( db->init.busy ) return SQLITE_OK;
   rc = db->xAuth(db->pAuthArg, SQLITE_READ, zTab,zCol,zDb,pParse->zAuthContext
 #ifdef SQLITE_USER_AUTHENTICATION
                  ,db->auth.zAuthUser
@@ -215,6 +216,18 @@ int sqlite3AuthCheck(
   if( db->xAuth==0 ){
     return SQLITE_OK;
   }
+
+  /* EVIDENCE-OF: R-43249-19882 The third through sixth parameters to the
+  ** callback are either NULL pointers or zero-terminated strings that
+  ** contain additional details about the action to be authorized.
+  **
+  ** The following testcase() macros show that any of the 3rd through 6th
+  ** parameters can be either NULL or a string. */
+  testcase( zArg1==0 );
+  testcase( zArg2==0 );
+  testcase( zArg3==0 );
+  testcase( pParse->zAuthContext==0 );
+
   rc = db->xAuth(db->pAuthArg, code, zArg1, zArg2, zArg3, pParse->zAuthContext
 #ifdef SQLITE_USER_AUTHENTICATION
                  ,db->auth.zAuthUser

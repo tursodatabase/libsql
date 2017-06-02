@@ -159,37 +159,39 @@ do_test e_vacuum-1.3.1.2 {
   execsql { PRAGMA page_size ; PRAGMA auto_vacuum }
 } {1024 1}
 
-# EVIDENCE-OF: R-08570-19916 However, when not in write-ahead log mode,
-# the page_size and/or auto_vacuum properties of an existing database
-# may be changed by using the page_size and/or pragma auto_vacuum
-# pragmas and then immediately VACUUMing the database.
-#
-do_test e_vacuum-1.3.2.1 {
-  execsql { PRAGMA journal_mode = delete }
-  execsql { PRAGMA page_size = 2048 }
-  execsql { PRAGMA auto_vacuum = NONE }
-  execsql VACUUM
-  execsql { PRAGMA page_size ; PRAGMA auto_vacuum }
-} {2048 0}
-
-# EVIDENCE-OF: R-48521-51450 When in write-ahead log mode, only the
-# auto_vacuum support property can be changed using VACUUM.
-#
-ifcapable wal {
-do_test e_vacuum-1.3.3.1 {
-  execsql { PRAGMA journal_mode = wal }
-  execsql { PRAGMA page_size ; PRAGMA auto_vacuum }
-} {2048 0}
-do_test e_vacuum-1.3.3.2 {
-  execsql { PRAGMA page_size = 1024 }
-  execsql { PRAGMA auto_vacuum = FULL }
-  execsql VACUUM
-  execsql { PRAGMA page_size ; PRAGMA auto_vacuum }
-} {2048 1}
+if {![nonzero_reserved_bytes]} {
+  # EVIDENCE-OF: R-08570-19916 However, when not in write-ahead log mode,
+  # the page_size and/or auto_vacuum properties of an existing database
+  # may be changed by using the page_size and/or pragma auto_vacuum
+  # pragmas and then immediately VACUUMing the database.
+  #
+  do_test e_vacuum-1.3.2.1 {
+    execsql { PRAGMA journal_mode = delete }
+    execsql { PRAGMA page_size = 2048 }
+    execsql { PRAGMA auto_vacuum = NONE }
+    execsql VACUUM
+    execsql { PRAGMA page_size ; PRAGMA auto_vacuum }
+  } {2048 0}
+  
+  # EVIDENCE-OF: R-48521-51450 When in write-ahead log mode, only the
+  # auto_vacuum support property can be changed using VACUUM.
+  #
+  if {[wal_is_capable]} {
+    do_test e_vacuum-1.3.3.1 {
+      execsql { PRAGMA journal_mode = wal }
+      execsql { PRAGMA page_size ; PRAGMA auto_vacuum }
+    } {2048 0}
+    do_test e_vacuum-1.3.3.2 {
+      execsql { PRAGMA page_size = 1024 }
+      execsql { PRAGMA auto_vacuum = FULL }
+      execsql VACUUM
+      execsql { PRAGMA page_size ; PRAGMA auto_vacuum }
+    } {2048 1}
+  }
 }
-
-# EVIDENCE-OF: R-38001-03952 VACUUM only works on the main database. It
-# is not possible to VACUUM an attached database file.
+  
+# EVIDENCE-OF: R-55119-57913 By default, VACUUM only works only on the
+# main database.
 forcedelete test.db2
 create_db { PRAGMA auto_vacuum = NONE }
 do_execsql_test e_vacuum-2.1.1 {
@@ -200,13 +202,14 @@ do_execsql_test e_vacuum-2.1.1 {
 } {}
 set original_size [file size test.db2]
 
-# Try everything we can think of to get the aux database vacuumed:
+# Vacuuming the main database does not affect aux
 do_execsql_test e_vacuum-2.1.3 { VACUUM } {}
-do_execsql_test e_vacuum-2.1.4 { VACUUM aux } {}
-do_execsql_test e_vacuum-2.1.5 { VACUUM 'test.db2' } {}
-
-# Despite our efforts, space in the aux database has not been reclaimed:
 do_test e_vacuum-2.1.6 { expr {[file size test.db2]==$::original_size} } 1
+
+# EVIDENCE-OF: R-36598-60500 Attached databases can be vacuumed by
+# appending the appropriate schema-name to the VACUUM statement.
+do_execsql_test e_vacuum-2.1.7 { VACUUM aux; } {}
+do_test e_vacuum-2.1.8 { expr {[file size test.db2]<$::original_size} } 1
 
 # EVIDENCE-OF: R-17495-17419 The VACUUM command may change the ROWIDs of
 # entries in any tables that do not have an explicit INTEGER PRIMARY
@@ -269,9 +272,9 @@ do_test e_vacuum-3.2.2.1 {
 } {1 {cannot VACUUM - SQL statements in progress}}
 
 
-# EVIDENCE-OF: R-38735-12540 As of SQLite version 3.1, an alternative to
-# using the VACUUM command to reclaim space after data has been deleted
-# is auto-vacuum mode, enabled using the auto_vacuum pragma.
+# EVIDENCE-OF: R-55138-13241 An alternative to using the VACUUM command
+# to reclaim space after data has been deleted is auto-vacuum mode,
+# enabled using the auto_vacuum pragma.
 #
 do_test e_vacuum-3.3.1 {
   create_db { PRAGMA auto_vacuum = FULL }

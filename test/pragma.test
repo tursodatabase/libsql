@@ -628,10 +628,10 @@ ifcapable tempdb&&attach {
 }
 do_test pragma-6.2 {
   execsql {
-    CREATE TABLE t2(a,b,c);
+    CREATE TABLE t2(a TYPE_X, b [TYPE_Y], c "TYPE_Z");
     pragma table_info(t2)
   }
-} {0 a {} 0 {} 0 1 b {} 0 {} 0 2 c {} 0 {} 0}
+} {0 a TYPE_X 0 {} 0 1 b TYPE_Y 0 {} 0 2 c TYPE_Z 0 {} 0}
 do_test pragma-6.2.1 {
   execsql {
     pragma table_info;
@@ -1083,7 +1083,20 @@ do_test pragma-8.2.15 {
 # "memory" or "disk" as appropriate.
 #
 proc check_temp_store {} {
-  db eval {CREATE TEMP TABLE IF NOT EXISTS a(b)}
+  db eval {
+    PRAGMA temp.cache_size = 1;
+    CREATE TEMP TABLE IF NOT EXISTS a(b);
+    DELETE FROM a;
+    INSERT INTO a VALUES(randomblob(1000));
+    INSERT INTO a SELECT * FROM a;
+    INSERT INTO a SELECT * FROM a;
+    INSERT INTO a SELECT * FROM a;
+    INSERT INTO a SELECT * FROM a;
+    INSERT INTO a SELECT * FROM a;
+    INSERT INTO a SELECT * FROM a;
+    INSERT INTO a SELECT * FROM a;
+    INSERT INTO a SELECT * FROM a;
+  }
   db eval {PRAGMA database_list} {
     if {$name=="temp"} {
       set bt [btree_from_db db 1]
@@ -1741,73 +1754,75 @@ forcedelete data_dir
 } ;# endif windows
 
 database_may_be_corrupt
+if {![nonzero_reserved_bytes]} {
 
-do_test 21.1 {
-  # Create a corrupt database in testerr.db. And a non-corrupt at test.db.
-  #
-  db close
-  forcedelete test.db
-  sqlite3 db test.db
-  execsql { 
-    PRAGMA page_size = 1024;
-    PRAGMA auto_vacuum = 0;
-    CREATE TABLE t1(a PRIMARY KEY, b);
-    INSERT INTO t1 VALUES(1, 1);
-  }
-  for {set i 0} {$i < 10} {incr i} {
-    execsql { INSERT INTO t1 SELECT a + (1 << $i), b + (1 << $i) FROM t1 }
-  }
-  db close
-  forcecopy test.db testerr.db
-  hexio_write testerr.db 15000 [string repeat 55 100]
-} {100}
-
-set mainerr {*** in database main ***
+  do_test 21.1 {
+    # Create a corrupt database in testerr.db. And a non-corrupt at test.db.
+    #
+    db close
+    forcedelete test.db
+    sqlite3 db test.db
+    execsql { 
+      PRAGMA page_size = 1024;
+      PRAGMA auto_vacuum = 0;
+      CREATE TABLE t1(a PRIMARY KEY, b);
+      INSERT INTO t1 VALUES(1, 1);
+    }
+    for {set i 0} {$i < 10} {incr i} {
+      execsql { INSERT INTO t1 SELECT a + (1 << $i), b + (1 << $i) FROM t1 }
+    }
+    db close
+    forcecopy test.db testerr.db
+    hexio_write testerr.db 15000 [string repeat 55 100]
+  } {100}
+  
+  set mainerr {*** in database main ***
 Multiple uses for byte 672 of page 15}
-set auxerr {*** in database aux ***
+  set auxerr {*** in database aux ***
 Multiple uses for byte 672 of page 15}
-
-set mainerr {/{\*\*\* in database main \*\*\*
+  
+  set mainerr {/{\*\*\* in database main \*\*\*
 Multiple uses for byte 672 of page 15}.*/}
-set auxerr {/{\*\*\* in database aux \*\*\*
+  set auxerr {/{\*\*\* in database aux \*\*\*
 Multiple uses for byte 672 of page 15}.*/}
-
-do_test 22.2 {
-  catch { db close }
-  sqlite3 db testerr.db
-  execsql { PRAGMA integrity_check }
-} $mainerr
-
-do_test 22.3.1 {
-  catch { db close }
-  sqlite3 db test.db
-  execsql { 
-    ATTACH 'testerr.db' AS 'aux';
-    PRAGMA integrity_check;
-  }
-} $auxerr
-do_test 22.3.2 {
-  execsql { PRAGMA main.integrity_check; }
-} {ok}
-do_test 22.3.3 {
-  execsql { PRAGMA aux.integrity_check; }
-} $auxerr
-
-do_test 22.4.1 {
-  catch { db close }
-  sqlite3 db testerr.db
-  execsql { 
-    ATTACH 'test.db' AS 'aux';
-    PRAGMA integrity_check;
-  }
-} $mainerr
-do_test 22.4.2 {
-  execsql { PRAGMA main.integrity_check; }
-} $mainerr
-do_test 22.4.3 {
-  execsql { PRAGMA aux.integrity_check; }
-} {ok}
-
+  
+  do_test 22.2 {
+    catch { db close }
+    sqlite3 db testerr.db
+    execsql { PRAGMA integrity_check }
+  } $mainerr
+  
+  do_test 22.3.1 {
+    catch { db close }
+    sqlite3 db test.db
+    execsql { 
+      ATTACH 'testerr.db' AS 'aux';
+      PRAGMA integrity_check;
+    }
+  } $auxerr
+  do_test 22.3.2 {
+    execsql { PRAGMA main.integrity_check; }
+  } {ok}
+  do_test 22.3.3 {
+    execsql { PRAGMA aux.integrity_check; }
+  } $auxerr
+  
+  do_test 22.4.1 {
+    catch { db close }
+    sqlite3 db testerr.db
+    execsql { 
+      ATTACH 'test.db' AS 'aux';
+      PRAGMA integrity_check;
+    }
+  } $mainerr
+  do_test 22.4.2 {
+    execsql { PRAGMA main.integrity_check; }
+  } $mainerr
+  do_test 22.4.3 {
+    execsql { PRAGMA aux.integrity_check; }
+  } {ok}
+}
+  
 db close
 forcedelete test.db test.db-wal test.db-journal
 sqlite3 db test.db

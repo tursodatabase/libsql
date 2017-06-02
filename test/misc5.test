@@ -571,6 +571,8 @@ ifcapable subquery&&compound {
 # Overflow the lemon parser stack by providing an overly complex
 # expression.  Make sure that the overflow is detected and reported.
 #
+# This test fails when building with -DYYSTACKDEPTH=0
+#
 do_test misc5-7.1 {
   execsql {CREATE TABLE t1(x)}
   set sql "INSERT INTO t1 VALUES("

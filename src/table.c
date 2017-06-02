@@ -17,8 +17,6 @@
 ** if they are not used.
 */
 #include "sqliteInt.h"
-#include <stdlib.h>
-#include <string.h>
 
 #ifndef SQLITE_OMIT_GET_TABLE
 

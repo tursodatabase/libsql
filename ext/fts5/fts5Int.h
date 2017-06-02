@@ -30,7 +30,9 @@ typedef short i16;
 typedef sqlite3_int64 i64;
 typedef sqlite3_uint64 u64;
 
-#define ArraySize(x) ((int)(sizeof(x) / sizeof(x[0])))
+#ifndef ArraySize
+# define ArraySize(x) ((int)(sizeof(x) / sizeof(x[0])))
+#endif
 
 #define testcase(x)
 #define ALWAYS(x) 1
@@ -47,6 +49,10 @@ typedef sqlite3_uint64 u64;
 
 #endif
 
+/* Truncate very long tokens to this many bytes. Hard limit is 
+** (65536-1-1-4-9)==65521 bytes. The limiting factor is the 16-bit offset
+** field that occurs at the start of each leaf page (see fts5_index.c). */
+#define FTS5_MAX_TOKEN_SIZE 32768
 
 /*
 ** Maximum number of prefix indexes on single FTS5 table. This must be
@@ -172,6 +178,7 @@ struct Fts5Config {
   int pgsz;                       /* Approximate page size used in %_data */
   int nAutomerge;                 /* 'automerge' setting */
   int nCrisisMerge;               /* Maximum allowed segments per level */
+  int nUsermerge;                 /* 'usermerge' setting */
   int nHashSize;                  /* Bytes of memory for in-memory hash */
   char *zRank;                    /* Name of rank function */
   char *zRankArgs;                /* Arguments to rank function */
@@ -439,9 +446,9 @@ int sqlite3Fts5IndexBeginWrite(
 
 /*
 ** Flush any data stored in the in-memory hash tables to the database.
-** If the bCommit flag is true, also close any open blob handles.
+** Also close any open blob handles.
 */
-int sqlite3Fts5IndexSync(Fts5Index *p, int bCommit);
+int sqlite3Fts5IndexSync(Fts5Index *p);
 
 /*
 ** Discard any data stored in the in-memory hash tables. Do not write it
@@ -479,6 +486,7 @@ int sqlite3Fts5IndexReads(Fts5Index *p);
 int sqlite3Fts5IndexReinit(Fts5Index *p);
 int sqlite3Fts5IndexOptimize(Fts5Index *p);
 int sqlite3Fts5IndexMerge(Fts5Index *p, int nMerge);
+int sqlite3Fts5IndexReset(Fts5Index *p);
 
 int sqlite3Fts5IndexLoadConfig(Fts5Index *p);
 
@@ -610,7 +618,7 @@ int sqlite3Fts5StorageDocsize(Fts5Storage *p, i64 iRowid, int *aCol);
 int sqlite3Fts5StorageSize(Fts5Storage *p, int iCol, i64 *pnAvg);
 int sqlite3Fts5StorageRowCount(Fts5Storage *p, i64 *pnRow);
 
-int sqlite3Fts5StorageSync(Fts5Storage *p, int bCommit);
+int sqlite3Fts5StorageSync(Fts5Storage *p);
 int sqlite3Fts5StorageRollback(Fts5Storage *p);
 
 int sqlite3Fts5StorageConfigValue(
@@ -621,6 +629,7 @@ int sqlite3Fts5StorageDeleteAll(Fts5Storage *p);
 int sqlite3Fts5StorageRebuild(Fts5Storage *p);
 int sqlite3Fts5StorageOptimize(Fts5Storage *p);
 int sqlite3Fts5StorageMerge(Fts5Storage *p, int nMerge);
+int sqlite3Fts5StorageReset(Fts5Storage *p);
 
 /*
 ** End of interface to code in fts5_storage.c.
@@ -645,6 +654,7 @@ struct Fts5Token {
 /* Parse a MATCH expression. */
 int sqlite3Fts5ExprNew(
   Fts5Config *pConfig, 
+  int iCol,                       /* Column on LHS of MATCH operator */
   const char *zExpr,
   Fts5Expr **ppNew, 
   char **pzErr
@@ -679,7 +689,6 @@ int sqlite3Fts5ExprPopulatePoslists(
     Fts5Config*, Fts5Expr*, Fts5PoslistPopulator*, int, const char*, int
 );
 void sqlite3Fts5ExprCheckPoslists(Fts5Expr*, i64);
-void sqlite3Fts5ExprClearEof(Fts5Expr*);
 
 int sqlite3Fts5ExprClonePhrase(Fts5Expr*, int, Fts5Expr**);
 
@@ -698,6 +707,12 @@ Fts5ExprNode *sqlite3Fts5ParseNode(
   Fts5ExprNode *pLeft,
   Fts5ExprNode *pRight,
   Fts5ExprNearset *pNear
+);
+
+Fts5ExprNode *sqlite3Fts5ParseImplicitAnd(
+  Fts5Parse *pParse,
+  Fts5ExprNode *pLeft,
+  Fts5ExprNode *pRight
 );
 
 Fts5ExprPhrase *sqlite3Fts5ParseTerm(
@@ -724,7 +739,8 @@ void sqlite3Fts5ParseNearsetFree(Fts5ExprNearset*);
 void sqlite3Fts5ParseNodeFree(Fts5ExprNode*);
 
 void sqlite3Fts5ParseSetDistance(Fts5Parse*, Fts5ExprNearset*, Fts5Token*);
-void sqlite3Fts5ParseSetColset(Fts5Parse*, Fts5ExprNearset*, Fts5Colset*);
+void sqlite3Fts5ParseSetColset(Fts5Parse*, Fts5ExprNode*, Fts5Colset*);
+Fts5Colset *sqlite3Fts5ParseColsetInvert(Fts5Parse*, Fts5Colset*);
 void sqlite3Fts5ParseFinished(Fts5Parse *pParse, Fts5ExprNode *p);
 void sqlite3Fts5ParseNear(Fts5Parse *pParse, Fts5Token*);
 

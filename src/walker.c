@@ -27,11 +27,11 @@
 **
 **    WRC_Continue      Continue descending down the tree.
 **
-**    WRC_Prune         Do not descend into child nodes.  But allow
+**    WRC_Prune         Do not descend into child nodes, but allow
 **                      the walk to continue with sibling nodes.
 **
 **    WRC_Abort         Do no more callbacks.  Unwind the stack and
-**                      return the top-level walk call.
+**                      return from the top-level walk call.
 **
 ** The return value from this routine is WRC_Abort to abandon the tree walk
 ** and WRC_Continue to continue.
@@ -41,17 +41,17 @@ static SQLITE_NOINLINE int walkExpr(Walker *pWalker, Expr *pExpr){
   testcase( ExprHasProperty(pExpr, EP_TokenOnly) );
   testcase( ExprHasProperty(pExpr, EP_Reduced) );
   rc = pWalker->xExprCallback(pWalker, pExpr);
-  if( rc==WRC_Continue
-              && !ExprHasProperty(pExpr,EP_TokenOnly) ){
-    if( sqlite3WalkExpr(pWalker, pExpr->pLeft) ) return WRC_Abort;
-    if( sqlite3WalkExpr(pWalker, pExpr->pRight) ) return WRC_Abort;
-    if( ExprHasProperty(pExpr, EP_xIsSelect) ){
-      if( sqlite3WalkSelect(pWalker, pExpr->x.pSelect) ) return WRC_Abort;
-    }else{
-      if( sqlite3WalkExprList(pWalker, pExpr->x.pList) ) return WRC_Abort;
-    }
+  if( rc || ExprHasProperty(pExpr,(EP_TokenOnly|EP_Leaf)) ){
+    return rc & WRC_Abort;
   }
-  return rc & WRC_Abort;
+  if( pExpr->pLeft && walkExpr(pWalker, pExpr->pLeft) ) return WRC_Abort;
+  if( pExpr->pRight && walkExpr(pWalker, pExpr->pRight) ) return WRC_Abort;
+  if( ExprHasProperty(pExpr, EP_xIsSelect) ){
+    if( sqlite3WalkSelect(pWalker, pExpr->x.pSelect) ) return WRC_Abort;
+  }else if( pExpr->x.pList ){
+    if( sqlite3WalkExprList(pWalker, pExpr->x.pList) ) return WRC_Abort;
+  }
+  return WRC_Continue;
 }
 int sqlite3WalkExpr(Walker *pWalker, Expr *pExpr){
   return pExpr ? walkExpr(pWalker,pExpr) : WRC_Continue;
@@ -124,8 +124,9 @@ int sqlite3WalkSelectFrom(Walker *pWalker, Select *p){
 **
 ** If it is not NULL, the xSelectCallback() callback is invoked before
 ** the walk of the expressions and FROM clause. The xSelectCallback2()
-** method, if it is not NULL, is invoked following the walk of the 
-** expressions and FROM clause.
+** method is invoked following the walk of the expressions and FROM clause,
+** but only if both xSelectCallback and xSelectCallback2 are both non-NULL
+** and if the expressions and FROM clause both return WRC_Continue;
 **
 ** Return WRC_Continue under normal conditions.  Return WRC_Abort if
 ** there is an abort request.
@@ -135,27 +136,19 @@ int sqlite3WalkSelectFrom(Walker *pWalker, Select *p){
 */
 int sqlite3WalkSelect(Walker *pWalker, Select *p){
   int rc;
-  if( p==0 || (pWalker->xSelectCallback==0 && pWalker->xSelectCallback2==0) ){
-    return WRC_Continue;
-  }
-  rc = WRC_Continue;
-  pWalker->walkerDepth++;
-  while( p ){
-    if( pWalker->xSelectCallback ){
-       rc = pWalker->xSelectCallback(pWalker, p);
-       if( rc ) break;
-    }
+  if( p==0 || pWalker->xSelectCallback==0 ) return WRC_Continue;
+  do{
+    rc = pWalker->xSelectCallback(pWalker, p);
+    if( rc ) return rc & WRC_Abort;
     if( sqlite3WalkSelectExpr(pWalker, p)
      || sqlite3WalkSelectFrom(pWalker, p)
     ){
-      pWalker->walkerDepth--;
       return WRC_Abort;
     }
     if( pWalker->xSelectCallback2 ){
       pWalker->xSelectCallback2(pWalker, p);
     }
     p = p->pPrior;
-  }
-  pWalker->walkerDepth--;
-  return rc & WRC_Abort;
+  }while( p!=0 );
+  return WRC_Continue;
 }

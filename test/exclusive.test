@@ -420,9 +420,10 @@ do_test exclusive-5.0 {
 } {}
 do_test exclusive-5.1 {
   # Three files are open: The db, journal and statement-journal.
+  # (2016-03-04) The statement-journal is now opened lazily
   set sqlite_open_file_count
   expr $sqlite_open_file_count-$extrafds
-} [expr 3 - ($TEMP_STORE>=2)]
+} {2}
 do_test exclusive-5.2 {
   execsql {
     COMMIT;
@@ -446,17 +447,19 @@ do_test exclusive-5.4 {
     INSERT INTO abc SELECT a+10, b+10, c+10 FROM abc;
   }
   # Three files are open: The db, journal and statement-journal.
+  # 2016-03-04: The statement-journal open is deferred
   set sqlite_open_file_count
   expr $sqlite_open_file_count-$extrafds
-} [expr 3 - ($TEMP_STORE>=2)]
+} {2}
 do_test exclusive-5.5 {
   execsql {
     COMMIT;
   }
   # Three files are still open: The db, journal and statement-journal.
+  # 2016-03-04: The statement-journal open is deferred
   set sqlite_open_file_count
   expr $sqlite_open_file_count-$extrafds
-} [expr 3 - ($TEMP_STORE>=2)]
+} {2}
 do_test exclusive-5.6 {
   execsql {
     PRAGMA locking_mode = normal;

@@ -243,5 +243,11 @@ do_execsql_test 8.5 {
   SELECT docid FROM t0 WHERE t0 MATCH '"abc abc"';
 } {}
 
+do_execsql_test 9.1 {
+  CREATE VIRTUAL TABLE t9 USING fts4(a, "", '---');
+}
+do_execsql_test 9.2 {
+  CREATE VIRTUAL TABLE t10 USING fts3(<, b, c);
+}
 
 finish_test

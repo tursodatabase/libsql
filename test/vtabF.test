@@ -21,7 +21,7 @@ ifcapable !vtab||!schema_pragmas { finish_test ; return }
 # Register the echo module
 register_echo_module [sqlite3_connection_pointer db]
 
-do_test vtabE-1.1 {
+do_test vtabF-1.1 {
   execsql {
     CREATE TABLE t1(a, b);
     CREATE INDEX i1 ON t1(a);
@@ -37,7 +37,7 @@ do_test vtabE-1.1 {
     SELECT b FROM t1 WHERE a IS NOT NULL;
   }
 } {110 111 112 113}
-do_test vtabE-1.2 {
+do_test vtabF-1.2 {
   execsql {SELECT b FROM tv1 WHERE a IS NOT NULL}
 } {110 111 112 113}
 

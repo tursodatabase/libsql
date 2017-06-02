@@ -13,9 +13,7 @@
 ** This file contains OS interface code that is common to all
 ** architectures.
 */
-#define _SQLITE_OS_C_ 1
 #include "sqliteInt.h"
-#undef _SQLITE_OS_C_
 
 /*
 ** If we compile with the SQLITE_TEST macro set, then the following block
@@ -66,7 +64,7 @@ int sqlite3_open_file_count = 0;
 #if defined(SQLITE_TEST)
 int sqlite3_memdebug_vfs_oom_test = 1;
   #define DO_OS_MALLOC_TEST(x)                                       \
-  if (sqlite3_memdebug_vfs_oom_test && (!x || !sqlite3IsMemJournal(x))) {  \
+  if (sqlite3_memdebug_vfs_oom_test && (!x || !sqlite3JournalIsInMemory(x))) { \
     void *pTstAlloc = sqlite3Malloc(10);                             \
     if (!pTstAlloc) return SQLITE_IOERR_NOMEM_BKPT;                  \
     sqlite3_free(pTstAlloc);                                         \
@@ -81,13 +79,11 @@ int sqlite3_memdebug_vfs_oom_test = 1;
 ** of this would be completely automatic if SQLite were coded using
 ** C++ instead of plain old C.
 */
-int sqlite3OsClose(sqlite3_file *pId){
-  int rc = SQLITE_OK;
+void sqlite3OsClose(sqlite3_file *pId){
   if( pId->pMethods ){
-    rc = pId->pMethods->xClose(pId);
+    pId->pMethods->xClose(pId);
     pId->pMethods = 0;
   }
-  return rc;
 }
 int sqlite3OsRead(sqlite3_file *id, void *pBuf, int amt, i64 offset){
   DO_OS_MALLOC_TEST(id);
@@ -262,6 +258,9 @@ int sqlite3OsRandomness(sqlite3_vfs *pVfs, int nByte, char *zBufOut){
 int sqlite3OsSleep(sqlite3_vfs *pVfs, int nMicro){
   return pVfs->xSleep(pVfs, nMicro);
 }
+int sqlite3OsGetLastError(sqlite3_vfs *pVfs){
+  return pVfs->xGetLastError ? pVfs->xGetLastError(pVfs, 0, 0) : 0;
+}
 int sqlite3OsCurrentTimeInt64(sqlite3_vfs *pVfs, sqlite3_int64 *pTimeOut){
   int rc;
   /* IMPLEMENTATION-OF: R-49045-42493 SQLite will use the xCurrentTimeInt64()
@@ -302,12 +301,10 @@ int sqlite3OsOpenMalloc(
   }
   return rc;
 }
-int sqlite3OsCloseFree(sqlite3_file *pFile){
-  int rc = SQLITE_OK;
+void sqlite3OsCloseFree(sqlite3_file *pFile){
   assert( pFile );
-  rc = sqlite3OsClose(pFile);
+  sqlite3OsClose(pFile);
   sqlite3_free(pFile);
-  return rc;
 }
 
 /*

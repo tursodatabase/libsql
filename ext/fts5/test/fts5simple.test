@@ -265,7 +265,7 @@ do_test 11.0 {
   execsql "
     INSERT INTO t4 VALUES('a b c \x1A');
     INSERT INTO t4 VALUES('a b c d\x1A');
-    INSERT INTO t4 VALUES('a b c \x1Ad');
+    INSERT INTO t4 VALUES('a b c \x1Ag');
     INSERT INTO t4 VALUES('a b c d');
   "
 } {}
@@ -340,7 +340,7 @@ do_test 14.2 {
 
 #-------------------------------------------------------------------------
 db func rnddoc fts5_rnddoc
-do_execsql_test 4.0 {
+do_execsql_test 14.3 {
   CREATE VIRTUAL TABLE x1 USING fts5(x);
   INSERT INTO x1(x1, rank) VALUES('pgsz', 32);
 
@@ -348,9 +348,9 @@ do_execsql_test 4.0 {
   INSERT INTO x1 SELECT rnddoc(5) FROM ii;
 }
 
-do_execsql_test 4.1 {
+do_execsql_test 14.4 {
   SELECT rowid, x, x1 FROM x1 WHERE x1 MATCH '*reads'
-} {0 {} 4}
+} {0 {} 3}
 
 #-------------------------------------------------------------------------
 reset_db
@@ -409,5 +409,63 @@ do_catchsql_test 19.2 {
   SELECT * FROM x1 WHERE x1 MATCH 'c0 AND (c1 AND (c2 AND (c3 AND (c4 AND (c5 AND (c6 AND (c7 AND (c8 AND (c9 AND (c10 AND (c11 AND (c12 AND (c13 AND (c14 AND (c15 AND (c16 AND (c17 AND (c18 AND (c19 AND (c20 AND (c21 AND (c22 AND (c23 AND (c24 AND (c25 AND (c26 AND (c27 AND (c28 AND (c29 AND (c30 AND (c31 AND (c32 AND (c33 AND (c34 AND (c35 AND (c36 AND (c37 AND (c38 AND (c39 AND (c40 AND (c41 AND (c42 AND (c43 AND (c44 AND (c45 AND (c46 AND (c47 AND (c48 AND (c49 AND (c50 AND (c51 AND (c52 AND (c53 AND (c54 AND (c55 AND (c56 AND (c57 AND (c58 AND (c59 AND (c60 AND (c61 AND (c62 AND (c63 AND (c64 AND (c65 AND (c66 AND (c67 AND (c68 AND (c69 AND (c70 AND (c71 AND (c72 AND (c73 AND (c74 AND (c75 AND (c76 AND (c77 AND (c78 AND (c79 AND (c80 AND (c81 AND (c82 AND (c83 AND (c84 AND (c85 AND (c86 AND (c87 AND (c88 AND (c89 AND (c90 AND (c91 AND (c92 AND (c93 AND (c94 AND (c95 AND (c96 AND (c97 AND (c98 AND (c99 AND (c100 AND (c101 AND (c102 AND (c103 AND (c104 AND (c105 AND (c106 AND (c107 AND (c108 AND (c109 AND (c110 AND (c111 AND (c112 AND (c113 AND (c114 AND (c115 AND (c116 AND (c117 AND (c118 AND (c119 AND (c120 AND (c121 AND (c122 AND (c123 AND (c124 AND (c125 AND (c126 AND (c127 AND (c128 AND (c129 AND (c130 AND (c131 AND (c132 AND (c133 AND (c134 AND (c135 AND (c136 AND (c137 AND (c138 AND (c139 AND (c140 AND (c141 AND (c142 AND (c143 AND (c144 AND (c145 AND (c146 AND (c147 AND (c148 AND (c149 AND (c150 AND (c151 AND (c152 AND (c153 AND (c154 AND (c155 AND (c156 AND (c157 AND (c158 AND (c159 AND (c160 AND (c161 AND (c162 AND (c163 AND (c164 AND (c165 AND (c166 AND (c167 AND (c168 AND (c169 AND (c170 AND (c171 AND (c172 AND (c173 AND (c174 AND (c175 AND (c176 AND (c177 AND (c178 AND (c179 AND (c180 AND (c181 AND (c182 AND (c183 AND (c184 AND (c185 AND (c186 AND (c187 AND (c188 AND (c189 AND (c190 AND (c191 AND (c192 AND (c193 AND (c194 AND (c195 AND (c196 AND (c197 AND (c198 AND (c199 AND c200)))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))';
 } {1 {fts5: parser stack overflow}}
 
-finish_test
+#-------------------------------------------------------------------------
+reset_db
+breakpoint
+do_execsql_test 20.0 {
+  CREATE VIRTUAL TABLE x1 USING fts5(x);
+  INSERT INTO x1(x1, rank) VALUES('pgsz', 32);
+  INSERT INTO x1(rowid, x) VALUES(11111, 'onetwothree');
+}
+do_test 20.1 {
+  for {set i 1} {$i <= 200} {incr i} {
+    execsql { INSERT INTO x1(rowid, x) VALUES($i, 'one two three'); }
+  }
+  execsql { INSERT INTO x1(x1) VALUES('optimize'); }
+  execsql { DELETE FROM x1 WHERE rowid = 4; }
+} {}
+do_execsql_test 20.2 {
+  INSERT INTO x1(x1) VALUES('optimize');
+  INSERT INTO x1(x1) VALUES('integrity-check');
+} {}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 20.0 {
+  CREATE VIRTUAL TABLE x1 USING fts5(x);
+  INSERT INTO x1(x1, rank) VALUES('pgsz', 32);
+  INSERT INTO x1(rowid, x) VALUES(11111, 'onetwothree');
+}
+do_test 20.1 {
+  for {set i 1} {$i <= 200} {incr i} {
+    execsql { INSERT INTO x1(rowid, x) VALUES($i, 'one two three'); }
+  }
+  execsql { INSERT INTO x1(x1) VALUES('optimize'); }
+  execsql { DELETE FROM x1 WHERE rowid = 4; }
+} {}
+do_execsql_test 20.2 {
+  INSERT INTO x1(x1) VALUES('optimize');
+  INSERT INTO x1(x1) VALUES('integrity-check');
+} {}
+
+#-------------------------------------------------------------------------
+reset_db
+set doc "a b [string repeat x 100000]"
+do_execsql_test 21.0 {
+  CREATE VIRTUAL TABLE x1 USING fts5(x);
+  INSERT INTO x1(rowid, x) VALUES(11111, $doc);
+  INSERT INTO x1(rowid, x) VALUES(11112, $doc);
+}
+do_execsql_test 21.1 {
+  INSERT INTO x1(x1) VALUES('integrity-check');
+}
+do_execsql_test 21.2 {
+  SELECT rowid FROM x1($doc);
+} {11111 11112}
+do_execsql_test 21.3 {
+  DELETE FROM x1 WHERE rowid=11111;
+  INSERT INTO x1(x1) VALUES('integrity-check');
+  SELECT rowid FROM x1($doc);
+} {11112}
+
+finish_test

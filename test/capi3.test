@@ -172,14 +172,15 @@ do_test capi3-3.3 {
   catch {
     set db2 [sqlite3_open /bogus/path/test.db {}]
   }
-  sqlite3_extended_errcode $db2
-} {SQLITE_CANTOPEN}
+  set ::capi3_errno [sqlite3_system_errno $db2]
+  list [sqlite3_extended_errcode $db2] [expr {$::capi3_errno!=0}]
+} {SQLITE_CANTOPEN 1}
 do_test capi3-3.4 {
   sqlite3_errmsg $db2
 } {unable to open database file}
 do_test capi3-3.5 {
-  sqlite3_close $db2
-} {SQLITE_OK}
+  list [sqlite3_system_errno $db2] [sqlite3_close $db2]
+} [list $::capi3_errno SQLITE_OK]
 if {[clang_sanitize_address]==0} {
   do_test capi3-3.6.1-misuse {
     sqlite3_close $db2
@@ -925,19 +926,20 @@ do_test capi3-11.9.3 {
 do_test capi3-11.10 {
   sqlite3_step $STMT
 } {SQLITE_ROW}
-ifcapable !autoreset {
-  # If SQLITE_OMIT_AUTORESET is defined, then the statement must be
-  # reset() before it can be passed to step() again.
-  do_test capi3-11.11a { sqlite3_step $STMT } {SQLITE_MISUSE}
-  do_test capi3-11.11b { sqlite3_reset $STMT } {SQLITE_ABORT}
-}
 do_test capi3-11.11 {
   sqlite3_step $STMT
 } {SQLITE_DONE}
-do_test capi3-11.12 {
-  sqlite3_step $STMT
-  sqlite3_step $STMT
-} {SQLITE_ROW}
+ifcapable !autoreset {
+  do_test capi3-11.12armor {
+    sqlite3_step $STMT
+    sqlite3_step $STMT
+  } {SQLITE_MISUSE}
+} else {
+  do_test capi3-11.12 {
+    sqlite3_step $STMT
+    sqlite3_step $STMT
+  } {SQLITE_ROW}
+}
 do_test capi3-11.13 {
   sqlite3_finalize $STMT
 } {SQLITE_OK}

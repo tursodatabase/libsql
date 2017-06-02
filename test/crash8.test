@@ -25,6 +25,7 @@ ifcapable !crashtest {
   finish_test
   return
 }
+do_not_use_codec
 
 do_test crash8-1.1 {
   execsql {

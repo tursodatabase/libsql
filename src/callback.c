@@ -405,10 +405,10 @@ FuncDef *sqlite3FindFunction(
   if( createFlag && bestScore<FUNC_PERFECT_MATCH && 
       (pBest = sqlite3DbMallocZero(db, sizeof(*pBest)+nName+1))!=0 ){
     FuncDef *pOther;
-    pBest->zName = (char *)&pBest[1];
+    pBest->zName = (const char*)&pBest[1];
     pBest->nArg = (u16)nArg;
     pBest->funcFlags = enc;
-    memcpy(pBest->zName, zName, nName+1);
+    memcpy((char*)&pBest[1], zName, nName+1);
     pOther = (FuncDef*)sqlite3HashInsert(&db->aFunc, pBest->zName, pBest);
     if( pOther==pBest ){
       sqlite3DbFree(db, pBest);

@@ -13,8 +13,8 @@
 ** subsystem.  See comments in the source code for a detailed description
 ** of what each interface routine does.
 */
-#ifndef _BTREE_H_
-#define _BTREE_H_
+#ifndef SQLITE_BTREE_H
+#define SQLITE_BTREE_H
 
 /* TODO: This definition is just included so other modules compile. It
 ** needs to be revisited.
@@ -39,6 +39,7 @@
 typedef struct Btree Btree;
 typedef struct BtCursor BtCursor;
 typedef struct BtShared BtShared;
+typedef struct BtreePayload BtreePayload;
 
 
 int sqlite3BtreeOpen(
@@ -89,7 +90,9 @@ int sqlite3BtreeIsInReadTrans(Btree*);
 int sqlite3BtreeIsInBackup(Btree*);
 void *sqlite3BtreeSchema(Btree *, int, void(*)(void *));
 int sqlite3BtreeSchemaLocked(Btree *pBtree);
+#ifndef SQLITE_OMIT_SHARED_CACHE
 int sqlite3BtreeLockTable(Btree *pBtree, int iTab, u8 isWriteLock);
+#endif
 int sqlite3BtreeSavepoint(Btree *, int, int);
 
 const char *sqlite3BtreeGetFilename(Btree *);
@@ -246,30 +249,60 @@ int sqlite3BtreeCursorHasMoved(BtCursor*);
 int sqlite3BtreeCursorRestore(BtCursor*, int*);
 int sqlite3BtreeDelete(BtCursor*, u8 flags);
 
-/* Allowed flags for the 2nd argument to sqlite3BtreeDelete() */
+/* Allowed flags for sqlite3BtreeDelete() and sqlite3BtreeInsert() */
 #define BTREE_SAVEPOSITION 0x02  /* Leave cursor pointing at NEXT or PREV */
 #define BTREE_AUXDELETE    0x04  /* not the primary delete operation */
+#define BTREE_APPEND       0x08  /* Insert is likely an append */
 
-int sqlite3BtreeInsert(BtCursor*, const void *pKey, i64 nKey,
-                                  const void *pData, int nData,
-                                  int nZero, int bias, int seekResult);
+/* An instance of the BtreePayload object describes the content of a single
+** entry in either an index or table btree.
+**
+** Index btrees (used for indexes and also WITHOUT ROWID tables) contain
+** an arbitrary key and no data.  These btrees have pKey,nKey set to their
+** key and pData,nData,nZero set to zero.
+**
+** Table btrees (used for rowid tables) contain an integer rowid used as
+** the key and passed in the nKey field.  The pKey field is zero.  
+** pData,nData hold the content of the new entry.  nZero extra zero bytes
+** are appended to the end of the content when constructing the entry.
+**
+** This object is used to pass information into sqlite3BtreeInsert().  The
+** same information used to be passed as five separate parameters.  But placing
+** the information into this object helps to keep the interface more 
+** organized and understandable, and it also helps the resulting code to
+** run a little faster by using fewer registers for parameter passing.
+*/
+struct BtreePayload {
+  const void *pKey;       /* Key content for indexes.  NULL for tables */
+  sqlite3_int64 nKey;     /* Size of pKey for indexes.  PRIMARY KEY for tabs */
+  const void *pData;      /* Data for tables.  NULL for indexes */
+  sqlite3_value *aMem;    /* First of nMem value in the unpacked pKey */
+  u16 nMem;               /* Number of aMem[] value.  Might be zero */
+  int nData;              /* Size of pData.  0 if none. */
+  int nZero;              /* Extra zero data appended after pData,nData */
+};
+
+int sqlite3BtreeInsert(BtCursor*, const BtreePayload *pPayload,
+                       int flags, int seekResult);
 int sqlite3BtreeFirst(BtCursor*, int *pRes);
 int sqlite3BtreeLast(BtCursor*, int *pRes);
-int sqlite3BtreeNext(BtCursor*, int *pRes);
+int sqlite3BtreeNext(BtCursor*, int flags);
 int sqlite3BtreeEof(BtCursor*);
-int sqlite3BtreePrevious(BtCursor*, int *pRes);
-int sqlite3BtreeKeySize(BtCursor*, i64 *pSize);
-int sqlite3BtreeKey(BtCursor*, u32 offset, u32 amt, void*);
-const void *sqlite3BtreeKeyFetch(BtCursor*, u32 *pAmt);
-const void *sqlite3BtreeDataFetch(BtCursor*, u32 *pAmt);
-int sqlite3BtreeDataSize(BtCursor*, u32 *pSize);
-int sqlite3BtreeData(BtCursor*, u32 offset, u32 amt, void*);
+int sqlite3BtreePrevious(BtCursor*, int flags);
+i64 sqlite3BtreeIntegerKey(BtCursor*);
+int sqlite3BtreePayload(BtCursor*, u32 offset, u32 amt, void*);
+const void *sqlite3BtreePayloadFetch(BtCursor*, u32 *pAmt);
+u32 sqlite3BtreePayloadSize(BtCursor*);
 
 char *sqlite3BtreeIntegrityCheck(Btree*, int *aRoot, int nRoot, int, int*);
 struct Pager *sqlite3BtreePager(Btree*);
+i64 sqlite3BtreeRowCountEst(BtCursor*);
 
+#ifndef SQLITE_OMIT_INCRBLOB
+int sqlite3BtreePayloadChecked(BtCursor*, u32 offset, u32 amt, void*);
 int sqlite3BtreePutData(BtCursor*, u32 offset, u32 amt, void*);
 void sqlite3BtreeIncrblobCursor(BtCursor *);
+#endif
 void sqlite3BtreeClearCursor(BtCursor *);
 int sqlite3BtreeSetVersion(Btree *pBt, int iVersion);
 int sqlite3BtreeCursorHasHint(BtCursor*, unsigned int mask);
@@ -279,6 +312,7 @@ int sqlite3HeaderSizeBtree(void);
 #ifndef NDEBUG
 int sqlite3BtreeCursorIsValid(BtCursor*);
 #endif
+int sqlite3BtreeCursorIsValidNN(BtCursor*);
 
 #ifndef SQLITE_OMIT_BTREECOUNT
 int sqlite3BtreeCount(BtCursor *, i64 *);
@@ -303,11 +337,13 @@ void sqlite3BtreeCursorList(Btree*);
   void sqlite3BtreeEnterAll(sqlite3*);
   int sqlite3BtreeSharable(Btree*);
   void sqlite3BtreeEnterCursor(BtCursor*);
+  int sqlite3BtreeConnectionCount(Btree*);
 #else
 # define sqlite3BtreeEnter(X) 
 # define sqlite3BtreeEnterAll(X)
 # define sqlite3BtreeSharable(X) 0
 # define sqlite3BtreeEnterCursor(X)
+# define sqlite3BtreeConnectionCount(X) 1
 #endif
 
 #if !defined(SQLITE_OMIT_SHARED_CACHE) && SQLITE_THREADSAFE
@@ -332,4 +368,4 @@ void sqlite3BtreeCursorList(Btree*);
 #endif
 
 
-#endif /* _BTREE_H_ */
+#endif /* SQLITE_BTREE_H */

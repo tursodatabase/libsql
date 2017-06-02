@@ -279,14 +279,13 @@ static int pcache1InitBulk(PCache1 *pCache){
     szBulk = -1024 * (i64)pcache1.nInitPage;
   }
   if( szBulk > pCache->szAlloc*(i64)pCache->nMax ){
-    szBulk = pCache->szAlloc*pCache->nMax;
+    szBulk = pCache->szAlloc*(i64)pCache->nMax;
   }
   zBulk = pCache->pBulk = sqlite3Malloc( szBulk );
   sqlite3EndBenignMalloc();
   if( zBulk ){
     int nBulk = sqlite3MallocSize(zBulk)/pCache->szAlloc;
-    int i;
-    for(i=0; i<nBulk; i++){
+    do{
       PgHdr1 *pX = (PgHdr1*)&zBulk[pCache->szPage];
       pX->page.pBuf = zBulk;
       pX->page.pExtra = &pX[1];
@@ -295,7 +294,7 @@ static int pcache1InitBulk(PCache1 *pCache){
       pX->pNext = pCache->pFree;
       pCache->pFree = pX;
       zBulk += pCache->szAlloc;
-    }
+    }while( --nBulk );
   }
   return pCache->pFree!=0;
 }
@@ -348,7 +347,6 @@ static void *pcache1Alloc(int nByte){
 ** Free an allocated buffer obtained from pcache1Alloc().
 */
 static void pcache1Free(void *p){
-  int nFreed = 0;
   if( p==0 ) return;
   if( SQLITE_WITHIN(p, pcache1.pStart, pcache1.pEnd) ){
     PgFreeslot *pSlot;
@@ -365,10 +363,13 @@ static void pcache1Free(void *p){
     assert( sqlite3MemdebugHasType(p, MEMTYPE_PCACHE) );
     sqlite3MemdebugSetType(p, MEMTYPE_HEAP);
 #ifndef SQLITE_DISABLE_PAGECACHE_OVERFLOW_STATS
-    nFreed = sqlite3MallocSize(p);
-    sqlite3_mutex_enter(pcache1.mutex);
-    sqlite3StatusDown(SQLITE_STATUS_PAGECACHE_OVERFLOW, nFreed);
-    sqlite3_mutex_leave(pcache1.mutex);
+    {
+      int nFreed = 0;
+      nFreed = sqlite3MallocSize(p);
+      sqlite3_mutex_enter(pcache1.mutex);
+      sqlite3StatusDown(SQLITE_STATUS_PAGECACHE_OVERFLOW, nFreed);
+      sqlite3_mutex_leave(pcache1.mutex);
+    }
 #endif
     sqlite3_free(p);
   }
@@ -630,12 +631,30 @@ static void pcache1TruncateUnsafe(
   PCache1 *pCache,             /* The cache to truncate */
   unsigned int iLimit          /* Drop pages with this pgno or larger */
 ){
-  TESTONLY( unsigned int nPage = 0; )  /* To assert pCache->nPage is correct */
-  unsigned int h;
+  TESTONLY( int nPage = 0; )  /* To assert pCache->nPage is correct */
+  unsigned int h, iStop;
   assert( sqlite3_mutex_held(pCache->pGroup->mutex) );
-  for(h=0; h<pCache->nHash; h++){
-    PgHdr1 **pp = &pCache->apHash[h]; 
+  assert( pCache->iMaxKey >= iLimit );
+  assert( pCache->nHash > 0 );
+  if( pCache->iMaxKey - iLimit < pCache->nHash ){
+    /* If we are just shaving the last few pages off the end of the
+    ** cache, then there is no point in scanning the entire hash table.
+    ** Only scan those hash slots that might contain pages that need to
+    ** be removed. */
+    h = iLimit % pCache->nHash;
+    iStop = pCache->iMaxKey % pCache->nHash;
+    TESTONLY( nPage = -10; )  /* Disable the pCache->nPage validity check */
+  }else{
+    /* This is the general case where many pages are being removed.
+    ** It is necessary to scan the entire hash table */
+    h = pCache->nHash/2;
+    iStop = h - 1;
+  }
+  for(;;){
+    PgHdr1 **pp;
     PgHdr1 *pPage;
+    assert( h<pCache->nHash );
+    pp = &pCache->apHash[h]; 
     while( (pPage = *pp)!=0 ){
       if( pPage->iKey>=iLimit ){
         pCache->nPage--;
@@ -644,11 +663,13 @@ static void pcache1TruncateUnsafe(
         pcache1FreePage(pPage);
       }else{
         pp = &pPage->pNext;
-        TESTONLY( nPage++; )
+        TESTONLY( if( nPage>=0 ) nPage++; )
       }
     }
+    if( h==iStop ) break;
+    h = (h+1) % pCache->nHash;
   }
-  assert( pCache->nPage==nPage );
+  assert( nPage<0 || pCache->nPage==(unsigned)nPage );
 }
 
 /******************************************************************************/
@@ -688,8 +709,8 @@ static int pcache1Init(void *NotUsed){
 
 #if SQLITE_THREADSAFE
   if( sqlite3GlobalConfig.bCoreMutex ){
-    pcache1.grp.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_LRU);
-    pcache1.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_PMEM);
+    pcache1.grp.mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_LRU);
+    pcache1.mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_PMEM);
   }
 #endif
   if( pcache1.separateCache
@@ -1125,7 +1146,7 @@ static void pcache1Destroy(sqlite3_pcache *p){
   PGroup *pGroup = pCache->pGroup;
   assert( pCache->bPurgeable || (pCache->nMax==0 && pCache->nMin==0) );
   pcache1EnterMutex(pGroup);
-  pcache1TruncateUnsafe(pCache, 0);
+  if( pCache->nPage ) pcache1TruncateUnsafe(pCache, 0);
   assert( pGroup->nMaxPage >= pCache->nMax );
   pGroup->nMaxPage -= pCache->nMax;
   assert( pGroup->nMinPage >= pCache->nMin );
@@ -1189,7 +1210,7 @@ int sqlite3PcacheReleaseMemory(int nReq){
   int nFree = 0;
   assert( sqlite3_mutex_notheld(pcache1.grp.mutex) );
   assert( sqlite3_mutex_notheld(pcache1.mutex) );
-  if( sqlite3GlobalConfig.nPage==0 ){
+  if( sqlite3GlobalConfig.pPage==0 ){
     PgHdr1 *p;
     pcache1EnterMutex(&pcache1.grp);
     while( (nReq<0 || nFree<nReq)

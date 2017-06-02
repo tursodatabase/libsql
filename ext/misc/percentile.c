@@ -167,7 +167,7 @@ static void percentStep(sqlite3_context *pCtx, int argc, sqlite3_value **argv){
 /*
 ** Compare to doubles for sorting using qsort()
 */
-static int doubleCmp(const void *pA, const void *pB){
+static int SQLITE_CDECL doubleCmp(const void *pA, const void *pB){
   double a = *(double*)pA;
   double b = *(double*)pB;
   if( a==b ) return 0;

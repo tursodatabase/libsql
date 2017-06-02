@@ -25,6 +25,7 @@
 #      copy_file              FROM TO
 #      delete_file            FILENAME
 #      drop_all_tables        ?DB?
+#      drop_all_indexes       ?DB?
 #      forcecopy              FROM TO
 #      forcedelete            FILENAME
 #
@@ -373,6 +374,13 @@ proc do_not_use_codec {} {
   set ::do_not_use_codec 1
   reset_db
 }
+unset -nocomplain do_not_use_codec
+
+# Return true if the "reserved_bytes" integer on database files is non-zero.
+#
+proc nonzero_reserved_bytes {} {
+  return [sqlite3 -has-codec]
+}
 
 # Print a HELP message and exit
 #
@@ -411,6 +419,8 @@ if {[info exists cmdlinearg]==0} {
   #   --match=$pattern
   #   --verbose=$val
   #   --output=$filename
+  #   -q                                      Reduce output
+  #   --testdir=$dir                          Run tests in subdirectory $dir
   #   --help
   #
   set cmdlinearg(soft-heap-limit)    0
@@ -425,6 +435,7 @@ if {[info exists cmdlinearg]==0} {
   set cmdlinearg(match)             ""
   set cmdlinearg(verbose)           ""
   set cmdlinearg(output)            ""
+  set cmdlinearg(testdir)           "testdir"
 
   set leftover [list]
   foreach a $argv {
@@ -450,10 +461,11 @@ if {[info exists cmdlinearg]==0} {
       }
       {^-+backtrace=.+$} {
         foreach {dummy cmdlinearg(backtrace)} [split $a =] break
-        sqlite3_memdebug_backtrace $value
+        sqlite3_memdebug_backtrace $cmdlinearg(backtrace)
       }
       {^-+binarylog=.+$} {
         foreach {dummy cmdlinearg(binarylog)} [split $a =] break
+        set cmdlinearg(binarylog) [file normalize $cmdlinearg(binarylog)]
       }
       {^-+soak=.+$} {
         foreach {dummy cmdlinearg(soak)} [split $a =] break
@@ -486,6 +498,7 @@ if {[info exists cmdlinearg]==0} {
 
       {^-+output=.+$} {
         foreach {dummy cmdlinearg(output)} [split $a =] break
+        set cmdlinearg(output) [file normalize $cmdlinearg(output)]
         if {$cmdlinearg(verbose)==""} {
           set cmdlinearg(verbose) 2
         }
@@ -498,6 +511,9 @@ if {[info exists cmdlinearg]==0} {
           error "option --verbose= must be set to a boolean or to \"file\""
         }
       }
+      {^-+testdir=.*$} {
+        foreach {dummy cmdlinearg(testdir)} [split $a =] break
+      }
       {.*help.*} {
          print_help_and_quit
       }
@@ -507,9 +523,21 @@ if {[info exists cmdlinearg]==0} {
       }
 
       default {
-        lappend leftover $a
+        if {[file tail $a]==$a} {
+          lappend leftover $a
+        } else {
+          lappend leftover [file normalize $a]
+        }
       }
     }
+  }
+  set testdir [file normalize $testdir]
+  set cmdlinearg(TESTFIXTURE_HOME) [pwd]
+  set cmdlinearg(INFO_SCRIPT) [file normalize [info script]]
+  set argv0 [file normalize $argv0]
+  if {$cmdlinearg(testdir)!=""} {
+    file mkdir $cmdlinearg(testdir)
+    cd $cmdlinearg(testdir)
   }
   set argv $leftover
 
@@ -694,6 +722,17 @@ proc puts {args} { uplevel puts_override $args }
 
 # Invoke the do_test procedure to run a single test
 #
+# The $expected parameter is the expected result.  The result is the return
+# value from the last TCL command in $cmd.
+#
+# Normally, $expected must match exactly.  But if $expected is of the form
+# "/regexp/" then regular expression matching is used.  If $expected is
+# "~/regexp/" then the regular expression must NOT match.  If $expected is
+# of the form "#/value-list/" then each term in value-list must be numeric
+# and must approximately match the corresponding numeric term in $result.
+# Values must match within 10%.  Or if the $expected term is A..B then the
+# $result term must be in between A and B.
+#
 proc do_test {name cmd expected} {
   global argv cmdlinearg
 
@@ -727,7 +766,7 @@ proc do_test {name cmd expected} {
       output2 "\nError: $result"
       fail_test $name
     } else {
-      if {[regexp {^~?/.*/$} $expected]} {
+      if {[regexp {^[~#]?/.*/$} $expected]} {
         # "expected" is of the form "/PATTERN/" then the result if correct if
         # regular expression PATTERN matches the result.  "~/PATTERN/" means
         # the regular expression must not match.
@@ -741,6 +780,21 @@ proc do_test {name cmd expected} {
             set ok [regexp $re $result]
           }
           set ok [expr {!$ok}]
+        } elseif {[string index $expected 0]=="#"} {
+          # Numeric range value comparison.  Each term of the $result is matched
+          # against one term of $expect.  Both $result and $expected terms must be
+          # numeric.  The values must match within 10%.  Or if $expected is of the
+          # form A..B then the $result term must be between A and B.
+          set e2 [string range $expected 2 end-1]
+          foreach i $result j $e2 {
+            if {[regexp {^(-?\d+)\.\.(-?\d)$} $j all A B]} {
+              set ok [expr {$i+0>=$A && $i+0<=$B}]
+            } else {
+              set ok [expr {$i+0>=0.9*$j && $i+0<=1.1*$j}]
+            }
+            if {!$ok} break
+          }
+          if {$ok && [llength $result]!=[llength $e2]} {set ok 0}
         } else {
           set re [string range $expected 1 end-1]
           if {[string index $re 0]=="*"} {
@@ -859,10 +913,43 @@ proc fix_testname {varname} {
   }
 }
 
-proc do_execsql_test {testname sql {result {}}} {
-  fix_testname testname
-  uplevel do_test [list $testname] [list "execsql {$sql}"] [list [list {*}$result]]
+proc normalize_list {L} {
+  set L2 [list]
+  foreach l $L {lappend L2 $l}
+  set L2
 }
+
+# Either:
+#
+#   do_execsql_test TESTNAME SQL ?RES?
+#   do_execsql_test -db DB TESTNAME SQL ?RES?
+#
+proc do_execsql_test {args} {
+  set db db
+  if {[lindex $args 0]=="-db"} {
+    set db [lindex $args 1]
+    set args [lrange $args 2 end]
+  }
+
+  if {[llength $args]==2} {
+    foreach {testname sql} $args {}
+    set result ""
+  } elseif {[llength $args]==3} {
+    foreach {testname sql result} $args {}
+  } else {
+    error [string trim {
+      wrong # args: should be "do_execsql_test ?-db DB? testname sql ?result?"
+    }]
+  }
+
+  fix_testname testname
+
+  uplevel do_test                 \
+      [list $testname]            \
+      [list "execsql {$sql} $db"] \
+      [list [list {*}$result]]
+}
+
 proc do_catchsql_test {testname sql result} {
   fix_testname testname
   uplevel do_test [list $testname] [list "catchsql {$sql}"] [list $result]
@@ -1230,9 +1317,9 @@ proc explain_i {sql {db db}} {
     set D ""
   }
   foreach opcode {
-      Seek SeekGe SeekGt SeekLe SeekLt NotFound Last Rewind
+      Seek SeekGE SeekGT SeekLE SeekLT NotFound Last Rewind
       NoConflict Next Prev VNext VPrev VFilter
-      SorterSort SorterNext
+      SorterSort SorterNext NextIfOpen
   } {
     set color($opcode) $B
   }
@@ -1253,9 +1340,15 @@ proc explain_i {sql {db db}} {
       set bSeenGoto 1
     }
 
+    if {$opcode=="Once"} {
+      for {set i $addr} {$i<$p2} {incr i} {
+        set star($i) $addr
+      }
+    }
+
     if {$opcode=="Next"  || $opcode=="Prev" 
      || $opcode=="VNext" || $opcode=="VPrev"
-     || $opcode=="SorterNext"
+     || $opcode=="SorterNext" || $opcode=="NextIfOpen"
     } {
       for {set i $p2} {$i<$addr} {incr i} {
         incr x($i) 2
@@ -1278,6 +1371,12 @@ proc explain_i {sql {db db}} {
       output2 ""
     }
     set I [string repeat " " $x($addr)]
+
+    if {[info exists star($addr)]} {
+      set ii [expr $x($star($addr))]
+      append I "  "
+      set I [string replace $I $ii $ii *]
+    }
 
     set col ""
     catch { set col $color($opcode) }
@@ -1434,6 +1533,7 @@ proc crashsql {args} {
   set tclbody {}
   set crashfile ""
   set dc ""
+  set dfltvfs 0
   set sql [lindex $args end]
 
   for {set ii 0} {$ii < [llength $args]-1} {incr ii 2} {
@@ -1447,7 +1547,8 @@ proc crashsql {args} {
     elseif {$n>1 && [string first $z -file]==0}      {set crashfile $z2}  \
     elseif {$n>1 && [string first $z -tclbody]==0}   {set tclbody $z2}  \
     elseif {$n>1 && [string first $z -blocksize]==0} {set blocksize "-s $z2" } \
-    elseif {$n>1 && [string first $z -characteristics]==0} {set dc "-c {$z2}" } \
+    elseif {$n>1 && [string first $z -characteristics]==0} {set dc "-c {$z2}" }\
+    elseif {$n>1 && [string first $z -dfltvfs]==0} {set dfltvfs $z2 }\
     else   { error "Unrecognized option: $z" }
   }
 
@@ -1461,7 +1562,7 @@ proc crashsql {args} {
   set cfile [string map {\\ \\\\} [file nativename [file join [get_pwd] $crashfile]]]
 
   set f [open crash.tcl w]
-  puts $f "sqlite3_crash_enable 1"
+  puts $f "sqlite3_crash_enable 1 $dfltvfs"
   puts $f "sqlite3_crashparams $blocksize $dc $crashdelay $cfile"
   puts $f "sqlite3_test_control_pending_byte $::sqlite_pending_byte"
 
@@ -1880,6 +1981,16 @@ proc drop_all_tables {{db db}} {
   }
 }
 
+# Drop all auxiliary indexes from the main database opened by handle [db].
+#
+proc drop_all_indexes {{db db}} {
+  set L [$db eval {
+    SELECT name FROM sqlite_master WHERE type='index' AND sql LIKE 'create%'
+  }]
+  foreach idx $L { $db eval "DROP INDEX $idx" }
+}
+
+
 #-------------------------------------------------------------------------
 # If a test script is executed with global variable $::G(perm:name) set to
 # "wal", then the tests are run in WAL mode. Otherwise, they should be run
@@ -1914,6 +2025,12 @@ proc wal_check_journal_mode {testname {db db}} {
     $db eval { SELECT * FROM sqlite_master }
     do_test $testname [list $db eval "PRAGMA main.journal_mode"] {wal}
   }
+}
+
+proc wal_is_capable {} {
+  ifcapable !wal { return 0 }
+  if {[permutation]=="journaltest"} { return 0 }
+  return 1
 }
 
 proc permutation {} {
@@ -2113,6 +2230,41 @@ proc test_restore_config_pagecache {} {
   autoinstall_test_functions
   sqlite3 db test.db
 }
+
+proc test_find_binary {nm} {
+  if {$::tcl_platform(platform)=="windows"} {
+    set ret "$nm.exe"
+  } else {
+    set ret $nm
+  }
+  set ret [file normalize [file join $::cmdlinearg(TESTFIXTURE_HOME) $ret]]
+  if {![file executable $ret]} {
+    finish_test
+    return ""
+  }
+  return $ret
+}
+
+# Find the name of the 'shell' executable (e.g. "sqlite3.exe") to use for
+# the tests in shell[1-5].test. If no such executable can be found, invoke
+# [finish_test ; return] in the callers context.
+#
+proc test_find_cli {} {
+  set prog [test_find_binary sqlite3]
+  if {$prog==""} { return -code return }
+  return $prog
+}
+
+# Find the name of the 'sqldiff' executable (e.g. "sqlite3.exe") to use for
+# the tests in sqldiff tests. If no such executable can be found, invoke
+# [finish_test ; return] in the callers context.
+#
+proc test_find_sqldiff {} {
+  set prog [test_find_binary sqldiff]
+  if {$prog==""} { return -code return }
+  return $prog
+}
+
 
 # If the library is compiled with the SQLITE_DEFAULT_AUTOVACUUM macro set
 # to non-zero, then set the global variable $AUTOVACUUM to 1.

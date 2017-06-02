@@ -70,7 +70,7 @@ struct WhereLevel {
   int addrFirst;        /* First instruction of interior of the loop */
   int addrBody;         /* Beginning of the body of this loop */
 #ifndef SQLITE_LIKE_DOESNT_MATCH_BLOBS
-  int iLikeRepCntr;     /* LIKE range processing counter register */
+  u32 iLikeRepCntr;     /* LIKE range processing counter register (times 2) */
   int addrLikeRep;      /* LIKE range processing address */
 #endif
   u8 iFrom;             /* Which entry in the FROM clause */
@@ -122,6 +122,9 @@ struct WhereLoop {
   union {
     struct {               /* Information for internal btree tables */
       u16 nEq;               /* Number of equality constraints */
+      u16 nBtm;              /* Size of BTM vector */
+      u16 nTop;              /* Size of TOP vector */
+      u16 nIdxCol;           /* Index column used for ORDER BY */
       Index *pIndex;         /* Index used, or NULL */
     } btree;
     struct {               /* Information for virtual tables */
@@ -244,19 +247,20 @@ struct WherePath {
 */
 struct WhereTerm {
   Expr *pExpr;            /* Pointer to the subexpression that is this term */
+  WhereClause *pWC;       /* The clause this term is part of */
+  LogEst truthProb;       /* Probability of truth for this expression */
+  u16 wtFlags;            /* TERM_xxx bit flags.  See below */
+  u16 eOperator;          /* A WO_xx value describing <op> */
+  u8 nChild;              /* Number of children that must disable us */
+  u8 eMatchOp;            /* Op for vtab MATCH/LIKE/GLOB/REGEXP terms */
   int iParent;            /* Disable pWC->a[iParent] when this term disabled */
   int leftCursor;         /* Cursor number of X in "X <op> <expr>" */
+  int iField;             /* Field in (?,?,?) IN (SELECT...) vector */
   union {
     int leftColumn;         /* Column number of X in "X <op> <expr>" */
     WhereOrInfo *pOrInfo;   /* Extra information if (eOperator & WO_OR)!=0 */
     WhereAndInfo *pAndInfo; /* Extra information if (eOperator& WO_AND)!=0 */
   } u;
-  LogEst truthProb;       /* Probability of truth for this expression */
-  u16 eOperator;          /* A WO_xx value describing <op> */
-  u16 wtFlags;            /* TERM_xxx bit flags.  See below */
-  u8 nChild;              /* Number of children that must disable us */
-  u8 eMatchOp;            /* Op for vtab MATCH/LIKE/GLOB/REGEXP terms */
-  WhereClause *pWC;       /* The clause this term is part of */
   Bitmask prereqRight;    /* Bitmask of tables used by pExpr->pRight */
   Bitmask prereqAll;      /* Bitmask of tables referenced by pExpr */
 };
@@ -392,7 +396,12 @@ struct WhereLoopBuilder {
   UnpackedRecord *pRec;     /* Probe for stat4 (if required) */
   int nRecValid;            /* Number of valid fields currently in pRec */
 #endif
+  unsigned int bldFlags;    /* SQLITE_BLDF_* flags */
 };
+
+/* Allowed values for WhereLoopBuider.bldFlags */
+#define SQLITE_BLDF_INDEXED  0x0001   /* An index is used */
+#define SQLITE_BLDF_UNIQUE   0x0002   /* All keys of a UNIQUE index used */
 
 /*
 ** The WHERE clause processing routine has two halves.  The
@@ -408,24 +417,27 @@ struct WhereInfo {
   Parse *pParse;            /* Parsing and code generating context */
   SrcList *pTabList;        /* List of tables in the join */
   ExprList *pOrderBy;       /* The ORDER BY clause or NULL */
-  ExprList *pResultSet;     /* Result set. DISTINCT operates on these */
-  WhereLoop *pLoops;        /* List of all WhereLoop objects */
-  Bitmask revMask;          /* Mask of ORDER BY terms that need reversing */
-  LogEst nRowOut;           /* Estimated number of output rows */
+  ExprList *pResultSet;     /* Result set of the query */
+  Expr *pWhere;             /* The complete WHERE clause */
+  LogEst iLimit;            /* LIMIT if wctrlFlags has WHERE_USE_LIMIT */
+  int aiCurOnePass[2];      /* OP_OpenWrite cursors for the ONEPASS opt */
+  int iContinue;            /* Jump here to continue with next record */
+  int iBreak;               /* Jump here to break out of the loop */
+  int savedNQueryLoop;      /* pParse->nQueryLoop outside the WHERE loop */
   u16 wctrlFlags;           /* Flags originally passed to sqlite3WhereBegin() */
+  u8 nLevel;                /* Number of nested loop */
   i8 nOBSat;                /* Number of ORDER BY terms satisfied by indices */
   u8 sorted;                /* True if really sorted (not just grouped) */
   u8 eOnePass;              /* ONEPASS_OFF, or _SINGLE, or _MULTI */
   u8 untestedTerms;         /* Not all WHERE terms resolved by outer loop */
-  u8 eDistinct;             /* One of the WHERE_DISTINCT_* values below */
-  u8 nLevel;                /* Number of nested loop */
+  u8 eDistinct;             /* One of the WHERE_DISTINCT_* values */
+  u8 bOrderedInnerLoop;     /* True if only the inner-most loop is ordered */
   int iTop;                 /* The very beginning of the WHERE loop */
-  int iContinue;            /* Jump here to continue with next record */
-  int iBreak;               /* Jump here to break out of the loop */
-  int savedNQueryLoop;      /* pParse->nQueryLoop outside the WHERE loop */
-  int aiCurOnePass[2];      /* OP_OpenWrite cursors for the ONEPASS opt */
-  WhereMaskSet sMaskSet;    /* Map cursor numbers to bitmasks */
+  WhereLoop *pLoops;        /* List of all WhereLoop objects */
+  Bitmask revMask;          /* Mask of ORDER BY terms that need reversing */
+  LogEst nRowOut;           /* Estimated number of output rows */
   WhereClause sWC;          /* Decomposition of the WHERE clause */
+  WhereMaskSet sMaskSet;    /* Map cursor numbers to bitmasks */
   WhereLevel a[1];          /* Information about each nest loop in WHERE */
 };
 
@@ -435,6 +447,9 @@ struct WhereInfo {
 ** where.c:
 */
 Bitmask sqlite3WhereGetMask(WhereMaskSet*,int);
+#ifdef WHERETRACE_ENABLED
+void sqlite3WhereClausePrint(WhereClause *pWC);
+#endif
 WhereTerm *sqlite3WhereFindTerm(
   WhereClause *pWC,     /* The WHERE clause to be searched */
   int iCur,             /* Cursor number of LHS */
@@ -491,6 +506,14 @@ void sqlite3WhereTabFuncArgs(Parse*, struct SrcList_item*, WhereClause*);
 ** operators that are of interest to the query planner.  An
 ** OR-ed combination of these values can be used when searching for
 ** particular WhereTerms within a WhereClause.
+**
+** Value constraints:
+**     WO_EQ    == SQLITE_INDEX_CONSTRAINT_EQ
+**     WO_LT    == SQLITE_INDEX_CONSTRAINT_LT
+**     WO_LE    == SQLITE_INDEX_CONSTRAINT_LE
+**     WO_GT    == SQLITE_INDEX_CONSTRAINT_GT
+**     WO_GE    == SQLITE_INDEX_CONSTRAINT_GE
+**     WO_MATCH == SQLITE_INDEX_CONSTRAINT_MATCH
 */
 #define WO_IN     0x0001
 #define WO_EQ     0x0002

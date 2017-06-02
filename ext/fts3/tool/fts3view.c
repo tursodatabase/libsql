@@ -398,8 +398,8 @@ static void showSegmentStats(sqlite3 *db, const char *zTab){
     if( sqlite3_step(pStmt)==SQLITE_ROW
      && (nLeaf = sqlite3_column_int(pStmt, 0))>0
     ){
-      nIdx = sqlite3_column_int(pStmt, 5);
       sqlite3_int64 sz;
+      nIdx = sqlite3_column_int(pStmt, 5);
       printf("For level %d:\n", i);
       printf("  Number of indexes...................... %9d\n", nIdx);
       printf("  Number of leaf segments................ %9d\n", nLeaf);

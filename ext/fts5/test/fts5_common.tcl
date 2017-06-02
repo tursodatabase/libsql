@@ -16,19 +16,18 @@ if {![info exists testdir]} {
 source $testdir/tester.tcl
 
 ifcapable !fts5 {
-  finish_test
+  proc return_if_no_fts5 {} {
+    finish_test
+    return -code return
+  }
   return
+} else {
+  proc return_if_no_fts5 {} {}
 }
 
 catch { 
   sqlite3_fts5_may_be_corrupt 0 
   reset_db
-}
-
-# If SQLITE_ENABLE_FTS5 is not defined, skip this test.
-ifcapable !fts5 {
-  finish_test
-  return
 }
 
 proc fts5_test_poslist {cmd} {
@@ -158,6 +157,12 @@ proc fts5_aux_test_functions {db} {
   } {
     sqlite3_fts5_create_function $db $f $f
   }
+}
+
+proc fts5_segcount {tbl} {
+  set N 0
+  foreach n [fts5_level_segs $tbl] { incr N $n }
+  set N
 }
 
 proc fts5_level_segs {tbl} {

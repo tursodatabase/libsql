@@ -21,6 +21,10 @@ ifcapable !vtab||!compound {
   return
 }
 
+# This module uses hard-coded results that depend on exact measurements of
+# pages sizes at the byte level, and hence will not work if the reserved_bytes
+# value is nonzero.
+if {[nonzero_reserved_bytes]} {finish_test; return;}
 
 set ::asc 1
 proc a_string {n} { string range [string repeat [incr ::asc]. $n] 1 $n }
@@ -28,12 +32,28 @@ db func a_string a_string
 
 register_dbstat_vtab db
 do_execsql_test stat-0.0 {
+  PRAGMA table_info(dbstat);
+} {/0 name TEXT .* 1 path TEXT .* 9 pgsize INTEGER/}
+
+# Attempts to drop an eponymous virtual table are a no-op.
+do_execsql_test stat-0.1 {
+  DROP TABLE dbstat;
+  PRAGMA table_info=dbstat;
+} {/0 name TEXT .* 1 path TEXT .* 9 pgsize INTEGER/}
+
+db close
+forcedelete test.db
+sqlite3 db test.db
+db func a_string a_string
+register_dbstat_vtab db
+do_execsql_test stat-0.2 {
   PRAGMA auto_vacuum = OFF;
   CREATE VIRTUAL TABLE temp.stat USING dbstat;
   SELECT * FROM stat;
 } {}
 
-ifcapable wal {
+
+if {[wal_is_capable]} {
   do_execsql_test stat-0.1 {
     PRAGMA journal_mode = WAL;
     PRAGMA journal_mode = delete;

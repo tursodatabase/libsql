@@ -18,6 +18,7 @@
 
 #define FTS5_DEFAULT_PAGE_SIZE   4050
 #define FTS5_DEFAULT_AUTOMERGE      4
+#define FTS5_DEFAULT_USERMERGE      4
 #define FTS5_DEFAULT_CRISISMERGE   16
 #define FTS5_DEFAULT_HASHSIZE    (1024*1024)
 
@@ -441,7 +442,9 @@ static const char *fts5ConfigGobbleWord(
       *pbQuoted = 1;
     }else{
       zRet = fts5ConfigSkipBareword(zIn);
-      zOut[zRet-zIn] = '\0';
+      if( zRet ){
+        zOut[zRet-zIn] = '\0';
+      }
     }
   }
 
@@ -857,6 +860,18 @@ int sqlite3Fts5ConfigSetValue(
     }
   }
 
+  else if( 0==sqlite3_stricmp(zKey, "usermerge") ){
+    int nUsermerge = -1;
+    if( SQLITE_INTEGER==sqlite3_value_numeric_type(pVal) ){
+      nUsermerge = sqlite3_value_int(pVal);
+    }
+    if( nUsermerge<2 || nUsermerge>16 ){
+      *pbBadkey = 1;
+    }else{
+      pConfig->nUsermerge = nUsermerge;
+    }
+  }
+
   else if( 0==sqlite3_stricmp(zKey, "crisismerge") ){
     int nCrisisMerge = -1;
     if( SQLITE_INTEGER==sqlite3_value_numeric_type(pVal) ){
@@ -903,6 +918,7 @@ int sqlite3Fts5ConfigLoad(Fts5Config *pConfig, int iCookie){
   /* Set default values */
   pConfig->pgsz = FTS5_DEFAULT_PAGE_SIZE;
   pConfig->nAutomerge = FTS5_DEFAULT_AUTOMERGE;
+  pConfig->nUsermerge = FTS5_DEFAULT_USERMERGE;
   pConfig->nCrisisMerge = FTS5_DEFAULT_CRISISMERGE;
   pConfig->nHashSize = FTS5_DEFAULT_HASHSIZE;
 

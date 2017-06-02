@@ -93,6 +93,24 @@ struct DIR {
 };
 
 /*
+** Provide a macro, for use by the implementation, to determine if a
+** particular directory entry should be skipped over when searching for
+** the next directory entry that should be returned by the readdir() or
+** readdir_r() functions.
+*/
+
+#ifndef is_filtered
+#  define is_filtered(a) ((((a).attrib)&_A_HIDDEN) || (((a).attrib)&_A_SYSTEM))
+#endif
+
+/*
+** Provide the function prototype for the POSIX compatiable getenv()
+** function.  This function is not thread-safe.
+*/
+
+extern const char *windirent_getenv(const char *name);
+
+/*
 ** Finally, we can provide the function prototypes for the opendir(),
 ** readdir(), readdir_r(), and closedir() POSIX functions.
 */

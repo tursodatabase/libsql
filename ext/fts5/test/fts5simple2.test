@@ -332,6 +332,41 @@ do_execsql_test 16.0 {
   DELETE FROM t2;
 }
 
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 17.0 {
+  CREATE VIRTUAL TABLE t2 USING fts5(x, y);
+  BEGIN;
+    INSERT INTO t2 VALUES('a aa aaa', 'b bb bbb');
+    INSERT INTO t2 VALUES('a aa aaa', 'b bb bbb');
+    INSERT INTO t2 VALUES('a aa aaa', 'b bb bbb');
+  COMMIT;
+}
+do_execsql_test 17.1 { SELECT * FROM t2('y:a*') WHERE rowid BETWEEN 10 AND 20 }
+do_execsql_test 17.2 {
+  BEGIN;
+    INSERT INTO t2 VALUES('a aa aaa', 'b bb bbb');
+    SELECT * FROM t2('y:a*') WHERE rowid BETWEEN 10 AND 20 ;
+}
+do_execsql_test 17.3 {
+  COMMIT
+}
+
+reset_db
+do_execsql_test 17.4 {
+  CREATE VIRTUAL TABLE t2 USING fts5(x, y);
+  BEGIN;
+    INSERT INTO t2 VALUES('a aa aaa', 'b bb bbb');
+    INSERT INTO t2 VALUES('a aa aaa', 'b bb bbb');
+    SELECT * FROM t2('y:a*') WHERE rowid>66;
+}
+do_execsql_test 17.5 { SELECT * FROM t2('x:b* OR y:a*') }
+do_execsql_test 17.5 { COMMIT ; SELECT * FROM t2('x:b* OR y:a*') }
+do_execsql_test 17.6 { 
+  SELECT * FROM t2('x:b* OR y:a*') WHERE rowid>55
+}
+
 #db eval {SELECT rowid, fts5_decode_none(rowid, block) aS r FROM t2_data} {puts $r}
   
 finish_test

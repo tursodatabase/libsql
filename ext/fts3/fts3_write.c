@@ -333,7 +333,8 @@ static int fts3SqlStmt(
 ** of the oldest level in the db that contains at least ? segments. Or,
 ** if no level in the FTS index contains more than ? segments, the statement
 ** returns zero rows.  */
-/* 28 */ "SELECT level FROM %Q.'%q_segdir' GROUP BY level HAVING count(*)>=?"
+/* 28 */ "SELECT level, count(*) AS cnt FROM %Q.'%q_segdir' "
+         "  GROUP BY level HAVING cnt>=?"
          "  ORDER BY (level %% 1024) ASC LIMIT 1",
 
 /* Estimate the upper limit on the number of leaf nodes in a new segment
@@ -3194,7 +3195,7 @@ static int fts3SegmentMerge(
     ** segment. The level of the new segment is equal to the numerically
     ** greatest segment level currently present in the database for this
     ** index. The idx of the new segment is always 0.  */
-    if( csr.nSegment==1 ){
+    if( csr.nSegment==1 && 0==fts3SegReaderIsPending(csr.apSegment[0]) ){
       rc = SQLITE_DONE;
       goto finished;
     }
@@ -4836,10 +4837,11 @@ int sqlite3Fts3Incrmerge(Fts3Table *p, int nMerge, int nMin){
     ** set nSeg to -1.
     */
     rc = fts3SqlStmt(p, SQL_FIND_MERGE_LEVEL, &pFindLevel, 0);
-    sqlite3_bind_int(pFindLevel, 1, nMin);
+    sqlite3_bind_int(pFindLevel, 1, MAX(2, nMin));
     if( sqlite3_step(pFindLevel)==SQLITE_ROW ){
       iAbsLevel = sqlite3_column_int64(pFindLevel, 0);
-      nSeg = nMin;
+      nSeg = sqlite3_column_int(pFindLevel, 1);
+      assert( nSeg>=2 );
     }else{
       nSeg = -1;
     }
@@ -4954,11 +4956,14 @@ int sqlite3Fts3Incrmerge(Fts3Table *p, int nMerge, int nMin){
 ** Convert the text beginning at *pz into an integer and return
 ** its value.  Advance *pz to point to the first character past
 ** the integer.
+**
+** This function used for parameters to merge= and incrmerge=
+** commands. 
 */
 static int fts3Getint(const char **pz){
   const char *z = *pz;
   int i = 0;
-  while( (*z)>='0' && (*z)<='9' ) i = 10*i + *(z++) - '0';
+  while( (*z)>='0' && (*z)<='9' && i<214748363 ) i = 10*i + *(z++) - '0';
   *pz = z;
   return i;
 }

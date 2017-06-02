@@ -94,5 +94,44 @@ do_execsql_test misc8-2.1 {
   0 10 {} 10 {} {}
 }
 
+# 2016-02-26: An assertion fault found by the libFuzzer project
+#
+do_execsql_test misc8-3.0 {
+  SELECT *
+    FROM
+         (
+           (SELECT 0 AS i) AS x1,
+           (SELECT 1) AS x2
+         ) AS x3,
+         (SELECT 6 AS j UNION ALL SELECT 7) AS x4
+   WHERE i<rowid
+   ORDER BY 1;
+} {0 1 6 0 1 7}
+
+# The SQLITE_DBCONFIG_MAINDBNAME interface
+#
+db close
+forcedelete test.db test2.db
+sqlite3 db test.db
+do_execsql_test misc8-4.0 {
+  CREATE TABLE t1(a,b,c);
+  INSERT INTO t1 VALUES(1,2,3);
+  ATTACH 'test2.db' AS aux2;
+  CREATE TABLE aux2.t2(c,d,e);
+  INSERT INTO t2 VALUES(4,5,6);
+  SELECT * FROM t1, t2;
+} {1 2 3 4 5 6}
+do_execsql_test misc8-4.1 {
+  PRAGMA database_list;
+} {/0 main .* 2 aux2/}
+dbconfig_maindbname_icecube db
+do_execsql_test misc8-4.2 {
+  SELECT name FROM icecube.sqlite_master;
+} {t1}
+do_execsql_test misc8-4.3 {
+  PRAGMA database_list;
+} {/0 icecube .* 2 aux2/}
+
+
 
 finish_test

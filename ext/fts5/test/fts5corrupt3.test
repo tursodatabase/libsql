@@ -179,6 +179,10 @@ for {set i 1} {1} {incr i} {
   if {$end<=$i} break
   lset var end [expr $end - $i]
   set struct [binary format c* $var]
+
+  db close
+  sqlite3 db test.db
+
   db eval {
     BEGIN;
     UPDATE t1_data SET block = $struct WHERE id=10;

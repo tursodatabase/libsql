@@ -21,18 +21,22 @@
 #
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-if {$tcl_platform(platform)=="windows"} {
-  set CLI "sqlite3.exe"
-} else {
-  set CLI "./sqlite3"
-}
-if {![file executable $CLI]} {
-  finish_test
-  return
-}
+set CLI [test_find_cli]
 db close
 forcedelete test.db test.db-journal test.db-wal
 sqlite3 db test.db
+
+# There are inconsistencies in command-line argument quoting on Windows.
+# In particular, individual applications are responsible for command-line
+# parsing in Windows, not the shell.  Depending on whether the sqlite3.exe
+# program is compiled with MinGW or MSVC, the command-line parsing is
+# different.  This causes problems for the tests below.  To avoid
+# issues, these tests are disabled for windows.
+#
+if {$::tcl_platform(platform)=="windows"} {
+  finish_test
+  return
+}
 
 #----------------------------------------------------------------------------
 #   shell3-1.*: Basic tests for running SQL statments from command line.
@@ -92,6 +96,6 @@ do_test shell3-2.6 {
 } {0 {}}
 do_test shell3-2.7 {
   catchcmd "foo.db" "CREATE TABLE"
-} {1 {Error: incomplete SQL: CREATE TABLE}}
+} {1 {Error: near line 1: near "TABLE": syntax error}}
 
 finish_test

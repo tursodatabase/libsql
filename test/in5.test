@@ -183,4 +183,70 @@ do_execsql_test 6.3.1 {
   SELECT count(*) FROM x2 WHERE b IN (SELECT DISTINCT a FROM x1 LIMIT 2);
 } {2}
 
+#-------------------------------------------------------------------------
+# Test to confirm that bug [5e3c886796e5] is fixed.
+#
+do_execsql_test 7.1 {
+  CREATE TABLE y1(a, b);
+  CREATE TABLE y2(c);
+
+  INSERT INTO y1 VALUES(1,     'one');
+  INSERT INTO y1 VALUES('two', 'two');
+  INSERT INTO y1 VALUES(3,     'three');
+
+  INSERT INTO y2 VALUES('one');
+  INSERT INTO y2 VALUES('two');
+  INSERT INTO y2 VALUES('three');
+} {}
+
+do_execsql_test 7.2.1 {
+  SELECT a FROM y1 WHERE b NOT IN (SELECT a FROM y2);
+} {1 3}
+do_execsql_test 7.2.2 {
+  SELECT a FROM y1 WHERE b IN (SELECT a FROM y2);
+} {two}
+
+do_execsql_test 7.3.1 {
+  CREATE INDEX y2c ON y2(c);
+  SELECT a FROM y1 WHERE b NOT IN (SELECT a FROM y2);
+} {1 3}
+do_execsql_test 7.3.2 {
+  SELECT a FROM y1 WHERE b IN (SELECT a FROM y2);
+} {two}
+
+#-------------------------------------------------------------------------
+# Tests to confirm that indexes on the rowid column do not confuse
+# the query planner. See ticket [0eab1ac7591f511d].
+#
+do_execsql_test 8.0 {
+  CREATE TABLE n1(a INTEGER PRIMARY KEY, b VARCHAR(500));
+  CREATE UNIQUE INDEX n1a ON n1(a);
+}
+
+do_execsql_test 8.1 {
+  SELECT count(*) FROM n1 WHERE a IN (1, 2, 3)
+} 0
+do_execsql_test 8.2 {
+  SELECT count(*) FROM n1 WHERE a IN (SELECT +a FROM n1)
+} 0
+do_execsql_test 8.3 {
+  INSERT INTO n1 VALUES(1, NULL), (2, NULL), (3, NULL);
+  SELECT count(*) FROM n1 WHERE a IN (1, 2, 3)
+} 3
+do_execsql_test 8.4 {
+  SELECT count(*) FROM n1 WHERE a IN (SELECT +a FROM n1)
+} 3
+
+#-------------------------------------------------------------------------
+# Test that ticket 61fe97454c is fixed.
+#
+do_execsql_test 9.0 {
+  CREATE TABLE t9(a INTEGER PRIMARY KEY);
+  INSERT INTO t9 VALUES (44), (45);
+}
+do_execsql_test 9.1 {
+  SELECT * FROM t9 WHERE a IN (44, 45, 44, 45)
+} {44 45}
+
+
 finish_test

@@ -52,7 +52,7 @@ do_faultsim_test 2 -prep {
     error [sqlite3_errmsg db]
   }
 } -test {
-  faultsim_test_result {1 {no such rowid: -1}}
+  faultsim_test_result {1 {no such rowid: -1}} {1 {disk I/O error}}
   close $::blob
 }
 

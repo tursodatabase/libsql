@@ -46,6 +46,7 @@
 TCCX =  $(TCC) $(OPTS) -I. -I$(TOP)/src -I$(TOP) 
 TCCX += -I$(TOP)/ext/rtree -I$(TOP)/ext/icu -I$(TOP)/ext/fts3
 TCCX += -I$(TOP)/ext/async -I$(TOP)/ext/userauth
+TCCX += -I$(TOP)/ext/session
 TCCX += -I$(TOP)/ext/fts5
 THREADLIB += $(LIBS)
 
@@ -61,7 +62,7 @@ LIBOBJ+= vdbe.o parse.o \
          fts3_tokenize_vtab.o \
 	 fts3_unicode.o fts3_unicode2.o \
          fts3_write.o fts5.o func.o global.o hash.o \
-         icu.o insert.o journal.o json1.o legacy.o loadext.o \
+         icu.o insert.o json1.o legacy.o loadext.o \
          main.o malloc.o mem0.o mem1.o mem2.o mem3.o mem5.o \
          memjournal.o \
          mutex.o mutex_noop.o mutex_unix.o mutex_w32.o \
@@ -74,6 +75,7 @@ LIBOBJ+= vdbe.o parse.o \
 	 vdbetrace.o wal.o walker.o where.o wherecode.o whereexpr.o \
          utf.o vtab.o
 
+LIBOBJ += sqlite3session.o
 
 # All of the source code files.
 #
@@ -104,7 +106,6 @@ SRC = \
   $(TOP)/src/hash.h \
   $(TOP)/src/hwtime.h \
   $(TOP)/src/insert.c \
-  $(TOP)/src/journal.c \
   $(TOP)/src/legacy.c \
   $(TOP)/src/loadext.c \
   $(TOP)/src/main.c \
@@ -224,6 +225,9 @@ SRC += \
   $(TOP)/ext/rtree/rtree.h \
   $(TOP)/ext/rtree/rtree.c
 SRC += \
+  $(TOP)/ext/session/sqlite3session.c \
+  $(TOP)/ext/session/sqlite3session.h
+SRC += \
   $(TOP)/ext/userauth/userauth.c \
   $(TOP)/ext/userauth/sqlite3userauth.h 
 SRC += \
@@ -285,9 +289,11 @@ TESTSRC = \
   $(TOP)/src/test_autoext.c \
   $(TOP)/src/test_async.c \
   $(TOP)/src/test_backup.c \
+  $(TOP)/src/test_bestindex.c \
   $(TOP)/src/test_blob.c \
   $(TOP)/src/test_btree.c \
   $(TOP)/src/test_config.c \
+  $(TOP)/src/test_delete.c \
   $(TOP)/src/test_demovfs.c \
   $(TOP)/src/test_devsym.c \
   $(TOP)/src/test_fs.c \
@@ -319,7 +325,9 @@ TESTSRC = \
 #
 TESTSRC += \
   $(TOP)/ext/misc/amatch.c \
+  $(TOP)/ext/misc/carray.c \
   $(TOP)/ext/misc/closure.c \
+  $(TOP)/ext/misc/csv.c \
   $(TOP)/ext/misc/eval.c \
   $(TOP)/ext/misc/fileio.c \
   $(TOP)/ext/misc/fuzzer.c \
@@ -327,6 +335,7 @@ TESTSRC += \
   $(TOP)/ext/misc/nextchar.c \
   $(TOP)/ext/misc/percentile.c \
   $(TOP)/ext/misc/regexp.c \
+  $(TOP)/ext/misc/remember.c \
   $(TOP)/ext/misc/series.c \
   $(TOP)/ext/misc/spellfix.c \
   $(TOP)/ext/misc/totype.c \
@@ -381,7 +390,9 @@ TESTSRC2 = \
   $(TOP)/ext/fts3/fts3_expr.c \
   $(TOP)/ext/fts3/fts3_tokenizer.c \
   $(TOP)/ext/fts3/fts3_write.c \
-  $(TOP)/ext/async/sqlite3async.c
+  $(TOP)/ext/async/sqlite3async.c \
+  $(TOP)/ext/session/sqlite3session.c \
+  $(TOP)/ext/session/test_session.c 
 
 # Header files used by all library source files.
 #
@@ -443,7 +454,8 @@ TESTPROGS = \
   testfixture$(EXE) \
   sqlite3$(EXE) \
   sqlite3_analyzer$(EXE) \
-  sqldiff$(EXE)
+  sqldiff$(EXE) \
+  dbhash$(EXE)
 
 # Databases containing fuzzer test cases
 #
@@ -451,7 +463,8 @@ FUZZDATA = \
   $(TOP)/test/fuzzdata1.db \
   $(TOP)/test/fuzzdata2.db \
   $(TOP)/test/fuzzdata3.db \
-  $(TOP)/test/fuzzdata4.db
+  $(TOP)/test/fuzzdata4.db \
+  $(TOP)/test/fuzzdata5.db
 
 # Standard options to testfixture
 #
@@ -460,8 +473,14 @@ TESTOPTS = --verbose=file --output=test-out.txt
 # Extra compiler options for various shell tools
 #
 SHELL_OPT = -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_FTS4 -DSQLITE_ENABLE_FTS5
+SHELL_OPT += -DSQLITE_ENABLE_EXPLAIN_COMMENTS
+SHELL_OPT += -DSQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
 FUZZERSHELL_OPT = -DSQLITE_ENABLE_JSON1
 FUZZCHECK_OPT = -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_MEMSYS5
+FUZZCHECK_OPT += -DSQLITE_MAX_MEMORY=50000000
+DBFUZZ_OPT =
+KV_OPT = -DSQLITE_THREADSAFE=0 -DSQLITE_DIRECT_OVERFLOW_READ
+ST_OPT = -DSQLITE_THREADSAFE=0
 
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
@@ -480,6 +499,13 @@ sqldiff$(EXE):	$(TOP)/tool/sqldiff.c sqlite3.c sqlite3.h
 	$(TCCX) -o sqldiff$(EXE) -DSQLITE_THREADSAFE=0 \
 		$(TOP)/tool/sqldiff.c sqlite3.c $(TLIBS) $(THREADLIB)
 
+dbhash$(EXE):	$(TOP)/tool/dbhash.c sqlite3.c sqlite3.h
+	$(TCCX) -o dbhash$(EXE) -DSQLITE_THREADSAFE=0 \
+		$(TOP)/tool/dbhash.c sqlite3.c $(TLIBS) $(THREADLIB)
+
+scrub$(EXE):	$(TOP)/ext/misc/scrub.c sqlite3.o
+	$(TCC) -I. -DSCRUB_STANDALONE -o scrub$(EXE) $(TOP)/ext/misc/scrub.c sqlite3.o $(THREADLIB)
+
 srcck1$(EXE):	$(TOP)/tool/srcck1.c
 	$(BCC) -o srcck1$(EXE) $(TOP)/tool/srcck1.c
 
@@ -491,10 +517,20 @@ fuzzershell$(EXE):	$(TOP)/tool/fuzzershell.c sqlite3.c sqlite3.h
 	  $(FUZZERSHELL_OPT) $(TOP)/tool/fuzzershell.c sqlite3.c \
 	  $(TLIBS) $(THREADLIB)
 
-fuzzcheck$(EXE):	$(TOP)/test/fuzzcheck.c sqlite3.c sqlite3.h
+dbfuzz$(EXE):	$(TOP)/test/dbfuzz.c sqlite3.c sqlite3.h
+	$(TCCX) -o dbfuzz$(EXE) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
+	  $(DBFUZZ_OPT) $(TOP)/test/dbfuzz.c sqlite3.c \
+	  $(TLIBS) $(THREADLIB)
+
+fuzzcheck$(EXE):	$(TOP)/test/fuzzcheck.c sqlite3.c sqlite3.h $(TOP)/test/ossfuzz.c
 	$(TCCX) -o fuzzcheck$(EXE) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
+		-DSQLITE_ENABLE_MEMSYS5 $(FUZZCHECK_OPT) -DSQLITE_OSS_FUZZ \
+		$(TOP)/test/fuzzcheck.c $(TOP)/test/ossfuzz.c sqlite3.c $(TLIBS) $(THREADLIB)
+
+ossshell$(EXE):	$(TOP)/test/ossfuzz.c $(TOP)/test/ossshell.c sqlite3.c sqlite3.h
+	$(TCCX) -o ossshell$(EXE) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
 		-DSQLITE_ENABLE_MEMSYS5 $(FUZZCHECK_OPT) \
-		$(TOP)/test/fuzzcheck.c sqlite3.c $(TLIBS) $(THREADLIB)
+		$(TOP)/test/ossfuzz.c $(TOP)/test/ossshell.c sqlite3.c $(TLIBS) $(THREADLIB)
 
 mptester$(EXE):	sqlite3.c $(TOP)/mptest/mptest.c
 	$(TCCX) -o $@ -I. $(TOP)/mptest/mptest.c sqlite3.c \
@@ -534,6 +570,7 @@ target_source:	$(SRC) $(TOP)/tool/vdbe-compress.tcl fts5.c
 sqlite3.c:	target_source $(TOP)/tool/mksqlite3c.tcl
 	tclsh $(TOP)/tool/mksqlite3c.tcl
 	cp tsrc/shell.c tsrc/sqlite3ext.h .
+	cp $(TOP)/ext/session/sqlite3session.h .
 	echo '#ifndef USE_SYSTEM_SQLITE' >tclsqlite3.c
 	cat sqlite3.c >>tclsqlite3.c
 	echo '#endif /* USE_SYSTEM_SQLITE */' >>tclsqlite3.c
@@ -700,9 +737,11 @@ fts5.c: $(FTS5_SRC) $(FTS5_HDR)
 userauth.o:	$(TOP)/ext/userauth/userauth.c $(HDR) $(EXTHDR)
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/userauth/userauth.c
 
+sqlite3session.o:	$(TOP)/ext/session/sqlite3session.c $(HDR) $(EXTHDR)
+	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/session/sqlite3session.c
+
 sqlite3rbu.o:	$(TOP)/ext/rbu/sqlite3rbu.c $(HDR) $(EXTHDR)
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/rbu/sqlite3rbu.c
-
 
 # Rules for building test programs and for running tests
 #
@@ -722,19 +761,27 @@ sqlite3_analyzer.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl
 sqlite3_analyzer$(EXE): sqlite3_analyzer.c
 	$(TCCX) $(TCL_FLAGS) sqlite3_analyzer.c -o $@ $(LIBTCL) $(THREADLIB) 
 
+dbdump$(EXE):	$(TOP)/ext/misc/dbdump.c sqlite3.o
+	$(TCCX) -DDBDUMP_STANDALONE -o dbdump$(EXE) \
+            $(TOP)/ext/misc/dbdump.c sqlite3.o $(THREADLIB)
+
 # Rules to build the 'testfixture' application.
 #
 TESTFIXTURE_FLAGS  = -DSQLITE_TEST=1 -DSQLITE_CRASH_TEST=1
-TESTFIXTURE_FLAGS += -DSQLITE_SERVER=1 -DSQLITE_PRIVATE="" -DSQLITE_CORE 
+TESTFIXTURE_FLAGS += -DSQLITE_SERVER=1 -DSQLITE_PRIVATE="" -DSQLITE_CORE
+TESTFIXTURE_FLAGS += -DSQLITE_SERIES_CONSTRAINT_VERIFY=1
+TESTFIXTURE_FLAGS += -DSQLITE_DEFAULT_PAGE_SIZE=1024
 
 testfixture$(EXE): $(TESTSRC2) libsqlite3.a $(TESTSRC) $(TOP)/src/tclsqlite.c
 	$(TCCX) $(TCL_FLAGS) -DTCLSH=1 $(TESTFIXTURE_FLAGS)                  \
 		$(TESTSRC) $(TESTSRC2) $(TOP)/src/tclsqlite.c                \
 		-o testfixture$(EXE) $(LIBTCL) libsqlite3.a $(THREADLIB)
 
-amalgamation-testfixture$(EXE): sqlite3.c $(TESTSRC) $(TOP)/src/tclsqlite.c
+amalgamation-testfixture$(EXE): sqlite3.c $(TESTSRC) $(TOP)/src/tclsqlite.c  \
+				$(TOP)/ext/session/test_session.c
 	$(TCCX) $(TCL_FLAGS) -DTCLSH=1 $(TESTFIXTURE_FLAGS)                  \
 		$(TESTSRC) $(TOP)/src/tclsqlite.c sqlite3.c                  \
+		$(TOP)/ext/session/test_session.c                            \
 		-o testfixture$(EXE) $(LIBTCL) $(THREADLIB)
 
 fts3-testfixture$(EXE): sqlite3.c fts3amal.c $(TESTSRC) $(TOP)/src/tclsqlite.c
@@ -764,6 +811,11 @@ fastfuzztest:	fuzzcheck$(EXE) $(FUZZDATA)
 valgrindfuzz:	fuzzcheck$(EXE) $(FUZZDATA)
 	valgrind ./fuzzcheck$(EXE) --cell-size-check --limit-mem 10M --timeout 600 $(FUZZDATA)
 
+# The veryquick.test TCL tests.
+#
+tcltest:	./testfixture$(EXE)
+	./testfixture$(EXE) $(TOP)/test/veryquick.test $(TESTOPTS)
+
 # A very quick test using only testfixture and omitting all the slower
 # tests.  Designed to run in under 3 minutes on a workstation.
 #
@@ -772,9 +824,7 @@ quicktest:	./testfixture$(EXE)
 
 # The default test case.  Runs most of the faster standard TCL tests,
 # and fuzz tests, and sqlite3_analyzer and sqldiff tests.
-#
-test:	$(TESTPROGS) sourcetest fastfuzztest
-	./testfixture$(EXE) $(TOP)/test/veryquick.test $(TESTOPTS)
+test:	fastfuzztest sourcetest $(TESTPROGS) tcltest
 
 # Run a test using valgrind.  This can take a really long time
 # because valgrind is so much slower than a native machine.
@@ -830,6 +880,10 @@ showwal$(EXE):	$(TOP)/tool/showwal.c sqlite3.o
 	$(TCC) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o showwal$(EXE) \
 		$(TOP)/tool/showwal.c sqlite3.o $(THREADLIB)
 
+changeset$(EXE):	$(TOP)/ext/session/changeset.c sqlite3.o
+	$(TCC) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o changeset$(EXE) \
+		$(TOP)/ext/session/changeset.c sqlite3.o $(THREADLIB)
+
 fts3view$(EXE):	$(TOP)/ext/fts3/tool/fts3view.c sqlite3.o
 	$(TCC) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o fts3view$(EXE) \
 		$(TOP)/ext/fts3/tool/fts3view.c sqlite3.o $(THREADLIB)
@@ -845,8 +899,11 @@ wordcount$(EXE):	$(TOP)/test/wordcount.c sqlite3.c
 	$(TCC) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o wordcount$(EXE) \
 		$(TOP)/test/wordcount.c sqlite3.c
 
-speedtest1$(EXE):	$(TOP)/test/speedtest1.c sqlite3.o
-	$(TCC) -I. $(OTAFLAGS) -o speedtest1$(EXE) $(TOP)/test/speedtest1.c sqlite3.o $(THREADLIB) 
+speedtest1$(EXE):	$(TOP)/test/speedtest1.c sqlite3.c
+	$(TCCX) -I. $(ST_OPT) -o speedtest1$(EXE) $(TOP)/test/speedtest1.c sqlite3.c $(THREADLIB) 
+
+kvtest$(EXE):	$(TOP)/test/kvtest.c sqlite3.c
+	$(TCCX) -I. $(KV_OPT) -o kvtest$(EXE) $(TOP)/test/kvtest.c sqlite3.c $(THREADLIB) 
 
 rbu$(EXE): $(TOP)/ext/rbu/rbu.c $(TOP)/ext/rbu/sqlite3rbu.c sqlite3.o 
 	$(TCC) -I. -o rbu$(EXE) $(TOP)/ext/rbu/rbu.c sqlite3.o \
@@ -886,7 +943,6 @@ clean:
 	rm -f mkkeywordhash mkkeywordhash.exe keywordhash.h
 	rm -f $(PUBLISH)
 	rm -f *.da *.bb *.bbg gmon.out
-	rm -rf quota2a quota2b quota2c
 	rm -rf tsrc target_source
 	rm -f testloadext.dll libtestloadext.so
 	rm -f amalgamation-testfixture amalgamation-testfixture.exe
@@ -900,6 +956,7 @@ clean:
 	rm -f showjournal showjournal.exe
 	rm -f showstat4 showstat4.exe
 	rm -f showwal showwal.exe
+	rm -f changeset changeset.exe
 	rm -f speedtest1 speedtest1.exe
 	rm -f wordcount wordcount.exe
 	rm -f rbu rbu.exe
