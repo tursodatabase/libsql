@@ -90,9 +90,11 @@ static const char zHelp[] =
 "           --cache-size N         Database cache size\n"
 "           --count N              Read N blobs\n"
 "           --desc                 Read blobs in descending order\n"
-"           --integrity-check      Run 'PRAGMA integrity_check' after test\n"
+"           --fsync                Synchronous file writes\n"
+"           --integrity-check      Run \"PRAGMA integrity_check\" after test\n"
 "           --max-id N             Maximum blob key to use\n"
 "           --mmap N               Mmap as much as N bytes of DBFILE\n"
+"           --nosync               Set \"PRAGMA synchronous=OFF\"\n"
 "           --jmode MODE           Set MODE journal mode prior to starting\n"
 "           --random               Read blobs in a random order\n"
 "           --start N              Start reading with this blob key\n"
@@ -541,11 +543,12 @@ static unsigned char *readFile(const char *zName, int *pnByte){
 ** Overwrite a file with randomness.  Do not change the size of the
 ** file.
 */
-static void updateFile(const char *zName, int *pnByte){
+static void updateFile(const char *zName, int *pnByte, int doFsync){
   FILE *out;              /* FILE from which to read content of zName */
   sqlite3_int64 sz;       /* Size of zName in bytes */
   size_t nWritten;        /* Number of bytes actually read */
   unsigned char *pBuf;    /* Content to store on disk */
+  const char *zMode = "wb";   /* Mode for fopen() */
 
   sz = fileSize(zName);
   if( sz<0 ){
@@ -558,11 +561,21 @@ static void updateFile(const char *zName, int *pnByte){
     fatalError("Cannot allocate %lld bytes\n", sz);
   }
   sqlite3_randomness((int)sz, pBuf); 
-  out = fopen(zName, "wb");
+#if defined(_WIN32)
+  if( doFsync ) zMode = "wbc";
+#endif
+  out = fopen(zName, zMode);
   if( out==0 ){
     fatalError("Cannot open \"%s\" for writing\n", zName);
   }
   nWritten = fwrite(pBuf, 1, (size_t)sz, out);
+  if( doFsync ){
+#if defined(_WIN32)
+    fflush(out);
+#else
+    fsync(fileno(out));
+#endif
+  }
   fclose(out);
   if( nWritten!=(size_t)sz ){
     fatalError("Wrote only %d of %d bytes to \"%s\"\n",
@@ -728,6 +741,7 @@ static int runMain(int argc, char **argv){
   int isUpdateTest = 0;       /* Do in-place updates rather than reads */
   int doIntegrityCk = 0;      /* Run PRAGMA integrity_check after the test */
   int noSync = 0;             /* Disable synchronous mode */
+  int doFsync = 0;            /* Update disk files synchronously */
   sqlite3 *db = 0;            /* Database connection */
   sqlite3_stmt *pStmt = 0;    /* Prepared statement for SQL access */
   sqlite3_blob *pBlob = 0;    /* Handle for incremental Blob I/O */
@@ -816,6 +830,10 @@ static int runMain(int argc, char **argv){
       noSync = 1;
       continue;
     }
+    if( strcmp(z, "-fsync")==0 ){
+      doFsync = 1;
+      continue;
+    }
     fatalError("unknown option: \"%s\"", argv[i]);
   }
   if( eType==PATH_DB ){
@@ -884,7 +902,7 @@ static int runMain(int argc, char **argv){
       zKey = sqlite3_mprintf("%s/%06d", zDb, iKey);
       nData = 0;
       if( isUpdateTest ){
-        updateFile(zKey, &nData);
+        updateFile(zKey, &nData, doFsync);
       }else{
         pData = readFile(zKey, &nData);
         sqlite3_free(pData);
