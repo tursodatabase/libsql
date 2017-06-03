@@ -71,10 +71,15 @@ static const char zHelp[] =
 "\n"
 "           --variance V           Randomly vary M by plus or minus V\n"
 "\n"
-"   kvtest export DBFILE DIRECTORY\n"
+"   kvtest export DBFILE DIRECTORY [--tree]\n"
 "\n"
 "        Export all the blobs in the kv table of DBFILE into separate\n"
-"        files in DIRECTORY.\n"
+"        files in DIRECTORY.  DIRECTORY is created if it does not previously\n"
+"        exist.  If the --tree option is used, then the blobs are written\n"
+"        into a hierarchy of directories, using names like 00/00/00,\n"
+"        00/00/01, 00/00/02, and so forth.  Without the --tree option, all\n"
+"        files are in the top-level directory with names like 000000, 000001,\n"
+"        000002, and so forth.\n"
 "\n"
 "   kvtest stat DBFILE\n"
 "\n"
@@ -117,6 +122,7 @@ static const char zHelp[] =
 # include <unistd.h>
 #else
   /* Provide Windows equivalent for the needed parts of unistd.h */
+# include <direct.h>
 # include <io.h>
 # define R_OK 2
 # define S_ISREG(m) (((m) & S_IFMT) == S_IFREG)
@@ -239,13 +245,23 @@ static int integerValue(const char *zArg){
 /*
 ** Check the filesystem object zPath.  Determine what it is:
 **
-**    PATH_DIR     A directory
+**    PATH_DIR     A single directory holding many files
+**    PATH_TREE    A directory hierarchy with files at the leaves
 **    PATH_DB      An SQLite database
 **    PATH_NEXIST  Does not exist
 **    PATH_OTHER   Something else
+**
+** PATH_DIR means all of the separate files are grouped together
+** into a single directory with names like 000000, 000001, 000002, and
+** so forth.  PATH_TREE means there is a hierarchy of directories so
+** that no single directory has too many entries.  The files have names
+** like 00/00/00, 00/00/01, 00/00/02 and so forth.  The decision between
+** PATH_DIR and PATH_TREE is determined by the presence of a subdirectory
+** named "00" at the top-level.
 */
 #define PATH_DIR     1
-#define PATH_DB      2
+#define PATH_TREE    2
+#define PATH_DB      3
 #define PATH_NEXIST  0
 #define PATH_OTHER   99
 static int pathType(const char *zPath){
@@ -255,7 +271,15 @@ static int pathType(const char *zPath){
   memset(&x, 0, sizeof(x));
   rc = stat(zPath, &x);
   if( rc<0 ) return PATH_OTHER;
-  if( S_ISDIR(x.st_mode) ) return PATH_DIR;
+  if( S_ISDIR(x.st_mode) ){
+    char *zLayer1 = sqlite3_mprintf("%s/00", zPath);
+    memset(&x, 0, sizeof(x));
+    rc = stat(zLayer1, &x);
+    sqlite3_free(zLayer1);
+    if( rc<0 ) return PATH_DIR;
+    if( S_ISDIR(x.st_mode) ) return PATH_TREE;
+    return PATH_DIR;
+  }
   if( (x.st_size%512)==0 ) return PATH_DB;
   return PATH_OTHER;
 }
@@ -417,37 +441,6 @@ static int statMain(int argc, char **argv){
 }
 
 /*
-** Implementation of the "writefile(X,Y)" SQL function.  The argument Y
-** is written into file X.  The number of bytes written is returned.  Or
-** NULL is returned if something goes wrong, such as being unable to open
-** file X for writing.
-*/
-static void writefileFunc(
-  sqlite3_context *context,
-  int argc,
-  sqlite3_value **argv
-){
-  FILE *out;
-  const char *z;
-  sqlite3_int64 rc;
-  const char *zFile;
-
-  zFile = (const char*)sqlite3_value_text(argv[0]);
-  if( zFile==0 ) return;
-  out = fopen(zFile, "wb");
-  if( out==0 ) return;
-  z = (const char*)sqlite3_value_blob(argv[1]);
-  if( z==0 ){
-    rc = 0;
-  }else{
-    rc = fwrite(z, 1, sqlite3_value_bytes(argv[1]), out);
-  }
-  fclose(out);
-  printf("\r%s   ", zFile); fflush(stdout);
-  sqlite3_result_int64(context, rc);
-}
-
-/*
 **      remember(V,PTR)
 **
 ** Return the integer value V.  Also save the value of V in a
@@ -468,38 +461,94 @@ static void rememberFunc(
 }
 
 /*
+** Make sure a directory named zDir exists.
+*/
+static void kvtest_mkdir(const char *zDir){
+#if defined(_WIN32)
+  (void)mkdir(zDir);
+#else
+  (void)mkdir(zDir, 0755);
+#endif
+}
+
+/*
 ** Export the kv table to individual files in the filesystem
 */
 static int exportMain(int argc, char **argv){
   char *zDb;
   char *zDir;
   sqlite3 *db;
-  char *zSql;
+  sqlite3_stmt *pStmt;
   int rc;
-  char *zErrMsg = 0;
+  int ePathType;
+  int nFN;
+  char *zFN;
+  char *zTail;
+  size_t nWrote;
+  int i;
 
   assert( strcmp(argv[1],"export")==0 );
   assert( argc>=3 );
+  if( argc<4 ) fatalError("Usage: kvtest export DATABASE DIRECTORY [OPTIONS]");
   zDb = argv[2];
-  if( argc!=4 ) fatalError("Usage: kvtest export DATABASE DIRECTORY");
   zDir = argv[3];
-  if( pathType(zDir)!=PATH_DIR ){
+  kvtest_mkdir(zDir);
+  for(i=4; i<argc; i++){
+    const char *z = argv[i];
+    if( z[0]=='-' && z[1]=='-' ) z++;
+    if( strcmp(z,"-tree")==0 ){
+      zFN = sqlite3_mprintf("%s/00", zDir);
+      kvtest_mkdir(zFN);
+      sqlite3_free(zFN);
+      continue;
+    }
+    fatalError("unknown argument: \"%s\"\n", argv[i]);
+  }
+  ePathType = pathType(zDir);
+  if( ePathType!=PATH_DIR && ePathType!=PATH_TREE ){
     fatalError("object \"%s\" is not a directory", zDir);
   }
   rc = sqlite3_open(zDb, &db);
   if( rc ){
     fatalError("cannot open database \"%s\": %s", zDb, sqlite3_errmsg(db));
   }
-  sqlite3_create_function(db, "writefile", 2, SQLITE_UTF8, 0,
-                          writefileFunc, 0, 0);
-  zSql = sqlite3_mprintf(
-    "SELECT writefile(printf('%s/%%06d',k),v) FROM kv;",
-    zDir
-  );
-  rc = sqlite3_exec(db, zSql, 0, 0, &zErrMsg);
-  if( rc ) fatalError("database create failed: %s", zErrMsg);
-  sqlite3_free(zSql);
+  rc = sqlite3_prepare_v2(db, "SELECT k, v FROM kv ORDER BY k", -1, &pStmt, 0);
+  if( rc ){
+    fatalError("prepare_v2 failed: %s\n", sqlite3_errmsg(db));
+  }
+  nFN = (int)strlen(zDir);
+  zFN = sqlite3_mprintf("%s/00/00/00.extra---------------------", zDir);
+  if( zFN==0 ){
+    fatalError("malloc failed\n");
+  }
+  zTail = zFN + nFN + 1;
+  while( sqlite3_step(pStmt)==SQLITE_ROW ){
+    int iKey = sqlite3_column_int(pStmt, 0);
+    int nData = sqlite3_column_bytes(pStmt, 1);
+    const void *pData = sqlite3_column_blob(pStmt, 1);
+    FILE *out;
+    if( ePathType==PATH_DIR ){
+      sqlite3_snprintf(20, zTail, "%06d", iKey);
+    }else{
+      sqlite3_snprintf(20, zTail, "%02d", iKey/10000);
+      kvtest_mkdir(zFN);
+      sqlite3_snprintf(20, zTail, "%02d/%02d", iKey/10000, (iKey/100)%100);
+      kvtest_mkdir(zFN);
+      sqlite3_snprintf(20, zTail, "%02d/%02d/%02d",
+                       iKey/10000, (iKey/100)%100, iKey%100);
+    }
+    out = fopen(zFN, "wb");      
+    nWrote = fwrite(pData, 1, nData, out);
+    fclose(out);
+    printf("\r%s   ", zTail); fflush(stdout);
+    if( nWrote!=nData ){
+      fatalError("Wrote only %d of %d bytes to %s\n",
+                  (int)nWrote, nData, zFN);
+    }
+  }
+  sqlite3_finalize(pStmt);
   sqlite3_close(db);
+  sqlite3_free(zFN);
   printf("\n");
   return 0;
 }
@@ -911,10 +960,15 @@ static int runMain(int argc, char **argv){
   }
   if( iMax<=0 ) iMax = 1000;
   for(i=0; i<nCount; i++){
-    if( eType==PATH_DIR ){
-      /* CASE 1: Reading blobs out of separate files */
+    if( eType==PATH_DIR || eType==PATH_TREE ){
+      /* CASE 1: Reading or writing blobs out of separate files */
       char *zKey;
-      zKey = sqlite3_mprintf("%s/%06d", zDb, iKey);
+      if( eType==PATH_DIR ){
+        zKey = sqlite3_mprintf("%s/%06d", zDb, iKey);
+      }else{
+        zKey = sqlite3_mprintf("%s/%02d/%02d/%02d", zDb, iKey/10000,
+                               (iKey/100)%100, iKey%100);
+      }
       nData = 0;
       if( isUpdateTest ){
         updateFile(zKey, &nData, doFsync);
