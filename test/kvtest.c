@@ -131,7 +131,6 @@ static const char zHelp[] =
 #endif
 
 #include <stdint.h>
-#include <inttypes.h>
 
 /*
 ** The following macros are used to cast pointers to integers and
