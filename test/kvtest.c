@@ -151,15 +151,9 @@ static const char zHelp[] =
 #if defined(__PTRDIFF_TYPE__)  /* This case should work for GCC */
 # define SQLITE_INT_TO_PTR(X)  ((void*)(__PTRDIFF_TYPE__)(X))
 # define SQLITE_PTR_TO_INT(X)  ((sqlite3_int64)(__PTRDIFF_TYPE__)(X))
-#elif !defined(__GNUC__)       /* Works for compilers other than LLVM */
-# define SQLITE_INT_TO_PTR(X)  ((void*)&((char*)0)[X])
-# define SQLITE_PTR_TO_INT(X)  ((sqlite3_int64)(((char*)X)-(char*)0))
-#elif defined(HAVE_STDINT_H)   /* Use this case if we have ANSI headers */
+#else
 # define SQLITE_INT_TO_PTR(X)  ((void*)(intptr_t)(X))
 # define SQLITE_PTR_TO_INT(X)  ((sqlite3_int64)(intptr_t)(X))
-#else                          /* Generates a warning - but it always works */
-# define SQLITE_INT_TO_PTR(X)  ((void*)(X))
-# define SQLITE_PTR_TO_INT(X)  ((sqlite3_int64)(X))
 #endif
 
 /*
@@ -901,6 +895,7 @@ static int runMain(int argc, char **argv){
     sqlite3_open(zDb, &db);
     sqlite3_exec(db, "SELECT rowid FROM sqlite_master LIMIT 1", 0, 0, 0);
     sqlite3_close(db);
+    db = 0;
   }
   tmStart = timeOfDay();
   if( eType==PATH_DB ){
@@ -1082,6 +1077,7 @@ static int runMain(int argc, char **argv){
       }
       sqlite3_finalize(pStmt);
       sqlite3_close(db);
+      db = 0;
     }
   }
   printf("--count %d --max-id %d", nCount-nExtra, iMax);
