@@ -94,12 +94,14 @@ static const char zHelp[] =
 "           --integrity-check      Run \"PRAGMA integrity_check\" after test\n"
 "           --max-id N             Maximum blob key to use\n"
 "           --mmap N               Mmap as much as N bytes of DBFILE\n"
+"           --multitrans           Each read or write in its own transaction\n"
+"           --nocheckpoint         Omit the checkpoint on WAL mode writes\n"
 "           --nosync               Set \"PRAGMA synchronous=OFF\"\n"
 "           --jmode MODE           Set MODE journal mode prior to starting\n"
 "           --random               Read blobs in a random order\n"
 "           --start N              Start reading with this blob key\n"
 "           --stats                Output operating stats before exiting\n"
-"           --update               To an overwrite test\n"
+"           --update               Do an overwrite test\n"
 ;
 
 /* Reference resources used */
@@ -742,6 +744,8 @@ static int runMain(int argc, char **argv){
   int doIntegrityCk = 0;      /* Run PRAGMA integrity_check after the test */
   int noSync = 0;             /* Disable synchronous mode */
   int doFsync = 0;            /* Update disk files synchronously */
+  int doMultiTrans = 0;       /* Each operation in its own transaction */
+  int noCheckpoint = 0;       /* Omit the checkpoint in WAL mode */
   sqlite3 *db = 0;            /* Database connection */
   sqlite3_stmt *pStmt = 0;    /* Prepared statement for SQL access */
   sqlite3_blob *pBlob = 0;    /* Handle for incremental Blob I/O */
@@ -765,10 +769,40 @@ static int runMain(int argc, char **argv){
     char *z = argv[i];
     if( z[0]!='-' ) fatalError("unknown argument: \"%s\"", z);
     if( z[1]=='-' ) z++;
+    if( strcmp(z, "-asc")==0 ){
+      eOrder = ORDER_ASC;
+      continue;
+    }
+    if( strcmp(z, "-blob-api")==0 ){
+      bBlobApi = 1;
+      continue;
+    }
+    if( strcmp(z, "-cache-size")==0 ){
+      if( i==argc-1 ) fatalError("missing argument on \"%s\"", argv[i]);
+      iCache = integerValue(argv[++i]);
+      continue;
+    }
     if( strcmp(z, "-count")==0 ){
       if( i==argc-1 ) fatalError("missing argument on \"%s\"", argv[i]);
       nCount = integerValue(argv[++i]);
       if( nCount<1 ) fatalError("the --count must be positive");
+      continue;
+    }
+    if( strcmp(z, "-desc")==0 ){
+      eOrder = ORDER_DESC;
+      continue;
+    }
+    if( strcmp(z, "-fsync")==0 ){
+      doFsync = 1;
+      continue;
+    }
+    if( strcmp(z, "-integrity-check")==0 ){
+      doIntegrityCk = 1;
+      continue;
+    }
+    if( strcmp(z, "-jmode")==0 ){
+      if( i==argc-1 ) fatalError("missing argument on \"%s\"", argv[i]);
+      zJMode = argv[++i];
       continue;
     }
     if( strcmp(z, "-mmap")==0 ){
@@ -782,36 +816,26 @@ static int runMain(int argc, char **argv){
       iMax = integerValue(argv[++i]);
       continue;
     }
-    if( strcmp(z, "-start")==0 ){
-      if( i==argc-1 ) fatalError("missing argument on \"%s\"", argv[i]);
-      iKey = integerValue(argv[++i]);
-      if( iKey<1 ) fatalError("the --start must be positive");
+    if( strcmp(z, "-multitrans")==0 ){
+      doMultiTrans = 1;
       continue;
     }
-    if( strcmp(z, "-cache-size")==0 ){
-      if( i==argc-1 ) fatalError("missing argument on \"%s\"", argv[i]);
-      iCache = integerValue(argv[++i]);
+    if( strcmp(z, "-nocheckpoint")==0 ){
+      noCheckpoint = 1;
       continue;
     }
-    if( strcmp(z, "-jmode")==0 ){
-      if( i==argc-1 ) fatalError("missing argument on \"%s\"", argv[i]);
-      zJMode = argv[++i];
+    if( strcmp(z, "-nosync")==0 ){
+      noSync = 1;
       continue;
     }
     if( strcmp(z, "-random")==0 ){
       eOrder = ORDER_RANDOM;
       continue;
     }
-    if( strcmp(z, "-asc")==0 ){
-      eOrder = ORDER_ASC;
-      continue;
-    }
-    if( strcmp(z, "-desc")==0 ){
-      eOrder = ORDER_DESC;
-      continue;
-    }
-    if( strcmp(z, "-blob-api")==0 ){
-      bBlobApi = 1;
+    if( strcmp(z, "-start")==0 ){
+      if( i==argc-1 ) fatalError("missing argument on \"%s\"", argv[i]);
+      iKey = integerValue(argv[++i]);
+      if( iKey<1 ) fatalError("the --start must be positive");
       continue;
     }
     if( strcmp(z, "-stats")==0 ){
@@ -820,18 +844,6 @@ static int runMain(int argc, char **argv){
     }
     if( strcmp(z, "-update")==0 ){
       isUpdateTest = 1;
-      continue;
-    }
-    if( strcmp(z, "-integrity-check")==0 ){
-      doIntegrityCk = 1;
-      continue;
-    }
-    if( strcmp(z, "-nosync")==0 ){
-      noSync = 1;
-      continue;
-    }
-    if( strcmp(z, "-fsync")==0 ){
-      doFsync = 1;
       continue;
     }
     fatalError("unknown option: \"%s\"", argv[i]);
@@ -876,6 +888,9 @@ static int runMain(int argc, char **argv){
       zSql = sqlite3_mprintf("PRAGMA journal_mode=%Q", zJMode);
       sqlite3_exec(db, zSql, 0, 0, 0);
       sqlite3_free(zSql);
+      if( noCheckpoint ){
+        sqlite3_exec(db, "PRAGMA wal_autocheckpoint=0", 0, 0, 0);
+      }
     }
     sqlite3_prepare_v2(db, "PRAGMA journal_mode", -1, &pStmt, 0);
     if( sqlite3_step(pStmt)==SQLITE_ROW ){
@@ -892,7 +907,7 @@ static int runMain(int argc, char **argv){
       sqlite3_finalize(pStmt);
     }
     pStmt = 0;
-    sqlite3_exec(db, "BEGIN", 0, 0, 0);
+    if( !doMultiTrans ) sqlite3_exec(db, "BEGIN", 0, 0, 0);
   }
   if( iMax<=0 ) iMax = 1000;
   for(i=0; i<nCount; i++){
@@ -990,10 +1005,17 @@ static int runMain(int argc, char **argv){
     display_stats(db, 0);
   }
   if( db ){
-    sqlite3_exec(db, "COMMIT", 0, 0, 0);
-    sqlite3_close(db);
+    if( !doMultiTrans ) sqlite3_exec(db, "COMMIT", 0, 0, 0);
+    if( !noCheckpoint ){
+      sqlite3_close(db);
+      db = 0;
+    }
   }
   tmElapsed = timeOfDay() - tmStart;
+  if( db && noCheckpoint ){
+    sqlite3_close(db);
+    db = 0;
+  }
   if( nExtra ){
     printf("%d cycles due to %d misses\n", nCount, nExtra);
   }
