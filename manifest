@@ -1,5 +1,5 @@
-C For\sthe\skvtest\sutility,\sadd\sthe\s--vacuum\soption\sto\s"kvtest\sstat"\sand\salso\nrun\sPRAGMA\sintegrity_check\swith\s"kvtest\sstat".
-D 2017-06-05T13:28:17.990
+C Fix\sa\sbug\sin\stest_fs.c\sthat\soccurs\swhen\sthe\sfirst\scomponent\sof\sa\spath\scontains\na\sGLOB\sor\sLIKE\sescape\scharacter.
+D 2017-06-05T16:33:53.195
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -434,7 +434,7 @@ F src/test_config.c edcba290248dc18736dd814c9b95863c6762e0b35753048d8cbe5bf65f7a
 F src/test_delete.c e2fe07646dff6300b48d49b2fee2fe192ed389e834dd635e3b3bac0ce0bf9f8f
 F src/test_demovfs.c a0c3bdd45ed044115c2c9f7779e56eafff18741e
 F src/test_devsym.c 4e58dec2602d8e139ca08659f62a62450587cb58
-F src/test_fs.c e16cbe68d3b107e00a907c20a9a02629870eb69b
+F src/test_fs.c 35a2f7dd8a915900873386331386d9ba1ae1b5026d74fd20c2807bc76221f291
 F src/test_func.c a4fdab3363b436c1b12660e9362ce3f3782b7b5e
 F src/test_hexio.c 1d4469ca61ab202a1fcec6543f584d2407205e8d
 F src/test_init.c 4413c211a94b62157ca4c145b3f27c497f03c664
@@ -1582,7 +1582,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ed0842c156ab1a78d5d00d3a55dab5e3f08cd349328d606724688f1528df3f6b
-R 469299041958944268a194091870ce94
-U drh
-Z 36dcea3e9252ed2e301fc8394580d033
+P f3c25df4562efda2adeb211a4cc893246354917849a0fa4d95da3d7970e9588e
+R aa24b19a4f45442ffc34eeb6356fadd9
+U dan
+Z 26a8d8f95b610c30297dc9723021b8e7
