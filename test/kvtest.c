@@ -543,7 +543,7 @@ static int exportMain(int argc, char **argv){
   zTail = zFN + nFN + 1;
   while( sqlite3_step(pStmt)==SQLITE_ROW ){
     int iKey = sqlite3_column_int(pStmt, 0);
-    int nData = sqlite3_column_bytes(pStmt, 1);
+    sqlite3_int64 nData = sqlite3_column_bytes(pStmt, 1);
     const void *pData = sqlite3_column_blob(pStmt, 1);
     FILE *out;
     if( ePathType==PATH_DIR ){
@@ -587,7 +587,7 @@ static int exportMain(int argc, char **argv){
 ** NULL is returned if any error is encountered. The final value of *pnByte
 ** is undefined in this case.
 */
-static unsigned char *readFile(const char *zName, int *pnByte){
+static unsigned char *readFile(const char *zName, sqlite3_int64 *pnByte){
   FILE *in;               /* FILE from which to read content of zName */
   sqlite3_int64 nIn;      /* Size of zName in bytes */
   size_t nRead;           /* Number of bytes actually read */
@@ -605,7 +605,7 @@ static unsigned char *readFile(const char *zName, int *pnByte){
     sqlite3_free(pBuf);
     return 0;
   }
-  if( pnByte ) *pnByte = (int)nIn;
+  if( pnByte ) *pnByte = nIn;
   return pBuf;
 }
 
@@ -613,7 +613,7 @@ static unsigned char *readFile(const char *zName, int *pnByte){
 ** Overwrite a file with randomness.  Do not change the size of the
 ** file.
 */
-static void updateFile(const char *zName, int *pnByte, int doFsync){
+static void updateFile(const char *zName, sqlite3_int64 *pnByte, int doFsync){
   FILE *out;              /* FILE from which to read content of zName */
   sqlite3_int64 sz;       /* Size of zName in bytes */
   size_t nWritten;        /* Number of bytes actually read */
@@ -624,7 +624,7 @@ static void updateFile(const char *zName, int *pnByte, int doFsync){
   if( sz<0 ){
     fatalError("No such file: \"%s\"", zName);
   }
-  *pnByte = (int)sz;
+  *pnByte = sz;
   if( sz==0 ) return;
   pBuf = sqlite3_malloc64( sz );
   if( pBuf==0 ){
@@ -820,10 +820,10 @@ static int runMain(int argc, char **argv){
   sqlite3_int64 tmStart;      /* Start time */
   sqlite3_int64 tmElapsed;    /* Elapsed time */
   int mmapSize = 0;           /* --mmap N argument */
-  int nData = 0;              /* Bytes of data */
+  sqlite3_int64 nData = 0;    /* Bytes of data */
   sqlite3_int64 nTotal = 0;   /* Total data read */
   unsigned char *pData = 0;   /* Content of the blob */
-  int nAlloc = 0;             /* Space allocated for pData[] */
+  sqlite3_int64 nAlloc = 0;   /* Space allocated for pData[] */
   const char *zJMode = 0;     /* Journal mode */
   
 
@@ -1013,18 +1013,18 @@ static int runMain(int argc, char **argv){
         nData = sqlite3_blob_bytes(pBlob);
         if( nAlloc<nData+1 ){
           nAlloc = nData+100;
-          pData = sqlite3_realloc(pData, nAlloc);
+          pData = sqlite3_realloc64(pData, nAlloc);
         }
         if( pData==0 ) fatalError("cannot allocate %d bytes", nData+1);
         if( isUpdateTest ){
           sqlite3_randomness((int)nData, pData);
-          rc = sqlite3_blob_write(pBlob, pData, nData, 0);
+          rc = sqlite3_blob_write(pBlob, pData, (int)nData, 0);
           if( rc!=SQLITE_OK ){
             fatalError("could not write the blob at %d: %s", iKey,
                       sqlite3_errmsg(db));
           }
         }else{
-          rc = sqlite3_blob_read(pBlob, pData, nData, 0);
+          rc = sqlite3_blob_read(pBlob, pData, (int)nData, 0);
           if( rc!=SQLITE_OK ){
             fatalError("could not read the blob at %d: %s", iKey,
                       sqlite3_errmsg(db));
