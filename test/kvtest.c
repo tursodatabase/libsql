@@ -81,9 +81,11 @@ static const char zHelp[] =
 "        files are in the top-level directory with names like 000000, 000001,\n"
 "        000002, and so forth.\n"
 "\n"
-"   kvtest stat DBFILE\n"
+"   kvtest stat DBFILE [options]\n"
 "\n"
-"        Display summary information about DBFILE\n"
+"        Display summary information about DBFILE.  Options:\n"
+"\n"
+"           --vacuum               Run VACUUM on the database file\n"
 "\n"
 "   kvtest run DBFILE [options]\n"
 "\n"
@@ -383,6 +385,7 @@ static int statMain(int argc, char **argv){
   sqlite3 *db;
   char *zSql;
   sqlite3_stmt *pStmt;
+  int doVacuum = 0;
 
   assert( strcmp(argv[1],"stat")==0 );
   assert( argc>=3 );
@@ -391,11 +394,20 @@ static int statMain(int argc, char **argv){
     char *z = argv[i];
     if( z[0]!='-' ) fatalError("unknown argument: \"%s\"", z);
     if( z[1]=='-' ) z++;
+    if( strcmp(z, "-vacuum")==0 ){
+      doVacuum = 1;
+      continue;
+    }
     fatalError("unknown option: \"%s\"", argv[i]);
   }
   rc = sqlite3_open(zDb, &db);
   if( rc ){
     fatalError("cannot open database \"%s\": %s", zDb, sqlite3_errmsg(db));
+  }
+  if( doVacuum ){
+    printf("Vacuuming...."); fflush(stdout);
+    sqlite3_exec(db, "VACUUM", 0, 0, 0);
+    printf("       done\n");
   }
   zSql = sqlite3_mprintf(
     "SELECT count(*), min(length(v)), max(length(v)), avg(length(v))"
@@ -427,6 +439,20 @@ static int statMain(int argc, char **argv){
   sqlite3_free(zSql);
   if( sqlite3_step(pStmt)==SQLITE_ROW ){
     printf("Page-count:         %8d\n", sqlite3_column_int(pStmt, 0));
+  }
+  sqlite3_finalize(pStmt);
+  zSql = sqlite3_mprintf("PRAGMA freelist_count");
+  rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
+  if( rc ) fatalError("cannot prepare SQL [%s]: %s", zSql, sqlite3_errmsg(db));
+  sqlite3_free(zSql);
+  if( sqlite3_step(pStmt)==SQLITE_ROW ){
+    printf("Freelist-count:     %8d\n", sqlite3_column_int(pStmt, 0));
+  }
+  sqlite3_finalize(pStmt);
+  rc = sqlite3_prepare_v2(db, "PRAGMA integrity_check(10)", -1, &pStmt, 0);
+  if( rc ) fatalError("cannot prepare integrity check: %s", sqlite3_errmsg(db));
+  while( sqlite3_step(pStmt)==SQLITE_ROW ){
+    printf("Integrity-check:    %s\n", sqlite3_column_text(pStmt, 0));
   }
   sqlite3_finalize(pStmt);
   sqlite3_close(db);
