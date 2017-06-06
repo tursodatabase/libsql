@@ -42,13 +42,15 @@ LSMTESTSRC = $(LSMDIR)/lsm-test/lsmtest1.c $(LSMDIR)/lsm-test/lsmtest2.c     \
 
 # all: lsm.so
 
+LSMOPTS = -DLSM_MUTEX_PTHREADS=1 -I$(LSMDIR)
+
 lsm.so:	$(LSMOBJ)
-	$(TCCX) $(CFLAGS) -shared -o lsm.so $(LSMOBJ)
+	$(TCCX) -shared -o lsm.so $(LSMOBJ)
 
 %.o:	$(LSMDIR)/%.c $(LSMHDR)
-	$(TCCX) -I$(LSMDIR) $(CFLAGS) -c $<
+	$(TCCX) $(LSMOPTS) -c $<
 	
 lsmtest$(EXE): $(LSMOBJ) $(LSMTESTSRC) $(LSMTESTHDR)
 	# $(TCPPX) -c $(TOP)/lsm-test/lsmtest_tdb2.cc
-	$(TCCX) -I$(LSMDIR) $(LSMTESTSRC) $(LSMOBJ) -o lsmtest$(EXE) $(THREADLIB) -lsqlite3 
+	$(TCCX) $(LSMOPTS) $(LSMTESTSRC) $(LSMOBJ) -o lsmtest$(EXE) $(THREADLIB) -lsqlite3 
 

@@ -529,6 +529,8 @@ static int waitOnCheckpointer(LsmDb *pDb, lsm_db *db){
   return rc;
 }
 
+static void mt_signal_worker(LsmDb*, int);
+
 static int waitOnWorker(LsmDb *pDb){
   int rc;
   int nLimit = -1;
@@ -540,6 +542,9 @@ static int waitOnWorker(LsmDb *pDb){
     rc = lsm_info(pDb->db, LSM_INFO_TREE_SIZE, &nOld, &nNew);
     if( rc!=LSM_OK ) return rc;
     if( nOld==0 || nNew<(nLimit/2) ) break;
+#ifdef LSM_MUTEX_PTHREADS
+    mt_signal_worker(pDb, 0);
+#endif
     usleep(5000);
     nSleep += 5;
   }while( 1 );
@@ -987,7 +992,7 @@ int test_lsm_open(
   int bClear, 
   TestDb **ppDb
 ){
-  return testLsmOpen("", zFilename, bClear, ppDb);
+  return testLsmOpen(zSpec, zFilename, bClear, ppDb);
 }
 
 int test_lsm_small_open(
