@@ -1,5 +1,5 @@
-C Fix\sa\ssubtle\sbug\sin\sthe\sremember\sUDF\sof\sthe\skvtest.exe\sutility\sprogram.
-D 2017-06-05T19:20:35.377
+C Add\sthe\sSQLITE_DEFAULT_ROWEST\scompile-time\soption\sfor\schanging\sthe\sestimated\nnumber\sof\srows\sin\stables\sthat\slack\ssqlite_stat1\sentries.
+D 2017-06-06T18:20:43.972
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -351,7 +351,7 @@ F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
 F src/btree.c 8ac6ae352c63998228718b5f11faa0da2676710898a47284de78e96cb41dca35
 F src/btree.h 3edc5329bc59534d2d15b4f069a9f54b779a7e51289e98fa481ae3c0e526a5ca
 F src/btreeInt.h a392d353104b4add58b4a59cb185f5d5693dde832c565b77d8d4c343ed98f610
-F src/build.c 4026a9c554b233e50c5e9ad46963e676cf54dd2306d952aa1eaa07a1bc9ce14f
+F src/build.c 88a8cdc11d1c081ed565aa3e795bdf9160f4556463b4c4555e9860b59dd80340
 F src/callback.c 2e76147783386374bf01b227f752c81ec872d730
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 47d91a25ad8f199a71a5b1b7b169d6dd0d6e98c5719eca801568798743d1161c
@@ -1582,7 +1582,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 73c70590d7689806901378cd2a7e167ec4339f886031369266e07868acd23b93
-R 0c827ca5686a71389301c8ab16d1380c
+P 9eea3670e77e2f831b7c00ae2d65a5583f9cad626d9ab286f92582ef29ecd4e3
+R de51f7d1edc1449c33df63cd75f44fee
 U drh
-Z aa16b10f95a81423ef1d2e52e40fab88
+Z db2906277b1736b6942b7d17ecf808c4
