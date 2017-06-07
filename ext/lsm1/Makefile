@@ -47,10 +47,10 @@ LSMOPTS = -DLSM_MUTEX_PTHREADS=1 -I$(LSMDIR)
 lsm.so:	$(LSMOBJ)
 	$(TCCX) -shared -o lsm.so $(LSMOBJ)
 
-%.o:	$(LSMDIR)/%.c $(LSMHDR)
+%.o:	$(LSMDIR)/%.c $(LSMHDR) sqlite3.h
 	$(TCCX) $(LSMOPTS) -c $<
 	
-lsmtest$(EXE): $(LSMOBJ) $(LSMTESTSRC) $(LSMTESTHDR)
+lsmtest$(EXE): $(LSMOBJ) $(LSMTESTSRC) $(LSMTESTHDR) sqlite3.o
 	# $(TCPPX) -c $(TOP)/lsm-test/lsmtest_tdb2.cc
-	$(TCCX) $(LSMOPTS) $(LSMTESTSRC) $(LSMOBJ) -o lsmtest$(EXE) $(THREADLIB) -lsqlite3 
+	$(TCCX) $(LSMOPTS) $(LSMTESTSRC) $(LSMOBJ) sqlite3.o -o lsmtest$(EXE) $(THREADLIB) 
 

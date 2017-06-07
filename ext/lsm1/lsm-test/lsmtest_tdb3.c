@@ -509,6 +509,8 @@ static int test_lsm_close(TestDb *pTestDb){
   return rc;
 }
 
+static void mt_signal_worker(LsmDb*, int);
+
 static int waitOnCheckpointer(LsmDb *pDb, lsm_db *db){
   int nSleep = 0;
   int nKB;
@@ -518,6 +520,9 @@ static int waitOnCheckpointer(LsmDb *pDb, lsm_db *db){
     nKB = 0;
     rc = lsm_info(db, LSM_INFO_CHECKPOINT_SIZE, &nKB);
     if( rc!=LSM_OK || nKB<pDb->nMtMaxCkpt ) break;
+#ifdef LSM_MUTEX_PTHREADS
+    mt_signal_worker(pDb, 1);
+#endif
     usleep(5000);
     nSleep += 5;
   }while( 1 );
@@ -528,8 +533,6 @@ static int waitOnCheckpointer(LsmDb *pDb, lsm_db *db){
 
   return rc;
 }
-
-static void mt_signal_worker(LsmDb*, int);
 
 static int waitOnWorker(LsmDb *pDb){
   int rc;
@@ -791,6 +794,8 @@ int test_lsm_config_str(
   };
   const char *z = zStr;
   int nThread = 1;
+
+  if( zStr==0 ) return 0;
 
   assert( db );
   while( z[0] ){

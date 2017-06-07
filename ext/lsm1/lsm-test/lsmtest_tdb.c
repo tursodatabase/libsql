@@ -693,6 +693,13 @@ static int sql_open(
   sqlite3_exec(pDb->db, "PRAGMA synchronous=OFF", 0, 0, 0);
   sqlite3_exec(pDb->db, "PRAGMA journal_mode=WAL", 0, 0, 0);
   sqlite3_exec(pDb->db, "PRAGMA wal_autocheckpoint=4096", 0, 0, 0);
+  if( zSpec ){
+    rc = sqlite3_exec(pDb->db, zSpec, 0, 0, 0);
+    if( rc!=SQLITE_OK ){
+      sql_close((TestDb *)pDb);
+      return rc;
+    }
+  }
 
   *ppDb = (TestDb *)pDb;
   return 0;

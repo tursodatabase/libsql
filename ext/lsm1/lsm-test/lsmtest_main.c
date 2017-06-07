@@ -1,5 +1,5 @@
 
-#include <stdarg.h>
+#include "stdarg.h"
 #include "lsmtest.h"
 #include "stdio.h"
 #include "assert.h"
@@ -363,7 +363,7 @@ char *testMallocVPrintf(const char *zFormat, va_list ap){
   va_list copy;
   char *zRet;
 
-  va_copy(copy, ap);
+  __va_copy(copy, ap);
   nByte = vsnprintf(0, 0, zFormat, copy);
   va_end(copy);
 
@@ -572,6 +572,7 @@ static void do_speed_write_hook2(
 #define ST_NSCAN   5
 #define ST_KEYSIZE 6
 #define ST_VALSIZE 7
+#define ST_TRANS   8
 
 
 static void print_speed_test_help(){
@@ -593,6 +594,7 @@ static void print_speed_test_help(){
 "  -keysize $keysize                (default value 12)\n"
 "  -valsize $valsize                (default value 100)\n"
 "  -system  $system                 (default value \"lsm\")\n"
+"  -trans   $trans                  (default value 0)\n"
 "\n"
 );
 }
@@ -611,12 +613,13 @@ int do_speed_test2(int nArg, char **azArg){
     { "-nscan",   ST_NSCAN,      0},
     { "-keysize", ST_KEYSIZE,   12},
     { "-valsize", ST_VALSIZE,  100},
+    { "-trans",   ST_TRANS,      0},
     { "-system",  -1,            0},
     { "help",     -2,            0},
     {0, 0, 0}
   };
   int i;
-  int aParam[8];
+  int aParam[9];
   int rc = 0;
   int bReadonly = 0;
   int nContent = 0;
@@ -712,7 +715,11 @@ int do_speed_test2(int nArg, char **azArg){
       msWrite = 0;
     }else{
       testTimeInit();
+
+      if( aParam[ST_TRANS] ) testBegin(pDb, 2, &rc);
       testWriteDatasourceRange(pDb, pData, i*nWrite, nWrite, &rc);
+      if( aParam[ST_TRANS] ) testCommit(pDb, 0, &rc);
+
       msWrite = testTimeGet();
       nContent += nWrite;
     }
@@ -724,6 +731,7 @@ int do_speed_test2(int nArg, char **azArg){
 
     if( aParam[ST_FETCH] ){
       testTimeInit();
+      if( aParam[ST_TRANS] ) testBegin(pDb, 1, &rc);
       for(iFetch=0; iFetch<aParam[ST_FETCH]; iFetch++){
         int iKey = testPrngValue(i*nWrite+iFetch) % nContent;
 #ifndef NDEBUG
@@ -738,6 +746,7 @@ int do_speed_test2(int nArg, char **azArg){
         if( rc ) break;
 #endif
       }
+      if( aParam[ST_TRANS] ) testCommit(pDb, 0, &rc);
       msFetch = testTimeGet();
     }else{
       msFetch = 0;
