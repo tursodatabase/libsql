@@ -875,14 +875,14 @@ static void statGet(
       return;
     }
 
-    sqlite3_snprintf(24, zRet, "%llu", (u64)p->nRow);
+    /* Never let the estimated number of rows be less than 10 */
+    sqlite3_snprintf(24, zRet, "%llu", MAX((u64)p->nRow, 10));
     z = zRet + sqlite3Strlen30(zRet);
     for(i=0; i<p->nKeyCol; i++){
       u64 nDistinct = p->current.anDLt[i] + 1;
       u64 iVal = (p->nRow + nDistinct - 1) / nDistinct;
       sqlite3_snprintf(24, z, " %llu", iVal);
       z += sqlite3Strlen30(z);
-      assert( p->current.anEq[i] );
     }
     assert( z[0]=='\0' && z>zRet );
 
@@ -984,7 +984,6 @@ static void analyzeOneTable(
   int iTabCur;                 /* Table cursor */
   Vdbe *v;                     /* The virtual machine being built up */
   int i;                       /* Loop counter */
-  int jZeroRows = -1;          /* Jump from here if number of rows is zero */
   int iDb;                     /* Index of database containing pTab */
   u8 needTableCnt = 1;         /* True to count the table */
   int regNewRowid = iMem++;    /* Rowid for the inserted record */
@@ -1219,6 +1218,7 @@ static void analyzeOneTable(
     sqlite3VdbeAddOp2(v, OP_Next, iIdxCur, addrNextRow); VdbeCoverage(v);
 
     /* Add the entry to the stat1 table. */
+    sqlite3VdbeJumpHere(v, addrRewind);
     callStatGet(v, regStat4, STAT_GET_STAT1, regStat1);
     assert( "BBB"[0]==SQLITE_AFF_TEXT );
     sqlite3VdbeAddOp4(v, OP_MakeRecord, regTabname, 3, regTemp, "BBB", 0);
@@ -1241,6 +1241,8 @@ static void analyzeOneTable(
 
       pParse->nMem = MAX(pParse->nMem, regCol+nCol);
 
+      addrRewind = sqlite3VdbeAddOp1(v, OP_Rewind, iIdxCur);
+      VdbeCoverage(v);
       addrNext = sqlite3VdbeCurrentAddr(v);
       callStatGet(v, regStat4, STAT_GET_ROWID, regSampleRowid);
       addrIsNull = sqlite3VdbeAddOp1(v, OP_IsNull, regSampleRowid);
@@ -1266,11 +1268,11 @@ static void analyzeOneTable(
       sqlite3VdbeAddOp3(v, OP_Insert, iStatCur+1, regTemp, regNewRowid);
       sqlite3VdbeAddOp2(v, OP_Goto, 1, addrNext); /* P1==1 for end-of-loop */
       sqlite3VdbeJumpHere(v, addrIsNull);
+      sqlite3VdbeJumpHere(v, addrRewind);
     }
 #endif /* SQLITE_ENABLE_STAT3_OR_STAT4 */
 
     /* End of analysis */
-    sqlite3VdbeJumpHere(v, addrRewind);
   }
 
 
@@ -1280,14 +1282,13 @@ static void analyzeOneTable(
   if( pOnlyIdx==0 && needTableCnt ){
     VdbeComment((v, "%s", pTab->zName));
     sqlite3VdbeAddOp2(v, OP_Count, iTabCur, regStat1);
-    jZeroRows = sqlite3VdbeAddOp1(v, OP_IfNot, regStat1); VdbeCoverage(v);
+    sqlite3VdbeAddOp2(v, OP_AddImm, regStat1, 10);
     sqlite3VdbeAddOp2(v, OP_Null, 0, regIdxname);
     assert( "BBB"[0]==SQLITE_AFF_TEXT );
     sqlite3VdbeAddOp4(v, OP_MakeRecord, regTabname, 3, regTemp, "BBB", 0);
     sqlite3VdbeAddOp2(v, OP_NewRowid, iStatCur, regNewRowid);
     sqlite3VdbeAddOp3(v, OP_Insert, iStatCur, regTemp, regNewRowid);
     sqlite3VdbeChangeP5(v, OPFLAG_APPEND);
-    sqlite3VdbeJumpHere(v, jZeroRows);
   }
 }
 

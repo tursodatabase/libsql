@@ -698,6 +698,6 @@ do_execsql_test 7.2 {
   INSERT INTO sqlite_stat1(tbl,idx,stat) VALUES('t1','t1a','12000');
   INSERT INTO sqlite_stat1(tbl,idx,stat) VALUES('t1','t1a','12000');
   ANALYZE sqlite_master;
-}
+} {t1 t1a {0 0}}
 
 finish_test
