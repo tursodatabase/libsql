@@ -510,6 +510,18 @@ static int strlen30(const char *z){
 }
 
 /*
+** Return the length of a string in characters.  Multibyte UTF8 characters
+** count as a single character.
+*/
+static int strlenChar(const char *z){
+  int n = 0;
+  while( *z ){
+    if( (0xc0&*(z++))!=0x80 ) n++;
+  }
+  return n;
+}
+
+/*
 ** This routine reads a line of text from FILE in, stores
 ** the text in memory obtained from malloc() and returns a pointer
 ** to the text.  NULL is returned at end of file, or if malloc()
@@ -1917,9 +1929,9 @@ static int shell_callback(
             w = 0;
           }
           if( w==0 ){
-            w = strlen30(azCol[i] ? azCol[i] : "");
+            w = strlenChar(azCol[i] ? azCol[i] : "");
             if( w<10 ) w = 10;
-            n = strlen30(azArg && azArg[i] ? azArg[i] : p->nullValue);
+            n = strlenChar(azArg && azArg[i] ? azArg[i] : p->nullValue);
             if( w<n ) w = n;
           }
           if( i<ArraySize(p->actualWidth) ){
@@ -1954,8 +1966,8 @@ static int shell_callback(
         }else{
            w = 10;
         }
-        if( p->cMode==MODE_Explain && azArg[i] && strlen30(azArg[i])>w ){
-          w = strlen30(azArg[i]);
+        if( p->cMode==MODE_Explain && azArg[i] && strlenChar(azArg[i])>w ){
+          w = strlenChar(azArg[i]);
         }
         if( i==1 && p->aiIndent && p->pStmt ){
           if( p->iIndent<p->nIndent ){
