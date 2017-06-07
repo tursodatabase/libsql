@@ -3338,6 +3338,12 @@ int sqlite3CantopenError(int lineno){
   return reportError(SQLITE_CANTOPEN, lineno, "cannot open file");
 }
 #ifdef SQLITE_DEBUG
+int sqlite3CorruptPgnoError(int lineno, Pgno pgno){
+  char zMsg[100];
+  sqlite3_snprintf(sizeof(zMsg), zMsg, "database corruption page %d", pgno);
+  testcase( sqlite3GlobalConfig.xLog!=0 );
+  return reportError(SQLITE_CORRUPT, lineno, zMsg);
+}
 int sqlite3NomemError(int lineno){
   testcase( sqlite3GlobalConfig.xLog!=0 );
   return reportError(SQLITE_NOMEM, lineno, "OOM");

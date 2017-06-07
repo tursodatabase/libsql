@@ -771,7 +771,7 @@ static int btreeMoveto(
     if( pIdxKey==0 ) return SQLITE_NOMEM_BKPT;
     sqlite3VdbeRecordUnpack(pCur->pKeyInfo, (int)nKey, pKey, pIdxKey);
     if( pIdxKey->nField==0 ){
-      rc = SQLITE_CORRUPT_BKPT;
+      rc = SQLITE_CORRUPT_PGNO(pCur->apPage[pCur->iPage]->pgno);
       goto moveto_done;
     }
   }else{
@@ -1000,7 +1000,7 @@ static int ptrmapGet(BtShared *pBt, Pgno key, u8 *pEType, Pgno *pPgno){
   if( pPgno ) *pPgno = get4byte(&pPtrmap[offset+1]);
 
   sqlite3PagerUnref(pDbPage);
-  if( *pEType<1 || *pEType>5 ) return SQLITE_CORRUPT_BKPT;
+  if( *pEType<1 || *pEType>5 ) return SQLITE_CORRUPT_PGNO(iPtrmap);
   return SQLITE_OK;
 }
 
@@ -1385,7 +1385,7 @@ static int defragmentPage(MemPage *pPage, int nMaxFrag){
         int sz = get2byte(&data[iFree+2]);
         int top = get2byte(&data[hdr+5]);
         if( iFree2 ){
-          if( iFree+sz>iFree2 ) return SQLITE_CORRUPT_BKPT;
+          if( iFree+sz>iFree2 ) return SQLITE_CORRUPT_PGNO(pPage->pgno);
           sz2 = get2byte(&data[iFree2+2]);
           assert( iFree+sz+sz2+iFree2-(iFree+sz) <= usableSize );
           memmove(&data[iFree+sz+sz2], &data[iFree+sz], iFree2-(iFree+sz));
@@ -1416,13 +1416,13 @@ static int defragmentPage(MemPage *pPage, int nMaxFrag){
     ** if PRAGMA cell_size_check=ON.
     */
     if( pc<iCellFirst || pc>iCellLast ){
-      return SQLITE_CORRUPT_BKPT;
+      return SQLITE_CORRUPT_PGNO(pPage->pgno);
     }
     assert( pc>=iCellFirst && pc<=iCellLast );
     size = pPage->xCellSize(pPage, &src[pc]);
     cbrk -= size;
     if( cbrk<iCellFirst || pc+size>usableSize ){
-      return SQLITE_CORRUPT_BKPT;
+      return SQLITE_CORRUPT_PGNO(pPage->pgno);
     }
     assert( cbrk+size<=usableSize && cbrk>=iCellFirst );
     testcase( cbrk+size==usableSize );
@@ -1442,7 +1442,7 @@ static int defragmentPage(MemPage *pPage, int nMaxFrag){
 
  defragment_out:
   if( data[hdr+7]+cbrk-iCellFirst!=pPage->nFree ){
-    return SQLITE_CORRUPT_BKPT;
+    return SQLITE_CORRUPT_PGNO(pPage->pgno);
   }
   assert( cbrk>=iCellFirst );
   put2byte(&data[hdr+5], cbrk);
@@ -1481,7 +1481,7 @@ static u8 *pageFindSlot(MemPage *pPg, int nByte, int *pRc){
     /* EVIDENCE-OF: R-06866-39125 Freeblocks are always connected in order of
     ** increasing offset. */
     if( pc>usableSize-4 || pc<iAddr+4 ){
-      *pRc = SQLITE_CORRUPT_BKPT;
+      *pRc = SQLITE_CORRUPT_PGNO(pPg->pgno);
       return 0;
     }
     /* EVIDENCE-OF: R-22710-53328 The third and fourth bytes of each
@@ -1492,7 +1492,7 @@ static u8 *pageFindSlot(MemPage *pPg, int nByte, int *pRc){
       testcase( x==4 );
       testcase( x==3 );
       if( pc < pPg->cellOffset+2*pPg->nCell || size+pc > usableSize ){
-        *pRc = SQLITE_CORRUPT_BKPT;
+        *pRc = SQLITE_CORRUPT_PGNO(pPg->pgno);
         return 0;
       }else if( x<4 ){
         /* EVIDENCE-OF: R-11498-58022 In a well-formed b-tree page, the total
@@ -1559,7 +1559,7 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
     if( top==0 && pPage->pBt->usableSize==65536 ){
       top = 65536;
     }else{
-      return SQLITE_CORRUPT_BKPT;
+      return SQLITE_CORRUPT_PGNO(pPage->pgno);
     }
   }
 
@@ -1655,11 +1655,11 @@ static int freeSpace(MemPage *pPage, u16 iStart, u16 iSize){
     while( (iFreeBlk = get2byte(&data[iPtr]))<iStart ){
       if( iFreeBlk<iPtr+4 ){
         if( iFreeBlk==0 ) break;
-        return SQLITE_CORRUPT_BKPT;
+        return SQLITE_CORRUPT_PGNO(pPage->pgno);
       }
       iPtr = iFreeBlk;
     }
-    if( iFreeBlk>iLast ) return SQLITE_CORRUPT_BKPT;
+    if( iFreeBlk>iLast ) return SQLITE_CORRUPT_PGNO(pPage->pgno);
     assert( iFreeBlk>iPtr || iFreeBlk==0 );
   
     /* At this point:
@@ -1670,9 +1670,11 @@ static int freeSpace(MemPage *pPage, u16 iStart, u16 iSize){
     */
     if( iFreeBlk && iEnd+3>=iFreeBlk ){
       nFrag = iFreeBlk - iEnd;
-      if( iEnd>iFreeBlk ) return SQLITE_CORRUPT_BKPT;
+      if( iEnd>iFreeBlk ) return SQLITE_CORRUPT_PGNO(pPage->pgno);
       iEnd = iFreeBlk + get2byte(&data[iFreeBlk+2]);
-      if( iEnd > pPage->pBt->usableSize ) return SQLITE_CORRUPT_BKPT;
+      if( iEnd > pPage->pBt->usableSize ){
+        return SQLITE_CORRUPT_PGNO(pPage->pgno);
+      }
       iSize = iEnd - iStart;
       iFreeBlk = get2byte(&data[iFreeBlk]);
     }
@@ -1684,20 +1686,20 @@ static int freeSpace(MemPage *pPage, u16 iStart, u16 iSize){
     if( iPtr>hdr+1 ){
       int iPtrEnd = iPtr + get2byte(&data[iPtr+2]);
       if( iPtrEnd+3>=iStart ){
-        if( iPtrEnd>iStart ) return SQLITE_CORRUPT_BKPT;
+        if( iPtrEnd>iStart ) return SQLITE_CORRUPT_PGNO(pPage->pgno);
         nFrag += iStart - iPtrEnd;
         iSize = iEnd - iPtr;
         iStart = iPtr;
       }
     }
-    if( nFrag>data[hdr+7] ) return SQLITE_CORRUPT_BKPT;
+    if( nFrag>data[hdr+7] ) return SQLITE_CORRUPT_PGNO(pPage->pgno);
     data[hdr+7] -= nFrag;
   }
   if( iStart==get2byte(&data[hdr+5]) ){
     /* The new freeblock is at the beginning of the cell content area,
     ** so just extend the cell content area rather than create another
     ** freelist entry */
-    if( iPtr!=hdr+1 ) return SQLITE_CORRUPT_BKPT;
+    if( iPtr!=hdr+1 ) return SQLITE_CORRUPT_PGNO(pPage->pgno);
     put2byte(&data[hdr+1], iFreeBlk);
     put2byte(&data[hdr+5], iEnd);
   }else{
@@ -1765,7 +1767,7 @@ static int decodeFlags(MemPage *pPage, int flagByte){
   }else{
     /* EVIDENCE-OF: R-47608-56469 Any other value for the b-tree page type is
     ** an error. */
-    return SQLITE_CORRUPT_BKPT;
+    return SQLITE_CORRUPT_PGNO(pPage->pgno);
   }
   pPage->max1bytePayload = pBt->max1bytePayload;
   return SQLITE_OK;
@@ -1805,7 +1807,9 @@ static int btreeInitPage(MemPage *pPage){
   data = pPage->aData;
   /* EVIDENCE-OF: R-28594-02890 The one-byte flag at offset 0 indicating
   ** the b-tree page type. */
-  if( decodeFlags(pPage, data[hdr]) ) return SQLITE_CORRUPT_BKPT;
+  if( decodeFlags(pPage, data[hdr]) ){
+    return SQLITE_CORRUPT_PGNO(pPage->pgno);
+  }
   assert( pBt->pageSize>=512 && pBt->pageSize<=65536 );
   pPage->maskPage = (u16)(pBt->pageSize - 1);
   pPage->nOverflow = 0;
@@ -1823,7 +1827,7 @@ static int btreeInitPage(MemPage *pPage){
   pPage->nCell = get2byte(&data[hdr+3]);
   if( pPage->nCell>MX_CELL(pBt) ){
     /* To many cells for a single page.  The page must be corrupt */
-    return SQLITE_CORRUPT_BKPT;
+    return SQLITE_CORRUPT_PGNO(pPage->pgno);
   }
   testcase( pPage->nCell==MX_CELL(pBt) );
   /* EVIDENCE-OF: R-24089-57979 If a page contains no cells (which is only
@@ -1851,12 +1855,12 @@ static int btreeInitPage(MemPage *pPage){
       testcase( pc==iCellFirst );
       testcase( pc==iCellLast );
       if( pc<iCellFirst || pc>iCellLast ){
-        return SQLITE_CORRUPT_BKPT;
+        return SQLITE_CORRUPT_PGNO(pPage->pgno);
       }
       sz = pPage->xCellSize(pPage, &data[pc]);
       testcase( pc+sz==usableSize );
       if( pc+sz>usableSize ){
-        return SQLITE_CORRUPT_BKPT;
+        return SQLITE_CORRUPT_PGNO(pPage->pgno);
       }
     }
     if( !pPage->leaf ) iCellLast++;
@@ -1874,11 +1878,12 @@ static int btreeInitPage(MemPage *pPage){
       /* EVIDENCE-OF: R-55530-52930 In a well-formed b-tree page, there will
       ** always be at least one cell before the first freeblock.
       */
-      return SQLITE_CORRUPT_BKPT; 
+      return SQLITE_CORRUPT_PGNO(pPage->pgno); 
     }
     while( 1 ){
       if( pc>iCellLast ){
-        return SQLITE_CORRUPT_BKPT; /* Freeblock off the end of the page */
+        /* Freeblock off the end of the page */
+        return SQLITE_CORRUPT_PGNO(pPage->pgno);
       }
       next = get2byte(&data[pc]);
       size = get2byte(&data[pc+2]);
@@ -1887,10 +1892,12 @@ static int btreeInitPage(MemPage *pPage){
       pc = next;
     }
     if( next>0 ){
-      return SQLITE_CORRUPT_BKPT;  /* Freeblock not in ascending order */
+      /* Freeblock not in ascending order */
+      return SQLITE_CORRUPT_PGNO(pPage->pgno);
     }
     if( pc+size>(unsigned int)usableSize ){
-      return SQLITE_CORRUPT_BKPT;  /* Last freeblock extends past page end */
+      /* Last freeblock extends past page end */
+      return SQLITE_CORRUPT_PGNO(pPage->pgno);
     }
   }
 
@@ -1902,7 +1909,7 @@ static int btreeInitPage(MemPage *pPage){
   ** area, according to the page header, lies within the page.
   */
   if( nFree>usableSize ){
-    return SQLITE_CORRUPT_BKPT; 
+    return SQLITE_CORRUPT_PGNO(pPage->pgno);
   }
   pPage->nFree = (u16)(nFree - iCellFirst);
   pPage->isInit = 1;
@@ -2069,7 +2076,7 @@ static int getAndInitPage(
   /* If obtaining a child page for a cursor, we must verify that the page is
   ** compatible with the root page. */
   if( pCur && ((*ppPage)->nCell<1 || (*ppPage)->intKey!=pCur->curIntKey) ){
-    rc = SQLITE_CORRUPT_BKPT;
+    rc = SQLITE_CORRUPT_PGNO(pgno);
     releasePage(*ppPage);
     goto getAndInitPage_error;
   }
@@ -3400,7 +3407,7 @@ static int modifyPagePointer(MemPage *pPage, Pgno iFrom, Pgno iTo, u8 eType){
   if( eType==PTRMAP_OVERFLOW2 ){
     /* The pointer is always the first 4 bytes of the page in this case.  */
     if( get4byte(pPage->aData)!=iFrom ){
-      return SQLITE_CORRUPT_BKPT;
+      return SQLITE_CORRUPT_PGNO(pPage->pgno);
     }
     put4byte(pPage->aData, iTo);
   }else{
@@ -3419,7 +3426,7 @@ static int modifyPagePointer(MemPage *pPage, Pgno iFrom, Pgno iTo, u8 eType){
         pPage->xParseCell(pPage, pCell, &info);
         if( info.nLocal<info.nPayload ){
           if( pCell+info.nSize > pPage->aData+pPage->pBt->usableSize ){
-            return SQLITE_CORRUPT_BKPT;
+            return SQLITE_CORRUPT_PGNO(pPage->pgno);
           }
           if( iFrom==get4byte(pCell+info.nSize-4) ){
             put4byte(pCell+info.nSize-4, iTo);
@@ -3437,7 +3444,7 @@ static int modifyPagePointer(MemPage *pPage, Pgno iFrom, Pgno iTo, u8 eType){
     if( i==nCell ){
       if( eType!=PTRMAP_BTREE || 
           get4byte(&pPage->aData[pPage->hdrOffset+8])!=iFrom ){
-        return SQLITE_CORRUPT_BKPT;
+        return SQLITE_CORRUPT_PGNO(pPage->pgno);
       }
       put4byte(&pPage->aData[pPage->hdrOffset+8], iTo);
     }
@@ -4545,7 +4552,7 @@ static int accessPayload(
     **    &aPayload[pCur->info.nLocal] > &pPage->aData[pBt->usableSize]
     ** but is recast into its current form to avoid integer overflow problems
     */
-    return SQLITE_CORRUPT_BKPT;
+    return SQLITE_CORRUPT_PGNO(pPage->pgno);
   }
 
   /* Check if data must be read/written to/from the btree page itself. */
@@ -4692,7 +4699,8 @@ static int accessPayload(
   }
 
   if( rc==SQLITE_OK && amt>0 ){
-    return SQLITE_CORRUPT_BKPT; /* Overflow chain ends prematurely */
+    /* Overflow chain ends prematurely */
+    return SQLITE_CORRUPT_PGNO(pPage->pgno);
   }
   return rc;
 }
@@ -4958,7 +4966,7 @@ static int moveToRoot(BtCursor *pCur){
   ** (or the freelist).  */
   assert( pRoot->intKey==1 || pRoot->intKey==0 );
   if( pRoot->isInit==0 || (pCur->pKeyInfo==0)!=pRoot->intKey ){
-    return SQLITE_CORRUPT_BKPT;
+    return SQLITE_CORRUPT_PGNO(pCur->apPage[pCur->iPage]->pgno);
   }
 
 skip_init:  
@@ -5231,7 +5239,9 @@ int sqlite3BtreeMovetoUnpacked(
         pCell = findCellPastPtr(pPage, idx);
         if( pPage->intKeyLeaf ){
           while( 0x80 <= *(pCell++) ){
-            if( pCell>=pPage->aDataEnd ) return SQLITE_CORRUPT_BKPT;
+            if( pCell>=pPage->aDataEnd ){
+              return SQLITE_CORRUPT_PGNO(pPage->pgno);
+            }
           }
         }
         getVarint(pCell, (u64*)&nCellKey);
@@ -5304,7 +5314,7 @@ int sqlite3BtreeMovetoUnpacked(
           testcase( nCell==1 );  /* Invalid key size:  0x80 0x80 0x01 */
           testcase( nCell==2 );  /* Minimum legal index key size */
           if( nCell<2 ){
-            rc = SQLITE_CORRUPT_BKPT;
+            rc = SQLITE_CORRUPT_PGNO(pPage->pgno);
             goto moveto_finish;
           }
           pCellKey = sqlite3Malloc( nCell+18 );
@@ -5706,7 +5716,7 @@ static int allocateBtreePage(
       }
       testcase( iTrunk==mxPage );
       if( iTrunk>mxPage || nSearch++ > n ){
-        rc = SQLITE_CORRUPT_BKPT;
+        rc = SQLITE_CORRUPT_PGNO(pPrevTrunk->pgno);
       }else{
         rc = btreeGetUnusedPage(pBt, iTrunk, &pTrunk, 0);
       }
@@ -5735,7 +5745,7 @@ static int allocateBtreePage(
         TRACE(("ALLOCATE: %d trunk - %d free pages left\n", *pPgno, n-1));
       }else if( k>(u32)(pBt->usableSize/4 - 2) ){
         /* Value of k is out of range.  Database corruption */
-        rc = SQLITE_CORRUPT_BKPT;
+        rc = SQLITE_CORRUPT_PGNO(iTrunk);
         goto end_allocate_page;
 #ifndef SQLITE_OMIT_AUTOVACUUM
       }else if( searchList 
@@ -5769,7 +5779,7 @@ static int allocateBtreePage(
           MemPage *pNewTrunk;
           Pgno iNewTrunk = get4byte(&pTrunk->aData[8]);
           if( iNewTrunk>mxPage ){ 
-            rc = SQLITE_CORRUPT_BKPT;
+            rc = SQLITE_CORRUPT_PGNO(iTrunk);
             goto end_allocate_page;
           }
           testcase( iNewTrunk==mxPage );
@@ -5834,7 +5844,7 @@ static int allocateBtreePage(
         iPage = get4byte(&aData[8+closest*4]);
         testcase( iPage==mxPage );
         if( iPage>mxPage ){
-          rc = SQLITE_CORRUPT_BKPT;
+          rc = SQLITE_CORRUPT_PGNO(iTrunk);
           goto end_allocate_page;
         }
         testcase( iPage==mxPage );
@@ -6104,7 +6114,8 @@ static int clearCell(
     return SQLITE_OK;  /* No overflow pages. Return without doing anything */
   }
   if( pCell+pInfo->nSize-1 > pPage->aData+pPage->maskPage ){
-    return SQLITE_CORRUPT_BKPT;  /* Cell extends past end of page */
+    /* Cell extends past end of page */
+    return SQLITE_CORRUPT_PGNO(pPage->pgno);
   }
   ovflPgno = get4byte(pCell + pInfo->nSize - 4);
   assert( pBt->usableSize > 4 );

@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_DEFAULT_ROWEST\scompile-time\soption\sfor\schanging\sthe\sestimated\nnumber\sof\srows\sin\stables\sthat\slack\ssqlite_stat1\sentries.
-D 2017-06-06T18:20:43.972
+C In\sSQLITE_DEBUG\smode,\sattempt\sto\slog\sthe\spage\snumber\sof\sthe\sdatabase\sthat\ncontained\sthe\sproblem\swhen\sSQLITE_CORRUPT\serrors\sare\sseen.
+D 2017-06-07T22:32:59.780
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -348,7 +348,7 @@ F src/auth.c 79f96c6f33bf0e5da8d1c282cee5ebb1852bb8a6ccca3e485d7c459b035d9c3c
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c 8ac6ae352c63998228718b5f11faa0da2676710898a47284de78e96cb41dca35
+F src/btree.c a13e516b945c82536ea821c6d68976dd95995ecc93a0843739ba2726654848de
 F src/btree.h 3edc5329bc59534d2d15b4f069a9f54b779a7e51289e98fa481ae3c0e526a5ca
 F src/btreeInt.h a392d353104b4add58b4a59cb185f5d5693dde832c565b77d8d4c343ed98f610
 F src/build.c 88a8cdc11d1c081ed565aa3e795bdf9160f4556463b4c4555e9860b59dd80340
@@ -370,7 +370,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 974499a3999d339a4c1ba8ef129a988d9f136b3789e423808b38cdc19d28adbe
 F src/legacy.c e88ed13c2d531decde75d42c2e35623fb9ce3cb0
 F src/loadext.c a72909474dadce771d3669bf84bf689424f6f87d471fee898589c3ef9b2acfd9
-F src/main.c 1054e4dbb4fcca84246ed48b35164a996f5a52daa56c275157a5d583c0e2cd00
+F src/main.c 65eb6093de90ab4372f2ae0d0cd0acfe718ea26ef0145435e0d9eecb854c9d7e
 F src/malloc.c e20bb2b48abec52d3faf01cce12e8b4f95973755fafec98d45162dfdab111978
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -410,7 +410,7 @@ F src/shell.c eca7e7fe8dae859aa56e462c5b35c735976fa1e5e1d7a90fd5a32aa4615c1825
 F src/sqlite.h.in ad7f4101e3613b1134d1ad6c61ff385424ffac0d542627fd31f26667fdd91c94
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 58fd0676d3111d02e62e5a35992a7d3da5d3f88753acc174f2d37b774fbbdd28
-F src/sqliteInt.h 82800fc19fbdeb35a0773c5d727da717652f4c421d191d2460219c7aab953462
+F src/sqliteInt.h f90955604b4d8e5a1f672bd230978640be89e0bbbf833d352cf4945ce3a799df
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -1582,7 +1582,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9eea3670e77e2f831b7c00ae2d65a5583f9cad626d9ab286f92582ef29ecd4e3
-R de51f7d1edc1449c33df63cd75f44fee
+P 234ede26e30f20e6c33002739ed8be35dbfb5c77700bd857ff31072b9b7df347
+R c04dd611e76a5178eefb81efcaf86a63
 U drh
-Z db2906277b1736b6942b7d17ecf808c4
+Z c18dd5659d184ab0c25e4eb565cb031f
