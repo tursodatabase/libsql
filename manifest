@@ -1,5 +1,5 @@
-C Merge\s3.19.3\schanges\swith\sthis\sbranch.
-D 2017-06-08T16:10:41.913
+C Update\sthe\srecent\sauto-vacuum\sfix\sso\sthat\sit\sworks\sfor\sthe\sin-memory\npointer-map\sstructure\sused\sby\sthis\sbranch.
+D 2017-06-08T16:23:55.894
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -350,7 +350,7 @@ F src/auth.c 79f96c6f33bf0e5da8d1c282cee5ebb1852bb8a6ccca3e485d7c459b035d9c3c
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c c77b7f5759e413c1c8b53267d633c952e66db79c1171964c7e24c0f92f5019cf
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c 95dd5106cb3ee133610b8fab3d1ab1d76ae7f9ef3fae11d023836dc3c672d2b7
+F src/btree.c 1394abd656dab0f62cfe7060be026451bb7fb75a2c5f5a2ea95484264d105614
 F src/btree.h 14e99cc2b666beb60322173c761d16b668ec2e07c18bbb74e8a49fe85946f8a0
 F src/btreeInt.h 7429915fc8f51bbd78b7ac023aa4afbe5b9660fc1e6970f144b07540a34a4623
 F src/build.c ba3f389668754c407805bbc5f8ab140f063ba6b04a6a86f63006b63b3c7319a8
@@ -612,7 +612,7 @@ F test/concfault.test 500f17c3fcfe7705114422bcc6ddd3c740001a43
 F test/concurrent.test 3eb5e6a911dc6ff72e3a679f563e683b436f6c701e6e1d6050173df2b8448d6b
 F test/concurrent2.test 9dfbeb0a323733fe1d13443371734bb94a674dbf777f464365475903873111f8
 F test/concurrent3.test f4af1cf1220908c6dd5694923621c19e999b78cd997e2646285f08a52bcb4170
-F test/concurrent4.test 989c6575225f9c4ef5d2392a9b9d0405665567c7501a3e44129598794d9b1b5f
+F test/concurrent4.test 653de3066911acfb9dcf3802bf4f1981b392b86c11f75e2c38ed1abfdd162293
 F test/concurrent5.test d5d7d9d404a9b4502464fc097c1fc5c3012bb4f1b063fae7ad707ca983fc86c5
 F test/conflict.test 029faa2d81a0d1cafb5f88614beb663d972c01db
 F test/conflict2.test bb0b94cf7196c64a3cbd815c66d3ee98c2fecd9c
@@ -1591,7 +1591,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0f59bb94d5e8e16a47c53ef0d6138a35c87230ad384b58008e8e7127780446d8 0ee482a1e0eae22e08edc8978c9733a96603d4509645f348ebf55b579e89636b
-R f7ed8b840e4f80adc0a45856c6802bc0
+P e2d38d51a9cf1c3dfef742507ec76e3d35853bd09b0d09bf2d404c4b036a184d
+R b03e2900f702f1d9793bda1b10355a73
 U dan
-Z 8407296cfc564f67ed28c7f44ba3d184
+Z f6db321d9b4a7908768625f45dff8451

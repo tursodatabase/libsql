@@ -84,6 +84,22 @@ do_multiclient_test tn {
   } {ok}
 }
 
+reset_db
+do_execsql_test 3.1 {
+  PRAGMA page_size = 1024;
+  PRAGMA journal_mode = wal;
+  CREATE TABLE t2(x);
+  INSERT INTO t2 VALUES(randomblob(5000));
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+  INSERT INTO t1 VALUES(25, randomblob(104));
+  DELETE FROM t2;
+} {wal}
+
+do_execsql_test 3.2 {
+  BEGIN CONCURRENT;
+    REPLACE INTO t1 VALUES(25, randomblob(1117));
+  COMMIT;
+} {}
 
 finish_test
 

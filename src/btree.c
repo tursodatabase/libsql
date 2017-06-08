@@ -8638,7 +8638,7 @@ int sqlite3BtreeInsert(
     }
     rc = clearCell(pPage, oldCell, &info);
     if( info.nSize==szNew && info.nLocal==info.nPayload 
-     && (!ISAUTOVACUUM || szNew<pPage->minLocal)
+     && (!REQUIRE_PTRMAP || szNew<pPage->minLocal)
     ){
       /* Overwrite the old cell with the new if they are the same size.
       ** We could also try to do this if the old cell is smaller, then add
