@@ -1,5 +1,5 @@
-C Ensure\spointer\smap\sentries\sare\salways\sadded\swhen\sa\srow\sthat\sdoes\suse\soverflow\npages\sreplaces\sone\sthat\sdoes\snot\sin\san\sauto-vacuum\sdatabase.\sFix\sfor\n[fda22108].
-D 2017-06-08T11:14:08.300
+C Add\sa\stestcase()\sto\sconfirm\sthat\san\sOOM\son\ssqlite3DbStrNDup()\sis\shandled\ncorrectly\sin\strigger.c.
+D 2017-06-08T14:35:21.062
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -467,7 +467,7 @@ F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 1003d6d90c6783206c711f0a9397656fa5b055209f4d092caa43bb3bf5215db5
 F src/treeview.c 6cf8d7fe9e63fae57dad1bb57f6615e14eac0c527e43d868e805042cae8ed1f7
-F src/trigger.c c9f0810043b265724fdb1bdd466894f984dfc182
+F src/trigger.c d1cae560bfacc8bfb3a072d73658245c1714c0389097da69b4cb23877a082d7e
 F src/update.c c443935c652af9365e033f756550b5032d02e1b06eb2cb890ed7511ae0c051dc
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c fc081ec6f63448dcd80d3dfad35baecfa104823254a815b081a4d9fe76e1db23
@@ -1582,7 +1582,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e39795d7d798d5249c7bd2a0f6ff891b455f4300a3d638c39a4668323b367666
-R df6ecf22774522a8ca211a64886fcf88
-U dan
-Z 8e745574a334e43b69c34d19bbabd56b
+P b30dfba811cb531b09ff2e71a1a18ed53c816cb39155dd52ca3e2701425fe17b
+R 8b6275f7a74215887d823a2acf4a12c1
+U drh
+Z afbd99381bc167bd1f1d6007c35f0942
