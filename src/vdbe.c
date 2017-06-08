@@ -4137,10 +4137,12 @@ case OP_Found: {        /* jump, in3 */
     pIdxKey = &r;
     pFree = 0;
   }else{
+    assert( pIn3->flags & MEM_Blob );
+    rc = ExpandBlob(pIn3);
+    assert( rc==SQLITE_OK || rc==SQLITE_NOMEM );
+    if( rc ) goto no_mem;
     pFree = pIdxKey = sqlite3VdbeAllocUnpackedRecord(pC->pKeyInfo);
     if( pIdxKey==0 ) goto no_mem;
-    assert( pIn3->flags & MEM_Blob );
-    (void)ExpandBlob(pIn3);
     sqlite3VdbeRecordUnpack(pC->pKeyInfo, pIn3->n, pIn3->z, pIdxKey);
   }
   pIdxKey->default_rc = 0;

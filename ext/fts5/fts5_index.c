@@ -5093,7 +5093,7 @@ static void fts5SetupPrefixIter(
     if( pData ){
       pData->p = (u8*)&pData[1];
       pData->nn = pData->szLeaf = doclist.n;
-      memcpy(pData->p, doclist.p, doclist.n);
+      if( doclist.n ) memcpy(pData->p, doclist.p, doclist.n);
       fts5MultiIterNew2(p, pData, bDesc, ppIter);
     }
     fts5BufferFree(&doclist);
@@ -5332,7 +5332,7 @@ int sqlite3Fts5IndexQuery(
 
   if( sqlite3Fts5BufferSize(&p->rc, &buf, nToken+1)==0 ){
     int iIdx = 0;                 /* Index to search */
-    memcpy(&buf.p[1], pToken, nToken);
+    if( nToken ) memcpy(&buf.p[1], pToken, nToken);
 
     /* Figure out which index to search and set iIdx accordingly. If this
     ** is a prefix query for which there is no prefix index, set iIdx to
@@ -5381,7 +5381,7 @@ int sqlite3Fts5IndexQuery(
     }
 
     if( p->rc ){
-      sqlite3Fts5IterClose(&pRet->base);
+      sqlite3Fts5IterClose((Fts5IndexIter*)pRet);
       pRet = 0;
       fts5CloseReader(p);
     }

@@ -1,5 +1,5 @@
-C Extend\seven\sfurther\sthe\slogging\sdesigned\sto\sfind\sproblems\sin\sthe\spointer-map\nstructure.\sCall\sabort()\sto\sdump\sa\score\sas\ssoon\sas\ssuch\sa\sproblem\sis\sseen.
-D 2017-06-02T09:31:27.185
+C Merge\schanges\sfor\sversion\s3.19.0\swith\sthis\sbranch.
+D 2017-06-08T15:54:02.114
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -10,7 +10,7 @@ F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
-F autoconf/Makefile.am 1a47d071e3d5435f8f7ebff7eb6703848bbd65d4
+F autoconf/Makefile.am ed95854f5df64c1d0a447d8ecb55edc67e3c32f79f597c3a4870f9ac51698275
 F autoconf/Makefile.msc 1014be616b420a5f48611d21b62ca2f50ec97ee795087ecb8a4d6bf6375ba11d
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/README.txt 4f04b0819303aabaa35fff5f7b257fb0c1ef95f1
@@ -101,11 +101,11 @@ F ext/fts5/extract_api_docs.tcl a36e54ec777172ddd3f9a88daf593b00848368e0
 F ext/fts5/fts5.h 62f3e33ceeb9a428db139f9c012186b371da1cc7
 F ext/fts5/fts5Int.h 15e7514b46a845937d7c62e5c69e935091f0dbb72eb61aa4c8bcfbd39fdea158
 F ext/fts5/fts5_aux.c 67acf8d51723cf28ffc3828210ba662df4b8d267
-F ext/fts5/fts5_buffer.c 4c1502d4c956cd092c89ce4480867f9d8bf325cd
+F ext/fts5/fts5_buffer.c 1dd1ec0446b3acfc2d7d407eb894762a461613e2695273f48e449bfd13e973ff
 F ext/fts5/fts5_config.c 5af9c360e99669d29f06492c370892394aba0857
 F ext/fts5/fts5_expr.c f2825f714d91bbe62ab5820aee9ad12e0c94205b2a01725eaa9072415ae9ff1c
-F ext/fts5/fts5_hash.c 880998e596b60f078348d48732ca4ad9a90caad2
-F ext/fts5/fts5_index.c 9ce10106f42f8b84278a8ea859940224e2af5f0cc882f909364469f6f52769cb
+F ext/fts5/fts5_hash.c 534d5591f479c0999543689122ad6952823bc7c85273a0ff4f7f91d9f914a54b
+F ext/fts5/fts5_index.c cdceac47287c66500214ee946ca871ac48027a82a0ca82177c1c6af19f181ca0
 F ext/fts5/fts5_main.c 1ba0e7806886c1bc16e20d0dde1c2b535d1aeb98cbbb937c4c3e064af5ac6f03
 F ext/fts5/fts5_storage.c 7750986004f3f0c94619a85ecb5dd6cbef53e5e3853488e8a906c269d4d11db6
 F ext/fts5/fts5_tcl.c 4a901f00c8553740dba63511603f5527d741c26a
@@ -474,7 +474,7 @@ F src/update.c c443935c652af9365e033f756550b5032d02e1b06eb2cb890ed7511ae0c051dc
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c fc081ec6f63448dcd80d3dfad35baecfa104823254a815b081a4d9fe76e1db23
 F src/vacuum.c 8aa1db0b7052269890ac03089ed030eefa88480897915f727703ca74d0676380
-F src/vdbe.c bf4d2b2953c50e8432a7c544a835cd74a358465072e130f3b8e6ef6657759244
+F src/vdbe.c 3cffe0734248764927b3fe6f0343d550bf678612f221daac24da8366a1d5c96d
 F src/vdbe.h f7d1456e28875c2dcb964056589b5b7149ab7edf39edeca801596a39bb3d3848
 F src/vdbeInt.h 1ecdacc1322fdd3241ec30c32a480e328a6f864e532dc53fae8e0ab68121aebf
 F src/vdbeapi.c dc904b3c5e459727993c2421e653e29d63223846d129fae98adc782b0a996481
@@ -1523,7 +1523,7 @@ F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
 F tool/logest.c 11346aa019e2e77a00902aa7d0cabd27bd2e8cca
 F tool/max-limits.c cbb635fbb37ae4d05f240bfb5b5270bb63c54439
-F tool/mkautoconfamal.sh e855df211ecbcc7131dee817110ff386cfb112f7
+F tool/mkautoconfamal.sh ab527af92dc684028e0d1db3fa6241787fae78987b99e5bbac7eb87e1970b8e5
 F tool/mkkeywordhash.c f5ecfd09b56b8badc644554ed38c86056152b893
 F tool/mkmsvcmin.tcl cbd93f1cfa3a0a9ae56fc958510aa3fc3ac65e29cb111716199e3d0e66eefaa4
 F tool/mkopcodec.tcl d1b6362bd3aa80d5520d4d6f3765badf01f6c43c
@@ -1568,7 +1568,7 @@ F tool/varint.c 5d94cb5003db9dbbcbcc5df08d66f16071aee003
 F tool/vdbe-compress.tcl 5926c71f9c12d2ab73ef35c29376e756eb68361c
 F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
-F tool/warnings.sh d9ded5274b3cb947e98e70d587f71d6263f803b5
+F tool/warnings.sh 8a4acea31e0f9c562949a2d767329533c0930d699ea19c6704c0ca0aa9154068
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F vsixtest/App.xaml b76d3b48860e7454775c47ea38ffea9c4abe3e85
 F vsixtest/App.xaml.cpp c465147f50871165c60ca16955219f6c5812d6d8
@@ -1591,7 +1591,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f7e3e2bc88f110d9282ce5d2fa58580c585faeb57cb707253f05001e5f4bd91b
-R 0cc4cace2096d9ccd320cd1d9a64685a
+P f131677dcb4937e0dd62626afa91756aa28079e92acd6e9e127f6f676aa334f9 28a94eb282822cad1d1420f2dad6bf65e4b8b9062eda4a0b9ee8270b2c608e40
+R 50aadce44e176f60760b761a01cd33b8
 U dan
-Z 40b70ad4ffb9dd03aeca52705a79b953
+Z b31d1e2c7344d42e8096fbb8a9c0e239

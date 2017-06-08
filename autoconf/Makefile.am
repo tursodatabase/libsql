@@ -12,7 +12,7 @@ sqlite3_LDADD = @EXTRA_SHELL_OBJ@ @READLINE_LIBS@
 sqlite3_DEPENDENCIES = @EXTRA_SHELL_OBJ@
 sqlite3_CFLAGS = $(AM_CFLAGS) -DSQLITE_ENABLE_EXPLAIN_COMMENTS
 
-include_HEADERS = sqlite3.h sqlite3ext.h
+include_HEADERS = sqlite3.h sqlite3ext.h msvc.h
 
 EXTRA_DIST = sqlite3.1 tea Makefile.msc sqlite3.rc README.txt Replace.cs
 pkgconfigdir = ${libdir}/pkgconfig
