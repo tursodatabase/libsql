@@ -1,10 +1,10 @@
-C Ensure\spointer\smap\sentries\sare\salways\sadded\swhen\sa\srow\sthat\sdoes\suse\soverflow\npages\sreplaces\sone\sthat\sdoes\snot\sin\san\sauto-vacuum\sdatabase.\sFix\sfor\n[fda22108].
-D 2017-06-08T11:26:13.795
+C Increase\sthe\sversion\snumber\sto\s3.19.3.
+D 2017-06-08T11:27:05.632
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
 F README.md 2b15fae33852f2f53996774c21fb41e1d94181c4401a0e43ac93e11f2cc901b9
-F VERSION 10a1d396b8a19db3c3cc6c7b909be2cf7ad97c517b4f00af363506fd85aab713
+F VERSION 6035ef7e627075d9a9194304c3a07acb2736a0abd0dd980a7ea75a3a45719e86
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
@@ -30,7 +30,7 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 6376abec766e9a0785178b1823b5a587e9f1ccbc
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 1b0309062481dbde6278cb870f1680c81c65202d0bfde469f81c7e22397d6f23 x
+F configure 51470e605be2083c8ac6e7973a1860ead8be59562f2121197216b70caa0d8b9d x
 F configure.ac 901e8db2c211e8b655e51ee24f2b8faa33407acde87effc47f70380f3b04e452
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html b5a3c07d33ecb8e019ce8f7660fe2dbbad9d7977
@@ -1580,8 +1580,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P edb4e819b0c058c7d74d27ebd14cc5ceb2bad6a6144a486a970182b7afe3f8b9
-Q +b30dfba811cb531b09ff2e71a1a18ed53c816cb39155dd52ca3e2701425fe17b
-R f3c8c8383c25bcc4e304081dde6d0ab0
+P 9478106ca963e3ae5cfe59da40301c5a0a07494d03e656b5eb10ab45e441b870
+R 28460bdf0816a2fdb51bf300e77b3848
 U drh
-Z f97aca8e1bd3663fbf75118ceaa954dd
+Z 52bfa7329c4a7a037c3124284cb2a054
