@@ -1,5 +1,5 @@
-C In\sSQLITE_DEBUG\smode,\sattempt\sto\slog\sthe\spage\snumber\sof\sthe\sdatabase\sthat\ncontained\sthe\sproblem\swhen\sSQLITE_CORRUPT\serrors\sare\sseen.
-D 2017-06-07T22:32:59.780
+C Ensure\spointer\smap\sentries\sare\salways\sadded\swhen\sa\srow\sthat\sdoes\suse\soverflow\npages\sreplaces\sone\sthat\sdoes\snot\sin\san\sauto-vacuum\sdatabase.\sFix\sfor\n[fda22108].
+D 2017-06-08T11:14:08.300
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -348,7 +348,7 @@ F src/auth.c 79f96c6f33bf0e5da8d1c282cee5ebb1852bb8a6ccca3e485d7c459b035d9c3c
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c a13e516b945c82536ea821c6d68976dd95995ecc93a0843739ba2726654848de
+F src/btree.c 896b823adae998afb0e87555c7d24c04f9536adb189184e295335f93311287f6
 F src/btree.h 3edc5329bc59534d2d15b4f069a9f54b779a7e51289e98fa481ae3c0e526a5ca
 F src/btreeInt.h a392d353104b4add58b4a59cb185f5d5693dde832c565b77d8d4c343ed98f610
 F src/build.c 88a8cdc11d1c081ed565aa3e795bdf9160f4556463b4c4555e9860b59dd80340
@@ -539,7 +539,7 @@ F test/autoindex2.test 12ef578928102baaa0dc23ad397601a2f4ecb0df
 F test/autoindex3.test a3be0d1a53a7d2edff208a5e442312957047e972
 F test/autoindex4.test 49d3cd791a9baa16fb461d7ea3de80d019a819cf
 F test/autoindex5.test 96f084a5e6024ea07cace5888df3223f3ea86990
-F test/autovacuum.test 92c24eedbdb68e49f3fb71f26f9ce6d8988cac15
+F test/autovacuum.test 0831cd34e14695d297187f7f6519265e3121c5b0a1720e548e86829e796129e9
 F test/autovacuum_ioerr2.test 8a367b224183ad801e0e24dcb7d1501f45f244b4
 F test/avtrans.test 0252654f4295ddda3b2cce0e894812259e655a85
 F test/backcompat.test 3e64cedda754c778ef6bbe417b6e7a295e662a4d
@@ -1582,7 +1582,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 234ede26e30f20e6c33002739ed8be35dbfb5c77700bd857ff31072b9b7df347
-R c04dd611e76a5178eefb81efcaf86a63
-U drh
-Z c18dd5659d184ab0c25e4eb565cb031f
+P e39795d7d798d5249c7bd2a0f6ff891b455f4300a3d638c39a4668323b367666
+R df6ecf22774522a8ca211a64886fcf88
+U dan
+Z 8e745574a334e43b69c34d19bbabd56b
