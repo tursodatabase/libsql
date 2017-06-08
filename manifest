@@ -1,10 +1,10 @@
-C Merge\sall\sfixes\sfrom\sthe\s3.19.2\srelease.
-D 2017-05-25T17:36:33.543
+C Merge\sthe\sauto_vacuum\sbug\sfix\sand\sall\sother\schanges\sfrom\sthe\s3.19.3\srelease.
+D 2017-06-08T14:41:05.866
 F Makefile.in 227347646e289e3b016ebb7a391ad6ed4ab56525834d56d47d1a83b8d97d6989
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc fb28c0304f8a14c5ce7d4bde9fea1c903f644b49e78ebd9976ab2a1f0eb8afb5
 F README.md 2b15fae33852f2f53996774c21fb41e1d94181c4401a0e43ac93e11f2cc901b9
-F VERSION 10a1d396b8a19db3c3cc6c7b909be2cf7ad97c517b4f00af363506fd85aab713
+F VERSION 6035ef7e627075d9a9194304c3a07acb2736a0abd0dd980a7ea75a3a45719e86
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
@@ -30,8 +30,8 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 6376abec766e9a0785178b1823b5a587e9f1ccbc
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 1b0309062481dbde6278cb870f1680c81c65202d0bfde469f81c7e22397d6f23 x
-F configure.ac 901e8db2c211e8b655e51ee24f2b8faa33407acde87effc47f70380f3b04e452
+F configure 1a94740b2ac20f3b865689d32746ade6eee7974282170b0ba2b019d310917ec7 x
+F configure.ac 13f45f02e6c51dd0e347315b5401c3f047712b7f79b7f35619115c23755afcff
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html b5a3c07d33ecb8e019ce8f7660fe2dbbad9d7977
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
@@ -349,7 +349,7 @@ F src/auth.c 79f96c6f33bf0e5da8d1c282cee5ebb1852bb8a6ccca3e485d7c459b035d9c3c
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c 9d5f1346945b4d94715fb990e7243f583a3f174606d812fa179b14cdc72d0e86
+F src/btree.c 4f095b81d7ee908a08cdffe0bdc8ca52c802f3bf739209bb4a50b48745d473f6
 F src/btree.h 80f518c0788be6cec8d9f8e13bd8e380df299d2b5e4ac340dc887b0642647cfc
 F src/btreeInt.h a392d353104b4add58b4a59cb185f5d5693dde832c565b77d8d4c343ed98f610
 F src/build.c 4026a9c554b233e50c5e9ad46963e676cf54dd2306d952aa1eaa07a1bc9ce14f
@@ -541,7 +541,7 @@ F test/autoindex2.test 12ef578928102baaa0dc23ad397601a2f4ecb0df
 F test/autoindex3.test a3be0d1a53a7d2edff208a5e442312957047e972
 F test/autoindex4.test 49d3cd791a9baa16fb461d7ea3de80d019a819cf
 F test/autoindex5.test 96f084a5e6024ea07cace5888df3223f3ea86990
-F test/autovacuum.test 92c24eedbdb68e49f3fb71f26f9ce6d8988cac15
+F test/autovacuum.test 0831cd34e14695d297187f7f6519265e3121c5b0a1720e548e86829e796129e9
 F test/autovacuum_ioerr2.test 8a367b224183ad801e0e24dcb7d1501f45f244b4
 F test/avtrans.test 0252654f4295ddda3b2cce0e894812259e655a85
 F test/backcompat.test 3e64cedda754c778ef6bbe417b6e7a295e662a4d
@@ -1585,7 +1585,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bbd2d0e1400984c9fabb4df015981c09ad172139ffa33db5132951d4f1f6fc96 edb4e819b0c058c7d74d27ebd14cc5ceb2bad6a6144a486a970182b7afe3f8b9
-R 8f7f4a2a67f7b616427682df9786aa3e
+P 12964240f1e497e6f02e4a87bf3eff75c807020108c3de83977264cc66188b8d 0ee482a1e0eae22e08edc8978c9733a96603d4509645f348ebf55b579e89636b
+R 3bf077ac2565718a31066a66ee1b255d
 U drh
-Z e4355aaf22b79f91f5965efabd280186
+Z bfffc8e100f060437c630f2a98328854
