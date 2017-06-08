@@ -8174,12 +8174,18 @@ int sqlite3BtreeInsert(
       memcpy(newCell, oldCell, 4);
     }
     rc = clearCell(pPage, oldCell, &info);
-    if( info.nSize==szNew && info.nLocal==info.nPayload ){
+    if( info.nSize==szNew && info.nLocal==info.nPayload 
+     && (!ISAUTOVACUUM || szNew<pPage->minLocal)
+    ){
       /* Overwrite the old cell with the new if they are the same size.
       ** We could also try to do this if the old cell is smaller, then add
       ** the leftover space to the free list.  But experiments show that
       ** doing that is no faster then skipping this optimization and just
-      ** calling dropCell() and insertCell(). */
+      ** calling dropCell() and insertCell(). 
+      **
+      ** This optimization cannot be used on an autovacuum database if the
+      ** new entry uses overflow pages, as the insertCell() call below is
+      ** necessary to add the PTRMAP_OVERFLOW1 pointer-map entry.  */
       assert( rc==SQLITE_OK ); /* clearCell never fails when nLocal==nPayload */
       if( oldCell+szNew > pPage->aDataEnd ) return SQLITE_CORRUPT_BKPT;
       memcpy(oldCell, newCell, szNew);

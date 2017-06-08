@@ -1,5 +1,5 @@
-C Version\s3.19.2
-D 2017-05-25T16:50:27.649
+C Ensure\spointer\smap\sentries\sare\salways\sadded\swhen\sa\srow\sthat\sdoes\suse\soverflow\npages\sreplaces\sone\sthat\sdoes\snot\sin\san\sauto-vacuum\sdatabase.\sFix\sfor\n[fda22108].
+D 2017-06-08T11:26:13.795
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -346,7 +346,7 @@ F src/auth.c 79f96c6f33bf0e5da8d1c282cee5ebb1852bb8a6ccca3e485d7c459b035d9c3c
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c 8c1fd4cfa2b0bf021386e0a1f4e30b64eea7a2c1bc2e0c3e5901a626b1ab6aa9
+F src/btree.c de57bf3f205082eb4ad8c923af7ecd1d10c4f15656f6a38038a3bd9b8ac3fc2a
 F src/btree.h 80f518c0788be6cec8d9f8e13bd8e380df299d2b5e4ac340dc887b0642647cfc
 F src/btreeInt.h a392d353104b4add58b4a59cb185f5d5693dde832c565b77d8d4c343ed98f610
 F src/build.c 4026a9c554b233e50c5e9ad46963e676cf54dd2306d952aa1eaa07a1bc9ce14f
@@ -537,7 +537,7 @@ F test/autoindex2.test 12ef578928102baaa0dc23ad397601a2f4ecb0df
 F test/autoindex3.test a3be0d1a53a7d2edff208a5e442312957047e972
 F test/autoindex4.test 49d3cd791a9baa16fb461d7ea3de80d019a819cf
 F test/autoindex5.test 96f084a5e6024ea07cace5888df3223f3ea86990
-F test/autovacuum.test 92c24eedbdb68e49f3fb71f26f9ce6d8988cac15
+F test/autovacuum.test 0831cd34e14695d297187f7f6519265e3121c5b0a1720e548e86829e796129e9
 F test/autovacuum_ioerr2.test 8a367b224183ad801e0e24dcb7d1501f45f244b4
 F test/avtrans.test 0252654f4295ddda3b2cce0e894812259e655a85
 F test/backcompat.test 3e64cedda754c778ef6bbe417b6e7a295e662a4d
@@ -1580,10 +1580,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1a074c8a2bc0b28918ef905339d11a21d30101b4ea8c06c8b3faca7d17237538
-R f4b3c258ec4a8c30fd1362752bfd9b5c
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.19.2 *
+P edb4e819b0c058c7d74d27ebd14cc5ceb2bad6a6144a486a970182b7afe3f8b9
+Q +b30dfba811cb531b09ff2e71a1a18ed53c816cb39155dd52ca3e2701425fe17b
+R f3c8c8383c25bcc4e304081dde6d0ab0
 U drh
-Z 1c4850e8eeff11c8d32e6493160f83cd
+Z f97aca8e1bd3663fbf75118ceaa954dd
