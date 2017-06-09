@@ -5668,7 +5668,9 @@ SQLITE_DEPRECATED void sqlite3_soft_heap_limit(int N);
 ** ^If the column-name parameter to sqlite3_table_column_metadata() is a
 ** NULL pointer, then this routine simply checks for the existence of the
 ** table and returns SQLITE_OK if the table exists and SQLITE_ERROR if it
-** does not.
+** does not.  If the table name parameter T in a call to
+** sqlite3_table_column_metadata(X,D,T,C,...) is NULL then the result is
+** undefined behavior.
 **
 ** ^The column is identified by the second, third and fourth parameters to
 ** this function. ^(The second parameter is either the name of the database
