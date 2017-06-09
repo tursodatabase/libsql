@@ -18,7 +18,6 @@ appveyor = { repository = "jgallagher/rusqlite" }
 name = "rusqlite"
 
 [features]
-default = ["backup", "blob", "chrono", "functions", "load_extension", "serde_json", "trace"]
 load_extension = []
 backup = ["libsqlite3-sys/min_sqlite_version_3_6_11"]
 blob = ["libsqlite3-sys/min_sqlite_version_3_7_4"]
@@ -50,3 +49,9 @@ harness = false
 
 [[test]]
 name = "deny_single_threaded_sqlite_config"
+
+[package.metadata.docs.rs]
+features = [ "backup", "blob", "chrono", "functions", "load_extension", "serde_json", "trace" ]
+all-features = false
+no-default-features = true
+default-target = "x86_64-unknown-linux-gnu"
