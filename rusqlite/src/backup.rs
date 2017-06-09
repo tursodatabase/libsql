@@ -18,7 +18,7 @@
 //! # use std::path::Path;
 //! # use std::time;
 //!
-//! fn backupDb<P: AsRef<Path>>(src: &Connection, dst: P, progress: fn(backup::Progress))
+//! fn backup_db<P: AsRef<Path>>(src: &Connection, dst: P, progress: fn(backup::Progress))
 //!     -> Result<()> {
 //!     let mut dst = try!(Connection::open(dst));
 //!     let backup = try!(backup::Backup::new(src, &mut dst));
@@ -30,7 +30,7 @@ use std::marker::PhantomData;
 use std::path::Path;
 use std::ptr;
 
-use libc::c_int;
+use std::os::raw::c_int;
 use std::thread;
 use std::time::Duration;
 
@@ -206,10 +206,10 @@ impl<'a, 'b> Backup<'a, 'b> {
         };
 
         Ok(Backup {
-            phantom_from: PhantomData,
-            phantom_to: PhantomData,
-            b: b,
-        })
+               phantom_from: PhantomData,
+               phantom_to: PhantomData,
+               b: b,
+           })
     }
 
     /// Gets the progress of the backup as of the last call to `step`.

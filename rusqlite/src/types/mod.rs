@@ -17,19 +17,17 @@
 //! truncates timespecs to the nearest second. If you want different storage for timespecs, you can
 //! use a newtype. For example, to store timespecs as `f64`s:
 //!
-//! ```rust,ignore
+//! ```rust
 //! extern crate rusqlite;
-//! extern crate libc;
+//! extern crate time;
 //!
-//! use rusqlite::types::{FromSql, ToSql, sqlite3_stmt};
+//! use rusqlite::types::{FromSql, FromSqlResult, ValueRef, ToSql, ToSqlOutput};
 //! use rusqlite::{Result};
-//! use libc::c_int;
-//! use time;
 //!
 //! pub struct TimespecSql(pub time::Timespec);
 //!
 //! impl FromSql for TimespecSql {
-//!     fn column_result(value: ValueRef) -> Result<Self> {
+//!     fn column_result(value: ValueRef) -> FromSqlResult<Self> {
 //!         f64::column_result(value).map(|as_f64| {
 //!             TimespecSql(time::Timespec{ sec: as_f64.trunc() as i64,
 //!                                         nsec: (as_f64.fract() * 1.0e9) as i32 })
@@ -38,24 +36,29 @@
 //! }
 //!
 //! impl ToSql for TimespecSql {
-//!     unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
+//!     fn to_sql(&self) -> Result<ToSqlOutput> {
 //!         let TimespecSql(ts) = *self;
 //!         let as_f64 = ts.sec as f64 + (ts.nsec as f64) / 1.0e9;
-//!         as_f64.bind_parameter(stmt, col)
+//!         Ok(as_f64.into())
 //!     }
 //! }
+//!
+//! # // Prevent this doc test from being wrapped in a `fn main()` so that it will compile.
+//! # fn main() {}
 //! ```
 //!
 //! `ToSql` and `FromSql` are also implemented for `Option<T>` where `T` implements `ToSql` or
 //! `FromSql` for the cases where you want to know if a value was NULL (which gets translated to
 //! `None`).
 
-pub use ffi::sqlite3_stmt;
-
-pub use self::from_sql::FromSql;
-pub use self::to_sql::ToSql;
+pub use self::from_sql::{FromSql, FromSqlError, FromSqlResult};
+pub use self::to_sql::{ToSql, ToSqlOutput};
+pub use self::value::Value;
 pub use self::value_ref::ValueRef;
 
+use std::fmt;
+
+mod value;
 mod value_ref;
 mod from_sql;
 mod to_sql;
@@ -70,11 +73,10 @@ mod serde_json;
 /// ## Example
 ///
 /// ```rust,no_run
-/// # extern crate libc;
 /// # extern crate rusqlite;
 /// # use rusqlite::{Connection, Result};
 /// # use rusqlite::types::{Null};
-/// # use libc::{c_int};
+/// # use std::os::raw::{c_int};
 /// fn main() {
 /// }
 /// fn insert_null(conn: &Connection) -> Result<c_int> {
@@ -84,37 +86,41 @@ mod serde_json;
 #[derive(Copy,Clone)]
 pub struct Null;
 
-/// Owning [dynamic type value](http://sqlite.org/datatype3.html). Value's type is typically
-/// dictated by SQLite (not by the caller).
-///
-/// See [`ValueRef`](enum.ValueRef.html) for a non-owning dynamic type value.
 #[derive(Clone,Debug,PartialEq)]
-pub enum Value {
-    /// The value is a `NULL` value.
+pub enum Type {
     Null,
-    /// The value is a signed integer.
-    Integer(i64),
-    /// The value is a floating point number.
-    Real(f64),
-    /// The value is a text string.
-    Text(String),
-    /// The value is a blob of data
-    Blob(Vec<u8>),
+    Integer,
+    Real,
+    Text,
+    Blob,
+}
+
+impl fmt::Display for Type {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            Type::Null => write!(f, "Null"),
+            Type::Integer => write!(f, "Integer"),
+            Type::Real => write!(f, "Real"),
+            Type::Text => write!(f, "Text"),
+            Type::Blob => write!(f, "Blob"),
+        }
+    }
 }
 
 #[cfg(test)]
-#[cfg_attr(feature="clippy", allow(similar_names))]
 mod test {
     extern crate time;
 
     use Connection;
     use Error;
-    use libc::{c_int, c_double};
+    use std::os::raw::{c_int, c_double};
     use std::f64::EPSILON;
+    use super::Value;
 
     fn checked_memory_handle() -> Connection {
         let db = Connection::open_in_memory().unwrap();
-        db.execute_batch("CREATE TABLE foo (b BLOB, t TEXT, i INTEGER, f FLOAT, n)").unwrap();
+        db.execute_batch("CREATE TABLE foo (b BLOB, t TEXT, i INTEGER, f FLOAT, n)")
+            .unwrap();
         db
     }
 
@@ -123,9 +129,11 @@ mod test {
         let db = checked_memory_handle();
 
         let v1234 = vec![1u8, 2, 3, 4];
-        db.execute("INSERT INTO foo(b) VALUES (?)", &[&v1234]).unwrap();
+        db.execute("INSERT INTO foo(b) VALUES (?)", &[&v1234])
+            .unwrap();
 
-        let v: Vec<u8> = db.query_row("SELECT b FROM foo", &[], |r| r.get(0)).unwrap();
+        let v: Vec<u8> = db.query_row("SELECT b FROM foo", &[], |r| r.get(0))
+            .unwrap();
         assert_eq!(v, v1234);
     }
 
@@ -134,9 +142,11 @@ mod test {
         let db = checked_memory_handle();
 
         let empty = vec![];
-        db.execute("INSERT INTO foo(b) VALUES (?)", &[&empty]).unwrap();
+        db.execute("INSERT INTO foo(b) VALUES (?)", &[&empty])
+            .unwrap();
 
-        let v: Vec<u8> = db.query_row("SELECT b FROM foo", &[], |r| r.get(0)).unwrap();
+        let v: Vec<u8> = db.query_row("SELECT b FROM foo", &[], |r| r.get(0))
+            .unwrap();
         assert_eq!(v, empty);
     }
 
@@ -145,10 +155,37 @@ mod test {
         let db = checked_memory_handle();
 
         let s = "hello, world!";
-        db.execute("INSERT INTO foo(t) VALUES (?)", &[&s.to_owned()]).unwrap();
+        db.execute("INSERT INTO foo(t) VALUES (?)", &[&s])
+            .unwrap();
 
-        let from: String = db.query_row("SELECT t FROM foo", &[], |r| r.get(0)).unwrap();
+        let from: String = db.query_row("SELECT t FROM foo", &[], |r| r.get(0))
+            .unwrap();
         assert_eq!(from, s);
+    }
+
+    #[test]
+    fn test_string() {
+        let db = checked_memory_handle();
+
+        let s = "hello, world!";
+        db.execute("INSERT INTO foo(t) VALUES (?)", &[&s.to_owned()])
+            .unwrap();
+
+        let from: String = db.query_row("SELECT t FROM foo", &[], |r| r.get(0))
+            .unwrap();
+        assert_eq!(from, s);
+    }
+
+    #[test]
+    fn test_value() {
+        let db = checked_memory_handle();
+
+        db.execute("INSERT INTO foo(i) VALUES (?)", &[&Value::Integer(10)])
+            .unwrap();
+
+        assert_eq!(10i64,
+                   db.query_row::<i64, _>("SELECT i FROM foo", &[], |r| r.get(0))
+                       .unwrap());
     }
 
     #[test]
@@ -158,10 +195,13 @@ mod test {
         let s = Some("hello, world!");
         let b = Some(vec![1u8, 2, 3, 4]);
 
-        db.execute("INSERT INTO foo(t) VALUES (?)", &[&s]).unwrap();
-        db.execute("INSERT INTO foo(b) VALUES (?)", &[&b]).unwrap();
+        db.execute("INSERT INTO foo(t) VALUES (?)", &[&s])
+            .unwrap();
+        db.execute("INSERT INTO foo(b) VALUES (?)", &[&b])
+            .unwrap();
 
-        let mut stmt = db.prepare("SELECT t, b FROM foo ORDER BY ROWID ASC").unwrap();
+        let mut stmt = db.prepare("SELECT t, b FROM foo ORDER BY ROWID ASC")
+            .unwrap();
         let mut rows = stmt.query(&[]).unwrap();
 
         {
@@ -182,11 +222,10 @@ mod test {
     }
 
     #[test]
-    #[cfg_attr(feature="clippy", allow(cyclomatic_complexity))]
     fn test_mismatched_types() {
         fn is_invalid_column_type(err: Error) -> bool {
             match err {
-                Error::InvalidColumnType => true,
+                Error::InvalidColumnType(_, _) => true,
                 _ => false,
             }
         }
@@ -207,9 +246,15 @@ mod test {
         assert_eq!("text", row.get_checked::<i32, String>(1).unwrap());
         assert_eq!(1, row.get_checked::<i32, c_int>(2).unwrap());
         assert!((1.5 - row.get_checked::<i32, c_double>(3).unwrap()).abs() < EPSILON);
-        assert!(row.get_checked::<i32, Option<c_int>>(4).unwrap().is_none());
-        assert!(row.get_checked::<i32, Option<c_double>>(4).unwrap().is_none());
-        assert!(row.get_checked::<i32, Option<String>>(4).unwrap().is_none());
+        assert!(row.get_checked::<i32, Option<c_int>>(4)
+                    .unwrap()
+                    .is_none());
+        assert!(row.get_checked::<i32, Option<c_double>>(4)
+                    .unwrap()
+                    .is_none());
+        assert!(row.get_checked::<i32, Option<String>>(4)
+                    .unwrap()
+                    .is_none());
 
         // check some invalid types
 

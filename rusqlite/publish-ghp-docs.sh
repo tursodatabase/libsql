@@ -8,7 +8,7 @@ fi
 
 cd $(git rev-parse --show-toplevel)
 rm -rf target/doc/
-rustup run nightly cargo doc --no-deps --features "backup blob chrono functions load_extension serde_json trace"
+rustup run nightly cargo doc --no-deps --features "backup blob chrono functions limits load_extension serde_json trace"
 echo '<meta http-equiv=refresh content=0;url=rusqlite/index.html>' > target/doc/index.html
 ghp-import target/doc
 git push origin gh-pages:gh-pages

@@ -1,30 +1,27 @@
 //! `ToSql` and `FromSql` implementation for JSON `Value`.
 extern crate serde_json;
 
-use libc::c_int;
 use self::serde_json::Value;
 
-use {Error, Result};
-use types::{FromSql, ToSql, ValueRef};
-
-use ffi::sqlite3_stmt;
+use Result;
+use types::{FromSql, FromSqlError, FromSqlResult, ToSql, ToSqlOutput, ValueRef};
 
 /// Serialize JSON `Value` to text.
 impl ToSql for Value {
-    unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
-        let s = serde_json::to_string(self).unwrap();
-        s.bind_parameter(stmt, col)
+    fn to_sql(&self) -> Result<ToSqlOutput> {
+        Ok(ToSqlOutput::from(serde_json::to_string(self).unwrap()))
     }
 }
 
 /// Deserialize text/blob to JSON `Value`.
 impl FromSql for Value {
-    fn column_result(value: ValueRef) -> Result<Self> {
+    fn column_result(value: ValueRef) -> FromSqlResult<Self> {
         match value {
-            ValueRef::Text(ref s) => serde_json::from_str(s),
-            ValueRef::Blob(ref b) => serde_json::from_slice(b),
-            _ => return Err(Error::InvalidColumnType),
-        }.map_err(|err| Error::FromSqlConversionFailure(Box::new(err)))
+                ValueRef::Text(s) => serde_json::from_str(s),
+                ValueRef::Blob(b) => serde_json::from_slice(b),
+                _ => return Err(FromSqlError::InvalidType),
+            }
+            .map_err(|err| FromSqlError::Other(Box::new(err)))
     }
 }
 
@@ -35,7 +32,8 @@ mod test {
 
     fn checked_memory_handle() -> Connection {
         let db = Connection::open_in_memory().unwrap();
-        db.execute_batch("CREATE TABLE foo (t TEXT, b BLOB)").unwrap();
+        db.execute_batch("CREATE TABLE foo (t TEXT, b BLOB)")
+            .unwrap();
         db
     }
 
@@ -49,9 +47,11 @@ mod test {
                      &[&data, &json.as_bytes()])
             .unwrap();
 
-        let t: serde_json::Value = db.query_row("SELECT t FROM foo", &[], |r| r.get(0)).unwrap();
+        let t: serde_json::Value = db.query_row("SELECT t FROM foo", &[], |r| r.get(0))
+            .unwrap();
         assert_eq!(data, t);
-        let b: serde_json::Value = db.query_row("SELECT b FROM foo", &[], |r| r.get(0)).unwrap();
+        let b: serde_json::Value = db.query_row("SELECT b FROM foo", &[], |r| r.get(0))
+            .unwrap();
         assert_eq!(data, b);
     }
 }

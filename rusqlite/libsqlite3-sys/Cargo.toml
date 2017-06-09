@@ -1,15 +1,30 @@
 [package]
 name = "libsqlite3-sys"
-version = "0.5.0"
+version = "0.8.1"
 authors = ["John Gallagher <jgallagher@bignerdranch.com>"]
 repository = "https://github.com/jgallagher/rusqlite"
 description = "Native bindings to the libsqlite3 library"
 license = "MIT"
 links = "sqlite3"
 build = "build.rs"
+keywords = ["sqlite", "database", "ffi"]
+categories = ["database", "external-ffi-bindings"]
+
+[features]
+default = ["min_sqlite_version_3_6_8"]
+bundled = ["gcc"]
+buildtime_bindgen = ["bindgen", "pkg-config", "vcpkg"]
+min_sqlite_version_3_6_8 = ["pkg-config", "vcpkg"]
+min_sqlite_version_3_6_11 = ["pkg-config", "vcpkg"]
+min_sqlite_version_3_6_23 = ["pkg-config", "vcpkg"]
+min_sqlite_version_3_7_3 = ["pkg-config", "vcpkg"]
+min_sqlite_version_3_7_4 = ["pkg-config", "vcpkg"]
+min_sqlite_version_3_7_16 = ["pkg-config", "vcpkg"]
 
 [build-dependencies]
-pkg-config = "~0.3"
+bindgen = { version = "0.23", optional = true }
+pkg-config = { version = "0.3", optional = true }
+gcc = { version = "0.3", optional = true }
 
-[dependencies]
-libc = "~0.2"
+[target.'cfg(target_env = "msvc")'.build-dependencies]
+vcpkg = { version = "0.2", optional = true }

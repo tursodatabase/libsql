@@ -4,94 +4,96 @@ extern crate chrono;
 use std::borrow::Cow;
 
 use self::chrono::{NaiveDate, NaiveTime, NaiveDateTime, DateTime, TimeZone, UTC, Local};
-use libc::c_int;
 
-use {Error, Result};
-use types::{FromSql, ToSql, ValueRef};
-
-use ffi::sqlite3_stmt;
+use Result;
+use types::{FromSql, FromSqlError, FromSqlResult, ToSql, ToSqlOutput, ValueRef};
 
 /// ISO 8601 calendar date without timezone => "YYYY-MM-DD"
 impl ToSql for NaiveDate {
-    unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
+    fn to_sql(&self) -> Result<ToSqlOutput> {
         let date_str = self.format("%Y-%m-%d").to_string();
-        date_str.bind_parameter(stmt, col)
+        Ok(ToSqlOutput::from(date_str))
     }
 }
 
 /// "YYYY-MM-DD" => ISO 8601 calendar date without timezone.
 impl FromSql for NaiveDate {
-    fn column_result(value: ValueRef) -> Result<Self> {
-        value.as_str().and_then(|s| match NaiveDate::parse_from_str(s, "%Y-%m-%d") {
-            Ok(dt) => Ok(dt),
-            Err(err) => Err(Error::FromSqlConversionFailure(Box::new(err))),
-        })
+    fn column_result(value: ValueRef) -> FromSqlResult<Self> {
+        value
+            .as_str()
+            .and_then(|s| match NaiveDate::parse_from_str(s, "%Y-%m-%d") {
+                          Ok(dt) => Ok(dt),
+                          Err(err) => Err(FromSqlError::Other(Box::new(err))),
+                      })
     }
 }
 
 /// ISO 8601 time without timezone => "HH:MM:SS.SSS"
 impl ToSql for NaiveTime {
-    unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
+    fn to_sql(&self) -> Result<ToSqlOutput> {
         let date_str = self.format("%H:%M:%S%.f").to_string();
-        date_str.bind_parameter(stmt, col)
+        Ok(ToSqlOutput::from(date_str))
     }
 }
 
 /// "HH:MM"/"HH:MM:SS"/"HH:MM:SS.SSS" => ISO 8601 time without timezone.
 impl FromSql for NaiveTime {
-    fn column_result(value: ValueRef) -> Result<Self> {
-        value.as_str().and_then(|s| {
-            let fmt = match s.len() {
-                5 => "%H:%M",
-                8 => "%H:%M:%S",
-                _ => "%H:%M:%S%.f",
-            };
-            match NaiveTime::parse_from_str(s, fmt) {
-                Ok(dt) => Ok(dt),
-                Err(err) => Err(Error::FromSqlConversionFailure(Box::new(err))),
-            }
-        })
+    fn column_result(value: ValueRef) -> FromSqlResult<Self> {
+        value
+            .as_str()
+            .and_then(|s| {
+                let fmt = match s.len() {
+                    5 => "%H:%M",
+                    8 => "%H:%M:%S",
+                    _ => "%H:%M:%S%.f",
+                };
+                match NaiveTime::parse_from_str(s, fmt) {
+                    Ok(dt) => Ok(dt),
+                    Err(err) => Err(FromSqlError::Other(Box::new(err))),
+                }
+            })
     }
 }
 
 /// ISO 8601 combined date and time without timezone => "YYYY-MM-DD HH:MM:SS.SSS"
 impl ToSql for NaiveDateTime {
-    unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
+    fn to_sql(&self) -> Result<ToSqlOutput> {
         let date_str = self.format("%Y-%m-%dT%H:%M:%S%.f").to_string();
-        date_str.bind_parameter(stmt, col)
+        Ok(ToSqlOutput::from(date_str))
     }
 }
 
 /// "YYYY-MM-DD HH:MM:SS"/"YYYY-MM-DD HH:MM:SS.SSS" => ISO 8601 combined date and time
 /// without timezone. ("YYYY-MM-DDTHH:MM:SS"/"YYYY-MM-DDTHH:MM:SS.SSS" also supported)
 impl FromSql for NaiveDateTime {
-    fn column_result(value: ValueRef) -> Result<Self> {
-        value.as_str().and_then(|s| {
-            let fmt = if s.len() >= 11 && s.as_bytes()[10] == b'T' {
-                "%Y-%m-%dT%H:%M:%S%.f"
-            } else {
-                "%Y-%m-%d %H:%M:%S%.f"
-            };
+    fn column_result(value: ValueRef) -> FromSqlResult<Self> {
+        value
+            .as_str()
+            .and_then(|s| {
+                let fmt = if s.len() >= 11 && s.as_bytes()[10] == b'T' {
+                    "%Y-%m-%dT%H:%M:%S%.f"
+                } else {
+                    "%Y-%m-%d %H:%M:%S%.f"
+                };
 
-            match NaiveDateTime::parse_from_str(s, fmt) {
-                Ok(dt) => Ok(dt),
-                Err(err) => Err(Error::FromSqlConversionFailure(Box::new(err))),
-            }
-        })
+                match NaiveDateTime::parse_from_str(s, fmt) {
+                    Ok(dt) => Ok(dt),
+                    Err(err) => Err(FromSqlError::Other(Box::new(err))),
+                }
+            })
     }
 }
 
 /// Date and time with time zone => UTC RFC3339 timestamp ("YYYY-MM-DDTHH:MM:SS.SSS+00:00").
 impl<Tz: TimeZone> ToSql for DateTime<Tz> {
-    unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
-        let utc_dt = self.with_timezone(&UTC);
-        utc_dt.to_rfc3339().bind_parameter(stmt, col)
+    fn to_sql(&self) -> Result<ToSqlOutput> {
+        Ok(ToSqlOutput::from(self.with_timezone(&UTC).to_rfc3339()))
     }
 }
 
 /// RFC3339 ("YYYY-MM-DDTHH:MM:SS.SSS[+-]HH:MM") into DateTime<UTC>.
 impl FromSql for DateTime<UTC> {
-    fn column_result(value: ValueRef) -> Result<Self> {
+    fn column_result(value: ValueRef) -> FromSqlResult<Self> {
         {
             // Try to parse value as rfc3339 first.
             let s = try!(value.as_str());
@@ -108,9 +110,8 @@ impl FromSql for DateTime<UTC> {
                 Cow::Borrowed(s)
             };
 
-            match DateTime::parse_from_rfc3339(&s) {
-                Ok(dt) => return Ok(dt.with_timezone(&UTC)),
-                Err(_) => (),
+            if let Ok(dt) = DateTime::parse_from_rfc3339(&s) {
+                return Ok(dt.with_timezone(&UTC));
             }
         }
 
@@ -121,7 +122,7 @@ impl FromSql for DateTime<UTC> {
 
 /// RFC3339 ("YYYY-MM-DDTHH:MM:SS.SSS[+-]HH:MM") into DateTime<Local>.
 impl FromSql for DateTime<Local> {
-    fn column_result(value: ValueRef) -> Result<Self> {
+    fn column_result(value: ValueRef) -> FromSqlResult<Self> {
         let utc_dt = try!(DateTime::<UTC>::column_result(value));
         Ok(utc_dt.with_timezone(&Local))
     }
@@ -135,7 +136,8 @@ mod test {
 
     fn checked_memory_handle() -> Connection {
         let db = Connection::open_in_memory().unwrap();
-        db.execute_batch("CREATE TABLE foo (t TEXT, i INTEGER, f FLOAT, b BLOB)").unwrap();
+        db.execute_batch("CREATE TABLE foo (t TEXT, i INTEGER, f FLOAT, b BLOB)")
+            .unwrap();
         db
     }
 
@@ -143,11 +145,14 @@ mod test {
     fn test_naive_date() {
         let db = checked_memory_handle();
         let date = NaiveDate::from_ymd(2016, 2, 23);
-        db.execute("INSERT INTO foo (t) VALUES (?)", &[&date]).unwrap();
+        db.execute("INSERT INTO foo (t) VALUES (?)", &[&date])
+            .unwrap();
 
-        let s: String = db.query_row("SELECT t FROM foo", &[], |r| r.get(0)).unwrap();
+        let s: String = db.query_row("SELECT t FROM foo", &[], |r| r.get(0))
+            .unwrap();
         assert_eq!("2016-02-23", s);
-        let t: NaiveDate = db.query_row("SELECT t FROM foo", &[], |r| r.get(0)).unwrap();
+        let t: NaiveDate = db.query_row("SELECT t FROM foo", &[], |r| r.get(0))
+            .unwrap();
         assert_eq!(date, t);
     }
 
@@ -155,11 +160,14 @@ mod test {
     fn test_naive_time() {
         let db = checked_memory_handle();
         let time = NaiveTime::from_hms(23, 56, 4);
-        db.execute("INSERT INTO foo (t) VALUES (?)", &[&time]).unwrap();
+        db.execute("INSERT INTO foo (t) VALUES (?)", &[&time])
+            .unwrap();
 
-        let s: String = db.query_row("SELECT t FROM foo", &[], |r| r.get(0)).unwrap();
+        let s: String = db.query_row("SELECT t FROM foo", &[], |r| r.get(0))
+            .unwrap();
         assert_eq!("23:56:04", s);
-        let v: NaiveTime = db.query_row("SELECT t FROM foo", &[], |r| r.get(0)).unwrap();
+        let v: NaiveTime = db.query_row("SELECT t FROM foo", &[], |r| r.get(0))
+            .unwrap();
         assert_eq!(time, v);
     }
 
@@ -170,15 +178,20 @@ mod test {
         let time = NaiveTime::from_hms(23, 56, 4);
         let dt = NaiveDateTime::new(date, time);
 
-        db.execute("INSERT INTO foo (t) VALUES (?)", &[&dt]).unwrap();
+        db.execute("INSERT INTO foo (t) VALUES (?)", &[&dt])
+            .unwrap();
 
-        let s: String = db.query_row("SELECT t FROM foo", &[], |r| r.get(0)).unwrap();
+        let s: String = db.query_row("SELECT t FROM foo", &[], |r| r.get(0))
+            .unwrap();
         assert_eq!("2016-02-23T23:56:04", s);
-        let v: NaiveDateTime = db.query_row("SELECT t FROM foo", &[], |r| r.get(0)).unwrap();
+        let v: NaiveDateTime = db.query_row("SELECT t FROM foo", &[], |r| r.get(0))
+            .unwrap();
         assert_eq!(dt, v);
 
-        db.execute("UPDATE foo set b = datetime(t)", &[]).unwrap(); // "YYYY-MM-DD HH:MM:SS"
-        let hms: NaiveDateTime = db.query_row("SELECT b FROM foo", &[], |r| r.get(0)).unwrap();
+        db.execute("UPDATE foo set b = datetime(t)", &[])
+            .unwrap(); // "YYYY-MM-DD HH:MM:SS"
+        let hms: NaiveDateTime = db.query_row("SELECT b FROM foo", &[], |r| r.get(0))
+            .unwrap();
         assert_eq!(dt, hms);
     }
 
@@ -190,12 +203,15 @@ mod test {
         let dt = NaiveDateTime::new(date, time);
         let utc = UTC.from_utc_datetime(&dt);
 
-        db.execute("INSERT INTO foo (t) VALUES (?)", &[&utc]).unwrap();
+        db.execute("INSERT INTO foo (t) VALUES (?)", &[&utc])
+            .unwrap();
 
-        let s: String = db.query_row("SELECT t FROM foo", &[], |r| r.get(0)).unwrap();
+        let s: String = db.query_row("SELECT t FROM foo", &[], |r| r.get(0))
+            .unwrap();
         assert_eq!("2016-02-23T23:56:04.789+00:00", s);
 
-        let v1: DateTime<UTC> = db.query_row("SELECT t FROM foo", &[], |r| r.get(0)).unwrap();
+        let v1: DateTime<UTC> = db.query_row("SELECT t FROM foo", &[], |r| r.get(0))
+            .unwrap();
         assert_eq!(utc, v1);
 
         let v2: DateTime<UTC> = db.query_row("SELECT '2016-02-23 23:56:04.789'", &[], |r| r.get(0))
@@ -207,7 +223,8 @@ mod test {
         assert_eq!(utc - Duration::milliseconds(789), v3);
 
         let v4: DateTime<UTC> =
-            db.query_row("SELECT '2016-02-23 23:56:04.789+00:00'", &[], |r| r.get(0)).unwrap();
+            db.query_row("SELECT '2016-02-23 23:56:04.789+00:00'", &[], |r| r.get(0))
+                .unwrap();
         assert_eq!(utc, v4);
     }
 
@@ -219,13 +236,16 @@ mod test {
         let dt = NaiveDateTime::new(date, time);
         let local = Local.from_local_datetime(&dt).single().unwrap();
 
-        db.execute("INSERT INTO foo (t) VALUES (?)", &[&local]).unwrap();
+        db.execute("INSERT INTO foo (t) VALUES (?)", &[&local])
+            .unwrap();
 
         // Stored string should be in UTC
-        let s: String = db.query_row("SELECT t FROM foo", &[], |r| r.get(0)).unwrap();
+        let s: String = db.query_row("SELECT t FROM foo", &[], |r| r.get(0))
+            .unwrap();
         assert!(s.ends_with("+00:00"));
 
-        let v: DateTime<Local> = db.query_row("SELECT t FROM foo", &[], |r| r.get(0)).unwrap();
+        let v: DateTime<Local> = db.query_row("SELECT t FROM foo", &[], |r| r.get(0))
+            .unwrap();
         assert_eq!(local, v);
     }
 }

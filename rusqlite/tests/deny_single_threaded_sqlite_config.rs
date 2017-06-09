@@ -7,14 +7,17 @@ extern crate libsqlite3_sys as ffi;
 use rusqlite::Connection;
 
 #[test]
+#[should_panic]
 fn test_error_when_singlethread_mode() {
     // put SQLite into single-threaded mode
     unsafe {
-        // 1 == SQLITE_CONFIG_SINGLETHREAD
-        assert_eq!(ffi::sqlite3_config(1), ffi::SQLITE_OK);
-        println!("{}", ffi::sqlite3_mutex_alloc(0) as u64);
+        if ffi::sqlite3_config(ffi::SQLITE_CONFIG_SINGLETHREAD) != ffi::SQLITE_OK {
+            return;
+        }
+        if ffi::sqlite3_initialize() != ffi::SQLITE_OK {
+            return;
+        }
     }
 
-    let result = Connection::open_in_memory();
-    assert!(result.is_err());
+    let _ = Connection::open_in_memory().unwrap();
 }

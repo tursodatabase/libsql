@@ -1,6 +1,6 @@
 [package]
 name = "rusqlite"
-version = "0.7.3"
+version = "0.12.0"
 authors = ["John Gallagher <jgallagher@bignerdranch.com>"]
 description = "Ergonomic wrapper for SQLite"
 repository = "https://github.com/jgallagher/rusqlite"
@@ -8,6 +8,11 @@ documentation = "http://docs.rs/rusqlite/"
 readme = "README.md"
 keywords = ["sqlite", "database", "ffi"]
 license = "MIT"
+categories = ["database"]
+
+[badges]
+travis-ci = { repository = "jgallagher/rusqlite" }
+appveyor = { repository = "jgallagher/rusqlite" }
 
 [lib]
 name = "rusqlite"
@@ -15,27 +20,29 @@ name = "rusqlite"
 [features]
 default = ["backup", "blob", "chrono", "functions", "load_extension", "serde_json", "trace"]
 load_extension = []
-backup = []
-blob = []
-functions = []
-trace = []
+backup = ["libsqlite3-sys/min_sqlite_version_3_6_11"]
+blob = ["libsqlite3-sys/min_sqlite_version_3_7_4"]
+functions = ["libsqlite3-sys/min_sqlite_version_3_7_3"]
+trace = ["libsqlite3-sys/min_sqlite_version_3_6_23"]
+bundled = ["libsqlite3-sys/bundled"]
+buildtime_bindgen = ["libsqlite3-sys/buildtime_bindgen"]
+limits = []
 
 [dependencies]
-time = "~0.1.0"
-bitflags = "0.7"
-lru-cache = "0.0.7"
-libc = "~0.2"
-chrono = { version = "~0.2", optional = true }
-serde_json = { version = "0.6", optional = true }
+time = "0.1.0"
+bitflags = "0.9"
+lru-cache = "0.1"
+chrono = { version = "0.3", optional = true }
+serde_json = { version = "1.0", optional = true }
 
 [dev-dependencies]
-tempdir = "~0.3.4"
-lazy_static = "~0.1"
-regex = "~0.1.41"
+tempdir = "0.3"
+lazy_static = "0.2"
+regex = "0.2"
 
 [dependencies.libsqlite3-sys]
 path = "libsqlite3-sys"
-version = "0.5.0"
+version = "0.8"
 
 [[test]]
 name = "config_log"

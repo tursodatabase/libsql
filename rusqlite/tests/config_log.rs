@@ -1,13 +1,14 @@
 //! This file contains unit tests for rusqlite::trace::config_log. This function affects
 //! SQLite process-wide and so is not safe to run as a normal #[test] in the library.
 
-#[macro_use] extern crate lazy_static;
-extern crate libc;
+#[cfg(feature = "trace")]
+#[macro_use]
+extern crate lazy_static;
 extern crate rusqlite;
 
 #[cfg(feature = "trace")]
 fn main() {
-    use libc::c_int;
+    use std::os::raw::c_int;
     use std::sync::Mutex;
 
     lazy_static! {

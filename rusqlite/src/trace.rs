@@ -1,6 +1,6 @@
 //! Tracing and profiling functions. Error and warning log.
 
-use libc::{c_char, c_int, c_void};
+use std::os::raw::{c_char, c_int, c_void};
 use std::ffi::{CStr, CString};
 use std::mem;
 use std::ptr;

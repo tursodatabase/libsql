@@ -5,6 +5,7 @@ use std::ops::{Deref, DerefMut};
 use lru_cache::LruCache;
 use {Result, Connection, Statement};
 use raw_statement::RawStatement;
+use statement::StatementCrateImpl;
 
 impl Connection {
     /// Prepare a SQL statement for execution, returning a previously prepared (but
@@ -43,6 +44,10 @@ impl Connection {
     /// the capacity manually using this method.
     pub fn set_prepared_statement_cache_capacity(&self, capacity: usize) {
         self.cache.set_capacity(capacity)
+    }
+
+    pub fn flush_prepared_statement_cache(&self) {
+        self.cache.flush()
     }
 }
 
@@ -133,6 +138,11 @@ impl StatementCache {
         let sql = String::from_utf8_lossy(stmt.sql().to_bytes()).to_string();
         cache.insert(sql, stmt);
     }
+
+    fn flush(&self) {
+        let mut cache = self.0.borrow_mut();
+        cache.clear()
+    }
 }
 
 #[cfg(test)]
@@ -166,16 +176,14 @@ mod test {
         {
             let mut stmt = db.prepare_cached(sql).unwrap();
             assert_eq!(0, cache.len());
-            assert_eq!(0,
-                       stmt.query(&[]).unwrap().get_expected_row().unwrap().get::<i32, i64>(0));
+            assert_eq!(0, stmt.query_row(&[], |r| r.get::<i32, i64>(0)).unwrap());
         }
         assert_eq!(1, cache.len());
 
         {
             let mut stmt = db.prepare_cached(sql).unwrap();
             assert_eq!(0, cache.len());
-            assert_eq!(0,
-                       stmt.query(&[]).unwrap().get_expected_row().unwrap().get::<i32, i64>(0));
+            assert_eq!(0, stmt.query_row(&[], |r| r.get::<i32, i64>(0)).unwrap());
         }
         assert_eq!(1, cache.len());
 
@@ -193,8 +201,7 @@ mod test {
         {
             let mut stmt = db.prepare_cached(sql).unwrap();
             assert_eq!(0, cache.len());
-            assert_eq!(0,
-                       stmt.query(&[]).unwrap().get_expected_row().unwrap().get::<i32, i64>(0));
+            assert_eq!(0, stmt.query_row(&[], |r| r.get::<i32, i64>(0)).unwrap());
         }
         assert_eq!(1, cache.len());
 
@@ -204,8 +211,7 @@ mod test {
         {
             let mut stmt = db.prepare_cached(sql).unwrap();
             assert_eq!(0, cache.len());
-            assert_eq!(0,
-                       stmt.query(&[]).unwrap().get_expected_row().unwrap().get::<i32, i64>(0));
+            assert_eq!(0, stmt.query_row(&[], |r| r.get::<i32, i64>(0)).unwrap());
         }
         assert_eq!(0, cache.len());
 
@@ -213,8 +219,7 @@ mod test {
         {
             let mut stmt = db.prepare_cached(sql).unwrap();
             assert_eq!(0, cache.len());
-            assert_eq!(0,
-                       stmt.query(&[]).unwrap().get_expected_row().unwrap().get::<i32, i64>(0));
+            assert_eq!(0, stmt.query_row(&[], |r| r.get::<i32, i64>(0)).unwrap());
         }
         assert_eq!(1, cache.len());
     }
@@ -228,8 +233,7 @@ mod test {
         {
             let mut stmt = db.prepare_cached(sql).unwrap();
             assert_eq!(0, cache.len());
-            assert_eq!(0,
-                       stmt.query(&[]).unwrap().get_expected_row().unwrap().get::<i32, i64>(0));
+            assert_eq!(0, stmt.query_row(&[], |r| r.get::<i32, i64>(0)).unwrap());
             stmt.discard();
         }
         assert_eq!(0, cache.len());
@@ -249,7 +253,11 @@ mod test {
         {
             let mut stmt = db.prepare_cached(sql).unwrap();
             assert_eq!(1i32,
-                       stmt.query_map(&[], |r| r.get(0)).unwrap().next().unwrap().unwrap());
+                       stmt.query_map::<i32, _>(&[], |r| r.get(0))
+                           .unwrap()
+                           .next()
+                           .unwrap()
+                           .unwrap());
         }
 
         db.execute_batch(r#"
@@ -267,5 +275,14 @@ mod test {
                            .unwrap()
                            .unwrap());
         }
+    }
+
+    #[test]
+    fn test_connection_close() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.prepare_cached("SELECT * FROM sqlite_master;")
+            .unwrap();
+
+        conn.close().expect("connection not closed");
     }
 }
