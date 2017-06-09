@@ -1,5 +1,5 @@
-C Adjust\sthe\simplementation\sof\sthe\s".selftest"\sfeature\sof\sthe\sshell\sto\savoid\nusing\sthe\sdeprecated\ssqlite3_get_table()\sinterface.
-D 2017-06-09T02:27:49.833
+C Update\sthe\sdocumentation\sto\smake\sit\sclear\sthat\sthe\stable\sname\sparameter\nto\ssqlite3_table_column_metadata()\smay\snot\sbe\sNULL.
+D 2017-06-09T11:43:53.133
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -407,7 +407,7 @@ F src/resolve.c adf3ef9843135b1383321ad751f16f5a40c3f37925154555a3e61653d2a954e8
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c d93205e43af302d9eb147fddecc956509ee9d0dde6297ee3f93c591f60f0e295
 F src/shell.c a43292634af8e3528fec5c6e3360f122fc807a0af619d566ea44fdb98dcfca78
-F src/sqlite.h.in ad7f4101e3613b1134d1ad6c61ff385424ffac0d542627fd31f26667fdd91c94
+F src/sqlite.h.in 67fa8bd29808e7988e0ce36c8d4c6043eb1727f94522fc612687aa5af51931e6
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 58fd0676d3111d02e62e5a35992a7d3da5d3f88753acc174f2d37b774fbbdd28
 F src/sqliteInt.h f90955604b4d8e5a1f672bd230978640be89e0bbbf833d352cf4945ce3a799df
@@ -1582,7 +1582,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 343e55992f503efa662e49bb0f3c0d798defd0a11f2ee1c36968902fa7e06823
-R 05d16117faed3625799198482db32d3f
+P 3168e2c92ad0a0dafc78a27ee1d87ac89f426585f506f418a0182141335dc68b
+R 58bb1b2ee6d8923f8cbdc89765f652d8
 U drh
-Z 9b8c30c557442a6e6787e2734b5f737b
+Z 16b157f827867d5307cac641f1800459
