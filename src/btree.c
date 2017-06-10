@@ -629,46 +629,11 @@ static void btreePtrmapDelete(BtShared *pBt){
     pBt->pMap = 0;
   }
 }
-
-static void btreeCheckPtrmap(BtShared *p, int nPage, const char *zLog){
-  BtreePtrmap *pMap = p->pMap;
-  if( pMap ){
-    int n = MIN(1 + nPage - (int)pMap->iFirst, 5);
-    int i;
-    for(i=0; i<n; i++){
-      int eType = pMap->aPtr[i].eType;
-      if( (eType==PTRMAP_OVERFLOW1 || 
-            eType==PTRMAP_OVERFLOW2 || 
-            eType==PTRMAP_BTREE) && pMap->aPtr[i].parent==0 
-        ){
-        sqlite3_log(SQLITE_ERROR, 
-            "Bitvec: error at (%s) - (%d/%d %d/%d %d/%d %d/%d %d/%d)",
-            zLog,
-            (int)pMap->aPtr[0].eType, (int)pMap->aPtr[0].parent,
-            (n>1 ? (int)pMap->aPtr[1].eType : -1),
-            (n>1 ? (int)pMap->aPtr[1].parent : -1),
-
-            (n>2 ? (int)pMap->aPtr[2].eType : -1),
-            (n>2 ? (int)pMap->aPtr[2].parent : -1),
-
-            (n>3 ? (int)pMap->aPtr[3].eType : -1),
-            (n>3 ? (int)pMap->aPtr[3].parent : -1),
-
-            (n>4 ? (int)pMap->aPtr[4].eType : -1),
-            (n>4 ? (int)pMap->aPtr[4].parent : -1)
-            );
-        abort();
-        break;
-      }
-    }
-  }
-}
 #else  /* SQLITE_OMIT_CONCURRENT */
 # define btreePtrmapAllocate(x) SQLITE_OK
 # define btreePtrmapDelete(x) 
 # define btreePtrmapBegin(x,y)  SQLITE_OK
 # define btreePtrmapEnd(x,y,z) 
-# define btreeCheckPtrmap(a,b,c)
 #endif /* SQLITE_OMIT_CONCURRENT */
 
 static void releasePage(MemPage *pPage);  /* Forward reference */
@@ -4122,8 +4087,6 @@ static int btreeFixUnlocked(Btree *p){
   Pgno iTrunk = get4byte(&p1[32]);
   Pgno nPage = btreePagecount(pBt);
   u32 nFree = get4byte(&p1[36]);
-
-  btreeCheckPtrmap(pBt, nPage, "btreeFixUnlocked(1)");
 
   assert( pBt->pMap );
   rc = sqlite3PagerUpgradeSnapshot(pPager, pPage1->pDbPage);
@@ -8717,7 +8680,6 @@ int sqlite3BtreeInsert(
   assert( pCur->apPage[pCur->iPage]->nOverflow==0 );
 
 end_insert:
-  btreeCheckPtrmap(pBt, pBt->nPage, "sqlite3BtreeInsert()");
   return rc;
 }
 
@@ -8813,8 +8775,6 @@ int sqlite3BtreeDelete(BtCursor *pCur, u8 flags){
     invalidateIncrblobCursors(p, pCur->pgnoRoot, pCur->info.nKey, 0);
   }
 
-  btreeCheckPtrmap(pBt, pBt->nPage, "sqlite3BtreeDelete(0)");
-
   /* Make the page containing the entry to be deleted writable. Then free any
   ** overflow pages associated with the entry and finally remove the cell
   ** itself from within the page.  */
@@ -8823,8 +8783,6 @@ int sqlite3BtreeDelete(BtCursor *pCur, u8 flags){
   rc = clearCell(pPage, pCell, &info);
   dropCell(pPage, iCellIdx, info.nSize, &rc);
   if( rc ) return rc;
-
-  btreeCheckPtrmap(pBt, pBt->nPage, "sqlite3BtreeDelete(1)");
 
   /* If the cell deleted was not located on a leaf page, then the cursor
   ** is currently pointing to the largest entry in the sub-tree headed
@@ -8851,8 +8809,6 @@ int sqlite3BtreeDelete(BtCursor *pCur, u8 flags){
     if( rc ) return rc;
   }
 
-  btreeCheckPtrmap(pBt, pBt->nPage, "sqlite3BtreeDelete(2)");
-
   /* Balance the tree. If the entry deleted was located on a leaf page,
   ** then the cursor still points to that page. In this case the first
   ** call to balance() repairs the tree, and the if(...) condition is
@@ -8875,8 +8831,6 @@ int sqlite3BtreeDelete(BtCursor *pCur, u8 flags){
     }
     rc = balance(pCur);
   }
-
-  btreeCheckPtrmap(pBt, pBt->nPage, "sqlite3BtreeDelete(3)");
 
   if( rc==SQLITE_OK ){
     if( bSkipnext ){

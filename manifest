@@ -1,5 +1,5 @@
-C Update\sthe\srecent\sauto-vacuum\sfix\sso\sthat\sit\sworks\sfor\sthe\sin-memory\npointer-map\sstructure\sused\sby\sthis\sbranch.
-D 2017-06-08T16:23:55.894
+C Remove\ssqlite3_log()\sand\sabort()\scalls\sadded\sto\sthis\sbranch\sto\sdebug\sthe\npointer-map\sproblem\s([fda22108]).
+D 2017-06-10T17:23:20.663
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -350,7 +350,7 @@ F src/auth.c 79f96c6f33bf0e5da8d1c282cee5ebb1852bb8a6ccca3e485d7c459b035d9c3c
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c c77b7f5759e413c1c8b53267d633c952e66db79c1171964c7e24c0f92f5019cf
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c 1394abd656dab0f62cfe7060be026451bb7fb75a2c5f5a2ea95484264d105614
+F src/btree.c 5a93ba67ecdcde5e0112c355dffbcb067891c9f2211dbc1e232796e279855de6
 F src/btree.h 14e99cc2b666beb60322173c761d16b668ec2e07c18bbb74e8a49fe85946f8a0
 F src/btreeInt.h 7429915fc8f51bbd78b7ac023aa4afbe5b9660fc1e6970f144b07540a34a4623
 F src/build.c ba3f389668754c407805bbc5f8ab140f063ba6b04a6a86f63006b63b3c7319a8
@@ -1591,7 +1591,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e2d38d51a9cf1c3dfef742507ec76e3d35853bd09b0d09bf2d404c4b036a184d
-R b03e2900f702f1d9793bda1b10355a73
+P 8e311a6dba202e8733830d8f31b8f0ce11eaefb3a0ab5e5e95ac0d2e5136043b
+R 6be74687e7f9ac02928f68f0a8d639cb
 U dan
-Z f6db321d9b4a7908768625f45dff8451
+Z a53782ebd88a9fbbd1f17403d5393b28
