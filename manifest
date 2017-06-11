@@ -1,5 +1,5 @@
-C Fix\sa\spotential\snull-pointer\sdeference\sfollowing\sOOM\sintroduced\sby\ncheck-in\s[e39795d7]\s(unreleased).
-D 2017-06-11T18:26:15.910
+C Fix\sthe\ssessiondiff\stest\smodule\sso\sthat\sit\sdoes\snot\srun\sif\sthe\ssession\nextension\sis\snot\senabled.
+D 2017-06-11T19:40:34.394
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -316,7 +316,7 @@ F ext/session/sessionG.test 01ef705096a9d3984eebdcca79807a211dee1b60
 F ext/session/session_common.tcl 7776eda579773113b30c7abfd4545c445228cb73
 F ext/session/session_speed_test.c edc1f96fd5e0e4b16eb03e2a73041013d59e8723
 F ext/session/sessionat.test b25d61d663ebc795506bf74079dc4ba0092fad25
-F ext/session/sessiondiff.test 7889d8e84cd130fe3712ed7c511f883e0b2a398ed2905d54e48a24edce49bfab
+F ext/session/sessiondiff.test ad13dd65664bae26744e1f18eb3cbd5588349b7e9118851d8f9364248d67bcec
 F ext/session/sessionfault.test da273f2712b6411e85e71465a1733b8501dbf6f7
 F ext/session/sessionfault2.test 04aa0bc9aa70ea43d8de82c4f648db4de1e990b0
 F ext/session/sessionwor.test 2f3744236dc8b170a695b7d8ddc8c743c7e79fdc
@@ -1582,7 +1582,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2881ab1ed24ed72760086785bdf224c4e687cf39a02fd349ae13c6e1235e24da
-R eff5a2801e4f5c4f13f1233ced3d979d
+P a2f77285fa44df86863eed576271f1030ec60f15480daf175908c5082c27774b
+R c6eaeb2a09080e7f27a1ec8231e7dfbc
 U drh
-Z 536f1c03466db48b164b1acec1d59851
+Z b837419d9c3a128c40e355059cbb84a3
