@@ -1,5 +1,5 @@
-C Fix\sthe\ssessiondiff\stest\smodule\sso\sthat\sit\sdoes\snot\srun\sif\sthe\ssession\nextension\sis\snot\senabled.
-D 2017-06-11T19:40:34.394
+C When\sreusing\sa\smaterialized\sview,\smake\ssure\sthe\sestimated\snumber\sof\noutput\srows\sis\scorrectly\sinitialized\sto\savoid\sconfusing\sthe\squery\splanner.
+D 2017-06-11T19:51:36.949
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -405,7 +405,7 @@ F src/printf.c 8757834f1b54dae512fb25eb1acc8e94a0d15dd2290b58f2563f65973265adb2
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c adf3ef9843135b1383321ad751f16f5a40c3f37925154555a3e61653d2a954e8
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c d93205e43af302d9eb147fddecc956509ee9d0dde6297ee3f93c591f60f0e295
+F src/select.c 0d2afdbdba5fbc61432c5454a35e0236e7aa4aa3756986a7d51b81a508e8083a
 F src/shell.c a43292634af8e3528fec5c6e3360f122fc807a0af619d566ea44fdb98dcfca78
 F src/sqlite.h.in 67fa8bd29808e7988e0ce36c8d4c6043eb1727f94522fc612687aa5af51931e6
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1582,7 +1582,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a2f77285fa44df86863eed576271f1030ec60f15480daf175908c5082c27774b
-R c6eaeb2a09080e7f27a1ec8231e7dfbc
+P 8f92b7a6223a69304dc8a6ab3b43a49cbb87f572a1e65d8a0c6dc09fca38e1a8
+R a9d0a03ba641ed87c89d84acdaf499c1
 U drh
-Z b837419d9c3a128c40e355059cbb84a3
+Z 6f34a8996840968a8347834320cb43af
