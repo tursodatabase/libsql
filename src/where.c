@@ -4577,7 +4577,7 @@ WhereInfo *sqlite3WhereBegin(
       static const char zLabel[] = "0123456789abcdefghijklmnopqrstuvwyxz"
                                              "ABCDEFGHIJKLMNOPQRSTUVWYXZ";
       for(p=pWInfo->pLoops, i=0; p; p=p->pNextLoop, i++){
-        p->cId = zLabel[i%sizeof(zLabel)];
+        p->cId = zLabel[i%(sizeof(zLabel)-1)];
         whereLoopPrint(p, sWLB.pWC);
       }
     }
