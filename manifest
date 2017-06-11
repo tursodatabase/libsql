@@ -1,5 +1,5 @@
-C Update\sthe\sdocumentation\sto\smake\sit\sclear\sthat\sthe\stable\sname\sparameter\nto\ssqlite3_table_column_metadata()\smay\snot\sbe\sNULL.
-D 2017-06-09T11:43:53.133
+C Fix\sa\spotential\snull-pointer\sdeference\sfollowing\sOOM\sintroduced\sby\ncheck-in\s[e39795d7]\s(unreleased).
+D 2017-06-11T18:26:15.910
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -348,7 +348,7 @@ F src/auth.c 79f96c6f33bf0e5da8d1c282cee5ebb1852bb8a6ccca3e485d7c459b035d9c3c
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c 896b823adae998afb0e87555c7d24c04f9536adb189184e295335f93311287f6
+F src/btree.c 430e34151e6ef37e42d3f956bb062907c80ff91e1380704b967b8c1a02a98f64
 F src/btree.h 3edc5329bc59534d2d15b4f069a9f54b779a7e51289e98fa481ae3c0e526a5ca
 F src/btreeInt.h a392d353104b4add58b4a59cb185f5d5693dde832c565b77d8d4c343ed98f610
 F src/build.c 88a8cdc11d1c081ed565aa3e795bdf9160f4556463b4c4555e9860b59dd80340
@@ -1582,7 +1582,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3168e2c92ad0a0dafc78a27ee1d87ac89f426585f506f418a0182141335dc68b
-R 58bb1b2ee6d8923f8cbdc89765f652d8
+P 2881ab1ed24ed72760086785bdf224c4e687cf39a02fd349ae13c6e1235e24da
+R eff5a2801e4f5c4f13f1233ced3d979d
 U drh
-Z 16b157f827867d5307cac641f1800459
+Z 536f1c03466db48b164b1acec1d59851
