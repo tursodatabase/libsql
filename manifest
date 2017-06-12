@@ -1,5 +1,5 @@
-C Version\s3.18.0\sRelease\sCandidate
-D 2017-03-28T18:48:43.315
+C Ensure\spointer\smap\sentries\sare\salways\sadded\swhen\sa\srow\sthat\sdoes\suse\soverflow\npages\sreplaces\sone\sthat\sdoes\snot\sin\san\sauto-vacuum\sdatabase.\sFix\sfor\n[fda22108].
+D 2017-06-12T23:44:37.129
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1faf9f06aadc9284c212dea7bbc7c0dea7e8337f0287c81001eff500912c790a
@@ -344,7 +344,7 @@ F src/auth.c 930b376a9c56998557367e6f7f8aaeac82a2a792
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c ae0e0397e6ad58465bbf932239ee7539ca22f257c97b16c9d0960a1f5de743a3
+F src/btree.c 5aa6108269a84fa9c4b1212754deaf9aed9cbcec603f2e7ea5652e9bf22d9b50
 F src/btree.h bf64dfeeddeebdb775a5eba0098bbc00d073290d
 F src/btreeInt.h cd55d39d9916270837a88c12e701047cba0729b0
 F src/build.c 43f903c9082040ced2b421543cb0300c2973647d
@@ -535,7 +535,7 @@ F test/autoindex2.test 12ef578928102baaa0dc23ad397601a2f4ecb0df
 F test/autoindex3.test a3be0d1a53a7d2edff208a5e442312957047e972
 F test/autoindex4.test 49d3cd791a9baa16fb461d7ea3de80d019a819cf
 F test/autoindex5.test 96f084a5e6024ea07cace5888df3223f3ea86990
-F test/autovacuum.test 92c24eedbdb68e49f3fb71f26f9ce6d8988cac15
+F test/autovacuum.test 0831cd34e14695d297187f7f6519265e3121c5b0a1720e548e86829e796129e9
 F test/autovacuum_ioerr2.test 8a367b224183ad801e0e24dcb7d1501f45f244b4
 F test/avtrans.test 0252654f4295ddda3b2cce0e894812259e655a85
 F test/backcompat.test 3e64cedda754c778ef6bbe417b6e7a295e662a4d
@@ -1569,10 +1569,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8469fc0d48d6af0accef9b8a84e08ad2ca32351907510d177b4ca4815c1ea7cb
-R e1b145e92e118b2bc2de7100fb7561b5
-T *branch * version-3.18
-T *sym-version-3.18 *
-T -sym-trunk *
+P 424a0d380332858ee55bdebc4af3789f74e70a2b3ba1cf29d84b9b4bcf3e2e37
+Q +b30dfba811cb531b09ff2e71a1a18ed53c816cb39155dd52ca3e2701425fe17b
+R 57dce72cc0744ff6614258be32191fb6
+T *branch * 3.18
+T *sym-3.18 *
+T -sym-branch-3.18 *
 U drh
-Z 2998f3cf8a15fbd1f3dc49f1b039f0d5
+Z 41752df1655a19c4124bf0da1d21e965
