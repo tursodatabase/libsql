@@ -1,5 +1,5 @@
-C Fix\san\soff-by-one\serror\sthat\smesses\sup\sthe\sdisplay\sof\sloop\scodes\sin\sthe\n".wheretrace"\sdebugging\soutput\sfor\squeries\swith\smore\sthan\s62\scandidate\nloops\swhen\sSQLITE_ENABLE_WHERETRACE\sis\son.
-D 2017-06-11T20:17:02.600
+C Fix\sthe\sprocessing\sof\sdouble-negatives\sin\sWHERE\sclause\sconstraints\swith\nSTAT4.\s\sTicket\s[cfa2c908f2182]
+D 2017-06-13T04:31:54.016
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -478,7 +478,7 @@ F src/vdbeInt.h cdcdabad4f5d6bf7a3beb826a7f33ee6f8f1cb220042bedd5b7d4bf2ea1d179f
 F src/vdbeapi.c c961d8d9e0f52e2df60a6ddbbccd7d99dc4d00103db7e53f77fcef44fbd23178
 F src/vdbeaux.c bc9b3228f6d99bef0d0ecaf3a0e0e8358b3873242d0d2fe944226de3fdf9521e
 F src/vdbeblob.c 359891617358deefc85bef7bcf787fa6b77facb9
-F src/vdbemem.c 2c70f8f5de6c71fb99a22c5b83be9fab5c47cdd8e279fa44a8c00cfed06d7e89
+F src/vdbemem.c 94b17d851f31d4fd075d47d373d4b33ed3962a6ecb82cf385018025751091360
 F src/vdbesort.c f512c68d0bf7e0105316a5594c4329358c8ee9cae3b25138df041d97516c0372
 F src/vdbetrace.c 41963d5376f0349842b5fc4aaaaacd7d9cdc0834
 F src/vtab.c 35b9bdc2b41de32a417141d12097bcc4e29a77ed7cdb8f836d1d2305d946b61b
@@ -1582,7 +1582,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 87aceb417a813a2925b636cffa660fe25f3b7e3b3c84bb2108951bf0af644376
-R 5d137f03dd98c6947d396116cfd8bb62
+P 0bbdaf2801e4102d952db65e53962e534b67b8b72e76fadb4ce404a6249129d9
+R f2f95fcabff93258ae6c63b2d0970c78
 U drh
-Z 9a468aee323b8155a594f5ff05c91ea1
+Z 010cf979d0ebcfd760d21c84533c2792
