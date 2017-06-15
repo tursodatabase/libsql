@@ -766,12 +766,13 @@ Bytes of payload
 
 Bytes of metadata
 
-    The amount of formatting and structural information stored on for the
+    The amount of formatting and structural information stored in the
     table or index.  Metadata includes the btree page header, the cell pointer
     array, the size field for each cell, the left child pointer or non-leaf
     cells, the overflow pointers for overflow cells, and the rowid value for
-    rowid table cells.  In other words, metadata is everything that is not
-    unused space and that is not content.
+    rowid table cells.  In other words, metadata is everything that is neither
+    unused space nor content.  The record header in the payload is counted as
+    content, not metadata.
 
 Average payload per entry
 
