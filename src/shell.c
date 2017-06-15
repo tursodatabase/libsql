@@ -1217,7 +1217,7 @@ static void shellAddSchemaName(
      "TRIGGER",
      "VIRTUAL TABLE"
   };
-  int i = 0, n;
+  int i = 0;
   const char *zIn = (const char*)sqlite3_value_text(apVal[0]);
   const char *zSchema = (const char*)sqlite3_value_text(apVal[1]);
   assert( nVal==2 );
@@ -5818,13 +5818,13 @@ static int do_meta_command(char *zLine, ShellState *p){
         zDiv = " UNION ALL ";
         if( strcmp(zDb, "main")!=0 ){
           appendText(&sSelect, "SELECT shell_add_schema(sql,", 0);
-          appendText(&sSelect, sqlite3_column_text(pStmt, 0), '"');
+          appendText(&sSelect, zDb, '"');
           appendText(&sSelect, ") AS sql, type, tbl_name, name, rowid,", 0);
           appendText(&sSelect, zScNum, 0);
           appendText(&sSelect, " AS snum, ", 0);
           appendText(&sSelect, zDb, '\'');
           appendText(&sSelect, " AS sname FROM ", 0);
-          appendText(&sSelect, sqlite3_column_text(pStmt, 0), '"');
+          appendText(&sSelect, zDb, '"');
           appendText(&sSelect, ".sqlite_master", 0);
         }else{
           appendText(&sSelect, "SELECT sql, type, tbl_name, name, rowid, ", 0);
