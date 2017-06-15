@@ -1,5 +1,5 @@
-C Fix\stypo\sand\simprove\sthe\swording\sof\sthe\sdescription\sof\s"Metadata"\sin\sthe\noutput\sof\sthe\ssqlite3_analyzer\stool.
-D 2017-06-15T16:45:23.229
+C Move\sthe\s"shell_add_schema()"\sSQL\sfunction\sused\sby\sthe\s".schema"\scommand\nof\sthe\scommand-line\sshell\sto\sa\sdifferent\sspot\sin\sthe\sshell.c\ssource\sfile\nso\sthat\sit\sis\snot\sin\sthe\smiddle\sof\san\sunrelated\smodule.
+D 2017-06-15T16:56:05.134
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -406,7 +406,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c adf3ef9843135b1383321ad751f16f5a40c3f37925154555a3e61653d2a954e8
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 0d2afdbdba5fbc61432c5454a35e0236e7aa4aa3756986a7d51b81a508e8083a
-F src/shell.c c45ae9a95faf5a495280bfa2d6b7956c707f347e56eb8b1985c852d152e46894
+F src/shell.c bcd3358ad6cb3f3dc7ec76ad3bd8191f123ed2425360c5c48fe431780eceb729
 F src/sqlite.h.in 67fa8bd29808e7988e0ce36c8d4c6043eb1727f94522fc612687aa5af51931e6
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 58fd0676d3111d02e62e5a35992a7d3da5d3f88753acc174f2d37b774fbbdd28
@@ -1582,7 +1582,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9afd7a2ffd3a39456190ad05e85ff6485298aae262d9e0698a58c1d73507a36f
-R d7d9e08f1b748cb64c86b209b3f80ec6
+P ca1ff70780e07e5ee930fe7972db02e887d9b085d8ab78e878d7f966b6d684d4
+R 726cc59902873bb7eaa232bba10d7407
 U drh
-Z ab25672babe6d73331acc6dc2b1d5532
+Z 1749d6289173114f89482a05c36735c7

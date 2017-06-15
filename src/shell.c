@@ -729,6 +729,61 @@ static char quoteChar(const char *zName){
   return 0;
 }
 
+/*
+** SQL function:  shell_add_schema(S,X)
+**
+** Add the schema name X to the CREATE statement in S and return the result.
+** Examples:
+**
+**    CREATE TABLE t1(x)   ->   CREATE TABLE xyz.t1(x);
+**
+** Also works on
+**
+**    CREATE INDEX
+**    CREATE UNIQUE INDEX
+**    CREATE VIEW
+**    CREATE TRIGGER
+**    CREATE VIRTUAL TABLE
+**
+** This UDF is used by the .schema command to insert the schema name of
+** attached databases into the middle of the sqlite_master.sql field.
+*/
+static void shellAddSchemaName(
+  sqlite3_context *pCtx,
+  int nVal,
+  sqlite3_value **apVal
+){
+  static const char *aPrefix[] = {
+     "TABLE",
+     "INDEX",
+     "UNIQUE INDEX",
+     "VIEW",
+     "TRIGGER",
+     "VIRTUAL TABLE"
+  };
+  int i = 0;
+  const char *zIn = (const char*)sqlite3_value_text(apVal[0]);
+  const char *zSchema = (const char*)sqlite3_value_text(apVal[1]);
+  assert( nVal==2 );
+  if( zIn!=0 && strncmp(zIn, "CREATE ", 7)==0 ){
+    for(i=0; i<sizeof(aPrefix)/sizeof(aPrefix[0]); i++){
+      int n = strlen30(aPrefix[i]);
+      if( strncmp(zIn+7, aPrefix[i], n)==0 && zIn[n+7]==' ' ){
+        char cQuote = quoteChar(zSchema);
+        char *z;
+        if( cQuote ){
+         z = sqlite3_mprintf("%.*s \"%w\".%s", n+7, zIn, zSchema, zIn+n+8);
+        }else{
+          z = sqlite3_mprintf("%.*s %s.%s", n+7, zIn, zSchema, zIn+n+8);
+        }
+        sqlite3_result_text(pCtx, z, -1, sqlite3_free);
+        return;
+      }
+    }
+  }
+  sqlite3_result_value(pCtx, apVal[0]);
+}
+
 /******************************************************************************
 ** SHA3 hash implementation copied from ../ext/misc/shathree.c
 */
@@ -1183,61 +1238,6 @@ static unsigned char *SHA3Final(SHA3Context *p){
     p->u.x[i+p->nRate] = p->u.x[i^p->ixMask];
   }
   return &p->u.x[p->nRate];
-}
-
-/*
-** SQL function:  shell_add_schema(S,X)
-**
-** Add the schema name X to the CREATE statement in S and return the result.
-** Examples:
-**
-**    CREATE TABLE t1(x)   ->   CREATE TABLE xyz.t1(x);
-**
-** Also works on
-**
-**    CREATE INDEX
-**    CREATE UNIQUE INDEX
-**    CREATE VIEW
-**    CREATE TRIGGER
-**    CREATE VIRTUAL TABLE
-**
-** This UDF is used by the .schema command to insert the schema name of
-** attached databases into the middle of the sqlite_master.sql field.
-*/
-static void shellAddSchemaName(
-  sqlite3_context *pCtx,
-  int nVal,
-  sqlite3_value **apVal
-){
-  static const char *aPrefix[] = {
-     "TABLE",
-     "INDEX",
-     "UNIQUE INDEX",
-     "VIEW",
-     "TRIGGER",
-     "VIRTUAL TABLE"
-  };
-  int i = 0;
-  const char *zIn = (const char*)sqlite3_value_text(apVal[0]);
-  const char *zSchema = (const char*)sqlite3_value_text(apVal[1]);
-  assert( nVal==2 );
-  if( zIn!=0 && strncmp(zIn, "CREATE ", 7)==0 ){
-    for(i=0; i<sizeof(aPrefix)/sizeof(aPrefix[0]); i++){
-      int n = strlen30(aPrefix[i]);
-      if( strncmp(zIn+7, aPrefix[i], n)==0 && zIn[n+7]==' ' ){
-        char cQuote = quoteChar(zSchema);
-        char *z;
-        if( cQuote ){
-         z = sqlite3_mprintf("%.*s \"%w\".%s", n+7, zIn, zSchema, zIn+n+8);
-        }else{
-          z = sqlite3_mprintf("%.*s %s.%s", n+7, zIn, zSchema, zIn+n+8);
-        }
-        sqlite3_result_text(pCtx, z, -1, sqlite3_free);
-        return;
-      }
-    }
-  }
-  sqlite3_result_value(pCtx, apVal[0]);
 }
 
 /*
