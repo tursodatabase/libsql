@@ -71,14 +71,21 @@ static const char zHelp[] =
 "\n"
 "           --variance V           Randomly vary M by plus or minus V\n"
 "\n"
-"   kvtest export DBFILE DIRECTORY\n"
+"   kvtest export DBFILE DIRECTORY [--tree]\n"
 "\n"
 "        Export all the blobs in the kv table of DBFILE into separate\n"
-"        files in DIRECTORY.\n"
+"        files in DIRECTORY.  DIRECTORY is created if it does not previously\n"
+"        exist.  If the --tree option is used, then the blobs are written\n"
+"        into a hierarchy of directories, using names like 00/00/00,\n"
+"        00/00/01, 00/00/02, and so forth.  Without the --tree option, all\n"
+"        files are in the top-level directory with names like 000000, 000001,\n"
+"        000002, and so forth.\n"
 "\n"
-"   kvtest stat DBFILE\n"
+"   kvtest stat DBFILE [options]\n"
 "\n"
-"        Display summary information about DBFILE\n"
+"        Display summary information about DBFILE.  Options:\n"
+"\n"
+"           --vacuum               Run VACUUM on the database file\n"
 "\n"
 "   kvtest run DBFILE [options]\n"
 "\n"
@@ -94,12 +101,14 @@ static const char zHelp[] =
 "           --integrity-check      Run \"PRAGMA integrity_check\" after test\n"
 "           --max-id N             Maximum blob key to use\n"
 "           --mmap N               Mmap as much as N bytes of DBFILE\n"
+"           --multitrans           Each read or write in its own transaction\n"
+"           --nocheckpoint         Omit the checkpoint on WAL mode writes\n"
 "           --nosync               Set \"PRAGMA synchronous=OFF\"\n"
 "           --jmode MODE           Set MODE journal mode prior to starting\n"
 "           --random               Read blobs in a random order\n"
 "           --start N              Start reading with this blob key\n"
 "           --stats                Output operating stats before exiting\n"
-"           --update               To an overwrite test\n"
+"           --update               Do an overwrite test\n"
 ;
 
 /* Reference resources used */
@@ -115,6 +124,7 @@ static const char zHelp[] =
 # include <unistd.h>
 #else
   /* Provide Windows equivalent for the needed parts of unistd.h */
+# include <direct.h>
 # include <io.h>
 # define R_OK 2
 # define S_ISREG(m) (((m) & S_IFMT) == S_IFREG)
@@ -123,7 +133,6 @@ static const char zHelp[] =
 #endif
 
 #include <stdint.h>
-#include <inttypes.h>
 
 /*
 ** The following macros are used to cast pointers to integers and
@@ -144,15 +153,9 @@ static const char zHelp[] =
 #if defined(__PTRDIFF_TYPE__)  /* This case should work for GCC */
 # define SQLITE_INT_TO_PTR(X)  ((void*)(__PTRDIFF_TYPE__)(X))
 # define SQLITE_PTR_TO_INT(X)  ((sqlite3_int64)(__PTRDIFF_TYPE__)(X))
-#elif !defined(__GNUC__)       /* Works for compilers other than LLVM */
-# define SQLITE_INT_TO_PTR(X)  ((void*)&((char*)0)[X])
-# define SQLITE_PTR_TO_INT(X)  ((sqlite3_int64)(((char*)X)-(char*)0))
-#elif defined(HAVE_STDINT_H)   /* Use this case if we have ANSI headers */
+#else
 # define SQLITE_INT_TO_PTR(X)  ((void*)(intptr_t)(X))
 # define SQLITE_PTR_TO_INT(X)  ((sqlite3_int64)(intptr_t)(X))
-#else                          /* Generates a warning - but it always works */
-# define SQLITE_INT_TO_PTR(X)  ((void*)(X))
-# define SQLITE_PTR_TO_INT(X)  ((sqlite3_int64)(X))
 #endif
 
 /*
@@ -237,13 +240,23 @@ static int integerValue(const char *zArg){
 /*
 ** Check the filesystem object zPath.  Determine what it is:
 **
-**    PATH_DIR     A directory
+**    PATH_DIR     A single directory holding many files
+**    PATH_TREE    A directory hierarchy with files at the leaves
 **    PATH_DB      An SQLite database
 **    PATH_NEXIST  Does not exist
 **    PATH_OTHER   Something else
+**
+** PATH_DIR means all of the separate files are grouped together
+** into a single directory with names like 000000, 000001, 000002, and
+** so forth.  PATH_TREE means there is a hierarchy of directories so
+** that no single directory has too many entries.  The files have names
+** like 00/00/00, 00/00/01, 00/00/02 and so forth.  The decision between
+** PATH_DIR and PATH_TREE is determined by the presence of a subdirectory
+** named "00" at the top-level.
 */
 #define PATH_DIR     1
-#define PATH_DB      2
+#define PATH_TREE    2
+#define PATH_DB      3
 #define PATH_NEXIST  0
 #define PATH_OTHER   99
 static int pathType(const char *zPath){
@@ -253,7 +266,15 @@ static int pathType(const char *zPath){
   memset(&x, 0, sizeof(x));
   rc = stat(zPath, &x);
   if( rc<0 ) return PATH_OTHER;
-  if( S_ISDIR(x.st_mode) ) return PATH_DIR;
+  if( S_ISDIR(x.st_mode) ){
+    char *zLayer1 = sqlite3_mprintf("%s/00", zPath);
+    memset(&x, 0, sizeof(x));
+    rc = stat(zLayer1, &x);
+    sqlite3_free(zLayer1);
+    if( rc<0 ) return PATH_DIR;
+    if( S_ISDIR(x.st_mode) ) return PATH_TREE;
+    return PATH_DIR;
+  }
   if( (x.st_size%512)==0 ) return PATH_DB;
   return PATH_OTHER;
 }
@@ -364,6 +385,7 @@ static int statMain(int argc, char **argv){
   sqlite3 *db;
   char *zSql;
   sqlite3_stmt *pStmt;
+  int doVacuum = 0;
 
   assert( strcmp(argv[1],"stat")==0 );
   assert( argc>=3 );
@@ -372,11 +394,20 @@ static int statMain(int argc, char **argv){
     char *z = argv[i];
     if( z[0]!='-' ) fatalError("unknown argument: \"%s\"", z);
     if( z[1]=='-' ) z++;
+    if( strcmp(z, "-vacuum")==0 ){
+      doVacuum = 1;
+      continue;
+    }
     fatalError("unknown option: \"%s\"", argv[i]);
   }
   rc = sqlite3_open(zDb, &db);
   if( rc ){
     fatalError("cannot open database \"%s\": %s", zDb, sqlite3_errmsg(db));
+  }
+  if( doVacuum ){
+    printf("Vacuuming...."); fflush(stdout);
+    sqlite3_exec(db, "VACUUM", 0, 0, 0);
+    printf("       done\n");
   }
   zSql = sqlite3_mprintf(
     "SELECT count(*), min(length(v)), max(length(v)), avg(length(v))"
@@ -410,39 +441,22 @@ static int statMain(int argc, char **argv){
     printf("Page-count:         %8d\n", sqlite3_column_int(pStmt, 0));
   }
   sqlite3_finalize(pStmt);
+  zSql = sqlite3_mprintf("PRAGMA freelist_count");
+  rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
+  if( rc ) fatalError("cannot prepare SQL [%s]: %s", zSql, sqlite3_errmsg(db));
+  sqlite3_free(zSql);
+  if( sqlite3_step(pStmt)==SQLITE_ROW ){
+    printf("Freelist-count:     %8d\n", sqlite3_column_int(pStmt, 0));
+  }
+  sqlite3_finalize(pStmt);
+  rc = sqlite3_prepare_v2(db, "PRAGMA integrity_check(10)", -1, &pStmt, 0);
+  if( rc ) fatalError("cannot prepare integrity check: %s", sqlite3_errmsg(db));
+  while( sqlite3_step(pStmt)==SQLITE_ROW ){
+    printf("Integrity-check:    %s\n", sqlite3_column_text(pStmt, 0));
+  }
+  sqlite3_finalize(pStmt);
   sqlite3_close(db);
   return 0;
-}
-
-/*
-** Implementation of the "writefile(X,Y)" SQL function.  The argument Y
-** is written into file X.  The number of bytes written is returned.  Or
-** NULL is returned if something goes wrong, such as being unable to open
-** file X for writing.
-*/
-static void writefileFunc(
-  sqlite3_context *context,
-  int argc,
-  sqlite3_value **argv
-){
-  FILE *out;
-  const char *z;
-  sqlite3_int64 rc;
-  const char *zFile;
-
-  zFile = (const char*)sqlite3_value_text(argv[0]);
-  if( zFile==0 ) return;
-  out = fopen(zFile, "wb");
-  if( out==0 ) return;
-  z = (const char*)sqlite3_value_blob(argv[1]);
-  if( z==0 ){
-    rc = 0;
-  }else{
-    rc = fwrite(z, 1, sqlite3_value_bytes(argv[1]), out);
-  }
-  fclose(out);
-  printf("\r%s   ", zFile); fflush(stdout);
-  sqlite3_result_int64(context, rc);
 }
 
 /*
@@ -466,38 +480,94 @@ static void rememberFunc(
 }
 
 /*
+** Make sure a directory named zDir exists.
+*/
+static void kvtest_mkdir(const char *zDir){
+#if defined(_WIN32)
+  (void)mkdir(zDir);
+#else
+  (void)mkdir(zDir, 0755);
+#endif
+}
+
+/*
 ** Export the kv table to individual files in the filesystem
 */
 static int exportMain(int argc, char **argv){
   char *zDb;
   char *zDir;
   sqlite3 *db;
-  char *zSql;
+  sqlite3_stmt *pStmt;
   int rc;
-  char *zErrMsg = 0;
+  int ePathType;
+  int nFN;
+  char *zFN;
+  char *zTail;
+  size_t nWrote;
+  int i;
 
   assert( strcmp(argv[1],"export")==0 );
   assert( argc>=3 );
+  if( argc<4 ) fatalError("Usage: kvtest export DATABASE DIRECTORY [OPTIONS]");
   zDb = argv[2];
-  if( argc!=4 ) fatalError("Usage: kvtest export DATABASE DIRECTORY");
   zDir = argv[3];
-  if( pathType(zDir)!=PATH_DIR ){
+  kvtest_mkdir(zDir);
+  for(i=4; i<argc; i++){
+    const char *z = argv[i];
+    if( z[0]=='-' && z[1]=='-' ) z++;
+    if( strcmp(z,"-tree")==0 ){
+      zFN = sqlite3_mprintf("%s/00", zDir);
+      kvtest_mkdir(zFN);
+      sqlite3_free(zFN);
+      continue;
+    }
+    fatalError("unknown argument: \"%s\"\n", argv[i]);
+  }
+  ePathType = pathType(zDir);
+  if( ePathType!=PATH_DIR && ePathType!=PATH_TREE ){
     fatalError("object \"%s\" is not a directory", zDir);
   }
   rc = sqlite3_open(zDb, &db);
   if( rc ){
     fatalError("cannot open database \"%s\": %s", zDb, sqlite3_errmsg(db));
   }
-  sqlite3_create_function(db, "writefile", 2, SQLITE_UTF8, 0,
-                          writefileFunc, 0, 0);
-  zSql = sqlite3_mprintf(
-    "SELECT writefile(printf('%s/%%06d',k),v) FROM kv;",
-    zDir
-  );
-  rc = sqlite3_exec(db, zSql, 0, 0, &zErrMsg);
-  if( rc ) fatalError("database create failed: %s", zErrMsg);
-  sqlite3_free(zSql);
+  rc = sqlite3_prepare_v2(db, "SELECT k, v FROM kv ORDER BY k", -1, &pStmt, 0);
+  if( rc ){
+    fatalError("prepare_v2 failed: %s\n", sqlite3_errmsg(db));
+  }
+  nFN = (int)strlen(zDir);
+  zFN = sqlite3_mprintf("%s/00/00/00.extra---------------------", zDir);
+  if( zFN==0 ){
+    fatalError("malloc failed\n");
+  }
+  zTail = zFN + nFN + 1;
+  while( sqlite3_step(pStmt)==SQLITE_ROW ){
+    int iKey = sqlite3_column_int(pStmt, 0);
+    sqlite3_int64 nData = sqlite3_column_bytes(pStmt, 1);
+    const void *pData = sqlite3_column_blob(pStmt, 1);
+    FILE *out;
+    if( ePathType==PATH_DIR ){
+      sqlite3_snprintf(20, zTail, "%06d", iKey);
+    }else{
+      sqlite3_snprintf(20, zTail, "%02d", iKey/10000);
+      kvtest_mkdir(zFN);
+      sqlite3_snprintf(20, zTail, "%02d/%02d", iKey/10000, (iKey/100)%100);
+      kvtest_mkdir(zFN);
+      sqlite3_snprintf(20, zTail, "%02d/%02d/%02d",
+                       iKey/10000, (iKey/100)%100, iKey%100);
+    }
+    out = fopen(zFN, "wb");      
+    nWrote = fwrite(pData, 1, nData, out);
+    fclose(out);
+    printf("\r%s   ", zTail); fflush(stdout);
+    if( nWrote!=nData ){
+      fatalError("Wrote only %d of %d bytes to %s\n",
+                  (int)nWrote, nData, zFN);
+    }
+  }
+  sqlite3_finalize(pStmt);
   sqlite3_close(db);
+  sqlite3_free(zFN);
   printf("\n");
   return 0;
 }
@@ -517,7 +587,7 @@ static int exportMain(int argc, char **argv){
 ** NULL is returned if any error is encountered. The final value of *pnByte
 ** is undefined in this case.
 */
-static unsigned char *readFile(const char *zName, int *pnByte){
+static unsigned char *readFile(const char *zName, sqlite3_int64 *pnByte){
   FILE *in;               /* FILE from which to read content of zName */
   sqlite3_int64 nIn;      /* Size of zName in bytes */
   size_t nRead;           /* Number of bytes actually read */
@@ -535,7 +605,7 @@ static unsigned char *readFile(const char *zName, int *pnByte){
     sqlite3_free(pBuf);
     return 0;
   }
-  if( pnByte ) *pnByte = (int)nIn;
+  if( pnByte ) *pnByte = nIn;
   return pBuf;
 }
 
@@ -543,7 +613,7 @@ static unsigned char *readFile(const char *zName, int *pnByte){
 ** Overwrite a file with randomness.  Do not change the size of the
 ** file.
 */
-static void updateFile(const char *zName, int *pnByte, int doFsync){
+static void updateFile(const char *zName, sqlite3_int64 *pnByte, int doFsync){
   FILE *out;              /* FILE from which to read content of zName */
   sqlite3_int64 sz;       /* Size of zName in bytes */
   size_t nWritten;        /* Number of bytes actually read */
@@ -554,7 +624,7 @@ static void updateFile(const char *zName, int *pnByte, int doFsync){
   if( sz<0 ){
     fatalError("No such file: \"%s\"", zName);
   }
-  *pnByte = (int)sz;
+  *pnByte = sz;
   if( sz==0 ) return;
   pBuf = sqlite3_malloc64( sz );
   if( pBuf==0 ){
@@ -742,16 +812,18 @@ static int runMain(int argc, char **argv){
   int doIntegrityCk = 0;      /* Run PRAGMA integrity_check after the test */
   int noSync = 0;             /* Disable synchronous mode */
   int doFsync = 0;            /* Update disk files synchronously */
+  int doMultiTrans = 0;       /* Each operation in its own transaction */
+  int noCheckpoint = 0;       /* Omit the checkpoint in WAL mode */
   sqlite3 *db = 0;            /* Database connection */
   sqlite3_stmt *pStmt = 0;    /* Prepared statement for SQL access */
   sqlite3_blob *pBlob = 0;    /* Handle for incremental Blob I/O */
   sqlite3_int64 tmStart;      /* Start time */
   sqlite3_int64 tmElapsed;    /* Elapsed time */
   int mmapSize = 0;           /* --mmap N argument */
-  int nData = 0;              /* Bytes of data */
+  sqlite3_int64 nData = 0;    /* Bytes of data */
   sqlite3_int64 nTotal = 0;   /* Total data read */
   unsigned char *pData = 0;   /* Content of the blob */
-  int nAlloc = 0;             /* Space allocated for pData[] */
+  sqlite3_int64 nAlloc = 0;   /* Space allocated for pData[] */
   const char *zJMode = 0;     /* Journal mode */
   
 
@@ -765,10 +837,40 @@ static int runMain(int argc, char **argv){
     char *z = argv[i];
     if( z[0]!='-' ) fatalError("unknown argument: \"%s\"", z);
     if( z[1]=='-' ) z++;
+    if( strcmp(z, "-asc")==0 ){
+      eOrder = ORDER_ASC;
+      continue;
+    }
+    if( strcmp(z, "-blob-api")==0 ){
+      bBlobApi = 1;
+      continue;
+    }
+    if( strcmp(z, "-cache-size")==0 ){
+      if( i==argc-1 ) fatalError("missing argument on \"%s\"", argv[i]);
+      iCache = integerValue(argv[++i]);
+      continue;
+    }
     if( strcmp(z, "-count")==0 ){
       if( i==argc-1 ) fatalError("missing argument on \"%s\"", argv[i]);
       nCount = integerValue(argv[++i]);
       if( nCount<1 ) fatalError("the --count must be positive");
+      continue;
+    }
+    if( strcmp(z, "-desc")==0 ){
+      eOrder = ORDER_DESC;
+      continue;
+    }
+    if( strcmp(z, "-fsync")==0 ){
+      doFsync = 1;
+      continue;
+    }
+    if( strcmp(z, "-integrity-check")==0 ){
+      doIntegrityCk = 1;
+      continue;
+    }
+    if( strcmp(z, "-jmode")==0 ){
+      if( i==argc-1 ) fatalError("missing argument on \"%s\"", argv[i]);
+      zJMode = argv[++i];
       continue;
     }
     if( strcmp(z, "-mmap")==0 ){
@@ -782,36 +884,26 @@ static int runMain(int argc, char **argv){
       iMax = integerValue(argv[++i]);
       continue;
     }
-    if( strcmp(z, "-start")==0 ){
-      if( i==argc-1 ) fatalError("missing argument on \"%s\"", argv[i]);
-      iKey = integerValue(argv[++i]);
-      if( iKey<1 ) fatalError("the --start must be positive");
+    if( strcmp(z, "-multitrans")==0 ){
+      doMultiTrans = 1;
       continue;
     }
-    if( strcmp(z, "-cache-size")==0 ){
-      if( i==argc-1 ) fatalError("missing argument on \"%s\"", argv[i]);
-      iCache = integerValue(argv[++i]);
+    if( strcmp(z, "-nocheckpoint")==0 ){
+      noCheckpoint = 1;
       continue;
     }
-    if( strcmp(z, "-jmode")==0 ){
-      if( i==argc-1 ) fatalError("missing argument on \"%s\"", argv[i]);
-      zJMode = argv[++i];
+    if( strcmp(z, "-nosync")==0 ){
+      noSync = 1;
       continue;
     }
     if( strcmp(z, "-random")==0 ){
       eOrder = ORDER_RANDOM;
       continue;
     }
-    if( strcmp(z, "-asc")==0 ){
-      eOrder = ORDER_ASC;
-      continue;
-    }
-    if( strcmp(z, "-desc")==0 ){
-      eOrder = ORDER_DESC;
-      continue;
-    }
-    if( strcmp(z, "-blob-api")==0 ){
-      bBlobApi = 1;
+    if( strcmp(z, "-start")==0 ){
+      if( i==argc-1 ) fatalError("missing argument on \"%s\"", argv[i]);
+      iKey = integerValue(argv[++i]);
+      if( iKey<1 ) fatalError("the --start must be positive");
       continue;
     }
     if( strcmp(z, "-stats")==0 ){
@@ -822,18 +914,6 @@ static int runMain(int argc, char **argv){
       isUpdateTest = 1;
       continue;
     }
-    if( strcmp(z, "-integrity-check")==0 ){
-      doIntegrityCk = 1;
-      continue;
-    }
-    if( strcmp(z, "-nosync")==0 ){
-      noSync = 1;
-      continue;
-    }
-    if( strcmp(z, "-fsync")==0 ){
-      doFsync = 1;
-      continue;
-    }
     fatalError("unknown option: \"%s\"", argv[i]);
   }
   if( eType==PATH_DB ){
@@ -841,6 +921,7 @@ static int runMain(int argc, char **argv){
     sqlite3_open(zDb, &db);
     sqlite3_exec(db, "SELECT rowid FROM sqlite_master LIMIT 1", 0, 0, 0);
     sqlite3_close(db);
+    db = 0;
   }
   tmStart = timeOfDay();
   if( eType==PATH_DB ){
@@ -876,6 +957,9 @@ static int runMain(int argc, char **argv){
       zSql = sqlite3_mprintf("PRAGMA journal_mode=%Q", zJMode);
       sqlite3_exec(db, zSql, 0, 0, 0);
       sqlite3_free(zSql);
+      if( noCheckpoint ){
+        sqlite3_exec(db, "PRAGMA wal_autocheckpoint=0", 0, 0, 0);
+      }
     }
     sqlite3_prepare_v2(db, "PRAGMA journal_mode", -1, &pStmt, 0);
     if( sqlite3_step(pStmt)==SQLITE_ROW ){
@@ -892,14 +976,19 @@ static int runMain(int argc, char **argv){
       sqlite3_finalize(pStmt);
     }
     pStmt = 0;
-    sqlite3_exec(db, "BEGIN", 0, 0, 0);
+    if( !doMultiTrans ) sqlite3_exec(db, "BEGIN", 0, 0, 0);
   }
   if( iMax<=0 ) iMax = 1000;
   for(i=0; i<nCount; i++){
-    if( eType==PATH_DIR ){
-      /* CASE 1: Reading blobs out of separate files */
+    if( eType==PATH_DIR || eType==PATH_TREE ){
+      /* CASE 1: Reading or writing blobs out of separate files */
       char *zKey;
-      zKey = sqlite3_mprintf("%s/%06d", zDb, iKey);
+      if( eType==PATH_DIR ){
+        zKey = sqlite3_mprintf("%s/%06d", zDb, iKey);
+      }else{
+        zKey = sqlite3_mprintf("%s/%02d/%02d/%02d", zDb, iKey/10000,
+                               (iKey/100)%100, iKey%100);
+      }
       nData = 0;
       if( isUpdateTest ){
         updateFile(zKey, &nData, doFsync);
@@ -924,18 +1013,18 @@ static int runMain(int argc, char **argv){
         nData = sqlite3_blob_bytes(pBlob);
         if( nAlloc<nData+1 ){
           nAlloc = nData+100;
-          pData = sqlite3_realloc(pData, nAlloc);
+          pData = sqlite3_realloc64(pData, nAlloc);
         }
         if( pData==0 ) fatalError("cannot allocate %d bytes", nData+1);
         if( isUpdateTest ){
           sqlite3_randomness((int)nData, pData);
-          rc = sqlite3_blob_write(pBlob, pData, nData, 0);
+          rc = sqlite3_blob_write(pBlob, pData, (int)nData, 0);
           if( rc!=SQLITE_OK ){
             fatalError("could not write the blob at %d: %s", iKey,
                       sqlite3_errmsg(db));
           }
         }else{
-          rc = sqlite3_blob_read(pBlob, pData, nData, 0);
+          rc = sqlite3_blob_read(pBlob, pData, (int)nData, 0);
           if( rc!=SQLITE_OK ){
             fatalError("could not read the blob at %d: %s", iKey,
                       sqlite3_errmsg(db));
@@ -990,10 +1079,17 @@ static int runMain(int argc, char **argv){
     display_stats(db, 0);
   }
   if( db ){
-    sqlite3_exec(db, "COMMIT", 0, 0, 0);
-    sqlite3_close(db);
+    if( !doMultiTrans ) sqlite3_exec(db, "COMMIT", 0, 0, 0);
+    if( !noCheckpoint ){
+      sqlite3_close(db);
+      db = 0;
+    }
   }
   tmElapsed = timeOfDay() - tmStart;
+  if( db && noCheckpoint ){
+    sqlite3_close(db);
+    db = 0;
+  }
   if( nExtra ){
     printf("%d cycles due to %d misses\n", nCount, nExtra);
   }
@@ -1007,6 +1103,7 @@ static int runMain(int argc, char **argv){
       }
       sqlite3_finalize(pStmt);
       sqlite3_close(db);
+      db = 0;
     }
   }
   printf("--count %d --max-id %d", nCount-nExtra, iMax);

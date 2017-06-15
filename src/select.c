@@ -5290,6 +5290,8 @@ int sqlite3Select(
       if( pPrior ){
         sqlite3VdbeAddOp2(v, OP_OpenDup, pItem->iCursor, pPrior->iCursor);
         explainSetInteger(pItem->iSelectId, pPrior->iSelectId);
+        assert( pPrior->pSelect!=0 );
+        pSub->nSelectRow = pPrior->pSelect->nSelectRow;
       }else{
         sqlite3SelectDestInit(&dest, SRT_EphemTab, pItem->iCursor);
         explainSetInteger(pItem->iSelectId, (u8)pParse->iNextSelectId);

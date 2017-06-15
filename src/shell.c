@@ -510,6 +510,18 @@ static int strlen30(const char *z){
 }
 
 /*
+** Return the length of a string in characters.  Multibyte UTF8 characters
+** count as a single character.
+*/
+static int strlenChar(const char *z){
+  int n = 0;
+  while( *z ){
+    if( (0xc0&*(z++))!=0x80 ) n++;
+  }
+  return n;
+}
+
+/*
 ** This routine reads a line of text from FILE in, stores
 ** the text in memory obtained from malloc() and returns a pointer
 ** to the text.  NULL is returned at end of file, or if malloc()
@@ -1171,6 +1183,61 @@ static unsigned char *SHA3Final(SHA3Context *p){
     p->u.x[i+p->nRate] = p->u.x[i^p->ixMask];
   }
   return &p->u.x[p->nRate];
+}
+
+/*
+** SQL function:  shell_add_schema(S,X)
+**
+** Add the schema name X to the CREATE statement in S and return the result.
+** Examples:
+**
+**    CREATE TABLE t1(x)   ->   CREATE TABLE xyz.t1(x);
+**
+** Also works on
+**
+**    CREATE INDEX
+**    CREATE UNIQUE INDEX
+**    CREATE VIEW
+**    CREATE TRIGGER
+**    CREATE VIRTUAL TABLE
+**
+** This UDF is used by the .schema command to insert the schema name of
+** attached databases into the middle of the sqlite_master.sql field.
+*/
+static void shellAddSchemaName(
+  sqlite3_context *pCtx,
+  int nVal,
+  sqlite3_value **apVal
+){
+  static const char *aPrefix[] = {
+     "TABLE",
+     "INDEX",
+     "UNIQUE INDEX",
+     "VIEW",
+     "TRIGGER",
+     "VIRTUAL TABLE"
+  };
+  int i = 0;
+  const char *zIn = (const char*)sqlite3_value_text(apVal[0]);
+  const char *zSchema = (const char*)sqlite3_value_text(apVal[1]);
+  assert( nVal==2 );
+  if( zIn!=0 && strncmp(zIn, "CREATE ", 7)==0 ){
+    for(i=0; i<sizeof(aPrefix)/sizeof(aPrefix[0]); i++){
+      int n = strlen30(aPrefix[i]);
+      if( strncmp(zIn+7, aPrefix[i], n)==0 && zIn[n+7]==' ' ){
+        char cQuote = quoteChar(zSchema);
+        char *z;
+        if( cQuote ){
+         z = sqlite3_mprintf("%.*s \"%w\".%s", n+7, zIn, zSchema, zIn+n+8);
+        }else{
+          z = sqlite3_mprintf("%.*s %s.%s", n+7, zIn, zSchema, zIn+n+8);
+        }
+        sqlite3_result_text(pCtx, z, -1, sqlite3_free);
+        return;
+      }
+    }
+  }
+  sqlite3_result_value(pCtx, apVal[0]);
 }
 
 /*
@@ -1917,9 +1984,9 @@ static int shell_callback(
             w = 0;
           }
           if( w==0 ){
-            w = strlen30(azCol[i] ? azCol[i] : "");
+            w = strlenChar(azCol[i] ? azCol[i] : "");
             if( w<10 ) w = 10;
-            n = strlen30(azArg && azArg[i] ? azArg[i] : p->nullValue);
+            n = strlenChar(azArg && azArg[i] ? azArg[i] : p->nullValue);
             if( w<n ) w = n;
           }
           if( i<ArraySize(p->actualWidth) ){
@@ -1954,8 +2021,8 @@ static int shell_callback(
         }else{
            w = 10;
         }
-        if( p->cMode==MODE_Explain && azArg[i] && strlen30(azArg[i])>w ){
-          w = strlen30(azArg[i]);
+        if( p->cMode==MODE_Explain && azArg[i] && strlenChar(azArg[i])>w ){
+          w = strlenChar(azArg[i]);
         }
         if( i==1 && p->aiIndent && p->pStmt ){
           if( p->iIndent<p->nIndent ){
@@ -3524,6 +3591,9 @@ static void open_db(ShellState *p, int keepAlive){
                             sha3QueryFunc, 0, 0);
     sqlite3_create_function(p->db, "sha3_query", 2, SQLITE_UTF8, 0,
                             sha3QueryFunc, 0, 0);
+    sqlite3_create_function(p->db, "shell_add_schema", 2, SQLITE_UTF8, 0,
+                            shellAddSchemaName, 0, 0);
+                            
   }
 }
 
@@ -5677,12 +5747,17 @@ static int do_meta_command(char *zLine, ShellState *p){
   }else
 
   if( c=='s' && strncmp(azArg[0], "schema", n)==0 ){
+    ShellText sSelect;
     ShellState data;
     char *zErrMsg = 0;
+    const char *zDiv = 0;
+    int iSchema = 0;
+
     open_db(p, 0);
     memcpy(&data, p, sizeof(data));
     data.showHeader = 0;
     data.cMode = data.mode = MODE_Semi;
+    initText(&sSelect);
     if( nArg>=2 && optionMatch(azArg[1], "indent") ){
       data.cMode = data.mode = MODE_Pretty;
       nArg--;
@@ -5720,32 +5795,61 @@ static int do_meta_command(char *zLine, ShellState *p){
         callback(&data, 1, new_argv, new_colv);
         rc = SQLITE_OK;
       }else{
-        char *zSql;
-        zSql = sqlite3_mprintf(
-          "SELECT sql FROM "
-          "  (SELECT sql sql, type type, tbl_name tbl_name, name name, rowid x"
-          "     FROM sqlite_master UNION ALL"
-          "   SELECT sql, type, tbl_name, name, rowid FROM sqlite_temp_master) "
-          "WHERE lower(tbl_name) LIKE %Q"
-          "  AND type!='meta' AND sql NOTNULL "
-          "ORDER BY rowid", azArg[1]);
-        rc = sqlite3_exec(p->db, zSql, callback, &data, &zErrMsg);
-        sqlite3_free(zSql);
+        zDiv = "(";
       }
     }else if( nArg==1 ){
-      rc = sqlite3_exec(p->db,
-         "SELECT sql FROM "
-         "  (SELECT sql sql, type type, tbl_name tbl_name, name name, rowid x"
-         "     FROM sqlite_master UNION ALL"
-         "   SELECT sql, type, tbl_name, name, rowid FROM sqlite_temp_master) "
-         "WHERE type!='meta' AND sql NOTNULL AND name NOT LIKE 'sqlite_%' "
-         "ORDER BY rowid",
-         callback, &data, &zErrMsg
-      );
+      zDiv = "(";
     }else{
       raw_printf(stderr, "Usage: .schema ?--indent? ?LIKE-PATTERN?\n");
       rc = 1;
       goto meta_command_exit;
+    }
+    if( zDiv ){
+      sqlite3_stmt *pStmt = 0;
+      sqlite3_prepare_v2(p->db, "SELECT name FROM pragma_database_list",
+                         -1, &pStmt, 0);
+      appendText(&sSelect, "SELECT sql FROM", 0);
+      iSchema = 0;
+      while( sqlite3_step(pStmt)==SQLITE_ROW ){
+        const char *zDb = (const char*)sqlite3_column_text(pStmt, 0);
+        char zScNum[30];
+        sqlite3_snprintf(sizeof(zScNum), zScNum, "%d", ++iSchema);
+        appendText(&sSelect, zDiv, 0);
+        zDiv = " UNION ALL ";
+        if( strcmp(zDb, "main")!=0 ){
+          appendText(&sSelect, "SELECT shell_add_schema(sql,", 0);
+          appendText(&sSelect, zDb, '"');
+          appendText(&sSelect, ") AS sql, type, tbl_name, name, rowid,", 0);
+          appendText(&sSelect, zScNum, 0);
+          appendText(&sSelect, " AS snum, ", 0);
+          appendText(&sSelect, zDb, '\'');
+          appendText(&sSelect, " AS sname FROM ", 0);
+          appendText(&sSelect, zDb, '"');
+          appendText(&sSelect, ".sqlite_master", 0);
+        }else{
+          appendText(&sSelect, "SELECT sql, type, tbl_name, name, rowid, ", 0);
+          appendText(&sSelect, zScNum, 0);
+          appendText(&sSelect, " AS snum, 'main' AS sname FROM sqlite_master",0);
+        }
+      }
+      sqlite3_finalize(pStmt);
+      appendText(&sSelect, ") WHERE ", 0);
+      if( nArg>1 ){
+        char *zQarg = sqlite3_mprintf("%Q", azArg[1]);
+        if( strchr(azArg[1], '.') ){
+          appendText(&sSelect, "lower(printf('%s.%s',sname,tbl_name))", 0);
+        }else{
+          appendText(&sSelect, "lower(tbl_name)", 0);
+        }
+        appendText(&sSelect, strchr(azArg[1], '*') ? " GLOB " : " LIKE ", 0);
+        appendText(&sSelect, zQarg, 0);
+        appendText(&sSelect, " AND ", 0);
+        sqlite3_free(zQarg);
+      }
+      appendText(&sSelect, "type!='meta' AND sql IS NOT NULL"
+                           " ORDER BY snum, rowid", 0);
+      rc = sqlite3_exec(p->db, sSelect.z, callback, &data, &zErrMsg);
+      freeText(&sSelect);
     }
     if( zErrMsg ){
       utf8_printf(stderr,"Error: %s\n", zErrMsg);
@@ -5988,19 +6092,11 @@ static int do_meta_command(char *zLine, ShellState *p){
     int bIsInit = 0;         /* True to initialize the SELFTEST table */
     int bVerbose = 0;        /* Verbose output */
     int bSelftestExists;     /* True if SELFTEST already exists */
-    char **azTest = 0;       /* Content of the SELFTEST table */
-    int nRow = 0;            /* Number of rows in the SELFTEST table */
-    int nCol = 4;            /* Number of columns in the SELFTEST table */
-    int i;                   /* Loop counter */
+    int i, k;                /* Loop counters */
     int nTest = 0;           /* Number of tests runs */
     int nErr = 0;            /* Number of errors seen */
     ShellText str;           /* Answer for a query */
-    static char *azDefaultTest[] = {
-       0, 0, 0, 0,
-       "0", "memo", "Missing SELFTEST table - default checks only", "",
-       "1", "run", "PRAGMA integrity_check", "ok"
-    };
-    static const int nDefaultRow = 2;
+    sqlite3_stmt *pStmt = 0; /* Query against the SELFTEST table */
 
     open_db(p,0);
     for(i=1; i<nArg; i++){
@@ -6030,70 +6126,71 @@ static int do_meta_command(char *zLine, ShellState *p){
       createSelftestTable(p);
       bSelftestExists = 1;
     }
-    if( bSelftestExists ){
-      rc = sqlite3_get_table(p->db,
-          "SELECT tno,op,cmd,ans FROM selftest ORDER BY tno",
-          &azTest, &nRow, &nCol, 0);
+    initText(&str);
+    appendText(&str, "x", 0);
+    for(k=bSelftestExists; k>=0; k--){
+      if( k==1 ){
+        rc = sqlite3_prepare_v2(p->db,
+            "SELECT tno,op,cmd,ans FROM selftest ORDER BY tno",
+            -1, &pStmt, 0);
+      }else{
+        rc = sqlite3_prepare_v2(p->db,
+          "VALUES(0,'memo','Missing SELFTEST table - default checks only',''),"
+          "      (1,'run','PRAGMA integrity_check','ok')",
+          -1, &pStmt, 0);
+      }
       if( rc ){
         raw_printf(stderr, "Error querying the selftest table\n");
         rc = 1;
-        sqlite3_free_table(azTest);
+        sqlite3_finalize(pStmt);
         goto meta_command_exit;
-      }else if( nRow==0 ){
-        sqlite3_free_table(azTest);
-        azTest = azDefaultTest;
-        nRow = nDefaultRow;
       }
-    }else{
-      azTest = azDefaultTest;
-      nRow = nDefaultRow;
-    }
-    initText(&str);
-    appendText(&str, "x", 0);
-    for(i=1; i<=nRow; i++){
-      int tno = atoi(azTest[i*nCol]);
-      const char *zOp = azTest[i*nCol+1];
-      const char *zSql = azTest[i*nCol+2];
-      const char *zAns = azTest[i*nCol+3];
+      for(i=1; sqlite3_step(pStmt)==SQLITE_ROW; i++){
+        int tno = sqlite3_column_int(pStmt, 0);
+        const char *zOp = (const char*)sqlite3_column_text(pStmt, 1);
+        const char *zSql = (const char*)sqlite3_column_text(pStmt, 2);
+        const char *zAns = (const char*)sqlite3_column_text(pStmt, 3);
 
-      if( bVerbose>0 ){
-        char *zQuote = sqlite3_mprintf("%q", zSql);
-        printf("%d: %s %s\n", tno, zOp, zSql);
-        sqlite3_free(zQuote);
-      }
-      if( strcmp(zOp,"memo")==0 ){
-        utf8_printf(p->out, "%s\n", zSql);
-      }else
-      if( strcmp(zOp,"run")==0 ){
-        char *zErrMsg = 0;
-        str.n = 0;
-        str.z[0] = 0;
-        rc = sqlite3_exec(p->db, zSql, captureOutputCallback, &str, &zErrMsg);
-        nTest++;
-        if( bVerbose ){
-          utf8_printf(p->out, "Result: %s\n", str.z);
+        k = 0;
+        if( bVerbose>0 ){
+          char *zQuote = sqlite3_mprintf("%q", zSql);
+          printf("%d: %s %s\n", tno, zOp, zSql);
+          sqlite3_free(zQuote);
         }
-        if( rc || zErrMsg ){
-          nErr++;
+        if( strcmp(zOp,"memo")==0 ){
+          utf8_printf(p->out, "%s\n", zSql);
+        }else
+        if( strcmp(zOp,"run")==0 ){
+          char *zErrMsg = 0;
+          str.n = 0;
+          str.z[0] = 0;
+          rc = sqlite3_exec(p->db, zSql, captureOutputCallback, &str, &zErrMsg);
+          nTest++;
+          if( bVerbose ){
+            utf8_printf(p->out, "Result: %s\n", str.z);
+          }
+          if( rc || zErrMsg ){
+            nErr++;
+            rc = 1;
+            utf8_printf(p->out, "%d: error-code-%d: %s\n", tno, rc, zErrMsg);
+            sqlite3_free(zErrMsg);
+          }else if( strcmp(zAns,str.z)!=0 ){
+            nErr++;
+            rc = 1;
+            utf8_printf(p->out, "%d: Expected: [%s]\n", tno, zAns);
+            utf8_printf(p->out, "%d:      Got: [%s]\n", tno, str.z);
+          }
+        }else
+        {
+          utf8_printf(stderr,
+            "Unknown operation \"%s\" on selftest line %d\n", zOp, tno);
           rc = 1;
-          utf8_printf(p->out, "%d: error-code-%d: %s\n", tno, rc, zErrMsg);
-          sqlite3_free(zErrMsg);
-        }else if( strcmp(zAns,str.z)!=0 ){
-          nErr++;
-          rc = 1;
-          utf8_printf(p->out, "%d: Expected: [%s]\n", tno, zAns);
-          utf8_printf(p->out, "%d:      Got: [%s]\n", tno, str.z);
+          break;
         }
-      }else
-      {
-        utf8_printf(stderr,
-          "Unknown operation \"%s\" on selftest line %d\n", zOp, tno);
-        rc = 1;
-        break;
-      }
-    }
+      } /* End loop over rows of content from SELFTEST */
+      sqlite3_finalize(pStmt);
+    } /* End loop over k */
     freeText(&str);
-    if( azTest!=azDefaultTest ) sqlite3_free_table(azTest);
     utf8_printf(p->out, "%d errors out of %d tests\n", nErr, nTest);
   }else
 
@@ -6302,59 +6399,47 @@ static int do_meta_command(char *zLine, ShellState *p){
     sqlite3_stmt *pStmt;
     char **azResult;
     int nRow, nAlloc;
-    char *zSql = 0;
     int ii;
+    ShellText s;
+    initText(&s);
     open_db(p, 0);
     rc = sqlite3_prepare_v2(p->db, "PRAGMA database_list", -1, &pStmt, 0);
     if( rc ) return shellDatabaseError(p->db);
 
-    /* Create an SQL statement to query for the list of tables in the
-    ** main and all attached databases where the table name matches the
-    ** LIKE pattern bound to variable "?1". */
-    if( c=='t' ){
-      zSql = sqlite3_mprintf(
-          "SELECT name FROM sqlite_master"
-          " WHERE type IN ('table','view')"
-          "   AND name NOT LIKE 'sqlite_%%'"
-          "   AND name LIKE ?1");
-    }else if( nArg>2 ){
+    if( nArg>2 && c=='i' ){
       /* It is an historical accident that the .indexes command shows an error
       ** when called with the wrong number of arguments whereas the .tables
       ** command does not. */
       raw_printf(stderr, "Usage: .indexes ?LIKE-PATTERN?\n");
       rc = 1;
       goto meta_command_exit;
-    }else{
-      zSql = sqlite3_mprintf(
-          "SELECT name FROM sqlite_master"
-          " WHERE type='index'"
-          "   AND tbl_name LIKE ?1");
     }
-    for(ii=0; zSql && sqlite3_step(pStmt)==SQLITE_ROW; ii++){
+    for(ii=0; sqlite3_step(pStmt)==SQLITE_ROW; ii++){
       const char *zDbName = (const char*)sqlite3_column_text(pStmt, 1);
-      if( zDbName==0 || ii==0 ) continue;
-      if( c=='t' ){
-        zSql = sqlite3_mprintf(
-                 "%z UNION ALL "
-                 "SELECT '%q.' || name FROM \"%w\".sqlite_master"
-                 " WHERE type IN ('table','view')"
-                 "   AND name NOT LIKE 'sqlite_%%'"
-                 "   AND name LIKE ?1", zSql, zDbName, zDbName);
+      if( zDbName==0 ) continue;
+      if( s.z && s.z[0] ) appendText(&s, " UNION ALL ", 0);
+      if( sqlite3_stricmp(zDbName, "main")==0 ){
+        appendText(&s, "SELECT name FROM ", 0);
       }else{
-        zSql = sqlite3_mprintf(
-                 "%z UNION ALL "
-                 "SELECT '%q.' || name FROM \"%w\".sqlite_master"
-                 " WHERE type='index'"
-                 "   AND tbl_name LIKE ?1", zSql, zDbName, zDbName);
+        appendText(&s, "SELECT ", 0);
+        appendText(&s, zDbName, '\'');
+        appendText(&s, "||'.'||name FROM ", 0);
+      }
+      appendText(&s, zDbName, '"');
+      appendText(&s, ".sqlite_master ", 0);
+      if( c=='t' ){
+        appendText(&s," WHERE type IN ('table','view')"
+                      "   AND name NOT LIKE 'sqlite_%'"
+                      "   AND name LIKE ?1", 0);
+      }else{
+        appendText(&s," WHERE type='index'"
+                      "   AND tbl_name LIKE ?1", 0);
       }
     }
     rc = sqlite3_finalize(pStmt);
-    if( zSql && rc==SQLITE_OK ){
-      zSql = sqlite3_mprintf("%z ORDER BY 1", zSql);
-      if( zSql ) rc = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
-    }
-    sqlite3_free(zSql);
-    if( !zSql ) return shellNomemError();
+    appendText(&s, " ORDER BY 1", 0);
+    rc = sqlite3_prepare_v2(p->db, s.z, -1, &pStmt, 0);
+    freeText(&s);
     if( rc ) return shellDatabaseError(p->db);
 
     /* Run the SQL statement prepared by the above block. Store the results
