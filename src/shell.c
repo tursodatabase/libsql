@@ -1186,6 +1186,61 @@ static unsigned char *SHA3Final(SHA3Context *p){
 }
 
 /*
+** SQL function:  shell_add_schema(S,X)
+**
+** Add the schema name X to the CREATE statement in S and return the result.
+** Examples:
+**
+**    CREATE TABLE t1(x)   ->   CREATE TABLE xyz.t1(x);
+**
+** Also works on
+**
+**    CREATE INDEX
+**    CREATE UNIQUE INDEX
+**    CREATE VIEW
+**    CREATE TRIGGER
+**    CREATE VIRTUAL TABLE
+**
+** This UDF is used by the .schema command to insert the schema name of
+** attached databases into the middle of the sqlite_master.sql field.
+*/
+static void shellAddSchemaName(
+  sqlite3_context *pCtx,
+  int nVal,
+  sqlite3_value **apVal
+){
+  static const char *aPrefix[] = {
+     "TABLE",
+     "INDEX",
+     "UNIQUE INDEX",
+     "VIEW",
+     "TRIGGER",
+     "VIRTUAL TABLE"
+  };
+  int i = 0, n;
+  const char *zIn = (const char*)sqlite3_value_text(apVal[0]);
+  const char *zSchema = (const char*)sqlite3_value_text(apVal[1]);
+  assert( nVal==2 );
+  if( zIn!=0 && strncmp(zIn, "CREATE ", 7)==0 ){
+    for(i=0; i<sizeof(aPrefix)/sizeof(aPrefix[0]); i++){
+      int n = strlen30(aPrefix[i]);
+      if( strncmp(zIn+7, aPrefix[i], n)==0 && zIn[n+7]==' ' ){
+        char cQuote = quoteChar(zSchema);
+        char *z;
+        if( cQuote ){
+         z = sqlite3_mprintf("%.*s \"%w\".%s", n+7, zIn, zSchema, zIn+n+8);
+        }else{
+          z = sqlite3_mprintf("%.*s %s.%s", n+7, zIn, zSchema, zIn+n+8);
+        }
+        sqlite3_result_text(pCtx, z, -1, sqlite3_free);
+        return;
+      }
+    }
+  }
+  sqlite3_result_value(pCtx, apVal[0]);
+}
+
+/*
 ** Implementation of the sha3(X,SIZE) function.
 **
 ** Return a BLOB which is the SIZE-bit SHA3 hash of X.  The default
@@ -3536,6 +3591,9 @@ static void open_db(ShellState *p, int keepAlive){
                             sha3QueryFunc, 0, 0);
     sqlite3_create_function(p->db, "sha3_query", 2, SQLITE_UTF8, 0,
                             sha3QueryFunc, 0, 0);
+    sqlite3_create_function(p->db, "shell_add_schema", 2, SQLITE_UTF8, 0,
+                            shellAddSchemaName, 0, 0);
+                            
   }
 }
 
@@ -5689,12 +5747,17 @@ static int do_meta_command(char *zLine, ShellState *p){
   }else
 
   if( c=='s' && strncmp(azArg[0], "schema", n)==0 ){
+    ShellText sSelect;
     ShellState data;
     char *zErrMsg = 0;
+    const char *zDiv = 0;
+    int iSchema = 0;
+
     open_db(p, 0);
     memcpy(&data, p, sizeof(data));
     data.showHeader = 0;
     data.cMode = data.mode = MODE_Semi;
+    initText(&sSelect);
     if( nArg>=2 && optionMatch(azArg[1], "indent") ){
       data.cMode = data.mode = MODE_Pretty;
       nArg--;
@@ -5732,32 +5795,61 @@ static int do_meta_command(char *zLine, ShellState *p){
         callback(&data, 1, new_argv, new_colv);
         rc = SQLITE_OK;
       }else{
-        char *zSql;
-        zSql = sqlite3_mprintf(
-          "SELECT sql FROM "
-          "  (SELECT sql sql, type type, tbl_name tbl_name, name name, rowid x"
-          "     FROM sqlite_master UNION ALL"
-          "   SELECT sql, type, tbl_name, name, rowid FROM sqlite_temp_master) "
-          "WHERE lower(tbl_name) LIKE %Q"
-          "  AND type!='meta' AND sql NOTNULL "
-          "ORDER BY rowid", azArg[1]);
-        rc = sqlite3_exec(p->db, zSql, callback, &data, &zErrMsg);
-        sqlite3_free(zSql);
+        zDiv = "(";
       }
     }else if( nArg==1 ){
-      rc = sqlite3_exec(p->db,
-         "SELECT sql FROM "
-         "  (SELECT sql sql, type type, tbl_name tbl_name, name name, rowid x"
-         "     FROM sqlite_master UNION ALL"
-         "   SELECT sql, type, tbl_name, name, rowid FROM sqlite_temp_master) "
-         "WHERE type!='meta' AND sql NOTNULL AND name NOT LIKE 'sqlite_%' "
-         "ORDER BY rowid",
-         callback, &data, &zErrMsg
-      );
+      zDiv = "(";
     }else{
       raw_printf(stderr, "Usage: .schema ?--indent? ?LIKE-PATTERN?\n");
       rc = 1;
       goto meta_command_exit;
+    }
+    if( zDiv ){
+      sqlite3_stmt *pStmt = 0;
+      sqlite3_prepare_v2(p->db, "SELECT name FROM pragma_database_list",
+                         -1, &pStmt, 0);
+      appendText(&sSelect, "SELECT sql FROM", 0);
+      iSchema = 0;
+      while( sqlite3_step(pStmt)==SQLITE_ROW ){
+        const char *zDb = (const char*)sqlite3_column_text(pStmt, 0);
+        char zScNum[30];
+        sqlite3_snprintf(sizeof(zScNum), zScNum, "%d", ++iSchema);
+        appendText(&sSelect, zDiv, 0);
+        zDiv = " UNION ALL ";
+        if( strcmp(zDb, "main")!=0 ){
+          appendText(&sSelect, "SELECT shell_add_schema(sql,", 0);
+          appendText(&sSelect, sqlite3_column_text(pStmt, 0), '"');
+          appendText(&sSelect, ") AS sql, type, tbl_name, name, rowid,", 0);
+          appendText(&sSelect, zScNum, 0);
+          appendText(&sSelect, " AS snum, ", 0);
+          appendText(&sSelect, zDb, '\'');
+          appendText(&sSelect, " AS sname FROM ", 0);
+          appendText(&sSelect, sqlite3_column_text(pStmt, 0), '"');
+          appendText(&sSelect, ".sqlite_master", 0);
+        }else{
+          appendText(&sSelect, "SELECT sql, type, tbl_name, name, rowid, ", 0);
+          appendText(&sSelect, zScNum, 0);
+          appendText(&sSelect, " AS snum, 'main' AS sname FROM sqlite_master",0);
+        }
+      }
+      sqlite3_finalize(pStmt);
+      appendText(&sSelect, ") WHERE ", 0);
+      if( nArg>1 ){
+        char *zQarg = sqlite3_mprintf("%Q", azArg[1]);
+        if( strchr(azArg[1], '.') ){
+          appendText(&sSelect, "lower(printf('%s.%s',sname,tbl_name))", 0);
+        }else{
+          appendText(&sSelect, "lower(tbl_name)", 0);
+        }
+        appendText(&sSelect, strchr(azArg[1], '*') ? " GLOB " : " LIKE ", 0);
+        appendText(&sSelect, zQarg, 0);
+        appendText(&sSelect, " AND ", 0);
+        sqlite3_free(zQarg);
+      }
+      appendText(&sSelect, "type!='meta' AND sql IS NOT NULL"
+                           " ORDER BY snum, rowid", 0);
+      rc = sqlite3_exec(p->db, sSelect.z, callback, &data, &zErrMsg);
+      freeText(&sSelect);
     }
     if( zErrMsg ){
       utf8_printf(stderr,"Error: %s\n", zErrMsg);

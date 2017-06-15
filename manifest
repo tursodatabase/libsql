@@ -1,5 +1,5 @@
-C Enhance\sthe\ssqlite3_analyzer.exe\sutility\sso\sthat\sit\scomputes\sand\sshows\sthe\nnumber\sof\sbytes\sof\smetadata\son\sbtree\spages\sand\sper\stable\sand\sindex\sentry.
-D 2017-06-15T00:52:03.263
+C In\sthe\scommand-line\sshell,\senhance\sthe\s".schema"\scommand\sshow\sthat\sit\nshows\sthe\sschema\sfor\sATTACH-ed\sdatabases\sin\saddition\sto\s"main".
+D 2017-06-15T12:21:09.255
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -406,7 +406,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c adf3ef9843135b1383321ad751f16f5a40c3f37925154555a3e61653d2a954e8
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 0d2afdbdba5fbc61432c5454a35e0236e7aa4aa3756986a7d51b81a508e8083a
-F src/shell.c a43292634af8e3528fec5c6e3360f122fc807a0af619d566ea44fdb98dcfca78
+F src/shell.c 41671b1b9cfed9d1686699ae91ce6ee6e2a8cac5d148a99e2a363a209c549ad8
 F src/sqlite.h.in 67fa8bd29808e7988e0ce36c8d4c6043eb1727f94522fc612687aa5af51931e6
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 58fd0676d3111d02e62e5a35992a7d3da5d3f88753acc174f2d37b774fbbdd28
@@ -1582,7 +1582,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c433672dd8ab625628bde2f4f40a2dc000ed915dbe91833d3f753d8ab51baf25
-R 3118b76870f7c5e12e646d6dc51a9560
+P 43ad41efa9e1fdd79a9804197a227491236495f14ed56c656224d6ce181703c1
+R d9f0817a6699b9c8517903bc72312e9f
 U drh
-Z 30d19856ae4fa68d439f06a24db9ac5d
+Z 79d9a69908657f1d338372f7df43a962
