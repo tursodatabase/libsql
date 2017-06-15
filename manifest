@@ -1,10 +1,10 @@
-C Version\s3.18.0\sRelease\sCandidate
-D 2017-03-28T18:48:43.315
+C Increase\sthe\sversion\snumber\sto\s3.18.1.
+D 2017-06-15T07:47:09.966
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1faf9f06aadc9284c212dea7bbc7c0dea7e8337f0287c81001eff500912c790a
 F README.md 2b15fae33852f2f53996774c21fb41e1d94181c4401a0e43ac93e11f2cc901b9
-F VERSION 3605fa447e4623f5ff4a6adc97b1fde9a257b8f2
+F VERSION a73b61aacb663dcb9138eab9671807e76c9144089c08330304cfbf348437c6cc
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
@@ -30,7 +30,7 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 6376abec766e9a0785178b1823b5a587e9f1ccbc
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure b15d030a8ae2e672d76c97b6667dacb98934a467 x
+F configure a1aa988953489a1e33654109193e3a6b0090b26aa9ddd0a21da827deb80271e4 x
 F configure.ac 605173e829ab64514ed89f9b53d0da1739d7b0a0
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html b5a3c07d33ecb8e019ce8f7660fe2dbbad9d7977
@@ -1569,10 +1569,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8469fc0d48d6af0accef9b8a84e08ad2ca32351907510d177b4ca4815c1ea7cb
-R e1b145e92e118b2bc2de7100fb7561b5
-T *branch * version-3.18
-T *sym-version-3.18 *
-T -sym-trunk *
+P 424a0d380332858ee55bdebc4af3789f74e70a2b3ba1cf29d84b9b4bcf3e2e37
+R d9d2937a9ef81a143daa8ffb08c470ae
 U drh
-Z 2998f3cf8a15fbd1f3dc49f1b039f0d5
+Z b647ddcdafc3db3432ec33f7a67073de
