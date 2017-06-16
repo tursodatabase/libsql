@@ -1,5 +1,5 @@
-C Prevent\spagesize\schanges\son\sVACUUM\sin\sencrypted\sdatabases\seven\swhen\srunning\nthe\sVACUUM\son\san\sattached\sdatabase.
-D 2017-06-16T13:43:37.982
+C Minor\srefactoring\schange\sto\sclarify\show\sATTACH\sworks.\s\sNo\sfunctional\schanges.
+D 2017-06-16T18:31:30.375
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -343,7 +343,7 @@ F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c 3b23977620ce9662ac54443f65b87ba996e36121
 F src/analyze.c 0d0ccf7520a201d8747ea2f02c92c26e26f801bc161f714f27b9f7630dde0421
-F src/attach.c 8c476f8bd5d2afe11d925f890d30e527e5b0ce43
+F src/attach.c 3bd555e28382603e80d430dfebb2270f86e1e375b4c4be3e1ab1aec3a0c44943
 F src/auth.c 79f96c6f33bf0e5da8d1c282cee5ebb1852bb8a6ccca3e485d7c459b035d9c3c
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
@@ -1582,7 +1582,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 254617a1ccfa1736d4e53d670d80319c79c4d93ebf1de69d89ebdba3949bc270
-R 2fae9403d6a69bdf81964eef17b517dd
+P 11693849342a308ad929e2d9ead67faabacb523af76128c6973ed6cc8b62c11e
+R a34795f4d0fcef5a05bf2f69a4f53c3a
 U drh
-Z 67d8e34c53b15ad85020fb42b5ae1f85
+Z 099d10b7bf311f5813d7dd796aa1a1dd
