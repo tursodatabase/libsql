@@ -282,10 +282,10 @@ proc copy_file {filename} {
 # inlining opportunities.
 #
 foreach file {
+   ctime.c
    sqliteInt.h
 
    global.c
-   ctime.c
    status.c
    date.c
    os.c

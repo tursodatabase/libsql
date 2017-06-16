@@ -1,5 +1,5 @@
-C Minor\srefactoring\schange\sto\sclarify\show\sATTACH\sworks.\s\sNo\sfunctional\schanges.
-D 2017-06-16T18:31:30.375
+C Rework\sthe\scode\sin\sctime.c\sa\sbit\sto\sreport\son\smore\scompile\stime\soptions.\sAnd\nto\sonly\soutput\sconfiguration\soptions\spassed\sin\sto\sSQLite,\snot\sthe\sdefault\nvalues\sof\s#define\ssymbols\sset\sautomatically.\sAlso\sgenerate\sthe\slarge\sarray\sin\nctime.c\susing\snew\sscript\stool/mkctime.tcl,\sinstead\sof\sentering\sit\smanually.
+D 2017-06-16T19:51:47.668
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -354,7 +354,7 @@ F src/btreeInt.h a392d353104b4add58b4a59cb185f5d5693dde832c565b77d8d4c343ed98f61
 F src/build.c 88a8cdc11d1c081ed565aa3e795bdf9160f4556463b4c4555e9860b59dd80340
 F src/callback.c 2e76147783386374bf01b227f752c81ec872d730
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
-F src/ctime.c 47d91a25ad8f199a71a5b1b7b169d6dd0d6e98c5719eca801568798743d1161c
+F src/ctime.c 6327cb262d3468bcd3af863db42b4daed033441ddd5e612ccf9079ac2e23247f
 F src/date.c cc42a41c7422389860d40419a5e3bce5eaf6e7835c3ba2677751dc653550a5c7
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
 F src/delete.c 3213547e97b676c6fa79948b7a9ede4801ea04a01a2043241deafedf132ecf5d
@@ -370,7 +370,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 974499a3999d339a4c1ba8ef129a988d9f136b3789e423808b38cdc19d28adbe
 F src/legacy.c e88ed13c2d531decde75d42c2e35623fb9ce3cb0
 F src/loadext.c a72909474dadce771d3669bf84bf689424f6f87d471fee898589c3ef9b2acfd9
-F src/main.c 65eb6093de90ab4372f2ae0d0cd0acfe718ea26ef0145435e0d9eecb854c9d7e
+F src/main.c 18f2145d572069dae91161add89446aec680aab296492a92ae5afcc2fc7c6b5a
 F src/malloc.c e20bb2b48abec52d3faf01cce12e8b4f95973755fafec98d45162dfdab111978
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -410,7 +410,7 @@ F src/shell.c bcd3358ad6cb3f3dc7ec76ad3bd8191f123ed2425360c5c48fe431780eceb729
 F src/sqlite.h.in 67fa8bd29808e7988e0ce36c8d4c6043eb1727f94522fc612687aa5af51931e6
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 58fd0676d3111d02e62e5a35992a7d3da5d3f88753acc174f2d37b774fbbdd28
-F src/sqliteInt.h f90955604b4d8e5a1f672bd230978640be89e0bbbf833d352cf4945ce3a799df
+F src/sqliteInt.h bdbc175a05b29293505530412a994fb259c7dfb63b06aa2016f13ef641229fa5
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -645,7 +645,7 @@ F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test b5de160630b209c4b8925bdcbbaf48cc90b67fe8
 F test/cse.test 277350a26264495e86b1785f34d2d0c8600e021c
 F test/csv01.test e0ba3caaa57e4c667a0b45977689fb8082f14348
-F test/ctime.test ff6c38e822459d6ca743c34901caf57740b08b54
+F test/ctime.test d19124daeadb9194f2af349b0e06cff723d6e3e7ac14903b4472edaf88b1839d
 F test/cursorhint.test 7bc346788390475e77a345da2b92270d04d35856
 F test/cursorhint2.test 8457e93d97f665f23f97cdbc8477d16e3480331b
 F test/date.test 9b73bbeb1b82d9c1f44dec5cf563bf7da58d2373
@@ -1515,6 +1515,7 @@ F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
 F tool/logest.c 11346aa019e2e77a00902aa7d0cabd27bd2e8cca
 F tool/max-limits.c cbb635fbb37ae4d05f240bfb5b5270bb63c54439
 F tool/mkautoconfamal.sh e855df211ecbcc7131dee817110ff386cfb112f7
+F tool/mkctimec.tcl 4751d3c3e3ca8551b4c707574661db03e231b2b5a300af3f613eae4d39e4445a
 F tool/mkkeywordhash.c f7f3b342211ac6a14258b9726d5b97cf4f548f22
 F tool/mkmsvcmin.tcl cbd93f1cfa3a0a9ae56fc958510aa3fc3ac65e29cb111716199e3d0e66eefaa4
 F tool/mkopcodec.tcl d1b6362bd3aa80d5520d4d6f3765badf01f6c43c
@@ -1523,7 +1524,7 @@ F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkpragmatab.tcl 32bb40741df11bddc8451de9ea4d130e7b4476d8064794b1cf402ac110840fba
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl fef88397668ae83166735c41af99d79f56afaabb
-F tool/mksqlite3c.tcl 06b2e6a0f21cc0a5d70fbbd136b3e0a96470645e
+F tool/mksqlite3c.tcl 226da6d794d7d43a31e159a6fa89db867bf1f5eafe4b37d031222287ef8dbadc
 F tool/mksqlite3h.tcl 51bd5e7e840a920388a5966c9f2ccc618f434c57bd68c1bab4085b2553e1e237
 F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
 F tool/mkvsix.tcl b9e0777a213c23156b6542842c238479e496ebf5
@@ -1582,7 +1583,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 11693849342a308ad929e2d9ead67faabacb523af76128c6973ed6cc8b62c11e
-R a34795f4d0fcef5a05bf2f69a4f53c3a
-U drh
-Z 099d10b7bf311f5813d7dd796aa1a1dd
+P 3944a32e1dd90ff903bcbaaa7cb497cebcfcb2ba2a326726ec2268505e524ae3
+R 7b6facdeed4814ee6f89b7d52660f8c0
+T *branch * ctime-refactor
+T *sym-ctime-refactor *
+T -sym-trunk *
+U dan
+Z 9b2fed7077fb54fd01f0379fb1045ffa

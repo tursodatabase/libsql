@@ -4370,4 +4370,6 @@ Expr *sqlite3VectorFieldSubexpr(Expr*, int);
 Expr *sqlite3ExprForVectorField(Parse*,Expr*,int);
 void sqlite3VectorErrorMsg(Parse*, Expr*);
 
+const char **sqlite3CompileOptions(int *pnOpt);
+
 #endif /* SQLITEINT_H */
