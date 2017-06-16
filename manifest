@@ -1,5 +1,5 @@
-C An\sunintentional\sfork\swas\screated\sdue\sto\sa\stypo\swhen\screating\sbranch-3.18.\nThis\scheck-in\sresolves\sthe\sfork\sand\sis\sthe\s3.18.1\srelease\scandidate.
-D 2017-06-16T12:15:25.099
+C Version\s3.18.1
+D 2017-06-16T13:41:15.259
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1faf9f06aadc9284c212dea7bbc7c0dea7e8337f0287c81001eff500912c790a
@@ -1569,8 +1569,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4be2eba8c15104e9f420738092c06a14a9c9c34b13c0c8f897302ab7613ffccc 30c50f0e06084f3c4357962ed99e2c803b21ca238d00d70d9dee40164caf2afa
+P 20e5ffb1ceed514bf812ea5a2ce027b55203612bdbf8116a69f0cd52c67dbb84
 R eff70f988c3d37d60a840932b2823aa3
-T +closed 30c50f0e06084f3c4357962ed99e2c803b21ca238d00d70d9dee40164caf2afa
+T +bgcolor * #d0c0ff
+T +sym-release *
+T +sym-version-3.18.1 *
 U drh
-Z 14751ab82fc1ed40f07c1c885ed5e7be
+Z 9e969511e8738c156bb93a567a3e9c78
