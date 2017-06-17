@@ -1,5 +1,5 @@
-C Rework\sthe\scode\sin\sctime.c\sa\sbit\sto\sreport\son\smore\scompile\stime\soptions.\sAnd\nto\sonly\soutput\sconfiguration\soptions\spassed\sin\sto\sSQLite,\snot\sthe\sdefault\nvalues\sof\s#define\ssymbols\sset\sautomatically.\sAlso\sgenerate\sthe\slarge\sarray\sin\nctime.c\susing\snew\sscript\stool/mkctime.tcl,\sinstead\sof\sentering\sit\smanually.
-D 2017-06-16T19:51:47.668
+C Ensure\sthat\sthe\svalue\sof\sthe\sTHREADSAFE\ssymbol\sis\salways\sincluded\swhen\nreporting\scompile\stime\soptions,\seven\sif\sit\swas\snot\sexplicitly\sconfigured.
+D 2017-06-17T17:29:24.923
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -354,7 +354,7 @@ F src/btreeInt.h a392d353104b4add58b4a59cb185f5d5693dde832c565b77d8d4c343ed98f61
 F src/build.c 88a8cdc11d1c081ed565aa3e795bdf9160f4556463b4c4555e9860b59dd80340
 F src/callback.c 2e76147783386374bf01b227f752c81ec872d730
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
-F src/ctime.c 6327cb262d3468bcd3af863db42b4daed033441ddd5e612ccf9079ac2e23247f
+F src/ctime.c ce45bd3078346f08f04d87ad4cb04af573490c46ca5c55a23a45166589542a6f
 F src/date.c cc42a41c7422389860d40419a5e3bce5eaf6e7835c3ba2677751dc653550a5c7
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
 F src/delete.c 3213547e97b676c6fa79948b7a9ede4801ea04a01a2043241deafedf132ecf5d
@@ -410,7 +410,7 @@ F src/shell.c bcd3358ad6cb3f3dc7ec76ad3bd8191f123ed2425360c5c48fe431780eceb729
 F src/sqlite.h.in 67fa8bd29808e7988e0ce36c8d4c6043eb1727f94522fc612687aa5af51931e6
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 58fd0676d3111d02e62e5a35992a7d3da5d3f88753acc174f2d37b774fbbdd28
-F src/sqliteInt.h bdbc175a05b29293505530412a994fb259c7dfb63b06aa2016f13ef641229fa5
+F src/sqliteInt.h 17e9bce594ea0c38c44ad0cbff4aa50cbff4b25f4bac9d38306caf9f1f028ac9
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -645,7 +645,7 @@ F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test b5de160630b209c4b8925bdcbbaf48cc90b67fe8
 F test/cse.test 277350a26264495e86b1785f34d2d0c8600e021c
 F test/csv01.test e0ba3caaa57e4c667a0b45977689fb8082f14348
-F test/ctime.test d19124daeadb9194f2af349b0e06cff723d6e3e7ac14903b4472edaf88b1839d
+F test/ctime.test 78749e6c9a5f0010d67985be80788f841e3cd2da18114e2ed6010399a7d807f3
 F test/cursorhint.test 7bc346788390475e77a345da2b92270d04d35856
 F test/cursorhint2.test 8457e93d97f665f23f97cdbc8477d16e3480331b
 F test/date.test 9b73bbeb1b82d9c1f44dec5cf563bf7da58d2373
@@ -1515,7 +1515,7 @@ F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
 F tool/logest.c 11346aa019e2e77a00902aa7d0cabd27bd2e8cca
 F tool/max-limits.c cbb635fbb37ae4d05f240bfb5b5270bb63c54439
 F tool/mkautoconfamal.sh e855df211ecbcc7131dee817110ff386cfb112f7
-F tool/mkctimec.tcl 4751d3c3e3ca8551b4c707574661db03e231b2b5a300af3f613eae4d39e4445a
+F tool/mkctimec.tcl dd183b73ae1c28249669741c250525f0407e579a70482371668fd5f130d9feb3
 F tool/mkkeywordhash.c f7f3b342211ac6a14258b9726d5b97cf4f548f22
 F tool/mkmsvcmin.tcl cbd93f1cfa3a0a9ae56fc958510aa3fc3ac65e29cb111716199e3d0e66eefaa4
 F tool/mkopcodec.tcl d1b6362bd3aa80d5520d4d6f3765badf01f6c43c
@@ -1583,10 +1583,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3944a32e1dd90ff903bcbaaa7cb497cebcfcb2ba2a326726ec2268505e524ae3
-R 7b6facdeed4814ee6f89b7d52660f8c0
-T *branch * ctime-refactor
-T *sym-ctime-refactor *
-T -sym-trunk *
+P bc1951d699e6eeacbe15776a37cd0f5cf3f09eb85d3ae01cff43293cb286fcd7
+R 45624ce11a236a8a994baa28885733aa
 U dan
-Z 9b2fed7077fb54fd01f0379fb1045ffa
+Z 71fa8cc8dcaaff976fb71d5480f74630

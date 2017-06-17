@@ -274,6 +274,11 @@
 **
 ** Older versions of SQLite used an optional THREADSAFE macro.
 ** We support that for legacy.
+**
+** To ensure that the correct value of "THREADSAFE" is reported when querying
+** for compile-time options at runtime (e.g. "PRAGMA compile_options"), this
+** logic is partially replicated in ctime.c. If it is updated here, it should
+** also be updated there.
 */
 #if !defined(SQLITE_THREADSAFE)
 # if defined(THREADSAFE)
@@ -589,7 +594,6 @@
 */
 #ifndef SQLITE_TEMP_STORE
 # define SQLITE_TEMP_STORE 1
-# define SQLITE_TEMP_STORE_xc 1  /* Exclude from ctime.c */
 #endif
 
 /*
@@ -890,7 +894,6 @@ typedef INT16_TYPE LogEst;
 # else
 #   define SQLITE_MAX_MMAP_SIZE 0
 # endif
-# define SQLITE_MAX_MMAP_SIZE_xc 1 /* exclude from ctime.c */
 #endif
 
 /*
@@ -900,7 +903,6 @@ typedef INT16_TYPE LogEst;
 */
 #ifndef SQLITE_DEFAULT_MMAP_SIZE
 # define SQLITE_DEFAULT_MMAP_SIZE 0
-# define SQLITE_DEFAULT_MMAP_SIZE_xc 1  /* Exclude from ctime.c */
 #endif
 #if SQLITE_DEFAULT_MMAP_SIZE>SQLITE_MAX_MMAP_SIZE
 # undef SQLITE_DEFAULT_MMAP_SIZE

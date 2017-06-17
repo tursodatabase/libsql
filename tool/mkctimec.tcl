@@ -241,7 +241,6 @@ set value_options {
   SQLITE_STAT4_SAMPLES
   SQLITE_STMTJRNL_SPILL
   SQLITE_TEMP_STORE
-  SQLITE_THREADSAFE
 }
 
 # Options that require custom code.
@@ -267,6 +266,15 @@ set options(COMPILER) {
 set options(HAVE_ISNAN) {
 #if HAVE_ISNAN || SQLITE_HAVE_ISNAN
   "HAVE_ISNAN",
+#endif
+}
+set options(THREADSAFE) {
+#if defined(SQLITE_THREADSAFE)
+  "THREADSAFE=" CTIMEOPT_VAL(SQLITE_THREADSAFE),
+#elif defined(THREADSAFE)
+  "THREADSAFE=" CTIMEOPT_VAL(THREADSAFE),
+#else
+  "THREADSAFE=1"
 #endif
 }
 

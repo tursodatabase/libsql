@@ -688,8 +688,12 @@ static const char * const azCompileOpt[] = {
 #if SQLITE_TEST
   "TEST",
 #endif
-#ifdef SQLITE_THREADSAFE
+#if defined(SQLITE_THREADSAFE)
   "THREADSAFE=" CTIMEOPT_VAL(SQLITE_THREADSAFE),
+#elif defined(THREADSAFE)
+  "THREADSAFE=" CTIMEOPT_VAL(THREADSAFE),
+#else
+  "THREADSAFE=1"
 #endif
 #if SQLITE_UNLINK_AFTER_CLOSE
   "UNLINK_AFTER_CLOSE",
