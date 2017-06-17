@@ -1,5 +1,5 @@
-C Fix\sa\smissing\scomma\sin\sthe\sprevious\scheck-in.
-D 2017-06-17T18:49:50.823
+C Avoid\sadding\san\sartifical\s"LIMIT\s1"\son\sscalar\ssubqueries\sthat\sdo\snot\sneed\sit.\nThis\sseems\slike\sa\spointless\soptimization\sas\sit\smakes\sminimal\srun-time\sdifference\nbut\sdoes\sincrease\scode\scomplexity.\s\sParked\son\sa\sbranch\sfor\shistorical\nreference.
+D 2017-06-17T19:06:17.565
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -358,7 +358,7 @@ F src/ctime.c eeff225a310b2d9a2a6cb413acaf78ab301b142ed3bcd83f0c06298f609373cb
 F src/date.c cc42a41c7422389860d40419a5e3bce5eaf6e7835c3ba2677751dc653550a5c7
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
 F src/delete.c 3213547e97b676c6fa79948b7a9ede4801ea04a01a2043241deafedf132ecf5d
-F src/expr.c 452c6f3aa656aabf3eefe96bb5f316b2c987fbc12c647964e4ed880f193ca31f
+F src/expr.c d2a511fbcd0fa55f5e751614003096195a5cde694d0ee3689f25646752a9d8dc
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c db65492ae549c3b548c9ef1f279ce1684f1c473b116e1c56a90878cd5dcf968d
 F src/func.c 9d52522cc8ae7f5cdadfe14594262f1618bc1f86083c4cd6da861b4cf5af6174
@@ -1583,7 +1583,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9a443397a6b110f60cae32e1f758914d72931e16ddb423e4d4a119df526bf340
-R 48cf46cf5e03c592f1eb729aae9e27b1
+P f3db02f49073c3f08c3fd7816d85e5472d5e22df20d862fe4886eb2a97efb15f
+R b5ba50ec4dc157215e354d4e576a6a71
+T *branch * subquery-limit-opt
+T *sym-subquery-limit-opt *
+T -sym-trunk *
 U drh
-Z 1075564756c6da5b66b28900b7b4b32b
+Z dd61568d206230960cbef07e1796efe9

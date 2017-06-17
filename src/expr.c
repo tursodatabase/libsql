@@ -2717,8 +2717,12 @@ int sqlite3CodeSubselect(
         VdbeComment((v, "Init EXISTS result"));
       }
       sqlite3ExprDelete(pParse->db, pSel->pLimit);
-      pSel->pLimit = sqlite3ExprAlloc(pParse->db, TK_INTEGER,
-                                  &sqlite3IntTokens[1], 0);
+      if( (pSel->selFlags & SF_Aggregate)!=0 && pSel->pGroupBy==0 ){
+        pSel->pLimit = 0;
+      }else{
+        pSel->pLimit = sqlite3ExprAlloc(pParse->db, TK_INTEGER,
+                                    &sqlite3IntTokens[1], 0);
+      }
       pSel->iLimit = 0;
       pSel->selFlags &= ~SF_MultiValue;
       if( sqlite3Select(pParse, pSel, &dest) ){
