@@ -1,5 +1,5 @@
-C Rework\sthe\scode\sin\sctime.c\sa\sbit\sto\sreport\son\smore\scompile\stime\soptions.\sAnd\nto\sonly\soutput\sconfiguration\soptions\spassed\sin\sto\sSQLite,\snot\sthe\sdefault\nvalues\sof\s#define\ssymbols\sset\sautomatically.\sAlso\sgenerate\sthe\slarge\sarray\sin\nctime.c\susing\snew\sscript\stool/mkctime.tcl,\sinstead\sof\sentering\sit\smanually.
-D 2017-06-17T17:55:33.959
+C Fix\sa\smissing\scomma\sin\sthe\sprevious\scheck-in.
+D 2017-06-17T18:49:50.823
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -354,7 +354,7 @@ F src/btreeInt.h a392d353104b4add58b4a59cb185f5d5693dde832c565b77d8d4c343ed98f61
 F src/build.c 88a8cdc11d1c081ed565aa3e795bdf9160f4556463b4c4555e9860b59dd80340
 F src/callback.c 2e76147783386374bf01b227f752c81ec872d730
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
-F src/ctime.c ce45bd3078346f08f04d87ad4cb04af573490c46ca5c55a23a45166589542a6f
+F src/ctime.c eeff225a310b2d9a2a6cb413acaf78ab301b142ed3bcd83f0c06298f609373cb
 F src/date.c cc42a41c7422389860d40419a5e3bce5eaf6e7835c3ba2677751dc653550a5c7
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
 F src/delete.c 3213547e97b676c6fa79948b7a9ede4801ea04a01a2043241deafedf132ecf5d
@@ -1583,7 +1583,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 603838fc9a65adda831a6a17b31b2e80f5b56e5946a9f0c1fa2c83d2f2a67f6a 95141c642697dc037e57f9e4992ff3460155995d3caef6259235601ee722cb93
-R 358dbf3fdae5ca4611427e66902abaf4
-U dan
-Z 1d5d7e50e2cd625a1568a19566c46408
+P 9a443397a6b110f60cae32e1f758914d72931e16ddb423e4d4a119df526bf340
+R 48cf46cf5e03c592f1eb729aae9e27b1
+U drh
+Z 1075564756c6da5b66b28900b7b4b32b

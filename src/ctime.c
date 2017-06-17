@@ -693,7 +693,7 @@ static const char * const azCompileOpt[] = {
 #elif defined(THREADSAFE)
   "THREADSAFE=" CTIMEOPT_VAL(THREADSAFE),
 #else
-  "THREADSAFE=1"
+  "THREADSAFE=1",
 #endif
 #if SQLITE_UNLINK_AFTER_CLOSE
   "UNLINK_AFTER_CLOSE",
@@ -733,4 +733,3 @@ const char **sqlite3CompileOptions(int *pnOpt){
 }
 
 #endif /* SQLITE_OMIT_COMPILEOPTION_DIAGS */
-
