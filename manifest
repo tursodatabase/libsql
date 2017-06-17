@@ -1,10 +1,10 @@
-C Version\s3.18.1
-D 2017-06-16T13:41:15.259
+C When\sbuilding\san\sephemeral\stable\sof\sintegers,\sdo\snot\sassume\sthat\sthe\stable\ndoes\snot\salready\scontain\sN\sif\sthe\sinsert\scursor\spoints\sto\sN-1.\sFix\sfor\sticket\n[61fe9745].\s\sAlso\sincrease\sthe\sversion\snumber\sto\s3.18.2.\s\sThis\sis\sthe\nrelease\scandidate.
+D 2017-06-17T00:39:47.524
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 1faf9f06aadc9284c212dea7bbc7c0dea7e8337f0287c81001eff500912c790a
 F README.md 2b15fae33852f2f53996774c21fb41e1d94181c4401a0e43ac93e11f2cc901b9
-F VERSION a73b61aacb663dcb9138eab9671807e76c9144089c08330304cfbf348437c6cc
+F VERSION 73dbb3aaa3d50b5bc513c1973949c879056115c8da845f413eefc0dc8f50141d
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
@@ -30,7 +30,7 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 6376abec766e9a0785178b1823b5a587e9f1ccbc
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure a1aa988953489a1e33654109193e3a6b0090b26aa9ddd0a21da827deb80271e4 x
+F configure 2128dbe97a28d3932f78d367abf63c82815504af4552b7f87690a5ae0dcd4f03 x
 F configure.ac 605173e829ab64514ed89f9b53d0da1739d7b0a0
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html b5a3c07d33ecb8e019ce8f7660fe2dbbad9d7977
@@ -344,7 +344,7 @@ F src/auth.c 930b376a9c56998557367e6f7f8aaeac82a2a792
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c 5aa6108269a84fa9c4b1212754deaf9aed9cbcec603f2e7ea5652e9bf22d9b50
+F src/btree.c 8668d6eea7a12c455a1936fe1dbe9c5bb7fdb134578cddd5d0f77fda8d3bab4e
 F src/btree.h bf64dfeeddeebdb775a5eba0098bbc00d073290d
 F src/btreeInt.h cd55d39d9916270837a88c12e701047cba0729b0
 F src/build.c 43f903c9082040ced2b421543cb0300c2973647d
@@ -856,7 +856,7 @@ F test/in.test 20c5529986998949908f889c8208b2cd894b2cc9
 F test/in2.test 5d4c61d17493c832f7d2d32bef785119e87bde75
 F test/in3.test 3cbf58c87f4052cee3a58b37b6389777505aa0c0
 F test/in4.test d2b38cba404bc4320f4fe1b595b3d163f212c068
-F test/in5.test 6c006e0bcd7351b69350ef566e65f244023489e9
+F test/in5.test 7ae37fcd4a5e198291c6ab5f31a5bb3d15397efe8b75a6736d7a95a7b8dd9e08
 F test/incrblob.test c9b96afc292aeff43d6687bcb09b0280aa599822
 F test/incrblob2.test a5ce5ed1d0b01e2ed347245a21170372528af0a5
 F test/incrblob3.test d8d036fde015d4a159cd3cbae9d29003b37227a4
@@ -1569,10 +1569,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 20e5ffb1ceed514bf812ea5a2ce027b55203612bdbf8116a69f0cd52c67dbb84
-R eff70f988c3d37d60a840932b2823aa3
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.18.1 *
+P 77bb46233db03a3338bacf7e56f439be3dfd1926ea0c44d252eeafa7a7b31c06
+Q +1c1b0862236f564283be08338790d6494e705f1198547a59499e3f8c07f2cd99
+R 065314068e0d2666f78bff38750cf197
 U drh
-Z 9e969511e8738c156bb93a567a3e9c78
+Z 7006fdaec97f2b6305aa5150063c2d3e
