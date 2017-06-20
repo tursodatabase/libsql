@@ -1,5 +1,5 @@
-C Add\stoo/tserver.c\s-\sthe\simplementation\sof\sa\ssimple\smulti-threaded\sserver\ndesigned\sfor\sinteractive\stesting\sof\sconcurrency\sbetween\sconnections\sused\sby\ndifferent\sthreads\sof\sthe\ssame\sprocess.
-D 2017-06-07T15:55:59.971
+C Ensure\sthat\stest\stool\s"tserver"\sfinalizes\sall\sstatements\sbefore\sattempting\sto\nclose\sa\sdatabase\shandle.
+D 2017-06-20T19:20:07.502
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a8c838220f7c00820e1fc0ac1bccaaa8e5676067e1dbfa1bafa7a4ffecf8ae6
@@ -1557,7 +1557,7 @@ F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
 F tool/symbols.sh c5a617b8c61a0926747a56c65f5671ef8ac0e148
 F tool/tostr.tcl 96022f35ada2194f6f8ccf6fd95809e90ed277c4
-F tool/tserver.c 3b2dc1be6ba6d942d2988a86983a9142d2a95a105ce17ef4e32871cbb213b0ca
+F tool/tserver.c 4596a21376c7632b430510b184911b60dfa2cd2167c4a2252371dcbafbdf752e
 F tool/varint.c 5d94cb5003db9dbbcbcc5df08d66f16071aee003
 F tool/vdbe-compress.tcl 5926c71f9c12d2ab73ef35c29376e756eb68361c
 F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
@@ -1585,7 +1585,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a726d98122704e1e702cfa7ae61d680497df6a826d98082161e0823e115d40a5
-R d51fab1f343a3ef16d87bb149082f9d8
+P 05b4fc4340011847c8585bb822d339dd7b8351266a12b26fdc85edce38fc9dd3
+R 5abfa2b3bda91a8770a53a2957396fde
 U dan
-Z d72926023206a1ab0336fd84f20b8227
+Z b4624fe82f09b9b3eec8967be30284e2

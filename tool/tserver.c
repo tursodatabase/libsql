@@ -268,6 +268,7 @@ static void *handle_client(void *pArg){
   int nCmd = 0;                   /* Valid bytes in zCmd[] */
   int res;                        /* Result of read() call */
   int rc = SQLITE_OK;
+  int j;
 
   ClientCtx ctx;
   memset(&ctx, 0, sizeof(ClientCtx));
@@ -346,6 +347,10 @@ static void *handle_client(void *pArg){
 
   fprintf(stdout, "Client %d disconnects\n", ctx.fd);
   close(ctx.fd);
+  for(j=0; j<ctx.nPrepare; j++){
+    sqlite3_finalize(ctx.apPrepare[j]);
+  }
+  sqlite3_free(ctx.apPrepare);
   sqlite3_close(ctx.db);
   return 0;
 } 
