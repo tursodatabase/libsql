@@ -1,5 +1,5 @@
-C Ensure\sthat\sthe\squery\splanner\sknows\sthat\sany\scolumn\sof\sa\sflattened\sLEFT\sJOIN\ncan\sbe\sNULL\seven\sif\sthat\scolumn\sis\slabeled\swith\s"NOT\sNULL".\nFix\sfor\sticket\s[892fc34f173e99d8].
-D 2017-06-20T17:43:26.613
+C Rename\sthe\sazCompileOpt\sglobal\sconstant\sto\savoid\sa\sharmless\scompiler\swarning\nabout\sa\sname\sconflict\swith\sa\slocal\svariable.
+D 2017-06-20T18:19:16.728
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -354,7 +354,7 @@ F src/btreeInt.h a392d353104b4add58b4a59cb185f5d5693dde832c565b77d8d4c343ed98f61
 F src/build.c 88a8cdc11d1c081ed565aa3e795bdf9160f4556463b4c4555e9860b59dd80340
 F src/callback.c 2e76147783386374bf01b227f752c81ec872d730
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
-F src/ctime.c eeff225a310b2d9a2a6cb413acaf78ab301b142ed3bcd83f0c06298f609373cb
+F src/ctime.c ca1b2403003ef5d0e331ad2d73ee812ac33b8efc55f8e525ffa8ce5ac1f2c4ea
 F src/date.c cc42a41c7422389860d40419a5e3bce5eaf6e7835c3ba2677751dc653550a5c7
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
 F src/delete.c 3213547e97b676c6fa79948b7a9ede4801ea04a01a2043241deafedf132ecf5d
@@ -1583,7 +1583,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f3db02f49073c3f08c3fd7816d85e5472d5e22df20d862fe4886eb2a97efb15f
-R 65c6dcf56f692aabb1488a88a7fa82bd
-U dan
-Z a6ca5a5b1b0df383164124d4a74591e8
+P 483462682d3a57fb9dd85b4772596e9738f1694a454b8ebbc480b9452733e88d
+R e2bade6a64e1049141b8f35e27012e03
+U drh
+Z 3ee9a1608fd465be0ecf3abf15580493
