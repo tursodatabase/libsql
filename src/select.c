@@ -3205,9 +3205,12 @@ static Expr *substExpr(
           pCopy = &ifNullRow;
         }
         pNew = sqlite3ExprDup(db, pCopy, 0);
-        if( pNew && (pExpr->flags & EP_FromJoin) ){
+        if( pNew && pSubst->isLeftJoin ){
+          ExprSetProperty(pNew, EP_CanBeNull);
+        }
+        if( pNew && ExprHasProperty(pExpr,EP_FromJoin) ){
           pNew->iRightJoinTable = pExpr->iRightJoinTable;
-          pNew->flags |= EP_FromJoin;
+          ExprSetProperty(pNew, EP_FromJoin);
         }
         sqlite3ExprDelete(db, pExpr);
         pExpr = pNew;
@@ -3500,7 +3503,7 @@ static int flattenSubquery(
   **
   ** If the subquery is the right operand of a LEFT JOIN, then the outer
   ** query cannot be an aggregate.  This is an artifact of the way aggregates
-  ** are processed - there is not mechanism to determine if the LEFT JOIN
+  ** are processed - there is no mechanism to determine if the LEFT JOIN
   ** table should be all-NULL.
   **
   ** See also tickets #306, #350, and #3300.
