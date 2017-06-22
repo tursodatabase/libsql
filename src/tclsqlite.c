@@ -161,6 +161,7 @@ struct SqliteDb {
   int nStmt;                 /* Number of statements in stmtList */
   IncrblobChannel *pIncrblob;/* Linked list of open incrblob channels */
   int nStep, nSort, nIndex;  /* Statistics for most recent operation */
+  int nVMStep;               /* Another statistic for most recent operation */
   int nTransaction;          /* Number of nested [transaction] methods */
   int openFlags;             /* Flags used to open.  (SQLITE_OPEN_URI) */
 #ifdef SQLITE_TEST
@@ -1588,6 +1589,7 @@ static int dbEvalStep(DbEvalContext *p){
       pDb->nStep = sqlite3_stmt_status(pStmt,SQLITE_STMTSTATUS_FULLSCAN_STEP,1);
       pDb->nSort = sqlite3_stmt_status(pStmt,SQLITE_STMTSTATUS_SORT,1);
       pDb->nIndex = sqlite3_stmt_status(pStmt,SQLITE_STMTSTATUS_AUTOINDEX,1);
+      pDb->nVMStep = sqlite3_stmt_status(pStmt,SQLITE_STMTSTATUS_VM_STEP,1);
       dbReleaseColumnNames(p);
       p->pPreStmt = 0;
 
@@ -2855,7 +2857,7 @@ static int SQLITE_TCLAPI DbObjCmd(
   }
 
   /*
-  **     $db status (step|sort|autoindex)
+  **     $db status (step|sort|autoindex|vmstep)
   **
   ** Display SQLITE_STMTSTATUS_FULLSCAN_STEP or
   ** SQLITE_STMTSTATUS_SORT for the most recent eval.
@@ -2874,9 +2876,11 @@ static int SQLITE_TCLAPI DbObjCmd(
       v = pDb->nSort;
     }else if( strcmp(zOp, "autoindex")==0 ){
       v = pDb->nIndex;
+    }else if( strcmp(zOp, "vmstep")==0 ){
+      v = pDb->nVMStep;
     }else{
       Tcl_AppendResult(interp,
-            "bad argument: should be autoindex, step, or sort",
+            "bad argument: should be autoindex, step, sort or vmstep",
             (char*)0);
       return TCL_ERROR;
     }

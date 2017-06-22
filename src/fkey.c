@@ -633,10 +633,12 @@ static void fkScanChildren(
   /* Create VDBE to loop through the entries in pSrc that match the WHERE
   ** clause. For each row found, increment either the deferred or immediate
   ** foreign key constraint counter. */
-  pWInfo = sqlite3WhereBegin(pParse, pSrc, pWhere, 0, 0, 0, 0);
-  sqlite3VdbeAddOp2(v, OP_FkCounter, pFKey->isDeferred, nIncr);
-  if( pWInfo ){
-    sqlite3WhereEnd(pWInfo);
+  if( pParse->nErr==0 ){
+    pWInfo = sqlite3WhereBegin(pParse, pSrc, pWhere, 0, 0, 0, 0);
+    sqlite3VdbeAddOp2(v, OP_FkCounter, pFKey->isDeferred, nIncr);
+    if( pWInfo ){
+      sqlite3WhereEnd(pWInfo);
+    }
   }
 
   /* Clean up the WHERE clause constructed above. */
