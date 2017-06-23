@@ -4295,6 +4295,31 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
 }
 
 /*
+** Helper function for exprIsDeterministic().
+*/
+static int exprNodeIsDeterministic(Walker *pWalker, Expr *pExpr){
+  if( pExpr->op==TK_FUNCTION && ExprHasProperty(pExpr, EP_ConstFunc)==0 ){
+    pWalker->eCode = 0;
+    return WRC_Abort;
+  }
+  return WRC_Continue;
+}
+
+/*
+** Return true if the expression contains no non-deterministic SQL 
+** functions. Do not consider non-deterministic SQL functions that are 
+** part of sub-select statements.
+*/
+static int exprIsDeterministic(Expr *p){
+  Walker w;
+  memset(&w, 0, sizeof(w));
+  w.eCode = 1;
+  w.xExprCallback = exprNodeIsDeterministic;
+  sqlite3WalkExpr(&w, p);
+  return w.eCode;
+}
+
+/*
 ** Generate the beginning of the loop used for WHERE clause processing.
 ** The return value is a pointer to an opaque structure that contains
 ** information needed to terminate the loop.  Later, the calling routine
@@ -4492,17 +4517,6 @@ WhereInfo *sqlite3WhereBegin(
   sqlite3WhereClauseInit(&pWInfo->sWC, pWInfo);
   sqlite3WhereSplit(&pWInfo->sWC, pWhere, TK_AND);
     
-  /* Special case: a WHERE clause that is constant.  Evaluate the
-  ** expression and either jump over all of the code or fall thru.
-  */
-  for(ii=0; ii<sWLB.pWC->nTerm; ii++){
-    if( nTabList==0 || sqlite3ExprIsConstantNotJoin(sWLB.pWC->a[ii].pExpr) ){
-      sqlite3ExprIfFalse(pParse, sWLB.pWC->a[ii].pExpr, pWInfo->iBreak,
-                         SQLITE_JUMPIFNULL);
-      sWLB.pWC->a[ii].wtFlags |= TERM_CODED;
-    }
-  }
-
   /* Special case: No FROM clause
   */
   if( nTabList==0 ){
@@ -4540,6 +4554,25 @@ WhereInfo *sqlite3WhereBegin(
   /* Analyze all of the subexpressions. */
   sqlite3WhereExprAnalyze(pTabList, &pWInfo->sWC);
   if( db->mallocFailed ) goto whereBeginError;
+
+  /* Special case: WHERE terms that do not refer to any tables in the join
+  ** (constant expressions). Evaluate each such term, and jump over all the
+  ** generated code if the result is not true.  
+  **
+  ** Do not do this if the expression contains non-deterministic functions
+  ** that are not within a sub-select. This is not strictly required, but
+  ** preserves SQLite's legacy behaviour in the following two cases:
+  **
+  **   FROM ... WHERE random()>0;           -- eval random() once per row
+  **   FROM ... WHERE (SELECT random())>0;  -- eval random() once overall
+  */
+  for(ii=0; ii<sWLB.pWC->nTerm; ii++){
+    WhereTerm *pT = &sWLB.pWC->a[ii];
+    if( pT->prereqAll==0 && (nTabList==0 || exprIsDeterministic(pT->pExpr)) ){
+      sqlite3ExprIfFalse(pParse, pT->pExpr, pWInfo->iBreak, SQLITE_JUMPIFNULL);
+      pT->wtFlags |= TERM_CODED;
+    }
+  }
 
   if( wctrlFlags & WHERE_WANT_DISTINCT ){
     if( isDistinctRedundant(pParse, pTabList, &pWInfo->sWC, pResultSet) ){
