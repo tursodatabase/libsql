@@ -69,7 +69,8 @@ static void attachFunc(
   char *zPath = 0;
   char *zErr = 0;
   unsigned int flags;
-  Db *aNew;
+  Db *aNew;                 /* New array of Db pointers */
+  Db *pNew;                 /* Db object for the newly attached database */
   char *zErrDyn = 0;
   sqlite3_vfs *pVfs;
 
@@ -117,8 +118,8 @@ static void attachFunc(
     if( aNew==0 ) return;
   }
   db->aDb = aNew;
-  aNew = &db->aDb[db->nDb];
-  memset(aNew, 0, sizeof(*aNew));
+  pNew = &db->aDb[db->nDb];
+  memset(pNew, 0, sizeof(*pNew));
 
   /* Open the database file. If the btree is successfully opened, use
   ** it to obtain the database schema. At this point the schema may
@@ -134,7 +135,7 @@ static void attachFunc(
   }
   assert( pVfs );
   flags |= SQLITE_OPEN_MAIN_DB;
-  rc = sqlite3BtreeOpen(pVfs, zPath, db, &aNew->pBt, 0, flags);
+  rc = sqlite3BtreeOpen(pVfs, zPath, db, &pNew->pBt, 0, flags);
   sqlite3_free( zPath );
   db->nDb++;
   db->skipBtreeMutex = 0;
@@ -143,28 +144,28 @@ static void attachFunc(
     zErrDyn = sqlite3MPrintf(db, "database is already attached");
   }else if( rc==SQLITE_OK ){
     Pager *pPager;
-    aNew->pSchema = sqlite3SchemaGet(db, aNew->pBt);
-    if( !aNew->pSchema ){
+    pNew->pSchema = sqlite3SchemaGet(db, pNew->pBt);
+    if( !pNew->pSchema ){
       rc = SQLITE_NOMEM_BKPT;
-    }else if( aNew->pSchema->file_format && aNew->pSchema->enc!=ENC(db) ){
+    }else if( pNew->pSchema->file_format && pNew->pSchema->enc!=ENC(db) ){
       zErrDyn = sqlite3MPrintf(db, 
         "attached databases must use the same text encoding as main database");
       rc = SQLITE_ERROR;
     }
-    sqlite3BtreeEnter(aNew->pBt);
-    pPager = sqlite3BtreePager(aNew->pBt);
+    sqlite3BtreeEnter(pNew->pBt);
+    pPager = sqlite3BtreePager(pNew->pBt);
     sqlite3PagerLockingMode(pPager, db->dfltLockMode);
-    sqlite3BtreeSecureDelete(aNew->pBt,
+    sqlite3BtreeSecureDelete(pNew->pBt,
                              sqlite3BtreeSecureDelete(db->aDb[0].pBt,-1) );
 #ifndef SQLITE_OMIT_PAGER_PRAGMAS
-    sqlite3BtreeSetPagerFlags(aNew->pBt,
+    sqlite3BtreeSetPagerFlags(pNew->pBt,
                       PAGER_SYNCHRONOUS_FULL | (db->flags & PAGER_FLAGS_MASK));
 #endif
-    sqlite3BtreeLeave(aNew->pBt);
+    sqlite3BtreeLeave(pNew->pBt);
   }
-  aNew->safety_level = SQLITE_DEFAULT_SYNCHRONOUS+1;
-  aNew->zDbSName = sqlite3DbStrDup(db, zName);
-  if( rc==SQLITE_OK && aNew->zDbSName==0 ){
+  pNew->safety_level = SQLITE_DEFAULT_SYNCHRONOUS+1;
+  pNew->zDbSName = sqlite3DbStrDup(db, zName);
+  if( rc==SQLITE_OK && pNew->zDbSName==0 ){
     rc = SQLITE_NOMEM_BKPT;
   }
 

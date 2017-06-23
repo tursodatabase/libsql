@@ -420,10 +420,10 @@ int sqlite3rbu_savestate(sqlite3rbu *pRbu);
 **
 ** If an error has already occurred as part of an sqlite3rbu_step()
 ** or sqlite3rbu_open() call, or if one occurs within this function, an
-** SQLite error code is returned. Additionally, *pzErrmsg may be set to
-** point to a buffer containing a utf-8 formatted English language error
-** message. It is the responsibility of the caller to eventually free any 
-** such buffer using sqlite3_free().
+** SQLite error code is returned. Additionally, if pzErrmsg is not NULL,
+** *pzErrmsg may be set to point to a buffer containing a utf-8 formatted
+** English language error message. It is the responsibility of the caller to
+** eventually free any such buffer using sqlite3_free().
 **
 ** Otherwise, if no error occurs, this function returns SQLITE_OK if the
 ** update has been partially applied, or SQLITE_DONE if it has been 

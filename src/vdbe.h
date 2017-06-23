@@ -63,7 +63,7 @@ struct VdbeOp {
 #ifdef SQLITE_ENABLE_CURSOR_HINTS
     Expr *pExpr;           /* Used when p4type is P4_EXPR */
 #endif
-    int (*xAdvance)(BtCursor *, int *);
+    int (*xAdvance)(BtCursor *, int);
   } p4;
 #ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
   char *zComment;          /* Comment to improve readability */

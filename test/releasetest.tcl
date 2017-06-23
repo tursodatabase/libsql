@@ -179,7 +179,7 @@ array set ::Configs [strip_comments {
     -DSQLITE_ENABLE_LOCKING_STYLE=1
   }
   "Apple" {
-    -O1   # Avoid a compiler bug in gcc 4.2.1 build 5658
+    -Os
     -DHAVE_GMTIME_R=1
     -DHAVE_ISNAN=1
     -DHAVE_LOCALTIME_R=1

@@ -870,6 +870,7 @@ static int binCollFunc(
   /* EVIDENCE-OF: R-65033-28449 The built-in BINARY collation compares
   ** strings byte by byte using the memcmp() function from the standard C
   ** library. */
+  assert( pKey1 && pKey2 );
   rc = memcmp(pKey1, pKey2, n);
   if( rc==0 ){
     if( padFlag
@@ -3456,6 +3457,12 @@ int sqlite3CantopenError(int lineno){
   return reportError(SQLITE_CANTOPEN, lineno, "cannot open file");
 }
 #ifdef SQLITE_DEBUG
+int sqlite3CorruptPgnoError(int lineno, Pgno pgno){
+  char zMsg[100];
+  sqlite3_snprintf(sizeof(zMsg), zMsg, "database corruption page %d", pgno);
+  testcase( sqlite3GlobalConfig.xLog!=0 );
+  return reportError(SQLITE_CORRUPT, lineno, zMsg);
+}
 int sqlite3NomemError(int lineno){
   testcase( sqlite3GlobalConfig.xLog!=0 );
   return reportError(SQLITE_NOMEM, lineno, "OOM");
@@ -4249,3 +4256,55 @@ void sqlite3_snapshot_free(sqlite3_snapshot *pSnapshot){
   sqlite3_free(pSnapshot);
 }
 #endif /* SQLITE_ENABLE_SNAPSHOT */
+
+#ifndef SQLITE_OMIT_COMPILEOPTION_DIAGS
+/*
+** Given the name of a compile-time option, return true if that option
+** was used and false if not.
+**
+** The name can optionally begin with "SQLITE_" but the "SQLITE_" prefix
+** is not required for a match.
+*/
+int sqlite3_compileoption_used(const char *zOptName){
+  int i, n;
+  int nOpt;
+  const char **azCompileOpt;
+ 
+#if SQLITE_ENABLE_API_ARMOR
+  if( zOptName==0 ){
+    (void)SQLITE_MISUSE_BKPT;
+    return 0;
+  }
+#endif
+
+  azCompileOpt = sqlite3CompileOptions(&nOpt);
+
+  if( sqlite3StrNICmp(zOptName, "SQLITE_", 7)==0 ) zOptName += 7;
+  n = sqlite3Strlen30(zOptName);
+
+  /* Since nOpt is normally in single digits, a linear search is 
+  ** adequate. No need for a binary search. */
+  for(i=0; i<nOpt; i++){
+    if( sqlite3StrNICmp(zOptName, azCompileOpt[i], n)==0
+     && sqlite3IsIdChar((unsigned char)azCompileOpt[i][n])==0
+    ){
+      return 1;
+    }
+  }
+  return 0;
+}
+
+/*
+** Return the N-th compile-time option string.  If N is out of range,
+** return a NULL pointer.
+*/
+const char *sqlite3_compileoption_get(int N){
+  int nOpt;
+  const char **azCompileOpt;
+  azCompileOpt = sqlite3CompileOptions(&nOpt);
+  if( N>=0 && N<nOpt ){
+    return azCompileOpt[N];
+  }
+  return 0;
+}
+#endif /* SQLITE_OMIT_COMPILEOPTION_DIAGS */

@@ -61,6 +61,24 @@ do_test ctime-1.2.2 {
   list [ lindex $ans 0 ] [ expr { [lsort [lindex $ans 1]]==[lindex $ans 1] } ]
 } {0 1}
 
+# Check the THREADSAFE option for SQLITE_THREADSAFE=2 builds (there are
+# a couple of these configurations in releasetest.tcl).
+#
+ifcapable threadsafe2 {
+  foreach {tn opt res} {
+    1 SQLITE_THREADSAFE     1
+    2 THREADSAFE            1
+    3 THREADSAFE=0          0
+    4 THREADSAFE=1          0
+    5 THREADSAFE=2          1
+    6 THREADSAFE=           0
+  } {
+    do_execsql_test ctime-1.3.$tn {
+      SELECT sqlite_compileoption_used($opt)
+    } $res
+  }
+}
+
 # SQLITE_THREADSAFE should pretty much always be defined
 # one way or the other, and it must have a value of 0 or 1.
 do_test ctime-1.4.1 {

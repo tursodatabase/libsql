@@ -573,7 +573,7 @@ int sqlite3VdbeExec(
   int iCompare = 0;          /* Result of last comparison */
   unsigned nVmStep = 0;      /* Number of virtual machine steps */
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
-  unsigned nProgressLimit = 0;/* Invoke xProgress() when nVmStep reaches this */
+  unsigned nProgressLimit;   /* Invoke xProgress() when nVmStep reaches this */
 #endif
   Mem *aMem = p->aMem;       /* Copy of p->aMem */
   Mem *pIn1 = 0;             /* 1st input operand */
@@ -606,6 +606,8 @@ int sqlite3VdbeExec(
     u32 iPrior = p->aCounter[SQLITE_STMTSTATUS_VM_STEP];
     assert( 0 < db->nProgressOps );
     nProgressLimit = db->nProgressOps - (iPrior % db->nProgressOps);
+  }else{
+    nProgressLimit = 0xffffffff;
   }
 #endif
 #ifdef SQLITE_DEBUG
@@ -783,7 +785,7 @@ check_for_interrupt:
   ** If the progress callback returns non-zero, exit the virtual machine with
   ** a return code SQLITE_ABORT.
   */
-  if( db->xProgress!=0 && nVmStep>=nProgressLimit ){
+  if( nVmStep>=nProgressLimit && db->xProgress!=0 ){
     assert( db->nProgressOps!=0 );
     nProgressLimit = nVmStep + db->nProgressOps - (nVmStep%db->nProgressOps);
     if( db->xProgress(db->pProgressArg) ){
@@ -1325,7 +1327,7 @@ case OP_ResultRow: {
   /* Run the progress counter just before returning.
   */
   if( db->xProgress!=0
-   && nVmStep>=nProgressLimit
+   && nVmStep>=nProgressLimit 
    && db->xProgress(db->pProgressArg)!=0
   ){
     rc = SQLITE_INTERRUPT;
@@ -2496,7 +2498,9 @@ case OP_Column: {
   pC = p->apCsr[pOp->p1];
   p2 = pOp->p2;
 
-  /* If the cursor cache is stale, bring it up-to-date */
+  /* If the cursor cache is stale (meaning it is not currently point at
+  ** the correct row) then bring it up-to-date by doing the necessary 
+  ** B-Tree seek. */
   rc = sqlite3VdbeCursorMoveto(&pC, &p2);
   if( rc ) goto abort_due_to_error;
 
@@ -3978,8 +3982,15 @@ case OP_SeekGT: {       /* jump, in3 */
   if( oc>=OP_SeekGE ){  assert( oc==OP_SeekGE || oc==OP_SeekGT );
     if( res<0 || (res==0 && oc==OP_SeekGT) ){
       res = 0;
-      rc = sqlite3BtreeNext(pC->uc.pCursor, &res);
-      if( rc!=SQLITE_OK ) goto abort_due_to_error;
+      rc = sqlite3BtreeNext(pC->uc.pCursor, 0);
+      if( rc!=SQLITE_OK ){
+        if( rc==SQLITE_DONE ){
+          rc = SQLITE_OK;
+          res = 1;
+        }else{
+          goto abort_due_to_error;
+        }
+      }
     }else{
       res = 0;
     }
@@ -3987,8 +3998,15 @@ case OP_SeekGT: {       /* jump, in3 */
     assert( oc==OP_SeekLT || oc==OP_SeekLE );
     if( res>0 || (res==0 && oc==OP_SeekLT) ){
       res = 0;
-      rc = sqlite3BtreePrevious(pC->uc.pCursor, &res);
-      if( rc!=SQLITE_OK ) goto abort_due_to_error;
+      rc = sqlite3BtreePrevious(pC->uc.pCursor, 0);
+      if( rc!=SQLITE_OK ){
+        if( rc==SQLITE_DONE ){
+          rc = SQLITE_OK;
+          res = 1;
+        }else{
+          goto abort_due_to_error;
+        }
+      }
     }else{
       /* res might be negative because the table is empty.  Check to
       ** see if this is the case.
@@ -5094,12 +5112,10 @@ case OP_Rewind: {        /* jump */
 */
 case OP_SorterNext: {  /* jump */
   VdbeCursor *pC;
-  int res;
 
   pC = p->apCsr[pOp->p1];
   assert( isSorter(pC) );
-  res = 0;
-  rc = sqlite3VdbeSorterNext(db, pC, &res);
+  rc = sqlite3VdbeSorterNext(db, pC);
   goto next_tail;
 case OP_PrevIfOpen:    /* jump */
 case OP_NextIfOpen:    /* jump */
@@ -5110,12 +5126,9 @@ case OP_Next:          /* jump */
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   assert( pOp->p5<ArraySize(p->aCounter) );
   pC = p->apCsr[pOp->p1];
-  res = pOp->p3;
   assert( pC!=0 );
   assert( pC->deferredMoveto==0 );
   assert( pC->eCurType==CURTYPE_BTREE );
-  assert( res==0 || (res==1 && pC->isTable==0) );
-  testcase( res==1 );
   assert( pOp->opcode!=OP_Next || pOp->p4.xAdvance==sqlite3BtreeNext );
   assert( pOp->opcode!=OP_Prev || pOp->p4.xAdvance==sqlite3BtreePrevious );
   assert( pOp->opcode!=OP_NextIfOpen || pOp->p4.xAdvance==sqlite3BtreeNext );
@@ -5130,21 +5143,21 @@ case OP_Next:          /* jump */
        || pC->seekOp==OP_SeekLT || pC->seekOp==OP_SeekLE
        || pC->seekOp==OP_Last );
 
-  rc = pOp->p4.xAdvance(pC->uc.pCursor, &res);
+  rc = pOp->p4.xAdvance(pC->uc.pCursor, pOp->p3);
 next_tail:
   pC->cacheStatus = CACHE_STALE;
-  VdbeBranchTaken(res==0,2);
-  if( rc ) goto abort_due_to_error;
-  if( res==0 ){
+  VdbeBranchTaken(rc==SQLITE_OK,2);
+  if( rc==SQLITE_OK ){
     pC->nullRow = 0;
     p->aCounter[pOp->p5]++;
 #ifdef SQLITE_TEST
     sqlite3_search_count++;
 #endif
     goto jump_to_p2_and_check_for_interrupt;
-  }else{
-    pC->nullRow = 1;
   }
+  if( rc!=SQLITE_DONE ) goto abort_due_to_error;
+  rc = SQLITE_OK;
+  pC->nullRow = 1;
   goto check_for_interrupt;
 }
 
@@ -5255,8 +5268,8 @@ case OP_IdxDelete: {
   break;
 }
 
-/* Opcode: Seek P1 * P3 P4 *
-** Synopsis: Move P3 to P1.rowid
+/* Opcode: DeferredSeek P1 * P3 P4 *
+** Synopsis: Move P3 to P1.rowid if needed
 **
 ** P1 is an open index cursor and P3 is a cursor on the corresponding
 ** table.  This opcode does a deferred seek of the P3 table cursor
@@ -5283,11 +5296,11 @@ case OP_IdxDelete: {
 **
 ** See also: Rowid, MakeRecord.
 */
-case OP_Seek:
-case OP_IdxRowid: {              /* out2 */
-  VdbeCursor *pC;                /* The P1 index cursor */
-  VdbeCursor *pTabCur;           /* The P2 table cursor (OP_Seek only) */
-  i64 rowid;                     /* Rowid that P1 current points to */
+case OP_DeferredSeek:
+case OP_IdxRowid: {           /* out2 */
+  VdbeCursor *pC;             /* The P1 index cursor */
+  VdbeCursor *pTabCur;        /* The P2 table cursor (OP_DeferredSeek only) */
+  i64 rowid;                  /* Rowid that P1 current points to */
 
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
@@ -5313,7 +5326,7 @@ case OP_IdxRowid: {              /* out2 */
     if( rc!=SQLITE_OK ){
       goto abort_due_to_error;
     }
-    if( pOp->opcode==OP_Seek ){
+    if( pOp->opcode==OP_DeferredSeek ){
       assert( pOp->p3>=0 && pOp->p3<p->nCursor );
       pTabCur = p->apCsr[pOp->p3];
       assert( pTabCur!=0 );

@@ -2160,17 +2160,18 @@ static void Cleanup(Vdbe *p){
 ** be called on an SQL statement before sqlite3_step().
 */
 void sqlite3VdbeSetNumCols(Vdbe *p, int nResColumn){
-  Mem *pColName;
   int n;
   sqlite3 *db = p->db;
 
-  releaseMemArray(p->aColName, p->nResColumn*COLNAME_N);
-  sqlite3DbFree(db, p->aColName);
+  if( p->nResColumn ){
+    releaseMemArray(p->aColName, p->nResColumn*COLNAME_N);
+    sqlite3DbFree(db, p->aColName);
+  }
   n = nResColumn*COLNAME_N;
   p->nResColumn = (u16)nResColumn;
-  p->aColName = pColName = (Mem*)sqlite3DbMallocRawNN(db, sizeof(Mem)*n );
+  p->aColName = (Mem*)sqlite3DbMallocRawNN(db, sizeof(Mem)*n );
   if( p->aColName==0 ) return;
-  initMemArray(p->aColName, n, p->db, MEM_Null);
+  initMemArray(p->aColName, n, db, MEM_Null);
 }
 
 /*
@@ -2820,10 +2821,10 @@ int sqlite3VdbeTransferError(Vdbe *p){
     sqlite3ValueSetStr(db->pErr, -1, p->zErrMsg, SQLITE_UTF8, SQLITE_TRANSIENT);
     sqlite3EndBenignMalloc();
     db->bBenignMalloc--;
-    db->errCode = rc;
-  }else{
-    sqlite3Error(db, rc);
+  }else if( db->pErr ){
+    sqlite3ValueSetNull(db->pErr);
   }
+  db->errCode = rc;
   return rc;
 }
 
@@ -3731,7 +3732,6 @@ static int vdbeCompareMemString(
   }else{
     int rc;
     const void *v1, *v2;
-    int n1, n2;
     Mem c1;
     Mem c2;
     sqlite3VdbeMemInit(&c1, pMem1->db, MEM_Null);
@@ -3739,11 +3739,13 @@ static int vdbeCompareMemString(
     sqlite3VdbeMemShallowCopy(&c1, pMem1, MEM_Ephem);
     sqlite3VdbeMemShallowCopy(&c2, pMem2, MEM_Ephem);
     v1 = sqlite3ValueText((sqlite3_value*)&c1, pColl->enc);
-    n1 = v1==0 ? 0 : c1.n;
     v2 = sqlite3ValueText((sqlite3_value*)&c2, pColl->enc);
-    n2 = v2==0 ? 0 : c2.n;
-    rc = pColl->xCmp(pColl->pUser, n1, v1, n2, v2);
-    if( (v1==0 || v2==0) && prcErr ) *prcErr = SQLITE_NOMEM_BKPT;
+    if( (v1==0 || v2==0) ){
+      if( prcErr ) *prcErr = SQLITE_NOMEM_BKPT;
+      rc = 0;
+    }else{
+      rc = pColl->xCmp(pColl->pUser, c1.n, v1, c2.n, v2);
+    }
     sqlite3VdbeMemRelease(&c1);
     sqlite3VdbeMemRelease(&c2);
     return rc;

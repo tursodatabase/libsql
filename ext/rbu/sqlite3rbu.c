@@ -3787,7 +3787,11 @@ int sqlite3rbu_close(sqlite3rbu *p, char **pzErrmsg){
 
     rbuEditErrmsg(p);
     rc = p->rc;
-    *pzErrmsg = p->zErrmsg;
+    if( pzErrmsg ){
+      *pzErrmsg = p->zErrmsg;
+    }else{
+      sqlite3_free(p->zErrmsg);
+    }
     sqlite3_free(p->zState);
     sqlite3_free(p);
   }else{

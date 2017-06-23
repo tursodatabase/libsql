@@ -1031,7 +1031,7 @@ static void selectInnerLoop(
 ** X extra columns.
 */
 KeyInfo *sqlite3KeyInfoAlloc(sqlite3 *db, int N, int X){
-  int nExtra = (N+X)*(sizeof(CollSeq*)+1);
+  int nExtra = (N+X)*(sizeof(CollSeq*)+1) - sizeof(CollSeq*);
   KeyInfo *p = sqlite3DbMallocRawNN(db, sizeof(KeyInfo) + nExtra);
   if( p ){
     p->aSortOrder = (u8*)&p->aColl[N+X];
@@ -3205,9 +3205,12 @@ static Expr *substExpr(
           pCopy = &ifNullRow;
         }
         pNew = sqlite3ExprDup(db, pCopy, 0);
-        if( pNew && (pExpr->flags & EP_FromJoin) ){
+        if( pNew && pSubst->isLeftJoin ){
+          ExprSetProperty(pNew, EP_CanBeNull);
+        }
+        if( pNew && ExprHasProperty(pExpr,EP_FromJoin) ){
           pNew->iRightJoinTable = pExpr->iRightJoinTable;
-          pNew->flags |= EP_FromJoin;
+          ExprSetProperty(pNew, EP_FromJoin);
         }
         sqlite3ExprDelete(db, pExpr);
         pExpr = pNew;
@@ -3500,7 +3503,7 @@ static int flattenSubquery(
   **
   ** If the subquery is the right operand of a LEFT JOIN, then the outer
   ** query cannot be an aggregate.  This is an artifact of the way aggregates
-  ** are processed - there is not mechanism to determine if the LEFT JOIN
+  ** are processed - there is no mechanism to determine if the LEFT JOIN
   ** table should be all-NULL.
   **
   ** See also tickets #306, #350, and #3300.
@@ -4611,6 +4614,25 @@ int sqlite3ExprWalkNoop(Walker *NotUsed, Expr *NotUsed2){
 }
 
 /*
+** No-op routine for the parse-tree walker for SELECT statements.
+** subquery in the parser tree.
+*/
+int sqlite3SelectWalkNoop(Walker *NotUsed, Select *NotUsed2){
+  UNUSED_PARAMETER2(NotUsed, NotUsed2);
+  return WRC_Continue;
+}
+
+#if SQLITE_DEBUG
+/*
+** Always assert.  This xSelectCallback2 implementation proves that the
+** xSelectCallback2 is never invoked.
+*/
+void sqlite3SelectWalkAssert2(Walker *NotUsed, Select *NotUsed2){
+  UNUSED_PARAMETER2(NotUsed, NotUsed2);
+  assert( 0 );
+}
+#endif
+/*
 ** This routine "expands" a SELECT statement and all of its subqueries.
 ** For additional information on what it means to "expand" a SELECT
 ** statement, see the comment on the selectExpand worker callback above.
@@ -4625,11 +4647,11 @@ int sqlite3ExprWalkNoop(Walker *NotUsed, Expr *NotUsed2){
 */
 static void sqlite3SelectExpand(Parse *pParse, Select *pSelect){
   Walker w;
-  memset(&w, 0, sizeof(w));
   w.xExprCallback = sqlite3ExprWalkNoop;
   w.pParse = pParse;
   if( pParse->hasCompound ){
     w.xSelectCallback = convertCompoundSelectToSubquery;
+    w.xSelectCallback2 = 0;
     sqlite3WalkSelect(&w, pSelect);
   }
   w.xSelectCallback = selectExpander;
@@ -4689,7 +4711,7 @@ static void selectAddSubqueryTypeInfo(Walker *pWalker, Select *p){
 static void sqlite3SelectAddTypeInfo(Parse *pParse, Select *pSelect){
 #ifndef SQLITE_OMIT_SUBQUERY
   Walker w;
-  memset(&w, 0, sizeof(w));
+  w.xSelectCallback = sqlite3SelectWalkNoop;
   w.xSelectCallback2 = selectAddSubqueryTypeInfo;
   w.xExprCallback = sqlite3ExprWalkNoop;
   w.pParse = pParse;
@@ -5270,6 +5292,9 @@ int sqlite3Select(
       pPrior = isSelfJoinView(pTabList, pItem);
       if( pPrior ){
         sqlite3VdbeAddOp2(v, OP_OpenDup, pItem->iCursor, pPrior->iCursor);
+        explainSetInteger(pItem->iSelectId, pPrior->iSelectId);
+        assert( pPrior->pSelect!=0 );
+        pSub->nSelectRow = pPrior->pSelect->nSelectRow;
       }else{
         sqlite3SelectDestInit(&dest, SRT_EphemTab, pItem->iCursor);
         explainSetInteger(pItem->iSelectId, (u8)pParse->iNextSelectId);

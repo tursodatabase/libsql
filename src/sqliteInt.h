@@ -274,6 +274,11 @@
 **
 ** Older versions of SQLite used an optional THREADSAFE macro.
 ** We support that for legacy.
+**
+** To ensure that the correct value of "THREADSAFE" is reported when querying
+** for compile-time options at runtime (e.g. "PRAGMA compile_options"), this
+** logic is partially replicated in ctime.c. If it is updated here, it should
+** also be updated there.
 */
 #if !defined(SQLITE_THREADSAFE)
 # if defined(THREADSAFE)
@@ -589,7 +594,6 @@
 */
 #ifndef SQLITE_TEMP_STORE
 # define SQLITE_TEMP_STORE 1
-# define SQLITE_TEMP_STORE_xc 1  /* Exclude from ctime.c */
 #endif
 
 /*
@@ -890,7 +894,6 @@ typedef INT16_TYPE LogEst;
 # else
 #   define SQLITE_MAX_MMAP_SIZE 0
 # endif
-# define SQLITE_MAX_MMAP_SIZE_xc 1 /* exclude from ctime.c */
 #endif
 
 /*
@@ -900,7 +903,6 @@ typedef INT16_TYPE LogEst;
 */
 #ifndef SQLITE_DEFAULT_MMAP_SIZE
 # define SQLITE_DEFAULT_MMAP_SIZE 0
-# define SQLITE_DEFAULT_MMAP_SIZE_xc 1  /* Exclude from ctime.c */
 #endif
 #if SQLITE_DEFAULT_MMAP_SIZE>SQLITE_MAX_MMAP_SIZE
 # undef SQLITE_DEFAULT_MMAP_SIZE
@@ -2364,7 +2366,7 @@ struct Expr {
 #define EP_FromJoin  0x000001 /* Originates in ON/USING clause of outer join */
 #define EP_Agg       0x000002 /* Contains one or more aggregate functions */
 #define EP_Resolved  0x000004 /* IDs have been resolved to COLUMNs */
-#define EP_Error     0x000008 /* Expression contains one or more errors */
+                  /* 0x000008 // available for use */
 #define EP_Distinct  0x000010 /* Aggregate function with DISTINCT keyword */
 #define EP_VarSelect 0x000020 /* pSelect is correlated, not constant */
 #define EP_DblQuoted 0x000040 /* token.z was originally in "..." */
@@ -2831,10 +2833,10 @@ struct Select {
 */
 struct SelectDest {
   u8 eDest;            /* How to dispose of the results.  On of SRT_* above. */
-  char *zAffSdst;      /* Affinity used when eDest==SRT_Set */
   int iSDParm;         /* A parameter used by the eDest disposal method */
   int iSdst;           /* Base register where results are written */
   int nSdst;           /* Number of registers allocated */
+  char *zAffSdst;      /* Affinity used when eDest==SRT_Set */
   ExprList *pOrderBy;  /* Key columns for SRT_Queue and SRT_DistQueue */
 };
 
@@ -3337,6 +3339,10 @@ int sqlite3WalkSelect(Walker*, Select*);
 int sqlite3WalkSelectExpr(Walker*, Select*);
 int sqlite3WalkSelectFrom(Walker*, Select*);
 int sqlite3ExprWalkNoop(Walker*, Expr*);
+int sqlite3SelectWalkNoop(Walker*, Select*);
+#ifdef SQLITE_DEBUG
+void sqlite3SelectWalkAssert2(Walker*, Select*);
+#endif
 
 /*
 ** Return code from the parse-tree walking primitives and their
@@ -3398,11 +3404,14 @@ int sqlite3CantopenError(int);
 #ifdef SQLITE_DEBUG
   int sqlite3NomemError(int);
   int sqlite3IoerrnomemError(int);
+  int sqlite3CorruptPgnoError(int,Pgno);
 # define SQLITE_NOMEM_BKPT sqlite3NomemError(__LINE__)
 # define SQLITE_IOERR_NOMEM_BKPT sqlite3IoerrnomemError(__LINE__)
+# define SQLITE_CORRUPT_PGNO(P) sqlite3CorruptPgnoError(__LINE__,(P))
 #else
 # define SQLITE_NOMEM_BKPT SQLITE_NOMEM
 # define SQLITE_IOERR_NOMEM_BKPT SQLITE_IOERR_NOMEM
+# define SQLITE_CORRUPT_PGNO(P) sqlite3CorruptError(__LINE__)
 #endif
 
 /*
@@ -4386,5 +4395,7 @@ int sqlite3ExprIsVector(Expr *pExpr);
 Expr *sqlite3VectorFieldSubexpr(Expr*, int);
 Expr *sqlite3ExprForVectorField(Parse*,Expr*,int);
 void sqlite3VectorErrorMsg(Parse*, Expr*);
+
+const char **sqlite3CompileOptions(int *pnOpt);
 
 #endif /* SQLITEINT_H */

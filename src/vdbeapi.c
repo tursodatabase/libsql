@@ -1319,8 +1319,10 @@ static int bindText(
       if( rc==SQLITE_OK && encoding!=0 ){
         rc = sqlite3VdbeChangeEncoding(pVar, ENC(p->db));
       }
-      sqlite3Error(p->db, rc);
-      rc = sqlite3ApiExit(p->db, rc);
+      if( rc ){
+        sqlite3Error(p->db, rc);
+        rc = sqlite3ApiExit(p->db, rc);
+      }
     }
     sqlite3_mutex_leave(p->db->mutex);
   }else if( xDel!=SQLITE_STATIC && xDel!=SQLITE_TRANSIENT ){
@@ -1654,8 +1656,19 @@ int sqlite3_stmt_status(sqlite3_stmt *pStmt, int op, int resetFlag){
     return 0;
   }
 #endif
-  v = pVdbe->aCounter[op];
-  if( resetFlag ) pVdbe->aCounter[op] = 0;
+  if( op==SQLITE_STMTSTATUS_MEMUSED ){
+    sqlite3 *db = pVdbe->db;
+    sqlite3_mutex_enter(db->mutex);
+    v = 0;
+    db->pnBytesFreed = (int*)&v;
+    sqlite3VdbeClearObject(db, pVdbe);
+    sqlite3DbFree(db, pVdbe);
+    db->pnBytesFreed = 0;
+    sqlite3_mutex_leave(db->mutex);
+  }else{
+    v = pVdbe->aCounter[op];
+    if( resetFlag ) pVdbe->aCounter[op] = 0;
+  }
   return (int)v;
 }
 

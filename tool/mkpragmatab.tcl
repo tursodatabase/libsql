@@ -263,7 +263,7 @@ set pragma_def {
   IF:   !defined(SQLITE_OMIT_FOREIGN_KEY)
 
   NAME: foreign_key_check
-  FLAG: NeedSchema
+  FLAG: NeedSchema Result0
   COLS: table rowid parent fkid
   IF:   !defined(SQLITE_OMIT_FOREIGN_KEY) && !defined(SQLITE_OMIT_TRIGGER)
 
@@ -274,12 +274,12 @@ set pragma_def {
   FLAG: NoColumns
 
   NAME: integrity_check
-  FLAG: NeedSchema
+  FLAG: NeedSchema Result0 Result1
   IF:   !defined(SQLITE_OMIT_INTEGRITY_CHECK)
 
   NAME: quick_check
   TYPE: INTEGRITY_CHECK
-  FLAG: NeedSchema
+  FLAG: NeedSchema Result0 Result1
   IF:   !defined(SQLITE_OMIT_INTEGRITY_CHECK)
 
   NAME: encoding

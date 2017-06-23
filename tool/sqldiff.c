@@ -1667,7 +1667,7 @@ static void changeset_one_table(const char *zTab, FILE *out){
 
   putc('T', out);
   putsVarint(out, (sqlite3_uint64)nCol);
-  for(i=0; i<nCol; i++) putc(aiFlg[i]!=0, out);
+  for(i=0; i<nCol; i++) putc(aiFlg[i], out);
   fwrite(zTab, 1, strlen(zTab), out);
   putc(0, out);
 
