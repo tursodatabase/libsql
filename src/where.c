@@ -3972,6 +3972,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
                rUnsorted, rCost));
         }else{
           rCost = rUnsorted;
+          rUnsorted -= 2;  /* TUNING:  Slight bias in favor of no-sort plans */
         }
 
         /* Check to see if pWLoop should be added to the set of

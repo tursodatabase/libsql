@@ -1,5 +1,5 @@
-C Make\ssure\senough\smemory\sis\sallocated\sfor\spathological\squoting\scases\swhen\ncomputing\sa\squoted\stable\sname\sin\sthe\scommand-line\sshell.
-D 2017-06-24T13:31:40.345
+C Query\splanner\stuning:\s\sWhen\sdeciding\sbetween\stwo\splans\swith\sthe\ssame\scost,\nbias\sthe\sselection\stoward\sthe\sone\sthat\sdoes\snot\suse\sthe\ssorter.
+D 2017-06-24T16:03:18.634
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -486,7 +486,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 40c543f0a2195d1b0dc88ef12142bea690009344
 F src/wal.h 06b2a0b599cc0f53ea97f497cf8c6b758c999f71
 F src/walker.c d46044e7a5842560dfe7122d93ff5145dd4a96f4d0bf5ba5910a7731b8c01e79
-F src/where.c d4f329d9055dbdb475d697f205db1104af886aad4400168fb9b957f6251ea926
+F src/where.c 74b0a05487e44e8c5d28ebe3bd77ca9719b1d5114235bed48079aee309a0bb4e
 F src/whereInt.h 2a4b634d63ce488b46d4b0da8f2eaa8f9aeab202bc25ef76f007de5e3fba1f20
 F src/wherecode.c 339ee802d9d311acf0cba8b5a9a092e167ef71c3a777d4b3e57de25d193251c7
 F src/whereexpr.c a2fe3811d45af45a5c6667caabc15e01054fe6228c64e86e1f7d2ba5ef5284f9
@@ -1583,7 +1583,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 712267c9c08fdcef5d59cedc672657b55fd6a77472711711599f0bd653e6d880
-R 64992782c16c9df1983fe8b9246941a3
+P 0583b84ab444db3ae3c93db619b67bf84b0305ab989200e77214e02ff2dc923a
+R 39ce7bbd8ca958eae50225863d2f437b
 U drh
-Z f16ca2ff8d7abe355c19c0847ea61db0
+Z 7b78ee1e3867abb438b738ced43fb1d9
