@@ -1,5 +1,5 @@
-C When\sgenerating\sindividual\sloops\sfor\seach\sORed\sterm\sof\san\sOR\sscan,\smove\sany\nconstant\sWHERE\sexpressions\soutside\sof\sthe\sloop,\sas\sis\sdone\sfor\stop-level\nloops.
-D 2017-06-23T15:47:05.684
+C Make\ssure\senough\smemory\sis\sallocated\sfor\spathological\squoting\scases\swhen\ncomputing\sa\squoted\stable\sname\sin\sthe\scommand-line\sshell.
+D 2017-06-24T13:31:40.345
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -406,7 +406,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c adf3ef9843135b1383321ad751f16f5a40c3f37925154555a3e61653d2a954e8
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 35ccfae64cecfa843d54a5898c4ab7d6595ce03d147267fa5eecdc8eab39cd6a
-F src/shell.c bcd3358ad6cb3f3dc7ec76ad3bd8191f123ed2425360c5c48fe431780eceb729
+F src/shell.c 2026e88e7892ba177eae79936285d781f1c449f7a7b4e8d86fd02739d4ead26b
 F src/sqlite.h.in 67fa8bd29808e7988e0ce36c8d4c6043eb1727f94522fc612687aa5af51931e6
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 58fd0676d3111d02e62e5a35992a7d3da5d3f88753acc174f2d37b774fbbdd28
@@ -1583,7 +1583,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 118f7bb33a6f78951bbffa957f48015d1bce5aaf9246a99262a90bc8ad52e5a3 e4a022be4b069b08cfdfda5295461676b99d28e17bbbedfbcb362dec69de59bd
-R b4aae75660dcec44ff13144cfab52224
-U dan
-Z 2d5bd4652bc9ff6cf87670159c4dccb2
+P 712267c9c08fdcef5d59cedc672657b55fd6a77472711711599f0bd653e6d880
+R 64992782c16c9df1983fe8b9246941a3
+U drh
+Z f16ca2ff8d7abe355c19c0847ea61db0

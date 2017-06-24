@@ -2363,7 +2363,7 @@ static void set_table_name(ShellState *p, const char *zName){
   if( zName==0 ) return;
   cQuote = quoteChar(zName);
   n = strlen30(zName);
-  if( cQuote ) n += 2;
+  if( cQuote ) n += n+2;
   z = p->zDestTable = malloc( n+1 );
   if( z==0 ){
     raw_printf(stderr,"Error: out of memory\n");
