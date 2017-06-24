@@ -1,5 +1,5 @@
-C Make\ssure\sthe\sconfig.h\sheader\sis\sincluded\sby\sctime.c,\sif\sthat\sheader\sexists.
-D 2017-06-24T16:35:00.182
+C Disable\sshell\stests\sfor\sthe\s.schema\scommand\sif\svirtual\stables\sare\snot\savailable.
+D 2017-06-24T19:21:48.519
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -1126,7 +1126,7 @@ F test/sharedA.test 0cdf1a76dfa00e6beee66af5b534b1e8df2720f5
 F test/sharedB.test 16cc7178e20965d75278f410943109b77b2e645e
 F test/shared_err.test 2f2aee20db294b9924e81f6ccbe60f19e21e8506
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test 50226a3a66bbd42a902e9f7698f768927eb33a56e9cfc55b7c157c38eb3e80ac
+F test/shell1.test 65f55c120ab289bc72ec0e534d104e078124d94aeac75dc7444c338c4d84fd0d
 F test/shell2.test e242a9912f44f4c23c3d1d802a83e934e84c853b
 F test/shell3.test 9b95ba643eaa228376f06a898fb410ee9b6e57c1
 F test/shell4.test 89ad573879a745974ff2df20ff97c5d6ffffbd5d
@@ -1583,7 +1583,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f0ec36d479ac4efaa0efd0594d032dd7b8ccdf84a4dc3644cd688762186fbcca
-R 372aadc61aabb2f352679729d647f91e
+P c2ea62937ec8fabec72d3c7cd38d8e2cabbb5ce48638f8ce7ebefd6cd2716fd3
+R 9f5da0e29f079e233ed155fcb887700c
 U drh
-Z 70448a4a6b9d4ba9f8d312e19786de1b
+Z e393ac92ea73930e7d0783c651bf561b
