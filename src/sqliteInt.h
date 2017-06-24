@@ -178,8 +178,9 @@
 ** Include the configuration header output by 'configure' if we're using the
 ** autoconf-based build
 */
-#ifdef _HAVE_SQLITE_CONFIG_H
+#if defined(_HAVE_SQLITE_CONFIG_H) && !defined(SQLITECONFIG_H)
 #include "config.h"
+#define SQLITECONFIG_H 1
 #endif
 
 #include "sqliteLimit.h"
