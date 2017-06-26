@@ -521,7 +521,9 @@ static int waitOnCheckpointer(LsmDb *pDb, lsm_db *db){
     rc = lsm_info(db, LSM_INFO_CHECKPOINT_SIZE, &nKB);
     if( rc!=LSM_OK || nKB<pDb->nMtMaxCkpt ) break;
 #ifdef LSM_MUTEX_PTHREADS
-    mt_signal_worker(pDb, 1);
+    mt_signal_worker(pDb, 
+        (pDb->eMode==LSMTEST_MODE_BACKGROUND_CKPT ? 0 : 1)
+    );
 #endif
     usleep(5000);
     nSleep += 5;
