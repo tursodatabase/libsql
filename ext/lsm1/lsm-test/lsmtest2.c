@@ -337,7 +337,7 @@ static void crash_test1(int bCompress, int *pRc){
       int nWrite = 0;
       lsm_db *db = tdb_lsm(pDb);
       testrc = lsm_work(db, 0, nPage, &nWrite);
-      assert( testrc!=0 || nWrite>0 );
+      /* assert( testrc!=0 || nWrite>0 ); */
       if( testrc==0 ) testrc = lsm_checkpoint(db, 0);
     }
     tdb_close(pDb);
@@ -468,7 +468,9 @@ void do_crash_test(const char *zPattern, int *pRc){
     int bCompress;
   } aTest [] = {
     { "crash.lsm.1",     crash_test1, 0 },
+#ifdef HAVE_ZLIB
     { "crash.lsm_zip.1", crash_test1, 1 },
+#endif
     { "crash.lsm.2",     crash_test2, 0 },
     { "crash.lsm.3",     crash_test3, 0 },
   };

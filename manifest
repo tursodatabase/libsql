@@ -1,5 +1,5 @@
-C Fix\sanother\sproblem\swith\smulti-threaded\smode\sin\sthe\sLSM\stest\scode.
-D 2017-06-26T08:24:35.524
+C Remove\san\sinvalid\sassert()\sfrom\slsm\stest\scode.
+D 2017-06-26T11:46:01.859
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -212,7 +212,7 @@ F ext/lsm1/Makefile 5f60d0e1635ee51c438973f37a93f8e562229b446db59fc00af1621d39fd
 F ext/lsm1/lsm-test/README 87ea529d2abe615e856d4714bfe8bb185e6c2771b8612aa6298588b7b43e6f86
 F ext/lsm1/lsm-test/lsmtest.h e7057a3f9db71938496fc8ef081c9f45623b25bfd8499b3550d1ea7123143e90
 F ext/lsm1/lsm-test/lsmtest1.c 27c3cf6512514b25a145154ae4e54d053d883b2f7f52ed214747b5ebaceedd3e
-F ext/lsm1/lsm-test/lsmtest2.c 02bd747ead150c6b0cdfeeb1637cabe21f977ab21265762036b04e76202f4fc0
+F ext/lsm1/lsm-test/lsmtest2.c 385efd49f3411bb2c8e0f9ffbd4f87450d5ac368aeee62d509d2c0ce10e4215b
 F ext/lsm1/lsm-test/lsmtest3.c 9ab87528a36dbf4a61d7c8ad954f5ee368c0878c127b84b942b2e2abe522de26
 F ext/lsm1/lsm-test/lsmtest4.c d258d6a245db5d8eaede096e2368d23f859c5e92c80ab9122463f708514fe10c
 F ext/lsm1/lsm-test/lsmtest5.c 8d5242a0f870d65eeada191c8945781fed9cb8ece3886573790ebd373b62dac5
@@ -1622,7 +1622,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d7015475f121db1f56060716cd8adb73e9b52016890ec9018b620ef9d7d4fbff
-R b9a98a6b215e7bedda7016d56ba98fbd
+P 461ced77d93e84f09bfb4291999cd0245506fa9a8369049fd68968bbcf18d41b
+R 63e8a5819d5154609225118f393af4e2
 U dan
-Z d1e7007f4ef8398b65bd06f90d76fe20
+Z 5b8d9ae5d3a8353b4cc4ac3639c99bf7
