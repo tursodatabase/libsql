@@ -1,5 +1,5 @@
-C Fix\ssome\scompiler\swarnings\sin\slsm_file.c.
-D 2017-06-26T06:53:24.693
+C Update\sa\stest\scase\sto\sreflect\sthe\sfact\sthat\sthe\slsm\sblocksize\sis\sconfigured\sin\nKiB.\sAnd\sdefaults\sto\s1024,\snot\s2048.
+D 2017-06-26T07:31:28.709
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -217,7 +217,7 @@ F ext/lsm1/lsm-test/lsmtest3.c 9ab87528a36dbf4a61d7c8ad954f5ee368c0878c127b84b94
 F ext/lsm1/lsm-test/lsmtest4.c d258d6a245db5d8eaede096e2368d23f859c5e92c80ab9122463f708514fe10c
 F ext/lsm1/lsm-test/lsmtest5.c 8d5242a0f870d65eeada191c8945781fed9cb8ece3886573790ebd373b62dac5
 F ext/lsm1/lsm-test/lsmtest6.c 9d5db9ff638152c8c3948dc1077dd302deff4fcb3d30cc71ac769915797bbb1d
-F ext/lsm1/lsm-test/lsmtest7.c aece33086e531898ecbf218d51c0be7a0d6c461219268f1a8e89ab0e8bf64654
+F ext/lsm1/lsm-test/lsmtest7.c 7a917455a0f956a8ed3f44f5c9387ec0ea6627714874464cc3fa5c5a9cabb2f2
 F ext/lsm1/lsm-test/lsmtest8.c b87a1279b0cfbb39df1fff50074696fbf5d83822349f65706fab6d618a7a52fa
 F ext/lsm1/lsm-test/lsmtest9.c 88245ce0fdd01678be548100e584cacdacab90208624223aac9029e4f90535fe
 F ext/lsm1/lsm-test/lsmtest_bt.c d70d9a9be5eef9360af1251dd083948d74fd30137a08f61bef995f7ac04e037f
@@ -1622,7 +1622,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 60105c2253d0b617037e975b0d0b729bcb59b950aa2c33d8891394ad45aabb69
-R f3df61e63c7c66f00f75df5faba47e75
+P 23f16382ed47a90bf5e6c1684d54d28484dca46fea20ca0f131bd477cf222bfb
+R 42cfaba8180225a4be675b52b68e350a
 U dan
-Z ed15241c63faac5908aa9f336ad26b1a
+Z 66b9f7dba4db0fdf711ca0bea95a98fa

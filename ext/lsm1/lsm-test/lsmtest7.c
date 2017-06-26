@@ -171,9 +171,9 @@ static void do_test_api2(const char *zPattern, int *pRc){
 
     testDeleteLsmdb("testdb.lsm");
     db1 = newLsmConnection("testdb.lsm", 0, 0, pRc);
-    testPagesize(db1, 4096, 2*1024*1024, pRc);
+    testPagesize(db1, 4096, 1024, pRc);
     db2 = newLsmConnection("testdb.lsm", 1024, 64*1024, pRc);
-    testPagesize(db2, 4096, 2*1024*1024, pRc);
+    testPagesize(db2, 4096, 1024, pRc);
     lsm_close(db1);
     lsm_close(db2);
 
@@ -186,10 +186,10 @@ static void do_test_api2(const char *zPattern, int *pRc){
     lsm_close(db2);
 
     testDeleteLsmdb("testdb.lsm");
-    db1 = newLsmConnection("testdb.lsm", 8192, 1*1024*1024, pRc);
-    testPagesize(db1, 8192, 1*1024*1024, pRc);
+    db1 = newLsmConnection("testdb.lsm", 8192, 2*1024, pRc);
+    testPagesize(db1, 8192, 2*1024, pRc);
     db2 = newLsmConnection("testdb.lsm", 1024, 64*1024, pRc);
-    testPagesize(db2, 8192, 1*1024*1024, pRc);
+    testPagesize(db2, 8192, 2*1024, pRc);
     lsm_close(db1);
     lsm_close(db2);
 
