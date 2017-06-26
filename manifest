@@ -1,5 +1,5 @@
-C Merge\sthe\slatest\schanges\sfrom\strunk.
-D 2017-06-15T15:06:26.353
+C Fix\ssome\scompiler\swarnings\sin\slsm_file.c.
+D 2017-06-26T06:53:24.693
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -235,7 +235,7 @@ F ext/lsm1/lsm-test/lsmtest_util.c 0c2b7c1d109fbd6b7b9a2780f1315e2438a973d18afea
 F ext/lsm1/lsm.h 0f6f64ff071471cb87bf98beb8386566f30ea001
 F ext/lsm1/lsmInt.h bc270dd81b3355c7410b06a6d54dd3eb9493a3e8
 F ext/lsm1/lsm_ckpt.c e7907e782fe2e95de0833675e35e726e487cc4cd
-F ext/lsm1/lsm_file.c 63796f5741422064b146cfbffbaeaeda14b70175
+F ext/lsm1/lsm_file.c 6dcd83e040d0ea003875e7684ca2ef063b5cc8a5af99f464475dfeb51d13adbf
 F ext/lsm1/lsm_log.c 5b3e855fcfb85de9fb86fcbf65696cc6886d3231
 F ext/lsm1/lsm_main.c f52eada2910f8a57bd4cafcee39c6c375f6b7ed8
 F ext/lsm1/lsm_mem.c 4c51ea9fa285ee6e35301b33491642d071740a0a
@@ -1622,7 +1622,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 61853bc171e7c3af1db6a33ac8b1ad21e1c08e8d6b317fe061fdcd89c9a42e88 9afd7a2ffd3a39456190ad05e85ff6485298aae262d9e0698a58c1d73507a36f
-R 86dc51b3b4b5ca3aa4d0c441dc00d984
-U drh
-Z 8f32c68f28804c0ec498baf7082045dc
+P 60105c2253d0b617037e975b0d0b729bcb59b950aa2c33d8891394ad45aabb69
+R f3df61e63c7c66f00f75df5faba47e75
+U dan
+Z ed15241c63faac5908aa9f336ad26b1a

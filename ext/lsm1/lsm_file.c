@@ -316,7 +316,7 @@ struct MetaPage {
 ** to catch IO errors (any error returned by a VFS method). 
 */
 #ifndef NDEBUG
-static void lsmIoerrBkpt(){
+static void lsmIoerrBkpt(void){
   static int nErr = 0;
   nErr++;
 }
@@ -447,7 +447,7 @@ int lsmEnvShmMap(
 }
 
 void lsmEnvShmBarrier(lsm_env *pEnv){
-  return pEnv->xShmBarrier();
+  pEnv->xShmBarrier();
 }
 
 void lsmEnvShmUnmap(lsm_env *pEnv, lsm_file *pFile, int bDel){
