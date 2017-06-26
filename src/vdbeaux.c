@@ -4540,7 +4540,7 @@ sqlite3 *sqlite3VdbeDb(Vdbe *v){
 */
 sqlite3_value *sqlite3VdbeGetBoundValue(Vdbe *v, int iVar, u8 aff){
   assert( iVar>0 );
-  if( v ){
+  if( v && (v->db->flags & SQLITE_EnableQPSG)==0 ){
     Mem *pMem = &v->aVar[iVar-1];
     if( 0==(pMem->flags & MEM_Null) ){
       sqlite3_value *pRet = sqlite3ValueNew(v->db);

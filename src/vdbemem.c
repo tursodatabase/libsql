@@ -1493,13 +1493,11 @@ static int stat4ValueFromExpr(
     Vdbe *v;
     int iBindVar = pExpr->iColumn;
     sqlite3VdbeSetVarmask(pParse->pVdbe, iBindVar);
-    if( (v = pParse->pReprepare)!=0 ){
+    if( (v = pParse->pReprepare)!=0 && (db->flags & SQLITE_EnableQPSG)==0 ){
       pVal = valueNew(db, pAlloc);
       if( pVal ){
         rc = sqlite3VdbeMemCopy((Mem*)pVal, &v->aVar[iBindVar-1]);
-        if( rc==SQLITE_OK ){
-          sqlite3ValueApplyAffinity(pVal, affinity, ENC(db));
-        }
+        sqlite3ValueApplyAffinity(pVal, affinity, ENC(db));
         pVal->db = pParse->db;
       }
     }

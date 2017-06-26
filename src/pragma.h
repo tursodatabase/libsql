@@ -458,7 +458,7 @@ static const PragmaName aPragmaName[] = {
   /* ePragTyp:  */ PragTyp_FLAG,
   /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
-  /* iArg:      */ SQLITE_ReadUncommitted },
+  /* iArg:      */ SQLITE_ReadUncommit },
  {/* zName:     */ "recursive_triggers",
   /* ePragTyp:  */ PragTyp_FLAG,
   /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns1,
@@ -610,7 +610,7 @@ static const PragmaName aPragmaName[] = {
   /* ePragTyp:  */ PragTyp_FLAG,
   /* ePragFlg:  */ PragFlg_Result0|PragFlg_NoColumns1,
   /* ColNames:  */ 0, 0,
-  /* iArg:      */ SQLITE_WriteSchema|SQLITE_RecoveryMode },
+  /* iArg:      */ SQLITE_WriteSchema },
 #endif
 };
 /* Number of pragmas: 60 on by default, 74 total. */

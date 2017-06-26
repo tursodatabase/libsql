@@ -811,6 +811,7 @@ int sqlite3_db_config(sqlite3 *db, int op, ...){
         { SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER, SQLITE_Fts3Tokenizer  },
         { SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION, SQLITE_LoadExtension  },
         { SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE,      SQLITE_NoCkptOnClose  },
+        { SQLITE_DBCONFIG_ENABLE_QPSG,           SQLITE_EnableQPSG     },
       };
       unsigned int i;
       rc = SQLITE_ERROR; /* IMP: R-42790-23372 */
@@ -2915,6 +2916,9 @@ static int openDatabase(
 #endif
 #if defined(SQLITE_ENABLE_FTS3_TOKENIZER)
                  | SQLITE_Fts3Tokenizer
+#endif
+#if defined(SQLITE_ENABLE_QPSG)
+                 | SQLITE_EnableQPSG
 #endif
       ;
   sqlite3HashInit(&db->aCollSeq);
