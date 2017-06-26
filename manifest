@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_DBCONFIG_ENABLE_QPSG\soption\sto\sactivate\sthe\squery\splanner\nstability\sguarantee.\s\sThis\sinvolves\srefactoring\sthe\ssqlite3.flags\sbitvector\nto\scarve\sout\sa\sfree\sbit\sto\suse.
-D 2017-06-26T13:57:49.311
+C Make\ssure\ssqlite3VdbeSetVarmask()\sis\snever\sinvoked\swhen\sQPSG\sis\senabled.
+D 2017-06-26T14:46:05.008
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -476,9 +476,9 @@ F src/vdbe.c 50f4f47bb190099b61fe87e239de17ad00636a522a271dd9b28329053091401d
 F src/vdbe.h 70a409d171d4e51b962f0d53abf15c33c404c6aa4c9d62fb3a931b5a62ba9615
 F src/vdbeInt.h cdcdabad4f5d6bf7a3beb826a7f33ee6f8f1cb220042bedd5b7d4bf2ea1d179f
 F src/vdbeapi.c c961d8d9e0f52e2df60a6ddbbccd7d99dc4d00103db7e53f77fcef44fbd23178
-F src/vdbeaux.c c03e96a20476f003a26d638da01264abc49288aa3a47d2a62aac16efe4a98ee7
+F src/vdbeaux.c d7c7a57f59dc22c05e9a16177615f604fe73588b0ebdc84b540ba5efe3ada430
 F src/vdbeblob.c 359891617358deefc85bef7bcf787fa6b77facb9
-F src/vdbemem.c dc204ad331409d4b7116d3112b8ff665e6a2927e1ac9e5cdd2c6b27e4ed8093f
+F src/vdbemem.c 8d78df62becfd2dce3c317f64b32a94ecaff8346d814bc8b0b877b38a1ad3718
 F src/vdbesort.c f512c68d0bf7e0105316a5594c4329358c8ee9cae3b25138df041d97516c0372
 F src/vdbetrace.c 41963d5376f0349842b5fc4aaaaacd7d9cdc0834
 F src/vtab.c 35b9bdc2b41de32a417141d12097bcc4e29a77ed7cdb8f836d1d2305d946b61b
@@ -489,7 +489,7 @@ F src/walker.c d46044e7a5842560dfe7122d93ff5145dd4a96f4d0bf5ba5910a7731b8c01e79
 F src/where.c 74b0a05487e44e8c5d28ebe3bd77ca9719b1d5114235bed48079aee309a0bb4e
 F src/whereInt.h 2a4b634d63ce488b46d4b0da8f2eaa8f9aeab202bc25ef76f007de5e3fba1f20
 F src/wherecode.c 339ee802d9d311acf0cba8b5a9a092e167ef71c3a777d4b3e57de25d193251c7
-F src/whereexpr.c a2fe3811d45af45a5c6667caabc15e01054fe6228c64e86e1f7d2ba5ef5284f9
+F src/whereexpr.c 1aac918f82953c9b5c8bee948434cb6476af0262141002f5818842c503f8c95a
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/affinity3.test 6a101af2fc945ce2912f6fe54dd646018551710d
@@ -1583,10 +1583,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c8186874b3fec737445ad5c4ba3eaecd922af664b387d89dc31eea60476a0294
-R aa6192592198c78cf22d0f0e4a80cfa8
-T *branch * enable-QPSG
-T *sym-enable-QPSG *
-T -sym-trunk *
+P 7076e8283ebae1b45a5d85d9538b49b6da399d38c3c6935de100f948f814f6a9
+R 2588e32e458f4a139c46205abd1223cf
 U drh
-Z bed31a9a72b1edbf482f280709a5296c
+Z b64d9ad639f986633210dd4158608eff

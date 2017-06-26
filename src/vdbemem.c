@@ -1482,18 +1482,17 @@ static int stat4ValueFromExpr(
   /* Skip over any TK_COLLATE nodes */
   pExpr = sqlite3ExprSkipCollate(pExpr);
 
+  assert( pExpr==0 || pExpr->op!=TK_REGISTER || pExpr->op2!=TK_VARIABLE );
   if( !pExpr ){
     pVal = valueNew(db, pAlloc);
     if( pVal ){
       sqlite3VdbeMemSetNull((Mem*)pVal);
     }
-  }else if( pExpr->op==TK_VARIABLE
-        || NEVER(pExpr->op==TK_REGISTER && pExpr->op2==TK_VARIABLE)
-  ){
+  }else if( pExpr->op==TK_VARIABLE && (db->flags & SQLITE_EnableQPSG)==0 ){
     Vdbe *v;
     int iBindVar = pExpr->iColumn;
     sqlite3VdbeSetVarmask(pParse->pVdbe, iBindVar);
-    if( (v = pParse->pReprepare)!=0 && (db->flags & SQLITE_EnableQPSG)==0 ){
+    if( (v = pParse->pReprepare)!=0 ){
       pVal = valueNew(db, pAlloc);
       if( pVal ){
         rc = sqlite3VdbeMemCopy((Mem*)pVal, &v->aVar[iBindVar-1]);
