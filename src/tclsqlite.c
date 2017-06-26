@@ -164,10 +164,17 @@ struct SqliteDb {
   int nVMStep;               /* Another statistic for most recent operation */
   int nTransaction;          /* Number of nested [transaction] methods */
   int openFlags;             /* Flags used to open.  (SQLITE_OPEN_URI) */
+  unsigned int modeFlags;    /* Operating mode flags */
 #ifdef SQLITE_TEST
   int bLegacyPrepare;        /* True to use sqlite3_prepare() */
 #endif
 };
+
+/*
+** Valid values for SqliteDb.modeFlags
+*/
+#define SQLITE_TCLMODE_UNSETNULL  0x0001  /* Unset NULL array values in */
+                                          /*   db eval ARRAY SQL */
 
 struct IncrblobChannel {
   sqlite3_blob *pBlob;      /* sqlite3 blob handle */
@@ -1730,11 +1737,15 @@ static int SQLITE_TCLAPI DbEvalNextCmd(
     Tcl_Obj **apColName;
     dbEvalRowInfo(p, &nCol, &apColName);
     for(i=0; i<nCol; i++){
-      Tcl_Obj *pVal = dbEvalColumnValue(p, i);
       if( pArray==0 ){
-        Tcl_ObjSetVar2(interp, apColName[i], 0, pVal, 0);
+        Tcl_ObjSetVar2(interp, apColName[i], 0, dbEvalColumnValue(p,i), 0);
+      }else if( (p->pDb->modeFlags & SQLITE_TCLMODE_UNSETNULL)!=0
+             && sqlite3_column_type(p->pPreStmt->pStmt, i)==SQLITE_NULL 
+      ){
+        Tcl_UnsetVar2(interp, Tcl_GetString(pArray), 
+                      Tcl_GetString(apColName[i]), 0);
       }else{
-        Tcl_ObjSetVar2(interp, pArray, apColName[i], pVal, 0);
+        Tcl_ObjSetVar2(interp, pArray, apColName[i], dbEvalColumnValue(p,i), 0);
       }
     }
 
@@ -3309,6 +3320,7 @@ static int SQLITE_TCLAPI DbMain(
   const char *zFile;
   const char *zVfs = 0;
   int flags;
+  unsigned int modeFlags = 0;
   Tcl_DString translatedFilename;
 #if defined(SQLITE_HAS_CODEC) && !defined(SQLITE_OMIT_CODEC_FROM_TCL)
   void *pKey = 0;
@@ -3399,6 +3411,14 @@ static int SQLITE_TCLAPI DbMain(
       }else{
         flags &= ~SQLITE_OPEN_URI;
       }
+    }else if( strcmp(zArg, "-unsetnull")==0 ){
+      int b;
+      if( Tcl_GetBooleanFromObj(interp, objv[i+1], &b) ) return TCL_ERROR;
+      if( b ){
+        modeFlags |= SQLITE_TCLMODE_UNSETNULL;
+      }else{
+        modeFlags &= ~SQLITE_TCLMODE_UNSETNULL;
+      }
     }else{
       Tcl_AppendResult(interp, "unknown option: ", zArg, (char*)0);
       return TCL_ERROR;
@@ -3408,6 +3428,7 @@ static int SQLITE_TCLAPI DbMain(
     Tcl_WrongNumArgs(interp, 1, objv,
       "HANDLE FILENAME ?-vfs VFSNAME? ?-readonly BOOLEAN? ?-create BOOLEAN?"
       " ?-nomutex BOOLEAN? ?-fullmutex BOOLEAN? ?-uri BOOLEAN?"
+      " ?-unsetnull BOOLEAN?"
 #if defined(SQLITE_HAS_CODEC) && !defined(SQLITE_OMIT_CODEC_FROM_TCL)
       " ?-key CODECKEY?"
 #endif
@@ -3443,6 +3464,7 @@ static int SQLITE_TCLAPI DbMain(
   }
   p->maxStmt = NUM_PREPARED_STMTS;
   p->openFlags = flags & SQLITE_OPEN_URI;
+  p->modeFlags = modeFlags;
   p->interp = interp;
   zArg = Tcl_GetStringFromObj(objv[1], 0);
   if( DbUseNre() ){
