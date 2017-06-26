@@ -1,5 +1,5 @@
-C The\s".import"\scommand\sof\sthe\sshell,\sand\sthe\scsv\svirtual\stable\sextension\sboth\nignore\sa\ssingle\sUTF-8\sBOM\sat\sthe\sbeginning\sof\stheir\sinput.
-D 2017-06-26T18:42:23.729
+C Add\sthe\s-withoutnulls\soption\sto\sthe\s"db\seval"\smethod\sin\sthe\sTCL\sinterface.
+D 2017-06-26T21:08:32.812
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -414,7 +414,7 @@ F src/sqliteInt.h 34a54fb47de2da1465f3d3ba1cd373db880bd5d588b0fe862a073ecacd6dda
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
-F src/tclsqlite.c 1ac29f18b1b3787a30b45dbbdf6fdc4aa4f1a2f8c7c8fe586beba1b177eba97d
+F src/tclsqlite.c cbf6313f86400acdf7dbf55fcd218cd28d43110a1210967efbc4f250646f81c0
 F src/test1.c c99f0442918a7a5d5b68a95d6024c211989e6c782c15ced5a558994baaf76a5e
 F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
 F src/test3.c b8434949dfb8aff8dfa082c8b592109e77844c2135ed3c492113839b6956255b
@@ -1187,7 +1187,7 @@ F test/tabfunc01.test 699251cb99651415218a891384510a685c7ab012
 F test/table.test b708f3e5fa2542fa51dfab21fc07b36ea445cb2f
 F test/tableapi.test 2674633fa95d80da917571ebdd759a14d9819126
 F test/tableopts.test dba698ba97251017b7c80d738c198d39ab747930
-F test/tclsqlite.test 1d73b9203b1ca8798d7d7310742b8d3febc0d56e
+F test/tclsqlite.test c3d7ac9449634b9f17fd048a3c0212e88a7448be810a9c5bd051acc1ffa00d2f
 F test/tempdb.test bd92eba8f20e16a9136e434e20b280794de3cdb6
 F test/tempdb2.test 27e41ed540b2f9b056c2e77e9bddc1b875358507
 F test/tempfault.test 0c0d349c9a99bf5f374655742577f8712c647900
@@ -1583,7 +1583,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c8186874b3fec737445ad5c4ba3eaecd922af664b387d89dc31eea60476a0294
-R ab3f395a40974200838735f2b7274cd8
+P 7c15d762d99c2e3e534cd35dfe25ddcd317637eb1f2655fd24c2dd5f9d5a7613
+R 444ece00921d566093c338ff4adc8e5d
 U drh
-Z 910f6f462fbe04fd9eb737726ef5f52f
+Z eb4d6ea47810159e5e12ebef5223a855
