@@ -1,5 +1,5 @@
-C Disable\sshell\stests\sfor\sthe\s.schema\scommand\sif\svirtual\stables\sare\snot\savailable.
-D 2017-06-24T19:21:48.519
+C The\s".import"\scommand\sof\sthe\sshell,\sand\sthe\scsv\svirtual\stable\sextension\sboth\nignore\sa\ssingle\sUTF-8\sBOM\sat\sthe\sbeginning\sof\stheir\sinput.
+D 2017-06-26T18:42:23.729
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -214,7 +214,7 @@ F ext/misc/anycollseq.c 5ffdfde9829eeac52219136ad6aa7cd9a4edb3b15f4f2532de52f4a2
 F ext/misc/carray.c 40c27641010a4dc67e3690bdb7c9d36ca58b3c2d
 F ext/misc/closure.c 0d2a038df8fbae7f19de42e7c7d71f2e4dc88704
 F ext/misc/compress.c 122faa92d25033d6c3f07c39231de074ab3d2e83
-F ext/misc/csv.c 531a46cbad789fca0aa9db69a0e6c8ac9e68767d
+F ext/misc/csv.c 934ed645372e39e44aa84b1c3dd16ba6838bd18fa09a389965bdfa5a6f984a9f
 F ext/misc/dbdump.c 3509fa6b8932d04e932d6b6b827b6a82ca362781b8e8f3c77336f416793e215e
 F ext/misc/eval.c f971962e92ebb8b0a4e6b62949463ee454d88fa2
 F ext/misc/fileio.c d4171c815d6543a9edef8308aab2951413cd8d0f
@@ -406,7 +406,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c adf3ef9843135b1383321ad751f16f5a40c3f37925154555a3e61653d2a954e8
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 35ccfae64cecfa843d54a5898c4ab7d6595ce03d147267fa5eecdc8eab39cd6a
-F src/shell.c 2026e88e7892ba177eae79936285d781f1c449f7a7b4e8d86fd02739d4ead26b
+F src/shell.c 227b86f2bdd707d0a177a4805a5c0b0378ef8337ab1ad04f5d79dc479568735a
 F src/sqlite.h.in 67fa8bd29808e7988e0ce36c8d4c6043eb1727f94522fc612687aa5af51931e6
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 58fd0676d3111d02e62e5a35992a7d3da5d3f88753acc174f2d37b774fbbdd28
@@ -1130,7 +1130,7 @@ F test/shell1.test 65f55c120ab289bc72ec0e534d104e078124d94aeac75dc7444c338c4d84f
 F test/shell2.test e242a9912f44f4c23c3d1d802a83e934e84c853b
 F test/shell3.test 9b95ba643eaa228376f06a898fb410ee9b6e57c1
 F test/shell4.test 89ad573879a745974ff2df20ff97c5d6ffffbd5d
-F test/shell5.test 50a732c1c2158b1cd62cf53975ce1ea7ce6b9dc9
+F test/shell5.test 0d973866d0df8501486a840f51d1502ab0d9b38ca12c9b242ee26adc788af576
 F test/shell6.test ab1592ebe881371f651f18ee6a0df21cbfb5310f88cb832ab642d4038f679772
 F test/shell7.test 07751911b294698e0c5df67bcbd29e7d2f0f2907
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
@@ -1583,7 +1583,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c2ea62937ec8fabec72d3c7cd38d8e2cabbb5ce48638f8ce7ebefd6cd2716fd3
-R 9f5da0e29f079e233ed155fcb887700c
+P c8186874b3fec737445ad5c4ba3eaecd922af664b387d89dc31eea60476a0294
+R ab3f395a40974200838735f2b7274cd8
 U drh
-Z e393ac92ea73930e7d0783c651bf561b
+Z 910f6f462fbe04fd9eb737726ef5f52f

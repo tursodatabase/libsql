@@ -3822,6 +3822,7 @@ struct ImportCtx {
   int n;              /* Number of bytes in z */
   int nAlloc;         /* Space allocated for z[] */
   int nLine;          /* Current line number */
+  int bNotFirst;      /* True if one or more bytes already read */
   int cTerm;          /* Character that terminated the most recent field */
   int cColSep;        /* The column separator character.  (Usually ",") */
   int cRowSep;        /* The row separator character.  (Usually "\n") */
@@ -3901,6 +3902,21 @@ static char *SQLITE_CDECL csv_read_one_field(ImportCtx *p){
       pc = c;
     }
   }else{
+    /* If this is the first field being parsed and it begins with the
+    ** UTF-8 BOM  (0xEF BB BF) then skip the BOM */
+    if( (c&0xff)==0xef && p->bNotFirst==0 ){
+      import_append_char(p, c);
+      c = fgetc(p->in);
+      if( (c&0xff)==0xbb ){
+        import_append_char(p, c);
+        c = fgetc(p->in);
+        if( (c&0xff)==0xbf ){
+          p->bNotFirst = 1;
+          p->n = 0;
+          return csv_read_one_field(p);
+        }
+      }
+    }
     while( c!=EOF && c!=cSep && c!=rSep ){
       import_append_char(p, c);
       c = fgetc(p->in);
@@ -3912,6 +3928,7 @@ static char *SQLITE_CDECL csv_read_one_field(ImportCtx *p){
     p->cTerm = c;
   }
   if( p->z ) p->z[p->n] = 0;
+  p->bNotFirst = 1;
   return p->z;
 }
 
