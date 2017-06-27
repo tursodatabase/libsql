@@ -120,12 +120,12 @@ set pragma_def {
 
   NAME: writable_schema
   TYPE: FLAG
-  ARG:  SQLITE_WriteSchema|SQLITE_RecoveryMode
+  ARG:  SQLITE_WriteSchema
   IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
 
   NAME: read_uncommitted
   TYPE: FLAG
-  ARG:  SQLITE_ReadUncommitted
+  ARG:  SQLITE_ReadUncommit
   IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
 
   NAME: recursive_triggers
