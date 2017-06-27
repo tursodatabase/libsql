@@ -1178,6 +1178,9 @@ static void exprAnalyze(
       Expr *pNewExpr;
       pNewExpr = sqlite3PExpr(pParse, TK_MATCH, 
                               0, sqlite3ExprDup(db, pRight, 0));
+      if( ExprHasProperty(pExpr, EP_FromJoin) && pNewExpr ){
+        ExprSetProperty(pNewExpr, EP_FromJoin);
+      }
       idxNew = whereClauseInsert(pWC, pNewExpr, TERM_VIRTUAL|TERM_DYNAMIC);
       testcase( idxNew==0 );
       pNewTerm = &pWC->a[idxNew];

@@ -61,4 +61,24 @@ do_catchsql_test 2.5 {
   SELECT * FROM ft3, ft2 WHERE y MATCH x AND x MATCH y; 
 } {1 {unable to use function MATCH in the requested context}}
 
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE vt USING fts3(x);
+  INSERT INTO vt VALUES('abc');
+  INSERT INTO vt VALUES('xyz');
+
+  CREATE TABLE tt(a INTEGER PRIMARY KEY);
+  INSERT INTO tt VALUES(1), (2);
+}
+
+do_execsql_test 3.1 {
+  SELECT * FROM tt LEFT JOIN (
+    SELECT rowid AS rrr, * FROM vt WHERE vt MATCH 'abc'
+  ) ON tt.a = rrr
+} {1 1 abc 2 {} {}}
+
+do_execsql_test 3.2 {
+  SELECT * FROM tt LEFT JOIN vt ON (vt MATCH 'abc')
+} {1 abc 2 abc}
+
+
 finish_test

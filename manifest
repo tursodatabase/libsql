@@ -1,5 +1,5 @@
-C Add\sthe\s-withoutnulls\soption\sto\sthe\s"db\seval"\smethod\sin\sthe\sTCL\sinterface.
-D 2017-06-26T21:08:32.812
+C Fix\sa\svirtual\stable\sproblem\sthat\scan\soccur\swhen\sthe\svtab\sis\son\sthe\sRHS\sof\sa\nLEFT\sJOIN\sand\sthere\sis\sa\sMATCH\sconstraint\sin\sthe\sON\sclause,\sor\swhen\sthe\svtab\nis\sin\sa\ssub-query\sthat\sis\sthe\sRHS\sof\sa\sLEFT\sJOIN\sand\sthere\sis\sa\sMATCH\nconstraint\sin\sthe\sWHERE\sclause\sof\sthe\ssub-query.
+D 2017-06-27T16:39:01.302
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -168,6 +168,7 @@ F ext/fts5/test/fts5fuzz1.test bece4695fc169b61ab236ada7931c6e4942cbef9
 F ext/fts5/test/fts5hash.test 06f9309ccb4d5050a131594e9e47d0b21456837d
 F ext/fts5/test/fts5integrity.test f5e4f8d284385875068ad0f3e894ce43e9de835d
 F ext/fts5/test/fts5lastrowid.test 4fac1aba696dd6c956e03b0cf91f6f1f3aaec494
+F ext/fts5/test/fts5leftjoin.test 513ad7a7c053f8a6b7968ed6c84d1fc8c7a84fd29cfde0d14cc085ae6ca682c6
 F ext/fts5/test/fts5matchinfo.test f7dde99697bcb310ea8faa8eb2714d9f4dfc0e1b
 F ext/fts5/test/fts5merge.test 9f65f090d214ff865c56bef4f864aaa1182af6e3
 F ext/fts5/test/fts5merge2.test a6da3c16d694235938d1939f503cfa53f0943d75
@@ -489,7 +490,7 @@ F src/walker.c d46044e7a5842560dfe7122d93ff5145dd4a96f4d0bf5ba5910a7731b8c01e79
 F src/where.c 74b0a05487e44e8c5d28ebe3bd77ca9719b1d5114235bed48079aee309a0bb4e
 F src/whereInt.h 2a4b634d63ce488b46d4b0da8f2eaa8f9aeab202bc25ef76f007de5e3fba1f20
 F src/wherecode.c 339ee802d9d311acf0cba8b5a9a092e167ef71c3a777d4b3e57de25d193251c7
-F src/whereexpr.c a2fe3811d45af45a5c6667caabc15e01054fe6228c64e86e1f7d2ba5ef5284f9
+F src/whereexpr.c 837c4a74cd023553b914e244c361a92c868a8b848783f4ff2387ccd61b6ccbc9
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/affinity3.test 6a101af2fc945ce2912f6fe54dd646018551710d
@@ -797,7 +798,7 @@ F test/fts3expr5.test f9abfffbf5e53d48a33e12a1e8f8ba2c551c9b49
 F test/fts3fault.test 3764ecffb3d341c5b05b3abe64153f385880035e67706ca2fc719e5d3352aedb
 F test/fts3fault2.test 536bbe01fe2946ec24b063a5eee813e8fd90354a6ca0b8f941d299c405edd17e
 F test/fts3first.test dbdedd20914c8d539aa3206c9b34a23775644641
-F test/fts3join.test 34750f3ce1e29b2749eaf0f1be2fa6301c5d50da
+F test/fts3join.test a758accc808cebaef8d622aac07994a2eae15c40eebc40888dcbbabc6f6bafb6
 F test/fts3malloc.test b0e4c133b8d61d4f6d112d8110f8320e9e453ef6
 F test/fts3matchinfo.test ce864e0bd92429df8008f31cf557269ba172482a
 F test/fts3misc.test 66e7b59576ce2c795f0baff6d47f7f6f57e6f41101cf85fad05989e43bb060dd
@@ -1583,7 +1584,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7c15d762d99c2e3e534cd35dfe25ddcd317637eb1f2655fd24c2dd5f9d5a7613
-R 444ece00921d566093c338ff4adc8e5d
-U drh
-Z eb4d6ea47810159e5e12ebef5223a855
+P 18f0616e15684ca327fb10a1d133331af1d3b75f609498982290f6ad69fcaced
+R 956ace4d151b9d18ca3bfa0998026b83
+U dan
+Z 227909c502fe08051a0386f1253486e4
