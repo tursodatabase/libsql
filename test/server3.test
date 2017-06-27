@@ -21,6 +21,8 @@ set testprefix server3
 db close
 
 do_multiclient_test tn {
+  if {$tn==1} continue
+
   do_test $tn.1 {
     sql1 { CREATE TABLE t1(a, b) }
     sql2 { CREATE TABLE t2(a, b) }

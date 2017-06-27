@@ -277,9 +277,7 @@ test_suite "server" -prefix "" -description {
   All server-edition tests.
 } -files [
   test_set \
-      select1.test \
-      [glob -nocomplain $::testdir/server*.test] \
-      -exclude *server1.test
+      select1.test server2.test server3.test
 ]
 
 test_suite "fts5-light" -prefix "" -description {

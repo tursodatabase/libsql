@@ -17,36 +17,60 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix server2
 
+db close
+foreach f [glob -nocomplain test.db*] {
+  forcedelete $f
+}
+
 #-------------------------------------------------------------------------
-# Check that the *-hma file is deleted correctly.
+# Check that the *-journal* files are deleted correctly.
 #
+reset_db
 do_execsql_test 1.0 {
   CREATE TABLE t1(a, b);
 } {}
+
 do_test 1.1 {
-  file exists test.db-hma
-} {1}
+  lsort [glob test.db*]
+} {test.db test.db-journal0}
+
 do_test 1.2 {
   db close
-  file exists test.db-hma
-} {0}
-do_test 1.3 {
-  sqlite3 db test.db
-  db eval { CREATE TABLE t2(a, b) }
-  sqlite3 db2 test.db
-  db2 eval { CREATE TABLE t3(a, b) }
-  file exists test.db-hma
-} {1}
+  lsort [glob test.db*]
+} {test.db}
+
+sqlite3 db test.db
+do_execsql_test 1.3 {
+  CREATE TABLE t2(a, b);
+} {}
+
+sqlite3 db2 test.db
 do_test 1.4 {
-  db2 close
-  file exists test.db-hma
-} {1}
-integrity_check 1.5
+  db eval {
+    BEGIN;
+      INSERT INTO t1 VALUES(1, 2);
+  }
+  db2 eval {
+    BEGIN;
+      INSERT INTO t2 VALUES(3, 4);
+  }
+} {}
+
+do_test 1.5 {
+  db2 eval COMMIT
+  db eval COMMIT
+  lsort [glob test.db*]
+} {test.db test.db-journal0 test.db-journal1}
+
 do_test 1.6 {
   db close
-  file exists test.db-hma
-} {0}
+  lsort [glob test.db*]
+} {test.db test.db-journal0 test.db-journal1}
 
+do_test 1.7 {
+  db2 close
+  lsort [glob test.db*]
+} {test.db}
 
 #-------------------------------------------------------------------------
 #
@@ -72,13 +96,13 @@ do_test 2.1 {
 } {}
 do_test 2.2 {
   lsort [glob test.db*]
-} {test.db test.db-hma test.db-journal0 test.db-journal1}
+} {test.db test.db-journal0 test.db-journal1}
 do_test 2.3.1 { db eval COMMIT  } {}
 do_test 2.3.2 { db2 eval COMMIT } {}
 do_execsql_test 2.4 {SELECT * FROM t1, t2} {1 2 3 4}
 do_test 2.5 {
   lsort [glob test.db*]
-} {test.db test.db-hma test.db-journal0 test.db-journal1}
+} {test.db test.db-journal0 test.db-journal1}
 
 do_test 2.6 {
   execsql {BEGIN}
@@ -106,7 +130,7 @@ do_execsql_test 3.0 {
 
 do_test 3.1 {
   glob test.db*
-} {test.db-journal0 test.db test.db-hma}
+} {test.db-journal0 test.db}
 
 do_test 3.2 {
   db close

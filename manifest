@@ -1,5 +1,5 @@
-C Ensure\sthat\stest\stool\s"tserver"\sfinalizes\sall\sstatements\sbefore\sattempting\sto\nclose\sa\sdatabase\shandle.
-D 2017-06-20T19:20:07.502
+C Support\sclients\swithin\sa\ssingle\sprocess\sonly.
+D 2017-06-27T20:23:07.577
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a8c838220f7c00820e1fc0ac1bccaaa8e5676067e1dbfa1bafa7a4ffecf8ae6
@@ -386,11 +386,11 @@ F src/os.c add02933b1dce7a39a005b00a2f5364b763e9a24
 F src/os.h 8e976e59eb4ca1c0fca6d35ee803e38951cb0343
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
 F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
-F src/os_unix.c 30e2c43e4955db990e5b5a81e901f8aa74cc8820
+F src/os_unix.c d3c3a186ceb27d363f7a5e281ece4eb32b56e173a331e153a761d280034e3212
 F src/os_win.c 2a6c73eef01c51a048cc4ddccd57f981afbec18a
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c f957574dc2f8a66d8ee2b5fd978ecd98760d6669182a023a3901e98ab5e4df33
-F src/pager.h ea05992c581c3366279fb1d436944604b4be17208ebb41fa407306e5e4b34205
+F src/pager.c 3f9c94c6906c624c4db730523f4e91045ffb7bdfa48ead118025c6ae3e176cea
+F src/pager.h 81d2c28e92e543cb1ed977f44810d04c34be2a23d7782bb02548d86a4b9ae657
 F src/parse.y 0513387ce02fea97897d8caef82d45f347818593f24f1bdc48e0c530a8af122d
 F src/pcache.c 62835bed959e2914edd26afadfecce29ece0e870
 F src/pcache.h 2cedcd8407eb23017d92790b112186886e179490
@@ -403,10 +403,10 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 3e518b962d932a997fae373366880fc028c75706
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 4f0adefaa5e9417459b07757e0f6060cac97930a86f0fba9797bab233ced66c0
-F src/server.c 63c3799a184cba3d3b9f102f10e815104ba8d1d4a01c70b0e709e8173b5f9ae7
-F src/server.h e1ce2da1e4d21f335904539e3f98a7c24e015e1201b4bb16d61f0044b8bd2884
+F src/server.c 9f1ce178587ae672058923f47de628d97490d3089fae8b9d6e3e6d6c5148320f
+F src/server.h 3796b9dcb61c60c4e49e9f579832ca1b4e63c6493dae5314b2970540a7cd22f8
 F src/shell.c e5950029da103c5d378e71d548759459b9a7fc76177a71562c22082c705745ab
-F src/sqlite.h.in 8d126e4cfbd1f4bc6f4043aacd77f78b45613e7d630185d49a5d099394247483
+F src/sqlite.h.in 61cac6e788c961bbaf2f91f55d63a8175809bddb7b4971a894b588321c1a82a6
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 58fd0676d3111d02e62e5a35992a7d3da5d3f88753acc174f2d37b774fbbdd28
 F src/sqliteInt.h 50a6bec0b83965edb0a805e1e0f3ebeab536084109a97bdd18a524eb42579a4e
@@ -1036,7 +1036,7 @@ F test/parser1.test 391b9bf9a229547a129c61ac345ed1a6f5eb1854
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
-F test/permutations.test ca1840b39571fc87f432c104e6df00279ab67edeec0f75d8015dcfea648fee2e
+F test/permutations.test 676872085bdaa9a4c789bffd2f1ebbebc22262773bf695e05d19d0085de308f4
 F test/pragma.test 1e94755164a3a3264cd39836de4bebcb7809e5f8
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
 F test/pragma3.test 14c12bc5352b1e100e0b6b44f371053a81ccf8ed
@@ -1112,8 +1112,8 @@ F test/selectE.test a8730ca330fcf40ace158f134f4fe0eb00c7edbf
 F test/selectF.test 21c94e6438f76537b72532fa9fd4710cdd455fc3
 F test/selectG.test e8600e379589e85e9fefd2fe4d44a4cdd63f6982
 F test/server1.test 46803bd3fe8b99b30dbc5ff38ffc756f5c13a118
-F test/server2.test 11dda300ebef43b4abe0fdc086b6f51b964beddb529fb65bc1f026db5895c36e
-F test/server3.test c33343f2f6bc23f2b4e2f047c3d083579f0cfac2795e0f1eb226ab34758967c0
+F test/server2.test 277b4b1f142232e1f992ea17b587474c32e41e2f321c01acdd49ef5ffee99ee6
+F test/server3.test 3667fea050a248508d46b5eccb8a5561055f802016dc0d701e6b6f035ecc55ae
 F test/servercrash.test 816c132b26af008067cab2913783f67006d4003e3988f3f3ee1075742f6e0a6c
 F test/serverwal.test 2d066ba70db35e28f0115a57385cf606513c56d6e2861119c2defb7471e4e2d9
 F test/session.test 78fa2365e93d3663a6e933f86e7afc395adf18be
@@ -1585,7 +1585,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 05b4fc4340011847c8585bb822d339dd7b8351266a12b26fdc85edce38fc9dd3
-R 5abfa2b3bda91a8770a53a2957396fde
+P d8568aacf083b63cdcf68d744ddb07a7615d14f169be6c632813a266a1e8a1cf
+R f783e0707b8d4ba7e92792e2decf35e1
+T *branch * server-process-edition
+T *sym-server-process-edition *
+T -sym-server-edition *
 U dan
-Z b4624fe82f09b9b3eec8967be30284e2
+Z c2e6e9d0d91d26e5c223f5dd53e51df2

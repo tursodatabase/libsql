@@ -3777,6 +3777,12 @@ static int unixGetTempname(int nBuf, char *zBuf);
 static int unixFileControl(sqlite3_file *id, int op, void *pArg){
   unixFile *pFile = (unixFile*)id;
   switch( op ){
+    case SQLITE_FCNTL_FILEID: {
+      i64 *aId = (i64)pArg;
+      aId[0] = (i64)(pFile->pInode->fileId.dev);
+      aId[1] = (i64)(pFile->pInode->fileId.ino);
+      return SQLITE_OK;
+    }
     case SQLITE_FCNTL_LOCKSTATE: {
       *(int*)pArg = pFile->eFileLock;
       return SQLITE_OK;

@@ -19,7 +19,7 @@
 
 typedef struct Server Server;
 
-int sqlite3ServerConnect(Pager *pPager, Server **ppOut, int *piClient);
+int sqlite3ServerConnect(Pager *pPager, Server **ppOut);
 
 void sqlite3ServerDisconnect(Server *p, sqlite3_file *dbfd);
 
