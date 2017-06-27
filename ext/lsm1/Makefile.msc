@@ -86,7 +86,7 @@ lsm_vtab.lo:	$(LSMDIR)\lsm_vtab.c $(LSMHDR) $(SQLITE3H)
 	$(LTCOMPILE) $(LSMOPTS) -c $(LSMDIR)\lsm_vtab.c
 
 lsm.dll:	$(LSMOBJ)
-	$(LD) $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) /VERBOSE /DLL /OUT:$@ $(LSMOBJ)
+	$(LD) $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) /DLL /OUT:$@ $(LSMOBJ)
 
 lsmtest.exe: $(LSMOBJ) $(LSMTESTSRC) $(LSMTESTHDR) $(LIBOBJS1)
 	# $(LTCOMPILE) -c $(TOP)\lsm-test\lsmtest_tdb2.cc

@@ -203,6 +203,7 @@ static int lsmWin32OsOpen(
                                   win32RetryIoerr(pEnv, &nRetry) ){
         /* Noop */
       }
+      lsmFree(pEnv, zConverted);
       if( hFile!=INVALID_HANDLE_VALUE ){
         pWin32File->pEnv = pEnv;
         pWin32File->zName = zFile;
