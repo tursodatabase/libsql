@@ -6,10 +6,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include <unistd.h>
+#ifndef _WIN32
+# include <unistd.h>
+#endif
 #include <stdio.h>
 
-#include <sys/time.h>
+#ifndef _WIN32
+# include <sys/time.h>
+#endif
 
 typedef struct LsmDb LsmDb;
 typedef struct LsmWorker LsmWorker;

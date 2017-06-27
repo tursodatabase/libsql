@@ -15,6 +15,25 @@
 extern "C" {
 #endif
 
+#ifdef _WIN32
+# include "windows.h"
+# define gettimeofday win32GetTimeOfDay
+# define F_OK  (0)
+# define sleep(sec) Sleep(1000 * (sec))
+# define usleep(usec) Sleep((usec) / 1000)
+# ifdef _MSC_VER
+#  include <io.h>
+#  define snprintf _snprintf
+#  define fsync(fd) FlushFileBuffers((HANDLE)_get_osfhandle((fd)))
+#  define fdatasync(fd) FlushFileBuffers((HANDLE)_get_osfhandle((fd)))
+#  define __va_copy(dst,src) ((dst) = (src))
+#  define ftruncate(fd,sz) (_chsize_s((fd), (sz))==0)
+# else
+#  error Unsupported C compiler for Windows.
+# endif
+int win32GetTimeOfDay(struct timeval *, void *);
+#endif
+
 #ifndef _LSM_INT_H
 typedef unsigned int  u32;
 typedef unsigned char u8;

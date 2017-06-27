@@ -24,7 +24,9 @@
 #include <ctype.h>
 
 #ifdef _WIN32
-# define snprintf _snprintf
+# ifdef _MSC_VER
+#  define snprintf _snprintf
+# endif
 #else
 # include <unistd.h>
 #endif

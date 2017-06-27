@@ -37,7 +37,7 @@ LSMTESTSRC = $(LSMDIR)/lsm-test/lsmtest1.c $(LSMDIR)/lsm-test/lsmtest2.c     \
              $(LSMDIR)/lsm-test/lsmtest_func.c $(LSMDIR)/lsm-test/lsmtest_io.c  \
              $(LSMDIR)/lsm-test/lsmtest_main.c $(LSMDIR)/lsm-test/lsmtest_mem.c \
              $(LSMDIR)/lsm-test/lsmtest_tdb.c $(LSMDIR)/lsm-test/lsmtest_tdb3.c \
-             $(LSMDIR)/lsm-test/lsmtest_util.c
+             $(LSMDIR)/lsm-test/lsmtest_util.c $(LSMDIR)/lsm-test/lsmtest_win32.c
 
 
 # all: lsm.so
