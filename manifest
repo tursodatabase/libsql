@@ -1,8 +1,8 @@
-C Remove\san\sinvalid\sassert()\sfrom\slsm\stest\scode.
-D 2017-06-26T11:46:01.859
+C Work\sin\sprogress\sporting\slsm1\sto\sWin32.
+D 2017-06-27T05:59:47.975
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
+F Makefile.msc d389c6fb3344ea6887b386d56784a6d8a5c85107294448aeda50ac404285a1ef
 F README.md 2b15fae33852f2f53996774c21fb41e1d94181c4401a0e43ac93e11f2cc901b9
 F VERSION 87f1498f27e398bce3da2fa8125c9879a38ed9d87e4b5fb922b351de1e25cadb
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -209,6 +209,7 @@ F ext/icu/README.txt d9fbbad0c2f647c3fdf715fc9fd64af53aedfc43
 F ext/icu/icu.c 84900472a088a3a172c6c079f58a1d3a1952c332
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/lsm1/Makefile 5f60d0e1635ee51c438973f37a93f8e562229b446db59fc00af1621d39fdee26
+F ext/lsm1/Makefile.msc c9806a69a06dc3fcbbc82c21479b58e4b2d70d80f64518fe1a6c0f6585776bbb
 F ext/lsm1/lsm-test/README 87ea529d2abe615e856d4714bfe8bb185e6c2771b8612aa6298588b7b43e6f86
 F ext/lsm1/lsm-test/lsmtest.h e7057a3f9db71938496fc8ef081c9f45623b25bfd8499b3550d1ea7123143e90
 F ext/lsm1/lsm-test/lsmtest1.c 27c3cf6512514b25a145154ae4e54d053d883b2f7f52ed214747b5ebaceedd3e
@@ -233,9 +234,9 @@ F ext/lsm1/lsm-test/lsmtest_tdb3.c 6de609f6233026227d721e9265e62bf1834aed07d8795
 F ext/lsm1/lsm-test/lsmtest_tdb4.c 47e8bb5eba266472d690fb8264f1855ebdba0ae5a0e541e35fcda61ebf1d277f
 F ext/lsm1/lsm-test/lsmtest_util.c 0c2b7c1d109fbd6b7b9a2780f1315e2438a973d18afea5c4eccf94e8827c8260
 F ext/lsm1/lsm.h 0f6f64ff071471cb87bf98beb8386566f30ea001
-F ext/lsm1/lsmInt.h bc270dd81b3355c7410b06a6d54dd3eb9493a3e8
+F ext/lsm1/lsmInt.h de86f9dc7f2d90a3c94a5df820929c57d0b24399358ec274603028ed4cbe5b2b
 F ext/lsm1/lsm_ckpt.c e7907e782fe2e95de0833675e35e726e487cc4cd
-F ext/lsm1/lsm_file.c 6dcd83e040d0ea003875e7684ca2ef063b5cc8a5af99f464475dfeb51d13adbf
+F ext/lsm1/lsm_file.c 2f0232e2dc0262f60cab1b7010785fb961d566c740fc0370101c14ab085739e0
 F ext/lsm1/lsm_log.c 5b3e855fcfb85de9fb86fcbf65696cc6886d3231
 F ext/lsm1/lsm_main.c f52eada2910f8a57bd4cafcee39c6c375f6b7ed8
 F ext/lsm1/lsm_mem.c 4c51ea9fa285ee6e35301b33491642d071740a0a
@@ -244,10 +245,10 @@ F ext/lsm1/lsm_shared.c 54cc3a5157c6abd77f7d3ae60708b9f7bf022b3c
 F ext/lsm1/lsm_sorted.c 4a9e3ffecda87b379ed757b59c9cbcd84a80b55c
 F ext/lsm1/lsm_str.c 77ebdd5040ddf267a6f724d4c83132d2dce8a226
 F ext/lsm1/lsm_tree.c 5d9fb2bc58a1a70c75126bd8d7198f7b627e165b
-F ext/lsm1/lsm_unix.c ff6d0a89861c90193f21e35ea5dfea389b480e46085c1d7ff931833b77c3ff30
+F ext/lsm1/lsm_unix.c ee0201dff10ce2008ef13a65f52a6ea348f287e795270f651596f812fcfccdcc
 F ext/lsm1/lsm_varint.c b19ae9bd26b5a1e8402fb8a564b25d9542338a41
 F ext/lsm1/lsm_vtab.c fff303ce03168eca9e333add3c1429b3471674b0
-F ext/lsm1/lsm_win32.c de84068b4df2999a9cefcf67aae19b0733203f772ca58f7e0c2b0bc87136d2e3
+F ext/lsm1/lsm_win32.c 7da009125424b6e8b1dfac1d4cea9222f3e8510a6730b9ba80b7dd1ae5941e63
 F ext/misc/README.md 8e008c8d2b02e09096b31dfba033253ac27c6c06a18aa5826e299fa7601d90b2
 F ext/misc/amatch.c 6db4607cb17c54b853a2d7c7c36046d004853f65b9b733e6f019d543d5dfae87
 F ext/misc/anycollseq.c 5ffdfde9829eeac52219136ad6aa7cd9a4edb3b15f4f2532de52f4a22525eddb
@@ -1622,7 +1623,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 461ced77d93e84f09bfb4291999cd0245506fa9a8369049fd68968bbcf18d41b
-R 63e8a5819d5154609225118f393af4e2
-U dan
-Z 5b8d9ae5d3a8353b4cc4ac3639c99bf7
+P ca8a7e995c3da10ba05e3b7d4818c633fe5ba6d6f9351b67017a2603b50b903d
+R a7e826530d21c7f6dddff2b89dc79765
+U mistachkin
+Z 3a63fba7e138ec3099b3888a8dabf0af

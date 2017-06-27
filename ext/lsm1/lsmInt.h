@@ -23,7 +23,11 @@
 #include <stdio.h>
 #include <ctype.h>
 
-#include <unistd.h>
+#ifdef _WIN32
+# define snprintf _snprintf
+#else
+# include <unistd.h>
+#endif
 
 #ifdef NDEBUG
 # ifdef LSM_DEBUG_EXPENSIVE

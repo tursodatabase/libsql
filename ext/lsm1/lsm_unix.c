@@ -13,7 +13,7 @@
 ** Unix-specific run-time environment implementation for LSM.
 */
 
-#ifndef WIN32
+#ifndef _WIN32
 
 #if defined(__GNUC__) || defined(__TINYC__)
 /* workaround for ftruncate() visibility on gcc. */

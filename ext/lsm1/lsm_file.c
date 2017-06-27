@@ -2085,12 +2085,12 @@ int lsmFsSortedAppend(
 ){
   int rc = LSM_OK;
   Page *pPg = 0;
-  *ppOut = 0;
   int iApp = 0;
   int iNext = 0;
   Segment *p = &pLvl->lhs;
   int iPrev = p->iLastPg;
 
+  *ppOut = 0;
   assert( p->pRedirect==0 );
 
   if( pFS->pCompress || bDefer ){
