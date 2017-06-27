@@ -1,5 +1,5 @@
-C Initial\swork\son\sporting\slsmtest\sto\sWin32.
-D 2017-06-27T22:27:54.690
+C Improve\sa\slocal\svariable\sname.
+D 2017-06-27T22:33:06.331
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d389c6fb3344ea6887b386d56784a6d8a5c85107294448aeda50ac404285a1ef
@@ -233,7 +233,7 @@ F ext/lsm1/lsm-test/lsmtest_tdb2.cc 99ea7f2dd9c7536c8fb9bdd329e4cfeb76899f3ddf6f
 F ext/lsm1/lsm-test/lsmtest_tdb3.c 105ef644ad03c8d7f21f8d1f6514adaf30a7c26f4e21cccb3874b70a14985041
 F ext/lsm1/lsm-test/lsmtest_tdb4.c 47e8bb5eba266472d690fb8264f1855ebdba0ae5a0e541e35fcda61ebf1d277f
 F ext/lsm1/lsm-test/lsmtest_util.c 241622db5a332a09c8e6e7606b617d288a37b557f7d3bce0bb97809f67cc2806
-F ext/lsm1/lsm-test/lsmtest_win32.c ce2e0afda0898bf920c275662cf53fff914c531b83dd510a62e036bdd566af4f
+F ext/lsm1/lsm-test/lsmtest_win32.c 5605aac3bf3852dcc2509fb1d097f5f11556418c1cc9cf0fdd09f9af53c97fb4
 F ext/lsm1/lsm.h 0f6f64ff071471cb87bf98beb8386566f30ea001
 F ext/lsm1/lsmInt.h 4c07df475dff0c7a718839ed4e87a66779055fbe3eb9c4815a0a4ba944da7e42
 F ext/lsm1/lsm_ckpt.c e7907e782fe2e95de0833675e35e726e487cc4cd
@@ -1624,7 +1624,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P dbe9c8aa8d70051fafec569054eeda6c02efe9d036ab6beada00da3ed42e52d9
-R 08b5f8178c42e28f51b4e8a018ddab16
+P 7e669d9bfab237ff7ece821cf95cfd3bb753b1882b9a86044b7d4579808aecf4
+R a194f4add86f8c2bf9581bbe931d15bb
 U mistachkin
-Z 1d7723421fca05b28161eb9a9865cd58
+Z 6e9726878bd2ddfe288293450bc21311
