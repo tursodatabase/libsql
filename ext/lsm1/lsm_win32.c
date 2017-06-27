@@ -45,8 +45,6 @@ struct Win32File {
   void **apShm;                   /* Array of 32K shared memory segments */
 };
 
-int lsmWin32OsSleep(lsm_env *pEnv, int us);
-
 static char *win32ShmFile(Win32File *p){
   char *zShm;
   int nName = strlen(p->zName);
@@ -56,6 +54,11 @@ static char *win32ShmFile(Win32File *p){
     memcpy(&zShm[nName], "-shm", 5);
   }
   return zShm;
+}
+
+static int win32Sleep(int us){
+  Sleep((us + 999) / 1000);
+  return LSM_OK;
 }
 
 /*
@@ -115,13 +118,13 @@ static int win32RetryIoerr(
   }
   lastErrno = GetLastError();
   if( win32IoerrCanRetry1(lastErrno) ){
-    lsmWin32OsSleep(pEnv, win32IoerrRetryDelay*(1+*pnRetry));
+    win32Sleep(win32IoerrRetryDelay*(1+*pnRetry));
     ++*pnRetry;
     return 1;
   }
 #if defined(win32IoerrCanRetry2)
   else if( win32IoerrCanRetry2(lastErrno) ){
-    lsmWin32OsSleep(pEnv, win32IoerrRetryDelay*(1+*pnRetry));
+    win32Sleep(win32IoerrRetryDelay*(1+*pnRetry));
     ++*pnRetry;
     return 1;
   }
@@ -154,6 +157,31 @@ static LPWSTR win32Utf8ToUnicode(lsm_env *pEnv, const char *zText){
   return zWideText;
 }
 
+/*
+** Convert a Microsoft Unicode string to UTF-8.
+**
+** Space to hold the returned string is obtained from lsmMalloc().
+*/
+static char *win32UnicodeToUtf8(lsm_env *pEnv, LPCWSTR zWideText){
+  int nByte;
+  char *zText;
+
+  nByte = WideCharToMultiByte(CP_UTF8, 0, zWideText, -1, 0, 0, 0, 0);
+  if( nByte == 0 ){
+    return 0;
+  }
+  zText = lsmMallocZero(pEnv, nByte);
+  if( zText==0 ){
+    return 0;
+  }
+  nByte = WideCharToMultiByte(CP_UTF8, 0, zWideText, -1, zText, nByte, 0, 0);
+  if( nByte == 0 ){
+    lsmFree(pEnv, zText);
+    zText = 0;
+  }
+  return zText;
+}
+
 #if !defined(win32IsNotFound)
 #define win32IsNotFound(a) (((a)==ERROR_FILE_NOT_FOUND)  || \
                             ((a)==ERROR_PATH_NOT_FOUND))
@@ -172,7 +200,7 @@ static int lsmWin32OsOpen(
   if( pWin32File==0 ){
     rc = LSM_NOMEM_BKPT;
   }else{
-    LPCWSTR zConverted;
+    LPWSTR zConverted;
     int bReadonly = (flags & LSM_OPEN_READONLY);
     DWORD dwDesiredAccess;
     DWORD dwShareMode = FILE_SHARE_READ | FILE_SHARE_WRITE;
@@ -334,13 +362,64 @@ static int lsmWin32OsRemap(
   return LSM_ERROR;
 }
 
+static BOOL win32IsDriveLetterAndColon(
+  const char *zPathname
+){
+  return ( isalpha(zPathname[0]) && zPathname[1]==':' );
+}
+
 static int lsmWin32OsFullpath(
   lsm_env *pEnv,
   const char *zName,
   char *zOut,
   int *pnOut
 ){
-  return LSM_ERROR;
+  DWORD nByte;
+  void *zConverted;
+  LPWSTR zTempWide;
+  char *zTempUtf8;
+
+  if( zName[0]=='/' && win32IsDriveLetterAndColon(zName+1) ){
+    zName++;
+  }
+  zConverted = win32Utf8ToUnicode(pEnv, zName);
+  if( zConverted==0 ){
+    return LSM_NOMEM_BKPT;
+  }
+  nByte = GetFullPathNameW((LPCWSTR)zConverted, 0, 0, 0);
+  if( nByte==0 ){
+    lsmFree(pEnv, zConverted);
+    return LSM_IOERR_BKPT;
+  }
+  nByte += 3;
+  zTempWide = lsmMallocZero(pEnv, nByte * sizeof(zTempWide[0]));
+  if( zTempWide==0 ){
+    lsmFree(pEnv, zConverted);
+    return LSM_NOMEM_BKPT;
+  }
+  nByte = GetFullPathNameW((LPCWSTR)zConverted, nByte, zTempWide, 0);
+  if( nByte==0 ){
+    lsmFree(pEnv, zConverted);
+    lsmFree(pEnv, zTempWide);
+    return LSM_IOERR_BKPT;
+  }
+  lsmFree(pEnv, zConverted);
+  zTempUtf8 = win32UnicodeToUtf8(pEnv, zTempWide);
+  lsmFree(pEnv, zTempWide);
+  if( zTempUtf8 ){
+    int nOut = *pnOut;
+    int nLen = strlen(zTempUtf8) + 1;
+    if( nLen>=nOut ){
+      lsmFree(pEnv, zTempUtf8);
+      return LSM_IOERR_BKPT;
+    }
+    snprintf(zOut, nOut, "%s", zTempUtf8);
+    lsmFree(pEnv, zTempUtf8);
+    *pnOut = nLen;
+    return LSM_OK;
+  }else{
+    return LSM_NOMEM_BKPT;
+  }
 }
 
 static int lsmWin32OsFileid(
@@ -431,8 +510,7 @@ static int lsmWin32OsClose(lsm_file *pFile){
 
 static int lsmWin32OsSleep(lsm_env *pEnv, int us){
   unused_parameter(pEnv);
-  Sleep((us + 999) / 1000);
-  return LSM_OK;
+  return win32Sleep(us);
 }
 
 /****************************************************************************
