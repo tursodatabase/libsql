@@ -16,6 +16,14 @@
 
 #ifndef SQLITE_OMIT_COMPILEOPTION_DIAGS
 
+/*
+** Include the configuration header output by 'configure' if we're using the
+** autoconf-based build
+*/
+#if defined(_HAVE_SQLITE_CONFIG_H) && !defined(SQLITECONFIG_H)
+#include "config.h"
+#define SQLITECONFIG_H 1
+#endif
 
 /* These macros are provided to "stringify" the value of the define
 ** for those options in which the value is meaningful. */
