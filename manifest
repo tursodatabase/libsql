@@ -1,5 +1,5 @@
-C Merge\sthe\sin\sthe\slatest\senhancements\sfrom\strunk.
-D 2017-06-28T18:07:29.453
+C Make\sthe\squery\splanners\suse\sof\spartial\sindexes\sbased\son\sbound\svariables\nresponsive\sto\sthe\sSQLITE_DBCONFIG_ENABLE_QPSG\ssetting.
+D 2017-06-28T18:25:03.706
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -487,7 +487,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 40c543f0a2195d1b0dc88ef12142bea690009344
 F src/wal.h 06b2a0b599cc0f53ea97f497cf8c6b758c999f71
 F src/walker.c d46044e7a5842560dfe7122d93ff5145dd4a96f4d0bf5ba5910a7731b8c01e79
-F src/where.c 563cd034b1d09e6b64a88cafc47a6f37de708d07d03c68b1d4185d8b7f3618bf
+F src/where.c 715b84912bf85d833ff558d6de51c0d0427483c1f5efe1bb6818d4e683f4869e
 F src/whereInt.h 2a4b634d63ce488b46d4b0da8f2eaa8f9aeab202bc25ef76f007de5e3fba1f20
 F src/wherecode.c f17f5d51e372168db51af637e265aa5e80f99fcc81bfead96b66e71a7732bc62
 F src/whereexpr.c fa51927cc6830b9d3155cafa4e589452ec023fe313a56550d2079dca6c52fbd8
@@ -886,7 +886,7 @@ F test/index5.test 8621491915800ec274609e42e02a97d67e9b13e7
 F test/index6.test b4fc812290067a578b98bb2667b676db89e202a7
 F test/index7.test 7feababe16f2091b229c22aff2bcc1d4d6b9d2bb
 F test/index8.test bc2e3db70e8e62459aaa1bd7e4a9b39664f8f9d7
-F test/index9.test 896b05eff9587ff251453c647e4f0e6a9a136a801c535842d0afde6d659a6d0b
+F test/index9.test 0aa3e509dddf81f93380396e40e9bb386904c1054924ba8fa9bcdfe85a8e7721
 F test/indexedby.test 9c4cd331224e57f79fbf411ae245e6272d415985
 F test/indexexpr1.test 038b3befa74e5a75126b6e9dd2ae5df61c1c7cf7
 F test/indexexpr2.test 68ee9dbe83fcf85e50f4d0bd1f742a082496f2ee5153f4be2a1861db84462bf7
@@ -1585,7 +1585,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7b59c353b805c64689b4ae9df347705acbb5f116346ad77af8ce087da7893747 f02a54599de7620438aecd3753199fc52ce8919d7503bb8b2f5592b0e51dbf8c
-R 6145771861a818bdd35ee8936bd678fa
+P 8f63c5863231eba7f853f9587b58a81102c31708402fa9962a6e91aa622fad13
+R c0bca5815e0b14a60d8900b0ad5f06a7
 U drh
-Z 027c22f2095cba4a04a80b38d45bc197
+Z afcf7a655c64b8f5d4a7cb72e9e49496

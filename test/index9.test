@@ -65,18 +65,31 @@ set y [expr 9223372036854775808]
 do_sqluses_test 3.2 { SELECT * FROM t1 WHERE y=$y ORDER BY x } {t1}
 set y [expr 9223372036854775806]
 do_sqluses_test 3.3 { SELECT * FROM t1 WHERE y=$y ORDER BY x } {t1}
+db cache flush
+sqlite3_db_config db QPSG 1
+set y [expr 9223372036854775807]
+do_sqluses_test 3.4 { SELECT * FROM t1 WHERE y=$y ORDER BY x } {t1}
+set y [expr 9223372036854775808]
+do_sqluses_test 3.5 { SELECT * FROM t1 WHERE y=$y ORDER BY x } {t1}
+sqlite3_db_config db QPSG 0
+db cache flush
 
-do_execsql_test 3.0 {
+
+do_execsql_test 4.0 {
   CREATE INDEX t1x4 ON t1(x) WHERE y=-9223372036854775808
 }
 set y [expr -9223372036854775808]
-do_sqluses_test 3.1 { SELECT * FROM t1 WHERE y=$y ORDER BY x } {t1 t1x4}
+do_sqluses_test 4.1 { SELECT * FROM t1 WHERE y=$y ORDER BY x } {t1 t1x4}
 set y [expr -9223372036854775807]
-do_sqluses_test 3.2 { SELECT * FROM t1 WHERE y=$y ORDER BY x } {t1}
+do_sqluses_test 4.2 { SELECT * FROM t1 WHERE y=$y ORDER BY x } {t1}
 set y [expr -9223372036854775809]
-do_sqluses_test 3.3 { SELECT * FROM t1 WHERE y=$y ORDER BY x } {t1}
+do_sqluses_test 4.3 { SELECT * FROM t1 WHERE y=$y ORDER BY x } {t1}
 set y [expr -9223372036854775808]
-do_sqluses_test 3.4 { SELECT * FROM t1 WHERE $y=y ORDER BY x } {t1 t1x4}
+do_sqluses_test 4.4 { SELECT * FROM t1 WHERE $y=y ORDER BY x } {t1 t1x4}
+db cache flush
+sqlite3_db_config db QPSG 1
+do_sqluses_test 4.5 { SELECT * FROM t1 WHERE $y=y ORDER BY x } {t1}
+sqlite3_db_config db QPSG 0
+db cache flush
 
 finish_test
-
