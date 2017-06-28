@@ -256,10 +256,10 @@ static char *csv_read_one_field(CsvReader *p){
     /* If this is the first field being parsed and it begins with the
     ** UTF-8 BOM  (0xEF BB BF) then skip the BOM */
     if( (c&0xff)==0xef && p->bNotFirst==0 ){
-      csv_append(p, c);
+      csv_append(p, (char)c);
       c = csv_getc(p);
       if( (c&0xff)==0xbb ){
-        csv_append(p, c);
+        csv_append(p, (char)c);
         c = csv_getc(p);
         if( (c&0xff)==0xbf ){
           p->bNotFirst = 1;

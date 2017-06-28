@@ -1,5 +1,5 @@
-C Faster\sparser\sstack\soverflow\sdetection.
-D 2017-06-28T15:01:35.715
+C Fix\sharmless\scompiler\swarnings\sin\sthe\sCSV\sextension.
+D 2017-06-28T15:17:31.371
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -215,7 +215,7 @@ F ext/misc/anycollseq.c 5ffdfde9829eeac52219136ad6aa7cd9a4edb3b15f4f2532de52f4a2
 F ext/misc/carray.c 40c27641010a4dc67e3690bdb7c9d36ca58b3c2d
 F ext/misc/closure.c 0d2a038df8fbae7f19de42e7c7d71f2e4dc88704
 F ext/misc/compress.c 122faa92d25033d6c3f07c39231de074ab3d2e83
-F ext/misc/csv.c 934ed645372e39e44aa84b1c3dd16ba6838bd18fa09a389965bdfa5a6f984a9f
+F ext/misc/csv.c d91c0388445b08f6e373dd0e8fc024d4551b1fcaf64e876a1c3f4fac8a63adc2
 F ext/misc/dbdump.c 3509fa6b8932d04e932d6b6b827b6a82ca362781b8e8f3c77336f416793e215e
 F ext/misc/eval.c f971962e92ebb8b0a4e6b62949463ee454d88fa2
 F ext/misc/fileio.c d4171c815d6543a9edef8308aab2951413cd8d0f
@@ -1584,7 +1584,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cc4810b23e683e8c359f7c1a562338ec8501e43cac3475b2be002568fca5e6a4
-R aecb52c4ffe19d7ddc13e13ae7717a64
+P 36e54cd8b1fb374fd41e3e09b34b86e34327bf07c9e4bfec58382163c5c5d279
+R 6108cfd499d3cf4cdcf025dbd8d46170
 U drh
-Z deaa1ad68fb12d39469a0630e4b55aa7
+Z 876994e9b4ab523dadf3076830cbada0
