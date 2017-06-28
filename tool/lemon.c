@@ -4422,7 +4422,7 @@ void ReportTable(
   ** sequentually beginning with 0.
   */
   for(rp=lemp->rule; rp; rp=rp->next){
-    fprintf(out,"  { %d, %d },\n",rp->lhs->index,rp->nrhs); lineno++;
+    fprintf(out,"  { %d, %d },\n",rp->lhs->index,-rp->nrhs); lineno++;
   }
   tplt_xfer(lemp->name,in,out,&lineno);
 

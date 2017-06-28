@@ -635,8 +635,8 @@ static void yy_shift(
 ** is used during the reduce.
 */
 static const struct {
-  YYCODETYPE lhs;         /* Symbol on the left-hand side of the rule */
-  unsigned char nrhs;     /* Number of right-hand side symbols in the rule */
+  YYCODETYPE lhs;       /* Symbol on the left-hand side of the rule */
+  signed char nrhs;     /* Negative of the number of RHS symbols in the rule */
 } yyRuleInfo[] = {
 %%
 };
@@ -661,7 +661,7 @@ static void yy_reduce(
   if( yyTraceFILE && yyruleno<(int)(sizeof(yyRuleName)/sizeof(yyRuleName[0])) ){
     yysize = yyRuleInfo[yyruleno].nrhs;
     fprintf(yyTraceFILE, "%sReduce [%s], go to state %d.\n", yyTracePrompt,
-      yyRuleName[yyruleno], yymsp[-yysize].stateno);
+      yyRuleName[yyruleno], yymsp[yysize].stateno);
   }
 #endif /* NDEBUG */
 
@@ -707,7 +707,7 @@ static void yy_reduce(
   assert( yyruleno<sizeof(yyRuleInfo)/sizeof(yyRuleInfo[0]) );
   yygoto = yyRuleInfo[yyruleno].lhs;
   yysize = yyRuleInfo[yyruleno].nrhs;
-  yyact = yy_find_reduce_action(yymsp[-yysize].stateno,(YYCODETYPE)yygoto);
+  yyact = yy_find_reduce_action(yymsp[yysize].stateno,(YYCODETYPE)yygoto);
 
   /* There are no SHIFTREDUCE actions on nonterminals because the table
   ** generator has simplified them to pure REDUCE actions. */
@@ -717,10 +717,10 @@ static void yy_reduce(
   assert( yyact!=YY_ERROR_ACTION );
 
   if( yyact==YY_ACCEPT_ACTION ){
-    yypParser->yytos -= yysize;
+    yypParser->yytos += yysize;
     yy_accept(yypParser);
   }else{
-    yymsp -= yysize-1;
+    yymsp += yysize+1;
     yypParser->yytos = yymsp;
     yymsp->stateno = (YYACTIONTYPE)yyact;
     yymsp->major = (YYCODETYPE)yygoto;
