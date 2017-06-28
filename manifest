@@ -1,5 +1,5 @@
-C Add\sSQLITE_DBCONFIG_ENABLE_QPSG\sthat\sforces\sthe\squery\splanner\sstability\nguarantee.\s\sThis\sis\sthe\sfix\sfor\sticket\s[b9f010107724c]
-D 2017-06-27T23:36:44.838
+C Avoid\san\sunnecessary\scall\sto\ssqlite3XPrintf()\sin\sthe\scode\sgenerator,\sfor\na\sperformance\simprovement.
+D 2017-06-28T00:55:50.411
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -352,7 +352,7 @@ F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
 F src/btree.c 00579ff9c2831d6f98cc993f8f2a34c0ff996e89b3cd2f27928f75796bc3a58a
 F src/btree.h 3edc5329bc59534d2d15b4f069a9f54b779a7e51289e98fa481ae3c0e526a5ca
 F src/btreeInt.h a392d353104b4add58b4a59cb185f5d5693dde832c565b77d8d4c343ed98f610
-F src/build.c 88a8cdc11d1c081ed565aa3e795bdf9160f4556463b4c4555e9860b59dd80340
+F src/build.c b24e0889ba18ba0e93e03e2ef5c9f1a2ca043d77c5abbd3d333858a76b795da3
 F src/callback.c 2e76147783386374bf01b227f752c81ec872d730
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c e9a6db1321c2353fe922533f202b85abb3084cdf569450abcabf55e21e104550
@@ -1584,8 +1584,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 87b381663398f029f52cb5598aadd069b03034b6f833ce80ba762b406075a44e ebcfa73e1c8ebb4fc371a6dcf77f97b6e06e405a299c66182aa4b20423d519ec
-R bb6b907fdeee773111627b13bd53e940
-T +closed ebcfa73e1c8ebb4fc371a6dcf77f97b6e06e405a299c66182aa4b20423d519ec
+P b82efd2a24914ace39acf99df75175042471fd73a8d31d66a40b15f63b342e10
+R 4655eadf37f65568436ba7b7c7775799
 U drh
-Z cfbd76746fc81ebc7a88eb549c6e1ee7
+Z 5d13438a82c29fffa946890a824367ff
