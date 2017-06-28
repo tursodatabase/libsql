@@ -4675,29 +4675,19 @@ void sqlite3ExprIfFalseDup(Parse *pParse, Expr *pExpr, int dest,int jumpIfNull){
 */
 static int exprCompareVariable(Parse *pParse, Expr *pVar, Expr *pExpr){
   int res = 0;
-  int iVar = pVar->iColumn;
-  Expr *p = pExpr;
-
-  while( p->op==TK_UMINUS ) p = p->pLeft;
-  if( p->op==TK_NULL  || p->op==TK_INTEGER 
-   || p->op==TK_FLOAT || p->op==TK_STRING 
-   || p->op==TK_BLOB 
-  ){
+  int iVar;
+  sqlite3_value *pL, *pR = 0;
+  
+  sqlite3ValueFromExpr(pParse->db, pExpr, SQLITE_UTF8, SQLITE_AFF_BLOB, &pR);
+  if( pR ){
+    iVar = pVar->iColumn;
     sqlite3VdbeSetVarmask(pParse->pVdbe, iVar);
-    sqlite3_value *pL;
     pL = sqlite3VdbeGetBoundValue(pParse->pReprepare, iVar, SQLITE_AFF_BLOB);
-    if( pL ){
-      sqlite3_value *pR = 0;
-      sqlite3ValueFromExpr(pParse->db, pExpr, SQLITE_UTF8, SQLITE_AFF_BLOB,&pR);
-      assert( pR || pParse->db->mallocFailed );
-      if( pR && 0==sqlite3MemCompare(pL, pR, 0) ){
-        res = 1;
-      }
-      sqlite3ValueFree(pR);
-      sqlite3ValueFree(pL);
-    }else if( p->op==TK_NULL ){
+    if( pL && 0==sqlite3MemCompare(pL, pR, 0) ){
       res = 1;
     }
+    sqlite3ValueFree(pR);
+    sqlite3ValueFree(pL);
   }
 
   return res;
@@ -4725,11 +4715,12 @@ static int exprCompareVariable(Parse *pParse, Expr *pVar, Expr *pExpr){
 ** just might result in some slightly slower code.  But returning
 ** an incorrect 0 or 1 could lead to a malfunction.
 **
-** Argument pParse should normally be NULL. If it is not NULL and 
-** expression pA contains SQL variable references, then the values
-** currently bound to those variable references may be compared to
-** simple SQL values in pB. See comments above function exprCompareVariable()
-** for details.
+** If pParse is not NULL then TK_VARIABLE terms in pA with bindings in
+** pParse->pReprepare can be matched against literals in pB.  The 
+** pParse->pVdbe->expmask bitmask is updated for each variable referenced.
+** If pParse is NULL (the normal case) then any TK_VARIABLE term in 
+** Argument pParse should normally be NULL. If it is not NULL and pA or
+** pB causes a return value of 2.
 */
 int sqlite3ExprCompare(Parse *pParse, Expr *pA, Expr *pB, int iTab){
   u32 combinedFlags;
@@ -4832,6 +4823,11 @@ int sqlite3ExprCompareSkip(Expr *pA, Expr *pB, int iTab){
 **
 ** When comparing TK_COLUMN nodes between pE1 and pE2, if pE2 has
 ** Expr.iTable<0 then assume a table number given by iTab.
+**
+** If pParse is not NULL, then the values of bound variables in pE1 are 
+** compared against literal values in pE2 and pParse->pVdbe->expmask is
+** modified to record which bound variables are referenced.  If pParse 
+** is NULL, then false will be returned if pE1 contains any bound variables.
 **
 ** When in doubt, return false.  Returning true might give a performance
 ** improvement.  Returning false might cause a performance reduction, but
