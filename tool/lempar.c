@@ -708,19 +708,23 @@ static void yy_reduce(
   yygoto = yyRuleInfo[yyruleno].lhs;
   yysize = yyRuleInfo[yyruleno].nrhs;
   yyact = yy_find_reduce_action(yymsp[-yysize].stateno,(YYCODETYPE)yygoto);
-  if( yyact <= YY_MAX_SHIFTREDUCE ){
-    if( yyact>YY_MAX_SHIFT ){
-      yyact += YY_MIN_REDUCE - YY_MIN_SHIFTREDUCE;
-    }
+
+  /* There are no SHIFTREDUCE actions on nonterminals because the table
+  ** generator has simplified them to pure REDUCE actions. */
+  assert( !(yyact>YY_MAX_SHIFT && yyact<=YY_MAX_SHIFTREDUCE) );
+
+  /* It is not possible for a REDUCE to be followed by an error */
+  assert( yyact!=YY_ERROR_ACTION );
+
+  if( yyact==YY_ACCEPT_ACTION ){
+    yypParser->yytos -= yysize;
+    yy_accept(yypParser);
+  }else{
     yymsp -= yysize-1;
     yypParser->yytos = yymsp;
     yymsp->stateno = (YYACTIONTYPE)yyact;
     yymsp->major = (YYCODETYPE)yygoto;
     yyTraceShift(yypParser, yyact);
-  }else{
-    assert( yyact == YY_ACCEPT_ACTION );
-    yypParser->yytos -= yysize;
-    yy_accept(yypParser);
   }
 }
 
