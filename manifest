@@ -1,5 +1,5 @@
-C Minor\scode\ssimplification\sin\sthe\sALTER\sTABLE\slogic.
-D 2017-06-28T01:12:53.264
+C Simplify\serror\shandling\slogic\sin\ssqlite3_exec()\sto\ssave\sabout\s40\sbytes.
+D 2017-06-28T01:21:16.224
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -369,7 +369,7 @@ F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 974499a3999d339a4c1ba8ef129a988d9f136b3789e423808b38cdc19d28adbe
-F src/legacy.c e88ed13c2d531decde75d42c2e35623fb9ce3cb0
+F src/legacy.c 134ab3e3fae00a0f67a5187981d6935b24b337bcf0f4b3e5c9fa5763da95bf4e
 F src/loadext.c a72909474dadce771d3669bf84bf689424f6f87d471fee898589c3ef9b2acfd9
 F src/main.c 747ec45346c3826113bc081cafe1aa2df945e50540c4b3fb13ec02b5e231c3db
 F src/malloc.c e20bb2b48abec52d3faf01cce12e8b4f95973755fafec98d45162dfdab111978
@@ -1584,7 +1584,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 29d6ceb3838394d902e248d1eab627625a857dccb5ed0bb66161a13fafc500c8
-R 6f0ea308ec1b73dd6e7772ec710252e2
+P bfc4e7f30e4654b9603457fb6a4136828e346dcfe4e313fdf56ed62d131b7156
+R 9ee65c1aa637763c0020e3a8027e1724
 U drh
-Z 9c7b9d5e2b38deb9e56f410615351475
+Z 46819a22d665678fea30894f28c71769
