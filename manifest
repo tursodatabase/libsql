@@ -1,5 +1,5 @@
-C Support\sclients\swithin\sa\ssingle\sprocess\sonly.
-D 2017-06-27T20:23:07.577
+C Merge\stserver\sfixes\swith\sthis\sbranch.
+D 2017-06-28T20:21:15.793
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 6a8c838220f7c00820e1fc0ac1bccaaa8e5676067e1dbfa1bafa7a4ffecf8ae6
@@ -1557,7 +1557,7 @@ F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
 F tool/symbols.sh c5a617b8c61a0926747a56c65f5671ef8ac0e148
 F tool/tostr.tcl 96022f35ada2194f6f8ccf6fd95809e90ed277c4
-F tool/tserver.c 4596a21376c7632b430510b184911b60dfa2cd2167c4a2252371dcbafbdf752e
+F tool/tserver.c 8067d85410c827c9d1b33fd3f269b96615ab404a277c268e1838bfa768b58949
 F tool/varint.c 5d94cb5003db9dbbcbcc5df08d66f16071aee003
 F tool/vdbe-compress.tcl 5926c71f9c12d2ab73ef35c29376e756eb68361c
 F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
@@ -1585,10 +1585,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d8568aacf083b63cdcf68d744ddb07a7615d14f169be6c632813a266a1e8a1cf
-R f783e0707b8d4ba7e92792e2decf35e1
-T *branch * server-process-edition
-T *sym-server-process-edition *
-T -sym-server-edition *
+P dfa9a4d53e0aa7f7911b11af57a4d37a1df2d835cf60eb9e76d28b6b39c2ba58 093b9108ea3532437683547c82f756df2413013a50a2fddad3d928cf8d74f9eb
+R 72b821ad7bad9e97d348feb666cadf11
 U dan
-Z c2e6e9d0d91d26e5c223f5dd53e51df2
+Z d8120536ead40ef5709cd4556448f644

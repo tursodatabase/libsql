@@ -155,6 +155,14 @@ static sqlite3_int64 get_timer(void){
   return ((sqlite3_int64)t.tv_usec / 1000) + ((sqlite3_int64)t.tv_sec * 1000);
 }
 
+static void clear_sql(ClientCtx *p){
+  int j;
+  for(j=0; j<p->nPrepare; j++){
+    sqlite3_finalize(p->apPrepare[j]);
+  }
+  p->nPrepare = 0;
+}
+
 static int handle_dot_command(ClientCtx *p, const char *zCmd, int nCmd){
   assert( zCmd[0]=='.' );
   int n;
@@ -188,6 +196,7 @@ static int handle_dot_command(ClientCtx *p, const char *zCmd, int nCmd){
   else if( n>=2 && n<=7 && 0==strncmp(z, "repeats", n) ){
     if( nArg ){
       p->nRepeat = strtol(zArg, 0, 0);
+      if( p->nRepeat>0 ) p->nSecond = 0;
     }
     rc = send_message(p, "ok (repeat=%d)\n", p->nRepeat);
   }
@@ -235,13 +244,14 @@ static int handle_dot_command(ClientCtx *p, const char *zCmd, int nCmd){
         t1 = t2;
         nT1 = j+1 - nBusy;
         nTBusy1 = nBusy;
-        if( p->nSecond>=0 && (p->nSecond*1000)<=t1-t0 ) break;
+        if( p->nSecond>0 && (p->nSecond*1000)<=t1-t0 ) break;
       }
     }
 
     if( rc==SQLITE_OK ){
       send_message(p, "ok (%d/%d SQLITE_BUSY)\n", nBusy, j);
     }
+    clear_sql(p);
   }
 
   else if( n>=1 && n<=7 && 0==strncmp(z, "seconds", n) ){
@@ -285,7 +295,6 @@ static void *handle_client(void *pArg){
     int i;
     int iStart;
     int nConsume;
-    int bQuote = 0;
     res = read(ctx.fd, &zCmd[nCmd], sizeof(zCmd)-nCmd-1);
     if( res<=0 ) break;
     nCmd += res;
@@ -347,9 +356,7 @@ static void *handle_client(void *pArg){
 
   fprintf(stdout, "Client %d disconnects\n", ctx.fd);
   close(ctx.fd);
-  for(j=0; j<ctx.nPrepare; j++){
-    sqlite3_finalize(ctx.apPrepare[j]);
-  }
+  clear_sql(&ctx);
   sqlite3_free(ctx.apPrepare);
   sqlite3_close(ctx.db);
   return 0;
@@ -361,7 +368,6 @@ int main(int argc, char *argv[]) {
   int rc;
   int yes = 1;
   struct sockaddr_in server;
-  struct sockaddr_in client;
 
   /* Ignore SIGPIPE. Otherwise the server exits if a client disconnects
   ** abruptly.  */
