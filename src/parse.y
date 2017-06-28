@@ -1375,8 +1375,7 @@ trigger_decl(A) ::= temp(T) TRIGGER ifnotexists(NOERR) nm(B) dbnm(Z)
 }
 
 %type trigger_time {int}
-trigger_time(A) ::= BEFORE.      { A = TK_BEFORE; }
-trigger_time(A) ::= AFTER.       { A = TK_AFTER;  }
+trigger_time(A) ::= BEFORE|AFTER(X).  { A = @X; /*A-overwrites-X*/ }
 trigger_time(A) ::= INSTEAD OF.  { A = TK_INSTEAD;}
 trigger_time(A) ::= .            { A = TK_BEFORE; }
 
