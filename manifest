@@ -1,8 +1,8 @@
-C Fix\sharmless\scompiler\swarnings\sin\sthe\sCSV\sextension.
-D 2017-06-28T15:17:31.371
-F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
+C Build\sthe\s"stmts"\svirtual\stable\sinto\sthe\samalgamation.\s\sIt\sis\sactive\sonly\nwhen\scompiled\susing\sSQLITE_ENABLE_STMTSVTAB.\s\sThat\soption\sis\ssupplied\sto\sthe\ncommand-line\sshell.
+D 2017-06-28T15:47:29.587
+F Makefile.in 8b27c128f319083e71cbe27695db058b4ff96970d380ecdf15b19bb8b650e6d9
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
+F Makefile.msc aec853b75178fe8ce79a7dcd3f897b557f3aa6274481254de4db7c029c7e4073
 F README.md 2b15fae33852f2f53996774c21fb41e1d94181c4401a0e43ac93e11f2cc901b9
 F VERSION 87f1498f27e398bce3da2fa8125c9879a38ed9d87e4b5fb922b351de1e25cadb
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -234,7 +234,7 @@ F ext/misc/sha1.c 0b9e9b855354910d3ca467bf39099d570e73db56
 F ext/misc/shathree.c fa185d7aee0ad0aca5e091b4a2db7baff11796170e5793b5de99e511a13af448
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c a4723b6aff748a417b5091b68a46443265c40f0d
-F ext/misc/stmts.c 4aa554f671f6a55a52060437a0215a93d2e9f10f2fa66b0f7f65aa0576fc90bb
+F ext/misc/stmts.c c96f66005174cb2b43bf8cbb3c33257635ea2f683c9713aadd5209c27930586f
 F ext/misc/totype.c 4a167594e791abeed95e0a8db028822b5e8fe512
 F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vfsstat.c bf10ef0bc51e1ad6756629e1edb142f7a8db1178
@@ -330,7 +330,7 @@ F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 9abb506e717887d57f754bae139b85c1a06d6f2ac25b589f3e792e310567f278
+F main.mk f92791b36dfe35024529f32e253e120ba5c0330f310d81fd87476d7cc1d7b3c7
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -371,7 +371,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 974499a3999d339a4c1ba8ef129a988d9f136b3789e423808b38cdc19d28adbe
 F src/legacy.c 134ab3e3fae00a0f67a5187981d6935b24b337bcf0f4b3e5c9fa5763da95bf4e
 F src/loadext.c a72909474dadce771d3669bf84bf689424f6f87d471fee898589c3ef9b2acfd9
-F src/main.c 747ec45346c3826113bc081cafe1aa2df945e50540c4b3fb13ec02b5e231c3db
+F src/main.c aaf24be7e2354b6f9f5fecd5c1627e6e5dd8b1825a91e013f1eb7c5d3bc051b1
 F src/malloc.c e20bb2b48abec52d3faf01cce12e8b4f95973755fafec98d45162dfdab111978
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -1525,7 +1525,7 @@ F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkpragmatab.tcl aa94395a91b5bd47022b7db0c08126f047887e0d299cc19ec1c23a9e5b136961
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl fef88397668ae83166735c41af99d79f56afaabb
-F tool/mksqlite3c.tcl 226da6d794d7d43a31e159a6fa89db867bf1f5eafe4b37d031222287ef8dbadc
+F tool/mksqlite3c.tcl 4b5c48a98dc8cc3bd6aa3e5388be1fff308e4eac4fe1f01b4546413d8ee2847f
 F tool/mksqlite3h.tcl 51bd5e7e840a920388a5966c9f2ccc618f434c57bd68c1bab4085b2553e1e237
 F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
 F tool/mkvsix.tcl b9e0777a213c23156b6542842c238479e496ebf5
@@ -1584,7 +1584,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 36e54cd8b1fb374fd41e3e09b34b86e34327bf07c9e4bfec58382163c5c5d279
-R 6108cfd499d3cf4cdcf025dbd8d46170
+P f02a54599de7620438aecd3753199fc52ce8919d7503bb8b2f5592b0e51dbf8c
+R 71e0a5250c5819c46c7a10d34cbfc101
+T *branch * stmts-vtab
+T *sym-stmts-vtab *
+T -sym-trunk *
 U drh
-Z 876994e9b4ab523dadf3076830cbada0
+Z 219a446101d8dd42aec8900ee9301107

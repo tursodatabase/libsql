@@ -20,7 +20,10 @@
 **     .header on
 **     SELECT * FROM stmts;
 */
+#if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_STMTSVTAB)
+#if !defined(SQLITEINT_H)
 #include "sqlite3ext.h"
+#endif
 SQLITE_EXTENSION_INIT1
 #include <assert.h>
 #include <string.h>
@@ -277,6 +280,15 @@ static sqlite3_module stmtsModule = {
 
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 
+int sqlite3StmtsVtabInit(sqlite3 *db){
+  int rc = SQLITE_OK;
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+  rc = sqlite3_create_module(db, "stmts", &stmtsModule, 0);
+#endif
+  return rc;
+}
+
+#ifndef SQLITE_CORE
 #ifdef _WIN32
 __declspec(dllexport)
 #endif
@@ -293,7 +305,9 @@ int sqlite3_stmts_init(
         "generate_stmts() requires SQLite 3.8.12 or later");
     return SQLITE_ERROR;
   }
-  rc = sqlite3_create_module(db, "stmts", &stmtsModule, 0);
+  rc = sqlite3StmtsVtabInit(db);
 #endif
   return rc;
 }
+#endif /* SQLITE_CORE */
+#endif /* !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_STMTSVTAB) */
