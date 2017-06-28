@@ -1215,7 +1215,6 @@ static int dbPrepare(
   sqlite3_stmt **ppStmt,          /* OUT: Prepared statement */
   const char **pzOut              /* OUT: Pointer to next SQL statement */
 ){
-  unsigned int prepFlags = 0;
 #ifdef SQLITE_TEST
   if( pDb->bLegacyPrepare ){
     return sqlite3_prepare(pDb->db, zSql, -1, ppStmt, pzOut);
@@ -1224,9 +1223,11 @@ static int dbPrepare(
   /* If the statement cache is large, use the SQLITE_PREPARE_PERSISTENT
   ** flags, which uses less lookaside memory.  But if the cache is small,
   ** omit that flag to make full use of lookaside */
-  if( pDb->maxStmt>5 ) prepFlags = SQLITE_PREPARE_PERSISTENT;
-
-  return sqlite3_prepare_v3(pDb->db, zSql, -1, prepFlags, ppStmt, pzOut);
+  if( pDb->maxStmt>5 ){
+    sqlite3_db_config(pDb->db, SQLITE_DBCONFIG_PREPARE_FLAGS,
+                               SQLITE_PREPARE_PERSISTENT);
+  }
+  return sqlite3_prepare_v2(pDb->db, zSql, -1, ppStmt, pzOut);
 }
 
 /*

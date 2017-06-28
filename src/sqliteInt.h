@@ -1337,6 +1337,7 @@ struct sqlite3 {
   u8 mTrace;                    /* zero or more SQLITE_TRACE flags */
   u8 skipBtreeMutex;            /* True if no shared-cache backends */
   u8 nSqlExec;                  /* Number of pending OP_SqlExec opcodes */
+  u8 prepFlags;                 /* Zero or more SQLITE_PREPARE_* flags */
   int nextPagesize;             /* Pagesize after VACUUM if >0 */
   u32 magic;                    /* Magic number for detect library misuse */
   int nChange;                  /* Value returned by sqlite3_changes() */

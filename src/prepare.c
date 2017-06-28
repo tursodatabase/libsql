@@ -529,6 +529,8 @@ static int sqlite3Prepare(
   assert( ppStmt && *ppStmt==0 );
   /* assert( !db->mallocFailed ); // not true with SQLITE_USE_ALLOCA */
   assert( sqlite3_mutex_held(db->mutex) );
+  prepFlags |= db->prepFlags;
+  db->prepFlags = 0;
 
   /* For a long-term use prepared statement avoid the use of
   ** lookaside memory.
@@ -770,21 +772,6 @@ int sqlite3_prepare_v2(
   assert( rc==SQLITE_OK || ppStmt==0 || *ppStmt==0 );  /* VERIFY: F13021 */
   return rc;
 }
-int sqlite3_prepare_v3(
-  sqlite3 *db,              /* Database handle. */
-  const char *zSql,         /* UTF-8 encoded SQL statement. */
-  int nBytes,               /* Length of zSql in bytes. */
-  unsigned int prepFlags,   /* Zero or more SQLITE_PREPARE_* flags */
-  sqlite3_stmt **ppStmt,    /* OUT: A pointer to the prepared statement */
-  const char **pzTail       /* OUT: End of parsed string */
-){
-  int rc;
-  rc = sqlite3LockAndPrepare(db,zSql,nBytes,
-                 SQLITE_PREPARE_SAVESQL|(prepFlags&SQLITE_PREPARE_MASK),
-                 0,ppStmt,pzTail);
-  assert( rc==SQLITE_OK || ppStmt==0 || *ppStmt==0 );  /* VERIFY: F13021 */
-  return rc;
-}
 
 
 #ifndef SQLITE_OMIT_UTF16
@@ -870,21 +857,6 @@ int sqlite3_prepare16_v2(
 ){
   int rc;
   rc = sqlite3Prepare16(db,zSql,nBytes,SQLITE_PREPARE_SAVESQL,ppStmt,pzTail);
-  assert( rc==SQLITE_OK || ppStmt==0 || *ppStmt==0 );  /* VERIFY: F13021 */
-  return rc;
-}
-int sqlite3_prepare16_v3(
-  sqlite3 *db,              /* Database handle. */ 
-  const void *zSql,         /* UTF-16 encoded SQL statement. */
-  int nBytes,               /* Length of zSql in bytes. */
-  unsigned int prepFlags,   /* Zero or more SQLITE_PREPARE_* flags */
-  sqlite3_stmt **ppStmt,    /* OUT: A pointer to the prepared statement */
-  const void **pzTail       /* OUT: End of parsed string */
-){
-  int rc;
-  rc = sqlite3Prepare16(db,zSql,nBytes,
-         SQLITE_PREPARE_SAVESQL|(prepFlags&SQLITE_PREPARE_MASK),
-         ppStmt,pzTail);
   assert( rc==SQLITE_OK || ppStmt==0 || *ppStmt==0 );  /* VERIFY: F13021 */
   return rc;
 }
