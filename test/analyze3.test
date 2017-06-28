@@ -123,6 +123,36 @@ do_eqp_test analyze3-1.1.3 {
   SELECT sum(y) FROM t1 WHERE x>0 AND x<1100 
 } {0 0 0 {SCAN TABLE t1}}
 
+# 2017-06-26:  Verify that the SQLITE_DBCONFIG_ENABLE_QPSG setting disables
+# the use of bound parameters by STAT4
+#
+db cache flush
+unset -nocomplain l
+unset -nocomplain u
+do_eqp_test analyze3-1.1.3.100 {
+  SELECT sum(y) FROM t1 WHERE x>$l AND x<$u
+} {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (x>? AND x<?)}}
+set l 200
+set u 300
+do_eqp_test analyze3-1.1.3.101 {
+  SELECT sum(y) FROM t1 WHERE x>$l AND x<$u
+} {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (x>? AND x<?)}}
+set l 0
+set u 1100
+do_eqp_test analyze3-1.1.3.102 {
+  SELECT sum(y) FROM t1 WHERE x>$l AND x<$u
+} {0 0 0 {SCAN TABLE t1}}
+db cache flush
+sqlite3_db_config db ENABLE_QPSG 1
+do_eqp_test analyze3-1.1.3.103 {
+  SELECT sum(y) FROM t1 WHERE x>$l AND x<$u
+} {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (x>? AND x<?)}}
+db cache flush
+sqlite3_db_config db ENABLE_QPSG 0
+do_eqp_test analyze3-1.1.3.104 {
+  SELECT sum(y) FROM t1 WHERE x>$l AND x<$u
+} {0 0 0 {SCAN TABLE t1}}
+
 do_test analyze3-1.1.4 {
   sf_execsql { SELECT sum(y) FROM t1 WHERE x>200 AND x<300 }
 } {199 0 14850}
