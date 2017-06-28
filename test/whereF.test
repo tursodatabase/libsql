@@ -119,4 +119,61 @@ do_execsql_test 4.0 {
   EXPLAIN QUERY PLAN SELECT rowid FROM t4 WHERE a=? AND b=?;
 } {/a=. AND b=./}
 
+#-------------------------------------------------------------------------
+# Test the following case:
+#
+#   ... FROM t1, t2 WHERE (
+#     t2.rowid = +t1.rowid OR (t2.f2 = t1.f1 AND t1.f1!=-1)
+#   )
+#
+# where there is an index on t2(f2). The planner should use "t1" as the
+# outer loop. The inner loop, on "t2", is an OR optimization. One pass
+# for:
+#
+#     t2.rowid = $1
+#
+# and another for:
+#
+#     t2.f2=$1 AND $1!=-1
+#
+# the test is to ensure that on the second pass, the ($1!=-1) condition
+# is tested before any seek operations are performed - i.e. outside of
+# the loop through the f2=$1 range of the t2(f2) index.
+#
+reset_db
+do_execsql_test 5.0 {
+  CREATE TABLE t1(f1);
+  CREATE TABLE t2(f2);
+  CREATE INDEX t2f ON t2(f2);
+
+  INSERT INTO t1 VALUES(-1);
+  INSERT INTO t1 VALUES(-1);
+  INSERT INTO t1 VALUES(-1);
+  INSERT INTO t1 VALUES(-1);
+
+  WITH w(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM w WHERE i<1000
+  )
+  INSERT INTO t2 SELECT -1 FROM w;
+}
+
+do_execsql_test 5.1 {
+  SELECT count(*) FROM t1, t2 WHERE t2.rowid = +t1.rowid
+} {4}
+do_test 5.2 { expr [db status vmstep]<200 } 1
+
+do_execsql_test 5.3 {
+  SELECT count(*) FROM t1, t2 WHERE (
+    t2.rowid = +t1.rowid OR t2.f2 = t1.f1
+  )
+} {4000}
+do_test 5.4 { expr [db status vmstep]>1000 } 1
+
+do_execsql_test 5.5 {
+  SELECT count(*) FROM t1, t2 WHERE (
+    t2.rowid = +t1.rowid OR (t2.f2 = t1.f1 AND t1.f1!=-1)
+  )
+} {4}
+do_test 5.6 { expr [db status vmstep]<200 } 1
+
 finish_test

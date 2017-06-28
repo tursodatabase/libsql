@@ -78,6 +78,7 @@ static int SQLITE_TCLAPI test_sqlite3rbu_cmd(
     {"db", 3, "RBU"},             /* 6 */
     {"state", 2, ""},             /* 7 */
     {"progress", 2, ""},          /* 8 */
+    {"close_no_error", 2, ""},    /* 9 */
     {0,0,0}
   };
   int iCmd;
@@ -102,11 +103,16 @@ static int SQLITE_TCLAPI test_sqlite3rbu_cmd(
       break;
     }
 
+    case 9: /* close_no_error */ 
     case 1: /* close */ {
       char *zErrmsg = 0;
       int rc;
       Tcl_DeleteCommand(interp, Tcl_GetString(objv[0]));
-      rc = sqlite3rbu_close(pRbu, &zErrmsg);
+      if( iCmd==1 ){
+        rc = sqlite3rbu_close(pRbu, &zErrmsg);
+      }else{
+        rc = sqlite3rbu_close(pRbu, 0);
+      }
       if( rc==SQLITE_OK || rc==SQLITE_DONE ){
         Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
         assert( zErrmsg==0 );

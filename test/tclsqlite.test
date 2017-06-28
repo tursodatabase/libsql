@@ -113,7 +113,7 @@ ifcapable {complete} {
 do_test tcl-1.14 {
   set v [catch {db eval} msg]
   lappend v $msg
-} {1 {wrong # args: should be "db eval SQL ?ARRAY-NAME? ?SCRIPT?"}}
+} {1 {wrong # args: should be "db eval ?OPTIONS? SQL ?ARRAY-NAME? ?SCRIPT?"}}
 do_test tcl-1.15 {
   set v [catch {db function} msg]
   lappend v $msg
@@ -665,6 +665,44 @@ do_test tcl-15.5 {
 } {0}
 
 
+# 2017-06-26: The --withoutnulls flag to "db eval".
+#
+# In the "db eval --withoutnulls SQL ARRAY" form, NULL results cause the
+# corresponding array entry to be unset.  The default behavior (without
+# the -withoutnulls flags) is for the corresponding array value to get
+# the [db nullvalue] string.
+#
+catch {db close}
+forcedelete test.db
+sqlite3 db test.db
+do_execsql_test tcl-16.100 {
+  CREATE TABLE t1(a,b);
+  INSERT INTO t1 VALUES(1,2),(2,NULL),(3,'xyz');
+}
+do_test tcl-16.101 {
+  set res {}
+  unset -nocomplain x
+  db eval {SELECT * FROM t1} x {
+    lappend res $x(a) [array names x]
+  }
+  set res
+} {1 {a b *} 2 {a b *} 3 {a b *}}
+do_test tcl-16.102 {
+  set res [catch {
+    db eval -unknown {SELECT * FROM t1} x {
+      lappend res $x(a) [array names x]
+    }
+  } rc]
+  lappend res $rc
+} {1 {unknown option: "-unknown"}}
+do_test tcl-16.103 {
+  set res {}
+  unset -nocomplain x
+  db eval -withoutnulls {SELECT * FROM t1} x {
+    lappend res $x(a) [array names x]
+  }
+  set res
+} {1 {a b *} 2 {a *} 3 {a b *}}
 
 
 

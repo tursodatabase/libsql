@@ -152,7 +152,7 @@ static int hasSharedCacheTableLock(
   ** Return true immediately.
   */
   if( (pBtree->sharable==0)
-   || (eLockType==READ_LOCK && (pBtree->db->flags & SQLITE_ReadUncommitted))
+   || (eLockType==READ_LOCK && (pBtree->db->flags & SQLITE_ReadUncommit))
   ){
     return 1;
   }
@@ -229,7 +229,7 @@ static int hasReadConflicts(Btree *pBtree, Pgno iRoot){
   for(p=pBtree->pBt->pCursor; p; p=p->pNext){
     if( p->pgnoRoot==iRoot 
      && p->pBtree!=pBtree
-     && 0==(p->pBtree->db->flags & SQLITE_ReadUncommitted)
+     && 0==(p->pBtree->db->flags & SQLITE_ReadUncommit)
     ){
       return 1;
     }
@@ -251,7 +251,7 @@ static int querySharedCacheTableLock(Btree *p, Pgno iTab, u8 eLock){
   assert( sqlite3BtreeHoldsMutex(p) );
   assert( eLock==READ_LOCK || eLock==WRITE_LOCK );
   assert( p->db!=0 );
-  assert( !(p->db->flags&SQLITE_ReadUncommitted)||eLock==WRITE_LOCK||iTab==1 );
+  assert( !(p->db->flags&SQLITE_ReadUncommit)||eLock==WRITE_LOCK||iTab==1 );
   
   /* If requesting a write-lock, then the Btree must have an open write
   ** transaction on this file. And, obviously, for this to be so there 
@@ -329,7 +329,7 @@ static int setSharedCacheTableLock(Btree *p, Pgno iTable, u8 eLock){
   ** obtain a read-lock using this function. The only read-lock obtained
   ** by a connection in read-uncommitted mode is on the sqlite_master 
   ** table, and that lock is obtained in BtreeBeginTrans().  */
-  assert( 0==(p->db->flags&SQLITE_ReadUncommitted) || eLock==WRITE_LOCK );
+  assert( 0==(p->db->flags&SQLITE_ReadUncommit) || eLock==WRITE_LOCK );
 
   /* This function should only be called on a sharable b-tree after it 
   ** has been determined that no other b-tree holds a conflicting lock.  */
@@ -3021,7 +3021,7 @@ static int lockBtree(BtShared *pBt){
                                    pageSize-usableSize);
       return rc;
     }
-    if( (pBt->db->flags & SQLITE_RecoveryMode)==0 && nPage>nPageFile ){
+    if( (pBt->db->flags & SQLITE_WriteSchema)==0 && nPage>nPageFile ){
       rc = SQLITE_CORRUPT_BKPT;
       goto page1_init_failed;
     }
@@ -5716,7 +5716,7 @@ static int allocateBtreePage(
       }
       testcase( iTrunk==mxPage );
       if( iTrunk>mxPage || nSearch++ > n ){
-        rc = SQLITE_CORRUPT_PGNO(pPrevTrunk->pgno);
+        rc = SQLITE_CORRUPT_PGNO(pPrevTrunk ? pPrevTrunk->pgno : 1);
       }else{
         rc = btreeGetUnusedPage(pBt, iTrunk, &pTrunk, 0);
       }
