@@ -1,5 +1,5 @@
-C Avoid\san\sunnecessary\scall\sto\ssqlite3XPrintf()\sin\sthe\scode\sgenerator,\sfor\na\sperformance\simprovement.
-D 2017-06-28T00:55:50.411
+C Minor\scode\ssimplification\sin\sthe\sALTER\sTABLE\slogic.
+D 2017-06-28T01:12:53.264
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8eeb80162074004e906b53d7340a12a14c471a83743aab975947e95ce061efcc
@@ -342,7 +342,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c 3b23977620ce9662ac54443f65b87ba996e36121
+F src/alter.c 850ede4e607f12fa25ea4f3cb6ece2b2e29d1aa50e3f786ce49d615788849552
 F src/analyze.c 0d0ccf7520a201d8747ea2f02c92c26e26f801bc161f714f27b9f7630dde0421
 F src/attach.c 3bd555e28382603e80d430dfebb2270f86e1e375b4c4be3e1ab1aec3a0c44943
 F src/auth.c 79f96c6f33bf0e5da8d1c282cee5ebb1852bb8a6ccca3e485d7c459b035d9c3c
@@ -1584,7 +1584,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b82efd2a24914ace39acf99df75175042471fd73a8d31d66a40b15f63b342e10
-R 4655eadf37f65568436ba7b7c7775799
+P 29d6ceb3838394d902e248d1eab627625a857dccb5ed0bb66161a13fafc500c8
+R 6f0ea308ec1b73dd6e7772ec710252e2
 U drh
-Z 5d13438a82c29fffa946890a824367ff
+Z 9c7b9d5e2b38deb9e56f410615351475
