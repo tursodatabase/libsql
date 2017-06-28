@@ -459,11 +459,59 @@ static int lsmWin32OsUnlink(lsm_env *pEnv, const char *zFile){
 }
 
 int lsmWin32OsLock(lsm_file *pFile, int iLock, int eType){
-  return LSM_ERROR;
+  Win32File *pWin32File = (Win32File *)pFile;
+  OVERLAPPED ovlp;
+
+  assert( LSM_LOCK_UNLOCK==0 );
+  assert( LSM_LOCK_SHARED==1 );
+  assert( LSM_LOCK_EXCL==2 );
+  assert( eType>=LSM_LOCK_UNLOCK && eType<=LSM_LOCK_EXCL );
+  assert( iLock>0 && iLock<=32 );
+
+  memset(&ovlp, 0, sizeof(OVERLAPPED));
+  ovlp.Offset = (4096-iLock);
+  if( eType>LSM_LOCK_UNLOCK ){
+    DWORD flags = LOCKFILE_FAIL_IMMEDIATELY;
+    if( eType>=LSM_LOCK_EXCL ) flags |= LOCKFILE_EXCLUSIVE_LOCK;
+    if( !LockFileEx(pWin32File->hFile, flags, 0, 1, 0, &ovlp) ){
+      if( GetLastError()==ERROR_IO_PENDING ){
+        return LSM_BUSY;
+      }else{
+        return LSM_IOERR_BKPT;
+      }
+    }
+  }else{
+    if( !UnlockFileEx(pWin32File->hFile, 0, 1, 0, &ovlp) ){
+      return LSM_IOERR_BKPT;
+    }
+  }
+  return LSM_OK;
 }
 
 int lsmWin32OsTestLock(lsm_file *pFile, int iLock, int nLock, int eType){
-  return LSM_ERROR;
+  Win32File *pWin32File = (Win32File *)pFile;
+  DWORD flags = LOCKFILE_FAIL_IMMEDIATELY;
+  OVERLAPPED ovlp;
+
+  assert( LSM_LOCK_UNLOCK==0 );
+  assert( LSM_LOCK_SHARED==1 );
+  assert( LSM_LOCK_EXCL==2 );
+  assert( eType==LSM_LOCK_SHARED || eType==LSM_LOCK_EXCL );
+  assert( nLock>=0 );
+  assert( iLock>0 && iLock<=32 );
+
+  if( eType>=LSM_LOCK_EXCL ) flags |= LOCKFILE_EXCLUSIVE_LOCK;
+  memset(&ovlp, 0, sizeof(OVERLAPPED));
+  ovlp.Offset = (4096-iLock);
+  if( !LockFileEx(pWin32File->hFile, flags, 0, (DWORD)nLock, 0, &ovlp) ){
+    if( GetLastError()==ERROR_IO_PENDING ){
+      return LSM_BUSY;
+    }else{
+      return LSM_IOERR_BKPT;
+    }
+  }
+  UnlockFileEx(pWin32File->hFile, 0, (DWORD)nLock, 0, &ovlp);
+  return LSM_OK;
 }
 
 int lsmWin32OsShmMap(lsm_file *pFile, int iChunk, int sz, void **ppShm){

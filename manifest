@@ -1,5 +1,5 @@
-C Improve\sa\slocal\svariable\sname.
-D 2017-06-27T22:33:06.331
+C Implement\sxLock\sand\sxTestLock\sfor\slsm1\son\sWin32.
+D 2017-06-28T21:36:40.949
 F Makefile.in 1cc758ce3374a32425e4d130c2fe7b026b20de5b8843243de75f087c0a2661fb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc d389c6fb3344ea6887b386d56784a6d8a5c85107294448aeda50ac404285a1ef
@@ -249,7 +249,7 @@ F ext/lsm1/lsm_tree.c 5d9fb2bc58a1a70c75126bd8d7198f7b627e165b
 F ext/lsm1/lsm_unix.c ee0201dff10ce2008ef13a65f52a6ea348f287e795270f651596f812fcfccdcc
 F ext/lsm1/lsm_varint.c b19ae9bd26b5a1e8402fb8a564b25d9542338a41
 F ext/lsm1/lsm_vtab.c fff303ce03168eca9e333add3c1429b3471674b0
-F ext/lsm1/lsm_win32.c fd1a47d851d1955846056df5644b6eea44912ffce56e02811e57d3daed9cdf38
+F ext/lsm1/lsm_win32.c a1a3d712f8112a93899a2964cb09dbedcea28e352d81048632c72cf6a14eb2c9
 F ext/misc/README.md 8e008c8d2b02e09096b31dfba033253ac27c6c06a18aa5826e299fa7601d90b2
 F ext/misc/amatch.c 6db4607cb17c54b853a2d7c7c36046d004853f65b9b733e6f019d543d5dfae87
 F ext/misc/anycollseq.c 5ffdfde9829eeac52219136ad6aa7cd9a4edb3b15f4f2532de52f4a22525eddb
@@ -1624,7 +1624,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7e669d9bfab237ff7ece821cf95cfd3bb753b1882b9a86044b7d4579808aecf4
-R a194f4add86f8c2bf9581bbe931d15bb
+P d0f6973d93c36451bf64f47de9a88abec613a624603033bf6717f5071139b6d2
+R 21110d45751e806c992b04ef05ac7e74
 U mistachkin
-Z 6e9726878bd2ddfe288293450bc21311
+Z e53e89fbbfaae4a22bd4502cd00f0ba9
