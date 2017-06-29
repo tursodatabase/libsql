@@ -1,5 +1,5 @@
 /*
-** 2001 September 15
+** 2001-09-15
 **
 ** The author disclaims copyright to this source code.  In place of
 ** a legal notice, here is a blessing:
@@ -3483,19 +3483,22 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 
 /*
 ** CAPI3REF: Prepare Flags
-** KEYWORDS:
 **
 ** These constants define various flags that can be passed into
-** the [sqlite3_prepare_v3()] interface.
+** "prepFlags" parameter of the [sqlite3_prepare_v3()] and
+** [sqlite3_prepare16_v3()] interfaces.
+**
+** New flags may be added in future releases of SQLite.
 **
 ** <dl>
 ** [[SQLITE_PREPARE_PERSISTENT]] ^(<dt>SQLITE_PREPARE_PERSISTENT</dt>
 ** <dd>The SQLITE_PREPARE_PERSISTENT flag causes [sqlite3_prepare_v3()]
+** and [sqlite3_prepare16_v3()]
 ** to optimize the resulting prepared statement to be retained for a 
 ** relatively long amount of time.)^  ^Without this flag,
-** [sqlite3_prepare_v3()] assumes that the prepared statement will be used
-** just once or at most a few times and then destroyed using
-** [sqlite3_finalize()] relatively soon.
+** [sqlite3_prepare_v3()] and [sqlite3_prepare16_v3()] assume that
+** the prepared statement will be used just once or at most a few times
+** and then destroyed using [sqlite3_finalize()] relatively soon.
 ** </dl>
 */
 #define SQLITE_PREPARE_PERSISTENT              0x01
@@ -3506,8 +3509,19 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 ** METHOD: sqlite3
 ** CONSTRUCTOR: sqlite3_stmt
 **
-** To execute an SQL query, it must first be compiled into a byte-code
-** program using one of these routines.
+** To execute an SQL statement, it must first be compiled into a byte-code
+** program using one of these routines.  Or, in other words, these routines
+** are constructors for the [prepared statement] object.
+**
+** The preferred routine to use is [sqlite3_prepare_v2()].  The
+** [sqlite3_prepare()] interface is legacy and should be avoided.
+** [sqlite3_prepare_v3()] has an extra "prepFlags" option that is used
+** for special purposes.
+**
+** The use of the UTF-8 interfaces is preferred, as SQLite currently
+** does all parsing using UTF-8.  The UTF-16 interfaces are provided
+** as a convenience.  The UTF-16 interfaces work by converting the
+** input text into UTF-8, then invoking the corresponding UTF-8 interface.
 **
 ** The first argument, "db", is a [database connection] obtained from a
 ** prior successful call to [sqlite3_open()], [sqlite3_open_v2()] or
@@ -3546,7 +3560,7 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 **
 ** The sqlite3_prepare_v2(), sqlite3_prepare_v3(), sqlite3_prepare16_v2(),
 ** and sqlite3_prepare16_v3() interfaces are recommended for all new programs.
-** The older interfaces are retained (sqlite3_prepare() and sqlite3_prepare16())
+** The older interfaces (sqlite3_prepare() and sqlite3_prepare16())
 ** are retained for backwards compatibility, but their use is discouraged.
 ** ^In the "vX" interfaces, the prepared statement
 ** that is returned (the [sqlite3_stmt] object) contains a copy of the
