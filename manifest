@@ -1,5 +1,5 @@
-C Add\sthe\sLSM1\sextension.
-D 2017-06-29T13:19:55.351
+C Compilation\sfix\sfor\slsm1\susing\sMSVC.
+D 2017-06-29T13:35:44.853
 F Makefile.in 8b27c128f319083e71cbe27695db058b4ff96970d380ecdf15b19bb8b650e6d9
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 00537d05e7e5da8cca16d184675c4c45943a62e1be2a82ab2fa6c459deab5ba3
@@ -226,7 +226,7 @@ F ext/lsm1/lsm-test/lsmtest_bt.c d70d9a9be5eef9360af1251dd083948d74fd30137a08f61
 F ext/lsm1/lsm-test/lsmtest_datasource.c 5d770be191d0ca51315926723009b2c25c0b4b8136840494ef710ac324aa916c
 F ext/lsm1/lsm-test/lsmtest_func.c 159aa401bc8032bfa3d8cf2977bd687abebab880255895a5eb45770d626fa38d
 F ext/lsm1/lsm-test/lsmtest_io.c ba678e052f497b4c2ff41d47672a1f2a02f495d14083845ee66e0bda678f5b80
-F ext/lsm1/lsm-test/lsmtest_main.c 70c5abcf62869aaeaa1f2e4760f590f018d3e1ad197c5499cebfc1ad7e8ad660
+F ext/lsm1/lsm-test/lsmtest_main.c dd062fe16d778aaaade3147199749ba9d8743e1408d249823ee9ecf3c24b5466
 F ext/lsm1/lsm-test/lsmtest_mem.c 996b1e76cc876e8d765182a2f14159b1acbf56cbf86d286173e13e970b79a945
 F ext/lsm1/lsm-test/lsmtest_tdb.c d85694a9e5cd3908cb3e10bb5cb5d6a47ad101adb9fb477ca61f1e3725253b06
 F ext/lsm1/lsm-test/lsmtest_tdb.h de1ee8c71a7ef61d964e40e057cffea387d7b58a51d95905ab909937d24e4a91
@@ -1627,8 +1627,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 88976ae31c2cbc8b75f162140d1356132f69e5b30786e39ad8ca5a1774b03621 680cc064c9e809ddc643074b5e65677f484d904b3d52826f6def480ddaa8f0ab
-R 8463f6c13eeaeca57e12da470457e7fa
-T +closed 680cc064c9e809ddc643074b5e65677f484d904b3d52826f6def480ddaa8f0ab
-U drh
-Z ee628bcf746e501b826cf64cb58e4d84
+P 824e83274c04d24fd854bc7376c958ea6b05862efc562a3dfed0fc888fd96cc2
+R 2589fa721f2e60c3bd6ce2e6aa363392
+U mistachkin
+Z 469dc3ed1cb5e0052b001ace76064d6a

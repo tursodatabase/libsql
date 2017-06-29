@@ -988,6 +988,9 @@ int do_speed_tests(int nArg, char **azArg){
           int nDummy;
           u32 iKey;
           u32 aKey[4];                  /* 16-byte key */
+#ifndef NDEBUG
+          u32 aVal[25];                 /* 100 byte value */
+#endif
 
           testCaseProgress(iSel, nSelTest, testCaseNDot(), &iDot);
     
@@ -996,7 +999,6 @@ int do_speed_tests(int nArg, char **azArg){
           rc = tdb_fetch(pDb, aKey, sizeof(aKey), &pDummy, &nDummy);
 
 #ifndef NDEBUG
-          u32 aVal[25];                 /* 100 byte value */
           testPrngArray(iKey, aVal, ArraySize(aVal));
           assert( nDummy==100 && memcmp(aVal, pDummy, 100)==0 );
 #endif
