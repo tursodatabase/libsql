@@ -1,8 +1,8 @@
-C Compilation\sfix\sfor\slsm1\susing\sMSVC.
-D 2017-06-29T13:35:44.853
-F Makefile.in 8b27c128f319083e71cbe27695db058b4ff96970d380ecdf15b19bb8b650e6d9
+C Add\sthe\sstmts\svirtual\stable\sto\stestfixture\sbuilds.\s\sAdd\snew\scompile-time\noptions\sSQLITE_ENABLE_QPSG\sand\sSQLITE_ENABLE_STMTSVTAB\sto\sctime.c
+D 2017-06-29T13:41:59.045
+F Makefile.in 2fde386bd3fca21b89a5f64eaa0c580b25079cd10f6eb9692987a70b7709edc0
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 00537d05e7e5da8cca16d184675c4c45943a62e1be2a82ab2fa6c459deab5ba3
+F Makefile.msc 822979c692e9f1004c3ac36802ad2c130709fe4d111c272d55b8bdeb0261070a
 F README.md 2b15fae33852f2f53996774c21fb41e1d94181c4401a0e43ac93e11f2cc901b9
 F VERSION 87f1498f27e398bce3da2fa8125c9879a38ed9d87e4b5fb922b351de1e25cadb
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -372,7 +372,7 @@ F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk f92791b36dfe35024529f32e253e120ba5c0330f310d81fd87476d7cc1d7b3c7
+F main.mk 91132b69fc5e2c03ba83fdd0f1ee2cdd6a8e18397dfa097ec84dfa522803c100
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -397,7 +397,7 @@ F src/btreeInt.h a392d353104b4add58b4a59cb185f5d5693dde832c565b77d8d4c343ed98f61
 F src/build.c b24e0889ba18ba0e93e03e2ef5c9f1a2ca043d77c5abbd3d333858a76b795da3
 F src/callback.c 2e76147783386374bf01b227f752c81ec872d730
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
-F src/ctime.c e9a6db1321c2353fe922533f202b85abb3084cdf569450abcabf55e21e104550
+F src/ctime.c 0dbb6af8bb0829f5db1e2b7ef34df081d8e41d5295eb6dddddd48a705db741ec
 F src/date.c cc42a41c7422389860d40419a5e3bce5eaf6e7835c3ba2677751dc653550a5c7
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
 F src/delete.c 3213547e97b676c6fa79948b7a9ede4801ea04a01a2043241deafedf132ecf5d
@@ -473,7 +473,7 @@ F src/test_backup.c bf5da90c9926df0a4b941f2d92825a01bbe090a0
 F src/test_bestindex.c d23f80d334c59662af69191854c76b8d3d0c8c96
 F src/test_blob.c f65ac717da2618691cf9dad094e6da0219dcd208
 F src/test_btree.c 8b2dc8b8848cf3a4db93f11578f075e82252a274
-F src/test_config.c edcba290248dc18736dd814c9b95863c6762e0b35753048d8cbe5bf65f7abfbb
+F src/test_config.c 15b06083a05b608464e1cd8b6d1a2fc97aa2948cd250c584f8ec564e0de71b14
 F src/test_delete.c e2fe07646dff6300b48d49b2fee2fe192ed389e834dd635e3b3bac0ce0bf9f8f
 F src/test_demovfs.c a0c3bdd45ed044115c2c9f7779e56eafff18741e
 F src/test_devsym.c 4e58dec2602d8e139ca08659f62a62450587cb58
@@ -1627,7 +1627,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 824e83274c04d24fd854bc7376c958ea6b05862efc562a3dfed0fc888fd96cc2
-R 2589fa721f2e60c3bd6ce2e6aa363392
-U mistachkin
-Z 469dc3ed1cb5e0052b001ace76064d6a
+P b7794cc5d5abc13c6301c8d5c1b330405432c047f154083430fd15823221e552
+R 1263a289b329cfabed471001fc5531df
+U drh
+Z 13eea48e6bae5beda0392b0d9ada0310
