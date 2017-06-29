@@ -5555,7 +5555,9 @@ static int do_meta_command(char *zLine, ShellState *p){
       p->mode = MODE_Ascii;
       sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Unit);
       sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Record);
-    }else {
+    }else if( nArg==1 ){
+      raw_printf(p->out, "current output mode: %s\n", modeDescr[p->mode]);
+    }else{
       raw_printf(stderr, "Error: mode should be one of: "
          "ascii column csv html insert line list quote tabs tcl\n");
       rc = 1;
@@ -7185,6 +7187,7 @@ static const char zOptions[] =
   "   -newline SEP         set output row separator. Default: '\\n'\n"
   "   -nullvalue TEXT      set text string for NULL values. Default ''\n"
   "   -pagecache SIZE N    use N slots of SZ bytes each for page cache memory\n"
+  "   -quote               set output mode to 'quote'\n"
   "   -scratch SIZE N      use N slots of SZ bytes each for scratch memory\n"
   "   -separator SEP       set output column separator. Default: '|'\n"
   "   -stats               print memory stats before each finalize\n"
@@ -7480,6 +7483,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       data.mode = MODE_Html;
     }else if( strcmp(z,"-list")==0 ){
       data.mode = MODE_List;
+    }else if( strcmp(z,"-quote")==0 ){
+      data.mode = MODE_Quote;
     }else if( strcmp(z,"-line")==0 ){
       data.mode = MODE_Line;
     }else if( strcmp(z,"-column")==0 ){
