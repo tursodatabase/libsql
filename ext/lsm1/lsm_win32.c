@@ -39,7 +39,7 @@ struct Win32File {
   HANDLE hShmFile;                /* File handle for *-shm file */
 
   HANDLE hMap;                    /* File handle for mapping */
-  void *pMap;                     /* Pointer to mapping of file fd */
+  LPVOID pMap;                    /* Pointer to mapping of file fd */
   size_t nMap;                    /* Size of mapping at pMap in bytes */
   int nShm;                       /* Number of entries in array apShm[] */
   void **apShm;                   /* Array of 32K shared memory segments */
@@ -291,10 +291,10 @@ static int lsmWin32OsTruncate(
   lsm_i64 nSize    /* Size to truncate file to */
 ){
   Win32File *pWin32File = (Win32File *)pFile;
-  LARGE_INTEGER largeInteger; /* The new offset */
+  LARGE_INTEGER offset;
 
-  largeInteger.QuadPart = nSize;
-  if( !SetFilePointerEx(pWin32File->hFile, largeInteger, 0, FILE_BEGIN) ){
+  offset.QuadPart = nSize;
+  if( !SetFilePointerEx(pWin32File->hFile, offset, 0, FILE_BEGIN) ){
     return LSM_IOERR_BKPT;
   }
   if (!SetEndOfFile(pWin32File->hFile) ){
@@ -335,7 +335,7 @@ static int lsmWin32OsSync(lsm_file *pFile){
 #ifndef LSM_NO_SYNC
   Win32File *pWin32File = (Win32File *)pFile;
 
-  if( pWin32File->pMap ){
+  if( pWin32File->pMap!=NULL ){
     if( !FlushViewOfFile(pWin32File->pMap, 0) ){
       rc = LSM_IOERR_BKPT;
     }
@@ -359,7 +359,61 @@ static int lsmWin32OsRemap(
   void **ppOut,
   lsm_i64 *pnOut
 ){
-  return LSM_ERROR;
+  Win32File *pWin32File = (Win32File *)pFile;
+
+  /* If the file is between 0 and 2MB in size, extend it in chunks of 256K.
+  ** Thereafter, in chunks of 1MB at a time.  */
+  const int aIncrSz[] = {256*1024, 1024*1024};
+  int nIncrSz = aIncrSz[iMin>(2*1024*1024)];
+
+  if( pWin32File->pMap!=NULL ){
+    UnmapViewOfFile(pWin32File->pMap);
+    *ppOut = pWin32File->pMap = NULL;
+    *pnOut = pWin32File->nMap = 0;
+  }
+  if( pWin32File->hMap!=NULL ){
+    CloseHandle(pWin32File->hMap);
+    pWin32File->hMap = NULL;
+  }
+  if( iMin>=0 ){
+    LARGE_INTEGER fileSize;
+    DWORD dwSizeHigh;
+    DWORD dwSizeLow;
+    HANDLE hMap;
+    LPVOID pMap;
+    memset(&fileSize, 0, sizeof(LARGE_INTEGER));
+    if( !GetFileSizeEx(pWin32File->hFile, &fileSize) ){
+      return LSM_IOERR_BKPT;
+    }
+    assert( fileSize.QuadPart>=0 );
+    if( fileSize.QuadPart<iMin ){
+      int rc;
+      fileSize.QuadPart = ((iMin + nIncrSz-1) / nIncrSz) * nIncrSz;
+      rc = lsmWin32OsTruncate(pFile, fileSize.QuadPart);
+      if( rc!=LSM_OK ){
+        return rc;
+      }
+    }
+    dwSizeLow = (DWORD)(fileSize.QuadPart & 0xFFFFFFFF);
+    dwSizeHigh = (DWORD)((fileSize.QuadPart & 0x7FFFFFFFFFFFFFFF) >> 32);
+    hMap = CreateFileMappingW(pWin32File->hFile, NULL, PAGE_READWRITE,
+                              dwSizeHigh, dwSizeLow, NULL);
+    if( hMap==NULL ){
+      return LSM_IOERR_BKPT;
+    }
+    pWin32File->hMap = hMap;
+    assert( fileSize.QuadPart<=0xFFFFFFFF );
+    pMap = MapViewOfFile(hMap, FILE_MAP_WRITE | FILE_MAP_READ, 0, 0,
+                         (SIZE_T)fileSize.QuadPart);
+    if( pMap==NULL ){
+      return LSM_IOERR_BKPT;
+    }
+    pWin32File->pMap = pMap;
+    pWin32File->nMap = (SIZE_T)fileSize.QuadPart;
+  }
+  *ppOut = pWin32File->pMap;
+  *pnOut = pWin32File->nMap;
+  return LSM_OK;
 }
 
 static BOOL win32IsDriveLetterAndColon(
@@ -532,17 +586,23 @@ static int lsmWin32OsClose(lsm_file *pFile){
   int nRetry = 0;
   Win32File *pWin32File = (Win32File *)pFile;
   lsmWin32OsShmUnmap(pFile, 0);
-  if( pWin32File->pMap ){
+  if( pWin32File->pMap!=NULL ){
     UnmapViewOfFile(pWin32File->pMap);
-    pWin32File->pMap = 0;
+    pWin32File->pMap = NULL;
+    pWin32File->nMap = 0;
   }
   if( pWin32File->hMap!=NULL ){
     CloseHandle(pWin32File->hMap);
     pWin32File->hMap = NULL;
   }
   do{
+    if( pWin32File->hFile==NULL ){
+      rc = LSM_IOERR_BKPT;
+      break;
+    }
     rc = CloseHandle(pWin32File->hFile);
     if( rc ){
+      pWin32File->hFile = NULL;
       rc = LSM_OK;
       break;
     }
