@@ -355,7 +355,7 @@ int lsmPosixOsTestLock(lsm_file *pFile, int iLock, int nLock, int eType){
   lock.l_whence = SEEK_SET;
   lock.l_len = nLock;
   lock.l_type = aType[eType];
-  lock.l_start = (4096-iLock);
+  lock.l_start = (4096-iLock-nLock+1);
 
   if( fcntl(p->fd, F_GETLK, &lock) ){
     rc = LSM_IOERR_BKPT;

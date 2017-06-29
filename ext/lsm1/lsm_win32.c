@@ -284,8 +284,8 @@ static int lsmWin32OsWrite(
   int nRetry = 0;         /* Number of retrys */
 
   memset(&overlapped, 0, sizeof(OVERLAPPED));
-  overlapped.Offset = (LONG)(iOff & 0xffffffff);
-  overlapped.OffsetHigh = (LONG)((iOff>>32) & 0x7fffffff);
+  overlapped.Offset = (LONG)(iOff & 0XFFFFFFFF);
+  overlapped.OffsetHigh = (LONG)((iOff>>32) & 0x7FFFFFFF);
   while( nRem>0 ){
     DWORD nWrite = 0; /* Bytes written using WriteFile */
     if( !WriteFile(pWin32File->hFile, aRem, nRem, &nWrite, &overlapped) ){
@@ -297,8 +297,8 @@ static int lsmWin32OsWrite(
       break;
     }
     iOff += nWrite;
-    overlapped.Offset = (LONG)(iOff & 0xffffffff);
-    overlapped.OffsetHigh = (LONG)((iOff>>32) & 0x7fffffff);
+    overlapped.Offset = (LONG)(iOff & 0xFFFFFFFF);
+    overlapped.OffsetHigh = (LONG)((iOff>>32) & 0x7FFFFFFF);
     aRem += nWrite;
     nRem -= nWrite;
   }
@@ -341,8 +341,8 @@ static int lsmWin32OsRead(
   int nRetry = 0;        /* Number of retrys */
 
   memset(&overlapped, 0, sizeof(OVERLAPPED));
-  overlapped.Offset = (LONG)(iOff & 0xffffffff);
-  overlapped.OffsetHigh = (LONG)((iOff>>32) & 0x7fffffff);
+  overlapped.Offset = (LONG)(iOff & 0XFFFFFFFF);
+  overlapped.OffsetHigh = (LONG)((iOff>>32) & 0X7FFFFFFF);
   while( !ReadFile(pWin32File->hFile, pData, nData, &nRead, &overlapped) &&
          GetLastError()!=ERROR_HANDLE_EOF ){
     if( win32RetryIoerr(pWin32File->pEnv, &nRetry) ) continue;
@@ -546,7 +546,6 @@ static int win32Delete(
   }else{
     int nRetry = 0;
     DWORD attr;
-    DWORD lastErrno;
 
     do {
       attr = GetFileAttributesW(zConverted);
@@ -625,7 +624,7 @@ int lsmWin32OsTestLock(lsm_file *pFile, int iLock, int nLock, int eType){
 
   if( eType>=LSM_LOCK_EXCL ) flags |= LOCKFILE_EXCLUSIVE_LOCK;
   memset(&ovlp, 0, sizeof(OVERLAPPED));
-  ovlp.Offset = (4096-iLock);
+  ovlp.Offset = (4096-iLock-nLock+1);
   if( !LockFileEx(pWin32File->hFile, flags, 0, (DWORD)nLock, 0, &ovlp) ){
     if( win32IsLockBusy(GetLastError()) ){
       return LSM_BUSY;
@@ -640,6 +639,10 @@ int lsmWin32OsTestLock(lsm_file *pFile, int iLock, int nLock, int eType){
 int lsmWin32OsShmMap(lsm_file *pFile, int iChunk, int sz, void **ppShm){
   int rc;
   Win32File *pWin32File = (Win32File *)pFile;
+  int iOffset = iChunk * sz;
+  int iOffsetShift = iOffset % pWin32File->sysInfo.dwAllocationGranularity;
+  int nNew = iChunk + 1;
+  lsm_i64 nReq = nNew * sz;
 
   *ppShm = NULL;
   assert( sz>=0 );
@@ -648,8 +651,6 @@ int lsmWin32OsShmMap(lsm_file *pFile, int iChunk, int sz, void **ppShm){
     int i;
     LPHANDLE ahNew;
     LPVOID *apNew;
-    int nNew = iChunk+1;
-    lsm_i64 nReq = nNew * sz;
     LARGE_INTEGER fileSize;
 
     /* If the shared-memory file has not been opened, open it now. */
@@ -697,16 +698,15 @@ int lsmWin32OsShmMap(lsm_file *pFile, int iChunk, int sz, void **ppShm){
 
   if( pWin32File->ahShm[iChunk]==NULL ){
     HANDLE hMap;
+    assert( nReq<=0xFFFFFFFF );
     hMap = CreateFileMappingW(pWin32File->hShmFile, NULL, PAGE_READWRITE, 0,
-                              (DWORD)sz, NULL);
+                              (DWORD)nReq, NULL);
     if( hMap==NULL ){
       return LSM_IOERR_BKPT;
     }
     pWin32File->ahShm[iChunk] = hMap;
   }
   if( pWin32File->apShm[iChunk]==NULL ){
-    int iOffset = iChunk * sz;
-    int iOffsetShift = iOffset % pWin32File->sysInfo.dwAllocationGranularity;
     LPVOID pMap;
     pMap = MapViewOfFile(pWin32File->ahShm[iChunk],
                          FILE_MAP_WRITE | FILE_MAP_READ, 0,
@@ -716,7 +716,12 @@ int lsmWin32OsShmMap(lsm_file *pFile, int iChunk, int sz, void **ppShm){
     }
     pWin32File->apShm[iChunk] = pMap;
   }
-  *ppShm = pWin32File->apShm[iChunk];
+  if( iOffsetShift!=0 ){
+    char *p = (char *)pWin32File->apShm[iChunk];
+    *ppShm = (void *)&p[iOffsetShift];
+  }else{
+    *ppShm = pWin32File->apShm[iChunk];
+  }
   return LSM_OK;
 }
 

@@ -1,5 +1,5 @@
-C Edit\scomments\sin\ssqlite.h.in\sused\sfor\sgenerating\sdocumentation,\sto\simprove\nthe\sdescription\sof\sthe\snew\ssqlite3_prepare_v3()\sinterfaces,\sand\sother\nmiscellaneous\scleanup.\s\sNo\schanges\sto\sexecutable\scode.
-D 2017-06-29T17:27:04.182
+C Fix\sissues\sin\sthe\sPOSIX\sand\sWin32\sinterfaces\sfor\slsm1.
+D 2017-06-29T19:08:52.350
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 4ebb1d257cac7fb1bcb4ba59278416d410ff1c4bf59447a9c37a415f3516056a
@@ -247,10 +247,10 @@ F ext/lsm1/lsm_shared.c 54cc3a5157c6abd77f7d3ae60708b9f7bf022b3c
 F ext/lsm1/lsm_sorted.c 4a9e3ffecda87b379ed757b59c9cbcd84a80b55c
 F ext/lsm1/lsm_str.c 77ebdd5040ddf267a6f724d4c83132d2dce8a226
 F ext/lsm1/lsm_tree.c 5d9fb2bc58a1a70c75126bd8d7198f7b627e165b
-F ext/lsm1/lsm_unix.c ee0201dff10ce2008ef13a65f52a6ea348f287e795270f651596f812fcfccdcc
+F ext/lsm1/lsm_unix.c 14aaebdd7a7e9abb57cc16890c8444b241de272bfc2303b68f6e6b984040dc1e
 F ext/lsm1/lsm_varint.c b19ae9bd26b5a1e8402fb8a564b25d9542338a41
 F ext/lsm1/lsm_vtab.c fff303ce03168eca9e333add3c1429b3471674b0
-F ext/lsm1/lsm_win32.c 29b76829d29921e1f2297d8400c37ffed23479e2a519a9421bf2467c9bfceea3
+F ext/lsm1/lsm_win32.c 1759ec9869e379d6f53937ef33b79dc6bec72223999eb8c5598b024528d6c70d
 F ext/misc/README.md 8e008c8d2b02e09096b31dfba033253ac27c6c06a18aa5826e299fa7601d90b2
 F ext/misc/amatch.c 6db4607cb17c54b853a2d7c7c36046d004853f65b9b733e6f019d543d5dfae87
 F ext/misc/anycollseq.c 5ffdfde9829eeac52219136ad6aa7cd9a4edb3b15f4f2532de52f4a22525eddb
@@ -1627,7 +1627,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cae647696769c9fcdc3beafdfdf74d8384217f4b22820e4545093bea7be58f7c
-R 041dfa61180f96fedaa6fea92ed99ea9
-U drh
-Z 9aaf6aa4a967053c1f0cee197b5d2771
+P 284707a7b3514a55cce24292e45632b7033d6edcff5b27deac5118b27c7b2954
+R 95cb4cb8128c681b43b4c959f1b53467
+U mistachkin
+Z 32c14f0ac7b13bb59a0dfed0d249addc
