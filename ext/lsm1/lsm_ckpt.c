@@ -717,7 +717,9 @@ static int ckptChecksumOk(u32 *aCkpt){
   u32 cksum1;
   u32 cksum2;
 
-  if( nCkpt<CKPT_HDR_NCKPT || nCkpt>(LSM_META_PAGE_SIZE)/sizeof(u32) ) return 0;
+  if( nCkpt<CKPT_HDR_NCKPT || nCkpt>(LSM_META_RW_PAGE_SIZE)/sizeof(u32) ){
+    return 0;
+  }
   ckptChecksum(aCkpt, nCkpt, &cksum1, &cksum2);
   return (cksum1==aCkpt[nCkpt-2] && cksum2==aCkpt[nCkpt-1]);
 }
@@ -870,7 +872,7 @@ int lsmCheckpointLoad(lsm_db *pDb, int *piRead){
     int nInt;
 
     nInt = pShm->aSnap1[CKPT_HDR_NCKPT];
-    if( nInt<=(LSM_META_PAGE_SIZE / sizeof(u32)) ){
+    if( nInt<=(LSM_META_RW_PAGE_SIZE / sizeof(u32)) ){
       memcpy(pDb->aSnapshot, pShm->aSnap1, nInt*sizeof(u32));
       if( ckptChecksumOk(pDb->aSnapshot) ){
         if( piRead ) *piRead = 1;
@@ -879,7 +881,7 @@ int lsmCheckpointLoad(lsm_db *pDb, int *piRead){
     }
 
     nInt = pShm->aSnap2[CKPT_HDR_NCKPT];
-    if( nInt<=(LSM_META_PAGE_SIZE / sizeof(u32)) ){
+    if( nInt<=(LSM_META_RW_PAGE_SIZE / sizeof(u32)) ){
       memcpy(pDb->aSnapshot, pShm->aSnap2, nInt*sizeof(u32));
       if( ckptChecksumOk(pDb->aSnapshot) ){
         if( piRead ) *piRead = 2;
@@ -1085,7 +1087,7 @@ int lsmCheckpointSaveWorker(lsm_db *pDb, int bFlush){
   if( rc!=LSM_OK ) return rc;
   assert( ckptChecksumOk((u32 *)p) );
 
-  assert( n<=LSM_META_PAGE_SIZE );
+  assert( n<=LSM_META_RW_PAGE_SIZE );
   memcpy(pShm->aSnap2, p, n);
   lsmShmBarrier(pDb);
   memcpy(pShm->aSnap1, p, n);
@@ -1120,9 +1122,9 @@ int lsmCheckpointSynced(lsm_db *pDb, i64 *piId, i64 *piLog, u32 *pnWrite){
       u8 *aData; 
 
       aData = lsmFsMetaPageData(pPg, &nData);
-      assert( nData==LSM_META_PAGE_SIZE );
+      assert( nData==LSM_META_RW_PAGE_SIZE );
       nCkpt = lsmGetU32(&aData[CKPT_HDR_NCKPT*sizeof(u32)]);
-      if( nCkpt<(LSM_META_PAGE_SIZE/sizeof(u32)) ){
+      if( nCkpt<(LSM_META_RW_PAGE_SIZE/sizeof(u32)) ){
         u32 *aCopy = lsmMallocRc(pDb->pEnv, sizeof(u32) * nCkpt, &rc);
         if( aCopy ){
           memcpy(aCopy, aData, nCkpt*sizeof(u32));

@@ -214,6 +214,7 @@ struct FileSystem {
   char *zDb;                      /* Database file name */
   char *zLog;                     /* Database file name */
   int nMetasize;                  /* Size of meta pages in bytes */
+  int nMetaRwSize;                /* Read/written size of meta pages in bytes */
   int nPagesize;                  /* Database page-size in bytes */
   int nBlocksize;                 /* Database block-size in bytes */
 
@@ -635,7 +636,8 @@ int lsmFsOpen(
     pFS->zLog = &pFS->zDb[nDb+1];
     pFS->nPagesize = LSM_DFLT_PAGE_SIZE;
     pFS->nBlocksize = LSM_DFLT_BLOCK_SIZE;
-    pFS->nMetasize = 4 * 1024;
+    pFS->nMetasize = LSM_META_PAGE_SIZE;
+    pFS->nMetaRwSize = LSM_META_RW_PAGE_SIZE;
     pFS->pDb = pDb;
     pFS->pEnv = pDb->pEnv;
 
@@ -2271,7 +2273,9 @@ int lsmFsMetaPageGet(
     }else{
       pPg->aData = lsmMallocRc(pFS->pEnv, pFS->nMetasize, &rc);
       if( rc==LSM_OK && bWrite==0 ){
-        rc = lsmEnvRead(pFS->pEnv, pFS->fdDb, iOff, pPg->aData, pFS->nMetasize);
+        rc = lsmEnvRead(
+            pFS->pEnv, pFS->fdDb, iOff, pPg->aData, pFS->nMetaRwSize
+        );
       }
 #ifndef NDEBUG
       /* pPg->aData causes an uninitialized access via a downstreadm write().
@@ -2311,7 +2315,7 @@ int lsmFsMetaPageRelease(MetaPage *pPg){
     if( pFS->nMapLimit==0 ){
       if( pPg->bWrite ){
         i64 iOff = (pPg->iPg==2 ? pFS->nMetasize : 0);
-        int nWrite = pFS->nMetasize;
+        int nWrite = pFS->nMetaRwSize;
         rc = lsmEnvWrite(pFS->pEnv, pFS->fdDb, iOff, pPg->aData, nWrite);
       }
       lsmFree(pFS->pEnv, pPg->aData);
@@ -2328,7 +2332,7 @@ int lsmFsMetaPageRelease(MetaPage *pPg){
 ** set *pnData to the size of the meta-page in bytes before returning.
 */
 u8 *lsmFsMetaPageData(MetaPage *pPg, int *pnData){
-  if( pnData ) *pnData = pPg->pFS->nMetasize;
+  if( pnData ) *pnData = pPg->pFS->nMetaRwSize;
   return pPg->aData;
 }
 

@@ -65,8 +65,6 @@
 #define LSM_CKSUM0_INIT 42
 #define LSM_CKSUM1_INIT 42
 
-#define LSM_META_PAGE_SIZE 4096
-
 /* "mmap" mode is currently only used in environments with 64-bit address 
 ** spaces. The following macro is used to test for this.  */
 #define LSM_IS_64_BIT (sizeof(void*)==8)
@@ -153,6 +151,15 @@ int lsmErrorBkpt(int);
 #define LSM_LOCK_ROTRANS      7
 #define LSM_LOCK_READER(i)    ((i) + LSM_LOCK_ROTRANS + 1)
 #define LSM_LOCK_RWCLIENT(i)  ((i) + LSM_LOCK_READER(LSM_LOCK_NREADER))
+
+#define LSM_N_LOCK LSM_LOCK_RWCLIENT(LSM_LOCK_NRWCLIENT)
+
+/*
+** Meta-page size and usable size.
+*/
+#define LSM_META_PAGE_SIZE 4096
+
+#define LSM_META_RW_PAGE_SIZE (LSM_META_PAGE_SIZE - LSM_N_LOCK)
 
 /*
 ** Hard limit on the number of free-list entries that may be stored in 
