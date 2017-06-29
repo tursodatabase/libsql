@@ -1,5 +1,5 @@
-C Fix\sissues\sin\sthe\sPOSIX\sand\sWin32\sinterfaces\sfor\slsm1.
-D 2017-06-29T19:08:52.350
+C Avoid\sreading\sor\swriting\sthe\s32\slocking\sbytes\sat\sthe\send\sof\sthe\sfirst\nmeta-page\sof\san\sLSM\sdatabase.
+D 2017-06-29T20:13:44.630
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 4ebb1d257cac7fb1bcb4ba59278416d410ff1c4bf59447a9c37a415f3516056a
@@ -236,9 +236,9 @@ F ext/lsm1/lsm-test/lsmtest_tdb4.c 47e8bb5eba266472d690fb8264f1855ebdba0ae5a0e54
 F ext/lsm1/lsm-test/lsmtest_util.c 241622db5a332a09c8e6e7606b617d288a37b557f7d3bce0bb97809f67cc2806
 F ext/lsm1/lsm-test/lsmtest_win32.c 5605aac3bf3852dcc2509fb1d097f5f11556418c1cc9cf0fdd09f9af53c97fb4
 F ext/lsm1/lsm.h 0f6f64ff071471cb87bf98beb8386566f30ea001
-F ext/lsm1/lsmInt.h 4c07df475dff0c7a718839ed4e87a66779055fbe3eb9c4815a0a4ba944da7e42
-F ext/lsm1/lsm_ckpt.c e7907e782fe2e95de0833675e35e726e487cc4cd
-F ext/lsm1/lsm_file.c 2f0232e2dc0262f60cab1b7010785fb961d566c740fc0370101c14ab085739e0
+F ext/lsm1/lsmInt.h b5d6d073aa5d233614cf4d97d81ba313e9f2c50cfaf12952f7efd9cd945bcd04
+F ext/lsm1/lsm_ckpt.c 239a8442693f1de6a06c9136a235757ab63f5a772ff44e1e81f00d71cc96151e
+F ext/lsm1/lsm_file.c fc95548f8cf8e47fda4120215d2c1fc22dfa85e09294e5656a99a846dc80a62b
 F ext/lsm1/lsm_log.c 5b3e855fcfb85de9fb86fcbf65696cc6886d3231
 F ext/lsm1/lsm_main.c f52eada2910f8a57bd4cafcee39c6c375f6b7ed8
 F ext/lsm1/lsm_mem.c 4c51ea9fa285ee6e35301b33491642d071740a0a
@@ -1627,7 +1627,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 284707a7b3514a55cce24292e45632b7033d6edcff5b27deac5118b27c7b2954
-R 95cb4cb8128c681b43b4c959f1b53467
-U mistachkin
-Z 32c14f0ac7b13bb59a0dfed0d249addc
+P 38ec41416679e8280d77c8a4913aa6a321784b1237a3fe409b8e256c5f4513de
+R b9474a3eab1ca564ebd8be3f19367146
+T *branch * lsm-metapage-fix
+T *sym-lsm-metapage-fix *
+T -sym-trunk *
+U dan
+Z 6a12e4be46d5c11006952d7eec011f51
