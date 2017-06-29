@@ -7079,6 +7079,7 @@ case OP_Init: {          /* jump */
     pOp->p1 = 0;
   }
   pOp->p1++;
+  p->aCounter[SQLITE_STMTSTATUS_RUN]++;
   goto jump_to_p2;
 }
 
