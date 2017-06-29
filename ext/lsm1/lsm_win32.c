@@ -703,7 +703,8 @@ int lsmWin32OsShmMap(lsm_file *pFile, int iChunk, int sz, void **ppShm){
   if( pWin32File->apShm[iChunk]==NULL ){
     LPVOID pMap;
     pMap = MapViewOfFile(pWin32File->ahShm[iChunk],
-                         FILE_MAP_WRITE | FILE_MAP_READ, 0, 0, (SIZE_T)sz);
+                         FILE_MAP_WRITE | FILE_MAP_READ, 0, (DWORD)(iChunk*sz),
+                         (SIZE_T)sz);
     if( pMap==NULL ){
       return LSM_IOERR_BKPT;
     }
