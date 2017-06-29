@@ -3327,7 +3327,9 @@ static char zHelp[] =
   ".echo on|off           Turn command echo on or off\n"
   ".eqp on|off|full       Enable or disable automatic EXPLAIN QUERY PLAN\n"
   ".exit                  Exit this program\n"
-  ".explain ?on|off|auto? Turn EXPLAIN output mode on or off or to automatic\n"
+/* Because explain mode comes on automatically now, the ".explain" mode
+** is removed from the help screen.  It is still supported for legacy, however */
+/*".explain ?on|off|auto? Turn EXPLAIN output mode on or off or to automatic\n"*/
   ".fullschema ?--indent? Show schema and the content of sqlite_stat tables\n"
   ".headers on|off        Turn display of headers on or off\n"
   ".help                  Show this message\n"
@@ -5035,6 +5037,8 @@ static int do_meta_command(char *zLine, ShellState *p){
     rc = 2;
   }else
 
+  /* The ".explain" command is automatic now.  It is largely pointless.  It
+  ** retained purely for backwards compatibility */
   if( c=='e' && strncmp(azArg[0], "explain", n)==0 ){
     int val = 1;
     if( nArg>=2 ){
