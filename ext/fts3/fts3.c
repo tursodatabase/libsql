@@ -1744,7 +1744,7 @@ static int fts3CursorSeekStmt(Fts3Cursor *pCsr){
     }else{
       zSql = sqlite3_mprintf("SELECT %s WHERE rowid = ?", p->zReadExprlist);
       if( !zSql ) return SQLITE_NOMEM;
-      rc = sqlite3_prepare_v2(p->db, zSql, -1, &pCsr->pStmt, 0);
+      rc = sqlite3_prepare_v3(p->db, zSql,-1,SQLITE_PREPARE_PERSISTENT,&pCsr->pStmt,0);
       sqlite3_free(zSql);
     }
     if( rc==SQLITE_OK ) pCsr->bSeekStmt = 1;
@@ -3281,7 +3281,7 @@ static int fts3FilterMethod(
       );
     }
     if( zSql ){
-      rc = sqlite3_prepare_v2(p->db, zSql, -1, &pCsr->pStmt, 0);
+      rc = sqlite3_prepare_v3(p->db,zSql,-1,SQLITE_PREPARE_PERSISTENT,&pCsr->pStmt,0);
       sqlite3_free(zSql);
     }else{
       rc = SQLITE_NOMEM;

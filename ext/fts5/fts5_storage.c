@@ -136,7 +136,8 @@ static int fts5StorageGetStmt(
     if( zSql==0 ){
       rc = SQLITE_NOMEM;
     }else{
-      rc = sqlite3_prepare_v2(pC->db, zSql, -1, &p->aStmt[eStmt], 0);
+      rc = sqlite3_prepare_v3(pC->db, zSql, -1,
+                              SQLITE_PREPARE_PERSISTENT, &p->aStmt[eStmt], 0);
       sqlite3_free(zSql);
       if( rc!=SQLITE_OK && pzErrMsg ){
         *pzErrMsg = sqlite3_mprintf("%s", sqlite3_errmsg(pC->db));

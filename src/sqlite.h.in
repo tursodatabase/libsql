@@ -235,7 +235,7 @@ int sqlite3_threadsafe(void);
 ** [sqlite3_open_v2()] interfaces are its constructors, and [sqlite3_close()]
 ** and [sqlite3_close_v2()] are its destructors.  There are many other
 ** interfaces (such as
-** [sqlite3_prepare_v2()], [sqlite3_create_function()], and
+** [sqlite3_prepare_v3()], [sqlite3_create_function()], and
 ** [sqlite3_busy_timeout()] to name but three) that are methods on an
 ** sqlite3 object.
 */
@@ -339,7 +339,7 @@ typedef int (*sqlite3_callback)(void*,int,char**, char**);
 ** METHOD: sqlite3
 **
 ** The sqlite3_exec() interface is a convenience wrapper around
-** [sqlite3_prepare_v2()], [sqlite3_step()], and [sqlite3_finalize()],
+** [sqlite3_prepare_v3()], [sqlite3_step()], and [sqlite3_finalize()],
 ** that allows an application to run multiple statements of SQL
 ** without having to use a lot of C code. 
 **
@@ -2691,7 +2691,8 @@ void sqlite3_randomness(int N, void *P);
 ** [database connection], supplied in the first argument.
 ** ^The authorizer callback is invoked as SQL statements are being compiled
 ** by [sqlite3_prepare()] or its variants [sqlite3_prepare_v2()],
-** [sqlite3_prepare16()] and [sqlite3_prepare16_v2()].  ^At various
+** [sqlite3_prepare_v3()], [sqlite3_prepare16()], [sqlite3_prepare16_v2()],
+** and [sqlite3_prepare16_v3()].  ^At various
 ** points during the compilation process, as logic is being created
 ** to perform various actions, the authorizer callback is invoked to
 ** see if those actions are allowed.  ^The authorizer callback should
@@ -2700,12 +2701,12 @@ void sqlite3_randomness(int N, void *P);
 ** compiled, or [SQLITE_DENY] to cause the entire SQL statement to be
 ** rejected with an error.  ^If the authorizer callback returns
 ** any value other than [SQLITE_IGNORE], [SQLITE_OK], or [SQLITE_DENY]
-** then the [sqlite3_prepare_v2()] or equivalent call that triggered
+** then the [sqlite3_prepare_v3()] or equivalent call that triggered
 ** the authorizer will fail with an error message.
 **
 ** When the callback returns [SQLITE_OK], that means the operation
 ** requested is ok.  ^When the callback returns [SQLITE_DENY], the
-** [sqlite3_prepare_v2()] or equivalent call that triggered the
+** [sqlite3_prepare_v3()] or equivalent call that triggered the
 ** authorizer will fail with an error message explaining that
 ** access is denied. 
 **
@@ -2756,10 +2757,10 @@ void sqlite3_randomness(int N, void *P);
 **
 ** The authorizer callback must not do anything that will modify
 ** the database connection that invoked the authorizer callback.
-** Note that [sqlite3_prepare_v2()] and [sqlite3_step()] both modify their
+** Note that [sqlite3_prepare_v3()] and [sqlite3_step()] both modify their
 ** database connections for the meaning of "modify" in this paragraph.
 **
-** ^When [sqlite3_prepare_v2()] is used to prepare a statement, the
+** ^When [sqlite3_prepare_v3()] is used to prepare a statement, the
 ** statement might be re-prepared during [sqlite3_step()] due to a 
 ** schema change.  Hence, the application should ensure that the
 ** correct authorizer callback remains in place during the [sqlite3_step()].
@@ -2768,7 +2769,7 @@ void sqlite3_randomness(int N, void *P);
 ** [sqlite3_prepare()] or its variants.  Authorization is not
 ** performed during statement evaluation in [sqlite3_step()], unless
 ** as stated in the previous paragraph, sqlite3_step() invokes
-** sqlite3_prepare_v2() to reprepare a statement after a schema change.
+** sqlite3_prepare_v3() to reprepare a statement after a schema change.
 */
 int sqlite3_set_authorizer(
   sqlite3*,
@@ -3004,7 +3005,7 @@ int sqlite3_trace_v2(
 **
 ** The progress handler callback must not do anything that will modify
 ** the database connection that invoked the progress handler.
-** Note that [sqlite3_prepare_v2()] and [sqlite3_step()] both modify their
+** Note that [sqlite3_prepare_v3()] and [sqlite3_step()] both modify their
 ** database connections for the meaning of "modify" in this paragraph.
 **
 */
@@ -3358,7 +3359,7 @@ const char *sqlite3_errstr(int);
 ** The life-cycle of a prepared statement object usually goes like this:
 **
 ** <ol>
-** <li> Create the prepared statement object using [sqlite3_prepare_v2()].
+** <li> Create the prepared statement object using [sqlite3_prepare_v3()].
 ** <li> Bind values to [parameters] using the sqlite3_bind_*()
 **      interfaces.
 ** <li> Run the SQL by calling [sqlite3_step()] one or more times.
@@ -3440,7 +3441,7 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 **
 ** [[SQLITE_LIMIT_VDBE_OP]] ^(<dt>SQLITE_LIMIT_VDBE_OP</dt>
 ** <dd>The maximum number of instructions in a virtual machine program
-** used to implement an SQL statement.  If [sqlite3_prepare_v2()] or
+** used to implement an SQL statement.  If [sqlite3_prepare_v3()] or
 ** the equivalent tries to allocate space for more than this many opcodes
 ** in a single prepared statement, an SQLITE_NOMEM error is returned.</dd>)^
 **
@@ -3480,6 +3481,24 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 #define SQLITE_LIMIT_TRIGGER_DEPTH            10
 #define SQLITE_LIMIT_WORKER_THREADS           11
 
+/*
+** CAPI3REF: Prepare Flags
+** KEYWORDS:
+**
+** These constants define various flags that can be passed into
+** the [sqlite3_prepare_v3()] interface.
+**
+** <dl>
+** [[SQLITE_PREPARE_PERSISTENT]] ^(<dt>SQLITE_PREPARE_PERSISTENT</dt>
+** <dd>The SQLITE_PREPARE_PERSISTENT flag causes [sqlite3_prepare_v3()]
+** to optimize the resulting prepared statement to be retained for a 
+** relatively long amount of time.)^  ^Without this flag,
+** [sqlite3_prepare_v3()] assumes that the prepared statement will be used
+** just once or at most a few times and then destroyed using
+** [sqlite3_finalize()] relatively soon.
+** </dl>
+*/
+#define SQLITE_PREPARE_PERSISTENT              0x01
 
 /*
 ** CAPI3REF: Compiling An SQL Statement
@@ -3495,9 +3514,10 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 ** [sqlite3_open16()].  The database connection must not have been closed.
 **
 ** The second argument, "zSql", is the statement to be compiled, encoded
-** as either UTF-8 or UTF-16.  The sqlite3_prepare() and sqlite3_prepare_v2()
-** interfaces use UTF-8, and sqlite3_prepare16() and sqlite3_prepare16_v2()
-** use UTF-16.
+** as either UTF-8 or UTF-16.  The sqlite3_prepare(), sqlite3_prepare_v2(),
+** and sqlite3_prepare_v3()
+** interfaces use UTF-8, and sqlite3_prepare16(), sqlite3_prepare16_v2(),
+** and sqlite3_prepare16_v3() use UTF-16.
 **
 ** ^If the nByte argument is negative, then zSql is read up to the
 ** first zero terminator. ^If nByte is positive, then it is the
@@ -3524,10 +3544,11 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 ** ^On success, the sqlite3_prepare() family of routines return [SQLITE_OK];
 ** otherwise an [error code] is returned.
 **
-** The sqlite3_prepare_v2() and sqlite3_prepare16_v2() interfaces are
-** recommended for all new programs. The two older interfaces are retained
-** for backwards compatibility, but their use is discouraged.
-** ^In the "v2" interfaces, the prepared statement
+** The sqlite3_prepare_v2(), sqlite3_prepare_v3(), sqlite3_prepare16_v2(),
+** and sqlite3_prepare16_v3() interfaces are recommended for all new programs.
+** The older interfaces are retained (sqlite3_prepare() and sqlite3_prepare16())
+** are retained for backwards compatibility, but their use is discouraged.
+** ^In the "vX" interfaces, the prepared statement
 ** that is returned (the [sqlite3_stmt] object) contains a copy of the
 ** original SQL text. This causes the [sqlite3_step()] interface to
 ** behave differently in three ways:
@@ -3560,6 +3581,12 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 ** or [GLOB] operator or if the parameter is compared to an indexed column
 ** and the [SQLITE_ENABLE_STAT3] compile-time option is enabled.
 ** </li>
+**
+** <p>^sqlite3_prepare_v3() differs from sqlite3_prepare_v2() only in having
+** the extra prepFlags parameter, which is a bit array consisting of zero or
+** more of the [SQLITE_PREPARE_PERSISTENT|SQLITE_PREPARE_*] flags.  ^The
+** sqlite3_prepare_v2() interface works exactly the same as
+** sqlite3_prepare_v3() with a zero prepFlags parameter.
 ** </ol>
 */
 int sqlite3_prepare(
@@ -3573,6 +3600,14 @@ int sqlite3_prepare_v2(
   sqlite3 *db,            /* Database handle */
   const char *zSql,       /* SQL statement, UTF-8 encoded */
   int nByte,              /* Maximum length of zSql in bytes. */
+  sqlite3_stmt **ppStmt,  /* OUT: Statement handle */
+  const char **pzTail     /* OUT: Pointer to unused portion of zSql */
+);
+int sqlite3_prepare_v3(
+  sqlite3 *db,            /* Database handle */
+  const char *zSql,       /* SQL statement, UTF-8 encoded */
+  int nByte,              /* Maximum length of zSql in bytes. */
+  unsigned int prepFlags, /* Zero or more SQLITE_PREPARE_ flags */
   sqlite3_stmt **ppStmt,  /* OUT: Statement handle */
   const char **pzTail     /* OUT: Pointer to unused portion of zSql */
 );
@@ -3590,6 +3625,14 @@ int sqlite3_prepare16_v2(
   sqlite3_stmt **ppStmt,  /* OUT: Statement handle */
   const void **pzTail     /* OUT: Pointer to unused portion of zSql */
 );
+int sqlite3_prepare16_v3(
+  sqlite3 *db,            /* Database handle */
+  const void *zSql,       /* SQL statement, UTF-16 encoded */
+  int nByte,              /* Maximum length of zSql in bytes. */
+  unsigned int prepFalgs, /* Zero or more SQLITE_PREPARE_ flags */
+  sqlite3_stmt **ppStmt,  /* OUT: Statement handle */
+  const void **pzTail     /* OUT: Pointer to unused portion of zSql */
+);
 
 /*
 ** CAPI3REF: Retrieving Statement SQL
@@ -3597,7 +3640,8 @@ int sqlite3_prepare16_v2(
 **
 ** ^The sqlite3_sql(P) interface returns a pointer to a copy of the UTF-8
 ** SQL text used to create [prepared statement] P if P was
-** created by either [sqlite3_prepare_v2()] or [sqlite3_prepare16_v2()].
+** created by [sqlite3_prepare_v2()], [sqlite3_prepare_v3()],
+** [sqlite3_prepare16_v2()], or [sqlite3_prepare16_v3()].
 ** ^The sqlite3_expanded_sql(P) interface returns a pointer to a UTF-8
 ** string containing the SQL text of prepared statement P with
 ** [bound parameters] expanded.
@@ -3743,7 +3787,7 @@ typedef struct sqlite3_context sqlite3_context;
 ** KEYWORDS: {SQL parameter} {SQL parameters} {parameter binding}
 ** METHOD: sqlite3_stmt
 **
-** ^(In the SQL statement text input to [sqlite3_prepare_v2()] and its variants,
+** ^(In the SQL statement text input to [sqlite3_prepare_v3()] and its variants,
 ** literals may be replaced by a [parameter] that matches one of following
 ** templates:
 **
@@ -3762,7 +3806,7 @@ typedef struct sqlite3_context sqlite3_context;
 **
 ** ^The first argument to the sqlite3_bind_*() routines is always
 ** a pointer to the [sqlite3_stmt] object returned from
-** [sqlite3_prepare_v2()] or its variants.
+** [sqlite3_prepare_v3()] or its variants.
 **
 ** ^The second argument is the index of the SQL parameter to be set.
 ** ^The leftmost SQL parameter has an index of 1.  ^When the same named
@@ -3899,8 +3943,8 @@ int sqlite3_bind_parameter_count(sqlite3_stmt*);
 ** ^If the value N is out of range or if the N-th parameter is
 ** nameless, then NULL is returned.  ^The returned string is
 ** always in UTF-8 encoding even if the named parameter was
-** originally specified as UTF-16 in [sqlite3_prepare16()] or
-** [sqlite3_prepare16_v2()].
+** originally specified as UTF-16 in [sqlite3_prepare16()],
+** [sqlite3_prepare16_v2()], or [sqlite3_prepare16_v3()].
 **
 ** See also: [sqlite3_bind_blob|sqlite3_bind()],
 ** [sqlite3_bind_parameter_count()], and
@@ -3917,7 +3961,8 @@ const char *sqlite3_bind_parameter_name(sqlite3_stmt*, int);
 ** parameter to [sqlite3_bind_blob|sqlite3_bind()].  ^A zero
 ** is returned if no matching parameter is found.  ^The parameter
 ** name must be given in UTF-8 even if the original statement
-** was prepared from UTF-16 text using [sqlite3_prepare16_v2()].
+** was prepared from UTF-16 text using [sqlite3_prepare16_v2()] or
+** [sqlite3_prepare16_v3()].
 **
 ** See also: [sqlite3_bind_blob|sqlite3_bind()],
 ** [sqlite3_bind_parameter_count()], and
@@ -4071,16 +4116,18 @@ const void *sqlite3_column_decltype16(sqlite3_stmt*,int);
 ** CAPI3REF: Evaluate An SQL Statement
 ** METHOD: sqlite3_stmt
 **
-** After a [prepared statement] has been prepared using either
-** [sqlite3_prepare_v2()] or [sqlite3_prepare16_v2()] or one of the legacy
+** After a [prepared statement] has been prepared using any of
+** [sqlite3_prepare_v2()], [sqlite3_prepare_v3()], [sqlite3_prepare16_v2()],
+** or [sqlite3_prepare16_v3()] or one of the legacy
 ** interfaces [sqlite3_prepare()] or [sqlite3_prepare16()], this function
 ** must be called one or more times to evaluate the statement.
 **
 ** The details of the behavior of the sqlite3_step() interface depend
-** on whether the statement was prepared using the newer "v2" interface
-** [sqlite3_prepare_v2()] and [sqlite3_prepare16_v2()] or the older legacy
-** interface [sqlite3_prepare()] and [sqlite3_prepare16()].  The use of the
-** new "v2" interface is recommended for new applications but the legacy
+** on whether the statement was prepared using the newer "vX" interfaces
+** [sqlite3_prepare_v3()], [sqlite3_prepare_v2()], [sqlite3_prepare16_v3()],
+** [sqlite3_prepare16_v2()] or the older legacy
+** interfaces [sqlite3_prepare()] and [sqlite3_prepare16()].  The use of the
+** new "vX" interface is recommended for new applications but the legacy
 ** interface will continue to be supported.
 **
 ** ^In the legacy interface, the return value will be either [SQLITE_BUSY],
@@ -4141,10 +4188,11 @@ const void *sqlite3_column_decltype16(sqlite3_stmt*,int);
 ** specific [error codes] that better describes the error.
 ** We admit that this is a goofy design.  The problem has been fixed
 ** with the "v2" interface.  If you prepare all of your SQL statements
-** using either [sqlite3_prepare_v2()] or [sqlite3_prepare16_v2()] instead
+** using [sqlite3_prepare_v3()] or [sqlite3_prepare_v2()]
+** or [sqlite3_prepare16_v2()] or [sqlite3_prepare16_v3()] instead
 ** of the legacy [sqlite3_prepare()] and [sqlite3_prepare16()] interfaces,
 ** then the more specific [error codes] are returned directly
-** by sqlite3_step().  The use of the "v2" interface is recommended.
+** by sqlite3_step().  The use of the "vX" interfaces is recommended.
 */
 int sqlite3_step(sqlite3_stmt*);
 
@@ -4209,7 +4257,7 @@ int sqlite3_data_count(sqlite3_stmt *pStmt);
 ** ^These routines return information about a single column of the current
 ** result row of a query.  ^In every case the first argument is a pointer
 ** to the [prepared statement] that is being evaluated (the [sqlite3_stmt*]
-** that was returned from [sqlite3_prepare_v2()] or one of its variants)
+** that was returned from [sqlite3_prepare_v3()] or one of its variants)
 ** and the second argument is the index of the column for which information
 ** should be returned. ^The leftmost column of the result set has the index 0.
 ** ^The number of columns in the result can be determined using
@@ -5333,7 +5381,7 @@ int sqlite3_get_autocommit(sqlite3*);
 ** to which a [prepared statement] belongs.  ^The [database connection]
 ** returned by sqlite3_db_handle is the same [database connection]
 ** that was the first argument
-** to the [sqlite3_prepare_v2()] call (or its variants) that was used to
+** to the [sqlite3_prepare_v3()] call (or its variants) that was used to
 ** create the statement in the first place.
 */
 sqlite3 *sqlite3_db_handle(sqlite3_stmt*);
@@ -5409,7 +5457,7 @@ sqlite3_stmt *sqlite3_next_stmt(sqlite3 *pDb, sqlite3_stmt *pStmt);
 ** completion of the [sqlite3_step()] call that triggered the commit
 ** or rollback hook in the first place.
 ** Note that running any other SQL statements, including SELECT statements,
-** or merely calling [sqlite3_prepare_v2()] and [sqlite3_step()] will modify
+** or merely calling [sqlite3_prepare_v3()] and [sqlite3_step()] will modify
 ** the database connections for the meaning of "modify" in this paragraph.
 **
 ** ^Registering a NULL function disables the callback.
@@ -5469,7 +5517,7 @@ void *sqlite3_rollback_hook(sqlite3*, void(*)(void *), void*);
 ** the database connection that invoked the update hook.  Any actions
 ** to modify the database connection must be deferred until after the
 ** completion of the [sqlite3_step()] call that triggered the update hook.
-** Note that [sqlite3_prepare_v2()] and [sqlite3_step()] both modify their
+** Note that [sqlite3_prepare_v3()] and [sqlite3_step()] both modify their
 ** database connections for the meaning of "modify" in this paragraph.
 **
 ** ^The sqlite3_update_hook(D,C,P) function

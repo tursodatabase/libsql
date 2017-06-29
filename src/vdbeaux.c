@@ -54,16 +54,14 @@ void sqlite3VdbeError(Vdbe *p, const char *zFormat, ...){
 /*
 ** Remember the SQL string for a prepared statement.
 */
-void sqlite3VdbeSetSql(Vdbe *p, const char *z, int n, int isPrepareV2){
-  assert( isPrepareV2==1 || isPrepareV2==0 );
+void sqlite3VdbeSetSql(Vdbe *p, const char *z, int n, u8 prepFlags){
   if( p==0 ) return;
-  if( !isPrepareV2 ) p->expmask = 0;
-#if defined(SQLITE_OMIT_TRACE) && !defined(SQLITE_ENABLE_SQLLOG)
-  if( !isPrepareV2 ) return;
-#endif
+  p->prepFlags = prepFlags;
+  if( (prepFlags & SQLITE_PREPARE_SAVESQL)==0 ){
+    p->expmask = 0;
+  }
   assert( p->zSql==0 );
   p->zSql = sqlite3DbStrNDup(p->db, z, n);
-  p->isPrepareV2 = (u8)isPrepareV2;
 }
 
 /*
@@ -85,11 +83,10 @@ void sqlite3VdbeSwap(Vdbe *pA, Vdbe *pB){
   zTmp = pA->zSql;
   pA->zSql = pB->zSql;
   pB->zSql = zTmp;
-  pB->isPrepareV2 = pA->isPrepareV2;
   pB->expmask = pA->expmask;
+  pB->prepFlags = pA->prepFlags;
   memcpy(pB->aCounter, pA->aCounter, sizeof(pB->aCounter));
   pB->aCounter[SQLITE_STMTSTATUS_REPREPARE]++;
-
 }
 
 /*
@@ -4531,6 +4528,13 @@ void sqlite3ExpirePreparedStatements(sqlite3 *db){
 */
 sqlite3 *sqlite3VdbeDb(Vdbe *v){
   return v->db;
+}
+
+/*
+** Return the SQLITE_PREPARE flags for a Vdbe.
+*/
+u8 sqlite3VdbePrepareFlags(Vdbe *v){
+  return v->prepFlags;
 }
 
 /*
