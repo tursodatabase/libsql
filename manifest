@@ -1,5 +1,5 @@
-C Rename\sthe\s"stmts"\svirtual\stable\sto\sjust\s"stmt"\swithout\sthe\sfinal\s"s".
-D 2017-06-29T14:33:51.582
+C Further\scorrections\sto\sthe\sWin32\sinterface\sfor\slsm1.
+D 2017-06-29T15:13:48.585
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 4ebb1d257cac7fb1bcb4ba59278416d410ff1c4bf59447a9c37a415f3516056a
@@ -250,7 +250,7 @@ F ext/lsm1/lsm_tree.c 5d9fb2bc58a1a70c75126bd8d7198f7b627e165b
 F ext/lsm1/lsm_unix.c ee0201dff10ce2008ef13a65f52a6ea348f287e795270f651596f812fcfccdcc
 F ext/lsm1/lsm_varint.c b19ae9bd26b5a1e8402fb8a564b25d9542338a41
 F ext/lsm1/lsm_vtab.c fff303ce03168eca9e333add3c1429b3471674b0
-F ext/lsm1/lsm_win32.c c7a9e2c6b6465292c27e58a5defb1427181ff7bcfde6f46a4afd6de272a4ef3b
+F ext/lsm1/lsm_win32.c 385e85a38dd0f2d7c9d0ca9336b891a92765765aaa769d577673cac7ffe96fd7
 F ext/misc/README.md 8e008c8d2b02e09096b31dfba033253ac27c6c06a18aa5826e299fa7601d90b2
 F ext/misc/amatch.c 6db4607cb17c54b853a2d7c7c36046d004853f65b9b733e6f019d543d5dfae87
 F ext/misc/anycollseq.c 5ffdfde9829eeac52219136ad6aa7cd9a4edb3b15f4f2532de52f4a22525eddb
@@ -276,7 +276,7 @@ F ext/misc/sha1.c 0b9e9b855354910d3ca467bf39099d570e73db56
 F ext/misc/shathree.c fa185d7aee0ad0aca5e091b4a2db7baff11796170e5793b5de99e511a13af448
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c a4723b6aff748a417b5091b68a46443265c40f0d
-F ext/misc/stmt.c 619222bc1752a7a8412bda2d9b97337c4bc67a1ddee0efcba0eb6f439f25ce5a w ext/misc/stmts.c
+F ext/misc/stmt.c 619222bc1752a7a8412bda2d9b97337c4bc67a1ddee0efcba0eb6f439f25ce5a
 F ext/misc/totype.c 4a167594e791abeed95e0a8db028822b5e8fe512
 F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vfsstat.c bf10ef0bc51e1ad6756629e1edb142f7a8db1178
@@ -1627,7 +1627,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ebbd98e941d8a8ea97b434c29b70095515af0adab1977aa4d37fe74a7401f846
-R 227414f0a87c66eaa518fb66692c2aa3
-U drh
-Z 4008bc0c583622d13bed9769f9852f41
+P adfdb80105c46ac42b71132c80a91dbd5b1c9ff241fb4fbb5d04641a88898d90
+R ef8d689596b1b0f39f6ae35de6ffda86
+U mistachkin
+Z c36edb8fe864971f5a22ea12e57f4f5d

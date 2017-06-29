@@ -572,6 +572,11 @@ static int lsmWin32OsUnlink(lsm_env *pEnv, const char *zFile){
   return win32Delete(pEnv, zFile);
 }
 
+#if !defined(win32IsLockBusy)
+#define win32IsLockBusy(a) (((a)==ERROR_LOCK_VIOLATION) || \
+                            ((a)==ERROR_IO_PENDING))
+#endif
+
 int lsmWin32OsLock(lsm_file *pFile, int iLock, int eType){
   Win32File *pWin32File = (Win32File *)pFile;
   OVERLAPPED ovlp;
@@ -588,7 +593,7 @@ int lsmWin32OsLock(lsm_file *pFile, int iLock, int eType){
     DWORD flags = LOCKFILE_FAIL_IMMEDIATELY;
     if( eType>=LSM_LOCK_EXCL ) flags |= LOCKFILE_EXCLUSIVE_LOCK;
     if( !LockFileEx(pWin32File->hFile, flags, 0, 1, 0, &ovlp) ){
-      if( GetLastError()==ERROR_IO_PENDING ){
+      if( win32IsLockBusy(GetLastError()) ){
         return LSM_BUSY;
       }else{
         return LSM_IOERR_BKPT;
@@ -618,7 +623,7 @@ int lsmWin32OsTestLock(lsm_file *pFile, int iLock, int nLock, int eType){
   memset(&ovlp, 0, sizeof(OVERLAPPED));
   ovlp.Offset = (4096-iLock);
   if( !LockFileEx(pWin32File->hFile, flags, 0, (DWORD)nLock, 0, &ovlp) ){
-    if( GetLastError()==ERROR_IO_PENDING ){
+    if( win32IsLockBusy(GetLastError()) ){
       return LSM_BUSY;
     }else{
       return LSM_IOERR_BKPT;
@@ -686,22 +691,23 @@ int lsmWin32OsShmMap(lsm_file *pFile, int iChunk, int sz, void **ppShm){
     pWin32File->nShm = nNew;
   }
 
-  if( pWin32File->apShm[iChunk]==NULL ){
+  if( pWin32File->ahShm[iChunk]==NULL ){
     HANDLE hMap;
-    LPVOID pMap;
     hMap = CreateFileMappingW(pWin32File->hShmFile, NULL, PAGE_READWRITE, 0,
                               (DWORD)sz, NULL);
     if( hMap==NULL ){
       return LSM_IOERR_BKPT;
     }
     pWin32File->ahShm[iChunk] = hMap;
-    pMap = MapViewOfFile(hMap, FILE_MAP_WRITE | FILE_MAP_READ, 0, 0,
-                         (SIZE_T)sz);
+  }
+  if( pWin32File->apShm[iChunk]==NULL ){
+    LPVOID pMap;
+    pMap = MapViewOfFile(pWin32File->ahShm[iChunk],
+                         FILE_MAP_WRITE | FILE_MAP_READ, 0, 0, (SIZE_T)sz);
     if( pMap==NULL ){
       return LSM_IOERR_BKPT;
     }
     pWin32File->apShm[iChunk] = pMap;
-    pWin32File->nMap = (SIZE_T)sz;
   }
   *ppShm = pWin32File->apShm[iChunk];
   return LSM_OK;
