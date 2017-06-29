@@ -486,11 +486,9 @@ static int lsmWin32OsFullpath(
   if( zTempUtf8 ){
     int nOut = *pnOut;
     int nLen = strlen(zTempUtf8) + 1;
-    if( nLen>=nOut ){
-      lsmFree(pEnv, zTempUtf8);
-      return LSM_IOERR_BKPT;
+    if( nLen<=nOut ){
+      snprintf(zOut, nOut, "%s", zTempUtf8);
     }
-    snprintf(zOut, nOut, "%s", zTempUtf8);
     lsmFree(pEnv, zTempUtf8);
     *pnOut = nLen;
     return LSM_OK;
@@ -639,7 +637,8 @@ int lsmWin32OsShmMap(lsm_file *pFile, int iChunk, int sz, void **ppShm){
   assert( sz==LSM_SHM_CHUNK_SIZE );
   if( iChunk>=pWin32File->nShm ){
     int i;
-    void **apNew;
+    LPHANDLE ahNew;
+    LPVOID *apNew;
     int nNew = iChunk+1;
     lsm_i64 nReq = nNew * sz;
     LARGE_INTEGER fileSize;
@@ -669,12 +668,20 @@ int lsmWin32OsShmMap(lsm_file *pFile, int iChunk, int sz, void **ppShm){
       }
     }
 
+    ahNew = (void **)lsmRealloc(pWin32File->pEnv, pWin32File->ahShm,
+                                sizeof(LPHANDLE) * nNew);
+    if( !ahNew ) return LSM_NOMEM_BKPT;
     apNew = (void **)lsmRealloc(pWin32File->pEnv, pWin32File->apShm,
                                 sizeof(LPVOID) * nNew);
-    if( !apNew ) return LSM_NOMEM_BKPT;
+    if( !apNew ){
+      lsmFree(pWin32File->pEnv, ahNew);
+      return LSM_NOMEM_BKPT;
+    }
     for(i=pWin32File->nShm; i<nNew; i++){
+      ahNew[i] = NULL;
       apNew[i] = NULL;
     }
+    pWin32File->ahShm = ahNew;
     pWin32File->apShm = apNew;
     pWin32File->nShm = nNew;
   }
@@ -761,6 +768,7 @@ static int lsmWin32OsClose(lsm_file *pFile){
       break;
     }
   }while( 1 );
+  lsmFree(pWin32File->pEnv, pWin32File->ahShm);
   lsmFree(pWin32File->pEnv, pWin32File->apShm);
   lsmFree(pWin32File->pEnv, pWin32File);
   return rc;
