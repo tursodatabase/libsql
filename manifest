@@ -1,5 +1,5 @@
-C Avoid\sreading\sor\swriting\sthe\s32\slocking\sbytes\sat\sthe\send\sof\sthe\sfirst\smeta-page\sof\san\sLSM\sdatabase.
-D 2017-06-29T20:23:32.521
+C Some\ssimple\stests\sfor\sthe\sSTMT\svirtual\stable.
+D 2017-06-29T20:31:01.137
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 4ebb1d257cac7fb1bcb4ba59278416d410ff1c4bf59447a9c37a415f3516056a
@@ -1215,6 +1215,7 @@ F test/sqllog.test 6af6cb0b09f4e44e1917e06ce85be7670302517a
 F test/stat.test f8f1279ffffabe6df825723af18cc6e0ae70a893
 F test/statfault.test f525a7bf633e50afd027700e9a486090684b1ac1
 F test/stmt.test 64844332db69cf1a735fcb3e11548557fc95392f
+F test/stmtvtab1.test 2a3cee496574ee9515e5e7a92fb8d9447903ccc14536a21545debeda267ff3c8 w test/stmt1.test
 F test/subjournal.test 2121a93ef3d3e83d52bf236c8a02aef4009fbf52884754104b2b6cad9a041095
 F test/subquery.test d7268d193dd33d5505df965399d3a594e76ae13f
 F test/subquery2.test 438f8a7da1457277b22e4176510f7659b286995f
@@ -1627,8 +1628,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 38ec41416679e8280d77c8a4913aa6a321784b1237a3fe409b8e256c5f4513de 2b5df3e8a80ae5c0415081dd9b29acaad1464be2e7971399e52c1c98408322d9
-R b9474a3eab1ca564ebd8be3f19367146
-T +closed 2b5df3e8a80ae5c0415081dd9b29acaad1464be2e7971399e52c1c98408322d9
-U dan
-Z efcae7a740d4e0101109b9de0782f9db
+P 3ed6877f89106131fd030c183fac036fed7231cd92dc4715e87a34a045500bdf
+R f67ff22f1b8b20f94ea7b59db6307e02
+U drh
+Z bbd5de16ec21a4e6e27746cc3cb954d3
