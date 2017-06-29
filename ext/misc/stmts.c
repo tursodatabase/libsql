@@ -92,20 +92,23 @@ static int stmtsConnect(
   int rc;
 
 /* Column numbers */
-#define STMTS_COLUMN_PTR   0    /* Numeric value of the statement pointer */
-#define STMTS_COLUMN_SQL   1    /* SQL for the statement */
-#define STMTS_COLUMN_NCOL  2    /* Number of result columns */
-#define STMTS_COLUMN_RO    3    /* True if read-only */
-#define STMTS_COLUMN_BUSY  4    /* True if currently busy */
-#define STMTS_COLUMN_NSCAN 5    /* SQLITE_STMTSTATUS_FULLSCAN_STEP */
-#define STMTS_COLUMN_NSORT 6    /* SQLITE_STMTSTATUS_SORT */
-#define STMTS_COLUMN_NAIDX 7    /* SQLITE_STMTSTATUS_AUTOINDEX */
-#define STMTS_COLUMN_NSTEP 8    /* SQLITE_STMTSTATUS_VM_STEP */
-#define STMTS_COLUMN_MEM   9    /* SQLITE_STMTSTATUS_MEMUSED */
+#define STMTS_COLUMN_PTR     0   /* Numeric value of the statement pointer */
+#define STMTS_COLUMN_SQL     1   /* SQL for the statement */
+#define STMTS_COLUMN_NCOL    2   /* Number of result columns */
+#define STMTS_COLUMN_RO      3   /* True if read-only */
+#define STMTS_COLUMN_BUSY    4   /* True if currently busy */
+#define STMTS_COLUMN_NSCAN   5   /* SQLITE_STMTSTATUS_FULLSCAN_STEP */
+#define STMTS_COLUMN_NSORT   6   /* SQLITE_STMTSTATUS_SORT */
+#define STMTS_COLUMN_NAIDX   7   /* SQLITE_STMTSTATUS_AUTOINDEX */
+#define STMTS_COLUMN_NSTEP   8   /* SQLITE_STMTSTATUS_VM_STEP */
+#define STMTS_COLUMN_REPREP  9   /* SQLITE_STMTSTATUS_REPREPARE */
+#define STMTS_COLUMN_RUN    10   /* SQLITE_STMTSTATUS_RUN */
+#define STMTS_COLUMN_MEM    11   /* SQLITE_STMTSTATUS_MEMUSED */
 
 
   rc = sqlite3_declare_vtab(db,
-     "CREATE TABLE x(ptr,sql,ncol,ro,busy,nscan,nsort,naidx,nstep,mem)");
+     "CREATE TABLE x(ptr,sql,ncol,ro,busy,nscan,nsort,naidx,nstep,"
+                    "reprep,run,mem)");
   if( rc==SQLITE_OK ){
     pNew = sqlite3_malloc( sizeof(*pNew) );
     *ppVtab = (sqlite3_vtab*)pNew;
@@ -187,11 +190,17 @@ static int stmtsColumn(
       sqlite3_result_int(ctx, sqlite3_stmt_busy(pCur->pStmt));
       break;
     }
+    case STMTS_COLUMN_MEM: {
+      i = SQLITE_STMTSTATUS_MEMUSED + 
+            STMTS_COLUMN_NSCAN - SQLITE_STMTSTATUS_FULLSCAN_STEP;
+      /* Fall thru */
+    }
     case STMTS_COLUMN_NSCAN:
     case STMTS_COLUMN_NSORT:
     case STMTS_COLUMN_NAIDX:
     case STMTS_COLUMN_NSTEP:
-    case STMTS_COLUMN_MEM: {
+    case STMTS_COLUMN_REPREP:
+    case STMTS_COLUMN_RUN: {
       sqlite3_result_int(ctx, sqlite3_stmt_status(pCur->pStmt,
                       i-STMTS_COLUMN_NSCAN+SQLITE_STMTSTATUS_FULLSCAN_STEP, 0));
       break;
