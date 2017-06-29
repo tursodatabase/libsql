@@ -41,8 +41,9 @@ struct Win32File {
   HANDLE hMap;                    /* File handle for mapping */
   LPVOID pMap;                    /* Pointer to mapping of file fd */
   size_t nMap;                    /* Size of mapping at pMap in bytes */
-  int nShm;                       /* Number of entries in array apShm[] */
-  void **apShm;                   /* Array of 32K shared memory segments */
+  int nShm;                       /* Number of entries in ahShm[]/apShm[] */
+  LPHANDLE ahShm;                 /* Array of handles for shared mappings */
+  LPVOID *apShm;                  /* Array of 32K shared memory segments */
 };
 
 static char *win32ShmFile(Win32File *p){
@@ -187,6 +188,57 @@ static char *win32UnicodeToUtf8(lsm_env *pEnv, LPCWSTR zWideText){
                             ((a)==ERROR_PATH_NOT_FOUND))
 #endif
 
+static int win32Open(
+  lsm_env *pEnv,
+  const char *zFile,
+  int flags,
+  LPHANDLE phFile
+){
+  int rc;
+  LPWSTR zConverted;
+
+  zConverted = win32Utf8ToUnicode(pEnv, zFile);
+  if( zConverted==0 ){
+    rc = LSM_NOMEM_BKPT;
+  }else{
+    int bReadonly = (flags & LSM_OPEN_READONLY);
+    DWORD dwDesiredAccess;
+    DWORD dwShareMode = FILE_SHARE_READ | FILE_SHARE_WRITE;
+    DWORD dwCreationDisposition;
+    DWORD dwFlagsAndAttributes = FILE_ATTRIBUTE_NORMAL;
+    HANDLE hFile;
+    int nRetry = 0;
+    if( bReadonly ){
+      dwDesiredAccess = GENERIC_READ;
+      dwCreationDisposition = OPEN_EXISTING;
+    }else{
+      dwDesiredAccess = GENERIC_READ | GENERIC_WRITE;
+      dwCreationDisposition = OPEN_ALWAYS;
+    }
+    while( (hFile = CreateFileW((LPCWSTR)zConverted,
+                                dwDesiredAccess,
+                                dwShareMode, NULL,
+                                dwCreationDisposition,
+                                dwFlagsAndAttributes,
+                                NULL))==INVALID_HANDLE_VALUE &&
+                                win32RetryIoerr(pEnv, &nRetry) ){
+      /* Noop */
+    }
+    lsmFree(pEnv, zConverted);
+    if( hFile!=INVALID_HANDLE_VALUE ){
+      *phFile = hFile;
+      rc = LSM_OK;
+    }else{
+      if( win32IsNotFound(GetLastError()) ){
+        rc = lsmErrorBkpt(LSM_IOERR_NOENT);
+      }else{
+        rc = LSM_IOERR_BKPT;
+      }
+    }
+  }
+  return rc;
+}
+
 static int lsmWin32OsOpen(
   lsm_env *pEnv,
   const char *zFile,
@@ -200,51 +252,16 @@ static int lsmWin32OsOpen(
   if( pWin32File==0 ){
     rc = LSM_NOMEM_BKPT;
   }else{
-    LPWSTR zConverted;
-    int bReadonly = (flags & LSM_OPEN_READONLY);
-    DWORD dwDesiredAccess;
-    DWORD dwShareMode = FILE_SHARE_READ | FILE_SHARE_WRITE;
-    DWORD dwCreationDisposition;
-    DWORD dwFlagsAndAttributes = FILE_ATTRIBUTE_NORMAL;
     HANDLE hFile;
 
-    zConverted = win32Utf8ToUnicode(pEnv, zFile);
-    if( zConverted==0 ){
+    rc = win32Open(pEnv, zFile, flags, &hFile);
+    if( rc==LSM_OK ){
+      pWin32File->pEnv = pEnv;
+      pWin32File->zName = zFile;
+      pWin32File->hFile = hFile;
+    }else{
       lsmFree(pEnv, pWin32File);
       pWin32File = 0;
-      rc = LSM_NOMEM_BKPT;
-    }else{
-      int nRetry = 0;
-      if( bReadonly ){
-        dwDesiredAccess = GENERIC_READ;
-        dwCreationDisposition = OPEN_EXISTING;
-      }else{
-        dwDesiredAccess = GENERIC_READ | GENERIC_WRITE;
-        dwCreationDisposition = OPEN_ALWAYS;
-      }
-      while( (hFile = CreateFileW((LPCWSTR)zConverted,
-                                  dwDesiredAccess,
-                                  dwShareMode, NULL,
-                                  dwCreationDisposition,
-                                  dwFlagsAndAttributes,
-                                  NULL))==INVALID_HANDLE_VALUE &&
-                                  win32RetryIoerr(pEnv, &nRetry) ){
-        /* Noop */
-      }
-      lsmFree(pEnv, zConverted);
-      if( hFile!=INVALID_HANDLE_VALUE ){
-        pWin32File->pEnv = pEnv;
-        pWin32File->zName = zFile;
-        pWin32File->hFile = hFile;
-      }else{
-        lsmFree(pEnv, pWin32File);
-        pWin32File = 0;
-        if( win32IsNotFound(GetLastError()) ){
-          rc = lsmErrorBkpt(LSM_IOERR_NOENT);
-        }else{
-          rc = LSM_IOERR_BKPT;
-        }
-      }
     }
   }
   *ppFile = (lsm_file *)pWin32File;
@@ -286,21 +303,27 @@ static int lsmWin32OsWrite(
   return LSM_OK;
 }
 
+static int win32Truncate(
+  HANDLE hFile,
+  lsm_i64 nSize
+){
+  LARGE_INTEGER offset;
+  offset.QuadPart = nSize;
+  if( !SetFilePointerEx(hFile, offset, 0, FILE_BEGIN) ){
+    return LSM_IOERR_BKPT;
+  }
+  if (!SetEndOfFile(hFile) ){
+    return LSM_IOERR_BKPT;
+  }
+  return LSM_OK;
+}
+
 static int lsmWin32OsTruncate(
   lsm_file *pFile, /* File to write to */
   lsm_i64 nSize    /* Size to truncate file to */
 ){
   Win32File *pWin32File = (Win32File *)pFile;
-  LARGE_INTEGER offset;
-
-  offset.QuadPart = nSize;
-  if( !SetFilePointerEx(pWin32File->hFile, offset, 0, FILE_BEGIN) ){
-    return LSM_IOERR_BKPT;
-  }
-  if (!SetEndOfFile(pWin32File->hFile) ){
-    return LSM_IOERR_BKPT;
-  }
-  return LSM_OK;
+  return win32Truncate(pWin32File->hFile, nSize);
 }
 
 static int lsmWin32OsRead(
@@ -508,8 +531,47 @@ static int lsmWin32OsFileid(
   return LSM_OK;
 }
 
+static int win32Delete(
+  lsm_env *pEnv,
+  const char *zFile
+){
+  int rc;
+  LPWSTR zConverted;
+
+  zConverted = win32Utf8ToUnicode(pEnv, zFile);
+  if( zConverted==0 ){
+    rc = LSM_NOMEM_BKPT;
+  }else{
+    int nRetry = 0;
+    DWORD attr;
+    DWORD lastErrno;
+
+    do {
+      attr = GetFileAttributesW(zConverted);
+      if ( attr==INVALID_FILE_ATTRIBUTES ){
+        rc = LSM_IOERR_BKPT;
+        break;
+      }
+      if ( attr&FILE_ATTRIBUTE_DIRECTORY ){
+        rc = LSM_IOERR_BKPT; /* Files only. */
+        break;
+      }
+      if ( DeleteFileW(zConverted) ){
+        rc = LSM_OK; /* Deleted OK. */
+        break;
+      }
+      if ( !win32RetryIoerr(pEnv, &nRetry) ){
+        rc = LSM_IOERR_BKPT; /* No more retries. */
+        break;
+      }
+    }while( 1 );
+  }
+  lsmFree(pEnv, zConverted);
+  return rc;
+}
+
 static int lsmWin32OsUnlink(lsm_env *pEnv, const char *zFile){
-  return LSM_ERROR;
+  return win32Delete(pEnv, zFile);
 }
 
 int lsmWin32OsLock(lsm_file *pFile, int iLock, int eType){
@@ -569,7 +631,73 @@ int lsmWin32OsTestLock(lsm_file *pFile, int iLock, int nLock, int eType){
 }
 
 int lsmWin32OsShmMap(lsm_file *pFile, int iChunk, int sz, void **ppShm){
-  return LSM_ERROR;
+  int rc;
+  Win32File *pWin32File = (Win32File *)pFile;
+
+  *ppShm = NULL;
+  assert( sz>=0 );
+  assert( sz==LSM_SHM_CHUNK_SIZE );
+  if( iChunk>=pWin32File->nShm ){
+    int i;
+    void **apNew;
+    int nNew = iChunk+1;
+    lsm_i64 nReq = nNew * sz;
+    LARGE_INTEGER fileSize;
+
+    /* If the shared-memory file has not been opened, open it now. */
+    if( pWin32File->hShmFile==NULL ){
+      char *zShm = win32ShmFile(pWin32File);
+      if( !zShm ) return LSM_NOMEM_BKPT;
+      rc = win32Open(pWin32File->pEnv, zShm, 0, &pWin32File->hShmFile);
+      lsmFree(pWin32File->pEnv, zShm);
+      if( rc!=LSM_OK ){
+        return rc;
+      }
+    }
+
+    /* If the shared-memory file is not large enough to contain the
+    ** requested chunk, cause it to grow.  */
+    memset(&fileSize, 0, sizeof(LARGE_INTEGER));
+    if( !GetFileSizeEx(pWin32File->hShmFile, &fileSize) ){
+      return LSM_IOERR_BKPT;
+    }
+    assert( fileSize.QuadPart>=0 );
+    if( fileSize.QuadPart<nReq ){
+      rc = win32Truncate(pWin32File->hShmFile, nReq);
+      if( rc!=LSM_OK ){
+        return rc;
+      }
+    }
+
+    apNew = (void **)lsmRealloc(pWin32File->pEnv, pWin32File->apShm,
+                                sizeof(LPVOID) * nNew);
+    if( !apNew ) return LSM_NOMEM_BKPT;
+    for(i=pWin32File->nShm; i<nNew; i++){
+      apNew[i] = NULL;
+    }
+    pWin32File->apShm = apNew;
+    pWin32File->nShm = nNew;
+  }
+
+  if( pWin32File->apShm[iChunk]==NULL ){
+    HANDLE hMap;
+    LPVOID pMap;
+    hMap = CreateFileMappingW(pWin32File->hShmFile, NULL, PAGE_READWRITE, 0,
+                              (DWORD)sz, NULL);
+    if( hMap==NULL ){
+      return LSM_IOERR_BKPT;
+    }
+    pWin32File->ahShm[iChunk] = hMap;
+    pMap = MapViewOfFile(hMap, FILE_MAP_WRITE | FILE_MAP_READ, 0, 0,
+                         (SIZE_T)sz);
+    if( pMap==NULL ){
+      return LSM_IOERR_BKPT;
+    }
+    pWin32File->apShm[iChunk] = pMap;
+    pWin32File->nMap = (SIZE_T)sz;
+  }
+  *ppShm = pWin32File->apShm[iChunk];
+  return LSM_OK;
 }
 
 void lsmWin32OsShmBarrier(void){
@@ -577,7 +705,29 @@ void lsmWin32OsShmBarrier(void){
 }
 
 int lsmWin32OsShmUnmap(lsm_file *pFile, int bDelete){
-  return LSM_ERROR;
+  Win32File *pWin32File = (Win32File *)pFile;
+
+  if( pWin32File->hShmFile!=NULL ){
+    int i;
+    for(i=0; i<pWin32File->nShm; i++){
+      if( pWin32File->apShm[i]!=NULL ){
+        UnmapViewOfFile(pWin32File->apShm[i]);
+        pWin32File->apShm[i] = NULL;
+      }
+      if( pWin32File->ahShm[i]!=NULL ){
+        CloseHandle(pWin32File->ahShm[i]);
+        pWin32File->ahShm[i] = NULL;
+      }
+    }
+    CloseHandle(pWin32File->hShmFile);
+    pWin32File->hShmFile = 0;
+    if( bDelete ){
+      char *zShm = win32ShmFile(pWin32File);
+      if( zShm ){ win32Delete(pWin32File->pEnv, zShm); }
+      lsmFree(pWin32File->pEnv, zShm);
+    }
+  }
+  return LSM_OK;
 }
 
 #define MX_CLOSE_ATTEMPT 3
