@@ -389,7 +389,7 @@ foreach file {
    sqlite3session.c
    json1.c
    fts5.c
-   stmts.c
+   stmt.c
 } {
   copy_file tsrc/$file
 }

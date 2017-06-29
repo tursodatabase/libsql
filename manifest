@@ -1,8 +1,8 @@
-C A\scouple\sfixes\sfor\sthe\sWin32\sinterface\sfor\slsm1.
-D 2017-06-29T14:17:48.990
-F Makefile.in 2fde386bd3fca21b89a5f64eaa0c580b25079cd10f6eb9692987a70b7709edc0
+C Rename\sthe\s"stmts"\svirtual\stable\sto\sjust\s"stmt"\swithout\sthe\sfinal\s"s".
+D 2017-06-29T14:33:51.582
+F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 822979c692e9f1004c3ac36802ad2c130709fe4d111c272d55b8bdeb0261070a
+F Makefile.msc 4ebb1d257cac7fb1bcb4ba59278416d410ff1c4bf59447a9c37a415f3516056a
 F README.md 2b15fae33852f2f53996774c21fb41e1d94181c4401a0e43ac93e11f2cc901b9
 F VERSION 87f1498f27e398bce3da2fa8125c9879a38ed9d87e4b5fb922b351de1e25cadb
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -276,7 +276,7 @@ F ext/misc/sha1.c 0b9e9b855354910d3ca467bf39099d570e73db56
 F ext/misc/shathree.c fa185d7aee0ad0aca5e091b4a2db7baff11796170e5793b5de99e511a13af448
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c a4723b6aff748a417b5091b68a46443265c40f0d
-F ext/misc/stmts.c a537a976bb901ebfb0f5e3bfe72f3e6d76f30186d4b29fb9c9bc68f145a33050
+F ext/misc/stmt.c 619222bc1752a7a8412bda2d9b97337c4bc67a1ddee0efcba0eb6f439f25ce5a w ext/misc/stmts.c
 F ext/misc/totype.c 4a167594e791abeed95e0a8db028822b5e8fe512
 F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vfsstat.c bf10ef0bc51e1ad6756629e1edb142f7a8db1178
@@ -372,7 +372,7 @@ F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 91132b69fc5e2c03ba83fdd0f1ee2cdd6a8e18397dfa097ec84dfa522803c100
+F main.mk b57f019e6cd9d8770b019726c544098fe38f3b5db997d2af739352bbd7c7a14c
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -397,7 +397,7 @@ F src/btreeInt.h a392d353104b4add58b4a59cb185f5d5693dde832c565b77d8d4c343ed98f61
 F src/build.c b24e0889ba18ba0e93e03e2ef5c9f1a2ca043d77c5abbd3d333858a76b795da3
 F src/callback.c 2e76147783386374bf01b227f752c81ec872d730
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
-F src/ctime.c 0dbb6af8bb0829f5db1e2b7ef34df081d8e41d5295eb6dddddd48a705db741ec
+F src/ctime.c 928954802b1397d9fb1378c7eb702c94b4735bbab1d5793e21b6a77734f56a1b
 F src/date.c cc42a41c7422389860d40419a5e3bce5eaf6e7835c3ba2677751dc653550a5c7
 F src/dbstat.c 19ee7a4e89979d4df8e44cfac7a8f905ec89b77d
 F src/delete.c 3213547e97b676c6fa79948b7a9ede4801ea04a01a2043241deafedf132ecf5d
@@ -413,7 +413,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c bb70abf32c7c926745eb550938db9132309584a667a44c2db0e5fa3207600391
 F src/legacy.c 134ab3e3fae00a0f67a5187981d6935b24b337bcf0f4b3e5c9fa5763da95bf4e
 F src/loadext.c a72909474dadce771d3669bf84bf689424f6f87d471fee898589c3ef9b2acfd9
-F src/main.c aaf24be7e2354b6f9f5fecd5c1627e6e5dd8b1825a91e013f1eb7c5d3bc051b1
+F src/main.c 0ed4383f4de08ac1a808c45666743c6352dfee87adf4557e99bf2a954b31bdf6
 F src/malloc.c e20bb2b48abec52d3faf01cce12e8b4f95973755fafec98d45162dfdab111978
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -473,7 +473,7 @@ F src/test_backup.c bf5da90c9926df0a4b941f2d92825a01bbe090a0
 F src/test_bestindex.c d23f80d334c59662af69191854c76b8d3d0c8c96
 F src/test_blob.c f65ac717da2618691cf9dad094e6da0219dcd208
 F src/test_btree.c 8b2dc8b8848cf3a4db93f11578f075e82252a274
-F src/test_config.c 15b06083a05b608464e1cd8b6d1a2fc97aa2948cd250c584f8ec564e0de71b14
+F src/test_config.c abf6fc1fe9d041b699578c42e3db81f8831c4f5b804f1927958102ee8f2b773e
 F src/test_delete.c e2fe07646dff6300b48d49b2fee2fe192ed389e834dd635e3b3bac0ce0bf9f8f
 F src/test_demovfs.c a0c3bdd45ed044115c2c9f7779e56eafff18741e
 F src/test_devsym.c 4e58dec2602d8e139ca08659f62a62450587cb58
@@ -1568,7 +1568,7 @@ F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkpragmatab.tcl aa94395a91b5bd47022b7db0c08126f047887e0d299cc19ec1c23a9e5b136961
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl fef88397668ae83166735c41af99d79f56afaabb
-F tool/mksqlite3c.tcl 4b5c48a98dc8cc3bd6aa3e5388be1fff308e4eac4fe1f01b4546413d8ee2847f
+F tool/mksqlite3c.tcl f6214285bec900d28441366ca31af327aade18bbc424b0480497966ec05bc43c
 F tool/mksqlite3h.tcl 51bd5e7e840a920388a5966c9f2ccc618f434c57bd68c1bab4085b2553e1e237
 F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
 F tool/mkvsix.tcl b9e0777a213c23156b6542842c238479e496ebf5
@@ -1627,7 +1627,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 60c628293a1d8a1505e1a36dbd01b1f62bcfd7915e144044c92385423cbf8e07
-R 6b1172fa5df14c2da55cdce2ba904e67
-U mistachkin
-Z b1cb3cacab6d77553cd0c3ad7148e349
+P ebbd98e941d8a8ea97b434c29b70095515af0adab1977aa4d37fe74a7401f846
+R 227414f0a87c66eaa518fb66692c2aa3
+U drh
+Z 4008bc0c583622d13bed9769f9852f41

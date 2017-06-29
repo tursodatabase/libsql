@@ -28,8 +28,8 @@
 #ifdef SQLITE_ENABLE_JSON1
 int sqlite3Json1Init(sqlite3*);
 #endif
-#ifdef SQLITE_ENABLE_STMTSVTAB
-int sqlite3StmtsVtabInit(sqlite3*);
+#ifdef SQLITE_ENABLE_STMTVTAB
+int sqlite3StmtVtabInit(sqlite3*);
 #endif
 #ifdef SQLITE_ENABLE_FTS5
 int sqlite3Fts5Init(sqlite3*);
@@ -3061,9 +3061,9 @@ static int openDatabase(
   }
 #endif
 
-#ifdef SQLITE_ENABLE_STMTSVTAB
+#ifdef SQLITE_ENABLE_STMTVTAB
   if( !db->mallocFailed && rc==SQLITE_OK){
-    rc = sqlite3StmtsVtabInit(db);
+    rc = sqlite3StmtVtabInit(db);
   }
 #endif
 

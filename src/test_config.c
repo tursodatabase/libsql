@@ -561,10 +561,10 @@ Tcl_SetVar2(interp, "sqlite_options", "mergesort", "1", TCL_GLOBAL_ONLY);
   Tcl_SetVar2(interp, "sqlite_options", "stat3", "0", TCL_GLOBAL_ONLY);
 #endif
 
-#if defined(SQLITE_ENABLE_STMTSVTAB) && !defined(SQLITE_OMIT_VIRTUALTABLE)
-  Tcl_SetVar2(interp, "sqlite_options", "stmtsvtab", "1", TCL_GLOBAL_ONLY);
+#if defined(SQLITE_ENABLE_STMTVTAB) && !defined(SQLITE_OMIT_VIRTUALTABLE)
+  Tcl_SetVar2(interp, "sqlite_options", "stmtvtab", "1", TCL_GLOBAL_ONLY);
 #else
-  Tcl_SetVar2(interp, "sqlite_options", "stmtsvtab", "0", TCL_GLOBAL_ONLY);
+  Tcl_SetVar2(interp, "sqlite_options", "stmtvtab", "0", TCL_GLOBAL_ONLY);
 #endif
 
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
