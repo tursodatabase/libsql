@@ -2243,6 +2243,9 @@ rbu.exe:	$(TOP)\ext\rbu\rbu.c $(TOP)\ext\rbu\sqlite3rbu.c $(SQLITE3C) $(SQLITE3H
 	$(LTLINK) $(NO_WARN) -DSQLITE_ENABLE_RBU \
 		$(TOP)\ext\rbu\rbu.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
+LSMDIR=$(TOP)\ext\lsm1
+!INCLUDE $(LSMDIR)\Makefile.msc
+
 moreclean:	clean
 	del /Q $(SQLITE3C) $(SQLITE3H) 2>NUL
 # <</mark>>
