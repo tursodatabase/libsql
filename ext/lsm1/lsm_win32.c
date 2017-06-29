@@ -38,6 +38,7 @@ struct Win32File {
   HANDLE hFile;                   /* Open file handle */
   HANDLE hShmFile;                /* File handle for *-shm file */
 
+  SYSTEM_INFO sysInfo;            /* Operating system information */
   HANDLE hMap;                    /* File handle for mapping */
   LPVOID pMap;                    /* Pointer to mapping of file fd */
   size_t nMap;                    /* Size of mapping at pMap in bytes */
@@ -256,6 +257,8 @@ static int lsmWin32OsOpen(
 
     rc = win32Open(pEnv, zFile, flags, &hFile);
     if( rc==LSM_OK ){
+      memset(&pWin32File->sysInfo, 0, sizeof(SYSTEM_INFO));
+      GetSystemInfo(&pWin32File->sysInfo);
       pWin32File->pEnv = pEnv;
       pWin32File->zName = zFile;
       pWin32File->hFile = hFile;
@@ -367,6 +370,7 @@ static int lsmWin32OsSync(lsm_file *pFile){
     rc = LSM_IOERR_BKPT;
   }
 #else
+  unused_parameter(pFile);
 #endif
 
   return rc;
@@ -673,11 +677,11 @@ int lsmWin32OsShmMap(lsm_file *pFile, int iChunk, int sz, void **ppShm){
       }
     }
 
-    ahNew = (void **)lsmRealloc(pWin32File->pEnv, pWin32File->ahShm,
-                                sizeof(LPHANDLE) * nNew);
+    ahNew = (LPHANDLE)lsmRealloc(pWin32File->pEnv, pWin32File->ahShm,
+                                 sizeof(LPHANDLE) * nNew);
     if( !ahNew ) return LSM_NOMEM_BKPT;
-    apNew = (void **)lsmRealloc(pWin32File->pEnv, pWin32File->apShm,
-                                sizeof(LPVOID) * nNew);
+    apNew = (LPVOID *)lsmRealloc(pWin32File->pEnv, pWin32File->apShm,
+                                 sizeof(LPVOID) * nNew);
     if( !apNew ){
       lsmFree(pWin32File->pEnv, ahNew);
       return LSM_NOMEM_BKPT;
@@ -701,10 +705,12 @@ int lsmWin32OsShmMap(lsm_file *pFile, int iChunk, int sz, void **ppShm){
     pWin32File->ahShm[iChunk] = hMap;
   }
   if( pWin32File->apShm[iChunk]==NULL ){
+    int iOffset = iChunk * sz;
+    int iOffsetShift = iOffset % pWin32File->sysInfo.dwAllocationGranularity;
     LPVOID pMap;
     pMap = MapViewOfFile(pWin32File->ahShm[iChunk],
-                         FILE_MAP_WRITE | FILE_MAP_READ, 0, (DWORD)(iChunk*sz),
-                         (SIZE_T)sz);
+                         FILE_MAP_WRITE | FILE_MAP_READ, 0,
+                         iOffset - iOffsetShift, sz + iOffsetShift);
     if( pMap==NULL ){
       return LSM_IOERR_BKPT;
     }
@@ -734,7 +740,7 @@ int lsmWin32OsShmUnmap(lsm_file *pFile, int bDelete){
       }
     }
     CloseHandle(pWin32File->hShmFile);
-    pWin32File->hShmFile = 0;
+    pWin32File->hShmFile = NULL;
     if( bDelete ){
       char *zShm = win32ShmFile(pWin32File);
       if( zShm ){ win32Delete(pWin32File->pEnv, zShm); }
