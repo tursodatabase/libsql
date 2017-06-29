@@ -5005,7 +5005,9 @@ static struct SrcList_item *isSelfJoinView(
     if( pItem->zName==0 ) continue;
     if( sqlite3_stricmp(pItem->zDatabase, pThis->zDatabase)!=0 ) continue;
     if( sqlite3_stricmp(pItem->zName, pThis->zName)!=0 ) continue;
-    if( sqlite3ExprCompare(pThis->pSelect->pWhere, pItem->pSelect->pWhere, -1) ){
+    if( sqlite3ExprCompare(0, 
+          pThis->pSelect->pWhere, pItem->pSelect->pWhere, -1) 
+    ){
       /* The view was modified by some other optimization such as
       ** pushDownWhereTerms() */
       continue;
