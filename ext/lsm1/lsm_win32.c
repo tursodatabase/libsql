@@ -802,10 +802,12 @@ static int lsmWin32OsSleep(lsm_env *pEnv, int us){
 */
 
 static void *lsmWin32OsMalloc(lsm_env *pEnv, size_t N){
+  assert( HeapValidate(GetProcessHeap(), 0, NULL) );
   return HeapAlloc(GetProcessHeap(), 0, (SIZE_T)N);
 }
 
 static void lsmWin32OsFree(lsm_env *pEnv, void *p){
+  assert( HeapValidate(GetProcessHeap(), 0, NULL) );
   if( p ){
     HeapFree(GetProcessHeap(), 0, p);
   }
@@ -813,6 +815,7 @@ static void lsmWin32OsFree(lsm_env *pEnv, void *p){
 
 static void *lsmWin32OsRealloc(lsm_env *pEnv, void *p, size_t N){
   unsigned char *m = (unsigned char *)p;
+  assert( HeapValidate(GetProcessHeap(), 0, NULL) );
   if( 1>N ){
     lsmWin32OsFree(pEnv, p);
     return NULL;
@@ -830,6 +833,7 @@ static void *lsmWin32OsRealloc(lsm_env *pEnv, void *p, size_t N){
 }
 
 static size_t lsmWin32OsMSize(lsm_env *pEnv, void *p){
+  assert( HeapValidate(GetProcessHeap(), 0, NULL) );
   return (size_t)HeapSize(GetProcessHeap(), 0, p);
 }
 
