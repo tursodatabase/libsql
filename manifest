@@ -1,5 +1,5 @@
-C In\sthe\scommand-line\sshell,\sadd\sthe\s-quote\soption\sto\sstart\sup\sin\squote\smode.\nEnhance\sthe\s".mode"\scommand\sso\sthat\sit\sreports\sthe\scurrent\soutput\smode\sif\ngiven\sno\sarguments.
-D 2017-06-29T21:33:25.847
+C Avoid\sconstantly\sfreeing\sand\sreallocing\ssmall\sinternal\sbuffers\sassociated\swith\nLSM\scursors.\sInstead,\sallow\sthem\sto\spersist\sfor\sthe\slifetime\sof\sthe\scursor\sif\nthey\sare\sLSM_SEGMENTPTR_FREE_THRESHOLD\s(default\s1024)\sbytes\sor\ssmaller.
+D 2017-06-30T11:44:11.712
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 4ebb1d257cac7fb1bcb4ba59278416d410ff1c4bf59447a9c37a415f3516056a
@@ -244,7 +244,7 @@ F ext/lsm1/lsm_main.c f52eada2910f8a57bd4cafcee39c6c375f6b7ed8
 F ext/lsm1/lsm_mem.c 4c51ea9fa285ee6e35301b33491642d071740a0a
 F ext/lsm1/lsm_mutex.c 378edf0a2b142b4f7640ee982df06d50b98788ea
 F ext/lsm1/lsm_shared.c 54cc3a5157c6abd77f7d3ae60708b9f7bf022b3c
-F ext/lsm1/lsm_sorted.c 4a9e3ffecda87b379ed757b59c9cbcd84a80b55c
+F ext/lsm1/lsm_sorted.c 62cc605a66cf8e0e6ab3593281c2476a787fc4b2013c618dd17568d18c730070
 F ext/lsm1/lsm_str.c 77ebdd5040ddf267a6f724d4c83132d2dce8a226
 F ext/lsm1/lsm_tree.c 5d9fb2bc58a1a70c75126bd8d7198f7b627e165b
 F ext/lsm1/lsm_unix.c 14aaebdd7a7e9abb57cc16890c8444b241de272bfc2303b68f6e6b984040dc1e
@@ -1628,7 +1628,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7782c04e9b2c0e95b5ac2a38876c1a233becfd892140bc6844790d62aeaff4f7
-R fdaec3a4a9930118ae9822ddeb4d3259
-U drh
-Z c0bf63d58bf1bc98c2ecc9c2e3c0756c
+P 5e3f9ea5c4fad35fe02a12d59114e94ee00e0a09c1840c88908a4c282e2f4625
+R e4ed1fd49ca170fbcc3ace94e802f0dd
+U dan
+Z 88693dceee9c2741baead710728f55cc

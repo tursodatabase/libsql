@@ -98,6 +98,11 @@
 #define PGFTR_SKIP_NEXT_FLAG   0x0002
 #define PGFTR_SKIP_THIS_FLAG   0x0004
 
+
+#ifndef LSM_SEGMENTPTR_FREE_THRESHOLD
+# define LSM_SEGMENTPTR_FREE_THRESHOLD 1024
+#endif
+
 typedef struct SegmentPtr SegmentPtr;
 typedef struct Blob Blob;
 
@@ -1148,7 +1153,11 @@ static void sortedSplitkey(lsm_db *pDb, Level *pLevel, int *pRc){
   *pRc = rc;
 }
 
-static void segmentPtrReset(SegmentPtr *pPtr){
+/*
+** Reset a segment cursor. Also free its buffers if they are nThreshold
+** bytes or larger in size.
+*/
+static void segmentPtrReset(SegmentPtr *pPtr, int nThreshold){
   lsmFsPageRelease(pPtr->pPg);
   pPtr->pPg = 0;
   pPtr->nCell = 0;
@@ -1158,8 +1167,8 @@ static void segmentPtrReset(SegmentPtr *pPtr){
   pPtr->nVal = 0;
   pPtr->eType = 0;
   pPtr->iCell = 0;
-  sortedBlobFree(&pPtr->blob1);
-  sortedBlobFree(&pPtr->blob2);
+  if( pPtr->blob1.nAlloc>=nThreshold ) sortedBlobFree(&pPtr->blob1);
+  if( pPtr->blob2.nAlloc>=nThreshold ) sortedBlobFree(&pPtr->blob2);
 }
 
 static int segmentPtrIgnoreSeparators(MultiCursor *pCsr, SegmentPtr *pPtr){
@@ -1206,7 +1215,7 @@ static int segmentPtrAdvance(
           rtTopic(pPtr->eType), pPtr->pKey, pPtr->nKey,
           pLvl->iSplitTopic, pLvl->pSplitKey, pLvl->nSplitKey
       );
-      if( res<0 ) segmentPtrReset(pPtr);
+      if( res<0 ) segmentPtrReset(pPtr, LSM_SEGMENTPTR_FREE_THRESHOLD);
     }
 
     if( pPtr->pPg==0 && (svFlags & LSM_END_DELETE) ){
@@ -1275,7 +1284,7 @@ static int segmentPtrEnd(MultiCursor *pCsr, SegmentPtr *pPtr, int bLast){
           rtTopic(pPtr->eType), pPtr->pKey, pPtr->nKey,
           pLvl->iSplitTopic, pLvl->pSplitKey, pLvl->nSplitKey
       );
-      if( res<0 ) segmentPtrReset(pPtr);
+      if( res<0 ) segmentPtrReset(pPtr, LSM_SEGMENTPTR_FREE_THRESHOLD);
     }
   }
   
@@ -1611,7 +1620,7 @@ static int segmentPtrFwdPointer(
       rc = ptrFwdPointer(ptr.pPg, ptr.iCell, ptr.pSeg, &iOut, &bFound);
       ptr.pPg = 0;
     }
-    segmentPtrReset(&ptr);
+    segmentPtrReset(&ptr, 0);
   }
 
   *piPtr = iOut;
@@ -1658,7 +1667,7 @@ static int segmentPtrSeek(
        || lsmFsDbPageIsLast(pPtr->pSeg, pPtr->pPg)
   );
   if( pPtr->nCell==0 ){
-    segmentPtrReset(pPtr);
+    segmentPtrReset(pPtr, LSM_SEGMENTPTR_FREE_THRESHOLD);
   }else{
     iMin = 0;
     iMax = pPtr->nCell-1;
@@ -1716,7 +1725,7 @@ static int segmentPtrSeek(
               }
               pCsr->flags |= CURSOR_SEEK_EQ;
             }
-            segmentPtrReset(pPtr);
+            segmentPtrReset(pPtr, LSM_SEGMENTPTR_FREE_THRESHOLD);
             break;
           }
           case LSM_SEEK_LE:
@@ -1943,7 +1952,7 @@ static int seekInLevel(
             rtTopic(pPtr->eType), pPtr->pKey, pPtr->nKey, 
             pLvl->iSplitTopic, pLvl->pSplitKey, pLvl->nSplitKey
         );
-        if( res<0 ) segmentPtrReset(pPtr);
+        if( res<0 ) segmentPtrReset(pPtr, LSM_SEGMENTPTR_FREE_THRESHOLD);
       }
 
       if( aPtr[i].pKey ) bHit = 1;
@@ -2219,7 +2228,7 @@ static void mcursorFreeComponents(MultiCursor *pCsr){
 
   /* Reset the segment pointers */
   for(i=0; i<pCsr->nPtr; i++){
-    segmentPtrReset(&pCsr->aPtr[i]);
+    segmentPtrReset(&pCsr->aPtr[i], 0);
   }
 
   /* And the b-tree cursor, if any */
@@ -2874,7 +2883,7 @@ static int multiCursorEnd(MultiCursor *pCsr, int bLast){
       if( bHit==0 && rc==LSM_OK ){
         rc = segmentPtrEnd(pCsr, pPtr, 1);
       }else{
-        segmentPtrReset(pPtr);
+        segmentPtrReset(pPtr, LSM_SEGMENTPTR_FREE_THRESHOLD);
       }
     }else{
       int bLhs = (pPtr->pSeg==&pLvl->lhs);
@@ -2886,7 +2895,7 @@ static int multiCursorEnd(MultiCursor *pCsr, int bLast){
       }
       for(iRhs=0; iRhs<pLvl->nRight && rc==LSM_OK; iRhs++){
         if( bHit ){
-          segmentPtrReset(&pPtr[iRhs+1]);
+          segmentPtrReset(&pPtr[iRhs+1], LSM_SEGMENTPTR_FREE_THRESHOLD);
         }else{
           rc = sortedRhsFirst(pCsr, pLvl, &pPtr[iRhs+bLhs]);
         }
@@ -2969,7 +2978,7 @@ void lsmMCursorReset(MultiCursor *pCsr){
   lsmTreeCursorReset(pCsr->apTreeCsr[0]);
   lsmTreeCursorReset(pCsr->apTreeCsr[1]);
   for(i=0; i<pCsr->nPtr; i++){
-    segmentPtrReset(&pCsr->aPtr[i]);
+    segmentPtrReset(&pCsr->aPtr[i], LSM_SEGMENTPTR_FREE_THRESHOLD);
   }
   pCsr->key.nData = 0;
 }
@@ -6079,8 +6088,8 @@ static int assertPointersOk(
     }
   }
 
-  segmentPtrReset(&ptr1);
-  segmentPtrReset(&ptr2);
+  segmentPtrReset(&ptr1, 0);
+  segmentPtrReset(&ptr2, 0);
   return LSM_OK;
 }
 
