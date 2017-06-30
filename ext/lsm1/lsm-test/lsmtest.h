@@ -27,7 +27,7 @@ extern "C" {
 #  define fsync(fd) FlushFileBuffers((HANDLE)_get_osfhandle((fd)))
 #  define fdatasync(fd) FlushFileBuffers((HANDLE)_get_osfhandle((fd)))
 #  define __va_copy(dst,src) ((dst) = (src))
-#  define ftruncate(fd,sz) (_chsize_s((fd), (sz))==0)
+#  define ftruncate(fd,sz) ((_chsize_s((fd), (sz))==0) ? 0 : -1)
 # else
 #  error Unsupported C compiler for Windows.
 # endif

@@ -1,5 +1,5 @@
-C Avoid\sconstantly\sfreeing\sand\sreallocing\ssmall\sinternal\sbuffers\sassociated\swith\nLSM\scursors.\sInstead,\sallow\sthem\sto\spersist\sfor\sthe\slifetime\sof\sthe\scursor\sif\nthey\sare\sLSM_SEGMENTPTR_FREE_THRESHOLD\s(default\s1024)\sbytes\sor\ssmaller.
-D 2017-06-30T11:44:11.712
+C Fix\ssome\sminor\stypos\sin\slsm1.
+D 2017-06-30T18:12:09.226
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 4ebb1d257cac7fb1bcb4ba59278416d410ff1c4bf59447a9c37a415f3516056a
@@ -212,7 +212,7 @@ F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/lsm1/Makefile a2ea4975162be8932b5efa727080f4982715d34c32035d9eb7a015ae78404981
 F ext/lsm1/Makefile.msc c8140509750fb207f0e984991bc426e91a11adb2f6434f218c52103b9d33a8e1
 F ext/lsm1/lsm-test/README 87ea529d2abe615e856d4714bfe8bb185e6c2771b8612aa6298588b7b43e6f86
-F ext/lsm1/lsm-test/lsmtest.h 910772d90683d44092ec591409280bf9e6635fd5eb8514af741ccb46061334f2
+F ext/lsm1/lsm-test/lsmtest.h ba9c3cdd4dee660f14de8fe0a5b8c36d72bb5524730f0ce7641aa08f0ef56da5
 F ext/lsm1/lsm-test/lsmtest1.c 27c3cf6512514b25a145154ae4e54d053d883b2f7f52ed214747b5ebaceedd3e
 F ext/lsm1/lsm-test/lsmtest2.c 385efd49f3411bb2c8e0f9ffbd4f87450d5ac368aeee62d509d2c0ce10e4215b
 F ext/lsm1/lsm-test/lsmtest3.c 9ab87528a36dbf4a61d7c8ad954f5ee368c0878c127b84b942b2e2abe522de26
@@ -247,10 +247,10 @@ F ext/lsm1/lsm_shared.c 54cc3a5157c6abd77f7d3ae60708b9f7bf022b3c
 F ext/lsm1/lsm_sorted.c 62cc605a66cf8e0e6ab3593281c2476a787fc4b2013c618dd17568d18c730070
 F ext/lsm1/lsm_str.c 77ebdd5040ddf267a6f724d4c83132d2dce8a226
 F ext/lsm1/lsm_tree.c 5d9fb2bc58a1a70c75126bd8d7198f7b627e165b
-F ext/lsm1/lsm_unix.c 14aaebdd7a7e9abb57cc16890c8444b241de272bfc2303b68f6e6b984040dc1e
+F ext/lsm1/lsm_unix.c 57361bcf5b1a1a028f5d66571ee490e9064d2cfb145a2cc9e5ddade467bb551b
 F ext/lsm1/lsm_varint.c b19ae9bd26b5a1e8402fb8a564b25d9542338a41
 F ext/lsm1/lsm_vtab.c fff303ce03168eca9e333add3c1429b3471674b0
-F ext/lsm1/lsm_win32.c 1759ec9869e379d6f53937ef33b79dc6bec72223999eb8c5598b024528d6c70d
+F ext/lsm1/lsm_win32.c 47b67076153f2144e0f2949c28685bd1e9cc21a51d73178f3d467e48af2bf449
 F ext/misc/README.md 8e008c8d2b02e09096b31dfba033253ac27c6c06a18aa5826e299fa7601d90b2
 F ext/misc/amatch.c 6db4607cb17c54b853a2d7c7c36046d004853f65b9b733e6f019d543d5dfae87
 F ext/misc/anycollseq.c 5ffdfde9829eeac52219136ad6aa7cd9a4edb3b15f4f2532de52f4a22525eddb
@@ -1628,7 +1628,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5e3f9ea5c4fad35fe02a12d59114e94ee00e0a09c1840c88908a4c282e2f4625
-R e4ed1fd49ca170fbcc3ace94e802f0dd
-U dan
-Z 88693dceee9c2741baead710728f55cc
+P bacfe8cb3e4d3be736c6789b2ce55ef5603e5c7a289b05b37cae2203cd7f2290
+R a011907843ab4438bc0ee3ce20101fac
+U mistachkin
+Z 2edac2ca40bc227a52681398353df5b7

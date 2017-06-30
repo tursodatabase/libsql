@@ -580,7 +580,7 @@ static int lsmWin32OsUnlink(lsm_env *pEnv, const char *zFile){
                             ((a)==ERROR_IO_PENDING))
 #endif
 
-int lsmWin32OsLock(lsm_file *pFile, int iLock, int eType){
+static int lsmWin32OsLock(lsm_file *pFile, int iLock, int eType){
   Win32File *pWin32File = (Win32File *)pFile;
   OVERLAPPED ovlp;
 
@@ -610,7 +610,7 @@ int lsmWin32OsLock(lsm_file *pFile, int iLock, int eType){
   return LSM_OK;
 }
 
-int lsmWin32OsTestLock(lsm_file *pFile, int iLock, int nLock, int eType){
+static int lsmWin32OsTestLock(lsm_file *pFile, int iLock, int nLock, int eType){
   Win32File *pWin32File = (Win32File *)pFile;
   DWORD flags = LOCKFILE_FAIL_IMMEDIATELY;
   OVERLAPPED ovlp;
@@ -636,7 +636,7 @@ int lsmWin32OsTestLock(lsm_file *pFile, int iLock, int nLock, int eType){
   return LSM_OK;
 }
 
-int lsmWin32OsShmMap(lsm_file *pFile, int iChunk, int sz, void **ppShm){
+static int lsmWin32OsShmMap(lsm_file *pFile, int iChunk, int sz, void **ppShm){
   int rc;
   Win32File *pWin32File = (Win32File *)pFile;
   int iOffset = iChunk * sz;
@@ -725,11 +725,11 @@ int lsmWin32OsShmMap(lsm_file *pFile, int iChunk, int sz, void **ppShm){
   return LSM_OK;
 }
 
-void lsmWin32OsShmBarrier(void){
+static void lsmWin32OsShmBarrier(void){
   MemoryBarrier();
 }
 
-int lsmWin32OsShmUnmap(lsm_file *pFile, int bDelete){
+static int lsmWin32OsShmUnmap(lsm_file *pFile, int bDelete){
   Win32File *pWin32File = (Win32File *)pFile;
 
   if( pWin32File->hShmFile!=NULL ){
