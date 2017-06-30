@@ -1,5 +1,5 @@
-C Add\ssome\sassert()\sstatements\sin\sthe\sWin32\sinterface\sfor\slsm1.
-D 2017-06-30T19:22:33.773
+C Improved\sdocumentation\sfor\ssqlite3_value_type().
+D 2017-06-30T20:11:45.610
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 4ebb1d257cac7fb1bcb4ba59278416d410ff1c4bf59447a9c37a415f3516056a
@@ -450,7 +450,7 @@ F src/resolve.c d1e69759e7a79c156c692793f5d16f82f9a60ce5e82efd95e4374b2423034946
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 741937503c74d85e64828b63d5a4219d3cfce480a717efef635839606001b1ba
 F src/shell.c a2b148e4ca8eb81b96e1050207c83d4a16ea6bf9182374faee4dd2a43628c291
-F src/sqlite.h.in 5d9e3996052222789c2031a0a0107d7bbaea447ff91cb8af1388f01a2e4d8571
+F src/sqlite.h.in 731f189fd07c115e274a09f83043f822866144f68861c38a08ea4a977b1fbd84
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 58fd0676d3111d02e62e5a35992a7d3da5d3f88753acc174f2d37b774fbbdd28
 F src/sqliteInt.h 37f1a9a3266aa7b11126585314cd98cf11ba6f174b1244de2221270107ea754d
@@ -1628,7 +1628,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0ef777d7474383c0211b19baa4a161cf7fce6570f384dfef368cdab45c1a0f01
-R 0e183fbba6dc1ce556d00bf8d1501330
-U mistachkin
-Z 11a4bd7ecf75eea45a722248445eea4e
+P d076d58ff108d286f7ac1f81e1ce945d6f4a4f5f97e3b8d5cee6f8d9a6c48d8f
+R b000ea732df88b8ca94b02ddd6334c48
+U drh
+Z 9442c52c473ff462a81f68567d54c14b
