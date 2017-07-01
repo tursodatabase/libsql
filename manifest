@@ -1,5 +1,5 @@
-C Enhance\sthe\sRTree\smodule\sto\sdetect\snode\struncation\searly\sand\sreport\san\serror.
-D 2017-07-01T15:21:17.151
+C Fix\sa\smemory\smanagement\sproblem\sin\slsm\slog\srecovery\scode.
+D 2017-07-01T20:59:06.315
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 4ebb1d257cac7fb1bcb4ba59278416d410ff1c4bf59447a9c37a415f3516056a
@@ -239,7 +239,7 @@ F ext/lsm1/lsm.h 0f6f64ff071471cb87bf98beb8386566f30ea001
 F ext/lsm1/lsmInt.h b5d6d073aa5d233614cf4d97d81ba313e9f2c50cfaf12952f7efd9cd945bcd04
 F ext/lsm1/lsm_ckpt.c 239a8442693f1de6a06c9136a235757ab63f5a772ff44e1e81f00d71cc96151e
 F ext/lsm1/lsm_file.c fc95548f8cf8e47fda4120215d2c1fc22dfa85e09294e5656a99a846dc80a62b
-F ext/lsm1/lsm_log.c 5b3e855fcfb85de9fb86fcbf65696cc6886d3231
+F ext/lsm1/lsm_log.c 82fd21043868b8982c58c3229dc420cc4ad67a77e7134f427805132c666a33e3
 F ext/lsm1/lsm_main.c f52eada2910f8a57bd4cafcee39c6c375f6b7ed8
 F ext/lsm1/lsm_mem.c 4c51ea9fa285ee6e35301b33491642d071740a0a
 F ext/lsm1/lsm_mutex.c 378edf0a2b142b4f7640ee982df06d50b98788ea
@@ -1628,7 +1628,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0db20efe201736b3ebb177948f6a440ce28e62454536a8496fae64a3b55cb702
-R 633635afcaac57e4dac188648a5b6f5f
-U drh
-Z 074c8e3ab3a18bac8667de793b71c31f
+P 66de6f4a9504ec2670b7273de8fb6955c80e03f7f73414ea6b80fd8a99f75976
+R 08eea8839166fcca2c06eb8d028d9968
+U dan
+Z d5e677a9a0d306f6127c3d95383e56f5

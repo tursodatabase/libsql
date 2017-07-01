@@ -868,12 +868,14 @@ static void logReaderBlob(
     }else{
       int nCopy = LSM_MIN(nAvail, nReq);
       if( nBlob==nReq ){
-        if( ppBlob ) *ppBlob = (u8 *)pBuf->z;
         pBuf->n = 0;
       }
       rc = lsmStringBinAppend(pBuf, (u8 *)&p->buf.z[p->iBuf], nCopy);
       nReq -= nCopy;
       p->iBuf += nCopy;
+      if( nReq==0 && ppBlob ){
+        *ppBlob = (u8*)pBuf->z;
+      }
     }
   }
 
@@ -915,6 +917,7 @@ static void logReaderCksum(LogReader *p, LsmString *pBuf, int *pbEof, int *pRc){
     logCksumUnaligned(&p->buf.z[p->iCksumBuf], nCksum, &p->cksum0, &p->cksum1);
     p->iCksumBuf = p->iBuf + 8;
     logReaderBlob(p, pBuf, 8, &pPtr, pRc);
+    assert( pPtr || *pRc );
 
     /* Read the checksums from the log file. Set *pbEof if they do not match. */
     if( pPtr ){
