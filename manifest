@@ -1,5 +1,5 @@
-C Add\smore\stests\sfor\sLSM\slog\sfile\srecovery.\sFix\sa\sproblem\sin\srecovering\slog\nfiles\sthat\scontain\srange\sdeletes.
-D 2017-07-03T09:00:18.115
+C Attempt\sto\simprove\sdocumentation\son\ssqlite3_column_\sand\ssqlite3_value_\ninterfaces.
+D 2017-07-03T17:37:04.837
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 4ebb1d257cac7fb1bcb4ba59278416d410ff1c4bf59447a9c37a415f3516056a
@@ -450,7 +450,7 @@ F src/resolve.c d1e69759e7a79c156c692793f5d16f82f9a60ce5e82efd95e4374b2423034946
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 741937503c74d85e64828b63d5a4219d3cfce480a717efef635839606001b1ba
 F src/shell.c a2b148e4ca8eb81b96e1050207c83d4a16ea6bf9182374faee4dd2a43628c291
-F src/sqlite.h.in 731f189fd07c115e274a09f83043f822866144f68861c38a08ea4a977b1fbd84
+F src/sqlite.h.in 651cba56f8df64ff4418aa981cdfd5bc2d65e5fef95c1671f9826f1a164a5fa3
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 58fd0676d3111d02e62e5a35992a7d3da5d3f88753acc174f2d37b774fbbdd28
 F src/sqliteInt.h 37f1a9a3266aa7b11126585314cd98cf11ba6f174b1244de2221270107ea754d
@@ -1628,7 +1628,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P dd55af30b4440bba1b97c2155b9f499d791cd7d8bae8341972c41439fdc41edc
-R 28a4b3f47ac9a6ed16a81e9fcc9e6dc7
-U dan
-Z 748ed88e39ac7ec5284cc27ded18a498
+P e34eafd4c5b2bbf2735e136ad69b67bb4288ad4d01a0128d8e107ac46209a182
+R daf6aa916562f77defe7fb8012cb61e0
+U drh
+Z 91228c779b3dd3fbfc53cd1f8eb1df59
