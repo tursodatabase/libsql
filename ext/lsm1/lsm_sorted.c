@@ -1952,7 +1952,17 @@ static int seekInLevel(
             rtTopic(pPtr->eType), pPtr->pKey, pPtr->nKey, 
             pLvl->iSplitTopic, pLvl->pSplitKey, pLvl->nSplitKey
         );
-        if( res<0 ) segmentPtrReset(pPtr, LSM_SEGMENTPTR_FREE_THRESHOLD);
+        if( res<0 ){
+          if( pPtr->eType & LSM_START_DELETE ){
+            pPtr->eType &= ~LSM_INSERT;
+            pPtr->pKey = pLvl->pSplitKey;
+            pPtr->nKey = pLvl->nSplitKey;
+            pPtr->pVal = 0;
+            pPtr->nVal = 0;
+          }else{
+            segmentPtrReset(pPtr, LSM_SEGMENTPTR_FREE_THRESHOLD);
+          }
+        }
       }
 
       if( aPtr[i].pKey ) bHit = 1;
