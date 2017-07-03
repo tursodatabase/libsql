@@ -232,6 +232,12 @@ void testDatasourceFree(Datasource *);
 void testDatasourceEntry(Datasource *, int, void **, int *, void **, int *);
 /* End of test_datasource.c interface.
 *************************************************************************/
+void testDatasourceFetch(
+  TestDb *pDb,                    /* Database handle */
+  Datasource *pData,
+  int iKey,
+  int *pRc                        /* IN/OUT: Error code */
+);
 
 void testWriteDatasource(TestDb *, Datasource *, int, int *);
 void testWriteDatasourceRange(TestDb *, Datasource *, int, int, int *);

@@ -326,13 +326,13 @@ static void *tmLsmMalloc(int n){ return malloc(n); }
 static void tmLsmFree(void *ptr){ free(ptr); }
 static void *tmLsmRealloc(void *ptr, int n){ return realloc(ptr, n); }
 
-static void *tmLsmEnvMalloc(lsm_env *p, int n){ 
+static void *tmLsmEnvMalloc(lsm_env *p, size_t n){ 
   return tmMalloc((TmGlobal *)(p->pMemCtx), n); 
 }
 static void tmLsmEnvFree(lsm_env *p, void *ptr){ 
   tmFree((TmGlobal *)(p->pMemCtx), ptr); 
 }
-static void *tmLsmEnvRealloc(lsm_env *p, void *ptr, int n){ 
+static void *tmLsmEnvRealloc(lsm_env *p, void *ptr, size_t n){ 
   return tmRealloc((TmGlobal *)(p->pMemCtx), ptr, n);
 }
 
@@ -370,9 +370,9 @@ void testMallocUninstall(lsm_env *pEnv){
   TmGlobal *p = (TmGlobal *)pEnv->pMemCtx;
   pEnv->pMemCtx = 0;
   if( p ){
-    pEnv->xMalloc = (void *(*)(lsm_env*, int))(p->xSaveMalloc);
-    pEnv->xRealloc = (void *(*)(lsm_env*, void*, int))(p->xSaveRealloc);
-    pEnv->xFree = (void (*)(lsm_env*, void*))(p->xSaveFree);
+    pEnv->xMalloc = p->xSaveMalloc;
+    pEnv->xRealloc = p->xSaveRealloc;
+    pEnv->xFree = p->xSaveFree;
     p->xDelMutex(p);
     tmLsmFree(p);
   }

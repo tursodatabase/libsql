@@ -115,6 +115,7 @@ void testCommit(TestDb *pDb, int iTrans, int *pRc){
     testSetError(rc);
   }
 }
+#if 0 /* unused */
 static void testRollback(TestDb *pDb, int iTrans, int *pRc){
   if( *pRc==0 ){
     int rc;
@@ -122,6 +123,7 @@ static void testRollback(TestDb *pDb, int iTrans, int *pRc){
     testSetError(rc);
   }
 }
+#endif
 
 void testWriteStr(
   TestDb *pDb,                    /* Database handle */
@@ -133,10 +135,11 @@ void testWriteStr(
   testWrite(pDb, (void *)zKey, strlen(zKey), (void *)zVal, nVal, pRc);
 }
 
+#if 0 /* unused */
 static void testDeleteStr(TestDb *pDb, const char *zKey, int *pRc){
   testDelete(pDb, (void *)zKey, strlen(zKey), pRc);
 }
-
+#endif
 void testFetchStr(
   TestDb *pDb,                    /* Database handle */
   const char *zKey,               /* Key to query database for */
@@ -343,6 +346,7 @@ void testReopen(TestDb **ppDb, int *pRc){
 }
 
 
+#if 0 /* unused */
 static void testSystemSelect(const char *zSys, int *piSel, int *pRc){
   if( *pRc==0 ){
     struct SysName { const char *zName; } *aName;
@@ -359,6 +363,7 @@ static void testSystemSelect(const char *zSys, int *piSel, int *pRc){
     free(aName);
   }
 }
+#endif
 
 char *testMallocVPrintf(const char *zFormat, va_list ap){
   int nByte;
@@ -541,6 +546,7 @@ static void flushPrev(FILE *pOut){
   }
 }
 
+#if 0 /* unused */
 static void do_speed_write_hook2(
   void *pCtx,
   int bLog,
@@ -565,6 +571,7 @@ static void do_speed_write_hook2(
     }
   }
 }
+#endif
 
 #define ST_REPEAT  0
 #define ST_WRITE   1
@@ -662,7 +669,6 @@ int do_speed_test2(int nArg, char **azArg){
     if( aOpt[iSel].eVal>=0 ){
       aParam[aOpt[iSel].eVal] = atoi(azArg[i+1]);
     }else{
-      int j;
       zSystem = azArg[i+1];
       bLsm = 0;
 #if 0
