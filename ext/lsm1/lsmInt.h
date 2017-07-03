@@ -864,7 +864,7 @@ int lsmInfoFreelist(lsm_db *pDb, char **pzOut);
 ** Functions from file "lsm_log.c".
 */
 int lsmLogBegin(lsm_db *pDb);
-int lsmLogWrite(lsm_db *, void *, int, void *, int);
+int lsmLogWrite(lsm_db *, int, void *, int, void *, int);
 int lsmLogCommit(lsm_db *);
 void lsmLogEnd(lsm_db *pDb, int bCommit);
 void lsmLogTell(lsm_db *, LogMark *);
@@ -874,6 +874,10 @@ void lsmLogClose(lsm_db *);
 int lsmLogRecover(lsm_db *);
 int lsmInfoLogStructure(lsm_db *pDb, char **pzVal);
 
+/* Valid values for the second argument to lsmLogWrite(). */
+#define LSM_WRITE        0x06
+#define LSM_DELETE       0x08
+#define LSM_DRANGE       0x0A
 
 /**************************************************************************
 ** Functions from file "lsm_shared.c".

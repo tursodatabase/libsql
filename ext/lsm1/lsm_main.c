@@ -669,11 +669,8 @@ static int doWriteOp(
   }
 
   if( rc==LSM_OK ){
-    if( bDeleteRange==0 ){
-      rc = lsmLogWrite(pDb, (void *)pKey, nKey, (void *)pVal, nVal);
-    }else{
-      /* TODO */
-    }
+    int eType = (bDeleteRange ? LSM_DRANGE : (nVal>=0?LSM_WRITE:LSM_DELETE));
+    rc = lsmLogWrite(pDb, eType, (void *)pKey, nKey, (void *)pVal, nVal);
   }
 
   lsmSortedSaveTreeCursors(pDb);

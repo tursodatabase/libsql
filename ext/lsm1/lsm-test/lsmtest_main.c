@@ -26,7 +26,7 @@ void test_failed(){
 static void testSetErrorFunc(int rc, int *pRc, const char *zFile, int iLine){
   if( rc ){
     *pRc = rc;
-    printf("FAILED (%s:%d) rc=%d ", zFile, iLine, rc);
+    fprintf(stderr, "FAILED (%s:%d) rc=%d ", zFile, iLine, rc);
     test_failed();
   }
 }
