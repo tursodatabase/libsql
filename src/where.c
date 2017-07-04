@@ -4549,9 +4549,13 @@ WhereInfo *sqlite3WhereBegin(
     sqlite3WhereTabFuncArgs(pParse, &pTabList->a[ii], &pWInfo->sWC);
   }
 #ifdef SQLITE_DEBUG
-  for(ii=0; ii<pTabList->nSrc; ii++){
-    Bitmask m = sqlite3WhereGetMask(pMaskSet, pTabList->a[ii].iCursor);
-    assert( m==MASKBIT(ii) );
+  {
+    Bitmask mx = 0;
+    for(ii=0; ii<pTabList->nSrc; ii++){
+      Bitmask m = sqlite3WhereGetMask(pMaskSet, pTabList->a[ii].iCursor);
+      assert( m>=mx );
+      mx = m;
+    }
   }
 #endif
 
