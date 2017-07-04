@@ -3874,7 +3874,7 @@ static int mergeWorkerData(
   int rc = LSM_OK;                /* Return code */
   int nRem = nWrite;              /* Number of bytes still to write */
 
-  while( nRem>0 ){
+  while( rc==LSM_OK && nRem>0 ){
     Merge *pMerge = pMW->pLevel->pMerge;
     int nCopy;                    /* Number of bytes to copy */
     u8 *aData;                    /* Pointer to buffer of current output page */
@@ -5406,7 +5406,9 @@ int lsmSortedAutoWork(
       lsmMCursorFreeCache(pDb);
       lsmFreeSnapshot(pDb->pEnv, pDb->pClient);
       pDb->pClient = 0;
-      rc = lsmCheckpointLoad(pDb, 0);
+      if( rc==LSM_OK ){
+        rc = lsmCheckpointLoad(pDb, 0);
+      }
       if( rc==LSM_OK ){
         rc = lsmCheckpointDeserialize(pDb, 0, pDb->aSnapshot, &pDb->pClient);
       }

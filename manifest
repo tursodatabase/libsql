@@ -1,5 +1,5 @@
-C Fix\sa\scouple\sof\sproblems\sin\shandling\sOOM\sconditions\swithin\sLSM.
-D 2017-07-04T17:25:45.084
+C Fix\sfurther\sOOM\shandling\scases\sin\sLSM.
+D 2017-07-04T19:23:32.815
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 4ebb1d257cac7fb1bcb4ba59278416d410ff1c4bf59447a9c37a415f3516056a
@@ -237,14 +237,14 @@ F ext/lsm1/lsm-test/lsmtest_util.c 241622db5a332a09c8e6e7606b617d288a37b557f7d3b
 F ext/lsm1/lsm-test/lsmtest_win32.c 5605aac3bf3852dcc2509fb1d097f5f11556418c1cc9cf0fdd09f9af53c97fb4
 F ext/lsm1/lsm.h 0f6f64ff071471cb87bf98beb8386566f30ea001
 F ext/lsm1/lsmInt.h 68945f00c4fc97a5c82bd285a15d0baacd0019cf2e0b7d535759f000459462e1
-F ext/lsm1/lsm_ckpt.c 239a8442693f1de6a06c9136a235757ab63f5a772ff44e1e81f00d71cc96151e
+F ext/lsm1/lsm_ckpt.c 6ab5f08f60f802601eef0d2bad968d8f3729b908f88131e72311b2c2deaa7734
 F ext/lsm1/lsm_file.c fc95548f8cf8e47fda4120215d2c1fc22dfa85e09294e5656a99a846dc80a62b
-F ext/lsm1/lsm_log.c c5b69f99a80d352357b1102e5c4c1c855fd5f403e30427b0f62b887e050d225a
-F ext/lsm1/lsm_main.c 8f1f68a87126dcecaed463ed38e4b1c0dcc184614de1d7b01542d88c06551d9e
+F ext/lsm1/lsm_log.c 8308714659b9fe4a995c239528520c57d26a03baf1d1c973967493a089a79cc6
+F ext/lsm1/lsm_main.c 15e73ccdafdd44ddeefc29e332079d88ba8f00c12c797b3c2b63d3171b5afce8
 F ext/lsm1/lsm_mem.c 4c51ea9fa285ee6e35301b33491642d071740a0a
 F ext/lsm1/lsm_mutex.c 378edf0a2b142b4f7640ee982df06d50b98788ea
 F ext/lsm1/lsm_shared.c 54cc3a5157c6abd77f7d3ae60708b9f7bf022b3c
-F ext/lsm1/lsm_sorted.c 105a4c0b95e6f8c1d03774f88afbf1397e7cacd52c1a4b24de1118d011d05fdd
+F ext/lsm1/lsm_sorted.c 9bc5251a54a5cb24c2f003c10595fa81ffc7178c4f200c6b0f83d50a2272bb1d
 F ext/lsm1/lsm_str.c 65e361b488c87b10bf3e5c0070b14ffc602cf84f094880bece77bbf6678bca82
 F ext/lsm1/lsm_tree.c 53b657439e0fcb1117b0559ad3567ac417f81f2ed0fff9bab79948a00ea3cacb
 F ext/lsm1/lsm_unix.c 57361bcf5b1a1a028f5d66571ee490e9064d2cfb145a2cc9e5ddade467bb551b
@@ -1628,7 +1628,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 268a40f44cea6c3f561b7f54c90d631877be44292911424bac24f72c5ee87d60
-R 29a4648a10525bedf183da8b85a862ca
+P 989a5c1745a7145c14c6d9b713176ecba6b99296de8bdd09f666eeef10da9c2e
+R 922d647253bd2cf17b869e10d18fa4de
 U dan
-Z dd241cb89313d1d4ce4db941dd142406
+Z 09d57a8486afc6b09ffba0c342517c3e

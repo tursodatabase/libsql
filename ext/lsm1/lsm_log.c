@@ -377,6 +377,7 @@ int lsmLogBegin(lsm_db *pDb){
       lsmStringInit(&pNew->buf, pDb->pEnv);
       rc = lsmStringExtend(&pNew->buf, 2);
     }
+    pDb->pLogWriter = pNew;
   }else{
     pNew = pDb->pLogWriter;
     assert( (u8 *)(&pNew[1])==(u8 *)(&((&pNew->buf)[1])) );
@@ -468,7 +469,7 @@ int lsmLogBegin(lsm_db *pDb){
     pNew->jump.iEnd = lastByteOnSector(pNew, pNew->jump.iEnd);
   }
 
-  pDb->pLogWriter = pNew;
+  assert( pDb->pLogWriter==pNew );
   return rc;
 }
 
