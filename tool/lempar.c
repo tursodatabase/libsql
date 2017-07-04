@@ -339,7 +339,9 @@ void ParseInit(void *yypParser){
   pParser->yytos = pParser->yystack;
   pParser->yystack[0].stateno = 0;
   pParser->yystack[0].major = 0;
+#if YYSTACKDEPTH>0
   pParser->yystackEnd = &pParser->yystack[YYSTACKDEPTH-1];
+#endif
 }
 
 #ifndef Parse_ENGINEALWAYSONSTACK
