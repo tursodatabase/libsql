@@ -1470,6 +1470,7 @@ static int treeInsertEntry(
     rc = lsmTreeCursorSeek(&csr, pKey, nKey, &res);
     pRes = csrGetKey(&csr, &csr.blob, &rc);
     if( rc!=LSM_OK ) return rc;
+    assert( pRes );
 
     if( flags==LSM_START_DELETE ){
       /* When inserting a start-delete-range entry, if the key that
@@ -1944,12 +1945,11 @@ void lsmTreeCursorReset(TreeCursor *pCsr){
 }
 
 #ifndef NDEBUG
-static int treeCsrCompare(TreeCursor *pCsr, void *pKey, int nKey){
+static int treeCsrCompare(TreeCursor *pCsr, void *pKey, int nKey, int *pRc){
   TreeKey *p;
   int cmp = 0;
-  int rc = LSM_OK;
   assert( pCsr->iNode>=0 );
-  p = csrGetKey(pCsr, &pCsr->blob, &rc);
+  p = csrGetKey(pCsr, &pCsr->blob, pRc);
   if( p ){
     cmp = treeKeycmp(TKV_KEY(p), p->nKey, pKey, nKey);
   }
@@ -2051,8 +2051,8 @@ int lsmTreeCursorSeek(TreeCursor *pCsr, void *pKey, int nKey, int *pRes){
   /* assert() that *pRes has been set properly */
 #ifndef NDEBUG
   if( rc==LSM_OK && lsmTreeCursorValid(pCsr) ){
-    int cmp = treeCsrCompare(pCsr, pKey, nKey);
-    assert( *pRes==cmp || (*pRes ^ cmp)>0 );
+    int cmp = treeCsrCompare(pCsr, pKey, nKey, &rc);
+    assert( rc!=LSM_OK || *pRes==cmp || (*pRes ^ cmp)>0 );
   }
 #endif
 
