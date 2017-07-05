@@ -1123,7 +1123,21 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
     }
 #endif
     case P4_INTARRAY: {
-      sqlite3_snprintf(nTemp, zTemp, "intarray");
+      int i, j;
+      int *ai = pOp->p4.ai;
+      int n = ai[0];   /* The first element of an INTARRAY is always the
+                       ** count of the number of elements to follow */
+      zTemp[0] = '[';
+      for(i=j=1; i<n && j<nTemp-7; i++){
+        if( j>1 ) zTemp[j++] = ',';
+        sqlite3_snprintf(nTemp-j, zTemp+j, "%d", ai[i]);
+        j += sqlite3Strlen30(zTemp+j);
+      }
+      if( i<n ){
+        memcpy(zTemp+j, ",...]", 6);
+      }else{
+        memcpy(zTemp+j, "]", 2);
+      }
       break;
     }
     case P4_SUBPROGRAM: {
@@ -2818,8 +2832,15 @@ int sqlite3VdbeCursorRestore(VdbeCursor *p){
 ** If the cursor is already pointing to the correct row and that row has
 ** not been deleted out from under the cursor, then this routine is a no-op.
 */
-int sqlite3VdbeCursorMoveto(VdbeCursor *p){
+int sqlite3VdbeCursorMoveto(VdbeCursor **pp, int *piCol){
+  VdbeCursor *p = *pp;
   if( p->deferredMoveto ){
+    int iMap;
+    if( p->aAltMap && (iMap = p->aAltMap[1+*piCol])>0 ){
+      *pp = p->pAltCursor;
+      *piCol = iMap - 1;
+      return SQLITE_OK;
+    }
     return handleDeferredMoveto(p);
   }
   if( p->pCursor && sqlite3BtreeCursorHasMoved(p->pCursor) ){

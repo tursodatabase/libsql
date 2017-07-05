@@ -1980,11 +1980,14 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
 ** The permutation is only valid until the next OP_Compare that has
 ** the OPFLAG_PERMUTE bit set in P5. Typically the OP_Permutation should 
 ** occur immediately prior to the OP_Compare.
+**
+** The first integer in the P4 integer array is the length of the array
+** and does not become part of the permutation.
 */
 case OP_Permutation: {
   assert( pOp->p4type==P4_INTARRAY );
   assert( pOp->p4.ai );
-  aPermute = pOp->p4.ai;
+  aPermute = pOp->p4.ai + 1;
   break;
 }
 
@@ -2290,12 +2293,16 @@ case OP_Column: {
   u16 fx;            /* pDest->flags value */
   Mem *pReg;         /* PseudoTable input register */
 
+  pC = p->apCsr[pOp->p1];
   p2 = pOp->p2;
+
+  /* If the cursor cache is stale, bring it up-to-date */
+  rc = sqlite3VdbeCursorMoveto(&pC, &p2);
+
   assert( pOp->p3>0 && pOp->p3<=(p->nMem-p->nCursor) );
   pDest = &aMem[pOp->p3];
   memAboutToChange(p, pDest);
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
-  pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
   assert( p2<pC->nField );
   aOffset = pC->aOffset;
@@ -2306,8 +2313,6 @@ case OP_Column: {
   assert( pCrsr!=0 || pC->pseudoTableReg>0 ); /* pCrsr NULL on PseudoTables */
   assert( pCrsr!=0 || pC->nullRow );          /* pC->nullRow on PseudoTables */
 
-  /* If the cursor cache is stale, bring it up-to-date */
-  rc = sqlite3VdbeCursorMoveto(pC);
   if( rc ) goto abort_due_to_error;
   if( pC->cacheStatus!=p->cacheCtr ){
     if( pC->nullRow ){
@@ -3725,7 +3730,7 @@ case OP_SeekGT: {       /* jump, in3 */
   break;
 }
 
-/* Opcode: Seek P1 P2 * * *
+/* Opcode: Seek P1 P2 P3 P4 *
 ** Synopsis:  intkey=r[P2]
 **
 ** P1 is an open table cursor and P2 is a rowid integer.  Arrange
@@ -3734,6 +3739,13 @@ case OP_SeekGT: {       /* jump, in3 */
 ** This is actually a deferred seek.  Nothing actually happens until
 ** the cursor is used to read a record.  That way, if no reads
 ** occur, no unnecessary I/O happens.
+**
+** P4 may contain an array of integers (type P4_INTARRAY) containing
+** one entry for each column in the table P1 is open on. If so, then
+** parameter P3 is a cursor open on a database index. If array entry
+** a[i] is non-zero, then reading column (a[i]-1) from cursor P3 is 
+** equivalent to performing the deferred seek and then reading column i 
+** from P1.
 */
 case OP_Seek: {    /* in2 */
   VdbeCursor *pC;
@@ -3747,6 +3759,9 @@ case OP_Seek: {    /* in2 */
   pIn2 = &aMem[pOp->p2];
   pC->movetoTarget = sqlite3VdbeIntValue(pIn2);
   pC->deferredMoveto = 1;
+  assert( pOp->p4type==P4_INTARRAY || pOp->p4.ai==0 );
+  pC->aAltMap = pOp->p4.ai;
+  pC->pAltCursor = p->apCsr[pOp->p3];
   break;
 }
   
