@@ -137,6 +137,12 @@ int tdb_lsm_open(const char *zCfg, const char *zDb, int bClear, TestDb **ppDb);
 lsm_db *tdb_lsm(TestDb *pDb);
 
 /*
+** Return true if the db passed as an argument is a multi-threaded LSM
+** connection.
+*/
+int tdb_lsm_multithread(TestDb *pDb);
+
+/*
 ** Return a pointer to the lsm_env object used by all lsm database
 ** connections initialized as a copy of the object returned by 
 ** lsm_default_env(). It may be modified (e.g. to override functions)

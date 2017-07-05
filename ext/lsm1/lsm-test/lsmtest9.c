@@ -44,6 +44,7 @@ static void doDataTest4(
   int i;
   int rc = 0;
   int iDot = 0;
+  int bMultiThreaded = 0;         /* True for MT LSM database */
 
   int nRecOn3 = (p->nRec / 3);
   int iData = 0;
@@ -52,7 +53,10 @@ static void doDataTest4(
   rc = testControlDb(&pControl);
   pDb = testOpen(zSystem, 1, &rc);
   pData = testDatasourceNew(&p->defn);
-  if( rc==0 ) db = tdb_lsm(pDb);
+  if( rc==0 ){
+    db = tdb_lsm(pDb);
+    bMultiThreaded = tdb_lsm_multithread(pDb);
+  }
 
   testWriteDatasourceRange(pControl, pData, iData, nRecOn3*3, &rc);
   testWriteDatasourceRange(pDb,      pData, iData, nRecOn3*3, &rc);
@@ -71,6 +75,7 @@ static void doDataTest4(
         nDone = 0;
         rc = lsm_work(db, 1, (1<<30), &nDone);
       }while( rc==0 && nDone>0 );
+      if( bMultiThreaded && rc==LSM_BUSY ) rc = LSM_OK;
 #if 0 
       fprintf(stderr, "lsm_work() done...\n"); fflush(stderr);
 #endif
