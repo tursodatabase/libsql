@@ -1,5 +1,5 @@
-C Initial\simplementation\sof\sa\shighly\sexperimental\sinterface\sfor\slisting\sall\nkeywords\sand\ssymbolic\snames\sfor\san\sSQLite\sdatabase\sconnection.
-D 2017-07-06T17:36:30.817
+C The\ssqlite3_namelist()\sroutine\snow\sworks\sfor\sall\sname\stypes.
+D 2017-07-06T18:25:27.748
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 4ebb1d257cac7fb1bcb4ba59278416d410ff1c4bf59447a9c37a415f3516056a
@@ -508,7 +508,7 @@ F src/test_windirent.c 17f91f5f2aa1bb7328abb49414c363b5d2a9d3ff
 F src/test_windirent.h 5d67483a55442e31e1bde0f4a230e6e932ad5906
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
-F src/tokenize.c 939ad705dcd99a934921e7467e255f46b8d8005594212fc257cde4041d1d52a8
+F src/tokenize.c 81b384fcc8ee8818313da9ce7732823b03e2f126a910fcb6bb82052600de72af
 F src/treeview.c 6cf8d7fe9e63fae57dad1bb57f6615e14eac0c527e43d868e805042cae8ed1f7
 F src/trigger.c d1cae560bfacc8bfb3a072d73658245c1714c0389097da69b4cb23877a082d7e
 F src/update.c c443935c652af9365e033f756550b5032d02e1b06eb2cb890ed7511ae0c051dc
@@ -1628,10 +1628,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c5ed5ebdf660501fde7cc8aefaaaeae2a68e5899a64ac93f26684842a235281d
-R bb0af586f209e5b11ed2ecdf0681df64
-T *branch * experimental-namelist
-T *sym-experimental-namelist *
-T -sym-trunk *
+P 04ef6783a56d87ef7ddc8c58f899d2dd3f5d9c95ac435246e92a670c1eb861e9
+R 5865202d3fcbf67976018c9d406f172d
 U drh
-Z 3279b6448dfe0804da535abc64fe9bce
+Z a63f9d43390938d12f22aba3f6bca9f3

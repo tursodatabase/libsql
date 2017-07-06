@@ -653,12 +653,76 @@ static void addName(struct NameAccum *p, const char *zName, int nName){
 char *sqlite3_namelist(sqlite3 *db, const char *zPrefix, int typeMask){
   struct NameAccum x;
   int i;
+  HashElem *j;
   x.zPrefix = zPrefix;
   x.nPrefix = sqlite3Strlen30(zPrefix);
   sqlite3StrAccumInit(&x.x, 0, 0, 0, 100000000);
   if( typeMask & SQLITE_NAMETYPE_KEYWORD ){
     for(i=0; i<ArraySize(aKWOffset); i++){
       addName(&x, zKWText + aKWOffset[i], aKWLen[i]);
+    }
+  }
+  if( typeMask & SQLITE_NAMETYPE_FUNCTION ){
+    for(i=0; i<SQLITE_FUNC_HASH_SZ; i++){
+      FuncDef *p;
+      for(p=sqlite3BuiltinFunctions.a[i]; p; p=p->u.pHash){
+        addName(&x, p->zName, -1);
+      }
+    }
+    for(j=sqliteHashFirst(&db->aFunc); j; j=sqliteHashNext(j)){
+      FuncDef *p = (FuncDef*)sqliteHashData(j);
+      addName(&x, p->zName, -1);
+    }
+  }
+  if( typeMask & SQLITE_NAMETYPE_COLLATION ){
+    for(j=sqliteHashFirst(&db->aCollSeq); j; j=sqliteHashNext(j)){
+      CollSeq *p = (CollSeq*)sqliteHashData(j);
+      addName(&x, p->zName, -1);
+    }
+  }
+  if( typeMask & SQLITE_NAMETYPE_MODULE ){
+    for(j=sqliteHashFirst(&db->aModule); j; j=sqliteHashNext(j)){
+      Module *p = (Module*)sqliteHashData(j);
+      addName(&x, p->zName, -1);
+    }
+  }
+  if( typeMask & (SQLITE_NAMETYPE_SCHEMA|
+                  SQLITE_NAMETYPE_TABLE|
+                  SQLITE_NAMETYPE_INDEX|
+                  SQLITE_NAMETYPE_TRIGGER|
+                  SQLITE_NAMETYPE_COLUMN) ){
+    int iDb;
+    for(iDb=0; iDb<db->nDb; iDb++){
+      Db *pDb = &db->aDb[iDb];
+      if( typeMask & SQLITE_NAMETYPE_SCHEMA ){
+         addName(&x, pDb->zDbSName, -1);
+      }
+      if( typeMask & (SQLITE_NAMETYPE_TABLE|SQLITE_NAMETYPE_COLUMN) ){
+        for(j=sqliteHashFirst(&pDb->pSchema->tblHash); j; j=sqliteHashNext(j)){
+          Table *p = (Table*)sqliteHashData(j);
+          if( typeMask & SQLITE_NAMETYPE_TABLE ){
+            addName(&x, p->zName, -1);
+          }
+          if( typeMask & SQLITE_NAMETYPE_COLUMN ){
+            int k;
+            for(k=0; k<p->nCol; k++){
+              addName(&x, p->aCol[k].zName, -1);
+            }
+          }
+        }
+      }
+      if( typeMask & SQLITE_NAMETYPE_INDEX ){
+        for(j=sqliteHashFirst(&pDb->pSchema->idxHash); j; j=sqliteHashNext(j)){
+          Index *p = (Index*)sqliteHashData(j);
+          addName(&x, p->zName, -1);
+        }
+      }
+      if( typeMask & SQLITE_NAMETYPE_TRIGGER ){
+        for(j=sqliteHashFirst(&pDb->pSchema->trigHash); j; j=sqliteHashNext(j)){
+          Trigger *p = (Trigger*)sqliteHashData(j);
+          addName(&x, p->zName, -1);
+        }
+      }
     }
   }
   return sqlite3StrAccumFinish(&x.x);
