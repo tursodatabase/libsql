@@ -1,5 +1,5 @@
-C The\ssqlite3_namelist()\sroutine\snow\sworks\sfor\sall\sname\stypes.
-D 2017-07-06T18:25:27.748
+C Change\sthe\ssqlite3_namelist()\sinterface\sto\sreturn\sa\spointer\sto\san\sarray\sof\npointers\sto\sstrings,\sand\sto\savoid\sduplicates.
+D 2017-07-06T18:52:36.337
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 4ebb1d257cac7fb1bcb4ba59278416d410ff1c4bf59447a9c37a415f3516056a
@@ -407,7 +407,7 @@ F src/fkey.c 5ff2c895fe087756d8085dc1a9bc229b5670e2a65c3929dd87c71e43649af333
 F src/func.c 7647140a8624c66cc6e34bdf8005a92390253d6272e87c7901dc8065b563d435
 F src/global.c 8a6ab6b4d91effb96ffa81b39f0d70c862abca157f8aaa194600a4a8b7923344
 F src/hash.c a12580e143f10301ed5166ea4964ae2853d3905a511d4e0c44497245c7ce1f7a
-F src/hash.h ab34c5c54a9e9de2e790b24349ba5aab3dbb4fd4
+F src/hash.h f650e8a7d2cc7585cb741246188ca5c96ed6b72aa1df4ede80f094ea6f2d7eee
 F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c bb70abf32c7c926745eb550938db9132309584a667a44c2db0e5fa3207600391
@@ -450,14 +450,14 @@ F src/resolve.c d1e69759e7a79c156c692793f5d16f82f9a60ce5e82efd95e4374b2423034946
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c c9f7b7196e196e93979665680d055a789938b8e025556097bf484b184c0dd576
 F src/shell.c a2b148e4ca8eb81b96e1050207c83d4a16ea6bf9182374faee4dd2a43628c291
-F src/sqlite.h.in 35afb0f728107946d24cd19079893b6abdc50c66e2776f6a7e1b8a740fb1517a
+F src/sqlite.h.in 51170f66b6fe5ab8d74caf40a790ea738c34ec0ffc58fca49e00ecf3b070976c
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 58fd0676d3111d02e62e5a35992a7d3da5d3f88753acc174f2d37b774fbbdd28
 F src/sqliteInt.h 7a7cd6f682471cce4afe64216f71fd64c622712aeb9d947c33c38337a7cf19a9
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
-F src/tclsqlite.c c18cf90f93f5ba6d2f9ed90d072bf25b973f490e1c16b3f79d9d6f2db00aa80e
+F src/tclsqlite.c c2390f9f84b036b1a8fbbec84eac924f4094bbf055531e878cd0a987d5464754
 F src/test1.c 1c0726cdf7389ed053a9b9aa0dc3c63f3b9bbc607a25decae6549682008510b3
 F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
 F src/test3.c b8434949dfb8aff8dfa082c8b592109e77844c2135ed3c492113839b6956255b
@@ -508,7 +508,7 @@ F src/test_windirent.c 17f91f5f2aa1bb7328abb49414c363b5d2a9d3ff
 F src/test_windirent.h 5d67483a55442e31e1bde0f4a230e6e932ad5906
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
-F src/tokenize.c 81b384fcc8ee8818313da9ce7732823b03e2f126a910fcb6bb82052600de72af
+F src/tokenize.c 3ab044b75a06e2992dcca05f4292ce552eb6c1fc277d856e4508e81b1250ce36
 F src/treeview.c 6cf8d7fe9e63fae57dad1bb57f6615e14eac0c527e43d868e805042cae8ed1f7
 F src/trigger.c d1cae560bfacc8bfb3a072d73658245c1714c0389097da69b4cb23877a082d7e
 F src/update.c c443935c652af9365e033f756550b5032d02e1b06eb2cb890ed7511ae0c051dc
@@ -1628,7 +1628,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 04ef6783a56d87ef7ddc8c58f899d2dd3f5d9c95ac435246e92a670c1eb861e9
-R 5865202d3fcbf67976018c9d406f172d
+P e41d62175b65428567a05130725ad0547ea3e8095cbad4f71948d2d2d9697a0e
+R 64f273e58e69154759e9cc87fb4f8b04
 U drh
-Z a63f9d43390938d12f22aba3f6bca9f3
+Z 7d8fd28d29c72acf900177b93faef8d9

@@ -2670,22 +2670,23 @@ static int SQLITE_TCLAPI DbObjCmd(
   case DB_NAMELIST: {
     const char *zPrefix;
     int mask;
-    char *zList;
+    char **azList;
+    int nList, i;
     if( objc!=4 ){
       Tcl_WrongNumArgs(interp, 2, objv, "PREFIX MASK");
       return TCL_ERROR;
     }
     zPrefix = Tcl_GetString(objv[2]);
     if( Tcl_GetIntFromObj(interp, objv[3], &mask) ) return TCL_ERROR;
-    zList = sqlite3_namelist(pDb->db, zPrefix, mask);
-    if( zList ){
-      Tcl_Obj *pList = Tcl_NewObj();
-      int i, n;
-      for(i=0; zList[i]; i += n+1){
-        n = (int)strlen(&zList[i]);
-        Tcl_ListObjAppendElement(interp, pList, Tcl_NewStringObj(&zList[i],-1));
+    azList = sqlite3_namelist(pDb->db, zPrefix, mask, &nList);
+    if( azList ){
+      Tcl_Obj *pList = Tcl_NewListObj(nList, 0);
+      for(i=0; azList[i]; i++){
+        Tcl_ListObjAppendElement(interp, pList,
+                                 Tcl_NewStringObj(azList[i],-1));
       }
-      sqlite3_free(zList);
+      assert( i==nList );
+      sqlite3_free(azList);
       Tcl_SetObjResult(interp, pList);
     }
     break;

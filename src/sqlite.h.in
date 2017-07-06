@@ -8472,26 +8472,26 @@ int sqlite3_preupdate_new(sqlite3 *, int, sqlite3_value **);
 /*
 ** CAPI3REF: List Of Symbolic Names
 **
-** ^The sqlite3_namelist(D,P,F) interface returns a list of symbolic names
+** ^The sqlite3_namelist(D,P,F,N) interface returns a list of symbolic names
 ** and keywords that might appear in valid SQL statements for [connection]
 ** D and that all begin with the prefix P.  ^The F parameter is a bitmask
 ** that determines the kinds of symbolic names and keywords that are found
 ** in the list.  ^Matching against the prefix P is performed using
 ** [sqlite3_strnicmp()] and is thus case insensitive for ASCII characters.
+** ^If the pointer N is not NULL, then the number of matching names is
+** stored in *N.
 **
 ** ^The value returned by sqlite3_namelist() is stored in memory obtained
 ** from [sqlite3_malloc()] and must be released by the caller using
 ** [sqlite3_free()].  ^The sqlite3_namelist() interface returns NULL if a
 ** memory allocation error occurs.
 **
-** ^Elements of the list are in no particular order and may include duplicates.
-** ^Each element is separated from the next by a single 0x00 byte.  ^The list
-** is terminated by a single zero-length entry.
+** ^Elements of the list are unique but are in no particular order.
 **
 ** This interface is intended to facilitate tab-completion for interactive
 ** interfaces for SQLite.
 */
-char *sqlite3_namelist(sqlite3 *db, const char *zPrefix, int typeMask);
+char **sqlite3_namelist(sqlite3 *db, const char *zPrefix, int typeMask, int*);
 
 /*
 ** CAPI3REF: Symbolic Name Typemask Values

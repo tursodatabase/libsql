@@ -619,7 +619,7 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
 ** of names for the sqlite3_namelist() interface
 */
 struct NameAccum {
-  StrAccum x;              /* Name list string stored here */
+  Hash x;                  /* Hash table of all names */
   const char *zPrefix;     /* All names must start with this prefix */
   int nPrefix;             /* Size of the prefix in bytes */
 };
@@ -630,11 +630,14 @@ struct NameAccum {
 ** of the name in bytes, or -1 if zName is zero-terminated.
 */
 static void addName(struct NameAccum *p, const char *zName, int nName){
+  char *zCopy;
+  char *zOld;
   if( nName<0 ) nName = sqlite3Strlen30(zName);
   if( nName<p->nPrefix ) return;
   if( sqlite3StrNICmp(p->zPrefix, zName, p->nPrefix)!=0 ) return;
-  sqlite3StrAccumAppend(&p->x, zName, nName);
-  sqlite3StrAccumAppend(&p->x, "", 1);
+  zCopy = sqlite3_mprintf("%.*s", nName, zName);
+  zOld = sqlite3HashInsert(&p->x, zCopy, zCopy);
+  sqlite3_free(zOld);  
 }
 
 /*
@@ -650,13 +653,20 @@ static void addName(struct NameAccum *p, const char *zName, int nName){
 ** Each word is separated from the next by a single 0x00 byte.  The list
 ** is terminated by two 0x00 bytes in a row.
 */
-char *sqlite3_namelist(sqlite3 *db, const char *zPrefix, int typeMask){
+char **sqlite3_namelist(
+  sqlite3 *db,             /* Database from which to extract names */
+  const char *zPrefix,     /* Only extract names matching this prefix */
+  int typeMask,            /* Mask of the types of names to extract */
+  int *pCount              /* Write the number of names here */
+){
   struct NameAccum x;
-  int i;
+  int i, n, nEntry;
   HashElem *j;
+  char **azAns;
+  char *zFree;
   x.zPrefix = zPrefix;
   x.nPrefix = sqlite3Strlen30(zPrefix);
-  sqlite3StrAccumInit(&x.x, 0, 0, 0, 100000000);
+  sqlite3HashInit(&x.x);
   if( typeMask & SQLITE_NAMETYPE_KEYWORD ){
     for(i=0; i<ArraySize(aKWOffset); i++){
       addName(&x, zKWText + aKWOffset[i], aKWLen[i]);
@@ -724,6 +734,32 @@ char *sqlite3_namelist(sqlite3 *db, const char *zPrefix, int typeMask){
         }
       }
     }
+    if( typeMask & SQLITE_NAMETYPE_COLUMN ){
+      addName(&x, "rowid", -1);
+    }
   }
-  return sqlite3StrAccumFinish(&x.x);
+  nEntry = sqliteHashCount(&x.x);
+  if( pCount ) *pCount = nEntry;
+  n = 0;
+  for(j=sqliteHashFirst(&x.x); j; j=sqliteHashNext(j)){
+    n += sqlite3Strlen30((const char*)sqliteHashData(j));
+  }
+  zFree = sqlite3_malloc( (nEntry+1)*sizeof(char*) + n + nEntry );
+  if( zFree ){
+    memset(zFree, 0, (nEntry+1)*sizeof(char*) + n + nEntry );
+    azAns = (char**)zFree;
+    zFree += (nEntry+1)*sizeof(char*);
+    for(i=0, j=sqliteHashFirst(&x.x); j; i++, j=sqliteHashNext(j)){
+      const char *zName = (const char*)sqliteHashData(j);
+      azAns[i] = zFree;
+      n = sqlite3Strlen30(zName);
+      memcpy(zFree, zName, n+1);
+      zFree += n+1;
+    }
+  }
+  for(j=sqliteHashFirst(&x.x); j; j=sqliteHashNext(j)){
+    sqlite3_free(sqliteHashData(j));
+  }
+  sqlite3HashClear(&x.x);
+  return azAns;
 }
