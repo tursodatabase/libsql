@@ -3599,7 +3599,34 @@ static void open_db(ShellState *p, int keepAlive){
   }
 }
 
-#ifdef HAVE_LINENOISE
+#if HAVE_READLINE || HAVE_EDITLINE
+/*
+** Readline completion callbacks
+*/
+static char *readline_completion_generator(const char *text, int state){
+  static char **azCompletions = 0;
+  static int iCompletion = 0;
+  char *zRet;
+  if( state==0 ){
+    sqlite3_free(azCompletions);
+    azCompletions = sqlite3_namelist(globalDb, text, -1, 0);
+    iCompletion = 0;
+  }
+  zRet = azCompletions[iCompletion++];
+  if( zRet==0 ){
+    sqlite3_free(azCompletions);
+    azCompletions = 0;
+  }else{
+    zRet = strdup(zRet);
+  }
+  return zRet;
+}
+static char **readline_completion(const char *zText, int iStart, int iEnd){
+  rl_attempted_completion_over = 1;
+  return rl_completion_matches(zText, readline_completion_generator);
+}
+
+#elif HAVE_LINENOISE
 /*
 ** Linenoise completion callback
 */
@@ -7665,7 +7692,9 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
         }
       }
       if( zHistory ){ shell_read_history(zHistory); }
-#ifdef HAVE_LINENOISE
+#if HAVE_READLINE || HAVE_EDITLINE
+      rl_attempted_completion_function = readline_completion;
+#elif HAVE_LINENOISE
       linenoiseSetCompletionCallback(linenoise_completion);
 #endif
       rc = process_input(&data, 0);
