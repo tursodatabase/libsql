@@ -3609,6 +3609,7 @@ static char *readline_completion_generator(const char *text, int state){
   char *zRet;
   if( state==0 ){
     sqlite3_free(azCompletions);
+    sqlite3_exec(globalDb, "PRAGMA page_count", 0, 0, 0); /* Load the schema */
     azCompletions = sqlite3_namelist(globalDb, text, -1, 0);
     iCompletion = 0;
   }
@@ -3640,6 +3641,7 @@ static void linenoise_completion(const char *zLine, linenoiseCompletions *lc){
   for(i=nLine-1; i>=0 && (isalnum(zLine[i]) || zLine[i]=='_'); i--){}
   if( i==nLine-1 ) return;
   iStart = i+1;
+  sqlite3_exec(globalDb, "PRAGMA page_count", 0, 0, 0); /* Load the schema */
   az = sqlite3_namelist(globalDb, &zLine[iStart], -1, &n);
   if( n>0 ){
     qsort(az, n, sizeof(az[0]),(int(*)(const void*,const void*))sqlite3_stricmp);
