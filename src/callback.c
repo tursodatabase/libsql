@@ -121,7 +121,7 @@ CollSeq *sqlite3GetCollSeq(
 ** from the main database is substituted, if one is available.
 */
 int sqlite3CheckCollSeq(Parse *pParse, CollSeq *pColl){
-  if( pColl ){
+  if( pColl && pColl->xCmp==0 ){
     const char *zName = pColl->zName;
     sqlite3 *db = pParse->db;
     CollSeq *p = sqlite3GetCollSeq(pParse, ENC(db), pColl, zName);
