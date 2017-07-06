@@ -1,5 +1,5 @@
-C Small\ssize\sreduction\sin\sfindCollSeqEntry().
-D 2017-07-06T03:06:20.347
+C Avoid\sunnecessary\supper-to-lower\scase\sconversion\sfor\sfunction\snames\swhen\nregistering\sthe\sbuilt-in\sfunctions.
+D 2017-07-06T13:23:26.761
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 4ebb1d257cac7fb1bcb4ba59278416d410ff1c4bf59447a9c37a415f3516056a
@@ -395,7 +395,7 @@ F src/btree.c 00579ff9c2831d6f98cc993f8f2a34c0ff996e89b3cd2f27928f75796bc3a58a
 F src/btree.h 3edc5329bc59534d2d15b4f069a9f54b779a7e51289e98fa481ae3c0e526a5ca
 F src/btreeInt.h a392d353104b4add58b4a59cb185f5d5693dde832c565b77d8d4c343ed98f610
 F src/build.c 74108007d286232fb4290464ee5452fa860c26215f8caa0e6c7cbf69a6fafe8f
-F src/callback.c 846e4b0ba5d5480135d5a68bfeec8039ba3c1f909732deb1277bbd59b6dd2614
+F src/callback.c 8e14b60d1ed1c87c02cb5f121ecda99224f2aea6524a77ee6f72c9b5c7110f84
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 928954802b1397d9fb1378c7eb702c94b4735bbab1d5793e21b6a77734f56a1b
 F src/date.c cc42a41c7422389860d40419a5e3bce5eaf6e7835c3ba2677751dc653550a5c7
@@ -1628,7 +1628,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 503ba172e4c32e288abf006fc5cb53fd2b0313c4ee4c526c2d9c4c21b7178f2d
-R dc18259234fe9a82f1b59607b548e9cc
+P 55ecd30304517acd23f89b3450fd6a5e18ac2f79aa24a4ff693f8d71a49f7837
+R f2caa248598afe69c11c79f692296985
 U drh
-Z 22e54b9b3cff037761f13c1ae71d4b81
+Z 44f64d9a1e77f2b97c5ca936f62c9641

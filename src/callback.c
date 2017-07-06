@@ -307,7 +307,8 @@ void sqlite3InsertBuiltinFuncs(
     FuncDef *pOther;
     const char *zName = aDef[i].zName;
     int nName = sqlite3Strlen30(zName);
-    int h = (sqlite3UpperToLower[(u8)zName[0]] + nName) % SQLITE_FUNC_HASH_SZ;
+    int h = (zName[0] + nName) % SQLITE_FUNC_HASH_SZ;
+    assert( zName[0]>='a' && zName[0]<='z' );
     pOther = functionSearch(h, zName);
     if( pOther ){
       assert( pOther!=&aDef[i] && pOther->pNext!=&aDef[i] );
