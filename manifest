@@ -1,5 +1,5 @@
-C Change\sthe\ssqlite3_namelist()\sinterface\sto\sreturn\sa\spointer\sto\san\sarray\sof\npointers\sto\sstrings,\sand\sto\savoid\sduplicates.
-D 2017-07-06T18:52:36.337
+C Use\sthe\ssqlite3_namelist()\sinterface\sto\simplement\ssimple\stab-completion\susing\nlinenoise.
+D 2017-07-06T19:26:23.558
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 4ebb1d257cac7fb1bcb4ba59278416d410ff1c4bf59447a9c37a415f3516056a
@@ -372,7 +372,7 @@ F ext/userauth/userauth.c 3410be31283abba70255d71fd24734e017a4497f
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk b57f019e6cd9d8770b019726c544098fe38f3b5db997d2af739352bbd7c7a14c
+F main.mk 0288de0e6b44c2fa709b354d4fab5bce423259cc1653c35305c6e50d23ec561a
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -449,7 +449,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c d1e69759e7a79c156c692793f5d16f82f9a60ce5e82efd95e4374b2423034946
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c c9f7b7196e196e93979665680d055a789938b8e025556097bf484b184c0dd576
-F src/shell.c a2b148e4ca8eb81b96e1050207c83d4a16ea6bf9182374faee4dd2a43628c291
+F src/shell.c 5f5dc595336874ebbb9a80f90d977665268e2b8daaaeaa3e4e76455e4234e82a
 F src/sqlite.h.in 51170f66b6fe5ab8d74caf40a790ea738c34ec0ffc58fca49e00ecf3b070976c
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 58fd0676d3111d02e62e5a35992a7d3da5d3f88753acc174f2d37b774fbbdd28
@@ -508,7 +508,7 @@ F src/test_windirent.c 17f91f5f2aa1bb7328abb49414c363b5d2a9d3ff
 F src/test_windirent.h 5d67483a55442e31e1bde0f4a230e6e932ad5906
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
-F src/tokenize.c 3ab044b75a06e2992dcca05f4292ce552eb6c1fc277d856e4508e81b1250ce36
+F src/tokenize.c a20086f022fa57fee62c724af2dfeb2e768829d0cb4a1252ee68f10d3501486c
 F src/treeview.c 6cf8d7fe9e63fae57dad1bb57f6615e14eac0c527e43d868e805042cae8ed1f7
 F src/trigger.c d1cae560bfacc8bfb3a072d73658245c1714c0389097da69b4cb23877a082d7e
 F src/update.c c443935c652af9365e033f756550b5032d02e1b06eb2cb890ed7511ae0c051dc
@@ -1628,7 +1628,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e41d62175b65428567a05130725ad0547ea3e8095cbad4f71948d2d2d9697a0e
-R 64f273e58e69154759e9cc87fb4f8b04
+P 702911104424f03f6ebe3beb9090f73b52abe2e655537b8cd8a32e799718ed14
+R 136b08bfcc403c1ab529d5b433d85a10
 U drh
-Z 7d8fd28d29c72acf900177b93faef8d9
+Z 6a3ca52fda5279d8cf1bff9e360e9d61

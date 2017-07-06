@@ -3599,6 +3599,35 @@ static void open_db(ShellState *p, int keepAlive){
   }
 }
 
+#ifdef HAVE_LINENOISE
+/*
+** Linenoise completion callback
+*/
+static void linenoise_completion(const char *zLine, linenoiseCompletions *lc){
+  int nLine = (int)strlen(zLine);
+  int i, n, iStart;
+  char **az;
+  char zBuf[1000];
+  if( nLine>sizeof(zBuf)-30 ) return;
+  if( zLine[0]=='.' ) return;
+  for(i=nLine-1; i>=0 && (isalnum(zLine[i]) || zLine[i]=='_'); i--){}
+  if( i==nLine-1 ) return;
+  iStart = i+1;
+  az = sqlite3_namelist(globalDb, &zLine[iStart], -1, &n);
+  if( n>0 ){
+    qsort(az, n, sizeof(az[0]),(int(*)(const void*,const void*))sqlite3_stricmp);
+    memcpy(zBuf, zLine, iStart);
+    for(i=0; az[i]; i++){
+      n = (int)strlen(az[i]);
+      if( iStart+n+1 >= sizeof(zBuf) ) continue;
+      memcpy(zBuf+iStart, az[i], n+1);
+      linenoiseAddCompletion(lc, zBuf);
+    }
+  }
+  sqlite3_free(az);
+}
+#endif
+
 /*
 ** Do C-language style dequoting.
 **
@@ -7636,6 +7665,9 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
         }
       }
       if( zHistory ){ shell_read_history(zHistory); }
+#ifdef HAVE_LINENOISE
+      linenoiseSetCompletionCallback(linenoise_completion);
+#endif
       rc = process_input(&data, 0);
       if( zHistory ){
         shell_stifle_history(100);

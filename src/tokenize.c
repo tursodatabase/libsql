@@ -745,9 +745,9 @@ char **sqlite3_namelist(
     n += sqlite3Strlen30((const char*)sqliteHashData(j));
   }
   zFree = sqlite3_malloc( (nEntry+1)*sizeof(char*) + n + nEntry );
+  azAns = (char**)zFree;
   if( zFree ){
     memset(zFree, 0, (nEntry+1)*sizeof(char*) + n + nEntry );
-    azAns = (char**)zFree;
     zFree += (nEntry+1)*sizeof(char*);
     for(i=0, j=sqliteHashFirst(&x.x); j; i++, j=sqliteHashNext(j)){
       const char *zName = (const char*)sqliteHashData(j);
