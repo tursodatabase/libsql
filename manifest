@@ -1,5 +1,5 @@
-C More\scompact\simplementation\sof\sthe\stypeof()\sSQL\sfunction.
-D 2017-07-06T13:51:50.091
+C Change\sthe\s(machine-generated)\skeywordhash.h\sfile\sto\sincrease\sthe\sscope\sof\sthe\ntables\sused\sfor\skeyword\smatching,\sso\sthat\sthe\stables\sare\saccessible\sto\nfunctions\sother\sthen\skeywordCode().
+D 2017-07-06T16:33:14.765
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 4ebb1d257cac7fb1bcb4ba59278416d410ff1c4bf59447a9c37a415f3516056a
@@ -1561,7 +1561,7 @@ F tool/logest.c 11346aa019e2e77a00902aa7d0cabd27bd2e8cca
 F tool/max-limits.c cbb635fbb37ae4d05f240bfb5b5270bb63c54439
 F tool/mkautoconfamal.sh e855df211ecbcc7131dee817110ff386cfb112f7
 F tool/mkctimec.tcl dd183b73ae1c28249669741c250525f0407e579a70482371668fd5f130d9feb3
-F tool/mkkeywordhash.c f7f3b342211ac6a14258b9726d5b97cf4f548f22
+F tool/mkkeywordhash.c 2e852ac0dfdc5af18886dc1ce7e9676d11714ae3df0a282dc7d90b3a0fe2033c
 F tool/mkmsvcmin.tcl cbd93f1cfa3a0a9ae56fc958510aa3fc3ac65e29cb111716199e3d0e66eefaa4
 F tool/mkopcodec.tcl d1b6362bd3aa80d5520d4d6f3765badf01f6c43c
 F tool/mkopcodeh.tcl a01d2c1d8a6205b03fc635adf3735b4c523befd3
@@ -1628,7 +1628,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 06269257647db51fbc9f8cda88abac5db28b6f917a509768af7686dfa2b94511
-R 8d88458ca1178062a686c7622fab862c
+P efb4aab0caa4145732a5438cc2a193bc12c455b4007220564d240e75900ea8ad
+R 77ecc187246c1c337a58790c9818d2e8
 U drh
-Z 16d02781d00f9c4bbd9708369c77eae3
+Z a448086e00aa693e2477a7bd0d12a0df
