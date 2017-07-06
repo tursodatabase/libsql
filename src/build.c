@@ -3772,12 +3772,12 @@ SrcList *sqlite3SrcListAppend(
     pDatabase = 0;
   }
   if( pDatabase ){
-    Token *pTemp = pDatabase;
-    pDatabase = pTable;
-    pTable = pTemp;
+    pItem->zName = sqlite3NameFromToken(db, pDatabase);
+    pItem->zDatabase = sqlite3NameFromToken(db, pTable);
+  }else{
+    pItem->zName = sqlite3NameFromToken(db, pTable);
+    pItem->zDatabase = 0;
   }
-  pItem->zName = sqlite3NameFromToken(db, pTable);
-  pItem->zDatabase = sqlite3NameFromToken(db, pDatabase);
   return pList;
 }
 
