@@ -8470,6 +8470,48 @@ int sqlite3_preupdate_new(sqlite3 *, int, sqlite3_value **);
 #endif
 
 /*
+** CAPI3REF: List Of Symbolic Names
+**
+** ^The sqlite3_namelist(D,P,F) interface returns a list of symbolic names
+** and keywords that might appear in valid SQL statements for [connection]
+** D and that all begin with the prefix P.  ^The F parameter is a bitmask
+** that determines the kinds of symbolic names and keywords that are found
+** in the list.  ^Matching against the prefix P is performed using
+** [sqlite3_strnicmp()] and is thus case insensitive for ASCII characters.
+**
+** ^The value returned by sqlite3_namelist() is stored in memory obtained
+** from [sqlite3_malloc()] and must be released by the caller using
+** [sqlite3_free()].  ^The sqlite3_namelist() interface returns NULL if a
+** memory allocation error occurs.
+**
+** ^Elements of the list are in no particular order and may include duplicates.
+** ^Each element is separated from the next by a single 0x00 byte.  ^The list
+** is terminated by a single zero-length entry.
+**
+** This interface is intended to facilitate tab-completion for interactive
+** interfaces for SQLite.
+*/
+char *sqlite3_namelist(sqlite3 *db, const char *zPrefix, int typeMask);
+
+/*
+** CAPI3REF: Symbolic Name Typemask Values
+**
+** ^These bitmask values are used to determine the kinds of symbolic names
+** and keywords that are returned by [sqlite3_namelist()].  The third
+** parameter to [sqlite3_namelist()] should be an OR-ed combination of
+** one or more of the following value.
+*/
+#define SQLITE_NAMETYPE_KEYWORD    0x0001
+#define SQLITE_NAMETYPE_SCHEMA     0x0002
+#define SQLITE_NAMETYPE_TABLE      0x0004
+#define SQLITE_NAMETYPE_INDEX      0x0008
+#define SQLITE_NAMETYPE_TRIGGER    0x0010
+#define SQLITE_NAMETYPE_FUNCTION   0x0020
+#define SQLITE_NAMETYPE_MODULE     0x0040
+#define SQLITE_NAMETYPE_COLLATION  0x0080
+#define SQLITE_NAMETYPE_COLUMN     0x0100
+
+/*
 ** CAPI3REF: Low-level system error code
 **
 ** ^Attempt to return the underlying operating system error code or error

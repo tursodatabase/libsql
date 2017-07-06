@@ -614,3 +614,52 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   assert( nErr==0 || pParse->rc!=SQLITE_OK );
   return nErr;
 }
+
+/* An instance of the following object is used to accumulate a list
+** of names for the sqlite3_namelist() interface
+*/
+struct NameAccum {
+  StrAccum x;              /* Name list string stored here */
+  const char *zPrefix;     /* All names must start with this prefix */
+  int nPrefix;             /* Size of the prefix in bytes */
+};
+
+/*
+** Examine zName to see if it belongs on the list (if it has a matching
+** prefix) and add it to the list if it belongs.  nName is the length
+** of the name in bytes, or -1 if zName is zero-terminated.
+*/
+static void addName(struct NameAccum *p, const char *zName, int nName){
+  if( nName<0 ) nName = sqlite3Strlen30(zName);
+  if( nName<p->nPrefix ) return;
+  if( sqlite3StrNICmp(p->zPrefix, zName, p->nPrefix)!=0 ) return;
+  sqlite3StrAccumAppend(&p->x, zName, nName);
+  sqlite3StrAccumAppend(&p->x, "", 1);
+}
+
+/*
+** Return a list of text words or identifiers that might appear in an
+** SQL statement.  The typeMask parameter is a bitmask that determines
+** specifically what kinds of names should be returned.  All names
+** returned must begin with zPrefix.
+**
+** The returned list is from a single memory allocation.  The caller owns
+** the allocation and should release it using sqlite3_free() when it has
+** finished using the list.
+**
+** Each word is separated from the next by a single 0x00 byte.  The list
+** is terminated by two 0x00 bytes in a row.
+*/
+char *sqlite3_namelist(sqlite3 *db, const char *zPrefix, int typeMask){
+  struct NameAccum x;
+  int i;
+  x.zPrefix = zPrefix;
+  x.nPrefix = sqlite3Strlen30(zPrefix);
+  sqlite3StrAccumInit(&x.x, 0, 0, 0, 100000000);
+  if( typeMask & SQLITE_NAMETYPE_KEYWORD ){
+    for(i=0; i<ArraySize(aKWOffset); i++){
+      addName(&x, zKWText + aKWOffset[i], aKWLen[i]);
+    }
+  }
+  return sqlite3StrAccumFinish(&x.x);
+}

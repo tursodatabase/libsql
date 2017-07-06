@@ -1850,14 +1850,13 @@ static int SQLITE_TCLAPI DbObjCmd(
     "complete",           "copy",              "enable_load_extension",
     "errorcode",          "eval",              "exists",
     "function",           "incrblob",          "interrupt",
-    "last_insert_rowid",  "nullvalue",         "onecolumn",
-    "preupdate",          "profile",           "progress",
-    "rekey",              "restore",           "rollback_hook",
-    "status",             "timeout",           "total_changes",
-    "trace",              "trace_v2",          "transaction",
-    "unlock_notify",      "update_hook",       "version",
-    "wal_hook",
-    0
+    "last_insert_rowid",  "namelist",          "nullvalue",
+    "onecolumn",          "preupdate",         "profile",
+    "progress",           "rekey",             "restore",
+    "rollback_hook",      "status",            "timeout",
+    "total_changes",      "trace",             "trace_v2",
+    "transaction",        "unlock_notify",     "update_hook",
+    "version",            "wal_hook",          0
   };
   enum DB_enum {
     DB_AUTHORIZER,        DB_BACKUP,           DB_BUSY,
@@ -1866,13 +1865,13 @@ static int SQLITE_TCLAPI DbObjCmd(
     DB_COMPLETE,          DB_COPY,             DB_ENABLE_LOAD_EXTENSION,
     DB_ERRORCODE,         DB_EVAL,             DB_EXISTS,
     DB_FUNCTION,          DB_INCRBLOB,         DB_INTERRUPT,
-    DB_LAST_INSERT_ROWID, DB_NULLVALUE,        DB_ONECOLUMN,
-    DB_PREUPDATE,         DB_PROFILE,          DB_PROGRESS,
-    DB_REKEY,             DB_RESTORE,          DB_ROLLBACK_HOOK,
-    DB_STATUS,            DB_TIMEOUT,          DB_TOTAL_CHANGES,
-    DB_TRACE,             DB_TRACE_V2,         DB_TRANSACTION,
-    DB_UNLOCK_NOTIFY,     DB_UPDATE_HOOK,      DB_VERSION,
-    DB_WAL_HOOK,
+    DB_LAST_INSERT_ROWID, DB_NAMELIST,         DB_NULLVALUE,
+    DB_ONECOLUMN,         DB_PREUPDATE,        DB_PROFILE,
+    DB_PROGRESS,          DB_REKEY,            DB_RESTORE,
+    DB_ROLLBACK_HOOK,     DB_STATUS,           DB_TIMEOUT,
+    DB_TOTAL_CHANGES,     DB_TRACE,            DB_TRACE_V2,
+    DB_TRANSACTION,       DB_UNLOCK_NOTIFY,    DB_UPDATE_HOOK,
+    DB_VERSION,           DB_WAL_HOOK,         
   };
   /* don't leave trailing commas on DB_enum, it confuses the AIX xlc compiler */
 
@@ -2662,6 +2661,33 @@ static int SQLITE_TCLAPI DbObjCmd(
   */
   case DB_INTERRUPT: {
     sqlite3_interrupt(pDb->db);
+    break;
+  }
+
+  /*
+  **     $db namelist PREFIX MASK
+  */
+  case DB_NAMELIST: {
+    const char *zPrefix;
+    int mask;
+    char *zList;
+    if( objc!=4 ){
+      Tcl_WrongNumArgs(interp, 2, objv, "PREFIX MASK");
+      return TCL_ERROR;
+    }
+    zPrefix = Tcl_GetString(objv[2]);
+    if( Tcl_GetIntFromObj(interp, objv[3], &mask) ) return TCL_ERROR;
+    zList = sqlite3_namelist(pDb->db, zPrefix, mask);
+    if( zList ){
+      Tcl_Obj *pList = Tcl_NewObj();
+      int i, n;
+      for(i=0; zList[i]; i += n+1){
+        n = (int)strlen(&zList[i]);
+        Tcl_ListObjAppendElement(interp, pList, Tcl_NewStringObj(&zList[i],-1));
+      }
+      sqlite3_free(zList);
+      Tcl_SetObjResult(interp, pList);
+    }
     break;
   }
 
