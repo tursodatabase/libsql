@@ -687,10 +687,6 @@ static int lsmWin32OsShmMap(lsm_file *pFile, int iChunk, int sz, void **ppShm){
     }
     memcpy(ahNew, pWin32File->ahShm, pWin32File->nShm);
     memcpy(apNew, pWin32File->apShm, pWin32File->nShm);
-    for(i=pWin32File->nShm; i<nNew; i++){
-      ahNew[i] = NULL;
-      apNew[i] = NULL;
-    }
     lsmFree(pWin32File->pEnv, pWin32File->ahShm);
     pWin32File->ahShm = ahNew;
     lsmFree(pWin32File->pEnv, pWin32File->apShm);
