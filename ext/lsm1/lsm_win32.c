@@ -685,14 +685,14 @@ static int lsmWin32OsShmMap(lsm_file *pFile, int iChunk, int sz, void **ppShm){
       }
     }
 
-    ahNew = (LPHANDLE)lsmMallocZero(pWin32File->pEnv, sizeof(LPHANDLE) * nNew);
+    ahNew = (LPHANDLE)lsmMallocZero(pWin32File->pEnv, sizeof(HANDLE) * nNew);
     if( !ahNew ) return LSM_NOMEM_BKPT;
     apNew = (LPVOID *)lsmMallocZero(pWin32File->pEnv, sizeof(LPVOID) * nNew);
     if( !apNew ){
       lsmFree(pWin32File->pEnv, ahNew);
       return LSM_NOMEM_BKPT;
     }
-    memcpy(ahNew, pWin32File->ahShm, sizeof(LPHANDLE) * pWin32File->nShm);
+    memcpy(ahNew, pWin32File->ahShm, sizeof(HANDLE) * pWin32File->nShm);
     memcpy(apNew, pWin32File->apShm, sizeof(LPVOID) * pWin32File->nShm);
     lsmFree(pWin32File->pEnv, pWin32File->ahShm);
     pWin32File->ahShm = ahNew;
