@@ -43,6 +43,10 @@ LSMTESTSRC = $(LSMDIR)\lsm-test\lsmtest1.c $(LSMDIR)\lsm-test\lsmtest2.c     \
 
 LSMOPTS = -DLSM_MUTEX_WIN32=1 -I$(LSMDIR)
 
+!IF $(MEMDEBUG)!=0
+LSMOPTS = $(LSMOPTS) -DLSM_DEBUG_MEM=1
+!ENDIF
+
 lsm_ckpt.lo:	$(LSMDIR)\lsm_ckpt.c $(LSMHDR) $(SQLITE3H)
 	$(LTCOMPILE) $(LSMOPTS) -c $(LSMDIR)\lsm_ckpt.c
 

@@ -1,5 +1,5 @@
-C Remove\sa\sblock\sfrom\sthe\sWin32\sVFS\sfor\slsm1\sthat\sis\snow\ssuperfluous.
-D 2017-07-07T16:27:43.990
+C Add\ssupport\sfor\sLSM_DEBUG_MEM\sto\sthe\sMSVC\smakefile\sfor\slsm1.
+D 2017-07-07T16:29:37.591
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 4ebb1d257cac7fb1bcb4ba59278416d410ff1c4bf59447a9c37a415f3516056a
@@ -210,7 +210,7 @@ F ext/icu/README.txt d9fbbad0c2f647c3fdf715fc9fd64af53aedfc43
 F ext/icu/icu.c 84900472a088a3a172c6c079f58a1d3a1952c332
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/lsm1/Makefile a2ea4975162be8932b5efa727080f4982715d34c32035d9eb7a015ae78404981
-F ext/lsm1/Makefile.msc c8140509750fb207f0e984991bc426e91a11adb2f6434f218c52103b9d33a8e1
+F ext/lsm1/Makefile.msc e5702306af1537a0e9311cc182a89bb3a36f31c18df6416f72a13f356620068f
 F ext/lsm1/lsm-test/README 87ea529d2abe615e856d4714bfe8bb185e6c2771b8612aa6298588b7b43e6f86
 F ext/lsm1/lsm-test/lsmtest.h 346295688c4b304689950f10e4dcd4640321f3c860112b72cb0691ca075b6a71
 F ext/lsm1/lsm-test/lsmtest1.c 33158978327f800e82b6a47c09b86ace809f56a9ff10b0162273ec1186cc3153
@@ -1628,7 +1628,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 281ad505d7a112c5524ea9fb195dfc46f819a58f79f42b37b12fbfe46a089ff2 db4a41408eff450ee429b936847313c2c92ba1f5b1fcbadaacaff3c08bfdd589
-R 178147b5297cfb61b57d98e52a0b02ab
-U dan
-Z 48480afd6748424fc3b06dba5c31edd2
+P 5f726f2830dcf91f5e5c010b10761757f746d39b9dd2b8c9770452ce65bb1652
+R 10f4aefb9087225386886b178c9318d9
+U mistachkin
+Z 30c8506981cfdd14daac87f535153316
