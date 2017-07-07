@@ -951,7 +951,7 @@ static int lsmWin32OsMutexNotHeld(lsm_mutex *p){
 }
 #endif
 /*
-** End of pthreads mutex implementation.
+** End of Win32 mutex implementation.
 *************************************************************************/
 #else
 /*************************************************************************
