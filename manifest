@@ -1,8 +1,8 @@
-C Add\ssupport\sfor\sLSM_DEBUG\sto\sthe\sMSVC\smakefile\sfor\slsm1.
-D 2017-07-07T18:31:51.950
+C Enhance\sthe\sMSVC\smakefile\s'clean'\starget\sto\shandle\slsm1.
+D 2017-07-07T19:02:51.650
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 4ebb1d257cac7fb1bcb4ba59278416d410ff1c4bf59447a9c37a415f3516056a
+F Makefile.msc 20850e3e8d4d4791e0531955852d768eb06f24138214870d543abb1a47346fba
 F README.md 2b15fae33852f2f53996774c21fb41e1d94181c4401a0e43ac93e11f2cc901b9
 F VERSION 87f1498f27e398bce3da2fa8125c9879a38ed9d87e4b5fb922b351de1e25cadb
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -1628,7 +1628,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cc329eb8d65171f3f4fcb39b0e55ef85c97a77f3510cf864bbc1537f993d0074
-R e5eced2fc3e30bf98e8a717609a80548
+P 277a7fedafbe5b43d44086f3cb73e952873913bdc4b51041f45b6571b386d7d9
+R f6458ee7a870e2551c7761f29969d435
 U mistachkin
-Z 68553be5e7e0dfa7549bf5d6dc18a4bd
+Z cebc3cc5b9576984263d133291a87338
