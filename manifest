@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\sLSM_DEBUG_MEM\sto\sthe\sMSVC\smakefile\sfor\slsm1.
-D 2017-07-07T16:29:37.591
+C Improve\sclarity\sin\sthe\sWin32\sVFS\sfor\slsm1.
+D 2017-07-07T16:46:08.188
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 4ebb1d257cac7fb1bcb4ba59278416d410ff1c4bf59447a9c37a415f3516056a
@@ -250,7 +250,7 @@ F ext/lsm1/lsm_tree.c 53b657439e0fcb1117b0559ad3567ac417f81f2ed0fff9bab79948a00e
 F ext/lsm1/lsm_unix.c 57361bcf5b1a1a028f5d66571ee490e9064d2cfb145a2cc9e5ddade467bb551b
 F ext/lsm1/lsm_varint.c b19ae9bd26b5a1e8402fb8a564b25d9542338a41
 F ext/lsm1/lsm_vtab.c 812b74a9a7539e8cab49761591ffddc1b3580735fac5d638826c8d2be95ff38b
-F ext/lsm1/lsm_win32.c 9745cebaf03c6e04f0017d0dda8dc1db447a372b9ae4e32e1119ded10e1b54bc
+F ext/lsm1/lsm_win32.c 24757d71673d20634afb681f59af8da8cbe84733be82b86b133d79bd9ff335de
 F ext/misc/README.md 8e008c8d2b02e09096b31dfba033253ac27c6c06a18aa5826e299fa7601d90b2
 F ext/misc/amatch.c 6db4607cb17c54b853a2d7c7c36046d004853f65b9b733e6f019d543d5dfae87
 F ext/misc/anycollseq.c 5ffdfde9829eeac52219136ad6aa7cd9a4edb3b15f4f2532de52f4a22525eddb
@@ -1628,7 +1628,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5f726f2830dcf91f5e5c010b10761757f746d39b9dd2b8c9770452ce65bb1652
-R 10f4aefb9087225386886b178c9318d9
+P 3340de83df8c4fb19f729e6ff0838a9a03a1e701cdb40cb830e76f294198024a
+R 441b83e8fe7c6e7ee9052521ffcfa22a
 U mistachkin
-Z 30c8506981cfdd14daac87f535153316
+Z 05a5043cc6c8a10020a4334d65b17df2

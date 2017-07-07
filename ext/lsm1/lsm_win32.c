@@ -47,12 +47,12 @@ struct Win32File {
   LPVOID *apShm;                  /* Array of 32K shared memory segments */
 };
 
-static char *win32ShmFile(Win32File *p){
+static char *win32ShmFile(Win32File *pWin32File){
   char *zShm;
-  int nName = strlen(p->zName);
-  zShm = (char *)lsmMallocZero(p->pEnv, nName+4+1);
+  int nName = strlen(pWin32File->zName);
+  zShm = (char *)lsmMallocZero(pWin32File->pEnv, nName+4+1);
   if( zShm ){
-    memcpy(zShm, p->zName, nName);
+    memcpy(zShm, pWin32File->zName, nName);
     memcpy(&zShm[nName], "-shm", 5);
   }
   return zShm;
@@ -380,6 +380,18 @@ static int lsmWin32OsSectorSize(lsm_file *pFile){
   return 512;
 }
 
+static void win32Unmap(Win32File *pWin32File){
+  if( pWin32File->pMap!=NULL ){
+    UnmapViewOfFile(pWin32File->pMap);
+    pWin32File->pMap = NULL;
+    pWin32File->nMap = 0;
+  }
+  if( pWin32File->hMap!=NULL ){
+    CloseHandle(pWin32File->hMap);
+    pWin32File->hMap = NULL;
+  }
+}
+
 static int lsmWin32OsRemap(
   lsm_file *pFile,
   lsm_i64 iMin,
@@ -393,15 +405,10 @@ static int lsmWin32OsRemap(
   const int aIncrSz[] = {256*1024, 1024*1024};
   int nIncrSz = aIncrSz[iMin>(2*1024*1024)];
 
-  if( pWin32File->pMap!=NULL ){
-    UnmapViewOfFile(pWin32File->pMap);
-    *ppOut = pWin32File->pMap = NULL;
-    *pnOut = pWin32File->nMap = 0;
-  }
-  if( pWin32File->hMap!=NULL ){
-    CloseHandle(pWin32File->hMap);
-    pWin32File->hMap = NULL;
-  }
+  *ppOut = NULL;
+  *pnOut = 0;
+
+  win32Unmap(pWin32File);
   if( iMin>=0 ){
     LARGE_INTEGER fileSize;
     DWORD dwSizeHigh;
@@ -759,15 +766,7 @@ static int lsmWin32OsClose(lsm_file *pFile){
   int nRetry = 0;
   Win32File *pWin32File = (Win32File *)pFile;
   lsmWin32OsShmUnmap(pFile, 0);
-  if( pWin32File->pMap!=NULL ){
-    UnmapViewOfFile(pWin32File->pMap);
-    pWin32File->pMap = NULL;
-    pWin32File->nMap = 0;
-  }
-  if( pWin32File->hMap!=NULL ){
-    CloseHandle(pWin32File->hMap);
-    pWin32File->hMap = NULL;
-  }
+  win32Unmap(pWin32File);
   do{
     if( pWin32File->hFile==NULL ){
       rc = LSM_IOERR_BKPT;
