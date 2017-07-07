@@ -5057,7 +5057,14 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
     if( pInode->bProcessLock==0 ){
       int openFlags = O_RDWR | O_CREAT;
       int fd;                     /* File descriptor for *-shm file */
-      if( sqlite3_uri_boolean(pDbFd->zPath, "readonly_shm", 0) ){
+      if( sqlite3_uri_boolean(pDbFd->zPath, "readonly_shm", 0)
+#ifdef __APPLE__
+       /* On MacOS and iOS, avoid even trying to open a read-only SHM file
+       ** for writing, because doing so generates scary log messages */
+       || (osAccess(zShmFilename, R_OK|W_OK)!=0
+            && (errno==EPERM || errno==EACCES))
+#endif
+      ){
         openFlags = O_RDONLY;
         pShmNode->isReadonly = 1;
       }
@@ -5071,7 +5078,7 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
       ** may be also be used by a read/write database connection.  */
 #if defined(SQLITE_ENABLE_PERSIST_WAL)&&(SQLITE_ENABLE_LOCKING_STYLE \
     || defined(__APPLE__))
-      if( fd<0 && errno!=EISDIR && pShmNode->isReadonly==0 
+      if( fd<0 && (errno==EPERM || errno==EACCES) && pShmNode->isReadonly==0 
        && (pDbFd->openFlags & O_RDWR)!=O_RDWR
       ){
         fd = robust_open(zShmFilename, O_RDONLY, (sStat.st_mode&0777));
