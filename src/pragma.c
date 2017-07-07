@@ -515,18 +515,22 @@ void sqlite3Pragma(
 
   /*
   **  PRAGMA [schema.]secure_delete
-  **  PRAGMA [schema.]secure_delete=ON/OFF
+  **  PRAGMA [schema.]secure_delete=ON/OFF/FAST
   **
   ** The first form reports the current setting for the
   ** secure_delete flag.  The second form changes the secure_delete
-  ** flag setting and reports thenew value.
+  ** flag setting and reports the new value.
   */
   case PragTyp_SECURE_DELETE: {
     Btree *pBt = pDb->pBt;
     int b = -1;
     assert( pBt!=0 );
     if( zRight ){
-      b = sqlite3GetBoolean(zRight, 0);
+      if( sqlite3_stricmp(zRight, "fast")==0 ){
+        b = 2;
+      }else{
+        b = sqlite3GetBoolean(zRight, 0);
+      }
     }
     if( pId2->n==0 && b>=0 ){
       int ii;

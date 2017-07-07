@@ -1,5 +1,5 @@
-C Change\sthe\serror\smessage\stext\sfor\sSQLITE_ERROR\sto\somit\sthe\spart\sabout\n"missing\sdatabase"\sas\sthat\smeaning\sis\snow\sobsolete\s(since\sapprox\sSQLite\s2.0).
-D 2017-07-07T19:43:23.476
+C Add\sthe\s"PRAGMA\ssecure_delete=FAST"\soption,\swhich\soverwrites\smost\sdeleted\ncontent\swithout\sincreasing\sthe\samount\sof\sI/O.\s\sDeleted\scontent\smight\spersist\non\sthe\sfree\spage\slist,\showever.\s\sAnd\sextra\sCPU\scycles\sare\sused\sfor\szeroing,\nof\scourse.
+D 2017-07-07T20:06:28.516
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 20850e3e8d4d4791e0531955852d768eb06f24138214870d543abb1a47346fba
@@ -391,9 +391,9 @@ F src/auth.c 79f96c6f33bf0e5da8d1c282cee5ebb1852bb8a6ccca3e485d7c459b035d9c3c
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c 00579ff9c2831d6f98cc993f8f2a34c0ff996e89b3cd2f27928f75796bc3a58a
+F src/btree.c 79fb003347c47c74f8fda24f2fd332321da616771cd3d1b3258b739f569ec625
 F src/btree.h 3edc5329bc59534d2d15b4f069a9f54b779a7e51289e98fa481ae3c0e526a5ca
-F src/btreeInt.h a392d353104b4add58b4a59cb185f5d5693dde832c565b77d8d4c343ed98f610
+F src/btreeInt.h 97700795edf8a43245720414798b7b29d8e465aef46bf301ffacd431910c0da1
 F src/build.c 74108007d286232fb4290464ee5452fa860c26215f8caa0e6c7cbf69a6fafe8f
 F src/callback.c 8e14b60d1ed1c87c02cb5f121ecda99224f2aea6524a77ee6f72c9b5c7110f84
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
@@ -441,7 +441,7 @@ F src/parse.y 71bf06b02f567232deabe258641b03e833e93c4dee61a120765ad74c13e7faec
 F src/pcache.c 62835bed959e2914edd26afadfecce29ece0e870
 F src/pcache.h 521bb9610d38ef17a3cc9b5ddafd4546c2ea67fa3d0e464823d73c2a28d50e11
 F src/pcache1.c 1195a21fe28e223e024f900b2011e80df53793f0356a24caace4188b098540dc
-F src/pragma.c 79ec7625d56130dbadf287a29b0ebf22167465049646366ad860a694f4547768
+F src/pragma.c 54e64a9d65e2c3b6ef11d4ca732c6abc8b67f5e886f222ffe2cbf3506c4efbd2
 F src/pragma.h bb83728944b42f6d409c77f5838a8edbdb0fe83046c5496ffc9602b40340a324
 F src/prepare.c 4b84ae7458febe1df3e04ae62ba56abc851f771340e460d14426e6802c5615f4
 F src/printf.c 8757834f1b54dae512fb25eb1acc8e94a0d15dd2290b58f2563f65973265adb2
@@ -1628,7 +1628,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0961ec873b78ad2da0ea9cdf2934bc8f08276375a153fe5d9fa8d4280328deef
-R 79fe59dfa4a836939eb45a203b110400
+P 732f90d6327c5c6368fc8b4cc207bd644ef08e3ae6d2e7295258ab099deaba63 f1682f0faf1a93ded066464b1ddd5f987e21ee0f6bb5e828ed31c3ad903cf2c3
+R 1f238fbce697fb2308131c37c5985e85
+T +closed f1682f0faf1a93ded066464b1ddd5f987e21ee0f6bb5e828ed31c3ad903cf2c3
 U drh
-Z 8d02d118072fdff02038158664ac514a
+Z c2c4f30ab3360a9e7249032b4e3580ff
