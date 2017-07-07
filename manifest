@@ -1,5 +1,5 @@
-C Exploit\sthe\sfact\sthat\sExpr.pRight\sand\sExpr.x\sare\snever\sused\sat\sthe\ssame\stime\nfor\sa\ssmall\sperformance\sgain.
-D 2017-07-07T13:59:34.309
+C Add\snew\spragmas:\s"function_list"\sand\s"module_list"
+D 2017-07-07T15:43:22.754
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 4ebb1d257cac7fb1bcb4ba59278416d410ff1c4bf59447a9c37a415f3516056a
@@ -441,8 +441,8 @@ F src/parse.y 71bf06b02f567232deabe258641b03e833e93c4dee61a120765ad74c13e7faec
 F src/pcache.c 62835bed959e2914edd26afadfecce29ece0e870
 F src/pcache.h 521bb9610d38ef17a3cc9b5ddafd4546c2ea67fa3d0e464823d73c2a28d50e11
 F src/pcache1.c 1195a21fe28e223e024f900b2011e80df53793f0356a24caace4188b098540dc
-F src/pragma.c 2362670a9d28b71708aecb2b9b10b3f7be71f4c950961c07e81dc400e3ce6371
-F src/pragma.h 99d3df4a3d2f12c5227ad403f767334910e6356325b6d155a9a99b4037093460
+F src/pragma.c 415a98ec60bd209b69e502f07f1c7b9a84140d7e44332202367b2d60e7c30e60
+F src/pragma.h 0d5573ec6c5aa8e65a7d1b33055b868295f16d1ee6aa754754fc1fc75ececd1a
 F src/prepare.c 4b84ae7458febe1df3e04ae62ba56abc851f771340e460d14426e6802c5615f4
 F src/printf.c 8757834f1b54dae512fb25eb1acc8e94a0d15dd2290b58f2563f65973265adb2
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
@@ -1566,7 +1566,7 @@ F tool/mkmsvcmin.tcl cbd93f1cfa3a0a9ae56fc958510aa3fc3ac65e29cb111716199e3d0e66e
 F tool/mkopcodec.tcl d1b6362bd3aa80d5520d4d6f3765badf01f6c43c
 F tool/mkopcodeh.tcl a01d2c1d8a6205b03fc635adf3735b4c523befd3
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
-F tool/mkpragmatab.tcl aa94395a91b5bd47022b7db0c08126f047887e0d299cc19ec1c23a9e5b136961
+F tool/mkpragmatab.tcl 3707a9586c5f3fccded77ac23b9f1672785f43c9bc0c1f49845bb81dbf8118d5
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl fef88397668ae83166735c41af99d79f56afaabb
 F tool/mksqlite3c.tcl f6214285bec900d28441366ca31af327aade18bbc424b0480497966ec05bc43c
@@ -1628,7 +1628,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 115d4b83392d346634866dd959bef30fca50db2e526df17eaeb3d94da7fc895e
-R 582e201382f2bd562c6f1266d901f884
+P aacbb9a461fdb34c7f9c8ce348e44c3e96c93334f210d438d92bfac1794dc686
+R 0f36dd9733d38244f7ca6a934ae9744a
+T *branch * list-pragmas
+T *sym-list-pragmas *
+T -sym-trunk *
 U drh
-Z 92ef67718e1f4940d85eca215e487e0c
+Z 4e2b289a760c670e9cafd6cf4ad4b9b9

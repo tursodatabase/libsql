@@ -252,6 +252,17 @@ set pragma_def {
   COLS: seq name file
   IF:   !defined(SQLITE_OMIT_SCHEMA_PRAGMAS)
 
+  NAME: function_list
+  FLAG: Result0
+  COLS: name builtin
+  IF:   !defined(SQLITE_OMIT_SCHEMA_PRAGMAS)
+
+  NAME: module_list
+  FLAG: Result0
+  COLS: name
+  IF:   !defined(SQLITE_OMIT_SCHEMA_PRAGMAS)
+  IF:   !defined(SQLITE_OMIT_VIRTUALTABLE)
+
   NAME: collation_list
   FLAG: Result0
   COLS: seq name
