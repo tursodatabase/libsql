@@ -227,7 +227,7 @@ int do_io(int nArg, char **azArg){
   aData = malloc(pgsz);
   memset(aData, 0x77, pgsz);
 
-  ctx.fd = open(zFile, O_RDWR|O_CREAT, 0644);
+  ctx.fd = open(zFile, O_RDWR|O_CREAT|_O_BINARY, 0644);
   if( ctx.fd<0 ){
     perror("open: ");
     return -1;

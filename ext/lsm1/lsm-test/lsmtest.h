@@ -15,6 +15,10 @@
 extern "C" {
 #endif
 
+#ifndef _O_BINARY
+# define _O_BINARY (0)
+#endif
+
 #ifdef _WIN32
 # include "windows.h"
 # define gettimeofday win32GetTimeOfDay

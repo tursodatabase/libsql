@@ -1240,7 +1240,7 @@ static int do_writer_test(int nArg, char **azArg){
   printf("Preparing file... ");
   fflush(stdout);
   unlink("writer.out");
-  fd = open("writer.out", O_RDWR|O_CREAT, 0664);
+  fd = open("writer.out", O_RDWR|O_CREAT|_O_BINARY, 0664);
   if( fd<0 ){
     testPrintError("open(): %d - %s\n", errno, strerror(errno));
     return -1;
@@ -1521,10 +1521,6 @@ int main(int argc, char **argv){
   const char *zReport = "malloc.txt generated";
 #else
   const char *zReport = "malloc.txt NOT generated";
-#endif
-
-#if defined(_MSC_VER) || defined(__MSVCRT__)
-  _set_fmode(_O_BINARY);
 #endif
 
   testMallocInstall(tdb_lsm_env());

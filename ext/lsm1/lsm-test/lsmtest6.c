@@ -269,8 +269,8 @@ static void copy_file(const char *zFrom, const char *zTo, int isDatabase){
     struct stat buf;
     u8 *aBuf;
 
-    fd1 = open(zFrom, O_RDONLY, 0644);
-    fd2 = open(zTo, O_RDWR | O_CREAT, 0644);
+    fd1 = open(zFrom, O_RDONLY | _O_BINARY, 0644);
+    fd2 = open(zTo, O_RDWR | O_CREAT | _O_BINARY, 0644);
 
     fstat(fd1, &buf);
     sz = buf.st_size;
