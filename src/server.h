@@ -19,12 +19,25 @@
 
 typedef struct Server Server;
 
-int sqlite3ServerConnect(Pager *pPager, Server **ppOut);
+typedef struct ServerPage ServerPage;
+struct ServerPage {
+  Pgno pgno;                      /* Page number for this record */
+  int nData;                      /* Size of aData[] in bytes */
+  u8 *aData;
+  ServerPage *pNext;
 
+  int iCommitId;
+  ServerPage *pHashNext;
+  ServerPage *pHashPrev;
+};
+
+int sqlite3ServerConnect(Pager *pPager, Server **ppOut);
 void sqlite3ServerDisconnect(Server *p, sqlite3_file *dbfd);
 
 int sqlite3ServerBegin(Server *p);
+int sqlite3ServerPreCommit(Server*, ServerPage*);
 int sqlite3ServerEnd(Server *p);
+
 int sqlite3ServerReleaseWriteLocks(Server *p);
 
 int sqlite3ServerLock(Server *p, Pgno pgno, int bWrite, int bBlock);
@@ -32,5 +45,5 @@ int sqlite3ServerLock(Server *p, Pgno pgno, int bWrite, int bBlock);
 int sqlite3ServerHasLock(Server *p, Pgno pgno, int bWrite);
 
 #endif /* SQLITE_SERVER_H */
-
 #endif /* SQLITE_SERVER_EDITION */
+

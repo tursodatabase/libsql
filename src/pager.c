@@ -708,6 +708,7 @@ struct Pager {
 #endif
 #ifdef SQLITE_SERVER_EDITION
   Server *pServer;
+  ServerPage *pServerPage;
 #endif
 };
 
@@ -1789,6 +1790,18 @@ static int addToSavepointBitvecs(Pager *pPager, Pgno pgno){
   return rc;
 }
 
+#ifdef SQLITE_SERVER_EDITION
+static void pagerFreeServerPage(Pager *pPager){
+  ServerPage *pPg;
+  ServerPage *pNext;
+  for(pPg=pPager->pServerPage; pPg; pPg=pNext){
+    pNext = pPg->pNext;
+    sqlite3_free(pPg);
+  }
+  pPager->pServerPage = 0;
+}
+#endif
+
 /*
 ** This function is a no-op if the pager is in exclusive mode and not
 ** in the ERROR state. Otherwise, it switches the pager to PAGER_OPEN
@@ -1819,6 +1832,7 @@ static void pager_unlock(Pager *pPager){
 
 #ifdef SQLITE_SERVER_EDITION
   if( pagerIsServer(pPager) ){
+    pagerFreeServerPage(pPager);
     sqlite3ServerEnd(pPager->pServer);
     pPager->eState = PAGER_OPEN;
   }else 
@@ -4359,6 +4373,14 @@ static int pager_write_pagelist(Pager *pPager, PgHdr *pList){
   assert( pPager->eLock==EXCLUSIVE_LOCK );
   assert( isOpen(pPager->fd) || pList->pDirty==0 );
 
+#ifdef SQLITE_SERVER_EDITION
+  if( pagerIsServer(pPager) ){
+    rc = sqlite3ServerPreCommit(pPager->pServer, pPager->pServerPage);
+    pPager->pServerPage = 0;
+    if( rc!=SQLITE_OK ) return rc;
+  }
+#endif
+
   /* If the file is a temp-file has not yet been opened, open it now. It
   ** is not possible for rc to be other than SQLITE_OK if this branch
   ** is taken, as pager_wait_on_lock() is a no-op for temp-files.
@@ -4535,6 +4557,8 @@ static int subjournalPageIfRequired(PgHdr *pPg){
 static int pagerStress(void *p, PgHdr *pPg){
   Pager *pPager = (Pager *)p;
   int rc = SQLITE_OK;
+
+  if( pagerIsServer(pPager) ) return SQLITE_OK;
 
   assert( pPg->pPager==pPager );
   assert( pPg->flags&PGHDR_DIRTY );
@@ -5908,6 +5932,20 @@ static SQLITE_NOINLINE int pagerAddPageToRollbackJournal(PgHdr *pPg){
   u32 cksum;
   char *pData2;
   i64 iOff = pPager->journalOff;
+
+#ifdef SQLITE_SERVER_EDITION
+  if( pagerIsServer(pPager) ){
+    int nByte = sizeof(ServerPage) + pPager->pageSize;
+    ServerPage *p = (ServerPage*)sqlite3_malloc(nByte);
+    if( !p ) return SQLITE_NOMEM_BKPT;
+    memset(p, 0, sizeof(ServerPage));
+    p->aData = (u8*)&p[1];
+    p->nData = pPager->pageSize;
+    p->pgno = pPg->pgno;
+    p->pNext = pPager->pServerPage;
+    pPager->pServerPage = p;
+  }
+#endif
 
   /* We should never write to the journal file the page that
   ** contains the database locks.  The following assert verifies
