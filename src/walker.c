@@ -41,15 +41,15 @@ static SQLITE_NOINLINE int walkExpr(Walker *pWalker, Expr *pExpr){
   testcase( ExprHasProperty(pExpr, EP_TokenOnly) );
   testcase( ExprHasProperty(pExpr, EP_Reduced) );
   rc = pWalker->xExprCallback(pWalker, pExpr);
-  if( rc || ExprHasProperty(pExpr,(EP_TokenOnly|EP_Leaf)) ){
-    return rc & WRC_Abort;
-  }
-  if( pExpr->pLeft && walkExpr(pWalker, pExpr->pLeft) ) return WRC_Abort;
-  if( pExpr->pRight && walkExpr(pWalker, pExpr->pRight) ) return WRC_Abort;
-  if( ExprHasProperty(pExpr, EP_xIsSelect) ){
-    if( sqlite3WalkSelect(pWalker, pExpr->x.pSelect) ) return WRC_Abort;
-  }else if( pExpr->x.pList ){
-    if( sqlite3WalkExprList(pWalker, pExpr->x.pList) ) return WRC_Abort;
+  if( rc ) return rc & WRC_Abort;
+  if( !ExprHasProperty(pExpr,(EP_TokenOnly|EP_Leaf)) ){
+    if( pExpr->pLeft && walkExpr(pWalker, pExpr->pLeft) ) return WRC_Abort;
+    if( pExpr->pRight && walkExpr(pWalker, pExpr->pRight) ) return WRC_Abort;
+    if( ExprHasProperty(pExpr, EP_xIsSelect) ){
+      if( sqlite3WalkSelect(pWalker, pExpr->x.pSelect) ) return WRC_Abort;
+    }else if( pExpr->x.pList ){
+      if( sqlite3WalkExprList(pWalker, pExpr->x.pList) ) return WRC_Abort;
+    }
   }
   return WRC_Continue;
 }
