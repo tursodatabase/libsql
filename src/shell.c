@@ -5829,8 +5829,14 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
     if( zDiv ){
       sqlite3_stmt *pStmt = 0;
-      sqlite3_prepare_v2(p->db, "SELECT name FROM pragma_database_list",
-                         -1, &pStmt, 0);
+      rc = sqlite3_prepare_v2(p->db, "SELECT name FROM pragma_database_list",
+                              -1, &pStmt, 0);
+      if( rc ){
+        utf8_printf(stderr, "Error: %s\n", sqlite3_errmsg(p->db));
+        sqlite3_finalize(pStmt);
+        rc = 1;
+        goto meta_command_exit;
+      }
       appendText(&sSelect, "SELECT sql FROM", 0);
       iSchema = 0;
       while( sqlite3_step(pStmt)==SQLITE_ROW ){

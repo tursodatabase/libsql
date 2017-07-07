@@ -1,5 +1,5 @@
-C Fix\sthe\susleep()\smacro\sin\sthe\sWin32\stest\scode\sfor\slsm1.
-D 2017-07-07T17:57:21.132
+C In\sthe\scommand-line\sshell,\swhen\srunning\s".schema"\sgive\sa\ssensible\serror\swhen\nthe\sdatabase\sfile\sis\slocked.
+D 2017-07-07T18:06:49.936
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 4ebb1d257cac7fb1bcb4ba59278416d410ff1c4bf59447a9c37a415f3516056a
@@ -449,7 +449,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 6aa1fb1212e601f65b983ee1215d69a591986c8f97a3805c425c625a53839539
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c c9f7b7196e196e93979665680d055a789938b8e025556097bf484b184c0dd576
-F src/shell.c a2b148e4ca8eb81b96e1050207c83d4a16ea6bf9182374faee4dd2a43628c291
+F src/shell.c a7067f647aef4b81569bbfd025f4fd120a4e7576a647d2aad05028eb50e50e48
 F src/sqlite.h.in 651cba56f8df64ff4418aa981cdfd5bc2d65e5fef95c1671f9826f1a164a5fa3
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 58fd0676d3111d02e62e5a35992a7d3da5d3f88753acc174f2d37b774fbbdd28
@@ -1628,7 +1628,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e0b6ae92adfae46f64fc2e2719e22e5467c34d49c1aeaec5cc5faf04258de0f7
-R 7da3c10a5e23d1c535fd1a007598a2d9
-U mistachkin
-Z 95abb7b40357bab3b1514e8c7eebc63a
+P 63599fa524a7c72ffa5362041f2ec394d9af9c43025d8b6d5a34e98eb423d5ff
+R e0e6067b4f6d8ab9e2dc371d790536e4
+U drh
+Z fde9cdc76debb617e008886702633a73
