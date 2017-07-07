@@ -1025,8 +1025,9 @@ static SQLITE_NOINLINE void sqlite3ExprDeleteNN(sqlite3 *db, Expr *p){
     /* The Expr.x union is never used at the same time as Expr.pRight */
     assert( p->x.pList==0 || p->pRight==0 );
     if( p->pLeft && p->op!=TK_SELECT_COLUMN ) sqlite3ExprDeleteNN(db, p->pLeft);
-    sqlite3ExprDelete(db, p->pRight);
-    if( ExprHasProperty(p, EP_xIsSelect) ){
+    if( p->pRight ){
+      sqlite3ExprDeleteNN(db, p->pRight);
+    }else if( ExprHasProperty(p, EP_xIsSelect) ){
       sqlite3SelectDelete(db, p->x.pSelect);
     }else{
       sqlite3ExprListDelete(db, p->x.pList);
