@@ -1226,6 +1226,7 @@ void sqlite3Pragma(
   }
   break;
 
+#ifdef SQLITE_INTROSPECTION_PRAGMAS
   case PragTyp_FUNCTION_LIST: {
     int i;
     HashElem *j;
@@ -1258,6 +1259,15 @@ void sqlite3Pragma(
   break;
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 
+  case PragTyp_PRAGMA_LIST: {
+    int i;
+    for(i=0; i<ArraySize(aPragmaName); i++){
+      sqlite3VdbeMultiLoad(v, 1, "s", aPragmaName[i].zName);
+      sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 1);
+    }
+  }
+  break;
+#endif /* SQLITE_INTROSPECTION_PRAGMAS */
 
 #endif /* SQLITE_OMIT_SCHEMA_PRAGMAS */
 
