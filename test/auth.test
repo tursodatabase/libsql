@@ -36,12 +36,20 @@ proc_real proc {name arguments script} {
 do_test auth-1.1.1 {
   db close
   set ::DB [sqlite3 db test.db]
+  proc authx {code arg1 arg2 arg3 arg4 args} {return SQLITE_DENY}
   proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_INSERT" && $arg1=="sqlite_master"} {
       return SQLITE_DENY
     }
     return SQLITE_OK
   }
+  db authorizer ::authx
+  # EVIDENCE-OF: R-03993-24285 Only a single authorizer can be in place on
+  # a database connection at a time. Each call to sqlite3_set_authorizer
+  # overrides the previous call.
+  #
+  # The authx authorizer above is overridden by the auth authorizer below
+  # authx is never invoked.
   db authorizer ::auth
   catchsql {CREATE TABLE t1(a,b,c)}
 } {1 {not authorized}}
@@ -60,6 +68,9 @@ do_test auth-1.1.4 {
 do_test auth-1.2 {
   execsql {SELECT name FROM sqlite_master}
 } {}
+# EVIDENCE-OF: R-04452-49349 When the callback returns SQLITE_DENY, the
+# sqlite3_prepare_v2() or equivalent call that triggered the authorizer
+# will fail with an error message explaining that access is denied.
 do_test auth-1.3.1 {
   proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_CREATE_TABLE"} {
@@ -312,6 +323,10 @@ ifcapable attach {
   } {1 {access to two.t2.b is prohibited}}
   execsql {DETACH DATABASE two}
 }
+# EVIDENCE-OF: R-38392-49970 If the action code is SQLITE_READ and the
+# callback returns SQLITE_IGNORE then the prepared statement statement
+# is constructed to substitute a NULL value in place of the table column
+# that would have been read if SQLITE_OK had been returned.
 do_test auth-1.36 {
   proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_READ" && $arg1=="t2" && $arg2=="b"} {
@@ -1606,6 +1621,8 @@ do_test auth-1.248 {
   set ::authargs
 } {COMMIT {} {} {}}
 do_test auth-1.249 {
+  # EVIDENCE-OF: R-52112-44167 Disable the authorizer by installing a NULL
+  # callback.
   db authorizer {}
   catchsql {ROLLBACK}
 } {0 {}}
@@ -2476,6 +2493,57 @@ do_test auth-7.4 {
   SQLITE_SELECT {} {} {} {}      \
   SQLITE_READ t7 a main {}       \
   SQLITE_READ t7 c main {}       \
+]
+
+# If a table is referenced but no columns are read from the table,
+# that causes a single SQLITE_READ authorization with a NULL column
+# name.
+#
+# EVIDENCE-OF: R-31520-16302 When a table is referenced by a SELECT but
+# no column values are extracted from that table (for example in a query
+# like "SELECT count(*) FROM tab") then the SQLITE_READ authorizer
+# callback is invoked once for that table with a column name that is an
+# empty string.
+#
+set ::authargs [list]
+do_test auth-8.1 {
+  execsql {SELECT count(*) FROM t7}
+  set ::authargs
+} [list \
+  SQLITE_SELECT {} {} {} {}          \
+  SQLITE_FUNCTION {} count {} {}     \
+  SQLITE_READ t7 {} {} {}            \
+  ]
+set ::authargs [list]
+
+do_test auth-8.2 {
+  execsql {SELECT t6.a FROM t6, t7}
+  set ::authargs
+} [list \
+  SQLITE_SELECT {} {} {} {}          \
+  SQLITE_READ t6 a main {}           \
+  SQLITE_READ t7 {} {} {}            \
+  ]
+
+# Test also that if SQLITE_DENY is returned from an SQLITE_READ authorizer 
+# invocation with no column name specified, compilation fails.
+#
+set ::authargs [list]
+proc auth {op a b c d} {
+  lappend ::authargs $op $a $b $c $d
+  if {$op == "SQLITE_READ"} { return "SQLITE_DENY" }
+  return "SQLITE_OK"
+}
+set ::authargs [list]
+do_catchsql_test auth-8.3 {
+  SELECT count(*) FROM t7
+} {1 {not authorized}}
+do_test auth-8.4 {
+  set ::authargs
+} [list \
+  SQLITE_SELECT {} {} {} {}          \
+  SQLITE_FUNCTION {} count {} {}     \
+  SQLITE_READ t7 {} {} {}            \
 ]
 
 

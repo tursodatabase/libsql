@@ -1,4 +1,4 @@
-# 2002 May 24
+# 2002-05-24
 #
 # The author disclaims copyright to this source code.  In place of
 # a legal notice, here is a blessing:
@@ -12,7 +12,6 @@
 #
 # This file implements tests for joins, including outer joins.
 #
-# $Id: join.test,v 1.27 2009/07/01 16:12:08 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -712,5 +711,73 @@ do_execsql_test join-13.2 {
   SELECT * FROM aa LEFT JOIN bb, cc WHERE cc.c=aa.a;
 } {45 {} 45 45 {} 45}
 
+# Verify that that iTable attributes the TK_IF_NULL_ROW operators in the
+# expression tree are correctly updated by the query flattener.  This was
+# a bug discovered on 2017-05-22 by Mark Brand.
+#
+do_execsql_test join-14.1 {
+  SELECT *
+    FROM (SELECT 1 a) AS x 
+         LEFT JOIN (SELECT 1, * FROM (SELECT * FROM (SELECT 1)));
+} {1 1 1}
+do_execsql_test join-14.2 {
+  SELECT *
+  FROM (SELECT 1 a) AS x
+    LEFT JOIN (SELECT 1, * FROM (SELECT * FROM (SELECT * FROM (SELECT 1)))) AS y
+    JOIN (SELECT * FROM (SELECT 9)) AS z;
+} {1 1 1 9}
+do_execsql_test join-14.3 {
+  SELECT *
+  FROM (SELECT 111)
+  LEFT JOIN (SELECT cc+222, * FROM (SELECT * FROM (SELECT 333 cc)));
+} {111 555 333}
+
+do_execsql_test join-14.4 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(c PRIMARY KEY, a TEXT(10000), b TEXT(10000));
+  SELECT * FROM (SELECT 111) LEFT JOIN (SELECT c+222 FROM t1) GROUP BY 1;
+} {111 {}}
+do_execsql_test join-14.5 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(c PRIMARY KEY) WITHOUT ROWID;
+  SELECT * FROM (SELECT 111) LEFT JOIN (SELECT c+222 FROM t1) GROUP BY 1;
+} {111 {}}
+
+# Verify the fix to ticket 
+# https://www.sqlite.org/src/tktview/7fde638e94287d2c948cd9389
+#
+db close
+sqlite3 db :memory:
+do_execsql_test join-14.10 {
+  CREATE TABLE t1(a);
+  INSERT INTO t1 VALUES(1),(2),(3);
+  CREATE VIEW v2 AS SELECT a, 1 AS b FROM t1;
+  CREATE TABLE t3(x);
+  INSERT INTO t3 VALUES(2),(4);
+  SELECT *, '|' FROM t3 LEFT JOIN v2 ON a=x WHERE b=1;
+} {2 2 1 |}
+do_execsql_test join-14.11 {
+  SELECT *, '|' FROM t3 LEFT JOIN v2 ON a=x WHERE b+1=x;
+} {2 2 1 |}
+do_execsql_test join-14.12 {
+  SELECT *, '|' FROM t3 LEFT JOIN v2 ON a=x ORDER BY b;
+} {4 {} {} | 2 2 1 |}
+
+# Verify the fix for ticket
+# https://www.sqlite.org/src/info/892fc34f173e99d8
+#
+db close
+sqlite3 db :memory:
+do_execsql_test join-14.20 {
+  CREATE TABLE t1(id INTEGER PRIMARY KEY);
+  CREATE TABLE t2(id INTEGER PRIMARY KEY, c2 INTEGER);
+  CREATE TABLE t3(id INTEGER PRIMARY KEY, c3 INTEGER);
+  INSERT INTO t1(id) VALUES(456);
+  INSERT INTO t3(id) VALUES(1),(2);
+  SELECT t1.id, x2.id, x3.id
+  FROM t1
+  LEFT JOIN (SELECT * FROM t2) AS x2 ON t1.id=x2.c2
+  LEFT JOIN t3 AS x3 ON x2.id=x3.c3;
+} {456 {} {}}
 
 finish_test

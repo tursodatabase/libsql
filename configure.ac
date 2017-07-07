@@ -596,7 +596,7 @@ AC_ARG_ENABLE(memsys5,
   [enable_memsys5=yes],[enable_memsys5=no])
 AC_MSG_CHECKING([whether to support MEMSYS5])
 if test "${enable_memsys5}" = "yes"; then
-  OPT_FEATURE_FLAGS="$(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_MEMSYS5"
+  OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_MEMSYS5"
   AC_MSG_RESULT([yes])
 else
   AC_MSG_RESULT([no])
@@ -606,7 +606,7 @@ AC_ARG_ENABLE(memsys3,
   [enable_memsys3=yes],[enable_memsys3=no])
 AC_MSG_CHECKING([whether to support MEMSYS3])
 if test "${enable_memsys3}" = "yes" -a "${enable_memsys5}" = "no"; then
-  OPT_FEATURE_FLAGS="$(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_MEMSYS3"
+  OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_MEMSYS3"
   AC_MSG_RESULT([yes])
 else
   AC_MSG_RESULT([no])
@@ -618,20 +618,20 @@ AC_ARG_ENABLE(fts3, AC_HELP_STRING([--enable-fts3],
       [Enable the FTS3 extension]),
       [enable_fts3=yes],[enable_fts3=no])
 if test "${enable_fts3}" = "yes" ; then
-  OPT_FEATURE_FLAGS="$(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_FTS3"
+  OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_FTS3"
 fi
 AC_ARG_ENABLE(fts4, AC_HELP_STRING([--enable-fts4],
       [Enable the FTS4 extension]),
       [enable_fts4=yes],[enable_fts4=no])
 if test "${enable_fts4}" = "yes" ; then
-  OPT_FEATURE_FLAGS="$(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_FTS4"
+  OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_FTS4"
   AC_SEARCH_LIBS([log],[m])
 fi
 AC_ARG_ENABLE(fts5, AC_HELP_STRING([--enable-fts5],
       [Enable the FTS5 extension]),
       [enable_fts5=yes],[enable_fts5=no])
 if test "${enable_fts5}" = "yes" ; then
-  OPT_FEATURE_FLAGS="$(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_FTS5"
+  OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_FTS5"
   AC_SEARCH_LIBS([log],[m])
 fi
 
@@ -641,7 +641,7 @@ AC_ARG_ENABLE(json1, AC_HELP_STRING([--enable-json1],
       [Enable the JSON1 extension]),
       [enable_json1=yes],[enable_json1=no])
 if test "${enable_json1}" = "yes" ; then
-  OPT_FEATURE_FLAGS="$(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_JSON1"
+  OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_JSON1"
 fi
 
 #########
@@ -650,7 +650,7 @@ AC_ARG_ENABLE(rtree, AC_HELP_STRING([--enable-rtree],
       [Enable the RTREE extension]),
       [enable_rtree=yes],[enable_rtree=no])
 if test "${enable_rtree}" = "yes" ; then
-  OPT_FEATURE_FLAGS="$(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_RTREE"
+  OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_RTREE"
 fi
 
 #########
@@ -659,12 +659,12 @@ AC_ARG_ENABLE(session, AC_HELP_STRING([--enable-session],
       [Enable the SESSION extension]),
       [enable_session=yes],[enable_session=no])
 if test "${enable_session}" = "yes" ; then
-  OPT_FEATURE_FLAGS="$(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_SESSION"
-  OPT_FEATURE_FLAGS="$(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_PREUPDATE_HOOK"
+  OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_SESSION"
+  OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_PREUPDATE_HOOK"
 fi
 
 #########
-# attempt to duplicate any OMITS and ENABLES into the $(OPT_FEATURE_FLAGS) parameter
+# attempt to duplicate any OMITS and ENABLES into the ${OPT_FEATURE_FLAGS} parameter
 for option in $CFLAGS $CPPFLAGS
 do
   case $option in

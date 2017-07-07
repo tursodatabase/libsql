@@ -283,10 +283,10 @@ proc copy_file {filename} {
 # inlining opportunities.
 #
 foreach file {
+   ctime.c
    sqliteInt.h
 
    global.c
-   ctime.c
    status.c
    date.c
    os.c
@@ -391,6 +391,7 @@ foreach file {
    sqlite3session.c
    json1.c
    fts5.c
+   stmt.c
 } {
   copy_file tsrc/$file
 }

@@ -179,7 +179,7 @@ array set ::Configs [strip_comments {
     -DSQLITE_ENABLE_LOCKING_STYLE=1
   }
   "Apple" {
-    -O1   # Avoid a compiler bug in gcc 4.2.1 build 5658
+    -Os
     -DHAVE_GMTIME_R=1
     -DHAVE_ISNAN=1
     -DHAVE_LOCALTIME_R=1
@@ -1036,7 +1036,7 @@ proc main {argv} {
       regsub -all {fuzzoomtest} $xtarget fuzztest xtarget
       if {$debug_idx < 0} {
         incr NTEST
-        append config_options " -DSQLITE_DEBUG=1"
+        append config_options " -DSQLITE_DEBUG=1 -DSQLITE_EXTRA_IFNULLROW=1"
         add_test_suite all "${zConfig}_debug" $xtarget $config_options
       } else {
         incr NTEST
