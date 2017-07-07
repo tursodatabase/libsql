@@ -1,5 +1,5 @@
-C Add\snew\sPRAGMAs:\s"function_list",\s"module_list",\sand\s"pragma_list".\s\sAll\sare\nenclosed\swithin\s#ifdef\sSQLITE_INTROSPECTION_PRAGMAS.\s\sThe\scompile-time\soption\nis\snot\son\sctime.c\syet,\ssince\sthese\sare\sstill\sexperimental\sand\sone\scan\salways\ntest\s"PRAGMA\spragma_list"\sand\ssee\swhether\sor\snot\sit\sreturns\san\sempty\sset.
-D 2017-07-07T17:43:30.458
+C Fix\sthe\susleep()\smacro\sin\sthe\sWin32\stest\scode\sfor\slsm1.
+D 2017-07-07T17:57:21.132
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 4ebb1d257cac7fb1bcb4ba59278416d410ff1c4bf59447a9c37a415f3516056a
@@ -212,7 +212,7 @@ F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/lsm1/Makefile a2ea4975162be8932b5efa727080f4982715d34c32035d9eb7a015ae78404981
 F ext/lsm1/Makefile.msc e5702306af1537a0e9311cc182a89bb3a36f31c18df6416f72a13f356620068f
 F ext/lsm1/lsm-test/README 87ea529d2abe615e856d4714bfe8bb185e6c2771b8612aa6298588b7b43e6f86
-F ext/lsm1/lsm-test/lsmtest.h 346295688c4b304689950f10e4dcd4640321f3c860112b72cb0691ca075b6a71
+F ext/lsm1/lsm-test/lsmtest.h 9c856fbaff90f2270b1df0ddff150925bcf7e1741035c5ddea0cc43c9f56210e
 F ext/lsm1/lsm-test/lsmtest1.c 33158978327f800e82b6a47c09b86ace809f56a9ff10b0162273ec1186cc3153
 F ext/lsm1/lsm-test/lsmtest2.c 188b09aec776516aeedcfd13b9c6faf85ba16b3671a0897a2c740ee00a5dc4f8
 F ext/lsm1/lsm-test/lsmtest3.c 9ab87528a36dbf4a61d7c8ad954f5ee368c0878c127b84b942b2e2abe522de26
@@ -1628,8 +1628,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9c7a9e805d95d3d4a3f7e2d608280b7ca0dda01114e32cd366b1deb14e6e6839 2f3c3781ef3d66ecafef083d7144287ff23eea5a6d93b014dfeb2a8ac71f757e
-R 4f6a333ba3ebc48a516283775adad985
-T +closed 2f3c3781ef3d66ecafef083d7144287ff23eea5a6d93b014dfeb2a8ac71f757e
-U drh
-Z eedd58e83d653cf2bb50d9ab0fddda0e
+P e0b6ae92adfae46f64fc2e2719e22e5467c34d49c1aeaec5cc5faf04258de0f7
+R 7da3c10a5e23d1c535fd1a007598a2d9
+U mistachkin
+Z 95abb7b40357bab3b1514e8c7eebc63a

@@ -20,7 +20,7 @@ extern "C" {
 # define gettimeofday win32GetTimeOfDay
 # define F_OK  (0)
 # define sleep(sec) Sleep(1000 * (sec))
-# define usleep(usec) Sleep((usec) / 1000)
+# define usleep(usec) Sleep(((usec) + 999) / 1000)
 # ifdef _MSC_VER
 #  include <io.h>
 #  define snprintf _snprintf
