@@ -1,5 +1,5 @@
-C Improve\sclarity\sin\sthe\sWin32\sVFS\sfor\slsm1.
-D 2017-07-07T16:46:08.188
+C Add\snew\sPRAGMAs:\s"function_list",\s"module_list",\sand\s"pragma_list".\s\sAll\sare\nenclosed\swithin\s#ifdef\sSQLITE_INTROSPECTION_PRAGMAS.\s\sThe\scompile-time\soption\nis\snot\son\sctime.c\syet,\ssince\sthese\sare\sstill\sexperimental\sand\sone\scan\salways\ntest\s"PRAGMA\spragma_list"\sand\ssee\swhether\sor\snot\sit\sreturns\san\sempty\sset.
+D 2017-07-07T17:43:30.458
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 4ebb1d257cac7fb1bcb4ba59278416d410ff1c4bf59447a9c37a415f3516056a
@@ -441,8 +441,8 @@ F src/parse.y 71bf06b02f567232deabe258641b03e833e93c4dee61a120765ad74c13e7faec
 F src/pcache.c 62835bed959e2914edd26afadfecce29ece0e870
 F src/pcache.h 521bb9610d38ef17a3cc9b5ddafd4546c2ea67fa3d0e464823d73c2a28d50e11
 F src/pcache1.c 1195a21fe28e223e024f900b2011e80df53793f0356a24caace4188b098540dc
-F src/pragma.c 3f9456edac7eaf171041d51510c5cc922c9b3bd56a713fb7ad6d5b85aa72f1f6
-F src/pragma.h 99d3df4a3d2f12c5227ad403f767334910e6356325b6d155a9a99b4037093460
+F src/pragma.c 79ec7625d56130dbadf287a29b0ebf22167465049646366ad860a694f4547768
+F src/pragma.h bb83728944b42f6d409c77f5838a8edbdb0fe83046c5496ffc9602b40340a324
 F src/prepare.c 4b84ae7458febe1df3e04ae62ba56abc851f771340e460d14426e6802c5615f4
 F src/printf.c 8757834f1b54dae512fb25eb1acc8e94a0d15dd2290b58f2563f65973265adb2
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
@@ -1566,7 +1566,7 @@ F tool/mkmsvcmin.tcl cbd93f1cfa3a0a9ae56fc958510aa3fc3ac65e29cb111716199e3d0e66e
 F tool/mkopcodec.tcl d1b6362bd3aa80d5520d4d6f3765badf01f6c43c
 F tool/mkopcodeh.tcl a01d2c1d8a6205b03fc635adf3735b4c523befd3
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
-F tool/mkpragmatab.tcl aa94395a91b5bd47022b7db0c08126f047887e0d299cc19ec1c23a9e5b136961
+F tool/mkpragmatab.tcl 2144bc8550a6471a029db262a132d2df4b9e0db61b90398bf64f5b7b3f8d92cd
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl fef88397668ae83166735c41af99d79f56afaabb
 F tool/mksqlite3c.tcl f6214285bec900d28441366ca31af327aade18bbc424b0480497966ec05bc43c
@@ -1628,7 +1628,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3340de83df8c4fb19f729e6ff0838a9a03a1e701cdb40cb830e76f294198024a
-R 441b83e8fe7c6e7ee9052521ffcfa22a
-U mistachkin
-Z 05a5043cc6c8a10020a4334d65b17df2
+P 9c7a9e805d95d3d4a3f7e2d608280b7ca0dda01114e32cd366b1deb14e6e6839 2f3c3781ef3d66ecafef083d7144287ff23eea5a6d93b014dfeb2a8ac71f757e
+R 4f6a333ba3ebc48a516283775adad985
+T +closed 2f3c3781ef3d66ecafef083d7144287ff23eea5a6d93b014dfeb2a8ac71f757e
+U drh
+Z eedd58e83d653cf2bb50d9ab0fddda0e
