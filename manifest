@@ -1,5 +1,5 @@
-C Fix\scomment\sin\sthe\sWin32\sVFS\sfor\slsm1.
-D 2017-07-07T21:20:26.973
+C Basic\stest\scases\sfor\sPRAGMA\ssecure_delete=FAST.
+D 2017-07-07T22:47:32.568
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 20850e3e8d4d4791e0531955852d768eb06f24138214870d543abb1a47346fba
@@ -1138,7 +1138,7 @@ F test/schema2.test 906408621ea881fdb496d878b1822572a34e32c5
 F test/schema3.test 1bc1008e1f8cb5654b248c55f27249366eb7ed38
 F test/schema4.test 3b26c9fa916abb6dadf894137adcf41b7796f7b9
 F test/schema5.test 29699b4421f183c8f0e88bd28ce7d75d13ea653e
-F test/securedel.test 21749c32ccc30f1ea9e4b9f33295a6521ec20fa0
+F test/securedel.test 5f997cb6bd38727b81e0985f53ec386c99db6441b2b9e6357240649d29017239
 F test/securedel2.test 2d54c28e46eb1fd6902089958b20b1b056c6f1c5
 F test/select1.test be62204d2bd9a5a8a149e9974cfddce893d8f686
 F test/select2.test 352480e0e9c66eda9c3044e412abdf5be0215b56
@@ -1628,7 +1628,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P aea6e0ffd33f41482f1b53b9f21b77add2865abda4eec1d9ee197177f74f43d0
-R def83fb5cfa9576d8c12369340380816
-U mistachkin
-Z 8beb9c524f111477daf399393f3c71eb
+P 12a421bcacf72128426eeafed8663accd8f2ac7edb46f620b60b8239065e657e
+R e6f8feea678ffb081657c6bb012062fd
+U drh
+Z c614413c179295441abb82c2446a03c8
