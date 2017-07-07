@@ -11,6 +11,7 @@
 #ifndef _WIN32
 # include <unistd.h>
 #endif
+#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -1520,6 +1521,10 @@ int main(int argc, char **argv){
   const char *zReport = "malloc.txt generated";
 #else
   const char *zReport = "malloc.txt NOT generated";
+#endif
+
+#if defined(_MSC_VER) || defined(__MSVCRT__)
+  _set_fmode(_O_BINARY);
 #endif
 
   testMallocInstall(tdb_lsm_env());

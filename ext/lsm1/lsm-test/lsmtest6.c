@@ -257,7 +257,7 @@ void testDeleteLsmdb(const char *zFile){
   testFree(zShm);
 }
 
-static void copy_file(const char *zFrom, const char *zTo){
+static void copy_file(const char *zFrom, const char *zTo, int isDatabase){
 
   if( access(zFrom, F_OK) ){
     unlink(zTo);
@@ -278,9 +278,15 @@ static void copy_file(const char *zFrom, const char *zTo){
 
     aBuf = testMalloc(4096);
     for(i=0; i<sz; i+=4096){
-      int nByte = MIN(4096, sz - i);
+      int bLockPage = isDatabase && i == 0;
+      int nByte = MIN((bLockPage ? 4066 : 4096), sz - i);
+      memset(aBuf, 0, 4096);
       read(fd1, aBuf, nByte);
       write(fd2, aBuf, nByte);
+      if( bLockPage ){
+        lseek(fd1, 4096, SEEK_SET);
+        lseek(fd2, 4096, SEEK_SET);
+      }
     }
     testFree(aBuf);
 
@@ -298,9 +304,9 @@ void testCopyLsmdb(const char *zFrom, const char *zTo){
   unlink(zShm2);
   unlink(zLog2);
   unlink(zTo);
-  copy_file(zFrom, zTo);
-  copy_file(zLog1, zLog2);
-  copy_file(zShm1, zShm2);
+  copy_file(zFrom, zTo, 1);
+  copy_file(zLog1, zLog2, 0);
+  copy_file(zShm1, zShm2, 0);
 
   testFree(zLog1); testFree(zLog2); testFree(zShm1); testFree(zShm2);
 }
@@ -322,8 +328,8 @@ void testSaveDb(const char *zFile, const char *zAux){
 
   unlink(zFileSave);
   unlink(zLogSave);
-  copy_file(zFile, zFileSave);
-  copy_file(zLog, zLogSave);
+  copy_file(zFile, zFileSave, 1);
+  copy_file(zLog, zLogSave, 0);
 
   testFree(zLog); testFree(zFileSave); testFree(zLogSave);
 }
@@ -341,8 +347,8 @@ void testRestoreDb(const char *zFile, const char *zAux){
   char *zFileSave = testMallocPrintf("%s-save", zFile);
   char *zLogSave = testMallocPrintf("%s-%s-save", zFile, zAux);
 
-  copy_file(zFileSave, zFile);
-  copy_file(zLogSave, zLog);
+  copy_file(zFileSave, zFile, 1);
+  copy_file(zLogSave, zLog, 0);
 
   testFree(zLog); testFree(zFileSave); testFree(zLogSave);
 }
