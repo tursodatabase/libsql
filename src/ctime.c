@@ -265,6 +265,9 @@ static const char * const sqlite3azCompileOpt[] = {
 #if SQLITE_ENABLE_PREUPDATE_HOOK
   "ENABLE_PREUPDATE_HOOK",
 #endif
+#if SQLITE_ENABLE_QPSG
+  "ENABLE_QPSG",
+#endif
 #if SQLITE_ENABLE_RBU
   "ENABLE_RBU",
 #endif
@@ -287,6 +290,9 @@ static const char * const sqlite3azCompileOpt[] = {
   "ENABLE_STAT4",
 #elif defined(SQLITE_ENABLE_STAT3)
   "ENABLE_STAT3",
+#endif
+#if SQLITE_ENABLE_STMTVTAB
+  "ENABLE_STMTVTAB",
 #endif
 #if SQLITE_ENABLE_STMT_SCANSTATUS
   "ENABLE_STMT_SCANSTATUS",

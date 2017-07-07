@@ -15,12 +15,15 @@
 **
 ** Usage example:
 **
-**     .load ./stmts
+**     .load ./stmt
 **     .mode line
 **     .header on
-**     SELECT * FROM stmts;
+**     SELECT * FROM stmt;
 */
+#if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_STMTVTAB)
+#if !defined(SQLITEINT_H)
 #include "sqlite3ext.h"
+#endif
 SQLITE_EXTENSION_INIT1
 #include <assert.h>
 #include <string.h>
@@ -44,21 +47,21 @@ SQLITE_EXTENSION_INIT1
 #endif
 
 
-/* stmts_vtab is a subclass of sqlite3_vtab which will
-** serve as the underlying representation of a stmts virtual table
+/* stmt_vtab is a subclass of sqlite3_vtab which will
+** serve as the underlying representation of a stmt virtual table
 */
-typedef struct stmts_vtab stmts_vtab;
-struct stmts_vtab {
+typedef struct stmt_vtab stmt_vtab;
+struct stmt_vtab {
   sqlite3_vtab base;  /* Base class - must be first */
-  sqlite3 *db;        /* Database connection for this stmts vtab */
+  sqlite3 *db;        /* Database connection for this stmt vtab */
 };
 
-/* stmts_cursor is a subclass of sqlite3_vtab_cursor which will
+/* stmt_cursor is a subclass of sqlite3_vtab_cursor which will
 ** serve as the underlying representation of a cursor that scans
 ** over rows of the result
 */
-typedef struct stmts_cursor stmts_cursor;
-struct stmts_cursor {
+typedef struct stmt_cursor stmt_cursor;
+struct stmt_cursor {
   sqlite3_vtab_cursor base;  /* Base class - must be first */
   sqlite3 *db;               /* Database connection for this cursor */
   sqlite3_stmt *pStmt;       /* Statement cursor is currently pointing at */
@@ -66,43 +69,46 @@ struct stmts_cursor {
 };
 
 /*
-** The stmtsConnect() method is invoked to create a new
-** stmts_vtab that describes the generate_stmts virtual table.
+** The stmtConnect() method is invoked to create a new
+** stmt_vtab that describes the generate_stmt virtual table.
 **
-** Think of this routine as the constructor for stmts_vtab objects.
+** Think of this routine as the constructor for stmt_vtab objects.
 **
 ** All this routine needs to do is:
 **
-**    (1) Allocate the stmts_vtab object and initialize all fields.
+**    (1) Allocate the stmt_vtab object and initialize all fields.
 **
 **    (2) Tell SQLite (via the sqlite3_declare_vtab() interface) what the
-**        result set of queries against generate_stmts will look like.
+**        result set of queries against generate_stmt will look like.
 */
-static int stmtsConnect(
+static int stmtConnect(
   sqlite3 *db,
   void *pAux,
   int argc, const char *const*argv,
   sqlite3_vtab **ppVtab,
   char **pzErr
 ){
-  stmts_vtab *pNew;
+  stmt_vtab *pNew;
   int rc;
 
 /* Column numbers */
-#define STMTS_COLUMN_PTR   0    /* Numeric value of the statement pointer */
-#define STMTS_COLUMN_SQL   1    /* SQL for the statement */
-#define STMTS_COLUMN_NCOL  2    /* Number of result columns */
-#define STMTS_COLUMN_RO    3    /* True if read-only */
-#define STMTS_COLUMN_BUSY  4    /* True if currently busy */
-#define STMTS_COLUMN_NSCAN 5    /* SQLITE_STMTSTATUS_FULLSCAN_STEP */
-#define STMTS_COLUMN_NSORT 6    /* SQLITE_STMTSTATUS_SORT */
-#define STMTS_COLUMN_NAIDX 7    /* SQLITE_STMTSTATUS_AUTOINDEX */
-#define STMTS_COLUMN_NSTEP 8    /* SQLITE_STMTSTATUS_VM_STEP */
-#define STMTS_COLUMN_MEM   9    /* SQLITE_STMTSTATUS_MEMUSED */
+#define STMT_COLUMN_PTR     0   /* Numeric value of the statement pointer */
+#define STMT_COLUMN_SQL     1   /* SQL for the statement */
+#define STMT_COLUMN_NCOL    2   /* Number of result columns */
+#define STMT_COLUMN_RO      3   /* True if read-only */
+#define STMT_COLUMN_BUSY    4   /* True if currently busy */
+#define STMT_COLUMN_NSCAN   5   /* SQLITE_STMTSTATUS_FULLSCAN_STEP */
+#define STMT_COLUMN_NSORT   6   /* SQLITE_STMTSTATUS_SORT */
+#define STMT_COLUMN_NAIDX   7   /* SQLITE_STMTSTATUS_AUTOINDEX */
+#define STMT_COLUMN_NSTEP   8   /* SQLITE_STMTSTATUS_VM_STEP */
+#define STMT_COLUMN_REPREP  9   /* SQLITE_STMTSTATUS_REPREPARE */
+#define STMT_COLUMN_RUN    10   /* SQLITE_STMTSTATUS_RUN */
+#define STMT_COLUMN_MEM    11   /* SQLITE_STMTSTATUS_MEMUSED */
 
 
   rc = sqlite3_declare_vtab(db,
-     "CREATE TABLE x(ptr,sql,ncol,ro,busy,nscan,nsort,naidx,nstep,mem)");
+     "CREATE TABLE x(ptr,sql,ncol,ro,busy,nscan,nsort,naidx,nstep,"
+                    "reprep,run,mem)");
   if( rc==SQLITE_OK ){
     pNew = sqlite3_malloc( sizeof(*pNew) );
     *ppVtab = (sqlite3_vtab*)pNew;
@@ -114,83 +120,89 @@ static int stmtsConnect(
 }
 
 /*
-** This method is the destructor for stmts_cursor objects.
+** This method is the destructor for stmt_cursor objects.
 */
-static int stmtsDisconnect(sqlite3_vtab *pVtab){
+static int stmtDisconnect(sqlite3_vtab *pVtab){
   sqlite3_free(pVtab);
   return SQLITE_OK;
 }
 
 /*
-** Constructor for a new stmts_cursor object.
+** Constructor for a new stmt_cursor object.
 */
-static int stmtsOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
-  stmts_cursor *pCur;
+static int stmtOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
+  stmt_cursor *pCur;
   pCur = sqlite3_malloc( sizeof(*pCur) );
   if( pCur==0 ) return SQLITE_NOMEM;
   memset(pCur, 0, sizeof(*pCur));
-  pCur->db = ((stmts_vtab*)p)->db;
+  pCur->db = ((stmt_vtab*)p)->db;
   *ppCursor = &pCur->base;
   return SQLITE_OK;
 }
 
 /*
-** Destructor for a stmts_cursor.
+** Destructor for a stmt_cursor.
 */
-static int stmtsClose(sqlite3_vtab_cursor *cur){
+static int stmtClose(sqlite3_vtab_cursor *cur){
   sqlite3_free(cur);
   return SQLITE_OK;
 }
 
 
 /*
-** Advance a stmts_cursor to its next row of output.
+** Advance a stmt_cursor to its next row of output.
 */
-static int stmtsNext(sqlite3_vtab_cursor *cur){
-  stmts_cursor *pCur = (stmts_cursor*)cur;
+static int stmtNext(sqlite3_vtab_cursor *cur){
+  stmt_cursor *pCur = (stmt_cursor*)cur;
   pCur->iRowid++;
   pCur->pStmt = sqlite3_next_stmt(pCur->db, pCur->pStmt);
   return SQLITE_OK;
 }
 
 /*
-** Return values of columns for the row at which the stmts_cursor
+** Return values of columns for the row at which the stmt_cursor
 ** is currently pointing.
 */
-static int stmtsColumn(
+static int stmtColumn(
   sqlite3_vtab_cursor *cur,   /* The cursor */
   sqlite3_context *ctx,       /* First argument to sqlite3_result_...() */
   int i                       /* Which column to return */
 ){
-  stmts_cursor *pCur = (stmts_cursor*)cur;
+  stmt_cursor *pCur = (stmt_cursor*)cur;
   switch( i ){
-    case STMTS_COLUMN_PTR: {
+    case STMT_COLUMN_PTR: {
       sqlite3_result_int64(ctx, SQLITE_PTR_TO_INT64(pCur->pStmt));
       break;
     }
-    case STMTS_COLUMN_SQL: {
+    case STMT_COLUMN_SQL: {
       sqlite3_result_text(ctx, sqlite3_sql(pCur->pStmt), -1, SQLITE_TRANSIENT);
       break;
     }
-    case STMTS_COLUMN_NCOL: {
+    case STMT_COLUMN_NCOL: {
       sqlite3_result_int(ctx, sqlite3_column_count(pCur->pStmt));
       break;
     }
-    case STMTS_COLUMN_RO: {
+    case STMT_COLUMN_RO: {
       sqlite3_result_int(ctx, sqlite3_stmt_readonly(pCur->pStmt));
       break;
     }
-    case STMTS_COLUMN_BUSY: {
+    case STMT_COLUMN_BUSY: {
       sqlite3_result_int(ctx, sqlite3_stmt_busy(pCur->pStmt));
       break;
     }
-    case STMTS_COLUMN_NSCAN:
-    case STMTS_COLUMN_NSORT:
-    case STMTS_COLUMN_NAIDX:
-    case STMTS_COLUMN_NSTEP:
-    case STMTS_COLUMN_MEM: {
+    case STMT_COLUMN_MEM: {
+      i = SQLITE_STMTSTATUS_MEMUSED + 
+            STMT_COLUMN_NSCAN - SQLITE_STMTSTATUS_FULLSCAN_STEP;
+      /* Fall thru */
+    }
+    case STMT_COLUMN_NSCAN:
+    case STMT_COLUMN_NSORT:
+    case STMT_COLUMN_NAIDX:
+    case STMT_COLUMN_NSTEP:
+    case STMT_COLUMN_REPREP:
+    case STMT_COLUMN_RUN: {
       sqlite3_result_int(ctx, sqlite3_stmt_status(pCur->pStmt,
-                      i-STMTS_COLUMN_NSCAN+SQLITE_STMTSTATUS_FULLSCAN_STEP, 0));
+                      i-STMT_COLUMN_NSCAN+SQLITE_STMTSTATUS_FULLSCAN_STEP, 0));
       break;
     }
   }
@@ -201,8 +213,8 @@ static int stmtsColumn(
 ** Return the rowid for the current row.  In this implementation, the
 ** rowid is the same as the output value.
 */
-static int stmtsRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
-  stmts_cursor *pCur = (stmts_cursor*)cur;
+static int stmtRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
+  stmt_cursor *pCur = (stmt_cursor*)cur;
   *pRowid = pCur->iRowid;
   return SQLITE_OK;
 }
@@ -211,35 +223,35 @@ static int stmtsRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
 ** Return TRUE if the cursor has been moved off of the last
 ** row of output.
 */
-static int stmtsEof(sqlite3_vtab_cursor *cur){
-  stmts_cursor *pCur = (stmts_cursor*)cur;
+static int stmtEof(sqlite3_vtab_cursor *cur){
+  stmt_cursor *pCur = (stmt_cursor*)cur;
   return pCur->pStmt==0;
 }
 
 /*
-** This method is called to "rewind" the stmts_cursor object back
+** This method is called to "rewind" the stmt_cursor object back
 ** to the first row of output.  This method is always called at least
-** once prior to any call to stmtsColumn() or stmtsRowid() or 
-** stmtsEof().
+** once prior to any call to stmtColumn() or stmtRowid() or 
+** stmtEof().
 */
-static int stmtsFilter(
+static int stmtFilter(
   sqlite3_vtab_cursor *pVtabCursor, 
   int idxNum, const char *idxStr,
   int argc, sqlite3_value **argv
 ){
-  stmts_cursor *pCur = (stmts_cursor *)pVtabCursor;
+  stmt_cursor *pCur = (stmt_cursor *)pVtabCursor;
   pCur->pStmt = 0;
   pCur->iRowid = 0;
-  return stmtsNext(pVtabCursor);
+  return stmtNext(pVtabCursor);
 }
 
 /*
 ** SQLite will invoke this method one or more times while planning a query
-** that uses the generate_stmts virtual table.  This routine needs to create
+** that uses the generate_stmt virtual table.  This routine needs to create
 ** a query plan for each invocation and compute an estimated cost for that
 ** plan.
 */
-static int stmtsBestIndex(
+static int stmtBestIndex(
   sqlite3_vtab *tab,
   sqlite3_index_info *pIdxInfo
 ){
@@ -250,22 +262,22 @@ static int stmtsBestIndex(
 
 /*
 ** This following structure defines all the methods for the 
-** generate_stmts virtual table.
+** generate_stmt virtual table.
 */
-static sqlite3_module stmtsModule = {
+static sqlite3_module stmtModule = {
   0,                         /* iVersion */
   0,                         /* xCreate */
-  stmtsConnect,             /* xConnect */
-  stmtsBestIndex,           /* xBestIndex */
-  stmtsDisconnect,          /* xDisconnect */
+  stmtConnect,               /* xConnect */
+  stmtBestIndex,             /* xBestIndex */
+  stmtDisconnect,            /* xDisconnect */
   0,                         /* xDestroy */
-  stmtsOpen,                /* xOpen - open a cursor */
-  stmtsClose,               /* xClose - close a cursor */
-  stmtsFilter,              /* xFilter - configure scan constraints */
-  stmtsNext,                /* xNext - advance a cursor */
-  stmtsEof,                 /* xEof - check for end of scan */
-  stmtsColumn,              /* xColumn - read data */
-  stmtsRowid,               /* xRowid - read data */
+  stmtOpen,                  /* xOpen - open a cursor */
+  stmtClose,                 /* xClose - close a cursor */
+  stmtFilter,                /* xFilter - configure scan constraints */
+  stmtNext,                  /* xNext - advance a cursor */
+  stmtEof,                   /* xEof - check for end of scan */
+  stmtColumn,                /* xColumn - read data */
+  stmtRowid,                 /* xRowid - read data */
   0,                         /* xUpdate */
   0,                         /* xBegin */
   0,                         /* xSync */
@@ -277,10 +289,19 @@ static sqlite3_module stmtsModule = {
 
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 
+int sqlite3StmtVtabInit(sqlite3 *db){
+  int rc = SQLITE_OK;
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+  rc = sqlite3_create_module(db, "stmt", &stmtModule, 0);
+#endif
+  return rc;
+}
+
+#ifndef SQLITE_CORE
 #ifdef _WIN32
 __declspec(dllexport)
 #endif
-int sqlite3_stmts_init(
+int sqlite3_stmt_init(
   sqlite3 *db, 
   char **pzErrMsg, 
   const sqlite3_api_routines *pApi
@@ -288,12 +309,9 @@ int sqlite3_stmts_init(
   int rc = SQLITE_OK;
   SQLITE_EXTENSION_INIT2(pApi);
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-  if( sqlite3_libversion_number()<3008012 ){
-    *pzErrMsg = sqlite3_mprintf(
-        "generate_stmts() requires SQLite 3.8.12 or later");
-    return SQLITE_ERROR;
-  }
-  rc = sqlite3_create_module(db, "stmts", &stmtsModule, 0);
+  rc = sqlite3StmtVtabInit(db);
 #endif
   return rc;
 }
+#endif /* SQLITE_CORE */
+#endif /* !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_STMTVTAB) */

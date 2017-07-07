@@ -120,12 +120,12 @@ set pragma_def {
 
   NAME: writable_schema
   TYPE: FLAG
-  ARG:  SQLITE_WriteSchema|SQLITE_RecoveryMode
+  ARG:  SQLITE_WriteSchema
   IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
 
   NAME: read_uncommitted
   TYPE: FLAG
-  ARG:  SQLITE_ReadUncommitted
+  ARG:  SQLITE_ReadUncommit
   IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
 
   NAME: recursive_triggers
@@ -251,6 +251,24 @@ set pragma_def {
   FLAG: NeedSchema Result0
   COLS: seq name file
   IF:   !defined(SQLITE_OMIT_SCHEMA_PRAGMAS)
+
+  NAME: function_list
+  FLAG: Result0
+  COLS: name builtin
+  IF:   !defined(SQLITE_OMIT_SCHEMA_PRAGMAS)
+  IF:   defined(SQLITE_INTROSPECTION_PRAGMAS)
+
+  NAME: module_list
+  FLAG: Result0
+  COLS: name
+  IF:   !defined(SQLITE_OMIT_SCHEMA_PRAGMAS)
+  IF:   !defined(SQLITE_OMIT_VIRTUALTABLE)
+  IF:   defined(SQLITE_INTROSPECTION_PRAGMAS)
+
+  NAME: pragma_list
+  FLAG: Result0
+  COLS: name
+  IF:   defined(SQLITE_INTROSPECTION_PRAGMAS)
 
   NAME: collation_list
   FLAG: Result0

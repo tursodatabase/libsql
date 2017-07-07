@@ -370,4 +370,3 @@ do_execsql_test 17.6 {
 #db eval {SELECT rowid, fts5_decode_none(rowid, block) aS r FROM t2_data} {puts $r}
   
 finish_test
-

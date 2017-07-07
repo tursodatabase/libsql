@@ -41,4 +41,3 @@ do_execsql_test 2.1 {
 } {2 2 3 3 4 4}
 
 finish_test
-

@@ -242,4 +242,3 @@ foreach {T create} {
 }
 
 finish_test
-

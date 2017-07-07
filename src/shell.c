@@ -3327,7 +3327,9 @@ static char zHelp[] =
   ".echo on|off           Turn command echo on or off\n"
   ".eqp on|off|full       Enable or disable automatic EXPLAIN QUERY PLAN\n"
   ".exit                  Exit this program\n"
-  ".explain ?on|off|auto? Turn EXPLAIN output mode on or off or to automatic\n"
+/* Because explain mode comes on automatically now, the ".explain" mode
+** is removed from the help screen.  It is still supported for legacy, however */
+/*".explain ?on|off|auto? Turn EXPLAIN output mode on or off or to automatic\n"*/
   ".fullschema ?--indent? Show schema and the content of sqlite_stat tables\n"
   ".headers on|off        Turn display of headers on or off\n"
   ".help                  Show this message\n"
@@ -5035,6 +5037,8 @@ static int do_meta_command(char *zLine, ShellState *p){
     rc = 2;
   }else
 
+  /* The ".explain" command is automatic now.  It is largely pointless.  It
+  ** retained purely for backwards compatibility */
   if( c=='e' && strncmp(azArg[0], "explain", n)==0 ){
     int val = 1;
     if( nArg>=2 ){
@@ -5551,7 +5555,9 @@ static int do_meta_command(char *zLine, ShellState *p){
       p->mode = MODE_Ascii;
       sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Unit);
       sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Record);
-    }else {
+    }else if( nArg==1 ){
+      raw_printf(p->out, "current output mode: %s\n", modeDescr[p->mode]);
+    }else{
       raw_printf(stderr, "Error: mode should be one of: "
          "ascii column csv html insert line list quote tabs tcl\n");
       rc = 1;
@@ -5823,8 +5829,14 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
     if( zDiv ){
       sqlite3_stmt *pStmt = 0;
-      sqlite3_prepare_v2(p->db, "SELECT name FROM pragma_database_list",
-                         -1, &pStmt, 0);
+      rc = sqlite3_prepare_v2(p->db, "SELECT name FROM pragma_database_list",
+                              -1, &pStmt, 0);
+      if( rc ){
+        utf8_printf(stderr, "Error: %s\n", sqlite3_errmsg(p->db));
+        sqlite3_finalize(pStmt);
+        rc = 1;
+        goto meta_command_exit;
+      }
       appendText(&sSelect, "SELECT sql FROM", 0);
       iSchema = 0;
       while( sqlite3_step(pStmt)==SQLITE_ROW ){
@@ -7181,6 +7193,7 @@ static const char zOptions[] =
   "   -newline SEP         set output row separator. Default: '\\n'\n"
   "   -nullvalue TEXT      set text string for NULL values. Default ''\n"
   "   -pagecache SIZE N    use N slots of SZ bytes each for page cache memory\n"
+  "   -quote               set output mode to 'quote'\n"
   "   -scratch SIZE N      use N slots of SZ bytes each for scratch memory\n"
   "   -separator SEP       set output column separator. Default: '|'\n"
   "   -stats               print memory stats before each finalize\n"
@@ -7476,6 +7489,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       data.mode = MODE_Html;
     }else if( strcmp(z,"-list")==0 ){
       data.mode = MODE_List;
+    }else if( strcmp(z,"-quote")==0 ){
+      data.mode = MODE_Quote;
     }else if( strcmp(z,"-line")==0 ){
       data.mode = MODE_Line;
     }else if( strcmp(z,"-column")==0 ){

@@ -177,7 +177,7 @@ read_test  1.2.1.9 { SELECT docid, * FROM pages } {}
 
 do_error_test fts3-1.2.1.10 {
   INSERT INTO pages(rowid, docid, title, body) VALUES(1, 2, 'A title', 'A document body');
-} {SQL logic error or missing database}
+} {SQL logic error}
 
 # Test the optimize() function example:
 ddl_test   1.2.2.1 { CREATE VIRTUAL TABLE docs USING fts3 }

@@ -769,7 +769,7 @@ forcedelete test.db-journal
 # Test the english language string equivalents for sqlite error codes
 set code2english [list \
 SQLITE_OK         {not an error} \
-SQLITE_ERROR      {SQL logic error or missing database} \
+SQLITE_ERROR      {SQL logic error} \
 SQLITE_PERM       {access permission denied} \
 SQLITE_ABORT      {callback requested query abort} \
 SQLITE_BUSY       {database is locked} \
