@@ -104,7 +104,7 @@ int sqlite3WalkSelectFrom(Walker *pWalker, Select *p){
   pSrc = p->pSrc;
   if( ALWAYS(pSrc) ){
     for(i=pSrc->nSrc, pItem=pSrc->a; i>0; i--, pItem++){
-      if( sqlite3WalkSelect(pWalker, pItem->pSelect) ){
+      if( pItem->pSelect && sqlite3WalkSelect(pWalker, pItem->pSelect) ){
         return WRC_Abort;
       }
       if( pItem->fg.isTabFunc
@@ -136,7 +136,8 @@ int sqlite3WalkSelectFrom(Walker *pWalker, Select *p){
 */
 int sqlite3WalkSelect(Walker *pWalker, Select *p){
   int rc;
-  if( p==0 || pWalker->xSelectCallback==0 ) return WRC_Continue;
+  if( p==0 ) return WRC_Continue;
+  if( pWalker->xSelectCallback==0 ) return WRC_Continue;
   do{
     rc = pWalker->xSelectCallback(pWalker, p);
     if( rc ) return rc & WRC_Abort;
