@@ -1,5 +1,5 @@
-C Always\sload\sthe\sschema\sbefore\sstarting\stab-completion.
-D 2017-07-06T22:40:47.126
+C Fix\san\sobsolete\scomment\son\sthe\ssqlite3_namelist()\sfunction\simplementation.
+D 2017-07-07T14:54:38.736
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 4ebb1d257cac7fb1bcb4ba59278416d410ff1c4bf59447a9c37a415f3516056a
@@ -508,7 +508,7 @@ F src/test_windirent.c 17f91f5f2aa1bb7328abb49414c363b5d2a9d3ff
 F src/test_windirent.h 5d67483a55442e31e1bde0f4a230e6e932ad5906
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
-F src/tokenize.c a20086f022fa57fee62c724af2dfeb2e768829d0cb4a1252ee68f10d3501486c
+F src/tokenize.c d0700eb5615c38dc4dd0ad50c8243c3b89f6efcca14ea1527e5ec1c409b90b66
 F src/treeview.c 6cf8d7fe9e63fae57dad1bb57f6615e14eac0c527e43d868e805042cae8ed1f7
 F src/trigger.c d1cae560bfacc8bfb3a072d73658245c1714c0389097da69b4cb23877a082d7e
 F src/update.c c443935c652af9365e033f756550b5032d02e1b06eb2cb890ed7511ae0c051dc
@@ -1628,7 +1628,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c906739f0c1046b57a8c6d4aa32dbfbb4c59a8d94eb87243bf5135c665492129
-R 55313a24118dcf99e2229f145c888c3e
+P 907fd3aab6205ac042d60c6455418a99b45efe954b3510597d54462cdbd12bfd
+R f10a1db0e6d806f6f5461a0acced2455
 U drh
-Z 9e77b99bd65c38a38bf6a561187c3966
+Z a145f3b426efc1ed167334c57e8208b8

@@ -650,8 +650,8 @@ static void addName(struct NameAccum *p, const char *zName, int nName){
 ** the allocation and should release it using sqlite3_free() when it has
 ** finished using the list.
 **
-** Each word is separated from the next by a single 0x00 byte.  The list
-** is terminated by two 0x00 bytes in a row.
+** The returned list is an array of pointers to strings.  The list is
+** terminated by a single NULL pointer.
 */
 char **sqlite3_namelist(
   sqlite3 *db,             /* Database from which to extract names */
