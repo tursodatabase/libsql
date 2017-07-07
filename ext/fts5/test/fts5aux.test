@@ -279,4 +279,3 @@ do_execsql_test 9.3 {
 
 
 finish_test
-

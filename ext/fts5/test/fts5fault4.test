@@ -395,4 +395,3 @@ do_faultsim_test 14.1 -faults oom-t* -prep {
 }
 
 finish_test
-

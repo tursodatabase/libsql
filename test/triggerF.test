@@ -69,4 +69,3 @@ foreach {tn sql log} {
 }
 
 finish_test
-

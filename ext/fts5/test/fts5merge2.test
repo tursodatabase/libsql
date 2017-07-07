@@ -55,4 +55,3 @@ do_execsql_test 1.2 {
 }
 
 finish_test
-

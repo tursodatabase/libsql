@@ -116,4 +116,3 @@ do_execsql_test 2.0 {
 }
 
 finish_test
-

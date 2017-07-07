@@ -954,7 +954,7 @@ do_test vtab1.10-3 {
   catchsql {
     INSERT INTO e VALUES(1, 2, 3);
   }
-} {1 {SQL logic error or missing database}}
+} {1 {SQL logic error}}
 do_test vtab1.10-4 {
   catch {execsql {
     EXPLAIN SELECT * FROM e WHERE rowid = 2;

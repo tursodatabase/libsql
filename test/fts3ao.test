@@ -71,7 +71,7 @@ do_test fts3ao-2.5 {
     CREATE TABLE t1_segdir(a, b, c);
     ALTER TABLE fts_t1 RENAME to t1;
   }
-} {1 {SQL logic error or missing database}}
+} {1 {SQL logic error}}
 do_test fts3ao-2.6 {
   execsql { SELECT rowid, snippet(fts_t1) FROM fts_t1 WHERE a MATCH 'four'; }
 } {1 {one three <b>four</b>}}
@@ -91,7 +91,7 @@ do_test fts3ao-2.9 {
   catchsql {
     ALTER TABLE fts_t1 RENAME to t1;
   }
-} {1 {SQL logic error or missing database}}
+} {1 {SQL logic error}}
 do_test fts3ao-2.10 {
   execsql { SELECT rowid, snippet(fts_t1) FROM fts_t1 WHERE a MATCH 'four'; }
 } {1 {one three <b>four</b>}}
