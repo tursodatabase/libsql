@@ -1,5 +1,5 @@
-C Enhance\sthe\sMSVC\smakefile\s'clean'\starget\sto\shandle\slsm1.
-D 2017-07-07T19:02:51.650
+C Fix\sthe\smemcpy\scalls\sin\sthe\slsmWin32OsShmMap\sfunction\sfor\slsm1.
+D 2017-07-07T19:12:55.644
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 20850e3e8d4d4791e0531955852d768eb06f24138214870d543abb1a47346fba
@@ -250,7 +250,7 @@ F ext/lsm1/lsm_tree.c 53b657439e0fcb1117b0559ad3567ac417f81f2ed0fff9bab79948a00e
 F ext/lsm1/lsm_unix.c 57361bcf5b1a1a028f5d66571ee490e9064d2cfb145a2cc9e5ddade467bb551b
 F ext/lsm1/lsm_varint.c b19ae9bd26b5a1e8402fb8a564b25d9542338a41
 F ext/lsm1/lsm_vtab.c 812b74a9a7539e8cab49761591ffddc1b3580735fac5d638826c8d2be95ff38b
-F ext/lsm1/lsm_win32.c 24757d71673d20634afb681f59af8da8cbe84733be82b86b133d79bd9ff335de
+F ext/lsm1/lsm_win32.c 8ec3bcc7d17c26d33b9f6af32444afa2e02c9002cda0f646946598036d17dbd4
 F ext/misc/README.md 8e008c8d2b02e09096b31dfba033253ac27c6c06a18aa5826e299fa7601d90b2
 F ext/misc/amatch.c 6db4607cb17c54b853a2d7c7c36046d004853f65b9b733e6f019d543d5dfae87
 F ext/misc/anycollseq.c 5ffdfde9829eeac52219136ad6aa7cd9a4edb3b15f4f2532de52f4a22525eddb
@@ -1628,7 +1628,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 277a7fedafbe5b43d44086f3cb73e952873913bdc4b51041f45b6571b386d7d9
-R f6458ee7a870e2551c7761f29969d435
+P 2d6faebc319aefeab796c5f2ead4c3c3e2a9dd25c979a16bdb555a109135b13c
+R a245078b8c325e979b84d418c47c9bd7
 U mistachkin
-Z cebc3cc5b9576984263d133291a87338
+Z dbc992308fb33d5413eb87d5a1383270

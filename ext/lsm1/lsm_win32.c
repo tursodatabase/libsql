@@ -692,8 +692,8 @@ static int lsmWin32OsShmMap(lsm_file *pFile, int iChunk, int sz, void **ppShm){
       lsmFree(pWin32File->pEnv, ahNew);
       return LSM_NOMEM_BKPT;
     }
-    memcpy(ahNew, pWin32File->ahShm, pWin32File->nShm);
-    memcpy(apNew, pWin32File->apShm, pWin32File->nShm);
+    memcpy(ahNew, pWin32File->ahShm, sizeof(LPHANDLE) * pWin32File->nShm);
+    memcpy(apNew, pWin32File->apShm, sizeof(LPVOID) * pWin32File->nShm);
     lsmFree(pWin32File->pEnv, pWin32File->ahShm);
     pWin32File->ahShm = ahNew;
     lsmFree(pWin32File->pEnv, pWin32File->apShm);
