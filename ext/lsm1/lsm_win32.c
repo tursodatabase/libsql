@@ -253,7 +253,7 @@ static int lsmWin32OsOpen(
   if( pWin32File==0 ){
     rc = LSM_NOMEM_BKPT;
   }else{
-    HANDLE hFile;
+    HANDLE hFile = NULL;
 
     rc = win32Open(pEnv, zFile, flags, &hFile);
     if( rc==LSM_OK ){
@@ -678,20 +678,22 @@ static int lsmWin32OsShmMap(lsm_file *pFile, int iChunk, int sz, void **ppShm){
       }
     }
 
-    ahNew = (LPHANDLE)lsmRealloc(pWin32File->pEnv, pWin32File->ahShm,
-                                 sizeof(LPHANDLE) * nNew);
+    ahNew = (LPHANDLE)lsmMallocZero(pWin32File->pEnv, sizeof(LPHANDLE) * nNew);
     if( !ahNew ) return LSM_NOMEM_BKPT;
-    apNew = (LPVOID *)lsmRealloc(pWin32File->pEnv, pWin32File->apShm,
-                                 sizeof(LPVOID) * nNew);
+    apNew = (LPVOID *)lsmMallocZero(pWin32File->pEnv, sizeof(LPVOID) * nNew);
     if( !apNew ){
       lsmFree(pWin32File->pEnv, ahNew);
       return LSM_NOMEM_BKPT;
     }
+    memcpy(ahNew, pWin32File->ahShm, pWin32File->nShm);
+    memcpy(apNew, pWin32File->apShm, pWin32File->nShm);
     for(i=pWin32File->nShm; i<nNew; i++){
       ahNew[i] = NULL;
       apNew[i] = NULL;
     }
+    lsmFree(pWin32File->pEnv, pWin32File->ahShm);
     pWin32File->ahShm = ahNew;
+    lsmFree(pWin32File->pEnv, pWin32File->apShm);
     pWin32File->apShm = apNew;
     pWin32File->nShm = nNew;
   }
