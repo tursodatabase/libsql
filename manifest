@@ -1,5 +1,5 @@
-C Memory\sreallocation\sfix\sfor\sthe\sWin32\sVFS\sfor\slsm1.
-D 2017-07-07T16:06:30.430
+C In\slsmtest,\suse\san\sempty\sstring\sinstead\sof\s":memory:"\swhen\srequesting\sa\ntemporary\sdatabase\sfrom\sSQLite.\sThis\sprevents\sother\stest\scode\sfrom\strying\sto\nunlink()\s":memory:",\swhich\sfails\son\swin32.
+D 2017-07-07T16:09:24.292
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 4ebb1d257cac7fb1bcb4ba59278416d410ff1c4bf59447a9c37a415f3516056a
@@ -213,7 +213,7 @@ F ext/lsm1/Makefile a2ea4975162be8932b5efa727080f4982715d34c32035d9eb7a015ae7840
 F ext/lsm1/Makefile.msc c8140509750fb207f0e984991bc426e91a11adb2f6434f218c52103b9d33a8e1
 F ext/lsm1/lsm-test/README 87ea529d2abe615e856d4714bfe8bb185e6c2771b8612aa6298588b7b43e6f86
 F ext/lsm1/lsm-test/lsmtest.h 346295688c4b304689950f10e4dcd4640321f3c860112b72cb0691ca075b6a71
-F ext/lsm1/lsm-test/lsmtest1.c 2570b0e21e854d3d079dc04a535ce58abe50ed512da23117ab95b01fecdb90a0
+F ext/lsm1/lsm-test/lsmtest1.c 33158978327f800e82b6a47c09b86ace809f56a9ff10b0162273ec1186cc3153
 F ext/lsm1/lsm-test/lsmtest2.c 188b09aec776516aeedcfd13b9c6faf85ba16b3671a0897a2c740ee00a5dc4f8
 F ext/lsm1/lsm-test/lsmtest3.c 9ab87528a36dbf4a61d7c8ad954f5ee368c0878c127b84b942b2e2abe522de26
 F ext/lsm1/lsm-test/lsmtest4.c d258d6a245db5d8eaede096e2368d23f859c5e92c80ab9122463f708514fe10c
@@ -1628,7 +1628,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c46f0f076c674891e20240bad56693d891aedc43004bcf980a5d199515f23413
-R 4d89fae253073c0782e85c8a3d95f158
-U mistachkin
-Z 1b373bb5c83dcb5af7e9a15d3d0aec3e
+P 5a3140e4dedace6de4366a3c52e41b818b6d19f356fdab738c6605afc1b674fa
+R 6462b0fbfbb0e91c958086ecb4e6ea20
+U dan
+Z 01bdf41d3d2686fb6c10584ef3102e0c

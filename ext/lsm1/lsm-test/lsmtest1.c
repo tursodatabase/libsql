@@ -96,7 +96,7 @@ int testControlDb(TestDb **ppDb){
 #ifdef HAVE_KYOTOCABINET
   return tdb_open("kyotocabinet", "tmp.db", 1, ppDb);
 #else
-  return tdb_open("sqlite3", ":memory:", 1, ppDb);
+  return tdb_open("sqlite3", "", 1, ppDb);
 #endif
 }
 
