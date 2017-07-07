@@ -1708,17 +1708,26 @@ static void fts3CursorFinalizeStmt(Fts3Cursor *pCsr){
 }
 
 /*
+** Free all resources currently held by the cursor passed as the only
+** argument.
+*/
+static void fts3ClearCursor(Fts3Cursor *pCsr){
+  fts3CursorFinalizeStmt(pCsr);
+  sqlite3Fts3FreeDeferredTokens(pCsr);
+  sqlite3_free(pCsr->aDoclist);
+  sqlite3Fts3MIBufferFree(pCsr->pMIBuffer);
+  sqlite3Fts3ExprFree(pCsr->pExpr);
+  memset(&(&pCsr->base)[1], 0, sizeof(Fts3Cursor)-sizeof(sqlite3_vtab_cursor));
+}
+
+/*
 ** Close the cursor.  For additional information see the documentation
 ** on the xClose method of the virtual table interface.
 */
 static int fts3CloseMethod(sqlite3_vtab_cursor *pCursor){
   Fts3Cursor *pCsr = (Fts3Cursor *)pCursor;
   assert( ((Fts3Table *)pCsr->base.pVtab)->pSegments==0 );
-  fts3CursorFinalizeStmt(pCsr);
-  sqlite3Fts3ExprFree(pCsr->pExpr);
-  sqlite3Fts3FreeDeferredTokens(pCsr);
-  sqlite3_free(pCsr->aDoclist);
-  sqlite3Fts3MIBufferFree(pCsr->pMIBuffer);
+  fts3ClearCursor(pCsr);
   assert( ((Fts3Table *)pCsr->base.pVtab)->pSegments==0 );
   sqlite3_free(pCsr);
   return SQLITE_OK;
@@ -3219,11 +3228,7 @@ static int fts3FilterMethod(
   assert( iIdx==nVal );
 
   /* In case the cursor has been used before, clear it now. */
-  fts3CursorFinalizeStmt(pCsr);
-  sqlite3_free(pCsr->aDoclist);
-  sqlite3Fts3MIBufferFree(pCsr->pMIBuffer);
-  sqlite3Fts3ExprFree(pCsr->pExpr);
-  memset(&pCursor[1], 0, sizeof(Fts3Cursor)-sizeof(sqlite3_vtab_cursor));
+  fts3ClearCursor(pCsr);
 
   /* Set the lower and upper bounds on docids to return */
   pCsr->iMinDocid = fts3DocidRange(pDocidGe, SMALLEST_INT64);
@@ -3302,7 +3307,12 @@ static int fts3FilterMethod(
 ** routine to find out if it has reached the end of a result set.
 */
 static int fts3EofMethod(sqlite3_vtab_cursor *pCursor){
-  return ((Fts3Cursor *)pCursor)->isEof;
+  Fts3Cursor *pCsr = (Fts3Cursor*)pCursor;
+  if( pCsr->isEof ){
+    fts3ClearCursor(pCsr);
+    pCsr->isEof = 1;
+  }
+  return pCsr->isEof;
 }
 
 /* 

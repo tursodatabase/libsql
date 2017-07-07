@@ -199,8 +199,12 @@
 
 #define LSM_LOG_WRITE        0x06
 #define LSM_LOG_WRITE_CKSUM  0x07
+
 #define LSM_LOG_DELETE       0x08
 #define LSM_LOG_DELETE_CKSUM 0x09
+
+#define LSM_LOG_DRANGE       0x0A
+#define LSM_LOG_DRANGE_CKSUM 0x0B
 
 /* Require a checksum every 32KB. */
 #define LSM_CKSUM_MAXDATA (32*1024)
@@ -373,6 +377,7 @@ int lsmLogBegin(lsm_db *pDb){
       lsmStringInit(&pNew->buf, pDb->pEnv);
       rc = lsmStringExtend(&pNew->buf, 2);
     }
+    pDb->pLogWriter = pNew;
   }else{
     pNew = pDb->pLogWriter;
     assert( (u8 *)(&pNew[1])==(u8 *)(&((&pNew->buf)[1])) );
@@ -464,7 +469,7 @@ int lsmLogBegin(lsm_db *pDb){
     pNew->jump.iEnd = lastByteOnSector(pNew, pNew->jump.iEnd);
   }
 
-  pDb->pLogWriter = pNew;
+  assert( pDb->pLogWriter==pNew );
   return rc;
 }
 
@@ -653,6 +658,7 @@ static int logFlush(lsm_db *pDb, int eType){
 */
 int lsmLogWrite(
   lsm_db *pDb,                    /* Database handle */
+  int eType,
   void *pKey, int nKey,           /* Database key to write to log */
   void *pVal, int nVal            /* Database value (or nVal<0) to write */
 ){
@@ -661,13 +667,19 @@ int lsmLogWrite(
   int nReq;                       /* Bytes of space required in log */
   int bCksum = 0;                 /* True to embed a checksum in this record */
 
+  assert( eType==LSM_WRITE || eType==LSM_DELETE || eType==LSM_DRANGE );
+  assert( LSM_LOG_WRITE==LSM_WRITE );
+  assert( LSM_LOG_DELETE==LSM_DELETE );
+  assert( LSM_LOG_DRANGE==LSM_DRANGE );
+  assert( (eType==LSM_LOG_DELETE)==(nVal<0) );
+
   if( pDb->bUseLog==0 ) return LSM_OK;
   pLog = pDb->pLogWriter;
 
   /* Determine how many bytes of space are required, assuming that a checksum
   ** will be embedded in this record (even though it may not be).  */
   nReq = 1 + lsmVarintLen32(nKey) + 8 + nKey;
-  if( nVal>=0 ) nReq += lsmVarintLen32(nVal) + nVal;
+  if( eType!=LSM_LOG_DELETE ) nReq += lsmVarintLen32(nVal) + nVal;
 
   /* Jump over the jump region if required. Set bCksum to true to tell the
   ** code below to include a checksum in the record if either (a) writing
@@ -687,9 +699,10 @@ int lsmLogWrite(
     ** DELETE) or 2 (for WRITE) varints.  */
     assert( LSM_LOG_WRITE_CKSUM == (LSM_LOG_WRITE | 0x0001) );
     assert( LSM_LOG_DELETE_CKSUM == (LSM_LOG_DELETE | 0x0001) );
-    *(a++) = (nVal>=0 ? LSM_LOG_WRITE : LSM_LOG_DELETE) | (u8)bCksum;
+    assert( LSM_LOG_DRANGE_CKSUM == (LSM_LOG_DRANGE | 0x0001) );
+    *(a++) = (u8)eType | (u8)bCksum;
     a += lsmVarintPut32(a, nKey);
-    if( nVal>=0 ) a += lsmVarintPut32(a, nVal);
+    if( eType!=LSM_LOG_DELETE ) a += lsmVarintPut32(a, nVal);
 
     if( bCksum ){
       pLog->buf.n = (a - (u8 *)pLog->buf.z);
@@ -699,7 +712,7 @@ int lsmLogWrite(
 
     memcpy(a, pKey, nKey);
     a += nKey;
-    if( nVal>=0 ){
+    if( eType!=LSM_LOG_DELETE ){
       memcpy(a, pVal, nVal);
       a += nVal;
     }
@@ -868,12 +881,14 @@ static void logReaderBlob(
     }else{
       int nCopy = LSM_MIN(nAvail, nReq);
       if( nBlob==nReq ){
-        if( ppBlob ) *ppBlob = (u8 *)pBuf->z;
         pBuf->n = 0;
       }
       rc = lsmStringBinAppend(pBuf, (u8 *)&p->buf.z[p->iBuf], nCopy);
       nReq -= nCopy;
       p->iBuf += nCopy;
+      if( nReq==0 && ppBlob ){
+        *ppBlob = (u8*)pBuf->z;
+      }
     }
   }
 
@@ -915,6 +930,7 @@ static void logReaderCksum(LogReader *p, LsmString *pBuf, int *pbEof, int *pRc){
     logCksumUnaligned(&p->buf.z[p->iCksumBuf], nCksum, &p->cksum0, &p->cksum1);
     p->iCksumBuf = p->iBuf + 8;
     logReaderBlob(p, pBuf, 8, &pPtr, pRc);
+    assert( pPtr || *pRc );
 
     /* Read the checksums from the log file. Set *pbEof if they do not match. */
     if( pPtr ){
@@ -1002,6 +1018,8 @@ int lsmLogRecover(lsm_db *pDb){
             break;
           }
 
+          case LSM_LOG_DRANGE:
+          case LSM_LOG_DRANGE_CKSUM:
           case LSM_LOG_WRITE:
           case LSM_LOG_WRITE_CKSUM: {
             int nKey;
@@ -1010,7 +1028,7 @@ int lsmLogRecover(lsm_db *pDb){
             logReaderVarint(&reader, &buf1, &nKey, &rc);
             logReaderVarint(&reader, &buf2, &nVal, &rc);
 
-            if( eType==LSM_LOG_WRITE_CKSUM ){
+            if( eType==LSM_LOG_WRITE_CKSUM || eType==LSM_LOG_DRANGE_CKSUM ){
               logReaderCksum(&reader, &buf1, &bEof, &rc);
             }else{
               bEof = logRequireCksum(&reader, nKey+nVal);
@@ -1020,7 +1038,11 @@ int lsmLogRecover(lsm_db *pDb){
             logReaderBlob(&reader, &buf1, nKey, 0, &rc);
             logReaderBlob(&reader, &buf2, nVal, &aVal, &rc);
             if( iPass==1 && rc==LSM_OK ){ 
-              rc = lsmTreeInsert(pDb, (u8 *)buf1.z, nKey, aVal, nVal);
+              if( eType==LSM_LOG_WRITE || eType==LSM_LOG_WRITE_CKSUM ){
+                rc = lsmTreeInsert(pDb, (u8 *)buf1.z, nKey, aVal, nVal);
+              }else{
+                rc = lsmTreeDelete(pDb, (u8 *)buf1.z, nKey, aVal, nVal);
+              }
             }
             break;
           }

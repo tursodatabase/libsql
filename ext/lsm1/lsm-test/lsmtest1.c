@@ -81,12 +81,12 @@ struct Datatest2 {
 ** Generate a unique name for the test case pTest with database system
 ** zSystem.
 */
-static char *getName(const char *zSystem, Datatest1 *pTest){
+static char *getName(const char *zSystem, int bRecover, Datatest1 *pTest){
   char *zRet;
   char *zData;
   zData = testDatasourceName(&pTest->defn);
-  zRet = testMallocPrintf("data.%s.%s.%d.%d", 
-      zSystem, zData, pTest->nRow, pTest->nVerify
+  zRet = testMallocPrintf("data.%s.%s.rec=%d.%d.%d", 
+      zSystem, zData, bRecover, pTest->nRow, pTest->nVerify
   );
   testFree(zData);
   return zRet;
@@ -251,8 +251,21 @@ static void printScanCb(
 }
 #endif
 
+void testReopenRecover(TestDb **ppDb, int *pRc){
+  if( *pRc==0 ){
+    const char *zLib = tdb_library_name(*ppDb);
+    const char *zDflt = tdb_default_db(zLib);
+    testCopyLsmdb(zDflt, "bak.db");
+    testClose(ppDb);
+    testCopyLsmdb("bak.db", zDflt);
+    *pRc = tdb_open(zLib, 0, 0, ppDb);
+  }
+}
+
+
 static void doDataTest1(
   const char *zSystem,            /* Database system to test */
+  int bRecover,
   Datatest1 *p,                   /* Structure containing test parameters */
   int *pRc                        /* OUT: Error code */
 ){
@@ -277,8 +290,11 @@ static void doDataTest1(
     /* Check that the db content is correct. */
     testDbContents(pDb, pData, p->nRow, 0, i-1, p->nTest, p->bTestScan, &rc);
 
-    /* Close and reopen the database. */
-    testReopen(&pDb, &rc);
+    if( bRecover ){
+      testReopenRecover(&pDb, &rc);
+    }else{
+      testReopen(&pDb, &rc);
+    }
 
     /* Check that the db content is still correct. */
     testDbContents(pDb, pData, p->nRow, 0, i-1, p->nTest, p->bTestScan, &rc);
@@ -299,7 +315,11 @@ static void doDataTest1(
     testDbContents(pDb, pData, p->nRow, i, p->nRow-1,p->nTest,p->bTestScan,&rc);
 
     /* Close and reopen the database. */
-    testReopen(&pDb, &rc);
+    if( bRecover ){
+      testReopenRecover(&pDb, &rc);
+    }else{
+      testReopen(&pDb, &rc);
+    }
 
     /* Check that the db content is still correct. */
     testDbContents(pDb, pData, p->nRow, i, p->nRow-1,p->nTest,p->bTestScan,&rc);
@@ -339,13 +359,17 @@ void test_data_1(
   };
 
   int i;
+  int bRecover;
 
-  for(i=0; *pRc==LSM_OK && i<ArraySize(aTest); i++){
-    char *zName = getName(zSystem, &aTest[i]);
-    if( testCaseBegin(pRc, zPattern, "%s", zName) ){
-      doDataTest1(zSystem, &aTest[i], pRc);
+  for(bRecover=0; bRecover<2; bRecover++){
+    if( bRecover==1 && memcmp(zSystem, "lsm", 3) ) break;
+    for(i=0; *pRc==LSM_OK && i<ArraySize(aTest); i++){
+      char *zName = getName(zSystem, bRecover, &aTest[i]);
+      if( testCaseBegin(pRc, zPattern, "%s", zName) ){
+        doDataTest1(zSystem, bRecover, &aTest[i], pRc);
+      }
+      testFree(zName);
     }
-    testFree(zName);
   }
 }
 
@@ -396,6 +420,7 @@ void testCompareDb(
 
 static void doDataTest2(
   const char *zSystem,            /* Database system to test */
+  int bRecover,
   Datatest2 *p,                   /* Structure containing test parameters */
   int *pRc                        /* OUT: Error code */
 ){
@@ -437,7 +462,11 @@ static void doDataTest2(
     testFree(pKey1);
 
     testCompareDb(pData, nRange, i, pControl, pDb, &rc);
-    testReopen(&pDb, &rc);
+    if( bRecover ){
+      testReopenRecover(&pDb, &rc);
+    }else{
+      testReopen(&pDb, &rc);
+    }
     testCompareDb(pData, nRange, i, pControl, pDb, &rc);
 
     /* Update the progress dots... */
@@ -451,12 +480,12 @@ static void doDataTest2(
   *pRc = rc;
 }
 
-static char *getName2(const char *zSystem, Datatest2 *pTest){
+static char *getName2(const char *zSystem, int bRecover, Datatest2 *pTest){
   char *zRet;
   char *zData;
   zData = testDatasourceName(&pTest->defn);
-  zRet = testMallocPrintf("data2.%s.%s.%d.%d.%d", 
-      zSystem, zData, pTest->nRange, pTest->nWrite, pTest->nIter
+  zRet = testMallocPrintf("data2.%s.%s.rec=%d.%d.%d.%d", 
+      zSystem, zData, bRecover, pTest->nRange, pTest->nWrite, pTest->nIter
   );
   testFree(zData);
   return zRet;
@@ -476,13 +505,17 @@ void test_data_2(
   };
 
   int i;
+  int bRecover;
 
-  for(i=0; *pRc==LSM_OK && i<ArraySize(aTest); i++){
-    char *zName = getName2(zSystem, &aTest[i]);
-    if( testCaseBegin(pRc, zPattern, "%s", zName) ){
-      doDataTest2(zSystem, &aTest[i], pRc);
+  for(bRecover=0; bRecover<2; bRecover++){
+    if( bRecover==1 && memcmp(zSystem, "lsm", 3) ) break;
+    for(i=0; *pRc==LSM_OK && i<ArraySize(aTest); i++){
+      char *zName = getName2(zSystem, bRecover, &aTest[i]);
+      if( testCaseBegin(pRc, zPattern, "%s", zName) ){
+        doDataTest2(zSystem, bRecover, &aTest[i], pRc);
+      }
+      testFree(zName);
     }
-    testFree(zName);
   }
 }
 

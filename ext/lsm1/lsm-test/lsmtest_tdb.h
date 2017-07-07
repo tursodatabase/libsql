@@ -125,6 +125,7 @@ int tdb_scan(
 );
 
 const char *tdb_system_name(int i);
+const char *tdb_default_db(const char *zSys);
 
 int tdb_lsm_open(const char *zCfg, const char *zDb, int bClear, TestDb **ppDb);
 
@@ -134,6 +135,12 @@ int tdb_lsm_open(const char *zCfg, const char *zDb, int bClear, TestDb **ppDb);
 ** database system, return NULL.
 */
 lsm_db *tdb_lsm(TestDb *pDb);
+
+/*
+** Return true if the db passed as an argument is a multi-threaded LSM
+** connection.
+*/
+int tdb_lsm_multithread(TestDb *pDb);
 
 /*
 ** Return a pointer to the lsm_env object used by all lsm database

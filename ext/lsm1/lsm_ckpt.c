@@ -1093,7 +1093,7 @@ int lsmCheckpointSaveWorker(lsm_db *pDb, int bFlush){
   memcpy(pShm->aSnap1, p, n);
   lsmFree(pDb->pEnv, p);
 
-  assert( lsmFsIntegrityCheck(pDb) );
+  /* assert( lsmFsIntegrityCheck(pDb) ); */
   return LSM_OK;
 }
 

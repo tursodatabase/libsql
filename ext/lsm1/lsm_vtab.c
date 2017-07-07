@@ -459,7 +459,10 @@ static int lsm1Column(
             if( aVal[0]==SQLITE_INTEGER ){
               sqlite3_result_int64(ctx, *(sqlite3_int64*)&x);
             }else{
-              sqlite3_result_double(ctx, *(double*)&x);
+              double r;
+              assert( sizeof(r)==sizeof(x) );
+              memcpy(&r, &x, sizeof(r));
+              sqlite3_result_double(ctx, r);
             }
             break;
           }
@@ -666,7 +669,9 @@ int lsm1Update(
         if( eType==SQLITE_INTEGER ){
           *(sqlite3_int64*)&x = sqlite3_value_int64(pValue);
         }else{
-          *(double*)&x = sqlite3_value_double(pValue);
+          double r = sqlite3_value_double(pValue);
+          assert( sizeof(r)==sizeof(x) );
+          memcpy(&x, &r, sizeof(r));
         }
         for(i=8; x>0 && i>=1; i--){
           aVal[i] = x & 0xff;

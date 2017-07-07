@@ -1952,7 +1952,17 @@ static int seekInLevel(
             rtTopic(pPtr->eType), pPtr->pKey, pPtr->nKey, 
             pLvl->iSplitTopic, pLvl->pSplitKey, pLvl->nSplitKey
         );
-        if( res<0 ) segmentPtrReset(pPtr, LSM_SEGMENTPTR_FREE_THRESHOLD);
+        if( res<0 ){
+          if( pPtr->eType & LSM_START_DELETE ){
+            pPtr->eType &= ~LSM_INSERT;
+            pPtr->pKey = pLvl->pSplitKey;
+            pPtr->nKey = pLvl->nSplitKey;
+            pPtr->pVal = 0;
+            pPtr->nVal = 0;
+          }else{
+            segmentPtrReset(pPtr, LSM_SEGMENTPTR_FREE_THRESHOLD);
+          }
+        }
       }
 
       if( aPtr[i].pKey ) bHit = 1;
@@ -3864,7 +3874,7 @@ static int mergeWorkerData(
   int rc = LSM_OK;                /* Return code */
   int nRem = nWrite;              /* Number of bytes still to write */
 
-  while( nRem>0 ){
+  while( rc==LSM_OK && nRem>0 ){
     Merge *pMerge = pMW->pLevel->pMerge;
     int nCopy;                    /* Number of bytes to copy */
     u8 *aData;                    /* Pointer to buffer of current output page */
@@ -5396,7 +5406,9 @@ int lsmSortedAutoWork(
       lsmMCursorFreeCache(pDb);
       lsmFreeSnapshot(pDb->pEnv, pDb->pClient);
       pDb->pClient = 0;
-      rc = lsmCheckpointLoad(pDb, 0);
+      if( rc==LSM_OK ){
+        rc = lsmCheckpointLoad(pDb, 0);
+      }
       if( rc==LSM_OK ){
         rc = lsmCheckpointDeserialize(pDb, 0, pDb->aSnapshot, &pDb->pClient);
       }

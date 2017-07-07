@@ -226,7 +226,7 @@ int lsm_close(lsm_db *pDb){
       lsmDbDatabaseRelease(pDb);
       lsmLogClose(pDb);
       lsmFsClose(pDb->pFS);
-      assert( pDb->mLock==0 );
+      /* assert( pDb->mLock==0 ); */
       
       /* Invoke any destructors registered for the compression or 
       ** compression factory callbacks.  */
@@ -669,11 +669,8 @@ static int doWriteOp(
   }
 
   if( rc==LSM_OK ){
-    if( bDeleteRange==0 ){
-      rc = lsmLogWrite(pDb, (void *)pKey, nKey, (void *)pVal, nVal);
-    }else{
-      /* TODO */
-    }
+    int eType = (bDeleteRange ? LSM_DRANGE : (nVal>=0?LSM_WRITE:LSM_DELETE));
+    rc = lsmLogWrite(pDb, eType, (void *)pKey, nKey, (void *)pVal, nVal);
   }
 
   lsmSortedSaveTreeCursors(pDb);
@@ -923,12 +920,14 @@ int lsm_commit(lsm_db *pDb, int iLevel){
 
   if( iLevel<pDb->nTransOpen ){
     if( iLevel==0 ){
+      int rc2;
       /* Commit the transaction to disk. */
       if( rc==LSM_OK ) rc = lsmLogCommit(pDb);
       if( rc==LSM_OK && pDb->eSafety==LSM_SAFETY_FULL ){
         rc = lsmFsSyncLog(pDb->pFS);
       }
-      lsmFinishWriteTrans(pDb, (rc==LSM_OK));
+      rc2 = lsmFinishWriteTrans(pDb, (rc==LSM_OK));
+      if( rc==LSM_OK ) rc = rc2;
     }
     pDb->nTransOpen = iLevel;
   }

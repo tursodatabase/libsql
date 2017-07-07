@@ -1051,6 +1051,14 @@ lsm_db *tdb_lsm(TestDb *pDb){
   return 0;
 }
 
+int tdb_lsm_multithread(TestDb *pDb){
+  int ret = 0;
+  if( tdb_lsm(pDb) ){
+    ret = ((LsmDb*)pDb)->eMode!=LSMTEST_MODE_SINGLETHREAD;
+  }
+  return ret;
+}
+
 void tdb_lsm_enable_log(TestDb *pDb, int bEnable){
   lsm_db *db = tdb_lsm(pDb);
   if( db ){

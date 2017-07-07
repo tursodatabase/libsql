@@ -242,6 +242,7 @@ static void testCompareCksumLsmdb(
   }
 }
 
+#if 0 /* not used */
 static void testCompareCksumBtdb(
   const char *zFile,              /* Path to LSM database */
   const char *zExpect1,           /* Expected checksum 1 */
@@ -278,6 +279,7 @@ static void testCompareCksumBtdb(
     }
   }
 }
+#endif /* not used */
 
 /* Above this point are reusable test routines. Not clear that they
 ** should really be in this file.
@@ -484,4 +486,3 @@ void do_crash_test(const char *zPattern, int *pRc){
     }
   }
 }
-

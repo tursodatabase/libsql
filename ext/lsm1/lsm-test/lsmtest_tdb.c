@@ -745,6 +745,14 @@ const char *tdb_system_name(int i){
   return aLib[i].zName;
 }
 
+const char *tdb_default_db(const char *zSys){
+  int i;
+  for(i=0; i<ArraySize(aLib); i++){
+    if( strcmp(aLib[i].zName, zSys)==0 ) return aLib[i].zDefaultDb;
+  }
+  return 0;
+}
+
 int tdb_open(const char *zLib, const char *zDb, int bClear, TestDb **ppDb){
   int i;
   int rc = 1;

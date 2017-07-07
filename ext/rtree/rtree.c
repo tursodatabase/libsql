@@ -3437,6 +3437,10 @@ static int getNodeSize(
     rc = getIntFromStmt(db, zSql, &pRtree->iNodeSize);
     if( rc!=SQLITE_OK ){
       *pzErr = sqlite3_mprintf("%s", sqlite3_errmsg(db));
+    }else if( pRtree->iNodeSize<(512-64) ){
+      rc = SQLITE_CORRUPT;
+      *pzErr = sqlite3_mprintf("undersize RTree blobs in \"%q_node\"",
+                               pRtree->zName);
     }
   }
 

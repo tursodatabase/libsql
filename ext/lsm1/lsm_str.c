@@ -39,11 +39,9 @@ int lsmStringExtend(LsmString *pStr, int nNew){
       lsmFree(pStr->pEnv, pStr->z);
       nAlloc = 0;
       pStr->n = -1;
-      pStr->z = 0;
-    }else{
-      pStr->nAlloc = nAlloc;
-      pStr->z = zNew;
     }
+    pStr->nAlloc = nAlloc;
+    pStr->z = zNew;
   }
   return (pStr->z ? LSM_OK : LSM_NOMEM_BKPT);
 }
