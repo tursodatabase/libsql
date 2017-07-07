@@ -1194,6 +1194,10 @@ if {$::tcl_platform(platform) == "unix"} {
     } $r($can_open)
 
     if {$can_open} {
+      # Different behavior, because Darwin does an access() call prior
+      # to attempting to open the SHM in read/write mode and demotes to
+      # read-only if the SHM is read-only.
+      if {$tn==4 && $::tcl_platform(os)=="Darwin"} {set can_read 1}
 
       # If $can_read is true, then the client should be able to read from
       # the database file. If $can_read is false, attempting to read should

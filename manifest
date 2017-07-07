@@ -1,5 +1,5 @@
-C Avoid\seven\strying\sto\sopen\sa\sSHM\sfile\sread/write\sin\sWAL\smode\sif\swe\sknow\sthat\nthe\sfile\sis\sread-only.\s\sThis\savoids\sscare\ssecurity\slog\smessages.
-D 2017-07-07T20:33:36.184
+C Fix\stest\scases\sin\swal2.test\sdue\sto\sthe\sfact\sthat\sDarwin\schecks\sto\ssee\sif\nthe\sSHM\sfile\sis\swritable\sbefore\sattempting\sto\sopen\sin\sread/write.
+D 2017-07-07T22:39:28.022
 F Makefile.in 227347646e289e3b016ebb7a391ad6ed4ab56525834d56d47d1a83b8d97d6989
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc fb28c0304f8a14c5ce7d4bde9fea1c903f644b49e78ebd9976ab2a1f0eb8afb5
@@ -1428,7 +1428,7 @@ F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 5253bff2355a9a3f014c15337da7e177ab0ef8ad
 F test/wal.test 83635d428b0a3fe883939cedbaedf29e13a5affd
-F test/wal2.test 72286d113a40817702fa59285ee5b82effbfe754
+F test/wal2.test 62450517846a0ff7aa17249bc439586ade88d437e2e6c53479f9235ba0f5599f
 F test/wal3.test 82f70ca79e5db6829f9246f4a30d4a4751921c3b
 F test/wal4.test 5755887f321baa4c55de0b91066fa7d0cafcac9d
 F test/wal5.test 9304fada875d7279deb2783385b0ae1c02d96b88
@@ -1589,7 +1589,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2b0954060fe10d6de6d479287dd88890f1bef6cc1beca11bc6cdb79f72e2377b
-R ee7bac678e139337809f17f1857c6b7a
+P d9d927814019f6c562eca198aca10f407aae423ea0a9f82c789298b77be8c187
+R 41b7dad15e3d9044aa4c397015793f31
 U drh
-Z b85dcfa1091a029b631421bc18f43c11
+Z 21df9088f48dddb3277cdb9829938e35
