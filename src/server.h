@@ -34,7 +34,7 @@ struct ServerPage {
 int sqlite3ServerConnect(Pager *pPager, Server **ppOut);
 void sqlite3ServerDisconnect(Server *p, sqlite3_file *dbfd);
 
-int sqlite3ServerBegin(Server *p);
+int sqlite3ServerBegin(Server *p, int bReadonly);
 int sqlite3ServerPreCommit(Server*, ServerPage*);
 int sqlite3ServerEnd(Server *p);
 
@@ -43,6 +43,9 @@ int sqlite3ServerReleaseWriteLocks(Server *p);
 int sqlite3ServerLock(Server *p, Pgno pgno, int bWrite, int bBlock);
 
 int sqlite3ServerHasLock(Server *p, Pgno pgno, int bWrite);
+
+void sqlite3ServerReadPage(Server*, Pgno, u8**);
+void sqlite3ServerEndReadPage(Server*, Pgno);
 
 #endif /* SQLITE_SERVER_H */
 #endif /* SQLITE_SERVER_EDITION */

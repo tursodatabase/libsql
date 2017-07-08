@@ -3120,7 +3120,7 @@ case OP_Savepoint: {
   break;
 }
 
-/* Opcode: AutoCommit P1 P2 * * *
+/* Opcode: AutoCommit P1 P2 P3 * *
 **
 ** Set the database auto-commit flag to P1 (1 or 0). If P2 is true, roll
 ** back any currently active btree transactions. If there are any active
@@ -3137,6 +3137,7 @@ case OP_AutoCommit: {
   iRollback = pOp->p2;
   assert( desiredAutoCommit==1 || desiredAutoCommit==0 );
   assert( desiredAutoCommit==1 || iRollback==0 );
+  assert( desiredAutoCommit==0 || pOp->p3==0 );
   assert( db->nVdbeActive>0 );  /* At least this one VM is active */
   assert( p->bIsReader );
 
@@ -3168,6 +3169,7 @@ case OP_AutoCommit: {
     sqlite3CloseSavepoints(db);
     if( p->rc==SQLITE_OK ){
       rc = SQLITE_DONE;
+      db->readonlyTrans = (pOp->p3==TK_READONLY);
     }else{
       rc = SQLITE_ERROR;
     }

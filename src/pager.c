@@ -3028,11 +3028,28 @@ static int readDbPage(PgHdr *pPg, u32 iFrame){
   }else
 #endif
   {
-    i64 iOffset = (pgno-1)*(i64)pPager->pageSize;
-    rc = sqlite3OsRead(pPager->fd, pPg->pData, pgsz, iOffset);
-    if( rc==SQLITE_IOERR_SHORT_READ ){
-      rc = SQLITE_OK;
+#ifdef SQLITE_SERVER_EDITION
+    u8 *pData = 0;
+    if( pagerIsServer(pPager) ){
+      sqlite3ServerReadPage(pPager->pServer, pgno, &pData);
+      if( pData ){
+        memcpy(pPg->pData, pData, pgsz);
+      }
     }
+    if( pData==0 ){
+#endif
+      i64 iOffset = (pgno-1)*(i64)pPager->pageSize;
+      rc = sqlite3OsRead(pPager->fd, pPg->pData, pgsz, iOffset);
+      if( rc==SQLITE_IOERR_SHORT_READ ){
+        rc = SQLITE_OK;
+      }
+#ifdef SQLITE_SERVER_EDITION
+      if( pagerIsServer(pPager) ){
+        sqlite3ServerEndReadPage(pPager->pServer, pgno);
+      }
+    }
+#endif
+
   }
 
   if( pgno==1 ){
@@ -5219,7 +5236,7 @@ void sqlite3PagerServerJournal(
 ** occurs while locking the database, checking for a hot-journal file or 
 ** rolling back a journal file, the IO error code is returned.
 */
-int sqlite3PagerSharedLock(Pager *pPager){
+int sqlite3PagerSharedLock(Pager *pPager, int bReadonly){
   int rc = SQLITE_OK;                /* Return code */
 
   /* This routine is only called from b-tree and only when there are no
@@ -5418,8 +5435,8 @@ int sqlite3PagerSharedLock(Pager *pPager){
     assert( rc==SQLITE_OK );
     assert( sqlite3PagerRefcount(pPager)==0 );
     pager_reset(pPager);
-    rc = sqlite3ServerBegin(pPager->pServer);
-    if( rc==SQLITE_OK){
+    rc = sqlite3ServerBegin(pPager->pServer, bReadonly);
+    if( rc==SQLITE_OK ){
       rc = sqlite3ServerLock(pPager->pServer, 1, 0, 0);
     }
   }
@@ -5969,6 +5986,7 @@ static SQLITE_NOINLINE int pagerAddPageToRollbackJournal(PgHdr *pPg){
     p->pgno = pPg->pgno;
     p->pNext = pPager->pServerPage;
     pPager->pServerPage = p;
+    memcpy(p->aData, pPg->pData, pPager->pageSize);  
   }
 #endif
 
@@ -7384,7 +7402,7 @@ int sqlite3PagerSetJournalMode(Pager *pPager, int eMode){
         int state = pPager->eState;
         assert( state==PAGER_OPEN || state==PAGER_READER );
         if( state==PAGER_OPEN ){
-          rc = sqlite3PagerSharedLock(pPager);
+          rc = sqlite3PagerSharedLock(pPager, 0);
         }
         if( pPager->eState==PAGER_READER ){
           assert( rc==SQLITE_OK );

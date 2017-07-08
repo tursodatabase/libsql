@@ -2910,7 +2910,7 @@ static int lockBtree(BtShared *pBt){
 
   assert( sqlite3_mutex_held(pBt->mutex) );
   assert( pBt->pPage1==0 );
-  rc = sqlite3PagerSharedLock(pBt->pPager);
+  rc = sqlite3PagerSharedLock(pBt->pPager, pBt->db->readonlyTrans);
   if( rc!=SQLITE_OK ) return rc;
   rc = btreeGetPage(pBt, 1, &pPage1, 0);
   if( rc!=SQLITE_OK ) return rc;

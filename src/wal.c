@@ -3398,7 +3398,7 @@ int sqlite3WalCheckpoint(
   */
   if( eMode!=SQLITE_CHECKPOINT_PASSIVE ){
     if( walIsServer(pWal) ){
-      rc = sqlite3ServerBegin(pWal->pServer);
+      rc = sqlite3ServerBegin(pWal->pServer, 0);
       if( rc!=SQLITE_OK ) goto ckpt_out;
       if( eMode>=SQLITE_CHECKPOINT_RESTART ){
         /* Exclusive lock on page 1. This is exclusive access to the db. */

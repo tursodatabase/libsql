@@ -324,7 +324,7 @@ static int SQLITE_TCLAPI page_get(
   }
   pPager = sqlite3TestTextToPtr(argv[1]);
   if( Tcl_GetInt(interp, argv[2], &pgno) ) return TCL_ERROR;
-  rc = sqlite3PagerSharedLock(pPager);
+  rc = sqlite3PagerSharedLock(pPager, 0);
   if( rc==SQLITE_OK ){
     rc = sqlite3PagerGet(pPager, pgno, &pPage, 0);
   }
