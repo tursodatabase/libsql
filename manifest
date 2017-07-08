@@ -1,5 +1,5 @@
-C Make\suse\sof\scovering\sindexes\sin\sthe\sOR\soptimization.
-D 2017-07-05T16:20:49.023
+C Fix\sthe\scovering\sindex\sOR\soptimization\s(check-in\s[fcbd6abd])\sso\sthat\nit\sworks\swith\sSQLITE_MAX_ATTACHED>30.\s\sBroken\sby\sa\sbad\scherry-pick\smerge.
+D 2017-07-08T01:01:08.062
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 00d12636df7a5b08af09116bcd6c7bfd49b8b3b4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -307,7 +307,7 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 878c8e1a51cb2ec45c395d26b7d5cd9e1a098e4a
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
-F src/where.c 4ba1381573d45cb11b09a0fbddd9f702a295a546986d5da4bf747f709aa4ac30
+F src/where.c 5e7cf96bd85f5e7cee1cce001031bc0ca1af68b8cfd07c781d1d8da7796eab34
 F src/whereInt.h 1d1fd0b3b9b56e08f5d3583c70a2c785a3c43941
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1250,8 +1250,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b7ae4b879fc086e9543493843377ae90ceff1fe49c97b4c23367012034c3c9d5
-Q +9de3d7123007636aa97da1c70bc34344b0391078
-R f237a48695c9cf0b1b130ff48b449b88
+P fcbd6abdb1a4cf622ff7e85625b9c2a9bbae92410359872924b7fc1e35046a75
+R e16d14bd52b65abae70b31af2e996886
 U drh
-Z 975105f0956961b19cc95f2a1afc7d0c
+Z 1ba13c74fc4ad36a0d13cfbf7520225c

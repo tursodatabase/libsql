@@ -3281,7 +3281,7 @@ static void codeDeferredSeek(
   
   sqlite3VdbeAddOp3(v, OP_Seek, iCur, iRowid, iIdxCur);
   if( (pWInfo->wctrlFlags & WHERE_FORCE_TABLE)
-   && sqlite3ParseToplevel(pParse)->writeMask==0 
+   && DbMaskAllZero(sqlite3ParseToplevel(pParse)->writeMask)
   ){
     int i;
     Table *pTab = pIdx->pTable;
