@@ -1,5 +1,5 @@
-C Basic\stest\scases\sfor\sPRAGMA\ssecure_delete=FAST.
-D 2017-07-07T22:47:32.568
+C Add\sthe\s--icc,\s--gcc7,\sand\s--orm\soptions\sto\sthe\sspeed-check.sh\stest\sscript.
+D 2017-07-08T22:30:30.933
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 20850e3e8d4d4791e0531955852d768eb06f24138214870d543abb1a47346fba
@@ -1588,7 +1588,7 @@ F tool/showstat4.c b14159aa062f661b394ba37b6b7b94bfb8012ab9
 F tool/showwal.c ad9d768f96ca6199ad3a8c9562d679680bd032dd01204ea3e5ea6fb931d81847
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
 F tool/spaceanal.tcl f40dc82b4d5e39d040a02a3ec38268e324068815e4292a15ffa30ee93208bbfd
-F tool/speed-check.sh 9630ba0468b609c52f48309243d4eb6e9c34deda
+F tool/speed-check.sh fd24151fd66465f01886c3f75faf8fa46d19f068c69d16514ca73887adcdafe4
 F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
 F tool/speedtest16.c ecb6542862151c3e6509bbc00509b234562ae81e
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
@@ -1628,7 +1628,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 12a421bcacf72128426eeafed8663accd8f2ac7edb46f620b60b8239065e657e
-R e6f8feea678ffb081657c6bb012062fd
+P 0c246017b45c5290f3a7932dfce649f1a6d8f9afc00c6c3edf2ef06c17dbca1d
+R 790e0518c141c3e30ee1148ab425730a
 U drh
-Z c614413c179295441abb82c2446a03c8
+Z 9e4f8a303b6a755dc44ed919de98f263
