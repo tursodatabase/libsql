@@ -1,5 +1,5 @@
-C Basic\stest\scases\sfor\sPRAGMA\ssecure_delete=FAST.
-D 2017-07-07T22:47:32.568
+C Disable\scompiler\sintrinsics\swhen\susing\sthe\sIntel\sC\sCompiler.
+D 2017-07-08T18:27:55.600
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 20850e3e8d4d4791e0531955852d768eb06f24138214870d543abb1a47346fba
@@ -453,7 +453,7 @@ F src/shell.c a7067f647aef4b81569bbfd025f4fd120a4e7576a647d2aad05028eb50e50e48
 F src/sqlite.h.in c38c31f2a874af2b7d8443aba1fba3652d8ee75f60305d2512215cbe0fa0674a
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 58fd0676d3111d02e62e5a35992a7d3da5d3f88753acc174f2d37b774fbbdd28
-F src/sqliteInt.h 7a7cd6f682471cce4afe64216f71fd64c622712aeb9d947c33c38337a7cf19a9
+F src/sqliteInt.h 881e00940c3b48118f104067c28aa80259addc8fe47bd591e04463d26ee40cf6
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -1628,7 +1628,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 12a421bcacf72128426eeafed8663accd8f2ac7edb46f620b60b8239065e657e
-R e6f8feea678ffb081657c6bb012062fd
+P 0c246017b45c5290f3a7932dfce649f1a6d8f9afc00c6c3edf2ef06c17dbca1d
+R 3ea2f9d33f7f45cb450174ad5406da01
 U drh
-Z c614413c179295441abb82c2446a03c8
+Z 385d291fc5a45660a6807c37c7bc716f
