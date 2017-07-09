@@ -1707,7 +1707,7 @@ int sqlite3ColumnsFromExprList(
     if( zName ){
       zName = sqlite3DbStrDup(db, zName);
     }else{
-      zName = sqlite3MPrintf(db,"column%d",i);
+      zName = sqlite3MPrintf(db,"column%d",i+1);
     }
 
     /* Make sure the column name is unique.  If the name is not unique,

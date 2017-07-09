@@ -1,5 +1,5 @@
-C Make\ssure\sthe\scolumns\sof\sa\sVALUES()\sclause\sare\snamed\s"column%d"\seven\sif\nthe\sVALUES()\sclause\sis\sa\ssubquery\sin\sthe\sFROM\sclause\sof\san\souter\squery.
-D 2017-07-09T00:30:58.430
+C Always\smake\s"column%d"\scolumn-names\s1-based,\snever\s0-based.
+D 2017-07-09T18:55:29.015
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 20850e3e8d4d4791e0531955852d768eb06f24138214870d543abb1a47346fba
@@ -448,7 +448,7 @@ F src/printf.c 8757834f1b54dae512fb25eb1acc8e94a0d15dd2290b58f2563f65973265adb2
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 6aa1fb1212e601f65b983ee1215d69a591986c8f97a3805c425c625a53839539
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c c1e669e01cb37c0683108a10e929615112572666053381df786806113b9a3ac4
+F src/select.c 6aa7e8ee53dcb9d0b77b05670bb44a1076d6747bc9b2c1f12a365b553ab6c828
 F src/shell.c a7067f647aef4b81569bbfd025f4fd120a4e7576a647d2aad05028eb50e50e48
 F src/sqlite.h.in c38c31f2a874af2b7d8443aba1fba3652d8ee75f60305d2512215cbe0fa0674a
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1628,7 +1628,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 70dae08a9a6e35416f7268b9a95f3c8562b74697918bd1e9d5b5cf4719b9d075
-R bd4690b24493be6c9d3f040b4f986ae1
+P acf3b9cc9c3932431979995a1dceacc06c659ab400fad95ce3728ff8895a022b
+R 60d8e23fc76e5f2c3762a18b534f29c2
 U drh
-Z ceb54c87f0670b76840ec1e6992b9263
+Z b13c2baffb7906f86d964ad698ac5682
