@@ -792,7 +792,7 @@ do_test attach-8.1 {
   catchsql {
     ATTACH 'test2.db' AS t2;
   }
-} {1 {file is encrypted or is not a database}}
+} {1 {file is not a database}}
 do_test attach-8.2 {
   db errorcode
 } {26}

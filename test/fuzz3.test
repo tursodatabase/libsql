@@ -152,7 +152,7 @@ for {set ii 0} {$ii < 5000} {incr ii} {
       if {$rc == 0 
        || $msg eq "database or disk is full"
        || $msg eq "database disk image is malformed"
-       || $msg eq "file is encrypted or is not a database"
+       || $msg eq "file is not a database"
        || [string match "malformed database schema*" $msg]
       } {
         set msg ok
