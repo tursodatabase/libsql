@@ -1,22 +1,6 @@
 
-#include "stdarg.h"
 #include "lsmtest.h"
-#include "stdio.h"
-#include "assert.h"
-#include "string.h"
-#include "stdlib.h"
-
 #include <sqlite3.h>
-
-#ifndef _WIN32
-# include <unistd.h>
-#endif
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <errno.h>
-
 
 void test_failed(){ 
   assert( 0 );

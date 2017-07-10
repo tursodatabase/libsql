@@ -240,13 +240,6 @@ static void testOomScan(
 
 #define LSMTEST6_TESTDB "testdb.lsm" 
 
-#ifndef _WIN32
-# include <unistd.h>
-#endif
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-
 void testDeleteLsmdb(const char *zFile){
   char *zLog = testMallocPrintf("%s-log", zFile);
   char *zShm = testMallocPrintf("%s-shm", zFile);
