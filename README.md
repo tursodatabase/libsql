@@ -272,7 +272,7 @@ Key files:
      is not part of the core SQLite library.  But as most of the tests in this
      repository are written in Tcl, the Tcl language bindings are important.
 
-There are many other source files.  Each has a suscinct header comment that
+There are many other source files.  Each has a succinct header comment that
 describes its purpose and role within the larger system.
 
 
