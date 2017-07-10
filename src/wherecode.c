@@ -2057,7 +2057,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         continue;
       }
       
-      if( iNext==1 && !sqlite3ExprCoveredByIndex(pE, pLevel->iTabCur, pIdx) ){
+      if( iLoop==1 && !sqlite3ExprCoveredByIndex(pE, pLevel->iTabCur, pIdx) ){
         iNext = 2;
         continue;
       }
