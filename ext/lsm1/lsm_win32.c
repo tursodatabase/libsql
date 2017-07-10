@@ -587,22 +587,27 @@ static int lsmWin32OsUnlink(lsm_env *pEnv, const char *zFile){
                             ((a)==ERROR_IO_PENDING))
 #endif
 
-static int lsmWin32OsLock(lsm_file *pFile, int iLock, int eType){
-  Win32File *pWin32File = (Win32File *)pFile;
+static int win32LockFile(
+  Win32File *pWin32File,
+  int iLock,
+  int nLock,
+  int eType
+){
   OVERLAPPED ovlp;
 
   assert( LSM_LOCK_UNLOCK==0 );
   assert( LSM_LOCK_SHARED==1 );
   assert( LSM_LOCK_EXCL==2 );
   assert( eType>=LSM_LOCK_UNLOCK && eType<=LSM_LOCK_EXCL );
+  assert( nLock>=0 );
   assert( iLock>0 && iLock<=32 );
 
   memset(&ovlp, 0, sizeof(OVERLAPPED));
-  ovlp.Offset = (4096-iLock);
+  ovlp.Offset = (4096-iLock-nLock+1);
   if( eType>LSM_LOCK_UNLOCK ){
     DWORD flags = LOCKFILE_FAIL_IMMEDIATELY;
     if( eType>=LSM_LOCK_EXCL ) flags |= LOCKFILE_EXCLUSIVE_LOCK;
-    if( !LockFileEx(pWin32File->hFile, flags, 0, 1, 0, &ovlp) ){
+    if( !LockFileEx(pWin32File->hFile, flags, 0, (DWORD)nLock, 0, &ovlp) ){
       if( win32IsLockBusy(GetLastError()) ){
         return LSM_BUSY;
       }else{
@@ -610,36 +615,24 @@ static int lsmWin32OsLock(lsm_file *pFile, int iLock, int eType){
       }
     }
   }else{
-    if( !UnlockFileEx(pWin32File->hFile, 0, 1, 0, &ovlp) ){
+    if( !UnlockFileEx(pWin32File->hFile, 0, (DWORD)nLock, 0, &ovlp) ){
       return LSM_IOERR_BKPT;
     }
   }
   return LSM_OK;
 }
 
-static int lsmWin32OsTestLock(lsm_file *pFile, int iLock, int nLock, int eType){
+static int lsmWin32OsLock(lsm_file *pFile, int iLock, int eType){
   Win32File *pWin32File = (Win32File *)pFile;
-  DWORD flags = LOCKFILE_FAIL_IMMEDIATELY;
-  OVERLAPPED ovlp;
+  return win32LockFile(pWin32File, iLock, 1, eType);
+}
 
-  assert( LSM_LOCK_UNLOCK==0 );
-  assert( LSM_LOCK_SHARED==1 );
-  assert( LSM_LOCK_EXCL==2 );
-  assert( eType==LSM_LOCK_SHARED || eType==LSM_LOCK_EXCL );
-  assert( nLock>=0 );
-  assert( iLock>0 && iLock<=32 );
-
-  if( eType>=LSM_LOCK_EXCL ) flags |= LOCKFILE_EXCLUSIVE_LOCK;
-  memset(&ovlp, 0, sizeof(OVERLAPPED));
-  ovlp.Offset = (4096-iLock-nLock+1);
-  if( !LockFileEx(pWin32File->hFile, flags, 0, (DWORD)nLock, 0, &ovlp) ){
-    if( win32IsLockBusy(GetLastError()) ){
-      return LSM_BUSY;
-    }else{
-      return LSM_IOERR_BKPT;
-    }
-  }
-  UnlockFileEx(pWin32File->hFile, 0, (DWORD)nLock, 0, &ovlp);
+static int lsmWin32OsTestLock(lsm_file *pFile, int iLock, int nLock, int eType){
+  int rc;
+  Win32File *pWin32File = (Win32File *)pFile;
+  rc = win32LockFile(pWin32File, iLock, nLock, eType);
+  if( rc!=LSM_OK ) return rc;
+  win32LockFile(pWin32File, iLock, nLock, LSM_LOCK_UNLOCK);
   return LSM_OK;
 }
 
