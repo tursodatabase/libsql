@@ -1,5 +1,5 @@
-C For\ssqlite3TreeView()\sdebugging\soutput,\sshow\sthe\sExpr.flags\sfield\son\nscalar\ssubqueries.
-D 2017-07-10T13:24:58.019
+C When\smultiple\sconstraints\sneed\sto\sbe\sevaluated\sfor\sa\srow,\sdo\sany\sconstraints\nthat\sinvolve\scorrelated\ssubqueries\slast.\s\sHence,\sthe\spriority\sis\sindex-covered\nconstraints\sfirst,\scorrelated\ssubquery\sconstraints\slast,\sand\sall\sothers\sin\nthe\smiddle.\s\sThis\sis\sa\nfollow-on\sand\simprovement\sto\sthe\spush-down\soptimization\sof\scheck-in\s[d7bb79ed].
+D 2017-07-10T17:00:31.898
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 20850e3e8d4d4791e0531955852d768eb06f24138214870d543abb1a47346fba
@@ -530,9 +530,9 @@ F src/wal.c 40c543f0a2195d1b0dc88ef12142bea690009344
 F src/wal.h 06b2a0b599cc0f53ea97f497cf8c6b758c999f71
 F src/walker.c a7ca64ce08a83a20d32186fbe06bca9234e348cfcf07959ee322fdc3e8a6173a
 F src/where.c e7cc80943459ade4ccaeb5c7c10f8a0db8b797e0b0f2509de7efc557b76bf7b6
-F src/whereInt.h 2a4b634d63ce488b46d4b0da8f2eaa8f9aeab202bc25ef76f007de5e3fba1f20
-F src/wherecode.c f17f5d51e372168db51af637e265aa5e80f99fcc81bfead96b66e71a7732bc62
-F src/whereexpr.c fa51927cc6830b9d3155cafa4e589452ec023fe313a56550d2079dca6c52fbd8
+F src/whereInt.h 93bb90b77d39901eda31b44d8e90da1351193ccfe96876f89b58a93a33b84c3d
+F src/wherecode.c c0c4c31573486cd14bb2cbfc63e41eda591609e5190416261999f211bf97abc1
+F src/whereexpr.c bf983d2d33e325cd63a36c40b8de289fd3d7b4d9f2db9052fb8f59f7161a34a0
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/affinity3.test 6a101af2fc945ce2912f6fe54dd646018551710d
@@ -1091,7 +1091,7 @@ F test/printf.test b3ff34e73d59124140eaf89f7672e21bc2ca5fcc
 F test/printf2.test 9e6db85f81c63f2367c34a9d7db384088bd374ad
 F test/progress.test ebab27f670bd0d4eb9d20d49cef96e68141d92fb
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
-F test/pushdown.test a5d2e5e66cc94cfb0989a5dd23e77427dd6c4313019155ba9051f52dfc5326aa
+F test/pushdown.test df9a5d1822531fc79fa46b622a7ee5fdf5cdc81fd2740443df59cc90b746abb6
 F test/queryonly.test 5f653159e0f552f0552d43259890c1089391dcca
 F test/quick.test 1681febc928d686362d50057c642f77a02c62e57
 F test/quota-glob.test 32901e9eed6705d68ca3faee2a06b73b57cb3c26
@@ -1628,7 +1628,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f27b6370407842e2c175ea4aa9ce018723c57eaac0cccc1f8399bc20f33324be
-R fcaff20edc67c3421a07c8a2f98bc875
+P dc857a96b00f13ffdf77bc222bc5acbbe14a36ca51e5368b568b3177d1be737a 0ca7474f05e9f27f53f8c71f5a3ff99963ffef9be9c147869e096246d552d6f1
+R 6bf4c162edf7ff6903aaf314bb0ae2fb
+T +closed 0ca7474f05e9f27f53f8c71f5a3ff99963ffef9be9c147869e096246d552d6f1
 U drh
-Z 4c32d3cf2874c5b6c91c344882e30f5e
+Z acda2b95cccbca8a55a4e5255bd0a430
