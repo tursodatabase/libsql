@@ -1,5 +1,5 @@
-C When\smultiple\sconstraints\sneed\sto\sbe\sevaluated\sfor\sa\srow,\sdo\sany\sconstraints\nthat\sinvolve\scorrelated\ssubqueries\slast.\s\sHence,\sthe\spriority\sis\sindex-covered\nconstraints\sfirst,\scorrelated\ssubquery\sconstraints\slast,\sand\sall\sothers\sin\nthe\smiddle.\s\sThis\sis\sa\nfollow-on\sand\simprovement\sto\sthe\spush-down\soptimization\sof\scheck-in\s[d7bb79ed].
-D 2017-07-10T17:00:31.898
+C Add\sthe\s"--newlines"\soption\sto\sthe\s".dump"\scommand\sin\sthe\sshell\sto\sdisable\nthe\snewline\sescaping\smechanism.
+D 2017-07-10T18:04:41.835
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 20850e3e8d4d4791e0531955852d768eb06f24138214870d543abb1a47346fba
@@ -449,7 +449,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 6aa1fb1212e601f65b983ee1215d69a591986c8f97a3805c425c625a53839539
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 6aa7e8ee53dcb9d0b77b05670bb44a1076d6747bc9b2c1f12a365b553ab6c828
-F src/shell.c a7067f647aef4b81569bbfd025f4fd120a4e7576a647d2aad05028eb50e50e48
+F src/shell.c c042ed1f74e80097f7a322bb05457d65c20e1df43459f065f76ad886da7331e0
 F src/sqlite.h.in 03a422ba13da1dfef7f1aaa1ba344acf18dc867112620b1fdb2a1426cabba634
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 58fd0676d3111d02e62e5a35992a7d3da5d3f88753acc174f2d37b774fbbdd28
@@ -1170,7 +1170,7 @@ F test/sharedA.test 0cdf1a76dfa00e6beee66af5b534b1e8df2720f5
 F test/sharedB.test 16cc7178e20965d75278f410943109b77b2e645e
 F test/shared_err.test 32634e404a3317eeb94abc7a099c556a346fdb8fb3858dbe222a4cbb8926a939
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test 76ae80ab24af6cdb994cff6df5f21f8cdbb0dc0f7229e937e8f1beb653611e26
+F test/shell1.test f78ea0e2637ae9f497cb41206f6346f983052ffc7a359e664aaf6847fc704ea7
 F test/shell2.test e242a9912f44f4c23c3d1d802a83e934e84c853b
 F test/shell3.test 9b95ba643eaa228376f06a898fb410ee9b6e57c1
 F test/shell4.test 89ad573879a745974ff2df20ff97c5d6ffffbd5d
@@ -1628,8 +1628,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P dc857a96b00f13ffdf77bc222bc5acbbe14a36ca51e5368b568b3177d1be737a 0ca7474f05e9f27f53f8c71f5a3ff99963ffef9be9c147869e096246d552d6f1
-R 6bf4c162edf7ff6903aaf314bb0ae2fb
-T +closed 0ca7474f05e9f27f53f8c71f5a3ff99963ffef9be9c147869e096246d552d6f1
+P c4cb90487f34937605732c3959891075e2aabfb0bd05e55c44565d65867093ea
+R 6d35197f305c27266246f32d8a4834d8
 U drh
-Z acda2b95cccbca8a55a4e5255bd0a430
+Z a3a7e11cbaa224fa5a8714694bd756ab

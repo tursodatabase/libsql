@@ -300,7 +300,7 @@ do_test shell1-3.4.2 {
 do_test shell1-3.4.3 {
   # too many arguments
   catchcmd "test.db" ".dump FOO BAD"
-} {1 {Usage: .dump ?--preserve-rowids? ?LIKE-PATTERN?}}
+} {1 {Usage: .dump ?--preserve-rowids? ?--newlines? ?LIKE-PATTERN?}}
 
 # .echo ON|OFF           Turn command echo on or off
 do_test shell1-3.5.1 {

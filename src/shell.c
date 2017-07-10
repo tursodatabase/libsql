@@ -1523,8 +1523,9 @@ struct ShellState {
 #define SHFLG_Lookaside      0x00000004 /* Lookaside memory is used */
 #define SHFLG_Backslash      0x00000008 /* The --backslash option is used */
 #define SHFLG_PreserveRowid  0x00000010 /* .dump preserves rowid values */
-#define SHFLG_CountChanges   0x00000020 /* .changes setting */
-#define SHFLG_Echo           0x00000040 /* .echo or --echo setting */
+#define SHFLG_Newlines       0x00000020 /* .dump --newline flag */
+#define SHFLG_CountChanges   0x00000040 /* .changes setting */
+#define SHFLG_Echo           0x00000080 /* .echo or --echo setting */
 
 /*
 ** Macros for testing and setting shellFlgs
@@ -2195,7 +2196,11 @@ static int shell_callback(
         if( (azArg[i]==0) || (aiType && aiType[i]==SQLITE_NULL) ){
           utf8_printf(p->out,"NULL");
         }else if( aiType && aiType[i]==SQLITE_TEXT ){
-          output_quoted_escaped_string(p->out, azArg[i]);
+          if( ShellHasFlag(p, SHFLG_Newlines) ){
+            output_quoted_string(p->out, azArg[i]);
+          }else{
+            output_quoted_escaped_string(p->out, azArg[i]);
+          }
         }else if( aiType && aiType[i]==SQLITE_INTEGER ){
           utf8_printf(p->out,"%s", azArg[i]);
         }else if( aiType && aiType[i]==SQLITE_FLOAT ){
@@ -2209,6 +2214,8 @@ static int shell_callback(
           output_hex_blob(p->out, pBlob, nBlob);
         }else if( isNumber(azArg[i], 0) ){
           utf8_printf(p->out,"%s", azArg[i]);
+        }else if( ShellHasFlag(p, SHFLG_Newlines) ){
+          output_quoted_string(p->out, azArg[i]);
         }else{
           output_quoted_escaped_string(p->out, azArg[i]);
         }
@@ -4930,7 +4937,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     const char *zLike = 0;
     int i;
     int savedShowHeader = p->showHeader;
-    ShellClearFlag(p, SHFLG_PreserveRowid);
+    ShellClearFlag(p, SHFLG_PreserveRowid|SHFLG_Newlines);
     for(i=1; i<nArg; i++){
       if( azArg[i][0]=='-' ){
         const char *z = azArg[i]+1;
@@ -4945,13 +4952,17 @@ static int do_meta_command(char *zLine, ShellState *p){
           ShellSetFlag(p, SHFLG_PreserveRowid);
 #endif
         }else
+        if( strcmp(z,"newlines")==0 ){
+          ShellSetFlag(p, SHFLG_Newlines);
+        }else
         {
           raw_printf(stderr, "Unknown option \"%s\" on \".dump\"\n", azArg[i]);
           rc = 1;
           goto meta_command_exit;
         }
       }else if( zLike ){
-        raw_printf(stderr, "Usage: .dump ?--preserve-rowids? ?LIKE-PATTERN?\n");
+        raw_printf(stderr, "Usage: .dump ?--preserve-rowids? "
+                           "?--newlines? ?LIKE-PATTERN?\n");
         rc = 1;
         goto meta_command_exit;
       }else{
