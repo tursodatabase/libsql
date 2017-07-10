@@ -2081,6 +2081,12 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         VdbeCoverage(v);
 #endif
       }
+#ifdef WHERETRACE_ENABLED /* 0xffff */
+      if( sqlite3WhereTrace ){
+        VdbeNoopComment((v, "WhereTerm[%d] (%p) priority=%d",
+                         pWC->nTerm-j, pTerm, iLoop));
+      }
+#endif
       sqlite3ExprIfFalse(pParse, pE, addrCont, SQLITE_JUMPIFNULL);
       if( skipLikeAddr ) sqlite3VdbeJumpHere(v, skipLikeAddr);
       pTerm->wtFlags |= TERM_CODED;
