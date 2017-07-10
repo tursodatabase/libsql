@@ -1,9 +1,9 @@
-C Spelling\serror\sin\sREADME.md
-D 2017-07-10T19:08:59.942
+C Another\sspelling\serror\sin\sthe\sREADME.md\sfile.
+D 2017-07-10T19:54:48.282
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 20850e3e8d4d4791e0531955852d768eb06f24138214870d543abb1a47346fba
-F README.md 43bb4cffc37febf89079b6af4a76552019f5024b8ae9cb45b2e76fc9a16444f4
+F README.md f5c87359573c4d255425e588a56554b50fdcc2afba4e017a2e02a43701456afd
 F VERSION 87f1498f27e398bce3da2fa8125c9879a38ed9d87e4b5fb922b351de1e25cadb
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -1628,7 +1628,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 75c9327b551d072effbb37efebf5fbe1a45965f89fe285df364dda06ca866cd7
-R 9b484dba98142e9766d49d019db2f0bc
+P 12bc47c50252f1307b224d171069b93192d0c905aadf480829bba390c059aee4
+R 760b18f77d254e39c1233bdd5abb0ed8
 U drh
-Z 745b27131441596a1708629826a79171
+Z 78eeda4b1b2ef6d92a2436796c56cbe3

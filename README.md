@@ -239,7 +239,7 @@ Key files:
   *  **sqliteInt.h** - this header file defines many of the data objects
      used internally by SQLite.
 
-  *  **parse.y** - This file describes the LALR(1) grammer that SQLite uses
+  *  **parse.y** - This file describes the LALR(1) grammar that SQLite uses
      to parse SQL statements, and the actions that are taken at each step
      in the parsing process.
 
