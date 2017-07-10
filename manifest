@@ -1,5 +1,5 @@
-C Minor\scleanup\sand\srefactoring\sof\sthe\sWin32\sVFS\sfor\slsm1.
-D 2017-07-10T20:33:50.763
+C Fix\serrors\sin\scomments\sin\sthe\sSTMT\svirtual\stable.\s\sNo\scode\schanges.
+D 2017-07-10T20:39:59.430
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 20850e3e8d4d4791e0531955852d768eb06f24138214870d543abb1a47346fba
@@ -276,7 +276,7 @@ F ext/misc/sha1.c 0b9e9b855354910d3ca467bf39099d570e73db56
 F ext/misc/shathree.c fa185d7aee0ad0aca5e091b4a2db7baff11796170e5793b5de99e511a13af448
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c a4723b6aff748a417b5091b68a46443265c40f0d
-F ext/misc/stmt.c 619222bc1752a7a8412bda2d9b97337c4bc67a1ddee0efcba0eb6f439f25ce5a
+F ext/misc/stmt.c e517a1e3e0075e17f3bb274544439db91f121e714da4a0f19f7c9693c20c3fcf
 F ext/misc/totype.c 4a167594e791abeed95e0a8db028822b5e8fe512
 F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vfsstat.c bf10ef0bc51e1ad6756629e1edb142f7a8db1178
@@ -1628,7 +1628,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0512937425df6f274153f1d822fc4fe358601c2944745c0039c40e645ebedd82
-R 23297e96404b1121c3ff346849386fe8
-U mistachkin
-Z 580805a1ed03998ae70db1e05b484fcc
+P bf7eda67c8124c3cd5d9150f2f2694cd3f991b20e0a527398885976d0d787242
+R 9fceecba0169b6f2b7addd3b0ba00915
+U drh
+Z b447d5a5b4804979281a5e6bb9f00809
