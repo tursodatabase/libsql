@@ -1,5 +1,5 @@
-C Fix\sanother\sproblem\son\sthis\sbranch.
-D 2017-07-10T15:17:30.050
+C Small\sperformance\soptimization\sin\ssqlite3WhereExprUsage().
+D 2017-07-10T15:26:09.382
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 20850e3e8d4d4791e0531955852d768eb06f24138214870d543abb1a47346fba
@@ -532,7 +532,7 @@ F src/walker.c a7ca64ce08a83a20d32186fbe06bca9234e348cfcf07959ee322fdc3e8a6173a
 F src/where.c e7cc80943459ade4ccaeb5c7c10f8a0db8b797e0b0f2509de7efc557b76bf7b6
 F src/whereInt.h 93bb90b77d39901eda31b44d8e90da1351193ccfe96876f89b58a93a33b84c3d
 F src/wherecode.c cd923f921c31158c1a771f0332294e01790e13a2e3d166c40c08d78c8d85e9d6
-F src/whereexpr.c 16bb63556da573364ffbebde0effe3bf124bde4381934d2d56f2cd8a3b24d1a1
+F src/whereexpr.c bf983d2d33e325cd63a36c40b8de289fd3d7b4d9f2db9052fb8f59f7161a34a0
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/affinity3.test 6a101af2fc945ce2912f6fe54dd646018551710d
@@ -1628,7 +1628,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7d3cb39f60951dcec1ff87da2c4ec998f993de5edf49ee5e5f480c6fe4e5a052
-R 47bcde6cd81a52404ad35aa15c46b8b4
-U dan
-Z 69f60f9a722dd7ebaee7a7905b2effee
+P a4fc98113aeb10860834f68a2fdcef690ea15d8303d23b6dd416994a4b7edab6
+R 68686794179912ee0f124d7b66b93bd8
+U drh
+Z a9547d4838023b821662e4eab7778dcd
