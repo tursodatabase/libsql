@@ -1419,15 +1419,19 @@ const char *sqlite3ErrStr(int rc){
     /* SQLITE_FULL        */ "database or disk is full",
     /* SQLITE_CANTOPEN    */ "unable to open database file",
     /* SQLITE_PROTOCOL    */ "locking protocol",
-    /* SQLITE_EMPTY       */ "table contains no data",
+    /* SQLITE_EMPTY       */ 0,
     /* SQLITE_SCHEMA      */ "database schema has changed",
     /* SQLITE_TOOBIG      */ "string or blob too big",
     /* SQLITE_CONSTRAINT  */ "constraint failed",
     /* SQLITE_MISMATCH    */ "datatype mismatch",
     /* SQLITE_MISUSE      */ "library routine called out of sequence",
+#ifdef SQLITE_DISABLE_LFS
     /* SQLITE_NOLFS       */ "large file support is disabled",
+#else
+    /* SQLITE_NOLFS       */ 0,
+#endif
     /* SQLITE_AUTH        */ "authorization denied",
-    /* SQLITE_FORMAT      */ "auxiliary database format error",
+    /* SQLITE_FORMAT      */ 0,
     /* SQLITE_RANGE       */ "bind or column index out of range",
     /* SQLITE_NOTADB      */ "file is encrypted or is not a database",
   };

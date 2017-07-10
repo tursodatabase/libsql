@@ -1,5 +1,5 @@
-C Always\smake\s"column%d"\scolumn-names\s1-based,\snever\s0-based.
-D 2017-07-09T18:55:29.015
+C Remove\sthe\serror\smessage\stext\sfrom\sdisused\serror\scodes\ssuch\sas\nSQLITE_EMPTY\sand\sSQLITE_FORMAT.
+D 2017-07-10T11:17:51.852
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 20850e3e8d4d4791e0531955852d768eb06f24138214870d543abb1a47346fba
@@ -413,7 +413,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c bb70abf32c7c926745eb550938db9132309584a667a44c2db0e5fa3207600391
 F src/legacy.c 134ab3e3fae00a0f67a5187981d6935b24b337bcf0f4b3e5c9fa5763da95bf4e
 F src/loadext.c a72909474dadce771d3669bf84bf689424f6f87d471fee898589c3ef9b2acfd9
-F src/main.c e36ab281dc7d08eacf8789459b06e34ea1272631a67489799d4303be81aa7c14
+F src/main.c 66bf423085fb7e4ceb2d9c569884077995d7a529feba1dd722ea290212372610
 F src/malloc.c e20bb2b48abec52d3faf01cce12e8b4f95973755fafec98d45162dfdab111978
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -450,7 +450,7 @@ F src/resolve.c 6aa1fb1212e601f65b983ee1215d69a591986c8f97a3805c425c625a53839539
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 6aa7e8ee53dcb9d0b77b05670bb44a1076d6747bc9b2c1f12a365b553ab6c828
 F src/shell.c a7067f647aef4b81569bbfd025f4fd120a4e7576a647d2aad05028eb50e50e48
-F src/sqlite.h.in c38c31f2a874af2b7d8443aba1fba3652d8ee75f60305d2512215cbe0fa0674a
+F src/sqlite.h.in 03a422ba13da1dfef7f1aaa1ba344acf18dc867112620b1fdb2a1426cabba634
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 58fd0676d3111d02e62e5a35992a7d3da5d3f88753acc174f2d37b774fbbdd28
 F src/sqliteInt.h 7a7cd6f682471cce4afe64216f71fd64c622712aeb9d947c33c38337a7cf19a9
@@ -624,7 +624,7 @@ F test/cache.test 13bc046b26210471ca6f2889aceb1ea52dc717de
 F test/cacheflush.test af25bb1509df04c1da10e38d8f322d66eceedf61
 F test/cachespill.test 895997f84a25b323b166aecb69baab2d6380ea98f9e0bcc688c4493c535cfab9
 F test/capi2.test 011c16da245fdc0106a2785035de6b242c05e738
-F test/capi3.test c6afa851428e60b78134f26e2a7ad55204b0b1612db62f284749f6b4b775fe2a
+F test/capi3.test 02f4cbbd3478608278c8cf10ea558475f187c5e4944bc6215d1f970f51b98f5c
 F test/capi3b.test efb2b9cfd127efa84433cd7a2d72ce0454ae0dc4
 F test/capi3c.test 09e311d58b5d9586dde8ad87801a5dc41f52b7da273a331b5f7bdb12b3c7c92f
 F test/capi3d.test 485048dc5cd07bc68011e4917ad035ad6047ab82
@@ -1628,7 +1628,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P acf3b9cc9c3932431979995a1dceacc06c659ab400fad95ce3728ff8895a022b
-R 60d8e23fc76e5f2c3762a18b534f29c2
+P 70096c505d702a9646da24613da387cee19afcf395d0294b3797c5ab50bb3ee2
+R 599e40027aa06aba6639eebf73b95973
 U drh
-Z b13c2baffb7906f86d964ad698ac5682
+Z be8ad28c2c42a9cd93fa855fe84d686d
