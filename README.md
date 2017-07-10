@@ -158,9 +158,8 @@ used to generate that documentation are in a separate source repository.
 The SQL language parser is **parse.c** which is generate from a grammar in
 the src/parse.y file.  The conversion of "parse.y" into "parse.c" is done
 by the [lemon](./doc/lemon.html) LALR(1) parser generator.  The source code
-for lemon is at tool/lemon.c.  Lemon uses a
-template for generating its parser.  A generic template is in tool/lempar.c,
-but SQLite uses a slightly modified template found in src/lempar.c.
+for lemon is at tool/lemon.c.  Lemon uses the tool/lempar.c file as a
+template for generating its parser.
 
 Lemon also generates the **parse.h** header file, at the same time it
 generates parse.c. But the parse.h header file is

@@ -1,9 +1,9 @@
-C Cleanup\sheader\susage\sin\slsmtest\sfor\sfiles\sthat\srequire\s_O_BINARY.
-D 2017-07-10T18:57:03.034
+C Fix\san\sobsolete\sstatement\sabout\sLemon\sin\sthe\sREADME.md\sfile.
+D 2017-07-10T19:03:04.499
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 20850e3e8d4d4791e0531955852d768eb06f24138214870d543abb1a47346fba
-F README.md 7149d20d5301d984700f873ddcfdff2b1e500e130b7731945519ab656a7c1ddd
+F README.md d1c5d991ff52f4c909f183c5d4fbc317e414c0f45b94d886361d221925625745
 F VERSION 87f1498f27e398bce3da2fa8125c9879a38ed9d87e4b5fb922b351de1e25cadb
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -1628,7 +1628,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7bfd3ab7996bf869eb2705495f3f2cd8bd6d1f4d029a1f26041e95049a9bfd3b
-R 4f46cf4e9e96a26da22bdd0734a7e05d
-U mistachkin
-Z f4701cd25a76177b05fde09e8a1c54fd
+P f3a6a64ec90e6cf24aadf62aef4f92104be5ba6790f7fca040eff7abc31f1061
+R 3085f173f8d199aef904ba3338310af3
+U drh
+Z 0fe6ee642b737cf9ab7f147ba1ed1105
