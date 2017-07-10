@@ -253,6 +253,8 @@ static void doDbDisconnect(lsm_db *pDb){
     rc = lsmShmLock(pDb, LSM_LOCK_DMS1, LSM_LOCK_EXCL, 1);
     if( rc==LSM_OK ){
 
+      lsmShmLock(pDb, LSM_LOCK_DMS2, LSM_LOCK_UNLOCK, 0);
+
       /* Try an exclusive lock on DMS2. If successful, this is the last
       ** connection to the database. In this case flush the contents of the
       ** in-memory tree to disk and write a checkpoint.  */
@@ -324,7 +326,6 @@ static void doDbDisconnect(lsm_db *pDb){
       pDb->iRwclient = -1;
     }
 
-    lsmShmLock(pDb, LSM_LOCK_DMS2, LSM_LOCK_UNLOCK, 0);
     lsmShmLock(pDb, LSM_LOCK_DMS1, LSM_LOCK_UNLOCK, 0);
   }
   pDb->pShmhdr = 0;
@@ -477,8 +478,15 @@ int lsmDbDatabaseConnect(
       }
 
       if( rc==LSM_OK && p->bMultiProc==0 ){
+        /* Hold an exclusive lock DMS1 while grabbing DMS2. This ensures
+        ** that any ongoing call to doDbDisconnect() (even one in another
+        ** process) is finished before proceeding.  */
         assert( p->bReadonly==0 );
-        rc = lsmEnvLock(pDb->pEnv, p->pFile, LSM_LOCK_DMS2, LSM_LOCK_EXCL);
+        rc = lsmEnvLock(pDb->pEnv, p->pFile, LSM_LOCK_DMS1, LSM_LOCK_EXCL);
+        if( rc==LSM_OK ){
+          rc = lsmEnvLock(pDb->pEnv, p->pFile, LSM_LOCK_DMS2, LSM_LOCK_EXCL);
+          lsmEnvLock(pDb->pEnv, p->pFile, LSM_LOCK_DMS1, LSM_LOCK_UNLOCK);
+        }
       }
 
       if( rc==LSM_OK ){
@@ -1747,7 +1755,10 @@ int lsmShmTestLock(
 
   lsmMutexEnter(db->pEnv, p->pClientMutex);
   for(pIter=p->pConn; pIter; pIter=pIter->pNext){
-    if( pIter!=db && (pIter->mLock & mask) ) break;
+    if( pIter!=db && (pIter->mLock & mask) ){
+      assert( pIter!=db );
+      break;
+    }
   }
 
   if( pIter ){

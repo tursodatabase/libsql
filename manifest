@@ -1,5 +1,5 @@
-C Add\sthe\s"--newlines"\soption\sto\sthe\s".dump"\scommand\sin\sthe\sshell\sto\sdisable\nthe\snewline\sescaping\smechanism.
-D 2017-07-10T18:04:41.835
+C In\sLSM,\savoid\scalling\sthe\sVFS\sxTestLock\smethod\sto\stest\sfor\sa\slock\sthat\nconflicts\swith\sone\sheld\sby\sthe\ssame\sprocess.\sThe\sresults\sof\ssuch\sa\scall\sare\nconsidered\sundefined\s(since\sthey\sare\sdifferent\sunder\swin32\sand\sposix).
+D 2017-07-10T18:33:41.229
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 20850e3e8d4d4791e0531955852d768eb06f24138214870d543abb1a47346fba
@@ -243,7 +243,7 @@ F ext/lsm1/lsm_log.c 8308714659b9fe4a995c239528520c57d26a03baf1d1c973967493a089a
 F ext/lsm1/lsm_main.c 15e73ccdafdd44ddeefc29e332079d88ba8f00c12c797b3c2b63d3171b5afce8
 F ext/lsm1/lsm_mem.c 4c51ea9fa285ee6e35301b33491642d071740a0a
 F ext/lsm1/lsm_mutex.c 378edf0a2b142b4f7640ee982df06d50b98788ea
-F ext/lsm1/lsm_shared.c 54cc3a5157c6abd77f7d3ae60708b9f7bf022b3c
+F ext/lsm1/lsm_shared.c 54185ae27b7580a959127c700459b3358e39723afce12b6281f2dfe408cb0efd
 F ext/lsm1/lsm_sorted.c 9bc5251a54a5cb24c2f003c10595fa81ffc7178c4f200c6b0f83d50a2272bb1d
 F ext/lsm1/lsm_str.c 65e361b488c87b10bf3e5c0070b14ffc602cf84f094880bece77bbf6678bca82
 F ext/lsm1/lsm_tree.c 53b657439e0fcb1117b0559ad3567ac417f81f2ed0fff9bab79948a00ea3cacb
@@ -1628,7 +1628,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c4cb90487f34937605732c3959891075e2aabfb0bd05e55c44565d65867093ea
-R 6d35197f305c27266246f32d8a4834d8
-U drh
-Z a3a7e11cbaa224fa5a8714694bd756ab
+P bde431b1e332feaeb516dc46d180e2b2f42820c471feed7eda89452ada898dc9
+R 71f00994c33b502fb1928c2468689120
+U dan
+Z 83fb5bcc897af021df9d77183bfae0e8
