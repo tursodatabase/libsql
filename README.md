@@ -110,7 +110,7 @@ The makefiles also require AWK.
 
 Most of the core source files are in the **src/** subdirectory.  The
 **src/** folder also contains files used to build the "testfixture" test
-harness. The names of the source files used "by testfixture" all begin
+harness. The names of the source files used by "testfixture" all begin
 with "test".
 The **src/** also contains the "shell.c" file
 which is the main program for the "sqlite3.exe"
