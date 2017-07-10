@@ -92,7 +92,8 @@ void testReadFile(const char *zFile, int iOff, void *pOut, int nByte, int *pRc){
       if( 0!=fseek(fd, iOff, SEEK_SET) ){
         *pRc = 1;
       }else{
-        if( nByte!=fread(pOut, 1, nByte, fd) ){
+        assert( nByte>=0 );
+        if( (size_t)nByte!=fread(pOut, 1, nByte, fd) ){
           *pRc = 1;
         }
       }
@@ -117,7 +118,8 @@ void testWriteFile(
       if( 0!=fseek(fd, iOff, SEEK_SET) ){
         *pRc = 1;
       }else{
-        if( nByte!=fwrite(pOut, 1, nByte, fd) ){
+        assert( nByte>=0 );
+        if( (size_t)nByte!=fwrite(pOut, 1, nByte, fd) ){
           *pRc = 1;
         }
       }

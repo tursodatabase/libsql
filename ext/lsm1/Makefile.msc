@@ -41,7 +41,7 @@ LSMTESTSRC = $(LSMDIR)\lsm-test\lsmtest1.c $(LSMDIR)\lsm-test\lsmtest2.c     \
 
 # all: lsm.dll
 
-LSMOPTS = -DLSM_MUTEX_WIN32=1 -I$(LSMDIR)
+LSMOPTS = $(NO_WARN) -DLSM_MUTEX_WIN32=1 -I$(LSMDIR)
 
 !IF $(DEBUG)>2
 LSMOPTS = $(LSMOPTS) -DLSM_DEBUG=1

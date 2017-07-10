@@ -902,7 +902,7 @@ int do_speed_tests(int nArg, char **azArg){
       testTimeInit();
       for(i=0; i<nRow; i+=nStep){
         int iStep;
-        int nWrite1, nWrite2;
+        int nWrite1 = 0, nWrite2 = 0;
         testCaseProgress(i, nRow, testCaseNDot(), &iDot);
         if( pLsm ) lsm_info(pLsm, LSM_INFO_NWRITE, &nWrite1);
         for(iStep=0; iStep<nStep; iStep++){

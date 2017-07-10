@@ -200,7 +200,7 @@ static void testOomScan(
     int rc;
     int iScan = 0;
     lsm_cursor *pCsr;
-    int (*xAdvance)(lsm_cursor *);
+    int (*xAdvance)(lsm_cursor *) = 0;
     
 
     rc = lsm_csr_open(pDb, &pCsr);
@@ -353,7 +353,7 @@ static int lsmWriteStr(lsm_db *pDb, const char *zKey, const char *zVal){
   return lsm_insert(pDb, (void *)zKey, nKey, (void *)zVal, nVal);
 }
 
-static void setup_delete_db(){
+static void setup_delete_db(void){
   testDeleteLsmdb(LSMTEST6_TESTDB);
 }
 
@@ -369,7 +369,7 @@ static void setup_delete_db(){
 **    "seven" -> "fourtynine"
 **    "eight" -> "sixtyfour"
 */
-static void setup_populate_db(){
+static void setup_populate_db(void){
   const char *azStr[] = {
     "one",   "one",
     "two",   "four",
@@ -411,7 +411,7 @@ static Datasource *getDatasource(void){
 **   * Contains 5000 key-value pairs starting at 0 from the
 **     datasource returned getDatasource().
 */
-static void setup_populate_db2(){
+static void setup_populate_db2(void){
   Datasource *pData;
   int ii;
   int rc;
