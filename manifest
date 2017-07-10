@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\scausing\snon-covered\sWHERE\sterms\sto\sbe\sevaluated\sbefore\scovered\nWHERE\sterms.
-D 2017-07-10T14:39:42.059
+C Fix\sanother\sproblem\son\sthis\sbranch.
+D 2017-07-10T15:17:30.050
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 20850e3e8d4d4791e0531955852d768eb06f24138214870d543abb1a47346fba
@@ -453,7 +453,7 @@ F src/shell.c a7067f647aef4b81569bbfd025f4fd120a4e7576a647d2aad05028eb50e50e48
 F src/sqlite.h.in 03a422ba13da1dfef7f1aaa1ba344acf18dc867112620b1fdb2a1426cabba634
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 58fd0676d3111d02e62e5a35992a7d3da5d3f88753acc174f2d37b774fbbdd28
-F src/sqliteInt.h 44398832c9eea319c618fd046678dd929127010a0923a0af97c6b2bc1a18fb81
+F src/sqliteInt.h 7a7cd6f682471cce4afe64216f71fd64c622712aeb9d947c33c38337a7cf19a9
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -530,9 +530,9 @@ F src/wal.c 40c543f0a2195d1b0dc88ef12142bea690009344
 F src/wal.h 06b2a0b599cc0f53ea97f497cf8c6b758c999f71
 F src/walker.c a7ca64ce08a83a20d32186fbe06bca9234e348cfcf07959ee322fdc3e8a6173a
 F src/where.c e7cc80943459ade4ccaeb5c7c10f8a0db8b797e0b0f2509de7efc557b76bf7b6
-F src/whereInt.h 2a4b634d63ce488b46d4b0da8f2eaa8f9aeab202bc25ef76f007de5e3fba1f20
-F src/wherecode.c 39bddb38a402acf4c191f4a6e69b37d0deb18bbfd01b28ab433653b7a91d7ef4
-F src/whereexpr.c fa51927cc6830b9d3155cafa4e589452ec023fe313a56550d2079dca6c52fbd8
+F src/whereInt.h 93bb90b77d39901eda31b44d8e90da1351193ccfe96876f89b58a93a33b84c3d
+F src/wherecode.c cd923f921c31158c1a771f0332294e01790e13a2e3d166c40c08d78c8d85e9d6
+F src/whereexpr.c 16bb63556da573364ffbebde0effe3bf124bde4381934d2d56f2cd8a3b24d1a1
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/affinity3.test 6a101af2fc945ce2912f6fe54dd646018551710d
@@ -1091,7 +1091,7 @@ F test/printf.test b3ff34e73d59124140eaf89f7672e21bc2ca5fcc
 F test/printf2.test 9e6db85f81c63f2367c34a9d7db384088bd374ad
 F test/progress.test ebab27f670bd0d4eb9d20d49cef96e68141d92fb
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
-F test/pushdown.test a5d2e5e66cc94cfb0989a5dd23e77427dd6c4313019155ba9051f52dfc5326aa
+F test/pushdown.test df9a5d1822531fc79fa46b622a7ee5fdf5cdc81fd2740443df59cc90b746abb6
 F test/queryonly.test 5f653159e0f552f0552d43259890c1089391dcca
 F test/quick.test 1681febc928d686362d50057c642f77a02c62e57
 F test/quota-glob.test 32901e9eed6705d68ca3faee2a06b73b57cb3c26
@@ -1628,7 +1628,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1f9c1f359e4693954ba7e2bc7b172ef34eb046e4ca2796df8336975b9d6aa92b
-R 053f7bb60ad55030babe7702fd1ffbbc
+P 7d3cb39f60951dcec1ff87da2c4ec998f993de5edf49ee5e5f480c6fe4e5a052
+R 47bcde6cd81a52404ad35aa15c46b8b4
 U dan
-Z 736dda2988ee033d8b53d1cbdc026654
+Z 69f60f9a722dd7ebaee7a7905b2effee

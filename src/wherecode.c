@@ -2061,7 +2061,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         iNext = 2;
         continue;
       }
-      if( iLoop<3 && (pE->flags & EP_VarSelect) ){
+      if( iLoop<3 && (pTerm->wtFlags & TERM_VARSELECT) ){
         if( iNext==0 ) iNext = 3;
         continue;
       }
