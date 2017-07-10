@@ -1130,7 +1130,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
   int iRowidReg = 0;        /* Rowid is stored in this register, if not zero */
   int iReleaseReg = 0;      /* Temp register to free before returning */
   Index *pIdx = 0;          /* Index used by loop (if any) */
-  int loopAgain;            /* True if constraint generator loop should repeat */
+  int iLoop;                /* Iteration of constraint generator loop */
 
   pParse = pWInfo->pParse;
   v = pParse->pVdbe;
@@ -2025,13 +2025,20 @@ Bitmask sqlite3WhereCodeOneLoopStart(
   /* Insert code to test every subexpression that can be completely
   ** computed using the current set of tables.
   **
-  ** This loop may run either once (pIdx==0) or twice (pIdx!=0). If
-  ** it is run twice, then the first iteration codes those sub-expressions
-  ** that can be computed using columns from pIdx only (without seeking
-  ** the main table cursor). 
+  ** This loop may run between one and three times, depending on the
+  ** constraints to be generated. The value of stack variable iLoop
+  ** determines the constraints coded by each iteration, as follows:
+  **
+  ** iLoop==1: Code only expressions that are entirely covered by pIdx.
+  ** iLoop==2: Code remaining expressions that do not contain correlated
+  **           sub-queries.  
+  ** iLoop==3: Code all remaining expressions.
+  **
+  ** An effort is made to skip unnecessary iterations of the loop.
   */
+  iLoop = (pIdx ? 1 : 2);
   do{
-    loopAgain = 0;
+    int iNext = 0;                /* Next value for iLoop */
     for(pTerm=pWC->a, j=pWC->nTerm; j>0; j--, pTerm++){
       Expr *pE;
       int skipLikeAddr = 0;
@@ -2049,10 +2056,16 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       if( pLevel->iLeftJoin && !ExprHasProperty(pE, EP_FromJoin) ){
         continue;
       }
-      if( pIdx && !sqlite3ExprCoveredByIndex(pE, pLevel->iTabCur, pIdx) ){
-        loopAgain = 1;
+      
+      if( iNext==1 && !sqlite3ExprCoveredByIndex(pE, pLevel->iTabCur, pIdx) ){
+        iNext = 2;
         continue;
       }
+      if( iLoop<3 && (pE->flags & EP_VarSelect) ){
+        if( iNext==0 ) iNext = 3;
+        continue;
+      }
+
       if( pTerm->wtFlags & TERM_LIKECOND ){
         /* If the TERM_LIKECOND flag is set, that means that the range search
         ** is sufficient to guarantee that the LIKE operator is true, so we
@@ -2072,8 +2085,8 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       if( skipLikeAddr ) sqlite3VdbeJumpHere(v, skipLikeAddr);
       pTerm->wtFlags |= TERM_CODED;
     }
-    pIdx = 0;
-  }while( loopAgain );
+    iLoop = iNext;
+  }while( iLoop>0 );
 
   /* Insert code to test for implied constraints based on transitivity
   ** of the "==" operator.

@@ -2398,7 +2398,7 @@ struct Expr {
 /*
 ** Combinations of two or more EP_* flags
 */
-#define EP_Propagate (EP_Collate|EP_Subquery) /* Propagate these bits up tree */
+#define EP_Propagate (EP_Collate|EP_Subquery|EP_VarSelect) /* Prop. up tree */
 
 /*
 ** These macros can be used to test, set, or clear bits in the
