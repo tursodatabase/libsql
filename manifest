@@ -1,9 +1,9 @@
-C Fix\sanother\sREADME.md\stypo.
-D 2017-07-10T19:05:58.156
+C Yet\sanother\stypo\sin\sREADME.md
+D 2017-07-10T19:07:11.329
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 20850e3e8d4d4791e0531955852d768eb06f24138214870d543abb1a47346fba
-F README.md 6847fa1efc878e11b03b6defa7fa25cfd71a366f9b2ce31da930a387f4d2c162
+F README.md 963a2ccaf76d739d84846a713c5915cbaf38894a5a558656cd3a888b17f1490b
 F VERSION 87f1498f27e398bce3da2fa8125c9879a38ed9d87e4b5fb922b351de1e25cadb
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -1628,7 +1628,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4f6ce7a38baef24e00818926b9b8dc852334e3d4011f1d3a577c8c7e5f7ed93e
-R 471e84035524deda9946a0216bd83546
+P 20b1f0eff175aa8be9a7a631ede0a434f6c340fcdb931633e1f228d1fb35abde
+R d14707a7b1c1b5ef5f78a7a9de58298d
 U drh
-Z 0b3a090576fbb540ed981e72dd351b5c
+Z d77cc73ab3a65115b5fe21eac81f9768
