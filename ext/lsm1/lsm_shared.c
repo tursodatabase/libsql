@@ -97,7 +97,7 @@ static void assertNotInFreelist(Freelist *p, int iBlk){
 /*
 ** Append an entry to the free-list. If (iId==-1), this is a delete.
 */
-int freelistAppend(lsm_db *db, int iBlk, i64 iId){
+int freelistAppend(lsm_db *db, u32 iBlk, i64 iId){
   lsm_env *pEnv = db->pEnv;
   Freelist *p;
   int i; 
@@ -639,11 +639,12 @@ static int walkFreelistCb(void *pCtx, int iBlk, i64 iSnapshot){
   Freelist *pFree = p->pFreelist;
 
   assert( p->bDone==0 );
+  assert( iBlk>=0 );
   if( pFree ){
     while( (p->iFree < pFree->nEntry) && p->iFree>=0 ){
       FreelistEntry *pEntry = &pFree->aEntry[p->iFree];
-      if( (p->bReverse==0 && pEntry->iBlk>iBlk)
-       || (p->bReverse!=0 && pEntry->iBlk<iBlk)
+      if( (p->bReverse==0 && pEntry->iBlk>(u32)iBlk)
+       || (p->bReverse!=0 && pEntry->iBlk<(u32)iBlk)
       ){
         break;
       }else{
@@ -654,7 +655,7 @@ static int walkFreelistCb(void *pCtx, int iBlk, i64 iSnapshot){
           p->bDone = 1;
           return 1;
         }
-        if( pEntry->iBlk==iBlk ) return 0;
+        if( pEntry->iBlk==(u32)iBlk ) return 0;
       }
     }
   }
@@ -937,7 +938,7 @@ int lsmCheckpointWrite(lsm_db *pDb, int bTruncate, u32 *pnWrite){
       u8 *aData;                  /* Meta-page data buffer */
       int nData;                  /* Size of aData[] in bytes */
       i64 iCkpt;                  /* Id of checkpoint just loaded */
-      i64 iDisk;                  /* Id of checkpoint already stored in db */
+      i64 iDisk = 0;              /* Id of checkpoint already stored in db */
       iCkpt = lsmCheckpointId(pDb->aSnapshot, 0);
       rc = lsmFsMetaPageGet(pDb->pFS, 0, pShm->iMetaPage, &pPg);
       if( rc==LSM_OK ){
@@ -1886,7 +1887,7 @@ int shmLockType(lsm_db *db, int iLock){
 **   (eOp==LSM_LOCK_EXCL)   -> true if db has an EXCLUSIVE lock on iLock.
 */
 int lsmShmAssertLock(lsm_db *db, int iLock, int eOp){
-  int ret;
+  int ret = 0;
   int eHave;
 
   assert( iLock>=1 && iLock<=LSM_LOCK_READER(LSM_LOCK_NREADER-1) );

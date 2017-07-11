@@ -648,7 +648,6 @@ static int lsmWin32OsShmMap(lsm_file *pFile, int iChunk, int sz, void **ppShm){
   assert( sz>=0 );
   assert( sz==LSM_SHM_CHUNK_SIZE );
   if( iChunk>=pWin32File->nShm ){
-    int i;
     LPHANDLE ahNew;
     LPVOID *apNew;
     LARGE_INTEGER fileSize;

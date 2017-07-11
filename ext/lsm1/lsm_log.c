@@ -545,7 +545,7 @@ static int jumpIfRequired(
         aPad[0] = LSM_LOG_PAD1;
       }else{
         aPad[0] = LSM_LOG_PAD2;
-        aPad[1] = (nPad-2);
+        aPad[1] = (u8)(nPad-2);
       }
       rc = lsmStringBinAppend(&pLog->buf, aPad, nPad);
       if( rc!=LSM_OK ) return rc;
@@ -627,7 +627,7 @@ static int logFlush(lsm_db *pDb, int eType){
       }else{
         int n = LSM_MIN(200, nPad-2);
         pLog->buf.z[pLog->buf.n++] = LSM_LOG_PAD2;
-        pLog->buf.z[pLog->buf.n++] = n;
+        pLog->buf.z[pLog->buf.n++] = (char)n;
         nPad -= 2;
         memset(&pLog->buf.z[pLog->buf.n], 0x2B, n);
         pLog->buf.n += n;
@@ -640,7 +640,7 @@ static int logFlush(lsm_db *pDb, int eType){
   ** record. Then add the first byte of it.  */
   rc = lsmStringExtend(&pLog->buf, 9);
   if( rc!=LSM_OK ) return rc;
-  pLog->buf.z[pLog->buf.n++] = eType;
+  pLog->buf.z[pLog->buf.n++] = (char)eType;
   memset(&pLog->buf.z[pLog->buf.n], 0, 8);
 
   rc = logCksumAndFlush(pDb);
@@ -772,7 +772,7 @@ void lsmLogSeek(
 
   assert( pMark->iOff<=pLog->iOff+pLog->buf.n );
   if( (pMark->iOff & 0xFFFFFFF8)>=pLog->iOff ){
-    pLog->buf.n = pMark->iOff - pLog->iOff;
+    pLog->buf.n = (int)(pMark->iOff - pLog->iOff);
     pLog->iCksumBuf = (pLog->buf.n & 0xFFFFFFF8);
   }else{
     pLog->buf.n = pMark->nBuf;

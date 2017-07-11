@@ -222,7 +222,7 @@ struct CkptBuffer {
 ** at aCkpt[].
 */
 static void ckptChecksum(u32 *aCkpt, u32 nCkpt, u32 *piCksum1, u32 *piCksum2){
-  int i;
+  u32 i;
   u32 cksum1 = 1;
   u32 cksum2 = 2;
 
@@ -511,7 +511,7 @@ static void ckptNewSegment(
   pSegment->iFirst = ckptGobble64(aIn, piIn);
   pSegment->iLastPg = ckptGobble64(aIn, piIn);
   pSegment->iRoot = ckptGobble64(aIn, piIn);
-  pSegment->nSize = ckptGobble64(aIn, piIn);
+  pSegment->nSize = (int)ckptGobble64(aIn, piIn);
   assert( pSegment->iFirst );
 }
 
