@@ -1,5 +1,5 @@
-C Support\sread-only\sMVCC\stransactions\sin\sserver-mode.\sStarted\susing\s"BEGIN\nREADONLY".
-D 2017-07-08T20:46:17.624
+C Fix\sa\sbug\scausing\sreadonly\smvcc\sconnections\sto\sread\sthe\swrong\scache\sentry\sin\nsome\scases.
+D 2017-07-11T16:47:26.878
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 4ebb1d257cac7fb1bcb4ba59278416d410ff1c4bf59447a9c37a415f3516056a
@@ -449,7 +449,7 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 6aa1fb1212e601f65b983ee1215d69a591986c8f97a3805c425c625a53839539
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c c9f7b7196e196e93979665680d055a789938b8e025556097bf484b184c0dd576
-F src/server.c f7b99d79a1b83d258bc0ef96ba715f8dd02749c79cd297d0dd976b4e3a4d2b46
+F src/server.c a5dbb0b06d046219e25f4f59998f6067e9d0761e4e06d35a70d0d7409c136c4f
 F src/server.h a8477ae61546a9a4c8e06dd31936b06abf18bd086ae6a183ed57f721a3a194b4
 F src/shell.c a2b148e4ca8eb81b96e1050207c83d4a16ea6bf9182374faee4dd2a43628c291
 F src/sqlite.h.in 7c783bb985825a13dd4c8294aade14bc4714275e142e2a5b21fc2a618cd669fb
@@ -1636,7 +1636,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 216c757f9289af818482253f77b0b2c9b09e8a478caf67d70a4a6da2fabbc642
-R aec492ec515bdebef9944fc5b7624f8f
+P 5a043aa8dd0751e644c495a59deea5fe05da905f49c664d978fe477f9240bc37
+R e59e1dfe288bdf1b4bb726ee235e7626
 U dan
-Z 17a24e9dfd744bc2511bd64d17405f97
+Z 6d2ed9dacb76457e26a93cd8b7b8a737

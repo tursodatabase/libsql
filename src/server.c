@@ -642,7 +642,8 @@ void sqlite3ServerReadPage(Server *p, Pgno pgno, u8 **ppData){
     /* Search the hash table for the oldest version of page pgno with
     ** a commit-id greater than or equal to Server.iCommitId.  */
     for(pIter=pDb->apPg[iHash]; pIter; pIter=pIter->pHashNext){
-      if( pIter->iCommitId>=p->iCommitId 
+      if( pIter->pgno==pgno 
+       && pIter->iCommitId>=p->iCommitId 
        && (pBest==0 || pIter->iCommitId<pBest->iCommitId) 
       ){
         pBest = pIter;
