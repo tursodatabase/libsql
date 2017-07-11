@@ -3,7 +3,7 @@ extern crate time;
 use Result;
 use types::{FromSql, FromSqlError, FromSqlResult, ToSql, ToSqlOutput, ValueRef};
 
-const SQLITE_DATETIME_FMT: &'static str = "%Y-%m-%d %H:%M:%f %z";
+const SQLITE_DATETIME_FMT: &'static str = "%Y-%m-%d %H:%M:%f";
 
 impl ToSql for time::Timespec {
     fn to_sql(&self) -> Result<ToSqlOutput> {
