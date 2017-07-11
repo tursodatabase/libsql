@@ -795,6 +795,7 @@ static void shellAddSchemaName(
 
 INCLUDE ../ext/misc/shathree.c
 INCLUDE ../ext/misc/fileio.c
+INCLUDE ../ext/misc/completion.c
 
 #if defined(SQLITE_ENABLE_SESSION)
 /*
@@ -2890,11 +2891,76 @@ static void open_db(ShellState *p, int keepAlive){
 #endif
     sqlite3_fileio_init(p->db, 0, 0);
     sqlite3_shathree_init(p->db, 0, 0);
+    sqlite3_completion_init(p->db, 0, 0);
     sqlite3_create_function(p->db, "shell_add_schema", 2, SQLITE_UTF8, 0,
                             shellAddSchemaName, 0, 0);
-                            
   }
 }
+
+#if HAVE_READLINE || HAVE_EDITLINE
+/*
+** Readline completion callbacks
+*/
+static char *readline_completion_generator(const char *text, int state){
+  static sqlite3_stmt *pStmt = 0;
+  char *zRet;
+  if( state==0 ){
+    char *zSql;
+    int rc;
+    sqlite3_finalize(pStmt);
+    zSql = sqlite3_mprintf("SELECT DISTINCT candidate COLLATE nocase"
+                           "  FROM completion(%Q) ORDER BY 1", text);
+    sqlite3_prepare_v2(globalDb, zSql, -1, &pStmt, 0);
+    sqlite3_free(zSql);
+  }
+  if( sqlite3_step(pStmt)==SQLITE_ROW ){
+    zRet = strdup(sqlite3_column_text(pStmt, 0));
+  }else{
+    sqlite3_finalize(pStmt);
+    pStmt = 0;
+    zRet = 0;
+  }
+  return zRet;
+}
+static char **readline_completion(const char *zText, int iStart, int iEnd){
+  rl_attempted_completion_over = 1;
+  return rl_completion_matches(zText, readline_completion_generator);
+}
+
+#elif HAVE_LINENOISE
+/*
+** Linenoise completion callback
+*/
+static void linenoise_completion(const char *zLine, linenoiseCompletions *lc){
+  int nLine = (int)strlen(zLine);
+  int i, iStart;
+  sqlite3_stmt *pStmt = 0;
+  char *zSql;
+  char zBuf[1000];
+
+  if( nLine>sizeof(zBuf)-30 ) return;
+  if( zLine[0]=='.' ) return;
+  for(i=nLine-1; i>=0 && (isalnum(zLine[i]) || zLine[i]=='_'); i--){}
+  if( i==nLine-1 ) return;
+  iStart = i+1;
+  memcpy(zBuf, zLine, iStart);
+  zSql = sqlite3_mprintf("SELECT DISTINCT candidate COLLATE nocase"
+                         "  FROM completion(%Q,%Q) ORDER BY 1",
+                         &zLine[iStart], zLine);
+  sqlite3_prepare_v2(globalDb, zSql, -1, &pStmt, 0);
+  sqlite3_free(zSql);
+  sqlite3_exec(globalDb, "PRAGMA page_count", 0, 0, 0); /* Load the schema */
+  while( sqlite3_step(pStmt)==SQLITE_ROW ){
+    const char *zCompletion = (const char*)sqlite3_column_text(pStmt, 0);
+    int nCompletion = sqlite3_column_bytes(pStmt, 0);
+    if( iStart+nCompletion < sizeof(zBuf)-1 ){
+      memcpy(zBuf+iStart, zCompletion, nCompletion+1);
+      linenoiseAddCompletion(lc, zBuf);
+    }
+  }
+  sqlite3_finalize(pStmt);
+}
+#endif
 
 /*
 ** Do C-language style dequoting.
@@ -6943,6 +7009,11 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
         }
       }
       if( zHistory ){ shell_read_history(zHistory); }
+#if HAVE_READLINE || HAVE_EDITLINE
+      rl_attempted_completion_function = readline_completion;
+#elif HAVE_LINENOISE
+      linenoiseSetCompletionCallback(linenoise_completion);
+#endif
       rc = process_input(&data, 0);
       if( zHistory ){
         shell_stifle_history(100);

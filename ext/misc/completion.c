@@ -33,10 +33,7 @@
 ** faster than any human can type.
 **
 */
-#if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_COMPLETIONVTAB)
-#if !defined(SQLITEINT_H)
 #include "sqlite3ext.h"
-#endif
 SQLITE_EXTENSION_INIT1
 #include <assert.h>
 #include <string.h>
@@ -495,7 +492,6 @@ int sqlite3CompletionVtabInit(sqlite3 *db){
   return rc;
 }
 
-#ifndef SQLITE_CORE
 #ifdef _WIN32
 __declspec(dllexport)
 #endif
@@ -511,5 +507,3 @@ int sqlite3_completion_init(
 #endif
   return rc;
 }
-#endif /* SQLITE_CORE */
-#endif /* !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_COMPLETIONVTAB) */

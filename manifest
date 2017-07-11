@@ -1,5 +1,5 @@
-C Change\sthe\ssrc/shell.c\sfile\sso\sthat\sit\sis\sgenerated\sfrom\sa\snew\sscript\sat\ntool/mkshellc.tcl\sand\sthe\stemplate\sfile\ssrc/shell.c.in,\sand\sautomatically\nincludes\sthe\sextensions\sit\sneeds\sout\sof\sext/misc.
-D 2017-07-11T13:34:40.462
+C Add\ssupport\sfor\stab-completion\s(using\sthe\sext/misc/completion.c\svirtual\stable)\nto\sthe\scommand-line\sshell.
+D 2017-07-11T13:59:07.400
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 20850e3e8d4d4791e0531955852d768eb06f24138214870d543abb1a47346fba
@@ -256,7 +256,7 @@ F ext/misc/amatch.c 6db4607cb17c54b853a2d7c7c36046d004853f65b9b733e6f019d543d5df
 F ext/misc/anycollseq.c 5ffdfde9829eeac52219136ad6aa7cd9a4edb3b15f4f2532de52f4a22525eddb
 F ext/misc/carray.c 40c27641010a4dc67e3690bdb7c9d36ca58b3c2d
 F ext/misc/closure.c 0d2a038df8fbae7f19de42e7c7d71f2e4dc88704
-F ext/misc/completion.c 637c016977809c2c3174472e7a416c9dbefc89dadb0efbd33f1516114b43900e
+F ext/misc/completion.c 821141b02a0313ce7dbe72f0260ef755f81d4b57eacb799864e4c40ad5ceb3f3
 F ext/misc/compress.c 122faa92d25033d6c3f07c39231de074ab3d2e83
 F ext/misc/csv.c d91c0388445b08f6e373dd0e8fc024d4551b1fcaf64e876a1c3f4fac8a63adc2
 F ext/misc/dbdump.c 3509fa6b8932d04e932d6b6b827b6a82ca362781b8e8f3c77336f416793e215e
@@ -450,8 +450,8 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 6aa1fb1212e601f65b983ee1215d69a591986c8f97a3805c425c625a53839539
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 6aa7e8ee53dcb9d0b77b05670bb44a1076d6747bc9b2c1f12a365b553ab6c828
-F src/shell.c 71a338b3a29502a4a7290fa646bc4547d911777aba55ebc040b5940786435833
-F src/shell.c.in 9d75c83c13fb1b96e60c56cce96146d84c4c8b3d18d11bd85e0759ebf744bcb2
+F src/shell.c 19726a6f28f66aa0488f5e9c7aacc399f2bbcd934bffc3a92a5de6d365389eee
+F src/shell.c.in 18510e3fdd9216a6183ff93a48cac7d8d253d39f17750af597d90d3c5f27fc34
 F src/sqlite.h.in 03a422ba13da1dfef7f1aaa1ba344acf18dc867112620b1fdb2a1426cabba634
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 58fd0676d3111d02e62e5a35992a7d3da5d3f88753acc174f2d37b774fbbdd28
@@ -1631,7 +1631,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 724819b456ca7a5ca6d68415b3b3554741c3ddbb5c416cb6b6b5fc54177f426e
-R 60a762ef308a5ae7a380cb2ce07b0a0c
+P 17e0bb12d82b510b86b6886b9fd0faf39b60b1374027344f89d7b89a32b842b9
+R 951f8f3a9284f3001be7f39a25c50055
 U drh
-Z 1a54bd7eb9eb8ff312901d65383e16cf
+Z 55996074e61f063450435131cf82f298
