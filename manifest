@@ -1,5 +1,5 @@
-C Fix\sa\swhitespace\salignment\sissue\sin\slsm1.
-D 2017-07-11T17:06:42.710
+C Enabled\sthe\snew\ssqlite3_prepare_v3()\sand\ssqlite3_prepare16_v3()\sinterfaces\nfor\sloadable\sextensions.
+D 2017-07-11T17:28:27.462
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 20850e3e8d4d4791e0531955852d768eb06f24138214870d543abb1a47346fba
@@ -413,7 +413,7 @@ F src/hwtime.h 747c1bbe9df21a92e9c50f3bbec1de841dc5e5da
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c bb70abf32c7c926745eb550938db9132309584a667a44c2db0e5fa3207600391
 F src/legacy.c 134ab3e3fae00a0f67a5187981d6935b24b337bcf0f4b3e5c9fa5763da95bf4e
-F src/loadext.c a72909474dadce771d3669bf84bf689424f6f87d471fee898589c3ef9b2acfd9
+F src/loadext.c 83fc9858b19ffe4b7191f5d0bfa9111896af9d7dff55367edc92e6720511108e
 F src/main.c 20574bb9a0d7911efcd659ac252f2126dc4e3308bed3c8764ea3fb5a00f70420
 F src/malloc.c e20bb2b48abec52d3faf01cce12e8b4f95973755fafec98d45162dfdab111978
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
@@ -454,7 +454,7 @@ F src/shell.c 19726a6f28f66aa0488f5e9c7aacc399f2bbcd934bffc3a92a5de6d365389eee
 F src/shell.c.in 18510e3fdd9216a6183ff93a48cac7d8d253d39f17750af597d90d3c5f27fc34
 F src/sqlite.h.in 03a422ba13da1dfef7f1aaa1ba344acf18dc867112620b1fdb2a1426cabba634
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
-F src/sqlite3ext.h 58fd0676d3111d02e62e5a35992a7d3da5d3f88753acc174f2d37b774fbbdd28
+F src/sqlite3ext.h 5539ec41f3d81890d626d5a845b08c82bd0e946ddc5c1c341144b700bc56101e
 F src/sqliteInt.h 7a7cd6f682471cce4afe64216f71fd64c622712aeb9d947c33c38337a7cf19a9
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
@@ -1631,7 +1631,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0f1307f1f5638c1c4f1ce2b89cdef7ce8b76dc2a38685cd1ca152cde9e8727da
-R 7400a8b15efac04f7b2e05c59db9c23f
-U mistachkin
-Z 8bfcb6b9870f5a07cd83371a25e25bb8
+P a8e651e0e52b016c3939df3ee23b4981f1a8841c7ddd2981c1ef391feb559a5e
+R 203da47c07175d33b190b03dbc1a6851
+U drh
+Z 26dac8927f38097219eaf56c6204ab1a
