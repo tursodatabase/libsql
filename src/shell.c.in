@@ -766,7 +766,7 @@ static void shellAddSchemaName(
   const char *zSchema = (const char*)sqlite3_value_text(apVal[1]);
   assert( nVal==2 );
   if( zIn!=0 && strncmp(zIn, "CREATE ", 7)==0 ){
-    for(i=0; i<sizeof(aPrefix)/sizeof(aPrefix[0]); i++){
+    for(i=0; i<(int)(sizeof(aPrefix)/sizeof(aPrefix[0])); i++){
       int n = strlen30(aPrefix[i]);
       if( strncmp(zIn+7, aPrefix[i], n)==0 && zIn[n+7]==' ' ){
         char cQuote = quoteChar(zSchema);
@@ -791,7 +791,7 @@ static void shellAddSchemaName(
 ** work here in the middle of this regular program.
 */
 #define SQLITE_EXTENSION_INIT1
-#define SQLITE_EXTENSION_INIT2(X)
+#define SQLITE_EXTENSION_INIT2(X) (void)(X)
 
 INCLUDE ../ext/misc/shathree.c
 INCLUDE ../ext/misc/fileio.c

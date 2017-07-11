@@ -1,5 +1,5 @@
-C Make\swin32GetTimeOfDay()\sin\sthe\slsm1\stest\scode\smore\sportable.
-D 2017-07-11T17:54:27.449
+C Fix\sharmless\scompiler\swarnings\sin\sthe\score.
+D 2017-07-11T18:11:33.473
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 20850e3e8d4d4791e0531955852d768eb06f24138214870d543abb1a47346fba
@@ -256,12 +256,12 @@ F ext/misc/amatch.c 6db4607cb17c54b853a2d7c7c36046d004853f65b9b733e6f019d543d5df
 F ext/misc/anycollseq.c 5ffdfde9829eeac52219136ad6aa7cd9a4edb3b15f4f2532de52f4a22525eddb
 F ext/misc/carray.c 40c27641010a4dc67e3690bdb7c9d36ca58b3c2d
 F ext/misc/closure.c 0d2a038df8fbae7f19de42e7c7d71f2e4dc88704
-F ext/misc/completion.c 821141b02a0313ce7dbe72f0260ef755f81d4b57eacb799864e4c40ad5ceb3f3
+F ext/misc/completion.c 52c3f01523e3e387eb321b4739a89d1fe47cbe6025aa1f2d8d3685e9e365df0f
 F ext/misc/compress.c 122faa92d25033d6c3f07c39231de074ab3d2e83
 F ext/misc/csv.c d91c0388445b08f6e373dd0e8fc024d4551b1fcaf64e876a1c3f4fac8a63adc2
 F ext/misc/dbdump.c 3509fa6b8932d04e932d6b6b827b6a82ca362781b8e8f3c77336f416793e215e
 F ext/misc/eval.c f971962e92ebb8b0a4e6b62949463ee454d88fa2
-F ext/misc/fileio.c d4171c815d6543a9edef8308aab2951413cd8d0f
+F ext/misc/fileio.c b1aa06c0f1dac277695d4529e5e976c65ab5678dcbb53a0304deaa8adc44b332
 F ext/misc/fuzzer.c 7c64b8197bb77b7d64eff7cac7848870235d4c25
 F ext/misc/ieee754.c f190d0cc5182529acb15babd177781be1ac1718c
 F ext/misc/json1.c dbe086615b9546c156bf32b9378fc09383b58bd17513b866cfd24c1e15281984
@@ -392,7 +392,7 @@ F src/auth.c 79f96c6f33bf0e5da8d1c282cee5ebb1852bb8a6ccca3e485d7c459b035d9c3c
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c 79fb003347c47c74f8fda24f2fd332321da616771cd3d1b3258b739f569ec625
+F src/btree.c f55ea8f456d103328d61076be40fa39acbfea05eaa4eccfed275532a63c867c4
 F src/btree.h 3edc5329bc59534d2d15b4f069a9f54b779a7e51289e98fa481ae3c0e526a5ca
 F src/btreeInt.h 97700795edf8a43245720414798b7b29d8e465aef46bf301ffacd431910c0da1
 F src/build.c 74108007d286232fb4290464ee5452fa860c26215f8caa0e6c7cbf69a6fafe8f
@@ -450,12 +450,12 @@ F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 6aa1fb1212e601f65b983ee1215d69a591986c8f97a3805c425c625a53839539
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 6aa7e8ee53dcb9d0b77b05670bb44a1076d6747bc9b2c1f12a365b553ab6c828
-F src/shell.c 19726a6f28f66aa0488f5e9c7aacc399f2bbcd934bffc3a92a5de6d365389eee
-F src/shell.c.in 18510e3fdd9216a6183ff93a48cac7d8d253d39f17750af597d90d3c5f27fc34
+F src/shell.c 0401a716fc5343594b8ee60ce065d9a71373d3403f0b81f9fed684741e6401d1
+F src/shell.c.in 98bfdeeb0808418b37f59e6d380568a76e0733efe2494377096f434b39940cad
 F src/sqlite.h.in 03a422ba13da1dfef7f1aaa1ba344acf18dc867112620b1fdb2a1426cabba634
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 5539ec41f3d81890d626d5a845b08c82bd0e946ddc5c1c341144b700bc56101e
-F src/sqliteInt.h 7a7cd6f682471cce4afe64216f71fd64c622712aeb9d947c33c38337a7cf19a9
+F src/sqliteInt.h c9cc829906fc9c95444c6c3b4a7dbf8eac39af15cde5582e869ae5c9b4eebef9
 F src/sqliteLimit.h 1513bfb7b20378aa0041e7022d04acb73525de35b80b252f1b83fedb4de6a76b
 F src/status.c a9e66593dfb28a9e746cba7153f84d49c1ddc4b1
 F src/table.c b46ad567748f24a326d9de40e5b9659f96ffff34
@@ -1631,7 +1631,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b9debd626a68c4bc0e5fdeb8d15a991cfe6f62f9586eda76c07a1c18e498e3c2
-R 8745ce1c706502301f89ec6738b13039
-U mistachkin
-Z 63dd27d75b2c25ef4e26d8f81d95be48
+P 2fe3a84330063378ca9fc5bfc8efe486c52d50b5c40be4f402a4f2318be69436
+R 5233df6163d8e8ff9a79e293df00de6c
+U drh
+Z d9b035cf4c291f130c8cdbd2d8e35ec0

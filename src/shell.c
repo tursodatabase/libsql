@@ -784,7 +784,7 @@ static void shellAddSchemaName(
   const char *zSchema = (const char*)sqlite3_value_text(apVal[1]);
   assert( nVal==2 );
   if( zIn!=0 && strncmp(zIn, "CREATE ", 7)==0 ){
-    for(i=0; i<sizeof(aPrefix)/sizeof(aPrefix[0]); i++){
+    for(i=0; i<(int)(sizeof(aPrefix)/sizeof(aPrefix[0])); i++){
       int n = strlen30(aPrefix[i]);
       if( strncmp(zIn+7, aPrefix[i], n)==0 && zIn[n+7]==' ' ){
         char cQuote = quoteChar(zSchema);
@@ -809,7 +809,7 @@ static void shellAddSchemaName(
 ** work here in the middle of this regular program.
 */
 #define SQLITE_EXTENSION_INIT1
-#define SQLITE_EXTENSION_INIT2(X)
+#define SQLITE_EXTENSION_INIT2(X) (void)(X)
 
 /************************* Begin ../ext/misc/shathree.c ******************/
 /*
@@ -1561,6 +1561,7 @@ static void readfileFunc(
   long nIn;
   void *pBuf;
 
+  (void)(argc);  /* Unused parameter */
   zName = (const char*)sqlite3_value_text(argv[0]);
   if( zName==0 ) return;
   in = fopen(zName, "rb");
@@ -1593,6 +1594,7 @@ static void writefileFunc(
   sqlite3_int64 rc;
   const char *zFile;
 
+  (void)(argc);  /* Unused parameter */
   zFile = (const char*)sqlite3_value_text(argv[0]);
   if( zFile==0 ) return;
   out = fopen(zFile, "wb");
@@ -1737,6 +1739,11 @@ static int completionConnect(
   completion_vtab *pNew;
   int rc;
 
+  (void)(pAux);    /* Unused parameter */
+  (void)(argc);    /* Unused parameter */
+  (void)(argv);    /* Unused parameter */
+  (void)(pzErr);   /* Unused parameter */
+
 /* Column numbers */
 #define COMPLETION_COLUMN_CANDIDATE 0  /* Suggested completion of the input */
 #define COMPLETION_COLUMN_PREFIX    1  /* Prefix of the word to be completed */
@@ -1823,6 +1830,8 @@ static const char *completionKwrds[] = {
   "UPDATE", "USING", "VACUUM", "VALUES", "VIEW", "VIRTUAL", "WHEN", "WHERE",
   "WITH", "WITHOUT",
 };
+#define completionKwCount \
+   (int)(sizeof(completionKwrds)/sizeof(completionKwrds[0]))
 
 /*
 ** Advance a completion_cursor to its next row of output.
@@ -1846,7 +1855,7 @@ static int completionNext(sqlite3_vtab_cursor *cur){
   while( pCur->ePhase!=COMPLETION_EOF ){
     switch( pCur->ePhase ){
       case COMPLETION_KEYWORDS: {
-        if( pCur->j >=  sizeof(completionKwrds)/sizeof(completionKwrds[0]) ){
+        if( pCur->j >= completionKwCount ){
           pCur->zCurrentRow = 0;
           pCur->ePhase = COMPLETION_DATABASES;
         }else{
@@ -2003,6 +2012,8 @@ static int completionFilter(
 ){
   completion_cursor *pCur = (completion_cursor *)pVtabCursor;
   int iArg = 0;
+  (void)(idxStr);   /* Unused parameter */
+  (void)(argc);     /* Unused parameter */
   completionCursorReset(pCur);
   if( idxNum & 1 ){
     pCur->nPrefix = sqlite3_value_bytes(argv[iArg]);
@@ -2057,6 +2068,7 @@ static int completionBestIndex(
   int nArg = 0;          /* Number of arguments that completeFilter() expects */
   const struct sqlite3_index_constraint *pConstraint;
 
+  (void)(tab);    /* Unused parameter */
   pConstraint = pIdxInfo->aConstraint;
   for(i=0; i<pIdxInfo->nConstraint; i++, pConstraint++){
     if( pConstraint->usable==0 ) continue;
@@ -2111,6 +2123,9 @@ static sqlite3_module completionModule = {
   0,                         /* xRollback */
   0,                         /* xFindMethod */
   0,                         /* xRename */
+  0,                         /* xSavepoint */
+  0,                         /* xRelease */
+  0                          /* xRollbackTo */
 };
 
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
@@ -2133,6 +2148,7 @@ int sqlite3_completion_init(
 ){
   int rc = SQLITE_OK;
   SQLITE_EXTENSION_INIT2(pApi);
+  (void)(pzErrMsg);  /* Unused parameter */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   rc = sqlite3CompletionVtabInit(db);
 #endif

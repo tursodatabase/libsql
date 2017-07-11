@@ -5449,19 +5449,19 @@ i64 sqlite3BtreeRowCountEst(BtCursor *pCur){
 ** routine is called when it is necessary to move to a different page or
 ** to restore the cursor.
 **
-** If bit 0x01 of the flags argument is 1, then the cursor corresponds to
-** an SQL index and this routine could have been skipped if the SQL index
-** had been a unique index.  The flags argument is a hint to the implement.
-** SQLite btree implementation does not use this hint, but COMDB2 does.
+** If bit 0x01 of the F argument in sqlite3BtreeNext(C,F) is 1, then the
+** cursor corresponds to an SQL index and this routine could have been
+** skipped if the SQL index had been a unique index.  The F argument
+** is a hint to the implement.  SQLite btree implementation does not use
+** this hint, but COMDB2 does.
 */
-static SQLITE_NOINLINE int btreeNext(BtCursor *pCur, int flags){
+static SQLITE_NOINLINE int btreeNext(BtCursor *pCur){
   int rc;
   int idx;
   MemPage *pPage;
 
   assert( cursorOwnsBtShared(pCur) );
   assert( pCur->skipNext==0 || pCur->eState!=CURSOR_VALID );
-  assert( flags==0 );
   if( pCur->eState!=CURSOR_VALID ){
     assert( (pCur->curFlags & BTCF_ValidOvfl)==0 );
     rc = restoreCursorPosition(pCur);
@@ -5508,7 +5508,7 @@ static SQLITE_NOINLINE int btreeNext(BtCursor *pCur, int flags){
       pPage = pCur->apPage[pCur->iPage];
     }while( pCur->ix>=pPage->nCell );
     if( pPage->intKey ){
-      return sqlite3BtreeNext(pCur, flags);
+      return sqlite3BtreeNext(pCur, 0);
     }else{
       return SQLITE_OK;
     }
@@ -5521,16 +5521,17 @@ static SQLITE_NOINLINE int btreeNext(BtCursor *pCur, int flags){
 }
 int sqlite3BtreeNext(BtCursor *pCur, int flags){
   MemPage *pPage;
+  UNUSED_PARAMETER( flags );  /* Used in COMDB2 but not native SQLite */
   assert( cursorOwnsBtShared(pCur) );
   assert( flags==0 || flags==1 );
   assert( pCur->skipNext==0 || pCur->eState!=CURSOR_VALID );
   pCur->info.nSize = 0;
   pCur->curFlags &= ~(BTCF_ValidNKey|BTCF_ValidOvfl);
-  if( pCur->eState!=CURSOR_VALID ) return btreeNext(pCur, 0);
+  if( pCur->eState!=CURSOR_VALID ) return btreeNext(pCur);
   pPage = pCur->apPage[pCur->iPage];
   if( (++pCur->ix)>=pPage->nCell ){
     pCur->ix--;
-    return btreeNext(pCur, 0);
+    return btreeNext(pCur);
   }
   if( pPage->leaf ){
     return SQLITE_OK;
@@ -5553,18 +5554,17 @@ int sqlite3BtreeNext(BtCursor *pCur, int flags){
 ** helper routine is called when it is necessary to move to a different page
 ** or to restore the cursor.
 **
-**
-** If bit 0x01 of the flags argument is 1, then the cursor corresponds to
-** an SQL index and this routine could have been skipped if the SQL index
-** had been a unique index.  The flags argument is a hint to the implement.
-** SQLite btree implementation does not use this hint, but COMDB2 does.
+** If bit 0x01 of the F argument to sqlite3BtreePrevious(C,F) is 1, then
+** the cursor corresponds to an SQL index and this routine could have been
+** skipped if the SQL index had been a unique index.  The F argument is a
+** hint to the implement.  The native SQLite btree implementation does not
+** use this hint, but COMDB2 does.
 */
-static SQLITE_NOINLINE int btreePrevious(BtCursor *pCur, int flags){
+static SQLITE_NOINLINE int btreePrevious(BtCursor *pCur){
   int rc;
   MemPage *pPage;
 
   assert( cursorOwnsBtShared(pCur) );
-  assert( flags==0 );
   assert( pCur->skipNext==0 || pCur->eState!=CURSOR_VALID );
   assert( (pCur->curFlags & (BTCF_AtLast|BTCF_ValidOvfl|BTCF_ValidNKey))==0 );
   assert( pCur->info.nSize==0 );
@@ -5608,7 +5608,7 @@ static SQLITE_NOINLINE int btreePrevious(BtCursor *pCur, int flags){
     pCur->ix--;
     pPage = pCur->apPage[pCur->iPage];
     if( pPage->intKey && !pPage->leaf ){
-      rc = sqlite3BtreePrevious(pCur, flags);
+      rc = sqlite3BtreePrevious(pCur, 0);
     }else{
       rc = SQLITE_OK;
     }
@@ -5619,13 +5619,14 @@ int sqlite3BtreePrevious(BtCursor *pCur, int flags){
   assert( cursorOwnsBtShared(pCur) );
   assert( flags==0 || flags==1 );
   assert( pCur->skipNext==0 || pCur->eState!=CURSOR_VALID );
+  UNUSED_PARAMETER( flags );  /* Used in COMDB2 but not native SQLite */
   pCur->curFlags &= ~(BTCF_AtLast|BTCF_ValidOvfl|BTCF_ValidNKey);
   pCur->info.nSize = 0;
   if( pCur->eState!=CURSOR_VALID
    || pCur->ix==0
    || pCur->apPage[pCur->iPage]->leaf==0
   ){
-    return btreePrevious(pCur, 0);
+    return btreePrevious(pCur);
   }
   pCur->ix--;
   return SQLITE_OK;
