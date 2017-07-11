@@ -4038,7 +4038,7 @@ static int mergeWorkerWrite(
     if( flags ) lsmPutU16(&aData[SEGMENT_FLAGS_OFFSET(nData)], (u16)flags);
 
     /* Write the entry header into the current page. */
-    aData[iOff++] = (u8)eType;                                               /* 1 */
+    aData[iOff++] = (u8)eType;                                           /* 1 */
     iOff += lsmVarintPut32(&aData[iOff], iRPtr);                         /* 2 */
     iOff += lsmVarintPut32(&aData[iOff], nKey);                          /* 3 */
     if( rtIsWrite(eType) ) iOff += lsmVarintPut32(&aData[iOff], nVal);   /* 4 */
