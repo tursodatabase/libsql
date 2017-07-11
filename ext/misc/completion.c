@@ -13,6 +13,25 @@
 ** This file implements an eponymous virtual table that returns suggested
 ** completions for a partial SQL input.
 **
+** Suggested usage:
+**
+**     SELECT DISTINCT candidate COLLATE nocase
+**       FROM completion($prefix,$wholeline)
+**      ORDER BY 1;
+**
+** The two query parameters are optional.  $prefix is the text of the
+** current word being typed and that is to be completed.  $wholeline is
+** the complete input line, used for context.
+**
+** The raw completion() table might return the same candidate multiple
+** times, for example if the same column name is used to two or more
+** tables.  And the candidates are returned in an arbitrary order.  Hence,
+** the DISTINCT and ORDER BY are recommended.
+**
+** This virtual table operates at the speed of human typing, and so there
+** is no attempt to make it fast.  Even a slow implementation will be much
+** faster than any human can type.
+**
 */
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_COMPLETIONVTAB)
 #if !defined(SQLITEINT_H)
@@ -94,12 +113,14 @@ static int completionConnect(
 #define COMPLETION_COLUMN_CANDIDATE 0  /* Suggested completion of the input */
 #define COMPLETION_COLUMN_PREFIX    1  /* Prefix of the word to be completed */
 #define COMPLETION_COLUMN_WHOLELINE 2  /* Entire line seen so far */
+#define COMPLETION_COLUMN_PHASE     3  /* ePhase - used for debugging only */
 
   rc = sqlite3_declare_vtab(db,
       "CREATE TABLE x("
       "  candidate TEXT,"
       "  prefix TEXT HIDDEN,"
-      "  wholeline TEXT HIDDEN"
+      "  wholeline TEXT HIDDEN,"
+      "  phase INT HIDDEN"        /* Used for debugging only */
       ")");
   if( rc==SQLITE_OK ){
     pNew = sqlite3_malloc( sizeof(*pNew) );
@@ -177,11 +198,22 @@ static const char *completionKwrds[] = {
 
 /*
 ** Advance a completion_cursor to its next row of output.
+**
+** The ->ePhase, ->j, and ->pStmt fields of the completion_cursor object
+** record the current state of the scan.  This routine sets ->zCurrentRow
+** to the current row of output and then returns.  If no more rows remain,
+** then ->ePhase is set to COMPLETION_EOF which will signal the virtual
+** table that has reached the end of its scan.
+**
+** The current implementation just lists potential identifiers and
+** keywords and filters them by zPrefix.  Future enhancements should
+** take zLine into account to try to restrict the set of identifiers and
+** keywords based on what would be legal at the current point of input.
 */
 static int completionNext(sqlite3_vtab_cursor *cur){
   completion_cursor *pCur = (completion_cursor*)cur;
-  int eNextPhase = 0;/* Next phase to try if current phase reaches end */
-  int iCol = -1;     /* If >=0 then step pCur->pStmt and use the i-th column */
+  int eNextPhase = 0;  /* Next phase to try if current phase reaches end */
+  int iCol = -1;       /* If >=0, step pCur->pStmt and use the i-th column */
   pCur->iRowid++;
   while( pCur->ePhase!=COMPLETION_EOF ){
     switch( pCur->ePhase ){
@@ -301,6 +333,10 @@ static int completionColumn(
     }
     case COMPLETION_COLUMN_WHOLELINE: {
       sqlite3_result_text(ctx, pCur->zLine, -1, SQLITE_TRANSIENT);
+      break;
+    }
+    case COMPLETION_COLUMN_PHASE: {
+      sqlite3_result_int(ctx, pCur->ePhase);
       break;
     }
   }
