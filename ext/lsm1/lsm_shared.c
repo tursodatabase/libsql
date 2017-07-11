@@ -230,7 +230,7 @@ static int dbTruncateFile(lsm_db *pDb){
 
     /* If the last block that contains data is not already the last block in
     ** the database file, truncate the database file so that it is. */
-    if( rc==LSM_OK && ctx.nBlock!=pDb->pWorker->nBlock ){
+    if( rc==LSM_OK ){
       rc = lsmFsTruncateDb(
           pDb->pFS, (i64)ctx.nBlock*lsmFsBlockSize(pDb->pFS)
       );
@@ -293,7 +293,7 @@ static void doDbDisconnect(lsm_db *pDb){
 
         /* Write a checkpoint to disk. */
         if( rc==LSM_OK ){
-          rc = lsmCheckpointWrite(pDb, (bReadonly==0), 0);
+          rc = lsmCheckpointWrite(pDb, 0);
         }
 
         /* If the checkpoint was written successfully, delete the log file
@@ -914,7 +914,7 @@ int lsmBlockRefree(lsm_db *pDb, int iBlk){
 ** not be held that long (in case it is required by a client flushing an
 ** in-memory tree to disk).
 */
-int lsmCheckpointWrite(lsm_db *pDb, int bTruncate, u32 *pnWrite){
+int lsmCheckpointWrite(lsm_db *pDb, u32 *pnWrite){
   int rc;                         /* Return Code */
   u32 nWrite = 0;
 
@@ -968,10 +968,6 @@ int lsmCheckpointWrite(lsm_db *pDb, int bTruncate, u32 *pnWrite){
           (int)lsmCheckpointId(pDb->aSnapshot, 0)
       );
 #endif
-    }
-
-    if( rc==LSM_OK && bTruncate && nBlock>0 ){
-      rc = lsmFsTruncateDb(pDb->pFS, (i64)nBlock*lsmFsBlockSize(pDb->pFS));
     }
   }
 
@@ -1966,7 +1962,7 @@ int lsm_checkpoint(lsm_db *pDb, int *pnKB){
 
   /* Attempt the checkpoint. If successful, nWrite is set to the number of
   ** pages written between this and the previous checkpoint.  */
-  rc = lsmCheckpointWrite(pDb, 0, &nWrite);
+  rc = lsmCheckpointWrite(pDb, &nWrite);
 
   /* If required, calculate the output variable (KB of data checkpointed). 
   ** Set it to zero if an error occured.  */
