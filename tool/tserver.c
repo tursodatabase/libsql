@@ -81,6 +81,21 @@ static int is_whitespace(int i){
   return (i==' ' || i=='\t' || is_eol(i));
 }
 
+/*
+** Implementation of SQL scalar function usleep().
+*/
+static void usleepFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  int nUs;
+  sqlite3_vfs *pVfs = (sqlite3_vfs*)sqlite3_user_data(context);
+  assert( argc==1 );
+  nUs = sqlite3_value_int64(argv[0]);
+  pVfs->xSleep(pVfs, nUs);
+}
+
 static void trim_string(const char **pzStr, int *pnStr){
   const char *zStr = *pzStr;
   int nStr = *pnStr;
@@ -278,7 +293,6 @@ static void *handle_client(void *pArg){
   int nCmd = 0;                   /* Valid bytes in zCmd[] */
   int res;                        /* Result of read() call */
   int rc = SQLITE_OK;
-  int j;
 
   ClientCtx ctx;
   memset(&ctx, 0, sizeof(ClientCtx));
@@ -290,6 +304,10 @@ static void *handle_client(void *pArg){
     fprintf(stderr, "sqlite3_open(): %s\n", sqlite3_errmsg(ctx.db));
     return 0;
   }
+  sqlite3_create_function(
+      ctx.db, "usleep", 1, SQLITE_UTF8, (void*)sqlite3_vfs_find(0), 
+      usleepFunc, 0, 0
+  );
 
   while( rc==SQLITE_OK ){
     int i;

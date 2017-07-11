@@ -1,5 +1,5 @@
-C Fix\sa\sbug\scausing\sreadonly\smvcc\sconnections\sto\sread\sthe\swrong\scache\sentry\sin\nsome\scases.
-D 2017-07-11T16:47:26.878
+C Add\sSQL\sfunction\susleep()\sto\stest\sprogram\stserver.c.
+D 2017-07-11T18:38:26.799
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 4ebb1d257cac7fb1bcb4ba59278416d410ff1c4bf59447a9c37a415f3516056a
@@ -1608,7 +1608,7 @@ F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
 F tool/symbols.sh c5a617b8c61a0926747a56c65f5671ef8ac0e148
 F tool/tostr.tcl 96022f35ada2194f6f8ccf6fd95809e90ed277c4
-F tool/tserver.c 8067d85410c827c9d1b33fd3f269b96615ab404a277c268e1838bfa768b58949
+F tool/tserver.c c04e49b7809c01a513df645b7bbaa12a74514e660c491ee753cc0e2573c68512
 F tool/varint.c 5d94cb5003db9dbbcbcc5df08d66f16071aee003
 F tool/vdbe-compress.tcl 5926c71f9c12d2ab73ef35c29376e756eb68361c
 F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
@@ -1636,7 +1636,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5a043aa8dd0751e644c495a59deea5fe05da905f49c664d978fe477f9240bc37
-R e59e1dfe288bdf1b4bb726ee235e7626
+P b6157267f9d4ecdffbdf4b1e591b8d6baaaa964c418ec247a24ccb82146f9041
+R d431332999db79016ab1852b88d53c44
 U dan
-Z 6d2ed9dacb76457e26a93cd8b7b8a737
+Z 974e699f24a083c2cc24ed8a142caee5
