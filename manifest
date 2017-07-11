@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sseen\swith\sMSVC\sfor\slsm1.
-D 2017-07-11T16:36:10.699
+C Fix\smore\sharmless\scompiler\swarnings\sin\slsm1,\sseen\swith\sMSVC\s2015.
+D 2017-07-11T16:46:41.623
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 20850e3e8d4d4791e0531955852d768eb06f24138214870d543abb1a47346fba
@@ -237,14 +237,14 @@ F ext/lsm1/lsm-test/lsmtest_util.c 241622db5a332a09c8e6e7606b617d288a37b557f7d3b
 F ext/lsm1/lsm-test/lsmtest_win32.c 5605aac3bf3852dcc2509fb1d097f5f11556418c1cc9cf0fdd09f9af53c97fb4
 F ext/lsm1/lsm.h 0f6f64ff071471cb87bf98beb8386566f30ea001
 F ext/lsm1/lsmInt.h 68945f00c4fc97a5c82bd285a15d0baacd0019cf2e0b7d535759f000459462e1
-F ext/lsm1/lsm_ckpt.c 3f88c5b4f37f033636c13c71c89d02f8104a4a97284b525516718041dfb4e672
-F ext/lsm1/lsm_file.c 04049405abcd7cb9bec1c21c3a690a64e97d80362d37649733d3871aaab956d9
+F ext/lsm1/lsm_ckpt.c ac6fb4581983291c2e0be6fbb68f12b26f0c08d606835c05417be1323d0fdd03
+F ext/lsm1/lsm_file.c d4aee18aeb97d2e91ce30a4b46fa4c7006bca1d5e9f9bb2b7897e30ba8bdf002
 F ext/lsm1/lsm_log.c a8bf334532109bba05b09a504ee45fc393828b0d034ca61ab45e3940709d9a7c
 F ext/lsm1/lsm_main.c 15e73ccdafdd44ddeefc29e332079d88ba8f00c12c797b3c2b63d3171b5afce8
 F ext/lsm1/lsm_mem.c 4c51ea9fa285ee6e35301b33491642d071740a0a
 F ext/lsm1/lsm_mutex.c 378edf0a2b142b4f7640ee982df06d50b98788ea
 F ext/lsm1/lsm_shared.c 6b903d1afce9e254b642be7898359b4760afde6fb5740623bae4affff5726ab8
-F ext/lsm1/lsm_sorted.c ad426f7ed930ff4bd0405fbf77e06b48cdaabd11673cc39870b4cf7e5d92109e
+F ext/lsm1/lsm_sorted.c 1bdd5668c27e36253d164b180ee3e0c5cf75964786d4777f25ef45c0d37e53a8
 F ext/lsm1/lsm_str.c 65e361b488c87b10bf3e5c0070b14ffc602cf84f094880bece77bbf6678bca82
 F ext/lsm1/lsm_tree.c 682679d7ef2b8b6f2fe77aeb532c8d29695bca671c220b0abac77069de5fb9fb
 F ext/lsm1/lsm_unix.c 57361bcf5b1a1a028f5d66571ee490e9064d2cfb145a2cc9e5ddade467bb551b
@@ -1631,7 +1631,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 95cd1d9f8baa6be305c9a8bfa26fef2a403f2d5b3b5c9c55382ec04f0bc98d40
-R e5707d39e2420bcc7332884f2942bda4
+P cf6da4a52f7f9047e653ef2972e4c0910b29d7182d789a9e30225dc1849e8779
+R e3b76a73346e93609e0049aa729badac
 U mistachkin
-Z 7cd7cb2156c8cf8d5e8c4a5374c20532
+Z 43b08d17226cf77572e88a78b7952b8a

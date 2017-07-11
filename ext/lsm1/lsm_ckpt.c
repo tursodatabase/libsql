@@ -1017,9 +1017,9 @@ int lsmCheckpointDeserialize(
             pDb->pEnv, sizeof(FreelistEntry)*nFree, &rc
         );
         if( rc==LSM_OK ){
-          int i;
-          for(i=0; i<nFree; i++){
-            FreelistEntry *p = &pNew->freelist.aEntry[i];
+          int j;
+          for(j=0; j<nFree; j++){
+            FreelistEntry *p = &pNew->freelist.aEntry[j];
             p->iBlk = aCkpt[iIn++];
             p->iId = ((i64)(aCkpt[iIn])<<32) + aCkpt[iIn+1];
             iIn += 2;

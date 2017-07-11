@@ -890,22 +890,22 @@ static int btreeCursorRestore(
       }
 
       do {
-        Page *pPg;
-        rc = lsmFsDbPageGet(pCsr->pFS, pSeg, iLoad, &pPg);
-        assert( rc==LSM_OK || pPg==0 );
+        Page *pPg2;
+        rc = lsmFsDbPageGet(pCsr->pFS, pSeg, iLoad, &pPg2);
+        assert( rc==LSM_OK || pPg2==0 );
         if( rc==LSM_OK ){
           u8 *aData;                  /* Buffer containing page data */
           int nData;                  /* Size of aData[] in bytes */
           int iMin;
           int iMax;
-          int iCell;
+          int iCell2;
 
-          aData = fsPageData(pPg, &nData);
+          aData = fsPageData(pPg2, &nData);
           assert( (pageGetFlags(aData, nData) & SEGMENT_BTREE_FLAG) );
 
           iLoad = (int)pageGetPtr(aData, nData);
-          iCell = pageGetNRec(aData, nData); 
-          iMax = iCell-1;
+          iCell2 = pageGetNRec(aData, nData); 
+          iMax = iCell2-1;
           iMin = 0;
 
           while( iMax>=iMin ){
@@ -916,7 +916,7 @@ static int btreeCursorRestore(
             int res;                      /* (pSeek - pKeyT) */
 
             rc = pageGetBtreeKey(
-                pSeg, pPg, iTry, &iPtr, &iTopic, &pKey, &nKey, &blob
+                pSeg, pPg2, iTry, &iPtr, &iTopic, &pKey, &nKey, &blob
             );
             if( rc!=LSM_OK ) break;
 
@@ -927,15 +927,15 @@ static int btreeCursorRestore(
 
             if( res<0 ){
               iLoad = (int)iPtr;
-              iCell = iTry;
+              iCell2 = iTry;
               iMax = iTry-1;
             }else{
               iMin = iTry+1;
             }
           }
 
-          pCsr->aPg[iPg].pPage = pPg;
-          pCsr->aPg[iPg].iCell = iCell;
+          pCsr->aPg[iPg].pPage = pPg2;
+          pCsr->aPg[iPg].iCell = iCell2;
           iPg++;
           assert( iPg!=nDepth-1 
                || lsmFsRedirectPage(pCsr->pFS, pSeg->pRedirect, iLoad)==iLeaf
@@ -2007,37 +2007,37 @@ static void multiCursorGetKey(
         if( pCsr->iFree < (nEntry*2) ){
           FreelistEntry *aEntry = pWorker->freelist.aEntry;
           int i = nEntry - 1 - (pCsr->iFree / 2);
-          u32 iKey = 0;
+          u32 iKey2 = 0;
 
           if( (pCsr->iFree % 2) ){
             eType = LSM_END_DELETE|LSM_SYSTEMKEY;
-            iKey = aEntry[i].iBlk-1;
+            iKey2 = aEntry[i].iBlk-1;
           }else if( aEntry[i].iId>=0 ){
             eType = LSM_INSERT|LSM_SYSTEMKEY;
-            iKey = aEntry[i].iBlk;
+            iKey2 = aEntry[i].iBlk;
 
             /* If the in-memory entry immediately before this one was a
              ** DELETE, and the block number is one greater than the current
              ** block number, mark this entry as an "end-delete-range". */
-            if( i<(nEntry-1) && aEntry[i+1].iBlk==iKey+1 && aEntry[i+1].iId<0 ){
+            if( i<(nEntry-1) && aEntry[i+1].iBlk==iKey2+1 && aEntry[i+1].iId<0 ){
               eType |= LSM_END_DELETE;
             }
 
           }else{
             eType = LSM_START_DELETE|LSM_SYSTEMKEY;
-            iKey = aEntry[i].iBlk + 1;
+            iKey2 = aEntry[i].iBlk + 1;
           }
 
           /* If the in-memory entry immediately after this one is a
           ** DELETE, and the block number is one less than the current
           ** key, mark this entry as an "start-delete-range".  */
-          if( i>0 && aEntry[i-1].iBlk==iKey-1 && aEntry[i-1].iId<0 ){
+          if( i>0 && aEntry[i-1].iBlk==iKey2-1 && aEntry[i-1].iId<0 ){
             eType |= LSM_START_DELETE;
           }
 
           pKey = pCsr->pSystemVal;
           nKey = 4;
-          lsmPutU32(pKey, ~iKey);
+          lsmPutU32(pKey, ~iKey2);
         }
       }
       break;
@@ -5699,20 +5699,20 @@ static int infoPageDump(
     LsmString str;
     int nRec;
     int iPtr;
-    int flags;
+    int flags2;
     int iCell;
     u8 *aData; int nData;         /* Page data and size thereof */
 
     aData = fsPageData(pPg, &nData);
     nRec = pageGetNRec(aData, nData);
     iPtr = (int)pageGetPtr(aData, nData);
-    flags = pageGetFlags(aData, nData);
+    flags2 = pageGetFlags(aData, nData);
 
     lsmStringInit(&str, pDb->pEnv);
     lsmStringAppendf(&str, "Page : %lld  (%d bytes)\n", iPg, nData);
     lsmStringAppendf(&str, "nRec : %d\n", nRec);
     lsmStringAppendf(&str, "iPtr : %d\n", iPtr);
-    lsmStringAppendf(&str, "flags: %04x\n", flags);
+    lsmStringAppendf(&str, "flags: %04x\n", flags2);
     lsmStringAppendf(&str, "\n");
 
     for(iCell=0; iCell<nRec; iCell++){
@@ -5735,7 +5735,7 @@ static int infoPageDump(
       infoCellDump(pDb, pSeg, bIndirect, pPg, iCell, &eType, &iPgPtr,
           &aKey, &nKey, &aVal, &nVal, &blob
       );
-      iAbsPtr = iPgPtr + ((flags & SEGMENT_BTREE_FLAG) ? 0 : iPtr);
+      iAbsPtr = iPgPtr + ((flags2 & SEGMENT_BTREE_FLAG) ? 0 : iPtr);
 
       lsmFlagsToString(eType, zFlags);
       lsmStringAppendf(&str, "%s %d (%s) ", 

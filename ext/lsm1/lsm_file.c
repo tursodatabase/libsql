@@ -2116,10 +2116,10 @@ int lsmFsSortedAppend(
     if( iPrev==0 ){
       iApp = findAppendPoint(pFS, pLvl);
     }else if( fsIsLast(pFS, iPrev) ){
-      int iNext;
-      rc = fsBlockNext(pFS, 0, fsPageToBlock(pFS, iPrev), &iNext);
+      int iNext2;
+      rc = fsBlockNext(pFS, 0, fsPageToBlock(pFS, iPrev), &iNext2);
       if( rc!=LSM_OK ) return rc;
-      iApp = fsFirstPageOnBlock(pFS, iNext);
+      iApp = fsFirstPageOnBlock(pFS, iNext2);
     }else{
       iApp = iPrev + 1;
     }
@@ -3257,10 +3257,10 @@ int lsmFsIntegrityCheck(lsm_db *pDb){
   }
 
   for(pLevel=pWorker->pLevel; pLevel; pLevel=pLevel->pNext){
-    int i;
+    int j;
     checkBlocks(pFS, &pLevel->lhs, (pLevel->nRight!=0), nBlock, aUsed);
-    for(i=0; i<pLevel->nRight; i++){
-      checkBlocks(pFS, &pLevel->aRhs[i], 0, nBlock, aUsed);
+    for(j=0; j<pLevel->nRight; j++){
+      checkBlocks(pFS, &pLevel->aRhs[j], 0, nBlock, aUsed);
     }
   }
 
