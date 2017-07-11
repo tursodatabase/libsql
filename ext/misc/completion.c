@@ -54,7 +54,7 @@ struct completion_cursor {
 
 /* Values for ePhase:
 */
-#define COMPLETION_FIRST_PHASE   0
+#define COMPLETION_FIRST_PHASE   1
 #define COMPLETION_KEYWORDS      1
 #define COMPLETION_PRAGMAS       2
 #define COMPLETION_FUNCTIONS     3
@@ -63,8 +63,9 @@ struct completion_cursor {
 #define COMPLETION_TRIGGERS      6
 #define COMPLETION_DATABASES     7
 #define COMPLETION_TABLES        8
-#define COMPLETION_MODULES       9
-#define COMPLETION_LAST_PHASE    10
+#define COMPLETION_COLUMNS       9
+#define COMPLETION_MODULES       10
+#define COMPLETION_EOF           11
 
 /*
 ** The completionConnect() method is invoked to create a new
@@ -138,6 +139,7 @@ static void completionCursorReset(completion_cursor *pCur){
   sqlite3_free(pCur->zPrefix);   pCur->zPrefix = 0;  pCur->nPrefix = 0;
   sqlite3_free(pCur->zLine);     pCur->zLine = 0;    pCur->nLine = 0;
   sqlite3_finalize(pCur->pStmt); pCur->pStmt = 0;
+  pCur->j = 0;
 }
 
 /*
@@ -178,28 +180,103 @@ static const char *completionKwrds[] = {
 */
 static int completionNext(sqlite3_vtab_cursor *cur){
   completion_cursor *pCur = (completion_cursor*)cur;
+  int eNextPhase = 0;/* Next phase to try if current phase reaches end */
+  int iCol = -1;     /* If >=0 then step pCur->pStmt and use the i-th column */
   pCur->iRowid++;
-  if( pCur->ePhase==COMPLETION_FIRST_PHASE ){
-    pCur->ePhase = COMPLETION_KEYWORDS;
-    pCur->j = -1;
-  }
-  if( pCur->ePhase==COMPLETION_KEYWORDS ){
-    while(1){
-      const char *z;
-      pCur->j++;
-      if( pCur->j >=  sizeof(completionKwrds)/sizeof(completionKwrds[0]) ){
-        pCur->ePhase = COMPLETION_LAST_PHASE;
+  while( pCur->ePhase!=COMPLETION_EOF ){
+    switch( pCur->ePhase ){
+      case COMPLETION_KEYWORDS: {
+        if( pCur->j >=  sizeof(completionKwrds)/sizeof(completionKwrds[0]) ){
+          pCur->zCurrentRow = 0;
+          pCur->ePhase = COMPLETION_DATABASES;
+        }else{
+          pCur->zCurrentRow = completionKwrds[pCur->j++];
+        }
+        iCol = -1;
         break;
       }
-      z = completionKwrds[pCur->j];
-      if( pCur->nPrefix==0 
-       || sqlite3_strnicmp(pCur->zPrefix, z, pCur->nPrefix)==0
-      ){
-        pCur->zCurrentRow = z;
+      case COMPLETION_DATABASES: {
+        if( pCur->pStmt==0 ){
+          sqlite3_prepare_v2(pCur->db, "PRAGMA database_list", -1,
+                             &pCur->pStmt, 0);
+        }
+        iCol = 1;
+        eNextPhase = COMPLETION_TABLES;
+        break;
+      }
+      case COMPLETION_TABLES: {
+        if( pCur->pStmt==0 ){
+          sqlite3_stmt *pS2;
+          char *zSql = 0;
+          const char *zSep = "";
+          sqlite3_prepare_v2(pCur->db, "PRAGMA database_list", -1, &pS2, 0);
+          while( sqlite3_step(pS2)==SQLITE_ROW ){
+            const char *zDb = (const char*)sqlite3_column_text(pS2, 1);
+            zSql = sqlite3_mprintf(
+               "%z%s"
+               "SELECT name FROM \"%w\".sqlite_master"
+               " WHERE type='table'",
+               zSql, zSep, zDb
+            );
+            if( zSql==0 ) return SQLITE_NOMEM;
+            zSep = " UNION ";
+          }
+          sqlite3_finalize(pS2);
+          sqlite3_prepare_v2(pCur->db, zSql, -1, &pCur->pStmt, 0);
+          sqlite3_free(zSql);
+        }
+        iCol = 0;
+        eNextPhase = COMPLETION_COLUMNS;
+        break;
+      }
+      case COMPLETION_COLUMNS: {
+        if( pCur->pStmt==0 ){
+          sqlite3_stmt *pS2;
+          char *zSql = 0;
+          const char *zSep = "";
+          sqlite3_prepare_v2(pCur->db, "PRAGMA database_list", -1, &pS2, 0);
+          while( sqlite3_step(pS2)==SQLITE_ROW ){
+            const char *zDb = (const char*)sqlite3_column_text(pS2, 1);
+            zSql = sqlite3_mprintf(
+               "%z%s"
+               "SELECT pti.name FROM \"%w\".sqlite_master AS sm"
+                       " JOIN pragma_table_info(sm.name,%Q) AS pti"
+               " WHERE sm.type='table'",
+               zSql, zSep, zDb, zDb
+            );
+            if( zSql==0 ) return SQLITE_NOMEM;
+            zSep = " UNION ";
+          }
+          sqlite3_finalize(pS2);
+          sqlite3_prepare_v2(pCur->db, zSql, -1, &pCur->pStmt, 0);
+          sqlite3_free(zSql);
+        }
+        iCol = 0;
+        eNextPhase = COMPLETION_EOF;
         break;
       }
     }
+    if( iCol<0 ){
+      /* This case is when the phase presets zCurrentRow */
+      if( pCur->zCurrentRow==0 ) continue;
+    }else{
+      if( sqlite3_step(pCur->pStmt)==SQLITE_ROW ){
+        /* Extract the next row of content */
+        pCur->zCurrentRow = (const char*)sqlite3_column_text(pCur->pStmt, iCol);
+      }else{
+        /* When all rows are finished, advance to the next phase */
+        sqlite3_finalize(pCur->pStmt);
+        pCur->pStmt = 0;
+        pCur->ePhase = eNextPhase;
+        continue;
+      }
+    }
+    if( pCur->nPrefix==0 ) break;
+    if( sqlite3_strnicmp(pCur->zPrefix, pCur->zCurrentRow, pCur->nPrefix)==0 ){
+      break;
+    }
   }
+
   return SQLITE_OK;
 }
 
@@ -246,7 +323,7 @@ static int completionRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
 */
 static int completionEof(sqlite3_vtab_cursor *cur){
   completion_cursor *pCur = (completion_cursor*)cur;
-  return pCur->ePhase >= COMPLETION_LAST_PHASE;
+  return pCur->ePhase >= COMPLETION_EOF;
 }
 
 /*
