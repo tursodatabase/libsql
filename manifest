@@ -1,5 +1,5 @@
-C Add\sthe\s"phase"\soutput\scolumn\son\sthe\sCOMPLETION\stable-valued\sfunction,\sfor\ndebugging.\s\sImproved\scomments\son\sthe\simplementation.
-D 2017-07-11T02:05:21.668
+C Fix\sa\sbackup2\stest\scase\sso\sthat\sit\sworks\son\sFreeBSD.
+D 2017-07-11T02:53:38.630
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 20850e3e8d4d4791e0531955852d768eb06f24138214870d543abb1a47346fba
@@ -588,7 +588,7 @@ F test/autovacuum_ioerr2.test 8a367b224183ad801e0e24dcb7d1501f45f244b4
 F test/avtrans.test 0252654f4295ddda3b2cce0e894812259e655a85
 F test/backcompat.test 3e64cedda754c778ef6bbe417b6e7a295e662a4d
 F test/backup.test dd4a5ff756e3df3931dacb1791db0584d4bad989
-F test/backup2.test 24e84f0b2b43199f5aed49ef8a43183bfc550de5772162ed7721223dbdf56b4e
+F test/backup2.test 1fd1ad8c5b3d2d5b9c0cce4143a4fc610d51ddc6ae16a7a122973d43e6b50bbd
 F test/backup4.test 8f6fd48e0dfde77b9a3bb26dc471ede3e101df32
 F test/backup5.test ee5da6d7fe5082f5b9b0bbfa31d016f52412a2e4
 F test/backup_ioerr.test 4c3c7147cee85b024ecf6e150e090c32fdbb5135
@@ -1629,7 +1629,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1cc97711fa86a3938f0930200476d1b0991e4b893a8be3a19015423a3de56bef
-R 5f96666448f8bc2a00b6b737201e92f6
+P 0e2135552757cc6566ac959475d3b87254b6d462425ee6c457c743001f3370e2
+R 07f4dd76f51d4ef1e51aa1dac340573b
 U drh
-Z 37fc96f83608b2443df93123a3a88569
+Z 31bd69a2dcea4c4a51c6ef1c3a8fdda1
