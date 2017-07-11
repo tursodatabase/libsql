@@ -696,6 +696,8 @@ int lsmFsOpenLog(lsm_db *, int *);
 void lsmFsCloseLog(lsm_db *);
 void lsmFsClose(FileSystem *);
 
+int lsmFsUnmap(FileSystem *);
+
 int lsmFsConfigure(lsm_db *db);
 
 int lsmFsBlockSize(FileSystem *);

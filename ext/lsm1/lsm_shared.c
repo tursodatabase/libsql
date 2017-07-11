@@ -312,6 +312,7 @@ static void doDbDisconnect(lsm_db *pDb){
           /* The database may only be truncated if there exist no read-only
           ** clients - either connected or running rotrans transactions. */
           if( bReadonly==0 && bRotrans==0 ){
+            lsmFsUnmap(pDb->pFS);
             dbTruncateFile(pDb);
             if( p->pFile && p->bMultiProc ){
               lsmEnvShmUnmap(pDb->pEnv, p->pFile, 1);
@@ -568,6 +569,7 @@ void lsmDbDatabaseRelease(lsm_db *pDb){
       doDbDisconnect(pDb);
     }
 
+    lsmFsUnmap(pDb->pFS);
     lsmMutexEnter(pDb->pEnv, p->pClientMutex);
     for(ppDb=&p->pConn; *ppDb!=pDb; ppDb=&((*ppDb)->pNext));
     *ppDb = pDb->pNext;

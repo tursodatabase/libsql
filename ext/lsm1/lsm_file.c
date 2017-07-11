@@ -1151,6 +1151,17 @@ static void fsGrowMapping(
 }
 
 /*
+** If it is mapped, unmap the database file.
+*/
+int lsmFsUnmap(FileSystem *pFS){
+  int rc = LSM_OK;
+  if( pFS ){
+    rc = lsmEnvRemap(pFS->pEnv, pFS->fdDb, -1, &pFS->pMap, &pFS->nMap);
+  }
+  return rc;
+}
+
+/*
 ** fsync() the database file.
 */
 int lsmFsSyncDb(FileSystem *pFS, int nBlock){
