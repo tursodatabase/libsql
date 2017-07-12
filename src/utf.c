@@ -332,7 +332,9 @@ translate_out:
 #endif
   return SQLITE_OK;
 }
+#endif /* SQLITE_OMIT_UTF16 */
 
+#ifndef SQLITE_OMIT_UTF16
 /*
 ** This routine checks for a byte-order mark at the beginning of the 
 ** UTF-16 string stored in *pMem. If one is present, it is removed and

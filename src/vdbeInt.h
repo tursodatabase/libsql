@@ -534,12 +534,14 @@ int sqlite3VdbeCheckFk(Vdbe *, int);
 # define sqlite3VdbeCheckFk(p,i) 0
 #endif
 
-int sqlite3VdbeMemTranslate(Mem*, u8);
 #ifdef SQLITE_DEBUG
   void sqlite3VdbePrintSql(Vdbe*);
   void sqlite3VdbeMemPrettyPrint(Mem *pMem, char *zBuf);
 #endif
-int sqlite3VdbeMemHandleBom(Mem *pMem);
+#ifndef SQLITE_OMIT_UTF16
+  int sqlite3VdbeMemTranslate(Mem*, u8);
+  int sqlite3VdbeMemHandleBom(Mem *pMem);
+#endif
 
 #ifndef SQLITE_OMIT_INCRBLOB
   int sqlite3VdbeMemExpandBlob(Mem *);
