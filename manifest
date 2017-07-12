@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\san\slsmtest\stest\scase\scaused\sby\swriting\sdata\sin\s"text"\smode\ninstead\sof\s"binary".
-D 2017-07-12T14:03:13.542
+C Clarification\sand\ssimplification\sand\sresult\scolumn\snaming\slogic.
+D 2017-07-12T14:10:19.869
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 20850e3e8d4d4791e0531955852d768eb06f24138214870d543abb1a47346fba
@@ -449,7 +449,7 @@ F src/printf.c 8757834f1b54dae512fb25eb1acc8e94a0d15dd2290b58f2563f65973265adb2
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 6aa1fb1212e601f65b983ee1215d69a591986c8f97a3805c425c625a53839539
 F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
-F src/select.c 6aa7e8ee53dcb9d0b77b05670bb44a1076d6747bc9b2c1f12a365b553ab6c828
+F src/select.c 95659b7990e390f9bd8dc30b8975c675fcd1d46e569bc4f5a14e22a8d03e3d14
 F src/shell.c 0401a716fc5343594b8ee60ce065d9a71373d3403f0b81f9fed684741e6401d1
 F src/shell.c.in 98bfdeeb0808418b37f59e6d380568a76e0733efe2494377096f434b39940cad
 F src/sqlite.h.in 03a422ba13da1dfef7f1aaa1ba344acf18dc867112620b1fdb2a1426cabba634
@@ -1631,7 +1631,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 783100b801703577e35ec12fe7623e1797e49699f3b8deb0694ef061a142b844
-R ab6ba7417c8ef7732b2a8b211358e460
-U dan
-Z df42a5b7a8146f5aa8e5ac6a01bf086c
+P 3e56a79ad8754e6da3181883154fa1c8b227a8d16c9b2a3eba925371595ae1f9
+R 262c8bdac1ac6c4d0dad5be8958ad15e
+U drh
+Z 4894df80f0f6930b7360c2bd22600907
