@@ -1,5 +1,5 @@
-C Compile\scleanly\swith\sSQLITE_OMIT_UTF16.
-D 2017-07-12T12:19:33.990
+C Fix\sa\sproblem\sin\san\slsmtest\stest\scase\scaused\sby\swriting\sdata\sin\s"text"\smode\ninstead\sof\s"binary".
+D 2017-07-12T14:03:13.542
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 20850e3e8d4d4791e0531955852d768eb06f24138214870d543abb1a47346fba
@@ -220,7 +220,7 @@ F ext/lsm1/lsm-test/lsmtest4.c d258d6a245db5d8eaede096e2368d23f859c5e92c80ab9122
 F ext/lsm1/lsm-test/lsmtest5.c 8d5242a0f870d65eeada191c8945781fed9cb8ece3886573790ebd373b62dac5
 F ext/lsm1/lsm-test/lsmtest6.c 869cb4a172cd07d1a75b3aeaecd61d0a477787b3b8668bad0d3ff0f43b642b7c
 F ext/lsm1/lsm-test/lsmtest7.c 7a917455a0f956a8ed3f44f5c9387ec0ea6627714874464cc3fa5c5a9cabb2f2
-F ext/lsm1/lsm-test/lsmtest8.c ab8c30c08540c7cd21e32b678e6c7090ae138c00faf84fdd0ba517361b710861
+F ext/lsm1/lsm-test/lsmtest8.c 589b68c44531a0f04d5e879bb1e211be5f7100f48eed7e8631e07ed5cbd68f94
 F ext/lsm1/lsm-test/lsmtest9.c dd1a0ebf41134933a744d1e00e60429a2a21fc50d587ae7dd6bdb6e96d805bdc
 F ext/lsm1/lsm-test/lsmtest_bt.c d70d9a9be5eef9360af1251dd083948d74fd30137a08f61bef995f7ac04e037f
 F ext/lsm1/lsm-test/lsmtest_datasource.c 5d770be191d0ca51315926723009b2c25c0b4b8136840494ef710ac324aa916c
@@ -1631,7 +1631,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 39069941e98605bc8c7c736819781761760ee2b83363471ceb6f19e5eb06b13a
-R 6c08473ae2deed66303e72a4ddd28537
-U drh
-Z 1abdfc4df47c311bf1af13a17928c267
+P 783100b801703577e35ec12fe7623e1797e49699f3b8deb0694ef061a142b844
+R ab6ba7417c8ef7732b2a8b211358e460
+U dan
+Z df42a5b7a8146f5aa8e5ac6a01bf086c

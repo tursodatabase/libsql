@@ -85,7 +85,7 @@ static void setupDatabase1(TestDb *pDb, Datasource **ppData){
 void testReadFile(const char *zFile, int iOff, void *pOut, int nByte, int *pRc){
   if( *pRc==0 ){
     FILE *fd;
-    fd = fopen(zFile, "r");
+    fd = fopen(zFile, "rb");
     if( fd==0 ){
       *pRc = 1;
     }else{
@@ -111,7 +111,7 @@ void testWriteFile(
 ){
   if( *pRc==0 ){
     FILE *fd;
-    fd = fopen(zFile, "r+");
+    fd = fopen(zFile, "r+b");
     if( fd==0 ){
       *pRc = 1;
     }else{
@@ -157,50 +157,52 @@ static ShmHeader *getShmHeader(const char *zDb){
 **    5) Check once more that the checksum is still zCksum.
 */
 static void doLiveRecovery(const char *zDb, const char *zCksum, int *pRc){
-  const DatasourceDefn defn = {TEST_DATASOURCE_RANDOM, 20, 25, 100, 500};
-  Datasource *pData;
-  const char *zCopy = "testcopy.lsm";
-  char zCksum2[TEST_CKSUM_BYTES];
-  TestDb *pDb = 0;
-  int rc;
+  if( *pRc==LSM_OK ){
+    const DatasourceDefn defn = {TEST_DATASOURCE_RANDOM, 20, 25, 100, 500};
+    Datasource *pData;
+    const char *zCopy = "testcopy.lsm";
+    char zCksum2[TEST_CKSUM_BYTES];
+    TestDb *pDb = 0;
+    int rc;
 
-  pData = testDatasourceNew(&defn);
+    pData = testDatasourceNew(&defn);
 
-  testCopyLsmdb(zDb, zCopy);
-  rc = tdb_lsm_open("test_no_recovery=1", zCopy, 0, &pDb);
-  if( rc==0 ){
-    ShmHeader *pHdr;
-    lsm_db *db;
-    testCksumDatabase(pDb, zCksum2);
-    testCompareStr(zCksum, zCksum2, &rc);
-
-    testWriteDatasourceRange(pDb, pData, 1, 10, &rc);
-    testDeleteDatasourceRange(pDb, pData, 1, 10, &rc);
-
-    /* Test that the two tree-headers are now consistent. */
-    pHdr = getShmHeader(zCopy);
-    if( rc==0 && memcmp(&pHdr->hdr1, &pHdr->hdr2, sizeof(pHdr->hdr1)) ){
-      rc = 1;
-    }
-    testFree(pHdr);
-
+    testCopyLsmdb(zDb, zCopy);
+    rc = tdb_lsm_open("test_no_recovery=1", zCopy, 0, &pDb);
     if( rc==0 ){
-      int nBuf = 64;
-      db = tdb_lsm(pDb);
-      lsm_config(db, LSM_CONFIG_AUTOFLUSH, &nBuf);
-      lsm_begin(db, 1);
-      lsm_commit(db, 0);
-      rc = lsm_work(db, 0, 0, 0);
+      ShmHeader *pHdr;
+      lsm_db *db;
+      testCksumDatabase(pDb, zCksum2);
+      testCompareStr(zCksum, zCksum2, &rc);
+
+      testWriteDatasourceRange(pDb, pData, 1, 10, &rc);
+      testDeleteDatasourceRange(pDb, pData, 1, 10, &rc);
+
+      /* Test that the two tree-headers are now consistent. */
+      pHdr = getShmHeader(zCopy);
+      if( rc==0 && memcmp(&pHdr->hdr1, &pHdr->hdr2, sizeof(pHdr->hdr1)) ){
+        rc = 1;
+      }
+      testFree(pHdr);
+
+      if( rc==0 ){
+        int nBuf = 64;
+        db = tdb_lsm(pDb);
+        lsm_config(db, LSM_CONFIG_AUTOFLUSH, &nBuf);
+        lsm_begin(db, 1);
+        lsm_commit(db, 0);
+        rc = lsm_work(db, 0, 0, 0);
+      }
+
+      testCksumDatabase(pDb, zCksum2);
+      testCompareStr(zCksum, zCksum2, &rc);
     }
 
-    testCksumDatabase(pDb, zCksum2);
-    testCompareStr(zCksum, zCksum2, &rc);
+    testDatasourceFree(pData);
+    testClose(&pDb);
+    testDeleteLsmdb(zCopy);
+    *pRc = rc;
   }
-
-  testDatasourceFree(pData);
-  testClose(&pDb);
-  testDeleteLsmdb(zCopy);
-  *pRc = rc;
 }
 
 static void doWriterCrash1(int *pRc){
