@@ -898,7 +898,7 @@ term(A) ::= INTEGER(X). {
   A.pExpr = sqlite3ExprAlloc(pParse->db, TK_INTEGER, &X, 1);
   A.zStart = X.z;
   A.zEnd = X.z + X.n;
-  if( A.pExpr ) A.pExpr->flags |= EP_Leaf|EP_Resolved;
+  if( A.pExpr ) A.pExpr->flags |= EP_Leaf;
 }
 expr(A) ::= VARIABLE(X).     {
   if( !(X.z[0]=='#' && sqlite3Isdigit(X.z[1])) ){
