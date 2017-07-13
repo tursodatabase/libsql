@@ -1,5 +1,5 @@
-C Improvements\sto\sthe\sdocumentation\sfor\sSQLITE_PREPARE_PERSISTENT.\nNo\scode\schanges.
-D 2017-07-13T22:03:34.848
+C Improved\sdocumentation\sfor\sthe\snew\ssqlite3_bind_pointer()\sinterface\sand\sits\ncousins.
+D 2017-07-13T22:39:15.915
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 20850e3e8d4d4791e0531955852d768eb06f24138214870d543abb1a47346fba
@@ -452,7 +452,7 @@ F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 95659b7990e390f9bd8dc30b8975c675fcd1d46e569bc4f5a14e22a8d03e3d14
 F src/shell.c 0401a716fc5343594b8ee60ce065d9a71373d3403f0b81f9fed684741e6401d1
 F src/shell.c.in 98bfdeeb0808418b37f59e6d380568a76e0733efe2494377096f434b39940cad
-F src/sqlite.h.in 340e8cfb0c7a04107dc4c587bdbe03376134c0ab64e26b1ae75b6aaea9f90252
+F src/sqlite.h.in 5e12ea31f8b5a01a7328775d114033b96e23c7489bf059cdc0e607e45031f3b6
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 654d76dd288780a460be9c88edc6a5eb2d61df03a7153c92f1d87aba41f73b96
 F src/sqliteInt.h 0ba730cdc8afa723a5642380712f8bb33abd6a69218571c18b94acf3562de22a
@@ -1631,7 +1631,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9319f7b71f68c9dc64c22c60b90650955b72f6bd9852d5ea86fa96a5c6fede37
-R 0c1cbac243532940e0fec5e42d3685f0
+P 265778142485882f39edfb5756175b2675c1993f0d6395dabbcbbb3767c6ec77
+R 2e83f5e692496d1086cbb1f17d346840
 U drh
-Z 0a54df107527e8a216f4daa22e976e46
+Z caa52445692beb0d01c9428aa87fa426
