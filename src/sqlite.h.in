@@ -5079,7 +5079,7 @@ typedef void (*sqlite3_destructor_type)(void*);
 ** when it has finished using that result.
 ** ^If the 4th parameter to the sqlite3_result_text* interfaces
 ** or sqlite3_result_blob is the special constant SQLITE_TRANSIENT
-** then SQLite makes a copy of the result into space obtained from
+** then SQLite makes a copy of the result into space obtained
 ** from [sqlite3_malloc()] before it returns.
 **
 ** ^The sqlite3_result_value() interface sets the result of
