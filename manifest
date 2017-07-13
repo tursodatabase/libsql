@@ -1,5 +1,5 @@
-C Add\sSQL\sfunction\susleep()\sto\stest\sprogram\stserver.c.
-D 2017-07-11T18:38:26.799
+C Make\sthe\sfreelist\sformat\sa\sseparate\sfeature\sfrom\sthe\spage-level\slocking.\nFreelist\sformat\sis\snow\sconfigure\susing\s"PRAGMA\sfreelist_format".
+D 2017-07-13T21:06:51.922
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 4ebb1d257cac7fb1bcb4ba59278416d410ff1c4bf59447a9c37a415f3516056a
@@ -391,8 +391,8 @@ F src/auth.c 79f96c6f33bf0e5da8d1c282cee5ebb1852bb8a6ccca3e485d7c459b035d9c3c
 F src/backup.c faf17e60b43233c214aae6a8179d24503a61e83b
 F src/bitvec.c 17ea48eff8ba979f1f5b04cc484c7bb2be632f33
 F src/btmutex.c 0e9ce2d56159b89b9bc8e197e023ee11e39ff8ca
-F src/btree.c 0e1bcecde07e3e022a1a1f16cdfa6817267c25eb4a48ea21fe9359b973837762
-F src/btree.h 3edc5329bc59534d2d15b4f069a9f54b779a7e51289e98fa481ae3c0e526a5ca
+F src/btree.c 85cd6d97be767b660a030d841534b082d8e50df506c9eaaa0bcc0c5c15f77da9
+F src/btree.h d1f64c5683e9ade8afa968b49abeb108acd430fc33f2cae2a62a2cfc601087d8
 F src/btreeInt.h a392d353104b4add58b4a59cb185f5d5693dde832c565b77d8d4c343ed98f610
 F src/build.c 32107046e8cda19a917b4a397175c7eb5f2e234d19fae2fc6164859e4a3d4704
 F src/callback.c 8e14b60d1ed1c87c02cb5f121ecda99224f2aea6524a77ee6f72c9b5c7110f84
@@ -441,8 +441,8 @@ F src/parse.y f732ca9ef4dbee9ba19d6d30d2d1f7ac0834d8642515dedbd8f6ebd16ab2a8e3
 F src/pcache.c 62835bed959e2914edd26afadfecce29ece0e870
 F src/pcache.h 521bb9610d38ef17a3cc9b5ddafd4546c2ea67fa3d0e464823d73c2a28d50e11
 F src/pcache1.c 1195a21fe28e223e024f900b2011e80df53793f0356a24caace4188b098540dc
-F src/pragma.c 3f9456edac7eaf171041d51510c5cc922c9b3bd56a713fb7ad6d5b85aa72f1f6
-F src/pragma.h 99d3df4a3d2f12c5227ad403f767334910e6356325b6d155a9a99b4037093460
+F src/pragma.c 09fe2d45a92a16d3dfcab3f18a4992b3bedaacdeed93704cc9dee4b8525717c8
+F src/pragma.h 10b1af34882f96d68b7d3bb07c00fda3283f270f83f58e1ebea6d3b694c95553
 F src/prepare.c 4b84ae7458febe1df3e04ae62ba56abc851f771340e460d14426e6802c5615f4
 F src/printf.c 8757834f1b54dae512fb25eb1acc8e94a0d15dd2290b58f2563f65973265adb2
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
@@ -517,7 +517,7 @@ F src/update.c c443935c652af9365e033f756550b5032d02e1b06eb2cb890ed7511ae0c051dc
 F src/utf.c 699001c79f28e48e9bcdf8a463da029ea660540c
 F src/util.c fc081ec6f63448dcd80d3dfad35baecfa104823254a815b081a4d9fe76e1db23
 F src/vacuum.c 874c0f2f15ab2908748297d587d22d485ea96d55aaec91d4775dddb2e24d2ecf
-F src/vdbe.c e4493b09cc603a1b031c982785e94bbe637799c9e7fc974d37036c04ad2d79e0
+F src/vdbe.c 51a564ddea23a62589424c7d1755dfa245a4e3ffdc3630b1dac9939cecdbbcdd
 F src/vdbe.h dde459b1e8a02b8445ecfd5959f38cd5ebb6b0ad392d491d8b159ac8193d231a
 F src/vdbeInt.h 8dd7548d86a98b77b6ed910d8014d0e9e0666356b56f3d16ab7063aad4f102f5
 F src/vdbeapi.c 899d8f021c89ab348708b3a9b00b855f5ecc3c0f949a75359a61a3c621021281
@@ -1573,7 +1573,7 @@ F tool/mkmsvcmin.tcl cbd93f1cfa3a0a9ae56fc958510aa3fc3ac65e29cb111716199e3d0e66e
 F tool/mkopcodec.tcl d1b6362bd3aa80d5520d4d6f3765badf01f6c43c
 F tool/mkopcodeh.tcl a01d2c1d8a6205b03fc635adf3735b4c523befd3
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
-F tool/mkpragmatab.tcl aa94395a91b5bd47022b7db0c08126f047887e0d299cc19ec1c23a9e5b136961
+F tool/mkpragmatab.tcl 983057a16468b7e5f7c8a1a0f9ba515b4e188d04f326b781ea96c2cf814b3b9f
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl fef88397668ae83166735c41af99d79f56afaabb
 F tool/mksqlite3c.tcl 4b17864d0ae7664b2a82ac852afbe52e7d1db65c996b72941e149704b5e3cc15
@@ -1636,7 +1636,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b6157267f9d4ecdffbdf4b1e591b8d6baaaa964c418ec247a24ccb82146f9041
-R d431332999db79016ab1852b88d53c44
+P 8cbe8f2b2fe0a5a246401718da8db8d487ced232ada73b53bdc9f9608c47d50e
+R e2a1314b3947fa4a991aa95e4137779f
 U dan
-Z 974e699f24a083c2cc24ed8a142caee5
+Z 013d31178aa545fe252ff8393248759a

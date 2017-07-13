@@ -364,6 +364,10 @@ set pragma_def {
 
   NAME: optimize
   FLAG: Result1 NeedSchema
+
+  NAME: freelist_format
+  FLAG: NeedSchema Result0 SchemaReq
+  IF:   !defined(SQLITE_OMIT_PAGER_PRAGMAS) && defined(SQLITE_SERVER_EDITION)
 }
 
 # Open the output file

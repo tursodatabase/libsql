@@ -656,6 +656,33 @@ void sqlite3Pragma(
     break;
   }
 
+#ifdef SQLITE_SERVER_EDITION
+  /*
+  **  PRAGMA [schema.]freelist_format
+  **  PRAGMA [schema.]freelist_format = (1|2)
+  */
+  case PragTyp_FREELIST_FORMAT: {
+    sqlite3VdbeUsesBtree(v, iDb);
+    static const VdbeOpList freelist[] = {
+      { OP_Transaction,    0,  0,  0},    /* 0 */
+      { OP_FreelistFmt,    0,  1,  0},    /* 1 */
+      { OP_ResultRow,      1,  1,  0}     /* 2 */
+    };
+    VdbeOp *aOp;
+    sqlite3VdbeVerifyNoMallocRequired(v, ArraySize(freelist));
+    aOp = sqlite3VdbeAddOpList(v, ArraySize(freelist), freelist,0);
+    aOp[0].p1 = iDb;
+    aOp[1].p1 = iDb;
+
+    if( zRight && (zRight[0]=='1' || zRight[0]=='2') && zRight[1]=='\0' ){
+      aOp[0].p2 = 1;              /* Open a write transaction */
+      aOp[1].p3 = (int)(zRight[0] - '0');
+    }
+
+    break;
+  }
+#endif
+
   /*
   **  PRAGMA [schema.]journal_size_limit
   **  PRAGMA [schema.]journal_size_limit=N

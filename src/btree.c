@@ -238,6 +238,15 @@ static int hasReadConflicts(Btree *pBtree, Pgno iRoot){
 }
 #endif    /* #ifdef SQLITE_DEBUG */
 
+#ifdef SQLITE_SERVER_EDITION
+/*
+** Return true if the b-tree uses free-list format 2. Or false otherwise.
+*/
+static int btreeFreelistFormat2(BtShared *pBt){
+  return (pBt->pPage1->aData[18] > 2);
+}
+#endif
+
 /*
 ** Query to see if Btree handle p may obtain a lock of type eLock 
 ** (READ_LOCK or WRITE_LOCK) on the table with root-page iTab. Return
@@ -2927,6 +2936,15 @@ static int lockBtree(BtShared *pBt){
     u32 pageSize;
     u32 usableSize;
     u8 *page1 = pPage1->aData;
+    u8 i18 = page1[18];
+    u8 i19 = page1[19];
+#ifdef SQLITE_SERVER_EDITION
+    if( i18==i19 && i18>2 ){
+      i18 -= 2;
+      i19 -= 2;
+    }
+#endif
+
     rc = SQLITE_NOTADB;
     /* EVIDENCE-OF: R-43737-39999 Every valid SQLite database file begins
     ** with the following 16 bytes (in hex): 53 51 4c 69 74 65 20 66 6f 72 6d
@@ -2936,17 +2954,17 @@ static int lockBtree(BtShared *pBt){
     }
 
 #ifdef SQLITE_OMIT_WAL
-    if( page1[18]>1 ){
+    if( i18>1 ){
       pBt->btsFlags |= BTS_READ_ONLY;
     }
-    if( page1[19]>1 ){
+    if( i19>1 ){
       goto page1_init_failed;
     }
 #else
-    if( page1[18]>2 ){
+    if( i18>2 ){
       pBt->btsFlags |= BTS_READ_ONLY;
     }
-    if( page1[19]>2 ){
+    if( i19>2 ){
       goto page1_init_failed;
     }
 
@@ -2958,7 +2976,7 @@ static int lockBtree(BtShared *pBt){
     ** may not be the latest version - there may be a newer one in the log
     ** file.
     */
-    if( page1[19]==2 && (pBt->btsFlags & BTS_NO_WAL)==0 ){
+    if( i19==2 && (pBt->btsFlags & BTS_NO_WAL)==0 ){
       int isOpen = 0;
       rc = sqlite3PagerOpenWal(pBt->pPager, &isOpen);
       if( rc!=SQLITE_OK ){
@@ -5900,7 +5918,7 @@ static int allocateBtreePage(
   MemPage *pPrevTrunk = 0;
   Pgno mxPage;     /* Total size of the database file */
 
-  if( sqlite3PagerIsServer(pBt->pPager) ){
+  if( btreeFreelistFormat2(pBt) ){
     return allocateServerPage(pBt, ppPage, pPgno, nearby, eMode); 
   }
 
@@ -6243,7 +6261,7 @@ static int freePage2(BtShared *pBt, MemPage *pMemPage, Pgno iPage){
     memset(pPage->aData, 0, pPage->pBt->pageSize);
   }
   
-  if( sqlite3PagerIsServer(pBt->pPager) ){
+  if( btreeFreelistFormat2(pBt) ){
     rc = freeServerPage2(pBt, pPage, iPage);
     goto freepage_out;
   }
@@ -9816,7 +9834,7 @@ char *sqlite3BtreeIntegrityCheck(
   */
   sCheck.zPfx = "Main freelist: ";
 #ifdef SQLITE_SERVER_EDITION
-  if( sqlite3PagerIsServer(pBt->pPager) ){
+  if( btreeFreelistFormat2(pBt) ){
     checkServerList(&sCheck);
   }else
 #endif
@@ -10092,6 +10110,37 @@ void sqlite3BtreeIncrblobCursor(BtCursor *pCur){
 }
 #endif
 
+int btreeSetVersion(Btree *pBtree, int iVersion, int iFreelistFmt){
+  BtShared *pBt = pBtree->pBt;
+  int rc = sqlite3BtreeBeginTrans(pBtree, 0);
+  if( rc==SQLITE_OK ){
+    u8 iVal;
+    u8 *aData = pBt->pPage1->aData;
+
+    assert( (iVersion==0 && (iFreelistFmt==1 || iFreelistFmt==2))
+         || (iFreelistFmt==0 && (iVersion==1 || iVersion==2))
+    );
+    if( iVersion==0 ){
+      iVal = ((aData[18] & 0x01) ? 1 : 2) + (u8)(iFreelistFmt==2 ? 2 : 0);
+    }else{
+      iVal = (u8)iVersion + (u8)(aData[18]>2 ? 2 : 0);
+    }
+
+    if( aData[18]!=iVal || aData[19]!=iVal ){
+      rc = sqlite3BtreeBeginTrans(pBtree, 2);
+      if( rc==SQLITE_OK ){
+        rc = sqlite3PagerWrite(pBt->pPage1->pDbPage);
+        if( rc==SQLITE_OK ){
+          aData[18] = iVal;
+          aData[19] = iVal;
+        }
+      }
+    }
+  }
+
+  return rc;
+}
+
 /*
 ** Set both the "read version" (single byte at byte offset 18) and 
 ** "write version" (single byte at byte offset 19) fields in the database
@@ -10108,23 +10157,22 @@ int sqlite3BtreeSetVersion(Btree *pBtree, int iVersion){
   */
   pBt->btsFlags &= ~BTS_NO_WAL;
   if( iVersion==1 ) pBt->btsFlags |= BTS_NO_WAL;
+  rc = btreeSetVersion(pBtree, iVersion, 0); 
+  pBt->btsFlags &= ~BTS_NO_WAL;
+  return rc;
+}
 
-  rc = sqlite3BtreeBeginTrans(pBtree, 0);
-  if( rc==SQLITE_OK ){
-    u8 *aData = pBt->pPage1->aData;
-    if( aData[18]!=(u8)iVersion || aData[19]!=(u8)iVersion ){
-      rc = sqlite3BtreeBeginTrans(pBtree, 2);
-      if( rc==SQLITE_OK ){
-        rc = sqlite3PagerWrite(pBt->pPage1->pDbPage);
-        if( rc==SQLITE_OK ){
-          aData[18] = (u8)iVersion;
-          aData[19] = (u8)iVersion;
-        }
-      }
+int sqlite3BtreeFreelistFormat(Btree *p, int eParam, int *peFmt){
+  int rc = SQLITE_OK;
+  sqlite3BtreeEnter(p);
+  if( eParam ){
+    u8 *aData = p->pBt->pPage1->aData;
+    if( 0==get4byte(&aData[32]) ){
+      rc = btreeSetVersion(p, 0, eParam);
     }
   }
-
-  pBt->btsFlags &= ~BTS_NO_WAL;
+  *peFmt = (btreeFreelistFormat2(p->pBt) ? 2 : 1);
+  sqlite3BtreeLeave(p);
   return rc;
 }
 

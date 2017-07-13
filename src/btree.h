@@ -367,5 +367,8 @@ void sqlite3BtreeCursorList(Btree*);
 # define sqlite3SchemaMutexHeld(X,Y,Z) 1
 #endif
 
+#ifdef SQLITE_SERVER_EDITION
+int sqlite3BtreeFreelistFormat(Btree *p, int eParam, int *peFmt);
+#endif
 
 #endif /* SQLITE_BTREE_H */

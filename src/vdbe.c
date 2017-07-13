@@ -3377,6 +3377,33 @@ case OP_SetCookie: {
   break;
 }
 
+#ifdef SQLITE_SERVER_EDITION
+/* Opcode: FreelistFmt P1 P2 P3 * *
+**
+** Parameter P3 must be 0, 1 or 2. If it is not 0, attempt to set the
+** freelist format of database P1 to format 1 or format 2. Before
+** returning, store the final freelist format (either 1 or 2) of 
+** database P1 into register P2.
+*/
+case OP_FreelistFmt: {  /* out2 */
+  Db *pDb;
+  int iVal;
+
+  assert( pOp->p1>=0 && pOp->p1<db->nDb );
+  assert( DbMaskTest(p->btreeMask, pOp->p1) );
+  assert( sqlite3SchemaMutexHeld(db, pOp->p1, 0) );
+  pDb = &db->aDb[pOp->p1];
+  assert( pDb->pBt!=0 );
+
+  pOut = out2Prerelease(p, pOp);
+  rc = sqlite3BtreeFreelistFormat(pDb->pBt, pOp->p3, &iVal);
+  if( rc ) goto abort_due_to_error;
+  pOut->u.i = iVal;
+
+  break;
+}
+#endif
+
 /* Opcode: OpenRead P1 P2 P3 P4 P5
 ** Synopsis: root=P2 iDb=P3
 **
