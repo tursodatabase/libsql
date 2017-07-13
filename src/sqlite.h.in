@@ -3492,13 +3492,15 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 **
 ** <dl>
 ** [[SQLITE_PREPARE_PERSISTENT]] ^(<dt>SQLITE_PREPARE_PERSISTENT</dt>
-** <dd>The SQLITE_PREPARE_PERSISTENT flag causes [sqlite3_prepare_v3()]
-** and [sqlite3_prepare16_v3()]
-** to optimize the resulting prepared statement to be retained for a 
-** relatively long amount of time.)^  ^Without this flag,
-** [sqlite3_prepare_v3()] and [sqlite3_prepare16_v3()] assume that
-** the prepared statement will be used just once or at most a few times
-** and then destroyed using [sqlite3_finalize()] relatively soon.
+** <dd>The SQLITE_PREPARE_PERSISTENT flag is a hint to the query planner
+** that the prepared statement will be retained for a long time and
+** probably reused many times. ^Without this flag, [sqlite3_prepare_v3()]
+** and [sqlite3_prepare16_v3()] assume that the prepared statement will 
+** be used just once or at most a few times and then destroyed using
+** [sqlite3_finalize()] relatively soon. The current implementation acts
+** on this hint by avoiding the use of [lookaside memory] so as not to
+** deplete the limited store of lookaside memory. Future versions of
+** SQLite may act on this hint differently.
 ** </dl>
 */
 #define SQLITE_PREPARE_PERSISTENT              0x01
