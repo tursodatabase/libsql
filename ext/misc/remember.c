@@ -21,8 +21,8 @@
 **    UPDATE counterTab SET cnt=remember(cnt,$PTR)+1 WHERE id=$ID
 **
 ** Prepare the above statement once.  Then to use it, bind the address
-** of the output variable to $PTR and the id of the counter to $ID and
-** run the prepared statement.
+** of the output variable to $PTR (using sqlite3_binary_pointer()) and
+** bind the id of the counter to $ID and run the prepared statement.
 **
 ** One can imagine doing similar things with floating-point values and
 ** strings, but this demonstration extension will stick to using just

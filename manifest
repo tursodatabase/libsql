@@ -1,5 +1,5 @@
-C Add\snew\sinterfaces\ssqlite3_bind_pointer(),\ssqlite3_result_pointer(),\sand\nsqlite3_value_pointer()\sused\sto\ssafely\smove\spointer\svalues\sthrough\sSQL\swithout\nexposing\sunderlying\smemory\saddress\sinformation.
-D 2017-07-13T18:09:36.846
+C Update\sheader\scomments\son\sthe\scarray()\sand\sremember()\sextensions\sto\sbring\nout\sthe\sfact\sthat\sthe\spointer\sarguments\smust\sbe\sbound\susing\nsqlite3_bind_pointer().
+D 2017-07-13T19:11:13.037
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 20850e3e8d4d4791e0531955852d768eb06f24138214870d543abb1a47346fba
@@ -254,7 +254,7 @@ F ext/lsm1/lsm_win32.c 0a4acbd7e8d136dd3a5753f0a9e7a9802263a9d96cef3278cf120bcaa
 F ext/misc/README.md 8e008c8d2b02e09096b31dfba033253ac27c6c06a18aa5826e299fa7601d90b2
 F ext/misc/amatch.c 6db4607cb17c54b853a2d7c7c36046d004853f65b9b733e6f019d543d5dfae87
 F ext/misc/anycollseq.c 5ffdfde9829eeac52219136ad6aa7cd9a4edb3b15f4f2532de52f4a22525eddb
-F ext/misc/carray.c 1fbaf9ada5b1919c07a5e76e260a41c13a20fe6d399411e41f1e9cc4a559479f
+F ext/misc/carray.c 5a330eea8f2f5382f9bd794eb37eadf234c4db190074ea6104cc66d2a724c1d3
 F ext/misc/closure.c 0d2a038df8fbae7f19de42e7c7d71f2e4dc88704
 F ext/misc/completion.c 52c3f01523e3e387eb321b4739a89d1fe47cbe6025aa1f2d8d3685e9e365df0f
 F ext/misc/compress.c 122faa92d25033d6c3f07c39231de074ab3d2e83
@@ -269,7 +269,7 @@ F ext/misc/memvfs.c e5225bc22e79dde6b28380f3a068ddf600683a33
 F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
 F ext/misc/percentile.c 92699c8cd7d517ff610e6037e56506f8904dae2e
 F ext/misc/regexp.c a68d25c659bd2d893cd1215667bbf75ecb9dc7d4
-F ext/misc/remember.c bee7963ddfa5b0633f4ac13f01cb471ae712f323a87978c9a9a47108b555598f
+F ext/misc/remember.c 4fe7fce44f1164100077073ac3f73ee3c32af4d9bae8b418c50c82eb7f8e9c0c
 F ext/misc/rot13.c 1ac6f95f99b575907b9b09c81a349114cf9be45a
 F ext/misc/scrub.c 1c5bfb8b0cd18b602fcb55755e84abf0023ac2fb
 F ext/misc/series.c b0f5f346aca9b7ff7caaf0da2efb4ad462441abd4dcd92a460cb573b3ea2370b
@@ -1631,8 +1631,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0c80593520d30958231be41fc443209eb39e0b3ee0e66308c3ef3a0f4cb8ea66 0bd7875bd9948836a14061275eb8ddac627f562a49f59f400ec98c00e2be82c5
-R c5909f0683f2365e40f92a217eed2222
-T +closed 0bd7875bd9948836a14061275eb8ddac627f562a49f59f400ec98c00e2be82c5
+P 72de49f204277191f62601cce70d5013ec30b564a01063f1e841019c78ae6c77
+R dbee61955ae741e7d85640e57f5eedcb
 U drh
-Z 735f8446b62685dce77314aad945e37d
+Z d5d82639274d4fbf94e14f67e2cde1f7

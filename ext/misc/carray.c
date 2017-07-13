@@ -17,8 +17,9 @@
 **      SELECT * FROM carray($ptr,5)
 **
 ** The query above returns 5 integers contained in a C-language array
-** at the address $ptr.  $ptr is a pointer to the array of integers that
-** has been cast to an integer.
+** at the address $ptr.  $ptr is a pointer to the array of integers.
+** The pointer value must be assigned to $ptr using the
+** sqlite3_bind_pointer() interface.
 **
 ** There is an optional third parameter to determine the datatype of
 ** the C-language array.  Allowed values of the third parameter are
