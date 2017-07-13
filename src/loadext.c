@@ -427,7 +427,10 @@ static const sqlite3_api_routines sqlite3Apis = {
   sqlite3_set_last_insert_rowid,
   /* Version 3.20.0 and later */
   sqlite3_prepare_v3,
-  sqlite3_prepare16_v3
+  sqlite3_prepare16_v3,
+  sqlite3_bind_pointer,
+  sqlite3_result_pointer,
+  sqlite3_value_pointer
 };
 
 /*
