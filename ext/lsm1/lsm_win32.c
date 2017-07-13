@@ -47,12 +47,12 @@ struct Win32File {
   LPVOID *apShm;                  /* Array of 32K shared memory segments */
 };
 
-static char *win32ShmFile(Win32File *p){
+static char *win32ShmFile(Win32File *pWin32File){
   char *zShm;
-  int nName = strlen(p->zName);
-  zShm = (char *)lsmMallocZero(p->pEnv, nName+4+1);
+  int nName = strlen(pWin32File->zName);
+  zShm = (char *)lsmMallocZero(pWin32File->pEnv, nName+4+1);
   if( zShm ){
-    memcpy(zShm, p->zName, nName);
+    memcpy(zShm, pWin32File->zName, nName);
     memcpy(&zShm[nName], "-shm", 5);
   }
   return zShm;
@@ -253,7 +253,7 @@ static int lsmWin32OsOpen(
   if( pWin32File==0 ){
     rc = LSM_NOMEM_BKPT;
   }else{
-    HANDLE hFile;
+    HANDLE hFile = NULL;
 
     rc = win32Open(pEnv, zFile, flags, &hFile);
     if( rc==LSM_OK ){
@@ -380,6 +380,18 @@ static int lsmWin32OsSectorSize(lsm_file *pFile){
   return 512;
 }
 
+static void win32Unmap(Win32File *pWin32File){
+  if( pWin32File->pMap!=NULL ){
+    UnmapViewOfFile(pWin32File->pMap);
+    pWin32File->pMap = NULL;
+    pWin32File->nMap = 0;
+  }
+  if( pWin32File->hMap!=NULL ){
+    CloseHandle(pWin32File->hMap);
+    pWin32File->hMap = NULL;
+  }
+}
+
 static int lsmWin32OsRemap(
   lsm_file *pFile,
   lsm_i64 iMin,
@@ -393,15 +405,10 @@ static int lsmWin32OsRemap(
   const int aIncrSz[] = {256*1024, 1024*1024};
   int nIncrSz = aIncrSz[iMin>(2*1024*1024)];
 
-  if( pWin32File->pMap!=NULL ){
-    UnmapViewOfFile(pWin32File->pMap);
-    *ppOut = pWin32File->pMap = NULL;
-    *pnOut = pWin32File->nMap = 0;
-  }
-  if( pWin32File->hMap!=NULL ){
-    CloseHandle(pWin32File->hMap);
-    pWin32File->hMap = NULL;
-  }
+  *ppOut = NULL;
+  *pnOut = 0;
+
+  win32Unmap(pWin32File);
   if( iMin>=0 ){
     LARGE_INTEGER fileSize;
     DWORD dwSizeHigh;
@@ -580,22 +587,27 @@ static int lsmWin32OsUnlink(lsm_env *pEnv, const char *zFile){
                             ((a)==ERROR_IO_PENDING))
 #endif
 
-static int lsmWin32OsLock(lsm_file *pFile, int iLock, int eType){
-  Win32File *pWin32File = (Win32File *)pFile;
+static int win32LockFile(
+  Win32File *pWin32File,
+  int iLock,
+  int nLock,
+  int eType
+){
   OVERLAPPED ovlp;
 
   assert( LSM_LOCK_UNLOCK==0 );
   assert( LSM_LOCK_SHARED==1 );
   assert( LSM_LOCK_EXCL==2 );
   assert( eType>=LSM_LOCK_UNLOCK && eType<=LSM_LOCK_EXCL );
+  assert( nLock>=0 );
   assert( iLock>0 && iLock<=32 );
 
   memset(&ovlp, 0, sizeof(OVERLAPPED));
-  ovlp.Offset = (4096-iLock);
+  ovlp.Offset = (4096-iLock-nLock+1);
   if( eType>LSM_LOCK_UNLOCK ){
     DWORD flags = LOCKFILE_FAIL_IMMEDIATELY;
     if( eType>=LSM_LOCK_EXCL ) flags |= LOCKFILE_EXCLUSIVE_LOCK;
-    if( !LockFileEx(pWin32File->hFile, flags, 0, 1, 0, &ovlp) ){
+    if( !LockFileEx(pWin32File->hFile, flags, 0, (DWORD)nLock, 0, &ovlp) ){
       if( win32IsLockBusy(GetLastError()) ){
         return LSM_BUSY;
       }else{
@@ -603,36 +615,24 @@ static int lsmWin32OsLock(lsm_file *pFile, int iLock, int eType){
       }
     }
   }else{
-    if( !UnlockFileEx(pWin32File->hFile, 0, 1, 0, &ovlp) ){
+    if( !UnlockFileEx(pWin32File->hFile, 0, (DWORD)nLock, 0, &ovlp) ){
       return LSM_IOERR_BKPT;
     }
   }
   return LSM_OK;
 }
 
-static int lsmWin32OsTestLock(lsm_file *pFile, int iLock, int nLock, int eType){
+static int lsmWin32OsLock(lsm_file *pFile, int iLock, int eType){
   Win32File *pWin32File = (Win32File *)pFile;
-  DWORD flags = LOCKFILE_FAIL_IMMEDIATELY;
-  OVERLAPPED ovlp;
+  return win32LockFile(pWin32File, iLock, 1, eType);
+}
 
-  assert( LSM_LOCK_UNLOCK==0 );
-  assert( LSM_LOCK_SHARED==1 );
-  assert( LSM_LOCK_EXCL==2 );
-  assert( eType==LSM_LOCK_SHARED || eType==LSM_LOCK_EXCL );
-  assert( nLock>=0 );
-  assert( iLock>0 && iLock<=32 );
-
-  if( eType>=LSM_LOCK_EXCL ) flags |= LOCKFILE_EXCLUSIVE_LOCK;
-  memset(&ovlp, 0, sizeof(OVERLAPPED));
-  ovlp.Offset = (4096-iLock-nLock+1);
-  if( !LockFileEx(pWin32File->hFile, flags, 0, (DWORD)nLock, 0, &ovlp) ){
-    if( win32IsLockBusy(GetLastError()) ){
-      return LSM_BUSY;
-    }else{
-      return LSM_IOERR_BKPT;
-    }
-  }
-  UnlockFileEx(pWin32File->hFile, 0, (DWORD)nLock, 0, &ovlp);
+static int lsmWin32OsTestLock(lsm_file *pFile, int iLock, int nLock, int eType){
+  int rc;
+  Win32File *pWin32File = (Win32File *)pFile;
+  rc = win32LockFile(pWin32File, iLock, nLock, eType);
+  if( rc!=LSM_OK ) return rc;
+  win32LockFile(pWin32File, iLock, nLock, LSM_LOCK_UNLOCK);
   return LSM_OK;
 }
 
@@ -648,7 +648,6 @@ static int lsmWin32OsShmMap(lsm_file *pFile, int iChunk, int sz, void **ppShm){
   assert( sz>=0 );
   assert( sz==LSM_SHM_CHUNK_SIZE );
   if( iChunk>=pWin32File->nShm ){
-    int i;
     LPHANDLE ahNew;
     LPVOID *apNew;
     LARGE_INTEGER fileSize;
@@ -678,20 +677,18 @@ static int lsmWin32OsShmMap(lsm_file *pFile, int iChunk, int sz, void **ppShm){
       }
     }
 
-    ahNew = (LPHANDLE)lsmRealloc(pWin32File->pEnv, pWin32File->ahShm,
-                                 sizeof(LPHANDLE) * nNew);
+    ahNew = (LPHANDLE)lsmMallocZero(pWin32File->pEnv, sizeof(HANDLE) * nNew);
     if( !ahNew ) return LSM_NOMEM_BKPT;
-    apNew = (LPVOID *)lsmRealloc(pWin32File->pEnv, pWin32File->apShm,
-                                 sizeof(LPVOID) * nNew);
+    apNew = (LPVOID *)lsmMallocZero(pWin32File->pEnv, sizeof(LPVOID) * nNew);
     if( !apNew ){
       lsmFree(pWin32File->pEnv, ahNew);
       return LSM_NOMEM_BKPT;
     }
-    for(i=pWin32File->nShm; i<nNew; i++){
-      ahNew[i] = NULL;
-      apNew[i] = NULL;
-    }
+    memcpy(ahNew, pWin32File->ahShm, sizeof(HANDLE) * pWin32File->nShm);
+    memcpy(apNew, pWin32File->apShm, sizeof(LPVOID) * pWin32File->nShm);
+    lsmFree(pWin32File->pEnv, pWin32File->ahShm);
     pWin32File->ahShm = ahNew;
+    lsmFree(pWin32File->pEnv, pWin32File->apShm);
     pWin32File->apShm = apNew;
     pWin32File->nShm = nNew;
   }
@@ -761,15 +758,7 @@ static int lsmWin32OsClose(lsm_file *pFile){
   int nRetry = 0;
   Win32File *pWin32File = (Win32File *)pFile;
   lsmWin32OsShmUnmap(pFile, 0);
-  if( pWin32File->pMap!=NULL ){
-    UnmapViewOfFile(pWin32File->pMap);
-    pWin32File->pMap = NULL;
-    pWin32File->nMap = 0;
-  }
-  if( pWin32File->hMap!=NULL ){
-    CloseHandle(pWin32File->hMap);
-    pWin32File->hMap = NULL;
-  }
+  win32Unmap(pWin32File);
   do{
     if( pWin32File->hFile==NULL ){
       rc = LSM_IOERR_BKPT;
@@ -954,7 +943,7 @@ static int lsmWin32OsMutexNotHeld(lsm_mutex *p){
 }
 #endif
 /*
-** End of pthreads mutex implementation.
+** End of Win32 mutex implementation.
 *************************************************************************/
 #else
 /*************************************************************************

@@ -157,7 +157,7 @@ static int lsm1Close(sqlite3_vtab_cursor *cur){
 */
 static int lsm1Next(sqlite3_vtab_cursor *cur){
   lsm1_cursor *pCur = (lsm1_cursor*)cur;
-  int rc;
+  int rc = LSM_OK;
   if( pCur->bUnique ){
     pCur->atEof = 1;
   }else{
@@ -368,7 +368,7 @@ static int lsm1EncodeKey(
         pSpace = sqlite3_malloc( nVal+1 );
         if( pSpace==0 ) return SQLITE_NOMEM;
       }
-      pSpace[0] = eType;
+      pSpace[0] = (unsigned char)eType;
       memcpy(&pSpace[1], pVal, nVal);
       *ppKey = pSpace;
       *pnKey = nVal+1;
@@ -385,7 +385,7 @@ static int lsm1EncodeKey(
         uVal = iVal;
         eType = LSM1_TYPE_POSITIVE;
       }
-      pSpace[0] = eType;
+      pSpace[0] = (unsigned char)eType;
       *ppKey = pSpace;
       *pnKey = 1 + lsm1PutVarint64(&pSpace[1], uVal);
     }
@@ -597,7 +597,7 @@ int lsm1Update(
   const void *pKey;
   int nKey;
   int eType;
-  int rc;
+  int rc = LSM_OK;
   sqlite3_value *pValue;
   const unsigned char *pVal;
   unsigned char *pData;
@@ -654,7 +654,7 @@ int lsm1Update(
         if( pData==0 ){
           rc = SQLITE_NOMEM;
         }else{
-          pData[0] = eType;
+          pData[0] = (unsigned char)eType;
           memcpy(&pData[1], pVal, nVal);
           rc = lsm_insert(p->pDb, pKey, nKey, pData, nVal+1);
           sqlite3_free(pData);
@@ -677,7 +677,7 @@ int lsm1Update(
           aVal[i] = x & 0xff;
           x >>= 8;
         }
-        aVal[i] = eType;
+        aVal[i] = (unsigned char)eType;
         rc = lsm_insert(p->pDb, pKey, nKey, &aVal[i], 9-i);
         break;
       }

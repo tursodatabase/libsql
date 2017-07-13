@@ -424,7 +424,7 @@ do_execsql_test 6.2.1 {
 do_catchsql_test 6.2.2 {
   DROP TABLE t7;
   SELECT * FROM ft7;
-} {1 {SQL logic error or missing database}}
+} {1 {SQL logic error}}
 
 db close
 sqlite3 db test.db
@@ -457,10 +457,10 @@ do_execsql_test 6.2.7 {
 }
 do_catchsql_test 6.2.8 {
   SELECT * FROM ft7 WHERE ft7 MATCH '"A A"';
-} {1 {SQL logic error or missing database}}
+} {1 {SQL logic error}}
 do_catchsql_test 6.2.9 {
   SELECT * FROM ft7 WHERE ft7 MATCH '"A A"';
-} {1 {SQL logic error or missing database}}
+} {1 {SQL logic error}}
 
 db close
 sqlite3 db test.db
@@ -504,7 +504,7 @@ do_execsql_test 7.2.3 {
 
 do_catchsql_test 7.2.4 {
   SELECT * FROM ft9 WHERE ft9 MATCH 'N';
-} {1 {SQL logic error or missing database}}
+} {1 {SQL logic error}}
 
 #-------------------------------------------------------------------------
 # Test cases 8.*

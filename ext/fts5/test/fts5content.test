@@ -255,4 +255,3 @@ do_execsql_test 6.2 {
 
 
 finish_test
-

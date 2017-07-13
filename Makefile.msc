@@ -2266,6 +2266,7 @@ clean:
 	-rmdir /Q/S tsrc 2>NUL
 	del /Q .target_source 2>NUL
 	del /Q tclsqlite3.exe $(SQLITETCLH) $(SQLITETCLDECLSH) 2>NUL
+	del /Q lsm.dll lsmtest.exe 2>NUL
 	del /Q testloadext.dll 2>NUL
 	del /Q testfixture.exe test.db 2>NUL
 	del /Q LogEst.exe fts3view.exe rollback-test.exe showdb.exe dbdump.exe 2>NUL

@@ -121,7 +121,7 @@ do_test 3.1.2 {
 proc my_wal_hook {args} { return 1 ;# SQLITE_ERROR }
 do_catchsql_test 4.1 {
   INSERT INTO t1 VALUES(7)
-} {1 {SQL logic error or missing database}}
+} {1 {SQL logic error}}
 
 proc my_wal_hook {args} { return 5 ;# SQLITE_BUSY }
 do_catchsql_test 4.2 {

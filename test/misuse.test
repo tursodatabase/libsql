@@ -179,12 +179,12 @@ if {[clang_sanitize_address]==0} {
     db cache flush
       sqlite3_close $::DB
       catchsql2 {SELECT * FROM t1}
-  } {1 {library routine called out of sequence}}
+  } {1 {bad parameter or other API misuse}}
   do_test misuse-4.5 {
     catchsql {
       SELECT * FROM t1
     }
-  } {1 {library routine called out of sequence}}
+  } {1 {bad parameter or other API misuse}}
 
   # Attempt to use a database after it has been closed.
   #
@@ -204,7 +204,7 @@ if {[clang_sanitize_address]==0} {
         sqlite3_prepare $::DB {SELECT * FROM t1} -1 TAIL
       } msg]
     lappend r $msg
-  } {1 {(21) library routine called out of sequence}}
+  } {1 {(21) bad parameter or other API misuse}}
 }
 
 finish_test

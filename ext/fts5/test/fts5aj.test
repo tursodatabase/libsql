@@ -66,4 +66,3 @@ do_execsql_test 2.0 { INSERT INTO t1(t1) VALUES('integrity-check') }
 
 
 finish_test
-

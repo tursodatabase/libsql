@@ -84,6 +84,12 @@ while test "$1" != ""; do
     --clang)
         CC=clang
         ;;
+    --icc)
+        CC=/home/drh/intel/bin/icc
+        ;;
+    --gcc7)
+        CC=gcc-7
+        ;;
     --heap)
         CC_OPTS="$CC_OPTS -DSQLITE_ENABLE_MEMSYS5"
         shift;
@@ -106,6 +112,9 @@ while test "$1" != ""; do
     --rtree)
         SPEEDTEST_OPTS="$SPEEDTEST_OPTS --testset rtree"
         CC_OPTS="$CC_OPTS -DSQLITE_ENABLE_RTREE"
+        ;;
+    --orm)
+        SPEEDTEST_OPTS="$SPEEDTEST_OPTS --testset orm"
         ;;
     *)
         CC_OPTS="$CC_OPTS $1"
@@ -143,5 +152,5 @@ if test $doExplain -eq 1; then
   ./speedtest1 --explain $SPEEDTEST_OPTS | ./sqlite3 >explain-$NAME.txt
 fi
 if test "$NAME" != "trunk"; then
-  fossil test-diff --tk cout-trunk.txt cout-$NAME.txt
+  fossil test-diff --tk -c 20 cout-trunk.txt cout-$NAME.txt
 fi

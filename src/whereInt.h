@@ -284,6 +284,7 @@ struct WhereTerm {
 #define TERM_LIKECOND   0x200  /* Conditionally this LIKE operator term */
 #define TERM_LIKE       0x400  /* The original LIKE operator */
 #define TERM_IS         0x800  /* Term.pExpr is an IS operator */
+#define TERM_VARSELECT  0x1000 /* Term.pExpr contains a correlated sub-query */
 
 /*
 ** An instance of the WhereScan object is used as an iterator for locating
@@ -373,6 +374,7 @@ struct WhereAndInfo {
 ** no gaps.
 */
 struct WhereMaskSet {
+  int bVarSelect;               /* Used by sqlite3WhereExprUsage() */
   int n;                        /* Number of assigned cursor values */
   int ix[BMS];                  /* Cursor assigned to each bit */
 };

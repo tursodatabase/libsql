@@ -52,7 +52,7 @@ do_test fts1o-2.1 {
     CREATE TABLE t1_term(a, b, c);
     ALTER TABLE fts_t1 RENAME to t1;
   }
-} {1 {SQL logic error or missing database}}
+} {1 {SQL logic error}}
 do_test fts1o-2.2 {
   execsql { SELECT rowid, snippet(fts_t1) FROM fts_t1 WHERE a MATCH 'four'; }
 } {1 {one three <b>four</b>}}
@@ -72,7 +72,7 @@ do_test fts1o-3.2 {
   catchsql {
     ALTER TABLE fts_t1 RENAME to t1;
   }
-} {1 {SQL logic error or missing database}}
+} {1 {SQL logic error}}
 # NOTE(shess) rowid AS rowid to defeat caching.  Otherwise, this
 # seg-faults, I suspect that there's something up with a stale
 # virtual-table reference, but I'm not quite sure how it happens here

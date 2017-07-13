@@ -387,7 +387,7 @@ for {set i 0} {$i < 50} {incr i} {
 }
 do_catchsql_test 4.1.5 {
   INSERT INTO t4(content, lid) VALUES('hello world', 101)
-} {1 {SQL logic error or missing database}}
+} {1 {SQL logic error}}
 
 #-------------------------------------------------------------------------
 # Test cases 5.*

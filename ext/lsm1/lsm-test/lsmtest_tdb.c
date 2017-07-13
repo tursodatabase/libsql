@@ -767,7 +767,8 @@ int tdb_open(const char *zLib, const char *zDb, int bClear, TestDb **ppDb){
   if( *zSpec=='\0' ) zSpec = 0;
 
   for(i=0; i<ArraySize(aLib); i++){
-    if( strlen(aLib[i].zName)==nLib && 0==memcmp(zLib, aLib[i].zName, nLib) ){
+    if( (int)strlen(aLib[i].zName)==nLib
+        && 0==memcmp(zLib, aLib[i].zName, nLib) ){
       rc = aLib[i].xOpen(zSpec, (zDb ? zDb : aLib[i].zDefaultDb), bClear, ppDb);
       if( rc==0 ){
         (*ppDb)->zLibrary = aLib[i].zName;

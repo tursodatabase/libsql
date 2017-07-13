@@ -70,7 +70,7 @@ struct stmt_cursor {
 
 /*
 ** The stmtConnect() method is invoked to create a new
-** stmt_vtab that describes the generate_stmt virtual table.
+** stmt_vtab that describes the stmt virtual table.
 **
 ** Think of this routine as the constructor for stmt_vtab objects.
 **
@@ -79,7 +79,7 @@ struct stmt_cursor {
 **    (1) Allocate the stmt_vtab object and initialize all fields.
 **
 **    (2) Tell SQLite (via the sqlite3_declare_vtab() interface) what the
-**        result set of queries against generate_stmt will look like.
+**        result set of queries against stmt will look like.
 */
 static int stmtConnect(
   sqlite3 *db,
@@ -247,7 +247,7 @@ static int stmtFilter(
 
 /*
 ** SQLite will invoke this method one or more times while planning a query
-** that uses the generate_stmt virtual table.  This routine needs to create
+** that uses the stmt virtual table.  This routine needs to create
 ** a query plan for each invocation and compute an estimated cost for that
 ** plan.
 */
@@ -262,7 +262,7 @@ static int stmtBestIndex(
 
 /*
 ** This following structure defines all the methods for the 
-** generate_stmt virtual table.
+** stmt virtual table.
 */
 static sqlite3_module stmtModule = {
   0,                         /* iVersion */
@@ -285,6 +285,9 @@ static sqlite3_module stmtModule = {
   0,                         /* xRollback */
   0,                         /* xFindMethod */
   0,                         /* xRename */
+  0,                         /* xSavepoint */
+  0,                         /* xRelease */
+  0,                         /* xRollbackTo */
 };
 
 #endif /* SQLITE_OMIT_VIRTUALTABLE */

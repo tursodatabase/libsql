@@ -108,7 +108,7 @@ do_catchsql_test 2.0 {
 do_catchsql_test 2.1 {
   CREATE VIRTUAL TABLE t4 USING fts3tokenize;
   SELECT * FROM t4;
-} {1 {SQL logic error or missing database}}
+} {1 {SQL logic error}}
 
 do_catchsql_test 2.2 {
   CREATE VIRTUAL TABLE t USING fts4(tokenize=simple""); 

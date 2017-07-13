@@ -199,33 +199,33 @@ static int testEnvWrite(lsm_file *pFile, lsm_i64 iOff, void *pData, int nData){
   if( pDb->bCrashed ) return LSM_IOERR;
 
   if( pDb->bPrepareCrash ){
-    FileData *pData = &pDb->aFile[p->bLog];
+    FileData *pData2 = &pDb->aFile[p->bLog];
     int iFirst;                 
     int iLast;
     int iSector;
 
-    iFirst = (iOff / pDb->szSector);
-    iLast =  ((iOff + nData - 1) / pDb->szSector);
+    iFirst = (int)(iOff / pDb->szSector);
+    iLast =  (int)((iOff + nData - 1) / pDb->szSector);
 
-    if( pData->nSector<(iLast+1) ){
+    if( pData2->nSector<(iLast+1) ){
       int nNew = ( ((iLast + 1) + 63) / 64 ) * 64;
       assert( nNew>iLast );
-      pData->aSector = (FileSector *)testRealloc(
-          pData->aSector, nNew*sizeof(FileSector)
+      pData2->aSector = (FileSector *)testRealloc(
+          pData2->aSector, nNew*sizeof(FileSector)
       );
-      memset(&pData->aSector[pData->nSector], 
-          0, (nNew - pData->nSector) * sizeof(FileSector)
+      memset(&pData2->aSector[pData2->nSector], 
+          0, (nNew - pData2->nSector) * sizeof(FileSector)
       );
-      pData->nSector = nNew;
+      pData2->nSector = nNew;
     }
 
     for(iSector=iFirst; iSector<=iLast; iSector++){
-      if( pData->aSector[iSector].aOld==0 ){
+      if( pData2->aSector[iSector].aOld==0 ){
         u8 *aOld = (u8 *)testMalloc(pDb->szSector);
         pRealEnv->xRead(
             p->pReal, (lsm_i64)iSector*pDb->szSector, aOld, pDb->szSector
         );
-        pData->aSector[iSector].aOld = aOld;
+        pData2->aSector[iSector].aOld = aOld;
       }
     }
   }
@@ -547,9 +547,9 @@ static int waitOnWorker(LsmDb *pDb){
 
   rc = lsm_config(pDb->db, LSM_CONFIG_AUTOFLUSH, &nLimit);
   do {
-    int nOld, nNew, rc;
-    rc = lsm_info(pDb->db, LSM_INFO_TREE_SIZE, &nOld, &nNew);
-    if( rc!=LSM_OK ) return rc;
+    int nOld, nNew, rc2;
+    rc2 = lsm_info(pDb->db, LSM_INFO_TREE_SIZE, &nOld, &nNew);
+    if( rc2!=LSM_OK ) return rc2;
     if( nOld==0 || nNew<(nLimit/2) ) break;
 #ifdef LSM_MUTEX_PTHREADS
     mt_signal_worker(pDb, 0);
@@ -888,7 +888,9 @@ int test_lsm_config_str(
 int tdb_lsm_config_str(TestDb *pDb, const char *zStr){
   int rc = 0;
   if( tdb_lsm(pDb) ){
+#ifdef LSM_MUTEX_PTHREADS
     int i;
+#endif
     LsmDb *pLsm = (LsmDb *)pDb;
 
     rc = test_lsm_config_str(pLsm, pLsm->db, 0, zStr, 0);

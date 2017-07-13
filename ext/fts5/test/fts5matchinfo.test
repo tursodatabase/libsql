@@ -492,4 +492,3 @@ do_catchsql_test 14.2 {
 } {1 {unrecognized matchinfo flag: d}}
 
 finish_test
-

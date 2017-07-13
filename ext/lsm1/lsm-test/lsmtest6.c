@@ -200,7 +200,7 @@ static void testOomScan(
     int rc;
     int iScan = 0;
     lsm_cursor *pCsr;
-    int (*xAdvance)(lsm_cursor *);
+    int (*xAdvance)(lsm_cursor *) = 0;
     
 
     rc = lsm_csr_open(pDb, &pCsr);
@@ -240,13 +240,6 @@ static void testOomScan(
 
 #define LSMTEST6_TESTDB "testdb.lsm" 
 
-#ifndef _WIN32
-# include <unistd.h>
-#endif
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-
 void testDeleteLsmdb(const char *zFile){
   char *zLog = testMallocPrintf("%s-log", zFile);
   char *zShm = testMallocPrintf("%s-shm", zFile);
@@ -257,7 +250,7 @@ void testDeleteLsmdb(const char *zFile){
   testFree(zShm);
 }
 
-static void copy_file(const char *zFrom, const char *zTo){
+static void copy_file(const char *zFrom, const char *zTo, int isDatabase){
 
   if( access(zFrom, F_OK) ){
     unlink(zTo);
@@ -269,8 +262,8 @@ static void copy_file(const char *zFrom, const char *zTo){
     struct stat buf;
     u8 *aBuf;
 
-    fd1 = open(zFrom, O_RDONLY, 0644);
-    fd2 = open(zTo, O_RDWR | O_CREAT, 0644);
+    fd1 = open(zFrom, O_RDONLY | _O_BINARY, 0644);
+    fd2 = open(zTo, O_RDWR | O_CREAT | _O_BINARY, 0644);
 
     fstat(fd1, &buf);
     sz = buf.st_size;
@@ -278,9 +271,15 @@ static void copy_file(const char *zFrom, const char *zTo){
 
     aBuf = testMalloc(4096);
     for(i=0; i<sz; i+=4096){
-      int nByte = MIN(4096, sz - i);
+      int bLockPage = isDatabase && i == 0;
+      int nByte = MIN((bLockPage ? 4066 : 4096), sz - i);
+      memset(aBuf, 0, 4096);
       read(fd1, aBuf, nByte);
       write(fd2, aBuf, nByte);
+      if( bLockPage ){
+        lseek(fd1, 4096, SEEK_SET);
+        lseek(fd2, 4096, SEEK_SET);
+      }
     }
     testFree(aBuf);
 
@@ -298,9 +297,9 @@ void testCopyLsmdb(const char *zFrom, const char *zTo){
   unlink(zShm2);
   unlink(zLog2);
   unlink(zTo);
-  copy_file(zFrom, zTo);
-  copy_file(zLog1, zLog2);
-  copy_file(zShm1, zShm2);
+  copy_file(zFrom, zTo, 1);
+  copy_file(zLog1, zLog2, 0);
+  copy_file(zShm1, zShm2, 0);
 
   testFree(zLog1); testFree(zLog2); testFree(zShm1); testFree(zShm2);
 }
@@ -322,8 +321,8 @@ void testSaveDb(const char *zFile, const char *zAux){
 
   unlink(zFileSave);
   unlink(zLogSave);
-  copy_file(zFile, zFileSave);
-  copy_file(zLog, zLogSave);
+  copy_file(zFile, zFileSave, 1);
+  copy_file(zLog, zLogSave, 0);
 
   testFree(zLog); testFree(zFileSave); testFree(zLogSave);
 }
@@ -341,8 +340,8 @@ void testRestoreDb(const char *zFile, const char *zAux){
   char *zFileSave = testMallocPrintf("%s-save", zFile);
   char *zLogSave = testMallocPrintf("%s-%s-save", zFile, zAux);
 
-  copy_file(zFileSave, zFile);
-  copy_file(zLogSave, zLog);
+  copy_file(zFileSave, zFile, 1);
+  copy_file(zLogSave, zLog, 0);
 
   testFree(zLog); testFree(zFileSave); testFree(zLogSave);
 }
@@ -354,7 +353,7 @@ static int lsmWriteStr(lsm_db *pDb, const char *zKey, const char *zVal){
   return lsm_insert(pDb, (void *)zKey, nKey, (void *)zVal, nVal);
 }
 
-static void setup_delete_db(){
+static void setup_delete_db(void){
   testDeleteLsmdb(LSMTEST6_TESTDB);
 }
 
@@ -370,7 +369,7 @@ static void setup_delete_db(){
 **    "seven" -> "fourtynine"
 **    "eight" -> "sixtyfour"
 */
-static void setup_populate_db(){
+static void setup_populate_db(void){
   const char *azStr[] = {
     "one",   "one",
     "two",   "four",
@@ -412,7 +411,7 @@ static Datasource *getDatasource(void){
 **   * Contains 5000 key-value pairs starting at 0 from the
 **     datasource returned getDatasource().
 */
-static void setup_populate_db2(){
+static void setup_populate_db2(void){
   Datasource *pData;
   int ii;
   int rc;

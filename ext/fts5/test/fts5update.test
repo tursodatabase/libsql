@@ -117,5 +117,3 @@ do_execsql_test 2.2.integrity {
 
 }
 finish_test
-
-

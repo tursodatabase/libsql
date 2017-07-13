@@ -1,9 +1,9 @@
 #
-# This Makefile is designed for use with main.mk in the root directory of
-# this project. After including main.mk, the users makefile should contain:
+# This Makefile is designed for use with Makefile.msc in the root directory
+# of this project.  The Makefile.msc should contain:
 #
-#    LSMDIR=$(TOP)\ext\lsm1\
-#    include $(LSMDIR)\Makefile.msc
+#    LSMDIR=$(TOP)\ext\lsm1
+#    !INCLUDE $(LSMDIR)\Makefile.msc
 #
 # The most useful targets are [lsmtest.exe] and [lsm.dll].
 #
@@ -39,9 +39,17 @@ LSMTESTSRC = $(LSMDIR)\lsm-test\lsmtest1.c $(LSMDIR)\lsm-test\lsmtest2.c     \
              $(LSMDIR)\lsm-test\lsmtest_tdb.c $(LSMDIR)\lsm-test\lsmtest_tdb3.c \
              $(LSMDIR)\lsm-test\lsmtest_util.c $(LSMDIR)\lsm-test\lsmtest_win32.c
 
-# all: lsm.dll
+# all: lsm.dll lsmtest.exe
 
-LSMOPTS = -DLSM_MUTEX_WIN32=1 -I$(LSMDIR)
+LSMOPTS = $(NO_WARN) -DLSM_MUTEX_WIN32=1 -I$(LSMDIR)
+
+!IF $(DEBUG)>2
+LSMOPTS = $(LSMOPTS) -DLSM_DEBUG=1
+!ENDIF
+
+!IF $(MEMDEBUG)!=0
+LSMOPTS = $(LSMOPTS) -DLSM_DEBUG_MEM=1
+!ENDIF
 
 lsm_ckpt.lo:	$(LSMDIR)\lsm_ckpt.c $(LSMHDR) $(SQLITE3H)
 	$(LTCOMPILE) $(LSMOPTS) -c $(LSMDIR)\lsm_ckpt.c
@@ -88,5 +96,5 @@ lsm_vtab.lo:	$(LSMDIR)\lsm_vtab.c $(LSMHDR) $(SQLITE3H)
 lsm.dll:	$(LSMOBJ)
 	$(LD) $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) /DLL /OUT:$@ $(LSMOBJ)
 
-lsmtest.exe: $(LSMOBJ) $(LSMTESTSRC) $(LSMTESTHDR) $(LIBOBJS1)
-	$(LTLINK) $(LSMOPTS) $(LSMTESTSRC) /link $(LSMOBJ) $(LIBOBJS1)
+lsmtest.exe: $(LSMOBJ) $(LSMTESTSRC) $(LSMTESTHDR) $(LIBOBJ)
+	$(LTLINK) $(LSMOPTS) $(LSMTESTSRC) /link $(LSMOBJ) $(LIBOBJ)
