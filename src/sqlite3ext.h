@@ -289,6 +289,9 @@ struct sqlite3_api_routines {
                     sqlite3_stmt**,const char**);
   int (*prepare16_v3)(sqlite3*,const void*,int,unsigned int,
                       sqlite3_stmt**,const void**);
+  int (*bind_pointer)(sqlite3_stmt*,int,void*);
+  int (*result_pointer)(sqlite3_context*,void*);
+  void *(*value_pointer)(sqlite3_value*);
 };
 
 /*
@@ -552,6 +555,9 @@ typedef int (*sqlite3_loadext_entry)(
 /* Version 3.20.0 and later */
 #define sqlite3_prepare_v3             sqlite3_api->prepare_v3
 #define sqlite3_prepare16_v3           sqlite3_api->prepare16_v3
+#define sqlite3_bind_pointer           sqlite3_api->bind_pointer
+#define sqlite3_result_pointer         sqlite3_api->result_pointer
+#define sqlite3_value_pointer          sqlite3_api->value_pointer
 #endif /* !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION) */
 
 #if !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION)
