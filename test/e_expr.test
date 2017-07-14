@@ -254,13 +254,14 @@ foreach {tn a b} {
 #-------------------------------------------------------------------------
 # Test the % operator.
 #
-# EVIDENCE-OF: R-08914-63790 The operator % outputs the value of its
-# left operand modulo its right operand.
+# EVIDENCE-OF: R-04223-04352 The operator % outputs the integer value of
+# its left operand modulo its right operand.
 #
 do_execsql_test e_expr-6.1 {SELECT  72%5}  {2}
 do_execsql_test e_expr-6.2 {SELECT  72%-5} {2}
 do_execsql_test e_expr-6.3 {SELECT -72%-5} {-2}
 do_execsql_test e_expr-6.4 {SELECT -72%5}  {-2}
+do_execsql_test e_expr-6.5 {SELECT 72.35%5} {2.0}
 
 #-------------------------------------------------------------------------
 # Test that the results of all binary operators are either numeric or 

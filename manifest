@@ -1,5 +1,5 @@
-C Add\svery\ssimple\stcl\stests\sfor\sthe\slsm1\sextension.
-D 2017-07-14T11:40:48.489
+C Minor\supdates\sto\srequirements\smarks\sand\sdocumention.\s\sNo\schanges\sto\scode.
+D 2017-07-14T13:24:31.730
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 20850e3e8d4d4791e0531955852d768eb06f24138214870d543abb1a47346fba
@@ -454,7 +454,7 @@ F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 95659b7990e390f9bd8dc30b8975c675fcd1d46e569bc4f5a14e22a8d03e3d14
 F src/shell.c e89ad1135cb47c95896a1aec4bd0113af90a057d80f20003f354fa56fc10a616
 F src/shell.c.in dae43a6a43988d955014f070341f296561ea4a43ca2685166a32495b0667ef59
-F src/sqlite.h.in 50755d181c15c514b774bbe17cb7742a2e6b65e434fe8ae8eb1b0c9ba87532c2
+F src/sqlite.h.in 8f028c7f751e628535b2f47889d9a16a4e02ee804e2ce08c12d8be021db7bb27
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 654d76dd288780a460be9c88edc6a5eb2d61df03a7153c92f1d87aba41f73b96
 F src/sqliteInt.h 0ba730cdc8afa723a5642380712f8bb33abd6a69218571c18b94acf3562de22a
@@ -721,10 +721,10 @@ F test/e_createtable.test d4c6059d44dcd4b636de9aae322766062b471844
 F test/e_delete.test ab39084f26ae1f033c940b70ebdbbd523dc4962e
 F test/e_droptrigger.test 3cd080807622c13e5bbb61fc9a57bd7754da2412
 F test/e_dropview.test 21ce09c361227ddbc9819a5608ee2700c276bdd5
-F test/e_expr.test d0dd488e0527cbc560ae2dea1939cc44cb9b9924
-F test/e_fkey.test 54cc0046d2d952d6c42b0dd94414e7a8f75f79f4
+F test/e_expr.test 146deba180273d19e3bf9f6b45f4e50094c64c7ec4756ea72f79dda25818eb17
+F test/e_fkey.test dcdc6ad26b1d4f07636208de4c1c22aae7c0597a685a6c10fe6da91f3191dd96
 F test/e_fts3.test 8cf40550bb088a6aa187c818c00fabe26ef82900a4cd5c66b427ccafe28bedaa
-F test/e_insert.test 3de217e95094d3d165992a6de1164bbc4bd92dc7
+F test/e_insert.test f02f7f17852b2163732c6611d193f84fc67bc641fb4882c77a464076e5eba80e
 F test/e_reindex.test 2bebf7b393e519198b7c654407221cf171a439b8
 F test/e_resolve.test a61751c368b109db73df0f20fc75fb47e166b1d8
 F test/e_select.test 16651bb681e83a1a2875ff4a595ed2b4b4dee375
@@ -1633,7 +1633,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d8cd0434f3451e27aefe38a1a9efdc4dfded2ea33baf25d82814c89264f3afff
-R 7035e4b35bda7a767a761f8f0be07308
-U dan
-Z fcf2323755b85655ac78a15cd2fe4ee2
+P 5e0a97930b08fff1c3a29f5c8b2962b856e3302209228c0e71b9f1a1bd2a4be3
+R dd78cda04979d081da1d882e6fd9450f
+U drh
+Z 7de81f651ca39e245dd8aa975678bc00

@@ -3494,7 +3494,7 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 ** [[SQLITE_PREPARE_PERSISTENT]] ^(<dt>SQLITE_PREPARE_PERSISTENT</dt>
 ** <dd>The SQLITE_PREPARE_PERSISTENT flag is a hint to the query planner
 ** that the prepared statement will be retained for a long time and
-** probably reused many times. ^Without this flag, [sqlite3_prepare_v3()]
+** probably reused many times.)^ ^Without this flag, [sqlite3_prepare_v3()]
 ** and [sqlite3_prepare16_v3()] assume that the prepared statement will 
 ** be used just once or at most a few times and then destroyed using
 ** [sqlite3_finalize()] relatively soon. The current implementation acts
