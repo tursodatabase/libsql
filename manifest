@@ -1,6 +1,6 @@
-C Modify\smkopcodeh.tcl\sso\sthat\sit\scan\shandle\s"same\sas"\sopcodes\swith\svalues\nlarger\sthan\sthe\stotal\snumber\sof\sopcodes.
-D 2017-07-14T17:50:11.847
-F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
+C Tweak\sMakefile.in\sso\sthat\stestfixture\scan\sbe\sbuilt\swith\sthe\n--disable-amalgamation\sconfigure\sswitch.
+D 2017-07-14T19:12:26.938
+F Makefile.in eda8bedf08c4c93e2137ef1218b3d3302488c68c2774918de0335a1133aab157
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 20850e3e8d4d4791e0531955852d768eb06f24138214870d543abb1a47346fba
 F README.md f5c87359573c4d255425e588a56554b50fdcc2afba4e017a2e02a43701456afd
@@ -1633,7 +1633,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6ed4ef03ff6f22ae83a14facc48ce594911d7d7b37446436b68af3a822578fae
-R c581c8a15e9205be16cfb4dd2842c7f2
+P 1eb56fe0305f0841b14865b7560add3da529b211328f5fa171b9628418a6ed49
+R bdfd0a46b51c03162f4cc2fd3159a1f5
 U dan
-Z 3b2741e009ea85f74a3c5e73aa1e4d08
+Z eda9defa0d1a29418a1b0b8c76434e30
