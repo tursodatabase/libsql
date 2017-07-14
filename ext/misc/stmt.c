@@ -30,23 +30,6 @@ SQLITE_EXTENSION_INIT1
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 
-/*
-** The following macros are used to cast pointers to integers.
-** The way you do this varies from one compiler
-** to the next, so we have developed the following set of #if statements
-** to generate appropriate macros for a wide range of compilers.
-*/
-#if defined(__PTRDIFF_TYPE__)  /* This case should work for GCC */
-# define SQLITE_PTR_TO_INT64(X)  ((sqlite3_int64)(__PTRDIFF_TYPE__)(X))
-#elif !defined(__GNUC__)       /* Works for compilers other than LLVM */
-# define SQLITE_PTR_TO_INT64(X)  ((sqlite3_int64)(((char*)X)-(char*)0))
-#elif defined(HAVE_STDINT_H)   /* Use this case if we have ANSI headers */
-# define SQLITE_PTR_TO_INT64(X)  ((sqlite3_int64)(intptr_t)(X))
-#else                          /* Generates a warning - but it always works */
-# define SQLITE_PTR_TO_INT64(X)  ((sqlite3_int64)(X))
-#endif
-
-
 /* stmt_vtab is a subclass of sqlite3_vtab which will
 ** serve as the underlying representation of a stmt virtual table
 */
@@ -92,22 +75,21 @@ static int stmtConnect(
   int rc;
 
 /* Column numbers */
-#define STMT_COLUMN_PTR     0   /* Numeric value of the statement pointer */
-#define STMT_COLUMN_SQL     1   /* SQL for the statement */
-#define STMT_COLUMN_NCOL    2   /* Number of result columns */
-#define STMT_COLUMN_RO      3   /* True if read-only */
-#define STMT_COLUMN_BUSY    4   /* True if currently busy */
-#define STMT_COLUMN_NSCAN   5   /* SQLITE_STMTSTATUS_FULLSCAN_STEP */
-#define STMT_COLUMN_NSORT   6   /* SQLITE_STMTSTATUS_SORT */
-#define STMT_COLUMN_NAIDX   7   /* SQLITE_STMTSTATUS_AUTOINDEX */
-#define STMT_COLUMN_NSTEP   8   /* SQLITE_STMTSTATUS_VM_STEP */
-#define STMT_COLUMN_REPREP  9   /* SQLITE_STMTSTATUS_REPREPARE */
-#define STMT_COLUMN_RUN    10   /* SQLITE_STMTSTATUS_RUN */
-#define STMT_COLUMN_MEM    11   /* SQLITE_STMTSTATUS_MEMUSED */
+#define STMT_COLUMN_SQL     0   /* SQL for the statement */
+#define STMT_COLUMN_NCOL    1   /* Number of result columns */
+#define STMT_COLUMN_RO      2   /* True if read-only */
+#define STMT_COLUMN_BUSY    3   /* True if currently busy */
+#define STMT_COLUMN_NSCAN   4   /* SQLITE_STMTSTATUS_FULLSCAN_STEP */
+#define STMT_COLUMN_NSORT   5   /* SQLITE_STMTSTATUS_SORT */
+#define STMT_COLUMN_NAIDX   6   /* SQLITE_STMTSTATUS_AUTOINDEX */
+#define STMT_COLUMN_NSTEP   7   /* SQLITE_STMTSTATUS_VM_STEP */
+#define STMT_COLUMN_REPREP  8   /* SQLITE_STMTSTATUS_REPREPARE */
+#define STMT_COLUMN_RUN     9   /* SQLITE_STMTSTATUS_RUN */
+#define STMT_COLUMN_MEM    10   /* SQLITE_STMTSTATUS_MEMUSED */
 
 
   rc = sqlite3_declare_vtab(db,
-     "CREATE TABLE x(ptr,sql,ncol,ro,busy,nscan,nsort,naidx,nstep,"
+     "CREATE TABLE x(sql,ncol,ro,busy,nscan,nsort,naidx,nstep,"
                     "reprep,run,mem)");
   if( rc==SQLITE_OK ){
     pNew = sqlite3_malloc( sizeof(*pNew) );
@@ -170,10 +152,6 @@ static int stmtColumn(
 ){
   stmt_cursor *pCur = (stmt_cursor*)cur;
   switch( i ){
-    case STMT_COLUMN_PTR: {
-      sqlite3_result_int64(ctx, SQLITE_PTR_TO_INT64(pCur->pStmt));
-      break;
-    }
     case STMT_COLUMN_SQL: {
       sqlite3_result_text(ctx, sqlite3_sql(pCur->pStmt), -1, SQLITE_TRANSIENT);
       break;
@@ -295,7 +273,7 @@ static sqlite3_module stmtModule = {
 int sqlite3StmtVtabInit(sqlite3 *db){
   int rc = SQLITE_OK;
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-  rc = sqlite3_create_module(db, "stmt", &stmtModule, 0);
+  rc = sqlite3_create_module(db, "sqlite_stmt", &stmtModule, 0);
 #endif
   return rc;
 }
