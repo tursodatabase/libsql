@@ -1,5 +1,5 @@
-C Make\sthe\sfreelist\sformat\sa\sseparate\sfeature\sfrom\sthe\spage-level\slocking.\nFreelist\sformat\sis\snow\sconfigure\susing\s"PRAGMA\sfreelist_format".
-D 2017-07-13T21:06:51.922
+C Add\ssimple\stests\sfor\s"PRAGMA\sfreelist_format".
+D 2017-07-14T08:15:16.028
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 4ebb1d257cac7fb1bcb4ba59278416d410ff1c4bf59447a9c37a415f3516056a
@@ -1162,6 +1162,7 @@ F test/server1.test 46803bd3fe8b99b30dbc5ff38ffc756f5c13a118
 F test/server2.test 277b4b1f142232e1f992ea17b587474c32e41e2f321c01acdd49ef5ffee99ee6
 F test/server3.test 3667fea050a248508d46b5eccb8a5561055f802016dc0d701e6b6f035ecc55ae
 F test/server4.test 039d93f1d46011261edc16cb076673ca7acb377d81e5314df9267477d6dd93e7
+F test/server5.test 975197b00a22be438a8a56414420c6d144ed6b3725087c936d433c67aceea456
 F test/servercrash.test 816c132b26af008067cab2913783f67006d4003e3988f3f3ee1075742f6e0a6c
 F test/serverwal.test 2d066ba70db35e28f0115a57385cf606513c56d6e2861119c2defb7471e4e2d9
 F test/session.test 78fa2365e93d3663a6e933f86e7afc395adf18be
@@ -1636,7 +1637,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8cbe8f2b2fe0a5a246401718da8db8d487ced232ada73b53bdc9f9608c47d50e
-R e2a1314b3947fa4a991aa95e4137779f
+P dcc407972aa213d28f95cbaf4da5ab7d89ddbad2740f41cfb44b2c2ce20a3132
+R 926f2f82f6c2fb1cbb14a30d94f3fd06
 U dan
-Z 013d31178aa545fe252ff8393248759a
+Z ed40a5c4613b127b71d738176ea73d52
