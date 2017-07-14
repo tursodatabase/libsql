@@ -45,6 +45,23 @@ struct lsm1_cursor {
   u8 bUnique;                /* True if no more than one row of output */
 };
 
+/* Dequote the string */
+static void lsm1Dequote(char *z){
+  int j;
+  char cQuote = z[0];
+  size_t i, n;
+
+  if( cQuote!='\'' && cQuote!='"' ) return;
+  n = strlen(z);
+  if( n<2 || z[n-1]!=z[0] ) return;
+  for(i=1, j=0; i<n-1; i++){
+    if( z[i]==cQuote && z[i+1]==cQuote ) i++;
+    z[j++] = z[i];
+  }
+  z[j] = 0;
+}
+
+
 /*
 ** The lsm1Connect() method is invoked to create a new
 ** lsm1_vtab that describes the virtual table.
@@ -58,6 +75,7 @@ static int lsm1Connect(
 ){
   lsm1_vtab *pNew;
   int rc;
+  char *zFilename;
 
   if( argc!=4 || argv[3]==0 || argv[3][0]==0 ){
     *pzErr = sqlite3_mprintf("filename argument missing");
@@ -75,7 +93,10 @@ static int lsm1Connect(
     rc = SQLITE_ERROR;
     goto connect_failed;
   }
-  rc = lsm_open(pNew->pDb, argv[3]);
+  zFilename = sqlite3_mprintf("%s", argv[3]);
+  lsm1Dequote(zFilename);
+  rc = lsm_open(pNew->pDb, zFilename);
+  sqlite3_free(zFilename);
   if( rc ){
     *pzErr = sqlite3_mprintf("lsm_open failed with %d", rc);
     rc = SQLITE_ERROR;

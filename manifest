@@ -1,5 +1,5 @@
-C Changes\sto\sthe\sLSM1\sTcl\stests\sto\smake\sthings\swork\son\sWin32.
-D 2017-07-14T15:45:27.821
+C In\sthe\sLSM1\svirtual\stable,\sdequote\sthe\sfilename\sbefore\sopening\sthe\sfile.
+D 2017-07-14T15:57:56.539
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 20850e3e8d4d4791e0531955852d768eb06f24138214870d543abb1a47346fba
@@ -249,7 +249,7 @@ F ext/lsm1/lsm_str.c 65e361b488c87b10bf3e5c0070b14ffc602cf84f094880bece77bbf6678
 F ext/lsm1/lsm_tree.c 682679d7ef2b8b6f2fe77aeb532c8d29695bca671c220b0abac77069de5fb9fb
 F ext/lsm1/lsm_unix.c 57361bcf5b1a1a028f5d66571ee490e9064d2cfb145a2cc9e5ddade467bb551b
 F ext/lsm1/lsm_varint.c 43f954af668a66c7928b81597c14d6ad4be9fedbc276bbd80f52fa28a02fdb62
-F ext/lsm1/lsm_vtab.c 62631565e8d8412b2509dec1929ce7dd2a3322f14fe468582734fa9d1fd20ba2
+F ext/lsm1/lsm_vtab.c d5af32abe32601b3f2618b9488225db9ca06af803ddee1aaaf1653e08e9d112b
 F ext/lsm1/lsm_win32.c 0a4acbd7e8d136dd3a5753f0a9e7a9802263a9d96cef3278cf120bcaa724db7c
 F ext/lsm1/test/lsm1_common.tcl 5ed4bab07c93be2e4f300ebe46007ecf4b3e20bc5fbe1dedaf04a8774a6d8d82
 F ext/lsm1/test/lsm1_simple.test 3bb38951450cd1f12a6c294949334d6fbb109a3da38c48eaf0877a37c43a0fab
@@ -1633,7 +1633,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b5e3b264814cde9572130b70fc0d21ccebc2d7f5f0e7db50b6395cb63723383e
-R 5a1ae2ae08ad67d31921f52cb922236d
-U mistachkin
-Z 978251d6ab90aca8183844f295bf9121
+P 7dc5e70ef1faa0b51a04abdfe1ee2f9ea5c2d0f99ea8ef6260b9de02500cf8b2
+R 5d5362fe9325134ea6f8a53ad92e5377
+U drh
+Z 0befee7d6243c1a561fd6eb2d6242e23
