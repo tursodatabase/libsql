@@ -1,5 +1,5 @@
-C Identify\srequirements\stext\sin\sthe\sSQLITE_DBCONFIG_ENABLE_QPSG\sdocumentation.\nAdd\ssome\simplementation\smarks\sfor\sSQLITE_DBCONFIG_MAINDBNAME\srequirements.\nNo\scode\schanges.
-D 2017-07-14T19:47:32.671
+C Fix\sa\stypo\sin\sa\scomment\sused\sto\sgenerate\sdocumentation.\s\sNo\scode\schanges.
+D 2017-07-14T19:52:47.696
 F Makefile.in eda8bedf08c4c93e2137ef1218b3d3302488c68c2774918de0335a1133aab157
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 20850e3e8d4d4791e0531955852d768eb06f24138214870d543abb1a47346fba
@@ -454,7 +454,7 @@ F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 95659b7990e390f9bd8dc30b8975c675fcd1d46e569bc4f5a14e22a8d03e3d14
 F src/shell.c e89ad1135cb47c95896a1aec4bd0113af90a057d80f20003f354fa56fc10a616
 F src/shell.c.in dae43a6a43988d955014f070341f296561ea4a43ca2685166a32495b0667ef59
-F src/sqlite.h.in 753bffec79261978670e8a29f52548b5c211ec003dc9d2a383cbb73d4f6a11b2
+F src/sqlite.h.in 042383fde795a11009248dd465629ef4f08837684820f6c660d3c12dcdc0f706
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 654d76dd288780a460be9c88edc6a5eb2d61df03a7153c92f1d87aba41f73b96
 F src/sqliteInt.h 0ba730cdc8afa723a5642380712f8bb33abd6a69218571c18b94acf3562de22a
@@ -1633,7 +1633,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 264238671379306b14d62a6ddaefd2a20acd34ca77276b6ce872253160fe0146
-R 699d2969de21ff7175916298b86255b3
+P ab165dcf35ae7385c9366853ce5648294bf5dc9aa9ffe1af84243e6fac3472fc
+R 6568f6289665ccdbd5ee88ad582e48f6
 U drh
-Z f6314232ead8314cf0533ccdafdadd4c
+Z 66e4b6db633246a7984985676b3c3227
