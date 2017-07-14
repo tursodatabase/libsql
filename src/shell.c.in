@@ -2906,7 +2906,6 @@ static char *readline_completion_generator(const char *text, int state){
   char *zRet;
   if( state==0 ){
     char *zSql;
-    int rc;
     sqlite3_finalize(pStmt);
     zSql = sqlite3_mprintf("SELECT DISTINCT candidate COLLATE nocase"
                            "  FROM completion(%Q) ORDER BY 1", text);
@@ -2914,7 +2913,7 @@ static char *readline_completion_generator(const char *text, int state){
     sqlite3_free(zSql);
   }
   if( sqlite3_step(pStmt)==SQLITE_ROW ){
-    zRet = strdup(sqlite3_column_text(pStmt, 0));
+    zRet = strdup((const char*)sqlite3_column_text(pStmt, 0));
   }else{
     sqlite3_finalize(pStmt);
     pStmt = 0;
