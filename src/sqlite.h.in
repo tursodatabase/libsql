@@ -2008,10 +2008,10 @@ struct sqlite3_mem_methods {
 ** </dd>
 **
 ** <dt>SQLITE_DBCONFIG_ENABLE_QPSG</dt>
-** <dd>The SQLITE_DBCONFIG_ENABLE_QPSG option activates or deactivates
+** <dd>^(The SQLITE_DBCONFIG_ENABLE_QPSG option activates or deactivates
 ** the [query planner stability guarantee] (QPSG).  When the QPSG is active,
 ** a single SQL query statement will always use the same algorithm regardless
-** of values of [bound parameters].  The QPSG disables some query optimizations
+** of values of [bound parameters].)^ The QPSG disables some query optimizations
 ** that look at the values of bound parameters, which can make some queries
 ** slower.  But the QPSG has the advantage of more predictable behavior.  With
 ** the QPSG active, SQLite will always use the same query plan in the field as
