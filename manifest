@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sin\sthe\sreadline\stab-completion\slogic\sof\sthe\ncommand-line\sshell.
-D 2017-07-14T00:28:28.380
+C Minor\stweaks\sto\sdocumentation.\s\sNo\scode\schanges.
+D 2017-07-14T04:16:03.173
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 20850e3e8d4d4791e0531955852d768eb06f24138214870d543abb1a47346fba
@@ -452,7 +452,7 @@ F src/rowset.c 7b7e7e479212e65b723bf40128c7b36dc5afdfac
 F src/select.c 95659b7990e390f9bd8dc30b8975c675fcd1d46e569bc4f5a14e22a8d03e3d14
 F src/shell.c e89ad1135cb47c95896a1aec4bd0113af90a057d80f20003f354fa56fc10a616
 F src/shell.c.in dae43a6a43988d955014f070341f296561ea4a43ca2685166a32495b0667ef59
-F src/sqlite.h.in 5e12ea31f8b5a01a7328775d114033b96e23c7489bf059cdc0e607e45031f3b6
+F src/sqlite.h.in 50755d181c15c514b774bbe17cb7742a2e6b65e434fe8ae8eb1b0c9ba87532c2
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 654d76dd288780a460be9c88edc6a5eb2d61df03a7153c92f1d87aba41f73b96
 F src/sqliteInt.h 0ba730cdc8afa723a5642380712f8bb33abd6a69218571c18b94acf3562de22a
@@ -1631,7 +1631,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 889968bdbf1c258238cb68d82f059e16366c4a40c2d541dd4a1811ab72e693cb
-R 7b0c9b69a35f4bfce4439b50c0703b5a
+P 271ca4acfcff448cf863045595d2c2616decd13b6015d7db481c91e2ad5bb92a
+R 95f34dc529fd01e526d64b6cdd87380f
 U drh
-Z 975c91c9cb096b239bb5d16f9ce1c990
+Z 9a58d18d69ad068ec72e9b779aa9ec21
