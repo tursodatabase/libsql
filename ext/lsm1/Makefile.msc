@@ -95,6 +95,8 @@ lsm_vtab.lo:	$(LSMDIR)\lsm_vtab.c $(LSMHDR) $(SQLITE3H)
 
 lsm.dll:	$(LSMOBJ)
 	$(LD) $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) /DLL /OUT:$@ $(LSMOBJ)
+	copy /Y $@ $(LSMDIR)\$@
 
 lsmtest.exe: $(LSMOBJ) $(LSMTESTSRC) $(LSMTESTHDR) $(LIBOBJ)
 	$(LTLINK) $(LSMOPTS) $(LSMTESTSRC) /link $(LSMOBJ) $(LIBOBJ)
+	copy /Y $@ $(LSMDIR)\$@

@@ -16,7 +16,12 @@ if {![info exists testdir]} {
 source $testdir/tester.tcl
 
 # Check if the lsm1 extension has been compiled.
-set lsm1 lsm1.so
+if {$::tcl_platform(platform) == "windows"} {
+  set lsm1 lsm.dll
+} else {
+  set lsm1 lsm.so
+}
+
 if {[file exists [file join .. $lsm1]]} {
   proc return_if_no_lsm1 {} {}
 } else {
@@ -29,7 +34,5 @@ if {[file exists [file join .. $lsm1]]} {
 
 proc load_lsm1_vtab {db} {
   db enable_load_extension 1
-  db eval {SELECT load_extension('../lsm1')}
+  db eval {SELECT load_extension('../lsm')}
 }
-
-

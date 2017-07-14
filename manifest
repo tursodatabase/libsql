@@ -1,5 +1,5 @@
-C Include\sa\shint\sin\sthe\sheader\scomment\sof\sthe\sLSM1\smakefile\sabout\show\sto\nset\sthe\sLSMOPTS\svariable.
-D 2017-07-14T15:42:11.041
+C Changes\sto\sthe\sLSM1\sTcl\stests\sto\smake\sthings\swork\son\sWin32.
+D 2017-07-14T15:45:27.821
 F Makefile.in 081e48dfe7f995d57ce1a88ddf4d2917b4349158648a6cd45b42beae30de3a12
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 20850e3e8d4d4791e0531955852d768eb06f24138214870d543abb1a47346fba
@@ -210,7 +210,7 @@ F ext/icu/README.txt d9fbbad0c2f647c3fdf715fc9fd64af53aedfc43
 F ext/icu/icu.c 84900472a088a3a172c6c079f58a1d3a1952c332
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/lsm1/Makefile 2951812df1c1cbc9e023af7e070876f479b3d75ce3898b3b9d00f83fecf13608
-F ext/lsm1/Makefile.msc f9b5f1f9f534231bf315d96364315928f9f06eae1a96435197c98c1f834e23b4
+F ext/lsm1/Makefile.msc f8c878b467232226de288da320e1ac71c131f5ec91e08b21f502303347260013
 F ext/lsm1/lsm-test/README 87ea529d2abe615e856d4714bfe8bb185e6c2771b8612aa6298588b7b43e6f86
 F ext/lsm1/lsm-test/lsmtest.h 5847594d4b43ec3412e1fd97104f7eb5fd770be55e691e6cb2e80929f86bebe3
 F ext/lsm1/lsm-test/lsmtest1.c 33158978327f800e82b6a47c09b86ace809f56a9ff10b0162273ec1186cc3153
@@ -251,7 +251,7 @@ F ext/lsm1/lsm_unix.c 57361bcf5b1a1a028f5d66571ee490e9064d2cfb145a2cc9e5ddade467
 F ext/lsm1/lsm_varint.c 43f954af668a66c7928b81597c14d6ad4be9fedbc276bbd80f52fa28a02fdb62
 F ext/lsm1/lsm_vtab.c 62631565e8d8412b2509dec1929ce7dd2a3322f14fe468582734fa9d1fd20ba2
 F ext/lsm1/lsm_win32.c 0a4acbd7e8d136dd3a5753f0a9e7a9802263a9d96cef3278cf120bcaa724db7c
-F ext/lsm1/test/lsm1_common.tcl e0c18a67d77e9179f12a28b214d8a130fa41afe9f944978cf22ef3d357dd1f18
+F ext/lsm1/test/lsm1_common.tcl 5ed4bab07c93be2e4f300ebe46007ecf4b3e20bc5fbe1dedaf04a8774a6d8d82
 F ext/lsm1/test/lsm1_simple.test 3bb38951450cd1f12a6c294949334d6fbb109a3da38c48eaf0877a37c43a0fab
 F ext/misc/README.md 8e008c8d2b02e09096b31dfba033253ac27c6c06a18aa5826e299fa7601d90b2
 F ext/misc/amatch.c 6db4607cb17c54b853a2d7c7c36046d004853f65b9b733e6f019d543d5dfae87
@@ -1085,7 +1085,7 @@ F test/parser1.test 391b9bf9a229547a129c61ac345ed1a6f5eb1854
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
-F test/permutations.test 38215423f5aaddcb4f529a112fea7a5dec185067fa8b96e8f8b7fcaba853d854
+F test/permutations.test 921bd8f9fbe400802b5f2a01267f375d6c2c4707645f28b5a3d1293eba7c95f5
 F test/pragma.test f274259d6393b6681eb433beb8dd39a26ec06a4431052a4880b43b84912a3f58
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
 F test/pragma3.test 14c12bc5352b1e100e0b6b44f371053a81ccf8ed
@@ -1633,7 +1633,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fe319bcd7f85e9997babdb024ab350514524f5901903600fa9780bdcd1805098
-R e7faf9e3aaae7e46389573282cf873e4
-U drh
-Z b6f48a20867f4746683ebfe6bc02686e
+P b5e3b264814cde9572130b70fc0d21ccebc2d7f5f0e7db50b6395cb63723383e
+R 5a1ae2ae08ad67d31921f52cb922236d
+U mistachkin
+Z 978251d6ab90aca8183844f295bf9121
