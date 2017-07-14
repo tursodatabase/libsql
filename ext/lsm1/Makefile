@@ -3,6 +3,7 @@
 # this project. After including main.mk, the users makefile should contain:
 #
 #    LSMDIR=$(TOP)/ext/lsm1/
+#    LSMOPTS=-fPIC
 #    include $(LSMDIR)/Makefile
 #
 # The most useful targets are [lsmtest] and [lsm.so].
