@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sa\scomment\sused\sto\sgenerate\sdocumentation.\s\sNo\scode\schanges.
-D 2017-07-14T19:52:47.696
+C Fix\stest\sproblems\swith\sstmtvtab1.test\sunder\ssome\spermutations.
+D 2017-07-14T20:53:21.369
 F Makefile.in eda8bedf08c4c93e2137ef1218b3d3302488c68c2774918de0335a1133aab157
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 20850e3e8d4d4791e0531955852d768eb06f24138214870d543abb1a47346fba
@@ -1085,7 +1085,7 @@ F test/parser1.test 391b9bf9a229547a129c61ac345ed1a6f5eb1854
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
-F test/permutations.test 921bd8f9fbe400802b5f2a01267f375d6c2c4707645f28b5a3d1293eba7c95f5
+F test/permutations.test 1e1065e4d6ae99352d48765dabbab5d048d6ee4e7f7cfed6baef843d39bd13c2
 F test/pragma.test f274259d6393b6681eb433beb8dd39a26ec06a4431052a4880b43b84912a3f58
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
 F test/pragma3.test 14c12bc5352b1e100e0b6b44f371053a81ccf8ed
@@ -1219,7 +1219,7 @@ F test/sqllog.test 6af6cb0b09f4e44e1917e06ce85be7670302517a
 F test/stat.test f8f1279ffffabe6df825723af18cc6e0ae70a893
 F test/statfault.test f525a7bf633e50afd027700e9a486090684b1ac1
 F test/stmt.test 64844332db69cf1a735fcb3e11548557fc95392f
-F test/stmtvtab1.test b80b7f094a8f6d2169b1829b8de560854a8a75a9133a91a0720d7e070ad5b78d
+F test/stmtvtab1.test acc3c40f484f2c4922e270724383d715abb9d69676da907a9c64f31c54f2ef9f
 F test/subjournal.test 8d4e2572c0ee9a15549f0d8e40863161295107e52f07a3e8012a2e1fdd093c49
 F test/subquery.test d7268d193dd33d5505df965399d3a594e76ae13f
 F test/subquery2.test 438f8a7da1457277b22e4176510f7659b286995f
@@ -1633,7 +1633,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ab165dcf35ae7385c9366853ce5648294bf5dc9aa9ffe1af84243e6fac3472fc
-R 6568f6289665ccdbd5ee88ad582e48f6
-U drh
-Z 66e4b6db633246a7984985676b3c3227
+P 65f9f29c58f61646d700eee6610ce85b572306f0ce2f19bebfd37632523019e5
+R 1b4827c3843d28640d55045bca8d7324
+U dan
+Z 3a1a049c3c93c2a8bbcf4e58ac15c1ef

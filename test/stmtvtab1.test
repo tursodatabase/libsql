@@ -23,6 +23,7 @@ ifcapable !stmtvtab {
   return
 }
 
+db cache flush
 db cache size 20
 unset -nocomplain x y z
 set x giraffe
