@@ -89,7 +89,8 @@ foreach f [glob $testdir/*.test] { lappend alltests [file tail $f] }
 foreach f [glob -nocomplain       \
     $testdir/../ext/rtree/*.test  \
     $testdir/../ext/fts5/test/*.test   \
-] { 
+    $testdir/../ext/lsm1/test/*.test   \
+] {
   lappend alltests $f 
 }
 foreach f [glob -nocomplain $testdir/../ext/session/*.test] { 

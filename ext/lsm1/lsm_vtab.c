@@ -595,6 +595,7 @@ int lsm1Update(
 ){
   lsm1_vtab *p = (lsm1_vtab*)pVTab;
   const void *pKey;
+  void *pFree = 0;
   int nKey;
   int eType;
   int rc = LSM_OK;
@@ -629,6 +630,7 @@ int lsm1Update(
                        (unsigned char**)&pKey,&nKey,
                        pSpace,sizeof(pSpace));
     if( rc ) return rc;
+    if( pKey!=(const void*)pSpace ) pFree = (void*)pKey;
   }
   if( sqlite3_value_type(argv[2+LSM1_COLUMN_BLOBVALUE])==SQLITE_BLOB ){
     pVal = sqlite3_value_blob(argv[2+LSM1_COLUMN_BLOBVALUE]);
@@ -683,7 +685,7 @@ int lsm1Update(
       }
     }
   }
-  if( pKey!=(const void*)pSpace ) sqlite3_free((void*)pKey);
+  sqlite3_free(pFree);
   return rc==LSM_OK ? SQLITE_OK : SQLITE_ERROR;
 }      
 
