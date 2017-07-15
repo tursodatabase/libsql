@@ -697,6 +697,17 @@ void sqlite3VdbeMemSetInt64(Mem *pMem, i64 val){
   }
 }
 
+/*
+** Set the value stored in *pMem should already be a NULL.
+** Also store a pointer to go with it.
+*/
+void sqlite3VdbeMemSetPointer(Mem *pMem, void *pPtr){
+  assert( pMem->flags==MEM_Null );
+  pMem->flags = MEM_Null|MEM_Subtype;
+  pMem->u.pPtr = pPtr;
+  pMem->eSubtype = 'p';
+}
+
 #ifndef SQLITE_OMIT_FLOATING_POINT
 /*
 ** Delete any previous value and set the value stored in *pMem to val,
