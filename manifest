@@ -1,5 +1,5 @@
-C Enhance\sthe\sshowstat4\sutility\sprogram\sto\sshow\sthe\sfull\sprecision\sof\s\nfloating\spoint\svalues\sin\ssqlite_stat4\stables.
-D 2017-07-15T17:57:31.773
+C Fix\sa\smissing\s\\n\sat\sthe\send\sof\sa\scomment\scausing\sa\sline\sto\sbe\stoo\slong.\nNo\scode\schanges.
+D 2017-07-15T20:25:22.563
 F Makefile.in eda8bedf08c4c93e2137ef1218b3d3302488c68c2774918de0335a1133aab157
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 20850e3e8d4d4791e0531955852d768eb06f24138214870d543abb1a47346fba
@@ -444,7 +444,7 @@ F src/parse.y e384cb73f99e1b074085c974b37f4d830e885359e4b60837e30f7d67c16ba65b
 F src/pcache.c 62835bed959e2914edd26afadfecce29ece0e870
 F src/pcache.h 521bb9610d38ef17a3cc9b5ddafd4546c2ea67fa3d0e464823d73c2a28d50e11
 F src/pcache1.c 1195a21fe28e223e024f900b2011e80df53793f0356a24caace4188b098540dc
-F src/pragma.c 54e64a9d65e2c3b6ef11d4ca732c6abc8b67f5e886f222ffe2cbf3506c4efbd2
+F src/pragma.c 91f30204f91fc5ca5a1b7ecc78cf93a2ba15f915598da534bfab31be6f6c5c69
 F src/pragma.h bb83728944b42f6d409c77f5838a8edbdb0fe83046c5496ffc9602b40340a324
 F src/prepare.c dd250f904739b1dc449c131ac527c35e3424d94082dd111321bd83f80c6bb0fe
 F src/printf.c 8757834f1b54dae512fb25eb1acc8e94a0d15dd2290b58f2563f65973265adb2
@@ -1633,7 +1633,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0953e74612358f48a9c9e3772876b514bc79784f277497121c59302a3106110c
-R 37447c1bc225884bf4cb0bdcfa8c7e9d
+P 5ec37c62f65b2870dcd7a906912da787367f3912a96b6f3536355fad65903575
+R 7017d33fb5d6dd61d3d0856d97dc8a0b
 U drh
-Z 9a63822039c6f4c14cca9f049689de46
+Z 2625f0ae8b81342536c983ae0b25c075
