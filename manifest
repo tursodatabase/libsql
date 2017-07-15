@@ -1,5 +1,5 @@
-C First\srelease\scandidate\sfor\sversion\s3.20.0.
-D 2017-07-15T13:35:17.547
+C Minor\schange\sto\sone\sof\sthe\scommand-line\sshell\stest\sscripts\sto\smake\sthat\nscript\scompatible\swith\sTcl\s8.5.
+D 2017-07-15T13:49:56.102
 F Makefile.in eda8bedf08c4c93e2137ef1218b3d3302488c68c2774918de0335a1133aab157
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 20850e3e8d4d4791e0531955852d768eb06f24138214870d543abb1a47346fba
@@ -1178,7 +1178,7 @@ F test/shell1.test f78ea0e2637ae9f497cb41206f6346f983052ffc7a359e664aaf6847fc704
 F test/shell2.test e242a9912f44f4c23c3d1d802a83e934e84c853b
 F test/shell3.test 9b95ba643eaa228376f06a898fb410ee9b6e57c1
 F test/shell4.test 89ad573879a745974ff2df20ff97c5d6ffffbd5d
-F test/shell5.test 0d973866d0df8501486a840f51d1502ab0d9b38ca12c9b242ee26adc788af576
+F test/shell5.test 23939a4c51f0421330ea61dbd3c74f9c215f5f8d3d1a94846da6ffc777a35458
 F test/shell6.test ab1592ebe881371f651f18ee6a0df21cbfb5310f88cb832ab642d4038f679772
 F test/shell7.test 115132f66d0463417f408562cc2cf534f6bbc6d83a6d50f0072a9eb171bae97f
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
@@ -1633,10 +1633,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0953e74612358f48a9c9e3772876b514bc79784f277497121c59302a3106110c
-R af5646727b9329571e6eea5c921583ee
-T *branch * branch-3.20
-T *sym-branch-3.20 *
-T -sym-trunk *
+P 035a86ec3e4abd2173bfd0d8666ec86bd85af414cb791e68e6334447ecd35b84
+R 5690770e8de75888850dcde4b004bea0
 U drh
-Z 4f3f7645132f2f5a62323cb54f959d5c
+Z a213745e76704ef14d5d7ae1e6163da5
