@@ -435,6 +435,7 @@ TESTSRC += \
   $(TOP)/ext/misc/series.c \
   $(TOP)/ext/misc/spellfix.c \
   $(TOP)/ext/misc/totype.c \
+  $(TOP)/ext/misc/unionvtab.c \
   $(TOP)/ext/misc/wholenumber.c
 
 # Source code to the library files needed by the test fixture

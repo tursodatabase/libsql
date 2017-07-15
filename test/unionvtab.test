@@ -1,0 +1,147 @@
+# 2017-07-15
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is percentile.c extension
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix unionvtab
+
+load_static_extension db unionvtab
+
+#-------------------------------------------------------------------------
+# Warm body tests.
+#
+forcedelete test.db2
+do_execsql_test 1.0 {
+  ATTACH 'test.db2' AS aux;
+
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b TEXT);
+  CREATE TABLE t2(a INTEGER PRIMARY KEY, b TEXT);
+  CREATE TABLE aux.t3(a INTEGER PRIMARY KEY, b TEXT);
+
+
+  INSERT INTO t1 VALUES(1, 'one'), (2, 'two'), (3, 'three');
+  INSERT INTO t2 VALUES(10, 'ten'), (11, 'eleven'), (12, 'twelve');
+  INSERT INTO t3 VALUES(20, 'twenty'), (21, 'twenty-one'), (22, 'twenty-two');
+}
+
+do_execsql_test 1.1 {
+  CREATE VIRTUAL TABLE temp.uuu USING unionvtab(
+    "VALUES(NULL, 't1', 1, 9),  ('main', 't2', 10, 19), ('aux', 't3', 20, 29)"
+  );
+  SELECT * FROM uuu;
+} {
+  1 one 2 two 3 three
+  10 ten 11 eleven 12 twelve
+  20 twenty 21 twenty-one 22 twenty-two
+}
+
+do_execsql_test 1.2 {
+  PRAGMA table_info(uuu);
+} {
+  0 a INTEGER 0 {} 0 
+  1 b TEXT 0 {} 0
+}
+
+do_execsql_test 1.3 {
+  SELECT * FROM uuu WHERE rowid = 3;
+  SELECT * FROM uuu WHERE rowid = 11;
+} {3 three 11 eleven}
+
+do_execsql_test 1.4 {
+  SELECT * FROM uuu WHERE rowid IN (12, 10, 2);
+} {2 two 10 ten 12 twelve}
+
+do_execsql_test 1.5 {
+  SELECT * FROM uuu WHERE rowid BETWEEN 3 AND 11;
+} {3 three 10 ten 11 eleven}
+
+do_execsql_test 1.6 {
+  SELECT * FROM uuu WHERE rowid BETWEEN 11 AND 15;
+} {11 eleven 12 twelve}
+
+do_execsql_test 1.7 {
+  SELECT * FROM uuu WHERE rowid BETWEEN -46 AND 1500;
+} {
+  1 one 2 two 3 three
+  10 ten 11 eleven 12 twelve
+  20 twenty 21 twenty-one 22 twenty-two
+}
+
+#-------------------------------------------------------------------------
+# Error conditions.
+#
+#   2.1.*: Attempt to create a unionvtab table outside of the TEMP schema.
+#   2.2.*: Tables that do not exist.
+#   2.3.*: Non WITHOUT ROWID tables.
+#   2.4.*: Tables with mismatched schemas.
+#
+do_catchsql_test 2.1.1 {
+  CREATE VIRTUAL TABLE u1 USING unionvtab("VALUES(NULL, 't1', 1, 100)");
+} {1 {unionvtab tables must be created in TEMP schema}}
+do_catchsql_test 2.1.2 {
+  CREATE VIRTUAL TABLE main.u1 USING unionvtab("VALUES('', 't1', 1, 100)");
+} {1 {unionvtab tables must be created in TEMP schema}}
+do_catchsql_test 2.1.3 {
+  CREATE VIRTUAL TABLE aux.u1 USING unionvtab("VALUES('', 't1', 1, 100)");
+} {1 {unionvtab tables must be created in TEMP schema}}
+
+do_catchsql_test 2.2.1 {
+  CREATE VIRTUAL TABLE temp.u1 USING unionvtab("VALUES(NULL, 't555', 1, 100)");
+} {1 {no such table: t555}}
+do_catchsql_test 2.2.2 {
+  CREATE VIRTUAL TABLE temp.u1 USING unionvtab("VALUES('aux', 't555', 1, 100)");
+} {1 {no such table: aux.t555}}
+do_catchsql_test 2.2.3 {
+  CREATE VIRTUAL TABLE temp.u1 USING unionvtab("VALUES('xua', 't555', 1, 100)");
+} {1 {unknown database 'xua'}}
+
+do_execsql_test 2.4.0 {
+  CREATE TABLE x1(a BLOB, b);
+  CREATE TABLE x2(a BLOB, b);
+  CREATE TEMP TABLE x3(a BLOB, b);
+
+  CREATE TABLE aux.y1(one, two, three INTEGER PRIMARY KEY);
+  CREATE TEMP TABLE y2(one, two, three INTEGER PRIMARY KEY);
+  CREATE TABLE y3(one, two, three INTEGER PRIMARY KEY);
+}
+
+foreach {tn dbs res} {
+  1 {x1 x2 x3} {0 {}}
+  2 {y1 y2 y3} {0 {}}
+  3 {x1 y2 y3} {1 {source table schema mismatch}}
+  4 {x1 y2 x3} {1 {source table schema mismatch}}
+  5 {x1 x2 y3} {1 {source table schema mismatch}}
+} {
+  set L [list]
+  set iMin 0
+  foreach e $dbs {
+    set E [split $e .]
+    if {[llength $E]>1} {
+      lappend L "('[lindex $E 0]', '[lindex $E 1]', $iMin, $iMin)"
+    } else {
+      lappend L "(NULL, '$e', $iMin, $iMin)"
+    }
+    incr iMin
+  }
+
+  set sql "CREATE VIRTUAL TABLE temp.a1 USING unionvtab(\"VALUES [join $L ,]\")"
+  do_catchsql_test 2.4.$tn "
+    DROP TABLE IF EXISTS temp.a1;
+    CREATE VIRTUAL TABLE temp.a1 USING unionvtab(\"VALUES [join $L ,]\");
+  " $res
+}
+
+
+finish_test
+
