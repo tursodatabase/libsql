@@ -1,5 +1,5 @@
-C Fix\sa\smissing\s\\n\sat\sthe\send\sof\sa\scomment\scausing\sa\sline\sto\sbe\stoo\slong.\nNo\scode\schanges.
-D 2017-07-15T20:25:22.563
+C Fix\sa\sregister\sallocation\sproblem\sin\sPRAGMA\sintegrity_check\sthat\scaused\nthe\ssame\sregister\sto\sbe\sused\sfor\stwo\sdifferent\spurposes\son\sthe\sfirst\nATTACHed\sdatabase\sif\sthe\sschema\sfor\sthe\sATTACHed\sdatabase\swas\snoticable\nmore\scomplex\sthan\sthe\sschema\sfor\sthe\sfirst\sdatabase.\nFix\sfor\sticket\s[a4e06e75a9ab61a1].
+D 2017-07-15T20:33:19.899
 F Makefile.in eda8bedf08c4c93e2137ef1218b3d3302488c68c2774918de0335a1133aab157
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 20850e3e8d4d4791e0531955852d768eb06f24138214870d543abb1a47346fba
@@ -404,7 +404,7 @@ F src/ctime.c 928954802b1397d9fb1378c7eb702c94b4735bbab1d5793e21b6a77734f56a1b
 F src/date.c cc42a41c7422389860d40419a5e3bce5eaf6e7835c3ba2677751dc653550a5c7
 F src/dbstat.c 7a4ba8518b6369ef3600c49cf9c918ad979acba610b2aebef1b656d649b96720
 F src/delete.c 3213547e97b676c6fa79948b7a9ede4801ea04a01a2043241deafedf132ecf5d
-F src/expr.c f3f0f7a1a8f91e980244152e9e0263144a9db862e715a80c70422faa2fde4f2f
+F src/expr.c 68552ca7f1238c9661e60a3adb4bd28c93d5373895bed5a0293b3977518dc980
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 5ff2c895fe087756d8085dc1a9bc229b5670e2a65c3929dd87c71e43649af333
 F src/func.c e2854b19386b93ad6b498a3f3b7d6baa98ec14cfe84530fb12fce4414263d871
@@ -444,7 +444,7 @@ F src/parse.y e384cb73f99e1b074085c974b37f4d830e885359e4b60837e30f7d67c16ba65b
 F src/pcache.c 62835bed959e2914edd26afadfecce29ece0e870
 F src/pcache.h 521bb9610d38ef17a3cc9b5ddafd4546c2ea67fa3d0e464823d73c2a28d50e11
 F src/pcache1.c 1195a21fe28e223e024f900b2011e80df53793f0356a24caace4188b098540dc
-F src/pragma.c 91f30204f91fc5ca5a1b7ecc78cf93a2ba15f915598da534bfab31be6f6c5c69
+F src/pragma.c 2ae4088e9c3ca0e63ffc3ada7f2d2d66e91f0b3db50c7f7ddb2f56e9e37fd638
 F src/pragma.h bb83728944b42f6d409c77f5838a8edbdb0fe83046c5496ffc9602b40340a324
 F src/prepare.c dd250f904739b1dc449c131ac527c35e3424d94082dd111321bd83f80c6bb0fe
 F src/printf.c 8757834f1b54dae512fb25eb1acc8e94a0d15dd2290b58f2563f65973265adb2
@@ -571,7 +571,7 @@ F test/async3.test d73a062002376d7edc1fe3edff493edbec1fc2f7
 F test/async4.test 1787e3952128aa10238bf39945126de7ca23685a
 F test/async5.test 383ab533fdb9f7ad228cc99ee66e1acb34cc0dc0
 F test/atof1.test ff0b0156fd705b67c506e1f2bfe9e26102bea9bd
-F test/attach.test b4c269f780b82acb1a17f2dddefe4da7304406cfa7cc371318ee55b7bf5ffb0c
+F test/attach.test f4b8918ba2f3e88e6883b8452340545f10a1388af808343c37fc5c577be8281c
 F test/attach2.test 0ec5defa340363de6cd50fd595046465e9aaba2d
 F test/attach3.test c59d92791070c59272e00183b7353eeb94915976
 F test/attach4.test 53bf502f17647c6d6c5add46dda6bac8b6f4665c
@@ -1633,7 +1633,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5ec37c62f65b2870dcd7a906912da787367f3912a96b6f3536355fad65903575
-R 7017d33fb5d6dd61d3d0856d97dc8a0b
+P 687bd478710eb827e041533eea67115464f5a0de767bb6cfdbe36a0d3c597fa1
+R 522613d16f7d47bea7a7f05e6d39255f
 U drh
-Z 2625f0ae8b81342536c983ae0b25c075
+Z 4ddd385f7f3a9276d818cfc9da4dbe0b
