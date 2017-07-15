@@ -217,11 +217,11 @@ do_test like-3.3.101 {
 # sqlite3_prepare_v2(), as in that case the statement cannot be reprepared
 # after the parameter is bound.
 #
+unset -nocomplain ::likepat
 set ::likepat abc%
 if {[permutation]!="prepare"} {
   do_test like-3.3.102 {
     set sqlite_like_count 0
-    unset -nocomplain ::likepat
     queryplan {
       SELECT x FROM t1 WHERE x LIKE $::likepat ORDER BY 1;
     }
