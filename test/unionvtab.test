@@ -98,13 +98,13 @@ do_catchsql_test 2.1.3 {
 
 do_catchsql_test 2.2.1 {
   CREATE VIRTUAL TABLE temp.u1 USING unionvtab("VALUES(NULL, 't555', 1, 100)");
-} {1 {no such table: t555}}
+} {1 {no such rowid table: t555}}
 do_catchsql_test 2.2.2 {
   CREATE VIRTUAL TABLE temp.u1 USING unionvtab("VALUES('aux', 't555', 1, 100)");
-} {1 {no such table: aux.t555}}
+} {1 {no such rowid table: aux.t555}}
 do_catchsql_test 2.2.3 {
   CREATE VIRTUAL TABLE temp.u1 USING unionvtab("VALUES('xua', 't555', 1, 100)");
-} {1 {unknown database 'xua'}}
+} {1 {no such rowid table: xua.t555}}
 
 do_execsql_test 2.4.0 {
   CREATE TABLE x1(a BLOB, b);
