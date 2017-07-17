@@ -1,5 +1,5 @@
-C Add\sthe\s"unionvtab"\svirtual\stable\sextension\sin\sext/misc/unionvtab.c.
-D 2017-07-15T20:48:30.280
+C Use\sinteger\shandles\sfor\sfts3\scursors\sfor\sa\ssmall\sperformance\simprovement.
+D 2017-07-17T09:30:15.939
 F Makefile.in d9873c9925917cca9990ee24be17eb9613a668012c85a343aef7e5536ae266e8
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 20850e3e8d4d4791e0531955852d768eb06f24138214870d543abb1a47346fba
@@ -70,9 +70,9 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 02fbd2215309a7a73cbf29045897344987b6e17bb0b1685d13155f8b29768a50
+F ext/fts3/fts3.c 839018ad38355de1b6a36240d2b5c4fd32af617b8a8adbeb37239241fcece771
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h eb2502000148e80913b965db3e59f29251266d0a
+F ext/fts3/fts3Int.h 6e503a752e2cf8f4de312d8909a00d6df101c99f270de1861a1d6d0cbc038120
 F ext/fts3/fts3_aux.c 9edc3655fcb287f0467d0a4b886a01c6185fe9f1
 F ext/fts3/fts3_expr.c dfd571a24412779ac01f25c01d888c6ef7b2d0ef
 F ext/fts3/fts3_hash.c 29b986e43f4e9dd40110eafa377dc0d63c422c60
@@ -1635,7 +1635,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 253945d480b052bfe311888022b5eb0be91c8c80cda05036e58207d57520262c
-R ee0a9dc5b1464f766485894fa2069cae
+P 62a86aa6c0519cf1fa232169122d3d6ae8d2f66b20530fb934a82a15712bd2f0
+R 1f2a6820ac6b2ca14c452355885bac61
+T *branch * fts3-int-cursor
+T *sym-fts3-int-cursor *
+T -sym-trunk *
 U dan
-Z d195e18cbc4e4f34f8cf4b9b0b0c8aaa
+Z 5522287dc73b8f3fd5c7ba004e151c88

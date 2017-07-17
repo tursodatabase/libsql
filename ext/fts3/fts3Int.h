@@ -288,6 +288,9 @@ struct Fts3Table {
   ** by special insert command 'test-no-incr-doclist'.  */
   int bNoIncrDoclist;
 #endif
+
+  Fts3Cursor *pAllCsr;            /* List of all open cursors */
+  int iLastCsrId;                 /* Last cursor id assigned (or 0) */
 };
 
 /*
@@ -297,6 +300,11 @@ struct Fts3Table {
 */
 struct Fts3Cursor {
   sqlite3_vtab_cursor base;       /* Base class used by SQLite core */
+  int iId;                        /* Numeric id of this cursor */
+  Fts3Cursor *pNext;              /* Next in list of all cursors */
+
+  /* Variables below this point are zeroed by fts3ClearCursor() */
+
   i16 eSearch;                    /* Search strategy (see below) */
   u8 isEof;                       /* True if at End Of Results */
   u8 isRequireSeek;               /* True if must seek pStmt to %_content row */

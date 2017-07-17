@@ -308,6 +308,14 @@
   SQLITE_EXTENSION_INIT1
 #endif
 
+/*
+** GCC does not define the offsetof() macro so we'll have to do it
+** ourselves. This definition was copied from sqlite3Int.h.
+*/
+#ifndef offsetof
+#define offsetof(STRUCTURE,FIELD) ((int)((char*)&((STRUCTURE*)0)->FIELD))
+#endif
+
 static int fts3EvalNext(Fts3Cursor *pCsr);
 static int fts3EvalStart(Fts3Cursor *pCsr);
 static int fts3TermSegReaderCursor(
@@ -1671,19 +1679,25 @@ static int fts3BestIndexMethod(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
 ** Implementation of xOpen method.
 */
 static int fts3OpenMethod(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCsr){
-  sqlite3_vtab_cursor *pCsr;               /* Allocated cursor */
-
-  UNUSED_PARAMETER(pVTab);
+  Fts3Table *p = (Fts3Table *)pVTab;
+  Fts3Cursor *pCsr;               /* Allocated cursor */
 
   /* Allocate a buffer large enough for an Fts3Cursor structure. If the
   ** allocation succeeds, zero it and return SQLITE_OK. Otherwise, 
   ** if the allocation fails, return SQLITE_NOMEM.
   */
-  *ppCsr = pCsr = (sqlite3_vtab_cursor *)sqlite3_malloc(sizeof(Fts3Cursor));
+  pCsr = (Fts3Cursor*)sqlite3_malloc(sizeof(Fts3Cursor));
+  *ppCsr = (sqlite3_vtab_cursor*)pCsr;
   if( !pCsr ){
     return SQLITE_NOMEM;
   }
   memset(pCsr, 0, sizeof(Fts3Cursor));
+
+  /* Link the new cursor into the linked list at Fts3Table.pCsr. */
+  pCsr->pNext = p->pAllCsr;
+  p->pAllCsr = pCsr;
+  pCsr->iId = ++p->iLastCsrId;
+
   return SQLITE_OK;
 }
 
@@ -1712,12 +1726,13 @@ static void fts3CursorFinalizeStmt(Fts3Cursor *pCsr){
 ** argument.
 */
 static void fts3ClearCursor(Fts3Cursor *pCsr){
+  const int nZero = sizeof(Fts3Cursor)-offsetof(Fts3Cursor,eSearch); 
   fts3CursorFinalizeStmt(pCsr);
   sqlite3Fts3FreeDeferredTokens(pCsr);
   sqlite3_free(pCsr->aDoclist);
   sqlite3Fts3MIBufferFree(pCsr->pMIBuffer);
   sqlite3Fts3ExprFree(pCsr->pExpr);
-  memset(&(&pCsr->base)[1], 0, sizeof(Fts3Cursor)-sizeof(sqlite3_vtab_cursor));
+  memset((void*)&pCsr->eSearch, 0, nZero);
 }
 
 /*
@@ -1725,10 +1740,14 @@ static void fts3ClearCursor(Fts3Cursor *pCsr){
 ** on the xClose method of the virtual table interface.
 */
 static int fts3CloseMethod(sqlite3_vtab_cursor *pCursor){
-  Fts3Cursor *pCsr = (Fts3Cursor *)pCursor;
-  assert( ((Fts3Table *)pCsr->base.pVtab)->pSegments==0 );
+  Fts3Table *p = (Fts3Table*)pCursor->pVtab;
+  Fts3Cursor *pCsr = (Fts3Cursor*)pCursor;
+  Fts3Cursor **pp;
+  assert( p->pSegments==0 );
   fts3ClearCursor(pCsr);
-  assert( ((Fts3Table *)pCsr->base.pVtab)->pSegments==0 );
+  assert( p->pSegments==0 );
+  for(pp=&p->pAllCsr; (*pp)!=pCsr; pp=&(*pp)->pNext);
+  *pp = 0;
   sqlite3_free(pCsr);
   return SQLITE_OK;
 }
@@ -3353,7 +3372,7 @@ static int fts3ColumnMethod(
   switch( iCol-p->nColumn ){
     case 0:
       /* The special 'table-name' column */
-      sqlite3_result_pointer(pCtx, pCsr);
+      sqlite3_result_int(pCtx, pCsr->iId);
       break;
 
     case 1:
@@ -3571,11 +3590,18 @@ static int fts3FunctionArg(
   sqlite3_value *pVal,            /* argv[0] passed to function */
   Fts3Cursor **ppCsr              /* OUT: Store cursor handle here */
 ){
-  int rc;
-  *ppCsr = (Fts3Cursor*)sqlite3_value_pointer(pVal);
-  if( (*ppCsr)!=0 ){
-    rc = SQLITE_OK;
-  }else{
+  int rc = SQLITE_OK;
+  int iId;
+  Fts3Table *p = (Fts3Table*)sqlite3_user_data(pContext);
+  iId = sqlite3_value_int(pVal);
+  Fts3Cursor *pRet;
+
+  for(pRet=p->pAllCsr; pRet; pRet=pRet->pNext){
+    if( pRet->iId==iId ) break;
+  }
+  *ppCsr = pRet;
+
+  if( pRet==0 ){
     char *zErr = sqlite3_mprintf("illegal first argument to %s", zFunc);
     sqlite3_result_error(pContext, zErr, -1);
     sqlite3_free(zErr);
@@ -3735,6 +3761,7 @@ static int fts3FindFunctionMethod(
   for(i=0; i<SizeofArray(aOverload); i++){
     if( strcmp(zName, aOverload[i].zName)==0 ){
       *pxFunc = aOverload[i].xFunc;
+      *ppArg = (void*)pVtab;
       return 1;
     }
   }
