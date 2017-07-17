@@ -89,7 +89,8 @@ foreach f [glob $testdir/*.test] { lappend alltests [file tail $f] }
 foreach f [glob -nocomplain       \
     $testdir/../ext/rtree/*.test  \
     $testdir/../ext/fts5/test/*.test   \
-] { 
+    $testdir/../ext/lsm1/test/*.test   \
+] {
   lappend alltests $f 
 }
 foreach f [glob -nocomplain $testdir/../ext/session/*.test] { 
@@ -280,6 +281,10 @@ test_suite "fts5-light" -prefix "" -description {
       [glob -nocomplain $::testdir/../ext/fts5/test/*.test] \
       -exclude *corrupt* *fault* *big* *fts5aj*
 ]
+
+test_suite "lsm1" -prefix "" -description {
+  All LSM1 tests.
+} -files [glob -nocomplain $::testdir/../ext/lsm1/test/*.test]
 
 test_suite "nofaultsim" -prefix "" -description {
   "Very" quick test suite. Runs in less than 5 minutes on a workstation. 
@@ -1043,7 +1048,8 @@ test_suite "prepare" -description {
   db_use_legacy_prepare $::dbhandle 1
   #$::dbhandle cache size 0
 } -files [
-  test_set $allquicktests -exclude *malloc* *ioerr* *fault*
+  test_set $allquicktests -exclude *malloc* *ioerr* *fault* \
+      stmtvtab1.test index9.test
 ]
 
 # End of tests

@@ -218,8 +218,8 @@ proc create_db_file {nByte} {
 
 foreach {nByte res} {
   1      {0 {}}
-  2      {1 {file is encrypted or is not a database}}
-  3      {1 {file is encrypted or is not a database}}
+  2      {1 {file is not a database}}
+  3      {1 {file is not a database}}
 } {
   do_test 7.$nByte {
     create_db_file $nByte

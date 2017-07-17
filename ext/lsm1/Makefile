@@ -3,6 +3,7 @@
 # this project. After including main.mk, the users makefile should contain:
 #
 #    LSMDIR=$(TOP)/ext/lsm1/
+#    LSMOPTS=-fPIC
 #    include $(LSMDIR)/Makefile
 #
 # The most useful targets are [lsmtest] and [lsm.so].
@@ -42,7 +43,7 @@ LSMTESTSRC = $(LSMDIR)/lsm-test/lsmtest1.c $(LSMDIR)/lsm-test/lsmtest2.c     \
 
 # all: lsm.so
 
-LSMOPTS = -DLSM_MUTEX_PTHREADS=1 -I$(LSMDIR)
+LSMOPTS += -DLSM_MUTEX_PTHREADS=1 -I$(LSMDIR)
 
 lsm.so:	$(LSMOBJ)
 	$(TCCX) -shared -o lsm.so $(LSMOBJ)
@@ -52,5 +53,4 @@ lsm.so:	$(LSMOBJ)
 	
 lsmtest$(EXE): $(LSMOBJ) $(LSMTESTSRC) $(LSMTESTHDR) sqlite3.o
 	# $(TCPPX) -c $(TOP)/lsm-test/lsmtest_tdb2.cc
-	$(TCCX) $(LSMOPTS) $(LSMTESTSRC) $(LSMOBJ) sqlite3.o -o lsmtest$(EXE) $(THREADLIB) 
-
+	$(TCCX) $(LSMOPTS) $(LSMTESTSRC) $(LSMOBJ) sqlite3.o -o lsmtest$(EXE) $(THREADLIB)

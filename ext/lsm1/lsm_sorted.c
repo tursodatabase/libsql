@@ -662,9 +662,9 @@ static int btreeCursorPtr(u8 *aData, int nData, int iCell){
 
   nCell = pageGetNRec(aData, nData);
   if( iCell>=nCell ){
-    return pageGetPtr(aData, nData);
+    return (int)pageGetPtr(aData, nData);
   }
-  return pageGetRecordPtr(aData, nData, iCell);
+  return (int)pageGetRecordPtr(aData, nData, iCell);
 }
 
 static int btreeCursorNext(BtreeCursor *pCsr){
@@ -751,7 +751,7 @@ static int btreeCursorFirst(BtreeCursor *pCsr){
 
   Page *pPg = 0;
   FileSystem *pFS = pCsr->pFS;
-  int iPg = pCsr->pSeg->iRoot;
+  int iPg = (int)pCsr->pSeg->iRoot;
 
   do {
     rc = lsmFsDbPageGet(pFS, pCsr->pSeg, iPg, &pPg);
@@ -779,7 +779,7 @@ static int btreeCursorFirst(BtreeCursor *pCsr){
         assert( pCsr->aPg[pCsr->nDepth].iCell==0 );
         pCsr->aPg[pCsr->nDepth].pPage = pPg;
         pCsr->nDepth++;
-        iPg = pageGetRecordPtr(aData, nData, 0);
+        iPg = (int)pageGetRecordPtr(aData, nData, 0);
       }
     }
   }while( rc==LSM_OK );
@@ -871,7 +871,7 @@ static int btreeCursorRestore(
       int nSeek;
       int iTopicSeek;
       int iPg = 0;
-      int iLoad = pSeg->iRoot;
+      int iLoad = (int)pSeg->iRoot;
       Page *pPg = pCsr->aPg[nDepth-1].pPage;
  
       if( pageObjGetNRec(pPg)==0 ){
@@ -890,22 +890,22 @@ static int btreeCursorRestore(
       }
 
       do {
-        Page *pPg;
-        rc = lsmFsDbPageGet(pCsr->pFS, pSeg, iLoad, &pPg);
-        assert( rc==LSM_OK || pPg==0 );
+        Page *pPg2;
+        rc = lsmFsDbPageGet(pCsr->pFS, pSeg, iLoad, &pPg2);
+        assert( rc==LSM_OK || pPg2==0 );
         if( rc==LSM_OK ){
           u8 *aData;                  /* Buffer containing page data */
           int nData;                  /* Size of aData[] in bytes */
           int iMin;
           int iMax;
-          int iCell;
+          int iCell2;
 
-          aData = fsPageData(pPg, &nData);
+          aData = fsPageData(pPg2, &nData);
           assert( (pageGetFlags(aData, nData) & SEGMENT_BTREE_FLAG) );
 
-          iLoad = pageGetPtr(aData, nData);
-          iCell = pageGetNRec(aData, nData); 
-          iMax = iCell-1;
+          iLoad = (int)pageGetPtr(aData, nData);
+          iCell2 = pageGetNRec(aData, nData); 
+          iMax = iCell2-1;
           iMin = 0;
 
           while( iMax>=iMin ){
@@ -916,7 +916,7 @@ static int btreeCursorRestore(
             int res;                      /* (pSeek - pKeyT) */
 
             rc = pageGetBtreeKey(
-                pSeg, pPg, iTry, &iPtr, &iTopic, &pKey, &nKey, &blob
+                pSeg, pPg2, iTry, &iPtr, &iTopic, &pKey, &nKey, &blob
             );
             if( rc!=LSM_OK ) break;
 
@@ -926,16 +926,16 @@ static int btreeCursorRestore(
             assert( res!=0 );
 
             if( res<0 ){
-              iLoad = iPtr;
-              iCell = iTry;
+              iLoad = (int)iPtr;
+              iCell2 = iTry;
               iMax = iTry-1;
             }else{
               iMin = iTry+1;
             }
           }
 
-          pCsr->aPg[iPg].pPage = pPg;
-          pCsr->aPg[iPg].iCell = iCell;
+          pCsr->aPg[iPg].pPage = pPg2;
+          pCsr->aPg[iPg].iCell = iCell2;
           iPg++;
           assert( iPg!=nDepth-1 
                || lsmFsRedirectPage(pCsr->pFS, pSeg->pRedirect, iLoad)==iLeaf
@@ -1001,7 +1001,7 @@ static void segmentPtrSetPage(SegmentPtr *pPtr, Page *pNext){
     int nData;
     u8 *aData = fsPageData(pNext, &nData);
     pPtr->nCell = pageGetNRec(aData, nData);
-    pPtr->flags = pageGetFlags(aData, nData);
+    pPtr->flags = (u16)pageGetFlags(aData, nData);
     pPtr->iPtr = pageGetPtr(aData, nData);
   }
   pPtr->pPg = pNext;
@@ -1637,7 +1637,7 @@ static int segmentPtrSeek(
   int *pbStop
 ){
   int (*xCmp)(void *, int, void *, int) = pCsr->pDb->xCmp;
-  int res;                        /* Result of comparison operation */
+  int res = 0;                        /* Result of comparison operation */
   int rc = LSM_OK;
   int iMin;
   int iMax;
@@ -1759,7 +1759,7 @@ static int segmentPtrSeek(
   }
 
   assert( rc!=LSM_OK || assertSeekResult(pCsr,pPtr,iTopic,pKey,nKey,eSeek) );
-  *piPtr = iPtrOut;
+  *piPtr = (int)iPtrOut;
   return rc;
 }
 
@@ -1777,7 +1777,7 @@ static int seekInBtree(
   Page *pPg = 0;
   Blob blob = {0, 0, 0};
 
-  iPg = pSeg->iRoot;
+  iPg = (int)pSeg->iRoot;
   do {
     Pgno *piFirst = 0;
     if( aPg ){
@@ -1799,7 +1799,7 @@ static int seekInBtree(
       flags = pageGetFlags(aData, nData);
       if( (flags & SEGMENT_BTREE_FLAG)==0 ) break;
 
-      iPg = pageGetPtr(aData, nData);
+      iPg = (int)pageGetPtr(aData, nData);
       nRec = pageGetNRec(aData, nData);
 
       iMin = 0;
@@ -1825,7 +1825,7 @@ static int seekInBtree(
             pCsr->pDb->xCmp, iTopic, pKey, nKey, iTopicT, pKeyT, nKeyT
         );
         if( res<0 ){
-          iPg = iPtr;
+          iPg = (int)iPtr;
           iMax = iTry-1;
         }else{
           iMin = iTry+1;
@@ -1866,7 +1866,7 @@ static int seekInSegment(
     if( rc==LSM_OK ) segmentPtrSetPage(pPtr, pPg);
   }else{
     if( iPtr==0 ){
-      iPtr = pPtr->pSeg->iFirst;
+      iPtr = (int)pPtr->pSeg->iFirst;
     }
     if( rc==LSM_OK ){
       rc = segmentPtrLoadPage(pCsr->pDb->pFS, pPtr, iPtr);
@@ -1923,7 +1923,7 @@ static int seekInLevel(
   ** left-hand-side of the level in this case.  */
   if( res<0 ){
     int iPtr = 0;
-    if( nRhs==0 ) iPtr = *piPgno;
+    if( nRhs==0 ) iPtr = (int)*piPgno;
 
     rc = seekInSegment(
         pCsr, &aPtr[0], iTopic, pKey, nKey, iPtr, eSeek, &iOut, &bStop
@@ -1935,7 +1935,7 @@ static int seekInLevel(
   
   if( res>=0 ){
     int bHit = 0;                 /* True if at least one rhs is not EOF */
-    int iPtr = *piPgno;
+    int iPtr = (int)*piPgno;
     int i;
     for(i=1; rc==LSM_OK && i<=nRhs && bStop==0; i++){
       SegmentPtr *pPtr = &aPtr[i];
@@ -2007,37 +2007,37 @@ static void multiCursorGetKey(
         if( pCsr->iFree < (nEntry*2) ){
           FreelistEntry *aEntry = pWorker->freelist.aEntry;
           int i = nEntry - 1 - (pCsr->iFree / 2);
-          u32 iKey = 0;
+          u32 iKey2 = 0;
 
           if( (pCsr->iFree % 2) ){
             eType = LSM_END_DELETE|LSM_SYSTEMKEY;
-            iKey = aEntry[i].iBlk-1;
+            iKey2 = aEntry[i].iBlk-1;
           }else if( aEntry[i].iId>=0 ){
             eType = LSM_INSERT|LSM_SYSTEMKEY;
-            iKey = aEntry[i].iBlk;
+            iKey2 = aEntry[i].iBlk;
 
             /* If the in-memory entry immediately before this one was a
              ** DELETE, and the block number is one greater than the current
              ** block number, mark this entry as an "end-delete-range". */
-            if( i<(nEntry-1) && aEntry[i+1].iBlk==iKey+1 && aEntry[i+1].iId<0 ){
+            if( i<(nEntry-1) && aEntry[i+1].iBlk==iKey2+1 && aEntry[i+1].iId<0 ){
               eType |= LSM_END_DELETE;
             }
 
           }else{
             eType = LSM_START_DELETE|LSM_SYSTEMKEY;
-            iKey = aEntry[i].iBlk + 1;
+            iKey2 = aEntry[i].iBlk + 1;
           }
 
           /* If the in-memory entry immediately after this one is a
           ** DELETE, and the block number is one less than the current
           ** key, mark this entry as an "start-delete-range".  */
-          if( i>0 && aEntry[i-1].iBlk==iKey-1 && aEntry[i-1].iId<0 ){
+          if( i>0 && aEntry[i-1].iBlk==iKey2-1 && aEntry[i-1].iId<0 ){
             eType |= LSM_START_DELETE;
           }
 
           pKey = pCsr->pSystemVal;
           nKey = 4;
-          lsmPutU32(pKey, ~iKey);
+          lsmPutU32(pKey, ~iKey2);
         }
       }
       break;
@@ -2617,7 +2617,7 @@ int lsmSortedWalkFreelist(
 
     while( rc==LSM_OK && lsmMCursorValid(pCsr) && rtIsSystem(pCsr->eType) ){
       void *pKey; int nKey;
-      void *pVal; int nVal;
+      void *pVal = 0; int nVal = 0;
 
       rc = lsmMCursorKey(pCsr, &pKey, &nKey);
       if( rc==LSM_OK ) rc = lsmMCursorValue(pCsr, &pVal, &nVal);
@@ -3475,7 +3475,7 @@ static int mergeWorkerLoadHierarchy(MergeWorker *pMW){
     lsm_env *pEnv = pMW->pDb->pEnv;
     Page **apHier = 0;
     int nHier = 0;
-    int iPg = pSeg->iRoot;
+    int iPg = (int)pSeg->iRoot;
 
     do {
       Page *pPg = 0;
@@ -3501,7 +3501,7 @@ static int mergeWorkerLoadHierarchy(MergeWorker *pMW){
         nHier++;
 
         apHier[0] = pPg;
-        iPg = pageGetPtr(aData, nData);
+        iPg = (int)pageGetPtr(aData, nData);
       }else{
         lsmFsPageRelease(pPg);
         break;
@@ -3620,9 +3620,9 @@ static int mergeWorkerBtreeWrite(
       assert( lsmFsPageWritable(pOld) );
       aData = fsPageData(pOld, &nData);
       if( eType==0 ){
-        nByte = 2 + 1 + lsmVarintLen32(iPtr) + lsmVarintLen32(iKeyPg);
+        nByte = 2 + 1 + lsmVarintLen32((int)iPtr) + lsmVarintLen32((int)iKeyPg);
       }else{
-        nByte = 2 + 1 + lsmVarintLen32(iPtr) + lsmVarintLen32(nKey) + nKey;
+        nByte = 2 + 1 + lsmVarintLen32((int)iPtr) + lsmVarintLen32(nKey) + nKey;
       }
       nRec = pageGetNRec(aData, nData);
       nFree = SEGMENT_EOF(nData, nRec) - mergeWorkerPageOffset(aData, nData);
@@ -3663,15 +3663,15 @@ static int mergeWorkerBtreeWrite(
   aData = fsPageData(p->apHier[iLevel], &nData);
   iOff = mergeWorkerPageOffset(aData, nData);
   nRec = pageGetNRec(aData, nData);
-  lsmPutU16(&aData[SEGMENT_CELLPTR_OFFSET(nData, nRec)], iOff);
-  lsmPutU16(&aData[SEGMENT_NRECORD_OFFSET(nData)], nRec+1);
+  lsmPutU16(&aData[SEGMENT_CELLPTR_OFFSET(nData, nRec)], (u16)iOff);
+  lsmPutU16(&aData[SEGMENT_NRECORD_OFFSET(nData)], (u16)(nRec+1));
   if( eType==0 ){
     aData[iOff++] = 0x00;
-    iOff += lsmVarintPut32(&aData[iOff], iPtr);
-    iOff += lsmVarintPut32(&aData[iOff], iKeyPg);
+    iOff += lsmVarintPut32(&aData[iOff], (int)iPtr);
+    iOff += lsmVarintPut32(&aData[iOff], (int)iKeyPg);
   }else{
     aData[iOff++] = eType;
-    iOff += lsmVarintPut32(&aData[iOff], iPtr);
+    iOff += lsmVarintPut32(&aData[iOff], (int)iPtr);
     iOff += lsmVarintPut32(&aData[iOff], nKey);
     memcpy(&aData[iOff], pKey, nKey);
   }
@@ -3918,7 +3918,7 @@ static int mergeWorkerFirstPage(MergeWorker *pMW){
 
   if( pCsr->pBtCsr ){
     rc = LSM_OK;
-    iFPtr = pMW->pLevel->pNext->lhs.iFirst;
+    iFPtr = (int)pMW->pLevel->pNext->lhs.iFirst;
   }else if( pCsr->nPtr>0 ){
     Segment *pSeg;
     pSeg = pCsr->aPtr[pCsr->nPtr-1].pSeg;
@@ -3927,7 +3927,7 @@ static int mergeWorkerFirstPage(MergeWorker *pMW){
       u8 *aData;                    /* Buffer for page pPg */
       int nData;                    /* Size of aData[] in bytes */
       aData = fsPageData(pPg, &nData);
-      iFPtr = pageGetPtr(aData, nData);
+      iFPtr = (int)pageGetPtr(aData, nData);
       lsmFsPageRelease(pPg);
     }
   }
@@ -3953,11 +3953,11 @@ static int mergeWorkerWrite(
   int nHdr;                       /* Space required for this record header */
   Page *pPg;                      /* Page to write to */
   u8 *aData;                      /* Data buffer for page pWriter->pPage */
-  int nData;                      /* Size of buffer aData[] in bytes */
-  int nRec;                       /* Number of records on page pPg */
-  int iFPtr;                      /* Value of pointer in footer of pPg */
+  int nData = 0;                  /* Size of buffer aData[] in bytes */
+  int nRec = 0;                   /* Number of records on page pPg */
+  int iFPtr = 0;                  /* Value of pointer in footer of pPg */
   int iRPtr = 0;                  /* Value of pointer written into record */
-  int iOff;                       /* Current write offset within page pPg */
+  int iOff = 0;                   /* Current write offset within page pPg */
   Segment *pSeg;                  /* Segment being written */
   int flags = 0;                  /* If != 0, flags value for page footer */
   int bFirst = 0;                 /* True for first key of output run */
@@ -3973,7 +3973,7 @@ static int mergeWorkerWrite(
   if( pPg ){
     aData = fsPageData(pPg, &nData);
     nRec = pageGetNRec(aData, nData);
-    iFPtr = pageGetPtr(aData, nData);
+    iFPtr = (int)pageGetPtr(aData, nData);
     iRPtr = iPtr - iFPtr;
   }
      
@@ -3999,7 +3999,7 @@ static int mergeWorkerWrite(
     ** marked read-only, advance to the next page of the output run. */
     iOff = pMerge->iOutputOff;
     if( iOff<0 || pPg==0 || iOff+nHdr > SEGMENT_EOF(nData, nRec+1) ){
-      iFPtr = *pMW->pCsr->pPrevMergePtr;
+      iFPtr = (int)*pMW->pCsr->pPrevMergePtr;
       iRPtr = iPtr - iFPtr;
       iOff = 0;
       nRec = 0;
@@ -4033,12 +4033,12 @@ static int mergeWorkerWrite(
     aData = fsPageData(pPg, &nData);
 
     /* Update the page footer. */
-    lsmPutU16(&aData[SEGMENT_NRECORD_OFFSET(nData)], nRec+1);
-    lsmPutU16(&aData[SEGMENT_CELLPTR_OFFSET(nData, nRec)], iOff);
-    if( flags ) lsmPutU16(&aData[SEGMENT_FLAGS_OFFSET(nData)], flags);
+    lsmPutU16(&aData[SEGMENT_NRECORD_OFFSET(nData)], (u16)(nRec+1));
+    lsmPutU16(&aData[SEGMENT_CELLPTR_OFFSET(nData, nRec)], (u16)iOff);
+    if( flags ) lsmPutU16(&aData[SEGMENT_FLAGS_OFFSET(nData)], (u16)flags);
 
     /* Write the entry header into the current page. */
-    aData[iOff++] = eType;                                               /* 1 */
+    aData[iOff++] = (u8)eType;                                           /* 1 */
     iOff += lsmVarintPut32(&aData[iOff], iRPtr);                         /* 2 */
     iOff += lsmVarintPut32(&aData[iOff], nKey);                          /* 3 */
     if( rtIsWrite(eType) ) iOff += lsmVarintPut32(&aData[iOff], nVal);   /* 4 */
@@ -4260,7 +4260,7 @@ static int mergeWorkerStep(MergeWorker *pMW){
         pVal = pCsr->val.pData;
       }
       if( rc==LSM_OK ){
-        rc = mergeWorkerWrite(pMW, eType, pKey, nKey, pVal, nVal, iPtr);
+        rc = mergeWorkerWrite(pMW, eType, pKey, nKey, pVal, nVal, (int)iPtr);
       }
     }
   }
@@ -4581,7 +4581,7 @@ static int mergeWorkerInit(
           SegmentPtr *pPtr;
           assert( pCsr->aPtr[i].pPg==0 );
           pPtr = &pCsr->aPtr[i];
-          rc = segmentPtrLoadPage(pDb->pFS, pPtr, pInput->iPg);
+          rc = segmentPtrLoadPage(pDb->pFS, pPtr, (int)pInput->iPg);
           if( rc==LSM_OK && pPtr->nCell>0 ){
             rc = segmentPtrLoadCell(pPtr, pInput->iCell);
           }
@@ -5184,7 +5184,7 @@ static int doLsmSingleWork(
     nUnsync = lsmCheckpointNWrite(pDb->pShmhdr->aSnap1, 0);
     nPgsz = lsmCheckpointPgsz(pDb->pShmhdr->aSnap1);
 
-    nMax = LSM_MIN(nMax, (pDb->nAutockpt/nPgsz) - (int)(nUnsync-nSync));
+    nMax = (int)LSM_MIN(nMax, (pDb->nAutockpt/nPgsz) - (int)(nUnsync-nSync));
     if( nMax<nRem ){
       bCkpt = 1;
       nRem = LSM_MAX(nMax, 0);
@@ -5522,7 +5522,7 @@ void sortedDumpPage(lsm_db *pDb, Segment *pRun, Page *pPg, int bVals){
   aData = fsPageData(pPg, &nData);
 
   nRec = pageGetNRec(aData, nData);
-  iPtr = pageGetPtr(aData, nData);
+  iPtr = (int)pageGetPtr(aData, nData);
   flags = pageGetFlags(aData, nData);
 
   lsmStringInit(&s, pDb->pEnv);
@@ -5533,7 +5533,7 @@ void sortedDumpPage(lsm_db *pDb, Segment *pRun, Page *pPg, int bVals){
     Page *pRef = 0;               /* Pointer to page iRef */
     int iChar;
     u8 *aKey; int nKey = 0;       /* Key */
-    u8 *aVal; int nVal = 0;       /* Value */
+    u8 *aVal = 0; int nVal = 0;   /* Value */
     int iTopic;
     u8 *aCell;
     int iPgPtr;
@@ -5593,7 +5593,7 @@ static void infoCellDump(
 ){
   u8 *aData; int nData;           /* Page data */
   u8 *aKey; int nKey = 0;         /* Key */
-  u8 *aVal; int nVal = 0;         /* Value */
+  u8 *aVal = 0; int nVal = 0;     /* Value */
   int eType;
   int iPgPtr;
   Page *pRef = 0;                 /* Pointer to page iRef */
@@ -5699,20 +5699,20 @@ static int infoPageDump(
     LsmString str;
     int nRec;
     int iPtr;
-    int flags;
+    int flags2;
     int iCell;
     u8 *aData; int nData;         /* Page data and size thereof */
 
     aData = fsPageData(pPg, &nData);
     nRec = pageGetNRec(aData, nData);
-    iPtr = pageGetPtr(aData, nData);
-    flags = pageGetFlags(aData, nData);
+    iPtr = (int)pageGetPtr(aData, nData);
+    flags2 = pageGetFlags(aData, nData);
 
     lsmStringInit(&str, pDb->pEnv);
     lsmStringAppendf(&str, "Page : %lld  (%d bytes)\n", iPg, nData);
     lsmStringAppendf(&str, "nRec : %d\n", nRec);
     lsmStringAppendf(&str, "iPtr : %d\n", iPtr);
-    lsmStringAppendf(&str, "flags: %04x\n", flags);
+    lsmStringAppendf(&str, "flags: %04x\n", flags2);
     lsmStringAppendf(&str, "\n");
 
     for(iCell=0; iCell<nRec; iCell++){
@@ -5735,7 +5735,7 @@ static int infoPageDump(
       infoCellDump(pDb, pSeg, bIndirect, pPg, iCell, &eType, &iPgPtr,
           &aKey, &nKey, &aVal, &nVal, &blob
       );
-      iAbsPtr = iPgPtr + ((flags & SEGMENT_BTREE_FLAG) ? 0 : iPtr);
+      iAbsPtr = iPgPtr + ((flags2 & SEGMENT_BTREE_FLAG) ? 0 : iPtr);
 
       lsmFlagsToString(eType, zFlags);
       lsmStringAppendf(&str, "%s %d (%s) ", 

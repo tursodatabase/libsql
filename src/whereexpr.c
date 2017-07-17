@@ -951,7 +951,9 @@ static void exprAnalyze(
   }else{
     pTerm->prereqRight = sqlite3WhereExprUsage(pMaskSet, pExpr->pRight);
   }
+  pMaskSet->bVarSelect = 0;
   prereqAll = sqlite3WhereExprUsage(pMaskSet, pExpr);
+  if( pMaskSet->bVarSelect ) pTerm->wtFlags |= TERM_VARSELECT;
   if( ExprHasProperty(pExpr, EP_FromJoin) ){
     Bitmask x = sqlite3WhereGetMask(pMaskSet, pExpr->iRightJoinTable);
     prereqAll |= x;
@@ -1382,9 +1384,12 @@ Bitmask sqlite3WhereExprUsage(WhereMaskSet *pMaskSet, Expr *p){
   }
   mask = (p->op==TK_IF_NULL_ROW) ? sqlite3WhereGetMask(pMaskSet, p->iTable) : 0;
   assert( !ExprHasProperty(p, EP_TokenOnly) );
-  if( p->pRight ) mask |= sqlite3WhereExprUsage(pMaskSet, p->pRight);
   if( p->pLeft ) mask |= sqlite3WhereExprUsage(pMaskSet, p->pLeft);
-  if( ExprHasProperty(p, EP_xIsSelect) ){
+  if( p->pRight ){
+    mask |= sqlite3WhereExprUsage(pMaskSet, p->pRight);
+    assert( p->x.pList==0 );
+  }else if( ExprHasProperty(p, EP_xIsSelect) ){
+    if( ExprHasProperty(p, EP_VarSelect) ) pMaskSet->bVarSelect = 1;
     mask |= exprSelectUsage(pMaskSet, p->x.pSelect);
   }else if( p->x.pList ){
     mask |= sqlite3WhereExprListUsage(pMaskSet, p->x.pList);

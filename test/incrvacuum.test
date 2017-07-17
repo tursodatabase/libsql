@@ -736,7 +736,7 @@ if {[permutation] == ""} {
     catchsql {
       PRAGMA incremental_vacuum(10);
     } db3
-  } {1 {file is encrypted or is not a database}}
+  } {1 {file is not a database}}
   db3 close
 }
 

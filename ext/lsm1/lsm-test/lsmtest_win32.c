@@ -12,19 +12,19 @@ int win32GetTimeOfDay(
   void *tzp
 ){
   FILETIME fileTime;
-  ULARGE_INTEGER largeInteger;
   ULONGLONG ticks;
+  ULONGLONG unixTicks;
 
   unused_parameter(tzp);
   memset(&fileTime, 0, sizeof(FILETIME));
   GetSystemTimeAsFileTime(&fileTime);
-  memset(&largeInteger, 0, sizeof(ULARGE_INTEGER));
-  largeInteger.LowPart = fileTime.dwLowDateTime;
-  largeInteger.HighPart = fileTime.dwHighDateTime;
-  ticks = largeInteger.QuadPart - TICKS_UNIX_EPOCH;
-  tp->tv_sec = (long)(ticks / TICKS_PER_SECOND);
-  ticks -= ((ULONGLONG)tp->tv_sec * TICKS_PER_SECOND);
-  tp->tv_usec = (long)(ticks / TICKS_PER_MICROSECOND);
+  ticks = (ULONGLONG)fileTime.dwHighDateTime << 32;
+  ticks |= (ULONGLONG)fileTime.dwLowDateTime;
+  unixTicks = ticks - TICKS_UNIX_EPOCH;
+  tp->tv_sec = (long)(unixTicks / TICKS_PER_SECOND);
+  unixTicks -= ((ULONGLONG)tp->tv_sec * TICKS_PER_SECOND);
+  tp->tv_usec = (long)(unixTicks / TICKS_PER_MICROSECOND);
+
   return 0;
 }
 #endif

@@ -278,8 +278,9 @@ static int treeKeycmp(void *p1, int n1, void *p2, int n2){
 ** sub-tree of the node.
 */
 static u32 getChildPtr(TreeNode *p, int iVersion, int iCell){
+  assert( iVersion>=0 );
   assert( iCell>=0 && iCell<=array_size(p->aiChildPtr) );
-  if( p->iV2 && p->iV2<=iVersion && iCell==p->iV2Child ) return p->iV2Ptr;
+  if( p->iV2 && p->iV2<=(u32)iVersion && iCell==p->iV2Child ) return p->iV2Ptr;
   return p->aiChildPtr[iCell];
 }
 
@@ -300,7 +301,7 @@ static int treeOffsetToChunk(u32 iOff){
 */
 static void *treeShmptr(lsm_db *pDb, u32 iPtr){
 
-  assert( (iPtr>>15)<pDb->nShm );
+  assert( (iPtr>>15)<(u32)pDb->nShm );
   assert( pDb->apShm[iPtr>>15] );
 
   return iPtr ? treeShmptrUnsafe(pDb, iPtr) : 0;
@@ -519,7 +520,7 @@ void dump_node_contents(
   }else{
     for(i=0; i<4 && nHeight>0; i++){
       u32 iPtr = getChildPtr(pNode, pDb->treehdr.root.iTransId, i);
-      zPath[nPath] = i+'0';
+      zPath[nPath] = (char)(i+'0');
       zPath[nPath+1] = '/';
 
       if( iPtr ){
@@ -644,7 +645,7 @@ static u32 treeShmalloc(lsm_db *pDb, int bAlign, int nByte, int *pRc){
     assert( iWrite );
     iChunk = treeOffsetToChunk(iWrite-1);
     iEof = (iChunk+1) * CHUNK_SIZE;
-    assert( iEof>=iWrite && (iEof-iWrite)<CHUNK_SIZE );
+    assert( iEof>=iWrite && (iEof-iWrite)<(u32)CHUNK_SIZE );
     if( (iWrite+nByte)>iEof ){
       ShmChunk *pHdr;           /* Header of chunk just finished (iChunk) */
       ShmChunk *pFirst;         /* Header of chunk treehdr.iFirst */
@@ -757,7 +758,7 @@ static TreeKey *newTreeKey(
 
       iWrite = (pDb->treehdr.iWrite & (LSM_SHM_CHUNK_SIZE-1));
       iWrite = LSM_MAX(iWrite, LSM_SHM_CHUNK_HDR);
-      nAlloc = LSM_MIN((LSM_SHM_CHUNK_SIZE-iWrite), nRem);
+      nAlloc = LSM_MIN((LSM_SHM_CHUNK_SIZE-iWrite), (u32)nRem);
 
       aAlloc = treeShmptr(pDb, treeShmalloc(pDb, 0, nAlloc, pRc));
       if( aAlloc==0 ) break;
@@ -1209,7 +1210,7 @@ static int treeCheckLinkedList(lsm_db *db){
     nVisit++;
   }
 
-  if( rc==LSM_OK && nVisit!=db->treehdr.nChunk-1 ){
+  if( rc==LSM_OK && (u32)nVisit!=db->treehdr.nChunk-1 ){
     rc = LSM_CORRUPT_BKPT;
   }
   return rc;
@@ -1259,7 +1260,7 @@ static int treeRepairList(lsm_db *db){
 
   /* Iterate through all shm chunks. Find the smallest shm-id present in
   ** the shared-memory region. */
-  for(i=1; rc==LSM_OK && i<db->treehdr.nChunk; i++){
+  for(i=1; rc==LSM_OK && (u32)i<db->treehdr.nChunk; i++){
     p = treeShmChunkRc(db, i, &rc);
     if( p && (pMin==0 || shm_sequence_ge(pMin->iShmid, p->iShmid)) ){
       pMin = p;
@@ -1279,7 +1280,7 @@ static int treeRepairList(lsm_db *db){
 
     /* Allocate space for a merge sort. */
     nSort = 1;
-    while( nSort < (db->treehdr.nChunk-1) ) nSort = nSort * 2;
+    while( (u32)nSort < (db->treehdr.nChunk-1) ) nSort = nSort * 2;
     nByte = sizeof(ShmChunkLoc) * nSort * 2;
     aSort = lsmMallocZeroRc(db->pEnv, nByte, &rc);
     iPrevShmid = pMin->iShmid;
@@ -1287,11 +1288,11 @@ static int treeRepairList(lsm_db *db){
     /* Fix all shm-ids, if required. */
     if( rc==LSM_OK ){
       iPrevShmid = pMin->iShmid-1;
-      for(i=1; i<db->treehdr.nChunk; i++){
+      for(i=1; (u32)i<db->treehdr.nChunk; i++){
         p = treeShmChunk(db, i);
         aSort[i-1].pShm = p;
         aSort[i-1].iLoc = i;
-        if( i!=db->treehdr.iFirst ){
+        if( (u32)i!=db->treehdr.iFirst ){
           if( shm_sequence_ge(p->iShmid, db->treehdr.iNextShmid) ){
             p->iShmid = iPrevShmid--;
           }
@@ -1375,7 +1376,7 @@ static void treeOverwriteKey(lsm_db *db, TreeCursor *pCsr, u32 iKey, int *pRc){
     int iCell = pCsr->aiCell[pCsr->iNode];
 
     /* Create a copy of this node */
-    if( (pCsr->iNode>0 && pCsr->iNode==(p->nHeight-1)) ){
+    if( (pCsr->iNode>0 && (u32)pCsr->iNode==(p->nHeight-1)) ){
       pNew = copyTreeLeaf(db, (TreeLeaf *)pNode, &iNew, pRc);
     }else{
       pNew = copyTreeNode(db, pNode, &iNew, pRc);
@@ -1398,7 +1399,7 @@ static int treeNextIsEndDelete(lsm_db *db, TreeCursor *pCsr){
   int iCell = pCsr->aiCell[iNode]+1;
 
   /* Cursor currently points to a leaf node. */
-  assert( pCsr->iNode==(db->treehdr.root.nHeight-1) );
+  assert( (u32)pCsr->iNode==(db->treehdr.root.nHeight-1) );
 
   while( iNode>=0 ){
     TreeNode *pNode = pCsr->apTreeNode[iNode];
@@ -1419,7 +1420,7 @@ static int treePrevIsStartDelete(lsm_db *db, TreeCursor *pCsr){
   int iNode = pCsr->iNode;
 
   /* Cursor currently points to a leaf node. */
-  assert( pCsr->iNode==(db->treehdr.root.nHeight-1) );
+  assert( (u32)pCsr->iNode==(db->treehdr.root.nHeight-1) );
 
   while( iNode>=0 ){
     TreeNode *pNode = pCsr->apTreeNode[iNode];
@@ -1450,7 +1451,7 @@ static int treeInsertEntry(
   u32 iTreeKey;
   TreeRoot *p = &pDb->treehdr.root;
   TreeCursor csr;                 /* Cursor to seek to pKey/nKey */
-  int res;                        /* Result of seek operation on csr */
+  int res = 0;                    /* Result of seek operation on csr */
 
   assert( nVal>=0 || pVal==0 );
   assert_tree_looks_ok(LSM_OK, pTree);
@@ -1597,9 +1598,9 @@ static int treeDeleteEntry(lsm_db *db, TreeCursor *pCsr, u32 iNewptr){
   assert( pNode->aiKeyPtr[1] );
   assert( pNode->aiKeyPtr[iSlot] );
   assert( iSlot==0 || iSlot==1 || iSlot==2 );
-  assert( (pCsr->iNode==(db->treehdr.root.nHeight-1))==(iNewptr==0) );
+  assert( ((u32)pCsr->iNode==(db->treehdr.root.nHeight-1))==(iNewptr==0) );
 
-  bLeaf = (pCsr->iNode==(p->nHeight-1) && p->nHeight>1);
+  bLeaf = ((u32)pCsr->iNode==(p->nHeight-1) && p->nHeight>1);
   
   if( pNode->aiKeyPtr[0] || pNode->aiKeyPtr[2] ){
     /* There are currently at least 2 keys on this node. So just create
@@ -1764,7 +1765,7 @@ static int treeDeleteEntry(lsm_db *db, TreeCursor *pCsr, u32 iNewptr){
         iPSlot--;
         pNew1->aiKeyPtr[iKOut++] = pParent->aiKeyPtr[iPSlot];
         if( bLeaf==0 ) pNew1->aiChildPtr[iPOut++] = iNewptr;
-        pCsr->aiCell[pCsr->iNode] = iPSlot;
+        pCsr->aiCell[pCsr->iNode] = (u8)iPSlot;
       }
 
       rc = treeDeleteEntry(db, pCsr, iNew1);
@@ -1839,7 +1840,7 @@ int lsmTreeDelete(
     }
 
     if( bDone==0 ){
-      if( csr.iNode==(p->nHeight-1) ){
+      if( (u32)csr.iNode==(p->nHeight-1) ){
         /* The element to delete already lies on a leaf node */
         rc = treeDeleteEntry(db, &csr, 0);
       }else{
@@ -1854,7 +1855,7 @@ int lsmTreeDelete(
         TreeKey *pKey;
         int iNode = csr.iNode;
         lsmTreeCursorNext(&csr);
-        assert( csr.iNode==(p->nHeight-1) );
+        assert( (u32)csr.iNode==(p->nHeight-1) );
 
         iKey = csr.apTreeNode[csr.iNode]->aiKeyPtr[csr.aiCell[csr.iNode]];
         lsmTreeCursorPrev(&csr);
@@ -2028,19 +2029,19 @@ int lsmTreeCursorSeek(TreeCursor *pCsr, void *pKey, int nKey, int *pRes){
         }
         res = treeKeycmp((void *)&pTreeKey[1], pTreeKey->nKey, pKey, nKey);
         if( res==0 ){
-          pCsr->aiCell[iNode] = iTest;
+          pCsr->aiCell[iNode] = (u8)iTest;
           break;
         }
       }else{
         iTest = 1;
       }
 
-      if( iNode<(pRoot->nHeight-1) ){
+      if( (u32)iNode<(pRoot->nHeight-1) ){
         iNodePtr = getChildPtr(pNode, pRoot->iTransId, iTest + (res<0));
       }else{
         iNodePtr = 0;
       }
-      pCsr->aiCell[iNode] = iTest + (iNodePtr && (res<0));
+      pCsr->aiCell[iNode] = (u8)(iTest + (iNodePtr && (res<0)));
     }
 
     *pRes = res;
@@ -2167,7 +2168,7 @@ int lsmTreeCursorPrev(TreeCursor *pCsr){
       if( rc!=LSM_OK ) break;
       pCsr->apTreeNode[pCsr->iNode] = pNode;
       iCell = 1 + (pNode->aiKeyPtr[2]!=0) + (pCsr->iNode < iLeaf);
-      pCsr->aiCell[pCsr->iNode] = iCell;
+      pCsr->aiCell[pCsr->iNode] = (u8)iCell;
     }while( pCsr->iNode < iLeaf );
   }
 
@@ -2179,7 +2180,7 @@ int lsmTreeCursorPrev(TreeCursor *pCsr){
       iCell = pCsr->aiCell[pCsr->iNode]-1;
       if( iCell>=0 && pCsr->apTreeNode[pCsr->iNode]->aiKeyPtr[iCell] ) break;
     }while( (--pCsr->iNode)>=0 );
-    pCsr->aiCell[pCsr->iNode] = iCell;
+    pCsr->aiCell[pCsr->iNode] = (u8)iCell;
   }
 
 #ifndef NDEBUG
@@ -2224,12 +2225,12 @@ int lsmTreeCursorEnd(TreeCursor *pCsr, int bLast){
     pCsr->iNode++;
     pCsr->apTreeNode[pCsr->iNode] = pNode;
 
-    if( pCsr->iNode<pRoot->nHeight-1 ){
+    if( (u32)pCsr->iNode<pRoot->nHeight-1 ){
       iNodePtr = getChildPtr(pNode, pRoot->iTransId, iCell);
     }else{
       iNodePtr = 0;
     }
-    pCsr->aiCell[pCsr->iNode] = iCell - (iNodePtr==0 && bLast);
+    pCsr->aiCell[pCsr->iNode] = (u8)(iCell - (iNodePtr==0 && bLast));
   }
 
   return rc;

@@ -192,11 +192,13 @@ for {set i 0} {$i<$nOp} {incr i} {
     set def($cnt) $name
   }
 }
-set max $cnt
-for {set i 0} {$i<$nOp} {incr i} {
+
+set max [lindex [lsort -decr -integer [array names used]] 0]
+for {set i 0} {$i<=$max} {incr i} {
   if {![info exists used($i)]} {
     set def($i) "OP_NotUsed_$i"
   }
+  if {$i>$max} {set max $i}
   set name $def($i)
   puts -nonewline [format {#define %-16s %3d} $name $i]
   set com {}
@@ -217,18 +219,24 @@ for {set i 0} {$i<$nOp} {incr i} {
   puts ""
 }
 
+if {$max>255} {
+  error "More than 255 opcodes - VdbeOp.opcode is of type u8!"
+}
+
 # Generate the bitvectors:
 #
 set bv(0) 0
 for {set i 0} {$i<=$max} {incr i} {
-  set name $def($i)
   set x 0
-  if {$jump($name)}  {incr x 1}
-  if {$in1($name)}   {incr x 2}
-  if {$in2($name)}   {incr x 4}
-  if {$in3($name)}   {incr x 8}
-  if {$out2($name)}  {incr x 16}
-  if {$out3($name)}  {incr x 32}
+  set name $def($i)
+  if {[string match OP_NotUsed* $name]==0} {
+    if {$jump($name)}  {incr x 1}
+    if {$in1($name)}   {incr x 2}
+    if {$in2($name)}   {incr x 4}
+    if {$in3($name)}   {incr x 8}
+    if {$out2($name)}  {incr x 16}
+    if {$out3($name)}  {incr x 32}
+  }
   set bv($i) $x
 }
 puts ""

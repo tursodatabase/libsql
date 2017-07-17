@@ -55,14 +55,6 @@
 
 #include "lsmtest.h"
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#ifndef _WIN32
-# include <unistd.h>
-#endif
-#include <ctype.h>
-
 typedef struct IoContext IoContext;
 
 struct IoContext {
@@ -155,7 +147,7 @@ static int doOneCmd(
     int nPg;
     int iPg;
 
-    nByte = getNextSize(z, &z, &rc);
+    nByte = (int)getNextSize(z, &z, &rc);
     if( rc || *z!='@' ) goto bad_command;
     z++;
     iOff = getNextSize(z, &z, &rc);
@@ -163,7 +155,7 @@ static int doOneCmd(
     if( pzOut ) *pzOut = z;
 
     nPg = (nByte+pgsz-1) / pgsz;
-    lseek(pCtx->fd, iOff, SEEK_SET);
+    lseek(pCtx->fd, (off_t)iOff, SEEK_SET);
     for(iPg=0; iPg<nPg; iPg++){
       write(pCtx->fd, aData, pgsz);
     }
@@ -219,7 +211,7 @@ int do_io(int nArg, char **azArg){
   zFile = azArg[0];
   zPgsz = azArg[1];
 
-  pgsz = getNextSize(zPgsz, 0, &rc);
+  pgsz = (int)getNextSize(zPgsz, 0, &rc);
   if( pgsz<=0 ){
     testPrintError("Ridiculous page size: %d", pgsz);
     return -1;

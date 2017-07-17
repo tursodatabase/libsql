@@ -190,6 +190,7 @@ struct sqlite3_value {
     double r;           /* Real value used when MEM_Real is set in flags */
     i64 i;              /* Integer value used when MEM_Int is set in flags */
     int nZero;          /* Used when bit MEM_Zero is set in flags */
+    void *pPtr;         /* Pointer when flags=MEM_NULL and eSubtype='p' */
     FuncDef *pDef;      /* Used only when flags==MEM_Agg */
     RowSet *pRowSet;    /* Used only when flags==MEM_RowSet */
     VdbeFrame *pFrame;  /* Used when flags==MEM_Frame */
@@ -475,6 +476,7 @@ void sqlite3VdbeMemSetInt64(Mem*, i64);
 #else
   void sqlite3VdbeMemSetDouble(Mem*, double);
 #endif
+void sqlite3VdbeMemSetPointer(Mem*, void*, const char*);
 void sqlite3VdbeMemInit(Mem*,sqlite3*,u16);
 void sqlite3VdbeMemSetNull(Mem*);
 void sqlite3VdbeMemSetZeroBlob(Mem*,int);
@@ -534,12 +536,14 @@ int sqlite3VdbeCheckFk(Vdbe *, int);
 # define sqlite3VdbeCheckFk(p,i) 0
 #endif
 
-int sqlite3VdbeMemTranslate(Mem*, u8);
 #ifdef SQLITE_DEBUG
   void sqlite3VdbePrintSql(Vdbe*);
   void sqlite3VdbeMemPrettyPrint(Mem *pMem, char *zBuf);
 #endif
-int sqlite3VdbeMemHandleBom(Mem *pMem);
+#ifndef SQLITE_OMIT_UTF16
+  int sqlite3VdbeMemTranslate(Mem*, u8);
+  int sqlite3VdbeMemHandleBom(Mem *pMem);
+#endif
 
 #ifndef SQLITE_OMIT_INCRBLOB
   int sqlite3VdbeMemExpandBlob(Mem *);

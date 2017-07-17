@@ -1528,6 +1528,7 @@ void sqlite3Pragma(
 
       /* Make sure sufficient number of registers have been allocated */
       pParse->nMem = MAX( pParse->nMem, 8+mxIdx );
+      sqlite3ClearTempRegCache(pParse);
 
       /* Do the b-tree integrity checks */
       sqlite3VdbeAddOp4(v, OP_IntegrityCk, 2, cnt, 1, (char*)aRoot,P4_INTARRAY);
@@ -1942,7 +1943,8 @@ void sqlite3Pragma(
   **    0x0008    (Not yet implemented) Create indexes that might have
   **              been helpful to recent queries
   **
-  ** The default MASK is and always shall be 0xfffe.  0xfffe means perform all    ** of the optimizations listed above except Debug Mode, including new
+  ** The default MASK is and always shall be 0xfffe.  0xfffe means perform all
+  ** of the optimizations listed above except Debug Mode, including new
   ** optimizations that have not yet been invented.  If new optimizations are
   ** ever added that should be off by default, those off-by-default 
   ** optimizations will have bitmasks of 0x10000 or larger.

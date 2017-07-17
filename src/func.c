@@ -85,6 +85,10 @@ static void typeofFunc(
   assert( SQLITE_TEXT==3 );
   assert( SQLITE_BLOB==4 );
   assert( SQLITE_NULL==5 );
+  /* EVIDENCE-OF: R-01470-60482 The sqlite3_value_type(V) interface returns
+  ** the datatype code for the initial datatype of the sqlite3_value object
+  ** V. The returned value is one of SQLITE_INTEGER, SQLITE_FLOAT,
+  ** SQLITE_TEXT, SQLITE_BLOB, or SQLITE_NULL. */
   sqlite3_result_text(context, azType[i], -1, SQLITE_STATIC);
 }
 

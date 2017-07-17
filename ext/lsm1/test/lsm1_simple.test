@@ -1,0 +1,56 @@
+# 2017 July 14
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this script is testing the lsm1 virtual table module.
+#
+
+source [file join [file dirname [info script]] lsm1_common.tcl]
+set testprefix lsm1_simple
+return_if_no_lsm1
+load_lsm1_vtab db
+
+forcedelete testlsm.db
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE x1 USING lsm1(testlsm.db);
+  PRAGMA table_info(x1);
+} {
+  0 key       {} 0 {} 0 
+  1 blobkey   {} 0 {} 0 
+  2 value     {} 0 {} 0 
+  3 blobvalue {} 0 {} 0
+}
+
+do_execsql_test 1.1 {
+  INSERT INTO x1(blobkey, blobvalue) VALUES(x'abcd', x'1234');
+  SELECT quote(blobkey), quote(blobvalue) FROM x1;
+} {X'ABCD' X'1234'}
+
+do_catchsql_test 1.2 {
+  UPDATE x1 SET blobvalue = x'7890' WHERE blobkey = x'abcd';
+} {1 {cannot UPDATE}}
+
+do_catchsql_test 1.3 {
+  DELETE FROM x1 WHERE blobkey = x'abcd'
+} {1 {cannot DELETE}}
+
+do_test 1.4 {
+  lsort [glob testlsm.db*]
+} {testlsm.db testlsm.db-log testlsm.db-shm}
+
+db close
+do_test 1.5 {
+  lsort [glob testlsm.db*]
+} {testlsm.db}
+
+finish_test
+
+

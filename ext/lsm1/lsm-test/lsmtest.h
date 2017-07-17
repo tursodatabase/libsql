@@ -7,16 +7,22 @@
 #include "lsm.h"
 
 #include <assert.h>
+#include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#ifndef _WIN32
+# include <unistd.h>
+#endif
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <ctype.h>
+#include <stdlib.h>
+#include <errno.h>
 
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-#ifndef _O_BINARY
-# define _O_BINARY (0)
 #endif
 
 #ifdef _WIN32
@@ -55,6 +61,10 @@ typedef unsigned long long int u64;
 
 #define TESTDB_DEFAULT_PAGE_SIZE   4096
 #define TESTDB_DEFAULT_CACHE_SIZE  2048
+
+#ifndef _O_BINARY
+# define _O_BINARY (0)
+#endif
 
 /*
 ** Ideally, these should be in wrapper.c. But they are here instead so that 
