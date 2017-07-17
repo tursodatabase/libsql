@@ -83,7 +83,7 @@ do_execsql_test 1.7 {
 #
 #   2.1.*: Attempt to create a unionvtab table outside of the TEMP schema.
 #   2.2.*: Tables that do not exist.
-#   2.3.*: Non WITHOUT ROWID tables.
+#   2.3.*: Non rowid tables.
 #   2.4.*: Tables with mismatched schemas.
 #
 do_catchsql_test 2.1.1 {
@@ -105,6 +105,21 @@ do_catchsql_test 2.2.2 {
 do_catchsql_test 2.2.3 {
   CREATE VIRTUAL TABLE temp.u1 USING unionvtab("VALUES('xua', 't555', 1, 100)");
 } {1 {no such rowid table: xua.t555}}
+
+do_execsql_test 2.3.0 {
+  CREATE TABLE wr1(a, b, c PRIMARY KEY) WITHOUT ROWID;
+  CREATE VIEW v1 AS SELECT * FROM t1;
+  CREATE VIEW v2 AS SELECT _rowid_, * FROM t1;
+}
+do_catchsql_test 2.3.1 {
+  CREATE VIRTUAL TABLE temp.u1 USING unionvtab("VALUES('main', 'wr1', 1, 2)");
+} {1 {no such rowid table: main.wr1}}
+do_catchsql_test 2.3.2 {
+  CREATE VIRTUAL TABLE temp.u1 USING unionvtab("VALUES(NULL, 'v1', 1, 2)");
+} {1 {no such rowid table: v1}}
+do_catchsql_test 2.3.3 {
+  CREATE VIRTUAL TABLE temp.u1 USING unionvtab("VALUES(NULL, 'v2', 1, 2)");
+} {1 {no such rowid table: v2}}
 
 do_execsql_test 2.4.0 {
   CREATE TABLE x1(a BLOB, b);
@@ -142,6 +157,86 @@ foreach {tn dbs res} {
   " $res
 }
 
+#-------------------------------------------------------------------------
+#
+reset_db
+load_static_extension db unionvtab
+do_execsql_test 3.0 {
+  CREATE TABLE tbl1(a INTEGER PRIMARY KEY, b);
+  CREATE TABLE tbl2(a INTEGER PRIMARY KEY, b);
+  CREATE TABLE tbl3(a INTEGER PRIMARY KEY, b);
+
+  WITH ss(ii) AS ( SELECT 1 UNION ALL SELECT ii+1 FROM ss WHERE ii<100 )
+  INSERT INTO tbl1 SELECT ii, '1.' || ii FROM ss;
+
+  WITH ss(ii) AS ( SELECT 1 UNION ALL SELECT ii+1 FROM ss WHERE ii<100 )
+  INSERT INTO tbl2 SELECT ii, '2.' || ii FROM ss;
+
+  WITH ss(ii) AS ( SELECT 1 UNION ALL SELECT ii+1 FROM ss WHERE ii<100 )
+  INSERT INTO tbl3 SELECT ii, '3.' || ii FROM ss;
+
+  CREATE VIRTUAL TABLE temp.uu USING unionvtab(
+    "VALUES(NULL,'tbl2', 26, 74), (NULL,'tbl3', 75, 100), (NULL,'tbl1', 1, 25)"
+  );
+}
+
+do_execsql_test 3.1 {
+  SELECT * FROM uu WHERE rowid = 10;
+} {10 {1.10}}
+do_execsql_test 3.2 {
+  SELECT * FROM uu WHERE rowid = 25;
+} {25 {1.25}}
+
+do_execsql_test 3.3 { SELECT count(*) FROM uu WHERE rowid <= 24 } {24}
+
+# The following queries get the "wrong" answers. This is because the
+# module assumes that each source table contains rowids from only within
+# the range specified. For example, (rowid <= 25) matches 100 rows. This
+# is because the module implements (rowid <= 25) as a full table scan
+# of tbl1 only.
+do_execsql_test 3.4.1 { SELECT count(*) FROM uu WHERE rowid <= 25 } {100}
+do_execsql_test 3.4.2 { SELECT count(*) FROM uu WHERE rowid <= 26 } {126}
+do_execsql_test 3.4.3 { SELECT count(*) FROM uu WHERE rowid <= 73 } {173}
+do_execsql_test 3.4.4 { SELECT count(*) FROM uu WHERE rowid <= 74 } {200}
+do_execsql_test 3.4.5 { SELECT count(*) FROM uu WHERE rowid <= 75 } {275}
+do_execsql_test 3.4.6 { SELECT count(*) FROM uu WHERE rowid <= 99 } {299}
+do_execsql_test 3.4.7 { SELECT count(*) FROM uu WHERE rowid <= 100 } {300}
+do_execsql_test 3.4.8 { SELECT count(*) FROM uu WHERE rowid <= 101 } {300}
+
+do_execsql_test 3.5.1 { SELECT count(*) FROM uu WHERE rowid < 25 } {24}
+do_execsql_test 3.5.2 { SELECT count(*) FROM uu WHERE rowid < 26 } {100}
+do_execsql_test 3.5.3 { SELECT count(*) FROM uu WHERE rowid < 27 } {126}
+do_execsql_test 3.5.4 { SELECT count(*) FROM uu WHERE rowid < 73 } {172}
+do_execsql_test 3.5.5 { SELECT count(*) FROM uu WHERE rowid < 74 } {173}
+do_execsql_test 3.5.6 { SELECT count(*) FROM uu WHERE rowid < 75 } {200}
+do_execsql_test 3.5.7 { SELECT count(*) FROM uu WHERE rowid < 76 } {275}
+do_execsql_test 3.5.8 { SELECT count(*) FROM uu WHERE rowid < 99 } {298}
+do_execsql_test 3.5.9 { SELECT count(*) FROM uu WHERE rowid < 100 } {299}
+do_execsql_test 3.5.10 { SELECT count(*) FROM uu WHERE rowid < 101 } {300}
+
+do_execsql_test 3.6.1 { SELECT count(*) FROM uu WHERE rowid > 24 } {276}
+do_execsql_test 3.6.1 { SELECT count(*) FROM uu WHERE rowid > 25 } {200}
+do_execsql_test 3.6.2 { SELECT count(*) FROM uu WHERE rowid > 26 } {174}
+do_execsql_test 3.6.3 { SELECT count(*) FROM uu WHERE rowid > 27 } {173}
+do_execsql_test 3.6.4 { SELECT count(*) FROM uu WHERE rowid > 73 } {127}
+do_execsql_test 3.6.5 { SELECT count(*) FROM uu WHERE rowid > 74 } {100}
+do_execsql_test 3.6.6 { SELECT count(*) FROM uu WHERE rowid > 75 } {25}
+do_execsql_test 3.6.7 { SELECT count(*) FROM uu WHERE rowid > 76 } {24}
+do_execsql_test 3.6.8 { SELECT count(*) FROM uu WHERE rowid > 99 } {1}
+do_execsql_test 3.6.9 { SELECT count(*) FROM uu WHERE rowid > 100 } {0}
+do_execsql_test 3.6.10 { SELECT count(*) FROM uu WHERE rowid > 101 } {0}
+
+do_execsql_test 3.7.1 { SELECT count(*) FROM uu WHERE rowid >= 24 } {277}
+do_execsql_test 3.7.1 { SELECT count(*) FROM uu WHERE rowid >= 25 } {276}
+do_execsql_test 3.7.2 { SELECT count(*) FROM uu WHERE rowid >= 26 } {200}
+do_execsql_test 3.7.3 { SELECT count(*) FROM uu WHERE rowid >= 27 } {174}
+do_execsql_test 3.7.4 { SELECT count(*) FROM uu WHERE rowid >= 73 } {128}
+do_execsql_test 3.7.5 { SELECT count(*) FROM uu WHERE rowid >= 74 } {127}
+do_execsql_test 3.7.6 { SELECT count(*) FROM uu WHERE rowid >= 75 } {100}
+do_execsql_test 3.7.7 { SELECT count(*) FROM uu WHERE rowid >= 76 } {25}
+do_execsql_test 3.7.8 { SELECT count(*) FROM uu WHERE rowid >= 99 } {2}
+do_execsql_test 3.7.9 { SELECT count(*) FROM uu WHERE rowid >= 100 } {1}
+do_execsql_test 3.7.10 { SELECT count(*) FROM uu WHERE rowid >= 101 } {0}
 
 finish_test
 

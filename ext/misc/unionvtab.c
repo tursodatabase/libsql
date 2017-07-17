@@ -653,7 +653,9 @@ static int unionFilter(
     }
   }
 
+
   if( rc==SQLITE_OK ){
+    if( zSql==0 ) return SQLITE_OK;
     pCsr->pStmt = unionPrepare(&rc, pTab->db, zSql, &pTab->base.zErrMsg);
   }
   sqlite3_free(zSql);
