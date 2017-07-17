@@ -1,5 +1,5 @@
-C For\sFROM-clause\ssubqueries\sthat\scannot\sbe\sflattened,\stry\sto\spush\srelevant\nWHERE\sclause\sterms\sof\sthe\souter\squery\sdown\sinto\sthe\ssubquery\sin\sorder\sto\shelp\nthe\ssubquery\srun\sfaster\sand/or\suse\sless\smemory.\nCherry-pick\sfrom\s[6df18e949d36].\s\sStill\sneed\sto\sbackport\sbug\sfixes\sassociated\nwith\sthat\scheck-in.
-D 2017-07-17T19:07:14.155
+C Do\snot\sapply\sthe\sWHERE-clause\spushdown\soptimization\sto\sterms\sthat\soriginate\nin\sthe\sON\sor\sUSING\sclause\sof\sa\sLEFT\sJOIN.\s\sFix\sfor\sticket\n[c2a19d81652f40568c].
+D 2017-07-17T19:14:11.253
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 00d12636df7a5b08af09116bcd6c7bfd49b8b3b4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -230,7 +230,7 @@ F src/printf.c 8ae1fa9d30c1200a9268a390ba9e9cea9197b27a
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 41aa91af56d960e9414ce1d7c17cfb68e0d1c6cb
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c 22db63945060c317d48efb0e98ccc8d4cd0c3f2e48123b3ff5de8ce3f4a8a30b
+F src/select.c 75f825e980a1e2b4fa703757b52677a53892e0d6a89c6a765391f4c8dbe49c76
 F src/shell.c 84a1593bd86aaa14f4da8a8f9b16fbc239d262aa
 F src/sqlite.h.in 278602140d49575e8708e643161f4263e428a02a
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
@@ -683,7 +683,7 @@ F test/join.test 52d4d49f86d0cf46926672878c4eaf0da399104a
 F test/join2.test f2171c265e57ee298a27e57e7051d22962f9f324
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
-F test/join5.test 5df23eba184f159ed9705a954957e765a10c141d
+F test/join5.test 8a5c0be6f0c260a5c7177c3b8f07c7856141038a
 F test/join6.test cfe6503791ceb0cbb509966740286ec423cbf10b
 F test/journal1.test 69abc726c51b4a0409189f9a85191205297c0577
 F test/journal2.test ae06f566c28552c313ded3fee79a6c69e6d049b1
@@ -1250,11 +1250,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d227de8ad9cf757f30f5415ca8fccff3b5959621d09244bd1f444d3282c5b2ef
-Q +6df18e949d3676290785143993513ea1b917d729
-R e3d665c8862aa342ba39861cd8f4b980
-T *branch * push-down-backport
-T *sym-push-down-backport *
-T -sym-branch-3.8.9 *
+P 043d6ce8ad85f8044735747b8938ea5ce9a08e71b860c2b7179b824021bb7a62
+Q +351bc22fa9b5a2e50da3583a882c5aa390bda19f
+R 6db0016b61cd969747c5a4253c144477
 U drh
-Z 47d048d729d8d3e7689e51a3a0eb2508
+Z 0af93fca2845697dabd5891a1460c268
