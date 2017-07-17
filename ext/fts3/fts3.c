@@ -3353,7 +3353,7 @@ static int fts3ColumnMethod(
   switch( iCol-p->nColumn ){
     case 0:
       /* The special 'table-name' column */
-      sqlite3_result_pointer(pCtx, pCsr);
+      sqlite3_result_pointer(pCtx, pCsr, "fts3cursor");
       break;
 
     case 1:
@@ -3572,7 +3572,7 @@ static int fts3FunctionArg(
   Fts3Cursor **ppCsr              /* OUT: Store cursor handle here */
 ){
   int rc;
-  *ppCsr = (Fts3Cursor*)sqlite3_value_pointer(pVal);
+  *ppCsr = (Fts3Cursor*)sqlite3_value_pointer(pVal, "fts3cursor");
   if( (*ppCsr)!=0 ){
     rc = SQLITE_OK;
   }else{
