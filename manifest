@@ -1,5 +1,5 @@
-C Fix\sthe\scovering\sindex\sOR\soptimization\s(check-in\s[fcbd6abd])\sso\sthat\nit\sworks\swith\sSQLITE_MAX_ATTACHED>30.\s\sBroken\sby\sa\sbad\scherry-pick\smerge.
-D 2017-07-08T01:01:08.062
+C For\sFROM-clause\ssubqueries\sthat\scannot\sbe\sflattened,\stry\sto\spush\srelevant\nWHERE\sclause\sterms\sof\sthe\souter\squery\sdown\sinto\sthe\ssubquery\sin\sorder\sto\shelp\nthe\ssubquery\srun\sfaster\sand/or\suse\sless\smemory.\nCherry-pick\sfrom\s[6df18e949d36].\s\sStill\sneed\sto\sbackport\sbug\sfixes\sassociated\nwith\sthat\scheck-in.
+D 2017-07-17T19:07:14.155
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 00d12636df7a5b08af09116bcd6c7bfd49b8b3b4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -230,7 +230,7 @@ F src/printf.c 8ae1fa9d30c1200a9268a390ba9e9cea9197b27a
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 41aa91af56d960e9414ce1d7c17cfb68e0d1c6cb
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c 12b01d61078da5aeaa6bae2bcb1bd5550c86a761dea52b4ce833d4e273e44e96
+F src/select.c 22db63945060c317d48efb0e98ccc8d4cd0c3f2e48123b3ff5de8ce3f4a8a30b
 F src/shell.c 84a1593bd86aaa14f4da8a8f9b16fbc239d262aa
 F src/sqlite.h.in 278602140d49575e8708e643161f4263e428a02a
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
@@ -1250,7 +1250,11 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fcbd6abdb1a4cf622ff7e85625b9c2a9bbae92410359872924b7fc1e35046a75
-R e16d14bd52b65abae70b31af2e996886
+P d227de8ad9cf757f30f5415ca8fccff3b5959621d09244bd1f444d3282c5b2ef
+Q +6df18e949d3676290785143993513ea1b917d729
+R e3d665c8862aa342ba39861cd8f4b980
+T *branch * push-down-backport
+T *sym-push-down-backport *
+T -sym-branch-3.8.9 *
 U drh
-Z 1ba13c74fc4ad36a0d13cfbf7520225c
+Z 47d048d729d8d3e7689e51a3a0eb2508
