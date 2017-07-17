@@ -1,5 +1,5 @@
-C Do\snot\sapply\sthe\sWHERE-clause\spushdown\soptimization\sto\sterms\sthat\soriginate\nin\sthe\sON\sor\sUSING\sclause\sof\sa\sLEFT\sJOIN.\s\sFix\sfor\sticket\n[c2a19d81652f40568c].
-D 2017-07-17T19:14:11.253
+C When\schecking\sfor\sthe\sWHERE-clause\spush-down\soptimization,\sverify\sthat\nall\sterms\sof\sthe\scompound\sinner\sSELECT\sare\snon-aggregate,\snot\sjust\sthe\nlast\sterm.\s\sFix\sfor\sticket\s[f7f8c97e97597].
+D 2017-07-17T19:25:10.921
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 00d12636df7a5b08af09116bcd6c7bfd49b8b3b4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -230,7 +230,7 @@ F src/printf.c 8ae1fa9d30c1200a9268a390ba9e9cea9197b27a
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 41aa91af56d960e9414ce1d7c17cfb68e0d1c6cb
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c 75f825e980a1e2b4fa703757b52677a53892e0d6a89c6a765391f4c8dbe49c76
+F src/select.c 7922b1e1aaceb8eea4b921d0e6d062e32cfef8d897c6b30015fdd546c9b9f57f
 F src/shell.c 84a1593bd86aaa14f4da8a8f9b16fbc239d262aa
 F src/sqlite.h.in 278602140d49575e8708e643161f4263e428a02a
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
@@ -840,7 +840,7 @@ F test/securedel2.test 2d54c28e46eb1fd6902089958b20b1b056c6f1c5
 F test/select1.test fc2a61f226a649393664ad54bc5376631801517c
 F test/select2.test 352480e0e9c66eda9c3044e412abdf5be0215b56
 F test/select3.test 2ce595f8fb8e2ac10071d3b4e424cadd4634a054
-F test/select4.test e20e8ce47b558de80616102ef273704cf0d48a3b
+F test/select4.test ddcaffe16252e84b85550d775b7a03bcf0d390b688122ca653d7199e469e3d5e
 F test/select5.test e758b8ef94f69b111df4cb819008856655dcd535
 F test/select6.test 39eac4a5c03650b2b473c532882273283ee8b7a0
 F test/select7.test 7fd2ef598cfabb6b9ff6ac13973b91d0527df49d
@@ -1250,8 +1250,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 043d6ce8ad85f8044735747b8938ea5ce9a08e71b860c2b7179b824021bb7a62
-Q +351bc22fa9b5a2e50da3583a882c5aa390bda19f
-R 6db0016b61cd969747c5a4253c144477
+P 52674f948c3e74e5cc32874d4885f2302ad1d5dd0bc45ff6bfda18cf4bea904a
+Q +ec215f94ac9748c0acd82af0cc9e7a92249462f9
+R a908a996bcff610704d1aca2821ce465
 U drh
-Z 0af93fca2845697dabd5891a1460c268
+Z 30ce9b14a61bc1a1adc0dcec2dba7a8c
