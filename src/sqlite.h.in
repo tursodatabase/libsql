@@ -3890,7 +3890,7 @@ typedef struct sqlite3_context sqlite3_context;
 ** host-language pointers into [application-defined SQL functions].
 ** ^A parameter that is initialized using [sqlite3_bind_pointer()] appears
 ** to be an ordinary SQL NULL value to everything other than
-** [sqlite3_value_pointer()].
+** [sqlite3_value_pointer()].  The T parameter should be a static string.
 **
 ** ^If any of the sqlite3_bind_*() routines are called with a NULL pointer
 ** for the [prepared statement] or with a prepared statement for which
@@ -5101,6 +5101,7 @@ typedef void (*sqlite3_destructor_type)(void*);
 ** also associates the host-language pointer P or type T with that 
 ** NULL value such that the pointer can be retrieved within an
 ** [application-defined SQL function] using [sqlite3_value_pointer()].
+** The T parameter should be a static string.
 ** This mechanism can be used to pass non-SQL values between
 ** application-defined functions.
 **

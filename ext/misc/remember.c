@@ -25,6 +25,9 @@
 ** pointer type of "carray" and bind the id of the counter to $ID and
 ** run the prepared statement.
 **
+** This implementation of the remember() function uses a "carray"
+** pointer so that it can share pointers with the carray() extension.
+**
 ** One can imagine doing similar things with floating-point values and
 ** strings, but this demonstration extension will stick to using just
 ** integers.
