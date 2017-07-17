@@ -712,7 +712,7 @@ void sqlite3VdbeMemSetInt64(Mem *pMem, i64 val){
 void sqlite3VdbeMemSetPointer(Mem *pMem, void *pPtr, const char *zPType){
   assert( pMem->flags==MEM_Null );
   if( zPType ){
-    pMem->flags = MEM_Null|MEM_Subtype;
+    pMem->flags = MEM_Null|MEM_Subtype|MEM_Term|MEM_Static;
     pMem->u.pPtr = pPtr;
     pMem->eSubtype = 'p';
     pMem->z = (char*)zPType;

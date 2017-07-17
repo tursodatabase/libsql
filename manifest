@@ -1,5 +1,5 @@
-C Add\san\sexperimental\s"pointer\stype"\sparameter\sto\ssqlite3_bind_pointer(),\nsqlite3_result_pointer(),\sand\ssqlite3_value_pointer().\s\sThe\spointer\stype\sis\na\sstring\sthat\smust\scompare\sequal\susing\sstrcmp()\sor\selse\sthe\spointer\scomes\nthrough\sas\sa\sNULL.
-D 2017-07-17T00:40:19.127
+C Improve\sthe\ssqlite3_result_pointer()\sinterface\sso\sthat\sit\scannot\sbe\sfaked\nusing\ssqlite3_result_null()\sand\ssqlite3_result_subtype().
+D 2017-07-17T11:39:46.366
 F Makefile.in eda8bedf08c4c93e2137ef1218b3d3302488c68c2774918de0335a1133aab157
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 20850e3e8d4d4791e0531955852d768eb06f24138214870d543abb1a47346fba
@@ -522,10 +522,10 @@ F src/vacuum.c 874c0f2f15ab2908748297d587d22d485ea96d55aaec91d4775dddb2e24d2ecf
 F src/vdbe.c adc8a378710ec2376101483cc8a5f499539ee9bbebfb2a784f3370704d5d44ad
 F src/vdbe.h 7bf719031782823b915aff2c1f93d1944c1c6b300770a15339b7dbc9610b802e
 F src/vdbeInt.h 19bd04a4211fe56c712ab35b48be77fd5a0579b851e9dea2cb8deade359b72b9
-F src/vdbeapi.c c42a2f0a34dc202aeee6ae33de4e2f7634a1b56ff31f1214f7f77443d5e51ed2
+F src/vdbeapi.c f600bf0dfcea8edb0e0a44a98035bbe3310824af18c193ba242449db250627a4
 F src/vdbeaux.c 518d1cf6728ecb591390541c58b14902e8d61735ef574426b9971624c54d2c4b
 F src/vdbeblob.c 359891617358deefc85bef7bcf787fa6b77facb9
-F src/vdbemem.c cdc72bb347aab890d50346cfc5b4f6a074c84c9c239139070652dbd90f915b6c
+F src/vdbemem.c fe8fce1cdc258320b465934039fe4b1230d63f81d6b81b1eac775b6eec00af0d
 F src/vdbesort.c f512c68d0bf7e0105316a5594c4329358c8ee9cae3b25138df041d97516c0372
 F src/vdbetrace.c 41963d5376f0349842b5fc4aaaaacd7d9cdc0834
 F src/vtab.c 35b9bdc2b41de32a417141d12097bcc4e29a77ed7cdb8f836d1d2305d946b61b
@@ -1633,10 +1633,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b64d64c84484162d1822430036ba0483365a39ef4cf82cd6a7b9436d9e9f50c8
-R c8735c4bec2daec9a986616d49ca5640
-T *branch * pointer-types
-T *sym-pointer-types *
-T -sym-branch-3.20 *
+P 211cce04e97d2e325a6ea3e99738fc71115d673dc13daeffb03ac3140deb11de
+R b5069fb289c149b1ae5393ff07d0ac4e
 U drh
-Z 0bdcc63008f6f6671f1faf99a5a3de4d
+Z 009027d79ad8aabb66e97a4b8be0060e
