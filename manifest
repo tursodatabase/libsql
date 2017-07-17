@@ -1,5 +1,5 @@
-C Improved\sthe\sinterface\sto\sthe\sfts5()\sextension\smechanism\sfor\senhanced\nsecurity.
-D 2017-07-17T15:38:57.883
+C Interchange\sto\sbranches\swithin\san\s"if"\sstatement\sin\ssqlite3_value_pointer()\nin\sorder\sto\swork\saround\sa\sbug\sin\sgcc.
+D 2017-07-17T17:46:29.420
 F Makefile.in eda8bedf08c4c93e2137ef1218b3d3302488c68c2774918de0335a1133aab157
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 20850e3e8d4d4791e0531955852d768eb06f24138214870d543abb1a47346fba
@@ -522,7 +522,7 @@ F src/vacuum.c 874c0f2f15ab2908748297d587d22d485ea96d55aaec91d4775dddb2e24d2ecf
 F src/vdbe.c adc8a378710ec2376101483cc8a5f499539ee9bbebfb2a784f3370704d5d44ad
 F src/vdbe.h 7bf719031782823b915aff2c1f93d1944c1c6b300770a15339b7dbc9610b802e
 F src/vdbeInt.h 19bd04a4211fe56c712ab35b48be77fd5a0579b851e9dea2cb8deade359b72b9
-F src/vdbeapi.c f600bf0dfcea8edb0e0a44a98035bbe3310824af18c193ba242449db250627a4
+F src/vdbeapi.c 52844a5a71712197be45f1c63d730c48a745c7457c959465cfb2b969af40a266
 F src/vdbeaux.c 518d1cf6728ecb591390541c58b14902e8d61735ef574426b9971624c54d2c4b
 F src/vdbeblob.c 359891617358deefc85bef7bcf787fa6b77facb9
 F src/vdbemem.c fe8fce1cdc258320b465934039fe4b1230d63f81d6b81b1eac775b6eec00af0d
@@ -1633,7 +1633,7 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e4579e50a1ece4f65dfdae39d5c1670f0e3f7d4824e7d242f07ec9859d15155f
-R 84ee586521f1c75e6bd72053e825fa25
+P bc78235f547977f1a821342ca8f3e03103a0eb351f8b3115ac10b43dd9c7044d
+R 43a91375009f6b9e40c3c37af47a9695
 U drh
-Z db36539b98f82465e246556331eb9f45
+Z 682f6cb740e4e1e6fe260cc4821cf982

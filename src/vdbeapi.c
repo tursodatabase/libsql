@@ -202,8 +202,8 @@ unsigned int sqlite3_value_subtype(sqlite3_value *pVal){
 void *sqlite3_value_pointer(sqlite3_value *pVal, const char *zPType){
   Mem *p = (Mem*)pVal;
   if( p->flags==(MEM_Null|MEM_Subtype|MEM_Term|MEM_Static)
-   && p->eSubtype=='p'
    && zPType!=0
+   && p->eSubtype=='p'
    && strcmp(p->z, zPType)==0
   ){
     return p->u.pPtr;
